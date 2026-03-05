@@ -161,11 +161,11 @@ export function CharacterSelectScreen({ onSelect, topLeft }: Props) {
           <UpcomingCharacterSlot />
         </div>
 
-          <div className="relative mt-2 h-[470px]">
+          <div className="relative mt-2 h-[388px]">
             <AnimatePresence>
               {showDeck && (
                 <motion.div
-                  className="absolute inset-x-0 top-0 z-[71] min-h-[445px] rounded-xl border border-zinc-700/80 bg-zinc-950/95 p-4"
+                  className="absolute inset-x-0 top-0 z-[71] min-h-[368px] rounded-xl border border-zinc-700/80 bg-zinc-950/95 p-4"
                   initial={{ opacity: 0, y: 8, scale: 0.98 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 8, scale: 0.98, transition: { duration: 0.12 } }}
@@ -174,7 +174,7 @@ export function CharacterSelectScreen({ onSelect, topLeft }: Props) {
                   onMouseLeave={scheduleCloseDeck}
                 >
                   <p className="text-[10px] uppercase tracking-widest text-zinc-600 mb-3 text-center">Starting Deck</p>
-                    <div className="mt-2 min-h-[360px] flex items-center justify-center overflow-visible">
+                    <div className="mt-1 min-h-[310px] flex items-center justify-center overflow-visible">
                     {previewCards.map(({ card, uid }, index) => {
                       const offset = index - previewMid
                       const rotate = offset * previewAnglePerCard

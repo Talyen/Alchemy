@@ -287,7 +287,7 @@ export function Hand({ cards, mana, maxMana, gold, onPlay, disabled, isEnemyActi
   return (
     <div
       className="relative h-full flex justify-center px-6 pb-6 overflow-visible"
-      style={{ paddingTop: 86 }}
+      style={{ paddingTop: 66 }}
     >
       {/* Draw pile — pinned bottom-left (mirrors discard pile) */}
       <div className="absolute left-4 bottom-6 z-10">
