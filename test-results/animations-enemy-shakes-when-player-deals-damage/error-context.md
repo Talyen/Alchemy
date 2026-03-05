@@ -1,0 +1,93 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e4]:
+  - main [ref=e5]:
+    - generic [ref=e6]:
+      - generic [ref=e7]:
+        - img "Knight" [ref=e11]
+        - img "Goblin" [ref=e20]
+      - generic [ref=e28]:
+        - img [ref=e29]
+        - text: Your Turn
+  - generic [ref=e35]:
+    - generic [ref=e36]:
+      - generic [ref=e37]:
+        - generic [ref=e42]: "5"
+        - generic [ref=e43]:
+          - img [ref=e44]
+          - generic [ref=e48]: Draw
+      - generic [ref=e49]:
+        - generic:
+          - img
+        - generic:
+          - img
+        - generic:
+          - img
+      - generic [ref=e51]:
+        - img [ref=e52]
+        - generic [ref=e55]: Log
+    - generic [ref=e56]:
+      - button "Bite Bite Deal 3 Damage Leech attack" [ref=e59]:
+        - generic [ref=e60]:
+          - generic [ref=e61]:
+            - generic [ref=e63]:
+              - img
+            - paragraph [ref=e64]: Bite
+          - img "Bite" [ref=e67]
+        - generic [ref=e69]:
+          - paragraph [ref=e71]: Deal 3 Damage Leech
+          - paragraph [ref=e72]: attack
+      - button "Apple Apple Gain 3 Health heal" [ref=e75]:
+        - generic [ref=e76]:
+          - paragraph [ref=e78]: Apple
+          - img "Apple" [ref=e81]
+        - generic [ref=e83]:
+          - paragraph [ref=e85]: Gain 3 Health
+          - paragraph [ref=e86]: heal
+      - generic [ref=e88]:
+        - generic:
+          - paragraph: Keywords
+          - generic:
+            - generic:
+              - img
+              - generic:
+                - generic: Blunt
+                - paragraph: A heavy, crushing physical damage type.
+        - button "Bash Bash Deal 8 Blunt Damage attack" [ref=e89]:
+          - generic [ref=e90]:
+            - generic [ref=e91]:
+              - generic [ref=e93]:
+                - img
+                - img
+              - paragraph [ref=e94]: Bash
+            - img "Bash" [ref=e97]
+          - generic [ref=e99]:
+            - paragraph [ref=e101]: Deal 8 Blunt Damage
+            - paragraph [ref=e102]: attack
+      - button "Defend Defend Gain 5 Block skill" [ref=e105]:
+        - generic [ref=e106]:
+          - generic [ref=e107]:
+            - generic [ref=e109]:
+              - img
+            - paragraph [ref=e110]: Defend
+          - img "Defend" [ref=e113]
+        - generic [ref=e115]:
+          - paragraph [ref=e117]: Gain 5 Block
+          - paragraph [ref=e118]: skill
+      - button "Fireball Fireball Deal 3 Burn attack" [ref=e121]:
+        - generic [ref=e122]:
+          - generic [ref=e123]:
+            - generic [ref=e125]:
+              - img
+            - paragraph [ref=e126]: Fireball
+          - img "Fireball" [ref=e129]
+        - generic [ref=e131]:
+          - paragraph [ref=e133]: Deal 3 Burn
+          - paragraph [ref=e134]: attack
+    - generic [ref=e136]:
+      - generic [ref=e141]: "0"
+      - generic [ref=e142]:
+        - img [ref=e143]
+        - generic [ref=e146]: Discard
+```

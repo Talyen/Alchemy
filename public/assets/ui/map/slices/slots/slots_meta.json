@@ -1,0 +1,74 @@
+﻿[
+    {
+        "File":  "slots_01_64x64.png",
+        "PixelCount":  4096,
+        "X":  128,
+        "Y":  128,
+        "Width":  64,
+        "Height":  64
+    },
+    {
+        "File":  "slots_02_64x56.png",
+        "PixelCount":  3521,
+        "X":  128,
+        "Y":  8,
+        "Width":  64,
+        "Height":  56
+    },
+    {
+        "File":  "slots_03_64x47.png",
+        "PixelCount":  2971,
+        "X":  128,
+        "Y":  256,
+        "Width":  64,
+        "Height":  47
+    },
+    {
+        "File":  "slots_04_24x64.png",
+        "PixelCount":  1331,
+        "X":  256,
+        "Y":  128,
+        "Width":  24,
+        "Height":  64
+    },
+    {
+        "File":  "slots_05_21x64.png",
+        "PixelCount":  1299,
+        "X":  43,
+        "Y":  128,
+        "Width":  21,
+        "Height":  64
+    },
+    {
+        "File":  "slots_06_23x56.png",
+        "PixelCount":  1124,
+        "X":  256,
+        "Y":  8,
+        "Width":  23,
+        "Height":  56
+    },
+    {
+        "File":  "slots_07_21x56.png",
+        "PixelCount":  999,
+        "X":  43,
+        "Y":  8,
+        "Width":  21,
+        "Height":  56
+    },
+    {
+        "File":  "slots_08_21x47.png",
+        "PixelCount":  914,
+        "X":  256,
+        "Y":  256,
+        "Width":  21,
+        "Height":  47
+    },
+    {
+        "File":  "slots_09_21x47.png",
+        "PixelCount":  902,
+        "X":  43,
+        "Y":  256,
+        "Width":  21,
+        "Height":  47
+    }
+]

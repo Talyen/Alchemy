@@ -1,0 +1,122 @@
+﻿[
+    {
+        "File":  "banner_01_188x92.png",
+        "PixelCount":  15848,
+        "X":  4,
+        "Y":  256,
+        "Width":  188,
+        "Height":  92
+    },
+    {
+        "File":  "banner_02_172x98.png",
+        "PixelCount":  14079,
+        "X":  512,
+        "Y":  256,
+        "Width":  172,
+        "Height":  98
+    },
+    {
+        "File":  "banner_03_64x128.png",
+        "PixelCount":  7904,
+        "X":  0,
+        "Y":  384,
+        "Width":  64,
+        "Height":  128
+    },
+    {
+        "File":  "banner_04_64x128.png",
+        "PixelCount":  7784,
+        "X":  256,
+        "Y":  384,
+        "Width":  64,
+        "Height":  128
+    },
+    {
+        "File":  "banner_05_64x128.png",
+        "PixelCount":  6884,
+        "X":  384,
+        "Y":  384,
+        "Width":  64,
+        "Height":  128
+    },
+    {
+        "File":  "banner_06_64x128.png",
+        "PixelCount":  6881,
+        "X":  128,
+        "Y":  384,
+        "Width":  64,
+        "Height":  128
+    },
+    {
+        "File":  "banner_07_64x64.png",
+        "PixelCount":  4096,
+        "X":  320,
+        "Y":  128,
+        "Width":  64,
+        "Height":  64
+    },
+    {
+        "File":  "banner_08_64x64.png",
+        "PixelCount":  4088,
+        "X":  256,
+        "Y":  256,
+        "Width":  64,
+        "Height":  64
+    },
+    {
+        "File":  "banner_09_64x64.png",
+        "PixelCount":  4080,
+        "X":  256,
+        "Y":  0,
+        "Width":  64,
+        "Height":  64
+    },
+    {
+        "File":  "banner_10_64x64.png",
+        "PixelCount":  4040,
+        "X":  384,
+        "Y":  256,
+        "Width":  64,
+        "Height":  64
+    },
+    {
+        "File":  "banner_11_64x64.png",
+        "PixelCount":  3997,
+        "X":  384,
+        "Y":  0,
+        "Width":  64,
+        "Height":  64
+    },
+    {
+        "File":  "banner_12_60x64.png",
+        "PixelCount":  3808,
+        "X":  4,
+        "Y":  128,
+        "Width":  60,
+        "Height":  64
+    },
+    {
+        "File":  "banner_13_60x64.png",
+        "PixelCount":  3147,
+        "X":  4,
+        "Y":  0,
+        "Width":  60,
+        "Height":  64
+    },
+    {
+        "File":  "banner_14_44x64.png",
+        "PixelCount":  2788,
+        "X":  640,
+        "Y":  128,
+        "Width":  44,
+        "Height":  64
+    },
+    {
+        "File":  "banner_15_44x64.png",
+        "PixelCount":  2698,
+        "X":  640,
+        "Y":  0,
+        "Width":  44,
+        "Height":  64
+    }
+]

@@ -1,0 +1,98 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e4]:
+  - main [ref=e5]:
+    - generic [ref=e6]:
+      - generic [ref=e7]:
+        - img "Knight" [ref=e11]
+        - img "Goblin" [ref=e20]
+      - generic [ref=e28]:
+        - img [ref=e29]
+        - text: Your Turn
+  - generic [ref=e35]:
+    - generic [ref=e36]:
+      - generic [ref=e37]:
+        - generic [ref=e42]: "5"
+        - generic [ref=e43]:
+          - img [ref=e44]
+          - generic [ref=e48]: Draw
+      - generic [ref=e49]:
+        - generic:
+          - img
+        - generic:
+          - img
+        - generic:
+          - img
+      - generic [ref=e51]:
+        - img [ref=e52]
+        - generic [ref=e55]: Log
+    - generic [ref=e56]:
+      - button "Bash Bash Deal 8 Blunt Damage attack" [ref=e59]:
+        - generic [ref=e60]:
+          - generic [ref=e61]:
+            - generic [ref=e63]:
+              - img
+              - img
+            - paragraph [ref=e64]: Bash
+          - img "Bash" [ref=e67]
+        - generic [ref=e69]:
+          - paragraph [ref=e71]: Deal 8 Blunt Damage
+          - paragraph [ref=e72]: attack
+      - button "Plate Mail Plate Mail Gain 1 Armor upgrade" [ref=e75]:
+        - generic [ref=e76]:
+          - generic [ref=e77]:
+            - generic [ref=e79]:
+              - img
+              - img
+            - paragraph [ref=e80]: Plate Mail
+          - img "Plate Mail" [ref=e83]
+        - generic [ref=e85]:
+          - paragraph [ref=e87]: Gain 1 Armor
+          - paragraph [ref=e88]: upgrade
+      - generic [ref=e90]:
+        - generic:
+          - paragraph: Keywords
+          - generic:
+            - generic:
+              - img
+              - generic:
+                - generic: Blunt
+                - paragraph: A heavy, crushing physical damage type.
+        - button "Bash Bash Deal 8 Blunt Damage attack" [ref=e91]:
+          - generic [ref=e92]:
+            - generic [ref=e93]:
+              - generic [ref=e95]:
+                - img
+                - img
+              - paragraph [ref=e96]: Bash
+            - img "Bash" [ref=e99]
+          - generic [ref=e101]:
+            - paragraph [ref=e103]: Deal 8 Blunt Damage
+            - paragraph [ref=e104]: attack
+      - button "Stab Stab Deal 4 Pierce Damage attack" [ref=e107]:
+        - generic [ref=e108]:
+          - generic [ref=e109]:
+            - generic [ref=e111]:
+              - img
+            - paragraph [ref=e112]: Stab
+          - img "Stab" [ref=e115]
+        - generic [ref=e117]:
+          - paragraph [ref=e119]: Deal 4 Pierce Damage
+          - paragraph [ref=e120]: attack
+      - button "Stab Stab Deal 4 Pierce Damage attack" [ref=e123]:
+        - generic [ref=e124]:
+          - generic [ref=e125]:
+            - generic [ref=e127]:
+              - img
+            - paragraph [ref=e128]: Stab
+          - img "Stab" [ref=e131]
+        - generic [ref=e133]:
+          - paragraph [ref=e135]: Deal 4 Pierce Damage
+          - paragraph [ref=e136]: attack
+    - generic [ref=e138]:
+      - generic [ref=e143]: "0"
+      - generic [ref=e144]:
+        - img [ref=e145]
+        - generic [ref=e148]: Discard
+```

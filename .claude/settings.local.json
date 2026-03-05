@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(/c/Users/Talye/Alchemy/.gitignore:*)",
+      "Bash(python3 -c \":*)",
+      "Bash(python -c \":*)",
+      "Bash(node -e \":*)",
+      "WebFetch(domain:johnscolaro.xyz)"
+    ]
+  }
+}

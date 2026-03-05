@@ -1,0 +1,15 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Raw asset packs — large source files, not committed
+raw-assets/
+
+# Keep runtime audio lean for git history/pushes (ogg is sufficient)
+public/assets/audio/**/*.wav
+public/assets/audio/**/*.mp3
+
+# Vite
+*.local
