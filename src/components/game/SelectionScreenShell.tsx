@@ -7,6 +7,7 @@ interface Props {
   children: ReactNode
   layout?: 'center' | 'top'
   topLeft?: ReactNode
+  titleOffsetY?: number
 }
 
 export const staggerContainerVariants = {
@@ -19,7 +20,7 @@ export const staggerItemVariants = {
   show: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring' as const, stiffness: 260, damping: 22 } },
 }
 
-export function SelectionScreenShell({ title, subtitle, children, layout = 'center', topLeft }: Props) {
+export function SelectionScreenShell({ title, subtitle, children, layout = 'center', topLeft, titleOffsetY = 0 }: Props) {
   return (
     <motion.div
       className="min-h-screen flex items-center justify-center p-6 bg-zinc-950"
@@ -36,6 +37,7 @@ export function SelectionScreenShell({ title, subtitle, children, layout = 'cent
 
         <motion.div
           className="flex flex-col items-center gap-1.5"
+          style={{ transform: `translateY(${titleOffsetY}px)` }}
           initial={{ opacity: 0, y: -12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}

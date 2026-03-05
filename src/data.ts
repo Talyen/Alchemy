@@ -208,7 +208,7 @@ export const ALL_CARDS: CardDef[] = [
     name: 'Wish',
     cost: 1,
     type: 'skill',
-    description: 'Wish 1',
+    description: 'Wish 1\nConsume',
     effect: { wish: 1 },
   },
   {

@@ -16,11 +16,12 @@ function toInstance(def: CardDef, uid: string): CardInstance {
 }
 
 export function CollectionScreen({ cards, onBack, topLeft }: Props) {
+  void onBack
   return (
-    <SelectionScreenShell title="Collection" subtitle="All Cards Collected" topLeft={topLeft}>
+    <SelectionScreenShell title="Collection" subtitle="All Cards Collected" topLeft={topLeft} titleOffsetY={14}>
       <div className="w-full px-10">
         <motion.div
-          className="grid grid-cols-5 gap-6 justify-items-center max-h-[62vh] overflow-y-auto pr-2 pt-14"
+          className="grid grid-cols-5 gap-6 justify-items-center max-h-[62vh] overflow-y-auto pr-2 pt-10"
           variants={staggerContainerVariants}
           initial="hidden"
           animate="show"
@@ -36,24 +37,6 @@ export function CollectionScreen({ cards, onBack, topLeft }: Props) {
               <Card card={toInstance(def, `collection-${i}`)} playable />
             </motion.div>
           ))}
-        </motion.div>
-
-        <motion.div
-          className="mt-6 flex justify-center"
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.2 }}
-        >
-          <motion.button
-            onClick={onBack}
-            className="px-5 py-2.5 rounded-xl border border-zinc-700 text-sm text-zinc-300"
-            style={{ background: 'rgba(39,39,42,0.8)' }}
-            whileHover={{ scale: 1.03, borderColor: 'rgba(161,161,170,0.6)' }}
-            whileTap={{ scale: 0.97 }}
-            transition={{ type: 'spring', stiffness: 380, damping: 26 }}
-          >
-            Back
-          </motion.button>
         </motion.div>
       </div>
     </SelectionScreenShell>

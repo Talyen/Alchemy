@@ -110,7 +110,7 @@ const KEYWORDS: Record<string, KeywordEntry> = {
   },
   Heal: {
     Icon:        Heart,
-    color:       '#16a34a',
+    color:       '#86efac',
     description: 'Restores your HP.',
   },
   Mana: {
@@ -125,7 +125,7 @@ const KEYWORDS: Record<string, KeywordEntry> = {
   },
   Poison: {
     Icon:        Droplets,
-    color:       '#4ade80',
+    color:       '#166534',
     description: 'Deals Poison damage each turn.',
   },
   Bleed: {
@@ -150,7 +150,7 @@ const KEYWORDS: Record<string, KeywordEntry> = {
   },
   Trap: {
     Icon:        ShieldOff,
-    color:       '#f59e0b',
+    color:       '#d2b48c',
     description: 'Triggers when attacked',
   },
   Wish: {
@@ -165,7 +165,7 @@ const KEYWORDS: Record<string, KeywordEntry> = {
   },
   Ailment: {
     Icon:        ShieldOff,
-    color:       '#a1a1aa',
+    color:       '#86efac',
     description: 'Negative status effects.',
   },
   Holy: {
