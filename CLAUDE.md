@@ -44,6 +44,16 @@ Full reference: `~/.claude/commands/ui-ux.md`
 - `npm run dev` — dev server (Chrome)
 - `npm run build` — type-check + build
 
+## Version Control Safety Policy
+
+- Default workflow: create automatic checkpoint commits during active development.
+- Commit when any of the following is true:
+  - A meaningful milestone is complete (feature, bugfix, UI pass).
+  - Before risky refactors or broad multi-file edits.
+  - A substantial amount of time or diff has accumulated in-session.
+- Push checkpoints to GitHub regularly and always push at session end.
+- Override phrase: if user says `no commit yet`, skip committing until explicitly re-enabled.
+
 ## File Structure
 
 ```
