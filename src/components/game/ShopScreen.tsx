@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import type { ReactNode } from 'react'
 import { Gem, ShoppingBag, Sparkles } from 'lucide-react'
 import type { CardDef, CardInstance } from '@/types'
 import { Card } from './Card'
@@ -23,15 +24,16 @@ interface Props {
   trinketOffers: ShopTrinketOffer[]
   onBuyCard: (offerId: string) => void
   onLeave: () => void
+  topLeft?: ReactNode
 }
 
 function toInstance(def: CardDef, uid: string): CardInstance {
   return { ...def, uid }
 }
 
-export function ShopScreen({ gold, cardOffers, trinketOffers, onBuyCard, onLeave }: Props) {
+export function ShopScreen({ gold, cardOffers, trinketOffers, onBuyCard, onLeave, topLeft }: Props) {
   return (
-    <SelectionScreenShell title="Shop" subtitle="Merchant">
+    <SelectionScreenShell title="Shop" subtitle="Merchant" topLeft={topLeft}>
       <div className="w-full max-w-6xl px-8 flex flex-col items-center gap-8">
         <div className="w-full flex justify-center">
           <div className="inline-flex items-center gap-2 rounded-xl border border-zinc-700/70 bg-zinc-900/80 px-4 py-2 text-zinc-200">

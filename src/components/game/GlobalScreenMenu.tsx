@@ -20,7 +20,7 @@ export function GlobalScreenMenu({
   const [open, setOpen] = useState(false)
 
   return (
-    <div className="fixed left-4 top-4 z-[140]">
+    <div className="relative z-[140]">
       <div className="relative">
         <motion.button
           type="button"

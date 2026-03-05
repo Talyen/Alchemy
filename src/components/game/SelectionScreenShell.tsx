@@ -29,10 +29,10 @@ export function SelectionScreenShell({ title, subtitle, children, layout = 'cent
       transition={{ duration: 0.3 }}
     >
       <div
-        className={`relative flex flex-col items-center rounded-2xl border border-zinc-800/60 bg-zinc-950 ${layout === 'top' ? 'overflow-visible justify-start pt-8 gap-6' : 'overflow-hidden justify-center gap-10'}`}
+        className={`relative flex flex-col items-center rounded-2xl border border-zinc-800/60 bg-zinc-950 overflow-hidden ${layout === 'top' ? 'justify-start pt-8 gap-6' : 'justify-center gap-10'}`}
         style={{ width: 'min(95vw, calc(94vh * (16 / 9)), 1440px)', aspectRatio: '16 / 9' }}
       >
-        {topLeft ? <div className="absolute left-0 top-0 z-50">{topLeft}</div> : null}
+        {topLeft ? <div className="absolute left-1 top-1 z-50">{topLeft}</div> : null}
 
         <motion.div
           className="flex flex-col items-center gap-1.5"

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import type { ReactNode } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ALL_CARDS, RUN_CHARACTERS, type RunCharacter } from '@/data'
 import { SelectionScreenShell } from './SelectionScreenShell'
@@ -7,6 +8,7 @@ import type { CardDef, CardInstance } from '@/types'
 
 interface Props {
   onSelect: (characterId: string) => void
+  topLeft?: ReactNode
 }
 
 const KNIGHT_FRAMES = Array.from({ length: 4 }, (_, i) => `/assets/knight-idle-f${i}.png`)
@@ -63,7 +65,7 @@ function UpcomingCharacterSlot() {
   )
 }
 
-export function CharacterSelectScreen({ onSelect }: Props) {
+export function CharacterSelectScreen({ onSelect, topLeft }: Props) {
   const [showDeck, setShowDeck] = useState(false)
   const [elevatedDeckCards, setElevatedDeckCards] = useState<Set<string>>(new Set())
   const hideDeckTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -126,7 +128,7 @@ export function CharacterSelectScreen({ onSelect }: Props) {
   }, [])
 
   return (
-    <SelectionScreenShell title="Choose Character" subtitle="Start Run" layout="top">
+    <SelectionScreenShell title="Choose Character" subtitle="Start Run" layout="top" topLeft={topLeft}>
       <div className="w-full relative mt-0">
         <div className="px-4 max-w-7xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -159,7 +161,7 @@ export function CharacterSelectScreen({ onSelect }: Props) {
           <UpcomingCharacterSlot />
         </div>
 
-          <div className="relative mt-2 h-[1040px]">
+          <div className="relative mt-2 h-[470px]">
             <AnimatePresence>
               {showDeck && (
                 <motion.div

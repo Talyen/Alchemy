@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import type { MouseEvent } from 'react'
+import type { ReactNode } from 'react'
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform, useAnimationControls } from 'framer-motion'
 import { FlaskConical, RotateCcw, Sword } from 'lucide-react'
 import { beginNextPlayerTurn, createGame, playCard, resolveEnemyAction, resolveEnemyStartOfTurn, startEnemyTurn } from './combat'
@@ -34,7 +35,15 @@ function pickRandom<T>(pool: T[], count: number): T[] {
 
 // ─── Main menu ───────────────────────────────────────────────────────────────
 
-function MainMenu({ onStart, onCollection }: { onStart: () => void; onCollection: () => void }) {
+function MainMenu({
+  onStart,
+  onCollection,
+  topLeft,
+}: {
+  onStart: () => void
+  onCollection: () => void
+  topLeft?: ReactNode
+}) {
   const sheenControls = useAnimationControls()
   const logoControls = useAnimationControls()
   const sheenTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -97,79 +106,86 @@ function MainMenu({ onStart, onCollection }: { onStart: () => void; onCollection
       exit={{ opacity: 0 }}
       transition={{ duration: 0.35 }}
     >
-      <motion.div
-        className="flex flex-col items-center gap-10"
-        initial={{ y: 24, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ type: 'spring', stiffness: 260, damping: 24, delay: 0.1 }}
+      <div
+        className="relative flex items-center justify-center rounded-2xl border border-zinc-800/60 bg-zinc-950 overflow-hidden"
+        style={{ width: 'min(95vw, calc(94vh * (16 / 9)), 1440px)', aspectRatio: '16 / 9' }}
       >
-        <motion.div
-          className="relative overflow-hidden rounded-2xl border border-zinc-800/70 bg-zinc-950 px-6 py-7"
-          style={{ x: dragX, y: dragY, rotateX, rotateY, rotateZ, transformPerspective: 1000 }}
-          animate={logoControls}
-          onTap={handleLogoStart}
-          drag
-          dragElastic={0.22}
-          dragMomentum={false}
-          dragSnapToOrigin
-          dragTransition={{ bounceStiffness: 380, bounceDamping: 28 }}
-          whileDrag={{ scale: 1.03, cursor: 'grabbing' }}
-          whileHover={{ cursor: 'grab' }}
-          onMouseMove={onTitleMove}
-          onMouseLeave={onTitleLeave}
-        >
-          <div className="relative flex items-center gap-4">
-            <div className="relative">
-              <h1
-                className="text-8xl font-bold tracking-tight text-zinc-100 whitespace-nowrap leading-[1.16]"
-              >
-                Alchemy
-              </h1>
-            </div>
-            <FlaskConical
-              size={56}
-              className="shrink-0"
-              style={{ color: '#f4f4f5' }}
-            />
-          </div>
-          <motion.div
-            className="absolute top-0 left-0 h-full w-1/2 pointer-events-none"
-            style={{
-              background: 'linear-gradient(102deg, transparent 22%, rgba(255,255,255,0.06) 46%, rgba(255,255,255,0.16) 50%, rgba(255,255,255,0.06) 54%, transparent 78%)',
-            }}
-            initial={{ x: -460 }}
-            animate={sheenControls}
-          />
-        </motion.div>
-        <div className="flex items-center gap-3">
-          <motion.button
-            onClick={onStart}
-            className="flex items-center gap-2.5 px-8 py-3 rounded-xl border border-zinc-700/70 text-sm font-semibold tracking-widest uppercase text-zinc-300"
-            style={{ background: 'rgba(39,39,42,0.5)' }}
-            whileHover={{ scale: 1.04, borderColor: 'rgba(161,161,170,0.45)' } as Parameters<typeof motion.button>[0]['whileHover']}
-            whileTap={{ scale: 0.97 }}
-            transition={{ type: 'spring', stiffness: 380, damping: 26 }}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0, transition: { delay: 0.25 } }}
-          >
-            <Sword size={14} className="opacity-60" />
-            Play
-          </motion.button>
+        {topLeft ? <div className="absolute left-1 top-1 z-50">{topLeft}</div> : null}
 
-          <motion.button
-            onClick={onCollection}
-            className="flex items-center gap-2.5 px-6 py-3 rounded-xl border border-zinc-700/70 text-sm font-semibold tracking-widest uppercase text-zinc-300"
-            style={{ background: 'rgba(39,39,42,0.5)' }}
-            whileHover={{ scale: 1.04, borderColor: 'rgba(161,161,170,0.45)' } as Parameters<typeof motion.button>[0]['whileHover']}
-            whileTap={{ scale: 0.97 }}
-            transition={{ type: 'spring', stiffness: 380, damping: 26 }}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0, transition: { delay: 0.3 } }}
+        <motion.div
+          className="flex flex-col items-center gap-10"
+          initial={{ y: 24, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ type: 'spring', stiffness: 260, damping: 24, delay: 0.1 }}
+        >
+          <motion.div
+            className="relative overflow-hidden rounded-2xl border border-zinc-800/70 bg-zinc-950 px-6 py-7"
+            style={{ x: dragX, y: dragY, rotateX, rotateY, rotateZ, transformPerspective: 1000 }}
+            animate={logoControls}
+            onTap={handleLogoStart}
+            drag
+            dragElastic={0.22}
+            dragMomentum={false}
+            dragSnapToOrigin
+            dragTransition={{ bounceStiffness: 380, bounceDamping: 28 }}
+            whileDrag={{ scale: 1.03, cursor: 'grabbing' }}
+            whileHover={{ cursor: 'grab' }}
+            onMouseMove={onTitleMove}
+            onMouseLeave={onTitleLeave}
           >
-            Collection
-          </motion.button>
-        </div>
-      </motion.div>
+            <div className="relative flex items-center gap-4">
+              <div className="relative">
+                <h1
+                  className="text-8xl font-bold tracking-tight text-zinc-100 whitespace-nowrap leading-[1.16]"
+                >
+                  Alchemy
+                </h1>
+              </div>
+              <FlaskConical
+                size={56}
+                className="shrink-0"
+                style={{ color: '#f4f4f5' }}
+              />
+            </div>
+            <motion.div
+              className="absolute top-0 left-0 h-full w-1/2 pointer-events-none"
+              style={{
+                background: 'linear-gradient(102deg, transparent 22%, rgba(255,255,255,0.06) 46%, rgba(255,255,255,0.16) 50%, rgba(255,255,255,0.06) 54%, transparent 78%)',
+              }}
+              initial={{ x: -460 }}
+              animate={sheenControls}
+            />
+          </motion.div>
+          <div className="flex items-center gap-3">
+            <motion.button
+              onClick={onStart}
+              className="flex items-center gap-2.5 px-8 py-3 rounded-xl border border-zinc-700/70 text-sm font-semibold tracking-widest uppercase text-zinc-300"
+              style={{ background: 'rgba(39,39,42,0.5)' }}
+              whileHover={{ scale: 1.04, borderColor: 'rgba(161,161,170,0.45)' } as Parameters<typeof motion.button>[0]['whileHover']}
+              whileTap={{ scale: 0.97 }}
+              transition={{ type: 'spring', stiffness: 380, damping: 26 }}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0, transition: { delay: 0.25 } }}
+            >
+              <Sword size={14} className="opacity-60" />
+              Play
+            </motion.button>
+
+            <motion.button
+              onClick={onCollection}
+              className="flex items-center gap-2.5 px-6 py-3 rounded-xl border border-zinc-700/70 text-sm font-semibold tracking-widest uppercase text-zinc-300"
+              style={{ background: 'rgba(39,39,42,0.5)' }}
+              whileHover={{ scale: 1.04, borderColor: 'rgba(161,161,170,0.45)' } as Parameters<typeof motion.button>[0]['whileHover']}
+              whileTap={{ scale: 0.97 }}
+              transition={{ type: 'spring', stiffness: 380, damping: 26 }}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0, transition: { delay: 0.3 } }}
+            >
+              Collection
+            </motion.button>
+          </div>
+        </motion.div>
+      </div>
     </motion.div>
   )
 }
@@ -472,26 +488,34 @@ export default function App() {
     setScreen('menu')
   }
 
+  const renderGlobalMenu = () => (
+    <GlobalScreenMenu
+      onGoMainMenu={handleRestart}
+      onGoCharacterSelect={handleOpenCharacterSelect}
+      onOpenCollection={() => openCollection(screen)}
+      musicEnabled={musicEnabled}
+      onToggleMusic={() => setMusicEnabled(prev => !prev)}
+    />
+  )
+
   return (
     <>
-      <GlobalScreenMenu
-        onGoMainMenu={handleRestart}
-        onGoCharacterSelect={handleOpenCharacterSelect}
-        onOpenCollection={() => openCollection(screen)}
-        musicEnabled={musicEnabled}
-        onToggleMusic={() => setMusicEnabled(prev => !prev)}
-      />
-
       <AnimatePresence mode="wait">
 
       {screen === 'menu' && (
-        <MainMenu key="menu" onStart={handleOpenCharacterSelect} onCollection={() => openCollection('menu')} />
+        <MainMenu
+          key="menu"
+          onStart={handleOpenCharacterSelect}
+          onCollection={() => openCollection('menu')}
+          topLeft={renderGlobalMenu()}
+        />
       )}
 
       {screen === 'character-select' && (
         <CharacterSelectScreen
           key="character-select"
           onSelect={handleStart}
+          topLeft={renderGlobalMenu()}
         />
       )}
 
@@ -500,6 +524,7 @@ export default function App() {
           key="collection"
           cards={ALL_CARDS}
           onBack={() => setScreen(collectionReturnScreen === 'collection' ? 'menu' : collectionReturnScreen)}
+          topLeft={renderGlobalMenu()}
         />
       )}
 
@@ -510,6 +535,7 @@ export default function App() {
           subtitle="Victory"
           options={pickOptions}
           onPick={handleRewardPick}
+          topLeft={renderGlobalMenu()}
         />
       )}
 
@@ -519,6 +545,7 @@ export default function App() {
           currentRoomLabel={currentRoomLabel}
           options={destinationOptions}
           onChoose={handleDestinationChoose}
+          topLeft={renderGlobalMenu()}
         />
       )}
 
@@ -529,6 +556,7 @@ export default function App() {
           subtitle="Choose 1 of 3"
           options={gameState.wishOptions}
           onPick={handleWishPick}
+          topLeft={renderGlobalMenu()}
         />
       )}
 
@@ -540,6 +568,7 @@ export default function App() {
           trinketOffers={SHOP_TRINKET_PLACEHOLDERS}
           onBuyCard={handleBuyShopCard}
           onLeave={returnToDestination}
+          topLeft={renderGlobalMenu()}
         />
       )}
 
@@ -550,6 +579,7 @@ export default function App() {
           currentHp={persistentHp}
           maxHp={30}
           onRest={handleCampfireRest}
+          topLeft={renderGlobalMenu()}
         />
       )}
 
@@ -566,6 +596,8 @@ export default function App() {
             className="relative flex flex-col rounded-2xl border border-zinc-800/60 bg-zinc-950 overflow-hidden"
             style={{ width: 'min(95vw, calc(94vh * (16 / 9)), 1440px)', aspectRatio: '16 / 9' }}
           >
+            <div className="absolute left-1 top-1 z-[90]">{renderGlobalMenu()}</div>
+
             <main className="flex-1 flex items-center justify-center px-8 min-h-0">
               <div className="flex flex-col items-center gap-3">
                 <div className="flex items-start gap-40">

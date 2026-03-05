@@ -1,4 +1,5 @@
 import { useState, type Dispatch, type SetStateAction } from 'react'
+import type { ReactNode } from 'react'
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
 import { CircleHelp, Flame, ShoppingBag, Skull, Swords } from 'lucide-react'
 import { SelectionScreenShell, staggerContainerVariants, staggerItemVariants } from './SelectionScreenShell'
@@ -15,6 +16,7 @@ interface Props {
   currentRoomLabel: string
   options: DestinationOption[]
   onChoose: (type: DestinationType) => void
+  topLeft?: ReactNode
 }
 
 const ICONS = {
@@ -102,11 +104,11 @@ function DestinationPanel({
   )
 }
 
-export function ChooseDestinationScreen({ currentRoomLabel, options, onChoose }: Props) {
+export function ChooseDestinationScreen({ currentRoomLabel, options, onChoose, topLeft }: Props) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
 
   return (
-    <SelectionScreenShell title="Choose Destination" subtitle="Travel">
+    <SelectionScreenShell title="Choose Destination" subtitle="Travel" topLeft={topLeft}>
       <div className="relative w-full h-[62%] max-w-5xl">
           <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
             {options.map((opt, i) => {

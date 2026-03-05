@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import type { ReactNode } from 'react'
 import type { CardDef, CardInstance } from '@/types'
 import { Card } from './Card'
 import { SelectionScreenShell, staggerContainerVariants, staggerItemVariants } from './SelectionScreenShell'
@@ -7,15 +8,16 @@ import { playCardPlay } from '@/sounds'
 interface Props {
   cards: CardDef[]
   onBack: () => void
+  topLeft?: ReactNode
 }
 
 function toInstance(def: CardDef, uid: string): CardInstance {
   return { ...def, uid }
 }
 
-export function CollectionScreen({ cards, onBack }: Props) {
+export function CollectionScreen({ cards, onBack, topLeft }: Props) {
   return (
-    <SelectionScreenShell title="Collection" subtitle="All Cards Collected">
+    <SelectionScreenShell title="Collection" subtitle="All Cards Collected" topLeft={topLeft}>
       <div className="w-full px-10">
         <motion.div
           className="grid grid-cols-5 gap-6 justify-items-center max-h-[62vh] overflow-y-auto pr-2 pt-14"

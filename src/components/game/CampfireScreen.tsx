@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import type { ReactNode } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Flame } from 'lucide-react'
 import { SelectionScreenShell } from './SelectionScreenShell'
@@ -8,6 +9,7 @@ interface Props {
   currentHp: number
   maxHp: number
   onRest: () => void
+  topLeft?: ReactNode
 }
 
 const KNIGHT_FRAMES = Array.from({ length: 4 }, (_, i) => `/assets/knight-idle-f${i}.png`)
@@ -34,12 +36,12 @@ function CharacterSprite({ characterId }: { characterId: string }) {
   )
 }
 
-export function CampfireScreen({ characterId, currentHp, maxHp, onRest }: Props) {
+export function CampfireScreen({ characterId, currentHp, maxHp, onRest, topLeft }: Props) {
   const [resting, setResting] = useState(false)
   const healAmount = Math.ceil(maxHp * 0.3)
 
   return (
-    <SelectionScreenShell title="Campfire" subtitle="Rest Site">
+    <SelectionScreenShell title="Campfire" subtitle="Rest Site" topLeft={topLeft}>
       <div className="relative w-full max-w-5xl h-[66%] flex items-center justify-center">
         <motion.div
           className="absolute inset-0"
