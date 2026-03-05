@@ -38,7 +38,7 @@ function getCardTarget(card: CardInstance): 'enemy' | 'player' | 'both' | 'neith
 function ManaOrbs({ current, max }: { current: number; max: number }) {
   const displayCount = Math.max(current, max)
   return (
-    <div className="flex items-center gap-1.5">
+    <div className="flex items-center gap-2">
       {Array.from({ length: displayCount }).map((_, i) => (
         <motion.div
           key={i}
@@ -46,7 +46,7 @@ function ManaOrbs({ current, max }: { current: number; max: number }) {
           transition={{ duration: 0.2 }}
           style={{ pointerEvents: 'none', display: 'flex' }}
         >
-          <Diamond size={12} fill="#2563eb" color="transparent" strokeWidth={0} style={{ pointerEvents: 'none' }} />
+          <Diamond size={18} fill="#2563eb" color="transparent" strokeWidth={0} style={{ pointerEvents: 'none' }} />
         </motion.div>
       ))}
     </div>
@@ -61,8 +61,8 @@ function GoldCounter({ gold }: { gold: number }) {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.2 }}
     >
-      <CircleDollarSign size={12} style={{ pointerEvents: 'none' }} />
-      <span className="text-[10px] uppercase tracking-widest">{gold} Gold</span>
+      <CircleDollarSign size={16} style={{ pointerEvents: 'none' }} />
+      <span className="text-xs uppercase tracking-widest">{gold} Gold</span>
     </motion.div>
   )
 }
@@ -100,7 +100,7 @@ function PileStack({ count, label, icon: Icon }: { count: number; label: string;
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
     >
       {/* Stacked card backs */}
-      <div className="relative w-14 h-20">
+      <div className="relative w-16 h-24">
         <div
           className="absolute inset-0 rounded-xl bg-zinc-900 border border-zinc-700/60"
           style={{ transform: 'rotate(-4deg)', transformOrigin: 'bottom center' }}
@@ -110,12 +110,12 @@ function PileStack({ count, label, icon: Icon }: { count: number; label: string;
           style={{ transform: 'rotate(-2deg)', transformOrigin: 'bottom center' }}
         />
         <div className="absolute inset-0 rounded-xl bg-zinc-900 border border-zinc-700 flex items-center justify-center">
-          <span className="text-lg font-bold text-zinc-400 font-mono">{count}</span>
+          <span className="text-xl font-bold text-zinc-400 font-mono">{count}</span>
         </div>
       </div>
       <div className="flex items-center gap-1 text-zinc-600">
-        <Icon size={10} />
-        <span className="text-[10px] uppercase tracking-widest">{label}</span>
+        <Icon size={12} />
+        <span className="text-[11px] uppercase tracking-widest">{label}</span>
       </div>
     </motion.div>
   )
@@ -286,16 +286,16 @@ export function Hand({ cards, mana, maxMana, gold, onPlay, disabled, isEnemyActi
 
   return (
     <div
-      className="relative h-full flex justify-center px-6 pb-5 overflow-visible"
-      style={{ paddingTop: 64 }}
+      className="relative h-full flex justify-center px-6 pb-6 overflow-visible"
+      style={{ paddingTop: 86 }}
     >
       {/* Draw pile — pinned bottom-left (mirrors discard pile) */}
-      <div className="absolute left-6 bottom-5 z-10">
+      <div className="absolute left-4 bottom-6 z-10">
         <PileStack count={drawCount} label="Draw" icon={Layers} />
       </div>
 
       {/* Resources + log — slightly to the right of draw pile */}
-      <div className="absolute left-24 bottom-5 z-10 flex flex-col items-start gap-2">
+      <div className="absolute left-28 bottom-6 z-10 flex flex-col items-start gap-2.5">
         <div className="relative">
           <ManaOrbs current={mana} max={maxMana} />
           <AnimatePresence>
@@ -315,8 +315,8 @@ export function Hand({ cards, mana, maxMana, gold, onPlay, disabled, isEnemyActi
             whileHover={{ color: '#a1a1aa', scale: 1.05 }}
             transition={{ type: 'spring', stiffness: 400, damping: 25 }}
           >
-            <ScrollText size={12} />
-            <span className="text-[10px] uppercase tracking-widest">Log</span>
+            <ScrollText size={14} />
+            <span className="text-[11px] uppercase tracking-widest">Log</span>
           </motion.div>
           <AnimatePresence>
             {showLog && <CombatLog log={log} />}
@@ -351,7 +351,7 @@ export function Hand({ cards, mana, maxMana, gold, onPlay, disabled, isEnemyActi
       </div>
 
       {/* Discard pile — pinned to right edge */}
-      <div className="absolute right-6 bottom-5 z-10">
+      <div className="absolute right-4 bottom-6 z-10">
         <PileStack count={discardCount} label="Discard" icon={Trash2} />
       </div>
 

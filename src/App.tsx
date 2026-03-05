@@ -107,10 +107,10 @@ function MainMenu({
       transition={{ duration: 0.35 }}
     >
       <div
-        className="relative flex items-center justify-center rounded-2xl border border-zinc-800/60 bg-zinc-950 overflow-hidden"
+        className="relative flex items-center justify-center bg-zinc-950 overflow-hidden"
         style={{ width: 'min(95vw, calc(94vh * (16 / 9)), 1440px)', aspectRatio: '16 / 9' }}
       >
-        {topLeft ? <div className="absolute left-1 top-1 z-50">{topLeft}</div> : null}
+        {topLeft ? <div className="absolute left-5 top-5 z-50">{topLeft}</div> : null}
 
         <motion.div
           className="flex flex-col items-center gap-10"
@@ -593,14 +593,14 @@ export default function App() {
           transition={{ duration: 0.35 }}
         >
           <div
-            className="relative flex flex-col rounded-2xl border border-zinc-800/60 bg-zinc-950 overflow-hidden"
+            className="relative flex flex-col bg-zinc-950 overflow-hidden"
             style={{ width: 'min(95vw, calc(94vh * (16 / 9)), 1440px)', aspectRatio: '16 / 9' }}
           >
-            <div className="absolute left-1 top-1 z-[90]">{renderGlobalMenu()}</div>
+            <div className="absolute left-5 top-5 z-[90]">{renderGlobalMenu()}</div>
 
-            <main className="flex-1 flex items-center justify-center px-8 min-h-0">
-              <div className="flex flex-col items-center gap-3">
-                <div className="flex items-start gap-40">
+            <main className="flex-1 flex items-center justify-center px-8 pt-8 min-h-0">
+              <div className="flex flex-col items-center gap-4 translate-y-6">
+                <div className="flex items-start gap-52">
                   <PlayerPanel
                     player={gameState.player}
                     gold={gameState.gold}
@@ -620,7 +620,7 @@ export default function App() {
               </div>
             </main>
 
-            <div className="shrink-0 h-[260px] border-t border-zinc-800/40 relative">
+            <div className="shrink-0 h-[300px] border-t border-zinc-800/40 relative">
               <Hand
                 cards={gameState.hand}
                 mana={gameState.mana}
