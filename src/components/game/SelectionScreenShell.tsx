@@ -8,6 +8,7 @@ interface Props {
   layout?: 'center' | 'top'
   topLeft?: ReactNode
   titleOffsetY?: number
+  allowOverflowVisible?: boolean
 }
 
 export const staggerContainerVariants = {
@@ -20,7 +21,7 @@ export const staggerItemVariants = {
   show: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring' as const, stiffness: 260, damping: 22 } },
 }
 
-export function SelectionScreenShell({ title, subtitle, children, layout = 'center', topLeft, titleOffsetY = 0 }: Props) {
+export function SelectionScreenShell({ title, subtitle, children, layout = 'center', topLeft, titleOffsetY = 0, allowOverflowVisible = false }: Props) {
   return (
     <motion.div
       className="min-h-screen flex items-center justify-center p-6 bg-zinc-950"
@@ -30,10 +31,10 @@ export function SelectionScreenShell({ title, subtitle, children, layout = 'cent
       transition={{ duration: 0.3 }}
     >
       <div
-        className={`relative flex flex-col items-center bg-zinc-950 overflow-hidden ${layout === 'top' ? 'justify-start pt-10 gap-6' : 'justify-center gap-10'}`}
+        className={`relative flex flex-col items-center bg-zinc-950 ${allowOverflowVisible ? 'overflow-visible' : 'overflow-hidden'} ${layout === 'top' ? 'justify-start pt-10 gap-6' : 'justify-center gap-10'}`}
         style={{ width: 'min(95vw, calc(94vh * (16 / 9)), 1440px)', aspectRatio: '16 / 9' }}
       >
-        {topLeft ? <div className="absolute left-5 top-5 z-50">{topLeft}</div> : null}
+        {topLeft ? <div className="absolute right-6 bottom-6 z-50">{topLeft}</div> : null}
 
         <motion.div
           className="flex flex-col items-center gap-1.5"

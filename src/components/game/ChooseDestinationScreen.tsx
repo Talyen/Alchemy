@@ -1,4 +1,4 @@
-import { useState, type Dispatch, type SetStateAction } from 'react'
+import { useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
 import { CircleHelp, Flame, ShoppingBag, Skull, Swords } from 'lucide-react'
@@ -13,7 +13,6 @@ export type DestinationOption = {
 }
 
 interface Props {
-  currentRoomLabel: string
   options: DestinationOption[]
   onChoose: (type: DestinationType) => void
   topLeft?: ReactNode
@@ -37,11 +36,11 @@ const COLORS = {
 
 function pathToChoice(choiceIndex: number) {
   const startX = 50
-  const startY = 84
-  const targetXs = [20, 50, 80]
+  const startY = -7
+  const targetXs = [18, 50, 82]
   const endX = targetXs[choiceIndex] ?? 50
-  const endY = 24
-  const curveY = 58
+  const endY = 40
+  const curveY = 14
   return `M ${startX} ${startY} C ${startX} ${curveY} ${endX} ${curveY - 6} ${endX} ${endY}`
 }
 
@@ -49,13 +48,15 @@ function DestinationPanel({
   option,
   index,
   hovered,
-  setHovered,
+  onHoverStart,
+  onHoverEnd,
   onChoose,
 }: {
   option: DestinationOption
   index: number
   hovered: number | null
-  setHovered: Dispatch<SetStateAction<number | null>>
+  onHoverStart: (index: number) => void
+  onHoverEnd: (index: number) => void
   onChoose: (type: DestinationType) => void
 }) {
   const Icon = ICONS[option.type]
@@ -72,9 +73,9 @@ function DestinationPanel({
       type="button"
       variants={staggerItemVariants}
       className="w-64 rounded-2xl border-2 bg-zinc-950 p-5 text-left"
-      onMouseEnter={() => setHovered(index)}
+      onMouseEnter={() => onHoverStart(index)}
       onMouseLeave={() => {
-        setHovered(curr => (curr === index ? null : curr))
+        onHoverEnd(index)
         rawX.set(0.5)
         rawY.set(0.5)
       }}
@@ -104,35 +105,55 @@ function DestinationPanel({
   )
 }
 
-export function ChooseDestinationScreen({ currentRoomLabel, options, onChoose, topLeft }: Props) {
+export function ChooseDestinationScreen({ options, onChoose, topLeft }: Props) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
+  const hoverLeaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const handleHoverStart = (index: number) => {
+    if (hoverLeaveTimeoutRef.current) {
+      clearTimeout(hoverLeaveTimeoutRef.current)
+      hoverLeaveTimeoutRef.current = null
+    }
+    setHoveredIndex(index)
+  }
+
+  const handleHoverEnd = (index: number) => {
+    if (hoverLeaveTimeoutRef.current) {
+      clearTimeout(hoverLeaveTimeoutRef.current)
+    }
+    hoverLeaveTimeoutRef.current = setTimeout(() => {
+      setHoveredIndex(curr => (curr === index ? null : curr))
+      hoverLeaveTimeoutRef.current = null
+    }, 90)
+  }
 
   return (
     <SelectionScreenShell title="Choose Destination" subtitle="Travel" topLeft={topLeft}>
       <div className="relative w-full h-[62%] max-w-5xl">
           <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
-            {options.map((opt, i) => {
-              const isHovered = hoveredIndex === i
-              if (!isHovered) return null
-              return (
-                <motion.path
-                  key={opt.type}
-                  d={pathToChoice(i)}
-                  fill="none"
-                  stroke="#a1a1aa"
-                  strokeWidth={0.42}
-                  strokeDasharray="0 2.2"
-                  strokeLinecap="round"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 0.95, strokeDashoffset: [0, -8] }}
-                  transition={{ opacity: { duration: 0.15 }, strokeDashoffset: { duration: 0.75, repeat: Infinity, ease: 'linear' } }}
-                />
-              )
-            })}
+            <motion.path
+              d={pathToChoice(hoveredIndex ?? 1)}
+              fill="none"
+              stroke="#b89b72"
+              strokeWidth={0.36}
+              strokeDasharray="1 5"
+              strokeLinecap="round"
+              initial={{ opacity: 0 }}
+              animate={{
+                d: pathToChoice(hoveredIndex ?? 1),
+                opacity: hoveredIndex === null ? 0 : 0.55,
+                strokeDashoffset: [0, -6],
+              }}
+              transition={{
+                d: { duration: 0.2, ease: [0.22, 1, 0.36, 1] },
+                opacity: { duration: 0.16 },
+                strokeDashoffset: { duration: 2.2, repeat: Infinity, ease: 'linear' },
+              }}
+            />
           </svg>
 
           <motion.div
-            className="absolute top-[8%] left-0 right-0 flex items-start justify-center gap-10 px-10"
+            className="absolute inset-0 flex items-center justify-center gap-10 px-10"
             variants={staggerContainerVariants}
             initial="hidden"
             animate="show"
@@ -143,18 +164,12 @@ export function ChooseDestinationScreen({ currentRoomLabel, options, onChoose, t
                 option={opt}
                 index={i}
                 hovered={hoveredIndex}
-                setHovered={setHoveredIndex}
+                onHoverStart={handleHoverStart}
+                onHoverEnd={handleHoverEnd}
                 onChoose={onChoose}
               />
             ))}
           </motion.div>
-
-          <div className="absolute bottom-[9%] left-1/2 -translate-x-1/2 w-64">
-            <div className="rounded-2xl border border-zinc-800/70 bg-zinc-950 p-4 text-center">
-              <p className="text-[10px] uppercase tracking-[0.2em] text-zinc-500 mb-1">Current Room</p>
-              <p className="text-sm text-zinc-200 font-semibold uppercase tracking-wider">{currentRoomLabel}</p>
-            </div>
-          </div>
       </div>
     </SelectionScreenShell>
   )

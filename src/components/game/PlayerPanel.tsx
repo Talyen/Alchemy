@@ -1,48 +1,81 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useAnimationControls, motion, AnimatePresence } from 'framer-motion'
-import { Bomb, Droplets, Flame, Pickaxe, ShieldHalf, ShieldOff, ShieldPlus, Swords, TrendingDown } from 'lucide-react'
+import { Bomb, Droplets, Flame, Pickaxe, ShieldHalf, ShieldOff, ShieldPlus, Sword, Swords, TrendingDown } from 'lucide-react'
+import { CHARACTER_IDLE_FPS, getCharacterIdleFrames } from '@/lib/characterSprites'
 import { HeartBar } from './HeartBar'
 import { DetailsPane } from './DetailsPane'
 import { FloatingNumber, FloatingStatus } from './FloatingNumber'
 import type { DmgEvent, StatusEvent } from './FloatingNumber'
-import type { ActiveUpgrade, Fighter } from '@/types'
+import type { ActiveUpgrade, Fighter, TrinketDef } from '@/types'
 import { playPlayerHit, playPlayerHeal, playBlock } from '@/sounds'
 
-const KNIGHT_FRAMES = Array.from({ length: 4 }, (_, i) => `/assets/knight-idle-f${i}.png`)
-const KNIGHT_FPS = 8
+const LIZARD_SCOUT_FRAMES = Array.from({ length: 4 }, (_, i) => `/assets/lizard_f-idle-f${i}.png`)
 
 interface Props {
   player: Fighter
   gold: number
+  characterId: string
   characterName: string
   isActive: boolean
   lastCardPlayedId: string | null
   activeUpgrades: ActiveUpgrade[]
+  trinkets?: TrinketDef[]
+  showLizardCompanion?: boolean
+  companionAttackTick?: number
 }
 
-export function PlayerPanel({ player, gold, characterName, isActive, lastCardPlayedId, activeUpgrades }: Props) {
+export function PlayerPanel({
+  player,
+  gold,
+  characterId,
+  characterName,
+  isActive,
+  lastCardPlayedId,
+  activeUpgrades,
+  trinkets = [],
+  showLizardCompanion = false,
+  companionAttackTick = 0,
+}: Props) {
   const controls    = useAnimationControls()
+  const companionControls = useAnimationControls()
   const prevHp      = useRef(player.hp)
   const prevBlock   = useRef(player.block)
   const prevGold    = useRef(gold)
   const nextId      = useRef(0)
   const nextLane    = useRef(0)
+  const prevCompanionAttackTick = useRef(companionAttackTick)
   const [dmgEvents,    setDmgEvents]    = useState<DmgEvent[]>([])
   const [statusEvents, setStatusEvents] = useState<StatusEvent[]>([])
   const [hovered,      setHovered]      = useState(false)
   const [frameIdx,     setFrameIdx]     = useState(0)
-  const prevStatus = useRef({ burn: 0, vulnerable: 0, weak: 0, poison: 0, bleed: 0, trap: 0, forge: 0, armor: 0 })
+  const characterFrames = getCharacterIdleFrames(characterId)
+  const prevStatus = useRef({ burn: 0, vulnerable: 0, weak: 0, poison: 0, bleed: 0, trap: 0, forge: 0, strength: 0, armor: 0 })
   const allocLane = useCallback(() => {
     const lane = nextLane.current
     nextLane.current = (nextLane.current + 1) % 5
     return lane
   }, [])
 
-  const tick = useCallback(() => setFrameIdx(f => (f + 1) % KNIGHT_FRAMES.length), [])
   useEffect(() => {
-    const id = setInterval(tick, 1000 / KNIGHT_FPS)
+    setFrameIdx(0)
+  }, [characterId])
+
+  const tick = useCallback(() => setFrameIdx(f => (f + 1) % characterFrames.length), [characterFrames.length])
+  useEffect(() => {
+    const id = setInterval(tick, 1000 / CHARACTER_IDLE_FPS)
     return () => clearInterval(id)
   }, [tick])
+
+  useEffect(() => {
+    if (!showLizardCompanion) return
+    if (companionAttackTick === prevCompanionAttackTick.current) return
+    prevCompanionAttackTick.current = companionAttackTick
+    void companionControls.start({
+      x: [0, 20, -6, 0],
+      y: [0, -2, 0],
+      transition: { duration: 0.36, ease: [0.22, 1, 0.36, 1] },
+    })
+  }, [companionAttackTick, showLizardCompanion, companionControls])
 
   useEffect(() => {
     if (gold > prevGold.current) {
@@ -80,7 +113,7 @@ export function PlayerPanel({ player, gold, characterName, isActive, lastCardPla
   }, [player.block, lastCardPlayedId, allocLane])
 
   useEffect(() => {
-    const { burn, vulnerable, weak, poison, bleed, trap, forge } = player.status
+    const { burn, vulnerable, weak, poison, bleed, trap, forge, strength } = player.status
     const armor = player.armor
     const prev  = prevStatus.current
     const newEvents: StatusEvent[] = []
@@ -91,8 +124,9 @@ export function PlayerPanel({ player, gold, characterName, isActive, lastCardPla
     if (bleed > prev.bleed)           newEvents.push({ id: nextId.current++, value: bleed - prev.bleed,           status: 'bleed',      cardId: lastCardPlayedId ?? undefined, lane: allocLane() })
     if (trap > prev.trap)             newEvents.push({ id: nextId.current++, value: trap - prev.trap,             status: 'trap',       cardId: lastCardPlayedId ?? undefined, lane: allocLane() })
     if (forge > prev.forge)           newEvents.push({ id: nextId.current++, value: forge - prev.forge,           status: 'forge',      cardId: lastCardPlayedId ?? undefined, lane: allocLane() })
+    if (strength > prev.strength)     newEvents.push({ id: nextId.current++, value: strength - prev.strength,     status: 'strength',   cardId: lastCardPlayedId ?? undefined, lane: allocLane() })
     if (armor > prev.armor)           newEvents.push({ id: nextId.current++, value: armor - prev.armor,           status: 'armor',      cardId: lastCardPlayedId ?? undefined, lane: allocLane() })
-    prevStatus.current = { burn, vulnerable, weak, poison, bleed, trap, forge, armor }
+    prevStatus.current = { burn, vulnerable, weak, poison, bleed, trap, forge, strength, armor }
     if (newEvents.length) setStatusEvents(e => [...e, ...newEvents])
   }, [player.status.burn, player.status.vulnerable, player.status.weak, player.status.poison, player.status.bleed, player.status.trap, player.status.forge, player.armor, lastCardPlayedId, allocLane])
 
@@ -102,8 +136,10 @@ export function PlayerPanel({ player, gold, characterName, isActive, lastCardPla
   const removeStatusEvent = (id: number) =>
     setStatusEvents(e => e.filter(x => x.id !== id))
 
-  const { vulnerable, weak, poison, bleed, trap, forge, burn } = player.status
-  const hasIcons = player.armor > 0 || player.block > 0 || forge > 0 || burn > 0 || poison > 0 || bleed > 0 || trap > 0 || vulnerable > 0 || weak > 0
+  const { vulnerable, weak, poison, bleed, trap, forge, burn, strength } = player.status
+  const hasIcons = player.armor > 0 || player.block > 0 || forge > 0 || strength > 0 || burn > 0 || poison > 0 || bleed > 0 || trap > 0 || vulnerable > 0 || weak > 0
+  const activeDmgEvent = dmgEvents[0]
+  const floatingTop = -22
 
 
   return (
@@ -114,39 +150,61 @@ export function PlayerPanel({ player, gold, characterName, isActive, lastCardPla
       onMouseLeave={() => setHovered(false)}
     >
       {/* Floating damage / block numbers */}
-      <AnimatePresence>
-        {dmgEvents.map(e => (
-          <FloatingNumber key={e.id} event={e} onDone={() => removeDmgEvent(e.id)} />
-        ))}
+      <AnimatePresence mode="wait">
+        {activeDmgEvent && (
+          <FloatingNumber
+            key={activeDmgEvent.id}
+            event={activeDmgEvent}
+            top={floatingTop}
+            onDone={() => removeDmgEvent(activeDmgEvent.id)}
+          />
+        )}
       </AnimatePresence>
 
       {/* Floating status effect icons */}
       <AnimatePresence>
         {statusEvents.map(e => (
-          <FloatingStatus key={e.id} event={e} onDone={() => removeStatusEvent(e.id)} />
+          <FloatingStatus key={e.id} event={e} top={floatingTop} onDone={() => removeStatusEvent(e.id)} />
         ))}
       </AnimatePresence>
 
       {/* Fixed-height sprite well */}
       <div className="h-40 flex items-end justify-center">
-        <motion.div
-          animate={{
-            scale:  isActive ? 1 : 0.82,
-            filter: isActive ? 'grayscale(0%)' : 'grayscale(100%)',
-          }}
-          whileHover={{ scale: 1.12, y: -10 }}
-          transition={{
-            scale:  { type: 'spring', stiffness: 260, damping: 24 },
-            filter: { duration: 0.55, ease: 'easeInOut' },
-          }}
-          style={{ transformOrigin: 'bottom center' }}
-        >
-          <img
-            src={KNIGHT_FRAMES[frameIdx]}
-            alt="Knight"
-            style={{ width: 80, height: 140, imageRendering: 'pixelated' }}
-          />
-        </motion.div>
+        <div className="flex items-end justify-center gap-2">
+          {showLizardCompanion && (
+            <motion.div
+              animate={companionControls}
+              whileHover={{ y: -4 }}
+              transition={{ filter: { duration: 0.45, ease: 'easeInOut' } }}
+              style={{ transformOrigin: 'bottom center', filter: isActive ? 'grayscale(0%)' : 'grayscale(100%)' }}
+            >
+              <img
+                src={LIZARD_SCOUT_FRAMES[frameIdx]}
+                alt="Lizard Scout companion"
+                style={{ width: 42, height: 60, imageRendering: 'pixelated', objectFit: 'contain' }}
+              />
+            </motion.div>
+          )}
+
+          <motion.div
+            animate={{
+              scale:  isActive ? 1 : 0.82,
+              filter: isActive ? 'grayscale(0%)' : 'grayscale(100%)',
+            }}
+            whileHover={{ scale: 1.12, y: -10 }}
+            transition={{
+              scale:  { type: 'spring', stiffness: 260, damping: 24 },
+              filter: { duration: 0.55, ease: 'easeInOut' },
+            }}
+            style={{ transformOrigin: 'bottom center' }}
+          >
+            <img
+              src={characterFrames[frameIdx]}
+              alt={characterName}
+              style={{ width: 80, height: 140, imageRendering: 'pixelated', objectFit: 'contain' }}
+            />
+          </motion.div>
+        </div>
       </div>
 
       {/* Details pane — left on hover */}
@@ -168,6 +226,7 @@ export function PlayerPanel({ player, gold, characterName, isActive, lastCardPla
             side="left"
             hpColor="green"
             upgrades={activeUpgrades}
+            trinkets={trinkets}
           />
         )}
       </AnimatePresence>
@@ -193,6 +252,9 @@ export function PlayerPanel({ player, gold, characterName, isActive, lastCardPla
               )}
               {forge > 0 && (
                 <Pickaxe size={16} style={{ color: '#fbbf24', pointerEvents: 'none' }} />
+              )}
+              {strength > 0 && (
+                <Sword size={16} style={{ color: '#fbbf24', pointerEvents: 'none' }} />
               )}
               {player.block > 0 && (
                 <ShieldHalf size={16} style={{ color: '#60a5fa', pointerEvents: 'none' }} />

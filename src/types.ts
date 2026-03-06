@@ -40,6 +40,12 @@ export type ActiveUpgrade = {
   effect: CardEffect
 }
 
+export type TrinketDef = {
+  id: string
+  name: string
+  description: string
+}
+
 export type StatusEffects = {
   vulnerable: number // turns remaining
   weak: number
@@ -60,7 +66,7 @@ export type Fighter = {
 }
 
 export type EnemyIntent = {
-  type: 'attack' | 'defend'
+  type: 'attack' | 'defend' | 'heal' | 'upgrade'
   value: number
   physical?: boolean  // if true, player Armor reduces this attack
 }
@@ -91,6 +97,7 @@ export type MapState = {
 
 export type GameState = {
   characterId: string
+  trinketIds: string[]
   phase: GamePhase
   turn: number
   player: Fighter

@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import type { ReactNode } from 'react'
 import type { CardDef, CardInstance } from '@/types'
 import { Card } from './Card'
+import { GoldIcon } from './GoldIcon'
 import { SelectionScreenShell, staggerContainerVariants, staggerItemVariants } from './SelectionScreenShell'
 
 interface Props {
@@ -9,6 +10,7 @@ interface Props {
   subtitle: string
   options: CardDef[]
   onPick: (card: CardDef) => void
+  foundGold?: number
   topLeft?: ReactNode
 }
 
@@ -17,9 +19,22 @@ function toInstance(def: CardDef, uid: string): CardInstance {
   return { ...def, uid }
 }
 
-export function CardPickScreen({ title, subtitle, options, onPick, topLeft }: Props) {
+export function CardPickScreen({ title, subtitle, options, onPick, foundGold, topLeft }: Props) {
   return (
     <SelectionScreenShell title={title} subtitle={subtitle} topLeft={topLeft}>
+      {foundGold !== undefined && foundGold > 0 && (
+        <motion.div
+          className="mb-4 inline-flex items-center gap-2 rounded-xl border border-zinc-700/70 bg-zinc-900/80 px-4 py-2"
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2 }}
+        >
+          <GoldIcon size={14} />
+          <span className="text-xs uppercase tracking-wider text-zinc-500">Found</span>
+          <span className="text-sm font-semibold text-amber-300">{foundGold} Gold</span>
+        </motion.div>
+      )}
+
       <motion.div
         className="flex items-start gap-[2.75rem] pt-3"
         variants={staggerContainerVariants}

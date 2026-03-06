@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { BookOpen, Home, Menu, Music, Music2, UserRound } from 'lucide-react'
+import { BookOpen, ChevronsRight, Home, Menu, Music, Music2, UserRound } from 'lucide-react'
 
 interface Props {
   onGoMainMenu: () => void
@@ -8,6 +8,9 @@ interface Props {
   onOpenCollection: () => void
   musicEnabled: boolean
   onToggleMusic: () => void
+  onSkipDevCombat?: () => void
+  direction?: 'up' | 'down'
+  align?: 'left' | 'right'
 }
 
 export function GlobalScreenMenu({
@@ -16,6 +19,9 @@ export function GlobalScreenMenu({
   onOpenCollection,
   musicEnabled,
   onToggleMusic,
+  onSkipDevCombat,
+  direction = 'down',
+  align = 'left',
 }: Props) {
   const [open, setOpen] = useState(false)
 
@@ -37,7 +43,7 @@ export function GlobalScreenMenu({
         <AnimatePresence>
           {open && (
             <motion.div
-              className="absolute left-0 top-full mt-2 w-60 rounded-xl border border-zinc-700/80 bg-zinc-950/95 p-1.5"
+              className={`absolute ${align === 'right' ? 'right-0' : 'left-0'} w-60 rounded-xl border border-zinc-700/80 bg-zinc-950/95 p-1.5 ${direction === 'up' ? 'bottom-full mb-2' : 'top-full mt-2'}`}
               initial={{ opacity: 0, y: 6, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 6, scale: 0.98, transition: { duration: 0.12 } }}
@@ -78,6 +84,20 @@ export function GlobalScreenMenu({
                 <BookOpen size={14} className="text-zinc-500" />
                 Collection
               </button>
+
+              {onSkipDevCombat && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpen(false)
+                    onSkipDevCombat()
+                  }}
+                  className="w-full flex items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm text-zinc-300 hover:bg-zinc-900/90"
+                >
+                  <ChevronsRight size={14} className="text-zinc-500" />
+                  Skip (Dev)
+                </button>
+              )}
 
               <button
                 type="button"

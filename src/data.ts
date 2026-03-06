@@ -60,8 +60,8 @@ export const ALL_CARDS: CardDef[] = [
     effect: { armor: 2 },
   },
   {
-    id: 'forge',
-    name: 'Forge',
+    id: 'anvil',
+    name: "Anvil",
     cost: 2,
     type: 'upgrade',
     description: 'Gain 1 Forge each turn',
@@ -72,7 +72,7 @@ export const ALL_CARDS: CardDef[] = [
     name: 'Health Potion',
     cost: 1,
     type: 'heal',
-    description: 'Heal 5 Remove 1 Ailment\nConsume',
+    description: 'Heal 5\n Remove 1 Ailment\nConsume',
     effect: { heal: 5, cleanse: 1 },
   },
   {
@@ -239,8 +239,33 @@ export const RUN_CHARACTERS: RunCharacter[] = [
       { cardId: 'bash', count: 1 },
       { cardId: 'defend', count: 2 },
       { cardId: 'plate_mail', count: 1 },
-      { cardId: 'forge', count: 1 },
+      { cardId: 'anvil', count: 1 },
       { cardId: 'meat', count: 1 },
+    ],
+  },
+  {
+    id: 'rogue',
+    name: 'Rogue',
+    quirk: 'Fast striker who stacks poison and bleed while weaving in and out of danger.',
+    starterDeck: [
+      { cardId: 'stab', count: 2 },
+      { cardId: 'health_potion', count: 1 },
+      { cardId: 'apple', count: 1 },
+      { cardId: 'poisoned_dagger', count: 2 },
+      { cardId: 'haste', count: 1 },
+      { cardId: 'lacerate', count: 1 },
+    ],
+  },
+  {
+    id: 'wizard',
+    name: 'Wizard',
+    quirk: 'Arcane specialist who controls tempo with mana growth and steady spell pressure.',
+    starterDeck: [
+      { cardId: 'fireball', count: 3 },
+      { cardId: 'defend', count: 2 },
+      { cardId: 'mana_crystal', count: 1 },
+      { cardId: 'mana_berries', count: 1 },
+      { cardId: 'cleanse', count: 1 },
     ],
   },
 ]
@@ -497,7 +522,7 @@ const SLUG: EnemyState = {
 
 const SWAMPY: EnemyState = {
   id: 'swampy',
-  name: 'Swampy',
+  name: 'Slime',
   hp: 37,
   maxHp: 37,
   block: 0,
@@ -527,9 +552,73 @@ const PLAGUE_DOCTOR: EnemyState = {
   patternIndex: 0,
 }
 
+const FLYTRAP: EnemyState = {
+  id: 'flytrap',
+  name: 'Flytrap',
+  hp: 34,
+  maxHp: 34,
+  block: 0,
+  armor: 0,
+  status: emptyStatus(),
+  pattern: [
+    { type: 'defend', value: 6 },
+    { type: 'attack', value: 7, physical: true },
+    { type: 'attack', value: 7, physical: true },
+  ],
+  patternIndex: 0,
+}
+
+const FLAMING_SKULL: EnemyState = {
+  id: 'flaming_skull',
+  name: 'Flaming Skull',
+  hp: 30,
+  maxHp: 30,
+  block: 0,
+  armor: 0,
+  status: emptyStatus(),
+  pattern: [
+    { type: 'attack', value: 7, physical: false },
+    { type: 'attack', value: 8, physical: false },
+    { type: 'defend', value: 4 },
+  ],
+  patternIndex: 0,
+}
+
+const SHADE: EnemyState = {
+  id: 'shade',
+  name: 'Shade',
+  hp: 31,
+  maxHp: 31,
+  block: 0,
+  armor: 0,
+  status: emptyStatus(),
+  pattern: [
+    { type: 'attack', value: 7, physical: false },
+    { type: 'defend', value: 5 },
+    { type: 'attack', value: 8, physical: false },
+  ],
+  patternIndex: 0,
+}
+
+const SNAKE: EnemyState = {
+  id: 'snake',
+  name: 'Snake',
+  hp: 29,
+  maxHp: 29,
+  block: 0,
+  armor: 0,
+  status: emptyStatus(),
+  pattern: [
+    { type: 'attack', value: 6, physical: true },
+    { type: 'attack', value: 7, physical: true },
+    { type: 'defend', value: 4 },
+  ],
+  patternIndex: 0,
+}
+
 const DEMON: EnemyState = {
   id: 'big_demon',
-  name: 'Demon',
+  name: 'Maw Demon',
   hp: 58,
   maxHp: 58,
   block: 0,
@@ -545,7 +634,7 @@ const DEMON: EnemyState = {
 
 const OGRE: EnemyState = {
   id: 'ogre',
-  name: 'Ogre',
+  name: 'Orc Chief',
   hp: 64,
   maxHp: 64,
   block: 0,
@@ -555,6 +644,38 @@ const OGRE: EnemyState = {
     { type: 'attack', value: 12, physical: true },
     { type: 'defend', value: 9 },
     { type: 'attack', value: 10, physical: true },
+  ],
+  patternIndex: 0,
+}
+
+const GREATER_MIMIC: EnemyState = {
+  id: 'greater_mimic',
+  name: 'Greater Mimic',
+  hp: 66,
+  maxHp: 66,
+  block: 0,
+  armor: 0,
+  status: emptyStatus(),
+  pattern: [
+    { type: 'defend', value: 10 },
+    { type: 'attack', value: 12, physical: true },
+    { type: 'attack', value: 11, physical: true },
+  ],
+  patternIndex: 0,
+}
+
+const GREATER_SLIME: EnemyState = {
+  id: 'greater_slime',
+  name: 'Greater Slime',
+  hp: 70,
+  maxHp: 70,
+  block: 0,
+  armor: 0,
+  status: emptyStatus(),
+  pattern: [
+    { type: 'defend', value: 10 },
+    { type: 'attack', value: 12, physical: true },
+    { type: 'attack', value: 12, physical: true },
   ],
   patternIndex: 0,
 }
@@ -575,11 +696,28 @@ const BASIC_ENEMY_TEMPLATES: EnemyState[] = [
   SLUG,
   SWAMPY,
   PLAGUE_DOCTOR,
+  FLYTRAP,
+  SNAKE,
 ]
 
 const ELITE_ENEMY_TEMPLATES: EnemyState[] = [
   DEMON,
   OGRE,
+  GREATER_MIMIC,
+  GREATER_SLIME,
+  FLAMING_SKULL,
+  SHADE,
+]
+
+export type BestiaryEnemy = {
+  id: string
+  name: string
+  tier: 'basic' | 'elite'
+}
+
+export const BESTIARY_ENEMIES: BestiaryEnemy[] = [
+  ...BASIC_ENEMY_TEMPLATES.map(enemy => ({ id: enemy.id, name: enemy.name, tier: 'basic' as const })),
+  ...ELITE_ENEMY_TEMPLATES.map(enemy => ({ id: enemy.id, name: enemy.name, tier: 'elite' as const })),
 ]
 
 function cloneEnemy(template: EnemyState): EnemyState {
@@ -598,4 +736,13 @@ export function pickEncounterEnemy(tier: 'basic' | 'elite' = 'basic'): EnemyStat
   const pool = tier === 'elite' ? ELITE_ENEMY_TEMPLATES : BASIC_ENEMY_TEMPLATES
   const chosen = pool[Math.floor(Math.random() * pool.length)]
   return cloneEnemy(chosen)
+}
+
+export function pickEncounterEnemyById(enemyId: string): EnemyState {
+  const allTemplates = [...BASIC_ENEMY_TEMPLATES, ...ELITE_ENEMY_TEMPLATES]
+  const template = allTemplates.find(enemy => enemy.id === enemyId)
+  if (!template) {
+    return pickEncounterEnemy('basic')
+  }
+  return cloneEnemy(template)
 }

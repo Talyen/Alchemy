@@ -1,17 +1,19 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform, useMotionTemplate, useAnimationControls } from 'framer-motion'
 import type { MouseEvent } from 'react'
-import { Circle, Diamond, Droplets, Expand, Flame, Hammer, Heart, HeartPulse, Pickaxe, ShieldHalf, ShieldOff, ShieldPlus, Sparkles, Swords, TrendingDown, Zap } from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
+import { Diamond } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { CardInstance } from '@/types'
 import { CARD_ART_BY_ID } from '@/cardArt'
+import { GoldIcon } from './GoldIcon'
+import { getKeywordsFromText, renderKeywordText } from './keywordGlossary'
 
 interface Props {
   card: CardInstance
   playable: boolean
   isBeingDragged?: boolean
   backgroundClassName?: string
+  keywordTooltipEnabled?: boolean
 }
 
 // Per-type visual config — attack=red, skill=blue, power=purple, upgrade=amber
@@ -53,169 +55,6 @@ const typeConfig = {
   },
 }
 
-// ─── Keyword glossary ────────────────────────────────────────────────────────
-// Add entries here as new keywords are introduced to the game.
-
-type KeywordEntry = {
-  Icon: LucideIcon
-  color: string
-  description: string
-}
-
-const KEYWORDS: Record<string, KeywordEntry> = {
-  Block: {
-    Icon:        ShieldHalf,
-    color:       '#60a5fa',
-    description: 'A shield that absorbs Damage before your HP. Persists until broken.',
-  },
-  Armor: {
-    Icon:        ShieldPlus,
-    color:       '#fbbf24',
-    description: 'Reduces incoming Physical damage by 1 per point, before it reaches your Block.',
-  },
-  Vulnerable: {
-    Icon:        ShieldOff,
-    color:       '#f97316',
-    description: 'Takes 50% more damage from all sources.',
-  },
-  Weak: {
-    Icon:        TrendingDown,
-    color:       '#a1a1aa',
-    description: 'Deals 25% less damage.',
-  },
-  Pierce: {
-    Icon:        Swords,
-    color:       '#94a3b8',
-    description: 'A precise physical damage type.',
-  },
-  Slash: {
-    Icon:        Zap,
-    color:       '#94a3b8',
-    description: 'A sweeping physical damage type.',
-  },
-  Blunt: {
-    Icon:        Hammer,
-    color:       '#94a3b8',
-    description: 'A heavy, crushing physical damage type.',
-  },
-  Forge: {
-    Icon:        Pickaxe,
-    color:       '#fbbf24',
-    description: 'Physical damage you deal is increased by 1.',
-  },
-  Leech: {
-    Icon:        HeartPulse,
-    color:       '#f43f5e',
-    description: 'Damage dealt heals you.',
-  },
-  Heal: {
-    Icon:        Heart,
-    color:       '#86efac',
-    description: 'Restores your HP.',
-  },
-  Mana: {
-    Icon:        Diamond,
-    color:       '#2563eb',
-    description: 'Resource used to play cards.',
-  },
-  Burn: {
-    Icon:        Flame,
-    color:       '#f97316',
-    description: 'Deals Fire damage and decreases by 1 each turn.',
-  },
-  Poison: {
-    Icon:        Droplets,
-    color:       '#166534',
-    description: 'Deals Poison damage each turn.',
-  },
-  Bleed: {
-    Icon:        Droplets,
-    color:       '#f87171',
-    description: 'Deals Physical damage and twice as much next turn before expiring.',
-  },
-  Area: {
-    Icon:        Expand,
-    color:       '#a78bfa',
-    description: 'Affects all enemies on the field.',
-  },
-  Gold: {
-    Icon:        Circle,
-    color:       '#fbbf24',
-    description: 'Currency used in shops.',
-  },
-  'Mana Crystal': {
-    Icon:        Diamond,
-    color:       '#2563eb',
-    description: 'Resource used to play cards. Mana Crystals refill each turn.',
-  },
-  Trap: {
-    Icon:        ShieldOff,
-    color:       '#d2b48c',
-    description: 'Triggers when attacked',
-  },
-  Wish: {
-    Icon:        Sparkles,
-    color:       '#facc15',
-    description: 'Select from a set of 3 cards.',
-  },
-  Haste: {
-    Icon:        Zap,
-    color:       '#facc15',
-    description: 'Take an extra turn after this one.',
-  },
-  Ailment: {
-    Icon:        ShieldOff,
-    color:       '#86efac',
-    description: 'Negative status effects.',
-  },
-  Holy: {
-    Icon:        Sparkles,
-    color:       '#fde68a',
-    description: 'A pious, smiteful damage type.',
-  },
-  Consume: {
-    Icon:        Flame,
-    color:       '#fdba74',
-    description: 'Removed for the rest of combat after use.',
-  },
-}
-
-// Splits description text and wraps keyword names in colored bold spans.
-function escapeRegExp(text: string) {
-  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-}
-
-function getKeywordNamesByPriority() {
-  return Object.keys(KEYWORDS).sort((a, b) => b.length - a.length)
-}
-
-function renderDescription(desc: string) {
-  const names = getKeywordNamesByPriority()
-  const pattern = new RegExp(`(${names.map(escapeRegExp).join('|')})`, 'g')
-  const parts = desc.split(pattern)
-  return parts.map((part, i) => {
-    const kw = KEYWORDS[part]
-    return kw
-      ? <span key={i} style={{ color: kw.color }} className="font-semibold">{part}</span>
-      : part
-  })
-}
-
-function getCardKeywords(card: CardInstance): Array<KeywordEntry & { name: string }> {
-  let remaining = card.description.toLowerCase()
-  const matchedNames: string[] = []
-
-  for (const name of getKeywordNamesByPriority()) {
-    const needle = name.toLowerCase()
-    if (remaining.includes(needle)) {
-      matchedNames.push(name)
-      remaining = remaining.split(needle).join(' ')
-    }
-  }
-
-  return matchedNames.map(name => ({ name, ...KEYWORDS[name] }))
-}
-
 // ─── Mana pips ───────────────────────────────────────────────────────────────
 
 function ManaPips({ cost }: { cost: number }) {
@@ -238,10 +77,10 @@ function ManaPips({ cost }: { cost: number }) {
 
 // ─── Card ────────────────────────────────────────────────────────────────────
 
-export function Card({ card, playable, isBeingDragged = false, backgroundClassName }: Props) {
+export function Card({ card, playable, isBeingDragged = false, backgroundClassName, keywordTooltipEnabled = true }: Props) {
   const cfg      = typeConfig[card.type]
   const art      = CARD_ART_BY_ID[card.id]
-  const keywords = getCardKeywords(card)
+  const keywords = getKeywordsFromText(card.description)
   const titleSizeClass = card.name.length >= 12 ? 'text-[13px]' : 'text-[15px]'
 
   // Tooltip with 1 s hover delay
@@ -252,6 +91,7 @@ export function Card({ card, playable, isBeingDragged = false, backgroundClassNa
   const sheenControls = useAnimationControls()
 
   const onWrapperEnter = () => {
+    if (!keywordTooltipEnabled) return
     timerRef.current = setTimeout(() => setShowTooltip(true), 300)
     void sheenControls.start({ x: 320, transition: { duration: 1.1, ease: [0.4, 0, 0.6, 1] } })
   }
@@ -302,7 +142,7 @@ export function Card({ card, playable, isBeingDragged = false, backgroundClassNa
 
       {/* ── Keyword tooltip — above the card ── */}
       <AnimatePresence>
-        {showTooltip && keywords.length > 0 && (
+        {keywordTooltipEnabled && showTooltip && keywords.length > 0 && (
           <motion.div
             className="absolute bottom-full left-1/2 mb-2.5 w-52 rounded-xl border border-zinc-700/80 bg-zinc-950 px-3 py-2.5 z-50 pointer-events-none"
             style={{ x: '-50%' }}
@@ -315,10 +155,14 @@ export function Card({ card, playable, isBeingDragged = false, backgroundClassNa
             <div className="flex flex-col gap-2">
               {keywords.map(({ name, Icon, color, description }, i) => (
                 <div key={i} className="flex items-start gap-2">
-                  <Icon
-                    size={16}
-                    style={{ color, fill: name === 'Gold' ? color : 'none', flexShrink: 0, pointerEvents: 'none' }}
-                  />
+                  {name === 'Gold' ? (
+                    <GoldIcon size={16} glimmer={false} />
+                  ) : (
+                    <Icon
+                      size={16}
+                      style={{ color, fill: 'none', flexShrink: 0, pointerEvents: 'none' }}
+                    />
+                  )}
                   <div className="flex flex-col gap-0.5">
                     <span className="text-[13px] font-semibold leading-none" style={{ color }}>{name}</span>
                     <p className="text-[11px] text-zinc-400 leading-snug">{description}</p>
@@ -394,7 +238,7 @@ export function Card({ card, playable, isBeingDragged = false, backgroundClassNa
         <div className="flex-1 flex flex-col px-3 py-2">
           <div className="flex-1 w-full flex items-center justify-center">
             <p className="mx-auto text-[14px] text-zinc-400 text-center leading-snug whitespace-pre-line">
-              {renderDescription(card.description)}
+              {renderKeywordText(card.description)}
             </p>
           </div>
           <p className={cn('text-center text-[8px] uppercase tracking-[0.15em] opacity-35', cfg.titleColor)}>

@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, useSpring } from 'framer-motion'
-import { CircleDollarSign, Diamond, Layers, ScrollText, Trash2 } from 'lucide-react'
+import { Diamond, Layers, ScrollText, Trash2 } from 'lucide-react'
 import { Card } from './Card'
 import { FloatingNumber } from './FloatingNumber'
+import { GoldIcon } from './GoldIcon'
 import type { CardInstance } from '@/types'
 import type { DmgEvent } from './FloatingNumber'
 import { useTilt } from '@/lib/useTilt'
@@ -61,7 +62,7 @@ function GoldCounter({ gold }: { gold: number }) {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.2 }}
     >
-      <CircleDollarSign size={16} style={{ pointerEvents: 'none' }} />
+      <GoldIcon size={16} />
       <span className="text-xs uppercase tracking-widest">{gold} Gold</span>
     </motion.div>
   )
@@ -144,7 +145,7 @@ function DraggableCard({
 }: DraggableCardProps) {
   const offset = i - mid
   const rotate = offset * anglePerCard
-  const yDip   = offset * offset * 3
+  const yDip   = offset * offset * 2.3
   const zBase  = i + 1
   const target = getCardTarget(card)
   // Calculate exit x based on target direction
@@ -283,6 +284,7 @@ export function Hand({ cards, mana, maxMana, gold, onPlay, disabled, isEnemyActi
   const mid = (cards.length - 1) / 2
   const anglePerCard = cards.length <= 1 ? 0 : Math.min(8, 24 / (cards.length - 1))
   const overlapPx = Math.max(10, Math.min(32, (cards.length - 1) * 4))
+  const activeManaEvent = manaEvents[0]
 
   return (
     <div
@@ -298,10 +300,14 @@ export function Hand({ cards, mana, maxMana, gold, onPlay, disabled, isEnemyActi
       <div className="absolute left-28 bottom-6 z-10 flex flex-col items-start gap-2.5">
         <div className="relative">
           <ManaOrbs current={mana} max={maxMana} />
-          <AnimatePresence>
-            {manaEvents.map(event => (
-              <FloatingNumber key={event.id} event={event} onDone={() => removeManaEvent(event.id)} />
-            ))}
+          <AnimatePresence mode="wait">
+            {activeManaEvent && (
+              <FloatingNumber
+                key={activeManaEvent.id}
+                event={activeManaEvent}
+                onDone={() => removeManaEvent(activeManaEvent.id)}
+              />
+            )}
           </AnimatePresence>
         </div>
         <GoldCounter gold={gold} />
@@ -325,7 +331,7 @@ export function Hand({ cards, mana, maxMana, gold, onPlay, disabled, isEnemyActi
       </div>
 
       {/* Fanned card hand — centered */}
-      <div className="flex items-end justify-center overflow-visible">
+      <div className="flex items-end justify-center overflow-visible pb-2">
         <AnimatePresence mode="popLayout" custom={isEnemyActing}>
           {cards.map((card, i) => {
             const playable = !disabled && card.cost <= mana

@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { Droplets, Flame, Pickaxe, ShieldHalf, ShieldOff, ShieldPlus, Swords, TrendingDown } from 'lucide-react'
-import type { ActiveUpgrade } from '@/types'
+import type { ActiveUpgrade, TrinketDef } from '@/types'
+import { TrinketInfoCard } from './TrinketInfoCard'
 
 type PaneSide = 'left' | 'right'
 
@@ -20,6 +21,7 @@ interface DetailsPaneProps {
   side: PaneSide
   hpColor: 'green' | 'red'
   upgrades?: ActiveUpgrade[]
+  trinkets?: TrinketDef[]
 }
 
 export function DetailsPane({
@@ -38,9 +40,11 @@ export function DetailsPane({
   side,
   hpColor,
   upgrades = [],
+  trinkets = [],
 }: DetailsPaneProps) {
   const hasStatus = armor > 0 || forge > 0 || block > 0 || vulnerable > 0 || weak > 0 || burn > 0 || poison > 0 || bleed > 0 || trap > 0
   const hasUpgrades = upgrades.length > 0
+  const hasTrinkets = trinkets.length > 0
   const groupedUpgrades = upgrades.reduce<Array<ActiveUpgrade & { count: number }>>((acc, upgrade) => {
     const existing = acc.find(item => item.id === upgrade.id)
     if (existing) {
@@ -173,6 +177,24 @@ export function DetailsPane({
                 </div>
                 <p className="text-[11px] text-amber-500/80 leading-snug">{upgrade.description}</p>
               </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {hasTrinkets && (
+        <>
+          <div className="h-px bg-zinc-800 mt-2 mb-1.5" />
+          <p className="text-[11px] text-zinc-600 uppercase tracking-widest mb-1.5">Trinkets</p>
+          <div className="flex flex-col gap-2">
+            {trinkets.map(trinket => (
+              <TrinketInfoCard
+                key={trinket.id}
+                id={trinket.id}
+                name={trinket.name}
+                description={trinket.description}
+                size="compact"
+              />
             ))}
           </div>
         </>

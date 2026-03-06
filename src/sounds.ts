@@ -21,21 +21,6 @@ export const ensureCtx = () => {
   return audioCtx
 }
 
-const playTone = (opts: {freq: number; type?: OscillatorType; duration?: number; volume?: number}) => {
-  const ctx = ensureCtx()
-  if (!ctx) return
-  const { freq, type = 'sine', duration = 0.2, volume = 0.2 } = opts
-  const osc = ctx.createOscillator()
-  osc.type = type
-  osc.frequency.setValueAtTime(freq, ctx.currentTime)
-  const gain = ctx.createGain()
-  gain.gain.setValueAtTime(volume, ctx.currentTime)
-  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration)
-  osc.connect(gain).connect(ctx.destination)
-  osc.start()
-  osc.stop(ctx.currentTime + duration)
-}
-
 type SoundSource = string | string[]
 
 const sounds: Record<string, SoundSource> = {
@@ -49,27 +34,44 @@ const sounds: Record<string, SoundSource> = {
   'card-attack': '/assets/audio/sfx/cards/slash',
   'card-skill': '/assets/audio/sfx/cards/defend',
   'card-spell': '/assets/audio/sfx/cards/fireball',
-  'card-upgrade': '/assets/audio/sfx/cards/forge',
-  'card-heal': '/assets/audio/sfx/cards/health-potion',
+  'card-upgrade': '/assets/audio/sfx/cards/defend',
+  'card-heal': '/assets/audio/sfx/cards/fantasy-ui-6',
   'card-stab': '/assets/audio/sfx/cards/stab',
   'card-slash': '/assets/audio/sfx/cards/slash',
   'card-defend': '/assets/audio/sfx/cards/defend',
-  'card-bash': '/assets/audio/sfx/cards/bash',
-  'card-plate_mail': '/assets/audio/sfx/cards/defend',
-  'card-forge': '/assets/audio/sfx/cards/defend',
-  'card-health_potion': '/assets/audio/sfx/cards/health-potion',
-  'card-apple': '/assets/audio/sfx/cards/apple',
-  'card-bite': '/assets/audio/sfx/cards/bite',
+  'card-bash': '/assets/audio/sfx/cards/bash-heavy-wrench',
+  'card-plate_mail': '/assets/audio/sfx/cards/plate-mail-cloth',
+  'card-anvil': '/assets/audio/sfx/cards/forge-metal-tap',
+  'card-health_potion': '/assets/audio/sfx/cards/health-potion-bubble',
+  'card-apple': '/assets/audio/sfx/cards/fantasy-ui-6',
+  'card-bite': '/assets/audio/sfx/cards/gore-splat-stab-poke-03',
   'card-fireball': '/assets/audio/sfx/cards/fireball',
   'card-immolate': '/assets/audio/sfx/cards/immolate',
+  'card-gold': '/assets/audio/sfx/cards/gold-coins-medium',
+  'card-mana_crystal': '/assets/audio/sfx/cards/mana-crystal-gem',
+  'card-mana_berries': '/assets/audio/sfx/cards/fantasy-ui-6',
+  'card-meat': '/assets/audio/sfx/cards/fantasy-ui-6',
+  'card-bread': '/assets/audio/sfx/cards/fantasy-ui-6',
+  'card-wish': '/assets/audio/sfx/cards/fantasy-ui-6',
+  'card-haste': '/assets/audio/sfx/cards/fantasy-ui-6',
+  'card-cleanse': '/assets/audio/sfx/cards/fantasy-ui-6',
+  'card-poisoned_dagger': '/assets/audio/sfx/cards/gore-splat-stab-poke-03',
+  'card-lacerate': '/assets/audio/sfx/cards/gore-splat-stab-poke-03',
+  'card-poison_fangs': '/assets/audio/sfx/cards/gore-splat-stab-poke-03',
+  'card-bear_trap': '/assets/audio/sfx/cards/gore-splat-stab-poke-03',
+  'card-fiery_blade': '/assets/audio/sfx/cards/fireball',
+  'card-holy_blade': '/assets/audio/sfx/cards/fireball',
+  victory: '/assets/audio/sfx/ui/victory-piano-positive',
+  defeat: '/assets/audio/sfx/ui/defeat-piano',
 }
 
 const battleBgmPool: SoundSource[] = [...BATTLE_MUSIC_TRACKS]
 
 let bgmElement: HTMLAudioElement | null = null
-let bgmFadeTimeout: ReturnType<typeof setTimeout> | null = null
+let bgmFadeInterval: ReturnType<typeof setInterval> | null = null
 let bgmTrackToken = 0
 let currentBgmKey: string | null = null
+let bgmNeedsUserUnmute = false
 let lastBattleTrackIndex = -1
 const BGM_TARGET_VOLUME = 0.14
 
@@ -159,11 +161,16 @@ function pickRandomBattleTrack(): SoundSource {
 }
 
 function clearCurrentBGM() {
+  if (bgmFadeInterval) {
+    clearInterval(bgmFadeInterval)
+    bgmFadeInterval = null
+  }
   if (!bgmElement) return
   bgmElement.pause()
   bgmElement.currentTime = 0
   bgmElement = null
   currentBgmKey = null
+  bgmNeedsUserUnmute = false
 }
 
 export const startBGM = (source?: SoundSource) => {
@@ -172,7 +179,16 @@ export const startBGM = (source?: SoundSource) => {
   const token = ++bgmTrackToken
 
   if (bgmElement && currentBgmKey === selectedKey) {
-    bgmElement.play().catch(() => {})
+    if (bgmFadeInterval) {
+      clearInterval(bgmFadeInterval)
+      bgmFadeInterval = null
+    }
+    bgmElement.play().then(() => {
+      if (bgmElement) {
+        bgmElement.muted = false
+        bgmNeedsUserUnmute = false
+      }
+    }).catch(() => {})
     return
   }
 
@@ -182,21 +198,46 @@ export const startBGM = (source?: SoundSource) => {
     if (!resolvedPath) return
     if (token !== bgmTrackToken) return
 
-    bgmElement = new Audio(resolvedPath)
+    const element = new Audio(resolvedPath)
+    bgmElement = element
     currentBgmKey = selectedKey
-    bgmElement.loop = true
-    bgmElement.volume = 0
-    bgmElement.play().catch(() => {})
+    element.loop = true
+    element.volume = 0
+
+    // Try immediate audible playback first. If autoplay is blocked,
+    // fall back to muted playback and unmute on first user interaction.
+    element.muted = false
+    element.play().then(() => {
+      if (token !== bgmTrackToken || bgmElement !== element) return
+      bgmNeedsUserUnmute = false
+    }).catch(() => {
+      if (token !== bgmTrackToken || bgmElement !== element) return
+      element.muted = true
+      element.play().then(() => {
+        if (token !== bgmTrackToken || bgmElement !== element) return
+        bgmNeedsUserUnmute = true
+      }).catch(() => {})
+    })
 
     let volume = 0
-    const fadeInterval = setInterval(() => {
-      if (!bgmElement || token !== bgmTrackToken) {
-        clearInterval(fadeInterval)
+    if (bgmFadeInterval) {
+      clearInterval(bgmFadeInterval)
+      bgmFadeInterval = null
+    }
+    bgmFadeInterval = setInterval(() => {
+      if (token !== bgmTrackToken || bgmElement !== element) {
+        if (bgmFadeInterval) {
+          clearInterval(bgmFadeInterval)
+          bgmFadeInterval = null
+        }
         return
       }
       volume = Math.min(volume + 0.02, BGM_TARGET_VOLUME)
-      bgmElement.volume = volume
-      if (volume >= BGM_TARGET_VOLUME) clearInterval(fadeInterval)
+      element.volume = volume
+      if (volume >= BGM_TARGET_VOLUME && bgmFadeInterval) {
+        clearInterval(bgmFadeInterval)
+        bgmFadeInterval = null
+      }
     }, 50)
   }).catch(() => {})
 }
@@ -206,25 +247,43 @@ export const playRandomBattleBGM = () => {
 }
 
 export const ensureRandomBGM = () => {
-  if (bgmElement) return
+  if (bgmElement) {
+    if (bgmFadeInterval) {
+      clearInterval(bgmFadeInterval)
+      bgmFadeInterval = null
+    }
+    if (bgmNeedsUserUnmute || bgmElement.muted) {
+      bgmElement.muted = false
+      bgmNeedsUserUnmute = false
+    }
+    bgmElement.play().catch(() => {})
+    return
+  }
   playRandomBattleBGM()
 }
 
 // Stop background music with fade out
 export const stopBGM = () => {
   bgmTrackToken += 1
-  if (!bgmElement) return
-  
-  if (bgmFadeTimeout) clearTimeout(bgmFadeTimeout)
-  
-  let volume = bgmElement.volume
-  const fadeInterval = setInterval(() => {
+  const element = bgmElement
+  if (!element) return
+
+  if (bgmFadeInterval) {
+    clearInterval(bgmFadeInterval)
+    bgmFadeInterval = null
+  }
+
+  let volume = element.volume
+  bgmFadeInterval = setInterval(() => {
     volume = Math.max(volume - 0.02, 0)
-    if (bgmElement) bgmElement.volume = volume
+    element.volume = volume
     if (volume <= 0) {
-      clearInterval(fadeInterval)
-      if (bgmElement) {
-        bgmElement.pause()
+      if (bgmFadeInterval) {
+        clearInterval(bgmFadeInterval)
+        bgmFadeInterval = null
+      }
+      element.pause()
+      if (bgmElement === element) {
         bgmElement = null
         currentBgmKey = null
       }
@@ -234,6 +293,44 @@ export const stopBGM = () => {
 
 // cache of preloaded audio elements for instant playback
 const audioCache = new Map<string, HTMLAudioElement>()
+const missingAudioWarnings = new Set<string>()
+const missingCardMappingWarnings = new Set<string>()
+let activeGameplaySfxCount = 0
+let pendingOutcomeSfx: { source: SoundSource | undefined; volume: number; label: string } | null = null
+
+function warnMissingAudio(label: string, detail: string) {
+  const key = `${label}:${detail}`
+  if (missingAudioWarnings.has(key)) return
+  missingAudioWarnings.add(key)
+  console.warn(`[audio] ${label} ${detail}`)
+}
+
+function tryPlayPendingOutcome() {
+  if (activeGameplaySfxCount !== 0) return
+  if (!pendingOutcomeSfx) return
+  const next = pendingOutcomeSfx
+  pendingOutcomeSfx = null
+  playSampleIfAvailable(next.source, next.volume, next.label, false)
+}
+
+function trackGameplaySfx(audio: HTMLAudioElement) {
+  let active = true
+  activeGameplaySfxCount += 1
+
+  const finish = () => {
+    if (!active) return
+    active = false
+    audio.removeEventListener('ended', finish)
+    audio.removeEventListener('pause', finish)
+    audio.removeEventListener('error', finish)
+    activeGameplaySfxCount = Math.max(0, activeGameplaySfxCount - 1)
+    tryPlayPendingOutcome()
+  }
+
+  audio.addEventListener('ended', finish, { once: true })
+  audio.addEventListener('pause', finish, { once: true })
+  audio.addEventListener('error', finish, { once: true })
+}
 
 // preload audio file on card hover for instant playback (called from Hand.tsx on hover)
 export const preloadSound = (cardId?: string, cardType?: string) => {
@@ -251,8 +348,11 @@ export const preloadSound = (cardId?: string, cardType?: string) => {
 }
 
 // helper to play sample files with instant playback from cache
-const playSampleOrFallback = (source: SoundSource | undefined, volume = 0.15) => {
-  if (!source) return
+const playSampleIfAvailable = (source: SoundSource | undefined, volume = 0.15, label = 'sound', countAsGameplay = true) => {
+  if (!source) {
+    warnMissingAudio(label, '(no source mapped)')
+    return
+  }
   const key = sourceKey(source)
 
   const cached = audioCache.get(key)
@@ -260,16 +360,31 @@ const playSampleOrFallback = (source: SoundSource | undefined, volume = 0.15) =>
     cached.pause()
     cached.volume = volume
     cached.currentTime = 0
-    cached.play().catch(() => {})
+    cached.play().then(() => {
+      if (countAsGameplay) trackGameplaySfx(cached)
+    }).catch(() => {})
     return
   }
 
   resolvePlayablePath(source).then(resolvedPath => {
-    if (!resolvedPath) return
+    if (!resolvedPath) {
+      warnMissingAudio(label, `(missing file for source: ${key})`)
+      return
+    }
     const audio = new Audio(resolvedPath)
     audio.volume = volume
-    audio.play().catch(() => {})
+    audio.play().then(() => {
+      if (countAsGameplay) trackGameplaySfx(audio)
+    }).catch(() => {})
   }).catch(() => {})
+}
+
+function queueOutcomeSfx(source: SoundSource | undefined, volume: number, label: string) {
+  if (activeGameplaySfxCount > 0) {
+    pendingOutcomeSfx = { source, volume, label }
+    return
+  }
+  playSampleIfAvailable(source, volume, label, false)
 }
 
 // resolve sound path by card-id, then card-type, then default
@@ -285,32 +400,40 @@ function getCardSoundSource(cardId: string, cardType: string): SoundSource | und
 // effect wrappers – these are called by game components
 
 export const playCardPlay = (cardId?: string, cardType?: string) => {
+  if (cardId && !(sounds as any)[`card-${cardId}`] && !missingCardMappingWarnings.has(cardId)) {
+    missingCardMappingWarnings.add(cardId)
+    console.warn(`[audio] card '${cardId}' has no dedicated SFX mapping; using type/default`)
+  }
   const source = cardId && cardType ? getCardSoundSource(cardId, cardType) : sounds.cardPlay
-  playSampleOrFallback(source)
+  playSampleIfAvailable(source, 0.15, `card:${cardId ?? cardType ?? 'unknown'}`)
 }
 
 export const playPlayerHit = () => {
-  playSampleOrFallback(sounds.playerHit, 0.15)
+  playSampleIfAvailable(sounds.playerHit, 0.15, 'player-hit')
 }
 
 export const playPlayerHeal = () => {
-  playSampleOrFallback(sounds.playerHeal, 0.15)
+  playSampleIfAvailable(sounds.playerHeal, 0.15, 'player-heal')
 }
 
 export const playBlock = () => {
-  playSampleOrFallback(sounds.block, 0.1)
+  playSampleIfAvailable(sounds.block, 0.1, 'block')
 }
 
 export const playEnemyHit = () => {
-  playSampleOrFallback(sounds.enemyHit, 0.15)
+  playSampleIfAvailable(sounds.enemyHit, 0.15, 'enemy-hit')
 }
 
 export const playEnemyAttack = () => {
-  playSampleOrFallback(sounds.enemyAttack, 0.15)
+  playSampleIfAvailable(sounds.enemyAttack, 0.15, 'enemy-attack')
 }
 
 export const playBurn = () => {
-  playSampleOrFallback(sounds.burn, 0.15)
+  playSampleIfAvailable(sounds.burn, 0.15, 'burn')
+}
+
+export const playGoldGain = () => {
+  playSampleIfAvailable(sounds['card-gold'], 0.18, 'gold-gain')
 }
 
 export const playVulnerable = () => {
@@ -318,13 +441,11 @@ export const playVulnerable = () => {
 }
 
 export const playVictory = () => {
-  playTone({ freq: 800, type: 'sine', duration: 0.25, volume: 0.06 })
-  setTimeout(() => playTone({ freq: 900, type: 'sine', duration: 0.22, volume: 0.06 }), 150)
-  setTimeout(() => playTone({ freq: 1000, type: 'sine', duration: 0.2, volume: 0.06 }), 300)
+  queueOutcomeSfx(sounds.victory, 0.22, 'victory')
 }
 
 export const playDefeat = () => {
-  playTone({ freq: 100, type: 'sine', duration: 0.3, volume: 0.05 })
+  queueOutcomeSfx(sounds.defeat, 0.22, 'defeat')
 }
 
 export const playTurnStart = () => {

@@ -1,6 +1,14 @@
 import type { GameState, StatusEffects } from './types'
 import type { CardDef } from './types'
-import { ALL_CARDS, emptyStatus, makeStartingDeck, makeCardInstances, pickEncounterEnemy } from './data'
+import { ALL_CARDS, emptyStatus, makeStartingDeck, makeCardInstances, pickEncounterEnemy, pickEncounterEnemyById } from './data'
+
+const TRINKET_SPECIAL_DELIVERY = 'special_delivery'
+const TRINKET_EQUIVALENT_EXCHANGE = 'equivalent_exchange'
+const TRINKET_GREEN_THUMB = 'green_thumb'
+const TRINKET_TORCH = 'torch'
+const TRINKET_SPELL_TOME = 'spell_tome'
+
+const WIZARD_CARD_IDS = ['fireball', 'defend', 'mana_crystal', 'mana_berries', 'cleanse']
 
 // ─── Internals ───────────────────────────────────────────────────────────────
 
@@ -45,6 +53,88 @@ function drawCards(s: GameState, count: number): GameState {
     drawPile = drawPile.slice(1)
   }
   return { ...s, drawPile, discardPile, hand }
+}
+
+function hasTrinket(state: GameState, trinketId: string): boolean {
+  return state.trinketIds.includes(trinketId)
+}
+
+function randomizeOneHandCard(state: GameState): GameState {
+  if (state.hand.length === 0) return state
+
+  const handIndex = Math.floor(Math.random() * state.hand.length)
+  const current = state.hand[handIndex]
+  const candidateDefs = ALL_CARDS.filter(card => card.id !== current.id)
+  if (candidateDefs.length === 0) return state
+
+  const randomDef = candidateDefs[Math.floor(Math.random() * candidateDefs.length)]
+  const randomCard = makeCardInstances([randomDef])[0]
+  const nextHand = [...state.hand]
+  nextHand[handIndex] = randomCard
+
+  const next = {
+    ...state,
+    hand: nextHand,
+    lastCardPlayedId: randomCard.id,
+  }
+
+  return addLog(next, `  → Equivalent Exchange randomizes ${current.name} into ${randomDef.name}.`)
+}
+
+function applyCombatStartTrinkets(state: GameState): GameState {
+  let s = state
+
+  if (hasTrinket(s, TRINKET_TORCH)) {
+    s = {
+      ...s,
+      enemy: {
+        ...s.enemy,
+        status: {
+          ...s.enemy.status,
+          burn: s.enemy.status.burn + 5,
+        },
+      },
+    }
+    s = addLog(s, `  → Torch scorches ${s.enemy.name} for 5 Burn.`)
+  }
+
+  if (hasTrinket(s, TRINKET_SPELL_TOME)) {
+    const wizardPool = ALL_CARDS.filter(card => WIZARD_CARD_IDS.includes(card.id))
+    const grantedDefs: CardDef[] = []
+    for (let i = 0; i < 2; i++) {
+      const picked = wizardPool[Math.floor(Math.random() * wizardPool.length)]
+      if (picked) grantedDefs.push(picked)
+    }
+    if (grantedDefs.length > 0) {
+      const grantedCards = makeCardInstances(grantedDefs)
+      s = {
+        ...s,
+        hand: [...s.hand, ...grantedCards],
+      }
+      s = addLog(s, '  → Spell Tome grants 2 random Wizard cards.')
+    }
+  }
+
+  if (hasTrinket(s, TRINKET_EQUIVALENT_EXCHANGE)) {
+    s = randomizeOneHandCard(s)
+  }
+
+  return s
+}
+
+function applyTurnStartTrinkets(state: GameState): GameState {
+  let s = state
+
+  if (hasTrinket(s, TRINKET_SPECIAL_DELIVERY)) {
+    s = drawCards(s, 1)
+    s = addLog(s, '  → Special Delivery draws 1 extra card.')
+  }
+
+  if (hasTrinket(s, TRINKET_EQUIVALENT_EXCHANGE)) {
+    s = randomizeOneHandCard(s)
+  }
+
+  return s
 }
 
 function addLog(s: GameState, ...lines: string[]): GameState {
@@ -114,7 +204,9 @@ function applyCardEffects(state: GameState, player: GameState['player'], enemy: 
     s = addLog(s, `  → Gain ${effect.armor} armor.`)
   }
   if (effect.heal !== undefined) {
-    const healed = Math.min(effect.heal, nextPlayer.maxHp - nextPlayer.hp)
+    const healBonus = hasTrinket(state, TRINKET_GREEN_THUMB) ? 1 : 0
+    const totalHeal = effect.heal + healBonus
+    const healed = Math.min(totalHeal, nextPlayer.maxHp - nextPlayer.hp)
     nextPlayer = { ...nextPlayer, hp: nextPlayer.hp + healed }
     s = addLog(s, `  → Heal ${healed} HP.`)
   }
@@ -253,11 +345,16 @@ export function createGame(
   encounterTier: 'basic' | 'elite' = 'basic',
   persistGold = 0,
   characterId = 'knight',
+  forcedEnemyId?: string,
+  trinketIds: string[] = [],
 ): GameState {
   const deck = shuffle([...makeStartingDeck(characterId), ...makeCardInstances(extraCards)])
-  const encounterEnemy = pickEncounterEnemy(encounterTier)
+  const encounterEnemy = forcedEnemyId
+    ? pickEncounterEnemyById(forcedEnemyId)
+    : pickEncounterEnemy(encounterTier)
   const base: GameState = {
     characterId,
+    trinketIds,
     phase: 'player_turn',
     turn: 1,
     player: { hp: Math.min(persistHp, 30), maxHp: 30, block: 0, armor: 0, status: emptyStatus() },
@@ -275,7 +372,10 @@ export function createGame(
     lastCardPlayedId: null,
     activeUpgrades: [],
   }
-  return drawCards(addLog(base, 'Turn 1 — draw 5 cards.'), 5)
+  const startingDraw = 5 + (trinketIds.includes(TRINKET_SPECIAL_DELIVERY) ? 1 : 0)
+  let s = drawCards(addLog(base, `Turn 1 — draw ${startingDraw} cards.`), startingDraw)
+  s = applyCombatStartTrinkets(s)
+  return s
 }
 
 export function playCard(state: GameState, cardUid: string): GameState {
@@ -331,6 +431,20 @@ export function playCard(state: GameState, cardUid: string): GameState {
   return { ...s, enemy }
 }
 
+export function applyCompanionStrike(state: GameState, baseDamage: number, sourceName: string): GameState {
+  if (state.phase !== 'player_turn') return state
+
+  const damage = calcDamage(baseDamage, emptyStatus(), state.enemy.status)
+  const enemy = applyDamage(state.enemy, damage)
+  const next = addLog({ ...state, enemy, lastCardPlayedId: 'lizard_scout_collar' }, `  → ${sourceName} strikes for ${damage}.`)
+
+  if (enemy.hp <= 0) {
+    return addLog({ ...next, phase: 'win' }, '⚔ Victory!')
+  }
+
+  return next
+}
+
 export function endTurn(state: GameState): GameState {
   let s = startEnemyTurn(state)
   s = resolveEnemyStartOfTurn(s)
@@ -342,21 +456,28 @@ export function endTurn(state: GameState): GameState {
   return beginNextPlayerTurn(s)
 }
 
+export function startExtraTurnTransition(state: GameState): GameState {
+  if (state.phase !== 'player_turn') return state
+  if (state.extraTurns <= 0) return state
+
+  let extraTurnState: GameState = {
+    ...state,
+    phase: 'enemy_turn',
+    hand: [],
+    discardPile: [...state.discardPile, ...state.hand],
+    extraTurns: state.extraTurns - 1,
+    lastCardPlayedId: null,
+  }
+
+  extraTurnState = addLog(extraTurnState, 'Haste grants an extra turn.')
+  return extraTurnState
+}
+
 export function startEnemyTurn(state: GameState): GameState {
   if (state.phase !== 'player_turn') return state
 
   if (state.extraTurns > 0) {
-    let extraTurnState: GameState = {
-      ...state,
-      phase: 'enemy_turn',
-      hand: [],
-      discardPile: [...state.discardPile, ...state.hand],
-      extraTurns: state.extraTurns - 1,
-      lastCardPlayedId: null,
-    }
-
-    extraTurnState = addLog(extraTurnState, 'Haste grants an extra turn.')
-    return beginNextPlayerTurn(extraTurnState)
+    return beginNextPlayerTurn(startExtraTurnTransition(state))
   }
 
   let s: GameState = {
@@ -439,6 +560,17 @@ export function resolveEnemyAction(state: GameState): GameState {
   } else if (intent.type === 'defend') {
     enemy = { ...enemy, block: enemy.block + intent.value }
     s = addLog(s, `  → Gains ${intent.value} block.`)
+  } else if (intent.type === 'heal') {
+    const healed = Math.min(intent.value, enemy.maxHp - enemy.hp)
+    enemy = { ...enemy, hp: enemy.hp + healed }
+    s = addLog(s, `  → Heals for ${healed}.`)
+  } else if (intent.type === 'upgrade') {
+    enemy = {
+      ...enemy,
+      armor: enemy.armor + intent.value,
+      status: { ...enemy.status, strength: enemy.status.strength + 1 },
+    }
+    s = addLog(s, `  → Fortifies (+${intent.value} Armor, +1 Strength).`)
   }
 
   enemy = {
@@ -521,5 +653,6 @@ export function beginNextPlayerTurn(state: GameState): GameState {
   }
 
   s = addLog(s, `Turn ${newTurn} — draw 5 cards.`)
-  return drawCards(s, 5)
+  s = drawCards(s, 5)
+  return applyTurnStartTrinkets(s)
 }

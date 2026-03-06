@@ -4,7 +4,7 @@ export const CARD_ART_BY_ID: Record<string, string> = {
   defend:        '/assets/icon-defend.png',
   bash:          '/assets/icon-bash.png',
   plate_mail:    '/assets/icon-plate-mail.png',
-  forge:         '/assets/icon-forge.png',
+  anvil:         '/assets/icon-forge.png',
   health_potion: '/assets/icon-health-potion.png',
   apple:         '/assets/icon-apple.png',
   meat:          '/assets/icon-meat.png',
