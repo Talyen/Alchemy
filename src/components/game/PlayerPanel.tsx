@@ -9,7 +9,7 @@ import type { DmgEvent, StatusEvent } from './FloatingNumber'
 import type { ActiveUpgrade, Fighter, TrinketDef } from '@/types'
 import { playPlayerHit, playPlayerHeal, playBlock } from '@/sounds'
 
-const LIZARD_SCOUT_FRAMES = Array.from({ length: 4 }, (_, i) => `/assets/lizard_f-idle-f${i}.png`)
+const LIZARD_SCOUT_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/lizard_f-idle-f${i}.png`)
 
 interface Props {
   player: Fighter

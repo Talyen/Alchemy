@@ -13,7 +13,7 @@ interface Props {
   showLizardCompanion?: boolean
 }
 
-const LIZARD_SCOUT_FRAMES = Array.from({ length: 4 }, (_, i) => `/assets/lizard_f-idle-f${i}.png`)
+const LIZARD_SCOUT_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/lizard_f-idle-f${i}.png`)
 const randomBetween = (min: number, max: number) => min + Math.random() * (max - min)
 
 type EmberFlickerState = {
@@ -194,7 +194,7 @@ export function CampfireScreen({ characterId, currentHp: _currentHp, maxHp, onRe
 
               <div className="relative w-5 h-5 origin-bottom scale-[7.0]">
                 <img
-                  src="/assets/campfire-rest.png"
+                  src="assets/campfire-rest.png"
                   alt="Campfire"
                   className="absolute inset-0 w-full h-full object-contain"
                   style={{
@@ -204,7 +204,7 @@ export function CampfireScreen({ characterId, currentHp: _currentHp, maxHp, onRe
                 />
 
                 <motion.img
-                  src="/assets/campfire-rest.png"
+                  src="assets/campfire-rest.png"
                   alt=""
                   aria-hidden
                   className="pointer-events-none absolute inset-0 w-full h-full object-contain"

@@ -40,7 +40,7 @@ function toInstance(def: CardDef, uid: string): CardInstance {
 
 function getIdleFrames(enemyId: string): string[] {
   const spriteId = BESTIARY_SPRITE_SOURCE_BY_ID[enemyId] ?? enemyId
-  return Array.from({ length: 4 }, (_, i) => `/assets/${spriteId}-idle-f${i}.png`)
+  return Array.from({ length: 4 }, (_, i) => `assets/${spriteId}-idle-f${i}.png`)
 }
 
 export function CollectionScreen({

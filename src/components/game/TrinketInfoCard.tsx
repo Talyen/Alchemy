@@ -20,7 +20,7 @@ function toClassName(parts: Array<string | false | null | undefined>): string {
 
 function getDefaultIconSrc(id?: string): string | undefined {
   if (!id) return undefined
-  return `/assets/trinkets/${id.replace(/_/g, '-')}.png`
+  return `assets/trinkets/${id.replace(/_/g, '-')}.png`
 }
 
 export function TrinketInfoCard({ id, name, description, iconSrc, size = 'default', className, keywordTooltipEnabled = true }: TrinketInfoCardProps) {

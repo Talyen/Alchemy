@@ -306,49 +306,49 @@ const ALL_TRINKET_OFFERS: ShopTrinketOffer[] = [
     name: LIZARD_SCOUT_COLLAR.name,
     description: LIZARD_SCOUT_COLLAR.description,
     price: 24,
-    iconSrc: '/assets/trinkets/lizard-scout-collar.png',
+    iconSrc: 'assets/trinkets/lizard-scout-collar.png',
   },
   {
     id: 'special_delivery',
     name: 'Special Delivery',
     description: 'Draw 1 extra card each turn.',
     price: 22,
-    iconSrc: '/assets/trinkets/special-delivery.png',
+    iconSrc: 'assets/trinkets/special-delivery.png',
   },
   {
     id: 'campfire',
     name: 'Campfire',
     description: 'Heal 10 HP after each battle.',
     price: 26,
-    iconSrc: '/assets/trinkets/campfire.png',
+    iconSrc: 'assets/trinkets/campfire.png',
   },
   {
     id: 'equivalent_exchange',
     name: 'Equivalent Exchange',
     description: 'Randomize 1 card each turn.',
     price: 27,
-    iconSrc: '/assets/trinkets/equivalent-exchange.png',
+    iconSrc: 'assets/trinkets/equivalent-exchange.png',
   },
   {
     id: 'green_thumb',
     name: 'Green Thumb',
     description: 'Heal effect increased by 1.',
     price: 21,
-    iconSrc: '/assets/trinkets/green-thumb.png',
+    iconSrc: 'assets/trinkets/green-thumb.png',
   },
   {
     id: 'torch',
     name: 'Torch',
     description: 'Enemies start combat with 5 Burn.',
     price: 24,
-    iconSrc: '/assets/trinkets/torch.png',
+    iconSrc: 'assets/trinkets/torch.png',
   },
   {
     id: 'spell_tome',
     name: 'Spell Tome',
     description: 'Start combat with two random Wizard cards.',
     price: 28,
-    iconSrc: '/assets/trinkets/spell-tome.png',
+    iconSrc: 'assets/trinkets/spell-tome.png',
   },
 ]
 
@@ -1013,7 +1013,7 @@ export default function App() {
         <MysteryTrinketRewardScreen
           key="mystery-reward"
           trinketName={LIZARD_SCOUT_COLLAR.name}
-          trinketIconSrc="/assets/trinkets/lizard-scout-collar.png"
+          trinketIconSrc="assets/trinkets/lizard-scout-collar.png"
           onContinue={returnToDestination}
           topLeft={renderGlobalMenu({ direction: 'up', align: 'right' })}
         />

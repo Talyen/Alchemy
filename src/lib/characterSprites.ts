@@ -1,8 +1,8 @@
 const CHARACTER_IDLE_FPS = 8
 
-const KNIGHT_IDLE_FRAMES = Array.from({ length: 4 }, (_, i) => `/assets/knight-idle-f${i}.png`)
-const ROGUE_IDLE_FRAMES = Array.from({ length: 4 }, (_, i) => `/assets/rogue-idle-f${i}.png`)
-const WIZARD_IDLE_FRAMES = Array.from({ length: 4 }, (_, i) => `/assets/wizard-idle-f${i}.png`)
+const KNIGHT_IDLE_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/knight-idle-f${i}.png`)
+const ROGUE_IDLE_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/rogue-idle-f${i}.png`)
+const WIZARD_IDLE_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/wizard-idle-f${i}.png`)
 
 const CHARACTER_IDLE_FRAMES_BY_ID: Record<string, string[]> = {
   knight: KNIGHT_IDLE_FRAMES,

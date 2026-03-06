@@ -11,7 +11,7 @@ interface Props {
   topLeft?: ReactNode
 }
 
-const LIZARD_SCOUT_FRAMES = Array.from({ length: 4 }, (_, i) => `/assets/lizard_f-idle-f${i}.png`)
+const LIZARD_SCOUT_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/lizard_f-idle-f${i}.png`)
 
 function AnimatedSprite({ frames, alt }: { frames: string[]; alt: string }) {
   const [frameIdx, setFrameIdx] = useState(0)

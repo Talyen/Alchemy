@@ -13,7 +13,7 @@ const W = 1000
 const H = 600
 const PAD_X = 120
 const PAD_Y = 58
-const PARCHMENT_TILE = '/assets/ui/map/slices/slots/slots_01_64x64.png'
+const PARCHMENT_TILE = 'assets/ui/map/slices/slots/slots_01_64x64.png'
 
 function nodeX(row: number, rowCount: number) {
   if (rowCount <= 1) return W / 2
@@ -165,7 +165,7 @@ export function MapScreen({ map, onNodeClick }: Props) {
             <div
               className="absolute top-16 bottom-16 left-4 w-12"
               style={{
-                backgroundImage: "url('/assets/ui/map/slices/banner/banner_03_64x128.png')",
+                backgroundImage: "url('assets/ui/map/slices/banner/banner_03_64x128.png')",
                 backgroundRepeat: 'repeat-y',
                 backgroundSize: '44px 88px',
                 backgroundPosition: 'left center',
@@ -174,7 +174,7 @@ export function MapScreen({ map, onNodeClick }: Props) {
             <div
               className="absolute top-16 bottom-16 right-4 w-12"
               style={{
-                backgroundImage: "url('/assets/ui/map/slices/banner/banner_04_64x128.png')",
+                backgroundImage: "url('assets/ui/map/slices/banner/banner_04_64x128.png')",
                 backgroundRepeat: 'repeat-y',
                 backgroundSize: '44px 88px',
                 backgroundPosition: 'right center',
@@ -182,25 +182,25 @@ export function MapScreen({ map, onNodeClick }: Props) {
             />
 
             <img
-              src="/assets/ui/map/slices/banner/banner_01_188x92.png"
+              src="assets/ui/map/slices/banner/banner_01_188x92.png"
               alt=""
               className="absolute top-3 left-4 w-40 select-none"
               draggable={false}
             />
             <img
-              src="/assets/ui/map/slices/banner/banner_02_172x98.png"
+              src="assets/ui/map/slices/banner/banner_02_172x98.png"
               alt=""
               className="absolute top-2 right-4 w-36 select-none"
               draggable={false}
             />
             <img
-              src="/assets/ui/map/slices/banner/banner_01_188x92.png"
+              src="assets/ui/map/slices/banner/banner_01_188x92.png"
               alt=""
               className="absolute bottom-3 left-5 w-40 select-none"
               draggable={false}
             />
             <img
-              src="/assets/ui/map/slices/banner/banner_02_172x98.png"
+              src="assets/ui/map/slices/banner/banner_02_172x98.png"
               alt=""
               className="absolute bottom-3 right-5 w-36 select-none"
               draggable={false}
