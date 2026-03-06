@@ -347,8 +347,11 @@ export function createGame(
   characterId = 'knight',
   forcedEnemyId?: string,
   trinketIds: string[] = [],
+  deckOverride?: CardDef[],
 ): GameState {
-  const deck = shuffle([...makeStartingDeck(characterId), ...makeCardInstances(extraCards)])
+  const deck = deckOverride && deckOverride.length > 0
+    ? shuffle(makeCardInstances(deckOverride))
+    : shuffle([...makeStartingDeck(characterId), ...makeCardInstances(extraCards)])
   const encounterEnemy = forcedEnemyId
     ? pickEncounterEnemyById(forcedEnemyId)
     : pickEncounterEnemy(encounterTier)

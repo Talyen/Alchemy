@@ -79,7 +79,7 @@ interface Props {
 export function EnemyPanel({ enemy, isActing, isActive, lastCardPlayedId, isEliteEncounter = false }: Props) {
   const enemyFrames = ENEMY_FRAME_SETS[enemy.id] ?? GOBLIN_FRAMES
   const isEliteEnemy = isEliteEncounter || ELITE_ENEMY_IDS.has(enemy.id)
-  const eliteEncounterScale = isEliteEncounter ? 2 : 1
+  const eliteEncounterScale = isEliteEncounter ? 1.25 : 1
   const spriteScale = getEnemyRelativeScale(enemy.id) * eliteEncounterScale
   const inactiveScale = isActive ? spriteScale : spriteScale * 0.82
   const hoverScale = isEliteEnemy ? spriteScale * 1.04 : spriteScale * 1.12

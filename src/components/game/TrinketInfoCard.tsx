@@ -52,9 +52,9 @@ export function TrinketInfoCard({ id, name, description, iconSrc, size = 'defaul
           <motion.div
             className="absolute bottom-full left-1/2 mb-2.5 w-56 rounded-xl border border-zinc-700/80 bg-zinc-950 px-3 py-2.5 z-50 pointer-events-none"
             style={{ x: '-50%' }}
-            initial={{ opacity: 0, y: 5, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 5, scale: 0.97, transition: { duration: 0.1, ease: 'easeIn' } }}
+            initial={{ opacity: 0, y: 3 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 3, transition: { duration: 0.1, ease: 'easeIn' } }}
             transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
           >
             <p className="text-[11px] text-zinc-600 uppercase tracking-widest mb-2">Keywords</p>

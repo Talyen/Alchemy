@@ -269,6 +269,7 @@ type PersistedRunV1 = {
   persistentHp: number
   persistentGold: number
   runExtraCards: CardDef[]
+  runDeckCards?: CardDef[]
   pickOptions: CardDef[]
   destinationOptions: DestinationOption[]
   currentRoomLabel: string
@@ -278,6 +279,8 @@ type PersistedRunV1 = {
   collectionReturnScreen: Screen
   shopOffers: ShopCardOffer[]
   shopTrinketOffers: ShopTrinketOffer[]
+  shopRefreshUsed?: boolean
+  shopDestroyUsed?: boolean
   runTrinkets: TrinketDef[]
   rewardGoldFound: number
   mysteryGoldFound: number
@@ -379,6 +382,7 @@ export default function App() {
   const [persistentHp, setPersistentHp]   = useState(30)
   const [persistentGold, setPersistentGold] = useState(0)
   const [runExtraCards, setRunExtraCards] = useState<CardDef[]>([])
+  const [runDeckCards, setRunDeckCards] = useState<CardDef[]>([])
   const [pickOptions, setPickOptions]     = useState<CardDef[]>([])
   const [destinationOptions, setDestinationOptions] = useState<DestinationOption[]>([])
   const [currentRoomLabel, setCurrentRoomLabel] = useState('Start')
@@ -394,6 +398,8 @@ export default function App() {
   const [runInProgress, setRunInProgress] = useState(false)
   const [shopOffers, setShopOffers] = useState<ShopCardOffer[]>([])
   const [shopTrinketOffers, setShopTrinketOffers] = useState<ShopTrinketOffer[]>([])
+  const [shopRefreshUsed, setShopRefreshUsed] = useState(false)
+  const [shopDestroyUsed, setShopDestroyUsed] = useState(false)
   const [runTrinkets, setRunTrinkets] = useState<TrinketDef[]>([])
   const [rewardGoldFound, setRewardGoldFound] = useState(0)
   const [mysteryGoldFound, setMysteryGoldFound] = useState(0)
@@ -409,6 +415,7 @@ export default function App() {
     setPersistentHp(snapshot.persistentHp)
     setPersistentGold(snapshot.persistentGold)
     setRunExtraCards(snapshot.runExtraCards)
+    setRunDeckCards(snapshot.runDeckCards ?? [...getCharacterStarterCards(snapshot.selectedCharacterId), ...snapshot.runExtraCards])
     setPickOptions(snapshot.pickOptions)
     setDestinationOptions(snapshot.destinationOptions)
     setCurrentRoomLabel(snapshot.currentRoomLabel)
@@ -418,6 +425,8 @@ export default function App() {
     setCollectionReturnScreen(snapshot.collectionReturnScreen)
     setShopOffers(snapshot.shopOffers)
     setShopTrinketOffers(snapshot.shopTrinketOffers)
+    setShopRefreshUsed(snapshot.shopRefreshUsed ?? false)
+    setShopDestroyUsed(snapshot.shopDestroyUsed ?? false)
     setRunTrinkets(snapshot.runTrinkets)
     setRewardGoldFound(snapshot.rewardGoldFound)
     setMysteryGoldFound(snapshot.mysteryGoldFound)
@@ -475,6 +484,7 @@ export default function App() {
       persistentHp,
       persistentGold,
       runExtraCards,
+      runDeckCards,
       pickOptions,
       destinationOptions,
       currentRoomLabel,
@@ -484,6 +494,8 @@ export default function App() {
       collectionReturnScreen,
       shopOffers,
       shopTrinketOffers,
+      shopRefreshUsed,
+      shopDestroyUsed,
       runTrinkets,
       rewardGoldFound,
       mysteryGoldFound,
@@ -499,6 +511,7 @@ export default function App() {
     persistentHp,
     persistentGold,
     runExtraCards,
+    runDeckCards,
     pickOptions,
     destinationOptions,
     currentRoomLabel,
@@ -508,6 +521,8 @@ export default function App() {
     collectionReturnScreen,
     shopOffers,
     shopTrinketOffers,
+    shopRefreshUsed,
+    shopDestroyUsed,
     runTrinkets,
     rewardGoldFound,
     mysteryGoldFound,
@@ -591,12 +606,15 @@ export default function App() {
   // ── Menu → First combat ──
   const resetRunState = useCallback(() => {
     setRunExtraCards([])
+    setRunDeckCards([])
     setPersistentHp(30)
     setPersistentGold(0)
     setDestinationOptions([])
     setCurrentRoomLabel('Start')
     setShopOffers([])
     setShopTrinketOffers([])
+    setShopRefreshUsed(false)
+    setShopDestroyUsed(false)
     setRunTrinkets([])
     setRewardGoldFound(0)
     setMysteryGoldFound(0)
@@ -622,10 +640,12 @@ export default function App() {
     setSavedRun(null)
     window.localStorage.removeItem(RUN_STORAGE_KEY)
     setSelectedCharacterId(characterId)
+    const starterCards = getCharacterStarterCards(characterId)
     const starterCardIds = new Set(getCharacterStarterCards(characterId).map(card => card.id))
+    setRunDeckCards(starterCards)
     setEncounteredCardIds(prev => new Set([...prev, ...starterCardIds]))
     setCurrentRoomLabel('Combat')
-    setGameState(createGame(30, [], 'basic', 0, characterId))
+    setGameState(createGame(30, [], 'basic', 0, characterId, undefined, [], starterCards))
     setLastRunScreen('game')
     setRunInProgress(true)
     setScreen('game')
@@ -641,9 +661,10 @@ export default function App() {
   }, [])
 
   const buildShopTrinketOffers = useCallback((): ShopTrinketOffer[] => {
+    const SHOP_TRINKET_OFFER_COUNT = 3
     const ownedIds = new Set(runTrinkets.map(trinket => trinket.id))
     const available = ALL_TRINKET_OFFERS.filter(offer => !ownedIds.has(offer.id))
-    return pickRandom(available, Math.min(3, available.length))
+    return pickRandom(available, Math.min(SHOP_TRINKET_OFFER_COUNT, available.length))
   }, [runTrinkets])
 
   // ── Combat actions ──
@@ -763,6 +784,7 @@ export default function App() {
   // ── Reward pick → Destination choice ──
   const handleRewardPick = (card: CardDef) => {
     setRunExtraCards(prev => [...prev, card])
+    setRunDeckCards(prev => [...prev, card])
     setEncounteredCardIds(prev => new Set([...prev, card.id]))
     setRewardGoldFound(0)
     setDestinationOptions(pickRandom(DESTINATION_POOL, 3))
@@ -778,6 +800,8 @@ export default function App() {
       setCurrentRoomLabel(label)
       setShopOffers(buildShopOffers())
       setShopTrinketOffers(buildShopTrinketOffers())
+      setShopRefreshUsed(false)
+      setShopDestroyUsed(false)
       setScreen('shop')
       return
     }
@@ -808,7 +832,7 @@ export default function App() {
 
     setCurrentRoomLabel(label)
     setPersistentHp(nextHp)
-    setGameState(createGame(nextHp, runExtraCards, type === 'elite' ? 'elite' : 'basic', persistentGold, selectedCharacterId, undefined, runTrinkets.map(trinket => trinket.id)))
+    setGameState(createGame(nextHp, runExtraCards, type === 'elite' ? 'elite' : 'basic', persistentGold, selectedCharacterId, undefined, runTrinkets.map(trinket => trinket.id), runDeckCards))
     setScreen('game')
   }
 
@@ -818,8 +842,37 @@ export default function App() {
     if (persistentGold < offer.price) return
     setPersistentGold(prev => prev - offer.price)
     setRunExtraCards(prev => [...prev, offer.card])
+    setRunDeckCards(prev => [...prev, offer.card])
     setEncounteredCardIds(prev => new Set([...prev, offer.card.id]))
     setShopOffers(prev => prev.filter(entry => entry.id !== offerId))
+  }
+
+  const handleRefreshShop = () => {
+    const SHOP_REFRESH_COST = 15
+    if (shopRefreshUsed) return
+    if (persistentGold < SHOP_REFRESH_COST) return
+    setPersistentGold(prev => prev - SHOP_REFRESH_COST)
+    setShopOffers(buildShopOffers())
+    setShopTrinketOffers(buildShopTrinketOffers())
+    setShopRefreshUsed(true)
+  }
+
+  const handleDestroyShopCard = (deckIndex: number) => {
+    const DESTROY_CARD_COST = 35
+    if (shopDestroyUsed) return
+    if (persistentGold < DESTROY_CARD_COST) return
+    if (deckIndex < 0 || deckIndex >= runDeckCards.length) return
+    if (runDeckCards.length <= 1) return
+
+    const removedCard = runDeckCards[deckIndex]
+    setPersistentGold(prev => prev - DESTROY_CARD_COST)
+    setRunDeckCards(prev => prev.filter((_, i) => i !== deckIndex))
+    setShopDestroyUsed(true)
+    setRunExtraCards(prev => {
+      const idx = prev.findIndex(card => card.id === removedCard.id)
+      if (idx === -1) return prev
+      return prev.filter((_, i) => i !== idx)
+    })
   }
 
   const handleBuyShopTrinket = (offerId: string) => {
@@ -852,7 +905,7 @@ export default function App() {
 
   const handleMysteryFight = () => {
     setCurrentRoomLabel('Lizard Scout')
-    setGameState(createGame(persistentHp, runExtraCards, 'basic', persistentGold, selectedCharacterId, 'lizard_f', runTrinkets.map(trinket => trinket.id)))
+    setGameState(createGame(persistentHp, runExtraCards, 'basic', persistentGold, selectedCharacterId, 'lizard_f', runTrinkets.map(trinket => trinket.id), runDeckCards))
     setScreen('game')
   }
 
@@ -989,11 +1042,19 @@ export default function App() {
       {screen === 'shop' && (
         <ShopScreen
           key="shop"
+          characterId={selectedCharacterId}
           gold={persistentGold}
           cardOffers={shopOffers}
           trinketOffers={shopTrinketOffers}
+          deckCards={runDeckCards}
+          refreshCost={15}
+          destroyCardCost={35}
+          refreshUsed={shopRefreshUsed}
+          destroyUsed={shopDestroyUsed}
+          onRefreshShop={handleRefreshShop}
           onBuyCard={handleBuyShopCard}
           onBuyTrinket={handleBuyShopTrinket}
+          onDestroyCard={handleDestroyShopCard}
           onLeave={returnToDestination}
           topLeft={renderGlobalMenu({ direction: 'up', align: 'right' })}
         />

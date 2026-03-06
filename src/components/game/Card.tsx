@@ -1,6 +1,7 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect } from 'react'
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform, useMotionTemplate, useAnimationControls } from 'framer-motion'
 import type { MouseEvent } from 'react'
+import { createPortal } from 'react-dom'
 import { Diamond } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { CardInstance } from '@/types'
@@ -82,22 +83,35 @@ export function Card({ card, playable, isBeingDragged = false, backgroundClassNa
   const art      = CARD_ART_BY_ID[card.id]
   const keywords = getKeywordsFromText(card.description)
   const titleSizeClass = card.name.length >= 12 ? 'text-[13px]' : 'text-[15px]'
+  const wrapperRef = useRef<HTMLDivElement | null>(null)
 
   // Tooltip with 1 s hover delay
   const [showTooltip, setShowTooltip] = useState(false)
+  const [tooltipPosition, setTooltipPosition] = useState<{ left: number; top: number } | null>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Sheen sweep — triggered on hover, resets on leave
   const sheenControls = useAnimationControls()
 
+  const updateTooltipPosition = () => {
+    if (!wrapperRef.current) return
+    const rect = wrapperRef.current.getBoundingClientRect()
+    setTooltipPosition({
+      left: Math.round(rect.left + rect.width / 2),
+      top: Math.round(rect.top - 10),
+    })
+  }
+
   const onWrapperEnter = () => {
     if (!keywordTooltipEnabled) return
+    updateTooltipPosition()
     timerRef.current = setTimeout(() => setShowTooltip(true), 300)
     void sheenControls.start({ x: 320, transition: { duration: 1.1, ease: [0.4, 0, 0.6, 1] } })
   }
   const onWrapperLeave = () => {
     if (timerRef.current) clearTimeout(timerRef.current)
     setShowTooltip(false)
+    setTooltipPosition(null)
     sheenControls.set({ x: -160 })
   }
 
@@ -136,43 +150,59 @@ export function Card({ card, playable, isBeingDragged = false, backgroundClassNa
     rawY.set(0.5)
   }
 
+  useLayoutEffect(() => {
+    if (!showTooltip) return
+
+    updateTooltipPosition()
+    window.addEventListener('resize', updateTooltipPosition)
+    window.addEventListener('scroll', updateTooltipPosition, true)
+
+    return () => {
+      window.removeEventListener('resize', updateTooltipPosition)
+      window.removeEventListener('scroll', updateTooltipPosition, true)
+    }
+  }, [showTooltip])
+
   return (
     // Wrapper sits outside overflow-hidden so the tooltip isn't clipped
-    <div className="relative" onMouseEnter={onWrapperEnter} onMouseLeave={onWrapperLeave}>
+    <div ref={wrapperRef} className={cn('relative', showTooltip ? 'z-[220]' : 'z-0')} onMouseEnter={onWrapperEnter} onMouseLeave={onWrapperLeave}>
 
       {/* ── Keyword tooltip — above the card ── */}
-      <AnimatePresence>
-        {keywordTooltipEnabled && showTooltip && keywords.length > 0 && (
-          <motion.div
-            className="absolute bottom-full left-1/2 mb-2.5 w-52 rounded-xl border border-zinc-700/80 bg-zinc-950 px-3 py-2.5 z-50 pointer-events-none"
-            style={{ x: '-50%' }}
-            initial={{ opacity: 0, y: 5, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 5, scale: 0.97, transition: { duration: 0.1, ease: 'easeIn' } }}
-            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-          >
-            <p className="text-[11px] text-zinc-600 uppercase tracking-widest mb-2">Keywords</p>
-            <div className="flex flex-col gap-2">
-              {keywords.map(({ name, Icon, color, description }, i) => (
-                <div key={i} className="flex items-start gap-2">
-                  {name === 'Gold' ? (
-                    <GoldIcon size={16} glimmer={false} />
-                  ) : (
-                    <Icon
-                      size={16}
-                      style={{ color, fill: 'none', flexShrink: 0, pointerEvents: 'none' }}
-                    />
-                  )}
-                  <div className="flex flex-col gap-0.5">
-                    <span className="text-[13px] font-semibold leading-none" style={{ color }}>{name}</span>
-                    <p className="text-[11px] text-zinc-400 leading-snug">{description}</p>
+      {typeof window !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {keywordTooltipEnabled && showTooltip && keywords.length > 0 && (
+            <motion.div
+              className="fixed w-52 rounded-xl border border-zinc-700/80 bg-zinc-950 px-3 py-2.5 z-[999] pointer-events-none"
+              style={{ left: tooltipPosition?.left ?? 0, top: tooltipPosition?.top ?? 0, x: '-50%', y: '-100%' }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0, transition: { duration: 0.1, ease: 'easeIn' } }}
+              transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <p className="text-[11px] text-zinc-600 uppercase tracking-widest mb-2">Keywords</p>
+              <div className="flex flex-col gap-2">
+                {keywords.map(({ name, Icon, color, description }, i) => (
+                  <div key={i} className="flex items-start gap-2">
+                    {name === 'Gold' ? (
+                      <GoldIcon size={16} glimmer={false} />
+                    ) : (
+                      <Icon
+                        size={16}
+                        style={{ color, fill: 'none', flexShrink: 0, pointerEvents: 'none' }}
+                      />
+                    )}
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-[13px] font-semibold leading-none" style={{ color }}>{name}</span>
+                      <p className="text-[11px] text-zinc-400 leading-snug">{description}</p>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body,
+      )}
 
       {/* ── Card button ── */}
       <motion.button
