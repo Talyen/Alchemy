@@ -155,11 +155,11 @@ export function CharacterSelectScreen({ onSelect, topLeft }: Props) {
           ))}
         </div>
 
-          <div className="relative mt-2 h-[396px]">
+          <div className="relative mt-2 h-[450px]">
             <AnimatePresence>
               {showDeck && (
                 <motion.div
-                  className="absolute inset-x-0 top-0 z-[71] min-h-[380px] rounded-xl border border-zinc-700/80 bg-zinc-950/95 px-4 pt-4 pb-8"
+                  className="absolute inset-x-0 top-0 z-[71] min-h-[380px] rounded-xl border border-zinc-700/80 bg-zinc-950/95 px-4 pt-4 pb-20"
                   initial={{ opacity: 0, y: 8, scale: 0.98 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 8, scale: 0.98, transition: { duration: 0.12 } }}

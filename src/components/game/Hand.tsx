@@ -4,10 +4,11 @@ import { Diamond, Layers, ScrollText, Trash2 } from 'lucide-react'
 import { Card } from './Card'
 import { FloatingNumber } from './FloatingNumber'
 import { GoldIcon } from './GoldIcon'
-import type { CardInstance } from '@/types'
+import type { CardInstance, TrinketDef } from '@/types'
 import type { DmgEvent } from './FloatingNumber'
 import { useTilt } from '@/lib/useTilt'
 import { playCardPlay, preloadSound } from '@/sounds'
+import { TrinketInfoCard } from './TrinketInfoCard'
 
 interface Props {
   cards: CardInstance[]
@@ -19,8 +20,11 @@ interface Props {
   isEnemyActing: boolean
   drawCount: number
   discardCount: number
+  trinkets: TrinketDef[]
   log: string[]
   lastCardPlayedId: string | null
+  overflowDiscardFxToken: number
+  overflowDiscardFxCount: number
 }
 
 // Determine which side of the board a card targets
@@ -253,10 +257,14 @@ function DraggableCard({
 
 // ─── Hand ────────────────────────────────────────────────────────────────────
 
-export function Hand({ cards, mana, maxMana, gold, onPlay, disabled, isEnemyActing, drawCount, discardCount, log, lastCardPlayedId }: Props) {
+export function Hand({ cards, mana, maxMana, gold, onPlay, disabled, isEnemyActing, drawCount, discardCount, trinkets, log, lastCardPlayedId, overflowDiscardFxToken, overflowDiscardFxCount }: Props) {
   const [elevated, setElevated] = useState<Set<string>>(new Set())
   const [showLog, setShowLog]   = useState(false)
+  const [showInventory, setShowInventory] = useState(false)
   const [manaEvents, setManaEvents] = useState<DmgEvent[]>([])
+  const [overflowFxEvents, setOverflowFxEvents] = useState<Array<{ id: number; count: number }>>([])
+  const nextOverflowFxId = useRef(0)
+  const prevOverflowToken = useRef(overflowDiscardFxToken)
   const prevMana = useRef(mana)
   const nextManaEventId = useRef(0)
 
@@ -271,8 +279,30 @@ export function Hand({ cards, mana, maxMana, gold, onPlay, disabled, isEnemyActi
     prevMana.current = mana
   }, [mana, lastCardPlayedId])
 
+  useEffect(() => {
+    if (overflowDiscardFxToken === prevOverflowToken.current) return
+    prevOverflowToken.current = overflowDiscardFxToken
+    if (overflowDiscardFxCount <= 0) return
+
+    setOverflowFxEvents(events => [
+      ...events,
+      { id: nextOverflowFxId.current++, count: overflowDiscardFxCount },
+    ])
+  }, [overflowDiscardFxToken, overflowDiscardFxCount])
+
+  useEffect(() => {
+    if (overflowFxEvents.length === 0) return
+    const latest = overflowFxEvents[overflowFxEvents.length - 1]
+    const id = window.setTimeout(() => removeOverflowFxEvent(latest.id), 720)
+    return () => window.clearTimeout(id)
+  }, [overflowFxEvents])
+
   const removeManaEvent = (id: number) => {
     setManaEvents(events => events.filter(event => event.id !== id))
+  }
+
+  const removeOverflowFxEvent = (id: number) => {
+    setOverflowFxEvents(events => events.filter(event => event.id !== id))
   }
 
   const raise = (uid: string) =>
@@ -294,6 +324,60 @@ export function Hand({ cards, mana, maxMana, gold, onPlay, disabled, isEnemyActi
       {/* Draw pile — pinned bottom-left (mirrors discard pile) */}
       <div className="absolute left-4 bottom-6 z-10">
         <PileStack count={drawCount} label="Draw" icon={Layers} />
+      </div>
+
+      {/* Inventory bag — above draw pile */}
+      <div className="absolute left-4 bottom-[126px] w-16 flex justify-center z-20">
+        <motion.button
+          type="button"
+          onClick={() => setShowInventory(prev => !prev)}
+          className="inline-flex h-14 w-14 items-center justify-center rounded-lg border border-zinc-700/80 bg-zinc-900/85"
+          whileHover={{ scale: 1.04, borderColor: 'rgba(161,161,170,0.7)' }}
+          whileTap={{ scale: 0.96 }}
+        >
+          <img
+            src="assets/ui/inventory-bag.png"
+            alt="Inventory"
+            className="h-9 w-9 object-contain"
+            style={{ imageRendering: 'pixelated' }}
+          />
+        </motion.button>
+        <AnimatePresence>
+          {showInventory && (
+            <motion.div
+              className="absolute bottom-16 left-1/2 -translate-x-1/2 w-72 max-h-72 overflow-y-auto rounded-xl border border-zinc-700/80 bg-zinc-950/95 p-3"
+              initial={{ opacity: 0, y: 8, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 8, scale: 0.98 }}
+            >
+              <div className="mb-2 flex items-center justify-between">
+                <p className="text-[10px] uppercase tracking-widest text-zinc-500">Inventory</p>
+                <button
+                  type="button"
+                  onClick={() => setShowInventory(false)}
+                  className="text-xs text-zinc-500 hover:text-zinc-300"
+                >
+                  Close
+                </button>
+              </div>
+              <div className="space-y-2">
+                {trinkets.length === 0 && (
+                  <p className="text-xs text-zinc-500">No trinkets yet.</p>
+                )}
+                {trinkets.map(trinket => (
+                  <TrinketInfoCard
+                    key={trinket.id}
+                    id={trinket.id}
+                    name={trinket.name}
+                    description={trinket.description}
+                    size="compact"
+                    className="w-full"
+                  />
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Resources + log — slightly to the right of draw pile */}
@@ -355,6 +439,30 @@ export function Hand({ cards, mana, maxMana, gold, onPlay, disabled, isEnemyActi
         </AnimatePresence>
 
       </div>
+
+      {/* Overflow dissolve FX for cards that exceeded max hand size */}
+      <AnimatePresence>
+        {overflowFxEvents.map(event => (
+          <motion.div
+            key={event.id}
+            className="absolute left-1/2 bottom-28 -translate-x-1/2 pointer-events-none z-[120]"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            {Array.from({ length: Math.min(4, event.count) }).map((_, i) => (
+              <motion.div
+                key={`${event.id}-${i}`}
+                className="absolute w-10 h-14 rounded-lg border border-zinc-500/55 bg-zinc-900/85"
+                style={{ left: i * 12, bottom: i * 3, boxShadow: '0 0 16px rgba(239,68,68,0.2)' }}
+                initial={{ opacity: 0, y: 0, scale: 0.9, rotate: -6 + i * 4, filter: 'blur(0px)' }}
+                animate={{ opacity: [0, 0.9, 0], y: -52 - i * 8, scale: [0.9, 1, 0.82], rotate: -2 + i * 3, filter: ['blur(0px)', 'blur(0px)', 'blur(2px)'] }}
+                transition={{ duration: 0.58, ease: 'easeOut', delay: i * 0.04 }}
+              />
+            ))}
+          </motion.div>
+        ))}
+      </AnimatePresence>
 
       {/* Discard pile — pinned to right edge */}
       <div className="absolute right-4 bottom-6 z-10">

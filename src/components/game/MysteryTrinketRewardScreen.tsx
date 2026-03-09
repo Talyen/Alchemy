@@ -6,11 +6,12 @@ import { TrinketInfoCard } from './TrinketInfoCard'
 interface Props {
   trinketName: string
   trinketIconSrc: string
+  trinketDescription?: string
   onContinue: () => void
   topLeft?: ReactNode
 }
 
-export function MysteryTrinketRewardScreen({ trinketName, trinketIconSrc, onContinue, topLeft }: Props) {
+export function MysteryTrinketRewardScreen({ trinketName, trinketIconSrc, trinketDescription = 'A loyal companion strikes at the end of your turn.', onContinue, topLeft }: Props) {
   return (
     <SelectionScreenShell title="Reward" subtitle="He's Just a Little Guy" topLeft={topLeft} allowOverflowVisible>
       <div className="w-full max-w-3xl -mt-4 flex flex-col items-center gap-6">
@@ -24,7 +25,7 @@ export function MysteryTrinketRewardScreen({ trinketName, trinketIconSrc, onCont
         >
           <TrinketInfoCard
             name={trinketName}
-            description="A nervous scout now fights by your side."
+            description={trinketDescription}
             iconSrc={trinketIconSrc}
           />
         </motion.div>

@@ -1,14 +1,23 @@
-import type { GameState, StatusEffects } from './types'
+import type { EnemyWeakness, GameState, StatusEffects } from './types'
 import type { CardDef } from './types'
 import { ALL_CARDS, emptyStatus, makeStartingDeck, makeCardInstances, pickEncounterEnemy, pickEncounterEnemyById } from './data'
 
 const TRINKET_SPECIAL_DELIVERY = 'special_delivery'
+const TRINKET_MAIL_DELIVERY = 'mail_delivery'
 const TRINKET_EQUIVALENT_EXCHANGE = 'equivalent_exchange'
 const TRINKET_GREEN_THUMB = 'green_thumb'
 const TRINKET_TORCH = 'torch'
 const TRINKET_SPELL_TOME = 'spell_tome'
+const TRINKET_HOLY_LANTERN = 'holy_lantern'
+const TRINKET_SCALES_OF_JUSTICE = 'scales_of_justice'
+
+const TRINKET_LUCKY_COIN = 'lucky_coin'
+const TRINKET_EMERALD = 'emerald'
+const TRINKET_RUBY = 'ruby'
+const TRINKET_SAPPHIRE = 'sapphire'
 
 const WIZARD_CARD_IDS = ['fireball', 'defend', 'mana_crystal', 'mana_berries', 'cleanse']
+const HAND_SIZE_LIMIT = 7
 
 // ─── Internals ───────────────────────────────────────────────────────────────
 
@@ -28,6 +37,32 @@ function calcDamage(base: number, atk: StatusEffects, def: StatusEffects): numbe
   return Math.max(0, dmg)
 }
 
+function applyEnemyWeaknessMultiplier(
+  enemy: GameState['enemy'],
+  damage: number,
+  weaknessType: EnemyWeakness | null,
+): { damage: number; doubled: boolean } {
+  if (!weaknessType || damage <= 0) {
+    return { damage, doubled: false }
+  }
+  if (!enemy.weaknesses.includes(weaknessType)) {
+    return { damage, doubled: false }
+  }
+  return { damage: damage * 2, doubled: true }
+}
+
+function inferDirectDamageWeaknessType(cardId?: string): EnemyWeakness | null {
+  if (!cardId) return null
+  if (cardId === 'bash') return 'blunt'
+  return null
+}
+
+function isHolyDamageSource(cardId?: string, sourceName?: string): boolean {
+  if (cardId === 'holy_blade') return true
+  if (!sourceName) return false
+  return sourceName.toLowerCase().includes('holy')
+}
+
 function applyDamage<T extends { hp: number; block: number }>(target: T, damage: number): T {
   const absorbed = Math.min(target.block, damage)
   return {
@@ -43,20 +78,108 @@ function tickStatus(s: StatusEffects): StatusEffects {
 
 function drawCards(s: GameState, count: number): GameState {
   let { drawPile, discardPile, hand } = s
+  let overflowCount = 0
   for (let i = 0; i < count; i++) {
     if (drawPile.length === 0) {
       if (discardPile.length === 0) break
       drawPile = shuffle(discardPile)
       discardPile = []
     }
-    hand = [...hand, drawPile[0]]
+    const nextCard = drawPile[0]
+    if (hand.length >= HAND_SIZE_LIMIT) {
+      // Over-cap draws are mechanically discarded and surfaced to UI as dissolve FX.
+      discardPile = [...discardPile, nextCard]
+      overflowCount += 1
+    } else {
+      hand = [...hand, nextCard]
+    }
     drawPile = drawPile.slice(1)
   }
-  return { ...s, drawPile, discardPile, hand }
+
+  const nextState = { ...s, drawPile, discardPile, hand }
+  if (overflowCount <= 0) return nextState
+
+  return addLog({
+    ...nextState,
+    overflowDiscardFxToken: s.overflowDiscardFxToken + 1,
+    overflowDiscardFxCount: overflowCount,
+  }, `  → ${overflowCount} card${overflowCount === 1 ? '' : 's'} dissolved from overflow and went to discard.`)
+}
+
+function addCardsToHandWithLimit(state: GameState, cards: ReturnType<typeof makeCardInstances>, sourceLabel: string): GameState {
+  if (cards.length === 0) return state
+
+  const availableSlots = Math.max(0, HAND_SIZE_LIMIT - state.hand.length)
+  const toHand = cards.slice(0, availableSlots)
+  const overflow = cards.slice(availableSlots)
+
+  let nextState: GameState = {
+    ...state,
+    hand: [...state.hand, ...toHand],
+    discardPile: [...state.discardPile, ...overflow],
+  }
+
+  if (overflow.length > 0) {
+    nextState = addLog({
+      ...nextState,
+      overflowDiscardFxToken: state.overflowDiscardFxToken + 1,
+      overflowDiscardFxCount: overflow.length,
+    }, `  → ${sourceLabel}: ${overflow.length} card${overflow.length === 1 ? '' : 's'} dissolved from hand overflow.`)
+  }
+
+  return nextState
 }
 
 function hasTrinket(state: GameState, trinketId: string): boolean {
   return state.trinketIds.includes(trinketId)
+}
+
+function cardContainsKeyword(card: CardDef, keyword: string): boolean {
+  const haystack = `${card.name} ${card.description}`.toLowerCase()
+  return haystack.includes(keyword.toLowerCase())
+}
+
+function weightedCardChanceMultiplier(card: CardDef, trinketIds: string[]): number {
+  let multiplier = 1
+  if (trinketIds.includes(TRINKET_LUCKY_COIN) && (cardContainsKeyword(card, 'Gold') || cardContainsKeyword(card, 'Holy'))) {
+    multiplier *= 2
+  }
+  if (trinketIds.includes(TRINKET_EMERALD) && (cardContainsKeyword(card, 'Poison') || cardContainsKeyword(card, 'Heal'))) {
+    multiplier *= 2
+  }
+  if (trinketIds.includes(TRINKET_RUBY) && (cardContainsKeyword(card, 'Burn') || cardContainsKeyword(card, 'Leech'))) {
+    multiplier *= 2
+  }
+  if (trinketIds.includes(TRINKET_SAPPHIRE) && (cardContainsKeyword(card, 'Mana') || cardContainsKeyword(card, 'Block') || cardContainsKeyword(card, 'Mana Crystal'))) {
+    multiplier *= 2
+  }
+  return multiplier
+}
+
+function weightedPickCardDef(pool: CardDef[], trinketIds: string[]): CardDef | null {
+  if (pool.length === 0) return null
+  const weighted = pool.map(card => ({ card, weight: weightedCardChanceMultiplier(card, trinketIds) }))
+  const total = weighted.reduce((sum, entry) => sum + entry.weight, 0)
+  if (total <= 0) return weighted[0].card
+  let roll = Math.random() * total
+  for (const entry of weighted) {
+    roll -= entry.weight
+    if (roll <= 0) return entry.card
+  }
+  return weighted[weighted.length - 1].card
+}
+
+function weightedPickDistinctCards(pool: CardDef[], count: number, trinketIds: string[]): CardDef[] {
+  const picks: CardDef[] = []
+  const nextPool = [...pool]
+  for (let i = 0; i < count && nextPool.length > 0; i++) {
+    const picked = weightedPickCardDef(nextPool, trinketIds)
+    if (!picked) break
+    picks.push(picked)
+    const index = nextPool.findIndex(card => card.id === picked.id)
+    if (index >= 0) nextPool.splice(index, 1)
+  }
+  return picks
 }
 
 function randomizeOneHandCard(state: GameState): GameState {
@@ -67,7 +190,8 @@ function randomizeOneHandCard(state: GameState): GameState {
   const candidateDefs = ALL_CARDS.filter(card => card.id !== current.id)
   if (candidateDefs.length === 0) return state
 
-  const randomDef = candidateDefs[Math.floor(Math.random() * candidateDefs.length)]
+  const randomDef = weightedPickCardDef(candidateDefs, state.trinketIds)
+  if (!randomDef) return state
   const randomCard = makeCardInstances([randomDef])[0]
   const nextHand = [...state.hand]
   nextHand[handIndex] = randomCard
@@ -102,15 +226,12 @@ function applyCombatStartTrinkets(state: GameState): GameState {
     const wizardPool = ALL_CARDS.filter(card => WIZARD_CARD_IDS.includes(card.id))
     const grantedDefs: CardDef[] = []
     for (let i = 0; i < 2; i++) {
-      const picked = wizardPool[Math.floor(Math.random() * wizardPool.length)]
+      const picked = weightedPickCardDef(wizardPool, s.trinketIds)
       if (picked) grantedDefs.push(picked)
     }
     if (grantedDefs.length > 0) {
       const grantedCards = makeCardInstances(grantedDefs)
-      s = {
-        ...s,
-        hand: [...s.hand, ...grantedCards],
-      }
+      s = addCardsToHandWithLimit(s, grantedCards, 'Spell Tome')
       s = addLog(s, '  → Spell Tome grants 2 random Wizard cards.')
     }
   }
@@ -125,9 +246,17 @@ function applyCombatStartTrinkets(state: GameState): GameState {
 function applyTurnStartTrinkets(state: GameState): GameState {
   let s = state
 
-  if (hasTrinket(s, TRINKET_SPECIAL_DELIVERY)) {
+  if (hasTrinket(s, TRINKET_MAIL_DELIVERY)) {
     s = drawCards(s, 1)
-    s = addLog(s, '  → Special Delivery draws 1 extra card.')
+    s = addLog(s, '  → Mail Delivery draws 1 extra card.')
+  }
+
+  if (hasTrinket(s, TRINKET_SPECIAL_DELIVERY)) {
+    const createdDef = weightedPickCardDef(ALL_CARDS, s.trinketIds)
+    if (createdDef) {
+      s = addCardsToHandWithLimit(s, makeCardInstances([createdDef]), 'Special Delivery')
+      s = addLog(s, `  → Special Delivery creates ${createdDef.name}.`)
+    }
   }
 
   if (hasTrinket(s, TRINKET_EQUIVALENT_EXCHANGE)) {
@@ -167,16 +296,42 @@ type AppliedEffects = {
   state: GameState
 }
 
-function applyCardEffects(state: GameState, player: GameState['player'], enemy: GameState['enemy'], effect: CardDef['effect'], sourceName: string): AppliedEffects {
+function applyCardEffects(
+  state: GameState,
+  player: GameState['player'],
+  enemy: GameState['enemy'],
+  effect: CardDef['effect'],
+  sourceName: string,
+  sourceCardId?: string,
+): AppliedEffects {
   let s = state
   let nextPlayer = player
   let nextEnemy = enemy
   let nextGold = state.gold
 
   if (effect.damage !== undefined) {
-    const dmg = calcDamage(effect.damage, nextPlayer.status, nextEnemy.status)
+    const baseDamage = calcDamage(effect.damage, nextPlayer.status, nextEnemy.status)
+    const weaknessType = inferDirectDamageWeaknessType(sourceCardId)
+    const { damage: weakAdjustedDamage, doubled } = applyEnemyWeaknessMultiplier(nextEnemy, baseDamage, weaknessType)
+    const isHolyDamage = isHolyDamageSource(sourceCardId, sourceName)
+    const holyLanternBonus = isHolyDamage && hasTrinket(state, TRINKET_HOLY_LANTERN) && nextEnemy.status.burn > 0
+    const dmg = holyLanternBonus ? weakAdjustedDamage * 2 : weakAdjustedDamage
     nextEnemy = applyDamage(nextEnemy, dmg)
-    s = addLog(s, `  → ${dmg} damage to ${nextEnemy.name}${nextEnemy.block > 0 ? ' (blocked some)' : ''}.`)
+    const weaknessNote = doubled ? ' (weakness exploited)' : ''
+    const holyLanternNote = holyLanternBonus ? ' (Holy Lantern)' : ''
+    s = addLog(s, `  → ${dmg} damage to ${nextEnemy.name}${nextEnemy.block > 0 ? ' (blocked some)' : ''}${weaknessNote}${holyLanternNote}.`)
+
+    if (isHolyDamage && hasTrinket(state, TRINKET_SCALES_OF_JUSTICE)) {
+      const target = nextPlayer.hp <= nextEnemy.hp ? 'player' : 'enemy'
+      if (target === 'player') {
+        nextPlayer = { ...nextPlayer, hp: Math.min(nextPlayer.maxHp, nextPlayer.hp + 1) }
+        s = addLog(s, '  → Scales of Justice heals you for 1.')
+      } else {
+        nextEnemy = { ...nextEnemy, hp: Math.min(nextEnemy.maxHp, nextEnemy.hp + 1) }
+        s = addLog(s, `  → Scales of Justice heals ${nextEnemy.name} for 1.`)
+      }
+    }
+
     if (effect.leech && dmg > 0) {
       nextPlayer = { ...nextPlayer, hp: Math.min(nextPlayer.maxHp, nextPlayer.hp + dmg) }
       s = addLog(s, `  → Leech heals you for ${dmg}.`)
@@ -216,12 +371,14 @@ function applyCardEffects(state: GameState, player: GameState['player'], enemy: 
   }
   if (effect.burn !== undefined) {
     const burnApplied = effect.burn
+    const { damage: burnDamage, doubled } = applyEnemyWeaknessMultiplier(nextEnemy, burnApplied, 'fire')
     nextEnemy = {
       ...nextEnemy,
-      hp: Math.max(0, nextEnemy.hp - burnApplied),
+      hp: Math.max(0, nextEnemy.hp - burnDamage),
       status: { ...nextEnemy.status, burn: nextEnemy.status.burn + burnApplied },
     }
-    s = addLog(s, `  → ${sourceName}: ${nextEnemy.name} gains ${burnApplied} Burn and burns for ${burnApplied}.`)
+    const weaknessNote = doubled ? ' (weakness exploited)' : ''
+    s = addLog(s, `  → ${sourceName}: ${nextEnemy.name} gains ${burnApplied} Burn and burns for ${burnDamage}${weaknessNote}.`)
     if (effect.leech && burnApplied > 0) {
       nextPlayer = { ...nextPlayer, hp: Math.min(nextPlayer.maxHp, nextPlayer.hp + burnApplied) }
       s = addLog(s, `  → Leech heals you for ${burnApplied}.`)
@@ -302,7 +459,7 @@ function applyCardEffects(state: GameState, player: GameState['player'], enemy: 
   if (effect.wish !== undefined) {
     const wishCount = Math.max(0, effect.wish)
     if (wishCount > 0) {
-      const options = shuffle(ALL_CARDS).slice(0, 3)
+      const options = weightedPickDistinctCards(ALL_CARDS, 3, state.trinketIds)
       s = { ...s, wishOptions: options }
       s = addLog(s, `  → Wish ${wishCount}: choose 1 of 3 cards.`)
     }
@@ -320,7 +477,7 @@ function applyPersistentUpgrades(state: GameState): GameState {
   let gold = s.gold
 
   for (const upgrade of s.activeUpgrades) {
-    const applied = applyCardEffects(s, player, enemy, upgrade.effect, upgrade.name)
+    const applied = applyCardEffects(s, player, enemy, upgrade.effect, upgrade.name, upgrade.id)
     s = { ...applied.state, lastCardPlayedId: upgrade.id }
     player = applied.player
     enemy = applied.enemy
@@ -348,19 +505,20 @@ export function createGame(
   forcedEnemyId?: string,
   trinketIds: string[] = [],
   deckOverride?: CardDef[],
+  floorsCleared = 0,
 ): GameState {
   const deck = deckOverride && deckOverride.length > 0
     ? shuffle(makeCardInstances(deckOverride))
     : shuffle([...makeStartingDeck(characterId), ...makeCardInstances(extraCards)])
   const encounterEnemy = forcedEnemyId
-    ? pickEncounterEnemyById(forcedEnemyId)
-    : pickEncounterEnemy(encounterTier)
+    ? pickEncounterEnemyById(forcedEnemyId, floorsCleared)
+    : pickEncounterEnemy(encounterTier, floorsCleared)
   const base: GameState = {
     characterId,
     trinketIds,
     phase: 'player_turn',
     turn: 1,
-    player: { hp: Math.min(persistHp, 30), maxHp: 30, block: 0, armor: 0, status: emptyStatus() },
+    player: { hp: persistHp, maxHp: persistHp, block: 0, armor: 0, status: emptyStatus() },
     enemy: encounterEnemy,
     hand: [],
     drawPile: deck,
@@ -374,11 +532,18 @@ export function createGame(
     log: ['Combat begins!'],
     lastCardPlayedId: null,
     activeUpgrades: [],
+    overflowDiscardFxToken: 0,
+    overflowDiscardFxCount: 0,
   }
-  const startingDraw = 5 + (trinketIds.includes(TRINKET_SPECIAL_DELIVERY) ? 1 : 0)
+  const startingDraw = 5 + (trinketIds.includes(TRINKET_MAIL_DELIVERY) ? 1 : 0)
   let s = drawCards(addLog(base, `Turn 1 — draw ${startingDraw} cards.`), startingDraw)
   s = applyCombatStartTrinkets(s)
   return s
+}
+
+export function grantCardsToHand(state: GameState, defs: CardDef[], sourceLabel = 'Effect'): GameState {
+  const instances = makeCardInstances(defs)
+  return addCardsToHandWithLimit(state, instances, sourceLabel)
 }
 
 export function playCard(state: GameState, cardUid: string): GameState {
@@ -394,7 +559,7 @@ export function playCard(state: GameState, cardUid: string): GameState {
   const isConsumed = /\bconsume\b/i.test(card.description)
 
   if (!isPersistentUpgrade) {
-    const applied = applyCardEffects(s, player, enemy, card.effect, card.name)
+    const applied = applyCardEffects(s, player, enemy, card.effect, card.name, card.id)
     s = applied.state
     player = applied.player
     enemy = applied.enemy
@@ -446,6 +611,55 @@ export function applyCompanionStrike(state: GameState, baseDamage: number, sourc
   }
 
   return next
+}
+
+export function applyCompanionEffect(
+  state: GameState,
+  effect: { damage?: number; burn?: number; poison?: number; bleed?: number },
+  sourceName: string,
+): GameState {
+  if (state.phase !== 'player_turn') return state
+
+  let enemy = state.enemy
+  let next = state
+
+  if ((effect.damage ?? 0) > 0) {
+    const damage = calcDamage(effect.damage ?? 0, emptyStatus(), enemy.status)
+    enemy = applyDamage(enemy, damage)
+    next = addLog({ ...next, enemy, lastCardPlayedId: 'companion' }, `  → ${sourceName} strikes for ${damage}.`)
+    if (enemy.hp <= 0) {
+      return addLog({ ...next, phase: 'win' }, '⚔ Victory!')
+    }
+  }
+
+  if ((effect.burn ?? 0) > 0) {
+    const burnAmount = effect.burn ?? 0
+    enemy = {
+      ...enemy,
+      status: { ...enemy.status, burn: enemy.status.burn + burnAmount },
+    }
+    next = addLog({ ...next, enemy }, `  → ${sourceName} inflicts ${burnAmount} Burn.`)
+  }
+
+  if ((effect.poison ?? 0) > 0) {
+    const poisonAmount = effect.poison ?? 0
+    enemy = {
+      ...enemy,
+      status: { ...enemy.status, poison: enemy.status.poison + poisonAmount },
+    }
+    next = addLog({ ...next, enemy }, `  → ${sourceName} inflicts ${poisonAmount} Poison.`)
+  }
+
+  if ((effect.bleed ?? 0) > 0) {
+    const bleedAmount = effect.bleed ?? 0
+    enemy = {
+      ...enemy,
+      status: { ...enemy.status, bleed: enemy.status.bleed + bleedAmount },
+    }
+    next = addLog({ ...next, enemy }, `  → ${sourceName} inflicts ${bleedAmount} Bleed.`)
+  }
+
+  return { ...next, enemy, lastCardPlayedId: 'companion' }
 }
 
 export function endTurn(state: GameState): GameState {
@@ -506,8 +720,10 @@ export function resolveEnemyStartOfTurn(state: GameState): GameState {
 
   if (enemy.status.burn > 0) {
     const b = enemy.status.burn
-    enemy = { ...enemy, hp: Math.max(0, enemy.hp - b), status: { ...enemy.status, burn: b - 1 } }
-    s = addLog({ ...s, enemy }, `  → ${enemy.name} burns for ${b}.`)
+    const { damage: burnTickDamage, doubled } = applyEnemyWeaknessMultiplier(enemy, b, 'fire')
+    enemy = { ...enemy, hp: Math.max(0, enemy.hp - burnTickDamage), status: { ...enemy.status, burn: b - 1 } }
+    const weaknessNote = doubled ? ' (weakness exploited)' : ''
+    s = addLog({ ...s, enemy }, `  → ${enemy.name} burns for ${burnTickDamage}${weaknessNote}.`)
     if (enemy.hp <= 0) return addLog({ ...s, enemy, phase: 'win' }, '⚔ Victory!')
   }
 
@@ -538,9 +754,12 @@ export function resolveEnemyAction(state: GameState): GameState {
 
   let s: GameState = { ...state, lastCardPlayedId: null }
   let { player, enemy } = s
-  const intent = enemy.pattern[enemy.patternIndex]
+  let actedId: GameState['lastCardPlayedId'] = null
+  const chosenIntentIndex = Math.floor(Math.random() * enemy.pattern.length)
+  const intent = enemy.pattern[chosenIntentIndex]
 
   if (intent.type === 'attack') {
+    actedId = 'enemy_attack'
     const rawDmg = calcDamage(intent.value, enemy.status, player.status)
     const armorReduction = intent.physical ? player.armor : 0
     const dmg = Math.max(0, rawDmg - armorReduction)
@@ -561,27 +780,51 @@ export function resolveEnemyAction(state: GameState): GameState {
       }
     }
   } else if (intent.type === 'defend') {
+    actedId = 'enemy_cast'
     enemy = { ...enemy, block: enemy.block + intent.value }
     s = addLog(s, `  → Gains ${intent.value} block.`)
   } else if (intent.type === 'heal') {
+    actedId = 'enemy_cast'
     const healed = Math.min(intent.value, enemy.maxHp - enemy.hp)
     enemy = { ...enemy, hp: enemy.hp + healed }
     s = addLog(s, `  → Heals for ${healed}.`)
   } else if (intent.type === 'upgrade') {
+    actedId = 'enemy_cast'
     enemy = {
       ...enemy,
       armor: enemy.armor + intent.value,
       status: { ...enemy.status, strength: enemy.status.strength + 1 },
     }
     s = addLog(s, `  → Fortifies (+${intent.value} Armor, +1 Strength).`)
+  } else if (intent.type === 'bleed') {
+    actedId = 'enemy_cast'
+    player = {
+      ...player,
+      status: { ...player.status, bleed: player.status.bleed + intent.value },
+    }
+    s = addLog(s, `  → Inflicts ${intent.value} Bleed.`)
+  } else if (intent.type === 'poison') {
+    actedId = 'enemy_cast'
+    player = {
+      ...player,
+      status: { ...player.status, poison: player.status.poison + intent.value },
+    }
+    s = addLog(s, `  → Inflicts ${intent.value} Poison.`)
+  } else if (intent.type === 'burn') {
+    actedId = 'enemy_cast'
+    player = {
+      ...player,
+      status: { ...player.status, burn: player.status.burn + intent.value },
+    }
+    s = addLog(s, `  → Inflicts ${intent.value} Burn.`)
   }
 
   enemy = {
     ...enemy,
-    patternIndex: (enemy.patternIndex + 1) % enemy.pattern.length,
+    patternIndex: chosenIntentIndex,
     status: tickStatus(enemy.status),
   }
-  s = { ...s, player, enemy }
+  s = { ...s, player, enemy, lastCardPlayedId: actedId }
 
   if (player.hp <= 0) {
     return addLog({ ...s, phase: 'lose' }, '☠ Defeated.')

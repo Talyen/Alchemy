@@ -1,10 +1,10 @@
 import { useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
-import { CircleHelp, Flame, ShoppingBag, Skull, Swords } from 'lucide-react'
+import { CircleHelp, FlaskConical, Flame, ShoppingBag, Skull, Swords } from 'lucide-react'
 import { SelectionScreenShell, staggerContainerVariants, staggerItemVariants } from './SelectionScreenShell'
 
-export type DestinationType = 'enemy' | 'elite' | 'rest' | 'shop' | 'mystery'
+export type DestinationType = 'enemy' | 'elite' | 'rest' | 'shop' | 'mystery' | 'alchemy'
 
 export type DestinationOption = {
   type: DestinationType
@@ -24,6 +24,7 @@ const ICONS = {
   rest: Flame,
   shop: ShoppingBag,
   mystery: CircleHelp,
+  alchemy: FlaskConical,
 } as const
 
 const COLORS = {
@@ -32,6 +33,7 @@ const COLORS = {
   rest: '#4ade80',
   shop: '#fbbf24',
   mystery: '#c4b5fd',
+  alchemy: '#34d399',
 } as const
 
 function pathToChoice(choiceIndex: number) {

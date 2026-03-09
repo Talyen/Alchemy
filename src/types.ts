@@ -66,14 +66,18 @@ export type Fighter = {
 }
 
 export type EnemyIntent = {
-  type: 'attack' | 'defend' | 'heal' | 'upgrade'
+  type: 'attack' | 'defend' | 'heal' | 'upgrade' | 'bleed' | 'poison' | 'burn'
   value: number
   physical?: boolean  // if true, player Armor reduces this attack
 }
 
+export type EnemyWeakness = 'blunt' | 'fire'
+
 export type EnemyState = Fighter & {
   id: string
   name: string
+  tier?: 'basic' | 'elite'
+  weaknesses: EnemyWeakness[]
   pattern: EnemyIntent[]
   patternIndex: number
 }
@@ -114,4 +118,6 @@ export type GameState = {
   log: string[]
   lastCardPlayedId: string | null
   activeUpgrades: ActiveUpgrade[]
+  overflowDiscardFxToken: number
+  overflowDiscardFxCount: number
 }

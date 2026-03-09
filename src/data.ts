@@ -1,4 +1,4 @@
-import type { CardDef, CardInstance, EnemyState, StatusEffects } from './types'
+import type { CardDef, CardInstance, EnemyState, EnemyWeakness, StatusEffects } from './types'
 
 export type RunCharacter = {
   id: string
@@ -72,8 +72,24 @@ export const ALL_CARDS: CardDef[] = [
     name: 'Health Potion',
     cost: 1,
     type: 'heal',
-    description: 'Heal 5\n Remove 1 Ailment\nConsume',
-    effect: { heal: 5, cleanse: 1 },
+    description: 'Heal 10\nConsume',
+    effect: { heal: 10 },
+  },
+  {
+    id: 'panacea_potion',
+    name: 'Panacea Potion',
+    cost: 1,
+    type: 'heal',
+    description: 'Remove 1 Ailment\nConsume',
+    effect: { cleanse: 1 },
+  },
+  {
+    id: 'mana_potion',
+    name: 'Mana Potion',
+    cost: 1,
+    type: 'skill',
+    description: 'Gain 2 Mana\nConsume',
+    effect: { mana: 2 },
   },
   {
     id: 'apple',
@@ -88,8 +104,8 @@ export const ALL_CARDS: CardDef[] = [
     name: 'Meat',
     cost: 2,
     type: 'heal',
-    description: 'Heal 10\nConsume',
-    effect: { heal: 10 },
+    description: 'Heal 15\nConsume',
+    effect: { heal: 15 },
   },
   {
     id: 'bread',
@@ -165,10 +181,10 @@ export const ALL_CARDS: CardDef[] = [
   },
   {
     id: 'haste',
-    name: 'Haste',
-    cost: 3,
+    name: 'Scroll of Haste',
+    cost: 2,
     type: 'skill',
-    description: 'Gain Haste',
+    description: 'Gain Haste\nConsume',
     effect: { haste: 1 },
   },
   {
@@ -312,437 +328,171 @@ export function makeCardInstances(defs: CardDef[]): CardInstance[] {
   return defs.map(def => ({ ...def, uid: nextUid() }))
 }
 
-export const GOBLIN: EnemyState = {
-  id: 'goblin',
-  name: 'Goblin',
-  hp: 30,
-  maxHp: 30,
-  block: 0,
-  armor: 0,
-  status: emptyStatus(),
-  pattern: [
-    { type: 'attack', value: 6, physical: true },
-    { type: 'attack', value: 6, physical: true },
-    { type: 'defend', value: 5 },
-  ],
-  patternIndex: 0,
+type EnemyTier = 'basic' | 'elite'
+
+type EnemyTemplate = {
+  id: string
+  name: string
+  tier: EnemyTier
+  weaknesses?: EnemyWeakness[]
 }
 
-const CHOMP: EnemyState = {
-  id: 'chort',
-  name: 'Chomp',
-  hp: 34,
-  maxHp: 34,
-  block: 0,
-  armor: 0,
-  status: emptyStatus(),
-  pattern: [
-    { type: 'attack', value: 7, physical: true },
-    { type: 'defend', value: 5 },
-    { type: 'attack', value: 8, physical: true },
-  ],
-  patternIndex: 0,
+const BASIC_ATTACK_RANGE_BY_TIER: Record<EnemyTier, { min: number; max: number }> = {
+  basic: { min: 3, max: 5 },
+  elite: { min: 5, max: 8 },
 }
 
-const IMP: EnemyState = {
-  id: 'imp',
-  name: 'Imp',
-  hp: 26,
-  maxHp: 26,
-  block: 0,
-  armor: 0,
-  status: emptyStatus(),
-  pattern: [
-    { type: 'attack', value: 5, physical: true },
-    { type: 'attack', value: 6, physical: true },
-    { type: 'defend', value: 4 },
-  ],
-  patternIndex: 0,
+const BASE_HP_RANGE_BY_TIER: Record<EnemyTier, { min: number; max: number }> = {
+  basic: { min: 20, max: 30 },
+  elite: { min: 40, max: 50 },
 }
 
-const MIMIC: EnemyState = {
-  id: 'mimic',
-  name: 'Mimic',
-  hp: 38,
-  maxHp: 38,
-  block: 0,
-  armor: 0,
-  status: emptyStatus(),
-  pattern: [
-    { type: 'defend', value: 7 },
-    { type: 'attack', value: 8, physical: true },
-    { type: 'attack', value: 7, physical: true },
-  ],
-  patternIndex: 0,
-}
+const BITE_ENEMY_IDS = new Set(['chort', 'mimic', 'greater_mimic', 'big_demon'])
+const POISON_ENEMY_IDS = new Set(['muddy', 'swampy', 'greater_slime', 'slug', 'doc', 'snake'])
+const BURN_ENEMY_IDS = new Set(['flaming_skull'])
 
-const LIZARD_F: EnemyState = {
-  id: 'lizard_f',
-  name: 'Lizard Scout',
-  hp: 29,
-  maxHp: 29,
-  block: 0,
-  armor: 0,
-  status: emptyStatus(),
-  pattern: [
-    { type: 'attack', value: 6, physical: true },
-    { type: 'defend', value: 4 },
-    { type: 'attack', value: 7, physical: true },
-  ],
-  patternIndex: 0,
-}
-
-const LIZARD_M: EnemyState = {
-  id: 'lizard_m',
-  name: 'Lizard Raider',
-  hp: 32,
-  maxHp: 32,
-  block: 0,
-  armor: 0,
-  status: emptyStatus(),
-  pattern: [
-    { type: 'attack', value: 7, physical: true },
-    { type: 'attack', value: 6, physical: true },
-    { type: 'defend', value: 5 },
-  ],
-  patternIndex: 0,
-}
-
-const MASKED_ORC: EnemyState = {
-  id: 'masked_orc',
-  name: 'Masked Orc',
-  hp: 36,
-  maxHp: 36,
-  block: 0,
-  armor: 0,
-  status: emptyStatus(),
-  pattern: [
-    { type: 'attack', value: 8, physical: true },
-    { type: 'defend', value: 5 },
-    { type: 'attack', value: 8, physical: true },
-  ],
-  patternIndex: 0,
-}
-
-const MUD_ELEMENTAL: EnemyState = {
-  id: 'muddy',
-  name: 'Mud Elemental',
-  hp: 40,
-  maxHp: 40,
-  block: 0,
-  armor: 0,
-  status: emptyStatus(),
-  pattern: [
-    { type: 'defend', value: 8 },
-    { type: 'attack', value: 7, physical: true },
-    { type: 'attack', value: 7, physical: true },
-  ],
-  patternIndex: 0,
-}
-
-const NECROMANCER: EnemyState = {
-  id: 'necromancer',
-  name: 'Necromancer',
-  hp: 33,
-  maxHp: 33,
-  block: 0,
-  armor: 0,
-  status: emptyStatus(),
-  pattern: [
-    { type: 'defend', value: 6 },
-    { type: 'attack', value: 9, physical: false },
-    { type: 'attack', value: 7, physical: false },
-  ],
-  patternIndex: 0,
-}
-
-const ORC_SHAMAN: EnemyState = {
-  id: 'orc_shaman',
-  name: 'Orc Shaman',
-  hp: 35,
-  maxHp: 35,
-  block: 0,
-  armor: 0,
-  status: emptyStatus(),
-  pattern: [
-    { type: 'defend', value: 6 },
-    { type: 'attack', value: 8, physical: false },
-    { type: 'attack', value: 7, physical: true },
-  ],
-  patternIndex: 0,
-}
-
-const ORC_WARRIOR: EnemyState = {
-  id: 'orc_warrior',
-  name: 'Orc Warrior',
-  hp: 42,
-  maxHp: 42,
-  block: 0,
-  armor: 0,
-  status: emptyStatus(),
-  pattern: [
-    { type: 'attack', value: 9, physical: true },
-    { type: 'attack', value: 8, physical: true },
-    { type: 'defend', value: 6 },
-  ],
-  patternIndex: 0,
-}
-
-const SKELET: EnemyState = {
-  id: 'skelet',
-  name: 'Skeleton',
-  hp: 31,
-  maxHp: 31,
-  block: 0,
-  armor: 0,
-  status: emptyStatus(),
-  pattern: [
-    { type: 'attack', value: 6, physical: true },
-    { type: 'defend', value: 4 },
-    { type: 'attack', value: 7, physical: true },
-  ],
-  patternIndex: 0,
-}
-
-const SLUG: EnemyState = {
-  id: 'slug',
-  name: 'Slug',
-  hp: 28,
-  maxHp: 28,
-  block: 0,
-  armor: 0,
-  status: emptyStatus(),
-  pattern: [
-    { type: 'attack', value: 5, physical: true },
-    { type: 'defend', value: 5 },
-    { type: 'attack', value: 6, physical: true },
-  ],
-  patternIndex: 0,
-}
-
-const SWAMPY: EnemyState = {
-  id: 'swampy',
-  name: 'Slime',
-  hp: 37,
-  maxHp: 37,
-  block: 0,
-  armor: 0,
-  status: emptyStatus(),
-  pattern: [
-    { type: 'defend', value: 6 },
-    { type: 'attack', value: 8, physical: true },
-    { type: 'attack', value: 8, physical: true },
-  ],
-  patternIndex: 0,
-}
-
-const PLAGUE_DOCTOR: EnemyState = {
-  id: 'doc',
-  name: 'Plague Doctor',
-  hp: 34,
-  maxHp: 34,
-  block: 0,
-  armor: 0,
-  status: emptyStatus(),
-  pattern: [
-    { type: 'attack', value: 7, physical: false },
-    { type: 'defend', value: 5 },
-    { type: 'attack', value: 8, physical: false },
-  ],
-  patternIndex: 0,
-}
-
-const FLYTRAP: EnemyState = {
-  id: 'flytrap',
-  name: 'Flytrap',
-  hp: 34,
-  maxHp: 34,
-  block: 0,
-  armor: 0,
-  status: emptyStatus(),
-  pattern: [
-    { type: 'defend', value: 6 },
-    { type: 'attack', value: 7, physical: true },
-    { type: 'attack', value: 7, physical: true },
-  ],
-  patternIndex: 0,
-}
-
-const FLAMING_SKULL: EnemyState = {
-  id: 'flaming_skull',
-  name: 'Flaming Skull',
-  hp: 30,
-  maxHp: 30,
-  block: 0,
-  armor: 0,
-  status: emptyStatus(),
-  pattern: [
-    { type: 'attack', value: 7, physical: false },
-    { type: 'attack', value: 8, physical: false },
-    { type: 'defend', value: 4 },
-  ],
-  patternIndex: 0,
-}
-
-const SHADE: EnemyState = {
-  id: 'shade',
-  name: 'Shade',
-  hp: 31,
-  maxHp: 31,
-  block: 0,
-  armor: 0,
-  status: emptyStatus(),
-  pattern: [
-    { type: 'attack', value: 7, physical: false },
-    { type: 'defend', value: 5 },
-    { type: 'attack', value: 8, physical: false },
-  ],
-  patternIndex: 0,
-}
-
-const SNAKE: EnemyState = {
-  id: 'snake',
-  name: 'Snake',
-  hp: 29,
-  maxHp: 29,
-  block: 0,
-  armor: 0,
-  status: emptyStatus(),
-  pattern: [
-    { type: 'attack', value: 6, physical: true },
-    { type: 'attack', value: 7, physical: true },
-    { type: 'defend', value: 4 },
-  ],
-  patternIndex: 0,
-}
-
-const DEMON: EnemyState = {
-  id: 'big_demon',
-  name: 'Maw Demon',
-  hp: 58,
-  maxHp: 58,
-  block: 0,
-  armor: 0,
-  status: emptyStatus(),
-  pattern: [
-    { type: 'attack', value: 11, physical: false },
-    { type: 'attack', value: 10, physical: true },
-    { type: 'defend', value: 8 },
-  ],
-  patternIndex: 0,
-}
-
-const OGRE: EnemyState = {
-  id: 'ogre',
-  name: 'Orc Chief',
-  hp: 64,
-  maxHp: 64,
-  block: 0,
-  armor: 0,
-  status: emptyStatus(),
-  pattern: [
-    { type: 'attack', value: 12, physical: true },
-    { type: 'defend', value: 9 },
-    { type: 'attack', value: 10, physical: true },
-  ],
-  patternIndex: 0,
-}
-
-const GREATER_MIMIC: EnemyState = {
-  id: 'greater_mimic',
-  name: 'Greater Mimic',
-  hp: 66,
-  maxHp: 66,
-  block: 0,
-  armor: 0,
-  status: emptyStatus(),
-  pattern: [
-    { type: 'defend', value: 10 },
-    { type: 'attack', value: 12, physical: true },
-    { type: 'attack', value: 11, physical: true },
-  ],
-  patternIndex: 0,
-}
-
-const GREATER_SLIME: EnemyState = {
-  id: 'greater_slime',
-  name: 'Greater Slime',
-  hp: 70,
-  maxHp: 70,
-  block: 0,
-  armor: 0,
-  status: emptyStatus(),
-  pattern: [
-    { type: 'defend', value: 10 },
-    { type: 'attack', value: 12, physical: true },
-    { type: 'attack', value: 12, physical: true },
-  ],
-  patternIndex: 0,
-}
-
-const BASIC_ENEMY_TEMPLATES: EnemyState[] = [
-  GOBLIN,
-  CHOMP,
-  IMP,
-  MIMIC,
-  LIZARD_F,
-  LIZARD_M,
-  MASKED_ORC,
-  MUD_ELEMENTAL,
-  NECROMANCER,
-  ORC_SHAMAN,
-  ORC_WARRIOR,
-  SKELET,
-  SLUG,
-  SWAMPY,
-  PLAGUE_DOCTOR,
-  FLYTRAP,
-  SNAKE,
+const BASIC_ENEMY_TEMPLATES: EnemyTemplate[] = [
+  { id: 'goblin', name: 'Goblin', tier: 'basic' },
+  { id: 'chort', name: 'Chomp', tier: 'basic' },
+  { id: 'imp', name: 'Imp', tier: 'basic' },
+  { id: 'mimic', name: 'Mimic', tier: 'basic' },
+  { id: 'lizard_f', name: 'Lizard Scout', tier: 'basic' },
+  { id: 'lizard_m', name: 'Lizard Raider', tier: 'basic' },
+  { id: 'masked_orc', name: 'Masked Orc', tier: 'basic', weaknesses: ['fire'] },
+  { id: 'muddy', name: 'Mud Elemental', tier: 'basic' },
+  { id: 'necromancer', name: 'Necromancer', tier: 'basic' },
+  { id: 'orc_shaman', name: 'Orc Shaman', tier: 'basic', weaknesses: ['fire'] },
+  { id: 'orc_warrior', name: 'Orc Warrior', tier: 'basic', weaknesses: ['fire'] },
+  { id: 'skelet', name: 'Skeleton', tier: 'basic', weaknesses: ['blunt'] },
+  { id: 'slug', name: 'Slug', tier: 'basic' },
+  { id: 'swampy', name: 'Slime', tier: 'basic' },
+  { id: 'doc', name: 'Plague Doctor', tier: 'basic' },
+  { id: 'snake', name: 'Snake', tier: 'basic' },
 ]
 
-const ELITE_ENEMY_TEMPLATES: EnemyState[] = [
-  DEMON,
-  OGRE,
-  GREATER_MIMIC,
-  GREATER_SLIME,
-  FLAMING_SKULL,
-  SHADE,
+const ELITE_ENEMY_TEMPLATES: EnemyTemplate[] = [
+  { id: 'big_demon', name: 'Maw Demon', tier: 'elite' },
+  { id: 'ogre', name: 'Orc Chieftain', tier: 'elite', weaknesses: ['fire'] },
+  { id: 'greater_mimic', name: 'Greater Mimic', tier: 'elite' },
+  { id: 'greater_slime', name: 'Greater Slime', tier: 'elite' },
+  { id: 'flaming_skull', name: 'Flaming Skull', tier: 'elite' },
+  { id: 'shade', name: 'Shade', tier: 'elite' },
 ]
 
 export type BestiaryEnemy = {
   id: string
   name: string
   tier: 'basic' | 'elite'
+  weaknesses: EnemyWeakness[]
+  abilities: string[]
 }
 
 export const BESTIARY_ENEMIES: BestiaryEnemy[] = [
-  ...BASIC_ENEMY_TEMPLATES.map(enemy => ({ id: enemy.id, name: enemy.name, tier: 'basic' as const })),
-  ...ELITE_ENEMY_TEMPLATES.map(enemy => ({ id: enemy.id, name: enemy.name, tier: 'elite' as const })),
+  ...BASIC_ENEMY_TEMPLATES.map(enemy => ({
+    id: enemy.id,
+    name: enemy.name,
+    tier: 'basic' as const,
+    weaknesses: enemy.weaknesses ?? [],
+    abilities: [],
+  })),
+  ...ELITE_ENEMY_TEMPLATES.map(enemy => ({
+    id: enemy.id,
+    name: enemy.name,
+    tier: 'elite' as const,
+    weaknesses: enemy.weaknesses ?? [],
+    abilities: [],
+  })),
 ]
 
-function cloneEnemy(template: EnemyState): EnemyState {
+const BESTIARY_ABILITY_LABELS_BY_ENEMY_ID: Partial<Record<string, string[]>> = {
+  chort: ['Bleeding Bite'],
+  mimic: ['Bleeding Bite'],
+  greater_mimic: ['Bleeding Bite'],
+  big_demon: ['Bleeding Bite'],
+  muddy: ['Poison Spit'],
+  swampy: ['Poison Spit'],
+  greater_slime: ['Poison Spit'],
+  slug: ['Poison Spit'],
+  doc: ['Poison Spit'],
+  snake: ['Poison Spit'],
+  flaming_skull: ['Burning Hex'],
+}
+
+function withBestiaryDetails(enemy: BestiaryEnemy): BestiaryEnemy {
   return {
-    ...template,
-    hp: template.maxHp,
+    ...enemy,
+    abilities: BESTIARY_ABILITY_LABELS_BY_ENEMY_ID[enemy.id] ?? [],
+  }
+}
+
+for (let i = 0; i < BESTIARY_ENEMIES.length; i++) {
+  BESTIARY_ENEMIES[i] = withBestiaryDetails(BESTIARY_ENEMIES[i])
+}
+
+function randomInt(min: number, max: number): number {
+  return Math.floor(Math.random() * (max - min + 1)) + min
+}
+
+function scaleByFloor(baseValue: number, floorsCleared: number): number {
+  const additiveScale = 1 + floorsCleared * 0.05
+  return Math.max(1, Math.round(baseValue * additiveScale))
+}
+
+function buildEnemySkillset(enemyId: string, baseAttackDamage: number): EnemyState['pattern'] {
+  const pattern: EnemyState['pattern'] = [
+    { type: 'attack', value: baseAttackDamage, physical: true },
+  ]
+
+  if (BITE_ENEMY_IDS.has(enemyId)) {
+    pattern.push({ type: 'bleed', value: Math.max(1, Math.floor(baseAttackDamage / 2)) })
+  }
+
+  if (POISON_ENEMY_IDS.has(enemyId)) {
+    pattern.push({ type: 'poison', value: Math.max(1, Math.floor(baseAttackDamage / 3)) })
+  }
+
+  if (BURN_ENEMY_IDS.has(enemyId)) {
+    pattern.push({ type: 'burn', value: Math.max(1, Math.floor(baseAttackDamage / 2)) })
+  }
+
+  return pattern
+}
+
+function makeEnemyFromTemplate(template: EnemyTemplate, floorsCleared: number): EnemyState {
+  const hpRange = BASE_HP_RANGE_BY_TIER[template.tier]
+  const attackRange = BASIC_ATTACK_RANGE_BY_TIER[template.tier]
+  const baseHp = randomInt(hpRange.min, hpRange.max)
+  const baseAttackDamage = randomInt(attackRange.min, attackRange.max)
+
+  const maxHp = scaleByFloor(baseHp, floorsCleared)
+  const scaledAttackDamage = scaleByFloor(baseAttackDamage, floorsCleared)
+
+  return {
+    id: template.id,
+    name: template.name,
+    tier: template.tier,
+    hp: maxHp,
+    maxHp,
     block: 0,
-    armor: template.armor,
+    armor: 0,
     status: emptyStatus(),
-    pattern: [...template.pattern],
+    weaknesses: template.weaknesses ?? [],
+    pattern: buildEnemySkillset(template.id, scaledAttackDamage),
     patternIndex: 0,
   }
 }
 
-export function pickEncounterEnemy(tier: 'basic' | 'elite' = 'basic'): EnemyState {
+export function pickEncounterEnemy(tier: EnemyTier = 'basic', floorsCleared = 0): EnemyState {
   const pool = tier === 'elite' ? ELITE_ENEMY_TEMPLATES : BASIC_ENEMY_TEMPLATES
   const chosen = pool[Math.floor(Math.random() * pool.length)]
-  return cloneEnemy(chosen)
+  return makeEnemyFromTemplate(chosen, floorsCleared)
 }
 
-export function pickEncounterEnemyById(enemyId: string): EnemyState {
+export function pickEncounterEnemyById(enemyId: string, floorsCleared = 0): EnemyState {
   const allTemplates = [...BASIC_ENEMY_TEMPLATES, ...ELITE_ENEMY_TEMPLATES]
   const template = allTemplates.find(enemy => enemy.id === enemyId)
   if (!template) {
-    return pickEncounterEnemy('basic')
+    return pickEncounterEnemy('basic', floorsCleared)
   }
-  return cloneEnemy(template)
+  return makeEnemyFromTemplate(template, floorsCleared)
 }

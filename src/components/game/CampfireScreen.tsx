@@ -10,10 +10,21 @@ interface Props {
   maxHp: number
   onRest: (healAmount: number) => void
   topLeft?: ReactNode
-  showLizardCompanion?: boolean
+  showCompanion?: boolean
+  companionName?: string
+  companionEnemyId?: string
 }
 
-const LIZARD_SCOUT_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/lizard_f-idle-f${i}.png`)
+const COMPANION_SPRITE_SOURCE_BY_ENEMY_ID: Partial<Record<string, string>> = {
+  greater_mimic: 'mimic',
+  greater_slime: 'swampy',
+}
+
+function getCompanionFrames(enemyId: string): string[] {
+  const spriteId = COMPANION_SPRITE_SOURCE_BY_ENEMY_ID[enemyId] ?? enemyId
+  return Array.from({ length: 4 }, (_, i) => `assets/${spriteId}-idle-f${i}.png`)
+}
+
 const randomBetween = (min: number, max: number) => min + Math.random() * (max - min)
 
 type EmberFlickerState = {
@@ -58,27 +69,28 @@ function CharacterSprite({ characterId }: { characterId: string }) {
   )
 }
 
-function CompanionSprite() {
+function CompanionSprite({ companionName, companionEnemyId }: { companionName: string; companionEnemyId: string }) {
+  const frames = getCompanionFrames(companionEnemyId)
   const [frameIdx, setFrameIdx] = useState(0)
 
   useEffect(() => {
     const id = setInterval(() => {
-      setFrameIdx(prev => (prev + 1) % LIZARD_SCOUT_FRAMES.length)
+      setFrameIdx(prev => (prev + 1) % frames.length)
     }, 1000 / CHARACTER_IDLE_FPS)
     return () => clearInterval(id)
-  }, [])
+  }, [frames.length])
 
   return (
     <img
-      src={LIZARD_SCOUT_FRAMES[frameIdx]}
-      alt="Lizard Scout companion"
+      src={frames[frameIdx]}
+      alt={`${companionName} companion`}
       className="w-14 h-20 object-contain"
       style={{ imageRendering: 'pixelated' }}
     />
   )
 }
 
-export function CampfireScreen({ characterId, currentHp: _currentHp, maxHp, onRest, topLeft, showLizardCompanion = false }: Props) {
+export function CampfireScreen({ characterId, currentHp: _currentHp, maxHp, onRest, topLeft, showCompanion = false, companionName = 'Companion', companionEnemyId = 'lizard_f' }: Props) {
   const [resting, setResting] = useState(false)
   const healAmount = Math.round(maxHp * 0.3)
   const [emberFlicker, setEmberFlicker] = useState<EmberFlickerState>({
@@ -136,7 +148,7 @@ export function CampfireScreen({ characterId, currentHp: _currentHp, maxHp, onRe
   }, [])
 
   return (
-    <SelectionScreenShell title="Campfire" subtitle="Rest Site" topLeft={topLeft} allowOverflowVisible>
+    <SelectionScreenShell title="Campfire" subtitle="Rest Site" topLeft={topLeft} allowOverflowVisible titleOffsetY={14}>
       <div className="relative w-full max-w-5xl h-[72%] flex items-center justify-center overflow-visible pointer-events-none">
         <svg className="absolute w-0 h-0 pointer-events-none" aria-hidden>
           <defs>
@@ -150,7 +162,7 @@ export function CampfireScreen({ characterId, currentHp: _currentHp, maxHp, onRe
           </defs>
         </svg>
 
-        <div className="relative z-10 mx-auto flex w-full max-w-[560px] -translate-y-30 items-end justify-between">
+        <div className="relative z-10 mx-auto flex w-full max-w-[460px] -translate-y-24 items-end justify-center gap-10">
           <motion.div
             className="flex w-56 justify-center"
             initial={{ opacity: 0, x: -24, y: 12 }}
@@ -158,8 +170,8 @@ export function CampfireScreen({ characterId, currentHp: _currentHp, maxHp, onRe
             transition={{ type: 'spring', stiffness: 260, damping: 24 }}
           >
             <div className="flex items-end justify-center gap-2">
-              {showLizardCompanion && (
-                <CompanionSprite />
+              {showCompanion && (
+                <CompanionSprite companionName={companionName} companionEnemyId={companionEnemyId} />
               )}
               <CharacterSprite characterId={characterId} />
             </div>
@@ -240,7 +252,7 @@ export function CampfireScreen({ characterId, currentHp: _currentHp, maxHp, onRe
         </AnimatePresence>
       </div>
 
-      <div className="-mt-40 w-full flex flex-col items-center gap-2 relative z-30 pointer-events-auto">
+      <div className="-mt-52 w-full flex flex-col items-center gap-2 relative z-30 pointer-events-auto">
         <motion.button
           type="button"
           onClick={() => {

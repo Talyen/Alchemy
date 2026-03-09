@@ -9,7 +9,15 @@ import type { DmgEvent, StatusEvent } from './FloatingNumber'
 import type { ActiveUpgrade, Fighter, TrinketDef } from '@/types'
 import { playPlayerHit, playPlayerHeal, playBlock } from '@/sounds'
 
-const LIZARD_SCOUT_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/lizard_f-idle-f${i}.png`)
+const COMPANION_SPRITE_SOURCE_BY_ENEMY_ID: Partial<Record<string, string>> = {
+  greater_mimic: 'mimic',
+  greater_slime: 'swampy',
+}
+
+function getCompanionFrames(enemyId: string): string[] {
+  const spriteId = COMPANION_SPRITE_SOURCE_BY_ENEMY_ID[enemyId] ?? enemyId
+  return Array.from({ length: 4 }, (_, i) => `assets/${spriteId}-idle-f${i}.png`)
+}
 
 interface Props {
   player: Fighter
@@ -20,8 +28,11 @@ interface Props {
   lastCardPlayedId: string | null
   activeUpgrades: ActiveUpgrade[]
   trinkets?: TrinketDef[]
-  showLizardCompanion?: boolean
+  showCompanion?: boolean
+  companionName?: string
+  companionEnemyId?: string
   companionAttackTick?: number
+  playerAttackTick?: number
 }
 
 export function PlayerPanel({
@@ -33,9 +44,13 @@ export function PlayerPanel({
   lastCardPlayedId,
   activeUpgrades,
   trinkets = [],
-  showLizardCompanion = false,
+  showCompanion = false,
+  companionName = 'Companion',
+  companionEnemyId = 'lizard_f',
   companionAttackTick = 0,
+  playerAttackTick = 0,
 }: Props) {
+    const companionFrames = getCompanionFrames(companionEnemyId)
   const controls    = useAnimationControls()
   const companionControls = useAnimationControls()
   const prevHp      = useRef(player.hp)
@@ -44,6 +59,7 @@ export function PlayerPanel({
   const nextId      = useRef(0)
   const nextLane    = useRef(0)
   const prevCompanionAttackTick = useRef(companionAttackTick)
+  const prevPlayerAttackTick = useRef(playerAttackTick)
   const [dmgEvents,    setDmgEvents]    = useState<DmgEvent[]>([])
   const [statusEvents, setStatusEvents] = useState<StatusEvent[]>([])
   const [hovered,      setHovered]      = useState(false)
@@ -67,7 +83,7 @@ export function PlayerPanel({
   }, [tick])
 
   useEffect(() => {
-    if (!showLizardCompanion) return
+    if (!showCompanion) return
     if (companionAttackTick === prevCompanionAttackTick.current) return
     prevCompanionAttackTick.current = companionAttackTick
     void companionControls.start({
@@ -75,7 +91,18 @@ export function PlayerPanel({
       y: [0, -2, 0],
       transition: { duration: 0.36, ease: [0.22, 1, 0.36, 1] },
     })
-  }, [companionAttackTick, showLizardCompanion, companionControls])
+  }, [companionAttackTick, showCompanion, companionControls])
+
+  useEffect(() => {
+    if (!isActive) return
+    if (playerAttackTick === prevPlayerAttackTick.current) return
+    prevPlayerAttackTick.current = playerAttackTick
+    void controls.start({
+      x: [0, 30, -8, 0],
+      y: [0, -2, 0],
+      transition: { duration: 0.34, ease: [0.22, 1, 0.36, 1] },
+    })
+  }, [controls, isActive, playerAttackTick])
 
   useEffect(() => {
     if (gold > prevGold.current) {
@@ -146,6 +173,7 @@ export function PlayerPanel({
     <motion.div
       animate={controls}
       className="relative flex flex-col items-center gap-6 w-44"
+      data-testid="player-panel"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
@@ -171,7 +199,7 @@ export function PlayerPanel({
       {/* Fixed-height sprite well */}
       <div className="h-40 flex items-end justify-center">
         <div className="flex items-end justify-center gap-2">
-          {showLizardCompanion && (
+          {showCompanion && (
             <motion.div
               animate={companionControls}
               whileHover={{ y: -4 }}
@@ -179,8 +207,8 @@ export function PlayerPanel({
               style={{ transformOrigin: 'bottom center', filter: isActive ? 'grayscale(0%)' : 'grayscale(100%)' }}
             >
               <img
-                src={LIZARD_SCOUT_FRAMES[frameIdx]}
-                alt="Lizard Scout companion"
+                src={companionFrames[frameIdx % companionFrames.length]}
+                alt={`${companionName} companion`}
                 style={{ width: 42, height: 60, imageRendering: 'pixelated', objectFit: 'contain' }}
               />
             </motion.div>

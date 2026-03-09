@@ -43,13 +43,16 @@ async function startKnightRun(page: import('@playwright/test').Page) {
 
 test('initial main menu load attempts BGM playback', async ({ page }) => {
   await page.goto('/')
-  await page.waitForTimeout(300)
+  // Allow extra time: async audio-path resolution probes HTTP files from the dev server.
+  // This can take ~5-10 seconds on first load (cold cache + file probing).
+  await page.waitForTimeout(12000)
 
   const bgmPlays = await page.evaluate(() => {
     const w = window as typeof window & {
       __audioProbe?: Array<{ id: number; action: 'play' | 'pause'; src: string }>
     }
-    return (w.__audioProbe ?? []).filter(event => event.action === 'play' && event.src.includes('/assets/audio/music/battle/')).length
+    // src may be a relative path (no leading /) or absolute URL depending on when play() fires
+    return (w.__audioProbe ?? []).filter(event => event.action === 'play' && event.src.includes('assets/audio/music/battle/')).length
   })
 
   expect(bgmPlays).toBeGreaterThan(0)
@@ -73,7 +76,7 @@ test('playing a card attempts real SFX file playback', async ({ page }) => {
 
   const playableCard = page.locator('button').filter({ hasText: /Deal|Gain|Apply|Heal|Draw|Wish/i }).first()
   await playableCard.click()
-  await page.waitForTimeout(300)
+  await page.waitForTimeout(1500) // allow async SFX path resolution to complete
 
   const sfxPlays = await page.evaluate(() => {
     const w = window as typeof window & {
@@ -81,7 +84,7 @@ test('playing a card attempts real SFX file playback', async ({ page }) => {
     }
     return (w.__audioProbe ?? []).filter(event => {
       if (event.action !== 'play') return false
-      if (!event.src.includes('/assets/audio/sfx/')) return false
+      if (!event.src.includes('assets/audio/sfx/')) return false
       return event.src.endsWith('.ogg') || event.src.endsWith('.wav')
     }).length
   })

@@ -436,6 +436,10 @@ export const playGoldGain = () => {
   playSampleIfAvailable(sounds['card-gold'], 0.18, 'gold-gain')
 }
 
+export const playGoldSpend = () => {
+  playSampleIfAvailable(sounds['card-gold'], 0.16, 'gold-spend')
+}
+
 export const playVulnerable = () => {
   // no asset mapped, stays silent
 }

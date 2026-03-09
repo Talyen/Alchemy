@@ -11,7 +11,9 @@
     "screenshot:destination": "node scripts/screenshot-map.mjs",
     "screenshot:card-variants": "node scripts/screenshot-card-variants.mjs",
     "screenshot:immolate-bg": "node scripts/screenshot-immolate-bg.mjs",
-    "test": "playwright test"
+    "test": "playwright test --project=core",
+    "test:all": "playwright test",
+    "test:extended": "playwright test --project=extended-regression"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",

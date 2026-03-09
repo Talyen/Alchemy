@@ -287,8 +287,25 @@ export function CollectionScreen({
                                   </p>
                                 </div>
 
-                                <div className="rounded-lg border border-zinc-800/80 bg-zinc-950/50 p-3 text-xs text-zinc-400">
-                                  Lore, traits, and combat behavior coming soon.
+                                <div className="rounded-lg border border-zinc-800/80 bg-zinc-950/50 p-3 space-y-2">
+                                  <div>
+                                    <p className="text-[10px] uppercase tracking-widest text-zinc-600">Weaknesses</p>
+                                    {enemy.weaknesses.length > 0 ? (
+                                      <p className="text-xs text-rose-300 mt-1">
+                                        {enemy.weaknesses.map(weakness => weakness === 'blunt' ? 'Blunt Damage' : weakness === 'fire' ? 'Fire Damage' : weakness).join(', ')}
+                                      </p>
+                                    ) : (
+                                      <p className="text-xs text-zinc-500 mt-1">None</p>
+                                    )}
+                                  </div>
+                                  <div>
+                                    <p className="text-[10px] uppercase tracking-widest text-zinc-600">Abilities</p>
+                                    {enemy.abilities.length > 0 ? (
+                                      <p className="text-xs text-zinc-300 mt-1">{enemy.abilities.join(', ')}</p>
+                                    ) : (
+                                      <p className="text-xs text-zinc-500 mt-1">Basic Attack</p>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                             </motion.div>

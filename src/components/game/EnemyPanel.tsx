@@ -26,7 +26,6 @@ const SWAMPY_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/swampy-idle-f$
 const DOC_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/doc-idle-f${i}.png`)
 const BIG_DEMON_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/big_demon-idle-f${i}.png`)
 const OGRE_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/ogre-idle-f${i}.png`)
-const FLYTRAP_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/flytrap-idle-f${i}.png`)
 const FLAMING_SKULL_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/flaming_skull-idle-f${i}.png`)
 const SHADE_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/shade-idle-f${i}.png`)
 const SNAKE_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/snake-idle-f${i}.png`)
@@ -51,7 +50,6 @@ const ENEMY_FRAME_SETS: Record<string, string[]> = {
   ogre: OGRE_FRAMES,
   greater_mimic: MIMIC_FRAMES,
   greater_slime: SWAMPY_FRAMES,
-  flytrap: FLYTRAP_FRAMES,
   flaming_skull: FLAMING_SKULL_FRAMES,
   shade: SHADE_FRAMES,
   snake: SNAKE_FRAMES,
@@ -61,7 +59,6 @@ const ELITE_ENEMY_IDS = new Set(['big_demon', 'ogre', 'greater_mimic', 'greater_
 const LEFT_FACING_ENEMY_IDS = new Set([
   'doc',
   'big_demon',
-  'flytrap',
   'flaming_skull',
   'shade',
   'snake',
@@ -124,28 +121,25 @@ export function EnemyPanel({ enemy, isActing, isActive, lastCardPlayedId, isElit
   }, [enemy.hp, controls, lastCardPlayedId, allocLane])
 
   useEffect(() => {
-    if (isActing) {
-      const currentIntent = enemy.pattern[enemy.patternIndex]
-      if (currentIntent?.type === 'attack') {
-        controls.start({
-          x: [0, -36, 10, 0],
-          y: [0, -2, 0],
-          transition: { duration: 0.56, ease: [0.22, 1, 0.36, 1] },
-        })
-        playEnemyAttack()
-      } else if (currentIntent) {
-        void controls.start({
-          scale: [1, 1.1, 1],
-          transition: { duration: 0.34, ease: [0.22, 1, 0.36, 1] },
-        })
-        if (currentIntent.type === 'defend') {
-          playCardPlay('defend', 'skill')
-        } else {
-          playCardPlay('heal', 'heal')
-        }
-      }
+    if (!isActing) return
+    if (lastCardPlayedId === 'enemy_attack') {
+      void controls.start({
+        x: [0, -36, 10, 0],
+        y: [0, -2, 0],
+        transition: { duration: 0.56, ease: [0.22, 1, 0.36, 1] },
+      })
+      playEnemyAttack()
+      return
     }
-  }, [isActing, controls, enemy.patternIndex, enemy.pattern])
+
+    if (lastCardPlayedId === 'enemy_cast') {
+      void controls.start({
+        scale: [1, 1.08, 1],
+        transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] },
+      })
+      playCardPlay('defend', 'skill')
+    }
+  }, [controls, isActing, lastCardPlayedId])
 
 
   useEffect(() => {
@@ -185,12 +179,18 @@ export function EnemyPanel({ enemy, isActing, isActive, lastCardPlayedId, isElit
 
   const { vulnerable, weak, burn, poison, bleed, trap, forge, strength } = enemy.status
   const hasStatus = enemy.armor > 0 || forge > 0 || strength > 0 || vulnerable > 0 || weak > 0 || burn > 0 || poison > 0 || bleed > 0 || trap > 0
+  const weaknessLabels = enemy.weaknesses.map(weakness => {
+    if (weakness === 'blunt') return 'Blunt Damage'
+    if (weakness === 'fire') return 'Fire Damage'
+    return weakness
+  })
   const activeDmgEvent = dmgEvents[0]
   const floatingTop = -22 - Math.max(0, spriteScale - 1) * 26
 
   return (
     <motion.div
       className="relative flex flex-col items-center gap-6 w-44"
+      data-testid="enemy-panel"
       animate={controls}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
@@ -245,6 +245,7 @@ export function EnemyPanel({ enemy, isActing, isActive, lastCardPlayedId, isElit
             burn={burn}
             poison={poison}
             bleed={bleed}
+            weaknesses={weaknessLabels}
             side="right"
             hpColor="red"
           />

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { BookOpen, ChevronsRight, Home, Menu, Music, Music2, UserRound } from 'lucide-react'
+import { BookOpen, ChevronsRight, Home, Menu, Music, Music2, SkipForward, UserRound } from 'lucide-react'
 
 interface Props {
   onGoMainMenu: () => void
@@ -8,6 +8,7 @@ interface Props {
   onOpenCollection: () => void
   musicEnabled: boolean
   onToggleMusic: () => void
+  onEndTurnEarly?: () => void
   onSkipDevCombat?: () => void
   direction?: 'up' | 'down'
   align?: 'left' | 'right'
@@ -19,6 +20,7 @@ export function GlobalScreenMenu({
   onOpenCollection,
   musicEnabled,
   onToggleMusic,
+  onEndTurnEarly,
   onSkipDevCombat,
   direction = 'down',
   align = 'left',
@@ -84,6 +86,20 @@ export function GlobalScreenMenu({
                 <BookOpen size={14} className="text-zinc-500" />
                 Collection
               </button>
+
+              {onEndTurnEarly && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpen(false)
+                    onEndTurnEarly()
+                  }}
+                  className="w-full flex items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm text-zinc-300 hover:bg-zinc-900/90"
+                >
+                  <SkipForward size={14} className="text-zinc-500" />
+                  End Turn
+                </button>
+              )}
 
               {onSkipDevCombat && (
                 <button

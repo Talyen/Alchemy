@@ -6,12 +6,23 @@ import { SelectionScreenShell } from './SelectionScreenShell'
 
 interface Props {
   characterId: string
+  mysteryTitle: string
+  companionName: string
+  companionEnemyId: string
   onBefriend: () => void
   onFight: () => void
   topLeft?: ReactNode
 }
 
-const LIZARD_SCOUT_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/lizard_f-idle-f${i}.png`)
+const COMPANION_SPRITE_SOURCE_BY_ENEMY_ID: Partial<Record<string, string>> = {
+  greater_mimic: 'mimic',
+  greater_slime: 'swampy',
+}
+
+function getCompanionFrames(enemyId: string): string[] {
+  const spriteId = COMPANION_SPRITE_SOURCE_BY_ENEMY_ID[enemyId] ?? enemyId
+  return Array.from({ length: 4 }, (_, i) => `assets/${spriteId}-idle-f${i}.png`)
+}
 
 function AnimatedSprite({ frames, alt }: { frames: string[]; alt: string }) {
   const [frameIdx, setFrameIdx] = useState(0)
@@ -33,9 +44,11 @@ function AnimatedSprite({ frames, alt }: { frames: string[]; alt: string }) {
   )
 }
 
-export function MysteryLizardScoutScreen({ characterId, onBefriend, onFight, topLeft }: Props) {
+export function MysteryLizardScoutScreen({ characterId, mysteryTitle, companionName, companionEnemyId, onBefriend, onFight, topLeft }: Props) {
+  const companionFrames = getCompanionFrames(companionEnemyId)
+
   return (
-    <SelectionScreenShell title="He's Just a Little Guy" subtitle="Mystery" topLeft={topLeft} allowOverflowVisible>
+    <SelectionScreenShell title={mysteryTitle} subtitle="Mystery" topLeft={topLeft} allowOverflowVisible>
       <div className="w-full max-w-5xl px-12 -mt-2">
         <motion.div
           className="mx-auto max-w-3xl rounded-2xl border border-zinc-800/80 bg-zinc-900/40 p-5"
@@ -44,7 +57,7 @@ export function MysteryLizardScoutScreen({ characterId, onBefriend, onFight, top
           transition={{ duration: 0.24 }}
         >
           <p className="text-sm leading-relaxed text-zinc-300 text-center">
-            Ready to fight, you encounter a Lizard Scout. He seems scared, and a little hungry.
+            Ready to fight, you encounter a {companionName}. They seem scared, and a little hungry.
           </p>
         </motion.div>
 
@@ -63,7 +76,7 @@ export function MysteryLizardScoutScreen({ characterId, onBefriend, onFight, top
             animate={{ opacity: 1, x: 0 }}
             transition={{ type: 'spring', stiffness: 260, damping: 24, delay: 0.04 }}
           >
-            <AnimatedSprite frames={LIZARD_SCOUT_FRAMES} alt="Lizard Scout" />
+            <AnimatedSprite frames={companionFrames} alt={companionName} />
           </motion.div>
         </div>
 

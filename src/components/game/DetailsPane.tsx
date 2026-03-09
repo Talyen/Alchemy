@@ -22,6 +22,7 @@ interface DetailsPaneProps {
   hpColor: 'green' | 'red'
   upgrades?: ActiveUpgrade[]
   trinkets?: TrinketDef[]
+  weaknesses?: string[]
 }
 
 export function DetailsPane({
@@ -41,10 +42,12 @@ export function DetailsPane({
   hpColor,
   upgrades = [],
   trinkets = [],
+  weaknesses = [],
 }: DetailsPaneProps) {
   const hasStatus = armor > 0 || forge > 0 || block > 0 || vulnerable > 0 || weak > 0 || burn > 0 || poison > 0 || bleed > 0 || trap > 0
   const hasUpgrades = upgrades.length > 0
   const hasTrinkets = trinkets.length > 0
+  const hasWeaknesses = weaknesses.length > 0
   const groupedUpgrades = upgrades.reduce<Array<ActiveUpgrade & { count: number }>>((acc, upgrade) => {
     const existing = acc.find(item => item.id === upgrade.id)
     if (existing) {
@@ -150,6 +153,18 @@ export function DetailsPane({
               <span className="text-zinc-500 ml-1">{trap}</span>
             </div>
           )}
+        </>
+      )}
+
+      {hasWeaknesses && (
+        <>
+          <div className="h-px bg-zinc-800 mt-2 mb-1.5" />
+          <p className="text-[11px] text-zinc-600 uppercase tracking-widest mb-1.5">Weaknesses</p>
+          <div className="flex flex-col gap-1">
+            {weaknesses.map(weakness => (
+              <p key={weakness} className="text-[13px] text-rose-300">{weakness}</p>
+            ))}
+          </div>
         </>
       )}
 

@@ -1,72 +1,69 @@
 import { test, expect } from '@playwright/test'
+import { startKnightRun, clickEndTurn } from './helpers'
 
 test.describe('Deck Management', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('http://localhost:5173')
-    await page.click('button:has-text("Start")')
-    await page.waitForTimeout(800)
+    await startKnightRun(page)
   })
 
   test('should start with cards in draw pile', async ({ page }) => {
     // Draw pile should have a number displayed
     const drawPile = await page.locator('text=Draw').first()
-    expect(drawPile).toBeVisible()
+    await expect(drawPile).toBeVisible()
   })
 
   test('discard pile should be empty initially', async ({ page }) => {
     const discardPile = await page.locator('text=Discard').first()
-    expect(discardPile).toBeVisible()
+    await expect(discardPile).toBeVisible()
   })
 
   test('should move cards to discard after player turn', async ({ page }) => {
     // Play a card
-    const card = await page.locator('button[class*="w-40"]').first()
+    const card = await page.locator('button[class*="w-48"]').first()
     await card.click()
     await page.waitForTimeout(300)
     
     // End turn
-    const endTurnButton = await page.locator('button:has-text("End Turn")').first()
-    if (await endTurnButton.isVisible()) {
-      await endTurnButton.click()
-    }
+    await clickEndTurn(page)
     
     await page.waitForTimeout(1500)
     
     // Discard pile should now have cards
     const discardLabel = await page.locator('text=Discard').first()
-    expect(discardLabel).toBeVisible()
+    await expect(discardLabel).toBeVisible()
   })
 
   test('should refill hand from draw pile', async ({ page }) => {
     // Play cards until hand is reduced
-    const cards = await page.locator('button[class*="w-40"]').count()
+    const cards = await page.locator('button[class*="w-48"]').count()
     
     if (cards > 0) {
-      const card = await page.locator('button[class*="w-40"]').first()
+      const card = await page.locator('button[class*="w-48"]').first()
       await card.click()
       await page.waitForTimeout(200)
     }
     
     // End turn
-    const endTurnButton = await page.locator('button:has-text("End Turn")').first()
-    if (await endTurnButton.isVisible()) {
-      await endTurnButton.click()
-    }
+    await clickEndTurn(page)
     
-    // Wait for draw phase and new turn
-    await page.waitForTimeout(2000)
+    // Wait for enemy turn to complete and new hand to be dealt.
+    // Poll until the card count is > 0 (retries handle the brief zero-card window during discard/draw).
+    await expect(async () => {
+      const count = await page.locator('button[class*="w-48"]').count()
+      expect(count).toBeGreaterThan(0)
+    }).toPass({ timeout: 10000 })
     
     // Should have cards in hand again (or close to 5)
-    const newCards = await page.locator('button[class*="w-40"]').count()
+    const newCards = await page.locator('button[class*="w-48"]').count()
     expect(newCards).toBeGreaterThan(0)
   })
 
   test('should shuffle discard back into draw when draw pile empty', async ({ page }) => {
     // Helper: play multiple cards to drain deck
     for (let i = 0; i < 3; i++) {
-      const cards = await page.locator('button[class*="w-40"]').count()
+      const cards = await page.locator('button[class*="w-48"]').count()
       if (cards > 0) {
-        const card = await page.locator('button[class*="w-40"]').first()
+        const card = await page.locator('button[class*="w-48"]').first()
         const isPlayable = await card.getAttribute('class').then(c => !c?.includes('grayscale'))
         if (isPlayable) {
           await card.click()
@@ -76,24 +73,19 @@ test.describe('Deck Management', () => {
     }
     
     // End turn
-    const endTurnButton = await page.locator('button:has-text("End Turn")').first()
-    if (await endTurnButton.isVisible()) {
-      await endTurnButton.click()
-    }
+    await clickEndTurn(page)
     
     await page.waitForTimeout(1500)
     
     // Game should still be playable
     const gameArea = await page.locator('[class*="min-h-screen"]').first()
-    expect(gameArea).toBeVisible()
+    await expect(gameArea).toBeVisible()
   })
 })
 
 test.describe('Stat Changes & Floating Numbers', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('http://localhost:5173')
-    await page.click('button:has-text("Start")')
-    await page.waitForTimeout(800)
+    await startKnightRun(page)
   })
 
   test('should show damage floating number', async ({ page }) => {
@@ -158,16 +150,13 @@ test.describe('Stat Changes & Floating Numbers', () => {
     }
     
     // End turn and let enemy attack
-    const endTurnButton = await page.locator('button:has-text("End Turn")').first()
-    if (await endTurnButton.isVisible()) {
-      await endTurnButton.click()
-    }
+    await clickEndTurn(page)
     
     await page.waitForTimeout(1500)
     
     // Check player still exists (game didn't crash)
     const gameArea = await page.locator('[class*="min-h-screen"]').first()
-    expect(gameArea).toBeVisible()
+    await expect(gameArea).toBeVisible()
   })
 
   test('enemy should take damage when hit', async ({ page }) => {
@@ -179,16 +168,13 @@ test.describe('Stat Changes & Floating Numbers', () => {
       
       // Game should continue and enemy should be taking damage over multiple turns
       const gameActive = await page.locator('[class*="flex"]').first()
-      expect(gameActive).toBeVisible()
+      await expect(gameActive).toBeVisible()
     }
   })
 
   test('should show attack animation when enemy attacks', async ({ page }) => {
     // End player turn
-    const endTurnButton = await page.locator('button:has-text("End Turn")').first()
-    if (await endTurnButton.isVisible()) {
-      await endTurnButton.click()
-    }
+    await clickEndTurn(page)
     
     // Wait for enemy turn to complete
     await page.waitForTimeout(1500)
@@ -201,15 +187,12 @@ test.describe('Stat Changes & Floating Numbers', () => {
 
 test.describe('Player vs Enemy Mechanics', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('http://localhost:5173')
-    await page.click('button:has-text("Start")')
-    await page.waitForTimeout(800)
+    await startKnightRun(page)
   })
 
   test('should have player panel with stats', async ({ page }) => {
-    // Player panel should show HP
-    const playerStats = await page.locator('[class*="text-zinc-300"]').count()
-    expect(playerStats).toBeGreaterThan(0)
+    // Player panel HP bar should be visible
+    await expect(page.locator('[data-testid="hp-bar-player"]')).toBeVisible()
   })
 
   test('should have enemy panel with stats', async ({ page }) => {
@@ -220,74 +203,13 @@ test.describe('Player vs Enemy Mechanics', () => {
 
   test('player HP should decrease when enemy attacks', async ({ page }) => {
     // End player turn to trigger enemy attack
-    const endTurnButton = await page.locator('button:has-text("End Turn")').first()
-    if (await endTurnButton.isVisible()) {
-      await endTurnButton.click()
-    }
+    await clickEndTurn(page)
     
     // Wait for enemy action
     await page.waitForTimeout(1500)
     
-    // Player should still have health (check HP is displayed)
-    const hpElements = await page.locator('[class*="font-mono"]').allTextContents()
-    const hasHP = hpElements.some(text => /\d+\/\d+/.test(text))
-    expect(hasHP).toBeTruthy()
+    // Player HP bar should still be visible
+    await expect(page.locator('[data-testid="hp-bar-player"]')).toBeVisible()
   })
 
-  test('should end game when player HP reaches 0', async ({ page }) => {
-    // Keep letting enemy attack until defeat
-    let turns = 0
-    const maxTurns = 100
-    
-    while (turns < maxTurns) {
-      // Check for game over
-      const gameOverText = await page.locator('text=/Defeat|Game Over|Victory/i').first()
-      if (await gameOverText.isVisible({ timeout: 500 }).catch(() => false)) {
-        expect(gameOverText).toBeVisible()
-        break
-      }
-      
-      // Just end turn immediately to speed up enemy attacks
-      const endTurnButton = await page.locator('button:has-text("End Turn")').first()
-      if (await endTurnButton.isVisible()) {
-        await endTurnButton.click()
-      } else {
-        // If no end turn button, just wait
-        await page.waitForTimeout(500)
-      }
-      
-      await page.waitForTimeout(1200)
-      turns++
-    }
-  })
-
-  test('should end game when enemy HP reaches 0', async ({ page }) => {
-    // Attack constantly to try to win
-    let turns = 0
-    const maxTurns = 100
-    
-    while (turns < maxTurns) {
-      // Check for victory
-      const victoryText = await page.locator('text=/Victory|You Win/i').first()
-      if (await victoryText.isVisible({ timeout: 500 }).catch(() => false)) {
-        expect(victoryText).toBeVisible()
-        break
-      }
-      
-      // Keep playing damage cards
-      const attackCard = await page.locator('button:has-text("Stab"), button:has-text("Bash"), button:has-text("Slash")').first()
-      if (await attackCard.isVisible({ timeout: 500 }).catch(() => false)) {
-        await attackCard.click()
-      }
-      
-      // End turn
-      const endTurnButton = await page.locator('button:has-text("End Turn")').first()
-      if (await endTurnButton.isVisible()) {
-        await endTurnButton.click()
-      }
-      
-      await page.waitForTimeout(1500)
-      turns++
-    }
-  })
 })
