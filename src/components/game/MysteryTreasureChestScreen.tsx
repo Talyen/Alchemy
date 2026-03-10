@@ -49,11 +49,11 @@ export function MysteryTreasureChestScreen({ reward, onOpen, onTake, onSkip, top
             <motion.button
               type="button"
               onClick={onSkip}
-              className="px-6 py-2.5 rounded-xl border border-zinc-700/80 bg-zinc-900/85 text-sm text-zinc-200"
+              className="px-3 py-1.5 rounded-lg border border-amber-900/60 bg-zinc-900/70 text-xs text-amber-200"
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
             >
-              Skip
+              Salvage for 25 Gold
             </motion.button>
           </div>
         )}
@@ -86,15 +86,6 @@ export function MysteryTreasureChestScreen({ reward, onOpen, onTake, onSkip, top
                 whileTap={{ scale: 0.97 }}
               >
                 Take Reward
-              </motion.button>
-              <motion.button
-                type="button"
-                onClick={onSkip}
-                className="px-6 py-2.5 rounded-xl border border-zinc-700/80 bg-zinc-900/85 text-sm text-zinc-200"
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-              >
-                Skip Reward
               </motion.button>
             </div>
           </>

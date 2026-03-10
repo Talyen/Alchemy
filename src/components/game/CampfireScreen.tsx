@@ -22,7 +22,7 @@ const COMPANION_SPRITE_SOURCE_BY_ENEMY_ID: Partial<Record<string, string>> = {
 
 function getCompanionFrames(enemyId: string): string[] {
   const spriteId = COMPANION_SPRITE_SOURCE_BY_ENEMY_ID[enemyId] ?? enemyId
-  return Array.from({ length: 4 }, (_, i) => `assets/${spriteId}-idle-f${i}.png`)
+  return Array.from({ length: 4 }, (_, i) => `assets/enemies/${spriteId}-idle-f${i}.png`)
 }
 
 const randomBetween = (min: number, max: number) => min + Math.random() * (max - min)

@@ -14,6 +14,7 @@ export interface ShopCardOffer {
   id: string
   card: CardDef
   price: number
+  sold?: boolean
 }
 
 export interface ShopTrinketOffer {
@@ -47,7 +48,7 @@ function toInstance(def: CardDef, uid: string): CardInstance {
   return { ...def, uid }
 }
 
-const SHOPKEEPER_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/dwarf_f-idle-f${i}.png`)
+const SHOPKEEPER_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/enemies/dwarf_f-idle-f${i}.png`)
 
 function AnimatedSprite({ frames, alt, className }: { frames: string[]; alt: string; className?: string }) {
   const [frameIdx, setFrameIdx] = useState(0)
@@ -146,14 +147,14 @@ export function ShopScreen({ characterId, gold, cardOffers, trinketOffers, offer
 
   return (
     <SelectionScreenShell title="Shop" subtitle="Merchant" topLeft={topLeft} layout="top" titleOffsetY={24}>
-      <div className="w-full h-full min-h-0 max-w-6xl px-6 pb-4 flex flex-col items-center gap-3">
+      <div className="w-full h-full min-h-0 max-w-6xl px-6 pb-4 flex flex-col items-center gap-6">
         <motion.div
           className="relative mx-auto w-full max-w-[760px] flex items-end justify-center z-10"
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ type: 'spring', stiffness: 260, damping: 24 }}
         >
-          <div className="absolute inset-x-0 bottom-1 mx-auto w-[640px] grid grid-cols-[192px_192px_192px] pointer-events-none">
+          <div className="absolute inset-x-0 bottom-1 w-full grid grid-cols-[1fr_1fr_1fr] pointer-events-none">
             <div className="flex justify-center">
               <div className="relative inline-flex items-center gap-2 rounded-xl border border-zinc-700/70 bg-zinc-900/80 px-3 py-1.5 text-zinc-200">
                 <GoldIcon size={13} />
@@ -175,6 +176,25 @@ export function ShopScreen({ characterId, gold, cardOffers, trinketOffers, offer
                   ))}
                 </AnimatePresence>
               </div>
+            </div>
+
+            <div />
+
+            <div className="flex justify-center pointer-events-auto">
+              <motion.button
+                type="button"
+                disabled={refreshDisabled}
+                onClick={handleRefreshClick}
+                className="inline-flex items-center gap-2 rounded-lg border border-zinc-700/70 bg-zinc-900/80 px-3 py-2 text-xs text-zinc-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                whileHover={refreshDisabled ? undefined : { scale: 1.03 }}
+                whileTap={refreshDisabled ? undefined : { scale: 0.97 }}
+                transition={{ type: 'spring', stiffness: 360, damping: 28 }}
+              >
+                <RefreshCw size={13} className="text-zinc-500" />
+                <span>{refreshUsed ? 'Refresh Used' : 'Refresh Shop'}</span>
+                <GoldIcon size={12} />
+                <span>{refreshCost}</span>
+              </motion.button>
             </div>
           </div>
 
@@ -206,7 +226,7 @@ export function ShopScreen({ characterId, gold, cardOffers, trinketOffers, offer
           </div>
         </motion.div>
 
-        <div className="relative z-20 w-full min-h-0 flex-1 overflow-y-auto pr-1">
+        <div className="relative z-20 w-full min-h-0 flex-1 overflow-visible pr-1">
           <div className="w-full flex flex-col items-center gap-4 pb-1">
             {offerMode === 'cards' && (
             <div className="w-full">
@@ -221,6 +241,20 @@ export function ShopScreen({ characterId, gold, cardOffers, trinketOffers, offer
             {cardOffers.map((offer, i) => {
               const canAfford = gold >= offer.price
               const pendingPurchase = pendingCardPurchaseIds.has(offer.id)
+              const isSold = offer.sold === true
+              if (isSold) {
+                return (
+                  <motion.div
+                    key={offer.id}
+                    variants={staggerItemVariants}
+                    className="flex flex-col items-center gap-2"
+                  >
+                    <div className="w-[192px] h-[288px] rounded-2xl border border-zinc-700/40 bg-zinc-900/30 flex items-center justify-center">
+                      <p className="text-xs text-zinc-600 uppercase tracking-wider">Sold</p>
+                    </div>
+                  </motion.div>
+                )
+              }
               return (
                 <motion.div
                   key={offer.id}
@@ -293,46 +327,31 @@ export function ShopScreen({ characterId, gold, cardOffers, trinketOffers, offer
           </div>
         </div>
 
-        <div className="w-full max-w-[760px] grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] items-center gap-2">
-          <motion.button
-            type="button"
-            disabled={refreshDisabled}
-            onClick={handleRefreshClick}
-            className="justify-self-center md:justify-self-end inline-flex items-center gap-2 rounded-lg border border-zinc-700/70 bg-zinc-900/80 px-3 py-2 text-xs text-zinc-300 disabled:opacity-50 disabled:cursor-not-allowed"
-            whileHover={refreshDisabled ? undefined : { scale: 1.03 }}
-            whileTap={refreshDisabled ? undefined : { scale: 0.97 }}
-            transition={{ type: 'spring', stiffness: 360, damping: 28 }}
-          >
-            <RefreshCw size={13} className="text-zinc-500" />
-            <span>Refresh Shop</span>
-            <GoldIcon size={12} />
-            <span>{refreshCost}</span>
-          </motion.button>
-
-          <motion.button
-            type="button"
-            onClick={onLeave}
-            className="justify-self-center px-5 py-2.5 rounded-xl border border-zinc-700 bg-zinc-800/80 text-sm text-zinc-300"
-            whileHover={{ scale: 1.03, borderColor: 'rgba(161,161,170,0.6)' }}
-            whileTap={{ scale: 0.97 }}
-            transition={{ type: 'spring', stiffness: 380, damping: 26 }}
-          >
-            Leave
-          </motion.button>
-
+        <div className="w-full max-w-[760px] flex flex-col items-center gap-3 pt-1">
           <motion.button
             type="button"
             disabled={destroyDisabled}
             onClick={() => setShowDestroyPanel(true)}
-            className="justify-self-center md:justify-self-start inline-flex items-center gap-2 rounded-lg border border-zinc-700/70 bg-zinc-900/80 px-3 py-2 text-xs text-zinc-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-2 rounded-lg border border-zinc-700/70 bg-zinc-900/80 px-3 py-2 text-xs text-zinc-300 disabled:opacity-50 disabled:cursor-not-allowed"
             whileHover={destroyDisabled ? undefined : { scale: 1.03 }}
             whileTap={destroyDisabled ? undefined : { scale: 0.97 }}
             transition={{ type: 'spring', stiffness: 360, damping: 28 }}
           >
             <Trash2 size={13} className="text-zinc-500" />
-            <span>Destroy a Card</span>
+            <span>Remove a Card</span>
             <GoldIcon size={12} />
             <span>{destroyCardCost}</span>
+          </motion.button>
+
+          <motion.button
+            type="button"
+            onClick={onLeave}
+            className="px-5 py-2.5 rounded-xl border border-zinc-700 bg-zinc-800/80 text-sm text-zinc-300"
+            whileHover={{ scale: 1.03, borderColor: 'rgba(161,161,170,0.6)' }}
+            whileTap={{ scale: 0.97 }}
+            transition={{ type: 'spring', stiffness: 380, damping: 26 }}
+          >
+            Leave
           </motion.button>
         </div>
 
@@ -355,7 +374,7 @@ export function ShopScreen({ characterId, gold, cardOffers, trinketOffers, offer
                 <div className="mb-4 flex items-center justify-between">
                   <div>
                     <p className="text-[10px] uppercase tracking-widest text-zinc-500">Shop Service</p>
-                    <h3 className="text-lg font-semibold text-zinc-100">Destroy a Card</h3>
+                    <h3 className="text-lg font-semibold text-zinc-100">Remove a Card</h3>
                     <p className="text-xs text-zinc-500 mt-1">Select one card from your current run deck to permanently remove. Cost: {destroyCardCost} Gold.</p>
                   </div>
                   <motion.button
@@ -419,7 +438,7 @@ export function ShopScreen({ characterId, gold, cardOffers, trinketOffers, offer
                     whileTap={selectedDeckIndex === null || destroyDisabled ? undefined : { scale: 0.97 }}
                   >
                     <Trash2 size={13} />
-                    <span>Destroy</span>
+                    <span>Remove</span>
                   </motion.button>
                 </div>
               </motion.div>

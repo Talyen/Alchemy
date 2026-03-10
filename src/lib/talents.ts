@@ -1,10 +1,14 @@
 export type TalentTheme = 'burn' | 'poison' | 'gold' | 'mana' | 'holy' | 'physical' | 'block' | 'heal' | 'neutral'
 
+export const TALENT_KEYWORDS = ['Burn', 'Poison', 'Mana', 'Gold', 'Physical', 'Block', 'Heal', 'Holy'] as const
+export type TalentKeyword = (typeof TALENT_KEYWORDS)[number]
+
 export type TalentNode = {
   id: string
   name: string
   description: string
   theme: TalentTheme
+  treeKeyword?: TalentKeyword
   keywords: string[]
   x: number
   y: number
@@ -27,45 +31,45 @@ export const TALENT_NODES: TalentNode[] = [
   { id: TALENT_ROOT_ID, name: 'Origin', description: 'Center of your passive tree. Branch outward from here.', theme: 'neutral', keywords: ['Wish'], x: 760, y: 430 },
 
   // Upper-left: Holy, Burn, Heal
-  { id: 'holy_light', name: 'Holy Light', description: '+1 Heal on cards that Heal.', theme: 'holy', keywords: ['Holy', 'Heal'], x: 560, y: 290 },
-  { id: 'burn_spark', name: 'Burn Spark', description: '+1 Burn on cards that apply Burn.', theme: 'burn', keywords: ['Burn'], x: 430, y: 190 },
-  { id: 'healing_chalice', name: 'Healing Chalice', description: 'Holy effects are not yet implemented. Placeholder node.', theme: 'heal', keywords: ['Holy', 'Heal'], x: 450, y: 340 },
-  { id: 'cinder_mastery', name: 'Cinder Mastery', description: '+1 Burn on cards that apply Burn.', theme: 'burn', keywords: ['Burn'], x: 300, y: 150 },
-  { id: 'restorative_light', name: 'Restorative Light', description: '+1 Heal on cards that Heal.', theme: 'heal', keywords: ['Heal', 'Holy'], x: 310, y: 360 },
+  { id: 'holy_light', name: 'Holy Light', description: '+1 Heal on cards that Heal.', theme: 'holy', treeKeyword: 'Holy', keywords: ['Holy', 'Heal'], x: 560, y: 290 },
+  { id: 'burn_spark', name: 'Burn Spark', description: '+1 Burn on cards that apply Burn.', theme: 'burn', treeKeyword: 'Burn', keywords: ['Burn'], x: 430, y: 190 },
+  { id: 'healing_chalice', name: 'Healing Chalice', description: 'Holy effects are not yet implemented. Placeholder node.', theme: 'heal', treeKeyword: 'Heal', keywords: ['Holy', 'Heal'], x: 450, y: 340 },
+  { id: 'cinder_mastery', name: 'Cinder Mastery', description: '+1 Burn on cards that apply Burn.', theme: 'burn', treeKeyword: 'Burn', keywords: ['Burn'], x: 300, y: 150 },
+  { id: 'restorative_light', name: 'Restorative Light', description: '+1 Heal on cards that Heal.', theme: 'heal', treeKeyword: 'Heal', keywords: ['Heal', 'Holy'], x: 310, y: 360 },
 
   // Upper: Mana, Mana Crystal
-  { id: 'mana_well', name: 'Arcane Well', description: '+1 Max Mana at the start of each combat.', theme: 'mana', keywords: ['Mana'], x: 760, y: 240 },
-  { id: 'mana_crystal_lattice', name: 'Crystal Lattice', description: '+1 Max Mana at the start of each combat.', theme: 'mana', keywords: ['Mana Crystal'], x: 760, y: 110 },
-  { id: 'astral_reservoir', name: 'Astral Reservoir', description: '+1 Max Mana at the start of each combat.', theme: 'mana', keywords: ['Mana'], x: 760, y: 20 },
+  { id: 'mana_well', name: 'Arcane Well', description: '+1 Max Mana at the start of each combat.', theme: 'mana', treeKeyword: 'Mana', keywords: ['Mana'], x: 760, y: 240 },
+  { id: 'mana_crystal_lattice', name: 'Crystal Lattice', description: '+1 Max Mana at the start of each combat.', theme: 'mana', treeKeyword: 'Mana', keywords: ['Mana Crystal'], x: 760, y: 110 },
+  { id: 'astral_reservoir', name: 'Astral Reservoir', description: '+1 Max Mana at the start of each combat.', theme: 'mana', treeKeyword: 'Mana', keywords: ['Mana'], x: 760, y: 20 },
 
   // Upper-right: Poison, Pierce, Bleed, Leech
-  { id: 'poison_seed', name: 'Poison Seed', description: '+1 Poison on cards that apply Poison.', theme: 'poison', keywords: ['Poison'], x: 960, y: 290 },
-  { id: 'venom_bloom', name: 'Venom Bloom', description: '+1 Poison on cards that apply Poison.', theme: 'poison', keywords: ['Poison'], x: 1120, y: 290 },
-  { id: 'pierce_edge', name: 'Pierce Edge', description: 'Pierce specialization is not yet implemented. Placeholder node.', theme: 'physical', keywords: ['Pierce'], x: 1080, y: 190 },
-  { id: 'bleed_lattice', name: 'Bleed Lattice', description: 'Bleed specialization is not yet implemented. Placeholder node.', theme: 'physical', keywords: ['Bleed'], x: 1220, y: 220 },
-  { id: 'leech_ritual', name: 'Leech Ritual', description: 'Leech specialization is not yet implemented. Placeholder node.', theme: 'heal', keywords: ['Leech'], x: 1170, y: 360 },
+  { id: 'poison_seed', name: 'Poison Seed', description: '+1 Poison on cards that apply Poison.', theme: 'poison', treeKeyword: 'Poison', keywords: ['Poison'], x: 960, y: 290 },
+  { id: 'venom_bloom', name: 'Venom Bloom', description: '+1 Poison on cards that apply Poison.', theme: 'poison', treeKeyword: 'Poison', keywords: ['Poison'], x: 1120, y: 290 },
+  { id: 'pierce_edge', name: 'Pierce Edge', description: 'Pierce specialization is not yet implemented. Placeholder node.', theme: 'physical', treeKeyword: 'Physical', keywords: ['Pierce'], x: 1080, y: 190 },
+  { id: 'bleed_lattice', name: 'Bleed Lattice', description: 'Bleed specialization is not yet implemented. Placeholder node.', theme: 'physical', treeKeyword: 'Physical', keywords: ['Bleed'], x: 1220, y: 220 },
+  { id: 'leech_ritual', name: 'Leech Ritual', description: 'Leech specialization is not yet implemented. Placeholder node.', theme: 'heal', treeKeyword: 'Heal', keywords: ['Leech'], x: 1170, y: 360 },
 
   // Lower-left: Physical, Blunt, Forge, Block, Armor
-  { id: 'physical_training', name: 'Physical Training', description: '+1 Damage on cards that deal direct damage.', theme: 'physical', keywords: ['Slash', 'Pierce'], x: 560, y: 580 },
-  { id: 'blunt_training', name: 'Blunt Training', description: '+1 Damage on cards that deal direct damage.', theme: 'physical', keywords: ['Blunt'], x: 430, y: 690 },
-  { id: 'forge_technique', name: 'Forge Technique', description: 'Forge specialization is not yet implemented. Placeholder node.', theme: 'physical', keywords: ['Forge'], x: 300, y: 760 },
-  { id: 'wall_training', name: 'Wall Training', description: '+2 Block at the start of each combat.', theme: 'block', keywords: ['Block'], x: 560, y: 740 },
-  { id: 'armor_doctrine', name: 'Armor Doctrine', description: '+2 Block at the start of each combat.', theme: 'block', keywords: ['Armor'], x: 420, y: 820 },
-  { id: 'iron_bastion', name: 'Iron Bastion', description: '+2 Block at the start of each combat.', theme: 'block', keywords: ['Armor', 'Block'], x: 300, y: 900 },
+  { id: 'physical_training', name: 'Physical Training', description: '+1 Damage on cards that deal direct damage.', theme: 'physical', treeKeyword: 'Physical', keywords: ['Slash', 'Pierce'], x: 560, y: 580 },
+  { id: 'blunt_training', name: 'Blunt Training', description: '+1 Damage on cards that deal direct damage.', theme: 'physical', treeKeyword: 'Physical', keywords: ['Blunt'], x: 430, y: 690 },
+  { id: 'forge_technique', name: 'Forge Technique', description: 'Forge specialization is not yet implemented. Placeholder node.', theme: 'physical', treeKeyword: 'Physical', keywords: ['Forge'], x: 300, y: 760 },
+  { id: 'wall_training', name: 'Wall Training', description: '+2 Block at the start of each combat.', theme: 'block', treeKeyword: 'Block', keywords: ['Block'], x: 560, y: 740 },
+  { id: 'armor_doctrine', name: 'Armor Doctrine', description: '+2 Block at the start of each combat.', theme: 'block', treeKeyword: 'Block', keywords: ['Armor'], x: 420, y: 820 },
+  { id: 'iron_bastion', name: 'Iron Bastion', description: '+2 Block at the start of each combat.', theme: 'block', treeKeyword: 'Block', keywords: ['Armor', 'Block'], x: 300, y: 900 },
 
   // Lower: Gold, Slash, Wish, Consume
-  { id: 'gold_cache', name: 'Golden Cache', description: '+3 starting Gold each run.', theme: 'gold', keywords: ['Gold'], x: 760, y: 640 },
-  { id: 'coin_sense', name: 'Coin Sense', description: '+3 starting Gold each run.', theme: 'gold', keywords: ['Gold'], x: 760, y: 840 },
-  { id: 'slash_rhythm', name: 'Slash Rhythm', description: 'Slash specialization is not yet implemented. Placeholder node.', theme: 'physical', keywords: ['Slash'], x: 640, y: 760 },
-  { id: 'wish_anchor', name: 'Wish Anchor', description: 'Wish specialization is not yet implemented. Placeholder node.', theme: 'holy', keywords: ['Wish'], x: 880, y: 760 },
-  { id: 'consume_rite', name: 'Consume Rite', description: 'Consume specialization is not yet implemented. Placeholder node.', theme: 'gold', keywords: ['Consume'], x: 760, y: 920 },
-  { id: 'wish_conduit', name: 'Wish Conduit', description: 'Wish specialization is not yet implemented. Placeholder node.', theme: 'holy', keywords: ['Wish'], x: 970, y: 900 },
+  { id: 'gold_cache', name: 'Golden Cache', description: '+3 starting Gold each run.', theme: 'gold', treeKeyword: 'Gold', keywords: ['Gold'], x: 760, y: 640 },
+  { id: 'coin_sense', name: 'Coin Sense', description: '+3 starting Gold each run.', theme: 'gold', treeKeyword: 'Gold', keywords: ['Gold'], x: 760, y: 840 },
+  { id: 'slash_rhythm', name: 'Slash Rhythm', description: 'Slash specialization is not yet implemented. Placeholder node.', theme: 'physical', treeKeyword: 'Physical', keywords: ['Slash'], x: 640, y: 760 },
+  { id: 'wish_anchor', name: 'Wish Anchor', description: 'Wish specialization is not yet implemented. Placeholder node.', theme: 'holy', treeKeyword: 'Holy', keywords: ['Wish'], x: 880, y: 760 },
+  { id: 'consume_rite', name: 'Consume Rite', description: 'Consume specialization is not yet implemented. Placeholder node.', theme: 'gold', treeKeyword: 'Gold', keywords: ['Consume'], x: 760, y: 920 },
+  { id: 'wish_conduit', name: 'Wish Conduit', description: 'Wish specialization is not yet implemented. Placeholder node.', theme: 'holy', treeKeyword: 'Holy', keywords: ['Wish'], x: 970, y: 900 },
 
   // Lower-right: Archery, trap, and utility branch
-  { id: 'archery_form', name: 'Archery Form', description: 'Archery is not yet implemented. Placeholder node.', theme: 'neutral', keywords: ['Pierce'], x: 960, y: 580 },
-  { id: 'ranger_focus', name: 'Ranger Focus', description: '+1 Damage on cards that deal direct damage.', theme: 'physical', keywords: ['Pierce'], x: 1110, y: 660 },
-  { id: 'trapcraft', name: 'Trapcraft', description: 'Trap specialization is not yet implemented. Placeholder node.', theme: 'neutral', keywords: ['Trap'], x: 1120, y: 780 },
-  { id: 'snare_line', name: 'Snare Line', description: 'Trap specialization is not yet implemented. Placeholder node.', theme: 'neutral', keywords: ['Trap'], x: 1260, y: 880 },
+  { id: 'archery_form', name: 'Archery Form', description: 'Archery is not yet implemented. Placeholder node.', theme: 'neutral', treeKeyword: 'Physical', keywords: ['Pierce'], x: 960, y: 580 },
+  { id: 'ranger_focus', name: 'Ranger Focus', description: '+1 Damage on cards that deal direct damage.', theme: 'physical', treeKeyword: 'Physical', keywords: ['Pierce'], x: 1110, y: 660 },
+  { id: 'trapcraft', name: 'Trapcraft', description: 'Trap specialization is not yet implemented. Placeholder node.', theme: 'neutral', treeKeyword: 'Physical', keywords: ['Trap'], x: 1120, y: 780 },
+  { id: 'snare_line', name: 'Snare Line', description: 'Trap specialization is not yet implemented. Placeholder node.', theme: 'neutral', treeKeyword: 'Physical', keywords: ['Trap'], x: 1260, y: 880 },
 ]
 
 export const TALENT_LINKS: Array<[string, string]> = [
@@ -133,26 +137,60 @@ export function getTalentThemeClasses(theme: TalentTheme): { ring: string; text:
   }
 }
 
-function nodeById(nodeId: string): TalentNode | undefined {
-  return TALENT_NODES.find(node => node.id === nodeId)
+function nodeById(nodeId: string, nodes: TalentNode[]): TalentNode | undefined {
+  return nodes.find(node => node.id === nodeId)
 }
 
-function neighborsOf(nodeId: string): string[] {
+function neighborsOf(nodeId: string, links: Array<[string, string]>): string[] {
   const neighbors: string[] = []
-  for (const [a, b] of TALENT_LINKS) {
+  for (const [a, b] of links) {
     if (a === nodeId) neighbors.push(b)
     if (b === nodeId) neighbors.push(a)
   }
   return neighbors
 }
 
-export function canUnlockTalent(nodeId: string, unlockedNodeIds: Set<string>): boolean {
-  if (!nodeById(nodeId)) return false
+export function getTalentNodesForKeyword(keyword: TalentKeyword): TalentNode[] {
+  return TALENT_NODES.filter(node => node.id === TALENT_ROOT_ID || node.treeKeyword === keyword)
+}
+
+export function getTalentLinksForNodes(nodes: TalentNode[]): Array<[string, string]> {
+  const validNodeIds = new Set(nodes.map(node => node.id))
+  return TALENT_LINKS.filter(([from, to]) => validNodeIds.has(from) && validNodeIds.has(to))
+}
+
+export function canUnlockTalent(nodeId: string, unlockedNodeIds: Set<string>, nodes = TALENT_NODES, links = TALENT_LINKS): boolean {
+  if (!nodeById(nodeId, nodes)) return false
   if (unlockedNodeIds.has(nodeId)) return false
 
   // First purchase must start at center.
   if (unlockedNodeIds.size === 0) return nodeId === TALENT_ROOT_ID
-  return neighborsOf(nodeId).some(neighbor => unlockedNodeIds.has(neighbor))
+  return neighborsOf(nodeId, links).some(neighbor => unlockedNodeIds.has(neighbor))
+}
+
+export type UnlockedTalentNodeIdsByKeyword = Record<TalentKeyword, Set<string>>
+
+export function getEmptyUnlockedTalentNodeIdsByKeyword(): UnlockedTalentNodeIdsByKeyword {
+  return {
+    Burn: new Set(),
+    Poison: new Set(),
+    Mana: new Set(),
+    Gold: new Set(),
+    Physical: new Set(),
+    Block: new Set(),
+    Heal: new Set(),
+    Holy: new Set(),
+  }
+}
+
+export function flattenUnlockedTalentNodeIds(unlockedByKeyword: UnlockedTalentNodeIdsByKeyword): Set<string> {
+  const flattened = new Set<string>()
+  for (const keyword of TALENT_KEYWORDS) {
+    for (const nodeId of unlockedByKeyword[keyword]) {
+      flattened.add(nodeId)
+    }
+  }
+  return flattened
 }
 
 export function getTalentBonuses(unlockedNodeIds: Set<string>): TalentBonusSet {
@@ -186,4 +224,8 @@ export function getTalentBonuses(unlockedNodeIds: Set<string>): TalentBonusSet {
   if (unlockedNodeIds.has('iron_bastion')) bonuses.combatStartingBlockBonus += 2
 
   return bonuses
+}
+
+export function getTalentBonusesFromKeywordTrees(unlockedByKeyword: UnlockedTalentNodeIdsByKeyword): TalentBonusSet {
+  return getTalentBonuses(flattenUnlockedTalentNodeIds(unlockedByKeyword))
 }

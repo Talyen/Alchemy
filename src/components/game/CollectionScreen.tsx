@@ -32,6 +32,11 @@ const ENEMY_FPS = 8
 const BESTIARY_SPRITE_SOURCE_BY_ID: Partial<Record<string, string>> = {
   greater_mimic: 'mimic',
   greater_slime: 'swampy',
+  frost_imp: 'imp',
+}
+
+const BESTIARY_TINT_FILTER_BY_ID: Partial<Record<string, string>> = {
+  frost_imp: 'hue-rotate(165deg) saturate(1.3) brightness(1.08)',
 }
 
 function toInstance(def: CardDef, uid: string): CardInstance {
@@ -40,7 +45,7 @@ function toInstance(def: CardDef, uid: string): CardInstance {
 
 function getIdleFrames(enemyId: string): string[] {
   const spriteId = BESTIARY_SPRITE_SOURCE_BY_ID[enemyId] ?? enemyId
-  return Array.from({ length: 4 }, (_, i) => `assets/${spriteId}-idle-f${i}.png`)
+  return Array.from({ length: 4 }, (_, i) => `assets/enemies/${spriteId}-idle-f${i}.png`)
 }
 
 export function CollectionScreen({
@@ -226,6 +231,7 @@ export function CollectionScreen({
                     const frameSrc = frames[frameIdx % frames.length]
                     const spriteSize = Math.round(80 * getEnemyRelativeScale(enemy.id))
                     const spriteBaseY = BESTIARY_Y_OFFSET[enemy.id] ?? -10
+                    const tintFilter = BESTIARY_TINT_FILTER_BY_ID[enemy.id]
 
                     return (
                       <motion.button
@@ -263,7 +269,9 @@ export function CollectionScreen({
                               height: spriteSize,
                               scaleX: 1,
                               imageRendering: 'pixelated',
-                              filter: isEncountered ? 'none' : 'grayscale(1) contrast(0.85) brightness(0.55)',
+                              filter: isEncountered
+                                ? (tintFilter ?? 'none')
+                                : `grayscale(1) contrast(0.85) brightness(0.55)${tintFilter ? ` ${tintFilter}` : ''}`,
                             }}
                           />
                         </div>

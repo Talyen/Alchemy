@@ -2,7 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import type { ReactNode } from 'react'
 import { useState } from 'react'
 import { SelectionScreenShell } from './SelectionScreenShell'
-import { TALENT_LINKS, TALENT_NODES, canUnlockTalent, getTalentThemeClasses } from '@/lib/talents'
+import { TALENT_KEYWORDS, type TalentKeyword, canUnlockTalent, getTalentLinksForNodes, getTalentNodesForKeyword, getTalentThemeClasses } from '@/lib/talents'
 import { KEYWORDS } from './keywordGlossary'
 import { Sparkles } from 'lucide-react'
 
@@ -13,8 +13,12 @@ const MIN_ZOOM = 0.65
 const MAX_ZOOM = 1.7
 
 type Props = {
+  activeKeyword: TalentKeyword
   unlockedTalentNodeIds: Set<string>
   availableTalentPoints: number
+  pointsProgress: number
+  totalPointsEarned: number
+  onChangeKeyword: (keyword: TalentKeyword) => void
   onUnlockTalent: (nodeId: string) => void
   onRespec: () => void
   onBack: () => void
@@ -33,15 +37,21 @@ function lineStyle(from: { x: number; y: number }, to: { x: number; y: number })
 }
 
 export function TalentsScreen({
+  activeKeyword,
   unlockedTalentNodeIds,
   availableTalentPoints,
+  pointsProgress,
+  totalPointsEarned,
+  onChangeKeyword,
   onUnlockTalent,
   onRespec,
   onBack,
   topLeft,
 }: Props) {
-  const hoveredNodeIds = TALENT_NODES.map(node => node.id)
-  const nodeById = (nodeId: string) => TALENT_NODES.find(node => node.id === nodeId)
+  const talentNodes = getTalentNodesForKeyword(activeKeyword)
+  const talentLinks = getTalentLinksForNodes(talentNodes)
+  const hoveredNodeIds = talentNodes.map(node => node.id)
+  const nodeById = (nodeId: string) => talentNodes.find(node => node.id === nodeId)
 
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null)
   const [zoom, setZoom] = useState(0.85)
@@ -58,7 +68,10 @@ export function TalentsScreen({
     <SelectionScreenShell title="Talents" subtitle="Passive Tree" topLeft={topLeft} layout="top" titleOffsetY={8}>
       <div className="w-full h-full min-h-0 max-w-6xl px-8 pb-5 flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm text-zinc-200">Available Points: {availableTalentPoints}</p>
+          <div className="flex flex-col gap-1">
+            <p className="text-sm text-zinc-200">Available Points: {availableTalentPoints}</p>
+            <p className="text-[11px] text-zinc-400">Progress: {pointsProgress} / 10 cards played ({totalPointsEarned} earned total)</p>
+          </div>
 
           <div className="flex items-center gap-2">
             <motion.button
@@ -80,6 +93,24 @@ export function TalentsScreen({
               Back
             </motion.button>
           </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {TALENT_KEYWORDS.map(keyword => {
+            const isActive = keyword === activeKeyword
+            return (
+              <motion.button
+                key={keyword}
+                type="button"
+                onClick={() => onChangeKeyword(keyword)}
+                className={`rounded-lg border px-3 py-1.5 text-xs uppercase tracking-wider ${isActive ? 'border-zinc-500 bg-zinc-800/90 text-zinc-100' : 'border-zinc-700/80 bg-zinc-900/70 text-zinc-400'}`}
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+              >
+                {keyword}
+              </motion.button>
+            )
+          })}
         </div>
 
         <div className="relative flex-1 rounded-2xl border border-zinc-800/70 bg-zinc-950/80 overflow-hidden">
@@ -139,9 +170,9 @@ export function TalentsScreen({
               }}
             >
               <div className="absolute inset-0">
-                {TALENT_LINKS.map(([a, b]) => {
-                  const from = TALENT_NODES.find(node => node.id === a)
-                  const to = TALENT_NODES.find(node => node.id === b)
+                {talentLinks.map(([a, b]) => {
+                  const from = talentNodes.find(node => node.id === a)
+                  const to = talentNodes.find(node => node.id === b)
                   if (!from || !to) return null
                   const style = lineStyle({ x: from.x + TALENT_NODE_SIZE / 2, y: from.y + TALENT_NODE_SIZE / 2 }, { x: to.x + TALENT_NODE_SIZE / 2, y: to.y + TALENT_NODE_SIZE / 2 })
                   const active = unlockedTalentNodeIds.has(a) && unlockedTalentNodeIds.has(b)
@@ -156,9 +187,9 @@ export function TalentsScreen({
               </div>
 
               <div className="absolute inset-0">
-                {TALENT_NODES.map(node => {
+                {talentNodes.map(node => {
                   const unlocked = unlockedTalentNodeIds.has(node.id)
-                  const unlockable = availableTalentPoints > 0 && canUnlockTalent(node.id, unlockedTalentNodeIds)
+                  const unlockable = availableTalentPoints > 0 && canUnlockTalent(node.id, unlockedTalentNodeIds, talentNodes, talentLinks)
                   const theme = getTalentThemeClasses(node.theme)
                   return (
                     <motion.button

@@ -21,10 +21,10 @@ const COMPANION_SPRITE_SOURCE_BY_ENEMY_ID: Partial<Record<string, string>> = {
 
 function getCompanionFrames(enemyId: string): string[] {
   const spriteId = COMPANION_SPRITE_SOURCE_BY_ENEMY_ID[enemyId] ?? enemyId
-  return Array.from({ length: 4 }, (_, i) => `assets/${spriteId}-idle-f${i}.png`)
+  return Array.from({ length: 4 }, (_, i) => `assets/enemies/${spriteId}-idle-f${i}.png`)
 }
 
-function AnimatedSprite({ frames, alt }: { frames: string[]; alt: string }) {
+function AnimatedSprite({ frames, alt, className }: { frames: string[]; alt: string; className?: string }) {
   const [frameIdx, setFrameIdx] = useState(0)
 
   useEffect(() => {
@@ -38,7 +38,7 @@ function AnimatedSprite({ frames, alt }: { frames: string[]; alt: string }) {
     <img
       src={frames[frameIdx]}
       alt={alt}
-      className="h-20 w-20 object-contain"
+      className={className ?? 'h-20 w-20 object-contain'}
       style={{ imageRendering: 'pixelated' }}
     />
   )
@@ -76,7 +76,7 @@ export function MysteryLizardScoutScreen({ characterId, mysteryTitle, companionN
             animate={{ opacity: 1, x: 0 }}
             transition={{ type: 'spring', stiffness: 260, damping: 24, delay: 0.04 }}
           >
-            <AnimatedSprite frames={companionFrames} alt={companionName} />
+            <AnimatedSprite frames={companionFrames} alt={companionName} className="h-12 w-12 object-contain" />
           </motion.div>
         </div>
 

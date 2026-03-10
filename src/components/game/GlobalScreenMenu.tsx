@@ -6,6 +6,7 @@ interface Props {
   onGoMainMenu: () => void
   onGoCharacterSelect: () => void
   onOpenCollection: () => void
+  onOpenOptions: () => void
   musicEnabled: boolean
   onToggleMusic: () => void
   onEndTurnEarly?: () => void
@@ -18,6 +19,7 @@ export function GlobalScreenMenu({
   onGoMainMenu,
   onGoCharacterSelect,
   onOpenCollection,
+  onOpenOptions,
   musicEnabled,
   onToggleMusic,
   onEndTurnEarly,
@@ -85,6 +87,18 @@ export function GlobalScreenMenu({
               >
                 <BookOpen size={14} className="text-zinc-500" />
                 Collection
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setOpen(false)
+                  onOpenOptions()
+                }}
+                className="w-full flex items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm text-zinc-300 hover:bg-zinc-900/90"
+              >
+                <Menu size={14} className="text-zinc-500" />
+                Options
               </button>
 
               {onEndTurnEarly && (

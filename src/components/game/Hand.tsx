@@ -20,6 +20,8 @@ interface Props {
   isEnemyActing: boolean
   drawCount: number
   discardCount: number
+  drawPileCards: CardInstance[]
+  discardPileCards: CardInstance[]
   trinkets: TrinketDef[]
   log: string[]
   lastCardPlayedId: string | null
@@ -93,15 +95,18 @@ function CombatLog({ log }: { log: string[] }) {
 
 // ─── Flanking pile components ────────────────────────────────────────────────
 
-function PileStack({ count, label, icon: Icon }: { count: number; label: string; icon: typeof Layers }) {
+function PileStack({ count, label, icon: Icon, onClick }: { count: number; label: string; icon: typeof Layers; onClick?: () => void }) {
   const { tiltStyle, onMouseMove, onMouseLeave } = useTilt(8, 600)
   return (
-    <motion.div
+    <motion.button
+      type="button"
       className="flex flex-col items-center gap-1.5 shrink-0"
       style={tiltStyle}
       whileHover={{ scale: 1.06 }}
+      whileTap={{ scale: 0.97 }}
       onMouseMove={onMouseMove}
       onMouseLeave={onMouseLeave}
+      onClick={onClick}
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
     >
       {/* Stacked card backs */}
@@ -122,6 +127,35 @@ function PileStack({ count, label, icon: Icon }: { count: number; label: string;
         <Icon size={12} />
         <span className="text-[11px] uppercase tracking-widest">{label}</span>
       </div>
+    </motion.button>
+  )
+}
+
+function PileViewer({ title, cards, onClose }: { title: string; cards: CardInstance[]; onClose: () => void }) {
+  return (
+    <motion.div
+      className="absolute bottom-full mb-3 left-0 w-[640px] max-w-[80vw] rounded-xl border border-zinc-700/80 bg-zinc-950/95 p-3 z-[130]"
+      initial={{ opacity: 0, y: 8, scale: 0.98 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: 8, scale: 0.98, transition: { duration: 0.12 } }}
+    >
+      <div className="mb-2 flex items-center justify-between">
+        <p className="text-[10px] uppercase tracking-widest text-zinc-500">{title}</p>
+        <button type="button" onClick={onClose} className="text-xs text-zinc-500 hover:text-zinc-300">Close</button>
+      </div>
+      {cards.length === 0 ? (
+        <p className="text-xs text-zinc-500">Empty.</p>
+      ) : (
+        <div className="max-h-[48vh] overflow-y-auto pr-1">
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 justify-items-center">
+            {cards.map((card, index) => (
+              <div key={`${card.uid}-${index}`} className="scale-[0.85] origin-top">
+                <Card card={card} playable={false} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </motion.div>
   )
 }
@@ -257,10 +291,12 @@ function DraggableCard({
 
 // ─── Hand ────────────────────────────────────────────────────────────────────
 
-export function Hand({ cards, mana, maxMana, gold, onPlay, disabled, isEnemyActing, drawCount, discardCount, trinkets, log, lastCardPlayedId, overflowDiscardFxToken, overflowDiscardFxCount }: Props) {
+export function Hand({ cards, mana, maxMana, gold, onPlay, disabled, isEnemyActing, drawCount, discardCount, drawPileCards, discardPileCards, trinkets, log, lastCardPlayedId, overflowDiscardFxToken, overflowDiscardFxCount }: Props) {
   const [elevated, setElevated] = useState<Set<string>>(new Set())
   const [showLog, setShowLog]   = useState(false)
   const [showInventory, setShowInventory] = useState(false)
+  const [showDrawPile, setShowDrawPile] = useState(false)
+  const [showDiscardPile, setShowDiscardPile] = useState(false)
   const [manaEvents, setManaEvents] = useState<DmgEvent[]>([])
   const [overflowFxEvents, setOverflowFxEvents] = useState<Array<{ id: number; count: number }>>([])
   const nextOverflowFxId = useRef(0)
@@ -323,11 +359,28 @@ export function Hand({ cards, mana, maxMana, gold, onPlay, disabled, isEnemyActi
     >
       {/* Draw pile — pinned bottom-left (mirrors discard pile) */}
       <div className="absolute left-4 bottom-6 z-10">
-        <PileStack count={drawCount} label="Draw" icon={Layers} />
+        <PileStack
+          count={drawCount}
+          label="Draw"
+          icon={Layers}
+          onClick={() => {
+            setShowDiscardPile(false)
+            setShowDrawPile(prev => !prev)
+          }}
+        />
+        <AnimatePresence>
+          {showDrawPile && (
+            <PileViewer
+              title="Draw Pile"
+              cards={drawPileCards}
+              onClose={() => setShowDrawPile(false)}
+            />
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Inventory bag — above draw pile */}
-      <div className="absolute left-4 bottom-[126px] w-16 flex justify-center z-20">
+      <div className="absolute left-4 bottom-[138px] w-16 flex justify-center z-20">
         <motion.button
           type="button"
           onClick={() => setShowInventory(prev => !prev)}
@@ -466,7 +519,26 @@ export function Hand({ cards, mana, maxMana, gold, onPlay, disabled, isEnemyActi
 
       {/* Discard pile — pinned to right edge */}
       <div className="absolute right-4 bottom-6 z-10">
-        <PileStack count={discardCount} label="Discard" icon={Trash2} />
+        <PileStack
+          count={discardCount}
+          label="Discard"
+          icon={Trash2}
+          onClick={() => {
+            setShowDrawPile(false)
+            setShowDiscardPile(prev => !prev)
+          }}
+        />
+        <AnimatePresence>
+          {showDiscardPile && (
+            <div className="absolute right-0 bottom-full mb-3">
+              <PileViewer
+                title="Discard Pile"
+                cards={discardPileCards}
+                onClose={() => setShowDiscardPile(false)}
+              />
+            </div>
+          )}
+        </AnimatePresence>
       </div>
 
     </div>

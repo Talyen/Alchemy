@@ -81,17 +81,20 @@ export interface DmgEvent {
   id: number
   /** Positive or negative amount. Sign is shown automatically. */
   value: number
-  type: 'damage' | 'heal' | 'block' | 'gold' | 'mana'
+  type: 'damage' | 'heal' | 'block' | 'gold' | 'mana' | 'burn_damage' | 'poison_damage' | 'bleed_damage'
   cardId?: string
   lane?: number
 }
 
 const dmgCfg = {
-  damage: { color: '#dc2626', prefix: '-', Icon: Sword,      shadow: 'rgba(185,28,28,0.4)' },
-  heal:   { color: '#16a34a', prefix: '+', Icon: Heart,      shadow: 'rgba(22,163,74,0.4)'  },
-  block:  { color: '#3b82f6', prefix: '+', Icon: ShieldHalf, shadow: 'rgba(59,130,246,0.4)' },
-  gold:   { color: '#f59e0b', prefix: '+', Icon: Diamond, shadow: 'rgba(245,158,11,0.4)' },
-  mana:   { color: '#2563eb', prefix: '+', Icon: Diamond, shadow: 'rgba(37,99,235,0.4)' },
+  damage:       { color: '#dc2626', prefix: '-', Icon: Sword,       shadow: 'rgba(185,28,28,0.4)' },
+  heal:         { color: '#16a34a', prefix: '+', Icon: Heart,       shadow: 'rgba(22,163,74,0.4)'  },
+  block:        { color: '#3b82f6', prefix: '+', Icon: ShieldHalf,  shadow: 'rgba(59,130,246,0.4)' },
+  gold:         { color: '#f59e0b', prefix: '+', Icon: Diamond,     shadow: 'rgba(245,158,11,0.4)' },
+  mana:         { color: '#2563eb', prefix: '+', Icon: Diamond,     shadow: 'rgba(37,99,235,0.4)' },
+  burn_damage:  { color: '#f97316', prefix: '-', Icon: Flame,       shadow: 'rgba(249,115,22,0.4)' },
+  poison_damage:{ color: '#4ade80', prefix: '-', Icon: Droplets,    shadow: 'rgba(74,222,128,0.4)' },
+  bleed_damage: { color: '#f87171', prefix: '-', Icon: Swords,      shadow: 'rgba(248,113,113,0.4)' },
 }
 
 interface DmgProps {
@@ -104,7 +107,8 @@ export function FloatingNumber({ event, onDone, top }: DmgProps) {
   const { color, Icon, shadow } = dmgCfg[event.type]
   const cardArt = event.cardId ? CARD_ART_BY_ID[event.cardId] : undefined
   const popupSeed = event.id * 11 + Math.abs(event.value) * 7 + event.type.length * 13
-  const popupMotion = event.type === 'damage'
+  const isBurst = event.type === 'damage' || event.type === 'burn_damage' || event.type === 'poison_damage' || event.type === 'bleed_damage'
+  const popupMotion = isBurst
     ? getDamageBurstMotion(popupSeed, event.lane ?? 0)
     : getStableFadeMotion(popupSeed)
   // determine sign and display value

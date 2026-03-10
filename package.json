@@ -11,6 +11,7 @@
     "screenshot:destination": "node scripts/screenshot-map.mjs",
     "screenshot:card-variants": "node scripts/screenshot-card-variants.mjs",
     "screenshot:immolate-bg": "node scripts/screenshot-immolate-bg.mjs",
+    "sprites:generate": "node scripts/generate-sprites.mjs",
     "test": "playwright test --project=core",
     "test:all": "playwright test",
     "test:extended": "playwright test --project=extended-regression"
@@ -18,10 +19,12 @@
   "dependencies": {
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "dotenv": "^17.3.1",
     "framer-motion": "^12.0.0",
     "lucide-react": "^0.474.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "replicate": "^1.4.0",
     "tailwind-merge": "^3.5.0"
   },
   "devDependencies": {

@@ -73,7 +73,37 @@ let bgmTrackToken = 0
 let currentBgmKey: string | null = null
 let bgmNeedsUserUnmute = false
 let lastBattleTrackIndex = -1
-const BGM_TARGET_VOLUME = 0.14
+const BASE_BGM_TARGET_VOLUME = 0.14
+
+let audioMix = {
+  master: 1,
+  music: 0.7,
+  sfx: 0.8,
+}
+
+function getClampedUnit(value: number) {
+  return Math.max(0, Math.min(1, value))
+}
+
+function getBgmTargetVolume() {
+  return BASE_BGM_TARGET_VOLUME * audioMix.master * audioMix.music
+}
+
+function getSfxVolume(baseVolume: number) {
+  return baseVolume * audioMix.master * audioMix.sfx
+}
+
+export function setAudioMix(nextMix: Partial<typeof audioMix>) {
+  audioMix = {
+    master: getClampedUnit(nextMix.master ?? audioMix.master),
+    music: getClampedUnit(nextMix.music ?? audioMix.music),
+    sfx: getClampedUnit(nextMix.sfx ?? audioMix.sfx),
+  }
+
+  if (bgmElement) {
+    bgmElement.volume = getBgmTargetVolume()
+  }
+}
 
 type AudioExt = 'ogg' | 'mp3' | 'wav'
 const AUDIO_EXT_ORDER: AudioExt[] = ['ogg', 'mp3', 'wav']
@@ -232,9 +262,10 @@ export const startBGM = (source?: SoundSource) => {
         }
         return
       }
-      volume = Math.min(volume + 0.02, BGM_TARGET_VOLUME)
+      const targetVolume = getBgmTargetVolume()
+      volume = Math.min(volume + 0.02, targetVolume)
       element.volume = volume
-      if (volume >= BGM_TARGET_VOLUME && bgmFadeInterval) {
+      if (volume >= targetVolume && bgmFadeInterval) {
         clearInterval(bgmFadeInterval)
         bgmFadeInterval = null
       }
@@ -356,9 +387,10 @@ const playSampleIfAvailable = (source: SoundSource | undefined, volume = 0.15, l
   const key = sourceKey(source)
 
   const cached = audioCache.get(key)
+  const mixedVolume = getSfxVolume(volume)
   if (cached) {
     cached.pause()
-    cached.volume = volume
+    cached.volume = mixedVolume
     cached.currentTime = 0
     cached.play().then(() => {
       if (countAsGameplay) trackGameplaySfx(cached)
@@ -372,7 +404,7 @@ const playSampleIfAvailable = (source: SoundSource | undefined, volume = 0.15, l
       return
     }
     const audio = new Audio(resolvedPath)
-    audio.volume = volume
+    audio.volume = mixedVolume
     audio.play().then(() => {
       if (countAsGameplay) trackGameplaySfx(audio)
     }).catch(() => {})

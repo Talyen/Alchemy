@@ -1,0 +1,696 @@
+{
+  "version": 1,
+  "outputRoot": "public/assets/generated/sprites",
+  "sprites": [
+    {
+      "id": "hero-knight-battle-idle-flux-i01",
+      "status": "generated",
+      "prompt": "SPRITES detailed pixel art sprite sheet of one single armored knight character only, same identity in every frame, helmeted with no visible hair variation, sword and shield, right-facing side profile in all frames. EXACTLY 8-frame battle idle animation in a strict 4 columns x 2 rows grid, equal frame boxes, consistent scale and alignment. Idle motion only: subtle breathing, cape flutter, shield-arm micro shift. No walking, no turning, no front-facing view, no alternate characters, no collage, no large central overlay. Transparent alpha background required. Style inspirations: Loop Hero, Celeste, Eastward, Octopath Traveler II, Little Witch in the Woods, Sea of Stars, Owlboy. For a 2D fantasy dungeon-crawling deckbuilder roguelite like Slay the Spire.",
+      "resolution": {
+        "width": 1024,
+        "height": 512
+      },
+      "animationStyle": "battle_idle_sheet",
+      "outputMode": "single_asset",
+      "framePrefix": "hero-knight-battle-idle-flux-i01-f",
+      "modelInput": {
+        "model": "dev",
+        "num_outputs": 1,
+        "go_fast": false,
+        "output_format": "png",
+        "output_quality": 100,
+        "aspect_ratio": "custom",
+        "num_inference_steps": 40,
+        "guidance_scale": 5,
+        "lora_scale": 1.1,
+        "seed": 5001
+      },
+      "error": null,
+      "lastAttemptAt": "2026-03-10T17:43:57.016Z",
+      "generatedAt": "2026-03-10T17:44:07.212Z",
+      "outputKind": "single_asset",
+      "outputFiles": [
+        "public/assets/generated/sprites/hero-knight-battle-idle-flux-i01/hero-knight-battle-idle-flux-i01.png"
+      ],
+      "outputFrames": [
+        "public/assets/generated/sprites/hero-knight-battle-idle-flux-i01/hero-knight-battle-idle-flux-i01.png"
+      ]
+    },
+    {
+      "id": "hero-knight-battle-idle-flux-i02",
+      "status": "generated",
+      "prompt": "SPRITES detailed pixel art sprite sheet of one single armored knight character only, same identity in every frame, helmeted with no visible hair variation, sword and shield, right-facing side profile in all frames. EXACTLY 8-frame battle idle animation in a strict 4 columns x 2 rows grid, equal frame boxes, consistent scale and alignment. Idle motion only: subtle breathing, cape flutter, shield-arm micro shift. No walking, no turning, no front-facing view, no alternate characters, no collage, no large central overlay. Transparent alpha background required. Style inspirations: Loop Hero, Celeste, Eastward, Octopath Traveler II, Little Witch in the Woods, Sea of Stars, Owlboy. For a 2D fantasy dungeon-crawling deckbuilder roguelite like Slay the Spire.",
+      "resolution": {
+        "width": 1024,
+        "height": 512
+      },
+      "animationStyle": "battle_idle_sheet",
+      "outputMode": "single_asset",
+      "framePrefix": "hero-knight-battle-idle-flux-i02-f",
+      "modelInput": {
+        "model": "dev",
+        "num_outputs": 1,
+        "go_fast": false,
+        "output_format": "png",
+        "output_quality": 100,
+        "aspect_ratio": "custom",
+        "num_inference_steps": 40,
+        "guidance_scale": 5,
+        "lora_scale": 1.1,
+        "seed": 5002
+      },
+      "error": null,
+      "lastAttemptAt": "2026-03-10T17:44:07.213Z",
+      "generatedAt": "2026-03-10T17:44:14.024Z",
+      "outputKind": "single_asset",
+      "outputFiles": [
+        "public/assets/generated/sprites/hero-knight-battle-idle-flux-i02/hero-knight-battle-idle-flux-i02.png"
+      ],
+      "outputFrames": [
+        "public/assets/generated/sprites/hero-knight-battle-idle-flux-i02/hero-knight-battle-idle-flux-i02.png"
+      ]
+    },
+    {
+      "id": "hero-knight-battle-idle-flux-i03",
+      "status": "generated",
+      "prompt": "SPRITES detailed pixel art sprite sheet of one single armored knight character only, same identity in every frame, helmeted with no visible hair variation, sword and shield, right-facing side profile in all frames. EXACTLY 8-frame battle idle animation in a strict 4 columns x 2 rows grid, equal frame boxes, consistent scale and alignment. Idle motion only: subtle breathing, cape flutter, shield-arm micro shift. No walking, no turning, no front-facing view, no alternate characters, no collage, no large central overlay. Transparent alpha background required. Style inspirations: Loop Hero, Celeste, Eastward, Octopath Traveler II, Little Witch in the Woods, Sea of Stars, Owlboy. For a 2D fantasy dungeon-crawling deckbuilder roguelite like Slay the Spire.",
+      "resolution": {
+        "width": 1024,
+        "height": 512
+      },
+      "animationStyle": "battle_idle_sheet",
+      "outputMode": "single_asset",
+      "framePrefix": "hero-knight-battle-idle-flux-i03-f",
+      "modelInput": {
+        "model": "dev",
+        "num_outputs": 1,
+        "go_fast": false,
+        "output_format": "png",
+        "output_quality": 100,
+        "aspect_ratio": "custom",
+        "num_inference_steps": 40,
+        "guidance_scale": 5,
+        "lora_scale": 1.1,
+        "seed": 5003
+      },
+      "error": null,
+      "lastAttemptAt": "2026-03-10T17:44:14.025Z",
+      "generatedAt": "2026-03-10T17:44:28.496Z",
+      "outputKind": "single_asset",
+      "outputFiles": [
+        "public/assets/generated/sprites/hero-knight-battle-idle-flux-i03/hero-knight-battle-idle-flux-i03.png"
+      ],
+      "outputFrames": [
+        "public/assets/generated/sprites/hero-knight-battle-idle-flux-i03/hero-knight-battle-idle-flux-i03.png"
+      ]
+    },
+    {
+      "id": "hero-knight-battle-idle-flux-i04",
+      "status": "generated",
+      "prompt": "SPRITES detailed pixel art sprite sheet of one single armored knight character only, same identity in every frame, helmeted with no visible hair variation, sword and shield, right-facing side profile in all frames. EXACTLY 8-frame battle idle animation in a strict 4 columns x 2 rows grid, equal frame boxes, consistent scale and alignment. Idle motion only: subtle breathing, cape flutter, shield-arm micro shift. No walking, no turning, no front-facing view, no alternate characters, no collage, no large central overlay. Transparent alpha background required. Style inspirations: Loop Hero, Celeste, Eastward, Octopath Traveler II, Little Witch in the Woods, Sea of Stars, Owlboy. For a 2D fantasy dungeon-crawling deckbuilder roguelite like Slay the Spire.",
+      "resolution": {
+        "width": 1024,
+        "height": 512
+      },
+      "animationStyle": "battle_idle_sheet",
+      "outputMode": "single_asset",
+      "framePrefix": "hero-knight-battle-idle-flux-i04-f",
+      "modelInput": {
+        "model": "dev",
+        "num_outputs": 1,
+        "go_fast": false,
+        "output_format": "png",
+        "output_quality": 100,
+        "aspect_ratio": "custom",
+        "num_inference_steps": 40,
+        "guidance_scale": 5,
+        "lora_scale": 1.1,
+        "seed": 5004
+      },
+      "error": null,
+      "lastAttemptAt": "2026-03-10T17:44:28.497Z",
+      "generatedAt": "2026-03-10T17:44:39.304Z",
+      "outputKind": "single_asset",
+      "outputFiles": [
+        "public/assets/generated/sprites/hero-knight-battle-idle-flux-i04/hero-knight-battle-idle-flux-i04.png"
+      ],
+      "outputFrames": [
+        "public/assets/generated/sprites/hero-knight-battle-idle-flux-i04/hero-knight-battle-idle-flux-i04.png"
+      ]
+    },
+    {
+      "id": "hero-knight-battle-idle-flux-i05",
+      "status": "generated",
+      "prompt": "SPRITES detailed pixel art sprite sheet of one single armored knight character only, same identity in every frame, helmeted with no visible hair variation, sword and shield, right-facing side profile in all frames. EXACTLY 8-frame battle idle animation in a strict 4 columns x 2 rows grid, equal frame boxes, consistent scale and alignment. Idle motion only: subtle breathing, cape flutter, shield-arm micro shift. No walking, no turning, no front-facing view, no alternate characters, no collage, no large central overlay. Transparent alpha background required. Style inspirations: Loop Hero, Celeste, Eastward, Octopath Traveler II, Little Witch in the Woods, Sea of Stars, Owlboy. For a 2D fantasy dungeon-crawling deckbuilder roguelite like Slay the Spire.",
+      "resolution": {
+        "width": 1024,
+        "height": 512
+      },
+      "animationStyle": "battle_idle_sheet",
+      "outputMode": "single_asset",
+      "framePrefix": "hero-knight-battle-idle-flux-i05-f",
+      "modelInput": {
+        "model": "dev",
+        "num_outputs": 1,
+        "go_fast": false,
+        "output_format": "png",
+        "output_quality": 100,
+        "aspect_ratio": "custom",
+        "num_inference_steps": 40,
+        "guidance_scale": 5,
+        "lora_scale": 1.1,
+        "seed": 5005
+      },
+      "error": null,
+      "lastAttemptAt": "2026-03-10T17:44:39.305Z",
+      "generatedAt": "2026-03-10T17:44:45.987Z",
+      "outputKind": "single_asset",
+      "outputFiles": [
+        "public/assets/generated/sprites/hero-knight-battle-idle-flux-i05/hero-knight-battle-idle-flux-i05.png"
+      ],
+      "outputFrames": [
+        "public/assets/generated/sprites/hero-knight-battle-idle-flux-i05/hero-knight-battle-idle-flux-i05.png"
+      ]
+    },
+    {
+      "id": "hero-knight-battle-idle-flux-i06",
+      "status": "generated",
+      "prompt": "SPRITES detailed pixel art sprite sheet of one single armored knight character only, same identity in every frame, helmeted with no visible hair variation, sword and shield, right-facing side profile in all frames. EXACTLY 8-frame battle idle animation in a strict 4 columns x 2 rows grid, equal frame boxes, consistent scale and alignment. Idle motion only: subtle breathing, cape flutter, shield-arm micro shift. No walking, no turning, no front-facing view, no alternate characters, no collage, no large central overlay. Transparent alpha background required. Style inspirations: Loop Hero, Celeste, Eastward, Octopath Traveler II, Little Witch in the Woods, Sea of Stars, Owlboy. For a 2D fantasy dungeon-crawling deckbuilder roguelite like Slay the Spire.",
+      "resolution": {
+        "width": 1024,
+        "height": 512
+      },
+      "animationStyle": "battle_idle_sheet",
+      "outputMode": "single_asset",
+      "framePrefix": "hero-knight-battle-idle-flux-i06-f",
+      "modelInput": {
+        "model": "dev",
+        "num_outputs": 1,
+        "go_fast": false,
+        "output_format": "png",
+        "output_quality": 100,
+        "aspect_ratio": "custom",
+        "num_inference_steps": 40,
+        "guidance_scale": 5,
+        "lora_scale": 1.1,
+        "seed": 5006
+      },
+      "error": null,
+      "lastAttemptAt": "2026-03-10T17:44:45.988Z",
+      "generatedAt": "2026-03-10T17:44:58.544Z",
+      "outputKind": "single_asset",
+      "outputFiles": [
+        "public/assets/generated/sprites/hero-knight-battle-idle-flux-i06/hero-knight-battle-idle-flux-i06.png"
+      ],
+      "outputFrames": [
+        "public/assets/generated/sprites/hero-knight-battle-idle-flux-i06/hero-knight-battle-idle-flux-i06.png"
+      ]
+    },
+    {
+      "id": "hero-knight-battle-idle-flux-i07",
+      "status": "generated",
+      "prompt": "SPRITES detailed pixel art sprite sheet of one single armored knight character only, same identity in every frame, helmeted with no visible hair variation, sword and shield, right-facing side profile in all frames. EXACTLY 8-frame battle idle animation in a strict 4 columns x 2 rows grid, equal frame boxes, consistent scale and alignment. Idle motion only: subtle breathing, cape flutter, shield-arm micro shift. No walking, no turning, no front-facing view, no alternate characters, no collage, no large central overlay. Transparent alpha background required. Style inspirations: Loop Hero, Celeste, Eastward, Octopath Traveler II, Little Witch in the Woods, Sea of Stars, Owlboy. For a 2D fantasy dungeon-crawling deckbuilder roguelite like Slay the Spire.",
+      "resolution": {
+        "width": 1024,
+        "height": 512
+      },
+      "animationStyle": "battle_idle_sheet",
+      "outputMode": "single_asset",
+      "framePrefix": "hero-knight-battle-idle-flux-i07-f",
+      "modelInput": {
+        "model": "dev",
+        "num_outputs": 1,
+        "go_fast": false,
+        "output_format": "png",
+        "output_quality": 100,
+        "aspect_ratio": "custom",
+        "num_inference_steps": 40,
+        "guidance_scale": 5,
+        "lora_scale": 1.1,
+        "seed": 5007
+      },
+      "error": null,
+      "lastAttemptAt": "2026-03-10T17:44:58.544Z",
+      "generatedAt": "2026-03-10T17:45:07.678Z",
+      "outputKind": "single_asset",
+      "outputFiles": [
+        "public/assets/generated/sprites/hero-knight-battle-idle-flux-i07/hero-knight-battle-idle-flux-i07.png"
+      ],
+      "outputFrames": [
+        "public/assets/generated/sprites/hero-knight-battle-idle-flux-i07/hero-knight-battle-idle-flux-i07.png"
+      ]
+    },
+    {
+      "id": "hero-knight-battle-idle-flux-i08",
+      "status": "generated",
+      "prompt": "SPRITES detailed pixel art sprite sheet of one single armored knight character only, same identity in every frame, helmeted with no visible hair variation, sword and shield, right-facing side profile in all frames. EXACTLY 8-frame battle idle animation in a strict 4 columns x 2 rows grid, equal frame boxes, consistent scale and alignment. Idle motion only: subtle breathing, cape flutter, shield-arm micro shift. No walking, no turning, no front-facing view, no alternate characters, no collage, no large central overlay. Transparent alpha background required. Style inspirations: Loop Hero, Celeste, Eastward, Octopath Traveler II, Little Witch in the Woods, Sea of Stars, Owlboy. For a 2D fantasy dungeon-crawling deckbuilder roguelite like Slay the Spire.",
+      "resolution": {
+        "width": 1024,
+        "height": 512
+      },
+      "animationStyle": "battle_idle_sheet",
+      "outputMode": "single_asset",
+      "framePrefix": "hero-knight-battle-idle-flux-i08-f",
+      "modelInput": {
+        "model": "dev",
+        "num_outputs": 1,
+        "go_fast": false,
+        "output_format": "png",
+        "output_quality": 100,
+        "aspect_ratio": "custom",
+        "num_inference_steps": 40,
+        "guidance_scale": 5,
+        "lora_scale": 1.1,
+        "seed": 5008
+      },
+      "error": null,
+      "lastAttemptAt": "2026-03-10T17:45:07.679Z",
+      "generatedAt": "2026-03-10T17:45:20.946Z",
+      "outputKind": "single_asset",
+      "outputFiles": [
+        "public/assets/generated/sprites/hero-knight-battle-idle-flux-i08/hero-knight-battle-idle-flux-i08.png"
+      ],
+      "outputFrames": [
+        "public/assets/generated/sprites/hero-knight-battle-idle-flux-i08/hero-knight-battle-idle-flux-i08.png"
+      ]
+    },
+    {
+      "id": "hero-knight-battle-idle-flux-i09",
+      "status": "generated",
+      "prompt": "SPRITES detailed pixel art sprite sheet of one single armored knight character only, same identity in every frame, helmeted with no visible hair variation, sword and shield, right-facing side profile in all frames. EXACTLY 8-frame battle idle animation in a strict 4 columns x 2 rows grid, equal frame boxes, consistent scale and alignment. Idle motion only: subtle breathing, cape flutter, shield-arm micro shift. No walking, no turning, no front-facing view, no alternate characters, no collage, no large central overlay. Transparent alpha background required. Style inspirations: Loop Hero, Celeste, Eastward, Octopath Traveler II, Little Witch in the Woods, Sea of Stars, Owlboy. For a 2D fantasy dungeon-crawling deckbuilder roguelite like Slay the Spire.",
+      "resolution": {
+        "width": 1024,
+        "height": 512
+      },
+      "animationStyle": "battle_idle_sheet",
+      "outputMode": "single_asset",
+      "framePrefix": "hero-knight-battle-idle-flux-i09-f",
+      "modelInput": {
+        "model": "dev",
+        "num_outputs": 1,
+        "go_fast": false,
+        "output_format": "png",
+        "output_quality": 100,
+        "aspect_ratio": "custom",
+        "num_inference_steps": 40,
+        "guidance_scale": 5,
+        "lora_scale": 1.1,
+        "seed": 5009
+      },
+      "error": null,
+      "lastAttemptAt": "2026-03-10T17:45:20.947Z",
+      "generatedAt": "2026-03-10T17:45:28.004Z",
+      "outputKind": "single_asset",
+      "outputFiles": [
+        "public/assets/generated/sprites/hero-knight-battle-idle-flux-i09/hero-knight-battle-idle-flux-i09.png"
+      ],
+      "outputFrames": [
+        "public/assets/generated/sprites/hero-knight-battle-idle-flux-i09/hero-knight-battle-idle-flux-i09.png"
+      ]
+    },
+    {
+      "id": "hero-knight-battle-idle-flux-i10",
+      "status": "generated",
+      "prompt": "SPRITES detailed pixel art sprite sheet of one single armored knight character only, same identity in every frame, helmeted with no visible hair variation, sword and shield, right-facing side profile in all frames. EXACTLY 8-frame battle idle animation in a strict 4 columns x 2 rows grid, equal frame boxes, consistent scale and alignment. Idle motion only: subtle breathing, cape flutter, shield-arm micro shift. No walking, no turning, no front-facing view, no alternate characters, no collage, no large central overlay. Transparent alpha background required. Style inspirations: Loop Hero, Celeste, Eastward, Octopath Traveler II, Little Witch in the Woods, Sea of Stars, Owlboy. For a 2D fantasy dungeon-crawling deckbuilder roguelite like Slay the Spire.",
+      "resolution": {
+        "width": 1024,
+        "height": 512
+      },
+      "animationStyle": "battle_idle_sheet",
+      "outputMode": "single_asset",
+      "framePrefix": "hero-knight-battle-idle-flux-i10-f",
+      "modelInput": {
+        "model": "dev",
+        "num_outputs": 1,
+        "go_fast": false,
+        "output_format": "png",
+        "output_quality": 100,
+        "aspect_ratio": "custom",
+        "num_inference_steps": 40,
+        "guidance_scale": 5,
+        "lora_scale": 1.1,
+        "seed": 5010
+      },
+      "error": null,
+      "lastAttemptAt": "2026-03-10T17:45:28.005Z",
+      "generatedAt": "2026-03-10T17:45:40.808Z",
+      "outputKind": "single_asset",
+      "outputFiles": [
+        "public/assets/generated/sprites/hero-knight-battle-idle-flux-i10/hero-knight-battle-idle-flux-i10.png"
+      ],
+      "outputFrames": [
+        "public/assets/generated/sprites/hero-knight-battle-idle-flux-i10/hero-knight-battle-idle-flux-i10.png"
+      ]
+    },
+    {
+      "id": "hero-knight-anchor-fgal-a01",
+      "status": "generated",
+      "model": "replicate/flux-2d-game-assets:0afb5cc10c16d8b5b8af800cbfe236481348936f4d872e404d1b7ce1e3b9c96d",
+      "prompt": "FGAL pixel art full-body armored knight with sword and shield, right-facing side profile, centered single character, plain clean background",
+      "resolution": {
+        "width": 512,
+        "height": 512
+      },
+      "animationStyle": "anchor_reference",
+      "outputMode": "single_asset",
+      "modelInput": {
+        "model": "dev",
+        "num_outputs": 1,
+        "go_fast": false,
+        "output_format": "png",
+        "output_quality": 100,
+        "aspect_ratio": "custom",
+        "num_inference_steps": 28,
+        "guidance_scale": 3.5,
+        "lora_scale": 1,
+        "seed": 6101
+      },
+      "error": null,
+      "lastAttemptAt": "2026-03-10T18:00:05.376Z",
+      "generatedAt": "2026-03-10T18:00:42.984Z",
+      "outputKind": "single_asset",
+      "outputFiles": [
+        "public/assets/generated/sprites/hero-knight-anchor-fgal-a01/hero-knight-anchor-fgal-a01.png"
+      ],
+      "outputFrames": [
+        "public/assets/generated/sprites/hero-knight-anchor-fgal-a01/hero-knight-anchor-fgal-a01.png"
+      ],
+      "outputUrls": [
+        "https://replicate.delivery/xezq/8dHmNpt0TjJLA5oNDYeVZNggNqTqObqblh9DVOF8SkYkcwHLA/out-0.png"
+      ],
+      "modelUsed": "replicate/flux-2d-game-assets:0afb5cc10c16d8b5b8af800cbfe236481348936f4d872e404d1b7ce1e3b9c96d"
+    },
+    {
+      "id": "hero-knight-battle-idle-anchor-dev-a01",
+      "status": "generated",
+      "prompt": "SPRITES pixel art sprite sheet of ONE armored knight only, right-facing side profile in every frame, same helmet, same proportions, same face/armor details. EXACT 8-frame battle idle loop in strict 4x2 grid with equal frame boxes and consistent baseline. Motion only: subtle breathing, cloth flutter, tiny shield hand shift. No walk cycle, no pose jump, no camera change, no extra characters, no collage, no text, no watermark.",
+      "resolution": {
+        "width": 1024,
+        "height": 512
+      },
+      "animationStyle": "battle_idle_sheet_anchored",
+      "outputMode": "single_asset",
+      "modelInput": {
+        "model": "dev",
+        "num_outputs": 1,
+        "go_fast": false,
+        "output_format": "png",
+        "output_quality": 100,
+        "aspect_ratio": "custom",
+        "num_inference_steps": 38,
+        "guidance_scale": 4.5,
+        "lora_scale": 1,
+        "prompt_strength": 0.32,
+        "seed": 7101,
+        "image": "public/assets/generated/sprites/hero-knight-anchor-sheet-1024x512.png"
+      },
+      "error": null,
+      "lastAttemptAt": "2026-03-10T18:04:42.632Z",
+      "generatedAt": "2026-03-10T18:04:49.972Z",
+      "outputKind": "single_asset",
+      "outputFiles": [
+        "public/assets/generated/sprites/hero-knight-battle-idle-anchor-dev-a01/hero-knight-battle-idle-anchor-dev-a01.png"
+      ],
+      "outputFrames": [
+        "public/assets/generated/sprites/hero-knight-battle-idle-anchor-dev-a01/hero-knight-battle-idle-anchor-dev-a01.png"
+      ],
+      "outputUrls": [
+        "https://replicate.delivery/xezq/EeiRLJHTUHToX6mBujXBGiebKWe990Eskewb55EqJtC8zDexC/out-0.png"
+      ],
+      "modelUsed": "miike-ai/flux-sprites:bfbaa4240a9948bcc5483cceb9abd73db68c63018a4a7ba5b8a01616d291dcc9"
+    },
+    {
+      "id": "hero-knight-battle-idle-anchor-dev-a02",
+      "status": "generated",
+      "prompt": "SPRITES pixel art sprite sheet of ONE armored knight only, right-facing side profile in every frame, same helmet, same proportions, same face/armor details. EXACT 8-frame battle idle loop in strict 4x2 grid with equal frame boxes and consistent baseline. Motion only: subtle breathing, cloth flutter, tiny shield hand shift. No walk cycle, no pose jump, no camera change, no extra characters, no collage, no text, no watermark.",
+      "resolution": {
+        "width": 1024,
+        "height": 512
+      },
+      "animationStyle": "battle_idle_sheet_anchored",
+      "outputMode": "single_asset",
+      "modelInput": {
+        "model": "dev",
+        "num_outputs": 1,
+        "go_fast": false,
+        "output_format": "png",
+        "output_quality": 100,
+        "aspect_ratio": "custom",
+        "num_inference_steps": 38,
+        "guidance_scale": 4.5,
+        "lora_scale": 1,
+        "prompt_strength": 0.32,
+        "seed": 7102,
+        "image": "public/assets/generated/sprites/hero-knight-anchor-sheet-1024x512.png"
+      },
+      "error": null,
+      "lastAttemptAt": "2026-03-10T18:04:49.973Z",
+      "generatedAt": "2026-03-10T18:04:57.282Z",
+      "outputKind": "single_asset",
+      "outputFiles": [
+        "public/assets/generated/sprites/hero-knight-battle-idle-anchor-dev-a02/hero-knight-battle-idle-anchor-dev-a02.png"
+      ],
+      "outputFrames": [
+        "public/assets/generated/sprites/hero-knight-battle-idle-anchor-dev-a02/hero-knight-battle-idle-anchor-dev-a02.png"
+      ],
+      "outputUrls": [
+        "https://replicate.delivery/xezq/qPHxh5XvfhX0I6uegsfSse3Ju7MSeyZn3lMgcYZ6ipNyoH8xC/out-0.png"
+      ],
+      "modelUsed": "miike-ai/flux-sprites:bfbaa4240a9948bcc5483cceb9abd73db68c63018a4a7ba5b8a01616d291dcc9"
+    },
+    {
+      "id": "hero-knight-battle-idle-anchor-dev-a03",
+      "status": "generated",
+      "prompt": "SPRITES pixel art sprite sheet of ONE armored knight only, right-facing side profile in every frame, same helmet, same proportions, same face/armor details. EXACT 8-frame battle idle loop in strict 4x2 grid with equal frame boxes and consistent baseline. Motion only: subtle breathing, cloth flutter, tiny shield hand shift. No walk cycle, no pose jump, no camera change, no extra characters, no collage, no text, no watermark.",
+      "resolution": {
+        "width": 1024,
+        "height": 512
+      },
+      "animationStyle": "battle_idle_sheet_anchored",
+      "outputMode": "single_asset",
+      "modelInput": {
+        "model": "dev",
+        "num_outputs": 1,
+        "go_fast": false,
+        "output_format": "png",
+        "output_quality": 100,
+        "aspect_ratio": "custom",
+        "num_inference_steps": 38,
+        "guidance_scale": 4.5,
+        "lora_scale": 1,
+        "prompt_strength": 0.32,
+        "seed": 7103,
+        "image": "public/assets/generated/sprites/hero-knight-anchor-sheet-1024x512.png"
+      },
+      "error": null,
+      "lastAttemptAt": "2026-03-10T18:04:57.283Z",
+      "generatedAt": "2026-03-10T18:05:09.549Z",
+      "outputKind": "single_asset",
+      "outputFiles": [
+        "public/assets/generated/sprites/hero-knight-battle-idle-anchor-dev-a03/hero-knight-battle-idle-anchor-dev-a03.png"
+      ],
+      "outputFrames": [
+        "public/assets/generated/sprites/hero-knight-battle-idle-anchor-dev-a03/hero-knight-battle-idle-anchor-dev-a03.png"
+      ],
+      "outputUrls": [
+        "https://replicate.delivery/xezq/QPe7xAhcg8RvU6A4EmJpMFGnW7sjHclVMJ7cD7QsgdxpegPWA/out-0.png"
+      ],
+      "modelUsed": "miike-ai/flux-sprites:bfbaa4240a9948bcc5483cceb9abd73db68c63018a4a7ba5b8a01616d291dcc9"
+    },
+    {
+      "id": "hero-knight-battle-idle-anchor-dev-a04",
+      "status": "generated",
+      "prompt": "SPRITES pixel art sprite sheet of ONE armored knight only, right-facing side profile in every frame, same helmet, same proportions, same face/armor details. EXACT 8-frame battle idle loop in strict 4x2 grid with equal frame boxes and consistent baseline. Motion only: subtle breathing, cloth flutter, tiny shield hand shift. No walk cycle, no pose jump, no camera change, no extra characters, no collage, no text, no watermark.",
+      "resolution": {
+        "width": 1024,
+        "height": 512
+      },
+      "animationStyle": "battle_idle_sheet_anchored",
+      "outputMode": "single_asset",
+      "modelInput": {
+        "model": "dev",
+        "num_outputs": 1,
+        "go_fast": false,
+        "output_format": "png",
+        "output_quality": 100,
+        "aspect_ratio": "custom",
+        "num_inference_steps": 38,
+        "guidance_scale": 4.5,
+        "lora_scale": 1,
+        "prompt_strength": 0.32,
+        "seed": 7104,
+        "image": "public/assets/generated/sprites/hero-knight-anchor-sheet-1024x512.png"
+      },
+      "error": null,
+      "lastAttemptAt": "2026-03-10T18:05:09.550Z",
+      "generatedAt": "2026-03-10T18:05:20.222Z",
+      "outputKind": "single_asset",
+      "outputFiles": [
+        "public/assets/generated/sprites/hero-knight-battle-idle-anchor-dev-a04/hero-knight-battle-idle-anchor-dev-a04.png"
+      ],
+      "outputFrames": [
+        "public/assets/generated/sprites/hero-knight-battle-idle-anchor-dev-a04/hero-knight-battle-idle-anchor-dev-a04.png"
+      ],
+      "outputUrls": [
+        "https://replicate.delivery/xezq/0DgRyn7H2u70A1eOuFHV2ATHSLxSXj1chBAc2Fcv95iuegPWA/out-0.png"
+      ],
+      "modelUsed": "miike-ai/flux-sprites:bfbaa4240a9948bcc5483cceb9abd73db68c63018a4a7ba5b8a01616d291dcc9"
+    },
+    {
+      "id": "hero-knight-battle-idle-anchor-schnell-b01",
+      "status": "generated",
+      "prompt": "SPRITES pixel art sprite sheet of ONE armored knight only, right-facing side profile in every frame, same helmet, same proportions, same face/armor details. EXACT 8-frame battle idle loop in strict 4x2 grid with equal frame boxes and consistent baseline. Motion only: subtle breathing, cloth flutter, tiny shield hand shift. No walk cycle, no pose jump, no camera change, no extra characters, no collage, no text, no watermark.",
+      "resolution": {
+        "width": 1024,
+        "height": 512
+      },
+      "animationStyle": "battle_idle_sheet_anchored",
+      "outputMode": "single_asset",
+      "modelInput": {
+        "model": "schnell",
+        "num_outputs": 1,
+        "go_fast": true,
+        "output_format": "png",
+        "output_quality": 100,
+        "aspect_ratio": "custom",
+        "num_inference_steps": 4,
+        "guidance_scale": 3.5,
+        "lora_scale": 0.9,
+        "prompt_strength": 0.28,
+        "seed": 7201,
+        "image": "public/assets/generated/sprites/hero-knight-anchor-sheet-1024x512.png"
+      },
+      "error": null,
+      "lastAttemptAt": "2026-03-10T18:05:20.223Z",
+      "generatedAt": "2026-03-10T18:05:29.487Z",
+      "outputKind": "single_asset",
+      "outputFiles": [
+        "public/assets/generated/sprites/hero-knight-battle-idle-anchor-schnell-b01/hero-knight-battle-idle-anchor-schnell-b01.png"
+      ],
+      "outputFrames": [
+        "public/assets/generated/sprites/hero-knight-battle-idle-anchor-schnell-b01/hero-knight-battle-idle-anchor-schnell-b01.png"
+      ],
+      "outputUrls": [
+        "https://replicate.delivery/xezq/ulZVt4BXfKzxPK5QYOeats6nwIVtfcwVTOrpFDhFI0pM7BfYB/out-0.png"
+      ],
+      "modelUsed": "miike-ai/flux-sprites:bfbaa4240a9948bcc5483cceb9abd73db68c63018a4a7ba5b8a01616d291dcc9"
+    },
+    {
+      "id": "hero-knight-battle-idle-anchor-schnell-b02",
+      "status": "generated",
+      "prompt": "SPRITES pixel art sprite sheet of ONE armored knight only, right-facing side profile in every frame, same helmet, same proportions, same face/armor details. EXACT 8-frame battle idle loop in strict 4x2 grid with equal frame boxes and consistent baseline. Motion only: subtle breathing, cloth flutter, tiny shield hand shift. No walk cycle, no pose jump, no camera change, no extra characters, no collage, no text, no watermark.",
+      "resolution": {
+        "width": 1024,
+        "height": 512
+      },
+      "animationStyle": "battle_idle_sheet_anchored",
+      "outputMode": "single_asset",
+      "modelInput": {
+        "model": "schnell",
+        "num_outputs": 1,
+        "go_fast": true,
+        "output_format": "png",
+        "output_quality": 100,
+        "aspect_ratio": "custom",
+        "num_inference_steps": 4,
+        "guidance_scale": 3.5,
+        "lora_scale": 0.9,
+        "prompt_strength": 0.28,
+        "seed": 7202,
+        "image": "public/assets/generated/sprites/hero-knight-anchor-sheet-1024x512.png"
+      },
+      "error": null,
+      "lastAttemptAt": "2026-03-10T18:05:29.487Z",
+      "generatedAt": "2026-03-10T18:05:37.824Z",
+      "outputKind": "single_asset",
+      "outputFiles": [
+        "public/assets/generated/sprites/hero-knight-battle-idle-anchor-schnell-b02/hero-knight-battle-idle-anchor-schnell-b02.png"
+      ],
+      "outputFrames": [
+        "public/assets/generated/sprites/hero-knight-battle-idle-anchor-schnell-b02/hero-knight-battle-idle-anchor-schnell-b02.png"
+      ],
+      "outputUrls": [
+        "https://replicate.delivery/xezq/e3svvtkrsVXxaydXbmxsnBBDj2Zf0J6fIlSR733Jll6f2DexC/out-0.png"
+      ],
+      "modelUsed": "miike-ai/flux-sprites:bfbaa4240a9948bcc5483cceb9abd73db68c63018a4a7ba5b8a01616d291dcc9"
+    },
+    {
+      "id": "hero-knight-battle-idle-anchor-dev-c01",
+      "status": "generated",
+      "prompt": "SPRITES pixel art 8-frame battle idle sprite sheet, 4x2 grid. Keep same knight identity from reference in every frame, right-facing side profile only. Introduce subtle per-frame movement: breathing chest, cape flutter, shield bob, sword hand micro-shift. Do not clone identical frames.",
+      "resolution": {
+        "width": 1024,
+        "height": 512
+      },
+      "animationStyle": "battle_idle_sheet_anchored_tuned",
+      "outputMode": "single_asset",
+      "modelInput": {
+        "model": "dev",
+        "num_outputs": 1,
+        "go_fast": false,
+        "output_format": "png",
+        "output_quality": 100,
+        "aspect_ratio": "custom",
+        "num_inference_steps": 40,
+        "guidance_scale": 4.2,
+        "lora_scale": 1,
+        "prompt_strength": 0.56,
+        "image": "public/assets/generated/sprites/hero-knight-anchor-sheet-1024x512.png",
+        "seed": 7301
+      },
+      "error": null,
+      "lastAttemptAt": "2026-03-10T18:06:11.609Z",
+      "generatedAt": "2026-03-10T18:06:18.545Z",
+      "outputKind": "single_asset",
+      "outputFiles": [
+        "public/assets/generated/sprites/hero-knight-battle-idle-anchor-dev-c01/hero-knight-battle-idle-anchor-dev-c01.png"
+      ],
+      "outputFrames": [
+        "public/assets/generated/sprites/hero-knight-battle-idle-anchor-dev-c01/hero-knight-battle-idle-anchor-dev-c01.png"
+      ],
+      "outputUrls": [
+        "https://replicate.delivery/xezq/eIi5xghbnemb6EerXe6FpnzmL0zfXBd7zwfpDgQwT7eLMfgPWA/out-0.png"
+      ],
+      "modelUsed": "miike-ai/flux-sprites:bfbaa4240a9948bcc5483cceb9abd73db68c63018a4a7ba5b8a01616d291dcc9"
+    },
+    {
+      "id": "hero-knight-battle-idle-anchor-schnell-c02",
+      "status": "generated",
+      "prompt": "SPRITES pixel art 8-frame battle idle sprite sheet, 4x2 grid. Keep same knight identity from reference in every frame, right-facing side profile only. Introduce subtle per-frame movement: breathing chest, cape flutter, shield bob, sword hand micro-shift. Do not clone identical frames.",
+      "resolution": {
+        "width": 1024,
+        "height": 512
+      },
+      "animationStyle": "battle_idle_sheet_anchored_tuned",
+      "outputMode": "single_asset",
+      "modelInput": {
+        "model": "schnell",
+        "num_outputs": 1,
+        "go_fast": true,
+        "output_format": "png",
+        "output_quality": 100,
+        "aspect_ratio": "custom",
+        "num_inference_steps": 4,
+        "guidance_scale": 3.5,
+        "lora_scale": 0.9,
+        "prompt_strength": 0.56,
+        "image": "public/assets/generated/sprites/hero-knight-anchor-sheet-1024x512.png",
+        "seed": 7302
+      },
+      "error": null,
+      "lastAttemptAt": "2026-03-10T18:06:18.546Z",
+      "generatedAt": "2026-03-10T18:06:26.694Z",
+      "outputKind": "single_asset",
+      "outputFiles": [
+        "public/assets/generated/sprites/hero-knight-battle-idle-anchor-schnell-c02/hero-knight-battle-idle-anchor-schnell-c02.png"
+      ],
+      "outputFrames": [
+        "public/assets/generated/sprites/hero-knight-battle-idle-anchor-schnell-c02/hero-knight-battle-idle-anchor-schnell-c02.png"
+      ],
+      "outputUrls": [
+        "https://replicate.delivery/xezq/L7VLGOX9f9S2bSBr9lLzx44oajpNPDcBBdKetrlpEHageBfYB/out-0.png"
+      ],
+      "modelUsed": "miike-ai/flux-sprites:bfbaa4240a9948bcc5483cceb9abd73db68c63018a4a7ba5b8a01616d291dcc9"
+    }
+  ]
+}

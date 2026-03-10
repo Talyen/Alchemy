@@ -16,7 +16,7 @@ const COMPANION_SPRITE_SOURCE_BY_ENEMY_ID: Partial<Record<string, string>> = {
 
 function getCompanionFrames(enemyId: string): string[] {
   const spriteId = COMPANION_SPRITE_SOURCE_BY_ENEMY_ID[enemyId] ?? enemyId
-  return Array.from({ length: 4 }, (_, i) => `assets/${spriteId}-idle-f${i}.png`)
+  return Array.from({ length: 4 }, (_, i) => `assets/enemies/${spriteId}-idle-f${i}.png`)
 }
 
 interface Props {
@@ -57,11 +57,12 @@ export function PlayerPanel({
   const prevBlock   = useRef(player.block)
   const prevGold    = useRef(gold)
   const nextId      = useRef(0)
+  type QueueEntry = { kind: 'dmg'; data: DmgEvent } | { kind: 'status'; data: StatusEvent }
+  const MAX_QUEUE = 5
   const nextLane    = useRef(0)
   const prevCompanionAttackTick = useRef(companionAttackTick)
   const prevPlayerAttackTick = useRef(playerAttackTick)
-  const [dmgEvents,    setDmgEvents]    = useState<DmgEvent[]>([])
-  const [statusEvents, setStatusEvents] = useState<StatusEvent[]>([])
+  const [eventQueue, setEventQueue] = useState<QueueEntry[]>([])
   const [hovered,      setHovered]      = useState(false)
   const [frameIdx,     setFrameIdx]     = useState(0)
   const characterFrames = getCharacterIdleFrames(characterId)
@@ -71,6 +72,13 @@ export function PlayerPanel({
     nextLane.current = (nextLane.current + 1) % 5
     return lane
   }, [])
+  const pushQueue = useCallback((entries: QueueEntry[]) => {
+    setEventQueue(prev => {
+      const combined = [...prev, ...entries]
+      return combined.length > MAX_QUEUE ? combined.slice(combined.length - MAX_QUEUE) : combined
+    })
+  }, [])
+  const popQueue = useCallback(() => setEventQueue(prev => prev.slice(1)), [])
 
   useEffect(() => {
     setFrameIdx(0)
@@ -107,65 +115,59 @@ export function PlayerPanel({
   useEffect(() => {
     if (gold > prevGold.current) {
       const diff = gold - prevGold.current
-      setDmgEvents(e => [...e, { id: nextId.current++, value: diff, type: 'gold', cardId: lastCardPlayedId ?? undefined, lane: allocLane() }])
+      pushQueue([{ kind: 'dmg', data: { id: nextId.current++, value: diff, type: 'gold', cardId: lastCardPlayedId ?? undefined, lane: allocLane() } }])
     }
     prevGold.current = gold
-  }, [gold, lastCardPlayedId, allocLane])
+  }, [gold, lastCardPlayedId, allocLane, pushQueue])
 
   useEffect(() => {
+    const entries: QueueEntry[] = []
     if (player.hp < prevHp.current) {
       const diff = prevHp.current - player.hp
-      controls.start({ x: [0, 12, -10, 5, 0], transition: { duration: 0.4, delay: 0.1 } })
-      setDmgEvents(e => [...e, { id: nextId.current++, value: diff, type: 'damage', cardId: lastCardPlayedId ?? undefined, lane: allocLane() }])
+      void controls.start({ x: [0, 12, -10, 5, 0], transition: { duration: 0.4, delay: 0.1 } })
+      entries.push({ kind: 'dmg', data: { id: nextId.current++, value: diff, type: 'damage', cardId: lastCardPlayedId ?? undefined, lane: allocLane() } })
       playPlayerHit()
     } else if (player.hp > prevHp.current) {
       const diff = player.hp - prevHp.current
-      setDmgEvents(e => [...e, { id: nextId.current++, value: diff, type: 'heal', cardId: lastCardPlayedId ?? undefined, lane: allocLane() }])
+      entries.push({ kind: 'dmg', data: { id: nextId.current++, value: diff, type: 'heal', cardId: lastCardPlayedId ?? undefined, lane: allocLane() } })
       playPlayerHeal()
     }
     prevHp.current = player.hp
-  }, [player.hp, controls, lastCardPlayedId, allocLane])
+    if (entries.length) pushQueue(entries)
+  }, [player.hp, controls, lastCardPlayedId, allocLane, pushQueue])
 
   useEffect(() => {
-    if (player.block > prevBlock.current) {
+    const entries: QueueEntry[] = []
+    if (player.block !== prevBlock.current) {
       const diff = player.block - prevBlock.current
-      setDmgEvents(e => [...e, { id: nextId.current++, value: diff, type: 'block', cardId: lastCardPlayedId ?? undefined, lane: allocLane() }])
-      playBlock()
-    } else if (player.block < prevBlock.current) {
-      const diff = player.block - prevBlock.current
-      // negative value signals block lost
-      setDmgEvents(e => [...e, { id: nextId.current++, value: diff, type: 'block', cardId: lastCardPlayedId ?? undefined, lane: allocLane() }])
+      entries.push({ kind: 'dmg', data: { id: nextId.current++, value: diff, type: 'block', cardId: lastCardPlayedId ?? undefined, lane: allocLane() } })
+      if (player.block > prevBlock.current) playBlock()
     }
     prevBlock.current = player.block
-  }, [player.block, lastCardPlayedId, allocLane])
+    if (entries.length) pushQueue(entries)
+  }, [player.block, lastCardPlayedId, allocLane, pushQueue])
 
   useEffect(() => {
     const { burn, vulnerable, weak, poison, bleed, trap, forge, strength } = player.status
     const armor = player.armor
     const prev  = prevStatus.current
-    const newEvents: StatusEvent[] = []
-    if (burn > prev.burn)             newEvents.push({ id: nextId.current++, value: burn - prev.burn,             status: 'burn',       cardId: lastCardPlayedId ?? undefined, lane: allocLane() })
-    if (vulnerable > prev.vulnerable) newEvents.push({ id: nextId.current++, value: vulnerable - prev.vulnerable, status: 'vulnerable', cardId: lastCardPlayedId ?? undefined, lane: allocLane() })
-    if (weak > prev.weak)             newEvents.push({ id: nextId.current++, value: weak - prev.weak,             status: 'weak',       cardId: lastCardPlayedId ?? undefined, lane: allocLane() })
-    if (poison > prev.poison)         newEvents.push({ id: nextId.current++, value: poison - prev.poison,         status: 'poison',     cardId: lastCardPlayedId ?? undefined, lane: allocLane() })
-    if (bleed > prev.bleed)           newEvents.push({ id: nextId.current++, value: bleed - prev.bleed,           status: 'bleed',      cardId: lastCardPlayedId ?? undefined, lane: allocLane() })
-    if (trap > prev.trap)             newEvents.push({ id: nextId.current++, value: trap - prev.trap,             status: 'trap',       cardId: lastCardPlayedId ?? undefined, lane: allocLane() })
-    if (forge > prev.forge)           newEvents.push({ id: nextId.current++, value: forge - prev.forge,           status: 'forge',      cardId: lastCardPlayedId ?? undefined, lane: allocLane() })
-    if (strength > prev.strength)     newEvents.push({ id: nextId.current++, value: strength - prev.strength,     status: 'strength',   cardId: lastCardPlayedId ?? undefined, lane: allocLane() })
-    if (armor > prev.armor)           newEvents.push({ id: nextId.current++, value: armor - prev.armor,           status: 'armor',      cardId: lastCardPlayedId ?? undefined, lane: allocLane() })
+    const entries: QueueEntry[] = []
+    if (burn > prev.burn)             entries.push({ kind: 'status', data: { id: nextId.current++, value: burn - prev.burn,             status: 'burn',       cardId: lastCardPlayedId ?? undefined, lane: allocLane() } })
+    if (vulnerable > prev.vulnerable) entries.push({ kind: 'status', data: { id: nextId.current++, value: vulnerable - prev.vulnerable, status: 'vulnerable', cardId: lastCardPlayedId ?? undefined, lane: allocLane() } })
+    if (weak > prev.weak)             entries.push({ kind: 'status', data: { id: nextId.current++, value: weak - prev.weak,             status: 'weak',       cardId: lastCardPlayedId ?? undefined, lane: allocLane() } })
+    if (poison > prev.poison)         entries.push({ kind: 'status', data: { id: nextId.current++, value: poison - prev.poison,         status: 'poison',     cardId: lastCardPlayedId ?? undefined, lane: allocLane() } })
+    if (bleed > prev.bleed)           entries.push({ kind: 'status', data: { id: nextId.current++, value: bleed - prev.bleed,           status: 'bleed',      cardId: lastCardPlayedId ?? undefined, lane: allocLane() } })
+    if (trap > prev.trap)             entries.push({ kind: 'status', data: { id: nextId.current++, value: trap - prev.trap,             status: 'trap',       cardId: lastCardPlayedId ?? undefined, lane: allocLane() } })
+    if (forge > prev.forge)           entries.push({ kind: 'status', data: { id: nextId.current++, value: forge - prev.forge,           status: 'forge',      cardId: lastCardPlayedId ?? undefined, lane: allocLane() } })
+    if (strength > prev.strength)     entries.push({ kind: 'status', data: { id: nextId.current++, value: strength - prev.strength,     status: 'strength',   cardId: lastCardPlayedId ?? undefined, lane: allocLane() } })
+    if (armor > prev.armor)           entries.push({ kind: 'status', data: { id: nextId.current++, value: armor - prev.armor,           status: 'armor',      cardId: lastCardPlayedId ?? undefined, lane: allocLane() } })
     prevStatus.current = { burn, vulnerable, weak, poison, bleed, trap, forge, strength, armor }
-    if (newEvents.length) setStatusEvents(e => [...e, ...newEvents])
-  }, [player.status.burn, player.status.vulnerable, player.status.weak, player.status.poison, player.status.bleed, player.status.trap, player.status.forge, player.armor, lastCardPlayedId, allocLane])
-
-  const removeDmgEvent = (id: number) =>
-    setDmgEvents(e => e.filter(x => x.id !== id))
-
-  const removeStatusEvent = (id: number) =>
-    setStatusEvents(e => e.filter(x => x.id !== id))
+    if (entries.length) pushQueue(entries)
+  }, [player.status.burn, player.status.vulnerable, player.status.weak, player.status.poison, player.status.bleed, player.status.trap, player.status.forge, player.armor, lastCardPlayedId, allocLane, pushQueue])
 
   const { vulnerable, weak, poison, bleed, trap, forge, burn, strength } = player.status
   const hasIcons = player.armor > 0 || player.block > 0 || forge > 0 || strength > 0 || burn > 0 || poison > 0 || bleed > 0 || trap > 0 || vulnerable > 0 || weak > 0
-  const activeDmgEvent = dmgEvents[0]
+  const activeEvent = eventQueue[0] ?? null
   const floatingTop = -22
 
 
@@ -177,23 +179,15 @@ export function PlayerPanel({
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      {/* Floating damage / block numbers */}
+      {/* Unified floating event queue — one at a time, no overlap */}
       <AnimatePresence mode="wait">
-        {activeDmgEvent && (
-          <FloatingNumber
-            key={activeDmgEvent.id}
-            event={activeDmgEvent}
-            top={floatingTop}
-            onDone={() => removeDmgEvent(activeDmgEvent.id)}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Floating status effect icons */}
-      <AnimatePresence>
-        {statusEvents.map(e => (
-          <FloatingStatus key={e.id} event={e} top={floatingTop} onDone={() => removeStatusEvent(e.id)} />
-        ))}
+        {activeEvent ? (
+          activeEvent.kind === 'dmg' ? (
+            <FloatingNumber key={activeEvent.data.id} event={activeEvent.data} top={floatingTop} onDone={popQueue} />
+          ) : (
+            <FloatingStatus key={activeEvent.data.id} event={activeEvent.data} top={floatingTop} onDone={popQueue} />
+          )
+        ) : null}
       </AnimatePresence>
 
       {/* Fixed-height sprite well */}

@@ -21,8 +21,9 @@ import { GlobalScreenMenu } from './components/game/GlobalScreenMenu'
 import { ShopScreen, type ShopCardOffer, type ShopTrinketOffer } from './components/game/ShopScreen'
 import { AlchemyScreen, type AlchemyTransformKind, type AlchemyTransformOffer } from './components/game/AlchemyScreen'
 import { TalentsScreen } from './components/game/TalentsScreen'
-import { canUnlockTalent, getTalentBonuses } from './lib/talents'
-import { ensureCtx, ensureRandomBGM, playDefeat, playVictory, stopBGM } from './sounds'
+import { OptionsScreen, type GameSettings, type OptionsTab } from './components/game/OptionsScreen'
+import { TALENT_KEYWORDS, type TalentKeyword, canUnlockTalent, getEmptyUnlockedTalentNodeIdsByKeyword, getTalentBonusesFromKeywordTrees, getTalentLinksForNodes, getTalentNodesForKeyword } from './lib/talents'
+import { ensureCtx, ensureRandomBGM, playDefeat, playGoldGain, playVictory, setAudioMix, stopBGM } from './sounds'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -163,12 +164,14 @@ function MainMenu({
   canResume,
   onCollection,
   onTalents,
+  onOptions,
 }: {
   onStart: () => void
   onResume: () => void
   canResume: boolean
   onCollection: () => void
   onTalents: () => void
+  onOptions: () => void
 }) {
   const sheenControls = useAnimationControls()
   const logoControls = useAnimationControls()
@@ -234,7 +237,10 @@ function MainMenu({
     >
       <div
         className="relative flex items-center justify-center bg-zinc-950 overflow-hidden"
-        style={{ width: 'min(95vw, calc(94vh * (16 / 9)), 1440px)', aspectRatio: '16 / 9' }}
+        style={{
+          width: 'min(95vw, calc(94vh * var(--alchemy-viewport-ratio, 16 / 9)), var(--alchemy-viewport-width, 1440px))',
+          aspectRatio: 'var(--alchemy-viewport-ratio, 16 / 9)',
+        }}
       >
         <motion.div
           className="flex flex-col items-center gap-10"
@@ -336,6 +342,19 @@ function MainMenu({
               Collection
             </motion.button>
 
+            <motion.button
+              onClick={onOptions}
+              className="flex items-center gap-2.5 px-6 py-3 rounded-xl border border-zinc-700/70 text-sm font-semibold tracking-widest uppercase text-zinc-300"
+              style={{ background: 'rgba(39,39,42,0.5)' }}
+              whileHover={{ scale: 1.04, borderColor: 'rgba(161,161,170,0.45)' } as Parameters<typeof motion.button>[0]['whileHover']}
+              whileTap={{ scale: 0.97 }}
+              transition={{ type: 'spring', stiffness: 380, damping: 26 }}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0, transition: { delay: 0.38 } }}
+            >
+              Options
+            </motion.button>
+
           </div>
         </motion.div>
       </div>
@@ -389,7 +408,7 @@ function TurnIndicator({ isPlayerTurn }: { isPlayerTurn: boolean }) {
 
 // ─── App ─────────────────────────────────────────────────────────────────────
 
-type Screen = 'menu' | 'character-select' | 'game' | 'reward' | 'destination' | 'collection' | 'talents' | 'wish' | 'shop' | 'alchemy' | 'campfire' | 'mystery' | 'mystery-chest' | 'mystery-reward' | 'mystery-gold-reward'
+type Screen = 'menu' | 'character-select' | 'game' | 'reward' | 'destination' | 'collection' | 'talents' | 'options' | 'wish' | 'shop' | 'alchemy' | 'campfire' | 'mystery' | 'mystery-chest' | 'mystery-reward' | 'mystery-gold-reward'
 type RunScreen = 'game' | 'reward' | 'destination' | 'wish' | 'shop' | 'alchemy' | 'campfire' | 'mystery' | 'mystery-chest' | 'mystery-reward' | 'mystery-gold-reward'
 
 type MetaProgressionV1 = {
@@ -398,8 +417,9 @@ type MetaProgressionV1 = {
   startingGoldBonus: number
   alchemyUnlocked: boolean
   roomsPlayedTotal: number
-  talentPointsEarned: number
-  talentUnlockedNodeIds: string[]
+  keywordTalentPointsEarned: Record<TalentKeyword, number>
+  keywordTalentProgress: Record<TalentKeyword, number>
+  talentUnlockedNodeIdsByKeyword: Record<TalentKeyword, string[]>
 }
 
 type PersistedProgressV1 = {
@@ -407,6 +427,7 @@ type PersistedProgressV1 = {
   encounteredCardIds: string[]
   encounteredTrinketIds: string[]
   meta?: MetaProgressionV1
+  settings?: GameSettings
 }
 
 type PersistedRunV1 = {
@@ -448,6 +469,45 @@ type PersistedRunV1 = {
 const RUN_SCREENS: RunScreen[] = ['game', 'reward', 'destination', 'wish', 'shop', 'alchemy', 'campfire', 'mystery', 'mystery-chest', 'mystery-reward', 'mystery-gold-reward']
 const PROGRESSION_STORAGE_KEY = 'alchemy.progress.v1'
 const RUN_STORAGE_KEY = 'alchemy.run.v1'
+const SETTINGS_STORAGE_KEY = 'alchemy.settings.v1'
+
+const DEFAULT_SETTINGS: GameSettings = {
+  display: { resolutionPreset: '1600x900' },
+  audio: { master: 100, music: 70, sfx: 80 },
+}
+
+const TALENT_MATCH_KEYWORDS_BY_TREE: Record<TalentKeyword, string[]> = {
+  Burn: ['Burn', 'Fire'],
+  Poison: ['Poison'],
+  Mana: ['Mana', 'Mana Crystal'],
+  Gold: ['Gold', 'Consume', 'Wish'],
+  Physical: ['Slash', 'Pierce', 'Blunt', 'Bleed', 'Trap', 'Leech'],
+  Block: ['Block', 'Armor'],
+  Heal: ['Heal', 'Leech', 'Ailment'],
+  Holy: ['Holy', 'Wish', 'Cleanse'],
+}
+
+const DEFAULT_KEYWORD_POINTS: Record<TalentKeyword, number> = {
+  Burn: 0,
+  Poison: 0,
+  Mana: 0,
+  Gold: 0,
+  Physical: 0,
+  Block: 0,
+  Heal: 0,
+  Holy: 0,
+}
+
+const DEFAULT_UNLOCKED_BY_KEYWORD: Record<TalentKeyword, string[]> = {
+  Burn: [],
+  Poison: [],
+  Mana: [],
+  Gold: [],
+  Physical: [],
+  Block: [],
+  Heal: [],
+  Holy: [],
+}
 
 const DEFAULT_META_PROGRESSION: MetaProgressionV1 = {
   runsCompleted: 0,
@@ -455,20 +515,82 @@ const DEFAULT_META_PROGRESSION: MetaProgressionV1 = {
   startingGoldBonus: 0,
   alchemyUnlocked: true,
   roomsPlayedTotal: 0,
-  talentPointsEarned: 0,
-  talentUnlockedNodeIds: [],
+  keywordTalentPointsEarned: { ...DEFAULT_KEYWORD_POINTS },
+  keywordTalentProgress: { ...DEFAULT_KEYWORD_POINTS },
+  talentUnlockedNodeIdsByKeyword: { ...DEFAULT_UNLOCKED_BY_KEYWORD },
+}
+
+function clampPercent(value: number): number {
+  return Math.max(0, Math.min(100, Math.round(value)))
+}
+
+function normalizeSettings(settings?: Partial<GameSettings>): GameSettings {
+  if (!settings) return DEFAULT_SETTINGS
+  return {
+    display: {
+      resolutionPreset: settings.display?.resolutionPreset ?? DEFAULT_SETTINGS.display.resolutionPreset,
+    },
+    audio: {
+      master: clampPercent(settings.audio?.master ?? DEFAULT_SETTINGS.audio.master),
+      music: clampPercent(settings.audio?.music ?? DEFAULT_SETTINGS.audio.music),
+      sfx: clampPercent(settings.audio?.sfx ?? DEFAULT_SETTINGS.audio.sfx),
+    },
+  }
+}
+
+function normalizeKeywordPoints(input?: Partial<Record<TalentKeyword, number>>): Record<TalentKeyword, number> {
+  return {
+    Burn: input?.Burn ?? 0,
+    Poison: input?.Poison ?? 0,
+    Mana: input?.Mana ?? 0,
+    Gold: input?.Gold ?? 0,
+    Physical: input?.Physical ?? 0,
+    Block: input?.Block ?? 0,
+    Heal: input?.Heal ?? 0,
+    Holy: input?.Holy ?? 0,
+  }
+}
+
+function normalizeUnlockedByKeyword(input?: Partial<Record<TalentKeyword, string[]>>): Record<TalentKeyword, string[]> {
+  return {
+    Burn: input?.Burn ?? [],
+    Poison: input?.Poison ?? [],
+    Mana: input?.Mana ?? [],
+    Gold: input?.Gold ?? [],
+    Physical: input?.Physical ?? [],
+    Block: input?.Block ?? [],
+    Heal: input?.Heal ?? [],
+    Holy: input?.Holy ?? [],
+  }
 }
 
 function normalizeMetaProgression(meta?: Partial<MetaProgressionV1>): MetaProgressionV1 {
   if (!meta) return DEFAULT_META_PROGRESSION
+
+  const legacyTalentPointsEarned = Number((meta as any).talentPointsEarned ?? 0)
+  const legacyTalentUnlockedNodeIds = Array.isArray((meta as any).talentUnlockedNodeIds)
+    ? ((meta as any).talentUnlockedNodeIds as string[])
+    : []
+
+  const keywordTalentPointsEarned = normalizeKeywordPoints(meta.keywordTalentPointsEarned)
+  if (legacyTalentPointsEarned > 0 && TALENT_KEYWORDS.every(keyword => keywordTalentPointsEarned[keyword] === 0)) {
+    keywordTalentPointsEarned.Physical = legacyTalentPointsEarned
+  }
+
+  const unlockedByKeyword = normalizeUnlockedByKeyword(meta.talentUnlockedNodeIdsByKeyword)
+  if (legacyTalentUnlockedNodeIds.length > 0 && TALENT_KEYWORDS.every(keyword => unlockedByKeyword[keyword].length === 0)) {
+    unlockedByKeyword.Physical = legacyTalentUnlockedNodeIds
+  }
+
   return {
     runsCompleted: meta.runsCompleted ?? 0,
     insight: meta.insight ?? 0,
     startingGoldBonus: meta.startingGoldBonus ?? 0,
     alchemyUnlocked: meta.alchemyUnlocked ?? true,
     roomsPlayedTotal: meta.roomsPlayedTotal ?? 0,
-    talentPointsEarned: meta.talentPointsEarned ?? 0,
-    talentUnlockedNodeIds: meta.talentUnlockedNodeIds ?? [],
+    keywordTalentPointsEarned,
+    keywordTalentProgress: normalizeKeywordPoints(meta.keywordTalentProgress),
+    talentUnlockedNodeIdsByKeyword: unlockedByKeyword,
   }
 }
 
@@ -802,6 +924,10 @@ export default function App() {
   const [gameState, setGameState]         = useState<GameState>(createGame)
   const [isEnemyActing, setIsEnemyActing] = useState(false)
   const [musicEnabled, setMusicEnabled]   = useState(true)
+  const [settings, setSettings] = useState<GameSettings>(DEFAULT_SETTINGS)
+  const [optionsTab, setOptionsTab] = useState<OptionsTab>('display')
+  const [optionsReturnScreen, setOptionsReturnScreen] = useState<Screen>('menu')
+  const [activeTalentKeyword, setActiveTalentKeyword] = useState<TalentKeyword>('Burn')
   const musicEnabledRef = useRef(musicEnabled)
   const hasHydratedPersistenceRef = useRef(false)
   const [collectionReturnScreen, setCollectionReturnScreen] = useState<Screen>('menu')
@@ -813,6 +939,7 @@ export default function App() {
   const [shopTrinketOffers, setShopTrinketOffers] = useState<ShopTrinketOffer[]>([])
   const [alchemyTransformOffers, setAlchemyTransformOffers] = useState<AlchemyTransformOffer[]>([])
   const [alchemyPotionOffer, setAlchemyPotionOffer] = useState<ShopCardOffer | null>(null)
+  const [alchemyPotionOffer2, setAlchemyPotionOffer2] = useState<ShopCardOffer | null>(null)
   const [shopRefreshUsed, setShopRefreshUsed] = useState(false)
   const [shopDestroyUsed, setShopDestroyUsed] = useState(false)
   const [alchemyRefreshUsed, setAlchemyRefreshUsed] = useState(false)
@@ -836,9 +963,13 @@ export default function App() {
   const activeMysteryCompanion = COMPANION_VARIANTS_BY_EVENT_ID.get(activeMysteryCompanionEventId ?? '') ?? COMPANION_VARIANTS[0]
   const hasCompanion = Boolean(activeCompanion && runTrinkets.some(trinket => trinket.id === COMPANION_COLLAR_TRINKET.id))
   const canResume = runInProgress || savedRun !== null
-  const unlockedTalentNodeIds = new Set(metaProgress.talentUnlockedNodeIds)
-  const availableTalentPoints = Math.max(0, metaProgress.talentPointsEarned - metaProgress.talentUnlockedNodeIds.length)
-  const talentBonuses = getTalentBonuses(unlockedTalentNodeIds)
+  const unlockedTalentNodeIdsByKeyword = getEmptyUnlockedTalentNodeIdsByKeyword()
+  for (const keyword of TALENT_KEYWORDS) {
+    unlockedTalentNodeIdsByKeyword[keyword] = new Set(metaProgress.talentUnlockedNodeIdsByKeyword[keyword] ?? [])
+  }
+  const unlockedTalentNodeIds = unlockedTalentNodeIdsByKeyword[activeTalentKeyword]
+  const availableTalentPoints = Math.max(0, (metaProgress.keywordTalentPointsEarned[activeTalentKeyword] ?? 0) - unlockedTalentNodeIds.size)
+  const talentBonuses = getTalentBonusesFromKeywordTrees(unlockedTalentNodeIdsByKeyword)
   const runMaxHp = 30 + talentBonuses.runMaxHpBonus
   const previousEnemyHpRef = useRef(gameState.enemy.hp)
 
@@ -955,6 +1086,13 @@ export default function App() {
         setEncounteredCardIds(new Set(parsed.encounteredCardIds ?? []))
         setEncounteredTrinketIds(new Set(parsed.encounteredTrinketIds ?? []))
         setMetaProgress(normalizeMetaProgression(parsed.meta))
+        setSettings(normalizeSettings(parsed.settings))
+      }
+
+      const settingsRaw = window.localStorage.getItem(SETTINGS_STORAGE_KEY)
+      if (settingsRaw) {
+        const parsedSettings = JSON.parse(settingsRaw) as GameSettings
+        setSettings(normalizeSettings(parsedSettings))
       }
 
       const runRaw = window.localStorage.getItem(RUN_STORAGE_KEY)
@@ -979,9 +1117,11 @@ export default function App() {
       encounteredCardIds: Array.from(encounteredCardIds),
       encounteredTrinketIds: Array.from(encounteredTrinketIds),
       meta: metaProgress,
+      settings,
     }
     window.localStorage.setItem(PROGRESSION_STORAGE_KEY, JSON.stringify(progress))
-  }, [encounteredEnemyIds, encounteredCardIds, encounteredTrinketIds, metaProgress])
+    window.localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings))
+  }, [encounteredEnemyIds, encounteredCardIds, encounteredTrinketIds, metaProgress, settings])
 
   useEffect(() => {
     if (!hasHydratedPersistenceRef.current) return
@@ -1080,6 +1220,28 @@ export default function App() {
   useEffect(() => {
     musicEnabledRef.current = musicEnabled
   }, [musicEnabled])
+
+  useEffect(() => {
+    const root = document.documentElement
+    const preset = settings.display.resolutionPreset
+    if (preset === 'auto') {
+      root.style.setProperty('--alchemy-viewport-width', '1440px')
+      root.style.setProperty('--alchemy-viewport-ratio', '16 / 9')
+      return
+    }
+
+    const [width, height] = preset.split('x').map(value => Number(value))
+    root.style.setProperty('--alchemy-viewport-width', `${width}px`)
+    root.style.setProperty('--alchemy-viewport-ratio', `${width} / ${height}`)
+  }, [settings.display.resolutionPreset])
+
+  useEffect(() => {
+    setAudioMix({
+      master: settings.audio.master / 100,
+      music: (musicEnabled ? settings.audio.music : 0) / 100,
+      sfx: settings.audio.sfx / 100,
+    })
+  }, [settings.audio.master, settings.audio.music, settings.audio.sfx, musicEnabled])
 
   // pre-warm audio and keep retrying BGM start on user interactions.
   // This avoids a silent first load when the initial autoplay attempt is blocked.
@@ -1211,8 +1373,7 @@ export default function App() {
     const cards = shuffle([...(guaranteedMatch ? [guaranteedMatch] : []), ...remainingCards]).map(applyTalentCardBonuses)
 
     return cards.map((card, index) => {
-      const typeBonus = card.type === 'upgrade' ? 2 : card.type === 'heal' ? 1 : 0
-      const price = Math.max(3, card.cost * 3 + typeBonus + 1)
+      const price = 25
       return { id: `shop-${card.id}-${Date.now()}-${index}`, card, price }
     })
   }, [applyTalentCardBonuses, runDeckCards, runTrinkets])
@@ -1244,6 +1405,25 @@ export default function App() {
     const card = gameState.hand.find(entry => entry.uid === uid)
     if (card) {
       setEncounteredCardIds(prev => new Set([...prev, card.id]))
+      setMetaProgress(prev => {
+        const nextProgress = { ...prev.keywordTalentProgress }
+        const nextPoints = { ...prev.keywordTalentPointsEarned }
+        const cardText = `${card.name} ${card.description}`
+
+        for (const keyword of TALENT_KEYWORDS) {
+          const matches = TALENT_MATCH_KEYWORDS_BY_TREE[keyword].some(matchKeyword => cardMatchesKeyword(card, matchKeyword) || textHasKeyword(cardText, matchKeyword))
+          if (!matches) continue
+          const updatedProgress = (nextProgress[keyword] ?? 0) + 1
+          nextPoints[keyword] = (nextPoints[keyword] ?? 0) + Math.floor(updatedProgress / 10)
+          nextProgress[keyword] = updatedProgress % 10
+        }
+
+        return {
+          ...prev,
+          keywordTalentProgress: nextProgress,
+          keywordTalentPointsEarned: nextPoints,
+        }
+      })
     }
     setGameState(prev => playCard(prev, uid))
   }
@@ -1414,6 +1594,8 @@ export default function App() {
         id: `alchemy-${entry.kind}-${Date.now()}-${i}`,
       })))
       setAlchemyPotionOffer(randomPotion ? { id: `alchemy-potion-${randomPotion.id}-${Date.now()}`, card: randomPotion, price: 25 } : null)
+      const randomPotion2 = weightedPickOne(potionCards.filter(c => c.id !== randomPotion?.id), card => cardWeightForTrinkets(card, ownedTrinketIds))
+      setAlchemyPotionOffer2(randomPotion2 ? { id: `alchemy-potion2-${randomPotion2.id}-${Date.now()}`, card: randomPotion2, price: 25 } : null)
       setAlchemyRefreshUsed(false)
       setScreen('alchemy')
       return
@@ -1437,6 +1619,7 @@ export default function App() {
         setMysteryGoldFound(found)
         setPersistentGold(prev => prev + found)
         setCurrentRoomLabel(CACHE_OF_COINS_MYSTERY_TITLE)
+        playGoldGain()
         setScreen('mystery-gold-reward')
         return
       }
@@ -1472,11 +1655,11 @@ export default function App() {
     setRunExtraCards(prev => [...prev, applyTalentCardBonuses(offer.card)])
     setRunDeckCards(prev => [...prev, applyTalentCardBonuses(offer.card)])
     setEncounteredCardIds(prev => new Set([...prev, offer.card.id]))
-    setShopOffers(prev => prev.filter(entry => entry.id !== offerId))
+    setShopOffers(prev => prev.map(entry => entry.id === offerId ? { ...entry, sold: true } : entry))
   }
 
   const handleRefreshShop = () => {
-    const SHOP_REFRESH_COST = 15
+    const SHOP_REFRESH_COST = 25
     if (shopRefreshUsed) return
     if (persistentGold < SHOP_REFRESH_COST) return
     setPersistentGold(prev => prev - SHOP_REFRESH_COST)
@@ -1506,11 +1689,13 @@ export default function App() {
       id: `alchemy-refresh-${entry.kind}-${Date.now()}-${i}`,
     })))
     setAlchemyPotionOffer(randomPotion ? { id: `alchemy-refresh-potion-${randomPotion.id}-${Date.now()}`, card: randomPotion, price: 25 } : null)
+    const randomPotion2r = weightedPickOne(potionCards.filter(c => c.id !== randomPotion?.id), card => cardWeightForTrinkets(card, ownedTrinketIds))
+    setAlchemyPotionOffer2(randomPotion2r ? { id: `alchemy-refresh-potion2-${randomPotion2r.id}-${Date.now()}`, card: randomPotion2r, price: 25 } : null)
     setAlchemyRefreshUsed(true)
   }
 
   const handleDestroyShopCard = (deckIndex: number) => {
-    const DESTROY_CARD_COST = 35
+    const DESTROY_CARD_COST = 25
     if (shopDestroyUsed) return
     if (persistentGold < DESTROY_CARD_COST) return
     if (deckIndex < 0 || deckIndex >= runDeckCards.length) return
@@ -1631,25 +1816,37 @@ export default function App() {
   const handleReturnToMainMenu = () => {
     setScreen('menu')
   }
+  const handleClearSavedProgress = useCallback(() => {
+    window.localStorage.removeItem(PROGRESSION_STORAGE_KEY)
+    window.localStorage.removeItem(RUN_STORAGE_KEY)
+    window.localStorage.removeItem(SETTINGS_STORAGE_KEY)
+
+    setEncounteredEnemyIds(new Set())
+    setEncounteredCardIds(new Set())
+    setEncounteredTrinketIds(new Set())
+    setMetaProgress(DEFAULT_META_PROGRESSION)
+    setSettings(DEFAULT_SETTINGS)
+    resetRunState()
+    setRunInProgress(false)
+    setSavedRun(null)
+    setScreen('menu')
+  }, [resetRunState])
 
   // ── Lose / abandon → Menu ──
   const handleRestart = () => {
     if (runInProgress) {
       setMetaProgress(prev => {
         const nextRuns = prev.runsCompleted + 1
-        const previousRoomMilestone = Math.floor(prev.roomsPlayedTotal / 10)
         const nextRoomsPlayed = prev.roomsPlayedTotal + floorsCleared
-        const nextRoomMilestone = Math.floor(nextRoomsPlayed / 10)
-        const roomPointsGained = nextRoomMilestone - previousRoomMilestone
-        const firstRunPoint = prev.runsCompleted === 0 ? 1 : 0
         return {
           runsCompleted: nextRuns,
           insight: prev.insight,
           startingGoldBonus: 0,
           alchemyUnlocked: prev.alchemyUnlocked || nextRuns >= 1,
           roomsPlayedTotal: nextRoomsPlayed,
-          talentPointsEarned: prev.talentPointsEarned + roomPointsGained + firstRunPoint,
-          talentUnlockedNodeIds: prev.talentUnlockedNodeIds,
+          keywordTalentPointsEarned: prev.keywordTalentPointsEarned,
+          keywordTalentProgress: prev.keywordTalentProgress,
+          talentUnlockedNodeIdsByKeyword: prev.talentUnlockedNodeIdsByKeyword,
         }
       })
     }
@@ -1659,6 +1856,10 @@ export default function App() {
     setSavedRun(null)
     window.localStorage.removeItem(RUN_STORAGE_KEY)
     setScreen('menu')
+  }
+  const handleSalvageTreasureChest = () => {
+    setPersistentGold(prev => prev + 25)
+    returnToDestination()
   }
 
   const handleDevSkipCombat = useCallback(() => {
@@ -1675,6 +1876,10 @@ export default function App() {
       onGoMainMenu={handleReturnToMainMenu}
       onGoCharacterSelect={handleOpenCharacterSelect}
       onOpenCollection={() => openCollection(screen)}
+      onOpenOptions={() => {
+        setOptionsReturnScreen(screen)
+        setScreen('options')
+      }}
       musicEnabled={musicEnabled}
       onToggleMusic={handleToggleMusic}
       onEndTurnEarly={opts?.onEndTurnEarly}
@@ -1701,29 +1906,57 @@ export default function App() {
           canResume={canResume}
           onCollection={() => openCollection('menu')}
           onTalents={() => setScreen('talents')}
+          onOptions={() => {
+            setOptionsReturnScreen('menu')
+            setScreen('options')
+          }}
         />
       )}
 
       {screen === 'talents' && (
         <TalentsScreen
           key="talents"
+          activeKeyword={activeTalentKeyword}
           unlockedTalentNodeIds={unlockedTalentNodeIds}
           availableTalentPoints={availableTalentPoints}
+          pointsProgress={metaProgress.keywordTalentProgress[activeTalentKeyword] ?? 0}
+          totalPointsEarned={metaProgress.keywordTalentPointsEarned[activeTalentKeyword] ?? 0}
+          onChangeKeyword={setActiveTalentKeyword}
           onUnlockTalent={(nodeId) => {
             if (availableTalentPoints <= 0) return
-            if (!canUnlockTalent(nodeId, unlockedTalentNodeIds)) return
+            const nodes = getTalentNodesForKeyword(activeTalentKeyword)
+            const links = getTalentLinksForNodes(nodes)
+            if (!canUnlockTalent(nodeId, unlockedTalentNodeIds, nodes, links)) return
             setMetaProgress(prev => ({
               ...prev,
-              talentUnlockedNodeIds: [...prev.talentUnlockedNodeIds, nodeId],
+              talentUnlockedNodeIdsByKeyword: {
+                ...prev.talentUnlockedNodeIdsByKeyword,
+                [activeTalentKeyword]: [...(prev.talentUnlockedNodeIdsByKeyword[activeTalentKeyword] ?? []), nodeId],
+              },
             }))
           }}
           onRespec={() => {
             setMetaProgress(prev => ({
               ...prev,
-              talentUnlockedNodeIds: [],
+              talentUnlockedNodeIdsByKeyword: { ...DEFAULT_UNLOCKED_BY_KEYWORD },
             }))
           }}
           onBack={() => setScreen('menu')}
+          topLeft={renderGlobalMenu({ direction: 'up', align: 'right' })}
+        />
+      )}
+
+      {screen === 'options' && (
+        <OptionsScreen
+          key="options"
+          settings={settings}
+          activeTab={optionsTab}
+          onChangeTab={setOptionsTab}
+          onSetResolutionPreset={(preset) => setSettings(prev => ({ ...prev, display: { ...prev.display, resolutionPreset: preset } }))}
+          onSetAudio={(channel, value) => setSettings(prev => ({ ...prev, audio: { ...prev.audio, [channel]: clampPercent(value) } }))}
+          onResetAudioDefaults={() => setSettings(prev => ({ ...prev, audio: { ...DEFAULT_SETTINGS.audio } }))}
+          onClearSavedProgress={handleClearSavedProgress}
+          onBack={() => setScreen(optionsReturnScreen === 'options' ? 'menu' : optionsReturnScreen)}
           topLeft={renderGlobalMenu({ direction: 'up', align: 'right' })}
         />
       )}
@@ -1792,8 +2025,8 @@ export default function App() {
           trinketOffers={shopTrinketOffers}
           offerMode={shopOfferMode}
           deckCards={runDeckCards}
-          refreshCost={15}
-          destroyCardCost={35}
+          refreshCost={25}
+          destroyCardCost={25}
           refreshUsed={shopRefreshUsed}
           destroyUsed={shopDestroyUsed}
           onRefreshShop={handleRefreshShop}
@@ -1813,6 +2046,7 @@ export default function App() {
           deckCards={runDeckCards}
           transformOffers={alchemyTransformOffers}
           potionOffer={alchemyPotionOffer}
+          potionOffer2={alchemyPotionOffer2}
           potionCost={25}
           mixCost={25}
           refreshUsed={alchemyRefreshUsed}
@@ -1827,8 +2061,20 @@ export default function App() {
             setEncounteredCardIds(prev => new Set([...prev, alchemyPotionOffer.card.id]))
             const potionCards = ALL_CARDS.filter(card => isPotionCard(card)).map(applyTalentCardBonuses)
             const ownedTrinketIds = new Set(runTrinkets.map(trinket => trinket.id))
-            const nextPotion = weightedPickOne(potionCards, card => cardWeightForTrinkets(card, ownedTrinketIds))
+            const nextPotion = weightedPickOne(potionCards.filter(c => c.id !== alchemyPotionOffer2?.card.id), card => cardWeightForTrinkets(card, ownedTrinketIds))
             setAlchemyPotionOffer(nextPotion ? { id: `alchemy-potion-${nextPotion.id}-${Date.now()}`, card: nextPotion, price: 25 } : null)
+          }}
+          onBuyPotion2={() => {
+            if (!alchemyPotionOffer2) return
+            if (persistentGold < 25) return
+            setPersistentGold(prev => prev - 25)
+            setRunExtraCards(prev => [...prev, alchemyPotionOffer2.card])
+            setRunDeckCards(prev => [...prev, alchemyPotionOffer2.card])
+            setEncounteredCardIds(prev => new Set([...prev, alchemyPotionOffer2.card.id]))
+            const potionCards = ALL_CARDS.filter(card => isPotionCard(card)).map(applyTalentCardBonuses)
+            const ownedTrinketIds = new Set(runTrinkets.map(trinket => trinket.id))
+            const nextPotion2 = weightedPickOne(potionCards.filter(c => c.id !== alchemyPotionOffer?.card.id), card => cardWeightForTrinkets(card, ownedTrinketIds))
+            setAlchemyPotionOffer2(nextPotion2 ? { id: `alchemy-potion2-${nextPotion2.id}-${Date.now()}`, card: nextPotion2, price: 25 } : null)
           }}
           onApplyTransform={(offerId, deckIndex) => {
             const offer = alchemyTransformOffers.find(o => o.id === offerId)
@@ -1840,7 +2086,7 @@ export default function App() {
             setPersistentGold(prev => prev - offer.cost)
             setRunDeckCards(prev => prev.map((c, i) => i === deckIndex ? transformed : c))
             setRunExtraCards(prev => prev.map((c, i) => i === deckIndex ? transformed : c))
-            setAlchemyTransformOffers(prev => prev.filter(o => o.id !== offerId))
+            setAlchemyTransformOffers(prev => prev.map(o => o.id === offerId ? { ...o, purchased: true } : o))
             setEncounteredCardIds(prev => new Set([...prev, transformed.id]))
           }}
           onMixPotions={(firstDeckIndex, secondDeckIndex) => {
@@ -1890,7 +2136,7 @@ export default function App() {
           reward={mysteryChestReward}
           onOpen={handleOpenTreasureChest}
           onTake={handleTakeTreasureReward}
-          onSkip={returnToDestination}
+          onSkip={handleSalvageTreasureChest}
           topLeft={renderGlobalMenu({ direction: 'up', align: 'right' })}
         />
       )}
@@ -1940,7 +2186,10 @@ export default function App() {
         >
           <div
             className="relative flex flex-col bg-zinc-950 overflow-hidden"
-            style={{ width: 'min(95vw, calc(94vh * (16 / 9)), 1440px)', aspectRatio: '16 / 9' }}
+            style={{
+              width: 'min(95vw, calc(94vh * var(--alchemy-viewport-ratio, 16 / 9)), var(--alchemy-viewport-width, 1440px))',
+              aspectRatio: 'var(--alchemy-viewport-ratio, 16 / 9)',
+            }}
           >
             <div className="absolute right-24 bottom-6 z-[90]">
               {renderGlobalMenu({
@@ -1995,6 +2244,8 @@ export default function App() {
                 isEnemyActing={isEnemyActing}
                 drawCount={gameState.drawPile.length}
                 discardCount={gameState.discardPile.length}
+                drawPileCards={gameState.drawPile}
+                discardPileCards={gameState.discardPile}
                 trinkets={runTrinkets}
                 log={gameState.log}
                 lastCardPlayedId={gameState.lastCardPlayedId}

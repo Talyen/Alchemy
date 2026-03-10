@@ -9,31 +9,32 @@ import type { EnemyState } from '@/types'
 import { playCardPlay, playEnemyHit, playEnemyAttack } from '@/sounds'
 import { getEnemyRelativeScale } from './enemyVisualConfig'
 
-const GOBLIN_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/goblin-idle-f${i}.png`)
-const CHORT_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/chort-idle-f${i}.png`)
-const IMP_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/imp-idle-f${i}.png`)
-const MIMIC_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/mimic-idle-f${i}.png`)
-const LIZARD_F_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/lizard_f-idle-f${i}.png`)
-const LIZARD_M_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/lizard_m-idle-f${i}.png`)
-const MASKED_ORC_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/masked_orc-idle-f${i}.png`)
-const MUDDY_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/muddy-idle-f${i}.png`)
-const NECROMANCER_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/necromancer-idle-f${i}.png`)
-const ORC_SHAMAN_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/orc_shaman-idle-f${i}.png`)
-const ORC_WARRIOR_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/orc_warrior-idle-f${i}.png`)
-const SKELET_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/skelet-idle-f${i}.png`)
-const SLUG_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/slug-idle-f${i}.png`)
-const SWAMPY_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/swampy-idle-f${i}.png`)
-const DOC_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/doc-idle-f${i}.png`)
-const BIG_DEMON_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/big_demon-idle-f${i}.png`)
-const OGRE_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/ogre-idle-f${i}.png`)
-const FLAMING_SKULL_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/flaming_skull-idle-f${i}.png`)
-const SHADE_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/shade-idle-f${i}.png`)
-const SNAKE_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/snake-idle-f${i}.png`)
+const GOBLIN_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/enemies/goblin-idle-f${i}.png`)
+const CHORT_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/enemies/chort-idle-f${i}.png`)
+const IMP_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/enemies/imp-idle-f${i}.png`)
+const MIMIC_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/enemies/mimic-idle-f${i}.png`)
+const LIZARD_F_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/enemies/lizard_f-idle-f${i}.png`)
+const LIZARD_M_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/enemies/lizard_m-idle-f${i}.png`)
+const MASKED_ORC_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/enemies/masked_orc-idle-f${i}.png`)
+const MUDDY_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/enemies/muddy-idle-f${i}.png`)
+const NECROMANCER_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/enemies/necromancer-idle-f${i}.png`)
+const ORC_SHAMAN_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/enemies/orc_shaman-idle-f${i}.png`)
+const ORC_WARRIOR_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/enemies/orc_warrior-idle-f${i}.png`)
+const SKELET_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/enemies/skelet-idle-f${i}.png`)
+const SLUG_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/enemies/slug-idle-f${i}.png`)
+const SWAMPY_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/enemies/swampy-idle-f${i}.png`)
+const DOC_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/enemies/doc-idle-f${i}.png`)
+const BIG_DEMON_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/enemies/big_demon-idle-f${i}.png`)
+const OGRE_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/enemies/ogre-idle-f${i}.png`)
+const FLAMING_SKULL_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/enemies/flaming_skull-idle-f${i}.png`)
+const SHADE_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/enemies/shade-idle-f${i}.png`)
+const SNAKE_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/enemies/snake-idle-f${i}.png`)
 
 const ENEMY_FRAME_SETS: Record<string, string[]> = {
   goblin: GOBLIN_FRAMES,
   chort: CHORT_FRAMES,
   imp: IMP_FRAMES,
+  frost_imp: IMP_FRAMES,
   mimic: MIMIC_FRAMES,
   lizard_f: LIZARD_F_FRAMES,
   lizard_m: LIZARD_M_FRAMES,
@@ -61,9 +62,12 @@ const LEFT_FACING_ENEMY_IDS = new Set([
   'big_demon',
   'flaming_skull',
   'shade',
-  'snake',
   'greater_slime',
 ])
+
+const ENEMY_TINT_FILTER_BY_ID: Partial<Record<string, string>> = {
+  frost_imp: 'hue-rotate(165deg) saturate(1.3) brightness(1.08)',
+}
 
 interface Props {
   enemy: EnemyState
@@ -81,13 +85,15 @@ export function EnemyPanel({ enemy, isActing, isActive, lastCardPlayedId, isElit
   const inactiveScale = isActive ? spriteScale : spriteScale * 0.82
   const hoverScale = isEliteEnemy ? spriteScale * 1.04 : spriteScale * 1.12
   const facingScaleX = LEFT_FACING_ENEMY_IDS.has(enemy.id) ? 1 : -1
+  const spriteTintFilter = ENEMY_TINT_FILTER_BY_ID[enemy.id] ?? 'none'
+  type QueueEntry = { kind: 'dmg'; data: DmgEvent } | { kind: 'status'; data: StatusEvent }
+  const MAX_QUEUE = 5
   const controls    = useAnimationControls()
   const prevHp      = useRef(enemy.hp)
   const prevBlock   = useRef(enemy.block)
   const nextId         = useRef(0)
   const nextLane       = useRef(0)
-  const [dmgEvents,    setDmgEvents]    = useState<DmgEvent[]>([])
-  const [statusEvents, setStatusEvents] = useState<StatusEvent[]>([])
+  const [eventQueue, setEventQueue] = useState<QueueEntry[]>([])
   const prevStatus = useRef({ burn: 0, vulnerable: 0, weak: 0, poison: 0, bleed: 0, trap: 0, forge: 0, strength: 0, armor: 0 })
   const [hovered,   setHovered]   = useState(false)
   const [frameIdx,  setFrameIdx]  = useState(0)
@@ -96,6 +102,13 @@ export function EnemyPanel({ enemy, isActing, isActive, lastCardPlayedId, isElit
     nextLane.current = (nextLane.current + 1) % 5
     return lane
   }, [])
+  const pushQueue = useCallback((entries: QueueEntry[]) => {
+    setEventQueue(prev => {
+      const combined = [...prev, ...entries]
+      return combined.length > MAX_QUEUE ? combined.slice(combined.length - MAX_QUEUE) : combined
+    })
+  }, [])
+  const popQueue = useCallback(() => setEventQueue(prev => prev.slice(1)), [])
 
   const tick = useCallback(() => setFrameIdx(f => (f + 1) % enemyFrames.length), [enemyFrames.length])
   useEffect(() => {
@@ -108,17 +121,26 @@ export function EnemyPanel({ enemy, isActing, isActive, lastCardPlayedId, isElit
   }, [tick])
 
   useEffect(() => {
+    const entries: QueueEntry[] = []
     if (enemy.hp < prevHp.current) {
       const diff = prevHp.current - enemy.hp
-      controls.start({ x: [0, -10, 8, -4, 0], transition: { duration: 0.35 } })
-      setDmgEvents(e => [...e, { id: nextId.current++, value: diff, type: 'damage', cardId: lastCardPlayedId ?? undefined, lane: allocLane() }])
+      // Detect damage kind from simultaneous status changes (status effect hasn't updated prevStatus yet)
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      let dmgType: DmgEvent['type'] = 'damage'
+      if (enemy.status.burn > prevStatus.current.burn) dmgType = 'burn_damage'
+      else if (enemy.status.poison > prevStatus.current.poison) dmgType = 'poison_damage'
+      else if (enemy.status.bleed > prevStatus.current.bleed) dmgType = 'bleed_damage'
+      void controls.start({ x: [0, -10, 8, -4, 0], transition: { duration: 0.35 } })
+      entries.push({ kind: 'dmg', data: { id: nextId.current++, value: diff, type: dmgType, cardId: lastCardPlayedId ?? undefined, lane: allocLane() } })
       playEnemyHit()
     } else if (enemy.hp > prevHp.current) {
       const diff = enemy.hp - prevHp.current
-      setDmgEvents(e => [...e, { id: nextId.current++, value: diff, type: 'heal', cardId: lastCardPlayedId ?? undefined, lane: allocLane() }])
+      entries.push({ kind: 'dmg', data: { id: nextId.current++, value: diff, type: 'heal', cardId: lastCardPlayedId ?? undefined, lane: allocLane() } })
     }
     prevHp.current = enemy.hp
-  }, [enemy.hp, controls, lastCardPlayedId, allocLane])
+    if (entries.length) pushQueue(entries)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enemy.hp, controls, lastCardPlayedId, allocLane, pushQueue])
 
   useEffect(() => {
     if (!isActing) return
@@ -143,39 +165,32 @@ export function EnemyPanel({ enemy, isActing, isActive, lastCardPlayedId, isElit
 
 
   useEffect(() => {
-    if (enemy.block > prevBlock.current) {
+    const entries: QueueEntry[] = []
+    if (enemy.block !== prevBlock.current) {
       const diff = enemy.block - prevBlock.current
-      setDmgEvents(e => [...e, { id: nextId.current++, value: diff, type: 'block', cardId: lastCardPlayedId ?? undefined, lane: allocLane() }])
-    } else if (enemy.block < prevBlock.current) {
-      const diff = enemy.block - prevBlock.current
-      setDmgEvents(e => [...e, { id: nextId.current++, value: diff, type: 'block', cardId: lastCardPlayedId ?? undefined, lane: allocLane() }])
+      entries.push({ kind: 'dmg', data: { id: nextId.current++, value: diff, type: 'block', cardId: lastCardPlayedId ?? undefined, lane: allocLane() } })
     }
     prevBlock.current = enemy.block
-  }, [enemy.block, lastCardPlayedId, allocLane])
+    if (entries.length) pushQueue(entries)
+  }, [enemy.block, lastCardPlayedId, allocLane, pushQueue])
 
   useEffect(() => {
     const { burn, vulnerable, weak, poison, bleed, trap, forge, strength } = enemy.status
     const armor = enemy.armor
     const prev = prevStatus.current
-    const newEvents: StatusEvent[] = []
-    if (burn > prev.burn)             newEvents.push({ id: nextId.current++, value: burn - prev.burn,             status: 'burn',       cardId: lastCardPlayedId ?? undefined, lane: allocLane() })
-    if (vulnerable > prev.vulnerable) newEvents.push({ id: nextId.current++, value: vulnerable - prev.vulnerable, status: 'vulnerable', cardId: lastCardPlayedId ?? undefined, lane: allocLane() })
-    if (weak > prev.weak)             newEvents.push({ id: nextId.current++, value: weak - prev.weak,             status: 'weak',       cardId: lastCardPlayedId ?? undefined, lane: allocLane() })
-    if (poison > prev.poison)         newEvents.push({ id: nextId.current++, value: poison - prev.poison,         status: 'poison',     cardId: lastCardPlayedId ?? undefined, lane: allocLane() })
-    if (bleed > prev.bleed)           newEvents.push({ id: nextId.current++, value: bleed - prev.bleed,           status: 'bleed',      cardId: lastCardPlayedId ?? undefined, lane: allocLane() })
-    if (trap > prev.trap)             newEvents.push({ id: nextId.current++, value: trap - prev.trap,             status: 'trap',       cardId: lastCardPlayedId ?? undefined, lane: allocLane() })
-    if (forge > prev.forge)           newEvents.push({ id: nextId.current++, value: forge - prev.forge,           status: 'forge',      cardId: lastCardPlayedId ?? undefined, lane: allocLane() })
-    if (strength > prev.strength)     newEvents.push({ id: nextId.current++, value: strength - prev.strength,     status: 'strength',   cardId: lastCardPlayedId ?? undefined, lane: allocLane() })
-    if (armor > prev.armor)           newEvents.push({ id: nextId.current++, value: armor - prev.armor,           status: 'armor',      cardId: lastCardPlayedId ?? undefined, lane: allocLane() })
+    const entries: QueueEntry[] = []
+    if (burn > prev.burn)             entries.push({ kind: 'status', data: { id: nextId.current++, value: burn - prev.burn,             status: 'burn',       cardId: lastCardPlayedId ?? undefined, lane: allocLane() } })
+    if (vulnerable > prev.vulnerable) entries.push({ kind: 'status', data: { id: nextId.current++, value: vulnerable - prev.vulnerable, status: 'vulnerable', cardId: lastCardPlayedId ?? undefined, lane: allocLane() } })
+    if (weak > prev.weak)             entries.push({ kind: 'status', data: { id: nextId.current++, value: weak - prev.weak,             status: 'weak',       cardId: lastCardPlayedId ?? undefined, lane: allocLane() } })
+    if (poison > prev.poison)         entries.push({ kind: 'status', data: { id: nextId.current++, value: poison - prev.poison,         status: 'poison',     cardId: lastCardPlayedId ?? undefined, lane: allocLane() } })
+    if (bleed > prev.bleed)           entries.push({ kind: 'status', data: { id: nextId.current++, value: bleed - prev.bleed,           status: 'bleed',      cardId: lastCardPlayedId ?? undefined, lane: allocLane() } })
+    if (trap > prev.trap)             entries.push({ kind: 'status', data: { id: nextId.current++, value: trap - prev.trap,             status: 'trap',       cardId: lastCardPlayedId ?? undefined, lane: allocLane() } })
+    if (forge > prev.forge)           entries.push({ kind: 'status', data: { id: nextId.current++, value: forge - prev.forge,           status: 'forge',      cardId: lastCardPlayedId ?? undefined, lane: allocLane() } })
+    if (strength > prev.strength)     entries.push({ kind: 'status', data: { id: nextId.current++, value: strength - prev.strength,     status: 'strength',   cardId: lastCardPlayedId ?? undefined, lane: allocLane() } })
+    if (armor > prev.armor)           entries.push({ kind: 'status', data: { id: nextId.current++, value: armor - prev.armor,           status: 'armor',      cardId: lastCardPlayedId ?? undefined, lane: allocLane() } })
     prevStatus.current = { burn, vulnerable, weak, poison, bleed, trap, forge, strength, armor }
-    if (newEvents.length) setStatusEvents(e => [...e, ...newEvents])
-  }, [enemy.status.burn, enemy.status.vulnerable, enemy.status.weak, enemy.status.poison, enemy.status.bleed, enemy.status.trap, enemy.status.forge, enemy.status.strength, enemy.armor, lastCardPlayedId, allocLane])
-
-  const removeDmgEvent = (id: number) =>
-    setDmgEvents(e => e.filter(x => x.id !== id))
-
-  const removeStatusEvent = (id: number) =>
-    setStatusEvents(e => e.filter(x => x.id !== id))
+    if (entries.length) pushQueue(entries)
+  }, [enemy.status.burn, enemy.status.vulnerable, enemy.status.weak, enemy.status.poison, enemy.status.bleed, enemy.status.trap, enemy.status.forge, enemy.status.strength, enemy.armor, lastCardPlayedId, allocLane, pushQueue])
 
   const { vulnerable, weak, burn, poison, bleed, trap, forge, strength } = enemy.status
   const hasStatus = enemy.armor > 0 || forge > 0 || strength > 0 || vulnerable > 0 || weak > 0 || burn > 0 || poison > 0 || bleed > 0 || trap > 0
@@ -184,7 +199,7 @@ export function EnemyPanel({ enemy, isActing, isActive, lastCardPlayedId, isElit
     if (weakness === 'fire') return 'Fire Damage'
     return weakness
   })
-  const activeDmgEvent = dmgEvents[0]
+  const activeEvent = eventQueue[0] ?? null
   const floatingTop = -22 - Math.max(0, spriteScale - 1) * 26
 
   return (
@@ -197,23 +212,15 @@ export function EnemyPanel({ enemy, isActing, isActive, lastCardPlayedId, isElit
     >
 
 
-      {/* Floating damage / block numbers */}
+      {/* Unified floating event queue — one at a time, no overlap */}
       <AnimatePresence mode="wait">
-        {activeDmgEvent && (
-          <FloatingNumber
-            key={activeDmgEvent.id}
-            event={activeDmgEvent}
-            top={floatingTop}
-            onDone={() => removeDmgEvent(activeDmgEvent.id)}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Floating status effect icons */}
-      <AnimatePresence>
-        {statusEvents.map(e => (
-          <FloatingStatus key={e.id} event={e} top={floatingTop} onDone={() => removeStatusEvent(e.id)} />
-        ))}
+        {activeEvent ? (
+          activeEvent.kind === 'dmg' ? (
+            <FloatingNumber key={activeEvent.data.id} event={activeEvent.data} top={floatingTop} onDone={popQueue} />
+          ) : (
+            <FloatingStatus key={activeEvent.data.id} event={activeEvent.data} top={floatingTop} onDone={popQueue} />
+          )
+        ) : null}
       </AnimatePresence>
 
       {/* Fixed-height sprite well */}
@@ -227,7 +234,7 @@ export function EnemyPanel({ enemy, isActing, isActive, lastCardPlayedId, isElit
           <img
             src={enemyFrames[frameIdx]}
             alt={enemy.name}
-            style={{ width: 80, height: 80, imageRendering: 'pixelated', objectFit: 'contain' }}
+            style={{ width: 80, height: 80, imageRendering: 'pixelated', objectFit: 'contain', filter: spriteTintFilter }}
           />
         </motion.div>
       </div>

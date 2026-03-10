@@ -355,6 +355,7 @@ const BASIC_ENEMY_TEMPLATES: EnemyTemplate[] = [
   { id: 'goblin', name: 'Goblin', tier: 'basic' },
   { id: 'chort', name: 'Chomp', tier: 'basic' },
   { id: 'imp', name: 'Imp', tier: 'basic' },
+  { id: 'frost_imp', name: 'Frost Imp', tier: 'basic', weaknesses: ['fire'] },
   { id: 'mimic', name: 'Mimic', tier: 'basic' },
   { id: 'lizard_f', name: 'Lizard Scout', tier: 'basic' },
   { id: 'lizard_m', name: 'Lizard Raider', tier: 'basic' },
@@ -405,6 +406,7 @@ export const BESTIARY_ENEMIES: BestiaryEnemy[] = [
 ]
 
 const BESTIARY_ABILITY_LABELS_BY_ENEMY_ID: Partial<Record<string, string[]>> = {
+  frost_imp: ['Chilling Claws'],
   chort: ['Bleeding Bite'],
   mimic: ['Bleeding Bite'],
   greater_mimic: ['Bleeding Bite'],

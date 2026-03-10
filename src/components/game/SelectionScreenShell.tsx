@@ -32,7 +32,10 @@ export function SelectionScreenShell({ title, subtitle, children, layout = 'cent
     >
       <div
         className={`relative flex flex-col items-center bg-zinc-950 ${allowOverflowVisible ? 'overflow-visible' : 'overflow-hidden'} ${layout === 'top' ? 'justify-start pt-10 gap-6' : 'justify-center gap-10'}`}
-        style={{ width: 'min(95vw, calc(94vh * (16 / 9)), 1440px)', aspectRatio: '16 / 9' }}
+        style={{
+          width: 'min(95vw, calc(94vh * var(--alchemy-viewport-ratio, 16 / 9)), var(--alchemy-viewport-width, 1440px))',
+          aspectRatio: 'var(--alchemy-viewport-ratio, 16 / 9)',
+        }}
       >
         {topLeft ? <div className="absolute right-6 bottom-6 z-50">{topLeft}</div> : null}
 

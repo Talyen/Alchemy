@@ -46,11 +46,11 @@ export function TrinketInfoCard({ id, name, description, iconSrc, size = 'defaul
   }
 
   return (
-    <div className="relative" onMouseEnter={onWrapperEnter} onMouseLeave={onWrapperLeave}>
+    <div className="relative z-[220]" onMouseEnter={onWrapperEnter} onMouseLeave={onWrapperLeave}>
       <AnimatePresence>
         {keywordTooltipEnabled && showTooltip && keywords.length > 0 && (
           <motion.div
-            className="absolute bottom-full left-1/2 mb-2.5 w-56 rounded-xl border border-zinc-700/80 bg-zinc-950 px-3 py-2.5 z-50 pointer-events-none"
+            className="absolute bottom-full left-1/2 mb-2.5 w-56 rounded-xl border border-zinc-700/80 bg-zinc-950 px-3 py-2.5 z-[320] pointer-events-none"
             style={{ x: '-50%' }}
             initial={{ opacity: 0, y: 3 }}
             animate={{ opacity: 1, y: 0 }}

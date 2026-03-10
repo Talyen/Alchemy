@@ -1,5 +1,7 @@
+import { useEffect } from 'react'
 import type { ReactNode } from 'react'
 import { motion } from 'framer-motion'
+import { playGoldGain } from '@/sounds'
 import { SelectionScreenShell } from './SelectionScreenShell'
 import { GoldIcon } from './GoldIcon'
 
@@ -10,6 +12,7 @@ interface Props {
 }
 
 export function MysteryGoldRewardScreen({ foundGold, onContinue, topLeft }: Props) {
+  useEffect(() => { playGoldGain() }, [])
   return (
     <SelectionScreenShell title="Cache of Coins" subtitle="Mystery" topLeft={topLeft} allowOverflowVisible>
       <div className="w-full max-w-3xl -mt-4 flex flex-col items-center gap-6">
