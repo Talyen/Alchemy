@@ -66,6 +66,25 @@ export function CollectionScreen({
   const [trinketPage, setTrinketPage] = useState(0)
   const [frameIdx, setFrameIdx] = useState(0)
   const [hoveredEnemyId, setHoveredEnemyId] = useState<string | null>(null)
+  const [hoveredEnemyTooltip, setHoveredEnemyTooltip] = useState<{ left: number; top: number; placeAbove: boolean } | null>(null)
+
+  const updateEnemyTooltipPosition = (target: EventTarget | null) => {
+    if (!(target instanceof Element)) return
+    const rect = target.getBoundingClientRect()
+    const tooltipWidth = 256
+    const viewportPadding = 12
+    const half = tooltipWidth / 2
+    const unclampedLeft = rect.left + rect.width / 2
+    const minLeft = viewportPadding + half
+    const maxLeft = window.innerWidth - viewportPadding - half
+    const left = Math.max(minLeft, Math.min(maxLeft, unclampedLeft))
+    const placeAbove = rect.top > 186
+    setHoveredEnemyTooltip({
+      left: Math.round(left),
+      top: Math.round(placeAbove ? rect.top - 10 : rect.bottom + 10),
+      placeAbove,
+    })
+  }
 
   useEffect(() => {
     setActiveTab(initialTab)
@@ -242,16 +261,24 @@ export function CollectionScreen({
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.985 }}
                         transition={{ type: 'spring', stiffness: 360, damping: 28 }}
-                        onMouseEnter={() => {
+                        onMouseEnter={(event) => {
                           if (!isEncountered) return
                           setHoveredEnemyId(enemy.id)
+                          updateEnemyTooltipPosition(event.currentTarget)
                         }}
-                        onFocus={() => {
+                        onFocus={(event) => {
                           if (!isEncountered) return
                           setHoveredEnemyId(enemy.id)
+                          updateEnemyTooltipPosition(event.currentTarget)
                         }}
-                        onMouseLeave={() => setHoveredEnemyId(curr => (curr === enemy.id ? null : curr))}
-                        onBlur={() => setHoveredEnemyId(curr => (curr === enemy.id ? null : curr))}
+                        onMouseLeave={() => {
+                          setHoveredEnemyId(curr => (curr === enemy.id ? null : curr))
+                          setHoveredEnemyTooltip(null)
+                        }}
+                        onBlur={() => {
+                          setHoveredEnemyId(curr => (curr === enemy.id ? null : curr))
+                          setHoveredEnemyTooltip(null)
+                        }}
                       >
                         <p className={`text-center text-xs font-semibold tracking-wide ${isEncountered ? 'text-zinc-200' : 'text-zinc-500'}`}>
                           {enemy.name}
@@ -280,7 +307,13 @@ export function CollectionScreen({
                           {isEncountered && hoveredEnemyId === enemy.id && (
                             <motion.div
                               key={`${enemy.id}-details`}
-                              className="absolute pointer-events-none z-30 bottom-full left-1/2 mb-2.5 w-64 -translate-x-1/2 rounded-xl border border-zinc-700/80 bg-zinc-950 px-3 py-2.5"
+                              className="fixed pointer-events-none z-[320] w-64 rounded-xl border border-zinc-700/80 bg-zinc-950 px-3 py-2.5"
+                              style={{
+                                left: hoveredEnemyTooltip?.left ?? 0,
+                                top: hoveredEnemyTooltip?.top ?? 0,
+                                x: '-50%',
+                                y: hoveredEnemyTooltip?.placeAbove ? '-100%' : '0%',
+                              }}
                               initial={{ opacity: 0, y: 5, scale: 0.97 }}
                               animate={{ opacity: 1, y: 0, scale: 1 }}
                               exit={{ opacity: 0, y: 5, scale: 0.97, transition: { duration: 0.1, ease: 'easeIn' } }}

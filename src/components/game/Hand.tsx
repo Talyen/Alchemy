@@ -134,28 +134,38 @@ function PileStack({ count, label, icon: Icon, onClick }: { count: number; label
 function PileViewer({ title, cards, onClose }: { title: string; cards: CardInstance[]; onClose: () => void }) {
   return (
     <motion.div
-      className="absolute bottom-full mb-3 left-0 w-[640px] max-w-[80vw] rounded-xl border border-zinc-700/80 bg-zinc-950/95 p-3 z-[130]"
+      className="fixed inset-0 z-[140] flex items-center justify-center p-6"
       initial={{ opacity: 0, y: 8, scale: 0.98 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 8, scale: 0.98, transition: { duration: 0.12 } }}
+      onClick={onClose}
     >
-      <div className="mb-2 flex items-center justify-between">
-        <p className="text-[10px] uppercase tracking-widest text-zinc-500">{title}</p>
-        <button type="button" onClick={onClose} className="text-xs text-zinc-500 hover:text-zinc-300">Close</button>
-      </div>
-      {cards.length === 0 ? (
-        <p className="text-xs text-zinc-500">Empty.</p>
-      ) : (
-        <div className="max-h-[48vh] overflow-y-auto pr-1">
-          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 justify-items-center">
-            {cards.map((card, index) => (
-              <div key={`${card.uid}-${index}`} className="scale-[0.85] origin-top">
-                <Card card={card} playable={false} />
-              </div>
-            ))}
-          </div>
+      <div className="absolute inset-0 bg-zinc-950/72 backdrop-blur-[2px]" />
+      <motion.div
+        className="relative w-[min(94vw,1220px)] max-h-[80vh] rounded-2xl border border-zinc-700/80 bg-zinc-950/95 p-4"
+        initial={{ opacity: 0, y: 10, scale: 0.985 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 10, scale: 0.985, transition: { duration: 0.12 } }}
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="mb-3 flex items-center justify-between">
+          <p className="text-[10px] uppercase tracking-widest text-zinc-500">{title}</p>
+          <button type="button" onClick={onClose} className="text-xs text-zinc-500 hover:text-zinc-300">Close</button>
         </div>
-      )}
+        {cards.length === 0 ? (
+          <p className="text-xs text-zinc-500">Empty.</p>
+        ) : (
+          <div className="max-h-[68vh] overflow-y-auto scrollbar-hidden pr-1">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 justify-items-center">
+              {cards.map((card, index) => (
+                <div key={`${card.uid}-${index}`} className="origin-top">
+                  <Card card={card} playable={false} />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </motion.div>
     </motion.div>
   )
 }
@@ -380,7 +390,7 @@ export function Hand({ cards, mana, maxMana, gold, onPlay, disabled, isEnemyActi
       </div>
 
       {/* Inventory bag — above draw pile */}
-      <div className="absolute left-4 bottom-[138px] w-16 flex justify-center z-20">
+      <div className="absolute left-5 bottom-[168px] w-16 flex justify-center z-20">
         <motion.button
           type="button"
           onClick={() => setShowInventory(prev => !prev)}
@@ -398,35 +408,41 @@ export function Hand({ cards, mana, maxMana, gold, onPlay, disabled, isEnemyActi
         <AnimatePresence>
           {showInventory && (
             <motion.div
-              className="absolute bottom-16 left-1/2 -translate-x-1/2 w-72 max-h-72 overflow-y-auto rounded-xl border border-zinc-700/80 bg-zinc-950/95 p-3"
+              className="fixed inset-0 z-[145] flex items-center justify-center p-6"
               initial={{ opacity: 0, y: 8, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 8, scale: 0.98 }}
+              onClick={() => setShowInventory(false)}
             >
-              <div className="mb-2 flex items-center justify-between">
-                <p className="text-[10px] uppercase tracking-widest text-zinc-500">Inventory</p>
-                <button
-                  type="button"
-                  onClick={() => setShowInventory(false)}
-                  className="text-xs text-zinc-500 hover:text-zinc-300"
-                >
-                  Close
-                </button>
-              </div>
-              <div className="space-y-2">
-                {trinkets.length === 0 && (
-                  <p className="text-xs text-zinc-500">No trinkets yet.</p>
-                )}
-                {trinkets.map(trinket => (
-                  <TrinketInfoCard
-                    key={trinket.id}
-                    id={trinket.id}
-                    name={trinket.name}
-                    description={trinket.description}
-                    size="compact"
-                    className="w-full"
-                  />
-                ))}
+              <div className="absolute inset-0 bg-zinc-950/72 backdrop-blur-[2px]" />
+              <div className="relative w-[min(94vw,980px)] max-h-[78vh] rounded-2xl border border-zinc-700/80 bg-zinc-950/95 p-4" onClick={(event) => event.stopPropagation()}>
+                <div className="mb-2 flex items-center justify-between">
+                  <p className="text-[10px] uppercase tracking-widest text-zinc-500">Inventory</p>
+                  <button
+                    type="button"
+                    onClick={() => setShowInventory(false)}
+                    className="text-xs text-zinc-500 hover:text-zinc-300"
+                  >
+                    Close
+                  </button>
+                </div>
+                <div className="max-h-[66vh] overflow-y-auto scrollbar-hidden pr-1">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {trinkets.length === 0 && (
+                      <p className="text-xs text-zinc-500">No trinkets yet.</p>
+                    )}
+                    {trinkets.map(trinket => (
+                      <TrinketInfoCard
+                        key={trinket.id}
+                        id={trinket.id}
+                        name={trinket.name}
+                        description={trinket.description}
+                        size="compact"
+                        className="w-full"
+                      />
+                    ))}
+                  </div>
+                </div>
               </div>
             </motion.div>
           )}
@@ -530,13 +546,11 @@ export function Hand({ cards, mana, maxMana, gold, onPlay, disabled, isEnemyActi
         />
         <AnimatePresence>
           {showDiscardPile && (
-            <div className="absolute right-0 bottom-full mb-3">
-              <PileViewer
-                title="Discard Pile"
-                cards={discardPileCards}
-                onClose={() => setShowDiscardPile(false)}
-              />
-            </div>
+            <PileViewer
+              title="Discard Pile"
+              cards={discardPileCards}
+              onClose={() => setShowDiscardPile(false)}
+            />
           )}
         </AnimatePresence>
       </div>

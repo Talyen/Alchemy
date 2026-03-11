@@ -226,7 +226,7 @@ export function ShopScreen({ characterId, gold, cardOffers, trinketOffers, offer
           </div>
         </motion.div>
 
-        <div className="relative z-20 w-full min-h-0 flex-1 overflow-visible pr-1">
+        <div className="relative z-20 w-full min-h-0 flex-1 overflow-visible pr-1 flex items-center justify-center">
           <div className="w-full flex flex-col items-center gap-4 pb-1">
             {offerMode === 'cards' && (
             <div className="w-full">
@@ -392,7 +392,7 @@ export function ShopScreen({ characterId, gold, cardOffers, trinketOffers, offer
                   </motion.button>
                 </div>
 
-                <div className="max-h-[56vh] overflow-y-auto px-1">
+                <div className="max-h-[56vh] overflow-y-auto scrollbar-hidden px-1">
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 justify-items-center">
                     {deckInstances.map(({ instance, index }) => {
                       const isSelected = selectedDeckIndex === index

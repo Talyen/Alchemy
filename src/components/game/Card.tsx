@@ -87,7 +87,7 @@ export function Card({ card, playable, isBeingDragged = false, backgroundClassNa
 
   // Tooltip with 1 s hover delay
   const [showTooltip, setShowTooltip] = useState(false)
-  const [tooltipPosition, setTooltipPosition] = useState<{ left: number; top: number } | null>(null)
+  const [tooltipPosition, setTooltipPosition] = useState<{ left: number; top: number; placeAbove: boolean } | null>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Sheen sweep — triggered on hover, resets on leave
@@ -96,9 +96,18 @@ export function Card({ card, playable, isBeingDragged = false, backgroundClassNa
   const updateTooltipPosition = () => {
     if (!wrapperRef.current) return
     const rect = wrapperRef.current.getBoundingClientRect()
+    const tooltipWidth = 208
+    const viewportPadding = 12
+    const half = tooltipWidth / 2
+    const unclampedLeft = rect.left + rect.width / 2
+    const minLeft = viewportPadding + half
+    const maxLeft = window.innerWidth - viewportPadding - half
+    const left = Math.max(minLeft, Math.min(maxLeft, unclampedLeft))
+    const placeAbove = rect.top > 186
     setTooltipPosition({
-      left: Math.round(rect.left + rect.width / 2),
-      top: Math.round(rect.top - 10),
+      left: Math.round(left),
+      top: Math.round(placeAbove ? rect.top - 10 : rect.bottom + 10),
+      placeAbove,
     })
   }
 
@@ -173,7 +182,7 @@ export function Card({ card, playable, isBeingDragged = false, backgroundClassNa
           {keywordTooltipEnabled && showTooltip && keywords.length > 0 && (
             <motion.div
               className="fixed w-52 rounded-xl border border-zinc-700/80 bg-zinc-950 px-3 py-2.5 z-[999] pointer-events-none"
-              style={{ left: tooltipPosition?.left ?? 0, top: tooltipPosition?.top ?? 0, x: '-50%', y: '-100%' }}
+              style={{ left: tooltipPosition?.left ?? 0, top: tooltipPosition?.top ?? 0, x: '-50%', y: tooltipPosition?.placeAbove ? '-100%' : '0%' }}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0, transition: { duration: 0.1, ease: 'easeIn' } }}
@@ -251,12 +260,26 @@ export function Card({ card, playable, isBeingDragged = false, backgroundClassNa
 
           <div className="flex-1 flex items-center justify-center">
             {art ? (
-              <img
-                src={art}
-                alt={card.name}
-                className="w-14 h-14 object-contain"
-                style={{ imageRendering: 'pixelated' }}
-              />
+              card.id === 'panacea_potion' ? (
+                <motion.img
+                  src={art}
+                  alt={card.name}
+                  className="w-14 h-14 object-contain"
+                  style={{ imageRendering: 'pixelated' }}
+                  animate={{ filter: ['hue-rotate(0deg) saturate(2) brightness(1.05)', 'hue-rotate(120deg) saturate(2) brightness(1.05)', 'hue-rotate(240deg) saturate(2) brightness(1.05)', 'hue-rotate(360deg) saturate(2) brightness(1.05)'] }}
+                  transition={{ duration: 3, repeat: Infinity, ease: 'linear', repeatType: 'loop' }}
+                />
+              ) : (
+                <img
+                  src={art}
+                  alt={card.name}
+                  className="w-14 h-14 object-contain"
+                  style={{
+                    imageRendering: 'pixelated',
+                    filter: card.id === 'mana_potion' ? 'hue-rotate(245deg) saturate(1.8) brightness(1.05)' : undefined,
+                  }}
+                />
+              )
             ) : null}
           </div>
         </div>

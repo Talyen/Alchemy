@@ -1,6 +1,7 @@
-import { useMemo, useRef, useState } from 'react'
+import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Sparkles } from 'lucide-react'
+import { createPortal } from 'react-dom'
 import { GoldIcon } from './GoldIcon'
 import { getKeywordsFromText, renderKeywordText } from './keywordGlossary'
 
@@ -26,7 +27,9 @@ function getDefaultIconSrc(id?: string): string | undefined {
 export function TrinketInfoCard({ id, name, description, iconSrc, size = 'default', className, keywordTooltipEnabled = true }: TrinketInfoCardProps) {
   const [imgFailed, setImgFailed] = useState(false)
   const [showTooltip, setShowTooltip] = useState(false)
+  const [tooltipPosition, setTooltipPosition] = useState<{ left: number; top: number; placeAbove: boolean } | null>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const wrapperRef = useRef<HTMLDivElement | null>(null)
   const resolvedIcon = useMemo(() => iconSrc ?? getDefaultIconSrc(id), [iconSrc, id])
   const keywords = useMemo(() => getKeywordsFromText(description), [description])
   const iconSize = size === 'compact' ? 'h-9 w-9' : 'h-11 w-11'
@@ -35,50 +38,85 @@ export function TrinketInfoCard({ id, name, description, iconSrc, size = 'defaul
     ? (isLongTitle ? 'text-[11px]' : 'text-xs')
     : (isLongTitle ? 'text-[13px]' : 'text-sm')
 
+  const updateTooltipPosition = () => {
+    if (!wrapperRef.current) return
+    const rect = wrapperRef.current.getBoundingClientRect()
+    const tooltipWidth = 224
+    const viewportPadding = 12
+    const half = tooltipWidth / 2
+    const unclampedLeft = rect.left + rect.width / 2
+    const minLeft = viewportPadding + half
+    const maxLeft = window.innerWidth - viewportPadding - half
+    const left = Math.max(minLeft, Math.min(maxLeft, unclampedLeft))
+    const placeAbove = rect.top > 186
+    setTooltipPosition({
+      left: Math.round(left),
+      top: Math.round(placeAbove ? rect.top - 10 : rect.bottom + 10),
+      placeAbove,
+    })
+  }
+
   const onWrapperEnter = () => {
     if (!keywordTooltipEnabled) return
+    updateTooltipPosition()
     timerRef.current = setTimeout(() => setShowTooltip(true), 300)
   }
 
   const onWrapperLeave = () => {
     if (timerRef.current) clearTimeout(timerRef.current)
     setShowTooltip(false)
+    setTooltipPosition(null)
   }
 
+  useLayoutEffect(() => {
+    if (!showTooltip) return
+    updateTooltipPosition()
+    window.addEventListener('resize', updateTooltipPosition)
+    window.addEventListener('scroll', updateTooltipPosition, true)
+
+    return () => {
+      window.removeEventListener('resize', updateTooltipPosition)
+      window.removeEventListener('scroll', updateTooltipPosition, true)
+    }
+  }, [showTooltip])
+
   return (
-    <div className="relative z-[220]" onMouseEnter={onWrapperEnter} onMouseLeave={onWrapperLeave}>
-      <AnimatePresence>
-        {keywordTooltipEnabled && showTooltip && keywords.length > 0 && (
-          <motion.div
-            className="absolute bottom-full left-1/2 mb-2.5 w-56 rounded-xl border border-zinc-700/80 bg-zinc-950 px-3 py-2.5 z-[320] pointer-events-none"
-            style={{ x: '-50%' }}
-            initial={{ opacity: 0, y: 3 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 3, transition: { duration: 0.1, ease: 'easeIn' } }}
-            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-          >
-            <p className="text-[11px] text-zinc-600 uppercase tracking-widest mb-2">Keywords</p>
-            <div className="flex flex-col gap-2">
-              {keywords.map(({ name: keywordName, Icon, color, description: keywordDescription }) => (
-                <div key={keywordName} className="flex items-start gap-2">
-                  {keywordName === 'Gold' ? (
-                    <GoldIcon size={16} glimmer={false} />
-                  ) : (
-                    <Icon
-                      size={16}
-                      style={{ color, fill: 'none', flexShrink: 0, pointerEvents: 'none' }}
-                    />
-                  )}
-                  <div className="flex flex-col gap-0.5">
-                    <span className="text-[13px] font-semibold leading-none" style={{ color }}>{keywordName}</span>
-                    <p className="text-[11px] text-zinc-400 leading-snug">{keywordDescription}</p>
+    <div ref={wrapperRef} className="relative z-[220]" onMouseEnter={onWrapperEnter} onMouseLeave={onWrapperLeave}>
+      {typeof window !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {keywordTooltipEnabled && showTooltip && keywords.length > 0 && (
+            <motion.div
+              className="fixed w-56 rounded-xl border border-zinc-700/80 bg-zinc-950 px-3 py-2.5 z-[999] pointer-events-none"
+              style={{ left: tooltipPosition?.left ?? 0, top: tooltipPosition?.top ?? 0, x: '-50%', y: tooltipPosition?.placeAbove ? '-100%' : '0%' }}
+              initial={{ opacity: 0, y: 3 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 3, transition: { duration: 0.1, ease: 'easeIn' } }}
+              transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <p className="text-[11px] text-zinc-600 uppercase tracking-widest mb-2">Keywords</p>
+              <div className="flex flex-col gap-2">
+                {keywords.map(({ name: keywordName, Icon, color, description: keywordDescription }) => (
+                  <div key={keywordName} className="flex items-start gap-2">
+                    {keywordName === 'Gold' ? (
+                      <GoldIcon size={16} glimmer={false} />
+                    ) : (
+                      <Icon
+                        size={16}
+                        style={{ color, fill: 'none', flexShrink: 0, pointerEvents: 'none' }}
+                      />
+                    )}
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-[13px] font-semibold leading-none" style={{ color }}>{keywordName}</span>
+                      <p className="text-[11px] text-zinc-400 leading-snug">{keywordDescription}</p>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body,
+      )}
 
       <div
         className={toClassName([

@@ -448,6 +448,8 @@ type PersistedRunV1 = {
   shopTrinketOffers: ShopTrinketOffer[]
   alchemyTransformOffers?: AlchemyTransformOffer[]
   alchemyPotionOffer?: ShopCardOffer | null
+  alchemyPotionOffer2?: ShopCardOffer | null
+  lastChosenDestinationType?: DestinationType | null
   shopRefreshUsed?: boolean
   shopDestroyUsed?: boolean
   alchemyRefreshUsed?: boolean
@@ -822,11 +824,17 @@ function isPotionCard(card: CardDef): boolean {
 }
 
 function addToKeywordLine(description: string, effectName: 'Burn' | 'Poison' | 'Bleed' | 'Heal', amount: number): string {
-  const pattern = new RegExp(`(\\b${effectName}\\s+)(\\d+)`, 'i')
-  if (!pattern.test(description)) {
-    return `${description}\n${effectName} ${amount}`
+  const valueBeforeKeyword = new RegExp(`(\\b)(\\d+)(\\s+${effectName}\\b)`, 'i')
+  if (valueBeforeKeyword.test(description)) {
+    return description.replace(valueBeforeKeyword, (_match, start: string, value: string, suffix: string) => `${start}${Number(value) + amount}${suffix}`)
   }
-  return description.replace(pattern, (_, prefix: string, value: string) => `${prefix}${Number(value) + amount}`)
+
+  const valueAfterKeyword = new RegExp(`(\\b${effectName}\\s+)(\\d+)`, 'i')
+  if (valueAfterKeyword.test(description)) {
+    return description.replace(valueAfterKeyword, (_match, prefix: string, value: string) => `${prefix}${Number(value) + amount}`)
+  }
+
+  return description
 }
 
 function applyTransformToCard(card: CardDef, kind: AlchemyTransformKind): CardDef {
@@ -950,6 +958,7 @@ export default function App() {
   const [floorsCleared, setFloorsCleared] = useState(0)
   const [rewardGoldFound, setRewardGoldFound] = useState(0)
   const [mysteryGoldFound, setMysteryGoldFound] = useState(0)
+  const [lastChosenDestinationType, setLastChosenDestinationType] = useState<DestinationType | null>(null)
   const [activeMysteryCompanionEventId, setActiveMysteryCompanionEventId] = useState<string | null>(null)
   const [activeRunCompanionEventId, setActiveRunCompanionEventId] = useState<string | null>(null)
   const [mysteryChestReward, setMysteryChestReward] = useState<TreasureChestReward | null>(null)
@@ -1011,7 +1020,12 @@ export default function App() {
   }, [talentBonuses.combatMaxManaBonus, talentBonuses.combatStartingBlockBonus])
 
   const buildDestinationOptions = useCallback((): DestinationOption[] => {
-    const available = DESTINATION_POOL.filter(option => option.type !== 'alchemy' || metaProgress.alchemyUnlocked)
+    const available = DESTINATION_POOL.filter(option => {
+      if (option.type === 'alchemy' && !metaProgress.alchemyUnlocked) return false
+      if (lastChosenDestinationType === 'shop' && option.type === 'shop') return false
+      if (lastChosenDestinationType === 'alchemy' && (option.type === 'alchemy' || option.type === 'shop')) return false
+      return true
+    })
     const guaranteedCombatPool = available.filter(option => option.type === 'enemy' || option.type === 'elite')
 
     if (!metaProgress.alchemyUnlocked) {
@@ -1037,7 +1051,7 @@ export default function App() {
     const chosenTypes = new Set([...seed, ...guaranteedCombat].map(option => option.type))
     const filler = pickRandom(available.filter(option => !chosenTypes.has(option.type)), 3 - seed.length - guaranteedCombat.length)
     return shuffle([...seed, ...guaranteedCombat, ...filler])
-  }, [metaProgress.alchemyUnlocked])
+  }, [metaProgress.alchemyUnlocked, lastChosenDestinationType])
 
   const applyRunSnapshot = useCallback((snapshot: PersistedRunV1) => {
     setPersistentHp(snapshot.persistentHp)
@@ -1055,6 +1069,8 @@ export default function App() {
     setShopTrinketOffers(snapshot.shopTrinketOffers)
     setAlchemyTransformOffers(snapshot.alchemyTransformOffers ?? [])
     setAlchemyPotionOffer(snapshot.alchemyPotionOffer ?? null)
+    setAlchemyPotionOffer2(snapshot.alchemyPotionOffer2 ?? null)
+    setLastChosenDestinationType(snapshot.lastChosenDestinationType ?? null)
     setShopRefreshUsed(snapshot.shopRefreshUsed ?? false)
     setShopDestroyUsed(snapshot.shopDestroyUsed ?? false)
     setAlchemyRefreshUsed(snapshot.alchemyRefreshUsed ?? false)
@@ -1145,6 +1161,8 @@ export default function App() {
       shopTrinketOffers,
       alchemyTransformOffers,
       alchemyPotionOffer,
+      alchemyPotionOffer2,
+      lastChosenDestinationType,
       shopRefreshUsed,
       shopDestroyUsed,
       alchemyRefreshUsed,
@@ -1182,6 +1200,8 @@ export default function App() {
     shopTrinketOffers,
     alchemyTransformOffers,
     alchemyPotionOffer,
+    alchemyPotionOffer2,
+    lastChosenDestinationType,
     shopRefreshUsed,
     shopDestroyUsed,
     alchemyRefreshUsed,
@@ -1306,6 +1326,7 @@ export default function App() {
     setShopTrinketOffers([])
     setAlchemyTransformOffers([])
     setAlchemyPotionOffer(null)
+    setAlchemyPotionOffer2(null)
     setShopRefreshUsed(false)
     setShopDestroyUsed(false)
     setAlchemyRefreshUsed(false)
@@ -1316,6 +1337,7 @@ export default function App() {
     setFloorsCleared(0)
     setRewardGoldFound(0)
     setMysteryGoldFound(0)
+    setLastChosenDestinationType(null)
     setActiveMysteryCompanionEventId(null)
     setActiveRunCompanionEventId(null)
     setMysteryChestReward(null)
@@ -1561,6 +1583,7 @@ export default function App() {
     const nextFloorsCleared = floorsCleared + 1
 
     setFloorsCleared(nextFloorsCleared)
+    setLastChosenDestinationType(type)
 
     if (type === 'shop') {
       const nextVisitCount = shopVisitCount + 1

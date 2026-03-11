@@ -192,7 +192,7 @@ export function AlchemyScreen({ characterId, gold, deckCards, transformOffers, p
 
   return (
     <SelectionScreenShell title="Alchemist's Hut" subtitle="Alchemy" topLeft={topLeft} layout="top" titleOffsetY={24}>
-      <div className="w-full h-full min-h-0 max-w-6xl px-6 pb-4 flex flex-col items-center gap-6">
+      <div className="w-full h-full min-h-0 max-w-6xl px-6 pb-6 flex flex-col items-center gap-8">
         <motion.div
           className="relative mx-auto w-full max-w-[760px] flex items-end justify-center z-10"
           initial={{ opacity: 0, y: 8 }}
@@ -413,7 +413,11 @@ export function AlchemyScreen({ characterId, gold, deckCards, transformOffers, p
 
             <div>
               <p className="mb-2 text-center text-[10px] uppercase tracking-widest text-zinc-600">Potion Making</p>
-              <div className="mx-auto w-full max-w-[360px] rounded-2xl border border-zinc-700/70 bg-zinc-900/65 p-4 flex flex-col items-center gap-3">
+              <motion.div
+                className="mx-auto w-full max-w-[360px] rounded-2xl border border-zinc-700/70 bg-zinc-900/65 p-4 flex flex-col items-center gap-3"
+                animate={!canMixPotions || pendingMixPurchase ? { opacity: 0.45, y: -6, scale: 0.99 } : { opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.24, ease: 'easeOut' }}
+              >
                 <motion.img
                   src="assets/cards/icon-health-potion.png"
                   alt="Mixed Potion"
@@ -426,7 +430,7 @@ export function AlchemyScreen({ characterId, gold, deckCards, transformOffers, p
                   <p className="text-sm text-zinc-100">Mix Potions</p>
                   <p className="mt-1 text-xs text-zinc-400">Select 2 of your Potions to Combine</p>
                 </div>
-              </div>
+              </motion.div>
               <div className="mt-2 flex justify-center">
                 <motion.button
                   type="button"
@@ -496,7 +500,7 @@ export function AlchemyScreen({ characterId, gold, deckCards, transformOffers, p
         <motion.button
           type="button"
           onClick={onLeave}
-          className="px-5 py-2.5 rounded-xl border border-zinc-700 bg-zinc-800/80 text-sm text-zinc-300"
+          className="mb-1 px-5 py-2.5 rounded-xl border border-zinc-700 bg-zinc-800/80 text-sm text-zinc-300"
           whileHover={{ scale: 1.03, borderColor: 'rgba(161,161,170,0.6)' }}
           whileTap={{ scale: 0.97 }}
         >
@@ -517,8 +521,8 @@ export function AlchemyScreen({ characterId, gold, deckCards, transformOffers, p
                   </motion.button>
                 </div>
 
-                <div className="max-h-[56vh] overflow-y-auto px-1">
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 justify-items-center">
+                <div className="max-h-[56vh] overflow-y-auto scrollbar-hidden px-4 py-3">
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5 justify-items-center">
                     {eligibleTransformCards.map(({ card, index }) => {
                       const isSelected = selectedDeckIndex === index
                       return (
@@ -559,8 +563,8 @@ export function AlchemyScreen({ characterId, gold, deckCards, transformOffers, p
                   </motion.button>
                 </div>
 
-                <div className="max-h-[56vh] overflow-y-auto px-1">
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 justify-items-center">
+                <div className="max-h-[56vh] overflow-y-auto scrollbar-hidden px-4 py-3">
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5 justify-items-center">
                     {potionCards.map(({ card, index }) => {
                       const isSelected = selectedPotionIndexes.includes(index)
                       return (
