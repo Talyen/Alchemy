@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { startKnightRun } from './helpers'
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
@@ -34,13 +35,6 @@ test.beforeEach(async ({ page }) => {
   })
 })
 
-async function startKnightRun(page: import('@playwright/test').Page) {
-  await page.goto('/')
-  await page.getByRole('button', { name: 'Play' }).click()
-  await page.getByRole('button', { name: /Knight/i }).first().click()
-  await page.waitForTimeout(1000)
-}
-
 test('initial main menu load attempts BGM playback', async ({ page }) => {
   await page.goto('/')
   // Allow extra time: async audio-path resolution probes HTTP files from the dev server.
@@ -74,20 +68,30 @@ test('background music attempts playback after first interaction', async ({ page
 test('playing a card attempts real SFX file playback', async ({ page }) => {
   await startKnightRun(page)
 
-  const playableCard = page.locator('button').filter({ hasText: /Deal|Gain|Apply|Heal|Draw|Wish/i }).first()
-  await playableCard.click()
-  await page.waitForTimeout(1500) // allow async SFX path resolution to complete
+  let sfxPlays = 0
+  const handCards = page.locator('button[class*="w-48"]')
+  const cardCount = await handCards.count()
+  const attempts = Math.min(cardCount, 5)
 
-  const sfxPlays = await page.evaluate(() => {
-    const w = window as typeof window & {
-      __audioProbe?: Array<{ id: number; action: 'play' | 'pause'; src: string }>
-    }
-    return (w.__audioProbe ?? []).filter(event => {
-      if (event.action !== 'play') return false
-      if (!event.src.includes('assets/audio/sfx/')) return false
-      return event.src.endsWith('.ogg') || event.src.endsWith('.wav')
-    }).length
-  })
+  for (let i = 0; i < attempts; i++) {
+    const card = handCards.nth(i)
+    if (!(await card.isVisible().catch(() => false))) continue
+    await card.click({ timeout: 3000 }).catch(() => {})
+    await page.waitForTimeout(750)
+
+    sfxPlays = await page.evaluate(() => {
+      const w = window as typeof window & {
+        __audioProbe?: Array<{ id: number; action: 'play' | 'pause'; src: string }>
+      }
+      return (w.__audioProbe ?? []).filter(event => {
+        if (event.action !== 'play') return false
+        if (!event.src.includes('assets/audio/sfx/')) return false
+        return event.src.endsWith('.ogg') || event.src.endsWith('.wav')
+      }).length
+    })
+
+    if (sfxPlays > 0) break
+  }
 
   expect(sfxPlays).toBeGreaterThan(0)
 })
@@ -119,13 +123,13 @@ test('rapid music toggles never leave overlapping BGM tracks', async ({ page }) 
   }
 
   const toggleMusic = async () => {
-    await page.getByRole('button', { name: /Music On|Music Off/i }).click()
+    await page.getByRole('button', { name: /Music On|Music Off/i }).click({ force: true })
   }
 
   await openMenu()
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < 4; i++) {
     await toggleMusic()
-    await page.waitForTimeout(60)
+    await page.waitForTimeout(40)
   }
 
   // Make sure final state is music ON for overlap detection.

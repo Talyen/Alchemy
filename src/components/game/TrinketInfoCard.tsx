@@ -4,6 +4,7 @@ import { Sparkles } from 'lucide-react'
 import { createPortal } from 'react-dom'
 import { GoldIcon } from './GoldIcon'
 import { getKeywordsFromText, renderKeywordText } from './keywordGlossary'
+import { getViewportPopoverPosition } from '@/lib/viewportPopover'
 
 interface TrinketInfoCardProps {
   id?: string
@@ -41,19 +42,7 @@ export function TrinketInfoCard({ id, name, description, iconSrc, size = 'defaul
   const updateTooltipPosition = () => {
     if (!wrapperRef.current) return
     const rect = wrapperRef.current.getBoundingClientRect()
-    const tooltipWidth = 224
-    const viewportPadding = 12
-    const half = tooltipWidth / 2
-    const unclampedLeft = rect.left + rect.width / 2
-    const minLeft = viewportPadding + half
-    const maxLeft = window.innerWidth - viewportPadding - half
-    const left = Math.max(minLeft, Math.min(maxLeft, unclampedLeft))
-    const placeAbove = rect.top > 186
-    setTooltipPosition({
-      left: Math.round(left),
-      top: Math.round(placeAbove ? rect.top - 10 : rect.bottom + 10),
-      placeAbove,
-    })
+    setTooltipPosition(getViewportPopoverPosition(rect, { width: 224 }))
   }
 
   const onWrapperEnter = () => {

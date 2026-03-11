@@ -10,6 +10,7 @@ import { GoldIcon } from './GoldIcon'
 import { SelectionScreenShell, staggerContainerVariants, staggerItemVariants } from './SelectionScreenShell'
 import { playGoldSpend } from '@/sounds'
 import { KEYWORDS, getKeywordsFromText, renderKeywordText } from './keywordGlossary'
+import { getViewportPopoverPosition, type PopoverPosition } from '@/lib/viewportPopover'
 
 export type AlchemyTransformKind = 'cost_down' | 'burn_up' | 'poison_up' | 'bleed_up' | 'heal_up'
 
@@ -114,6 +115,7 @@ export function AlchemyScreen({ characterId, gold, deckCards, transformOffers, p
   const [pendingPotion2Purchase, setPendingPotion2Purchase] = useState(false)
   const [pendingMixPurchase, setPendingMixPurchase] = useState(false)
   const [hoveredTransformOfferId, setHoveredTransformOfferId] = useState<string | null>(null)
+  const [transformTooltipPosition, setTransformTooltipPosition] = useState<PopoverPosition | null>(null)
   const characterFrames = useMemo(() => getCharacterIdleFrames(characterId), [characterId])
 
   const selectedOffer = useMemo(
@@ -302,8 +304,14 @@ export function AlchemyScreen({ characterId, gold, deckCards, transformOffers, p
                       key={offer.id}
                       variants={staggerItemVariants}
                       className="relative flex flex-col items-center gap-2"
-                      onMouseEnter={() => setHoveredTransformOfferId(offer.id)}
-                      onMouseLeave={() => setHoveredTransformOfferId(current => (current === offer.id ? null : current))}
+                      onMouseEnter={(event) => {
+                        setHoveredTransformOfferId(offer.id)
+                        setTransformTooltipPosition(getViewportPopoverPosition(event.currentTarget.getBoundingClientRect(), { width: hasTargets ? 224 : 208 }))
+                      }}
+                      onMouseLeave={() => {
+                        setHoveredTransformOfferId(current => (current === offer.id ? null : current))
+                        setTransformTooltipPosition(null)
+                      }}
                       animate={isPurchased || pendingPurchase ? { opacity: 0.35, y: -8, scale: 0.98 } : { opacity: 1, y: 0, scale: 1 }}
                       transition={{ duration: 0.24, ease: 'easeOut' }}
                     >
@@ -333,7 +341,8 @@ export function AlchemyScreen({ characterId, gold, deckCards, transformOffers, p
                       <AnimatePresence>
                         {showNoTargetsTooltip && (
                           <motion.div
-                            className="absolute z-[280] bottom-full left-1/2 mb-2.5 w-52 -translate-x-1/2 rounded-xl border border-zinc-700/80 bg-zinc-950 px-3 py-2.5 pointer-events-none"
+                            className="fixed z-[320] w-52 rounded-xl border border-zinc-700/80 bg-zinc-950 px-3 py-2.5 pointer-events-none"
+                            style={{ left: transformTooltipPosition?.left ?? 0, top: transformTooltipPosition?.top ?? 0, x: '-50%', y: transformTooltipPosition?.placeAbove ? '-100%' : '0%' }}
                             initial={{ opacity: 0, y: 4, scale: 0.98 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 4, scale: 0.98, transition: { duration: 0.1 } }}
@@ -343,7 +352,8 @@ export function AlchemyScreen({ characterId, gold, deckCards, transformOffers, p
                         )}
                         {showKeywordTooltip && (
                           <motion.div
-                            className="absolute z-[280] bottom-full left-1/2 mb-2.5 w-56 -translate-x-1/2 rounded-xl border border-zinc-700/80 bg-zinc-950 px-3 py-2.5 pointer-events-none"
+                            className="fixed z-[320] w-56 rounded-xl border border-zinc-700/80 bg-zinc-950 px-3 py-2.5 pointer-events-none"
+                            style={{ left: transformTooltipPosition?.left ?? 0, top: transformTooltipPosition?.top ?? 0, x: '-50%', y: transformTooltipPosition?.placeAbove ? '-100%' : '0%' }}
                             initial={{ opacity: 0, y: 4, scale: 0.98 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 4, scale: 0.98, transition: { duration: 0.1 } }}

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, useSpring } from 'framer-motion'
 import { Diamond, Layers, ScrollText, Trash2 } from 'lucide-react'
+import { createPortal } from 'react-dom'
 import { Card } from './Card'
 import { FloatingNumber } from './FloatingNumber'
 import { GoldIcon } from './GoldIcon'
@@ -9,6 +10,8 @@ import type { DmgEvent } from './FloatingNumber'
 import { useTilt } from '@/lib/useTilt'
 import { playCardPlay, preloadSound } from '@/sounds'
 import { TrinketInfoCard } from './TrinketInfoCard'
+import { CenterModal } from '@/components/ui/CenterModal'
+import { getViewportPopoverPosition, type PopoverPosition } from '@/lib/viewportPopover'
 
 interface Props {
   cards: CardInstance[]
@@ -76,10 +79,12 @@ function GoldCounter({ gold }: { gold: number }) {
 
 // ─── Combat log panel ────────────────────────────────────────────────────────
 
-function CombatLog({ log }: { log: string[] }) {
-  return (
+function CombatLog({ log, position }: { log: string[]; position: PopoverPosition | null }) {
+  if (typeof window === 'undefined') return null
+  return createPortal(
     <motion.div
-      className="absolute bottom-full mb-2 left-0 w-72 rounded-xl border border-zinc-800 bg-zinc-950 p-3 space-y-1 z-40"
+      className="fixed w-72 rounded-xl border border-zinc-800 bg-zinc-950 p-3 space-y-1 z-[999] pointer-events-none"
+      style={{ left: position?.left ?? 0, top: position?.top ?? 0, x: '-50%', y: position?.placeAbove ? '-100%' : '0%' }}
       initial={{ opacity: 0, y: 5, scale: 0.97 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 5, scale: 0.97, transition: { duration: 0.1, ease: 'easeIn' } }}
@@ -89,7 +94,8 @@ function CombatLog({ log }: { log: string[] }) {
       {[...log].reverse().map((line, i) => (
         <p key={i} className="text-[11px] text-zinc-400 leading-snug">{line}</p>
       ))}
-    </motion.div>
+    </motion.div>,
+    document.body,
   )
 }
 
@@ -133,21 +139,7 @@ function PileStack({ count, label, icon: Icon, onClick }: { count: number; label
 
 function PileViewer({ title, cards, onClose }: { title: string; cards: CardInstance[]; onClose: () => void }) {
   return (
-    <motion.div
-      className="fixed inset-0 z-[140] flex items-center justify-center p-6"
-      initial={{ opacity: 0, y: 8, scale: 0.98 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: 8, scale: 0.98, transition: { duration: 0.12 } }}
-      onClick={onClose}
-    >
-      <div className="absolute inset-0 bg-zinc-950/72 backdrop-blur-[2px]" />
-      <motion.div
-        className="relative w-[min(94vw,1220px)] max-h-[80vh] rounded-2xl border border-zinc-700/80 bg-zinc-950/95 p-4"
-        initial={{ opacity: 0, y: 10, scale: 0.985 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: 10, scale: 0.985, transition: { duration: 0.12 } }}
-        onClick={(event) => event.stopPropagation()}
-      >
+    <CenterModal open onClose={onClose} widthClassName="w-[min(94vw,1220px)]">
         <div className="mb-3 flex items-center justify-between">
           <p className="text-[10px] uppercase tracking-widest text-zinc-500">{title}</p>
           <button type="button" onClick={onClose} className="text-xs text-zinc-500 hover:text-zinc-300">Close</button>
@@ -165,8 +157,7 @@ function PileViewer({ title, cards, onClose }: { title: string; cards: CardInsta
             </div>
           </div>
         )}
-      </motion.div>
-    </motion.div>
+    </CenterModal>
   )
 }
 
@@ -304,6 +295,7 @@ function DraggableCard({
 export function Hand({ cards, mana, maxMana, gold, onPlay, disabled, isEnemyActing, drawCount, discardCount, drawPileCards, discardPileCards, trinkets, log, lastCardPlayedId, overflowDiscardFxToken, overflowDiscardFxCount }: Props) {
   const [elevated, setElevated] = useState<Set<string>>(new Set())
   const [showLog, setShowLog]   = useState(false)
+  const [logPosition, setLogPosition] = useState<PopoverPosition | null>(null)
   const [showInventory, setShowInventory] = useState(false)
   const [showDrawPile, setShowDrawPile] = useState(false)
   const [showDiscardPile, setShowDiscardPile] = useState(false)
@@ -313,6 +305,12 @@ export function Hand({ cards, mana, maxMana, gold, onPlay, disabled, isEnemyActi
   const prevOverflowToken = useRef(overflowDiscardFxToken)
   const prevMana = useRef(mana)
   const nextManaEventId = useRef(0)
+  const logAnchorRef = useRef<HTMLDivElement | null>(null)
+
+  const updateLogPosition = () => {
+    if (!logAnchorRef.current) return
+    setLogPosition(getViewportPopoverPosition(logAnchorRef.current.getBoundingClientRect(), { width: 288 }))
+  }
 
   useEffect(() => {
     if (mana > prevMana.current) {
@@ -342,6 +340,17 @@ export function Hand({ cards, mana, maxMana, gold, onPlay, disabled, isEnemyActi
     const id = window.setTimeout(() => removeOverflowFxEvent(latest.id), 720)
     return () => window.clearTimeout(id)
   }, [overflowFxEvents])
+
+  useEffect(() => {
+    if (!showLog) return
+    updateLogPosition()
+    window.addEventListener('resize', updateLogPosition)
+    window.addEventListener('scroll', updateLogPosition, true)
+    return () => {
+      window.removeEventListener('resize', updateLogPosition)
+      window.removeEventListener('scroll', updateLogPosition, true)
+    }
+  }, [showLog])
 
   const removeManaEvent = (id: number) => {
     setManaEvents(events => events.filter(event => event.id !== id))
@@ -405,17 +414,7 @@ export function Hand({ cards, mana, maxMana, gold, onPlay, disabled, isEnemyActi
             style={{ imageRendering: 'pixelated' }}
           />
         </motion.button>
-        <AnimatePresence>
-          {showInventory && (
-            <motion.div
-              className="fixed inset-0 z-[145] flex items-center justify-center p-6"
-              initial={{ opacity: 0, y: 8, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 8, scale: 0.98 }}
-              onClick={() => setShowInventory(false)}
-            >
-              <div className="absolute inset-0 bg-zinc-950/72 backdrop-blur-[2px]" />
-              <div className="relative w-[min(94vw,980px)] max-h-[78vh] rounded-2xl border border-zinc-700/80 bg-zinc-950/95 p-4" onClick={(event) => event.stopPropagation()}>
+        <CenterModal open={showInventory} onClose={() => setShowInventory(false)} widthClassName="w-[min(94vw,980px)] max-h-[78vh]">
                 <div className="mb-2 flex items-center justify-between">
                   <p className="text-[10px] uppercase tracking-widest text-zinc-500">Inventory</p>
                   <button
@@ -443,10 +442,7 @@ export function Hand({ cards, mana, maxMana, gold, onPlay, disabled, isEnemyActi
                     ))}
                   </div>
                 </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        </CenterModal>
       </div>
 
       {/* Resources + log — slightly to the right of draw pile */}
@@ -465,9 +461,16 @@ export function Hand({ cards, mana, maxMana, gold, onPlay, disabled, isEnemyActi
         </div>
         <GoldCounter gold={gold} />
         <div
+          ref={logAnchorRef}
           className="relative"
-          onMouseEnter={() => setShowLog(true)}
-          onMouseLeave={() => setShowLog(false)}
+          onMouseEnter={() => {
+            updateLogPosition()
+            setShowLog(true)
+          }}
+          onMouseLeave={() => {
+            setShowLog(false)
+            setLogPosition(null)
+          }}
         >
           <motion.div
             className="flex items-center gap-1.5 text-zinc-600 cursor-default"
@@ -478,7 +481,7 @@ export function Hand({ cards, mana, maxMana, gold, onPlay, disabled, isEnemyActi
             <span className="text-[11px] uppercase tracking-widest">Log</span>
           </motion.div>
           <AnimatePresence>
-            {showLog && <CombatLog log={log} />}
+            {showLog && <CombatLog log={log} position={logPosition} />}
           </AnimatePresence>
         </div>
       </div>

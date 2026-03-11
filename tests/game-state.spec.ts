@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { goToCharacterSelect, startKnightRun } from './helpers'
+import { goToCharacterSelect, startKnightRun, waitForCombatReady } from './helpers'
 
 test.describe('Game State & Initialization', () => {
   test('should load main menu on app start', async ({ page }) => {
@@ -21,7 +21,7 @@ test.describe('Game State & Initialization', () => {
 
   test('player panel should be visible during combat', async ({ page }) => {
     await startKnightRun(page)
-    await page.waitForTimeout(800)
+    await waitForCombatReady(page)
     
     // Look for player health indicator
     const healthText = await page.locator('[class*="font-mono"]').first()
@@ -30,7 +30,7 @@ test.describe('Game State & Initialization', () => {
 
   test('enemy panel should be visible during combat', async ({ page }) => {
     await startKnightRun(page)
-    await page.waitForTimeout(800)
+    await waitForCombatReady(page)
     
     // Should have two panels (player and enemy)
     const panels = await page.locator('[class*="flex-col"]').count()
@@ -39,7 +39,7 @@ test.describe('Game State & Initialization', () => {
 
   test('should display player HP and max HP', async ({ page }) => {
     await startKnightRun(page)
-    await page.waitForTimeout(800)
+    await waitForCombatReady(page)
     
     // HP bar should be present in DOM with our test id
     const hpBar = page.locator('[data-testid="hp-bar-player"]')
@@ -48,7 +48,7 @@ test.describe('Game State & Initialization', () => {
 
   test('should display mana orbs', async ({ page }) => {
     await startKnightRun(page)
-    await page.waitForTimeout(800)
+    await waitForCombatReady(page)
     
     // Look for mana diamonds
     const diamondElements = await page.locator('svg[width="12"]').count()
@@ -57,7 +57,7 @@ test.describe('Game State & Initialization', () => {
 
   test('should display draw and discard piles', async ({ page }) => {
     await startKnightRun(page)
-    await page.waitForTimeout(800)
+    await waitForCombatReady(page)
     
     // Look for pile labels
     const drawLabel = await page.locator('text=Draw').first()
@@ -69,7 +69,7 @@ test.describe('Game State & Initialization', () => {
 
   test('hand should have fanned layout', async ({ page }) => {
     await startKnightRun(page)
-    await page.waitForTimeout(800)
+    await waitForCombatReady(page)
     
     // Get positions of multiple cards - they should be staggered
     const cards = await page.locator('button[class*="w-48"]').all()
@@ -88,7 +88,7 @@ test.describe('Game State & Initialization', () => {
 
   test('should show turn indicator', async ({ page }) => {
     await startKnightRun(page)
-    await page.waitForTimeout(800)
+    await waitForCombatReady(page)
     
     // Should indicate whose turn it is
     const turnIndicators = await page.locator('[class*="text"]').count()
@@ -97,7 +97,7 @@ test.describe('Game State & Initialization', () => {
 
   test('should maintain game state after playing card', async ({ page }) => {
     await startKnightRun(page)
-    await page.waitForTimeout(800)
+    await waitForCombatReady(page)
     
     const card = await page.locator('button[class*="w-48"]').first()
     const initialBox = await card.boundingBox()
@@ -147,7 +147,7 @@ test.describe('Card Display & Info', () => {
     const card = await page.locator('button[class*="w-48"]').first()
     if (card) {
       await card.hover()
-      await page.waitForTimeout(1200) // Wait for tooltip delay
+      await page.waitForTimeout(450)
       
       // Tooltip should appear
       const tooltip = await page.locator('[class*="rounded-xl"][class*="border"]').last()
@@ -180,7 +180,7 @@ test.describe('UI Responsiveness', () => {
     const initialBox = await card.boundingBox()
     
     await card.hover()
-    await page.waitForTimeout(200)
+    await page.waitForTimeout(120)
     
     const hoveredBox = await card.boundingBox()
     
@@ -194,11 +194,11 @@ test.describe('UI Responsiveness', () => {
     const card = await page.locator('button[class*="w-48"]').first()
     
     await card.hover()
-    await page.waitForTimeout(200)
+    await page.waitForTimeout(120)
     const hoveredBox = await card.boundingBox()
     
     await page.mouse.move(0, 0) // Move away
-    await page.waitForTimeout(400)
+    await page.waitForTimeout(240)
     const unhoveredBox = await card.boundingBox()
     
     if (hoveredBox && unhoveredBox) {

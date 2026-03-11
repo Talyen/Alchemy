@@ -21,12 +21,12 @@ test.describe('Deck Management', () => {
     // Play a card
     const card = await page.locator('button[class*="w-48"]').first()
     await card.click()
-    await page.waitForTimeout(300)
+    await page.waitForTimeout(180)
     
     // End turn
     await clickEndTurn(page)
     
-    await page.waitForTimeout(1500)
+    await page.waitForTimeout(1100)
     
     // Discard pile should now have cards
     const discardLabel = await page.locator('text=Discard').first()
@@ -40,7 +40,7 @@ test.describe('Deck Management', () => {
     if (cards > 0) {
       const card = await page.locator('button[class*="w-48"]').first()
       await card.click()
-      await page.waitForTimeout(200)
+      await page.waitForTimeout(120)
     }
     
     // End turn
@@ -75,7 +75,7 @@ test.describe('Deck Management', () => {
     // End turn
     await clickEndTurn(page)
     
-    await page.waitForTimeout(1500)
+    await page.waitForTimeout(1000)
     
     // Game should still be playable
     const gameArea = await page.locator('[class*="min-h-screen"]').first()
@@ -93,7 +93,7 @@ test.describe('Stat Changes & Floating Numbers', () => {
     const attackCard = await page.locator('button:has-text("Stab"), button:has-text("Slash")').first()
     if (await attackCard.isVisible()) {
       await attackCard.click()
-      await page.waitForTimeout(600)
+      await page.waitForTimeout(360)
       
       // Damage number should appear above enemy
       // Look for red colored floating numbers
@@ -107,7 +107,7 @@ test.describe('Stat Changes & Floating Numbers', () => {
     const healCard = await page.locator('button:has-text("Apple"), button:has-text("Health Potion")').first()
     if (await healCard.isVisible()) {
       await healCard.click()
-      await page.waitForTimeout(600)
+      await page.waitForTimeout(360)
       
       // Heal number should appear above player
       const redElements = await page.locator('[style*="color"]').count()
@@ -120,7 +120,7 @@ test.describe('Stat Changes & Floating Numbers', () => {
     const blockCard = await page.locator('button:has-text("Defend")').first()
     if (await blockCard.isVisible()) {
       await blockCard.click()
-      await page.waitForTimeout(600)
+      await page.waitForTimeout(360)
       
       // Block number should appear
       const elements = await page.locator('[class*="pointer-events-none"]').count()
@@ -133,7 +133,7 @@ test.describe('Stat Changes & Floating Numbers', () => {
     const statusCard = await page.locator('button:has-text("Fireball")').first()
     if (await statusCard.isVisible()) {
       await statusCard.click()
-      await page.waitForTimeout(600)
+      await page.waitForTimeout(360)
       
       // Status indicator should appear
       const statusElements = await page.locator('[class*="animation"]').count()
@@ -146,13 +146,13 @@ test.describe('Stat Changes & Floating Numbers', () => {
     const defendCard = await page.locator('button:has-text("Defend")').first()
     if (await defendCard.isVisible()) {
       await defendCard.click()
-      await page.waitForTimeout(300)
+      await page.waitForTimeout(180)
     }
     
     // End turn and let enemy attack
     await clickEndTurn(page)
     
-    await page.waitForTimeout(1500)
+    await page.waitForTimeout(1100)
     
     // Check player still exists (game didn't crash)
     const gameArea = await page.locator('[class*="min-h-screen"]').first()
@@ -177,7 +177,7 @@ test.describe('Stat Changes & Floating Numbers', () => {
     await clickEndTurn(page)
     
     // Wait for enemy turn to complete
-    await page.waitForTimeout(1500)
+    await page.waitForTimeout(1100)
     
     // Look for any floating animations (attack icon)
     const animations = await page.locator('[class*="animate"]').count()

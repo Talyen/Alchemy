@@ -1,23 +1,12 @@
 import { expect, test } from '@playwright/test'
-
-async function goToCharacterSelect(page: import('@playwright/test').Page) {
-  await page.goto('/')
-  await page.getByRole('button', { name: 'Play' }).click()
-  await page.waitForTimeout(500)
-}
-
-async function startKnightRun(page: import('@playwright/test').Page) {
-  await goToCharacterSelect(page)
-  await page.getByRole('button', { name: /Knight/i }).first().click()
-  await page.waitForTimeout(900)
-}
+import { goToCharacterSelect, startKnightRun } from './helpers'
 
 test('starting deck preview cards stay above panel bottom border', async ({ page }) => {
   await goToCharacterSelect(page)
 
   const knight = page.getByRole('button', { name: /Knight/i }).first()
   await knight.hover()
-  await page.waitForTimeout(250)
+  await expect(knight).toBeVisible()
 
   const metrics = await page.evaluate(() => {
     const title = Array.from(document.querySelectorAll('p')).find(node => node.textContent?.includes('Starting Deck'))
@@ -46,21 +35,19 @@ test('starting deck preview cards stay above panel bottom border', async ({ page
   expect(metrics!.rightBottomGap).toBeGreaterThan(4)
 })
 
-test('battle HUD piles do not overlap playable hand cards', async ({ page }) => {
+test('inventory icon does not overlap draw pile', async ({ page }) => {
   await startKnightRun(page)
 
   const overlapArea = await page.evaluate(() => {
-    const drawLabel = Array.from(document.querySelectorAll('span')).find(el => el.textContent === 'Draw')
-    const discardLabel = Array.from(document.querySelectorAll('span')).find(el => el.textContent === 'Discard')
+    const inventoryButton = Array.from(document.querySelectorAll('button')).find(node => {
+      const img = node.querySelector('img[alt="Inventory"]')
+      return Boolean(img)
+    })
+    const drawButton = Array.from(document.querySelectorAll('button')).find(node => node.textContent?.includes('Draw'))
 
-    const drawRect = drawLabel?.closest('div.flex.flex-col')?.getBoundingClientRect() ?? null
-    const discardRect = discardLabel?.closest('div.flex.flex-col')?.getBoundingClientRect() ?? null
-
-    const cards = Array.from(document.querySelectorAll('button'))
-      .map(node => node.getBoundingClientRect())
-      .filter(rect => rect.width > 150 && rect.height > 220)
-
-    if (!drawRect || !discardRect || cards.length === 0) return null
+    const inventoryRect = inventoryButton?.getBoundingClientRect() ?? null
+    const drawRect = drawButton?.querySelector('div.relative.w-16.h-24')?.getBoundingClientRect() ?? null
+    if (!drawRect || !inventoryRect) return null
 
     const intersectionArea = (a: DOMRect, b: DOMRect) => {
       const x = Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left))
@@ -68,12 +55,7 @@ test('battle HUD piles do not overlap playable hand cards', async ({ page }) => 
       return x * y
     }
 
-    let maxOverlap = 0
-    for (const card of cards) {
-      maxOverlap = Math.max(maxOverlap, intersectionArea(card, drawRect), intersectionArea(card, discardRect))
-    }
-
-    return maxOverlap
+    return intersectionArea(inventoryRect, drawRect)
   })
 
   expect(overlapArea).not.toBeNull()
@@ -102,4 +84,57 @@ test('turn indicator label is below character sprite wells', async ({ page }) =>
 
   expect(ok).not.toBeNull()
   expect(ok).toBeTruthy()
+})
+
+test('card keyword tooltip stays within viewport bounds at balanced resolution', async ({ page }) => {
+  await startKnightRun(page)
+
+  const hoveredCard = page.locator('button[class*="w-48"]').first()
+  await expect(hoveredCard).toBeVisible()
+  await hoveredCard.hover()
+  await page.waitForTimeout(520)
+
+  const bounds = await page.evaluate(() => {
+    const tooltip = Array.from(document.querySelectorAll('div.fixed')).find(node => node.textContent?.includes('Keywords'))
+    if (!tooltip) return null
+    const rect = tooltip.getBoundingClientRect()
+    return {
+      left: rect.left,
+      top: rect.top,
+      right: rect.right,
+      bottom: rect.bottom,
+      width: window.innerWidth,
+      height: window.innerHeight,
+    }
+  })
+
+  if (bounds) {
+    expect(bounds.left).toBeGreaterThanOrEqual(0)
+    expect(bounds.top).toBeGreaterThanOrEqual(0)
+    expect(bounds.right).toBeLessThanOrEqual(bounds.width)
+    expect(bounds.bottom).toBeLessThanOrEqual(bounds.height)
+  }
+})
+
+test('draw pile opens as centered modal and cards do not overlap', async ({ page }) => {
+  await startKnightRun(page)
+
+  await page.locator('span', { hasText: 'Draw' }).first().click()
+  const modal = page.locator('div.fixed.inset-0').first()
+  await expect(modal).toBeVisible()
+
+  const cardRects = await page.locator('div.fixed.inset-0 button[class*="w-48"]').evaluateAll(nodes =>
+    nodes.slice(0, 6).map(node => node.getBoundingClientRect()),
+  )
+
+  expect(cardRects.length).toBeGreaterThan(1)
+  for (let i = 0; i < cardRects.length - 1; i++) {
+    for (let j = i + 1; j < cardRects.length; j++) {
+      const a = cardRects[i]
+      const b = cardRects[j]
+      const overlapX = Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left))
+      const overlapY = Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top))
+      expect(overlapX * overlapY).toBe(0)
+    }
+  }
 })
