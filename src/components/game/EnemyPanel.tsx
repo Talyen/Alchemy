@@ -7,7 +7,7 @@ import { FloatingNumber, FloatingStatus } from './FloatingNumber'
 import type { DmgEvent, StatusEvent } from './FloatingNumber'
 import type { EnemyState } from '@/types'
 import { playCardPlay, playEnemyHit, playEnemyAttack } from '@/sounds'
-import { getEnemyRelativeScale } from './enemyVisualConfig'
+import { PRISMATIC_ENEMY_IDS, getEnemyRelativeScale } from './enemyVisualConfig'
 
 const GOBLIN_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/enemies/goblin-idle-f${i}.png`)
 const CHORT_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/enemies/chort-idle-f${i}.png`)
@@ -75,7 +75,7 @@ const LEFT_FACING_ENEMY_IDS = new Set([
 
 const ENEMY_TINT_FILTER_BY_ID: Partial<Record<string, string>> = {
   frost_imp: 'hue-rotate(165deg) saturate(1.3) brightness(1.08)',
-  blood_goblin: 'hue-rotate(338deg) saturate(1.7) brightness(1.02)',
+  blood_goblin: 'hue-rotate(325deg) saturate(3.1) brightness(0.92)',
   blood_shaman: 'hue-rotate(338deg) saturate(1.55) brightness(1.03)',
   mirror_shade: 'saturate(0.28) brightness(1.28) contrast(1.18)',
   prismatic_slug: 'hue-rotate(220deg) saturate(2.2) brightness(1.08)',
@@ -84,6 +84,14 @@ const ENEMY_TINT_FILTER_BY_ID: Partial<Record<string, string>> = {
   prismatic_greater_mimic: 'hue-rotate(240deg) saturate(2.0) brightness(1.08)',
   prismatic_greater_slime: 'hue-rotate(205deg) saturate(2.25) brightness(1.05)',
 }
+
+const PRISMATIC_FILTER_KEYFRAMES = [
+  'hue-rotate(0deg) saturate(2.15) brightness(1.06)',
+  'hue-rotate(90deg) saturate(2.15) brightness(1.06)',
+  'hue-rotate(180deg) saturate(2.15) brightness(1.06)',
+  'hue-rotate(270deg) saturate(2.15) brightness(1.06)',
+  'hue-rotate(360deg) saturate(2.15) brightness(1.06)',
+]
 
 interface Props {
   enemy: EnemyState
@@ -100,8 +108,10 @@ export function EnemyPanel({ enemy, isActing, isActive, lastCardPlayedId, isElit
   const spriteScale = getEnemyRelativeScale(enemy.id) * eliteEncounterScale
   const inactiveScale = isActive ? spriteScale : spriteScale * 0.82
   const hoverScale = isEliteEnemy ? spriteScale * 1.04 : spriteScale * 1.12
-  const facingScaleX = LEFT_FACING_ENEMY_IDS.has(enemy.id) ? 1 : -1
+  const facingScaleX = 1
+  const isPrismatic = PRISMATIC_ENEMY_IDS.has(enemy.id)
   const spriteTintFilter = ENEMY_TINT_FILTER_BY_ID[enemy.id] ?? 'none'
+  void LEFT_FACING_ENEMY_IDS
   type QueueEntry = { kind: 'dmg'; data: DmgEvent } | { kind: 'status'; data: StatusEvent }
   const MAX_QUEUE = 5
   const controls    = useAnimationControls()
@@ -249,10 +259,18 @@ export function EnemyPanel({ enemy, isActing, isActive, lastCardPlayedId, isElit
           transition={{ type: 'spring', stiffness: 260, damping: 24 }}
           style={{ transformOrigin: 'bottom center' }}
         >
-          <img
+          <motion.img
             src={enemyFrames[frameIdx]}
             alt={enemy.name}
-            style={{ width: 80, height: 80, imageRendering: 'pixelated', objectFit: 'contain', filter: spriteTintFilter }}
+            animate={isPrismatic ? { filter: PRISMATIC_FILTER_KEYFRAMES } : undefined}
+            transition={isPrismatic ? { filter: { duration: 3.2, repeat: Infinity, ease: 'linear' } } : undefined}
+            style={{
+              width: 80,
+              height: 80,
+              imageRendering: 'pixelated',
+              objectFit: 'contain',
+              filter: isPrismatic ? PRISMATIC_FILTER_KEYFRAMES[0] : spriteTintFilter,
+            }}
           />
         </motion.div>
       </div>

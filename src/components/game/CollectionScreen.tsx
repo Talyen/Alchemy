@@ -6,7 +6,7 @@ import type { CardDef, CardInstance } from '@/types'
 import type { BestiaryEnemy } from '@/data'
 import { Card } from './Card'
 import { SelectionScreenShell, staggerContainerVariants, staggerItemVariants } from './SelectionScreenShell'
-import { BESTIARY_Y_OFFSET, getEnemyRelativeScale } from './enemyVisualConfig'
+import { BESTIARY_Y_OFFSET, PRISMATIC_ENEMY_IDS, getEnemyRelativeScale } from './enemyVisualConfig'
 import { playCardPlay } from '@/sounds'
 import { TrinketInfoCard } from './TrinketInfoCard'
 import { getViewportPopoverPosition } from '@/lib/viewportPopover'
@@ -55,6 +55,14 @@ const BESTIARY_TINT_FILTER_BY_ID: Partial<Record<string, string>> = {
   prismatic_greater_mimic: 'hue-rotate(240deg) saturate(2.0) brightness(1.08)',
   prismatic_greater_slime: 'hue-rotate(205deg) saturate(2.25) brightness(1.05)',
 }
+
+const PRISMATIC_FILTER_KEYFRAMES = [
+  'hue-rotate(0deg) saturate(2.15) brightness(1.06)',
+  'hue-rotate(90deg) saturate(2.15) brightness(1.06)',
+  'hue-rotate(180deg) saturate(2.15) brightness(1.06)',
+  'hue-rotate(270deg) saturate(2.15) brightness(1.06)',
+  'hue-rotate(360deg) saturate(2.15) brightness(1.06)',
+]
 
 function toInstance(def: CardDef, uid: string): CardInstance {
   return { ...def, uid }
@@ -270,6 +278,7 @@ export function CollectionScreen({
                     const spriteSize = Math.round(80 * getEnemyRelativeScale(enemy.id))
                     const spriteBaseY = BESTIARY_Y_OFFSET[enemy.id] ?? -10
                     const tintFilter = BESTIARY_TINT_FILTER_BY_ID[enemy.id]
+                    const isPrismatic = PRISMATIC_ENEMY_IDS.has(enemy.id)
 
                     return (
                       <motion.button
@@ -313,33 +322,40 @@ export function CollectionScreen({
 
                         <div className="mt-2 flex h-[108px] items-end justify-center" style={{ opacity: isEncountered ? 1 : 0.6 }}>
                           <motion.img
+                            data-testid="bestiary-enemy-sprite"
                             src={frameSrc}
                             alt={enemy.name}
                             className="object-contain"
-                            animate={{ y: [spriteBaseY, spriteBaseY - 2, spriteBaseY] }}
-                            transition={{ duration: 0.45, repeat: Infinity, repeatDelay: 0.15 }}
+                            animate={{
+                              y: [spriteBaseY, spriteBaseY - 2, spriteBaseY],
+                              ...(isEncountered && isPrismatic ? { filter: PRISMATIC_FILTER_KEYFRAMES } : {}),
+                            }}
+                            transition={{
+                              y: { duration: 0.45, repeat: Infinity, repeatDelay: 0.15 },
+                              ...(isEncountered && isPrismatic ? { filter: { duration: 3.2, repeat: Infinity, ease: 'linear' } } : {}),
+                            }}
                             style={{
                               width: spriteSize,
                               height: spriteSize,
                               scaleX: 1,
                               imageRendering: 'pixelated',
                               filter: isEncountered
-                                ? (tintFilter ?? 'none')
+                                ? (isPrismatic ? PRISMATIC_FILTER_KEYFRAMES[0] : (tintFilter ?? 'none'))
                                 : `grayscale(1) contrast(0.85) brightness(0.55)${tintFilter ? ` ${tintFilter}` : ''}`,
                             }}
                           />
                         </div>
 
                         <AnimatePresence>
-                          {isEncountered && hoveredEnemyId === enemy.id && (
+                          {isEncountered && hoveredEnemyId === enemy.id && hoveredEnemyTooltip && (
                             <motion.div
                               key={`${enemy.id}-details`}
                               className="fixed pointer-events-none z-[320] w-64 rounded-xl border border-zinc-700/80 bg-zinc-950 px-3 py-2.5"
                               style={{
-                                left: hoveredEnemyTooltip?.left ?? 0,
-                                top: hoveredEnemyTooltip?.top ?? 0,
+                                left: hoveredEnemyTooltip.left,
+                                top: hoveredEnemyTooltip.top,
                                 x: '-50%',
-                                y: hoveredEnemyTooltip?.placeAbove ? '-100%' : '0%',
+                                y: hoveredEnemyTooltip.placeAbove ? '-100%' : '0%',
                               }}
                               initial={{ opacity: 0, y: 5, scale: 0.97 }}
                               animate={{ opacity: 1, y: 0, scale: 1 }}

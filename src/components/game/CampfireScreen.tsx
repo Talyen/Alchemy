@@ -206,17 +206,17 @@ export function CampfireScreen({ characterId, currentHp: _currentHp, maxHp, onRe
 
               <div className="relative w-5 h-5 origin-bottom scale-[5.7]">
                 <img
-                  src="assets/campfire-rest.png"
+                  src="assets/trinkets/fc23.png"
                   alt="Campfire"
                   className="absolute inset-0 w-full h-full object-contain"
                   style={{
                     imageRendering: 'pixelated',
-                    filter: 'url(#campfire-posterize) contrast(1) saturate(0.78) brightness(1)',
+                    filter: 'contrast(1.08) saturate(0.96) brightness(1.02)',
                   }}
                 />
 
                 <motion.img
-                  src="assets/campfire-rest.png"
+                  src="assets/trinkets/fc23.png"
                   alt=""
                   aria-hidden
                   className="pointer-events-none absolute inset-0 w-full h-full object-contain"

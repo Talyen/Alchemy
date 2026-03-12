@@ -115,7 +115,9 @@ export function AlchemyScreen({ characterId, gold, deckCards, transformOffers, p
   const [pendingPotion2Purchase, setPendingPotion2Purchase] = useState(false)
   const [pendingMixPurchase, setPendingMixPurchase] = useState(false)
   const [hoveredTransformOfferId, setHoveredTransformOfferId] = useState<string | null>(null)
+  const [hoveredTransformBuyOfferId, setHoveredTransformBuyOfferId] = useState<string | null>(null)
   const [transformTooltipPosition, setTransformTooltipPosition] = useState<PopoverPosition | null>(null)
+  const [noTargetTooltipPosition, setNoTargetTooltipPosition] = useState<PopoverPosition | null>(null)
   const characterFrames = useMemo(() => getCharacterIdleFrames(characterId), [characterId])
 
   const selectedOffer = useMemo(
@@ -297,8 +299,8 @@ export function AlchemyScreen({ characterId, gold, deckCards, transformOffers, p
                   const keywordMatches = getKeywordsFromText(label.text)
                   const hasTargets = hasEligibleCards.get(offer.id) ?? false
                   const isDisabled = !affordable || pendingPurchase || isPurchased || !hasTargets
-                  const showNoTargetsTooltip = hoveredTransformOfferId === offer.id && !isPurchased && !hasTargets
-                  const showKeywordTooltip = hoveredTransformOfferId === offer.id && hasTargets && keywordMatches.length > 0
+                  const showNoTargetsTooltip = hoveredTransformBuyOfferId === offer.id && !isPurchased && !hasTargets
+                  const showKeywordTooltip = hoveredTransformOfferId === offer.id && keywordMatches.length > 0
                   return (
                     <motion.div
                       key={offer.id}
@@ -310,12 +312,14 @@ export function AlchemyScreen({ characterId, gold, deckCards, transformOffers, p
                       }}
                       onMouseLeave={() => {
                         setHoveredTransformOfferId(current => (current === offer.id ? null : current))
+                        setHoveredTransformBuyOfferId(current => (current === offer.id ? null : current))
                         setTransformTooltipPosition(null)
+                        setNoTargetTooltipPosition(null)
                       }}
-                      animate={isPurchased || pendingPurchase ? { opacity: 0.35, y: -8, scale: 0.98 } : { opacity: 1, y: 0, scale: 1 }}
+                      animate={isPurchased || pendingPurchase ? { opacity: 0.35, y: -8, scale: 0.98 } : { opacity: hasTargets ? 1 : 0.5, y: 0, scale: 1 }}
                       transition={{ duration: 0.24, ease: 'easeOut' }}
                     >
-                      <div className="w-full min-h-[98px] rounded-2xl border border-zinc-700/70 bg-zinc-900/65 px-4 py-3 flex flex-col items-center justify-center gap-2">
+                      <div className="w-full min-h-[98px] rounded-2xl border border-zinc-700/70 bg-zinc-900/65 px-4 py-3 flex flex-col items-center justify-center gap-2" style={{ filter: hasTargets ? 'none' : 'grayscale(1)' }}>
                         {KeywordIcon && keywordEntry ? (
                           <KeywordIcon size={32} style={{ color: keywordEntry.color }} />
                         ) : (
@@ -328,6 +332,16 @@ export function AlchemyScreen({ characterId, gold, deckCards, transformOffers, p
                         type="button"
                         disabled={isDisabled}
                         onClick={() => handleOpenTransform(offer.id)}
+                        onMouseEnter={(event) => {
+                          setHoveredTransformBuyOfferId(offer.id)
+                          if (!hasTargets && !isPurchased) {
+                            setNoTargetTooltipPosition(getViewportPopoverPosition(event.currentTarget.getBoundingClientRect(), { width: 208 }))
+                          }
+                        }}
+                        onMouseLeave={() => {
+                          setHoveredTransformBuyOfferId(current => (current === offer.id ? null : current))
+                          setNoTargetTooltipPosition(null)
+                        }}
                         className="inline-flex items-center gap-2 rounded-lg border border-zinc-700/70 bg-zinc-900/80 px-3 py-1.5 text-xs text-zinc-300 disabled:opacity-50 disabled:cursor-not-allowed"
                         whileHover={!isDisabled ? { scale: 1.03 } : undefined}
                         whileTap={!isDisabled ? { scale: 0.97 } : undefined}
@@ -342,7 +356,7 @@ export function AlchemyScreen({ characterId, gold, deckCards, transformOffers, p
                         {showNoTargetsTooltip && (
                           <motion.div
                             className="fixed z-[320] w-52 rounded-xl border border-zinc-700/80 bg-zinc-950 px-3 py-2.5 pointer-events-none"
-                            style={{ left: transformTooltipPosition?.left ?? 0, top: transformTooltipPosition?.top ?? 0, x: '-50%', y: transformTooltipPosition?.placeAbove ? '-100%' : '0%' }}
+                            style={{ left: noTargetTooltipPosition?.left ?? 0, top: noTargetTooltipPosition?.top ?? 0, x: '-50%', y: noTargetTooltipPosition?.placeAbove ? '-100%' : '0%' }}
                             initial={{ opacity: 0, y: 4, scale: 0.98 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 4, scale: 0.98, transition: { duration: 0.1 } }}

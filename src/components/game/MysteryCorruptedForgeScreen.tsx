@@ -24,6 +24,12 @@ export function MysteryCorruptedForgeScreen({ deckCards, onCorrupt, onSkip, topL
       allowOverflowVisible
     >
       <div className="w-full max-w-6xl -mt-4 flex flex-col items-center gap-5">
+        <img
+          src="assets/cards/icon-forge.png"
+          alt="Corrupted Forge"
+          className="h-12 w-12 object-contain"
+          style={{ imageRendering: 'pixelated', filter: 'hue-rotate(330deg) saturate(2.8) brightness(0.75)' }}
+        />
         <p className="text-xs uppercase tracking-wider text-zinc-400">Choose one card to corrupt</p>
 
         {deckCards.length === 0 ? (

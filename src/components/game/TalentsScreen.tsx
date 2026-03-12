@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import type { ReactNode } from 'react'
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { SelectionScreenShell } from './SelectionScreenShell'
 import { KEYWORDS } from './keywordGlossary'
 import { TALENT_KEYWORDS, type TalentKeyword, TALENT_ROOT_ID, canUnlockTalent, getTalentLinksForNodes, getTalentNodesForKeyword, getTalentThemeClasses } from '@/lib/talents'
@@ -22,7 +22,7 @@ type Props = {
 type NodePosition = { x: number; y: number }
 
 const NODE_W = 146
-const NODE_H = 82
+const NODE_H = 118
 const CANVAS_WIDTH = 760
 const CANVAS_HEIGHT = 420
 
@@ -60,7 +60,6 @@ export function TalentsScreen({
 }: Props) {
   const talentNodes = getTalentNodesForKeyword(activeKeyword)
   const talentLinks = getTalentLinksForNodes(talentNodes)
-  const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null)
 
   const nodeById = useMemo(
     () => new Map(talentNodes.map(node => [node.id, node])),
@@ -81,8 +80,7 @@ export function TalentsScreen({
     [positionedNodes],
   )
 
-  const hoveredPosition = hoveredNodeId ? positionById.get(hoveredNodeId) : null
-  const hoveredNode = hoveredNodeId ? nodeById.get(hoveredNodeId) ?? null : null
+  void nodeById
 
   return (
     <SelectionScreenShell title="Talents" subtitle="Passive Tree" topLeft={topLeft} layout="top" titleOffsetY={8}>
@@ -175,10 +173,8 @@ export function TalentsScreen({
                     key={node.id}
                     type="button"
                     onClick={() => unlockable && onUnlockTalent(node.id)}
-                    onHoverStart={() => setHoveredNodeId(node.id)}
-                    onHoverEnd={() => setHoveredNodeId(current => (current === node.id ? null : current))}
-                    className={`absolute w-[146px] h-[82px] rounded-xl border-2 px-3 py-2 text-left ${unlocked ? theme.ring : 'border-zinc-700/80'} ${unlockable ? 'cursor-pointer' : 'cursor-default'}`}
-                    style={{ left: node.position.x, top: node.position.y, background: unlocked ? theme.glow : 'rgba(24,24,27,0.7)' }}
+                    className={`absolute w-[146px] h-[118px] rounded-xl border-2 px-3 py-2 text-left ${unlocked ? theme.ring : 'border-zinc-700'} ${unlockable ? 'cursor-pointer' : 'cursor-default'}`}
+                    style={{ left: node.position.x, top: node.position.y, background: unlocked ? 'rgb(24,24,27)' : 'rgb(24,24,27)' }}
                     whileHover={{ scale: 1.04 }}
                     whileTap={unlockable ? { scale: 0.97 } : undefined}
                   >
@@ -192,23 +188,10 @@ export function TalentsScreen({
                       })()}
                       <p className="text-[13px] leading-tight text-white font-semibold">{node.name}</p>
                     </div>
+                    <p className="mt-2 text-[11px] leading-snug text-zinc-300">{node.description}</p>
                   </motion.button>
                 )
               })}
-
-              {hoveredNode && hoveredPosition && (
-                <motion.div
-                  className="absolute w-[320px] rounded-xl border border-zinc-700/80 bg-zinc-950/95 px-4 py-3 pointer-events-none"
-                  style={{ left: hoveredPosition.x + NODE_W + 10, top: hoveredPosition.y }}
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 6 }}
-                >
-                  <p className="text-[10px] uppercase tracking-widest text-zinc-500">Talent</p>
-                  <p className="mt-1 text-sm text-zinc-100">{hoveredNode.name}</p>
-                  <p className="mt-1 text-xs text-zinc-300">{hoveredNode.description}</p>
-                </motion.div>
-              )}
             </div>
           </div>
         </div>

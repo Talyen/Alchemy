@@ -98,11 +98,11 @@ export function TrinketInfoCard({ id, name, description, iconSrc, size = 'defaul
 
       <div
         className={toClassName([
-          'rounded-2xl border border-zinc-700/80 bg-zinc-900/55 p-4 min-h-[112px]',
+          'rounded-2xl border border-zinc-700/80 bg-zinc-900/55 p-4 min-h-[132px]',
           className,
         ])}
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 min-h-[100px]">
           {resolvedIcon && !imgFailed ? (
             <img
               src={resolvedIcon}
@@ -117,9 +117,9 @@ export function TrinketInfoCard({ id, name, description, iconSrc, size = 'defaul
             </div>
           )}
 
-          <div className="min-w-0 flex-1">
-            <p className={`${titleSize} font-semibold leading-tight text-zinc-200 h-[30px] overflow-hidden`}>{name}</p>
-            <p className="text-[11px] leading-snug text-zinc-400 h-[34px] overflow-hidden">{renderKeywordText(description)}</p>
+          <div className="min-w-0 flex-1 min-h-[84px] flex flex-col justify-center gap-1">
+            <p className={`${titleSize} font-semibold leading-tight text-zinc-200`}>{name}</p>
+            <p className="text-[11px] leading-snug text-zinc-400">{renderKeywordText(description)}</p>
           </div>
         </div>
       </div>

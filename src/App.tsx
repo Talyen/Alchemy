@@ -25,6 +25,7 @@ import { AlchemyScreen, type AlchemyTransformKind, type AlchemyTransformOffer } 
 import { TalentsScreen } from './components/game/TalentsScreen'
 import { OptionsScreen, type GameSettings, type OptionsTab } from './components/game/OptionsScreen'
 import { TALENT_KEYWORDS, type TalentKeyword, canUnlockTalent, getEmptyUnlockedTalentNodeIdsByKeyword, getTalentBonusesFromKeywordTrees, getTalentLinksForNodes, getTalentNodesForKeyword } from './lib/talents'
+import { canAppearAfter } from './lib/destinationRules'
 import { ensureCtx, ensureRandomBGM, playDefeat, playGoldGain, playVictory, setAudioMix, stopBGM } from './sounds'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -857,35 +858,35 @@ const ALL_TRINKET_OFFERS: ShopTrinketOffer[] = [
     name: 'Flash Fire',
     description: 'The first Burn card you play each combat costs 0 Mana.',
     price: 25,
-    iconSrc: 'assets/trinkets/torch.png',
+    iconSrc: 'assets/trinkets/fc761.png',
   },
   {
     id: 'hidden_blade',
     name: 'Hidden Blade',
     description: 'The first Pierce card you play each combat costs 0 Mana.',
     price: 25,
-    iconSrc: 'assets/trinkets/special-delivery.png',
+    iconSrc: 'assets/trinkets/fc1444.png',
   },
   {
     id: 'shield_of_faith',
     name: 'Shield of Faith',
     description: 'Holy cards grant +1 extra Block when played.',
     price: 25,
-    iconSrc: 'assets/trinkets/holy-lantern.png',
+    iconSrc: 'assets/trinkets/fc854.png',
   },
   {
     id: 'camp_kit',
     name: 'Camp Kit',
     description: 'Campfire Rest heals 10% more HP.',
     price: 25,
-    iconSrc: 'assets/trinkets/fc23.png',
+    iconSrc: 'assets/trinkets/fc910.png',
   },
   {
     id: 'mana_crystal_trinket',
     name: 'Mana Crystal',
     description: 'Gain +1 max Mana at the start of each combat.',
     price: 25,
-    iconSrc: 'assets/trinkets/fc165.png',
+    iconSrc: 'assets/trinkets/fc927.png',
   },
   {
     id: 'wardstone_shard',
@@ -899,35 +900,35 @@ const ALL_TRINKET_OFFERS: ShopTrinketOffer[] = [
     name: 'Shieldbreaker',
     description: 'Deal double direct damage to enemies that currently have Block.',
     price: 25,
-    iconSrc: 'assets/trinkets/spell-tome.png',
+    iconSrc: 'assets/trinkets/fc1107.png',
   },
   {
     id: 'heatforged_shield',
     name: 'Heatforged Shield',
     description: 'Reduce Burn damage you take by 1.',
     price: 25,
-    iconSrc: 'assets/trinkets/campfire.png',
+    iconSrc: 'assets/trinkets/fc853.png',
   },
   {
     id: 'golden_flail',
     name: 'Golden Flail',
     description: 'Gain 1 Gold whenever you deal Blunt damage.',
     price: 25,
-    iconSrc: 'assets/trinkets/lucky-coin.png',
+    iconSrc: 'assets/trinkets/fc1555.png',
   },
   {
     id: 'golden_great_axe',
     name: 'Golden Great Axe',
     description: 'Gain 1 Gold whenever you play a Slash card.',
     price: 25,
-    iconSrc: 'assets/trinkets/lucky-coin.png',
+    iconSrc: 'assets/trinkets/fc1546.png',
   },
   {
     id: 'cloak_of_flames',
     name: 'Cloak of Flames',
     description: 'At the start of your turn, inflict 1 Burn on the enemy.',
     price: 25,
-    iconSrc: 'assets/trinkets/torch.png',
+    iconSrc: 'assets/trinkets/fc2095.png',
   },
 ]
 
@@ -1288,6 +1289,7 @@ export default function App() {
   const buildDestinationOptions = useCallback((): DestinationOption[] => {
     const available = DESTINATION_POOL.filter(option => {
       if (option.type === 'alchemy' && !metaProgress.alchemyUnlocked) return false
+      if (!canAppearAfter(lastChosenDestinationType, option.type)) return false
       if (lastChosenDestinationType === 'shop' && option.type === 'shop') return false
       if (lastChosenDestinationType === 'alchemy' && (option.type === 'alchemy' || option.type === 'shop')) return false
       return true
