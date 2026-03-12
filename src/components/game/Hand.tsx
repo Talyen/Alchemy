@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, useSpring } from 'framer-motion'
-import { Diamond, Layers, ScrollText, Trash2 } from 'lucide-react'
+import { Diamond, ScrollText } from 'lucide-react'
 import { createPortal } from 'react-dom'
 import { Card } from './Card'
 import { FloatingNumber } from './FloatingNumber'
@@ -101,12 +101,15 @@ function CombatLog({ log, position }: { log: string[]; position: PopoverPosition
 
 // ─── Flanking pile components ────────────────────────────────────────────────
 
-function PileStack({ count, label, icon: Icon, onClick }: { count: number; label: string; icon: typeof Layers; onClick?: () => void }) {
+const PILE_IMAGE_SRC = 'assets/ui/pile-card-transparent.png'
+
+function PileStack({ count, label, onClick, isDiscard = false }: { count: number; label: string; onClick?: () => void; isDiscard?: boolean }) {
   const { tiltStyle, onMouseMove, onMouseLeave } = useTilt(8, 600)
   return (
     <motion.button
       type="button"
       className="flex flex-col items-center gap-1.5 shrink-0"
+      data-testid={`pile-${label.toLowerCase()}`}
       style={tiltStyle}
       whileHover={{ scale: 1.06 }}
       whileTap={{ scale: 0.97 }}
@@ -115,22 +118,25 @@ function PileStack({ count, label, icon: Icon, onClick }: { count: number; label
       onClick={onClick}
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
     >
-      {/* Stacked card backs */}
-      <div className="relative w-16 h-24">
-        <div
-          className="absolute inset-0 rounded-xl bg-zinc-900 border border-zinc-700/60"
-          style={{ transform: 'rotate(-4deg)', transformOrigin: 'bottom center' }}
+      <div className="relative h-24 w-24">
+        <motion.img
+          src={PILE_IMAGE_SRC}
+          alt={`${label} pile`}
+          className="absolute inset-0 h-full w-full object-contain pointer-events-none select-none"
+          style={{
+            imageRendering: 'pixelated',
+            filter: isDiscard ? 'grayscale(1) saturate(0.2) brightness(0.88) contrast(1.06)' : 'none',
+          }}
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.18 }}
+          draggable={false}
         />
-        <div
-          className="absolute inset-0 rounded-xl bg-zinc-900 border border-zinc-700/60"
-          style={{ transform: 'rotate(-2deg)', transformOrigin: 'bottom center' }}
-        />
-        <div className="absolute inset-0 rounded-xl bg-zinc-900 border border-zinc-700 flex items-center justify-center">
-          <span className="text-xl font-bold text-zinc-400 font-mono">{count}</span>
+        <div className="absolute -bottom-1 right-0 flex h-8 min-w-8 items-center justify-center rounded-full border border-zinc-700/80 bg-zinc-900/92 px-2 shadow-[0_0_12px_rgba(0,0,0,0.45)]">
+          <span className="text-sm font-bold text-zinc-200 font-mono tabular-nums">{count}</span>
         </div>
       </div>
       <div className="flex items-center gap-1 text-zinc-600">
-        <Icon size={12} />
         <span className="text-[11px] uppercase tracking-widest">{label}</span>
       </div>
     </motion.button>
@@ -381,7 +387,6 @@ export function Hand({ cards, mana, maxMana, gold, onPlay, disabled, isEnemyActi
         <PileStack
           count={drawCount}
           label="Draw"
-          icon={Layers}
           onClick={() => {
             setShowDiscardPile(false)
             setShowDrawPile(prev => !prev)
@@ -542,7 +547,7 @@ export function Hand({ cards, mana, maxMana, gold, onPlay, disabled, isEnemyActi
         <PileStack
           count={discardCount}
           label="Discard"
-          icon={Trash2}
+          isDiscard
           onClick={() => {
             setShowDrawPile(false)
             setShowDiscardPile(prev => !prev)

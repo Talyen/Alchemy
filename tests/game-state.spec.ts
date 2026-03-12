@@ -4,7 +4,7 @@ import { goToCharacterSelect, startKnightRun, waitForCombatReady } from './helpe
 test.describe('Game State & Initialization', () => {
   test('should load main menu on app start', async ({ page }) => {
     await page.goto('/')
-    await expect(page.locator('h1', { hasText: 'Alchemy' }).first()).toBeVisible()
+    await expect(page.getByTestId('main-menu-logo')).toBeVisible()
   })
 
   test('should show Play button on main menu', async ({ page }) => {
@@ -58,13 +58,9 @@ test.describe('Game State & Initialization', () => {
   test('should display draw and discard piles', async ({ page }) => {
     await startKnightRun(page)
     await waitForCombatReady(page)
-    
-    // Look for pile labels
-    const drawLabel = await page.locator('text=Draw').first()
-    const discardLabel = await page.locator('text=Discard').first()
-    
-    await expect(drawLabel).toBeVisible()
-    await expect(discardLabel).toBeVisible()
+
+    await expect(page.getByTestId('pile-draw')).toBeVisible()
+    await expect(page.getByTestId('pile-discard')).toBeVisible()
   })
 
   test('hand should have fanned layout', async ({ page }) => {

@@ -48,3 +48,18 @@ test('required fallback SFX files exist for card/combat playback', async () => {
     expect.soft(existsSync(fsPath), `Missing required gameplay SFX file: ${assetPath}`).toBeTruthy()
   }
 })
+
+test('main menu and pile UI art assets exist', async () => {
+  const requiredUiAssets = [
+    '/assets/Alchemy Logo/Alchemy Logo-transparent.png',
+    '/assets/ui/pile-card-transparent.png',
+  ]
+
+  for (const assetPath of requiredUiAssets) {
+    const fsPath = publicPathToFs(assetPath)
+    expect.soft(existsSync(fsPath), `Missing required UI art file: ${assetPath}`).toBeTruthy()
+    if (existsSync(fsPath)) {
+      expect.soft(statSync(fsPath).size, `UI art file is empty: ${assetPath}`).toBeGreaterThan(0)
+    }
+  }
+})

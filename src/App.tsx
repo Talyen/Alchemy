@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import type { MouseEvent } from 'react'
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform, useAnimationControls } from 'framer-motion'
-import { FlaskConical, RotateCcw, Sword } from 'lucide-react'
+import { RotateCcw, Sword } from 'lucide-react'
 import { applyCompanionEffect, beginNextPlayerTurn, createGame, grantCardsToHand, playCard, resolveEnemyAction, resolveEnemyStartOfTurn, startEnemyTurn, startExtraTurnTransition } from './combat'
 import { ALL_CARDS, BESTIARY_ENEMIES, getCharacterStarterCards, getRunCharacter } from './data'
 import type { CardDef, GameState, TrinketDef } from './types'
@@ -180,30 +180,7 @@ function MainMenu({
   onTalents: () => void
   onOptions: () => void
 }) {
-    const [selectedLogoVariant, setSelectedLogoVariant] = useState(0)
-    const LOGO_VARIANTS = [
-      { text: '#f4f4f5', icon: '#f4f4f5', shadow: '0 0 0 transparent' },
-      { text: '#f97316', icon: '#fb923c', shadow: '0 0 26px rgba(249,115,22,0.3)' },
-      { text: '#22c55e', icon: '#4ade80', shadow: '0 0 26px rgba(34,197,94,0.3)' },
-      { text: '#38bdf8', icon: '#60a5fa', shadow: '0 0 24px rgba(56,189,248,0.28)' },
-      { text: '#facc15', icon: '#fcd34d', shadow: '0 0 24px rgba(250,204,21,0.3)' },
-      { text: '#e879f9', icon: '#c084fc', shadow: '0 0 24px rgba(232,121,249,0.25)' },
-      { text: '#fda4af', icon: '#fb7185', shadow: '0 0 24px rgba(251,113,133,0.28)' },
-      { text: '#a3e635', icon: '#84cc16', shadow: '0 0 24px rgba(132,204,22,0.26)' },
-      { text: '#a1a1aa', icon: '#d4d4d8', shadow: '0 0 20px rgba(161,161,170,0.22)' },
-      { text: '#f59e0b', icon: '#fde68a', shadow: '0 0 28px rgba(245,158,11,0.35)' },
-      { text: '#f43f5e', icon: '#fb7185', shadow: '0 0 26px rgba(244,63,94,0.28)' },
-      { text: '#0ea5e9', icon: '#22d3ee', shadow: '0 0 24px rgba(14,165,233,0.3)' },
-      { text: '#10b981', icon: '#34d399', shadow: '0 0 24px rgba(16,185,129,0.3)' },
-      { text: '#818cf8', icon: '#a78bfa', shadow: '0 0 24px rgba(129,140,248,0.28)' },
-      { text: '#fef08a', icon: '#fcd34d', shadow: '0 0 30px rgba(254,240,138,0.35)' },
-      { text: '#fdba74', icon: '#fb923c', shadow: '0 0 28px rgba(251,146,60,0.3)' },
-      { text: '#67e8f9', icon: '#22d3ee', shadow: '0 0 24px rgba(103,232,249,0.28)' },
-      { text: '#bef264', icon: '#a3e635', shadow: '0 0 24px rgba(190,242,100,0.3)' },
-      { text: '#f5d0fe', icon: '#e879f9', shadow: '0 0 26px rgba(245,208,254,0.27)' },
-      { text: '#f1f5f9', icon: '#cbd5e1', shadow: '0 0 20px rgba(241,245,249,0.2)' },
-    ] as const
-    const activeLogoVariant = LOGO_VARIANTS[selectedLogoVariant]
+  const MAIN_MENU_LOGO_SRC = 'assets/Alchemy Logo/Alchemy Logo-transparent.png'
 
   const sheenControls = useAnimationControls()
   const logoControls = useAnimationControls()
@@ -295,19 +272,14 @@ function MainMenu({
             onMouseMove={onTitleMove}
             onMouseLeave={onTitleLeave}
           >
-            <div className="relative flex items-center gap-4">
-              <div className="relative">
-                <h1
-                  className="text-8xl font-bold tracking-tight text-zinc-100 whitespace-nowrap leading-[1.16]"
-                  style={{ color: activeLogoVariant.text, textShadow: activeLogoVariant.shadow }}
-                >
-                  Alchemy
-                </h1>
-              </div>
-              <FlaskConical
-                size={56}
-                className="shrink-0"
-                style={{ color: activeLogoVariant.icon, filter: `drop-shadow(${activeLogoVariant.shadow})` }}
+            <div className="relative">
+              <img
+                src={MAIN_MENU_LOGO_SRC}
+                alt="Alchemy"
+                data-testid="main-menu-logo"
+                className="max-h-[140px] w-auto object-contain select-none pointer-events-none"
+                style={{ imageRendering: 'auto' }}
+                draggable={false}
               />
             </div>
             <motion.div
@@ -319,20 +291,6 @@ function MainMenu({
               animate={sheenControls}
             />
           </motion.div>
-          <div className="grid grid-cols-5 gap-2 w-[560px]">
-            {LOGO_VARIANTS.map((variant, index) => (
-              <motion.button
-                key={`logo-${index}`}
-                type="button"
-                onClick={() => setSelectedLogoVariant(index)}
-                className={`px-2.5 py-2 rounded-lg border text-[10px] tracking-wider uppercase ${selectedLogoVariant === index ? 'border-zinc-400 bg-zinc-800/80' : 'border-zinc-700/70 bg-zinc-900/60'}`}
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <span style={{ color: variant.text }}>Alchemy</span>
-              </motion.button>
-            ))}
-          </div>
 
           <div className="flex items-center gap-3">
             {canResume && (
