@@ -28,4 +28,10 @@ export const CARD_ART_BY_ID: Record<string, string> = {
   wish:          'assets/cards/icon-wish.png',
   holy_blade:    'assets/cards/icon-holy-blade.png',
   immolate:      'assets/cards/icon-immolate.png',
+  cauterize:     'assets/cards/icon-cauterize.png',
+  blessed_aegis: 'assets/cards/icon-blessed-aegis.png',
+  steal:         'assets/cards/icon-steal.png',
+  exsanguinate:  'assets/cards/icon-exsanguinate.png',
+  conflagrate:   'assets/cards/icon-conflagrate.png',
+  frostbolt:     'assets/cards/icon-frostbolt.png',
 }

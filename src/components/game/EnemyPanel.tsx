@@ -35,6 +35,8 @@ const ENEMY_FRAME_SETS: Record<string, string[]> = {
   chort: CHORT_FRAMES,
   imp: IMP_FRAMES,
   frost_imp: IMP_FRAMES,
+  blood_goblin: GOBLIN_FRAMES,
+  blood_shaman: ORC_SHAMAN_FRAMES,
   mimic: MIMIC_FRAMES,
   lizard_f: LIZARD_F_FRAMES,
   lizard_m: LIZARD_M_FRAMES,
@@ -52,11 +54,17 @@ const ENEMY_FRAME_SETS: Record<string, string[]> = {
   greater_mimic: MIMIC_FRAMES,
   greater_slime: SWAMPY_FRAMES,
   flaming_skull: FLAMING_SKULL_FRAMES,
+  prismatic_skull: FLAMING_SKULL_FRAMES,
   shade: SHADE_FRAMES,
+  mirror_shade: SHADE_FRAMES,
+  prismatic_shade: SHADE_FRAMES,
   snake: SNAKE_FRAMES,
+  prismatic_slug: SLUG_FRAMES,
+  prismatic_greater_mimic: MIMIC_FRAMES,
+  prismatic_greater_slime: SWAMPY_FRAMES,
 }
 const GOBLIN_FPS = 8
-const ELITE_ENEMY_IDS = new Set(['big_demon', 'ogre', 'greater_mimic', 'greater_slime', 'flaming_skull', 'shade'])
+const ELITE_ENEMY_IDS = new Set(['big_demon', 'ogre', 'greater_mimic', 'greater_slime', 'flaming_skull', 'shade', 'prismatic_skull', 'prismatic_shade', 'prismatic_greater_mimic', 'prismatic_greater_slime'])
 const LEFT_FACING_ENEMY_IDS = new Set([
   'doc',
   'big_demon',
@@ -67,6 +75,14 @@ const LEFT_FACING_ENEMY_IDS = new Set([
 
 const ENEMY_TINT_FILTER_BY_ID: Partial<Record<string, string>> = {
   frost_imp: 'hue-rotate(165deg) saturate(1.3) brightness(1.08)',
+  blood_goblin: 'hue-rotate(338deg) saturate(1.7) brightness(1.02)',
+  blood_shaman: 'hue-rotate(338deg) saturate(1.55) brightness(1.03)',
+  mirror_shade: 'saturate(0.28) brightness(1.28) contrast(1.18)',
+  prismatic_slug: 'hue-rotate(220deg) saturate(2.2) brightness(1.08)',
+  prismatic_skull: 'hue-rotate(255deg) saturate(2.1) brightness(1.1)',
+  prismatic_shade: 'hue-rotate(285deg) saturate(2.3) brightness(1.12)',
+  prismatic_greater_mimic: 'hue-rotate(240deg) saturate(2.0) brightness(1.08)',
+  prismatic_greater_slime: 'hue-rotate(205deg) saturate(2.25) brightness(1.05)',
 }
 
 interface Props {
@@ -94,7 +110,7 @@ export function EnemyPanel({ enemy, isActing, isActive, lastCardPlayedId, isElit
   const nextId         = useRef(0)
   const nextLane       = useRef(0)
   const [eventQueue, setEventQueue] = useState<QueueEntry[]>([])
-  const prevStatus = useRef({ burn: 0, vulnerable: 0, weak: 0, poison: 0, bleed: 0, trap: 0, forge: 0, strength: 0, armor: 0 })
+  const prevStatus = useRef({ burn: 0, vulnerable: 0, weak: 0, poison: 0, bleed: 0, chill: 0, trap: 0, forge: 0, strength: 0, armor: 0 })
   const [hovered,   setHovered]   = useState(false)
   const [frameIdx,  setFrameIdx]  = useState(0)
   const allocLane = useCallback(() => {
@@ -130,6 +146,7 @@ export function EnemyPanel({ enemy, isActing, isActive, lastCardPlayedId, isElit
       if (enemy.status.burn > prevStatus.current.burn) dmgType = 'burn_damage'
       else if (enemy.status.poison > prevStatus.current.poison) dmgType = 'poison_damage'
       else if (enemy.status.bleed > prevStatus.current.bleed) dmgType = 'bleed_damage'
+      else if ((enemy.status.chill ?? 0) > ((prevStatus.current as { chill?: number }).chill ?? 0)) dmgType = 'chill_damage'
       void controls.start({ x: [0, -10, 8, -4, 0], transition: { duration: 0.35 } })
       entries.push({ kind: 'dmg', data: { id: nextId.current++, value: diff, type: dmgType, cardId: lastCardPlayedId ?? undefined, lane: allocLane() } })
       playEnemyHit()
@@ -139,6 +156,7 @@ export function EnemyPanel({ enemy, isActing, isActive, lastCardPlayedId, isElit
     }
     prevHp.current = enemy.hp
     if (entries.length) pushQueue(entries)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enemy.hp, controls, lastCardPlayedId, allocLane, pushQueue])
 
@@ -175,7 +193,7 @@ export function EnemyPanel({ enemy, isActing, isActive, lastCardPlayedId, isElit
   }, [enemy.block, lastCardPlayedId, allocLane, pushQueue])
 
   useEffect(() => {
-    const { burn, vulnerable, weak, poison, bleed, trap, forge, strength } = enemy.status
+    const { burn, vulnerable, weak, poison, bleed, chill, trap, forge, strength } = enemy.status
     const armor = enemy.armor
     const prev = prevStatus.current
     const entries: QueueEntry[] = []
@@ -188,15 +206,15 @@ export function EnemyPanel({ enemy, isActing, isActive, lastCardPlayedId, isElit
     if (forge > prev.forge)           entries.push({ kind: 'status', data: { id: nextId.current++, value: forge - prev.forge,           status: 'forge',      cardId: lastCardPlayedId ?? undefined, lane: allocLane() } })
     if (strength > prev.strength)     entries.push({ kind: 'status', data: { id: nextId.current++, value: strength - prev.strength,     status: 'strength',   cardId: lastCardPlayedId ?? undefined, lane: allocLane() } })
     if (armor > prev.armor)           entries.push({ kind: 'status', data: { id: nextId.current++, value: armor - prev.armor,           status: 'armor',      cardId: lastCardPlayedId ?? undefined, lane: allocLane() } })
-    prevStatus.current = { burn, vulnerable, weak, poison, bleed, trap, forge, strength, armor }
+    prevStatus.current = { burn, vulnerable, weak, poison, bleed, chill, trap, forge, strength, armor }
     if (entries.length) pushQueue(entries)
-  }, [enemy.status.burn, enemy.status.vulnerable, enemy.status.weak, enemy.status.poison, enemy.status.bleed, enemy.status.trap, enemy.status.forge, enemy.status.strength, enemy.armor, lastCardPlayedId, allocLane, pushQueue])
+  }, [enemy.status.burn, enemy.status.vulnerable, enemy.status.weak, enemy.status.poison, enemy.status.bleed, enemy.status.chill, enemy.status.trap, enemy.status.forge, enemy.status.strength, enemy.armor, lastCardPlayedId, allocLane, pushQueue])
 
   const { vulnerable, weak, burn, poison, bleed, trap, forge, strength } = enemy.status
   const hasStatus = enemy.armor > 0 || forge > 0 || strength > 0 || vulnerable > 0 || weak > 0 || burn > 0 || poison > 0 || bleed > 0 || trap > 0
   const weaknessLabels = enemy.weaknesses.map(weakness => {
     if (weakness === 'blunt') return 'Blunt Damage'
-    if (weakness === 'fire') return 'Fire Damage'
+    if (weakness === 'burn') return 'Burn Damage'
     return weakness
   })
   const activeEvent = eventQueue[0] ?? null

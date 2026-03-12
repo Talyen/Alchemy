@@ -4,6 +4,7 @@ import { SelectionScreenShell } from './SelectionScreenShell'
 import { TrinketInfoCard } from './TrinketInfoCard'
 
 interface Props {
+  subtitle?: string
   trinketName: string
   trinketIconSrc: string
   trinketDescription?: string
@@ -11,9 +12,9 @@ interface Props {
   topLeft?: ReactNode
 }
 
-export function MysteryTrinketRewardScreen({ trinketName, trinketIconSrc, trinketDescription = 'A loyal companion strikes at the end of your turn.', onContinue, topLeft }: Props) {
+export function MysteryTrinketRewardScreen({ subtitle = 'Friend or Foe?', trinketName, trinketIconSrc, trinketDescription = 'A loyal companion strikes at the end of your turn.', onContinue, topLeft }: Props) {
   return (
-    <SelectionScreenShell title="Reward" subtitle="He's Just a Little Guy" topLeft={topLeft} allowOverflowVisible>
+    <SelectionScreenShell title="Reward" subtitle={subtitle} topLeft={topLeft} allowOverflowVisible>
       <div className="w-full max-w-3xl -mt-4 flex flex-col items-center gap-6">
         <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">Received:</p>
 

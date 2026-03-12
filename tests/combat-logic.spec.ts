@@ -29,16 +29,16 @@ test.describe('Combat Logic', () => {
     expect(game.enemy.weaknesses).toContain('blunt')
   })
 
-  test('orc enemies have fire weakness', () => {
+  test('orc enemies have burn weakness', () => {
     const maskedOrc = createGame(30, [], 'basic', 0, 'knight', 'masked_orc', [], undefined, 0)
     const orcShaman = createGame(30, [], 'basic', 0, 'knight', 'orc_shaman', [], undefined, 0)
     const orcWarrior = createGame(30, [], 'basic', 0, 'knight', 'orc_warrior', [], undefined, 0)
     const orcChieftain = createGame(30, [], 'elite', 0, 'knight', 'ogre', [], undefined, 0)
 
-    expect(maskedOrc.enemy.weaknesses).toContain('fire')
-    expect(orcShaman.enemy.weaknesses).toContain('fire')
-    expect(orcWarrior.enemy.weaknesses).toContain('fire')
-    expect(orcChieftain.enemy.weaknesses).toContain('fire')
+    expect(maskedOrc.enemy.weaknesses).toContain('burn')
+    expect(orcShaman.enemy.weaknesses).toContain('burn')
+    expect(orcWarrior.enemy.weaknesses).toContain('burn')
+    expect(orcChieftain.enemy.weaknesses).toContain('burn')
   })
 
   test('blunt damage is doubled against skeleton', () => {
@@ -51,7 +51,7 @@ test.describe('Combat Logic', () => {
     expect(startHp - next.enemy.hp).toBe(16)
   })
 
-  test('fire application damage is doubled against fire-weak orcs', () => {
+  test('burn application damage is doubled against burn-weak orcs', () => {
     const fireball = cardById('fireball')
     const game = createGame(30, [], 'basic', 0, 'wizard', 'masked_orc', [], [fireball], 0)
 
@@ -62,7 +62,7 @@ test.describe('Combat Logic', () => {
     expect(afterCard.enemy.status.burn).toBe(3)
   })
 
-  test('burn tick damage is doubled against fire-weak orcs', () => {
+  test('burn tick damage is doubled against burn-weak orcs', () => {
     const fireball = cardById('fireball')
     const game = createGame(30, [], 'basic', 0, 'wizard', 'masked_orc', [], [fireball], 0)
 

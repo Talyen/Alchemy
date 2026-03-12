@@ -1,16 +1,14 @@
 import { useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { BookOpen, ChevronsRight, Home, Menu, Music, Music2, SkipForward, UserRound } from 'lucide-react'
+import { BookOpen, Home, Menu, SkipForward, UserRound, XCircle } from 'lucide-react'
 
 interface Props {
   onGoMainMenu: () => void
   onGoCharacterSelect: () => void
   onOpenCollection: () => void
   onOpenOptions: () => void
-  musicEnabled: boolean
-  onToggleMusic: () => void
+  onEndRun?: () => void
   onEndTurnEarly?: () => void
-  onSkipDevCombat?: () => void
   direction?: 'up' | 'down'
   align?: 'left' | 'right'
 }
@@ -20,10 +18,8 @@ export function GlobalScreenMenu({
   onGoCharacterSelect,
   onOpenCollection,
   onOpenOptions,
-  musicEnabled,
-  onToggleMusic,
+  onEndRun,
   onEndTurnEarly,
-  onSkipDevCombat,
   direction = 'down',
   align = 'left',
 }: Props) {
@@ -115,30 +111,19 @@ export function GlobalScreenMenu({
                 </button>
               )}
 
-              {onSkipDevCombat && (
+              {onEndRun && (
                 <button
                   type="button"
                   onClick={() => {
                     setOpen(false)
-                    onSkipDevCombat()
+                    onEndRun()
                   }}
                   className="w-full flex items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm text-zinc-300 hover:bg-zinc-900/90"
                 >
-                  <ChevronsRight size={14} className="text-zinc-500" />
-                  Skip (Dev)
+                  <XCircle size={14} className="text-zinc-500" />
+                  End Run
                 </button>
               )}
-
-              <button
-                type="button"
-                onClick={() => {
-                  onToggleMusic()
-                }}
-                className="w-full flex items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm text-zinc-300 hover:bg-zinc-900/90"
-              >
-                {musicEnabled ? <Music2 size={14} className="text-zinc-500" /> : <Music size={14} className="text-zinc-500" />}
-                {musicEnabled ? 'Music On' : 'Music Off'}
-              </button>
             </motion.div>
           )}
         </AnimatePresence>

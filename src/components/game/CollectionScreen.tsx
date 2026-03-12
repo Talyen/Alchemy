@@ -34,10 +34,26 @@ const BESTIARY_SPRITE_SOURCE_BY_ID: Partial<Record<string, string>> = {
   greater_mimic: 'mimic',
   greater_slime: 'swampy',
   frost_imp: 'imp',
+  blood_goblin: 'goblin',
+  blood_shaman: 'orc_shaman',
+  mirror_shade: 'shade',
+  prismatic_slug: 'slug',
+  prismatic_skull: 'flaming_skull',
+  prismatic_shade: 'shade',
+  prismatic_greater_mimic: 'mimic',
+  prismatic_greater_slime: 'swampy',
 }
 
 const BESTIARY_TINT_FILTER_BY_ID: Partial<Record<string, string>> = {
   frost_imp: 'hue-rotate(165deg) saturate(1.3) brightness(1.08)',
+  blood_goblin: 'hue-rotate(338deg) saturate(1.7) brightness(1.02)',
+  blood_shaman: 'hue-rotate(338deg) saturate(1.55) brightness(1.03)',
+  mirror_shade: 'saturate(0.28) brightness(1.28) contrast(1.18)',
+  prismatic_slug: 'hue-rotate(220deg) saturate(2.2) brightness(1.08)',
+  prismatic_skull: 'hue-rotate(255deg) saturate(2.1) brightness(1.1)',
+  prismatic_shade: 'hue-rotate(285deg) saturate(2.3) brightness(1.12)',
+  prismatic_greater_mimic: 'hue-rotate(240deg) saturate(2.0) brightness(1.08)',
+  prismatic_greater_slime: 'hue-rotate(205deg) saturate(2.25) brightness(1.05)',
 }
 
 function toInstance(def: CardDef, uid: string): CardInstance {
@@ -68,12 +84,26 @@ export function CollectionScreen({
   const [frameIdx, setFrameIdx] = useState(0)
   const [hoveredEnemyId, setHoveredEnemyId] = useState<string | null>(null)
   const [hoveredEnemyTooltip, setHoveredEnemyTooltip] = useState<{ left: number; top: number; placeAbove: boolean } | null>(null)
+  const hoveredEnemyAnchorRef = useState<Element | null>(null)
+  const [hoveredEnemyAnchor, setHoveredEnemyAnchor] = hoveredEnemyAnchorRef
 
   const updateEnemyTooltipPosition = (target: EventTarget | null) => {
     if (!(target instanceof Element)) return
     const rect = target.getBoundingClientRect()
     setHoveredEnemyTooltip(getViewportPopoverPosition(rect, { width: 256 }))
   }
+
+  useEffect(() => {
+    if (!hoveredEnemyId || !hoveredEnemyAnchor) return
+    const update = () => updateEnemyTooltipPosition(hoveredEnemyAnchor)
+    update()
+    window.addEventListener('resize', update)
+    window.addEventListener('scroll', update, true)
+    return () => {
+      window.removeEventListener('resize', update)
+      window.removeEventListener('scroll', update, true)
+    }
+  }, [hoveredEnemyId, hoveredEnemyAnchor])
 
   useEffect(() => {
     setActiveTab(initialTab)
@@ -253,19 +283,27 @@ export function CollectionScreen({
                         onMouseEnter={(event) => {
                           if (!isEncountered) return
                           setHoveredEnemyId(enemy.id)
+                          setHoveredEnemyAnchor(event.currentTarget)
+                          updateEnemyTooltipPosition(event.currentTarget)
+                        }}
+                        onMouseMove={(event) => {
+                          if (!isEncountered || hoveredEnemyId !== enemy.id) return
                           updateEnemyTooltipPosition(event.currentTarget)
                         }}
                         onFocus={(event) => {
                           if (!isEncountered) return
                           setHoveredEnemyId(enemy.id)
+                          setHoveredEnemyAnchor(event.currentTarget)
                           updateEnemyTooltipPosition(event.currentTarget)
                         }}
                         onMouseLeave={() => {
                           setHoveredEnemyId(curr => (curr === enemy.id ? null : curr))
+                          setHoveredEnemyAnchor(null)
                           setHoveredEnemyTooltip(null)
                         }}
                         onBlur={() => {
                           setHoveredEnemyId(curr => (curr === enemy.id ? null : curr))
+                          setHoveredEnemyAnchor(null)
                           setHoveredEnemyTooltip(null)
                         }}
                       >
@@ -322,7 +360,7 @@ export function CollectionScreen({
                                     <p className="text-[10px] uppercase tracking-widest text-zinc-600">Weaknesses</p>
                                     {enemy.weaknesses.length > 0 ? (
                                       <p className="text-xs text-rose-300 mt-1">
-                                        {enemy.weaknesses.map(weakness => weakness === 'blunt' ? 'Blunt Damage' : weakness === 'fire' ? 'Fire Damage' : weakness).join(', ')}
+                                        {enemy.weaknesses.map(weakness => weakness === 'blunt' ? 'Blunt Damage' : weakness === 'burn' ? 'Burn Damage' : weakness).join(', ')}
                                       </p>
                                     ) : (
                                       <p className="text-xs text-zinc-500 mt-1">None</p>

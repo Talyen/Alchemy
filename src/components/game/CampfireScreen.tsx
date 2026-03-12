@@ -149,7 +149,7 @@ export function CampfireScreen({ characterId, currentHp: _currentHp, maxHp, onRe
 
   return (
     <SelectionScreenShell title="Campfire" subtitle="Rest Site" topLeft={topLeft} allowOverflowVisible titleOffsetY={14}>
-      <div className="relative w-full max-w-5xl h-[72%] flex items-center justify-center overflow-visible pointer-events-none">
+      <div className="relative w-full max-w-4xl h-[64%] flex items-center justify-center overflow-visible pointer-events-none">
         <svg className="absolute w-0 h-0 pointer-events-none" aria-hidden>
           <defs>
             <filter id="campfire-posterize" colorInterpolationFilters="sRGB">
@@ -162,14 +162,14 @@ export function CampfireScreen({ characterId, currentHp: _currentHp, maxHp, onRe
           </defs>
         </svg>
 
-        <div className="relative z-10 mx-auto flex w-full max-w-[460px] -translate-y-24 items-end justify-center gap-10">
+        <div className="relative z-10 mx-auto flex w-full max-w-[390px] -translate-y-8 items-end justify-center gap-6">
           <motion.div
-            className="flex w-56 justify-center"
+            className="flex w-44 justify-center"
             initial={{ opacity: 0, x: -24, y: 12 }}
             animate={{ opacity: 1, x: 0, y: 0 }}
             transition={{ type: 'spring', stiffness: 260, damping: 24 }}
           >
-            <div className="flex items-end justify-center gap-2">
+            <div className="flex items-end justify-center gap-1.5">
               {showCompanion && (
                 <CompanionSprite companionName={companionName} companionEnemyId={companionEnemyId} />
               )}
@@ -178,13 +178,13 @@ export function CampfireScreen({ characterId, currentHp: _currentHp, maxHp, onRe
           </motion.div>
 
           <motion.div
-            className="relative flex w-56 flex-col items-center translate-y-[13px] overflow-visible"
+            className="relative flex w-44 flex-col items-center translate-y-[8px] overflow-visible"
             initial={{ opacity: 0, x: 24, y: 12 }}
             animate={{ opacity: 1, x: 0, y: 0 }}
             transition={{ type: 'spring', stiffness: 260, damping: 24, delay: 0.05 }}
           >
             <motion.div
-              className="absolute left-1/2 top-[58%] -translate-x-1/2 -translate-y-1/2 w-35 h-35 rounded-full"
+              className="absolute left-1/2 top-[58%] -translate-x-1/2 -translate-y-1/2 w-28 h-28 rounded-full"
               animate={{ opacity: [0.2, 0.3, 0.22], scale: [0.90, 1.10, 0.90] }}
               transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
               style={{
@@ -193,9 +193,9 @@ export function CampfireScreen({ characterId, currentHp: _currentHp, maxHp, onRe
               }}
             />
 
-            <div className="relative w-56 h-52 flex items-end justify-center overflow-visible">
+            <div className="relative w-44 h-40 flex items-end justify-center overflow-visible">
               <motion.div
-                className="pointer-events-none absolute bottom-14 left-1/2 w-20 h-16 -translate-x-1/2 rounded-full"
+                className="pointer-events-none absolute bottom-11 left-1/2 w-16 h-12 -translate-x-1/2 rounded-full"
                 animate={{ opacity: emberFlicker.opacity, scale: emberFlicker.scale, y: emberFlicker.y }}
                 transition={{ duration: emberFlicker.duration, ease: 'easeInOut' }}
                 style={{
@@ -204,7 +204,7 @@ export function CampfireScreen({ characterId, currentHp: _currentHp, maxHp, onRe
                 }}
               />
 
-              <div className="relative w-5 h-5 origin-bottom scale-[7.0]">
+              <div className="relative w-5 h-5 origin-bottom scale-[5.7]">
                 <img
                   src="assets/campfire-rest.png"
                   alt="Campfire"
@@ -252,7 +252,7 @@ export function CampfireScreen({ characterId, currentHp: _currentHp, maxHp, onRe
         </AnimatePresence>
       </div>
 
-      <div className="-mt-52 w-full flex flex-col items-center gap-2 relative z-30 pointer-events-auto">
+      <div className="-mt-24 w-full flex flex-col items-center gap-2 relative z-30 pointer-events-auto">
         <motion.button
           type="button"
           onClick={() => {

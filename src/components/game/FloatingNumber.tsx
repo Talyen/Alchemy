@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { Bomb, Diamond, Droplets, Flame, Heart, Pickaxe, ShieldHalf, ShieldOff, ShieldPlus, Sword, Swords, TrendingDown } from 'lucide-react'
+import { Bomb, Diamond, Droplets, Flame, Heart, Pickaxe, ShieldHalf, ShieldOff, ShieldPlus, Snowflake, Sword, Swords, TrendingDown } from 'lucide-react'
 import { CARD_ART_BY_ID } from '@/cardArt'
 import { GoldIcon } from './GoldIcon'
 
@@ -25,7 +25,7 @@ function getDamageBurstMotion(seed: number, lane = 0): PopupMotion {
     return {
       initial: { x: 0, y: 0, opacity: 1, scale: 0.95, rotate: 0, filter: 'blur(0px)' },
       animate: { x: side * (18 + Math.abs(jitter)), y: -54, opacity: [1, 1, 0], scale: [0.95, 1.08, 1], rotate: side * 8, filter: ['blur(0px)', 'blur(0px)', 'blur(0.6px)'] },
-      transition: { duration: 1.25, ease: 'easeOut', times: [0, 0.7, 1] },
+      transition: { duration: 1.75, ease: 'easeOut', times: [0, 0.7, 1] },
     }
   }
 
@@ -33,7 +33,7 @@ function getDamageBurstMotion(seed: number, lane = 0): PopupMotion {
     return {
       initial: { x: 0, y: 0, opacity: 1, scale: 0.92, rotate: 0, filter: 'blur(0px)' },
       animate: { x: side * (26 + jitter), y: -62, opacity: [1, 0.95, 0], scale: [0.92, 1.14, 0.96], rotate: side * 12, filter: ['blur(0px)', 'blur(0px)', 'blur(1px)'] },
-      transition: { duration: 1.35, ease: [0.16, 1, 0.3, 1], times: [0, 0.72, 1] },
+      transition: { duration: 1.85, ease: [0.16, 1, 0.3, 1], times: [0, 0.72, 1] },
     }
   }
 
@@ -48,14 +48,14 @@ function getDamageBurstMotion(seed: number, lane = 0): PopupMotion {
         rotate: [0, side * 6, 0],
         filter: ['blur(0px)', 'blur(0px)', 'blur(1.1px)'],
       },
-      transition: { duration: 1.38, ease: 'easeOut', times: [0, 0.52, 1] },
+      transition: { duration: 1.88, ease: 'easeOut', times: [0, 0.52, 1] },
     }
   }
 
   return {
     initial: { x: 0, y: 0, opacity: 1, scale: 0.94, rotate: 0, filter: 'blur(0px)' },
     animate: { x: jitter * 0.35, y: -58, opacity: [1, 0.95, 0], scale: [0.94, 1.08, 1], rotate: jitter * 0.22, filter: ['blur(0px)', 'blur(0px)', 'blur(0.7px)'] },
-    transition: { duration: 1.3, ease: 'easeOut', times: [0, 0.66, 1] },
+    transition: { duration: 1.8, ease: 'easeOut', times: [0, 0.66, 1] },
   }
 }
 
@@ -71,7 +71,7 @@ function getStableFadeMotion(seed: number): PopupMotion {
       rotate: [0, wobble * 0.15, 0],
       filter: ['blur(0px)', 'blur(0px)', 'blur(0.6px)'],
     },
-    transition: { duration: 1.0, ease: 'easeOut', times: [0, 0.62, 1] },
+    transition: { duration: 1.5, ease: 'easeOut', times: [0, 0.62, 1] },
   }
 }
 
@@ -81,7 +81,7 @@ export interface DmgEvent {
   id: number
   /** Positive or negative amount. Sign is shown automatically. */
   value: number
-  type: 'damage' | 'heal' | 'block' | 'gold' | 'mana' | 'burn_damage' | 'poison_damage' | 'bleed_damage'
+  type: 'damage' | 'heal' | 'block' | 'gold' | 'mana' | 'burn_damage' | 'poison_damage' | 'bleed_damage' | 'chill_damage'
   cardId?: string
   lane?: number
 }
@@ -95,6 +95,7 @@ const dmgCfg = {
   burn_damage:  { color: '#f97316', prefix: '-', Icon: Flame,       shadow: 'rgba(249,115,22,0.4)' },
   poison_damage:{ color: '#4ade80', prefix: '-', Icon: Droplets,    shadow: 'rgba(74,222,128,0.4)' },
   bleed_damage: { color: '#f87171', prefix: '-', Icon: Swords,      shadow: 'rgba(248,113,113,0.4)' },
+  chill_damage: { color: '#38bdf8', prefix: '-', Icon: Snowflake,   shadow: 'rgba(56,189,248,0.4)' },
 }
 
 interface DmgProps {
@@ -107,7 +108,7 @@ export function FloatingNumber({ event, onDone, top }: DmgProps) {
   const { color, Icon, shadow } = dmgCfg[event.type]
   const cardArt = event.cardId ? CARD_ART_BY_ID[event.cardId] : undefined
   const popupSeed = event.id * 11 + Math.abs(event.value) * 7 + event.type.length * 13
-  const isBurst = event.type === 'damage' || event.type === 'burn_damage' || event.type === 'poison_damage' || event.type === 'bleed_damage'
+  const isBurst = event.type === 'damage' || event.type === 'burn_damage' || event.type === 'poison_damage' || event.type === 'bleed_damage' || event.type === 'chill_damage'
   const popupMotion = isBurst
     ? getDamageBurstMotion(popupSeed, event.lane ?? 0)
     : getStableFadeMotion(popupSeed)
@@ -139,7 +140,7 @@ export function FloatingNumber({ event, onDone, top }: DmgProps) {
         style={{
           color,
           fontWeight: 800,
-          fontSize: 27,
+          fontSize: 31,
           lineHeight: 1,
           textShadow: `0 2px 10px ${shadow}`,
           fontVariantNumeric: 'tabular-nums',
@@ -206,7 +207,7 @@ export function FloatingStatus({ event, onDone, top }: StatusProps) {
         style={{
           color,
           fontWeight: 800,
-          fontSize: 23,
+          fontSize: 26,
           lineHeight: 1,
           textShadow: `0 2px 10px ${shadow}`,
           fontVariantNumeric: 'tabular-nums',

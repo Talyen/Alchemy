@@ -4,6 +4,7 @@ import { SelectionScreenShell } from './SelectionScreenShell'
 import { Card } from './Card'
 import { TrinketInfoCard } from './TrinketInfoCard'
 import type { CardDef } from '@/types'
+import { playGoldGain } from '@/sounds'
 
 export type TreasureChestReward =
   | { type: 'card'; card: CardDef }
@@ -46,15 +47,6 @@ export function MysteryTreasureChestScreen({ reward, onOpen, onTake, onSkip, top
             >
               Open Chest
             </motion.button>
-            <motion.button
-              type="button"
-              onClick={onSkip}
-              className="px-3 py-1.5 rounded-lg border border-amber-900/60 bg-zinc-900/70 text-xs text-amber-200"
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-            >
-              Salvage for 25 Gold
-            </motion.button>
           </div>
         )}
 
@@ -86,6 +78,18 @@ export function MysteryTreasureChestScreen({ reward, onOpen, onTake, onSkip, top
                 whileTap={{ scale: 0.97 }}
               >
                 Take Reward
+              </motion.button>
+              <motion.button
+                type="button"
+                onClick={() => {
+                  playGoldGain()
+                  onSkip()
+                }}
+                className="px-3 py-1.5 rounded-lg border border-amber-900/60 bg-zinc-900/70 text-xs text-amber-200"
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+              >
+                Salvage for 25 Gold
               </motion.button>
             </div>
           </>

@@ -68,7 +68,12 @@ export const KEYWORDS: Record<string, KeywordEntry> = {
   Burn: {
     Icon: Flame,
     color: '#f97316',
-    description: 'Deals Fire damage and decreases by 1 each turn.',
+    description: 'Deals Burn damage and decreases by 1 each turn.',
+  },
+  Chill: {
+    Icon: Droplets,
+    color: '#38bdf8',
+    description: 'Accumulates cold damage. If Chill reaches 20% of max HP, that unit loses its next turn and Chill is removed.',
   },
   Poison: {
     Icon: Droplets,
@@ -129,6 +134,11 @@ export const KEYWORDS: Record<string, KeywordEntry> = {
     Icon: Sparkles,
     color: '#c084fc',
     description: 'Replace a card in your hand with a random card this encounter.',
+  },
+  Corrupt: {
+    Icon: Sparkles,
+    color: '#f43f5e',
+    description: 'A volatile mutation applied by events. Corrupted cards gain random stat shifts or side effects.',
   },
 }
 

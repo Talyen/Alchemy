@@ -10,6 +10,7 @@ interface Props {
   subtitle: string
   options: CardDef[]
   onPick: (card: CardDef) => void
+  onSkip?: () => void
   foundGold?: number
   topLeft?: ReactNode
 }
@@ -19,7 +20,7 @@ function toInstance(def: CardDef, uid: string): CardInstance {
   return { ...def, uid }
 }
 
-export function CardPickScreen({ title, subtitle, options, onPick, foundGold, topLeft }: Props) {
+export function CardPickScreen({ title, subtitle, options, onPick, onSkip, foundGold, topLeft }: Props) {
   return (
     <SelectionScreenShell title={title} subtitle={subtitle} topLeft={topLeft}>
       {foundGold !== undefined && foundGold > 0 && (
@@ -60,6 +61,19 @@ export function CardPickScreen({ title, subtitle, options, onPick, foundGold, to
           </motion.div>
         ))}
       </motion.div>
+      {onSkip && (
+        <motion.button
+          className="mt-6 px-5 py-2 rounded-lg border border-zinc-700/60 bg-zinc-900/60 text-zinc-400 text-sm hover:text-zinc-200 hover:border-zinc-500"
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.2 }}
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.97 }}
+          onClick={onSkip}
+        >
+          Skip
+        </motion.button>
+      )}
     </SelectionScreenShell>
   )
 }

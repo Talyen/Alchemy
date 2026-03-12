@@ -151,7 +151,7 @@ function PileViewer({ title, cards, onClose }: { title: string; cards: CardInsta
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 justify-items-center">
               {cards.map((card, index) => (
                 <div key={`${card.uid}-${index}`} className="origin-top">
-                  <Card card={card} playable={false} />
+                  <Card card={card} playable={false} dimmed={false} />
                 </div>
               ))}
             </div>
@@ -454,6 +454,7 @@ export function Hand({ cards, mana, maxMana, gold, onPlay, disabled, isEnemyActi
               <FloatingNumber
                 key={activeManaEvent.id}
                 event={activeManaEvent}
+                top={-38}
                 onDone={() => removeManaEvent(activeManaEvent.id)}
               />
             )}

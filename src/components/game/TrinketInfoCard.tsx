@@ -1,10 +1,9 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
 import { Sparkles } from 'lucide-react'
-import { createPortal } from 'react-dom'
 import { GoldIcon } from './GoldIcon'
 import { getKeywordsFromText, renderKeywordText } from './keywordGlossary'
 import { getViewportPopoverPosition } from '@/lib/viewportPopover'
+import { ViewportPopover } from '@/components/ui/ViewportPopover'
 
 interface TrinketInfoCardProps {
   id?: string
@@ -71,45 +70,35 @@ export function TrinketInfoCard({ id, name, description, iconSrc, size = 'defaul
 
   return (
     <div ref={wrapperRef} className="relative z-[220]" onMouseEnter={onWrapperEnter} onMouseLeave={onWrapperLeave}>
-      {typeof window !== 'undefined' && createPortal(
-        <AnimatePresence>
-          {keywordTooltipEnabled && showTooltip && keywords.length > 0 && (
-            <motion.div
-              className="fixed w-56 rounded-xl border border-zinc-700/80 bg-zinc-950 px-3 py-2.5 z-[999] pointer-events-none"
-              style={{ left: tooltipPosition?.left ?? 0, top: tooltipPosition?.top ?? 0, x: '-50%', y: tooltipPosition?.placeAbove ? '-100%' : '0%' }}
-              initial={{ opacity: 0, y: 3 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 3, transition: { duration: 0.1, ease: 'easeIn' } }}
-              transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-            >
-              <p className="text-[11px] text-zinc-600 uppercase tracking-widest mb-2">Keywords</p>
-              <div className="flex flex-col gap-2">
-                {keywords.map(({ name: keywordName, Icon, color, description: keywordDescription }) => (
-                  <div key={keywordName} className="flex items-start gap-2">
-                    {keywordName === 'Gold' ? (
-                      <GoldIcon size={16} glimmer={false} />
-                    ) : (
-                      <Icon
-                        size={16}
-                        style={{ color, fill: 'none', flexShrink: 0, pointerEvents: 'none' }}
-                      />
-                    )}
-                    <div className="flex flex-col gap-0.5">
-                      <span className="text-[13px] font-semibold leading-none" style={{ color }}>{keywordName}</span>
-                      <p className="text-[11px] text-zinc-400 leading-snug">{keywordDescription}</p>
-                    </div>
-                  </div>
-                ))}
+      <ViewportPopover
+        open={keywordTooltipEnabled && showTooltip && keywords.length > 0}
+        position={tooltipPosition}
+        className="fixed w-56 rounded-xl border border-zinc-700/80 bg-zinc-950 px-3 py-2.5 z-[999] pointer-events-none"
+      >
+        <p className="text-[11px] text-zinc-600 uppercase tracking-widest mb-2">Keywords</p>
+        <div className="flex flex-col gap-2">
+          {keywords.map(({ name: keywordName, Icon, color, description: keywordDescription }) => (
+            <div key={keywordName} className="flex items-start gap-2">
+              {keywordName === 'Gold' ? (
+                <GoldIcon size={16} glimmer={false} />
+              ) : (
+                <Icon
+                  size={16}
+                  style={{ color, fill: 'none', flexShrink: 0, pointerEvents: 'none' }}
+                />
+              )}
+              <div className="flex flex-col gap-0.5">
+                <span className="text-[13px] font-semibold leading-none" style={{ color }}>{keywordName}</span>
+                <p className="text-[11px] text-zinc-400 leading-snug">{keywordDescription}</p>
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>,
-        document.body,
-      )}
+            </div>
+          ))}
+        </div>
+      </ViewportPopover>
 
       <div
         className={toClassName([
-          'rounded-2xl border border-zinc-700/80 bg-zinc-900/55 p-4',
+          'rounded-2xl border border-zinc-700/80 bg-zinc-900/55 p-4 min-h-[112px]',
           className,
         ])}
       >
@@ -128,9 +117,9 @@ export function TrinketInfoCard({ id, name, description, iconSrc, size = 'defaul
             </div>
           )}
 
-          <div className="min-w-0">
-            <p className={`${titleSize} font-semibold leading-tight text-zinc-200 whitespace-nowrap truncate`}>{name}</p>
-            <p className="text-[11px] leading-snug text-zinc-400">{renderKeywordText(description)}</p>
+          <div className="min-w-0 flex-1">
+            <p className={`${titleSize} font-semibold leading-tight text-zinc-200 h-[30px] overflow-hidden`}>{name}</p>
+            <p className="text-[11px] leading-snug text-zinc-400 h-[34px] overflow-hidden">{renderKeywordText(description)}</p>
           </div>
         </div>
       </div>

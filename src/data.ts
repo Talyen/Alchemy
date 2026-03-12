@@ -15,6 +15,7 @@ export const emptyStatus = (): StatusEffects => ({
   burn: 0,
   poison: 0,
   bleed: 0,
+  chill: 0,
   trap: 0,
 })
 
@@ -243,6 +244,55 @@ export const ALL_CARDS: CardDef[] = [
     description: 'Deal 1 Burn to Self and Enemy each turn',
     effect: { burn: 1, selfBurn: 1 },
   },
+  // ── New cards ────────────────────────────────────────────────────────────
+  {
+    id: 'cauterize',
+    name: 'Cauterize',
+    cost: 0,
+    type: 'skill',
+    description: 'Remove all Bleed\nBurn 1 Self',
+    effect: { removeSelfBleed: true, selfBurn: 1 },
+  },
+  {
+    id: 'blessed_aegis',
+    name: 'Blessed Aegis',
+    cost: 2,
+    type: 'skill',
+    description: 'Gain 6 Block\nDeal 4 Holy',
+    effect: { block: 6, damage: 4 },
+  },
+  {
+    id: 'steal',
+    name: 'Steal',
+    cost: 1,
+    type: 'attack',
+    description: 'Deal 2 Blunt\nGain 2 Gold',
+    effect: { damage: 2, gold: 2 },
+  },
+  {
+    id: 'exsanguinate',
+    name: 'Exsanguinate',
+    cost: 2,
+    type: 'skill',
+    description: 'Double enemy Bleed',
+    effect: { doubleEnemyBleed: true },
+  },
+  {
+    id: 'conflagrate',
+    name: 'Conflagrate',
+    cost: 2,
+    type: 'skill',
+    description: 'Double enemy Burn',
+    effect: { doubleEnemyBurn: true },
+  },
+  {
+    id: 'frostbolt',
+    name: 'Frostbolt',
+    cost: 1,
+    type: 'attack',
+    description: 'Deal 2 Chill',
+    effect: { chill: 2 },
+  },
 ]
 
 export const RUN_CHARACTERS: RunCharacter[] = [
@@ -349,35 +399,52 @@ const BASE_HP_RANGE_BY_TIER: Record<EnemyTier, { min: number; max: number }> = {
 
 const BITE_ENEMY_IDS = new Set(['chort', 'mimic', 'greater_mimic', 'big_demon'])
 const POISON_ENEMY_IDS = new Set(['muddy', 'swampy', 'greater_slime', 'slug', 'doc', 'snake'])
-const BURN_ENEMY_IDS = new Set(['flaming_skull'])
+const BURN_ENEMY_IDS = new Set(['flaming_skull', 'prismatic_skull'])
+const CHILL_ENEMY_IDS = new Set(['frost_imp'])
+const LEECH_ENEMY_IDS = new Set(['blood_goblin', 'blood_shaman'])
+const STEAL_GOLD_ENEMY_IDS = new Set<string>()
+const RANDOM_DAMAGE_ENEMY_IDS = new Set([
+  'prismatic_slug', 'prismatic_skull', 'prismatic_shade',
+  'prismatic_greater_mimic', 'prismatic_greater_slime'
+])
 
 const BASIC_ENEMY_TEMPLATES: EnemyTemplate[] = [
   { id: 'goblin', name: 'Goblin', tier: 'basic' },
   { id: 'chort', name: 'Chomp', tier: 'basic' },
   { id: 'imp', name: 'Imp', tier: 'basic' },
-  { id: 'frost_imp', name: 'Frost Imp', tier: 'basic', weaknesses: ['fire'] },
+  { id: 'frost_imp', name: 'Frost Imp', tier: 'basic', weaknesses: ['burn'] },
   { id: 'mimic', name: 'Mimic', tier: 'basic' },
   { id: 'lizard_f', name: 'Lizard Scout', tier: 'basic' },
   { id: 'lizard_m', name: 'Lizard Raider', tier: 'basic' },
-  { id: 'masked_orc', name: 'Masked Orc', tier: 'basic', weaknesses: ['fire'] },
+  { id: 'masked_orc', name: 'Masked Orc', tier: 'basic', weaknesses: ['burn'] },
   { id: 'muddy', name: 'Mud Elemental', tier: 'basic' },
   { id: 'necromancer', name: 'Necromancer', tier: 'basic' },
-  { id: 'orc_shaman', name: 'Orc Shaman', tier: 'basic', weaknesses: ['fire'] },
-  { id: 'orc_warrior', name: 'Orc Warrior', tier: 'basic', weaknesses: ['fire'] },
+  { id: 'orc_shaman', name: 'Orc Shaman', tier: 'basic', weaknesses: ['burn'] },
+  { id: 'orc_warrior', name: 'Orc Warrior', tier: 'basic', weaknesses: ['burn'] },
   { id: 'skelet', name: 'Skeleton', tier: 'basic', weaknesses: ['blunt'] },
   { id: 'slug', name: 'Slug', tier: 'basic' },
   { id: 'swampy', name: 'Slime', tier: 'basic' },
   { id: 'doc', name: 'Plague Doctor', tier: 'basic' },
   { id: 'snake', name: 'Snake', tier: 'basic' },
+  // New variants
+  { id: 'blood_goblin', name: 'Blood Goblin', tier: 'basic' },
+  { id: 'blood_shaman', name: 'Blood Shaman', tier: 'basic', weaknesses: ['burn'] },
+  { id: 'mirror_shade', name: 'Mirror Shade', tier: 'basic' },
+  { id: 'prismatic_slug', name: 'Prismatic Slug', tier: 'basic' },
 ]
 
 const ELITE_ENEMY_TEMPLATES: EnemyTemplate[] = [
   { id: 'big_demon', name: 'Maw Demon', tier: 'elite' },
-  { id: 'ogre', name: 'Orc Chieftain', tier: 'elite', weaknesses: ['fire'] },
+  { id: 'ogre', name: 'Orc Chieftain', tier: 'elite', weaknesses: ['burn'] },
   { id: 'greater_mimic', name: 'Greater Mimic', tier: 'elite' },
   { id: 'greater_slime', name: 'Greater Slime', tier: 'elite' },
   { id: 'flaming_skull', name: 'Flaming Skull', tier: 'elite' },
   { id: 'shade', name: 'Shade', tier: 'elite' },
+  // New elite variants
+  { id: 'prismatic_skull', name: 'Prismatic Skull', tier: 'elite' },
+  { id: 'prismatic_shade', name: 'Prismatic Shade', tier: 'elite' },
+  { id: 'prismatic_greater_mimic', name: 'Prismatic Greater Mimic', tier: 'elite' },
+  { id: 'prismatic_greater_slime', name: 'Prismatic Greater Slime', tier: 'elite' },
 ]
 
 export type BestiaryEnemy = {
@@ -418,6 +485,14 @@ const BESTIARY_ABILITY_LABELS_BY_ENEMY_ID: Partial<Record<string, string[]>> = {
   doc: ['Poison Spit'],
   snake: ['Poison Spit'],
   flaming_skull: ['Burning Hex'],
+  blood_goblin: ['Leeching Strike'],
+  blood_shaman: ['Leeching Strike'],
+  mirror_shade: ['Mirror Image'],
+  prismatic_slug: ['Random Element'],
+  prismatic_skull: ['Random Element'],
+  prismatic_shade: ['Random Element'],
+  prismatic_greater_mimic: ['Random Element'],
+  prismatic_greater_slime: ['Random Element'],
 }
 
 function withBestiaryDetails(enemy: BestiaryEnemy): BestiaryEnemy {
@@ -455,6 +530,26 @@ function buildEnemySkillset(enemyId: string, baseAttackDamage: number): EnemySta
 
   if (BURN_ENEMY_IDS.has(enemyId)) {
     pattern.push({ type: 'burn', value: Math.max(1, Math.floor(baseAttackDamage / 2)) })
+  }
+
+  if (CHILL_ENEMY_IDS.has(enemyId)) {
+    pattern.push({ type: 'chill', value: Math.max(1, Math.floor(baseAttackDamage / 2)) })
+  }
+
+  if (LEECH_ENEMY_IDS.has(enemyId)) {
+    pattern.push({ type: 'leech', value: Math.max(1, Math.floor(baseAttackDamage * 0.8)) })
+  }
+
+  if (STEAL_GOLD_ENEMY_IDS.has(enemyId)) {
+    pattern.push({ type: 'steal_gold', value: Math.max(1, Math.ceil(baseAttackDamage / 2)) })
+  }
+
+  if (RANDOM_DAMAGE_ENEMY_IDS.has(enemyId)) {
+    pattern.push({ type: 'random_damage', value: Math.max(1, Math.floor(baseAttackDamage * 0.7)) })
+  }
+
+  if (enemyId === 'mirror_shade') {
+    pattern.push({ type: 'random_damage', value: Math.max(1, Math.floor(baseAttackDamage * 0.9)) })
   }
 
   return pattern

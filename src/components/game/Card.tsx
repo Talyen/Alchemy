@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect, useLayoutEffect } from 'react'
-import { motion, AnimatePresence, useMotionValue, useSpring, useTransform, useMotionTemplate, useAnimationControls } from 'framer-motion'
+import { motion, useMotionValue, useSpring, useTransform, useMotionTemplate, useAnimationControls } from 'framer-motion'
 import type { MouseEvent } from 'react'
-import { createPortal } from 'react-dom'
 import { Diamond } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { CardInstance } from '@/types'
@@ -9,10 +8,12 @@ import { CARD_ART_BY_ID } from '@/cardArt'
 import { GoldIcon } from './GoldIcon'
 import { getKeywordsFromText, renderKeywordText } from './keywordGlossary'
 import { getViewportPopoverPosition } from '@/lib/viewportPopover'
+import { ViewportPopover } from '@/components/ui/ViewportPopover'
 
 interface Props {
   card: CardInstance
   playable: boolean
+  dimmed?: boolean
   isBeingDragged?: boolean
   backgroundClassName?: string
   keywordTooltipEnabled?: boolean
@@ -79,7 +80,7 @@ function ManaPips({ cost }: { cost: number }) {
 
 // ─── Card ────────────────────────────────────────────────────────────────────
 
-export function Card({ card, playable, isBeingDragged = false, backgroundClassName, keywordTooltipEnabled = true }: Props) {
+export function Card({ card, playable, dimmed, isBeingDragged = false, backgroundClassName, keywordTooltipEnabled = true }: Props) {
   const cfg      = typeConfig[card.type]
   const art      = CARD_ART_BY_ID[card.id]
   const keywords = getKeywordsFromText(card.description)
@@ -166,41 +167,31 @@ export function Card({ card, playable, isBeingDragged = false, backgroundClassNa
     <div ref={wrapperRef} className={cn('relative', showTooltip ? 'z-[220]' : 'z-0')} onMouseEnter={onWrapperEnter} onMouseLeave={onWrapperLeave}>
 
       {/* ── Keyword tooltip — above the card ── */}
-      {typeof window !== 'undefined' && createPortal(
-        <AnimatePresence>
-          {keywordTooltipEnabled && showTooltip && keywords.length > 0 && (
-            <motion.div
-              className="fixed w-52 rounded-xl border border-zinc-700/80 bg-zinc-950 px-3 py-2.5 z-[999] pointer-events-none"
-              style={{ left: tooltipPosition?.left ?? 0, top: tooltipPosition?.top ?? 0, x: '-50%', y: tooltipPosition?.placeAbove ? '-100%' : '0%' }}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0, transition: { duration: 0.1, ease: 'easeIn' } }}
-              transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-            >
-              <p className="text-[11px] text-zinc-600 uppercase tracking-widest mb-2">Keywords</p>
-              <div className="flex flex-col gap-2">
-                {keywords.map(({ name, Icon, color, description }, i) => (
-                  <div key={i} className="flex items-start gap-2">
-                    {name === 'Gold' ? (
-                      <GoldIcon size={16} glimmer={false} />
-                    ) : (
-                      <Icon
-                        size={16}
-                        style={{ color, fill: 'none', flexShrink: 0, pointerEvents: 'none' }}
-                      />
-                    )}
-                    <div className="flex flex-col gap-0.5">
-                      <span className="text-[13px] font-semibold leading-none" style={{ color }}>{name}</span>
-                      <p className="text-[11px] text-zinc-400 leading-snug">{description}</p>
-                    </div>
-                  </div>
-                ))}
+      <ViewportPopover
+        open={keywordTooltipEnabled && showTooltip && keywords.length > 0}
+        position={tooltipPosition}
+        className="fixed w-52 rounded-xl border border-zinc-700/80 bg-zinc-950 px-3 py-2.5 z-[999] pointer-events-none"
+      >
+        <p className="text-[11px] text-zinc-600 uppercase tracking-widest mb-2">Keywords</p>
+        <div className="flex flex-col gap-2">
+          {keywords.map(({ name, Icon, color, description }, i) => (
+            <div key={i} className="flex items-start gap-2">
+              {name === 'Gold' ? (
+                <GoldIcon size={16} glimmer={false} />
+              ) : (
+                <Icon
+                  size={16}
+                  style={{ color, fill: 'none', flexShrink: 0, pointerEvents: 'none' }}
+                />
+              )}
+              <div className="flex flex-col gap-0.5">
+                <span className="text-[13px] font-semibold leading-none" style={{ color }}>{name}</span>
+                <p className="text-[11px] text-zinc-400 leading-snug">{description}</p>
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>,
-        document.body,
-      )}
+            </div>
+          ))}
+        </div>
+      </ViewportPopover>
 
       {/* ── Card button ── */}
       <motion.button
@@ -212,10 +203,10 @@ export function Card({ card, playable, isBeingDragged = false, backgroundClassNa
           cfg.border,
           backgroundClassName ?? 'bg-zinc-900',
           'select-none outline-none overflow-hidden',
-          playable ? 'cursor-grab' : 'cursor-not-allowed'
+          playable ? 'cursor-grab' : 'cursor-default'
         )}
         style={{ rotateX, rotateY, transformPerspective: 900 }}
-        animate={{ filter: playable ? 'grayscale(0%) brightness(1)' : 'grayscale(100%) brightness(0.45)' }}
+        animate={{ filter: (dimmed ?? !playable) ? 'grayscale(100%) brightness(0.45)' : 'grayscale(0%) brightness(1)' }}
         transition={{ type: 'spring', stiffness: 380, damping: 28 }}
       >
         {/* Tilt sheen */}

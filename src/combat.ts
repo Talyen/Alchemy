@@ -16,6 +16,26 @@ const TRINKET_EMERALD = 'emerald'
 const TRINKET_RUBY = 'ruby'
 const TRINKET_SAPPHIRE = 'sapphire'
 
+// New trinkets
+const TRINKET_FLASH_FIRE = 'flash_fire'
+const TRINKET_HIDDEN_BLADE = 'hidden_blade'
+const TRINKET_SHIELD_OF_FAITH = 'shield_of_faith'
+const TRINKET_MANA_CRYSTAL_TRINKET = 'mana_crystal_trinket'
+const TRINKET_WARDSTONE_SHARD = 'wardstone_shard'
+const TRINKET_SHIELDBREAKER = 'shieldbreaker'
+const TRINKET_HEATFORGED_SHIELD = 'heatforged_shield'
+const TRINKET_GOLDEN_FLAIL = 'golden_flail'
+const TRINKET_GOLDEN_GREAT_AXE = 'golden_great_axe'
+const TRINKET_CLOAK_OF_FLAMES = 'cloak_of_flames'
+
+// Talent flags carried as synthetic trinket IDs
+const TALENT_CONTROLLED_BURN = 'talent_controlled_burn'
+const TALENT_MELT_ARMOR = 'talent_melt_armor'
+const TALENT_AVATAR_OF_FIRE = 'talent_avatar_of_fire'
+const TALENT_HOLY_FLAME = 'talent_holy_flame'
+const TALENT_HOT_STREAK = 'talent_hot_streak'
+const TALENT_PYROMANIA = 'talent_pyromania'
+
 const WIZARD_CARD_IDS = ['fireball', 'defend', 'mana_crystal', 'mana_berries', 'cleanse']
 const HAND_SIZE_LIMIT = 7
 
@@ -53,12 +73,12 @@ function applyEnemyWeaknessMultiplier(
 
 function inferDirectDamageWeaknessType(cardId?: string): EnemyWeakness | null {
   if (!cardId) return null
-  if (cardId === 'bash') return 'blunt'
+  if (cardId === 'bash' || cardId === 'steal') return 'blunt'
   return null
 }
 
 function isHolyDamageSource(cardId?: string, sourceName?: string): boolean {
-  if (cardId === 'holy_blade') return true
+  if (cardId === 'holy_blade' || cardId === 'blessed_aegis') return true
   if (!sourceName) return false
   return sourceName.toLowerCase().includes('holy')
 }
@@ -240,6 +260,12 @@ function applyCombatStartTrinkets(state: GameState): GameState {
     s = randomizeOneHandCard(s)
   }
 
+  // Mana Crystal trinket: +1 max mana each combat
+  if (hasTrinket(s, TRINKET_MANA_CRYSTAL_TRINKET)) {
+    s = { ...s, maxMana: s.maxMana + 1, mana: s.mana + 1 }
+    s = addLog(s, '  → Mana Crystal grants +1 Max Mana this combat.')
+  }
+
   return s
 }
 
@@ -263,7 +289,40 @@ function applyTurnStartTrinkets(state: GameState): GameState {
     s = randomizeOneHandCard(s)
   }
 
+  // Cloak of Flames: deal 1 Burn to enemy each turn
+  if (hasTrinket(s, TRINKET_CLOAK_OF_FLAMES)) {
+    s = {
+      ...s,
+      enemy: { ...s.enemy, status: { ...s.enemy.status, burn: s.enemy.status.burn + 1 } },
+    }
+    s = addLog(s, `  → Cloak of Flames scorches ${s.enemy.name} for 1 Burn.`)
+  }
+
   return s
+}
+
+function isBurnCard(card: GameState['hand'][number]): boolean {
+  return (card.effect.burn ?? 0) > 0 || /\bburn\b/i.test(card.description)
+}
+
+function drawOneBurnCard(state: GameState): GameState {
+  if (state.hand.length >= HAND_SIZE_LIMIT) return state
+
+  const drawIndex = state.drawPile.findIndex(isBurnCard)
+  if (drawIndex >= 0) {
+    const card = state.drawPile[drawIndex]
+    const drawPile = [...state.drawPile.slice(0, drawIndex), ...state.drawPile.slice(drawIndex + 1)]
+    return addLog({ ...state, drawPile, hand: [...state.hand, card] }, `  → Hot Streak draws ${card.name}.`)
+  }
+
+  const discardIndex = state.discardPile.findIndex(isBurnCard)
+  if (discardIndex >= 0) {
+    const card = state.discardPile[discardIndex]
+    const discardPile = [...state.discardPile.slice(0, discardIndex), ...state.discardPile.slice(discardIndex + 1)]
+    return addLog({ ...state, discardPile, hand: [...state.hand, card] }, `  → Hot Streak draws ${card.name}.`)
+  }
+
+  return state
 }
 
 function addLog(s: GameState, ...lines: string[]): GameState {
@@ -315,11 +374,15 @@ function applyCardEffects(
     const { damage: weakAdjustedDamage, doubled } = applyEnemyWeaknessMultiplier(nextEnemy, baseDamage, weaknessType)
     const isHolyDamage = isHolyDamageSource(sourceCardId, sourceName)
     const holyLanternBonus = isHolyDamage && hasTrinket(state, TRINKET_HOLY_LANTERN) && nextEnemy.status.burn > 0
-    const dmg = holyLanternBonus ? weakAdjustedDamage * 2 : weakAdjustedDamage
+    // Shieldbreaker: double damage if enemy has block
+    const shieldbreakerBonus = hasTrinket(state, TRINKET_SHIELDBREAKER) && nextEnemy.block > 0
+    let dmg = holyLanternBonus ? weakAdjustedDamage * 2 : weakAdjustedDamage
+    if (shieldbreakerBonus) dmg = dmg * 2
     nextEnemy = applyDamage(nextEnemy, dmg)
     const weaknessNote = doubled ? ' (weakness exploited)' : ''
     const holyLanternNote = holyLanternBonus ? ' (Holy Lantern)' : ''
-    s = addLog(s, `  → ${dmg} damage to ${nextEnemy.name}${nextEnemy.block > 0 ? ' (blocked some)' : ''}${weaknessNote}${holyLanternNote}.`)
+    const shieldbreakerNote = shieldbreakerBonus ? ' (Shieldbreaker)' : ''
+    s = addLog(s, `  → ${dmg} damage to ${nextEnemy.name}${nextEnemy.block > 0 ? ' (blocked some)' : ''}${weaknessNote}${holyLanternNote}${shieldbreakerNote}.`)
 
     if (isHolyDamage && hasTrinket(state, TRINKET_SCALES_OF_JUSTICE)) {
       const target = nextPlayer.hp <= nextEnemy.hp ? 'player' : 'enemy'
@@ -336,10 +399,29 @@ function applyCardEffects(
       nextPlayer = { ...nextPlayer, hp: Math.min(nextPlayer.maxHp, nextPlayer.hp + dmg) }
       s = addLog(s, `  → Leech heals you for ${dmg}.`)
     }
+
+    // Golden Flail: blunt damage earns gold
+    if (hasTrinket(state, TRINKET_GOLDEN_FLAIL) && weaknessType === 'blunt' && dmg > 0) {
+      nextGold += 1
+      s = addLog(s, '  → Golden Flail earns 1 Gold.')
+    }
+    // Golden Great Axe: slash damage earns gold
+    if (hasTrinket(state, TRINKET_GOLDEN_GREAT_AXE) && (sourceCardId === 'slash') && dmg > 0) {
+      nextGold += 1
+      s = addLog(s, '  → Golden Great Axe earns 1 Gold.')
+    }
   }
   if (effect.block !== undefined) {
     nextPlayer = { ...nextPlayer, block: nextPlayer.block + effect.block }
-    s = addLog(s, `  → Gain ${effect.block} block.`)
+    // Shield of Faith: holy cards grant +1 Block
+    const isHolyCard = isHolyDamageSource(sourceCardId, sourceName)
+    const shieldFaithBonus = hasTrinket(state, TRINKET_SHIELD_OF_FAITH) && isHolyCard ? 1 : 0
+    if (shieldFaithBonus > 0) {
+      nextPlayer = { ...nextPlayer, block: nextPlayer.block + shieldFaithBonus }
+      s = addLog(s, `  → Gain ${effect.block + shieldFaithBonus} block (Shield of Faith +1).`)
+    } else {
+      s = addLog(s, `  → Gain ${effect.block} block.`)
+    }
   }
   if (effect.mana !== undefined) {
     const manaGained = Math.max(0, effect.mana)
@@ -371,14 +453,26 @@ function applyCardEffects(
   }
   if (effect.burn !== undefined) {
     const burnApplied = effect.burn
-    const { damage: burnDamage, doubled } = applyEnemyWeaknessMultiplier(nextEnemy, burnApplied, 'fire')
+    const { damage: weakBurnDamage, doubled } = applyEnemyWeaknessMultiplier(nextEnemy, burnApplied, 'burn')
+    const controlledBonus = hasTrinket(state, TALENT_CONTROLLED_BURN) ? 1 : 0
+    const meltArmorBonus = hasTrinket(state, TALENT_MELT_ARMOR) && nextEnemy.block > 0
+    let burnDamage = weakBurnDamage + controlledBonus
+    if (meltArmorBonus) burnDamage *= 2
     nextEnemy = {
       ...nextEnemy,
       hp: Math.max(0, nextEnemy.hp - burnDamage),
       status: { ...nextEnemy.status, burn: nextEnemy.status.burn + burnApplied },
     }
     const weaknessNote = doubled ? ' (weakness exploited)' : ''
-    s = addLog(s, `  → ${sourceName}: ${nextEnemy.name} gains ${burnApplied} Burn and burns for ${burnDamage}${weaknessNote}.`)
+    const controlledNote = controlledBonus > 0 ? ' (Controlled Burn)' : ''
+    const meltArmorNote = meltArmorBonus ? ' (Melt Armor)' : ''
+    s = addLog(s, `  → ${sourceName}: ${nextEnemy.name} gains ${burnApplied} Burn and burns for ${burnDamage}${weaknessNote}${controlledNote}${meltArmorNote}.`)
+
+    if (hasTrinket(state, TALENT_HOLY_FLAME) && burnDamage > 0) {
+      const holyBonusDamage = Math.max(1, Math.floor(burnDamage * 0.2))
+      nextEnemy = { ...nextEnemy, hp: Math.max(0, nextEnemy.hp - holyBonusDamage) }
+      s = addLog(s, `  → Holy Flame deals ${holyBonusDamage} Holy damage.`)
+    }
     if (effect.leech && burnApplied > 0) {
       nextPlayer = { ...nextPlayer, hp: Math.min(nextPlayer.maxHp, nextPlayer.hp + burnApplied) }
       s = addLog(s, `  → Leech heals you for ${burnApplied}.`)
@@ -409,6 +503,35 @@ function applyCardEffects(
       nextPlayer = { ...nextPlayer, hp: Math.min(nextPlayer.maxHp, nextPlayer.hp + bleedApplied) }
       s = addLog(s, `  → Leech heals you for ${bleedApplied}.`)
     }
+  }
+  if (effect.chill !== undefined) {
+    const chillApplied = effect.chill
+    const chillDamage = chillApplied // immediate damage equal to chill stacks
+    nextEnemy = {
+      ...nextEnemy,
+      hp: Math.max(0, nextEnemy.hp - chillDamage),
+      status: { ...nextEnemy.status, chill: nextEnemy.status.chill + chillApplied },
+    }
+    const threshold = Math.ceil(nextEnemy.maxHp * 0.2)
+    const willFreeze = nextEnemy.status.chill + chillApplied >= threshold
+    const freezeNote = willFreeze ? ' (will freeze on next turn!)' : ''
+    s = addLog(s, `  → ${sourceName}: ${nextEnemy.name} gains ${chillApplied} Chill${freezeNote}.`)
+  }
+  if (effect.removeSelfBleed) {
+    const bleedRemoved = nextPlayer.status.bleed
+    nextPlayer = { ...nextPlayer, status: { ...nextPlayer.status, bleed: 0 } }
+    if (bleedRemoved > 0) s = addLog(s, `  → Removed ${bleedRemoved} Bleed from yourself.`)
+    else s = addLog(s, '  → No Bleed to remove.')
+  }
+  if (effect.doubleEnemyBleed) {
+    const newBleed = nextEnemy.status.bleed * 2
+    nextEnemy = { ...nextEnemy, status: { ...nextEnemy.status, bleed: newBleed } }
+    s = addLog(s, `  → ${nextEnemy.name}'s Bleed doubled to ${newBleed}.`)
+  }
+  if (effect.doubleEnemyBurn) {
+    const newBurn = nextEnemy.status.burn * 2
+    nextEnemy = { ...nextEnemy, status: { ...nextEnemy.status, burn: newBurn } }
+    s = addLog(s, `  → ${nextEnemy.name}'s Burn doubled to ${newBurn}.`)
   }
   if (effect.selfBurn !== undefined) {
     const selfBurnApplied = effect.selfBurn
@@ -534,6 +657,7 @@ export function createGame(
     activeUpgrades: [],
     overflowDiscardFxToken: 0,
     overflowDiscardFxCount: 0,
+    battleUsedTrinkets: [],
   }
   const startingDraw = 5 + (trinketIds.includes(TRINKET_MAIL_DELIVERY) ? 1 : 0)
   let s = drawCards(addLog(base, `Turn 1 — draw ${startingDraw} cards.`), startingDraw)
@@ -549,11 +673,28 @@ export function grantCardsToHand(state: GameState, defs: CardDef[], sourceLabel 
 export function playCard(state: GameState, cardUid: string): GameState {
   if (state.phase !== 'player_turn') return state
   const card = state.hand.find(c => c.uid === cardUid)
-  if (!card || state.mana < card.cost) return state
+  if (!card) return state
+
+  // Determine effective cost (may be reduced by trinket once-per-battle effects)
+  let effectiveCost = card.cost
+  let nextBattleUsed = [...state.battleUsedTrinkets]
+  const cardHasBurn = card.effect.burn !== undefined && card.effect.burn > 0
+  const cardHasPierce = /pierce/i.test(card.description)
+
+  if (hasTrinket(state, TRINKET_FLASH_FIRE) && cardHasBurn && !nextBattleUsed.includes(TRINKET_FLASH_FIRE)) {
+    effectiveCost = 0
+    nextBattleUsed = [...nextBattleUsed, TRINKET_FLASH_FIRE]
+  }
+  if (hasTrinket(state, TRINKET_HIDDEN_BLADE) && cardHasPierce && !nextBattleUsed.includes(TRINKET_HIDDEN_BLADE)) {
+    effectiveCost = 0
+    nextBattleUsed = [...nextBattleUsed, TRINKET_HIDDEN_BLADE]
+  }
+
+  if (state.mana < effectiveCost) return state
 
   let { player, enemy } = state
   let gold = state.gold
-  let s = addLog({ ...state, mana: state.mana - card.cost }, `You play ${card.name}.`)
+  let s = addLog({ ...state, mana: state.mana - effectiveCost, battleUsedTrinkets: nextBattleUsed }, `You play ${card.name}.`)
 
   const isPersistentUpgrade = card.type === 'upgrade'
   const isConsumed = /\bconsume\b/i.test(card.description)
@@ -720,10 +861,21 @@ export function resolveEnemyStartOfTurn(state: GameState): GameState {
 
   if (enemy.status.burn > 0) {
     const b = enemy.status.burn
-    const { damage: burnTickDamage, doubled } = applyEnemyWeaknessMultiplier(enemy, b, 'fire')
+    const { damage: weakBurnTickDamage, doubled } = applyEnemyWeaknessMultiplier(enemy, b, 'burn')
+    const controlledBonus = hasTrinket(s, TALENT_CONTROLLED_BURN) ? 1 : 0
+    const pyromaniaDouble = hasTrinket(s, TALENT_PYROMANIA) && enemy.status.burn > 10
+    let burnTickDamage = weakBurnTickDamage + controlledBonus
+    if (pyromaniaDouble) burnTickDamage *= 2
     enemy = { ...enemy, hp: Math.max(0, enemy.hp - burnTickDamage), status: { ...enemy.status, burn: b - 1 } }
     const weaknessNote = doubled ? ' (weakness exploited)' : ''
-    s = addLog({ ...s, enemy }, `  → ${enemy.name} burns for ${burnTickDamage}${weaknessNote}.`)
+    const pyromaniaNote = pyromaniaDouble ? ' (Pyromania)' : ''
+    s = addLog({ ...s, enemy }, `  → ${enemy.name} burns for ${burnTickDamage}${weaknessNote}${pyromaniaNote}.`)
+
+    if (hasTrinket(s, TALENT_HOLY_FLAME) && burnTickDamage > 0) {
+      const holyBonusDamage = Math.max(1, Math.floor(burnTickDamage * 0.2))
+      enemy = { ...enemy, hp: Math.max(0, enemy.hp - holyBonusDamage) }
+      s = addLog({ ...s, enemy }, `  → Holy Flame deals ${holyBonusDamage} Holy damage.`)
+    }
     if (enemy.hp <= 0) return addLog({ ...s, enemy, phase: 'win' }, '⚔ Victory!')
   }
 
@@ -744,6 +896,17 @@ export function resolveEnemyStartOfTurn(state: GameState): GameState {
     }
     s = addLog({ ...s, enemy }, `  → ${enemy.name} bleeds for ${bleedDmg}.`)
     if (enemy.hp <= 0) return addLog({ ...s, enemy, phase: 'win' }, '⚔ Victory!')
+  }
+
+  // Chill: if stacks reach 20% of max HP, enemy loses their turn this round
+  if (enemy.status.chill > 0) {
+    const freezeThreshold = Math.ceil(enemy.maxHp * 0.2)
+    if (enemy.status.chill >= freezeThreshold) {
+      enemy = { ...enemy, status: { ...enemy.status, chill: 0 } }
+      s = addLog({ ...s, enemy }, `  → ${enemy.name} is frozen solid and loses their turn!`)
+      // Skip resolveEnemyAction by going straight to player turn
+      return beginNextPlayerTurn({ ...s, enemy })
+    }
   }
 
   return { ...s, enemy }
@@ -798,25 +961,74 @@ export function resolveEnemyAction(state: GameState): GameState {
     s = addLog(s, `  → Fortifies (+${intent.value} Armor, +1 Strength).`)
   } else if (intent.type === 'bleed') {
     actedId = 'enemy_cast'
-    player = {
-      ...player,
-      status: { ...player.status, bleed: player.status.bleed + intent.value },
+    if (hasTrinket(s, TRINKET_WARDSTONE_SHARD) && !s.battleUsedTrinkets.includes(TRINKET_WARDSTONE_SHARD)) {
+      s = { ...s, battleUsedTrinkets: [...s.battleUsedTrinkets, TRINKET_WARDSTONE_SHARD] }
+      s = addLog(s, `  → Wardstone Shard absorbs the Bleed!`)
+    } else {
+      player = { ...player, status: { ...player.status, bleed: player.status.bleed + intent.value } }
+      s = addLog(s, `  → Inflicts ${intent.value} Bleed.`)
     }
-    s = addLog(s, `  → Inflicts ${intent.value} Bleed.`)
   } else if (intent.type === 'poison') {
     actedId = 'enemy_cast'
-    player = {
-      ...player,
-      status: { ...player.status, poison: player.status.poison + intent.value },
+    if (hasTrinket(s, TRINKET_WARDSTONE_SHARD) && !s.battleUsedTrinkets.includes(TRINKET_WARDSTONE_SHARD)) {
+      s = { ...s, battleUsedTrinkets: [...s.battleUsedTrinkets, TRINKET_WARDSTONE_SHARD] }
+      s = addLog(s, `  → Wardstone Shard absorbs the Poison!`)
+    } else {
+      player = { ...player, status: { ...player.status, poison: player.status.poison + intent.value } }
+      s = addLog(s, `  → Inflicts ${intent.value} Poison.`)
     }
-    s = addLog(s, `  → Inflicts ${intent.value} Poison.`)
   } else if (intent.type === 'burn') {
     actedId = 'enemy_cast'
-    player = {
-      ...player,
-      status: { ...player.status, burn: player.status.burn + intent.value },
+    if (hasTrinket(s, TRINKET_WARDSTONE_SHARD) && !s.battleUsedTrinkets.includes(TRINKET_WARDSTONE_SHARD)) {
+      s = { ...s, battleUsedTrinkets: [...s.battleUsedTrinkets, TRINKET_WARDSTONE_SHARD] }
+      s = addLog(s, `  → Wardstone Shard absorbs the Burn!`)
+    } else {
+      player = { ...player, status: { ...player.status, burn: player.status.burn + intent.value } }
+      s = addLog(s, `  → Inflicts ${intent.value} Burn.`)
     }
-    s = addLog(s, `  → Inflicts ${intent.value} Burn.`)
+  } else if (intent.type === 'chill') {
+    actedId = 'enemy_cast'
+    if (hasTrinket(s, TRINKET_WARDSTONE_SHARD) && !s.battleUsedTrinkets.includes(TRINKET_WARDSTONE_SHARD)) {
+      s = { ...s, battleUsedTrinkets: [...s.battleUsedTrinkets, TRINKET_WARDSTONE_SHARD] }
+      s = addLog(s, `  → Wardstone Shard absorbs the Chill!`)
+    } else {
+      player = { ...player, status: { ...player.status, chill: (player.status.chill ?? 0) + intent.value } }
+      s = addLog(s, `  → Inflicts ${intent.value} Chill.`)
+    }
+  } else if (intent.type === 'leech') {
+    actedId = 'enemy_attack'
+    const rawLeech = calcDamage(intent.value, enemy.status, player.status)
+    const leechDmg = Math.max(0, rawLeech)
+    player = applyDamage(player, leechDmg)
+    enemy = { ...enemy, hp: Math.min(enemy.maxHp, enemy.hp + leechDmg) }
+    s = addLog(s, `  → Leeches for ${leechDmg} and heals self.`)
+  } else if (intent.type === 'steal_gold') {
+    actedId = 'enemy_attack'
+    const rawSteal = calcDamage(intent.value, enemy.status, player.status)
+    const stealDmg = Math.max(0, rawSteal)
+    const stolen = Math.min(s.gold, intent.value)
+    player = applyDamage(player, stealDmg)
+    s = { ...s, gold: s.gold - stolen }
+    s = addLog(s, `  → Attacks for ${stealDmg} and steals ${stolen} Gold.`)
+  } else if (intent.type === 'random_damage') {
+    actedId = 'enemy_attack'
+    const dmgTypes = ['attack', 'burn', 'poison', 'bleed'] as const
+    const picked = dmgTypes[Math.floor(Math.random() * dmgTypes.length)]
+    const rawRnd = calcDamage(intent.value, enemy.status, player.status)
+    const rndDmg = Math.max(0, rawRnd)
+    if (picked === 'attack') {
+      player = applyDamage(player, rndDmg)
+      s = addLog(s, `  → Prismatic strike deals ${rndDmg} damage.`)
+    } else if (picked === 'burn') {
+      player = { ...player, status: { ...player.status, burn: player.status.burn + Math.ceil(rndDmg / 2) } }
+      s = addLog(s, `  → Prismatic strike inflicts ${Math.ceil(rndDmg / 2)} Burn.`)
+    } else if (picked === 'poison') {
+      player = { ...player, status: { ...player.status, poison: player.status.poison + Math.ceil(rndDmg / 2) } }
+      s = addLog(s, `  → Prismatic strike inflicts ${Math.ceil(rndDmg / 2)} Poison.`)
+    } else {
+      player = { ...player, status: { ...player.status, bleed: player.status.bleed + Math.ceil(rndDmg / 2) } }
+      s = addLog(s, `  → Prismatic strike inflicts ${Math.ceil(rndDmg / 2)} Bleed.`)
+    }
   }
 
   enemy = {
@@ -850,15 +1062,18 @@ export function beginNextPlayerTurn(state: GameState): GameState {
 
   if (s.player.status.burn > 0) {
     const b = s.player.status.burn
+    const heatforgedReduction = hasTrinket(s, TRINKET_HEATFORGED_SHIELD) ? 1 : 0
+    const avatarMultiplier = hasTrinket(s, TALENT_AVATAR_OF_FIRE) ? 0.5 : 1
+    const actualBurnDmg = Math.max(0, Math.floor((b - heatforgedReduction) * avatarMultiplier))
     s = {
       ...s,
       player: {
         ...s.player,
-        hp: Math.max(0, s.player.hp - b),
+        hp: Math.max(0, s.player.hp - actualBurnDmg),
         status: { ...s.player.status, burn: b - 1 },
       },
     }
-    s = addLog(s, `  → You burn for ${b}.`)
+    s = addLog(s, `  → You burn for ${actualBurnDmg}${heatforgedReduction > 0 ? ' (Heatforged Shield reduces 1)' : ''}.`)
     if (s.player.hp <= 0) {
       return addLog({ ...s, phase: 'lose' }, '☠ Defeated.')
     }
@@ -900,5 +1115,8 @@ export function beginNextPlayerTurn(state: GameState): GameState {
 
   s = addLog(s, `Turn ${newTurn} — draw 5 cards.`)
   s = drawCards(s, 5)
+  if (hasTrinket(s, TALENT_HOT_STREAK)) {
+    s = drawOneBurnCard(s)
+  }
   return applyTurnStartTrinkets(s)
 }
