@@ -24,6 +24,7 @@ export function Modal({ open, onClose, className, children }: ModalProps) {
           exit={{ opacity: 0 }}
           onClick={onClose}
         >
+          {/* ui-allow-absolute: modal backdrop fill */}
           <div className="absolute inset-0 bg-zinc-950/72 backdrop-blur-[2px]" />
           <motion.div
             data-ui-container

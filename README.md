@@ -20,6 +20,14 @@ Enable UI debug overlays:
 - Set `UI_DEBUG=true` (or `VITE_UI_DEBUG=true`) in `.env`
 - Or use `Ctrl+Shift+U` while running the app
 
+Run strict static UI checks:
+
+- `npm run build:ui-strict` (fails build if guardrail violations exist)
+
+Run responsive UI diagnostics regression:
+
+- `npm run test:ui-guardrails`
+
 ## Version Control Safety Policy
 
 This project uses an automatic checkpoint workflow to reduce accidental loss.

@@ -167,6 +167,7 @@ export function Card({ card, playable, dimmed, isBeingDragged = false, backgroun
     <div ref={wrapperRef} className={cn('relative', showTooltip ? 'z-[220]' : 'z-0')} onMouseEnter={onWrapperEnter} onMouseLeave={onWrapperLeave}>
 
       {/* ── Keyword tooltip — above the card ── */}
+      {/* ui-allow-absolute: viewport anchored tooltip */}
       <ViewportPopover
         open={keywordTooltipEnabled && showTooltip && keywords.length > 0}
         position={tooltipPosition}

@@ -6,6 +6,7 @@ import { CHARACTER_IDLE_FPS, getCharacterIdleFrames } from '@/lib/characterSprit
 import { SelectionScreenShell } from './SelectionScreenShell'
 import { Card } from './Card'
 import type { CardDef, CardInstance } from '@/types'
+import { Stack } from '@/ui/primitives'
 
 interface Props {
   onSelect: (characterId: string) => void
@@ -128,7 +129,7 @@ export function CharacterSelectScreen({ onSelect, topLeft }: Props) {
   return (
     <SelectionScreenShell title="Choose Character" subtitle="Start Run" layout="top" topLeft={topLeft}>
       <div className="w-full relative mt-0">
-        <div className="px-4 max-w-7xl mx-auto">
+        <div className="px-4 max-w-7xl mx-auto" data-ui-container>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {orderedCharacters.map(character => (
             <motion.button
@@ -136,30 +137,35 @@ export function CharacterSelectScreen({ onSelect, topLeft }: Props) {
               onClick={() => onSelect(character.id)}
               onMouseEnter={() => openDeck(character.id)}
               onMouseLeave={scheduleCloseDeck}
-              className="w-full max-w-[460px] h-[275px] mx-auto rounded-2xl border border-zinc-700/70 bg-zinc-900/90 px-5 py-4 flex flex-col items-center justify-center gap-3 text-center"
+              data-ui-control
+              className="w-full max-w-md min-h-64 mx-auto rounded-2xl border border-zinc-700/70 bg-zinc-900/90 px-5 py-4 flex flex-col items-center justify-center gap-3 text-center"
               whileHover={{ scale: 1.01, y: -3 }}
               whileTap={{ scale: 0.995, y: 0 }}
               transition={{ type: 'spring', stiffness: 360, damping: 28 }}
             >
-              <div className="-translate-y-[15px] flex flex-col items-center gap-3">
+              <Stack align="center" gap="sm" className="translate-y-[-4px]">
                 <div className="shrink-0 flex items-center justify-center">
                   <CharacterSprite characterId={character.id} />
                 </div>
 
                 <div className="min-w-0">
                   <p className="text-2xl font-semibold text-zinc-100">{character.name}</p>
-                  <p className="mt-2 text-xs text-zinc-400 leading-relaxed max-w-[24ch] mx-auto">{character.quirk}</p>
+                  <p className="mt-2 text-xs text-zinc-400 leading-relaxed max-w-[24ch] mx-auto break-words">{character.quirk}</p>
                 </div>
-              </div>
+              </Stack>
             </motion.button>
           ))}
         </div>
 
-          <div className="relative mt-2 h-[450px]">
+          <div className="relative mt-2 min-h-[410px]" data-ui-container>
             <AnimatePresence>
               {showDeck && (
+                <>
+                {/* ui-allow-absolute: hover deck overlay */}
                 <motion.div
                   className="absolute inset-x-0 top-0 z-[71] min-h-[380px] rounded-xl border border-zinc-700/80 bg-zinc-950/95 px-4 pt-4 pb-20"
+                  data-ui-boundary
+                  data-ui-overlay
                   initial={{ opacity: 0, y: 8, scale: 0.98 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 8, scale: 0.98, transition: { duration: 0.12 } }}
@@ -200,7 +206,7 @@ export function CharacterSelectScreen({ onSelect, topLeft }: Props) {
                           onHoverEnd={() => lowerPreviewCard(uid)}
                           transition={{ type: 'spring', stiffness: 220, damping: 28, delay: index * 0.06 }}
                         >
-                          <div className="w-[192px] h-[288px] overflow-visible">
+                          <div className="w-36 sm:w-40 md:w-44 lg:w-48 aspect-[2/3] overflow-visible">
                             <div className="origin-top-left scale-100">
                               <Card card={toInstance(card, uid)} playable />
                             </div>
@@ -210,6 +216,7 @@ export function CharacterSelectScreen({ onSelect, topLeft }: Props) {
                     })}
                   </div>
                 </motion.div>
+                </>
               )}
             </AnimatePresence>
           </div>

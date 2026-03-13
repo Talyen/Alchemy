@@ -116,6 +116,7 @@ export function FloatingNumber({ event, onDone, top }: DmgProps) {
   const val = Math.abs(event.value)
   const sign = event.value >= 0 ? dmgCfg[event.type].prefix : '-'
   return (
+    // ui-allow-absolute: combat popup visual effect
     <motion.div
       className="absolute left-1/2 -translate-x-1/2 flex items-center gap-0.5 pointer-events-none z-20 whitespace-nowrap"
       style={{ top: top ?? FLOATING_BASE_TOP }}
@@ -185,6 +186,7 @@ export function FloatingStatus({ event, onDone, top }: StatusProps) {
   const cardArt = event.cardId ? CARD_ART_BY_ID[event.cardId] : undefined
   const popupMotion = getStableFadeMotion(event.id * 13 + event.value * 5 + event.status.length * 9)
   return (
+    // ui-allow-absolute: combat popup visual effect
     <motion.div
       className="absolute left-1/2 -translate-x-1/2 flex items-center gap-0.5 pointer-events-none z-20 whitespace-nowrap"
       style={{ top: top ?? FLOATING_BASE_TOP }}

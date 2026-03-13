@@ -16,6 +16,7 @@ export function ViewportPopover({ open, position, className, children }: Viewpor
   return createPortal(
     <AnimatePresence>
       {open && (
+        // ui-allow-absolute: viewport portal popover positioning
         <motion.div
           className={className}
           style={{ left: position?.left ?? 0, top: position?.top ?? 0, x: '-50%', y: position?.placeAbove ? '-100%' : '0%' }}

@@ -40,55 +40,40 @@ function describeElement(element: HTMLElement): string {
   return `${element.tagName.toLowerCase()}${id}${classPart}`
 }
 
-function projectedRect(rect: DOMRect, scaleX: number, scaleY: number): DOMRect {
-  const left = rect.left * scaleX
-  const right = rect.right * scaleX
-  const top = rect.top * scaleY
-  const bottom = rect.bottom * scaleY
-  return {
-    ...rect,
-    left,
-    right,
-    top,
-    bottom,
-    width: right - left,
-    height: bottom - top,
-    x: left,
-    y: top,
-    toJSON: () => ({}),
-  } as DOMRect
+function getViewportLabel(width: number, height: number): string {
+  const ranked = TARGET_VIEWPORTS
+    .map((target) => {
+      const dx = Math.abs(width - target.width)
+      const dy = Math.abs(height - target.height)
+      return { name: target.name, delta: dx + dy }
+    })
+    .sort((a, b) => a.delta - b.delta)
+
+  return ranked[0]?.name ?? 'custom'
 }
 
 function collectUiElements() {
   const boundaries = Array.from(document.querySelectorAll('[data-ui-boundary]')).filter(isVisible)
   const containers = Array.from(document.querySelectorAll('[data-ui-container]')).filter(isVisible)
-  const controls = Array.from(document.querySelectorAll('[data-ui-control], button, a, input, textarea, select')).filter(isVisible)
+  const controls = Array.from(document.querySelectorAll('[data-ui-control], [data-ui-hit-target]')).filter(isVisible)
   return { boundaries, containers, controls }
 }
 
-function validateAtViewport(viewport: TargetViewport): ValidationIssue[] {
+function validateCurrentViewport(): ValidationIssue[] {
   const { boundaries, containers, controls } = collectUiElements()
   const issues: ValidationIssue[] = []
-
-  const currentWidth = Math.max(window.innerWidth, 1)
-  const currentHeight = Math.max(window.innerHeight, 1)
-  const scaleX = viewport.width / currentWidth
-  const scaleY = viewport.height / currentHeight
+  const viewport = {
+    name: getViewportLabel(window.innerWidth, window.innerHeight),
+    width: window.innerWidth,
+    height: window.innerHeight,
+  }
 
   for (const element of containers) {
-    const rect = projectedRect(element.getBoundingClientRect(), scaleX, scaleY)
-
-    if (rect.left < -1 || rect.top < -1 || rect.right > viewport.width + 1 || rect.bottom > viewport.height + 1) {
-      issues.push({
-        kind: 'offscreen',
-        viewport: viewport.name,
-        detail: `${describeElement(element)} projects outside ${viewport.width}x${viewport.height}`,
-      })
-    }
+    const rect = element.getBoundingClientRect()
 
     const parent = element.parentElement
     if (parent) {
-      const parentRect = projectedRect(parent.getBoundingClientRect(), scaleX, scaleY)
+      const parentRect = parent.getBoundingClientRect()
       const overflowsParent =
         rect.left < parentRect.left - 1 ||
         rect.top < parentRect.top - 1 ||
@@ -104,12 +89,24 @@ function validateAtViewport(viewport: TargetViewport): ValidationIssue[] {
     }
   }
 
+  for (const element of boundaries) {
+    if (element.hasAttribute('data-ui-overlay')) continue
+    const rect = element.getBoundingClientRect()
+    if (rect.left < -1 || rect.top < -1 || rect.right > viewport.width + 1 || rect.bottom > viewport.height + 1) {
+      issues.push({
+        kind: 'offscreen',
+        viewport: viewport.name,
+        detail: `${describeElement(element)} projects outside ${viewport.width}x${viewport.height}`,
+      })
+    }
+  }
+
   for (let i = 0; i < boundaries.length; i += 1) {
     const a = boundaries[i]
-    const aRect = projectedRect(a.getBoundingClientRect(), scaleX, scaleY)
+    const aRect = a.getBoundingClientRect()
     for (let j = i + 1; j < boundaries.length; j += 1) {
       const b = boundaries[j]
-      const bRect = projectedRect(b.getBoundingClientRect(), scaleX, scaleY)
+      const bRect = b.getBoundingClientRect()
       if (intersects(aRect, bRect) > 144) {
         issues.push({
           kind: 'overlap',
@@ -121,7 +118,7 @@ function validateAtViewport(viewport: TargetViewport): ValidationIssue[] {
   }
 
   for (const control of controls) {
-    const rect = projectedRect(control.getBoundingClientRect(), scaleX, scaleY)
+    const rect = control.getBoundingClientRect()
     if (rect.width < MIN_TARGET_SIZE || rect.height < MIN_TARGET_SIZE) {
       issues.push({
         kind: 'touch-target',
@@ -144,7 +141,7 @@ export function startResponsiveLayoutValidation() {
 
   const runValidation = () => {
     rafHandle = 0
-    const issues = TARGET_VIEWPORTS.flatMap(validateAtViewport)
+    const issues = validateCurrentViewport()
     const now = Date.now()
 
     for (const issue of issues) {

@@ -69,6 +69,10 @@ Debug mode provides:
 - hidden-element reveal markers
 - console diagnostics for overlap and out-of-screen rendering
 
+## Enforcement Commands
+- `npm run build:ui-strict`: enables strict UI guardrails and fails on unresolved static violations.
+- `npm run test:ui-guardrails`: verifies no runtime `[ui-layout]` diagnostics for core menu/character-select flow at small/medium/large resolutions.
+
 ## Validation Checklist
 - [ ] No primary layout via absolute/fixed positioning
 - [ ] No hardcoded pixel offsets for layout spacing
