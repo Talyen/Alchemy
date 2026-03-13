@@ -34,6 +34,16 @@ This process creates visual artifacts and machine-checkable UI assertions so reg
 3. Run `npm run test:ui-guardrails`.
 4. If any failure appears, inspect screenshot artifacts before merging.
 
+## Visual Review Gate
+
+- Automated checks are necessary but not sufficient.
+- Every QA pass should include explicit screenshot inspection and written findings in PR/task notes.
+- Minimum manual/agent visual checklist:
+  - Hover popovers do not cover their source content.
+  - Combat controls (menu/dev controls, draw/discard/inventory) remain visually separated.
+  - Character/enemy facing directions match design intent.
+  - Bestiary sprite vertical alignment is centered and not clipped.
+
 ## Why Overlap Bugs Previously Slipped Through
 
 - The first guardrail regression focused on menu + character select only, not battle control placement.

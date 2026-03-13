@@ -142,6 +142,43 @@ test('visual QA capture and checks', async ({ page, baseURL }) => {
     recordCheck(rule.id, pass, `overlap=${result.overlap.toFixed(2)}, gap=${result.gap.toFixed(2)}px (min ${rule.minGap}px)`)
   }
 
+  const handCards = page.locator('button[class*="w-48"]')
+  const handCardCount = await handCards.count()
+  for (let i = 0; i < Math.min(handCardCount, 6); i += 1) {
+    await handCards.nth(i).hover()
+    await page.waitForTimeout(380)
+    const tooltipVisible = await page.locator('div.fixed', { hasText: 'Keywords' }).first().isVisible().catch(() => false)
+    if (tooltipVisible) break
+  }
+  await page.waitForTimeout(180)
+
+  const cardTooltipPlacement = await page.evaluate(() => {
+    const card = document.querySelector('button[class*="w-48"]')
+    const tooltip = Array.from(document.querySelectorAll('div.fixed')).find(node => node.textContent?.includes('Keywords'))
+    if (!card || !tooltip) return null
+
+    const cardRect = card.getBoundingClientRect()
+    const tipRect = tooltip.getBoundingClientRect()
+    const overlapX = Math.max(0, Math.min(tipRect.right, cardRect.right) - Math.max(tipRect.left, cardRect.left))
+    const overlapY = Math.max(0, Math.min(tipRect.bottom, cardRect.bottom) - Math.max(tipRect.top, cardRect.top))
+    return {
+      overlapArea: overlapX * overlapY,
+      tipBottom: tipRect.bottom,
+      cardTop: cardRect.top,
+    }
+  })
+
+  if (!cardTooltipPlacement) {
+    recordCheck('card-tooltip-above-source', false, 'Could not resolve card + tooltip geometry.')
+  } else {
+    const pass = cardTooltipPlacement.overlapArea === 0 && cardTooltipPlacement.tipBottom <= cardTooltipPlacement.cardTop
+    recordCheck(
+      'card-tooltip-above-source',
+      pass,
+      `overlap=${cardTooltipPlacement.overlapArea.toFixed(2)}, tipBottom=${cardTooltipPlacement.tipBottom.toFixed(2)}, cardTop=${cardTooltipPlacement.cardTop.toFixed(2)}`,
+    )
+  }
+
   const inventoryButton = page.locator('button', {
     has: page.locator('img[alt="Inventory"]'),
   }).first()

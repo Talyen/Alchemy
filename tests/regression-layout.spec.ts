@@ -103,24 +103,31 @@ test('card keyword tooltip stays within viewport bounds at balanced resolution',
 
   const bounds = await page.evaluate(() => {
     const tooltip = Array.from(document.querySelectorAll('div.fixed')).find(node => node.textContent?.includes('Keywords'))
-    if (!tooltip) return null
+    const card = document.querySelector('button[class*="w-48"]')
+    if (!tooltip || !card) return null
+    const cardRect = card.getBoundingClientRect()
     const rect = tooltip.getBoundingClientRect()
+    const overlapX = Math.max(0, Math.min(rect.right, cardRect.right) - Math.max(rect.left, cardRect.left))
+    const overlapY = Math.max(0, Math.min(rect.bottom, cardRect.bottom) - Math.max(rect.top, cardRect.top))
     return {
       left: rect.left,
       top: rect.top,
       right: rect.right,
       bottom: rect.bottom,
+      cardTop: cardRect.top,
+      overlapArea: overlapX * overlapY,
       width: window.innerWidth,
       height: window.innerHeight,
     }
   })
 
-  if (bounds) {
-    expect(bounds.left).toBeGreaterThanOrEqual(0)
-    expect(bounds.top).toBeGreaterThanOrEqual(0)
-    expect(bounds.right).toBeLessThanOrEqual(bounds.width)
-    expect(bounds.bottom).toBeLessThanOrEqual(bounds.height)
-  }
+  expect(bounds).not.toBeNull()
+  expect(bounds!.left).toBeGreaterThanOrEqual(0)
+  expect(bounds!.top).toBeGreaterThanOrEqual(0)
+  expect(bounds!.right).toBeLessThanOrEqual(bounds!.width)
+  expect(bounds!.bottom).toBeLessThanOrEqual(bounds!.height)
+  expect(bounds!.bottom).toBeLessThanOrEqual(bounds!.cardTop)
+  expect(bounds!.overlapArea).toBe(0)
 })
 
 test('draw pile opens as centered modal and cards do not overlap', async ({ page }) => {

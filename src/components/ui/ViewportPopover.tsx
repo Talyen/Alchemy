@@ -23,9 +23,8 @@ export function ViewportPopover({ open, position, className, children }: Viewpor
           style={{
             left: position?.left ?? 0,
             top: position?.top ?? 0,
-            transform: position?.placeAbove
-              ? 'translate(-50%, calc(-100% - 8px))'
-              : 'translate(-50%, 8px)',
+            x: '-50%',
+            y: position?.placeAbove ? '-100%' : '0%',
           }}
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
