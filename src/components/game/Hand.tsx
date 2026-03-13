@@ -111,6 +111,7 @@ function PileStack({ count, label, onClick, isDiscard = false }: { count: number
       type="button"
       className="flex flex-col items-center gap-1.5 shrink-0"
       data-testid={`pile-${label.toLowerCase()}`}
+      data-ui-control
       style={tiltStyle}
       whileHover={{ scale: 1.06 }}
       whileTap={{ scale: 0.97 }}

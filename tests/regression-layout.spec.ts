@@ -1,6 +1,12 @@
 import { expect, test } from '@playwright/test'
 import { goToCharacterSelect, startKnightRun } from './helpers'
 
+const BATTLE_VIEWPORTS = [
+  { width: 800, height: 600 },
+  { width: 1280, height: 720 },
+  { width: 1920, height: 1080 },
+]
+
 test('starting deck preview cards stay above panel bottom border', async ({ page }) => {
   await goToCharacterSelect(page)
 
@@ -43,10 +49,10 @@ test('inventory icon does not overlap draw pile', async ({ page }) => {
       const img = node.querySelector('img[alt="Inventory"]')
       return Boolean(img)
     })
-    const drawButton = Array.from(document.querySelectorAll('button')).find(node => node.textContent?.includes('Draw'))
+    const drawButton = document.querySelector('[data-testid="pile-draw"]')
 
     const inventoryRect = inventoryButton?.getBoundingClientRect() ?? null
-    const drawRect = drawButton?.querySelector('div.relative.w-16.h-24')?.getBoundingClientRect() ?? null
+    const drawRect = drawButton?.getBoundingClientRect() ?? null
     if (!drawRect || !inventoryRect) return null
 
     const intersectionArea = (a: DOMRect, b: DOMRect) => {
@@ -136,5 +142,41 @@ test('draw pile opens as centered modal and cards do not overlap', async ({ page
       const overlapY = Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top))
       expect(overlapX * overlapY).toBe(0)
     }
+  }
+})
+
+test('battle menu does not overlap draw/discard pile controls', async ({ page }) => {
+  await startKnightRun(page)
+
+  for (const viewport of BATTLE_VIEWPORTS) {
+    await page.setViewportSize(viewport)
+    await page.waitForTimeout(300)
+
+    const overlap = await page.evaluate(() => {
+      const menuButton = document.querySelector('button[aria-label="Open main menu"]')
+      const drawPile = document.querySelector('[data-testid="pile-draw"]')
+      const discardPile = document.querySelector('[data-testid="pile-discard"]')
+
+      if (!menuButton || !drawPile || !discardPile) return null
+
+      const menuRect = menuButton.getBoundingClientRect()
+      const drawRect = drawPile.getBoundingClientRect()
+      const discardRect = discardPile.getBoundingClientRect()
+
+      const area = (a: DOMRect, b: DOMRect) => {
+        const x = Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left))
+        const y = Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top))
+        return x * y
+      }
+
+      return {
+        drawOverlap: area(menuRect, drawRect),
+        discardOverlap: area(menuRect, discardRect),
+      }
+    })
+
+    expect(overlap, `layout probes missing at ${viewport.width}x${viewport.height}`).not.toBeNull()
+    expect(overlap!.drawOverlap, `menu overlaps draw pile at ${viewport.width}x${viewport.height}`).toBe(0)
+    expect(overlap!.discardOverlap, `menu overlaps discard pile at ${viewport.width}x${viewport.height}`).toBe(0)
   }
 })

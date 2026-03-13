@@ -5,7 +5,7 @@ type TargetViewport = {
 }
 
 type ValidationIssue = {
-  kind: 'overlap' | 'overflow' | 'offscreen' | 'touch-target'
+  kind: 'overlap' | 'overflow' | 'offscreen' | 'touch-target' | 'control-overlap'
   viewport: string
   detail: string
 }
@@ -125,6 +125,26 @@ function validateCurrentViewport(): ValidationIssue[] {
         viewport: viewport.name,
         detail: `${describeElement(control)} is below ${MIN_TARGET_SIZE}px target size`,
       })
+    }
+  }
+
+  for (let i = 0; i < controls.length; i += 1) {
+    const a = controls[i]
+    const aRect = a.getBoundingClientRect()
+    for (let j = i + 1; j < controls.length; j += 1) {
+      const b = controls[j]
+
+      // Ignore nested controls so icon wrappers inside buttons don't register as collisions.
+      if (a.contains(b) || b.contains(a)) continue
+
+      const bRect = b.getBoundingClientRect()
+      if (intersects(aRect, bRect) > 16) {
+        issues.push({
+          kind: 'control-overlap',
+          viewport: viewport.name,
+          detail: `${describeElement(a)} overlaps interactive ${describeElement(b)}`,
+        })
+      }
     }
   }
 

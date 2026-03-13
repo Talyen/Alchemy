@@ -31,7 +31,8 @@ export function GlobalScreenMenu({
         <motion.button
           type="button"
           onClick={() => setOpen(prev => !prev)}
-          className="inline-flex items-center justify-center rounded-lg border border-zinc-800/70 bg-zinc-900/80 p-2 text-zinc-500"
+          data-ui-control
+          className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-zinc-800/70 bg-zinc-900/80 text-zinc-500"
           whileHover={{ scale: 1.03, color: '#a1a1aa', borderColor: 'rgba(113,113,122,0.8)' }}
           whileTap={{ scale: 0.97 }}
           transition={{ type: 'spring', stiffness: 360, damping: 26 }}

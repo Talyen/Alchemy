@@ -2566,13 +2566,13 @@ export default function App() {
               aspectRatio: 'var(--alchemy-viewport-ratio, 16 / 9)',
             }}
           >
-            <div className="absolute right-24 bottom-6 z-[90]">
+            <div className="absolute right-6 top-6 z-[90]">
               <div className="flex items-center gap-2">
                 {isDevBuild && gameState.phase !== 'win' && gameState.phase !== 'lose' && (
-                  <DevQaMenu onSkipCombat={handleDevSkipCombat} onUnlockAll={handleDevUnlockAll} />
+                  <DevQaMenu onSkipCombat={handleDevSkipCombat} onUnlockAll={handleDevUnlockAll} direction="down" />
                 )}
                 {renderGlobalMenu({
-                  direction: 'up',
+                  direction: 'down',
                   align: 'right',
                   onEndTurnEarly: gameState.phase === 'player_turn' && !isEnemyActing ? handleEndTurn : undefined,
                 })}

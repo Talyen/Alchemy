@@ -5,9 +5,10 @@ import { Bug, ChevronsRight, LockOpen } from 'lucide-react'
 interface Props {
   onSkipCombat: () => void
   onUnlockAll: () => void
+  direction?: 'up' | 'down'
 }
 
-export function DevQaMenu({ onSkipCombat, onUnlockAll }: Props) {
+export function DevQaMenu({ onSkipCombat, onUnlockAll, direction = 'up' }: Props) {
   const [open, setOpen] = useState(false)
 
   return (
@@ -28,7 +29,7 @@ export function DevQaMenu({ onSkipCombat, onUnlockAll }: Props) {
         {open && (
           // ui-allow-absolute: anchored QA flyout menu
           <motion.div
-            className="absolute right-0 bottom-full mb-2 w-56 rounded-xl border border-zinc-700/80 bg-zinc-950/95 p-1.5"
+            className={`absolute right-0 w-56 rounded-xl border border-zinc-700/80 bg-zinc-950/95 p-1.5 ${direction === 'up' ? 'bottom-full mb-2' : 'top-full mt-2'}`}
             initial={{ opacity: 0, y: 6, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 6, scale: 0.98, transition: { duration: 0.12 } }}

@@ -108,6 +108,39 @@ test('visual QA capture and checks', async ({ page, baseURL }) => {
     )
   }
 
+  const menuPileOverlap = await page.evaluate(() => {
+    const menuButton = document.querySelector('button[aria-label="Open main menu"]')
+    const drawPile = document.querySelector('[data-testid="pile-draw"]')
+    const discardPile = document.querySelector('[data-testid="pile-discard"]')
+    if (!menuButton || !drawPile || !discardPile) return null
+
+    const menuRect = menuButton.getBoundingClientRect()
+    const drawRect = drawPile.getBoundingClientRect()
+    const discardRect = discardPile.getBoundingClientRect()
+
+    const area = (a: DOMRect, b: DOMRect) => {
+      const x = Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left))
+      const y = Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top))
+      return x * y
+    }
+
+    return {
+      drawOverlap: area(menuRect, drawRect),
+      discardOverlap: area(menuRect, discardRect),
+    }
+  })
+
+  if (!menuPileOverlap) {
+    recordCheck('combat-menu-pile-overlap', false, 'Could not locate menu/draw/discard controls.')
+  } else {
+    const passes = menuPileOverlap.drawOverlap === 0 && menuPileOverlap.discardOverlap === 0
+    recordCheck(
+      'combat-menu-pile-overlap',
+      passes,
+      `drawOverlap=${menuPileOverlap.drawOverlap.toFixed(2)}, discardOverlap=${menuPileOverlap.discardOverlap.toFixed(2)}`,
+    )
+  }
+
   const inventoryButton = page.locator('button', {
     has: page.locator('img[alt="Inventory"]'),
   }).first()

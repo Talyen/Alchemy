@@ -33,3 +33,17 @@ This process creates visual artifacts and machine-checkable UI assertions so reg
 2. Run `npm run qa:visual`.
 3. Run `npm run test:ui-guardrails`.
 4. If any failure appears, inspect screenshot artifacts before merging.
+
+## Why Overlap Bugs Previously Slipped Through
+
+- The first guardrail regression focused on menu + character select only, not battle control placement.
+- Runtime validation only compared `data-ui-boundary` nodes; interactive controls without `data-ui-control` tags were not checked for collisions.
+- Visual QA captured battle, but initially did not assert geometric overlap between menu and pile controls.
+
+## New Prevention Coverage
+
+- Battle menu is anchored top-right to avoid sharing the discard pile region.
+- Critical controls are tagged with `data-ui-control` so runtime diagnostics can detect control collisions.
+- Runtime validator now emits `control-overlap` warnings when interactive controls overlap.
+- Regression test now verifies menu vs draw/discard overlap at 800x600, 1280x720, and 1920x1080.
+- Visual QA report includes a dedicated `combat-menu-pile-overlap` check.
