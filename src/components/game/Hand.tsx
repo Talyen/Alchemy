@@ -43,7 +43,7 @@ function getCardTarget(card: CardInstance): 'enemy' | 'player' | 'both' | 'neith
   return 'neither'
 }
 
-// ─── Mana orbs ───────────────────────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇ Mana orbs ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 function ManaOrbs({ current, max }: { current: number; max: number }) {
   const displayCount = Math.max(current, max)
@@ -77,11 +77,12 @@ function GoldCounter({ gold }: { gold: number }) {
   )
 }
 
-// ─── Combat log panel ────────────────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇ Combat log panel ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 function CombatLog({ log, position }: { log: string[]; position: PopoverPosition | null }) {
   if (typeof window === 'undefined') return null
   return createPortal(
+    // ui-allow-absolute: viewport-anchored combat log popover
     <motion.div
       className="fixed w-72 rounded-xl border border-zinc-800 bg-zinc-950 p-3 space-y-1 z-[999] pointer-events-none"
       style={{ left: position?.left ?? 0, top: position?.top ?? 0, x: '-50%', y: position?.placeAbove ? '-100%' : '0%' }}
@@ -99,7 +100,7 @@ function CombatLog({ log, position }: { log: string[]; position: PopoverPosition
   )
 }
 
-// ─── Flanking pile components ────────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇ Flanking pile components ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 const PILE_IMAGE_SRC = 'assets/ui/pile-card-transparent.png'
 
@@ -119,6 +120,7 @@ function PileStack({ count, label, onClick, isDiscard = false }: { count: number
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
     >
       <div className="relative h-24 w-24">
+        {/* ui-allow-absolute: stacked pile card sprite */}
         <motion.img
           src={PILE_IMAGE_SRC}
           alt={`${label} pile`}
@@ -132,6 +134,7 @@ function PileStack({ count, label, onClick, isDiscard = false }: { count: number
           transition={{ duration: 0.18 }}
           draggable={false}
         />
+        {/* ui-allow-absolute: pile count badge */}
         <div className="absolute -bottom-1 right-0 flex h-8 min-w-8 items-center justify-center rounded-full border border-zinc-700/80 bg-zinc-900/92 px-2 shadow-[0_0_12px_rgba(0,0,0,0.45)]">
           <span className="text-sm font-bold text-zinc-200 font-mono tabular-nums">{count}</span>
         </div>
@@ -167,7 +170,7 @@ function PileViewer({ title, cards, onClose }: { title: string; cards: CardInsta
   )
 }
 
-// ─── Draggable card wrapper ───────────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇ Draggable card wrapper ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 // Extracted as a component so it can use hooks (useSpring, useState) per card.
 
 interface DraggableCardProps {
@@ -224,7 +227,7 @@ function DraggableCard({
   // Track dragging for the periodic sheen effect in Card
   const [isDragging, setIsDragging] = useState(false)
 
-  // Velocity-driven tilt during drag — springs back to 0 on release
+  // Velocity-driven tilt during drag ΓÇö springs back to 0 on release
   const dragTiltX = useSpring(0, { stiffness: 250, damping: 18 })
   const dragTiltY = useSpring(0, { stiffness: 250, damping: 18 })
 
@@ -262,7 +265,7 @@ function DraggableCard({
       onHoverEnd={() => lower(card.uid)}
       onClick={() => { if (playable) { playCardPlay(card.id, card.type); onPlay(card.uid) } }}
       transition={{ type: 'spring', stiffness: 220, damping: 28, delay: i * 0.06 }}
-      // ── Click or drag to play ──
+      // ΓöÇΓöÇ Click or drag to play ΓöÇΓöÇ
       drag={playable}
       dragMomentum={false}
       dragElastic={0}
@@ -296,7 +299,7 @@ function DraggableCard({
   )
 }
 
-// ─── Hand ────────────────────────────────────────────────────────────────────
+// ΓöÇΓöÇΓöÇ Hand ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 export function Hand({ cards, mana, maxMana, gold, onPlay, disabled, isEnemyActing, drawCount, discardCount, drawPileCards, discardPileCards, trinkets, log, lastCardPlayedId, overflowDiscardFxToken, overflowDiscardFxCount }: Props) {
   const [elevated, setElevated] = useState<Set<string>>(new Set())
@@ -382,7 +385,7 @@ export function Hand({ cards, mana, maxMana, gold, onPlay, disabled, isEnemyActi
       className="relative h-full flex justify-center px-6 pb-6 overflow-visible"
       style={{ paddingTop: 66 }}
     >
-      {/* Draw pile — pinned bottom-left (mirrors discard pile) */}
+      {/* ui-allow-absolute: draw pile pinned bottom-left */}
       <div className="absolute left-4 bottom-6 z-10">
         <PileStack
           count={drawCount}
@@ -403,7 +406,7 @@ export function Hand({ cards, mana, maxMana, gold, onPlay, disabled, isEnemyActi
         </AnimatePresence>
       </div>
 
-      {/* Inventory bag — above draw pile */}
+      {/* ui-allow-absolute: inventory bag pinned above draw pile */}
       <div className="absolute left-5 bottom-[168px] w-16 flex justify-center z-20">
         <motion.button
           type="button"
@@ -450,7 +453,7 @@ export function Hand({ cards, mana, maxMana, gold, onPlay, disabled, isEnemyActi
         </CenterModal>
       </div>
 
-      {/* Resources + log — slightly to the right of draw pile */}
+      {/* ui-allow-absolute: resources cluster pinned near draw pile */}
       <div className="absolute left-28 bottom-6 z-10 flex flex-col items-start gap-2.5">
         <div className="relative">
           <ManaOrbs current={mana} max={maxMana} />
@@ -492,7 +495,7 @@ export function Hand({ cards, mana, maxMana, gold, onPlay, disabled, isEnemyActi
         </div>
       </div>
 
-      {/* Fanned card hand — centered */}
+      {/* Fanned card hand ΓÇö centered */}
       <div className="flex items-end justify-center overflow-visible pb-2">
         <AnimatePresence mode="popLayout" custom={isEnemyActing}>
           {cards.map((card, i) => {
@@ -518,7 +521,7 @@ export function Hand({ cards, mana, maxMana, gold, onPlay, disabled, isEnemyActi
 
       </div>
 
-      {/* Overflow dissolve FX for cards that exceeded max hand size */}
+      {/* ui-allow-absolute: overflow dissolve FX for cards that exceeded max hand size */}
       <AnimatePresence>
         {overflowFxEvents.map(event => (
           <motion.div
@@ -542,7 +545,7 @@ export function Hand({ cards, mana, maxMana, gold, onPlay, disabled, isEnemyActi
         ))}
       </AnimatePresence>
 
-      {/* Discard pile — pinned to right edge */}
+      {/* ui-allow-absolute: discard pile pinned to right edge */}
       <div className="absolute right-4 bottom-6 z-10">
         <PileStack
           count={discardCount}

@@ -211,12 +211,14 @@ export function Card({ card, playable, dimmed, isBeingDragged = false, backgroun
         transition={{ type: 'spring', stiffness: 380, damping: 28 }}
       >
         {/* Tilt sheen */}
+        {/* ui-allow-absolute: internal sheen overlay */}
         <motion.div
           className="absolute inset-0 pointer-events-none z-10 rounded-xl"
           style={{ background: sheen }}
         />
 
         {/* Hover glimmer sweep — diagonal stripe triggered on hover */}
+        {/* ui-allow-absolute: internal glimmer overlay */}
         <motion.div
           className="absolute top-0 left-0 h-full w-1/2 pointer-events-none z-10"
           style={{
@@ -229,6 +231,7 @@ export function Card({ card, playable, dimmed, isBeingDragged = false, backgroun
         {/* ── Top half: pips + name + art ── */}
         <div className="flex flex-col" style={{ flex: '0 0 50%' }}>
           <div className={cn('relative flex items-center justify-center px-2.5 pt-2 pb-1.5', cfg.headerBg)}>
+            {/* ui-allow-absolute: mana pip anchor */}
             <div className="absolute left-2 top-1/2 z-20 -translate-y-1/2 pointer-events-none">
               <ManaPips cost={card.cost} />
             </div>

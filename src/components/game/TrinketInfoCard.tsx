@@ -102,6 +102,7 @@ export function TrinketInfoCard({ id, name, description, iconSrc, size = 'defaul
           className,
         ])}
       >
+        {/* ui-allow-fixed-size: minimum card row height for icon/text alignment */}
         <div className="flex items-center gap-3 min-h-[100px]">
           {resolvedIcon && !imgFailed ? (
             <img
@@ -117,6 +118,7 @@ export function TrinketInfoCard({ id, name, description, iconSrc, size = 'defaul
             </div>
           )}
 
+          {/* ui-allow-fixed-size: minimum text column height to prevent card jump */}
           <div className="min-w-0 flex-1 min-h-[84px] flex flex-col justify-center gap-1">
             <p className={`${titleSize} font-semibold leading-tight text-zinc-200`}>{name}</p>
             <p className="text-[11px] leading-snug text-zinc-400">{renderKeywordText(description)}</p>

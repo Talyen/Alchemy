@@ -138,6 +138,7 @@ export function TalentsScreen({
         </div>
 
         <div className="relative flex-1 overflow-visible">
+          {/* ui-allow-absolute: fixed canvas positioning for talent graph */}
           <div className="absolute inset-0 flex items-center justify-center p-4">
             <div className="relative" style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT }}>
               <svg width={CANVAS_WIDTH} height={CANVAS_HEIGHT} className="absolute left-0 top-0 pointer-events-none">
@@ -169,6 +170,7 @@ export function TalentsScreen({
                 const theme = getTalentThemeClasses(node.theme)
 
                 return (
+                  // ui-allow-fixed-size: talent node card dimensions are graph design constraints
                   <motion.button
                     key={node.id}
                     type="button"

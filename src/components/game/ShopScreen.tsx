@@ -148,12 +148,14 @@ export function ShopScreen({ characterId, gold, cardOffers, trinketOffers, offer
   return (
     <SelectionScreenShell title="Shop" subtitle="Merchant" topLeft={topLeft} layout="top" titleOffsetY={24}>
       <div className="w-full h-full min-h-0 max-w-6xl px-6 pb-4 flex flex-col items-center gap-6">
+        {/* ui-allow-fixed-size: composition width for character stage */}
         <motion.div
           className="relative mx-auto w-full max-w-[760px] flex items-end justify-center z-10"
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ type: 'spring', stiffness: 260, damping: 24 }}
         >
+          {/* ui-allow-absolute: shop HUD overlay above characters */}
           <div className="absolute inset-x-0 bottom-1 w-full grid grid-cols-[1fr_1fr_1fr] pointer-events-none">
             <div className="flex justify-center">
               <div className="relative inline-flex items-center gap-2 rounded-xl border border-zinc-700/70 bg-zinc-900/80 px-3 py-1.5 text-zinc-200">
@@ -249,6 +251,7 @@ export function ShopScreen({ characterId, gold, cardOffers, trinketOffers, offer
                     variants={staggerItemVariants}
                     className="flex flex-col items-center gap-2"
                   >
+                    {/* ui-allow-fixed-size: card preview frame */}
                     <div className="w-[192px] h-[288px] rounded-2xl border border-zinc-700/40 bg-zinc-900/30 flex items-center justify-center">
                       <p className="text-xs text-zinc-600 uppercase tracking-wider">Sold</p>
                     </div>
@@ -263,6 +266,7 @@ export function ShopScreen({ characterId, gold, cardOffers, trinketOffers, offer
                   animate={pendingPurchase ? { opacity: 0.35, y: -8, scale: 0.98 } : { opacity: 1, y: 0, scale: 1 }}
                   transition={{ duration: 0.24, ease: 'easeOut' }}
                 >
+                  {/* ui-allow-fixed-size: card preview frame */}
                   <div className="w-[192px] h-[288px]">
                     <Card card={toInstance(offer.card, `shop-card-${i}`)} playable />
                   </div>
@@ -290,10 +294,12 @@ export function ShopScreen({ characterId, gold, cardOffers, trinketOffers, offer
             {offerMode === 'trinkets' && (
             <div className="w-full">
               <p className="mb-2 text-center text-[10px] uppercase tracking-widest text-zinc-600">Trinkets For Sale</p>
+              {/* ui-allow-fixed-size: trinket row width cap for consistent card sizing */}
               <div className="mx-auto w-full max-w-[760px] grid grid-cols-1 md:grid-cols-3 gap-3 justify-items-center">
                 {trinketOffers.map(trinket => (
                   <motion.div
                     key={trinket.id}
+                    // ui-allow-fixed-size: trinket card width cap
                     className="w-full max-w-[236px] flex flex-col items-center gap-2"
                     animate={pendingTrinketPurchaseIds.has(trinket.id) ? { opacity: 0.35, y: -8, scale: 0.98 } : { opacity: 1, y: 0, scale: 1 }}
                     transition={{ duration: 0.24, ease: 'easeOut' }}
@@ -327,6 +333,7 @@ export function ShopScreen({ characterId, gold, cardOffers, trinketOffers, offer
           </div>
         </div>
 
+        {/* ui-allow-fixed-size: action row width cap aligns controls with shop columns */}
         <div className="w-full max-w-[760px] flex flex-col items-center gap-3 pt-1">
           <motion.button
             type="button"
@@ -357,6 +364,7 @@ export function ShopScreen({ characterId, gold, cardOffers, trinketOffers, offer
 
         <AnimatePresence>
           {showDestroyPanel && (
+            // ui-allow-absolute: full-screen modal backdrop
             <motion.div
               className="absolute inset-0 z-40 flex items-center justify-center"
               initial={{ opacity: 0 }}

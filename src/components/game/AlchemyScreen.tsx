@@ -197,18 +197,21 @@ export function AlchemyScreen({ characterId, gold, deckCards, transformOffers, p
   return (
     <SelectionScreenShell title="Alchemist's Hut" subtitle="Alchemy" topLeft={topLeft} layout="top" titleOffsetY={24}>
       <div className="w-full h-full min-h-0 max-w-6xl px-6 pb-6 flex flex-col items-center gap-8">
+        {/* ui-allow-fixed-size: composition width for character stage */}
         <motion.div
           className="relative mx-auto w-full max-w-[760px] flex items-end justify-center z-10"
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ type: 'spring', stiffness: 260, damping: 24 }}
         >
+          {/* ui-allow-absolute: HUD overlay above alchemy characters */}
           <div className="absolute inset-x-0 bottom-1 w-full grid grid-cols-[1fr_1fr_1fr] pointer-events-none">
             <div className="flex justify-center">
               <div className="relative inline-flex items-center gap-2 rounded-xl border border-zinc-700/70 bg-zinc-900/80 px-3 py-1.5 text-zinc-200">
                 <GoldIcon size={13} />
                 <span className="text-[10px] uppercase tracking-wider text-zinc-500">Gold</span>
                 <span className="text-sm font-semibold">{gold}</span>
+                {/* ui-allow-absolute: floating gold spend feedback */}
                 <AnimatePresence>
                   {goldSpendFx.map(entry => (
                     <motion.div
@@ -280,6 +283,7 @@ export function AlchemyScreen({ characterId, gold, deckCards, transformOffers, p
         </motion.div>
 
         <div className="relative z-20 w-full flex-1 overflow-visible">
+          {/* ui-allow-fixed-size: three-column alchemy desk layout */}
           <div className="mx-auto grid w-full max-w-[1120px] grid-cols-[1fr_240px_1fr] items-start gap-5">
             <div className="col-span-3">
               <p className="mb-2 text-center text-[10px] uppercase tracking-widest text-zinc-600">Transform a Card</p>
@@ -319,6 +323,7 @@ export function AlchemyScreen({ characterId, gold, deckCards, transformOffers, p
                       animate={isPurchased || pendingPurchase ? { opacity: 0.35, y: -8, scale: 0.98 } : { opacity: hasTargets ? 1 : 0.5, y: 0, scale: 1 }}
                       transition={{ duration: 0.24, ease: 'easeOut' }}
                     >
+                      {/* ui-allow-fixed-size: minimum offer card height for alignment */}
                       <div className="w-full min-h-[98px] rounded-2xl border border-zinc-700/70 bg-zinc-900/65 px-4 py-3 flex flex-col items-center justify-center gap-2" style={{ filter: hasTargets ? 'none' : 'grayscale(1)' }}>
                         {KeywordIcon && keywordEntry ? (
                           <KeywordIcon size={32} style={{ color: keywordEntry.color }} />
@@ -352,6 +357,7 @@ export function AlchemyScreen({ characterId, gold, deckCards, transformOffers, p
                         <span>{offer.cost}</span>
                       </motion.button>
 
+                      {/* ui-allow-absolute: contextual offer tooltips */}
                       <AnimatePresence>
                         {showNoTargetsTooltip && (
                           <motion.div
@@ -405,6 +411,7 @@ export function AlchemyScreen({ characterId, gold, deckCards, transformOffers, p
                     animate={pendingPotionPurchase ? { opacity: 0.35, y: -8, scale: 0.98 } : { opacity: 1, y: 0, scale: 1 }}
                     transition={{ duration: 0.24, ease: 'easeOut' }}
                   >
+                    {/* ui-allow-fixed-size: card art display frame */}
                     <div className="w-[192px] h-[288px]">
                       <Card card={toInstance(potionOffer.card, `alchemy-potion-${potionOffer.card.id}`)} playable />
                     </div>
@@ -437,6 +444,7 @@ export function AlchemyScreen({ characterId, gold, deckCards, transformOffers, p
 
             <div>
               <p className="mb-2 text-center text-[10px] uppercase tracking-widest text-zinc-600">Potion Making</p>
+              {/* ui-allow-fixed-size: potion mixing panel width cap */}
               <motion.div
                 className="mx-auto w-full max-w-[360px] rounded-2xl border border-zinc-700/70 bg-zinc-900/65 p-4 flex flex-col items-center gap-3"
                 animate={!canMixPotions || pendingMixPurchase ? { opacity: 0.45, y: -6, scale: 0.99 } : { opacity: 1, y: 0, scale: 1 }}
@@ -489,6 +497,7 @@ export function AlchemyScreen({ characterId, gold, deckCards, transformOffers, p
                     animate={pendingPotion2Purchase ? { opacity: 0.35, y: -8, scale: 0.98 } : { opacity: 1, y: 0, scale: 1 }}
                     transition={{ duration: 0.24, ease: 'easeOut' }}
                   >
+                    {/* ui-allow-fixed-size: card art display frame */}
                     <div className="w-[192px] h-[288px]">
                       <Card card={toInstance(potionOffer2.card, `alchemy-potion2-${potionOffer2.card.id}`)} playable />
                     </div>
@@ -532,6 +541,7 @@ export function AlchemyScreen({ characterId, gold, deckCards, transformOffers, p
         </motion.button>
 
         <AnimatePresence>
+          {/* ui-allow-absolute: full-screen modal backdrop */}
           {showTransformPanel && selectedOffer && (
             <motion.div className="absolute inset-0 z-40 flex items-center justify-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ background: 'rgba(9,9,11,0.72)', backdropFilter: 'blur(6px)' }}>
               <motion.div className="w-[min(92vw,1120px)] max-h-[82vh] overflow-hidden rounded-2xl border border-zinc-700/80 bg-zinc-950/95 p-5" initial={{ opacity: 0, y: 10, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.98 }}>
@@ -573,6 +583,7 @@ export function AlchemyScreen({ characterId, gold, deckCards, transformOffers, p
         </AnimatePresence>
 
         <AnimatePresence>
+          {/* ui-allow-absolute: full-screen modal backdrop */}
           {showMixPanel && (
             <motion.div className="absolute inset-0 z-40 flex items-center justify-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ background: 'rgba(9,9,11,0.72)', backdropFilter: 'blur(6px)' }}>
               <motion.div className="w-[min(92vw,1120px)] max-h-[82vh] overflow-hidden rounded-2xl border border-zinc-700/80 bg-zinc-950/95 p-5" initial={{ opacity: 0, y: 10, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.98 }}>

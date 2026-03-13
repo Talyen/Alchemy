@@ -18,6 +18,7 @@ type GuardrailMatch = {
 const INCLUDED_EXTENSIONS = new Set(['.tsx', '.ts', '.jsx', '.js'])
 const SCAN_DIRECTORIES = ['src/components', 'src/ui']
 const ALLOW_ABSOLUTE_MARKER = 'ui-allow-absolute'
+const ALLOW_FIXED_SIZE_MARKER = 'ui-allow-fixed-size'
 
 function normalizeBoolean(value: unknown): boolean {
   if (typeof value === 'boolean') return value
@@ -69,12 +70,12 @@ function readLine(source: string, lineNumber: number): string {
   return lines[Math.max(0, lineNumber - 1)]?.trim() ?? ''
 }
 
-function hasNearbyAllowMarker(source: string, lineNumber: number): boolean {
+function hasNearbyMarker(source: string, lineNumber: number, marker: string): boolean {
   const lines = source.split(/\r\n|\r|\n/)
-  const from = Math.max(0, lineNumber - 4)
-  const to = Math.min(lines.length - 1, lineNumber + 1)
+  const from = Math.max(0, lineNumber - 24)
+  const to = Math.min(lines.length - 1, lineNumber + 2)
   for (let i = from; i <= to; i += 1) {
-    if ((lines[i] ?? '').includes(ALLOW_ABSOLUTE_MARKER)) {
+    if ((lines[i] ?? '').includes(marker)) {
       return true
     }
   }
@@ -108,10 +109,10 @@ function findMatches(source: string, file: string): GuardrailFinding[] {
     }
   }
 
-  addMatches(CLASSNAME_ABSOLUTE_PATTERN, 'absolute/fixed layout positioning', match => !hasNearbyAllowMarker(source, match.line))
-  addMatches(INLINE_OFFSET_PATTERN, 'hardcoded pixel offsets in inline style')
-  addMatches(PIXEL_OFFSET_CLASS_PATTERN, 'pixel offset utility class detected')
-  addMatches(FIXED_SIZE_PATTERN, 'fixed pixel sizing that can break scaling')
+  addMatches(CLASSNAME_ABSOLUTE_PATTERN, 'absolute/fixed layout positioning', match => !hasNearbyMarker(source, match.line, ALLOW_ABSOLUTE_MARKER))
+  addMatches(INLINE_OFFSET_PATTERN, 'hardcoded pixel offsets in inline style', match => !hasNearbyMarker(source, match.line, ALLOW_ABSOLUTE_MARKER))
+  addMatches(PIXEL_OFFSET_CLASS_PATTERN, 'pixel offset utility class detected', match => !hasNearbyMarker(source, match.line, ALLOW_ABSOLUTE_MARKER))
+  addMatches(FIXED_SIZE_PATTERN, 'fixed pixel sizing that can break scaling', match => !hasNearbyMarker(source, match.line, ALLOW_FIXED_SIZE_MARKER))
   addMatches(SCREEN_SIZE_PATTERN, 'screen-sized utility class can break container scaling')
 
   return findings

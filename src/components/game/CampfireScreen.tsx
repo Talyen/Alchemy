@@ -150,6 +150,7 @@ export function CampfireScreen({ characterId, currentHp: _currentHp, maxHp, onRe
   return (
     <SelectionScreenShell title="Campfire" subtitle="Rest Site" topLeft={topLeft} allowOverflowVisible titleOffsetY={14}>
       <div className="relative w-full max-w-4xl h-[64%] flex items-center justify-center overflow-visible pointer-events-none">
+        {/* ui-allow-absolute: hidden svg filter definition */}
         <svg className="absolute w-0 h-0 pointer-events-none" aria-hidden>
           <defs>
             <filter id="campfire-posterize" colorInterpolationFilters="sRGB">
@@ -162,6 +163,8 @@ export function CampfireScreen({ characterId, currentHp: _currentHp, maxHp, onRe
           </defs>
         </svg>
 
+        {/* ui-allow-fixed-size: campfire scene composition width */}
+        {/* ui-allow-absolute: intentional pixel offset for sprite staging */}
         <div className="relative z-10 mx-auto flex w-full max-w-[390px] -translate-y-8 items-end justify-center gap-6">
           <motion.div
             className="flex w-44 justify-center"
@@ -183,6 +186,7 @@ export function CampfireScreen({ characterId, currentHp: _currentHp, maxHp, onRe
             animate={{ opacity: 1, x: 0, y: 0 }}
             transition={{ type: 'spring', stiffness: 260, damping: 24, delay: 0.05 }}
           >
+            {/* ui-allow-absolute: ambient light bloom */}
             <motion.div
               className="absolute left-1/2 top-[58%] -translate-x-1/2 -translate-y-1/2 w-28 h-28 rounded-full"
               animate={{ opacity: [0.2, 0.3, 0.22], scale: [0.90, 1.10, 0.90] }}
@@ -194,6 +198,7 @@ export function CampfireScreen({ characterId, currentHp: _currentHp, maxHp, onRe
             />
 
             <div className="relative w-44 h-40 flex items-end justify-center overflow-visible">
+              {/* ui-allow-absolute: ember glow overlay */}
               <motion.div
                 className="pointer-events-none absolute bottom-11 left-1/2 w-16 h-12 -translate-x-1/2 rounded-full"
                 animate={{ opacity: emberFlicker.opacity, scale: emberFlicker.scale, y: emberFlicker.y }}
@@ -205,6 +210,7 @@ export function CampfireScreen({ characterId, currentHp: _currentHp, maxHp, onRe
               />
 
               <div className="relative w-5 h-5 origin-bottom scale-[5.7]">
+                {/* ui-allow-absolute: layered flame base */}
                 <img
                   src="assets/trinkets/fc23.png"
                   alt="Campfire"
@@ -215,6 +221,7 @@ export function CampfireScreen({ characterId, currentHp: _currentHp, maxHp, onRe
                   }}
                 />
 
+                {/* ui-allow-absolute: layered flame flicker */}
                 <motion.img
                   src="assets/trinkets/fc23.png"
                   alt=""
@@ -240,6 +247,7 @@ export function CampfireScreen({ characterId, currentHp: _currentHp, maxHp, onRe
         </div>
 
         <AnimatePresence>
+          {/* ui-allow-absolute: rest fade overlay */}
           {resting && (
             <motion.div
               className="absolute inset-0 z-20 bg-zinc-950"

@@ -55,10 +55,12 @@ export function MysteryTreasureChestScreen({ reward, onOpen, onTake, onSkip, top
             <p className="text-xs uppercase tracking-wider text-zinc-500">Inside you found:</p>
 
             {reward.type === 'card' ? (
+              // ui-allow-fixed-size: card preview framing
               <div className="w-[192px] h-[288px]">
                 <Card card={toInstance(reward.card)} playable />
               </div>
             ) : (
+              // ui-allow-fixed-size: trinket info framing
               <div className="w-[260px]">
                 <TrinketInfoCard
                   id={reward.id}

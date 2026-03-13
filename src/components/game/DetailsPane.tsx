@@ -59,6 +59,7 @@ export function DetailsPane({
   }, [])
 
   return (
+    // ui-allow-absolute: side-attached hover details panel
     <motion.div
       key="details-pane"
       className="absolute pointer-events-none z-30 rounded-lg border border-zinc-700/80 bg-zinc-950 px-3 py-2.5 w-64"

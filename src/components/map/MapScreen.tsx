@@ -121,6 +121,8 @@ export function MapScreen({ map, onNodeClick }: Props) {
     >
       <div
         className="relative flex flex-col rounded-2xl border border-zinc-800/60 overflow-hidden"
+        data-ui-container
+        data-ui-boundary
         style={{
           width: 'min(90vw, calc(90vh * (16 / 9)), 1280px)',
           aspectRatio: '16 / 9',
@@ -143,6 +145,7 @@ export function MapScreen({ map, onNodeClick }: Props) {
         {/* SVG paths + node divs share the same flex-1 container for alignment */}
         <div className="relative z-10 flex-1">
 
+          {/* ui-allow-absolute: decorative frame overlays */}
           <div className="absolute inset-0 pointer-events-none">
             <div
               className="absolute top-4 left-5 right-5 h-14"
@@ -171,6 +174,7 @@ export function MapScreen({ map, onNodeClick }: Props) {
                 backgroundPosition: 'left center',
               }}
             />
+            {/* ui-allow-absolute: decorative frame strip */}
             <div
               className="absolute top-16 bottom-16 right-4 w-12"
               style={{
@@ -181,24 +185,28 @@ export function MapScreen({ map, onNodeClick }: Props) {
               }}
             />
 
+            {/* ui-allow-absolute: decorative corner banner */}
             <img
               src="assets/ui/map/slices/banner/banner_01_188x92.png"
               alt=""
               className="absolute top-3 left-4 w-40 select-none"
               draggable={false}
             />
+            {/* ui-allow-absolute: decorative corner banner */}
             <img
               src="assets/ui/map/slices/banner/banner_02_172x98.png"
               alt=""
               className="absolute top-2 right-4 w-36 select-none"
               draggable={false}
             />
+            {/* ui-allow-absolute: decorative corner banner */}
             <img
               src="assets/ui/map/slices/banner/banner_01_188x92.png"
               alt=""
               className="absolute bottom-3 left-5 w-40 select-none"
               draggable={false}
             />
+            {/* ui-allow-absolute: decorative corner banner */}
             <img
               src="assets/ui/map/slices/banner/banner_02_172x98.png"
               alt=""
@@ -208,6 +216,7 @@ export function MapScreen({ map, onNodeClick }: Props) {
           </div>
 
           {/* Full route graph */}
+          {/* ui-allow-absolute: coordinate-aligned map graph layer */}
           <svg
             className="absolute inset-0 w-full h-full pointer-events-none"
             viewBox={`0 0 ${W} ${H}`}
@@ -240,6 +249,7 @@ export function MapScreen({ map, onNodeClick }: Props) {
             const size = isAvail ? 52 : isVisited ? 40 : 34
 
             return (
+              // ui-allow-absolute: coordinate-based node positioning
               <motion.div
                 key={node.id}
                 className="absolute"
@@ -275,6 +285,7 @@ export function MapScreen({ map, onNodeClick }: Props) {
                 </motion.div>
 
                 {/* Label */}
+                {/* ui-allow-absolute: node-attached label offset */}
                 <p
                   className="absolute text-center whitespace-nowrap pointer-events-none"
                   style={{
@@ -295,6 +306,7 @@ export function MapScreen({ map, onNodeClick }: Props) {
             )
           })}
 
+          {/* ui-allow-absolute: footer hint pinned to map bottom */}
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-[10px] uppercase tracking-[0.18em] text-zinc-800">
             Select a node to continue upward
           </div>

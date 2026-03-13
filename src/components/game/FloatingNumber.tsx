@@ -126,6 +126,7 @@ export function FloatingNumber({ event, onDone, top }: DmgProps) {
       onAnimationComplete={onDone}
     >
       {cardArt ? (
+        // ui-allow-fixed-size: compact icon lockup for popup readability
         <img
           src={cardArt}
           alt=""
@@ -196,6 +197,7 @@ export function FloatingStatus({ event, onDone, top }: StatusProps) {
       onAnimationComplete={onDone}
     >
       {cardArt ? (
+        // ui-allow-fixed-size: compact icon lockup for popup readability
         <img
           src={cardArt}
           alt=""

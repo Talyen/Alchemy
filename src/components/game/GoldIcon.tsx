@@ -22,6 +22,7 @@ export function GoldIcon({ size = 14, className, glimmer = true }: Props) {
       }}
       aria-hidden
     >
+      {/* ui-allow-absolute: coin highlight overlay */}
       <span
         className="absolute rounded-full"
         style={{
@@ -35,6 +36,7 @@ export function GoldIcon({ size = 14, className, glimmer = true }: Props) {
       />
 
       {glimmer && (
+        // ui-allow-absolute: glimmer sweep overlay
         <motion.span
           className="absolute inset-y-0 w-[28%]"
           style={{

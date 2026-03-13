@@ -64,12 +64,14 @@ export function HpBar({ current, max, color = 'red', block = 0 }: Props) {
       {/* Bar track */}
       <div className="h-2 rounded-full bg-zinc-800 overflow-hidden relative">
         {/* HP fill */}
+        {/* ui-allow-absolute: internal fill layer */}
         <motion.div
           className={`h-full absolute left-0 top-0 rounded-full ${trackColor[color]}`}
           animate={{ width: `${pct}%` }}
           transition={{ type: 'spring', stiffness: 120, damping: 20 }}
         />
         {/* Shield overlay — blue tint on top of HP fill, clamped to 100% */}
+        {/* ui-allow-absolute: internal shield overlay layer */}
         <motion.div
           className="absolute top-0 left-0 h-full rounded-full bg-sky-400/55 pointer-events-none"
           animate={{ width: `${shieldPct}%`, opacity: block > 0 ? 1 : 0 }}

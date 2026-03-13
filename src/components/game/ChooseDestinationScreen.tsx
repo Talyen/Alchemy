@@ -132,6 +132,7 @@ export function ChooseDestinationScreen({ options, onChoose, topLeft }: Props) {
   return (
     <SelectionScreenShell title="Choose Destination" subtitle="Travel" topLeft={topLeft}>
       <div className="relative w-full h-[62%] max-w-5xl">
+          {/* ui-allow-absolute: decorative route guide path layer */}
           <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
             <motion.path
               d={pathToChoice(hoveredIndex ?? 1)}
@@ -154,6 +155,7 @@ export function ChooseDestinationScreen({ options, onChoose, topLeft }: Props) {
             />
           </svg>
 
+          {/* ui-allow-absolute: full-area option layout overlay */}
           <motion.div
             className="absolute inset-0 flex items-center justify-center gap-10 px-10"
             variants={staggerContainerVariants}

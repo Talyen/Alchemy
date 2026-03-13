@@ -37,6 +37,7 @@ export function SelectionScreenShell({ title, subtitle, children, layout = 'cent
           aspectRatio: 'var(--alchemy-viewport-ratio, 16 / 9)',
         }}
       >
+        {/* ui-allow-absolute: anchored shell corner slot */}
         {topLeft ? <div className="absolute right-6 bottom-6 z-50">{topLeft}</div> : null}
 
         <motion.div

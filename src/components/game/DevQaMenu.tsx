@@ -26,6 +26,7 @@ export function DevQaMenu({ onSkipCombat, onUnlockAll }: Props) {
 
       <AnimatePresence>
         {open && (
+          // ui-allow-absolute: anchored QA flyout menu
           <motion.div
             className="absolute right-0 bottom-full mb-2 w-56 rounded-xl border border-zinc-700/80 bg-zinc-950/95 p-1.5"
             initial={{ opacity: 0, y: 6, scale: 0.98 }}
