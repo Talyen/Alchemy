@@ -381,145 +381,163 @@ export function Hand({ cards, mana, maxMana, gold, onPlay, disabled, isEnemyActi
   const activeManaEvent = manaEvents[0]
 
   return (
-    <div
-      className="relative h-full flex justify-center px-6 pb-6 overflow-visible"
-      style={{ paddingTop: 66 }}
-    >
-      {/* ui-allow-absolute: draw pile pinned bottom-left */}
-      <div className="absolute left-4 bottom-6 z-10">
-        <PileStack
-          count={drawCount}
-          label="Draw"
-          onClick={() => {
-            setShowDiscardPile(false)
-            setShowDrawPile(prev => !prev)
-          }}
-        />
-        <AnimatePresence>
-          {showDrawPile && (
-            <PileViewer
-              title="Draw Pile"
-              cards={drawPileCards}
-              onClose={() => setShowDrawPile(false)}
+    <div className="relative h-full flex flex-col justify-end px-4 md:px-6 pb-6 overflow-visible gap-4" data-ui-container>
+      <div className="w-full grid grid-cols-[auto_1fr_auto] items-end gap-4" data-ui-container>
+        <div className="flex items-end gap-4" data-ui-container>
+          <div className="flex flex-col items-center gap-3" data-ui-container>
+            <motion.button
+              type="button"
+              onClick={() => setShowInventory(prev => !prev)}
+              className="inline-flex h-14 w-14 items-center justify-center rounded-lg border border-zinc-700/80 bg-zinc-900/85"
+              whileHover={{ scale: 1.04, borderColor: 'rgba(161,161,170,0.7)' }}
+              whileTap={{ scale: 0.96 }}
+            >
+              <img
+                src="assets/ui/inventory-bag.png"
+                alt="Inventory"
+                className="h-9 w-9 object-contain"
+                style={{ imageRendering: 'pixelated' }}
+              />
+            </motion.button>
+
+            <PileStack
+              count={drawCount}
+              label="Draw"
+              onClick={() => {
+                setShowDiscardPile(false)
+                setShowDrawPile(prev => !prev)
+              }}
             />
-          )}
-        </AnimatePresence>
-      </div>
+          </div>
 
-      {/* ui-allow-absolute: inventory bag pinned above draw pile */}
-      <div className="absolute left-5 bottom-[168px] w-16 flex justify-center z-20">
-        <motion.button
-          type="button"
-          onClick={() => setShowInventory(prev => !prev)}
-          className="inline-flex h-14 w-14 items-center justify-center rounded-lg border border-zinc-700/80 bg-zinc-900/85"
-          whileHover={{ scale: 1.04, borderColor: 'rgba(161,161,170,0.7)' }}
-          whileTap={{ scale: 0.96 }}
-        >
-          <img
-            src="assets/ui/inventory-bag.png"
-            alt="Inventory"
-            className="h-9 w-9 object-contain"
-            style={{ imageRendering: 'pixelated' }}
+          <div className="flex flex-col items-start gap-2.5" data-ui-container>
+            <div className="relative">
+              <ManaOrbs current={mana} max={maxMana} />
+              <AnimatePresence mode="wait">
+                {activeManaEvent && (
+                  <FloatingNumber
+                    key={activeManaEvent.id}
+                    event={activeManaEvent}
+                    top={-38}
+                    onDone={() => removeManaEvent(activeManaEvent.id)}
+                  />
+                )}
+              </AnimatePresence>
+            </div>
+            <GoldCounter gold={gold} />
+            <div
+              ref={logAnchorRef}
+              className="relative"
+              onMouseEnter={() => {
+                updateLogPosition()
+                setShowLog(true)
+              }}
+              onMouseLeave={() => {
+                setShowLog(false)
+                setLogPosition(null)
+              }}
+            >
+              <motion.div
+                className="flex items-center gap-1.5 text-zinc-600 cursor-default"
+                whileHover={{ color: '#a1a1aa', scale: 1.05 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+              >
+                <ScrollText size={14} />
+                <span className="text-[11px] uppercase tracking-widest">Log</span>
+              </motion.div>
+              <AnimatePresence>
+                {showLog && <CombatLog log={log} position={logPosition} />}
+              </AnimatePresence>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-end justify-center overflow-visible pb-2" data-ui-boundary>
+          <AnimatePresence mode="popLayout" custom={isEnemyActing}>
+            {cards.map((card, i) => {
+              const playable = !disabled && card.cost <= mana
+              return (
+                <DraggableCard
+                  key={card.uid}
+                  card={card}
+                  i={i}
+                  mid={mid}
+                  anglePerCard={anglePerCard}
+                  overlapPx={overlapPx}
+                  elevated={elevated}
+                  raise={raise}
+                  lower={lower}
+                  playable={playable}
+                  disabled={disabled}
+                  onPlay={onPlay}
+                />
+              )
+            })}
+          </AnimatePresence>
+        </div>
+
+        <div className="flex items-end">
+          <PileStack
+            count={discardCount}
+            label="Discard"
+            isDiscard
+            onClick={() => {
+              setShowDrawPile(false)
+              setShowDiscardPile(prev => !prev)
+            }}
           />
-        </motion.button>
-        <CenterModal open={showInventory} onClose={() => setShowInventory(false)} widthClassName="w-[min(94vw,980px)] max-h-[78vh]">
-                <div className="mb-2 flex items-center justify-between">
-                  <p className="text-[10px] uppercase tracking-widest text-zinc-500">Inventory</p>
-                  <button
-                    type="button"
-                    onClick={() => setShowInventory(false)}
-                    className="text-xs text-zinc-500 hover:text-zinc-300"
-                  >
-                    Close
-                  </button>
-                </div>
-                <div className="max-h-[66vh] overflow-y-auto scrollbar-hidden pr-1">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {trinkets.length === 0 && (
-                      <p className="text-xs text-zinc-500">No trinkets yet.</p>
-                    )}
-                    {trinkets.map(trinket => (
-                      <TrinketInfoCard
-                        key={trinket.id}
-                        id={trinket.id}
-                        name={trinket.name}
-                        description={trinket.description}
-                        size="compact"
-                        className="w-full"
-                      />
-                    ))}
-                  </div>
-                </div>
-        </CenterModal>
+        </div>
       </div>
 
-      {/* ui-allow-absolute: resources cluster pinned near draw pile */}
-      <div className="absolute left-28 bottom-6 z-10 flex flex-col items-start gap-2.5">
-        <div className="relative">
-          <ManaOrbs current={mana} max={maxMana} />
-          <AnimatePresence mode="wait">
-            {activeManaEvent && (
-              <FloatingNumber
-                key={activeManaEvent.id}
-                event={activeManaEvent}
-                top={-38}
-                onDone={() => removeManaEvent(activeManaEvent.id)}
-              />
-            )}
-          </AnimatePresence>
-        </div>
-        <GoldCounter gold={gold} />
-        <div
-          ref={logAnchorRef}
-          className="relative"
-          onMouseEnter={() => {
-            updateLogPosition()
-            setShowLog(true)
-          }}
-          onMouseLeave={() => {
-            setShowLog(false)
-            setLogPosition(null)
-          }}
-        >
-          <motion.div
-            className="flex items-center gap-1.5 text-zinc-600 cursor-default"
-            whileHover={{ color: '#a1a1aa', scale: 1.05 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+      <AnimatePresence>
+        {showDrawPile && (
+          <PileViewer
+            title="Draw Pile"
+            cards={drawPileCards}
+            onClose={() => setShowDrawPile(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showDiscardPile && (
+          <PileViewer
+            title="Discard Pile"
+            cards={discardPileCards}
+            onClose={() => setShowDiscardPile(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      <CenterModal open={showInventory} onClose={() => setShowInventory(false)} widthClassName="w-[min(94vw,980px)] max-h-[78vh]">
+        <div className="mb-2 flex items-center justify-between">
+          <p className="text-[10px] uppercase tracking-widest text-zinc-500">Inventory</p>
+          <button
+            type="button"
+            onClick={() => setShowInventory(false)}
+            className="text-xs text-zinc-500 hover:text-zinc-300"
           >
-            <ScrollText size={14} />
-            <span className="text-[11px] uppercase tracking-widest">Log</span>
-          </motion.div>
-          <AnimatePresence>
-            {showLog && <CombatLog log={log} position={logPosition} />}
-          </AnimatePresence>
+            Close
+          </button>
         </div>
-      </div>
-
-      {/* Fanned card hand ΓÇö centered */}
-      <div className="flex items-end justify-center overflow-visible pb-2">
-        <AnimatePresence mode="popLayout" custom={isEnemyActing}>
-          {cards.map((card, i) => {
-            const playable = !disabled && card.cost <= mana
-            return (
-              <DraggableCard
-                key={card.uid}
-                card={card}
-                i={i}
-                mid={mid}
-                anglePerCard={anglePerCard}
-                overlapPx={overlapPx}
-                elevated={elevated}
-                raise={raise}
-                lower={lower}
-                playable={playable}
-                disabled={disabled}
-                onPlay={onPlay}
+        <div className="max-h-[66vh] overflow-y-auto scrollbar-hidden pr-1">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {trinkets.length === 0 && (
+              <p className="text-xs text-zinc-500">No trinkets yet.</p>
+            )}
+            {trinkets.map(trinket => (
+              <TrinketInfoCard
+                key={trinket.id}
+                id={trinket.id}
+                name={trinket.name}
+                description={trinket.description}
+                size="compact"
+                className="w-full"
               />
-            )
-          })}
-        </AnimatePresence>
-
-      </div>
+            ))}
+          </div>
+        </div>
+      </CenterModal>
 
       {/* ui-allow-absolute: overflow dissolve FX for cards that exceeded max hand size */}
       <AnimatePresence>
@@ -544,29 +562,6 @@ export function Hand({ cards, mana, maxMana, gold, onPlay, disabled, isEnemyActi
           </motion.div>
         ))}
       </AnimatePresence>
-
-      {/* ui-allow-absolute: discard pile pinned to right edge */}
-      <div className="absolute right-4 bottom-6 z-10">
-        <PileStack
-          count={discardCount}
-          label="Discard"
-          isDiscard
-          onClick={() => {
-            setShowDrawPile(false)
-            setShowDiscardPile(prev => !prev)
-          }}
-        />
-        <AnimatePresence>
-          {showDiscardPile && (
-            <PileViewer
-              title="Discard Pile"
-              cards={discardPileCards}
-              onClose={() => setShowDiscardPile(false)}
-            />
-          )}
-        </AnimatePresence>
-      </div>
-
     </div>
   )
 }
