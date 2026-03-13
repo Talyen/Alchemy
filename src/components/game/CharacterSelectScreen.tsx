@@ -143,7 +143,7 @@ export function CharacterSelectScreen({ onSelect, topLeft }: Props) {
               whileTap={{ scale: 0.995, y: 0 }}
               transition={{ type: 'spring', stiffness: 360, damping: 28 }}
             >
-              <Stack align="center" gap="sm" className="translate-y-[-4px]">
+              <Stack align="center" gap="sm">
                 <div className="shrink-0 flex items-center justify-center">
                   <CharacterSprite characterId={character.id} />
                 </div>
@@ -157,13 +157,13 @@ export function CharacterSelectScreen({ onSelect, topLeft }: Props) {
           ))}
         </div>
 
-          <div className="relative mt-2 min-h-[410px]" data-ui-container>
+          <div className="relative mt-2 min-h-96" data-ui-container>
             <AnimatePresence>
               {showDeck && (
                 <>
                 {/* ui-allow-absolute: hover deck overlay */}
                 <motion.div
-                  className="absolute inset-x-0 top-0 z-[71] min-h-[380px] rounded-xl border border-zinc-700/80 bg-zinc-950/95 px-4 pt-4 pb-20"
+                  className="absolute inset-x-0 top-0 z-[71] min-h-96 rounded-xl border border-zinc-700/80 bg-zinc-950/95 px-4 pt-4 pb-20"
                   data-ui-boundary
                   data-ui-overlay
                   initial={{ opacity: 0, y: 8, scale: 0.98 }}
@@ -174,7 +174,7 @@ export function CharacterSelectScreen({ onSelect, topLeft }: Props) {
                   onMouseLeave={scheduleCloseDeck}
                 >
                   <p className="text-[10px] uppercase tracking-widest text-zinc-600 mb-3 text-center">{activeDeckCharacter.name} Starting Deck</p>
-                    <div className="mt-1 min-h-[318px] flex items-center justify-center overflow-visible">
+                    <div className="mt-1 min-h-80 flex items-center justify-center overflow-visible">
                     {previewCards.map(({ card, uid }, index) => {
                       const offset = index - previewMid
                       const rotate = offset * previewAnglePerCard

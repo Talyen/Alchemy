@@ -73,7 +73,7 @@ export function TrinketInfoCard({ id, name, description, iconSrc, size = 'defaul
       <ViewportPopover
         open={keywordTooltipEnabled && showTooltip && keywords.length > 0}
         position={tooltipPosition}
-        className="fixed w-56 rounded-xl border border-zinc-700/80 bg-zinc-950 px-3 py-2.5 z-[999] pointer-events-none"
+        className="w-56 rounded-xl border border-zinc-700/80 bg-zinc-950 px-3 py-2.5 z-[999] pointer-events-none"
       >
         <p className="text-[11px] text-zinc-600 uppercase tracking-widest mb-2">Keywords</p>
         <div className="flex flex-col gap-2">

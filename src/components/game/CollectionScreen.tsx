@@ -10,6 +10,7 @@ import { BESTIARY_Y_OFFSET, PRISMATIC_ENEMY_IDS, getEnemyRelativeScale } from '.
 import { playCardPlay } from '@/sounds'
 import { TrinketInfoCard } from './TrinketInfoCard'
 import { getViewportPopoverPosition } from '@/lib/viewportPopover'
+import { ViewportPopover } from '@/components/ui/ViewportPopover'
 
 interface Props {
   cards: CardDef[]
@@ -187,8 +188,8 @@ export function CollectionScreen({
       titleOffsetY={0}
       allowOverflowVisible
     >
-      <div className="w-full px-8 pt-5">
-        <div className="relative mx-auto w-[960px]">
+      <div className="w-full px-6 md:px-8 pt-5" data-ui-container>
+        <div className="relative mx-auto w-full max-w-6xl" data-ui-boundary>
           <div className="mb-5 flex items-center justify-center gap-2">
             {(['cards', 'bestiary', 'trinkets'] as const).map(tab => {
               const isActive = activeTab === tab
@@ -214,20 +215,22 @@ export function CollectionScreen({
             })}
           </div>
 
-          <div className="relative">
-            {totalPages > 1 && (
-              <motion.button
-                type="button"
-                aria-label="Previous page"
-                onClick={prevPage}
-                className="absolute -left-16 top-1/2 -translate-y-1/2 z-20 inline-flex items-center justify-center rounded-lg border border-zinc-800/70 bg-zinc-900/80 p-2 text-zinc-500"
-                whileHover={{ scale: 1.04, color: '#a1a1aa', borderColor: 'rgba(113,113,122,0.8)' }}
-                whileTap={{ scale: 0.96 }}
-                transition={{ type: 'spring', stiffness: 360, damping: 26 }}
-              >
-                <ChevronLeft size={16} />
-              </motion.button>
-            )}
+          <div className="grid grid-cols-[2rem_1fr_2rem] items-center gap-2 md:gap-4" data-ui-container>
+            <div className="flex items-center justify-center">
+              {totalPages > 1 ? (
+                <motion.button
+                  type="button"
+                  aria-label="Previous page"
+                  onClick={prevPage}
+                  className="inline-flex items-center justify-center rounded-lg border border-zinc-800/70 bg-zinc-900/80 p-2 text-zinc-500"
+                  whileHover={{ scale: 1.04, color: '#a1a1aa', borderColor: 'rgba(113,113,122,0.8)' }}
+                  whileTap={{ scale: 0.96 }}
+                  transition={{ type: 'spring', stiffness: 360, damping: 26 }}
+                >
+                  <ChevronLeft size={16} />
+                </motion.button>
+              ) : null}
+            </div>
 
             <AnimatePresence mode="wait">
               {activeTab === 'cards' && (
@@ -320,7 +323,7 @@ export function CollectionScreen({
                           {enemy.name}
                         </p>
 
-                        <div className="mt-2 flex h-[108px] items-end justify-center" style={{ opacity: isEncountered ? 1 : 0.6 }}>
+                        <div className="mt-2 flex min-h-24 md:min-h-28 items-end justify-center" style={{ opacity: isEncountered ? 1 : 0.6 }}>
                           <motion.img
                             data-testid="bestiary-enemy-sprite"
                             src={frameSrc}
@@ -348,19 +351,10 @@ export function CollectionScreen({
 
                         <AnimatePresence>
                           {isEncountered && hoveredEnemyId === enemy.id && hoveredEnemyTooltip && (
-                            <motion.div
-                              key={`${enemy.id}-details`}
-                              className="fixed pointer-events-none z-[320] w-64 rounded-xl border border-zinc-700/80 bg-zinc-950 px-3 py-2.5"
-                              style={{
-                                left: hoveredEnemyTooltip.left,
-                                top: hoveredEnemyTooltip.top,
-                                x: '-50%',
-                                y: hoveredEnemyTooltip.placeAbove ? '-100%' : '0%',
-                              }}
-                              initial={{ opacity: 0, y: 5, scale: 0.97 }}
-                              animate={{ opacity: 1, y: 0, scale: 1 }}
-                              exit={{ opacity: 0, y: 5, scale: 0.97, transition: { duration: 0.1, ease: 'easeIn' } }}
-                              transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+                            <ViewportPopover
+                              open
+                              position={hoveredEnemyTooltip}
+                              className="pointer-events-none z-[320] w-64 rounded-xl border border-zinc-700/80 bg-zinc-950 px-3 py-2.5"
                             >
                               <p className="text-[10px] uppercase tracking-widest text-zinc-500">Details</p>
                               <div className="mt-3 space-y-3">
@@ -392,7 +386,7 @@ export function CollectionScreen({
                                   </div>
                                 </div>
                               </div>
-                            </motion.div>
+                            </ViewportPopover>
                           )}
                         </AnimatePresence>
                       </motion.button>
@@ -439,19 +433,21 @@ export function CollectionScreen({
               )}
             </AnimatePresence>
 
-            {totalPages > 1 && (
-              <motion.button
-                type="button"
-                aria-label="Next page"
-                onClick={nextPage}
-                className="absolute -right-16 top-1/2 -translate-y-1/2 z-20 inline-flex items-center justify-center rounded-lg border border-zinc-800/70 bg-zinc-900/80 p-2 text-zinc-500"
-                whileHover={{ scale: 1.04, color: '#a1a1aa', borderColor: 'rgba(113,113,122,0.8)' }}
-                whileTap={{ scale: 0.96 }}
-                transition={{ type: 'spring', stiffness: 360, damping: 26 }}
-              >
-                <ChevronRight size={16} />
-              </motion.button>
-            )}
+            <div className="flex items-center justify-center">
+              {totalPages > 1 ? (
+                <motion.button
+                  type="button"
+                  aria-label="Next page"
+                  onClick={nextPage}
+                  className="inline-flex items-center justify-center rounded-lg border border-zinc-800/70 bg-zinc-900/80 p-2 text-zinc-500"
+                  whileHover={{ scale: 1.04, color: '#a1a1aa', borderColor: 'rgba(113,113,122,0.8)' }}
+                  whileTap={{ scale: 0.96 }}
+                  transition={{ type: 'spring', stiffness: 360, damping: 26 }}
+                >
+                  <ChevronRight size={16} />
+                </motion.button>
+              ) : null}
+            </div>
           </div>
 
           {totalPages > 1 && (

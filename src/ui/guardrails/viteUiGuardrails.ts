@@ -30,7 +30,7 @@ const CLASSNAME_ABSOLUTE_PATTERN = /className\s*=\s*["'`][^"'`]*(?:\babsolute\b|
 const INLINE_OFFSET_PATTERN = /style\s*=\s*\{\{[^}]*\b(left|right|top|bottom)\s*:\s*['"]?\d+px/gs
 const FIXED_SIZE_PATTERN = /(?:className\s*=\s*["'`][^"'`]*(?:\bw-\[\d+px\]|\bh-\[\d+px\]|\bmin-w-\[\d+px\]|\bmin-h-\[\d+px\]|\bmax-w-\[\d+px\]|\bmax-h-\[\d+px\])[^"'`]*["'`])|(?:style\s*=\s*\{\{[^}]*\b(width|height|minWidth|minHeight|maxWidth|maxHeight)\s*:\s*['"]?\d+px[^}]*\}\})/gs
 const PIXEL_OFFSET_CLASS_PATTERN = /className\s*=\s*["'`][^"'`]*(?:\bleft-\[\d+px\]|\bright-\[\d+px\]|\btop-\[\d+px\]|\bbottom-\[\d+px\]|\btranslate-x-\[\d+px\]|\btranslate-y-\[\d+px\])[^"'`]*["'`]/g
-const SCREEN_SIZE_PATTERN = /className\s*=\s*["'`][^"'`]*(?:\bw-screen\b|\bh-screen\b)[^"'`]*["'`]/g
+const SCREEN_SIZE_PATTERN = /className\s*=\s*["'`][^"'`]*(?:^|\s)(?:w-screen|h-screen)(?:\s|$)[^"'`]*["'`]/g
 
 function collectFiles(root: string): string[] {
   const files: string[] = []
