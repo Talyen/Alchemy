@@ -108,10 +108,9 @@ export function EnemyPanel({ enemy, isActing, isActive, lastCardPlayedId, isElit
   const spriteScale = getEnemyRelativeScale(enemy.id) * eliteEncounterScale
   const inactiveScale = isActive ? spriteScale : spriteScale * 0.82
   const hoverScale = isEliteEnemy ? spriteScale * 1.04 : spriteScale * 1.12
-  const facingScaleX = 1
+  const facingScaleX = LEFT_FACING_ENEMY_IDS.has(enemy.id) ? -1 : 1
   const isPrismatic = PRISMATIC_ENEMY_IDS.has(enemy.id)
   const spriteTintFilter = ENEMY_TINT_FILTER_BY_ID[enemy.id] ?? 'none'
-  void LEFT_FACING_ENEMY_IDS
   type QueueEntry = { kind: 'dmg'; data: DmgEvent } | { kind: 'status'; data: StatusEvent }
   const MAX_QUEUE = 5
   const controls    = useAnimationControls()

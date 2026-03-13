@@ -11,6 +11,8 @@ import { SelectionScreenShell, staggerContainerVariants, staggerItemVariants } f
 import { playGoldSpend } from '@/sounds'
 import { KEYWORDS, getKeywordsFromText, renderKeywordText } from './keywordGlossary'
 import { getViewportPopoverPosition, type PopoverPosition } from '@/lib/viewportPopover'
+import { Row } from '@/ui/primitives/Row'
+import { Stack } from '@/ui/primitives/Stack'
 
 export type AlchemyTransformKind = 'cost_down' | 'burn_up' | 'poison_up' | 'bleed_up' | 'heal_up'
 
@@ -196,7 +198,7 @@ export function AlchemyScreen({ characterId, gold, deckCards, transformOffers, p
 
   return (
     <SelectionScreenShell title="Alchemist's Hut" subtitle="Alchemy" topLeft={topLeft} layout="top" titleOffsetY={24}>
-      <div className="w-full h-full min-h-0 max-w-6xl px-6 pb-6 flex flex-col items-center gap-8">
+      <Stack className="h-full min-h-0 max-w-6xl px-6 pb-6" align="center" gap="xl">
         {/* ui-allow-fixed-size: composition width for character stage */}
         <motion.div
           className="relative mx-auto w-full max-w-[760px] flex items-end justify-center z-10"
@@ -254,7 +256,7 @@ export function AlchemyScreen({ characterId, gold, deckCards, transformOffers, p
             </div>
           </div>
 
-          <div className="flex items-end justify-center gap-10">
+          <Row className="w-auto" align="end" justify="center" gap="lg">
             <motion.div
               initial={{ opacity: 0, x: -14 }}
               animate={{ opacity: 1, x: 0 }}
@@ -279,7 +281,7 @@ export function AlchemyScreen({ characterId, gold, deckCards, transformOffers, p
                 className="h-20 w-20 object-contain"
               />
             </motion.div>
-          </div>
+          </Row>
         </motion.div>
 
         <div className="relative z-20 w-full flex-1 overflow-visible">
@@ -624,7 +626,7 @@ export function AlchemyScreen({ characterId, gold, deckCards, transformOffers, p
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
+      </Stack>
     </SelectionScreenShell>
   )
 }

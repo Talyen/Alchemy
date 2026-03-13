@@ -28,6 +28,12 @@ Run responsive UI diagnostics regression:
 
 - `npm run test:ui-guardrails`
 
+Run visual QA capture + assertions:
+
+- `npm run qa:visual`
+- Report files: `screenshots/qa/report.md` and `screenshots/qa/report.json`
+- Process details: `docs/ui_qa_process.md`
+
 ## Version Control Safety Policy
 
 This project uses an automatic checkpoint workflow to reduce accidental loss.

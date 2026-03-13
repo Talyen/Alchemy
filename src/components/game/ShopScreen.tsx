@@ -9,6 +9,8 @@ import { GoldIcon } from './GoldIcon'
 import { SelectionScreenShell, staggerContainerVariants, staggerItemVariants } from './SelectionScreenShell'
 import { TrinketInfoCard } from './TrinketInfoCard'
 import { playGoldSpend } from '@/sounds'
+import { Row } from '@/ui/primitives/Row'
+import { Stack } from '@/ui/primitives/Stack'
 
 export interface ShopCardOffer {
   id: string
@@ -147,7 +149,7 @@ export function ShopScreen({ characterId, gold, cardOffers, trinketOffers, offer
 
   return (
     <SelectionScreenShell title="Shop" subtitle="Merchant" topLeft={topLeft} layout="top" titleOffsetY={24}>
-      <div className="w-full h-full min-h-0 max-w-6xl px-6 pb-4 flex flex-col items-center gap-6">
+      <Stack className="h-full min-h-0 max-w-6xl px-6 pb-4" align="center" gap="lg">
         {/* ui-allow-fixed-size: composition width for character stage */}
         <motion.div
           className="relative mx-auto w-full max-w-[760px] flex items-end justify-center z-10"
@@ -200,7 +202,7 @@ export function ShopScreen({ characterId, gold, cardOffers, trinketOffers, offer
             </div>
           </div>
 
-          <div className="flex items-end justify-center gap-10">
+          <Row className="w-auto" align="end" justify="center" gap="lg">
             <motion.div
               initial={{ opacity: 0, x: -14 }}
               animate={{ opacity: 1, x: 0 }}
@@ -225,11 +227,11 @@ export function ShopScreen({ characterId, gold, cardOffers, trinketOffers, offer
                 className="h-20 w-20 object-contain"
               />
             </motion.div>
-          </div>
+          </Row>
         </motion.div>
 
         <div className="relative z-20 w-full min-h-0 flex-1 overflow-visible pr-1 flex items-center justify-center">
-          <div className="w-full flex flex-col items-center gap-4 pb-1">
+          <Stack className="w-full pb-1" align="center" gap="md">
             {offerMode === 'cards' && (
             <div className="w-full">
               <p className="mb-2 text-center text-[10px] uppercase tracking-widest text-zinc-600">Cards For Sale</p>
@@ -330,11 +332,11 @@ export function ShopScreen({ characterId, gold, cardOffers, trinketOffers, offer
               </div>
             </div>
             )}
-          </div>
+          </Stack>
         </div>
 
         {/* ui-allow-fixed-size: action row width cap aligns controls with shop columns */}
-        <div className="w-full max-w-[760px] flex flex-col items-center gap-3 pt-1">
+        <Stack className="w-full max-w-[760px] pt-1" align="center" gap="sm">
           <motion.button
             type="button"
             disabled={destroyDisabled}
@@ -360,7 +362,7 @@ export function ShopScreen({ characterId, gold, cardOffers, trinketOffers, offer
           >
             Leave
           </motion.button>
-        </div>
+        </Stack>
 
         <AnimatePresence>
           {showDestroyPanel && (
@@ -453,7 +455,7 @@ export function ShopScreen({ characterId, gold, cardOffers, trinketOffers, offer
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
+      </Stack>
     </SelectionScreenShell>
   )
 }

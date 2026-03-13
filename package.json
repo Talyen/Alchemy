@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "screenshot": "node scripts/screenshot.mjs",
+    "qa:visual": "playwright test tests/ui-visual-qa.spec.ts --project=core",
     "screenshot:destination": "node scripts/screenshot-map.mjs",
     "screenshot:card-variants": "node scripts/screenshot-card-variants.mjs",
     "screenshot:immolate-bg": "node scripts/screenshot-immolate-bg.mjs",
