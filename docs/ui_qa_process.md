@@ -47,3 +47,9 @@ This process creates visual artifacts and machine-checkable UI assertions so reg
 - Runtime validator now emits `control-overlap` warnings when interactive controls overlap.
 - Regression test now verifies menu vs draw/discard overlap at 800x600, 1280x720, and 1920x1080.
 - Visual QA report includes a dedicated `combat-menu-pile-overlap` check.
+
+## Critical Control Matrix
+
+- Source of truth: `src/ui/qa/criticalControlMatrix.ts`
+- Runtime diagnostics (`src/ui/debug/responsiveValidation.ts`) and Playwright visual/layout tests both consume this shared rule set.
+- Add new selector pairs here when introducing critical controls (menu, turn controls, core pile buttons, etc.) so architecture and test enforcement stay in sync.

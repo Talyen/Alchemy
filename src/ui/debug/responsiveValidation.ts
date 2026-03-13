@@ -1,3 +1,5 @@
+import { CRITICAL_CONTROL_RULES } from '@/ui/qa/criticalControlMatrix'
+
 type TargetViewport = {
   name: 'small' | 'medium' | 'large'
   width: number
@@ -5,7 +7,7 @@ type TargetViewport = {
 }
 
 type ValidationIssue = {
-  kind: 'overlap' | 'overflow' | 'offscreen' | 'touch-target' | 'control-overlap'
+  kind: 'overlap' | 'overflow' | 'offscreen' | 'touch-target' | 'control-overlap' | 'critical-control'
   viewport: string
   detail: string
 }
@@ -31,6 +33,15 @@ function intersects(a: DOMRect, b: DOMRect): number {
   const top = Math.max(a.top, b.top)
   const bottom = Math.min(a.bottom, b.bottom)
   return Math.max(0, right - left) * Math.max(0, bottom - top)
+}
+
+function minAxisGap(a: DOMRect, b: DOMRect): number {
+  const horizontalGap = Math.max(0, Math.max(a.left - b.right, b.left - a.right))
+  const verticalGap = Math.max(0, Math.max(a.top - b.bottom, b.top - a.bottom))
+  if (horizontalGap === 0 && verticalGap === 0) return 0
+  if (horizontalGap === 0) return verticalGap
+  if (verticalGap === 0) return horizontalGap
+  return Math.hypot(horizontalGap, verticalGap)
 }
 
 function describeElement(element: HTMLElement): string {
@@ -145,6 +156,26 @@ function validateCurrentViewport(): ValidationIssue[] {
           detail: `${describeElement(a)} overlaps interactive ${describeElement(b)}`,
         })
       }
+    }
+  }
+
+  for (const rule of CRITICAL_CONTROL_RULES) {
+    const primary = document.querySelector(rule.primarySelector)
+    const secondary = document.querySelector(rule.secondarySelector)
+    if (!primary || !secondary) continue
+    if (!isVisible(primary) || !isVisible(secondary)) continue
+
+    const primaryRect = primary.getBoundingClientRect()
+    const secondaryRect = secondary.getBoundingClientRect()
+    const overlapArea = intersects(primaryRect, secondaryRect)
+    const gap = minAxisGap(primaryRect, secondaryRect)
+
+    if (overlapArea > 0 || gap < rule.minGap) {
+      issues.push({
+        kind: 'critical-control',
+        viewport: viewport.name,
+        detail: `${rule.id} failed (overlap=${overlapArea.toFixed(2)}, gap=${gap.toFixed(2)}px, minGap=${rule.minGap}px)`,
+      })
     }
   }
 

@@ -9,6 +9,7 @@ type PopoverOptions = {
   padding?: number
   minHeightForAbove?: number
   offset?: number
+  preferAbove?: boolean
 }
 
 export function getViewportPopoverPosition(rect: DOMRect, options: PopoverOptions): PopoverPosition {
@@ -22,7 +23,8 @@ export function getViewportPopoverPosition(rect: DOMRect, options: PopoverOption
   const minLeft = padding + half
   const maxLeft = window.innerWidth - padding - half
   const left = Math.max(minLeft, Math.min(maxLeft, unclampedLeft))
-  const placeAbove = rect.top > minHeightForAbove
+  const preferAbove = options.preferAbove ?? true
+  const placeAbove = preferAbove || rect.top > minHeightForAbove
 
   return {
     left: Math.round(left),

@@ -6,7 +6,7 @@ import type { CardDef, CardInstance } from '@/types'
 import type { BestiaryEnemy } from '@/data'
 import { Card } from './Card'
 import { SelectionScreenShell, staggerContainerVariants, staggerItemVariants } from './SelectionScreenShell'
-import { BESTIARY_Y_OFFSET, PRISMATIC_ENEMY_IDS, getEnemyRelativeScale } from './enemyVisualConfig'
+import { BESTIARY_HORIZONTAL_FLIP_IDS, BESTIARY_Y_OFFSET, PRISMATIC_ENEMY_IDS, getEnemyRelativeScale } from './enemyVisualConfig'
 import { playCardPlay } from '@/sounds'
 import { TrinketInfoCard } from './TrinketInfoCard'
 import { getViewportPopoverPosition } from '@/lib/viewportPopover'
@@ -282,12 +282,13 @@ export function CollectionScreen({
                     const spriteBaseY = BESTIARY_Y_OFFSET[enemy.id] ?? -10
                     const tintFilter = BESTIARY_TINT_FILTER_BY_ID[enemy.id]
                     const isPrismatic = PRISMATIC_ENEMY_IDS.has(enemy.id)
+                    const faceLeft = BESTIARY_HORIZONTAL_FLIP_IDS === 'all'
 
                     return (
                       <motion.button
                         key={`${enemy.id}-${enemyPage}-${i}`}
                         type="button"
-                        className="group relative h-44 rounded-xl border border-zinc-800/70 bg-zinc-900/35 px-3 py-2"
+                        className="group relative h-44 rounded-xl border border-zinc-800/70 bg-zinc-900/35 px-3 py-2 flex flex-col"
                         variants={staggerItemVariants}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.985 }}
@@ -323,7 +324,7 @@ export function CollectionScreen({
                           {enemy.name}
                         </p>
 
-                        <div className="mt-2 flex min-h-24 md:min-h-28 items-end justify-center" style={{ opacity: isEncountered ? 1 : 0.6 }}>
+                        <div className="mt-2 flex flex-1 min-h-24 md:min-h-28 items-end justify-center" style={{ opacity: isEncountered ? 1 : 0.6 }}>
                           <motion.img
                             data-testid="bestiary-enemy-sprite"
                             src={frameSrc}
@@ -340,7 +341,7 @@ export function CollectionScreen({
                             style={{
                               width: spriteSize,
                               height: spriteSize,
-                              scaleX: 1,
+                              scaleX: faceLeft ? -1 : 1,
                               imageRendering: 'pixelated',
                               filter: isEncountered
                                 ? (isPrismatic ? PRISMATIC_FILTER_KEYFRAMES[0] : (tintFilter ?? 'none'))

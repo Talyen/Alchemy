@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { goToCharacterSelect, startKnightRun } from './helpers'
+import { CRITICAL_CONTROL_RULES } from '../src/ui/qa/criticalControlMatrix'
 
 const BATTLE_VIEWPORTS = [
   { width: 800, height: 600 },
@@ -152,31 +153,98 @@ test('battle menu does not overlap draw/discard pile controls', async ({ page })
     await page.setViewportSize(viewport)
     await page.waitForTimeout(300)
 
-    const overlap = await page.evaluate(() => {
-      const menuButton = document.querySelector('button[aria-label="Open main menu"]')
-      const drawPile = document.querySelector('[data-testid="pile-draw"]')
-      const discardPile = document.querySelector('[data-testid="pile-discard"]')
+    for (const rule of CRITICAL_CONTROL_RULES) {
+      const result = await page.evaluate((input) => {
+        const primary = document.querySelector(input.primarySelector)
+        const secondary = document.querySelector(input.secondarySelector)
+        if (!primary || !secondary) return null
 
-      if (!menuButton || !drawPile || !discardPile) return null
+        const a = primary.getBoundingClientRect()
+        const b = secondary.getBoundingClientRect()
+        const overlapX = Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left))
+        const overlapY = Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top))
+        const overlap = overlapX * overlapY
 
-      const menuRect = menuButton.getBoundingClientRect()
-      const drawRect = drawPile.getBoundingClientRect()
-      const discardRect = discardPile.getBoundingClientRect()
+        const horizontalGap = Math.max(0, Math.max(a.left - b.right, b.left - a.right))
+        const verticalGap = Math.max(0, Math.max(a.top - b.bottom, b.top - a.bottom))
+        let gap = 0
+        if (!(horizontalGap === 0 && verticalGap === 0)) {
+          gap = horizontalGap === 0
+            ? verticalGap
+            : verticalGap === 0
+              ? horizontalGap
+              : Math.hypot(horizontalGap, verticalGap)
+        }
 
-      const area = (a: DOMRect, b: DOMRect) => {
-        const x = Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left))
-        const y = Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top))
-        return x * y
+        return { overlap, gap }
+      }, rule)
+
+      expect(result, `${rule.id} probes missing at ${viewport.width}x${viewport.height}`).not.toBeNull()
+      expect(result!.overlap, `${rule.id} overlaps at ${viewport.width}x${viewport.height}`).toBe(0)
+      expect(result!.gap, `${rule.id} gap below ${rule.minGap}px at ${viewport.width}x${viewport.height}`).toBeGreaterThanOrEqual(rule.minGap)
+    }
+  }
+})
+
+test('bestiary enemies face left and key sprites stay vertically centered', async ({ page }) => {
+  await page.goto('/', { waitUntil: 'domcontentloaded' })
+  await page.getByRole('button', { name: 'Collection' }).click()
+  await page.getByRole('button', { name: 'Bestiary' }).click()
+  await page.waitForTimeout(600)
+
+  const targets = new Set(['Shade', 'Prismatic Shade', 'Flaming Skull', 'Prismatic Skull'])
+  const found = new Map<string, { scaleX: number; bottomGap: number }>()
+
+  for (let step = 0; step < 16 && found.size < targets.size; step += 1) {
+    const snapshot = await page.evaluate(() => {
+      const entries: Array<{ name: string; scaleX: number; bottomGap: number }> = []
+      const cards = Array.from(document.querySelectorAll('button.group.relative.h-44'))
+      for (const card of cards) {
+        const nameEl = card.querySelector('p')
+        const sprite = card.querySelector('img[data-testid="bestiary-enemy-sprite"]') as HTMLImageElement | null
+        if (!nameEl || !sprite) continue
+
+        const transform = getComputedStyle(sprite).transform
+        let scaleX = 1
+        const m2d = transform.match(/^matrix\(([^)]+)\)$/)
+        if (m2d) {
+          const first = Number(m2d[1].split(',')[0])
+          if (Number.isFinite(first)) scaleX = first
+        }
+        const m3d = transform.match(/^matrix3d\(([^)]+)\)$/)
+        if (m3d) {
+          const first = Number(m3d[1].split(',')[0])
+          if (Number.isFinite(first)) scaleX = first
+        }
+
+        const cardRect = card.getBoundingClientRect()
+        const spriteRect = sprite.getBoundingClientRect()
+        entries.push({
+          name: (nameEl.textContent ?? '').trim(),
+          scaleX,
+          bottomGap: cardRect.bottom - spriteRect.bottom,
+        })
       }
-
-      return {
-        drawOverlap: area(menuRect, drawRect),
-        discardOverlap: area(menuRect, discardRect),
-      }
+      return entries
     })
 
-    expect(overlap, `layout probes missing at ${viewport.width}x${viewport.height}`).not.toBeNull()
-    expect(overlap!.drawOverlap, `menu overlaps draw pile at ${viewport.width}x${viewport.height}`).toBe(0)
-    expect(overlap!.discardOverlap, `menu overlaps discard pile at ${viewport.width}x${viewport.height}`).toBe(0)
+    for (const entry of snapshot) {
+      if (!targets.has(entry.name)) continue
+      found.set(entry.name, { scaleX: entry.scaleX, bottomGap: entry.bottomGap })
+    }
+
+    if (found.size < targets.size) {
+      const nextPage = page.getByRole('button', { name: 'Next page' })
+      if (!(await nextPage.isVisible().catch(() => false))) break
+      await nextPage.click()
+      await page.waitForTimeout(280)
+    }
+  }
+
+  for (const name of targets) {
+    expect(found.has(name), `Missing bestiary target ${name}`).toBeTruthy()
+    const metric = found.get(name)!
+    expect(metric.scaleX, `${name} should face left in bestiary`).toBeLessThan(0)
+    expect(metric.bottomGap, `${name} sprite sits too low in bestiary tile`).toBeGreaterThanOrEqual(10)
   }
 })

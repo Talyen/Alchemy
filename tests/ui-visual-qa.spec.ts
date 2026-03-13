@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { mkdir, writeFile } from 'node:fs/promises'
+import { CRITICAL_CONTROL_RULES } from '../src/ui/qa/criticalControlMatrix'
 
 const OUT_DIR = 'screenshots/qa'
 
@@ -98,47 +99,47 @@ test('visual QA capture and checks', async ({ page, baseURL }) => {
   } else {
     const playerScale = parseScaleX(facing.playerTransform)
     const enemyScale = parseScaleX(facing.enemyTransform)
-    const alt = facing.enemyAlt.toLowerCase()
-    const shouldFaceLeft = ['doc', 'big demon', 'flaming skull', 'shade', 'greater slime'].some(name => alt.includes(name))
-    const facingOk = shouldFaceLeft ? enemyScale < 0 : enemyScale > 0
+    const facingOk = enemyScale < 0
     recordCheck(
       'combat-facing-direction',
       facingOk && playerScale > 0,
-      `enemy='${facing.enemyAlt}', shouldFaceLeft=${shouldFaceLeft}, playerScaleX=${playerScale.toFixed(3)}, enemyScaleX=${enemyScale.toFixed(3)}`,
+      `enemy='${facing.enemyAlt}', playerScaleX=${playerScale.toFixed(3)}, enemyScaleX=${enemyScale.toFixed(3)}`,
     )
   }
 
-  const menuPileOverlap = await page.evaluate(() => {
-    const menuButton = document.querySelector('button[aria-label="Open main menu"]')
-    const drawPile = document.querySelector('[data-testid="pile-draw"]')
-    const discardPile = document.querySelector('[data-testid="pile-discard"]')
-    if (!menuButton || !drawPile || !discardPile) return null
+  for (const rule of CRITICAL_CONTROL_RULES) {
+    const result = await page.evaluate((input) => {
+      const primary = document.querySelector(input.primarySelector)
+      const secondary = document.querySelector(input.secondarySelector)
+      if (!primary || !secondary) return null
 
-    const menuRect = menuButton.getBoundingClientRect()
-    const drawRect = drawPile.getBoundingClientRect()
-    const discardRect = discardPile.getBoundingClientRect()
+      const a = primary.getBoundingClientRect()
+      const b = secondary.getBoundingClientRect()
+      const overlapX = Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left))
+      const overlapY = Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top))
+      const overlap = overlapX * overlapY
 
-    const area = (a: DOMRect, b: DOMRect) => {
-      const x = Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left))
-      const y = Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top))
-      return x * y
+      const horizontalGap = Math.max(0, Math.max(a.left - b.right, b.left - a.right))
+      const verticalGap = Math.max(0, Math.max(a.top - b.bottom, b.top - a.bottom))
+      let gap = 0
+      if (!(horizontalGap === 0 && verticalGap === 0)) {
+        gap = horizontalGap === 0
+          ? verticalGap
+          : verticalGap === 0
+            ? horizontalGap
+            : Math.hypot(horizontalGap, verticalGap)
+      }
+
+      return { overlap, gap }
+    }, rule)
+
+    if (!result) {
+      recordCheck(rule.id, false, 'Could not locate critical control selectors.')
+      continue
     }
 
-    return {
-      drawOverlap: area(menuRect, drawRect),
-      discardOverlap: area(menuRect, discardRect),
-    }
-  })
-
-  if (!menuPileOverlap) {
-    recordCheck('combat-menu-pile-overlap', false, 'Could not locate menu/draw/discard controls.')
-  } else {
-    const passes = menuPileOverlap.drawOverlap === 0 && menuPileOverlap.discardOverlap === 0
-    recordCheck(
-      'combat-menu-pile-overlap',
-      passes,
-      `drawOverlap=${menuPileOverlap.drawOverlap.toFixed(2)}, discardOverlap=${menuPileOverlap.discardOverlap.toFixed(2)}`,
-    )
+    const pass = result.overlap === 0 && result.gap >= rule.minGap
+    recordCheck(rule.id, pass, `overlap=${result.overlap.toFixed(2)}, gap=${result.gap.toFixed(2)}px (min ${rule.minGap}px)`)
   }
 
   const inventoryButton = page.locator('button', {

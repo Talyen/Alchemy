@@ -65,14 +65,6 @@ const ENEMY_FRAME_SETS: Record<string, string[]> = {
 }
 const GOBLIN_FPS = 8
 const ELITE_ENEMY_IDS = new Set(['big_demon', 'ogre', 'greater_mimic', 'greater_slime', 'flaming_skull', 'shade', 'prismatic_skull', 'prismatic_shade', 'prismatic_greater_mimic', 'prismatic_greater_slime'])
-const LEFT_FACING_ENEMY_IDS = new Set([
-  'doc',
-  'big_demon',
-  'flaming_skull',
-  'shade',
-  'greater_slime',
-])
-
 const ENEMY_TINT_FILTER_BY_ID: Partial<Record<string, string>> = {
   frost_imp: 'hue-rotate(165deg) saturate(1.3) brightness(1.08)',
   blood_goblin: 'hue-rotate(325deg) saturate(3.1) brightness(0.92)',
@@ -108,7 +100,7 @@ export function EnemyPanel({ enemy, isActing, isActive, lastCardPlayedId, isElit
   const spriteScale = getEnemyRelativeScale(enemy.id) * eliteEncounterScale
   const inactiveScale = isActive ? spriteScale : spriteScale * 0.82
   const hoverScale = isEliteEnemy ? spriteScale * 1.04 : spriteScale * 1.12
-  const facingScaleX = LEFT_FACING_ENEMY_IDS.has(enemy.id) ? -1 : 1
+  const facingScaleX = -1
   const isPrismatic = PRISMATIC_ENEMY_IDS.has(enemy.id)
   const spriteTintFilter = ENEMY_TINT_FILTER_BY_ID[enemy.id] ?? 'none'
   type QueueEntry = { kind: 'dmg'; data: DmgEvent } | { kind: 'status'; data: StatusEvent }

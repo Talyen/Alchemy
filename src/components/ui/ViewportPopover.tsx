@@ -20,10 +20,16 @@ export function ViewportPopover({ open, position, className, children }: Viewpor
         // ui-allow-absolute: viewport portal popover positioning
         <motion.div
           className={cn('fixed', className)}
-          style={{ left: position?.left ?? 0, top: position?.top ?? 0, x: '-50%', y: position?.placeAbove ? '-100%' : '0%' }}
-          initial={{ opacity: 0, y: 4, scale: 0.98 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 4, scale: 0.98, transition: { duration: 0.1, ease: 'easeIn' } }}
+          style={{
+            left: position?.left ?? 0,
+            top: position?.top ?? 0,
+            transform: position?.placeAbove
+              ? 'translate(-50%, calc(-100% - 8px))'
+              : 'translate(-50%, 8px)',
+          }}
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.1, ease: 'easeIn' } }}
           transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
         >
           {children}

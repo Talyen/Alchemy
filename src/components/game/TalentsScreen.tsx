@@ -21,21 +21,21 @@ type Props = {
 
 type NodePosition = { x: number; y: number }
 
-const NODE_W = 146
-const NODE_H = 118
-const CANVAS_WIDTH = 760
-const CANVAS_HEIGHT = 420
+const NODE_W = 172
+const NODE_H = 114
+const CANVAS_WIDTH = 980
+const CANVAS_HEIGHT = 560
 
 const ROW_Y: Record<0 | 1 | 2, number> = {
-  2: 34,
-  1: 164,
-  0: 294,
+  2: 44,
+  1: 222,
+  0: 400,
 }
 
 const ROW_X: Record<0 | 1 | 2, number[]> = {
-  2: [28, 212, 396, 580],
-  1: [152, 458],
-  0: [306],
+  2: [58, 288, 518, 748],
+  1: [173, 633],
+  0: [403],
 }
 
 function getNodePosition(row: 0 | 1 | 2, col: number): NodePosition {
@@ -44,6 +44,11 @@ function getNodePosition(row: 0 | 1 | 2, col: number): NodePosition {
 
 function getNodeCenter(position: NodePosition): NodePosition {
   return { x: position.x + NODE_W / 2, y: position.y + NODE_H / 2 }
+}
+
+function getLinkPath(from: NodePosition, to: NodePosition): string {
+  const cpY = (from.y + to.y) / 2
+  return `M ${from.x} ${from.y} C ${from.x} ${cpY} ${to.x} ${cpY} ${to.x} ${to.y}`
 }
 
 export function TalentsScreen({
@@ -86,8 +91,8 @@ export function TalentsScreen({
     <SelectionScreenShell title="Talents" subtitle="Passive Tree" topLeft={topLeft} layout="top" titleOffsetY={8}>
       <div className="w-full h-full min-h-0 max-w-6xl px-8 pb-5 flex flex-col gap-4">
         <div className="flex items-center justify-between gap-3">
-          <div className="flex flex-col gap-1">
-            <p className="text-sm text-zinc-200">Available Points: {availableTalentPoints}</p>
+          <div className="flex flex-col gap-1.5">
+            <p className="text-sm font-semibold text-zinc-100">Available Points: {availableTalentPoints}</p>
             <p className="text-[11px] text-zinc-400">Progress: {pointsProgress} / 10 cards played ({totalPointsEarned} earned total)</p>
           </div>
 
@@ -113,7 +118,7 @@ export function TalentsScreen({
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center justify-center gap-2">
+        <div className="flex flex-wrap items-center justify-center gap-2.5">
           {TALENT_KEYWORDS.map(keyword => {
             const isActive = keyword === activeKeyword
             const color = KEYWORDS[keyword]?.color ?? '#a1a1aa'
@@ -122,11 +127,12 @@ export function TalentsScreen({
                 key={keyword}
                 type="button"
                 onClick={() => onChangeKeyword(keyword)}
-                className="rounded-lg border px-3 py-1.5 text-xs uppercase tracking-wider"
+                className="rounded-xl border px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em]"
                 style={{
                   borderColor: isActive ? color : 'rgba(63,63,70,0.8)',
                   color: isActive ? color : 'rgba(161,161,170,0.9)',
-                  background: isActive ? 'rgba(24,24,27,0.9)' : 'rgba(9,9,11,0.55)',
+                  background: isActive ? 'rgba(24,24,27,0.95)' : 'rgba(9,9,11,0.62)',
+                  boxShadow: isActive ? `0 0 0 1px ${color}33 inset` : 'none',
                 }}
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
@@ -140,7 +146,9 @@ export function TalentsScreen({
         <div className="relative flex-1 overflow-visible">
           {/* ui-allow-absolute: fixed canvas positioning for talent graph */}
           <div className="absolute inset-0 flex items-center justify-center p-4">
-            <div className="relative" style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT }}>
+            <div className="relative rounded-2xl border border-zinc-800/80 bg-zinc-950/70 p-5" style={{ width: CANVAS_WIDTH + 40, height: CANVAS_HEIGHT + 40 }}>
+              <div className="absolute inset-0 pointer-events-none rounded-2xl" style={{ background: 'radial-gradient(120% 85% at 50% 0%, rgba(63,63,70,0.24), rgba(9,9,11,0))' }} />
+              <div className="relative" style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT }}>
               <svg width={CANVAS_WIDTH} height={CANVAS_HEIGHT} className="absolute left-0 top-0 pointer-events-none">
                 {talentLinks.map(([fromId, toId]) => {
                   const fromPos = positionById.get(fromId)
@@ -151,14 +159,13 @@ export function TalentsScreen({
                   const fromCenter = getNodeCenter(fromPos)
                   const toCenter = getNodeCenter(toPos)
                   return (
-                    <line
+                    <path
                       key={`${fromId}-${toId}`}
-                      x1={fromCenter.x}
-                      y1={fromCenter.y}
-                      x2={toCenter.x}
-                      y2={toCenter.y}
+                      d={getLinkPath(fromCenter, toCenter)}
+                      fill="none"
                       stroke={fromNodeUnlocked && toNodeUnlocked ? 'rgba(212,212,216,0.9)' : 'rgba(63,63,70,0.8)'}
-                      strokeWidth={2.5}
+                      strokeWidth={fromNodeUnlocked && toNodeUnlocked ? 3 : 2.5}
+                      strokeLinecap="round"
                     />
                   )
                 })}
@@ -175,8 +182,17 @@ export function TalentsScreen({
                     key={node.id}
                     type="button"
                     onClick={() => unlockable && onUnlockTalent(node.id)}
-                    className={`absolute w-[146px] h-[118px] rounded-xl border-2 px-3 py-2 text-left ${unlocked ? theme.ring : 'border-zinc-700'} ${unlockable ? 'cursor-pointer' : 'cursor-default'}`}
-                    style={{ left: node.position.x, top: node.position.y, background: unlocked ? 'rgb(24,24,27)' : 'rgb(24,24,27)' }}
+                    className={`absolute w-[172px] h-[114px] rounded-2xl border-2 px-3.5 py-3 text-left ${unlocked ? theme.ring : 'border-zinc-700/85'} ${unlockable ? 'cursor-pointer' : 'cursor-default'}`}
+                    style={{
+                      left: node.position.x,
+                      top: node.position.y,
+                      background: unlocked
+                        ? 'linear-gradient(165deg, rgba(39,39,42,0.95), rgba(24,24,27,0.95))'
+                        : 'linear-gradient(165deg, rgba(24,24,27,0.88), rgba(9,9,11,0.9))',
+                      boxShadow: unlocked
+                        ? '0 0 0 1px rgba(161,161,170,0.16), 0 8px 24px rgba(0,0,0,0.38)'
+                        : '0 6px 18px rgba(0,0,0,0.34)',
+                    }}
                     whileHover={{ scale: 1.04 }}
                     whileTap={unlockable ? { scale: 0.97 } : undefined}
                   >
@@ -188,12 +204,13 @@ export function TalentsScreen({
                         const KeywordIcon = entry.Icon
                         return <KeywordIcon size={15} style={{ color: entry.color }} />
                       })()}
-                      <p className="text-[13px] leading-tight text-white font-semibold">{node.name}</p>
+                      <p className="text-[13px] leading-tight text-zinc-100 font-semibold">{node.name}</p>
                     </div>
-                    <p className="mt-2 text-[11px] leading-snug text-zinc-300">{node.description}</p>
+                    <p className="mt-2.5 text-[11px] leading-snug text-zinc-300">{node.description}</p>
                   </motion.button>
                 )
               })}
+              </div>
             </div>
           </div>
         </div>
