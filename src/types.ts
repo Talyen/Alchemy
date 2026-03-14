@@ -107,6 +107,7 @@ export type MapState = {
 export type GameState = {
   characterId: string
   trinketIds: string[]
+  availableCardIds?: string[]
   phase: GamePhase
   turn: number
   player: Fighter

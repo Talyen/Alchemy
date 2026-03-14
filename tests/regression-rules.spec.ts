@@ -15,7 +15,7 @@ test('destination rules never allow repeated non-combat rooms', async () => {
   expect(canAppearAfter('shop', 'alchemy')).toBe(true)
 })
 
-test('bestiary enemy sprites all face right', async ({ page }) => {
+test('bestiary shade variants face left', async ({ page }) => {
   await startKnightRun(page)
 
   await page.getByRole('button', { name: 'Open main menu' }).click()
@@ -24,20 +24,51 @@ test('bestiary enemy sprites all face right', async ({ page }) => {
   await page.getByRole('button', { name: 'Bestiary' }).click()
   await expect(page.locator('[data-testid="bestiary-enemy-sprite"]').first()).toBeVisible({ timeout: 5000 })
 
-  const facingDirections = await page.evaluate(() => {
-    const sprites = Array.from(document.querySelectorAll('[data-testid="bestiary-enemy-sprite"]')) as HTMLElement[]
-    return sprites.map((sprite) => {
-      const transform = window.getComputedStyle(sprite).transform
-      if (!transform || transform === 'none') return 1
-      const matrix = transform.match(/matrix\(([^)]+)\)/)
-      if (!matrix) return 1
-      const first = Number(matrix[1].split(',')[0])
-      if (!Number.isFinite(first)) return 1
-      return Math.sign(first) || 1
-    })
-  })
+  const targets = new Set(['Shade', 'Mirror Shade', 'Prismatic Shade'])
+  const found = new Map<string, number>()
 
-  expect(facingDirections.length).toBeGreaterThan(0)
-  expect(new Set(facingDirections).size).toBe(1)
-  expect(facingDirections[0]).toBe(1)
+  for (let step = 0; step < 12 && found.size < targets.size; step += 1) {
+    const snapshot = await page.evaluate(() => {
+      const out: Array<{ name: string; scaleX: number }> = []
+      const cards = Array.from(document.querySelectorAll('button.group.relative.h-44'))
+      for (const card of cards) {
+        const nameEl = card.querySelector('p')
+        const sprite = card.querySelector('[data-testid="bestiary-enemy-sprite"]') as HTMLElement | null
+        if (!nameEl || !sprite) continue
+
+        const transform = window.getComputedStyle(sprite).transform
+        let scaleX = 1
+        const matrix2d = transform.match(/matrix\(([^)]+)\)/)
+        if (matrix2d) {
+          const first = Number(matrix2d[1].split(',')[0])
+          if (Number.isFinite(first)) scaleX = first
+        }
+        const matrix3d = transform.match(/matrix3d\(([^)]+)\)/)
+        if (matrix3d) {
+          const first = Number(matrix3d[1].split(',')[0])
+          if (Number.isFinite(first)) scaleX = first
+        }
+
+        out.push({ name: (nameEl.textContent ?? '').trim(), scaleX })
+      }
+      return out
+    })
+
+    for (const entry of snapshot) {
+      if (!targets.has(entry.name)) continue
+      found.set(entry.name, entry.scaleX)
+    }
+
+    if (found.size < targets.size) {
+      const nextPage = page.getByRole('button', { name: 'Next page' })
+      if (!(await nextPage.isVisible().catch(() => false))) break
+      await nextPage.click()
+      await page.waitForTimeout(250)
+    }
+  }
+
+  for (const name of targets) {
+    expect(found.has(name), `Missing bestiary target ${name}`).toBeTruthy()
+    expect(found.get(name)!, `${name} should face left in bestiary`).toBeLessThan(0)
+  }
 })

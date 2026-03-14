@@ -16,7 +16,7 @@
     "test": "playwright test --project=core",
     "test:quick": "playwright test --project=core --workers=50%",
     "test:all": "playwright test",
-    "test:extended": "playwright test --project=extended-regression",
+    "test:extended": "playwright test --project=extended-regression --workers=50%",
     "test:full": "playwright test --project=core --project=extended-regression",
     "test:ui-guardrails": "playwright test tests/ui-guardrails.spec.ts --project=core",
     "build:ui-strict": "node scripts/build-ui-strict.mjs"

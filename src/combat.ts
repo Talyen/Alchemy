@@ -202,12 +202,19 @@ function weightedPickDistinctCards(pool: CardDef[], count: number, trinketIds: s
   return picks
 }
 
+function getAvailableCardPool(state: GameState): CardDef[] {
+  if (!state.availableCardIds || state.availableCardIds.length === 0) return ALL_CARDS
+  const allowed = new Set(state.availableCardIds)
+  const filtered = ALL_CARDS.filter(card => allowed.has(card.id))
+  return filtered.length > 0 ? filtered : ALL_CARDS
+}
+
 function randomizeOneHandCard(state: GameState): GameState {
   if (state.hand.length === 0) return state
 
   const handIndex = Math.floor(Math.random() * state.hand.length)
   const current = state.hand[handIndex]
-  const candidateDefs = ALL_CARDS.filter(card => card.id !== current.id)
+  const candidateDefs = getAvailableCardPool(state).filter(card => card.id !== current.id)
   if (candidateDefs.length === 0) return state
 
   const randomDef = weightedPickCardDef(candidateDefs, state.trinketIds)
@@ -243,7 +250,7 @@ function applyCombatStartTrinkets(state: GameState): GameState {
   }
 
   if (hasTrinket(s, TRINKET_SPELL_TOME)) {
-    const wizardPool = ALL_CARDS.filter(card => WIZARD_CARD_IDS.includes(card.id))
+    const wizardPool = getAvailableCardPool(s).filter(card => WIZARD_CARD_IDS.includes(card.id))
     const grantedDefs: CardDef[] = []
     for (let i = 0; i < 2; i++) {
       const picked = weightedPickCardDef(wizardPool, s.trinketIds)
@@ -278,7 +285,7 @@ function applyTurnStartTrinkets(state: GameState): GameState {
   }
 
   if (hasTrinket(s, TRINKET_SPECIAL_DELIVERY)) {
-    const createdDef = weightedPickCardDef(ALL_CARDS, s.trinketIds)
+    const createdDef = weightedPickCardDef(getAvailableCardPool(s), s.trinketIds)
     if (createdDef) {
       s = addCardsToHandWithLimit(s, makeCardInstances([createdDef]), 'Special Delivery')
       s = addLog(s, `  → Special Delivery creates ${createdDef.name}.`)
@@ -582,7 +589,7 @@ function applyCardEffects(
   if (effect.wish !== undefined) {
     const wishCount = Math.max(0, effect.wish)
     if (wishCount > 0) {
-      const options = weightedPickDistinctCards(ALL_CARDS, 3, state.trinketIds)
+      const options = weightedPickDistinctCards(getAvailableCardPool(state), 3, state.trinketIds)
       s = { ...s, wishOptions: options }
       s = addLog(s, `  → Wish ${wishCount}: choose 1 of 3 cards.`)
     }
@@ -629,6 +636,7 @@ export function createGame(
   trinketIds: string[] = [],
   deckOverride?: CardDef[],
   floorsCleared = 0,
+  availableCardIds?: string[],
 ): GameState {
   const deck = deckOverride && deckOverride.length > 0
     ? shuffle(makeCardInstances(deckOverride))
@@ -639,6 +647,7 @@ export function createGame(
   const base: GameState = {
     characterId,
     trinketIds,
+    availableCardIds,
     phase: 'player_turn',
     turn: 1,
     player: { hp: persistHp, maxHp: persistHp, block: 0, armor: 0, status: emptyStatus() },

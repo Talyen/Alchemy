@@ -41,7 +41,11 @@ test('pile viewers toggle independently from draw and discard buttons', async ({
   await drawPile.click()
   await expect(page.getByText('Draw Pile')).toBeVisible()
 
+  // Pile viewer opens in a modal overlay, so close it before interacting with
+  // background controls.
+  await page.getByRole('button', { name: 'Close' }).click()
+  await expect(page.getByText('Draw Pile')).not.toBeVisible()
+
   await discardPile.click()
   await expect(page.getByText('Discard Pile')).toBeVisible()
-  await expect(page.getByText('Draw Pile')).not.toBeVisible()
 })

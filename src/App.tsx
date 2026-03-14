@@ -18,6 +18,7 @@ import { MysteryGoldRewardScreen } from './components/game/MysteryGoldRewardScre
 import { MysteryTrinketRewardScreen } from './components/game/MysteryTrinketRewardScreen'
 import { MysteryTreasureChestScreen, type TreasureChestReward } from './components/game/MysteryTreasureChestScreen'
 import { MysteryCorruptedForgeScreen } from './components/game/MysteryCorruptedForgeScreen'
+import { RunUnlockRewardScreen } from './components/game/RunUnlockRewardScreen'
 import { GlobalScreenMenu } from './components/game/GlobalScreenMenu'
 import { DevQaMenu } from './components/game/DevQaMenu'
 import { ShopScreen, type ShopCardOffer, type ShopTrinketOffer } from './components/game/ShopScreen'
@@ -417,7 +418,7 @@ function TurnIndicator({ isPlayerTurn }: { isPlayerTurn: boolean }) {
 
 // ─── App ─────────────────────────────────────────────────────────────────────
 
-type Screen = 'menu' | 'character-select' | 'game' | 'reward' | 'destination' | 'collection' | 'talents' | 'options' | 'wish' | 'shop' | 'alchemy' | 'campfire' | 'mystery' | 'mystery-chest' | 'mystery-reward' | 'mystery-gold-reward' | 'mystery-corrupted-forge' | 'mystery-mirage-market'
+type Screen = 'menu' | 'character-select' | 'game' | 'reward' | 'destination' | 'collection' | 'talents' | 'options' | 'wish' | 'shop' | 'alchemy' | 'campfire' | 'mystery' | 'mystery-chest' | 'mystery-reward' | 'mystery-gold-reward' | 'mystery-corrupted-forge' | 'mystery-mirage-market' | 'run-unlock-reward'
 type RunScreen = 'game' | 'reward' | 'destination' | 'wish' | 'shop' | 'alchemy' | 'campfire' | 'mystery' | 'mystery-chest' | 'mystery-reward' | 'mystery-gold-reward' | 'mystery-corrupted-forge' | 'mystery-mirage-market'
 
 type MetaProgressionV1 = {
@@ -435,6 +436,8 @@ type PersistedProgressV1 = {
   encounteredEnemyIds: string[]
   encounteredCardIds: string[]
   encounteredTrinketIds: string[]
+  unlockedCardIds?: string[]
+  unlockedCharacterIds?: string[]
   meta?: MetaProgressionV1
   settings?: GameSettings
 }
@@ -486,6 +489,10 @@ const RUN_SCREENS: RunScreen[] = ['game', 'reward', 'destination', 'wish', 'shop
 const PROGRESSION_STORAGE_KEY = 'alchemy.progress.v1'
 const RUN_STORAGE_KEY = 'alchemy.run.v1'
 const SETTINGS_STORAGE_KEY = 'alchemy.settings.v1'
+
+const DEFAULT_UNLOCKED_CHARACTER_IDS = ['knight'] as const
+const ALL_CHARACTER_IDS = ['knight', 'rogue', 'wizard'] as const
+const KNIGHT_STARTER_CARD_IDS = Array.from(new Set(getCharacterStarterCards('knight').map(card => card.id)))
 
 const DEFAULT_SETTINGS: GameSettings = {
   display: { resolutionPreset: '1600x900' },
@@ -1044,14 +1051,15 @@ function applyMirageDiscountToTrinketOffers(offers: ShopTrinketOffer[]): ShopTri
   return offers.map(offer => ({ ...offer, price: Math.max(1, Math.floor(offer.price / 2)) }))
 }
 
-function applyCorruptedForgeMutation(card: CardDef): CardDef {
+function applyCorruptedForgeMutation(card: CardDef, transformPool: CardDef[]): CardDef {
   const numericKeys: Array<keyof CardDef['effect']> = ['damage', 'block', 'heal', 'burn', 'poison', 'bleed', 'gold', 'mana']
   const presentNumericKeys = numericKeys.filter(key => typeof card.effect[key] === 'number' && (card.effect[key] as number) > 0)
   const outcomes = ['shift', 'scale', 'bonus', 'transform'] as const
   const outcome = outcomes[Math.floor(Math.random() * outcomes.length)]
 
   if (outcome === 'transform') {
-    const transformed = ALL_CARDS[Math.floor(Math.random() * ALL_CARDS.length)]
+    const pool = transformPool.length > 0 ? transformPool : ALL_CARDS
+    const transformed = pool[Math.floor(Math.random() * pool.length)]
     return {
       ...transformed,
       id: card.id,
@@ -1176,8 +1184,12 @@ export default function App() {
   const [companionAttackTick, setCompanionAttackTick] = useState(0)
   const [playerAttackTick, setPlayerAttackTick] = useState(0)
   const [encounteredEnemyIds, setEncounteredEnemyIds] = useState<Set<string>>(new Set())
-  const [encounteredCardIds, setEncounteredCardIds] = useState<Set<string>>(new Set())
+  const [encounteredCardIds, setEncounteredCardIds] = useState<Set<string>>(new Set(KNIGHT_STARTER_CARD_IDS))
   const [encounteredTrinketIds, setEncounteredTrinketIds] = useState<Set<string>>(new Set())
+  const [unlockedCardIds, setUnlockedCardIds] = useState<Set<string>>(new Set(KNIGHT_STARTER_CARD_IDS))
+  const [unlockedCharacterIds, setUnlockedCharacterIds] = useState<Set<string>>(new Set(DEFAULT_UNLOCKED_CHARACTER_IDS))
+  const [runRewardUnlockedCardNames, setRunRewardUnlockedCardNames] = useState<string[]>([])
+  const [runRewardUnlockedCharacterId, setRunRewardUnlockedCharacterId] = useState<string | null>(null)
   const activeCompanion = COMPANION_VARIANTS_BY_EVENT_ID.get(activeRunCompanionEventId ?? '') ?? null
   const activeMysteryCompanion = COMPANION_VARIANTS_BY_EVENT_ID.get(activeMysteryCompanionEventId ?? '') ?? COMPANION_VARIANTS[0]
   const hasCompanion = Boolean(
@@ -1185,6 +1197,9 @@ export default function App() {
     && runTrinkets.some(trinket => trinket.id === activeCompanion.collarTrinket.id || trinket.id === LEGACY_COMPANION_COLLAR_ID),
   )
   const canResume = runInProgress || savedRun !== null
+  const unlockedCardPool = ALL_CARDS.filter(card => unlockedCardIds.has(card.id))
+  const unlockedCardIdList = Array.from(unlockedCardIds)
+  const runRewardUnlockedCharacterName = runRewardUnlockedCharacterId ? getRunCharacter(runRewardUnlockedCharacterId).name : null
   const unlockedTalentNodeIdsByKeyword = getEmptyUnlockedTalentNodeIdsByKeyword()
   for (const keyword of TALENT_KEYWORDS) {
     unlockedTalentNodeIdsByKeyword[keyword] = new Set(metaProgress.talentUnlockedNodeIdsByKeyword[keyword] ?? [])
@@ -1330,8 +1345,15 @@ export default function App() {
       if (progressRaw) {
         const parsed = JSON.parse(progressRaw) as PersistedProgressV1
         setEncounteredEnemyIds(new Set(parsed.encounteredEnemyIds ?? []))
-        setEncounteredCardIds(new Set(parsed.encounteredCardIds ?? []))
+        const hydratedUnlockedCards = new Set(parsed.unlockedCardIds ?? parsed.encounteredCardIds ?? KNIGHT_STARTER_CARD_IDS)
+        if (hydratedUnlockedCards.size === 0) {
+          KNIGHT_STARTER_CARD_IDS.forEach(cardId => hydratedUnlockedCards.add(cardId))
+        }
+        setUnlockedCardIds(hydratedUnlockedCards)
+        setEncounteredCardIds(new Set(parsed.encounteredCardIds ?? Array.from(hydratedUnlockedCards)))
         setEncounteredTrinketIds(new Set(parsed.encounteredTrinketIds ?? []))
+        const legacyUnlockAll = new Set(ALL_CHARACTER_IDS)
+        setUnlockedCharacterIds(new Set(parsed.unlockedCharacterIds ?? Array.from(legacyUnlockAll)))
         setMetaProgress(normalizeMetaProgression(parsed.meta))
         setSettings(normalizeSettings(parsed.settings))
       }
@@ -1363,12 +1385,14 @@ export default function App() {
       encounteredEnemyIds: Array.from(encounteredEnemyIds),
       encounteredCardIds: Array.from(encounteredCardIds),
       encounteredTrinketIds: Array.from(encounteredTrinketIds),
+      unlockedCardIds: Array.from(unlockedCardIds),
+      unlockedCharacterIds: Array.from(unlockedCharacterIds),
       meta: metaProgress,
       settings,
     }
     window.localStorage.setItem(PROGRESSION_STORAGE_KEY, JSON.stringify(progress))
     window.localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings))
-  }, [encounteredEnemyIds, encounteredCardIds, encounteredTrinketIds, metaProgress, settings])
+  }, [encounteredEnemyIds, encounteredCardIds, encounteredTrinketIds, unlockedCardIds, unlockedCharacterIds, metaProgress, settings])
 
   useEffect(() => {
     if (!hasHydratedPersistenceRef.current) return
@@ -1602,6 +1626,7 @@ export default function App() {
   }
 
   const handleStart = (characterId: string) => {
+    if (!unlockedCharacterIds.has(characterId)) return
     resetRunState()
     setSavedRun(null)
     window.localStorage.removeItem(RUN_STORAGE_KEY)
@@ -1614,7 +1639,7 @@ export default function App() {
     setPersistentGold(startingGold)
     setEncounteredCardIds(prev => new Set([...prev, ...starterCardIds]))
     setCurrentRoomLabel('Combat')
-    setGameState(applyCombatTalentBonuses(createGame(runMaxHp, [], 'basic', startingGold, characterId, undefined, [], starterCards, 0)))
+    setGameState(applyCombatTalentBonuses(createGame(runMaxHp, [], 'basic', startingGold, characterId, undefined, [], starterCards, 0, unlockedCardIdList)))
     setLastRunScreen('game')
     setRunInProgress(true)
     setScreen('game')
@@ -1624,15 +1649,15 @@ export default function App() {
     const ownedTrinketIds = new Set(runTrinkets.map(trinket => trinket.id))
     const dominantKeyword = getDeckDominantKeyword(runDeckCards)
     const dominantMatchPool = dominantKeyword
-      ? ALL_CARDS.filter(card => cardMatchesKeyword(card, dominantKeyword))
+      ? unlockedCardPool.filter(card => cardMatchesKeyword(card, dominantKeyword))
       : []
     const guaranteedMatch = dominantMatchPool.length > 0
       ? weightedPickOne(dominantMatchPool, card => cardWeightForTrinkets(card, ownedTrinketIds))
       : null
 
     const remainingPool = guaranteedMatch
-      ? ALL_CARDS.filter(card => card.id !== guaranteedMatch.id)
-      : ALL_CARDS
+      ? unlockedCardPool.filter(card => card.id !== guaranteedMatch.id)
+      : unlockedCardPool
     const remainingCards = weightedPickMany(remainingPool, guaranteedMatch ? 2 : 3, card => cardWeightForTrinkets(card, ownedTrinketIds))
     const cards = shuffle([...(guaranteedMatch ? [guaranteedMatch] : []), ...remainingCards]).map(applyTalentCardBonuses)
 
@@ -1640,7 +1665,7 @@ export default function App() {
       const price = rollVisitPrice()
       return { id: `shop-${card.id}-${Date.now()}-${index}`, card, price }
     })
-  }, [applyTalentCardBonuses, runDeckCards, runTrinkets])
+  }, [applyTalentCardBonuses, runDeckCards, runTrinkets, unlockedCardPool])
 
   const buildShopTrinketOffers = useCallback((): ShopTrinketOffer[] => {
     const SHOP_TRINKET_OFFER_COUNT = 3
@@ -1807,7 +1832,7 @@ export default function App() {
     setPersistentHp(healedHp)
     setPersistentGold(gameState.gold + foundGold)
     const ownedTrinketIds = new Set(runTrinkets.map(trinket => trinket.id))
-    setPickOptions(weightedPickMany(ALL_CARDS, 3, card => cardWeightForTrinkets(card, ownedTrinketIds)).map(applyTalentCardBonuses))
+    setPickOptions(weightedPickMany(unlockedCardPool, 3, card => cardWeightForTrinkets(card, ownedTrinketIds)).map(applyTalentCardBonuses))
     setScreen('reward')
   }
 
@@ -1858,7 +1883,7 @@ export default function App() {
     }
 
     if (type === 'alchemy') {
-      const potionCards = ALL_CARDS.filter(card => isPotionCard(card)).map(applyTalentCardBonuses)
+      const potionCards = unlockedCardPool.filter(card => isPotionCard(card)).map(applyTalentCardBonuses)
       const ownedTrinketIds = new Set(runTrinkets.map(trinket => trinket.id))
       const randomPotion = weightedPickOne(potionCards, card => cardWeightForTrinkets(card, ownedTrinketIds))
       setCurrentRoomLabel(label)
@@ -1943,7 +1968,7 @@ export default function App() {
 
     setCurrentRoomLabel(label)
     setPersistentHp(nextHp)
-    setGameState(applyCombatTalentBonuses(createGame(nextHp, runExtraCards, type === 'elite' ? 'elite' : 'basic', persistentGold, selectedCharacterId, undefined, runTrinkets.map(trinket => trinket.id), runDeckCards, nextFloorsCleared)))
+    setGameState(applyCombatTalentBonuses(createGame(nextHp, runExtraCards, type === 'elite' ? 'elite' : 'basic', persistentGold, selectedCharacterId, undefined, runTrinkets.map(trinket => trinket.id), runDeckCards, nextFloorsCleared, unlockedCardIdList)))
     setScreen('game')
   }
 
@@ -1975,7 +2000,7 @@ export default function App() {
   const handleRefreshAlchemy = () => {
     if (alchemyRefreshUsed) return
     if (persistentGold < alchemyRefreshCost) return
-    const potionCards = ALL_CARDS.filter(card => isPotionCard(card)).map(applyTalentCardBonuses)
+    const potionCards = unlockedCardPool.filter(card => isPotionCard(card)).map(applyTalentCardBonuses)
     const ownedTrinketIds = new Set(runTrinkets.map(trinket => trinket.id))
     const randomPotion = weightedPickOne(potionCards, card => cardWeightForTrinkets(card, ownedTrinketIds))
     const nextPotionCost = rollVisitPrice()
@@ -2056,13 +2081,13 @@ export default function App() {
     const companion = COMPANION_VARIANTS_BY_EVENT_ID.get(activeMysteryCompanionEventId ?? '')
     const enemyId = companion?.companionEnemyId ?? 'lizard_f'
     setCurrentRoomLabel(companion?.companionName ?? 'Companion Trial')
-    setGameState(applyCombatTalentBonuses(createGame(persistentHp, runExtraCards, 'basic', persistentGold, selectedCharacterId, enemyId, runTrinkets.map(trinket => trinket.id), runDeckCards, floorsCleared)))
+    setGameState(applyCombatTalentBonuses(createGame(persistentHp, runExtraCards, 'basic', persistentGold, selectedCharacterId, enemyId, runTrinkets.map(trinket => trinket.id), runDeckCards, floorsCleared, unlockedCardIdList)))
     setScreen('game')
   }
 
   const handleOpenTreasureChest = () => {
     const ownedTrinketIds = new Set(runTrinkets.map(trinket => trinket.id))
-    const cardReward = weightedPickOne(ALL_CARDS, card => cardWeightForTrinkets(card, ownedTrinketIds))
+    const cardReward = weightedPickOne(unlockedCardPool, card => cardWeightForTrinkets(card, ownedTrinketIds))
     const trinketCandidates = ALL_TRINKET_OFFERS.filter(offer => !runTrinkets.some(trinket => trinket.id === offer.id))
     const trinketReward = weightedPickOne(trinketCandidates, offer => trinketWeightForTrinkets(offer, ownedTrinketIds))
     if (trinketReward && Math.random() < 0.5) {
@@ -2111,7 +2136,7 @@ export default function App() {
   const handleCorruptForgeCard = (deckIndex: number) => {
     if (deckIndex < 0 || deckIndex >= runDeckCards.length) return
     const before = runDeckCards[deckIndex]
-    const corrupted = applyCorruptedForgeMutation(before)
+    const corrupted = applyCorruptedForgeMutation(before, unlockedCardPool)
     setRunDeckCards(prev => prev.map((card, index) => (index === deckIndex ? corrupted : card)))
     setRunExtraCards(prev => prev.map((card, index) => (index === deckIndex ? corrupted : card)))
     setEncounteredCardIds(prev => new Set([...prev, corrupted.id]))
@@ -2129,14 +2154,67 @@ export default function App() {
   const handleReturnToMainMenu = () => {
     setScreen('menu')
   }
+
+  const completeRunAndReturn = useCallback((endedCharacterId: string, endedFloors: number) => {
+    setMetaProgress(prev => {
+      const nextRuns = prev.runsCompleted + 1
+      const nextRoomsPlayed = prev.roomsPlayedTotal + endedFloors
+      return {
+        runsCompleted: nextRuns,
+        insight: prev.insight,
+        startingGoldBonus: 0,
+        alchemyUnlocked: prev.alchemyUnlocked || nextRuns >= 1,
+        roomsPlayedTotal: nextRoomsPlayed,
+        keywordTalentPointsEarned: prev.keywordTalentPointsEarned,
+        keywordTalentProgress: prev.keywordTalentProgress,
+        talentUnlockedNodeIdsByKeyword: prev.talentUnlockedNodeIdsByKeyword,
+      }
+    })
+
+    if (endedFloors < 5) {
+      setRunRewardUnlockedCardNames([])
+      setRunRewardUnlockedCharacterId(null)
+      setScreen('menu')
+      return
+    }
+
+    const lockedCards = ALL_CARDS.filter(card => !unlockedCardIds.has(card.id))
+    const newlyUnlockedCards = pickRandom(lockedCards, 3)
+
+    if (newlyUnlockedCards.length > 0) {
+      setUnlockedCardIds(prev => new Set([...prev, ...newlyUnlockedCards.map(card => card.id)]))
+      setEncounteredCardIds(prev => new Set([...prev, ...newlyUnlockedCards.map(card => card.id)]))
+    }
+
+    let unlockedCharacterId: string | null = null
+    if (endedCharacterId === 'knight' && !unlockedCharacterIds.has('rogue')) {
+      unlockedCharacterId = 'rogue'
+    } else if (endedCharacterId === 'rogue' && !unlockedCharacterIds.has('wizard')) {
+      unlockedCharacterId = 'wizard'
+    }
+
+    if (unlockedCharacterId) {
+      setUnlockedCharacterIds(prev => new Set([...prev, unlockedCharacterId!]))
+    }
+
+    const hasAnyReward = newlyUnlockedCards.length > 0 || Boolean(unlockedCharacterId)
+    setRunRewardUnlockedCardNames(newlyUnlockedCards.map(card => card.name))
+    setRunRewardUnlockedCharacterId(unlockedCharacterId)
+    setScreen(hasAnyReward ? 'run-unlock-reward' : 'menu')
+  }, [unlockedCardIds, unlockedCharacterIds])
+
   const handleClearSavedProgress = useCallback(() => {
     window.localStorage.removeItem(PROGRESSION_STORAGE_KEY)
     window.localStorage.removeItem(RUN_STORAGE_KEY)
     window.localStorage.removeItem(SETTINGS_STORAGE_KEY)
 
     setEncounteredEnemyIds(new Set())
-    setEncounteredCardIds(new Set())
+    setEncounteredCardIds(new Set(KNIGHT_STARTER_CARD_IDS))
     setEncounteredTrinketIds(new Set())
+    setUnlockedCardIds(new Set(KNIGHT_STARTER_CARD_IDS))
+    setUnlockedCharacterIds(new Set(DEFAULT_UNLOCKED_CHARACTER_IDS))
+    setRunRewardUnlockedCardNames([])
+    setRunRewardUnlockedCharacterId(null)
     setMetaProgress(DEFAULT_META_PROGRESSION)
     setSettings(DEFAULT_SETTINGS)
     resetRunState()
@@ -2147,27 +2225,19 @@ export default function App() {
 
   // ── Lose / abandon → Menu ──
   const handleRestart = () => {
-    if (runInProgress) {
-      setMetaProgress(prev => {
-        const nextRuns = prev.runsCompleted + 1
-        const nextRoomsPlayed = prev.roomsPlayedTotal + floorsCleared
-        return {
-          runsCompleted: nextRuns,
-          insight: prev.insight,
-          startingGoldBonus: 0,
-          alchemyUnlocked: prev.alchemyUnlocked || nextRuns >= 1,
-          roomsPlayedTotal: nextRoomsPlayed,
-          keywordTalentPointsEarned: prev.keywordTalentPointsEarned,
-          keywordTalentProgress: prev.keywordTalentProgress,
-          talentUnlockedNodeIdsByKeyword: prev.talentUnlockedNodeIdsByKeyword,
-        }
-      })
-    }
+    const endedCharacterId = selectedCharacterId
+    const endedFloors = floorsCleared
+    const hadRun = runInProgress
 
     resetRunState()
     setRunInProgress(false)
     setSavedRun(null)
     window.localStorage.removeItem(RUN_STORAGE_KEY)
+
+    if (hadRun) {
+      completeRunAndReturn(endedCharacterId, endedFloors)
+      return
+    }
     setScreen('menu')
   }
   const handleSalvageTreasureChest = () => {
@@ -2186,6 +2256,8 @@ export default function App() {
 
   const handleDevUnlockAll = useCallback(() => {
     setEncounteredCardIds(new Set(ALL_CARDS.map(card => card.id)))
+    setUnlockedCardIds(new Set(ALL_CARDS.map(card => card.id)))
+    setUnlockedCharacterIds(new Set(ALL_CHARACTER_IDS))
     setEncounteredEnemyIds(new Set(BESTIARY_ENEMIES.map(enemy => enemy.id)))
     setEncounteredTrinketIds(new Set(ALL_TRINKET_OFFERS.map(trinket => trinket.id)))
     setMetaProgress(prev => ({
@@ -2207,12 +2279,19 @@ export default function App() {
     if (!runInProgress && !savedRun) return
     const confirmed = window.confirm('End current run and return to main menu? This cannot be undone.')
     if (!confirmed) return
+    const endedCharacterId = selectedCharacterId
+    const endedFloors = floorsCleared
+    const hadRun = runInProgress
     resetRunState()
     setRunInProgress(false)
     setSavedRun(null)
     window.localStorage.removeItem(RUN_STORAGE_KEY)
+    if (hadRun) {
+      completeRunAndReturn(endedCharacterId, endedFloors)
+      return
+    }
     setScreen('menu')
-  }, [resetRunState, runInProgress, savedRun])
+  }, [completeRunAndReturn, floorsCleared, resetRunState, runInProgress, savedRun, selectedCharacterId])
 
   const renderGlobalMenu = (opts?: { direction?: 'up' | 'down'; align?: 'left' | 'right'; onEndTurnEarly?: () => void }) => (
     <GlobalScreenMenu
@@ -2306,6 +2385,7 @@ export default function App() {
         <CharacterSelectScreen
           key="character-select"
           onSelect={handleStart}
+          unlockedCharacterIds={unlockedCharacterIds}
           topLeft={renderGlobalMenu({ direction: 'up', align: 'right' })}
         />
       )}
@@ -2316,10 +2396,20 @@ export default function App() {
           cards={ALL_CARDS}
           enemies={BESTIARY_ENEMIES}
           trinkets={ALL_TRINKET_OFFERS.map(offer => ({ id: offer.id, name: offer.name, description: offer.description, iconSrc: offer.iconSrc }))}
-          encounteredCardIds={encounteredCardIds}
+          encounteredCardIds={unlockedCardIds}
           encounteredEnemyIds={encounteredEnemyIds}
           encounteredTrinketIds={encounteredTrinketIds}
           onBack={() => setScreen(collectionReturnScreen === 'collection' ? 'menu' : collectionReturnScreen)}
+          topLeft={renderGlobalMenu({ direction: 'up', align: 'right' })}
+        />
+      )}
+
+      {screen === 'run-unlock-reward' && (
+        <RunUnlockRewardScreen
+          key="run-unlock-reward"
+          unlockedCardNames={runRewardUnlockedCardNames}
+          unlockedCharacterName={runRewardUnlockedCharacterName}
+          onContinue={() => setScreen('menu')}
           topLeft={renderGlobalMenu({ direction: 'up', align: 'right' })}
         />
       )}
@@ -2401,7 +2491,7 @@ export default function App() {
             setRunExtraCards(prev => [...prev, alchemyPotionOffer.card])
             setRunDeckCards(prev => [...prev, alchemyPotionOffer.card])
             setEncounteredCardIds(prev => new Set([...prev, alchemyPotionOffer.card.id]))
-            const potionCards = ALL_CARDS.filter(card => isPotionCard(card)).map(applyTalentCardBonuses)
+            const potionCards = unlockedCardPool.filter(card => isPotionCard(card)).map(applyTalentCardBonuses)
             const ownedTrinketIds = new Set(runTrinkets.map(trinket => trinket.id))
             const nextPotion = weightedPickOne(potionCards.filter(c => c.id !== alchemyPotionOffer2?.card.id), card => cardWeightForTrinkets(card, ownedTrinketIds))
             setAlchemyPotionOffer(nextPotion ? { id: `alchemy-potion-${nextPotion.id}-${Date.now()}`, card: nextPotion, price: alchemyPotionCost } : null)
@@ -2413,7 +2503,7 @@ export default function App() {
             setRunExtraCards(prev => [...prev, alchemyPotionOffer2.card])
             setRunDeckCards(prev => [...prev, alchemyPotionOffer2.card])
             setEncounteredCardIds(prev => new Set([...prev, alchemyPotionOffer2.card.id]))
-            const potionCards = ALL_CARDS.filter(card => isPotionCard(card)).map(applyTalentCardBonuses)
+            const potionCards = unlockedCardPool.filter(card => isPotionCard(card)).map(applyTalentCardBonuses)
             const ownedTrinketIds = new Set(runTrinkets.map(trinket => trinket.id))
             const nextPotion2 = weightedPickOne(potionCards.filter(c => c.id !== alchemyPotionOffer?.card.id), card => cardWeightForTrinkets(card, ownedTrinketIds))
             setAlchemyPotionOffer2(nextPotion2 ? { id: `alchemy-potion2-${nextPotion2.id}-${Date.now()}`, card: nextPotion2, price: alchemyPotionCost } : null)

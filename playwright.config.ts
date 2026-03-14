@@ -30,7 +30,6 @@ export default defineConfig({
     },
     {
       name: 'extended-regression',
-      fullyParallel: false,
       testMatch: ['tests/regression-audio.spec.ts', 'tests/regression-assets.spec.ts', 'tests/regression-layout.spec.ts'],
       timeout: 90000,
     },

@@ -10,6 +10,7 @@ import { Stack } from '@/ui/primitives'
 
 interface Props {
   onSelect: (characterId: string) => void
+  unlockedCharacterIds: Set<string>
   topLeft?: ReactNode
 }
 
@@ -51,7 +52,7 @@ function getStarterDeckCards(character: RunCharacter): CardDef[] {
   })
 }
 
-export function CharacterSelectScreen({ onSelect, topLeft }: Props) {
+export function CharacterSelectScreen({ onSelect, unlockedCharacterIds, topLeft }: Props) {
   const [showDeck, setShowDeck] = useState(false)
   const [hoveredCharacterId, setHoveredCharacterId] = useState<string | null>(null)
   const [elevatedDeckCards, setElevatedDeckCards] = useState<Set<string>>(new Set())
@@ -61,7 +62,7 @@ export function CharacterSelectScreen({ onSelect, topLeft }: Props) {
     () => displayOrder.map(id => RUN_CHARACTERS.find(character => character.id === id)).filter((character): character is RunCharacter => Boolean(character)),
     [displayOrder],
   )
-  const fallbackCharacter = RUN_CHARACTERS[0]
+  const fallbackCharacter = orderedCharacters.find(character => unlockedCharacterIds.has(character.id)) ?? RUN_CHARACTERS[0]
   const activeDeckCharacter = useMemo(() => {
     if (!hoveredCharacterId) return fallbackCharacter
     return orderedCharacters.find(character => character.id === hoveredCharacterId) ?? fallbackCharacter
@@ -131,16 +132,28 @@ export function CharacterSelectScreen({ onSelect, topLeft }: Props) {
       <div className="w-full relative mt-0">
         <div className="px-4 max-w-7xl mx-auto" data-ui-container>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {orderedCharacters.map(character => (
+          {orderedCharacters.map(character => {
+            const isUnlocked = unlockedCharacterIds.has(character.id)
+            return (
             <motion.button
               key={character.id}
-              onClick={() => onSelect(character.id)}
-              onMouseEnter={() => openDeck(character.id)}
-              onMouseLeave={scheduleCloseDeck}
+              onClick={() => {
+                if (!isUnlocked) return
+                onSelect(character.id)
+              }}
+              onMouseEnter={() => {
+                if (!isUnlocked) return
+                openDeck(character.id)
+              }}
+              onMouseLeave={() => {
+                if (!isUnlocked) return
+                scheduleCloseDeck()
+              }}
               data-ui-control
-              className="w-full max-w-md min-h-64 mx-auto rounded-2xl border border-zinc-700/70 bg-zinc-900/90 px-5 py-4 flex flex-col items-center justify-center gap-3 text-center"
-              whileHover={{ scale: 1.01, y: -3 }}
-              whileTap={{ scale: 0.995, y: 0 }}
+              disabled={!isUnlocked}
+              className="w-full max-w-md min-h-64 mx-auto rounded-2xl border border-zinc-700/70 bg-zinc-900/90 px-5 py-4 flex flex-col items-center justify-center gap-3 text-center disabled:opacity-55"
+              whileHover={isUnlocked ? { scale: 1.01, y: -3 } : { scale: 1 }}
+              whileTap={isUnlocked ? { scale: 0.995, y: 0 } : { scale: 1 }}
               transition={{ type: 'spring', stiffness: 360, damping: 28 }}
             >
               <Stack align="center" gap="sm">
@@ -150,11 +163,16 @@ export function CharacterSelectScreen({ onSelect, topLeft }: Props) {
 
                 <div className="min-w-0">
                   <p className="text-2xl font-semibold text-zinc-100">{character.name}</p>
-                  <p className="mt-2 text-xs text-zinc-400 leading-relaxed max-w-[24ch] mx-auto break-words">{character.quirk}</p>
+                  <p className="mt-2 text-xs text-zinc-400 leading-relaxed max-w-[24ch] mx-auto break-words">
+                    {isUnlocked ? character.quirk : 'Locked - complete qualifying runs to unlock this character.'}
+                  </p>
+                  {!isUnlocked && (
+                    <p className="mt-2 text-[10px] uppercase tracking-widest text-amber-400/90">Locked</p>
+                  )}
                 </div>
               </Stack>
             </motion.button>
-          ))}
+          )})}
         </div>
 
           <div className="relative mt-2 min-h-96" data-ui-container>

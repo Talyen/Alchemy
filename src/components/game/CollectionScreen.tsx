@@ -331,17 +331,18 @@ export function CollectionScreen({
                             alt={enemy.name}
                             className="object-contain"
                             animate={{
+                              scaleX: faceLeft ? -1 : 1,
                               y: [spriteBaseY, spriteBaseY - 2, spriteBaseY],
                               ...(isEncountered && isPrismatic ? { filter: PRISMATIC_FILTER_KEYFRAMES } : {}),
                             }}
                             transition={{
+                              scaleX: { duration: 0 },
                               y: { duration: 0.45, repeat: Infinity, repeatDelay: 0.15 },
                               ...(isEncountered && isPrismatic ? { filter: { duration: 3.2, repeat: Infinity, ease: 'linear' } } : {}),
                             }}
                             style={{
                               width: spriteSize,
                               height: spriteSize,
-                              scaleX: faceLeft ? -1 : 1,
                               imageRendering: 'pixelated',
                               filter: isEncountered
                                 ? (isPrismatic ? PRISMATIC_FILTER_KEYFRAMES[0] : (tintFilter ?? 'none'))

@@ -199,7 +199,7 @@ test('bestiary enemies face left and key sprites stay vertically centered', asyn
   await page.getByRole('button', { name: 'Bestiary' }).click()
   await page.waitForTimeout(600)
 
-  const targets = new Set(['Shade', 'Prismatic Shade', 'Flaming Skull', 'Prismatic Skull'])
+  const targets = new Set(['Shade', 'Mirror Shade', 'Prismatic Shade', 'Flaming Skull', 'Prismatic Skull'])
   const found = new Map<string, { scaleX: number; bottomGap: number }>()
 
   for (let step = 0; step < 16 && found.size < targets.size; step += 1) {
