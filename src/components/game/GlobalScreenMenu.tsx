@@ -7,6 +7,8 @@ interface Props {
   onGoCharacterSelect: () => void
   onOpenCollection: () => void
   onOpenOptions: () => void
+  musicEnabled?: boolean
+  onToggleMusic?: () => void
   onEndRun?: () => void
   onEndTurnEarly?: () => void
   direction?: 'up' | 'down'
@@ -18,6 +20,8 @@ export function GlobalScreenMenu({
   onGoCharacterSelect,
   onOpenCollection,
   onOpenOptions,
+  musicEnabled,
+  onToggleMusic,
   onEndRun,
   onEndTurnEarly,
   direction = 'down',
@@ -97,6 +101,19 @@ export function GlobalScreenMenu({
                 <Menu size={14} className="text-zinc-500" />
                 Options
               </button>
+
+              {onToggleMusic && typeof musicEnabled === 'boolean' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onToggleMusic()
+                  }}
+                  className="w-full flex items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm text-zinc-300 hover:bg-zinc-900/90"
+                >
+                  <Menu size={14} className="text-zinc-500" />
+                  {musicEnabled ? 'Music On' : 'Music Off'}
+                </button>
+              )}
 
               {onEndTurnEarly && (
                 <button

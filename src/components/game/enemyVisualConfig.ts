@@ -31,12 +31,3 @@ export function getEnemyRelativeScale(enemyId: string): number {
   return base * (EXTRA_SIZE_MULTIPLIER[enemyId] ?? 1)
 }
 
-export const BESTIARY_Y_OFFSET: Partial<Record<string, number>> = {
-  shade: -6,
-  mirror_shade: -6,
-  prismatic_shade: -6,
-  flaming_skull: -3,
-  prismatic_skull: -3,
-}
-
-export const BESTIARY_HORIZONTAL_FLIP_IDS = 'all'

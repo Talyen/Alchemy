@@ -18,16 +18,18 @@ import { MysteryGoldRewardScreen } from './components/game/MysteryGoldRewardScre
 import { MysteryTrinketRewardScreen } from './components/game/MysteryTrinketRewardScreen'
 import { MysteryTreasureChestScreen, type TreasureChestReward } from './components/game/MysteryTreasureChestScreen'
 import { MysteryCorruptedForgeScreen } from './components/game/MysteryCorruptedForgeScreen'
-import { RunUnlockRewardScreen } from './components/game/RunUnlockRewardScreen'
+import { RunCharacterUnlockRewardScreen } from './components/game/RunCharacterUnlockRewardScreen'
+import { RunCardUnlockRewardScreen } from './components/game/RunCardUnlockRewardScreen'
 import { GlobalScreenMenu } from './components/game/GlobalScreenMenu'
 import { DevQaMenu } from './components/game/DevQaMenu'
 import { ShopScreen, type ShopCardOffer, type ShopTrinketOffer } from './components/game/ShopScreen'
 import { AlchemyScreen, type AlchemyTransformKind, type AlchemyTransformOffer } from './components/game/AlchemyScreen'
 import { TalentsScreen } from './components/game/TalentsScreen'
 import { OptionsScreen, type GameSettings, type OptionsTab } from './components/game/OptionsScreen'
+import { CenterModal } from '@/components/ui/CenterModal'
 import { TALENT_KEYWORDS, type TalentKeyword, canUnlockTalent, getEmptyUnlockedTalentNodeIdsByKeyword, getTalentBonusesFromKeywordTrees, getTalentLinksForNodes, getTalentNodesForKeyword } from './lib/talents'
 import { canAppearAfter } from './lib/destinationRules'
-import { ensureCtx, ensureRandomBGM, playDefeat, playGoldGain, playVictory, setAudioMix, stopBGM } from './sounds'
+import { ensureCtx, ensureRandomBGM, pauseBGM, playDefeat, playGoldGain, playRunStartBGM, playVictory, primeRunStartBGM, setAudioMix, stopBGM } from './sounds'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -418,7 +420,7 @@ function TurnIndicator({ isPlayerTurn }: { isPlayerTurn: boolean }) {
 
 // ─── App ─────────────────────────────────────────────────────────────────────
 
-type Screen = 'menu' | 'character-select' | 'game' | 'reward' | 'destination' | 'collection' | 'talents' | 'options' | 'wish' | 'shop' | 'alchemy' | 'campfire' | 'mystery' | 'mystery-chest' | 'mystery-reward' | 'mystery-gold-reward' | 'mystery-corrupted-forge' | 'mystery-mirage-market' | 'run-unlock-reward'
+type Screen = 'menu' | 'character-select' | 'game' | 'reward' | 'destination' | 'collection' | 'talents' | 'options' | 'wish' | 'shop' | 'alchemy' | 'campfire' | 'mystery' | 'mystery-chest' | 'mystery-reward' | 'mystery-gold-reward' | 'mystery-corrupted-forge' | 'mystery-mirage-market' | 'run-character-unlock-reward' | 'run-card-unlock-reward'
 type RunScreen = 'game' | 'reward' | 'destination' | 'wish' | 'shop' | 'alchemy' | 'campfire' | 'mystery' | 'mystery-chest' | 'mystery-reward' | 'mystery-gold-reward' | 'mystery-corrupted-forge' | 'mystery-mirage-market'
 
 type MetaProgressionV1 = {
@@ -493,6 +495,10 @@ const SETTINGS_STORAGE_KEY = 'alchemy.settings.v1'
 const DEFAULT_UNLOCKED_CHARACTER_IDS = ['knight'] as const
 const ALL_CHARACTER_IDS = ['knight', 'rogue', 'wizard'] as const
 const KNIGHT_STARTER_CARD_IDS = Array.from(new Set(getCharacterStarterCards('knight').map(card => card.id)))
+
+function getUniqueStarterCardIds(characterId: string): string[] {
+  return Array.from(new Set(getCharacterStarterCards(characterId).map(card => card.id)))
+}
 
 const DEFAULT_SETTINGS: GameSettings = {
   display: { resolutionPreset: '1600x900' },
@@ -897,10 +903,16 @@ const ALL_TRINKET_OFFERS: ShopTrinketOffer[] = [
   },
 ]
 
-function getPreviewMode(): 'destination' | null {
+type PreviewMode = { type: 'destination' } | { type: 'enemy'; enemyId: string } | null
+
+function getPreviewMode(): PreviewMode {
   const params = new URLSearchParams(window.location.search)
   const preview = params.get('preview')
-  if (preview === 'destination') return 'destination'
+  if (preview === 'destination') return { type: 'destination' }
+  if (preview === 'enemy') {
+    const enemyId = params.get('enemy')
+    if (enemyId) return { type: 'enemy', enemyId }
+  }
   return null
 }
 
@@ -1144,7 +1156,7 @@ export default function App() {
   const [selectedCharacterId, setSelectedCharacterId] = useState('knight')
   const [gameState, setGameState]         = useState<GameState>(createGame)
   const [isEnemyActing, setIsEnemyActing] = useState(false)
-  const [musicEnabled]   = useState(true)
+  const [musicEnabled, setMusicEnabled] = useState(true)
   const [settings, setSettings] = useState<GameSettings>(DEFAULT_SETTINGS)
   const [optionsTab, setOptionsTab] = useState<OptionsTab>('display')
   const [optionsReturnScreen, setOptionsReturnScreen] = useState<Screen>('menu')
@@ -1188,8 +1200,9 @@ export default function App() {
   const [encounteredTrinketIds, setEncounteredTrinketIds] = useState<Set<string>>(new Set())
   const [unlockedCardIds, setUnlockedCardIds] = useState<Set<string>>(new Set(KNIGHT_STARTER_CARD_IDS))
   const [unlockedCharacterIds, setUnlockedCharacterIds] = useState<Set<string>>(new Set(DEFAULT_UNLOCKED_CHARACTER_IDS))
-  const [runRewardUnlockedCardNames, setRunRewardUnlockedCardNames] = useState<string[]>([])
+  const [runRewardUnlockedCards, setRunRewardUnlockedCards] = useState<CardDef[]>([])
   const [runRewardUnlockedCharacterId, setRunRewardUnlockedCharacterId] = useState<string | null>(null)
+  const [endRunConfirmOpen, setEndRunConfirmOpen] = useState(false)
   const activeCompanion = COMPANION_VARIANTS_BY_EVENT_ID.get(activeRunCompanionEventId ?? '') ?? null
   const activeMysteryCompanion = COMPANION_VARIANTS_BY_EVENT_ID.get(activeMysteryCompanionEventId ?? '') ?? COMPANION_VARIANTS[0]
   const hasCompanion = Boolean(
@@ -1199,7 +1212,7 @@ export default function App() {
   const canResume = runInProgress || savedRun !== null
   const unlockedCardPool = ALL_CARDS.filter(card => unlockedCardIds.has(card.id))
   const unlockedCardIdList = Array.from(unlockedCardIds)
-  const runRewardUnlockedCharacterName = runRewardUnlockedCharacterId ? getRunCharacter(runRewardUnlockedCharacterId).name : null
+  const runRewardUnlockedCharacter = runRewardUnlockedCharacterId ? getRunCharacter(runRewardUnlockedCharacterId) : null
   const unlockedTalentNodeIdsByKeyword = getEmptyUnlockedTalentNodeIdsByKeyword()
   for (const keyword of TALENT_KEYWORDS) {
     unlockedTalentNodeIdsByKeyword[keyword] = new Set(metaProgress.talentUnlockedNodeIdsByKeyword[keyword] ?? [])
@@ -1353,7 +1366,9 @@ export default function App() {
         setEncounteredCardIds(new Set(parsed.encounteredCardIds ?? Array.from(hydratedUnlockedCards)))
         setEncounteredTrinketIds(new Set(parsed.encounteredTrinketIds ?? []))
         const legacyUnlockAll = new Set(ALL_CHARACTER_IDS)
-        setUnlockedCharacterIds(new Set(parsed.unlockedCharacterIds ?? Array.from(legacyUnlockAll)))
+        const hydratedUnlockedCharacters = new Set(parsed.unlockedCharacterIds ?? Array.from(legacyUnlockAll))
+        DEFAULT_UNLOCKED_CHARACTER_IDS.forEach(characterId => hydratedUnlockedCharacters.add(characterId))
+        setUnlockedCharacterIds(hydratedUnlockedCharacters)
         setMetaProgress(normalizeMetaProgression(parsed.meta))
         setSettings(normalizeSettings(parsed.settings))
       }
@@ -1493,16 +1508,6 @@ export default function App() {
   }, [screen])
 
   useEffect(() => {
-    if (previewMode === 'destination') {
-      setDestinationOptions(buildDestinationOptions())
-      setCurrentRoomLabel('Combat')
-      setScreen('destination')
-      return
-    }
-
-  }, [previewMode, buildDestinationOptions])
-
-  useEffect(() => {
     musicEnabledRef.current = musicEnabled
   }, [musicEnabled])
 
@@ -1552,11 +1557,15 @@ export default function App() {
   }, [])
 
   useEffect(() => {
+    primeRunStartBGM()
+  }, [])
+
+  useEffect(() => {
     if (musicEnabled) {
       ensureCtx()
       ensureRandomBGM()
     } else {
-      stopBGM()
+      pauseBGM()
     }
   }, [musicEnabled])
 
@@ -1612,27 +1621,65 @@ export default function App() {
     setPlayerAttackTick(0)
   }, [runMaxHp])
 
+  useEffect(() => {
+    if (previewMode?.type === 'destination') {
+      setDestinationOptions(buildDestinationOptions())
+      setCurrentRoomLabel('Combat')
+      setScreen('destination')
+      return
+    }
+
+    if (previewMode?.type === 'enemy') {
+      const previewCharacterId = 'knight'
+      const starterCards = getCharacterStarterCards(previewCharacterId).map(applyTalentCardBonuses)
+      const starterCardIds = new Set(getUniqueStarterCardIds(previewCharacterId))
+      const startingGold = talentBonuses.startingGold
+      resetRunState()
+      setSelectedCharacterId(previewCharacterId)
+      setRunDeckCards(starterCards)
+      setPersistentHp(runMaxHp)
+      setPersistentGold(startingGold)
+      setEncounteredCardIds(prev => new Set([...prev, ...starterCardIds]))
+      setCurrentRoomLabel('Combat')
+      setGameState(applyCombatTalentBonuses(createGame(runMaxHp, [], 'basic', startingGold, previewCharacterId, previewMode.enemyId, [], starterCards, 0, unlockedCardIdList)))
+      setLastRunScreen('game')
+      setRunInProgress(true)
+      setScreen('game')
+      return
+    }
+
+  }, [applyCombatTalentBonuses, applyTalentCardBonuses, buildDestinationOptions, previewMode, resetRunState, runMaxHp, talentBonuses.startingGold, unlockedCardIdList])
+
   const openCollection = (from: Screen) => {
     setCollectionReturnScreen(from)
     setScreen('collection')
   }
 
   const handleOpenCharacterSelect = () => {
+    primeRunStartBGM()
     resetRunState()
     setRunInProgress(false)
     setSavedRun(null)
+    setEndRunConfirmOpen(false)
     window.localStorage.removeItem(RUN_STORAGE_KEY)
     setScreen('character-select')
   }
+
+  const clearRunRewardState = useCallback(() => {
+    setRunRewardUnlockedCards([])
+    setRunRewardUnlockedCharacterId(null)
+  }, [])
 
   const handleStart = (characterId: string) => {
     if (!unlockedCharacterIds.has(characterId)) return
     resetRunState()
     setSavedRun(null)
+    setEndRunConfirmOpen(false)
+    clearRunRewardState()
     window.localStorage.removeItem(RUN_STORAGE_KEY)
     setSelectedCharacterId(characterId)
     const starterCards = getCharacterStarterCards(characterId).map(applyTalentCardBonuses)
-    const starterCardIds = new Set(getCharacterStarterCards(characterId).map(card => card.id))
+    const starterCardIds = new Set(getUniqueStarterCardIds(characterId))
     const startingGold = talentBonuses.startingGold
     setRunDeckCards(starterCards)
     setPersistentHp(runMaxHp)
@@ -1643,6 +1690,7 @@ export default function App() {
     setLastRunScreen('game')
     setRunInProgress(true)
     setScreen('game')
+    playRunStartBGM()
   }
 
   const buildShopOffers = useCallback((): ShopCardOffer[] => {
@@ -2152,6 +2200,7 @@ export default function App() {
   }
 
   const handleReturnToMainMenu = () => {
+    setEndRunConfirmOpen(false)
     setScreen('menu')
   }
 
@@ -2172,19 +2221,13 @@ export default function App() {
     })
 
     if (endedFloors < 5) {
-      setRunRewardUnlockedCardNames([])
-      setRunRewardUnlockedCharacterId(null)
+      clearRunRewardState()
       setScreen('menu')
       return
     }
 
     const lockedCards = ALL_CARDS.filter(card => !unlockedCardIds.has(card.id))
     const newlyUnlockedCards = pickRandom(lockedCards, 3)
-
-    if (newlyUnlockedCards.length > 0) {
-      setUnlockedCardIds(prev => new Set([...prev, ...newlyUnlockedCards.map(card => card.id)]))
-      setEncounteredCardIds(prev => new Set([...prev, ...newlyUnlockedCards.map(card => card.id)]))
-    }
 
     let unlockedCharacterId: string | null = null
     if (endedCharacterId === 'knight' && !unlockedCharacterIds.has('rogue')) {
@@ -2193,15 +2236,35 @@ export default function App() {
       unlockedCharacterId = 'wizard'
     }
 
+    const starterDeckUnlockIds = unlockedCharacterId ? getUniqueStarterCardIds(unlockedCharacterId) : []
+    const unlockedCardRewardIds = newlyUnlockedCards.map(card => card.id)
+    const allUnlockedCardIds = [...starterDeckUnlockIds, ...unlockedCardRewardIds]
+
+    if (allUnlockedCardIds.length > 0) {
+      setUnlockedCardIds(prev => new Set([...prev, ...allUnlockedCardIds]))
+      setEncounteredCardIds(prev => new Set([...prev, ...allUnlockedCardIds]))
+    }
+
     if (unlockedCharacterId) {
       setUnlockedCharacterIds(prev => new Set([...prev, unlockedCharacterId!]))
     }
 
     const hasAnyReward = newlyUnlockedCards.length > 0 || Boolean(unlockedCharacterId)
-    setRunRewardUnlockedCardNames(newlyUnlockedCards.map(card => card.name))
+    setRunRewardUnlockedCards(newlyUnlockedCards)
     setRunRewardUnlockedCharacterId(unlockedCharacterId)
-    setScreen(hasAnyReward ? 'run-unlock-reward' : 'menu')
-  }, [unlockedCardIds, unlockedCharacterIds])
+    if (!hasAnyReward) {
+      clearRunRewardState()
+      setScreen('menu')
+      return
+    }
+
+    if (unlockedCharacterId) {
+      setScreen('run-character-unlock-reward')
+      return
+    }
+
+    setScreen('run-card-unlock-reward')
+  }, [clearRunRewardState, unlockedCardIds, unlockedCharacterIds])
 
   const handleClearSavedProgress = useCallback(() => {
     window.localStorage.removeItem(PROGRESSION_STORAGE_KEY)
@@ -2213,15 +2276,15 @@ export default function App() {
     setEncounteredTrinketIds(new Set())
     setUnlockedCardIds(new Set(KNIGHT_STARTER_CARD_IDS))
     setUnlockedCharacterIds(new Set(DEFAULT_UNLOCKED_CHARACTER_IDS))
-    setRunRewardUnlockedCardNames([])
-    setRunRewardUnlockedCharacterId(null)
+    clearRunRewardState()
     setMetaProgress(DEFAULT_META_PROGRESSION)
     setSettings(DEFAULT_SETTINGS)
     resetRunState()
     setRunInProgress(false)
     setSavedRun(null)
+    setEndRunConfirmOpen(false)
     setScreen('menu')
-  }, [resetRunState])
+  }, [clearRunRewardState, resetRunState])
 
   // ── Lose / abandon → Menu ──
   const handleRestart = () => {
@@ -2232,6 +2295,7 @@ export default function App() {
     resetRunState()
     setRunInProgress(false)
     setSavedRun(null)
+    setEndRunConfirmOpen(false)
     window.localStorage.removeItem(RUN_STORAGE_KEY)
 
     if (hadRun) {
@@ -2277,8 +2341,7 @@ export default function App() {
 
   const handleEndRun = useCallback(() => {
     if (!runInProgress && !savedRun) return
-    const confirmed = window.confirm('End current run and return to main menu? This cannot be undone.')
-    if (!confirmed) return
+    setEndRunConfirmOpen(false)
     const endedCharacterId = selectedCharacterId
     const endedFloors = floorsCleared
     const hadRun = runInProgress
@@ -2293,6 +2356,11 @@ export default function App() {
     setScreen('menu')
   }, [completeRunAndReturn, floorsCleared, resetRunState, runInProgress, savedRun, selectedCharacterId])
 
+  const handleOpenEndRunConfirm = useCallback(() => {
+    if (!runInProgress && !savedRun) return
+    setEndRunConfirmOpen(true)
+  }, [runInProgress, savedRun])
+
   const renderGlobalMenu = (opts?: { direction?: 'up' | 'down'; align?: 'left' | 'right'; onEndTurnEarly?: () => void }) => (
     <GlobalScreenMenu
       onGoMainMenu={handleReturnToMainMenu}
@@ -2302,7 +2370,9 @@ export default function App() {
         setOptionsReturnScreen(screen)
         setScreen('options')
       }}
-      onEndRun={runInProgress || savedRun ? handleEndRun : undefined}
+      musicEnabled={musicEnabled}
+      onToggleMusic={() => setMusicEnabled(prev => !prev)}
+      onEndRun={runInProgress || savedRun ? handleOpenEndRunConfirm : undefined}
       onEndTurnEarly={opts?.onEndTurnEarly}
       direction={opts?.direction}
       align={opts?.align}
@@ -2404,12 +2474,30 @@ export default function App() {
         />
       )}
 
-      {screen === 'run-unlock-reward' && (
-        <RunUnlockRewardScreen
-          key="run-unlock-reward"
-          unlockedCardNames={runRewardUnlockedCardNames}
-          unlockedCharacterName={runRewardUnlockedCharacterName}
-          onContinue={() => setScreen('menu')}
+      {screen === 'run-character-unlock-reward' && runRewardUnlockedCharacter && (
+        <RunCharacterUnlockRewardScreen
+          key="run-character-unlock-reward"
+          character={runRewardUnlockedCharacter}
+          onContinue={() => {
+            if (runRewardUnlockedCards.length > 0) {
+              setScreen('run-card-unlock-reward')
+              return
+            }
+            clearRunRewardState()
+            setScreen('menu')
+          }}
+          topLeft={renderGlobalMenu({ direction: 'up', align: 'right' })}
+        />
+      )}
+
+      {screen === 'run-card-unlock-reward' && (
+        <RunCardUnlockRewardScreen
+          key="run-card-unlock-reward"
+          unlockedCards={runRewardUnlockedCards}
+          onContinue={() => {
+            clearRunRewardState()
+            setScreen('menu')
+          }}
           topLeft={renderGlobalMenu({ direction: 'up', align: 'right' })}
         />
       )}
@@ -2771,6 +2859,40 @@ export default function App() {
       )}
 
       </AnimatePresence>
+
+      <CenterModal open={endRunConfirmOpen} onClose={() => setEndRunConfirmOpen(false)} widthClassName="w-[min(92vw,560px)]">
+        <div className="px-5 py-5">
+          <p className="text-[11px] uppercase tracking-[0.22em] text-zinc-500">Confirm</p>
+          <h2 className="mt-2 text-2xl font-semibold text-zinc-100">End this run?</h2>
+          <p className="mt-3 text-sm leading-relaxed text-zinc-400">
+            You will return to the main menu and lose the current run state. This cannot be undone.
+          </p>
+
+          <div className="mt-6 flex items-center justify-end gap-3">
+            <motion.button
+              type="button"
+              onClick={() => setEndRunConfirmOpen(false)}
+              className="rounded-xl border border-zinc-700/80 bg-zinc-900/85 px-4 py-2.5 text-sm text-zinc-300"
+              whileHover={{ scale: 1.02, borderColor: 'rgba(161,161,170,0.6)' }}
+              whileTap={{ scale: 0.98 }}
+              transition={{ type: 'spring', stiffness: 360, damping: 28 }}
+            >
+              Cancel
+            </motion.button>
+
+            <motion.button
+              type="button"
+              onClick={handleEndRun}
+              className="rounded-xl border border-red-500/40 bg-red-500/12 px-4 py-2.5 text-sm font-medium text-red-200"
+              whileHover={{ scale: 1.02, borderColor: 'rgba(248,113,113,0.7)', backgroundColor: 'rgba(239,68,68,0.16)' }}
+              whileTap={{ scale: 0.98 }}
+              transition={{ type: 'spring', stiffness: 360, damping: 28 }}
+            >
+              End Run
+            </motion.button>
+          </div>
+        </div>
+      </CenterModal>
     </>
   )
 }

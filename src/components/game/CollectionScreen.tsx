@@ -6,7 +6,7 @@ import type { CardDef, CardInstance } from '@/types'
 import type { BestiaryEnemy } from '@/data'
 import { Card } from './Card'
 import { SelectionScreenShell, staggerContainerVariants, staggerItemVariants } from './SelectionScreenShell'
-import { BESTIARY_HORIZONTAL_FLIP_IDS, BESTIARY_Y_OFFSET, PRISMATIC_ENEMY_IDS, getEnemyRelativeScale } from './enemyVisualConfig'
+import { PRISMATIC_ENEMY_IDS, getEnemyRelativeScale } from './enemyVisualConfig'
 import { playCardPlay } from '@/sounds'
 import { TrinketInfoCard } from './TrinketInfoCard'
 import { getViewportPopoverPosition } from '@/lib/viewportPopover'
@@ -279,10 +279,9 @@ export function CollectionScreen({
                     const frames = getIdleFrames(enemy.id)
                     const frameSrc = frames[frameIdx % frames.length]
                     const spriteSize = Math.round(80 * getEnemyRelativeScale(enemy.id))
-                    const spriteBaseY = BESTIARY_Y_OFFSET[enemy.id] ?? -10
                     const tintFilter = BESTIARY_TINT_FILTER_BY_ID[enemy.id]
                     const isPrismatic = PRISMATIC_ENEMY_IDS.has(enemy.id)
-                    const faceLeft = BESTIARY_HORIZONTAL_FLIP_IDS === 'all'
+                    const facingScaleX = -1
 
                     return (
                       <motion.button
@@ -324,15 +323,15 @@ export function CollectionScreen({
                           {enemy.name}
                         </p>
 
-                        <div className="mt-2 flex flex-1 min-h-24 md:min-h-28 items-end justify-center" style={{ opacity: isEncountered ? 1 : 0.6 }}>
+                        <div className="mt-2 flex flex-1 min-h-24 items-center justify-center md:min-h-28" style={{ opacity: isEncountered ? 1 : 0.6 }}>
                           <motion.img
                             data-testid="bestiary-enemy-sprite"
                             src={frameSrc}
                             alt={enemy.name}
                             className="object-contain"
                             animate={{
-                              scaleX: faceLeft ? -1 : 1,
-                              y: [spriteBaseY, spriteBaseY - 2, spriteBaseY],
+                              scaleX: facingScaleX,
+                              y: [0, -2, 0],
                               ...(isEncountered && isPrismatic ? { filter: PRISMATIC_FILTER_KEYFRAMES } : {}),
                             }}
                             transition={{

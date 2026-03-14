@@ -61,11 +61,13 @@ const sounds: Record<string, SoundSource> = {
   'card-bear_trap': 'assets/audio/sfx/cards/gore-splat-stab-poke-03',
   'card-fiery_blade': 'assets/audio/sfx/cards/fireball',
   'card-holy_blade': 'assets/audio/sfx/cards/fireball',
+  unlockReward: 'assets/audio/sfx/ui/reward-unlock',
   victory: 'assets/audio/sfx/ui/victory-piano-positive',
   defeat: 'assets/audio/sfx/ui/defeat-piano',
 }
 
 const battleBgmPool: SoundSource[] = [...BATTLE_MUSIC_TRACKS]
+const RUN_START_BGM_TRACK: SoundSource = 'assets/audio/music/battle/pixel-fantasy-30/Loops/ogg/17. Hymn of Valor.ogg'
 
 let bgmElement: HTMLAudioElement | null = null
 let bgmFadeInterval: ReturnType<typeof setInterval> | null = null
@@ -132,6 +134,19 @@ function toCandidatePaths(path: string): string[] {
   return candidates
 }
 
+function toAudioUrl(path: string) {
+  if (/^(https?:)?\/\//i.test(path)) return path
+  return path.startsWith('/') ? path : `/${path}`
+}
+
+function createAudioElement(path: string) {
+  const audio = new Audio()
+  const url = toAudioUrl(path)
+  audio.setAttribute('src', url)
+  audio.src = url
+  return audio
+}
+
 function sourceKey(source: SoundSource) {
   return Array.isArray(source) ? source.join('|') : source
 }
@@ -149,7 +164,7 @@ function probeAudioPath(path: string): Promise<boolean> {
 
     audio.onloadedmetadata = () => done(true)
     audio.onerror = () => done(false)
-    audio.src = path
+    audio.src = toAudioUrl(path)
   })
 }
 
@@ -203,6 +218,51 @@ function clearCurrentBGM() {
   bgmNeedsUserUnmute = false
 }
 
+function mountBGMElement(resolvedPath: string, selectedKey: string, token: number) {
+  const element = createAudioElement(resolvedPath)
+  bgmElement = element
+  currentBgmKey = selectedKey
+  element.loop = true
+  element.volume = 0
+
+  // Try immediate audible playback first. If autoplay is blocked,
+  // fall back to muted playback and unmute on first user interaction.
+  element.muted = false
+  element.play().then(() => {
+    if (token !== bgmTrackToken || bgmElement !== element) return
+    bgmNeedsUserUnmute = false
+  }).catch(() => {
+    if (token !== bgmTrackToken || bgmElement !== element) return
+    element.muted = true
+    element.play().then(() => {
+      if (token !== bgmTrackToken || bgmElement !== element) return
+      bgmNeedsUserUnmute = true
+    }).catch(() => {})
+  })
+
+  let volume = 0
+  if (bgmFadeInterval) {
+    clearInterval(bgmFadeInterval)
+    bgmFadeInterval = null
+  }
+  bgmFadeInterval = setInterval(() => {
+    if (token !== bgmTrackToken || bgmElement !== element) {
+      if (bgmFadeInterval) {
+        clearInterval(bgmFadeInterval)
+        bgmFadeInterval = null
+      }
+      return
+    }
+    const targetVolume = getBgmTargetVolume()
+    volume = Math.min(volume + 0.02, targetVolume)
+    element.volume = volume
+    if (volume >= targetVolume && bgmFadeInterval) {
+      clearInterval(bgmFadeInterval)
+      bgmFadeInterval = null
+    }
+  }, 50)
+}
+
 export const startBGM = (source?: SoundSource) => {
   const selectedSource = source ?? battleBgmPool[0]
   const selectedKey = sourceKey(selectedSource)
@@ -224,57 +284,29 @@ export const startBGM = (source?: SoundSource) => {
 
   clearCurrentBGM()
 
+  if (typeof selectedSource === 'string' && /\.(ogg|mp3|wav)$/i.test(selectedSource)) {
+    mountBGMElement(selectedSource, selectedKey, token)
+    return
+  }
+
   resolvePlayablePath(selectedSource).then(resolvedPath => {
     if (!resolvedPath) return
     if (token !== bgmTrackToken) return
 
-    const element = new Audio(resolvedPath)
-    bgmElement = element
-    currentBgmKey = selectedKey
-    element.loop = true
-    element.volume = 0
-
-    // Try immediate audible playback first. If autoplay is blocked,
-    // fall back to muted playback and unmute on first user interaction.
-    element.muted = false
-    element.play().then(() => {
-      if (token !== bgmTrackToken || bgmElement !== element) return
-      bgmNeedsUserUnmute = false
-    }).catch(() => {
-      if (token !== bgmTrackToken || bgmElement !== element) return
-      element.muted = true
-      element.play().then(() => {
-        if (token !== bgmTrackToken || bgmElement !== element) return
-        bgmNeedsUserUnmute = true
-      }).catch(() => {})
-    })
-
-    let volume = 0
-    if (bgmFadeInterval) {
-      clearInterval(bgmFadeInterval)
-      bgmFadeInterval = null
-    }
-    bgmFadeInterval = setInterval(() => {
-      if (token !== bgmTrackToken || bgmElement !== element) {
-        if (bgmFadeInterval) {
-          clearInterval(bgmFadeInterval)
-          bgmFadeInterval = null
-        }
-        return
-      }
-      const targetVolume = getBgmTargetVolume()
-      volume = Math.min(volume + 0.02, targetVolume)
-      element.volume = volume
-      if (volume >= targetVolume && bgmFadeInterval) {
-        clearInterval(bgmFadeInterval)
-        bgmFadeInterval = null
-      }
-    }, 50)
+    mountBGMElement(resolvedPath, selectedKey, token)
   }).catch(() => {})
 }
 
 export const playRandomBattleBGM = () => {
   startBGM(pickRandomBattleTrack())
+}
+
+export const playRunStartBGM = () => {
+  startBGM(RUN_START_BGM_TRACK)
+}
+
+export const primeRunStartBGM = () => {
+  void resolvePlayablePath(RUN_START_BGM_TRACK)
 }
 
 export const ensureRandomBGM = () => {
@@ -291,6 +323,15 @@ export const ensureRandomBGM = () => {
     return
   }
   playRandomBattleBGM()
+}
+
+export const pauseBGM = () => {
+  if (bgmFadeInterval) {
+    clearInterval(bgmFadeInterval)
+    bgmFadeInterval = null
+  }
+  if (!bgmElement) return
+  bgmElement.pause()
 }
 
 // Stop background music with fade out
@@ -372,7 +413,7 @@ export const preloadSound = (cardId?: string, cardType?: string) => {
 
   resolvePlayablePath(source).then(resolvedPath => {
     if (!resolvedPath || audioCache.has(key)) return
-    const audio = new Audio(resolvedPath)
+    const audio = createAudioElement(resolvedPath)
     audio.preload = 'auto'
     audioCache.set(key, audio)
   }).catch(() => {})
@@ -403,7 +444,7 @@ const playSampleIfAvailable = (source: SoundSource | undefined, volume = 0.15, l
       warnMissingAudio(label, `(missing file for source: ${key})`)
       return
     }
-    const audio = new Audio(resolvedPath)
+    const audio = createAudioElement(resolvedPath)
     audio.volume = mixedVolume
     audio.play().then(() => {
       if (countAsGameplay) trackGameplaySfx(audio)
@@ -470,6 +511,10 @@ export const playGoldGain = () => {
 
 export const playGoldSpend = () => {
   playSampleIfAvailable(sounds['card-gold'], 0.16, 'gold-spend')
+}
+
+export const playUnlockReward = () => {
+  playSampleIfAvailable(sounds.unlockReward, 0.22, 'unlock-reward', false)
 }
 
 export const playVulnerable = () => {

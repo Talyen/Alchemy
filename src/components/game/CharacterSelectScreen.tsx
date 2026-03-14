@@ -127,6 +127,12 @@ export function CharacterSelectScreen({ onSelect, unlockedCharacterIds, topLeft 
     }
   }, [])
 
+  const getLockedDescription = (characterId: string) => {
+    if (characterId === 'rogue') return 'Unlock by playing a run as the Knight.'
+    if (characterId === 'wizard') return 'Unlock by playing a run as the Rogue.'
+    return 'Locked'
+  }
+
   return (
     <SelectionScreenShell title="Choose Character" subtitle="Start Run" layout="top" topLeft={topLeft}>
       <div className="w-full relative mt-0">
@@ -137,6 +143,7 @@ export function CharacterSelectScreen({ onSelect, unlockedCharacterIds, topLeft 
             return (
             <motion.button
               key={character.id}
+              aria-label={character.name}
               onClick={() => {
                 if (!isUnlocked) return
                 onSelect(character.id)
@@ -151,20 +158,20 @@ export function CharacterSelectScreen({ onSelect, unlockedCharacterIds, topLeft 
               }}
               data-ui-control
               disabled={!isUnlocked}
-              className="w-full max-w-md min-h-64 mx-auto rounded-2xl border border-zinc-700/70 bg-zinc-900/90 px-5 py-4 flex flex-col items-center justify-center gap-3 text-center disabled:opacity-55"
+              className={`w-full max-w-md min-h-64 mx-auto rounded-2xl px-5 py-4 flex flex-col items-center justify-center gap-3 text-center transition-colors ${isUnlocked ? 'border border-zinc-700/70 bg-zinc-900/90' : 'border border-zinc-800/90 bg-zinc-950/95 text-zinc-500'}`}
               whileHover={isUnlocked ? { scale: 1.01, y: -3 } : { scale: 1 }}
               whileTap={isUnlocked ? { scale: 0.995, y: 0 } : { scale: 1 }}
               transition={{ type: 'spring', stiffness: 360, damping: 28 }}
             >
               <Stack align="center" gap="sm">
-                <div className="shrink-0 flex items-center justify-center">
+                <div className={`shrink-0 flex items-center justify-center ${isUnlocked ? '' : 'grayscale brightness-75 contrast-90'}`}>
                   <CharacterSprite characterId={character.id} />
                 </div>
 
                 <div className="min-w-0">
-                  <p className="text-2xl font-semibold text-zinc-100">{character.name}</p>
-                  <p className="mt-2 text-xs text-zinc-400 leading-relaxed max-w-[24ch] mx-auto break-words">
-                    {isUnlocked ? character.quirk : 'Locked - complete qualifying runs to unlock this character.'}
+                  <p className={`text-2xl font-semibold ${isUnlocked ? 'text-zinc-100' : 'text-zinc-400'}`}>{character.name}</p>
+                  <p className={`mt-2 text-xs leading-relaxed max-w-[24ch] mx-auto break-words ${isUnlocked ? 'text-zinc-400' : 'text-zinc-500'}`}>
+                    {isUnlocked ? character.quirk : getLockedDescription(character.id)}
                   </p>
                   {!isUnlocked && (
                     <p className="mt-2 text-[10px] uppercase tracking-widest text-amber-400/90">Locked</p>

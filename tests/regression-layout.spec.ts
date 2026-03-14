@@ -200,11 +200,11 @@ test('bestiary enemies face left and key sprites stay vertically centered', asyn
   await page.waitForTimeout(600)
 
   const targets = new Set(['Shade', 'Mirror Shade', 'Prismatic Shade', 'Flaming Skull', 'Prismatic Skull'])
-  const found = new Map<string, { scaleX: number; bottomGap: number }>()
+  const found = new Map<string, { scaleX: number; deltaX: number; deltaY: number }>()
 
   for (let step = 0; step < 16 && found.size < targets.size; step += 1) {
     const snapshot = await page.evaluate(() => {
-      const entries: Array<{ name: string; scaleX: number; bottomGap: number }> = []
+      const entries: Array<{ name: string; scaleX: number; deltaX: number; deltaY: number }> = []
       const cards = Array.from(document.querySelectorAll('button.group.relative.h-44'))
       for (const card of cards) {
         const nameEl = card.querySelector('p')
@@ -226,10 +226,15 @@ test('bestiary enemies face left and key sprites stay vertically centered', asyn
 
         const cardRect = card.getBoundingClientRect()
         const spriteRect = sprite.getBoundingClientRect()
+        const cardCenterX = cardRect.left + cardRect.width / 2
+        const cardCenterY = cardRect.top + cardRect.height / 2
+        const spriteCenterX = spriteRect.left + spriteRect.width / 2
+        const spriteCenterY = spriteRect.top + spriteRect.height / 2
         entries.push({
           name: (nameEl.textContent ?? '').trim(),
           scaleX,
-          bottomGap: cardRect.bottom - spriteRect.bottom,
+          deltaX: spriteCenterX - cardCenterX,
+          deltaY: spriteCenterY - cardCenterY,
         })
       }
       return entries
@@ -237,7 +242,7 @@ test('bestiary enemies face left and key sprites stay vertically centered', asyn
 
     for (const entry of snapshot) {
       if (!targets.has(entry.name)) continue
-      found.set(entry.name, { scaleX: entry.scaleX, bottomGap: entry.bottomGap })
+      found.set(entry.name, { scaleX: entry.scaleX, deltaX: entry.deltaX, deltaY: entry.deltaY })
     }
 
     if (found.size < targets.size) {
@@ -252,6 +257,7 @@ test('bestiary enemies face left and key sprites stay vertically centered', asyn
     expect(found.has(name), `Missing bestiary target ${name}`).toBeTruthy()
     const metric = found.get(name)!
     expect(metric.scaleX, `${name} should face left in bestiary`).toBeLessThan(0)
-    expect(metric.bottomGap, `${name} sprite sits too low in bestiary tile`).toBeGreaterThanOrEqual(10)
+    expect(Math.abs(metric.deltaX), `${name} sprite is not horizontally centered in bestiary tile`).toBeLessThanOrEqual(8)
+    expect(Math.abs(metric.deltaY), `${name} sprite is not vertically centered in bestiary tile`).toBeLessThanOrEqual(14)
   }
 })
