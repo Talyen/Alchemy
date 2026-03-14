@@ -187,7 +187,7 @@ for (const card of ALL_CARDS) {
 function trinketCoverageIdsFromAppSource(): string[] {
   const appSource = readFileSync(new URL('../src/App.tsx', import.meta.url), 'utf8')
   const start = appSource.indexOf('const ALL_TRINKET_OFFERS: ShopTrinketOffer[] = [')
-  const end = appSource.indexOf(']\n\nfunction getPreviewMode()', start)
+  const end = appSource.indexOf('\n\nconst DESTINATION_POOL: DestinationOption[] = [', start)
   if (start < 0 || end < 0) {
     throw new Error('Failed to locate ALL_TRINKET_OFFERS in App.tsx')
   }

@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ALL_CARDS, type RunCharacter } from '@/data'
-import { CHARACTER_IDLE_FPS, getCharacterIdleFrames } from '@/lib/characterSprites'
+import type { RunCharacter } from '@/data'
 import type { CardDef, CardInstance } from '@/types'
 import { playUnlockReward } from '@/sounds'
 import { Card } from './Card'
 import { SelectionScreenShell } from './SelectionScreenShell'
+import { getStarterDeckCards, RunCharacterShowcaseCard } from './RunCharacterShowcaseCard'
 
 type Props = {
   character: RunCharacter
@@ -16,33 +16,6 @@ type Props = {
 
 function toInstance(def: CardDef, uid: string): CardInstance {
   return { ...def, uid }
-}
-
-function CharacterSprite({ characterId, characterName }: { characterId: string; characterName: string }) {
-  const frames = getCharacterIdleFrames(characterId)
-  const [frameIdx, setFrameIdx] = useState(0)
-
-  useEffect(() => {
-    setFrameIdx(0)
-  }, [characterId])
-
-  useEffect(() => {
-    const id = setInterval(() => {
-      setFrameIdx(prev => (prev + 1) % frames.length)
-    }, 1000 / CHARACTER_IDLE_FPS)
-    return () => clearInterval(id)
-  }, [frames.length])
-
-  return <img src={frames[frameIdx]} alt={`${characterName} sprite`} className="h-40 w-28 object-contain" style={{ imageRendering: 'pixelated' }} />
-}
-
-function getStarterDeckCards(character: RunCharacter): CardDef[] {
-  const cardById = new Map(ALL_CARDS.map(card => [card.id, card]))
-  return character.starterDeck.flatMap(({ cardId, count }) => {
-    const card = cardById.get(cardId)
-    if (!card) return []
-    return Array.from({ length: count }, () => card)
-  })
 }
 
 export function RunCharacterUnlockRewardScreen({ character, onContinue, topLeft }: Props) {
@@ -115,7 +88,8 @@ export function RunCharacterUnlockRewardScreen({ character, onContinue, topLeft 
     <SelectionScreenShell title="Character Unlocked" subtitle="Progression" topLeft={topLeft} allowOverflowVisible>
       <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-6 px-4">
         <motion.div
-          className="w-full max-w-2xl rounded-3xl border border-amber-500/35 bg-zinc-950/92 px-6 py-6"
+          className="w-full max-w-md"
+          data-testid="run-character-reward-card"
           initial={{ opacity: 0, y: 10, scale: 0.985 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ type: 'spring', stiffness: 260, damping: 24 }}
@@ -124,26 +98,15 @@ export function RunCharacterUnlockRewardScreen({ character, onContinue, topLeft 
           onFocus={openDeck}
           onBlur={scheduleCloseDeck}
         >
-          <div className="flex flex-col items-center gap-4 text-center md:flex-row md:items-center md:gap-6 md:text-left">
-            <div className="flex shrink-0 items-center justify-center rounded-2xl border border-amber-500/25 bg-amber-500/10 px-4 py-3">
-              <CharacterSprite characterId={character.id} characterName={character.name} />
-            </div>
-
-            <div className="flex-1">
-              <p className="text-[11px] uppercase tracking-[0.2em] text-amber-300/90">New Adventurer</p>
-              <h2 className="mt-2 text-3xl font-semibold text-zinc-100">{character.name}</h2>
-              <p className="mt-3 text-sm leading-relaxed text-zinc-400">{character.quirk}</p>
-              <p className="mt-3 text-xs uppercase tracking-[0.18em] text-zinc-500">Hover to preview the starting deck</p>
-              <p className="mt-2 text-sm text-zinc-300">This character&apos;s starting deck is now unlocked in the collection and can appear in future runs.</p>
-            </div>
-          </div>
+          <RunCharacterShowcaseCard character={character} testId="run-character-reward-showcase" />
         </motion.div>
 
         <div className="relative min-h-96 w-full max-w-6xl">
           <AnimatePresence>
             {showDeck && (
+              // ui-allow-absolute: hover deck overlay matches character select preview behavior
               <motion.div
-                className="absolute inset-x-0 top-0 z-[71] min-h-96 rounded-2xl border border-zinc-700/80 bg-zinc-950/95 px-4 pt-4 pb-20"
+                className="absolute inset-x-0 top-0 z-[71] min-h-96 rounded-xl border border-zinc-700/80 bg-zinc-950/95 px-4 pt-4 pb-20"
                 initial={{ opacity: 0, y: 8, scale: 0.98 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 8, scale: 0.98, transition: { duration: 0.12 } }}

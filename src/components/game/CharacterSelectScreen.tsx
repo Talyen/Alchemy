@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ALL_CARDS, RUN_CHARACTERS, type RunCharacter } from '@/data'
-import { CHARACTER_IDLE_FPS, getCharacterIdleFrames } from '@/lib/characterSprites'
+import { RUN_CHARACTERS, type RunCharacter } from '@/data'
 import { SelectionScreenShell } from './SelectionScreenShell'
 import { Card } from './Card'
 import type { CardDef, CardInstance } from '@/types'
-import { Stack } from '@/ui/primitives'
+import { getStarterDeckCards, RunCharacterShowcaseCard } from './RunCharacterShowcaseCard'
 
 interface Props {
   onSelect: (characterId: string) => void
@@ -16,40 +15,6 @@ interface Props {
 
 function toInstance(def: CardDef, uid: string): CardInstance {
   return { ...def, uid }
-}
-
-function CharacterSprite({ characterId }: { characterId: string }) {
-  const frames = getCharacterIdleFrames(characterId)
-  const [frameIdx, setFrameIdx] = useState(0)
-
-  useEffect(() => {
-    setFrameIdx(0)
-  }, [characterId])
-
-  useEffect(() => {
-    const id = setInterval(() => {
-      setFrameIdx(prev => (prev + 1) % frames.length)
-    }, 1000 / CHARACTER_IDLE_FPS)
-    return () => clearInterval(id)
-  }, [frames.length])
-
-  return (
-    <img
-      src={frames[frameIdx]}
-      alt={`${characterId} sprite`}
-      className="w-20 h-32 object-contain"
-      style={{ imageRendering: 'pixelated' }}
-    />
-  )
-}
-
-function getStarterDeckCards(character: RunCharacter): CardDef[] {
-  const cardById = new Map(ALL_CARDS.map(card => [card.id, card]))
-  return character.starterDeck.flatMap(({ cardId, count }) => {
-    const card = cardById.get(cardId)
-    if (!card) return []
-    return Array.from({ length: count }, () => card)
-  })
 }
 
 export function CharacterSelectScreen({ onSelect, unlockedCharacterIds, topLeft }: Props) {
@@ -163,21 +128,13 @@ export function CharacterSelectScreen({ onSelect, unlockedCharacterIds, topLeft 
               whileTap={isUnlocked ? { scale: 0.995, y: 0 } : { scale: 1 }}
               transition={{ type: 'spring', stiffness: 360, damping: 28 }}
             >
-              <Stack align="center" gap="sm">
-                <div className={`shrink-0 flex items-center justify-center ${isUnlocked ? '' : 'grayscale brightness-75 contrast-90'}`}>
-                  <CharacterSprite characterId={character.id} />
-                </div>
-
-                <div className="min-w-0">
-                  <p className={`text-2xl font-semibold ${isUnlocked ? 'text-zinc-100' : 'text-zinc-400'}`}>{character.name}</p>
-                  <p className={`mt-2 text-xs leading-relaxed max-w-[24ch] mx-auto break-words ${isUnlocked ? 'text-zinc-400' : 'text-zinc-500'}`}>
-                    {isUnlocked ? character.quirk : getLockedDescription(character.id)}
-                  </p>
-                  {!isUnlocked && (
-                    <p className="mt-2 text-[10px] uppercase tracking-widest text-amber-400/90">Locked</p>
-                  )}
-                </div>
-              </Stack>
+              <RunCharacterShowcaseCard
+                character={character}
+                locked={!isUnlocked}
+                lockedDescription={getLockedDescription(character.id)}
+                className="min-h-0 max-w-none border-0 bg-transparent p-0"
+                contentClassName="gap-3"
+              />
             </motion.button>
           )})}
         </div>

@@ -146,8 +146,11 @@ export function TalentsScreen({
         <div className="relative flex-1 overflow-visible">
           {/* ui-allow-absolute: fixed canvas positioning for talent graph */}
           <div className="absolute inset-0 flex items-center justify-center p-4">
-            <div className="relative rounded-2xl border border-zinc-800/80 bg-zinc-950/70 p-5" style={{ width: CANVAS_WIDTH + 40, height: CANVAS_HEIGHT + 40 }}>
-              <div className="absolute inset-0 pointer-events-none rounded-2xl" style={{ background: 'radial-gradient(120% 85% at 50% 0%, rgba(63,63,70,0.24), rgba(9,9,11,0))' }} />
+            <div
+              className="relative rounded-2xl border border-zinc-800/80 bg-zinc-950 p-5"
+              data-testid="talent-canvas"
+              style={{ width: CANVAS_WIDTH + 40, height: CANVAS_HEIGHT + 40 }}
+            >
               <div className="relative" style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT }}>
               <svg width={CANVAS_WIDTH} height={CANVAS_HEIGHT} className="absolute left-0 top-0 pointer-events-none">
                 {talentLinks.map(([fromId, toId]) => {
@@ -174,6 +177,7 @@ export function TalentsScreen({
               {positionedNodes.map(node => {
                 const unlocked = unlockedTalentNodeIds.has(node.id)
                 const unlockable = availableTalentPoints > 0 && canUnlockTalent(node.id, unlockedTalentNodeIds, talentNodes, talentLinks)
+                const reachable = unlocked || unlockable || node.id === TALENT_ROOT_ID
                 const theme = getTalentThemeClasses(node.theme)
 
                 return (
@@ -182,31 +186,37 @@ export function TalentsScreen({
                     key={node.id}
                     type="button"
                     onClick={() => unlockable && onUnlockTalent(node.id)}
+                    data-testid={`talent-node-${node.id}`}
+                    data-keyword-count={node.keywords.length}
+                    data-unlocked={unlocked ? 'true' : 'false'}
+                    data-unlockable={unlockable ? 'true' : 'false'}
                     className={`absolute w-[172px] h-[114px] rounded-2xl border-2 px-3.5 py-3 text-left ${unlocked ? theme.ring : 'border-zinc-700/85'} ${unlockable ? 'cursor-pointer' : 'cursor-default'}`}
                     style={{
                       left: node.position.x,
                       top: node.position.y,
-                      background: unlocked
-                        ? 'linear-gradient(165deg, rgba(39,39,42,0.95), rgba(24,24,27,0.95))'
-                        : 'linear-gradient(165deg, rgba(24,24,27,0.88), rgba(9,9,11,0.9))',
+                      background: unlocked ? 'rgb(39 39 42)' : 'rgb(24 24 27)',
                       boxShadow: unlocked
                         ? '0 0 0 1px rgba(161,161,170,0.16), 0 8px 24px rgba(0,0,0,0.38)'
                         : '0 6px 18px rgba(0,0,0,0.34)',
+                      filter: reachable ? 'none' : 'saturate(0.72) brightness(0.86)',
                     }}
-                    whileHover={{ scale: 1.04 }}
+                    whileHover={unlockable ? { scale: 1.04 } : { scale: 1.015 }}
                     whileTap={unlockable ? { scale: 0.97 } : undefined}
                   >
                     <div className="flex items-center gap-2">
-                      {(() => {
-                        const keywordName = node.keywords[0] ?? 'Wish'
-                        const entry = KEYWORDS[keywordName]
-                        if (!entry) return <Sparkles size={15} className="text-zinc-300" />
-                        const KeywordIcon = entry.Icon
-                        return <KeywordIcon size={15} style={{ color: entry.color }} />
-                      })()}
+                      <div className="flex items-center gap-1" data-testid={`talent-node-icons-${node.id}`}>
+                        {node.keywords.map((keywordName, index) => {
+                          const entry = KEYWORDS[keywordName]
+                          if (!entry) {
+                            return <Sparkles key={`${node.id}-${keywordName}-${index}`} size={15} className="text-zinc-300" />
+                          }
+                          const KeywordIcon = entry.Icon
+                          return <KeywordIcon key={`${node.id}-${keywordName}-${index}`} size={15} style={{ color: entry.color }} />
+                        })}
+                      </div>
                       <p className="text-[13px] leading-tight text-zinc-100 font-semibold">{node.name}</p>
                     </div>
-                    <p className="mt-2.5 text-[11px] leading-snug text-zinc-300">{node.description}</p>
+                    <p className={`mt-2.5 text-[11px] leading-snug ${reachable ? 'text-zinc-300' : 'text-zinc-500'}`}>{node.description}</p>
                   </motion.button>
                 )
               })}

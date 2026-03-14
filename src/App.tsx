@@ -27,6 +27,7 @@ import { AlchemyScreen, type AlchemyTransformKind, type AlchemyTransformOffer } 
 import { TalentsScreen } from './components/game/TalentsScreen'
 import { OptionsScreen, type GameSettings, type OptionsTab } from './components/game/OptionsScreen'
 import { CenterModal } from '@/components/ui/CenterModal'
+import { NotificationDot } from '@/ui/primitives'
 import { TALENT_KEYWORDS, type TalentKeyword, canUnlockTalent, getEmptyUnlockedTalentNodeIdsByKeyword, getTalentBonusesFromKeywordTrees, getTalentLinksForNodes, getTalentNodesForKeyword } from './lib/talents'
 import { canAppearAfter } from './lib/destinationRules'
 import { ensureCtx, ensureRandomBGM, pauseBGM, playDefeat, playGoldGain, playRunStartBGM, playVictory, primeRunStartBGM, setAudioMix, stopBGM } from './sounds'
@@ -174,6 +175,7 @@ function MainMenu({
   canResume,
   onCollection,
   onTalents,
+  showTalentsNotification,
   onOptions,
 }: {
   onStart: () => void
@@ -181,6 +183,7 @@ function MainMenu({
   canResume: boolean
   onCollection: () => void
   onTalents: () => void
+  showTalentsNotification: boolean
   onOptions: () => void
 }) {
   const MAIN_MENU_LOGO_SRC = 'assets/Alchemy Logo/Alchemy Logo-transparent.png'
@@ -330,7 +333,8 @@ function MainMenu({
 
             <motion.button
               onClick={onTalents}
-              className="flex items-center gap-2.5 px-6 py-3 rounded-xl border border-zinc-700/70 text-sm font-semibold tracking-widest uppercase text-zinc-300"
+              data-testid="main-menu-talents-button"
+              className="relative flex items-center gap-2.5 px-6 py-3 rounded-xl border border-zinc-700/70 text-sm font-semibold tracking-widest uppercase text-zinc-300"
               style={{ background: 'rgba(39,39,42,0.5)' }}
               whileHover={{ scale: 1.04, borderColor: 'rgba(161,161,170,0.45)' } as Parameters<typeof motion.button>[0]['whileHover']}
               whileTap={{ scale: 0.97 }}
@@ -339,6 +343,9 @@ function MainMenu({
               animate={{ opacity: 1, y: 0, transition: { delay: 0.3 } }}
             >
               Talents
+              {showTalentsNotification && (
+                <NotificationDot className="absolute right-2 top-2" testId="talents-notification-dot" />
+              )}
             </motion.button>
 
             <motion.button
@@ -549,6 +556,12 @@ const DEFAULT_META_PROGRESSION: MetaProgressionV1 = {
   talentUnlockedNodeIdsByKeyword: { ...DEFAULT_UNLOCKED_BY_KEYWORD },
 }
 
+const FIRST_RUN_TALENT_KEYWORD_FALLBACK: Record<string, TalentKeyword> = {
+  knight: 'Physical',
+  rogue: 'Poison',
+  wizard: 'Burn',
+}
+
 function clampPercent(value: number): number {
   return Math.max(0, Math.min(100, Math.round(value)))
 }
@@ -621,6 +634,20 @@ function normalizeMetaProgression(meta?: Partial<MetaProgressionV1>): MetaProgre
     keywordTalentProgress: normalizeKeywordPoints(meta.keywordTalentProgress),
     talentUnlockedNodeIdsByKeyword: unlockedByKeyword,
   }
+}
+
+function getFirstRunBonusKeyword(meta: MetaProgressionV1, endedCharacterId: string): TalentKeyword {
+  let bestKeyword = FIRST_RUN_TALENT_KEYWORD_FALLBACK[endedCharacterId] ?? 'Physical'
+  let bestScore = 0
+
+  for (const keyword of TALENT_KEYWORDS) {
+    const score = ((meta.keywordTalentPointsEarned[keyword] ?? 0) * 10) + (meta.keywordTalentProgress[keyword] ?? 0)
+    if (score <= bestScore) continue
+    bestKeyword = keyword
+    bestScore = score
+  }
+
+  return bestKeyword
 }
 
 type CompanionAttackProfile = {
@@ -1219,6 +1246,12 @@ export default function App() {
   }
   const unlockedTalentNodeIds = unlockedTalentNodeIdsByKeyword[activeTalentKeyword]
   const availableTalentPoints = Math.max(0, (metaProgress.keywordTalentPointsEarned[activeTalentKeyword] ?? 0) - unlockedTalentNodeIds.size)
+  const totalAvailableTalentPoints = TALENT_KEYWORDS.reduce((sum, keyword) => {
+    const earned = metaProgress.keywordTalentPointsEarned[keyword] ?? 0
+    const spent = unlockedTalentNodeIdsByKeyword[keyword].size
+    return sum + Math.max(0, earned - spent)
+  }, 0)
+  const hasUnspentTalentPoints = totalAvailableTalentPoints > 0
   const talentBonuses = getTalentBonusesFromKeywordTrees(unlockedTalentNodeIdsByKeyword)
   const runMaxHp = 30 + talentBonuses.runMaxHpBonus
   const previousEnemyHpRef = useRef(gameState.enemy.hp)
@@ -2208,13 +2241,18 @@ export default function App() {
     setMetaProgress(prev => {
       const nextRuns = prev.runsCompleted + 1
       const nextRoomsPlayed = prev.roomsPlayedTotal + endedFloors
+      const nextPointsEarned = { ...prev.keywordTalentPointsEarned }
+      if (prev.runsCompleted === 0) {
+        const bonusKeyword = getFirstRunBonusKeyword(prev, endedCharacterId)
+        nextPointsEarned[bonusKeyword] = (nextPointsEarned[bonusKeyword] ?? 0) + 1
+      }
       return {
         runsCompleted: nextRuns,
         insight: prev.insight,
         startingGoldBonus: 0,
         alchemyUnlocked: prev.alchemyUnlocked || nextRuns >= 1,
         roomsPlayedTotal: nextRoomsPlayed,
-        keywordTalentPointsEarned: prev.keywordTalentPointsEarned,
+        keywordTalentPointsEarned: nextPointsEarned,
         keywordTalentProgress: prev.keywordTalentProgress,
         talentUnlockedNodeIdsByKeyword: prev.talentUnlockedNodeIdsByKeyword,
       }
@@ -2396,6 +2434,7 @@ export default function App() {
           canResume={canResume}
           onCollection={() => openCollection('menu')}
           onTalents={() => setScreen('talents')}
+          showTalentsNotification={hasUnspentTalentPoints}
           onOptions={() => {
             setOptionsReturnScreen('menu')
             setScreen('options')
@@ -2863,9 +2902,9 @@ export default function App() {
       <CenterModal open={endRunConfirmOpen} onClose={() => setEndRunConfirmOpen(false)} widthClassName="w-[min(92vw,560px)]">
         <div className="px-5 py-5">
           <p className="text-[11px] uppercase tracking-[0.22em] text-zinc-500">Confirm</p>
-          <h2 className="mt-2 text-2xl font-semibold text-zinc-100">End this run?</h2>
+          <h2 className="mt-2 text-2xl font-semibold text-zinc-100">End Run</h2>
           <p className="mt-3 text-sm leading-relaxed text-zinc-400">
-            You will return to the main menu and lose the current run state. This cannot be undone.
+            End current run and receive any progression rewards accumulated.
           </p>
 
           <div className="mt-6 flex items-center justify-end gap-3">

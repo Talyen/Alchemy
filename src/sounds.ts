@@ -71,11 +71,23 @@ const RUN_START_BGM_TRACK: SoundSource = 'assets/audio/music/battle/pixel-fantas
 
 let bgmElement: HTMLAudioElement | null = null
 let bgmFadeInterval: ReturnType<typeof setInterval> | null = null
+let bgmRotationTimeout: ReturnType<typeof setTimeout> | null = null
 let bgmTrackToken = 0
 let currentBgmKey: string | null = null
+let currentBgmSource: SoundSource | null = null
 let bgmNeedsUserUnmute = false
 let lastBattleTrackIndex = -1
 const BASE_BGM_TARGET_VOLUME = 0.14
+const DEFAULT_BGM_ROTATE_MS = 120000
+const BGM_FADE_STEP = 0.02
+const BGM_FADE_INTERVAL_MS = 50
+
+const bgmDebugState = {
+  currentBgmKey: null as string | null,
+  currentSourceKey: null as string | null,
+  startCount: 0,
+  rotationCount: 0,
+}
 
 let audioMix = {
   master: 1,
@@ -89,6 +101,10 @@ function getClampedUnit(value: number) {
 
 function getBgmTargetVolume() {
   return BASE_BGM_TARGET_VOLUME * audioMix.master * audioMix.music
+}
+
+function getConfiguredBgmRotateMs() {
+  return Math.max(0, Number((window as any).__alchemyAudioTestConfig?.bgmRotateMs ?? DEFAULT_BGM_ROTATE_MS))
 }
 
 function getSfxVolume(baseVolume: number) {
@@ -205,17 +221,40 @@ function pickRandomBattleTrack(): SoundSource {
   return battleBgmPool[nextIndex]
 }
 
-function clearCurrentBGM() {
-  if (bgmFadeInterval) {
-    clearInterval(bgmFadeInterval)
-    bgmFadeInterval = null
+function syncBgmDebugState() {
+  bgmDebugState.currentBgmKey = currentBgmKey
+  bgmDebugState.currentSourceKey = currentBgmSource ? sourceKey(currentBgmSource) : null
+  ;(window as any).__alchemyAudioDebug = {
+    getState: () => ({ ...bgmDebugState, rotateMs: getConfiguredBgmRotateMs() }),
   }
-  if (!bgmElement) return
-  bgmElement.pause()
-  bgmElement.currentTime = 0
-  bgmElement = null
-  currentBgmKey = null
-  bgmNeedsUserUnmute = false
+}
+
+function clearBgmRotationTimeout() {
+  if (bgmRotationTimeout) {
+    clearTimeout(bgmRotationTimeout)
+    bgmRotationTimeout = null
+  }
+}
+
+function shouldRotateSource(source: SoundSource) {
+  const key = sourceKey(source)
+  if (key === sourceKey(RUN_START_BGM_TRACK)) return true
+  return battleBgmPool.some(track => sourceKey(track) === key)
+}
+
+function scheduleBgmRotation(source: SoundSource, token: number) {
+  clearBgmRotationTimeout()
+  if (!shouldRotateSource(source)) return
+
+  const rotateMs = getConfiguredBgmRotateMs()
+  if (rotateMs <= 0) return
+
+  bgmRotationTimeout = setTimeout(() => {
+    if (token !== bgmTrackToken) return
+    if (!bgmElement) return
+    bgmDebugState.rotationCount += 1
+    startBGM(pickRandomBattleTrack())
+  }, rotateMs)
 }
 
 function mountBGMElement(resolvedPath: string, selectedKey: string, token: number) {
@@ -254,13 +293,56 @@ function mountBGMElement(resolvedPath: string, selectedKey: string, token: numbe
       return
     }
     const targetVolume = getBgmTargetVolume()
-    volume = Math.min(volume + 0.02, targetVolume)
+    volume = Math.min(volume + BGM_FADE_STEP, targetVolume)
     element.volume = volume
     if (volume >= targetVolume && bgmFadeInterval) {
       clearInterval(bgmFadeInterval)
       bgmFadeInterval = null
     }
-  }, 50)
+  }, BGM_FADE_INTERVAL_MS)
+}
+
+function fadeOutCurrentBGM(token: number, onComplete: () => void) {
+  if (!bgmElement) {
+    onComplete()
+    return
+  }
+
+  const element = bgmElement
+  let volume = element.volume
+  if (bgmFadeInterval) {
+    clearInterval(bgmFadeInterval)
+    bgmFadeInterval = null
+  }
+
+  bgmFadeInterval = setInterval(() => {
+    if (token !== bgmTrackToken || bgmElement !== element) {
+      if (bgmFadeInterval) {
+        clearInterval(bgmFadeInterval)
+        bgmFadeInterval = null
+      }
+      return
+    }
+
+    volume = Math.max(volume - BGM_FADE_STEP, 0)
+    element.volume = volume
+    if (volume > 0) return
+
+    if (bgmFadeInterval) {
+      clearInterval(bgmFadeInterval)
+      bgmFadeInterval = null
+    }
+    element.pause()
+    element.currentTime = 0
+    if (bgmElement === element) {
+      bgmElement = null
+      currentBgmKey = null
+      currentBgmSource = null
+      bgmNeedsUserUnmute = false
+      syncBgmDebugState()
+    }
+    onComplete()
+  }, BGM_FADE_INTERVAL_MS)
 }
 
 export const startBGM = (source?: SoundSource) => {
@@ -279,13 +361,22 @@ export const startBGM = (source?: SoundSource) => {
         bgmNeedsUserUnmute = false
       }
     }).catch(() => {})
+    currentBgmSource = selectedSource
+    scheduleBgmRotation(selectedSource, bgmTrackToken)
+    syncBgmDebugState()
     return
   }
 
-  clearCurrentBGM()
+  clearBgmRotationTimeout()
 
   if (typeof selectedSource === 'string' && /\.(ogg|mp3|wav)$/i.test(selectedSource)) {
-    mountBGMElement(selectedSource, selectedKey, token)
+    fadeOutCurrentBGM(token, () => {
+      currentBgmSource = selectedSource
+      bgmDebugState.startCount += 1
+      mountBGMElement(selectedSource, selectedKey, token)
+      scheduleBgmRotation(selectedSource, token)
+      syncBgmDebugState()
+    })
     return
   }
 
@@ -293,7 +384,13 @@ export const startBGM = (source?: SoundSource) => {
     if (!resolvedPath) return
     if (token !== bgmTrackToken) return
 
-    mountBGMElement(resolvedPath, selectedKey, token)
+    fadeOutCurrentBGM(token, () => {
+      currentBgmSource = selectedSource
+      bgmDebugState.startCount += 1
+      mountBGMElement(resolvedPath, selectedKey, token)
+      scheduleBgmRotation(selectedSource, token)
+      syncBgmDebugState()
+    })
   }).catch(() => {})
 }
 
@@ -320,12 +417,16 @@ export const ensureRandomBGM = () => {
       bgmNeedsUserUnmute = false
     }
     bgmElement.play().catch(() => {})
+    if (currentBgmSource) {
+      scheduleBgmRotation(currentBgmSource, bgmTrackToken)
+    }
     return
   }
   playRandomBattleBGM()
 }
 
 export const pauseBGM = () => {
+  clearBgmRotationTimeout()
   if (bgmFadeInterval) {
     clearInterval(bgmFadeInterval)
     bgmFadeInterval = null
@@ -338,6 +439,7 @@ export const pauseBGM = () => {
 export const stopBGM = () => {
   bgmTrackToken += 1
   const element = bgmElement
+  clearBgmRotationTimeout()
   if (!element) return
 
   if (bgmFadeInterval) {
@@ -347,7 +449,7 @@ export const stopBGM = () => {
 
   let volume = element.volume
   bgmFadeInterval = setInterval(() => {
-    volume = Math.max(volume - 0.02, 0)
+    volume = Math.max(volume - BGM_FADE_STEP, 0)
     element.volume = volume
     if (volume <= 0) {
       if (bgmFadeInterval) {
@@ -358,10 +460,14 @@ export const stopBGM = () => {
       if (bgmElement === element) {
         bgmElement = null
         currentBgmKey = null
+        currentBgmSource = null
       }
+      syncBgmDebugState()
     }
-  }, 50)
+  }, BGM_FADE_INTERVAL_MS)
 }
+
+syncBgmDebugState()
 
 // cache of preloaded audio elements for instant playback
 const audioCache = new Map<string, HTMLAudioElement>()
