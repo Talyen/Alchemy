@@ -30,7 +30,7 @@ import { CenterModal } from '@/components/ui/CenterModal'
 import { NotificationDot } from '@/ui/primitives'
 import { TALENT_KEYWORDS, type TalentKeyword, canUnlockTalent, getEmptyUnlockedTalentNodeIdsByKeyword, getTalentBonusesFromKeywordTrees, getTalentLinksForNodes, getTalentNodesForKeyword } from './lib/talents'
 import { canAppearAfter } from './lib/destinationRules'
-import { ensureCtx, ensureRandomBGM, pauseBGM, playDefeat, playGoldGain, playRunStartBGM, playVictory, primeRunStartBGM, setAudioMix, stopBGM } from './sounds'
+import { ensureCtx, ensureRandomBGM, pauseBGM, playDefeat, playGoldGain, playRunStartBGM, playUnlockReward, playVictory, primeRunStartBGM, setAudioMix, stopBGM } from './sounds'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -1230,6 +1230,7 @@ export default function App() {
   const [runRewardUnlockedCards, setRunRewardUnlockedCards] = useState<CardDef[]>([])
   const [runRewardUnlockedCharacterId, setRunRewardUnlockedCharacterId] = useState<string | null>(null)
   const [endRunConfirmOpen, setEndRunConfirmOpen] = useState(false)
+  const [compactBattleLayout, setCompactBattleLayout] = useState(false)
   const activeCompanion = COMPANION_VARIANTS_BY_EVENT_ID.get(activeRunCompanionEventId ?? '') ?? null
   const activeMysteryCompanion = COMPANION_VARIANTS_BY_EVENT_ID.get(activeMysteryCompanionEventId ?? '') ?? COMPANION_VARIANTS[0]
   const hasCompanion = Boolean(
@@ -1252,6 +1253,12 @@ export default function App() {
     return sum + Math.max(0, earned - spent)
   }, 0)
   const hasUnspentTalentPoints = totalAvailableTalentPoints > 0
+  const hasUnspentByKeyword = TALENT_KEYWORDS.reduce((acc, keyword) => {
+    const earned = metaProgress.keywordTalentPointsEarned[keyword] ?? 0
+    const spent = unlockedTalentNodeIdsByKeyword[keyword].size
+    acc[keyword] = Math.max(0, earned - spent) > 0
+    return acc
+  }, {} as Record<TalentKeyword, boolean>)
   const talentBonuses = getTalentBonusesFromKeywordTrees(unlockedTalentNodeIdsByKeyword)
   const runMaxHp = 30 + talentBonuses.runMaxHpBonus
   const previousEnemyHpRef = useRef(gameState.enemy.hp)
@@ -1608,6 +1615,19 @@ export default function App() {
     ensureCtx()
     ensureRandomBGM()
   }, [screen, musicEnabled])
+
+  useEffect(() => {
+    const updateCompactLayout = () => {
+      const landscape = window.innerWidth > window.innerHeight
+      const lowHeightLandscape = landscape && window.innerHeight <= 520
+      const narrowLandscape = landscape && window.innerWidth <= 900
+      setCompactBattleLayout(lowHeightLandscape || narrowLandscape)
+    }
+
+    updateCompactLayout()
+    window.addEventListener('resize', updateCompactLayout)
+    return () => window.removeEventListener('resize', updateCompactLayout)
+  }, [])
 
   useEffect(() => {
     return () => {
@@ -2450,12 +2470,14 @@ export default function App() {
           availableTalentPoints={availableTalentPoints}
           pointsProgress={metaProgress.keywordTalentProgress[activeTalentKeyword] ?? 0}
           totalPointsEarned={metaProgress.keywordTalentPointsEarned[activeTalentKeyword] ?? 0}
+          hasUnspentByKeyword={hasUnspentByKeyword}
           onChangeKeyword={setActiveTalentKeyword}
           onUnlockTalent={(nodeId) => {
             if (availableTalentPoints <= 0) return
             const nodes = getTalentNodesForKeyword(activeTalentKeyword)
             const links = getTalentLinksForNodes(nodes)
             if (!canUnlockTalent(nodeId, unlockedTalentNodeIds, nodes, links)) return
+            playUnlockReward()
             setMetaProgress(prev => ({
               ...prev,
               talentUnlockedNodeIdsByKeyword: {
@@ -2797,8 +2819,8 @@ export default function App() {
             </div>
 
             <main className="flex-1 flex items-center justify-center px-8 pt-8 min-h-0">
-              <div className="flex flex-col items-center gap-4 translate-y-6">
-                <div className="flex items-start gap-52">
+              <div className={`flex flex-col items-center ${compactBattleLayout ? 'gap-1 translate-y-0' : 'gap-4 translate-y-6'}`}>
+                <div className={`flex items-start ${compactBattleLayout ? 'gap-8' : 'gap-52'}`}>
                   <PlayerPanel
                     player={gameState.player}
                     gold={gameState.gold}
@@ -2813,6 +2835,7 @@ export default function App() {
                     companionEnemyId={activeCompanion?.companionEnemyId}
                     companionAttackTick={companionAttackTick}
                     playerAttackTick={playerAttackTick}
+                    compact={compactBattleLayout}
                   />
                   <EnemyPanel
                     enemy={gameState.enemy}
@@ -2820,13 +2843,14 @@ export default function App() {
                     isActive={isEnemyActing}
                     lastCardPlayedId={gameState.lastCardPlayedId}
                     isEliteEncounter={currentRoomLabel === 'Elite'}
+                    compact={compactBattleLayout}
                   />
                 </div>
                 <TurnIndicator isPlayerTurn={!isEnemyActing && gameState.phase === 'player_turn'} />
               </div>
             </main>
 
-            <div className="shrink-0 h-[300px] border-t border-zinc-800/40 relative">
+            <div className={`shrink-0 border-t border-zinc-800/40 relative ${compactBattleLayout ? 'h-[220px]' : 'h-[300px]'}`}>
               <Hand
                 cards={gameState.hand}
                 mana={gameState.mana}
@@ -2844,6 +2868,7 @@ export default function App() {
                 lastCardPlayedId={gameState.lastCardPlayedId}
                 overflowDiscardFxToken={gameState.overflowDiscardFxToken}
                 overflowDiscardFxCount={gameState.overflowDiscardFxCount}
+                compact={compactBattleLayout}
               />
             </div>
 

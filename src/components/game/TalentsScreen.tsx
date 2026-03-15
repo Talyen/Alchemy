@@ -5,6 +5,7 @@ import { SelectionScreenShell } from './SelectionScreenShell'
 import { KEYWORDS } from './keywordGlossary'
 import { TALENT_KEYWORDS, type TalentKeyword, TALENT_ROOT_ID, canUnlockTalent, getTalentLinksForNodes, getTalentNodesForKeyword, getTalentThemeClasses } from '@/lib/talents'
 import { Sparkles } from 'lucide-react'
+import { NotificationDot } from '@/ui/primitives'
 
 type Props = {
   activeKeyword: TalentKeyword
@@ -12,6 +13,7 @@ type Props = {
   availableTalentPoints: number
   pointsProgress: number
   totalPointsEarned: number
+  hasUnspentByKeyword: Record<TalentKeyword, boolean>
   onChangeKeyword: (keyword: TalentKeyword) => void
   onUnlockTalent: (nodeId: string) => void
   onRespec: () => void
@@ -57,6 +59,7 @@ export function TalentsScreen({
   availableTalentPoints,
   pointsProgress,
   totalPointsEarned,
+  hasUnspentByKeyword,
   onChangeKeyword,
   onUnlockTalent,
   onRespec,
@@ -127,7 +130,7 @@ export function TalentsScreen({
                 key={keyword}
                 type="button"
                 onClick={() => onChangeKeyword(keyword)}
-                className="rounded-xl border px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em]"
+                className="relative rounded-xl border px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em]"
                 style={{
                   borderColor: isActive ? color : 'rgba(63,63,70,0.8)',
                   color: isActive ? color : 'rgba(161,161,170,0.9)',
@@ -138,6 +141,9 @@ export function TalentsScreen({
                 whileTap={{ scale: 0.97 }}
               >
                 {keyword}
+                {hasUnspentByKeyword[keyword] && (
+                  <NotificationDot className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 h-2 w-2" testId={`talents-keyword-dot-${keyword}`} />
+                )}
               </motion.button>
             )
           })}

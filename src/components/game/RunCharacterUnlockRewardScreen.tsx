@@ -101,12 +101,12 @@ export function RunCharacterUnlockRewardScreen({ character, onContinue, topLeft 
           <RunCharacterShowcaseCard character={character} testId="run-character-reward-showcase" />
         </motion.div>
 
-        <div className="relative min-h-96 w-full max-w-6xl">
+        <div className="relative min-h-72 w-full max-w-6xl">
           <AnimatePresence>
             {showDeck && (
               // ui-allow-absolute: hover deck overlay matches character select preview behavior
               <motion.div
-                className="absolute inset-x-0 top-0 z-[71] min-h-96 rounded-xl border border-zinc-700/80 bg-zinc-950/95 px-4 pt-4 pb-20"
+                className="absolute inset-x-0 top-0 z-[71] min-h-72 rounded-xl border border-zinc-700/80 bg-zinc-950/95 px-4 pt-4 pb-10"
                 initial={{ opacity: 0, y: 8, scale: 0.98 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 8, scale: 0.98, transition: { duration: 0.12 } }}
@@ -115,7 +115,7 @@ export function RunCharacterUnlockRewardScreen({ character, onContinue, topLeft 
                 onMouseLeave={scheduleCloseDeck}
               >
                 <p className="mb-3 text-center text-[10px] uppercase tracking-widest text-zinc-600">{character.name} Starting Deck</p>
-                <div className="mt-1 flex min-h-80 items-center justify-center overflow-visible">
+                <div className="mt-1 flex min-h-56 items-center justify-center overflow-visible">
                   {previewCards.map(({ card, uid }, index) => {
                     const offset = index - previewMid
                     const rotate = offset * previewAnglePerCard
@@ -148,7 +148,7 @@ export function RunCharacterUnlockRewardScreen({ character, onContinue, topLeft 
                         onHoverEnd={() => lowerPreviewCard(uid)}
                         transition={{ type: 'spring', stiffness: 220, damping: 28, delay: index * 0.06 }}
                       >
-                        <div className="aspect-[2/3] w-36 overflow-visible sm:w-40 md:w-44 lg:w-48">
+                        <div className="aspect-[2/3] w-28 overflow-visible sm:w-32 md:w-36 lg:w-40">
                           <div className="origin-top-left scale-100">
                             <Card card={toInstance(card, uid)} playable />
                           </div>
@@ -169,6 +169,7 @@ export function RunCharacterUnlockRewardScreen({ character, onContinue, topLeft 
           whileHover={{ scale: 1.03, borderColor: 'rgba(161,161,170,0.6)' }}
           whileTap={{ scale: 0.97 }}
           transition={{ type: 'spring', stiffness: 360, damping: 28 }}
+          data-testid="run-character-reward-continue"
         >
           Continue
         </motion.button>

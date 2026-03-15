@@ -30,6 +30,7 @@ interface Props {
   lastCardPlayedId: string | null
   overflowDiscardFxToken: number
   overflowDiscardFxCount: number
+  compact?: boolean
 }
 
 // Determine which side of the board a card targets
@@ -186,11 +187,12 @@ interface DraggableCardProps {
   playable: boolean
   disabled: boolean
   onPlay: (uid: string) => void
+  compact?: boolean
 }
 
 function DraggableCard({
   card, i, mid, anglePerCard, overlapPx, elevated, raise, lower,
-  playable, disabled, onPlay,
+  playable, disabled, onPlay, compact = false,
 }: DraggableCardProps) {
   const offset = i - mid
   const rotate = offset * anglePerCard
@@ -255,7 +257,7 @@ function DraggableCard({
       variants={exitVariants}
       exit="exit"
       whileHover={!disabled ? {
-        y: yDip - 56,
+        y: yDip - (compact ? 38 : 56),
         rotate: 0,
         transition: { type: 'spring', stiffness: 220, damping: 28 },
       } : {}}
@@ -291,18 +293,20 @@ function DraggableCard({
         }
       }}
     >
-      <Card
-        card={card}
-        playable={playable}
-        isBeingDragged={isDragging}
-      />
+      <div className={compact ? 'scale-[0.84] origin-bottom' : ''}>
+        <Card
+          card={card}
+          playable={playable}
+          isBeingDragged={isDragging}
+        />
+      </div>
     </motion.div>
   )
 }
 
 // ΓöÇΓöÇΓöÇ Hand ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
-export function Hand({ cards, mana, maxMana, gold, onPlay, disabled, isEnemyActing, drawCount, discardCount, drawPileCards, discardPileCards, trinkets, log, lastCardPlayedId, overflowDiscardFxToken, overflowDiscardFxCount }: Props) {
+export function Hand({ cards, mana, maxMana, gold, onPlay, disabled, isEnemyActing, drawCount, discardCount, drawPileCards, discardPileCards, trinkets, log, lastCardPlayedId, overflowDiscardFxToken, overflowDiscardFxCount, compact = false }: Props) {
   const [elevated, setElevated] = useState<Set<string>>(new Set())
   const [showLog, setShowLog]   = useState(false)
   const [logPosition, setLogPosition] = useState<PopoverPosition | null>(null)
@@ -378,25 +382,25 @@ export function Hand({ cards, mana, maxMana, gold, onPlay, disabled, isEnemyActi
 
   const mid = (cards.length - 1) / 2
   const anglePerCard = cards.length <= 1 ? 0 : Math.min(8, 24 / (cards.length - 1))
-  const overlapPx = Math.max(10, Math.min(32, (cards.length - 1) * 4))
+  const overlapPx = Math.max(compact ? 8 : 10, Math.min(compact ? 26 : 32, (cards.length - 1) * (compact ? 3 : 4)))
   const activeManaEvent = manaEvents[0]
 
   return (
-    <div className="relative h-full flex flex-col justify-end px-4 md:px-6 pb-6 overflow-visible gap-4" data-ui-container>
-      <div className="w-full grid grid-cols-[auto_1fr_auto] items-end gap-4" data-ui-container>
-        <div className="flex items-end gap-4" data-ui-container>
+    <div className={`relative h-full flex flex-col justify-end overflow-visible ${compact ? 'gap-2 px-2 pb-2' : 'gap-4 px-4 pb-6 md:px-6'}`} data-ui-container>
+      <div className={`w-full grid grid-cols-[auto_1fr_auto] items-end ${compact ? 'gap-2' : 'gap-4'}`} data-ui-container>
+        <div className={`flex items-end ${compact ? 'gap-2' : 'gap-4'}`} data-ui-container>
           <div className="flex flex-col items-center gap-3" data-ui-container>
             <motion.button
               type="button"
               onClick={() => setShowInventory(prev => !prev)}
-              className="inline-flex h-14 w-14 items-center justify-center rounded-lg border border-zinc-700/80 bg-zinc-900/85"
+              className={`inline-flex items-center justify-center rounded-lg border border-zinc-700/80 bg-zinc-900/85 ${compact ? 'h-11 w-11' : 'h-14 w-14'}`}
               whileHover={{ scale: 1.04, borderColor: 'rgba(161,161,170,0.7)' }}
               whileTap={{ scale: 0.96 }}
             >
               <img
                 src="assets/ui/inventory-bag.png"
                 alt="Inventory"
-                className="h-9 w-9 object-contain"
+                className={`object-contain ${compact ? 'h-7 w-7' : 'h-9 w-9'}`}
                 style={{ imageRendering: 'pixelated' }}
               />
             </motion.button>
@@ -411,7 +415,7 @@ export function Hand({ cards, mana, maxMana, gold, onPlay, disabled, isEnemyActi
             />
           </div>
 
-          <div className="flex flex-col items-start gap-2.5" data-ui-container>
+          <div className={`flex flex-col items-start ${compact ? 'gap-1.5' : 'gap-2.5'}`} data-ui-container>
             <div className="relative">
               <ManaOrbs current={mana} max={maxMana} />
               <AnimatePresence mode="wait">
@@ -453,7 +457,7 @@ export function Hand({ cards, mana, maxMana, gold, onPlay, disabled, isEnemyActi
           </div>
         </div>
 
-        <div className="flex items-end justify-center overflow-visible pb-2" data-ui-boundary>
+        <div className={`flex items-end justify-center overflow-visible ${compact ? 'pb-0' : 'pb-2'}`} data-ui-boundary>
           <AnimatePresence mode="popLayout" custom={isEnemyActing}>
             {cards.map((card, i) => {
               const playable = !disabled && card.cost <= mana
@@ -471,6 +475,7 @@ export function Hand({ cards, mana, maxMana, gold, onPlay, disabled, isEnemyActi
                   playable={playable}
                   disabled={disabled}
                   onPlay={onPlay}
+                  compact={compact}
                 />
               )
             })}

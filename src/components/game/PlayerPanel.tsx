@@ -33,6 +33,7 @@ interface Props {
   companionEnemyId?: string
   companionAttackTick?: number
   playerAttackTick?: number
+  compact?: boolean
 }
 
 export function PlayerPanel({
@@ -49,6 +50,7 @@ export function PlayerPanel({
   companionEnemyId = 'lizard_f',
   companionAttackTick = 0,
   playerAttackTick = 0,
+  compact = false,
 }: Props) {
     const companionFrames = getCompanionFrames(companionEnemyId)
   const controls    = useAnimationControls()
@@ -62,6 +64,7 @@ export function PlayerPanel({
   const nextLane    = useRef(0)
   const prevCompanionAttackTick = useRef(companionAttackTick)
   const prevPlayerAttackTick = useRef(playerAttackTick)
+  const prevLastCardPlayedId = useRef(lastCardPlayedId)
   const [eventQueue, setEventQueue] = useState<QueueEntry[]>([])
   const [hovered,      setHovered]      = useState(false)
   const [frameIdx,     setFrameIdx]     = useState(0)
@@ -131,7 +134,10 @@ export function PlayerPanel({
       const diff = player.hp - prevHp.current
       entries.push({ kind: 'dmg', data: { id: nextId.current++, value: diff, type: 'heal', cardId: lastCardPlayedId ?? undefined, lane: allocLane() } })
       playPlayerHeal()
+    } else if (lastCardPlayedId === 'enemy_attack' && prevLastCardPlayedId.current !== lastCardPlayedId) {
+      entries.push({ kind: 'dmg', data: { id: nextId.current++, value: 0, type: 'damage', cardId: undefined, lane: allocLane() } })
     }
+    prevLastCardPlayedId.current = lastCardPlayedId
     prevHp.current = player.hp
     if (entries.length) pushQueue(entries)
   }, [player.hp, controls, lastCardPlayedId, allocLane, pushQueue])
@@ -174,7 +180,7 @@ export function PlayerPanel({
   return (
     <motion.div
       animate={controls}
-      className="relative flex flex-col items-center gap-6 w-44"
+      className={`relative flex flex-col items-center ${compact ? 'w-36 gap-3' : 'w-44 gap-6'}`}
       data-testid="player-panel"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
@@ -191,7 +197,7 @@ export function PlayerPanel({
       </AnimatePresence>
 
       {/* Fixed-height sprite well */}
-      <div className="h-40 flex items-end justify-center">
+      <div className={`${compact ? 'h-28' : 'h-40'} flex items-end justify-center`}>
         <div className="flex items-end justify-center gap-2">
           {showCompanion && (
             <motion.div
@@ -203,7 +209,7 @@ export function PlayerPanel({
               <img
                 src={companionFrames[frameIdx % companionFrames.length]}
                 alt={`${companionName} companion`}
-                style={{ width: 42, height: 60, imageRendering: 'pixelated', objectFit: 'contain' }}
+                style={{ width: compact ? 34 : 42, height: compact ? 48 : 60, imageRendering: 'pixelated', objectFit: 'contain' }}
               />
             </motion.div>
           )}
@@ -223,7 +229,7 @@ export function PlayerPanel({
             <img
               src={characterFrames[frameIdx]}
               alt={characterName}
-              style={{ width: 80, height: 140, imageRendering: 'pixelated', objectFit: 'contain' }}
+              style={{ width: compact ? 64 : 80, height: compact ? 110 : 140, imageRendering: 'pixelated', objectFit: 'contain' }}
             />
           </motion.div>
         </div>

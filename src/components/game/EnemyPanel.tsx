@@ -8,6 +8,7 @@ import type { DmgEvent, StatusEvent } from './FloatingNumber'
 import type { EnemyState } from '@/types'
 import { playCardPlay, playEnemyHit, playEnemyAttack } from '@/sounds'
 import { PRISMATIC_ENEMY_IDS, getEnemyRelativeScale } from './enemyVisualConfig'
+import { ALL_CARDS } from '@/data'
 
 const GOBLIN_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/enemies/goblin-idle-f${i}.png`)
 const CHORT_FRAMES = Array.from({ length: 4 }, (_, i) => `assets/enemies/chort-idle-f${i}.png`)
@@ -91,9 +92,16 @@ interface Props {
   isActive: boolean
   lastCardPlayedId: string | null
   isEliteEncounter?: boolean
+  compact?: boolean
 }
 
-export function EnemyPanel({ enemy, isActing, isActive, lastCardPlayedId, isEliteEncounter = false }: Props) {
+const ATTACK_CARD_IDS = new Set(
+  ALL_CARDS
+    .filter(card => (card.effect.damage ?? 0) > 0 || (card.effect.burn ?? 0) > 0 || (card.effect.poison ?? 0) > 0 || (card.effect.bleed ?? 0) > 0 || (card.effect.chill ?? 0) > 0)
+    .map(card => card.id),
+)
+
+export function EnemyPanel({ enemy, isActing, isActive, lastCardPlayedId, isEliteEncounter = false, compact = false }: Props) {
   const enemyFrames = ENEMY_FRAME_SETS[enemy.id] ?? GOBLIN_FRAMES
   const isEliteEnemy = isEliteEncounter || ELITE_ENEMY_IDS.has(enemy.id)
   const eliteEncounterScale = isEliteEncounter ? 1.25 : 1
@@ -112,6 +120,7 @@ export function EnemyPanel({ enemy, isActing, isActive, lastCardPlayedId, isElit
   const nextLane       = useRef(0)
   const [eventQueue, setEventQueue] = useState<QueueEntry[]>([])
   const prevStatus = useRef({ burn: 0, vulnerable: 0, weak: 0, poison: 0, bleed: 0, chill: 0, trap: 0, forge: 0, strength: 0, armor: 0 })
+  const prevLastCardPlayedId = useRef(lastCardPlayedId)
   const [hovered,   setHovered]   = useState(false)
   const [frameIdx,  setFrameIdx]  = useState(0)
   const allocLane = useCallback(() => {
@@ -154,7 +163,10 @@ export function EnemyPanel({ enemy, isActing, isActive, lastCardPlayedId, isElit
     } else if (enemy.hp > prevHp.current) {
       const diff = enemy.hp - prevHp.current
       entries.push({ kind: 'dmg', data: { id: nextId.current++, value: diff, type: 'heal', cardId: lastCardPlayedId ?? undefined, lane: allocLane() } })
+    } else if (lastCardPlayedId && prevLastCardPlayedId.current !== lastCardPlayedId && ATTACK_CARD_IDS.has(lastCardPlayedId)) {
+      entries.push({ kind: 'dmg', data: { id: nextId.current++, value: 0, type: 'damage', cardId: lastCardPlayedId, lane: allocLane() } })
     }
+    prevLastCardPlayedId.current = lastCardPlayedId
     prevHp.current = enemy.hp
     if (entries.length) pushQueue(entries)
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -223,7 +235,7 @@ export function EnemyPanel({ enemy, isActing, isActive, lastCardPlayedId, isElit
 
   return (
     <motion.div
-      className="relative flex flex-col items-center gap-6 w-44"
+      className={`relative flex flex-col items-center ${compact ? 'w-36 gap-3' : 'w-44 gap-6'}`}
       data-testid="enemy-panel"
       animate={controls}
       onMouseEnter={() => setHovered(true)}
@@ -243,7 +255,7 @@ export function EnemyPanel({ enemy, isActing, isActive, lastCardPlayedId, isElit
       </AnimatePresence>
 
       {/* Fixed-height sprite well */}
-      <div className="h-40 flex items-end justify-center">
+      <div className={`${compact ? 'h-28' : 'h-40'} flex items-end justify-center`}>
         <motion.div
           animate={{ scaleX: facingScaleX, scale: inactiveScale, y: 0 }}
           whileHover={{ scaleX: facingScaleX, scale: hoverScale, y: -8 }}
@@ -256,8 +268,8 @@ export function EnemyPanel({ enemy, isActing, isActive, lastCardPlayedId, isElit
             animate={isPrismatic ? { filter: PRISMATIC_FILTER_KEYFRAMES } : undefined}
             transition={isPrismatic ? { filter: { duration: 3.2, repeat: Infinity, ease: 'linear' } } : undefined}
             style={{
-              width: 80,
-              height: 80,
+              width: compact ? 64 : 80,
+              height: compact ? 64 : 80,
               imageRendering: 'pixelated',
               objectFit: 'contain',
               filter: isPrismatic ? PRISMATIC_FILTER_KEYFRAMES[0] : spriteTintFilter,

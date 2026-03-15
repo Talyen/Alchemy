@@ -114,7 +114,7 @@ export function FloatingNumber({ event, onDone, top }: DmgProps) {
     : getStableFadeMotion(popupSeed)
   // determine sign and display value
   const val = Math.abs(event.value)
-  const sign = event.value >= 0 ? dmgCfg[event.type].prefix : '-'
+  const sign = val === 0 ? '' : (event.value >= 0 ? dmgCfg[event.type].prefix : '-')
   return (
     // ui-allow-absolute: combat popup visual effect
     <motion.div
