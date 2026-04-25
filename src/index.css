@@ -1,0 +1,298 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 96%;
+    --card: 0 0% 5%;
+    --card-foreground: 0 0% 96%;
+    --popover: 0 0% 5%;
+    --popover-foreground: 0 0% 96%;
+    --primary: 38 80% 62%;
+    --primary-foreground: 28 22% 12%;
+    --secondary: 0 0% 10%;
+    --secondary-foreground: 0 0% 92%;
+    --muted: 0 0% 8%;
+    --muted-foreground: 0 0% 68%;
+    --accent: 191 45% 52%;
+    --accent-foreground: 28 22% 12%;
+    --destructive: 7 70% 56%;
+    --border: 0 0% 18%;
+    --input: 0 0% 18%;
+    --ring: 38 80% 62%;
+    --radius: 1.5rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    @apply scroll-smooth;
+  }
+
+  #root {
+    min-height: 100vh;
+  }
+
+  body {
+    @apply min-h-screen bg-background font-body text-foreground antialiased;
+    background-color: #000;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  img {
+    -webkit-user-drag: none;
+    user-select: none;
+  }
+
+  input,
+  textarea,
+  select,
+  option {
+    user-select: text;
+  }
+}
+
+@layer components {
+  .alchemy-shell {
+    background: rgba(0, 0, 0, 0.94);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .tilt-surface {
+    transform:
+      var(--card-base-transform, translate3d(0px, 0px, 0px))
+      perspective(900px)
+      rotateX(var(--tilt-rotate-x, 0deg))
+      rotateY(var(--tilt-rotate-y, 0deg));
+    transform-style: preserve-3d;
+    transition: transform 460ms cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: transform;
+  }
+
+  .card-shimmer-sweep {
+    position: absolute;
+    inset: -15%;
+    background: linear-gradient(110deg, transparent 22%, rgba(255, 255, 255, 0.12) 36%, rgba(255, 250, 225, 0.42) 49%, rgba(255, 255, 255, 0.16) 60%, transparent 76%);
+    filter: blur(1px);
+    mix-blend-mode: screen;
+    transform: translateX(-165%) skewX(-18deg);
+    opacity: 0;
+  }
+
+  .card-shimmer-active .card-shimmer-sweep {
+    animation: cardShimmer 1800ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .hover-popup-panel {
+    transform-origin: bottom center;
+    transition:
+      opacity 120ms ease-out,
+      transform 160ms cubic-bezier(0.16, 1, 0.3, 1);
+    transform: translateX(-50%) translateY(6px) scale(0.985);
+    will-change: opacity, transform;
+  }
+
+  .hover-popup-quick-in {
+    animation: hoverPopupQuickIn 120ms ease-out both;
+  }
+
+  .group:hover > .hover-popup-panel,
+  .group:focus-within > .hover-popup-panel,
+  .group\/keyword:hover > .hover-popup-panel,
+  .group\/keyword:focus-within > .hover-popup-panel,
+  .group\/status:hover > .hover-popup-panel,
+  .group\/status:focus-within > .hover-popup-panel {
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+
+  .card-ghost-overlay {
+    animation-duration: 420ms;
+    animation-fill-mode: both;
+    animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+    transform: rotate(var(--ghost-rotation, 0deg));
+    will-change: transform, opacity, filter;
+  }
+
+  .card-ghost-draw-in {
+    animation-duration: 520ms;
+    animation-name: cardGhostDrawIn;
+  }
+
+  .card-ghost-discard-out {
+    animation-duration: 320ms;
+    animation-name: cardGhostDiscardOut;
+  }
+
+  .card-ghost-activate {
+    animation-duration: 672ms;
+    animation-name: cardGhostActivate;
+  }
+
+  .card-ghost-play-travel {
+    animation-duration: 528ms;
+    animation-name: cardGhostPlayTravel;
+  }
+
+  .combat-text-float {
+    animation: combatTextFloat 1180ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    transform: translate3d(0px, calc(var(--combat-text-lane, 0) * 18px), 0px);
+    will-change: transform, opacity;
+  }
+
+  .destination-guide-path {
+    fill: none;
+    stroke: rgba(242, 214, 146, 0.88);
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    filter: drop-shadow(0 0 10px rgba(242, 214, 146, 0.35));
+    animation: destinationGuideDraw 280ms ease-out forwards;
+  }
+}
+
+@layer utilities {
+  .surface-muted {
+    background: rgba(8, 8, 8, 0.96);
+  }
+}
+
+@keyframes cardShimmer {
+  0% {
+    transform: translateX(-165%) skewX(-18deg);
+    opacity: 0;
+  }
+
+  12% {
+    opacity: 0.2;
+  }
+
+  45% {
+    opacity: 0.5;
+  }
+
+  100% {
+    transform: translateX(165%) skewX(-18deg);
+    opacity: 0;
+  }
+}
+
+@keyframes cardGhostDrawIn {
+  0% {
+    opacity: 0;
+    transform: translateY(42px) scale(0.84) rotate(var(--ghost-rotation, 0deg));
+    filter: blur(12px);
+  }
+
+  62% {
+    opacity: 0.92;
+    transform: translateY(-2px) scale(1.02) rotate(var(--ghost-rotation, 0deg));
+    filter: blur(1px);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(0px) scale(1) rotate(var(--ghost-rotation, 0deg));
+    filter: blur(0px);
+  }
+}
+
+@keyframes cardGhostDiscardOut {
+  0% {
+    opacity: 1;
+    transform: translateY(0px) scale(1) rotate(var(--ghost-rotation, 0deg));
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(42px) scale(0.86) rotate(calc(var(--ghost-rotation, 0deg) + 6deg));
+  }
+}
+
+@keyframes cardGhostActivate {
+  0% {
+    opacity: 1;
+    transform: translateY(0px) scale(1) rotate(var(--ghost-rotation, 0deg));
+    filter: brightness(1);
+  }
+
+  45% {
+    opacity: 1;
+    transform: translateY(-42px) scale(1.04) rotate(calc(var(--ghost-rotation, 0deg) * 0.5));
+    filter: brightness(1.35);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-122px) scale(1.08) rotate(calc(var(--ghost-rotation, 0deg) * 0.2));
+    filter: brightness(1.7);
+  }
+}
+
+@keyframes cardGhostPlayTravel {
+  0% {
+    opacity: 0.98;
+    transform: translate3d(0px, 0px, 0px) scale(1) rotate(var(--ghost-rotation, 0deg));
+    filter: brightness(1);
+  }
+
+  65% {
+    opacity: 1;
+    transform: translate3d(calc(var(--ghost-travel-x, 0px) * 0.78), calc(var(--ghost-travel-y, 0px) * 0.78), 0px)
+      scale(calc(1 + (1 - var(--ghost-scale, 0.74)) * 0.2)) rotate(calc(var(--ghost-rotation, 0deg) * 0.3));
+    filter: brightness(1.2);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--ghost-travel-x, 0px), var(--ghost-travel-y, 0px), 0px) scale(var(--ghost-scale, 0.74)) rotate(0deg);
+    filter: brightness(1.45);
+  }
+}
+
+@keyframes combatTextFloat {
+  0% {
+    opacity: 0;
+    transform: translate3d(0px, calc(var(--combat-text-lane, 0) * 18px + 20px), 0px) scale(0.92);
+  }
+
+  18% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate3d(0px, calc(var(--combat-text-lane, 0) * 18px - 52px), 0px) scale(1.02);
+  }
+}
+
+@keyframes hoverPopupQuickIn {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, calc(-100% - 18px)) scale(0.985);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate(-50%, calc(-100% - 26px)) scale(1);
+  }
+}
+
+@keyframes destinationGuideDraw {
+  0% {
+    stroke-dashoffset: 1;
+    opacity: 0;
+  }
+
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}

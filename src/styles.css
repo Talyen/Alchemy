@@ -1,0 +1,79 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 222 42% 5%;
+  --foreground: 33 44% 90%;
+  --card: 225 21% 10%;
+  --card-foreground: 33 44% 90%;
+  --popover: 224 25% 9%;
+  --popover-foreground: 33 44% 90%;
+  --primary: 36 59% 59%;
+  --primary-foreground: 225 35% 8%;
+  --secondary: 215 30% 18%;
+  --secondary-foreground: 33 44% 90%;
+  --muted: 222 18% 16%;
+  --muted-foreground: 33 18% 67%;
+  --accent: 201 70% 64%;
+  --accent-foreground: 224 35% 10%;
+  --destructive: 0 68% 55%;
+  --destructive-foreground: 33 44% 96%;
+  --border: 223 16% 20%;
+  --input: 223 16% 20%;
+  --ring: 36 59% 59%;
+  --radius: 1rem;
+  color: #f3ead4;
+  background: #000;
+  font-family: 'Inter', sans-serif;
+  color-scheme: dark;
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+  width: 100%;
+}
+
+body {
+  min-height: 100vh;
+  background: #000;
+  overflow: hidden;
+}
+
+#root {
+  height: 100vh;
+}
+
+html:not([data-fonts-loaded='true']) #root {
+  opacity: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
