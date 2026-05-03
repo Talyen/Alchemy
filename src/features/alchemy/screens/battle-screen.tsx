@@ -138,7 +138,7 @@ export function BattleScreen({
                 onClick={(event) => onKeyboardPlay(card, index, event)}
                 onPointerDown={(event) => onCardPointerDown(card, index, event)}
                 buttonRef={(node) => {
-                  handCardRefs.current[card.id] = node;
+                  handCardRefs.current[`${card.id}-${index}`] = node;
                 }}
                 ariaLabel={`Play ${card.title}`}
                 tiltStrength={18}

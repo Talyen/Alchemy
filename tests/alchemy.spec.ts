@@ -40,6 +40,35 @@ test("options page exposes the display resolution selector", async ({ page }) =>
   await expect(page.getByLabel("Resolution")).toHaveValue("2560x1440");
 });
 
+test("multiple copies of the same card in hand can be hovered and played independently", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Play" }).click();
+
+  const playableCards = page.locator('[aria-label^="Play "]');
+  await expect(playableCards.first()).toBeVisible({ timeout: 10000 });
+
+  const handBefore = await playableCards.count();
+  expect(handBefore).toBeGreaterThanOrEqual(2);
+
+  await playableCards.nth(0).hover();
+  await expect(page.locator(".hover-popup-quick-in")).toBeVisible();
+
+  await playableCards.nth(1).hover();
+  await expect(page.locator(".hover-popup-quick-in")).toBeVisible();
+
+  await playableCards.nth(0).click();
+  await page.waitForTimeout(300);
+
+  const handAfterFirst = await playableCards.count();
+  expect(handAfterFirst).toBe(handBefore - 1);
+
+  await playableCards.nth(0).click();
+  await page.waitForTimeout(300);
+
+  const handAfterSecond = await playableCards.count();
+  expect(handAfterSecond).toBe(handAfterFirst - 1);
+});
+
 test("collection tabs expose known and undiscovered compendium entries", async ({ page }) => {
   await page.goto("/");
 

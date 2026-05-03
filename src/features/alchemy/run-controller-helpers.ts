@@ -8,7 +8,7 @@ export function animateRemainingHandDiscard(
   spawnCardGhost: (ghost: Omit<CardGhost, "id">) => void,
 ) {
   cards.forEach((card, index) => {
-    const element = handCardRefs.current[card.id];
+    const element = handCardRefs.current[`${card.id}-${index}`];
     if (!element) {
       return;
     }

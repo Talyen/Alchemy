@@ -64,7 +64,7 @@ export function useAlchemyRunController({
     const frame = window.requestAnimationFrame(() => {
       // Draw animations disabled - uncomment to re-enable
       // battleState.hand.forEach((card, index) => {
-      //   const element = handCardRefs.current[card.id];
+      //   const element = handCardRefs.current[`${card.id}-${index}`];
       //   if (!element) {
       //     return;
       //   }
