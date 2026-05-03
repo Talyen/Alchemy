@@ -76,10 +76,6 @@ test("victory reward requires confirmation before advancing to destinations", as
 
   await addCardButton.click();
   await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible();
-
-  const destinationButton = page.getByRole("button", { name: /Normal Combat|Elite Combat|Merchant's Shop|Alchemist's Hut|Mystery|Campfire/ }).first();
-  await destinationButton.hover();
-  await expect(page.locator("path.destination-guide-path")).toBeVisible();
 });
 
 for (const resolution of supportedResolutions) {

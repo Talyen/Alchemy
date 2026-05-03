@@ -6,7 +6,7 @@ import { destinationPool } from "./config";
 import { useCardGhosts, useFloatingCombatTexts, useHandCardDrag, useShimmerController } from "./hooks";
 import { animateCardActivation, animateRemainingHandDiscard, isPointerInBattlefield } from "./run-controller-helpers";
 import type { Destination, Screen } from "./types";
-import { appendUnique, buildDestinationGuidePath, getCardRect, getEnemyStatusChips, getHoverId, getPlayerStatusChips, randomBetween, sampleItems } from "./utils";
+import { appendUnique, getCardRect, getEnemyStatusChips, getHoverId, getPlayerStatusChips, randomBetween, sampleItems } from "./utils";
 
 type SetStringList = React.Dispatch<React.SetStateAction<string[]>>;
 
@@ -29,16 +29,12 @@ export function useAlchemyRunController({
   const [rewardGold, setRewardGold] = useState(0);
   const [selectedRewardId, setSelectedRewardId] = useState<string | null>(null);
   const [destinationOptions, setDestinationOptions] = useState<Destination[]>([]);
-  const [hoveredDestination, setHoveredDestination] = useState<Destination | null>(null);
-  const [destinationGuidePath, setDestinationGuidePath] = useState<string | null>(null);
 
   const handCardRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const animatedHandCycleRef = useRef(-1);
   const battleSceneRef = useRef<HTMLDivElement | null>(null);
   const playerPanelRef = useRef<HTMLDivElement | null>(null);
   const enemyPanelRef = useRef<HTMLDivElement | null>(null);
-  const destinationMapRef = useRef<HTMLDivElement | null>(null);
-  const destinationHeaderRef = useRef<HTMLHeadingElement | null>(null);
   const destinationButtonRefs = useRef<Partial<Record<Destination, HTMLButtonElement | null>>>({});
   const { cardGhosts, removeCardGhost, spawnCardGhost } = useCardGhosts();
   const { floatingCombatTexts, showCombatTexts } = useFloatingCombatTexts();
@@ -101,18 +97,6 @@ export function useAlchemyRunController({
     const timeout = window.setTimeout(() => setScreen("rewards"), 680);
     return () => window.clearTimeout(timeout);
   }, [battleState.enemyHealth, battleState.gold, screen]);
-
-  useEffect(() => {
-    if (screen !== "destination" || !hoveredDestination) {
-      setDestinationGuidePath(null);
-      return;
-    }
-
-    const updateGuidePath = () => setDestinationGuidePath(buildDestinationGuidePath(hoveredDestination, destinationMapRef.current?.getBoundingClientRect(), destinationHeaderRef.current?.getBoundingClientRect(), destinationButtonRefs.current[hoveredDestination]?.getBoundingClientRect()));
-    updateGuidePath();
-    window.addEventListener("resize", updateGuidePath);
-    return () => window.removeEventListener("resize", updateGuidePath);
-  }, [hoveredDestination, screen, destinationOptions]);
 
   function beginRun() {
     const freshDeck = [...starterDeck];
@@ -240,8 +224,6 @@ export function useAlchemyRunController({
     setRewardGold(0);
     setSelectedRewardId(null);
     setDestinationOptions([]);
-    setHoveredDestination(null);
-    setDestinationGuidePath(null);
     setHoveredCardId(null);
     setMenuOpen(false);
     setHasActiveBattle(false);
@@ -258,14 +240,10 @@ export function useAlchemyRunController({
     rewardGold,
     selectedRewardId,
     destinationOptions,
-    hoveredDestination,
-    destinationGuidePath,
     handCardRefs,
     battleSceneRef,
     playerPanelRef,
     enemyPanelRef,
-    destinationMapRef,
-    destinationHeaderRef,
     destinationButtonRefs,
     cardGhosts,
     shimmerState,
@@ -278,7 +256,6 @@ export function useAlchemyRunController({
     setHoveredCardId,
     setMenuOpen,
     setSelectedRewardId,
-    setHoveredDestination,
     beginRun,
     returnToBattle,
     goToScreen,

@@ -145,17 +145,6 @@
     transform: translate3d(0px, calc(var(--combat-text-lane, 0) * 18px), 0px);
     will-change: transform, opacity;
   }
-
-  .destination-guide-path {
-    fill: none;
-    stroke: rgba(242, 214, 146, 0.88);
-    stroke-width: 3;
-    stroke-linecap: round;
-    stroke-dasharray: 1;
-    stroke-dashoffset: 1;
-    filter: drop-shadow(0 0 10px rgba(242, 214, 146, 0.35));
-    animation: destinationGuideDraw 280ms ease-out forwards;
-  }
 }
 
 @layer utilities {
@@ -282,17 +271,5 @@
   100% {
     opacity: 1;
     transform: translate(-50%, calc(-100% - 26px)) scale(1);
-  }
-}
-
-@keyframes destinationGuideDraw {
-  0% {
-    stroke-dashoffset: 1;
-    opacity: 0;
-  }
-
-  100% {
-    stroke-dashoffset: 0;
-    opacity: 1;
   }
 }

@@ -9,19 +9,15 @@ import type { Destination, ResolutionOption } from "../types";
 
 export function DestinationChoices({
   destinationOptions,
-  hoveredDestination,
-  onHoverChange,
   onChoose,
   buttonRefs,
 }: {
   destinationOptions: Destination[];
-  hoveredDestination: Destination | null;
-  onHoverChange: (destination: Destination | null) => void;
   onChoose: () => void;
   buttonRefs: MutableRefObject<Partial<Record<Destination, HTMLButtonElement | null>>>;
 }) {
   return (
-    <div className="mt-14 grid grid-cols-3 gap-3">
+    <div className="mt-14 flex flex-wrap justify-center gap-3">
       {destinationOptions.map((destination) => {
         const Icon = destinationMeta[destination].icon;
 
@@ -32,10 +28,6 @@ export function DestinationChoices({
               buttonRefs.current[destination] = node;
             }}
             type="button"
-            onMouseEnter={() => onHoverChange(destination)}
-            onMouseLeave={() => onHoverChange(hoveredDestination === destination ? null : hoveredDestination)}
-            onFocus={() => onHoverChange(destination)}
-            onBlur={() => onHoverChange(hoveredDestination === destination ? null : hoveredDestination)}
             onClick={onChoose}
             className={cn(
               "relative inline-flex min-h-[56px] items-center justify-start gap-2 overflow-hidden rounded-full border border-border/80 px-4 py-2 text-left text-sm font-semibold shadow-[0_12px_24px_rgba(0,0,0,0.26)] transition-transform duration-200 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",

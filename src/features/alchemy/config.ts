@@ -64,7 +64,7 @@ export const destinationMeta: Record<Destination, { icon: LucideIcon; className:
   },
   Campfire: {
     icon: Flame,
-    className: "bg-orange-900/85 text-orange-100",
+    className: "bg-green-900/85 text-green-100",
   },
 };
 

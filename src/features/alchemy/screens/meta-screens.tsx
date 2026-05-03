@@ -117,38 +117,22 @@ export function RewardsScreen({
 
 export function DestinationScreen({
   destinationOptions,
-  hoveredDestination,
-  onHoverChange,
   onChoose,
-  destinationGuidePath,
-  destinationMapRef,
-  destinationHeaderRef,
   destinationButtonRefs,
 }: {
   destinationOptions: Destination[];
-  hoveredDestination: Destination | null;
-  onHoverChange: (destination: Destination | null) => void;
   onChoose: () => void;
-  destinationGuidePath: string | null;
-  destinationMapRef: MutableRefObject<HTMLDivElement | null>;
-  destinationHeaderRef: MutableRefObject<HTMLHeadingElement | null>;
   destinationButtonRefs: MutableRefObject<Partial<Record<Destination, HTMLButtonElement | null>>>;
 }) {
   return (
     <div className="flex h-full w-full items-center justify-center px-4 py-6">
-      <div ref={destinationMapRef} className="alchemy-shell relative w-full max-w-6xl rounded-[30px] border border-border/80 px-6 py-7 text-center sm:px-8">
-        <h1 ref={destinationHeaderRef} className="text-4xl font-semibold text-foreground">
+      <div className="alchemy-shell w-full max-w-6xl rounded-[30px] border border-border/80 px-6 py-7 text-center sm:px-8">
+        <h1 className="text-4xl font-semibold text-foreground">
           Choose Destination
         </h1>
 
-        <svg className="pointer-events-none absolute inset-0 h-full w-full">
-          {destinationGuidePath ? <path key={hoveredDestination} d={destinationGuidePath} pathLength={1} className="destination-guide-path" /> : null}
-        </svg>
-
         <DestinationChoices
           destinationOptions={destinationOptions}
-          hoveredDestination={hoveredDestination}
-          onHoverChange={onHoverChange}
           onChoose={onChoose}
           buttonRefs={destinationButtonRefs}
         />
