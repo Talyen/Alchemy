@@ -3,7 +3,7 @@ import { BookOpen, Cog, Coins, House, Menu, Swords, WandSparkles } from "lucide-
 
 import { Button } from "@/components/ui/button";
 import { battleArt, type BattleCard } from "@/lib/game-data";
-import { playCardPlay, playCardHover } from "@/lib/audio";
+
 
 import { currentEnemy, handCardWidthClass } from "../config";
 import { ArtPanel, BattleCardButton, CardGhostOverlay, DragCardPreview, ManaPanel, PilePanel } from "../components";
@@ -148,8 +148,6 @@ export function BattleScreen({
                 dragging={activeDraggedCardId === card.id}
                 wrapperClassName="relative -mx-5 flex justify-center sm:-mx-6"
                 wrapperStyle={{ zIndex: isHovered ? 40 : 10 + index }}
-                onPlaySound={playCardPlay}
-                onHoverSound={playCardHover}
               />
             );
           })}
