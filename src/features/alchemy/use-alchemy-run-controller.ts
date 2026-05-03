@@ -191,18 +191,6 @@ export function useAlchemyRunController({
       return;
     }
 
-    const hasDamage = card.effects.some(e => e.kind === 'damage');
-    const hasHeal = card.effects.some(e => e.kind === 'heal');
-    const hasBeneficialStatus = card.effects.some(e => e.kind === 'player-status');
-
-    if (hasDamage) {
-      playDamage();
-    } else if (hasHeal || hasBeneficialStatus) {
-      playBuff();
-    } else {
-      playSound('ui');
-    }
-
     animateCardActivation(card, sourceRect, (index - (battleState.hand.length - 1) / 2) * 4.2, playerPanelRef, enemyPanelRef, battleSceneRef, spawnCardGhost);
     const resolution = playBattleCardResolved(battleState, card.id, index);
 
@@ -211,13 +199,13 @@ export function useAlchemyRunController({
     const buffOnPlayer = resolution.combatTexts.some(ct => ct.kind === 'status' && ct.target === 'player');
 
     if (damageToEnemy) {
-      setTimeout(() => playDamage(), 100);
+      playDamage();
     }
     if (healOnPlayer) {
-      setTimeout(() => playBuff(), 100);
+      playBuff();
     }
     if (buffOnPlayer) {
-      setTimeout(() => playBuff(), 100);
+      playBuff();
     }
     
     setBattleState(resolution.state);
