@@ -106,6 +106,7 @@ export function BattleScreen({
           surfaceRef={(node) => {
             enemyPanelRef.current = node;
           }}
+          isDead={battleState.enemyHealth <= 0}
         />
       </section>
 

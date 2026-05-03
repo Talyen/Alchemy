@@ -106,7 +106,7 @@ export function useAlchemyRunController({
     setMenuOpen(false);
     playVictory();
 
-    const timeout = window.setTimeout(() => setScreen("rewards"), 680);
+    const timeout = window.setTimeout(() => setScreen("rewards"), 1200);
     return () => window.clearTimeout(timeout);
   }, [battleState.enemyHealth, battleState.gold, screen]);
 

@@ -94,6 +94,7 @@ export function ArtPanel({
   onHoverShimmer,
   combatTexts,
   surfaceRef,
+  isDead = false,
 }: {
   side: "player" | "enemy";
   title: string;
@@ -107,9 +108,10 @@ export function ArtPanel({
   onHoverShimmer: (cardId: string) => void;
   combatTexts: FloatingCombatText[];
   surfaceRef?: (node: HTMLDivElement | null) => void;
+  isDead?: boolean;
 }) {
   return (
-    <div className="relative flex flex-col items-center gap-3">
+    <div className={cn("relative flex flex-col items-center gap-3", isDead && "animate-death")}>
       <CombatTextRail entries={combatTexts} side={side} />
 
       <div
@@ -130,11 +132,11 @@ export function ArtPanel({
       <div className={cn("surface-muted rounded-[24px] px-4 py-3 shadow-[0_16px_36px_rgba(0,0,0,0.38)]", battleCardWidthClass)}>
         <div className="flex items-center justify-between gap-3">
           <p className="text-sm font-semibold text-foreground">{title}</p>
-          <p className="text-xs font-medium text-muted-foreground">
+          <p className={cn("text-xs font-medium text-muted-foreground", isDead && "opacity-30")}>
             {health}/{maxHealth}
           </p>
         </div>
-        <Progress value={(health / maxHealth) * 100} className="mt-2.5 h-2 bg-background/80 [&>div]:bg-destructive" />
+        <Progress value={(health / maxHealth) * 100} className={cn("mt-2.5 h-2 bg-background/80 [&>div]:bg-destructive", isDead && "[&>div]:bg-destructive/30")} />
 
         <div className="mt-2.5 flex min-h-7 items-center gap-1">
           {statuses.length > 0 ? statuses.map((status) => <StatusIcon key={`${title}-${status.id}`} chip={status} />) : null}
