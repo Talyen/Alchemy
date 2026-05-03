@@ -30,6 +30,7 @@ export function useAlchemyRunController({
   const [rewardGold, setRewardGold] = useState(0);
   const [selectedRewardId, setSelectedRewardId] = useState<string | null>(null);
   const [destinationOptions, setDestinationOptions] = useState<Destination[]>([]);
+  const [battlesWon, setBattlesWon] = useState(0);
 
   const handCardRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const animatedHandCycleRef = useRef(-1);
@@ -104,6 +105,7 @@ export function useAlchemyRunController({
     setHasActiveBattle(false);
     setHoveredCardId(null);
     setMenuOpen(false);
+    setBattlesWon((current) => current + 1);
     playVictory();
 
     const timeout = window.setTimeout(() => setScreen("rewards"), 1200);
@@ -114,6 +116,7 @@ export function useAlchemyRunController({
     const freshDeck = [...starterDeck];
     setRunDeck(freshDeck);
     setRunGold(0);
+    setBattlesWon(0);
     setRewardChoices([]);
     setRewardGold(0);
     setSelectedRewardId(null);
@@ -125,7 +128,7 @@ export function useAlchemyRunController({
 
   function startBattle(deck: BattleCard[] = runDeck, gold: number = runGold) {
     clearCardGhosts();
-    setBattleState(createBattleState(deck, gold));
+    setBattleState(createBattleState(deck, gold, battlesWon));
     setHasActiveBattle(true);
     setHoveredCardId(null);
     setMenuOpen(false);
@@ -256,6 +259,7 @@ export function useAlchemyRunController({
     setBattleState(createBattleState(starterDeck, 0));
     setRunDeck([...starterDeck]);
     setRunGold(0);
+    setBattlesWon(0);
     setRewardChoices([]);
     setRewardGold(0);
     setSelectedRewardId(null);

@@ -42,8 +42,11 @@ export function drawCards(deck: BattleCard[], discard: BattleCard[], hand: Battl
   };
 }
 
-export function createBattleState(runDeck: BattleCard[] = starterDeck, gold = 0): BattleState {
+export function createBattleState(runDeck: BattleCard[] = starterDeck, gold = 0, battlesWon = 0): BattleState {
   const openingHand = drawCards(shuffleCards(runDeck), [], [], cardsPerTurn);
+
+  const baseEnemyHealth = maxEnemyHealth;
+  const scaledEnemyHealth = baseEnemyHealth + Math.min(battlesWon * 2, 20);
 
   return {
     deck: openingHand.deck,
@@ -55,7 +58,7 @@ export function createBattleState(runDeck: BattleCard[] = starterDeck, gold = 0)
     gold,
     turn: 1,
     playerHealth: maxPlayerHealth,
-    enemyHealth: maxEnemyHealth,
+    enemyHealth: scaledEnemyHealth,
     playerStatuses: emptyPlayerStatuses(),
     enemyStatuses: emptyEnemyStatuses(),
     enemySkipTurns: 0,

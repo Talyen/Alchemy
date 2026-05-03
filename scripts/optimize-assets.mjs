@@ -13,6 +13,13 @@ const assets = [
   { source: "Alchemy Logo.png", target: "alchemy-logo.webp", width: 1200, quality: 84 },
   { source: "Knight.png", target: "knight.webp", width: 720, quality: 82 },
   { source: "Skeleton.png", target: "skeleton.webp", width: 720, quality: 82 },
+  { source: "Goblin.png", target: "goblin.webp", width: 720, quality: 82 },
+  { source: "Imp.png", target: "imp.webp", width: 720, quality: 82 },
+  { source: "Lizard Scout.png", target: "lizard-scout.webp", width: 720, quality: 82 },
+  { source: "Mimic.png", target: "mimic.webp", width: 720, quality: 82 },
+  { source: "Mud Elemental.png", target: "mud-elemental.webp", width: 720, quality: 82 },
+  { source: "Necromancer.png", target: "necromancer.webp", width: 720, quality: 82 },
+  { source: "Plague Doctor.png", target: "plague-doctor.webp", width: 720, quality: 82 },
   { source: "Card Back.png", target: "card-back.webp", width: 420, quality: 82 },
   { source: "Mana Crystal.png", target: "mana-crystal.webp", width: 120, quality: 88 },
   { source: "Anvil.png", target: "anvil.webp", width: 420, quality: 80 },
@@ -38,6 +45,7 @@ const assets = [
   { source: "Stab.png", target: "stab.webp", width: 420, quality: 80 },
   { source: "Steal.png", target: "steal.webp", width: 420, quality: 80 },
   { source: "Wish.png", target: "wish.webp", width: 420, quality: 80 },
+  { source: "Gold.png", target: "gold.webp", width: 420, quality: 80 },
 ];
 
 async function fileIsFresh(sourcePath, outputPath) {
