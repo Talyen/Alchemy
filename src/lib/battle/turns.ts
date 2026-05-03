@@ -4,21 +4,21 @@ import { drawCards } from "./draw";
 import { applyCardEffects, clampEnemy, clampPlayer, mergeCombatText } from "./effects";
 import { cardsPerTurn, type BattleResolution, type BattleState, type CombatTextEvent } from "./types";
 
-export function playBattleCardResolved(state: BattleState, cardId: string): BattleResolution {
+export function playBattleCardResolved(state: BattleState, cardId: string, index: number): BattleResolution {
   const combatTexts: CombatTextEvent[] = [];
 
   if (state.mana <= 0 || state.wishOptions) {
     return { state, combatTexts };
   }
 
-  const card = state.hand.find((candidate) => candidate.id === cardId);
-  if (!card) {
+  const card = state.hand[index];
+  if (!card || card.id !== cardId) {
     return { state, combatTexts };
   }
 
   let nextState: BattleState = {
     ...state,
-    hand: state.hand.filter((candidate) => candidate.id !== cardId),
+    hand: state.hand.filter((_, i) => i !== index),
     mana: Math.max(0, state.mana - card.cost),
   };
 
@@ -31,8 +31,8 @@ export function playBattleCardResolved(state: BattleState, cardId: string): Batt
   return { state: { ...nextState, discard: [...nextState.discard, card] }, combatTexts };
 }
 
-export function playBattleCard(state: BattleState, cardId: string) {
-  return playBattleCardResolved(state, cardId).state;
+export function playBattleCard(state: BattleState, cardId: string, index: number) {
+  return playBattleCardResolved(state, cardId, index).state;
 }
 
 function tickEnemyStatuses(state: BattleState, combatTexts: CombatTextEvent[]) {

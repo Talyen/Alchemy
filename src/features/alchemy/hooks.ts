@@ -16,6 +16,7 @@ const dragStartThresholdPx = 10;
 
 type DragSession = {
   card: BattleCard;
+  index: number;
   pointerId: number;
   pointerOffsetX: number;
   pointerOffsetY: number;
@@ -34,6 +35,10 @@ export function useCardGhosts() {
     setCardGhosts((current) => current.filter((ghost) => ghost.id !== id));
   }
 
+  function clearCardGhosts() {
+    setCardGhosts([]);
+  }
+
   function spawnCardGhost(ghost: Omit<CardGhost, "id">) {
     const id = `${performance.now()}-${Math.random()}`;
     setCardGhosts((current) => [...current, { ...ghost, id }]);
@@ -42,6 +47,7 @@ export function useCardGhosts() {
   return {
     cardGhosts,
     removeCardGhost,
+    clearCardGhosts,
     spawnCardGhost,
   };
 }
@@ -147,7 +153,7 @@ export function useShimmerController() {
   };
 }
 
-export function useHandCardDrag(onRelease: (payload: { card: BattleCard; rect: CardRect; dragged: boolean; pointerX: number; pointerY: number }) => void) {
+export function useHandCardDrag(onRelease: (payload: { card: BattleCard; index: number; rect: CardRect; dragged: boolean; pointerX: number; pointerY: number }) => void) {
   const [dragSession, setDragSession] = useState<DragSession | null>(null);
   const onReleaseRef = useRef(onRelease);
   const ignoreClickCardIdRef = useRef<string | null>(null);
@@ -206,6 +212,7 @@ export function useHandCardDrag(onRelease: (payload: { card: BattleCard; rect: C
 
       onReleaseRef.current({
         card: activeSession.card,
+        index: activeSession.index,
         rect: finalRect,
         dragged: activeSession.dragging,
         pointerX: event.clientX,
@@ -226,7 +233,7 @@ export function useHandCardDrag(onRelease: (payload: { card: BattleCard; rect: C
     };
   }, [dragSession]);
 
-  function beginCardDrag(card: BattleCard, event: ReactPointerEvent<HTMLButtonElement>) {
+  function beginCardDrag(card: BattleCard, index: number, event: ReactPointerEvent<HTMLButtonElement>) {
     if (event.button !== 0) {
       return;
     }
@@ -236,6 +243,7 @@ export function useHandCardDrag(onRelease: (payload: { card: BattleCard; rect: C
 
     setDragSession({
       card,
+      index,
       pointerId: event.pointerId,
       pointerOffsetX: event.clientX - rect.x,
       pointerOffsetY: event.clientY - rect.y,

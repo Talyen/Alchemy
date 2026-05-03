@@ -3,6 +3,7 @@ import { BookOpen, Cog, Coins, House, Menu, Swords, WandSparkles } from "lucide-
 
 import { Button } from "@/components/ui/button";
 import { battleArt, type BattleCard } from "@/lib/game-data";
+import { playCardPlay, playCardHover } from "@/lib/audio";
 
 import { currentEnemy, handCardWidthClass } from "../config";
 import { ArtPanel, BattleCardButton, CardGhostOverlay, DragCardPreview, ManaPanel, PilePanel } from "../components";
@@ -55,8 +56,8 @@ export function BattleScreen({
   playerCombatTexts: FloatingCombatText[];
   enemyCombatTexts: FloatingCombatText[];
   handCardRefs: MutableRefObject<Record<string, HTMLButtonElement | null>>;
-  onCardPointerDown: (card: BattleCard, event: ReactPointerEvent<HTMLButtonElement>) => void;
-  onKeyboardPlay: (card: BattleCard, event: MouseEvent<HTMLButtonElement>) => void;
+  onCardPointerDown: (card: BattleCard, index: number, event: ReactPointerEvent<HTMLButtonElement>) => void;
+  onKeyboardPlay: (card: BattleCard, index: number, event: MouseEvent<HTMLButtonElement>) => void;
   activeDraggedCardId: string | null;
   menuOpen: boolean;
   setMenuOpen: (value: boolean | ((current: boolean) => boolean)) => void;
@@ -116,7 +117,7 @@ export function BattleScreen({
 
         <div className="flex min-h-[298px] min-w-0 items-end justify-center pb-3 pt-10" aria-label="Player hand">
           {battleState.hand.map((card, index) => {
-            const hoverId = getHoverId("hand", card.id);
+            const hoverId = getHoverId("hand", `${card.id}-${index}`);
             const isHovered = hoveredCardId === hoverId;
             const offset = index - (battleState.hand.length - 1) / 2;
             const restingTransform = `translateY(${Math.abs(offset) * 10}px) rotate(${offset * 4.2}deg)`;
@@ -133,8 +134,8 @@ export function BattleScreen({
                   onHoverShimmer(hoverId);
                 }}
                 onHoverEnd={() => setHoveredCardId((current) => (current === hoverId ? null : current))}
-                onClick={(event) => onKeyboardPlay(card, event)}
-                onPointerDown={(event) => onCardPointerDown(card, event)}
+                onClick={(event) => onKeyboardPlay(card, index, event)}
+                onPointerDown={(event) => onCardPointerDown(card, index, event)}
                 buttonRef={(node) => {
                   handCardRefs.current[card.id] = node;
                 }}
@@ -147,6 +148,8 @@ export function BattleScreen({
                 dragging={activeDraggedCardId === card.id}
                 wrapperClassName="relative -mx-5 flex justify-center sm:-mx-6"
                 wrapperStyle={{ zIndex: isHovered ? 40 : 10 + index }}
+                onPlaySound={playCardPlay}
+                onHoverSound={playCardHover}
               />
             );
           })}

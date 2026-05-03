@@ -3,6 +3,7 @@ import { Coins, House, Swords } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import type { BattleCard } from "@/lib/game-data";
+import { getAllSoundOptions, getSound, playSound, setSound, type SoundCategory } from "@/lib/audio";
 
 import { resolutionOptions } from "../config";
 import { BattleCardButton, CollectionGrid, CollectionPagination, CollectionTabs, DestinationChoices, PlaceholderScreen, ResolutionSelect } from "../components";
@@ -173,6 +174,39 @@ export function OptionsScreen({
           </div>
 
           <ResolutionSelect selectedResolution={selectedResolution} resolutionOptions={resolutionOptions} onChange={onResolutionChange} />
+
+          <div className="mt-4 rounded-[22px] border border-border/70 bg-card p-5">
+            <p className="mb-4 text-sm font-semibold text-foreground">Sound Effects Test</p>
+
+            {(['damage', 'beneficial', 'ui'] as SoundCategory[]).map((category) => {
+              const options = getAllSoundOptions()[category];
+              const currentVariant = getSound(category);
+              return (
+                <div key={category} className="mb-4">
+                  <p className="mb-2 text-xs text-muted-foreground capitalize">{category} Sound</p>
+                  <div className="flex flex-wrap gap-2">
+                    {options.map((opt) => (
+                      <button
+                        key={opt}
+                        type="button"
+                        className={`rounded-full border px-3 py-1 text-xs capitalize ${
+                          currentVariant === opt
+                            ? "border-primary bg-primary/20 text-primary"
+                            : "border-border/80 bg-secondary text-foreground hover:bg-secondary/80"
+                        }`}
+                        onClick={() => {
+                          setSound(category, opt);
+                          playSound(category);
+                        }}
+                      >
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
 
           <div className="surface-muted rounded-[22px] border border-border/70 p-5">
             <div className="flex items-center justify-between gap-4">

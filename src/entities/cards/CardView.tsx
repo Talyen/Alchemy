@@ -131,6 +131,7 @@ export function CardView({
           <div className="w-full" style={{ minWidth: 0, overflow: 'visible' }}>
             <div className="relative" style={{ aspectRatio: '375 / 524', minWidth: 0, overflow: 'visible' }}>
               <motion.div
+                initial={false}
                 animate={{
                   filter: disabled ? 'grayscale(0.92) saturate(0.38) brightness(0.72)' : hovered ? 'saturate(1.06) brightness(1.02)' : 'none',
                   opacity: disabled ? 0.82 : 1,

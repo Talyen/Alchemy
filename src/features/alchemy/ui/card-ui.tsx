@@ -101,6 +101,8 @@ export function BattleCardButton({
   selected = false,
   disabled = false,
   dragging = false,
+  onPlaySound,
+  onHoverSound,
 }: {
   card: BattleCard;
   hovered: boolean;
@@ -120,9 +122,21 @@ export function BattleCardButton({
   selected?: boolean;
   disabled?: boolean;
   dragging?: boolean;
+  onPlaySound?: () => void;
+  onHoverSound?: () => void;
 }) {
+  const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
+    onPlaySound?.();
+    onClick?.(event);
+  };
+
+  const handleHoverStart = () => {
+    onHoverSound?.();
+    onHoverStart();
+  };
+
   return (
-    <div className={cn("relative", wrapperClassName)} style={wrapperStyle} onMouseEnter={onHoverStart} onMouseLeave={onHoverEnd}>
+    <div className={cn("relative", wrapperClassName)} style={wrapperStyle} onMouseEnter={handleHoverStart} onMouseLeave={onHoverEnd}>
       {hovered ? (
         <DetailPopup idPrefix={card.id} title={card.title} descriptionLines={card.descriptionLines} />
       ) : null}
@@ -132,9 +146,9 @@ export function BattleCardButton({
         type="button"
         aria-label={ariaLabel}
         disabled={disabled}
-        onClick={onClick}
+        onClick={handleClick}
         onPointerDown={onPointerDown}
-        onFocus={onHoverStart}
+        onFocus={handleHoverStart}
         onBlur={onHoverEnd}
         onMouseMove={setTiltFromEvent}
         onMouseLeave={clearTiltFromEvent}
@@ -153,7 +167,7 @@ export function BattleCardButton({
           <div key={shimmerActive ? shimmerToken : undefined} className={cn("card-shimmer-sweep", shimmerActive ? "opacity-100" : "opacity-0")} />
         </div>
 
-        <img src={card.art} alt={card.title} className="block h-auto w-full rounded-[30px]" loading="lazy" />
+        <img src={card.art} alt={card.title} className="block h-auto w-full rounded-[30px] aspect-[375/524]" loading="lazy" />
       </button>
     </div>
   );

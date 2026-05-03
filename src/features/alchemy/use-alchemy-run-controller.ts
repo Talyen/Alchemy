@@ -2,6 +2,7 @@ import type { MouseEvent, PointerEvent as ReactPointerEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { advanceBattleTurnResolved, chooseWishCard, createBattleState, playBattleCardResolved, type BattleState } from "@/lib/battle";
 import { cardLibrary, enemyBestiary, starterDeck, type BattleCard } from "@/lib/game-data";
+import { playVictory, playDefeat, playEnemyAttack, playTurnStart, playPlayerHurt, initAudio, playSound, playDamage, playBuff } from "@/lib/audio";
 import { destinationPool } from "./config";
 import { useCardGhosts, useFloatingCombatTexts, useHandCardDrag, useShimmerController } from "./hooks";
 import { animateCardActivation, animateRemainingHandDiscard, isPointerInBattlefield } from "./run-controller-helpers";
@@ -36,7 +37,7 @@ export function useAlchemyRunController({
   const playerPanelRef = useRef<HTMLDivElement | null>(null);
   const enemyPanelRef = useRef<HTMLDivElement | null>(null);
   const destinationButtonRefs = useRef<Partial<Record<Destination, HTMLButtonElement | null>>>({});
-  const { cardGhosts, removeCardGhost, spawnCardGhost } = useCardGhosts();
+  const { cardGhosts, removeCardGhost, clearCardGhosts, spawnCardGhost } = useCardGhosts();
   const { floatingCombatTexts, showCombatTexts } = useFloatingCombatTexts();
   const { shimmerState, maybeTriggerShimmer: triggerShimmer } = useShimmerController();
   const { activeDraggedCardId, beginCardDrag, dragPreview, shouldIgnoreClick } = useHandCardDrag(handleCardRelease);
@@ -45,6 +46,10 @@ export function useAlchemyRunController({
   const enemyStatusChips = useMemo(() => getEnemyStatusChips(battleState), [battleState]);
   const playerCombatTexts = useMemo(() => floatingCombatTexts.filter((entry) => entry.target === "player"), [floatingCombatTexts]);
   const enemyCombatTexts = useMemo(() => floatingCombatTexts.filter((entry) => entry.target === "enemy"), [floatingCombatTexts]);
+
+  useEffect(() => {
+    initAudio();
+  }, []);
 
   useEffect(() => {
     if (screen !== "battle") {
@@ -57,14 +62,15 @@ export function useAlchemyRunController({
 
     animatedHandCycleRef.current = handAnimationCycle;
     const frame = window.requestAnimationFrame(() => {
-      battleState.hand.forEach((card, index) => {
-        const element = handCardRefs.current[card.id];
-        if (!element) {
-          return;
-        }
+      // Draw animations disabled - uncomment to re-enable
+      // battleState.hand.forEach((card, index) => {
+      //   const element = handCardRefs.current[card.id];
+      //   if (!element) {
+      //     return;
+      //   }
 
-        spawnCardGhost({ art: card.art, rect: getCardRect(element.getBoundingClientRect()), rotation: (index - (battleState.hand.length - 1) / 2) * 4.2, delay: index * 55, variant: "draw-in" });
-      });
+      //   spawnCardGhost({ art: card.art, rect: getCardRect(element.getBoundingClientRect()), rotation: (index - (battleState.hand.length - 1) / 2) * 4.2, delay: index * 55, variant: "draw-in" });
+      // });
     });
 
     return () => window.cancelAnimationFrame(frame);
@@ -84,6 +90,11 @@ export function useAlchemyRunController({
       return;
     }
 
+    if (battleState.playerHealth <= 0) {
+      playDefeat();
+      return;
+    }
+
     const foundGold = randomBetween(10, 30);
     setRunGold(battleState.gold + foundGold);
     setRewardGold(foundGold);
@@ -93,6 +104,7 @@ export function useAlchemyRunController({
     setHasActiveBattle(false);
     setHoveredCardId(null);
     setMenuOpen(false);
+    playVictory();
 
     const timeout = window.setTimeout(() => setScreen("rewards"), 680);
     return () => window.clearTimeout(timeout);
@@ -112,6 +124,7 @@ export function useAlchemyRunController({
   }
 
   function startBattle(deck: BattleCard[] = runDeck, gold: number = runGold) {
+    clearCardGhosts();
     setBattleState(createBattleState(deck, gold));
     setHasActiveBattle(true);
     setHoveredCardId(null);
@@ -144,47 +157,81 @@ export function useAlchemyRunController({
       return;
     }
 
+    playTurnStart();
     animateRemainingHandDiscard(battleState.hand, handCardRefs, spawnCardGhost);
     const resolution = advanceBattleTurnResolved(battleState);
+
+    const playerTakesDamage = resolution.combatTexts.some(ct => ct.kind === 'damage' && ct.target === 'player');
+    if (playerTakesDamage) {
+      setTimeout(() => playEnemyAttack(), 150);
+      setTimeout(() => playPlayerHurt(), 250);
+    }
+    
     setBattleState(resolution.state);
     showCombatTexts(resolution.combatTexts);
     setHoveredCardId(null);
     setHandAnimationCycle((current) => current + 1);
   }
 
-  function handleKeyboardPlay(card: BattleCard, event: MouseEvent<HTMLButtonElement>) {
+  function handleKeyboardPlay(card: BattleCard, index: number, event: MouseEvent<HTMLButtonElement>) {
     if (event.detail === 0 && !shouldIgnoreClick(card.id)) {
-      handlePlayCard(card, getCardRect(event.currentTarget.getBoundingClientRect()));
+      handlePlayCard(card, index, getCardRect(event.currentTarget.getBoundingClientRect()));
     }
   }
 
-  function handleCardPointerDown(card: BattleCard, event: ReactPointerEvent<HTMLButtonElement>) {
+  function handleCardPointerDown(card: BattleCard, index: number, event: ReactPointerEvent<HTMLButtonElement>) {
     if (screen === "battle" && battleState.mana >= card.cost && !battleState.wishOptions) {
       setHoveredCardId(null);
-      beginCardDrag(card, event);
+      beginCardDrag(card, index, event);
     }
   }
 
-  function handlePlayCard(card: BattleCard, sourceRect: { x: number; y: number; width: number; height: number }) {
+  function handlePlayCard(card: BattleCard, index: number, sourceRect: { x: number; y: number; width: number; height: number }) {
     if (screen !== "battle" || battleState.mana < card.cost || battleState.wishOptions) {
       return;
     }
 
-    const index = battleState.hand.findIndex((candidate) => candidate.id === card.id);
+    const hasDamage = card.effects.some(e => e.kind === 'damage');
+    const hasHeal = card.effects.some(e => e.kind === 'heal');
+    const hasBeneficialStatus = card.effects.some(e => e.kind === 'player-status');
+
+    if (hasDamage) {
+      playDamage();
+    } else if (hasHeal || hasBeneficialStatus) {
+      playBuff();
+    } else {
+      playSound('ui');
+    }
+
     animateCardActivation(card, sourceRect, (index - (battleState.hand.length - 1) / 2) * 4.2, playerPanelRef, enemyPanelRef, battleSceneRef, spawnCardGhost);
-    const resolution = playBattleCardResolved(battleState, card.id);
+    const resolution = playBattleCardResolved(battleState, card.id, index);
+
+    const damageToEnemy = resolution.combatTexts.some(ct => ct.kind === 'damage' && ct.target === 'enemy');
+    const healOnPlayer = resolution.combatTexts.some(ct => ct.kind === 'heal' && ct.target === 'player');
+    const buffOnPlayer = resolution.combatTexts.some(ct => ct.kind === 'status' && ct.target === 'player');
+
+    if (damageToEnemy) {
+      setTimeout(() => playDamage(), 100);
+    }
+    if (healOnPlayer) {
+      setTimeout(() => playBuff(), 100);
+    }
+    if (buffOnPlayer) {
+      setTimeout(() => playBuff(), 100);
+    }
+    
     setBattleState(resolution.state);
     showCombatTexts(resolution.combatTexts);
-    setHoveredCardId((current) => (current === getHoverId("hand", card.id) ? null : current));
+    setHoveredCardId((current) => (current === getHoverId("hand", `${card.id}-${index}`) ? null : current));
   }
 
-  function handleCardRelease(payload: { card: BattleCard; rect: { x: number; y: number; width: number; height: number }; dragged: boolean; pointerX: number; pointerY: number }) {
+  function handleCardRelease(payload: { card: BattleCard; index: number; rect: { x: number; y: number; width: number; height: number }; dragged: boolean; pointerX: number; pointerY: number }) {
     if (screen !== "battle" || battleState.mana < payload.card.cost || battleState.wishOptions) {
       return;
     }
 
     if (!payload.dragged || isPointerInBattlefield(payload.pointerX, payload.pointerY, battleSceneRef)) {
-      handlePlayCard(payload.card, payload.rect);
+      handlePlayCard(payload.card, payload.index, payload.rect);
     }
   }
 
@@ -217,6 +264,7 @@ export function useAlchemyRunController({
   }
 
   function resetRunState() {
+    clearCardGhosts();
     setBattleState(createBattleState(starterDeck, 0));
     setRunDeck([...starterDeck]);
     setRunGold(0);
