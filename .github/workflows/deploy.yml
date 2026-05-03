@@ -12,7 +12,7 @@ jobs:
       - name: Install
         run: npm install
       - name: Build
-        run: npm run build
+        run: npm run build -- --base /Alchemy/
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         with:
