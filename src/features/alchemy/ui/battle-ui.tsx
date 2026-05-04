@@ -1,9 +1,9 @@
-import type { CSSProperties, ReactNode } from "react";
-import { Coins, Gem, House, Swords } from "lucide-react";
+import type { CSSProperties } from "react";
+import { Coins, Gem } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { keywordDefinitions, pileDiscardArt, pileDrawArt } from "@/lib/game-data";
+import { keywordDefinitions, pileDiscardArt, pileDrawArt, type KeywordId } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
 import {
@@ -17,6 +17,7 @@ import {
 import type { FloatingCombatText, StatusChip } from "../types";
 import { clearTiltFromEvent, getCombatTextColorClass, getCombatTextIcon, setTiltFromEvent } from "../utils";
 import { KeywordTag } from "./keyword-tag";
+import { ShimmerOverlay } from "./shared-ui";
 
 export function CombatTextRail({ entries, side }: { entries: FloatingCombatText[]; side: "player" | "enemy" }) {
   if (entries.length === 0) {
@@ -54,8 +55,9 @@ function CombatTextBubble({ entry }: { entry: FloatingCombatText }) {
 }
 
 function StatusIcon({ chip }: { chip: StatusChip }) {
-  const definition = keywordDefinitions[chip.id];
-  const Icon = keywordIcons[chip.id];
+  const kw = chip.id as KeywordId;
+  const definition = keywordDefinitions[kw];
+  const Icon = keywordIcons[kw];
 
   return (
     <div className="group/status relative flex items-center justify-center">
@@ -119,9 +121,7 @@ export function ArtPanel({
         onMouseLeave={clearTiltFromEvent}
         style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
       >
-        <div className={cn("pointer-events-none absolute inset-0 overflow-hidden rounded-[30px]", shimmerActive ? "card-shimmer-active" : "")}> 
-          <div key={shimmerActive ? shimmerToken : undefined} className={cn("card-shimmer-sweep", shimmerActive ? "opacity-100" : "opacity-0")} />
-        </div>
+        <ShimmerOverlay active={shimmerActive} token={shimmerToken} />
         <img src={art} alt={title} className="block h-auto w-full rounded-[30px]" loading="eager" />
       </div>
 
@@ -178,44 +178,6 @@ export function ManaPanel({ mana, maxMana, gold }: { mana: number; maxMana: numb
       <div className="flex items-center gap-1 text-sm font-medium text-yellow-300">
         <Coins className="h-4 w-4" />
         <span>{gold}</span>
-      </div>
-    </div>
-  );
-}
-
-export function PlaceholderScreen({
-  title,
-  children,
-  onMainMenu,
-  onReturnToBattle,
-  showReturnToBattle,
-}: {
-  title: string;
-  children: ReactNode;
-  onMainMenu: () => void;
-  onReturnToBattle: () => void;
-  showReturnToBattle: boolean;
-}) {
-  return (
-    <div className="flex h-full w-full items-center justify-center px-4 py-6">
-      <div className="alchemy-shell w-full max-w-3xl rounded-[28px] px-6 py-7 sm:px-8">
-        <div className="flex flex-wrap items-center justify-center gap-3">
-          <Button variant="outline" onClick={onMainMenu}>
-            <House className="h-4 w-4" />
-            Main Menu
-          </Button>
-          {showReturnToBattle ? (
-            <Button onClick={onReturnToBattle}>
-              <Swords className="h-4 w-4" />
-              Return to Battle
-            </Button>
-          ) : null}
-        </div>
-
-        <div className="mt-8 text-center">
-          <h1 className="text-3xl font-semibold text-foreground">{title}</h1>
-          <div className="mt-6">{children}</div>
-        </div>
       </div>
     </div>
   );

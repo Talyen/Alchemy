@@ -2,21 +2,6 @@ import { getBattleCardPlayTarget, getCardRect } from "./utils";
 import type { CardGhost, CardRect } from "./types";
 import type { BattleCard } from "@/lib/game-data";
 
-export function animateRemainingHandDiscard(
-  cards: BattleCard[],
-  handCardRefs: React.RefObject<Record<string, HTMLButtonElement | null>>,
-  spawnCardGhost: (ghost: Omit<CardGhost, "id">) => void,
-) {
-  cards.forEach((card, index) => {
-    const element = handCardRefs.current[`${card.id}-${index}`];
-    if (!element) {
-      return;
-    }
-
-    spawnCardGhost({ art: card.art, rect: getCardRect(element.getBoundingClientRect()), rotation: (index - (cards.length - 1) / 2) * 4.2, delay: index * 45, variant: "discard-out" });
-  });
-}
-
 export function animateCardActivation(
   card: BattleCard,
   rect: CardRect,

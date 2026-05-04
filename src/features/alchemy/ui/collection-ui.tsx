@@ -15,8 +15,10 @@ import { cardSurfaceClass, collectionCardWidthClass, collectionTabMeta, staticCa
 import type { CollectionTab } from "../types";
 import { clearTiltFromEvent, getHoverId, setTiltFromEvent } from "../utils";
 import { DetailPopup } from "./card-ui";
+import { ShimmerOverlay } from "./shared-ui";
+import { COLLECTION_PAGE_SIZE } from "@/lib/game-constants";
 
-export const collectionPageSize = 10;
+const collectionPageSize = COLLECTION_PAGE_SIZE;
 
 type CollectionTileItem = {
   id: string;
@@ -69,9 +71,7 @@ function CompendiumTile({
         )}
         style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
       >
-        <div className={cn("pointer-events-none absolute inset-0 z-10 overflow-hidden rounded-[30px]", shimmerActive ? "card-shimmer-active" : "")}>
-          <div key={shimmerActive ? shimmerToken : undefined} className={cn("card-shimmer-sweep", shimmerActive ? "opacity-100" : "opacity-0")} />
-        </div>
+        <ShimmerOverlay active={shimmerActive} token={shimmerToken} />
         <img
           src={item.art}
           alt={item.title}
@@ -194,6 +194,27 @@ export function CollectionPagination({
   );
 }
 
+function getCardItems(discoveredCardIds: string[]) {
+  return cardLibrary.map((card) => {
+    const discovered = discoveredCardIds.includes(card.id);
+    return { id: card.id, title: discovered ? card.title : "Undiscovered", descriptionLines: discovered ? card.descriptionLines : ["Discover this card during a run to reveal it here."], art: card.art, discovered, hoverScope: "collection-card" as const };
+  });
+}
+
+function getBestiaryItems(encounteredEnemyIds: string[]) {
+  return enemyBestiary.map((entry: BestiaryEntry) => {
+    const discovered = encounteredEnemyIds.includes(entry.id);
+    return { id: entry.id, title: discovered ? entry.title : "Undiscovered", subtitle: discovered ? entry.subtitle : undefined, descriptionLines: discovered ? entry.descriptionLines : ["Encounter this enemy to record its details."], art: entry.art, discovered, hoverScope: "collection-bestiary" as const };
+  });
+}
+
+function getTrinketItems(discoveredTrinketIds: string[]) {
+  return trinketLibrary.map((entry: TrinketEntry) => {
+    const discovered = discoveredTrinketIds.includes(entry.id);
+    return { id: entry.id, title: discovered ? entry.title : "Undiscovered", subtitle: discovered ? "Relic" : undefined, descriptionLines: discovered ? entry.descriptionLines : ["Find this relic to reveal its effect."], art: entry.art, discovered, hoverScope: "collection-trinket" as const };
+  });
+}
+
 function getCollectionPageItems({
   collectionTab,
   discoveredCardIds,
@@ -205,48 +226,7 @@ function getCollectionPageItems({
   encounteredEnemyIds: string[];
   discoveredTrinketIds: string[];
 }) {
-  if (collectionTab === "cards") {
-    return cardLibrary.map((card) => {
-      const discovered = discoveredCardIds.includes(card.id);
-
-      return {
-        id: card.id,
-        title: discovered ? card.title : "Undiscovered",
-        descriptionLines: discovered ? card.descriptionLines : ["Discover this card during a run to reveal it here."],
-        art: card.art,
-        discovered,
-        hoverScope: "collection-card",
-      };
-    });
-  }
-
-  if (collectionTab === "bestiary") {
-    return enemyBestiary.map((entry: BestiaryEntry) => {
-      const discovered = encounteredEnemyIds.includes(entry.id);
-
-      return {
-        id: entry.id,
-        title: discovered ? entry.title : "Undiscovered",
-        subtitle: discovered ? entry.subtitle : undefined,
-        descriptionLines: discovered ? entry.descriptionLines : ["Encounter this enemy to record its details."],
-        art: entry.art,
-        discovered,
-        hoverScope: "collection-bestiary",
-      };
-    });
-  }
-
-  return trinketLibrary.map((entry: TrinketEntry) => {
-    const discovered = discoveredTrinketIds.includes(entry.id);
-
-    return {
-      id: entry.id,
-      title: discovered ? entry.title : "Undiscovered",
-      subtitle: discovered ? "Relic" : undefined,
-      descriptionLines: discovered ? entry.descriptionLines : ["Find this relic to reveal its effect."],
-      art: entry.art,
-      discovered,
-      hoverScope: "collection-trinket",
-    };
-  });
+  if (collectionTab === "cards") return getCardItems(discoveredCardIds);
+  if (collectionTab === "bestiary") return getBestiaryItems(encounteredEnemyIds);
+  return getTrinketItems(discoveredTrinketIds);
 }

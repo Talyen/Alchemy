@@ -18,6 +18,7 @@ import {
 } from "../config";
 import type { CardGhost, DragPreview, GhostStyle } from "../types";
 import { clearTiltFromEvent, setTiltFromEvent, tokenizeDescription } from "../utils";
+import { ShimmerOverlay } from "./shared-ui";
 import { KeywordTag } from "./keyword-tag";
 
 function KeywordToken({ keywordId, matchedText }: { keywordId: KeywordId; matchedText: string }) {
@@ -101,8 +102,6 @@ export function BattleCardButton({
   selected = false,
   disabled = false,
   dragging = false,
-  onPlaySound,
-  onHoverSound,
 }: {
   card: BattleCard;
   hovered: boolean;
@@ -122,16 +121,12 @@ export function BattleCardButton({
   selected?: boolean;
   disabled?: boolean;
   dragging?: boolean;
-  onPlaySound?: () => void;
-  onHoverSound?: () => void;
 }) {
   const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
-    onPlaySound?.();
     onClick?.(event);
   };
 
   const handleHoverStart = () => {
-    onHoverSound?.();
     onHoverStart();
   };
 
@@ -163,9 +158,7 @@ export function BattleCardButton({
         )}
         style={{ "--card-base-transform": baseTransform } as CSSProperties}
       >
-        <div className={cn("pointer-events-none absolute inset-0 overflow-hidden rounded-[30px]", shimmerActive ? "card-shimmer-active" : "")}> 
-          <div key={shimmerActive ? shimmerToken : undefined} className={cn("card-shimmer-sweep", shimmerActive ? "opacity-100" : "opacity-0")} />
-        </div>
+        <ShimmerOverlay active={shimmerActive} token={shimmerToken} />
 
         <img src={card.art} alt={card.title} className="block h-auto w-full rounded-[30px] aspect-[375/524]" loading="lazy" />
       </button>

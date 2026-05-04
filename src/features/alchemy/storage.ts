@@ -3,8 +3,9 @@ import type { TalentXP } from "@/lib/talents";
 
 import type { UnlockedTalents } from "./talent-pool";
 import type { ResolutionOption } from "./types";
+import { SAVE_KEY } from "@/lib/game-constants";
 
-const storageKey = "alchemy-save-v1";
+const storageKey = SAVE_KEY;
 
 type SaveData = {
   selectedResolution: ResolutionOption;

@@ -1,5 +1,5 @@
 import type { MouseEvent, MutableRefObject, PointerEvent as ReactPointerEvent } from "react";
-import { BookOpen, Cog, Coins, House, Menu, Swords, WandSparkles, Zap } from "lucide-react";
+import { BookOpen, Cog, Coins, House, Menu, Swords, WandSparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { type BattleCard } from "@/lib/game-data";

@@ -5,54 +5,55 @@ import {
   baseEnemyHealth,
   basePlayerMana,
   cardsPerTurn,
-  emptyEnemyStatuses,
-  emptyPlayerStatuses,
-  emptyTalentEffects,
   maxHandSize,
   maxPlayerHealth,
   type BattleState,
+  type EnemyStatusValues,
+  type PlayerStatusValues,
   type TalentEffectManifest,
   type TurnPhase,
 } from "./types";
+import { ROOM_SCALING_INCREMENT, STARTING_TURN } from "../game-constants";
 
+// Returns a fresh (deck, discard) pair after possibly reshuffling discard into deck.
+function refillDeck(deck: BattleCard[], discard: BattleCard[]) {
+  if (deck.length > 0) return { deck, discard };
+  if (discard.length === 0) return null;
+  return { deck: shuffleCards(discard), discard: [] };
+}
+
+// Draws cards from the deck into the hand. If the deck runs out, the discard pile
+// is shuffled back into the deck. Stops at maxHandSize.
 export function drawCards(deck: BattleCard[], discard: BattleCard[], hand: BattleCard[], amount: number) {
   let nextDeck = [...deck];
   let nextDiscard = [...discard];
   const nextHand = [...hand];
-  let remaining = amount;
 
-  while (remaining > 0 && nextHand.length < maxHandSize) {
-    if (nextDeck.length === 0) {
-      if (nextDiscard.length === 0) {
-        break;
-      }
+  for (let i = 0; i < amount && nextHand.length < maxHandSize; i++) {
+    const refilled = refillDeck(nextDeck, nextDiscard);
+    if (!refilled) break;
+    nextDeck = refilled.deck;
+    nextDiscard = refilled.discard;
 
-      nextDeck = shuffleCards(nextDiscard);
-      nextDiscard = [];
+    const card = nextDeck.shift();
+    if (card) {
+      nextHand.push(card);
     }
-
-    const nextCard = nextDeck.shift();
-    if (!nextCard) {
-      break;
-    }
-
-    nextHand.push(nextCard);
-    remaining -= 1;
   }
 
-  return {
-    deck: nextDeck,
-    discard: nextDiscard,
-    hand: nextHand,
-  };
+  return { deck: nextDeck, discard: nextDiscard, hand: nextHand };
 }
 
-export function createBattleState(runDeck: BattleCard[] = starterDeck, gold = 0, roomsEncountered = 0, currentEnemy?: BestiaryEntry, playerHealth = maxPlayerHealth, talentEffects: TalentEffectManifest = emptyTalentEffects()): BattleState {
+// Creates the initial BattleState for a fresh encounter. Enemy HP and attack
+// scale per room (multiplicative by 1.1x per room after the first) so the game
+// gets gradually harder. The scaler uses `roomsEncountered - 1` so room 0
+// (the first fight) has no scaling at all.
+export function createBattleState(runDeck: BattleCard[] = starterDeck, gold = 0, roomsEncountered = 0, currentEnemy?: BestiaryEntry, playerHealth = maxPlayerHealth, talentEffects: TalentEffectManifest = { flatPhysicalDamage: 0, armorToPhysicalDamage: false, physicalCritChance: 0 }): BattleState {
   const openingHand = drawCards(shuffleCards(runDeck), [], [], cardsPerTurn);
 
   const enemy = currentEnemy ?? enemyBestiary[0];
   const scaler = Math.max(0, roomsEncountered - 1);
-  const hpMultiplier = 1 + scaler * 0.1;
+  const hpMultiplier = 1 + scaler * ROOM_SCALING_INCREMENT;
   const scaledEnemyHealth = Math.floor(baseEnemyHealth * hpMultiplier);
   const scaledEnemyAttack = Math.floor(baseEnemyAttack * hpMultiplier);
 
@@ -64,14 +65,14 @@ export function createBattleState(runDeck: BattleCard[] = starterDeck, gold = 0,
     mana: basePlayerMana,
     maxMana: basePlayerMana,
     gold,
-    turn: 1,
+    turn: STARTING_TURN,
     turnPhase: "player" as TurnPhase,
     playerHealth,
     enemyHealth: scaledEnemyHealth,
     enemyMaxHealth: scaledEnemyHealth,
     enemyAttack: scaledEnemyAttack,
-    playerStatuses: emptyPlayerStatuses(),
-    enemyStatuses: emptyEnemyStatuses(),
+    playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 } as PlayerStatusValues,
+    enemyStatuses: { burn: 0, poison: 0, bleed: 0, bleedLeech: 0, freeze: 0, stun: 0 } as EnemyStatusValues,
     enemySkipTurns: 0,
     wishOptions: null,
     currentEnemy: enemy,
@@ -79,6 +80,7 @@ export function createBattleState(runDeck: BattleCard[] = starterDeck, gold = 0,
   };
 }
 
+// Fisher-Yates shuffle — O(n), unbiased, in-place on a clone.
 function shuffleCards(cards: BattleCard[]) {
   const shuffled = [...cards];
 

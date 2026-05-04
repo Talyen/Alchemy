@@ -3,8 +3,9 @@ import type { KeywordId } from "@/lib/game-data";
 import { keywordDefinitions } from "@/lib/game-data";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { keywordIcons, keywordAliases } from "../config";
+import { keywordIcons } from "../config";
 import { KeywordTag } from "./keyword-tag";
+import { tokenizeDescription } from "../utils";
 import type { TalentDefinition } from "../talent-pool";
 
 const keywordBorderClasses: Record<KeywordId, string> = {
@@ -27,56 +28,17 @@ const keywordBorderClasses: Record<KeywordId, string> = {
   mana: "border-sky-400",
 };
 
-function getKeywordStyle(keywordId: KeywordId) {
-  const def = keywordDefinitions[keywordId];
-  return {
-    textClass: def?.colorClass ?? "text-foreground",
-    borderClass: keywordBorderClasses[keywordId] ?? "border-border/60",
-  };
-}
-
-function formatDescription(description: string): (string | { text: string; colorClass: string })[] {
-  const sorted = [...keywordAliases].sort((a, b) => b.match.length - a.match.length);
-  const pattern = new RegExp(
-    `\\b(${sorted.map((a) => a.match.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})\\b`,
-    "gi",
-  );
-  const parts: (string | { text: string; colorClass: string })[] = [];
-  let lastIndex = 0;
-  let match: RegExpExecArray | null;
-
-  while ((match = pattern.exec(description)) !== null) {
-    if (match.index > lastIndex) {
-      parts.push(description.slice(lastIndex, match.index));
-    }
-    const alias = sorted.find(
-      (a) => a.match.toLowerCase() === match![0].toLowerCase(),
-    );
-    const colorClass = alias
-      ? keywordDefinitions[alias.keywordId]?.colorClass ?? ""
-      : "";
-    parts.push({ text: match[0], colorClass });
-    lastIndex = pattern.lastIndex;
-  }
-
-  if (lastIndex < description.length) {
-    parts.push(description.slice(lastIndex));
-  }
-
-  return parts;
-}
-
 function renderDescription(description: string) {
-  const parts = formatDescription(description);
+  const parts = tokenizeDescription(description);
   return parts.map((part, i) => {
-    if (typeof part === "string") {
-      return <Fragment key={i}>{part}</Fragment>;
+    if (part.keywordId) {
+      return (
+        <span key={i} className={keywordDefinitions[part.keywordId]?.colorClass}>
+          {part.text}
+        </span>
+      );
     }
-    return (
-      <span key={i} className={part.colorClass}>
-        {part.text}
-      </span>
-    );
+    return <Fragment key={i}>{part.text}</Fragment>;
   });
 }
 
@@ -104,7 +66,8 @@ export function TalentChoicesInline({
       </p>
       <div className="flex flex-wrap justify-center gap-3">
         {choices.map((talent) => {
-          const { borderClass, textClass } = getKeywordStyle(talent.keywordId);
+          const borderClass = keywordBorderClasses[talent.keywordId] ?? "border-border/60";
+          const textClass = keywordDefinitions[talent.keywordId]?.colorClass ?? "text-foreground";
           const Icon = keywordIcons[talent.keywordId];
           const isSelected = selectedId === talent.id;
           return (
@@ -154,7 +117,7 @@ export function TalentList({
         <div className="flex flex-wrap justify-center gap-2">
           {allTalents.map((talent) => {
             const isUnlocked = unlockedIds.has(talent.id);
-            const { borderClass } = getKeywordStyle(talent.keywordId);
+            const borderClass = keywordBorderClasses[talent.keywordId] ?? "border-border/60";
             const Icon = keywordIcons[talent.keywordId];
 
             if (isUnlocked) {

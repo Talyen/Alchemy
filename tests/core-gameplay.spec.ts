@@ -422,3 +422,82 @@ test.describe("Card Interactions", () => {
     expect(handAfterSecond).toBe(handAfterFirst - 1);
   });
 });
+
+test.describe("Merchant's Shop", () => {
+  test("shop screen appears when choosing Merchant's Shop destination", async ({ page }) => {
+    await startRun(page);
+    await playUntilVictory(page);
+
+    // Select a reward card first
+    await page.locator('[aria-label^="Select "]').first().click();
+    await page.getByRole("button", { name: "Add Card" }).click();
+
+    // Check if Merchant's Shop is among the destinations
+    const shopBtn = page.getByRole("button", { name: "Merchant's Shop" });
+    if (!(await shopBtn.isVisible({ timeout: 500 }).catch(() => false))) {
+      test.skip(true, "Merchant's Shop not among destination choices");
+      return;
+    }
+    await shopBtn.click();
+
+    // Should see the shop screen
+    await expect(page.getByRole("heading", { name: "Merchant's Shop" })).toBeVisible();
+    await expect(page.getByText(/Gold/)).toBeVisible();
+    await expect(page.getByRole("button", { name: "Leave Shop" })).toBeVisible();
+  });
+
+  test("shop shows three cards for sale", async ({ page }) => {
+    await startRun(page);
+    await playUntilVictory(page);
+
+    await page.locator('[aria-label^="Select "]').first().click();
+    await page.getByRole("button", { name: "Add Card" }).click();
+
+    const shopBtn = page.getByRole("button", { name: "Merchant's Shop" });
+    if (!(await shopBtn.isVisible({ timeout: 500 }).catch(() => false))) {
+      test.skip(true, "Merchant's Shop not among destination choices");
+      return;
+    }
+    await shopBtn.click();
+
+    // Verify three card purchase buttons
+    const buyButtons = page.getByRole("button", { name: /Buy for/ });
+    await expect(buyButtons).toHaveCount(3);
+  });
+
+  test("shop shows Remove Card and Refresh options", async ({ page }) => {
+    await startRun(page);
+    await playUntilVictory(page);
+
+    await page.locator('[aria-label^="Select "]').first().click();
+    await page.getByRole("button", { name: "Add Card" }).click();
+
+    const shopBtn = page.getByRole("button", { name: "Merchant's Shop" });
+    if (!(await shopBtn.isVisible({ timeout: 500 }).catch(() => false))) {
+      test.skip(true, "Merchant's Shop not among destination choices");
+      return;
+    }
+    await shopBtn.click();
+
+    await expect(page.getByRole("button", { name: /Remove Card/ })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Refresh/ })).toBeVisible();
+  });
+
+  test("leaving the shop navigates to destination choices", async ({ page }) => {
+    await startRun(page);
+    await playUntilVictory(page);
+
+    await page.locator('[aria-label^="Select "]').first().click();
+    await page.getByRole("button", { name: "Add Card" }).click();
+
+    const shopBtn = page.getByRole("button", { name: "Merchant's Shop" });
+    if (!(await shopBtn.isVisible({ timeout: 500 }).catch(() => false))) {
+      test.skip(true, "Merchant's Shop not among destination choices");
+      return;
+    }
+    await shopBtn.click();
+
+    await page.getByRole("button", { name: "Leave Shop" }).click();
+    await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 5000 });
+  });
+});

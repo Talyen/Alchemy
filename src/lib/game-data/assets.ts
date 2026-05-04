@@ -6,7 +6,6 @@ import bash from "@/assets/optimized/bash.webp";
 import blessedAegis from "@/assets/optimized/blessed-aegis.webp";
 import block from "@/assets/optimized/block.webp";
 import bread from "@/assets/optimized/bread.webp";
-import cardBack from "@/assets/optimized/card-back.webp";
 import cleanse from "@/assets/optimized/cleanse.webp";
 import discardPile from "@/assets/optimized/discard-pile.webp";
 import drawPile from "@/assets/optimized/draw-pile.webp";
@@ -51,7 +50,6 @@ export {
   block,
   bread,
   campfire,
-  cardBack,
   cleanse,
   discardPile,
   drawPile,
@@ -89,7 +87,6 @@ export {
 };
 
 export const menuLogo = alchemyLogo;
-export const battleCardBack = cardBack;
 export const pileDrawArt = drawPile;
 export const pileDiscardArt = discardPile;
 
@@ -98,8 +95,3 @@ export const characterArt = {
   rogue: { male: maleRogue, female: femaleRogue },
   wizard: { male: maleWizard, female: femaleWizard },
 } as const;
-
-export const battleArt = {
-  hero: femaleKnight,
-  enemy: skeleton,
-};
