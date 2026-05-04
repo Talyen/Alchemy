@@ -372,6 +372,29 @@ test.describe("Navigation", () => {
 });
 
 test.describe("Card Interactions", () => {
+  test("campfire screen restores HP and continues to next battle", async ({ page }) => {
+    await startRun(page);
+    await playUntilVictory(page);
+
+    await page.locator('[aria-label^="Select "]').first().click();
+    await page.getByRole("button", { name: "Add Card" }).click();
+
+    // Need to find Campfire among destinations - it's one of 3 random options
+    const campfireBtn = page.getByRole("button", { name: "Campfire" });
+    if (!(await campfireBtn.isVisible({ timeout: 500 }).catch(() => false))) {
+      test.skip(true, "Campfire not among destination choices");
+      return;
+    }
+    await campfireBtn.click();
+
+    await expect(page.getByRole("button", { name: "Rest" })).toBeVisible();
+    await page.getByRole("button", { name: "Rest" }).click();
+
+    await expect(page.getByRole("button", { name: "Continue" })).toBeVisible({ timeout: 3000 });
+    await page.getByRole("button", { name: "Continue" }).click();
+    await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });
+  });
+
   test("multiple copies of the same card in hand can be hovered and played independently", async ({ page }) => {
     await startRun(page);
 

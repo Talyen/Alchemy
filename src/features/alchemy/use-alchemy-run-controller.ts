@@ -244,7 +244,17 @@ export function useAlchemyRunController({
     setScreen("destination");
   }
 
-  function handleDestinationChoice() {
+  function handleDestinationChoice(destination: Destination) {
+    if (destination === "Campfire") {
+      setHoveredCardId(null);
+      setMenuOpen(false);
+      setScreen("campfire");
+    } else {
+      startBattle();
+    }
+  }
+
+  function handleCampfireContinue() {
     startBattle();
   }
 
@@ -343,6 +353,7 @@ function skipCombatDevMode() {
     roomsEncountered,
     rewardChoices,
     rewardGold,
+    runPlayerHealth,
     selectedRewardId,
     destinationOptions,
     handCardRefs,
@@ -380,6 +391,7 @@ function skipCombatDevMode() {
     handleWishChoice,
     finishRewards,
     handleDestinationChoice,
+    handleCampfireContinue,
     skipCombatDevMode,
     removeCardGhost,
     resetRunState,

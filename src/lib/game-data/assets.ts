@@ -1,5 +1,6 @@
 import alchemyLogo from "@/assets/optimized/alchemy-logo.webp";
 import anvil from "@/assets/optimized/anvil.webp";
+import campfire from "@/assets/optimized/campfire.webp";
 import apple from "@/assets/optimized/apple.webp";
 import bash from "@/assets/optimized/bash.webp";
 import blessedAegis from "@/assets/optimized/blessed-aegis.webp";
@@ -49,6 +50,7 @@ export {
   blessedAegis,
   block,
   bread,
+  campfire,
   cardBack,
   cleanse,
   discardPile,

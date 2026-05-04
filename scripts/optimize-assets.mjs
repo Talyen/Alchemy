@@ -63,6 +63,8 @@ const assets = [
   { source: "Cards/Stab.png", target: "stab.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Steal.png", target: "steal.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Wish.png", target: "wish.webp", width: cardWidth, quality: cardQuality },
+  // Destinations
+  { source: "Destinations/Campfire.png", target: "campfire.webp", width: 900, quality: 84 },
 ];
 
 async function fileIsFresh(sourcePath, outputPath) {

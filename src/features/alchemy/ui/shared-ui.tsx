@@ -13,7 +13,7 @@ export function DestinationChoices({
   buttonRefs,
 }: {
   destinationOptions: Destination[];
-  onChoose: () => void;
+  onChoose: (destination: Destination) => void;
   buttonRefs: MutableRefObject<Partial<Record<Destination, HTMLButtonElement | null>>>;
 }) {
   return (
@@ -28,7 +28,7 @@ export function DestinationChoices({
               buttonRefs.current[destination] = node;
             }}
             type="button"
-            onClick={onChoose}
+            onClick={() => onChoose(destination)}
             className={cn(
               "relative inline-flex min-h-[56px] items-center justify-start gap-2 overflow-hidden rounded-full border border-border/80 px-4 py-2 text-left text-sm font-semibold shadow-[0_12px_24px_rgba(0,0,0,0.26)] transition-transform duration-200 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
               destinationMeta[destination].className,

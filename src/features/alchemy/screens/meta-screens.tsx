@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type MutableRefObject } from "rea
 import { Coins, House, Swords } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { characters, characterArt, keywordDefinitions, type BattleCard, type CharacterGender, type CharacterId, type KeywordId } from "@/lib/game-data";
+import { campfire, characters, characterArt, keywordDefinitions, type BattleCard, type CharacterGender, type CharacterId, type KeywordId } from "@/lib/game-data";
 import { setMusicVolume } from "@/lib/audio";
 
 import { cn } from "@/lib/utils";
@@ -212,7 +212,7 @@ export function DestinationScreen({
   destinationButtonRefs,
 }: {
   destinationOptions: Destination[];
-  onChoose: () => void;
+  onChoose: (destination: Destination) => void;
   destinationButtonRefs: MutableRefObject<Partial<Record<Destination, HTMLButtonElement | null>>>;
 }) {
   return (
@@ -228,6 +228,73 @@ export function DestinationScreen({
           buttonRefs={destinationButtonRefs}
         />
       </div>
+    </div>
+  );
+}
+
+export function CampfireScreen({
+  playerHealth,
+  maxHp,
+  onContinue,
+}: {
+  playerHealth: number;
+  maxHp: number;
+  onContinue: () => void;
+}) {
+  const [resting, setResting] = useState(false);
+  const [displayHp, setDisplayHp] = useState(playerHealth);
+  const [done, setDone] = useState(false);
+
+  function handleRest() {
+    setResting(true);
+    const targetHp = Math.min(maxHp, playerHealth + Math.floor(maxHp * 0.3));
+    const start = playerHealth;
+    const duration = 1200;
+    const startTime = performance.now();
+
+    function animate(now: number) {
+      const elapsed = now - startTime;
+      const t = Math.min(1, elapsed / duration);
+      const current = Math.round(start + (targetHp - start) * t);
+      setDisplayHp(current);
+      if (t < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        setDone(true);
+      }
+    }
+
+    requestAnimationFrame(animate);
+  }
+
+  return (
+    <div className="flex h-full w-full flex-col items-center justify-center gap-8 px-4 py-6 text-center">
+      <img src={campfire} alt="Campfire" className="w-full max-w-[400px] object-contain" />
+
+      <div className="w-full max-w-sm">
+        <div className="flex items-center justify-between text-sm">
+          <span className="font-semibold text-foreground">HP</span>
+          <span className="text-muted-foreground">{displayHp} / {maxHp}</span>
+        </div>
+        <div className="mt-2 h-4 w-full overflow-hidden rounded-full bg-muted">
+          <div
+            className="h-full rounded-full bg-red-500 transition-all duration-100 ease-linear"
+            style={{ width: `${(displayHp / maxHp) * 100}%` }}
+          />
+        </div>
+      </div>
+
+      {!resting ? (
+        <Button size="lg" onClick={handleRest}>
+          Rest
+        </Button>
+      ) : null}
+
+      {done ? (
+        <Button size="lg" variant="outline" onClick={onContinue}>
+          Continue
+        </Button>
+      ) : null}
     </div>
   );
 }

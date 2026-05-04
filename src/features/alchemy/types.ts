@@ -3,7 +3,7 @@ import type { CSSProperties } from "react";
 import type { CombatTextEvent } from "@/lib/battle";
 import type { BattleCard, KeywordId } from "@/lib/game-data";
 
-export type Screen = "menu" | "character-select" | "battle" | "rewards" | "destination" | "options" | "collection" | "talents" | "game-over";
+export type Screen = "menu" | "character-select" | "battle" | "rewards" | "destination" | "options" | "collection" | "talents" | "game-over" | "campfire";
 
 export type ResolutionOption = "1920x1080" | "2560x1440" | "3840x2160";
 
