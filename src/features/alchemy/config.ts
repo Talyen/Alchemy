@@ -22,7 +22,13 @@ import { enemyBestiary, type KeywordId } from "@/lib/game-data";
 
 import type { CardGhostVariant, CollectionTab, Destination, ResolutionOption } from "./types";
 
-export const currentEnemy = enemyBestiary[0];
+export function getCurrentEnemy(roomsEncountered: number) {
+  if (roomsEncountered === 0) {
+    return enemyBestiary.find((e) => e.id === "skeleton") ?? enemyBestiary[0];
+  }
+  const nonSkeletonEnemies = enemyBestiary.filter((e) => e.id !== "skeleton");
+  return nonSkeletonEnemies[Math.floor(Math.random() * nonSkeletonEnemies.length)] ?? enemyBestiary[0];
+}
 
 export const resolutionOptions: ResolutionOption[] = ["1920x1080", "2560x1440", "3840x2160"];
 
@@ -38,7 +44,6 @@ export const destinationPool: Destination[] = [
 export const collectionTabMeta: Array<{ id: CollectionTab; label: string; icon: LucideIcon }> = [
   { id: "cards", label: "Cards", icon: BookOpen },
   { id: "bestiary", label: "Bestiary", icon: ShieldAlert },
-  { id: "trinkets", label: "Trinkets", icon: Gem },
 ];
 
 export const destinationMeta: Record<Destination, { icon: LucideIcon; className: string }> = {
@@ -99,7 +104,7 @@ export const battleCardWidthClass = "w-[clamp(222px,22vh,336px)]";
 export const handCardWidthClass = "w-[clamp(189px,18.7vh,286px)]";
 export const collectionCardWidthClass = "w-[clamp(156px,15vw,210px)]";
 export const pileCardWidthClass = "w-[clamp(74px,7.4vh,112px)]";
-export const cardSurfaceClass = "relative overflow-hidden rounded-[30px] border border-[#6a4525] bg-black shadow-[0_20px_48px_rgba(0,0,0,0.48)]";
+export const cardSurfaceClass = "relative overflow-hidden rounded-[30px] bg-black shadow-[0_20px_48px_rgba(0,0,0,0.48)]";
 export const staticCardTransform = "translate3d(0px, 0px, 0px)";
 export const popupClassName =
   "absolute bottom-full left-1/2 z-40 mb-4 w-60 -translate-x-1/2 rounded-[20px] border border-border/80 bg-card px-3 py-3 text-left shadow-[0_18px_42px_rgba(0,0,0,0.55)]";
@@ -119,6 +124,8 @@ export const combatTextColorClasses: Record<string, string> = {
   forge: "text-yellow-300",
   haste: "text-fuchsia-300",
   health: "text-emerald-300",
+  mana: "text-sky-400",
+  gold: "text-yellow-300",
 };
 
 export const combatTextIconClasses: Record<string, LucideIcon> = {
@@ -156,6 +163,7 @@ export const keywordAliases: Array<{ match: string; keywordId: KeywordId }> = [
   { match: "Bleed", keywordId: "bleed" },
   { match: "Leech", keywordId: "leech" },
   { match: "Freeze", keywordId: "freeze" },
+  { match: "Mana Crystal", keywordId: "mana" },
   { match: "Mana", keywordId: "mana" },
 ];
 

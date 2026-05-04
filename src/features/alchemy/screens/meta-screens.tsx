@@ -1,25 +1,50 @@
-import type { MutableRefObject } from "react";
+import { useState, type MutableRefObject } from "react";
 import { Coins, House, Swords } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import type { BattleCard } from "@/lib/game-data";
-import { getAllSoundOptions, getSound, playSound, setSound, type SoundCategory } from "@/lib/audio";
+import { characters, characterArt, keywordDefinitions, type BattleCard, type CharacterGender, type CharacterId, type KeywordId } from "@/lib/game-data";
+import { setMusicVolume } from "@/lib/audio";
 
-import { resolutionOptions } from "../config";
+import { cn } from "@/lib/utils";
+import { computeTalentPoints, xpForNextPoint, xpToNextPoint, type TalentXP } from "@/lib/talents";
+import { battleCardWidthClass, cardSurfaceClass, handCardWidthClass, keywordIcons, resolutionOptions, staticCardTransform } from "../config";
 import { BattleCardButton, CollectionGrid, CollectionPagination, CollectionTabs, DestinationChoices, PlaceholderScreen, ResolutionSelect } from "../components";
 import { getCollectionTotalPages } from "../ui/collection-ui";
 import { ConfirmationDialog } from "../ui/shared-ui";
+import { KeywordTag } from "../ui/keyword-tag";
 import type { CollectionTab, Destination, ResolutionOption } from "../types";
-import { getHoverId } from "../utils";
+import { clearTiltFromEvent, getHoverId, setTiltFromEvent } from "../utils";
+import { useShimmerController } from "../hooks";
 
-export function MenuScreen({ onPlay, onCollection, onOptions, onTalents, logoSrc }: { onPlay: () => void; onCollection: () => void; onOptions: () => void; onTalents: () => void; logoSrc: string }) {
+const talentNodeLabels: Partial<Record<KeywordId, string[]>> = {
+  physical: ["+1 Physical damage", "", "", "", "", "", "", "", ""],
+  block: ["", "", "", "", "", "", "", "", ""],
+  armor: ["", "", "", "", "", "", "", "", ""],
+  forge: ["", "", "", "", "", "", "", "", ""],
+  stun: ["", "", "", "", "", "", "", "", ""],
+  burn: ["", "", "", "", "", "", "", "", ""],
+  poison: ["", "", "", "", "", "", "", "", ""],
+  bleed: ["", "", "", "", "", "", "", "", ""],
+  freeze: ["", "", "", "", "", "", "", "", ""],
+  gold: ["", "", "", "", "", "", "", "", ""],
+  mana: ["", "", "", "", "", "", "", "", ""],
+};
+
+const talentTreeLayout = [
+  [8],
+  [6, 7],
+  [3, 4, 5],
+  [0, 1, 2],
+];
+
+export function MenuScreen({ onPlay, onCollection, onOptions, onTalents, logoSrc, hasActiveBattle }: { onPlay: () => void; onCollection: () => void; onOptions: () => void; onTalents: () => void; logoSrc: string; hasActiveBattle?: boolean }) {
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-8 text-center">
-      <img src={logoSrc} alt="Alchemy logo" className="w-full max-w-[720px] object-contain" loading="eager" />
+      <img src={logoSrc} alt="Alchemy logo" className="w-full max-w-[430px] object-contain" loading="eager" />
 
       <div className="grid gap-3">
         <Button size="lg" className="w-56 justify-center text-base" onClick={onPlay}>
-          Play
+          {hasActiveBattle ? "Resume Run" : "Play"}
         </Button>
         <Button size="lg" variant="outline" className="w-56 justify-center text-base" onClick={onCollection}>
           Collection
@@ -32,6 +57,90 @@ export function MenuScreen({ onPlay, onCollection, onOptions, onTalents, logoSrc
         </Button>
         <Button size="lg" variant="outline" className="w-56 justify-center text-base" onClick={() => window.close()}>
           Quit
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+const defaultGender: Record<CharacterId, CharacterGender> = {
+  knight: "male",
+  rogue: "male",
+  wizard: "female",
+};
+
+export function CharacterSelectScreen({ onConfirm, onBack }: { onConfirm: (characterId: CharacterId, gender: CharacterGender) => void; onBack: () => void }) {
+  const [selectedId, setSelectedId] = useState<CharacterId | null>(null);
+  const { shimmerState, maybeTriggerShimmer } = useShimmerController();
+
+  const charIds = Object.keys(characters) as CharacterId[];
+  const selectedChar = selectedId ? characters[selectedId] : null;
+
+  return (
+    <div className="flex h-full w-full flex-col items-center justify-center gap-6 px-4 py-6 text-center">
+      <h1 className="text-4xl font-semibold text-foreground">Choose Your Hero</h1>
+
+      <div className="flex flex-wrap items-start justify-center gap-12">
+        {charIds.map((id) => {
+          const char = characters[id];
+          const gender = defaultGender[id];
+          const art = characterArt[char.id][gender];
+          const isSelected = selectedId === id;
+          const isShimmer = shimmerState?.cardId === id;
+
+          return (
+            <div key={id} className="flex flex-col items-center gap-3">
+              <button
+                type="button"
+                className={cn(
+                  "tilt-surface relative rounded-[22px]",
+                  battleCardWidthClass,
+                  isSelected && "ring-2 ring-primary",
+                )}
+                style={{ "--card-base-transform": staticCardTransform } as React.CSSProperties}
+                data-tilt-strength="15"
+                onMouseMove={setTiltFromEvent}
+                onMouseEnter={() => maybeTriggerShimmer(id)}
+                onMouseLeave={clearTiltFromEvent}
+                onClick={() => setSelectedId(id)}
+              >
+                <div className={cn("pointer-events-none absolute inset-0 z-10 overflow-hidden rounded-[22px]", isShimmer ? "card-shimmer-active" : "")}>
+                  <div key={isShimmer ? shimmerState?.token : undefined} className={cn("card-shimmer-sweep", isShimmer ? "opacity-100" : "opacity-0")} />
+                </div>
+                <img
+                  src={art}
+                  alt={char.name}
+                  className={cn(cardSurfaceClass, "w-full rounded-[22px]")}
+                />
+              </button>
+
+              <p className="text-2xl font-semibold text-foreground">{char.name}</p>
+
+              <div className="flex flex-wrap justify-center gap-1">
+                {char.keywords.map((kw) => (
+                  <KeywordTag key={kw} keywordId={kw} pill />
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="flex gap-4">
+        <Button
+          size="lg"
+          className="w-40"
+          disabled={!selectedChar}
+          onClick={() => {
+            if (selectedChar) {
+              onConfirm(selectedChar.id, defaultGender[selectedChar.id]);
+            }
+          }}
+        >
+          Continue
+        </Button>
+        <Button size="lg" variant="outline" className="w-40" onClick={onBack}>
+          Back
         </Button>
       </div>
     </div>
@@ -152,6 +261,10 @@ export function OptionsScreen({
   onOpenClearSaveConfirm,
   onCloseClearSaveConfirm,
   onConfirmClearSave,
+  musicVol,
+  sfxVol,
+  onMusicVolChange,
+  onSfxVolChange,
 }: {
   hasActiveBattle: boolean;
   onMainMenu: () => void;
@@ -162,63 +275,80 @@ export function OptionsScreen({
   onOpenClearSaveConfirm: () => void;
   onCloseClearSaveConfirm: () => void;
   onConfirmClearSave: () => void;
+  musicVol: number;
+  sfxVol: number;
+  onMusicVolChange: (v: number) => void;
+  onSfxVolChange: (v: number) => void;
 }) {
+  const [tab, setTab] = useState<"display" | "sound" | "other">("display");
+
   return (
     <div className="relative h-full w-full">
       <PlaceholderScreen title="Options" onMainMenu={onMainMenu} onReturnToBattle={onReturnToBattle} showReturnToBattle={hasActiveBattle}>
         <div className="mx-auto flex w-full max-w-xl flex-col gap-6 text-left">
           <div className="flex justify-center gap-2">
-            <button type="button" className="rounded-full border border-border/80 bg-card px-4 py-2 text-sm font-semibold text-foreground">
-              Display
-            </button>
+            {(["display", "sound", "other"] as const).map((t) => (
+              <button
+                key={t}
+                type="button"
+                className={cn(
+                  "rounded-full border px-4 py-2 text-sm font-semibold capitalize",
+                  tab === t
+                    ? "border-primary bg-primary/20 text-primary"
+                    : "border-border/80 bg-card text-foreground",
+                )}
+                onClick={() => setTab(t)}
+              >
+                {t}
+              </button>
+            ))}
           </div>
 
-          <ResolutionSelect selectedResolution={selectedResolution} resolutionOptions={resolutionOptions} onChange={onResolutionChange} />
+          {tab === "display" ? <ResolutionSelect selectedResolution={selectedResolution} resolutionOptions={resolutionOptions} onChange={onResolutionChange} /> : null}
 
-          <div className="mt-4 rounded-[22px] border border-border/70 bg-card p-5">
-            <p className="mb-4 text-sm font-semibold text-foreground">Sound Effects Test</p>
-
-            {(['damage', 'beneficial', 'ui'] as SoundCategory[]).map((category) => {
-              const options = getAllSoundOptions()[category];
-              const currentVariant = getSound(category);
-              return (
-                <div key={category} className="mb-4">
-                  <p className="mb-2 text-xs text-muted-foreground capitalize">{category} Sound</p>
-                  <div className="flex flex-wrap gap-2">
-                    {options.map((opt) => (
-                      <button
-                        key={opt}
-                        type="button"
-                        className={`rounded-full border px-3 py-1 text-xs capitalize ${
-                          currentVariant === opt
-                            ? "border-primary bg-primary/20 text-primary"
-                            : "border-border/80 bg-secondary text-foreground hover:bg-secondary/80"
-                        }`}
-                        onClick={() => {
-                          setSound(category, opt);
-                          playSound(category);
-                        }}
-                      >
-                        {opt}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="surface-muted rounded-[22px] border border-border/70 p-5">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="text-sm font-semibold text-foreground">Save Data</p>
-                <p className="mt-1 text-sm text-muted-foreground">Clear discovered collection progress and saved options.</p>
+          {tab === "sound" ? (
+            <div className="space-y-5">
+              <div className="surface-muted rounded-[22px] border border-border/70 p-5">
+                <p className="text-sm font-semibold text-foreground">Music Volume</p>
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  value={musicVol}
+                  onChange={(e) => {
+                    onMusicVolChange(Number(e.target.value));
+                    setMusicVolume(Number(e.target.value) / 100);
+                  }}
+                  className="mt-3 w-full accent-primary"
+                />
               </div>
-              <Button variant="destructive" onClick={onOpenClearSaveConfirm}>
-                Clear Save Data
-              </Button>
+              <div className="surface-muted rounded-[22px] border border-border/70 p-5">
+                <p className="text-sm font-semibold text-foreground">Sound Effects Volume</p>
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  value={sfxVol}
+                  onChange={(e) => onSfxVolChange(Number(e.target.value))}
+                  className="mt-3 w-full accent-primary"
+                />
+              </div>
             </div>
-          </div>
+          ) : null}
+
+          {tab === "other" ? (
+            <div className="surface-muted rounded-[22px] border border-border/70 p-5">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Save Data</p>
+                  <p className="mt-1 text-sm text-muted-foreground">Clear discovered collection progress and saved options.</p>
+                </div>
+                <Button variant="destructive" onClick={onOpenClearSaveConfirm}>
+                  Clear Save Data
+                </Button>
+              </div>
+            </div>
+          ) : null}
         </div>
       </PlaceholderScreen>
 
@@ -262,6 +392,7 @@ export function CollectionScreen({
   page: number;
   onPageChange: (page: number) => void;
 }) {
+  const { shimmerState, maybeTriggerShimmer } = useShimmerController();
   const totalPages = getCollectionTotalPages(collectionTab);
 
   return (
@@ -292,6 +423,8 @@ export function CollectionScreen({
             discoveredTrinketIds={discoveredTrinketIds}
             onHoverChange={onHoverChange}
             page={page}
+            shimmerState={shimmerState}
+            onHoverShimmer={maybeTriggerShimmer}
           />
           <CollectionPagination page={page} totalPages={totalPages} onPageChange={onPageChange} />
         </div>
@@ -300,11 +433,103 @@ export function CollectionScreen({
   );
 }
 
-export function TalentsScreen({ hasActiveBattle, onMainMenu, onReturnToBattle }: { hasActiveBattle: boolean; onMainMenu: () => void; onReturnToBattle: () => void }) {
+export function TalentsScreen({
+  hasActiveBattle,
+  onMainMenu,
+  onReturnToBattle,
+  talentXP,
+  runTalentXP,
+}: {
+  hasActiveBattle: boolean;
+  onMainMenu: () => void;
+  onReturnToBattle: () => void;
+  talentXP: TalentXP;
+  runTalentXP?: TalentXP;
+}) {
+  const [selectedKeyword, setSelectedKeyword] = useState<KeywordId>("physical");
+  const keywordIds = Object.keys(keywordDefinitions) as KeywordId[];
+
+  const currentXP = talentXP[selectedKeyword] ?? 0;
+  const runXP = runTalentXP?.[selectedKeyword] ?? 0;
+  const totalXP = currentXP + runXP;
+  const points = computeTalentPoints(totalXP);
+  const nextXP = xpForNextPoint(points);
+  const progress = xpToNextPoint(totalXP);
+  const progressPercent = Math.min(100, Math.round(((nextXP - progress) / nextXP) * 100));
+
+  const activeLabels = talentNodeLabels[selectedKeyword] ?? [];
+  const activeLayout = talentTreeLayout;
+
   return (
     <PlaceholderScreen title="Talents" onMainMenu={onMainMenu} onReturnToBattle={onReturnToBattle} showReturnToBattle={hasActiveBattle}>
-      <div className="surface-muted mx-auto max-w-xl rounded-[22px] border border-border/70 p-5 text-base leading-7 text-muted-foreground">
-        Placeholder screen for persistent upgrades and progression choices.
+      <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 text-left">
+        <div className="flex flex-wrap justify-center gap-2">
+          {keywordIds.map((kw) => {
+            const kwXP = (talentXP[kw] ?? 0) + (runTalentXP?.[kw] ?? 0);
+            const kwPoints = computeTalentPoints(kwXP);
+            return (
+              <button
+                key={kw}
+                type="button"
+                className={cn(
+                  "rounded-full border px-3 py-1.5 text-sm font-semibold inline-flex items-center gap-1.5",
+                  selectedKeyword === kw
+                    ? "border-primary bg-primary/20 text-primary"
+                    : "border-border/80 bg-card text-foreground",
+                )}
+                onClick={() => setSelectedKeyword(kw)}
+              >
+                <KeywordTag keywordId={kw} />
+                <span className="text-xs">({kwPoints})</span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="surface-muted rounded-[22px] border border-border/70 p-5">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-semibold text-foreground">
+              <KeywordTag keywordId={selectedKeyword} /> XP Progress
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {totalXP} XP / {nextXP} XP — {points} point{points !== 1 ? "s" : ""}
+            </p>
+          </div>
+          <div className="mt-3 h-2 w-full rounded-full bg-muted">
+            <div
+              className="h-2 rounded-full bg-primary transition-all"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
+        </div>
+
+        <div className="flex flex-col items-center gap-3">
+          {activeLayout.map((row, rowIndex) => (
+            <div key={rowIndex} className="flex justify-center gap-6">
+              {row.map((nodeIndex) => {
+                const label = activeLabels[nodeIndex] ?? "";
+                const isUnlocked = nodeIndex < points;
+                const isCurrent = nodeIndex === points - 1;
+                return (
+                  <div
+                    key={nodeIndex}
+                    className={cn(
+                      "flex h-16 w-16 items-center justify-center rounded-full border-2 text-center text-xs font-semibold",
+                      isCurrent
+                        ? "border-primary bg-primary/20 text-primary"
+                        : isUnlocked
+                          ? "border-emerald-500/60 bg-emerald-500/10 text-emerald-400"
+                          : "border-border/60 bg-muted/40 text-muted-foreground",
+                    )}
+                    title={label}
+                  >
+                    {label}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
       </div>
     </PlaceholderScreen>
   );

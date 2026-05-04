@@ -40,11 +40,15 @@ function CompendiumTile({
   hovered,
   onHoverStart,
   onHoverEnd,
+  shimmerActive,
+  shimmerToken,
 }: {
   item: CollectionTileItem;
   hovered: boolean;
   onHoverStart: () => void;
   onHoverEnd: () => void;
+  shimmerActive: boolean;
+  shimmerToken?: number;
 }) {
   return (
     <div className="relative" onMouseEnter={onHoverStart} onMouseLeave={onHoverEnd}>
@@ -65,6 +69,9 @@ function CompendiumTile({
         )}
         style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
       >
+        <div className={cn("pointer-events-none absolute inset-0 z-10 overflow-hidden rounded-[30px]", shimmerActive ? "card-shimmer-active" : "")}>
+          <div key={shimmerActive ? shimmerToken : undefined} className={cn("card-shimmer-sweep", shimmerActive ? "opacity-100" : "opacity-0")} />
+        </div>
         <img
           src={item.art}
           alt={item.title}
@@ -84,6 +91,8 @@ export function CollectionGrid({
   discoveredTrinketIds,
   onHoverChange,
   page,
+  shimmerState,
+  onHoverShimmer,
 }: {
   collectionTab: CollectionTab;
   hoveredCardId: string | null;
@@ -92,6 +101,8 @@ export function CollectionGrid({
   discoveredTrinketIds: string[];
   onHoverChange: (nextHoverId: string | null | ((current: string | null) => string | null)) => void;
   page: number;
+  shimmerState: { cardId: string; token: number } | null;
+  onHoverShimmer: (cardId: string) => void;
 }) {
   const pageItems = getCollectionPageItems({
     collectionTab,
@@ -110,8 +121,10 @@ export function CollectionGrid({
             key={`${item.hoverScope}-${item.id}`}
             item={item}
             hovered={hoveredCardId === hoverId}
-            onHoverStart={() => onHoverChange(hoverId)}
+            onHoverStart={() => { onHoverChange(hoverId); onHoverShimmer(hoverId); }}
             onHoverEnd={() => onHoverChange((current) => (current === hoverId ? null : current))}
+            shimmerActive={shimmerState?.cardId === hoverId}
+            shimmerToken={shimmerState?.token}
           />
         );
       })}

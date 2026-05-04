@@ -94,6 +94,10 @@
     animation: deathAnimation 800ms ease-out forwards;
   }
 
+  .animate-shake {
+    animation: shake 380ms ease-out;
+  }
+
   @keyframes deathAnimation {
     0% {
       opacity: 1;
@@ -162,7 +166,7 @@
   }
 
   .combat-text-float {
-    animation: combatTextFloat 1180ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: combatTextFloat 2600ms cubic-bezier(0.16, 1, 0.3, 1) both;
     transform: translate3d(0px, calc(var(--combat-text-lane, 0) * 18px), 0px);
     will-change: transform, opacity;
   }
@@ -269,18 +273,24 @@
 
 @keyframes combatTextFloat {
   0% {
-    opacity: 0;
-    transform: translate3d(0px, calc(var(--combat-text-lane, 0) * 18px + 20px), 0px) scale(0.92);
-  }
-
-  18% {
     opacity: 1;
+    transform: translate3d(0px, calc(var(--combat-text-lane, 0) * 18px + 20px), 0px) scale(0.92);
   }
 
   100% {
     opacity: 0;
     transform: translate3d(0px, calc(var(--combat-text-lane, 0) * 18px - 52px), 0px) scale(1.02);
   }
+}
+
+@keyframes shake {
+  0% { transform: translateX(0); }
+  12% { transform: translateX(-12px); }
+  28% { transform: translateX(10px); }
+  44% { transform: translateX(-8px); }
+  60% { transform: translateX(5px); }
+  76% { transform: translateX(-3px); }
+  100% { transform: translateX(0); }
 }
 
 @keyframes hoverPopupQuickIn {

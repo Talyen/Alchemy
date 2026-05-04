@@ -1,15 +1,19 @@
-import type { BattleCard, DamageType, EnemyStatusId, PlayerStatusId } from "@/lib/game-data";
+import type { BattleCard, BestiaryEntry, DamageType, EnemyStatusId, PlayerStatusId } from "@/lib/game-data";
 
 export const cardsPerTurn = 4;
 export const maxHandSize = 7;
-export const maxPlayerHealth = 36;
-export const maxEnemyHealth = 30;
+export const maxPlayerHealth = 30;
+export const baseEnemyHealth = 30;
+export const baseEnemyAttack = 8;
+export const basePlayerMana = 4;
 
 export type PlayerStatusValues = Record<PlayerStatusId, number>;
 
 export type EnemyStatusValues = Record<EnemyStatusId, number> & {
   bleedLeech: number;
 };
+
+export type TurnPhase = "player" | "enemy";
 
 export type BattleState = {
   deck: BattleCard[];
@@ -20,17 +24,21 @@ export type BattleState = {
   maxMana: number;
   gold: number;
   turn: number;
+  turnPhase: TurnPhase;
   playerHealth: number;
   enemyHealth: number;
+  enemyMaxHealth: number;
+  enemyAttack: number;
   playerStatuses: PlayerStatusValues;
   enemyStatuses: EnemyStatusValues;
   enemySkipTurns: number;
   wishOptions: BattleCard[] | null;
+  currentEnemy: BestiaryEntry;
 };
 
 export type CombatTextTarget = "player" | "enemy";
 export type CombatTextKind = "damage" | "heal" | "status";
-export type CombatTextStat = DamageType | PlayerStatusId | EnemyStatusId | "health";
+export type CombatTextStat = DamageType | PlayerStatusId | EnemyStatusId | "health" | "mana" | "gold";
 
 export type CombatTextEvent = {
   target: CombatTextTarget;

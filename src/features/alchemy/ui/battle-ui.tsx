@@ -3,7 +3,7 @@ import { Coins, Gem, House, Swords } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { battleCardBack, keywordDefinitions } from "@/lib/game-data";
+import { keywordDefinitions, pileDiscardArt, pileDrawArt } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
 import {
@@ -16,19 +16,18 @@ import {
 } from "../config";
 import type { FloatingCombatText, StatusChip } from "../types";
 import { clearTiltFromEvent, getCombatTextColorClass, getCombatTextIcon, setTiltFromEvent } from "../utils";
+import { KeywordTag } from "./keyword-tag";
 
-function CombatTextRail({ entries, side }: { entries: FloatingCombatText[]; side: "player" | "enemy" }) {
+export function CombatTextRail({ entries, side }: { entries: FloatingCombatText[]; side: "player" | "enemy" }) {
   if (entries.length === 0) {
     return null;
   }
 
   return (
-    <div
-      className={cn(
-        "pointer-events-none absolute top-[18%] z-30 flex w-44 flex-col gap-2",
-        side === "player" ? "left-full ml-7 items-start text-left" : "right-full mr-7 items-end text-right",
-      )}
-    >
+    <div className={cn(
+      "pointer-events-none z-30 flex flex-col gap-2",
+      side === "player" ? "items-start text-left" : "items-end text-right",
+    )}>
       {entries.map((entry) => (
         <CombatTextBubble key={entry.id} entry={entry} />
       ))}
@@ -43,12 +42,12 @@ function CombatTextBubble({ entry }: { entry: FloatingCombatText }) {
   return (
     <div
       className={cn(
-        "combat-text-float inline-flex items-center gap-2 rounded-full bg-black/35 px-4 py-2 text-xl font-semibold backdrop-blur-[2px]",
+        "combat-text-float inline-flex items-center gap-2 rounded-full bg-black/35 px-5 py-2.5 text-2xl font-semibold backdrop-blur-[2px]",
         colorClass,
       )}
       style={{ "--combat-text-lane": String(entry.lane) } as CSSProperties}
     >
-      <Icon className={cn("h-5 w-5", colorClass)} />
+      <Icon className={cn("h-6 w-6", colorClass)} />
       <span>{entry.signedAmountText}</span>
     </div>
   );
@@ -69,10 +68,7 @@ function StatusIcon({ chip }: { chip: StatusChip }) {
       </button>
       <div className={cn(popupClassName, "hover-popup-panel pointer-events-none opacity-0 group-hover/status:opacity-100")}>
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <Icon className={cn("h-4 w-4", definition.colorClass)} />
-            <p className="text-sm font-semibold text-foreground">{definition.label}</p>
-          </div>
+          <KeywordTag keywordId={chip.id as import("@/lib/game-data").KeywordId} />
           <span className="rounded-full bg-background px-2 py-0.5 text-[11px] font-semibold text-foreground">{chip.value}</span>
         </div>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">{definition.description}</p>
@@ -95,6 +91,7 @@ export function ArtPanel({
   combatTexts,
   surfaceRef,
   isDead = false,
+  shaking = false,
 }: {
   side: "player" | "enemy";
   title: string;
@@ -109,11 +106,10 @@ export function ArtPanel({
   combatTexts: FloatingCombatText[];
   surfaceRef?: (node: HTMLDivElement | null) => void;
   isDead?: boolean;
+  shaking?: boolean;
 }) {
   return (
-    <div className={cn("relative flex flex-col items-center gap-3", isDead && "animate-death")}>
-      <CombatTextRail entries={combatTexts} side={side} />
-
+    <div className={cn("relative flex flex-col items-center gap-3", isDead && "animate-death", shaking && "animate-shake")}>
       <div
         ref={surfaceRef}
         className={cn("tilt-surface", cardSurfaceClass, battleCardWidthClass)}
@@ -146,7 +142,8 @@ export function ArtPanel({
   );
 }
 
-export function PilePanel({ label, count }: { label: string; count: number }) {
+export function PilePanel({ label, count, type }: { label: string; count: number; type: "draw" | "discard" }) {
+  const art = type === "draw" ? pileDrawArt : pileDiscardArt;
   return (
     <div className="flex flex-col items-center gap-2 text-center">
       <div
@@ -156,7 +153,7 @@ export function PilePanel({ label, count }: { label: string; count: number }) {
         onMouseLeave={clearTiltFromEvent}
         style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
       >
-        <img src={battleCardBack} alt={`${label} card back`} className="block h-auto w-full rounded-[30px]" loading="lazy" />
+        <img src={art} alt={`${label} pile`} className="block h-auto w-full rounded-[30px]" loading="lazy" />
       </div>
       <div>
         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">{label}</p>

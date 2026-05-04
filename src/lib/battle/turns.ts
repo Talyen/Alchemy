@@ -2,7 +2,7 @@ import type { BattleCard } from "@/lib/game-data";
 
 import { drawCards } from "./draw";
 import { applyCardEffects, clampEnemy, clampPlayer, mergeCombatText } from "./effects";
-import { cardsPerTurn, type BattleResolution, type BattleState, type CombatTextEvent } from "./types";
+import { cardsPerTurn, type BattleResolution, type BattleState, type CombatTextEvent, type TurnPhase } from "./types";
 
 export function playBattleCardResolved(state: BattleState, cardId: string, index: number): BattleResolution {
   const combatTexts: CombatTextEvent[] = [];
@@ -70,46 +70,6 @@ function tickEnemyStatuses(state: BattleState, combatTexts: CombatTextEvent[]) {
   return nextState;
 }
 
-export function advanceBattleTurnResolved(state: BattleState): BattleResolution {
-  const combatTexts: CombatTextEvent[] = [];
-
-  if (state.enemyHealth <= 0 || state.playerHealth <= 0 || state.wishOptions) {
-    return { state, combatTexts };
-  }
-
-  const nextDiscard = [...state.discard, ...state.hand];
-  let nextState: BattleState = { ...state, hand: [], discard: nextDiscard };
-
-  nextState.playerStatuses = { ...nextState.playerStatuses, block: Math.floor(nextState.playerStatuses.block / 2) };
-
-  if (nextState.playerStatuses.haste > 0) {
-    nextState.playerStatuses.haste -= 1;
-  } else {
-    nextState = tickEnemyStatuses(nextState, combatTexts);
-    if (nextState.enemySkipTurns > 0) {
-      nextState.enemySkipTurns -= 1;
-    }
-  }
-
-  const nextDraw = drawCards(nextState.deck, nextState.discard, [], cardsPerTurn);
-
-  return {
-    state: {
-      ...nextState,
-      deck: nextDraw.deck,
-      discard: nextDraw.discard,
-      hand: nextDraw.hand,
-      mana: nextState.maxMana,
-      turn: nextState.turn + 1,
-    },
-    combatTexts,
-  };
-}
-
-export function advanceBattleTurn(state: BattleState) {
-  return advanceBattleTurnResolved(state).state;
-}
-
 export function chooseWishCard(state: BattleState, cardId: string) {
   const chosenCard = state.wishOptions?.find((card) => card.id === cardId);
   if (!chosenCard) {
@@ -121,4 +81,83 @@ export function chooseWishCard(state: BattleState, cardId: string) {
   }
 
   return { ...state, discard: [...state.discard, chosenCard], wishOptions: null };
+}
+
+export function endPlayerTurn(state: BattleState): { state: BattleState; combatTexts: CombatTextEvent[] } {
+  const combatTexts: CombatTextEvent[] = [];
+
+  let nextState: BattleState = {
+    ...state,
+    turnPhase: "enemy" as TurnPhase,
+    hand: [],
+    discard: [...state.discard, ...state.hand],
+  };
+
+  if (state.enemySkipTurns > 0) {
+    const skipDraw = drawCards(state.deck, nextState.discard, [], cardsPerTurn);
+    nextState = {
+      ...nextState,
+      enemySkipTurns: state.enemySkipTurns - 1,
+      turn: state.turn + 1,
+      turnPhase: "player" as TurnPhase,
+      deck: skipDraw.deck,
+      hand: skipDraw.hand,
+      discard: [],
+      mana: state.maxMana,
+      playerStatuses: {
+        ...nextState.playerStatuses,
+        block: Math.floor((nextState.playerStatuses.block ?? 0) / 2),
+      },
+    };
+    mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "stun", amount: 0 });
+    return { state: nextState, combatTexts };
+  }
+
+  nextState = tickEnemyStatuses(nextState, combatTexts);
+
+  if (nextState.enemyHealth <= 0) {
+    nextState = {
+      ...nextState,
+      playerStatuses: {
+        ...nextState.playerStatuses,
+        block: Math.floor((nextState.playerStatuses.block ?? 0) / 2),
+      },
+    };
+    return { state: nextState, combatTexts };
+  }
+
+  const enemyAttack = nextState.enemyAttack;
+  let remainingDamage = enemyAttack;
+
+  const blockAbsorb = Math.min(remainingDamage, nextState.playerStatuses.block);
+  remainingDamage -= blockAbsorb;
+  nextState.playerStatuses = { ...nextState.playerStatuses, block: nextState.playerStatuses.block - blockAbsorb };
+
+  const actualDamage = Math.max(0, remainingDamage - nextState.playerStatuses.armor);
+
+  nextState = {
+    ...nextState,
+    playerHealth: clampPlayer(nextState.playerHealth - actualDamage),
+    playerStatuses: {
+      ...nextState.playerStatuses,
+      block: Math.floor(nextState.playerStatuses.block / 2),
+    },
+  };
+
+  if (actualDamage > 0) {
+    mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "health", amount: actualDamage });
+  }
+
+  const nextDraw = drawCards(state.deck, nextState.discard, [], cardsPerTurn);
+  nextState = {
+    ...nextState,
+    turn: state.turn + 1,
+    turnPhase: "player" as TurnPhase,
+    deck: nextDraw.deck,
+    hand: nextDraw.hand,
+    discard: [],
+    mana: state.maxMana,
+  };
+
+  return { state: nextState, combatTexts };
 }

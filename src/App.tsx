@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 
-import { menuLogo } from "@/lib/game-data";
+import { characterArt, menuLogo } from "@/lib/game-data";
+import { setMusicVolume } from "@/lib/audio";
 
 import { useVirtualResolution } from "@/features/alchemy/hooks";
 import { BattleScreen } from "@/features/alchemy/screens/battle-screen";
 import {
+  CharacterSelectScreen,
   CollectionScreen,
   DestinationScreen,
   MenuScreen,
@@ -39,10 +41,15 @@ export default function App() {
   const [discoveredCardIds, setDiscoveredCardIds] = useState<string[]>(initialSave.discoveredCardIds);
   const [encounteredEnemyIds, setEncounteredEnemyIds] = useState<string[]>(initialSave.encounteredEnemyIds);
   const [discoveredTrinketIds, setDiscoveredTrinketIds] = useState<string[]>(initialSave.discoveredTrinketIds);
+  const [musicVol, setMusicVol] = useState(initialSave.musicVolume);
+  const [sfxVol, setSfxVol] = useState(initialSave.sfxVolume);
+
+  useEffect(() => { setMusicVolume(musicVol / 100); }, [musicVol]);
 
   const { frameStyle, stageStyle } = useVirtualResolution(selectedResolution);
-  const run = useAlchemyRunController({ setDiscoveredCardIds, setEncounteredEnemyIds });
+  const run = useAlchemyRunController({ setDiscoveredCardIds, setEncounteredEnemyIds, initialTalentXP: initialSave.talentXP, initialActiveRun: initialSave.activeRun });
   const currentCollectionPage = collectionPages[collectionTab];
+  const heroArt = characterArt[run.characterId]?.[run.characterGender] ?? characterArt.knight.female;
 
   useEffect(() => {
     saveAlchemySaveData({
@@ -50,8 +57,12 @@ export default function App() {
       discoveredCardIds,
       encounteredEnemyIds,
       discoveredTrinketIds,
+      talentXP: run.talentXP,
+      musicVolume: musicVol,
+      sfxVolume: sfxVol,
+      activeRun: run.activeRunData,
     });
-  }, [selectedResolution, discoveredCardIds, encounteredEnemyIds, discoveredTrinketIds]);
+  }, [selectedResolution, discoveredCardIds, encounteredEnemyIds, discoveredTrinketIds, run.talentXP, musicVol, sfxVol, run.activeRunData]);
 
   function handleCollectionTabChange(nextTab: CollectionTab) {
     setCollectionTab(nextTab);
@@ -78,13 +89,14 @@ export default function App() {
     <div className="flex h-screen w-screen items-center justify-center overflow-hidden bg-background p-4">
       <div className="relative" style={frameStyle}>
         <div className="absolute left-0 top-0 overflow-hidden bg-background" style={stageStyle}>
-          {run.screen === "menu" ? <MenuScreen onPlay={run.beginRun} onCollection={() => run.goToScreen("collection")} onOptions={() => run.goToScreen("options")} onTalents={() => run.goToScreen("talents")} logoSrc={menuLogo} /> : null}
-          {run.screen === "battle" ? <BattleScreen battleState={run.battleState} hoveredCardId={run.hoveredCardId} setHoveredCardId={run.setHoveredCardId} shimmerState={run.shimmerState} onHoverShimmer={run.maybeTriggerShimmer} playerStatusChips={run.playerStatusChips} enemyStatusChips={run.enemyStatusChips} playerCombatTexts={run.playerCombatTexts} enemyCombatTexts={run.enemyCombatTexts} handCardRefs={run.handCardRefs} onCardPointerDown={run.handleCardPointerDown} onKeyboardPlay={run.handleKeyboardPlay} activeDraggedCardId={run.activeDraggedCardId} menuOpen={run.menuOpen} setMenuOpen={run.setMenuOpen} onGoToScreen={run.goToScreen} onWishChoice={run.handleWishChoice} cardGhosts={run.cardGhosts} onRemoveCardGhost={run.removeCardGhost} dragPreview={run.dragPreview} onSkipCombatDevMode={run.skipCombatDevMode} battleSceneRef={run.battleSceneRef} playerPanelRef={run.playerPanelRef} enemyPanelRef={run.enemyPanelRef} /> : null}
+          {run.screen === "menu" ? <MenuScreen onPlay={run.beginRun} hasActiveBattle={run.hasActiveBattle} onCollection={() => run.goToScreen("collection")} onOptions={() => run.goToScreen("options")} onTalents={() => run.goToScreen("talents")} logoSrc={menuLogo} /> : null}
+          {run.screen === "character-select" ? <CharacterSelectScreen onConfirm={run.handleCharacterSelect} onBack={() => run.goToScreen("menu")} /> : null}
+          {run.screen === "battle" ? <BattleScreen battleState={run.battleState} heroArt={heroArt} hoveredCardId={run.hoveredCardId} setHoveredCardId={run.setHoveredCardId} shimmerState={run.shimmerState} onHoverShimmer={run.maybeTriggerShimmer} playerStatusChips={run.playerStatusChips} enemyStatusChips={run.enemyStatusChips} playerCombatTexts={run.playerCombatTexts} enemyCombatTexts={run.enemyCombatTexts} handCardRefs={run.handCardRefs} onCardPointerDown={run.handleCardPointerDown} onKeyboardPlay={run.handleKeyboardPlay} activeDraggedCardId={run.activeDraggedCardId} menuOpen={run.menuOpen} setMenuOpen={run.setMenuOpen} onGoToScreen={run.goToScreen} onWishChoice={run.handleWishChoice} cardGhosts={run.cardGhosts} onRemoveCardGhost={run.removeCardGhost} dragPreview={run.dragPreview} onSkipCombatDevMode={run.skipCombatDevMode} onEndTurn={run.handleEndTurn} onEndRun={run.handleEndRun} battleSceneRef={run.battleSceneRef} playerPanelRef={run.playerPanelRef} enemyPanelRef={run.enemyPanelRef} playerShaking={run.playerShaking} enemyShaking={run.enemyShaking} /> : null}
           {run.screen === "rewards" ? <RewardsScreen rewardChoices={run.rewardChoices} rewardGold={run.rewardGold} hoveredCardId={run.hoveredCardId} onHoverChange={run.setHoveredCardId} shimmerState={run.shimmerState} onHoverShimmer={run.maybeTriggerShimmer} selectedRewardId={run.selectedRewardId} onSelectReward={run.setSelectedRewardId} onAddCard={() => { const chosen = run.rewardChoices.find((card) => card.id === run.selectedRewardId); if (chosen) { run.finishRewards(chosen); } }} onSkip={() => run.finishRewards()} /> : null}
           {run.screen === "destination" ? <DestinationScreen destinationOptions={run.destinationOptions} onChoose={run.handleDestinationChoice} destinationButtonRefs={run.destinationButtonRefs} /> : null}
-          {run.screen === "options" ? <OptionsScreen hasActiveBattle={run.hasActiveBattle} onMainMenu={() => run.goToScreen("menu")} onReturnToBattle={run.returnToBattle} selectedResolution={selectedResolution} onResolutionChange={setSelectedResolution} showClearSaveConfirm={showClearSaveConfirm} onOpenClearSaveConfirm={() => setShowClearSaveConfirm(true)} onCloseClearSaveConfirm={() => setShowClearSaveConfirm(false)} onConfirmClearSave={clearSaveData} /> : null}
+          {run.screen === "options" ? <OptionsScreen hasActiveBattle={run.hasActiveBattle} onMainMenu={() => run.goToScreen("menu")} onReturnToBattle={run.returnToBattle} selectedResolution={selectedResolution} onResolutionChange={setSelectedResolution} musicVol={musicVol} sfxVol={sfxVol} onMusicVolChange={setMusicVol} onSfxVolChange={setSfxVol} showClearSaveConfirm={showClearSaveConfirm} onOpenClearSaveConfirm={() => setShowClearSaveConfirm(true)} onCloseClearSaveConfirm={() => setShowClearSaveConfirm(false)} onConfirmClearSave={clearSaveData} /> : null}
           {run.screen === "collection" ? <CollectionScreen hasActiveBattle={run.hasActiveBattle} onMainMenu={() => run.goToScreen("menu")} onReturnToBattle={run.returnToBattle} collectionTab={collectionTab} onSelectTab={handleCollectionTabChange} hoveredCardId={run.hoveredCardId} onHoverChange={run.setHoveredCardId} discoveredCardIds={discoveredCardIds} encounteredEnemyIds={encounteredEnemyIds} discoveredTrinketIds={discoveredTrinketIds} page={currentCollectionPage} onPageChange={setCollectionPage} /> : null}
-          {run.screen === "talents" ? <TalentsScreen hasActiveBattle={run.hasActiveBattle} onMainMenu={() => run.goToScreen("menu")} onReturnToBattle={run.returnToBattle} /> : null}
+          {run.screen === "talents" ? <TalentsScreen hasActiveBattle={run.hasActiveBattle} onMainMenu={() => run.goToScreen("menu")} onReturnToBattle={run.returnToBattle} talentXP={run.talentXP} runTalentXP={run.runTalentXP} /> : null}
         </div>
       </div>
     </div>

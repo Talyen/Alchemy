@@ -1,11 +1,12 @@
 import type { MouseEvent, PointerEvent as ReactPointerEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { advanceBattleTurnResolved, chooseWishCard, createBattleState, playBattleCardResolved, type BattleState } from "@/lib/battle";
-import { cardLibrary, enemyBestiary, starterDeck, type BattleCard } from "@/lib/game-data";
-import { playVictory, playDefeat, playEnemyAttack, playTurnStart, playPlayerHurt, initAudio, playSound, playDamage, playBuff } from "@/lib/audio";
-import { destinationPool } from "./config";
+import { chooseWishCard, createBattleState, endPlayerTurn, maxPlayerHealth, playBattleCardResolved, type BattleState } from "@/lib/battle";
+import { cardLibrary, characters, starterDeck, type BattleCard, type CharacterGender, type CharacterId } from "@/lib/game-data";
+import { playVictory, playDefeat, playEnemyAttack, initAudio, playDamage, playBuff, playMusic } from "@/lib/audio";
+import { addTalentXP, extractCardKeywords, type TalentXP } from "@/lib/talents";
+import { destinationPool, getCurrentEnemy } from "./config";
 import { useCardGhosts, useFloatingCombatTexts, useHandCardDrag, useShimmerController } from "./hooks";
-import { animateCardActivation, animateRemainingHandDiscard, isPointerInBattlefield } from "./run-controller-helpers";
+import { animateCardActivation, isPointerInBattlefield } from "./run-controller-helpers";
 import type { Destination, Screen } from "./types";
 import { appendUnique, getCardRect, getEnemyStatusChips, getHoverId, getPlayerStatusChips, randomBetween, sampleItems } from "./utils";
 
@@ -14,33 +15,42 @@ type SetStringList = React.Dispatch<React.SetStateAction<string[]>>;
 export function useAlchemyRunController({
   setDiscoveredCardIds,
   setEncounteredEnemyIds,
+  initialTalentXP,
+  initialActiveRun,
 }: {
   setDiscoveredCardIds: SetStringList;
   setEncounteredEnemyIds: SetStringList;
+  initialTalentXP: TalentXP;
+  initialActiveRun: { characterId: CharacterId; characterGender: CharacterGender } | null;
 }) {
   const [screen, setScreen] = useState<Screen>("menu");
   const [battleState, setBattleState] = useState<BattleState>(() => createBattleState(starterDeck, 0));
   const [hoveredCardId, setHoveredCardId] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [handAnimationCycle, setHandAnimationCycle] = useState(0);
-  const [hasActiveBattle, setHasActiveBattle] = useState(false);
-  const [runDeck, setRunDeck] = useState<BattleCard[]>(() => [...starterDeck]);
+  const [hasActiveBattle, setHasActiveBattle] = useState(initialActiveRun !== null);
+  const [runDeck, setRunDeck] = useState<BattleCard[]>(() => initialActiveRun ? [...characters[initialActiveRun.characterId].startingDeck] : [...starterDeck]);
   const [runGold, setRunGold] = useState(0);
+  const [talentXP, setTalentXP] = useState<TalentXP>(initialTalentXP);
+  const [runTalentXP, setRunTalentXP] = useState<TalentXP>({});
   const [rewardChoices, setRewardChoices] = useState<BattleCard[]>([]);
   const [rewardGold, setRewardGold] = useState(0);
   const [selectedRewardId, setSelectedRewardId] = useState<string | null>(null);
   const [destinationOptions, setDestinationOptions] = useState<Destination[]>([]);
-  const [battlesWon, setBattlesWon] = useState(0);
+  const [roomsEncountered, setRoomsEncountered] = useState(0);
+  const [runPlayerHealth, setRunPlayerHealth] = useState(maxPlayerHealth);
+  const [enemyShaking, setEnemyShaking] = useState(false);
+  const [playerShaking, setPlayerShaking] = useState(false);
+  const [characterId, setCharacterId] = useState<CharacterId>("knight");
+  const [characterGender, setCharacterGender] = useState<CharacterGender>("female");
 
   const handCardRefs = useRef<Record<string, HTMLButtonElement | null>>({});
-  const animatedHandCycleRef = useRef(-1);
   const battleSceneRef = useRef<HTMLDivElement | null>(null);
   const playerPanelRef = useRef<HTMLDivElement | null>(null);
   const enemyPanelRef = useRef<HTMLDivElement | null>(null);
   const destinationButtonRefs = useRef<Partial<Record<Destination, HTMLButtonElement | null>>>({});
   const { cardGhosts, removeCardGhost, clearCardGhosts, spawnCardGhost } = useCardGhosts();
   const { floatingCombatTexts, showCombatTexts } = useFloatingCombatTexts();
-  const { shimmerState, maybeTriggerShimmer: triggerShimmer } = useShimmerController();
+  const { shimmerState, maybeTriggerShimmer } = useShimmerController();
   const { activeDraggedCardId, beginCardDrag, dragPreview, shouldIgnoreClick } = useHandCardDrag(handleCardRelease);
 
   const playerStatusChips = useMemo(() => getPlayerStatusChips(battleState), [battleState]);
@@ -53,38 +63,26 @@ export function useAlchemyRunController({
   }, []);
 
   useEffect(() => {
-    if (screen !== "battle") {
-      return;
-    }
-
-    if (animatedHandCycleRef.current === handAnimationCycle) {
-      return;
-    }
-
-    animatedHandCycleRef.current = handAnimationCycle;
-    const frame = window.requestAnimationFrame(() => {
-      // Draw animations disabled - uncomment to re-enable
-      // battleState.hand.forEach((card, index) => {
-      //   const element = handCardRefs.current[`${card.id}-${index}`];
-      //   if (!element) {
-      //     return;
-      //   }
-
-      //   spawnCardGhost({ art: card.art, rect: getCardRect(element.getBoundingClientRect()), rotation: (index - (battleState.hand.length - 1) / 2) * 4.2, delay: index * 55, variant: "draw-in" });
-      // });
-    });
-
-    return () => window.cancelAnimationFrame(frame);
-  }, [battleState.hand, handAnimationCycle, screen, spawnCardGhost]);
-
-  useEffect(() => {
     if (screen !== "battle" || battleState.enemyHealth <= 0 || battleState.playerHealth <= 0 || battleState.wishOptions || (battleState.mana > 0 && battleState.hand.length > 0)) {
       return;
     }
 
-    const timeout = window.setTimeout(() => advanceTurn(), 1220);
+    const timeout = window.setTimeout(() => handleEndTurn(), 1220);
     return () => window.clearTimeout(timeout);
   }, [battleState, screen]);
+
+  useEffect(() => {
+    if (screen !== "battle" || battleState.playerHealth > 0) {
+      return;
+    }
+
+    playDefeat();
+    setHasActiveBattle(false);
+    setHoveredCardId(null);
+    setMenuOpen(false);
+    const timeout = window.setTimeout(() => setScreen("menu"), 2000);
+    return () => window.clearTimeout(timeout);
+  }, [battleState.playerHealth, screen]);
 
   useEffect(() => {
     if (screen !== "battle" || battleState.enemyHealth > 0) {
@@ -92,11 +90,11 @@ export function useAlchemyRunController({
     }
 
     if (battleState.playerHealth <= 0) {
-      playDefeat();
       return;
     }
 
     const foundGold = randomBetween(10, 30);
+    setRunPlayerHealth(battleState.playerHealth);
     setRunGold(battleState.gold + foundGold);
     setRewardGold(foundGold);
     setRewardChoices(sampleItems(cardLibrary, 3));
@@ -105,7 +103,6 @@ export function useAlchemyRunController({
     setHasActiveBattle(false);
     setHoveredCardId(null);
     setMenuOpen(false);
-    setBattlesWon((current) => current + 1);
     playVictory();
 
     const timeout = window.setTimeout(() => setScreen("rewards"), 1200);
@@ -113,29 +110,45 @@ export function useAlchemyRunController({
   }, [battleState.enemyHealth, battleState.gold, screen]);
 
   function beginRun() {
-    const freshDeck = [...starterDeck];
+    if (hasActiveBattle) {
+      returnToBattle();
+      return;
+    }
+    playMusic("menu");
+    setScreen("character-select");
+  }
+
+  function handleCharacterSelect(selectedId: CharacterId, gender: CharacterGender) {
+    const character = characters[selectedId];
+    const freshDeck = [...character.startingDeck];
+    setCharacterId(selectedId);
+    setCharacterGender(gender);
     setRunDeck(freshDeck);
     setRunGold(0);
-    setBattlesWon(0);
+    setRoomsEncountered(0);
+    setRunPlayerHealth(maxPlayerHealth);
     setRewardChoices([]);
     setRewardGold(0);
     setSelectedRewardId(null);
     setDestinationOptions([]);
     setDiscoveredCardIds((current) => Array.from(new Set([...current, ...freshDeck.map((card) => card.id)])));
     setEncounteredEnemyIds([]);
+    playMusic(selectedId);
     startBattle(freshDeck, 0);
   }
 
   function startBattle(deck: BattleCard[] = runDeck, gold: number = runGold) {
+    const currentEnemy = getCurrentEnemy(roomsEncountered);
+    const nextRooms = roomsEncountered + 1;
+    setRoomsEncountered(nextRooms);
     clearCardGhosts();
-    setBattleState(createBattleState(deck, gold, battlesWon));
+    setBattleState(createBattleState(deck, gold, nextRooms, currentEnemy, runPlayerHealth));
     setHasActiveBattle(true);
     setHoveredCardId(null);
     setMenuOpen(false);
     setSelectedRewardId(null);
     setScreen("battle");
-    setHandAnimationCycle((current) => current + 1);
-    setEncounteredEnemyIds((current) => appendUnique(current, enemyBestiary[0].id));
+    setEncounteredEnemyIds((current) => appendUnique(current, currentEnemy.id));
   }
 
   function returnToBattle() {
@@ -149,31 +162,6 @@ export function useAlchemyRunController({
     setHoveredCardId(null);
     setMenuOpen(false);
     setScreen(nextScreen);
-  }
-
-  function maybeTriggerShimmer(cardId: string) {
-    triggerShimmer(cardId);
-  }
-
-  function advanceTurn() {
-    if (screen !== "battle" || battleState.wishOptions) {
-      return;
-    }
-
-    playTurnStart();
-    animateRemainingHandDiscard(battleState.hand, handCardRefs, spawnCardGhost);
-    const resolution = advanceBattleTurnResolved(battleState);
-
-    const playerTakesDamage = resolution.combatTexts.some(ct => ct.kind === 'damage' && ct.target === 'player');
-    if (playerTakesDamage) {
-      setTimeout(() => playEnemyAttack(), 150);
-      setTimeout(() => playPlayerHurt(), 250);
-    }
-    
-    setBattleState(resolution.state);
-    showCombatTexts(resolution.combatTexts);
-    setHoveredCardId(null);
-    setHandAnimationCycle((current) => current + 1);
   }
 
   function handleKeyboardPlay(card: BattleCard, index: number, event: MouseEvent<HTMLButtonElement>) {
@@ -190,7 +178,7 @@ export function useAlchemyRunController({
   }
 
   function handlePlayCard(card: BattleCard, index: number, sourceRect: { x: number; y: number; width: number; height: number }) {
-    if (screen !== "battle" || battleState.mana < card.cost || battleState.wishOptions) {
+    if (screen !== "battle" || battleState.mana < card.cost || battleState.wishOptions || battleState.turnPhase !== "player") {
       return;
     }
 
@@ -203,6 +191,8 @@ export function useAlchemyRunController({
 
     if (damageToEnemy) {
       playDamage();
+      setEnemyShaking(true);
+      setTimeout(() => setEnemyShaking(false), 420);
     }
     if (healOnPlayer) {
       playBuff();
@@ -214,6 +204,12 @@ export function useAlchemyRunController({
     setBattleState(resolution.state);
     showCombatTexts(resolution.combatTexts);
     setHoveredCardId((current) => (current === getHoverId("hand", `${card.id}-${index}`) ? null : current));
+
+    const cardKeywords = extractCardKeywords(card);
+    if (cardKeywords.length > 0) {
+      setTalentXP((prev) => addTalentXP(prev, cardKeywords));
+      setRunTalentXP((prev) => addTalentXP(prev, cardKeywords));
+    }
   }
 
   function handleCardRelease(payload: { card: BattleCard; index: number; rect: { x: number; y: number; width: number; height: number }; dragged: boolean; pointerX: number; pointerY: number }) {
@@ -247,11 +243,56 @@ export function useAlchemyRunController({
     startBattle();
   }
 
-  function skipCombatDevMode() {
+function skipCombatDevMode() {
     if (screen === "battle") {
       setMenuOpen(false);
       setBattleState((current) => ({ ...current, enemyHealth: 0, wishOptions: null }));
     }
+  }
+
+  function handleEndTurn() {
+    if (screen !== "battle" || battleState.turnPhase !== "player" || battleState.wishOptions) {
+      return;
+    }
+
+    const intermediateState = endPlayerTurn(battleState);
+    const enemyPhaseState = {
+      ...intermediateState.state,
+      turnPhase: "enemy" as const,
+      hand: [],
+      playerHealth: battleState.playerHealth,
+      playerStatuses: battleState.playerStatuses,
+    };
+    setBattleState(enemyPhaseState);
+
+    const dotTexts = intermediateState.combatTexts.filter(ct => ct.target === 'enemy');
+    if (dotTexts.length > 0) {
+      showCombatTexts(dotTexts);
+    }
+
+    if (intermediateState.state.enemyHealth <= 0) {
+      return;
+    }
+
+    const playerTexts = intermediateState.combatTexts.filter(ct => ct.target === 'player');
+
+    setTimeout(() => {
+      playEnemyAttack();
+      setBattleState(intermediateState.state);
+      if (playerTexts.length > 0) {
+        showCombatTexts(playerTexts);
+      }
+      const playerTookDamage = playerTexts.some(ct => ct.kind === 'damage');
+      if (playerTookDamage) {
+        setPlayerShaking(true);
+        setTimeout(() => setPlayerShaking(false), 420);
+      }
+    }, 1800);
+  }
+
+  function handleEndRun() {
+    if (screen !== "battle") return;
+    setBattleState((current) => ({ ...current, playerHealth: 0 }));
   }
 
   function resetRunState() {
@@ -259,7 +300,7 @@ export function useAlchemyRunController({
     setBattleState(createBattleState(starterDeck, 0));
     setRunDeck([...starterDeck]);
     setRunGold(0);
-    setBattlesWon(0);
+    setRoomsEncountered(0);
     setRewardChoices([]);
     setRewardGold(0);
     setSelectedRewardId(null);
@@ -276,6 +317,7 @@ export function useAlchemyRunController({
     hoveredCardId,
     menuOpen,
     hasActiveBattle,
+    roomsEncountered,
     rewardChoices,
     rewardGold,
     selectedRewardId,
@@ -293,10 +335,17 @@ export function useAlchemyRunController({
     enemyStatusChips,
     playerCombatTexts,
     enemyCombatTexts,
+    enemyShaking,
+    playerShaking,
+    talentXP,
+    runTalentXP,
     setHoveredCardId,
     setMenuOpen,
     setSelectedRewardId,
+    characterId,
+    characterGender,
     beginRun,
+    handleCharacterSelect,
     returnToBattle,
     goToScreen,
     maybeTriggerShimmer,
@@ -308,5 +357,8 @@ export function useAlchemyRunController({
     skipCombatDevMode,
     removeCardGhost,
     resetRunState,
+    handleEndTurn,
+    handleEndRun,
+    get activeRunData() { return hasActiveBattle ? { characterId, characterGender } : null; },
   };
 }

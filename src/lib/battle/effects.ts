@@ -1,19 +1,18 @@
 import { ailmentStatusIds, cardLibrary, type BattleCard, type BattleCardEffect } from "@/lib/game-data";
 
 import {
-  maxEnemyHealth,
+  baseEnemyHealth,
   maxPlayerHealth,
-  type BattleResolution,
   type BattleState,
   type CombatTextEvent,
 } from "./types";
 
-function clampPlayerHealth(value: number) {
+export function clampPlayer(value: number) {
   return Math.max(0, Math.min(maxPlayerHealth, value));
 }
 
-function clampEnemyHealth(value: number) {
-  return Math.max(0, Math.min(maxEnemyHealth, value));
+export function clampEnemy(value: number) {
+  return Math.max(0, Math.min(baseEnemyHealth, value));
 }
 
 export function mergeCombatText(combatTexts: CombatTextEvent[], nextEvent: CombatTextEvent) {
@@ -40,12 +39,12 @@ function dealEnemyDamage(
 
   const nextState: BattleState = {
     ...state,
-    enemyHealth: clampEnemyHealth(state.enemyHealth - actualDamage),
+    enemyHealth: clampEnemy(state.enemyHealth - actualDamage),
     enemyStatuses: { ...state.enemyStatuses },
   };
 
   if (effect.lifesteal && actualDamage > 0) {
-    nextState.playerHealth = clampPlayerHealth(nextState.playerHealth + actualDamage);
+    nextState.playerHealth = clampPlayer(nextState.playerHealth + actualDamage);
     mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: actualDamage });
   }
 
@@ -129,12 +128,21 @@ export function applyCardEffects(state: BattleState, card: BattleCard, combatTex
       }
       case "heal":
         mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: effect.amount });
-        return { ...currentState, playerHealth: clampPlayerHealth(currentState.playerHealth + effect.amount) };
+        return { ...currentState, playerHealth: clampPlayer(currentState.playerHealth + effect.amount) };
       case "restore-mana":
-        return { ...currentState, mana: Math.min(currentState.maxMana, currentState.mana + effect.amount) };
+        mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "mana", amount: effect.amount });
+        return { ...currentState, mana: currentState.mana + effect.amount };
+      case "lose-mana":
+        mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "mana", amount: effect.amount });
+        return { ...currentState, mana: Math.max(0, currentState.mana - effect.amount) };
       case "gain-max-mana":
+        mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "mana", amount: effect.amount });
         return { ...currentState, maxMana: currentState.maxMana + effect.amount };
+      case "lose-max-mana":
+        mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "mana", amount: effect.amount });
+        return { ...currentState, maxMana: Math.max(1, currentState.maxMana - effect.amount) };
       case "gain-gold":
+        mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "gold", amount: effect.amount });
         return { ...currentState, gold: currentState.gold + effect.amount };
       case "wish":
         return { ...currentState, wishOptions: cardLibrary.filter((candidate) => candidate.id !== card.id).slice(0, 3) };
@@ -146,10 +154,4 @@ export function applyCardEffects(state: BattleState, card: BattleCard, combatTex
   }, state);
 }
 
-export function clampPlayer(value: number) {
-  return clampPlayerHealth(value);
-}
 
-export function clampEnemy(value: number) {
-  return clampEnemyHealth(value);
-}

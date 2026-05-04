@@ -1,4 +1,5 @@
-import { starterDeck } from "@/lib/game-data";
+import { starterDeck, type CharacterGender, type CharacterId } from "@/lib/game-data";
+import type { TalentXP } from "@/lib/talents";
 
 import type { ResolutionOption } from "./types";
 
@@ -9,6 +10,15 @@ type SaveData = {
   discoveredCardIds: string[];
   encounteredEnemyIds: string[];
   discoveredTrinketIds: string[];
+  talentXP: TalentXP;
+  musicVolume: number;
+  sfxVolume: number;
+  activeRun: ActiveRunData | null;
+};
+
+type ActiveRunData = {
+  characterId: CharacterId;
+  characterGender: CharacterGender;
 };
 
 export const defaultSaveData: SaveData = {
@@ -16,6 +26,10 @@ export const defaultSaveData: SaveData = {
   discoveredCardIds: starterDeck.map((card) => card.id),
   encounteredEnemyIds: [],
   discoveredTrinketIds: [],
+  talentXP: {},
+  musicVolume: 0,
+  sfxVolume: 70,
+  activeRun: null,
 };
 
 export function loadAlchemySaveData(): SaveData {
@@ -35,6 +49,10 @@ export function loadAlchemySaveData(): SaveData {
       discoveredCardIds: Array.isArray(parsed.discoveredCardIds) ? parsed.discoveredCardIds : defaultSaveData.discoveredCardIds,
       encounteredEnemyIds: Array.isArray(parsed.encounteredEnemyIds) ? parsed.encounteredEnemyIds : defaultSaveData.encounteredEnemyIds,
       discoveredTrinketIds: Array.isArray(parsed.discoveredTrinketIds) ? parsed.discoveredTrinketIds : defaultSaveData.discoveredTrinketIds,
+      talentXP: typeof parsed.talentXP === 'object' && parsed.talentXP ? parsed.talentXP as TalentXP : defaultSaveData.talentXP,
+      musicVolume: typeof parsed.musicVolume === 'number' ? parsed.musicVolume : defaultSaveData.musicVolume,
+      sfxVolume: typeof parsed.sfxVolume === 'number' ? parsed.sfxVolume : defaultSaveData.sfxVolume,
+      activeRun: parsed.activeRun && typeof parsed.activeRun === 'object' ? parsed.activeRun as ActiveRunData : null,
     };
   } catch {
     return defaultSaveData;

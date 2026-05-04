@@ -1,13 +1,16 @@
-import { starterDeck, type BattleCard } from "@/lib/game-data";
+import { enemyBestiary, starterDeck, type BattleCard, type BestiaryEntry } from "@/lib/game-data";
 
 import {
+  baseEnemyAttack,
+  baseEnemyHealth,
+  basePlayerMana,
   cardsPerTurn,
   emptyEnemyStatuses,
   emptyPlayerStatuses,
-  maxEnemyHealth,
   maxHandSize,
   maxPlayerHealth,
   type BattleState,
+  type TurnPhase,
 } from "./types";
 
 export function drawCards(deck: BattleCard[], discard: BattleCard[], hand: BattleCard[], amount: number) {
@@ -42,27 +45,34 @@ export function drawCards(deck: BattleCard[], discard: BattleCard[], hand: Battl
   };
 }
 
-export function createBattleState(runDeck: BattleCard[] = starterDeck, gold = 0, battlesWon = 0): BattleState {
+export function createBattleState(runDeck: BattleCard[] = starterDeck, gold = 0, roomsEncountered = 0, currentEnemy?: BestiaryEntry, playerHealth = maxPlayerHealth): BattleState {
   const openingHand = drawCards(shuffleCards(runDeck), [], [], cardsPerTurn);
 
-  const baseEnemyHealth = maxEnemyHealth;
-  const scaledEnemyHealth = baseEnemyHealth + Math.min(battlesWon * 2, 20);
+  const enemy = currentEnemy ?? enemyBestiary[0];
+  const scaler = Math.max(0, roomsEncountered - 1);
+  const hpMultiplier = 1 + scaler * 0.1;
+  const scaledEnemyHealth = Math.floor(baseEnemyHealth * hpMultiplier);
+  const scaledEnemyAttack = Math.floor(baseEnemyAttack * hpMultiplier);
 
   return {
     deck: openingHand.deck,
     hand: openingHand.hand,
     discard: openingHand.discard,
     exhausted: [],
-    mana: 4,
-    maxMana: 4,
+    mana: basePlayerMana,
+    maxMana: basePlayerMana,
     gold,
     turn: 1,
-    playerHealth: maxPlayerHealth,
+    turnPhase: "player" as TurnPhase,
+    playerHealth,
     enemyHealth: scaledEnemyHealth,
+    enemyMaxHealth: scaledEnemyHealth,
+    enemyAttack: scaledEnemyAttack,
     playerStatuses: emptyPlayerStatuses(),
     enemyStatuses: emptyEnemyStatuses(),
     enemySkipTurns: 0,
     wishOptions: null,
+    currentEnemy: enemy,
   };
 }
 

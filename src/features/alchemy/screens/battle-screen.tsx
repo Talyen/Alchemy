@@ -1,12 +1,13 @@
 import type { MouseEvent, MutableRefObject, PointerEvent as ReactPointerEvent } from "react";
-import { BookOpen, Cog, Coins, House, Menu, Swords, WandSparkles } from "lucide-react";
+import { BookOpen, Cog, Coins, House, Menu, Swords, WandSparkles, Zap } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { battleArt, type BattleCard } from "@/lib/game-data";
+import { type BattleCard } from "@/lib/game-data";
+import { maxPlayerHealth, type BattleState } from "@/lib/battle/types";
 
 
-import { currentEnemy, handCardWidthClass } from "../config";
-import { ArtPanel, BattleCardButton, CardGhostOverlay, DragCardPreview, ManaPanel, PilePanel } from "../components";
+import { handCardWidthClass } from "../config";
+import { ArtPanel, BattleCardButton, CardGhostOverlay, CombatTextRail, DragCardPreview, ManaPanel, PilePanel } from "../components";
 import type { CardGhost, DragPreview, FloatingCombatText, StatusChip } from "../types";
 import { getHoverId } from "../utils";
 
@@ -32,21 +33,17 @@ export function BattleScreen({
   onRemoveCardGhost,
   dragPreview,
   onSkipCombatDevMode,
+  onEndTurn,
+  onEndRun,
   battleSceneRef,
   playerPanelRef,
   enemyPanelRef,
+  playerShaking,
+  enemyShaking,
+  heroArt,
 }: {
-  battleState: {
-    playerHealth: number;
-    enemyHealth: number;
-    mana: number;
-    maxMana: number;
-    gold: number;
-    deck: BattleCard[];
-    discard: BattleCard[];
-    hand: BattleCard[];
-    wishOptions: BattleCard[] | null;
-  };
+  battleState: Pick<BattleState, 'playerHealth' | 'enemyHealth' | 'enemyMaxHealth' | 'mana' | 'maxMana' | 'gold' | 'deck' | 'discard' | 'hand' | 'wishOptions' | 'currentEnemy' | 'turnPhase'>;
+  heroArt: string;
   hoveredCardId: string | null;
   setHoveredCardId: (value: string | null | ((current: string | null) => string | null)) => void;
   shimmerState: { cardId: string; token: number } | null;
@@ -67,53 +64,83 @@ export function BattleScreen({
   onRemoveCardGhost: (id: string) => void;
   dragPreview: DragPreview | null;
   onSkipCombatDevMode: () => void;
+  onEndTurn: () => void;
+  onEndRun: () => void;
   battleSceneRef: MutableRefObject<HTMLDivElement | null>;
   playerPanelRef: MutableRefObject<HTMLDivElement | null>;
   enemyPanelRef: MutableRefObject<HTMLDivElement | null>;
+  playerShaking: boolean;
+  enemyShaking: boolean;
 }) {
+  const isPlayerTurn = battleState.turnPhase === "player";
+
   return (
     <div ref={battleSceneRef} className="relative h-full w-full overflow-hidden">
-      <section className="absolute inset-x-0 top-[42%] flex -translate-y-1/2 items-start justify-center gap-[clamp(104px,9vw,182px)] px-4">
-        <ArtPanel
-          side="player"
-          title="Knight Errant"
-          art={battleArt.hero}
-          health={battleState.playerHealth}
-          maxHealth={36}
-          statuses={playerStatusChips}
-          shimmerId="player-card"
-          shimmerActive={shimmerState?.cardId === "player-card"}
-          shimmerToken={shimmerState?.token}
-          onHoverShimmer={onHoverShimmer}
-          combatTexts={playerCombatTexts}
-          surfaceRef={(node) => {
-            playerPanelRef.current = node;
+      <section className="absolute inset-x-0 flex -translate-y-1/2 items-start justify-center gap-[clamp(104px,9vw,182px)] px-4" style={{ top: '42%' }}>
+        <div
+          className={`pointer-events-none absolute -top-10 left-1/2 z-20 whitespace-nowrap rounded-md px-3 py-1 text-sm font-semibold transition-all duration-500 ${
+            isPlayerTurn ? 'bg-emerald-900/80 text-emerald-300' : 'bg-rose-900/80 text-rose-300'
+          }`}
+          style={{
+            transform: isPlayerTurn
+              ? 'translateX(calc(-50% - clamp(111px,11vh,168px) - clamp(52px,4.5vw,91px)))'
+              : 'translateX(calc(-50% + clamp(111px,11vh,168px) + clamp(52px,4.5vw,91px)))',
           }}
-        />
+        >
+          {isPlayerTurn ? 'Your Turn' : 'Enemy Turn'}
+        </div>
+        <div className="relative flex flex-col items-center">
+          <div className="absolute top-[18%] left-full ml-2 z-30 max-w-52">
+            <CombatTextRail entries={playerCombatTexts} side="player" />
+          </div>
+          <ArtPanel
+            side="player"
+            title="Knight"
+            art={heroArt}
+            health={battleState.playerHealth}
+            maxHealth={maxPlayerHealth}
+            statuses={playerStatusChips}
+            shimmerId="player-card"
+            shimmerActive={shimmerState?.cardId === "player-card"}
+            shimmerToken={shimmerState?.token}
+            onHoverShimmer={onHoverShimmer}
+            combatTexts={playerCombatTexts}
+            surfaceRef={(node) => {
+              playerPanelRef.current = node;
+            }}
+            shaking={playerShaking}
+          />
+        </div>
 
-        <ArtPanel
-          side="enemy"
-          title={currentEnemy.title}
-          art={battleArt.enemy}
-          health={battleState.enemyHealth}
-          maxHealth={30}
-          statuses={enemyStatusChips}
-          shimmerId="enemy-card"
-          shimmerActive={shimmerState?.cardId === "enemy-card"}
-          shimmerToken={shimmerState?.token}
-          onHoverShimmer={onHoverShimmer}
-          combatTexts={enemyCombatTexts}
-          surfaceRef={(node) => {
-            enemyPanelRef.current = node;
-          }}
-          isDead={battleState.enemyHealth <= 0}
-        />
+        <div className="relative flex flex-col items-center">
+          <div className="absolute top-[18%] right-full mr-2 z-30 max-w-52">
+            <CombatTextRail entries={enemyCombatTexts} side="enemy" />
+          </div>
+          <ArtPanel
+            side="enemy"
+            title={battleState.currentEnemy.title}
+            art={battleState.currentEnemy.art}
+            health={battleState.enemyHealth}
+            maxHealth={battleState.enemyMaxHealth}
+            statuses={enemyStatusChips}
+            shimmerId="enemy-card"
+            shimmerActive={shimmerState?.cardId === "enemy-card"}
+            shimmerToken={shimmerState?.token}
+            onHoverShimmer={onHoverShimmer}
+            combatTexts={enemyCombatTexts}
+            surfaceRef={(node) => {
+              enemyPanelRef.current = node;
+            }}
+            isDead={battleState.enemyHealth <= 0}
+            shaking={enemyShaking}
+          />
+        </div>
       </section>
 
       <section className="absolute inset-x-0 bottom-2 grid grid-cols-[minmax(110px,0.24fr)_1fr_minmax(110px,0.24fr)] items-end gap-[clamp(16px,2vw,28px)] px-2 pb-1">
         <div className="flex flex-col items-center justify-end gap-4 pb-4">
           <ManaPanel mana={battleState.mana} maxMana={battleState.maxMana} gold={battleState.gold} />
-          <PilePanel label="Draw Pile" count={battleState.deck.length} />
+          <PilePanel label="Draw Pile" count={battleState.deck.length} type="draw" />
         </div>
 
         <div className="flex min-h-[298px] min-w-0 items-end justify-center pb-3 pt-10" aria-label="Player hand">
@@ -124,6 +151,7 @@ export function BattleScreen({
             const restingTransform = `translateY(${Math.abs(offset) * 10}px) rotate(${offset * 4.2}deg)`;
             const hoverTransform = `translateY(-34px) rotate(${offset * 2.6}deg) scale(1.03)`;
             const isShimmering = shimmerState?.cardId === hoverId;
+            const canPlay = battleState.turnPhase === "player" && battleState.mana >= card.cost && !battleState.wishOptions;
 
             return (
               <BattleCardButton
@@ -147,6 +175,7 @@ export function BattleScreen({
                 baseTransform={isHovered ? hoverTransform : restingTransform}
                 className={handCardWidthClass}
                 dragging={activeDraggedCardId === card.id}
+                disabled={!canPlay}
                 wrapperClassName="relative -mx-5 flex justify-center sm:-mx-6"
                 wrapperStyle={{ zIndex: isHovered ? 40 : 10 + index }}
               />
@@ -155,15 +184,25 @@ export function BattleScreen({
         </div>
 
         <div className="flex flex-col items-center justify-end gap-4 pb-4">
-          <div className="relative flex flex-col items-center gap-3">
+          <div className="relative flex flex-col items-center gap-2">
             <Button
-              variant="outline"
+              variant="ghost"
               size="icon"
-              className="h-12 w-12"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+              onClick={() => setMenuOpen((prev) => !prev)}
               aria-label="Open battle menu"
-              onClick={() => setMenuOpen((current) => !current)}
             >
-              <Menu className="h-5 w-5" />
+              <Menu className="h-4 w-4" />
+            </Button>
+
+            <Button
+              variant="default"
+              size="sm"
+              className="bg-amber-600 hover:bg-amber-700 text-white font-bold"
+              onClick={onEndTurn}
+              disabled={battleState.turnPhase !== "player"}
+            >
+              End Turn
             </Button>
 
             {menuOpen ? (
@@ -185,6 +224,10 @@ export function BattleScreen({
                     <WandSparkles className="h-4 w-4" />
                     Talents
                   </Button>
+                  <Button variant="ghost" className="justify-start text-red-400 hover:text-red-300 hover:bg-red-950/40" onClick={onEndRun}>
+                    <Swords className="h-4 w-4" />
+                    End Run
+                  </Button>
                   <Button variant="ghost" className="justify-start text-amber-200 hover:text-amber-100" onClick={onSkipCombatDevMode}>
                     <Coins className="h-4 w-4" />
                     Skip Combat
@@ -194,7 +237,7 @@ export function BattleScreen({
             ) : null}
           </div>
 
-          <PilePanel label="Discard Pile" count={battleState.discard.length} />
+          <PilePanel label="Discard Pile" count={battleState.discard.length} type="discard" />
         </div>
       </section>
 
@@ -239,6 +282,13 @@ export function BattleScreen({
         <CardGhostOverlay key={ghost.id} ghost={ghost} onDone={() => onRemoveCardGhost(ghost.id)} />
       ))}
       {dragPreview ? <DragCardPreview preview={dragPreview} /> : null}
+
+      {battleState.playerHealth <= 0 ? (
+        <div className="absolute inset-0 z-[100] flex flex-col items-center justify-center gap-4 bg-black/80 px-6">
+          <h1 className="text-5xl font-bold text-red-400">Defeat</h1>
+          <p className="text-lg text-muted-foreground">Your run has ended.</p>
+        </div>
+      ) : null}
     </div>
   );
 }

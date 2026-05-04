@@ -76,6 +76,9 @@ export function getEnemyStatusChips(state: BattleState): StatusChip[] {
 }
 
 export function getCombatTextColorClass(event: CombatTextEvent) {
+  if (event.kind === "damage" && event.stat === "health") {
+    return "text-red-400";
+  }
   if (event.kind === "heal") {
     return combatTextColorClasses.health;
   }
@@ -84,6 +87,10 @@ export function getCombatTextColorClass(event: CombatTextEvent) {
 }
 
 export function getCombatTextIcon(event: CombatTextEvent) {
+  if (event.kind === "damage" && event.stat === "health") {
+    return combatTextIconClasses.physical;
+  }
+
   return combatTextIconClasses[event.stat] ?? keywordIcons[event.stat as KeywordId] ?? keywordIcons.health;
 }
 

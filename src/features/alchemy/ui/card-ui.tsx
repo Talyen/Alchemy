@@ -18,6 +18,7 @@ import {
 } from "../config";
 import type { CardGhost, DragPreview, GhostStyle } from "../types";
 import { clearTiltFromEvent, setTiltFromEvent, tokenizeDescription } from "../utils";
+import { KeywordTag } from "./keyword-tag";
 
 function KeywordToken({ keywordId, matchedText }: { keywordId: KeywordId; matchedText: string }) {
   const definition = keywordDefinitions[keywordId];
@@ -28,8 +29,7 @@ function KeywordToken({ keywordId, matchedText }: { keywordId: KeywordId; matche
       <span className={cn("cursor-help font-semibold", definition.colorClass)}>{matchedText}</span>
       <div className={cn(popupClassName, "hover-popup-panel pointer-events-none opacity-0 group-hover/keyword:opacity-100")}>
         <div className="flex items-center gap-2">
-          <Icon className={cn("h-4 w-4", definition.colorClass)} />
-          <p className="text-sm font-semibold text-foreground">{definition.label}</p>
+          <KeywordTag keywordId={keywordId} />
         </div>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">{definition.description}</p>
       </div>
@@ -159,7 +159,7 @@ export function BattleCardButton({
           className,
           selected ? "ring-2 ring-primary ring-offset-4 ring-offset-background" : null,
           dragging ? "opacity-0" : null,
-          disabled ? "cursor-default" : null,
+          disabled ? "cursor-default grayscale" : null,
         )}
         style={{ "--card-base-transform": baseTransform } as CSSProperties}
       >
@@ -218,7 +218,7 @@ export function DragCardPreview({ preview }: { preview: DragPreview }) {
       alt=""
       aria-hidden="true"
       className={cn(
-        "pointer-events-none fixed z-[95] rounded-[30px] border border-[#6a4525] bg-black object-cover shadow-[0_26px_54px_rgba(0,0,0,0.45)]",
+        "pointer-events-none fixed z-[95] rounded-[30px] bg-black object-cover shadow-[0_26px_54px_rgba(0,0,0,0.45)]",
         "transition-transform duration-75 ease-out",
       )}
       style={{

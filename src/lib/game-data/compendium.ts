@@ -1,41 +1,30 @@
-import { blessedAegis, goblin, imp, lizardScout, manaCrystal, meteor, mimic, mudElemental, necromancer, plagueDoctor, poisonDagger, skeleton, steal } from "./assets";
+import { blessedAegis, goblin, imp, lizardScout, manaCrystal, mimic, mudElemental, necromancer, plagueDoctor, skeleton, steal } from "./assets";
 import type { BestiaryEntry, TrinketEntry } from "./types";
 
 export const enemyBestiary: BestiaryEntry[] = [
   {
-    id: "skeleton-marauder",
-    title: "Skeleton Marauder",
+    id: "skeleton",
+    title: "Skeleton",
     subtitle: "Shambling Raider",
     descriptionLines: ["A brittle frontliner that leans on raw pressure instead of defense.", "Best dropped quickly before lingering ailments start to matter."],
     art: skeleton,
+    enemyType: "normal",
   },
   {
-    id: "ember-acolyte",
-    title: "Ember Acolyte",
-    subtitle: "Ash Chapel Fanatic",
-    descriptionLines: ["A fire-bound cultist that turns every opening into searing attrition.", "Its curses build slowly, then burn out of control if ignored."],
-    art: meteor,
-  },
-  {
-    id: "venom-collector",
-    title: "Venom Collector",
-    subtitle: "Bogglass Hunter",
-    descriptionLines: ["A patient stalker that layers poison and waits for panic.", "Long fights favor it, so tempo matters more than greed."],
-    art: poisonDagger,
-  },
-  {
-    id: "goblin-rogue",
-    title: "Goblin Rogue",
+    id: "goblin",
+    title: "Goblin",
     subtitle: "Sneaky Brigand",
     descriptionLines: ["A swift attacker that strikes from the shadows.", "Watch out for quick hits and opportunistic strikes."],
     art: goblin,
+    enemyType: "normal",
   },
   {
-    id: "imp-wisp",
-    title: "Imp Wisp",
+    id: "imp",
+    title: "Imp",
     subtitle: "Chaos Ember",
     descriptionLines: ["A mischievous flame spirit that dances around the battlefield.", "Its attacks leave lingering burn damage."],
     art: imp,
+    enemyType: "normal",
   },
   {
     id: "lizard-scout",
@@ -43,13 +32,15 @@ export const enemyBestiary: BestiaryEntry[] = [
     subtitle: "Swamp Skirmisher",
     descriptionLines: ["A fast-moving hunter that strikes and retreats.", "Its poison weakens you over time."],
     art: lizardScout,
+    enemyType: "normal",
   },
   {
-    id: "mimic-chest",
-    title: "Mimic Chest",
+    id: "mimic",
+    title: "Mimic",
     subtitle: "Treasure Trap",
     descriptionLines: ["A cunning trap disguised as loot.", "Think twice before grabbing that shiny treasure!"],
     art: mimic,
+    enemyType: "elite",
   },
   {
     id: "mud-elemental",
@@ -57,6 +48,7 @@ export const enemyBestiary: BestiaryEntry[] = [
     subtitle: "Swamp Golem",
     descriptionLines: ["A slow but resilient construct of mud and earth.", "Its thick shell reduces incoming damage."],
     art: mudElemental,
+    enemyType: "elite",
   },
   {
     id: "necromancer",
@@ -64,6 +56,7 @@ export const enemyBestiary: BestiaryEntry[] = [
     subtitle: "Death Speaker",
     descriptionLines: ["A dark mage that manipulates life force.", "Watch out for cursed attacks that leech your health."],
     art: necromancer,
+    enemyType: "elite",
   },
   {
     id: "plague-doctor",
@@ -71,6 +64,7 @@ export const enemyBestiary: BestiaryEntry[] = [
     subtitle: "Pestilence Carrier",
     descriptionLines: ["A masked healer of terrible diseases.", "Its miasma spreads poison to all who draw near."],
     art: plagueDoctor,
+    enemyType: "elite",
   },
 ];
 

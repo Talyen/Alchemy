@@ -10,7 +10,7 @@ import { getCardRect } from "./utils";
 const shimmerDurationMs = 1250;
 const shimmerCooldownMs = 2600;
 const shimmerIntroDelayMs = 500;
-const combatTextLifetimeMs = 1280;
+const combatTextLifetimeMs = 2800;
 const combatTextLaneDelayMs = 80;
 const dragStartThresholdPx = 10;
 
@@ -57,7 +57,7 @@ export function useFloatingCombatTexts() {
 
   function getSignedAmountText(event: CombatTextEvent) {
     if (event.kind === "damage") {
-      return String(event.amount);
+      return `-${event.amount}`;
     }
 
     const showPlus = event.kind === "heal" || event.kind === "status";

@@ -30,6 +30,8 @@ export type BattleCardEffect =
   | { kind: "player-status"; status: Extract<PlayerStatusId, "block" | "armor" | "forge" | "haste">; amount: number }
   | { kind: "heal"; amount: number }
   | { kind: "restore-mana"; amount: number }
+  | { kind: "lose-mana"; amount: number }
+  | { kind: "lose-max-mana"; amount: number }
   | { kind: "gain-max-mana"; amount: number }
   | { kind: "gain-gold"; amount: number }
   | { kind: "wish"; amount: number }
@@ -46,12 +48,15 @@ export type BattleCard = {
   effects: BattleCardEffect[];
 };
 
+export type EnemyType = "normal" | "elite";
+
 export type BestiaryEntry = {
   id: string;
   title: string;
   subtitle: string;
   descriptionLines: string[];
   art: string;
+  enemyType: EnemyType;
 };
 
 export type TrinketEntry = {
