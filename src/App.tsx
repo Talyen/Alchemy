@@ -9,6 +9,7 @@ import {
   CharacterSelectScreen,
   CollectionScreen,
   DestinationScreen,
+  GameOverScreen,
   MenuScreen,
   OptionsScreen,
   RewardsScreen,
@@ -47,7 +48,7 @@ export default function App() {
   useEffect(() => { setMusicVolume(musicVol / 100); }, [musicVol]);
 
   const { frameStyle, stageStyle } = useVirtualResolution(selectedResolution);
-  const run = useAlchemyRunController({ setDiscoveredCardIds, setEncounteredEnemyIds, initialTalentXP: initialSave.talentXP, initialActiveRun: initialSave.activeRun });
+  const run = useAlchemyRunController({ setDiscoveredCardIds, setEncounteredEnemyIds, initialTalentXP: initialSave.talentXP, initialUnlockedTalents: initialSave.unlockedTalents, initialActiveRun: initialSave.activeRun });
   const currentCollectionPage = collectionPages[collectionTab];
   const heroArt = characterArt[run.characterId]?.[run.characterGender] ?? characterArt.knight.female;
 
@@ -58,11 +59,12 @@ export default function App() {
       encounteredEnemyIds,
       discoveredTrinketIds,
       talentXP: run.talentXP,
+      unlockedTalents: run.unlockedTalents,
       musicVolume: musicVol,
       sfxVolume: sfxVol,
       activeRun: run.activeRunData,
     });
-  }, [selectedResolution, discoveredCardIds, encounteredEnemyIds, discoveredTrinketIds, run.talentXP, musicVol, sfxVol, run.activeRunData]);
+  }, [selectedResolution, discoveredCardIds, encounteredEnemyIds, discoveredTrinketIds, run.talentXP, run.unlockedTalents, musicVol, sfxVol, run.activeRunData]);
 
   function handleCollectionTabChange(nextTab: CollectionTab) {
     setCollectionTab(nextTab);
@@ -83,6 +85,7 @@ export default function App() {
     setCollectionTab("cards");
     setShowClearSaveConfirm(false);
     run.resetRunState();
+    run.clearPermanentData();
   }
 
   return (
@@ -96,7 +99,8 @@ export default function App() {
           {run.screen === "destination" ? <DestinationScreen destinationOptions={run.destinationOptions} onChoose={run.handleDestinationChoice} destinationButtonRefs={run.destinationButtonRefs} /> : null}
           {run.screen === "options" ? <OptionsScreen hasActiveBattle={run.hasActiveBattle} onMainMenu={() => run.goToScreen("menu")} onReturnToBattle={run.returnToBattle} selectedResolution={selectedResolution} onResolutionChange={setSelectedResolution} musicVol={musicVol} sfxVol={sfxVol} onMusicVolChange={setMusicVol} onSfxVolChange={setSfxVol} showClearSaveConfirm={showClearSaveConfirm} onOpenClearSaveConfirm={() => setShowClearSaveConfirm(true)} onCloseClearSaveConfirm={() => setShowClearSaveConfirm(false)} onConfirmClearSave={clearSaveData} /> : null}
           {run.screen === "collection" ? <CollectionScreen hasActiveBattle={run.hasActiveBattle} onMainMenu={() => run.goToScreen("menu")} onReturnToBattle={run.returnToBattle} collectionTab={collectionTab} onSelectTab={handleCollectionTabChange} hoveredCardId={run.hoveredCardId} onHoverChange={run.setHoveredCardId} discoveredCardIds={discoveredCardIds} encounteredEnemyIds={encounteredEnemyIds} discoveredTrinketIds={discoveredTrinketIds} page={currentCollectionPage} onPageChange={setCollectionPage} /> : null}
-          {run.screen === "talents" ? <TalentsScreen hasActiveBattle={run.hasActiveBattle} onMainMenu={() => run.goToScreen("menu")} onReturnToBattle={run.returnToBattle} talentXP={run.talentXP} runTalentXP={run.runTalentXP} /> : null}
+          {run.screen === "talents" ? <TalentsScreen hasActiveBattle={run.hasActiveBattle} onMainMenu={() => run.goToScreen("menu")} onReturnToBattle={run.returnToBattle} talentXP={run.talentXP} runTalentXP={run.runTalentXP} unlockedTalents={run.unlockedTalents} onUnlockTalent={run.unlockTalent} onResetTalents={run.resetUnlockedTalents} /> : null}
+          {run.screen === "game-over" ? <GameOverScreen runTalentXP={run.runTalentXP} talentXP={run.talentXP} onMainMenu={() => run.resetRunState()} /> : null}
         </div>
       </div>
     </div>

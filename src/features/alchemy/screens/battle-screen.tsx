@@ -282,13 +282,6 @@ export function BattleScreen({
         <CardGhostOverlay key={ghost.id} ghost={ghost} onDone={() => onRemoveCardGhost(ghost.id)} />
       ))}
       {dragPreview ? <DragCardPreview preview={dragPreview} /> : null}
-
-      {battleState.playerHealth <= 0 ? (
-        <div className="absolute inset-0 z-[100] flex flex-col items-center justify-center gap-4 bg-black/80 px-6">
-          <h1 className="text-5xl font-bold text-red-400">Defeat</h1>
-          <p className="text-lg text-muted-foreground">Your run has ended.</p>
-        </div>
-      ) : null}
     </div>
   );
 }

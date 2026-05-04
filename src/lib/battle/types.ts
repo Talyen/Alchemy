@@ -15,6 +15,18 @@ export type EnemyStatusValues = Record<EnemyStatusId, number> & {
 
 export type TurnPhase = "player" | "enemy";
 
+export type TalentEffectManifest = {
+  flatPhysicalDamage: number;
+  armorToPhysicalDamage: boolean;
+  physicalCritChance: number;
+};
+
+export const emptyTalentEffects = (): TalentEffectManifest => ({
+  flatPhysicalDamage: 0,
+  armorToPhysicalDamage: false,
+  physicalCritChance: 0,
+});
+
 export type BattleState = {
   deck: BattleCard[];
   hand: BattleCard[];
@@ -34,6 +46,7 @@ export type BattleState = {
   enemySkipTurns: number;
   wishOptions: BattleCard[] | null;
   currentEnemy: BestiaryEntry;
+  talentEffects: TalentEffectManifest;
 };
 
 export type CombatTextTarget = "player" | "enemy";

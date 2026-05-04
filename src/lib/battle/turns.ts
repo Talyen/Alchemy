@@ -133,6 +133,10 @@ export function endPlayerTurn(state: BattleState): { state: BattleState; combatT
   remainingDamage -= blockAbsorb;
   nextState.playerStatuses = { ...nextState.playerStatuses, block: nextState.playerStatuses.block - blockAbsorb };
 
+  if (blockAbsorb > 0) {
+    mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "block", amount: blockAbsorb });
+  }
+
   const actualDamage = Math.max(0, remainingDamage - nextState.playerStatuses.armor);
 
   nextState = {

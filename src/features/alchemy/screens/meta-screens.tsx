@@ -1,4 +1,4 @@
-import { useState, type MutableRefObject } from "react";
+import { useEffect, useMemo, useRef, useState, type MutableRefObject } from "react";
 import { Coins, House, Swords } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -8,34 +8,15 @@ import { setMusicVolume } from "@/lib/audio";
 import { cn } from "@/lib/utils";
 import { computeTalentPoints, xpForNextPoint, xpToNextPoint, type TalentXP } from "@/lib/talents";
 import { battleCardWidthClass, cardSurfaceClass, handCardWidthClass, keywordIcons, resolutionOptions, staticCardTransform } from "../config";
-import { BattleCardButton, CollectionGrid, CollectionPagination, CollectionTabs, DestinationChoices, PlaceholderScreen, ResolutionSelect } from "../components";
+import { BattleCardButton, CollectionGrid, CollectionPagination, CollectionTabs, DestinationChoices, PlaceholderScreen, ResolutionSelect, TalentChoicesInline, TalentKeywordButton, TalentList } from "../components";
 import { getCollectionTotalPages } from "../ui/collection-ui";
 import { ConfirmationDialog } from "../ui/shared-ui";
 import { KeywordTag } from "../ui/keyword-tag";
 import type { CollectionTab, Destination, ResolutionOption } from "../types";
+import type { UnlockedTalents, TalentDefinition } from "../talent-pool";
+import { getTalentsForKeyword, sampleTalentChoices } from "../talent-pool";
 import { clearTiltFromEvent, getHoverId, setTiltFromEvent } from "../utils";
 import { useShimmerController } from "../hooks";
-
-const talentNodeLabels: Partial<Record<KeywordId, string[]>> = {
-  physical: ["+1 Physical damage", "", "", "", "", "", "", "", ""],
-  block: ["", "", "", "", "", "", "", "", ""],
-  armor: ["", "", "", "", "", "", "", "", ""],
-  forge: ["", "", "", "", "", "", "", "", ""],
-  stun: ["", "", "", "", "", "", "", "", ""],
-  burn: ["", "", "", "", "", "", "", "", ""],
-  poison: ["", "", "", "", "", "", "", "", ""],
-  bleed: ["", "", "", "", "", "", "", "", ""],
-  freeze: ["", "", "", "", "", "", "", "", ""],
-  gold: ["", "", "", "", "", "", "", "", ""],
-  mana: ["", "", "", "", "", "", "", "", ""],
-};
-
-const talentTreeLayout = [
-  [8],
-  [6, 7],
-  [3, 4, 5],
-  [0, 1, 2],
-];
 
 export function MenuScreen({ onPlay, onCollection, onOptions, onTalents, logoSrc, hasActiveBattle }: { onPlay: () => void; onCollection: () => void; onOptions: () => void; onTalents: () => void; logoSrc: string; hasActiveBattle?: boolean }) {
   return (
@@ -89,7 +70,7 @@ export function CharacterSelectScreen({ onConfirm, onBack }: { onConfirm: (chara
           const isShimmer = shimmerState?.cardId === id;
 
           return (
-            <div key={id} className="flex flex-col items-center gap-3">
+            <div key={id} className="flex flex-col items-center gap-3 rounded-[26px] border border-border/60 bg-card/60 px-6 pb-6 pt-5">
               <button
                 type="button"
                 className={cn(
@@ -126,7 +107,7 @@ export function CharacterSelectScreen({ onConfirm, onBack }: { onConfirm: (chara
         })}
       </div>
 
-      <div className="flex gap-4">
+      <div className="mt-6 flex gap-4">
         <Button
           size="lg"
           className="w-40"
@@ -283,27 +264,42 @@ export function OptionsScreen({
   const [tab, setTab] = useState<"display" | "sound" | "other">("display");
 
   return (
-    <div className="relative h-full w-full">
-      <PlaceholderScreen title="Options" onMainMenu={onMainMenu} onReturnToBattle={onReturnToBattle} showReturnToBattle={hasActiveBattle}>
-        <div className="mx-auto flex w-full max-w-xl flex-col gap-6 text-left">
-          <div className="flex justify-center gap-2">
-            {(["display", "sound", "other"] as const).map((t) => (
-              <button
-                key={t}
-                type="button"
-                className={cn(
-                  "rounded-full border px-4 py-2 text-sm font-semibold capitalize",
-                  tab === t
-                    ? "border-primary bg-primary/20 text-primary"
-                    : "border-border/80 bg-card text-foreground",
-                )}
-                onClick={() => setTab(t)}
-              >
-                {t}
-              </button>
-            ))}
-          </div>
+    <div className="relative flex h-full w-full flex-col items-center overflow-y-auto">
+      <div className="alchemy-shell mt-6 mb-auto flex w-full max-w-3xl flex-col rounded-[28px] px-6 py-7 sm:px-8">
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          <Button variant="outline" onClick={onMainMenu}>
+            <House className="h-4 w-4" />
+            Main Menu
+          </Button>
+          {hasActiveBattle ? (
+            <Button onClick={onReturnToBattle}>
+              <Swords className="h-4 w-4" />
+              Return to Battle
+            </Button>
+          ) : null}
+        </div>
 
+        <h1 className="mt-8 text-center text-3xl font-semibold text-foreground">Options</h1>
+
+        <div className="mt-6 flex justify-center gap-2">
+          {(["display", "sound", "other"] as const).map((t) => (
+            <button
+              key={t}
+              type="button"
+              className={cn(
+                "rounded-full border px-4 py-2 text-sm font-semibold capitalize",
+                tab === t
+                  ? "border-primary bg-primary/20 text-primary"
+                  : "border-border/80 bg-card text-foreground",
+              )}
+              onClick={() => setTab(t)}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
+
+        <div className="mt-6 text-left">
           {tab === "display" ? <ResolutionSelect selectedResolution={selectedResolution} resolutionOptions={resolutionOptions} onChange={onResolutionChange} /> : null}
 
           {tab === "sound" ? (
@@ -350,7 +346,7 @@ export function OptionsScreen({
             </div>
           ) : null}
         </div>
-      </PlaceholderScreen>
+      </div>
 
       {showClearSaveConfirm ? (
         <ConfirmationDialog
@@ -396,8 +392,109 @@ export function CollectionScreen({
   const totalPages = getCollectionTotalPages(collectionTab);
 
   return (
-    <div className="flex h-full w-full items-center justify-center px-4 py-4">
-      <div className="alchemy-shell flex h-full w-full max-w-[1620px] flex-col items-center justify-start overflow-visible rounded-[30px] border border-border/80 px-8 py-8 text-center">
+    <div className="alchemy-shell m-4 flex h-[calc(100%-32px)] w-[calc(100%-32px)] max-w-[1620px] flex-col items-center justify-start overflow-visible rounded-[30px] border border-border/80 px-8 py-8 text-center">
+      <div className="flex flex-wrap items-center justify-center gap-3">
+        <Button variant="outline" onClick={onMainMenu}>
+          <House className="h-4 w-4" />
+          Main Menu
+        </Button>
+        {hasActiveBattle ? (
+          <Button onClick={onReturnToBattle}>
+            <Swords className="h-4 w-4" />
+            Return to Battle
+          </Button>
+        ) : null}
+      </div>
+
+      <h1 className="mt-8 min-h-[44px] text-4xl font-semibold text-foreground">Collection</h1>
+      <CollectionTabs collectionTab={collectionTab} onSelectTab={onSelectTab} />
+
+      <div className="mt-12 flex min-h-[640px] flex-col items-center overflow-visible">
+        <CollectionGrid
+          collectionTab={collectionTab}
+          hoveredCardId={hoveredCardId}
+          discoveredCardIds={discoveredCardIds}
+          encounteredEnemyIds={encounteredEnemyIds}
+          discoveredTrinketIds={discoveredTrinketIds}
+          onHoverChange={onHoverChange}
+          page={page}
+          shimmerState={shimmerState}
+          onHoverShimmer={maybeTriggerShimmer}
+        />
+        <CollectionPagination page={page} totalPages={totalPages} onPageChange={onPageChange} />
+      </div>
+    </div>
+  );
+}
+
+export function TalentsScreen({
+  hasActiveBattle,
+  onMainMenu,
+  onReturnToBattle,
+  talentXP,
+  runTalentXP,
+  unlockedTalents,
+  onUnlockTalent,
+  onResetTalents,
+}: {
+  hasActiveBattle: boolean;
+  onMainMenu: () => void;
+  onReturnToBattle: () => void;
+  talentXP: TalentXP;
+  runTalentXP?: TalentXP;
+  unlockedTalents: UnlockedTalents;
+  onUnlockTalent: (keywordId: KeywordId, talentId: string) => void;
+  onResetTalents: () => void;
+}) {
+  const [selectedKeyword, setSelectedKeyword] = useState<KeywordId>("physical");
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const keywordIds = Object.keys(keywordDefinitions) as KeywordId[];
+  const choicesCache = useRef<Record<string, TalentDefinition[]>>({});
+
+  const currentXP = talentXP[selectedKeyword] ?? 0;
+  const runXP = runTalentXP?.[selectedKeyword] ?? 0;
+  const totalXP = currentXP + runXP;
+  const totalPoints = computeTalentPoints(totalXP);
+  const nextXP = xpForNextPoint(totalPoints);
+  const progress = xpToNextPoint(totalXP);
+  const progressPercent = Math.min(100, Math.round(((nextXP - progress) / nextXP) * 100));
+
+  const unlockedIds = unlockedTalents[selectedKeyword] ?? [];
+  const spentPoints = unlockedIds.length;
+  const unspentPoints = Math.max(0, totalPoints - spentPoints);
+
+  const allTalentsForKeyword = getTalentsForKeyword(selectedKeyword);
+  const allUnlocked = spentPoints >= allTalentsForKeyword.length;
+
+  const unlockedTalentsForKeyword = allTalentsForKeyword.filter((t) => unlockedIds.includes(t.id));
+
+  const currentChoices = useMemo(() => {
+    const cached = choicesCache.current[selectedKeyword];
+    if (cached) return cached;
+    if (!allUnlocked && unspentPoints > 0) {
+      const c = sampleTalentChoices(selectedKeyword, unlockedIds, 3);
+      if (c.length > 0) {
+        choicesCache.current[selectedKeyword] = c;
+        return c;
+      }
+    }
+    return null;
+  }, [selectedKeyword, unlockedIds, unspentPoints, allUnlocked]);
+
+  function handleChooseTalent(talent: TalentDefinition) {
+    onUnlockTalent(selectedKeyword, talent.id);
+    delete choicesCache.current[selectedKeyword];
+  }
+
+  function handleReset() {
+    onResetTalents();
+    choicesCache.current = {};
+    setShowResetConfirm(false);
+  }
+
+  return (
+    <div className="relative flex h-full w-full flex-col items-center overflow-y-auto">
+      <div className="alchemy-shell mt-6 mb-auto flex w-full max-w-3xl flex-col rounded-[28px] px-6 py-7 sm:px-8">
         <div className="flex flex-wrap items-center justify-center gap-3">
           <Button variant="outline" onClick={onMainMenu}>
             <House className="h-4 w-4" />
@@ -411,126 +508,149 @@ export function CollectionScreen({
           ) : null}
         </div>
 
-        <h1 className="mt-8 min-h-[44px] text-4xl font-semibold text-foreground">Collection</h1>
-        <CollectionTabs collectionTab={collectionTab} onSelectTab={onSelectTab} />
+        <h1 className="mt-8 text-center text-3xl font-semibold text-foreground">Talents</h1>
 
-        <div className="mt-12 flex min-h-[640px] flex-col items-center overflow-visible">
-          <CollectionGrid
-            collectionTab={collectionTab}
-            hoveredCardId={hoveredCardId}
-            discoveredCardIds={discoveredCardIds}
-            encounteredEnemyIds={encounteredEnemyIds}
-            discoveredTrinketIds={discoveredTrinketIds}
-            onHoverChange={onHoverChange}
-            page={page}
-            shimmerState={shimmerState}
-            onHoverShimmer={maybeTriggerShimmer}
-          />
-          <CollectionPagination page={page} totalPages={totalPages} onPageChange={onPageChange} />
+        <div className="mx-auto mt-6 flex w-full max-w-2xl flex-col gap-6 text-left">
+          <div className="flex flex-wrap justify-center gap-2">
+            {keywordIds.map((kw) => {
+              const kwXP = (talentXP[kw] ?? 0) + (runTalentXP?.[kw] ?? 0);
+              const kwPoints = computeTalentPoints(kwXP);
+              const kwUnlockedIds = unlockedTalents[kw] ?? [];
+              const hasUnspent = kwPoints - kwUnlockedIds.length > 0;
+              return (
+                <TalentKeywordButton
+                  key={kw}
+                  keywordId={kw}
+                  hasUnspent={hasUnspent}
+                  isSelected={selectedKeyword === kw}
+                  onClick={() => setSelectedKeyword(kw)}
+                />
+              );
+            })}
+            <button
+              type="button"
+              onClick={() => setShowResetConfirm(true)}
+              className="rounded-full border border-border/40 px-3 py-1.5 text-xs font-medium text-muted-foreground/60 hover:border-border/60 hover:text-muted-foreground"
+            >
+              Reset Talents
+            </button>
+          </div>
+
+          <div className="surface-muted rounded-[22px] border border-border/70 p-5">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-semibold text-foreground">
+                <KeywordTag keywordId={selectedKeyword} /> XP Progress
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {totalXP} XP / {nextXP} XP — {totalPoints} point{totalPoints !== 1 ? "s" : ""}
+              </p>
+            </div>
+            <div className="mt-3 h-2 w-full rounded-full bg-muted">
+              <div
+                className="h-2 rounded-full bg-primary transition-all"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+          </div>
+
+          {currentChoices ? (
+            <TalentChoicesInline choices={currentChoices} onChoose={handleChooseTalent} />
+          ) : (
+            <TalentList
+              unlockedTalents={unlockedTalentsForKeyword}
+              allTalents={allTalentsForKeyword}
+            />
+          )}
         </div>
       </div>
+
+      {showResetConfirm ? (
+        <ConfirmationDialog
+          title="Reset Talents?"
+          description="This will refund all your talent points so you can choose again. Any unspent talent points will also be available."
+          confirmLabel="Reset Talents"
+          tone="default"
+          onConfirm={handleReset}
+          onCancel={() => setShowResetConfirm(false)}
+        />
+      ) : null}
     </div>
   );
 }
 
-export function TalentsScreen({
-  hasActiveBattle,
-  onMainMenu,
-  onReturnToBattle,
-  talentXP,
+export function GameOverScreen({
   runTalentXP,
+  talentXP,
+  onMainMenu,
 }: {
-  hasActiveBattle: boolean;
-  onMainMenu: () => void;
-  onReturnToBattle: () => void;
+  runTalentXP: TalentXP;
   talentXP: TalentXP;
-  runTalentXP?: TalentXP;
+  onMainMenu: () => void;
 }) {
-  const [selectedKeyword, setSelectedKeyword] = useState<KeywordId>("physical");
-  const keywordIds = Object.keys(keywordDefinitions) as KeywordId[];
+  const [animate, setAnimate] = useState(false);
+  const keywordIds = (Object.keys(runTalentXP) as KeywordId[]).filter((kw) => (runTalentXP[kw] ?? 0) > 0);
 
-  const currentXP = talentXP[selectedKeyword] ?? 0;
-  const runXP = runTalentXP?.[selectedKeyword] ?? 0;
-  const totalXP = currentXP + runXP;
-  const points = computeTalentPoints(totalXP);
-  const nextXP = xpForNextPoint(points);
-  const progress = xpToNextPoint(totalXP);
-  const progressPercent = Math.min(100, Math.round(((nextXP - progress) / nextXP) * 100));
-
-  const activeLabels = talentNodeLabels[selectedKeyword] ?? [];
-  const activeLayout = talentTreeLayout;
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setAnimate(true));
+    return () => cancelAnimationFrame(frame);
+  }, []);
 
   return (
-    <PlaceholderScreen title="Talents" onMainMenu={onMainMenu} onReturnToBattle={onReturnToBattle} showReturnToBattle={hasActiveBattle}>
-      <div className="mx-auto flex w-full max-w-2xl flex-col gap-6 text-left">
-        <div className="flex flex-wrap justify-center gap-2">
-          {keywordIds.map((kw) => {
-            const kwXP = (talentXP[kw] ?? 0) + (runTalentXP?.[kw] ?? 0);
-            const kwPoints = computeTalentPoints(kwXP);
-            return (
-              <button
-                key={kw}
-                type="button"
-                className={cn(
-                  "rounded-full border px-3 py-1.5 text-sm font-semibold inline-flex items-center gap-1.5",
-                  selectedKeyword === kw
-                    ? "border-primary bg-primary/20 text-primary"
-                    : "border-border/80 bg-card text-foreground",
-                )}
-                onClick={() => setSelectedKeyword(kw)}
-              >
-                <KeywordTag keywordId={kw} />
-                <span className="text-xs">({kwPoints})</span>
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="surface-muted rounded-[22px] border border-border/70 p-5">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold text-foreground">
-              <KeywordTag keywordId={selectedKeyword} /> XP Progress
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {totalXP} XP / {nextXP} XP — {points} point{points !== 1 ? "s" : ""}
-            </p>
-          </div>
-          <div className="mt-3 h-2 w-full rounded-full bg-muted">
-            <div
-              className="h-2 rounded-full bg-primary transition-all"
-              style={{ width: `${progressPercent}%` }}
-            />
-          </div>
-        </div>
-
-        <div className="flex flex-col items-center gap-3">
-          {activeLayout.map((row, rowIndex) => (
-            <div key={rowIndex} className="flex justify-center gap-6">
-              {row.map((nodeIndex) => {
-                const label = activeLabels[nodeIndex] ?? "";
-                const isUnlocked = nodeIndex < points;
-                const isCurrent = nodeIndex === points - 1;
-                return (
-                  <div
-                    key={nodeIndex}
-                    className={cn(
-                      "flex h-16 w-16 items-center justify-center rounded-full border-2 text-center text-xs font-semibold",
-                      isCurrent
-                        ? "border-primary bg-primary/20 text-primary"
-                        : isUnlocked
-                          ? "border-emerald-500/60 bg-emerald-500/10 text-emerald-400"
-                          : "border-border/60 bg-muted/40 text-muted-foreground",
-                    )}
-                    title={label}
-                  >
-                    {label}
-                  </div>
-                );
-              })}
-            </div>
-          ))}
-        </div>
+    <div className="flex h-full w-full flex-col items-center justify-center gap-8 px-4 py-6 text-center">
+      <div>
+        <h1 className="text-5xl font-bold text-red-400">Defeat</h1>
+        <p className="mt-3 text-lg text-muted-foreground">Your run has ended.</p>
       </div>
-    </PlaceholderScreen>
+
+      {keywordIds.length > 0 ? (
+        <div className="w-full max-w-md">
+          <p className="mb-4 text-sm font-semibold text-foreground">Talent Progress This Run</p>
+          <div className="grid gap-4">
+            {keywordIds.map((kw) => {
+              const runXP = runTalentXP[kw] ?? 0;
+              const totalXP = (talentXP[kw] ?? 0) + runXP;
+              const points = computeTalentPoints(totalXP);
+              const nextXP = xpForNextPoint(points);
+              const progress = xpToNextPoint(totalXP);
+              const percent = Math.min(100, Math.round(((nextXP - progress) / nextXP) * 100));
+              const Icon = keywordIcons[kw];
+              const def = keywordDefinitions[kw];
+              return (
+                <div key={kw} className="surface-muted rounded-[18px] border border-border/70 p-4 text-left">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      {Icon ? (
+                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/5">
+                          <Icon className={cn("h-4 w-4", def?.colorClass)} />
+                        </div>
+                      ) : null}
+                      <span className={cn("text-sm font-semibold", def?.colorClass)}>
+                        {def?.label ?? kw}
+                      </span>
+                    </div>
+                    <span className="text-xs text-muted-foreground">+{runXP} XP</span>
+                  </div>
+                  <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-muted">
+                    <div
+                      className="h-full rounded-full bg-primary transition-all duration-1000 ease-out"
+                      style={{ width: `${animate ? percent : 0}%` }}
+                    />
+                  </div>
+                  <p className="mt-1.5 text-right text-[11px] text-muted-foreground">
+                    {totalXP} / {nextXP} XP
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : (
+        <p className="text-sm text-muted-foreground">No talent XP earned this run.</p>
+      )}
+
+      <Button size="lg" className="min-w-44" onClick={onMainMenu}>
+        Return to Main Menu
+      </Button>
+    </div>
   );
 }

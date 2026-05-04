@@ -34,8 +34,24 @@ function dealEnemyDamage(
   combatTexts: CombatTextEvent[],
 ) {
   const forgeBonus = effect.damageType === "physical" || effect.damageType === "stun" ? state.playerStatuses.forge : 0;
-  const rawAmount = effect.fromBlock ? state.playerStatuses.block : effect.amount + forgeBonus;
-  const actualDamage = Math.max(0, rawAmount);
+  let rawAmount = effect.fromBlock ? state.playerStatuses.block : effect.amount + forgeBonus;
+
+  if (effect.damageType === "physical") {
+    rawAmount += state.talentEffects.flatPhysicalDamage;
+    if (state.talentEffects.armorToPhysicalDamage) {
+      rawAmount += state.playerStatuses.armor;
+    }
+  }
+
+  let actualDamage = Math.max(0, rawAmount);
+
+  const globalCritChance = 5;
+  const physCritChance = effect.damageType === "physical" ? state.talentEffects.physicalCritChance : 0;
+  const totalCritChance = globalCritChance + physCritChance;
+  const isCrit = totalCritChance > 0 && Math.random() * 100 < totalCritChance;
+  if (isCrit) {
+    actualDamage *= 2;
+  }
 
   const nextState: BattleState = {
     ...state,

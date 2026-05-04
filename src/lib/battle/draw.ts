@@ -7,9 +7,11 @@ import {
   cardsPerTurn,
   emptyEnemyStatuses,
   emptyPlayerStatuses,
+  emptyTalentEffects,
   maxHandSize,
   maxPlayerHealth,
   type BattleState,
+  type TalentEffectManifest,
   type TurnPhase,
 } from "./types";
 
@@ -45,7 +47,7 @@ export function drawCards(deck: BattleCard[], discard: BattleCard[], hand: Battl
   };
 }
 
-export function createBattleState(runDeck: BattleCard[] = starterDeck, gold = 0, roomsEncountered = 0, currentEnemy?: BestiaryEntry, playerHealth = maxPlayerHealth): BattleState {
+export function createBattleState(runDeck: BattleCard[] = starterDeck, gold = 0, roomsEncountered = 0, currentEnemy?: BestiaryEntry, playerHealth = maxPlayerHealth, talentEffects: TalentEffectManifest = emptyTalentEffects()): BattleState {
   const openingHand = drawCards(shuffleCards(runDeck), [], [], cardsPerTurn);
 
   const enemy = currentEnemy ?? enemyBestiary[0];
@@ -73,6 +75,7 @@ export function createBattleState(runDeck: BattleCard[] = starterDeck, gold = 0,
     enemySkipTurns: 0,
     wishOptions: null,
     currentEnemy: enemy,
+    talentEffects,
   };
 }
 

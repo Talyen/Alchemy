@@ -1,13 +1,15 @@
 import type { MouseEvent, PointerEvent as ReactPointerEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { chooseWishCard, createBattleState, endPlayerTurn, maxPlayerHealth, playBattleCardResolved, type BattleState } from "@/lib/battle";
-import { cardLibrary, characters, starterDeck, type BattleCard, type CharacterGender, type CharacterId } from "@/lib/game-data";
+import { cardLibrary, characters, starterDeck, type BattleCard, type CharacterGender, type CharacterId, type KeywordId } from "@/lib/game-data";
 import { playVictory, playDefeat, playEnemyAttack, initAudio, playDamage, playBuff, playMusic } from "@/lib/audio";
 import { addTalentXP, extractCardKeywords, type TalentXP } from "@/lib/talents";
 import { destinationPool, getCurrentEnemy } from "./config";
 import { useCardGhosts, useFloatingCombatTexts, useHandCardDrag, useShimmerController } from "./hooks";
 import { animateCardActivation, isPointerInBattlefield } from "./run-controller-helpers";
 import type { Destination, Screen } from "./types";
+import type { UnlockedTalents } from "./talent-pool";
+import { computeTalentEffects } from "./talent-pool";
 import { appendUnique, getCardRect, getEnemyStatusChips, getHoverId, getPlayerStatusChips, randomBetween, sampleItems } from "./utils";
 
 type SetStringList = React.Dispatch<React.SetStateAction<string[]>>;
@@ -16,11 +18,13 @@ export function useAlchemyRunController({
   setDiscoveredCardIds,
   setEncounteredEnemyIds,
   initialTalentXP,
+  initialUnlockedTalents,
   initialActiveRun,
 }: {
   setDiscoveredCardIds: SetStringList;
   setEncounteredEnemyIds: SetStringList;
   initialTalentXP: TalentXP;
+  initialUnlockedTalents: UnlockedTalents;
   initialActiveRun: { characterId: CharacterId; characterGender: CharacterGender } | null;
 }) {
   const [screen, setScreen] = useState<Screen>("menu");
@@ -32,6 +36,7 @@ export function useAlchemyRunController({
   const [runGold, setRunGold] = useState(0);
   const [talentXP, setTalentXP] = useState<TalentXP>(initialTalentXP);
   const [runTalentXP, setRunTalentXP] = useState<TalentXP>({});
+  const [unlockedTalents, setUnlockedTalents] = useState<UnlockedTalents>(initialUnlockedTalents);
   const [rewardChoices, setRewardChoices] = useState<BattleCard[]>([]);
   const [rewardGold, setRewardGold] = useState(0);
   const [selectedRewardId, setSelectedRewardId] = useState<string | null>(null);
@@ -80,8 +85,7 @@ export function useAlchemyRunController({
     setHasActiveBattle(false);
     setHoveredCardId(null);
     setMenuOpen(false);
-    const timeout = window.setTimeout(() => setScreen("menu"), 2000);
-    return () => window.clearTimeout(timeout);
+    setScreen("game-over");
   }, [battleState.playerHealth, screen]);
 
   useEffect(() => {
@@ -142,7 +146,8 @@ export function useAlchemyRunController({
     const nextRooms = roomsEncountered + 1;
     setRoomsEncountered(nextRooms);
     clearCardGhosts();
-    setBattleState(createBattleState(deck, gold, nextRooms, currentEnemy, runPlayerHealth));
+    const talentEffects = computeTalentEffects(unlockedTalents);
+    setBattleState(createBattleState(deck, gold, nextRooms, currentEnemy, runPlayerHealth, talentEffects));
     setHasActiveBattle(true);
     setHoveredCardId(null);
     setMenuOpen(false);
@@ -295,11 +300,23 @@ function skipCombatDevMode() {
     setBattleState((current) => ({ ...current, playerHealth: 0 }));
   }
 
+  function unlockTalent(keywordId: KeywordId, talentId: string) {
+    setUnlockedTalents((prev) => ({
+      ...prev,
+      [keywordId]: [...(prev[keywordId] ?? []), talentId],
+    }));
+  }
+
+  function resetUnlockedTalents() {
+    setUnlockedTalents({});
+  }
+
   function resetRunState() {
     clearCardGhosts();
     setBattleState(createBattleState(starterDeck, 0));
     setRunDeck([...starterDeck]);
     setRunGold(0);
+    setRunTalentXP({});
     setRoomsEncountered(0);
     setRewardChoices([]);
     setRewardGold(0);
@@ -309,6 +326,12 @@ function skipCombatDevMode() {
     setMenuOpen(false);
     setHasActiveBattle(false);
     setScreen("menu");
+  }
+
+  function clearPermanentData() {
+    setTalentXP({});
+    setRunTalentXP({});
+    setUnlockedTalents({});
   }
 
   return {
@@ -339,6 +362,9 @@ function skipCombatDevMode() {
     playerShaking,
     talentXP,
     runTalentXP,
+    unlockedTalents,
+    unlockTalent,
+    resetUnlockedTalents,
     setHoveredCardId,
     setMenuOpen,
     setSelectedRewardId,
@@ -357,6 +383,7 @@ function skipCombatDevMode() {
     skipCombatDevMode,
     removeCardGhost,
     resetRunState,
+    clearPermanentData,
     handleEndTurn,
     handleEndRun,
     get activeRunData() { return hasActiveBattle ? { characterId, characterGender } : null; },

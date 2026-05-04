@@ -1,6 +1,7 @@
 import { starterDeck, type CharacterGender, type CharacterId } from "@/lib/game-data";
 import type { TalentXP } from "@/lib/talents";
 
+import type { UnlockedTalents } from "./talent-pool";
 import type { ResolutionOption } from "./types";
 
 const storageKey = "alchemy-save-v1";
@@ -11,6 +12,7 @@ type SaveData = {
   encounteredEnemyIds: string[];
   discoveredTrinketIds: string[];
   talentXP: TalentXP;
+  unlockedTalents: UnlockedTalents;
   musicVolume: number;
   sfxVolume: number;
   activeRun: ActiveRunData | null;
@@ -27,6 +29,7 @@ export const defaultSaveData: SaveData = {
   encounteredEnemyIds: [],
   discoveredTrinketIds: [],
   talentXP: {},
+  unlockedTalents: {},
   musicVolume: 0,
   sfxVolume: 70,
   activeRun: null,
@@ -50,6 +53,7 @@ export function loadAlchemySaveData(): SaveData {
       encounteredEnemyIds: Array.isArray(parsed.encounteredEnemyIds) ? parsed.encounteredEnemyIds : defaultSaveData.encounteredEnemyIds,
       discoveredTrinketIds: Array.isArray(parsed.discoveredTrinketIds) ? parsed.discoveredTrinketIds : defaultSaveData.discoveredTrinketIds,
       talentXP: typeof parsed.talentXP === 'object' && parsed.talentXP ? parsed.talentXP as TalentXP : defaultSaveData.talentXP,
+      unlockedTalents: typeof parsed.unlockedTalents === 'object' && parsed.unlockedTalents ? parsed.unlockedTalents as UnlockedTalents : defaultSaveData.unlockedTalents,
       musicVolume: typeof parsed.musicVolume === 'number' ? parsed.musicVolume : defaultSaveData.musicVolume,
       sfxVolume: typeof parsed.sfxVolume === 'number' ? parsed.sfxVolume : defaultSaveData.sfxVolume,
       activeRun: parsed.activeRun && typeof parsed.activeRun === 'object' ? parsed.activeRun as ActiveRunData : null,
