@@ -25,11 +25,11 @@ export function OptionsScreen({
   return (
     <PageLayout>
       <div className="alchemy-shell flex w-full max-w-3xl flex-col rounded-[28px] px-6 py-7 sm:px-8">
-        <h1 className="text-center text-3xl font-semibold text-foreground">Options</h1>
+        <h1 className="text-center text-3xl text-foreground">Options</h1>
 
         <div className="mt-6 flex justify-center gap-2">
           {(["display", "sound", "other"] as const).map((t) => (
-            <button key={t} type="button" className={cn("rounded-full border px-4 py-2 text-sm font-semibold capitalize", tab === t ? "border-primary bg-primary/20 text-primary" : "border-border/80 bg-card text-foreground")} onClick={() => setTab(t)}>{t}</button>
+            <button key={t} type="button" className={cn("rounded-full border px-4 py-2 text-sm font-semibold capitalize transition-transform active:scale-95", tab === t ? "border-primary bg-primary/20 text-primary" : "border-border/80 bg-card text-foreground")} onClick={() => setTab(t)}>{t}</button>
           ))}
         </div>
 

@@ -125,7 +125,7 @@ export function ArtPanel({
 
       <div className={cn("surface-muted rounded-[24px] px-4 py-3 shadow-[0_16px_36px_rgba(0,0,0,0.38)]", battleCardWidthClass)}>
         <div className="flex items-center justify-between gap-3">
-          <p className="text-sm font-semibold text-foreground">{title}</p>
+          <p className="text-sm text-foreground">{title}</p>
           <p className={cn("text-xs font-medium text-muted-foreground", isDead && "opacity-30")}>
             {health}/{maxHealth}
           </p>

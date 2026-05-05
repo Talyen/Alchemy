@@ -80,7 +80,7 @@ export function BattleScreen({
     <div ref={battleSceneRef} className="relative h-full w-full overflow-hidden">
       <section className="absolute inset-x-0 flex -translate-y-1/2 items-start justify-center gap-[clamp(104px,9vw,182px)] px-4" style={{ top: '42%' }}>
         <div
-          className={`pointer-events-none absolute -top-10 left-1/2 z-20 whitespace-nowrap rounded-md px-3 py-1 text-sm font-semibold transition-all duration-500 ${
+          className={`pointer-events-none absolute -top-10 left-1/2 z-20 whitespace-nowrap rounded-md px-3 py-1 text-sm transition-all duration-500 ${
             isPlayerTurn ? 'bg-emerald-900/80 text-emerald-300' : 'bg-rose-900/80 text-rose-300'
           }`}
           style={{
@@ -247,7 +247,7 @@ export function BattleScreen({
         <div className="absolute inset-0 z-[90] flex items-center justify-center bg-black/70 px-6">
           <div className="alchemy-shell w-full max-w-5xl rounded-[28px] border border-border/80 px-6 py-6">
             <div className="text-center">
-              <h2 className="text-2xl font-semibold text-foreground">Wish 1</h2>
+              <h2 className="text-2xl text-foreground">Wish 1</h2>
               <p className="mt-2 text-sm text-muted-foreground">Choose one card to add to your hand.</p>
             </div>
 

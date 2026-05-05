@@ -1,5 +1,5 @@
 import type { MouseEvent, PointerEvent as ReactPointerEvent } from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { chooseWishCard, createBattleState, endPlayerTurn, maxPlayerHealth, playBattleCardResolved, type BattleState } from "@/lib/battle";
 import { cardLibrary, characters, starterDeck, type BattleCard, type CharacterGender, type CharacterId, type KeywordId } from "@/lib/game-data";
 import { playVictory, playDefeat, playDamage, playBuff, playMusic } from "@/lib/audio";
@@ -63,6 +63,9 @@ export function useAlchemyRunController({
   const playerPanelRef = useRef<HTMLDivElement | null>(null);
   const enemyPanelRef = useRef<HTMLDivElement | null>(null);
   const destinationButtonRefs = useRef<Partial<Record<Destination, HTMLButtonElement | null>>>({});
+  const navTimerRef = useRef<number>(0);
+
+  useEffect(() => () => window.clearTimeout(navTimerRef.current), []);
 
   // ============ Hooks ============
   const { cardGhosts, removeCardGhost, clearCardGhosts, spawnCardGhost } = useCardGhosts();
@@ -104,7 +107,7 @@ export function useAlchemyRunController({
   }, [battleState.enemyHealth, battleState.gold, screen]);
 
   // ============ Game Flow ============
-  function beginRun() { if (hasActiveBattle) { returnToBattle(); return; } playMusic(MUSIC_KEYS.MENU); setScreen("character-select"); }
+  function beginRun() { if (hasActiveBattle) { returnToBattle(); return; } playMusic(MUSIC_KEYS.MENU); navigateTo("character-select"); }
 
   function handleCharacterSelect(selectedId: CharacterId, gender: CharacterGender) {
     const character = characters[selectedId];
@@ -126,12 +129,17 @@ export function useAlchemyRunController({
     run.setRoomsEncountered((p) => p + 1);
     clearCardGhosts();
     setBattleState(createBattleState(deck, gold, run.roomsEncountered, enemy, run.runPlayerHealth, talents.talentEffects));
-    setHasActiveBattle(true); setHoveredCardId(null); setMenuOpen(false); setRewardState((p) => ({ ...p, selectedId: null })); setScreen("battle");
+    setHasActiveBattle(true); setHoveredCardId(null); setMenuOpen(false); setRewardState((p) => ({ ...p, selectedId: null })); navigateTo("battle");
     setEncounteredEnemyIds((current) => current.includes(enemy.id) ? current : [...current, enemy.id]);
   }
 
-  function returnToBattle() { if (hasActiveBattle) { setMenuOpen(false); setScreen("battle"); } }
-  function goToScreen(nextScreen: Screen) { setHoveredCardId(null); setMenuOpen(false); setScreen(nextScreen); }
+  function returnToBattle() { if (hasActiveBattle) { setMenuOpen(false); navigateTo("battle"); } }
+  function goToScreen(nextScreen: Screen) { setHoveredCardId(null); setMenuOpen(false); navigateTo(nextScreen); }
+
+  function navigateTo(nextScreen: Screen) {
+    window.clearTimeout(navTimerRef.current);
+    navTimerRef.current = window.setTimeout(() => setScreen(nextScreen), 100);
+  }
 
   // ============ Card Play ============
   function handleKeyboardPlay(card: BattleCard, index: number, event: MouseEvent<HTMLButtonElement>) {
@@ -169,15 +177,15 @@ export function useAlchemyRunController({
   function finishRewards(chosenCard?: BattleCard) {
     if (chosenCard) { run.setRunDeck((prev) => [...prev, chosenCard]); setDiscoveredCardIds((cur) => cur.includes(chosenCard.id) ? cur : [...cur, chosenCard.id]); }
     setRewardState((prev) => ({ choices: [], gold: 0, selectedId: null, destinations: prev.destinations }));
-    setHoveredCardId(null); setScreen("destination");
+    setHoveredCardId(null); navigateTo("destination");
   }
 
   function handleDestinationChoice(destination: Destination) {
     setHoveredCardId(null); setMenuOpen(false);
-    if (destination === "Campfire") setScreen("campfire");
-    else if (destination === "Merchant's Shop") { setShopState({ cards: sampleItems(cardLibrary, 3), refreshesLeft: 1, removeUsed: false }); setScreen("shop"); }
-    else if (destination === "Alchemist's Shop") { const potions = sampleItems(cardLibrary.filter((c) => c.id.includes("potion") && c.id !== "mixed-potion"), 3); setAlchemistState({ potions, refreshesLeft: 1, mixUsed: false }); setScreen("alchemist"); }
-    else if (destination === "Mystery") { setMysteryEvent(mysteryPool[Math.floor(Math.random() * mysteryPool.length)]); setScreen("mystery"); }
+    if (destination === "Campfire") navigateTo("campfire");
+    else if (destination === "Merchant's Shop") { setShopState({ cards: sampleItems(cardLibrary, 3), refreshesLeft: 1, removeUsed: false }); navigateTo("shop"); }
+    else if (destination === "Alchemist's Shop") { const potions = sampleItems(cardLibrary.filter((c) => c.id.includes("potion") && c.id !== "mixed-potion"), 3); setAlchemistState({ potions, refreshesLeft: 1, mixUsed: false }); navigateTo("alchemist"); }
+    else if (destination === "Mystery") { setMysteryEvent(mysteryPool[Math.floor(Math.random() * mysteryPool.length)]); navigateTo("mystery"); }
     else if (destination === "Elite Combat") startBattle(undefined, undefined, "elite");
     else startBattle(undefined, undefined, "normal");
   }
@@ -205,14 +213,14 @@ export function useAlchemyRunController({
   function handleShopContinue() {
     run.setRoomsEncountered((p) => p + 1);
     setRewardState((prev) => ({ ...prev, destinations: sampleItems(getAvailableDestinations(), DESTINATION_CHOICES) }));
-    setHoveredCardId(null); setMenuOpen(false); setScreen("destination");
+    setHoveredCardId(null); setMenuOpen(false); navigateTo("destination");
   }
 
   function handleCampfireContinue() {
     run.setRunPlayerHealth((prev) => Math.min(maxPlayerHealth, prev + Math.floor(maxPlayerHealth * CAMPFIRE_HEAL_FRACTION)));
     run.setRoomsEncountered((p) => p + 1);
     setRewardState((prev) => ({ ...prev, destinations: sampleItems(getAvailableDestinations(), DESTINATION_CHOICES) }));
-    setHoveredCardId(null); setMenuOpen(false); setScreen("destination");
+    setHoveredCardId(null); setMenuOpen(false); navigateTo("destination");
   }
 
   function handleAlchemistRefresh() {
@@ -254,7 +262,7 @@ export function useAlchemyRunController({
   function handleAlchemistContinue() {
     run.setRoomsEncountered((p) => p + 1);
     setRewardState((prev) => ({ ...prev, destinations: sampleItems(getAvailableDestinations(), DESTINATION_CHOICES) }));
-    setHoveredCardId(null); setMenuOpen(false); setScreen("destination");
+    setHoveredCardId(null); setMenuOpen(false); navigateTo("destination");
   }
 
   function handleMysteryChoice(choice: MysteryChoice) {
@@ -286,7 +294,7 @@ export function useAlchemyRunController({
   function handleMysteryContinue() {
     run.setRoomsEncountered((p) => p + 1);
     setRewardState((prev) => ({ ...prev, destinations: sampleItems(getAvailableDestinations(), DESTINATION_CHOICES) }));
-    setHoveredCardId(null); setMenuOpen(false); setScreen("destination");
+    setHoveredCardId(null); setMenuOpen(false); navigateTo("destination");
   }
 
   // ============ Turn Management ============
@@ -313,7 +321,7 @@ export function useAlchemyRunController({
     clearCardGhosts(); setBattleState(createBattleState(starterDeck, 0));
     run.reset(); talents.resetRunXP();
     setRewardState({ choices: [], gold: 0, selectedId: null, destinations: [] });
-    setHoveredCardId(null); setMenuOpen(false); setHasActiveBattle(false); setScreen("menu");
+    setHoveredCardId(null); setMenuOpen(false); setHasActiveBattle(false); navigateTo("menu");
   }
 
   function clearPermanentData() { talents.clearPermanentData(); }

@@ -29,7 +29,7 @@ function CharacterCard({ id, isSelected, isShimmer, shimmerToken, onSelect, onHo
         <ShimmerOverlay active={isShimmer} token={shimmerToken} rounded="rounded-[22px]" />
         <img src={art} alt={char.name} className={cn(cardSurfaceClass, "w-full rounded-[22px]")} />
       </button>
-      <p className="text-2xl font-semibold text-foreground">{char.name}</p>
+      <p className="text-2xl text-foreground">{char.name}</p>
       <div className="flex flex-wrap justify-center gap-1">{char.keywords.map((kw) => <KeywordTag key={kw} keywordId={kw} pill />)}</div>
     </div>
   );
@@ -44,7 +44,7 @@ export function CharacterSelectScreen({ onConfirm, onBack }: { onConfirm: (chara
 
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-6 px-4 py-6 text-center">
-      <h1 className="text-4xl font-semibold text-foreground">Choose Your Hero</h1>
+      <h1 className="text-4xl text-foreground">Choose Your Hero</h1>
 
       <div className="flex flex-wrap items-start justify-center gap-12">
         {charIds.map((id) => <CharacterCard key={id} id={id} isSelected={selectedId === id} isShimmer={shimmerState?.cardId === id} shimmerToken={shimmerState?.token} onSelect={setSelectedId} onHoverShimmer={maybeTriggerShimmer} />)}

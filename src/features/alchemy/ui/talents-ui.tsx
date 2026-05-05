@@ -181,7 +181,7 @@ export function TalentKeywordButton({
     <button
       type="button"
       className={cn(
-        "relative rounded-full border px-3 py-1.5 text-sm font-semibold inline-flex items-center gap-1.5",
+        "relative rounded-full border px-3 py-1.5 text-sm font-semibold inline-flex items-center gap-1.5 transition-transform active:scale-95",
         isSelected
           ? "border-primary bg-primary/20 text-primary"
           : "border-border/80 bg-card text-foreground",

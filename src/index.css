@@ -4,24 +4,24 @@
 
 @layer base {
   :root {
-    --background: 0 0% 0%;
-    --foreground: 0 0% 96%;
-    --card: 0 0% 5%;
-    --card-foreground: 0 0% 96%;
-    --popover: 0 0% 5%;
-    --popover-foreground: 0 0% 96%;
-    --primary: 38 80% 62%;
+    --background: 30 10% 3%;
+    --foreground: 40 25% 88%;
+    --card: 30 8% 6%;
+    --card-foreground: 40 25% 88%;
+    --popover: 30 8% 6%;
+    --popover-foreground: 40 25% 88%;
+    --primary: 36 55% 56%;
     --primary-foreground: 28 22% 12%;
-    --secondary: 0 0% 10%;
-    --secondary-foreground: 0 0% 92%;
-    --muted: 0 0% 8%;
-    --muted-foreground: 0 0% 68%;
-    --accent: 191 45% 52%;
+    --secondary: 30 8% 10%;
+    --secondary-foreground: 38 20% 86%;
+    --muted: 30 6% 8%;
+    --muted-foreground: 35 12% 62%;
+    --accent: 195 30% 48%;
     --accent-foreground: 28 22% 12%;
-    --destructive: 7 70% 56%;
-    --border: 0 0% 18%;
-    --input: 0 0% 18%;
-    --ring: 38 80% 62%;
+    --destructive: 0 50% 45%;
+    --border: 30 8% 16%;
+    --input: 30 8% 16%;
+    --ring: 36 55% 56%;
     --radius: 1.5rem;
   }
 
@@ -34,14 +34,26 @@
   }
 
   #root {
+    position: relative;
+    z-index: 1;
     min-height: 100vh;
   }
 
   body {
     @apply min-h-screen bg-background font-body text-foreground antialiased;
-    background-color: #000;
+    background-color: hsl(30 10% 3%);
     overflow: hidden;
     user-select: none;
+  }
+
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.05;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   }
 
   img {
@@ -59,8 +71,8 @@
 
 @layer components {
   .alchemy-shell {
-    background: rgba(0, 0, 0, 0.94);
-    border-color: rgba(255, 255, 255, 0.08);
+    background: rgba(12, 10, 7, 0.95);
+    border-color: rgba(255, 253, 245, 0.08);
   }
 
   .tilt-surface {
@@ -172,7 +184,7 @@
 
 @layer utilities {
   .surface-muted {
-    background: rgba(8, 8, 8, 0.96);
+    background: rgba(14, 12, 9, 0.96);
   }
 
   .page-enter {
@@ -181,8 +193,8 @@
 }
 
 @keyframes pageEnter {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from { opacity: 0; transform: scale(0.985); }
+  to { opacity: 1; transform: scale(1); }
 }
 
 @keyframes cardShimmer {

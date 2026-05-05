@@ -67,7 +67,7 @@ export function MysteryScreen({
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-6 overflow-y-auto px-4 py-6 text-center">
       {event.art ? <img src={event.art} alt={event.title} className="w-full max-w-[320px] rounded-[18px] object-contain" /> : null}
-      <h1 className="text-4xl font-semibold text-foreground">{event.title}</h1>
+      <h1 className="text-4xl text-foreground">{event.title}</h1>
       <p className="max-w-lg text-base leading-relaxed text-muted-foreground">{event.narrative}</p>
 
       {!chosen ? (

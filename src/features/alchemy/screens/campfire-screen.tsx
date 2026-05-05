@@ -49,7 +49,7 @@ export function CampfireScreen({
 
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-8 px-4 py-6 text-center">
-      <h1 className="text-4xl font-semibold text-foreground">Campfire</h1>
+      <h1 className="text-4xl text-foreground">Campfire</h1>
       <p className="-mt-6 text-base text-muted-foreground">Rest to Restore 30% HP</p>
 
       <img src={campfire} alt="Campfire" className="w-full max-w-[400px] rounded-[22px] object-contain" />

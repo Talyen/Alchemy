@@ -23,7 +23,7 @@ export function CollectionScreen({
 
   return (
     <PageLayout>
-      <h1 className="text-4xl font-semibold text-foreground">Collection</h1>
+      <h1 className="text-4xl text-foreground">Collection</h1>
       <CollectionTabs collectionTab={collectionTab} onSelectTab={onSelectTab} />
 
       <div className="mt-6 flex min-h-[640px] flex-col items-center overflow-visible">

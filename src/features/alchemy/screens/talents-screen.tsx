@@ -56,7 +56,7 @@ export function TalentsScreen({
   return (
     <PageLayout>
       <div className="alchemy-shell flex w-full max-w-3xl flex-col rounded-[28px] px-6 py-7 sm:px-8">
-        <h1 className="text-center text-3xl font-semibold text-foreground">Talents</h1>
+        <h1 className="text-center text-3xl text-foreground">Talents</h1>
 
         <div className="mx-auto mt-6 flex w-full max-w-2xl flex-col gap-6 text-left">
           <div className="flex flex-wrap justify-center gap-2">
@@ -67,7 +67,7 @@ export function TalentsScreen({
               const hasUnspent = kwPoints - kwUnlockedIds.length > 0;
               return <TalentKeywordButton key={kw} keywordId={kw} hasUnspent={hasUnspent} isSelected={selectedKeyword === kw} onClick={() => setSelectedKeyword(kw)} />;
             })}
-            <button type="button" onClick={() => setShowResetConfirm(true)} className="rounded-full border border-border/40 px-3 py-1.5 text-xs font-medium text-muted-foreground/60 hover:border-border/60 hover:text-muted-foreground">Reset Talents</button>
+            <button type="button" onClick={() => setShowResetConfirm(true)} className="rounded-full border border-border/40 px-3 py-1.5 text-xs font-medium text-muted-foreground/60 hover:border-border/60 hover:text-muted-foreground transition-transform active:scale-95">Reset Talents</button>
           </div>
 
           <div className="surface-muted rounded-[22px] border border-border/70 p-5">

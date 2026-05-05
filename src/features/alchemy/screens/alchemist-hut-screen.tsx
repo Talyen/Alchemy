@@ -134,7 +134,7 @@ export function AlchemistHutScreen({
 
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-6 overflow-y-auto px-4 py-6 text-center">
-      <h1 className="text-4xl font-semibold text-foreground">Alchemist's Shop</h1>
+      <h1 className="text-4xl text-foreground">Alchemist's Shop</h1>
       {!mixedCard ? <GoldDisplay gold={gold} /> : null}
 
       {mixedCard ? (
