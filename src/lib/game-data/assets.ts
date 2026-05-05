@@ -1,6 +1,11 @@
 import alchemyLogo from "@/assets/optimized/alchemy-logo.webp";
 import anvil from "@/assets/optimized/anvil.webp";
 import campfire from "@/assets/optimized/campfire.webp";
+import alchemistShopBg from "@/assets/optimized/alchemist-shop.webp";
+import merchantShopBg from "@/assets/optimized/merchant-shop.webp";
+import eliteEnemyBg from "@/assets/optimized/elite-enemy.webp";
+import normalEnemyBg from "@/assets/optimized/normal-enemy.webp";
+import mysteryBg from "@/assets/optimized/mystery.webp";
 import apple from "@/assets/optimized/apple.webp";
 import bash from "@/assets/optimized/bash.webp";
 import blessedAegis from "@/assets/optimized/blessed-aegis.webp";
@@ -32,6 +37,7 @@ import mimic from "@/assets/optimized/mimic.webp";
 import mudElemental from "@/assets/optimized/mud-elemental.webp";
 import necromancer from "@/assets/optimized/necromancer.webp";
 import panaceaPotion from "@/assets/optimized/panacea-potion.webp";
+import mixedPotion from "@/assets/optimized/mixed-potion.webp";
 import plagueDoctor from "@/assets/optimized/plague-doctor.webp";
 import plateMail from "@/assets/optimized/plate-mail.webp";
 import poisonDagger from "@/assets/optimized/poison-dagger.webp";
@@ -76,6 +82,7 @@ export {
   mudElemental,
   necromancer,
   panaceaPotion,
+  mixedPotion,
   plagueDoctor,
   plateMail,
   poisonDagger,
@@ -84,6 +91,11 @@ export {
   stab,
   steal,
   wish,
+  alchemistShopBg,
+  merchantShopBg,
+  eliteEnemyBg,
+  normalEnemyBg,
+  mysteryBg,
 };
 
 export const menuLogo = alchemyLogo;

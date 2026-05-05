@@ -4,12 +4,12 @@ import { AlertTriangle, House, Swords } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-import { destinationMeta } from "../config";
+import { destinationMeta, staticCardTransform } from "../config";
 import type { Destination, ResolutionOption } from "../types";
+import { clearTiltFromEvent, setTiltFromEvent } from "../utils";
 
 // Destination choice buttons shown after victory. Each destination gets its own
-// color scheme from destinationMeta. Refs are stored so the controller can
-// reference them (currently unused but available for focus management).
+// color scheme and art image. Tilt effects on the art are applied on hover.
 export function DestinationChoices({
   destinationOptions,
   onChoose,
@@ -20,23 +20,30 @@ export function DestinationChoices({
   buttonRefs: MutableRefObject<Partial<Record<Destination, HTMLButtonElement | null>>>;
 }) {
   return (
-    <div className="mt-14 flex flex-wrap justify-center gap-3">
+    <div className="flex flex-wrap justify-center gap-8">
       {destinationOptions.map((destination) => {
-        const Icon = destinationMeta[destination].icon;
-
+        const { icon: Icon, className, art } = destinationMeta[destination];
         return (
-          <button
-            key={destination}
-            ref={(node) => { buttonRefs.current[destination] = node; }}
-            type="button"
-            onClick={() => onChoose(destination)}
-            className={cn("relative inline-flex min-h-[56px] items-center justify-start gap-2 overflow-hidden rounded-full border border-border/80 px-4 py-2 text-left text-sm font-semibold shadow-[0_12px_24px_rgba(0,0,0,0.26)] hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background", destinationMeta[destination].className)}
-          >
-            <div className="relative flex items-center gap-2">
+          <div key={destination} className="flex flex-col items-center gap-4">
+            <div
+              className="tilt-surface rounded-[18px]"
+              style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
+              data-tilt-strength="12"
+              onMouseMove={setTiltFromEvent}
+              onMouseLeave={clearTiltFromEvent}
+            >
+              <img src={art} alt={destination} className="w-full max-w-[352px] rounded-[18px] object-contain" />
+            </div>
+            <button
+              ref={(node) => { buttonRefs.current[destination] = node; }}
+              type="button"
+              onClick={() => onChoose(destination)}
+              className={cn("inline-flex min-h-[48px] items-center justify-start gap-2 rounded-full border border-border/80 px-4 py-2 text-left text-sm font-semibold shadow-[0_12px_24px_rgba(0,0,0,0.26)] hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background", className)}
+            >
               <span className="rounded-full bg-black/16 p-1.5"><Icon className="h-4 w-4" /></span>
               <span className="leading-none">{destination}</span>
-            </div>
-          </button>
+            </button>
+          </div>
         );
       })}
     </div>
@@ -115,6 +122,19 @@ export function PageLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex h-full w-full flex-col items-center justify-center overflow-y-auto px-4 py-6">
       {children}
+    </div>
+  );
+}
+
+// Wraps disabled buttons to show a hover tooltip explaining why it's disabled.
+export function DisabledTooltip({ show, message, children }: { show: boolean; message: string; children: ReactNode }) {
+  if (!show) return <>{children}</>;
+  return (
+    <div className="relative group">
+      {children}
+      <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-black/90 px-3 py-1.5 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100">
+        {message}
+      </div>
     </div>
   );
 }

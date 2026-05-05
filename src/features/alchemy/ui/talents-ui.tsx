@@ -114,7 +114,7 @@ export function TalentList({
   return (
     <div>
       {allTalents.length > 0 ? (
-        <div className="flex flex-wrap justify-center gap-2">
+        <div className="grid grid-cols-3 items-start gap-2">
           {allTalents.map((talent) => {
             const isUnlocked = unlockedIds.has(talent.id);
             const borderClass = keywordBorderClasses[talent.keywordId] ?? "border-border/60";
@@ -125,12 +125,12 @@ export function TalentList({
                 <div
                   key={talent.id}
                   className={cn(
-                    "flex items-center gap-2 rounded-[12px] border bg-black px-3 py-2.5 text-sm font-semibold leading-snug",
+                    "flex items-start gap-2 rounded-[12px] border bg-black px-3 py-2.5 text-sm font-semibold leading-snug min-h-[5rem]",
                     `${borderClass}/30`,
                   )}
                 >
                   {Icon ? (
-                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/5">
+                    <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/5">
                       <Icon className="h-3 w-3" />
                     </div>
                   ) : null}
@@ -143,12 +143,12 @@ export function TalentList({
               <div
                 key={talent.id}
                 className={cn(
-                  "flex items-center gap-2 rounded-[12px] border border-dashed px-3 py-2.5 text-sm font-semibold leading-snug",
+                  "flex items-start gap-2 rounded-[12px] border border-dashed px-3 py-2.5 text-sm font-semibold leading-snug min-h-[5rem]",
                   "border-border/20 bg-black/40 text-muted-foreground/40",
                 )}
               >
                 {Icon ? (
-                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/[0.03]">
+                  <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/[0.03]">
                     <Icon className="h-3 w-3 opacity-30" />
                   </div>
                 ) : null}

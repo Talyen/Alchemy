@@ -25,26 +25,24 @@ export function CombatTextRail({ entries, side }: { entries: FloatingCombatText[
   }
 
   return (
-    <div className={cn(
-      "pointer-events-none z-30 flex flex-col gap-2",
-      side === "player" ? "items-start text-left" : "items-end text-right",
-    )}>
+    <div className="pointer-events-none z-30 relative" style={{ width: "max-content" }}>
       {entries.map((entry) => (
-        <CombatTextBubble key={entry.id} entry={entry} />
+        <CombatTextBubble key={entry.id} entry={entry} side={side} />
       ))}
     </div>
   );
 }
 
-function CombatTextBubble({ entry }: { entry: FloatingCombatText }) {
+function CombatTextBubble({ entry, side }: { entry: FloatingCombatText; side: "player" | "enemy" }) {
   const Icon = getCombatTextIcon(entry);
   const colorClass = getCombatTextColorClass(entry);
 
   return (
     <div
       className={cn(
-        "combat-text-float inline-flex items-center gap-2 rounded-full bg-black/35 px-5 py-2.5 text-2xl font-semibold backdrop-blur-[2px]",
+        "combat-text-float absolute whitespace-nowrap inline-flex items-center gap-2 rounded-full bg-black/35 px-5 py-2.5 text-2xl font-semibold backdrop-blur-[2px]",
         colorClass,
+        side === "player" ? "left-0" : "right-0",
       )}
       style={{ "--combat-text-lane": String(entry.lane) } as CSSProperties}
     >
@@ -122,7 +120,7 @@ export function ArtPanel({
         style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
       >
         <ShimmerOverlay active={shimmerActive} token={shimmerToken} />
-        <img src={art} alt={title} className="block h-auto w-full rounded-[30px]" loading="eager" />
+        <img src={art} alt={title} className="block w-full rounded-[30px] aspect-[375/524]" loading="eager" />
       </div>
 
       <div className={cn("surface-muted rounded-[24px] px-4 py-3 shadow-[0_16px_36px_rgba(0,0,0,0.38)]", battleCardWidthClass)}>
@@ -153,7 +151,7 @@ export function PilePanel({ label, count, type }: { label: string; count: number
         onMouseLeave={clearTiltFromEvent}
         style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
       >
-        <img src={art} alt={`${label} pile`} className="block h-auto w-full rounded-[30px]" loading="lazy" />
+        <img src={art} alt={`${label} pile`} className="block w-full rounded-[30px] aspect-[375/524]" loading="lazy" />
       </div>
       <div>
         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">{label}</p>

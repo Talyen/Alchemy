@@ -59,3 +59,150 @@ Add a new raw asset:
 - **Asset pipeline**: `prebuild`/`predev` run `assets:optimize` automatically. The script reads from `Raw Art Assets/` and writes webp to `src/assets/optimized/`. Run `npm run assets:optimize` after adding new art.
 - **Vite base path** is `/Alchemy/` (for GitHub Pages deploy). Dev server runs at `http://127.0.0.1:4173/Alchemy/`.
 - The `.github/copilot-instructions.md` file contains additional UI/design guidance.
+
+## Token efficiency
+
+### Never read these files
+They are either binary, generated, or never relevant to coding tasks:
+- `package-lock.json`
+- `Raw Art Assets/**` — source PNGs, never needed; optimized outputs are in `src/assets/optimized/`
+- `src/assets/optimized/**` — webp binaries
+- `Music/**` — MP3 binaries
+- `dist/**`, `.vite/**`
+- `.github/copilot-instructions.md` — only relevant for UI/design tasks; read only if explicitly working on visual styling
+
+### Stable files — don't re-read within a session
+These rarely change mid-session. Read once if needed, then rely on what you already know:
+- `src/lib/game-constants.ts` — all tuning values; if you need a constant, check here once
+- `src/lib/game-data/cards.ts`, `keywords.ts`, `assets.ts` — card/keyword/art definitions
+- `vite.config.ts`, `tsconfig.json`, `playwright.config.ts` — build config, don't read unless the task is explicitly about build/test config
+
+### Navigation hints — find things without reading everything
+- Game tuning knobs → `src/lib/game-constants.ts`
+- A card's effects → `src/lib/game-data/cards.ts`
+- Battle state shape → `src/lib/battle/` (start with the type definitions)
+- Run-level state → `src/features/alchemy/use-alchemy-run-controller.ts`
+- A UI screen → `src/features/alchemy/screens/`
+- A reusable widget → `src/features/alchemy/ui/`
+- Sound behaviour → `src/lib/audio.ts`
+- Talent maths → `src/lib/talents.ts`
+- Imports for cards, enemies, keywords → always via `@/lib/game-data` barrel, not submodule paths directly
+
+### Prefer surgical reads
+- Read specific functions or types with a line range rather than whole files when the task is localised
+- Don't read a file to confirm something you already saw earlier in this session
+- Don't read `game-constants.ts` to find a value and then re-read the file that uses it — you already have the value
+
+### Avoid polluting context with output
+- Don't run `npm run dev` or leave a dev server running in a tool call — the streaming output will grow the context unboundedly
+- Capture only the relevant portion of build/test output; don't dump full Playwright traces into context, asset optimization logs, or complete build file lists
+- For type errors, run `tsc --noEmit` once and read the output; don't iterate by re-running repeatedly within one turn
+- Use `Select-Object -Last 5` or `Select-String "error"` to filter build/test output to only what matters
+
+# Alchemy Game UI/UX Taste Guidelines
+
+Apply these rules whenever building or modifying UI, styling, layout, animation, or interaction code for this project.
+
+## Core Principle
+
+This is a fantasy roguelite deckbuilder web game. The interface should feel like a polished game, not a SaaS app, landing page, portfolio, or dashboard.
+
+Gameplay clarity always beats decoration. A player should quickly understand what is happening, what they can interact with, what changed, and what consequences an action may have.
+
+## Visual Direction
+
+Use a cohesive fantasy adventure style: tactile, readable, atmospheric, and hand-crafted.
+
+Prefer grounded colors:
+- Warm neutrals, muted golds, deep reds, forest greens, smoky blues, bone/off-white
+
+Avoid generic modern-web styling:
+- Corporate gradients
+- Glassmorphism as a default
+- Neon-heavy UI
+- SaaS cards and dashboards
+- Marketing-page layouts
+
+Ornamentation is welcome, but it should frame and support the interface rather than compete with it.
+
+## Readability
+
+Gameplay text must be easy to read at normal play size.
+
+Use decorative fonts only for flavor, headings, logos, or major presentation moments. Use clear fonts for rules, numbers, labels, buttons, tooltips, settings, and repeated gameplay information.
+
+Do not shrink text aggressively to fit a design. Improve the wording, layout, or hierarchy instead.
+
+## Interaction
+
+Every interactive element should have clear states:
+- Default
+- Hover
+- Active/pressed
+- Selected
+- Focus
+- Disabled
+- Loading or unavailable, when relevant
+
+Do not rely on color alone. Use shape, contrast, motion, icons, borders, brightness, or labels as supporting cues.
+
+Important actions should provide immediate feedback. The UI should never leave the player wondering whether a click, drag, selection, purchase, confirmation, or cancellation worked.
+
+## Motion
+
+Motion should feel tactile and game-like, not like a marketing site.
+
+Use animation to clarify:
+- Selection
+- Movement
+- Confirmation
+- Impact
+- Change of state
+- Entrance or exit of important UI
+
+Avoid motion that is slow, decorative, distracting, or repeated so often that it gets annoying.
+
+Prefer fast, responsive transitions using `transform` and `opacity`. Avoid expensive layout or filter animations unless clearly justified.
+
+## Performance
+
+This is a game. Responsiveness matters.
+
+Avoid unnecessary re-renders, heavy shadows, large animated blurs, excessive particles, and constantly animated backgrounds.
+
+Keep frequently repeated interactions snappy. Do not add cinematic delays to actions the player may perform hundreds of times.
+
+## Layout
+
+Use stable, responsive layouts that preserve clarity across common desktop and laptop sizes.
+
+Avoid fragile magic-pixel positioning. Prefer clear layout regions, consistent spacing, and predictable alignment.
+
+Prevent the UI from feeling cramped, but do not waste space with landing-page-style whitespace.
+
+## Content Style
+
+Use concise, concrete language.
+
+Prefer direct, game-appropriate labels.
+
+No emoji in game UI. Use proper icons, symbols, or text.
+
+## Component Rule
+
+Do not ship default-looking component-library UI.
+
+If using UI primitives or component libraries, restyle them so they feel native to the game world while preserving accessibility and expected behavior.
+
+## Pre-Flight Check
+
+Before finalizing UI work, ask:
+
+- Does this feel like a game rather than a website?
+- Is the current state obvious?
+- Are available actions obvious?
+- Are unavailable actions explained or clearly disabled?
+- Is important text readable?
+- Are interactions responsive?
+- Does motion help understanding rather than distract?
+- Is the fantasy styling cohesive rather than generic?

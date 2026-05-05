@@ -501,3 +501,77 @@ test.describe("Merchant's Shop", () => {
     await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 5000 });
   });
 });
+
+test.describe("Alchemist's Shop", () => {
+  test("alchemist hut appears when chosen as destination", async ({ page }) => {
+    await startRun(page);
+    await playUntilVictory(page);
+
+    await page.locator('[aria-label^="Select "]').first().click();
+    await page.getByRole("button", { name: "Add Card" }).click();
+
+    const hutBtn = page.getByRole("button", { name: "Alchemist's Shop" });
+    if (!(await hutBtn.isVisible({ timeout: 500 }).catch(() => false))) {
+      test.skip(true, "Alchemist's Shop not among destination choices");
+      return;
+    }
+    await hutBtn.click();
+
+    await expect(page.getByRole("heading", { name: "Alchemist's Shop" })).toBeVisible();
+    await expect(page.getByText(/Gold/)).toBeVisible();
+  });
+
+  test("alchemist hut shows potion cards for sale", async ({ page }) => {
+    await startRun(page);
+    await playUntilVictory(page);
+
+    await page.locator('[aria-label^="Select "]').first().click();
+    await page.getByRole("button", { name: "Add Card" }).click();
+
+    const hutBtn = page.getByRole("button", { name: "Alchemist's Shop" });
+    if (!(await hutBtn.isVisible({ timeout: 500 }).catch(() => false))) {
+      test.skip(true, "Alchemist's Shop not among destination choices");
+      return;
+    }
+    await hutBtn.click();
+
+    const buyButtons = page.getByRole("button", { name: /Buy for/ });
+    await expect(buyButtons.first()).toBeVisible();
+  });
+
+  test("alchemist hut shows Mix Potions and Refresh options", async ({ page }) => {
+    await startRun(page);
+    await playUntilVictory(page);
+
+    await page.locator('[aria-label^="Select "]').first().click();
+    await page.getByRole("button", { name: "Add Card" }).click();
+
+    const hutBtn = page.getByRole("button", { name: "Alchemist's Shop" });
+    if (!(await hutBtn.isVisible({ timeout: 500 }).catch(() => false))) {
+      test.skip(true, "Alchemist's Shop not among destination choices");
+      return;
+    }
+    await hutBtn.click();
+
+    await expect(page.getByRole("button", { name: /Mix Potions/ })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Refresh/ })).toBeVisible();
+  });
+
+  test("leaving the hut navigates to destination choices", async ({ page }) => {
+    await startRun(page);
+    await playUntilVictory(page);
+
+    await page.locator('[aria-label^="Select "]').first().click();
+    await page.getByRole("button", { name: "Add Card" }).click();
+
+    const hutBtn = page.getByRole("button", { name: "Alchemist's Shop" });
+    if (!(await hutBtn.isVisible({ timeout: 500 }).catch(() => false))) {
+      test.skip(true, "Alchemist's Shop not among destination choices");
+      return;
+    }
+    await hutBtn.click();
+
+    await page.getByRole("button", { name: "Leave Hut" }).click();
+    await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 5000 });
+  });
+});

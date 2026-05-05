@@ -13,7 +13,7 @@ import {
   type TalentEffectManifest,
   type TurnPhase,
 } from "./types";
-import { ROOM_SCALING_INCREMENT, STARTING_TURN } from "../game-constants";
+import { ROOM_SCALING_INCREMENT, ELITE_STAT_MULTIPLIER, STARTING_TURN } from "../game-constants";
 
 // Returns a fresh (deck, discard) pair after possibly reshuffling discard into deck.
 function refillDeck(deck: BattleCard[], discard: BattleCard[]) {
@@ -54,8 +54,9 @@ export function createBattleState(runDeck: BattleCard[] = starterDeck, gold = 0,
   const enemy = currentEnemy ?? enemyBestiary[0];
   const scaler = Math.max(0, roomsEncountered - 1);
   const hpMultiplier = 1 + scaler * ROOM_SCALING_INCREMENT;
-  const scaledEnemyHealth = Math.floor(baseEnemyHealth * hpMultiplier);
-  const scaledEnemyAttack = Math.floor(baseEnemyAttack * hpMultiplier);
+  const eliteMul = enemy.enemyType === "elite" ? ELITE_STAT_MULTIPLIER : 1;
+  const scaledEnemyHealth = Math.floor(baseEnemyHealth * hpMultiplier * eliteMul);
+  const scaledEnemyAttack = Math.floor(baseEnemyAttack * hpMultiplier * eliteMul);
 
   return {
     deck: openingHand.deck,

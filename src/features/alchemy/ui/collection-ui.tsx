@@ -75,7 +75,7 @@ function CompendiumTile({
         <img
           src={item.art}
           alt={item.title}
-          className={cn("block h-auto w-full rounded-[30px] transition duration-300", item.discovered ? "opacity-100" : "grayscale opacity-45")}
+          className={cn("block w-full rounded-[30px] transition duration-300 aspect-[375/524]", item.discovered ? "opacity-100" : "grayscale opacity-45")}
           loading="lazy"
         />
       </button>

@@ -3,11 +3,11 @@ import type { CSSProperties } from "react";
 import type { CombatTextEvent } from "@/lib/battle";
 import type { BattleCard, KeywordId } from "@/lib/game-data";
 
-export type Screen = "menu" | "character-select" | "battle" | "rewards" | "destination" | "options" | "collection" | "talents" | "game-over" | "campfire" | "shop";
+export type Screen = "menu" | "character-select" | "battle" | "rewards" | "destination" | "options" | "collection" | "talents" | "game-over" | "campfire" | "shop" | "alchemist" | "mystery";
 
 export type ResolutionOption = "1920x1080" | "2560x1440" | "3840x2160";
 
-export type Destination = "Normal Combat" | "Elite Combat" | "Merchant's Shop" | "Alchemist's Hut" | "Mystery" | "Campfire";
+export type Destination = "Normal Combat" | "Elite Combat" | "Merchant's Shop" | "Alchemist's Shop" | "Mystery" | "Campfire";
 
 export type CollectionTab = "cards" | "bestiary" | "trinkets";
 

@@ -126,8 +126,9 @@ export function useHandCardDrag(onRelease: (payload: { card: BattleCard; index: 
     }
 
     function scheduleClickSuppression() {
-      ignoreClickCardIdRef.current = session.card.id;
-      setTimeout(() => { if (ignoreClickCardIdRef.current === session.card.id) ignoreClickCardIdRef.current = null; }, 0);
+      const compositeId = `${session.card.id}-${session.index}`;
+      ignoreClickCardIdRef.current = compositeId;
+      setTimeout(() => { if (ignoreClickCardIdRef.current === compositeId) ignoreClickCardIdRef.current = null; }, 0);
     }
 
     function onPointerEnd(event: PointerEvent) {
@@ -155,14 +156,15 @@ export function useHandCardDrag(onRelease: (payload: { card: BattleCard; index: 
     setDragSession({ card, index, pointerId: event.pointerId, pointerOffsetX: event.clientX - rect.x, pointerOffsetY: event.clientY - rect.y, originRect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height }, startX: event.clientX, startY: event.clientY, currentX: event.clientX, currentY: event.clientY, dragging: false });
   }
 
-  function shouldIgnoreClick(cardId: string) {
-    if (ignoreClickCardIdRef.current !== cardId) return false;
+  function shouldIgnoreClick(cardId: string, index: number) {
+    const compositeId = `${cardId}-${index}`;
+    if (ignoreClickCardIdRef.current !== compositeId) return false;
     ignoreClickCardIdRef.current = null;
     return true;
   }
 
   return {
-    activeDraggedCardId: dragSession?.dragging ? dragSession.card.id : null,
+    activeDraggedCardId: dragSession?.dragging ? `${dragSession.card.id}-${dragSession.index}` : null,
     dragPreview: dragSession?.dragging ? {
       card: dragSession.card,
       rect: { x: dragSession.currentX - dragSession.pointerOffsetX, y: dragSession.currentY - dragSession.pointerOffsetY, width: dragSession.originRect.width, height: dragSession.originRect.height },

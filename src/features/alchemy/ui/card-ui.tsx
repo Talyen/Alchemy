@@ -1,5 +1,5 @@
 import type { CSSProperties, MouseEvent, PointerEvent as ReactPointerEvent } from "react";
-import { useEffect } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import {
   keywordDefinitions,
@@ -9,7 +9,6 @@ import {
 import { cn } from "@/lib/utils";
 
 import {
-  cardPopupClassName,
   cardSurfaceClass,
   ghostDurations,
   keywordIcons,
@@ -71,10 +70,21 @@ export function DetailPopup({
   subtitle?: string;
   descriptionLines: string[];
 }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [flip, setFlip] = useState(false);
+
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    if (rect.top < 0) setFlip(true);
+  }, []);
+
   return (
     <div
-      className={cn(cardPopupClassName, "hover-popup-quick-in pointer-events-auto")}
-      style={{ transform: "translate(-50%, calc(-100% - 26px))" } as CSSProperties}
+      ref={ref}
+      className={cn("hover-popup-panel absolute left-1/2 z-40 w-full origin-bottom rounded-[20px] border border-border/80 bg-card px-4 py-3 text-left shadow-[0_18px_42px_rgba(0,0,0,0.55)]", "hover-popup-quick-in pointer-events-auto")}
+      style={{ top: flip ? "100%" : 0, transform: flip ? "translate(-50%, 12px)" : "translate(-50%, calc(-100% - 26px))" } as CSSProperties}
     >
       <p className="text-base font-semibold text-foreground sm:text-lg">{title}</p>
       {subtitle ? <p className="mt-1 text-xs uppercase tracking-[0.18em] text-muted-foreground">{subtitle}</p> : null}

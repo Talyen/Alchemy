@@ -78,7 +78,11 @@ export function TalentsScreen({
             <ProgressBar value={progressPercent} className="mt-3" style={{ transition: "width 0.3s ease" }} />
           </div>
 
-          {currentChoices ? <TalentChoicesInline choices={currentChoices} onChoose={handleChooseTalent} /> : <TalentList unlockedTalents={unlockedTalentsForKeyword} allTalents={allTalentsForKeyword} />}
+          {currentChoices ? <TalentChoicesInline choices={currentChoices} onChoose={handleChooseTalent} /> : (
+            <div className="px-5">
+              <TalentList unlockedTalents={unlockedTalentsForKeyword} allTalents={allTalentsForKeyword} />
+            </div>
+          )}
         </div>
       </div>
 

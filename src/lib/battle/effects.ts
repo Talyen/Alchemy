@@ -192,7 +192,7 @@ export function applyCardEffects(state: BattleState, card: BattleCard, combatTex
         return { ...currentState, mana: Math.max(0, currentState.mana - effect.amount) };
       case "gain-max-mana":
         mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "mana", amount: effect.amount });
-        return { ...currentState, maxMana: currentState.maxMana + effect.amount };
+        return { ...currentState, maxMana: currentState.maxMana + effect.amount, mana: currentState.mana + effect.amount };
       case "lose-max-mana":
         mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "mana", amount: effect.amount });
         // Floor of 1 prevents a softlock — with 0 max mana no card can ever be played.

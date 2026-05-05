@@ -154,6 +154,24 @@ export const talentPool: TalentDefinition[] = [
   { id: "freeze-6", keywordId: "freeze", description: "Freeze effects last 1 turn longer" },
   { id: "freeze-7", keywordId: "freeze", description: "Freeze effects last 1 turn longer" },
   { id: "freeze-8", keywordId: "freeze", description: "Freeze effects last 1 turn longer" },
+  // 9th node per keyword for 3x3 grid
+  { id: "physical-dmg-7", keywordId: "physical", description: "Increase Physical Damage by 1" },
+  { id: "stun-9", keywordId: "stun", description: "Stun effects last 1 turn longer" },
+  { id: "block-9", keywordId: "block", description: "+1 Block when blocking" },
+  { id: "forge-9", keywordId: "forge", description: "Forge effects are 1 stronger" },
+  { id: "armor-9", keywordId: "armor", description: "+1 Armor gained" },
+  { id: "health-9", keywordId: "health", description: "+5 Max Health" },
+  { id: "burn-9", keywordId: "burn", description: "Burn deals 1 extra damage" },
+  { id: "gold-9", keywordId: "gold", description: "+1 Gold earned per battle" },
+  { id: "holy-9", keywordId: "holy", description: "+1 Holy damage dealt" },
+  { id: "wish-9", keywordId: "wish", description: "Wish offers 1 extra choice" },
+  { id: "ailment-9", keywordId: "ailment", description: "Ailments last 1 turn longer" },
+  { id: "consume-9", keywordId: "consume", description: "Draw 1 card when a card is consumed" },
+  { id: "poison-9", keywordId: "poison", description: "Poison deals 1 extra damage" },
+  { id: "bleed-9", keywordId: "bleed", description: "Bleed deals 1 extra damage" },
+  { id: "leech-9", keywordId: "leech", description: "Leech heals for 1 more" },
+  { id: "freeze-9", keywordId: "freeze", description: "Freeze effects last 1 turn longer" },
+  { id: "mana-9", keywordId: "mana", description: "+1 Max Mana" },
 ];
 
 // Filter helpers for the talent selection UI.

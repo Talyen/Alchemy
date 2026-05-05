@@ -1,5 +1,5 @@
 // Campfire rest screen — restores a percentage of max HP.
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 import { Button } from "@/components/ui/button";
 import { campfire } from "@/lib/game-data";
@@ -17,6 +17,7 @@ export function CampfireScreen({
   const [resting, setResting] = useState(false);
   const [displayHp, setDisplayHp] = useState(playerHealth);
   const [done, setDone] = useState(false);
+  const hpCounterRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (done) {
@@ -27,9 +28,23 @@ export function CampfireScreen({
 
   function handleRest() {
     setResting(true);
+    const startHp = playerHealth;
     const targetHp = Math.min(maxHp, playerHealth + Math.floor(maxHp * CAMPFIRE_HEAL_FRACTION));
-    setDisplayHp(targetHp);
-    setTimeout(() => setDone(true), CAMPFIRE_ANIMATION_MS);
+    const startTime = performance.now();
+
+    function animateHp() {
+      const elapsed = performance.now() - startTime;
+      const progress = Math.min(1, elapsed / CAMPFIRE_ANIMATION_MS);
+      const current = Math.round(startHp + (targetHp - startHp) * progress);
+      setDisplayHp(current);
+      if (progress < 1) {
+        hpCounterRef.current = requestAnimationFrame(animateHp);
+      } else {
+        setTimeout(() => setDone(true), 0);
+      }
+    }
+
+    hpCounterRef.current = requestAnimationFrame(animateHp);
   }
 
   return (

@@ -11,8 +11,10 @@ import { useTalentState } from "./use-talent-state";
 import { useRunState } from "./use-run-state";
 import type { TalentXP } from "@/lib/talents";
 import type { UnlockedTalents } from "./talent-pool";
-import { AUTO_END_TURN_DELAY, CAMPFIRE_HEAL_FRACTION, DESTINATION_CHOICES, ENEMY_PHASE_DELAY, GOLD_REWARD_MAX, GOLD_REWARD_MIN, MUSIC_KEYS, REWARD_CARD_CHOICES, SHAKE_DURATION, SHOP_CARD_PRICE, SHOP_REFRESH_PRICE, SHOP_REMOVE_PRICE, VICTORY_TRANSITION_DELAY } from "@/lib/game-constants";
-import { getCardRect, getEnemyStatusChips, getHoverId, getPlayerStatusChips, randomBetween, sampleItems } from "./utils";
+import { mysteryPool, type MysteryChoice, type MysteryEvent } from "./mystery-events";
+import { createMixedPotion, applyMixToDeck } from "./potion-mixer";
+import { AUTO_END_TURN_DELAY, ALCHEMIST_MIX_PRICE, ALCHEMIST_POTION_PRICE, ALCHEMIST_REFRESH_PRICE, CAMPFIRE_HEAL_FRACTION, DESTINATION_CHOICES, ENEMY_PHASE_DELAY, GOLD_REWARD_MAX, GOLD_REWARD_MIN, MUSIC_KEYS, REWARD_CARD_CHOICES, SHAKE_DURATION, SHOP_CARD_PRICE, SHOP_REFRESH_PRICE, SHOP_REMOVE_PRICE, VICTORY_TRANSITION_DELAY } from "@/lib/game-constants";
+import { getCardRect, getEnemyStatusChips, getHoverId, getPlayerStatusChips, randomBetween, resampleItems, sampleItems } from "./utils";
 
 type SetStringList = React.Dispatch<React.SetStateAction<string[]>>;
 
@@ -39,10 +41,12 @@ export function useAlchemyRunController({
 
   // Filters the destination pool based on current game state.
   // Campfire only appears when HP is below 80%. Merchant's Shop only appears when gold >= 50.
-  function getAvailableDestinations() {
+  function getAvailableDestinations(currentHp?: number, currentGold?: number) {
+    const hp = currentHp ?? run.runPlayerHealth;
+    const gold = currentGold ?? run.runGold;
     return destinationPool.filter((d) => {
-      if (d === "Campfire" && run.runPlayerHealth >= Math.floor(maxPlayerHealth * 0.8)) return false;
-      if (d === "Merchant's Shop" && run.runGold < 50) return false;
+      if (d === "Campfire" && hp >= Math.floor(maxPlayerHealth * 0.8)) return false;
+      if (d === "Merchant's Shop" && gold < 50) return false;
       return true;
     });
   }
@@ -50,6 +54,8 @@ export function useAlchemyRunController({
   // ============ Reward / Shop State ============
   const [rewardState, setRewardState] = useState<{ choices: BattleCard[]; gold: number; selectedId: string | null; destinations: Destination[] }>({ choices: [], gold: 0, selectedId: null, destinations: [] });
   const [shopState, setShopState] = useState<{ cards: BattleCard[]; refreshesLeft: number; removeUsed: boolean }>({ cards: [], refreshesLeft: 1, removeUsed: false });
+  const [alchemistState, setAlchemistState] = useState<{ potions: BattleCard[]; refreshesLeft: number; mixUsed: boolean }>({ potions: [], refreshesLeft: 1, mixUsed: false });
+  const [mysteryEvent, setMysteryEvent] = useState<MysteryEvent | null>(null);
 
   // ============ Refs ============
   const handCardRefs = useRef<Record<string, HTMLButtonElement | null>>({});
@@ -86,9 +92,12 @@ export function useAlchemyRunController({
     if (screen !== "battle" || battleState.enemyHealth > 0) return;
     if (battleState.playerHealth <= 0) return;
     const gold = randomBetween(GOLD_REWARD_MIN, GOLD_REWARD_MAX);
-    run.setRunPlayerHealth(battleState.playerHealth);
-    run.setRunGold(battleState.gold + gold);
-    setRewardState({ choices: sampleItems(cardLibrary, REWARD_CARD_CHOICES), gold: gold, selectedId: null, destinations: sampleItems(getAvailableDestinations(), DESTINATION_CHOICES) });
+    const eliteBonus = battleState.currentEnemy.enemyType === "elite" ? Math.floor(gold * 0.3) : 0;
+    const newHp = battleState.playerHealth;
+    const newGold = battleState.gold + gold + eliteBonus;
+    run.setRunPlayerHealth(newHp);
+    run.setRunGold(newGold);
+    setRewardState({ choices: sampleItems(cardLibrary.filter((c) => c.id !== "mixed-potion"), REWARD_CARD_CHOICES), gold: gold + eliteBonus, selectedId: null, destinations: sampleItems(getAvailableDestinations(newHp, newGold), DESTINATION_CHOICES) });
     setHasActiveBattle(false); setHoveredCardId(null); setMenuOpen(false); playVictory();
     const t = setTimeout(() => setScreen("rewards"), VICTORY_TRANSITION_DELAY);
     return () => clearTimeout(t);
@@ -112,8 +121,8 @@ export function useAlchemyRunController({
     startBattle(freshDeck, 0);
   }
 
-  function startBattle(deck: BattleCard[] = run.runDeck, gold: number = run.runGold) {
-    const enemy = getCurrentEnemy(run.roomsEncountered);
+  function startBattle(deck: BattleCard[] = run.runDeck, gold: number = run.runGold, enemyType: "normal" | "elite" = "normal") {
+    const enemy = getCurrentEnemy(run.roomsEncountered, enemyType);
     run.setRoomsEncountered((p) => p + 1);
     clearCardGhosts();
     setBattleState(createBattleState(deck, gold, run.roomsEncountered, enemy, run.runPlayerHealth, talents.talentEffects));
@@ -126,7 +135,7 @@ export function useAlchemyRunController({
 
   // ============ Card Play ============
   function handleKeyboardPlay(card: BattleCard, index: number, event: MouseEvent<HTMLButtonElement>) {
-    if (event.detail === 0 && !shouldIgnoreClick(card.id)) handlePlayCard(card, index, getCardRect(event.currentTarget.getBoundingClientRect()));
+    if (event.detail === 0 && !shouldIgnoreClick(card.id, index)) handlePlayCard(card, index, getCardRect(event.currentTarget.getBoundingClientRect()));
   }
 
   function handleCardPointerDown(card: BattleCard, index: number, event: ReactPointerEvent<HTMLButtonElement>) {
@@ -167,26 +176,29 @@ export function useAlchemyRunController({
     setHoveredCardId(null); setMenuOpen(false);
     if (destination === "Campfire") setScreen("campfire");
     else if (destination === "Merchant's Shop") { setShopState({ cards: sampleItems(cardLibrary, 3), refreshesLeft: 1, removeUsed: false }); setScreen("shop"); }
-    else startBattle();
+    else if (destination === "Alchemist's Shop") { const potions = sampleItems(cardLibrary.filter((c) => c.id.includes("potion") && c.id !== "mixed-potion"), 3); setAlchemistState({ potions, refreshesLeft: 1, mixUsed: false }); setScreen("alchemist"); }
+    else if (destination === "Mystery") { setMysteryEvent(mysteryPool[Math.floor(Math.random() * mysteryPool.length)]); setScreen("mystery"); }
+    else if (destination === "Elite Combat") startBattle(undefined, undefined, "elite");
+    else startBattle(undefined, undefined, "normal");
   }
 
   function handleShopBuyCard(card: BattleCard) {
     if (run.runGold < SHOP_CARD_PRICE) return;
-    run.setRunGold((p) => p - SHOP_CARD_PRICE); run.setRunDeck((p) => [...p, card]);
+    run.setRunGold((p) => Math.max(0, p - SHOP_CARD_PRICE)); run.setRunDeck((p) => [...p, card]);
     setDiscoveredCardIds((cur) => cur.includes(card.id) ? cur : [...cur, card.id]);
   }
 
   function handleShopRemoveCard(index: number) {
     if (run.runGold < SHOP_REMOVE_PRICE) return;
-    run.setRunGold((p) => p - SHOP_REMOVE_PRICE); run.setRunDeck((p) => p.filter((_, i) => i !== index));
+    run.setRunGold((p) => Math.max(0, p - SHOP_REMOVE_PRICE)); run.setRunDeck((p) => p.filter((_, i) => i !== index));
     setShopState((p) => ({ ...p, removeUsed: true }));
   }
 
   function handleShopRefresh() {
     setShopState((p) => {
       if (p.refreshesLeft <= 0 || run.runGold < SHOP_REFRESH_PRICE) return p;
-      run.setRunGold((g) => g - SHOP_REFRESH_PRICE);
-      return { ...p, cards: sampleItems(cardLibrary, 3), refreshesLeft: 0 };
+      run.setRunGold((g) => Math.max(0, g - SHOP_REFRESH_PRICE));
+      return { ...p, cards: resampleItems(cardLibrary, p.cards, 3), refreshesLeft: 0 };
     });
   }
 
@@ -198,6 +210,80 @@ export function useAlchemyRunController({
 
   function handleCampfireContinue() {
     run.setRunPlayerHealth((prev) => Math.min(maxPlayerHealth, prev + Math.floor(maxPlayerHealth * CAMPFIRE_HEAL_FRACTION)));
+    run.setRoomsEncountered((p) => p + 1);
+    setRewardState((prev) => ({ ...prev, destinations: sampleItems(getAvailableDestinations(), DESTINATION_CHOICES) }));
+    setHoveredCardId(null); setMenuOpen(false); setScreen("destination");
+  }
+
+  function handleAlchemistRefresh() {
+    const potionPool = cardLibrary.filter((c) => c.id.includes("potion") && c.id !== "mixed-potion");
+    setAlchemistState((p) => {
+      if (p.refreshesLeft <= 0 || run.runGold < ALCHEMIST_REFRESH_PRICE) return p;
+      run.setRunGold((g) => Math.max(0, g - ALCHEMIST_REFRESH_PRICE));
+      return { ...p, potions: resampleItems(potionPool, p.potions, 3), refreshesLeft: 0 };
+    });
+  }
+
+  function handleAlchemistBuyCard(card: BattleCard) {
+    if (run.runGold < ALCHEMIST_POTION_PRICE) return;
+    run.setRunGold((p) => Math.max(0, p - ALCHEMIST_POTION_PRICE)); run.setRunDeck((p) => [...p, card]);
+    setDiscoveredCardIds((cur) => cur.includes(card.id) ? cur : [...cur, card.id]);
+  }
+
+  function handleAlchemistMixPotions(indexA: number, indexB: number) {
+    if (run.runGold < ALCHEMIST_MIX_PRICE) return;
+    const deck = run.runDeck;
+    const highIdx = Math.max(indexA, indexB);
+    const lowIdx = Math.min(indexA, indexB);
+    const cardA = deck[highIdx];
+    const cardB = deck[lowIdx];
+
+    let mixed: BattleCard;
+    try {
+      mixed = createMixedPotion(cardA, cardB);
+    } catch {
+      return;
+    }
+
+    run.setRunGold((p) => Math.max(0, p - ALCHEMIST_MIX_PRICE));
+    run.setRunDeck((p) => applyMixToDeck(p, indexA, indexB, mixed));
+    setAlchemistState((p) => ({ ...p, mixUsed: true }));
+    setDiscoveredCardIds((cur) => cur.includes("mixed-potion") ? cur : [...cur, "mixed-potion"]);
+  }
+
+  function handleAlchemistContinue() {
+    run.setRoomsEncountered((p) => p + 1);
+    setRewardState((prev) => ({ ...prev, destinations: sampleItems(getAvailableDestinations(), DESTINATION_CHOICES) }));
+    setHoveredCardId(null); setMenuOpen(false); setScreen("destination");
+  }
+
+  function handleMysteryChoice(choice: MysteryChoice) {
+    for (const effect of choice.effects) {
+      switch (effect.kind) {
+        case "addCard": {
+          const card = cardLibrary.find((c) => c.id === effect.cardId);
+          if (card) { run.setRunDeck((p) => [...p, card]); setDiscoveredCardIds((cur) => cur.includes(card.id) ? cur : [...cur, card.id]); }
+          break;
+        }
+        case "healHP":
+          run.setRunPlayerHealth((p) => Math.min(maxPlayerHealth, p + effect.amount));
+          break;
+        case "damageHP":
+          run.setRunPlayerHealth((p) => Math.max(0, p - effect.amount));
+          break;
+        case "gainGold":
+          run.setRunGold((p) => p + effect.amount);
+          break;
+        case "gainMaxMana":
+          // Max mana gain is handled in battle — no persistent state to update
+          break;
+        case "none":
+          break;
+      }
+    }
+  }
+
+  function handleMysteryContinue() {
     run.setRoomsEncountered((p) => p + 1);
     setRewardState((prev) => ({ ...prev, destinations: sampleItems(getAvailableDestinations(), DESTINATION_CHOICES) }));
     setHoveredCardId(null); setMenuOpen(false); setScreen("destination");
@@ -239,6 +325,7 @@ export function useAlchemyRunController({
     get rewardChoices() { return rewardState.choices; }, get rewardGold() { return rewardState.gold; },
     get selectedRewardId() { return rewardState.selectedId; }, get destinationOptions() { return rewardState.destinations; },
     get shopCards() { return shopState.cards; }, get shopRefreshesLeft() { return shopState.refreshesLeft; }, get shopRemoveUsed() { return shopState.removeUsed; },
+    get alchemistPotions() { return alchemistState.potions; }, get alchemistRefreshesLeft() { return alchemistState.refreshesLeft; }, get alchemistMixUsed() { return alchemistState.mixUsed; },
     setRewardState,
     runDeck: run.runDeck, runGold: run.runGold, runPlayerHealth: run.runPlayerHealth,
     handCardRefs, battleSceneRef, playerPanelRef, enemyPanelRef, destinationButtonRefs,
@@ -253,8 +340,12 @@ export function useAlchemyRunController({
     maybeTriggerShimmer, handleKeyboardPlay, handleCardPointerDown,
     handleWishChoice, finishRewards, handleDestinationChoice, handleCampfireContinue,
     handleShopBuyCard, handleShopRemoveCard, handleShopRefresh, handleShopContinue,
+    handleAlchemistBuyCard, handleAlchemistRefresh, handleAlchemistMixPotions, handleAlchemistContinue,
+    get mysteryEvent() { return mysteryEvent; },
+    handleMysteryChoice, handleMysteryContinue,
     skipCombatDevMode, removeCardGhost, resetRunState, clearPermanentData,
     handleEndTurn, handleEndRun,
     get activeRunData() { return hasActiveBattle ? { characterId: run.characterId, characterGender: run.characterGender } : null; },
+    findCard: (id: string) => cardLibrary.find((c) => c.id === id),
   };
 }

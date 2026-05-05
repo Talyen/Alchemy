@@ -1,18 +1,21 @@
 import type { LucideIcon } from "lucide-react";
 import { BookOpen, Coins, Flame, Gem, Hammer, Heart, HeartPulse, Shield, ShieldAlert, Snowflake, Sparkles, Sun, Swords, TriangleAlert, WandSparkles, Zap, Trophy } from "lucide-react";
 
-import { enemyBestiary, type KeywordId } from "@/lib/game-data";
+import { enemyBestiary, type EnemyType, type KeywordId } from "@/lib/game-data";
+import { alchemistShopBg, campfire, eliteEnemyBg, merchantShopBg, mysteryBg, normalEnemyBg } from "@/lib/game-data";
 
 import type { CardGhostVariant, CollectionTab, Destination, ResolutionOption } from "./types";
 
 // Picks an enemy for the current room. Room 0 always starts with the Skeleton
-// as a tutorial boss. Subsequent rooms pick randomly from the non-skeleton pool.
-export function getCurrentEnemy(roomsEncountered: number) {
+// as a tutorial boss. Subsequent rooms pick from normal or elite pools
+// based on the current destination type.
+export function getCurrentEnemy(roomsEncountered: number, enemyType?: EnemyType) {
   if (roomsEncountered === 0) {
     return enemyBestiary.find((e) => e.id === "skeleton") ?? enemyBestiary[0];
   }
-  const nonSkeletonEnemies = enemyBestiary.filter((e) => e.id !== "skeleton");
-  return nonSkeletonEnemies[Math.floor(Math.random() * nonSkeletonEnemies.length)] ?? enemyBestiary[0];
+  const pool = enemyType ? enemyBestiary.filter((e) => e.enemyType === enemyType) : enemyBestiary.filter((e) => e.id !== "skeleton");
+  const available = pool.length > 0 ? pool : enemyBestiary.filter((e) => e.id !== "skeleton");
+  return available[Math.floor(Math.random() * available.length)] ?? enemyBestiary[0];
 }
 
 export const resolutionOptions: ResolutionOption[] = ["1920x1080", "2560x1440", "3840x2160"];
@@ -21,7 +24,7 @@ export const resolutionOptions: ResolutionOption[] = ["1920x1080", "2560x1440", 
 // 6 options, 3 are randomly offered each time. Adding a new destination here
 // requires a matching entry in destinationMeta and a Screen handler.
 export const destinationPool: Destination[] = [
-  "Normal Combat", "Elite Combat", "Merchant's Shop", "Alchemist's Hut", "Mystery", "Campfire",
+  "Normal Combat", "Elite Combat", "Merchant's Shop", "Alchemist's Shop", "Mystery", "Campfire",
 ];
 
 // Collection tabs metadata — currently cards + bestiary. Trinkets is handled
@@ -33,14 +36,14 @@ export const collectionTabMeta: Array<{ id: CollectionTab; label: string; icon: 
 ];
 
 // Destination visual theming — each type gets a unique icon + dark color scheme
-// for its pill button. The className sets both background and text colors.
-export const destinationMeta: Record<Destination, { icon: LucideIcon; className: string }> = {
-  "Normal Combat": { icon: Swords, className: "bg-red-900/85 text-white" },
-  "Elite Combat": { icon: ShieldAlert, className: "bg-violet-900/85 text-white" },
-  "Merchant's Shop": { icon: Coins, className: "bg-amber-800/85 text-white" },
-  "Alchemist's Hut": { icon: WandSparkles, className: "bg-emerald-800/85 text-white" },
-  Mystery: { icon: Sparkles, className: "bg-zinc-800/90 text-zinc-100" },
-  Campfire: { icon: Flame, className: "bg-emerald-800/85 text-white" },
+// for its pill button and a background art image displayed above the button.
+export const destinationMeta: Record<Destination, { icon: LucideIcon; className: string; art: string }> = {
+  "Normal Combat": { icon: Swords, className: "bg-red-900/85 text-white", art: normalEnemyBg },
+  "Elite Combat": { icon: ShieldAlert, className: "bg-violet-900/85 text-white", art: eliteEnemyBg },
+  "Merchant's Shop": { icon: Coins, className: "bg-amber-800/85 text-white", art: merchantShopBg },
+  "Alchemist's Shop": { icon: WandSparkles, className: "bg-emerald-800/85 text-white", art: alchemistShopBg },
+  Mystery: { icon: Sparkles, className: "bg-zinc-800/90 text-zinc-100", art: mysteryBg },
+  Campfire: { icon: Flame, className: "bg-emerald-800/85 text-white", art: campfire },
 };
 
 // Maps each keyword to its Lucide icon. Used across the UI for status chips,

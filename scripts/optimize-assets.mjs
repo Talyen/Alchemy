@@ -63,8 +63,14 @@ const assets = [
   { source: "Cards/Stab.png", target: "stab.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Steal.png", target: "steal.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Wish.png", target: "wish.webp", width: cardWidth, quality: cardQuality },
+  { source: "Cards/Mixed Potion.png", target: "mixed-potion.webp", width: cardWidth, quality: 84 },
   // Destinations
   { source: "Destinations/Campfire.png", target: "campfire.webp", width: 900, quality: 84 },
+  { source: "Destinations/Alchemist's Shop.png", target: "alchemist-shop.webp", width: 900, quality: 84 },
+  { source: "Destinations/Merchant's Shop.png", target: "merchant-shop.webp", width: 900, quality: 84 },
+  { source: "Destinations/Elite Enemy.png", target: "elite-enemy.webp", width: 900, quality: 84 },
+  { source: "Destinations/Normal Enemy.png", target: "normal-enemy.webp", width: 900, quality: 84 },
+  { source: "Destinations/Mystery.png", target: "mystery.webp", width: 900, quality: 84 },
 ];
 
 async function fileIsFresh(sourcePath, outputPath) {

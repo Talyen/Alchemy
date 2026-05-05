@@ -33,7 +33,7 @@ export function OptionsScreen({
           ))}
         </div>
 
-        <div className="mt-6 text-left">
+        <div className="mt-6 min-h-[200px] text-left">
           {tab === "display" ? <ResolutionSelect selectedResolution={selectedResolution} resolutionOptions={resolutionOptions} onChange={onResolutionChange} /> : null}
           {tab === "sound" ? (
             <div className="space-y-5">

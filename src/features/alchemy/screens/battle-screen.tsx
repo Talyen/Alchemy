@@ -1,4 +1,5 @@
 import type { MouseEvent, MutableRefObject, PointerEvent as ReactPointerEvent } from "react";
+import { useState } from "react";
 import { BookOpen, Cog, Coins, House, Menu, Swords, WandSparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -73,6 +74,7 @@ export function BattleScreen({
   enemyShaking: boolean;
 }) {
   const isPlayerTurn = battleState.turnPhase === "player";
+  const [wishSelectedCard, setWishSelectedCard] = useState<BattleCard | null>(null);
 
   return (
     <div ref={battleSceneRef} className="relative h-full w-full overflow-hidden">
@@ -155,7 +157,7 @@ export function BattleScreen({
 
             return (
               <BattleCardButton
-                key={card.id}
+                key={`${card.id}-${index}`}
                 card={card}
                 hovered={isHovered}
                 onHoverStart={() => {
@@ -174,7 +176,7 @@ export function BattleScreen({
                 shimmerToken={shimmerState?.token}
                 baseTransform={isHovered ? hoverTransform : restingTransform}
                 className={handCardWidthClass}
-                dragging={activeDraggedCardId === card.id}
+                dragging={activeDraggedCardId === `${card.id}-${index}`}
                 disabled={!canPlay}
                 wrapperClassName="relative -mx-5 flex justify-center sm:-mx-6"
                 wrapperStyle={{ zIndex: isHovered ? 40 : 10 + index }}
@@ -252,6 +254,7 @@ export function BattleScreen({
             <div className="mt-6 flex flex-wrap items-start justify-center gap-5">
               {battleState.wishOptions.map((card) => {
                 const hoverId = getHoverId("wish", card.id);
+                const isSelected = wishSelectedCard?.id === card.id;
 
                 return (
                   <BattleCardButton
@@ -263,16 +266,23 @@ export function BattleScreen({
                       onHoverShimmer(hoverId);
                     }}
                     onHoverEnd={() => setHoveredCardId((current) => (current === hoverId ? null : current))}
-                    onClick={() => onWishChoice(card)}
+                    onClick={() => setWishSelectedCard(card)}
                     ariaLabel={`Choose ${card.title}`}
                     tiltStrength={15}
                     shimmerActive={shimmerState?.cardId === hoverId}
                     shimmerToken={shimmerState?.token}
                     className={handCardWidthClass}
                     wrapperClassName="relative flex justify-center"
+                    selected={isSelected}
                   />
                 );
               })}
+            </div>
+
+            <div className="mt-6 flex justify-center gap-3">
+              <Button size="lg" disabled={!wishSelectedCard} onClick={() => { onWishChoice(wishSelectedCard!); setWishSelectedCard(null); }}>
+                Confirm
+              </Button>
             </div>
           </div>
         </div>

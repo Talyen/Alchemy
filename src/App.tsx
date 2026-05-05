@@ -7,16 +7,9 @@ import { setMusicVolume } from "@/lib/audio";
 import { useVirtualResolution } from "@/features/alchemy/hooks";
 import { BattleScreen } from "@/features/alchemy/screens/battle-screen";
 import {
-  CampfireScreen,
-  CharacterSelectScreen,
-  CollectionScreen,
-  DestinationScreen,
-  GameOverScreen,
-  MenuScreen,
-  MerchantShopScreen,
-  OptionsScreen,
-  RewardsScreen,
-  TalentsScreen,
+  AlchemistHutScreen, CampfireScreen, CharacterSelectScreen, CollectionScreen, DestinationScreen,
+  GameOverScreen, MenuScreen, MerchantShopScreen, MysteryScreen, OptionsScreen,
+  RewardsScreen, TalentsScreen,
 } from "@/features/alchemy/screens";
 import {
   clearAlchemySaveData,
@@ -95,6 +88,7 @@ export default function App() {
     <div className="flex h-screen w-screen items-center justify-center overflow-hidden bg-background p-4">
       <div className="relative" style={frameStyle}>
         <div className="absolute left-0 top-0 overflow-hidden bg-background" style={stageStyle}>
+          <div key={run.screen} className="page-enter h-full w-full overflow-hidden">
           {run.screen === "menu" ? <MenuScreen onPlay={run.beginRun} hasActiveBattle={run.hasActiveBattle} onCollection={() => run.goToScreen("collection")} onOptions={() => run.goToScreen("options")} onTalents={() => run.goToScreen("talents")} logoSrc={menuLogo} /> : null}
           {run.screen === "character-select" ? <CharacterSelectScreen onConfirm={run.handleCharacterSelect} onBack={() => run.goToScreen("menu")} /> : null}
           {run.screen === "battle" ? <BattleScreen battleState={run.battleState} heroArt={heroArt} hoveredCardId={run.hoveredCardId} setHoveredCardId={run.setHoveredCardId} shimmerState={run.shimmerState} onHoverShimmer={run.maybeTriggerShimmer} playerStatusChips={run.playerStatusChips} enemyStatusChips={run.enemyStatusChips} playerCombatTexts={run.playerCombatTexts} enemyCombatTexts={run.enemyCombatTexts} handCardRefs={run.handCardRefs} onCardPointerDown={run.handleCardPointerDown} onKeyboardPlay={run.handleKeyboardPlay} activeDraggedCardId={run.activeDraggedCardId} menuOpen={run.menuOpen} setMenuOpen={run.setMenuOpen} onGoToScreen={run.goToScreen} onWishChoice={run.handleWishChoice} cardGhosts={run.cardGhosts} onRemoveCardGhost={run.removeCardGhost} dragPreview={run.dragPreview} onSkipCombatDevMode={run.skipCombatDevMode} onEndTurn={run.handleEndTurn} onEndRun={run.handleEndRun} battleSceneRef={run.battleSceneRef} playerPanelRef={run.playerPanelRef} enemyPanelRef={run.enemyPanelRef} playerShaking={run.playerShaking} enemyShaking={run.enemyShaking} /> : null}
@@ -102,10 +96,13 @@ export default function App() {
           {run.screen === "destination" ? <DestinationScreen destinationOptions={run.destinationOptions} onChoose={(dest) => run.handleDestinationChoice(dest)} destinationButtonRefs={run.destinationButtonRefs} /> : null}
           {run.screen === "campfire" ? <CampfireScreen playerHealth={run.runPlayerHealth} maxHp={maxPlayerHealth} onContinue={run.handleCampfireContinue} /> : null}
           {run.screen === "shop" ? <MerchantShopScreen gold={run.runGold} shopCards={run.shopCards} runDeck={run.runDeck} refreshesLeft={run.shopRefreshesLeft} removeUsed={run.shopRemoveUsed} onBuyCard={run.handleShopBuyCard} onRemoveCard={run.handleShopRemoveCard} onRefresh={run.handleShopRefresh} onContinue={run.handleShopContinue} /> : null}
+          {run.screen === "alchemist" ? <AlchemistHutScreen gold={run.runGold} potionCards={run.alchemistPotions} runDeck={run.runDeck} refreshesLeft={run.alchemistRefreshesLeft} mixUsed={run.alchemistMixUsed} onBuyCard={run.handleAlchemistBuyCard} onRefresh={run.handleAlchemistRefresh} onMixPotions={run.handleAlchemistMixPotions} onContinue={run.handleAlchemistContinue} /> : null}
+          {run.screen === "mystery" && run.mysteryEvent ? <MysteryScreen event={run.mysteryEvent} onChoose={run.handleMysteryChoice} onContinue={run.handleMysteryContinue} findCard={run.findCard} /> : null}
           {run.screen === "options" ? <OptionsScreen hasActiveBattle={run.hasActiveBattle} onMainMenu={() => run.goToScreen("menu")} onReturnToBattle={run.returnToBattle} selectedResolution={selectedResolution} onResolutionChange={setSelectedResolution} musicVol={musicVol} sfxVol={sfxVol} onMusicVolChange={setMusicVol} onSfxVolChange={setSfxVol} showClearSaveConfirm={showClearSaveConfirm} onOpenClearSaveConfirm={() => setShowClearSaveConfirm(true)} onCloseClearSaveConfirm={() => setShowClearSaveConfirm(false)} onConfirmClearSave={clearSaveData} /> : null}
           {run.screen === "collection" ? <CollectionScreen hasActiveBattle={run.hasActiveBattle} onMainMenu={() => run.goToScreen("menu")} onReturnToBattle={run.returnToBattle} collectionTab={collectionTab} onSelectTab={handleCollectionTabChange} hoveredCardId={run.hoveredCardId} onHoverChange={run.setHoveredCardId} discoveredCardIds={discoveredCardIds} encounteredEnemyIds={encounteredEnemyIds} discoveredTrinketIds={discoveredTrinketIds} page={currentCollectionPage} onPageChange={setCollectionPage} /> : null}
           {run.screen === "talents" ? <TalentsScreen hasActiveBattle={run.hasActiveBattle} onMainMenu={() => run.goToScreen("menu")} onReturnToBattle={run.returnToBattle} talentXP={run.talentXP} runTalentXP={run.runTalentXP} unlockedTalents={run.unlockedTalents} onUnlockTalent={run.unlockTalent} onResetTalents={run.resetUnlockedTalents} /> : null}
           {run.screen === "game-over" ? <GameOverScreen runTalentXP={run.runTalentXP} talentXP={run.talentXP} onMainMenu={() => run.resetRunState()} /> : null}
+          </div>
         </div>
       </div>
     </div>

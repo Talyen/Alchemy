@@ -11,8 +11,9 @@ export const WISH_CHOICE_COUNT = 3;           // Wish offers 3 cards from the fu
 export const MIN_MAX_MANA_FLOOR = 1;          // Minimum maxMana after reductions. Prevents softlock — with 0 max mana no card can ever be played.
 
 // ============ Battle / Rooms ============
-export const ROOM_SCALING_INCREMENT = 0.1;    // +10% enemy HP/attack per room (multiplicative). At room 10 the enemy has 2x stats, creating a natural difficulty curve.
-export const STARTING_TURN = 1;               // Turn counter starts at 1 for readability in UI/debugging.
+export const ROOM_SCALING_INCREMENT = 0.1;     // +10% enemy HP/attack per room (multiplicative)
+export const ELITE_STAT_MULTIPLIER = 1.3;       // Elite enemies get 30% more HP and attack
+export const STARTING_TURN = 1;                 // Turn counter starts at 1 for readability.
 
 // ============ Timing (ms) ============
 export const AUTO_END_TURN_DELAY = 1220;       // How long the system waits before auto-ending turn when conditions are met (no mana, no cards).
@@ -36,6 +37,11 @@ export const TALENT_CHOICES_OFFERED = 3;       // Number of random talent option
 export const SHOP_CARD_PRICE = 30;
 export const SHOP_REMOVE_PRICE = 50;
 export const SHOP_REFRESH_PRICE = 20;
+
+// ============ Alchemist's Shop ============
+export const ALCHEMIST_POTION_PRICE = 20;    // each potion costs 20g
+export const ALCHEMIST_REFRESH_PRICE = 20;   // refresh rerolls the 3 potion options
+export const ALCHEMIST_MIX_PRICE = 40;       // combine 2 potions from deck
 
 // ============ Rewards ============
 export const GOLD_REWARD_MIN = 10;

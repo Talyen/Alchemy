@@ -17,6 +17,7 @@ import {
   manaPotion,
   meteor,
   panaceaPotion,
+  mixedPotion,
   plateMail,
   poisonDagger,
   slash,
@@ -51,6 +52,7 @@ export const cardLibrary: BattleCard[] = [
   { id: "mana-crystals", title: "Mana Crystals", descriptionLines: ["Gain 1 Maximum Mana", "Consume"], art: manaCrystal, cost: 1, template: "alchemy", consume: true, effects: [{ kind: "gain-max-mana", amount: 1 }] },
   { id: "mana-potion", title: "Mana Potion", descriptionLines: ["Restore 2 Mana", "Consume"], art: manaPotion, cost: 1, template: "alchemy", consume: true, effects: [{ kind: "restore-mana", amount: 2 }] },
   { id: "panacea-potion", title: "Panacea Potion", descriptionLines: ["Remove all Ailments", "Consume"], art: panaceaPotion, cost: 1, template: "alchemy", consume: true, effects: [{ kind: "remove-ailment", mode: "all" }] },
+  { id: "mixed-potion", title: "Mixed Potion", descriptionLines: ["Mixed at an Alchemist's Shop"], art: mixedPotion, cost: 1, template: "alchemy", consume: true, effects: [] },
 ];
 
 const starterDeckIds = ["slash", "bash", "block", "anvil", "plate-mail", "apple", "meteor", "blessed-aegis"];

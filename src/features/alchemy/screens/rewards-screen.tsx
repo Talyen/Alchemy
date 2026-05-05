@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import type { BattleCard } from "@/lib/game-data";
 
 import { BattleCardButton } from "../ui/card-ui";
+import { collectionCardWidthClass } from "../config";
 import { getHoverId } from "../utils";
 
 export function RewardsScreen({
@@ -57,7 +58,7 @@ export function RewardsScreen({
                 tiltStrength={15}
                 shimmerActive={shimmerState?.cardId === hoverId}
                 shimmerToken={shimmerState?.token}
-                className="w-[clamp(189px,18.7vh,286px)]"
+                className={collectionCardWidthClass}
                 wrapperClassName="relative flex justify-center"
                 selected={selectedRewardId === card.id}
               />
