@@ -52,8 +52,4 @@ export type GhostStyle = CSSProperties & {
   "--ghost-travel-y"?: string;
 };
 
-export type DragPreview = {
-  card: BattleCard;
-  rect: CardRect;
-  rotation: number;
-};
+

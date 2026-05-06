@@ -15,7 +15,7 @@ import {
   popupClassName,
   staticCardTransform,
 } from "../config";
-import type { CardGhost, DragPreview, GhostStyle } from "../types";
+import type { CardGhost, GhostStyle } from "../types";
 import { clearTiltFromEvent, setTiltFromEvent, tokenizeDescription } from "../utils";
 import { ShimmerOverlay } from "./shared-ui";
 import { KeywordTag } from "./keyword-tag";
@@ -83,7 +83,7 @@ export function DetailPopup({
   return (
     <div
       ref={ref}
-      className={cn("hover-popup-panel absolute left-1/2 z-40 w-full origin-bottom rounded-[20px] border border-border/80 bg-card px-4 py-3 text-left shadow-[0_18px_42px_rgba(0,0,0,0.55)]", "hover-popup-quick-in pointer-events-auto")}
+      className={cn("hover-popup-panel absolute left-1/2 z-40 w-full origin-bottom rounded-[20px] border border-border/80 bg-card px-4 py-3 text-left", "hover-popup-quick-in pointer-events-auto")}
       style={{ top: flip ? "100%" : 0, transform: flip ? "translate(-50%, 12px)" : "translate(-50%, calc(-100% - 26px))" } as CSSProperties}
     >
       <p className="text-base text-foreground sm:text-lg">{title}</p>
@@ -191,7 +191,7 @@ export function CardGhostOverlay({ ghost, onDone }: { ghost: CardGhost; onDone: 
       alt=""
       aria-hidden="true"
       className={cn(
-        "card-ghost-overlay pointer-events-none fixed rounded-[30px] bg-black object-cover shadow-[0_20px_48px_rgba(0,0,0,0.42)]",
+        "card-ghost-overlay pointer-events-none fixed rounded-[30px] bg-black object-cover",
         ghost.variant === "draw-in" ? "card-ghost-draw-in" : null,
         ghost.variant === "discard-out" ? "card-ghost-discard-out" : null,
         ghost.variant === "activate" ? "card-ghost-activate" : null,
@@ -214,23 +214,4 @@ export function CardGhostOverlay({ ghost, onDone }: { ghost: CardGhost; onDone: 
   );
 }
 
-export function DragCardPreview({ preview }: { preview: DragPreview }) {
-  return (
-    <img
-      src={preview.card.art}
-      alt=""
-      aria-hidden="true"
-      className={cn(
-        "pointer-events-none fixed z-[95] rounded-[30px] bg-black object-cover shadow-[0_26px_54px_rgba(0,0,0,0.45)]",
-        "transition-transform duration-75 ease-out",
-      )}
-      style={{
-        left: preview.rect.x,
-        top: preview.rect.y,
-        width: preview.rect.width,
-        height: preview.rect.height,
-        transform: `rotate(${preview.rotation}deg)`,
-      }}
-    />
-  );
-}
+

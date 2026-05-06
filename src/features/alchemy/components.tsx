@@ -1,4 +1,4 @@
-export { BattleCardButton, CardGhostOverlay, DragCardPreview } from "./ui/card-ui";
+export { BattleCardButton, CardGhostOverlay } from "./ui/card-ui";
 export { ArtPanel, CombatTextRail, ManaPanel, PilePanel } from "./ui/battle-ui";
 export { CollectionGrid, CollectionPagination, CollectionTabs } from "./ui/collection-ui";
 export { ConfirmationDialog, DestinationChoices, DisabledTooltip, PageLayout, ProgressBar, ResolutionSelect, ScreenHeader, ShimmerOverlay } from "./ui/shared-ui";

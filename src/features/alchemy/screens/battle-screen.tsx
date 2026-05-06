@@ -1,4 +1,4 @@
-import type { MouseEvent, MutableRefObject, PointerEvent as ReactPointerEvent } from "react";
+import type { MouseEvent, MutableRefObject } from "react";
 import { useState } from "react";
 import { BookOpen, Cog, Coins, House, Menu, Swords, WandSparkles } from "lucide-react";
 
@@ -8,8 +8,8 @@ import { maxPlayerHealth, type BattleState } from "@/lib/battle/types";
 
 
 import { handCardWidthClass } from "../config";
-import { ArtPanel, BattleCardButton, CardGhostOverlay, CombatTextRail, DragCardPreview, ManaPanel, PilePanel } from "../components";
-import type { CardGhost, DragPreview, FloatingCombatText, StatusChip } from "../types";
+import { ArtPanel, BattleCardButton, CardGhostOverlay, CombatTextRail, ManaPanel, PilePanel } from "../components";
+import type { CardGhost, FloatingCombatText, StatusChip } from "../types";
 import { getHoverId } from "../utils";
 
 export function BattleScreen({
@@ -23,16 +23,13 @@ export function BattleScreen({
   playerCombatTexts,
   enemyCombatTexts,
   handCardRefs,
-  onCardPointerDown,
-  onKeyboardPlay,
-  activeDraggedCardId,
+  onCardClick,
   menuOpen,
   setMenuOpen,
   onGoToScreen,
   onWishChoice,
   cardGhosts,
   onRemoveCardGhost,
-  dragPreview,
   onSkipCombatDevMode,
   onEndTurn,
   onEndRun,
@@ -54,16 +51,13 @@ export function BattleScreen({
   playerCombatTexts: FloatingCombatText[];
   enemyCombatTexts: FloatingCombatText[];
   handCardRefs: MutableRefObject<Record<string, HTMLButtonElement | null>>;
-  onCardPointerDown: (card: BattleCard, index: number, event: ReactPointerEvent<HTMLButtonElement>) => void;
-  onKeyboardPlay: (card: BattleCard, index: number, event: MouseEvent<HTMLButtonElement>) => void;
-  activeDraggedCardId: string | null;
+  onCardClick: (card: BattleCard, index: number, event: MouseEvent<HTMLButtonElement>) => void;
   menuOpen: boolean;
   setMenuOpen: (value: boolean | ((current: boolean) => boolean)) => void;
   onGoToScreen: (screen: "menu" | "collection" | "options" | "talents") => void;
   onWishChoice: (card: BattleCard) => void;
   cardGhosts: CardGhost[];
   onRemoveCardGhost: (id: string) => void;
-  dragPreview: DragPreview | null;
   onSkipCombatDevMode: () => void;
   onEndTurn: () => void;
   onEndRun: () => void;
@@ -165,8 +159,7 @@ export function BattleScreen({
                   onHoverShimmer(hoverId);
                 }}
                 onHoverEnd={() => setHoveredCardId((current) => (current === hoverId ? null : current))}
-                onClick={(event) => onKeyboardPlay(card, index, event)}
-                onPointerDown={(event) => onCardPointerDown(card, index, event)}
+                onClick={(event) => onCardClick(card, index, event)}
                 buttonRef={(node) => {
                   handCardRefs.current[`${card.id}-${index}`] = node;
                 }}
@@ -176,7 +169,6 @@ export function BattleScreen({
                 shimmerToken={shimmerState?.token}
                 baseTransform={isHovered ? hoverTransform : restingTransform}
                 className={handCardWidthClass}
-                dragging={activeDraggedCardId === `${card.id}-${index}`}
                 disabled={!canPlay}
                 wrapperClassName="relative -mx-5 flex justify-center sm:-mx-6"
                 wrapperStyle={{ zIndex: isHovered ? 40 : 10 + index }}
@@ -291,7 +283,6 @@ export function BattleScreen({
       {cardGhosts.map((ghost) => (
         <CardGhostOverlay key={ghost.id} ghost={ghost} onDone={() => onRemoveCardGhost(ghost.id)} />
       ))}
-      {dragPreview ? <DragCardPreview preview={dragPreview} /> : null}
     </div>
   );
 }

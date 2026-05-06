@@ -123,7 +123,7 @@ export function ArtPanel({
         <img src={art} alt={title} className="block w-full rounded-[30px] aspect-[375/524]" loading="eager" />
       </div>
 
-      <div className={cn("surface-muted rounded-[24px] px-4 py-3 shadow-[0_16px_36px_rgba(0,0,0,0.38)]", battleCardWidthClass)}>
+      <div className={cn("surface-muted rounded-[24px] px-4 py-3", battleCardWidthClass)}>
         <div className="flex items-center justify-between gap-3">
           <p className="text-sm text-foreground">{title}</p>
           <p className={cn("text-xs font-medium text-muted-foreground", isDead && "opacity-30")}>
@@ -145,7 +145,7 @@ export function PilePanel({ label, count, type }: { label: string; count: number
   return (
     <div className="flex flex-col items-center gap-2 text-center">
       <div
-        className={cn("tilt-surface", cardSurfaceClass, pileCardWidthClass)}
+        className={cn("tilt-surface", cardSurfaceClass, pileCardWidthClass, "bg-transparent")}
         data-tilt-strength="12"
         onMouseMove={setTiltFromEvent}
         onMouseLeave={clearTiltFromEvent}
@@ -162,20 +162,31 @@ export function PilePanel({ label, count, type }: { label: string; count: number
 }
 
 export function ManaPanel({ mana, maxMana, gold }: { mana: number; maxMana: number; gold: number }) {
+  const displayCount = Math.max(mana, maxMana);
+
   return (
-    <div className="flex flex-col items-center gap-2">
-      <div className="flex items-center justify-center gap-1.5">
-        {Array.from({ length: maxMana }).map((_, index) => (
-          <Gem
-            key={`mana-${index}`}
-            className={cn("h-[22px] w-[22px] transition-opacity duration-200", index < mana ? "text-[#2c4f88]" : "text-[#2c4f88]/20")}
-            strokeWidth={2.2}
-          />
-        ))}
-      </div>
+    <div className="flex flex-col items-center gap-2" data-testid="mana-panel" data-mana={mana}>
       <div className="flex items-center gap-1 text-sm font-medium text-yellow-300">
         <Coins className="h-4 w-4" />
         <span>{gold}</span>
+      </div>
+      <div className="flex items-center justify-center gap-1.5">
+        {Array.from({ length: displayCount }).map((_, index) => {
+          const isFilled = index < mana;
+          const isOverflow = index >= maxMana;
+          return (
+            <Gem
+              key={`mana-${index}`}
+              className={cn(
+                "h-[22px] w-[22px] transition-opacity duration-200",
+                isFilled && isOverflow && "text-sky-300 drop-shadow-[0_0_3px_rgba(125,211,252,0.6)]",
+                isFilled && !isOverflow && "text-[#2c4f88]",
+                !isFilled && "text-[#2c4f88]/20",
+              )}
+              strokeWidth={2.2}
+            />
+          );
+        })}
       </div>
     </div>
   );

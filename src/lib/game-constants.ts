@@ -51,7 +51,7 @@ export const DESTINATION_CHOICES = 3;          // Path choices offered after eac
 
 // ============ Audio ============
 export const MASTER_GAIN = 0.3;                 // Master volume level. 0.3 prevents ear fatigue during extended sessions.
-export const DEFAULT_MUSIC_VOLUME = 0.35;       // Music sits slightly louder than SFX by default.
+export const DEFAULT_MUSIC_VOLUME = 0.175;      // Music baseline halved so it doesn't overpower SFX.
 export const MUSIC_BASE_PATH = "Music/";        // Relative path from BASE_URL for music files.
 
 // ============ Animation / Timing ============

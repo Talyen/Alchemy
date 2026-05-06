@@ -36,12 +36,12 @@ export const mysteryPool: MysteryEvent[] = [
     narrative: "You stumble upon a lush field of glowing Mana Berries. Their faint blue radiance pulses gently, promising restored mana. Harvesting them would yield useful supplies, but perhaps it is wiser to leave them undisturbed.",
     choices: [
       {
-        label: "Harvest the Berries",
+        label: "Harvest",
         description: "Add a Mana Berries card to your deck.",
         effects: [{ kind: "addCard", cardId: "mana-berries" }],
       },
       {
-        label: "Leave them alone",
+        label: "Leave",
         description: "Continue on your journey without taking anything.",
         effects: [{ kind: "none" }],
       },

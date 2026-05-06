@@ -15,7 +15,9 @@ async function playUntilVictory(page: Parameters<typeof test>[0]["page"]) {
     }
 
     while ((await page.locator('[aria-label^="Play "]').count()) > 0) {
-      await page.locator('[aria-label^="Play "]').first().click();
+      const card = page.locator('[aria-label^="Play "]').first();
+      if (!(await card.isEnabled({ timeout: 500 }).catch(() => false))) break;
+      await card.click({ force: true });
       await page.waitForTimeout(220);
 
       if (await victoryHeading.isVisible().catch(() => false)) {
@@ -23,7 +25,14 @@ async function playUntilVictory(page: Parameters<typeof test>[0]["page"]) {
       }
     }
 
-    await page.waitForTimeout(1400);
+    if (await victoryHeading.isVisible().catch(() => false)) {
+      return;
+    }
+
+    await expect(page.locator('[aria-label^="Play "]').first()).toBeEnabled({ timeout: 8000 }).catch(async (e) => {
+      if (await victoryHeading.isVisible().catch(() => false)) return;
+      throw e;
+    });
   }
 
   throw new Error("Battle did not reach the Victory screen in time.");

@@ -1,11 +1,11 @@
-import type { MouseEvent, PointerEvent as ReactPointerEvent } from "react";
+import type { MouseEvent } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { chooseWishCard, createBattleState, endPlayerTurn, maxPlayerHealth, playBattleCardResolved, type BattleState } from "@/lib/battle";
 import { cardLibrary, characters, starterDeck, type BattleCard, type CharacterGender, type CharacterId, type KeywordId } from "@/lib/game-data";
-import { playVictory, playDefeat, playDamage, playBuff, playMusic } from "@/lib/audio";
+import { playVictory, playDefeat, playCardSound, playEnemyAttack, playMusic } from "@/lib/audio";
 import { destinationPool, getCurrentEnemy } from "./config";
-import { useCardGhosts, useFloatingCombatTexts, useHandCardDrag, useShimmerController } from "./hooks";
-import { animateCardActivation, isPointerInBattlefield } from "./run-controller-helpers";
+import { useCardGhosts, useFloatingCombatTexts, useShimmerController } from "./hooks";
+import { animateCardActivation } from "./run-controller-helpers";
 import type { Destination, Screen } from "./types";
 import { useTalentState } from "./use-talent-state";
 import { useRunState } from "./use-run-state";
@@ -64,6 +64,7 @@ export function useAlchemyRunController({
   const enemyPanelRef = useRef<HTMLDivElement | null>(null);
   const destinationButtonRefs = useRef<Partial<Record<Destination, HTMLButtonElement | null>>>({});
   const navTimerRef = useRef<number>(0);
+  const cardPlayInProgressRef = useRef(false);
 
   useEffect(() => () => window.clearTimeout(navTimerRef.current), []);
 
@@ -71,7 +72,6 @@ export function useAlchemyRunController({
   const { cardGhosts, removeCardGhost, clearCardGhosts, spawnCardGhost } = useCardGhosts();
   const { floatingCombatTexts, showCombatTexts } = useFloatingCombatTexts();
   const { shimmerState, maybeTriggerShimmer } = useShimmerController();
-  const { activeDraggedCardId, beginCardDrag, dragPreview, shouldIgnoreClick } = useHandCardDrag(handleCardRelease);
 
   // ============ Derived State ============
   const playerStatusChips = useMemo(() => getPlayerStatusChips(battleState), [battleState]);
@@ -142,30 +142,22 @@ export function useAlchemyRunController({
   }
 
   // ============ Card Play ============
-  function handleKeyboardPlay(card: BattleCard, index: number, event: MouseEvent<HTMLButtonElement>) {
-    if (event.detail === 0 && !shouldIgnoreClick(card.id, index)) handlePlayCard(card, index, getCardRect(event.currentTarget.getBoundingClientRect()));
-  }
-
-  function handleCardPointerDown(card: BattleCard, index: number, event: ReactPointerEvent<HTMLButtonElement>) {
-    if (screen === "battle" && battleState.mana >= card.cost && !battleState.wishOptions) { setHoveredCardId(null); beginCardDrag(card, index, event); }
+  function handleCardClick(card: BattleCard, index: number, event: MouseEvent<HTMLButtonElement>) {
+    handlePlayCard(card, index, getCardRect(event.currentTarget.getBoundingClientRect()));
   }
 
   function handlePlayCard(card: BattleCard, index: number, sourceRect: { x: number; y: number; width: number; height: number }) {
-    if (screen !== "battle" || battleState.mana < card.cost || battleState.wishOptions || battleState.turnPhase !== "player") return;
+    if (screen !== "battle" || battleState.mana < card.cost || battleState.wishOptions || battleState.turnPhase !== "player" || cardPlayInProgressRef.current) return;
+    cardPlayInProgressRef.current = true;
     animateCardActivation(card, sourceRect, (index - (battleState.hand.length - 1) / 2) * 4.2, playerPanelRef, enemyPanelRef, battleSceneRef, spawnCardGhost);
+    playCardSound(card.id);
     const resolution = playBattleCardResolved(battleState, card.id, index);
-    if (resolution.combatTexts.some((ct) => ct.kind === "damage" && ct.target === "enemy")) { playDamage(); setEnemyShaking(true); setTimeout(() => setEnemyShaking(false), SHAKE_DURATION); }
-    if (resolution.combatTexts.some((ct) => ct.kind === "heal" && ct.target === "player")) playBuff();
-    if (resolution.combatTexts.some((ct) => ct.kind === "status" && ct.target === "player")) playBuff();
+    if (resolution.combatTexts.some((ct) => ct.kind === "damage" && ct.target === "enemy")) { setEnemyShaking(true); setTimeout(() => setEnemyShaking(false), SHAKE_DURATION); }
     setBattleState(resolution.state);
     showCombatTexts(resolution.combatTexts);
     setHoveredCardId((current) => (current === getHoverId("hand", `${card.id}-${index}`) ? null : current));
     talents.awardCardXP(card);
-  }
-
-  function handleCardRelease(payload: { card: BattleCard; index: number; rect: { x: number; y: number; width: number; height: number }; dragged: boolean; pointerX: number; pointerY: number }) {
-    if (screen !== "battle" || battleState.mana < payload.card.cost || battleState.wishOptions) return;
-    if (!payload.dragged || isPointerInBattlefield(payload.pointerX, payload.pointerY, battleSceneRef)) handlePlayCard(payload.card, payload.index, payload.rect);
+    cardPlayInProgressRef.current = false;
   }
 
   function handleWishChoice(card: BattleCard) {
@@ -299,7 +291,7 @@ export function useAlchemyRunController({
 
   // ============ Turn Management ============
   function handleEndTurn() {
-    if (screen !== "battle" || battleState.turnPhase !== "player" || battleState.wishOptions) return;
+    if (screen !== "battle" || battleState.turnPhase !== "player" || battleState.wishOptions || cardPlayInProgressRef.current) return;
     const result = endPlayerTurn(battleState);
     setBattleState({ ...result.state, turnPhase: "enemy", hand: [], playerHealth: battleState.playerHealth, playerStatuses: battleState.playerStatuses });
     const dotTexts = result.combatTexts.filter((ct) => ct.target === "enemy");
@@ -307,7 +299,8 @@ export function useAlchemyRunController({
     if (result.state.enemyHealth <= 0) return;
     const playerTexts = result.combatTexts.filter((ct) => ct.target === "player");
     setTimeout(() => {
-      playDamage(); setBattleState(result.state);
+      playEnemyAttack(battleState.currentEnemy.id);
+      setBattleState(result.state);
       if (playerTexts.length > 0) showCombatTexts(playerTexts);
       if (playerTexts.some((ct) => ct.kind === "damage")) { setPlayerShaking(true); setTimeout(() => setPlayerShaking(false), SHAKE_DURATION); }
     }, ENEMY_PHASE_DELAY);
@@ -337,7 +330,7 @@ export function useAlchemyRunController({
     setRewardState,
     runDeck: run.runDeck, runGold: run.runGold, runPlayerHealth: run.runPlayerHealth,
     handCardRefs, battleSceneRef, playerPanelRef, enemyPanelRef, destinationButtonRefs,
-    cardGhosts, shimmerState, dragPreview, activeDraggedCardId,
+    cardGhosts, shimmerState,
     playerStatusChips, enemyStatusChips, playerCombatTexts, enemyCombatTexts,
     enemyShaking, playerShaking,
     talentXP: talents.talentXP, runTalentXP: talents.runTalentXP, unlockedTalents: talents.unlockedTalents,
@@ -345,7 +338,7 @@ export function useAlchemyRunController({
     setHoveredCardId, setMenuOpen, setSelectedRewardId: (id: string | null) => setRewardState((p) => ({ ...p, selectedId: id })),
     characterId: run.characterId, characterGender: run.characterGender,
     beginRun, handleCharacterSelect, returnToBattle, goToScreen,
-    maybeTriggerShimmer, handleKeyboardPlay, handleCardPointerDown,
+    maybeTriggerShimmer, handleCardClick,
     handleWishChoice, finishRewards, handleDestinationChoice, handleCampfireContinue,
     handleShopBuyCard, handleShopRemoveCard, handleShopRefresh, handleShopContinue,
     handleAlchemistBuyCard, handleAlchemistRefresh, handleAlchemistMixPotions, handleAlchemistContinue,

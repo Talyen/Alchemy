@@ -6,7 +6,8 @@
 npm run dev          # Vite dev server
 npm run build        # tsc + vite build (runs assets:optimize first)
 npm run test:e2e     # Playwright tests (starts Vite on :4173 automatically)
-npm run assets:optimize  # Convert Raw Art Assets/ PNGs → src/assets/optimized/ webps
+npm run assets:optimize   # Convert Raw Assets/ PNGs → src/assets/optimized/ webps
+npm run sounds:optimize   # Convert Raw Assets/Sound Effects → public/sounds/ OGGs
 ```
 
 Add a new raw asset:
@@ -16,7 +17,7 @@ Add a new raw asset:
 
 ## Architecture
 
-- **`src/lib/`** — Pure game logic (no React). `battle/` (state machine, effects, draw), `talents.ts` (XP math), `audio.ts` (Web Audio synthesis), `game-constants.ts` (all tuning knobs).
+- **`src/lib/`** — Pure game logic (no React). `battle/` (state machine, effects, draw), `talents.ts` (XP math), `audio.ts` (Web Audio buffer playback), `game-constants.ts` (all tuning knobs).
 - **`src/features/alchemy/`** — React layer. `use-alchemy-run-controller.ts` is the single state orchestrator; all screens read from `run.xxx`. `screens/` are page-level components. `ui/` are reusable widgets.
 - **`src/lib/game-data/`** — Card definitions (`cards.ts`), keyword definitions (`keywords.ts`), art imports (`assets.ts`), character/enemy data.
 - Barrel export at `src/lib/game-data.ts` re-exports everything from `game-data/` submodules — import cards, enemies, keywords from `@/lib/game-data`.
@@ -26,7 +27,7 @@ Add a new raw asset:
 - **Immutability**: Battle state is never mutated — `createBattleState`, `playBattleCardResolved`, `endPlayerTurn` all return new `BattleState` objects. Reducer pattern through `applyCardEffects`.
 - **Combat texts**: Damage/heal/status events are emitted by battle functions and merged by `(target, kind, stat)` so multi-hit cards produce a single floating number.
 - **Talent effects**: Pre-computed once per battle start into `TalentEffectManifest` and carried on `BattleState.talentEffects`. The battle engine does not import talent-pool directly.
-- **No audio files**: All sounds are Web Audio API synthesis (`lib/audio.ts`). Music is MP3 files from a `Music/` directory at the site root.
+- **No audio files**: All sounds are Web Audio API buffer playback (`lib/audio.ts`). Music is MP3 files from a `Music/` directory at the site root.
 - **`@/` path alias**: Maps to `src/`. Use in all imports.
 
 ## Architecture Rules
@@ -56,7 +57,7 @@ Add a new raw asset:
 ## Project gotchas
 
 - **PowerShell** is the default shell on Windows. Use `;` instead of `&&` to chain commands.
-- **Asset pipeline**: `prebuild`/`predev` run `assets:optimize` automatically. The script reads from `Raw Art Assets/` and writes webp to `src/assets/optimized/`. Run `npm run assets:optimize` after adding new art.
+- **Asset pipeline**: `prebuild`/`predev` run `assets:optimize` and `sounds:optimize` automatically. The art script reads from `Raw Assets/` and writes webp to `src/assets/optimized/`; the sound script reads from `Raw Assets/Sound Effects/` and writes OGG to `public/sounds/`. Run the relevant optimize command after adding new assets.
 - **Vite base path** is `/Alchemy/` (for GitHub Pages deploy). Dev server runs at `http://127.0.0.1:4173/Alchemy/`.
 - The `.github/copilot-instructions.md` file contains additional UI/design guidance.
 
@@ -65,7 +66,7 @@ Add a new raw asset:
 ### Never read these files
 They are either binary, generated, or never relevant to coding tasks:
 - `package-lock.json`
-- `Raw Art Assets/**` — source PNGs, never needed; optimized outputs are in `src/assets/optimized/`
+- `Raw Assets/**` — source PNGs and raw sound files, never needed; optimized outputs are in `src/assets/optimized/` and `public/sounds/`
 - `src/assets/optimized/**` — webp binaries
 - `Music/**` — MP3 binaries
 - `dist/**`, `.vite/**`

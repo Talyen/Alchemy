@@ -87,14 +87,14 @@ function applyDamageStatuses(state: BattleState, effect: Extract<BattleCardEffec
       nextStatuses.stun += actualDamage;
       if (state.enemyHealth > 0 && nextStatuses.stun > state.enemyHealth * STUN_THRESHOLD_FRACTION) {
         nextStatuses.stun = 0;
-        state.enemySkipTurns += 1;
+        return { ...state, enemyStatuses: nextStatuses, enemySkipTurns: state.enemySkipTurns + 1 };
       }
       break;
     case "freeze":
       nextStatuses.freeze += actualDamage;
       if (state.enemyHealth > 0 && nextStatuses.freeze >= state.enemyHealth * FREEZE_THRESHOLD_FRACTION) {
         nextStatuses.freeze = 0;
-        state.enemySkipTurns += 1;
+        return { ...state, enemyStatuses: nextStatuses, enemySkipTurns: state.enemySkipTurns + 1 };
       }
       break;
   }
@@ -115,7 +115,7 @@ function dealEnemyDamage(
 
   let nextState: BattleState = {
     ...state,
-    enemyHealth: Math.max(0, Math.min(baseEnemyHealth, state.enemyHealth - finalDamage)),
+    enemyHealth: Math.max(0, Math.min(state.enemyMaxHealth, state.enemyHealth - finalDamage)),
   };
 
   nextState = applyDamageStatuses(nextState, effect, finalDamage);
@@ -200,10 +200,17 @@ export function applyCardEffects(state: BattleState, card: BattleCard, combatTex
       case "gain-gold":
         mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "gold", amount: effect.amount });
         return { ...currentState, gold: currentState.gold + effect.amount };
-      case "wish":
+      case "wish": {
         // Wish excludes the played card itself (can't wish for a copy of the card
         // you just played) and offers a fixed 3 choices from the full card library.
-        return { ...currentState, wishOptions: cardLibrary.filter((candidate) => candidate.id !== card.id).slice(0, WISH_CHOICE_COUNT) };
+        const candidates = cardLibrary.filter((candidate) => candidate.id !== card.id);
+        const shuffled = [...candidates];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        return { ...currentState, wishOptions: shuffled.slice(0, WISH_CHOICE_COUNT) };
+      }
       case "remove-ailment":
         return removePlayerAilments(currentState, effect.mode);
       default:

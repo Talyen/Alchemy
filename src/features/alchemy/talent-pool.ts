@@ -183,12 +183,14 @@ function getAvailableTalents(keywordId: KeywordId, unlockedIds: string[]): Talen
   return getTalentsForKeyword(keywordId).filter((t) => !unlockedIds.includes(t.id));
 }
 
-// Randomly picks N talent choices from the available pool. Uses a simple
-// sort-based shuffle (not Fisher-Yates) since the pool is small enough that
-// the bias is negligible and readability matters more.
+// Randomly picks N talent choices from the available pool.
 export function sampleTalentChoices(keywordId: KeywordId, unlockedIds: string[], count: number = 3): TalentDefinition[] {
   const available = getAvailableTalents(keywordId, unlockedIds);
-  const shuffled = [...available].sort(() => Math.random() - 0.5);
+  const shuffled = [...available];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
   return shuffled.slice(0, count);
 }
 

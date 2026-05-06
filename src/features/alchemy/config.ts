@@ -68,15 +68,15 @@ export const ghostDurations: Record<CardGhostVariant, number> = {
 export const battleCardWidthClass = "w-[clamp(222px,22vh,336px)]";
 export const handCardWidthClass = "w-[clamp(189px,18.7vh,286px)]";
 export const collectionCardWidthClass = "w-[clamp(156px,15vw,210px)]";
-export const pileCardWidthClass = "w-[clamp(74px,7.4vh,112px)]";
+export const pileCardWidthClass = "w-[clamp(96px,9.6vh,146px)]";
 
 // Card surface styling — shared by all card-like elements.
-export const cardSurfaceClass = "relative overflow-hidden rounded-[30px] bg-black shadow-[0_20px_48px_rgba(0,0,0,0.48)]";
+export const cardSurfaceClass = "relative overflow-hidden rounded-[30px] bg-black";
 export const staticCardTransform = "translate3d(0px, 0px, 0px)";
 
 // Popup panel styles for card detail hover popups and the battle menu.
-export const popupClassName = "absolute bottom-full left-1/2 z-40 mb-4 w-60 -translate-x-1/2 rounded-[20px] border border-border/80 bg-card px-3 py-3 text-left shadow-[0_18px_42px_rgba(0,0,0,0.55)]";
-export const cardPopupClassName = "hover-popup-panel absolute left-1/2 top-0 z-40 w-full origin-bottom rounded-[20px] border border-border/80 bg-card px-4 py-3 text-left shadow-[0_18px_42px_rgba(0,0,0,0.55)]";
+export const popupClassName = "absolute bottom-full left-1/2 z-40 mb-4 w-60 -translate-x-1/2 rounded-[20px] border border-border/80 bg-card px-3 py-3 text-left";
+export const cardPopupClassName = "hover-popup-panel absolute left-1/2 top-0 z-40 w-full origin-bottom rounded-[20px] border border-border/80 bg-card px-4 py-3 text-left";
 
 // ---- Combat Text Theming ----
 // Maps damage/status types to colors for floating combat text. These match

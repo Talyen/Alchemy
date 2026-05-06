@@ -1,6 +1,6 @@
 import { drawCards } from "./draw";
 import { applyCardEffects, mergeCombatText } from "./effects";
-import { cardsPerTurn, maxHandSize, type BattleResolution, type BattleState, type CombatTextEvent, type TurnPhase } from "./types";
+import { cardsPerTurn, maxHandSize, maxPlayerHealth, type BattleResolution, type BattleState, type CombatTextEvent, type TurnPhase } from "./types";
 
 // Entry point for playing a card. Validates mana/wish state, finds the card in hand,
 // deducts mana, applies effects, then routes to discard or exhaust.
@@ -46,22 +46,22 @@ function tickBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
   const damage = state.enemyStatuses.burn;
   if (damage <= 0) return state;
   mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "burn", amount: damage });
-  return { ...state, enemyHealth: Math.max(0, Math.min(30, state.enemyHealth - damage)), enemyStatuses: { ...state.enemyStatuses, burn: Math.floor(state.enemyStatuses.burn / 2) } };
+  return { ...state, enemyHealth: Math.max(0, Math.min(state.enemyMaxHealth, state.enemyHealth - damage)), enemyStatuses: { ...state.enemyStatuses, burn: Math.floor(state.enemyStatuses.burn / 2) } };
 }
 
 function tickPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
   const damage = state.enemyStatuses.poison;
   if (damage <= 0) return state;
   mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "poison", amount: damage });
-  return { ...state, enemyHealth: Math.max(0, Math.min(30, state.enemyHealth - damage)), enemyStatuses: { ...state.enemyStatuses, poison: Math.max(0, state.enemyStatuses.poison - 1) } };
+  return { ...state, enemyHealth: Math.max(0, Math.min(state.enemyMaxHealth, state.enemyHealth - damage)), enemyStatuses: { ...state.enemyStatuses, poison: Math.max(0, state.enemyStatuses.poison - 1) } };
 }
 
 function tickBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
   const damage = state.enemyStatuses.bleed;
   if (damage <= 0) return state;
-  let nextState = { ...state, enemyHealth: Math.max(0, Math.min(30, state.enemyHealth - damage)), enemyStatuses: { ...state.enemyStatuses, bleed: 0, bleedLeech: 0 } };
+  let nextState = { ...state, enemyHealth: Math.max(0, Math.min(state.enemyMaxHealth, state.enemyHealth - damage)), enemyStatuses: { ...state.enemyStatuses, bleed: 0, bleedLeech: 0 } };
   if (state.enemyStatuses.bleedLeech > 0) {
-    nextState.playerHealth = Math.max(0, Math.min(30, nextState.playerHealth + damage));
+    nextState.playerHealth = Math.max(0, Math.min(maxPlayerHealth, nextState.playerHealth + damage));
     mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: damage });
   }
   mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "bleed", amount: damage });
@@ -105,7 +105,7 @@ function advanceToPlayerTurn(state: BattleState) {
     turnPhase: "player" as TurnPhase,
     deck: nextDraw.deck,
     hand: nextDraw.hand,
-    discard: [],
+    discard: nextDraw.discard,
     mana: state.maxMana,
     playerStatuses: { ...state.playerStatuses, block: Math.floor((state.playerStatuses.block ?? 0) / 2) },
   };
@@ -132,7 +132,7 @@ function processEnemyAttack(state: BattleState, combatTexts: CombatTextEvent[]) 
 
   return {
     ...state,
-    playerHealth: Math.max(0, Math.min(30, state.playerHealth - actualDamage)),
+    playerHealth: Math.max(0, Math.min(maxPlayerHealth, state.playerHealth - actualDamage)),
     playerStatuses: {
       ...state.playerStatuses,
       block: state.playerStatuses.block - blockAbsorb,

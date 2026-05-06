@@ -20,11 +20,6 @@ export function animateCardActivation(
   spawnCardGhost({ art: card.art, rect, rotation, delay: 0, variant: "activate" });
 }
 
-export function isPointerInBattlefield(pointerX: number, pointerY: number, battleSceneRef: React.RefObject<HTMLDivElement | null>) {
-  const rect = battleSceneRef.current?.getBoundingClientRect();
-  return Boolean(rect && pointerX >= rect.left && pointerX <= rect.right && pointerY >= rect.top && pointerY <= rect.top + rect.height * 0.74);
-}
-
 function getCardPlayGhostTargetRect(
   card: BattleCard,
   playerPanelRef: React.RefObject<HTMLDivElement | null>,

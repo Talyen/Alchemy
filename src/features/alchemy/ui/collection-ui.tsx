@@ -17,6 +17,7 @@ import { clearTiltFromEvent, getHoverId, setTiltFromEvent } from "../utils";
 import { DetailPopup } from "./card-ui";
 import { ShimmerOverlay } from "./shared-ui";
 import { COLLECTION_PAGE_SIZE } from "@/lib/game-constants";
+import { playCardSound, playEnemyAttack } from "@/lib/audio";
 
 const collectionPageSize = COLLECTION_PAGE_SIZE;
 
@@ -63,6 +64,10 @@ function CompendiumTile({
         onBlur={onHoverEnd}
         onMouseMove={setTiltFromEvent}
         onMouseLeave={clearTiltFromEvent}
+        onClick={() => {
+          if (item.hoverScope === "collection-card") playCardSound(item.id);
+          else if (item.hoverScope === "collection-bestiary") playEnemyAttack(item.id);
+        }}
         data-tilt-strength="11"
         className={cn(
           "tilt-surface group w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
@@ -178,7 +183,7 @@ export function CollectionPagination({
   onPageChange: (page: number) => void;
 }) {
   return (
-    <div className={cn("mt-10 flex min-h-[44px] items-center justify-center gap-4", totalPages <= 1 ? "invisible" : "visible")}>
+    <div className={cn("mt-8 flex min-h-[44px] items-center justify-center gap-4", totalPages <= 1 ? "invisible" : "visible")}>
       <Button variant="outline" disabled={page === 0} onClick={() => onPageChange(page - 1)}>
         <ChevronLeft className="h-4 w-4" />
         Previous

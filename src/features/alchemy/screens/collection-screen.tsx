@@ -31,7 +31,7 @@ export function CollectionScreen({
         <CollectionPagination page={page} totalPages={totalPages} onPageChange={onPageChange} />
       </div>
 
-      <div className="flex flex-wrap justify-center gap-3">
+      <div className="mt-6 flex flex-wrap justify-center gap-3">
         <Button variant="outline" onClick={onMainMenu}><House className="h-4 w-4" /> Main Menu</Button>
         {hasActiveBattle ? <Button onClick={onReturnToBattle}><Swords className="h-4 w-4" /> Return to Battle</Button> : null}
       </div>

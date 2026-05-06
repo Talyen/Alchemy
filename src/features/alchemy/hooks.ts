@@ -1,11 +1,9 @@
-import type { PointerEvent as ReactPointerEvent } from "react";
 import { useEffect, useRef, useState } from "react";
 
 import type { CombatTextEvent } from "@/lib/battle";
-import type { BattleCard } from "@/lib/game-data";
 
-import type { CardGhost, CardRect, DragPreview, FloatingCombatText, ResolutionOption } from "./types";
-import { COMBAT_TEXT_LANE_DELAY_MS, COMBAT_TEXT_LIFETIME_MS, DRAG_START_THRESHOLD_PX, DRAG_ROTATION_CLAMP, DRAG_ROTATION_DIVISOR, SHIMMER_COOLDOWN_MS, SHIMMER_DURATION_MS, SHIMMER_INTRO_DELAY_MS } from "@/lib/game-constants";
+import type { CardGhost, FloatingCombatText, ResolutionOption } from "./types";
+import { COMBAT_TEXT_LANE_DELAY_MS, COMBAT_TEXT_LIFETIME_MS, SHIMMER_COOLDOWN_MS, SHIMMER_DURATION_MS, SHIMMER_INTRO_DELAY_MS } from "@/lib/game-constants";
 
 // ---- Card Shimmer (Hover Effect) ----
 // Manages the "shimmer" animation that sweeps across card art on mouse hover.
@@ -34,6 +32,7 @@ export function useShimmerController() {
 // Manages the lifecycle of floating damage/heal numbers. Events are grouped
 // by (target, kind, stat) via mergeCombatText in effects.ts, so multi-hit
 // cards produce a single float instead of overlapping numbers.
+// Entries are staggered by lane so simultaneous texts queue visually.
 
 const combatTextLifetimeMs = COMBAT_TEXT_LIFETIME_MS;
 const combatTextLaneDelayMs = COMBAT_TEXT_LANE_DELAY_MS;
@@ -60,8 +59,14 @@ export function useFloatingCombatTexts() {
       laneCounts[event.target] += 1;
       return { ...event, lane, id: `${createdAt}-${event.target}-${event.stat}-${index}`, signedAmountText: getSignedAmountText(event) } satisfies FloatingCombatText;
     });
-    setFloatingCombatTexts((current) => [...current, ...nextEntries]);
-    nextEntries.forEach(scheduleExpiry);
+
+    nextEntries.forEach((entry) => {
+      const delay = entry.lane * combatTextLaneDelayMs;
+      setTimeout(() => {
+        setFloatingCombatTexts((current) => [...current, entry]);
+        scheduleExpiry(entry);
+      }, delay);
+    });
   }
 
   return { floatingCombatTexts, showCombatTexts };
@@ -83,96 +88,6 @@ export function useCardGhosts() {
   }
 
   return { cardGhosts, removeCardGhost, clearCardGhosts, spawnCardGhost };
-}
-
-// ---- Hand Card Drag (Desktop Aiming) ----
-// On desktop, clicking a card plays it immediately. Dragging a card into the
-// battlefield area aims it (e.g., for positional effects). The drag threshold
-// prevents accidental drags from normal clicking.
-
-const dragStartThresholdPx = DRAG_START_THRESHOLD_PX;
-
-type DragSession = {
-  card: BattleCard;
-  index: number;
-  pointerId: number;
-  pointerOffsetX: number;
-  pointerOffsetY: number;
-  originRect: CardRect;
-  startX: number;
-  startY: number;
-  currentX: number;
-  currentY: number;
-  dragging: boolean;
-};
-
-export function useHandCardDrag(onRelease: (payload: { card: BattleCard; index: number; rect: CardRect; dragged: boolean; pointerX: number; pointerY: number }) => void) {
-  const [dragSession, setDragSession] = useState<DragSession | null>(null);
-  const onReleaseRef = useRef(onRelease);
-  const ignoreClickCardIdRef = useRef<string | null>(null);
-  onReleaseRef.current = onRelease;
-
-  useEffect(() => {
-    if (!dragSession) return;
-    const session = dragSession;
-
-    function onPointerMove(event: PointerEvent) {
-      if (event.pointerId !== session.pointerId) return;
-      setDragSession((current) => {
-        if (!current || current.pointerId !== event.pointerId) return current;
-        const dragged = current.dragging || Math.hypot(event.clientX - current.startX, event.clientY - current.startY) >= dragStartThresholdPx;
-        return { ...current, currentX: event.clientX, currentY: event.clientY, dragging: dragged };
-      });
-    }
-
-    function scheduleClickSuppression() {
-      const compositeId = `${session.card.id}-${session.index}`;
-      ignoreClickCardIdRef.current = compositeId;
-      setTimeout(() => { if (ignoreClickCardIdRef.current === compositeId) ignoreClickCardIdRef.current = null; }, 0);
-    }
-
-    function onPointerEnd(event: PointerEvent) {
-      if (event.pointerId !== session.pointerId) return;
-      const finalRect = { x: (session.dragging ? event.clientX : session.startX) - session.pointerOffsetX, y: (session.dragging ? event.clientY : session.startY) - session.pointerOffsetY, width: session.originRect.width, height: session.originRect.height };
-      if (session.dragging) scheduleClickSuppression();
-      onReleaseRef.current({ card: session.card, index: session.index, rect: finalRect, dragged: session.dragging, pointerX: event.clientX, pointerY: event.clientY });
-      setDragSession(null);
-    }
-
-    window.addEventListener("pointermove", onPointerMove);
-    window.addEventListener("pointerup", onPointerEnd);
-    window.addEventListener("pointercancel", onPointerEnd);
-    return () => {
-      window.removeEventListener("pointermove", onPointerMove);
-      window.removeEventListener("pointerup", onPointerEnd);
-      window.removeEventListener("pointercancel", onPointerEnd);
-    };
-  }, [dragSession]);
-
-  function beginCardDrag(card: BattleCard, index: number, event: ReactPointerEvent<HTMLButtonElement>) {
-    if (event.button !== 0) return;
-    event.preventDefault();
-    const rect = event.currentTarget.getBoundingClientRect();
-    setDragSession({ card, index, pointerId: event.pointerId, pointerOffsetX: event.clientX - rect.x, pointerOffsetY: event.clientY - rect.y, originRect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height }, startX: event.clientX, startY: event.clientY, currentX: event.clientX, currentY: event.clientY, dragging: false });
-  }
-
-  function shouldIgnoreClick(cardId: string, index: number) {
-    const compositeId = `${cardId}-${index}`;
-    if (ignoreClickCardIdRef.current !== compositeId) return false;
-    ignoreClickCardIdRef.current = null;
-    return true;
-  }
-
-  return {
-    activeDraggedCardId: dragSession?.dragging ? `${dragSession.card.id}-${dragSession.index}` : null,
-    dragPreview: dragSession?.dragging ? {
-      card: dragSession.card,
-      rect: { x: dragSession.currentX - dragSession.pointerOffsetX, y: dragSession.currentY - dragSession.pointerOffsetY, width: dragSession.originRect.width, height: dragSession.originRect.height },
-      rotation: Math.max(-DRAG_ROTATION_CLAMP, Math.min(DRAG_ROTATION_CLAMP, (dragSession.currentX - dragSession.startX) / DRAG_ROTATION_DIVISOR)),
-    } : null satisfies DragPreview | null,
-    beginCardDrag,
-    shouldIgnoreClick,
-  };
 }
 
 // ---- Virtual Resolution ----

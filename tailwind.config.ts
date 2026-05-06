@@ -34,9 +34,6 @@ const config: Config = {
         body: ["Inter", "sans-serif"],
         display: ["Inter", "sans-serif"],
       },
-      boxShadow: {
-        aurora: "0 24px 60px rgba(0, 0, 0, 0.18)",
-      },
       keyframes: {
         float: {
           "0%, 100%": { transform: "translateY(0px)" },

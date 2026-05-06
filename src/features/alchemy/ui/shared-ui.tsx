@@ -38,7 +38,7 @@ export function DestinationChoices({
               ref={(node) => { buttonRefs.current[destination] = node; }}
               type="button"
               onClick={() => onChoose(destination)}
-              className={cn("inline-flex min-h-[48px] items-center justify-start gap-2 rounded-full border border-border/80 px-4 py-2 text-left text-sm font-semibold shadow-[0_12px_24px_rgba(0,0,0,0.26)] transition-all hover:-translate-y-0.5 active:translate-y-0 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background", className)}
+              className={cn("inline-flex min-h-[48px] items-center justify-start gap-2 rounded-full border border-border/80 px-4 py-2 text-left text-sm font-semibold transition-all hover:-translate-y-0.5 active:translate-y-0 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background", className)}
             >
               <span className="rounded-full bg-black/16 p-1.5"><Icon className="h-4 w-4" /></span>
               <span className="leading-none">{destination}</span>
@@ -69,7 +69,7 @@ export function ResolutionSelect({ selectedResolution, resolutionOptions, onChan
 export function ConfirmationDialog({ title, description, confirmLabel, cancelLabel = "Cancel", tone = "danger", onConfirm, onCancel }: { title: string; description: string; confirmLabel: string; cancelLabel?: string; tone?: "danger" | "default"; onConfirm: () => void; onCancel: () => void }) {
   return (
     <div className="absolute inset-0 z-[120] flex items-center justify-center bg-black/70 px-6">
-      <div className="alchemy-shell w-full max-w-md rounded-[26px] border border-border/80 px-6 py-6 text-center shadow-[0_20px_48px_rgba(0,0,0,0.45)]">
+      <div className="alchemy-shell w-full max-w-md rounded-[26px] border border-border/80 px-6 py-6 text-center">
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/15 text-amber-200"><AlertTriangle className="h-6 w-6" /></div>
         <h2 className="mt-4 text-2xl font-semibold text-foreground">{title}</h2>
         <p className="mt-3 text-sm leading-6 text-muted-foreground">{description}</p>

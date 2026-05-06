@@ -6,7 +6,7 @@ import sharp from "sharp";
 
 const currentFile = fileURLToPath(import.meta.url);
 const rootDir = path.resolve(path.dirname(currentFile), "..");
-const sourceDir = path.join(rootDir, "Raw Art Assets");
+const sourceDir = path.join(rootDir, "Raw Assets");
 const outputDir = path.join(rootDir, "src", "assets", "optimized");
 
 const cardWidth = 420;
