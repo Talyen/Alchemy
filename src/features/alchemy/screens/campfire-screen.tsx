@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { campfire } from "@/lib/game-data";
 import { CAMPFIRE_ANIMATION_MS, CAMPFIRE_CONTINUE_DELAY, CAMPFIRE_HEAL_FRACTION } from "@/lib/game-constants";
 
@@ -16,6 +17,7 @@ export function CampfireScreen({
 }) {
   const [resting, setResting] = useState(false);
   const [displayHp, setDisplayHp] = useState(playerHealth);
+  const [targetHp, setTargetHp] = useState(playerHealth);
   const [done, setDone] = useState(false);
   const hpCounterRef = useRef<number | null>(null);
 
@@ -26,25 +28,38 @@ export function CampfireScreen({
     }
   }, [done, onContinue]);
 
+  useEffect(() => {
+    return () => {
+      if (hpCounterRef.current !== null) cancelAnimationFrame(hpCounterRef.current);
+    };
+  }, []);
+
   function handleRest() {
-    setResting(true);
     const startHp = playerHealth;
-    const targetHp = Math.min(maxHp, playerHealth + Math.floor(maxHp * CAMPFIRE_HEAL_FRACTION));
-    const startTime = performance.now();
+    const nextTargetHp = Math.min(maxHp, playerHealth + Math.floor(maxHp * CAMPFIRE_HEAL_FRACTION));
+    setTargetHp(startHp);
+    setResting(true);
 
-    function animateHp() {
-      const elapsed = performance.now() - startTime;
-      const progress = Math.min(1, elapsed / CAMPFIRE_ANIMATION_MS);
-      const current = Math.round(startHp + (targetHp - startHp) * progress);
-      setDisplayHp(current);
-      if (progress < 1) {
-        hpCounterRef.current = requestAnimationFrame(animateHp);
-      } else {
-        setTimeout(() => setDone(true), 0);
+    hpCounterRef.current = requestAnimationFrame(() => {
+      const startTime = performance.now();
+      setTargetHp(nextTargetHp);
+
+      function animateHp() {
+        const elapsed = performance.now() - startTime;
+        const progress = Math.min(1, elapsed / CAMPFIRE_ANIMATION_MS);
+        const easedProgress = 1 - Math.pow(1 - progress, 3);
+        const current = Math.round(startHp + (nextTargetHp - startHp) * easedProgress);
+        setDisplayHp(current);
+        if (progress < 1) {
+          hpCounterRef.current = requestAnimationFrame(animateHp);
+        } else {
+          hpCounterRef.current = null;
+          setTimeout(() => setDone(true), 0);
+        }
       }
-    }
 
-    hpCounterRef.current = requestAnimationFrame(animateHp);
+      hpCounterRef.current = requestAnimationFrame(animateHp);
+    });
   }
 
   return (
@@ -64,15 +79,7 @@ export function CampfireScreen({
             <span className="font-semibold text-foreground">HP</span>
             <span className="text-muted-foreground">{displayHp} / {maxHp}</span>
           </div>
-          <div className="mt-2 h-4 w-full overflow-hidden rounded-full bg-muted">
-            <div
-              className="h-full rounded-full bg-red-500"
-              style={{
-                width: `${(displayHp / maxHp) * 100}%`,
-                transition: resting ? "width 1200ms linear" : "none",
-              }}
-            />
-          </div>
+          <Progress value={(targetHp / maxHp) * 100} className="campfire-hp-progress mt-2 h-4 bg-muted [&>div]:bg-red-500" />
         </div>
       )}
     </div>

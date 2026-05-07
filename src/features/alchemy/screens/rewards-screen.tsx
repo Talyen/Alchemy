@@ -1,4 +1,5 @@
 // Victory reward screen — pick a card to add to the deck or skip.
+import type { CSSProperties } from "react";
 import { Coins } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -40,7 +41,7 @@ export function RewardsScreen({
         <p className="mt-3 text-base text-muted-foreground">Choose a Card to add to your Deck</p>
 
         <div className="mt-8 flex flex-wrap items-start justify-center gap-6">
-          {rewardChoices.map((card) => {
+          {rewardChoices.map((card, index) => {
             const hoverId = getHoverId("reward", card.id);
 
             return (
@@ -59,14 +60,15 @@ export function RewardsScreen({
                 shimmerActive={shimmerState?.cardId === hoverId}
                 shimmerToken={shimmerState?.token}
                 className={collectionCardWidthClass}
-                wrapperClassName="relative flex justify-center"
+                wrapperClassName="stagger-item relative flex justify-center"
+                wrapperStyle={{ "--stagger-index": index } as CSSProperties}
                 selected={selectedRewardId === card.id}
               />
             );
           })}
         </div>
 
-        <div className="mt-8 text-center text-lg font-medium text-yellow-300">
+        <div className="state-swap mt-8 text-center text-lg font-medium text-yellow-300">
           <span className="inline-flex items-center gap-2">
             <Coins className="h-5 w-5" />
             Found {rewardGold} Gold

@@ -2,22 +2,47 @@ import type { MouseEvent } from "react";
 import type { BattleCard } from "@/lib/game-data";
 import type { CardRect } from "../types";
 
+type TiltFrame = {
+  rect: DOMRect;
+  x: number;
+  y: number;
+  rafId: number | null;
+};
+
+const tiltFrames = new WeakMap<HTMLElement, TiltFrame>();
+
 export function getCardRect(element: DOMRect): CardRect {
   return { x: element.x, y: element.y, width: element.width, height: element.height };
 }
 
 export function setTiltFromEvent(event: MouseEvent<HTMLElement>) {
   const target = event.currentTarget;
-  const rect = target.getBoundingClientRect();
-  const strength = Number(target.dataset.tiltStrength ?? 10);
-  const x = (event.clientX - rect.left) / rect.width;
-  const y = (event.clientY - rect.top) / rect.height;
-  target.style.setProperty("--tilt-rotate-y", `${(x - 0.5) * strength}deg`);
-  target.style.setProperty("--tilt-rotate-x", `${(0.5 - y) * strength}deg`);
+  const frame = tiltFrames.get(target) ?? { rect: target.getBoundingClientRect(), x: 0.5, y: 0.5, rafId: null };
+  frame.x = (event.clientX - frame.rect.left) / frame.rect.width;
+  frame.y = (event.clientY - frame.rect.top) / frame.rect.height;
+  tiltFrames.set(target, frame);
+  target.classList.add("tilt-active");
+
+  if (frame.rafId !== null) return;
+
+  // Batch tilt writes into the next animation frame so hover movement never forces
+  // layout and style work multiple times in the same frame.
+  frame.rafId = requestAnimationFrame(() => {
+    const latest = tiltFrames.get(target);
+    if (!latest) return;
+    const strength = Number(target.dataset.tiltStrength ?? 10);
+    target.style.setProperty("--tilt-rotate-y", `${(latest.x - 0.5) * strength}deg`);
+    target.style.setProperty("--tilt-rotate-x", `${(0.5 - latest.y) * strength}deg`);
+    latest.rafId = null;
+  });
 }
 
 export function clearTiltFromEvent(event: MouseEvent<HTMLElement>) {
   const target = event.currentTarget;
+  const frame = tiltFrames.get(target);
+  if (frame?.rafId !== null && frame?.rafId !== undefined) cancelAnimationFrame(frame.rafId);
+  tiltFrames.delete(target);
+  target.classList.remove("tilt-active");
   target.style.setProperty("--tilt-rotate-y", "0deg");
   target.style.setProperty("--tilt-rotate-x", "0deg");
 }

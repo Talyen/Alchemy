@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Coins, Gem } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -19,13 +20,28 @@ import { clearTiltFromEvent, getCombatTextColorClass, getCombatTextIcon, setTilt
 import { KeywordTag } from "./keyword-tag";
 import { ShimmerOverlay } from "./shared-ui";
 
+// Returns a token that changes briefly after a value update so numeric combat UI
+// can replay a small settle animation without storing old battle state globally.
+function useChangeToken(value: number | string) {
+  const previousValueRef = useRef(value);
+  const [token, setToken] = useState(0);
+
+  useEffect(() => {
+    if (previousValueRef.current === value) return;
+    previousValueRef.current = value;
+    setToken((current) => current + 1);
+  }, [value]);
+
+  return token;
+}
+
 export function CombatTextRail({ entries, side }: { entries: FloatingCombatText[]; side: "player" | "enemy" }) {
   if (entries.length === 0) {
     return null;
   }
 
   return (
-    <div className="pointer-events-none z-30 relative" style={{ width: "max-content" }}>
+    <div className={cn("pointer-events-none relative z-30 h-24 w-full", side === "player" ? "flex justify-end" : "flex justify-start")}>
       {entries.map((entry) => (
         <CombatTextBubble key={entry.id} entry={entry} side={side} />
       ))}
@@ -58,7 +74,7 @@ function StatusIcon({ chip }: { chip: StatusChip }) {
   const Icon = keywordIcons[kw];
 
   return (
-    <div className="group/status relative flex items-center justify-center">
+    <div className="status-chip-pop group/status relative flex items-center justify-center">
       <button
         type="button"
         className="relative flex h-7 w-7 items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
@@ -108,6 +124,8 @@ export function ArtPanel({
   isDead?: boolean;
   shaking?: boolean;
 }) {
+  const healthToken = useChangeToken(health);
+
   return (
     <div className={cn("relative flex flex-col items-center gap-3", isDead && "animate-death", shaking && "animate-shake")}>
       <div
@@ -126,14 +144,14 @@ export function ArtPanel({
       <div className={cn("surface-muted rounded-[24px] px-4 py-3", battleCardWidthClass)}>
         <div className="flex items-center justify-between gap-3">
           <p className="text-sm text-foreground">{title}</p>
-          <p className={cn("text-xs font-medium text-muted-foreground", isDead && "opacity-30")}>
+          <p key={healthToken} className={cn("hp-number-pop text-xs font-medium text-muted-foreground", isDead && "opacity-30")}>
             {health}/{maxHealth}
           </p>
         </div>
         <Progress value={(health / maxHealth) * 100} className={cn("mt-2.5 h-2 bg-background/80 [&>div]:bg-destructive", isDead && "[&>div]:bg-destructive/30")} />
 
         <div className="mt-2.5 flex min-h-7 items-center gap-1">
-          {statuses.length > 0 ? statuses.map((status) => <StatusIcon key={`${title}-${status.id}`} chip={status} />) : null}
+          {statuses.length > 0 ? statuses.map((status) => <StatusIcon key={`${title}-${status.id}-${status.value}`} chip={status} />) : null}
         </div>
       </div>
     </div>
@@ -163,6 +181,7 @@ export function PilePanel({ label, count, type }: { label: string; count: number
 
 export function ManaPanel({ mana, maxMana, gold }: { mana: number; maxMana: number; gold: number }) {
   const displayCount = Math.max(mana, maxMana);
+  const manaToken = useChangeToken(`${mana}-${maxMana}`);
 
   return (
     <div className="flex flex-col items-center gap-2" data-testid="mana-panel" data-mana={mana}>
@@ -176,9 +195,10 @@ export function ManaPanel({ mana, maxMana, gold }: { mana: number; maxMana: numb
           const isOverflow = index >= maxMana;
           return (
             <Gem
-              key={`mana-${index}`}
+              key={`mana-${index}-${manaToken}-${isFilled}`}
               className={cn(
                 "h-[22px] w-[22px] transition-opacity duration-200",
+                isFilled && "mana-gem-active",
                 isFilled && isOverflow && "text-sky-300 drop-shadow-[0_0_3px_rgba(125,211,252,0.6)]",
                 isFilled && !isOverflow && "text-[#2c4f88]",
                 !isFilled && "text-[#2c4f88]/20",

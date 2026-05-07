@@ -1,3 +1,4 @@
+// Talent UI widgets for selecting pending unlocks and reviewing unlocked nodes.
 import { useState, Fragment } from "react";
 import type { KeywordId } from "@/lib/game-data";
 import { keywordDefinitions } from "@/lib/game-data";
@@ -26,6 +27,9 @@ const keywordBorderClasses: Record<KeywordId, string> = {
   leech: "border-pink-300",
   freeze: "border-cyan-300",
   mana: "border-sky-400",
+  nature: "border-green-700",
+  companion: "border-[#a36a32]",
+  trap: "border-stone-300",
 };
 
 function renderDescription(description: string) {
@@ -76,7 +80,7 @@ export function TalentChoicesInline({
               type="button"
               onClick={() => setSelectedId(talent.id)}
               className={cn(
-                "flex items-center gap-2 flex-1 min-w-[180px] max-w-[240px] rounded-[14px] border bg-black px-4 py-3 text-left text-sm transition-all",
+                "talent-choice-pending flex items-center gap-2 flex-1 min-w-[180px] max-w-[240px] rounded-[14px] border bg-black px-4 py-3 text-left text-sm transition-all",
                 isSelected
                   ? `${borderClass} ring-1 ring-inset ring-white/20`
                   : `${borderClass}/30 hover:${borderClass}/60`,

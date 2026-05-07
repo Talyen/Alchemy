@@ -1,5 +1,5 @@
 import type { CSSProperties, MouseEvent, PointerEvent as ReactPointerEvent } from "react";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 
 import {
   keywordDefinitions,
@@ -10,7 +10,6 @@ import { cn } from "@/lib/utils";
 
 import {
   cardSurfaceClass,
-  ghostDurations,
   keywordIcons,
   popupClassName,
   staticCardTransform,
@@ -83,7 +82,7 @@ export function DetailPopup({
   return (
     <div
       ref={ref}
-      className={cn("hover-popup-panel absolute left-1/2 z-40 w-full origin-bottom rounded-[20px] border border-border/80 bg-card px-4 py-3 text-left", "hover-popup-quick-in pointer-events-auto")}
+      className={cn("hover-popup-panel absolute left-1/2 z-40 w-full origin-bottom rounded-[20px] border border-border/80 bg-card px-4 py-3 text-left", "hover-popup-quick-in pointer-events-auto", flip ? "hover-popup-below" : "hover-popup-above")}
       style={{ top: flip ? "100%" : 0, transform: flip ? "translate(-50%, 12px)" : "translate(-50%, calc(-100% - 26px))" } as CSSProperties}
     >
       <p className="text-base text-foreground sm:text-lg">{title}</p>
@@ -177,14 +176,6 @@ export function BattleCardButton({
 }
 
 export function CardGhostOverlay({ ghost, onDone }: { ghost: CardGhost; onDone: () => void }) {
-  useEffect(() => {
-    const timeout = window.setTimeout(onDone, ghost.delay + ghostDurations[ghost.variant] + 90);
-
-    return () => {
-      window.clearTimeout(timeout);
-    };
-  }, [ghost.delay, ghost.variant, ghost.id, onDone]);
-
   return (
     <img
       src={ghost.art}
@@ -197,6 +188,7 @@ export function CardGhostOverlay({ ghost, onDone }: { ghost: CardGhost; onDone: 
         ghost.variant === "activate" ? "card-ghost-activate" : null,
         ghost.variant === "play-travel" ? "card-ghost-play-travel" : null,
       )}
+      onAnimationEnd={onDone}
       style={
         {
           left: ghost.rect.x,

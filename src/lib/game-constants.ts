@@ -22,7 +22,7 @@ export const FREE_CARD_SENTINEL = 99;           // nextCardCostReduction value t
 // ============ Timing (ms) ============
 export const AUTO_END_TURN_DELAY = 1220;       // How long the system waits before auto-ending turn when conditions are met (no mana, no cards).
 export const VICTORY_TRANSITION_DELAY = 1200;  // Brief pause after enemy dies so the death animation can play before the victory screen.
-export const ENEMY_PHASE_DELAY = 1800;         // Gap between DoT ticks and enemy attack — gives the player time to read combat text before damage lands.
+export const ENEMY_PHASE_DELAY = 900;          // Gap between enemy turn start and enemy action. Short enough to keep turns snappy while still readable.
 export const SHAKE_DURATION = 420;             // Screen shake on hit. 420ms is long enough to feel impactful but short enough to not delay gameplay.
 export const CAMPFIRE_ANIMATION_MS = 1250;     // HP bar animation duration. Long enough to feel satisfying, short enough to not bore.
 export const CAMPFIRE_CONTINUE_DELAY = 600;    // Brief pause after animation completes before auto-advancing. Gives player time to register the new HP value.
@@ -62,7 +62,7 @@ export const MUSIC_BASE_PATH = "Music/";        // Relative path from BASE_URL f
 export const SHIMMER_DURATION_MS = 1250;        // Card shimmer sweep animation runtime.
 export const SHIMMER_COOLDOWN_MS = 2600;        // Minimum time between shimmer triggers. Prevents rapid-fire re-triggers from spamming hover.
 export const SHIMMER_INTRO_DELAY_MS = 500;      // Delay before first shimmer when entering a screen.
-export const COMBAT_TEXT_LIFETIME_MS = 2800;     // How long floating combat text stays visible.
+export const COMBAT_TEXT_LIFETIME_MS = 3300;     // How long floating combat text stays mounted; visual fade is slightly shorter so cleanup never clips it.
 export const COMBAT_TEXT_LANE_DELAY_MS = 80;     // Stagger between multi-line combat text entries (creates a stacking effect).
 export const GHOST_EXTRA_BUFFER_MS = 90;        // Extra buffer on ghost animation cleanup. Prevents visual flicker at animation end.
 

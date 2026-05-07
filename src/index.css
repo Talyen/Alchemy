@@ -83,6 +83,10 @@
       rotateY(var(--tilt-rotate-y, 0deg));
     transform-style: preserve-3d;
     transition: transform 460ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .tilt-surface.tilt-active,
+  .tilt-surface:focus-visible {
     will-change: transform;
   }
 
@@ -134,8 +138,12 @@
     will-change: opacity, transform;
   }
 
-  .hover-popup-quick-in {
-    animation: hoverPopupQuickIn 120ms ease-out both;
+  .hover-popup-quick-in.hover-popup-above {
+    animation: hoverPopupQuickInAbove 120ms ease-out both;
+  }
+
+  .hover-popup-quick-in.hover-popup-below {
+    animation: hoverPopupQuickInBelow 120ms ease-out both;
   }
 
   .group:hover > .hover-popup-panel,
@@ -152,7 +160,7 @@
     animation-fill-mode: both;
     animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
     transform: rotate(var(--ghost-rotation, 0deg));
-    will-change: transform, opacity, filter;
+    will-change: transform, opacity;
   }
 
   .card-ghost-draw-in {
@@ -176,8 +184,57 @@
   }
 
   .combat-text-float {
-    animation: combatTextFloat 2600ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: combatTextFloat 3100ms cubic-bezier(0.16, 1, 0.3, 1) both;
     will-change: transform, opacity;
+  }
+
+  .motion-overlay {
+    animation: overlayFadeIn 160ms ease-out both;
+  }
+
+  .motion-panel {
+    animation: panelPopIn 190ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    will-change: opacity, transform;
+  }
+
+  .battle-menu-pop {
+    animation: battleMenuPop 140ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    transform-origin: bottom right;
+    will-change: opacity, transform;
+  }
+
+  .stagger-item {
+    animation: staggerItemIn 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: calc(var(--stagger-index, 0) * 42ms);
+  }
+
+  .state-swap {
+    animation: stateSwapIn 180ms ease-out both;
+  }
+
+  .hp-number-pop {
+    animation: numberPop 280ms ease-out both;
+  }
+
+  .hp-fill {
+    transition: width 360ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .campfire-hp-progress > div {
+    transition-duration: 1250ms;
+    transition-timing-function: ease-out;
+  }
+
+  .mana-gem-active {
+    animation: manaGemSettle 260ms ease-out both;
+  }
+
+  .status-chip-pop {
+    animation: statusChipPop 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .talent-choice-pending {
+    animation: talentChoicePulse 1900ms ease-in-out infinite;
   }
 }
 
@@ -187,13 +244,23 @@
   }
 
   .page-enter {
-    animation: pageEnter 180ms ease-out both;
+    animation: pageEnter 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .page-exit {
+    animation: pageExit 130ms ease-in both;
+    pointer-events: none;
   }
 }
 
 @keyframes pageEnter {
-  from { opacity: 0; transform: scale(0.985); }
+  from { opacity: 0; transform: translateY(8px) scale(0.988); }
   to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pageExit {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: translateY(-6px) scale(0.992); }
 }
 
 @keyframes cardShimmer {
@@ -220,19 +287,16 @@
   0% {
     opacity: 0;
     transform: translateY(42px) scale(0.84) rotate(var(--ghost-rotation, 0deg));
-    filter: blur(12px);
   }
 
   62% {
     opacity: 0.92;
     transform: translateY(-2px) scale(1.02) rotate(var(--ghost-rotation, 0deg));
-    filter: blur(1px);
   }
 
   100% {
     opacity: 0;
     transform: translateY(0px) scale(1) rotate(var(--ghost-rotation, 0deg));
-    filter: blur(0px);
   }
 }
 
@@ -252,19 +316,16 @@
   0% {
     opacity: 1;
     transform: translateY(0px) scale(1) rotate(var(--ghost-rotation, 0deg));
-    filter: brightness(1);
   }
 
   45% {
     opacity: 1;
     transform: translateY(-42px) scale(1.04) rotate(calc(var(--ghost-rotation, 0deg) * 0.5));
-    filter: brightness(1.35);
   }
 
   100% {
     opacity: 0;
     transform: translateY(-122px) scale(1.08) rotate(calc(var(--ghost-rotation, 0deg) * 0.2));
-    filter: brightness(1.7);
   }
 }
 
@@ -272,20 +333,17 @@
   0% {
     opacity: 0.98;
     transform: translate3d(0px, 0px, 0px) scale(1) rotate(var(--ghost-rotation, 0deg));
-    filter: brightness(1);
   }
 
   65% {
     opacity: 1;
     transform: translate3d(calc(var(--ghost-travel-x, 0px) * 0.78), calc(var(--ghost-travel-y, 0px) * 0.78), 0px)
       scale(calc(1 + (1 - var(--ghost-scale, 0.74)) * 0.2)) rotate(calc(var(--ghost-rotation, 0deg) * 0.3));
-    filter: brightness(1.2);
   }
 
   100% {
     opacity: 0;
     transform: translate3d(var(--ghost-travel-x, 0px), var(--ghost-travel-y, 0px), 0px) scale(var(--ghost-scale, 0.74)) rotate(0deg);
-    filter: brightness(1.45);
   }
 }
 
@@ -311,7 +369,7 @@
   100% { transform: translateX(0); }
 }
 
-@keyframes hoverPopupQuickIn {
+@keyframes hoverPopupQuickInAbove {
   0% {
     opacity: 0;
     transform: translate(-50%, calc(-100% - 18px)) scale(0.985);
@@ -320,5 +378,83 @@
   100% {
     opacity: 1;
     transform: translate(-50%, calc(-100% - 26px)) scale(1);
+  }
+}
+
+@keyframes hoverPopupQuickInBelow {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 4px) scale(0.985);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate(-50%, 12px) scale(1);
+  }
+}
+
+@keyframes overlayFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes panelPopIn {
+  from { opacity: 0; transform: translateY(10px) scale(0.975); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes battleMenuPop {
+  from { opacity: 0; transform: translateY(8px) scale(0.965); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes staggerItemIn {
+  from { opacity: 0; transform: translateY(14px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes stateSwapIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes numberPop {
+  0% { transform: translateY(2px) scale(0.96); }
+  48% { transform: translateY(-1px) scale(1.08); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+@keyframes manaGemSettle {
+  0% { transform: translateY(2px) scale(0.82); opacity: 0.5; }
+  58% { transform: translateY(-2px) scale(1.12); opacity: 1; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+@keyframes statusChipPop {
+  from { opacity: 0; transform: translateY(4px) scale(0.82); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes talentChoicePulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 1px rgba(245, 196, 93, 0.12), 0 0 16px rgba(245, 196, 93, 0.12);
+    filter: brightness(1);
+  }
+
+  50% {
+    box-shadow: 0 0 0 1px rgba(245, 196, 93, 0.32), 0 0 24px rgba(245, 196, 93, 0.24);
+    filter: brightness(1.12);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 1ms !important;
   }
 }

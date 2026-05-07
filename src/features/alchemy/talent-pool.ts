@@ -194,6 +194,36 @@ export const talentPool: TalentDefinition[] = [
   { id: "mana-max-7", keywordId: "mana", description: "+1 Max Mana" },
   { id: "mana-max-8", keywordId: "mana", description: "+1 Max Mana" },
   { id: "mana-max-9", keywordId: "mana", description: "+1 Max Mana" },
+
+  { id: "nature-placeholder-1", keywordId: "nature", description: "Placeholder Nature talent" },
+  { id: "nature-placeholder-2", keywordId: "nature", description: "Placeholder Nature talent" },
+  { id: "nature-placeholder-3", keywordId: "nature", description: "Placeholder Nature talent" },
+  { id: "nature-placeholder-4", keywordId: "nature", description: "Placeholder Nature talent" },
+  { id: "nature-placeholder-5", keywordId: "nature", description: "Placeholder Nature talent" },
+  { id: "nature-placeholder-6", keywordId: "nature", description: "Placeholder Nature talent" },
+  { id: "nature-placeholder-7", keywordId: "nature", description: "Placeholder Nature talent" },
+  { id: "nature-placeholder-8", keywordId: "nature", description: "Placeholder Nature talent" },
+  { id: "nature-placeholder-9", keywordId: "nature", description: "Placeholder Nature talent" },
+
+  { id: "companion-placeholder-1", keywordId: "companion", description: "Placeholder Companion talent" },
+  { id: "companion-placeholder-2", keywordId: "companion", description: "Placeholder Companion talent" },
+  { id: "companion-placeholder-3", keywordId: "companion", description: "Placeholder Companion talent" },
+  { id: "companion-placeholder-4", keywordId: "companion", description: "Placeholder Companion talent" },
+  { id: "companion-placeholder-5", keywordId: "companion", description: "Placeholder Companion talent" },
+  { id: "companion-placeholder-6", keywordId: "companion", description: "Placeholder Companion talent" },
+  { id: "companion-placeholder-7", keywordId: "companion", description: "Placeholder Companion talent" },
+  { id: "companion-placeholder-8", keywordId: "companion", description: "Placeholder Companion talent" },
+  { id: "companion-placeholder-9", keywordId: "companion", description: "Placeholder Companion talent" },
+
+  { id: "trap-placeholder-1", keywordId: "trap", description: "Placeholder Trap talent" },
+  { id: "trap-placeholder-2", keywordId: "trap", description: "Placeholder Trap talent" },
+  { id: "trap-placeholder-3", keywordId: "trap", description: "Placeholder Trap talent" },
+  { id: "trap-placeholder-4", keywordId: "trap", description: "Placeholder Trap talent" },
+  { id: "trap-placeholder-5", keywordId: "trap", description: "Placeholder Trap talent" },
+  { id: "trap-placeholder-6", keywordId: "trap", description: "Placeholder Trap talent" },
+  { id: "trap-placeholder-7", keywordId: "trap", description: "Placeholder Trap talent" },
+  { id: "trap-placeholder-8", keywordId: "trap", description: "Placeholder Trap talent" },
+  { id: "trap-placeholder-9", keywordId: "trap", description: "Placeholder Trap talent" },
 ];
 
 // Filter helpers for the talent selection UI.

@@ -24,6 +24,20 @@ type ActiveRunData = {
   characterGender: CharacterGender;
 };
 
+function normalizeActiveRun(activeRun: unknown): ActiveRunData | null {
+  if (!activeRun || typeof activeRun !== "object") {
+    return null;
+  }
+
+  const candidate = activeRun as { characterId?: string; characterGender?: CharacterGender };
+  const characterId = candidate.characterId === "wizard" ? "sorcerer" : candidate.characterId;
+  if (characterId !== "knight" && characterId !== "rogue" && characterId !== "sorcerer" && characterId !== "warden") {
+    return null;
+  }
+
+  return { characterId, characterGender: candidate.characterGender === "male" ? "male" : "female" };
+}
+
 export const defaultSaveData: SaveData = {
   selectedResolution: "1920x1080",
   discoveredCardIds: starterDeck.map((card) => card.id),
@@ -57,7 +71,7 @@ export function loadAlchemySaveData(): SaveData {
       unlockedTalents: typeof parsed.unlockedTalents === 'object' && parsed.unlockedTalents ? parsed.unlockedTalents as UnlockedTalents : defaultSaveData.unlockedTalents,
       musicVolume: typeof parsed.musicVolume === 'number' ? parsed.musicVolume : defaultSaveData.musicVolume,
       sfxVolume: typeof parsed.sfxVolume === 'number' ? parsed.sfxVolume : defaultSaveData.sfxVolume,
-      activeRun: parsed.activeRun && typeof parsed.activeRun === 'object' ? parsed.activeRun as ActiveRunData : null,
+      activeRun: normalizeActiveRun(parsed.activeRun),
     };
   } catch {
     return defaultSaveData;

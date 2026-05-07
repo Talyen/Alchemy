@@ -1,5 +1,6 @@
 // Merchant shop screen — buy cards, remove deck cards, or refresh the shop.
 import { useState } from "react";
+import type { CSSProperties } from "react";
 import { Coins } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -11,12 +12,12 @@ import { BattleCardButton } from "../ui/card-ui";
 import { DisabledTooltip, GoldCost, PaginationControls } from "../ui/shared-ui";
 import { collectionCardWidthClass, handCardWidthClass } from "../config";
 
-function ShopCardItem({ card, price, gold, purchased, onBuy }: { card: BattleCard; price: number; gold: number; purchased: boolean; onBuy: () => void }) {
+function ShopCardItem({ card, price, gold, purchased, onBuy, index }: { card: BattleCard; price: number; gold: number; purchased: boolean; onBuy: () => void; index: number }) {
   const [hovered, setHovered] = useState(false);
 
   if (purchased) {
     return (
-      <div className="flex flex-col items-center gap-3 rounded-[18px] border border-border/30 bg-card/30 p-4 text-center opacity-50">
+      <div className="stagger-item flex flex-col items-center gap-3 rounded-[18px] border border-border/30 bg-card/30 p-4 text-center opacity-50" style={{ "--stagger-index": index } as CSSProperties}>
         <div onMouseEnter={() => {}} onMouseLeave={() => {}}>
           <BattleCardButton card={card} hovered={false} onHoverStart={() => {}} onHoverEnd={() => {}} ariaLabel={card.title} shimmerActive={false} className={handCardWidthClass} />
         </div>
@@ -27,13 +28,13 @@ function ShopCardItem({ card, price, gold, purchased, onBuy }: { card: BattleCar
   }
 
   return (
-    <div className="flex flex-col items-center gap-3 rounded-[18px] border border-border/70 bg-card/60 p-4 text-center">
+    <div className="stagger-item flex flex-col items-center gap-3 rounded-[18px] border border-border/70 bg-card/60 p-4 text-center" style={{ "--stagger-index": index } as CSSProperties}>
       <div onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
         <BattleCardButton card={card} hovered={hovered} onHoverStart={() => setHovered(true)} onHoverEnd={() => setHovered(false)} ariaLabel={`Inspect ${card.title}`} shimmerActive={false} className={handCardWidthClass} />
       </div>
       <p className="text-sm font-semibold text-foreground">{card.title}</p>
       <DisabledTooltip show={gold < price} message="Not Enough Gold">
-        <Button size="sm" disabled={gold < price} onClick={onBuy} className="bg-black border border-yellow-500/60 text-foreground hover:bg-zinc-900">
+        <Button size="sm" variant="outline" disabled={gold < price} onClick={onBuy}>
           Buy <GoldCost amount={price} />
         </Button>
       </DisabledTooltip>
@@ -41,12 +42,13 @@ function ShopCardItem({ card, price, gold, purchased, onBuy }: { card: BattleCar
   );
 }
 
-function DeckCardItem({ card, index, isSelected, onSelect }: { card: BattleCard; index: number; isSelected: boolean; onSelect: (index: number) => void }) {
+function DeckCardItem({ card, index, visualIndex, isSelected, onSelect }: { card: BattleCard; index: number; visualIndex: number; isSelected: boolean; onSelect: (index: number) => void }) {
   const [hovered, setHovered] = useState(false);
 
   return (
     <div
-      className={cn("cursor-pointer rounded-[18px] border p-2 text-center transition-all", isSelected ? "border-primary bg-primary/10 ring-1 ring-primary" : "border-border/60 bg-card/40 hover:border-border")}
+      className={cn("stagger-item cursor-pointer rounded-[18px] border p-2 text-center transition-all", isSelected ? "border-primary bg-primary/10 ring-1 ring-primary" : "border-border/60 bg-card/40 hover:border-border")}
+      style={{ "--stagger-index": visualIndex } as CSSProperties}
       onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
       onClick={() => onSelect(index)}
     >
@@ -70,7 +72,7 @@ function DeckGridPaginated({
       <div className="grid grid-cols-5 grid-rows-2 items-start justify-items-center gap-x-4 gap-y-5">
         {pageItems.map((card, i) => {
           const realIndex = page * pageSize + i;
-          return <DeckCardItem key={`${card.id}-${realIndex}`} card={card} index={realIndex} isSelected={selectedIndex === realIndex} onSelect={onSelect} />;
+          return <DeckCardItem key={`${card.id}-${realIndex}`} card={card} index={realIndex} visualIndex={i} isSelected={selectedIndex === realIndex} onSelect={onSelect} />;
         })}
         {Array.from({ length: Math.max(0, pageSize - pageItems.length) }).map((_, i) => (
           <div key={`deck-filler-${i}`} className={collectionCardWidthClass} aria-hidden="true" />
@@ -114,9 +116,9 @@ export function MerchantShopScreen({
 
       {!removeMode ? (
         <>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div key={shopCards.map((card) => card.id).join("-")} className="state-swap grid grid-cols-1 gap-4 sm:grid-cols-3">
             {shopCards.map((card, i) => (
-              <ShopCardItem key={`${card.id}-${i}`} card={card} price={SHOP_CARD_PRICE} gold={gold} purchased={purchasedIds.has(card.id)} onBuy={() => handleBuyCard(card)} />
+              <ShopCardItem key={`${card.id}-${i}`} card={card} price={SHOP_CARD_PRICE} gold={gold} purchased={purchasedIds.has(card.id)} onBuy={() => handleBuyCard(card)} index={i} />
             ))}
           </div>
 
@@ -136,7 +138,7 @@ export function MerchantShopScreen({
           </div>
         </>
       ) : (
-        <div>
+        <div className="state-swap">
           <p className="mb-4 text-sm text-muted-foreground">Select a card to remove from your deck</p>
           <DeckGridPaginated cards={runDeck} selectedIndex={selectedRemoveIndex} onSelect={(realIndex) => setSelectedRemoveIndex(realIndex)} page={removePage} onPageChange={setRemovePage} pageSize={deckPageSize} />
           <div className="mt-5 flex justify-center gap-3">

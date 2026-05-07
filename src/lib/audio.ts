@@ -141,6 +141,22 @@ export function playCardSound(cardId: string) {
   playBuffer(pickRandom(sounds));
 }
 
+// Reuses Steal's coin flourish for generic gold gains so rewards and card-driven
+// gold pickups sound like the same resource entering the purse.
+export function playGoldGain() {
+  const sounds = cardSounds.steal;
+  if (!sounds) return;
+  playBuffer(pickRandom(sounds));
+}
+
+// Plays the same coin flourish used by Steal whenever gold leaves the player's
+// purse, keeping all gold-spend feedback consistent across shops and events.
+export function playGoldSpend() {
+  const sounds = cardSounds.steal;
+  if (!sounds) return;
+  playBuffer(pickRandom(sounds));
+}
+
 export function playEnemyAttack(enemyId: string) {
   const sounds = enemyAttackSounds[enemyId];
   if (!sounds) return;

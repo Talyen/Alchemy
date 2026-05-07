@@ -37,6 +37,14 @@ const combatTextLaneDelayMs = COMBAT_TEXT_LANE_DELAY_MS;
 
 export function useFloatingCombatTexts() {
   const [floatingCombatTexts, setFloatingCombatTexts] = useState<FloatingCombatText[]>([]);
+  const timerRefs = useRef<number[]>([]);
+
+  useEffect(() => {
+    return () => {
+      timerRefs.current.forEach((timer) => window.clearTimeout(timer));
+      timerRefs.current = [];
+    };
+  }, []);
 
   function getSignedAmountText(event: CombatTextEvent) {
     if (event.kind === "damage") return `-${event.amount}`;
@@ -45,7 +53,8 @@ export function useFloatingCombatTexts() {
   }
 
   function scheduleExpiry(entry: FloatingCombatText) {
-    setTimeout(() => setFloatingCombatTexts((current) => current.filter((c) => c.id !== entry.id)), combatTextLifetimeMs + entry.lane * combatTextLaneDelayMs);
+    const timer = window.setTimeout(() => setFloatingCombatTexts((current) => current.filter((c) => c.id !== entry.id)), combatTextLifetimeMs + entry.lane * combatTextLaneDelayMs);
+    timerRefs.current.push(timer);
   }
 
   function showCombatTexts(events: CombatTextEvent[]) {
@@ -60,10 +69,11 @@ export function useFloatingCombatTexts() {
 
     nextEntries.forEach((entry) => {
       const delay = entry.lane * combatTextLaneDelayMs;
-      setTimeout(() => {
+      const timer = window.setTimeout(() => {
         setFloatingCombatTexts((current) => [...current, entry]);
         scheduleExpiry(entry);
       }, delay);
+      timerRefs.current.push(timer);
     });
   }
 
@@ -89,10 +99,11 @@ export function useCardGhosts() {
 }
 
 // ---- Virtual Resolution ----
-// Wraps the game canvas in a CSS scale transform so it fits the window at any
-// resolution. The stage uses the selected resolution's aspect ratio, scaled
-// to fit within the viewport while respecting the 0.45-1.35 clamp to prevent
-// extreme scaling on tiny or massive screens.
+const designStageHeight = 1080;
+
+// Wraps the game canvas in a CSS scale transform so it fits the window. The
+// selected resolution contributes aspect ratio only; UI density stays anchored
+// to a 1080p design canvas so higher output resolutions do not shrink content.
 export function useVirtualResolution(selectedResolution: ResolutionOption) {
   const [viewportSize, setViewportSize] = useState(() => ({ width: window.innerWidth, height: window.innerHeight }));
 
@@ -102,7 +113,9 @@ export function useVirtualResolution(selectedResolution: ResolutionOption) {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const [stageWidth, stageHeight] = selectedResolution.split("x").map(Number);
+  const [selectedWidth, selectedHeight] = selectedResolution.split("x").map(Number);
+  const stageHeight = designStageHeight;
+  const stageWidth = Math.round(stageHeight * (selectedWidth / selectedHeight));
   const viewportAspect = viewportSize.width / viewportSize.height;
   const stageAspect = stageWidth / stageHeight;
 

@@ -15,7 +15,10 @@ export type KeywordId =
   | "bleed"
   | "leech"
   | "freeze"
-  | "mana";
+  | "mana"
+  | "nature"
+  | "companion"
+  | "trap";
 
 export type CardTemplate = "mechanical" | "nature" | "arcane" | "holy" | "alchemy";
 

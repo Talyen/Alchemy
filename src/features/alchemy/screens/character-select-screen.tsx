@@ -12,12 +12,12 @@ import { useShimmerController } from "../hooks";
 import { clearTiltFromEvent, setTiltFromEvent } from "../utils";
 import { battleCardWidthClass, cardSurfaceClass, staticCardTransform } from "../config";
 
-function CharacterCard({ id, gender, isSelected, isShimmer, shimmerToken, onSelect, onHoverShimmer }: { id: CharacterId; gender: CharacterGender; isSelected: boolean; isShimmer: boolean; shimmerToken?: number; onSelect: (id: CharacterId) => void; onHoverShimmer: (id: CharacterId) => void }) {
+function CharacterCard({ id, gender, index, isSelected, isShimmer, shimmerToken, onSelect, onHoverShimmer }: { id: CharacterId; gender: CharacterGender; index: number; isSelected: boolean; isShimmer: boolean; shimmerToken?: number; onSelect: (id: CharacterId) => void; onHoverShimmer: (id: CharacterId) => void }) {
   const char = characters[id];
   const art = characterArt[char.id][gender];
 
   return (
-    <div className={cn("flex flex-col items-center gap-3 rounded-[26px] border border-border/60 bg-card/60 px-6 pb-6 pt-5", isSelected && "ring-2 ring-primary")}>
+    <div className={cn("stagger-item flex flex-col items-center gap-3 rounded-[26px] border border-border/60 bg-card/60 px-6 pb-6 pt-5", isSelected && "ring-2 ring-primary")} style={{ "--stagger-index": index } as CSSProperties}>
       <button type="button" className={cn("tilt-surface relative rounded-[22px]", battleCardWidthClass)} style={{ "--card-base-transform": staticCardTransform } as CSSProperties} data-tilt-strength="15" onMouseMove={setTiltFromEvent} onMouseEnter={() => onHoverShimmer(id)} onMouseLeave={clearTiltFromEvent} onClick={() => onSelect(id)}>
         <ShimmerOverlay active={isShimmer} token={shimmerToken} rounded="rounded-[22px]" />
         <img src={art} alt={char.name} className={cn(cardSurfaceClass, "w-full rounded-[22px]")} />
@@ -66,7 +66,7 @@ export function CharacterSelectScreen({ onConfirm, onBack }: { onConfirm: (chara
       <h1 className="text-4xl text-foreground">Choose Your Hero</h1>
 
       <div className="flex flex-wrap items-start justify-center gap-12">
-        {charIds.map((id) => <CharacterCard key={id} id={id} gender={selectedGender} isSelected={selectedId === id} isShimmer={shimmerState?.cardId === id} shimmerToken={shimmerState?.token} onSelect={setSelectedId} onHoverShimmer={maybeTriggerShimmer} />)}
+        {charIds.map((id, index) => <CharacterCard key={id} id={id} gender={selectedGender} index={index} isSelected={selectedId === id} isShimmer={shimmerState?.cardId === id} shimmerToken={shimmerState?.token} onSelect={setSelectedId} onHoverShimmer={maybeTriggerShimmer} />)}
       </div>
 
       <div className="mt-6 flex flex-col items-center gap-4">

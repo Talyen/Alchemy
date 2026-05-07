@@ -45,6 +45,7 @@ function CompendiumTile({
   onHoverEnd,
   shimmerActive,
   shimmerToken,
+  wrapperStyle,
 }: {
   item: CollectionTileItem;
   hovered: boolean;
@@ -52,9 +53,10 @@ function CompendiumTile({
   onHoverEnd: () => void;
   shimmerActive: boolean;
   shimmerToken?: number;
+  wrapperStyle?: CSSProperties;
 }) {
   return (
-    <div className="relative" onMouseEnter={onHoverStart} onMouseLeave={onHoverEnd}>
+    <div className="stagger-item relative" style={wrapperStyle} onMouseEnter={onHoverStart} onMouseLeave={onHoverEnd}>
       {hovered ? <DetailPopup idPrefix={item.id} title={item.title} subtitle={item.subtitle} descriptionLines={item.descriptionLines} /> : null}
 
       <button
@@ -121,8 +123,8 @@ export function CollectionGrid({
   }).slice(page * collectionPageSize, (page + 1) * collectionPageSize);
 
   return (
-    <div className="grid min-h-[540px] grid-cols-5 grid-rows-2 justify-items-center gap-x-6 gap-y-7 overflow-visible">
-      {pageItems.map((item) => {
+    <div key={`${collectionTab}-${page}`} className="state-swap grid min-h-[540px] grid-cols-5 grid-rows-2 justify-items-center gap-x-6 gap-y-7 overflow-visible">
+      {pageItems.map((item, index) => {
         const hoverId = getHoverId(item.hoverScope, item.id);
 
         return (
@@ -134,6 +136,7 @@ export function CollectionGrid({
             onHoverEnd={() => onHoverChange((current) => (current === hoverId ? null : current))}
             shimmerActive={shimmerState?.cardId === hoverId}
             shimmerToken={shimmerState?.token}
+            wrapperStyle={{ "--stagger-index": index } as CSSProperties}
           />
         );
       })}

@@ -7,14 +7,29 @@ import type { CSSProperties } from "react";
 import { Button } from "@/components/ui/button";
 import { playUISound } from "@/lib/audio";
 import { COLLECTION_PAGE_SIZE } from "@/lib/game-constants";
-import type { BattleCard } from "@/lib/game-data";
+import { keywordDefinitions, type BattleCard } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
 import { PaginationControls } from "../ui/shared-ui";
 import { cardSurfaceClass, collectionCardWidthClass, handCardWidthClass, staticCardTransform } from "../config";
 import type { MysteryEvent, MysteryChoice, MysteryEffect } from "../mystery-events";
-import { clearTiltFromEvent, setTiltFromEvent } from "../utils";
+import { clearTiltFromEvent, setTiltFromEvent, tokenizeDescription } from "../utils";
 import { BattleCardButton } from "../ui/card-ui";
+
+function ChoiceDescription({ text }: { text: string }) {
+  return (
+    <p>
+      {tokenizeDescription(text).map((part, index) => {
+        const definition = part.keywordId ? keywordDefinitions[part.keywordId] : null;
+        return definition ? (
+          <span key={`${part.text}-${index}`} className={cn("font-semibold", definition.colorClass)}>{part.text}</span>
+        ) : (
+          <span key={`${part.text}-${index}`}>{part.text}</span>
+        );
+      })}
+    </p>
+  );
+}
 
 function EffectResultText({ effect }: { effect: MysteryEffect }) {
   switch (effect.kind) {
@@ -22,7 +37,7 @@ function EffectResultText({ effect }: { effect: MysteryEffect }) {
     case "damageHP": return <span>Took {effect.amount} damage</span>;
     case "gainGold": return <span>Gained {effect.amount} Gold</span>;
     case "loseGold": return <span>Lost {effect.amount} Gold</span>;
-    case "gainMaxMana": return <span>Max Mana increased</span>;
+    case "gainMaxMana": return <span>Mana Crystal increased</span>;
     case "gainXP": return <span>Gained {effect.amount} {effect.keyword} XP</span>;
     case "removeCard":
       return effect.mode === "random"
@@ -52,7 +67,7 @@ function RewardScreen({
   const [hoveredCardId, setHoveredCardId] = useState<string | null>(null);
 
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center gap-6 px-4 py-6 text-center">
+    <div className="state-swap flex h-full w-full flex-col items-center justify-center gap-6 px-4 py-6 text-center">
       <h1 className="text-4xl text-foreground">Reward</h1>
       {addCardEffects.map((effect, i) => {
         if (effect.kind !== "addCard") return null;
@@ -106,7 +121,7 @@ function RemoveCardPicker({
   const visible = runDeck.slice(start, start + COLLECTION_PAGE_SIZE);
 
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center gap-6 px-4 py-6 text-center">
+    <div className="state-swap flex h-full w-full flex-col items-center justify-center gap-6 px-4 py-6 text-center">
       <h2 className="text-3xl text-foreground">Select a card to remove</h2>
       <div className="grid grid-cols-5 gap-3">
         {visible.map((card, i) => {
@@ -216,7 +231,7 @@ export function MysteryScreen({
   const isHovered = hoveredCardId === event.id;
 
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center gap-6 overflow-hidden px-4 py-6 text-center">
+    <div className="state-swap flex h-full w-full flex-col items-center justify-center gap-6 overflow-hidden px-4 py-6 text-center">
       {featuredCard ? (
         <BattleCardButton
           card={featuredCard}
@@ -250,15 +265,19 @@ export function MysteryScreen({
 
       <div className="flex flex-wrap justify-center gap-4">
         {event.choices.map((choice, i) => (
-          <Button
-            key={i}
-            size="lg"
-            variant="outline"
-            className="min-w-32"
-            onClick={() => handlePick(choice)}
-          >
-            {choice.label}
-          </Button>
+          <div key={i} className="group relative">
+            <Button
+              size="lg"
+              variant="outline"
+              className="min-w-32"
+              onClick={() => handlePick(choice)}
+            >
+              {choice.label}
+            </Button>
+            <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-3 w-64 -translate-x-1/2 translate-y-1 rounded-[16px] border border-border/80 bg-card px-3 py-2 text-left text-sm leading-6 text-muted-foreground opacity-0 transition-all duration-150 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100">
+              <ChoiceDescription text={choice.description} />
+            </div>
+          </div>
         ))}
       </div>
     </div>

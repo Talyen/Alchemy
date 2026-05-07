@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { BookOpen, Coins, Flame, Gem, Hammer, Heart, HeartPulse, Shield, ShieldAlert, Snowflake, Sparkles, Sun, Swords, TriangleAlert, WandSparkles, Zap, Trophy } from "lucide-react";
+import { BookOpen, Coins, Crosshair, Flame, Gem, Hammer, Heart, HeartPulse, Leaf, PawPrint, Shield, ShieldAlert, Snowflake, Sparkles, Sun, Swords, TriangleAlert, WandSparkles, Zap, Trophy } from "lucide-react";
 
 import { enemyBestiary, type EnemyType, type KeywordId } from "@/lib/game-data";
 import { alchemistShopBg, campfire, eliteEnemyBg, merchantShopBg, mysteryBg, normalEnemyBg } from "@/lib/game-data";
@@ -18,7 +18,7 @@ export function getCurrentEnemy(roomsEncountered: number, enemyType?: EnemyType)
   return available[Math.floor(Math.random() * available.length)] ?? enemyBestiary[0];
 }
 
-export const resolutionOptions: ResolutionOption[] = ["1920x1080", "2560x1440", "3840x2160"];
+export const resolutionOptions: ResolutionOption[] = ["1366x768", "1600x900", "1920x1080", "1920x1200", "2560x1080", "2560x1440", "3440x1440", "3840x2160"];
 
 // The pool of destinations the player can choose from after each victory.
 // 6 options, 3 are randomly offered each time. Adding a new destination here
@@ -52,7 +52,8 @@ export const keywordIcons: Record<KeywordId, LucideIcon> = {
   physical: Swords, stun: Zap, block: Shield, forge: Hammer, armor: ShieldAlert,
   health: Heart, burn: Flame, gold: Coins, holy: Sun, wish: Sparkles,
   ailment: TriangleAlert, consume: TriangleAlert, poison: Flame, bleed: Heart,
-  leech: HeartPulse, freeze: Snowflake, mana: Gem,
+  leech: HeartPulse, freeze: Snowflake, mana: Gem, nature: Leaf,
+  companion: PawPrint, trap: Crosshair,
 };
 
 // Duration (ms) of each card ghost animation variant. Used by the card-ui

@@ -2,7 +2,7 @@ import type { BattleCard } from "./types";
 import { cardLibrary } from "./cards";
 import type { KeywordId } from "./types";
 
-export type CharacterId = "knight" | "rogue" | "wizard";
+export type CharacterId = "knight" | "rogue" | "sorcerer" | "warden";
 
 export type CharacterGender = "male" | "female";
 
@@ -52,9 +52,9 @@ export const characters: Record<CharacterId, CharacterDefinition> = {
     ]),
     keywords: ["poison", "bleed", "gold"],
   },
-  wizard: {
-    id: "wizard",
-    name: "Wizard",
+  sorcerer: {
+    id: "sorcerer",
+    name: "Sorcerer",
     role: "Arcanist",
     description: "A master of the elements who burns, freezes, and manipulates mana to control the battlefield.",
     startingDeck: resolveDeck([
@@ -66,5 +66,20 @@ export const characters: Record<CharacterId, CharacterDefinition> = {
       "meteor",
     ]),
     keywords: ["burn", "freeze", "mana"],
+  },
+  warden: {
+    id: "warden",
+    name: "Warden",
+    role: "Wildkeeper",
+    description: "A wilderness guardian whose nature, companion, and trap synergies will arrive in a future update.",
+    startingDeck: resolveDeck([
+      "slash",
+      "slash",
+      "slash",
+      "slash",
+      "slash",
+      "slash",
+    ]),
+    keywords: ["nature", "companion", "trap"],
   },
 };

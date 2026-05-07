@@ -21,10 +21,10 @@ export function DestinationChoices({
 }) {
   return (
     <div className="flex flex-wrap justify-center gap-8">
-      {destinationOptions.map((destination) => {
+      {destinationOptions.map((destination, index) => {
         const { icon: Icon, className, art } = destinationMeta[destination];
         return (
-          <div key={destination} className="flex flex-col items-center gap-4">
+          <div key={destination} className="stagger-item flex flex-col items-center gap-4" style={{ "--stagger-index": index } as CSSProperties}>
             <div
               className="tilt-surface rounded-[18px]"
               style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
@@ -38,7 +38,7 @@ export function DestinationChoices({
               ref={(node) => { buttonRefs.current[destination] = node; }}
               type="button"
               onClick={() => onChoose(destination)}
-              className={cn("inline-flex min-h-[48px] items-center justify-start gap-2 rounded-full border border-border/80 px-4 py-2 text-left text-sm font-semibold transition-all hover:-translate-y-0.5 active:translate-y-0 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background", className)}
+              className={cn("inline-flex min-h-[48px] items-center justify-start gap-2 rounded-full border border-border/80 px-4 py-2 text-left text-sm font-semibold transition-colors active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background", className)}
             >
               <span className="rounded-full bg-black/16 p-1.5"><Icon className="h-4 w-4" /></span>
               <span className="leading-none">{destination}</span>
@@ -68,8 +68,8 @@ export function ResolutionSelect({ selectedResolution, resolutionOptions, onChan
 // Uses z-[120] to sit above the main content (z-[100] for defeat overlay).
 export function ConfirmationDialog({ title, description, confirmLabel, cancelLabel = "Cancel", tone = "danger", onConfirm, onCancel }: { title: string; description: string; confirmLabel: string; cancelLabel?: string; tone?: "danger" | "default"; onConfirm: () => void; onCancel: () => void }) {
   return (
-    <div className="absolute inset-0 z-[120] flex items-center justify-center bg-black/70 px-6">
-      <div className="alchemy-shell w-full max-w-md rounded-[26px] border border-border/80 px-6 py-6 text-center">
+    <div className="motion-overlay absolute inset-0 z-[120] flex items-center justify-center bg-black/70 px-6">
+      <div className="motion-panel alchemy-shell w-full max-w-md rounded-[26px] border border-border/80 px-6 py-6 text-center">
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/15 text-amber-200"><AlertTriangle className="h-6 w-6" /></div>
         <h2 className="mt-4 text-2xl font-semibold text-foreground">{title}</h2>
         <p className="mt-3 text-sm leading-6 text-muted-foreground">{description}</p>
@@ -144,7 +144,7 @@ export function DisabledTooltip({ show, message, children }: { show: boolean; me
   return (
     <div className="relative group">
       {children}
-      <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-black/90 px-3 py-1.5 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100">
+      <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-md bg-black/90 px-3 py-1.5 text-xs text-white opacity-0 transition-all duration-150 group-hover:translate-y-0 group-hover:opacity-100">
         {message}
       </div>
     </div>

@@ -1,4 +1,4 @@
-import type { MouseEvent, MutableRefObject } from "react";
+import type { CSSProperties, MouseEvent, MutableRefObject } from "react";
 import { useState } from "react";
 import { BookOpen, Cog, Coins, House, Menu, Swords, WandSparkles } from "lucide-react";
 
@@ -72,21 +72,21 @@ export function BattleScreen({
 
   return (
     <div ref={battleSceneRef} className="relative h-full w-full overflow-hidden">
-      <section className="absolute inset-x-0 flex -translate-y-1/2 items-start justify-center gap-[clamp(104px,9vw,182px)] px-4" style={{ top: '42%' }}>
+      <section className="absolute inset-x-0 flex -translate-y-1/2 items-start justify-center gap-[clamp(144px,11vw,224px)] px-4" style={{ top: '42%' }}>
         <div
           className={`pointer-events-none absolute -top-10 left-1/2 z-20 whitespace-nowrap rounded-md px-3 py-1 text-sm transition-all duration-500 ${
             isPlayerTurn ? 'bg-emerald-900/80 text-emerald-300' : 'bg-rose-900/80 text-rose-300'
           }`}
           style={{
             transform: isPlayerTurn
-              ? 'translateX(calc(-50% - clamp(111px,11vh,168px) - clamp(52px,4.5vw,91px)))'
-              : 'translateX(calc(-50% + clamp(111px,11vh,168px) + clamp(52px,4.5vw,91px)))',
+              ? 'translateX(calc(-50% - clamp(111px,11vh,168px) - clamp(72px,5.5vw,112px)))'
+              : 'translateX(calc(-50% + clamp(111px,11vh,168px) + clamp(72px,5.5vw,112px)))',
           }}
         >
           {isPlayerTurn ? 'Your Turn' : 'Enemy Turn'}
         </div>
         <div className="relative flex flex-col items-center">
-          <div className="absolute top-[18%] left-full ml-2 z-30 max-w-52">
+          <div className="absolute left-full top-[12%] z-30 ml-3 w-40">
             <CombatTextRail entries={playerCombatTexts} side="player" />
           </div>
           <ArtPanel
@@ -109,7 +109,7 @@ export function BattleScreen({
         </div>
 
         <div className="relative flex flex-col items-center">
-          <div className="absolute top-[18%] right-full mr-2 z-30 max-w-52">
+          <div className="absolute right-full top-[30%] z-30 mr-3 w-40">
             <CombatTextRail entries={enemyCombatTexts} side="enemy" />
           </div>
           <ArtPanel
@@ -170,8 +170,8 @@ export function BattleScreen({
                 baseTransform={isHovered ? hoverTransform : restingTransform}
                 className={handCardWidthClass}
                 disabled={!canPlay}
-                wrapperClassName="relative -mx-5 flex justify-center sm:-mx-6"
-                wrapperStyle={{ zIndex: isHovered ? 40 : 10 + index }}
+                wrapperClassName="stagger-item relative -mx-5 flex justify-center sm:-mx-6"
+                wrapperStyle={{ zIndex: isHovered ? 40 : 10 + index, "--stagger-index": index } as CSSProperties}
               />
             );
           })}
@@ -200,7 +200,7 @@ export function BattleScreen({
             </Button>
 
             {menuOpen ? (
-              <div className="alchemy-shell absolute bottom-full right-0 z-50 mb-3 w-56 rounded-[20px] border border-border/80 p-2">
+              <div className="battle-menu-pop alchemy-shell absolute bottom-full right-0 z-50 mb-3 w-56 rounded-[20px] border border-border/80 p-2">
                 <div className="grid gap-2">
                   <Button variant="ghost" className="justify-start" onClick={() => onGoToScreen("menu")}>
                     <House className="h-4 w-4" />
@@ -238,15 +238,15 @@ export function BattleScreen({
       </section>
 
       {battleState.wishOptions ? (
-        <div className="absolute inset-0 z-[90] flex items-center justify-center bg-black/70 px-6">
-          <div className="alchemy-shell w-full max-w-5xl rounded-[28px] border border-border/80 px-6 py-6">
+        <div className="motion-overlay absolute inset-0 z-[90] flex items-center justify-center bg-black/70 px-6">
+          <div className="motion-panel alchemy-shell w-full max-w-5xl rounded-[28px] border border-border/80 px-6 py-6">
             <div className="text-center">
               <h2 className="text-2xl text-foreground">Wish 1</h2>
               <p className="mt-2 text-sm text-muted-foreground">Choose one card to add to your hand.</p>
             </div>
 
             <div className="mt-6 flex flex-wrap items-start justify-center gap-5">
-              {battleState.wishOptions.map((card) => {
+              {battleState.wishOptions.map((card, index) => {
                 const hoverId = getHoverId("wish", card.id);
                 const isSelected = wishSelectedCard?.id === card.id;
 
@@ -266,7 +266,8 @@ export function BattleScreen({
                     shimmerActive={shimmerState?.cardId === hoverId}
                     shimmerToken={shimmerState?.token}
                     className={handCardWidthClass}
-                    wrapperClassName="relative flex justify-center"
+                    wrapperClassName="stagger-item relative flex justify-center"
+                    wrapperStyle={{ "--stagger-index": index } as CSSProperties}
                     selected={isSelected}
                   />
                 );

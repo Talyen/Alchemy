@@ -1,4 +1,6 @@
 // Main menu screen with logo and navigation buttons. Entry point for all other screens.
+import type { CSSProperties } from "react";
+
 import { Button } from "@/components/ui/button";
 
 export function MenuScreen({ onPlay, onCollection, onOptions, onTalents, logoSrc, hasActiveBattle }: { onPlay: () => void; onCollection: () => void; onOptions: () => void; onTalents: () => void; logoSrc: string; hasActiveBattle?: boolean }) {
@@ -7,19 +9,19 @@ export function MenuScreen({ onPlay, onCollection, onOptions, onTalents, logoSrc
       <img src={logoSrc} alt="Alchemy logo" className="w-full max-w-[430px] object-contain" loading="eager" />
 
       <div className="grid gap-3">
-        <Button size="lg" className="w-56 justify-center text-base" onClick={onPlay}>
+        <Button size="lg" className="stagger-item w-56 justify-center text-base" style={{ "--stagger-index": 0 } as CSSProperties} onClick={onPlay}>
           {hasActiveBattle ? "Resume Run" : "Play"}
         </Button>
-        <Button size="lg" variant="outline" className="w-56 justify-center text-base" onClick={onCollection}>
+        <Button size="lg" variant="outline" className="stagger-item w-56 justify-center text-base" style={{ "--stagger-index": 1 } as CSSProperties} onClick={onCollection}>
           Collection
         </Button>
-        <Button size="lg" variant="outline" className="w-56 justify-center text-base" onClick={onOptions}>
+        <Button size="lg" variant="outline" className="stagger-item w-56 justify-center text-base" style={{ "--stagger-index": 2 } as CSSProperties} onClick={onOptions}>
           Options
         </Button>
-        <Button size="lg" variant="outline" className="w-56 justify-center text-base" onClick={onTalents}>
+        <Button size="lg" variant="outline" className="stagger-item w-56 justify-center text-base" style={{ "--stagger-index": 3 } as CSSProperties} onClick={onTalents}>
           Talents
         </Button>
-        <Button size="lg" variant="outline" className="w-56 justify-center text-base" onClick={() => window.close()}>
+        <Button size="lg" variant="outline" className="stagger-item w-56 justify-center text-base" style={{ "--stagger-index": 4 } as CSSProperties} onClick={() => window.close()}>
           Quit
         </Button>
       </div>

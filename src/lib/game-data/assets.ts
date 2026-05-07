@@ -17,7 +17,7 @@ import drawPile from "@/assets/optimized/draw-pile.webp";
 import fangs from "@/assets/optimized/fangs.webp";
 import femaleKnight from "@/assets/optimized/female-knight.webp";
 import femaleRogue from "@/assets/optimized/female-rogue.webp";
-import femaleWizard from "@/assets/optimized/female-wizard.webp";
+import femaleSorcerer from "@/assets/optimized/female-wizard.webp";
 import fireball from "@/assets/optimized/fireball.webp";
 import frostbolt from "@/assets/optimized/frostbolt.webp";
 import goblin from "@/assets/optimized/goblin.webp";
@@ -28,7 +28,7 @@ import imp from "@/assets/optimized/imp.webp";
 import lizardScout from "@/assets/optimized/lizard-scout.webp";
 import maleKnight from "@/assets/optimized/male-knight.webp";
 import maleRogue from "@/assets/optimized/male-rogue.webp";
-import maleWizard from "@/assets/optimized/male-wizard.webp";
+import maleSorcerer from "@/assets/optimized/male-wizard.webp";
 import manaBerries from "@/assets/optimized/mana-berries.webp";
 import manaCrystal from "@/assets/optimized/mana-crystal.webp";
 import manaPotion from "@/assets/optimized/mana-potion.webp";
@@ -70,7 +70,7 @@ export {
   fangs,
   femaleKnight,
   femaleRogue,
-  femaleWizard,
+  femaleSorcerer,
   fireball,
   frostbolt,
   goblin,
@@ -81,7 +81,7 @@ export {
   lizardScout,
   maleKnight,
   maleRogue,
-  maleWizard,
+  maleSorcerer,
   manaBerries,
   manaCrystal,
   manaPotion,
@@ -121,5 +121,6 @@ export const pileDiscardArt = discardPile;
 export const characterArt = {
   knight: { male: maleKnight, female: femaleKnight },
   rogue: { male: maleRogue, female: femaleRogue },
-  wizard: { male: maleWizard, female: femaleWizard },
+  sorcerer: { male: maleSorcerer, female: femaleSorcerer },
+  warden: { male: maleRogue, female: femaleRogue },
 } as const;

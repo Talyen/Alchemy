@@ -34,7 +34,7 @@ export function OptionsScreen({
           ))}
         </div>
 
-        <div className="mt-6 min-h-[200px] text-left">
+        <div key={tab} className="state-swap mt-6 min-h-[200px] text-left">
           {tab === "display" ? <ResolutionSelect selectedResolution={selectedResolution} resolutionOptions={resolutionOptions} onChange={onResolutionChange} /> : null}
           {tab === "sound" ? (
             <div className="space-y-5">
@@ -73,11 +73,11 @@ export function OptionsScreen({
             </div>
           ) : null}
         </div>
-      </div>
 
-      <div className="flex flex-wrap justify-center gap-3">
-        <Button variant="outline" onClick={onMainMenu}><House className="h-4 w-4" /> Main Menu</Button>
-        {hasActiveBattle ? <Button onClick={onReturnToBattle}><Swords className="h-4 w-4" /> Return to Battle</Button> : null}
+        <div className="mt-auto flex flex-wrap justify-center gap-3 pt-6">
+          <Button variant="outline" onClick={onMainMenu}><House className="h-4 w-4" /> Main Menu</Button>
+          {hasActiveBattle ? <Button onClick={onReturnToBattle}><Swords className="h-4 w-4" /> Return to Battle</Button> : null}
+        </div>
       </div>
 
       {showClearSaveConfirm ? <ConfirmationDialog title="Clear Save Data?" description="This will reset your saved resolution setting and all discovered collection progress. This cannot be undone." confirmLabel="Clear Save Data" onConfirm={onConfirmClearSave} onCancel={onCloseClearSaveConfirm} /> : null}

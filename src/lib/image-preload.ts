@@ -1,0 +1,69 @@
+// Image preloading helpers for warming likely-next game art without blocking the
+// current interaction. Used by the app shell to reduce visible image pop-in.
+const imageCache = new Set<string>();
+const imageLoads = new Map<string, Promise<void>>();
+const PRELOAD_BATCH_SIZE = 4;
+
+// Decodes an image once and caches the promise so repeated route predictions can
+// share work instead of creating competing network requests.
+export function preloadImage(src: string) {
+  if (!src || imageCache.has(src)) return Promise.resolve();
+  const existing = imageLoads.get(src);
+  if (existing) return existing;
+
+  const promise = new Promise<void>((resolve) => {
+    const image = new Image();
+    image.decoding = "async";
+    image.onload = () => {
+      imageCache.add(src);
+      resolve();
+    };
+    image.onerror = () => resolve();
+    image.src = src;
+    if (image.decode) {
+      image.decode().then(() => {
+        imageCache.add(src);
+        resolve();
+      }).catch(() => {});
+    }
+  });
+
+  imageLoads.set(src, promise);
+  return promise;
+}
+
+// Warms a list immediately for high-confidence assets, such as the current battle
+// enemy and hand images, while still allowing the browser to prioritize rendering.
+export function preloadImages(srcs: string[]) {
+  srcs.forEach((src) => { void preloadImage(src); });
+}
+
+// Spreads speculative image decoding across idle time so menu and battle input
+// remain responsive while future screen art is prepared.
+export function preloadImagesWhenIdle(srcs: string[]) {
+  const uniqueSrcs = Array.from(new Set(srcs.filter(Boolean)));
+  let index = 0;
+
+  function preloadNextBatch() {
+    preloadImages(uniqueSrcs.slice(index, index + PRELOAD_BATCH_SIZE));
+    index += PRELOAD_BATCH_SIZE;
+    if (index < uniqueSrcs.length) schedulePreloadBatch(preloadNextBatch);
+  }
+
+  schedulePreloadBatch(preloadNextBatch);
+}
+
+// Uses idle callbacks when available and falls back to a timer in browsers that
+// do not expose requestIdleCallback.
+function schedulePreloadBatch(callback: () => void) {
+  const scheduler = globalThis as typeof globalThis & {
+    requestIdleCallback?: (callback: IdleRequestCallback, options?: IdleRequestOptions) => number;
+  };
+
+  if (scheduler.requestIdleCallback) {
+    scheduler.requestIdleCallback(callback, { timeout: 900 });
+    return;
+  }
+
+  globalThis.setTimeout(callback, 0);
+}

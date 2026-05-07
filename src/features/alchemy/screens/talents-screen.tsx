@@ -55,7 +55,7 @@ export function TalentsScreen({
 
   return (
     <PageLayout>
-      <div className="alchemy-shell flex w-full max-w-3xl flex-col rounded-[28px] px-6 py-7 sm:px-8">
+      <div className="alchemy-shell flex min-h-[520px] w-full max-w-3xl flex-col rounded-[28px] px-6 py-7 sm:px-8">
         <h1 className="text-center text-3xl text-foreground">Talents</h1>
 
         <div className="mx-auto mt-6 flex w-full max-w-2xl flex-col gap-6 text-left">
@@ -70,7 +70,7 @@ export function TalentsScreen({
             <button type="button" onClick={() => setShowResetConfirm(true)} className="rounded-full border border-border/40 px-3 py-1.5 text-xs font-medium text-muted-foreground/60 hover:border-border/60 hover:text-muted-foreground transition-transform active:scale-95">Reset Talents</button>
           </div>
 
-          <div className="surface-muted rounded-[22px] border border-border/70 p-5">
+          <div key={selectedKeyword} className="state-swap surface-muted rounded-[22px] border border-border/70 p-5">
             <div className="flex items-center justify-between">
               <p className="text-sm font-semibold text-foreground"><KeywordTag keywordId={selectedKeyword} /> XP Progress</p>
               <p className="text-xs text-muted-foreground">{totalXP} XP / {nextXP} XP — {totalPoints} point{totalPoints !== 1 ? "s" : ""}</p>
@@ -84,11 +84,11 @@ export function TalentsScreen({
             </div>
           )}
         </div>
-      </div>
 
-      <div className="flex flex-wrap justify-center gap-3">
-        <Button variant="outline" onClick={onMainMenu}><House className="h-4 w-4" /> Main Menu</Button>
-        {hasActiveBattle ? <Button onClick={onReturnToBattle}><Swords className="h-4 w-4" /> Return to Battle</Button> : null}
+        <div className="mt-auto flex flex-wrap justify-center gap-3 pt-6">
+          <Button variant="outline" onClick={onMainMenu}><House className="h-4 w-4" /> Main Menu</Button>
+          {hasActiveBattle ? <Button onClick={onReturnToBattle}><Swords className="h-4 w-4" /> Return to Battle</Button> : null}
+        </div>
       </div>
 
       {showResetConfirm ? <ConfirmationDialog title="Reset Talents?" description="This will refund all your talent points so you can choose again. Any unspent talent points will also be available." confirmLabel="Reset Talents" tone="default" onConfirm={handleReset} onCancel={() => setShowResetConfirm(false)} /> : null}
