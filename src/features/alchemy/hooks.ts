@@ -3,16 +3,14 @@ import { useEffect, useRef, useState } from "react";
 import type { CombatTextEvent } from "@/lib/battle";
 
 import type { CardGhost, FloatingCombatText, ResolutionOption } from "./types";
-import { COMBAT_TEXT_LANE_DELAY_MS, COMBAT_TEXT_LIFETIME_MS, SHIMMER_COOLDOWN_MS, SHIMMER_DURATION_MS, SHIMMER_INTRO_DELAY_MS } from "@/lib/game-constants";
+import { COMBAT_TEXT_LANE_DELAY_MS, COMBAT_TEXT_LIFETIME_MS, SHIMMER_COOLDOWN_MS } from "@/lib/game-constants";
 
 // ---- Card Shimmer (Hover Effect) ----
 // Manages the "shimmer" animation that sweeps across card art on mouse hover.
 // Cooldown prevents rapid re-triggering; intro delay ensures the first hover
 // on a screen doesn't feel delayed.
 
-const shimmerDurationMs = SHIMMER_DURATION_MS;
 const shimmerCooldownMs = SHIMMER_COOLDOWN_MS;
-const shimmerIntroDelayMs = SHIMMER_INTRO_DELAY_MS;
 
 export function useShimmerController() {
   const [shimmerState, setShimmerState] = useState<{ cardId: string; token: number } | null>(null);

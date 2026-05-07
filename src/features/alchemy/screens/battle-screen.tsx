@@ -4,7 +4,7 @@ import { BookOpen, Cog, Coins, House, Menu, Swords, WandSparkles } from "lucide-
 
 import { Button } from "@/components/ui/button";
 import { type BattleCard } from "@/lib/game-data";
-import { maxPlayerHealth, type BattleState } from "@/lib/battle/types";
+import type { BattleState } from "@/lib/battle/types";
 
 
 import { handCardWidthClass } from "../config";
@@ -40,7 +40,7 @@ export function BattleScreen({
   enemyShaking,
   heroArt,
 }: {
-  battleState: Pick<BattleState, 'playerHealth' | 'enemyHealth' | 'enemyMaxHealth' | 'mana' | 'maxMana' | 'gold' | 'deck' | 'discard' | 'hand' | 'wishOptions' | 'currentEnemy' | 'turnPhase'>;
+  battleState: Pick<BattleState, 'playerHealth' | 'playerMaxHealth' | 'enemyHealth' | 'enemyMaxHealth' | 'mana' | 'maxMana' | 'gold' | 'deck' | 'discard' | 'hand' | 'wishOptions' | 'currentEnemy' | 'turnPhase'>;
   heroArt: string;
   hoveredCardId: string | null;
   setHoveredCardId: (value: string | null | ((current: string | null) => string | null)) => void;
@@ -94,7 +94,7 @@ export function BattleScreen({
             title="Knight"
             art={heroArt}
             health={battleState.playerHealth}
-            maxHealth={maxPlayerHealth}
+            maxHealth={battleState.playerMaxHealth}
             statuses={playerStatusChips}
             shimmerId="player-card"
             shimmerActive={shimmerState?.cardId === "player-card"}

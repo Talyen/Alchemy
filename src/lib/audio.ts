@@ -8,7 +8,6 @@ import { DEFAULT_MUSIC_VOLUME, MASTER_GAIN, MUSIC_BASE_PATH } from "./game-const
 let audioContext: AudioContext | null = null;
 let masterGain: GainNode | null = null;
 let isMuted = false;
-let isInitialized = false;
 let sfxVolume = 0.35;
 let musicVolume = DEFAULT_MUSIC_VOLUME;
 
@@ -167,29 +166,102 @@ export function getSfxVolume(): number {
 // ============= Music (streaming MP3) =============
 
 const musicBase = import.meta.env.BASE_URL + MUSIC_BASE_PATH;
+const FADE_OUT_DURATION = 300;
+const FADE_IN_DELAY = 600;
+const FADE_IN_DURATION = 1400;
+const MUSIC_MASTER_GAIN = 0.5; // Halve overall music output so the slider provides finer control.
 
 const musicTracks: Record<string, string[]> = {
-  menu: ["Menu 1.mp3", "Menu 2.mp3"],
-  knight: ["Knight 1.mp3", "Knight 2.mp3"],
-  rogue: ["Rogue 1.mp3", "Rogue 2.mp3"],
-  wizard: ["Wizard 1.mp3", "Wizard 2.mp3"],
+  menu: ["Menu 1.mp3"],
+  battle: ["Battle 1.mp3", "Battle 2.mp3", "Battle 3.mp3", "Battle 4.mp3"],
 };
 
 let currentMusic: HTMLAudioElement | null = null;
+let currentKey: string | null = null;
 
-export function playMusic(key: string) {
-  stopMusic();
+function applyMusicVolume(el: HTMLAudioElement) {
+  el.volume = musicVolume * MUSIC_MASTER_GAIN;
+}
+
+function startTrack(track: string) {
+  if (currentMusic) {
+    currentMusic.pause();
+    currentMusic.currentTime = 0;
+    currentMusic = null;
+  }
+  const el = new Audio(musicBase + track);
+  el.loop = true;
+  el.volume = 0;
+  el.muted = isMuted;
+  el.play().catch(() => {});
+  currentMusic = el;
+
+  const startTime = performance.now();
+  function fadeIn() {
+    const elapsed = performance.now() - startTime;
+    if (elapsed < FADE_IN_DELAY) return void requestAnimationFrame(fadeIn);
+    const t = Math.min(1, (elapsed - FADE_IN_DELAY) / FADE_IN_DURATION);
+    if (currentMusic === el) el.volume = musicVolume * MUSIC_MASTER_GAIN * t;
+    if (t < 1) requestAnimationFrame(fadeIn);
+  }
+  requestAnimationFrame(fadeIn);
+}
+
+function startTrackImmediate(track: string) {
+  if (currentMusic) {
+    currentMusic.pause();
+    currentMusic.currentTime = 0;
+    currentMusic = null;
+  }
+  const el = new Audio(musicBase + track);
+  el.loop = true;
+  el.volume = musicVolume * MUSIC_MASTER_GAIN;
+  el.muted = isMuted;
+  el.play().catch(() => {});
+  currentMusic = el;
+}
+
+export function playMusicImmediate(key: string) {
+  currentKey = key;
   const tracks = musicTracks[key];
   if (!tracks) return;
   const track = tracks[Math.floor(Math.random() * tracks.length)];
-  currentMusic = new Audio(musicBase + track);
-  currentMusic.loop = true;
-  currentMusic.volume = musicVolume;
-  currentMusic.muted = isMuted;
-  currentMusic.play().catch(() => {});
+  startTrackImmediate(track);
+}
+
+export function playMusic(key: string) {
+  if (key === currentKey) {
+    if (currentMusic?.paused) {
+      currentMusic.play().catch(() => {});
+    }
+    return;
+  }
+  currentKey = key;
+  const tracks = musicTracks[key];
+  if (!tracks) return;
+  const track = tracks[Math.floor(Math.random() * tracks.length)];
+
+  if (currentMusic) {
+    const old = currentMusic;
+    const oldVol = old.volume;
+    const startTime = performance.now();
+    function fadeOut() {
+      const elapsed = performance.now() - startTime;
+      const t = Math.min(1, elapsed / FADE_OUT_DURATION);
+      if (old) old.volume = Math.max(0, oldVol * (1 - t));
+      if (t < 1) return void requestAnimationFrame(fadeOut);
+      old.pause();
+      currentMusic = null;
+      startTrack(track);
+    }
+    return void requestAnimationFrame(fadeOut);
+  }
+
+  startTrack(track);
 }
 
 export function stopMusic() {
+  currentKey = null;
   if (currentMusic) {
     currentMusic.pause();
     currentMusic.currentTime = 0;
@@ -200,7 +272,7 @@ export function stopMusic() {
 export function setMusicVolume(value: number) {
   musicVolume = Math.max(0, Math.min(1, value));
   if (currentMusic) {
-    currentMusic.volume = musicVolume;
+    applyMusicVolume(currentMusic);
   }
 }
 

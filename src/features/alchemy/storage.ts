@@ -31,7 +31,7 @@ export const defaultSaveData: SaveData = {
   discoveredTrinketIds: [],
   talentXP: {},
   unlockedTalents: {},
-  musicVolume: 0,
+  musicVolume: 35,
   sfxVolume: 70,
   activeRun: null,
 };

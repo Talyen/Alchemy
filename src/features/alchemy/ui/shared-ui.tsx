@@ -1,5 +1,5 @@
 import type { CSSProperties, MutableRefObject, ReactNode } from "react";
-import { AlertTriangle, House, Swords } from "lucide-react";
+import { AlertTriangle, ChevronLeft, ChevronRight, Coins } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -94,18 +94,6 @@ export function ShimmerOverlay({ active, token, rounded = "rounded-[30px]" }: { 
   );
 }
 
-// Shared header bar used on Options, Talents, and Collection screens.
-// Provides consistent navigation: Main Menu always visible, Return to Battle
-// only when there's an active battle to return to.
-export function ScreenHeader({ onMainMenu, onReturnToBattle, showReturnToBattle }: { onMainMenu: () => void; onReturnToBattle?: () => void; showReturnToBattle?: boolean }) {
-  return (
-    <div className="flex flex-wrap items-center justify-center gap-3">
-      <Button variant="outline" onClick={onMainMenu}><House className="h-4 w-4" /> Main Menu</Button>
-      {showReturnToBattle && onReturnToBattle ? <Button onClick={onReturnToBattle}><Swords className="h-4 w-4" /> Return to Battle</Button> : null}
-    </div>
-  );
-}
-
 // Generic progress bar used for XP progress and talent progress display.
 // defaultValue determines the fill percentage (0-100). Callers can override color
 // and pass additional style (e.g. transition timing for animations).
@@ -113,6 +101,30 @@ export function ProgressBar({ value, color = "bg-primary", className, style }: {
   return (
     <div className={cn("h-2 w-full overflow-hidden rounded-full bg-muted", className)}>
       <div className={cn("h-full rounded-full", color)} style={{ width: `${value}%`, ...style }} />
+    </div>
+  );
+}
+
+// Gold cost display with coin icon. Shared by merchant and alchemist shops.
+export function GoldCost({ amount }: { amount: number }) {
+  return <span className="flex items-center gap-1 text-xs text-yellow-300"><Coins className="h-3 w-3" />{amount}</span>;
+}
+
+// Prev/Next pagination controls with page counter. Supports two visual sizes.
+export function PaginationControls({ page, totalPages, onPageChange, size = "sm" }: { page: number; totalPages: number; onPageChange: (page: number) => void; size?: "sm" | "default" }) {
+  if (totalPages <= 1) return null;
+  const variant = size === "sm" ? { buttonSize: "sm" as const, prevLabel: "Prev", nextLabel: "Next" } : { buttonSize: "default" as const, prevLabel: "Previous", nextLabel: "Next" };
+  return (
+    <div className="mt-4 flex min-h-[44px] items-center justify-center gap-4">
+      <Button variant="outline" size={variant.buttonSize} disabled={page === 0} onClick={() => onPageChange(page - 1)}>
+        <ChevronLeft className="h-4 w-4" /> {variant.prevLabel}
+      </Button>
+      <p className="min-w-20 text-center text-sm font-medium text-muted-foreground">
+        {page + 1} / {totalPages}
+      </p>
+      <Button variant="outline" size={variant.buttonSize} disabled={page >= totalPages - 1} onClick={() => onPageChange(page + 1)}>
+        {variant.nextLabel} <ChevronRight className="h-4 w-4" />
+      </Button>
     </div>
   );
 }

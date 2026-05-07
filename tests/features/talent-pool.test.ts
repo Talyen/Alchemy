@@ -51,7 +51,9 @@ describe("sampleTalentChoices", () => {
 describe("computeTalentEffects", () => {
   it("returns empty effects with no unlocked talents", () => {
     const effects = computeTalentEffects({});
-    expect(effects).toEqual({ flatPhysicalDamage: 0, armorToPhysicalDamage: false, physicalCritChance: 0 });
+    expect(effects.flatPhysicalDamage).toBe(0);
+    expect(effects.armorToPhysicalDamage).toBe(false);
+    expect(effects.physicalCritChance).toBe(0);
   });
 
   it("counts flat physical damage talents", () => {

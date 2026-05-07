@@ -1,7 +1,5 @@
 import type { CSSProperties } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
 import {
   cardLibrary,
   enemyBestiary,
@@ -11,6 +9,7 @@ import {
 } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
+import { PaginationControls } from "./shared-ui";
 import { cardSurfaceClass, collectionCardWidthClass, collectionTabMeta, staticCardTransform } from "../config";
 import type { CollectionTab } from "../types";
 import { clearTiltFromEvent, getHoverId, setTiltFromEvent } from "../utils";
@@ -173,30 +172,8 @@ export function CollectionTabs({
   );
 }
 
-export function CollectionPagination({
-  page,
-  totalPages,
-  onPageChange,
-}: {
-  page: number;
-  totalPages: number;
-  onPageChange: (page: number) => void;
-}) {
-  return (
-    <div className={cn("mt-8 flex min-h-[44px] items-center justify-center gap-4", totalPages <= 1 ? "invisible" : "visible")}>
-      <Button variant="outline" disabled={page === 0} onClick={() => onPageChange(page - 1)}>
-        <ChevronLeft className="h-4 w-4" />
-        Previous
-      </Button>
-      <p className="min-w-24 text-center text-sm font-medium text-muted-foreground">
-        Page {page + 1} / {totalPages}
-      </p>
-      <Button variant="outline" disabled={page >= totalPages - 1} onClick={() => onPageChange(page + 1)}>
-        Next
-        <ChevronRight className="h-4 w-4" />
-      </Button>
-    </div>
-  );
+export function CollectionPagination({ page, totalPages, onPageChange }: { page: number; totalPages: number; onPageChange: (page: number) => void }) {
+  return <PaginationControls page={page} totalPages={totalPages} onPageChange={onPageChange} size="default" />;
 }
 
 function getCardItems(discoveredCardIds: string[]) {

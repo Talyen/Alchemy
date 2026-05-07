@@ -6,10 +6,12 @@ import type { CSSProperties } from "react";
 
 import { Button } from "@/components/ui/button";
 import { playUISound } from "@/lib/audio";
+import { COLLECTION_PAGE_SIZE } from "@/lib/game-constants";
 import type { BattleCard } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
-import { cardSurfaceClass, handCardWidthClass, staticCardTransform } from "../config";
+import { PaginationControls } from "../ui/shared-ui";
+import { cardSurfaceClass, collectionCardWidthClass, handCardWidthClass, staticCardTransform } from "../config";
 import type { MysteryEvent, MysteryChoice, MysteryEffect } from "../mystery-events";
 import { clearTiltFromEvent, setTiltFromEvent } from "../utils";
 import { BattleCardButton } from "../ui/card-ui";
@@ -19,7 +21,15 @@ function EffectResultText({ effect }: { effect: MysteryEffect }) {
     case "healHP": return <span>Restored {effect.amount} HP</span>;
     case "damageHP": return <span>Took {effect.amount} damage</span>;
     case "gainGold": return <span>Gained {effect.amount} Gold</span>;
+    case "loseGold": return <span>Lost {effect.amount} Gold</span>;
     case "gainMaxMana": return <span>Max Mana increased</span>;
+    case "gainXP": return <span>Gained {effect.amount} {effect.keyword} XP</span>;
+    case "removeCard":
+      return effect.mode === "random"
+        ? <span>A card was removed from your deck</span>
+        : <span>Select a card to remove</span>;
+    case "gainTrinket": return <span>Found a trinket</span>;
+    case "addRandomCard": return <span>Gained a random card</span>;
     case "none": return <span>You continue on your journey</span>;
     default: return null;
   }
@@ -35,7 +45,10 @@ function RewardScreen({
   onContinue: () => void;
 }) {
   const addCardEffects = choice.effects.filter((e) => e.kind === "addCard");
-  const otherEffects = choice.effects.filter((e) => e.kind !== "addCard");
+  const hasRandomCard = choice.effects.some((e) => e.kind === "addRandomCard");
+  const otherEffects = choice.effects.filter(
+    (e) => e.kind !== "addCard" && e.kind !== "addRandomCard"
+  );
   const [hoveredCardId, setHoveredCardId] = useState<string | null>(null);
 
   return (
@@ -62,6 +75,9 @@ function RewardScreen({
           </div>
         );
       })}
+      {hasRandomCard && (
+        <p className="text-base text-muted-foreground">Gained a random card</p>
+      )}
       {otherEffects.map((effect, i) => (
         <p key={i} className="text-base text-muted-foreground">
           <EffectResultText effect={effect} />
@@ -74,26 +90,122 @@ function RewardScreen({
   );
 }
 
+function RemoveCardPicker({
+  runDeck,
+  onSelect,
+  onCancel,
+}: {
+  runDeck: BattleCard[];
+  onSelect: (index: number) => void;
+  onCancel: () => void;
+}) {
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [page, setPage] = useState(0);
+  const totalPages = Math.ceil(runDeck.length / COLLECTION_PAGE_SIZE);
+  const start = page * COLLECTION_PAGE_SIZE;
+  const visible = runDeck.slice(start, start + COLLECTION_PAGE_SIZE);
+
+  return (
+    <div className="flex h-full w-full flex-col items-center justify-center gap-6 px-4 py-6 text-center">
+      <h2 className="text-3xl text-foreground">Select a card to remove</h2>
+      <div className="grid grid-cols-5 gap-3">
+        {visible.map((card, i) => {
+          const idx = start + i;
+          const isSelected = selectedIndex === idx;
+          return (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => setSelectedIndex(idx)}
+              className={cn(
+                "flex flex-col items-center gap-2 rounded-xl border-2 p-2 transition-colors",
+                isSelected
+                  ? "border-primary bg-primary/10 ring-1 ring-primary"
+                  : "border-transparent hover:border-border"
+              )}
+            >
+              <BattleCardButton
+                card={card}
+                hovered={isSelected}
+                onHoverStart={() => {}}
+                onHoverEnd={() => {}}
+                ariaLabel={card.title}
+                shimmerActive={false}
+                className={collectionCardWidthClass}
+              />
+              <p className="text-xs text-foreground">{card.title}</p>
+            </button>
+          );
+        })}
+        <PaginationControls page={page} totalPages={totalPages} onPageChange={(p) => setPage(p)} size="sm" />
+      </div>
+      <div className="flex gap-4">
+        <Button size="lg" variant="outline" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button
+          size="lg"
+          disabled={selectedIndex === null}
+          onClick={() => { if (selectedIndex !== null) onSelect(selectedIndex); }}
+        >
+          Remove Card
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export function MysteryScreen({
   event,
   onChoose,
+  onRemoveCard,
   onContinue,
+  runDeck,
   findCard,
 }: {
   event: MysteryEvent;
   onChoose: (choice: MysteryChoice) => void;
+  onRemoveCard: (index: number) => void;
   onContinue: () => void;
+  runDeck: BattleCard[];
   findCard: (id: string) => BattleCard | undefined;
 }) {
   const [chosen, setChosen] = useState<MysteryChoice | null>(null);
+  const [pendingRemoval, setPendingRemoval] = useState<MysteryChoice | null>(null);
   const [hoveredCardId, setHoveredCardId] = useState<string | null>(null);
 
   function handlePick(choice: MysteryChoice) {
     onChoose(choice);
-    setChosen(choice);
-    if (choice.effects.some((e) => e.kind === "addCard")) {
-      playUISound("mysteryGood");
+    if (choice.effects.some((e) => e.kind === "removeCard" && e.mode === "choose")) {
+      setPendingRemoval(choice);
+    } else {
+      setChosen(choice);
+      if (choice.effects.some((e) => e.kind === "addCard" || e.kind === "addRandomCard")) {
+        playUISound("mysteryGood");
+      }
     }
+  }
+
+  function handleRemoveConfirm(index: number) {
+    onRemoveCard(index);
+    setPendingRemoval(null);
+    if (!chosen) {
+      const choice = pendingRemoval!;
+      setChosen(choice);
+      if (choice.effects.some((e) => e.kind === "addCard")) {
+        playUISound("mysteryGood");
+      }
+    }
+  }
+
+  if (pendingRemoval) {
+    return (
+      <RemoveCardPicker
+        runDeck={runDeck}
+        onSelect={handleRemoveConfirm}
+        onCancel={() => setPendingRemoval(null)}
+      />
+    );
   }
 
   if (chosen) {

@@ -1,6 +1,6 @@
 // Merchant shop screen — buy cards, remove deck cards, or refresh the shop.
 import { useState } from "react";
-import { Coins, ChevronLeft, ChevronRight } from "lucide-react";
+import { Coins } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -8,12 +8,8 @@ import type { BattleCard } from "@/lib/game-data";
 import { SHOP_CARD_PRICE, SHOP_REFRESH_PRICE, SHOP_REMOVE_PRICE, COLLECTION_PAGE_SIZE } from "@/lib/game-constants";
 
 import { BattleCardButton } from "../ui/card-ui";
-import { DisabledTooltip } from "../ui/shared-ui";
+import { DisabledTooltip, GoldCost, PaginationControls } from "../ui/shared-ui";
 import { collectionCardWidthClass, handCardWidthClass } from "../config";
-
-function GoldCost({ amount }: { amount: number }) {
-  return <span className="flex items-center gap-1 text-xs text-yellow-300"><Coins className="h-3 w-3" />{amount}</span>;
-}
 
 function ShopCardItem({ card, price, gold, purchased, onBuy }: { card: BattleCard; price: number; gold: number; purchased: boolean; onBuy: () => void }) {
   const [hovered, setHovered] = useState(false);
@@ -80,17 +76,7 @@ function DeckGridPaginated({
           <div key={`deck-filler-${i}`} className={collectionCardWidthClass} aria-hidden="true" />
         ))}
       </div>
-      <div className={cn("mt-4 flex min-h-[44px] items-center justify-center gap-4", totalPages <= 1 ? "invisible" : "visible")}>
-        <Button variant="outline" size="sm" disabled={page === 0} onClick={() => onPageChange(page - 1)}>
-          <ChevronLeft className="h-4 w-4" /> Prev
-        </Button>
-        <p className="min-w-20 text-center text-sm font-medium text-muted-foreground">
-          {page + 1} / {totalPages}
-        </p>
-        <Button variant="outline" size="sm" disabled={page >= totalPages - 1} onClick={() => onPageChange(page + 1)}>
-          Next <ChevronRight className="h-4 w-4" />
-        </Button>
-      </div>
+      <PaginationControls page={page} totalPages={totalPages} onPageChange={onPageChange} />
     </div>
   );
 }

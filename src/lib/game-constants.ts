@@ -14,6 +14,10 @@ export const MIN_MAX_MANA_FLOOR = 1;          // Minimum maxMana after reduction
 export const ROOM_SCALING_INCREMENT = 0.1;     // +10% enemy HP/attack per room (multiplicative)
 export const ELITE_STAT_MULTIPLIER = 1.3;       // Elite enemies get 30% more HP and attack
 export const STARTING_TURN = 1;                 // Turn counter starts at 1 for readability.
+export const ENEMY_HEAL_FRACTION = 0.1;         // Enemy heals 10% of max HP when below 50% HP.
+export const ENEMY_BASE_REGENERATION = 2;       // Base enemy regeneration per turn (scaled by room).
+export const BLEED_EXECUTE_MULTIPLIER = 2;      // Bleed damage multiplier when enemy is below execute threshold.
+export const FREE_CARD_SENTINEL = 99;           // nextCardCostReduction value that guarantees a card costs 0.
 
 // ============ Timing (ms) ============
 export const AUTO_END_TURN_DELAY = 1220;       // How long the system waits before auto-ending turn when conditions are met (no mana, no cards).
@@ -51,7 +55,7 @@ export const DESTINATION_CHOICES = 3;          // Path choices offered after eac
 
 // ============ Audio ============
 export const MASTER_GAIN = 0.3;                 // Master volume level. 0.3 prevents ear fatigue during extended sessions.
-export const DEFAULT_MUSIC_VOLUME = 0.175;      // Music baseline halved so it doesn't overpower SFX.
+export const DEFAULT_MUSIC_VOLUME = 0.0875;     // Music baseline — reduced so it sits under SFX without overpowering.
 export const MUSIC_BASE_PATH = "Music/";        // Relative path from BASE_URL for music files.
 
 // ============ Animation / Timing ============
@@ -93,35 +97,7 @@ export const SCREENS = {
   TALENTS: "talents",
 } as const;
 
-export const COMBAT_TEXT = {
-  TARGET_PLAYER: "player",
-  TARGET_ENEMY: "enemy",
-  KIND_DAMAGE: "damage",
-  KIND_HEAL: "heal",
-  KIND_STATUS: "status",
-} as const;
-
-export const EFFECT_KINDS = {
-  DAMAGE: "damage",
-  PLAYER_STATUS: "player-status",
-  HEAL: "heal",
-  RESTORE_MANA: "restore-mana",
-  LOSE_MANA: "lose-mana",
-  GAIN_MAX_MANA: "gain-max-mana",
-  LOSE_MAX_MANA: "lose-max-mana",
-  GAIN_GOLD: "gain-gold",
-  WISH: "wish",
-  REMOVE_AILMENT: "remove-ailment",
-} as const;
-
-export const TURN_PHASES = {
-  PLAYER: "player",
-  ENEMY: "enemy",
-} as const;
-
 export const MUSIC_KEYS = {
   MENU: "menu",
-  KNIGHT: "knight",
-  ROGUE: "rogue",
-  WIZARD: "wizard",
+  BATTLE: "battle",
 } as const;

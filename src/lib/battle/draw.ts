@@ -1,7 +1,6 @@
-import { enemyBestiary, starterDeck, type BattleCard, type BestiaryEntry } from "@/lib/game-data";
+import { enemyBestiary, starterDeck, type BattleCard, type BestiaryEntry, type EnemyAttackEffect } from "@/lib/game-data";
 
 import {
-  baseEnemyAttack,
   baseEnemyHealth,
   basePlayerMana,
   cardsPerTurn,
@@ -13,7 +12,97 @@ import {
   type TalentEffectManifest,
   type TurnPhase,
 } from "./types";
-import { ROOM_SCALING_INCREMENT, ELITE_STAT_MULTIPLIER, STARTING_TURN } from "../game-constants";
+import { ROOM_SCALING_INCREMENT, ELITE_STAT_MULTIPLIER, STARTING_TURN, ENEMY_BASE_REGENERATION } from "../game-constants";
+
+// Default talent manifest used when no talents are unlocked.
+// Every field must have a safe zero/false value so battle logic can read
+// talentEffects without existence checks.
+export const defaultTalentEffects: TalentEffectManifest = {
+  flatPhysicalDamage: 0,
+  armorToPhysicalDamage: false,
+  physicalCritChance: 0,
+  firstPhysicalCardFree: false,
+  physicalVsStunnedMultiplier: 0,
+  physicalVsFrozenMultiplier: 0,
+
+  stunThresholdReduction: 0,
+  drawOnStun: 0,
+  nextCardFreeOnStun: false,
+
+  startBlock: 0,
+  blockToPhysicalDamage: false,
+  blockPreventsBleed: false,
+  blockPreventsPoison: false,
+  blockPreventsStun: false,
+  blockAbsorbPhysicalBonus: 0,
+
+  forgeToBurn: false,
+  forgeToHoly: false,
+  forgeToBlock: false,
+  forgeBurnThreshold: 0,
+  forgeBurnDamage: 0,
+
+  armorAilmentReduction: 0,
+  armorBlockThreshold: 0,
+  armorBlockAmount: 0,
+  armorDoubledBelowHalfHealth: false,
+  firstArmorCardDoubled: false,
+
+  campfireHealBonus: 0,
+  healthThresholdBlock: null,
+  maxHealthPerCombat: 0,
+  startHealth: 0,
+  healMultiplier: 1,
+  healthThresholdArmor: null,
+
+  firstBurnCardDoubled: false,
+  burnRemovesEnemyArmor: false,
+  burnDoubleChance: 0,
+  receiveHalfBurnDamage: false,
+
+  shopCardDiscount: 0,
+  shopFreeRefresh: false,
+  startGold: 0,
+  goldPerCombat: 0,
+  potionDiscount: 0,
+  removeCardDiscount: 0,
+  enemyGoldDropBonus: 0,
+  goldOnWish: 0,
+  mixPotionDiscount: 0,
+
+  holyLifestealPercent: 0,
+  firstHolyCardFree: false,
+  holyGoldPercent: 0,
+  holyBurnChance: 0,
+  receiveHalfHolyDamage: false,
+  holyBlockPercent: 0,
+  holyWishChance: 0,
+  holyBlockPercentFromDamage: 0,
+  holyVsBurnMultiplier: 0,
+
+  goldOnWishAmount: 0,
+  wishUndiscoveredCards: false,
+  healthOnWish: 0,
+  removeAilmentOnWish: false,
+  wishExtraChoiceChance: 0,
+  wishDrawsCard: false,
+
+  firstPoisonCardFree: false,
+  poisonPhysicalBonus: 0,
+  poisonGainChance: 0,
+  receiveHalfPoisonDamage: false,
+  goldOnFirstPoison: 0,
+  poisonHalvesHealing: false,
+
+  firstBleedCardFree: false,
+  bleedPhysicalBonus: 0,
+  bleedLeechChance: 0,
+  bleedEnemyDamageReduction: 0,
+  bleedPhysicalTakenBonus: 0,
+  bleedExecuteThreshold: 0,
+  bleedDesperateMultiplier: 1,
+  bleedPoisonChance: 0,
+};
 
 // Returns a fresh (deck, discard) pair after possibly reshuffling discard into deck.
 function refillDeck(deck: BattleCard[], discard: BattleCard[]) {
@@ -44,19 +133,49 @@ export function drawCards(deck: BattleCard[], discard: BattleCard[], hand: Battl
   return { deck: nextDeck, discard: nextDiscard, hand: nextHand };
 }
 
-// Creates the initial BattleState for a fresh encounter. Enemy HP and attack
-// scale per room (multiplicative by 1.1x per room after the first) so the game
-// gets gradually harder. The scaler uses `roomsEncountered - 1` so room 0
-// (the first fight) has no scaling at all.
-export function createBattleState(runDeck: BattleCard[] = starterDeck, gold = 0, roomsEncountered = 0, currentEnemy?: BestiaryEntry, playerHealth = maxPlayerHealth, talentEffects: TalentEffectManifest = { flatPhysicalDamage: 0, armorToPhysicalDamage: false, physicalCritChance: 0 }): BattleState {
-  const openingHand = drawCards(shuffleCards(runDeck), [], [], cardsPerTurn);
-
-  const enemy = currentEnemy ?? enemyBestiary[0];
+// Builds scaled enemy data for a given room. Extracted so createBattleState stays under 30 lines.
+function buildScaledEnemy(roomsEncountered: number, enemy: BestiaryEntry) {
   const scaler = Math.max(0, roomsEncountered - 1);
   const hpMultiplier = 1 + scaler * ROOM_SCALING_INCREMENT;
   const eliteMul = enemy.enemyType === "elite" ? ELITE_STAT_MULTIPLIER : 1;
   const scaledEnemyHealth = Math.floor(baseEnemyHealth * hpMultiplier * eliteMul);
-  const scaledEnemyAttack = Math.floor(baseEnemyAttack * hpMultiplier * eliteMul);
+  const scaleAmount = (amount: number) => Math.floor(amount * hpMultiplier * eliteMul);
+
+  const baseEffects = enemy.attackEffects.length > 0
+    ? enemy.attackEffects
+    : [{ kind: "damage" as const, damageType: "physical" as const, amount: 8 }];
+  const scaledEnemyAttackEffects: EnemyAttackEffect[] = baseEffects.map((effect) => {
+    if (effect.kind === "damage") {
+      return { kind: "damage", damageType: effect.damageType, amount: scaleAmount(effect.amount), lifesteal: effect.lifesteal };
+    }
+    return { kind: "player-status", status: effect.status, amount: scaleAmount(effect.amount) };
+  });
+  const enemyRegeneration = enemy.traits.some((t) => t.id === "regeneration") ? scaleAmount(ENEMY_BASE_REGENERATION) : 0;
+
+  return { enemy, scaledEnemyHealth, scaledEnemyAttackEffects, enemyRegeneration, hpMultiplier, eliteMul };
+}
+
+// Creates the initial BattleState for a fresh encounter. Enemy HP and attack
+// scale per room (multiplicative by 1.1x per room after the first) so the game
+// gets gradually harder. The scaler uses `roomsEncountered - 1` so room 0
+// (the first fight) has no scaling at all.
+export function createBattleState(
+  runDeck: BattleCard[] = starterDeck,
+  gold = 0,
+  roomsEncountered = 0,
+  currentEnemy?: BestiaryEntry,
+  playerHealth = maxPlayerHealth,
+  talentEffects: TalentEffectManifest = defaultTalentEffects,
+  discoveredCardIds: string[] = [],
+  maxHealth = maxPlayerHealth,
+): BattleState {
+  const openingHand = drawCards(shuffleCards(runDeck), [], [], cardsPerTurn);
+
+  const enemy = currentEnemy ?? enemyBestiary[0];
+  const { scaledEnemyHealth, scaledEnemyAttackEffects, enemyRegeneration } = buildScaledEnemy(roomsEncountered, enemy);
+
+  const effectiveMaxHealth = maxHealth + talentEffects.maxHealthPerCombat * roomsEncountered;
+  const startingHealth = Math.min(effectiveMaxHealth, playerHealth + talentEffects.startHealth);
 
   return {
     deck: openingHand.deck,
@@ -68,21 +187,36 @@ export function createBattleState(runDeck: BattleCard[] = starterDeck, gold = 0,
     gold,
     turn: STARTING_TURN,
     turnPhase: "player" as TurnPhase,
-    playerHealth,
+    playerHealth: startingHealth,
+    playerMaxHealth: effectiveMaxHealth,
     enemyHealth: scaledEnemyHealth,
     enemyMaxHealth: scaledEnemyHealth,
-    enemyAttack: scaledEnemyAttack,
-    playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 } as PlayerStatusValues,
+    enemyAttackEffects: scaledEnemyAttackEffects,
+    enemyRegeneration,
+    enemyArmor: 0,
+    playerStatuses: { block: talentEffects.startBlock, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 } as PlayerStatusValues,
     enemyStatuses: { burn: 0, poison: 0, bleed: 0, bleedLeech: 0, freeze: 0, stun: 0 } as EnemyStatusValues,
-    enemySkipTurns: 0,
+    enemyStunSkipTurns: 0,
+    enemyFreezeSkipTurns: 0,
     wishOptions: null,
     currentEnemy: enemy,
     talentEffects,
+    flags: {
+      firstPhysicalCardFreeUsed: false,
+      firstHolyCardFreeUsed: false,
+      firstBurnCardDoubledUsed: false,
+      firstArmorCardDoubledUsed: false,
+      firstPoisonCardFreeUsed: false,
+      firstBleedCardFreeUsed: false,
+      nextCardCostReduction: 0,
+      goldOnFirstPoisonThisCombat: false,
+    },
+    discoveredCardIds,
   };
 }
 
 // Fisher-Yates shuffle — O(n), unbiased, in-place on a clone.
-function shuffleCards(cards: BattleCard[]) {
+export function shuffleCards(cards: BattleCard[]) {
   const shuffled = [...cards];
 
   for (let index = shuffled.length - 1; index > 0; index -= 1) {

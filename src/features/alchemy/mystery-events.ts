@@ -1,23 +1,25 @@
 import { manaBerries } from "@/lib/game-data";
+import type { KeywordId } from "@/lib/game-data";
 
-// A single result from resolving a mystery choice.
-// Effects are applied by the controller when a choice is confirmed.
 export type MysteryEffect =
   | { kind: "addCard"; cardId: string }
-  | { kind: "healHP"; amount: number }
+  | { kind: "addRandomCard" }
+  | { kind: "healHP"; amount: number; chance?: number }
   | { kind: "damageHP"; amount: number }
   | { kind: "gainGold"; amount: number }
+  | { kind: "loseGold"; amount: number }
   | { kind: "gainMaxMana"; amount: number }
+  | { kind: "gainXP"; keyword: KeywordId; amount: number }
+  | { kind: "removeCard"; mode: "random" | "choose" }
+  | { kind: "gainTrinket"; trinketId: string }
   | { kind: "none" };
 
-// A choice the player can make during a mystery event.
 export type MysteryChoice = {
   label: string;
   description: string;
   effects: MysteryEffect[];
 };
 
-// A mystery event definition — art, narrative, and choices.
 export type MysteryEvent = {
   id: string;
   title: string;
@@ -26,8 +28,6 @@ export type MysteryEvent = {
   choices: MysteryChoice[];
 };
 
-// The full pool of possible mystery events. Extend this array to add new events.
-// Each event follows the same structure: art + narrative + choices → result.
 export const mysteryPool: MysteryEvent[] = [
   {
     id: "mana-berries",
@@ -44,6 +44,312 @@ export const mysteryPool: MysteryEvent[] = [
         label: "Leave",
         description: "Continue on your journey without taking anything.",
         effects: [{ kind: "none" }],
+      },
+    ],
+  },
+  {
+    id: "enchanted-spring",
+    title: "Enchanted Spring",
+    art: "",
+    narrative: "A pool of iridescent water steams gently in the cool air. Its surface shimmers with an inviting warmth, promising restoration.",
+    choices: [
+      {
+        label: "Sip Slowly",
+        description: "Restore 8 HP.",
+        effects: [{ kind: "healHP", amount: 8 }],
+      },
+      {
+        label: "Drink Deeply",
+        description: "Restore 18 HP.",
+        effects: [{ kind: "healHP", amount: 18 }],
+      },
+      {
+        label: "Bottle the Essence",
+        description: "Add a Health Potion card to your deck.",
+        effects: [{ kind: "addCard", cardId: "health-potion" }],
+      },
+    ],
+  },
+  {
+    id: "fungal-grotto",
+    title: "Fungal Grotto",
+    art: "",
+    narrative: "Bioluminescent mushrooms pulse in the dark, their spores hanging thick in the air. The cave walls glitter with an otherworldly light.",
+    choices: [
+      {
+        label: "Harvest Carefully",
+        description: "Add a Mana Berries card to your deck.",
+        effects: [{ kind: "addCard", cardId: "mana-berries" }],
+      },
+      {
+        label: "Inhale the Spores",
+        description: "Take 4 damage, gain 12 Mana XP.",
+        effects: [
+          { kind: "damageHP", amount: 4 },
+          { kind: "gainXP", keyword: "mana", amount: 12 },
+        ],
+      },
+      {
+        label: "Collect Rare Mold",
+        description: "Gain 20 Gold.",
+        effects: [{ kind: "gainGold", amount: 20 }],
+      },
+    ],
+  },
+  {
+    id: "wisdom-tree",
+    title: "Wisdom Tree",
+    art: "",
+    narrative: "An immense oak with a weathered face carved into its bark speaks in rustling leaves. Ancient wisdom emanates from its gnarled branches.",
+    choices: [
+      {
+        label: "Ask for Knowledge",
+        description: "Gain +1 Max Mana.",
+        effects: [{ kind: "gainMaxMana", amount: 1 }],
+      },
+      {
+        label: "Rest in its Shade",
+        description: "Restore 15 HP.",
+        effects: [{ kind: "healHP", amount: 15 }],
+      },
+      {
+        label: "Memorize a Lesson",
+        description: "Gain a Wish card, but a random card is removed from your deck.",
+        effects: [
+          { kind: "addCard", cardId: "wish" },
+          { kind: "removeCard", mode: "random" },
+        ],
+      },
+    ],
+  },
+  {
+    id: "fairy-ring",
+    title: "Fairy Ring",
+    art: "",
+    narrative: "A circle of glowing mushrooms hums with fey energy in a moonlit clearing. The air feels thick with mischief and ancient magic.",
+    choices: [
+      {
+        label: "Leave an Offering",
+        description: "Lose 20 Gold. Remove a card from your deck.",
+        effects: [
+          { kind: "loseGold", amount: 20 },
+          { kind: "removeCard", mode: "choose" },
+        ],
+      },
+      {
+        label: "Dance Until Dawn",
+        description: "Restore 5 HP, with a 50% chance to restore 8 more.",
+        effects: [
+          { kind: "healHP", amount: 5 },
+          { kind: "healHP", amount: 8, chance: 0.5 },
+        ],
+      },
+    ],
+  },
+  {
+    id: "ancient-altar",
+    title: "Ancient Altar",
+    art: "",
+    narrative: "A weathered stone altar stands beneath a shaft of light piercing the canopy. A rusted offering bowl rests before it, etched with forgotten symbols.",
+    choices: [
+      {
+        label: "Pray",
+        description: "Restore 15 HP.",
+        effects: [{ kind: "healHP", amount: 15 }],
+      },
+      {
+        label: "Make an Offering",
+        description: "Lose 20 Gold. Remove a card from your deck.",
+        effects: [
+          { kind: "loseGold", amount: 20 },
+          { kind: "removeCard", mode: "choose" },
+        ],
+      },
+    ],
+  },
+  {
+    id: "hidden-cache",
+    title: "Hidden Cache",
+    art: "",
+    narrative: "A leather-wrapped bundle tucked between exposed roots catches your eye. Whatever is inside has been hidden here for a long time.",
+    choices: [
+      {
+        label: "Take Everything",
+        description: "Gain 20 Gold and a Steal card.",
+        effects: [
+          { kind: "gainGold", amount: 20 },
+          { kind: "addCard", cardId: "steal" },
+        ],
+      },
+      {
+        label: "Study the Map",
+        description: "Gain 10 Gold XP and find a Smuggler's Map trinket.",
+        effects: [
+          { kind: "gainXP", keyword: "gold", amount: 10 },
+          { kind: "gainTrinket", trinketId: "smugglers-map" },
+        ],
+      },
+    ],
+  },
+  {
+    id: "overgrown-temple",
+    title: "Overgrown Temple",
+    art: "",
+    narrative: "Vines carpet ancient mosaic floors. A faint glow pulses from a cracked sarcophagus in the chamber beyond, hinting at preserved treasures.",
+    choices: [
+      {
+        label: "Explore the Crypt",
+        description: "Take 6 damage. Gain 30 Gold and a Mana Crystals card.",
+        effects: [
+          { kind: "damageHP", amount: 6 },
+          { kind: "gainGold", amount: 30 },
+          { kind: "addCard", cardId: "mana-crystals" },
+        ],
+      },
+      {
+        label: "Decipher the Inscriptions",
+        description: "Gain 15 Holy XP.",
+        effects: [{ kind: "gainXP", keyword: "holy", amount: 15 }],
+      },
+    ],
+  },
+  {
+    id: "abandoned-study",
+    title: "Abandoned Study",
+    art: "",
+    narrative: "Dusty shelves line a circular tower room. A half-written thesis lies open on the desk, quill dried beside it centuries ago.",
+    choices: [
+      {
+        label: "Search the Scrolls",
+        description: "Gain a random card.",
+        effects: [{ kind: "addRandomCard" }],
+      },
+      {
+        label: "Organize the Library",
+        description: "Gain 12 Mana XP.",
+        effects: [{ kind: "gainXP", keyword: "mana", amount: 12 }],
+      },
+    ],
+  },
+  {
+    id: "mysterious-tome",
+    title: "Mysterious Tome",
+    art: "",
+    narrative: "A leather-bound book floats above a pedestal, pages turning on their own. Arcane energy crackles around it as if it has been waiting for a reader.",
+    choices: [
+      {
+        label: "Read Carefully",
+        description: "Gain a Wish card.",
+        effects: [{ kind: "addCard", cardId: "wish" }],
+      },
+      {
+        label: "Tear Out the Pages",
+        description: "Gain 20 Gold and a Tattered Pages trinket.",
+        effects: [
+          { kind: "gainGold", amount: 20 },
+          { kind: "gainTrinket", trinketId: "tattered-pages" },
+        ],
+      },
+    ],
+  },
+  {
+    id: "crystal-geode",
+    title: "Crystal Geode",
+    art: "",
+    narrative: "A massive amethyst geode splits the cave floor, its resonant hum filling the chamber with a deep, soothing vibration.",
+    choices: [
+      {
+        label: "Mine the Crystals",
+        description: "Gain 20 Gold and a Mana Crystals card.",
+        effects: [
+          { kind: "gainGold", amount: 20 },
+          { kind: "addCard", cardId: "mana-crystals" },
+        ],
+      },
+      {
+        label: "Meditate Under the Crystal",
+        description: "Gain +1 Max Mana.",
+        effects: [{ kind: "gainMaxMana", amount: 1 }],
+      },
+    ],
+  },
+  {
+    id: "meteorite-crash",
+    title: "Meteorite Crash",
+    art: "",
+    narrative: "A smoldering crater scars the forest floor. A strange metallic rock from beyond the sky sits at its center, radiating unfamiliar energy.",
+    choices: [
+      {
+        label: "Collect a Fragment",
+        description: "Gain a Meteor card.",
+        effects: [{ kind: "addCard", cardId: "meteor" }],
+      },
+      {
+        label: "Scavenge the Metal",
+        description: "Gain 25 Gold and a Meteorite trinket.",
+        effects: [
+          { kind: "gainGold", amount: 25 },
+          { kind: "gainTrinket", trinketId: "meteorite" },
+        ],
+      },
+      {
+        label: "Study the Impact Site",
+        description: "Gain 12 Burn XP.",
+        effects: [{ kind: "gainXP", keyword: "burn", amount: 12 }],
+      },
+    ],
+  },
+  {
+    id: "forgotten-hoard",
+    title: "Forgotten Hoard",
+    art: "",
+    narrative: "Gold coins glitter among scattered bones beside a massive, ancient skeleton. The remains of a once-great beast guard its treasure even in death.",
+    choices: [
+      {
+        label: "Take the Coins",
+        description: "Gain 30 Gold.",
+        effects: [{ kind: "gainGold", amount: 30 }],
+      },
+      {
+        label: "Search the Bones",
+        description: "Take 4 damage. Gain 40 Gold and a Bone Charm trinket.",
+        effects: [
+          { kind: "damageHP", amount: 4 },
+          { kind: "gainGold", amount: 40 },
+          { kind: "gainTrinket", trinketId: "bone-charm" },
+        ],
+      },
+      {
+        label: "Study the Remains",
+        description: "Gain 12 Physical XP.",
+        effects: [{ kind: "gainXP", keyword: "physical", amount: 12 }],
+      },
+    ],
+  },
+  {
+    id: "sacred-grove",
+    title: "Sacred Grove",
+    art: "",
+    narrative: "Sunlight breaks through the canopy in golden rays. The air is thick with peace, and the ground hums with quiet vitality.",
+    choices: [
+      {
+        label: "Bask in the Light",
+        description: "Restore 20 HP.",
+        effects: [{ kind: "healHP", amount: 20 }],
+      },
+      {
+        label: "Collect Holy Dew",
+        description: "Add a Health Potion card to your deck.",
+        effects: [{ kind: "addCard", cardId: "health-potion" }],
+      },
+      {
+        label: "Plant a Seed",
+        description: "Take 3 damage. Gain 15 Health XP and a Grove's Favor trinket.",
+        effects: [
+          { kind: "damageHP", amount: 3 },
+          { kind: "gainXP", keyword: "health", amount: 15 },
+          { kind: "gainTrinket", trinketId: "groves-favor" },
+        ],
       },
     ],
   },

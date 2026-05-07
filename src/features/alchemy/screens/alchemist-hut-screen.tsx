@@ -1,6 +1,6 @@
 // Alchemist's Shop screen — buy potions, refresh, or mix two potions from your deck.
 import { useState } from "react";
-import { Coins, FlaskConical, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
+import { Coins, FlaskConical, RefreshCw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -8,17 +8,9 @@ import type { BattleCard } from "@/lib/game-data";
 import { ALCHEMIST_MIX_PRICE, ALCHEMIST_POTION_PRICE, ALCHEMIST_REFRESH_PRICE, COLLECTION_PAGE_SIZE } from "@/lib/game-constants";
 
 import { BattleCardButton } from "../ui/card-ui";
-import { DisabledTooltip } from "../ui/shared-ui";
+import { DisabledTooltip, GoldCost, PaginationControls } from "../ui/shared-ui";
 import { collectionCardWidthClass, handCardWidthClass } from "../config";
 import { createMixedPotion } from "../potion-mixer";
-
-function GoldCost({ amount }: { amount: number }) {
-  return (
-    <span className="flex items-center gap-1 text-xs text-yellow-300">
-      <Coins className="h-3 w-3" />{amount}
-    </span>
-  );
-}
 
 function PotionCardItem({ card, gold, purchased, onBuy }: { card: BattleCard; gold: number; purchased: boolean; onBuy: () => void }) {
   const [hovered, setHovered] = useState(false);
@@ -193,17 +185,7 @@ export function AlchemistHutScreen({
                     <div key={`mix-filler-${i}`} className={collectionCardWidthClass} aria-hidden="true" />
                   ))}
                 </div>
-                <div className={cn("mt-4 flex min-h-[44px] items-center justify-center gap-4", totalPages <= 1 ? "invisible" : "visible")}>
-                  <Button variant="outline" size="sm" disabled={mixPage === 0} onClick={() => setMixPage(mixPage - 1)}>
-                    <ChevronLeft className="h-4 w-4" /> Prev
-                  </Button>
-                  <p className="min-w-20 text-center text-sm font-medium text-muted-foreground">
-                    {mixPage + 1} / {totalPages}
-                  </p>
-                  <Button variant="outline" size="sm" disabled={mixPage >= totalPages - 1} onClick={() => setMixPage(mixPage + 1)}>
-                    Next <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
+                <PaginationControls page={mixPage} totalPages={totalPages} onPageChange={setMixPage} />
               </>
             );
           })()}

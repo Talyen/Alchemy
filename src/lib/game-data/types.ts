@@ -25,6 +25,16 @@ export type PlayerStatusId = "block" | "armor" | "forge" | "haste" | "burn" | "p
 
 export type EnemyStatusId = "burn" | "poison" | "bleed" | "freeze" | "stun";
 
+export type EnemyAttackEffect =
+  | { kind: "damage"; damageType: "physical"; amount: number; lifesteal?: boolean }
+  | { kind: "player-status"; status: PlayerStatusId; amount: number };
+
+export type EnemyTrait = {
+  id: string;
+  title: string;
+  description: string;
+};
+
 export type BattleCardEffect =
   | { kind: "damage"; damageType: DamageType; amount: number; lifesteal?: boolean; fromBlock?: boolean }
   | { kind: "player-status"; status: Extract<PlayerStatusId, "block" | "armor" | "forge" | "haste">; amount: number }
@@ -57,6 +67,8 @@ export type BestiaryEntry = {
   descriptionLines: string[];
   art: string;
   enemyType: EnemyType;
+  traits: EnemyTrait[];
+  attackEffects: EnemyAttackEffect[];
 };
 
 export type TrinketEntry = {

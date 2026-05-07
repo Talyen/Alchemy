@@ -18,6 +18,10 @@ export function useTalentState(initialTalentXP: TalentXP, initialUnlockedTalents
     setRunTalentXP((prev) => addTalentXP(prev, keywords));
   }
 
+  function awardMysteryXP(keywordId: KeywordId, amount: number) {
+    setRunTalentXP((prev) => addTalentXP(prev, [keywordId], amount));
+  }
+
   function unlockTalent(keywordId: KeywordId, talentId: string) {
     setUnlockedTalents((prev) => ({ ...prev, [keywordId]: [...(prev[keywordId] ?? []), talentId] }));
   }
@@ -31,5 +35,6 @@ export function useTalentState(initialTalentXP: TalentXP, initialUnlockedTalents
   return {
     talentXP, runTalentXP, unlockedTalents, talentEffects,
     awardCardXP, unlockTalent, resetUnlockedTalents, resetRunXP, clearPermanentData,
+    awardMysteryXP,
   };
 }
