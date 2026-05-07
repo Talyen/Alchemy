@@ -1,4 +1,4 @@
-import { blessedAegis, goblin, imp, lizardScout, manaCrystal, mimic, mudElemental, necromancer, plagueDoctor, skeleton, steal } from "./assets";
+import { boneCharm, brassCenser, cleanse, frozenHeart, goblin, imp, ironwoodBuckler, lizardScout, manaCrystal, meteorite, mimic, mixedPotion, mudElemental, necromancer, obsidianHammer, plagueDoctor, poisonDagger, runicQuill, skeleton, slash, stab, steal, tatteredPages, wish } from "./assets";
 import type { BestiaryEntry, TrinketEntry } from "./types";
 
 export const enemyBestiary: BestiaryEntry[] = [
@@ -102,19 +102,109 @@ export const trinketLibrary: TrinketEntry[] = [
   {
     id: "brass-censer",
     title: "Brass Censer",
-    descriptionLines: ["Future Trinket", "Your first Holy attack each battle deals 2 extra damage."],
-    art: blessedAegis,
+    descriptionLines: ["Your first Holy attack each battle deals 2 extra damage."],
+    art: brassCenser,
   },
   {
-    id: "crystal-phial",
-    title: "Crystal Phial",
-    descriptionLines: ["Future Trinket", "The first consumed card each battle restores 1 Mana."],
-    art: manaCrystal,
+    id: "tattered-pages",
+    title: "Tattered Pages",
+    descriptionLines: ["Draw 1 additional card at the start of each battle."],
+    art: tatteredPages,
   },
   {
-    id: "gilded-ledger",
-    title: "Gilded Ledger",
-    descriptionLines: ["Future Trinket", "Gain 5 Gold after your first victory in each act."],
+    id: "meteorite",
+    title: "Meteorite",
+    descriptionLines: ["The first Burn you apply each battle is doubled."],
+    art: meteorite,
+  },
+  {
+    id: "bone-charm",
+    title: "Bone Charm",
+    descriptionLines: ["When an enemy dies, heal 3 HP."],
+    art: boneCharm,
+  },
+  {
+    id: "obsidian-hammer",
+    title: "Obsidian Hammer",
+    descriptionLines: ["When you have 4 or more Forge, your Physical attacks also Stun for 1."],
+    art: obsidianHammer,
+  },
+  {
+    id: "frozen-heart",
+    title: "Frozen Heart",
+    descriptionLines: ["Enemies that miss a turn to Freeze or Stun take 3 damage."],
+    art: frozenHeart,
+  },
+  {
+    id: "ironwood-buckler",
+    title: "Ironwood Buckler",
+    descriptionLines: ["At the end of your turn, if you have 6 or more Block, gain 1 Armor."],
+    art: ironwoodBuckler,
+  },
+  {
+    id: "runic-quill",
+    title: "Runic Quill",
+    descriptionLines: ["When you consume a card, draw 1 card."],
+    art: runicQuill,
+  },
+  {
+    id: "sin-eaters-lantern",
+    title: "Sin-Eater's Lantern",
+    descriptionLines: ["When you remove an ailment from yourself, gain 1 Gold."],
+    art: cleanse,
+  },
+  {
+    id: "vanguards-crest",
+    title: "Vanguard's Crest",
+    descriptionLines: ["When your Block fully absorbs an attack, gain 1 Forge."],
+    art: slash,
+  },
+  {
+    id: "parasitic-bloom",
+    title: "Parasitic Bloom",
+    descriptionLines: ["When Poison ticks on an enemy, heal 1 HP."],
+    art: poisonDagger,
+  },
+  {
+    id: "cutpurse-knife",
+    title: "Cutpurse Knife",
+    descriptionLines: ["When you apply Bleed to an enemy, gain 1 Gold."],
     art: steal,
+  },
+  {
+    id: "wishing-well-coin",
+    title: "Wishing Well Coin",
+    descriptionLines: ["When you Wish, also gain 3 Gold."],
+    art: wish,
+  },
+  {
+    id: "merchants-favor",
+    title: "Merchant's Favor",
+    descriptionLines: ["Your first purchase at each shop costs 7 less Gold."],
+    art: steal,
+  },
+  {
+    id: "plague-doctors-mask",
+    title: "Plague Doctor's Mask",
+    descriptionLines: ["You are immune to the first ailment you would receive each battle."],
+    art: plagueDoctor,
+  },
+  {
+    id: "mortar-and-pestle",
+    title: "Mortar and Pestle",
+    descriptionLines: ["The first Potion card you play each combat is free."],
+    art: mixedPotion,
+  },
+  {
+    id: "sundering-charm",
+    title: "Sundering Charm",
+    descriptionLines: ["Your Physical attacks ignore 2 enemy Armor."],
+    art: stab,
+  },
+  {
+    id: "resonant-chime",
+    title: "Resonant Chime",
+    descriptionLines: ["When you play 3 or more cards in a single turn, gain 1 Mana."],
+    art: manaCrystal,
   },
 ];

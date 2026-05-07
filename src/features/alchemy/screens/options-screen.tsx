@@ -13,12 +13,13 @@ import type { ResolutionOption } from "../types";
 export function OptionsScreen({
   hasActiveBattle, onMainMenu, onReturnToBattle, selectedResolution, onResolutionChange,
   showClearSaveConfirm, onOpenClearSaveConfirm, onCloseClearSaveConfirm, onConfirmClearSave,
-  musicVol, sfxVol, onMusicVolChange, onSfxVolChange,
+  musicVol, sfxVol, onMusicVolChange, onSfxVolChange, onUnlockAll,
 }: {
   hasActiveBattle: boolean; onMainMenu: () => void; onReturnToBattle: () => void;
   selectedResolution: ResolutionOption; onResolutionChange: (resolution: ResolutionOption) => void;
   showClearSaveConfirm: boolean; onOpenClearSaveConfirm: () => void; onCloseClearSaveConfirm: () => void; onConfirmClearSave: () => void;
   musicVol: number; sfxVol: number; onMusicVolChange: (v: number) => void; onSfxVolChange: (v: number) => void;
+  onUnlockAll: () => void;
 }) {
   const [tab, setTab] = useState<"display" | "sound" | "other">("display");
 
@@ -48,13 +49,26 @@ export function OptionsScreen({
             </div>
           ) : null}
           {tab === "other" ? (
-            <div className="surface-muted rounded-[22px] border border-border/70 p-5">
+            <div className="space-y-4">
+              {import.meta.env.DEV ? (
+                <div className="surface-muted rounded-[22px] border border-primary/40 p-5">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">Dev / QA Unlocks</p>
+                      <p className="mt-1 text-sm text-muted-foreground">Unlock every compendium entry and grant every talent node for testing.</p>
+                    </div>
+                    <Button onClick={onUnlockAll}>Unlock All</Button>
+                  </div>
+                </div>
+              ) : null}
+              <div className="surface-muted rounded-[22px] border border-border/70 p-5">
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <p className="text-sm font-semibold text-foreground">Save Data</p>
                   <p className="mt-1 text-sm text-muted-foreground">Clear discovered collection progress and saved options.</p>
                 </div>
                 <Button variant="destructive" onClick={onOpenClearSaveConfirm}>Clear Save Data</Button>
+              </div>
               </div>
             </div>
           ) : null}

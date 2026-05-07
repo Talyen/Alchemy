@@ -40,10 +40,12 @@ function getEffectiveCost(state: BattleState, card: BattleCard): number {
 
 export function useAlchemyRunController({
   discoveredCardIds, setDiscoveredCardIds, setEncounteredEnemyIds,
+  discoveredTrinketIds, setDiscoveredTrinketIds,
   initialTalentXP, initialUnlockedTalents, initialActiveRun,
 }: {
   discoveredCardIds: string[];
   setDiscoveredCardIds: SetStringList; setEncounteredEnemyIds: SetStringList;
+  discoveredTrinketIds: string[]; setDiscoveredTrinketIds: SetStringList;
   initialTalentXP: TalentXP; initialUnlockedTalents: UnlockedTalents;
   initialActiveRun: { characterId: CharacterId; characterGender: CharacterGender } | null;
 }) {
@@ -73,8 +75,8 @@ export function useAlchemyRunController({
 
   // ============ Reward / Shop State ============
   const [rewardState, setRewardState] = useState<{ choices: BattleCard[]; gold: number; selectedId: string | null; destinations: Destination[] }>({ choices: [], gold: 0, selectedId: null, destinations: [] });
-  const [shopState, setShopState] = useState<{ cards: BattleCard[]; refreshesLeft: number; removeUsed: boolean }>({ cards: [], refreshesLeft: 1, removeUsed: false });
-  const [alchemistState, setAlchemistState] = useState<{ potions: BattleCard[]; refreshesLeft: number; mixUsed: boolean }>({ potions: [], refreshesLeft: 1, mixUsed: false });
+  const [shopState, setShopState] = useState<{ cards: BattleCard[]; refreshesLeft: number; removeUsed: boolean; firstPurchaseUsed: boolean }>({ cards: [], refreshesLeft: 1, removeUsed: false, firstPurchaseUsed: false });
+  const [alchemistState, setAlchemistState] = useState<{ potions: BattleCard[]; refreshesLeft: number; mixUsed: boolean; firstPurchaseUsed: boolean }>({ potions: [], refreshesLeft: 1, mixUsed: false, firstPurchaseUsed: false });
   const [mysteryEvent, setMysteryEvent] = useState<MysteryEvent | null>(null);
 
   // ============ Refs ============
@@ -152,7 +154,7 @@ export function useAlchemyRunController({
     const enemy = getCurrentEnemy(run.roomsEncountered, enemyType);
     run.setRoomsEncountered((p) => p + 1);
     clearCardGhosts();
-    setBattleState(createBattleState(deck, gold, run.roomsEncountered, enemy, run.runPlayerHealth, talents.talentEffects, discoveredCardIds, run.runMaxHealth));
+    setBattleState(createBattleState(deck, gold, run.roomsEncountered, enemy, run.runPlayerHealth, talents.talentEffects, discoveredCardIds, run.runMaxHealth, run.runTrinkets));
     setHasActiveBattle(true); setHoveredCardId(null); setMenuOpen(false); setRewardState((p) => ({ ...p, selectedId: null })); navigateTo("battle");
     setEncounteredEnemyIds((current) => current.includes(enemy.id) ? current : [...current, enemy.id]);
   }
@@ -199,18 +201,22 @@ export function useAlchemyRunController({
   function handleDestinationChoice(destination: Destination) {
     setHoveredCardId(null); setMenuOpen(false);
     if (destination === "Campfire") navigateTo("campfire");
-    else if (destination === "Merchant's Shop") { setShopState({ cards: sampleItems(cardLibrary, 3), refreshesLeft: 1, removeUsed: false }); navigateTo("shop"); }
-    else if (destination === "Alchemist's Shop") { const potions = sampleItems(cardLibrary.filter((c) => c.id.includes("potion") && c.id !== "mixed-potion"), 3); setAlchemistState({ potions, refreshesLeft: 1, mixUsed: false }); navigateTo("alchemist"); }
+    else if (destination === "Merchant's Shop") { setShopState({ cards: sampleItems(cardLibrary, 3), refreshesLeft: 1, removeUsed: false, firstPurchaseUsed: false }); navigateTo("shop"); }
+    else if (destination === "Alchemist's Shop") { const potions = sampleItems(cardLibrary.filter((c) => c.id.includes("potion") && c.id !== "mixed-potion"), 3); setAlchemistState({ potions, refreshesLeft: 1, mixUsed: false, firstPurchaseUsed: false }); navigateTo("alchemist"); }
     else if (destination === "Mystery") { setMysteryEvent(mysteryPool[Math.floor(Math.random() * mysteryPool.length)]); navigateTo("mystery"); }
     else if (destination === "Elite Combat") startBattle(undefined, undefined, "elite");
     else startBattle(undefined, undefined, "normal");
   }
 
   function handleShopBuyCard(card: BattleCard) {
-    const price = Math.max(0, SHOP_CARD_PRICE - talents.talentEffects.shopCardDiscount);
+    let price = Math.max(0, SHOP_CARD_PRICE - talents.talentEffects.shopCardDiscount);
+    if (!shopState.firstPurchaseUsed && run.runTrinkets.includes("merchants-favor")) {
+      price = Math.max(0, price - 7);
+    }
     if (run.runGold < price) return;
     run.setRunGold((p) => Math.max(0, p - price)); run.setRunDeck((p) => [...p, card]);
     setDiscoveredCardIds((cur) => cur.includes(card.id) ? cur : [...cur, card.id]);
+    setShopState((p) => ({ ...p, firstPurchaseUsed: true }));
   }
 
   function handleShopRemoveCard(index: number) {
@@ -253,10 +259,14 @@ export function useAlchemyRunController({
   }
 
   function handleAlchemistBuyCard(card: BattleCard) {
-    const price = Math.max(0, ALCHEMIST_POTION_PRICE - talents.talentEffects.potionDiscount);
+    let price = Math.max(0, ALCHEMIST_POTION_PRICE - talents.talentEffects.potionDiscount);
+    if (!alchemistState.firstPurchaseUsed && run.runTrinkets.includes("merchants-favor")) {
+      price = Math.max(0, price - 7);
+    }
     if (run.runGold < price) return;
     run.setRunGold((p) => Math.max(0, p - price)); run.setRunDeck((p) => [...p, card]);
     setDiscoveredCardIds((cur) => cur.includes(card.id) ? cur : [...cur, card.id]);
+    setAlchemistState((p) => ({ ...p, firstPurchaseUsed: true }));
   }
 
   function handleAlchemistMixPotions(indexA: number, indexB: number) {
@@ -331,6 +341,7 @@ export function useAlchemyRunController({
           break;
         case "gainTrinket":
           run.setRunTrinkets((p) => [...p, effect.trinketId]);
+          setDiscoveredTrinketIds((cur) => cur.includes(effect.trinketId) ? cur : [...cur, effect.trinketId]);
           break;
         case "none":
           break;
@@ -394,7 +405,7 @@ export function useAlchemyRunController({
     playerStatusChips, enemyStatusChips, playerCombatTexts, enemyCombatTexts,
     enemyShaking, playerShaking,
     talentXP: talents.talentXP, runTalentXP: talents.runTalentXP, unlockedTalents: talents.unlockedTalents,
-    unlockTalent: talents.unlockTalent, resetUnlockedTalents: talents.resetUnlockedTalents,
+    unlockTalent: talents.unlockTalent, unlockAllTalents: talents.unlockAllTalents, resetUnlockedTalents: talents.resetUnlockedTalents,
     setHoveredCardId, setMenuOpen, setSelectedRewardId: (id: string | null) => setRewardState((p) => ({ ...p, selectedId: id })),
     characterId: run.characterId, characterGender: run.characterGender,
     beginRun, handleCharacterSelect, returnToBattle, goToScreen,

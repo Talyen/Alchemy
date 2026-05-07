@@ -28,6 +28,7 @@ type CollectionTileItem = {
   art: string;
   discovered: boolean;
   hoverScope: string;
+  frameType: "card" | "bestiary" | "trinket";
 };
 
 export function getCollectionTotalPages(collectionTab: CollectionTab) {
@@ -79,7 +80,11 @@ function CompendiumTile({
         <img
           src={item.art}
           alt={item.title}
-          className={cn("block w-full rounded-[30px] transition duration-300 aspect-[375/524]", item.discovered ? "opacity-100" : "grayscale opacity-45")}
+          className={cn(
+            "block w-full rounded-[30px] transition duration-300",
+            item.frameType === "trinket" ? "aspect-square" : "aspect-[375/524]",
+            item.discovered ? "opacity-100" : "grayscale opacity-45",
+          )}
           loading="lazy"
         />
       </button>
@@ -179,21 +184,21 @@ export function CollectionPagination({ page, totalPages, onPageChange }: { page:
 function getCardItems(discoveredCardIds: string[]) {
   return cardLibrary.map((card) => {
     const discovered = discoveredCardIds.includes(card.id);
-    return { id: card.id, title: discovered ? card.title : "Undiscovered", descriptionLines: discovered ? card.descriptionLines : ["Discover this card during a run to reveal it here."], art: card.art, discovered, hoverScope: "collection-card" as const };
+    return { id: card.id, title: discovered ? card.title : "Undiscovered", descriptionLines: discovered ? card.descriptionLines : ["Discover this card during a run to reveal it here."], art: card.art, discovered, hoverScope: "collection-card" as const, frameType: "card" as const };
   });
 }
 
 function getBestiaryItems(encounteredEnemyIds: string[]) {
   return enemyBestiary.map((entry: BestiaryEntry) => {
     const discovered = encounteredEnemyIds.includes(entry.id);
-    return { id: entry.id, title: discovered ? entry.title : "Undiscovered", subtitle: discovered ? entry.subtitle : undefined, descriptionLines: discovered ? entry.descriptionLines : ["Encounter this enemy to record its details."], art: entry.art, discovered, hoverScope: "collection-bestiary" as const };
+    return { id: entry.id, title: discovered ? entry.title : "Undiscovered", subtitle: discovered ? entry.subtitle : undefined, descriptionLines: discovered ? entry.descriptionLines : ["Encounter this enemy to record its details."], art: entry.art, discovered, hoverScope: "collection-bestiary" as const, frameType: "bestiary" as const };
   });
 }
 
 function getTrinketItems(discoveredTrinketIds: string[]) {
   return trinketLibrary.map((entry: TrinketEntry) => {
     const discovered = discoveredTrinketIds.includes(entry.id);
-    return { id: entry.id, title: discovered ? entry.title : "Undiscovered", subtitle: discovered ? "Relic" : undefined, descriptionLines: discovered ? entry.descriptionLines : ["Find this relic to reveal its effect."], art: entry.art, discovered, hoverScope: "collection-trinket" as const };
+    return { id: entry.id, title: discovered ? entry.title : "Undiscovered", subtitle: discovered ? "Relic" : undefined, descriptionLines: discovered ? entry.descriptionLines : ["Find this relic to reveal its effect."], art: entry.art, discovered, hoverScope: "collection-trinket" as const, frameType: "trinket" as const };
   });
 }
 

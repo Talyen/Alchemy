@@ -21,6 +21,32 @@ export type EnemyStatusValues = Record<EnemyStatusId, number> & {
 
 export type TurnPhase = "player" | "enemy";
 
+// Pre-computed bonuses from trinkets acquired during the run. Follows the same
+// pattern as TalentEffectManifest — computed once at battle start, immutable for
+// the duration of the battle.
+export type TrinketManifest = {
+  extraDrawPerBattle: number;
+  firstHolyDamageBonus: number;
+  firstBurnDoubled: boolean;
+  boneCharmHealOnKill: number;
+  forgeStunThreshold: number;
+  forgeStunAmount: number;
+  frozenHeartDamage: number;
+  blockToArmorThreshold: number;
+  blockToArmorAmount: number;
+  runicQuillDrawOnConsume: number;
+  sinEaterGoldOnAilmentRemove: number;
+  vanguardCrestForgeOnBlockAbsorb: number;
+  parasiticBloomHealPerPoisonTick: number;
+  cutpurseGoldOnBleed: number;
+  wishingWellGoldOnWish: number;
+  plagueDoctorImmunity: boolean;
+  mortarPestleFreeFirstPotion: boolean;
+  sunderingArmorPiercing: number;
+  resonantChimeCardsRequired: number;
+  resonantChimeMana: number;
+};
+
 // Pre-computed bonuses from unlocked talents, recalculated each battle start.
 // We pass these as flat numbers rather than raw talent IDs to keep the battle
 // engine decoupled from the talent-pool data shape.
@@ -133,6 +159,12 @@ export type CombatFlags = {
   firstBleedCardFreeUsed: boolean;
   nextCardCostReduction: number; // temporary mana discount on next card played
   goldOnFirstPoisonThisCombat: boolean;
+  firstHolyDamageBonusUsed: boolean;
+  firstBurnTrinketDoubledUsed: boolean;
+  firstAilmentPrevented: boolean;
+  firstPotionFreeUsed: boolean;
+  boneCharmUsed: boolean;
+  resonantChimeUsedThisTurn: boolean;
 };
 
 // The full snapshot of a battle at one point in time. Every mutation returns a new
@@ -161,8 +193,10 @@ export type BattleState = {
   wishOptions: BattleCard[] | null; // non-null = Wish selection is active
   currentEnemy: BestiaryEntry;
   talentEffects: TalentEffectManifest;
+  trinketEffects: TrinketManifest;
   flags: CombatFlags;
   discoveredCardIds: string[];    // used by wish undiscovered talent
+  cardsPlayedThisTurn: number;
 };
 
 // Combat texts are emitted by battle functions and consumed by the floating-text

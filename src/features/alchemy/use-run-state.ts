@@ -8,8 +8,8 @@ export function useRunState(initialActiveRun: { characterId: CharacterId; charac
   const [runPlayerHealth, setRunPlayerHealth] = useState(maxPlayerHealth);
   const [runMaxHealth, setRunMaxHealth] = useState(maxPlayerHealth);
   const [roomsEncountered, setRoomsEncountered] = useState(0);
-  const [characterId, setCharacterId] = useState<CharacterId>("knight");
-  const [characterGender, setCharacterGender] = useState<CharacterGender>("female");
+  const [characterId, setCharacterId] = useState<CharacterId>(() => initialActiveRun?.characterId ?? "knight");
+  const [characterGender, setCharacterGender] = useState<CharacterGender>(() => initialActiveRun?.characterGender ?? "female");
   const [runTrinkets, setRunTrinkets] = useState<string[]>([]);
 
   function setCharacter(selectedId: CharacterId, gender: CharacterGender) {

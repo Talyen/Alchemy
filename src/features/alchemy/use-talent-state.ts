@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { KeywordId } from "@/lib/game-data";
 import { addTalentXP, extractCardKeywords, type TalentXP } from "@/lib/talents";
-import { computeTalentEffects } from "./talent-pool";
+import { computeTalentEffects, talentPool } from "./talent-pool";
 import type { UnlockedTalents } from "./talent-pool";
 import type { BattleCard } from "@/lib/game-data";
 import type { TalentEffectManifest } from "@/lib/battle/types";
@@ -26,6 +26,14 @@ export function useTalentState(initialTalentXP: TalentXP, initialUnlockedTalents
     setUnlockedTalents((prev) => ({ ...prev, [keywordId]: [...(prev[keywordId] ?? []), talentId] }));
   }
 
+  function unlockAllTalents() {
+    const next: UnlockedTalents = {};
+    for (const talent of talentPool) {
+      next[talent.keywordId] = [...(next[talent.keywordId] ?? []), talent.id];
+    }
+    setUnlockedTalents(next);
+  }
+
   function resetUnlockedTalents() { setUnlockedTalents({}); }
   function resetRunXP() { setRunTalentXP({}); }
   function clearPermanentData() { setTalentXP({}); setRunTalentXP({}); setUnlockedTalents({}); }
@@ -34,7 +42,7 @@ export function useTalentState(initialTalentXP: TalentXP, initialUnlockedTalents
 
   return {
     talentXP, runTalentXP, unlockedTalents, talentEffects,
-    awardCardXP, unlockTalent, resetUnlockedTalents, resetRunXP, clearPermanentData,
+    awardCardXP, unlockTalent, unlockAllTalents, resetUnlockedTalents, resetRunXP, clearPermanentData,
     awardMysteryXP,
   };
 }

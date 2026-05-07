@@ -71,6 +71,15 @@ const assets = [
   { source: "Destinations/Elite Enemy.png", target: "elite-enemy.webp", width: 900, quality: 84 },
   { source: "Destinations/Normal Enemy.png", target: "normal-enemy.webp", width: 900, quality: 84 },
   { source: "Destinations/Mystery.png", target: "mystery.webp", width: 900, quality: 84 },
+  // Trinkets
+  { source: "Trinkets/Bone Charm.png", target: "bone-charm.webp", width: 420, quality: 82 },
+  { source: "Trinkets/Brass Censer.png", target: "brass-censer.webp", width: 420, quality: 82 },
+  { source: "Trinkets/Frozen Heart.png", target: "frozen-heart.webp", width: 420, quality: 82 },
+  { source: "Trinkets/Ironwood Buckler.png", target: "ironwood-buckler.webp", width: 420, quality: 82 },
+  { source: "Trinkets/Meteorite.png", target: "meteorite.webp", width: 420, quality: 82 },
+  { source: "Trinkets/Obsidian Hammer.png", target: "obsidian-hammer.webp", width: 420, quality: 82 },
+  { source: "Trinkets/Runic Quill.png", target: "runic-quill.webp", width: 420, quality: 82 },
+  { source: "Trinkets/Tattered Pages.png", target: "tattered-pages.webp", width: 420, quality: 82 },
 ];
 
 async function fileIsFresh(sourcePath, outputPath) {

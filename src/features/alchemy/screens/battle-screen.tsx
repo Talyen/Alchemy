@@ -222,10 +222,12 @@ export function BattleScreen({
                     <Swords className="h-4 w-4" />
                     End Run
                   </Button>
-                  <Button variant="ghost" className="justify-start text-amber-200 hover:text-amber-100" onClick={onSkipCombatDevMode}>
-                    <Coins className="h-4 w-4" />
-                    Skip Combat
-                  </Button>
+                  {import.meta.env.DEV ? (
+                    <Button variant="ghost" className="justify-start text-amber-200 hover:text-amber-100" onClick={onSkipCombatDevMode}>
+                      <Coins className="h-4 w-4" />
+                      Skip Combat
+                    </Button>
+                  ) : null}
                 </div>
               </div>
             ) : null}

@@ -10,9 +10,11 @@ import {
   type EnemyStatusValues,
   type PlayerStatusValues,
   type TalentEffectManifest,
+  type TrinketManifest,
   type TurnPhase,
 } from "./types";
 import { ROOM_SCALING_INCREMENT, ELITE_STAT_MULTIPLIER, STARTING_TURN, ENEMY_BASE_REGENERATION } from "../game-constants";
+import { computeTrinketManifest, defaultTrinketEffects } from "../trinkets";
 
 // Default talent manifest used when no talents are unlocked.
 // Every field must have a safe zero/false value so battle logic can read
@@ -168,8 +170,16 @@ export function createBattleState(
   talentEffects: TalentEffectManifest = defaultTalentEffects,
   discoveredCardIds: string[] = [],
   maxHealth = maxPlayerHealth,
+  trinketIds: string[] = [],
 ): BattleState {
   const openingHand = drawCards(shuffleCards(runDeck), [], [], cardsPerTurn);
+
+  const trinketEffects = computeTrinketManifest(trinketIds);
+
+  // Tattered Pages: draw extra cards after the initial opening hand
+  const extraHand = trinketEffects.extraDrawPerBattle > 0
+    ? drawCards(openingHand.deck, openingHand.discard, openingHand.hand, trinketEffects.extraDrawPerBattle)
+    : null;
 
   const enemy = currentEnemy ?? enemyBestiary[0];
   const { scaledEnemyHealth, scaledEnemyAttackEffects, enemyRegeneration } = buildScaledEnemy(roomsEncountered, enemy);
@@ -178,9 +188,9 @@ export function createBattleState(
   const startingHealth = Math.min(effectiveMaxHealth, playerHealth + talentEffects.startHealth);
 
   return {
-    deck: openingHand.deck,
-    hand: openingHand.hand,
-    discard: openingHand.discard,
+    deck: extraHand ? extraHand.deck : openingHand.deck,
+    hand: extraHand ? extraHand.hand : openingHand.hand,
+    discard: extraHand ? extraHand.discard : openingHand.discard,
     exhausted: [],
     mana: basePlayerMana,
     maxMana: basePlayerMana,
@@ -201,6 +211,7 @@ export function createBattleState(
     wishOptions: null,
     currentEnemy: enemy,
     talentEffects,
+    trinketEffects,
     flags: {
       firstPhysicalCardFreeUsed: false,
       firstHolyCardFreeUsed: false,
@@ -210,8 +221,15 @@ export function createBattleState(
       firstBleedCardFreeUsed: false,
       nextCardCostReduction: 0,
       goldOnFirstPoisonThisCombat: false,
+      firstHolyDamageBonusUsed: false,
+      firstBurnTrinketDoubledUsed: false,
+      firstAilmentPrevented: false,
+      firstPotionFreeUsed: false,
+      boneCharmUsed: false,
+      resonantChimeUsedThisTurn: false,
     },
     discoveredCardIds,
+    cardsPlayedThisTurn: 0,
   };
 }
 

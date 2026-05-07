@@ -46,6 +46,14 @@ import slash from "@/assets/optimized/slash.webp";
 import stab from "@/assets/optimized/stab.webp";
 import steal from "@/assets/optimized/steal.webp";
 import wish from "@/assets/optimized/wish.webp";
+import boneCharm from "@/assets/optimized/bone-charm.webp";
+import brassCenser from "@/assets/optimized/brass-censer.webp";
+import frozenHeart from "@/assets/optimized/frozen-heart.webp";
+import ironwoodBuckler from "@/assets/optimized/ironwood-buckler.webp";
+import meteorite from "@/assets/optimized/meteorite.webp";
+import obsidianHammer from "@/assets/optimized/obsidian-hammer.webp";
+import runicQuill from "@/assets/optimized/runic-quill.webp";
+import tatteredPages from "@/assets/optimized/tattered-pages.webp";
 
 export {
   alchemyLogo,
@@ -91,6 +99,14 @@ export {
   stab,
   steal,
   wish,
+  boneCharm,
+  brassCenser,
+  frozenHeart,
+  ironwoodBuckler,
+  meteorite,
+  obsidianHammer,
+  runicQuill,
+  tatteredPages,
   alchemistShopBg,
   merchantShopBg,
   eliteEnemyBg,

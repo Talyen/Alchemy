@@ -1,6 +1,6 @@
 import { drawCards } from "./draw";
 import { applyCardEffects, getEnemyDamageMultiplier, mergeCombatText } from "./effects";
-import { type EnemyAttackEffect, type BattleCard } from "@/lib/game-data";
+import { ailmentStatusIds, type EnemyAttackEffect, type BattleCard } from "@/lib/game-data";
 import { cardsPerTurn, clampHealth, maxHandSize, type BattleResolution, type BattleState, type CombatTextEvent, type TurnPhase } from "./types";
 import { ENEMY_HEAL_FRACTION } from "../game-constants";
 
@@ -43,6 +43,11 @@ export function playBattleCardResolved(state: BattleState, cardId: string, index
     effectiveCost = 0;
     state = { ...state, flags: { ...state.flags, firstBleedCardFreeUsed: true } };
   }
+  // Mortar and Pestle trinket: first potion is free
+  if (!state.flags.firstPotionFreeUsed && state.trinketEffects.mortarPestleFreeFirstPotion && card.id.includes("potion")) {
+    effectiveCost = 0;
+    state = { ...state, flags: { ...state.flags, firstPotionFreeUsed: true } };
+  }
 
   if (state.mana < effectiveCost) {
     return { state, combatTexts };
@@ -53,11 +58,27 @@ export function playBattleCardResolved(state: BattleState, cardId: string, index
     hand: state.hand.filter((_, i) => i !== index),
     mana: Math.max(0, state.mana - effectiveCost),
     flags: { ...state.flags, nextCardCostReduction: 0 },
+    cardsPlayedThisTurn: state.cardsPlayedThisTurn + 1,
   };
 
   nextState = applyCardEffects(nextState, card, combatTexts);
 
+  // Resonant Chime trinket: play N+ cards in a turn → gain mana
+  if (nextState.trinketEffects.resonantChimeCardsRequired > 0 && nextState.trinketEffects.resonantChimeMana > 0 && !nextState.flags.resonantChimeUsedThisTurn && nextState.cardsPlayedThisTurn >= nextState.trinketEffects.resonantChimeCardsRequired) {
+    nextState = {
+      ...nextState,
+      mana: nextState.mana + nextState.trinketEffects.resonantChimeMana,
+      flags: { ...nextState.flags, resonantChimeUsedThisTurn: true },
+    };
+    mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "mana", amount: nextState.trinketEffects.resonantChimeMana });
+  }
+
   if (card.consume) {
+    // Runic Quill trinket: draw 1 when consuming a card
+    if (nextState.trinketEffects.runicQuillDrawOnConsume > 0) {
+      const draw = drawCards(nextState.deck, nextState.discard, nextState.hand, nextState.trinketEffects.runicQuillDrawOnConsume);
+      nextState = { ...nextState, deck: draw.deck, discard: draw.discard, hand: draw.hand };
+    }
     return { state: { ...nextState, exhausted: [...nextState.exhausted, card] }, combatTexts };
   }
 
@@ -93,7 +114,16 @@ function tickPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
   } else {
     nextPoison = Math.max(0, nextPoison - 1);
   }
-  return { ...state, enemyHealth: clampHealth(state.enemyHealth, -finalDamage, state.enemyMaxHealth), enemyStatuses: { ...state.enemyStatuses, poison: nextPoison } };
+  let nextState = { ...state, enemyHealth: clampHealth(state.enemyHealth, -finalDamage, state.enemyMaxHealth), enemyStatuses: { ...state.enemyStatuses, poison: nextPoison } };
+
+  // Parasitic Bloom trinket: heal when poison ticks
+  if (state.trinketEffects.parasiticBloomHealPerPoisonTick > 0) {
+    const healAmount = state.trinketEffects.parasiticBloomHealPerPoisonTick;
+    nextState = { ...nextState, playerHealth: clampHealth(nextState.playerHealth, healAmount, nextState.playerMaxHealth) };
+    mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: healAmount });
+  }
+
+  return nextState;
 }
 
 function tickBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
@@ -126,7 +156,11 @@ function tickPlayerBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
   if (reducedDamage > 0) {
     mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "burn", amount: reducedDamage });
   }
-  return { ...state, playerHealth: Math.max(0, state.playerHealth - reducedDamage) };
+  return {
+    ...state,
+    playerHealth: Math.max(0, state.playerHealth - reducedDamage),
+    playerStatuses: { ...state.playerStatuses, burn: Math.floor(state.playerStatuses.burn / 2) },
+  };
 }
 
 function tickPlayerPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
@@ -213,6 +247,8 @@ function advanceToPlayerTurn(state: BattleState) {
     discard: nextDraw.discard,
     mana: state.maxMana,
     playerStatuses: { ...state.playerStatuses, block: Math.floor((state.playerStatuses.block ?? 0) / 2) },
+    cardsPlayedThisTurn: 0,
+    flags: { ...state.flags, resonantChimeUsedThisTurn: false, nextCardCostReduction: 0 },
   };
 }
 
@@ -291,6 +327,18 @@ function processEnemyDamageEffect(state: BattleState, effect: EnemyAttackEffect 
     },
   };
 
+  // Vanguard's Crest trinket: block fully absorbed attack → gain forge
+  if (nextState.trinketEffects.vanguardCrestForgeOnBlockAbsorb > 0 && blockAbsorb > 0 && remainingDamage === 0) {
+    nextState = {
+      ...nextState,
+      playerStatuses: {
+        ...nextState.playerStatuses,
+        forge: nextState.playerStatuses.forge + nextState.trinketEffects.vanguardCrestForgeOnBlockAbsorb,
+      },
+    };
+    mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "forge", amount: nextState.trinketEffects.vanguardCrestForgeOnBlockAbsorb });
+  }
+
   nextState = checkHealthThresholds(prevHealth, nextState.playerHealth, nextState, combatTexts);
 
   if (effect.lifesteal && actualDamage > 0) {
@@ -316,6 +364,13 @@ function processEnemyAttack(state: BattleState, combatTexts: CombatTextEvent[]) 
       if (nextState.playerStatuses.block > 0) {
         if (status === "bleed" && state.talentEffects.blockPreventsBleed) continue;
         if (status === "poison" && state.talentEffects.blockPreventsPoison) continue;
+        if (status === "stun" && state.talentEffects.blockPreventsStun) continue;
+      }
+
+      // Plague Doctor's Mask trinket: immune to first ailment each battle
+      if (ailmentStatusIds.includes(status) && nextState.trinketEffects.plagueDoctorImmunity && !nextState.flags.firstAilmentPrevented) {
+        nextState = { ...nextState, flags: { ...nextState.flags, firstAilmentPrevented: true } };
+        continue;
       }
 
       nextState = {
@@ -367,6 +422,28 @@ export function endPlayerTurn(state: BattleState): { state: BattleState; combatT
   if (state.enemyStunSkipTurns + state.enemyFreezeSkipTurns > 0) {
     nextState = reduceSkipTurns(nextState);
     mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "stun", amount: 0 });
+
+    // Frozen Heart: enemy loses turn to stun/freeze → take damage
+    if (nextState.trinketEffects.frozenHeartDamage > 0) {
+      nextState = {
+        ...nextState,
+        enemyHealth: clampHealth(nextState.enemyHealth, -nextState.trinketEffects.frozenHeartDamage, nextState.enemyMaxHealth),
+      };
+      mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "stun", amount: nextState.trinketEffects.frozenHeartDamage });
+    }
+
+    // Ironwood Buckler: end of turn, if block >= threshold, gain armor
+    if (nextState.trinketEffects.blockToArmorThreshold > 0 && nextState.playerStatuses.block >= nextState.trinketEffects.blockToArmorThreshold) {
+      nextState = {
+        ...nextState,
+        playerStatuses: {
+          ...nextState.playerStatuses,
+          armor: nextState.playerStatuses.armor + nextState.trinketEffects.blockToArmorAmount,
+        },
+      };
+      mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "armor", amount: nextState.trinketEffects.blockToArmorAmount });
+    }
+
     return { state: advanceToPlayerTurn(nextState), combatTexts };
   }
 
@@ -374,12 +451,44 @@ export function endPlayerTurn(state: BattleState): { state: BattleState; combatT
   nextState = tickEnemyStatuses(nextState, combatTexts);
 
   if (nextState.enemyHealth <= 0) {
+    // Bone Charm trinket: heal on enemy death
+    if (nextState.trinketEffects.boneCharmHealOnKill > 0 && !nextState.flags.boneCharmUsed) {
+      nextState = {
+        ...nextState,
+        playerHealth: clampHealth(nextState.playerHealth, nextState.trinketEffects.boneCharmHealOnKill, nextState.playerMaxHealth),
+        flags: { ...nextState.flags, boneCharmUsed: true },
+      };
+      mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: nextState.trinketEffects.boneCharmHealOnKill });
+    }
+    // Ironwood Buckler: end of turn block → armor check
+    if (nextState.trinketEffects.blockToArmorThreshold > 0 && nextState.playerStatuses.block >= nextState.trinketEffects.blockToArmorThreshold) {
+      nextState = {
+        ...nextState,
+        playerStatuses: {
+          ...nextState.playerStatuses,
+          armor: nextState.playerStatuses.armor + nextState.trinketEffects.blockToArmorAmount,
+        },
+      };
+      mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "armor", amount: nextState.trinketEffects.blockToArmorAmount });
+    }
     return { state: advanceToPlayerTurn(nextState), combatTexts };
   }
 
   nextState = processEnemyAttack(nextState, combatTexts);
   nextState = tickPlayerStatuses(nextState, combatTexts);
   nextState = processEnemyRegeneration(nextState, combatTexts);
+
+  // Ironwood Buckler: end of turn, if block >= threshold, gain armor
+  if (nextState.trinketEffects.blockToArmorThreshold > 0 && nextState.playerStatuses.block >= nextState.trinketEffects.blockToArmorThreshold) {
+    nextState = {
+      ...nextState,
+      playerStatuses: {
+        ...nextState.playerStatuses,
+        armor: nextState.playerStatuses.armor + nextState.trinketEffects.blockToArmorAmount,
+      },
+    };
+    mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "armor", amount: nextState.trinketEffects.blockToArmorAmount });
+  }
 
   return { state: advanceToPlayerTurn(nextState), combatTexts };
 }

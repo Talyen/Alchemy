@@ -138,7 +138,7 @@ function applyDamageStatuses(state: BattleState, effect: Extract<BattleCardEffec
     }
     case "poison": {
       nextStatuses.poison += actualDamage;
-      if (nextState.talentEffects.goldOnFirstPoison > 0 && !nextState.flags.goldOnFirstPoisonThisCombat) {
+      if (actualDamage > 0 && nextState.talentEffects.goldOnFirstPoison > 0 && !nextState.flags.goldOnFirstPoisonThisCombat) {
         nextState = {
           ...nextState,
           gold: nextState.gold + nextState.talentEffects.goldOnFirstPoison,
@@ -151,12 +151,21 @@ function applyDamageStatuses(state: BattleState, effect: Extract<BattleCardEffec
     case "bleed": {
       let bleedAmount = actualDamage * BLEED_STATUS_MULTIPLIER;
       nextStatuses.bleed += bleedAmount;
-      if (effect.lifesteal) nextStatuses.bleedLeech += bleedAmount;
-      if (nextState.talentEffects.bleedLeechChance > 0 && Math.random() * 100 < nextState.talentEffects.bleedLeechChance) {
+      if (bleedAmount > 0 && effect.lifesteal) nextStatuses.bleedLeech += bleedAmount;
+      if (bleedAmount > 0 && nextState.talentEffects.bleedLeechChance > 0 && Math.random() * 100 < nextState.talentEffects.bleedLeechChance) {
         nextStatuses.bleedLeech += bleedAmount;
       }
-      if (nextState.talentEffects.bleedPoisonChance > 0 && Math.random() * 100 < nextState.talentEffects.bleedPoisonChance) {
+      if (actualDamage > 0 && nextState.talentEffects.bleedPoisonChance > 0 && Math.random() * 100 < nextState.talentEffects.bleedPoisonChance) {
         nextStatuses.poison += actualDamage;
+      }
+      // Cutpurse Knife: gain gold when applying bleed
+      if (bleedAmount > 0 && nextState.trinketEffects.cutpurseGoldOnBleed > 0) {
+        nextState = {
+          ...nextState,
+          gold: nextState.gold + nextState.trinketEffects.cutpurseGoldOnBleed,
+          enemyStatuses: nextStatuses,
+        };
+        mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "gold", amount: nextState.trinketEffects.cutpurseGoldOnBleed });
       }
       break;
     }
@@ -209,14 +218,32 @@ function dealEnemyDamage(
 ) {
   let rawDamage = computeBaseDamage(state, effect);
 
-  // First burn card doubled
-  if (effect.damageType === "burn" && !state.flags.firstBurnCardDoubledUsed) {
+  // First burn card doubled (talent)
+  if (effect.damageType === "burn" && state.talentEffects.firstBurnCardDoubled && !state.flags.firstBurnCardDoubledUsed) {
     rawDamage *= 2;
     state = { ...state, flags: { ...state.flags, firstBurnCardDoubledUsed: true } };
   }
 
+  // First burn doubled (Meteorite trinket)
+  if (effect.damageType === "burn" && state.trinketEffects.firstBurnDoubled && !state.flags.firstBurnTrinketDoubledUsed) {
+    rawDamage *= 2;
+    state = { ...state, flags: { ...state.flags, firstBurnTrinketDoubledUsed: true } };
+  }
+
+  // First holy damage bonus (Brass Censer trinket)
+  if (effect.damageType === "holy" && state.trinketEffects.firstHolyDamageBonus > 0 && !state.flags.firstHolyDamageBonusUsed) {
+    rawDamage += state.trinketEffects.firstHolyDamageBonus;
+    state = { ...state, flags: { ...state.flags, firstHolyDamageBonusUsed: true } };
+  }
+
   const finalDamage = applyCrit(rawDamage, effect.damageType, state);
-  const damageAfterArmor = Math.max(0, finalDamage - state.enemyArmor);
+
+  // Sundering Charm: Physical attacks ignore N enemy armor
+  const effectiveArmor = effect.damageType === "physical"
+    ? Math.max(0, state.enemyArmor - state.trinketEffects.sunderingArmorPiercing)
+    : state.enemyArmor;
+
+  const damageAfterArmor = Math.max(0, finalDamage - effectiveArmor);
   const multiplier = getEnemyDamageMultiplier(state, effect.damageType);
   const modifiedDamage = Math.floor(damageAfterArmor * multiplier);
 
@@ -225,7 +252,27 @@ function dealEnemyDamage(
     enemyHealth: clampHealth(state.enemyHealth, -modifiedDamage, state.enemyMaxHealth),
   };
 
-  nextState = applyDamageStatuses(nextState, effect, damageAfterArmor, combatTexts);
+  // Bone Charm: heal on kill
+  if (nextState.enemyHealth <= 0 && state.enemyHealth > 0 && nextState.trinketEffects.boneCharmHealOnKill > 0 && !nextState.flags.boneCharmUsed) {
+    const healAmount = nextState.trinketEffects.boneCharmHealOnKill;
+    nextState = {
+      ...nextState,
+      playerHealth: clampHealth(nextState.playerHealth, healAmount, nextState.playerMaxHealth),
+      flags: { ...nextState.flags, boneCharmUsed: true },
+    };
+    mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: healAmount });
+  }
+
+  nextState = applyDamageStatuses(nextState, effect, modifiedDamage, combatTexts);
+
+  // Obsidian Hammer: 4+ forge → physical attacks stun
+  if (effect.damageType === "physical" && nextState.trinketEffects.forgeStunThreshold > 0 && nextState.playerStatuses.forge >= nextState.trinketEffects.forgeStunThreshold) {
+    nextState = {
+      ...nextState,
+      enemyStatuses: { ...nextState.enemyStatuses, stun: nextState.enemyStatuses.stun + nextState.trinketEffects.forgeStunAmount },
+    };
+    mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "stun", amount: nextState.trinketEffects.forgeStunAmount });
+  }
 
   if (effect.lifesteal) {
     nextState = applyLifesteal(nextState, modifiedDamage, combatTexts);
@@ -263,29 +310,40 @@ function dealEnemyDamage(
 
 // Ailments are negative player statuses (burn, poison, bleed, freeze, stun).
 // remove-ailment can remove one (random first found) or all.
-function removePlayerAilments(state: BattleState, mode: "one" | "all") {
+function removePlayerAilments(state: BattleState, mode: "one" | "all", combatTexts?: CombatTextEvent[]) {
   const nextPlayerStatuses = { ...state.playerStatuses };
+  let removed = false;
 
   if (mode === "all") {
-    ailmentStatusIds.forEach((statusId) => {
+    for (const statusId of ailmentStatusIds) {
+      if (nextPlayerStatuses[statusId] > 0) removed = true;
       nextPlayerStatuses[statusId] = 0;
-    });
-
-    return {
-      ...state,
-      playerStatuses: nextPlayerStatuses,
-    };
+    }
+  } else {
+    const firstAilment = ailmentStatusIds.find((statusId) => nextPlayerStatuses[statusId] > 0);
+    if (firstAilment) {
+      nextPlayerStatuses[firstAilment] = 0;
+      removed = true;
+    }
   }
 
-  const firstAilment = ailmentStatusIds.find((statusId) => nextPlayerStatuses[statusId] > 0);
-  if (firstAilment) {
-    nextPlayerStatuses[firstAilment] = 0;
-  }
-
-  return {
+  let nextState = {
     ...state,
     playerStatuses: nextPlayerStatuses,
   };
+
+  // Sin-Eater's Lantern: gain gold when removing an ailment
+  if (removed && nextState.trinketEffects.sinEaterGoldOnAilmentRemove > 0) {
+    nextState = {
+      ...nextState,
+      gold: nextState.gold + nextState.trinketEffects.sinEaterGoldOnAilmentRemove,
+    };
+    if (combatTexts) {
+      mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "gold", amount: nextState.trinketEffects.sinEaterGoldOnAilmentRemove });
+    }
+  }
+
+  return nextState;
 }
 
 // Builds the wish card pool considering undiscovered talent and extra choice chance.
@@ -359,16 +417,25 @@ function applyPlayerStatusEffect(state: BattleState, effect: Extract<BattleCardE
 function applyWishEffect(state: BattleState, card: BattleCard, combatTexts: CombatTextEvent[]) {
   let nextState: BattleState = { ...state, wishOptions: buildWishOptions(state, card) };
 
+  if (nextState.talentEffects.goldOnWish > 0) {
+    nextState = { ...nextState, gold: nextState.gold + nextState.talentEffects.goldOnWish };
+    mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "gold", amount: nextState.talentEffects.goldOnWish });
+  }
   if (nextState.talentEffects.goldOnWishAmount > 0) {
     nextState = { ...nextState, gold: nextState.gold + nextState.talentEffects.goldOnWishAmount };
     mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "gold", amount: nextState.talentEffects.goldOnWishAmount });
+  }
+  // Wishing Well Coin trinket
+  if (nextState.trinketEffects.wishingWellGoldOnWish > 0) {
+    nextState = { ...nextState, gold: nextState.gold + nextState.trinketEffects.wishingWellGoldOnWish };
+    mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "gold", amount: nextState.trinketEffects.wishingWellGoldOnWish });
   }
   if (nextState.talentEffects.healthOnWish > 0) {
     nextState = { ...nextState, playerHealth: clampHealth(nextState.playerHealth, nextState.talentEffects.healthOnWish, nextState.playerMaxHealth) };
     mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: nextState.talentEffects.healthOnWish });
   }
   if (nextState.talentEffects.removeAilmentOnWish) {
-    nextState = removePlayerAilments(nextState, "one");
+    nextState = removePlayerAilments(nextState, "one", combatTexts);
   }
   if (nextState.talentEffects.wishDrawsCard) {
     const draw = drawCards(nextState.deck, nextState.discard, nextState.hand, 1);
@@ -411,7 +478,7 @@ export function applyCardEffects(state: BattleState, card: BattleCard, combatTex
       case "wish":
         return applyWishEffect(currentState, card, combatTexts);
       case "remove-ailment":
-        return removePlayerAilments(currentState, effect.mode);
+        return removePlayerAilments(currentState, effect.mode, combatTexts);
       default:
         return currentState;
     }

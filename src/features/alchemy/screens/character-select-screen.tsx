@@ -12,15 +12,8 @@ import { useShimmerController } from "../hooks";
 import { clearTiltFromEvent, setTiltFromEvent } from "../utils";
 import { battleCardWidthClass, cardSurfaceClass, staticCardTransform } from "../config";
 
-const defaultGender: Record<CharacterId, CharacterGender> = {
-  knight: "male",
-  rogue: "male",
-  wizard: "female",
-};
-
-function CharacterCard({ id, isSelected, isShimmer, shimmerToken, onSelect, onHoverShimmer }: { id: CharacterId; isSelected: boolean; isShimmer: boolean; shimmerToken?: number; onSelect: (id: CharacterId) => void; onHoverShimmer: (id: CharacterId) => void }) {
+function CharacterCard({ id, gender, isSelected, isShimmer, shimmerToken, onSelect, onHoverShimmer }: { id: CharacterId; gender: CharacterGender; isSelected: boolean; isShimmer: boolean; shimmerToken?: number; onSelect: (id: CharacterId) => void; onHoverShimmer: (id: CharacterId) => void }) {
   const char = characters[id];
-  const gender = defaultGender[id];
   const art = characterArt[char.id][gender];
 
   return (
@@ -35,8 +28,34 @@ function CharacterCard({ id, isSelected, isShimmer, shimmerToken, onSelect, onHo
   );
 }
 
+function GenderToggle({ gender, onChange }: { gender: CharacterGender; onChange: (gender: CharacterGender) => void }) {
+  const genderOptions: { value: CharacterGender; label: string; className: string }[] = [
+    { value: "male", label: "♂", className: "text-sky-200 hover:bg-sky-500/10 hover:text-sky-100 data-[selected=true]:border-sky-300/45 data-[selected=true]:bg-sky-500/20 data-[selected=true]:text-sky-100" },
+    { value: "female", label: "♀", className: "text-rose-200 hover:bg-rose-500/10 hover:text-rose-100 data-[selected=true]:border-rose-300/45 data-[selected=true]:bg-rose-500/20 data-[selected=true]:text-rose-100" },
+  ];
+
+  return (
+    <div className="flex rounded-full border border-border/50 bg-background/35 p-1" aria-label="Character gender variant">
+      {genderOptions.map((option) => (
+        <button
+          key={option.value}
+          type="button"
+          className={cn("h-8 w-9 rounded-full border border-transparent text-lg leading-none transition-colors active:scale-95", option.className)}
+          data-selected={gender === option.value}
+          aria-label={`${option.value} character variant`}
+          aria-pressed={gender === option.value}
+          onClick={() => onChange(option.value)}
+        >
+          {option.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export function CharacterSelectScreen({ onConfirm, onBack }: { onConfirm: (characterId: CharacterId, gender: CharacterGender) => void; onBack: () => void }) {
   const [selectedId, setSelectedId] = useState<CharacterId | null>(null);
+  const [selectedGender, setSelectedGender] = useState<CharacterGender>("male");
   const { shimmerState, maybeTriggerShimmer } = useShimmerController();
 
   const charIds = Object.keys(characters) as CharacterId[];
@@ -47,12 +66,15 @@ export function CharacterSelectScreen({ onConfirm, onBack }: { onConfirm: (chara
       <h1 className="text-4xl text-foreground">Choose Your Hero</h1>
 
       <div className="flex flex-wrap items-start justify-center gap-12">
-        {charIds.map((id) => <CharacterCard key={id} id={id} isSelected={selectedId === id} isShimmer={shimmerState?.cardId === id} shimmerToken={shimmerState?.token} onSelect={setSelectedId} onHoverShimmer={maybeTriggerShimmer} />)}
+        {charIds.map((id) => <CharacterCard key={id} id={id} gender={selectedGender} isSelected={selectedId === id} isShimmer={shimmerState?.cardId === id} shimmerToken={shimmerState?.token} onSelect={setSelectedId} onHoverShimmer={maybeTriggerShimmer} />)}
       </div>
 
-      <div className="mt-6 flex gap-4">
-        <Button size="lg" className="w-40" disabled={!selectedChar} onClick={() => { if (selectedChar) onConfirm(selectedChar.id, defaultGender[selectedChar.id]); }}>Continue</Button>
+      <div className="mt-6 flex flex-col items-center gap-4">
+        <GenderToggle gender={selectedGender} onChange={setSelectedGender} />
+        <div className="flex gap-4">
+        <Button size="lg" className="w-40" disabled={!selectedChar} onClick={() => { if (selectedChar) onConfirm(selectedChar.id, selectedGender); }}>Continue</Button>
         <Button size="lg" variant="outline" className="w-40" onClick={onBack}>Back</Button>
+        </div>
       </div>
     </div>
   );

@@ -13,6 +13,7 @@ let musicVolume = DEFAULT_MUSIC_VOLUME;
 
 const soundCache = new Map<string, AudioBuffer>();
 const loadingPromises = new Map<string, Promise<AudioBuffer | null>>();
+const PRELOAD_BATCH_SIZE = 4;
 
 function getAudioContext(): AudioContext {
   if (!audioContext) {
@@ -68,8 +69,8 @@ export function preloadSounds(names: string[]) {
   names.forEach((name) => loadSoundBuffer(name));
 }
 
-// Eagerly loads every registered sound asset. Call once on app start so the
-// cache is hot before the player interacts.
+// Eagerly loads every registered sound asset in idle batches so startup remains
+// interactive while the cache warms in the background.
 export function preloadAllSounds() {
   const names = new Set<string>([
     ...Object.values(cardSounds).flat(),
@@ -78,7 +79,35 @@ export function preloadAllSounds() {
     ...Object.values(uiSounds),
     ...Object.values(stingerSounds),
   ]);
-  preloadSounds([...names]);
+  preloadSoundsWhenIdle([...names]);
+}
+
+// Spreads audio decoding work across idle frames because decoding all SFX during
+// the first effect can make the freshly rendered menu feel disabled.
+function preloadSoundsWhenIdle(names: string[]) {
+  let index = 0;
+
+  function preloadNextBatch() {
+    preloadSounds(names.slice(index, index + PRELOAD_BATCH_SIZE));
+    index += PRELOAD_BATCH_SIZE;
+
+    if (index < names.length) {
+      schedulePreloadBatch(preloadNextBatch);
+    }
+  }
+
+  schedulePreloadBatch(preloadNextBatch);
+}
+
+// Uses browser idle time when available and falls back to a short timer for
+// environments without requestIdleCallback.
+function schedulePreloadBatch(callback: () => void) {
+  if ("requestIdleCallback" in window) {
+    window.requestIdleCallback(callback, { timeout: 1000 });
+    return;
+  }
+
+  globalThis.setTimeout(callback, 0);
 }
 
 // Core playback helper. Creates a one-shot buffer source with a per-play gain node
