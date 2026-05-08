@@ -9,7 +9,7 @@ import { TALENT_CHOICES_OFFERED } from "@/lib/game-constants";
 
 import { AnimatedHeight } from "../ui/animated-height";
 import { TalentKeywordButton, TalentList } from "../ui/talents-ui";
-import { ConfirmationDialog, PageLayout, ProgressBar } from "../ui/shared-ui";
+import { ConfirmationDialog, PageLayout, ProgressBar, ScreenHeader } from "../ui/shared-ui";
 import { KeywordTag } from "../ui/keyword-tag";
 import { getTalentsForKeyword, sampleTalentChoices, type UnlockedTalents, type TalentDefinition } from "../talent-pool";
 import { playUISound } from "@/lib/audio";
@@ -57,7 +57,7 @@ export function TalentsScreen({
   return (
     <PageLayout>
       <div className="alchemy-shell flex min-h-[520px] w-full max-w-3xl flex-col rounded-[28px] px-6 py-7 sm:px-8">
-        <h1 className="text-center text-3xl text-foreground">Talents</h1>
+        <ScreenHeader title="Talents" />
 
         <div className="mx-auto mt-6 flex w-full max-w-2xl flex-col gap-6 text-left">
           <div className="flex flex-wrap justify-center gap-2">

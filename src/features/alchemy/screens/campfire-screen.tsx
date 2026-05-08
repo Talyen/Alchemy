@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 
 import { AnimatedHeight } from "../ui/animated-height";
+import { ScreenHeader } from "../ui/shared-ui";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { campfire } from "@/lib/game-data";
@@ -65,8 +66,10 @@ export function CampfireScreen({
 
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-8 px-4 py-6 text-center">
-      <h1 className="text-4xl text-foreground">Campfire</h1>
-      <p className="-mt-6 text-base text-muted-foreground">Rest to Restore 30% HP</p>
+      <div>
+        <ScreenHeader title="Campfire" />
+        <p className="mt-3 text-base text-muted-foreground">Rest to Restore 30% HP</p>
+      </div>
 
       <img src={campfire} alt="Campfire" className="w-full max-w-[400px] rounded-[22px] object-contain" />
 

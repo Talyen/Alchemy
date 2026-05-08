@@ -72,7 +72,7 @@ export type BattleCard = {
   effects: BattleCardEffect[];
 };
 
-export type EnemyType = "normal" | "elite";
+export type EnemyType = "normal" | "elite" | "boss";
 
 export type BestiaryEntry = {
   id: string;

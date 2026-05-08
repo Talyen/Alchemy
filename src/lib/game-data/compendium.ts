@@ -1,7 +1,47 @@
-import { boneCharm, brassCenser, cleanse, frozenHeart, goblin, imp, ironwoodBuckler, lizardScout, manaCrystal, meteorite, mimic, mixedPotion, mudElemental, necromancer, obsidianHammer, plagueDoctor, poisonDagger, runicQuill, skeleton, slash, stab, steal, tatteredPages, wish } from "./assets";
+import { apple, boneCharm, brassCenser, cleanse, frozenHeart, goblin, imp, ironwoodBuckler, lizardScout, manaCrystal, meteorite, mimic, mixedPotion, mudElemental, necromancer, obsidianHammer, plagueDoctor, poisonDagger, runicQuill, skeleton, slash, stab, steal, tatteredPages, wish } from "./assets";
 import type { BestiaryEntry, TrinketEntry } from "./types";
 
 export const enemyBestiary: BestiaryEntry[] = [
+  {
+    id: "act-i-boss",
+    title: "Warden of the Ashen Gate",
+    subtitle: "Act I Boss",
+    descriptionLines: ["Trait — Ashen Aura: Receives half Burn damage. Attacks apply Burn.", "Attacks with sweeping physical strikes."],
+    art: mimic,
+    enemyType: "boss",
+    traits: [{ id: "ashen-aura", title: "Ashen Aura", description: "Receives half Burn damage." }],
+    attackEffects: [
+      { kind: "damage", damageType: "physical", amount: 3 },
+      { kind: "player-status", status: "burn", amount: 2 },
+    ],
+  },
+  {
+    id: "act-ii-boss",
+    title: "The Hollow Knight",
+    subtitle: "Act II Boss",
+    descriptionLines: ["Trait — Cursed Armor: Starts with Armor each turn. Immune to Stun.", "Attacks with a powerful bleed-inflicting strike."],
+    art: necromancer,
+    enemyType: "boss",
+    traits: [{ id: "cursed-armor", title: "Cursed Armor", description: "Starts with Armor each turn. Immune to Stun." }],
+    attackEffects: [
+      { kind: "damage", damageType: "physical", amount: 4 },
+      { kind: "player-status", status: "bleed", amount: 3 },
+    ],
+  },
+  {
+    id: "act-iii-boss",
+    title: "The Primordial Wyrm",
+    subtitle: "Act III Boss",
+    descriptionLines: ["Trait — Elemental Scales: Resistant to all elements. Takes double Physical damage.", "Attacks with a devastating multi-element strike."],
+    art: mudElemental,
+    enemyType: "boss",
+    traits: [{ id: "elemental-scales", title: "Elemental Scales", description: "Resistant to all elements. Takes double Physical damage." }],
+    attackEffects: [
+      { kind: "damage", damageType: "physical", amount: 5 },
+      { kind: "player-status", status: "poison", amount: 2 },
+      { kind: "player-status", status: "freeze", amount: 2 },
+    ],
+  },
   {
     id: "skeleton",
     title: "Skeleton",
@@ -206,5 +246,17 @@ export const trinketLibrary: TrinketEntry[] = [
     title: "Resonant Chime",
     descriptionLines: ["When you play 3 or more cards in a single turn, gain 1 Mana."],
     art: manaCrystal,
+  },
+  {
+    id: "smugglers-map",
+    title: "Smuggler's Map",
+    descriptionLines: ["Gold rewards from combat are increased by 2."],
+    art: steal,
+  },
+  {
+    id: "groves-favor",
+    title: "Grove's Favor",
+    descriptionLines: ["Restore 2 Health at the start of each battle."],
+    art: apple,
   },
 ];

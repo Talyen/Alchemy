@@ -1,13 +1,27 @@
 import type { LucideIcon } from "lucide-react";
-import { BookOpen, Coins, Crosshair, Flame, Gem, Hammer, Heart, HeartPulse, Leaf, PawPrint, Shield, ShieldAlert, Snowflake, Sparkles, Sun, Swords, TriangleAlert, WandSparkles, Zap, Trophy } from "lucide-react";
+import { BookOpen, Coins, Crosshair, Flame, Gem, Hammer, Heart, HeartPulse, Leaf, PawPrint, Shield, ShieldAlert, Skull, Snowflake, Sparkles, Sun, Swords, TriangleAlert, WandSparkles, Zap, Trophy } from "lucide-react";
 
 import { enemyBestiary, type EnemyType, type KeywordId } from "@/lib/game-data";
 import { alchemistShopBg, campfire, eliteEnemyBg, merchantShopBg, mysteryBg, normalEnemyBg } from "@/lib/game-data";
+import { DESTINATIONS_PER_ACT } from "@/lib/game-constants";
 
 import type { CardGhostVariant, CollectionTab, Destination, DisplayMode, ResolutionOption, UiScale } from "./types";
 
-// Picks an enemy for the current room. Room 0 always starts with the Skeleton
-// as a tutorial boss. Subsequent rooms pick from normal or elite pools
+// Filters the destination pool to remove inappropriate choices for the current
+// game state. Boss Combat is never offered as a pick — it always fills slot 8.
+export function getAvailableDestinations(currentHp: number, currentGold: number, maxHp: number) {
+  const halfHp = Math.floor(maxHp * 0.5);
+  return destinationPool.filter((d) => {
+    if (d === "Boss Combat") return false;
+    if (d === "Campfire" && currentHp >= Math.floor(maxHp * 0.8) && currentHp >= halfHp) return false;
+    if ((d === "Merchant's Shop" || d === "Alchemist's Shop") && currentGold < 40) return false;
+    if (d === "Elite Combat" && currentHp < halfHp) return false;
+    return true;
+  });
+}
+
+// Picks an enemy for the current room. Room 0 of a run always starts with the
+// Skeleton as a tutorial fight. Subsequent rooms pick from normal or elite pools
 // based on the current destination type.
 export function getCurrentEnemy(roomsEncountered: number, enemyType?: EnemyType) {
   if (roomsEncountered === 0) {
@@ -16,6 +30,12 @@ export function getCurrentEnemy(roomsEncountered: number, enemyType?: EnemyType)
   const pool = enemyType ? enemyBestiary.filter((e) => e.enemyType === enemyType) : enemyBestiary.filter((e) => e.id !== "skeleton");
   const available = pool.length > 0 ? pool : enemyBestiary.filter((e) => e.id !== "skeleton");
   return available[Math.floor(Math.random() * available.length)] ?? enemyBestiary[0];
+}
+
+// Returns the boss enemy for a given act. Each act has a unique boss.
+export function getBossEnemy(act: number) {
+  const bossId = act === 1 ? "act-i-boss" : act === 2 ? "act-ii-boss" : "act-iii-boss";
+  return enemyBestiary.find((e) => e.id === bossId) ?? enemyBestiary[0];
 }
 
 export const resolutionOptions: ResolutionOption[] = ["1366x768", "1600x900", "1920x1080", "1920x1200", "2560x1080", "2560x1440", "3440x1440", "3840x2160"];
@@ -34,10 +54,10 @@ export const uiScaleOptions: Array<{ value: UiScale; label: string }> = [
 ];
 
 // The pool of destinations the player can choose from after each victory.
-// 6 options, 3 are randomly offered each time. Adding a new destination here
-// requires a matching entry in destinationMeta and a Screen handler.
+// Boss Combat is excluded by getAvailableDestinations — it always fills slot 8.
+// Adding a new destination here requires a matching entry in destinationMeta and a Screen handler.
 export const destinationPool: Destination[] = [
-  "Normal Combat", "Elite Combat", "Merchant's Shop", "Alchemist's Shop", "Mystery", "Campfire",
+  "Normal Combat", "Elite Combat", "Merchant's Shop", "Alchemist's Shop", "Mystery", "Campfire", "Boss Combat",
 ];
 
 // Collection tabs metadata — currently cards + bestiary. Trinkets is handled
@@ -57,6 +77,7 @@ export const destinationMeta: Record<Destination, { icon: LucideIcon; className:
   "Alchemist's Shop": { icon: WandSparkles, className: "bg-emerald-800/85 text-white", art: alchemistShopBg },
   Mystery: { icon: Sparkles, className: "bg-zinc-800/90 text-zinc-100", art: mysteryBg },
   Campfire: { icon: Flame, className: "bg-emerald-800/85 text-white", art: campfire },
+  "Boss Combat": { icon: Skull, className: "bg-red-950/90 text-red-300", art: eliteEnemyBg },
 };
 
 // Maps each keyword to its Lucide icon. Used across the UI for status chips,
@@ -131,7 +152,8 @@ export const keywordAliases: Array<{ match: string; keywordId: KeywordId }> = [
   { match: "Consume", keywordId: "consume" }, { match: "Poison", keywordId: "poison" },
   { match: "Bleed", keywordId: "bleed" }, { match: "Leech", keywordId: "leech" },
   { match: "Freeze", keywordId: "freeze" }, { match: "Mana Crystal", keywordId: "mana" },
-  { match: "Mana", keywordId: "mana" }, { match: "Companion", keywordId: "companion" },
+  { match: "Mana", keywordId: "mana" },   { match: "Companion", keywordId: "companion" },
+  { match: "HP", keywordId: "health" },
 ];
 
 // Pre-compiled regex for keyword highlighting. Built once at module init so

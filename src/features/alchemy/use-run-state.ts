@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { characters, starterDeck, type BattleCard, type CharacterGender, type CharacterId } from "@/lib/game-data";
 import { maxPlayerHealth } from "@/lib/battle/types";
+import type { Destination } from "./types";
 
 export function useRunState(initialActiveRun: { characterId: CharacterId; characterGender: CharacterGender } | null) {
   const [runDeck, setRunDeck] = useState<BattleCard[]>(() => initialActiveRun ? [...characters[initialActiveRun.characterId].startingDeck] : [...starterDeck]);
@@ -8,6 +9,9 @@ export function useRunState(initialActiveRun: { characterId: CharacterId; charac
   const [runPlayerHealth, setRunPlayerHealth] = useState(maxPlayerHealth);
   const [runMaxHealth, setRunMaxHealth] = useState(maxPlayerHealth);
   const [roomsEncountered, setRoomsEncountered] = useState(0);
+  const [currentAct, setCurrentAct] = useState(1);
+  const [destinationIndexInAct, setDestinationIndexInAct] = useState(0);
+  const [completedDestinations, setCompletedDestinations] = useState<Destination[]>([]);
   const [characterId, setCharacterId] = useState<CharacterId>(() => initialActiveRun?.characterId ?? "knight");
   const [characterGender, setCharacterGender] = useState<CharacterGender>(() => initialActiveRun?.characterGender ?? "female");
   const [runTrinkets, setRunTrinkets] = useState<string[]>([]);
@@ -23,13 +27,19 @@ export function useRunState(initialActiveRun: { characterId: CharacterId; charac
     setRunPlayerHealth(maxPlayerHealth);
     setRunMaxHealth(maxPlayerHealth);
     setRoomsEncountered(0);
+    setCurrentAct(1);
+    setDestinationIndexInAct(0);
+    setCompletedDestinations([]);
     setRunTrinkets([]);
   }
 
   return {
     runDeck, setRunDeck, runGold, setRunGold, runPlayerHealth, setRunPlayerHealth,
     runMaxHealth, setRunMaxHealth,
-    roomsEncountered, setRoomsEncountered, characterId, characterGender, setCharacter, reset,
+    roomsEncountered, setRoomsEncountered,
+    currentAct, setCurrentAct, destinationIndexInAct, setDestinationIndexInAct,
+    completedDestinations, setCompletedDestinations,
+    characterId, characterGender, setCharacter, reset,
     runTrinkets, setRunTrinkets,
   };
 }

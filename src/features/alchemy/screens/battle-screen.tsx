@@ -41,8 +41,10 @@ export function BattleScreen({
   companionShaking,
   heroArt,
   isMobileLandscape = false,
+  currentAct,
 }: {
   battleState: Pick<BattleState, 'playerHealth' | 'playerMaxHealth' | 'enemyHealth' | 'enemyMaxHealth' | 'mana' | 'maxMana' | 'gold' | 'deck' | 'discard' | 'hand' | 'wishOptions' | 'activeCompanion' | 'currentEnemy' | 'turnPhase'>;
+  currentAct?: number;
   heroArt: string;
   hoveredCardId: string | null;
   setHoveredCardId: (value: string | null | ((current: string | null) => string | null)) => void;

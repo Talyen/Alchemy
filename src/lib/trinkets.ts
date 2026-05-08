@@ -21,6 +21,8 @@ export const defaultTrinketEffects: TrinketManifest = {
   sunderingArmorPiercing: 0,
   resonantChimeCardsRequired: 0,
   resonantChimeMana: 0,
+  smugglersMapGoldBonus: 0,
+  grovesFavorStartHeal: 0,
 };
 
 export function computeTrinketManifest(trinketIds: string[]): TrinketManifest {
@@ -83,6 +85,12 @@ export function computeTrinketManifest(trinketIds: string[]): TrinketManifest {
       case "resonant-chime":
         manifest.resonantChimeCardsRequired = 3;
         manifest.resonantChimeMana = 1;
+        break;
+      case "smugglers-map":
+        manifest.smugglersMapGoldBonus = 2;
+        break;
+      case "groves-favor":
+        manifest.grovesFavorStartHeal = 2;
         break;
     }
   }

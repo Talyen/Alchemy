@@ -10,7 +10,7 @@ import { ALCHEMIST_MIX_PRICE, ALCHEMIST_POTION_PRICE, ALCHEMIST_REFRESH_PRICE, C
 
 import { BattleCardButton } from "../ui/card-ui";
 import { AnimatedHeight } from "../ui/animated-height";
-import { DisabledTooltip, GoldCost, PaginationControls } from "../ui/shared-ui";
+import { DisabledTooltip, GoldCost, PaginationControls, ScreenHeader } from "../ui/shared-ui";
 import { collectionCardWidthClass, handCardWidthClass } from "../config";
 import { createMixedPotion } from "../potion-mixer";
 
@@ -129,7 +129,7 @@ export function AlchemistHutScreen({
 
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-6 overflow-y-auto px-4 py-6 text-center">
-      <h1 className="text-4xl text-foreground">Alchemist's Shop</h1>
+      <ScreenHeader title="Alchemist's Shop" />
       {!mixedCard ? <GoldDisplay gold={gold} /> : null}
 
       <AnimatedHeight deps={[mixMode, mixedCard]}>

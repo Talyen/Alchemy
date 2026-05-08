@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 
 import { displayModeOptions, resolutionOptions, uiScaleOptions } from "../config";
 import { AnimatedHeight } from "../ui/animated-height";
-import { ConfirmationDialog, DisplayModeSelect, PageLayout, ResolutionSelect, UiScaleSelect } from "../ui/shared-ui";
+import { ConfirmationDialog, DisplayModeSelect, PageLayout, ResolutionSelect, ScreenHeader, UiScaleSelect } from "../ui/shared-ui";
 import type { DisplayMode, ResolutionOption, UiScale } from "../types";
 
 type OptionsTab = "display" | "sound" | "gameplay" | "other";
@@ -63,7 +63,7 @@ export function OptionsScreen({
   return (
     <PageLayout>
       <div className="alchemy-shell flex min-h-[520px] w-full max-w-3xl flex-col rounded-[28px] px-6 py-7 sm:px-8">
-        <h1 className="text-center text-3xl text-foreground">Options</h1>
+        <ScreenHeader title="Options" />
 
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           {(["display", "sound", "gameplay", "other"] as const).map((t) => (

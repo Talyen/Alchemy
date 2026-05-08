@@ -29,7 +29,7 @@ type ActiveRunData = {
   characterGender: CharacterGender;
 };
 
-function normalizeActiveRun(activeRun: unknown): ActiveRunData | null {
+export function normalizeActiveRun(activeRun: unknown): ActiveRunData | null {
   if (!activeRun || typeof activeRun !== "object") {
     return null;
   }

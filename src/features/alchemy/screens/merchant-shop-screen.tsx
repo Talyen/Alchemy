@@ -10,7 +10,7 @@ import { SHOP_CARD_PRICE, SHOP_REFRESH_PRICE, SHOP_REMOVE_PRICE, COLLECTION_PAGE
 
 import { BattleCardButton } from "../ui/card-ui";
 import { AnimatedHeight } from "../ui/animated-height";
-import { DisabledTooltip, GoldCost, PaginationControls } from "../ui/shared-ui";
+import { DisabledTooltip, GoldCost, PaginationControls, ScreenHeader } from "../ui/shared-ui";
 import { collectionCardWidthClass, handCardWidthClass } from "../config";
 
 function ShopCardItem({ card, price, gold, purchased, onBuy, index }: { card: BattleCard; price: number; gold: number; purchased: boolean; onBuy: () => void; index: number }) {
@@ -112,7 +112,7 @@ export function MerchantShopScreen({
 
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-6 overflow-y-auto px-4 py-6 text-center">
-      <h1 className="text-4xl text-foreground">Merchant's Shop</h1>
+      <ScreenHeader title="Merchant's Shop" />
       <p className="flex items-center gap-2 text-lg font-medium text-yellow-300"><Coins className="h-5 w-5" />{gold} Gold</p>
 
       <AnimatedHeight deps={[removeMode]}>

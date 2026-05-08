@@ -94,11 +94,9 @@
       rotateY(var(--tilt-rotate-y, 0deg));
     transform-style: preserve-3d;
     transition: transform 460ms cubic-bezier(0.16, 1, 0.3, 1);
-  }
-
-  .tilt-surface.tilt-active,
-  .tilt-surface:focus-visible {
     will-change: transform;
+    backface-visibility: hidden;
+    isolation: isolate;
   }
 
   .card-shimmer-sweep {

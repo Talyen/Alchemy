@@ -7,7 +7,7 @@ import { keywordDefinitions, type KeywordId } from "@/lib/game-data";
 import { computeTalentPoints, xpForNextPoint, xpToNextPoint, type TalentXP } from "@/lib/talents";
 
 import { keywordIcons } from "../config";
-import { ProgressBar } from "../ui/shared-ui";
+import { ProgressBar, ScreenHeader } from "../ui/shared-ui";
 
 function KeywordProgressCard({ kw, runXP, totalXP, animate }: { kw: KeywordId; runXP: number; totalXP: number; animate: boolean }) {
   const points = computeTalentPoints(totalXP);
@@ -44,7 +44,7 @@ export function GameOverScreen({ runTalentXP, talentXP, onMainMenu }: { runTalen
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-6 px-4 py-6 text-center">
       <div>
-        <h1 className="text-5xl text-red-400">Defeat</h1>
+        <ScreenHeader title="Defeat" />
         <p className="mt-3 text-lg text-muted-foreground">Your run has ended.</p>
       </div>
 

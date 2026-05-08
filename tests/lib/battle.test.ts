@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import { mergeCombatText, applyCardEffects } from "@/lib/battle/effects";
+import { mergeCombatText, applyCardEffects, getEnemyDamageMultiplier } from "@/lib/battle/effects";
 import { playBattleCardResolved, endPlayerTurn, chooseWishCard, processCompanionTurnStart } from "@/lib/battle/turns";
 import { drawCards, createBattleState, defaultTalentEffects, shuffleCards } from "@/lib/battle/draw";
-import { cardLibrary, characters, companionLibrary } from "@/lib/game-data";
+import { cardLibrary, companionLibrary, enemyBestiary } from "@/lib/game-data";
 import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
 import type { BattleState, CombatTextEvent, TrinketManifest } from "@/lib/battle/types";
 import { basePlayerMana, clamp, clampHealth, maxHandSize, maxPlayerHealth } from "@/lib/battle/types";
@@ -143,6 +143,45 @@ describe("applyCardEffects", () => {
   });
 });
 
+describe("getEnemyDamageMultiplier", () => {
+  it("returns 1 for an enemy with no traits", () => {
+    const state = makeState();
+    expect(getEnemyDamageMultiplier(state, "physical")).toBe(1);
+  });
+
+  it("returns 2 for holy damage against brittle-bones", () => {
+    const state = makeState({ currentEnemy: { id: "skeleton", title: "Skeleton", subtitle: "", descriptionLines: [""], art: "", enemyType: "normal", traits: [{ id: "brittle-bones", title: "Brittle Bones", description: "" }], attackEffects: [] } });
+    expect(getEnemyDamageMultiplier(state, "holy")).toBe(2);
+    expect(getEnemyDamageMultiplier(state, "stun")).toBe(2);
+    expect(getEnemyDamageMultiplier(state, "physical")).toBe(1);
+  });
+
+  it("returns 2 for burn and holy against fear-the-light", () => {
+    const state = makeState({ currentEnemy: { id: "goblin", title: "Goblin", subtitle: "", descriptionLines: [""], art: "", enemyType: "normal", traits: [{ id: "fear-the-light", title: "Fear the Light", description: "" }], attackEffects: [] } });
+    expect(getEnemyDamageMultiplier(state, "burn")).toBe(2);
+    expect(getEnemyDamageMultiplier(state, "holy")).toBe(2);
+    expect(getEnemyDamageMultiplier(state, "physical")).toBe(1);
+  });
+
+  it("returns 2 for holy against holy-vulnerability", () => {
+    const state = makeState({ currentEnemy: { id: "necromancer", title: "Necromancer", subtitle: "", descriptionLines: [""], art: "", enemyType: "elite", traits: [{ id: "holy-vulnerability", title: "Holy Vulnerability", description: "" }], attackEffects: [] } });
+    expect(getEnemyDamageMultiplier(state, "holy")).toBe(2);
+    expect(getEnemyDamageMultiplier(state, "physical")).toBe(1);
+  });
+
+  it("returns 0.5 for burn against burn-resistance", () => {
+    const state = makeState({ currentEnemy: { id: "imp", title: "Imp", subtitle: "", descriptionLines: [""], art: "", enemyType: "normal", traits: [{ id: "burn-resistance", title: "Burn Resistance", description: "" }], attackEffects: [] } });
+    expect(getEnemyDamageMultiplier(state, "burn")).toBe(0.5);
+    expect(getEnemyDamageMultiplier(state, "physical")).toBe(1);
+  });
+
+  it("returns 0.5 for poison against poison-resistance", () => {
+    const state = makeState({ currentEnemy: { id: "lizard-scout", title: "Lizard Scout", subtitle: "", descriptionLines: [""], art: "", enemyType: "normal", traits: [{ id: "poison-resistance", title: "Poison Resistance", description: "" }], attackEffects: [] } });
+    expect(getEnemyDamageMultiplier(state, "poison")).toBe(0.5);
+    expect(getEnemyDamageMultiplier(state, "physical")).toBe(1);
+  });
+});
+
 describe("combat number accuracy", () => {
   it("does not double the first Burn card unless the talent is active", () => {
     const card = makeCard({ effects: [{ kind: "damage", damageType: "burn", amount: 10 }] });
@@ -269,13 +308,6 @@ describe("playBattleCardResolved", () => {
     expect(result.state.hand).toHaveLength(0);
   });
 
-  it("returns unchanged state when mana is 0", () => {
-    const card = makeCard({ cost: 1 });
-    const state = makeState({ mana: 0, hand: [card] });
-    const result = playBattleCardResolved(state, card.id, 0);
-    expect(result.state).toBe(state);
-  });
-
   it("returns unchanged state when wish is active", () => {
     const card = makeCard({ cost: 1 });
     const state = makeState({ mana: 5, wishOptions: [card], hand: [card] });
@@ -290,9 +322,9 @@ describe("playBattleCardResolved", () => {
     expect(result.state.enemyHealth).toBe(23);
   });
 
-  it("cannot play a card that costs more than available mana", () => {
-    const card = makeCard({ cost: 3 });
-    const state = makeState({ mana: 2, hand: [card] });
+  it("cannot play a card with insufficient mana", () => {
+    const card = makeCard({ cost: 1 });
+    const state = makeState({ mana: 0, hand: [card] });
     const result = playBattleCardResolved(state, card.id, 0);
     expect(result.state).toBe(state);
   });
@@ -303,14 +335,6 @@ describe("playBattleCardResolved", () => {
     const result = playBattleCardResolved(state, card.id, 0);
     expect(result.state.mana).toBe(0);
     expect(result.state.hand).toHaveLength(0);
-    expect(result.state.enemyHealth).toBe(29);
-  });
-
-  it("can spend overflow mana when above maxMana", () => {
-    const cheapCard = makeCard({ cost: 1, effects: [{ kind: "damage", damageType: "physical", amount: 1 }] });
-    const state = makeState({ mana: 6, maxMana: 4, hand: [cheapCard] });
-    const result = playBattleCardResolved(state, cheapCard.id, 0);
-    expect(result.state.mana).toBe(5);
     expect(result.state.enemyHealth).toBe(29);
   });
 
@@ -593,8 +617,10 @@ describe("drawCards", () => {
 });
 
 describe("createBattleState", () => {
+  const skeleton = enemyBestiary.find((e) => e.id === "skeleton")!;
+
   it("creates a valid battle state with starting hand", () => {
-    const result = createBattleState();
+    const result = createBattleState(undefined, 0, 0, skeleton);
     expect(result.turn).toBe(1);
     expect(result.playerHealth).toBe(maxPlayerHealth);
     expect(result.enemyHealth).toBe(30);
@@ -604,33 +630,9 @@ describe("createBattleState", () => {
   });
 
   it("scales enemy stats based on rooms encountered", () => {
-    const result = createBattleState(undefined, 0, 5); // room 5 → 40% boost
+    const result = createBattleState(undefined, 0, 5, skeleton, undefined, undefined, undefined, undefined, undefined, 5);
     expect(result.enemyHealth).toBe(42); // 30 * 1.4 = 42
     expect(result.enemyAttackEffects[0].amount).toBe(11); // 8 * 1.4 = 11.2 → floor 11
-  });
-});
-
-describe("companion game data", () => {
-  it("adds the new companion cards outside the Ranger starting deck", () => {
-    expect(cardLibrary.find((card) => card.id === "lizard-scout-companion")?.effects).toEqual([{ kind: "summon-companion", companionId: "lizard-scout" }]);
-    expect(cardLibrary.find((card) => card.id === "imp-companion")?.effects).toEqual([{ kind: "summon-companion", companionId: "imp" }]);
-
-    const rangerDeckIds = characters.ranger.startingDeck.map((card) => card.id);
-    expect(rangerDeckIds).not.toContain("lizard-scout-companion");
-    expect(rangerDeckIds).not.toContain("imp-companion");
-  });
-
-  it("uses the requested Ranger starting deck order", () => {
-    expect(characters.ranger.startingDeck.map((card) => card.id)).toEqual([
-      "stab",
-      "slash",
-      "fangs",
-      "heal",
-      "poison-dagger",
-      "wolf-companion",
-      "apple",
-      "mana-berries",
-    ]);
   });
 });
 

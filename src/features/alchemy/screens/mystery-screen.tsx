@@ -1,21 +1,22 @@
 // Mystery event screen — shows a random narrative event with choices.
-// After choosing Harvest, transitions to a dedicated reward screen (with victory
-// sound) so the result is presented clearly without inline scrolling.
+// After choosing, transitions to a dedicated reward screen with victory
+// sounds and visual summaries of all gains.
 import { useState } from "react";
 import type { CSSProperties } from "react";
+import { Coins } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { playUISound } from "@/lib/audio";
+import { playUISound, playVictory } from "@/lib/audio";
 import { COLLECTION_PAGE_SIZE } from "@/lib/game-constants";
-import { keywordDefinitions, type BattleCard } from "@/lib/game-data";
+import { keywordDefinitions, type BattleCard, type TrinketEntry } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
-import { PaginationControls } from "../ui/shared-ui";
+import { PaginationControls, ScreenHeader } from "../ui/shared-ui";
 import { cardSurfaceClass, collectionCardWidthClass, handCardWidthClass, staticCardTransform } from "../config";
 import type { MysteryEvent, MysteryChoice, MysteryEffect } from "../mystery-events";
 import { clearTiltFromEvent, setTiltFromEvent, tokenizeDescription } from "../utils";
 import { AnimatedHeight } from "../ui/animated-height";
-import { BattleCardButton } from "../ui/card-ui";
+import { BattleCardButton, DetailPopup } from "../ui/card-ui";
 
 function ChoiceDescription({ text }: { text: string }) {
   return (
@@ -36,69 +37,126 @@ function EffectResultText({ effect }: { effect: MysteryEffect }) {
   switch (effect.kind) {
     case "healHP": return <span>Restored {effect.amount} HP</span>;
     case "damageHP": return <span>Took {effect.amount} damage</span>;
-    case "gainGold": return <span>Gained {effect.amount} Gold</span>;
-    case "loseGold": return <span>Lost {effect.amount} Gold</span>;
-    case "gainMaxMana": return <span>Mana Crystal increased</span>;
+    case "gainMaxMana": return <span>Gained +1 Mana Crystal</span>;
     case "gainXP": return <span>Gained {effect.amount} {effect.keyword} XP</span>;
     case "removeCard":
       return effect.mode === "random"
         ? <span>A card was removed from your deck</span>
         : <span>Select a card to remove</span>;
-    case "gainTrinket": return <span>Found a trinket</span>;
-    case "addRandomCard": return <span>Gained a random card</span>;
-    case "none": return <span>You continue on your journey</span>;
+    case "none": return null;
     default: return null;
   }
 }
 
 function RewardScreen({
   choice,
+  runDeck,
   findCard,
+  findTrinket,
   onContinue,
 }: {
   choice: MysteryChoice;
+  runDeck: BattleCard[];
   findCard: (id: string) => BattleCard | undefined;
+  findTrinket: (id: string) => TrinketEntry | undefined;
   onContinue: () => void;
 }) {
-  const addCardEffects = choice.effects.filter((e) => e.kind === "addCard");
-  const hasRandomCard = choice.effects.some((e) => e.kind === "addRandomCard");
-  const otherEffects = choice.effects.filter(
-    (e) => e.kind !== "addCard" && e.kind !== "addRandomCard"
-  );
-  const [hoveredCardId, setHoveredCardId] = useState<string | null>(null);
+  const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
 
   return (
     <div className="state-swap space-y-6 text-center">
-      <h1 className="text-4xl text-foreground">Reward</h1>
-      {addCardEffects.map((effect, i) => {
-        if (effect.kind !== "addCard") return null;
-        const card = findCard(effect.cardId);
-        if (!card) return null;
-        const isHovered = hoveredCardId === card.id;
-        return (
-          <div key={i} className="flex flex-col items-center gap-3">
-            <BattleCardButton
-              card={card}
-              hovered={isHovered}
-              onHoverStart={() => setHoveredCardId(card.id)}
-              onHoverEnd={() => setHoveredCardId(null)}
-              ariaLabel={card.title}
-              shimmerActive={false}
-              className={handCardWidthClass}
-            />
-            <p className="text-sm font-semibold text-foreground">{card.title}</p>
-            <p className="text-sm text-muted-foreground">Added to your deck</p>
-          </div>
-        );
+      <ScreenHeader title="Reward" />
+
+      {choice.effects.map((effect, i) => {
+        switch (effect.kind) {
+          case "addCard": {
+            const card = findCard(effect.cardId);
+            if (!card) return null;
+            const isHovered = hoveredItemId === card.id;
+            return (
+              <div key={i} className="flex flex-col items-center gap-3">
+                <BattleCardButton
+                  card={card}
+                  hovered={isHovered}
+                  onHoverStart={() => setHoveredItemId(card.id)}
+                  onHoverEnd={() => setHoveredItemId(null)}
+                  ariaLabel={card.title}
+                  shimmerActive={false}
+                  className={handCardWidthClass}
+                />
+                <p className="text-sm font-semibold text-foreground">{card.title}</p>
+                <p className="text-sm text-muted-foreground">Added {card.title} to your Deck</p>
+              </div>
+            );
+          }
+          case "addRandomCard": {
+            const card = runDeck[runDeck.length - 1];
+            if (!card) return null;
+            const isHovered = hoveredItemId === card.id;
+            return (
+              <div key={i} className="flex flex-col items-center gap-3">
+                <BattleCardButton
+                  card={card}
+                  hovered={isHovered}
+                  onHoverStart={() => setHoveredItemId(card.id)}
+                  onHoverEnd={() => setHoveredItemId(null)}
+                  ariaLabel={card.title}
+                  shimmerActive={false}
+                  className={handCardWidthClass}
+                />
+                <p className="text-sm font-semibold text-foreground">{card.title}</p>
+                <p className="text-sm text-muted-foreground">Added {card.title} to your Deck</p>
+              </div>
+            );
+          }
+          case "gainTrinket": {
+            const trinket = findTrinket(effect.trinketId);
+            if (!trinket) return null;
+            const isHovered = hoveredItemId === trinket.id;
+            return (
+              <div key={i} className="flex flex-col items-center gap-3">
+                <div className="relative" onMouseEnter={() => setHoveredItemId(trinket.id)} onMouseLeave={() => setHoveredItemId(null)}>
+                  {isHovered ? (
+                    <DetailPopup idPrefix={trinket.id} title={trinket.title} subtitle="Relic" descriptionLines={trinket.descriptionLines} />
+                  ) : null}
+                  <div
+                    className={cn("tilt-surface", cardSurfaceClass, collectionCardWidthClass)}
+                    data-tilt-strength="11"
+                    onMouseMove={setTiltFromEvent}
+                    onMouseLeave={clearTiltFromEvent}
+                    style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
+                  >
+                    <img
+                      src={trinket.art}
+                      alt={trinket.title}
+                      className="block w-full rounded-[30px] aspect-square"
+                      loading="eager"
+                    />
+                  </div>
+                </div>
+                <p className="text-sm font-semibold text-foreground">{trinket.title}</p>
+                <p className="text-sm text-muted-foreground">Added {trinket.title} to your Inventory</p>
+              </div>
+            );
+          }
+          case "gainGold":
+            return (
+              <p key={i} className="inline-flex items-center gap-2 text-lg font-medium text-yellow-300">
+                <Coins className="h-5 w-5" />
+                Found {effect.amount} Gold
+              </p>
+            );
+          case "none":
+            return null;
+          default:
+            return (
+              <p key={i} className="text-base text-muted-foreground">
+                <EffectResultText effect={effect} />
+              </p>
+            );
+        }
       })}
-      {hasRandomCard && (
-        <p className="text-base text-muted-foreground">Gained a random card</p>
-      )}
-      {otherEffects.map((effect, i) => (
-        <p key={i} className="text-base text-muted-foreground">
-          <EffectResultText effect={effect} />
-        </p>
-      ))}
+
       <Button size="lg" onClick={onContinue}>
         Continue
       </Button>
@@ -178,6 +236,7 @@ export function MysteryScreen({
   onContinue,
   runDeck,
   findCard,
+  findTrinket,
 }: {
   event: MysteryEvent;
   onChoose: (choice: MysteryChoice) => void;
@@ -185,20 +244,40 @@ export function MysteryScreen({
   onContinue: () => void;
   runDeck: BattleCard[];
   findCard: (id: string) => BattleCard | undefined;
+  findTrinket: (id: string) => TrinketEntry | undefined;
 }) {
   const [chosen, setChosen] = useState<MysteryChoice | null>(null);
   const [pendingRemoval, setPendingRemoval] = useState<MysteryChoice | null>(null);
   const [hoveredCardId, setHoveredCardId] = useState<string | null>(null);
 
+  function hasPositiveEffect(effects: MysteryEffect[]) {
+    return effects.some((e) =>
+      ["addCard", "addRandomCard", "gainTrinket", "healHP", "gainGold", "gainMaxMana", "gainXP"].includes(e.kind)
+    );
+  }
+  function hasNegativeEffect(effects: MysteryEffect[]) {
+    return effects.some((e) =>
+      ["damageHP", "loseGold", "removeCard"].includes(e.kind)
+    );
+  }
+
   function handlePick(choice: MysteryChoice) {
     onChoose(choice);
-    if (choice.effects.some((e) => e.kind === "removeCard" && e.mode === "choose")) {
+
+    const isNone = choice.effects.every((e) => e.kind === "none");
+    const needsRemoval = choice.effects.some((e) => e.kind === "removeCard" && e.mode === "choose");
+
+    if (isNone) {
+      onContinue();
+      return;
+    }
+
+    if (needsRemoval) {
       setPendingRemoval(choice);
     } else {
       setChosen(choice);
-      if (choice.effects.some((e) => e.kind === "addCard" || e.kind === "addRandomCard")) {
-        playUISound("mysteryGood");
-      }
+      if (hasPositiveEffect(choice.effects)) playVictory();
+      if (hasNegativeEffect(choice.effects)) playUISound("mysteryBad");
     }
   }
 
@@ -208,9 +287,8 @@ export function MysteryScreen({
     if (!chosen) {
       const choice = pendingRemoval!;
       setChosen(choice);
-      if (choice.effects.some((e) => e.kind === "addCard")) {
-        playUISound("mysteryGood");
-      }
+      if (hasPositiveEffect(choice.effects)) playVictory();
+      if (hasNegativeEffect(choice.effects)) playUISound("mysteryBad");
     }
   }
 
@@ -227,7 +305,7 @@ export function MysteryScreen({
             onCancel={() => setPendingRemoval(null)}
           />
         ) : chosen ? (
-          <RewardScreen choice={chosen} findCard={findCard} onContinue={onContinue} />
+          <RewardScreen choice={chosen} runDeck={runDeck} findCard={findCard} findTrinket={findTrinket} onContinue={onContinue} />
         ) : (
           <div className="state-swap flex flex-col items-center gap-6">
             {featuredCard ? (
@@ -256,7 +334,7 @@ export function MysteryScreen({
                 />
               </div>
             ) : null}
-            <h1 className="text-4xl text-foreground">{event.title}</h1>
+            <ScreenHeader title={event.title} />
             <p className="max-w-lg text-base leading-relaxed text-muted-foreground">
               {event.narrative}
             </p>

@@ -37,7 +37,7 @@ export const mysteryPool: MysteryEvent[] = [
     choices: [
       {
         label: "Harvest",
-        description: "Add a Mana Berries card to your deck",
+        description: "Add Mana Berries to your deck",
         effects: [{ kind: "addCard", cardId: "mana-berries" }],
       },
       {
@@ -65,7 +65,7 @@ export const mysteryPool: MysteryEvent[] = [
       },
       {
         label: "Bottle the Essence",
-        description: "Add a Health Potion card to your deck",
+        description: "Add Health Potion to your deck",
         effects: [{ kind: "addCard", cardId: "health-potion" }],
       },
     ],
@@ -78,7 +78,7 @@ export const mysteryPool: MysteryEvent[] = [
     choices: [
       {
         label: "Harvest Carefully",
-        description: "Add a Mana Berries card to your deck",
+        description: "Add Mana Berries to your deck",
         effects: [{ kind: "addCard", cardId: "mana-berries" }],
       },
       {
@@ -114,7 +114,7 @@ export const mysteryPool: MysteryEvent[] = [
       },
       {
         label: "Memorize a Lesson",
-        description: "Gain a Wish card, but a random card is removed from your deck",
+        description: "Add Wish to your deck, then remove a random card",
         effects: [
           { kind: "addCard", cardId: "wish" },
           { kind: "removeCard", mode: "random" },
@@ -138,7 +138,7 @@ export const mysteryPool: MysteryEvent[] = [
       },
       {
         label: "Dance Until Dawn",
-        description: "Restore 5 HP, with a 50% chance to restore 8 more",
+        description: "Restore 5 HP (50% chance for 8 more)",
         effects: [
           { kind: "healHP", amount: 5 },
           { kind: "healHP", amount: 8, chance: 0.5 },
@@ -175,7 +175,7 @@ export const mysteryPool: MysteryEvent[] = [
     choices: [
       {
         label: "Take Everything",
-        description: "Gain 20 Gold and a Steal card",
+        description: "Gain 20 Gold and add Steal to your deck",
         effects: [
           { kind: "gainGold", amount: 20 },
           { kind: "addCard", cardId: "steal" },
@@ -183,7 +183,7 @@ export const mysteryPool: MysteryEvent[] = [
       },
       {
         label: "Study the Map",
-        description: "Gain 10 Gold XP and find a Smuggler's Map trinket",
+        description: "Gain 10 Gold XP and add Smuggler's Map to your Inventory",
         effects: [
           { kind: "gainXP", keyword: "gold", amount: 10 },
           { kind: "gainTrinket", trinketId: "smugglers-map" },
@@ -199,7 +199,7 @@ export const mysteryPool: MysteryEvent[] = [
     choices: [
       {
         label: "Explore the Crypt",
-        description: "Take 6 damage and gain 30 Gold and a Mana Crystals card",
+        description: "Take 6 damage, gain 30 Gold, and add Mana Crystals to your deck",
         effects: [
           { kind: "damageHP", amount: 6 },
           { kind: "gainGold", amount: 30 },
@@ -221,7 +221,7 @@ export const mysteryPool: MysteryEvent[] = [
     choices: [
       {
         label: "Search the Scrolls",
-        description: "Gain a random card",
+        description: "Add a random card to your deck",
         effects: [{ kind: "addRandomCard" }],
       },
       {
@@ -239,12 +239,12 @@ export const mysteryPool: MysteryEvent[] = [
     choices: [
       {
         label: "Read Carefully",
-        description: "Gain a Wish card",
+        description: "Add Wish to your deck",
         effects: [{ kind: "addCard", cardId: "wish" }],
       },
       {
         label: "Tear Out the Pages",
-        description: "Gain 20 Gold and a Tattered Pages trinket",
+        description: "Gain 20 Gold and add Tattered Pages to your Inventory",
         effects: [
           { kind: "gainGold", amount: 20 },
           { kind: "gainTrinket", trinketId: "tattered-pages" },
@@ -260,7 +260,7 @@ export const mysteryPool: MysteryEvent[] = [
     choices: [
       {
         label: "Mine the Crystals",
-        description: "Gain 20 Gold and a Mana Crystals card",
+        description: "Gain 20 Gold and add Mana Crystals to your deck",
         effects: [
           { kind: "gainGold", amount: 20 },
           { kind: "addCard", cardId: "mana-crystals" },
@@ -281,12 +281,12 @@ export const mysteryPool: MysteryEvent[] = [
     choices: [
       {
         label: "Collect a Fragment",
-        description: "Gain a Meteor card",
+        description: "Add Meteor to your deck",
         effects: [{ kind: "addCard", cardId: "meteor" }],
       },
       {
         label: "Scavenge the Metal",
-        description: "Gain 25 Gold and a Meteorite trinket",
+        description: "Gain 25 Gold and add Meteorite to your Inventory",
         effects: [
           { kind: "gainGold", amount: 25 },
           { kind: "gainTrinket", trinketId: "meteorite" },
@@ -312,7 +312,7 @@ export const mysteryPool: MysteryEvent[] = [
       },
       {
         label: "Search the Bones",
-        description: "Take 4 damage and gain 40 Gold and a Bone Charm trinket",
+        description: "Take 4 damage, gain 40 Gold, and add Bone Charm to your Inventory",
         effects: [
           { kind: "damageHP", amount: 4 },
           { kind: "gainGold", amount: 40 },
@@ -339,12 +339,12 @@ export const mysteryPool: MysteryEvent[] = [
       },
       {
         label: "Collect Holy Dew",
-        description: "Add a Health Potion card to your deck",
+        description: "Add Health Potion to your deck",
         effects: [{ kind: "addCard", cardId: "health-potion" }],
       },
       {
         label: "Plant a Seed",
-        description: "Take 3 damage and gain 15 Health XP and a Grove's Favor trinket",
+        description: "Take 3 damage, gain 15 Health XP, and add Grove's Favor to your Inventory",
         effects: [
           { kind: "damageHP", amount: 3 },
           { kind: "gainXP", keyword: "health", amount: 15 },

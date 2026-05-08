@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { characters, characterArt, type CharacterGender, type CharacterId } from "@/lib/game-data";
 
 import { KeywordTag } from "../ui/keyword-tag";
-import { ShimmerOverlay } from "../ui/shared-ui";
+import { ScreenHeader, ShimmerOverlay } from "../ui/shared-ui";
 import { useShimmerController } from "../hooks";
 import { clearTiltFromEvent, setTiltFromEvent } from "../utils";
 import { battleCardWidthClass, cardSurfaceClass, staticCardTransform } from "../config";
@@ -30,8 +30,8 @@ function CharacterCard({ id, gender, index, isSelected, isShimmer, shimmerToken,
 
 function GenderToggle({ gender, onChange }: { gender: CharacterGender; onChange: (gender: CharacterGender) => void }) {
   const genderOptions: { value: CharacterGender; label: string; className: string }[] = [
-    { value: "male", label: "♂", className: "text-sky-200 hover:bg-sky-500/10 hover:text-sky-100 data-[selected=true]:border-sky-300/45 data-[selected=true]:bg-sky-500/20 data-[selected=true]:text-sky-100" },
-    { value: "female", label: "♀", className: "text-rose-200 hover:bg-rose-500/10 hover:text-rose-100 data-[selected=true]:border-rose-300/45 data-[selected=true]:bg-rose-500/20 data-[selected=true]:text-rose-100" },
+    { value: "male", label: "\u2642", className: "text-sky-200 hover:bg-sky-500/10 hover:text-sky-100 data-[selected=true]:border-sky-300/45 data-[selected=true]:bg-sky-500/20 data-[selected=true]:text-sky-100" },
+    { value: "female", label: "\u2640", className: "text-rose-200 hover:bg-rose-500/10 hover:text-rose-100 data-[selected=true]:border-rose-300/45 data-[selected=true]:bg-rose-500/20 data-[selected=true]:text-rose-100" },
   ];
 
   return (
@@ -63,7 +63,7 @@ export function CharacterSelectScreen({ onConfirm, onBack }: { onConfirm: (chara
 
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-6 px-4 py-6 text-center">
-      <h1 className="text-4xl text-foreground">Choose Your Hero</h1>
+      <ScreenHeader title="Choose Your Hero" />
 
       <div className="flex flex-wrap items-start justify-center gap-12">
         {charIds.map((id, index) => <CharacterCard key={id} id={id} gender={selectedGender} index={index} isSelected={selectedId === id} isShimmer={shimmerState?.cardId === id} shimmerToken={shimmerState?.token} onSelect={setSelectedId} onHoverShimmer={maybeTriggerShimmer} />)}

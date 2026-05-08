@@ -45,6 +45,8 @@ export type TrinketManifest = {
   sunderingArmorPiercing: number;
   resonantChimeCardsRequired: number;
   resonantChimeMana: number;
+  smugglersMapGoldBonus: number;
+  grovesFavorStartHeal: number;
 };
 
 // Pre-computed bonuses from unlocked talents, recalculated each battle start.

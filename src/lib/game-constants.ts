@@ -53,6 +53,11 @@ export const GOLD_REWARD_MIN = 10;
 export const GOLD_REWARD_MAX = 30;             // Gold range per victory. ~20 average means you can afford a mid-tier shop item every ~3 fights.
 export const REWARD_CARD_CHOICES = 3;          // Card rewards offered after each victory.
 export const DESTINATION_CHOICES = 3;          // Path choices offered after each victory.
+export const DESTINATIONS_PER_ACT = 8;         // Number of destination slots per act (slot 8 = boss).
+export const ACTS_PER_RUN = 3;                 // Number of acts in a full run.
+export const BOSS_STAT_MULTIPLIER = 1.8;       // Boss enemies get 80% more HP and attack.
+export const ACT_SCALING_INCREMENT = 0.2;      // +20% enemy stats per act (baseline).
+export const BOSS_TRINKET_REWARD_CHOICES = 3;  // Trinket choices offered after a boss kill.
 
 // ============ Audio ============
 export const MASTER_GAIN = 0.3;                 // Master volume level. 0.3 prevents ear fatigue during extended sessions.
@@ -96,6 +101,8 @@ export const SCREENS = {
   COLLECTION: "collection",
   OPTIONS: "options",
   TALENTS: "talents",
+  ACT_COMPLETE: "act-complete",
+  RUN_VICTORY: "run-victory",
 } as const;
 
 export const MUSIC_KEYS = {

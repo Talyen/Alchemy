@@ -13,7 +13,7 @@ import {
   type TrinketManifest,
   type TurnPhase,
 } from "./types";
-import { ROOM_SCALING_INCREMENT, ELITE_STAT_MULTIPLIER, STARTING_TURN, ENEMY_BASE_REGENERATION } from "../game-constants";
+import { ROOM_SCALING_INCREMENT, ELITE_STAT_MULTIPLIER, BOSS_STAT_MULTIPLIER, ACT_SCALING_INCREMENT, STARTING_TURN, ENEMY_BASE_REGENERATION } from "../game-constants";
 import { computeTrinketManifest, defaultTrinketEffects } from "../trinkets";
 
 let cardUidCounter = 0;
@@ -137,13 +137,19 @@ export function drawCards(deck: BattleCard[], discard: BattleCard[], hand: Battl
   return { deck: nextDeck, discard: nextDiscard, hand: nextHand };
 }
 
-// Builds scaled enemy data for a given room. Extracted so createBattleState stays under 30 lines.
-function buildScaledEnemy(roomsEncountered: number, enemy: BestiaryEntry) {
-  const scaler = Math.max(0, roomsEncountered - 1);
-  const hpMultiplier = 1 + scaler * ROOM_SCALING_INCREMENT;
+// Builds scaled enemy data for a given room. Uses destinationIndexInAct for
+// room-to-room scaling (resets each act) and currentAct for act baseline difficulty.
+// Boss-type enemies get an additional BOSS_STAT_MULTIPLIER on top of the act scaling.
+function buildScaledEnemy(roomsEncountered: number, enemy: BestiaryEntry, destinationIndexInAct = 0, currentAct = 1) {
+  const scaler = Math.max(0, destinationIndexInAct - 1);
+  const roomMul = 1 + scaler * ROOM_SCALING_INCREMENT;
+  const actMul = 1 + (currentAct - 1) * ACT_SCALING_INCREMENT;
+  const hpMultiplier = actMul * roomMul;
   const eliteMul = enemy.enemyType === "elite" ? ELITE_STAT_MULTIPLIER : 1;
-  const scaledEnemyHealth = Math.floor(baseEnemyHealth * hpMultiplier * eliteMul);
-  const scaleAmount = (amount: number) => Math.floor(amount * hpMultiplier * eliteMul);
+  const bossMul = enemy.enemyType === "boss" ? BOSS_STAT_MULTIPLIER : 1;
+  const typeMul = Math.max(1, eliteMul, bossMul);
+  const scaledEnemyHealth = Math.floor(baseEnemyHealth * hpMultiplier * typeMul);
+  const scaleAmount = (amount: number) => Math.floor(amount * hpMultiplier * typeMul);
 
   const baseEffects = enemy.attackEffects.length > 0
     ? enemy.attackEffects
@@ -156,13 +162,14 @@ function buildScaledEnemy(roomsEncountered: number, enemy: BestiaryEntry) {
   });
   const enemyRegeneration = enemy.traits.some((t) => t.id === "regeneration") ? scaleAmount(ENEMY_BASE_REGENERATION) : 0;
 
-  return { enemy, scaledEnemyHealth, scaledEnemyAttackEffects, enemyRegeneration, hpMultiplier, eliteMul };
+  return { enemy, scaledEnemyHealth, scaledEnemyAttackEffects, enemyRegeneration, hpMultiplier, typeMul };
 }
 
 // Creates the initial BattleState for a fresh encounter. Enemy HP and attack
-// scale per room (multiplicative by 1.1x per room after the first) so the game
-// gets gradually harder. The scaler uses `roomsEncountered - 1` so room 0
-// (the first fight) has no scaling at all.
+// scale per destination within an act (multiplicative by 1.1x per slot after the
+// first) and per act baseline (1.2x per act). Boss-type enemies get an additional
+// 1.8x multiplier. `roomsEncountered` tracks total rooms across all acts for
+// talent bonuses.
 export function createBattleState(
   runDeck: BattleCard[] = starterDeck,
   gold = 0,
@@ -173,6 +180,8 @@ export function createBattleState(
   discoveredCardIds: string[] = [],
   maxHealth = maxPlayerHealth,
   trinketIds: string[] = [],
+  destinationIndexInAct = 0,
+  currentAct = 1,
 ): BattleState {
   const openingHand = drawCards(shuffleCards(runDeck), [], [], cardsPerTurn);
 
@@ -184,7 +193,7 @@ export function createBattleState(
     : null;
 
   const enemy = currentEnemy ?? enemyBestiary[0];
-  const { scaledEnemyHealth, scaledEnemyAttackEffects, enemyRegeneration } = buildScaledEnemy(roomsEncountered, enemy);
+  const { scaledEnemyHealth, scaledEnemyAttackEffects, enemyRegeneration } = buildScaledEnemy(roomsEncountered, enemy, destinationIndexInAct, currentAct);
 
   const effectiveMaxHealth = maxHealth + talentEffects.maxHealthPerCombat * roomsEncountered;
   const startingHealth = Math.min(effectiveMaxHealth, playerHealth + talentEffects.startHealth);

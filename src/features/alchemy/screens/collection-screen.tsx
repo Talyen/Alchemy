@@ -4,7 +4,7 @@
 import { cn } from "@/lib/utils";
 import { House, Swords } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { PageLayout } from "../ui/shared-ui";
+import { PageLayout, ScreenHeader } from "../ui/shared-ui";
 import { CollectionGrid, CollectionPagination, CollectionTabs, getCollectionTotalPages } from "../ui/collection-ui";
 import { useShimmerController } from "../hooks";
 import type { CollectionTab } from "../types";
@@ -34,7 +34,7 @@ export function CollectionScreen({
 
   return (
     <PageLayout>
-      <h1 className="text-4xl text-foreground">Collection</h1>
+      <ScreenHeader title="Collection" />
       <CollectionTabs collectionTab={collectionTab} onSelectTab={onSelectTab} />
 
       <div className="mt-6 flex min-h-[640px] flex-col items-center overflow-visible">

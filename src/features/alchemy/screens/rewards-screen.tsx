@@ -7,7 +7,7 @@ import type { BattleCard, TrinketEntry } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
 import { BattleCardButton, DetailPopup } from "../ui/card-ui";
-import { ShimmerOverlay } from "../ui/shared-ui";
+import { ScreenHeader, ShimmerOverlay } from "../ui/shared-ui";
 import { cardSurfaceClass, collectionCardWidthClass, staticCardTransform } from "../config";
 import { clearTiltFromEvent, getHoverId, setTiltFromEvent } from "../utils";
 
@@ -95,7 +95,7 @@ export function RewardsScreen({
   return (
     <div className="flex h-full w-full items-center justify-center px-4 py-6">
       <div className="alchemy-shell w-full max-w-6xl rounded-[30px] border border-border/80 px-6 py-7 text-center sm:px-8">
-        <h1 className="text-4xl text-foreground">Victory!</h1>
+        <ScreenHeader title="Victory" />
         <p className="mt-3 text-base text-muted-foreground">
           {isTrinket ? "Choose a Trinket to add to your Collection" : "Choose a Card to add to your Deck"}
         </p>

@@ -3,7 +3,7 @@ import type { CSSProperties } from "react";
 import type { CombatTextEvent } from "@/lib/battle";
 import type { BattleCard, KeywordId } from "@/lib/game-data";
 
-export type Screen = "menu" | "character-select" | "battle" | "rewards" | "destination" | "options" | "collection" | "talents" | "game-over" | "campfire" | "shop" | "alchemist" | "mystery";
+export type Screen = "menu" | "character-select" | "battle" | "rewards" | "destination" | "options" | "collection" | "talents" | "game-over" | "campfire" | "shop" | "alchemist" | "mystery" | "act-complete" | "run-victory";
 
 export type ResolutionOption = "1366x768" | "1600x900" | "1920x1080" | "1920x1200" | "2560x1080" | "2560x1440" | "3440x1440" | "3840x2160";
 
@@ -11,7 +11,7 @@ export type DisplayMode = "windowed" | "borderless-fullscreen" | "fullscreen";
 
 export type UiScale = "90" | "100" | "110" | "120";
 
-export type Destination = "Normal Combat" | "Elite Combat" | "Merchant's Shop" | "Alchemist's Shop" | "Mystery" | "Campfire";
+export type Destination = "Normal Combat" | "Elite Combat" | "Merchant's Shop" | "Alchemist's Shop" | "Mystery" | "Campfire" | "Boss Combat";
 
 export type CollectionTab = "cards" | "bestiary" | "trinkets";
 
