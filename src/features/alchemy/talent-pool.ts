@@ -22,6 +22,7 @@ export const talentPool: TalentDefinition[] = [
   { id: "physical-armor", keywordId: "physical", description: "Physical Damage is increased by your Armor" },
   { id: "physical-crit", keywordId: "physical", description: "Physical Damage has +5% Critical Chance" },
   { id: "physical-dmg-4", keywordId: "physical", description: "Increase Physical Damage by 1" },
+  { id: "physical-dmg-5", keywordId: "physical", description: "Increase Physical Damage by 1" },
 
   // --- Stun ---
   { id: "stun-threshold", keywordId: "stun", description: "Stun threshold reduced by 10%" },
@@ -33,6 +34,7 @@ export const talentPool: TalentDefinition[] = [
   { id: "stun-duration-4", keywordId: "stun", description: "Stun effects last 1 turn longer" },
   { id: "stun-duration-5", keywordId: "stun", description: "Stun effects last 1 turn longer" },
   { id: "stun-duration-6", keywordId: "stun", description: "Stun effects last 1 turn longer" },
+  { id: "stun-duration-7", keywordId: "stun", description: "Stun effects last 1 turn longer" },
 
   // --- Block ---
   { id: "block-start", keywordId: "block", description: "Start combat with 10 Block" },
@@ -44,6 +46,7 @@ export const talentPool: TalentDefinition[] = [
   { id: "block-amount-1", keywordId: "block", description: "+1 Block when blocking" },
   { id: "block-amount-2", keywordId: "block", description: "+1 Block when blocking" },
   { id: "block-amount-3", keywordId: "block", description: "+1 Block when blocking" },
+  { id: "block-amount-4", keywordId: "block", description: "+1 Block when blocking" },
 
   // --- Forge ---
   { id: "forge-to-burn", keywordId: "forge", description: "Forge also increases Burn damage" },
@@ -55,6 +58,7 @@ export const talentPool: TalentDefinition[] = [
   { id: "forge-strength-3", keywordId: "forge", description: "Forge effects are 1 stronger" },
   { id: "forge-strength-4", keywordId: "forge", description: "Forge effects are 1 stronger" },
   { id: "forge-strength-5", keywordId: "forge", description: "Forge effects are 1 stronger" },
+  { id: "forge-strength-6", keywordId: "forge", description: "Forge effects are 1 stronger" },
 
   // --- Armor ---
   { id: "armor-ailment-reduce", keywordId: "armor", description: "Armor reduces Ailment damage you take by 1" },
@@ -66,6 +70,7 @@ export const talentPool: TalentDefinition[] = [
   { id: "armor-amount-3", keywordId: "armor", description: "+1 Armor gained" },
   { id: "armor-amount-4", keywordId: "armor", description: "+1 Armor gained" },
   { id: "armor-amount-5", keywordId: "armor", description: "+1 Armor gained" },
+  { id: "armor-amount-6", keywordId: "armor", description: "+1 Armor gained" },
 
   // --- Health ---
   { id: "health-campfire", keywordId: "health", description: "Campfire heals 10% more Health" },
@@ -77,6 +82,7 @@ export const talentPool: TalentDefinition[] = [
   { id: "health-max-1", keywordId: "health", description: "+5 Max Health" },
   { id: "health-max-2", keywordId: "health", description: "+5 Max Health" },
   { id: "health-max-3", keywordId: "health", description: "+5 Max Health" },
+  { id: "health-max-4", keywordId: "health", description: "+5 Max Health" },
 
   // --- Burn ---
   { id: "burn-first-double", keywordId: "burn", description: "Your first Burn card each combat is doubled" },
@@ -88,6 +94,7 @@ export const talentPool: TalentDefinition[] = [
   { id: "burn-dmg-3", keywordId: "burn", description: "Burn deals 1 extra damage" },
   { id: "burn-dmg-4", keywordId: "burn", description: "Burn deals 1 extra damage" },
   { id: "burn-dmg-5", keywordId: "burn", description: "Burn deals 1 extra damage" },
+  { id: "burn-dmg-6", keywordId: "burn", description: "Burn deals 1 extra damage" },
 
   // --- Gold ---
   { id: "gold-shop-discount", keywordId: "gold", description: "Shop cards cost 5 less Gold" },
@@ -99,6 +106,7 @@ export const talentPool: TalentDefinition[] = [
   { id: "gold-enemy-drop", keywordId: "gold", description: "Enemies drop 10% more Gold" },
   { id: "gold-on-wish", keywordId: "gold", description: "Gain 3 Gold when you Wish" },
   { id: "gold-mix-discount", keywordId: "gold", description: "Mix Potions costs 10 less Gold" },
+  { id: "gold-per-combat-extra", keywordId: "gold", description: "Gain +2 Gold after each combat" },
 
   // --- Holy ---
   { id: "holy-lifesteal", keywordId: "holy", description: "Holy damage heals you for 10% of the amount dealt" },
@@ -110,6 +118,7 @@ export const talentPool: TalentDefinition[] = [
   { id: "holy-wish-chance", keywordId: "holy", description: "Holy damage has a 5% chance to Wish" },
   { id: "holy-block-grant", keywordId: "holy", description: "Holy damage grants Block for 15% of the amount dealt" },
   { id: "holy-vs-burn", keywordId: "holy", description: "Holy damage is increased by 20% against enemies with Burn" },
+  { id: "holy-dmg-1", keywordId: "holy", description: "Holy damage is increased by 1" },
 
   // --- Wish ---
   { id: "wish-gold", keywordId: "wish", description: "Gain 2 Gold when you Wish" },
@@ -121,6 +130,7 @@ export const talentPool: TalentDefinition[] = [
   { id: "wish-choice-1", keywordId: "wish", description: "Wish offers 1 extra choice" },
   { id: "wish-choice-2", keywordId: "wish", description: "Wish offers 1 extra choice" },
   { id: "wish-choice-3", keywordId: "wish", description: "Wish offers 1 extra choice" },
+  { id: "wish-choice-4", keywordId: "wish", description: "Wish offers 1 extra choice" },
 
   // --- Poison ---
   { id: "poison-first-free", keywordId: "poison", description: "Your first Poison card each combat is free" },
@@ -132,6 +142,7 @@ export const talentPool: TalentDefinition[] = [
   { id: "poison-dmg-1", keywordId: "poison", description: "Poison deals 1 extra damage" },
   { id: "poison-dmg-2", keywordId: "poison", description: "Poison deals 1 extra damage" },
   { id: "poison-dmg-3", keywordId: "poison", description: "Poison deals 1 extra damage" },
+  { id: "poison-dmg-4", keywordId: "poison", description: "Poison deals 1 extra damage" },
 
   // --- Bleed ---
   { id: "bleed-first-free", keywordId: "bleed", description: "Your first Bleed card each combat is free" },
@@ -143,6 +154,7 @@ export const talentPool: TalentDefinition[] = [
   { id: "bleed-desperate", keywordId: "bleed", description: "You deal double Bleed damage if you are below 50% Health" },
   { id: "bleed-poison-chance", keywordId: "bleed", description: "Bleed has a 10% chance to Poison" },
   { id: "bleed-dmg-1", keywordId: "bleed", description: "Bleed deals 1 extra damage" },
+  { id: "bleed-dmg-2", keywordId: "bleed", description: "Bleed deals 1 extra damage" },
 
   // --- Other keywords (placeholders retained for grid completeness) ---
   { id: "ailment-duration-1", keywordId: "ailment", description: "Ailments last 1 turn longer" },
@@ -154,6 +166,7 @@ export const talentPool: TalentDefinition[] = [
   { id: "ailment-duration-7", keywordId: "ailment", description: "Ailments last 1 turn longer" },
   { id: "ailment-duration-8", keywordId: "ailment", description: "Ailments last 1 turn longer" },
   { id: "ailment-duration-9", keywordId: "ailment", description: "Ailments last 1 turn longer" },
+  { id: "ailment-duration-10", keywordId: "ailment", description: "Ailments last 1 turn longer" },
 
   { id: "consume-draw-1", keywordId: "consume", description: "Draw 1 card when a card is consumed" },
   { id: "consume-draw-2", keywordId: "consume", description: "Draw 1 card when a card is consumed" },
@@ -164,6 +177,7 @@ export const talentPool: TalentDefinition[] = [
   { id: "consume-draw-7", keywordId: "consume", description: "Draw 1 card when a card is consumed" },
   { id: "consume-draw-8", keywordId: "consume", description: "Draw 1 card when a card is consumed" },
   { id: "consume-draw-9", keywordId: "consume", description: "Draw 1 card when a card is consumed" },
+  { id: "consume-draw-10", keywordId: "consume", description: "Draw 1 card when a card is consumed" },
 
   { id: "leech-heal-1", keywordId: "leech", description: "Leech heals for 1 more" },
   { id: "leech-heal-2", keywordId: "leech", description: "Leech heals for 1 more" },
@@ -174,6 +188,7 @@ export const talentPool: TalentDefinition[] = [
   { id: "leech-heal-7", keywordId: "leech", description: "Leech heals for 1 more" },
   { id: "leech-heal-8", keywordId: "leech", description: "Leech heals for 1 more" },
   { id: "leech-heal-9", keywordId: "leech", description: "Leech heals for 1 more" },
+  { id: "leech-heal-10", keywordId: "leech", description: "Leech heals for 1 more" },
 
   { id: "freeze-duration-1", keywordId: "freeze", description: "Freeze effects last 1 turn longer" },
   { id: "freeze-duration-2", keywordId: "freeze", description: "Freeze effects last 1 turn longer" },
@@ -184,6 +199,7 @@ export const talentPool: TalentDefinition[] = [
   { id: "freeze-duration-7", keywordId: "freeze", description: "Freeze effects last 1 turn longer" },
   { id: "freeze-duration-8", keywordId: "freeze", description: "Freeze effects last 1 turn longer" },
   { id: "freeze-duration-9", keywordId: "freeze", description: "Freeze effects last 1 turn longer" },
+  { id: "freeze-duration-10", keywordId: "freeze", description: "Freeze effects last 1 turn longer" },
 
   { id: "mana-max-1", keywordId: "mana", description: "+1 Max Mana" },
   { id: "mana-max-2", keywordId: "mana", description: "+1 Max Mana" },
@@ -194,6 +210,7 @@ export const talentPool: TalentDefinition[] = [
   { id: "mana-max-7", keywordId: "mana", description: "+1 Max Mana" },
   { id: "mana-max-8", keywordId: "mana", description: "+1 Max Mana" },
   { id: "mana-max-9", keywordId: "mana", description: "+1 Max Mana" },
+  { id: "mana-max-10", keywordId: "mana", description: "+1 Max Mana" },
 
   { id: "nature-placeholder-1", keywordId: "nature", description: "Placeholder Nature talent" },
   { id: "nature-placeholder-2", keywordId: "nature", description: "Placeholder Nature talent" },
@@ -204,6 +221,7 @@ export const talentPool: TalentDefinition[] = [
   { id: "nature-placeholder-7", keywordId: "nature", description: "Placeholder Nature talent" },
   { id: "nature-placeholder-8", keywordId: "nature", description: "Placeholder Nature talent" },
   { id: "nature-placeholder-9", keywordId: "nature", description: "Placeholder Nature talent" },
+  { id: "nature-placeholder-10", keywordId: "nature", description: "Placeholder Nature talent" },
 
   { id: "companion-placeholder-1", keywordId: "companion", description: "Placeholder Companion talent" },
   { id: "companion-placeholder-2", keywordId: "companion", description: "Placeholder Companion talent" },
@@ -214,6 +232,7 @@ export const talentPool: TalentDefinition[] = [
   { id: "companion-placeholder-7", keywordId: "companion", description: "Placeholder Companion talent" },
   { id: "companion-placeholder-8", keywordId: "companion", description: "Placeholder Companion talent" },
   { id: "companion-placeholder-9", keywordId: "companion", description: "Placeholder Companion talent" },
+  { id: "companion-placeholder-10", keywordId: "companion", description: "Placeholder Companion talent" },
 
   { id: "trap-placeholder-1", keywordId: "trap", description: "Placeholder Trap talent" },
   { id: "trap-placeholder-2", keywordId: "trap", description: "Placeholder Trap talent" },
@@ -224,6 +243,7 @@ export const talentPool: TalentDefinition[] = [
   { id: "trap-placeholder-7", keywordId: "trap", description: "Placeholder Trap talent" },
   { id: "trap-placeholder-8", keywordId: "trap", description: "Placeholder Trap talent" },
   { id: "trap-placeholder-9", keywordId: "trap", description: "Placeholder Trap talent" },
+  { id: "trap-placeholder-10", keywordId: "trap", description: "Placeholder Trap talent" },
 ];
 
 // Filter helpers for the talent selection UI.
@@ -235,15 +255,10 @@ function getAvailableTalents(keywordId: KeywordId, unlockedIds: string[]): Talen
   return getTalentsForKeyword(keywordId).filter((t) => !unlockedIds.includes(t.id));
 }
 
-// Randomly picks N talent choices from the available pool.
-export function sampleTalentChoices(keywordId: KeywordId, unlockedIds: string[], count: number = 3): TalentDefinition[] {
+// Returns the next N unlockable talents in pool order (top-to-bottom, left-to-right).
+export function sampleTalentChoices(keywordId: KeywordId, unlockedIds: string[], count: number = 1): TalentDefinition[] {
   const available = getAvailableTalents(keywordId, unlockedIds);
-  const shuffled = [...available];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled.slice(0, count);
+  return available.slice(0, count);
 }
 
 export type UnlockedTalents = Partial<Record<KeywordId, string[]>>;

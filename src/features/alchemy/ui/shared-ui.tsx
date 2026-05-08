@@ -141,7 +141,7 @@ export function ShimmerOverlay({ active, token, rounded = "rounded-[30px]" }: { 
 // and pass additional style (e.g. transition timing for animations).
 export function ProgressBar({ value, color = "bg-primary", className, style }: { value: number; color?: string; className?: string; style?: CSSProperties }) {
   return (
-    <div className={cn("h-2 w-full overflow-hidden rounded-full bg-muted", className)}>
+    <div className={cn("h-1 w-full overflow-hidden rounded-full bg-muted", className)}>
       <div className={cn("h-full rounded-full", color)} style={{ width: `${value}%`, ...style }} />
     </div>
   );

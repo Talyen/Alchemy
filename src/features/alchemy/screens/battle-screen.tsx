@@ -74,14 +74,14 @@ export function BattleScreen({
   const isPlayerTurn = battleState.turnPhase === "player";
   const hasCompanion = Boolean(battleState.activeCompanion);
   const playerTurnBadgeTransform = hasCompanion
-    ? 'translateX(calc(-50% - clamp(111px,11vh,168px) - clamp(72px,5.5vw,112px) - clamp(12px,1.2vw,22px)))'
-    : 'translateX(calc(-50% - clamp(111px,11vh,168px) - clamp(72px,5.5vw,112px)))';
+    ? 'translateX(calc(-50% - clamp(111px,11cqh,168px) - clamp(72px,5.5vw,112px) - clamp(12px,1.2vw,22px)))'
+    : 'translateX(calc(-50% - clamp(111px,11cqh,168px) - clamp(72px,5.5vw,112px)))';
   const [wishSelectedCard, setWishSelectedCard] = useState<BattleCard | null>(null);
 
   // MOBILE LANDSCAPE — compact two-row layout for touch devices
   if (isMobileLandscape) {
     return (
-      <div ref={battleSceneRef} className="relative h-full w-full overflow-hidden">
+      <div ref={battleSceneRef} className="relative h-full w-full overflow-hidden [container-type:size]">
         <div className="absolute inset-0 flex flex-col">
           {/* Top: Player & Enemy side-by-side */}
           <div className="flex items-start justify-center gap-1 p-1">
@@ -272,7 +272,7 @@ export function BattleScreen({
   }
 
   return (
-    <div ref={battleSceneRef} className="relative h-full w-full overflow-hidden">
+    <div ref={battleSceneRef} className="relative h-full w-full overflow-hidden [container-type:size]">
       <section className="absolute inset-x-0 flex -translate-y-1/2 items-start justify-center gap-[clamp(144px,11vw,224px)] px-4" style={{ top: '42%' }}>
         <div
           className={`pointer-events-none absolute -top-10 left-1/2 z-20 whitespace-nowrap rounded-md px-3 py-1 text-sm transition-all duration-500 ${
@@ -281,7 +281,7 @@ export function BattleScreen({
           style={{
             transform: isPlayerTurn
               ? playerTurnBadgeTransform
-              : 'translateX(calc(-50% + clamp(111px,11vh,168px) + clamp(72px,5.5vw,112px)))',
+              : 'translateX(calc(-50% + clamp(111px,11cqh,168px) + clamp(72px,5.5vw,112px)))',
           }}
         >
           {isPlayerTurn ? 'Your Turn' : 'Enemy Turn'}
@@ -309,7 +309,7 @@ export function BattleScreen({
               shaking={playerShaking}
             />
             {battleState.activeCompanion ? (
-              <div className="absolute bottom-[clamp(88px,8.5vh,118px)] left-[calc(100%-clamp(42px,4.6vh,68px))] z-20">
+              <div className="absolute bottom-[clamp(88px,8.5cqh,118px)] left-[calc(100%-clamp(42px,4.6cqh,68px))] z-20">
                 <CompanionPanel companion={battleState.activeCompanion} shaking={companionShaking} />
               </div>
             ) : null}
@@ -348,7 +348,7 @@ export function BattleScreen({
           <PilePanel label="Draw Pile" count={battleState.deck.length} type="draw" />
         </div>
 
-        <div className="flex min-h-[298px] min-w-0 items-end justify-center pb-3 pt-10" aria-label="Player hand">
+        <div className="flex min-h-[334px] min-w-0 items-end justify-center pb-3 pt-10" aria-label="Player hand">
           {battleState.hand.map((card, index) => {
             const hoverId = getHoverId("hand", `${card.id}-${card.uid}`);
             const isHovered = hoveredCardId === hoverId;

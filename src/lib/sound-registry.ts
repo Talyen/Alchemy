@@ -25,6 +25,12 @@ export const cardSounds: Record<string, string[]> = {
   "poison-dagger": ["sword-impact-hit-2.ogg"],
   fireball: ["fireball-1.ogg"],
   fangs: ["sword-impact-hit-2.ogg"],
+  "wolf-companion": ["sword-impact-hit-2.ogg"],
+  "companion-wolf": ["sword-impact-hit-2.ogg"],
+  "imp-companion": ["torch-attack-strike-1.ogg"],
+  "companion-imp": ["torch-attack-strike-1.ogg"],
+  "lizard-scout-companion": ["swipe.ogg"],
+  "companion-lizard-scout": ["swipe.ogg"],
   frostbolt: ["ice-throw-1.ogg"],
   "health-potion": ["ice-in-water.ogg"],
   "mana-berries": ["buff-pickup.ogg"],
@@ -88,7 +94,7 @@ export const uiSounds = {
   mysteryGood: "grand-piano-chime-positive.ogg",
   mysteryBad: "harpsichord-negative.ogg",
   rewardSelect: "sci-fi-confirm.ogg",
-  talentUnlock: "harpsichord-level-complete.ogg",
+  talentUnlock: "music-box-chime-positive.ogg",
   collectionPage: "page-turn.ogg",
 } as const;
 

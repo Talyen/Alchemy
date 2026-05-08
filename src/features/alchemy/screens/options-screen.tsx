@@ -72,7 +72,7 @@ export function OptionsScreen({
         </div>
 
         <AnimatedHeight deps={[tab]}>
-        <div key={tab} className="state-swap text-left">
+        <div key={tab} className="state-swap mt-6 text-left">
           {tab === "display" ? (
             <div className="space-y-4">
               {showDisplayMode ? <DisplayModeSelect displayMode={displayMode} displayModeOptions={displayModeOptions} onChange={onDisplayModeChange} /> : null}

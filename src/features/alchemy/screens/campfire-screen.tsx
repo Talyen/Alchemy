@@ -76,12 +76,12 @@ export function CampfireScreen({
             Rest
           </Button>
         ) : (
-          <div className="w-full max-w-sm">
-            <div className="flex items-center justify-between text-sm">
-              <span className="font-semibold text-foreground">HP</span>
-              <span className="text-muted-foreground">{displayHp} / {maxHp}</span>
+          <div className="surface-muted w-[clamp(222px,22vh,336px)] rounded-[24px] px-4 py-3">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm font-semibold text-foreground">HP</p>
+              <p className="hp-number-pop text-xs font-medium text-muted-foreground">{displayHp} / {maxHp}</p>
             </div>
-            <Progress value={(targetHp / maxHp) * 100} className="campfire-hp-progress mt-2 h-4 bg-muted [&>div]:bg-red-500" />
+            <Progress value={(targetHp / maxHp) * 100} className="campfire-hp-progress mt-2.5 h-2 bg-background/80 [&>div]:bg-destructive" />
           </div>
         )}
       </AnimatedHeight>

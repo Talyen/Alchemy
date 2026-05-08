@@ -3,16 +3,16 @@ import { useState, useRef, useMemo } from "react";
 import { House, Swords } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import { keywordDefinitions, type KeywordId } from "@/lib/game-data";
 import { computeTalentPoints, xpForNextPoint, xpToNextPoint, type TalentXP } from "@/lib/talents";
 import { TALENT_CHOICES_OFFERED } from "@/lib/game-constants";
 
 import { AnimatedHeight } from "../ui/animated-height";
-import { TalentChoicesInline, TalentKeywordButton, TalentList } from "../ui/talents-ui";
+import { TalentKeywordButton, TalentList } from "../ui/talents-ui";
 import { ConfirmationDialog, PageLayout, ProgressBar } from "../ui/shared-ui";
 import { KeywordTag } from "../ui/keyword-tag";
 import { getTalentsForKeyword, sampleTalentChoices, type UnlockedTalents, type TalentDefinition } from "../talent-pool";
+import { playUISound } from "@/lib/audio";
 
 export function TalentsScreen({
   hasActiveBattle, onMainMenu, onReturnToBattle, talentXP, runTalentXP,
@@ -51,7 +51,7 @@ export function TalentsScreen({
     return c.length > 0 ? c : null;
   }, [selectedKeyword, unlockedIds, unspentPoints, allUnlocked]);
 
-  function handleChooseTalent(talent: TalentDefinition) { onUnlockTalent(selectedKeyword, talent.id); delete choicesCache.current[selectedKeyword]; }
+  function handleUnlockTalent(talentId: string) { onUnlockTalent(selectedKeyword, talentId); delete choicesCache.current[selectedKeyword]; playUISound("talentUnlock"); }
   function handleReset() { onResetTalents(); choicesCache.current = {}; setShowResetConfirm(false); }
 
   return (
@@ -72,19 +72,17 @@ export function TalentsScreen({
           </div>
 
           <AnimatedHeight deps={[selectedKeyword]}>
-            <div className="surface-muted rounded-[22px] border border-border/70 p-5">
+            <div className="surface-muted rounded-[22px] border border-border/70 p-3">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-semibold text-foreground"><KeywordTag keywordId={selectedKeyword} /> XP Progress</p>
+                <p className="text-lg font-semibold text-foreground"><KeywordTag keywordId={selectedKeyword} className="text-base" /></p>
                 <p className="text-xs text-muted-foreground">{totalXP} XP / {nextXP} XP — {totalPoints} point{totalPoints !== 1 ? "s" : ""}</p>
               </div>
-              <ProgressBar value={progressPercent} className="mt-3" style={{ transition: "width 0.3s ease" }} />
+              <ProgressBar value={progressPercent} className="mt-1.5" style={{ transition: "width 0.3s ease" }} />
             </div>
 
-            {currentChoices ? <TalentChoicesInline choices={currentChoices} onChoose={handleChooseTalent} /> : (
-              <div className="px-5">
-                <TalentList unlockedTalents={unlockedTalentsForKeyword} allTalents={allTalentsForKeyword} />
-              </div>
-            )}
+            <div className="mt-4 px-5">
+              <TalentList unlockedTalents={unlockedTalentsForKeyword} allTalents={allTalentsForKeyword} choices={currentChoices} onUnlock={handleUnlockTalent} />
+            </div>
           </AnimatedHeight>
         </div>
 

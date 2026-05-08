@@ -130,14 +130,23 @@ export function useMobileDetection() {
 }
 
 // ---- Virtual Resolution ----
+// Design canvas height. All screens render onto a virtual canvas of this height
+// (width derived from selected resolution's aspect ratio) and are CSS-scaled to
+// fit the viewport. This ensures consistent layout proportions across all displays.
 const designStageHeight = 1080;
+
+// The minimum scale floor — lowered from 0.45 to 0.3 so that very small viewports
+// (mobile landscape ~375px tall) still produce a frame that fits without overflow.
+const MIN_STAGE_SCALE = 0.3;
+const MAX_STAGE_SCALE = 1.35;
 
 // Wraps the game canvas in a CSS scale transform so it fits the window. The
 // selected resolution contributes aspect ratio only; UI density stays anchored
 // to a 1080p design canvas so higher output resolutions do not shrink content.
-// When isMobileLandscape is true, the virtual canvas is bypassed entirely and
-// the game renders at viewport size (scale: 1).
-export function useVirtualResolution(selectedResolution: ResolutionOption, isMobileLandscape = false) {
+// When bypassVr is true (mobile landscape + battle screen), the virtual canvas
+// is bypassed entirely and the game renders at viewport size (scale: 1) so that
+// the compact mobile battle layout's touch targets stay at native pixel size.
+export function useVirtualResolution(selectedResolution: ResolutionOption, bypassVr = false) {
   const [viewportSize, setViewportSize] = useState(() => ({ width: window.innerWidth, height: window.innerHeight }));
 
   useEffect(() => {
@@ -146,8 +155,9 @@ export function useVirtualResolution(selectedResolution: ResolutionOption, isMob
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Mobile landscape: render directly into the viewport with no scaling
-  if (isMobileLandscape) {
+  // Bypass VR for the mobile battle layout — it uses a compact flex layout
+  // designed for the native viewport.
+  if (bypassVr) {
     return {
       frameStyle: { width: "100%", height: "100%" },
       stageStyle: { width: "100%", height: "100%", transform: "none", transformOrigin: "top left", left: 0, top: 0 },
@@ -166,7 +176,7 @@ export function useVirtualResolution(selectedResolution: ResolutionOption, isMob
   } else {
     scale = viewportSize.width / stageWidth;
   }
-  scale = Math.max(0.45, Math.min(1.35, scale));
+  scale = Math.max(MIN_STAGE_SCALE, Math.min(MAX_STAGE_SCALE, scale));
 
   const frameWidth = stageWidth * scale;
   const frameHeight = stageHeight * scale;

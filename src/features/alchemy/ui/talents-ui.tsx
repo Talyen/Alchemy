@@ -1,10 +1,8 @@
 // Talent UI widgets for selecting pending unlocks and reviewing unlocked nodes.
-import { useState, Fragment } from "react";
+import { useState, useEffect, Fragment } from "react";
 import type { KeywordId } from "@/lib/game-data";
 import { keywordDefinitions } from "@/lib/game-data";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { keywordIcons } from "../config";
 import { KeywordTag } from "./keyword-tag";
 import { tokenizeDescription } from "../utils";
 import type { TalentDefinition } from "../talent-pool";
@@ -46,120 +44,87 @@ function renderDescription(description: string) {
   });
 }
 
-export function TalentChoicesInline({
+export function TalentList({
+  unlockedTalents,
+  allTalents,
   choices,
-  onChoose,
+  onUnlock,
 }: {
-  choices: TalentDefinition[];
-  onChoose: (talent: TalentDefinition) => void;
+  unlockedTalents: TalentDefinition[];
+  allTalents: TalentDefinition[];
+  choices?: TalentDefinition[] | null;
+  onUnlock?: (talentId: string) => void;
 }) {
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const selectedTalent = choices.find((t) => t.id === selectedId) ?? null;
+  const [revealingId, setRevealingId] = useState<string | null>(null);
+  const unlockedIds = new Set(unlockedTalents.map((t) => t.id));
+  const choiceIds = new Set(choices?.map((c) => c.id) ?? []);
 
-  function handleConfirm() {
-    if (selectedTalent) {
-      onChoose(selectedTalent);
-      setSelectedId(null);
+  useEffect(() => {
+    if (revealingId) {
+      const timer = setTimeout(() => setRevealingId(null), 400);
+      return () => clearTimeout(timer);
     }
+  }, [revealingId]);
+
+  function handleChoiceClick(talentId: string) {
+    setRevealingId(talentId);
+    onUnlock?.(talentId);
   }
 
   return (
     <div>
-      <p className="mb-3 text-center text-sm font-semibold text-amber-300">
-        Choose a talent to unlock
-      </p>
-      <div className="flex flex-wrap justify-center gap-3">
-        {choices.map((talent) => {
-          const borderClass = keywordBorderClasses[talent.keywordId] ?? "border-border/60";
-          const textClass = keywordDefinitions[talent.keywordId]?.colorClass ?? "text-foreground";
-          const Icon = keywordIcons[talent.keywordId];
-          const isSelected = selectedId === talent.id;
-          return (
-            <button
-              key={talent.id}
-              type="button"
-              onClick={() => setSelectedId(talent.id)}
-              className={cn(
-                "talent-choice-pending flex items-center gap-2 flex-1 min-w-[180px] max-w-[240px] rounded-[14px] border bg-black px-4 py-3 text-left text-sm transition-all",
-                isSelected
-                  ? `${borderClass} ring-1 ring-inset ring-white/20`
-                  : `${borderClass}/30 hover:${borderClass}/60`,
-              )}
-            >
-              {Icon ? <Icon className={cn("h-4 w-4 shrink-0", textClass)} /> : null}
-              <span className="font-semibold leading-snug text-muted-foreground">
-                {renderDescription(talent.description)}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="mt-4 flex h-10 items-center justify-center">
-        {selectedTalent ? (
-          <Button onClick={handleConfirm}>
-            Confirm
-          </Button>
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
-export function TalentList({
-  unlockedTalents,
-  allTalents,
-}: {
-  unlockedTalents: TalentDefinition[];
-  allTalents: TalentDefinition[];
-}) {
-  const unlockedIds = new Set(unlockedTalents.map((t) => t.id));
-
-  return (
-    <div>
       {allTalents.length > 0 ? (
-        <div className="grid grid-cols-3 items-start gap-2">
-          {allTalents.map((talent) => {
-            const isUnlocked = unlockedIds.has(talent.id);
-            const borderClass = keywordBorderClasses[talent.keywordId] ?? "border-border/60";
-            const Icon = keywordIcons[talent.keywordId];
+        <div className="flex flex-col items-center gap-2">
+          {[[0, 1], [1, 2], [3, 3], [6, 4]].map(([start, count]) => (
+            <div key={start} className="flex justify-center gap-2">
+              {allTalents.slice(start, start + count).map((talent) => {
+                const isUnlocked = unlockedIds.has(talent.id);
+                const isChoice = choiceIds.has(talent.id);
+                const borderClass = keywordBorderClasses[talent.keywordId] ?? "border-border/60";
 
-            if (isUnlocked) {
-              return (
-                <div
-                  key={talent.id}
-                  className={cn(
-                    "flex items-start gap-2 rounded-[12px] border bg-black px-3 py-2.5 text-sm font-semibold leading-snug min-h-[5rem]",
-                    `${borderClass}/30`,
-                  )}
-                >
-                  {Icon ? (
-                    <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/5">
-                      <Icon className="h-3 w-3" />
+                if (isUnlocked) {
+                  return (
+                    <div key={talent.id}
+                      className={cn(
+                        "flex w-[155px] items-center justify-center rounded-[12px] border bg-black px-3 py-3 text-sm font-semibold leading-snug min-h-[5rem] text-center",
+                        `${borderClass}/30`,
+                        revealingId === talent.id && "animate-talent-reveal",
+                      )}
+                    >
+                      <span>{renderDescription(talent.description)}</span>
                     </div>
-                  ) : null}
-                  <span>{renderDescription(talent.description)}</span>
-                </div>
-              );
-            }
+                  );
+                }
 
-            return (
-              <div
-                key={talent.id}
-                className={cn(
-                  "flex items-start gap-2 rounded-[12px] border border-dashed px-3 py-2.5 text-sm font-semibold leading-snug min-h-[5rem]",
-                  "border-border/20 bg-black/40 text-muted-foreground/40",
-                )}
-              >
-                {Icon ? (
-                  <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/[0.03]">
-                    <Icon className="h-3 w-3 opacity-30" />
+                if (isChoice) {
+                  return (
+                    <button key={talent.id} type="button"
+                      onClick={() => handleChoiceClick(talent.id)}
+                      className={cn(
+                        "talent-choice-pending flex w-[155px] items-center justify-center rounded-[12px] border bg-black px-3 py-3 text-sm font-semibold leading-snug min-h-[5rem] text-center transition-all",
+                        borderClass,
+                      )}
+                    >
+                      <span className="animate-unlock-text-pulse text-amber-300">
+                        Unlock Talent
+                      </span>
+                    </button>
+                  );
+                }
+
+                return (
+                  <div key={talent.id}
+                    className={cn(
+                      "flex w-[155px] items-center justify-center rounded-[12px] border border-dashed px-3 py-3 text-sm font-semibold leading-snug min-h-[5rem] text-center",
+                      "border-border/10 bg-black/25 text-muted-foreground/30",
+                    )}
+                  >
+                    <span>Undiscovered</span>
                   </div>
-                ) : null}
-                <span>Undiscovered</span>
-              </div>
-            );
-          })}
+                );
+              })}
+            </div>
+          ))}
         </div>
       ) : (
         <p className="py-6 text-center text-sm text-muted-foreground">
@@ -189,13 +154,12 @@ export function TalentKeywordButton({
         isSelected
           ? "border-primary bg-primary/20 text-primary"
           : "border-border/80 bg-card text-foreground",
+        hasUnspent && "shadow-[0_0_6px_2px_rgba(251,191,36,0.15)]",
       )}
       onClick={onClick}
     >
       <KeywordTag keywordId={keywordId} />
-      {hasUnspent ? (
-        <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-background" />
-      ) : null}
+      {hasUnspent ? <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-red-400/40 ring-1 ring-background" /> : null}
     </button>
   );
 }

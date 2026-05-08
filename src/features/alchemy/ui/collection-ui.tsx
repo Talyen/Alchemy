@@ -87,7 +87,7 @@ function CompendiumTile({
             item.frameType === "trinket" ? "aspect-square" : "aspect-[375/524]",
             item.discovered ? "opacity-100" : "grayscale opacity-45",
           )}
-          loading="lazy"
+          loading="eager"
         />
       </button>
     </div>

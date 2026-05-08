@@ -34,7 +34,7 @@ function PotionCardItem({ card, gold, purchased, onBuy, index }: { card: BattleC
       </div>
       <p className="text-sm font-semibold text-foreground">{card.title}</p>
       <DisabledTooltip show={gold < ALCHEMIST_POTION_PRICE} message="Not Enough Gold">
-        <Button variant="outline" disabled={gold < ALCHEMIST_POTION_PRICE} onClick={onBuy} className="transition-colors hover:translate-y-0">
+        <Button variant="outline" disabled={gold < ALCHEMIST_POTION_PRICE} onClick={onBuy} >
           Buy <GoldCost amount={ALCHEMIST_POTION_PRICE} />
         </Button>
       </DisabledTooltip>
@@ -59,12 +59,12 @@ function MixPotionCardItem({ card, visualIndex, isSelected, onSelect }: { card: 
 
 function ServiceButton({ icon: Icon, label, cost, disabled, used, soldOutText, onClick }: { icon: React.ComponentType<{ className?: string }>; label: string; cost: number; disabled: boolean; used: boolean; soldOutText: string; onClick: () => void }) {
   if (used) {
-    return <Button variant="outline" disabled className="text-muted-foreground/40 transition-colors hover:translate-y-0">{soldOutText}</Button>;
+    return <Button variant="outline" disabled className="text-muted-foreground/40">{soldOutText}</Button>;
   }
   const tooltip = label === "Mix Potions" ? "Not Enough Potions to Mix" : "Not Enough Gold";
   return (
     <DisabledTooltip show={disabled} message={tooltip}>
-      <Button variant="outline" disabled={disabled} onClick={onClick} className="transition-colors hover:translate-y-0">
+      <Button variant="outline" disabled={disabled} onClick={onClick} >
         <Icon className="h-4 w-4" />
         <span className="text-sm font-normal">{label}</span>
         <GoldCost amount={cost} />

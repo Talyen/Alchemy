@@ -36,7 +36,7 @@ export const XP_BASE_PER_POINT = 10;           // First talent point costs 10 XP
 export const XP_TRIANGULAR_MULTIPLIER = 5;     // Used in the triangular number formula: n(n+1)/2 * 5 = total XP for n points.
 export const XP_MIN_THRESHOLD = 10;            // XP floor before any talent point is earned. Prevents fractional points at very low XP.
 export const XP_ROOT_DIVISOR = 0.8;            // Constant in the inverse triangular formula: sqrt(1 + 0.8*XP). Derived from 2/XP_BASE_PER_POINT.
-export const TALENT_CHOICES_OFFERED = 3;       // Number of random talent options presented when spending a point. Same "rule of three" as Wish.
+export const TALENT_CHOICES_OFFERED = 1;       // Number of random talent options presented when spending a point. Now 1 — click to unlock instantly.
 
 // ============ Shop ============
 export const SHOP_CARD_PRICE = 30;

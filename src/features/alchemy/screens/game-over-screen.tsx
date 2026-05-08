@@ -51,8 +51,12 @@ export function GameOverScreen({ runTalentXP, talentXP, onMainMenu }: { runTalen
       {keywordIds.length > 0 ? (
         <div className="w-full max-w-2xl">
           <p className="mb-3 text-sm font-semibold text-foreground">Talent Progress This Run</p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {keywordIds.map((kw) => <KeywordProgressCard key={kw} kw={kw} runXP={runTalentXP[kw] ?? 0} totalXP={(talentXP[kw] ?? 0) + (runTalentXP[kw] ?? 0)} animate={animate} />)}
+          <div className="flex flex-wrap justify-center gap-2">
+            {keywordIds.map((kw) => (
+              <div key={kw} className="flex-none w-[210px]">
+                <KeywordProgressCard kw={kw} runXP={runTalentXP[kw] ?? 0} totalXP={(talentXP[kw] ?? 0) + (runTalentXP[kw] ?? 0)} animate={animate} />
+              </div>
+            ))}
           </div>
         </div>
       ) : <p className="text-sm text-muted-foreground">No talent XP earned this run.</p>}

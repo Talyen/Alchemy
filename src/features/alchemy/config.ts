@@ -76,19 +76,19 @@ export const ghostDurations: Record<CardGhostVariant, number> = {
 };
 
 // ---- Responsive Card Widths ----
-// These clamp() CSS values ensure cards look good at any viewport size.
-// The min/ideal/max strategy prevents tiny cards on small screens and
-// excessively large cards on ultra-wides.
-export const battleCardWidthClass = "w-[clamp(222px,22vh,336px)]";
-export const handCardWidthClass = "w-[clamp(189px,18.7vh,286px)]";
+// These clamp() CSS values size battle cards from the virtual battle stage
+// instead of the browser viewport, so desktop scaling and preview emulation
+// cannot double-scale the hand differently from the battlefield.
+export const battleCardWidthClass = "w-[clamp(222px,22cqh,336px)]";
+export const handCardWidthClass = "w-[clamp(189px,18.7cqh,286px)]";
 export const collectionCardWidthClass = "w-[clamp(156px,15vw,210px)]";
-export const pileCardWidthClass = "w-[clamp(144px,14.4vh,219px)]";
+export const pileCardWidthClass = "w-[clamp(144px,14.4cqh,219px)]";
 
 // Mobile-safe card widths for touch / small-landscape viewports.
 // These are smaller than desktop to fit side-by-side player/enemy panels.
 export const mobileBattleCardWidthClass = "w-[clamp(120px,26vh,180px)]";
 export const mobileHandCardWidthClass = "w-[clamp(90px,25vw,150px)]";
-export const mobilePileCardWidthClass = "w-[clamp(60px,6vh,90px)]";
+export const mobilePileCardWidthClass = "w-[clamp(60px,6cqh,90px)]";
 
 // Card surface styling — shared by all card-like elements.
 export const cardSurfaceClass = "relative overflow-hidden rounded-[30px] bg-black";

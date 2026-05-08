@@ -225,6 +225,17 @@ for (const resolution of supportedResolutions) {
     expect(layout.width).toBeLessThanOrEqual(layout.viewportWidth);
     expect(layout.height).toBeLessThanOrEqual(layout.viewportHeight);
 
+    const battleSpacing = await page.evaluate(() => {
+      const handCards = Array.from(document.querySelectorAll<HTMLElement>('[aria-label^="Play "]'));
+      const statusPanes = Array.from(document.querySelectorAll<HTMLElement>(".surface-muted"));
+      const handTop = Math.min(...handCards.map((card) => card.getBoundingClientRect().top));
+      const statusBottom = Math.max(...statusPanes.map((pane) => pane.getBoundingClientRect().bottom));
+
+      return { handTop, statusBottom, gap: handTop - statusBottom };
+    });
+
+    expect(battleSpacing.gap).toBeGreaterThanOrEqual(16);
+
     await firstCard.click();
     await expect(playableCards).toHaveCount(Math.max(0, cardsBeforePlay - 1));
   });

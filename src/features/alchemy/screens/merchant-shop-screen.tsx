@@ -35,7 +35,7 @@ function ShopCardItem({ card, price, gold, purchased, onBuy, index }: { card: Ba
       </div>
       <p className="text-sm font-semibold text-foreground">{card.title}</p>
       <DisabledTooltip show={gold < price} message="Not Enough Gold">
-        <Button variant="outline" disabled={gold < price} onClick={onBuy} className="transition-colors hover:translate-y-0">
+        <Button variant="outline" disabled={gold < price} onClick={onBuy} >
           Buy <GoldCost amount={price} />
         </Button>
       </DisabledTooltip>
@@ -126,15 +126,15 @@ export function MerchantShopScreen({
 
             <div className="mt-6 flex flex-wrap justify-center gap-3">
               {removeUsed ? (
-                <Button variant="outline" disabled className="text-muted-foreground/40 transition-colors hover:translate-y-0"><Trash2 className="h-4 w-4" /> Remove Card — Sold Out</Button>
+                <Button variant="outline" disabled className="text-muted-foreground/40"><Trash2 className="h-4 w-4" /> Remove Card — Sold Out</Button>
               ) : (
                 <DisabledTooltip show={gold < SHOP_REMOVE_PRICE} message="Not Enough Gold">
-                  <Button variant="outline" disabled={gold < SHOP_REMOVE_PRICE} onClick={() => { setRemoveMode(true); setRemovePage(0); }} className="transition-colors hover:translate-y-0">
+                  <Button variant="outline" disabled={gold < SHOP_REMOVE_PRICE} onClick={() => { setRemoveMode(true); setRemovePage(0); }} >
                     <Trash2 className="h-4 w-4" /> Remove Card <GoldCost amount={SHOP_REMOVE_PRICE} />
                   </Button>
                 </DisabledTooltip>
               )}
-              <Button variant="outline" disabled={refreshesLeft <= 0 || gold < SHOP_REFRESH_PRICE} onClick={onRefresh} className="transition-colors hover:translate-y-0">
+              <Button variant="outline" disabled={refreshesLeft <= 0 || gold < SHOP_REFRESH_PRICE} onClick={onRefresh} >
                 <RefreshCw className="h-4 w-4" /> Refresh <GoldCost amount={SHOP_REFRESH_PRICE} />
               </Button>
             </div>

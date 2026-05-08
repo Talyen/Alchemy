@@ -389,6 +389,7 @@ export function useAlchemyRunController({
     let currentState = battleState;
     const preCombatTexts: CombatTextEvent[] = [];
     if (companionScheduledRef.current && currentState.activeCompanion) {
+      playCardSound(`companion-${currentState.activeCompanion.id}`);
       currentState = processCompanionTurnStart(currentState, preCombatTexts);
       setCompanionShaking(true);
       setTimeout(() => setCompanionShaking(false), SHAKE_DURATION);
@@ -416,6 +417,9 @@ export function useAlchemyRunController({
       if (result.state.activeCompanion) {
         companionTimeoutRef.current = setTimeout(() => {
           const texts: CombatTextEvent[] = [];
+          if (battleStateRef.current.activeCompanion) {
+            playCardSound(`companion-${battleStateRef.current.activeCompanion.id}`);
+          }
           const newState = processCompanionTurnStart(battleStateRef.current, texts);
           setBattleState(newState);
           setCompanionShaking(true);

@@ -183,7 +183,7 @@ export function CompanionPanel({ companion, compact = false, shaking = false }: 
   return (
     <div className="companion-enter group/companion relative" data-testid="active-companion" aria-label={`Active companion: ${companion.title}`}>
       <div
-        className={cn("tilt-surface", cardSurfaceClass, compact ? "w-[clamp(78px,17vh,120px)]" : "w-[clamp(96px,11vh,150px)]", shaking && "animate-shake")}
+        className={cn("tilt-surface", cardSurfaceClass, compact ? "w-[clamp(78px,17cqh,120px)]" : "w-[clamp(96px,11cqh,150px)]", shaking && "animate-shake")}
         data-tilt-strength="10"
         onMouseMove={setTiltFromEvent}
         onMouseLeave={clearTiltFromEvent}
