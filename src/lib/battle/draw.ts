@@ -16,6 +16,8 @@ import {
 import { ROOM_SCALING_INCREMENT, ELITE_STAT_MULTIPLIER, STARTING_TURN, ENEMY_BASE_REGENERATION } from "../game-constants";
 import { computeTrinketManifest, defaultTrinketEffects } from "../trinkets";
 
+let cardUidCounter = 0;
+
 // Default talent manifest used when no talents are unlocked.
 // Every field must have a safe zero/false value so battle logic can read
 // talentEffects without existence checks.
@@ -128,7 +130,7 @@ export function drawCards(deck: BattleCard[], discard: BattleCard[], hand: Battl
 
     const card = nextDeck.shift();
     if (card) {
-      nextHand.push(card);
+      nextHand.push({ ...card, uid: cardUidCounter++ });
     }
   }
 
@@ -209,6 +211,7 @@ export function createBattleState(
     enemyStunSkipTurns: 0,
     enemyFreezeSkipTurns: 0,
     wishOptions: null,
+    activeCompanion: null,
     currentEnemy: enemy,
     talentEffects,
     trinketEffects,

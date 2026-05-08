@@ -1,4 +1,4 @@
-import { ailmentStatusIds, cardLibrary, type BattleCard, type BattleCardEffect } from "@/lib/game-data";
+import { ailmentStatusIds, cardLibrary, companionLibrary, type BattleCard, type BattleCardEffect } from "@/lib/game-data";
 import { drawCards, shuffleCards } from "./draw";
 
 import {
@@ -477,6 +477,8 @@ export function applyCardEffects(state: BattleState, card: BattleCard, combatTex
         return { ...currentState, gold: currentState.gold + effect.amount };
       case "wish":
         return applyWishEffect(currentState, card, combatTexts);
+      case "summon-companion":
+        return { ...currentState, activeCompanion: companionLibrary[effect.companionId] };
       case "remove-ailment":
         return removePlayerAilments(currentState, effect.mode, combatTexts);
       default:

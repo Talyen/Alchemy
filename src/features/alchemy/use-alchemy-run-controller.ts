@@ -1,6 +1,6 @@
 import type { MouseEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { chooseWishCard, createBattleState, endPlayerTurn, maxPlayerHealth, playBattleCardResolved, cardHasDamageType, type BattleState } from "@/lib/battle";
+import { chooseWishCard, createBattleState, endPlayerTurn, maxPlayerHealth, playBattleCardResolved, cardHasDamageType, processCompanionTurnStart, type BattleState, type CombatTextEvent } from "@/lib/battle";
 import { cardLibrary, characters, starterDeck, type BattleCard, type CharacterGender, type CharacterId, type KeywordId } from "@/lib/game-data";
 import { playVictory, playDefeat, playCardSound, playEnemyAttack, playGoldGain, playGoldSpend } from "@/lib/audio";
 import { destinationPool, getCurrentEnemy } from "./config";
@@ -13,7 +13,7 @@ import type { TalentXP } from "@/lib/talents";
 import type { UnlockedTalents } from "./talent-pool";
 import { mysteryPool, type MysteryChoice, type MysteryEvent } from "./mystery-events";
 import { createMixedPotion, applyMixToDeck } from "./potion-mixer";
-import { AUTO_END_TURN_DELAY, ALCHEMIST_MIX_PRICE, ALCHEMIST_POTION_PRICE, ALCHEMIST_REFRESH_PRICE, CAMPFIRE_HEAL_FRACTION, DESTINATION_CHOICES, ENEMY_PHASE_DELAY, GOLD_REWARD_MAX, GOLD_REWARD_MIN, REWARD_CARD_CHOICES, SHAKE_DURATION, SHOP_CARD_PRICE, SHOP_REFRESH_PRICE, SHOP_REMOVE_PRICE, VICTORY_TRANSITION_DELAY } from "@/lib/game-constants";
+import { AUTO_END_TURN_DELAY, ALCHEMIST_MIX_PRICE, ALCHEMIST_POTION_PRICE, ALCHEMIST_REFRESH_PRICE, CAMPFIRE_HEAL_FRACTION, COMPANION_ATTACK_DELAY, DESTINATION_CHOICES, ENEMY_PHASE_DELAY, GOLD_REWARD_MAX, GOLD_REWARD_MIN, REWARD_CARD_CHOICES, SHAKE_DURATION, SHOP_CARD_PRICE, SHOP_REFRESH_PRICE, SHOP_REMOVE_PRICE, VICTORY_TRANSITION_DELAY } from "@/lib/game-constants";
 import { getCardRect, getEnemyStatusChips, getHoverId, getPlayerStatusChips, randomBetween, resampleItems, sampleItems } from "./utils";
 
 type SetStringList = React.Dispatch<React.SetStateAction<string[]>>;
@@ -41,13 +41,14 @@ function getEffectiveCost(state: BattleState, card: BattleCard): number {
 export function useAlchemyRunController({
   discoveredCardIds, setDiscoveredCardIds, setEncounteredEnemyIds,
   discoveredTrinketIds, setDiscoveredTrinketIds,
-  initialTalentXP, initialUnlockedTalents, initialActiveRun,
+  initialTalentXP, initialUnlockedTalents, initialActiveRun, autoEndTurn,
 }: {
   discoveredCardIds: string[];
   setDiscoveredCardIds: SetStringList; setEncounteredEnemyIds: SetStringList;
   discoveredTrinketIds: string[]; setDiscoveredTrinketIds: SetStringList;
   initialTalentXP: TalentXP; initialUnlockedTalents: UnlockedTalents;
   initialActiveRun: { characterId: CharacterId; characterGender: CharacterGender } | null;
+  autoEndTurn: boolean;
 }) {
   // ============ Sub-hooks ============
   const talents = useTalentState(initialTalentXP, initialUnlockedTalents);
@@ -61,6 +62,7 @@ export function useAlchemyRunController({
   const [hasActiveBattle, setHasActiveBattle] = useState(initialActiveRun !== null);
   const [enemyShaking, setEnemyShaking] = useState(false);
   const [playerShaking, setPlayerShaking] = useState(false);
+  const [companionShaking, setCompanionShaking] = useState(false);
 
   // Filters the destination pool based on current game state.
   function getAvailableDestinations(currentHp?: number, currentGold?: number) {
@@ -87,8 +89,14 @@ export function useAlchemyRunController({
   const destinationButtonRefs = useRef<Partial<Record<Destination, HTMLButtonElement | null>>>({});
   const navTimerRef = useRef<number>(0);
   const cardPlayInProgressRef = useRef(false);
+  const companionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const companionScheduledRef = useRef(false);
+  const battleStateRef = useRef(battleState);
+
+  useEffect(() => { battleStateRef.current = battleState; }, [battleState]);
 
   useEffect(() => () => window.clearTimeout(navTimerRef.current), []);
+  useEffect(() => () => { if (companionTimeoutRef.current) clearTimeout(companionTimeoutRef.current); }, []);
 
   // ============ Hooks ============
   const { cardGhosts, removeCardGhost, clearCardGhosts, spawnCardGhost } = useCardGhosts();
@@ -103,10 +111,11 @@ export function useAlchemyRunController({
 
   // ============ Effects ============
   useEffect(() => {
-    if (screen !== "battle" || battleState.enemyHealth <= 0 || battleState.playerHealth <= 0 || battleState.wishOptions || (battleState.mana > 0 && battleState.hand.length > 0)) return;
+    const hasPlayableCard = battleState.hand.some((card) => battleState.mana >= getEffectiveCost(battleState, card));
+    if (!autoEndTurn || screen !== "battle" || battleState.turnPhase !== "player" || battleState.enemyHealth <= 0 || battleState.playerHealth <= 0 || battleState.wishOptions || hasPlayableCard) return;
     const t = setTimeout(() => handleEndTurn(), AUTO_END_TURN_DELAY);
     return () => clearTimeout(t);
-  }, [battleState, screen]);
+  }, [autoEndTurn, battleState, screen]);
 
   useEffect(() => {
     if (screen !== "battle" || battleState.playerHealth > 0) return;
@@ -184,7 +193,7 @@ export function useAlchemyRunController({
     if (resolution.combatTexts.some((ct) => ct.kind === "damage" && ct.target === "enemy")) { setEnemyShaking(true); setTimeout(() => setEnemyShaking(false), SHAKE_DURATION); }
     setBattleState(resolution.state);
     showCombatTexts(resolution.combatTexts);
-    setHoveredCardId((current) => (current === getHoverId("hand", `${card.id}-${index}`) ? null : current));
+    setHoveredCardId((current) => (current === getHoverId("hand", `${card.id}-${card.uid}`) ? null : current));
     talents.awardCardXP(card);
     cardPlayInProgressRef.current = false;
   }
@@ -369,17 +378,54 @@ export function useAlchemyRunController({
   // ============ Turn Management ============
   function handleEndTurn() {
     if (screen !== "battle" || battleState.turnPhase !== "player" || battleState.wishOptions || cardPlayInProgressRef.current) return;
-    const result = endPlayerTurn(battleState);
-    setBattleState({ ...result.state, turnPhase: "enemy", hand: [], playerHealth: battleState.playerHealth, playerStatuses: battleState.playerStatuses });
-    const dotTexts = result.combatTexts.filter((ct) => ct.target === "enemy");
+
+    // Clear pending companion timer (player ended turn before companion attacked)
+    if (companionTimeoutRef.current) {
+      clearTimeout(companionTimeoutRef.current);
+      companionTimeoutRef.current = null;
+    }
+
+    // If companion hasn't attacked yet this turn, do it now at end of turn
+    let currentState = battleState;
+    const preCombatTexts: CombatTextEvent[] = [];
+    if (companionScheduledRef.current && currentState.activeCompanion) {
+      currentState = processCompanionTurnStart(currentState, preCombatTexts);
+      setCompanionShaking(true);
+      setTimeout(() => setCompanionShaking(false), SHAKE_DURATION);
+    }
+    companionScheduledRef.current = false;
+
+    // Enemy phase + draw new hand (companion attack is no longer part of this)
+    const result = endPlayerTurn(currentState);
+
+    // Combine end-of-turn companion texts with enemy phase texts
+    const combinedCombatTexts = [...preCombatTexts, ...result.combatTexts];
+
+    setBattleState({ ...result.state, turnPhase: "enemy", hand: [], playerHealth: currentState.playerHealth, playerStatuses: currentState.playerStatuses });
+    const dotTexts = combinedCombatTexts.filter((ct) => ct.target === "enemy");
     if (dotTexts.length > 0) showCombatTexts(dotTexts);
     if (result.state.enemyHealth <= 0) return;
-    const playerTexts = result.combatTexts.filter((ct) => ct.target === "player");
+    const playerTexts = combinedCombatTexts.filter((ct) => ct.target === "player");
     setTimeout(() => {
-      playEnemyAttack(battleState.currentEnemy.id);
+      playEnemyAttack(currentState.currentEnemy.id);
       setBattleState(result.state);
       if (playerTexts.length > 0) showCombatTexts(playerTexts);
       if (playerTexts.some((ct) => ct.kind === "damage")) { setPlayerShaking(true); setTimeout(() => setPlayerShaking(false), SHAKE_DURATION); }
+
+      // Schedule companion attack for 1 second into the new turn
+      if (result.state.activeCompanion) {
+        companionTimeoutRef.current = setTimeout(() => {
+          const texts: CombatTextEvent[] = [];
+          const newState = processCompanionTurnStart(battleStateRef.current, texts);
+          setBattleState(newState);
+          setCompanionShaking(true);
+          setTimeout(() => setCompanionShaking(false), SHAKE_DURATION);
+          if (texts.length > 0) showCombatTexts(texts);
+          companionTimeoutRef.current = null;
+          companionScheduledRef.current = false;
+        }, COMPANION_ATTACK_DELAY);
+        companionScheduledRef.current = true;
+      }
     }, ENEMY_PHASE_DELAY);
   }
 
@@ -410,7 +456,7 @@ export function useAlchemyRunController({
     handCardRefs, battleSceneRef, playerPanelRef, enemyPanelRef, destinationButtonRefs,
     cardGhosts, shimmerState,
     playerStatusChips, enemyStatusChips, playerCombatTexts, enemyCombatTexts,
-    enemyShaking, playerShaking,
+    enemyShaking, playerShaking, companionShaking,
     talentXP: talents.talentXP, runTalentXP: talents.runTalentXP, unlockedTalents: talents.unlockedTalents,
     unlockTalent: talents.unlockTalent, unlockAllTalents: talents.unlockAllTalents, resetUnlockedTalents: talents.resetUnlockedTalents,
     setHoveredCardId, setMenuOpen, setSelectedRewardId: (id: string | null) => setRewardState((p) => ({ ...p, selectedId: id })),

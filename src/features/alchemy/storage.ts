@@ -2,13 +2,15 @@ import { starterDeck, type CharacterGender, type CharacterId } from "@/lib/game-
 import type { TalentXP } from "@/lib/talents";
 
 import type { UnlockedTalents } from "./talent-pool";
-import type { ResolutionOption } from "./types";
+import type { DisplayMode, ResolutionOption, UiScale } from "./types";
 import { SAVE_KEY } from "@/lib/game-constants";
 
 const storageKey = SAVE_KEY;
 
 type SaveData = {
   selectedResolution: ResolutionOption;
+  displayMode: DisplayMode;
+  uiScale: UiScale;
   discoveredCardIds: string[];
   encounteredEnemyIds: string[];
   discoveredTrinketIds: string[];
@@ -16,6 +18,9 @@ type SaveData = {
   unlockedTalents: UnlockedTalents;
   musicVolume: number;
   sfxVolume: number;
+  masterVolume: number;
+  muteInBackground: boolean;
+  autoEndTurn: boolean;
   activeRun: ActiveRunData | null;
 };
 
@@ -30,8 +35,8 @@ function normalizeActiveRun(activeRun: unknown): ActiveRunData | null {
   }
 
   const candidate = activeRun as { characterId?: string; characterGender?: CharacterGender };
-  const characterId = candidate.characterId === "wizard" ? "sorcerer" : candidate.characterId;
-  if (characterId !== "knight" && characterId !== "rogue" && characterId !== "sorcerer" && characterId !== "warden") {
+  const characterId = candidate.characterId === "wizard" ? "sorcerer" : candidate.characterId === "warden" ? "ranger" : candidate.characterId;
+  if (characterId !== "knight" && characterId !== "ranger" && characterId !== "rogue" && characterId !== "sorcerer") {
     return null;
   }
 
@@ -40,6 +45,8 @@ function normalizeActiveRun(activeRun: unknown): ActiveRunData | null {
 
 export const defaultSaveData: SaveData = {
   selectedResolution: "1920x1080",
+  displayMode: "borderless-fullscreen",
+  uiScale: "100",
   discoveredCardIds: starterDeck.map((card) => card.id),
   encounteredEnemyIds: [],
   discoveredTrinketIds: [],
@@ -47,6 +54,9 @@ export const defaultSaveData: SaveData = {
   unlockedTalents: {},
   musicVolume: 35,
   sfxVolume: 70,
+  masterVolume: 100,
+  muteInBackground: true,
+  autoEndTurn: true,
   activeRun: null,
 };
 
@@ -64,6 +74,8 @@ export function loadAlchemySaveData(): SaveData {
     const parsed = JSON.parse(raw) as Partial<SaveData>;
     return {
       selectedResolution: parsed.selectedResolution ?? defaultSaveData.selectedResolution,
+      displayMode: normalizeDisplayMode(parsed.displayMode),
+      uiScale: normalizeUiScale(parsed.uiScale),
       discoveredCardIds: Array.isArray(parsed.discoveredCardIds) ? parsed.discoveredCardIds : defaultSaveData.discoveredCardIds,
       encounteredEnemyIds: Array.isArray(parsed.encounteredEnemyIds) ? parsed.encounteredEnemyIds : defaultSaveData.encounteredEnemyIds,
       discoveredTrinketIds: Array.isArray(parsed.discoveredTrinketIds) ? parsed.discoveredTrinketIds : defaultSaveData.discoveredTrinketIds,
@@ -71,11 +83,30 @@ export function loadAlchemySaveData(): SaveData {
       unlockedTalents: typeof parsed.unlockedTalents === 'object' && parsed.unlockedTalents ? parsed.unlockedTalents as UnlockedTalents : defaultSaveData.unlockedTalents,
       musicVolume: typeof parsed.musicVolume === 'number' ? parsed.musicVolume : defaultSaveData.musicVolume,
       sfxVolume: typeof parsed.sfxVolume === 'number' ? parsed.sfxVolume : defaultSaveData.sfxVolume,
+      masterVolume: typeof parsed.masterVolume === 'number' ? parsed.masterVolume : defaultSaveData.masterVolume,
+      muteInBackground: typeof parsed.muteInBackground === "boolean" ? parsed.muteInBackground : defaultSaveData.muteInBackground,
+      autoEndTurn: typeof parsed.autoEndTurn === "boolean" ? parsed.autoEndTurn : defaultSaveData.autoEndTurn,
       activeRun: normalizeActiveRun(parsed.activeRun),
     };
   } catch {
     return defaultSaveData;
   }
+}
+
+function normalizeDisplayMode(displayMode: unknown): DisplayMode {
+  if (displayMode === "windowed" || displayMode === "borderless-fullscreen" || displayMode === "fullscreen") {
+    return displayMode;
+  }
+
+  return defaultSaveData.displayMode;
+}
+
+function normalizeUiScale(uiScale: unknown): UiScale {
+  if (uiScale === "90" || uiScale === "100" || uiScale === "110" || uiScale === "120") {
+    return uiScale;
+  }
+
+  return defaultSaveData.uiScale;
 }
 
 export function saveAlchemySaveData(data: SaveData) {

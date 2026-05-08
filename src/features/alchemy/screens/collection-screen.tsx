@@ -28,12 +28,13 @@ export function CollectionScreen({
 
       <div className="mt-6 flex min-h-[640px] flex-col items-center overflow-visible">
         <CollectionGrid collectionTab={collectionTab} hoveredCardId={hoveredCardId} discoveredCardIds={discoveredCardIds} encounteredEnemyIds={encounteredEnemyIds} discoveredTrinketIds={discoveredTrinketIds} onHoverChange={onHoverChange} page={page} shimmerState={shimmerState} onHoverShimmer={maybeTriggerShimmer} />
-        <CollectionPagination page={page} totalPages={totalPages} onPageChange={onPageChange} />
+        <div className="min-h-[48px]"><CollectionPagination page={page} totalPages={totalPages} onPageChange={onPageChange} /></div>
       </div>
 
-      <div className="mt-6 flex flex-wrap justify-center gap-3">
-        <Button variant="outline" onClick={onMainMenu}><House className="h-4 w-4" /> Main Menu</Button>
-        {hasActiveBattle ? <Button onClick={onReturnToBattle}><Swords className="h-4 w-4" /> Return to Battle</Button> : null}
+      <div className="mt-6 grid w-full max-w-md grid-cols-[1fr_auto_1fr] items-center gap-3">
+        <span aria-hidden="true" />
+        <Button className="hover:translate-y-0" variant="outline" onClick={onMainMenu}><House className="h-4 w-4" /> Main Menu</Button>
+        {hasActiveBattle ? <Button className="justify-self-start hover:translate-y-0" onClick={onReturnToBattle}><Swords className="h-4 w-4" /> Return to Battle</Button> : <span aria-hidden="true" />}
       </div>
     </PageLayout>
   );

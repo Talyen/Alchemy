@@ -28,6 +28,8 @@ export type PlayerStatusId = "block" | "armor" | "forge" | "haste" | "burn" | "p
 
 export type EnemyStatusId = "burn" | "poison" | "bleed" | "freeze" | "stun";
 
+export type CompanionId = "wolf" | "lizard-scout" | "imp";
+
 export type EnemyAttackEffect =
   | { kind: "damage"; damageType: "physical"; amount: number; lifesteal?: boolean }
   | { kind: "player-status"; status: PlayerStatusId; amount: number };
@@ -48,10 +50,19 @@ export type BattleCardEffect =
   | { kind: "gain-max-mana"; amount: number }
   | { kind: "gain-gold"; amount: number }
   | { kind: "wish"; amount: number }
+  | { kind: "summon-companion"; companionId: CompanionId }
   | { kind: "remove-ailment"; mode: "one" | "all" };
+
+export type CompanionDefinition = {
+  id: CompanionId;
+  title: string;
+  art: string;
+  turnStartEffects: BattleCardEffect[];
+};
 
 export type BattleCard = {
   id: string;
+  uid?: number;
   title: string;
   descriptionLines: string[];
   art: string;

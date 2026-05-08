@@ -7,6 +7,10 @@ export type Screen = "menu" | "character-select" | "battle" | "rewards" | "desti
 
 export type ResolutionOption = "1366x768" | "1600x900" | "1920x1080" | "1920x1200" | "2560x1080" | "2560x1440" | "3440x1440" | "3840x2160";
 
+export type DisplayMode = "windowed" | "borderless-fullscreen" | "fullscreen";
+
+export type UiScale = "90" | "100" | "110" | "120";
+
 export type Destination = "Normal Combat" | "Elite Combat" | "Merchant's Shop" | "Alchemist's Shop" | "Mystery" | "Campfire";
 
 export type CollectionTab = "cards" | "bestiary" | "trinkets";

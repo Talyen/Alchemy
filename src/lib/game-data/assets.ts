@@ -16,6 +16,7 @@ import discardPile from "@/assets/optimized/discard-pile.webp";
 import drawPile from "@/assets/optimized/draw-pile.webp";
 import fangs from "@/assets/optimized/fangs.webp";
 import femaleKnight from "@/assets/optimized/female-knight.webp";
+import femaleRanger from "@/assets/optimized/female-ranger.webp";
 import femaleRogue from "@/assets/optimized/female-rogue.webp";
 import femaleSorcerer from "@/assets/optimized/female-wizard.webp";
 import fireball from "@/assets/optimized/fireball.webp";
@@ -27,6 +28,7 @@ import healthPotion from "@/assets/optimized/health-potion.webp";
 import imp from "@/assets/optimized/imp.webp";
 import lizardScout from "@/assets/optimized/lizard-scout.webp";
 import maleKnight from "@/assets/optimized/male-knight.webp";
+import maleRanger from "@/assets/optimized/male-ranger.webp";
 import maleRogue from "@/assets/optimized/male-rogue.webp";
 import maleSorcerer from "@/assets/optimized/male-wizard.webp";
 import manaBerries from "@/assets/optimized/mana-berries.webp";
@@ -46,6 +48,7 @@ import slash from "@/assets/optimized/slash.webp";
 import stab from "@/assets/optimized/stab.webp";
 import steal from "@/assets/optimized/steal.webp";
 import wish from "@/assets/optimized/wish.webp";
+import wolfCompanion from "@/assets/optimized/wolf-companion.webp";
 import boneCharm from "@/assets/optimized/bone-charm.webp";
 import brassCenser from "@/assets/optimized/brass-censer.webp";
 import frozenHeart from "@/assets/optimized/frozen-heart.webp";
@@ -69,6 +72,7 @@ export {
   drawPile,
   fangs,
   femaleKnight,
+  femaleRanger,
   femaleRogue,
   femaleSorcerer,
   fireball,
@@ -80,6 +84,7 @@ export {
   imp,
   lizardScout,
   maleKnight,
+  maleRanger,
   maleRogue,
   maleSorcerer,
   manaBerries,
@@ -99,6 +104,7 @@ export {
   stab,
   steal,
   wish,
+  wolfCompanion,
   boneCharm,
   brassCenser,
   frozenHeart,
@@ -120,7 +126,7 @@ export const pileDiscardArt = discardPile;
 
 export const characterArt = {
   knight: { male: maleKnight, female: femaleKnight },
+  ranger: { male: maleRanger, female: femaleRanger },
   rogue: { male: maleRogue, female: femaleRogue },
   sorcerer: { male: maleSorcerer, female: femaleSorcerer },
-  warden: { male: maleRogue, female: femaleRogue },
 } as const;

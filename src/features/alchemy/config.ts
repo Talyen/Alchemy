@@ -4,7 +4,7 @@ import { BookOpen, Coins, Crosshair, Flame, Gem, Hammer, Heart, HeartPulse, Leaf
 import { enemyBestiary, type EnemyType, type KeywordId } from "@/lib/game-data";
 import { alchemistShopBg, campfire, eliteEnemyBg, merchantShopBg, mysteryBg, normalEnemyBg } from "@/lib/game-data";
 
-import type { CardGhostVariant, CollectionTab, Destination, ResolutionOption } from "./types";
+import type { CardGhostVariant, CollectionTab, Destination, DisplayMode, ResolutionOption, UiScale } from "./types";
 
 // Picks an enemy for the current room. Room 0 always starts with the Skeleton
 // as a tutorial boss. Subsequent rooms pick from normal or elite pools
@@ -19,6 +19,19 @@ export function getCurrentEnemy(roomsEncountered: number, enemyType?: EnemyType)
 }
 
 export const resolutionOptions: ResolutionOption[] = ["1366x768", "1600x900", "1920x1080", "1920x1200", "2560x1080", "2560x1440", "3440x1440", "3840x2160"];
+
+export const displayModeOptions: Array<{ value: DisplayMode; label: string }> = [
+  { value: "windowed", label: "Windowed" },
+  { value: "borderless-fullscreen", label: "Borderless Fullscreen" },
+  { value: "fullscreen", label: "Fullscreen" },
+];
+
+export const uiScaleOptions: Array<{ value: UiScale; label: string }> = [
+  { value: "90", label: "Small" },
+  { value: "100", label: "Normal" },
+  { value: "110", label: "Large" },
+  { value: "120", label: "Very Large" },
+];
 
 // The pool of destinations the player can choose from after each victory.
 // 6 options, 3 are randomly offered each time. Adding a new destination here
@@ -69,7 +82,13 @@ export const ghostDurations: Record<CardGhostVariant, number> = {
 export const battleCardWidthClass = "w-[clamp(222px,22vh,336px)]";
 export const handCardWidthClass = "w-[clamp(189px,18.7vh,286px)]";
 export const collectionCardWidthClass = "w-[clamp(156px,15vw,210px)]";
-export const pileCardWidthClass = "w-[clamp(96px,9.6vh,146px)]";
+export const pileCardWidthClass = "w-[clamp(144px,14.4vh,219px)]";
+
+// Mobile-safe card widths for touch / small-landscape viewports.
+// These are smaller than desktop to fit side-by-side player/enemy panels.
+export const mobileBattleCardWidthClass = "w-[clamp(120px,26vh,180px)]";
+export const mobileHandCardWidthClass = "w-[clamp(90px,25vw,150px)]";
+export const mobilePileCardWidthClass = "w-[clamp(60px,6vh,90px)]";
 
 // Card surface styling — shared by all card-like elements.
 export const cardSurfaceClass = "relative overflow-hidden rounded-[30px] bg-black";
@@ -112,7 +131,7 @@ export const keywordAliases: Array<{ match: string; keywordId: KeywordId }> = [
   { match: "Consume", keywordId: "consume" }, { match: "Poison", keywordId: "poison" },
   { match: "Bleed", keywordId: "bleed" }, { match: "Leech", keywordId: "leech" },
   { match: "Freeze", keywordId: "freeze" }, { match: "Mana Crystal", keywordId: "mana" },
-  { match: "Mana", keywordId: "mana" },
+  { match: "Mana", keywordId: "mana" }, { match: "Companion", keywordId: "companion" },
 ];
 
 // Pre-compiled regex for keyword highlighting. Built once at module init so

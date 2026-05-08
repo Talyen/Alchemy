@@ -24,6 +24,7 @@ export const AUTO_END_TURN_DELAY = 1220;       // How long the system waits befo
 export const VICTORY_TRANSITION_DELAY = 1200;  // Brief pause after enemy dies so the death animation can play before the victory screen.
 export const ENEMY_PHASE_DELAY = 900;          // Gap between enemy turn start and enemy action. Short enough to keep turns snappy while still readable.
 export const SHAKE_DURATION = 420;             // Screen shake on hit. 420ms is long enough to feel impactful but short enough to not delay gameplay.
+export const COMPANION_ATTACK_DELAY = 1000;    // Delay before companion attacks at start of player turn.
 export const CAMPFIRE_ANIMATION_MS = 1250;     // HP bar animation duration. Long enough to feel satisfying, short enough to not bore.
 export const CAMPFIRE_CONTINUE_DELAY = 600;    // Brief pause after animation completes before auto-advancing. Gives player time to register the new HP value.
 

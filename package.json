@@ -3,13 +3,23 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "main": "desktop/main.cjs",
   "scripts": {
     "assets:optimize": "node scripts/optimize-assets.mjs",
     "sounds:optimize": "node scripts/optimize-sounds.mjs",
     "predev": "npm run assets:optimize && npm run sounds:optimize",
+    "predev:desktop": "npm run assets:optimize && npm run sounds:optimize",
     "prebuild": "npm run assets:optimize && npm run sounds:optimize",
+    "prebuild:desktop": "npm run assets:optimize && npm run sounds:optimize",
     "dev": "vite",
+    "dev:desktop": "concurrently \"vite --mode desktop --host 127.0.0.1\" \"wait-on http://127.0.0.1:5173 && electron .\"",
     "build": "tsc && vite build",
+    "build:web": "npm run build",
+    "compile:desktop": "tsc && vite build --mode desktop",
+    "build:desktop": "tsc && vite build --mode desktop",
+    "package:win": "npm run compile:desktop && cross-env NODE_OPTIONS=--no-deprecation electron-builder --win --dir",
+    "package:win:full": "npm run build:desktop && cross-env NODE_OPTIONS=--no-deprecation electron-builder --win --dir",
+    "dist:win": "npm run build:desktop && cross-env NODE_OPTIONS=--no-deprecation electron-builder --win",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -17,6 +27,10 @@
     "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
+    "@radix-ui/react-switch": "^1.2.6"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@radix-ui/react-hover-card": "^1.1.8",
     "@radix-ui/react-progress": "^1.1.8",
     "@radix-ui/react-select": "^2.1.4",
@@ -25,29 +39,51 @@
     "@radix-ui/react-tabs": "^1.1.3",
     "@radix-ui/react-tooltip": "^1.1.8",
     "@tabler/icons-react": "^3.28.1",
-    "class-variance-authority": "^0.7.1",
-    "clsx": "^2.1.1",
-    "lucide-react": "^1.11.0",
-    "motion": "^12.12.1",
-    "react": "^19.2.5",
-    "react-dom": "^19.2.5",
-    "react-router-dom": "^7.1.1",
-    "sharp": "^0.34.5",
-    "tailwind-merge": "^3.5.0"
-  },
-  "devDependencies": {
-    "@playwright/test": "^1.59.1",
     "@types/node": "^24.0.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
     "autoprefixer": "^10.4.20",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "concurrently": "^9.2.1",
+    "cross-env": "^10.1.0",
+    "electron": "^39.2.6",
+    "electron-builder": "^26.0.12",
     "ffmpeg-static": "^5.3.0",
+    "lucide-react": "^1.11.0",
+    "motion": "^12.12.1",
     "postcss": "^8.4.49",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "react-router-dom": "^7.1.1",
+    "sharp": "^0.34.5",
+    "tailwind-merge": "^3.5.0",
     "tailwindcss": "^3.4.17",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "^6.0.3",
     "vite": "^8.0.10",
-    "vitest": "^4.1.5"
+    "vitest": "^4.1.5",
+    "wait-on": "^9.0.3"
+  },
+  "build": {
+    "appId": "com.alchemy.game",
+    "productName": "Alchemy",
+    "asar": true,
+    "npmRebuild": false,
+    "directories": {
+      "output": "release-desktop"
+    },
+    "files": [
+      "desktop/**/*",
+      "dist/**/*",
+      "package.json"
+    ],
+    "win": {
+      "signAndEditExecutable": false,
+      "target": [
+        "nsis"
+      ]
+    }
   }
 }

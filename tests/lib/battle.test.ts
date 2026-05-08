@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { mergeCombatText, applyCardEffects } from "@/lib/battle/effects";
-import { playBattleCardResolved, endPlayerTurn, chooseWishCard } from "@/lib/battle/turns";
+import { playBattleCardResolved, endPlayerTurn, chooseWishCard, processCompanionTurnStart } from "@/lib/battle/turns";
 import { drawCards, createBattleState, defaultTalentEffects, shuffleCards } from "@/lib/battle/draw";
+import { cardLibrary, characters, companionLibrary } from "@/lib/game-data";
 import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
 import type { BattleState, CombatTextEvent, TrinketManifest } from "@/lib/battle/types";
 import { basePlayerMana, clamp, clampHealth, maxHandSize, maxPlayerHealth } from "@/lib/battle/types";
@@ -16,7 +17,7 @@ function makeState(overrides: Partial<BattleState> = {}): BattleState {
     enemyMaxHealth: 30, enemyAttackEffects: [], enemyArmor: 0, enemyRegeneration: 0,
     playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
     enemyStatuses: { burn: 0, poison: 0, bleed: 0, bleedLeech: 0, freeze: 0, stun: 0 },
-    enemyStunSkipTurns: 0, enemyFreezeSkipTurns: 0, wishOptions: null,
+    enemyStunSkipTurns: 0, enemyFreezeSkipTurns: 0, wishOptions: null, activeCompanion: null,
     currentEnemy: { id: "skeleton", title: "Skeleton", subtitle: "", descriptionLines: [""], art: "", enemyType: "normal", traits: [], attackEffects: [] },
     talentEffects: defaultTalentEffects,
     trinketEffects: defaultTrinketEffects,
@@ -312,6 +313,26 @@ describe("playBattleCardResolved", () => {
     expect(result.state.mana).toBe(5);
     expect(result.state.enemyHealth).toBe(29);
   });
+
+  it("summons and consumes a companion card", () => {
+    const card = makeCard({ id: "wolf-companion", title: "Wolf Companion", consume: true, effects: [{ kind: "summon-companion", companionId: "wolf" }] });
+    const state = makeState({ mana: 4, hand: [card] });
+
+    const result = playBattleCardResolved(state, card.id, 0);
+
+    expect(result.state.activeCompanion?.id).toBe("wolf");
+    expect(result.state.hand).toHaveLength(0);
+    expect(result.state.exhausted).toEqual([card]);
+  });
+
+  it("replaces the current companion when another companion is summoned", () => {
+    const card = makeCard({ id: "wolf-companion", effects: [{ kind: "summon-companion", companionId: "wolf" }] });
+    const state = makeState({ mana: 4, hand: [card], activeCompanion: { ...companionLibrary.wolf, title: "Old Wolf" } });
+
+    const result = playBattleCardResolved(state, card.id, 0);
+
+    expect(result.state.activeCompanion).toEqual(companionLibrary.wolf);
+  });
 });
 
 describe("endPlayerTurn", () => {
@@ -422,6 +443,93 @@ describe("endPlayerTurn", () => {
     expect(result.state.playerStatuses.poison).toBe(0);
     expect(result.state.flags.firstAilmentPrevented).toBe(true);
   });
+
+  it("does not trigger companion attack (now handled by controller timing)", () => {
+    const state = makeState({
+      activeCompanion: companionLibrary.wolf,
+      enemyAttackEffects: [],
+      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
+      mana: 4,
+      maxMana: 4,
+    });
+
+    const result = endPlayerTurn(state);
+
+    expect(result.state.activeCompanion?.id).toBe("wolf");
+    expect(result.state.turnPhase).toBe("player");
+    // Companion no longer attacks as part of endPlayerTurn
+    expect(result.state.enemyHealth).toBe(30);
+    expect(result.state.enemyStatuses.bleed).toBe(0);
+  });
+});
+
+describe("processCompanionTurnStart", () => {
+  it("triggers Wolf companion bleed damage", () => {
+    const state = makeState({
+      activeCompanion: companionLibrary.wolf,
+      enemyAttackEffects: [],
+    });
+
+    const texts: CombatTextEvent[] = [];
+    const result = processCompanionTurnStart(state, texts);
+
+    expect(result.enemyHealth).toBe(29);
+    expect(result.enemyStatuses.bleed).toBe(2);
+    expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "bleed", amount: 1 });
+  });
+
+  it("applies player modifiers to companion attacks", () => {
+    const state = makeState({
+      activeCompanion: companionLibrary.wolf,
+      enemyAttackEffects: [],
+      playerHealth: 10,
+      talentEffects: { ...defaultTalentEffects, bleedDesperateMultiplier: 2 },
+    });
+
+    const texts: CombatTextEvent[] = [];
+    const result = processCompanionTurnStart(state, texts);
+
+    expect(result.enemyHealth).toBe(28);
+    expect(result.enemyStatuses.bleed).toBe(4);
+  });
+
+  it("triggers Lizard Scout companion poison damage", () => {
+    const state = makeState({
+      activeCompanion: companionLibrary["lizard-scout"],
+      enemyAttackEffects: [],
+    });
+
+    const texts: CombatTextEvent[] = [];
+    const result = processCompanionTurnStart(state, texts);
+
+    expect(result.enemyHealth).toBe(29);
+    expect(result.enemyStatuses.poison).toBe(1);
+    expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "poison", amount: 1 });
+  });
+
+  it("triggers Imp companion burn damage", () => {
+    const state = makeState({
+      activeCompanion: companionLibrary.imp,
+      enemyAttackEffects: [],
+    });
+
+    const texts: CombatTextEvent[] = [];
+    const result = processCompanionTurnStart(state, texts);
+
+    expect(result.enemyHealth).toBe(28);
+    expect(result.enemyStatuses.burn).toBe(2);
+    expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "burn", amount: 2 });
+  });
+
+  it("returns state unchanged when no active companion", () => {
+    const state = makeState();
+
+    const texts: CombatTextEvent[] = [];
+    const result = processCompanionTurnStart(state, texts);
+
+    expect(result).toBe(state);
+    expect(texts).toHaveLength(0);
+  });
 });
 
 describe("chooseWishCard", () => {
@@ -492,12 +600,37 @@ describe("createBattleState", () => {
     expect(result.enemyHealth).toBe(30);
     expect(result.hand.length).toBeGreaterThanOrEqual(1);
     expect(result.mana).toBe(basePlayerMana);
+    expect(result.activeCompanion).toBeNull();
   });
 
   it("scales enemy stats based on rooms encountered", () => {
     const result = createBattleState(undefined, 0, 5); // room 5 → 40% boost
     expect(result.enemyHealth).toBe(42); // 30 * 1.4 = 42
     expect(result.enemyAttackEffects[0].amount).toBe(11); // 8 * 1.4 = 11.2 → floor 11
+  });
+});
+
+describe("companion game data", () => {
+  it("adds the new companion cards outside the Ranger starting deck", () => {
+    expect(cardLibrary.find((card) => card.id === "lizard-scout-companion")?.effects).toEqual([{ kind: "summon-companion", companionId: "lizard-scout" }]);
+    expect(cardLibrary.find((card) => card.id === "imp-companion")?.effects).toEqual([{ kind: "summon-companion", companionId: "imp" }]);
+
+    const rangerDeckIds = characters.ranger.startingDeck.map((card) => card.id);
+    expect(rangerDeckIds).not.toContain("lizard-scout-companion");
+    expect(rangerDeckIds).not.toContain("imp-companion");
+  });
+
+  it("uses the requested Ranger starting deck order", () => {
+    expect(characters.ranger.startingDeck.map((card) => card.id)).toEqual([
+      "stab",
+      "slash",
+      "fangs",
+      "heal",
+      "poison-dagger",
+      "wolf-companion",
+      "apple",
+      "mana-berries",
+    ]);
   });
 });
 

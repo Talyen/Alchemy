@@ -14,6 +14,7 @@ import { PaginationControls } from "../ui/shared-ui";
 import { cardSurfaceClass, collectionCardWidthClass, handCardWidthClass, staticCardTransform } from "../config";
 import type { MysteryEvent, MysteryChoice, MysteryEffect } from "../mystery-events";
 import { clearTiltFromEvent, setTiltFromEvent, tokenizeDescription } from "../utils";
+import { AnimatedHeight } from "../ui/animated-height";
 import { BattleCardButton } from "../ui/card-ui";
 
 function ChoiceDescription({ text }: { text: string }) {
@@ -67,7 +68,7 @@ function RewardScreen({
   const [hoveredCardId, setHoveredCardId] = useState<string | null>(null);
 
   return (
-    <div className="state-swap flex h-full w-full flex-col items-center justify-center gap-6 px-4 py-6 text-center">
+    <div className="state-swap space-y-6 text-center">
       <h1 className="text-4xl text-foreground">Reward</h1>
       {addCardEffects.map((effect, i) => {
         if (effect.kind !== "addCard") return null;
@@ -121,7 +122,7 @@ function RemoveCardPicker({
   const visible = runDeck.slice(start, start + COLLECTION_PAGE_SIZE);
 
   return (
-    <div className="state-swap flex h-full w-full flex-col items-center justify-center gap-6 px-4 py-6 text-center">
+    <div className="state-swap space-y-6 text-center">
       <h2 className="text-3xl text-foreground">Select a card to remove</h2>
       <div className="grid grid-cols-5 gap-3">
         {visible.map((card, i) => {
@@ -154,7 +155,7 @@ function RemoveCardPicker({
         })}
         <PaginationControls page={page} totalPages={totalPages} onPageChange={(p) => setPage(p)} size="sm" />
       </div>
-      <div className="flex gap-4">
+      <div className="flex justify-center gap-4">
         <Button size="lg" variant="outline" onClick={onCancel}>
           Cancel
         </Button>
@@ -213,73 +214,73 @@ export function MysteryScreen({
     }
   }
 
-  if (pendingRemoval) {
-    return (
-      <RemoveCardPicker
-        runDeck={runDeck}
-        onSelect={handleRemoveConfirm}
-        onCancel={() => setPendingRemoval(null)}
-      />
-    );
-  }
-
-  if (chosen) {
-    return <RewardScreen choice={chosen} findCard={findCard} onContinue={onContinue} />;
-  }
-
   const featuredCard = findCard(event.id);
   const isHovered = hoveredCardId === event.id;
 
   return (
-    <div className="state-swap flex h-full w-full flex-col items-center justify-center gap-6 overflow-hidden px-4 py-6 text-center">
-      {featuredCard ? (
-        <BattleCardButton
-          card={featuredCard}
-          hovered={isHovered}
-          onHoverStart={() => setHoveredCardId(event.id)}
-          onHoverEnd={() => setHoveredCardId(null)}
-          ariaLabel={featuredCard.title}
-          shimmerActive={false}
-          className={handCardWidthClass}
-        />
-      ) : event.art ? (
-        <div
-          className={cn("tilt-surface", cardSurfaceClass, handCardWidthClass)}
-          data-tilt-strength="15"
-          onMouseMove={setTiltFromEvent}
-          onMouseLeave={clearTiltFromEvent}
-          style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
-        >
-          <img
-            src={event.art}
-            alt={event.title}
-            className="block h-auto w-full rounded-[30px] aspect-[375/524]"
-            loading="eager"
+    <div className="flex h-full w-full flex-col items-center justify-center gap-6 overflow-hidden px-4 py-6 text-center">
+      <AnimatedHeight deps={[pendingRemoval, chosen]}>
+        {pendingRemoval ? (
+          <RemoveCardPicker
+            runDeck={runDeck}
+            onSelect={handleRemoveConfirm}
+            onCancel={() => setPendingRemoval(null)}
           />
-        </div>
-      ) : null}
-      <h1 className="text-4xl text-foreground">{event.title}</h1>
-      <p className="max-w-lg text-base leading-relaxed text-muted-foreground">
-        {event.narrative}
-      </p>
+        ) : chosen ? (
+          <RewardScreen choice={chosen} findCard={findCard} onContinue={onContinue} />
+        ) : (
+          <div className="state-swap flex flex-col items-center gap-6">
+            {featuredCard ? (
+              <BattleCardButton
+                card={featuredCard}
+                hovered={isHovered}
+                onHoverStart={() => setHoveredCardId(event.id)}
+                onHoverEnd={() => setHoveredCardId(null)}
+                ariaLabel={featuredCard.title}
+                shimmerActive={false}
+                className={handCardWidthClass}
+              />
+            ) : event.art ? (
+              <div
+                className={cn("tilt-surface", cardSurfaceClass, handCardWidthClass)}
+                data-tilt-strength="15"
+                onMouseMove={setTiltFromEvent}
+                onMouseLeave={clearTiltFromEvent}
+                style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
+              >
+                <img
+                  src={event.art}
+                  alt={event.title}
+                  className="block h-auto w-full rounded-[30px] aspect-[375/524]"
+                  loading="eager"
+                />
+              </div>
+            ) : null}
+            <h1 className="text-4xl text-foreground">{event.title}</h1>
+            <p className="max-w-lg text-base leading-relaxed text-muted-foreground">
+              {event.narrative}
+            </p>
 
-      <div className="flex flex-wrap justify-center gap-4">
-        {event.choices.map((choice, i) => (
-          <div key={i} className="group relative">
-            <Button
-              size="lg"
-              variant="outline"
-              className="min-w-32"
-              onClick={() => handlePick(choice)}
-            >
-              {choice.label}
-            </Button>
-            <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-3 w-64 -translate-x-1/2 translate-y-1 rounded-[16px] border border-border/80 bg-card px-3 py-2 text-left text-sm leading-6 text-muted-foreground opacity-0 transition-all duration-150 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100">
-              <ChoiceDescription text={choice.description} />
+            <div className="flex flex-wrap justify-center gap-4">
+              {event.choices.map((choice, i) => (
+                <div key={i} className="group relative">
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="min-w-32"
+                    onClick={() => handlePick(choice)}
+                  >
+                    {choice.label}
+                  </Button>
+                  <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-3 w-64 -translate-x-1/2 translate-y-1 rounded-[16px] border border-border/80 bg-card px-3 py-2 text-left text-sm leading-6 text-muted-foreground opacity-0 transition-all duration-150 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100">
+                    <ChoiceDescription text={choice.description} />
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
-        ))}
-      </div>
+        )}
+      </AnimatedHeight>
     </div>
   );
 }

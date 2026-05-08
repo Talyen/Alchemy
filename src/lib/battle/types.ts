@@ -1,4 +1,4 @@
-import type { BattleCard, BestiaryEntry, DamageType, EnemyAttackEffect, EnemyStatusId, PlayerStatusId } from "@/lib/game-data";
+import type { BattleCard, BestiaryEntry, CompanionDefinition, DamageType, EnemyAttackEffect, EnemyStatusId, PlayerStatusId } from "@/lib/game-data";
 
 // Baseline balance knobs — tuned so the Knight starter deck (8 cards, 8 turns avg per fight)
 // can consistently beat the first enemy with some health remaining. Scaling per room
@@ -191,6 +191,7 @@ export type BattleState = {
   enemyStunSkipTurns: number;     // turns skipped from stun triggers
   enemyFreezeSkipTurns: number;   // turns skipped from freeze triggers
   wishOptions: BattleCard[] | null; // non-null = Wish selection is active
+  activeCompanion: CompanionDefinition | null; // persistent ally effect for this battle only
   currentEnemy: BestiaryEntry;
   talentEffects: TalentEffectManifest;
   trinketEffects: TrinketManifest;

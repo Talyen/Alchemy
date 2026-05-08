@@ -4,8 +4,8 @@ import { fileURLToPath, URL } from "node:url";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
-export default defineConfig({
-  base: "/Alchemy/",
+export default defineConfig(({ mode }) => ({
+  base: mode === "desktop" ? "./" : "/Alchemy/",
   plugins: [react()],
   resolve: {
     alias: {
@@ -15,4 +15,4 @@ export default defineConfig({
   test: {
     include: ["tests/**/*.test.ts"],
   },
-});
+}));

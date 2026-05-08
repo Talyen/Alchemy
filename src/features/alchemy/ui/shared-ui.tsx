@@ -2,10 +2,11 @@ import type { CSSProperties, MutableRefObject, ReactNode } from "react";
 import { AlertTriangle, ChevronLeft, ChevronRight, Coins } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
 import { destinationMeta, staticCardTransform } from "../config";
-import type { Destination, ResolutionOption } from "../types";
+import type { Destination, DisplayMode, ResolutionOption, UiScale } from "../types";
 import { clearTiltFromEvent, setTiltFromEvent } from "../utils";
 
 // Destination choice buttons shown after victory. Each destination gets its own
@@ -56,9 +57,50 @@ export function ResolutionSelect({ selectedResolution, resolutionOptions, onChan
   return (
     <div className="surface-muted rounded-[22px] border border-border/70 p-5 text-left">
       <label htmlFor="resolution" className="block text-sm font-semibold text-foreground">Resolution</label>
-      <select id="resolution" value={selectedResolution} onChange={(event) => onChange(event.target.value as ResolutionOption)} className="mt-3 w-full rounded-[16px] border border-border/80 bg-background px-4 py-3 text-base text-foreground outline-none transition-colors focus:border-primary">
-        {resolutionOptions.map((option) => (<option key={option} value={option}>{option}</option>))}
-      </select>
+      <Select value={selectedResolution} onValueChange={(value) => onChange(value as ResolutionOption)}>
+        <SelectTrigger id="resolution" className="mt-3">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {resolutionOptions.map((option) => (<SelectItem key={option} value={option}>{option}</SelectItem>))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
+// Desktop-only native window mode selector. Browser builds omit this because
+// Chromium pages cannot manage the outer OS window decoration or fullscreen mode.
+export function DisplayModeSelect({ displayMode, displayModeOptions, onChange }: { displayMode: DisplayMode; displayModeOptions: Array<{ value: DisplayMode; label: string }>; onChange: (mode: DisplayMode) => void }) {
+  return (
+    <div className="surface-muted rounded-[22px] border border-border/70 p-5 text-left">
+      <label htmlFor="display-mode" className="block text-sm font-semibold text-foreground">Display Mode</label>
+      <Select value={displayMode} onValueChange={(value) => onChange(value as DisplayMode)}>
+        <SelectTrigger id="display-mode" className="mt-3">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {displayModeOptions.map((option) => (<SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
+// UI scale adjusts the root rem size, making text and interface controls easier
+// to read without changing the selected virtual resolution/aspect ratio.
+export function UiScaleSelect({ uiScale, uiScaleOptions, onChange }: { uiScale: UiScale; uiScaleOptions: Array<{ value: UiScale; label: string }>; onChange: (scale: UiScale) => void }) {
+  return (
+    <div className="surface-muted rounded-[22px] border border-border/70 p-5 text-left">
+      <label htmlFor="ui-scale" className="block text-sm font-semibold text-foreground">UI Scale</label>
+      <Select value={uiScale} onValueChange={(value) => onChange(value as UiScale)}>
+        <SelectTrigger id="ui-scale" className="mt-3">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {uiScaleOptions.map((option) => (<SelectItem key={option.value} value={option.value}>{option.label} ({option.value}%)</SelectItem>))}
+        </SelectContent>
+      </Select>
     </div>
   );
 }
@@ -111,19 +153,21 @@ export function GoldCost({ amount }: { amount: number }) {
 }
 
 // Prev/Next pagination controls with page counter. Supports two visual sizes.
-export function PaginationControls({ page, totalPages, onPageChange, size = "sm" }: { page: number; totalPages: number; onPageChange: (page: number) => void; size?: "sm" | "default" }) {
-  if (totalPages <= 1) return null;
-  const variant = size === "sm" ? { buttonSize: "sm" as const, prevLabel: "Prev", nextLabel: "Next" } : { buttonSize: "default" as const, prevLabel: "Previous", nextLabel: "Next" };
+export function PaginationControls({ page, totalPages, onPageChange, size = "sm", reserveSpace = false }: { page: number; totalPages: number; onPageChange: (page: number) => void; size?: "sm" | "default"; reserveSpace?: boolean }) {
+  const buttonClass = size === "sm" ? "h-9 w-9" : "h-11 w-11";
+  const widthClass = size === "sm" ? "max-w-28" : "max-w-36";
+
+  if (totalPages <= 1) {
+    return reserveSpace ? <div className={cn("mt-4 min-h-[44px] w-full", widthClass)} aria-hidden="true" /> : null;
+  }
+
   return (
-    <div className="mt-4 flex min-h-[44px] items-center justify-center gap-4">
-      <Button variant="outline" size={variant.buttonSize} disabled={page === 0} onClick={() => onPageChange(page - 1)}>
-        <ChevronLeft className="h-4 w-4" /> {variant.prevLabel}
+    <div className={cn("mt-4 flex min-h-[44px] w-full items-center justify-center gap-4", widthClass)}>
+      <Button aria-label="Previous page" className={buttonClass} variant="outline" size="icon" disabled={page === 0} onClick={() => onPageChange(page - 1)}>
+        <ChevronLeft className="h-5 w-5" />
       </Button>
-      <p className="min-w-20 text-center text-sm font-medium text-muted-foreground">
-        {page + 1} / {totalPages}
-      </p>
-      <Button variant="outline" size={variant.buttonSize} disabled={page >= totalPages - 1} onClick={() => onPageChange(page + 1)}>
-        {variant.nextLabel} <ChevronRight className="h-4 w-4" />
+      <Button aria-label="Next page" className={buttonClass} variant="outline" size="icon" disabled={page >= totalPages - 1} onClick={() => onPageChange(page + 1)}>
+        <ChevronRight className="h-5 w-5" />
       </Button>
     </div>
   );
@@ -132,7 +176,7 @@ export function PaginationControls({ page, totalPages, onPageChange, size = "sm"
 // Universal page layout for consistent centering and spacing across all screens.
 export function PageLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center overflow-y-auto px-4 py-6">
+    <div className="game-page-scroll flex h-full w-full flex-col items-center justify-center overflow-x-hidden overflow-y-auto px-4 py-6">
       {children}
     </div>
   );

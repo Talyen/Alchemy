@@ -1,6 +1,7 @@
 // Campfire rest screen — restores a percentage of max HP.
 import { useState, useEffect, useRef } from "react";
 
+import { AnimatedHeight } from "../ui/animated-height";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { campfire } from "@/lib/game-data";
@@ -69,19 +70,21 @@ export function CampfireScreen({
 
       <img src={campfire} alt="Campfire" className="w-full max-w-[400px] rounded-[22px] object-contain" />
 
-      {!resting ? (
-        <Button size="lg" onClick={handleRest}>
-          Rest
-        </Button>
-      ) : (
-        <div className="w-full max-w-sm">
-          <div className="flex items-center justify-between text-sm">
-            <span className="font-semibold text-foreground">HP</span>
-            <span className="text-muted-foreground">{displayHp} / {maxHp}</span>
+      <AnimatedHeight deps={[resting]}>
+        {!resting ? (
+          <Button size="lg" onClick={handleRest}>
+            Rest
+          </Button>
+        ) : (
+          <div className="w-full max-w-sm">
+            <div className="flex items-center justify-between text-sm">
+              <span className="font-semibold text-foreground">HP</span>
+              <span className="text-muted-foreground">{displayHp} / {maxHp}</span>
+            </div>
+            <Progress value={(targetHp / maxHp) * 100} className="campfire-hp-progress mt-2 h-4 bg-muted [&>div]:bg-red-500" />
           </div>
-          <Progress value={(targetHp / maxHp) * 100} className="campfire-hp-progress mt-2 h-4 bg-muted [&>div]:bg-red-500" />
-        </div>
-      )}
+        )}
+      </AnimatedHeight>
     </div>
   );
 }

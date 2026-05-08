@@ -26,24 +26,24 @@ function KeywordToken({ keywordId, matchedText }: { keywordId: KeywordId; matche
   return (
     <span className="group/keyword relative inline-flex items-center">
       <span className={cn("cursor-help font-semibold", definition.colorClass)}>{matchedText}</span>
-      <div className={cn(popupClassName, "hover-popup-panel pointer-events-none opacity-0 group-hover/keyword:opacity-100")}>
-        <div className="flex items-center gap-2">
+      <span className={cn(popupClassName, "hover-popup-panel pointer-events-none opacity-0 group-hover/keyword:opacity-100")}>
+        <span className="flex items-center gap-2">
           <KeywordTag keywordId={keywordId} />
-        </div>
-        <p className="mt-2 text-sm leading-6 text-muted-foreground">{definition.description}</p>
-      </div>
+        </span>
+        <span className="mt-2 block text-sm leading-6 text-muted-foreground">{definition.description}</span>
+      </span>
     </span>
   );
 }
 
-function DescriptionLines({ lines, idPrefix }: { lines: string[]; idPrefix: string }) {
+export function DescriptionLines({ lines, idPrefix }: { lines: string[]; idPrefix: string }) {
   return (
     <div className="mt-2 space-y-1.5 text-sm leading-6 text-muted-foreground">
       {lines.map((line, lineIndex) => {
         const parts = tokenizeDescription(line);
 
         return (
-          <p key={`${idPrefix}-${lineIndex}-${line}`}>
+          <div key={`${idPrefix}-${lineIndex}-${line}`}>
             {parts.map((part, index) =>
               part.keywordId ? (
                 <KeywordToken key={`${idPrefix}-${lineIndex}-${index}`} keywordId={part.keywordId} matchedText={part.text} />
@@ -51,7 +51,7 @@ function DescriptionLines({ lines, idPrefix }: { lines: string[]; idPrefix: stri
                 <span key={`${idPrefix}-${lineIndex}-${index}`}>{part.text}</span>
               ),
             )}
-          </p>
+          </div>
         );
       })}
     </div>

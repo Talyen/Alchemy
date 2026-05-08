@@ -1,7 +1,7 @@
 // Merchant shop screen — buy cards, remove deck cards, or refresh the shop.
 import { useState } from "react";
 import type { CSSProperties } from "react";
-import { Coins } from "lucide-react";
+import { Coins, RefreshCw, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -9,6 +9,7 @@ import type { BattleCard } from "@/lib/game-data";
 import { SHOP_CARD_PRICE, SHOP_REFRESH_PRICE, SHOP_REMOVE_PRICE, COLLECTION_PAGE_SIZE } from "@/lib/game-constants";
 
 import { BattleCardButton } from "../ui/card-ui";
+import { AnimatedHeight } from "../ui/animated-height";
 import { DisabledTooltip, GoldCost, PaginationControls } from "../ui/shared-ui";
 import { collectionCardWidthClass, handCardWidthClass } from "../config";
 
@@ -34,7 +35,7 @@ function ShopCardItem({ card, price, gold, purchased, onBuy, index }: { card: Ba
       </div>
       <p className="text-sm font-semibold text-foreground">{card.title}</p>
       <DisabledTooltip show={gold < price} message="Not Enough Gold">
-        <Button size="sm" variant="outline" disabled={gold < price} onClick={onBuy}>
+        <Button variant="outline" disabled={gold < price} onClick={onBuy} className="transition-colors hover:translate-y-0">
           Buy <GoldCost amount={price} />
         </Button>
       </DisabledTooltip>
@@ -114,41 +115,43 @@ export function MerchantShopScreen({
       <h1 className="text-4xl text-foreground">Merchant's Shop</h1>
       <p className="flex items-center gap-2 text-lg font-medium text-yellow-300"><Coins className="h-5 w-5" />{gold} Gold</p>
 
-      {!removeMode ? (
-        <>
-          <div key={shopCards.map((card) => card.id).join("-")} className="state-swap grid grid-cols-1 gap-4 sm:grid-cols-3">
-            {shopCards.map((card, i) => (
-              <ShopCardItem key={`${card.id}-${i}`} card={card} price={SHOP_CARD_PRICE} gold={gold} purchased={purchasedIds.has(card.id)} onBuy={() => handleBuyCard(card)} index={i} />
-            ))}
-          </div>
+      <AnimatedHeight deps={[removeMode]}>
+        {!removeMode ? (
+          <>
+            <div key={shopCards.map((card) => card.id).join("-")} className="state-swap grid grid-cols-1 gap-4 sm:grid-cols-3">
+              {shopCards.map((card, i) => (
+                <ShopCardItem key={`${card.id}-${i}`} card={card} price={SHOP_CARD_PRICE} gold={gold} purchased={purchasedIds.has(card.id)} onBuy={() => handleBuyCard(card)} index={i} />
+              ))}
+            </div>
 
-          <div className="flex flex-wrap justify-center gap-3">
-            {removeUsed ? (
-              <Button variant="outline" disabled className="text-muted-foreground/40">Remove Card — Sold Out</Button>
-            ) : (
-              <DisabledTooltip show={gold < SHOP_REMOVE_PRICE} message="Not Enough Gold">
-                <Button variant="outline" disabled={gold < SHOP_REMOVE_PRICE} onClick={() => { setRemoveMode(true); setRemovePage(0); }}>
-                  Remove Card — <GoldCost amount={SHOP_REMOVE_PRICE} />
-                </Button>
-              </DisabledTooltip>
-            )}
-            <Button variant="outline" disabled={refreshesLeft <= 0 || gold < SHOP_REFRESH_PRICE} onClick={onRefresh}>
-              Refresh — <GoldCost amount={SHOP_REFRESH_PRICE} />
-            </Button>
+            <div className="mt-6 flex flex-wrap justify-center gap-3">
+              {removeUsed ? (
+                <Button variant="outline" disabled className="text-muted-foreground/40 transition-colors hover:translate-y-0"><Trash2 className="h-4 w-4" /> Remove Card — Sold Out</Button>
+              ) : (
+                <DisabledTooltip show={gold < SHOP_REMOVE_PRICE} message="Not Enough Gold">
+                  <Button variant="outline" disabled={gold < SHOP_REMOVE_PRICE} onClick={() => { setRemoveMode(true); setRemovePage(0); }} className="transition-colors hover:translate-y-0">
+                    <Trash2 className="h-4 w-4" /> Remove Card <GoldCost amount={SHOP_REMOVE_PRICE} />
+                  </Button>
+                </DisabledTooltip>
+              )}
+              <Button variant="outline" disabled={refreshesLeft <= 0 || gold < SHOP_REFRESH_PRICE} onClick={onRefresh} className="transition-colors hover:translate-y-0">
+                <RefreshCw className="h-4 w-4" /> Refresh <GoldCost amount={SHOP_REFRESH_PRICE} />
+              </Button>
+            </div>
+          </>
+        ) : (
+          <div className="state-swap">
+            <p className="mb-4 text-sm text-muted-foreground">Select a card to remove from your deck</p>
+            <DeckGridPaginated cards={runDeck} selectedIndex={selectedRemoveIndex} onSelect={(realIndex) => setSelectedRemoveIndex(realIndex)} page={removePage} onPageChange={setRemovePage} pageSize={deckPageSize} />
+            <div className="mt-5 flex justify-center gap-3">
+              <Button variant="ghost" onClick={() => { setRemoveMode(false); setSelectedRemoveIndex(null); setRemovePage(0); }}>Cancel</Button>
+              <Button size="lg" disabled={selectedRemoveIndex === null || gold < SHOP_REMOVE_PRICE} onClick={handleRemoveConfirm}>
+                <Trash2 className="h-4 w-4" /> Remove Card <GoldCost amount={SHOP_REMOVE_PRICE} />
+              </Button>
+            </div>
           </div>
-        </>
-      ) : (
-        <div className="state-swap">
-          <p className="mb-4 text-sm text-muted-foreground">Select a card to remove from your deck</p>
-          <DeckGridPaginated cards={runDeck} selectedIndex={selectedRemoveIndex} onSelect={(realIndex) => setSelectedRemoveIndex(realIndex)} page={removePage} onPageChange={setRemovePage} pageSize={deckPageSize} />
-          <div className="mt-5 flex justify-center gap-3">
-            <Button variant="ghost" onClick={() => { setRemoveMode(false); setSelectedRemoveIndex(null); setRemovePage(0); }}>Cancel</Button>
-            <Button size="lg" disabled={selectedRemoveIndex === null || gold < SHOP_REMOVE_PRICE} onClick={handleRemoveConfirm}>
-              Remove Card — <GoldCost amount={SHOP_REMOVE_PRICE} />
-            </Button>
-          </div>
-        </div>
-      )}
+        )}
+      </AnimatedHeight>
 
       <Button size="lg" className="mt-2 min-w-44" onClick={onContinue}>Continue</Button>
     </div>

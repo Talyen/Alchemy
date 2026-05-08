@@ -236,7 +236,23 @@ export function chooseWishCard(state: BattleState, cardId: string) {
 
 // ----- Enemy turn helpers -----
 
-function advanceToPlayerTurn(state: BattleState) {
+export function processCompanionTurnStart(state: BattleState, combatTexts: CombatTextEvent[]) {
+  if (!state.activeCompanion) return state;
+
+  const companionCard: BattleCard = {
+    id: `companion-${state.activeCompanion.id}`,
+    title: state.activeCompanion.title,
+    descriptionLines: [],
+    art: state.activeCompanion.art,
+    cost: 0,
+    template: "nature",
+    effects: state.activeCompanion.turnStartEffects,
+  };
+
+  return applyCardEffects(state, companionCard, combatTexts);
+}
+
+function advanceToPlayerTurn(state: BattleState, combatTexts: CombatTextEvent[]) {
   const nextDraw = drawCards(state.deck, state.discard, [], cardsPerTurn);
   return {
     ...state,
@@ -416,7 +432,7 @@ export function endPlayerTurn(state: BattleState): { state: BattleState; combatT
   // Haste gives the player an extra turn immediately, skipping the enemy phase.
   if (state.playerStatuses.haste > 0) {
     nextState = { ...nextState, playerStatuses: { ...nextState.playerStatuses, haste: nextState.playerStatuses.haste - 1 } };
-    return { state: advanceToPlayerTurn(nextState), combatTexts };
+    return { state: advanceToPlayerTurn(nextState, combatTexts), combatTexts };
   }
 
   if (state.enemyStunSkipTurns + state.enemyFreezeSkipTurns > 0) {
@@ -444,7 +460,7 @@ export function endPlayerTurn(state: BattleState): { state: BattleState; combatT
       mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "armor", amount: nextState.trinketEffects.blockToArmorAmount });
     }
 
-    return { state: advanceToPlayerTurn(nextState), combatTexts };
+    return { state: advanceToPlayerTurn(nextState, combatTexts), combatTexts };
   }
 
   nextState = processEnemyHealing(nextState, combatTexts);
@@ -471,7 +487,7 @@ export function endPlayerTurn(state: BattleState): { state: BattleState; combatT
       };
       mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "armor", amount: nextState.trinketEffects.blockToArmorAmount });
     }
-    return { state: advanceToPlayerTurn(nextState), combatTexts };
+    return { state: advanceToPlayerTurn(nextState, combatTexts), combatTexts };
   }
 
   nextState = processEnemyAttack(nextState, combatTexts);
@@ -490,5 +506,5 @@ export function endPlayerTurn(state: BattleState): { state: BattleState; combatT
     mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "armor", amount: nextState.trinketEffects.blockToArmorAmount });
   }
 
-  return { state: advanceToPlayerTurn(nextState), combatTexts };
+  return { state: advanceToPlayerTurn(nextState, combatTexts), combatTexts };
 }

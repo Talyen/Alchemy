@@ -8,6 +8,14 @@ async function startRun(page: Parameters<typeof test>[0]["page"]) {
   await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });
 }
 
+async function startRangerRun(page: Parameters<typeof test>[0]["page"]) {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Play" }).click();
+  await page.getByRole("button", { name: "Ranger" }).click();
+  await page.getByRole("button", { name: "Continue" }).click();
+  await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });
+}
+
 async function waitForEnemyTurn(page: Parameters<typeof test>[0]["page"]) {
   const endTurnButton = page.getByRole("button", { name: "End Turn" });
   await endTurnButton.click();
@@ -64,19 +72,23 @@ test.describe("Menu", () => {
 });
 
 test.describe("Character Select", () => {
-  test("all three characters are selectable", async ({ page }) => {
+  test("all characters are selectable", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("button", { name: "Play" }).click();
 
     await expect(page.getByRole("heading", { name: "Choose Your Hero" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Knight" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Ranger" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Rogue" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Wizard" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Sorcerer" })).toBeVisible();
 
     await page.getByRole("button", { name: "Rogue" }).click();
     await expect(page.getByRole("button", { name: "Continue" })).toBeEnabled();
 
-    await page.getByRole("button", { name: "Wizard" }).click();
+    await page.getByRole("button", { name: "Sorcerer" }).click();
+    await expect(page.getByRole("button", { name: "Continue" })).toBeEnabled();
+
+    await page.getByRole("button", { name: "Ranger" }).click();
     await expect(page.getByRole("button", { name: "Continue" })).toBeEnabled();
   });
 
@@ -168,6 +180,24 @@ test.describe("Battle Mechanics", () => {
     // Forge should persist (doesn't decay like block)
     const forgeChip = page.getByRole("button", { name: /Forge/ });
     await expect(forgeChip).toHaveCount(1);
+  });
+
+  test("wolf companion appears and attacks on the next player turn", async ({ page }) => {
+    await startRangerRun(page);
+
+    const wolfCard = page.getByRole("button", { name: "Play Wolf Companion" });
+    if (!(await wolfCard.isVisible({ timeout: 500 }).catch(() => false))) {
+      test.skip(true, "Wolf Companion not in initial hand");
+      return;
+    }
+
+    await wolfCard.click();
+    await expect(page.getByTestId("active-companion")).toBeVisible();
+    await expect(wolfCard).toHaveCount(0);
+
+    await waitForEnemyTurn(page);
+
+    await expect(page.getByRole("button", { name: "Bleed 2" })).toBeVisible({ timeout: 5000 });
   });
 });
 

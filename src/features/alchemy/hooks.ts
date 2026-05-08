@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { CombatTextEvent } from "@/lib/battle";
 
@@ -98,13 +98,46 @@ export function useCardGhosts() {
   return { cardGhosts, removeCardGhost, clearCardGhosts, spawnCardGhost };
 }
 
+// ---- Mobile Detection ----
+// Detects mobile landscape and portrait viewports using viewport dimensions
+// and pointer media queries. Portrait mobile shows a rotate-device prompt;
+// mobile landscape gets a full-viewport layout without virtual-resolution scaling.
+export function useMobileDetection() {
+  const [isMobileLandscape, setIsMobileLandscape] = useState(false);
+  const [isPortraitMobile, setIsPortraitMobile] = useState(false);
+
+  const check = useCallback(() => {
+    const isCoarse = window.matchMedia("(pointer: coarse)").matches
+      || "ontouchstart" in window
+      || navigator.maxTouchPoints > 0;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    setIsMobileLandscape(isCoarse && vw > vh && vw <= 1024);
+    setIsPortraitMobile(isCoarse && vh > vw && vw <= 768);
+  }, []);
+
+  useEffect(() => {
+    check();
+    window.addEventListener("resize", check);
+    window.addEventListener("orientationchange", () => setTimeout(check, 100));
+    return () => {
+      window.removeEventListener("resize", check);
+      window.removeEventListener("orientationchange", () => setTimeout(check, 100));
+    };
+  }, [check]);
+
+  return { isMobileLandscape, isPortraitMobile };
+}
+
 // ---- Virtual Resolution ----
 const designStageHeight = 1080;
 
 // Wraps the game canvas in a CSS scale transform so it fits the window. The
 // selected resolution contributes aspect ratio only; UI density stays anchored
 // to a 1080p design canvas so higher output resolutions do not shrink content.
-export function useVirtualResolution(selectedResolution: ResolutionOption) {
+// When isMobileLandscape is true, the virtual canvas is bypassed entirely and
+// the game renders at viewport size (scale: 1).
+export function useVirtualResolution(selectedResolution: ResolutionOption, isMobileLandscape = false) {
   const [viewportSize, setViewportSize] = useState(() => ({ width: window.innerWidth, height: window.innerHeight }));
 
   useEffect(() => {
@@ -112,6 +145,14 @@ export function useVirtualResolution(selectedResolution: ResolutionOption) {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  // Mobile landscape: render directly into the viewport with no scaling
+  if (isMobileLandscape) {
+    return {
+      frameStyle: { width: "100%", height: "100%" },
+      stageStyle: { width: "100%", height: "100%", transform: "none", transformOrigin: "top left", left: 0, top: 0 },
+    };
+  }
 
   const [selectedWidth, selectedHeight] = selectedResolution.split("x").map(Number);
   const stageHeight = designStageHeight;

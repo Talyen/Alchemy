@@ -31,10 +31,12 @@ const assets = [
   { source: "Enemies/Plague Doctor.png", target: "plague-doctor.webp", width: 720, quality: 82 },
   // Characters — Female
   { source: "Player Characters/Female Knight.png", target: "female-knight.webp", width: characterWidth, quality: 82 },
+  { source: "Player Characters/Female Ranger.png", target: "female-ranger.webp", width: characterWidth, quality: 82 },
   { source: "Player Characters/Female Rogue.png", target: "female-rogue.webp", width: characterWidth, quality: 82 },
   { source: "Player Characters/Female Wizard.png", target: "female-wizard.webp", width: characterWidth, quality: 82 },
   // Characters — Male
   { source: "Player Characters/Male Knight.png", target: "male-knight.webp", width: characterWidth, quality: 82 },
+  { source: "Player Characters/Male Ranger.png", target: "male-ranger.webp", width: characterWidth, quality: 82 },
   { source: "Player Characters/Male Rogue.png", target: "male-rogue.webp", width: characterWidth, quality: 82 },
   { source: "Player Characters/Male Wizard.png", target: "male-wizard.webp", width: characterWidth, quality: 82 },
   // Cards
@@ -63,6 +65,7 @@ const assets = [
   { source: "Cards/Stab.png", target: "stab.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Steal.png", target: "steal.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Wish.png", target: "wish.webp", width: cardWidth, quality: cardQuality },
+  { source: "Cards/Wolf Companion.png", target: "wolf-companion.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Mixed Potion.png", target: "mixed-potion.webp", width: cardWidth, quality: 84 },
   // Destinations
   { source: "Destinations/Campfire.png", target: "campfire.webp", width: 900, quality: 84 },

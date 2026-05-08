@@ -5,6 +5,7 @@ import { Coins, Gem } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { keywordDefinitions, pileDiscardArt, pileDrawArt, type KeywordId } from "@/lib/game-data";
+import type { CompanionDefinition } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
 import {
@@ -18,6 +19,7 @@ import {
 import type { FloatingCombatText, StatusChip } from "../types";
 import { clearTiltFromEvent, getCombatTextColorClass, getCombatTextIcon, setTiltFromEvent } from "../utils";
 import { KeywordTag } from "./keyword-tag";
+import { DescriptionLines } from "./card-ui";
 import { ShimmerOverlay } from "./shared-ui";
 
 // Returns a token that changes briefly after a value update so numeric combat UI
@@ -108,6 +110,8 @@ export function ArtPanel({
   surfaceRef,
   isDead = false,
   shaking = false,
+  cardWidthClass,
+  descriptionLines,
 }: {
   side: "player" | "enemy";
   title: string;
@@ -123,14 +127,22 @@ export function ArtPanel({
   surfaceRef?: (node: HTMLDivElement | null) => void;
   isDead?: boolean;
   shaking?: boolean;
+  cardWidthClass?: string;
+  descriptionLines?: string[];
 }) {
   const healthToken = useChangeToken(health);
 
   return (
-    <div className={cn("relative flex flex-col items-center gap-3", isDead && "animate-death", shaking && "animate-shake")}>
+    <div className={cn("group/enemy-panel relative flex flex-col items-center gap-3", isDead && "animate-death", shaking && "animate-shake")}>
+      {descriptionLines ? (
+        <div className={cn(popupClassName, "hover-popup-panel pointer-events-auto opacity-0 group-hover/enemy-panel:opacity-100")}>
+          <p className="text-sm text-foreground">{title}</p>
+          <DescriptionLines lines={descriptionLines} idPrefix={`enemy-${title}`} />
+        </div>
+      ) : null}
       <div
         ref={surfaceRef}
-        className={cn("tilt-surface", cardSurfaceClass, battleCardWidthClass)}
+        className={cn("tilt-surface", cardSurfaceClass, cardWidthClass ?? battleCardWidthClass)}
         data-tilt-strength="15"
         onMouseEnter={() => onHoverShimmer(shimmerId)}
         onMouseMove={setTiltFromEvent}
@@ -141,7 +153,7 @@ export function ArtPanel({
         <img src={art} alt={title} className="block w-full rounded-[30px] aspect-[375/524]" loading="eager" />
       </div>
 
-      <div className={cn("surface-muted rounded-[24px] px-4 py-3", battleCardWidthClass)}>
+      <div className={cn("surface-muted rounded-[24px] px-4 py-3", cardWidthClass ?? battleCardWidthClass)}>
         <div className="flex items-center justify-between gap-3">
           <p className="text-sm text-foreground">{title}</p>
           <p key={healthToken} className={cn("hp-number-pop text-xs font-medium text-muted-foreground", isDead && "opacity-30")}>
@@ -158,23 +170,54 @@ export function ArtPanel({
   );
 }
 
-export function PilePanel({ label, count, type }: { label: string; count: number; type: "draw" | "discard" }) {
-  const art = type === "draw" ? pileDrawArt : pileDiscardArt;
+function getCompanionDescriptionLines(companion: CompanionDefinition): string[] {
+  const attack = companion.turnStartEffects.find((effect) => effect.kind === "damage");
+  if (!attack) return ["Acts at the start of each turn"];
+
+  const displayAmount = attack.damageType === "bleed" ? attack.amount * 2 : attack.amount;
+  const displayType = attack.damageType.charAt(0).toUpperCase() + attack.damageType.slice(1);
+  return [`Attacks for ${displayAmount} ${displayType} each turn`];
+}
+
+export function CompanionPanel({ companion, compact = false, shaking = false }: { companion: CompanionDefinition; compact?: boolean; shaking?: boolean }) {
   return (
-    <div className="flex flex-col items-center gap-2 text-center">
+    <div className="companion-enter group/companion relative" data-testid="active-companion" aria-label={`Active companion: ${companion.title}`}>
       <div
-        className={cn("tilt-surface", cardSurfaceClass, pileCardWidthClass, "bg-transparent")}
-        data-tilt-strength="12"
+        className={cn("tilt-surface", cardSurfaceClass, compact ? "w-[clamp(78px,17vh,120px)]" : "w-[clamp(96px,11vh,150px)]", shaking && "animate-shake")}
+        data-tilt-strength="10"
         onMouseMove={setTiltFromEvent}
         onMouseLeave={clearTiltFromEvent}
         style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
       >
-        <img src={art} alt={`${label} pile`} className="block w-full rounded-[30px] aspect-[375/524]" loading="lazy" />
+        <img src={companion.art} alt={companion.title} className="block w-full rounded-[30px] aspect-[375/524]" loading="eager" />
       </div>
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">{label}</p>
-        <p className="mt-1 text-sm font-medium text-foreground">{count}</p>
+      <div className={cn(popupClassName, "hover-popup-panel pointer-events-auto opacity-0 group-hover/companion:opacity-100")}>
+        <p className="text-sm text-foreground">{companion.title}</p>
+        <DescriptionLines lines={getCompanionDescriptionLines(companion)} idPrefix={`companion-${companion.id}`} />
       </div>
+    </div>
+  );
+}
+
+export function PilePanel({ label, count, type, compact = false }: { label: string; count: number; type: "draw" | "discard"; compact?: boolean }) {
+  const art = type === "draw" ? pileDrawArt : pileDiscardArt;
+  if (compact) {
+    return (
+      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <span className="font-semibold uppercase tracking-wider">{label}</span>
+        <span className="font-medium text-foreground">{count}</span>
+      </div>
+    );
+  }
+  return (
+    <div
+      className={cn("tilt-surface", cardSurfaceClass, pileCardWidthClass, "bg-transparent")}
+      data-tilt-strength="12"
+      onMouseMove={setTiltFromEvent}
+      onMouseLeave={clearTiltFromEvent}
+      style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
+    >
+      <img src={art} alt={`${label} pile`} className="block w-full rounded-[30px] aspect-[375/524]" loading="lazy" />
     </div>
   );
 }

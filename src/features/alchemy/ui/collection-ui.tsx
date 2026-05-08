@@ -181,7 +181,7 @@ export function CollectionTabs({
 }
 
 export function CollectionPagination({ page, totalPages, onPageChange }: { page: number; totalPages: number; onPageChange: (page: number) => void }) {
-  return <PaginationControls page={page} totalPages={totalPages} onPageChange={onPageChange} size="default" />;
+  return <PaginationControls page={page} totalPages={totalPages} onPageChange={onPageChange} size="default" reserveSpace />;
 }
 
 function getCardItems(discoveredCardIds: string[]) {

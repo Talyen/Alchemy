@@ -2,7 +2,7 @@ import type { BattleCard } from "./types";
 import { cardLibrary } from "./cards";
 import type { KeywordId } from "./types";
 
-export type CharacterId = "knight" | "rogue" | "sorcerer" | "warden";
+export type CharacterId = "knight" | "ranger" | "rogue" | "sorcerer";
 
 export type CharacterGender = "male" | "female";
 
@@ -67,18 +67,20 @@ export const characters: Record<CharacterId, CharacterDefinition> = {
     ]),
     keywords: ["burn", "freeze", "mana"],
   },
-  warden: {
-    id: "warden",
-    name: "Warden",
+  ranger: {
+    id: "ranger",
+    name: "Ranger",
     role: "Wildkeeper",
     description: "A wilderness guardian whose nature, companion, and trap synergies will arrive in a future update.",
     startingDeck: resolveDeck([
+      "stab",
       "slash",
-      "slash",
-      "slash",
-      "slash",
-      "slash",
-      "slash",
+      "fangs",
+      "heal",
+      "poison-dagger",
+      "wolf-companion",
+      "apple",
+      "mana-berries",
     ]),
     keywords: ["nature", "companion", "trap"],
   },

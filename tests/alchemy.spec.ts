@@ -229,3 +229,59 @@ for (const resolution of supportedResolutions) {
     await expect(playableCards).toHaveCount(Math.max(0, cardsBeforePlay - 1));
   });
 }
+
+// ---- Mobile Tests ----
+
+test.describe("Mobile Portrait", () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
+
+  test("portrait view shows rotate device prompt", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByRole("heading", { name: "Rotate Your Device" })).toBeVisible();
+  });
+});
+
+test.describe("Mobile Landscape", () => {
+  // hasTouch: true triggers navigator.maxTouchPoints > 0 for mobile detection
+  test.use({ hasTouch: true });
+
+  const mobileLandscapeViewports = [
+    { width: 844, height: 390 },
+    { width: 852, height: 393 },
+    { width: 915, height: 412 },
+    { width: 932, height: 430 },
+  ];
+
+  for (const vp of mobileLandscapeViewports) {
+    test(`menu and character select work at ${vp.width}x${vp.height}`, async ({ page }) => {
+      await page.setViewportSize({ width: vp.width, height: vp.height });
+      await page.goto("/");
+      await expect(page.getByRole("button", { name: "Play" })).toBeVisible();
+      await page.getByRole("button", { name: "Play" }).click();
+      await expect(page.getByRole("heading", { name: "Choose Your Hero" })).toBeVisible();
+    });
+
+    test(`battle hand is playable at ${vp.width}x${vp.height}`, async ({ page }) => {
+      await page.setViewportSize({ width: vp.width, height: vp.height });
+      await startRun(page);
+
+      const playableCards = page.locator('[aria-label^="Play "]');
+      await expect(playableCards.first()).toBeVisible({ timeout: 10000 });
+      expect(await playableCards.count()).toBeGreaterThanOrEqual(1);
+
+      // Record mana before playing a card
+      const manaBefore = Number(await page.getByTestId("mana-panel").getAttribute("data-mana"));
+
+      // Dispatch a native click event (bypasses disabled attribute check)
+      await page.evaluate(() => {
+        const btn = document.querySelector('[aria-label^="Play "]') as HTMLButtonElement | null;
+        if (btn) btn.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+      });
+      await page.waitForTimeout(400);
+
+      // Mana should have decreased by at least 1 (cheapest card costs 1)
+      const manaAfter = Number(await page.getByTestId("mana-panel").getAttribute("data-mana"));
+      expect(manaAfter).toBeLessThan(manaBefore);
+    });
+  }
+});

@@ -10,6 +10,7 @@ let masterGain: GainNode | null = null;
 let isMuted = false;
 let sfxVolume = 0.35;
 let musicVolume = DEFAULT_MUSIC_VOLUME;
+let masterVolume = 1;
 
 const soundCache = new Map<string, AudioBuffer>();
 const loadingPromises = new Map<string, Promise<AudioBuffer | null>>();
@@ -20,7 +21,7 @@ function getAudioContext(): AudioContext {
     audioContext = new AudioContext();
     masterGain = audioContext.createGain();
     masterGain.connect(audioContext.destination);
-    masterGain.gain.value = MASTER_GAIN;
+    masterGain.gain.value = MASTER_GAIN * masterVolume;
   }
   return audioContext;
 }
@@ -208,6 +209,20 @@ export function getSfxVolume(): number {
   return sfxVolume;
 }
 
+export function setMasterVolume(value: number) {
+  masterVolume = Math.max(0, Math.min(1, value));
+  if (masterGain) {
+    masterGain.gain.value = MASTER_GAIN * masterVolume;
+  }
+  if (currentMusic) {
+    applyMusicVolume(currentMusic);
+  }
+}
+
+export function getMasterVolume(): number {
+  return masterVolume;
+}
+
 // ============= Music (streaming MP3) =============
 
 const musicBase = import.meta.env.BASE_URL + MUSIC_BASE_PATH;
@@ -225,7 +240,7 @@ let currentMusic: HTMLAudioElement | null = null;
 let currentKey: string | null = null;
 
 function applyMusicVolume(el: HTMLAudioElement) {
-  el.volume = musicVolume * MUSIC_MASTER_GAIN;
+  el.volume = musicVolume * masterVolume * MUSIC_MASTER_GAIN;
 }
 
 function startTrack(track: string) {
@@ -246,7 +261,7 @@ function startTrack(track: string) {
     const elapsed = performance.now() - startTime;
     if (elapsed < FADE_IN_DELAY) return void requestAnimationFrame(fadeIn);
     const t = Math.min(1, (elapsed - FADE_IN_DELAY) / FADE_IN_DURATION);
-    if (currentMusic === el) el.volume = musicVolume * MUSIC_MASTER_GAIN * t;
+    if (currentMusic === el) el.volume = musicVolume * masterVolume * MUSIC_MASTER_GAIN * t;
     if (t < 1) requestAnimationFrame(fadeIn);
   }
   requestAnimationFrame(fadeIn);
@@ -260,7 +275,7 @@ function startTrackImmediate(track: string) {
   }
   const el = new Audio(musicBase + track);
   el.loop = true;
-  el.volume = musicVolume * MUSIC_MASTER_GAIN;
+  el.volume = musicVolume * masterVolume * MUSIC_MASTER_GAIN;
   el.muted = isMuted;
   el.play().catch(() => {});
   currentMusic = el;

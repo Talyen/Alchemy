@@ -18,7 +18,7 @@ export const keywordDefinitions: Record<KeywordId, KeywordDefinition> = {
   leech: { id: "leech", label: "Leech", description: "Lifesteal heals you for the amount of damage dealt", colorClass: "text-pink-300" },
   freeze: { id: "freeze", label: "Freeze", description: "Freeze damage causes the enemy to lose their turn if it accumulates to half their remaining HP", colorClass: "text-cyan-300" },
   mana: { id: "mana", label: "Mana", description: "Mana is used to play cards", colorClass: "text-sky-400" },
-  nature: { id: "nature", label: "Nature", description: "Nature cards will support Warden growth and wild magic synergies", colorClass: "text-green-700" },
-  companion: { id: "companion", label: "Companion", description: "Companion cards will call allied creatures to aid the Warden", colorClass: "text-[#a36a32]" },
+  nature: { id: "nature", label: "Nature", description: "Nature cards support Ranger growth and wild magic synergies", colorClass: "text-green-700" },
+  companion: { id: "companion", label: "Companion", description: "Companion cards call allied creatures to aid the Ranger", colorClass: "text-[#a36a32]" },
   trap: { id: "trap", label: "Trap", description: "Trap cards will prepare delayed effects for unsuspecting enemies", colorClass: "text-stone-300" },
 };
