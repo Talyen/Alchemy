@@ -58,13 +58,13 @@ function CombatTextBubble({ entry, side }: { entry: FloatingCombatText; side: "p
   return (
     <div
       className={cn(
-        "combat-text-float absolute whitespace-nowrap inline-flex items-center gap-2 rounded-full bg-black/35 px-5 py-2.5 text-2xl font-semibold backdrop-blur-[2px]",
+        "combat-text-float absolute whitespace-nowrap inline-flex items-center gap-2 text-3xl font-semibold",
         colorClass,
         side === "player" ? "left-0" : "right-0",
       )}
       style={{ "--combat-text-lane": String(entry.lane) } as CSSProperties}
     >
-      <Icon className={cn("h-6 w-6", colorClass)} />
+      <Icon className={cn("h-7 w-7", colorClass)} />
       <span>{entry.signedAmountText}</span>
     </div>
   );

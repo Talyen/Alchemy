@@ -12,8 +12,8 @@ import {
   haste,
   heal,
   healthPotion,
-  imp,
-  lizardScout,
+  impCompanion,
+  lizardScoutCompanion,
   manaBerries,
   manaCrystal,
   manaPotion,
@@ -57,8 +57,8 @@ export const cardLibrary: BattleCard[] = [
   { id: "panacea-potion", title: "Panacea Potion", descriptionLines: ["Remove all Ailments", "Consume"], art: panaceaPotion, cost: 1, template: "alchemy", consume: true, effects: [{ kind: "remove-ailment", mode: "all" }] },
   { id: "mixed-potion", title: "Mixed Potion", descriptionLines: ["Mixed at an Alchemist's Shop"], art: mixedPotion, cost: 1, template: "alchemy", consume: true, effects: [] },
   { id: "wolf-companion", title: "Wolf Companion", descriptionLines: ["Summon a Wolf Companion", "Consume"], art: wolfCompanion, cost: 1, template: "nature", consume: true, effects: [{ kind: "summon-companion", companionId: "wolf" }] },
-  { id: "lizard-scout-companion", title: "Lizard Scout Companion", descriptionLines: ["Summon a Lizard Scout Companion", "Consume"], art: lizardScout, cost: 1, template: "nature", consume: true, effects: [{ kind: "summon-companion", companionId: "lizard-scout" }] },
-  { id: "imp-companion", title: "Imp Companion", descriptionLines: ["Summon an Imp Companion", "Consume"], art: imp, cost: 1, template: "arcane", consume: true, effects: [{ kind: "summon-companion", companionId: "imp" }] },
+  { id: "lizard-scout-companion", title: "Lizard Scout Companion", descriptionLines: ["Summon a Lizard Scout Companion", "Consume"], art: lizardScoutCompanion, cost: 1, template: "nature", consume: true, effects: [{ kind: "summon-companion", companionId: "lizard-scout" }] },
+  { id: "imp-companion", title: "Imp Companion", descriptionLines: ["Summon an Imp Companion", "Consume"], art: impCompanion, cost: 1, template: "arcane", consume: true, effects: [{ kind: "summon-companion", companionId: "imp" }] },
 ];
 
 const starterDeckIds = ["slash", "bash", "block", "anvil", "plate-mail", "apple", "meteor", "blessed-aegis"];

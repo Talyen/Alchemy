@@ -209,7 +209,7 @@ test.describe("Full Run Flow", () => {
     // Reward screen: select first card
     await expect(page.getByRole("heading", { name: "Victory!" })).toBeVisible();
     await page.locator('[aria-label^="Select "]').first().click();
-    await page.getByRole("button", { name: "Add Card" }).click();
+    await page.getByRole("button", { name: /^(Add Card|Take Trinket)$/ }).click();
 
     // Destination screen
     await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible();
@@ -420,7 +420,7 @@ test.describe("Card Interactions", () => {
     await playUntilVictory(page);
 
     await page.locator('[aria-label^="Select "]').first().click();
-    await page.getByRole("button", { name: "Add Card" }).click();
+    await page.getByRole("button", { name: /^(Add Card|Take Trinket)$/ }).click();
 
     // Need to find Campfire among destinations - it's one of 3 random options
     const campfireBtn = page.getByRole("button", { name: "Campfire" });
@@ -473,7 +473,7 @@ test.describe("Merchant's Shop", () => {
 
     // Select a reward card first
     await page.locator('[aria-label^="Select "]').first().click();
-    await page.getByRole("button", { name: "Add Card" }).click();
+    await page.getByRole("button", { name: /^(Add Card|Take Trinket)$/ }).click();
 
     // Check if Merchant's Shop is among the destinations
     const shopBtn = page.getByRole("button", { name: "Merchant's Shop" });
@@ -494,7 +494,7 @@ test.describe("Merchant's Shop", () => {
     await playUntilVictory(page);
 
     await page.locator('[aria-label^="Select "]').first().click();
-    await page.getByRole("button", { name: "Add Card" }).click();
+    await page.getByRole("button", { name: /^(Add Card|Take Trinket)$/ }).click();
 
     const shopBtn = page.getByRole("button", { name: "Merchant's Shop" });
     if (!(await shopBtn.isVisible({ timeout: 500 }).catch(() => false))) {
@@ -513,7 +513,7 @@ test.describe("Merchant's Shop", () => {
     await playUntilVictory(page);
 
     await page.locator('[aria-label^="Select "]').first().click();
-    await page.getByRole("button", { name: "Add Card" }).click();
+    await page.getByRole("button", { name: /^(Add Card|Take Trinket)$/ }).click();
 
     const shopBtn = page.getByRole("button", { name: "Merchant's Shop" });
     if (!(await shopBtn.isVisible({ timeout: 500 }).catch(() => false))) {
@@ -531,7 +531,7 @@ test.describe("Merchant's Shop", () => {
     await playUntilVictory(page);
 
     await page.locator('[aria-label^="Select "]').first().click();
-    await page.getByRole("button", { name: "Add Card" }).click();
+    await page.getByRole("button", { name: /^(Add Card|Take Trinket)$/ }).click();
 
     const shopBtn = page.getByRole("button", { name: "Merchant's Shop" });
     if (!(await shopBtn.isVisible({ timeout: 500 }).catch(() => false))) {
@@ -551,7 +551,7 @@ test.describe("Alchemist's Shop", () => {
     await playUntilVictory(page);
 
     await page.locator('[aria-label^="Select "]').first().click();
-    await page.getByRole("button", { name: "Add Card" }).click();
+    await page.getByRole("button", { name: /^(Add Card|Take Trinket)$/ }).click();
 
     const hutBtn = page.getByRole("button", { name: "Alchemist's Shop" });
     if (!(await hutBtn.isVisible({ timeout: 500 }).catch(() => false))) {
@@ -569,7 +569,7 @@ test.describe("Alchemist's Shop", () => {
     await playUntilVictory(page);
 
     await page.locator('[aria-label^="Select "]').first().click();
-    await page.getByRole("button", { name: "Add Card" }).click();
+    await page.getByRole("button", { name: /^(Add Card|Take Trinket)$/ }).click();
 
     const hutBtn = page.getByRole("button", { name: "Alchemist's Shop" });
     if (!(await hutBtn.isVisible({ timeout: 500 }).catch(() => false))) {
@@ -587,7 +587,7 @@ test.describe("Alchemist's Shop", () => {
     await playUntilVictory(page);
 
     await page.locator('[aria-label^="Select "]').first().click();
-    await page.getByRole("button", { name: "Add Card" }).click();
+    await page.getByRole("button", { name: /^(Add Card|Take Trinket)$/ }).click();
 
     const hutBtn = page.getByRole("button", { name: "Alchemist's Shop" });
     if (!(await hutBtn.isVisible({ timeout: 500 }).catch(() => false))) {
@@ -605,7 +605,7 @@ test.describe("Alchemist's Shop", () => {
     await playUntilVictory(page);
 
     await page.locator('[aria-label^="Select "]').first().click();
-    await page.getByRole("button", { name: "Add Card" }).click();
+    await page.getByRole("button", { name: /^(Add Card|Take Trinket)$/ }).click();
 
     const hutBtn = page.getByRole("button", { name: "Alchemist's Shop" });
     if (!(await hutBtn.isVisible({ timeout: 500 }).catch(() => false))) {

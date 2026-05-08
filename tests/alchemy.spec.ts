@@ -196,7 +196,7 @@ test("victory reward requires confirmation before advancing to destinations", as
 
   await playUntilVictory(page);
 
-  const addCardButton = page.getByRole("button", { name: "Add Card" });
+  const addCardButton = page.getByRole("button", { name: /^(Add Card|Take Trinket)$/ });
   await expect(addCardButton).toBeDisabled();
 
   await page.locator('[aria-label^="Select "]').first().click();

@@ -36,7 +36,7 @@ async function playUntilVictory(page: Parameters<typeof test>[0]["page"]) {
 async function completeVictoryFlow(page: Parameters<typeof test>[0]["page"]) {
   // Complete the reward screen after a victory
   await page.locator('[aria-label^="Select "]').first().click();
-  await page.getByRole("button", { name: "Add Card" }).click();
+  await page.getByRole("button", { name: /^(Add Card|Take Trinket)$/ }).click();
   // Wait for destination screen to render fully
   await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 5000 });
 }

@@ -288,7 +288,7 @@ export function BattleScreen({
           {isPlayerTurn ? 'Your Turn' : 'Enemy Turn'}
         </div>
         <div className="relative flex items-start justify-center transition-transform duration-500 ease-out">
-          <div className="absolute left-full top-[12%] z-30 ml-3 w-40">
+          <div className="absolute left-[calc(100%+clamp(28px,3cqw,44px))] top-[30%] z-30 w-40">
             <CombatTextRail entries={playerCombatTexts} side="player" />
           </div>
           <div className={hasCompanion ? "relative transition-transform duration-500 ease-out -translate-x-[clamp(12px,1.2vw,22px)]" : "relative transition-transform duration-500 ease-out"}>
@@ -318,7 +318,7 @@ export function BattleScreen({
         </div>
 
         <div className="relative flex flex-col items-center">
-          <div className="absolute right-full top-[30%] z-30 mr-3 w-40">
+          <div className="absolute right-[calc(100%+clamp(28px,3cqw,44px))] top-[30%] z-30 w-40">
             <CombatTextRail entries={enemyCombatTexts} side="enemy" />
           </div>
           <ArtPanel

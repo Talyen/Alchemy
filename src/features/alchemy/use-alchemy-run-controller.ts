@@ -1,7 +1,7 @@
 import type { MouseEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { chooseWishCard, createBattleState, endPlayerTurn, maxPlayerHealth, playBattleCardResolved, cardHasDamageType, processCompanionTurnStart, type BattleState, type CombatTextEvent } from "@/lib/battle";
-import { cardLibrary, characters, starterDeck, type BattleCard, type CharacterGender, type CharacterId, type KeywordId } from "@/lib/game-data";
+import { cardLibrary, characters, starterDeck, trinketLibrary, type BattleCard, type CharacterGender, type CharacterId, type KeywordId, type TrinketEntry } from "@/lib/game-data";
 import { playVictory, playDefeat, playCardSound, playEnemyAttack, playGoldGain, playGoldSpend } from "@/lib/audio";
 import { destinationPool, getCurrentEnemy } from "./config";
 import { useCardGhosts, useFloatingCombatTexts, useShimmerController } from "./hooks";
@@ -36,6 +36,89 @@ function getEffectiveCost(state: BattleState, card: BattleCard): number {
     cost = 0;
   }
   return cost;
+}
+
+// Extracts keyword IDs associated with a card for reward targeting.
+function getCardKeywords(card: BattleCard): KeywordId[] {
+  const keywords = new Set<KeywordId>();
+
+  if (card.template === "nature") keywords.add("nature");
+  if (card.template === "holy") keywords.add("holy");
+
+  for (const effect of card.effects) {
+    switch (effect.kind) {
+      case "damage":
+        keywords.add(effect.damageType);
+        if (effect.lifesteal) keywords.add("leech");
+        break;
+      case "player-status":
+        if (effect.status === "block" || effect.status === "armor" || effect.status === "forge") {
+          keywords.add(effect.status);
+        }
+        break;
+      case "heal":
+        keywords.add("health");
+        break;
+      case "restore-mana":
+      case "lose-mana":
+      case "lose-max-mana":
+      case "gain-max-mana":
+        keywords.add("mana");
+        break;
+      case "gain-gold":
+        keywords.add("gold");
+        break;
+      case "wish":
+        keywords.add("wish");
+        break;
+      case "summon-companion":
+        keywords.add("companion");
+        break;
+      case "remove-ailment":
+        keywords.add("ailment");
+        break;
+    }
+  }
+
+  if (card.consume) keywords.add("consume");
+
+  return Array.from(keywords);
+}
+
+// 25% chance to offer trinket rewards instead of cards after a victory.
+const REWARD_TRINKET_CHANCE = 0.25;
+
+// Selects reward trinkets — fully random from the library.
+function selectRewardTrinkets(allTrinkets: TrinketEntry[], count: number): TrinketEntry[] {
+  return sampleItems(allTrinkets, count);
+}
+
+// Selects reward cards biased toward the player's deck archetype.
+// 70% chance: scores cards by keyword overlap with deck + new-card bonus
+// 30% chance: fully random for variety
+const REWARD_RANDOM_CHANCE = 0.3;
+function selectRewardCards(deck: BattleCard[], allCards: BattleCard[], count: number): BattleCard[] {
+  const candidates = allCards.filter((c) => c.id !== "mixed-potion");
+
+  if (Math.random() < REWARD_RANDOM_CHANCE) return sampleItems(candidates, count);
+
+  const freq: Record<string, number> = {};
+  for (const card of deck) {
+    for (const kw of getCardKeywords(card)) freq[kw] = (freq[kw] || 0) + 1;
+  }
+
+  const deckIds = new Set(deck.map((c) => c.id));
+
+  const scored = candidates.map((card) => {
+    let score = 0;
+    for (const kw of getCardKeywords(card)) score += freq[kw] || 0;
+    if (!deckIds.has(card.id)) score += 2;
+    return { card, score };
+  });
+
+  scored.sort((a, b) => b.score - a.score);
+  const pool = scored.slice(0, Math.min(count * 2, scored.length)).map((s) => s.card);
+  return sampleItems(pool, count);
 }
 
 export function useAlchemyRunController({
@@ -76,7 +159,7 @@ export function useAlchemyRunController({
   }
 
   // ============ Reward / Shop State ============
-  const [rewardState, setRewardState] = useState<{ choices: BattleCard[]; gold: number; selectedId: string | null; destinations: Destination[] }>({ choices: [], gold: 0, selectedId: null, destinations: [] });
+  const [rewardState, setRewardState] = useState<{ choices: (BattleCard | TrinketEntry)[]; gold: number; selectedId: string | null; destinations: Destination[]; rewardType: "card" | "trinket" }>({ choices: [], gold: 0, selectedId: null, destinations: [], rewardType: "card" });
   const [shopState, setShopState] = useState<{ cards: BattleCard[]; refreshesLeft: number; removeUsed: boolean; firstPurchaseUsed: boolean }>({ cards: [], refreshesLeft: 1, removeUsed: false, firstPurchaseUsed: false });
   const [alchemistState, setAlchemistState] = useState<{ potions: BattleCard[]; refreshesLeft: number; mixUsed: boolean; firstPurchaseUsed: boolean }>({ potions: [], refreshesLeft: 1, mixUsed: false, firstPurchaseUsed: false });
   const [mysteryEvent, setMysteryEvent] = useState<MysteryEvent | null>(null);
@@ -136,7 +219,15 @@ export function useAlchemyRunController({
     if (talents.talentEffects.maxHealthPerCombat > 0) {
       run.setRunMaxHealth((p) => p + talents.talentEffects.maxHealthPerCombat);
     }
-    setRewardState({ choices: sampleItems(cardLibrary.filter((c) => c.id !== "mixed-potion"), REWARD_CARD_CHOICES), gold: gold + eliteBonus + talents.talentEffects.goldPerCombat, selectedId: null, destinations: sampleItems(getAvailableDestinations(newHp, newGold), DESTINATION_CHOICES) });
+    const isElite = battleState.currentEnemy.enemyType === "elite";
+    const trinketChance = isElite ? 0.75 : REWARD_TRINKET_CHANCE;
+    const offerTrinket = Math.random() < trinketChance;
+    setRewardState({
+      rewardType: offerTrinket ? "trinket" : "card",
+      choices: offerTrinket ? selectRewardTrinkets(trinketLibrary, REWARD_CARD_CHOICES) : selectRewardCards(run.runDeck, cardLibrary, REWARD_CARD_CHOICES),
+      gold: offerTrinket ? 0 : gold + eliteBonus + talents.talentEffects.goldPerCombat,
+      selectedId: null, destinations: sampleItems(getAvailableDestinations(newHp, newGold), DESTINATION_CHOICES),
+    });
     setHasActiveBattle(false); setHoveredCardId(null); setMenuOpen(false); playVictory();
     const t = setTimeout(() => setScreen("rewards"), VICTORY_TRANSITION_DELAY);
     return () => clearTimeout(t);
@@ -155,7 +246,7 @@ export function useAlchemyRunController({
     run.setRoomsEncountered(0);
     run.setRunPlayerHealth(maxPlayerHealth);
     run.setRunMaxHealth(maxPlayerHealth);
-    setRewardState({ choices: [], gold: 0, selectedId: null, destinations: [] });
+    setRewardState({ choices: [], gold: 0, selectedId: null, destinations: [], rewardType: "card" });
     setDiscoveredCardIds((current) => Array.from(new Set([...current, ...freshDeck.map((c) => c.id)])));
     setEncounteredEnemyIds([]);
     startBattle(freshDeck, talents.talentEffects.startGold);
@@ -204,9 +295,20 @@ export function useAlchemyRunController({
   }
 
   // ============ Rewards & Destinations ============
-  function finishRewards(chosenCard?: BattleCard) {
-    if (chosenCard) { run.setRunDeck((prev) => [...prev, chosenCard]); setDiscoveredCardIds((cur) => cur.includes(chosenCard.id) ? cur : [...cur, chosenCard.id]); }
-    setRewardState((prev) => ({ choices: [], gold: 0, selectedId: null, destinations: prev.destinations }));
+  function finishRewards() {
+    if (rewardState.selectedId) {
+      const chosen = rewardState.choices.find((c) => c.id === rewardState.selectedId);
+      if (chosen) {
+        if (rewardState.rewardType === "card") {
+          run.setRunDeck((prev) => [...prev, chosen as BattleCard]);
+          setDiscoveredCardIds((cur) => cur.includes(chosen.id) ? cur : [...cur, chosen.id]);
+        } else {
+          run.setRunTrinkets((prev) => [...prev, chosen.id]);
+          setDiscoveredTrinketIds((cur) => cur.includes(chosen.id) ? cur : [...cur, chosen.id]);
+        }
+      }
+    }
+    setRewardState((prev) => ({ choices: [], gold: 0, selectedId: null, destinations: prev.destinations, rewardType: "card" }));
     setHoveredCardId(null); navigateTo("destination");
   }
 
@@ -440,7 +542,7 @@ export function useAlchemyRunController({
   function resetRunState() {
     clearCardGhosts(); setBattleState(createBattleState(starterDeck, 0));
     run.reset(); talents.resetRunXP();
-    setRewardState({ choices: [], gold: 0, selectedId: null, destinations: [] });
+    setRewardState({ choices: [], gold: 0, selectedId: null, destinations: [], rewardType: "card" });
     setHoveredCardId(null); setMenuOpen(false); setHasActiveBattle(false); navigateTo("menu");
   }
 
@@ -451,7 +553,7 @@ export function useAlchemyRunController({
     screen, battleState, hoveredCardId, menuOpen, hasActiveBattle,
     roomsEncountered: run.roomsEncountered,
     get rewardChoices() { return rewardState.choices; }, get rewardGold() { return rewardState.gold; },
-    get selectedRewardId() { return rewardState.selectedId; }, get destinationOptions() { return rewardState.destinations; },
+    get rewardType() { return rewardState.rewardType; }, get selectedRewardId() { return rewardState.selectedId; }, get destinationOptions() { return rewardState.destinations; },
     get shopCards() { return shopState.cards; }, get shopRefreshesLeft() { return shopState.refreshesLeft; }, get shopRemoveUsed() { return shopState.removeUsed; },
     get alchemistPotions() { return alchemistState.potions; }, get alchemistRefreshesLeft() { return alchemistState.refreshesLeft; }, get alchemistMixUsed() { return alchemistState.mixUsed; },
     setRewardState,

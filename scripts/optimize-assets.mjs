@@ -66,6 +66,8 @@ const assets = [
   { source: "Cards/Steal.png", target: "steal.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Wish.png", target: "wish.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Wolf Companion.png", target: "wolf-companion.webp", width: cardWidth, quality: cardQuality },
+  { source: "Cards/Lizard Scout Companion.png", target: "lizard-scout-companion.webp", width: cardWidth, quality: cardQuality },
+  { source: "Cards/Imp Companion.png", target: "imp-companion.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Mixed Potion.png", target: "mixed-potion.webp", width: cardWidth, quality: 84 },
   // Destinations
   { source: "Destinations/Campfire.png", target: "campfire.webp", width: 900, quality: 84 },

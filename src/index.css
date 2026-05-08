@@ -382,7 +382,7 @@
 
   100% {
     opacity: 0;
-    transform: translate3d(0px, calc(var(--combat-text-lane, 0) * 56px - 72px), 0px) scale(1.02);
+    transform: translate3d(0px, calc(var(--combat-text-lane, 0) * 56px - 140px), 0px) scale(1.02);
   }
 }
 

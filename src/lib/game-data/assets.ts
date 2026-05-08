@@ -26,7 +26,9 @@ import haste from "@/assets/optimized/haste.webp";
 import heal from "@/assets/optimized/heal.webp";
 import healthPotion from "@/assets/optimized/health-potion.webp";
 import imp from "@/assets/optimized/imp.webp";
+import impCompanion from "@/assets/optimized/imp-companion.webp";
 import lizardScout from "@/assets/optimized/lizard-scout.webp";
+import lizardScoutCompanion from "@/assets/optimized/lizard-scout-companion.webp";
 import maleKnight from "@/assets/optimized/male-knight.webp";
 import maleRanger from "@/assets/optimized/male-ranger.webp";
 import maleRogue from "@/assets/optimized/male-rogue.webp";
@@ -82,7 +84,9 @@ export {
   heal,
   healthPotion,
   imp,
+  impCompanion,
   lizardScout,
+  lizardScoutCompanion,
   maleKnight,
   maleRanger,
   maleRogue,

@@ -105,7 +105,7 @@ export function TalentList({
                         borderClass,
                       )}
                     >
-                      <span className="animate-unlock-text-pulse text-amber-300">
+                      <span className={cn("animate-unlock-text-pulse", keywordDefinitions[talent.keywordId]?.colorClass ?? "text-amber-300")}>
                         Unlock Talent
                       </span>
                     </button>
