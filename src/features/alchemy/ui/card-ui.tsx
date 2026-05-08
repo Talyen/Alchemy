@@ -182,7 +182,7 @@ export function CardGhostOverlay({ ghost, onDone }: { ghost: CardGhost; onDone: 
       alt=""
       aria-hidden="true"
       className={cn(
-        "card-ghost-overlay pointer-events-none fixed rounded-[30px] bg-black object-cover",
+        "card-ghost-overlay pointer-events-none absolute z-[80] rounded-[30px] bg-black object-cover",
         ghost.variant === "draw-in" ? "card-ghost-draw-in" : null,
         ghost.variant === "discard-out" ? "card-ghost-discard-out" : null,
         ghost.variant === "activate" ? "card-ghost-activate" : null,

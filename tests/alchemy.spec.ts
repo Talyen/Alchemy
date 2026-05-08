@@ -1,8 +1,13 @@
 import { expect, test } from "@playwright/test";
 
 const supportedResolutions = [
+  { width: 1366, height: 768 },
+  { width: 1600, height: 900 },
   { width: 1920, height: 1080 },
+  { width: 1920, height: 1200 },
+  { width: 2560, height: 1080 },
   { width: 2560, height: 1440 },
+  { width: 3440, height: 1440 },
   { width: 3840, height: 2160 },
 ];
 
@@ -226,15 +231,27 @@ for (const resolution of supportedResolutions) {
     expect(layout.height).toBeLessThanOrEqual(layout.viewportHeight);
 
     const battleSpacing = await page.evaluate(() => {
+      const scene = document.querySelector<HTMLElement>('[data-testid="battle-scene"]');
+      const playerPanel = document.querySelector<HTMLElement>('[data-testid="battle-player-art-panel"]');
+      const enemyPanel = document.querySelector<HTMLElement>('[data-testid="battle-enemy-art-panel"]');
       const handCards = Array.from(document.querySelectorAll<HTMLElement>('[aria-label^="Play "]'));
       const statusPanes = Array.from(document.querySelectorAll<HTMLElement>(".surface-muted"));
+      if (!scene || !playerPanel || !enemyPanel) throw new Error("Battle panels were not rendered");
+
+      const sceneRect = scene.getBoundingClientRect();
+      const scale = sceneRect.width / scene.offsetWidth;
+      const playerRect = playerPanel.getBoundingClientRect();
+      const enemyRect = enemyPanel.getBoundingClientRect();
       const handTop = Math.min(...handCards.map((card) => card.getBoundingClientRect().top));
       const statusBottom = Math.max(...statusPanes.map((pane) => pane.getBoundingClientRect().bottom));
+      const actorGap = enemyRect.left - playerRect.right;
+      const requiredCombatRailGap = (160 * 2 + 12 * 2) * scale;
 
-      return { handTop, statusBottom, gap: handTop - statusBottom };
+      return { handTop, statusBottom, handGap: handTop - statusBottom, actorGap, requiredCombatRailGap };
     });
 
-    expect(battleSpacing.gap).toBeGreaterThanOrEqual(16);
+    expect(battleSpacing.handGap).toBeGreaterThanOrEqual(16);
+    expect(battleSpacing.actorGap).toBeGreaterThanOrEqual(battleSpacing.requiredCombatRailGap);
 
     await firstCard.click();
     await expect(playableCards).toHaveCount(Math.max(0, cardsBeforePlay - 1));

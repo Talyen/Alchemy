@@ -73,15 +73,16 @@ export function BattleScreen({
 }) {
   const isPlayerTurn = battleState.turnPhase === "player";
   const hasCompanion = Boolean(battleState.activeCompanion);
+  const battleActorHalfGap = 'clamp(168px,10cqw,210px)';
   const playerTurnBadgeTransform = hasCompanion
-    ? 'translateX(calc(-50% - clamp(111px,11cqh,168px) - clamp(72px,5.5vw,112px) - clamp(12px,1.2vw,22px)))'
-    : 'translateX(calc(-50% - clamp(111px,11cqh,168px) - clamp(72px,5.5vw,112px)))';
+    ? `translateX(calc(-50% - clamp(111px,11cqh,168px) - ${battleActorHalfGap} - clamp(12px,1.2cqw,22px)))`
+    : `translateX(calc(-50% - clamp(111px,11cqh,168px) - ${battleActorHalfGap}))`;
   const [wishSelectedCard, setWishSelectedCard] = useState<BattleCard | null>(null);
 
   // MOBILE LANDSCAPE — compact two-row layout for touch devices
   if (isMobileLandscape) {
     return (
-      <div ref={battleSceneRef} className="relative h-full w-full overflow-hidden [container-type:size]">
+      <div ref={battleSceneRef} data-testid="battle-scene" className="relative h-full w-full overflow-hidden [container-type:size]">
         <div className="absolute inset-0 flex flex-col">
           {/* Top: Player & Enemy side-by-side */}
           <div className="flex items-start justify-center gap-1 p-1">
@@ -272,8 +273,8 @@ export function BattleScreen({
   }
 
   return (
-    <div ref={battleSceneRef} className="relative h-full w-full overflow-hidden [container-type:size]">
-      <section className="absolute inset-x-0 flex -translate-y-1/2 items-start justify-center gap-[clamp(144px,11vw,224px)] px-4" style={{ top: '42%' }}>
+    <div ref={battleSceneRef} data-testid="battle-scene" className="relative h-full w-full overflow-hidden [container-type:size]">
+      <section className="absolute inset-x-0 flex -translate-y-1/2 items-start justify-center gap-[clamp(336px,20cqw,420px)] px-4" style={{ top: '42%' }}>
         <div
           className={`pointer-events-none absolute -top-10 left-1/2 z-20 whitespace-nowrap rounded-md px-3 py-1 text-sm transition-all duration-500 ${
             isPlayerTurn ? 'bg-emerald-900/80 text-emerald-300' : 'bg-rose-900/80 text-rose-300'
@@ -281,7 +282,7 @@ export function BattleScreen({
           style={{
             transform: isPlayerTurn
               ? playerTurnBadgeTransform
-              : 'translateX(calc(-50% + clamp(111px,11cqh,168px) + clamp(72px,5.5vw,112px)))',
+              : `translateX(calc(-50% + clamp(111px,11cqh,168px) + ${battleActorHalfGap}))`,
           }}
         >
           {isPlayerTurn ? 'Your Turn' : 'Enemy Turn'}

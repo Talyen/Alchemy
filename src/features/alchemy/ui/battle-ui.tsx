@@ -142,6 +142,7 @@ export function ArtPanel({
       ) : null}
       <div
         ref={surfaceRef}
+        data-testid={`battle-${side}-art-panel`}
         className={cn("tilt-surface", cardSurfaceClass, cardWidthClass ?? battleCardWidthClass)}
         data-tilt-strength="15"
         onMouseEnter={() => onHoverShimmer(shimmerId)}
