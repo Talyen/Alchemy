@@ -19,6 +19,7 @@ import fireball from "@/assets/optimized/fireball.webp";
 import frostbolt from "@/assets/optimized/frostbolt.webp";
 import goblin from "@/assets/optimized/goblin.webp";
 import haste from "@/assets/optimized/haste.webp";
+import herbGarden from "@/assets/optimized/herb-garden.webp";
 import heal from "@/assets/optimized/heal.webp";
 import healthPotion from "@/assets/optimized/health-potion.webp";
 import imp from "@/assets/optimized/imp.webp";
@@ -74,6 +75,7 @@ export {
   goblin,
   haste,
   heal,
+  herbGarden,
   healthPotion,
   imp,
   impCompanion,

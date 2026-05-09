@@ -56,19 +56,19 @@ export const buildings: HomesteadBuilding[] = [
 
 export const farmPlots: HomesteadFarm[] = [
   {
-    id: "wheat-field",
-    title: "Wheat Field",
-    description: "A sun-drenched field of golden wheat.",
-    cost: { food: 5, herbs: 3, wood: 0, stone: 0, iron: 0, leather: 0, crystal: 0 },
-    yield: { food: 2, wood: 0, stone: 0, iron: 0, herbs: 0, leather: 0, crystal: 0 },
-    buttonLabel: "Grow",
-  },
-  {
     id: "herb-garden",
     title: "Herb Garden",
     description: "A neat patch of medicinal and aromatic herbs.",
     cost: { herbs: 5, food: 3, wood: 0, stone: 0, iron: 0, leather: 0, crystal: 0 },
     yield: { herbs: 2, wood: 0, stone: 0, iron: 0, food: 0, leather: 0, crystal: 0 },
+    buttonLabel: "Grow",
+  },
+  {
+    id: "wheat-field",
+    title: "Wheat Field",
+    description: "A sun-drenched field of golden wheat.",
+    cost: { food: 5, herbs: 3, wood: 0, stone: 0, iron: 0, leather: 0, crystal: 0 },
+    yield: { food: 2, wood: 0, stone: 0, iron: 0, herbs: 0, leather: 0, crystal: 0 },
     buttonLabel: "Grow",
   },
   {
@@ -86,6 +86,22 @@ export const farmPlots: HomesteadFarm[] = [
     cost: { food: 8, leather: 5, wood: 0, stone: 0, iron: 0, herbs: 0, crystal: 0 },
     yield: { leather: 2, food: 1, wood: 0, stone: 0, iron: 0, herbs: 0, crystal: 0 },
     buttonLabel: "Raise",
+  },
+  {
+    id: "orchard",
+    title: "Orchard",
+    description: "A small grove of fruit-bearing trees.",
+    cost: { wood: 8, food: 5, stone: 0, iron: 0, herbs: 0, leather: 0, crystal: 0 },
+    yield: { food: 2, wood: 1, stone: 0, iron: 0, herbs: 0, leather: 0, crystal: 0 },
+    buttonLabel: "Plant",
+  },
+  {
+    id: "crystal-garden",
+    title: "Crystal Garden",
+    description: "A geomantically attuned patch that grows shimmering crystals.",
+    cost: { crystal: 8, herbs: 5, wood: 0, stone: 0, iron: 0, leather: 0, food: 0 },
+    yield: { crystal: 2, herbs: 1, wood: 0, stone: 0, iron: 0, leather: 0, food: 0 },
+    buttonLabel: "Cultivate",
   },
 ];
 

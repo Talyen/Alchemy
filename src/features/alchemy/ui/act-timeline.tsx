@@ -55,7 +55,7 @@ export function ActTimeline({
   return (
     <div className="w-full max-w-5xl px-2 sm:px-6">
       <div className="mb-5 flex flex-col items-center">
-        <div className="text-sm font-black uppercase tracking-[0.34em] text-amber-100/75 sm:text-base">
+        <div className="text-lg font-black uppercase tracking-[0.15em] text-amber-100/75 sm:text-xl">
           Act {currentAct} of {ACTS_PER_RUN}
         </div>
         <div className="mt-2 h-px w-44 bg-gradient-to-r from-transparent via-amber-300/60 to-transparent" />

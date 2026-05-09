@@ -53,7 +53,7 @@ export function subtractInventory(inventory: MaterialInventory, cost: MaterialIn
 
 export type BuildingId = "workshop" | "storehouse" | "stone-walls" | "herb-shed" | "watchtower" | "smithy";
 
-export type FarmId = "wheat-field" | "herb-garden" | "chicken-coop" | "sheep-pasture";
+export type FarmId = "wheat-field" | "herb-garden" | "chicken-coop" | "sheep-pasture" | "orchard" | "crystal-garden";
 
 export type ResearchId = "carpentry" | "masonry" | "crop-rotation" | "animal-husbandry" | "fortified-walls" | "metallurgy";
 

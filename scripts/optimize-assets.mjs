@@ -71,6 +71,8 @@ const assets = [
   { source: "Destinations/Elite Enemy.png", target: "elite-enemy.webp", width: 900, quality: 84 },
   { source: "Destinations/Normal Enemy.png", target: "normal-enemy.webp", width: 900, quality: 84 },
   { source: "Destinations/Mystery.png", target: "mystery.webp", width: 900, quality: 84 },
+  // Homestead
+  { source: "Homestead/Herb Garden.png", target: "herb-garden.webp", width: 900, quality: 84 },
   // Trinkets
   { source: "Trinkets/Bone Charm.png", target: "bone-charm.webp", width: 420, quality: 82 },
   { source: "Trinkets/Brass Censer.png", target: "brass-censer.webp", width: 420, quality: 82 },

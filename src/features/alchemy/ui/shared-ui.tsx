@@ -129,7 +129,7 @@ export function ConfirmationDialog({ title, description, confirmLabel, cancelLab
 export function ScreenHeader({ title, className }: { title: ReactNode; className?: string }) {
   return (
     <div className={cn("flex flex-col items-center text-center", className)}>
-      <h1 className="text-sm font-black uppercase tracking-[0.34em] text-amber-100/75 sm:text-base">
+      <h1 className="text-lg font-black uppercase tracking-[0.15em] text-amber-100/75 sm:text-xl">
         {title}
       </h1>
       <div className="mt-2 h-px w-44 bg-gradient-to-r from-transparent via-amber-300/60 to-transparent" />
