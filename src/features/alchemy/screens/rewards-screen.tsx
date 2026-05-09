@@ -143,12 +143,14 @@ export function RewardsScreen({
           })}
         </div>
 
-        <div className="state-swap mt-8 text-center text-lg font-medium text-yellow-300">
-          <span className="inline-flex items-center gap-2">
-            <Coins className="h-5 w-5" />
-            Found {rewardGold} Gold
-          </span>
-        </div>
+        {rewardGold > 0 ? (
+          <div className="state-swap mt-8 text-center text-lg font-medium text-yellow-300">
+            <span className="inline-flex items-center gap-2">
+              <Coins className="h-5 w-5" />
+              Found {rewardGold} Gold
+            </span>
+          </div>
+        ) : null}
 
         <div className="mt-5 flex flex-wrap justify-center gap-3">
           <Button size="lg" className="min-w-40" disabled={!selectedRewardItem} onClick={onAddReward}>

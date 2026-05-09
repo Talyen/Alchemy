@@ -1,6 +1,6 @@
 import { expect, type Page } from "@playwright/test";
 
-export async function startRun(page: Page, character: "Knight" | "Ranger" | "Rogue" | "Sorcerer" = "Knight") {
+export async function startRun(page: Page, character: "Knight" | "Ranger" | "Rogue" | "Wizard" = "Knight") {
   await page.goto("/");
   await page.getByRole("button", { name: "Play" }).click();
   await page.getByRole("button", { name: character }).click();

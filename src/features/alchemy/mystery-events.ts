@@ -1,5 +1,6 @@
 import { manaBerries } from "@/lib/game-data";
 import type { KeywordId } from "@/lib/game-data";
+import type { MaterialId } from "@/lib/homestead/types";
 
 export type MysteryEffect =
   | { kind: "addCard"; cardId: string }
@@ -12,6 +13,7 @@ export type MysteryEffect =
   | { kind: "gainXP"; keyword: KeywordId; amount: number }
   | { kind: "removeCard"; mode: "random" | "choose" }
   | { kind: "gainTrinket"; trinketId: string }
+  | { kind: "gainMaterial"; material: MaterialId; amount: number }
   | { kind: "none" };
 
 export type MysteryChoice = {

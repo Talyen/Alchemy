@@ -29,16 +29,11 @@ const assets = [
   { source: "Enemies/Mud Elemental.png", target: "mud-elemental.webp", width: 720, quality: 82 },
   { source: "Enemies/Necromancer.png", target: "necromancer.webp", width: 720, quality: 82 },
   { source: "Enemies/Plague Doctor.png", target: "plague-doctor.webp", width: 720, quality: 82 },
-  // Characters — Female
-  { source: "Player Characters/Female Knight.png", target: "female-knight.webp", width: characterWidth, quality: 82 },
-  { source: "Player Characters/Female Ranger.png", target: "female-ranger.webp", width: characterWidth, quality: 82 },
-  { source: "Player Characters/Female Rogue.png", target: "female-rogue.webp", width: characterWidth, quality: 82 },
-  { source: "Player Characters/Female Wizard.png", target: "female-wizard.webp", width: characterWidth, quality: 82 },
-  // Characters — Male
-  { source: "Player Characters/Male Knight.png", target: "male-knight.webp", width: characterWidth, quality: 82 },
-  { source: "Player Characters/Male Ranger.png", target: "male-ranger.webp", width: characterWidth, quality: 82 },
-  { source: "Player Characters/Male Rogue.png", target: "male-rogue.webp", width: characterWidth, quality: 82 },
-  { source: "Player Characters/Male Wizard.png", target: "male-wizard.webp", width: characterWidth, quality: 82 },
+  // Characters
+  { source: "Player Characters/Knight.png", target: "knight.webp", width: characterWidth, quality: 82 },
+  { source: "Player Characters/Ranger.png", target: "ranger.webp", width: characterWidth, quality: 82 },
+  { source: "Player Characters/Rogue.png", target: "rogue.webp", width: characterWidth, quality: 82 },
+  { source: "Player Characters/Wizard.png", target: "wizard.webp", width: characterWidth, quality: 82 },
   // Cards
   { source: "Cards/Anvil.png", target: "anvil.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Apple.png", target: "apple.webp", width: cardWidth, quality: cardQuality },

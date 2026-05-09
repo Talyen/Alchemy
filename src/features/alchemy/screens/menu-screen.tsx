@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { staticCardTransform } from "../config";
 import { clearTiltFromEvent, setTiltFromEvent } from "../utils";
 
-export function MenuScreen({ onPlay, onCollection, onOptions, onTalents, onQuit, logoSrc, hasActiveBattle, isMobileLandscape = false }: { onPlay: () => void; onCollection: () => void; onOptions: () => void; onTalents: () => void; onQuit?: () => void; logoSrc: string; hasActiveBattle?: boolean; isMobileLandscape?: boolean }) {
+export function MenuScreen({ onPlay, onCollection, onOptions, onTalents, onHomestead, onQuit, logoSrc, hasActiveBattle, isMobileLandscape = false }: { onPlay: () => void; onCollection: () => void; onOptions: () => void; onTalents: () => void; onHomestead: () => void; onQuit?: () => void; logoSrc: string; hasActiveBattle?: boolean; isMobileLandscape?: boolean }) {
   return (
     <div className={`flex h-full w-full flex-col items-center justify-center text-center ${isMobileLandscape ? "gap-2" : "gap-8"}`}>
       <div
@@ -33,11 +33,14 @@ export function MenuScreen({ onPlay, onCollection, onOptions, onTalents, onQuit,
         <Button size={isMobileLandscape ? "sm" : "lg"} variant="outline" className={`stagger-item justify-center ${isMobileLandscape ? "w-36 text-xs" : "w-56 text-base"}`} style={{ "--stagger-index": 2 } as CSSProperties} onClick={onOptions}>
           Options
         </Button>
-        <Button size={isMobileLandscape ? "sm" : "lg"} variant="outline" className={`stagger-item justify-center ${isMobileLandscape ? "w-36 text-xs" : "w-56 text-base"}`} style={{ "--stagger-index": 3 } as CSSProperties} onClick={onTalents}>
+        <Button size={isMobileLandscape ? "sm" : "lg"} variant="outline" className={`stagger-item justify-center ${isMobileLandscape ? "w-36 text-xs" : "w-56 text-base"}`} style={{ "--stagger-index": 3 } as CSSProperties} onClick={onHomestead}>
+          Homestead
+        </Button>
+        <Button size={isMobileLandscape ? "sm" : "lg"} variant="outline" className={`stagger-item justify-center ${isMobileLandscape ? "w-36 text-xs" : "w-56 text-base"}`} style={{ "--stagger-index": 4 } as CSSProperties} onClick={onTalents}>
           Talents
         </Button>
         {onQuit ? (
-          <Button size={isMobileLandscape ? "sm" : "lg"} variant="outline" className={`stagger-item justify-center ${isMobileLandscape ? "w-36 text-xs" : "w-56 text-base"}`} style={{ "--stagger-index": 4 } as CSSProperties} onClick={onQuit}>
+          <Button size={isMobileLandscape ? "sm" : "lg"} variant="outline" className={`stagger-item justify-center ${isMobileLandscape ? "w-36 text-xs" : "w-56 text-base"}`} style={{ "--stagger-index": 5 } as CSSProperties} onClick={onQuit}>
             Quit
           </Button>
         ) : null}

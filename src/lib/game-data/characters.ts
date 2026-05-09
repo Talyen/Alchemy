@@ -2,9 +2,7 @@ import type { BattleCard } from "./types";
 import { cardLibrary } from "./cards";
 import type { KeywordId } from "./types";
 
-export type CharacterId = "knight" | "ranger" | "rogue" | "sorcerer";
-
-export type CharacterGender = "male" | "female";
+export type CharacterId = "knight" | "ranger" | "rogue" | "wizard";
 
 export type CharacterDefinition = {
   id: CharacterId;
@@ -52,9 +50,9 @@ export const characters: Record<CharacterId, CharacterDefinition> = {
     ]),
     keywords: ["poison", "bleed", "gold"],
   },
-  sorcerer: {
-    id: "sorcerer",
-    name: "Sorcerer",
+  wizard: {
+    id: "wizard",
+    name: "Wizard",
     role: "Arcanist",
     description: "A master of the elements who burns, freezes, and manipulates mana to control the battlefield.",
     startingDeck: resolveDeck([

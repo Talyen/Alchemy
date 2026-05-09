@@ -3,7 +3,7 @@ import { startRun } from "./helpers";
 
 test.describe("Mana Mechanics", () => {
   test("restore-mana does not exceed maxMana", async ({ page }) => {
-    await startRun(page, "Sorcerer");
+    await startRun(page, "Wizard");
 
     const manaBerries = page.getByRole("button", { name: "Play Mana Berries" });
     if (!(await manaBerries.isVisible({ timeout: 500 }).catch(() => false))) {
@@ -22,7 +22,7 @@ test.describe("Mana Mechanics", () => {
   });
 
   test("meteor reduces max mana and clamps current mana", async ({ page }) => {
-    await startRun(page, "Sorcerer");
+    await startRun(page, "Wizard");
 
     const meteor = page.getByRole("button", { name: "Play Meteor" });
     if (!(await meteor.isVisible({ timeout: 500 }).catch(() => false))) {

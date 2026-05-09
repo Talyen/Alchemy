@@ -15,53 +15,38 @@ describe("normalizeActiveRun", () => {
     expect(normalizeActiveRun(42)).toBeNull();
   });
 
-  it("maps legacy wizard to sorcerer", () => {
-    const result = normalizeActiveRun({ characterId: "wizard", characterGender: "male" });
-    expect(result?.characterId).toBe("sorcerer");
+  it("maps legacy sorcerer to wizard", () => {
+    const result = normalizeActiveRun({ characterId: "sorcerer" });
+    expect(result?.characterId).toBe("wizard");
   });
 
   it("maps legacy warden to ranger", () => {
-    const result = normalizeActiveRun({ characterId: "warden", characterGender: "female" });
+    const result = normalizeActiveRun({ characterId: "warden" });
     expect(result?.characterId).toBe("ranger");
   });
 
   it("passes through valid knight characterId", () => {
-    const result = normalizeActiveRun({ characterId: "knight", characterGender: "male" });
+    const result = normalizeActiveRun({ characterId: "knight" });
     expect(result?.characterId).toBe("knight");
   });
 
   it("passes through valid ranger characterId", () => {
-    const result = normalizeActiveRun({ characterId: "ranger", characterGender: "female" });
+    const result = normalizeActiveRun({ characterId: "ranger" });
     expect(result?.characterId).toBe("ranger");
   });
 
   it("passes through valid rogue characterId", () => {
-    const result = normalizeActiveRun({ characterId: "rogue", characterGender: "male" });
+    const result = normalizeActiveRun({ characterId: "rogue" });
     expect(result?.characterId).toBe("rogue");
   });
 
-  it("passes through valid sorcerer characterId", () => {
-    const result = normalizeActiveRun({ characterId: "sorcerer", characterGender: "female" });
-    expect(result?.characterId).toBe("sorcerer");
+  it("passes through valid wizard characterId", () => {
+    const result = normalizeActiveRun({ characterId: "wizard" });
+    expect(result?.characterId).toBe("wizard");
   });
 
   it("returns null for unknown characterId", () => {
-    const result = normalizeActiveRun({ characterId: "bard", characterGender: "male" });
+    const result = normalizeActiveRun({ characterId: "bard" });
     expect(result).toBeNull();
-  });
-
-  it("normalizes male gender", () => {
-    const result = normalizeActiveRun({ characterId: "knight", characterGender: "male" });
-    expect(result?.characterGender).toBe("male");
-  });
-
-  it("normalizes female gender", () => {
-    const result = normalizeActiveRun({ characterId: "knight", characterGender: "female" });
-    expect(result?.characterGender).toBe("female");
-  });
-
-  it("defaults any non-male/non-female gender to female", () => {
-    const result = normalizeActiveRun({ characterId: "knight", characterGender: "other" as any });
-    expect(result?.characterGender).toBe("female");
   });
 });

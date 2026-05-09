@@ -15,10 +15,6 @@ import cleanse from "@/assets/optimized/cleanse.webp";
 import discardPile from "@/assets/optimized/discard-pile.webp";
 import drawPile from "@/assets/optimized/draw-pile.webp";
 import fangs from "@/assets/optimized/fangs.webp";
-import femaleKnight from "@/assets/optimized/female-knight.webp";
-import femaleRanger from "@/assets/optimized/female-ranger.webp";
-import femaleRogue from "@/assets/optimized/female-rogue.webp";
-import femaleSorcerer from "@/assets/optimized/female-wizard.webp";
 import fireball from "@/assets/optimized/fireball.webp";
 import frostbolt from "@/assets/optimized/frostbolt.webp";
 import goblin from "@/assets/optimized/goblin.webp";
@@ -27,12 +23,9 @@ import heal from "@/assets/optimized/heal.webp";
 import healthPotion from "@/assets/optimized/health-potion.webp";
 import imp from "@/assets/optimized/imp.webp";
 import impCompanion from "@/assets/optimized/imp-companion.webp";
+import knight from "@/assets/optimized/knight.webp";
 import lizardScout from "@/assets/optimized/lizard-scout.webp";
 import lizardScoutCompanion from "@/assets/optimized/lizard-scout-companion.webp";
-import maleKnight from "@/assets/optimized/male-knight.webp";
-import maleRanger from "@/assets/optimized/male-ranger.webp";
-import maleRogue from "@/assets/optimized/male-rogue.webp";
-import maleSorcerer from "@/assets/optimized/male-wizard.webp";
 import manaBerries from "@/assets/optimized/mana-berries.webp";
 import manaCrystal from "@/assets/optimized/mana-crystal.webp";
 import manaPotion from "@/assets/optimized/mana-potion.webp";
@@ -45,11 +38,14 @@ import mixedPotion from "@/assets/optimized/mixed-potion.webp";
 import plagueDoctor from "@/assets/optimized/plague-doctor.webp";
 import plateMail from "@/assets/optimized/plate-mail.webp";
 import poisonDagger from "@/assets/optimized/poison-dagger.webp";
+import ranger from "@/assets/optimized/ranger.webp";
+import rogue from "@/assets/optimized/rogue.webp";
 import skeleton from "@/assets/optimized/skeleton.webp";
 import slash from "@/assets/optimized/slash.webp";
 import stab from "@/assets/optimized/stab.webp";
 import steal from "@/assets/optimized/steal.webp";
 import wish from "@/assets/optimized/wish.webp";
+import wizard from "@/assets/optimized/wizard.webp";
 import wolfCompanion from "@/assets/optimized/wolf-companion.webp";
 import boneCharm from "@/assets/optimized/bone-charm.webp";
 import brassCenser from "@/assets/optimized/brass-censer.webp";
@@ -73,10 +69,6 @@ export {
   discardPile,
   drawPile,
   fangs,
-  femaleKnight,
-  femaleRanger,
-  femaleRogue,
-  femaleSorcerer,
   fireball,
   frostbolt,
   goblin,
@@ -85,12 +77,9 @@ export {
   healthPotion,
   imp,
   impCompanion,
+  knight,
   lizardScout,
   lizardScoutCompanion,
-  maleKnight,
-  maleRanger,
-  maleRogue,
-  maleSorcerer,
   manaBerries,
   manaCrystal,
   manaPotion,
@@ -103,11 +92,14 @@ export {
   plagueDoctor,
   plateMail,
   poisonDagger,
+  ranger,
+  rogue,
   skeleton,
   slash,
   stab,
   steal,
   wish,
+  wizard,
   wolfCompanion,
   boneCharm,
   brassCenser,
@@ -129,8 +121,8 @@ export const pileDrawArt = drawPile;
 export const pileDiscardArt = discardPile;
 
 export const characterArt = {
-  knight: { male: maleKnight, female: femaleKnight },
-  ranger: { male: maleRanger, female: femaleRanger },
-  rogue: { male: maleRogue, female: femaleRogue },
-  sorcerer: { male: maleSorcerer, female: femaleSorcerer },
+  knight,
+  ranger,
+  rogue,
+  wizard,
 } as const;

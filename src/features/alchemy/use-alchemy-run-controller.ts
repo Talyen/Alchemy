@@ -1,7 +1,7 @@
 import type { MouseEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { chooseWishCard, createBattleState, endPlayerTurn, maxPlayerHealth, playBattleCardResolved, getEffectiveCost, processCompanionTurnStart, type BattleState, type CombatTextEvent } from "@/lib/battle";
-import { cardLibrary, characters, starterDeck, trinketLibrary, type BattleCard, type CharacterGender, type CharacterId, type TrinketEntry } from "@/lib/game-data";
+import { cardLibrary, characters, starterDeck, trinketLibrary, type BattleCard, type CharacterId, type TrinketEntry } from "@/lib/game-data";
 import { playVictory, playDefeat, playCardSound, playEnemyAttack, playGoldGain, playGoldSpend } from "@/lib/audio";
 import { selectRewardCards, selectRewardTrinkets, REWARD_TRINKET_CHANCE } from "./reward-utils";
 import { getAvailableDestinations as getFilteredDestinations, getCurrentEnemy, getBossEnemy } from "./config";
@@ -12,6 +12,9 @@ import { useTalentState } from "./use-talent-state";
 import { useRunState } from "./use-run-state";
 import type { TalentXP } from "@/lib/talents";
 import { computeTrinketManifest } from "@/lib/trinkets";
+import { getEnemyMaterialLoot } from "@/lib/homestead/loot";
+import { mergeIntoManifest } from "@/lib/homestead/effects";
+import { emptyInventory, type HomesteadEffectManifest, type MaterialInventory } from "@/lib/homestead/types";
 import type { UnlockedTalents } from "./talent-pool";
 import { mysteryPool, type MysteryChoice, type MysteryEvent } from "./mystery-events";
 import { createMixedPotion, applyMixToDeck } from "./potion-mixer";
@@ -24,13 +27,17 @@ export function useAlchemyRunController({
   discoveredCardIds, setDiscoveredCardIds, setEncounteredEnemyIds,
   discoveredTrinketIds, setDiscoveredTrinketIds,
   initialTalentXP, initialUnlockedTalents, initialActiveRun, autoEndTurn,
+  onAddMaterials, onTriggerFarmYield, homesteadEffects,
 }: {
   discoveredCardIds: string[];
   setDiscoveredCardIds: SetStringList; setEncounteredEnemyIds: SetStringList;
   discoveredTrinketIds: string[]; setDiscoveredTrinketIds: SetStringList;
   initialTalentXP: TalentXP; initialUnlockedTalents: UnlockedTalents;
-  initialActiveRun: { characterId: CharacterId; characterGender: CharacterGender } | null;
+  initialActiveRun: { characterId: CharacterId } | null;
   autoEndTurn: boolean;
+  onAddMaterials: (materials: MaterialInventory) => void;
+  onTriggerFarmYield: () => void;
+  homesteadEffects: HomesteadEffectManifest;
 }) {
   // ============ Sub-hooks ============
   const talents = useTalentState(initialTalentXP, initialUnlockedTalents);
@@ -38,7 +45,6 @@ export function useAlchemyRunController({
 
   // ============ Core Screen / Battle State ============
   const [screen, setScreen] = useState<Screen>("menu");
-  const [completedAct, setCompletedAct] = useState(0);
   const [battleState, setBattleState] = useState<BattleState>(() => createBattleState(starterDeck, 0));
   const [hoveredCardId, setHoveredCardId] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -76,6 +82,13 @@ export function useAlchemyRunController({
   useEffect(() => { battleStateRef.current = battleState; }, [battleState]);
   useEffect(() => { handleEndTurnRef.current = handleEndTurn; }, [handleEndTurn]);
 
+  const onAddMaterialsRef = useRef(onAddMaterials);
+  const onTriggerFarmYieldRef = useRef(onTriggerFarmYield);
+  const homesteadEffectsRef = useRef(homesteadEffects);
+  useEffect(() => { onAddMaterialsRef.current = onAddMaterials; }, [onAddMaterials]);
+  useEffect(() => { onTriggerFarmYieldRef.current = onTriggerFarmYield; }, [onTriggerFarmYield]);
+  useEffect(() => { homesteadEffectsRef.current = homesteadEffects; }, [homesteadEffects]);
+
   useEffect(() => () => window.clearTimeout(navTimerRef.current), []);
   useEffect(() => () => { if (companionTimeoutRef.current) clearTimeout(companionTimeoutRef.current); }, []);
 
@@ -109,7 +122,7 @@ export function useAlchemyRunController({
 
   useEffect(() => {
     if (screen !== "battle" || battleState.playerHealth > 0) return;
-    playDefeat(); setHasActiveBattle(false); setHoveredCardId(null); setMenuOpen(false); setScreen("game-over");
+    onTriggerFarmYieldRef.current(); playDefeat(); setHasActiveBattle(false); setHoveredCardId(null); setMenuOpen(false); setScreen("game-over");
   }, [battleState.playerHealth, screen]);
 
   useEffect(() => {
@@ -125,6 +138,8 @@ export function useAlchemyRunController({
     run.setRunPlayerHealth(newHp);
     run.setRunGold(newGold);
     if (newGold > battleState.gold) playGoldGain();
+    const materials = getEnemyMaterialLoot(battleState.currentEnemy.id, battleState.currentEnemy.enemyType);
+    onAddMaterialsRef.current(materials);
     if (talents.talentEffects.maxHealthPerCombat > 0) {
       run.setRunMaxHealth((p) => p + talents.talentEffects.maxHealthPerCombat);
     }
@@ -155,16 +170,19 @@ export function useAlchemyRunController({
   // ============ Game Flow ============
   function beginRun() { if (hasActiveBattle) { returnToBattle(); return; } navigateTo("character-select"); }
 
-  function handleCharacterSelect(selectedId: CharacterId, gender: CharacterGender) {
+  function handleCharacterSelect(selectedId: CharacterId) {
     const character = characters[selectedId];
     const freshDeck = [...character.startingDeck];
-    run.setCharacter(selectedId, gender);
+    run.setCharacter(selectedId);
     run.setRunDeck(freshDeck);
-    if (talents.talentEffects.startGold > 0) playGoldGain();
-    run.setRunGold(talents.talentEffects.startGold);
+    const homesteadGoldBonus = homesteadEffectsRef.current.startGold;
+    const totalStartGold = talents.talentEffects.startGold + homesteadGoldBonus;
+    if (totalStartGold > 0) playGoldGain();
+    run.setRunGold(totalStartGold);
     run.setRoomsEncountered(0);
-    run.setRunPlayerHealth(maxPlayerHealth);
-    run.setRunMaxHealth(maxPlayerHealth);
+    const maxHp = maxPlayerHealth + homesteadEffectsRef.current.startMaxHealthBonus;
+    run.setRunPlayerHealth(maxHp);
+    run.setRunMaxHealth(maxHp);
     run.setCurrentAct(1);
     run.setDestinationIndexInAct(0);
     run.setCompletedDestinations([]);
@@ -175,7 +193,6 @@ export function useAlchemyRunController({
     });
     setDiscoveredCardIds((current) => Array.from(new Set([...current, ...freshDeck.map((c) => c.id)])));
     setEncounteredEnemyIds([]);
-    setCompletedAct(0);
     setHoveredCardId(null);
     navigateTo("destination");
   }
@@ -186,7 +203,8 @@ export function useAlchemyRunController({
     if (grovesHeal > 0) run.setRunPlayerHealth((p) => Math.min(run.runMaxHealth, p + grovesHeal));
     run.setRoomsEncountered((p) => p + 1);
     clearCardGhosts();
-    setBattleState(createBattleState(deck, gold, run.roomsEncountered, enemy, run.runPlayerHealth, talents.talentEffects, discoveredCardIds, run.runMaxHealth, run.runTrinkets, run.destinationIndexInAct, run.currentAct));
+    const mergedEffects = mergeIntoManifest(talents.talentEffects, homesteadEffectsRef.current);
+    setBattleState(createBattleState(deck, gold, run.roomsEncountered, enemy, run.runPlayerHealth, mergedEffects, discoveredCardIds, run.runMaxHealth, run.runTrinkets, run.destinationIndexInAct, run.currentAct));
     setHasActiveBattle(true); setHoveredCardId(null); setMenuOpen(false); setRewardState((p) => ({ ...p, selectedId: null })); navigateTo("battle");
     setEncounteredEnemyIds((current) => current.includes(enemy.id) ? current : [...current, enemy.id]);
   }
@@ -197,7 +215,8 @@ export function useAlchemyRunController({
     if (grovesHeal > 0) run.setRunPlayerHealth((p) => Math.min(run.runMaxHealth, p + grovesHeal));
     run.setRoomsEncountered((p) => p + 1);
     clearCardGhosts();
-    setBattleState(createBattleState(run.runDeck, run.runGold, run.roomsEncountered, enemy, run.runPlayerHealth, talents.talentEffects, discoveredCardIds, run.runMaxHealth, run.runTrinkets, run.destinationIndexInAct, run.currentAct));
+    const mergedEffects = mergeIntoManifest(talents.talentEffects, homesteadEffectsRef.current);
+    setBattleState(createBattleState(run.runDeck, run.runGold, run.roomsEncountered, enemy, run.runPlayerHealth, mergedEffects, discoveredCardIds, run.runMaxHealth, run.runTrinkets, run.destinationIndexInAct, run.currentAct));
     setHasActiveBattle(true); setHoveredCardId(null); setMenuOpen(false); setRewardState((p) => ({ ...p, selectedId: null })); navigateTo("battle");
     setEncounteredEnemyIds((current) => current.includes(enemy.id) ? current : [...current, enemy.id]);
   }
@@ -282,30 +301,24 @@ export function useAlchemyRunController({
     else startBattle(undefined, undefined, "normal");
   }
 
-  // Called after a boss is defeated — shows act-complete or run-victory screen.
+  // Called after a boss is defeated — advances act or shows victory.
   function handleActComplete() {
     setHoveredCardId(null); setMenuOpen(false);
     setHasActiveBattle(false);
 
     if (run.currentAct >= ACTS_PER_RUN) {
+      onTriggerFarmYieldRef.current();
       navigateTo("run-victory");
     } else {
-      setCompletedAct(run.currentAct);
-      navigateTo("act-complete");
+      run.setCurrentAct((p) => p + 1);
+      run.setDestinationIndexInAct(0);
+      run.setCompletedDestinations([]);
+      setRewardState((prev) => ({
+        ...prev,
+        destinations: sampleItems(getAvailableDestinations(), DESTINATION_CHOICES),
+      }));
+      navigateTo("destination");
     }
-  }
-
-  // Called from the act-complete screen to advance to the next act.
-  function handleAdvanceAct() {
-    run.setCurrentAct((p) => p + 1);
-    run.setDestinationIndexInAct(0);
-    run.setCompletedDestinations([]);
-    setRewardState((prev) => ({
-      ...prev,
-      destinations: sampleItems(getAvailableDestinations(), DESTINATION_CHOICES),
-    }));
-    setHoveredCardId(null); setMenuOpen(false);
-    navigateTo("destination");
   }
 
   function handleShopBuyCard(card: BattleCard) {
@@ -448,6 +461,12 @@ export function useAlchemyRunController({
           run.setRunTrinkets((p) => [...p, effect.trinketId]);
           setDiscoveredTrinketIds((cur) => cur.includes(effect.trinketId) ? cur : [...cur, effect.trinketId]);
           break;
+        case "gainMaterial": {
+          const matInv = emptyInventory();
+          matInv[effect.material] = effect.amount;
+          onAddMaterialsRef.current(matInv);
+          break;
+        }
         case "none":
           break;
       }
@@ -525,7 +544,6 @@ export function useAlchemyRunController({
   function resetRunState() {
     clearCardGhosts(); setBattleState(createBattleState(starterDeck, 0));
     run.reset(); talents.resetRunXP();
-    setCompletedAct(0);
     setRewardState({ choices: [], gold: 0, selectedId: null, destinations: [], rewardType: "card" });
     setHoveredCardId(null); setMenuOpen(false); setHasActiveBattle(false); navigateTo("menu");
   }
@@ -534,12 +552,12 @@ export function useAlchemyRunController({
 
   // ============ Return ============
   return {
-    screen, battleState, hoveredCardId, menuOpen, hasActiveBattle, completedAct,
+    screen, battleState, hoveredCardId, menuOpen, hasActiveBattle,
     runDeck: run.runDeck, runGold: run.runGold, runPlayerHealth: run.runPlayerHealth, runMaxHealth: run.runMaxHealth,
     runTrinkets: run.runTrinkets, roomsEncountered: run.roomsEncountered,
     currentAct: run.currentAct, destinationIndexInAct: run.destinationIndexInAct,
     completedDestinations: run.completedDestinations,
-    characterId: run.characterId, characterGender: run.characterGender,
+    characterId: run.characterId,
     talentXP: talents.talentXP, runTalentXP: talents.runTalentXP, unlockedTalents: talents.unlockedTalents,
     unlockTalent: talents.unlockTalent, unlockAllTalents: talents.unlockAllTalents, resetUnlockedTalents: talents.resetUnlockedTalents,
     clearPermanentData,
@@ -553,7 +571,7 @@ export function useAlchemyRunController({
     get alchemistPotions() { return alchemistState.potions; }, get alchemistRefreshesLeft() { return alchemistState.refreshesLeft; },
     get alchemistMixUsed() { return alchemistState.mixUsed; },
     get mysteryEvent() { return mysteryEvent; },
-    get activeRunData() { return hasActiveBattle ? { characterId: run.characterId, characterGender: run.characterGender } : null; },
+    get activeRunData() { return hasActiveBattle ? { characterId: run.characterId } : null; },
     handCardRefs, battleSceneRef, playerPanelRef, enemyPanelRef, destinationButtonRefs,
     cardGhosts, shimmerState,
     playerStatusChips, enemyStatusChips, playerCombatTexts, enemyCombatTexts,
@@ -564,7 +582,7 @@ export function useAlchemyRunController({
     handleShopBuyCard, handleShopRemoveCard, handleShopRefresh, handleShopContinue,
     handleAlchemistBuyCard, handleAlchemistRefresh, handleAlchemistMixPotions, handleAlchemistContinue,
     handleMysteryChoice, handleMysteryRemoveCard, handleMysteryContinue,
-    handleActComplete, handleAdvanceAct,
+    handleActComplete,
     handleEndTurn, handleEndRun,
     skipCombatDevMode, removeCardGhost, resetRunState,
     findCard: (id: string) => cardLibrary.find((c) => c.id === id),

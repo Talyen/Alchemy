@@ -27,12 +27,12 @@ test.describe("Character Select", () => {
     await expect(page.getByRole("button", { name: "Knight" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Ranger" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Rogue" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Sorcerer" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Wizard" })).toBeVisible();
 
     await page.getByRole("button", { name: "Rogue" }).click();
     await expect(page.getByRole("button", { name: "Continue" })).toBeEnabled();
 
-    await page.getByRole("button", { name: "Sorcerer" }).click();
+    await page.getByRole("button", { name: "Wizard" }).click();
     await expect(page.getByRole("button", { name: "Continue" })).toBeEnabled();
 
     await page.getByRole("button", { name: "Ranger" }).click();

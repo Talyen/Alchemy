@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { characters, starterDeck, type BattleCard, type CharacterGender, type CharacterId } from "@/lib/game-data";
+import { characters, starterDeck, type BattleCard, type CharacterId } from "@/lib/game-data";
 import { maxPlayerHealth } from "@/lib/battle/types";
 import type { Destination } from "./types";
 
-export function useRunState(initialActiveRun: { characterId: CharacterId; characterGender: CharacterGender } | null) {
+export function useRunState(initialActiveRun: { characterId: CharacterId } | null) {
   const [runDeck, setRunDeck] = useState<BattleCard[]>(() => initialActiveRun ? [...characters[initialActiveRun.characterId].startingDeck] : [...starterDeck]);
   const [runGold, setRunGold] = useState(0);
   const [runPlayerHealth, setRunPlayerHealth] = useState(maxPlayerHealth);
@@ -13,12 +13,10 @@ export function useRunState(initialActiveRun: { characterId: CharacterId; charac
   const [destinationIndexInAct, setDestinationIndexInAct] = useState(0);
   const [completedDestinations, setCompletedDestinations] = useState<Destination[]>([]);
   const [characterId, setCharacterId] = useState<CharacterId>(() => initialActiveRun?.characterId ?? "knight");
-  const [characterGender, setCharacterGender] = useState<CharacterGender>(() => initialActiveRun?.characterGender ?? "female");
   const [runTrinkets, setRunTrinkets] = useState<string[]>([]);
 
-  function setCharacter(selectedId: CharacterId, gender: CharacterGender) {
+  function setCharacter(selectedId: CharacterId) {
     setCharacterId(selectedId);
-    setCharacterGender(gender);
   }
 
   function reset() {
@@ -39,7 +37,7 @@ export function useRunState(initialActiveRun: { characterId: CharacterId; charac
     roomsEncountered, setRoomsEncountered,
     currentAct, setCurrentAct, destinationIndexInAct, setDestinationIndexInAct,
     completedDestinations, setCompletedDestinations,
-    characterId, characterGender, setCharacter, reset,
+    characterId, setCharacter, reset,
     runTrinkets, setRunTrinkets,
   };
 }

@@ -1,5 +1,7 @@
-import { starterDeck, type CharacterGender, type CharacterId } from "@/lib/game-data";
+import { starterDeck, type CharacterId } from "@/lib/game-data";
 import type { TalentXP } from "@/lib/talents";
+import type { BuildingId, FarmId, MaterialInventory, ResearchId } from "@/lib/homestead/types";
+import { emptyInventory } from "@/lib/homestead/types";
 
 import type { UnlockedTalents } from "./talent-pool";
 import type { DisplayMode, ResolutionOption, UiScale } from "./types";
@@ -22,11 +24,15 @@ type SaveData = {
   muteInBackground: boolean;
   autoEndTurn: boolean;
   activeRun: ActiveRunData | null;
+  materialInventory: MaterialInventory;
+  constructedBuildings: BuildingId[];
+  plantedFarms: FarmId[];
+  completedResearch: ResearchId[];
+  pendingFarmYield: boolean;
 };
 
 type ActiveRunData = {
   characterId: CharacterId;
-  characterGender: CharacterGender;
 };
 
 export function normalizeActiveRun(activeRun: unknown): ActiveRunData | null {
@@ -34,13 +40,13 @@ export function normalizeActiveRun(activeRun: unknown): ActiveRunData | null {
     return null;
   }
 
-  const candidate = activeRun as { characterId?: string; characterGender?: CharacterGender };
-  const characterId = candidate.characterId === "wizard" ? "sorcerer" : candidate.characterId === "warden" ? "ranger" : candidate.characterId;
-  if (characterId !== "knight" && characterId !== "ranger" && characterId !== "rogue" && characterId !== "sorcerer") {
+  const candidate = activeRun as { characterId?: string };
+  const characterId = candidate.characterId === "sorcerer" ? "wizard" : candidate.characterId === "warden" ? "ranger" : candidate.characterId;
+  if (characterId !== "knight" && characterId !== "ranger" && characterId !== "rogue" && characterId !== "wizard") {
     return null;
   }
 
-  return { characterId, characterGender: candidate.characterGender === "male" ? "male" : "female" };
+  return { characterId };
 }
 
 export const defaultSaveData: SaveData = {
@@ -58,6 +64,11 @@ export const defaultSaveData: SaveData = {
   muteInBackground: true,
   autoEndTurn: true,
   activeRun: null,
+  materialInventory: emptyInventory(),
+  constructedBuildings: [],
+  plantedFarms: [],
+  completedResearch: [],
+  pendingFarmYield: false,
 };
 
 export function loadAlchemySaveData(): SaveData {
@@ -87,6 +98,11 @@ export function loadAlchemySaveData(): SaveData {
       muteInBackground: typeof parsed.muteInBackground === "boolean" ? parsed.muteInBackground : defaultSaveData.muteInBackground,
       autoEndTurn: typeof parsed.autoEndTurn === "boolean" ? parsed.autoEndTurn : defaultSaveData.autoEndTurn,
       activeRun: normalizeActiveRun(parsed.activeRun),
+      materialInventory: typeof parsed.materialInventory === 'object' && parsed.materialInventory ? parsed.materialInventory as MaterialInventory : defaultSaveData.materialInventory,
+      constructedBuildings: Array.isArray(parsed.constructedBuildings) ? parsed.constructedBuildings as BuildingId[] : defaultSaveData.constructedBuildings,
+      plantedFarms: Array.isArray(parsed.plantedFarms) ? parsed.plantedFarms as FarmId[] : defaultSaveData.plantedFarms,
+      completedResearch: Array.isArray(parsed.completedResearch) ? parsed.completedResearch as ResearchId[] : defaultSaveData.completedResearch,
+      pendingFarmYield: typeof parsed.pendingFarmYield === "boolean" ? parsed.pendingFarmYield : defaultSaveData.pendingFarmYield,
     };
   } catch {
     return defaultSaveData;
