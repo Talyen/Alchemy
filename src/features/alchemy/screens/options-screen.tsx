@@ -14,14 +14,14 @@ import type { DisplayMode, ResolutionOption, UiScale } from "../types";
 type OptionsTab = "display" | "sound" | "gameplay" | "other";
 
 // Keeps slider rows consistent so volume settings read as one sound board.
-function SliderOption({ label, value, onChange }: { label: string; value: number; onChange: (value: number) => void }) {
+function SliderOption({ label, value, onChange, min = 0, max = 100 }: { label: string; value: number; onChange: (value: number) => void; min?: number; max?: number }) {
   return (
     <div className="surface-muted rounded-[22px] border border-border/70 p-5">
       <div className="flex items-center justify-between gap-4">
         <p className="text-sm font-semibold text-foreground">{label}</p>
         <p className="text-sm font-semibold text-primary">{value}%</p>
       </div>
-      <input type="range" min={0} max={100} value={value} onChange={(event) => onChange(Number(event.target.value))} className="mt-3 w-full accent-primary" />
+      <input type="range" min={min} max={max} value={value} onChange={(event) => onChange(Number(event.target.value))} className="mt-3 w-full accent-primary" />
     </div>
   );
 }
@@ -44,13 +44,14 @@ function ToggleOption({ label, description, checked, onChange }: { label: string
 export function OptionsScreen({
   hasActiveBattle, onMainMenu, onReturnToBattle, selectedResolution, onResolutionChange, displayMode, onDisplayModeChange, showDisplayMode,
   uiScale, onUiScaleChange, masterVol, musicVol, sfxVol, onMasterVolChange, onMusicVolChange, onSfxVolChange,
-  muteInBackground, onMuteInBackgroundChange, autoEndTurn, onAutoEndTurnChange, onResetOptions,
+  brightness, onBrightnessChange, muteInBackground, onMuteInBackgroundChange, autoEndTurn, onAutoEndTurnChange, onResetOptions,
   showClearSaveConfirm, onOpenClearSaveConfirm, onCloseClearSaveConfirm, onConfirmClearSave, onUnlockAll,
 }: {
   hasActiveBattle: boolean; onMainMenu: () => void; onReturnToBattle: () => void;
   selectedResolution: ResolutionOption; onResolutionChange: (resolution: ResolutionOption) => void;
   displayMode: DisplayMode; onDisplayModeChange: (mode: DisplayMode) => void; showDisplayMode: boolean;
   uiScale: UiScale; onUiScaleChange: (scale: UiScale) => void;
+  brightness: number; onBrightnessChange: (v: number) => void;
   masterVol: number; musicVol: number; sfxVol: number; onMasterVolChange: (v: number) => void; onMusicVolChange: (v: number) => void; onSfxVolChange: (v: number) => void;
   muteInBackground: boolean; onMuteInBackgroundChange: (checked: boolean) => void;
   autoEndTurn: boolean; onAutoEndTurnChange: (checked: boolean) => void;
@@ -75,9 +76,10 @@ export function OptionsScreen({
         <div key={tab} className="state-swap mt-6 text-left">
           {tab === "display" ? (
             <div className="space-y-4">
+              <ResolutionSelect selectedResolution={selectedResolution} resolutionOptions={resolutionOptions} onChange={onResolutionChange} />
               {showDisplayMode ? <DisplayModeSelect displayMode={displayMode} displayModeOptions={displayModeOptions} onChange={onDisplayModeChange} /> : null}
               <UiScaleSelect uiScale={uiScale} uiScaleOptions={uiScaleOptions} onChange={onUiScaleChange} />
-              <ResolutionSelect selectedResolution={selectedResolution} resolutionOptions={resolutionOptions} onChange={onResolutionChange} />
+              <SliderOption label="Brightness" value={brightness} onChange={onBrightnessChange} min={50} max={150} />
             </div>
           ) : null}
 

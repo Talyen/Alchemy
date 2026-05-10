@@ -61,7 +61,7 @@ export function useAlchemyRunController({
   }
 
   // ============ Reward / Shop State ============
-  const [rewardState, setRewardState] = useState<{ choices: (BattleCard | TrinketEntry)[]; gold: number; selectedId: string | null; destinations: Destination[]; rewardType: "card" | "trinket" }>({ choices: [], gold: 0, selectedId: null, destinations: [], rewardType: "card" });
+  const [rewardState, setRewardState] = useState<{ choices: (BattleCard | TrinketEntry)[]; gold: number; materials: MaterialInventory; selectedId: string | null; destinations: Destination[]; rewardType: "card" | "trinket" }>({ choices: [], gold: 0, materials: emptyInventory(), selectedId: null, destinations: [], rewardType: "card" });
   const [shopState, setShopState] = useState<{ cards: BattleCard[]; refreshesLeft: number; removeUsed: boolean; firstPurchaseUsed: boolean }>({ cards: [], refreshesLeft: 1, removeUsed: false, firstPurchaseUsed: false });
   const [alchemistState, setAlchemistState] = useState<{ potions: BattleCard[]; refreshesLeft: number; mixUsed: boolean; firstPurchaseUsed: boolean }>({ potions: [], refreshesLeft: 1, mixUsed: false, firstPurchaseUsed: false });
   const [mysteryEvent, setMysteryEvent] = useState<MysteryEvent | null>(null);
@@ -139,7 +139,7 @@ export function useAlchemyRunController({
     run.setRunGold(newGold);
     if (newGold > battleState.gold) playGoldGain();
     const materials = getEnemyMaterialLoot(battleState.currentEnemy.id, battleState.currentEnemy.enemyType);
-    onAddMaterialsRef.current(materials);
+    setRewardState((prev) => ({ ...prev, materials }));
     if (talents.talentEffects.maxHealthPerCombat > 0) {
       run.setRunMaxHealth((p) => p + talents.talentEffects.maxHealthPerCombat);
     }
@@ -150,7 +150,7 @@ export function useAlchemyRunController({
         rewardType: "trinket",
         choices: selectRewardTrinkets(trinketLibrary, BOSS_TRINKET_REWARD_CHOICES),
         gold: gold + bossBonus + talents.talentEffects.goldPerCombat,
-        selectedId: null, destinations: [],
+        materials: emptyInventory(), selectedId: null, destinations: [],
       });
     } else {
       const trinketChance = isElite ? 0.75 : REWARD_TRINKET_CHANCE;
@@ -159,7 +159,7 @@ export function useAlchemyRunController({
         rewardType: offerTrinket ? "trinket" : "card",
         choices: offerTrinket ? selectRewardTrinkets(trinketLibrary, REWARD_CARD_CHOICES) : selectRewardCards(run.runDeck, cardLibrary, REWARD_CARD_CHOICES),
         gold: offerTrinket ? 0 : gold + eliteBonus + talents.talentEffects.goldPerCombat,
-        selectedId: null, destinations: sampleItems(getAvailableDestinations(newHp, newGold), DESTINATION_CHOICES),
+        materials: emptyInventory(), selectedId: null, destinations: sampleItems(getAvailableDestinations(newHp, newGold), DESTINATION_CHOICES),
       });
     }
     setHasActiveBattle(false); setHoveredCardId(null); setMenuOpen(false); playVictory();
@@ -187,7 +187,7 @@ export function useAlchemyRunController({
     run.setDestinationIndexInAct(0);
     run.setCompletedDestinations([]);
     setRewardState({
-      choices: [], gold: 0, selectedId: null,
+      choices: [], gold: 0, materials: emptyInventory(), selectedId: null,
       destinations: sampleItems(getAvailableDestinations(), DESTINATION_CHOICES),
       rewardType: "card",
     });
@@ -257,6 +257,7 @@ export function useAlchemyRunController({
 
   // ============ Rewards & Destinations ============
   function finishRewards() {
+    onAddMaterialsRef.current(rewardState.materials);
     if (rewardState.selectedId) {
       const chosen = rewardState.choices.find((c) => c.id === rewardState.selectedId);
       if (chosen) {
@@ -269,7 +270,7 @@ export function useAlchemyRunController({
         }
       }
     }
-    setRewardState((prev) => ({ choices: [], gold: 0, selectedId: null, destinations: prev.destinations, rewardType: "card" }));
+    setRewardState((prev) => ({ choices: [], gold: 0, materials: emptyInventory(), selectedId: null, destinations: prev.destinations, rewardType: "card" }));
     setHoveredCardId(null);
 
     // Boss was the last enemy → act complete (no destination screen)
@@ -544,7 +545,7 @@ export function useAlchemyRunController({
   function resetRunState() {
     clearCardGhosts(); setBattleState(createBattleState(starterDeck, 0));
     run.reset(); talents.resetRunXP();
-    setRewardState({ choices: [], gold: 0, selectedId: null, destinations: [], rewardType: "card" });
+    setRewardState({ choices: [], gold: 0, materials: emptyInventory(), selectedId: null, destinations: [], rewardType: "card" });
     setHoveredCardId(null); setMenuOpen(false); setHasActiveBattle(false); navigateTo("menu");
   }
 
@@ -563,7 +564,7 @@ export function useAlchemyRunController({
     clearPermanentData,
     setRewardState, setHoveredCardId, setMenuOpen,
     setSelectedRewardId: (id: string | null) => setRewardState((p) => ({ ...p, selectedId: id })),
-    get rewardChoices() { return rewardState.choices; }, get rewardGold() { return rewardState.gold; },
+    get rewardChoices() { return rewardState.choices; }, get rewardGold() { return rewardState.gold; }, get rewardMaterials() { return rewardState.materials; },
     get rewardType() { return rewardState.rewardType; }, get selectedRewardId() { return rewardState.selectedId; },
     get destinationOptions() { return rewardState.destinations; },
     get shopCards() { return shopState.cards; }, get shopRefreshesLeft() { return shopState.refreshesLeft; },

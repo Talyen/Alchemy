@@ -13,6 +13,7 @@ type SaveData = {
   selectedResolution: ResolutionOption;
   displayMode: DisplayMode;
   uiScale: UiScale;
+  brightness: number;
   discoveredCardIds: string[];
   encounteredEnemyIds: string[];
   discoveredTrinketIds: string[];
@@ -63,6 +64,7 @@ export const defaultSaveData: SaveData = {
   masterVolume: 100,
   muteInBackground: true,
   autoEndTurn: true,
+  brightness: 100,
   activeRun: null,
   materialInventory: emptyInventory(),
   constructedBuildings: [],
@@ -97,6 +99,7 @@ export function loadAlchemySaveData(): SaveData {
       masterVolume: typeof parsed.masterVolume === 'number' ? parsed.masterVolume : defaultSaveData.masterVolume,
       muteInBackground: typeof parsed.muteInBackground === "boolean" ? parsed.muteInBackground : defaultSaveData.muteInBackground,
       autoEndTurn: typeof parsed.autoEndTurn === "boolean" ? parsed.autoEndTurn : defaultSaveData.autoEndTurn,
+      brightness: typeof parsed.brightness === "number" ? parsed.brightness : defaultSaveData.brightness,
       activeRun: normalizeActiveRun(parsed.activeRun),
       materialInventory: typeof parsed.materialInventory === 'object' && parsed.materialInventory ? parsed.materialInventory as MaterialInventory : defaultSaveData.materialInventory,
       constructedBuildings: Array.isArray(parsed.constructedBuildings) ? parsed.constructedBuildings as BuildingId[] : defaultSaveData.constructedBuildings,

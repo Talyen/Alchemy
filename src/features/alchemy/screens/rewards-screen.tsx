@@ -5,6 +5,8 @@ import { Coins } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { BattleCard, TrinketEntry } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
+import { MATERIAL_IDS, materialLabels, type MaterialInventory } from "@/lib/homestead/types";
+import { matIconMap, matTextColor } from "../ui/material-icons";
 
 import { BattleCardButton, DetailPopup } from "../ui/card-ui";
 import { ScreenHeader, ShimmerOverlay } from "../ui/shared-ui";
@@ -68,6 +70,7 @@ export function RewardsScreen({
   rewardType,
   rewardChoices,
   rewardGold,
+  rewardMaterials,
   hoveredCardId,
   onHoverChange,
   shimmerState,
@@ -80,6 +83,7 @@ export function RewardsScreen({
   rewardType: "card" | "trinket";
   rewardChoices: (BattleCard | TrinketEntry)[];
   rewardGold: number;
+  rewardMaterials: MaterialInventory;
   hoveredCardId: string | null;
   onHoverChange: (value: string | null | ((current: string | null) => string | null)) => void;
   shimmerState: { cardId: string; token: number } | null;
@@ -149,6 +153,17 @@ export function RewardsScreen({
               <Coins className="h-5 w-5" />
               Found {rewardGold} Gold
             </span>
+          </div>
+        ) : null}
+
+        {MATERIAL_IDS.some((mat) => rewardMaterials[mat] > 0) ? (
+          <div className="state-swap mt-3 flex flex-wrap items-center justify-center gap-4 text-lg font-medium">
+            {MATERIAL_IDS.filter((mat) => rewardMaterials[mat] > 0).map((mat) => (
+              <span key={mat} className={cn("inline-flex items-center gap-1.5", matTextColor[mat])}>
+                {matIconMap[mat]}
+                +{rewardMaterials[mat]} {materialLabels[mat]}
+              </span>
+            ))}
           </div>
         ) : null}
 

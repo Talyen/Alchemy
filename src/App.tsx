@@ -74,6 +74,13 @@ export default function App() {
   useEffect(() => { setSfxVolume(sfxVol / 100); }, [sfxVol]);
   useEffect(() => { platform.setDisplayMode(displayMode); }, [displayMode]);
   useEffect(() => { document.documentElement.style.setProperty("--alchemy-ui-scale", String(Number(uiScale) / 100)); }, [uiScale]);
+  const [brightness, setBrightness] = useState(initialSave.brightness);
+  const vrStageRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (vrStageRef.current) {
+      vrStageRef.current.style.filter = `brightness(${brightness / 100})`;
+    }
+  }, [brightness]);
   useEffect(() => {
     function applyBackgroundMute() {
       setMuted(muteInBackground && (document.hidden || !document.hasFocus()));
@@ -169,6 +176,7 @@ export default function App() {
       masterVolume: masterVol,
       muteInBackground,
       autoEndTurn,
+      brightness,
       activeRun: run.activeRunData,
       materialInventory: homestead.materialInventory,
       constructedBuildings: homestead.constructedBuildings,
@@ -176,7 +184,7 @@ export default function App() {
       completedResearch: homestead.completedResearch,
       pendingFarmYield: homestead.pendingFarmYield,
     });
-  }, [selectedResolution, displayMode, uiScale, discoveredCardIds, encounteredEnemyIds, discoveredTrinketIds, run.talentXP, run.unlockedTalents, musicVol, sfxVol, masterVol, muteInBackground, autoEndTurn, run.activeRunData, homestead.materialInventory, homestead.constructedBuildings, homestead.plantedFarms, homestead.completedResearch, homestead.pendingFarmYield]);
+  }, [selectedResolution, displayMode, uiScale, discoveredCardIds, encounteredEnemyIds, discoveredTrinketIds, run.talentXP, run.unlockedTalents, brightness, musicVol, sfxVol, masterVol, muteInBackground, autoEndTurn, run.activeRunData, homestead.materialInventory, homestead.constructedBuildings, homestead.plantedFarms, homestead.completedResearch, homestead.pendingFarmYield]);
 
   function handleCollectionTabChange(nextTab: CollectionTab) {
     setCollectionTab(nextTab);
@@ -205,6 +213,7 @@ export default function App() {
     setSelectedResolution(defaultSaveData.selectedResolution);
     setDisplayMode(defaultSaveData.displayMode);
     setUiScale(defaultSaveData.uiScale);
+    setBrightness(defaultSaveData.brightness);
     setMasterVol(defaultSaveData.masterVolume);
     setMusicVol(defaultSaveData.musicVolume);
     setSfxVol(defaultSaveData.sfxVolume);
@@ -241,18 +250,18 @@ export default function App() {
   return (
     <div className={`flex h-screen w-screen items-center justify-center overflow-hidden bg-background ${isMobileLandscape ? "p-0" : "p-4"}`}>
       <div className="relative" style={frameStyle}>
-        <div className="absolute left-0 top-0 overflow-hidden bg-background" style={stageStyle}>
+        <div ref={vrStageRef} className="absolute left-0 top-0 overflow-hidden bg-background" style={stageStyle}>
           <div key={renderedScreen} className={`${pagePhase === "exit" ? "page-exit" : "page-enter"} h-full w-full overflow-hidden`}>
           {renderedScreen === "menu" ? <MenuScreen onPlay={run.beginRun} hasActiveBattle={run.hasActiveBattle} onCollection={() => run.goToScreen("collection")} onOptions={() => run.goToScreen("options")} onHomestead={() => run.goToScreen("homestead")} onTalents={() => run.goToScreen("talents")} onQuit={platform.canQuit ? platform.quit : undefined} logoSrc={menuLogo} isMobileLandscape={isMobileLandscape} /> : null}
           {renderedScreen === "character-select" ? <CharacterSelectScreen onConfirm={run.handleCharacterSelect} onBack={() => run.goToScreen("menu")} /> : null}
           {renderedScreen === "battle" ? <BattleScreen battleState={run.battleState} heroArt={heroArt} hoveredCardId={run.hoveredCardId} setHoveredCardId={run.setHoveredCardId} shimmerState={run.shimmerState} onHoverShimmer={run.maybeTriggerShimmer} playerStatusChips={run.playerStatusChips} enemyStatusChips={run.enemyStatusChips} playerCombatTexts={run.playerCombatTexts} enemyCombatTexts={run.enemyCombatTexts} handCardRefs={run.handCardRefs} onCardClick={run.handleCardClick} menuOpen={run.menuOpen} setMenuOpen={run.setMenuOpen} onGoToScreen={run.goToScreen} onWishChoice={run.handleWishChoice} cardGhosts={run.cardGhosts} onRemoveCardGhost={run.removeCardGhost} onSkipCombatDevMode={run.skipCombatDevMode} onEndTurn={run.handleEndTurn} onEndRun={run.handleEndRun} battleSceneRef={run.battleSceneRef} playerPanelRef={run.playerPanelRef} enemyPanelRef={run.enemyPanelRef} playerShaking={run.playerShaking} enemyShaking={run.enemyShaking} companionShaking={run.companionShaking} isMobileLandscape={isMobileLandscape} currentAct={run.currentAct} /> : null}
-          {renderedScreen === "rewards" ? <RewardsScreen rewardType={run.rewardType} rewardChoices={run.rewardChoices} rewardGold={run.rewardGold} hoveredCardId={run.hoveredCardId} onHoverChange={run.setHoveredCardId} shimmerState={run.shimmerState} onHoverShimmer={run.maybeTriggerShimmer} selectedRewardId={run.selectedRewardId} onSelectReward={run.setSelectedRewardId} onAddReward={() => run.finishRewards()} onSkip={() => run.finishRewards()} /> : null}
+          {renderedScreen === "rewards" ? <RewardsScreen rewardType={run.rewardType} rewardChoices={run.rewardChoices} rewardGold={run.rewardGold} rewardMaterials={run.rewardMaterials} hoveredCardId={run.hoveredCardId} onHoverChange={run.setHoveredCardId} shimmerState={run.shimmerState} onHoverShimmer={run.maybeTriggerShimmer} selectedRewardId={run.selectedRewardId} onSelectReward={run.setSelectedRewardId} onAddReward={() => run.finishRewards()} onSkip={() => run.finishRewards()} /> : null}
           {renderedScreen === "destination" ? <DestinationScreen destinationOptions={run.destinationOptions} onChoose={(dest) => run.handleDestinationChoice(dest)} destinationButtonRefs={run.destinationButtonRefs} /> : null}
           {renderedScreen === "campfire" ? <CampfireScreen playerHealth={run.runPlayerHealth} maxHp={run.runMaxHealth} onContinue={run.handleCampfireContinue} /> : null}
           {renderedScreen === "shop" ? <MerchantShopScreen gold={run.runGold} shopCards={run.shopCards} runDeck={run.runDeck} refreshesLeft={run.shopRefreshesLeft} removeUsed={run.shopRemoveUsed} onBuyCard={run.handleShopBuyCard} onRemoveCard={run.handleShopRemoveCard} onRefresh={run.handleShopRefresh} onContinue={run.handleShopContinue} /> : null}
           {renderedScreen === "alchemist" ? <AlchemistHutScreen gold={run.runGold} potionCards={run.alchemistPotions} runDeck={run.runDeck} refreshesLeft={run.alchemistRefreshesLeft} mixUsed={run.alchemistMixUsed} onBuyCard={run.handleAlchemistBuyCard} onRefresh={run.handleAlchemistRefresh} onMixPotions={run.handleAlchemistMixPotions} onContinue={run.handleAlchemistContinue} /> : null}
           {renderedScreen === "mystery" && run.mysteryEvent ? <MysteryScreen event={run.mysteryEvent} onChoose={run.handleMysteryChoice} onRemoveCard={run.handleMysteryRemoveCard} onContinue={run.handleMysteryContinue} runDeck={run.runDeck} findCard={run.findCard} findTrinket={run.findTrinket} /> : null}
-          {renderedScreen === "options" ? <OptionsScreen hasActiveBattle={run.hasActiveBattle} onMainMenu={() => run.goToScreen("menu")} onReturnToBattle={run.returnToBattle} selectedResolution={selectedResolution} onResolutionChange={setSelectedResolution} displayMode={displayMode} onDisplayModeChange={setDisplayMode} showDisplayMode={platform.isDesktop} uiScale={uiScale} onUiScaleChange={setUiScale} masterVol={masterVol} musicVol={musicVol} sfxVol={sfxVol} onMasterVolChange={setMasterVol} onMusicVolChange={setMusicVol} onSfxVolChange={setSfxVol} muteInBackground={muteInBackground} onMuteInBackgroundChange={setMuteInBackground} autoEndTurn={autoEndTurn} onAutoEndTurnChange={setAutoEndTurn} onResetOptions={resetOptionsToDefault} showClearSaveConfirm={showClearSaveConfirm} onOpenClearSaveConfirm={() => setShowClearSaveConfirm(true)} onCloseClearSaveConfirm={() => setShowClearSaveConfirm(false)} onConfirmClearSave={clearSaveData} onUnlockAll={unlockAllDevMode} /> : null}
+          {renderedScreen === "options" ? <OptionsScreen hasActiveBattle={run.hasActiveBattle} onMainMenu={() => run.goToScreen("menu")} onReturnToBattle={run.returnToBattle} selectedResolution={selectedResolution} onResolutionChange={setSelectedResolution} displayMode={displayMode} onDisplayModeChange={setDisplayMode} showDisplayMode={platform.isDesktop} uiScale={uiScale} onUiScaleChange={setUiScale} brightness={brightness} onBrightnessChange={setBrightness} masterVol={masterVol} musicVol={musicVol} sfxVol={sfxVol} onMasterVolChange={setMasterVol} onMusicVolChange={setMusicVol} onSfxVolChange={setSfxVol} muteInBackground={muteInBackground} onMuteInBackgroundChange={setMuteInBackground} autoEndTurn={autoEndTurn} onAutoEndTurnChange={setAutoEndTurn} onResetOptions={resetOptionsToDefault} showClearSaveConfirm={showClearSaveConfirm} onOpenClearSaveConfirm={() => setShowClearSaveConfirm(true)} onCloseClearSaveConfirm={() => setShowClearSaveConfirm(false)} onConfirmClearSave={clearSaveData} onUnlockAll={unlockAllDevMode} /> : null}
           {renderedScreen === "collection" ? <CollectionScreen hasActiveBattle={run.hasActiveBattle} onMainMenu={() => run.goToScreen("menu")} onReturnToBattle={run.returnToBattle} collectionTab={collectionTab} onSelectTab={handleCollectionTabChange} hoveredCardId={run.hoveredCardId} onHoverChange={run.setHoveredCardId} discoveredCardIds={discoveredCardIds} encounteredEnemyIds={encounteredEnemyIds} discoveredTrinketIds={discoveredTrinketIds} collectionPages={collectionPages} onPageChange={setCollectionPage} /> : null}
           {renderedScreen === "homestead" ? <HomesteadScreen materialInventory={homestead.materialInventory} constructedBuildings={homestead.constructedBuildings} plantedFarms={homestead.plantedFarms} completedResearch={homestead.completedResearch} effects={homestead.effects} pendingFarmYield={homestead.pendingFarmYield} lastFarmYield={homestead.lastFarmYield} hasActiveBattle={run.hasActiveBattle} onMainMenu={() => run.goToScreen("menu")} onReturnToBattle={run.returnToBattle} onConstructBuilding={homestead.constructBuilding} onPlantFarm={homestead.plantFarm} onCompleteResearch={homestead.completeResearch} onCollectFarmYield={homestead.collectFarmYield} onClearFarmYield={homestead.clearLastFarmYield} /> : null}
           {renderedScreen === "talents" ? <TalentsScreen hasActiveBattle={run.hasActiveBattle} onMainMenu={() => run.goToScreen("menu")} onReturnToBattle={run.returnToBattle} talentXP={run.talentXP} runTalentXP={run.runTalentXP} unlockedTalents={run.unlockedTalents} onUnlockTalent={run.unlockTalent} onResetTalents={run.resetUnlockedTalents} /> : null}
