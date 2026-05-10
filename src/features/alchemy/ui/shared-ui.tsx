@@ -197,38 +197,60 @@ export function PageLayout({ children }: { children: ReactNode }) {
 
 // Full-screen overlay menu opened by Escape or the battle menu button.
 // Shows navigation options and optionally End Run during battle.
-export function GameMenu({ isOpen, onClose, onMainMenu, onCollection, onTalents, onHomestead, onOptions, onEndRun }: { isOpen: boolean; onClose: () => void; onMainMenu: () => void; onCollection: () => void; onTalents: () => void; onHomestead: () => void; onOptions: () => void; onEndRun?: () => void }) {
+// When anchorRect is provided (hamburger click), the panel floats above the button.
+// When anchorRect is null (Escape key), the panel centers in the screen.
+export function GameMenu({ isOpen, onClose, onMainMenu, onCollection, onTalents, onHomestead, onOptions, onEndRun, anchorRect }: { isOpen: boolean; onClose: () => void; onMainMenu: () => void; onCollection: () => void; onTalents: () => void; onHomestead: () => void; onOptions: () => void; onEndRun?: () => void; anchorRect?: DOMRect | null }) {
   if (!isOpen) return null;
+
+  const panel = (
+    <div className="motion-panel alchemy-shell bg-[#0c0a07] w-full max-w-sm rounded-[26px] border border-border/80 px-4 py-5" onClick={(e) => e.stopPropagation()}>
+      <div className="grid gap-2">
+        <Button variant="ghost" className="justify-start" onClick={() => { onMainMenu(); onClose(); }}>
+          <House className="h-4 w-4" /> Main Menu
+        </Button>
+        <Button variant="ghost" className="justify-start" onClick={() => { onCollection(); onClose(); }}>
+          <BookOpen className="h-4 w-4" /> Collection
+        </Button>
+        <Button variant="ghost" className="justify-start" onClick={() => { onTalents(); onClose(); }}>
+          <WandSparkles className="h-4 w-4" /> Talents
+        </Button>
+        <Button variant="ghost" className="justify-start" onClick={() => { onHomestead(); onClose(); }}>
+          <TreePine className="h-4 w-4" /> Homestead
+        </Button>
+        <Button variant="ghost" className="justify-start" onClick={() => { onOptions(); onClose(); }}>
+          <Cog className="h-4 w-4" /> Options
+        </Button>
+        {onEndRun ? (
+          <>
+            <div className="my-1 border-t border-border/60" />
+            <Button variant="ghost" className="justify-start text-red-400 hover:text-red-300 hover:bg-red-950/40" onClick={() => { onEndRun(); onClose(); }}>
+              <Swords className="h-4 w-4" /> End Run
+            </Button>
+          </>
+        ) : null}
+      </div>
+    </div>
+  );
+
+  if (anchorRect) {
+    return (
+      <div className="absolute inset-0 z-[120]" onClick={onClose}>
+        <div
+          className="fixed z-[121]"
+          style={{
+            right: window.innerWidth - anchorRect.right + 8,
+            bottom: window.innerHeight - anchorRect.top + 8,
+          }}
+        >
+          {panel}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="absolute inset-0 z-[120] flex items-center justify-center px-6" onClick={onClose}>
-      <div className="motion-panel alchemy-shell bg-[#0c0a07] w-full max-w-sm rounded-[26px] border border-border/80 px-4 py-5" onClick={(e) => e.stopPropagation()}>
-        <div className="grid gap-2">
-          <Button variant="ghost" className="justify-start" onClick={() => { onMainMenu(); onClose(); }}>
-            <House className="h-4 w-4" /> Main Menu
-          </Button>
-          <Button variant="ghost" className="justify-start" onClick={() => { onCollection(); onClose(); }}>
-            <BookOpen className="h-4 w-4" /> Collection
-          </Button>
-          <Button variant="ghost" className="justify-start" onClick={() => { onTalents(); onClose(); }}>
-            <WandSparkles className="h-4 w-4" /> Talents
-          </Button>
-          <Button variant="ghost" className="justify-start" onClick={() => { onHomestead(); onClose(); }}>
-            <TreePine className="h-4 w-4" /> Homestead
-          </Button>
-          <Button variant="ghost" className="justify-start" onClick={() => { onOptions(); onClose(); }}>
-            <Cog className="h-4 w-4" /> Options
-          </Button>
-          {onEndRun ? (
-            <>
-              <div className="my-1 border-t border-border/60" />
-              <Button variant="ghost" className="justify-start text-red-400 hover:text-red-300 hover:bg-red-950/40" onClick={() => { onEndRun(); onClose(); }}>
-                <Swords className="h-4 w-4" /> End Run
-              </Button>
-            </>
-          ) : null}
-        </div>
-      </div>
+      {panel}
     </div>
   );
 }

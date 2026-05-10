@@ -58,7 +58,7 @@ export function BattleScreen({
   enemyCombatTexts: FloatingCombatText[];
   handCardRefs: MutableRefObject<Record<string, HTMLButtonElement | null>>;
   onCardClick: (card: BattleCard, index: number, event: MouseEvent<HTMLButtonElement>) => void;
-  onOpenMenu: () => void;
+  onOpenMenu: (rect?: DOMRect) => void;
   onWishChoice: (card: BattleCard) => void;
   cardGhosts: CardGhost[];
   onRemoveCardGhost: (id: string) => void;
@@ -211,7 +211,7 @@ export function BattleScreen({
               variant="ghost"
               size="icon"
               className={isMobileLandscape ? "h-20 w-20 text-muted-foreground hover:text-foreground" : "h-8 w-8 text-muted-foreground hover:text-foreground"}
-              onClick={onOpenMenu}
+              onClick={(e) => onOpenMenu(e.currentTarget.getBoundingClientRect())}
               aria-label="Open battle menu"
             >
               <Menu className={isMobileLandscape ? "h-11 w-11" : "h-4 w-4"} />

@@ -56,12 +56,13 @@ export function playBattleCardResolved(state: BattleState, cardId: string, index
   let nextState: BattleState = {
     ...state,
     hand: state.hand.filter((_, i) => i !== index),
-    mana: Math.max(0, state.mana - effectiveCost),
     flags: { ...state.flags, nextCardCostReduction: 0 },
     cardsPlayedThisTurn: state.cardsPlayedThisTurn + 1,
   };
 
   nextState = applyCardEffects(nextState, card, combatTexts);
+
+  nextState = { ...nextState, mana: Math.max(0, nextState.mana - effectiveCost) };
 
   // Resonant Chime trinket: play N+ cards in a turn → gain mana
   if (nextState.trinketEffects.resonantChimeCardsRequired > 0 && nextState.trinketEffects.resonantChimeMana > 0 && !nextState.flags.resonantChimeUsedThisTurn && nextState.cardsPlayedThisTurn >= nextState.trinketEffects.resonantChimeCardsRequired) {

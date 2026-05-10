@@ -593,6 +593,11 @@ export function useAlchemyRunController({
     get shopCards() { return shopState.cards; }, get shopRefreshesLeft() { return shopState.refreshesLeft; },
     get shopRemoveUsed() { return shopState.removeUsed; },
     get alchemistPotions() { return alchemistState.potions; }, get alchemistRefreshesLeft() { return alchemistState.refreshesLeft; },
+    get alchemistPotionPrice() {
+      const favorDiscount = !alchemistState.firstPurchaseUsed && run.runTrinkets.includes("merchants-favor") ? 7 : 0;
+      return Math.max(0, ALCHEMIST_POTION_PRICE - talents.talentEffects.potionDiscount - favorDiscount);
+    },
+    get alchemistMixPrice() { return Math.max(0, ALCHEMIST_MIX_PRICE - talents.talentEffects.mixPotionDiscount); },
     get alchemistMixUsed() { return alchemistState.mixUsed; },
     get mysteryEvent() { return mysteryEvent; },
     get activeRunData() { return hasActiveBattle ? { characterId: run.characterId } : null; },

@@ -56,6 +56,18 @@ import meteorite from "@/assets/optimized/meteorite.webp";
 import obsidianHammer from "@/assets/optimized/obsidian-hammer.webp";
 import runicQuill from "@/assets/optimized/runic-quill.webp";
 import tatteredPages from "@/assets/optimized/tattered-pages.webp";
+import sinEatersLantern from "@/assets/optimized/sin-eaters-lantern.webp";
+import vanguardsCrest from "@/assets/optimized/vanguards-crest.webp";
+import parasiticBloom from "@/assets/optimized/parasitic-bloom.webp";
+import cutpurseKnife from "@/assets/optimized/cutpurse-knife.webp";
+import wishingWellCoin from "@/assets/optimized/wishing-well-coin.webp";
+import merchantsFavor from "@/assets/optimized/merchants-favor.webp";
+import plagueDoctorsMask from "@/assets/optimized/plague-doctors-mask.webp";
+import mortarAndPestle from "@/assets/optimized/mortar-and-pestle.webp";
+import sunderingCharm from "@/assets/optimized/sundering-charm.webp";
+import resonantChime from "@/assets/optimized/resonant-chime.webp";
+import smugglersMap from "@/assets/optimized/smugglers-map.webp";
+import grovesFavor from "@/assets/optimized/groves-favor.webp";
 import placeholderCard from "@/assets/optimized/placeholder-card.webp";
 import placeholderEnemy from "@/assets/optimized/placeholder-enemy.webp";
 import placeholderTrinket from "@/assets/optimized/placeholder-trinket.webp";
@@ -116,6 +128,18 @@ export {
   obsidianHammer,
   runicQuill,
   tatteredPages,
+  sinEatersLantern,
+  vanguardsCrest,
+  parasiticBloom,
+  cutpurseKnife,
+  wishingWellCoin,
+  merchantsFavor,
+  plagueDoctorsMask,
+  mortarAndPestle,
+  sunderingCharm,
+  resonantChime,
+  smugglersMap,
+  grovesFavor,
   placeholderCard,
   placeholderEnemy,
   placeholderTrinket,

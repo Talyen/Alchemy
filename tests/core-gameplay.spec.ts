@@ -396,17 +396,17 @@ test.describe("Merchant's Shop", () => {
 });
 
 test.describe("Alchemist's Shop", () => {
-  test("alchemist hut renders with potions for sale, mix potions, and refresh options", async ({ page }) => {
+  test("alchemist shop renders with potions for sale, mix potions, and refresh options", async ({ page }) => {
     await startRun(page);
     await playUntilVictory(page);
     await completeVictoryFlow(page);
 
-    const hutBtn = page.getByRole("button", { name: "Alchemist's Shop" });
-    if (!(await hutBtn.isVisible({ timeout: 500 }).catch(() => false))) {
+    const shopBtn = page.getByRole("button", { name: "Alchemist's Shop" });
+    if (!(await shopBtn.isVisible({ timeout: 500 }).catch(() => false))) {
       test.skip(true, "Alchemist's Shop not among destination choices");
       return;
     }
-    await hutBtn.click();
+    await shopBtn.click();
 
     await expect(page.getByRole("heading", { name: "Alchemist's Shop" })).toBeVisible();
     await expect(page.getByText(/Gold/)).toBeVisible();
@@ -415,19 +415,19 @@ test.describe("Alchemist's Shop", () => {
     await expect(page.getByRole("button", { name: /Refresh/ })).toBeVisible();
   });
 
-  test("leaving the hut navigates to destination choices", async ({ page }) => {
+  test("leaving the shop navigates to destination choices", async ({ page }) => {
     await startRun(page);
     await playUntilVictory(page);
     await completeVictoryFlow(page);
 
-    const hutBtn = page.getByRole("button", { name: "Alchemist's Shop" });
-    if (!(await hutBtn.isVisible({ timeout: 500 }).catch(() => false))) {
+    const shopBtn = page.getByRole("button", { name: "Alchemist's Shop" });
+    if (!(await shopBtn.isVisible({ timeout: 500 }).catch(() => false))) {
       test.skip(true, "Alchemist's Shop not among destination choices");
       return;
     }
-    await hutBtn.click();
+    await shopBtn.click();
 
-    await page.getByRole("button", { name: "Leave Hut" }).click();
+    await page.getByRole("button", { name: "Leave Shop" }).click();
     await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 5000 });
   });
 });

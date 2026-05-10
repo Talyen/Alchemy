@@ -70,14 +70,11 @@ function DeckGridPaginated({
 
   return (
     <div>
-      <div className="grid grid-cols-5 grid-rows-2 items-start justify-items-center gap-x-4 gap-y-5">
+      <div className="flex flex-wrap justify-center gap-x-4 gap-y-5">
         {pageItems.map((card, i) => {
           const realIndex = page * pageSize + i;
           return <DeckCardItem key={`${card.id}-${realIndex}`} card={card} index={realIndex} visualIndex={i} isSelected={selectedIndex === realIndex} onSelect={onSelect} />;
         })}
-        {Array.from({ length: Math.max(0, pageSize - pageItems.length) }).map((_, i) => (
-          <div key={`deck-filler-${i}`} className={collectionCardWidthClass} aria-hidden="true" />
-        ))}
       </div>
       <PaginationControls page={page} totalPages={totalPages} onPageChange={onPageChange} />
     </div>

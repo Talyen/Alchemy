@@ -5,7 +5,7 @@ export { RewardsScreen } from "./rewards-screen";
 export { DestinationScreen } from "./destination-screen";
 export { CampfireScreen } from "./campfire-screen";
 export { MerchantShopScreen } from "./merchant-shop-screen";
-export { AlchemistHutScreen } from "./alchemist-hut-screen";
+export { AlchemistShopScreen } from "./alchemist-shop-screen";
 export { OptionsScreen } from "./options-screen";
 export { CollectionScreen } from "./collection-screen";
 export { TalentsScreen } from "./talents-screen";

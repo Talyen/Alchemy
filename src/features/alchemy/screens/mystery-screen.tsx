@@ -3,57 +3,21 @@
 // sounds and visual summaries of all gains.
 import { useState } from "react";
 import type { CSSProperties } from "react";
-import { Coins } from "lucide-react";
-
 import { BlurFade } from "@/components/ui/blur-fade";
 import { Button } from "@/components/ui/button";
 import { TextAnimate } from "@/components/ui/text-animate";
-import { playUISound, playVictory } from "@/lib/audio";
+import { playVictory } from "@/lib/audio";
 import { COLLECTION_PAGE_SIZE } from "@/lib/game-constants";
-import { keywordDefinitions, type BattleCard, type TrinketEntry } from "@/lib/game-data";
+import { type BattleCard, type TrinketEntry } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
 import { PaginationControls, ScreenHeader } from "../ui/shared-ui";
 import { cardSurfaceClass, collectionCardWidthClass, handCardWidthClass, staticCardTransform } from "../config";
-import { materialLabels } from "@/lib/homestead/types";
-import { matIconMap, matPillStyle, matTextColor } from "../ui/material-icons";
+import { MysteryEffectBadge, MysteryEffectList } from "../ui/mystery-effect-badge";
 import type { MysteryEvent, MysteryChoice, MysteryEffect } from "../mystery-events";
-import { clearTiltFromEvent, setTiltFromEvent, tokenizeDescription } from "../utils";
+import { clearTiltFromEvent, setTiltFromEvent } from "../utils";
 import { AnimatedHeight } from "../ui/animated-height";
 import { BattleCardButton, DetailPopup } from "../ui/card-ui";
-
-function ChoiceDescription({ text }: { text: string }) {
-  return (
-    <p>
-      {tokenizeDescription(text).map((part, index) => {
-        const definition = part.keywordId ? keywordDefinitions[part.keywordId] : null;
-        return definition ? (
-          <span key={`${part.text}-${index}`} className={cn("font-semibold", definition.colorClass)}>{part.text}</span>
-        ) : (
-          <span key={`${part.text}-${index}`}>{part.text}</span>
-        );
-      })}
-    </p>
-  );
-}
-
-function EffectResultText({ effect }: { effect: MysteryEffect }) {
-  switch (effect.kind) {
-    case "healHP": return <span>Restored {effect.amount} HP</span>;
-    case "damageHP": return <span>Took {effect.amount} damage</span>;
-    case "gainMaxMana": return <span>Gained +1 Mana Crystal</span>;
-    case "gainXP": return <span>Gained {effect.amount} {effect.keyword} XP</span>;
-    case "gainMaterial":
-      return <span>Gained {effect.amount} {materialLabels[effect.material]}</span>;
-    case "removeCard":
-      return effect.mode === "random"
-        ? <span>A card was removed from your deck</span>
-        : <span>Select a card to remove</span>;
-    case "gainRandomTrinket": return <span>Gained a random trinket</span>;
-    case "none": return null;
-    default: return null;
-  }
-}
 
 function RewardScreen({
   choice,
@@ -126,7 +90,7 @@ function RewardScreen({
               <div key={i} className="flex flex-col items-center gap-3">
                 <div className="relative" onMouseEnter={() => setHoveredItemId(trinket.id)} onMouseLeave={() => setHoveredItemId(null)}>
                   {isHovered ? (
-                    <DetailPopup idPrefix={trinket.id} title={trinket.title} subtitle="Relic" descriptionLines={trinket.descriptionLines} />
+                    <DetailPopup idPrefix={trinket.id} title={trinket.title} subtitle="Trinket" descriptionLines={trinket.descriptionLines} />
                   ) : null}
                   <div
                     className={cn("tilt-surface", cardSurfaceClass, collectionCardWidthClass)}
@@ -158,20 +122,21 @@ function RewardScreen({
             return (
               <div key={i} className="flex items-center justify-center gap-2 text-sm font-medium text-muted-foreground">
                 Found
-                <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold bg-yellow-300/15 text-yellow-300">
-                  <Coins className="h-4 w-4" />
-                  {effect.amount} Gold
-                </span>
+                <MysteryEffectBadge effect={effect} />
+              </div>
+            );
+          case "loseGold":
+            return (
+              <div key={i} className="flex items-center justify-center gap-2 text-sm font-medium text-muted-foreground">
+                Lost
+                <MysteryEffectBadge effect={effect} />
               </div>
             );
           case "gainMaterial":
             return (
               <div key={i} className="flex items-center justify-center gap-2 text-sm font-medium text-muted-foreground">
                 Found
-                <span className={cn("inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold", matPillStyle[effect.material], matTextColor[effect.material])}>
-                  <span>{matIconMap[effect.material]}</span>
-                  {effect.amount} {materialLabels[effect.material]}
-                </span>
+                <MysteryEffectBadge effect={effect} />
               </div>
             );
           case "chooseCard": {
@@ -199,7 +164,7 @@ function RewardScreen({
           default:
             return (
               <p key={i} className="text-base text-muted-foreground">
-                <EffectResultText effect={effect} />
+                <MysteryEffectBadge effect={effect} findCard={findCard} findTrinket={findTrinket} />
               </p>
             );
         }
@@ -230,7 +195,7 @@ function RemoveCardPicker({
   return (
     <div className="state-swap space-y-6 text-center">
       <h2 className="text-3xl text-foreground">Select a card to remove</h2>
-      <div className="grid grid-cols-5 gap-3">
+      <div className="flex flex-wrap justify-center gap-3">
         {visible.map((card, i) => {
           const idx = start + i;
           const isSelected = selectedIndex === idx;
@@ -259,8 +224,8 @@ function RemoveCardPicker({
             </button>
           );
         })}
-        <PaginationControls page={page} totalPages={totalPages} onPageChange={(p) => setPage(p)} size="sm" />
       </div>
+      <PaginationControls page={page} totalPages={totalPages} onPageChange={(p) => setPage(p)} size="sm" />
       <div className="flex justify-center gap-4">
         <Button size="lg" variant="outline" onClick={onCancel}>
           Cancel
@@ -352,12 +317,6 @@ export function MysteryScreen({
       ["addCard", "addRandomCard", "chooseCard", "gainTrinket", "gainRandomTrinket", "healHP", "gainGold", "gainMaxMana", "gainXP", "gainMaterial"].includes(e.kind)
     );
   }
-  function hasNegativeEffect(effects: MysteryEffect[]) {
-    return effects.some((e) =>
-      ["damageHP", "loseGold", "removeCard"].includes(e.kind)
-    );
-  }
-
   function handlePick(choice: MysteryChoice) {
     const hasChooseCard = choice.effects.some((e) => e.kind === "chooseCard");
 
@@ -376,7 +335,6 @@ export function MysteryScreen({
     } else {
       setChosen(choice);
       if (hasPositiveEffect(choice.effects)) playVictory();
-      if (hasNegativeEffect(choice.effects)) playUISound("mysteryBad");
     }
   }
 
@@ -387,7 +345,6 @@ export function MysteryScreen({
       const choice = pendingRemoval!;
       setChosen(choice);
       if (hasPositiveEffect(choice.effects)) playVictory();
-      if (hasNegativeEffect(choice.effects)) playUISound("mysteryBad");
     }
   }
 
@@ -443,7 +400,7 @@ export function MysteryScreen({
             <ScreenHeader title={event.title} />
             <TextAnimate
               animation="blurInUp"
-              by="character"
+              by="word"
               once
               className="max-w-lg text-base leading-relaxed text-muted-foreground"
             >
@@ -462,8 +419,8 @@ export function MysteryScreen({
                     >
                       {choice.label}
                     </Button>
-                    <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-3 w-64 -translate-x-1/2 translate-y-1 rounded-[16px] border border-border/80 bg-card px-3 py-2 text-left text-sm leading-6 text-muted-foreground opacity-0 transition-all duration-150 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100">
-                      <ChoiceDescription text={choice.description} />
+                    <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-3 w-64 -translate-x-1/2 translate-y-1 rounded-[16px] border border-border/80 bg-card px-3 py-2 text-left text-sm leading-6 text-muted-foreground opacity-0 transition-[opacity,transform] duration-150 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[opacity,transform] group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100">
+                      <MysteryEffectList effects={choice.effects} findCard={findCard} findTrinket={findTrinket} />
                     </div>
                   </div>
                 </BlurFade>

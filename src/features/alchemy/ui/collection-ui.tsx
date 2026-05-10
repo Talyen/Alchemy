@@ -201,7 +201,7 @@ function getBestiaryItems(encounteredEnemyIds: string[]) {
 function getTrinketItems(discoveredTrinketIds: string[]) {
   return trinketLibrary.map((entry: TrinketEntry) => {
     const discovered = discoveredTrinketIds.includes(entry.id);
-    return { id: entry.id, title: discovered ? entry.title : "Undiscovered", subtitle: discovered ? "Relic" : undefined, descriptionLines: discovered ? entry.descriptionLines : ["Find this relic to reveal its effect."], art: entry.art, discovered, hoverScope: "collection-trinket" as const, frameType: "trinket" as const };
+    return { id: entry.id, title: discovered ? entry.title : "Undiscovered", subtitle: discovered ? "Trinket" : undefined, descriptionLines: discovered ? entry.descriptionLines : ["Find this trinket to reveal its effect."], art: entry.art, discovered, hoverScope: "collection-trinket" as const, frameType: "trinket" as const };
   });
 }
 

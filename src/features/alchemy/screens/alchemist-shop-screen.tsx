@@ -6,7 +6,7 @@ import { Coins, FlaskConical, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { BattleCard } from "@/lib/game-data";
-import { ALCHEMIST_MIX_PRICE, ALCHEMIST_POTION_PRICE, ALCHEMIST_REFRESH_PRICE, COLLECTION_PAGE_SIZE } from "@/lib/game-constants";
+import { ALCHEMIST_REFRESH_PRICE, COLLECTION_PAGE_SIZE } from "@/lib/game-constants";
 
 import { BattleCardButton } from "../ui/card-ui";
 import { AnimatedHeight } from "../ui/animated-height";
@@ -14,7 +14,7 @@ import { DisabledTooltip, GoldCost, PaginationControls, ScreenHeader } from "../
 import { collectionCardWidthClass, handCardWidthClass } from "../config";
 import { createMixedPotion } from "../potion-mixer";
 
-function PotionCardItem({ card, gold, purchased, onBuy, index }: { card: BattleCard; gold: number; purchased: boolean; onBuy: () => void; index: number }) {
+function PotionCardItem({ card, price, gold, purchased, onBuy, index }: { card: BattleCard; price: number; gold: number; purchased: boolean; onBuy: () => void; index: number }) {
   const [hovered, setHovered] = useState(false);
 
   if (purchased) {
@@ -33,9 +33,9 @@ function PotionCardItem({ card, gold, purchased, onBuy, index }: { card: BattleC
         <BattleCardButton card={card} hovered={hovered} onHoverStart={() => setHovered(true)} onHoverEnd={() => setHovered(false)} ariaLabel={`Inspect ${card.title}`} shimmerActive={false} className={handCardWidthClass} />
       </div>
       <p className="text-sm font-semibold text-foreground">{card.title}</p>
-      <DisabledTooltip show={gold < ALCHEMIST_POTION_PRICE} message="Not Enough Gold">
-        <Button variant="outline" disabled={gold < ALCHEMIST_POTION_PRICE} onClick={onBuy} >
-          Buy <GoldCost amount={ALCHEMIST_POTION_PRICE} />
+      <DisabledTooltip show={gold < price} message="Not Enough Gold">
+        <Button variant="outline" disabled={gold < price} onClick={onBuy} >
+          Buy <GoldCost amount={price} />
         </Button>
       </DisabledTooltip>
     </div>
@@ -57,13 +57,12 @@ function MixPotionCardItem({ card, visualIndex, isSelected, onSelect }: { card: 
   );
 }
 
-function ServiceButton({ icon: Icon, label, cost, disabled, used, soldOutText, onClick }: { icon: React.ComponentType<{ className?: string }>; label: string; cost: number; disabled: boolean; used: boolean; soldOutText: string; onClick: () => void }) {
+function ServiceButton({ icon: Icon, label, cost, disabled, disabledMessage, used, soldOutText, onClick }: { icon: React.ComponentType<{ className?: string }>; label: string; cost: number; disabled: boolean; disabledMessage: string; used: boolean; soldOutText: string; onClick: () => void }) {
   if (used) {
     return <Button variant="outline" disabled className="text-muted-foreground/40">{soldOutText}</Button>;
   }
-  const tooltip = label === "Mix Potions" ? "Not Enough Potions to Mix" : "Not Enough Gold";
   return (
-    <DisabledTooltip show={disabled} message={tooltip}>
+    <DisabledTooltip show={disabled} message={disabledMessage}>
       <Button variant="outline" disabled={disabled} onClick={onClick} >
         <Icon className="h-4 w-4" />
         <span className="text-sm font-normal">{label}</span>
@@ -77,11 +76,11 @@ function GoldDisplay({ gold }: { gold: number }) {
   return <p className="flex items-center gap-2 text-lg font-medium text-yellow-300"><Coins className="h-5 w-5" />{gold} Gold</p>;
 }
 
-export function AlchemistHutScreen({
-  gold, potionCards, runDeck, refreshesLeft, mixUsed,
+export function AlchemistShopScreen({
+  gold, potionCards, runDeck, refreshesLeft, mixUsed, potionPrice, mixPrice,
   onBuyCard, onRefresh, onMixPotions, onContinue,
 }: {
-  gold: number; potionCards: BattleCard[]; runDeck: BattleCard[]; refreshesLeft: number; mixUsed: boolean;
+  gold: number; potionCards: BattleCard[]; runDeck: BattleCard[]; refreshesLeft: number; mixUsed: boolean; potionPrice: number; mixPrice: number;
   onBuyCard: (card: BattleCard) => void; onRefresh: () => void;
   onMixPotions: (indexA: number, indexB: number) => void; onContinue: () => void;
 }) {
@@ -126,6 +125,9 @@ export function AlchemistHutScreen({
   }
 
   const mixableCards = runDeck.map((c, i) => ({ card: c, index: i })).filter(({ card }) => card.id.includes("potion") && card.id !== "mixed-potion");
+  const hasEnoughPotionsToMix = mixableCards.length >= 2;
+  const mixDisabled = gold < mixPrice || !hasEnoughPotionsToMix;
+  const mixDisabledMessage = hasEnoughPotionsToMix ? "Not Enough Gold" : "Not Enough Potions to Mix";
 
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-6 overflow-y-auto px-4 py-6 text-center">
@@ -147,20 +149,20 @@ export function AlchemistHutScreen({
           <>
             <div key={potionCards.map((card) => card.id).join("-")} className="state-swap grid grid-cols-1 gap-4 sm:grid-cols-3">
               {potionCards.map((card, i) => (
-                <PotionCardItem key={`${card.id}-${i}`} card={card} gold={gold} purchased={purchasedIds.has(card.id)} onBuy={() => handleBuyCard(card)} index={i} />
+                <PotionCardItem key={`${card.id}-${i}`} card={card} price={potionPrice} gold={gold} purchased={purchasedIds.has(card.id)} onBuy={() => handleBuyCard(card)} index={i} />
               ))}
             </div>
 
             <div className="mt-6 flex flex-wrap justify-center gap-4">
               <ServiceButton
-                icon={FlaskConical} label="Mix Potions" cost={ALCHEMIST_MIX_PRICE}
-                disabled={gold < ALCHEMIST_MIX_PRICE || mixableCards.length < 2}
+                icon={FlaskConical} label="Mix Potions" cost={mixPrice}
+                disabled={mixDisabled} disabledMessage={mixDisabledMessage}
                 used={mixUsed} soldOutText="Mix Potions — Sold Out"
                 onClick={startMix}
               />
               <ServiceButton
                 icon={RefreshCw} label="Refresh Shop" cost={ALCHEMIST_REFRESH_PRICE}
-                disabled={refreshesLeft <= 0 || gold < ALCHEMIST_REFRESH_PRICE}
+                disabled={refreshesLeft <= 0 || gold < ALCHEMIST_REFRESH_PRICE} disabledMessage="Not Enough Gold"
                 used={refreshesLeft <= 0} soldOutText="Refresh — Sold Out"
                 onClick={onRefresh}
               />
@@ -176,7 +178,7 @@ export function AlchemistHutScreen({
 
               return (
                 <>
-                  <div className="grid grid-cols-5 grid-rows-2 items-start justify-items-center gap-x-4 gap-y-5">
+                  <div className="flex flex-wrap justify-center gap-x-4 gap-y-5">
                     {pageItems.map(({ card, index }, visualIndex) => {
                       const isSelected = selectedA === index || selectedB === index;
                       return (
@@ -186,9 +188,6 @@ export function AlchemistHutScreen({
                           onSelect={() => selectMixCard(index)} />
                       );
                     })}
-                    {Array.from({ length: Math.max(0, pageSize - pageItems.length) }).map((_, i) => (
-                      <div key={`mix-filler-${i}`} className={collectionCardWidthClass} aria-hidden="true" />
-                    ))}
                   </div>
                   <PaginationControls page={mixPage} totalPages={totalPages} onPageChange={setMixPage} />
                 </>

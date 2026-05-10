@@ -35,7 +35,7 @@ function TrinketRewardButton({
   return (
     <div className="relative" onMouseEnter={onHoverStart} onMouseLeave={onHoverEnd}>
       {hovered ? (
-        <DetailPopup idPrefix={trinket.id} title={trinket.title} subtitle="Relic" descriptionLines={trinket.descriptionLines} />
+        <DetailPopup idPrefix={trinket.id} title={trinket.title} subtitle="Trinket" descriptionLines={trinket.descriptionLines} />
       ) : null}
       <button
         type="button"

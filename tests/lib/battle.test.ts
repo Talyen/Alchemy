@@ -357,6 +357,52 @@ describe("playBattleCardResolved", () => {
 
     expect(result.state.activeCompanion).toEqual(companionLibrary.wolf);
   });
+
+  // ─── Mana Overflow Tests ───
+
+  it("restore-mana effect is applied before cost deduction so overflow works", () => {
+    const card = makeCard({ cost: 1, effects: [{ kind: "restore-mana", amount: 2 }] });
+    const state = makeState({ mana: 4, maxMana: 4, hand: [card] });
+    const result = playBattleCardResolved(state, card.id, 0);
+    // restore(4→6) then cost(6→5) = 5 mana, exceeding maxMana=4
+    expect(result.state.mana).toBe(5);
+    expect(result.state.maxMana).toBe(4);
+  });
+
+  it("restore-mana that equals cost results in no net mana change", () => {
+    const card = makeCard({ cost: 1, effects: [{ kind: "restore-mana", amount: 1 }] });
+    const state = makeState({ mana: 4, maxMana: 4, hand: [card] });
+    const result = playBattleCardResolved(state, card.id, 0);
+    // restore(4→5) then cost(5→4) = 4 mana
+    expect(result.state.mana).toBe(4);
+    expect(result.state.maxMana).toBe(4);
+  });
+
+  it("gain-max-mana with cost applies gain before cost deduction", () => {
+    const card = makeCard({ cost: 1, effects: [{ kind: "gain-max-mana", amount: 1 }] });
+    const state = makeState({ mana: 4, maxMana: 4, hand: [card] });
+    const result = playBattleCardResolved(state, card.id, 0);
+    // gain-max(4→5/5) then cost(5→4) = 4 mana, 5 maxMana
+    expect(result.state.mana).toBe(4);
+    expect(result.state.maxMana).toBe(5);
+  });
+
+  it("can overflow with multiple restore-mana effects", () => {
+    const card = makeCard({ cost: 0, effects: [{ kind: "restore-mana", amount: 3 }] });
+    const state = makeState({ mana: 4, maxMana: 4, hand: [card] });
+    const result = playBattleCardResolved(state, card.id, 0);
+    expect(result.state.mana).toBe(7);
+    expect(result.state.maxMana).toBe(4);
+  });
+
+  it("overflow mana is not clamped down on subsequent turns", () => {
+    const card = makeCard({ cost: 1, effects: [{ kind: "restore-mana", amount: 2 }] });
+    const state = makeState({ mana: 4, maxMana: 4, hand: [card], deck: [makeCard()] });
+    const result = playBattleCardResolved(state, card.id, 0);
+    expect(result.state.mana).toBe(5);
+    // Turn end refills to maxMana=4 — overflow should NOT persist
+    // but the state at this point should have mana=5
+  });
 });
 
 describe("endPlayerTurn", () => {

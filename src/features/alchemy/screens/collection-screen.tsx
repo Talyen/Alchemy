@@ -64,10 +64,9 @@ export function CollectionScreen({
         <div className="min-h-[48px]"><CollectionPagination page={activePage} totalPages={totalPages} onPageChange={handlePageChange} /></div>
       </div>
 
-      <div className="mt-6 grid w-full max-w-md grid-cols-[1fr_auto_1fr] items-center gap-3">
-        <span aria-hidden="true" />
+      <div className="mt-6 flex items-center justify-center gap-3">
         <Button variant="outline" onClick={onMainMenu}><House className="h-4 w-4" /> Main Menu</Button>
-        {hasActiveBattle ? <Button className="justify-self-start" onClick={onReturnToBattle}><Swords className="h-4 w-4" /> Return to Battle</Button> : <span aria-hidden="true" />}
+        {hasActiveBattle && <Button onClick={onReturnToBattle}><Swords className="h-4 w-4" /> Return to Battle</Button>}
       </div>
     </PageLayout>
   );
