@@ -1,4 +1,4 @@
-import { apple, boneCharm, brassCenser, cleanse, frozenHeart, goblin, imp, ironwoodBuckler, lizardScout, manaCrystal, meteorite, mimic, mixedPotion, mudElemental, necromancer, obsidianHammer, plagueDoctor, poisonDagger, runicQuill, skeleton, slash, stab, steal, tatteredPages, wish } from "./assets";
+import { apple, boneCharm, brassCenser, cleanse, frozenHeart, goblin, imp, ironwoodBuckler, lizardScout, manaCrystal, meteorite, mimic, mixedPotion, mudElemental, necromancer, obsidianHammer, placeholderEnemy, placeholderTrinket, plagueDoctor, poisonDagger, runicQuill, skeleton, slash, stab, steal, tatteredPages, wish } from "./assets";
 import type { BestiaryEntry, TrinketEntry } from "./types";
 
 export const enemyBestiary: BestiaryEntry[] = [
@@ -7,7 +7,7 @@ export const enemyBestiary: BestiaryEntry[] = [
     title: "Warden of the Ashen Gate",
     subtitle: "Act I Boss",
     descriptionLines: ["Trait — Ashen Aura: Receives half Burn damage. Attacks apply Burn.", "Attacks with sweeping physical strikes."],
-    art: mimic,
+    art: placeholderEnemy,
     enemyType: "boss",
     traits: [{ id: "ashen-aura", title: "Ashen Aura", description: "Receives half Burn damage." }],
     attackEffects: [
@@ -20,7 +20,7 @@ export const enemyBestiary: BestiaryEntry[] = [
     title: "The Hollow Knight",
     subtitle: "Act II Boss",
     descriptionLines: ["Trait — Cursed Armor: Starts with Armor each turn. Immune to Stun.", "Attacks with a powerful bleed-inflicting strike."],
-    art: necromancer,
+    art: placeholderEnemy,
     enemyType: "boss",
     traits: [{ id: "cursed-armor", title: "Cursed Armor", description: "Starts with Armor each turn. Immune to Stun." }],
     attackEffects: [
@@ -33,7 +33,7 @@ export const enemyBestiary: BestiaryEntry[] = [
     title: "The Primordial Wyrm",
     subtitle: "Act III Boss",
     descriptionLines: ["Trait — Elemental Scales: Resistant to all elements. Takes double Physical damage.", "Attacks with a devastating multi-element strike."],
-    art: mudElemental,
+    art: placeholderEnemy,
     enemyType: "boss",
     traits: [{ id: "elemental-scales", title: "Elemental Scales", description: "Resistant to all elements. Takes double Physical damage." }],
     attackEffects: [
@@ -191,72 +191,72 @@ export const trinketLibrary: TrinketEntry[] = [
     id: "sin-eaters-lantern",
     title: "Sin-Eater's Lantern",
     descriptionLines: ["When you remove an ailment from yourself, gain 1 Gold."],
-    art: cleanse,
+    art: placeholderTrinket,
   },
   {
     id: "vanguards-crest",
     title: "Vanguard's Crest",
     descriptionLines: ["When your Block fully absorbs an attack, gain 1 Forge."],
-    art: slash,
+    art: placeholderTrinket,
   },
   {
     id: "parasitic-bloom",
     title: "Parasitic Bloom",
     descriptionLines: ["When Poison ticks on an enemy, heal 1 HP."],
-    art: poisonDagger,
+    art: placeholderTrinket,
   },
   {
     id: "cutpurse-knife",
     title: "Cutpurse Knife",
     descriptionLines: ["When you apply Bleed to an enemy, gain 1 Gold."],
-    art: steal,
+    art: placeholderTrinket,
   },
   {
     id: "wishing-well-coin",
     title: "Wishing Well Coin",
     descriptionLines: ["When you Wish, also gain 3 Gold."],
-    art: wish,
+    art: placeholderTrinket,
   },
   {
     id: "merchants-favor",
     title: "Merchant's Favor",
     descriptionLines: ["Your first purchase at each shop costs 7 less Gold."],
-    art: steal,
+    art: placeholderTrinket,
   },
   {
     id: "plague-doctors-mask",
     title: "Plague Doctor's Mask",
     descriptionLines: ["You are immune to the first ailment you would receive each battle."],
-    art: plagueDoctor,
+    art: placeholderTrinket,
   },
   {
     id: "mortar-and-pestle",
     title: "Mortar and Pestle",
     descriptionLines: ["The first Potion card you play each combat is free."],
-    art: mixedPotion,
+    art: placeholderTrinket,
   },
   {
     id: "sundering-charm",
     title: "Sundering Charm",
     descriptionLines: ["Your Physical attacks ignore 2 enemy Armor."],
-    art: stab,
+    art: placeholderTrinket,
   },
   {
     id: "resonant-chime",
     title: "Resonant Chime",
     descriptionLines: ["When you play 3 or more cards in a single turn, gain 1 Mana."],
-    art: manaCrystal,
+    art: placeholderTrinket,
   },
   {
     id: "smugglers-map",
     title: "Smuggler's Map",
     descriptionLines: ["Gold rewards from combat are increased by 2."],
-    art: steal,
+    art: placeholderTrinket,
   },
   {
     id: "groves-favor",
     title: "Grove's Favor",
     descriptionLines: ["Restore 2 Health at the start of each battle."],
-    art: apple,
+    art: placeholderTrinket,
   },
 ];

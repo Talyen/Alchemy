@@ -13,6 +13,9 @@ import { cn } from "@/lib/utils";
 
 import { PaginationControls, ScreenHeader } from "../ui/shared-ui";
 import { cardSurfaceClass, collectionCardWidthClass, handCardWidthClass, staticCardTransform } from "../config";
+import { materialLabels } from "@/lib/homestead/types";
+import type { MaterialId } from "@/lib/homestead/types";
+import { matIconMap, matTextColor } from "../ui/material-icons";
 import type { MysteryEvent, MysteryChoice, MysteryEffect } from "../mystery-events";
 import { clearTiltFromEvent, setTiltFromEvent, tokenizeDescription } from "../utils";
 import { AnimatedHeight } from "../ui/animated-height";
@@ -39,6 +42,8 @@ function EffectResultText({ effect }: { effect: MysteryEffect }) {
     case "damageHP": return <span>Took {effect.amount} damage</span>;
     case "gainMaxMana": return <span>Gained +1 Mana Crystal</span>;
     case "gainXP": return <span>Gained {effect.amount} {effect.keyword} XP</span>;
+    case "gainMaterial":
+      return <span>Gained {effect.amount} {materialLabels[effect.material]}</span>;
     case "removeCard":
       return effect.mode === "random"
         ? <span>A card was removed from your deck</span>
@@ -144,6 +149,13 @@ function RewardScreen({
               <p key={i} className="inline-flex items-center gap-2 text-lg font-medium text-yellow-300">
                 <Coins className="h-5 w-5" />
                 Found {effect.amount} Gold
+              </p>
+            );
+          case "gainMaterial":
+            return (
+              <p key={i} className={cn("inline-flex items-center gap-2 text-lg font-medium", matTextColor[effect.material])}>
+                <span>{matIconMap[effect.material]}</span>
+                Gained {effect.amount} {materialLabels[effect.material]}
               </p>
             );
           case "none":
@@ -252,7 +264,7 @@ export function MysteryScreen({
 
   function hasPositiveEffect(effects: MysteryEffect[]) {
     return effects.some((e) =>
-      ["addCard", "addRandomCard", "gainTrinket", "healHP", "gainGold", "gainMaxMana", "gainXP"].includes(e.kind)
+      ["addCard", "addRandomCard", "gainTrinket", "healHP", "gainGold", "gainMaxMana", "gainXP", "gainMaterial"].includes(e.kind)
     );
   }
   function hasNegativeEffect(effects: MysteryEffect[]) {
@@ -329,7 +341,7 @@ export function MysteryScreen({
                 <img
                   src={event.art}
                   alt={event.title}
-                  className="block h-auto w-full rounded-[30px] aspect-[375/524]"
+                  className="block h-auto w-full rounded-[30px] aspect-[3/4]"
                   loading="eager"
                 />
               </div>

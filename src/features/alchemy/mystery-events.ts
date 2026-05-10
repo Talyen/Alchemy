@@ -40,7 +40,10 @@ export const mysteryPool: MysteryEvent[] = [
       {
         label: "Harvest",
         description: "Add Mana Berries to your deck",
-        effects: [{ kind: "addCard", cardId: "mana-berries" }],
+        effects: [
+          { kind: "addCard", cardId: "mana-berries" },
+          { kind: "gainMaterial", material: "herbs", amount: 2 },
+        ],
       },
       {
         label: "Leave",
@@ -58,12 +61,18 @@ export const mysteryPool: MysteryEvent[] = [
       {
         label: "Sip Slowly",
         description: "Restore 8 HP",
-        effects: [{ kind: "healHP", amount: 8 }],
+        effects: [
+          { kind: "healHP", amount: 8 },
+          { kind: "gainMaterial", material: "herbs", amount: 2 },
+        ],
       },
       {
         label: "Drink Deeply",
         description: "Restore 18 HP",
-        effects: [{ kind: "healHP", amount: 18 }],
+        effects: [
+          { kind: "healHP", amount: 18 },
+          { kind: "gainMaterial", material: "herbs", amount: 3 },
+        ],
       },
       {
         label: "Bottle the Essence",
@@ -81,7 +90,10 @@ export const mysteryPool: MysteryEvent[] = [
       {
         label: "Harvest Carefully",
         description: "Add Mana Berries to your deck",
-        effects: [{ kind: "addCard", cardId: "mana-berries" }],
+        effects: [
+          { kind: "addCard", cardId: "mana-berries" },
+          { kind: "gainMaterial", material: "food", amount: 3 },
+        ],
       },
       {
         label: "Inhale the Spores",
@@ -94,7 +106,10 @@ export const mysteryPool: MysteryEvent[] = [
       {
         label: "Collect Rare Mold",
         description: "Gain 20 Gold",
-        effects: [{ kind: "gainGold", amount: 20 }],
+        effects: [
+          { kind: "gainGold", amount: 20 },
+          { kind: "gainMaterial", material: "herbs", amount: 3 },
+        ],
       },
     ],
   },
@@ -107,12 +122,18 @@ export const mysteryPool: MysteryEvent[] = [
       {
         label: "Ask for Knowledge",
         description: "Gain +1 Mana Crystal",
-        effects: [{ kind: "gainMaxMana", amount: 1 }],
+        effects: [
+          { kind: "gainMaxMana", amount: 1 },
+          { kind: "gainMaterial", material: "wood", amount: 3 },
+        ],
       },
       {
         label: "Rest in its Shade",
         description: "Restore 15 HP",
-        effects: [{ kind: "healHP", amount: 15 }],
+        effects: [
+          { kind: "healHP", amount: 15 },
+          { kind: "gainMaterial", material: "herbs", amount: 2 },
+        ],
       },
       {
         label: "Memorize a Lesson",
@@ -189,6 +210,7 @@ export const mysteryPool: MysteryEvent[] = [
         effects: [
           { kind: "gainXP", keyword: "gold", amount: 10 },
           { kind: "gainTrinket", trinketId: "smugglers-map" },
+          { kind: "gainMaterial", material: "food", amount: 3 },
         ],
       },
     ],
@@ -211,7 +233,10 @@ export const mysteryPool: MysteryEvent[] = [
       {
         label: "Decipher the Inscriptions",
         description: "Gain 15 Holy XP",
-        effects: [{ kind: "gainXP", keyword: "holy", amount: 15 }],
+        effects: [
+          { kind: "gainXP", keyword: "holy", amount: 15 },
+          { kind: "gainMaterial", material: "herbs", amount: 3 },
+        ],
       },
     ],
   },
@@ -229,7 +254,10 @@ export const mysteryPool: MysteryEvent[] = [
       {
         label: "Organize the Library",
         description: "Gain 12 Mana XP",
-        effects: [{ kind: "gainXP", keyword: "mana", amount: 12 }],
+        effects: [
+          { kind: "gainXP", keyword: "mana", amount: 12 },
+          { kind: "gainMaterial", material: "wood", amount: 3 },
+        ],
       },
     ],
   },
@@ -266,6 +294,7 @@ export const mysteryPool: MysteryEvent[] = [
         effects: [
           { kind: "gainGold", amount: 20 },
           { kind: "addCard", cardId: "mana-crystals" },
+          { kind: "gainMaterial", material: "crystal", amount: 3 },
         ],
       },
       {
@@ -284,7 +313,10 @@ export const mysteryPool: MysteryEvent[] = [
       {
         label: "Collect a Fragment",
         description: "Add Meteor to your deck",
-        effects: [{ kind: "addCard", cardId: "meteor" }],
+        effects: [
+          { kind: "addCard", cardId: "meteor" },
+          { kind: "gainMaterial", material: "iron", amount: 3 },
+        ],
       },
       {
         label: "Scavenge the Metal",
@@ -310,7 +342,10 @@ export const mysteryPool: MysteryEvent[] = [
       {
         label: "Take the Coins",
         description: "Gain 30 Gold",
-        effects: [{ kind: "gainGold", amount: 30 }],
+        effects: [
+          { kind: "gainGold", amount: 30 },
+          { kind: "gainMaterial", material: "iron", amount: 3 },
+        ],
       },
       {
         label: "Search the Bones",
@@ -337,7 +372,10 @@ export const mysteryPool: MysteryEvent[] = [
       {
         label: "Bask in the Light",
         description: "Restore 20 HP",
-        effects: [{ kind: "healHP", amount: 20 }],
+        effects: [
+          { kind: "healHP", amount: 20 },
+          { kind: "gainMaterial", material: "herbs", amount: 3 },
+        ],
       },
       {
         label: "Collect Holy Dew",

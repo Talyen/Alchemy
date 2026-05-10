@@ -19,47 +19,47 @@ function lootEntry(material: MaterialId, min: number, max: number, weight = 1): 
 
 const enemyLootTables: Record<string, EnemyLootTable> = {
   skeleton: {
-    guaranteed: { wood: 0, stone: 1, iron: 0, herbs: 0, food: 0, leather: 0, crystal: 0 },
+    guaranteed: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 },
     bonuses: [lootEntry("herbs", 0, 1, 0.3)],
   },
   goblin: {
-    guaranteed: { wood: 1, stone: 0, iron: 0, herbs: 0, food: 1, leather: 0, crystal: 0 },
-    bonuses: [lootEntry("wood", 0, 1, 0.4), lootEntry("leather", 0, 1, 0.2)],
+    guaranteed: { wood: 1, iron: 0, herbs: 0, food: 1, crystal: 0 },
+    bonuses: [lootEntry("wood", 0, 1, 0.4)],
   },
   imp: {
-    guaranteed: { wood: 0, stone: 0, iron: 0, herbs: 1, food: 0, leather: 0, crystal: 0 },
+    guaranteed: { wood: 0, iron: 0, herbs: 1, food: 0, crystal: 0 },
     bonuses: [lootEntry("crystal", 0, 1, 0.1)],
   },
   "lizard-scout": {
-    guaranteed: { wood: 0, stone: 0, iron: 0, herbs: 1, food: 0, leather: 1, crystal: 0 },
+    guaranteed: { wood: 0, iron: 0, herbs: 1, food: 0, crystal: 0 },
     bonuses: [lootEntry("herbs", 0, 1, 0.3)],
   },
   mimic: {
-    guaranteed: { wood: 0, stone: 1, iron: 1, herbs: 0, food: 0, leather: 0, crystal: 0 },
+    guaranteed: { wood: 0, iron: 2, herbs: 0, food: 0, crystal: 0 },
     bonuses: [lootEntry("crystal", 0, 1, 0.5), lootEntry("iron", 0, 1, 0.4)],
   },
   "mud-elemental": {
-    guaranteed: { wood: 0, stone: 2, iron: 0, herbs: 1, food: 0, leather: 0, crystal: 0 },
-    bonuses: [lootEntry("stone", 0, 2, 0.5)],
+    guaranteed: { wood: 0, iron: 0, herbs: 1, food: 0, crystal: 0 },
+    bonuses: [],
   },
   necromancer: {
-    guaranteed: { wood: 0, stone: 0, iron: 0, herbs: 2, food: 0, leather: 0, crystal: 1 },
+    guaranteed: { wood: 0, iron: 0, herbs: 2, food: 0, crystal: 1 },
     bonuses: [lootEntry("crystal", 0, 1, 0.3), lootEntry("herbs", 0, 1, 0.5)],
   },
   "plague-doctor": {
-    guaranteed: { wood: 0, stone: 0, iron: 0, herbs: 2, food: 0, leather: 1, crystal: 0 },
-    bonuses: [lootEntry("herbs", 0, 1, 0.4), lootEntry("leather", 0, 1, 0.3)],
+    guaranteed: { wood: 0, iron: 0, herbs: 2, food: 0, crystal: 0 },
+    bonuses: [lootEntry("herbs", 0, 1, 0.4)],
   },
   "act-i-boss": {
-    guaranteed: { wood: 0, stone: 3, iron: 0, herbs: 0, food: 0, leather: 0, crystal: 1 },
-    bonuses: [lootEntry("stone", 0, 2, 0.6), lootEntry("crystal", 0, 1, 0.4)],
+    guaranteed: { wood: 0, iron: 3, herbs: 0, food: 0, crystal: 1 },
+    bonuses: [lootEntry("iron", 0, 2, 0.6), lootEntry("crystal", 0, 1, 0.4)],
   },
   "act-ii-boss": {
-    guaranteed: { wood: 0, stone: 0, iron: 3, herbs: 0, food: 0, leather: 0, crystal: 1 },
+    guaranteed: { wood: 0, iron: 3, herbs: 0, food: 0, crystal: 1 },
     bonuses: [lootEntry("iron", 0, 2, 0.6), lootEntry("crystal", 0, 1, 0.4)],
   },
   "act-iii-boss": {
-    guaranteed: { wood: 1, stone: 1, iron: 1, herbs: 1, food: 1, leather: 1, crystal: 2 },
+    guaranteed: { wood: 1, iron: 2, herbs: 1, food: 2, crystal: 2 },
     bonuses: [lootEntry("crystal", 0, 2, 0.5)],
   },
 };
@@ -99,11 +99,9 @@ export function getEnemyMaterialLoot(enemyId: string, enemyType: string): Materi
 export function getEndOfRunMaterials(roomsEncountered: number, currentAct: number): MaterialInventory {
   return {
     wood: roomsEncountered * 2,
-    stone: Math.floor(roomsEncountered * 1.5),
-    iron: roomsEncountered,
+    iron: roomsEncountered + Math.floor(roomsEncountered * 1.5),
     herbs: roomsEncountered,
-    food: roomsEncountered,
-    leather: Math.floor(roomsEncountered * 0.5),
+    food: Math.floor(roomsEncountered * 1.5),
     crystal: currentAct - 1 + Math.floor(roomsEncountered / 4),
   };
 }

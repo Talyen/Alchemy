@@ -1,5 +1,5 @@
 import type { CSSProperties, MutableRefObject, ReactNode } from "react";
-import { AlertTriangle, ChevronLeft, ChevronRight, Coins } from "lucide-react";
+import { AlertTriangle, BookOpen, ChevronLeft, ChevronRight, Cog, Coins, House, Swords, TreePine, WandSparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -191,6 +191,44 @@ export function PageLayout({ children }: { children: ReactNode }) {
   return (
     <div className="game-page-scroll flex h-full w-full flex-col items-center justify-center overflow-x-hidden overflow-y-auto px-4 py-6">
       {children}
+    </div>
+  );
+}
+
+// Full-screen overlay menu opened by Escape or the battle menu button.
+// Shows navigation options and optionally End Run during battle.
+export function GameMenu({ isOpen, onClose, onMainMenu, onCollection, onTalents, onHomestead, onOptions, onEndRun }: { isOpen: boolean; onClose: () => void; onMainMenu: () => void; onCollection: () => void; onTalents: () => void; onHomestead: () => void; onOptions: () => void; onEndRun?: () => void }) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="absolute inset-0 z-[120] flex items-center justify-center px-6">
+      <div className="motion-panel alchemy-shell bg-[#0c0a07] w-full max-w-sm rounded-[26px] border border-border/80 px-4 py-5">
+        <div className="grid gap-2">
+          <Button variant="ghost" className="justify-start" onClick={() => { onMainMenu(); onClose(); }}>
+            <House className="h-4 w-4" /> Main Menu
+          </Button>
+          <Button variant="ghost" className="justify-start" onClick={() => { onCollection(); onClose(); }}>
+            <BookOpen className="h-4 w-4" /> Collection
+          </Button>
+          <Button variant="ghost" className="justify-start" onClick={() => { onTalents(); onClose(); }}>
+            <WandSparkles className="h-4 w-4" /> Talents
+          </Button>
+          <Button variant="ghost" className="justify-start" onClick={() => { onHomestead(); onClose(); }}>
+            <TreePine className="h-4 w-4" /> Homestead
+          </Button>
+          <Button variant="ghost" className="justify-start" onClick={() => { onOptions(); onClose(); }}>
+            <Cog className="h-4 w-4" /> Options
+          </Button>
+          {onEndRun ? (
+            <>
+              <div className="my-1 border-t border-border/60" />
+              <Button variant="ghost" className="justify-start text-red-400 hover:text-red-300 hover:bg-red-950/40" onClick={() => { onEndRun(); onClose(); }}>
+                <Swords className="h-4 w-4" /> End Run
+              </Button>
+            </>
+          ) : null}
+        </div>
+      </div>
     </div>
   );
 }

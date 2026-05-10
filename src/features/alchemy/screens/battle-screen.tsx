@@ -1,6 +1,6 @@
 import type { CSSProperties, MouseEvent, MutableRefObject } from "react";
 import { useState } from "react";
-import { BookOpen, Cog, Coins, House, Menu, Swords, WandSparkles } from "lucide-react";
+import { Coins, Menu } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { type BattleCard } from "@/lib/game-data";
@@ -28,9 +28,7 @@ export function BattleScreen({
   enemyCombatTexts,
   handCardRefs,
   onCardClick,
-  menuOpen,
-  setMenuOpen,
-  onGoToScreen,
+  onOpenMenu,
   onWishChoice,
   cardGhosts,
   onRemoveCardGhost,
@@ -60,9 +58,7 @@ export function BattleScreen({
   enemyCombatTexts: FloatingCombatText[];
   handCardRefs: MutableRefObject<Record<string, HTMLButtonElement | null>>;
   onCardClick: (card: BattleCard, index: number, event: MouseEvent<HTMLButtonElement>) => void;
-  menuOpen: boolean;
-  setMenuOpen: (value: boolean | ((current: boolean) => boolean)) => void;
-  onGoToScreen: (screen: "menu" | "collection" | "options" | "talents") => void;
+  onOpenMenu: () => void;
   onWishChoice: (card: BattleCard) => void;
   cardGhosts: CardGhost[];
   onRemoveCardGhost: (id: string) => void;
@@ -215,7 +211,7 @@ export function BattleScreen({
               variant="ghost"
               size="icon"
               className={isMobileLandscape ? "h-20 w-20 text-muted-foreground hover:text-foreground" : "h-8 w-8 text-muted-foreground hover:text-foreground"}
-              onClick={() => setMenuOpen((prev) => !prev)}
+              onClick={onOpenMenu}
               aria-label="Open battle menu"
             >
               <Menu className={isMobileLandscape ? "h-11 w-11" : "h-4 w-4"} />
@@ -231,37 +227,15 @@ export function BattleScreen({
               End Turn
             </Button>
 
-            {menuOpen ? (
-              <div className="battle-menu-pop alchemy-shell absolute bottom-full right-0 z-50 mb-3 w-56 rounded-[20px] border border-border/80 p-2">
-                <div className="grid gap-2">
-                  <Button variant="ghost" className="justify-start" onClick={() => onGoToScreen("menu")}>
-                    <House className="h-4 w-4" />
-                    Main Menu
-                  </Button>
-                  <Button variant="ghost" className="justify-start" onClick={() => onGoToScreen("collection")}>
-                    <BookOpen className="h-4 w-4" />
-                    Collection
-                  </Button>
-                  <Button variant="ghost" className="justify-start" onClick={() => onGoToScreen("options")}>
-                    <Cog className="h-4 w-4" />
-                    Options
-                  </Button>
-                  <Button variant="ghost" className="justify-start" onClick={() => onGoToScreen("talents")}>
-                    <WandSparkles className="h-4 w-4" />
-                    Talents
-                  </Button>
-                  <Button variant="ghost" className="justify-start text-red-400 hover:text-red-300 hover:bg-red-950/40" onClick={onEndRun}>
-                    <Swords className="h-4 w-4" />
-                    End Run
-                  </Button>
-                  {import.meta.env.DEV ? (
-                    <Button variant="ghost" className="justify-start text-amber-200 hover:text-amber-100" onClick={onSkipCombatDevMode}>
-                      <Coins className="h-4 w-4" />
-                      Skip Combat
-                    </Button>
-                  ) : null}
-                </div>
-              </div>
+            {import.meta.env.DEV ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                className={isMobileLandscape ? "h-20 w-20 text-amber-200 hover:text-amber-100 text-2xl" : "w-full text-amber-200 hover:text-amber-100 text-xs"}
+                onClick={onSkipCombatDevMode}
+              >
+                <Coins className={isMobileLandscape ? "h-11 w-11" : "h-3.5 w-3.5"} /> {isMobileLandscape ? "" : "Skip Combat"}
+              </Button>
             ) : null}
           </div>
 

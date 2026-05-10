@@ -101,9 +101,9 @@ export function loadAlchemySaveData(): SaveData {
       autoEndTurn: typeof parsed.autoEndTurn === "boolean" ? parsed.autoEndTurn : defaultSaveData.autoEndTurn,
       brightness: typeof parsed.brightness === "number" ? parsed.brightness : defaultSaveData.brightness,
       activeRun: normalizeActiveRun(parsed.activeRun),
-      materialInventory: typeof parsed.materialInventory === 'object' && parsed.materialInventory ? parsed.materialInventory as MaterialInventory : defaultSaveData.materialInventory,
-      constructedBuildings: Array.isArray(parsed.constructedBuildings) ? parsed.constructedBuildings as BuildingId[] : defaultSaveData.constructedBuildings,
-      plantedFarms: Array.isArray(parsed.plantedFarms) ? parsed.plantedFarms as FarmId[] : defaultSaveData.plantedFarms,
+      materialInventory: migrateMaterialInventory(parsed.materialInventory),
+      constructedBuildings: migrateBuildingIds(parsed.constructedBuildings),
+      plantedFarms: migrateFarmIds(parsed.plantedFarms),
       completedResearch: Array.isArray(parsed.completedResearch) ? parsed.completedResearch as ResearchId[] : defaultSaveData.completedResearch,
       pendingFarmYield: typeof parsed.pendingFarmYield === "boolean" ? parsed.pendingFarmYield : defaultSaveData.pendingFarmYield,
     };
@@ -134,6 +134,34 @@ export function saveAlchemySaveData(data: SaveData) {
   }
 
   window.localStorage.setItem(storageKey, JSON.stringify(data));
+}
+
+function migrateMaterialInventory(inv: unknown): MaterialInventory {
+  if (!inv || typeof inv !== "object") return defaultSaveData.materialInventory;
+  const old = inv as Record<string, number>;
+  return {
+    wood: old.wood ?? 0,
+    iron: old.iron ?? 0,
+    herbs: old.herbs ?? 0,
+    food: old.food ?? 0,
+    crystal: old.crystal ?? 0,
+  };
+}
+
+function migrateBuildingIds(ids: unknown): BuildingId[] {
+  if (!Array.isArray(ids)) return defaultSaveData.constructedBuildings;
+  return ids.map((id) => {
+    if (id === "smithy") return "blacksmiths-forge" as BuildingId;
+    return id as BuildingId;
+  });
+}
+
+function migrateFarmIds(ids: unknown): FarmId[] {
+  if (!Array.isArray(ids)) return defaultSaveData.plantedFarms;
+  return ids.map((id) => {
+    if (id === "sheep-pasture") return "pasture" as FarmId;
+    return id as FarmId;
+  });
 }
 
 export function clearAlchemySaveData() {

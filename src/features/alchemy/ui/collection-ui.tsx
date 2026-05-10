@@ -84,7 +84,7 @@ function CompendiumTile({
           alt={item.title}
           className={cn(
             "block w-full rounded-[30px] transition duration-300",
-            item.frameType === "trinket" ? "aspect-square" : "aspect-[375/524]",
+            item.frameType === "trinket" ? "aspect-square" : "aspect-[3/4]",
             item.discovered ? "opacity-100" : "grayscale opacity-45",
           )}
           loading="eager"

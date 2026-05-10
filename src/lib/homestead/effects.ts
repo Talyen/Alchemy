@@ -32,7 +32,7 @@ export function computeHomesteadEffects(
       case "watchtower":
         effects.startMaxHealthBonus += 5;
         break;
-      case "smithy":
+      case "blacksmiths-forge":
         effects.physicalCritChance += 2;
         break;
     }

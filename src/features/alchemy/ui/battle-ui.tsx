@@ -151,7 +151,7 @@ export function ArtPanel({
         style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
       >
         <ShimmerOverlay active={shimmerActive} token={shimmerToken} />
-        <img src={art} alt={title} className="block w-full rounded-[30px] aspect-[375/524]" loading="eager" />
+        <img src={art} alt={title} className="block w-full rounded-[30px] aspect-[3/4]" loading="eager" />
       </div>
 
       <div className={cn("surface-muted rounded-[24px] px-4 py-3", cardWidthClass ?? battleCardWidthClass)}>
@@ -190,7 +190,7 @@ export function CompanionPanel({ companion, compact = false, shaking = false }: 
         onMouseLeave={clearTiltFromEvent}
         style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
       >
-        <img src={companion.art} alt={companion.title} className="block w-full rounded-[30px] aspect-[375/524]" loading="eager" />
+        <img src={companion.art} alt={companion.title} className="block w-full rounded-[30px] aspect-[3/4]" loading="eager" />
       </div>
       <div className={cn(popupClassName, "hover-popup-panel pointer-events-auto opacity-0 group-hover/companion:opacity-100")}>
         <p className="text-sm text-foreground">{companion.title}</p>
@@ -218,7 +218,7 @@ export function PilePanel({ label, count, type, compact = false }: { label: stri
       onMouseLeave={clearTiltFromEvent}
       style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
     >
-      <img src={art} alt={`${label} pile`} className="block w-full rounded-[30px] aspect-[375/524]" loading="lazy" />
+      <img src={art} alt={`${label} pile`} className="block w-full rounded-[30px] aspect-[3/4]" loading="lazy" />
     </div>
   );
 }

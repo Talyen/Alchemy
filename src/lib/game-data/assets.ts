@@ -56,6 +56,11 @@ import meteorite from "@/assets/optimized/meteorite.webp";
 import obsidianHammer from "@/assets/optimized/obsidian-hammer.webp";
 import runicQuill from "@/assets/optimized/runic-quill.webp";
 import tatteredPages from "@/assets/optimized/tattered-pages.webp";
+import placeholderCard from "@/assets/optimized/placeholder-card.webp";
+import placeholderEnemy from "@/assets/optimized/placeholder-enemy.webp";
+import placeholderTrinket from "@/assets/optimized/placeholder-trinket.webp";
+import placeholderDestination from "@/assets/optimized/placeholder-destination.webp";
+import placeholderHomestead from "@/assets/optimized/placeholder-homestead.webp";
 
 export {
   alchemyLogo,
@@ -111,6 +116,11 @@ export {
   obsidianHammer,
   runicQuill,
   tatteredPages,
+  placeholderCard,
+  placeholderEnemy,
+  placeholderTrinket,
+  placeholderDestination,
+  placeholderHomestead,
   alchemistShopBg,
   merchantShopBg,
   eliteEnemyBg,

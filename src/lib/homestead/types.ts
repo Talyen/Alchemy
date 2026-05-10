@@ -1,34 +1,30 @@
 // Core types for the Homestead persistent progression system.
 // Materials, building/farm/research IDs, and effect manifests.
 
-export type MaterialId = "wood" | "stone" | "iron" | "herbs" | "food" | "leather" | "crystal";
+export type MaterialId = "wood" | "iron" | "herbs" | "food" | "crystal";
 
-export const MATERIAL_IDS: MaterialId[] = ["wood", "stone", "iron", "herbs", "food", "leather", "crystal"];
+export const MATERIAL_IDS: MaterialId[] = ["wood", "iron", "herbs", "food", "crystal"];
 
 export const materialLabels: Record<MaterialId, string> = {
   wood: "Wood",
-  stone: "Stone",
   iron: "Iron",
   herbs: "Herbs",
   food: "Food",
-  leather: "Leather",
   crystal: "Crystal",
 };
 
 export const materialIcons: Record<MaterialId, string> = {
-  wood: "\u{1FAB5}", // wooden placeholder
-  stone: "\u{1FAA8}", // rock placeholder
-  iron: "\u{2692}", // hammer & pick
-  herbs: "\u{1F33F}", // herb
-  food: "\u{1F36E}", // food
-  leather: "\u{1F9FA}", // leather
-  crystal: "\u{1F48E}", // gem
+  wood: "\u{1FAB5}",
+  iron: "\u{2692}",
+  herbs: "\u{1F33F}",
+  food: "\u{1F36E}",
+  crystal: "\u{1F48E}",
 };
 
 export type MaterialInventory = Record<MaterialId, number>;
 
 export function emptyInventory(): MaterialInventory {
-  return { wood: 0, stone: 0, iron: 0, herbs: 0, food: 0, leather: 0, crystal: 0 };
+  return { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 };
 }
 
 export function addInventory(a: MaterialInventory, b: MaterialInventory): MaterialInventory {
@@ -51,9 +47,9 @@ export function subtractInventory(inventory: MaterialInventory, cost: MaterialIn
   return result;
 }
 
-export type BuildingId = "workshop" | "storehouse" | "stone-walls" | "herb-shed" | "watchtower" | "smithy";
+export type BuildingId = "workshop" | "storehouse" | "stone-walls" | "herb-shed" | "watchtower" | "blacksmiths-forge";
 
-export type FarmId = "wheat-field" | "herb-garden" | "chicken-coop" | "sheep-pasture" | "orchard" | "crystal-garden";
+export type FarmId = "wheat-field" | "herb-garden" | "chicken-coop" | "pasture" | "orchard" | "crystal-garden";
 
 export type ResearchId = "carpentry" | "masonry" | "crop-rotation" | "animal-husbandry" | "fortified-walls" | "metallurgy";
 

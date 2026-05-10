@@ -169,7 +169,7 @@ export function BattleCardButton({
       >
         <ShimmerOverlay active={shimmerActive} token={shimmerToken} />
 
-        <img src={card.art} alt={card.title} className="block h-auto w-full rounded-[30px] aspect-[375/524]" loading="lazy" />
+        <img src={card.art} alt={card.title} className="block h-auto w-full rounded-[30px] aspect-[3/4]" loading="lazy" />
       </button>
     </div>
   );

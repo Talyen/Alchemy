@@ -72,7 +72,10 @@ const assets = [
   { source: "Destinations/Normal Enemy.png", target: "normal-enemy.webp", width: 900, quality: 84 },
   { source: "Destinations/Mystery.png", target: "mystery.webp", width: 900, quality: 84 },
   // Homestead
+  { source: "Homestead/Blacksmith's Forge.png", target: "blacksmiths-forge.webp", width: 900, quality: 84 },
+  { source: "Homestead/Chicken Coop.png", target: "chicken-coop.webp", width: 900, quality: 84 },
   { source: "Homestead/Herb Garden.png", target: "herb-garden.webp", width: 900, quality: 84 },
+  { source: "Homestead/Pasture.png", target: "pasture.webp", width: 900, quality: 84 },
   // Trinkets
   { source: "Trinkets/Bone Charm.png", target: "bone-charm.webp", width: 420, quality: 82 },
   { source: "Trinkets/Brass Censer.png", target: "brass-censer.webp", width: 420, quality: 82 },
@@ -82,6 +85,12 @@ const assets = [
   { source: "Trinkets/Obsidian Hammer.png", target: "obsidian-hammer.webp", width: 420, quality: 82 },
   { source: "Trinkets/Runic Quill.png", target: "runic-quill.webp", width: 420, quality: 82 },
   { source: "Trinkets/Tattered Pages.png", target: "tattered-pages.webp", width: 420, quality: 82 },
+  // Placeholders
+  { source: "Cards/Placeholder Card.png", target: "placeholder-card.webp", width: cardWidth, quality: 60 },
+  { source: "Enemies/Placeholder Enemy.png", target: "placeholder-enemy.webp", width: 720, quality: 60 },
+  { source: "Trinkets/Placeholder Trinket.png", target: "placeholder-trinket.webp", width: 420, quality: 60 },
+  { source: "Destinations/Placeholder Destination.png", target: "placeholder-destination.webp", width: 900, quality: 60 },
+  { source: "Homestead/Placeholder Homestead.png", target: "placeholder-homestead.webp", width: 900, quality: 60 },
 ];
 
 async function fileIsFresh(sourcePath, outputPath) {

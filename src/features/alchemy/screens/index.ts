@@ -1,3 +1,4 @@
+export { HomesteadScreen } from "./homestead-screen";
 export { MenuScreen } from "./menu-screen";
 export { CharacterSelectScreen } from "./character-select-screen";
 export { RewardsScreen } from "./rewards-screen";

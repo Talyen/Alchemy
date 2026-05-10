@@ -2,7 +2,7 @@ import type { LucideIcon } from "lucide-react";
 import { BookOpen, Coins, Crosshair, Flame, Gem, Hammer, Heart, HeartPulse, Leaf, PawPrint, Shield, ShieldAlert, Skull, Snowflake, Sparkles, Sun, Swords, TriangleAlert, WandSparkles, Zap, Trophy } from "lucide-react";
 
 import { enemyBestiary, type EnemyType, type KeywordId } from "@/lib/game-data";
-import { alchemistShopBg, campfire, eliteEnemyBg, merchantShopBg, mysteryBg, normalEnemyBg } from "@/lib/game-data";
+import { alchemistShopBg, campfire, eliteEnemyBg, merchantShopBg, mysteryBg, normalEnemyBg, placeholderDestination } from "@/lib/game-data";
 import { DESTINATIONS_PER_ACT } from "@/lib/game-constants";
 
 import type { CardGhostVariant, CollectionTab, Destination, DisplayMode, ResolutionOption, UiScale } from "./types";
@@ -77,7 +77,7 @@ export const destinationMeta: Record<Destination, { icon: LucideIcon; className:
   "Alchemist's Shop": { icon: WandSparkles, className: "bg-emerald-800/85 text-white", art: alchemistShopBg },
   Mystery: { icon: Sparkles, className: "bg-zinc-800/90 text-zinc-100", art: mysteryBg },
   Campfire: { icon: Flame, className: "bg-emerald-800/85 text-white", art: campfire },
-  "Boss Combat": { icon: Skull, className: "bg-red-950/90 text-red-300", art: eliteEnemyBg },
+  "Boss Combat": { icon: Skull, className: "bg-red-950/90 text-red-300", art: placeholderDestination },
 };
 
 // Maps each keyword to its Lucide icon. Used across the UI for status chips,
