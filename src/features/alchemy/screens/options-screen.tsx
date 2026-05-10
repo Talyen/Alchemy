@@ -140,7 +140,7 @@ export function OptionsScreen({
         </div>
       </div>
 
-      {showClearSaveConfirm ? <ConfirmationDialog title="Clear Save Data?" description="This will reset your saved options, active run, and all discovered collection progress. This cannot be undone." confirmLabel="Clear Save Data" onConfirm={onConfirmClearSave} onCancel={onCloseClearSaveConfirm} /> : null}
+      {showClearSaveConfirm ? <ConfirmationDialog title="Clear Save Data?" description="This will reset your saved options, active run, and all discovered collection progress. This cannot be undone." confirmLabel="Clear Save Data" dimBackground={false} onConfirm={onConfirmClearSave} onCancel={onCloseClearSaveConfirm} /> : null}
     </PageLayout>
   );
 }

@@ -15,6 +15,7 @@ import {
   type HomesteadEffectManifest,
   type HomesteadFarm,
   type HomesteadResearch,
+  type MaterialId,
   type MaterialInventory,
   type ResearchId,
   canAfford,
@@ -28,9 +29,12 @@ import herbGarden from "@/assets/optimized/herb-garden.webp";
 import pasture from "@/assets/optimized/pasture.webp";
 import placeholderHomestead from "@/assets/optimized/placeholder-homestead.webp";
 
-import { AnimatedHeight } from "../ui/animated-height";
+import { DetailPopup } from "../ui/card-ui";
 import { DisabledTooltip, PageLayout, ScreenHeader } from "../ui/shared-ui";
-import { MaterialIcon, matColorHex, matTextColor } from "../ui/material-icons";
+import { MaterialIcon, matIconMap, matPillStyle, matTextColor } from "../ui/material-icons";
+import { playUISound } from "@/lib/audio";
+
+import { clearTiltFromEvent, setTiltFromEvent } from "../utils";
 
 
 type Tab = "buildings" | "farm" | "research";
@@ -113,6 +117,7 @@ export function HomesteadScreen({
   onClearFarmYield: () => void;
 }) {
   const [tab, setTab] = useState<Tab>("buildings");
+  const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
   const [showYieldNotification, setShowYieldNotification] = useState(false);
 
   useEffect(() => {
@@ -136,12 +141,14 @@ export function HomesteadScreen({
   const total = totalCount(tab);
 
   const costReduction = tab === "buildings" ? effects.buildingCostReduction : 0;
-  const yieldMul = tab === "farm" ? 1 + effects.farmYieldMultiplier : 1;
 
   function handleAction(item: GoalItem) {
-    if (item.kind === "building") onConstructBuilding(item.data.id as BuildingId);
-    else if (item.kind === "farm") onPlantFarm(item.data.id as FarmId);
-    else onCompleteResearch(item.data.id as ResearchId);
+    const success = item.kind === "building"
+      ? onConstructBuilding(item.data.id as BuildingId)
+      : item.kind === "farm"
+        ? onPlantFarm(item.data.id as FarmId)
+        : onCompleteResearch(item.data.id as ResearchId);
+    if (success) playUISound("talentUnlock");
   }
 
   return (
@@ -163,96 +170,93 @@ export function HomesteadScreen({
           </div>
         )}
 
-        {/* Tabs */}
-        <div className="mx-auto mt-5 flex flex-wrap justify-center gap-3">
-          {tabs.map((t) => {
-            const tCount = t.id === "buildings" ? constructedBuildings.length : t.id === "farm" ? plantedFarms.length : completedResearch.length;
-            const tTotal = totalCount(t.id);
-            return (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => setTab(t.id)}
-                className={cn(
-                  "inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                  tab === t.id
-                    ? "border-primary/70 bg-primary/15 text-primary"
-                    : "border-border/80 bg-card text-foreground hover:bg-secondary/50",
-                )}
-              >
-                {t.id === "buildings" ? <Hammer className="h-4 w-4" /> : t.id === "farm" ? <Wheat className="h-4 w-4" /> : <FlaskConical className="h-4 w-4" />}
-                {t.label}
-                <span className="ml-0.5 text-[11px] opacity-60">{tCount}/{tTotal}</span>
-              </button>
-            );
-          })}
-        </div>
-
         {/* Materials bar */}
         <div className="mx-auto mt-5 flex w-full max-w-2xl flex-nowrap items-center justify-center gap-x-3">
           {MATERIAL_IDS.map((mat) => (
-            <span key={mat} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <MaterialIcon material={mat} />
-              <span className={cn("font-medium", matTextColor[mat])}>{materialInventory[mat] ?? 0}</span>
-              <span className={matTextColor[mat]}>{materialLabels[mat]}</span>
+            <span key={mat} className={cn("inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold", matPillStyle[mat], matTextColor[mat])}>
+              {matIconMap[mat]}
+              {materialInventory[mat] ?? 0} {materialLabels[mat]}
             </span>
           ))}
         </div>
 
+        {/* Tabs */}
+        <div className="mx-auto mt-5 flex flex-wrap justify-center gap-3">
+          {tabs.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setTab(t.id)}
+              className={cn(
+                "inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                tab === t.id
+                  ? "border-primary/70 bg-primary/15 text-primary"
+                  : "border-border/80 bg-card text-foreground hover:bg-secondary/50",
+              )}
+            >
+              {t.id === "buildings" ? <Hammer className="h-4 w-4" /> : t.id === "farm" ? <Wheat className="h-4 w-4" /> : <FlaskConical className="h-4 w-4" />}
+              {t.label}
+            </button>
+          ))}
+        </div>
+
         {/* Grid of all items */}
-        <AnimatedHeight deps={[tab, completed.join(","), ...MATERIAL_IDS.map((m) => materialInventory[m])]}>
-          <div className="mx-auto mt-6 grid w-full grid-cols-3 gap-4">
-            {allItems.map((item) => {
+        <div className="mx-auto mt-6 grid w-full grid-cols-3 gap-x-2 gap-y-6">
+          {allItems.map((item, index) => {
               const isCompleted = (completed as string[]).includes(item.data.id);
               const itemCost = getEffectiveCost(item.data.cost, costReduction);
               const itemAffordable = canAfford(materialInventory, itemCost);
               const costItems = MATERIAL_IDS.filter((m) => (itemCost[m] ?? 0) > 0);
 
               return (
-                <div
-                  key={item.data.id}
-                  className={cn(
-                    "relative flex flex-col items-center gap-0",
-                    isCompleted && "opacity-55",
-                  )}
-                >
-                  {/* Title + Art frame */}
-                  <div className="flex w-full flex-col items-center gap-0">
-                    <p className="mb-2 w-full truncate text-center text-sm font-semibold text-foreground">
-                      {item.data.title}
-                    </p>
+                <div key={item.data.id} className={cn("flex flex-col items-center", index < 3 && "mb-2")}>
+                  {/* Title */}
+                  <p className="mb-1.5 w-full truncate text-center text-sm font-semibold text-amber-100/75">
+                    {item.data.title}
+                  </p>
 
-                    <div className={cn(
-                      "flex aspect-[4/3] w-4/5 items-center justify-center overflow-hidden rounded-[18px] border",
-                      isCompleted
-                        ? "border-stone-600/70 bg-stone-800/70"
-                        : "border-amber-700/60 bg-stone-900",
-                    )}>
-                      <img src={getArt(item.data.id)} alt={item.data.title} className={cn("h-full w-full object-cover", isCompleted ? "grayscale" : "")} />
+                  {/* Tilt surface — art only */}
+                  <div
+                    className="relative"
+                    onMouseEnter={() => setHoveredItemId(item.data.id)}
+                    onMouseLeave={() => setHoveredItemId(null)}
+                  >
+                    {hoveredItemId === item.data.id && (
+                      <DetailPopup
+                        idPrefix={item.data.id}
+                        title={item.data.title}
+                        descriptionLines={[
+                          item.data.description,
+                          ...(item.kind === "farm"
+                            ? [MATERIAL_IDS.filter((m) => ((item.data as HomesteadFarm).yield[m] ?? 0) > 0)
+                                .map((m) => `+${(item.data as HomesteadFarm).yield[m]} ${materialLabels[m]}`)
+                                .join(", ")]
+                            : [(item.data as HomesteadBuilding | HomesteadResearch).benefitDescription]),
+                        ]}
+                      />
+                    )}
+                    <div
+                      className={cn(
+                        "group tilt-surface w-full overflow-hidden rounded-[18px] p-3",
+                      )}
+                      data-tilt-strength="8"
+                      onMouseMove={setTiltFromEvent}
+                      onMouseLeave={clearTiltFromEvent}
+                    >
+                      <div className={cn(
+                        "relative mx-auto flex aspect-[4/3] w-[90%] items-center justify-center overflow-hidden rounded-[18px] bg-stone-900",
+                        isCompleted && "bg-stone-800/70",
+                      )}>
+                        <img src={getArt(item.data.id)} alt={item.data.title} className="h-full w-full object-cover" />
+                      </div>
                     </div>
                   </div>
 
-                  {/* Persistent material costs */}
-                  {!isCompleted && costItems.length > 0 && (
-                    <div className="mt-2 flex flex-wrap justify-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
-                      {costItems.map((mat) => {
-                        const need = itemCost[mat];
-                        return (
-                          <span key={mat} className="flex items-center gap-1">
-                            <MaterialIcon material={mat} />
-                            <span className={cn("font-medium", matTextColor[mat])}>{need}</span>
-                            <span className={matTextColor[mat]}>{materialLabels[mat]}</span>
-                          </span>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  {/* Action button */}
+                  {/* Action button — separate tooltip wrapper */}
                   {!isCompleted && (() => {
                     const hasCost = MATERIAL_IDS.some((m) => (itemCost[m] ?? 0) > 0);
                     return hasCost ? (
-                      <div className="mt-3">
+                      <div className="mt-1.5">
                         <DisabledTooltip show={!itemAffordable} message="Not Enough Resources">
                           <Button
                             size="sm"
@@ -275,7 +279,6 @@ export function HomesteadScreen({
               );
             })}
           </div>
-        </AnimatedHeight>
 
         {/* All-completed message */}
         {doneCount === total && total > 0 && (

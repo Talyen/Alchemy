@@ -1,11 +1,12 @@
 import type { CSSProperties } from "react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Coins, Gem } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { keywordDefinitions, pileDiscardArt, pileDrawArt, type KeywordId } from "@/lib/game-data";
 import type { CompanionDefinition } from "@/lib/game-data";
+import { animateParticles, createParticles, createStatusParticles } from "@/lib/battle/particle-burst";
 import { cn } from "@/lib/utils";
 
 import {
@@ -95,6 +96,92 @@ function StatusIcon({ chip }: { chip: StatusChip }) {
   );
 }
 
+function StatusParticleBurst() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useLayoutEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const parent = canvas.parentElement;
+    if (!parent) return;
+    const rect = parent.getBoundingClientRect();
+    const w = Math.round(rect.width);
+    const h = Math.round(rect.height);
+    if (w === 0 || h === 0) return;
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const particles = createStatusParticles(w, h);
+    const stop = animateParticles(ctx, particles, w, h, 1000, () => {});
+    return () => { stop(); };
+  }, []);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="absolute inset-0 z-10 w-full h-full rounded-[24px]"
+      style={{ pointerEvents: "none" }}
+    />
+  );
+}
+
+function ParticleBurst({ imageUrl }: { imageUrl: string }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useLayoutEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const parent = canvas.parentElement;
+    if (!parent) return;
+
+    const rect = parent.getBoundingClientRect();
+    const w = Math.round(rect.width);
+    const h = Math.round(rect.height);
+    if (w === 0 || h === 0) return;
+
+    canvas.width = w;
+    canvas.height = h;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+
+    let cancelled = false;
+    let stop: (() => void) | null = null;
+
+    img.onload = () => {
+      if (cancelled) return;
+      ctx.drawImage(img, 0, 0, w, h);
+      const particles = createParticles(ctx, w, h);
+      ctx.clearRect(0, 0, w, h);
+      stop = animateParticles(ctx, particles, w, h, 1000, () => {});
+    };
+
+    img.onerror = () => {
+      // If the image fails to load, do nothing — the CSS fade handles the death animation
+    };
+
+    img.src = imageUrl;
+
+    return () => {
+      cancelled = true;
+      if (stop) stop();
+    };
+  }, [imageUrl]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="absolute inset-0 z-10 w-full h-full rounded-[30px]"
+      style={{ pointerEvents: "none" }}
+    />
+  );
+}
+
 export function ArtPanel({
   side,
   title,
@@ -133,7 +220,7 @@ export function ArtPanel({
   const healthToken = useChangeToken(health);
 
   return (
-    <div className={cn("group/enemy-panel relative flex flex-col items-center gap-3", isDead && "animate-death", shaking && "animate-shake")}>
+    <div className={cn("group/enemy-panel relative flex flex-col items-center gap-3", shaking && "animate-shake")}>
       {descriptionLines ? (
         <div className={cn(popupClassName, "hover-popup-panel pointer-events-auto opacity-0 group-hover/enemy-panel:opacity-100")}>
           <p className="text-sm text-foreground">{title}</p>
@@ -143,7 +230,7 @@ export function ArtPanel({
       <div
         ref={surfaceRef}
         data-testid={`battle-${side}-art-panel`}
-        className={cn("tilt-surface", cardSurfaceClass, cardWidthClass ?? battleCardWidthClass)}
+        className={cn("tilt-surface", cardSurfaceClass, cardWidthClass ?? battleCardWidthClass, isDead && "overflow-visible animate-frame-fade surface-transparent")}
         data-tilt-strength="15"
         onMouseEnter={() => onHoverShimmer(shimmerId)}
         onMouseMove={setTiltFromEvent}
@@ -151,21 +238,25 @@ export function ArtPanel({
         style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
       >
         <ShimmerOverlay active={shimmerActive} token={shimmerToken} />
-        <img src={art} alt={title} className="block w-full rounded-[30px] aspect-[3/4]" loading="eager" />
+        <img src={art} alt={title} className={cn("block w-full rounded-[30px] aspect-[3/4]", isDead && "opacity-0")} loading="eager" />
+        {isDead && <ParticleBurst imageUrl={art} />}
       </div>
 
-      <div className={cn("surface-muted rounded-[24px] px-4 py-3", cardWidthClass ?? battleCardWidthClass)}>
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-sm text-foreground">{title}</p>
-          <p key={healthToken} className={cn("hp-number-pop text-xs font-medium text-muted-foreground", isDead && "opacity-30")}>
-            {health}/{maxHealth}
-          </p>
-        </div>
-        <Progress value={(health / maxHealth) * 100} className={cn("mt-2.5 h-2 bg-background/80 [&>div]:bg-destructive", isDead && "[&>div]:bg-destructive/30")} />
+      <div className={cn("surface-muted rounded-[24px] px-4 py-3 relative", cardWidthClass ?? battleCardWidthClass, isDead && "animate-frame-fade surface-transparent")}>
+        <div className={isDead ? "opacity-0" : ""}>
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm text-foreground">{title}</p>
+            <p key={healthToken} className={cn("hp-number-pop text-xs font-medium text-muted-foreground")}>
+              {health}/{maxHealth}
+            </p>
+          </div>
+          <Progress value={(health / maxHealth) * 100} className={cn("mt-2.5 h-2 bg-background/80 [&>div]:bg-destructive", isDead && "[&>div]:bg-destructive/30")} />
 
-        <div className="mt-2.5 flex min-h-7 items-center gap-1">
-          {statuses.length > 0 ? statuses.map((status) => <StatusIcon key={`${title}-${status.id}-${status.value}`} chip={status} />) : null}
+          <div className="mt-2.5 flex min-h-7 items-center gap-1">
+            {statuses.length > 0 ? statuses.map((status) => <StatusIcon key={`${title}-${status.id}-${status.value}`} chip={status} />) : null}
+          </div>
         </div>
+        {isDead && <StatusParticleBurst />}
       </div>
     </div>
   );

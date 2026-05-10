@@ -63,6 +63,15 @@ test.describe("Mystery Events", () => {
       await page.waitForTimeout(300);
     }
 
+    if (await page.getByText("Choose a Card").isVisible({ timeout: 1000 }).catch(() => false)) {
+      const cardChoice = page.locator("button[aria-label^='Select']").first();
+      await cardChoice.waitFor({ timeout: 2000 });
+      await cardChoice.click();
+      await page.waitForTimeout(200);
+      await page.getByRole("button", { name: "Add Card" }).click();
+      await page.waitForTimeout(300);
+    }
+
     await expect(page.getByRole("heading", { name: "Reward" })).toBeVisible({ timeout: 5000 });
 
     await page.getByRole("button", { name: "Continue" }).click();

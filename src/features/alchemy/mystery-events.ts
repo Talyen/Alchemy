@@ -5,6 +5,7 @@ import type { MaterialId } from "@/lib/homestead/types";
 export type MysteryEffect =
   | { kind: "addCard"; cardId: string }
   | { kind: "addRandomCard" }
+  | { kind: "chooseCard" }
   | { kind: "healHP"; amount: number; chance?: number }
   | { kind: "damageHP"; amount: number }
   | { kind: "gainGold"; amount: number }
@@ -13,6 +14,7 @@ export type MysteryEffect =
   | { kind: "gainXP"; keyword: KeywordId; amount: number }
   | { kind: "removeCard"; mode: "random" | "choose" }
   | { kind: "gainTrinket"; trinketId: string }
+  | { kind: "gainRandomTrinket" }
   | { kind: "gainMaterial"; material: MaterialId; amount: number }
   | { kind: "none" };
 
@@ -35,7 +37,7 @@ export const mysteryPool: MysteryEvent[] = [
     id: "mana-berries",
     title: "Mana Berries",
     art: manaBerries,
-    narrative: "You stumble upon a lush field of glowing Mana Berries. Their faint blue radiance pulses gently, promising restored mana. Harvesting them would yield useful supplies, but perhaps it is wiser to leave them undisturbed.",
+    narrative: "You stumble upon a lush field of glowing Mana Berries. Their faint blue radiance pulses gently, promising restored mana.",
     choices: [
       {
         label: "Harvest",
@@ -46,9 +48,17 @@ export const mysteryPool: MysteryEvent[] = [
         ],
       },
       {
-        label: "Leave",
-        description: "Continue on your journey without taking anything",
-        effects: [{ kind: "none" }],
+        label: "Study the Glow",
+        description: "Gain 8 Mana XP",
+        effects: [{ kind: "gainXP", keyword: "mana", amount: 8 }],
+      },
+      {
+        label: "Feast",
+        description: "Restore 6 HP",
+        effects: [
+          { kind: "healHP", amount: 6 },
+          { kind: "gainMaterial", material: "food", amount: 2 },
+        ],
       },
     ],
   },
@@ -59,25 +69,26 @@ export const mysteryPool: MysteryEvent[] = [
     narrative: "A pool of iridescent water steams gently in the cool air. Its surface shimmers with an inviting warmth, promising restoration.",
     choices: [
       {
-        label: "Sip Slowly",
-        description: "Restore 8 HP",
+        label: "Bathe in the Spring",
+        description: "Restore 12 HP",
         effects: [
-          { kind: "healHP", amount: 8 },
+          { kind: "healHP", amount: 12 },
           { kind: "gainMaterial", material: "herbs", amount: 2 },
-        ],
-      },
-      {
-        label: "Drink Deeply",
-        description: "Restore 18 HP",
-        effects: [
-          { kind: "healHP", amount: 18 },
-          { kind: "gainMaterial", material: "herbs", amount: 3 },
         ],
       },
       {
         label: "Bottle the Essence",
         description: "Add Health Potion to your deck",
         effects: [{ kind: "addCard", cardId: "health-potion" }],
+      },
+      {
+        label: "Search the Springbed",
+        description: "Take 2 damage, gain 4 Crystal",
+        effects: [
+          { kind: "damageHP", amount: 2 },
+          { kind: "gainMaterial", material: "crystal", amount: 4 },
+          { kind: "gainMaterial", material: "food", amount: 2 },
+        ],
       },
     ],
   },
@@ -92,7 +103,7 @@ export const mysteryPool: MysteryEvent[] = [
         description: "Add Mana Berries to your deck",
         effects: [
           { kind: "addCard", cardId: "mana-berries" },
-          { kind: "gainMaterial", material: "food", amount: 3 },
+          { kind: "gainMaterial", material: "food", amount: 2 },
         ],
       },
       {
@@ -122,10 +133,7 @@ export const mysteryPool: MysteryEvent[] = [
       {
         label: "Ask for Knowledge",
         description: "Gain +1 Mana Crystal",
-        effects: [
-          { kind: "gainMaxMana", amount: 1 },
-          { kind: "gainMaterial", material: "wood", amount: 3 },
-        ],
+        effects: [{ kind: "gainMaxMana", amount: 1 }],
       },
       {
         label: "Rest in its Shade",
@@ -167,6 +175,11 @@ export const mysteryPool: MysteryEvent[] = [
           { kind: "healHP", amount: 8, chance: 0.5 },
         ],
       },
+      {
+        label: "Make a Wish",
+        description: "Add Wish to your deck",
+        effects: [{ kind: "addCard", cardId: "wish" }],
+      },
     ],
   },
   {
@@ -187,6 +200,11 @@ export const mysteryPool: MysteryEvent[] = [
           { kind: "loseGold", amount: 20 },
           { kind: "removeCard", mode: "choose" },
         ],
+      },
+      {
+        label: "Decipher the Symbols",
+        description: "Gain 10 Holy XP",
+        effects: [{ kind: "gainXP", keyword: "holy", amount: 10 }],
       },
     ],
   },
@@ -210,7 +228,15 @@ export const mysteryPool: MysteryEvent[] = [
         effects: [
           { kind: "gainXP", keyword: "gold", amount: 10 },
           { kind: "gainTrinket", trinketId: "smugglers-map" },
-          { kind: "gainMaterial", material: "food", amount: 3 },
+        ],
+      },
+      {
+        label: "Follow the Trail",
+        description: "Take 3 damage, gain 30 Gold",
+        effects: [
+          { kind: "damageHP", amount: 3 },
+          { kind: "gainGold", amount: 30 },
+          { kind: "gainMaterial", material: "iron", amount: 2 },
         ],
       },
     ],
@@ -223,11 +249,10 @@ export const mysteryPool: MysteryEvent[] = [
     choices: [
       {
         label: "Explore the Crypt",
-        description: "Take 6 damage, gain 30 Gold, and add Mana Crystals to your deck",
+        description: "Take 6 damage and gain a random trinket",
         effects: [
           { kind: "damageHP", amount: 6 },
-          { kind: "gainGold", amount: 30 },
-          { kind: "addCard", cardId: "mana-crystals" },
+          { kind: "gainRandomTrinket" },
         ],
       },
       {
@@ -236,6 +261,14 @@ export const mysteryPool: MysteryEvent[] = [
         effects: [
           { kind: "gainXP", keyword: "holy", amount: 15 },
           { kind: "gainMaterial", material: "herbs", amount: 3 },
+        ],
+      },
+      {
+        label: "Gather Offerings",
+        description: "Gain 3 Food and 2 Wood",
+        effects: [
+          { kind: "gainMaterial", material: "food", amount: 3 },
+          { kind: "gainMaterial", material: "wood", amount: 2 },
         ],
       },
     ],
@@ -248,15 +281,23 @@ export const mysteryPool: MysteryEvent[] = [
     choices: [
       {
         label: "Search the Scrolls",
-        description: "Add a random card to your deck",
-        effects: [{ kind: "addRandomCard" }],
+        description: "Choose 1 of 3 random cards to add to your deck",
+        effects: [{ kind: "chooseCard" }],
       },
       {
         label: "Organize the Library",
         description: "Gain 12 Mana XP",
         effects: [
           { kind: "gainXP", keyword: "mana", amount: 12 },
+          { kind: "gainMaterial", material: "wood", amount: 2 },
+        ],
+      },
+      {
+        label: "Salvage the Furnishings",
+        description: "Gain 3 Wood and 2 Iron",
+        effects: [
           { kind: "gainMaterial", material: "wood", amount: 3 },
+          { kind: "gainMaterial", material: "iron", amount: 2 },
         ],
       },
     ],
@@ -280,6 +321,14 @@ export const mysteryPool: MysteryEvent[] = [
           { kind: "gainTrinket", trinketId: "tattered-pages" },
         ],
       },
+      {
+        label: "Copy the Diagrams",
+        description: "Gain 10 Mana XP",
+        effects: [
+          { kind: "gainXP", keyword: "mana", amount: 10 },
+          { kind: "gainMaterial", material: "crystal", amount: 2 },
+        ],
+      },
     ],
   },
   {
@@ -301,6 +350,14 @@ export const mysteryPool: MysteryEvent[] = [
         label: "Meditate Under the Crystal",
         description: "Gain +1 Mana Crystal",
         effects: [{ kind: "gainMaxMana", amount: 1 }],
+      },
+      {
+        label: "Collect Crystal Dust",
+        description: "Gain 5 Crystal",
+        effects: [
+          { kind: "gainMaterial", material: "crystal", amount: 5 },
+          { kind: "gainMaterial", material: "food", amount: 1 },
+        ],
       },
     ],
   },
@@ -389,6 +446,69 @@ export const mysteryPool: MysteryEvent[] = [
           { kind: "damageHP", amount: 3 },
           { kind: "gainXP", keyword: "health", amount: 15 },
           { kind: "gainTrinket", trinketId: "groves-favor" },
+        ],
+      },
+    ],
+  },
+  {
+    id: "mountain-pass",
+    title: "Mountain Pass",
+    art: "",
+    narrative: "A narrow pass winds through jagged peaks. The wind howls and loose rocks scatter the path, but valuable minerals glint in the sunlight.",
+    choices: [
+      {
+        label: "Scout the Path Ahead",
+        description: "Restore 5 HP",
+        effects: [
+          { kind: "healHP", amount: 5 },
+          { kind: "gainMaterial", material: "food", amount: 3 },
+        ],
+      },
+      {
+        label: "Mine the Cliffside",
+        description: "Take 3 damage, gain 5 Iron and 2 Crystal",
+        effects: [
+          { kind: "damageHP", amount: 3 },
+          { kind: "gainMaterial", material: "iron", amount: 5 },
+          { kind: "gainMaterial", material: "crystal", amount: 2 },
+        ],
+      },
+      {
+        label: "Study the Alpine Flora",
+        description: "Gain 8 Nature XP",
+        effects: [
+          { kind: "gainXP", keyword: "nature", amount: 8 },
+          { kind: "gainMaterial", material: "herbs", amount: 2 },
+        ],
+      },
+    ],
+  },
+  {
+    id: "murky-pond",
+    title: "Murky Pond",
+    art: "",
+    narrative: "A still pond reflects the gnarled trees surrounding it. Bubbles rise from its murky depths, hinting at secrets beneath the surface.",
+    choices: [
+      {
+        label: "Fish for Dinner",
+        description: "Gain 3 Food",
+        effects: [{ kind: "gainMaterial", material: "food", amount: 3 }],
+      },
+      {
+        label: "Dredge the Bottom",
+        description: "Take 2 damage, gain 20 Gold and 2 Crystal",
+        effects: [
+          { kind: "damageHP", amount: 2 },
+          { kind: "gainGold", amount: 20 },
+          { kind: "gainMaterial", material: "crystal", amount: 2 },
+        ],
+      },
+      {
+        label: "Gather Medicinal Reeds",
+        description: "Gain 4 Herbs and 2 Wood",
+        effects: [
+          { kind: "gainMaterial", material: "herbs", amount: 4 },
+          { kind: "gainMaterial", material: "wood", amount: 2 },
         ],
       },
     ],

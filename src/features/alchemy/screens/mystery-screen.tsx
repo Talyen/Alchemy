@@ -5,7 +5,9 @@ import { useState } from "react";
 import type { CSSProperties } from "react";
 import { Coins } from "lucide-react";
 
+import { BlurFade } from "@/components/ui/blur-fade";
 import { Button } from "@/components/ui/button";
+import { TextAnimate } from "@/components/ui/text-animate";
 import { playUISound, playVictory } from "@/lib/audio";
 import { COLLECTION_PAGE_SIZE } from "@/lib/game-constants";
 import { keywordDefinitions, type BattleCard, type TrinketEntry } from "@/lib/game-data";
@@ -14,8 +16,7 @@ import { cn } from "@/lib/utils";
 import { PaginationControls, ScreenHeader } from "../ui/shared-ui";
 import { cardSurfaceClass, collectionCardWidthClass, handCardWidthClass, staticCardTransform } from "../config";
 import { materialLabels } from "@/lib/homestead/types";
-import type { MaterialId } from "@/lib/homestead/types";
-import { matIconMap, matTextColor } from "../ui/material-icons";
+import { matIconMap, matPillStyle, matTextColor } from "../ui/material-icons";
 import type { MysteryEvent, MysteryChoice, MysteryEffect } from "../mystery-events";
 import { clearTiltFromEvent, setTiltFromEvent, tokenizeDescription } from "../utils";
 import { AnimatedHeight } from "../ui/animated-height";
@@ -48,6 +49,7 @@ function EffectResultText({ effect }: { effect: MysteryEffect }) {
       return effect.mode === "random"
         ? <span>A card was removed from your deck</span>
         : <span>Select a card to remove</span>;
+    case "gainRandomTrinket": return <span>Gained a random trinket</span>;
     case "none": return null;
     default: return null;
   }
@@ -59,18 +61,20 @@ function RewardScreen({
   findCard,
   findTrinket,
   onContinue,
+  eventTitle,
 }: {
   choice: MysteryChoice;
   runDeck: BattleCard[];
   findCard: (id: string) => BattleCard | undefined;
   findTrinket: (id: string) => TrinketEntry | undefined;
   onContinue: () => void;
+  eventTitle: string;
 }) {
   const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
 
   return (
     <div className="state-swap space-y-6 text-center">
-      <ScreenHeader title="Reward" />
+      <ScreenHeader title={eventTitle} />
 
       {choice.effects.map((effect, i) => {
         switch (effect.kind) {
@@ -144,21 +148,53 @@ function RewardScreen({
               </div>
             );
           }
+          case "gainRandomTrinket":
+            return (
+              <p key={i} className="text-base font-semibold text-foreground">
+                Gained a random trinket
+              </p>
+            );
           case "gainGold":
             return (
-              <p key={i} className="inline-flex items-center gap-2 text-lg font-medium text-yellow-300">
-                <Coins className="h-5 w-5" />
-                Found {effect.amount} Gold
-              </p>
+              <div key={i} className="flex items-center justify-center gap-2 text-sm font-medium text-muted-foreground">
+                Found
+                <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold bg-yellow-300/15 text-yellow-300">
+                  <Coins className="h-4 w-4" />
+                  {effect.amount} Gold
+                </span>
+              </div>
             );
           case "gainMaterial":
             return (
-              <p key={i} className={cn("inline-flex items-center gap-2 text-lg font-medium", matTextColor[effect.material])}>
-                <span>{matIconMap[effect.material]}</span>
-                Gained {effect.amount} {materialLabels[effect.material]}
-              </p>
+              <div key={i} className="flex items-center justify-center gap-2 text-sm font-medium text-muted-foreground">
+                Found
+                <span className={cn("inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold", matPillStyle[effect.material], matTextColor[effect.material])}>
+                  <span>{matIconMap[effect.material]}</span>
+                  {effect.amount} {materialLabels[effect.material]}
+                </span>
+              </div>
             );
-          case "none":
+          case "chooseCard": {
+          const card = runDeck[runDeck.length - 1];
+          if (!card) return null;
+          const isHovered = hoveredItemId === card.id;
+          return (
+            <div key={i} className="flex flex-col items-center gap-3">
+              <BattleCardButton
+                card={card}
+                hovered={isHovered}
+                onHoverStart={() => setHoveredItemId(card.id)}
+                onHoverEnd={() => setHoveredItemId(null)}
+                ariaLabel={card.title}
+                shimmerActive={false}
+                className={handCardWidthClass}
+              />
+              <p className="text-sm font-semibold text-foreground">{card.title}</p>
+              <p className="text-sm text-muted-foreground">Added {card.title} to your Deck</p>
+            </div>
+          );
+        }
+        case "none":
             return null;
           default:
             return (
@@ -241,22 +277,71 @@ function RemoveCardPicker({
   );
 }
 
+function CardChoicePicker({
+  choices,
+  onSelect,
+}: {
+  choices: BattleCard[];
+  onSelect: (cardId: string) => void;
+}) {
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  return (
+    <div className="state-swap space-y-6 text-center">
+      <ScreenHeader title="Choose a Card" />
+      <p className="text-base text-muted-foreground">Select one of the scrolls to add to your deck</p>
+      <div className="flex flex-wrap items-start justify-center gap-6">
+        {choices.map((card, i) => {
+          const isSelected = selectedId === card.id;
+          return (
+            <BattleCardButton
+              key={card.id}
+              card={card}
+              hovered={isSelected}
+              onHoverStart={() => setSelectedId(card.id)}
+              onHoverEnd={() => {}}
+              onClick={() => setSelectedId(card.id)}
+              ariaLabel={`Select ${card.title}`}
+              shimmerActive={false}
+              className={collectionCardWidthClass}
+              wrapperClassName="stagger-item relative flex justify-center"
+              wrapperStyle={{ "--stagger-index": i } as CSSProperties}
+              selected={isSelected}
+            />
+          );
+        })}
+      </div>
+      <Button
+        size="lg"
+        disabled={selectedId === null}
+        onClick={() => { if (selectedId !== null) onSelect(selectedId); }}
+      >
+        Add Card
+      </Button>
+    </div>
+  );
+}
+
 export function MysteryScreen({
   event,
   onChoose,
+  onChooseCard,
   onRemoveCard,
   onContinue,
   runDeck,
   findCard,
   findTrinket,
+  mysteryCardChoices,
 }: {
   event: MysteryEvent;
   onChoose: (choice: MysteryChoice) => void;
+  onChooseCard: (cardId: string) => void;
   onRemoveCard: (index: number) => void;
   onContinue: () => void;
   runDeck: BattleCard[];
   findCard: (id: string) => BattleCard | undefined;
   findTrinket: (id: string) => TrinketEntry | undefined;
+  mysteryCardChoices: BattleCard[] | null;
 }) {
   const [chosen, setChosen] = useState<MysteryChoice | null>(null);
   const [pendingRemoval, setPendingRemoval] = useState<MysteryChoice | null>(null);
@@ -264,7 +349,7 @@ export function MysteryScreen({
 
   function hasPositiveEffect(effects: MysteryEffect[]) {
     return effects.some((e) =>
-      ["addCard", "addRandomCard", "gainTrinket", "healHP", "gainGold", "gainMaxMana", "gainXP", "gainMaterial"].includes(e.kind)
+      ["addCard", "addRandomCard", "chooseCard", "gainTrinket", "gainRandomTrinket", "healHP", "gainGold", "gainMaxMana", "gainXP", "gainMaterial"].includes(e.kind)
     );
   }
   function hasNegativeEffect(effects: MysteryEffect[]) {
@@ -274,15 +359,17 @@ export function MysteryScreen({
   }
 
   function handlePick(choice: MysteryChoice) {
-    onChoose(choice);
+    const hasChooseCard = choice.effects.some((e) => e.kind === "chooseCard");
 
-    const isNone = choice.effects.every((e) => e.kind === "none");
-    const needsRemoval = choice.effects.some((e) => e.kind === "removeCard" && e.mode === "choose");
-
-    if (isNone) {
-      onContinue();
+    if (hasChooseCard) {
+      setChosen(choice);
+      onChoose(choice);
       return;
     }
+
+    onChoose(choice);
+
+    const needsRemoval = choice.effects.some((e) => e.kind === "removeCard" && e.mode === "choose");
 
     if (needsRemoval) {
       setPendingRemoval(choice);
@@ -304,20 +391,27 @@ export function MysteryScreen({
     }
   }
 
+  function handleCardChoiceConfirm(cardId: string) {
+    onChooseCard(cardId);
+    playVictory();
+  }
+
   const featuredCard = findCard(event.id);
   const isHovered = hoveredCardId === event.id;
 
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-6 overflow-hidden px-4 py-6 text-center">
-      <AnimatedHeight deps={[pendingRemoval, chosen]}>
-        {pendingRemoval ? (
+      <AnimatedHeight deps={[pendingRemoval, chosen, mysteryCardChoices]}>
+        {mysteryCardChoices ? (
+          <CardChoicePicker choices={mysteryCardChoices} onSelect={handleCardChoiceConfirm} />
+        ) : pendingRemoval ? (
           <RemoveCardPicker
             runDeck={runDeck}
             onSelect={handleRemoveConfirm}
             onCancel={() => setPendingRemoval(null)}
           />
         ) : chosen ? (
-          <RewardScreen choice={chosen} runDeck={runDeck} findCard={findCard} findTrinket={findTrinket} onContinue={onContinue} />
+          <RewardScreen choice={chosen} runDeck={runDeck} findCard={findCard} findTrinket={findTrinket} onContinue={onContinue} eventTitle={event.title} />
         ) : (
           <div className="state-swap flex flex-col items-center gap-6">
             {featuredCard ? (
@@ -347,25 +441,32 @@ export function MysteryScreen({
               </div>
             ) : null}
             <ScreenHeader title={event.title} />
-            <p className="max-w-lg text-base leading-relaxed text-muted-foreground">
+            <TextAnimate
+              animation="blurInUp"
+              by="character"
+              once
+              className="max-w-lg text-base leading-relaxed text-muted-foreground"
+            >
               {event.narrative}
-            </p>
+            </TextAnimate>
 
             <div className="flex flex-wrap justify-center gap-4">
               {event.choices.map((choice, i) => (
-                <div key={i} className="group relative">
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    className="min-w-32"
-                    onClick={() => handlePick(choice)}
-                  >
-                    {choice.label}
-                  </Button>
-                  <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-3 w-64 -translate-x-1/2 translate-y-1 rounded-[16px] border border-border/80 bg-card px-3 py-2 text-left text-sm leading-6 text-muted-foreground opacity-0 transition-all duration-150 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100">
-                    <ChoiceDescription text={choice.description} />
+                <BlurFade key={i} delay={0.6 + i * 0.15} direction="up" offset={8}>
+                  <div className="group relative">
+                    <Button
+                      size="lg"
+                      variant="outline"
+                      className="min-w-32"
+                      onClick={() => handlePick(choice)}
+                    >
+                      {choice.label}
+                    </Button>
+                    <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-3 w-64 -translate-x-1/2 translate-y-1 rounded-[16px] border border-border/80 bg-card px-3 py-2 text-left text-sm leading-6 text-muted-foreground opacity-0 transition-all duration-150 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100">
+                      <ChoiceDescription text={choice.description} />
+                    </div>
                   </div>
-                </div>
+                </BlurFade>
               ))}
             </div>
           </div>

@@ -108,9 +108,9 @@ export function UiScaleSelect({ uiScale, uiScaleOptions, onChange }: { uiScale: 
 // Modal confirmation dialog for destructive actions (clear save data, reset talents).
 // Rendered as an absolutely-positioned overlay so the parent's layout is unaffected.
 // Uses z-[120] to sit above the main content (z-[100] for defeat overlay).
-export function ConfirmationDialog({ title, description, confirmLabel, cancelLabel = "Cancel", tone = "danger", onConfirm, onCancel }: { title: string; description: string; confirmLabel: string; cancelLabel?: string; tone?: "danger" | "default"; onConfirm: () => void; onCancel: () => void }) {
+export function ConfirmationDialog({ title, description, confirmLabel, cancelLabel = "Cancel", tone = "danger", dimBackground = true, onConfirm, onCancel }: { title: string; description: string; confirmLabel: string; cancelLabel?: string; tone?: "danger" | "default"; dimBackground?: boolean; onConfirm: () => void; onCancel: () => void }) {
   return (
-    <div className="motion-overlay absolute inset-0 z-[120] flex items-center justify-center bg-black/70 px-6">
+    <div className={`motion-overlay absolute inset-0 z-[120] flex items-center justify-center px-6 ${dimBackground ? "bg-black/70" : ""}`}>
       <div className="motion-panel alchemy-shell w-full max-w-md rounded-[26px] border border-border/80 px-6 py-6 text-center">
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/15 text-amber-200"><AlertTriangle className="h-6 w-6" /></div>
         <h2 className="mt-4 text-2xl font-semibold text-foreground">{title}</h2>
@@ -201,8 +201,8 @@ export function GameMenu({ isOpen, onClose, onMainMenu, onCollection, onTalents,
   if (!isOpen) return null;
 
   return (
-    <div className="absolute inset-0 z-[120] flex items-center justify-center px-6">
-      <div className="motion-panel alchemy-shell bg-[#0c0a07] w-full max-w-sm rounded-[26px] border border-border/80 px-4 py-5">
+    <div className="absolute inset-0 z-[120] flex items-center justify-center px-6" onClick={onClose}>
+      <div className="motion-panel alchemy-shell bg-[#0c0a07] w-full max-w-sm rounded-[26px] border border-border/80 px-4 py-5" onClick={(e) => e.stopPropagation()}>
         <div className="grid gap-2">
           <Button variant="ghost" className="justify-start" onClick={() => { onMainMenu(); onClose(); }}>
             <House className="h-4 w-4" /> Main Menu

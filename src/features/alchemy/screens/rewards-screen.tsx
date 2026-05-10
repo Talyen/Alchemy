@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import type { BattleCard, TrinketEntry } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 import { MATERIAL_IDS, materialLabels, type MaterialInventory } from "@/lib/homestead/types";
-import { matIconMap, matTextColor } from "../ui/material-icons";
+import { matIconMap, matPillStyle, matTextColor } from "../ui/material-icons";
 
 import { BattleCardButton, DetailPopup } from "../ui/card-ui";
 import { ScreenHeader, ShimmerOverlay } from "../ui/shared-ui";
@@ -147,21 +147,24 @@ export function RewardsScreen({
           })}
         </div>
 
-        {rewardGold > 0 ? (
-          <div className="state-swap mt-8 text-center text-lg font-medium text-yellow-300">
-            <span className="inline-flex items-center gap-2">
-              <Coins className="h-5 w-5" />
-              Found {rewardGold} Gold
-            </span>
-          </div>
-        ) : null}
-
-        {MATERIAL_IDS.some((mat) => rewardMaterials[mat] > 0) ? (
-          <div className="state-swap mt-3 flex flex-wrap items-center justify-center gap-4 text-lg font-medium">
+        {(rewardGold > 0 || MATERIAL_IDS.some((mat) => rewardMaterials[mat] > 0)) ? (
+          <div className="state-swap mt-8 flex flex-col items-center gap-2 text-sm font-medium">
+            {rewardGold > 0 ? (
+              <span className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                Found
+                <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold bg-yellow-300/15 text-yellow-300">
+                  <Coins className="h-4 w-4" />
+                  {rewardGold} Gold
+                </span>
+              </span>
+            ) : null}
             {MATERIAL_IDS.filter((mat) => rewardMaterials[mat] > 0).map((mat) => (
-              <span key={mat} className={cn("inline-flex items-center gap-1.5", matTextColor[mat])}>
-                {matIconMap[mat]}
-                +{rewardMaterials[mat]} {materialLabels[mat]}
+              <span key={mat} className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                Found
+                <span className={cn("inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold", matPillStyle[mat], matTextColor[mat])}>
+                  {matIconMap[mat]}
+                  {rewardMaterials[mat]} {materialLabels[mat]}
+                </span>
               </span>
             ))}
           </div>

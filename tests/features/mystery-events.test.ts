@@ -1,16 +1,18 @@
 import { describe, expect, it } from "vitest";
 import { mysteryPool } from "@/features/alchemy/mystery-events";
-import { cardLibrary } from "@/lib/game-data";
+import { cardLibrary, trinketLibrary } from "@/lib/game-data";
 import type { KeywordId } from "@/lib/game-data";
+import { MATERIAL_IDS } from "@/lib/homestead/types";
 
 const validKeywords: KeywordId[] = [
   "physical", "stun", "block", "forge", "armor", "health", "burn", "gold",
   "holy", "wish", "ailment", "consume", "poison", "bleed", "leech", "freeze", "mana",
+  "nature", "companion", "trap",
 ];
 
 describe("mysteryPool", () => {
-  it("contains at least one event", () => {
-    expect(mysteryPool.length).toBeGreaterThanOrEqual(1);
+  it("contains 16 events", () => {
+    expect(mysteryPool.length).toBe(16);
   });
 
   it("each event has required fields", () => {
@@ -47,6 +49,19 @@ describe("mysteryPool", () => {
           if (effect.kind === "addCard") {
             const card = cardLibrary.find((c) => c.id === effect.cardId);
             expect(card, `Event "${event.id}" references unknown card "${effect.cardId}"`).toBeDefined();
+          }
+        }
+      }
+    }
+  });
+
+  it("gainTrinket effects reference valid trinket IDs from the library", () => {
+    for (const event of mysteryPool) {
+      for (const choice of event.choices) {
+        for (const effect of choice.effects) {
+          if (effect.kind === "gainTrinket") {
+            const trinket = trinketLibrary.find((t) => t.id === effect.trinketId);
+            expect(trinket, `Event "${event.id}" references unknown trinket "${effect.trinketId}"`).toBeDefined();
           }
         }
       }
@@ -101,6 +116,18 @@ describe("mysteryPool", () => {
     }
   });
 
+  it("gainMaterial effects reference valid material IDs", () => {
+    for (const event of mysteryPool) {
+      for (const choice of event.choices) {
+        for (const effect of choice.effects) {
+          if (effect.kind === "gainMaterial") {
+            expect(MATERIAL_IDS, `Event "${event.id}" has invalid material`).toContain(effect.material);
+          }
+        }
+      }
+    }
+  });
+
   it("healHP with chance is 0.5 (Fairy Ring dance)", () => {
     const fairyRing = mysteryPool.find((e) => e.id === "fairy-ring");
     expect(fairyRing).toBeDefined();
@@ -133,6 +160,45 @@ describe("mysteryPool", () => {
     );
   });
 
+  it("Abandoned Study 'Search the Scrolls' uses chooseCard effect", () => {
+    const study = mysteryPool.find((e) => e.id === "abandoned-study");
+    expect(study).toBeDefined();
+    const search = study!.choices.find((c) => c.label === "Search the Scrolls");
+    expect(search).toBeDefined();
+    expect(search!.effects.some((e) => e.kind === "chooseCard")).toBe(true);
+  });
+
+  it("Overgrown Temple 'Explore the Crypt' uses gainRandomTrinket", () => {
+    const temple = mysteryPool.find((e) => e.id === "overgrown-temple");
+    expect(temple).toBeDefined();
+    const explore = temple!.choices.find((c) => c.label === "Explore the Crypt");
+    expect(explore).toBeDefined();
+    expect(explore!.effects.some((e) => e.kind === "gainRandomTrinket")).toBe(true);
+  });
+
+  it("no event has a 'none'-only choice", () => {
+    for (const event of mysteryPool) {
+      for (const choice of event.choices) {
+        const allNone = choice.effects.every((e) => e.kind === "none");
+        expect(allNone, `Event "${event.id}" choice "${choice.label}" is all 'none'`).toBe(false);
+      }
+    }
+  });
+
+  it("Mana Berries no longer has a Leave choice", () => {
+    const berries = mysteryPool.find((e) => e.id === "mana-berries");
+    expect(berries).toBeDefined();
+    const leave = berries!.choices.find((c) => c.label === "Leave");
+    expect(leave).toBeUndefined();
+  });
+
+  it("Enchanted Spring has no 'Sip Slowly' or 'Drink Deeply'", () => {
+    const spring = mysteryPool.find((e) => e.id === "enchanted-spring");
+    expect(spring).toBeDefined();
+    expect(spring!.choices.find((c) => c.label === "Sip Slowly")).toBeUndefined();
+    expect(spring!.choices.find((c) => c.label === "Drink Deeply")).toBeUndefined();
+  });
+
   it("gainXP amounts are positive", () => {
     for (const event of mysteryPool) {
       for (const choice of event.choices) {
@@ -143,5 +209,22 @@ describe("mysteryPool", () => {
         }
       }
     }
+  });
+
+  it("new events are present", () => {
+    expect(mysteryPool.find((e) => e.id === "mountain-pass")).toBeDefined();
+    expect(mysteryPool.find((e) => e.id === "murky-pond")).toBeDefined();
+  });
+
+  it("Fairy Ring has a 'Make a Wish' choice", () => {
+    const ring = mysteryPool.find((e) => e.id === "fairy-ring");
+    expect(ring).toBeDefined();
+    expect(ring!.choices.find((c) => c.label === "Make a Wish")).toBeDefined();
+  });
+
+  it("Ancient Altar has a 'Decipher the Symbols' choice", () => {
+    const altar = mysteryPool.find((e) => e.id === "ancient-altar");
+    expect(altar).toBeDefined();
+    expect(altar!.choices.find((c) => c.label === "Decipher the Symbols")).toBeDefined();
   });
 });
