@@ -141,12 +141,10 @@ const MIN_STAGE_SCALE = 0.3;
 const MAX_STAGE_SCALE = 1.35;
 
 // Wraps the game canvas in a CSS scale transform so it fits the window. The
-// selected resolution contributes aspect ratio only; UI density stays anchored
-// to a 1080p design canvas so higher output resolutions do not shrink content.
-// When bypassVr is true (mobile landscape + battle screen), the virtual canvas
-// is bypassed entirely and the game renders at viewport size (scale: 1) so that
-// the compact mobile battle layout's touch targets stay at native pixel size.
-export function useVirtualResolution(selectedResolution: ResolutionOption, bypassVr = false) {
+// selected resolution contributes aspect ratio only on desktop; mobile landscape
+// uses the live phone aspect ratio so battle can keep the desktop composition
+// without rendering into a narrow 16:9 letterbox.
+export function useVirtualResolution(selectedResolution: ResolutionOption, bypassVr = false, mobileLandscape = false) {
   const [viewportSize, setViewportSize] = useState(() => ({ width: window.innerWidth, height: window.innerHeight }));
 
   useEffect(() => {
@@ -165,8 +163,10 @@ export function useVirtualResolution(selectedResolution: ResolutionOption, bypas
   }
 
   const [selectedWidth, selectedHeight] = selectedResolution.split("x").map(Number);
-  const stageHeight = designStageHeight;
-  const stageWidth = Math.round(stageHeight * (selectedWidth / selectedHeight));
+  const stageHeight = mobileLandscape ? 900 : designStageHeight;
+  const stageWidth = mobileLandscape
+    ? Math.round(stageHeight * (viewportSize.width / viewportSize.height))
+    : Math.round(stageHeight * (selectedWidth / selectedHeight));
   const viewportAspect = viewportSize.width / viewportSize.height;
   const stageAspect = stageWidth / stageHeight;
 

@@ -114,11 +114,7 @@ export default function App() {
   }, []);
 
   const { isMobileLandscape, isPortraitMobile } = useMobileDetection();
-  // Bypass VR only for the battle screen on mobile (its compact layout was
-  // designed for the native viewport). All other screens use VR scaling to
-  // ensure content fits without scrolling.
-  const bypassVr = isMobileLandscape && renderedScreen === "battle";
-  const { frameStyle, stageStyle } = useVirtualResolution(selectedResolution, bypassVr);
+  const { frameStyle, stageStyle } = useVirtualResolution(selectedResolution, false, isMobileLandscape);
   const homestead = useHomesteadState({
     materialInventory: initialSave.materialInventory,
     constructedBuildings: initialSave.constructedBuildings,
@@ -248,7 +244,7 @@ export default function App() {
   }
 
   return (
-    <div className={`flex h-screen w-screen items-center justify-center overflow-hidden bg-background ${isMobileLandscape ? "p-0" : "p-4"}`}>
+    <div className={`flex h-screen w-screen items-center justify-center overflow-hidden bg-background ${isMobileLandscape ? "mobile-landscape p-0" : "p-4"}`}>
       <div className="relative" style={frameStyle}>
         <div ref={vrStageRef} className="absolute left-0 top-0 overflow-hidden bg-background" style={stageStyle}>
           <div key={renderedScreen} className={`${pagePhase === "exit" ? "page-exit" : "page-enter"} h-full w-full overflow-hidden`}>

@@ -105,11 +105,10 @@ export const handCardWidthClass = "w-[clamp(189px,18.7cqh,286px)]";
 export const collectionCardWidthClass = "w-[clamp(156px,15vw,210px)]";
 export const pileCardWidthClass = "w-[clamp(144px,14.4cqh,219px)]";
 
-// Mobile-safe card widths for touch / small-landscape viewports.
-// These are smaller than desktop to fit side-by-side player/enemy panels.
-export const mobileBattleCardWidthClass = "w-[clamp(120px,26vh,180px)]";
-export const mobileHandCardWidthClass = "w-[clamp(90px,25vw,150px)]";
-export const mobilePileCardWidthClass = "w-[clamp(60px,6cqh,90px)]";
+// Mobile landscape uses the same virtual-stage battle composition as desktop,
+// so these widths are intentionally expressed in container height units.
+export const mobileStageBattleCardWidthClass = "w-[clamp(270px,33cqh,330px)]";
+export const mobileStageHandCardWidthClass = "w-[clamp(200px,24cqh,250px)]";
 
 // Card surface styling — shared by all card-like elements.
 export const cardSurfaceClass = "relative overflow-hidden rounded-[30px] bg-black";

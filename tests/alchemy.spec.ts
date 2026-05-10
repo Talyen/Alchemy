@@ -137,6 +137,7 @@ test.describe("Mobile Landscape", () => {
   test.use({ hasTouch: true });
 
   const mobileLandscapeViewports = [
+    { width: 812, height: 375 },
     { width: 844, height: 390 },
     { width: 932, height: 430 },
   ];
@@ -157,6 +158,27 @@ test.describe("Mobile Landscape", () => {
       const playableCards = page.locator('[aria-label^="Play "]');
       await expect(playableCards.first()).toBeVisible({ timeout: 10000 });
       expect(await playableCards.count()).toBeGreaterThanOrEqual(1);
+
+      const layout = await page.evaluate(() => {
+        const cards = [...document.querySelectorAll('[aria-label^="Play "]')].map((card) => {
+          const rect = card.getBoundingClientRect();
+          return { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom };
+        });
+        const hasFanOverlap = cards.length >= 2 && cards.some((card, index) => index > 0 && card.left < cards[index - 1].right);
+        return {
+          width: document.documentElement.scrollWidth,
+          height: document.documentElement.scrollHeight,
+          viewportWidth: window.innerWidth,
+          viewportHeight: window.innerHeight,
+          cardsWithinViewport: cards.every((card) => card.left >= 0 && card.right <= window.innerWidth && card.top >= 0 && card.bottom <= window.innerHeight),
+          hasFanOverlap,
+        };
+      });
+
+      expect(layout.width).toBeLessThanOrEqual(layout.viewportWidth);
+      expect(layout.height).toBeLessThanOrEqual(layout.viewportHeight);
+      expect(layout.cardsWithinViewport).toBe(true);
+      expect(layout.hasFanOverlap).toBe(true);
 
       const manaBefore = Number(await page.getByTestId("mana-panel").getAttribute("data-mana"));
 
