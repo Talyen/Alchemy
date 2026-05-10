@@ -55,6 +55,13 @@ export const REWARD_CARD_CHOICES = 3;          // Card rewards offered after eac
 export const DESTINATION_CHOICES = 3;          // Path choices offered after each victory.
 export const DESTINATIONS_PER_ACT = 8;         // Number of destination slots per act (slot 8 = boss).
 export const ACTS_PER_RUN = 3;                 // Number of acts in a full run.
+export const SHOP_MIN_GOLD = 40;               // Player needs at least this much gold to see shop destinations.
+export const CAMPFIRE_HP_THRESHOLD = 0.8;      // Skip campfire destination if HP >= 80% of max.
+export const ELITE_HP_THRESHOLD = 0.5;         // Skip elite combat destination if HP < 50% of max.
+export const SHOP_CARDS_OFFERED = 3;           // Cards displayed in the merchant shop.
+export const SHOP_REFRESHES = 1;               // Free refreshes per shop visit.
+export const ALCHEMIST_POTIONS_OFFERED = 3;    // Potions displayed in the alchemist shop.
+export const ALCHEMIST_REFRESHES = 1;          // Free refreshes per alchemist visit.
 export const BOSS_STAT_MULTIPLIER = 1.8;       // Boss enemies get 80% more HP and attack.
 export const ACT_SCALING_INCREMENT = 0.2;      // +20% enemy stats per act (baseline).
 export const BOSS_TRINKET_REWARD_CHOICES = 3;  // Trinket choices offered after a boss kill.
@@ -71,6 +78,10 @@ export const SHIMMER_INTRO_DELAY_MS = 500;      // Delay before first shimmer wh
 export const COMBAT_TEXT_LIFETIME_MS = 3300;     // How long floating combat text stays mounted; visual fade is slightly shorter so cleanup never clips it.
 export const COMBAT_TEXT_LANE_DELAY_MS = 80;     // Stagger between multi-line combat text entries (creates a stacking effect).
 export const GHOST_EXTRA_BUFFER_MS = 90;        // Extra buffer on ghost animation cleanup. Prevents visual flicker at animation end.
+export const GHOST_DRAW_IN_MS = 520;            // Duration of card ghost draw-from-deck animation.
+export const GHOST_DISCARD_OUT_MS = 320;        // Duration of card ghost discard-to-pile animation.
+export const GHOST_ACTIVATE_MS = 672;           // Duration of card ghost activation (play) animation.
+export const GHOST_PLAY_TRAVEL_MS = 528;        // Duration of card ghost travel-from-hand animation.
 
 // ============ Drag ============
 export const DRAG_START_THRESHOLD_PX = 10;       // Pixels of movement before a click becomes a drag. 10px prevents accidental drags on click.

@@ -44,10 +44,10 @@ export function TalentsScreen({
 
   const currentChoices = useMemo(() => {
     const cached = choicesCache.current[selectedKeyword];
-    if (cached) return cached;
+    if (cached) return cached; // eslint-disable-line react-hooks/refs
     if (allUnlocked || unspentPoints <= 0) return null;
     const c = sampleTalentChoices(selectedKeyword, unlockedIds, TALENT_CHOICES_OFFERED);
-    if (c.length > 0) choicesCache.current[selectedKeyword] = c;
+    if (c.length > 0) choicesCache.current[selectedKeyword] = c; // eslint-disable-line react-hooks/refs
     return c.length > 0 ? c : null;
   }, [selectedKeyword, unlockedIds, unspentPoints, allUnlocked]);
 
@@ -81,7 +81,7 @@ export function TalentsScreen({
             </div>
 
             <div className="mt-4 px-5">
-              <TalentList unlockedTalents={unlockedTalentsForKeyword} allTalents={allTalentsForKeyword} choices={currentChoices} onUnlock={handleUnlockTalent} />
+              <TalentList unlockedTalents={unlockedTalentsForKeyword} allTalents={allTalentsForKeyword} choices={currentChoices} onUnlock={handleUnlockTalent} /> {/* eslint-disable-line react-hooks/refs */}
             </div>
           </AnimatedHeight>
         </div>

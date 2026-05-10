@@ -2,9 +2,7 @@ import { ailmentStatusIds, cardLibrary, companionLibrary, type BattleCard, type 
 import { drawCards, shuffleCards } from "./draw";
 
 import {
-  baseEnemyHealth,
   clampHealth,
-  maxHandSize,
   type BattleState,
   type CombatTextEvent,
 } from "./types";
@@ -149,7 +147,7 @@ function applyDamageStatuses(state: BattleState, effect: Extract<BattleCardEffec
       break;
     }
     case "bleed": {
-      let bleedAmount = actualDamage * BLEED_STATUS_MULTIPLIER;
+      const bleedAmount = actualDamage * BLEED_STATUS_MULTIPLIER;
       nextStatuses.bleed += bleedAmount;
       if (bleedAmount > 0 && effect.lifesteal) nextStatuses.bleedLeech += bleedAmount;
       if (bleedAmount > 0 && nextState.talentEffects.bleedLeechChance > 0 && Math.random() * 100 < nextState.talentEffects.bleedLeechChance) {
@@ -174,7 +172,7 @@ function applyDamageStatuses(state: BattleState, effect: Extract<BattleCardEffec
       const threshold = STUN_THRESHOLD_FRACTION - nextState.talentEffects.stunThresholdReduction;
       if (state.enemyHealth > 0 && nextStatuses.stun > state.enemyHealth * threshold) {
         nextStatuses.stun = 0;
-        nextState = { ...nextState, enemyStatuses: nextStatuses, enemyStunSkipTurns: nextState.enemyStunSkipTurns + 1 };
+        nextState = { ...nextState, enemyStatuses: nextStatuses, enemyStunSkipTurns: nextState.enemyStunSkipTurns + 1 + nextState.talentEffects.stunDurationExtension };
         if (nextState.talentEffects.drawOnStun > 0) {
           const draw = drawCards(nextState.deck, nextState.discard, nextState.hand, nextState.talentEffects.drawOnStun);
           nextState = { ...nextState, deck: draw.deck, discard: draw.discard, hand: draw.hand };

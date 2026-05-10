@@ -23,6 +23,7 @@ export const defaultTrinketEffects: TrinketManifest = {
   resonantChimeMana: 0,
   smugglersMapGoldBonus: 0,
   grovesFavorStartHeal: 0,
+  merchantsFavorDiscount: 0,
 };
 
 export function computeTrinketManifest(trinketIds: string[]): TrinketManifest {
@@ -72,6 +73,7 @@ export function computeTrinketManifest(trinketIds: string[]): TrinketManifest {
         manifest.wishingWellGoldOnWish = 3;
         break;
       case "merchants-favor":
+        manifest.merchantsFavorDiscount = 7;
         break;
       case "plague-doctors-mask":
         manifest.plagueDoctorImmunity = true;

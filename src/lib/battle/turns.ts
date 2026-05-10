@@ -130,7 +130,7 @@ function tickPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
 function tickBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
   const damage = state.enemyStatuses.bleed;
   if (damage <= 0) return state;
-  let nextState = { ...state, enemyHealth: clampHealth(state.enemyHealth, -damage, state.enemyMaxHealth), enemyStatuses: { ...state.enemyStatuses, bleed: 0, bleedLeech: 0 } };
+  const nextState = { ...state, enemyHealth: clampHealth(state.enemyHealth, -damage, state.enemyMaxHealth), enemyStatuses: { ...state.enemyStatuses, bleed: 0, bleedLeech: 0 } };
   const leechAmount = state.enemyStatuses.bleedLeech;
   if (leechAmount > 0) {
     nextState.playerHealth = clampHealth(nextState.playerHealth, leechAmount, nextState.playerMaxHealth);
@@ -248,7 +248,7 @@ export function processCompanionTurnStart(state: BattleState, combatTexts: Comba
   return applyCardEffects(state, companionCard, combatTexts);
 }
 
-function advanceToPlayerTurn(state: BattleState, combatTexts: CombatTextEvent[]) {
+function advanceToPlayerTurn(state: BattleState, _combatTexts: CombatTextEvent[]) {
   const nextDraw = drawCards(state.deck, state.discard, [], cardsPerTurn);
   return {
     ...state,
@@ -322,7 +322,9 @@ function processEnemyDamageEffect(state: BattleState, effect: EnemyAttackEffect 
     mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "block", amount: blockAbsorb });
   }
 
-  const actualDamage = Math.max(0, remainingDamage - state.playerStatuses.armor);
+  const rawDamage = Math.max(0, remainingDamage - state.playerStatuses.armor);
+  const damageType: string = effect.damageType;
+  const actualDamage = damageType === "holy" && state.talentEffects.receiveHalfHolyDamage ? Math.floor(rawDamage / 2) : rawDamage;
 
   if (actualDamage > 0) {
     const stat = effect.damageType === "physical" ? "health" : effect.damageType;

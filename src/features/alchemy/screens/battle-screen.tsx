@@ -34,7 +34,6 @@ export function BattleScreen({
   onRemoveCardGhost,
   onSkipCombatDevMode,
   onEndTurn,
-  onEndRun,
   battleSceneRef,
   playerPanelRef,
   enemyPanelRef,
@@ -43,10 +42,8 @@ export function BattleScreen({
   companionShaking,
   heroArt,
   isMobileLandscape = false,
-  currentAct,
 }: {
   battleState: Pick<BattleState, 'playerHealth' | 'playerMaxHealth' | 'enemyHealth' | 'enemyMaxHealth' | 'mana' | 'maxMana' | 'gold' | 'deck' | 'discard' | 'hand' | 'wishOptions' | 'activeCompanion' | 'currentEnemy' | 'turnPhase'>;
-  currentAct?: number;
   heroArt: string;
   hoveredCardId: string | null;
   setHoveredCardId: (value: string | null | ((current: string | null) => string | null)) => void;
@@ -64,7 +61,6 @@ export function BattleScreen({
   onRemoveCardGhost: (id: string) => void;
   onSkipCombatDevMode: () => void;
   onEndTurn: () => void;
-  onEndRun: () => void;
   battleSceneRef: MutableRefObject<HTMLDivElement | null>;
   playerPanelRef: MutableRefObject<HTMLDivElement | null>;
   enemyPanelRef: MutableRefObject<HTMLDivElement | null>;

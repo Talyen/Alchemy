@@ -1,8 +1,7 @@
-import type { CSSProperties } from "react";
+import { createElement, type CSSProperties } from "react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Coins, Gem } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { keywordDefinitions, pileDiscardArt, pileDrawArt, type KeywordId } from "@/lib/game-data";
 import type { CompanionDefinition } from "@/lib/game-data";
@@ -53,7 +52,6 @@ export function CombatTextRail({ entries, side }: { entries: FloatingCombatText[
 }
 
 function CombatTextBubble({ entry, side }: { entry: FloatingCombatText; side: "player" | "enemy" }) {
-  const Icon = getCombatTextIcon(entry);
   const colorClass = getCombatTextColorClass(entry);
 
   return (
@@ -65,7 +63,7 @@ function CombatTextBubble({ entry, side }: { entry: FloatingCombatText; side: "p
       )}
       style={{ "--combat-text-lane": String(entry.lane) } as CSSProperties}
     >
-      <Icon className={cn("h-7 w-7", colorClass)} />
+      {createElement(getCombatTextIcon(entry), { className: cn("h-7 w-7", colorClass) })}
       <span>{entry.signedAmountText}</span>
     </div>
   );
@@ -193,7 +191,7 @@ export function ArtPanel({
   shimmerActive,
   shimmerToken,
   onHoverShimmer,
-  combatTexts,
+  combatTexts: _combatTexts,
   surfaceRef,
   isDead = false,
   shaking = false,
@@ -208,13 +206,13 @@ export function ArtPanel({
   statuses: StatusChip[];
   shimmerId: string;
   shimmerActive: boolean;
-  shimmerToken?: number;
+  shimmerToken: number | undefined;
   onHoverShimmer: (cardId: string) => void;
   combatTexts: FloatingCombatText[];
   surfaceRef?: (node: HTMLDivElement | null) => void;
   isDead?: boolean;
   shaking?: boolean;
-  cardWidthClass?: string;
+  cardWidthClass: string | undefined;
   descriptionLines?: string[];
 }) {
   const healthToken = useChangeToken(health);

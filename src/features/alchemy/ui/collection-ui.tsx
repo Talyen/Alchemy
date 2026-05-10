@@ -23,7 +23,7 @@ const collectionPageSize = COLLECTION_PAGE_SIZE;
 type CollectionTileItem = {
   id: string;
   title: string;
-  subtitle?: string;
+  subtitle: string | undefined;
   descriptionLines: string[];
   art: string;
   discovered: boolean;
@@ -52,7 +52,7 @@ function CompendiumTile({
   onHoverStart: () => void;
   onHoverEnd: () => void;
   shimmerActive: boolean;
-  shimmerToken?: number;
+  shimmerToken: number | undefined;
   wrapperStyle?: CSSProperties;
 }) {
   return (
@@ -187,7 +187,7 @@ export function CollectionPagination({ page, totalPages, onPageChange }: { page:
 function getCardItems(discoveredCardIds: string[]) {
   return cardLibrary.map((card) => {
     const discovered = discoveredCardIds.includes(card.id);
-    return { id: card.id, title: discovered ? card.title : "Undiscovered", descriptionLines: discovered ? card.descriptionLines : ["Discover this card during a run to reveal it here."], art: card.art, discovered, hoverScope: "collection-card" as const, frameType: "card" as const };
+    return { id: card.id, title: discovered ? card.title : "Undiscovered", subtitle: undefined, descriptionLines: discovered ? card.descriptionLines : ["Discover this card during a run to reveal it here."], art: card.art, discovered, hoverScope: "collection-card" as const, frameType: "card" as const };
   });
 }
 

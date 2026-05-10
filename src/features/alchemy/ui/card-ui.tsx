@@ -10,7 +10,6 @@ import { cn } from "@/lib/utils";
 
 import {
   cardSurfaceClass,
-  keywordIcons,
   popupClassName,
   staticCardTransform,
 } from "../config";
@@ -21,7 +20,6 @@ import { KeywordTag } from "./keyword-tag";
 
 function KeywordToken({ keywordId, matchedText }: { keywordId: KeywordId; matchedText: string }) {
   const definition = keywordDefinitions[keywordId];
-  const Icon = keywordIcons[keywordId];
 
   return (
     <span className="group/keyword relative inline-flex items-center">
@@ -66,7 +64,7 @@ export function DetailPopup({
 }: {
   idPrefix: string;
   title: string;
-  subtitle?: string;
+  subtitle: string | undefined;
   descriptionLines: string[];
 }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -122,7 +120,7 @@ export function BattleCardButton({
   ariaLabel: string;
   tiltStrength?: number;
   shimmerActive: boolean;
-  shimmerToken?: number;
+  shimmerToken: number | undefined;
   baseTransform?: string;
   className?: string;
   wrapperClassName?: string;
@@ -142,7 +140,7 @@ export function BattleCardButton({
   return (
     <div className={cn("relative", wrapperClassName)} style={wrapperStyle} onMouseEnter={handleHoverStart} onMouseLeave={onHoverEnd}>
       {hovered ? (
-        <DetailPopup idPrefix={card.id} title={card.title} descriptionLines={card.descriptionLines} />
+        <DetailPopup idPrefix={card.id} title={card.title} subtitle={undefined} descriptionLines={card.descriptionLines} />
       ) : null}
 
       <button

@@ -343,7 +343,7 @@ const TextAnimateBase = ({
 }: TextAnimateProps) => {
   const MotionComponent = motionElements[Component]
 
-  let segments: string[] = []
+  let segments: string[]
   switch (by) {
     case "word":
       segments = children.split(/(\s+)/)
@@ -410,8 +410,8 @@ const TextAnimateBase = ({
       <MotionComponent
         variants={finalVariants.container as Variants}
         initial="hidden"
-        whileInView={startOnView ? "show" : undefined}
-        animate={startOnView ? undefined : "show"}
+        {...(startOnView ? { whileInView: "show" as const } : {})}
+        {...(startOnView ? {} : { animate: "show" as const })}
         exit="exit"
         className={cn("whitespace-pre-wrap", className)}
         viewport={{ once }}

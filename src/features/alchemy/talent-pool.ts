@@ -29,12 +29,6 @@ export const talentPool: TalentDefinition[] = [
   { id: "stun-draw", keywordId: "stun", description: "When you Stun an enemy, draw a card" },
   { id: "stun-next-free", keywordId: "stun", description: "When you Stun an enemy, your next card is free" },
   { id: "stun-duration-1", keywordId: "stun", description: "Stun effects last 1 turn longer" },
-  { id: "stun-duration-2", keywordId: "stun", description: "Stun effects last 1 turn longer" },
-  { id: "stun-duration-3", keywordId: "stun", description: "Stun effects last 1 turn longer" },
-  { id: "stun-duration-4", keywordId: "stun", description: "Stun effects last 1 turn longer" },
-  { id: "stun-duration-5", keywordId: "stun", description: "Stun effects last 1 turn longer" },
-  { id: "stun-duration-6", keywordId: "stun", description: "Stun effects last 1 turn longer" },
-  { id: "stun-duration-7", keywordId: "stun", description: "Stun effects last 1 turn longer" },
 
   // --- Block ---
   { id: "block-start", keywordId: "block", description: "Start combat with 10 Block" },
@@ -289,6 +283,7 @@ export function computeTalentEffects(unlockedTalents: UnlockedTalents): TalentEf
     stunThresholdReduction: stunIds.includes("stun-threshold") ? 0.1 : 0,
     drawOnStun: stunIds.includes("stun-draw") ? 1 : 0,
     nextCardFreeOnStun: stunIds.includes("stun-next-free"),
+    stunDurationExtension: stunIds.includes("stun-duration-1") ? 1 : 0,
 
     startBlock: blockIds.includes("block-start") ? 10 : 0,
     blockToPhysicalDamage: blockIds.includes("block-to-physical"),

@@ -1,7 +1,6 @@
 // Enemy material loot tables and end-of-run bonus calculations.
 // Each enemy drops thematic materials based on its identity.
 
-import { enemyBestiary, type BestiaryEntry } from "@/lib/game-data";
 import type { MaterialId, MaterialInventory } from "./types";
 import { emptyInventory, addInventory } from "./types";
 

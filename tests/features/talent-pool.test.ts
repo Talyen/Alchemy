@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
+import type { KeywordId } from "@/lib/game-data";
 import { getTalentsForKeyword, sampleTalentChoices, computeTalentEffects, talentPool } from "@/features/alchemy/talent-pool";
 
 describe("talentPool", () => {
   it("contains talents for all keywords", () => {
     const keywords = ["physical", "stun", "block", "forge", "armor", "health", "burn", "gold", "holy", "wish", "ailment", "consume", "poison", "bleed", "leech", "freeze", "mana"];
     for (const kw of keywords) {
-      expect(getTalentsForKeyword(kw as any).length).toBeGreaterThan(0);
+      expect(getTalentsForKeyword(kw as unknown as KeywordId).length).toBeGreaterThan(0);
     }
   });
 });
@@ -17,7 +18,7 @@ describe("getTalentsForKeyword", () => {
   });
 
   it("returns empty array for unknown keyword", () => {
-    expect(getTalentsForKeyword("unknown" as any)).toEqual([]);
+    expect(getTalentsForKeyword("unknown" as unknown as KeywordId)).toEqual([]);
   });
 });
 

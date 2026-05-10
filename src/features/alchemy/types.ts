@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 
 import type { CombatTextEvent } from "@/lib/battle";
-import type { BattleCard, KeywordId } from "@/lib/game-data";
+import type { KeywordId } from "@/lib/game-data";
 
 export type Screen = "menu" | "character-select" | "battle" | "rewards" | "destination" | "options" | "collection" | "talents" | "homestead" | "game-over" | "campfire" | "shop" | "alchemist" | "mystery" | "act-complete" | "run-victory";
 

@@ -11,7 +11,7 @@ import { useShimmerController } from "../hooks";
 import { clearTiltFromEvent, setTiltFromEvent } from "../utils";
 import { battleCardWidthClass, cardSurfaceClass, staticCardTransform } from "../config";
 
-function CharacterCard({ id, index, isSelected, isShimmer, shimmerToken, onSelect, onHoverShimmer }: { id: CharacterId; index: number; isSelected: boolean; isShimmer: boolean; shimmerToken?: number; onSelect: (id: CharacterId) => void; onHoverShimmer: (id: CharacterId) => void }) {
+function CharacterCard({ id, index, isSelected, isShimmer, shimmerToken, onSelect, onHoverShimmer }: { id: CharacterId; index: number; isSelected: boolean; isShimmer: boolean; shimmerToken: number | undefined; onSelect: (id: CharacterId) => void; onHoverShimmer: (id: CharacterId) => void }) {
   const char = characters[id];
   const art = characterArt[char.id];
 

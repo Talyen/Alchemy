@@ -26,7 +26,6 @@ export const cardSounds: Record<string, string[]> = {
   fireball: ["fireball-1.ogg"],
   fangs: ["sword-impact-hit-2.ogg"],
   "wolf-companion": ["sword-impact-hit-2.ogg"],
-  "wolf-companion": ["sword-impact-hit-2.ogg"],
   "imp-companion": ["torch-attack-strike-1.ogg"],
   "lizard-scout-companion": ["swipe.ogg"],
   frostbolt: ["ice-throw-1.ogg"],

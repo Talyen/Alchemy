@@ -79,9 +79,9 @@ describe("computeTrinketManifest", () => {
     expect(manifest.wishingWellGoldOnWish).toBe(3);
   });
 
-  it("Merchant's Favor no battle manifest fields (out-of-battle)", () => {
+  it("Merchant's Favor → merchantsFavorDiscount: 7 (first purchase discount in shop)", () => {
     const manifest = computeTrinketManifest(["merchants-favor"]);
-    expect(manifest).toEqual(defaultTrinketEffects);
+    expect(manifest.merchantsFavorDiscount).toBe(7);
   });
 
   it("Plague Doctor's Mask → plagueDoctorImmunity: true", () => {

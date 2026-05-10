@@ -1,10 +1,8 @@
 import { useState } from "react";
-import type { KeywordId } from "@/lib/game-data";
+import type { BattleCard, KeywordId } from "@/lib/game-data";
 import { addTalentXP, extractCardKeywords, type TalentXP } from "@/lib/talents";
 import { computeTalentEffects, talentPool } from "./talent-pool";
 import type { UnlockedTalents } from "./talent-pool";
-import type { BattleCard } from "@/lib/game-data";
-import type { TalentEffectManifest } from "@/lib/battle/types";
 
 export function useTalentState(initialTalentXP: TalentXP, initialUnlockedTalents: UnlockedTalents) {
   const [talentXP, setTalentXP] = useState<TalentXP>(initialTalentXP);

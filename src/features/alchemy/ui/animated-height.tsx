@@ -17,7 +17,7 @@ export function AnimatedHeight({ deps, children }: { deps: unknown[]; children: 
     if (mounted.current && prevHeight.current > 0 && prevHeight.current !== newHeight) {
       el.style.overflow = "hidden";
       el.style.height = `${prevHeight.current}px`;
-      el.scrollHeight;
+      void el.scrollHeight;
 
       el.style.transition = `height ${DURATION}ms ${EASE}`;
       el.style.height = `${newHeight}px`;

@@ -11,7 +11,7 @@ describe("cn", () => {
   });
 
   it("handles conditional classes via clsx", () => {
-    expect(cn("base", false && "hidden", "visible")).toBe("base visible");
+    expect(cn("base", false && "hidden", "visible")).toBe("base visible"); // eslint-disable-line no-constant-binary-expression
   });
 
   it("resolves conflicting tailwind classes (last wins)", () => {

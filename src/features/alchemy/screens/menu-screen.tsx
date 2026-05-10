@@ -1,7 +1,7 @@
 // Main menu screen with logo and navigation buttons. Entry point for all other screens.
 import type { CSSProperties } from "react";
 
-import { BookOpen, Cog, House, Swords, TreePine, WandSparkles } from "lucide-react";
+import { BookOpen, Cog, Swords, TreePine, WandSparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { staticCardTransform } from "../config";
 import { clearTiltFromEvent, setTiltFromEvent } from "../utils";

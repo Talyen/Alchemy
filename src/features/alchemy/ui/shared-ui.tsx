@@ -141,7 +141,7 @@ export function ScreenHeader({ title, className }: { title: ReactNode; className
 // battle hand, collection grid, and enemy/player art panels. The rounded prop varies
 // because different card containers have different border radii (22px for character
 // cards, 30px for battle cards).
-export function ShimmerOverlay({ active, token, rounded = "rounded-[30px]" }: { active: boolean; token?: number; rounded?: string }) {
+export function ShimmerOverlay({ active, token, rounded = "rounded-[30px]" }: { active: boolean; token: number | undefined; rounded?: string }) {
   return (
     <div className={cn("pointer-events-none absolute inset-0 z-10 overflow-hidden", rounded, active ? "card-shimmer-active" : "")}>
       <div key={active ? token : undefined} className={cn("card-shimmer-sweep", active ? "opacity-100" : "opacity-0")} />

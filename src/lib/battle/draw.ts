@@ -10,11 +10,10 @@ import {
   type EnemyStatusValues,
   type PlayerStatusValues,
   type TalentEffectManifest,
-  type TrinketManifest,
   type TurnPhase,
 } from "./types";
 import { ROOM_SCALING_INCREMENT, ELITE_STAT_MULTIPLIER, BOSS_STAT_MULTIPLIER, ACT_SCALING_INCREMENT, STARTING_TURN, ENEMY_BASE_REGENERATION } from "../game-constants";
-import { computeTrinketManifest, defaultTrinketEffects } from "../trinkets";
+import { computeTrinketManifest } from "../trinkets";
 
 let cardUidCounter = 0;
 
@@ -32,6 +31,7 @@ export const defaultTalentEffects: TalentEffectManifest = {
   stunThresholdReduction: 0,
   drawOnStun: 0,
   nextCardFreeOnStun: false,
+  stunDurationExtension: 0,
 
   startBlock: 0,
   blockToPhysicalDamage: false,
@@ -140,7 +140,7 @@ export function drawCards(deck: BattleCard[], discard: BattleCard[], hand: Battl
 // Builds scaled enemy data for a given room. Uses destinationIndexInAct for
 // room-to-room scaling (resets each act) and currentAct for act baseline difficulty.
 // Boss-type enemies get an additional BOSS_STAT_MULTIPLIER on top of the act scaling.
-function buildScaledEnemy(roomsEncountered: number, enemy: BestiaryEntry, destinationIndexInAct = 0, currentAct = 1) {
+function buildScaledEnemy(_roomsEncountered: number, enemy: BestiaryEntry, destinationIndexInAct = 0, currentAct = 1) {
   const scaler = Math.max(0, destinationIndexInAct - 1);
   const roomMul = 1 + scaler * ROOM_SCALING_INCREMENT;
   const actMul = 1 + (currentAct - 1) * ACT_SCALING_INCREMENT;
@@ -156,7 +156,7 @@ function buildScaledEnemy(roomsEncountered: number, enemy: BestiaryEntry, destin
     : [{ kind: "damage" as const, damageType: "physical" as const, amount: 8 }];
   const scaledEnemyAttackEffects: EnemyAttackEffect[] = baseEffects.map((effect) => {
     if (effect.kind === "damage") {
-      return { kind: "damage", damageType: effect.damageType, amount: scaleAmount(effect.amount), lifesteal: effect.lifesteal };
+      return { kind: "damage", damageType: effect.damageType, amount: scaleAmount(effect.amount), ...("lifesteal" in effect ? { lifesteal: effect.lifesteal } : {}) };
     }
     return { kind: "player-status", status: effect.status, amount: scaleAmount(effect.amount) };
   });

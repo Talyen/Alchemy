@@ -1,4 +1,4 @@
-import { apple, boneCharm, brassCenser, cleanse, cutpurseKnife, frozenHeart, goblin, imp, ironwoodBuckler, lizardScout, manaCrystal, meteorite, mimic, mixedPotion, mortarAndPestle, mudElemental, necromancer, merchantsFavor, obsidianHammer, parasiticBloom, placeholderEnemy, placeholderTrinket, plagueDoctor, plagueDoctorsMask, poisonDagger, resonantChime, runicQuill, skeleton, sinEatersLantern, slash, stab, steal, smugglersMap, sunderingCharm, tatteredPages, vanguardsCrest, wishingWellCoin, grovesFavor } from "./assets";
+import { boneCharm, brassCenser, cutpurseKnife, frozenHeart, goblin, imp, ironwoodBuckler, lizardScout, meteorite, mimic, mortarAndPestle, mudElemental, necromancer, merchantsFavor, obsidianHammer, parasiticBloom, placeholderEnemy, plagueDoctor, plagueDoctorsMask, resonantChime, runicQuill, skeleton, sinEatersLantern, smugglersMap, sunderingCharm, tatteredPages, vanguardsCrest, wishingWellCoin, grovesFavor } from "./assets";
 import type { BestiaryEntry, TrinketEntry } from "./types";
 
 export const enemyBestiary: BestiaryEntry[] = [

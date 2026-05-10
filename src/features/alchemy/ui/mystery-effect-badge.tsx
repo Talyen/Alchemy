@@ -15,8 +15,8 @@ export function MysteryEffectBadge({
   tooltip,
 }: {
   effect: MysteryEffect;
-  findCard?: (id: string) => { title: string } | undefined;
-  findTrinket?: (id: string) => { title: string } | undefined;
+  findCard: ((id: string) => { title: string } | undefined) | undefined;
+  findTrinket: ((id: string) => { title: string } | undefined) | undefined;
   tooltip?: boolean;
 }) {
   switch (effect.kind) {
@@ -107,8 +107,8 @@ export function MysteryEffectList({
   findTrinket,
 }: {
   effects: MysteryEffect[];
-  findCard?: (id: string) => { title: string } | undefined;
-  findTrinket?: (id: string) => { title: string } | undefined;
+  findCard: ((id: string) => { title: string } | undefined) | undefined;
+  findTrinket: ((id: string) => { title: string } | undefined) | undefined;
 }) {
   return (
     <div className="flex flex-col items-start gap-1.5">

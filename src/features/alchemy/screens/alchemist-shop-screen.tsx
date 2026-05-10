@@ -20,7 +20,7 @@ function PotionCardItem({ card, price, gold, purchased, onBuy, index }: { card: 
   if (purchased) {
     return (
       <div className="stagger-item flex flex-col items-center gap-3 rounded-[18px] border border-border/30 bg-card/30 p-4 text-center opacity-50" style={{ "--stagger-index": index } as CSSProperties}>
-        <BattleCardButton card={card} hovered={false} onHoverStart={() => {}} onHoverEnd={() => {}} ariaLabel={card.title} shimmerActive={false} className={handCardWidthClass} />
+        <BattleCardButton card={card} hovered={false} onHoverStart={() => {}} onHoverEnd={() => {}} ariaLabel={card.title} shimmerActive={false} shimmerToken={undefined} className={handCardWidthClass} />
         <p className="text-sm font-semibold text-muted-foreground">{card.title}</p>
         <span className="text-xs text-muted-foreground">Purchased</span>
       </div>
@@ -30,7 +30,7 @@ function PotionCardItem({ card, price, gold, purchased, onBuy, index }: { card: 
   return (
     <div className="stagger-item flex flex-col items-center gap-3 rounded-[18px] border border-border/70 bg-card/60 p-4 text-center" style={{ "--stagger-index": index } as CSSProperties}>
       <div onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
-        <BattleCardButton card={card} hovered={hovered} onHoverStart={() => setHovered(true)} onHoverEnd={() => setHovered(false)} ariaLabel={`Inspect ${card.title}`} shimmerActive={false} className={handCardWidthClass} />
+        <BattleCardButton card={card} hovered={hovered} onHoverStart={() => setHovered(true)} onHoverEnd={() => setHovered(false)} ariaLabel={`Inspect ${card.title}`} shimmerActive={false} shimmerToken={undefined} className={handCardWidthClass} />
       </div>
       <p className="text-sm font-semibold text-foreground">{card.title}</p>
       <DisabledTooltip show={gold < price} message="Not Enough Gold">
@@ -51,7 +51,7 @@ function MixPotionCardItem({ card, visualIndex, isSelected, onSelect }: { card: 
       style={{ "--stagger-index": visualIndex } as CSSProperties}
       onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
       onClick={onSelect}>
-      <BattleCardButton card={card} hovered={hovered} onHoverStart={() => setHovered(true)} onHoverEnd={() => setHovered(false)} ariaLabel={`Inspect ${card.title}`} shimmerActive={false} className={collectionCardWidthClass} />
+      <BattleCardButton card={card} hovered={hovered} onHoverStart={() => setHovered(true)} onHoverEnd={() => setHovered(false)} ariaLabel={`Inspect ${card.title}`} shimmerActive={false} shimmerToken={undefined} className={collectionCardWidthClass} />
       <p className="mt-1 text-xs font-semibold text-foreground">{card.title}</p>
     </div>
   );
@@ -140,7 +140,7 @@ export function AlchemistShopScreen({
             <p className="text-lg font-semibold text-emerald-400">Added to Deck: Mixed Potion</p>
             <div className="flex flex-col items-center gap-3">
               <div onMouseEnter={() => setMixedCardHovered(true)} onMouseLeave={() => setMixedCardHovered(false)}>
-                <BattleCardButton card={mixedCard} hovered={mixedCardHovered} onHoverStart={() => setMixedCardHovered(true)} onHoverEnd={() => setMixedCardHovered(false)} ariaLabel="Mixed Potion" shimmerActive={false} className={handCardWidthClass} />
+                <BattleCardButton card={mixedCard} hovered={mixedCardHovered} onHoverStart={() => setMixedCardHovered(true)} onHoverEnd={() => setMixedCardHovered(false)} ariaLabel="Mixed Potion" shimmerActive={false} shimmerToken={undefined} className={handCardWidthClass} />
               </div>
             </div>
             <Button size="lg" onClick={() => { setMixedCard(null); cancelMix(); }}>Continue</Button>

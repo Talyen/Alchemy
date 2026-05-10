@@ -15,7 +15,6 @@ import {
   type HomesteadEffectManifest,
   type HomesteadFarm,
   type HomesteadResearch,
-  type MaterialId,
   type MaterialInventory,
   type ResearchId,
   canAfford,
@@ -126,7 +125,7 @@ export function HomesteadScreen({
 
   useEffect(() => {
     if (lastFarmYield) {
-      setShowYieldNotification(true);
+      setShowYieldNotification(true); // eslint-disable-line react-hooks/set-state-in-effect
       const timer = setTimeout(() => {
         setShowYieldNotification(false);
         onClearFarmYield();
@@ -225,6 +224,7 @@ export function HomesteadScreen({
                       <DetailPopup
                         idPrefix={item.data.id}
                         title={item.data.title}
+                        subtitle={undefined}
                         descriptionLines={[
                           item.data.description,
                           ...(item.kind === "farm"

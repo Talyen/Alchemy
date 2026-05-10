@@ -47,6 +47,7 @@ export type TrinketManifest = {
   resonantChimeMana: number;
   smugglersMapGoldBonus: number;
   grovesFavorStartHeal: number;
+  merchantsFavorDiscount: number;
 };
 
 // Pre-computed bonuses from unlocked talents, recalculated each battle start.
@@ -62,9 +63,10 @@ export type TalentEffectManifest = {
   physicalVsFrozenMultiplier: number;  // percent bonus when enemy is frozen
 
   // --- Stun ---
-  stunThresholdReduction: number; // fraction subtracted from base 0.5 threshold
-  drawOnStun: number;             // cards drawn when stunning an enemy
-  nextCardFreeOnStun: boolean;    // next card costs 0 after stunning
+  stunThresholdReduction: number;   // fraction subtracted from base 0.5 threshold
+  drawOnStun: number;               // cards drawn when stunning an enemy
+  nextCardFreeOnStun: boolean;      // next card costs 0 after stunning
+  stunDurationExtension: number;    // +X turns stun lasts when applied
 
   // --- Block ---
   startBlock: number;

@@ -3,9 +3,9 @@
 // effects into a TalentEffectManifest for battle use.
 
 import type { TalentEffectManifest } from "@/lib/battle";
-import type { BuildingId, FarmId, HomesteadEffectManifest, ResearchId } from "./types";
+import type { BuildingId, HomesteadEffectManifest, ResearchId } from "./types";
 import { defaultHomesteadEffects } from "./types";
-import { buildings, farmPlots, researchUpgrades } from "./data";
+import { buildings, researchUpgrades } from "./data";
 
 export function computeHomesteadEffects(
   constructedBuildings: BuildingId[],

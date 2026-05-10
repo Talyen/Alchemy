@@ -54,7 +54,7 @@ function RewardScreen({
                   onHoverStart={() => setHoveredItemId(card.id)}
                   onHoverEnd={() => setHoveredItemId(null)}
                   ariaLabel={card.title}
-                  shimmerActive={false}
+                  shimmerActive={false} shimmerToken={undefined}
                   className={handCardWidthClass}
                 />
                 <p className="text-sm font-semibold text-foreground">{card.title}</p>
@@ -74,7 +74,7 @@ function RewardScreen({
                   onHoverStart={() => setHoveredItemId(card.id)}
                   onHoverEnd={() => setHoveredItemId(null)}
                   ariaLabel={card.title}
-                  shimmerActive={false}
+                  shimmerActive={false} shimmerToken={undefined}
                   className={handCardWidthClass}
                 />
                 <p className="text-sm font-semibold text-foreground">{card.title}</p>
@@ -122,21 +122,21 @@ function RewardScreen({
             return (
               <div key={i} className="flex items-center justify-center gap-2 text-sm font-medium text-muted-foreground">
                 Found
-                <MysteryEffectBadge effect={effect} />
+                <MysteryEffectBadge effect={effect} findCard={undefined} findTrinket={undefined} />
               </div>
             );
           case "loseGold":
             return (
               <div key={i} className="flex items-center justify-center gap-2 text-sm font-medium text-muted-foreground">
                 Lost
-                <MysteryEffectBadge effect={effect} />
+                <MysteryEffectBadge effect={effect} findCard={undefined} findTrinket={undefined} />
               </div>
             );
           case "gainMaterial":
             return (
               <div key={i} className="flex items-center justify-center gap-2 text-sm font-medium text-muted-foreground">
                 Found
-                <MysteryEffectBadge effect={effect} />
+                <MysteryEffectBadge effect={effect} findCard={undefined} findTrinket={undefined} />
               </div>
             );
           case "chooseCard": {
@@ -151,7 +151,7 @@ function RewardScreen({
                 onHoverStart={() => setHoveredItemId(card.id)}
                 onHoverEnd={() => setHoveredItemId(null)}
                 ariaLabel={card.title}
-                shimmerActive={false}
+                shimmerActive={false} shimmerToken={undefined}
                 className={handCardWidthClass}
               />
               <p className="text-sm font-semibold text-foreground">{card.title}</p>
@@ -217,7 +217,7 @@ function RemoveCardPicker({
                 onHoverStart={() => {}}
                 onHoverEnd={() => {}}
                 ariaLabel={card.title}
-                shimmerActive={false}
+                shimmerActive={false} shimmerToken={undefined}
                 className={collectionCardWidthClass}
               />
               <p className="text-xs text-foreground">{card.title}</p>
@@ -267,7 +267,7 @@ function CardChoicePicker({
               onHoverEnd={() => {}}
               onClick={() => setSelectedId(card.id)}
               ariaLabel={`Select ${card.title}`}
-              shimmerActive={false}
+              shimmerActive={false} shimmerToken={undefined}
               className={collectionCardWidthClass}
               wrapperClassName="stagger-item relative flex justify-center"
               wrapperStyle={{ "--stagger-index": i } as CSSProperties}
@@ -378,7 +378,7 @@ export function MysteryScreen({
                 onHoverStart={() => setHoveredCardId(event.id)}
                 onHoverEnd={() => setHoveredCardId(null)}
                 ariaLabel={featuredCard.title}
-                shimmerActive={false}
+                shimmerActive={false} shimmerToken={undefined}
                 className={handCardWidthClass}
               />
             ) : event.art ? (

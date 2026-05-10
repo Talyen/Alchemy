@@ -29,7 +29,7 @@ function TrinketRewardButton({
   onHoverEnd: () => void;
   onClick: () => void;
   shimmerActive: boolean;
-  shimmerToken?: number;
+  shimmerToken: number | undefined;
   selected: boolean;
 }) {
   return (

@@ -117,7 +117,7 @@ export function useMobileDetection() {
   }, []);
 
   useEffect(() => {
-    check();
+    check(); // eslint-disable-line react-hooks/set-state-in-effect
     window.addEventListener("resize", check);
     window.addEventListener("orientationchange", () => setTimeout(check, 100));
     return () => {

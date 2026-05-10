@@ -3,18 +3,18 @@ import { BookOpen, Coins, Crosshair, Flame, Gem, Hammer, Heart, HeartPulse, Leaf
 
 import { enemyBestiary, type EnemyType, type KeywordId } from "@/lib/game-data";
 import { alchemistShopBg, campfire, eliteEnemyBg, merchantShopBg, mysteryBg, normalEnemyBg, placeholderDestination } from "@/lib/game-data";
-import { DESTINATIONS_PER_ACT } from "@/lib/game-constants";
+import { CAMPFIRE_HP_THRESHOLD, ELITE_HP_THRESHOLD, SHOP_MIN_GOLD, GHOST_DRAW_IN_MS, GHOST_DISCARD_OUT_MS, GHOST_ACTIVATE_MS, GHOST_PLAY_TRAVEL_MS } from "@/lib/game-constants";
 
 import type { CardGhostVariant, CollectionTab, Destination, DisplayMode, ResolutionOption, UiScale } from "./types";
 
 // Filters the destination pool to remove inappropriate choices for the current
 // game state. Boss Combat is never offered as a pick — it always fills slot 8.
 export function getAvailableDestinations(currentHp: number, currentGold: number, maxHp: number) {
-  const halfHp = Math.floor(maxHp * 0.5);
+  const halfHp = Math.floor(maxHp * ELITE_HP_THRESHOLD);
   return destinationPool.filter((d) => {
     if (d === "Boss Combat") return false;
-    if (d === "Campfire" && currentHp >= Math.floor(maxHp * 0.8) && currentHp >= halfHp) return false;
-    if ((d === "Merchant's Shop" || d === "Alchemist's Shop") && currentGold < 40) return false;
+    if (d === "Campfire" && currentHp >= Math.floor(maxHp * CAMPFIRE_HP_THRESHOLD) && currentHp >= halfHp) return false;
+    if ((d === "Merchant's Shop" || d === "Alchemist's Shop") && currentGold < SHOP_MIN_GOLD) return false;
     if (d === "Elite Combat" && currentHp < halfHp) return false;
     return true;
   });
@@ -93,7 +93,7 @@ export const keywordIcons: Record<KeywordId, LucideIcon> = {
 // Duration (ms) of each card ghost animation variant. Used by the card-ui
 // component to auto-remove ghost elements after their animation completes.
 export const ghostDurations: Record<CardGhostVariant, number> = {
-  "draw-in": 520, "discard-out": 320, activate: 672, "play-travel": 528,
+  "draw-in": GHOST_DRAW_IN_MS, "discard-out": GHOST_DISCARD_OUT_MS, activate: GHOST_ACTIVATE_MS, "play-travel": GHOST_PLAY_TRAVEL_MS,
 };
 
 // ---- Responsive Card Widths ----
