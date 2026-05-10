@@ -172,12 +172,7 @@ function tickPlayerPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
   if (reducedDamage > 0) {
     mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "poison", amount: reducedDamage });
   }
-  let nextPoison = state.playerStatuses.poison;
-  if (state.talentEffects.poisonGainChance > 0 && Math.random() * 100 < state.talentEffects.poisonGainChance) {
-    nextPoison += 1;
-  } else {
-    nextPoison = Math.max(0, nextPoison - 1);
-  }
+  const nextPoison = Math.max(0, state.playerStatuses.poison - 1);
   return { ...state, playerHealth: Math.max(0, state.playerHealth - reducedDamage), playerStatuses: { ...state.playerStatuses, poison: nextPoison } };
 }
 

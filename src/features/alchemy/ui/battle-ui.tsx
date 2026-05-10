@@ -295,7 +295,7 @@ export function PilePanel({ label, count, type, compact = false }: { label: stri
   const art = type === "draw" ? pileDrawArt : pileDiscardArt;
   if (compact) {
     return (
-      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+      <div className="flex items-center gap-1.5 text-xs text-muted-foreground" data-testid={`${type}-pile`} data-count={count}>
         <span className="font-semibold uppercase tracking-wider">{label}</span>
         <span className="font-medium text-foreground">{count}</span>
       </div>
@@ -304,6 +304,8 @@ export function PilePanel({ label, count, type, compact = false }: { label: stri
   return (
     <div
       className={cn("tilt-surface", cardSurfaceClass, pileCardWidthClass, "bg-transparent")}
+      data-testid={`${type}-pile`}
+      data-count={count}
       data-tilt-strength="12"
       onMouseMove={setTiltFromEvent}
       onMouseLeave={clearTiltFromEvent}

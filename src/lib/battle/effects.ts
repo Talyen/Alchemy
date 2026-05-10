@@ -63,8 +63,8 @@ function computeBaseDamage(state: BattleState, effect: Extract<BattleCardEffect,
   }
 
   if (effect.damageType === "holy") {
-    rawAmount += Math.floor(rawAmount * state.talentEffects.holyGoldPercent / 100 * state.gold);
-    rawAmount += Math.floor(rawAmount * state.talentEffects.holyBlockPercent / 100 * state.playerStatuses.block);
+    rawAmount += Math.floor(state.gold * state.talentEffects.holyGoldPercent / 100);
+    rawAmount += Math.floor(state.playerStatuses.block * state.talentEffects.holyBlockPercent / 100);
     if (state.enemyStatuses.burn > 0) {
       rawAmount = Math.floor(rawAmount * (1 + state.talentEffects.holyVsBurnMultiplier / 100));
     }
