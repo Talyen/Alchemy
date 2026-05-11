@@ -1,6 +1,7 @@
 import { createElement, type CSSProperties } from "react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Coins, Gem } from "lucide-react";
+import { AnimatePresence } from "motion/react";
 
 import { Progress } from "@/components/ui/progress";
 import { keywordDefinitions, pileDiscardArt, pileDrawArt, type KeywordId } from "@/lib/game-data";
@@ -14,10 +15,11 @@ import {
   keywordIcons,
   pileCardWidthClass,
   popupClassName,
+  statGradientColors,
   staticCardTransform,
 } from "../config";
-import type { FloatingCombatText, StatusChip } from "../types";
-import { clearTiltFromEvent, getCombatTextColorClass, getCombatTextIcon, setTiltFromEvent } from "../utils";
+import type { CombatTextAnimationVariant, FloatingCombatText, StatusChip } from "../types";
+import { clearTiltFromEvent, getCombatTextIcon, setTiltFromEvent } from "../utils";
 import { KeywordTag } from "./keyword-tag";
 import { DescriptionLines } from "./card-ui";
 import { ShimmerOverlay } from "./shared-ui";
@@ -37,33 +39,45 @@ function useChangeToken(value: number | string) {
   return token;
 }
 
-export function CombatTextRail({ entries, side }: { entries: FloatingCombatText[]; side: "player" | "enemy" }) {
+export function CombatTextRail({ entries, side, variant = "bounce" }: { entries: FloatingCombatText[]; side: "player" | "enemy"; variant?: CombatTextAnimationVariant }) {
   if (entries.length === 0) {
     return null;
   }
 
   return (
     <div className={cn("pointer-events-none relative z-30 h-24 w-full", side === "player" ? "flex justify-end" : "flex justify-start")}>
-      {entries.map((entry) => (
-        <CombatTextBubble key={entry.id} entry={entry} side={side} />
-      ))}
+      <AnimatePresence>
+        {entries.map((entry) => (
+          <CombatTextBubble key={entry.id} entry={entry} side={side} variant={variant} />
+        ))}
+      </AnimatePresence>
     </div>
   );
 }
 
-function CombatTextBubble({ entry, side }: { entry: FloatingCombatText; side: "player" | "enemy" }) {
-  const colorClass = getCombatTextColorClass(entry);
+function CombatTextBubble({ entry, side, variant }: { entry: FloatingCombatText; side: "player" | "enemy"; variant: CombatTextAnimationVariant }) {
+  const icon = getCombatTextIcon(entry);
+  const auroraColors = statGradientColors[entry.stat] ?? statGradientColors.physical;
+
+  const sharedClasses = cn(
+    "absolute whitespace-nowrap inline-flex items-center gap-2 text-3xl font-semibold",
+    side === "player" ? "left-0" : "right-0",
+    variant === "bounce" && "combat-text-bounce",
+    variant === "landing" && "combat-text-landing",
+  );
+
+  const sharedStyle = {
+    "--combat-text-lane": String(entry.lane),
+    "--aurora-0": auroraColors[0],
+    "--aurora-1": auroraColors[1],
+    "--aurora-2": auroraColors[2],
+    "--aurora-3": auroraColors[3],
+    "--aurora-4": auroraColors[4],
+  } as CSSProperties;
 
   return (
-    <div
-      className={cn(
-        "combat-text-float absolute whitespace-nowrap inline-flex items-center gap-2 text-3xl font-semibold",
-        colorClass,
-        side === "player" ? "left-0" : "right-0",
-      )}
-      style={{ "--combat-text-lane": String(entry.lane) } as CSSProperties}
-    >
-      {createElement(getCombatTextIcon(entry), { className: cn("h-7 w-7", colorClass) })}
+    <div className={sharedClasses} style={sharedStyle}>
+      {createElement(icon, { className: "h-7 w-7" })}
       <span>{entry.signedAmountText}</span>
     </div>
   );

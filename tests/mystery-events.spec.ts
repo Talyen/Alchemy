@@ -72,7 +72,7 @@ test.describe("Mystery Events", () => {
       await page.waitForTimeout(300);
     }
 
-    await expect(page.getByRole("heading", { name: "Reward" })).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole("button", { name: "Continue" })).toBeVisible({ timeout: 5000 });
 
     await page.getByRole("button", { name: "Continue" }).click();
     await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 5000 });

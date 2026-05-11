@@ -15,6 +15,8 @@ export type Destination = "Normal Combat" | "Elite Combat" | "Merchant's Shop" |
 
 export type CollectionTab = "cards" | "bestiary" | "trinkets";
 
+export type CombatTextAnimationVariant = "bounce" | "landing";
+
 export type CardGhostVariant = "draw-in" | "discard-out" | "activate" | "play-travel";
 
 export type CardRect = { x: number; y: number; width: number; height: number };

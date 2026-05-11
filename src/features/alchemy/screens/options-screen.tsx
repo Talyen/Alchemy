@@ -6,10 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 
-import { displayModeOptions, resolutionOptions, uiScaleOptions } from "../config";
+import { combatTextAnimationConfig, displayModeOptions, resolutionOptions, uiScaleOptions } from "../config";
 import { AnimatedHeight } from "../ui/animated-height";
 import { ConfirmationDialog, DisplayModeSelect, PageLayout, ResolutionSelect, ScreenHeader, UiScaleSelect } from "../ui/shared-ui";
-import type { DisplayMode, ResolutionOption, UiScale } from "../types";
+import type { CombatTextAnimationVariant, DisplayMode, ResolutionOption, UiScale } from "../types";
 
 type OptionsTab = "display" | "sound" | "gameplay" | "other";
 
@@ -44,7 +44,8 @@ function ToggleOption({ label, description, checked, onChange }: { label: string
 export function OptionsScreen({
   hasActiveBattle, onMainMenu, onReturnToBattle, selectedResolution, onResolutionChange, displayMode, onDisplayModeChange, showDisplayMode,
   uiScale, onUiScaleChange, masterVol, musicVol, sfxVol, onMasterVolChange, onMusicVolChange, onSfxVolChange,
-  brightness, onBrightnessChange, muteInBackground, onMuteInBackgroundChange, autoEndTurn, onAutoEndTurnChange, onResetOptions,
+  brightness, onBrightnessChange, muteInBackground, onMuteInBackgroundChange, autoEndTurn, onAutoEndTurnChange,
+  combatTextAnimationVariant, onCombatTextAnimationVariantChange, onResetOptions,
   showClearSaveConfirm, onOpenClearSaveConfirm, onCloseClearSaveConfirm, onConfirmClearSave, onUnlockAll,
 }: {
   hasActiveBattle: boolean; onMainMenu: () => void; onReturnToBattle: () => void;
@@ -55,6 +56,7 @@ export function OptionsScreen({
   masterVol: number; musicVol: number; sfxVol: number; onMasterVolChange: (v: number) => void; onMusicVolChange: (v: number) => void; onSfxVolChange: (v: number) => void;
   muteInBackground: boolean; onMuteInBackgroundChange: (checked: boolean) => void;
   autoEndTurn: boolean; onAutoEndTurnChange: (checked: boolean) => void;
+  combatTextAnimationVariant: CombatTextAnimationVariant; onCombatTextAnimationVariantChange: (v: CombatTextAnimationVariant) => void;
   onResetOptions: () => void;
   showClearSaveConfirm: boolean; onOpenClearSaveConfirm: () => void; onCloseClearSaveConfirm: () => void; onConfirmClearSave: () => void;
   onUnlockAll: () => void;
@@ -101,6 +103,22 @@ export function OptionsScreen({
           {tab === "other" ? (
             <div className="space-y-4">
               {import.meta.env.DEV ? (
+                <>
+                <div className="surface-muted rounded-[22px] border border-primary/40 p-5">
+                  <label className="text-sm font-semibold text-foreground">Floating Combat Text</label>
+                  <p className="mt-1 mb-3 text-sm text-muted-foreground">Choose an animation variant for floating combat numbers. Changes apply immediately.</p>
+                  <select
+                    className="w-full rounded-xl border border-border/70 bg-card px-4 py-2.5 text-sm font-medium text-foreground outline-none focus:border-primary"
+                    value={combatTextAnimationVariant}
+                    onChange={(e) => onCombatTextAnimationVariantChange(e.target.value as CombatTextAnimationVariant)}
+                  >
+                    {(Object.keys(combatTextAnimationConfig) as CombatTextAnimationVariant[]).map((key) => (
+                      <option key={key} value={key}>
+                        {combatTextAnimationConfig[key].label} — {combatTextAnimationConfig[key].description}
+                      </option>
+                    ))}
+                  </select>
+                </div>
                 <div className="surface-muted rounded-[22px] border border-primary/40 p-5">
                   <div className="flex items-center justify-between gap-4">
                     <div>
@@ -110,6 +128,7 @@ export function OptionsScreen({
                     <Button onClick={onUnlockAll}>Unlock All</Button>
                   </div>
                 </div>
+                </>
               ) : null}
               <div className="surface-muted rounded-[22px] border border-border/70 p-5">
                 <div className="flex items-center justify-between gap-4">

@@ -201,8 +201,15 @@
     animation-name: cardGhostPlayTravel;
   }
 
-  .combat-text-float {
-    animation: combatTextFloat 3100ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  .combat-text-bounce {
+    animation: combatTextBounce 2800ms cubic-bezier(0.16, 1, 0.3, 1) both,
+               auroraColorCycle 2800ms ease-in-out both;
+    will-change: transform, opacity;
+  }
+
+  .combat-text-landing {
+    animation: combatTextLanding 2400ms ease-out both,
+               auroraColorCycle 2400ms ease-in-out both;
     will-change: transform, opacity;
   }
 
@@ -379,16 +386,42 @@
   }
 }
 
-@keyframes combatTextFloat {
+@keyframes combatTextBounce {
   0% {
-    opacity: 1;
     transform: translate3d(0px, calc(var(--combat-text-lane, 0) * 56px), 0px) scale(0.92);
   }
-
+  30% { transform: translate3d(0px, calc(var(--combat-text-lane, 0) * 56px - 110px), 0px) scale(1.05); }
+  50% { transform: translate3d(0px, calc(var(--combat-text-lane, 0) * 56px - 88px), 0px) scale(1.03); }
+  70% { transform: translate3d(0px, calc(var(--combat-text-lane, 0) * 56px - 100px), 0px) scale(1.02); }
   100% {
     opacity: 0;
-    transform: translate3d(0px, calc(var(--combat-text-lane, 0) * 56px - 140px), 0px) scale(1.02);
+    transform: translate3d(0px, calc(var(--combat-text-lane, 0) * 56px - 105px), 0px) scale(1);
   }
+}
+
+@keyframes combatTextLanding {
+  0% {
+    opacity: 0;
+    transform: translate3d(0px, calc(var(--combat-text-lane, 0) * 56px), 0px) scale(1.4);
+  }
+  15% {
+    opacity: 1;
+  }
+  50% {
+    transform: translate3d(0px, calc(var(--combat-text-lane, 0) * 56px), 0px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(0px, calc(var(--combat-text-lane, 0) * 56px), 0px) scale(0.95);
+  }
+}
+
+@keyframes auroraColorCycle {
+  0% { color: var(--aurora-0); }
+  25% { color: var(--aurora-1); }
+  50% { color: var(--aurora-2); }
+  75% { color: var(--aurora-3); }
+  100% { color: var(--aurora-4); }
 }
 
 @keyframes shake {

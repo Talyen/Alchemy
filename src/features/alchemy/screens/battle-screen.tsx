@@ -13,7 +13,7 @@ import {
   mobileStageHandCardWidthClass,
 } from "../config";
 import { ArtPanel, BattleCardButton, CardGhostOverlay, CompanionPanel, CombatTextRail, ManaPanel, PilePanel } from "../components";
-import type { CardGhost, FloatingCombatText, StatusChip } from "../types";
+import type { CardGhost, CombatTextAnimationVariant, FloatingCombatText, StatusChip } from "../types";
 import { getHoverId } from "../utils";
 
 export function BattleScreen({
@@ -26,6 +26,7 @@ export function BattleScreen({
   enemyStatusChips,
   playerCombatTexts,
   enemyCombatTexts,
+  combatTextAnimationVariant,
   handCardRefs,
   onCardClick,
   onOpenMenu,
@@ -53,6 +54,7 @@ export function BattleScreen({
   enemyStatusChips: StatusChip[];
   playerCombatTexts: FloatingCombatText[];
   enemyCombatTexts: FloatingCombatText[];
+  combatTextAnimationVariant: CombatTextAnimationVariant;
   handCardRefs: MutableRefObject<Record<string, HTMLButtonElement | null>>;
   onCardClick: (card: BattleCard, index: number, event: MouseEvent<HTMLButtonElement>) => void;
   onOpenMenu: (rect?: DOMRect) => void;
@@ -99,7 +101,7 @@ export function BattleScreen({
         </div>
         <div className="relative flex items-start justify-center transition-transform duration-500 ease-out">
           <div className="absolute left-[calc(100%+clamp(28px,3cqw,44px))] top-[30%] z-30 w-40">
-            <CombatTextRail entries={playerCombatTexts} side="player" />
+            <CombatTextRail entries={playerCombatTexts} side="player" variant={combatTextAnimationVariant} />
           </div>
           <div className={hasCompanion ? "relative transition-transform duration-500 ease-out -translate-x-[clamp(12px,1.2vw,22px)]" : "relative transition-transform duration-500 ease-out"}>
             <ArtPanel
@@ -130,7 +132,7 @@ export function BattleScreen({
 
         <div className="relative flex flex-col items-center">
           <div className="absolute right-[calc(100%+clamp(28px,3cqw,44px))] top-[30%] z-30 w-40">
-            <CombatTextRail entries={enemyCombatTexts} side="enemy" />
+            <CombatTextRail entries={enemyCombatTexts} side="enemy" variant={combatTextAnimationVariant} />
           </div>
           <ArtPanel
             side="enemy"

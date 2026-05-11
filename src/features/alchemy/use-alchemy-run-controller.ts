@@ -8,12 +8,13 @@ import { useRunState } from "./use-run-state";
 import { useBattleController } from "./use-battle-controller";
 import { useShopController } from "./use-shop-controller";
 import { useRunNavigation } from "./use-run-navigation";
-import type { Screen } from "./types";
+import type { CombatTextAnimationVariant, Screen } from "./types";
 
 export function useAlchemyRunController({
   discoveredCardIds, setDiscoveredCardIds, setEncounteredEnemyIds,
   setDiscoveredTrinketIds,
   initialTalentXP, initialUnlockedTalents, initialActiveRun, autoEndTurn,
+  combatTextAnimationVariant,
   onAddMaterials, onTriggerFarmYield, homesteadEffects,
 }: {
   discoveredCardIds: string[];
@@ -23,6 +24,7 @@ export function useAlchemyRunController({
   initialTalentXP: TalentXP; initialUnlockedTalents: UnlockedTalents;
   initialActiveRun: { characterId: CharacterId } | null;
   autoEndTurn: boolean;
+  combatTextAnimationVariant: CombatTextAnimationVariant;
   onAddMaterials: (materials: MaterialInventory) => void;
   onTriggerFarmYield: () => void;
   homesteadEffects: HomesteadEffectManifest;
@@ -37,7 +39,6 @@ export function useAlchemyRunController({
 
   // ============ Screen Navigation ============
   const navTimerRef = useRef<number>(0);
-  useEffect(() => () => window.clearTimeout(navTimerRef.current), []);
 
   function navigateTo(nextScreen: Screen) {
     window.clearTimeout(navTimerRef.current);
@@ -56,7 +57,7 @@ export function useAlchemyRunController({
   const battle = useBattleController({
     run, talents,
     discoveredCardIds, setDiscoveredCardIds, setEncounteredEnemyIds,
-    autoEndTurn, homesteadEffectsRef, screen,
+    autoEndTurn, combatTextAnimationVariant, homesteadEffectsRef, screen,
     setHoveredCardId,
     initialHasActiveBattle: initialActiveRun !== null,
   });
@@ -126,6 +127,7 @@ export function useAlchemyRunController({
     shimmerState: battle.shimmerState,
     playerStatusChips: battle.playerStatusChips, enemyStatusChips: battle.enemyStatusChips,
     playerCombatTexts: battle.playerCombatTexts, enemyCombatTexts: battle.enemyCombatTexts,
+    combatTextAnimationVariant: battle.combatTextAnimationVariant,
     enemyShaking: battle.enemyShaking, playerShaking: battle.playerShaking, companionShaking: battle.companionShaking,
     beginRun: nav.beginRun, handleCharacterSelect: nav.handleCharacterSelect,
     returnToBattle: nav.returnToBattle, goToScreen: nav.goToScreen,

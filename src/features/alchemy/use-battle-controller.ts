@@ -10,7 +10,7 @@ import { playCardSound, playEnemyAttack, playGoldGain } from "@/lib/audio";
 import { getCurrentEnemy, getBossEnemy } from "./config";
 import { useCardGhosts, useFloatingCombatTexts, useShimmerController } from "./hooks";
 import { animateCardActivation } from "./run-controller-helpers";
-import type { Screen } from "./types";
+import type { CombatTextAnimationVariant, Screen } from "./types";
 import { computeTrinketManifest } from "@/lib/trinkets";
 import { mergeIntoManifest } from "@/lib/homestead/effects";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
@@ -22,7 +22,7 @@ import type { useTalentState } from "./use-talent-state";
 export function useBattleController({
   run, talents,
   discoveredCardIds, setDiscoveredCardIds, setEncounteredEnemyIds,
-  autoEndTurn, homesteadEffectsRef, screen,
+  autoEndTurn, combatTextAnimationVariant, homesteadEffectsRef, screen,
   setHoveredCardId, initialHasActiveBattle,
 }: {
   run: ReturnType<typeof useRunState>;
@@ -31,6 +31,7 @@ export function useBattleController({
   setDiscoveredCardIds: React.Dispatch<React.SetStateAction<string[]>>;
   setEncounteredEnemyIds: React.Dispatch<React.SetStateAction<string[]>>;
   autoEndTurn: boolean;
+  combatTextAnimationVariant: CombatTextAnimationVariant;
   homesteadEffectsRef: React.MutableRefObject<HomesteadEffectManifest>;
   screen: Screen;
   setHoveredCardId: React.Dispatch<React.SetStateAction<string | null>>;
@@ -58,7 +59,7 @@ export function useBattleController({
   useEffect(() => () => { if (companionTimeoutRef.current) clearTimeout(companionTimeoutRef.current); }, []);
 
   const { cardGhosts, removeCardGhost, clearCardGhosts, spawnCardGhost } = useCardGhosts();
-  const { floatingCombatTexts, showCombatTexts } = useFloatingCombatTexts();
+  const { floatingCombatTexts, showCombatTexts } = useFloatingCombatTexts(combatTextAnimationVariant);
   const { shimmerState, maybeTriggerShimmer } = useShimmerController();
 
   const playerStatusChips = useMemo(() => getPlayerStatusChips(battleState), [battleState]);
@@ -191,6 +192,7 @@ export function useBattleController({
     battleStateRef,
     cardGhosts, shimmerState, floatingCombatTexts,
     playerStatusChips, enemyStatusChips, playerCombatTexts, enemyCombatTexts,
+    combatTextAnimationVariant,
     startBattle, startBossBattle,
     handleCardClick, handleWishChoice, handleEndTurn, handleEndRun,
     skipCombatDevMode, removeCardGhost, maybeTriggerShimmer, clearCardGhosts,

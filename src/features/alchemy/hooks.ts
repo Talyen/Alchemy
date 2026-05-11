@@ -2,8 +2,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { CombatTextEvent } from "@/lib/battle";
 
-import type { CardGhost, FloatingCombatText, ResolutionOption } from "./types";
-import { COMBAT_TEXT_LANE_DELAY_MS, COMBAT_TEXT_LIFETIME_MS, SHIMMER_COOLDOWN_MS } from "@/lib/game-constants";
+import type { CardGhost, CombatTextAnimationVariant, FloatingCombatText, ResolutionOption } from "./types";
+import { COMBAT_TEXT_LANE_DELAY_MS, SHIMMER_COOLDOWN_MS } from "@/lib/game-constants";
+import { combatTextAnimationConfig } from "./config";
 
 // ---- Card Shimmer (Hover Effect) ----
 // Manages the "shimmer" animation that sweeps across card art on mouse hover.
@@ -32,12 +33,13 @@ export function useShimmerController() {
 // cards produce a single float instead of overlapping numbers.
 // Entries are staggered by lane so simultaneous texts queue visually.
 
-const combatTextLifetimeMs = COMBAT_TEXT_LIFETIME_MS;
 const combatTextLaneDelayMs = COMBAT_TEXT_LANE_DELAY_MS;
 
-export function useFloatingCombatTexts() {
+export function useFloatingCombatTexts(variant: CombatTextAnimationVariant = "bounce") {
   const [floatingCombatTexts, setFloatingCombatTexts] = useState<FloatingCombatText[]>([]);
   const timerRefs = useRef<number[]>([]);
+
+  const combatTextLifetimeMs = combatTextAnimationConfig[variant].lifetimeMs;
 
   useEffect(() => {
     return () => {

@@ -9,16 +9,35 @@ async function skipAndReward(page: ReturnType<typeof test>["page"]) {
 }
 
 async function navigateToDestination(page: ReturnType<typeof test>["page"], name: string) {
-  for (let attempt = 0; attempt < 5; attempt++) {
+  for (let attempt = 0; attempt < 10; attempt++) {
     await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 10000 });
     const target = page.getByRole("button", { name });
     if (await target.isVisible({ timeout: 500 }).catch(() => false)) {
       await target.click();
       return;
     }
-    await page.getByRole("button", { name: /Combat/ }).first().click();
-    await page.waitForSelector('[aria-label^="Play "]');
-    await skipAndReward(page);
+    const combatBtn = page.getByRole("button", { name: /Combat/ }).first();
+    if (await combatBtn.isVisible({ timeout: 500 }).catch(() => false)) {
+      await combatBtn.click();
+      await page.waitForSelector('[aria-label^="Play "]');
+      await skipAndReward(page);
+    } else {
+      await page.getByRole("button").last().click();
+      await page.waitForTimeout(500);
+      const cont = page.getByRole("button", { name: "Continue" });
+      if (await cont.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await cont.click();
+      } else {
+        const choiceBtn = page.locator("button").filter({ hasNotText: /Cancel|Menu|Remove Card|Previous|Next/ }).first();
+        if (await choiceBtn.isVisible({ timeout: 1000 }).catch(() => false)) {
+          await choiceBtn.click();
+          await page.waitForTimeout(300);
+          await page.getByRole("button", { name: /Continue|Add Card|Remove Card/ }).first().click({ timeout: 2000 }).catch(() => {});
+          await page.waitForTimeout(200);
+          await page.getByRole("button", { name: "Continue" }).click({ timeout: 2000 }).catch(() => {});
+        }
+      }
+    }
   }
   test.skip(true, `Could not find "${name}" in destination choices`);
 }
@@ -78,6 +97,9 @@ test.describe("Alchemist Shop", () => {
         await page.waitForSelector('[aria-label^="Play "]');
       }
     }
+
+    // Allow navigateTo debounce + page exit animation to complete
+    await page.waitForTimeout(500);
 
     await navigateToDestination(page, "Alchemist's Shop");
     await expect(page.getByRole("heading", { name: "Alchemist's Shop" })).toBeVisible();

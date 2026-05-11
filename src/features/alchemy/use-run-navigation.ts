@@ -65,7 +65,10 @@ export function useRunNavigation({
 
   const destinationButtonRefs = useRef<Partial<Record<Destination, HTMLButtonElement | null>>>({});
 
-  function getAvailableDestinations(currentHp?: number, currentGold?: number) {
+  function getAvailableDestinations(currentHp?: number, currentGold?: number, destIdxInAct?: number) {
+    if ((destIdxInAct ?? run.destinationIndexInAct) >= DESTINATIONS_PER_ACT - 1) {
+      return ["Boss Combat"];
+    }
     const hp = currentHp ?? run.runPlayerHealth;
     const gold = currentGold ?? run.runGold;
     return getFilteredDestinations(hp, gold, run.runMaxHealth);
@@ -178,11 +181,6 @@ export function useRunNavigation({
       return;
     }
 
-    if (run.destinationIndexInAct >= DESTINATIONS_PER_ACT - 1) {
-      onStartBossBattle(); navigateTo("battle");
-      return;
-    }
-
     navigateTo("destination");
   }
 
@@ -196,6 +194,7 @@ export function useRunNavigation({
     else if (destination === "Alchemist's Shop") { onInitAlchemist(); navigateTo("alchemist"); }
     else if (destination === "Mystery") { setMysteryEvent(mysteryPool[Math.floor(Math.random() * mysteryPool.length)]); setMysteryCardChoices(null); navigateTo("mystery"); }
     else if (destination === "Elite Combat") { onStartBattle(undefined, undefined, "elite"); navigateTo("battle"); }
+    else if (destination === "Boss Combat") { onStartBossBattle(); navigateTo("battle"); }
     else { onStartBattle(undefined, undefined, "normal"); navigateTo("battle"); }
   }
 
@@ -212,7 +211,7 @@ export function useRunNavigation({
       run.setCompletedDestinations([]);
       setRewardState((prev) => ({
         ...prev,
-        destinations: sampleItems(getAvailableDestinations(), DESTINATION_CHOICES),
+        destinations: sampleItems(getAvailableDestinations(undefined, undefined, 0), DESTINATION_CHOICES),
       }));
       navigateTo("destination");
     }
@@ -220,9 +219,6 @@ export function useRunNavigation({
 
   function advanceToNextDestination() {
     run.setRoomsEncountered((p) => p + 1);
-    if (run.destinationIndexInAct >= DESTINATIONS_PER_ACT - 1) {
-      onStartBossBattle(); navigateTo("battle"); return;
-    }
     setRewardState((prev) => ({ ...prev, destinations: sampleItems(getAvailableDestinations(), DESTINATION_CHOICES) }));
     setHoveredCardId(null); setMysteryCardChoices(null); navigateTo("destination");
   }
