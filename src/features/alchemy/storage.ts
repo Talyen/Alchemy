@@ -1,4 +1,4 @@
-import { starterDeck, type CharacterId } from "@/lib/game-data";
+import { starterDeck, type BattleCard, type CharacterId } from "@/lib/game-data";
 import type { TalentXP } from "@/lib/talents";
 import type { BuildingId, FarmId, MaterialInventory, ResearchId } from "@/lib/homestead/types";
 import { emptyInventory } from "@/lib/homestead/types";
@@ -34,20 +34,59 @@ type SaveData = {
 
 type ActiveRunData = {
   characterId: CharacterId;
+  runDeck: BattleCard[];
+  runGold: number;
+  runPlayerHealth: number;
+  runMaxHealth: number;
+  roomsEncountered: number;
+  currentAct: number;
+  destinationIndexInAct: number;
+  completedDestinations: string[];
+  runTrinkets: string[];
 };
+
+function isValidCharacterId(id: string): id is CharacterId {
+  return id === "knight" || id === "ranger" || id === "rogue" || id === "wizard";
+}
 
 export function normalizeActiveRun(activeRun: unknown): ActiveRunData | null {
   if (!activeRun || typeof activeRun !== "object") {
     return null;
   }
 
-  const candidate = activeRun as { characterId?: string };
-  const characterId = candidate.characterId === "sorcerer" ? "wizard" : candidate.characterId === "warden" ? "ranger" : candidate.characterId;
-  if (characterId !== "knight" && characterId !== "ranger" && characterId !== "rogue" && characterId !== "wizard") {
+  const candidate = activeRun as Record<string, unknown>;
+  const rawCharacterId = candidate.characterId === "sorcerer" ? "wizard" : candidate.characterId === "warden" ? "ranger" : candidate.characterId;
+  const characterId = typeof rawCharacterId === "string" && isValidCharacterId(rawCharacterId) ? rawCharacterId : null;
+  if (!characterId) {
     return null;
   }
 
-  return { characterId };
+  const runDeck = Array.isArray(candidate.runDeck) ? candidate.runDeck as BattleCard[] : [];
+  const runGold = typeof candidate.runGold === "number" ? candidate.runGold : 0;
+  const runPlayerHealth = typeof candidate.runPlayerHealth === "number" ? candidate.runPlayerHealth : 30;
+  const runMaxHealth = typeof candidate.runMaxHealth === "number" ? candidate.runMaxHealth : 30;
+  const roomsEncountered = typeof candidate.roomsEncountered === "number" ? candidate.roomsEncountered : 0;
+  const currentAct = typeof candidate.currentAct === "number" ? candidate.currentAct : 1;
+  const destinationIndexInAct = typeof candidate.destinationIndexInAct === "number" ? candidate.destinationIndexInAct : 0;
+  const completedDestinations = Array.isArray(candidate.completedDestinations) ? candidate.completedDestinations as string[] : [];
+  const runTrinkets = Array.isArray(candidate.runTrinkets) ? candidate.runTrinkets as string[] : [];
+
+  if (runDeck.length === 0) {
+    return null; // No deck = no valid run to restore
+  }
+
+  return {
+    characterId,
+    runDeck,
+    runGold,
+    runPlayerHealth,
+    runMaxHealth,
+    roomsEncountered,
+    currentAct,
+    destinationIndexInAct,
+    completedDestinations,
+    runTrinkets,
+  };
 }
 
 export const defaultSaveData: SaveData = {

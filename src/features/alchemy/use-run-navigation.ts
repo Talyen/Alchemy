@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createBattleState, maxPlayerHealth } from "@/lib/battle";
 import { cardLibrary, characters, starterDeck, trinketLibrary, type BattleCard, type CharacterId, type TrinketEntry } from "@/lib/game-data";
 import { playVictory, playDefeat, playGoldGain, playGoldSpend } from "@/lib/audio";
@@ -23,6 +23,7 @@ export function useRunNavigation({
   run, talents,
   screen, setScreen, navigateTo,
   battleState, hasActiveBattle, setHasActiveBattle,
+  hasActiveRun, setHasActiveRun,
   battleStateRef,
   clearCardGhosts, setBattleState,
   setDiscoveredCardIds,
@@ -40,6 +41,8 @@ export function useRunNavigation({
   battleState: BattleState;
   hasActiveBattle: boolean;
   setHasActiveBattle: React.Dispatch<React.SetStateAction<boolean>>;
+  hasActiveRun: boolean;
+  setHasActiveRun: React.Dispatch<React.SetStateAction<boolean>>;
   battleStateRef: React.MutableRefObject<BattleState>;
   clearCardGhosts: () => void;
   setBattleState: React.Dispatch<React.SetStateAction<BattleState>>;
@@ -65,9 +68,22 @@ export function useRunNavigation({
 
   const destinationButtonRefs = useRef<Partial<Record<Destination, HTMLButtonElement | null>>>({});
 
-  function getAvailableDestinations(currentHp?: number, currentGold?: number, destIdxInAct?: number) {
+  const currentActiveRunData = useMemo(() => ({
+    characterId: run.characterId,
+    runDeck: run.runDeck,
+    runGold: run.runGold,
+    runPlayerHealth: run.runPlayerHealth,
+    runMaxHealth: run.runMaxHealth,
+    roomsEncountered: run.roomsEncountered,
+    currentAct: run.currentAct,
+    destinationIndexInAct: run.destinationIndexInAct,
+    completedDestinations: run.completedDestinations,
+    runTrinkets: run.runTrinkets,
+  }), [run.characterId, run.runDeck, run.runGold, run.runPlayerHealth, run.runMaxHealth, run.roomsEncountered, run.currentAct, run.destinationIndexInAct, run.completedDestinations, run.runTrinkets]);
+
+  function getAvailableDestinations(currentHp?: number, currentGold?: number, destIdxInAct?: number): Destination[] {
     if ((destIdxInAct ?? run.destinationIndexInAct) >= DESTINATIONS_PER_ACT - 1) {
-      return ["Boss Combat"];
+      return ["Boss Combat" as Destination];
     }
     const hp = currentHp ?? run.runPlayerHealth;
     const gold = currentGold ?? run.runGold;
@@ -125,7 +141,18 @@ export function useRunNavigation({
 
   // ============ Game Flow ============
 
-  function beginRun() { if (hasActiveBattle) { returnToBattle(); return; } navigateTo("character-select"); }
+  function beginRun() {
+    if (hasActiveBattle) { returnToBattle(); return; }
+    if (hasActiveRun) {
+      setRewardState((prev) => ({
+        ...prev,
+        destinations: prev.destinations.length > 0 ? prev.destinations : sampleItems(getAvailableDestinations(), DESTINATION_CHOICES),
+      }));
+      navigateTo("destination");
+      return;
+    }
+    navigateTo("character-select");
+  }
 
   function handleCharacterSelect(selectedId: CharacterId) {
     const character = characters[selectedId];
@@ -151,6 +178,7 @@ export function useRunNavigation({
     setDiscoveredCardIds((current) => Array.from(new Set([...current, ...freshDeck.map((c) => c.id)])));
     setEncounteredEnemyIds([]);
     setHoveredCardId(null);
+    setHasActiveRun(true);
     navigateTo("destination");
   }
 
@@ -326,7 +354,7 @@ export function useRunNavigation({
     clearCardGhosts(); setBattleState(createBattleState(starterDeck, 0));
     run.reset(); talents.resetRunXP();
     setRewardState({ choices: [], gold: 0, materials: emptyInventory(), selectedId: null, destinations: [], rewardType: "card" });
-    setMysteryCardChoices(null); setHoveredCardId(null); setHasActiveBattle(false); navigateTo("menu");
+    setMysteryCardChoices(null); setHoveredCardId(null); setHasActiveBattle(false); setHasActiveRun(false); navigateTo("menu");
   }
 
   return {
@@ -341,7 +369,7 @@ export function useRunNavigation({
     get destinationOptions() { return rewardState.destinations; },
     get mysteryEvent() { return mysteryEvent; },
     get mysteryCardChoices() { return mysteryCardChoices; },
-    get activeRunData() { return hasActiveBattle ? { characterId: run.characterId } : null; },
+    get activeRunData() { return currentActiveRunData; },
     destinationButtonRefs,
     getAvailableDestinations, advanceToNextDestination,
     beginRun, handleCharacterSelect, returnToBattle, goToScreen,

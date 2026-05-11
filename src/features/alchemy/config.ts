@@ -5,7 +5,7 @@ import { enemyBestiary, type EnemyType, type KeywordId } from "@/lib/game-data";
 import { alchemistShopBg, campfire, eliteEnemyBg, merchantShopBg, mysteryBg, normalEnemyBg, placeholderDestination } from "@/lib/game-data";
 import { CAMPFIRE_HP_THRESHOLD, ELITE_HP_THRESHOLD, SHOP_MIN_GOLD, GHOST_DRAW_IN_MS, GHOST_DISCARD_OUT_MS, GHOST_ACTIVATE_MS, GHOST_PLAY_TRAVEL_MS } from "@/lib/game-constants";
 
-import type { CardGhostVariant, CollectionTab, CombatTextAnimationVariant, Destination, DisplayMode, ResolutionOption, UiScale } from "./types";
+import type { CardGhostVariant, CollectionTab, Destination, DisplayMode, ResolutionOption, UiScale } from "./types";
 
 // Filters the destination pool to remove inappropriate choices for the current
 // game state. Boss Combat is excluded here — it's injected by useRunNavigation
@@ -155,34 +155,6 @@ export const keywordAliases: Array<{ match: string; keywordId: KeywordId }> = [
   { match: "Mana", keywordId: "mana" },   { match: "Companion", keywordId: "companion" },
   { match: "HP", keywordId: "health" },
 ];
-
-// ---- Combat Text Animation Variants ----
-// Each variant defines its label, description, whether it uses CSS or framer-motion,
-// and the DOM lifetime (animation finishes slightly before removal).
-export const combatTextAnimationConfig: Record<CombatTextAnimationVariant, { label: string; description: string; lifetimeMs: number }> = {
-  "bounce": { label: "Bounce", description: "Tossed upward with a gentle bounce — colors cycle through keyword aurora palette", lifetimeMs: 3000 },
-  "landing": { label: "Landing", description: "Scales down from above and lands in place with deceleration — colors cycle through keyword aurora palette", lifetimeMs: 2600 },
-};
-
-// Maps keyword stats to gradient color arrays for the aurora animation variant.
-// Each array is [dark, mid, light, mid, dark] to create a glowing wave effect
-// as background-position scrolls through the gradient.
-export const statGradientColors: Record<string, string[]> = {
-  physical: ["#475569", "#94a3b8", "#f8fafc", "#94a3b8", "#475569"],
-  holy: ["#b45309", "#f59e0b", "#fef3c7", "#f59e0b", "#b45309"],
-  stun: ["#b45309", "#f59e0b", "#fde68a", "#f59e0b", "#b45309"],
-  burn: ["#c2410c", "#fb923c", "#fed7aa", "#fb923c", "#c2410c"],
-  poison: ["#4d7c0f", "#a3e635", "#bef264", "#a3e635", "#4d7c0f"],
-  bleed: ["#9f1239", "#fb7185", "#fda4af", "#fb7185", "#9f1239"],
-  freeze: ["#0369a1", "#22d3ee", "#e0f2fe", "#22d3ee", "#0369a1"],
-  block: ["#0369a1", "#7dd3fc", "#e0f2fe", "#7dd3fc", "#0369a1"],
-  armor: ["#a16207", "#fde047", "#fef08a", "#fde047", "#a16207"],
-  forge: ["#a16207", "#facc15", "#fde047", "#facc15", "#a16207"],
-  haste: ["#86198f", "#e879f9", "#f0abfc", "#e879f9", "#86198f"],
-  health: ["#047857", "#34d399", "#a7f3d0", "#34d399", "#047857"],
-  mana: ["#0369a1", "#38bdf8", "#bae6fd", "#38bdf8", "#0369a1"],
-  gold: ["#a16207", "#facc15", "#fde047", "#facc15", "#a16207"],
-};
 
 // Pre-compiled regex for keyword highlighting. Built once at module init so
 // card description rendering doesn't rebuild the regex on every frame.

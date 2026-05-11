@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { staticCardTransform } from "../config";
 import { clearTiltFromEvent, setTiltFromEvent } from "../utils";
 
-export function MenuScreen({ onPlay, onCollection, onOptions, onTalents, onHomestead, onQuit, logoSrc, hasActiveBattle, isMobileLandscape = false }: { onPlay: () => void; onCollection: () => void; onOptions: () => void; onTalents: () => void; onHomestead: () => void; onQuit?: () => void; logoSrc: string; hasActiveBattle?: boolean; isMobileLandscape?: boolean }) {
+export function MenuScreen({ onPlay, onCollection, onOptions, onTalents, onHomestead, onQuit, logoSrc, hasActiveBattle, hasActiveRun, isMobileLandscape = false }: { onPlay: () => void; onCollection: () => void; onOptions: () => void; onTalents: () => void; onHomestead: () => void; onQuit?: () => void; logoSrc: string; hasActiveBattle?: boolean; hasActiveRun?: boolean; isMobileLandscape?: boolean }) {
   return (
     <div className={`flex h-full w-full flex-col items-center justify-center text-center ${isMobileLandscape ? "gap-2" : "gap-8"}`}>
       <div
@@ -26,7 +26,7 @@ export function MenuScreen({ onPlay, onCollection, onOptions, onTalents, onHomes
 
       <div className="grid gap-2">
         <Button size={isMobileLandscape ? "sm" : "lg"} className={`stagger-item justify-center gap-2 ${isMobileLandscape ? "w-36 text-xs" : "w-56 text-base"}`} style={{ "--stagger-index": 0 } as CSSProperties} onClick={onPlay}>
-          <Swords className={isMobileLandscape ? "h-3.5 w-3.5" : "h-4 w-4"} />{hasActiveBattle ? "Resume Run" : "Play"}
+          <Swords className={isMobileLandscape ? "h-3.5 w-3.5" : "h-4 w-4"} />{hasActiveBattle || hasActiveRun ? "Resume Run" : "Play"}
         </Button>
         <Button size={isMobileLandscape ? "sm" : "lg"} variant="outline" className={`stagger-item justify-center gap-2 ${isMobileLandscape ? "w-36 text-xs" : "w-56 text-base"}`} style={{ "--stagger-index": 1 } as CSSProperties} onClick={onCollection}>
           <BookOpen className={isMobileLandscape ? "h-3.5 w-3.5" : "h-4 w-4"} />Collection

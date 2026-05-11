@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { cardLibrary, trinketLibrary, type CharacterId } from "@/lib/game-data";
+import { cardLibrary, trinketLibrary, type BattleCard, type CharacterId } from "@/lib/game-data";
 import type { TalentXP } from "@/lib/talents";
 import type { HomesteadEffectManifest, MaterialInventory } from "@/lib/homestead/types";
 import type { UnlockedTalents } from "./talent-pool";
@@ -8,13 +8,12 @@ import { useRunState } from "./use-run-state";
 import { useBattleController } from "./use-battle-controller";
 import { useShopController } from "./use-shop-controller";
 import { useRunNavigation } from "./use-run-navigation";
-import type { CombatTextAnimationVariant, Screen } from "./types";
+import type { Screen } from "./types";
 
 export function useAlchemyRunController({
   discoveredCardIds, setDiscoveredCardIds, setEncounteredEnemyIds,
   setDiscoveredTrinketIds,
   initialTalentXP, initialUnlockedTalents, initialActiveRun, autoEndTurn,
-  combatTextAnimationVariant,
   onAddMaterials, onTriggerFarmYield, homesteadEffects,
 }: {
   discoveredCardIds: string[];
@@ -24,7 +23,6 @@ export function useAlchemyRunController({
   initialTalentXP: TalentXP; initialUnlockedTalents: UnlockedTalents;
   initialActiveRun: { characterId: CharacterId } | null;
   autoEndTurn: boolean;
-  combatTextAnimationVariant: CombatTextAnimationVariant;
   onAddMaterials: (materials: MaterialInventory) => void;
   onTriggerFarmYield: () => void;
   homesteadEffects: HomesteadEffectManifest;
@@ -36,6 +34,7 @@ export function useAlchemyRunController({
   // ============ Shared State ============
   const [screen, setScreen] = useState<Screen>("menu");
   const [hoveredCardId, setHoveredCardId] = useState<string | null>(null);
+  const [hasActiveRun, setHasActiveRun] = useState(initialActiveRun !== null);
 
   // ============ Screen Navigation ============
   const navTimerRef = useRef<number>(0);
@@ -57,9 +56,9 @@ export function useAlchemyRunController({
   const battle = useBattleController({
     run, talents,
     discoveredCardIds, setDiscoveredCardIds, setEncounteredEnemyIds,
-    autoEndTurn, combatTextAnimationVariant, homesteadEffectsRef, screen,
+    autoEndTurn, homesteadEffectsRef, screen,
     setHoveredCardId,
-    initialHasActiveBattle: initialActiveRun !== null,
+    initialHasActiveBattle: false,
   });
 
   const shop = useShopController({
@@ -73,6 +72,8 @@ export function useAlchemyRunController({
     battleState: battle.battleState,
     hasActiveBattle: battle.hasActiveBattle,
     setHasActiveBattle: battle.setHasActiveBattle,
+    hasActiveRun,
+    setHasActiveRun,
     battleStateRef: battle.battleStateRef,
     clearCardGhosts: battle.clearCardGhosts,
     setBattleState: battle.setBattleState,
@@ -91,7 +92,7 @@ export function useAlchemyRunController({
   return {
     screen,
     battleState: battle.battleState,
-    hoveredCardId, hasActiveBattle: battle.hasActiveBattle,
+    hoveredCardId, hasActiveBattle: battle.hasActiveBattle, hasActiveRun,
     runDeck: run.runDeck, runGold: run.runGold, runPlayerHealth: run.runPlayerHealth, runMaxHealth: run.runMaxHealth,
     runTrinkets: run.runTrinkets, roomsEncountered: run.roomsEncountered,
     currentAct: run.currentAct, destinationIndexInAct: run.destinationIndexInAct,
@@ -127,7 +128,6 @@ export function useAlchemyRunController({
     shimmerState: battle.shimmerState,
     playerStatusChips: battle.playerStatusChips, enemyStatusChips: battle.enemyStatusChips,
     playerCombatTexts: battle.playerCombatTexts, enemyCombatTexts: battle.enemyCombatTexts,
-    combatTextAnimationVariant: battle.combatTextAnimationVariant,
     enemyShaking: battle.enemyShaking, playerShaking: battle.playerShaking, companionShaking: battle.companionShaking,
     beginRun: nav.beginRun, handleCharacterSelect: nav.handleCharacterSelect,
     returnToBattle: nav.returnToBattle, goToScreen: nav.goToScreen,

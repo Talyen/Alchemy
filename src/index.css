@@ -201,18 +201,6 @@
     animation-name: cardGhostPlayTravel;
   }
 
-  .combat-text-bounce {
-    animation: combatTextBounce 2800ms cubic-bezier(0.16, 1, 0.3, 1) both,
-               auroraColorCycle 2800ms ease-in-out both;
-    will-change: transform, opacity;
-  }
-
-  .combat-text-landing {
-    animation: combatTextLanding 2400ms ease-out both,
-               auroraColorCycle 2400ms ease-in-out both;
-    will-change: transform, opacity;
-  }
-
   .motion-overlay {
     animation: overlayFadeIn 160ms ease-out both;
   }
@@ -386,43 +374,7 @@
   }
 }
 
-@keyframes combatTextBounce {
-  0% {
-    transform: translate3d(0px, calc(var(--combat-text-lane, 0) * 56px), 0px) scale(0.92);
-  }
-  30% { transform: translate3d(0px, calc(var(--combat-text-lane, 0) * 56px - 110px), 0px) scale(1.05); }
-  50% { transform: translate3d(0px, calc(var(--combat-text-lane, 0) * 56px - 88px), 0px) scale(1.03); }
-  70% { transform: translate3d(0px, calc(var(--combat-text-lane, 0) * 56px - 100px), 0px) scale(1.02); }
-  100% {
-    opacity: 0;
-    transform: translate3d(0px, calc(var(--combat-text-lane, 0) * 56px - 105px), 0px) scale(1);
-  }
-}
 
-@keyframes combatTextLanding {
-  0% {
-    opacity: 0;
-    transform: translate3d(0px, calc(var(--combat-text-lane, 0) * 56px), 0px) scale(1.4);
-  }
-  15% {
-    opacity: 1;
-  }
-  50% {
-    transform: translate3d(0px, calc(var(--combat-text-lane, 0) * 56px), 0px) scale(1);
-  }
-  100% {
-    opacity: 0;
-    transform: translate3d(0px, calc(var(--combat-text-lane, 0) * 56px), 0px) scale(0.95);
-  }
-}
-
-@keyframes auroraColorCycle {
-  0% { color: var(--aurora-0); }
-  25% { color: var(--aurora-1); }
-  50% { color: var(--aurora-2); }
-  75% { color: var(--aurora-3); }
-  100% { color: var(--aurora-4); }
-}
 
 @keyframes shake {
   0% { transform: translateX(0); }
@@ -432,6 +384,11 @@
   60% { transform: translateX(5px); }
   76% { transform: translateX(-3px); }
   100% { transform: translateX(0); }
+}
+
+@keyframes shinySweep {
+  0% { background-position: 150% 50%; }
+  100% { background-position: -50% 50%; }
 }
 
 @keyframes hoverPopupQuickInAbove {
@@ -621,3 +578,6 @@
   .mobile-landscape .max-w-\[400px\] { max-width: 160px !important; }
   .mobile-landscape .max-w-\[352px\] { max-width: 160px !important; }
 }
+
+
+

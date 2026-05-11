@@ -1,19 +1,32 @@
 import { useState } from "react";
-import { characters, starterDeck, type BattleCard, type CharacterId } from "@/lib/game-data";
+import { starterDeck, type BattleCard, type CharacterId } from "@/lib/game-data";
 import { maxPlayerHealth } from "@/lib/battle/types";
 import type { Destination } from "./types";
 
-export function useRunState(initialActiveRun: { characterId: CharacterId } | null) {
-  const [runDeck, setRunDeck] = useState<BattleCard[]>(() => initialActiveRun ? [...characters[initialActiveRun.characterId].startingDeck] : [...starterDeck]);
-  const [runGold, setRunGold] = useState(0);
-  const [runPlayerHealth, setRunPlayerHealth] = useState(maxPlayerHealth);
-  const [runMaxHealth, setRunMaxHealth] = useState(maxPlayerHealth);
-  const [roomsEncountered, setRoomsEncountered] = useState(0);
-  const [currentAct, setCurrentAct] = useState(1);
-  const [destinationIndexInAct, setDestinationIndexInAct] = useState(0);
-  const [completedDestinations, setCompletedDestinations] = useState<Destination[]>([]);
+type ActiveRunData = {
+  characterId: CharacterId;
+  runDeck: BattleCard[];
+  runGold: number;
+  runPlayerHealth: number;
+  runMaxHealth: number;
+  roomsEncountered: number;
+  currentAct: number;
+  destinationIndexInAct: number;
+  completedDestinations: string[];
+  runTrinkets: string[];
+};
+
+export function useRunState(initialActiveRun: ActiveRunData | null) {
+  const [runDeck, setRunDeck] = useState<BattleCard[]>(() => initialActiveRun ? [...initialActiveRun.runDeck] : [...starterDeck]);
+  const [runGold, setRunGold] = useState(initialActiveRun?.runGold ?? 0);
+  const [runPlayerHealth, setRunPlayerHealth] = useState(initialActiveRun?.runPlayerHealth ?? maxPlayerHealth);
+  const [runMaxHealth, setRunMaxHealth] = useState(initialActiveRun?.runMaxHealth ?? maxPlayerHealth);
+  const [roomsEncountered, setRoomsEncountered] = useState(initialActiveRun?.roomsEncountered ?? 0);
+  const [currentAct, setCurrentAct] = useState(initialActiveRun?.currentAct ?? 1);
+  const [destinationIndexInAct, setDestinationIndexInAct] = useState(initialActiveRun?.destinationIndexInAct ?? 0);
+  const [completedDestinations, setCompletedDestinations] = useState<Destination[]>(() => initialActiveRun?.completedDestinations?.length ? initialActiveRun.completedDestinations as Destination[] : []);
   const [characterId, setCharacterId] = useState<CharacterId>(() => initialActiveRun?.characterId ?? "knight");
-  const [runTrinkets, setRunTrinkets] = useState<string[]>([]);
+  const [runTrinkets, setRunTrinkets] = useState<string[]>(() => initialActiveRun?.runTrinkets ?? []);
 
   function setCharacter(selectedId: CharacterId) {
     setCharacterId(selectedId);

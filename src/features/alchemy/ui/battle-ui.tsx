@@ -1,7 +1,7 @@
 import { createElement, type CSSProperties } from "react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Coins, Gem } from "lucide-react";
-import { AnimatePresence } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 
 import { Progress } from "@/components/ui/progress";
 import { keywordDefinitions, pileDiscardArt, pileDrawArt, type KeywordId } from "@/lib/game-data";
@@ -15,11 +15,10 @@ import {
   keywordIcons,
   pileCardWidthClass,
   popupClassName,
-  statGradientColors,
   staticCardTransform,
 } from "../config";
-import type { CombatTextAnimationVariant, FloatingCombatText, StatusChip } from "../types";
-import { clearTiltFromEvent, getCombatTextIcon, setTiltFromEvent } from "../utils";
+import type { FloatingCombatText, StatusChip } from "../types";
+import { clearTiltFromEvent, getCombatTextColorClass, getCombatTextIcon, setTiltFromEvent } from "../utils";
 import { KeywordTag } from "./keyword-tag";
 import { DescriptionLines } from "./card-ui";
 import { ShimmerOverlay } from "./shared-ui";
@@ -39,7 +38,7 @@ function useChangeToken(value: number | string) {
   return token;
 }
 
-export function CombatTextRail({ entries, side, variant = "bounce" }: { entries: FloatingCombatText[]; side: "player" | "enemy"; variant?: CombatTextAnimationVariant }) {
+export function CombatTextRail({ entries, side }: { entries: FloatingCombatText[]; side: "player" | "enemy" }) {
   if (entries.length === 0) {
     return null;
   }
@@ -48,38 +47,42 @@ export function CombatTextRail({ entries, side, variant = "bounce" }: { entries:
     <div className={cn("pointer-events-none relative z-30 h-24 w-full", side === "player" ? "flex justify-end" : "flex justify-start")}>
       <AnimatePresence>
         {entries.map((entry) => (
-          <CombatTextBubble key={entry.id} entry={entry} side={side} variant={variant} />
+          <CombatTextBubble key={entry.id} entry={entry} side={side} />
         ))}
       </AnimatePresence>
     </div>
   );
 }
 
-function CombatTextBubble({ entry, side, variant }: { entry: FloatingCombatText; side: "player" | "enemy"; variant: CombatTextAnimationVariant }) {
+function CombatTextBubble({ entry, side }: { entry: FloatingCombatText; side: "player" | "enemy" }) {
   const icon = getCombatTextIcon(entry);
-  const auroraColors = statGradientColors[entry.stat] ?? statGradientColors.physical;
-
-  const sharedClasses = cn(
-    "absolute whitespace-nowrap inline-flex items-center gap-2 text-3xl font-semibold",
-    side === "player" ? "left-0" : "right-0",
-    variant === "bounce" && "combat-text-bounce",
-    variant === "landing" && "combat-text-landing",
-  );
-
-  const sharedStyle = {
-    "--combat-text-lane": String(entry.lane),
-    "--aurora-0": auroraColors[0],
-    "--aurora-1": auroraColors[1],
-    "--aurora-2": auroraColors[2],
-    "--aurora-3": auroraColors[3],
-    "--aurora-4": auroraColors[4],
-  } as CSSProperties;
+  const colorClass = getCombatTextColorClass(entry);
 
   return (
-    <div className={sharedClasses} style={sharedStyle}>
-      {createElement(icon, { className: "h-7 w-7" })}
+    <motion.div
+      className={cn("absolute whitespace-nowrap inline-flex items-center gap-2 text-[32px] font-semibold", colorClass, side === "player" ? "left-0" : "right-0")}
+      style={{
+        top: `${entry.lane * 56}px`,
+        fontFamily: "Inter, sans-serif",
+      } as Record<string, string>}
+      initial={{ y: 0, opacity: 1, filter: "blur(0px)", scale: 1 }}
+      animate={{
+        y: -120,
+        opacity: [1, 1, 0],
+        filter: ["blur(0px)", "blur(0px)", "blur(4px)"],
+        scale: [1, 1, 1.3],
+        transition: {
+          y: { duration: 1.6, ease: "easeOut" },
+          opacity: { duration: 1.6, times: [0, 0.4, 1], ease: "easeOut" },
+          filter: { duration: 1.6, times: [0, 0.4, 1], ease: "easeOut" },
+          scale: { duration: 1.6, times: [0, 0.5, 1], ease: "easeOut" },
+        },
+      }}
+      exit={{ opacity: 0, transition: { duration: 0.1 } }}
+    >
+      {createElement(icon, { className: "h-[30px] w-[30px]" })}
       <span>{entry.signedAmountText}</span>
-    </div>
+    </motion.div>
   );
 }
 
@@ -99,7 +102,7 @@ function StatusIcon({ chip }: { chip: StatusChip }) {
       </button>
       <div className={cn(popupClassName, "hover-popup-panel pointer-events-none opacity-0 group-hover/status:opacity-100")}>
         <div className="flex items-center justify-between gap-3">
-          <KeywordTag keywordId={chip.id as import("@/lib/game-data").KeywordId} />
+          <KeywordTag keywordId={kw} />
           <span className="rounded-full bg-background px-2 py-0.5 text-[11px] font-semibold text-foreground">{chip.value}</span>
         </div>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">{definition.description}</p>
