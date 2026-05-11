@@ -78,6 +78,9 @@
   option {
     user-select: text;
   }
+  .theme {
+    --animate-shine: shine var(--duration) infinite linear;
+  }
 }
 
 @layer components {
@@ -259,6 +262,16 @@
     animation: talentChoicePulse 1900ms ease-in-out infinite;
   }
 
+  .alchemy-startup-bar {
+    background: hsl(var(--primary));
+    animation: startupBarFill 500ms ease-out forwards;
+    transform-origin: left;
+  }
+
+  .alchemy-loading-fade {
+    animation: startupBlurFadeIn 350ms ease-out both;
+  }
+
   .mobile-landscape .game-page-scroll {
     scrollbar-width: none;
   }
@@ -378,8 +391,6 @@
   }
 }
 
-
-
 @keyframes shake {
   0% { transform: translateX(0); }
   12% { transform: translateX(-12px); }
@@ -393,6 +404,16 @@
 @keyframes shinySweep {
   0% { background-position: 150% 50%; }
   100% { background-position: -50% 50%; }
+}
+
+@keyframes startupBarFill {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+@keyframes startupBlurFadeIn {
+  from { opacity: 0; filter: blur(4px); }
+  to { opacity: 1; filter: blur(0); }
 }
 
 @keyframes hoverPopupQuickInAbove {
@@ -582,6 +603,4 @@
   .mobile-landscape .max-w-\[400px\] { max-width: 160px !important; }
   .mobile-landscape .max-w-\[352px\] { max-width: 160px !important; }
 }
-
-
 

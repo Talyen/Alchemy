@@ -44,10 +44,16 @@ const config: Config = {
           "0%, 100%": { opacity: "0.7" },
           "50%": { opacity: "1" },
         },
+        shine: {
+          "0%": { backgroundPosition: "0% 0%" },
+          "50%": { backgroundPosition: "100% 100%" },
+          to: { backgroundPosition: "0% 0%" },
+        },
       },
       animation: {
         float: "float 7s ease-in-out infinite",
         "pulse-soft": "pulseSoft 4s ease-in-out infinite",
+        shine: "shine 14s linear infinite",
       },
     },
   },

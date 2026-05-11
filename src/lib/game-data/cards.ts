@@ -39,7 +39,7 @@ export const cardLibrary: BattleCard[] = [
   { id: "plate-mail", title: "Plate Mail", descriptionLines: ["Gain 1 Armor"], art: plateMail, cost: 1, template: "mechanical", effects: [{ kind: "player-status", status: "armor", amount: 1 }] },
   { id: "apple", title: "Apple", descriptionLines: ["Gain 5 Health", "Consume"], art: apple, cost: 1, template: "nature", consume: true, effects: [{ kind: "heal", amount: 5 }] },
   { id: "bread", title: "Bread", descriptionLines: ["Gain 5 Health", "Consume"], art: bread, cost: 1, template: "nature", consume: true, effects: [{ kind: "heal", amount: 5 }] },
-  { id: "meteor", title: "Meteor", descriptionLines: ["Deal 10 Burn", "Lose 1 Mana Crystal"], art: meteor, cost: 1, template: "arcane", effects: [{ kind: "damage", damageType: "burn", amount: 10 }, { kind: "lose-max-mana", amount: 1 }] },
+  { id: "meteor", title: "Meteor", descriptionLines: ["Deal 10 Burn", "Lose 1 Mana Crystal", "Consume"], art: meteor, cost: 1, template: "arcane", consume: true, effects: [{ kind: "damage", damageType: "burn", amount: 10 }, { kind: "lose-max-mana", amount: 1 }] },
   { id: "steal", title: "Steal", descriptionLines: ["Steal 4 Gold"], art: steal, cost: 1, template: "arcane", effects: [{ kind: "gain-gold", amount: 4 }] },
   { id: "blessed-aegis", title: "Blessed Aegis", descriptionLines: ["Deal Holy equal to your Block"], art: blessedAegis, cost: 1, template: "holy", effects: [{ kind: "damage", damageType: "holy", amount: 0, fromBlock: true }] },
   { id: "wish", title: "Wish", descriptionLines: ["Wish 1"], art: wish, cost: 1, template: "arcane", effects: [{ kind: "wish", amount: 1 }] },

@@ -7,6 +7,22 @@ import { defineConfig } from "vite";
 export default defineConfig(({ mode }) => ({
   base: mode === "desktop" ? "./" : "/Alchemy/",
   plugins: [react()],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          // Keep gameplay screens eagerly loaded while letting the browser cache and parse
+          // stable vendor libraries separately from frequently changed app code.
+          if (!id.includes("node_modules")) return undefined;
+          if (id.includes("react") || id.includes("react-dom")) return "react-vendor";
+          if (id.includes("motion")) return "motion-vendor";
+          if (id.includes("lucide-react")) return "icons-vendor";
+          if (id.includes("@radix-ui")) return "radix-vendor";
+          return "vendor";
+        },
+      },
+    },
+  },
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),

@@ -15,6 +15,8 @@ import { platform } from "@/lib/platform";
 import { useAppAudioEffects } from "@/app/use-app-audio-effects";
 import { useAppDisplayEffects } from "@/app/use-app-display-effects";
 import { useScreenAssetPreloadEffects, useStartupPreloadEffects } from "@/app/use-app-preload-effects";
+import { useInitialLoadReady } from "@/app/use-initial-load-ready";
+import { StartupLoadingScreen } from "@/app/startup-loading-screen";
 import { useMobileDetection, useVirtualResolution } from "@/features/alchemy/hooks";
 import { BattleScreen } from "@/features/alchemy/screens/battle-screen";
 import {
@@ -36,6 +38,7 @@ import { ErrorBoundary } from "@/components/error-boundary";
 import { HomesteadScreen } from "@/features/alchemy/screens/homestead-screen";
 
 const PAGE_EXIT_MS = 130;
+const INITIAL_LOAD_IMAGE_URLS = [menuLogo];
 
 type CollectionPages = Record<CollectionTab, number>;
 
@@ -69,6 +72,7 @@ export default function App() {
   const pendingScreenRef = useRef(renderedScreen);
   const [brightness, setBrightness] = useState(initialSave.brightness);
   const vrStageRef = useRef<HTMLDivElement>(null);
+  const initialLoadReady = useInitialLoadReady({ imageUrls: INITIAL_LOAD_IMAGE_URLS });
   useAppDisplayEffects({ displayMode, uiScale, brightness, stageRef: vrStageRef });
   useStartupPreloadEffects();
 
@@ -205,7 +209,7 @@ export default function App() {
         <div className={`flex h-screen w-screen items-center justify-center overflow-hidden bg-background ${isMobileLandscape ? "mobile-landscape p-0" : "p-4"}`}>
           <div className="relative" style={frameStyle}>
             <div ref={vrStageRef} className="absolute left-0 top-0 overflow-hidden bg-background" style={stageStyle}>
-              <div key={renderedScreen} className={`${pagePhase === "exit" ? "page-exit" : "page-enter"} h-full w-full overflow-hidden`}>
+              {!initialLoadReady ? <StartupLoadingScreen /> : <div key={renderedScreen} className={`${pagePhase === "exit" ? "page-exit" : "page-enter"} h-full w-full overflow-hidden`}>
               {renderedScreen === "menu" ? <MenuScreen onPlay={run.beginRun} hasActiveBattle={run.hasActiveBattle} hasActiveRun={run.hasActiveRun} onCollection={() => run.goToScreen("collection")} onOptions={() => run.goToScreen("options")} onHomestead={() => run.goToScreen("homestead")} onTalents={() => run.goToScreen("talents")} {...(platform.canQuit ? { onQuit: platform.quit } : {})} logoSrc={menuLogo} isMobileLandscape={isMobileLandscape} /> : null}
               {renderedScreen === "character-select" ? <CharacterSelectScreen onConfirm={run.handleCharacterSelect} onBack={() => run.goToScreen("menu")} /> : null}
               {renderedScreen === "battle" ? <BattleScreen battleState={run.battleState} heroArt={heroArt} hoveredCardId={run.hoveredCardId} setHoveredCardId={run.setHoveredCardId} shimmerState={run.shimmerState} onHoverShimmer={run.maybeTriggerShimmer} playerStatusChips={run.playerStatusChips} enemyStatusChips={run.enemyStatusChips} playerCombatTexts={run.playerCombatTexts} enemyCombatTexts={run.enemyCombatTexts} handCardRefs={run.handCardRefs} onCardClick={run.handleCardClick} onOpenMenu={(rect) => { setMenuAnchorRect(rect ?? null); setGameMenuOpen(true); }} onWishChoice={run.handleWishChoice} cardGhosts={run.cardGhosts} onRemoveCardGhost={run.removeCardGhost} onSkipCombatDevMode={run.skipCombatDevMode} onEndTurn={run.handleEndTurn} battleSceneRef={run.battleSceneRef} playerPanelRef={run.playerPanelRef} enemyPanelRef={run.enemyPanelRef} playerShaking={run.playerShaking} enemyShaking={run.enemyShaking} companionShaking={run.companionShaking} isMobileLandscape={isMobileLandscape} /> : null}
@@ -221,7 +225,7 @@ export default function App() {
               {renderedScreen === "talents" ? <TalentsScreen hasActiveBattle={run.hasActiveBattle} onMainMenu={() => run.goToScreen("menu")} onReturnToBattle={run.returnToBattle} talentXP={run.talentXP} runTalentXP={run.runTalentXP} unlockedTalents={run.unlockedTalents} onUnlockTalent={run.unlockTalent} onResetTalents={run.resetUnlockedTalents} /> : null}
               {renderedScreen === "game-over" ? <GameOverScreen runTalentXP={run.runTalentXP} talentXP={run.talentXP} onMainMenu={() => run.resetRunState()} /> : null}
               {renderedScreen === "run-victory" ? <RunVictoryScreen onMainMenu={() => run.resetRunState()} /> : null}
-              </div>
+              </div>}
               <GameMenu
                 isOpen={gameMenuOpen}
                 anchorRect={menuAnchorRect}
