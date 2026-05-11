@@ -9,7 +9,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { Progress } from "@/components/ui/progress";
 import { keywordDefinitions, pileDiscardArt, pileDrawArt, type KeywordId } from "@/lib/game-data";
 import type { CompanionDefinition } from "@/lib/game-data";
-import { animateParticles, createParticles, createStatusParticles } from "@/lib/battle/particle-burst";
+import { animateParticles, createParticles, createStatusParticles } from "@/lib/animation/particle-burst";
 import { cn } from "@/lib/utils";
 
 import {

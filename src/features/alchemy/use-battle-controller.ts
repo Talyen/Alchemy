@@ -10,6 +10,7 @@ import {
 } from "@/lib/battle";
 import { starterDeck, type BattleCard, type BestiaryEntry } from "@/lib/game-data";
 import { playCardSound, playEnemyAttack, playGoldGain } from "@/lib/audio";
+import { appendUnique } from "@/lib/utils";
 import { getCurrentEnemy, getBossEnemy } from "./config";
 import { useCardGhosts, useFloatingCombatTexts, useShimmerController } from "./hooks";
 import { animateCardActivation } from "./run-controller-helpers";
@@ -18,12 +19,15 @@ import { computeTrinketManifest } from "@/lib/trinkets";
 import { mergeIntoManifest } from "@/lib/homestead/effects";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import {
-  AUTO_END_TURN_DELAY, CARD_ACTIVATION_ROTATION_DEGREES, COMPANION_ATTACK_DELAY,
-  ENEMY_PHASE_DELAY, SHAKE_DURATION,
+  CARD_ACTIVATION_ROTATION_DEGREES, COMPANION_ATTACK_DELAY,
+  ENEMY_PHASE_DELAY,
 } from "@/lib/game-constants";
 import { getCardRect, getEnemyStatusChips, getHoverId, getPlayerStatusChips } from "./utils";
 import type { useRunState } from "./use-run-state";
 import type { useTalentState } from "./use-talent-state";
+import { shouldPlayCardGoldGain, shouldShakeEnemyFromCombatTexts, shouldShakePlayerFromCombatTexts } from "./battle/battle-feedback";
+import { useBattleAutoEndTurn } from "./battle/use-battle-auto-end-turn";
+import { useBattleShake } from "./battle/use-battle-shake";
 
 export function useBattleController({
   run, talents,
@@ -46,9 +50,7 @@ export function useBattleController({
   // @/lib/battle so UI delays cannot silently change battle outcomes.
   const [battleState, setBattleState] = useState<BattleState>(() => createBattleState(starterDeck, 0));
   const [hasActiveBattle, setHasActiveBattle] = useState(initialHasActiveBattle ?? false);
-  const [enemyShaking, setEnemyShaking] = useState(false);
-  const [playerShaking, setPlayerShaking] = useState(false);
-  const [companionShaking, setCompanionShaking] = useState(false);
+  const { enemyShaking, playerShaking, companionShaking, shakeEnemy, shakePlayer, shakeCompanion } = useBattleShake();
 
   const handCardRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const battleSceneRef = useRef<HTMLDivElement | null>(null);
@@ -58,11 +60,8 @@ export function useBattleController({
   const companionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const companionScheduledRef = useRef(false);
   const battleStateRef = useRef(battleState);
-  const handleEndTurnRef = useRef(handleEndTurn);
-  const autoEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => { battleStateRef.current = battleState; }, [battleState]);
-  useEffect(() => { handleEndTurnRef.current = handleEndTurn; }, [handleEndTurn]);
   useEffect(() => () => { if (companionTimeoutRef.current) clearTimeout(companionTimeoutRef.current); }, []);
 
   const { cardGhosts, removeCardGhost, clearCardGhosts, spawnCardGhost } = useCardGhosts();
@@ -73,22 +72,7 @@ export function useBattleController({
   const enemyStatusChips = useMemo(() => getEnemyStatusChips(battleState), [battleState]);
   const playerCombatTexts = useMemo(() => floatingCombatTexts.filter((e) => e.target === "player"), [floatingCombatTexts]);
   const enemyCombatTexts = useMemo(() => floatingCombatTexts.filter((e) => e.target === "enemy"), [floatingCombatTexts]);
-
-  function scheduleAutoEndTurn(state: BattleState = battleState) {
-    // Auto-end waits for a stable no-actions state. Wish prompts, deaths, enemy phase,
-    // and playable discounted cards all block it so automation cannot skip decisions.
-    if (autoEndTimerRef.current) clearTimeout(autoEndTimerRef.current);
-    autoEndTimerRef.current = null;
-    if (!autoEndTurn || screen !== "battle" || state.turnPhase !== "player" || state.enemyHealth <= 0 || state.playerHealth <= 0 || state.wishOptions) return;
-    const hasPlayableCard = state.hand.some((card) => state.mana >= getEffectiveCost(state, card));
-    if (hasPlayableCard) return;
-    autoEndTimerRef.current = setTimeout(() => handleEndTurnRef.current(), AUTO_END_TURN_DELAY);
-  }
-
-  useEffect(() => {
-    scheduleAutoEndTurn();
-    return () => { if (autoEndTimerRef.current) clearTimeout(autoEndTimerRef.current); };
-  }, [autoEndTurn, battleState, screen]);
+  const { scheduleAutoEndTurn } = useBattleAutoEndTurn({ autoEndTurn, screen, battleState, onEndTurn: handleEndTurn });
 
   function startBattle(deck: BattleCard[] = run.runDeck, gold: number = run.runGold, enemyType: "normal" | "elite" = "normal") {
     beginBattle(getCurrentEnemy(run.roomsEncountered, enemyType), deck, gold);
@@ -106,7 +90,7 @@ export function useBattleController({
     clearCardGhosts();
     setBattleState(createBattleForEnemy(enemy, deck, gold));
     setHasActiveBattle(true);
-    setEncounteredEnemyIds((current) => current.includes(enemy.id) ? current : [...current, enemy.id]);
+    setEncounteredEnemyIds((current) => appendUnique(current, enemy.id));
   }
 
   function applyGrovesFavorHeal() {
@@ -149,8 +133,8 @@ export function useBattleController({
   }
 
   function playCardResolutionFeedback(card: BattleCard, state: BattleState, combatTexts: CombatTextEvent[]) {
-    if (state.gold > battleState.gold && card.id !== "steal") playGoldGain();
-    if (combatTexts.some((ct) => ct.kind === "damage" && ct.target === "enemy")) shakeEnemy();
+    if (shouldPlayCardGoldGain(battleState, state, card)) playGoldGain();
+    if (shouldShakeEnemyFromCombatTexts(combatTexts)) shakeEnemy();
   }
 
   function handleCardClick(card: BattleCard, index: number, event: MouseEvent<HTMLButtonElement>) {
@@ -159,7 +143,7 @@ export function useBattleController({
 
   function handleWishChoice(card: BattleCard) {
     setBattleState((current) => chooseWishCard(current, card.id));
-    setDiscoveredCardIds((current) => current.includes(card.id) ? current : [...current, card.id]);
+    setDiscoveredCardIds((current) => appendUnique(current, card.id));
   }
 
   function handleEndTurn() {
@@ -214,7 +198,7 @@ export function useBattleController({
       playEnemyAttack(currentState.currentEnemy.id);
       setBattleState(resultState);
       if (playerTexts.length > 0) showCombatTexts(playerTexts);
-      if (playerTexts.some((ct) => ct.kind === "damage")) shakePlayer();
+      if (shouldShakePlayerFromCombatTexts(playerTexts)) shakePlayer();
       scheduleCompanionFollowUp(resultState);
     }, ENEMY_PHASE_DELAY);
   }
@@ -244,10 +228,6 @@ export function useBattleController({
     shakeCompanion();
     return texts;
   }
-
-  function shakeEnemy() { setEnemyShaking(true); setTimeout(() => setEnemyShaking(false), SHAKE_DURATION); }
-  function shakePlayer() { setPlayerShaking(true); setTimeout(() => setPlayerShaking(false), SHAKE_DURATION); }
-  function shakeCompanion() { setCompanionShaking(true); setTimeout(() => setCompanionShaking(false), SHAKE_DURATION); }
 
   function handleEndRun() { if (screen !== "battle") return; setBattleState((c) => ({ ...c, playerHealth: 0 })); }
   function skipCombatDevMode() { if (screen === "battle") { setBattleState((c) => ({ ...c, enemyHealth: 0, wishOptions: null })); } }

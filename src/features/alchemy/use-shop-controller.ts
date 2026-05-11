@@ -4,6 +4,7 @@
 import { cardLibrary, type BattleCard } from "@/lib/game-data";
 import { playGoldSpend } from "@/lib/audio";
 import { computeTrinketManifest } from "@/lib/trinkets";
+import { appendUnique } from "@/lib/utils";
 import { createMixedPotion, applyMixToDeck } from "./potion-mixer";
 import { useShopState } from "./use-shop-state";
 import {
@@ -37,7 +38,7 @@ export function useShopController({
     if (run.runGold < price) return;
     if (price > 0) playGoldSpend();
     run.setRunGold((p) => Math.max(0, p - price)); run.setRunDeck((p) => [...p, card]);
-    setDiscoveredCardIds((cur) => cur.includes(card.id) ? cur : [...cur, card.id]);
+    setDiscoveredCardIds((cur) => appendUnique(cur, card.id));
     setShopState((p) => ({ ...p, firstPurchaseUsed: true }));
   }
 
@@ -69,7 +70,7 @@ export function useShopController({
     if (run.runGold < price) return;
     if (price > 0) playGoldSpend();
     run.setRunGold((p) => Math.max(0, p - price)); run.setRunDeck((p) => [...p, card]);
-    setDiscoveredCardIds((cur) => cur.includes(card.id) ? cur : [...cur, card.id]);
+    setDiscoveredCardIds((cur) => appendUnique(cur, card.id));
     setAlchemistState((p) => ({ ...p, firstPurchaseUsed: true }));
   }
 
@@ -105,7 +106,7 @@ export function useShopController({
     run.setRunGold((p) => Math.max(0, p - price));
     run.setRunDeck((p) => applyMixToDeck(p, indexA, indexB, mixed));
     setAlchemistState((p) => ({ ...p, mixUsed: true }));
-    setDiscoveredCardIds((cur) => cur.includes("mixed-potion") ? cur : [...cur, "mixed-potion"]);
+    setDiscoveredCardIds((cur) => appendUnique(cur, "mixed-potion"));
   }
 
   return {

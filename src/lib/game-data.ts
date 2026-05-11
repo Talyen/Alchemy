@@ -8,3 +8,4 @@ export * from "./game-data/compendium";
 export * from "./game-data/companions";
 export * from "./game-data/cards";
 export * from "./game-data/characters";
+export * from "./game-data/talents";

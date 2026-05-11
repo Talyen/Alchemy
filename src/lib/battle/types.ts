@@ -205,6 +205,7 @@ export type BattleState = {
   flags: CombatFlags;
   discoveredCardIds: string[];    // used by wish undiscovered talent
   cardsPlayedThisTurn: number;
+  nextCardUid: number;             // battle-owned source for unique rendered card keys
 };
 
 // Combat texts are emitted by battle functions and consumed by the floating-text

@@ -8,27 +8,23 @@ import { computeTalentEffects, talentPool } from "./talent-pool";
 import type { UnlockedTalents } from "./talent-pool";
 
 export function useTalentState(initialTalentXP: TalentXP, initialUnlockedTalents: UnlockedTalents) {
-  // XP, run XP, unlocks, and derived effects are owned together so persistence, battle
-  // setup, and the talent screen all observe a consistent progression snapshot.
-  const [talentXP, setTalentXP] = useState<TalentXP>(initialTalentXP);
-  const [runTalentXP, setRunTalentXP] = useState<TalentXP>({});
-  const [unlockedTalents, setUnlockedTalents] = useState<UnlockedTalents>(initialUnlockedTalents);
+  // XP, run XP, and unlocks are owned by one store so progression mutations stay grouped.
+  const [state, setState] = useState({ talentXP: initialTalentXP, runTalentXP: {} as TalentXP, unlockedTalents: initialUnlockedTalents });
 
   function awardCardXP(card: BattleCard) {
     // Cards can teach multiple keywords; XP is mirrored into permanent and run-scoped
     // stores so the run summary can show gains without delaying permanent progression.
     const keywords = extractCardKeywords(card);
     if (keywords.length === 0) return;
-    setTalentXP((prev) => addTalentXP(prev, keywords));
-    setRunTalentXP((prev) => addTalentXP(prev, keywords));
+    setState((prev) => ({ ...prev, talentXP: addTalentXP(prev.talentXP, keywords), runTalentXP: addTalentXP(prev.runTalentXP, keywords) }));
   }
 
   function awardMysteryXP(keywordId: KeywordId, amount: number) {
-    setRunTalentXP((prev) => addTalentXP(prev, [keywordId], amount));
+    setState((prev) => ({ ...prev, runTalentXP: addTalentXP(prev.runTalentXP, [keywordId], amount) }));
   }
 
   function unlockTalent(keywordId: KeywordId, talentId: string) {
-    setUnlockedTalents((prev) => ({ ...prev, [keywordId]: [...(prev[keywordId] ?? []), talentId] }));
+    setState((prev) => ({ ...prev, unlockedTalents: { ...prev.unlockedTalents, [keywordId]: [...(prev.unlockedTalents[keywordId] ?? []), talentId] } }));
   }
 
   function unlockAllTalents() {
@@ -38,17 +34,17 @@ export function useTalentState(initialTalentXP: TalentXP, initialUnlockedTalents
     for (const talent of talentPool) {
       next[talent.keywordId] = [...(next[talent.keywordId] ?? []), talent.id];
     }
-    setUnlockedTalents(next);
+    setState((prev) => ({ ...prev, unlockedTalents: next }));
   }
 
-  function resetUnlockedTalents() { setUnlockedTalents({}); }
-  function resetRunXP() { setRunTalentXP({}); }
-  function clearPermanentData() { setTalentXP({}); setRunTalentXP({}); setUnlockedTalents({}); }
+  function resetUnlockedTalents() { setState((prev) => ({ ...prev, unlockedTalents: {} })); }
+  function resetRunXP() { setState((prev) => ({ ...prev, runTalentXP: {} })); }
+  function clearPermanentData() { setState({ talentXP: {}, runTalentXP: {}, unlockedTalents: {} }); }
 
-  const talentEffects = computeTalentEffects(unlockedTalents);
+  const talentEffects = computeTalentEffects(state.unlockedTalents);
 
   return {
-    talentXP, runTalentXP, unlockedTalents, talentEffects,
+    talentXP: state.talentXP, runTalentXP: state.runTalentXP, unlockedTalents: state.unlockedTalents, talentEffects,
     awardCardXP, unlockTalent, unlockAllTalents, resetUnlockedTalents, resetRunXP, clearPermanentData,
     awardMysteryXP,
   };

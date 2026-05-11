@@ -18,8 +18,6 @@ import {
 import { ROOM_SCALING_INCREMENT, ELITE_STAT_MULTIPLIER, BOSS_STAT_MULTIPLIER, ACT_SCALING_INCREMENT, STARTING_TURN, ENEMY_BASE_REGENERATION } from "../game-constants";
 import { computeTrinketManifest } from "../trinkets";
 
-let cardUidCounter = 0;
-
 // Default talent manifest used when no talents are unlocked.
 // Every field must have a safe zero/false value so battle logic can read
 // talentEffects without existence checks.
@@ -120,10 +118,11 @@ function refillDeck(deck: BattleCard[], discard: BattleCard[]) {
 
 // Draws cards from the deck into the hand. If the deck runs out, the discard pile
 // is shuffled back into the deck. Stops at maxHandSize.
-export function drawCards(deck: BattleCard[], discard: BattleCard[], hand: BattleCard[], amount: number) {
+export function drawCards(deck: BattleCard[], discard: BattleCard[], hand: BattleCard[], amount: number, nextCardUid = 0) {
   let nextDeck = [...deck];
   let nextDiscard = [...discard];
   const nextHand = [...hand];
+  let uid = nextCardUid;
 
   for (let i = 0; i < amount && nextHand.length < maxHandSize; i++) {
     const refilled = refillDeck(nextDeck, nextDiscard);
@@ -133,11 +132,12 @@ export function drawCards(deck: BattleCard[], discard: BattleCard[], hand: Battl
 
     const card = nextDeck.shift();
     if (card) {
-      nextHand.push({ ...card, uid: cardUidCounter++ });
+      nextHand.push({ ...card, uid });
+      uid += 1;
     }
   }
 
-  return { deck: nextDeck, discard: nextDiscard, hand: nextHand };
+  return { deck: nextDeck, discard: nextDiscard, hand: nextHand, nextCardUid: uid };
 }
 
 // Enemy scaling is centralized so every battle start uses the same act, room, and type
@@ -186,13 +186,13 @@ export function createBattleState(
   destinationIndexInAct = 0,
   currentAct = 1,
 ): BattleState {
-  const openingHand = drawCards(shuffleCards(runDeck), [], [], cardsPerTurn);
+  const openingHand = drawCards(shuffleCards(runDeck), [], [], cardsPerTurn, 0);
 
   const trinketEffects = computeTrinketManifest(trinketIds);
 
   // Tattered Pages: draw extra cards after the initial opening hand
   const extraHand = trinketEffects.extraDrawPerBattle > 0
-    ? drawCards(openingHand.deck, openingHand.discard, openingHand.hand, trinketEffects.extraDrawPerBattle)
+    ? drawCards(openingHand.deck, openingHand.discard, openingHand.hand, trinketEffects.extraDrawPerBattle, openingHand.nextCardUid)
     : null;
 
   const enemy = currentEnemy ?? enemyBestiary[0];
@@ -245,6 +245,7 @@ export function createBattleState(
     },
     discoveredCardIds,
     cardsPlayedThisTurn: 0,
+    nextCardUid: extraHand ? extraHand.nextCardUid : openingHand.nextCardUid,
   };
 }
 

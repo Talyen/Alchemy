@@ -19,43 +19,61 @@ export type ActiveRunData = {
   runTrinkets: string[];
 };
 
+type RunState = {
+  characterId: CharacterId;
+  runDeck: BattleCard[];
+  runGold: number;
+  runPlayerHealth: number;
+  runMaxHealth: number;
+  roomsEncountered: number;
+  currentAct: number;
+  destinationIndexInAct: number;
+  completedDestinations: Destination[];
+  runTrinkets: string[];
+};
+
+function createInitialRunState(initialActiveRun: ActiveRunData | null): RunState {
+  // Hydration copies mutable arrays so the active run store is independent of save data.
+  return {
+    characterId: initialActiveRun?.characterId ?? "knight",
+    runDeck: initialActiveRun ? [...initialActiveRun.runDeck] : [...starterDeck],
+    runGold: initialActiveRun?.runGold ?? 0,
+    runPlayerHealth: initialActiveRun?.runPlayerHealth ?? maxPlayerHealth,
+    runMaxHealth: initialActiveRun?.runMaxHealth ?? maxPlayerHealth,
+    roomsEncountered: initialActiveRun?.roomsEncountered ?? 0,
+    currentAct: initialActiveRun?.currentAct ?? 1,
+    destinationIndexInAct: initialActiveRun?.destinationIndexInAct ?? 0,
+    completedDestinations: initialActiveRun?.completedDestinations?.length ? initialActiveRun.completedDestinations as Destination[] : [],
+    runTrinkets: initialActiveRun?.runTrinkets ? [...initialActiveRun.runTrinkets] : [],
+  };
+}
+
 export function useRunState(initialActiveRun: ActiveRunData | null) {
-  // Copy saved arrays into React state so the live session can mutate independently from
-  // the persisted payload object that was normalized during app boot.
-  const [runDeck, setRunDeck] = useState<BattleCard[]>(() => initialActiveRun ? [...initialActiveRun.runDeck] : [...starterDeck]);
-  const [runGold, setRunGold] = useState(initialActiveRun?.runGold ?? 0);
-  const [runPlayerHealth, setRunPlayerHealth] = useState(initialActiveRun?.runPlayerHealth ?? maxPlayerHealth);
-  const [runMaxHealth, setRunMaxHealth] = useState(initialActiveRun?.runMaxHealth ?? maxPlayerHealth);
-  const [roomsEncountered, setRoomsEncountered] = useState(initialActiveRun?.roomsEncountered ?? 0);
-  const [currentAct, setCurrentAct] = useState(initialActiveRun?.currentAct ?? 1);
-  const [destinationIndexInAct, setDestinationIndexInAct] = useState(initialActiveRun?.destinationIndexInAct ?? 0);
-  const [completedDestinations, setCompletedDestinations] = useState<Destination[]>(() => initialActiveRun?.completedDestinations?.length ? initialActiveRun.completedDestinations as Destination[] : []);
-  const [characterId, setCharacterId] = useState<CharacterId>(() => initialActiveRun?.characterId ?? "knight");
-  const [runTrinkets, setRunTrinkets] = useState<string[]>(() => initialActiveRun?.runTrinkets ?? []);
+  // Run data is stored as one object so multi-field transitions describe one coherent run.
+  const [state, setState] = useState<RunState>(() => createInitialRunState(initialActiveRun));
+
+  const setRunDeck: React.Dispatch<React.SetStateAction<BattleCard[]>> = (action) => setState((prev) => ({ ...prev, runDeck: typeof action === "function" ? action(prev.runDeck) : action }));
+  const setRunGold: React.Dispatch<React.SetStateAction<number>> = (action) => setState((prev) => ({ ...prev, runGold: typeof action === "function" ? action(prev.runGold) : action }));
+  const setRunPlayerHealth: React.Dispatch<React.SetStateAction<number>> = (action) => setState((prev) => ({ ...prev, runPlayerHealth: typeof action === "function" ? action(prev.runPlayerHealth) : action }));
+  const setRunMaxHealth: React.Dispatch<React.SetStateAction<number>> = (action) => setState((prev) => ({ ...prev, runMaxHealth: typeof action === "function" ? action(prev.runMaxHealth) : action }));
+  const setRoomsEncountered: React.Dispatch<React.SetStateAction<number>> = (action) => setState((prev) => ({ ...prev, roomsEncountered: typeof action === "function" ? action(prev.roomsEncountered) : action }));
+  const setCurrentAct: React.Dispatch<React.SetStateAction<number>> = (action) => setState((prev) => ({ ...prev, currentAct: typeof action === "function" ? action(prev.currentAct) : action }));
+  const setDestinationIndexInAct: React.Dispatch<React.SetStateAction<number>> = (action) => setState((prev) => ({ ...prev, destinationIndexInAct: typeof action === "function" ? action(prev.destinationIndexInAct) : action }));
+  const setCompletedDestinations: React.Dispatch<React.SetStateAction<Destination[]>> = (action) => setState((prev) => ({ ...prev, completedDestinations: typeof action === "function" ? action(prev.completedDestinations) : action }));
+  const setRunTrinkets: React.Dispatch<React.SetStateAction<string[]>> = (action) => setState((prev) => ({ ...prev, runTrinkets: typeof action === "function" ? action(prev.runTrinkets) : action }));
 
   function setCharacter(selectedId: CharacterId) {
-    setCharacterId(selectedId);
+    setState((prev) => ({ ...prev, characterId: selectedId }));
   }
 
   function reset() {
-    setRunDeck([...starterDeck]);
-    setRunGold(0);
-    setRunPlayerHealth(maxPlayerHealth);
-    setRunMaxHealth(maxPlayerHealth);
-    setRoomsEncountered(0);
-    setCurrentAct(1);
-    setDestinationIndexInAct(0);
-    setCompletedDestinations([]);
-    setRunTrinkets([]);
+    setState((prev) => ({ ...createInitialRunState(null), characterId: prev.characterId }));
   }
 
   return {
-    runDeck, setRunDeck, runGold, setRunGold, runPlayerHealth, setRunPlayerHealth,
-    runMaxHealth, setRunMaxHealth,
-    roomsEncountered, setRoomsEncountered,
-    currentAct, setCurrentAct, destinationIndexInAct, setDestinationIndexInAct,
-    completedDestinations, setCompletedDestinations,
-    characterId, setCharacter, reset,
-    runTrinkets, setRunTrinkets,
+    ...state,
+    setRunDeck, setRunGold, setRunPlayerHealth, setRunMaxHealth,
+    setRoomsEncountered, setCurrentAct, setDestinationIndexInAct,
+    setCompletedDestinations, setCharacter, reset, setRunTrinkets,
   };
 }

@@ -20,14 +20,20 @@ export interface AlchemistState {
   firstPurchaseUsed: boolean;
 }
 
+type ShopStore = {
+  shop: ShopState;
+  alchemist: AlchemistState;
+};
+
 const emptyShop: ShopState = { cards: [], refreshesLeft: SHOP_REFRESHES, removeUsed: false, firstPurchaseUsed: false };
 const emptyAlchemist: AlchemistState = { potions: [], refreshesLeft: ALCHEMIST_REFRESHES, mixUsed: false, firstPurchaseUsed: false };
 
 export function useShopState() {
-  // Offers reset on shop entry instead of persisting across visits; each destination node
-  // should feel like a fresh shop while controller rules decide what can be bought.
-  const [shopState, setShopState] = useState<ShopState>(emptyShop);
-  const [alchemistState, setAlchemistState] = useState<AlchemistState>(emptyAlchemist);
+  // Shop visit data lives in one store so merchant and alchemist offers share one owner.
+  const [store, setStore] = useState<ShopStore>({ shop: emptyShop, alchemist: emptyAlchemist });
+
+  const setShopState: React.Dispatch<React.SetStateAction<ShopState>> = (action) => setStore((prev) => ({ ...prev, shop: typeof action === "function" ? action(prev.shop) : action }));
+  const setAlchemistState: React.Dispatch<React.SetStateAction<AlchemistState>> = (action) => setStore((prev) => ({ ...prev, alchemist: typeof action === "function" ? action(prev.alchemist) : action }));
 
   function initShop() {
     setShopState({ cards: sampleItems(cardLibrary, SHOP_CARDS_OFFERED), refreshesLeft: SHOP_REFRESHES, removeUsed: false, firstPurchaseUsed: false });
@@ -43,5 +49,5 @@ export function useShopState() {
   function resetShop() { setShopState(emptyShop); }
   function resetAlchemist() { setAlchemistState(emptyAlchemist); }
 
-  return { shopState, setShopState, alchemistState, setAlchemistState, initShop, initAlchemist, resetShop, resetAlchemist };
+  return { shopState: store.shop, setShopState, alchemistState: store.alchemist, setAlchemistState, initShop, initAlchemist, resetShop, resetAlchemist };
 }

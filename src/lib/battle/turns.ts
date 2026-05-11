@@ -81,8 +81,8 @@ export function playBattleCardResolved(state: BattleState, cardId: string, index
   if (card.consume) {
     // Runic Quill trinket: draw 1 when consuming a card
     if (nextState.trinketEffects.runicQuillDrawOnConsume > 0) {
-      const draw = drawCards(nextState.deck, nextState.discard, nextState.hand, nextState.trinketEffects.runicQuillDrawOnConsume);
-      nextState = { ...nextState, deck: draw.deck, discard: draw.discard, hand: draw.hand };
+      const draw = drawCards(nextState.deck, nextState.discard, nextState.hand, nextState.trinketEffects.runicQuillDrawOnConsume, nextState.nextCardUid);
+      nextState = { ...nextState, deck: draw.deck, discard: draw.discard, hand: draw.hand, nextCardUid: draw.nextCardUid };
     }
     return { state: { ...nextState, exhausted: [...nextState.exhausted, card] }, combatTexts };
   }
@@ -265,7 +265,7 @@ export function processCompanionTurnStart(state: BattleState, combatTexts: Comba
 function advanceToPlayerTurn(state: BattleState, _combatTexts: CombatTextEvent[]) {
   // All player-turn reset work happens here so haste, skipped enemy turns, and normal
   // enemy turns draw cards, restore mana, decay block, and clear per-turn flags identically.
-  const nextDraw = drawCards(state.deck, state.discard, [], cardsPerTurn);
+  const nextDraw = drawCards(state.deck, state.discard, [], cardsPerTurn, state.nextCardUid);
   return {
     ...state,
     turn: state.turn + 1,
@@ -273,6 +273,7 @@ function advanceToPlayerTurn(state: BattleState, _combatTexts: CombatTextEvent[]
     deck: nextDraw.deck,
     hand: nextDraw.hand,
     discard: nextDraw.discard,
+    nextCardUid: nextDraw.nextCardUid,
     mana: state.maxMana,
     playerStatuses: { ...state.playerStatuses, block: Math.floor((state.playerStatuses.block ?? 0) / 2) },
     cardsPlayedThisTurn: 0,

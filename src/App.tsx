@@ -4,25 +4,17 @@
 import { useEffect, useRef, useState } from "react";
 
 import {
-  alchemistShopBg,
-  campfire,
   cardLibrary,
   characterArt,
-  eliteEnemyBg,
   enemyBestiary,
   menuLogo,
-  merchantShopBg,
-  mysteryBg,
-  normalEnemyBg,
-  pileDiscardArt,
-  pileDrawArt,
   trinketLibrary,
 } from "@/lib/game-data";
-import { playMusic, playMusicImmediate, setMasterVolume, setMusicVolume, setMuted, setSfxVolume, preloadAllSounds } from "@/lib/audio";
-import { preloadImages, preloadImagesWhenIdle } from "@/lib/image-preload";
-import { MUSIC_KEYS } from "@/lib/game-constants";
 import { platform } from "@/lib/platform";
 
+import { useAppAudioEffects } from "@/app/use-app-audio-effects";
+import { useAppDisplayEffects } from "@/app/use-app-display-effects";
+import { useScreenAssetPreloadEffects, useStartupPreloadEffects } from "@/app/use-app-preload-effects";
 import { useMobileDetection, useVirtualResolution } from "@/features/alchemy/hooks";
 import { BattleScreen } from "@/features/alchemy/screens/battle-screen";
 import {
@@ -75,37 +67,10 @@ export default function App() {
   const [renderedScreen, setRenderedScreen] = useState<Screen>("menu");
   const [pagePhase, setPagePhase] = useState<"enter" | "exit">("enter");
   const pendingScreenRef = useRef(renderedScreen);
-
-  useEffect(() => { setMasterVolume(masterVol / 100); }, [masterVol]);
-  useEffect(() => { setMusicVolume(musicVol / 100); }, [musicVol]);
-  useEffect(() => { setSfxVolume(sfxVol / 100); }, [sfxVol]);
-  useEffect(() => { platform.setDisplayMode(displayMode); }, [displayMode]);
-  useEffect(() => { document.documentElement.style.setProperty("--alchemy-ui-scale", String(Number(uiScale) / 100)); }, [uiScale]);
   const [brightness, setBrightness] = useState(initialSave.brightness);
   const vrStageRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (vrStageRef.current) {
-      vrStageRef.current.style.filter = `brightness(${brightness / 100})`;
-    }
-  }, [brightness]);
-  useEffect(() => {
-    // Background mute must respond to both tab visibility and focus changes, then always
-    // unmute on cleanup so toggling the option cannot leave the audio graph muted.
-    function applyBackgroundMute() {
-      setMuted(muteInBackground && (document.hidden || !document.hasFocus()));
-    }
-
-    applyBackgroundMute();
-    document.addEventListener("visibilitychange", applyBackgroundMute);
-    window.addEventListener("blur", applyBackgroundMute);
-    window.addEventListener("focus", applyBackgroundMute);
-    return () => {
-      document.removeEventListener("visibilitychange", applyBackgroundMute);
-      window.removeEventListener("blur", applyBackgroundMute);
-      window.removeEventListener("focus", applyBackgroundMute);
-      setMuted(false);
-    };
-  }, [muteInBackground]);
+  useAppDisplayEffects({ displayMode, uiScale, brightness, stageRef: vrStageRef });
+  useStartupPreloadEffects();
 
   const gameMenuOpenRef = useRef(gameMenuOpen);
   const renderedScreenRef = useRef(renderedScreen);
@@ -125,22 +90,6 @@ export default function App() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  useEffect(() => {
-    preloadAllSounds();
-    preloadImagesWhenIdle([
-      menuLogo,
-      ...Object.values(characterArt),
-      pileDrawArt,
-      pileDiscardArt,
-      normalEnemyBg,
-      eliteEnemyBg,
-      merchantShopBg,
-      alchemistShopBg,
-      mysteryBg,
-      campfire,
-    ]);
-  }, []);
-
   const { isMobileLandscape, isPortraitMobile } = useMobileDetection();
   const { frameStyle, stageStyle } = useVirtualResolution(selectedResolution, false, isMobileLandscape);
   const homestead = useHomesteadState({
@@ -150,18 +99,7 @@ export default function App() {
     completedResearch: initialSave.completedResearch,
   });
   const run = useAlchemyRunController({ discoveredCardIds, setDiscoveredCardIds, setEncounteredEnemyIds, setDiscoveredTrinketIds, initialTalentXP: initialSave.talentXP, initialUnlockedTalents: initialSave.unlockedTalents, initialActiveRun: initialSave.activeRun, autoEndTurn, onAddMaterials: homestead.addMaterials, onTriggerFarmYield: homestead.triggerFarmYield, homesteadEffects: homestead.effects });
-  const musicStartedRef = useRef(false);
-  useEffect(() => {
-    const key = run.screen === "battle" ? MUSIC_KEYS.BATTLE : MUSIC_KEYS.MENU;
-    if (!musicStartedRef.current) {
-      // First music start is immediate to avoid fade-from-silence; later screen changes
-      // use crossfade so battle/menu transitions still feel deliberate.
-      musicStartedRef.current = true;
-      playMusicImmediate(key);
-    } else {
-      playMusic(key);
-    }
-  }, [run.screen]);
+  useAppAudioEffects({ masterVol, musicVol, sfxVol, muteInBackground, screen: run.screen });
   const heroArt = characterArt[run.characterId] ?? characterArt.knight;
 
   useEffect(() => {
@@ -177,19 +115,7 @@ export default function App() {
     return () => window.clearTimeout(timeout);
   }, [run.screen, renderedScreen]);
 
-  useEffect(() => {
-    // Preload only assets for the current or imminent screen so card/enemy art does not
-    // pop in, without forcing the entire collection into memory on startup.
-    const priorityImages = [heroArt];
-    if (run.screen === "battle") {
-      priorityImages.push(run.battleState.currentEnemy.art, pileDrawArt, pileDiscardArt, ...run.battleState.hand.map((card) => card.art));
-    }
-    if (run.screen === "rewards") priorityImages.push(...run.rewardChoices.map((card) => card.art));
-    if (run.screen === "shop") priorityImages.push(...run.shopCards.map((card) => card.art));
-    if (run.screen === "alchemist") priorityImages.push(...run.alchemistPotions.map((card) => card.art));
-    if (run.screen === "mystery" && run.mysteryEvent?.art) priorityImages.push(run.mysteryEvent.art);
-    preloadImages(priorityImages);
-  }, [heroArt, run.screen, run.battleState.currentEnemy.art, run.battleState.hand, run.rewardChoices, run.shopCards, run.alchemistPotions, run.mysteryEvent]);
+  useScreenAssetPreloadEffects({ heroArt, screen: run.screen, battleEnemyArt: run.battleState.currentEnemy.art, battleHand: run.battleState.hand, rewardChoices: run.rewardChoices, shopCards: run.shopCards, alchemistPotions: run.alchemistPotions, mysteryEvent: run.mysteryEvent });
 
   useEffect(() => {
     saveAlchemySaveData({

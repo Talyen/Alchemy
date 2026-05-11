@@ -180,8 +180,8 @@ function applyDamageStatuses(state: BattleState, effect: Extract<BattleCardEffec
         nextStatuses.stun = 0;
         nextState = { ...nextState, enemyStatuses: nextStatuses, enemyStunSkipTurns: nextState.enemyStunSkipTurns + 1 + nextState.talentEffects.stunDurationExtension };
         if (nextState.talentEffects.drawOnStun > 0) {
-          const draw = drawCards(nextState.deck, nextState.discard, nextState.hand, nextState.talentEffects.drawOnStun);
-          nextState = { ...nextState, deck: draw.deck, discard: draw.discard, hand: draw.hand };
+          const draw = drawCards(nextState.deck, nextState.discard, nextState.hand, nextState.talentEffects.drawOnStun, nextState.nextCardUid);
+          nextState = { ...nextState, deck: draw.deck, discard: draw.discard, hand: draw.hand, nextCardUid: draw.nextCardUid };
         }
         if (nextState.talentEffects.nextCardFreeOnStun) {
           nextState = { ...nextState, flags: { ...nextState.flags, nextCardCostReduction: FREE_CARD_SENTINEL } };
@@ -449,8 +449,8 @@ function applyWishEffect(state: BattleState, card: BattleCard, combatTexts: Comb
     nextState = removePlayerAilments(nextState, "one", combatTexts);
   }
   if (nextState.talentEffects.wishDrawsCard) {
-    const draw = drawCards(nextState.deck, nextState.discard, nextState.hand, 1);
-    nextState = { ...nextState, deck: draw.deck, discard: draw.discard, hand: draw.hand };
+    const draw = drawCards(nextState.deck, nextState.discard, nextState.hand, 1, nextState.nextCardUid);
+    nextState = { ...nextState, deck: draw.deck, discard: draw.discard, hand: draw.hand, nextCardUid: draw.nextCardUid };
   }
 
   return nextState;

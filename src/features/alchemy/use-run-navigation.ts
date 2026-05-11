@@ -3,26 +3,25 @@
 // Used by the top-level alchemy controller to keep screen changes and run mutations synchronized.
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createBattleState, maxPlayerHealth } from "@/lib/battle";
-import { cardLibrary, characters, starterDeck, trinketLibrary, type BattleCard, type CharacterId, type KeywordId, type TrinketEntry } from "@/lib/game-data";
-import { playVictory, playDefeat, playGoldGain, playGoldSpend } from "@/lib/audio";
-import { selectRewardCards, selectRewardTrinkets, REWARD_TRINKET_CHANCE } from "./reward-utils";
-import { getAvailableDestinations as getFilteredDestinations } from "./config";
+import { cardLibrary, characters, starterDeck, type BattleCard, type CharacterId } from "@/lib/game-data";
+import { playVictory, playDefeat, playGoldGain } from "@/lib/audio";
+import { appendUnique, appendUniqueMany, pickRandom } from "@/lib/utils";
 import type { Destination, Screen } from "./types";
-import { computeTrinketManifest } from "@/lib/trinkets";
 import { getEnemyMaterialLoot } from "@/lib/homestead/loot";
-import { emptyInventory, type HomesteadEffectManifest, type MaterialId, type MaterialInventory } from "@/lib/homestead/types";
-import { mysteryPool, type MysteryChoice, type MysteryEffect, type MysteryEvent } from "./mystery-events";
+import { type HomesteadEffectManifest, type MaterialInventory } from "@/lib/homestead/types";
+import { mysteryPool, type MysteryChoice, type MysteryEvent } from "./mystery-events";
 import {
-  ACTS_PER_RUN, BOSS_TRINKET_REWARD_CHOICES, CAMPFIRE_HEAL_FRACTION,
-  DESTINATION_CHOICES, DESTINATIONS_PER_ACT, ELITE_GOLD_BONUS_FRACTION,
-  BOSS_GOLD_BONUS_FRACTION, ELITE_TRINKET_REWARD_CHANCE, GOLD_REWARD_MAX,
-  GOLD_REWARD_MIN, MIXED_POTION_CARD_ID, MYSTERY_CARD_CHOICES, REWARD_CARD_CHOICES,
-  VICTORY_TRANSITION_DELAY,
+  ACTS_PER_RUN, CAMPFIRE_HEAL_FRACTION,
+  ELITE_GOLD_BONUS_FRACTION, BOSS_GOLD_BONUS_FRACTION, GOLD_REWARD_MAX,
+  GOLD_REWARD_MIN, VICTORY_TRANSITION_DELAY,
 } from "@/lib/game-constants";
-import { randomBetween, sampleItems } from "./utils";
+import { randomBetween } from "./utils";
 import type { BattleState } from "@/lib/battle";
 import type { useRunState } from "./use-run-state";
 import type { useTalentState } from "./use-talent-state";
+import { getRunAvailableDestinations, sampleDestinationChoices } from "./navigation/destination-flow";
+import { createBossRewardState as createBossRewardStateFromFlow, createCombatRewardState as createCombatRewardStateFromFlow, createEmptyRewardState, getVictoryGoldTotal, type RewardState } from "./navigation/reward-flow";
+import { addCardToRun, applyMysteryEffect } from "./navigation/mystery-flow";
 
 export function useRunNavigation({
   run, talents,
@@ -65,11 +64,7 @@ export function useRunNavigation({
 }) {
   // Run-flow side effects live here because screens, rewards, destination routing,
   // mystery outcomes, act completion, and reset all need the same run/battle snapshot.
-  const [rewardState, setRewardState] = useState<{
-    choices: (BattleCard | TrinketEntry)[]; gold: number;
-    materials: MaterialInventory; selectedId: string | null;
-    destinations: Destination[]; rewardType: "card" | "trinket";
-  }>({ choices: [], gold: 0, materials: emptyInventory(), selectedId: null, destinations: [], rewardType: "card" });
+  const [rewardState, setRewardState] = useState<RewardState>(() => createEmptyRewardState());
   const [mysteryEvent, setMysteryEvent] = useState<MysteryEvent | null>(null);
   const [mysteryCardChoices, setMysteryCardChoices] = useState<BattleCard[] | null>(null);
 
@@ -89,14 +84,12 @@ export function useRunNavigation({
   }), [run.characterId, run.runDeck, run.runGold, run.runPlayerHealth, run.runMaxHealth, run.roomsEncountered, run.currentAct, run.destinationIndexInAct, run.completedDestinations, run.runTrinkets]);
 
   function getAvailableDestinations(currentHp?: number, currentGold?: number, destIdxInAct?: number): Destination[] {
-    // Boss routing is injected by act progress; normal destination filtering stays in
-    // config so HP/gold gates can be reused without knowing run progression.
-    if ((destIdxInAct ?? run.destinationIndexInAct) >= DESTINATIONS_PER_ACT - 1) {
-      return ["Boss Combat" as Destination];
-    }
-    const hp = currentHp ?? run.runPlayerHealth;
-    const gold = currentGold ?? run.runGold;
-    return getFilteredDestinations(hp, gold, run.runMaxHealth);
+    return getRunAvailableDestinations({
+      destinationIndexInAct: destIdxInAct ?? run.destinationIndexInAct,
+      currentHp: currentHp ?? run.runPlayerHealth,
+      currentGold: currentGold ?? run.runGold,
+      maxHp: run.runMaxHealth,
+    });
   }
 
   // ============ Victory / Defeat Effects ============
@@ -140,8 +133,7 @@ export function useRunNavigation({
   }
 
   function awardVictoryGold(gold: number, eliteBonus: number, bossBonus: number) {
-    const trinketGoldBonus = computeTrinketManifest(run.runTrinkets).smugglersMapGoldBonus;
-    const newGold = battleState.gold + gold + eliteBonus + bossBonus + talents.talentEffects.goldPerCombat + trinketGoldBonus;
+    const newGold = getVictoryGoldTotal(battleState, run.runTrinkets, gold, eliteBonus, bossBonus, talents.talentEffects.goldPerCombat);
     run.setRunGold(newGold);
     return newGold;
   }
@@ -160,26 +152,19 @@ export function useRunNavigation({
   }
 
   function createBossRewardState(gold: number, bossBonus: number, materials: MaterialInventory) {
-    return {
-      rewardType: "trinket" as const,
-      choices: selectRewardTrinkets(trinketLibrary, BOSS_TRINKET_REWARD_CHOICES),
-      gold: gold + bossBonus + talents.talentEffects.goldPerCombat,
-      materials, selectedId: null, destinations: [],
-    };
+    return createBossRewardStateFromFlow({ gold, bossBonus, talentGoldPerCombat: talents.talentEffects.goldPerCombat, materials });
   }
 
   function createCombatRewardState(gold: number, eliteBonus: number, newGold: number, materials: MaterialInventory) {
-    // Combat rewards can be cards or trinkets. Destination choices use post-victory
-    // HP/gold so shops/campfires are filtered against the state the player will enter.
-    const trinketChance = battleState.currentEnemy.enemyType === "elite" ? ELITE_TRINKET_REWARD_CHANCE : REWARD_TRINKET_CHANCE;
-    const offerTrinket = Math.random() < trinketChance;
-    return {
-      rewardType: offerTrinket ? "trinket" as const : "card" as const,
-      choices: offerTrinket ? selectRewardTrinkets(trinketLibrary, REWARD_CARD_CHOICES) : selectRewardCards(run.runDeck, cardLibrary, REWARD_CARD_CHOICES),
-      gold: offerTrinket ? 0 : gold + eliteBonus + talents.talentEffects.goldPerCombat,
-      materials, selectedId: null,
-      destinations: sampleItems(getAvailableDestinations(battleState.playerHealth, newGold), DESTINATION_CHOICES),
-    };
+    return createCombatRewardStateFromFlow({
+      battleState,
+      runDeck: run.runDeck,
+      gold,
+      eliteBonus,
+      talentGoldPerCombat: talents.talentEffects.goldPerCombat,
+      materials,
+      destinations: sampleDestinationChoices(getAvailableDestinations(battleState.playerHealth, newGold)),
+    });
   }
 
   // ============ Game Flow ============
@@ -191,7 +176,7 @@ export function useRunNavigation({
     if (hasActiveRun) {
       setRewardState((prev) => ({
         ...prev,
-        destinations: prev.destinations.length > 0 ? prev.destinations : sampleItems(getAvailableDestinations(), DESTINATION_CHOICES),
+        destinations: prev.destinations.length > 0 ? prev.destinations : sampleDestinationChoices(getAvailableDestinations()),
       }));
       navigateTo("destination");
       return;
@@ -217,12 +202,8 @@ export function useRunNavigation({
     run.setCurrentAct(1);
     run.setDestinationIndexInAct(0);
     run.setCompletedDestinations([]);
-    setRewardState({
-      choices: [], gold: 0, materials: emptyInventory(), selectedId: null,
-      destinations: sampleItems(getAvailableDestinations(), DESTINATION_CHOICES),
-      rewardType: "card",
-    });
-    setDiscoveredCardIds((current) => Array.from(new Set([...current, ...freshDeck.map((c) => c.id)])));
+    setRewardState(createEmptyRewardState(sampleDestinationChoices(getAvailableDestinations())));
+    setDiscoveredCardIds((current) => appendUniqueMany(current, freshDeck.map((c) => c.id)));
     setEncounteredEnemyIds([]);
     setHoveredCardId(null);
     setHasActiveRun(true);
@@ -243,14 +224,14 @@ export function useRunNavigation({
       if (chosen) {
         if (rewardState.rewardType === "card") {
           run.setRunDeck((prev) => [...prev, chosen as BattleCard]);
-          setDiscoveredCardIds((cur) => cur.includes(chosen.id) ? cur : [...cur, chosen.id]);
+          setDiscoveredCardIds((cur) => appendUnique(cur, chosen.id));
         } else {
           run.setRunTrinkets((prev) => [...prev, chosen.id]);
-          setDiscoveredTrinketIds((cur) => cur.includes(chosen.id) ? cur : [...cur, chosen.id]);
+          setDiscoveredTrinketIds((cur) => appendUnique(cur, chosen.id));
         }
       }
     }
-    setRewardState((prev) => ({ choices: [], gold: 0, materials: emptyInventory(), selectedId: null, destinations: prev.destinations, rewardType: "card" }));
+    setRewardState((prev) => createEmptyRewardState(prev.destinations));
     setHoveredCardId(null);
 
     if (battleStateRef.current.currentEnemy.enemyType === "boss") {
@@ -271,7 +252,7 @@ export function useRunNavigation({
     if (destination === "Campfire") navigateTo("campfire");
     else if (destination === "Merchant's Shop") { onInitShop(); navigateTo("shop"); }
     else if (destination === "Alchemist's Shop") { onInitAlchemist(); navigateTo("alchemist"); }
-    else if (destination === "Mystery") { setMysteryEvent(mysteryPool[Math.floor(Math.random() * mysteryPool.length)]); setMysteryCardChoices(null); navigateTo("mystery"); }
+    else if (destination === "Mystery") { setMysteryEvent(pickRandom(mysteryPool) ?? mysteryPool[0]); setMysteryCardChoices(null); navigateTo("mystery"); }
     else if (destination === "Elite Combat") { onStartBattle(undefined, undefined, "elite"); navigateTo("battle"); }
     else if (destination === "Boss Combat") { onStartBossBattle(); navigateTo("battle"); }
     else { onStartBattle(undefined, undefined, "normal"); navigateTo("battle"); }
@@ -292,7 +273,7 @@ export function useRunNavigation({
       run.setCompletedDestinations([]);
       setRewardState((prev) => ({
         ...prev,
-        destinations: sampleItems(getAvailableDestinations(undefined, undefined, 0), DESTINATION_CHOICES),
+        destinations: sampleDestinationChoices(getAvailableDestinations(undefined, undefined, 0)),
       }));
       navigateTo("destination");
     }
@@ -300,7 +281,7 @@ export function useRunNavigation({
 
   function advanceToNextDestination() {
     run.setRoomsEncountered((p) => p + 1);
-    setRewardState((prev) => ({ ...prev, destinations: sampleItems(getAvailableDestinations(), DESTINATION_CHOICES) }));
+    setRewardState((prev) => ({ ...prev, destinations: sampleDestinationChoices(getAvailableDestinations()) }));
     setHoveredCardId(null); setMysteryCardChoices(null); navigateTo("destination");
   }
 
@@ -316,103 +297,25 @@ export function useRunNavigation({
     // applyMysteryEffect returns true when an effect opens follow-up UI; that pauses the
     // remaining event flow until the player picks a card/removal target.
     for (const effect of choice.effects) {
-      if (applyMysteryEffect(effect)) return;
+      if (applyMysteryEffect(effect, {
+        runMaxHealth: run.runMaxHealth,
+        setRunDeck: run.setRunDeck,
+        setRunGold: run.setRunGold,
+        setRunPlayerHealth: run.setRunPlayerHealth,
+        setRunTrinkets: run.setRunTrinkets,
+        setDiscoveredCardIds,
+        setDiscoveredTrinketIds,
+        setMysteryCardChoices,
+        awardMysteryXP: talents.awardMysteryXP,
+        onAddMaterials: onAddMaterialsRef.current,
+      })) return;
     }
-  }
-
-  function applyMysteryEffect(effect: MysteryEffect) {
-    switch (effect.kind) {
-      case "addCard": return addSpecificMysteryCard(effect.cardId);
-      case "addRandomCard": return addRandomMysteryCard();
-      case "chooseCard": return offerMysteryCardChoices();
-      case "healHP": return healFromMystery(effect.amount, effect.chance);
-      case "damageHP": return damageFromMystery(effect.amount);
-      case "gainGold": return gainMysteryGold(effect.amount);
-      case "loseGold": return loseMysteryGold(effect.amount);
-      case "gainMaxMana": return false;
-      case "gainXP": return awardMysteryXP(effect.keyword, effect.amount);
-      case "removeCard": return removeMysteryCard(effect.mode);
-      case "gainTrinket": return gainMysteryTrinket(effect.trinketId);
-      case "gainRandomTrinket": return gainRandomMysteryTrinket();
-      case "gainMaterial": return gainMysteryMaterial(effect.material, effect.amount);
-      case "none": return false;
-    }
-  }
-
-  function addSpecificMysteryCard(cardId: string) {
-    const card = cardLibrary.find((c) => c.id === cardId);
-    if (card) addCardToRun(card);
-    return false;
-  }
-
-  function addRandomMysteryCard() {
-    const pool = getMysteryCardPool();
-    const card = pool[Math.floor(Math.random() * pool.length)];
-    addCardToRun(card);
-    return false;
-  }
-
-  function offerMysteryCardChoices() {
-    setMysteryCardChoices(sampleItems(getMysteryCardPool(), MYSTERY_CARD_CHOICES));
-    return true;
-  }
-
-  function getMysteryCardPool() {
-    return cardLibrary.filter((c) => c.id !== MIXED_POTION_CARD_ID);
-  }
-
-  function addCardToRun(card: BattleCard) {
-    run.setRunDeck((p) => [...p, card]);
-    setDiscoveredCardIds((cur) => cur.includes(card.id) ? cur : [...cur, card.id]);
-  }
-
-  function healFromMystery(amount: number, chance?: number) {
-    if (chance !== undefined && Math.random() >= chance) return false;
-    run.setRunPlayerHealth((p) => Math.min(run.runMaxHealth, p + amount));
-    return false;
-  }
-
-  function damageFromMystery(amount: number) { run.setRunPlayerHealth((p) => Math.max(0, p - amount)); return false; }
-  function gainMysteryGold(amount: number) { if (amount > 0) playGoldGain(); run.setRunGold((p) => p + amount); return false; }
-  function loseMysteryGold(amount: number) { if (amount > 0) playGoldSpend(); run.setRunGold((p) => Math.max(0, p - amount)); return false; }
-  function awardMysteryXP(keyword: KeywordId, amount: number) { talents.awardMysteryXP(keyword, amount); return false; }
-
-  function removeMysteryCard(mode: "random" | "choose") {
-    // Choice-based removal is handled by the screen picker; this helper only mutates
-    // immediately for random removal so controller state does not need a pending index.
-    if (mode !== "random") return false;
-    run.setRunDeck((p) => {
-      if (p.length === 0) return p;
-      const idx = Math.floor(Math.random() * p.length);
-      return p.filter((_, i) => i !== idx);
-    });
-    return false;
-  }
-
-  function gainMysteryTrinket(trinketId: string) {
-    run.setRunTrinkets((p) => [...p, trinketId]);
-    setDiscoveredTrinketIds((cur) => cur.includes(trinketId) ? cur : [...cur, trinketId]);
-    return false;
-  }
-
-  function gainRandomMysteryTrinket() {
-    const randomTrinket = sampleItems(trinketLibrary, 1)[0];
-    if (randomTrinket) gainMysteryTrinket(randomTrinket.id);
-    return false;
-  }
-
-  function gainMysteryMaterial(material: MaterialId, amount: number) {
-    const matInv = emptyInventory();
-    matInv[material] = amount;
-    onAddMaterialsRef.current(matInv);
-    return false;
   }
 
   function handleMysteryChooseCard(cardId: string) {
     const card = cardLibrary.find((c) => c.id === cardId);
     if (card) {
-      run.setRunDeck((p) => [...p, card]);
-      setDiscoveredCardIds((cur) => cur.includes(card.id) ? cur : [...cur, card.id]);
+      addCardToRun(card, { setRunDeck: run.setRunDeck, setDiscoveredCardIds });
     }
     setMysteryCardChoices(null);
   }
@@ -430,7 +333,7 @@ export function useRunNavigation({
     // and mystery UI, active flags, and routing together to avoid resuming stale runs.
     clearCardGhosts(); setBattleState(createBattleState(starterDeck, 0));
     run.reset(); talents.resetRunXP();
-    setRewardState({ choices: [], gold: 0, materials: emptyInventory(), selectedId: null, destinations: [], rewardType: "card" });
+    setRewardState(createEmptyRewardState());
     setMysteryCardChoices(null); setHoveredCardId(null); setHasActiveBattle(false); setHasActiveRun(false); navigateTo("menu");
   }
 
