@@ -25,6 +25,7 @@ export const VICTORY_TRANSITION_DELAY = 1200;  // Brief pause after enemy dies s
 export const ENEMY_PHASE_DELAY = 900;          // Gap between enemy turn start and enemy action. Short enough to keep turns snappy while still readable.
 export const SHAKE_DURATION = 420;             // Screen shake on hit. 420ms is long enough to feel impactful but short enough to not delay gameplay.
 export const COMPANION_ATTACK_DELAY = 1000;    // Delay before companion attacks at start of player turn.
+export const NAVIGATION_DELAY_MS = 100;        // Short delay lets page exit transitions begin before the next screen mounts.
 export const CAMPFIRE_ANIMATION_MS = 1250;     // HP bar animation duration. Long enough to feel satisfying, short enough to not bore.
 export const CAMPFIRE_CONTINUE_DELAY = 600;    // Brief pause after animation completes before auto-advancing. Gives player time to register the new HP value.
 
@@ -51,6 +52,8 @@ export const ALCHEMIST_MIX_PRICE = 40;       // combine 2 potions from deck
 // ============ Rewards ============
 export const GOLD_REWARD_MIN = 10;
 export const GOLD_REWARD_MAX = 30;             // Gold range per victory. ~20 average means you can afford a mid-tier shop item every ~3 fights.
+export const ELITE_GOLD_BONUS_FRACTION = 0.3;  // Elite fights pay a modest bonus without eclipsing boss rewards.
+export const BOSS_GOLD_BONUS_FRACTION = 0.5;   // Boss fights pay a larger bonus to mark act completion.
 export const REWARD_CARD_CHOICES = 3;          // Card rewards offered after each victory.
 export const DESTINATION_CHOICES = 3;          // Path choices offered after each victory.
 export const DESTINATIONS_PER_ACT = 8;         // Number of destination slots per act (slot 8 = boss).
@@ -65,6 +68,9 @@ export const ALCHEMIST_REFRESHES = 1;          // Free refreshes per alchemist v
 export const BOSS_STAT_MULTIPLIER = 1.8;       // Boss enemies get 80% more HP and attack.
 export const ACT_SCALING_INCREMENT = 0.2;      // +20% enemy stats per act (baseline).
 export const BOSS_TRINKET_REWARD_CHOICES = 3;  // Trinket choices offered after a boss kill.
+export const ELITE_TRINKET_REWARD_CHANCE = 0.75; // Elite rewards strongly favor trinkets but still allow card rewards.
+export const MYSTERY_CARD_CHOICES = 3;          // Card-choice mystery events offer the same count as normal reward choices.
+export const MIXED_POTION_CARD_ID = "mixed-potion"; // Generated alchemy card excluded from random permanent card rewards.
 
 // ============ Audio ============
 export const MASTER_GAIN = 0.3;                 // Master volume level. 0.3 prevents ear fatigue during extended sessions.
@@ -82,6 +88,7 @@ export const GHOST_DRAW_IN_MS = 520;            // Duration of card ghost draw-f
 export const GHOST_DISCARD_OUT_MS = 320;        // Duration of card ghost discard-to-pile animation.
 export const GHOST_ACTIVATE_MS = 672;           // Duration of card ghost activation (play) animation.
 export const GHOST_PLAY_TRAVEL_MS = 528;        // Duration of card ghost travel-from-hand animation.
+export const CARD_ACTIVATION_ROTATION_DEGREES = 4.2; // Fan angle applied while animating played cards from hand.
 
 // ============ Drag ============
 export const DRAG_START_THRESHOLD_PX = 10;       // Pixels of movement before a click becomes a drag. 10px prevents accidental drags on click.

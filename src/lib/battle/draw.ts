@@ -1,3 +1,6 @@
+// Deck drawing and battle-state creation for new encounters.
+// Depends on game data, combat constants, talent manifests, and trinket manifests.
+// Used by turn logic and battle controllers whenever cards or fresh battles are needed.
 import { enemyBestiary, starterDeck, type BattleCard, type BestiaryEntry, type EnemyAttackEffect } from "@/lib/game-data";
 
 import {
@@ -137,9 +140,9 @@ export function drawCards(deck: BattleCard[], discard: BattleCard[], hand: Battl
   return { deck: nextDeck, discard: nextDiscard, hand: nextHand };
 }
 
-// Builds scaled enemy data for a given room. Uses destinationIndexInAct for
-// room-to-room scaling (resets each act) and currentAct for act baseline difficulty.
-// Boss-type enemies get an additional BOSS_STAT_MULTIPLIER on top of the act scaling.
+// Enemy scaling is centralized so every battle start uses the same act, room, and type
+// multipliers. The fallback physical attack keeps malformed/new bestiary entries playable
+// instead of crashing combat with an enemy that has no action.
 function buildScaledEnemy(_roomsEncountered: number, enemy: BestiaryEntry, destinationIndexInAct = 0, currentAct = 1) {
   const scaler = Math.max(0, destinationIndexInAct - 1);
   const roomMul = 1 + scaler * ROOM_SCALING_INCREMENT;

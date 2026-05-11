@@ -1,3 +1,6 @@
+// Motion text animation primitive with segmenting, presets, viewport trigger, and accessibility support.
+// Depends on motion/react, React memoization, and class-name utilities.
+// Used by screens that need animated presentation text without duplicating stagger logic.
 import { memo } from "react"
 import {
   AnimatePresence,
@@ -343,6 +346,8 @@ const TextAnimateBase = ({
 }: TextAnimateProps) => {
   const MotionComponent = motionElements[Component]
 
+  // Segmenting preserves whitespace for word/character animation; line mode renders each
+  // segment as a block so multi-line copy keeps its intended layout while animating.
   let segments: string[]
   switch (by) {
     case "word":
@@ -360,6 +365,8 @@ const TextAnimateBase = ({
       break
   }
 
+  // Final variants merge caller overrides or presets with per-segment stagger timing based
+  // on requested duration, keeping container timing and item motion in one contract.
   const finalVariants = variants
     ? {
         container: {
@@ -418,6 +425,8 @@ const TextAnimateBase = ({
         aria-label={accessible ? children : undefined}
         {...props}
       >
+        {/* Accessible mode exposes one full string to assistive tech and hides animated
+            fragments so screen readers do not announce every word/character separately. */}
         {accessible && <span className="sr-only">{children}</span>}
         {segments.map((segment, i) => (
           <motion.span

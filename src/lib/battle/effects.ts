@@ -1,3 +1,6 @@
+// Card-effect resolver for battle: damage, status, healing, wish, companions, and rewards.
+// Depends on immutable battle state, draw helpers, game data, and combat constants.
+// Called by turn sequencing and companion logic whenever a card-like effect resolves.
 import { ailmentStatusIds, cardLibrary, companionLibrary, type BattleCard, type BattleCardEffect } from "@/lib/game-data";
 import { drawCards, shuffleCards } from "./draw";
 
@@ -24,8 +27,9 @@ export function mergeCombatText(combatTexts: CombatTextEvent[], nextEvent: Comba
   combatTexts.push(nextEvent);
 }
 
-// Computes the raw damage before crit: card base + forge bonus + talent bonuses.
-// Forge now also boosts Burn and Holy when those talents are unlocked.
+// All additive and multiplicative pre-defense bonuses meet here so crits, armor,
+// enemy traits, and status riders all see the same authored damage number.
+// Forge only leaks into burn/holy when talents say so; otherwise it remains physical tech.
 function computeBaseDamage(state: BattleState, effect: Extract<BattleCardEffect, { kind: "damage" }>) {
   const isPhysicalOrStun = effect.damageType === "physical" || effect.damageType === "stun";
   const isBurn = effect.damageType === "burn";
@@ -121,7 +125,9 @@ function applyDamageBlock(state: BattleState, damage: number, combatTexts: Comba
   };
 }
 
-// Secondary status effects triggered by specific damage types.
+// Damage-type riders happen after actual post-defense damage is known. This lets stun
+// and freeze thresholds scale with meaningful damage dealt, while burn/poison/bleed
+// stacks cannot be inflated by attacks fully absorbed by armor or enemy traits.
 function applyDamageStatuses(state: BattleState, effect: Extract<BattleCardEffect, { kind: "damage" }>, actualDamage: number, combatTexts: CombatTextEvent[]) {
   const nextStatuses = { ...state.enemyStatuses };
   let nextState: BattleState = { ...state, enemyStatuses: nextStatuses };
@@ -208,7 +214,9 @@ export function getEnemyDamageMultiplier(state: BattleState, damageType: string)
   return 1;
 }
 
-// Full damage pipeline: base → crit → enemy armor → trait multiplier → apply → status → lifesteal → holy effects → combat text.
+// Full enemy damage is an ordering contract for balance: base bonuses and one-shot
+// boosts happen before crit, armor and traits reduce the final hit, then health changes
+// unlock death/trinket/status/lifesteal side effects before the visible damage text emits.
 function dealEnemyDamage(
   state: BattleState,
   effect: Extract<BattleCardEffect, { kind: "damage" }>,
@@ -306,8 +314,8 @@ function dealEnemyDamage(
   return nextState;
 }
 
-// Ailments are negative player statuses (burn, poison, bleed, freeze, stun).
-// remove-ailment can remove one (random first found) or all.
+// Ailment removal is deterministic by ailmentStatusIds order, not random. That makes
+// save/replay behavior predictable and lets trinket rewards attach to exactly one removal.
 function removePlayerAilments(state: BattleState, mode: "one" | "all", combatTexts?: CombatTextEvent[]) {
   const nextPlayerStatuses = { ...state.playerStatuses };
   let removed = false;
@@ -344,7 +352,8 @@ function removePlayerAilments(state: BattleState, mode: "one" | "all", combatTex
   return nextState;
 }
 
-// Builds the wish card pool considering undiscovered talent and extra choice chance.
+// Wish excludes the card that created it to avoid self-looping. Undiscovered bias only
+// takes over when enough choices exist, so the player still receives a full offer set.
 function buildWishOptions(state: BattleState, card: BattleCard): BattleCard[] {
   const baseCount = WISH_CHOICE_COUNT + (Math.random() * 100 < state.talentEffects.wishExtraChoiceChance ? 1 : 0);
 
@@ -361,6 +370,8 @@ function buildWishOptions(state: BattleState, card: BattleCard): BattleCard[] {
 }
 
 function applyPlayerStatusEffect(state: BattleState, effect: Extract<BattleCardEffect, { kind: "player-status" }>, combatTexts: CombatTextEvent[]) {
+  // Status gains can cross talent thresholds, so armor/forge/block side effects resolve
+  // before the final increment is written and shown to the player.
   let amount = effect.amount;
 
   if (effect.status === "armor") {
@@ -413,6 +424,8 @@ function applyPlayerStatusEffect(state: BattleState, effect: Extract<BattleCardE
 }
 
 function applyWishEffect(state: BattleState, card: BattleCard, combatTexts: CombatTextEvent[]) {
+  // Wish pauses normal hand play via wishOptions, but all on-wish talents/trinkets apply
+  // immediately so the reward state is visible before the player picks a card.
   let nextState: BattleState = { ...state, wishOptions: buildWishOptions(state, card) };
 
   if (nextState.talentEffects.goldOnWish > 0) {
@@ -443,7 +456,8 @@ function applyWishEffect(state: BattleState, card: BattleCard, combatTexts: Comb
   return nextState;
 }
 
-// Iterates a card's effects and applies each one sequentially.
+// Card effects reduce through immutable state in authored order. Multi-effect cards rely
+// on earlier effects changing resources/statuses before later effects read them.
 export function applyCardEffects(state: BattleState, card: BattleCard, combatTexts: CombatTextEvent[]) {
   return card.effects.reduce((currentState, effect) => {
     switch (effect.kind) {

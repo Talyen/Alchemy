@@ -1,3 +1,6 @@
+// Styled Radix select primitives for options controls.
+// Depends on @radix-ui/react-select, Lucide icons, and class-name utilities.
+// Used by resolution, display mode, and UI scale settings.
 import * as SelectPrimitive from "@radix-ui/react-select";
 import { cn } from "@/lib/utils";
 import { Check, ChevronDown } from "lucide-react";

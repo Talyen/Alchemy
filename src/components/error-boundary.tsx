@@ -1,3 +1,6 @@
+// React error boundary that logs component stacks and shows a reload fallback.
+// Depends only on React class lifecycle APIs.
+// Used at the root so render failures do not leave the game on a blank page.
 import { Component, type ErrorInfo, type ReactNode } from "react";
 
 interface Props { children: ReactNode; }

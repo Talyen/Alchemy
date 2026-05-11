@@ -1,3 +1,6 @@
+// Shared alchemy UI primitives for destinations, settings controls, dialogs, shimmer, and menus.
+// Depends on base UI components, icons, route metadata, and tilt utilities.
+// Used across screens to keep game-native presentation consistent.
 import type { CSSProperties, MutableRefObject, ReactNode } from "react";
 import { AlertTriangle, BookOpen, ChevronLeft, ChevronRight, Cog, Coins, House, Swords, TreePine, WandSparkles } from "lucide-react";
 
@@ -233,6 +236,8 @@ export function GameMenu({ isOpen, onClose, onMainMenu, onCollection, onTalents,
   );
 
   if (anchorRect) {
+    // Anchored menus use fixed viewport coordinates from the clicked button so the menu
+    // floats above the hamburger even inside the scaled virtual-resolution stage.
     return (
       <div className="absolute inset-0 z-[120]" onClick={onClose}>
         <div

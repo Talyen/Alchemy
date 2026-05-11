@@ -1,3 +1,6 @@
+// Unlockable talent data and conversion into flat combat effect manifests.
+// Depends on keyword IDs and battle talent effect shapes.
+// Used by talent UI/state and battle setup to avoid scanning raw talent IDs during combat.
 import type { KeywordId } from "@/lib/game-data";
 import type { TalentEffectManifest } from "@/lib/battle/types";
 
@@ -257,7 +260,8 @@ export function sampleTalentChoices(keywordId: KeywordId, unlockedIds: string[],
 
 export type UnlockedTalents = Partial<Record<KeywordId, string[]>>;
 
-// Computes the battle effect manifest from the unlocked talent IDs.
+// Collapse unlocked IDs into a flat manifest once per change/battle. Combat code reads
+// numbers/booleans directly, which keeps turn resolution decoupled from talent grid data.
 export function computeTalentEffects(unlockedTalents: UnlockedTalents): TalentEffectManifest {
   const physIds = unlockedTalents.physical ?? [];
   const stunIds = unlockedTalents.stun ?? [];

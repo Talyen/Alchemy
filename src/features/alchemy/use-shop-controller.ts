@@ -1,3 +1,6 @@
+// Shop and alchemist purchase controller for pricing, refreshes, removals, and potion mixing.
+// Depends on run/talent state, sampled shop state, trinket pricing, audio, and mixer helpers.
+// Used by the top-level controller so offer storage stays separate from purchase rules.
 import { cardLibrary, type BattleCard } from "@/lib/game-data";
 import { playGoldSpend } from "@/lib/audio";
 import { computeTrinketManifest } from "@/lib/trinkets";
@@ -20,9 +23,13 @@ export function useShopController({
   talents: ReturnType<typeof useTalentState>;
   setDiscoveredCardIds: React.Dispatch<React.SetStateAction<string[]>>;
 }) {
+  // Purchase/removal/refresh/mixing rules are grouped here so sampled offer state remains
+  // a simple store and does not need to know about gold, talents, trinkets, or discovery.
   const { shopState, setShopState, alchemistState, setAlchemistState, initShop, initAlchemist } = useShopState();
 
   function handleShopBuyCard(card: BattleCard) {
+    // First-purchase pricing combines the talent discount with one trinket discount, then
+    // marks the visit discount as spent even if future purchases happen in the same shop.
     let price = Math.max(0, SHOP_CARD_PRICE - talents.talentEffects.shopCardDiscount);
     if (!shopState.firstPurchaseUsed) {
       price = Math.max(0, price - computeTrinketManifest(run.runTrinkets).merchantsFavorDiscount);
@@ -43,6 +50,8 @@ export function useShopController({
   }
 
   function handleShopRefresh() {
+    // Refreshes resample against the current offer list so the same cards are avoided, and
+    // collapse to zero uses after spending the visit's refresh opportunity.
     const price = talents.talentEffects.shopFreeRefresh && shopState.refreshesLeft > 0 ? 0 : SHOP_REFRESH_PRICE;
     if (shopState.refreshesLeft <= 0 || run.runGold < price) return;
     if (price > 0) playGoldSpend();
@@ -51,6 +60,8 @@ export function useShopController({
   }
 
   function handleAlchemistBuyCard(card: BattleCard) {
+    // Alchemist purchases mirror shop discovery/discount behavior but use potion pricing
+    // and a separate first-purchase flag for this visit type.
     let price = Math.max(0, ALCHEMIST_POTION_PRICE - talents.talentEffects.potionDiscount);
     if (!alchemistState.firstPurchaseUsed) {
       price = Math.max(0, price - computeTrinketManifest(run.runTrinkets).merchantsFavorDiscount);
@@ -63,6 +74,8 @@ export function useShopController({
   }
 
   function handleAlchemistRefresh() {
+    // Mixed potions are crafted outcomes, not shop stock, so refreshes sample only base
+    // potion cards from the library.
     const potionPool = cardLibrary.filter((c) => c.id.includes("potion") && c.id !== "mixed-potion");
     if (alchemistState.refreshesLeft <= 0 || run.runGold < ALCHEMIST_REFRESH_PRICE) return;
     playGoldSpend();
@@ -71,6 +84,8 @@ export function useShopController({
   }
 
   function handleAlchemistMixPotions(indexA: number, indexB: number) {
+    // Validate deck indices through createMixedPotion before spending gold. Only a valid
+    // mix removes originals, appends the crafted card, and records Mixed Potion discovery.
     const price = Math.max(0, ALCHEMIST_MIX_PRICE - talents.talentEffects.mixPotionDiscount);
     if (run.runGold < price) return;
     const deck = run.runDeck;

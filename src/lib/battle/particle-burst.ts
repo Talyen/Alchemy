@@ -1,3 +1,6 @@
+// Canvas particle burst helpers for card/status destruction effects.
+// Depends only on Canvas APIs, random motion, performance.now, and requestAnimationFrame.
+// Used by battle UI death animations; it never reads or mutates battle state.
 interface Particle {
   x: number;
   y: number;
@@ -16,6 +19,8 @@ function sampleParticles(
   canvasHeight: number,
   maxParticles: number,
 ): Particle[] {
+  // Sampling opaque pixels by stride preserves source image colors while capping particle
+  // count; full-resolution particles would be too expensive for responsive card art.
   const data = imageData.data;
   const particles: Particle[] = [];
   const area = canvasWidth * canvasHeight;
@@ -72,11 +77,15 @@ export function createParticles(
   height: number,
   maxParticles: number = 400,
 ): Particle[] {
+  // Convert already-rendered canvas pixels into particles so the caller can sample card art
+  // once, clear the canvas, and let the burst replace the original image visually.
   const imageData = ctx.getImageData(0, 0, width, height);
   return sampleParticles(imageData, width, height, maxParticles);
 }
 
 export function createStatusParticles(width: number, height: number): Particle[] {
+  // Status panels have no source image to sample, so synthetic clusters approximate the
+  // panel background, HP bar, text, and icons for a matching death breakup.
   const particles: Particle[] = [];
   const padX = Math.round(width * 0.08);
   const padY = Math.round(height * 0.1);
@@ -128,6 +137,8 @@ export function animateParticles(
   duration: number,
   onComplete: () => void,
 ): () => void {
+  // The animation owns its RAF lifecycle and returns cancellation for React unmounts;
+  // otherwise delayed death effects could keep drawing into detached canvases.
   let running = true;
   const startTime = performance.now();
   let lastTime = startTime;

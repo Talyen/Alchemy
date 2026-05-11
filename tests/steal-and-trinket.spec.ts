@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { startRun, playUntilVictory, completeVictoryFlow } from "./helpers";
+import { startRun } from "./helpers";
 
 test.describe("Steal Card", () => {
   test("steal card increases gold in battle", async ({ page }) => {

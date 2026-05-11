@@ -25,6 +25,8 @@ export function TalentsScreen({
   const [selectedKeyword, setSelectedKeyword] = useState<KeywordId>("physical");
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const keywordIds = Object.keys(keywordDefinitions) as KeywordId[];
+  // Choices are cached per keyword so rerenders or tab changes do not reroll talent offers
+  // until the player unlocks/refunds something that changes availability.
   const choicesCache = useRef<Record<string, TalentDefinition[]>>({});
 
   const currentXP = talentXP[selectedKeyword] ?? 0;
@@ -35,7 +37,7 @@ export function TalentsScreen({
   const progress = xpToNextPoint(totalXP);
   const progressPercent = Math.min(100, Math.round(((nextXP - progress) / nextXP) * 100));
 
-  const unlockedIds = unlockedTalents[selectedKeyword] ?? [];
+  const unlockedIds = useMemo(() => unlockedTalents[selectedKeyword] ?? [], [selectedKeyword, unlockedTalents]);
   const spentPoints = unlockedIds.length;
   const unspentPoints = Math.max(0, totalPoints - spentPoints);
   const allTalentsForKeyword = getTalentsForKeyword(selectedKeyword);
@@ -52,6 +54,7 @@ export function TalentsScreen({
   }, [selectedKeyword, unlockedIds, unspentPoints, allUnlocked]);
 
   function handleUnlockTalent(talentId: string) { onUnlockTalent(selectedKeyword, talentId); delete choicesCache.current[selectedKeyword]; playUISound("talentUnlock"); }
+  // Clearing cached choices forces the next offer to reflect the newly unlocked/refunded state.
   function handleReset() { onResetTalents(); choicesCache.current = {}; setShowResetConfirm(false); }
 
   return (

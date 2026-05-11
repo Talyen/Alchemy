@@ -1,7 +1,12 @@
+// Description tokenization for keyword-highlighted rules text.
+// Depends on keyword alias metadata and description part types.
+// Used by card/detail UI so keyword matching stays consistent across descriptions.
 import { keywordAliases, keywordPattern } from "../config";
 import type { DescriptionPart } from "../types";
 
 export function tokenizeDescription(line: string) {
+  // Match aliases with the pre-sorted regex from config so multi-word keywords win before
+  // shorter substrings, preserving readable highlights in card rules text.
   const pieces: DescriptionPart[] = [];
   let lastIndex = 0;
   const matches = line.matchAll(keywordPattern);

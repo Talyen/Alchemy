@@ -1,3 +1,6 @@
+// Root app shell for save data, audio/display side effects, routing, and global layout.
+// Depends on alchemy controllers, homestead state, screen modules, assets, and platform/audio helpers.
+// Everything visible flows through here, but domain rules stay in feature/lib controllers.
 import { useEffect, useRef, useState } from "react";
 
 import {
@@ -86,6 +89,8 @@ export default function App() {
     }
   }, [brightness]);
   useEffect(() => {
+    // Background mute must respond to both tab visibility and focus changes, then always
+    // unmute on cleanup so toggling the option cannot leave the audio graph muted.
     function applyBackgroundMute() {
       setMuted(muteInBackground && (document.hidden || !document.hasFocus()));
     }
@@ -104,6 +109,8 @@ export default function App() {
 
   const gameMenuOpenRef = useRef(gameMenuOpen);
   const renderedScreenRef = useRef(renderedScreen);
+  // Refs let the global Escape listener read current screen/menu state without re-registering
+  // a document-level handler on every route or menu toggle.
   useEffect(() => { gameMenuOpenRef.current = gameMenuOpen; }, [gameMenuOpen]);
   useEffect(() => { renderedScreenRef.current = renderedScreen; }, [renderedScreen]);
 
@@ -147,6 +154,8 @@ export default function App() {
   useEffect(() => {
     const key = run.screen === "battle" ? MUSIC_KEYS.BATTLE : MUSIC_KEYS.MENU;
     if (!musicStartedRef.current) {
+      // First music start is immediate to avoid fade-from-silence; later screen changes
+      // use crossfade so battle/menu transitions still feel deliberate.
       musicStartedRef.current = true;
       playMusicImmediate(key);
     } else {
@@ -157,6 +166,8 @@ export default function App() {
 
   useEffect(() => {
     if (run.screen === renderedScreen) return;
+    // renderedScreen intentionally lags the controller screen so exit animation can finish
+    // before the next screen mounts and starts its enter animation.
     pendingScreenRef.current = run.screen;
     setPagePhase("exit"); // eslint-disable-line react-hooks/set-state-in-effect
     const timeout = window.setTimeout(() => {
@@ -167,6 +178,8 @@ export default function App() {
   }, [run.screen, renderedScreen]);
 
   useEffect(() => {
+    // Preload only assets for the current or imminent screen so card/enemy art does not
+    // pop in, without forcing the entire collection into memory on startup.
     const priorityImages = [heroArt];
     if (run.screen === "battle") {
       priorityImages.push(run.battleState.currentEnemy.art, pileDrawArt, pileDiscardArt, ...run.battleState.hand.map((card) => card.art));

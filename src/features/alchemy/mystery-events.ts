@@ -1,3 +1,6 @@
+// Declarative mystery event data and effect schema for non-combat route nodes.
+// Depends on game-data art/card IDs and homestead material IDs.
+// Consumed by run navigation and mystery screens; this file should not mutate run state.
 import { manaBerries } from "@/lib/game-data";
 import type { KeywordId } from "@/lib/game-data";
 import type { MaterialId } from "@/lib/homestead/types";

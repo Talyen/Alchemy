@@ -63,6 +63,8 @@ function RewardScreen({
             );
           }
           case "addRandomCard": {
+            // The controller has already appended the random card before this reward view
+            // renders, so the newest deck card is the card to display.
             const card = runDeck[runDeck.length - 1];
             if (!card) return null;
             const isHovered = hoveredItemId === card.id;
@@ -140,6 +142,8 @@ function RewardScreen({
               </div>
             );
           case "chooseCard": {
+          // Card choice confirmation also mutates the deck before this summary appears;
+          // show the last deck card as the selected reward result.
           const card = runDeck[runDeck.length - 1];
           if (!card) return null;
           const isHovered = hoveredItemId === card.id;
@@ -318,6 +322,8 @@ export function MysteryScreen({
     );
   }
   function handlePick(choice: MysteryChoice) {
+    // Follow-up card/removal choices split state mutation from the reward screen: the
+    // controller applies effects first, then this screen shows the picker or summary.
     const hasChooseCard = choice.effects.some((e) => e.kind === "chooseCard");
 
     if (hasChooseCard) {
@@ -339,6 +345,8 @@ export function MysteryScreen({
   }
 
   function handleRemoveConfirm(index: number) {
+    // pendingRemoval is expected here because this path is reachable only after choosing
+    // a remove-card event; after removal, resume the delayed result screen.
     onRemoveCard(index);
     setPendingRemoval(null);
     if (!chosen) {

@@ -1,3 +1,6 @@
+// Turn sequencing for the battle engine: card play, enemy phases, status ticks, and turn reset.
+// Depends on draw/effect helpers, game-data attack shapes, and combat tuning constants.
+// Used by the React battle controller as the only way to advance combat state.
 import { drawCards } from "./draw";
 import { applyCardEffects, getEnemyDamageMultiplier, mergeCombatText } from "./effects";
 import { ailmentStatusIds, type EnemyAttackEffect, type BattleCard } from "@/lib/game-data";
@@ -8,8 +11,9 @@ export function cardHasDamageType(card: BattleCard, damageType: string): boolean
   return card.effects.some((e) => e.kind === "damage" && e.damageType === damageType);
 }
 
-// Entry point for playing a card. Validates mana/wish state, finds the card in hand,
-// deducts mana, applies effects, then routes to discard or exhaust.
+// Card play is intentionally funneled through one gateway so cost prediction, one-shot
+// free-card flags, immutable hand movement, effect order, and consume/discard routing
+// cannot drift across UI paths or future automation.
 export function playBattleCardResolved(state: BattleState, cardId: string, index: number): BattleResolution {
   const combatTexts: CombatTextEvent[] = [];
 
@@ -87,6 +91,8 @@ export function playBattleCardResolved(state: BattleState, cardId: string, index
 }
 
 // ----- Enemy DoT tick functions -----
+// Enemy ailments are split because each stack decays differently: burn halves or doubles,
+// poison usually drains by one and can feed healing, and bleed is a one-shot delayed hit.
 
 function tickBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
   const damage = state.enemyStatuses.burn;
@@ -141,6 +147,8 @@ function tickBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
 }
 
 function tickEnemyStatuses(state: BattleState, combatTexts: CombatTextEvent[]) {
+  // Tick order is a balance contract: burn/poison can kill before bleed leech resolves,
+  // and changing the order would alter rewards, healing, and death timing.
   let nextState = tickBurn(state, combatTexts);
   nextState = tickPoison(nextState, combatTexts);
   nextState = tickBleed(nextState, combatTexts);
@@ -148,6 +156,8 @@ function tickEnemyStatuses(state: BattleState, combatTexts: CombatTextEvent[]) {
 }
 
 // ----- Player DoT tick functions -----
+// Player-side ailments stay separate from enemy ticks because armor mitigation and
+// half-damage talents apply only here, while stun/freeze are damaging ailments, not turn skips.
 
 function tickPlayerBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
   const damage = state.playerStatuses.burn;
@@ -207,6 +217,8 @@ function tickPlayerFreeze(state: BattleState, combatTexts: CombatTextEvent[]) {
 }
 
 function tickPlayerStatuses(state: BattleState, combatTexts: CombatTextEvent[]) {
+  // This fixed order keeps simultaneous ailments deterministic for combat text merging
+  // and for edge cases where the player dies during end-of-turn cleanup.
   let nextState = tickPlayerBurn(state, combatTexts);
   nextState = tickPlayerPoison(nextState, combatTexts);
   nextState = tickPlayerBleed(nextState, combatTexts);
@@ -235,6 +247,8 @@ export function chooseWishCard(state: BattleState, cardId: string) {
 export function processCompanionTurnStart(state: BattleState, combatTexts: CombatTextEvent[]) {
   if (!state.activeCompanion) return state;
 
+  // Companions masquerade as a zero-cost card so their turn-start powers reuse the
+  // normal card-effect pipeline, including combat text merging and status side effects.
   const companionCard: BattleCard = {
     id: `companion-${state.activeCompanion.id}`,
     title: state.activeCompanion.title,
@@ -249,6 +263,8 @@ export function processCompanionTurnStart(state: BattleState, combatTexts: Comba
 }
 
 function advanceToPlayerTurn(state: BattleState, _combatTexts: CombatTextEvent[]) {
+  // All player-turn reset work happens here so haste, skipped enemy turns, and normal
+  // enemy turns draw cards, restore mana, decay block, and clear per-turn flags identically.
   const nextDraw = drawCards(state.deck, state.discard, [], cardsPerTurn);
   return {
     ...state,
@@ -265,6 +281,8 @@ function advanceToPlayerTurn(state: BattleState, _combatTexts: CombatTextEvent[]
 }
 
 function processEnemyHealing(state: BattleState, combatTexts: CombatTextEvent[]) {
+  // Enemy self-heal is an early enemy-phase pressure valve: poison can halve it before
+  // DoTs tick, so poison decks can counter sustain instead of only racing damage.
   if (state.enemyHealth >= state.enemyMaxHealth / 2) return state;
   let healAmount = Math.floor(state.enemyMaxHealth * ENEMY_HEAL_FRACTION);
   if (state.enemyStatuses.poison > 0 && state.talentEffects.poisonHalvesHealing) {
@@ -276,6 +294,8 @@ function processEnemyHealing(state: BattleState, combatTexts: CombatTextEvent[])
 }
 
 function checkHealthThresholds(prevHealth: number, nextHealth: number, state: BattleState, combatTexts: CombatTextEvent[]) {
+  // Threshold talents trigger only when crossing downward from above; otherwise a player
+  // who stays below the threshold would re-trigger block/armor on every later hit.
   let nextState = state;
   if (state.talentEffects.healthThresholdBlock) {
     const { threshold, amount } = state.talentEffects.healthThresholdBlock;
@@ -302,7 +322,8 @@ function checkHealthThresholds(prevHealth: number, nextHealth: number, state: Ba
   return nextState;
 }
 
-// Processes a single enemy damage effect: reduce by physical talent, absorb with block/armor, apply damage.
+// Per-hit enemy damage order is gameplay-significant: bleed mitigation first, then block
+// absorption, armor, damage-type mitigation, HP threshold triggers, lifesteal, and trinkets.
 function processEnemyDamageEffect(state: BattleState, effect: EnemyAttackEffect & { kind: "damage" }, combatTexts: CombatTextEvent[]) {
   let remainingDamage = effect.amount;
 
@@ -363,8 +384,8 @@ function processEnemyDamageEffect(state: BattleState, effect: EnemyAttackEffect 
   return nextState;
 }
 
-// Enemy attacks the player by iterating through its attack effects.
-// Block and armor apply to each damage effect in sequence.
+// Enemy attacks resolve effect-by-effect so multi-part attacks can spend block, have
+// status riders prevented by remaining block, and consume first-ailment immunity once.
 function processEnemyAttack(state: BattleState, combatTexts: CombatTextEvent[]) {
   let nextState = state;
 
@@ -402,6 +423,8 @@ function processEnemyAttack(state: BattleState, combatTexts: CombatTextEvent[]) 
 }
 
 function processEnemyRegeneration(state: BattleState, combatTexts: CombatTextEvent[]) {
+  // Regeneration is isolated after enemy actions so it cannot save an enemy from DoT
+  // death earlier in the same phase, but still rewards survival through the attack step.
   if (state.enemyRegeneration <= 0) return state;
   const healAmount = state.enemyRegeneration;
   mergeCombatText(combatTexts, { target: "enemy", kind: "heal", stat: "health", amount: healAmount });
@@ -416,7 +439,9 @@ function reduceSkipTurns(state: BattleState): BattleState {
   return { ...state, enemyStunSkipTurns: newStun, enemyFreezeSkipTurns: newFreeze };
 }
 
-// End-turn resolution: this is called when the player clicks "End Turn".
+// Canonical enemy-phase pipeline: discard hand, handle haste/skips, heal, enemy DoTs,
+// enemy attack, player ailments, regeneration, trinket cleanup, then return to player.
+// Keeping this order centralized prevents UI timing from changing combat outcomes.
 export function endPlayerTurn(state: BattleState): { state: BattleState; combatTexts: CombatTextEvent[] } {
   const combatTexts: CombatTextEvent[] = [];
 

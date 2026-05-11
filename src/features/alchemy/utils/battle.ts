@@ -1,3 +1,6 @@
+// Battle UI formatting helpers for combat text colors/icons and status chip ordering.
+// Depends on battle state, game-data status IDs, alchemy config, and shared UI types.
+// Used by battle controller and widgets to keep presentation derivation out of combat logic.
 import type { BattleState, CombatTextEvent } from "@/lib/battle";
 import { type EnemyStatusId, type PlayerStatusId } from "@/lib/game-data";
 import { combatTextColorClasses, combatTextIconClasses, keywordIcons } from "../config";

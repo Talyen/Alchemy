@@ -1,3 +1,6 @@
+// Battle presentation screen for actors, hand fan, piles, ghosts, wish choices, and menu entry.
+// Depends on battle state snapshots, reusable alchemy UI widgets, and responsive card sizing config.
+// Driven by useBattleController; it should not mutate combat state directly.
 import type { CSSProperties, MouseEvent, MutableRefObject } from "react";
 import { useState } from "react";
 import { Coins, Menu } from "lucide-react";
@@ -71,6 +74,8 @@ export function BattleScreen({
 }) {
   const isPlayerTurn = battleState.turnPhase === "player";
   const hasCompanion = Boolean(battleState.activeCompanion);
+  // These formulas mirror actor-card width and companion offset so the turn badge remains
+  // visually attached to the active actor across desktop and mobile-landscape stages.
   const battleActorHalfGap = isMobileLandscape ? 'clamp(130px,8cqw,180px)' : 'clamp(168px,10cqw,210px)';
   const actorCardWidthClass = isMobileLandscape ? mobileStageBattleCardWidthClass : undefined;
   const handWidthClass = isMobileLandscape ? mobileStageHandCardWidthClass : handCardWidthClass;
@@ -81,6 +86,8 @@ export function BattleScreen({
 
   return (
     <div ref={battleSceneRef} data-testid="battle-scene" className="relative h-full w-full overflow-hidden [container-type:size]">
+      {/* Battle actors use fixed stage anchors/container queries instead of document flow so
+          actor panels, combat text rails, and the hand fan keep stable coordinates at every scale. */}
       <section
         className={`absolute inset-x-0 flex -translate-y-1/2 items-start justify-center px-4 ${isMobileLandscape ? "gap-[clamp(260px,16cqw,360px)]" : "gap-[clamp(336px,20cqw,420px)]"}`}
         style={{ top: isMobileLandscape ? '36%' : '42%' }}
@@ -173,6 +180,8 @@ export function BattleScreen({
             const isShimmering = shimmerState?.cardId === hoverId;
             const canPlay = battleState.turnPhase === "player" && battleState.mana >= card.cost && !battleState.wishOptions;
 
+            // The index offset creates the fan without layout shifts; hovered cards lift,
+            // rotate less, and temporarily win z-index so detail popups remain readable.
             return (
               <BattleCardButton
                 key={`${card.id}-${card.uid}`}

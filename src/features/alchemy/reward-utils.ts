@@ -1,3 +1,6 @@
+// Reward selection helpers for deck keyword affinity and trinket/card sampling.
+// Depends on battle card/trinket shapes and shared sampling utilities.
+// Used by run navigation after combat victories and other reward-generating screens.
 import type { BattleCard, KeywordId, TrinketEntry } from "@/lib/game-data";
 import { sampleItems } from "./utils";
 
@@ -5,6 +8,8 @@ export const REWARD_TRINKET_CHANCE = 0.25;
 export const REWARD_RANDOM_CHANCE = 0.3;
 
 export function getCardKeywords(card: BattleCard): KeywordId[] {
+  // Reward affinity duplicates lightweight keyword inference from card templates/effects
+  // so reward scoring can understand deck themes without running combat effect logic.
   const keywords = new Set<KeywordId>();
 
   if (card.template === "nature") keywords.add("nature");
@@ -55,6 +60,8 @@ export function selectRewardTrinkets(allTrinkets: TrinketEntry[], count: number)
 }
 
 export function selectRewardCards(deck: BattleCard[], allCards: BattleCard[], count: number): BattleCard[] {
+  // Rewards are usually biased toward keywords already present in the deck, but occasional
+  // random offers and a small new-card bonus keep drafts from becoming too deterministic.
   const candidates = allCards.filter((c) => c.id !== "mixed-potion");
 
   if (Math.random() < REWARD_RANDOM_CHANCE) return sampleItems(candidates, count);

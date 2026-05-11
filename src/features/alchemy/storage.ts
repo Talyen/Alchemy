@@ -1,10 +1,15 @@
-import { starterDeck, type BattleCard, type CharacterId } from "@/lib/game-data";
+// Persistence and migration layer for settings, collection, active runs, talents, and homestead data.
+// Depends on game constants/data plus battle, talent, homestead, and run state shapes.
+// Used by App during boot/save so older or partial localStorage payloads remain playable.
+import { characters, starterDeck, type BattleCard, type CharacterId } from "@/lib/game-data";
+import { maxPlayerHealth } from "@/lib/battle/types";
 import type { TalentXP } from "@/lib/talents";
 import type { BuildingId, FarmId, MaterialInventory, ResearchId } from "@/lib/homestead/types";
 import { emptyInventory } from "@/lib/homestead/types";
 
 import type { UnlockedTalents } from "./talent-pool";
 import type { DisplayMode, ResolutionOption, UiScale } from "./types";
+import type { ActiveRunData } from "./use-run-state";
 import { SAVE_KEY } from "@/lib/game-constants";
 
 const storageKey = SAVE_KEY;
@@ -32,24 +37,13 @@ type SaveData = {
   pendingFarmYield: boolean;
 };
 
-type ActiveRunData = {
-  characterId: CharacterId;
-  runDeck: BattleCard[];
-  runGold: number;
-  runPlayerHealth: number;
-  runMaxHealth: number;
-  roomsEncountered: number;
-  currentAct: number;
-  destinationIndexInAct: number;
-  completedDestinations: string[];
-  runTrinkets: string[];
-};
-
 function isValidCharacterId(id: string): id is CharacterId {
   return id === "knight" || id === "ranger" || id === "rogue" || id === "wizard";
 }
 
 export function normalizeActiveRun(activeRun: unknown): ActiveRunData | null {
+  // Active runs are sanitized before hydration because localStorage can contain stale
+  // character IDs, renamed heroes, missing route fields, or hand-edited invalid payloads.
   if (!activeRun || typeof activeRun !== "object") {
     return null;
   }
@@ -61,19 +55,15 @@ export function normalizeActiveRun(activeRun: unknown): ActiveRunData | null {
     return null;
   }
 
-  const runDeck = Array.isArray(candidate.runDeck) ? candidate.runDeck as BattleCard[] : [];
+  const runDeck = Array.isArray(candidate.runDeck) && candidate.runDeck.length > 0 ? candidate.runDeck as BattleCard[] : [...characters[characterId].startingDeck];
   const runGold = typeof candidate.runGold === "number" ? candidate.runGold : 0;
-  const runPlayerHealth = typeof candidate.runPlayerHealth === "number" ? candidate.runPlayerHealth : 30;
-  const runMaxHealth = typeof candidate.runMaxHealth === "number" ? candidate.runMaxHealth : 30;
+  const runPlayerHealth = typeof candidate.runPlayerHealth === "number" ? candidate.runPlayerHealth : maxPlayerHealth;
+  const runMaxHealth = typeof candidate.runMaxHealth === "number" ? candidate.runMaxHealth : maxPlayerHealth;
   const roomsEncountered = typeof candidate.roomsEncountered === "number" ? candidate.roomsEncountered : 0;
   const currentAct = typeof candidate.currentAct === "number" ? candidate.currentAct : 1;
   const destinationIndexInAct = typeof candidate.destinationIndexInAct === "number" ? candidate.destinationIndexInAct : 0;
   const completedDestinations = Array.isArray(candidate.completedDestinations) ? candidate.completedDestinations as string[] : [];
   const runTrinkets = Array.isArray(candidate.runTrinkets) ? candidate.runTrinkets as string[] : [];
-
-  if (runDeck.length === 0) {
-    return null; // No deck = no valid run to restore
-  }
 
   return {
     characterId,
@@ -124,6 +114,8 @@ export function loadAlchemySaveData(): SaveData {
 
   try {
     const parsed = JSON.parse(raw) as Partial<SaveData>;
+    // Normalize each field independently so one corrupt/old value falls back without
+    // wiping unrelated permanent progress such as discoveries or homestead materials.
     return {
       selectedResolution: parsed.selectedResolution ?? defaultSaveData.selectedResolution,
       displayMode: normalizeDisplayMode(parsed.displayMode),
@@ -176,6 +168,8 @@ export function saveAlchemySaveData(data: SaveData) {
 }
 
 function migrateMaterialInventory(inv: unknown): MaterialInventory {
+  // Rebuild key-by-key so saves from before a material existed receive a zero default
+  // while preserving any resources the player had already earned.
   if (!inv || typeof inv !== "object") return defaultSaveData.materialInventory;
   const old = inv as Record<string, number>;
   return {
@@ -188,6 +182,8 @@ function migrateMaterialInventory(inv: unknown): MaterialInventory {
 }
 
 function migrateBuildingIds(ids: unknown): BuildingId[] {
+  // Content IDs are part of persisted progress, so legacy names are remapped on load
+  // instead of forcing players to rebuild renamed structures.
   if (!Array.isArray(ids)) return defaultSaveData.constructedBuildings;
   return ids.map((id) => {
     if (id === "smithy") return "blacksmiths-forge" as BuildingId;
@@ -196,6 +192,8 @@ function migrateBuildingIds(ids: unknown): BuildingId[] {
 }
 
 function migrateFarmIds(ids: unknown): FarmId[] {
+  // Farm plots follow the same persisted-ID migration rule as buildings: renamed farm
+  // content should keep its planted/completed state across versions.
   if (!Array.isArray(ids)) return defaultSaveData.plantedFarms;
   return ids.map((id) => {
     if (id === "sheep-pasture") return "pasture" as FarmId;

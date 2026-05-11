@@ -69,9 +69,6 @@ test.describe("Battle Mechanics", () => {
       return;
     }
 
-    const hpText = await page.locator("text=/\\d+\\/30/").first().textContent();
-    const hpBefore = Number(hpText?.split("/")[0]);
-
     await waitForEnemyTurn(page);
     const hpAfterDamageText = await page.locator("text=/\\d+\\/30/").first().textContent();
     const hpAfterDamage = Number(hpAfterDamageText?.split("/")[0]);

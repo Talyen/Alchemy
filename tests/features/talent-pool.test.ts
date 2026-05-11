@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { KeywordId } from "@/lib/game-data";
-import { getTalentsForKeyword, sampleTalentChoices, computeTalentEffects, talentPool } from "@/features/alchemy/talent-pool";
+import { getTalentsForKeyword, sampleTalentChoices, computeTalentEffects } from "@/features/alchemy/talent-pool";
 
 describe("talentPool", () => {
   it("contains talents for all keywords", () => {

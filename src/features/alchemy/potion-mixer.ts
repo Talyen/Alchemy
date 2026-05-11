@@ -1,9 +1,15 @@
+// Pure alchemist potion-combining logic.
+// Depends only on battle card shapes and the Mixed Potion art/data shell.
+// Used by shop controller and UI previews so mixing behavior stays testable outside React.
 import type { BattleCard } from "@/lib/game-data";
 import { mixedPotion } from "@/lib/game-data";
 
 /** Pure logic for combining two potion cards into a Mixed Potion.
  * Used by the Alchemist's Shop controller so the mixing logic is independently testable. */
 export function createMixedPotion(cardA: BattleCard, cardB: BattleCard): BattleCard {
+  // Existing Mixed Potions are rejected to avoid recursively combining generated effects.
+  // Same potion doubles numeric effects; different potions concatenate effects, and Consume
+  // is normalized to one final line so descriptions do not accumulate duplicates.
   if (cardA.id === "mixed-potion" || cardB.id === "mixed-potion") {
     throw new Error("Cannot mix with an existing Mixed Potion");
   }

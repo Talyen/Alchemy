@@ -1,3 +1,6 @@
+// Styled button primitive with variant/size class composition and optional Radix Slot rendering.
+// Depends on class-variance-authority, Radix Slot, React, and cn utilities.
+// Used across game screens as the base clickable control.
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";

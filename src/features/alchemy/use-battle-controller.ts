@@ -1,3 +1,6 @@
+// React battle orchestrator for combat state, card play, turn timing, ghosts, and feedback.
+// Depends on pure battle logic, run/talent state, homestead modifiers, audio, and UI hooks.
+// Used by the alchemy controller while keeping deterministic combat rules in @/lib/battle.
 import type { MouseEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -5,7 +8,7 @@ import {
   getEffectiveCost, playBattleCardResolved, processCompanionTurnStart,
   type BattleState, type CombatTextEvent,
 } from "@/lib/battle";
-import { starterDeck, type BattleCard } from "@/lib/game-data";
+import { starterDeck, type BattleCard, type BestiaryEntry } from "@/lib/game-data";
 import { playCardSound, playEnemyAttack, playGoldGain } from "@/lib/audio";
 import { getCurrentEnemy, getBossEnemy } from "./config";
 import { useCardGhosts, useFloatingCombatTexts, useShimmerController } from "./hooks";
@@ -14,7 +17,10 @@ import type { Screen } from "./types";
 import { computeTrinketManifest } from "@/lib/trinkets";
 import { mergeIntoManifest } from "@/lib/homestead/effects";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
-import { AUTO_END_TURN_DELAY, COMPANION_ATTACK_DELAY, ENEMY_PHASE_DELAY, SHAKE_DURATION } from "@/lib/game-constants";
+import {
+  AUTO_END_TURN_DELAY, CARD_ACTIVATION_ROTATION_DEGREES, COMPANION_ATTACK_DELAY,
+  ENEMY_PHASE_DELAY, SHAKE_DURATION,
+} from "@/lib/game-constants";
 import { getCardRect, getEnemyStatusChips, getHoverId, getPlayerStatusChips } from "./utils";
 import type { useRunState } from "./use-run-state";
 import type { useTalentState } from "./use-talent-state";
@@ -36,6 +42,8 @@ export function useBattleController({
   setHoveredCardId: React.Dispatch<React.SetStateAction<string | null>>;
   initialHasActiveBattle?: boolean;
 }) {
+  // React owns timing, refs, animation, and audio here; pure combat resolution stays in
+  // @/lib/battle so UI delays cannot silently change battle outcomes.
   const [battleState, setBattleState] = useState<BattleState>(() => createBattleState(starterDeck, 0));
   const [hasActiveBattle, setHasActiveBattle] = useState(initialHasActiveBattle ?? false);
   const [enemyShaking, setEnemyShaking] = useState(false);
@@ -67,6 +75,8 @@ export function useBattleController({
   const enemyCombatTexts = useMemo(() => floatingCombatTexts.filter((e) => e.target === "enemy"), [floatingCombatTexts]);
 
   function scheduleAutoEndTurn(state: BattleState = battleState) {
+    // Auto-end waits for a stable no-actions state. Wish prompts, deaths, enemy phase,
+    // and playable discounted cards all block it so automation cannot skip decisions.
     if (autoEndTimerRef.current) clearTimeout(autoEndTimerRef.current);
     autoEndTimerRef.current = null;
     if (!autoEndTurn || screen !== "battle" || state.turnPhase !== "player" || state.enemyHealth <= 0 || state.playerHealth <= 0 || state.wishOptions) return;
@@ -81,43 +91,66 @@ export function useBattleController({
   }, [autoEndTurn, battleState, screen]);
 
   function startBattle(deck: BattleCard[] = run.runDeck, gold: number = run.runGold, enemyType: "normal" | "elite" = "normal") {
-    const enemy = getCurrentEnemy(run.roomsEncountered, enemyType);
-    const grovesHeal = computeTrinketManifest(run.runTrinkets).grovesFavorStartHeal;
-    if (grovesHeal > 0) run.setRunPlayerHealth((p) => Math.min(run.runMaxHealth, p + grovesHeal));
-    run.setRoomsEncountered((p) => p + 1);
-    clearCardGhosts();
-    const mergedEffects = mergeIntoManifest(talents.talentEffects, homesteadEffectsRef.current);
-    setBattleState(createBattleState(deck, gold, run.roomsEncountered, enemy, run.runPlayerHealth, mergedEffects, discoveredCardIds, run.runMaxHealth, run.runTrinkets, run.destinationIndexInAct, run.currentAct));
-    setHasActiveBattle(true);
-    setEncounteredEnemyIds((current) => current.includes(enemy.id) ? current : [...current, enemy.id]);
+    beginBattle(getCurrentEnemy(run.roomsEncountered, enemyType), deck, gold);
   }
 
   function startBossBattle() {
-    const enemy = getBossEnemy(run.currentAct);
-    const grovesHeal = computeTrinketManifest(run.runTrinkets).grovesFavorStartHeal;
-    if (grovesHeal > 0) run.setRunPlayerHealth((p) => Math.min(run.runMaxHealth, p + grovesHeal));
+    beginBattle(getBossEnemy(run.currentAct), run.runDeck, run.runGold);
+  }
+
+  function beginBattle(enemy: BestiaryEntry, deck: BattleCard[], gold: number) {
+    // Battle setup batches start-heal trinkets, room count, ghost cleanup, immutable
+    // state creation, and bestiary discovery so the first battle render is coherent.
+    applyGrovesFavorHeal();
     run.setRoomsEncountered((p) => p + 1);
     clearCardGhosts();
-    const mergedEffects = mergeIntoManifest(talents.talentEffects, homesteadEffectsRef.current);
-    setBattleState(createBattleState(run.runDeck, run.runGold, run.roomsEncountered, enemy, run.runPlayerHealth, mergedEffects, discoveredCardIds, run.runMaxHealth, run.runTrinkets, run.destinationIndexInAct, run.currentAct));
+    setBattleState(createBattleForEnemy(enemy, deck, gold));
     setHasActiveBattle(true);
     setEncounteredEnemyIds((current) => current.includes(enemy.id) ? current : [...current, enemy.id]);
   }
 
+  function applyGrovesFavorHeal() {
+    const grovesHeal = computeTrinketManifest(run.runTrinkets).grovesFavorStartHeal;
+    if (grovesHeal > 0) run.setRunPlayerHealth((p) => Math.min(run.runMaxHealth, p + grovesHeal));
+  }
+
+  function createBattleForEnemy(enemy: BestiaryEntry, deck: BattleCard[], gold: number) {
+    // Talent and homestead bonuses are merged before state creation so the battle engine
+    // reads one precomputed manifest instead of consulting React/controller state mid-fight.
+    const mergedEffects = mergeIntoManifest(talents.talentEffects, homesteadEffectsRef.current);
+    return createBattleState(deck, gold, run.roomsEncountered, enemy, run.runPlayerHealth, mergedEffects, discoveredCardIds, run.runMaxHealth, run.runTrinkets, run.destinationIndexInAct, run.currentAct);
+  }
+
   function handlePlayCard(card: BattleCard, index: number, sourceRect: { x: number; y: number; width: number; height: number }) {
-    if (screen !== "battle" || battleState.mana < getEffectiveCost(battleState, card) || battleState.wishOptions || battleState.turnPhase !== "player" || cardPlayInProgressRef.current) return;
+    // Play validation happens before animation/audio, then pure resolution drives XP,
+    // combat text, hover cleanup, and any auto-end scheduling from the resolved state.
+    if (!canPlayCard(card)) return;
     cardPlayInProgressRef.current = true;
-    animateCardActivation(card, sourceRect, (index - (battleState.hand.length - 1) / 2) * 4.2, playerPanelRef, enemyPanelRef, battleSceneRef, spawnCardGhost);
+    animatePlayedCard(card, index, sourceRect);
     playCardSound(card.id);
     const resolution = playBattleCardResolved(battleState, card.id, index);
-    if (resolution.state.gold > battleState.gold && card.id !== "steal") playGoldGain();
-    if (resolution.combatTexts.some((ct) => ct.kind === "damage" && ct.target === "enemy")) { setEnemyShaking(true); setTimeout(() => setEnemyShaking(false), SHAKE_DURATION); }
+    playCardResolutionFeedback(card, resolution.state, resolution.combatTexts);
     setBattleState(resolution.state);
     showCombatTexts(resolution.combatTexts);
     setHoveredCardId((current) => (current === getHoverId("hand", `${card.id}-${card.uid}`) ? null : current));
     talents.awardCardXP(card);
     cardPlayInProgressRef.current = false;
     scheduleAutoEndTurn(resolution.state);
+  }
+
+  function canPlayCard(card: BattleCard) {
+    return screen === "battle" && battleState.mana >= getEffectiveCost(battleState, card)
+      && !battleState.wishOptions && battleState.turnPhase === "player" && !cardPlayInProgressRef.current;
+  }
+
+  function animatePlayedCard(card: BattleCard, index: number, sourceRect: { x: number; y: number; width: number; height: number }) {
+    const centerOffset = index - (battleState.hand.length - 1) / 2;
+    animateCardActivation(card, sourceRect, centerOffset * CARD_ACTIVATION_ROTATION_DEGREES, playerPanelRef, enemyPanelRef, battleSceneRef, spawnCardGhost);
+  }
+
+  function playCardResolutionFeedback(card: BattleCard, state: BattleState, combatTexts: CombatTextEvent[]) {
+    if (state.gold > battleState.gold && card.id !== "steal") playGoldGain();
+    if (combatTexts.some((ct) => ct.kind === "damage" && ct.target === "enemy")) shakeEnemy();
   }
 
   function handleCardClick(card: BattleCard, index: number, event: MouseEvent<HTMLButtonElement>) {
@@ -130,55 +163,91 @@ export function useBattleController({
   }
 
   function handleEndTurn() {
+    // Queued companion effects resolve before the enemy action, then enemy damage is
+    // delayed for readability while the pure end-turn result remains already computed.
     if (screen !== "battle" || battleState.turnPhase !== "player" || battleState.wishOptions || cardPlayInProgressRef.current) return;
+    clearCompanionTimeout();
 
-    if (companionTimeoutRef.current) {
-      clearTimeout(companionTimeoutRef.current);
-      companionTimeoutRef.current = null;
-    }
+    const companionResult = resolveQueuedCompanionTurn(battleState);
+    const result = endPlayerTurn(companionResult.state);
+    const combinedCombatTexts = [...companionResult.combatTexts, ...result.combatTexts];
 
-    let currentState = battleState;
-    const preCombatTexts: CombatTextEvent[] = [];
-    if (companionScheduledRef.current && currentState.activeCompanion) {
-      playCardSound(`companion-${currentState.activeCompanion.id}`);
-      currentState = processCompanionTurnStart(currentState, preCombatTexts);
-      setCompanionShaking(true);
-      setTimeout(() => setCompanionShaking(false), SHAKE_DURATION);
+    showEnemyTurnStart(result.state, companionResult.state, combinedCombatTexts);
+    if (result.state.enemyHealth <= 0) return;
+    scheduleEnemyTurnResolution(result.state, companionResult.state, combinedCombatTexts);
+  }
+
+  function clearCompanionTimeout() {
+    if (!companionTimeoutRef.current) return;
+    clearTimeout(companionTimeoutRef.current);
+    companionTimeoutRef.current = null;
+  }
+
+  function resolveQueuedCompanionTurn(state: BattleState) {
+    // Manual end-turn can consume a scheduled companion trigger so delayed follow-ups do
+    // not duplicate the same companion turn-start effect.
+    const combatTexts: CombatTextEvent[] = [];
+    if (companionScheduledRef.current && state.activeCompanion) {
+      playCardSound(`companion-${state.activeCompanion.id}`);
+      const nextState = processCompanionTurnStart(state, combatTexts);
+      shakeCompanion();
+      companionScheduledRef.current = false;
+      return { state: nextState, combatTexts };
     }
     companionScheduledRef.current = false;
+    return { state, combatTexts };
+  }
 
-    const result = endPlayerTurn(currentState);
-    const combinedCombatTexts = [...preCombatTexts, ...result.combatTexts];
-
-    setBattleState({ ...result.state, turnPhase: "enemy", hand: [], playerHealth: currentState.playerHealth, playerStatuses: currentState.playerStatuses });
-    const dotTexts = combinedCombatTexts.filter((ct) => ct.target === "enemy");
+  function showEnemyTurnStart(resultState: BattleState, currentState: BattleState, combatTexts: CombatTextEvent[]) {
+    // The UI briefly shows enemy phase with the hand cleared but preserves pre-attack
+    // player HP/status so enemy-target DoT text can read before player damage lands.
+    setBattleState({ ...resultState, turnPhase: "enemy", hand: [], playerHealth: currentState.playerHealth, playerStatuses: currentState.playerStatuses });
+    const dotTexts = combatTexts.filter((ct) => ct.target === "enemy");
     if (dotTexts.length > 0) showCombatTexts(dotTexts);
-    if (result.state.enemyHealth <= 0) return;
-    const playerTexts = combinedCombatTexts.filter((ct) => ct.target === "player");
+  }
+
+  function scheduleEnemyTurnResolution(resultState: BattleState, currentState: BattleState, combatTexts: CombatTextEvent[]) {
+    // Enemy audio, player damage text, and shake are delayed to make the phase transition
+    // legible; resultState was already computed, so this is presentation timing only.
+    const playerTexts = combatTexts.filter((ct) => ct.target === "player");
     setTimeout(() => {
       playEnemyAttack(currentState.currentEnemy.id);
-      setBattleState(result.state);
+      setBattleState(resultState);
       if (playerTexts.length > 0) showCombatTexts(playerTexts);
-      if (playerTexts.some((ct) => ct.kind === "damage")) { setPlayerShaking(true); setTimeout(() => setPlayerShaking(false), SHAKE_DURATION); }
-
-      if (result.state.activeCompanion) {
-        companionTimeoutRef.current = setTimeout(() => {
-          const texts: CombatTextEvent[] = [];
-          if (battleStateRef.current.activeCompanion) {
-            playCardSound(`companion-${battleStateRef.current.activeCompanion.id}`);
-          }
-          const newState = processCompanionTurnStart(battleStateRef.current, texts);
-          setBattleState(newState);
-          setCompanionShaking(true);
-          setTimeout(() => setCompanionShaking(false), SHAKE_DURATION);
-          if (texts.length > 0) showCombatTexts(texts);
-          companionTimeoutRef.current = null;
-          companionScheduledRef.current = false;
-        }, COMPANION_ATTACK_DELAY);
-        companionScheduledRef.current = true;
-      }
+      if (playerTexts.some((ct) => ct.kind === "damage")) shakePlayer();
+      scheduleCompanionFollowUp(resultState);
     }, ENEMY_PHASE_DELAY);
   }
+
+  function scheduleCompanionFollowUp(resultState: BattleState) {
+    // Companion follow-up is tracked with refs because the timeout can outlive renders;
+    // the flags prevent overlapping or duplicate companion animations/effects.
+    if (!resultState.activeCompanion) return;
+    companionTimeoutRef.current = setTimeout(() => {
+      const texts = resolveCompanionFollowUpTexts();
+      if (texts.length > 0) showCombatTexts(texts);
+      companionTimeoutRef.current = null;
+      companionScheduledRef.current = false;
+    }, COMPANION_ATTACK_DELAY);
+    companionScheduledRef.current = true;
+  }
+
+  function resolveCompanionFollowUpTexts() {
+    // Read the latest battle state inside the timeout to avoid stale closure state after
+    // enemy resolution, victory checks, or other delayed React updates.
+    const texts: CombatTextEvent[] = [];
+    if (battleStateRef.current.activeCompanion) {
+      playCardSound(`companion-${battleStateRef.current.activeCompanion.id}`);
+    }
+    const newState = processCompanionTurnStart(battleStateRef.current, texts);
+    setBattleState(newState);
+    shakeCompanion();
+    return texts;
+  }
+
+  function shakeEnemy() { setEnemyShaking(true); setTimeout(() => setEnemyShaking(false), SHAKE_DURATION); }
+  function shakePlayer() { setPlayerShaking(true); setTimeout(() => setPlayerShaking(false), SHAKE_DURATION); }
+  function shakeCompanion() { setCompanionShaking(true); setTimeout(() => setCompanionShaking(false), SHAKE_DURATION); }
 
   function handleEndRun() { if (screen !== "battle") return; setBattleState((c) => ({ ...c, playerHealth: 0 })); }
   function skipCombatDevMode() { if (screen === "battle") { setBattleState((c) => ({ ...c, enemyHealth: 0, wishOptions: null })); } }

@@ -1,3 +1,6 @@
+// Decorative animated border overlay using CSS masks and configurable shine colors.
+// Depends only on React and class-name utilities.
+// Used for presentation accents where a static border is too flat.
 import * as React from "react"
 
 import { cn } from "@/lib/utils"

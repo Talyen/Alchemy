@@ -1,3 +1,6 @@
+// Hero selection screen with character art, keyword previews, tilt, and shimmer feedback.
+// Depends on character game data, shared alchemy UI, and hover shimmer hooks.
+// Used when beginning a fresh run before destination routing starts.
 import { useState } from "react";
 import type { CSSProperties } from "react";
 

@@ -1,8 +1,13 @@
+// Read-only card-cost prediction for battle UI affordances.
+// Depends on battle state and card damage metadata, and must mirror playBattleCardResolved.
+// It never consumes free-card flags; the turn resolver owns stateful cost side effects.
 import { cardHasDamageType } from "./turns";
 import type { BattleState } from "./types";
 import type { BattleCard } from "@/lib/game-data";
 
 export function getEffectiveCost(state: BattleState, card: BattleCard): number {
+  // This is intentionally side-effect free so hover/playable UI can call it repeatedly
+  // without spending one-shot discounts or changing the battle state.
   let cost = card.cost;
   if (state.flags.nextCardCostReduction > 0) {
     cost = Math.max(0, cost - state.flags.nextCardCostReduction);

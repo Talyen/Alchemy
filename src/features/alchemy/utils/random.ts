@@ -1,3 +1,6 @@
+// Random sampling helpers for rewards, shops, routes, and mystery outcomes.
+// Depends only on Math.random.
+// Used by controllers/config where deterministic ordering is not required.
 export function randomBetween(min: number, max: number) {
   return Math.floor(Math.random() * (max - min + 1) + min);
 }

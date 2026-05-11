@@ -1,3 +1,6 @@
+// Styled progress bar primitive with transform-based fill.
+// Depends only on React and class-name utilities.
+// Used by health, XP, and other meter displays.
 import * as React from "react"
 
 import { cn } from "@/lib/utils"

@@ -1,3 +1,6 @@
+// Convenience barrel for route screen components.
+// Depends on screen modules only.
+// App imports from here for most screens while battle/homestead can still be direct imports.
 export { HomesteadScreen } from "./homestead-screen";
 export { MenuScreen } from "./menu-screen";
 export { CharacterSelectScreen } from "./character-select-screen";

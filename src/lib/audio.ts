@@ -1,3 +1,6 @@
+// Web Audio sound playback and HTMLAudio music control for the game.
+// Depends on sound registries and audio tuning constants.
+// Used by controllers/App for feedback, music transitions, volume, mute, and preloading.
 import { battleEventSounds, cardSounds, enemyAttackSounds, stingerSounds, uiSounds } from "./sound-registry";
 import { DEFAULT_MUSIC_VOLUME, MASTER_GAIN, MUSIC_BASE_PATH } from "./game-constants";
 

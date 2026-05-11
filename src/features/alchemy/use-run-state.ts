@@ -1,9 +1,12 @@
+// Transient per-run React state restored from active save data or initialized from defaults.
+// Depends on starter game data, battle health defaults, and destination/run type shapes.
+// Used by controllers; battle, shop, and navigation rules intentionally live elsewhere.
 import { useState } from "react";
 import { starterDeck, type BattleCard, type CharacterId } from "@/lib/game-data";
 import { maxPlayerHealth } from "@/lib/battle/types";
 import type { Destination } from "./types";
 
-type ActiveRunData = {
+export type ActiveRunData = {
   characterId: CharacterId;
   runDeck: BattleCard[];
   runGold: number;
@@ -17,6 +20,8 @@ type ActiveRunData = {
 };
 
 export function useRunState(initialActiveRun: ActiveRunData | null) {
+  // Copy saved arrays into React state so the live session can mutate independently from
+  // the persisted payload object that was normalized during app boot.
   const [runDeck, setRunDeck] = useState<BattleCard[]>(() => initialActiveRun ? [...initialActiveRun.runDeck] : [...starterDeck]);
   const [runGold, setRunGold] = useState(initialActiveRun?.runGold ?? 0);
   const [runPlayerHealth, setRunPlayerHealth] = useState(initialActiveRun?.runPlayerHealth ?? maxPlayerHealth);

@@ -1,3 +1,6 @@
+// React hooks for card shimmer, combat text lifetimes, card ghosts, mobile detection, and scaling.
+// Depends on battle combat text contracts, alchemy UI types, and timing constants.
+// Used by controllers/App to keep animation and viewport side effects reusable.
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { CombatTextEvent } from "@/lib/battle";

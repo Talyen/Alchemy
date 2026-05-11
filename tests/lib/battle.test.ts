@@ -2,13 +2,13 @@ import { describe, expect, it, vi } from "vitest";
 import { mergeCombatText, applyCardEffects, getEnemyDamageMultiplier } from "@/lib/battle/effects";
 import { playBattleCardResolved, endPlayerTurn, chooseWishCard, processCompanionTurnStart } from "@/lib/battle/turns";
 import { drawCards, createBattleState, defaultTalentEffects, shuffleCards } from "@/lib/battle/draw";
-import { cardLibrary, companionLibrary, enemyBestiary } from "@/lib/game-data";
-import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
-import type { BattleState, CombatTextEvent, TrinketManifest } from "@/lib/battle/types";
+import { companionLibrary, enemyBestiary } from "@/lib/game-data";
+import type { BattleCard } from "@/lib/game-data";
+import type { BattleState, CombatTextEvent } from "@/lib/battle/types";
 import { basePlayerMana, clamp, clampHealth, maxHandSize, maxPlayerHealth } from "@/lib/battle/types";
 import { defaultTrinketEffects, computeTrinketManifest } from "@/lib/trinkets";
 
-const mathRandomSpy = vi.spyOn(Math, "random").mockReturnValue(0.99);
+vi.spyOn(Math, "random").mockReturnValue(0.99);
 
 function makeState(overrides: Partial<BattleState> = {}): BattleState {
   const empty: BattleState = {
@@ -129,9 +129,7 @@ describe("applyCardEffects", () => {
   });
 
   it("handles consume cards (exhaust instead of discard)", () => {
-    const state = makeState({ mana: 10 });
     const card = makeCard({ id: "consumable", consume: true, effects: [{ kind: "damage", damageType: "physical", amount: 5 }] });
-    const result = playBattleCardResolved(state, "consumable", 0);
     // Also check that the card went to exhausted
     // playBattleCardResolved puts the card in exhausted if consume is true
     // hand starts empty so index 0 doesn't exist, let's use a proper test

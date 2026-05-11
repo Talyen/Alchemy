@@ -1,14 +1,18 @@
+// Top-level alchemy controller composition hook.
+// Depends on run, battle, shop, navigation, talent, persistence-facing, and homestead state.
+// Used by App as the single UI-facing API while domain rules stay in smaller controllers.
 import { useEffect, useRef, useState } from "react";
-import { cardLibrary, trinketLibrary, type BattleCard, type CharacterId } from "@/lib/game-data";
+import { cardLibrary, trinketLibrary } from "@/lib/game-data";
 import type { TalentXP } from "@/lib/talents";
 import type { HomesteadEffectManifest, MaterialInventory } from "@/lib/homestead/types";
 import type { UnlockedTalents } from "./talent-pool";
 import { useTalentState } from "./use-talent-state";
-import { useRunState } from "./use-run-state";
+import { useRunState, type ActiveRunData } from "./use-run-state";
 import { useBattleController } from "./use-battle-controller";
 import { useShopController } from "./use-shop-controller";
 import { useRunNavigation } from "./use-run-navigation";
 import type { Screen } from "./types";
+import { NAVIGATION_DELAY_MS } from "@/lib/game-constants";
 
 export function useAlchemyRunController({
   discoveredCardIds, setDiscoveredCardIds, setEncounteredEnemyIds,
@@ -21,12 +25,14 @@ export function useAlchemyRunController({
   setEncounteredEnemyIds: React.Dispatch<React.SetStateAction<string[]>>;
   setDiscoveredTrinketIds: React.Dispatch<React.SetStateAction<string[]>>;
   initialTalentXP: TalentXP; initialUnlockedTalents: UnlockedTalents;
-  initialActiveRun: { characterId: CharacterId } | null;
+  initialActiveRun: ActiveRunData | null;
   autoEndTurn: boolean;
   onAddMaterials: (materials: MaterialInventory) => void;
   onTriggerFarmYield: () => void;
   homesteadEffects: HomesteadEffectManifest;
 }) {
+  // This hook composes domain controllers and exposes a stable UI API; it intentionally
+  // avoids owning combat/shop/navigation rules directly so those modules stay testable.
   // ============ Sub-hooks ============
   const talents = useTalentState(initialTalentXP, initialUnlockedTalents);
   const run = useRunState(initialActiveRun);
@@ -40,8 +46,10 @@ export function useAlchemyRunController({
   const navTimerRef = useRef<number>(0);
 
   function navigateTo(nextScreen: Screen) {
+    // Screen changes are delayed for transition pacing, and clearing the previous timer
+    // prevents rapid clicks from racing multiple navigation commits.
     window.clearTimeout(navTimerRef.current);
-    navTimerRef.current = window.setTimeout(() => setScreen(nextScreen), 100);
+    navTimerRef.current = window.setTimeout(() => setScreen(nextScreen), NAVIGATION_DELAY_MS);
   }
 
   // ============ Ref Wrappers ============

@@ -1,18 +1,23 @@
+// Run-flow controller for routing, rewards, mysteries, campfires, act transitions, and reset.
+// Depends on battle/run/talent/shop callbacks, homestead effects, game data, and audio feedback.
+// Used by the top-level alchemy controller to keep screen changes and run mutations synchronized.
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createBattleState, maxPlayerHealth } from "@/lib/battle";
-import { cardLibrary, characters, starterDeck, trinketLibrary, type BattleCard, type CharacterId, type TrinketEntry } from "@/lib/game-data";
+import { cardLibrary, characters, starterDeck, trinketLibrary, type BattleCard, type CharacterId, type KeywordId, type TrinketEntry } from "@/lib/game-data";
 import { playVictory, playDefeat, playGoldGain, playGoldSpend } from "@/lib/audio";
 import { selectRewardCards, selectRewardTrinkets, REWARD_TRINKET_CHANCE } from "./reward-utils";
 import { getAvailableDestinations as getFilteredDestinations } from "./config";
 import type { Destination, Screen } from "./types";
 import { computeTrinketManifest } from "@/lib/trinkets";
 import { getEnemyMaterialLoot } from "@/lib/homestead/loot";
-import { emptyInventory, type HomesteadEffectManifest, type MaterialInventory } from "@/lib/homestead/types";
-import { mysteryPool, type MysteryChoice, type MysteryEvent } from "./mystery-events";
+import { emptyInventory, type HomesteadEffectManifest, type MaterialId, type MaterialInventory } from "@/lib/homestead/types";
+import { mysteryPool, type MysteryChoice, type MysteryEffect, type MysteryEvent } from "./mystery-events";
 import {
   ACTS_PER_RUN, BOSS_TRINKET_REWARD_CHOICES, CAMPFIRE_HEAL_FRACTION,
-  DESTINATION_CHOICES, DESTINATIONS_PER_ACT, GOLD_REWARD_MAX, GOLD_REWARD_MIN,
-  REWARD_CARD_CHOICES, VICTORY_TRANSITION_DELAY,
+  DESTINATION_CHOICES, DESTINATIONS_PER_ACT, ELITE_GOLD_BONUS_FRACTION,
+  BOSS_GOLD_BONUS_FRACTION, ELITE_TRINKET_REWARD_CHANCE, GOLD_REWARD_MAX,
+  GOLD_REWARD_MIN, MIXED_POTION_CARD_ID, MYSTERY_CARD_CHOICES, REWARD_CARD_CHOICES,
+  VICTORY_TRANSITION_DELAY,
 } from "@/lib/game-constants";
 import { randomBetween, sampleItems } from "./utils";
 import type { BattleState } from "@/lib/battle";
@@ -58,6 +63,8 @@ export function useRunNavigation({
   onInitShop: () => void;
   onInitAlchemist: () => void;
 }) {
+  // Run-flow side effects live here because screens, rewards, destination routing,
+  // mystery outcomes, act completion, and reset all need the same run/battle snapshot.
   const [rewardState, setRewardState] = useState<{
     choices: (BattleCard | TrinketEntry)[]; gold: number;
     materials: MaterialInventory; selectedId: string | null;
@@ -82,6 +89,8 @@ export function useRunNavigation({
   }), [run.characterId, run.runDeck, run.runGold, run.runPlayerHealth, run.runMaxHealth, run.roomsEncountered, run.currentAct, run.destinationIndexInAct, run.completedDestinations, run.runTrinkets]);
 
   function getAvailableDestinations(currentHp?: number, currentGold?: number, destIdxInAct?: number): Destination[] {
+    // Boss routing is injected by act progress; normal destination filtering stays in
+    // config so HP/gold gates can be reused without knowing run progression.
     if ((destIdxInAct ?? run.destinationIndexInAct) >= DESTINATIONS_PER_ACT - 1) {
       return ["Boss Combat" as Destination];
     }
@@ -94,54 +103,90 @@ export function useRunNavigation({
 
   useEffect(() => {
     if (screen !== "battle" || battleState.playerHealth > 0) return;
-    onTriggerFarmYieldRef.current(); playDefeat(); setHasActiveBattle(false); setHoveredCardId(null); setScreen("game-over"); // eslint-disable-line react-hooks/set-state-in-effect
+    handleBattleDefeat();
   }, [battleState.playerHealth, screen]);
 
   useEffect(() => {
     if (screen !== "battle" || battleState.enemyHealth > 0) return;
     if (battleState.playerHealth <= 0) return;
+    const transitionTimer = handleBattleVictory();
+    return () => clearTimeout(transitionTimer);
+  }, [battleState.enemyHealth, battleState.gold, screen]);
+
+  function handleBattleDefeat() {
+    onTriggerFarmYieldRef.current();
+    playDefeat();
+    setHasActiveBattle(false);
+    setHoveredCardId(null);
+    setScreen("game-over");
+  }
+
+  function handleBattleVictory() {
+    // Victory state is captured in one sequence so persisted HP, gold/material rewards,
+    // reward choices, battle cleanup, audio, and delayed routing agree on the same result.
     const baseGold = randomBetween(GOLD_REWARD_MIN, GOLD_REWARD_MAX);
     const gold = Math.floor(baseGold * (1 + talents.talentEffects.enemyGoldDropBonus));
-    const eliteBonus = battleState.currentEnemy.enemyType === "elite" ? Math.floor(gold * 0.3) : 0;
-    const bossBonus = battleState.currentEnemy.enemyType === "boss" ? Math.floor(gold * 0.5) : 0;
-    const trinketGoldBonus = computeTrinketManifest(run.runTrinkets).smugglersMapGoldBonus;
-    const newHp = battleState.playerHealth;
-    const newGold = battleState.gold + gold + eliteBonus + bossBonus + talents.talentEffects.goldPerCombat + trinketGoldBonus;
-    run.setRunPlayerHealth(newHp);
-    run.setRunGold(newGold);
+    const eliteBonus = battleState.currentEnemy.enemyType === "elite" ? Math.floor(gold * ELITE_GOLD_BONUS_FRACTION) : 0;
+    const bossBonus = battleState.currentEnemy.enemyType === "boss" ? Math.floor(gold * BOSS_GOLD_BONUS_FRACTION) : 0;
+    const newGold = awardVictoryGold(gold, eliteBonus, bossBonus);
+    run.setRunPlayerHealth(battleState.playerHealth);
     if (newGold > battleState.gold) playGoldGain();
-    const materials = getEnemyMaterialLoot(battleState.currentEnemy.id, battleState.currentEnemy.enemyType);
-    setRewardState((prev) => ({ ...prev, materials })); // eslint-disable-line react-hooks/set-state-in-effect
     if (talents.talentEffects.maxHealthPerCombat > 0) {
       run.setRunMaxHealth((p) => p + talents.talentEffects.maxHealthPerCombat);
     }
-    const isBoss = battleState.currentEnemy.enemyType === "boss";
-    const isElite = battleState.currentEnemy.enemyType === "elite";
-    if (isBoss) {
-      setRewardState({
-        rewardType: "trinket",
-        choices: selectRewardTrinkets(trinketLibrary, BOSS_TRINKET_REWARD_CHOICES),
-        gold: gold + bossBonus + talents.talentEffects.goldPerCombat,
-        materials: emptyInventory(), selectedId: null, destinations: [],
-      });
-    } else {
-      const trinketChance = isElite ? 0.75 : REWARD_TRINKET_CHANCE;
-      const offerTrinket = Math.random() < trinketChance;
-      setRewardState({
-        rewardType: offerTrinket ? "trinket" : "card",
-        choices: offerTrinket ? selectRewardTrinkets(trinketLibrary, REWARD_CARD_CHOICES) : selectRewardCards(run.runDeck, cardLibrary, REWARD_CARD_CHOICES),
-        gold: offerTrinket ? 0 : gold + eliteBonus + talents.talentEffects.goldPerCombat,
-        materials: emptyInventory(), selectedId: null, destinations: sampleItems(getAvailableDestinations(newHp, newGold), DESTINATION_CHOICES),
-      });
-    }
+    setRewardState(createVictoryRewardState(gold, eliteBonus, bossBonus, newGold, getVictoryMaterials()));
     setHasActiveBattle(false); setHoveredCardId(null); playVictory();
-    const t = setTimeout(() => setScreen("rewards"), VICTORY_TRANSITION_DELAY);
-    return () => clearTimeout(t);
-  }, [battleState.enemyHealth, battleState.gold, screen]);
+    return setTimeout(() => setScreen("rewards"), VICTORY_TRANSITION_DELAY);
+  }
+
+  function awardVictoryGold(gold: number, eliteBonus: number, bossBonus: number) {
+    const trinketGoldBonus = computeTrinketManifest(run.runTrinkets).smugglersMapGoldBonus;
+    const newGold = battleState.gold + gold + eliteBonus + bossBonus + talents.talentEffects.goldPerCombat + trinketGoldBonus;
+    run.setRunGold(newGold);
+    return newGold;
+  }
+
+  function getVictoryMaterials() {
+    return getEnemyMaterialLoot(battleState.currentEnemy.id, battleState.currentEnemy.enemyType);
+  }
+
+  function createVictoryRewardState(gold: number, eliteBonus: number, bossBonus: number, newGold: number, materials: MaterialInventory) {
+    // Boss rewards branch here because bosses advance acts and always offer trinkets,
+    // while normal/elite fights continue the destination route with card/trinket rolls.
+    if (battleState.currentEnemy.enemyType === "boss") {
+      return createBossRewardState(gold, bossBonus, materials);
+    }
+    return createCombatRewardState(gold, eliteBonus, newGold, materials);
+  }
+
+  function createBossRewardState(gold: number, bossBonus: number, materials: MaterialInventory) {
+    return {
+      rewardType: "trinket" as const,
+      choices: selectRewardTrinkets(trinketLibrary, BOSS_TRINKET_REWARD_CHOICES),
+      gold: gold + bossBonus + talents.talentEffects.goldPerCombat,
+      materials, selectedId: null, destinations: [],
+    };
+  }
+
+  function createCombatRewardState(gold: number, eliteBonus: number, newGold: number, materials: MaterialInventory) {
+    // Combat rewards can be cards or trinkets. Destination choices use post-victory
+    // HP/gold so shops/campfires are filtered against the state the player will enter.
+    const trinketChance = battleState.currentEnemy.enemyType === "elite" ? ELITE_TRINKET_REWARD_CHANCE : REWARD_TRINKET_CHANCE;
+    const offerTrinket = Math.random() < trinketChance;
+    return {
+      rewardType: offerTrinket ? "trinket" as const : "card" as const,
+      choices: offerTrinket ? selectRewardTrinkets(trinketLibrary, REWARD_CARD_CHOICES) : selectRewardCards(run.runDeck, cardLibrary, REWARD_CARD_CHOICES),
+      gold: offerTrinket ? 0 : gold + eliteBonus + talents.talentEffects.goldPerCombat,
+      materials, selectedId: null,
+      destinations: sampleItems(getAvailableDestinations(battleState.playerHealth, newGold), DESTINATION_CHOICES),
+    };
+  }
 
   // ============ Game Flow ============
 
   function beginRun() {
+    // The Play button resumes active progress first; only a truly inactive save should
+    // enter character select and create a fresh route.
     if (hasActiveBattle) { returnToBattle(); return; }
     if (hasActiveRun) {
       setRewardState((prev) => ({
@@ -155,6 +200,8 @@ export function useRunNavigation({
   }
 
   function handleCharacterSelect(selectedId: CharacterId) {
+    // Fresh-run fields are initialized together so deck, HP, gold bonuses, route state,
+    // discoveries, and active-run flags cannot describe different runs for one render.
     const character = characters[selectedId];
     const freshDeck = [...character.startingDeck];
     run.setCharacter(selectedId);
@@ -188,6 +235,8 @@ export function useRunNavigation({
   // ============ Rewards & Destinations ============
 
   function finishRewards() {
+    // Apply materials/card/trinket rewards before routing so the next screen sees the
+    // updated deck and collection; boss rewards then diverge into act completion.
     onAddMaterialsRef.current(rewardState.materials);
     if (rewardState.selectedId) {
       const chosen = rewardState.choices.find((c) => c.id === rewardState.selectedId);
@@ -213,6 +262,8 @@ export function useRunNavigation({
   }
 
   function handleDestinationChoice(destination: Destination) {
+    // Route progress is recorded before dispatching so battle scaling and later boss-slot
+    // checks reflect the chosen node even if the destination immediately starts combat.
     run.setCompletedDestinations((prev) => [...prev, destination]);
     run.setDestinationIndexInAct((p) => p + 1);
 
@@ -227,6 +278,8 @@ export function useRunNavigation({
   }
 
   function handleActComplete() {
+    // Farm yield is a full-run reward, not an act reward. Non-final acts reset only the
+    // in-act destination route while preserving deck, gold, HP, and trinkets.
     setHoveredCardId(null);
     setHasActiveBattle(false);
 
@@ -260,77 +313,99 @@ export function useRunNavigation({
   // ============ Mystery ============
 
   function handleMysteryChoice(choice: MysteryChoice) {
+    // applyMysteryEffect returns true when an effect opens follow-up UI; that pauses the
+    // remaining event flow until the player picks a card/removal target.
     for (const effect of choice.effects) {
-      switch (effect.kind) {
-        case "addCard": {
-          const card = cardLibrary.find((c) => c.id === effect.cardId);
-          if (card) { run.setRunDeck((p) => [...p, card]); setDiscoveredCardIds((cur) => cur.includes(card.id) ? cur : [...cur, card.id]); }
-          break;
-        }
-        case "addRandomCard": {
-          const pool = cardLibrary.filter((c) => c.id !== "mixed-potion");
-          const card = pool[Math.floor(Math.random() * pool.length)];
-          run.setRunDeck((p) => [...p, card]);
-          setDiscoveredCardIds((cur) => cur.includes(card.id) ? cur : [...cur, card.id]);
-          break;
-        }
-        case "chooseCard": {
-          const pool = cardLibrary.filter((c) => c.id !== "mixed-potion");
-          const choices = sampleItems(pool, 3);
-          setMysteryCardChoices(choices);
-          return;
-        }
-        case "healHP":
-          if (effect.chance !== undefined && Math.random() >= effect.chance) break;
-          run.setRunPlayerHealth((p) => Math.min(run.runMaxHealth, p + effect.amount));
-          break;
-        case "damageHP":
-          run.setRunPlayerHealth((p) => Math.max(0, p - effect.amount));
-          break;
-        case "gainGold":
-          if (effect.amount > 0) playGoldGain();
-          run.setRunGold((p) => p + effect.amount);
-          break;
-        case "loseGold":
-          if (effect.amount > 0) playGoldSpend();
-          run.setRunGold((p) => Math.max(0, p - effect.amount));
-          break;
-        case "gainMaxMana":
-          break;
-        case "gainXP":
-          talents.awardMysteryXP(effect.keyword, effect.amount);
-          break;
-        case "removeCard":
-          if (effect.mode === "random") {
-            run.setRunDeck((p) => {
-              if (p.length === 0) return p;
-              const idx = Math.floor(Math.random() * p.length);
-              return p.filter((_, i) => i !== idx);
-            });
-          }
-          break;
-        case "gainTrinket":
-          run.setRunTrinkets((p) => [...p, effect.trinketId]);
-          setDiscoveredTrinketIds((cur) => cur.includes(effect.trinketId) ? cur : [...cur, effect.trinketId]);
-          break;
-        case "gainRandomTrinket": {
-          const randomTrinket = sampleItems(trinketLibrary, 1)[0];
-          if (randomTrinket) {
-            run.setRunTrinkets((p) => [...p, randomTrinket.id]);
-            setDiscoveredTrinketIds((cur) => cur.includes(randomTrinket.id) ? cur : [...cur, randomTrinket.id]);
-          }
-          break;
-        }
-        case "gainMaterial": {
-          const matInv = emptyInventory();
-          matInv[effect.material] = effect.amount;
-          onAddMaterialsRef.current(matInv);
-          break;
-        }
-        case "none":
-          break;
-      }
+      if (applyMysteryEffect(effect)) return;
     }
+  }
+
+  function applyMysteryEffect(effect: MysteryEffect) {
+    switch (effect.kind) {
+      case "addCard": return addSpecificMysteryCard(effect.cardId);
+      case "addRandomCard": return addRandomMysteryCard();
+      case "chooseCard": return offerMysteryCardChoices();
+      case "healHP": return healFromMystery(effect.amount, effect.chance);
+      case "damageHP": return damageFromMystery(effect.amount);
+      case "gainGold": return gainMysteryGold(effect.amount);
+      case "loseGold": return loseMysteryGold(effect.amount);
+      case "gainMaxMana": return false;
+      case "gainXP": return awardMysteryXP(effect.keyword, effect.amount);
+      case "removeCard": return removeMysteryCard(effect.mode);
+      case "gainTrinket": return gainMysteryTrinket(effect.trinketId);
+      case "gainRandomTrinket": return gainRandomMysteryTrinket();
+      case "gainMaterial": return gainMysteryMaterial(effect.material, effect.amount);
+      case "none": return false;
+    }
+  }
+
+  function addSpecificMysteryCard(cardId: string) {
+    const card = cardLibrary.find((c) => c.id === cardId);
+    if (card) addCardToRun(card);
+    return false;
+  }
+
+  function addRandomMysteryCard() {
+    const pool = getMysteryCardPool();
+    const card = pool[Math.floor(Math.random() * pool.length)];
+    addCardToRun(card);
+    return false;
+  }
+
+  function offerMysteryCardChoices() {
+    setMysteryCardChoices(sampleItems(getMysteryCardPool(), MYSTERY_CARD_CHOICES));
+    return true;
+  }
+
+  function getMysteryCardPool() {
+    return cardLibrary.filter((c) => c.id !== MIXED_POTION_CARD_ID);
+  }
+
+  function addCardToRun(card: BattleCard) {
+    run.setRunDeck((p) => [...p, card]);
+    setDiscoveredCardIds((cur) => cur.includes(card.id) ? cur : [...cur, card.id]);
+  }
+
+  function healFromMystery(amount: number, chance?: number) {
+    if (chance !== undefined && Math.random() >= chance) return false;
+    run.setRunPlayerHealth((p) => Math.min(run.runMaxHealth, p + amount));
+    return false;
+  }
+
+  function damageFromMystery(amount: number) { run.setRunPlayerHealth((p) => Math.max(0, p - amount)); return false; }
+  function gainMysteryGold(amount: number) { if (amount > 0) playGoldGain(); run.setRunGold((p) => p + amount); return false; }
+  function loseMysteryGold(amount: number) { if (amount > 0) playGoldSpend(); run.setRunGold((p) => Math.max(0, p - amount)); return false; }
+  function awardMysteryXP(keyword: KeywordId, amount: number) { talents.awardMysteryXP(keyword, amount); return false; }
+
+  function removeMysteryCard(mode: "random" | "choose") {
+    // Choice-based removal is handled by the screen picker; this helper only mutates
+    // immediately for random removal so controller state does not need a pending index.
+    if (mode !== "random") return false;
+    run.setRunDeck((p) => {
+      if (p.length === 0) return p;
+      const idx = Math.floor(Math.random() * p.length);
+      return p.filter((_, i) => i !== idx);
+    });
+    return false;
+  }
+
+  function gainMysteryTrinket(trinketId: string) {
+    run.setRunTrinkets((p) => [...p, trinketId]);
+    setDiscoveredTrinketIds((cur) => cur.includes(trinketId) ? cur : [...cur, trinketId]);
+    return false;
+  }
+
+  function gainRandomMysteryTrinket() {
+    const randomTrinket = sampleItems(trinketLibrary, 1)[0];
+    if (randomTrinket) gainMysteryTrinket(randomTrinket.id);
+    return false;
+  }
+
+  function gainMysteryMaterial(material: MaterialId, amount: number) {
+    const matInv = emptyInventory();
+    matInv[material] = amount;
+    onAddMaterialsRef.current(matInv);
+    return false;
   }
 
   function handleMysteryChooseCard(cardId: string) {
@@ -351,6 +426,8 @@ export function useRunNavigation({
   // ============ State Reset ============
 
   function resetRunState() {
+    // Reset must clear combat animation state, battle/run/talent session state, reward
+    // and mystery UI, active flags, and routing together to avoid resuming stale runs.
     clearCardGhosts(); setBattleState(createBattleState(starterDeck, 0));
     run.reset(); talents.resetRunXP();
     setRewardState({ choices: [], gold: 0, materials: emptyInventory(), selectedId: null, destinations: [], rewardType: "card" });

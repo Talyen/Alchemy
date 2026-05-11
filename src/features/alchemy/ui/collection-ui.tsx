@@ -1,3 +1,6 @@
+// Collection widgets for cards, bestiary, trinkets, discovery state, pagination, and previews.
+// Depends on game-data libraries, collection config, audio samples, tilt, and shared UI.
+// Used by CollectionScreen to render encyclopedia-style grids without owning screen routing.
 import type { CSSProperties } from "react";
 
 import {

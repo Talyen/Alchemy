@@ -1,3 +1,6 @@
+// Shared alchemy configuration for routing filters, enemy selection, icons, sizing, and theming.
+// Depends on game data, Lucide icons, combat timing constants, and alchemy UI types.
+// Used by controllers and UI widgets to keep display metadata out of game logic.
 import type { LucideIcon } from "lucide-react";
 import { BookOpen, Coins, Crosshair, Flame, Gem, Hammer, Heart, HeartPulse, Leaf, PawPrint, Shield, ShieldAlert, Skull, Snowflake, Sparkles, Sun, Swords, TriangleAlert, WandSparkles, Zap, Trophy } from "lucide-react";
 

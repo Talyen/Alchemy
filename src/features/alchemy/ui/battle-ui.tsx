@@ -1,3 +1,6 @@
+// Reusable battle widgets for actor panels, combat text, particles, piles, companions, and mana.
+// Depends on motion, canvas particle helpers, game-data keyword metadata, and shared UI styling.
+// Used by BattleScreen and alchemy component barrels; combat decisions stay in controllers/lib.
 import { createElement, type CSSProperties } from "react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Coins, Gem } from "lucide-react";
@@ -58,6 +61,8 @@ function CombatTextBubble({ entry, side }: { entry: FloatingCombatText; side: "p
   const icon = getCombatTextIcon(entry);
   const colorClass = getCombatTextColorClass(entry);
 
+  // Lane spacing and the 1.6s travel duration match the combat-text lifetime in hooks;
+  // merged multi-hit text can float together without overlapping newer entries.
   return (
     <motion.div
       className={cn("absolute whitespace-nowrap inline-flex items-center gap-2 text-[32px] font-semibold", colorClass, side === "player" ? "left-0" : "right-0")}
@@ -115,6 +120,8 @@ function StatusParticleBurst() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useLayoutEffect(() => {
+    // Measure after layout so the synthetic particle burst exactly overlays the status
+    // panel during death fade, including responsive card widths.
     const canvas = canvasRef.current;
     if (!canvas) return;
     const parent = canvas.parentElement;
@@ -145,6 +152,8 @@ function ParticleBurst({ imageUrl }: { imageUrl: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useLayoutEffect(() => {
+    // The actor image is sampled into canvas particles, then the canvas is cleared before
+    // animation so CSS frame fade and particle breakup read as one death effect.
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -332,6 +341,8 @@ export function PilePanel({ label, count, type, compact = false }: { label: stri
 }
 
 export function ManaPanel({ mana, maxMana, gold }: { mana: number; maxMana: number; gold: number }) {
+  // Show temporary mana overflow by rendering up to current mana, not just max mana;
+  // otherwise mana-grant cards could appear to do nothing above the cap.
   const displayCount = Math.max(mana, maxMana);
   const manaToken = useChangeToken(`${mana}-${maxMana}`);
 

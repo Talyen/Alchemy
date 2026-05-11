@@ -1,5 +1,9 @@
 "use client"
 
+// Motion wrapper that fades, slides, and blurs children, optionally on viewport entry.
+// Depends on motion/react and React refs.
+// Used by decorative UI reveals where CSS-only transitions are not expressive enough.
+
 import { useRef } from "react"
 import {
   AnimatePresence,
@@ -28,6 +32,8 @@ interface BlurFadeProps extends MotionProps {
   blur?: string
 }
 
+// Function variants cannot be inspected for a concrete filter value, so filter-specific
+// transition timing is added only when both variant states expose comparable filters.
 const getFilter = (v: Variants[string]) =>
   typeof v === "function" ? undefined : v.filter
 
@@ -65,6 +71,8 @@ export function BlurFade({
   const hiddenFilter = getFilter(combinedVariants.hidden)
   const visibleFilter = getFilter(combinedVariants.visible)
 
+  // Avoid animating filter unless it actually changes; unnecessary blur transitions are
+  // expensive and can make simple opacity/position variants feel sluggish.
   const shouldTransitionFilter =
     hiddenFilter != null &&
     visibleFilter != null &&

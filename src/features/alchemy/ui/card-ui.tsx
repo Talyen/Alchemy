@@ -1,3 +1,6 @@
+// Reusable card rendering: descriptions, keyword popups, detail popups, hand buttons, and ghosts.
+// Depends on game-data keyword metadata, shared styling, tilt utilities, and ghost animation types.
+// Used by battle, shop, rewards, collection, and alchemist UI.
 import type { CSSProperties, MouseEvent, PointerEvent as ReactPointerEvent } from "react";
 import { useLayoutEffect, useRef, useState } from "react";
 
@@ -71,6 +74,8 @@ export function DetailPopup({
   const [flip, setFlip] = useState(false);
 
   useLayoutEffect(() => {
+    // Measure after layout and flip below if the popup would leave the viewport; cards near
+    // the top edge should remain readable instead of clipping off-screen.
     const el = ref.current;
     if (!el) return;
     const rect = el.getBoundingClientRect();
@@ -174,6 +179,8 @@ export function BattleCardButton({
 }
 
 export function CardGhostOverlay({ ghost, onDone }: { ghost: CardGhost; onDone: () => void }) {
+  // Ghosts use viewport rects captured before hand/battle state changes. CSS variables carry
+  // travel distance, rotation, and scale into keyframes so React does not animate layout.
   return (
     <img
       src={ghost.art}

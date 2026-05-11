@@ -1,3 +1,6 @@
+// Talent XP math and card-to-keyword extraction helpers.
+// Depends on game-data card/keyword types and XP tuning constants.
+// Used by talent state and UI to award, total, and display progression.
 import type { BattleCard, KeywordId } from "@/lib/game-data";
 import { XP_BASE_PER_POINT, XP_MIN_THRESHOLD, XP_ROOT_DIVISOR, XP_TRIANGULAR_MULTIPLIER } from "./game-constants";
 

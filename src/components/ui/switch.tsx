@@ -1,3 +1,6 @@
+// Styled Radix switch primitive for options toggles.
+// Depends on @radix-ui/react-switch and class-name utilities.
+// Used by settings rows that need accessible boolean controls.
 import * as SwitchPrimitive from "@radix-ui/react-switch";
 import { cn } from "@/lib/utils";
 

@@ -6,7 +6,7 @@ import {
 
 describe("cardSounds", () => {
   it("every entry maps to a non-empty array of .ogg filenames", () => {
-    for (const [cardId, sounds] of Object.entries(cardSounds)) {
+    for (const sounds of Object.values(cardSounds)) {
       expect(sounds.length).toBeGreaterThan(0);
       for (const s of sounds) {
         expect(s).toBeTruthy();
@@ -23,7 +23,7 @@ describe("cardSounds", () => {
 
 describe("enemyAttackSounds", () => {
   it("every entry maps to a non-empty array of .ogg filenames", () => {
-    for (const [enemyId, sounds] of Object.entries(enemyAttackSounds)) {
+    for (const sounds of Object.values(enemyAttackSounds)) {
       expect(sounds.length).toBeGreaterThan(0);
       for (const s of sounds) {
         expect(s).toBeTruthy();
@@ -40,7 +40,7 @@ describe("enemyAttackSounds", () => {
 
 describe("battleEventSounds", () => {
   it("all values are non-empty .ogg filenames", () => {
-    for (const [event, name] of Object.entries(battleEventSounds)) {
+    for (const name of Object.values(battleEventSounds)) {
       expect(name).toBeTruthy();
       expect(name).toMatch(/\.ogg$/);
     }
@@ -49,7 +49,7 @@ describe("battleEventSounds", () => {
 
 describe("uiSounds", () => {
   it("all values are non-empty .ogg filenames", () => {
-    for (const [event, name] of Object.entries(uiSounds)) {
+    for (const name of Object.values(uiSounds)) {
       expect(name).toBeTruthy();
       expect(name).toMatch(/\.ogg$/);
     }
@@ -63,7 +63,7 @@ describe("uiSounds", () => {
 
 describe("stingerSounds", () => {
   it("all values are non-empty .ogg filenames", () => {
-    for (const [event, name] of Object.entries(stingerSounds)) {
+    for (const name of Object.values(stingerSounds)) {
       expect(name).toBeTruthy();
       expect(name).toMatch(/\.ogg$/);
     }

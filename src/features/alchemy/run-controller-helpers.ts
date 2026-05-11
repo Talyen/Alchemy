@@ -1,3 +1,6 @@
+// Visual helper utilities for card ghost animation and battle-stage coordinate conversion.
+// Depends on card targeting utilities, ghost types, battle cards, and animation constants.
+// Used by the battle controller so animation math stays outside pure combat logic.
 import { getBattleCardPlayTarget, getCardRect } from "./utils";
 import type { CardGhost, CardRect } from "./types";
 import type { BattleCard } from "@/lib/game-data";
@@ -12,6 +15,8 @@ export function animateCardActivation(
   battleSceneRef: React.RefObject<HTMLDivElement | null>,
   spawnCardGhost: (ghost: Omit<CardGhost, "id">) => void,
 ) {
+  // Prefer actor panels as travel targets so plays read as player/enemy actions; fall back
+  // to a generic activation ghost when the refs are unavailable during layout transitions.
   const sceneRect = getBattleSceneLocalRect(battleSceneRef.current);
   const localSourceRect = sceneRect ? viewportRectToBattleSceneRect(rect, sceneRect) : rect;
   const targetRect = getCardPlayGhostTargetRect(card, playerPanelRef, enemyPanelRef, battleSceneRef, sceneRect);
@@ -41,6 +46,8 @@ function getCardPlayGhostTargetRect(
   battleSceneRef: React.RefObject<HTMLDivElement | null>,
   sceneRect: BattleSceneLocalRect | null,
 ) {
+  // Player-targeted cards are offset slightly left to keep the ghost readable next to the
+  // hero card; missing panel refs still get a stable center-stage endpoint.
   const target = getBattleCardPlayTarget(card);
   const panelRect = target === "player" ? playerPanelRef.current?.getBoundingClientRect() : target === "enemy" ? enemyPanelRef.current?.getBoundingClientRect() : null;
   if (panelRect) {

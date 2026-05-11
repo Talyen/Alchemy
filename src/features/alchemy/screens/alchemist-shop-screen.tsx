@@ -103,6 +103,8 @@ export function AlchemistShopScreen({
   function cancelMix() { setMixMode(false); setMixStep(0); setSelectedA(null); setSelectedB(null); setMixPage(0); }
 
   function selectMixCard(index: number) {
+    // Potion mixing is a two-step selection machine: generated Mixed Potions are excluded,
+    // re-clicking the first pick backs up to step one, and the second pick toggles freely.
     if (runDeck[index].id === "mixed-potion") return;
     if (mixStep === 1) {
       setSelectedA(index); setMixStep(2);
@@ -114,6 +116,8 @@ export function AlchemistShopScreen({
   }
 
   function handleMixConfirm() {
+    // Build a preview result before mutating the deck so the reveal can show the crafted
+    // card after the controller removes the two source potions.
     if (selectedA === null || selectedB === null) return;
     const cardA = runDeck[selectedA];
     const cardB = runDeck[selectedB];

@@ -1,6 +1,6 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { getHoverId, getPlayerStatusChips, getEnemyStatusChips, getBattleCardPlayTarget, randomBetween, sampleItems, tokenizeDescription, getCombatTextColorClass, getCombatTextIcon } from "@/features/alchemy/utils";
-import type { BattleState, CombatTextEvent } from "@/lib/battle/types";
+import type { BattleState } from "@/lib/battle/types";
 
 function makeState(overrides: Partial<BattleState> = {}): BattleState {
   return {
