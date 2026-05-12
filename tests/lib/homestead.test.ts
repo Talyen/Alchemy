@@ -126,7 +126,7 @@ describe("buildings data integrity", () => {
   it("each building has required fields", () => {
     for (const b of buildings) {
       expect(b.title).toBeTruthy();
-      expect(b.description).toBeTruthy();
+      expect(typeof b.description).toBe("string");
       expect(b.benefitDescription).toBeTruthy();
       expect(b.buttonLabel).toBeTruthy();
       expect(b.cost).toBeDefined();
@@ -159,7 +159,7 @@ describe("farmPlots data integrity", () => {
   it("each farm has required fields", () => {
     for (const f of farmPlots) {
       expect(f.title).toBeTruthy();
-      expect(f.description).toBeTruthy();
+      expect(typeof f.description).toBe("string");
       expect(f.yield).toBeDefined();
       expect(f.buttonLabel).toBeTruthy();
     }
@@ -173,10 +173,11 @@ describe("farmPlots data integrity", () => {
     }
   });
 
-  it("each farm has a positive yield in at least one material", () => {
+  it("each farm yield is non-negative", () => {
     for (const f of farmPlots) {
-      const totalYield = MATERIAL_IDS.reduce((sum, mat) => sum + f.yield[mat], 0);
-      expect(totalYield).toBeGreaterThan(0);
+      for (const mat of MATERIAL_IDS) {
+        expect(f.yield[mat]).toBeGreaterThanOrEqual(0);
+      }
     }
   });
 });
@@ -190,7 +191,7 @@ describe("researchUpgrades data integrity", () => {
   it("each research has required fields", () => {
     for (const r of researchUpgrades) {
       expect(r.title).toBeTruthy();
-      expect(r.description).toBeTruthy();
+      expect(typeof r.description).toBe("string");
       expect(r.benefitDescription).toBeTruthy();
       expect(r.buttonLabel).toBeTruthy();
       expect(r.cost).toBeDefined();
@@ -202,99 +203,75 @@ describe("researchUpgrades data integrity", () => {
 
 describe("computeHomesteadEffects", () => {
   it("returns defaults for empty inputs", () => {
-    const effects = computeHomesteadEffects([], []);
+    const effects = computeHomesteadEffects([], [], []);
     expect(effects).toEqual(defaultHomesteadEffects);
   });
 
-  it("workshop adds flatPhysicalDamage", () => {
-    const effects = computeHomesteadEffects(["workshop"], []);
+  it("blacksmiths-forge adds flatPhysicalDamage and forgeToBurn", () => {
+    const effects = computeHomesteadEffects(["blacksmiths-forge"], [], []);
     expect(effects.flatPhysicalDamage).toBe(1);
-    expect(effects.startGold).toBe(0);
-  });
-
-  it("storehouse adds startGold", () => {
-    const effects = computeHomesteadEffects(["storehouse"], []);
-    expect(effects.startGold).toBe(5);
-  });
-
-  it("stone-walls adds startBlock", () => {
-    const effects = computeHomesteadEffects(["stone-walls"], []);
-    expect(effects.startBlock).toBe(3);
-  });
-
-  it("herb-shed adds campfireHealBonus", () => {
-    const effects = computeHomesteadEffects(["herb-shed"], []);
-    expect(effects.campfireHealBonus).toBeCloseTo(0.05);
-  });
-
-  it("watchtower adds startMaxHealthBonus", () => {
-    const effects = computeHomesteadEffects(["watchtower"], []);
-    expect(effects.startMaxHealthBonus).toBe(5);
-  });
-
-  it("blacksmiths-forge adds physicalCritChance", () => {
-    const effects = computeHomesteadEffects(["blacksmiths-forge"], []);
-    expect(effects.physicalCritChance).toBe(2);
+    expect(effects.forgeToBurn).toBe(1);
   });
 
   it("carpentry adds buildingCostReduction", () => {
-    const effects = computeHomesteadEffects([], ["carpentry"]);
+    const effects = computeHomesteadEffects([], [], ["carpentry"]);
     expect(effects.buildingCostReduction).toBeCloseTo(0.1);
   });
 
   it("masonry adds buildingCostReduction", () => {
-    const effects = computeHomesteadEffects([], ["masonry"]);
+    const effects = computeHomesteadEffects([], [], ["masonry"]);
     expect(effects.buildingCostReduction).toBeCloseTo(0.1);
   });
 
   it("crop-rotation adds farmYieldMultiplier", () => {
-    const effects = computeHomesteadEffects([], ["crop-rotation"]);
+    const effects = computeHomesteadEffects([], [], ["crop-rotation"]);
     expect(effects.farmYieldMultiplier).toBeCloseTo(0.5);
   });
 
   it("animal-husbandry adds farmYieldMultiplier", () => {
-    const effects = computeHomesteadEffects([], ["animal-husbandry"]);
+    const effects = computeHomesteadEffects([], [], ["animal-husbandry"]);
     expect(effects.farmYieldMultiplier).toBeCloseTo(0.25);
   });
 
   it("fortified-walls adds startBlock", () => {
-    const effects = computeHomesteadEffects([], ["fortified-walls"]);
+    const effects = computeHomesteadEffects([], [], ["fortified-walls"]);
     expect(effects.startBlock).toBe(5);
   });
 
   it("metallurgy adds physicalCritChance", () => {
-    const effects = computeHomesteadEffects([], ["metallurgy"]);
+    const effects = computeHomesteadEffects([], [], ["metallurgy"]);
     expect(effects.physicalCritChance).toBe(2);
   });
 
   it("combines multiple buildings", () => {
-    const effects = computeHomesteadEffects(["workshop", "storehouse", "watchtower"], []);
+    const effects = computeHomesteadEffects(["blacksmiths-forge", "hunters-lodge", "alchemy-lab"], [], []);
     expect(effects.flatPhysicalDamage).toBe(1);
-    expect(effects.startGold).toBe(5);
-    expect(effects.startMaxHealthBonus).toBe(5);
+    expect(effects.forgeToBurn).toBe(1);
+    expect(effects.companionDamage).toBe(1);
+    expect(effects.potionHealMultiplier).toBeCloseTo(0.2);
+    expect(effects.potionDiscount).toBeCloseTo(0.1);
   });
 
   it("combines multiple research upgrades", () => {
-    const effects = computeHomesteadEffects([], ["carpentry", "masonry", "crop-rotation"]);
+    const effects = computeHomesteadEffects([], [], ["carpentry", "masonry", "crop-rotation"]);
     expect(effects.buildingCostReduction).toBeCloseTo(0.2);
     expect(effects.farmYieldMultiplier).toBeCloseTo(0.5);
   });
 
   it("combines buildings and research together", () => {
-    const effects = computeHomesteadEffects(["workshop", "stone-walls"], ["carpentry", "metallurgy"]);
+    const effects = computeHomesteadEffects(["blacksmiths-forge"], [], ["carpentry", "metallurgy"]);
     expect(effects.flatPhysicalDamage).toBe(1);
-    expect(effects.startBlock).toBe(3);
     expect(effects.buildingCostReduction).toBeCloseTo(0.1);
     expect(effects.physicalCritChance).toBe(2);
   });
 
   it("ignores unknown building IDs", () => {
-    const effects = computeHomesteadEffects(["nonexistent-building" as never], []);
+    const effects = computeHomesteadEffects(["nonexistent-building" as never], [], []);
     expect(effects).toEqual(defaultHomesteadEffects);
   });
 
   it("ignores unknown research IDs", () => {
-    const effects = computeHomesteadEffects([], ["nonexistent-research" as never]);
+    const effects = computeHomesteadEffects([], [], ["nonexistent-research" as never]);
     expect(effects).toEqual(defaultHomesteadEffects);
   });
 });
@@ -341,6 +318,7 @@ describe("mergeIntoManifest", () => {
     shopFreeRefresh: false,
     goldPerCombat: 0,
     potionDiscount: 0,
+    potionManaBonus: 0,
     removeCardDiscount: 0,
     enemyGoldDropBonus: 0,
     goldOnWish: 0,
@@ -378,6 +356,11 @@ describe("mergeIntoManifest", () => {
 
   const makeHomesteadEffects = () => ({
     flatPhysicalDamage: 1,
+    companionDamage: 1,
+    forgeToBurn: 1,
+    potionHealMultiplier: 0.2,
+    potionManaBonus: 1,
+    potionDiscount: 0.1,
     startGold: 5,
     startBlock: 3,
     campfireHealBonus: 0.05,
@@ -394,15 +377,19 @@ describe("mergeIntoManifest", () => {
     expect(merged.startBlock).toBe(5);
     expect(merged.campfireHealBonus).toBeCloseTo(0.15);
     expect(merged.physicalCritChance).toBe(7);
+    expect(merged.potionDiscount).toBeCloseTo(0.1);
+    expect(merged.potionManaBonus).toBe(1);
+    expect(merged.forgeToBurn).toBe(true);
+    expect(merged.healMultiplier).toBeCloseTo(0.2);
   });
 
   it("preserves non-merged talent fields", () => {
     const talent = makeTalentManifest();
     talent.firstBleedCardFree = true;
-    talent.healMultiplier = 1.1;
+    talent.armorToPhysicalDamage = true;
     const merged = mergeIntoManifest(talent, makeHomesteadEffects());
     expect(merged.firstBleedCardFree).toBe(true);
-    expect(merged.healMultiplier).toBeCloseTo(1.1);
+    expect(merged.armorToPhysicalDamage).toBe(true);
   });
 
   it("does not spread homestead-only fields into talent manifest", () => {

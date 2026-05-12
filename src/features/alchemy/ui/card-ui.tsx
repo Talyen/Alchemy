@@ -1,7 +1,7 @@
 // Reusable card rendering: descriptions, keyword popups, detail popups, hand buttons, and ghosts.
 // Depends on game-data keyword metadata, shared styling, tilt utilities, and ghost animation types.
 // Used by battle, shop, rewards, collection, and alchemist UI.
-import { Fragment, type CSSProperties, type MouseEvent, type PointerEvent as ReactPointerEvent } from "react";
+import { Fragment, type CSSProperties, type MouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { useLayoutEffect, useRef, useState } from "react";
 
 import {
@@ -78,11 +78,13 @@ export function DetailPopup({
   title,
   subtitle,
   descriptionLines,
+  descriptionNodes,
 }: {
   idPrefix: string;
   title: string;
   subtitle: string | undefined;
   descriptionLines: string[];
+  descriptionNodes?: ReactNode[];
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [flip, setFlip] = useState(false);
@@ -105,6 +107,9 @@ export function DetailPopup({
       <p className="text-base text-foreground sm:text-lg">{title}</p>
       {subtitle ? <p className="mt-1 text-xs uppercase tracking-[0.18em] text-muted-foreground">{subtitle}</p> : null}
       <DescriptionLines lines={descriptionLines} idPrefix={idPrefix} />
+      {descriptionNodes?.map((node, i) => (
+        <div key={i} className="mt-1.5 text-sm leading-6">{node}</div>
+      ))}
     </div>
   );
 }

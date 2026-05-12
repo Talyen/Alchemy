@@ -144,8 +144,8 @@ describe("migrateMaterialInventory", () => {
 
 describe("migrateBuildingIds", () => {
   it("passes through known building IDs", () => {
-    const result = migrateBuildingIds(["workshop", "storehouse"]);
-    expect(result).toEqual(["workshop", "storehouse"]);
+    const result = migrateBuildingIds(["blacksmiths-forge", "hunters-lodge"]);
+    expect(result).toEqual(["blacksmiths-forge", "hunters-lodge"]);
   });
 
   it("maps smithy to blacksmiths-forge", () => {

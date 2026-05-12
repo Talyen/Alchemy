@@ -89,6 +89,9 @@ export type BattleState = {
   turnPhase: TurnPhase;
   playerHealth: number;
   playerMaxHealth: number;       // current max health (can increase from talents)
+  deathsDoorUsed: boolean;       // one-shot combat survival trigger for this battle
+  deathsDoorActive: boolean;     // true while the player has one turn to heal from 0 HP
+  deathsDoorTriggeredTurn: number | null; // enemy-turn marker so the grace window lasts one full player turn
   enemyHealth: number;
   enemyMaxHealth: number;        // stored so UI can render % even after damage
   enemyAttackEffects: EnemyAttackEffect[]; // scaled per room, applied during enemy phase
@@ -137,5 +140,27 @@ export function clamp(value: number, min: number, max: number): number {
 // Shortcut for health changes: health + delta, clamped to [0, max].
 export function clampHealth(current: number, delta: number, max: number): number {
   return clamp(current + delta, 0, max);
+}
+
+// Combat damage at 0 HP gets one battle-scoped grace window instead of immediate defeat.
+export function applyPlayerCombatDamage(state: BattleState, damage: number): BattleState {
+  if (damage <= 0) return state;
+  const nextHealth = clampHealth(state.playerHealth, -damage, state.playerMaxHealth);
+  if (nextHealth > 0) return { ...state, playerHealth: nextHealth };
+  if (!state.deathsDoorUsed) {
+    return { ...state, playerHealth: 0, deathsDoorUsed: true, deathsDoorActive: true, deathsDoorTriggeredTurn: state.turn };
+  }
+  return { ...state, playerHealth: 0, deathsDoorActive: false };
+}
+
+// Healing above 0 ends the warning window, but the one-shot trigger stays consumed.
+export function applyPlayerHealing(state: BattleState, amount: number): BattleState {
+  const playerHealth = clampHealth(state.playerHealth, amount, state.playerMaxHealth);
+  return { ...state, playerHealth, deathsDoorActive: playerHealth <= 0 && state.deathsDoorActive };
+}
+
+// Defeat checks use this so 0 HP can be survivable only during Death's Door.
+export function isPlayerDefeated(state: Pick<BattleState, "playerHealth" | "deathsDoorActive">): boolean {
+  return state.playerHealth <= 0 && !state.deathsDoorActive;
 }
 

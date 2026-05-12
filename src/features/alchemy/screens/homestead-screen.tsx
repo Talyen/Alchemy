@@ -2,7 +2,7 @@
 // All nodes show in a 3-column grid; any uncompleted node can be built if
 // materials are sufficient. Completed nodes are dimmed with a checkmark.
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Check, FlaskConical, Hammer, House, Sprout, Swords, Wheat } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -32,8 +32,9 @@ import { DetailPopup } from "../ui/card-ui";
 import { DisabledTooltip, PageLayout, ScreenHeader } from "../ui/shared-ui";
 import { MaterialIcon, matIconMap, matPillStyle, matTextColor } from "../ui/material-icons";
 import { playUISound } from "@/lib/audio";
+import { keywordDefinitions } from "@/lib/game-data/keywords";
 
-import { clearTiltFromEvent, setTiltFromEvent } from "../utils";
+import { clearTiltFromEvent, setTiltFromEvent, tokenizeDescription } from "../utils";
 
 
 type Tab = "buildings" | "farm" | "research";
@@ -74,6 +75,31 @@ const itemArt: Record<string, string> = {
 
 function getArt(id: string): string {
   return itemArt[id] ?? placeholderHomestead;
+}
+
+function renderTextWithMaterials(text: string): ReactNode {
+  const keywordParts = tokenizeDescription(text);
+  const result: ReactNode[] = [];
+  for (const part of keywordParts) {
+    if (part.keywordId) {
+      result.push(<span key={result.length} className={cn(keywordDefinitions[part.keywordId]?.colorClass, "font-semibold")}>{part.text}</span>);
+    } else {
+      const materialParts = part.text.split(/(Herbs|Food|Wood|Iron|Crystal)/g);
+      for (const sub of materialParts) {
+        const mat = MATERIAL_IDS.find((m) => materialLabels[m] === sub);
+        if (mat) {
+          result.push(
+            <span key={result.length} className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold align-middle", matPillStyle[mat], matTextColor[mat])}>
+              {matIconMap[mat]}{sub}
+            </span>
+          );
+        } else {
+          result.push(<span key={result.length}>{sub}</span>);
+        }
+      }
+    }
+  }
+  return result;
 }
 
 const tabs: { id: Tab; label: string }[] = [
@@ -220,21 +246,54 @@ export function HomesteadScreen({
                     onMouseEnter={() => setHoveredItemId(item.data.id)}
                     onMouseLeave={() => setHoveredItemId(null)}
                   >
-                    {hoveredItemId === item.data.id && (
-                      <DetailPopup
-                        idPrefix={item.data.id}
-                        title={item.data.title}
-                        subtitle={undefined}
-                        descriptionLines={[
-                          item.data.description,
-                          ...(item.kind === "farm"
-                            ? [MATERIAL_IDS.filter((m) => ((item.data as HomesteadFarm).yield[m] ?? 0) > 0)
-                                .map((m) => `+${(item.data as HomesteadFarm).yield[m]} ${materialLabels[m]}`)
-                                .join(", ")]
-                            : [(item.data as HomesteadBuilding | HomesteadResearch).benefitDescription]),
-                        ]}
-                      />
-                    )}
+                    {hoveredItemId === item.data.id && (() => {
+                      const nodes: ReactNode[] = [];
+                      const building = item.kind === "building" ? (item.data as HomesteadBuilding) : null;
+                      const farm = item.kind === "farm" ? (item.data as HomesteadFarm) : null;
+                      const research = item.kind === "research" ? (item.data as HomesteadResearch) : null;
+
+                      // Yield pills for farms
+                      if (farm) {
+                        for (const m of MATERIAL_IDS) {
+                          if ((farm.yield[m] ?? 0) > 0) {
+                            nodes.push(
+                              <span key={`yield-${m}`} className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold", matPillStyle[m], matTextColor[m])}>
+                                {matIconMap[m]} +{farm.yield[m]} {materialLabels[m]}
+                              </span>
+                            );
+                          }
+                        }
+                      }
+
+                      // Benefit descriptions
+                      if (building) {
+                        for (const line of building.benefitDescription.split("\n")) {
+                          nodes.push(<div key={`b-${nodes.length}`} className="text-sm leading-6 text-muted-foreground">{renderTextWithMaterials(line)}</div>);
+                        }
+                        if (building.nonCombatBenefitDescription) {
+                          nodes.push(<div key={`b-${nodes.length}`} className="text-sm leading-6 text-muted-foreground">{renderTextWithMaterials(building.nonCombatBenefitDescription)}</div>);
+                        }
+                      } else if (farm) {
+                        if (farm.benefitDescription) {
+                          nodes.push(<div key="combat" className="text-sm leading-6 text-muted-foreground">{renderTextWithMaterials(farm.benefitDescription)}</div>);
+                        }
+                        if (farm.nonCombatBenefitDescription) {
+                          nodes.push(<div key="noncombat" className="text-sm leading-6 text-muted-foreground">{renderTextWithMaterials(farm.nonCombatBenefitDescription)}</div>);
+                        }
+                      } else if (research) {
+                        nodes.push(<div key="benefit" className="text-sm leading-6 text-muted-foreground">{renderTextWithMaterials(research.benefitDescription)}</div>);
+                      }
+
+                      return (
+                        <DetailPopup
+                          idPrefix={item.data.id}
+                          title={item.data.title}
+                          subtitle={undefined}
+                          descriptionLines={item.data.description ? [item.data.description] : []}
+                          descriptionNodes={nodes}
+                        />
+                      );
+                    })()}
                     <div
                       className={cn(
                         "group tilt-surface w-full overflow-hidden rounded-[18px] p-3",

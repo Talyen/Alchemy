@@ -9,7 +9,7 @@ import {
   type BattleState, type CombatTextEvent,
 } from "@/lib/battle";
 import { starterDeck, type BattleCard, type BestiaryEntry } from "@/lib/game-data";
-import { playCardSound, playEnemyAttack, playGoldGain } from "@/lib/audio";
+import { playBattleEvent, playCardSound, playEnemyAttack, playGoldGain } from "@/lib/audio";
 import { appendUnique } from "@/lib/utils";
 import { getCurrentEnemy, getBossEnemy } from "./config";
 import { useCardGhosts, useFloatingCombatTexts, useShimmerController } from "./hooks";
@@ -196,6 +196,7 @@ export function useBattleController({
     const playerTexts = combatTexts.filter((ct) => ct.target === "player");
     setTimeout(() => {
       playEnemyAttack(currentState.currentEnemy.id);
+      if (!currentState.deathsDoorActive && resultState.deathsDoorActive) playBattleEvent("deathsDoor");
       setBattleState(resultState);
       if (playerTexts.length > 0) showCombatTexts(playerTexts);
       if (shouldShakePlayerFromCombatTexts(playerTexts)) shakePlayer();
@@ -229,7 +230,7 @@ export function useBattleController({
     return texts;
   }
 
-  function handleEndRun() { if (screen !== "battle") return; setBattleState((c) => ({ ...c, playerHealth: 0 })); }
+  function handleEndRun() { if (screen !== "battle") return; setBattleState((c) => ({ ...c, playerHealth: 0, deathsDoorUsed: true, deathsDoorActive: false, deathsDoorTriggeredTurn: null })); }
   function skipCombatDevMode() { if (screen === "battle") { setBattleState((c) => ({ ...c, enemyHealth: 0, wishOptions: null })); } }
 
   return {

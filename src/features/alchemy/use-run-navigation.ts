@@ -2,7 +2,7 @@
 // Depends on battle/run/talent/shop callbacks, homestead effects, game data, and audio feedback.
 // Used by the top-level alchemy controller to keep screen changes and run mutations synchronized.
 import { useEffect, useMemo, useRef, useState } from "react";
-import { createBattleState, maxPlayerHealth } from "@/lib/battle";
+import { createBattleState, isPlayerDefeated, maxPlayerHealth } from "@/lib/battle";
 import { cardLibrary, characters, starterDeck, type BattleCard, type CharacterId } from "@/lib/game-data";
 import { playVictory, playDefeat, playGoldGain } from "@/lib/audio";
 import { appendUnique, appendUniqueMany, pickRandom } from "@/lib/utils";
@@ -67,6 +67,8 @@ export function useRunNavigation({
   const [rewardState, setRewardState] = useState<RewardState>(() => createEmptyRewardState());
   const [mysteryEvent, setMysteryEvent] = useState<MysteryEvent | null>(null);
   const [mysteryCardChoices, setMysteryCardChoices] = useState<BattleCard[] | null>(null);
+  const [runEndHerbs, setRunEndHerbs] = useState(0);
+  const [runEndFood, setRunEndFood] = useState(0);
 
   const destinationButtonRefs = useRef<Partial<Record<Destination, HTMLButtonElement | null>>>({});
 
@@ -95,18 +97,24 @@ export function useRunNavigation({
   // ============ Victory / Defeat Effects ============
 
   useEffect(() => {
-    if (screen !== "battle" || battleState.playerHealth > 0) return;
+    if (screen !== "battle" || !isPlayerDefeated(battleState)) return;
     handleBattleDefeat();
-  }, [battleState.playerHealth, screen]);
+  }, [battleState.playerHealth, battleState.deathsDoorActive, screen]);
 
   useEffect(() => {
     if (screen !== "battle" || battleState.enemyHealth > 0) return;
-    if (battleState.playerHealth <= 0) return;
+    if (isPlayerDefeated(battleState)) return;
     const transitionTimer = handleBattleVictory();
     return () => clearTimeout(transitionTimer);
   }, [battleState.enemyHealth, battleState.gold, screen]);
 
   function handleBattleDefeat() {
+    const herbs = homesteadEffectsRef.current.potionManaBonus > 0 ? run.roomsEncountered : 0;
+    if (herbs > 0) onAddMaterialsRef.current({ wood: 0, iron: 0, herbs, food: 0, crystal: 0 });
+    setRunEndHerbs(herbs);
+    const food = homesteadEffectsRef.current.companionDamage > 0 ? run.roomsEncountered : 0;
+    if (food > 0) onAddMaterialsRef.current({ wood: 0, iron: 0, herbs: 0, food, crystal: 0 });
+    setRunEndFood(food);
     onTriggerFarmYieldRef.current();
     playDefeat();
     setHasActiveBattle(false);
@@ -265,6 +273,12 @@ export function useRunNavigation({
     setHasActiveBattle(false);
 
     if (run.currentAct >= ACTS_PER_RUN) {
+      const herbs = homesteadEffectsRef.current.potionManaBonus > 0 ? run.roomsEncountered : 0;
+      if (herbs > 0) onAddMaterialsRef.current({ wood: 0, iron: 0, herbs, food: 0, crystal: 0 });
+      setRunEndHerbs(herbs);
+      const food = homesteadEffectsRef.current.companionDamage > 0 ? run.roomsEncountered : 0;
+      if (food > 0) onAddMaterialsRef.current({ wood: 0, iron: 0, herbs: 0, food, crystal: 0 });
+      setRunEndFood(food);
       onTriggerFarmYieldRef.current();
       navigateTo("run-victory");
     } else {
@@ -347,6 +361,8 @@ export function useRunNavigation({
     get rewardType() { return rewardState.rewardType; },
     get selectedRewardId() { return rewardState.selectedId; },
     get destinationOptions() { return rewardState.destinations; },
+    get runEndHerbs() { return runEndHerbs; },
+    get runEndFood() { return runEndFood; },
     get mysteryEvent() { return mysteryEvent; },
     get mysteryCardChoices() { return mysteryCardChoices; },
     get activeRunData() { return currentActiveRunData; },

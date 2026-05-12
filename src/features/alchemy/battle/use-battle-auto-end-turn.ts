@@ -28,7 +28,7 @@ export function useBattleAutoEndTurn({ autoEndTurn, screen, battleState, onEndTu
 
   function scheduleAutoEndTurn(state: BattleState = battleState) {
     clearAutoEndTurn();
-    if (!autoEndTurn || screen !== "battle" || state.turnPhase !== "player" || state.enemyHealth <= 0 || state.playerHealth <= 0 || state.wishOptions) return;
+    if (!autoEndTurn || screen !== "battle" || state.turnPhase !== "player" || state.enemyHealth <= 0 || (state.playerHealth <= 0 && !state.deathsDoorActive) || state.wishOptions) return;
     const hasPlayableCard = state.hand.some((card) => state.mana >= getEffectiveCost(state, card));
     if (hasPlayableCard) return;
     autoEndTimerRef.current = setTimeout(() => onEndTurnRef.current(), AUTO_END_TURN_DELAY);

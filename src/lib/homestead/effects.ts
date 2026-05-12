@@ -3,12 +3,13 @@
 // effects into a TalentEffectManifest for battle use.
 
 import type { TalentEffectManifest } from "@/lib/battle";
-import type { BuildingId, HomesteadEffectManifest, ResearchId } from "./types";
+import type { BuildingId, FarmId, HomesteadEffectManifest, ResearchId } from "./types";
 import { defaultHomesteadEffects } from "./types";
-import { buildings, researchUpgrades } from "./data";
+import { buildings, farmPlots, researchUpgrades } from "./data";
 
 export function computeHomesteadEffects(
   constructedBuildings: BuildingId[],
+  plantedFarms: FarmId[],
   completedResearch: ResearchId[],
 ): HomesteadEffectManifest {
   const effects = { ...defaultHomesteadEffects };
@@ -17,23 +18,26 @@ export function computeHomesteadEffects(
     const building = buildings.find((b) => b.id === buildingId);
     if (!building) continue;
     switch (building.id) {
-      case "workshop":
-        effects.flatPhysicalDamage += 1;
-        break;
-      case "storehouse":
-        effects.startGold += 5;
-        break;
-      case "stone-walls":
-        effects.startBlock += 3;
-        break;
-      case "herb-shed":
-        effects.campfireHealBonus += 0.05;
-        break;
-      case "watchtower":
-        effects.startMaxHealthBonus += 5;
-        break;
       case "blacksmiths-forge":
-        effects.physicalCritChance += 2;
+        effects.flatPhysicalDamage += 1;
+        effects.forgeToBurn = 1;
+        break;
+      case "hunters-lodge":
+        effects.companionDamage += 1;
+        break;
+      case "alchemy-lab":
+        effects.potionHealMultiplier += 0.2;
+        effects.potionDiscount += 0.1;
+        break;
+    }
+  }
+
+  for (const farmId of plantedFarms) {
+    const farm = farmPlots.find((f) => f.id === farmId);
+    if (!farm) continue;
+    switch (farm.id) {
+      case "herb-garden":
+        effects.potionManaBonus += 1;
         break;
     }
   }
@@ -79,5 +83,9 @@ export function mergeIntoManifest(
     startBlock: talentEffects.startBlock + homesteadEffects.startBlock,
     campfireHealBonus: talentEffects.campfireHealBonus + homesteadEffects.campfireHealBonus,
     physicalCritChance: talentEffects.physicalCritChance + homesteadEffects.physicalCritChance,
+    potionDiscount: talentEffects.potionDiscount + Math.round(homesteadEffects.potionDiscount * 100) / 100,
+    healMultiplier: talentEffects.healMultiplier + homesteadEffects.potionHealMultiplier,
+    potionManaBonus: talentEffects.potionManaBonus + homesteadEffects.potionManaBonus,
+    forgeToBurn: talentEffects.forgeToBurn || homesteadEffects.forgeToBurn > 0,
   };
 }

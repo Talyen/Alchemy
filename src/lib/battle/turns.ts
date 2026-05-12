@@ -4,7 +4,7 @@
 import { drawCards } from "./draw";
 import { applyBoneCharmHeal, applyCardEffects, applyIronwoodBuckler, getEnemyDamageMultiplier, mergeCombatText } from "./effects";
 import { ailmentStatusIds, type EnemyAttackEffect, type BattleCard } from "@/lib/game-data";
-import { cardsPerTurn, clampHealth, maxHandSize, type BattleResolution, type BattleState, type CombatTextEvent, type TurnPhase } from "./types";
+import { applyPlayerCombatDamage, applyPlayerHealing, cardsPerTurn, clampHealth, maxHandSize, type BattleResolution, type BattleState, type CombatTextEvent, type TurnPhase } from "./types";
 import { ENEMY_HEAL_FRACTION } from "../game-constants";
 
 export function cardHasDamageType(card: BattleCard, damageType: string): boolean {
@@ -126,7 +126,7 @@ function tickPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
   // Parasitic Bloom trinket: heal when poison ticks
   if (state.trinketEffects.parasiticBloomHealPerPoisonTick > 0) {
     const healAmount = state.trinketEffects.parasiticBloomHealPerPoisonTick;
-    nextState = { ...nextState, playerHealth: clampHealth(nextState.playerHealth, healAmount, nextState.playerMaxHealth) };
+    nextState = applyPlayerHealing(nextState, healAmount);
     mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: healAmount });
   }
 
@@ -136,10 +136,10 @@ function tickPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
 function tickBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
   const damage = state.enemyStatuses.bleed;
   if (damage <= 0) return state;
-  const nextState = { ...state, enemyHealth: clampHealth(state.enemyHealth, -damage, state.enemyMaxHealth), enemyStatuses: { ...state.enemyStatuses, bleed: 0, bleedLeech: 0 } };
+  let nextState = { ...state, enemyHealth: clampHealth(state.enemyHealth, -damage, state.enemyMaxHealth), enemyStatuses: { ...state.enemyStatuses, bleed: 0, bleedLeech: 0 } };
   const leechAmount = state.enemyStatuses.bleedLeech;
   if (leechAmount > 0) {
-    nextState.playerHealth = clampHealth(nextState.playerHealth, leechAmount, nextState.playerMaxHealth);
+    nextState = applyPlayerHealing(nextState, leechAmount);
     mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: leechAmount });
   }
   mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "bleed", amount: damage });
@@ -169,11 +169,17 @@ function tickPlayerBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
   if (reducedDamage > 0) {
     mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "burn", amount: reducedDamage });
   }
-  return {
-    ...state,
-    playerHealth: Math.max(0, state.playerHealth - reducedDamage),
-    playerStatuses: { ...state.playerStatuses, burn: Math.floor(state.playerStatuses.burn / 2) },
-  };
+  let nextState = { ...applyPlayerCombatDamage(state, reducedDamage), playerStatuses: { ...state.playerStatuses, burn: Math.floor(state.playerStatuses.burn / 2) } };
+  if (reducedDamage > 0 && nextState.playerStatuses.armor > 0) {
+    nextState = {
+      ...nextState,
+      playerStatuses: {
+        ...nextState.playerStatuses,
+        armor: nextState.playerStatuses.armor - 1,
+      },
+    };
+  }
+  return nextState;
 }
 
 function tickPlayerPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
@@ -184,7 +190,17 @@ function tickPlayerPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
     mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "poison", amount: reducedDamage });
   }
   const nextPoison = Math.max(0, state.playerStatuses.poison - 1);
-  return { ...state, playerHealth: Math.max(0, state.playerHealth - reducedDamage), playerStatuses: { ...state.playerStatuses, poison: nextPoison } };
+  let nextState = { ...applyPlayerCombatDamage(state, reducedDamage), playerStatuses: { ...state.playerStatuses, poison: nextPoison } };
+  if (reducedDamage > 0 && nextState.playerStatuses.armor > 0) {
+    nextState = {
+      ...nextState,
+      playerStatuses: {
+        ...nextState.playerStatuses,
+        armor: nextState.playerStatuses.armor - 1,
+      },
+    };
+  }
+  return nextState;
 }
 
 function tickPlayerBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
@@ -193,7 +209,17 @@ function tickPlayerBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
   if (damage > 0) {
     mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "bleed", amount: damage });
   }
-  return { ...state, playerHealth: Math.max(0, state.playerHealth - damage), playerStatuses: { ...state.playerStatuses, bleed: 0 } };
+  let nextState = { ...applyPlayerCombatDamage(state, damage), playerStatuses: { ...state.playerStatuses, bleed: 0 } };
+  if (damage > 0 && nextState.playerStatuses.armor > 0) {
+    nextState = {
+      ...nextState,
+      playerStatuses: {
+        ...nextState.playerStatuses,
+        armor: nextState.playerStatuses.armor - 1,
+      },
+    };
+  }
+  return nextState;
 }
 
 function tickPlayerStun(state: BattleState, combatTexts: CombatTextEvent[]) {
@@ -202,7 +228,17 @@ function tickPlayerStun(state: BattleState, combatTexts: CombatTextEvent[]) {
   if (damage > 0) {
     mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "stun", amount: damage });
   }
-  return { ...state, playerHealth: Math.max(0, state.playerHealth - damage), playerStatuses: { ...state.playerStatuses, stun: 0 } };
+  let nextState = { ...applyPlayerCombatDamage(state, damage), playerStatuses: { ...state.playerStatuses, stun: 0 } };
+  if (damage > 0 && nextState.playerStatuses.armor > 0) {
+    nextState = {
+      ...nextState,
+      playerStatuses: {
+        ...nextState.playerStatuses,
+        armor: nextState.playerStatuses.armor - 1,
+      },
+    };
+  }
+  return nextState;
 }
 
 function tickPlayerFreeze(state: BattleState, combatTexts: CombatTextEvent[]) {
@@ -211,7 +247,17 @@ function tickPlayerFreeze(state: BattleState, combatTexts: CombatTextEvent[]) {
   if (damage > 0) {
     mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "freeze", amount: damage });
   }
-  return { ...state, playerHealth: Math.max(0, state.playerHealth - damage), playerStatuses: { ...state.playerStatuses, freeze: 0 } };
+  let nextState = { ...applyPlayerCombatDamage(state, damage), playerStatuses: { ...state.playerStatuses, freeze: 0 } };
+  if (damage > 0 && nextState.playerStatuses.armor > 0) {
+    nextState = {
+      ...nextState,
+      playerStatuses: {
+        ...nextState.playerStatuses,
+        armor: nextState.playerStatuses.armor - 1,
+      },
+    };
+  }
+  return nextState;
 }
 
 function tickPlayerStatuses(state: BattleState, combatTexts: CombatTextEvent[]) {
@@ -357,7 +403,7 @@ function processEnemyDamageEffect(state: BattleState, effect: EnemyAttackEffect 
   const prevHealth = state.playerHealth;
   let nextState = {
     ...state,
-    playerHealth: clampHealth(state.playerHealth, -actualDamage, state.playerMaxHealth),
+    ...applyPlayerCombatDamage(state, actualDamage),
     playerStatuses: {
       ...state.playerStatuses,
       block: state.playerStatuses.block - Math.min(blockAbsorb, state.playerStatuses.block),
@@ -377,6 +423,17 @@ function processEnemyDamageEffect(state: BattleState, effect: EnemyAttackEffect 
   }
 
   nextState = checkHealthThresholds(prevHealth, nextState.playerHealth, nextState, combatTexts);
+
+  // Taking damage removes 1 Armor
+  if (effect.amount > 0 && nextState.playerStatuses.armor > 0) {
+    nextState = {
+      ...nextState,
+      playerStatuses: {
+        ...nextState.playerStatuses,
+        armor: nextState.playerStatuses.armor - 1,
+      },
+    };
+  }
 
   if (effect.lifesteal && actualDamage > 0) {
     nextState = { ...nextState, enemyHealth: clampHealth(nextState.enemyHealth, actualDamage, nextState.enemyMaxHealth) };
@@ -441,6 +498,14 @@ function reduceSkipTurns(state: BattleState): BattleState {
   return { ...state, enemyStunSkipTurns: newStun, enemyFreezeSkipTurns: newFreeze };
 }
 
+function resolveDeathsDoorEndOfEnemyTurn(state: BattleState): BattleState {
+  // The grace window expires only after a later enemy turn, not the turn that triggered it.
+  if (!state.deathsDoorActive) return state;
+  if (state.playerHealth > 0) return { ...state, deathsDoorActive: false, deathsDoorTriggeredTurn: null };
+  if (state.deathsDoorTriggeredTurn === state.turn) return state;
+  return { ...state, deathsDoorActive: false, deathsDoorTriggeredTurn: null };
+}
+
 // Canonical enemy-phase pipeline: discard hand, handle haste/skips, heal, enemy DoTs,
 // enemy attack, player ailments, regeneration, trinket cleanup, then return to player.
 // Keeping this order centralized prevents UI timing from changing combat outcomes.
@@ -474,6 +539,7 @@ export function endPlayerTurn(state: BattleState): { state: BattleState; combatT
     }
 
     nextState = applyIronwoodBuckler(nextState, combatTexts);
+    nextState = resolveDeathsDoorEndOfEnemyTurn(nextState);
     return { state: advanceToPlayerTurn(nextState, combatTexts), combatTexts };
   }
 
@@ -500,6 +566,7 @@ export function endPlayerTurn(state: BattleState): { state: BattleState; combatT
   nextState = processEnemyRegeneration(nextState, combatTexts);
 
   nextState = applyIronwoodBuckler(nextState, combatTexts);
+  nextState = resolveDeathsDoorEndOfEnemyTurn(nextState);
 
   return { state: advanceToPlayerTurn(nextState, combatTexts), combatTexts };
 }

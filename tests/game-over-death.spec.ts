@@ -25,6 +25,10 @@ test.describe("Game Over via Death", () => {
     await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });
 
     await page.getByRole("button", { name: "End Turn" }).click();
+    await expect(page.getByRole("button", { name: "Death's Door" })).toBeVisible({ timeout: 15000 });
+    await page.getByRole("button", { name: "Death's Door" }).hover();
+    await expect(page.getByText("Heal before the end of the next enemy turn or you will die.")).toBeVisible();
+    await page.getByRole("button", { name: "End Turn" }).click();
     await expect(page.getByRole("heading", { name: "Defeat" })).toBeVisible({ timeout: 15000 });
     await expect(page.getByRole("button", { name: "Return to Main Menu" })).toBeVisible();
   });

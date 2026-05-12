@@ -47,7 +47,7 @@ export function BattleScreen({
   playerName,
   isMobileLandscape = false,
 }: {
-  battleState: Pick<BattleState, 'playerHealth' | 'playerMaxHealth' | 'enemyHealth' | 'enemyMaxHealth' | 'mana' | 'maxMana' | 'gold' | 'deck' | 'discard' | 'hand' | 'wishOptions' | 'activeCompanion' | 'currentEnemy' | 'turnPhase'>;
+  battleState: Pick<BattleState, 'playerHealth' | 'playerMaxHealth' | 'deathsDoorActive' | 'enemyHealth' | 'enemyMaxHealth' | 'mana' | 'maxMana' | 'gold' | 'deck' | 'discard' | 'hand' | 'wishOptions' | 'activeCompanion' | 'currentEnemy' | 'turnPhase'>;
   heroArt: string;
   playerName: string;
   hoveredCardId: string | null;
@@ -123,6 +123,7 @@ export function BattleScreen({
               shimmerToken={shimmerState?.token}
               onHoverShimmer={onHoverShimmer}
               combatTexts={playerCombatTexts}
+              deathsDoorActive={battleState.deathsDoorActive}
               surfaceRef={(node) => {
                 playerPanelRef.current = node;
               }}

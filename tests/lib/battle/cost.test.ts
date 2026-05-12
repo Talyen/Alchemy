@@ -25,7 +25,7 @@ const defaultFlags: CombatFlags = {
 function makeState(flags: Partial<CombatFlags> = {}, talentOverrides: Record<string, unknown> = {}): BattleState {
   return {
     deck: [], hand: [], discard: [], exhausted: [], mana: 5, maxMana: 5, gold: 0,
-    turn: 1, turnPhase: "player", playerHealth: 30, playerMaxHealth: 30, enemyHealth: 30,
+    turn: 1, turnPhase: "player", playerHealth: 30, playerMaxHealth: 30, deathsDoorUsed: false, deathsDoorActive: false, deathsDoorTriggeredTurn: null, enemyHealth: 30,
     enemyMaxHealth: 30, enemyAttackEffects: [], enemyArmor: 0, enemyForge: 0, enemyRegeneration: 0,
     playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
     enemyStatuses: { burn: 0, poison: 0, bleed: 0, bleedLeech: 0, freeze: 0, stun: 0 },
@@ -36,6 +36,7 @@ function makeState(flags: Partial<CombatFlags> = {}, talentOverrides: Record<str
     flags: { ...defaultFlags, ...flags },
     discoveredCardIds: [],
     cardsPlayedThisTurn: 0,
+    nextCardUid: 0,
   };
 }
 

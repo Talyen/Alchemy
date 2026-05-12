@@ -1,5 +1,6 @@
 // Game over screen — shows defeat message and talent XP earned this run.
 import { useState, useEffect } from "react";
+import { Sprout } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -32,7 +33,7 @@ function KeywordProgressCard({ kw, runXP, totalXP, animate }: { kw: KeywordId; r
   );
 }
 
-export function GameOverScreen({ runTalentXP, talentXP, onMainMenu }: { runTalentXP: TalentXP; talentXP: TalentXP; onMainMenu: () => void }) {
+export function GameOverScreen({ runTalentXP, talentXP, herbGardenHerbs, hunterLodgeFood, onMainMenu }: { runTalentXP: TalentXP; talentXP: TalentXP; herbGardenHerbs: number; hunterLodgeFood: number; onMainMenu: () => void }) {
   const [animate, setAnimate] = useState(false);
   const keywordIds = (Object.keys(runTalentXP) as KeywordId[]).filter((kw) => (runTalentXP[kw] ?? 0) > 0);
 
@@ -60,6 +61,19 @@ export function GameOverScreen({ runTalentXP, talentXP, onMainMenu }: { runTalen
           </div>
         </div>
       ) : <p className="text-sm text-muted-foreground">No talent XP earned this run.</p>}
+
+      {herbGardenHerbs > 0 && (
+        <div className="flex items-center gap-2 rounded-xl border border-emerald-600/40 bg-emerald-950/60 px-5 py-3 text-emerald-300">
+          <Sprout className="h-5 w-5" />
+          <span className="text-sm font-semibold">+{herbGardenHerbs} Herbs from Herb Garden</span>
+        </div>
+      )}
+      {hunterLodgeFood > 0 && (
+        <div className="flex items-center gap-2 rounded-xl border border-amber-600/40 bg-amber-950/60 px-5 py-3 text-amber-300">
+          <Sprout className="h-5 w-5" />
+          <span className="text-sm font-semibold">+{hunterLodgeFood} Food from Hunter&apos;s Lodge</span>
+        </div>
+      )}
 
       <Button size="lg" className="min-w-44" onClick={onMainMenu}>Return to Main Menu</Button>
     </div>

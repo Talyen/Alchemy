@@ -47,7 +47,7 @@ export function subtractInventory(inventory: MaterialInventory, cost: MaterialIn
   return result;
 }
 
-export type BuildingId = "workshop" | "storehouse" | "stone-walls" | "herb-shed" | "watchtower" | "blacksmiths-forge";
+export type BuildingId = "blacksmiths-forge" | "hunters-lodge" | "alchemy-lab" | "placeholder-1" | "placeholder-2" | "placeholder-3";
 
 export type FarmId = "wheat-field" | "herb-garden" | "chicken-coop" | "pasture" | "orchard" | "crystal-garden";
 
@@ -59,6 +59,7 @@ export type HomesteadBuilding = {
   description: string;
   cost: MaterialInventory;
   benefitDescription: string;
+  nonCombatBenefitDescription?: string;
   buttonLabel: string;
 };
 
@@ -68,6 +69,8 @@ export type HomesteadFarm = {
   description: string;
   cost: MaterialInventory;
   yield: MaterialInventory;
+  benefitDescription?: string;
+  nonCombatBenefitDescription?: string;
   buttonLabel: string;
 };
 
@@ -84,6 +87,10 @@ export type HomesteadResearch = {
 // are merged into TalentEffectManifest; run-level effects applied at character select.
 export type HomesteadEffectManifest = {
   flatPhysicalDamage: number;
+  companionDamage: number;
+  potionHealMultiplier: number;
+  potionManaBonus: number;
+  potionDiscount: number;
   startGold: number;
   startBlock: number;
   campfireHealBonus: number;
@@ -91,10 +98,15 @@ export type HomesteadEffectManifest = {
   startMaxHealthBonus: number;
   buildingCostReduction: number;
   farmYieldMultiplier: number;
+  forgeToBurn: number;
 };
 
 export const defaultHomesteadEffects: HomesteadEffectManifest = {
   flatPhysicalDamage: 0,
+  companionDamage: 0,
+  potionHealMultiplier: 0,
+  potionManaBonus: 0,
+  potionDiscount: 0,
   startGold: 0,
   startBlock: 0,
   campfireHealBonus: 0,
@@ -102,4 +114,5 @@ export const defaultHomesteadEffects: HomesteadEffectManifest = {
   startMaxHealthBonus: 0,
   buildingCostReduction: 0,
   farmYieldMultiplier: 0,
+  forgeToBurn: 0,
 };

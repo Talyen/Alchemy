@@ -31,8 +31,8 @@ export function useHomesteadState(initial: {
   const [lastFarmYield, setLastFarmYield] = useState<MaterialInventory | null>(null);
 
   const effects = useMemo(
-    () => computeHomesteadEffects(constructedBuildings, completedResearch),
-    [constructedBuildings, completedResearch],
+    () => computeHomesteadEffects(constructedBuildings, plantedFarms, completedResearch),
+    [constructedBuildings, plantedFarms, completedResearch],
   );
 
   const addMaterials = useCallback((materials: MaterialInventory) => {

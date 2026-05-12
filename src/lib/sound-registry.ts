@@ -70,6 +70,7 @@ export const battleEventSounds = {
   endTurn: "toggle-off.ogg",
   wishAppear: "harpsichord-mystery.ogg",
   gainGold: "coin-collect.ogg",
+  deathsDoor: "horror-sting.ogg",
 } as const;
 
 export type BattleEventSound = keyof typeof battleEventSounds;

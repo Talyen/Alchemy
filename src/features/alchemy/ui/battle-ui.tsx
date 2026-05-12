@@ -3,10 +3,11 @@
 // Used by BattleScreen and alchemy component barrels; combat decisions stay in controllers/lib.
 import { createElement, type CSSProperties } from "react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Coins, Gem } from "lucide-react";
+import { Coins, Gem, Skull } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 
 import { Progress } from "@/components/ui/progress";
+import { ShineBorder } from "@/components/ui/shine-border";
 import { keywordDefinitions, pileDiscardArt, pileDrawArt, type KeywordId } from "@/lib/game-data";
 import type { CompanionDefinition } from "@/lib/game-data";
 import { animateParticles, createParticles, createStatusParticles } from "@/lib/animation/particle-burst";
@@ -113,6 +114,28 @@ function StatusIcon({ chip }: { chip: StatusChip }) {
           <span className="rounded-full bg-background px-2 py-0.5 text-[11px] font-semibold text-foreground">{chip.value}</span>
         </div>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">{renderColoredKeywords(definition.description)}</p>
+      </div>
+    </div>
+  );
+}
+
+function DeathsDoorStatusIcon() {
+  return (
+    <div className="status-chip-pop group/status relative flex items-center justify-center">
+      <button
+        type="button"
+        className="relative flex h-7 w-7 items-center justify-center rounded-full bg-red-950/70 text-red-200 ring-1 ring-red-400/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        aria-label="Death's Door"
+      >
+        <Skull className="h-[18px] w-[18px]" />
+      </button>
+      <div className={cn(popupClassName, "w-72 hover-popup-panel pointer-events-none opacity-0 group-hover/status:opacity-100") }>
+        <div className="flex items-center justify-between gap-3">
+          <span className="inline-flex items-center gap-2 rounded-full border border-red-400/50 bg-red-950/70 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-red-200">
+            <Skull className="h-3.5 w-3.5" /> Death's Door
+          </span>
+        </div>
+        <p className="mt-2 text-sm leading-6 italic text-muted-foreground">Because I could not stop for Death,<br />He kindly stopped for me</p>
       </div>
     </div>
   );
@@ -226,6 +249,7 @@ export function ArtPanel({
   cardWidthClass,
   descriptionLines,
   currentEnemy,
+  deathsDoorActive = false,
 }: {
   side: "player" | "enemy";
   title: string;
@@ -244,6 +268,7 @@ export function ArtPanel({
   cardWidthClass: string | undefined;
   descriptionLines?: string[];
   currentEnemy?: BestiaryEntry;
+  deathsDoorActive?: boolean;
 }) {
   const healthToken = useChangeToken(health);
 
@@ -270,11 +295,13 @@ export function ArtPanel({
         style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
       >
         <ShimmerOverlay active={shimmerActive} token={shimmerToken} />
+        {deathsDoorActive ? <ShineBorder borderWidth={3} duration={4} shineColor={["#450a0a", "#dc2626", "#7f1d1d", "#111827"]} className="rounded-[30px]" /> : null}
         <img src={art} alt={title} className={cn("block w-full rounded-[30px] aspect-[3/4]", isDead && "opacity-0")} loading="eager" />
         {isDead && <ParticleBurst imageUrl={art} />}
       </div>
 
-      <div className={cn("surface-muted rounded-[24px] px-4 py-3 relative", cardWidthClass ?? battleCardWidthClass, isDead && "animate-frame-fade surface-transparent")}>
+      <div className={cn("surface-muted rounded-[24px] px-4 py-3 relative", cardWidthClass ?? battleCardWidthClass, deathsDoorActive && "shadow-[0_0_30px_rgba(127,29,29,0.45)]", isDead && "animate-frame-fade surface-transparent")}>
+        {deathsDoorActive ? <ShineBorder borderWidth={2} duration={4} shineColor={["#450a0a", "#ef4444", "#991b1b", "#1f0505"]} className="rounded-[24px]" /> : null}
         <div className={isDead ? "opacity-0" : ""}>
           <div className="flex items-center justify-between gap-3">
             <p className="text-sm leading-6 text-muted-foreground">{title}</p>
@@ -285,6 +312,7 @@ export function ArtPanel({
           <Progress value={(health / maxHealth) * 100} className={cn("mt-2.5 h-2 bg-background/80 [&>div]:bg-destructive", isDead && "[&>div]:bg-destructive/30")} />
 
           <div className="mt-2.5 flex min-h-7 items-center gap-1">
+            {deathsDoorActive ? <DeathsDoorStatusIcon /> : null}
             {statuses.length > 0 ? statuses.map((status) => <StatusIcon key={`${title}-${status.id}-${status.value}`} chip={status} />) : null}
           </div>
         </div>

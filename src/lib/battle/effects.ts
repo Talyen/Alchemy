@@ -5,6 +5,7 @@ import { ailmentStatusIds, cardLibrary, companionLibrary, type BattleCard, type 
 import { drawCards, shuffleCards } from "./draw";
 
 import {
+  applyPlayerHealing,
   clampHealth,
   type BattleState,
   type CombatTextEvent,
@@ -98,7 +99,7 @@ function applyLifesteal(state: BattleState, damage: number, combatTexts: CombatT
   if (damage <= 0) return state;
   const healAmount = Math.floor(damage * state.talentEffects.healMultiplier);
   mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: healAmount });
-  return { ...state, playerHealth: clampHealth(state.playerHealth, healAmount, state.playerMaxHealth) };
+  return applyPlayerHealing(state, healAmount);
 }
 
 // Holy lifesteal: heals for a percentage of holy damage dealt.
@@ -107,7 +108,7 @@ function applyHolyLifesteal(state: BattleState, damage: number, combatTexts: Com
   const healAmount = Math.floor(damage * state.talentEffects.holyLifestealPercent / 100 * state.talentEffects.healMultiplier);
   if (healAmount <= 0) return state;
   mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: healAmount });
-  return { ...state, playerHealth: clampHealth(state.playerHealth, healAmount, state.playerMaxHealth) };
+  return applyPlayerHealing(state, healAmount);
 }
 
 // Grants block equal to a percentage of damage dealt.
@@ -305,6 +306,17 @@ function dealEnemyDamage(
     mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: effect.damageType, amount: modifiedDamage });
   }
 
+  // Dealing Physical or Stun damage removes 1 Forge
+  if ((effect.damageType === "physical" || effect.damageType === "stun") && modifiedDamage > 0 && nextState.playerStatuses.forge > 0) {
+    nextState = {
+      ...nextState,
+      playerStatuses: {
+        ...nextState.playerStatuses,
+        forge: nextState.playerStatuses.forge - 1,
+      },
+    };
+  }
+
   return nextState;
 }
 
@@ -436,7 +448,7 @@ function applyWishEffect(state: BattleState, card: BattleCard, combatTexts: Comb
     mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "gold", amount: nextState.trinketEffects.wishingWellGoldOnWish });
   }
   if (nextState.talentEffects.healthOnWish > 0) {
-    nextState = { ...nextState, playerHealth: clampHealth(nextState.playerHealth, nextState.talentEffects.healthOnWish, nextState.playerMaxHealth) };
+    nextState = applyPlayerHealing(nextState, nextState.talentEffects.healthOnWish);
     mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: nextState.talentEffects.healthOnWish });
   }
   if (nextState.talentEffects.removeAilmentOnWish) {
@@ -473,9 +485,9 @@ export function applyBoneCharmHeal(state: BattleState, enemyWasAlive: boolean, c
     const healAmount = state.trinketEffects.boneCharmHealOnKill;
     state = {
       ...state,
-      playerHealth: clampHealth(state.playerHealth, healAmount, state.playerMaxHealth),
       flags: { ...state.flags, boneCharmUsed: true },
     };
+    state = applyPlayerHealing(state, healAmount);
     mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: healAmount });
   }
   return state;
@@ -493,7 +505,7 @@ export function applyCardEffects(state: BattleState, card: BattleCard, combatTex
       case "heal": {
         const healAmount = Math.floor(effect.amount * currentState.talentEffects.healMultiplier);
         mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: healAmount });
-        return { ...currentState, playerHealth: clampHealth(currentState.playerHealth, healAmount, currentState.playerMaxHealth) };
+        return applyPlayerHealing(currentState, healAmount);
       }
       case "restore-mana":
         mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "mana", amount: effect.amount });

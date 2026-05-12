@@ -62,6 +62,7 @@ const sounds = [
   { source: "Musical Effects/harpsichord_defeated.wav", target: "harpsichord-defeated.ogg" },
   { source: "Musical Effects/grand_piano_defeated.wav", target: "grand-piano-defeated.ogg" },
   { source: "Musical Effects/harpsichord_level_start.wav", target: "harpsichord-level-start.ogg" },
+  { source: "Musical Effects/horror_sting.wav", target: "horror-sting.ogg" },
 
   // ── Replacement / new sounds ──
   { source: "Weapons/weapon_upgrade.wav", target: "weapon-upgrade.ogg" },

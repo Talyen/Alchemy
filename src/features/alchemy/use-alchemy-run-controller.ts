@@ -125,6 +125,8 @@ export function useAlchemyRunController({
     get alchemistPotionPrice() { return shop.alchemistPotionPrice; },
     get alchemistMixPrice() { return shop.alchemistMixPrice; },
     get alchemistMixUsed() { return shop.alchemistMixUsed; },
+    get runEndHerbs() { return nav.runEndHerbs; },
+    get runEndFood() { return nav.runEndFood; },
     get mysteryEvent() { return nav.mysteryEvent; },
     get activeRunData() { return nav.activeRunData; },
     handCardRefs: battle.handCardRefs,

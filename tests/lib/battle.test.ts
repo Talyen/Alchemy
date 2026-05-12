@@ -5,7 +5,7 @@ import { drawCards, createBattleState, defaultTalentEffects, shuffleCards } from
 import { companionLibrary, enemyBestiary } from "@/lib/game-data";
 import type { BattleCard } from "@/lib/game-data";
 import type { BattleState, CombatTextEvent } from "@/lib/battle/types";
-import { basePlayerMana, clamp, clampHealth, maxHandSize, maxPlayerHealth } from "@/lib/battle/types";
+import { basePlayerMana, clamp, clampHealth, isPlayerDefeated, maxHandSize, maxPlayerHealth } from "@/lib/battle/types";
 import { defaultTrinketEffects, computeTrinketManifest } from "@/lib/trinkets";
 
 vi.spyOn(Math, "random").mockReturnValue(0.99);
@@ -13,7 +13,7 @@ vi.spyOn(Math, "random").mockReturnValue(0.99);
 function makeState(overrides: Partial<BattleState> = {}): BattleState {
   const empty: BattleState = {
     deck: [], hand: [], discard: [], exhausted: [], mana: 0, maxMana: 0, gold: 0,
-    turn: 1, turnPhase: "player", playerHealth: 30, playerMaxHealth: 30, enemyHealth: 30,
+    turn: 1, turnPhase: "player", playerHealth: 30, playerMaxHealth: 30, deathsDoorUsed: false, deathsDoorActive: false, deathsDoorTriggeredTurn: null, enemyHealth: 30,
     enemyMaxHealth: 30, enemyAttackEffects: [], enemyArmor: 0, enemyForge: 0, enemyRegeneration: 0,
     playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
     enemyStatuses: { burn: 0, poison: 0, bleed: 0, bleedLeech: 0, freeze: 0, stun: 0 },
@@ -39,6 +39,7 @@ function makeState(overrides: Partial<BattleState> = {}): BattleState {
     },
     discoveredCardIds: [],
     cardsPlayedThisTurn: 0,
+    nextCardUid: 0,
   };
   return { ...empty, ...overrides };
 }
@@ -425,6 +426,46 @@ describe("endPlayerTurn", () => {
     const result = endPlayerTurn(state);
     // With no block or armor, all 8 damage goes through
     expect(result.state.playerHealth).toBe(22);
+  });
+
+  it("triggers Death's Door instead of defeat on the first fatal combat damage", () => {
+    const state = makeState({ enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 8 }], playerHealth: 5, deck: [makeCard({ id: "d1" })], mana: 4, maxMana: 4 });
+    const result = endPlayerTurn(state);
+
+    expect(result.state.playerHealth).toBe(0);
+    expect(result.state.deathsDoorUsed).toBe(true);
+    expect(result.state.deathsDoorActive).toBe(true);
+    expect(result.state.deathsDoorTriggeredTurn).toBe(1);
+    expect(isPlayerDefeated(result.state)).toBe(false);
+  });
+
+  it("kills the player at the next enemy turn end if Death's Door was not healed", () => {
+    const state = makeState({ playerHealth: 0, deathsDoorUsed: true, deathsDoorActive: true, deathsDoorTriggeredTurn: 1, turn: 2, deck: [makeCard({ id: "d1" })], mana: 4, maxMana: 4 });
+    const result = endPlayerTurn(state);
+
+    expect(result.state.playerHealth).toBe(0);
+    expect(result.state.deathsDoorActive).toBe(false);
+    expect(isPlayerDefeated(result.state)).toBe(true);
+  });
+
+  it("does not retrigger Death's Door after it was consumed", () => {
+    const state = makeState({ enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 8 }], playerHealth: 3, deathsDoorUsed: true, deck: [makeCard({ id: "d1" })], mana: 4, maxMana: 4 });
+    const result = endPlayerTurn(state);
+
+    expect(result.state.playerHealth).toBe(0);
+    expect(result.state.deathsDoorActive).toBe(false);
+    expect(isPlayerDefeated(result.state)).toBe(true);
+  });
+
+  it("healing above 0 clears Death's Door but keeps it consumed", () => {
+    const state = makeState({ playerHealth: 0, deathsDoorUsed: true, deathsDoorActive: true, deathsDoorTriggeredTurn: 1 });
+    const card = makeCard({ effects: [{ kind: "heal", amount: 5 }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+
+    expect(result.playerHealth).toBe(5);
+    expect(result.deathsDoorUsed).toBe(true);
+    expect(result.deathsDoorActive).toBe(false);
   });
 
   it("gives the player an extra turn when haste is active", () => {
