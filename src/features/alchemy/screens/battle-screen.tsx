@@ -7,7 +7,7 @@ import { Coins, Menu } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { type BattleCard } from "@/lib/game-data";
-import type { BattleState } from "@/lib/battle/types";
+import type { BattleState } from "@/lib/battle";
 
 
 import {

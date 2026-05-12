@@ -1,7 +1,7 @@
 // Deck drawing and battle-state creation for new encounters.
 // Depends on game data, combat constants, talent manifests, and trinket manifests.
 // Used by turn logic and battle controllers whenever cards or fresh battles are needed.
-import { enemyBestiary, starterDeck, type BattleCard, type BestiaryEntry, type EnemyAttackEffect } from "@/lib/game-data";
+import { createEmptyTalentManifest, enemyBestiary, starterDeck, type BattleCard, type BestiaryEntry, type EnemyAttackEffect } from "@/lib/game-data";
 
 import {
   baseEnemyHealth,
@@ -18,96 +18,10 @@ import {
 import { ROOM_SCALING_INCREMENT, ELITE_STAT_MULTIPLIER, BOSS_STAT_MULTIPLIER, ACT_SCALING_INCREMENT, STARTING_TURN, ENEMY_BASE_REGENERATION } from "../game-constants";
 import { computeTrinketManifest } from "../trinkets";
 
-// Default talent manifest used when no talents are unlocked.
-// Every field must have a safe zero/false value so battle logic can read
-// talentEffects without existence checks.
-export const defaultTalentEffects: TalentEffectManifest = {
-  flatPhysicalDamage: 0,
-  armorToPhysicalDamage: false,
-  physicalCritChance: 0,
-  firstPhysicalCardFree: false,
-  physicalVsStunnedMultiplier: 0,
-  physicalVsFrozenMultiplier: 0,
-
-  stunThresholdReduction: 0,
-  drawOnStun: 0,
-  nextCardFreeOnStun: false,
-  stunDurationExtension: 0,
-
-  startBlock: 0,
-  blockToPhysicalDamage: false,
-  blockPreventsBleed: false,
-  blockPreventsPoison: false,
-  blockPreventsStun: false,
-  blockAbsorbPhysicalBonus: 0,
-
-  forgeToBurn: false,
-  forgeToHoly: false,
-  forgeToBlock: false,
-  forgeBurnThreshold: 0,
-  forgeBurnDamage: 0,
-
-  armorMitigatesBurn: false,
-  armorBlockThreshold: 0,
-  armorBlockAmount: 0,
-  armorDoubledBelowHalfHealth: false,
-  firstArmorCardDoubled: false,
-
-  campfireHealBonus: 0,
-  healthThresholdBlock: null,
-  maxHealthPerCombat: 0,
-  startHealth: 0,
-  healMultiplier: 1,
-  healthThresholdArmor: null,
-
-  firstBurnCardDoubled: false,
-  burnRemovesEnemyArmor: false,
-  burnDoubleChance: 0,
-  receiveHalfBurnDamage: false,
-
-  shopCardDiscount: 0,
-  shopFreeRefresh: false,
-  startGold: 0,
-  goldPerCombat: 0,
-  potionDiscount: 0,
-  removeCardDiscount: 0,
-  enemyGoldDropBonus: 0,
-  goldOnWish: 0,
-  mixPotionDiscount: 0,
-
-  holyLifestealPercent: 0,
-  firstHolyCardFree: false,
-  holyGoldPercent: 0,
-  holyBurnChance: 0,
-  receiveHalfHolyDamage: false,
-  holyBlockPercent: 0,
-  holyWishChance: 0,
-  holyBlockPercentFromDamage: 0,
-  holyVsBurnMultiplier: 0,
-
-  goldOnWishAmount: 0,
-  wishUndiscoveredCards: false,
-  healthOnWish: 0,
-  removeAilmentOnWish: false,
-  wishExtraChoiceChance: 0,
-  wishDrawsCard: false,
-
-  firstPoisonCardFree: false,
-  poisonPhysicalBonus: 0,
-  poisonGainChance: 0,
-  receiveHalfPoisonDamage: false,
-  goldOnFirstPoison: 0,
-  poisonHalvesHealing: false,
-
-  firstBleedCardFree: false,
-  bleedPhysicalBonus: 0,
-  bleedLeechChance: 0,
-  bleedEnemyDamageReduction: 0,
-  bleedPhysicalTakenBonus: 0,
-  bleedExecuteThreshold: 0,
-  bleedDesperateMultiplier: 1,
-  bleedPoisonChance: 0,
-};
+// Default talent manifest used when no talents are unlocked. Every field must have a safe
+// zero/false value so battle logic can read talentEffects without existence checks.
+// Defined via the shared factory so new manifest fields are caught at compile time.
+const defaultTalentEffects: TalentEffectManifest = createEmptyTalentManifest();
 
 // Returns a fresh (deck, discard) pair after possibly reshuffling discard into deck.
 function refillDeck(deck: BattleCard[], discard: BattleCard[]) {

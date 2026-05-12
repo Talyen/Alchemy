@@ -1,7 +1,7 @@
 // Type contracts and tiny clamp helpers for the immutable battle engine.
 // Depends only on game-data shape types and is imported by draw, effects, turns, and UI.
 // Keep these state shapes explicit so save/load, animation, and combat stay in sync.
-import type { BattleCard, BestiaryEntry, CompanionDefinition, DamageType, EnemyAttackEffect, EnemyStatusId, PlayerStatusId } from "@/lib/game-data";
+import type { BattleCard, BestiaryEntry, CompanionDefinition, DamageType, EnemyAttackEffect, EnemyStatusId, PlayerStatusId, TalentEffectManifest } from "@/lib/game-data";
 
 // Baseline balance knobs — tuned so the Knight starter deck (8 cards, 8 turns avg per fight)
 // can consistently beat the first enemy with some health remaining. Scaling per room
@@ -53,108 +53,9 @@ export type TrinketManifest = {
   merchantsFavorDiscount: number;
 };
 
-// Pre-computed bonuses from unlocked talents, recalculated each battle start.
-// We pass these as flat numbers rather than raw talent IDs to keep the battle
-// engine decoupled from the talent-pool data shape.
-export type TalentEffectManifest = {
-  // --- Physical ---
-  flatPhysicalDamage: number;   // +X to all physical damage
-  armorToPhysicalDamage: boolean; // adds current armor value to physical damage
-  physicalCritChance: number;   // additional crit % for physical (on top of global 5%)
-  firstPhysicalCardFree: boolean;
-  physicalVsStunnedMultiplier: number; // percent bonus when enemy is stunned
-  physicalVsFrozenMultiplier: number;  // percent bonus when enemy is frozen
-
-  // --- Stun ---
-  stunThresholdReduction: number;   // fraction subtracted from base 0.5 threshold
-  drawOnStun: number;               // cards drawn when stunning an enemy
-  nextCardFreeOnStun: boolean;      // next card costs 0 after stunning
-  stunDurationExtension: number;    // +X turns stun lasts when applied
-
-  // --- Block ---
-  startBlock: number;
-  blockToPhysicalDamage: boolean; // add floor(block/2) to physical damage
-  blockPreventsBleed: boolean;
-  blockPreventsPoison: boolean;
-  blockPreventsStun: boolean;
-  blockAbsorbPhysicalBonus: number; // percent more damage block absorbs from physical attacks
-
-  // --- Forge ---
-  forgeToBurn: boolean;
-  forgeToHoly: boolean;
-  forgeToBlock: boolean;
-  forgeBurnThreshold: number; // forge count that triggers burn burst
-  forgeBurnDamage: number;    // burn burst damage amount
-
-  // --- Armor ---
-  armorMitigatesBurn: boolean;   // armor stacks also reduce burn damage
-  armorBlockThreshold: number;   // armor count that triggers block burst
-  armorBlockAmount: number;      // block burst amount
-  armorDoubledBelowHalfHealth: boolean;
-  firstArmorCardDoubled: boolean;
-
-  // --- Health ---
-  campfireHealBonus: number; // fraction added to base campfire heal (e.g. 0.1 = +10%)
-  healthThresholdBlock: { threshold: number; amount: number } | null; // gain block when health drops below threshold
-  maxHealthPerCombat: number; // max health gained after each combat
-  startHealth: number;         // bonus health at start of combat
-  healMultiplier: number;      // multiplier for all healing (e.g. 1.1 = +10%)
-  healthThresholdArmor: { threshold: number; amount: number } | null; // gain armor when health drops below threshold
-
-  // --- Burn ---
-  firstBurnCardDoubled: boolean;
-  burnRemovesEnemyArmor: boolean;
-  burnDoubleChance: number; // percent chance burn stack doubles instead of halving on tick
-  receiveHalfBurnDamage: boolean;
-
-  // --- Gold ---
-  shopCardDiscount: number;
-  shopFreeRefresh: boolean;
-  startGold: number;
-  goldPerCombat: number;
-  potionDiscount: number;
-  removeCardDiscount: number;
-  enemyGoldDropBonus: number; // fraction bonus to gold drops (e.g. 0.1 = +10%)
-  goldOnWish: number;
-  mixPotionDiscount: number;
-
-  // --- Holy ---
-  holyLifestealPercent: number; // percent of holy damage healed (e.g. 10 = 10%)
-  firstHolyCardFree: boolean;
-  holyGoldPercent: number;      // holy damage increased by this percent of current gold
-  holyBurnChance: number;       // percent chance holy damage applies burn
-  receiveHalfHolyDamage: boolean;
-  holyBlockPercent: number;     // holy damage increased by this percent of current block
-  holyWishChance: number;       // percent chance holy damage triggers wish
-  holyBlockPercentFromDamage: number; // block granted equal to this percent of holy damage dealt
-  holyVsBurnMultiplier: number; // percent bonus when enemy has burn
-
-  // --- Wish ---
-  goldOnWishAmount: number;
-  wishUndiscoveredCards: boolean;
-  healthOnWish: number;
-  removeAilmentOnWish: boolean;
-  wishExtraChoiceChance: number; // percent chance to offer an extra card choice
-  wishDrawsCard: boolean;
-
-  // --- Poison ---
-  firstPoisonCardFree: boolean;
-  poisonPhysicalBonus: number; // +X physical damage against poisoned enemies
-  poisonGainChance: number;    // percent chance poison gains a stack instead of losing on tick
-  receiveHalfPoisonDamage: boolean;
-  goldOnFirstPoison: number;
-  poisonHalvesHealing: boolean;
-
-  // --- Bleed ---
-  firstBleedCardFree: boolean;
-  bleedPhysicalBonus: number;        // +X physical damage against bleeding enemies
-  bleedLeechChance: number;          // percent chance bleed applies lifesteal
-  bleedEnemyDamageReduction: number; // enemies with bleed deal X less damage
-  bleedPhysicalTakenBonus: number;   // +X physical damage against bleeding enemies (stacks with bleedPhysicalBonus)
-  bleedExecuteThreshold: number;     // percent HP threshold for bleed execute bonus
-  bleedDesperateMultiplier: number;  // multiplier when player is below 50% health
-  bleedPoisonChance: number;         // percent chance bleed also applies poison
-};
+// TalentEffectManifest moved to game-data/types.ts to resolve cross-layer dependency.
+// Re-exported here so existing barrel consumers still find it at @/lib/battle.
+export type { TalentEffectManifest } from "@/lib/game-data";
 
 // Threshold-driven combat flags that reset each battle.
 export type CombatFlags = {

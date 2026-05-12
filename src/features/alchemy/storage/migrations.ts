@@ -1,7 +1,7 @@
 // Save normalization and migration helpers for legacy or partial localStorage payloads.
 // Depends on current game data, battle health defaults, homestead IDs, and save defaults.
 import { characters, type BattleCard, type CharacterId } from "@/lib/game-data";
-import { maxPlayerHealth } from "@/lib/battle/types";
+import { maxPlayerHealth } from "@/lib/battle";
 import type { TalentXP } from "@/lib/talents";
 import type { BuildingId, FarmId, MaterialInventory, ResearchId } from "@/lib/homestead/types";
 

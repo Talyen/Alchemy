@@ -101,4 +101,106 @@ export type KeywordDefinition = {
   shineColors: string[];
 };
 
+// Pre-computed bonuses from unlocked talents, recalculated each battle start.
+// Lives in game-data because talents are game content; battle engine consumes the flat type.
+export type TalentEffectManifest = {
+  // --- Physical ---
+  flatPhysicalDamage: number;
+  armorToPhysicalDamage: boolean;
+  physicalCritChance: number;
+  firstPhysicalCardFree: boolean;
+  physicalVsStunnedMultiplier: number;
+  physicalVsFrozenMultiplier: number;
+
+  // --- Stun ---
+  stunThresholdReduction: number;
+  drawOnStun: number;
+  nextCardFreeOnStun: boolean;
+  stunDurationExtension: number;
+
+  // --- Block ---
+  startBlock: number;
+  blockToPhysicalDamage: boolean;
+  blockPreventsBleed: boolean;
+  blockPreventsPoison: boolean;
+  blockPreventsStun: boolean;
+  blockAbsorbPhysicalBonus: number;
+
+  // --- Forge ---
+  forgeToBurn: boolean;
+  forgeToHoly: boolean;
+  forgeToBlock: boolean;
+  forgeBurnThreshold: number;
+  forgeBurnDamage: number;
+
+  // --- Armor ---
+  armorMitigatesBurn: boolean;
+  armorBlockThreshold: number;
+  armorBlockAmount: number;
+  armorDoubledBelowHalfHealth: boolean;
+  firstArmorCardDoubled: boolean;
+
+  // --- Health ---
+  campfireHealBonus: number;
+  healthThresholdBlock: { threshold: number; amount: number } | null;
+  maxHealthPerCombat: number;
+  startHealth: number;
+  healMultiplier: number;
+  healthThresholdArmor: { threshold: number; amount: number } | null;
+
+  // --- Burn ---
+  firstBurnCardDoubled: boolean;
+  burnRemovesEnemyArmor: boolean;
+  burnDoubleChance: number;
+  receiveHalfBurnDamage: boolean;
+
+  // --- Gold ---
+  shopCardDiscount: number;
+  shopFreeRefresh: boolean;
+  startGold: number;
+  goldPerCombat: number;
+  potionDiscount: number;
+  removeCardDiscount: number;
+  enemyGoldDropBonus: number;
+  goldOnWish: number;
+  mixPotionDiscount: number;
+
+  // --- Holy ---
+  holyLifestealPercent: number;
+  firstHolyCardFree: boolean;
+  holyGoldPercent: number;
+  holyBurnChance: number;
+  receiveHalfHolyDamage: boolean;
+  holyBlockPercent: number;
+  holyWishChance: number;
+  holyBlockPercentFromDamage: number;
+  holyVsBurnMultiplier: number;
+
+  // --- Wish ---
+  goldOnWishAmount: number;
+  wishUndiscoveredCards: boolean;
+  healthOnWish: number;
+  removeAilmentOnWish: boolean;
+  wishExtraChoiceChance: number;
+  wishDrawsCard: boolean;
+
+  // --- Poison ---
+  firstPoisonCardFree: boolean;
+  poisonPhysicalBonus: number;
+  poisonGainChance: number;
+  receiveHalfPoisonDamage: boolean;
+  goldOnFirstPoison: number;
+  poisonHalvesHealing: boolean;
+
+  // --- Bleed ---
+  firstBleedCardFree: boolean;
+  bleedPhysicalBonus: number;
+  bleedLeechChance: number;
+  bleedEnemyDamageReduction: number;
+  bleedPhysicalTakenBonus: number;
+  bleedExecuteThreshold: number;
+  bleedDesperateMultiplier: number;
+  bleedPoisonChance: number;
+};
+
 export const ailmentStatusIds: PlayerStatusId[] = ["burn", "poison", "bleed", "freeze", "stun"];

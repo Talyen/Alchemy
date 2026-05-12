@@ -3,7 +3,7 @@
 // Used by controllers; battle, shop, and navigation rules intentionally live elsewhere.
 import { useState } from "react";
 import { starterDeck, type BattleCard, type CharacterId } from "@/lib/game-data";
-import { maxPlayerHealth } from "@/lib/battle/types";
+import { maxPlayerHealth } from "@/lib/battle";
 import type { Destination } from "./types";
 
 export type ActiveRunData = {

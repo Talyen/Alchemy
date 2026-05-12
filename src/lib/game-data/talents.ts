@@ -1,8 +1,7 @@
 // Unlockable talent data and conversion into flat combat effect manifests.
 // Depends on keyword IDs and battle talent effect shapes.
 // Used by talent UI/state and battle setup to avoid scanning raw talent IDs during combat.
-import type { KeywordId } from "@/lib/game-data";
-import type { TalentEffectManifest } from "@/lib/battle/types";
+import type { KeywordId, TalentEffectManifest } from "./types";
 
 // A talent definition — just an ID + description. Talent names were removed
 // per player feedback; the description is self-explanatory. New talents can be
@@ -13,7 +12,7 @@ export interface TalentDefinition {
   description: string;
 }
 
-// The full pool of unlockable talents. Each keyword has exactly 9 talents for a 3x3 grid.
+// The full pool of unlockable talents. Most keywords have 10 talents for a 2x5 or equivalent grid.
 export const talentPool: TalentDefinition[] = [
   // --- Physical ---
   { id: "physical-dmg-1", keywordId: "physical", description: "Increase Physical Damage by 1" },
@@ -265,6 +264,98 @@ export function sampleTalentChoices(keywordId: KeywordId, unlockedIds: string[],
 }
 
 export type UnlockedTalents = Partial<Record<KeywordId, string[]>>;
+
+// Returns a manifest with all zero/false/null values — the safe default when no talents are
+// unlocked. New TalentEffectManifest fields must be added here AND in computeTalentEffects.
+export function createEmptyTalentManifest(): TalentEffectManifest {
+  return {
+    flatPhysicalDamage: 0,
+    armorToPhysicalDamage: false,
+    physicalCritChance: 0,
+    firstPhysicalCardFree: false,
+    physicalVsStunnedMultiplier: 0,
+    physicalVsFrozenMultiplier: 0,
+
+    stunThresholdReduction: 0,
+    drawOnStun: 0,
+    nextCardFreeOnStun: false,
+    stunDurationExtension: 0,
+
+    startBlock: 0,
+    blockToPhysicalDamage: false,
+    blockPreventsBleed: false,
+    blockPreventsPoison: false,
+    blockPreventsStun: false,
+    blockAbsorbPhysicalBonus: 0,
+
+    forgeToBurn: false,
+    forgeToHoly: false,
+    forgeToBlock: false,
+    forgeBurnThreshold: 0,
+    forgeBurnDamage: 0,
+
+    armorMitigatesBurn: false,
+    armorBlockThreshold: 0,
+    armorBlockAmount: 0,
+    armorDoubledBelowHalfHealth: false,
+    firstArmorCardDoubled: false,
+
+    campfireHealBonus: 0,
+    healthThresholdBlock: null,
+    maxHealthPerCombat: 0,
+    startHealth: 0,
+    healMultiplier: 1,
+    healthThresholdArmor: null,
+
+    firstBurnCardDoubled: false,
+    burnRemovesEnemyArmor: false,
+    burnDoubleChance: 0,
+    receiveHalfBurnDamage: false,
+
+    shopCardDiscount: 0,
+    shopFreeRefresh: false,
+    startGold: 0,
+    goldPerCombat: 0,
+    potionDiscount: 0,
+    removeCardDiscount: 0,
+    enemyGoldDropBonus: 0,
+    goldOnWish: 0,
+    mixPotionDiscount: 0,
+
+    holyLifestealPercent: 0,
+    firstHolyCardFree: false,
+    holyGoldPercent: 0,
+    holyBurnChance: 0,
+    receiveHalfHolyDamage: false,
+    holyBlockPercent: 0,
+    holyWishChance: 0,
+    holyBlockPercentFromDamage: 0,
+    holyVsBurnMultiplier: 0,
+
+    goldOnWishAmount: 0,
+    wishUndiscoveredCards: false,
+    healthOnWish: 0,
+    removeAilmentOnWish: false,
+    wishExtraChoiceChance: 0,
+    wishDrawsCard: false,
+
+    firstPoisonCardFree: false,
+    poisonPhysicalBonus: 0,
+    poisonGainChance: 0,
+    receiveHalfPoisonDamage: false,
+    goldOnFirstPoison: 0,
+    poisonHalvesHealing: false,
+
+    firstBleedCardFree: false,
+    bleedPhysicalBonus: 0,
+    bleedLeechChance: 0,
+    bleedEnemyDamageReduction: 0,
+    bleedPhysicalTakenBonus: 0,
+    bleedExecuteThreshold: 0,
+    bleedDesperateMultiplier: 1,
+    bleedPoisonChance: 0,
+  };
+}
 
 // Collapse unlocked IDs into a flat manifest once per change/battle. Combat code reads
 // numbers/booleans directly, which keeps turn resolution decoupled from talent grid data.

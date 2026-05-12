@@ -24,5 +24,9 @@ export function getEffectiveCost(state: BattleState, card: BattleCard): number {
   if (!state.flags.firstBleedCardFreeUsed && state.talentEffects.firstBleedCardFree && cardHasDamageType(card, "bleed")) {
     cost = 0;
   }
+  // Mortar and Pestle trinket: first potion is free (mirrors playBattleCardResolved)
+  if (!state.flags.firstPotionFreeUsed && state.trinketEffects.mortarPestleFreeFirstPotion && card.id.includes("potion")) {
+    cost = 0;
+  }
   return cost;
 }

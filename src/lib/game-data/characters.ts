@@ -62,6 +62,7 @@ export const characters: Record<CharacterId, CharacterDefinition> = {
       "mana-crystals",
       "mana-potion",
       "meteor",
+      "health-potion",
     ]),
     keywords: ["burn", "freeze", "mana"],
   },

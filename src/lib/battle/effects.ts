@@ -259,15 +259,7 @@ function dealEnemyDamage(
   };
 
   // Bone Charm: heal on kill
-  if (nextState.enemyHealth <= 0 && state.enemyHealth > 0 && nextState.trinketEffects.boneCharmHealOnKill > 0 && !nextState.flags.boneCharmUsed) {
-    const healAmount = nextState.trinketEffects.boneCharmHealOnKill;
-    nextState = {
-      ...nextState,
-      playerHealth: clampHealth(nextState.playerHealth, healAmount, nextState.playerMaxHealth),
-      flags: { ...nextState.flags, boneCharmUsed: true },
-    };
-    mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: healAmount });
-  }
+  nextState = applyBoneCharmHeal(nextState, state.enemyHealth > 0, combatTexts);
 
   nextState = applyDamageStatuses(nextState, effect, modifiedDamage, combatTexts);
 
@@ -454,6 +446,37 @@ function applyWishEffect(state: BattleState, card: BattleCard, combatTexts: Comb
   }
 
   return nextState;
+}
+
+// Ironwood Buckler trinket: end of turn, if block >= threshold, convert to armor.
+// Used identically in 3 places in endPlayerTurn (stun-skip, death-mid-phase, normal attack).
+export function applyIronwoodBuckler(state: BattleState, combatTexts: CombatTextEvent[]) {
+  if (state.trinketEffects.blockToArmorThreshold > 0 && state.playerStatuses.block >= state.trinketEffects.blockToArmorThreshold) {
+    state = {
+      ...state,
+      playerStatuses: {
+        ...state.playerStatuses,
+        armor: state.playerStatuses.armor + state.trinketEffects.blockToArmorAmount,
+      },
+    };
+    mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "armor", amount: state.trinketEffects.blockToArmorAmount });
+  }
+  return state;
+}
+
+// Bone Charm trinket: heal on enemy kill. Used in dealEnemyDamage (mid-player-turn) and
+// endPlayerTurn (enemy killed by DoTs). The heal-on-kill flag is consumed here.
+export function applyBoneCharmHeal(state: BattleState, enemyWasAlive: boolean, combatTexts: CombatTextEvent[]) {
+  if (state.enemyHealth <= 0 && enemyWasAlive && state.trinketEffects.boneCharmHealOnKill > 0 && !state.flags.boneCharmUsed) {
+    const healAmount = state.trinketEffects.boneCharmHealOnKill;
+    state = {
+      ...state,
+      playerHealth: clampHealth(state.playerHealth, healAmount, state.playerMaxHealth),
+      flags: { ...state.flags, boneCharmUsed: true },
+    };
+    mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: healAmount });
+  }
+  return state;
 }
 
 // Card effects reduce through immutable state in authored order. Multi-effect cards rely

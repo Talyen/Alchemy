@@ -2,7 +2,7 @@
 // Depends on draw/effect helpers, game-data attack shapes, and combat tuning constants.
 // Used by the React battle controller as the only way to advance combat state.
 import { drawCards } from "./draw";
-import { applyCardEffects, getEnemyDamageMultiplier, mergeCombatText } from "./effects";
+import { applyBoneCharmHeal, applyCardEffects, applyIronwoodBuckler, getEnemyDamageMultiplier, mergeCombatText } from "./effects";
 import { ailmentStatusIds, type EnemyAttackEffect, type BattleCard } from "@/lib/game-data";
 import { cardsPerTurn, clampHealth, maxHandSize, type BattleResolution, type BattleState, type CombatTextEvent, type TurnPhase } from "./types";
 import { ENEMY_HEAL_FRACTION } from "../game-constants";
@@ -472,18 +472,7 @@ export function endPlayerTurn(state: BattleState): { state: BattleState; combatT
       mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "stun", amount: nextState.trinketEffects.frozenHeartDamage });
     }
 
-    // Ironwood Buckler: end of turn, if block >= threshold, gain armor
-    if (nextState.trinketEffects.blockToArmorThreshold > 0 && nextState.playerStatuses.block >= nextState.trinketEffects.blockToArmorThreshold) {
-      nextState = {
-        ...nextState,
-        playerStatuses: {
-          ...nextState.playerStatuses,
-          armor: nextState.playerStatuses.armor + nextState.trinketEffects.blockToArmorAmount,
-        },
-      };
-      mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "armor", amount: nextState.trinketEffects.blockToArmorAmount });
-    }
-
+    nextState = applyIronwoodBuckler(nextState, combatTexts);
     return { state: advanceToPlayerTurn(nextState, combatTexts), combatTexts };
   }
 
@@ -491,26 +480,8 @@ export function endPlayerTurn(state: BattleState): { state: BattleState; combatT
   nextState = tickEnemyStatuses(nextState, combatTexts);
 
   if (nextState.enemyHealth <= 0) {
-    // Bone Charm trinket: heal on enemy death
-    if (nextState.trinketEffects.boneCharmHealOnKill > 0 && !nextState.flags.boneCharmUsed) {
-      nextState = {
-        ...nextState,
-        playerHealth: clampHealth(nextState.playerHealth, nextState.trinketEffects.boneCharmHealOnKill, nextState.playerMaxHealth),
-        flags: { ...nextState.flags, boneCharmUsed: true },
-      };
-      mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: nextState.trinketEffects.boneCharmHealOnKill });
-    }
-    // Ironwood Buckler: end of turn block → armor check
-    if (nextState.trinketEffects.blockToArmorThreshold > 0 && nextState.playerStatuses.block >= nextState.trinketEffects.blockToArmorThreshold) {
-      nextState = {
-        ...nextState,
-        playerStatuses: {
-          ...nextState.playerStatuses,
-          armor: nextState.playerStatuses.armor + nextState.trinketEffects.blockToArmorAmount,
-        },
-      };
-      mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "armor", amount: nextState.trinketEffects.blockToArmorAmount });
-    }
+    nextState = applyBoneCharmHeal(nextState, true, combatTexts);
+    nextState = applyIronwoodBuckler(nextState, combatTexts);
     return { state: advanceToPlayerTurn(nextState, combatTexts), combatTexts };
   }
 
@@ -518,17 +489,7 @@ export function endPlayerTurn(state: BattleState): { state: BattleState; combatT
   nextState = tickPlayerStatuses(nextState, combatTexts);
   nextState = processEnemyRegeneration(nextState, combatTexts);
 
-  // Ironwood Buckler: end of turn, if block >= threshold, gain armor
-  if (nextState.trinketEffects.blockToArmorThreshold > 0 && nextState.playerStatuses.block >= nextState.trinketEffects.blockToArmorThreshold) {
-    nextState = {
-      ...nextState,
-      playerStatuses: {
-        ...nextState.playerStatuses,
-        armor: nextState.playerStatuses.armor + nextState.trinketEffects.blockToArmorAmount,
-      },
-    };
-    mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "armor", amount: nextState.trinketEffects.blockToArmorAmount });
-  }
+  nextState = applyIronwoodBuckler(nextState, combatTexts);
 
   return { state: advanceToPlayerTurn(nextState, combatTexts), combatTexts };
 }
