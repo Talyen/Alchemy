@@ -17,6 +17,7 @@ import { cardSurfaceClass, collectionCardWidthClass, collectionTabMeta, staticCa
 import type { CollectionTab } from "../types";
 import { clearTiltFromEvent, getHoverId, setTiltFromEvent } from "../utils";
 import { DetailPopup } from "./card-ui";
+import { EnemyTooltip } from "./enemy-tooltip";
 import { ShimmerOverlay } from "./shared-ui";
 import { COLLECTION_PAGE_SIZE } from "@/lib/game-constants";
 import { playCardSound, playEnemyAttack } from "@/lib/audio";
@@ -58,9 +59,15 @@ function CompendiumTile({
   shimmerToken: number | undefined;
   wrapperStyle?: CSSProperties;
 }) {
+  const enemyEntry = item.frameType === "bestiary" ? enemyBestiary.find((e) => e.id === item.id) : undefined;
+
   return (
     <div className="stagger-item relative" style={wrapperStyle} onMouseEnter={onHoverStart} onMouseLeave={onHoverEnd}>
-      {hovered ? <DetailPopup idPrefix={item.id} title={item.title} subtitle={item.subtitle} descriptionLines={item.descriptionLines} /> : null}
+      {hovered && item.frameType === "bestiary" && enemyEntry ? (
+        <EnemyTooltip entry={enemyEntry} discovered={item.discovered} />
+      ) : hovered ? (
+        <DetailPopup idPrefix={item.id} title={item.title} subtitle={item.subtitle} descriptionLines={item.descriptionLines} />
+      ) : null}
 
       <button
         type="button"
@@ -204,7 +211,7 @@ function getBestiaryItems(encounteredEnemyIds: string[]) {
 function getTrinketItems(discoveredTrinketIds: string[]) {
   return trinketLibrary.map((entry: TrinketEntry) => {
     const discovered = discoveredTrinketIds.includes(entry.id);
-    return { id: entry.id, title: discovered ? entry.title : "Undiscovered", subtitle: discovered ? "Trinket" : undefined, descriptionLines: discovered ? entry.descriptionLines : ["Find this trinket to reveal its effect."], art: entry.art, discovered, hoverScope: "collection-trinket" as const, frameType: "trinket" as const };
+    return { id: entry.id, title: discovered ? entry.title : "Undiscovered", subtitle: undefined, descriptionLines: discovered ? entry.descriptionLines : ["Find this trinket to reveal its effect."], art: entry.art, discovered, hoverScope: "collection-trinket" as const, frameType: "trinket" as const };
   });
 }
 

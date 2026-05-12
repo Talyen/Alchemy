@@ -79,7 +79,7 @@ export function RewardScreen({
               <div key={i} className="flex flex-col items-center gap-3">
                 <div className="relative" onMouseEnter={() => setHoveredItemId(trinket.id)} onMouseLeave={() => setHoveredItemId(null)}>
                   {isHovered ? (
-                    <DetailPopup idPrefix={trinket.id} title={trinket.title} subtitle="Trinket" descriptionLines={trinket.descriptionLines} />
+                    <DetailPopup idPrefix={trinket.id} title={trinket.title} subtitle={undefined} descriptionLines={trinket.descriptionLines} />
                   ) : null}
                   <div
                     className={cn("tilt-surface", cardSurfaceClass, collectionCardWidthClass)}

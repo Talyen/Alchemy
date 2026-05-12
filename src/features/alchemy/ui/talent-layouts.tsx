@@ -155,12 +155,11 @@ export function TalentLayout({ unlockedTalents, allTalents, choices, onUnlock }:
             <span className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: `${kwColor}99` }}>{tierLabels[ri]}</span>
             <div className="h-px flex-1" style={{ background: `linear-gradient(to right, transparent, ${kwColor}33, transparent)` }} />
           </div>
-          <div className="flex justify-center gap-2">
+          <div className="flex justify-center gap-3">
             {row.map((talent) => {
               const isUnlocked = unlockedIds.has(talent.id);
               const isChoice = choiceIds.has(talent.id);
               const bColor = keywordBorderClasses[talent.keywordId] ?? "border-border/60";
-              const cColor = keywordDefinitions[talent.keywordId]?.colorClass ?? "text-amber-300";
               const shineColors = keywordShineColors[talent.keywordId] ?? ["#fcd34d", "#d97706", "#fcd34d"];
               const baseColor = shineColors[0];
 
@@ -177,10 +176,9 @@ export function TalentLayout({ unlockedTalents, allTalents, choices, onUnlock }:
                   {isUnlocked ? (
                     <div
                       className={cn(
-                        "flex w-[140px] items-center justify-center rounded-[14px] border-2 px-3 py-3 text-[12px] font-bold leading-snug text-center min-h-[5rem]",
-                        `${bColor}/60`,
-                        "bg-black"
+                        "flex w-[140px] items-center justify-center rounded-[14px] border-2 px-3 py-3 text-[12px] font-bold leading-snug text-center min-h-[5rem] bg-popover text-muted-foreground",
                       )}
+                      style={{ borderColor: `${baseColor}33` }}
                     >
                       {revealingId === talent.id ? (
                         <AnimatedChars description={talent.description} />
@@ -191,18 +189,18 @@ export function TalentLayout({ unlockedTalents, allTalents, choices, onUnlock }:
                   ) : isChoice ? (
                     <button type="button" onClick={() => { setRevealingId(talent.id); onUnlock?.(talent.id); }}
                       className={cn(
-                        "relative flex w-[140px] cursor-pointer items-center justify-center rounded-[14px] border-2 bg-black/80 px-3 py-3 text-[12px] font-bold leading-snug text-center min-h-[5rem] transition-all",
+                        "relative flex w-[140px] cursor-pointer items-center justify-center rounded-[14px] border-2 bg-popover px-3 py-3 text-[12px] font-bold leading-snug text-center min-h-[5rem] transition-all",
                         bColor
                       )}
                       style={{ boxShadow: `0 0 18px 4px ${baseColor}40` }}
                     >
-                      <span className={cn("animate-unlock-text-pulse", cColor)}>Unlock Talent</span>
+                      <span className="animate-unlock-text-pulse text-muted-foreground">Unlock Talent</span>
                     </button>
                   ) : (
                     <div className={cn(
-                      "relative flex w-[140px] items-center justify-center rounded-[14px] border border-dashed px-3 py-3 text-[12px] font-bold leading-snug text-center min-h-[5rem]",
-                      "border-white/10 bg-black/15 text-white/20"
-                    )}>
+                      "relative flex w-[140px] items-center justify-center rounded-[14px] border border-dashed px-3 py-3 text-[12px] font-bold leading-snug text-center min-h-[5rem] text-muted-foreground bg-popover",
+                    )}
+                      style={{ borderColor: `${baseColor}33` }}>
                       <span>Undiscovered</span>
                     </div>
                   )}

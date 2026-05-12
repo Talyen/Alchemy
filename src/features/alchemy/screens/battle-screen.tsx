@@ -156,7 +156,7 @@ export function BattleScreen({
             }}
             isDead={battleState.enemyHealth <= 0}
             shaking={enemyShaking}
-            descriptionLines={battleState.currentEnemy.descriptionLines}
+            currentEnemy={battleState.currentEnemy}
             cardWidthClass={actorCardWidthClass}
           />
         </div>

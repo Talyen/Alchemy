@@ -3,6 +3,7 @@
 // Screens import from here when they need grouped game UI primitives.
 export { BattleCardButton, CardGhostOverlay } from "./ui/card-ui";
 export { ArtPanel, CompanionPanel, CombatTextRail, ManaPanel, PilePanel } from "./ui/battle-ui";
+export { EnemyTooltip } from "./ui/enemy-tooltip";
 export { CollectionGrid, CollectionPagination, CollectionTabs } from "./ui/collection-ui";
 export { ConfirmationDialog, DestinationChoices, DisabledTooltip, GoldCost, PageLayout, PaginationControls, ProgressBar, ResolutionSelect, ShimmerOverlay } from "./ui/shared-ui";
 export { TalentKeywordButton } from "./ui/talents-ui";

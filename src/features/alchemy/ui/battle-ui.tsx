@@ -20,10 +20,12 @@ import {
   popupClassName,
   staticCardTransform,
 } from "../config";
+import type { BestiaryEntry } from "@/lib/game-data";
 import type { FloatingCombatText, StatusChip } from "../types";
 import { clearTiltFromEvent, getCombatTextColorClass, getCombatTextIcon, setTiltFromEvent } from "../utils";
 import { KeywordTag } from "./keyword-tag";
 import { DescriptionLines } from "./card-ui";
+import { EnemyTooltip } from "./enemy-tooltip";
 import { ShimmerOverlay } from "./shared-ui";
 
 // Returns a token that changes briefly after a value update so numeric combat UI
@@ -223,6 +225,7 @@ export function ArtPanel({
   shaking = false,
   cardWidthClass,
   descriptionLines,
+  currentEnemy,
 }: {
   side: "player" | "enemy";
   title: string;
@@ -240,12 +243,17 @@ export function ArtPanel({
   shaking?: boolean;
   cardWidthClass: string | undefined;
   descriptionLines?: string[];
+  currentEnemy?: BestiaryEntry;
 }) {
   const healthToken = useChangeToken(health);
 
   return (
     <div className={cn("group/enemy-panel relative flex flex-col items-center gap-3", shaking && "animate-shake")}>
-      {descriptionLines ? (
+      {currentEnemy ? (
+        <div className="opacity-0 group-hover/enemy-panel:opacity-100">
+          <EnemyTooltip entry={currentEnemy} />
+        </div>
+      ) : descriptionLines ? (
         <div className={cn(popupClassName, "hover-popup-panel pointer-events-auto opacity-0 group-hover/enemy-panel:opacity-100")}>
           <p className="text-sm text-foreground">{title}</p>
           <DescriptionLines lines={descriptionLines} idPrefix={`enemy-${title}`} />
