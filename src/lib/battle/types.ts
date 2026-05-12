@@ -94,6 +94,7 @@ export type BattleState = {
   enemyAttackEffects: EnemyAttackEffect[]; // scaled per room, applied during enemy phase
   enemyRegeneration: number;       // health restored at end of each enemy turn
   enemyArmor: number;             // flat damage reduction for the enemy
+  enemyForge: number;             // bonus physical damage added per stack (rusting-carapace)
   playerStatuses: PlayerStatusValues;
   enemyStatuses: EnemyStatusValues;
   enemyStunSkipTurns: number;     // turns skipped from stun triggers

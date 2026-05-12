@@ -15,7 +15,7 @@ import {
   ALCHEMIST_POTION_PRICE, ALCHEMIST_REFRESH_PRICE, ALCHEMIST_MIX_PRICE,
   GOLD_REWARD_MIN, GOLD_REWARD_MAX, REWARD_CARD_CHOICES,
   DESTINATION_CHOICES, ACTS_PER_RUN,
-  BOSS_STAT_MULTIPLIER, BOSS_TRINKET_REWARD_CHOICES,
+  BOSS_HP_MULTIPLIER, BOSS_ATTACK_MULTIPLIER, BOSS_TRINKET_REWARD_CHOICES,
   MASTER_GAIN, DEFAULT_MUSIC_VOLUME, MUSIC_BASE_PATH,
   SHIMMER_DURATION_MS, SHIMMER_COOLDOWN_MS,
   COMBAT_TEXT_LIFETIME_MS,
@@ -166,8 +166,14 @@ describe("Reward constants", () => {
     expect(Number.isInteger(ACTS_PER_RUN)).toBe(true);
   });
 
-  it("BOSS_STAT_MULTIPLIER is at least 1", () => {
-    expect(BOSS_STAT_MULTIPLIER).toBeGreaterThanOrEqual(1);
+  it("BOSS_HP_MULTIPLIER is at least 1", () => {
+    expect(BOSS_HP_MULTIPLIER).toBeGreaterThanOrEqual(1);
+    expect(Number.isFinite(BOSS_HP_MULTIPLIER)).toBe(true);
+  });
+
+  it("BOSS_ATTACK_MULTIPLIER is at least 1", () => {
+    expect(BOSS_ATTACK_MULTIPLIER).toBeGreaterThanOrEqual(1);
+    expect(Number.isFinite(BOSS_ATTACK_MULTIPLIER)).toBe(true);
   });
 
   it("BOSS_TRINKET_REWARD_CHOICES is at least 1", () => {

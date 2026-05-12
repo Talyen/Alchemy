@@ -15,13 +15,13 @@ import {
   type TalentEffectManifest,
   type TurnPhase,
 } from "./types";
-import { ROOM_SCALING_INCREMENT, ELITE_STAT_MULTIPLIER, BOSS_STAT_MULTIPLIER, ACT_SCALING_INCREMENT, STARTING_TURN, ENEMY_BASE_REGENERATION } from "../game-constants";
+import { ROOM_SCALING_INCREMENT, ELITE_STAT_MULTIPLIER, BOSS_HP_MULTIPLIER, BOSS_ATTACK_MULTIPLIER, ACT_SCALING_INCREMENT, STARTING_TURN, ENEMY_BASE_REGENERATION, ENEMY_BOSS_REGENERATION } from "../game-constants";
 import { computeTrinketManifest } from "../trinkets";
 
 // Default talent manifest used when no talents are unlocked. Every field must have a safe
 // zero/false value so battle logic can read talentEffects without existence checks.
 // Defined via the shared factory so new manifest fields are caught at compile time.
-const defaultTalentEffects: TalentEffectManifest = createEmptyTalentManifest();
+export const defaultTalentEffects: TalentEffectManifest = createEmptyTalentManifest();
 
 // Returns a fresh (deck, discard) pair after possibly reshuffling discard into deck.
 function refillDeck(deck: BattleCard[], discard: BattleCard[]) {
@@ -63,10 +63,12 @@ function buildScaledEnemy(_roomsEncountered: number, enemy: BestiaryEntry, desti
   const actMul = 1 + (currentAct - 1) * ACT_SCALING_INCREMENT;
   const hpMultiplier = actMul * roomMul;
   const eliteMul = enemy.enemyType === "elite" ? ELITE_STAT_MULTIPLIER : 1;
-  const bossMul = enemy.enemyType === "boss" ? BOSS_STAT_MULTIPLIER : 1;
-  const typeMul = Math.max(1, eliteMul, bossMul);
-  const scaledEnemyHealth = Math.floor(baseEnemyHealth * hpMultiplier * typeMul);
-  const scaleAmount = (amount: number) => Math.floor(amount * hpMultiplier * typeMul);
+  const bossHpMul = enemy.enemyType === "boss" ? BOSS_HP_MULTIPLIER : 1;
+  const bossAtkMul = enemy.enemyType === "boss" ? BOSS_ATTACK_MULTIPLIER : 1;
+  const hpTypeMul = Math.max(1, eliteMul, bossHpMul);
+  const atkTypeMul = Math.max(1, eliteMul, bossAtkMul);
+  const scaledEnemyHealth = Math.floor(baseEnemyHealth * hpMultiplier * hpTypeMul);
+  const scaleAmount = (amount: number) => Math.floor(amount * hpMultiplier * atkTypeMul);
 
   const baseEffects = enemy.attackEffects.length > 0
     ? enemy.attackEffects
@@ -77,9 +79,12 @@ function buildScaledEnemy(_roomsEncountered: number, enemy: BestiaryEntry, desti
     }
     return { kind: "player-status", status: effect.status, amount: scaleAmount(effect.amount) };
   });
-  const enemyRegeneration = enemy.traits.some((t) => t.id === "regeneration") ? scaleAmount(ENEMY_BASE_REGENERATION) : 0;
+  const regenBase = enemy.traits.some((t) => t.id === "regeneration")
+    ? (enemy.enemyType === "boss" ? ENEMY_BOSS_REGENERATION : ENEMY_BASE_REGENERATION)
+    : 0;
+  const enemyRegeneration = regenBase > 0 ? scaleAmount(regenBase) : 0;
 
-  return { enemy, scaledEnemyHealth, scaledEnemyAttackEffects, enemyRegeneration, hpMultiplier, typeMul };
+  return { enemy, scaledEnemyHealth, scaledEnemyAttackEffects, enemyRegeneration, hpMultiplier, typeMul: atkTypeMul };
 }
 
 // Creates the initial BattleState for a fresh encounter. Enemy HP and attack
@@ -132,6 +137,7 @@ export function createBattleState(
     enemyAttackEffects: scaledEnemyAttackEffects,
     enemyRegeneration,
     enemyArmor: 0,
+    enemyForge: 0,
     playerStatuses: { block: talentEffects.startBlock, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 } as PlayerStatusValues,
     enemyStatuses: { burn: 0, poison: 0, bleed: 0, bleedLeech: 0, freeze: 0, stun: 0 } as EnemyStatusValues,
     enemyStunSkipTurns: 0,

@@ -40,12 +40,12 @@ describe("formatEnemyAttackLines", () => {
     expect(formatEnemyAttackLines(effects)).toEqual(["Deals Burn, Poison and Freeze"]);
   });
 
-  it("formats mixed damage + status as separate lines", () => {
+  it("formats single physical + single status as a combined line", () => {
     const effects: EnemyAttackEffect[] = [
       { kind: "damage", damageType: "physical", amount: 3 },
       { kind: "player-status", status: "burn", amount: 2 },
     ];
-    expect(formatEnemyAttackLines(effects)).toEqual(["Deals Physical damage", "Deals Burn damage"]);
+    expect(formatEnemyAttackLines(effects)).toEqual(["Deals Physical and Burn damage"]);
   });
 
   it("formats mixed damage (with lifesteal) + status", () => {
@@ -105,15 +105,15 @@ describe("enemyBestiary attack lines integration", () => {
     expect(getAttackLines("plague-doctor")).toEqual(["Deals Poison damage"]);
   });
 
-  it("Warden of the Ashen Gate — physical + burn", () => {
-    expect(getAttackLines("act-i-boss")).toEqual(["Deals Physical damage", "Deals Burn damage"]);
+  it("The Forge Golem — physical + stun combined", () => {
+    expect(getAttackLines("rusted-colossus")).toEqual(["Deals Physical and Stun damage"]);
   });
 
-  it("The Hollow Knight — physical + bleed", () => {
-    expect(getAttackLines("act-ii-boss")).toEqual(["Deals Physical damage", "Deals Bleed damage"]);
+  it("The Frostwarden — physical + freeze combined", () => {
+    expect(getAttackLines("frostwarden")).toEqual(["Deals Physical and Freeze damage"]);
   });
 
-  it("The Primordial Wyrm — physical + poison + freeze", () => {
-    expect(getAttackLines("act-iii-boss")).toEqual(["Deals Physical damage", "Deals Poison damage", "Deals Freeze damage"]);
+  it("The Blight Treant — physical + poison combined", () => {
+    expect(getAttackLines("blight-treant")).toEqual(["Deals Physical and Poison damage"]);
   });
 });

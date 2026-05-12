@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeActiveRun } from "@/features/alchemy/storage";
+import { normalizeActiveRun, normalizeSaveData, normalizeDisplayMode, normalizeUiScale, migrateMaterialInventory, migrateBuildingIds, migrateFarmIds } from "@/features/alchemy/storage";
 
 describe("normalizeActiveRun", () => {
   it("returns null for null input", () => {
@@ -48,5 +48,173 @@ describe("normalizeActiveRun", () => {
   it("returns null for unknown characterId", () => {
     const result = normalizeActiveRun({ characterId: "bard" });
     expect(result).toBeNull();
+  });
+});
+
+describe("normalizeDisplayMode", () => {
+  it("passes through windowed", () => {
+    expect(normalizeDisplayMode("windowed")).toBe("windowed");
+  });
+
+  it("passes through borderless-fullscreen", () => {
+    expect(normalizeDisplayMode("borderless-fullscreen")).toBe("borderless-fullscreen");
+  });
+
+  it("passes through fullscreen", () => {
+    expect(normalizeDisplayMode("fullscreen")).toBe("fullscreen");
+  });
+
+  it("falls back to default for null", () => {
+    expect(normalizeDisplayMode(null)).toBe("borderless-fullscreen");
+  });
+
+  it("falls back to default for undefined", () => {
+    expect(normalizeDisplayMode(undefined)).toBe("borderless-fullscreen");
+  });
+
+  it("falls back to default for invalid string", () => {
+    expect(normalizeDisplayMode("fake-mode")).toBe("borderless-fullscreen");
+  });
+
+  it("falls back to default for number", () => {
+    expect(normalizeDisplayMode(42)).toBe("borderless-fullscreen");
+  });
+});
+
+describe("normalizeUiScale", () => {
+  it("passes through 90", () => {
+    expect(normalizeUiScale("90")).toBe("90");
+  });
+
+  it("passes through 100", () => {
+    expect(normalizeUiScale("100")).toBe("100");
+  });
+
+  it("passes through 110", () => {
+    expect(normalizeUiScale("110")).toBe("110");
+  });
+
+  it("passes through 120", () => {
+    expect(normalizeUiScale("120")).toBe("120");
+  });
+
+  it("falls back to default for null", () => {
+    expect(normalizeUiScale(null)).toBe("100");
+  });
+
+  it("falls back to default for undefined", () => {
+    expect(normalizeUiScale(undefined)).toBe("100");
+  });
+
+  it("falls back to default for invalid value", () => {
+    expect(normalizeUiScale("200")).toBe("100");
+  });
+
+  it("falls back to default for number", () => {
+    expect(normalizeUiScale(90)).toBe("100");
+  });
+});
+
+describe("migrateMaterialInventory", () => {
+  it("preserves valid inventory", () => {
+    const result = migrateMaterialInventory({ wood: 5, iron: 3, herbs: 2, food: 1, crystal: 0 });
+    expect(result).toEqual({ wood: 5, iron: 3, herbs: 2, food: 1, crystal: 0 });
+  });
+
+  it("fills missing keys with 0", () => {
+    const result = migrateMaterialInventory({ wood: 2 });
+    expect(result).toEqual({ wood: 2, iron: 0, herbs: 0, food: 0, crystal: 0 });
+  });
+
+  it("returns default for null", () => {
+    const result = migrateMaterialInventory(null);
+    expect(result).toEqual({ wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 });
+  });
+
+  it("returns default for undefined", () => {
+    const result = migrateMaterialInventory(undefined);
+    expect(result).toEqual({ wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 });
+  });
+
+  it("returns default for non-object", () => {
+    const result = migrateMaterialInventory("string");
+    expect(result).toEqual({ wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 });
+  });
+});
+
+describe("migrateBuildingIds", () => {
+  it("passes through known building IDs", () => {
+    const result = migrateBuildingIds(["workshop", "storehouse"]);
+    expect(result).toEqual(["workshop", "storehouse"]);
+  });
+
+  it("maps smithy to blacksmiths-forge", () => {
+    const result = migrateBuildingIds(["smithy"]);
+    expect(result).toEqual(["blacksmiths-forge"]);
+  });
+
+  it("passes through unknown IDs", () => {
+    const result = migrateBuildingIds(["future-building"]);
+    expect(result).toEqual(["future-building"]);
+  });
+
+  it("returns default for null", () => {
+    const result = migrateBuildingIds(null);
+    expect(result).toEqual([]);
+  });
+
+  it("returns default for non-array", () => {
+    const result = migrateBuildingIds({});
+    expect(result).toEqual([]);
+  });
+});
+
+describe("migrateFarmIds", () => {
+  it("passes through known farm IDs", () => {
+    const result = migrateFarmIds(["wheat-field", "herb-garden"]);
+    expect(result).toEqual(["wheat-field", "herb-garden"]);
+  });
+
+  it("maps sheep-pasture to pasture", () => {
+    const result = migrateFarmIds(["sheep-pasture"]);
+    expect(result).toEqual(["pasture"]);
+  });
+
+  it("passes through unknown IDs", () => {
+    const result = migrateFarmIds(["future-farm"]);
+    expect(result).toEqual(["future-farm"]);
+  });
+
+  it("returns default for null", () => {
+    const result = migrateFarmIds(null);
+    expect(result).toEqual([]);
+  });
+
+  it("returns default for non-array", () => {
+    const result = migrateFarmIds("string");
+    expect(result).toEqual([]);
+  });
+});
+
+describe("normalizeSaveData", () => {
+  it("fills all defaults for empty input", () => {
+    const result = normalizeSaveData({});
+    expect(result.selectedResolution).toBe("1920x1080");
+    expect(result.displayMode).toBe("borderless-fullscreen");
+    expect(result.uiScale).toBe("100");
+    expect(result.activeRun).toBeNull();
+    expect(result.materialInventory).toEqual({ wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 });
+    expect(result.constructedBuildings).toEqual([]);
+  });
+
+  it("preserves valid partial data", () => {
+    const result = normalizeSaveData({ displayMode: "fullscreen", uiScale: "120" });
+    expect(result.displayMode).toBe("fullscreen");
+    expect(result.uiScale).toBe("120");
+  });
+
+  it("normalizes invalid display mode to default", () => {
+    const result = normalizeSaveData({ displayMode: "fake-mode" as never });
+    expect(result.displayMode).toBe("borderless-fullscreen");
   });
 });

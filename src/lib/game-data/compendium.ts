@@ -3,43 +3,42 @@ import type { BestiaryEntry, TrinketEntry } from "./types";
 
 export const enemyBestiary: BestiaryEntry[] = [
   {
-    id: "act-i-boss",
-    title: "Warden of the Ashen Gate",
-    subtitle: "Act I Boss",
+    id: "rusted-colossus",
+    title: "The Forge Golem",
+    subtitle: "Boss",
     descriptionLines: [],
     art: placeholderEnemy,
     enemyType: "boss",
-    traits: [{ id: "ashen-aura", title: "Ashen Aura", description: "Receives half Burn damage" }],
-    attackEffects: [
-      { kind: "damage", damageType: "physical", amount: 3 },
-      { kind: "player-status", status: "burn", amount: 2 },
-    ],
-  },
-  {
-    id: "act-ii-boss",
-    title: "The Hollow Knight",
-    subtitle: "Act II Boss",
-    descriptionLines: [],
-    art: placeholderEnemy,
-    enemyType: "boss",
-    traits: [{ id: "cursed-armor", title: "Cursed Armor", description: "Starts with Armor each turn. Immune to Stun" }],
-    attackEffects: [
-      { kind: "damage", damageType: "physical", amount: 4 },
-      { kind: "player-status", status: "bleed", amount: 3 },
-    ],
-  },
-  {
-    id: "act-iii-boss",
-    title: "The Primordial Wyrm",
-    subtitle: "Act III Boss",
-    descriptionLines: [],
-    art: placeholderEnemy,
-    enemyType: "boss",
-    traits: [{ id: "elemental-scales", title: "Elemental Scales", description: "Resistant to all elements. Takes double Physical damage" }],
+    traits: [{ id: "rusting-carapace", title: "Rusting Carapace", description: "Gains 1 Armor and 1 Forge each turn" }],
     attackEffects: [
       { kind: "damage", damageType: "physical", amount: 5 },
+      { kind: "player-status", status: "stun", amount: 2 },
+    ],
+  },
+  {
+    id: "frostwarden",
+    title: "The Frostwarden",
+    subtitle: "Boss",
+    descriptionLines: [],
+    art: placeholderEnemy,
+    enemyType: "boss",
+    traits: [{ id: "glacial-shell", title: "Glacial Shell", description: "Immune to Freeze. Receives double Burn damage" }],
+    attackEffects: [
+      { kind: "damage", damageType: "physical", amount: 4 },
+      { kind: "player-status", status: "freeze", amount: 3 },
+    ],
+  },
+  {
+    id: "blight-treant",
+    title: "The Blight Treant",
+    subtitle: "Boss",
+    descriptionLines: [],
+    art: placeholderEnemy,
+    enemyType: "boss",
+    traits: [{ id: "regeneration", title: "Rotting Regrowth", description: "Gains 4 Health each turn" }],
+    attackEffects: [
+      { kind: "damage", damageType: "physical", amount: 3 },
       { kind: "player-status", status: "poison", amount: 2 },
-      { kind: "player-status", status: "freeze", amount: 2 },
     ],
   },
   {
@@ -103,7 +102,7 @@ export const enemyBestiary: BestiaryEntry[] = [
     descriptionLines: [],
     art: mudElemental,
     enemyType: "elite",
-    traits: [{ id: "regeneration", title: "Regeneration", description: "Gains 2 Health at the end of each of its turns" }],
+    traits: [{ id: "regeneration", title: "Regeneration", description: "Gains 2 Health each turn" }],
     attackEffects: [
       { kind: "player-status", status: "stun", amount: 2 },
       { kind: "player-status", status: "poison", amount: 2 },

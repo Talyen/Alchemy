@@ -49,17 +49,17 @@ const enemyLootTables: Record<string, EnemyLootTable> = {
     guaranteed: { wood: 0, iron: 0, herbs: 2, food: 0, crystal: 0 },
     bonuses: [lootEntry("herbs", 0, 1, 0.4)],
   },
-  "act-i-boss": {
+  "rusted-colossus": {
     guaranteed: { wood: 0, iron: 3, herbs: 0, food: 0, crystal: 1 },
     bonuses: [lootEntry("iron", 0, 2, 0.6), lootEntry("crystal", 0, 1, 0.4)],
   },
-  "act-ii-boss": {
-    guaranteed: { wood: 0, iron: 3, herbs: 0, food: 0, crystal: 1 },
-    bonuses: [lootEntry("iron", 0, 2, 0.6), lootEntry("crystal", 0, 1, 0.4)],
+  "frostwarden": {
+    guaranteed: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 3 },
+    bonuses: [lootEntry("crystal", 0, 2, 0.6), lootEntry("iron", 0, 1, 0.3)],
   },
-  "act-iii-boss": {
-    guaranteed: { wood: 1, iron: 2, herbs: 1, food: 2, crystal: 2 },
-    bonuses: [lootEntry("crystal", 0, 2, 0.5)],
+  "blight-treant": {
+    guaranteed: { wood: 2, iron: 0, herbs: 2, food: 0, crystal: 0 },
+    bonuses: [lootEntry("wood", 0, 2, 0.6), lootEntry("herbs", 0, 2, 0.5)],
   },
 };
 

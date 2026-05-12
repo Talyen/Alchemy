@@ -192,7 +192,8 @@ function applyDamageStatuses(state: BattleState, effect: Extract<BattleCardEffec
     }
     case "freeze": {
       nextStatuses.freeze += actualDamage;
-      if (state.enemyHealth > 0 && nextStatuses.freeze >= state.enemyHealth * FREEZE_THRESHOLD_FRACTION) {
+      const isFreezeImmune = state.currentEnemy.traits.some((t) => t.id === "glacial-shell");
+      if (!isFreezeImmune && state.enemyHealth > 0 && nextStatuses.freeze >= state.enemyHealth * FREEZE_THRESHOLD_FRACTION) {
         nextStatuses.freeze = 0;
         return { ...nextState, enemyStatuses: nextStatuses, enemyFreezeSkipTurns: nextState.enemyFreezeSkipTurns + 1 };
       }
@@ -211,6 +212,7 @@ export function getEnemyDamageMultiplier(state: BattleState, damageType: string)
   if (traitIds.includes("holy-vulnerability") && damageType === "holy") return 2;
   if (traitIds.includes("burn-resistance") && damageType === "burn") return 0.5;
   if (traitIds.includes("poison-resistance") && damageType === "poison") return 0.5;
+  if (traitIds.includes("glacial-shell") && damageType === "burn") return 2;
   return 1;
 }
 

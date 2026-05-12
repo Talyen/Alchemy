@@ -63,26 +63,26 @@ describe("getAvailableDestinations", () => {
 describe("getBossEnemy", () => {
   it("returns Act I boss for act 1", () => {
     const boss = getBossEnemy(1);
-    expect(boss.id).toBe("act-i-boss");
+    expect(boss.id).toBe("rusted-colossus");
   });
 
   it("returns Act II boss for act 2", () => {
     const boss = getBossEnemy(2);
-    expect(boss.id).toBe("act-ii-boss");
+    expect(boss.id).toBe("frostwarden");
   });
 
   it("returns Act III boss for act 3", () => {
     const boss = getBossEnemy(3);
-    expect(boss.id).toBe("act-iii-boss");
+    expect(boss.id).toBe("blight-treant");
   });
 
   it("returns Act III boss for act beyond 3", () => {
     const boss = getBossEnemy(99);
-    expect(boss.id).toBe("act-iii-boss");
+    expect(boss.id).toBe("blight-treant");
   });
 
   it("returns Act III boss for act 0", () => {
     const boss = getBossEnemy(0);
-    expect(boss.id).toBe("act-iii-boss");
+    expect(boss.id).toBe("blight-treant");
   });
 });

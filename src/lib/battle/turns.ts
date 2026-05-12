@@ -328,6 +328,7 @@ function processEnemyDamageEffect(state: BattleState, effect: EnemyAttackEffect 
 
   if (effect.damageType === "physical") {
     remainingDamage = Math.max(0, remainingDamage - state.talentEffects.bleedEnemyDamageReduction);
+    remainingDamage += state.enemyForge;
   }
 
   let effectiveBlock = state.playerStatuses.block;
@@ -483,6 +484,15 @@ export function endPlayerTurn(state: BattleState): { state: BattleState; combatT
     nextState = applyBoneCharmHeal(nextState, true, combatTexts);
     nextState = applyIronwoodBuckler(nextState, combatTexts);
     return { state: advanceToPlayerTurn(nextState, combatTexts), combatTexts };
+  }
+
+  if (nextState.currentEnemy.traits.some((t) => t.id === "rusting-carapace")) {
+    nextState = {
+      ...nextState,
+      enemyArmor: nextState.enemyArmor + 1,
+      enemyForge: nextState.enemyForge + 1,
+    };
+    mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "armor", amount: 1 });
   }
 
   nextState = processEnemyAttack(nextState, combatTexts);

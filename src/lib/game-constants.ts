@@ -16,6 +16,7 @@ export const ELITE_STAT_MULTIPLIER = 1.3;       // Elite enemies get 30% more HP
 export const STARTING_TURN = 1;                 // Turn counter starts at 1 for readability.
 export const ENEMY_HEAL_FRACTION = 0.1;         // Enemy heals 10% of max HP when below 50% HP.
 export const ENEMY_BASE_REGENERATION = 2;       // Base enemy regeneration per turn (scaled by room).
+export const ENEMY_BOSS_REGENERATION = 4;       // Base regen for regeneration-trait bosses.
 export const BLEED_EXECUTE_MULTIPLIER = 2;      // Bleed damage multiplier when enemy is below execute threshold.
 export const FREE_CARD_SENTINEL = 99;           // nextCardCostReduction value that guarantees a card costs 0.
 
@@ -65,7 +66,8 @@ export const SHOP_CARDS_OFFERED = 3;           // Cards displayed in the merchan
 export const SHOP_REFRESHES = 1;               // Free refreshes per shop visit.
 export const ALCHEMIST_POTIONS_OFFERED = 3;    // Potions displayed in the alchemist shop.
 export const ALCHEMIST_REFRESHES = 1;          // Free refreshes per alchemist visit.
-export const BOSS_STAT_MULTIPLIER = 1.8;       // Boss enemies get 80% more HP and attack.
+export const BOSS_HP_MULTIPLIER = 2.2;          // Boss enemies get 120% more HP.
+export const BOSS_ATTACK_MULTIPLIER = 1.8;      // Boss enemies get 80% more attack.
 export const ACT_SCALING_INCREMENT = 0.2;      // +20% enemy stats per act (baseline).
 export const BOSS_TRINKET_REWARD_CHOICES = 3;  // Trinket choices offered after a boss kill.
 export const ELITE_TRINKET_REWARD_CHANCE = 0.75; // Elite rewards strongly favor trinkets but still allow card rewards.

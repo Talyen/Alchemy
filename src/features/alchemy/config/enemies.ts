@@ -17,6 +17,6 @@ export function getCurrentEnemy(roomsEncountered: number, enemyType?: EnemyType)
 
 // Returns the boss enemy for a given act. Each act has a unique boss.
 export function getBossEnemy(act: number) {
-  const bossId = act === 1 ? "act-i-boss" : act === 2 ? "act-ii-boss" : "act-iii-boss";
+  const bossId = act === 1 ? "rusted-colossus" : act === 2 ? "frostwarden" : "blight-treant";
   return enemyBestiary.find((e) => e.id === bossId) ?? enemyBestiary[0];
 }

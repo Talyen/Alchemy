@@ -21,7 +21,16 @@ export function formatEnemyAttackLines(attackEffects: EnemyAttackEffect[]): stri
     return [`Deals ${names.slice(0, -1).join(", ")} and ${names.slice(-1)}`];
   }
 
-  // Mixed damage + status, or pure damage
+  // Single physical damage + single status without lifesteal — combine into one line
+  if (attackEffects.length === 2) {
+    const phys = attackEffects.find((e) => e.kind === "damage" && !e.lifesteal);
+    const status = attackEffects.find((e) => e.kind === "player-status");
+    if (phys && status) {
+      return [`Deals Physical and ${capitalize(status.status)} damage`];
+    }
+  }
+
+  // Mixed damage + status with lifesteal, or pure damage
   const lines: string[] = [];
   for (const effect of attackEffects) {
     if (effect.kind === "damage") {
