@@ -26,8 +26,8 @@ function KeywordProgressCard({ kw, runXP, totalXP, animate }: { kw: KeywordId; r
         </div>
         <span className="text-[10px] text-muted-foreground">+{runXP}</span>
       </div>
-      <ProgressBar value={animate ? percent : 0} className="mt-2" style={{ transition: animate ? "width 1000ms ease-out" : "none" }} />
-      <p className="mt-1 text-right text-[10px] text-muted-foreground">{totalXP}/{nextXP}</p>
+      <ProgressBar value={animate ? percent : 0} className="mt-2" color="bg-primary" style={{ transition: animate ? "width 1000ms ease-out" : "none", backgroundColor: def?.shineColors?.[0] ?? undefined }} />
+      <p className="mt-1 text-right text-[10px] text-muted-foreground">{nextXP - progress}/{nextXP}</p>
     </div>
   );
 }

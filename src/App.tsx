@@ -7,9 +7,12 @@ import {
   cardLibrary,
   characterArt,
   enemyBestiary,
+  keywordDefinitions,
   menuLogo,
   trinketLibrary,
+  type KeywordId,
 } from "@/lib/game-data";
+import { computeTalentPoints } from "@/lib/talents";
 import { platform } from "@/lib/platform";
 
 import { useAppAudioEffects } from "@/app/use-app-audio-effects";
@@ -34,6 +37,8 @@ import type { CollectionTab, DisplayMode, ResolutionOption, Screen, UiScale } fr
 import { GameMenu } from "@/features/alchemy/ui/shared-ui";
 import { useAlchemyRunController } from "@/features/alchemy/use-alchemy-run-controller";
 import { useHomesteadState } from "@/features/alchemy/use-homestead-state";
+import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
+import { canAfford, emptyInventory } from "@/lib/homestead/types";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { HomesteadScreen } from "@/features/alchemy/screens/homestead-screen";
 
@@ -189,6 +194,30 @@ export default function App() {
     homestead.setMaterials({ wood: 99, iron: 99, herbs: 99, food: 99, crystal: 99 });
   }
 
+  const hasUnspentTalents = Object.keys(keywordDefinitions).some((kw) => {
+    const kwId = kw as KeywordId;
+    const xp = (run.talentXP[kwId] ?? 0) + (run.runTalentXP?.[kwId] ?? 0);
+    const points = computeTalentPoints(xp);
+    const unlocked = run.unlockedTalents[kwId] ?? [];
+    return points - unlocked.length > 0;
+  });
+
+  const hasAffordableHomestead = (() => {
+    const { materialInventory, constructedBuildings, plantedFarms, completedResearch, effects } = homestead;
+    const affordableBuilding = buildings.some((b) => {
+      if (constructedBuildings.includes(b.id)) return false;
+      const cost = emptyInventory();
+      for (const mat of ["wood", "iron", "herbs", "food", "crystal"] as const) {
+        const base = b.cost[mat] ?? 0;
+        cost[mat] = base > 0 ? Math.ceil(base * (1 - effects.buildingCostReduction)) : 0;
+      }
+      return canAfford(materialInventory, cost);
+    });
+    const affordableFarm = farmPlots.some((f) => !plantedFarms.includes(f.id) && canAfford(materialInventory, f.cost));
+    const affordableResearch = researchUpgrades.some((r) => !completedResearch.includes(r.id) && canAfford(materialInventory, r.cost));
+    return affordableBuilding || affordableFarm || affordableResearch;
+  })();
+
   return (
     <ErrorBoundary>
       {isPortraitMobile ? (
@@ -210,7 +239,7 @@ export default function App() {
           <div className="relative" style={frameStyle}>
             <div ref={vrStageRef} className="absolute left-0 top-0 overflow-hidden bg-background" style={stageStyle}>
               {!initialLoadReady ? <StartupLoadingScreen /> : <div key={renderedScreen} className={`${pagePhase === "exit" ? "page-exit" : "page-enter"} h-full w-full overflow-hidden`}>
-              {renderedScreen === "menu" ? <MenuScreen onPlay={run.beginRun} hasActiveBattle={run.hasActiveBattle} hasActiveRun={run.hasActiveRun} onCollection={() => run.goToScreen("collection")} onOptions={() => run.goToScreen("options")} onHomestead={() => run.goToScreen("homestead")} onTalents={() => run.goToScreen("talents")} {...(platform.canQuit ? { onQuit: platform.quit } : {})} logoSrc={menuLogo} isMobileLandscape={isMobileLandscape} /> : null}
+              {renderedScreen === "menu" ? <MenuScreen onPlay={run.beginRun} hasActiveBattle={run.hasActiveBattle} hasActiveRun={run.hasActiveRun} onCollection={() => run.goToScreen("collection")} onOptions={() => run.goToScreen("options")} onHomestead={() => run.goToScreen("homestead")} onTalents={() => run.goToScreen("talents")} {...(platform.canQuit ? { onQuit: platform.quit } : {})} logoSrc={menuLogo} isMobileLandscape={isMobileLandscape} hasUnspentTalents={hasUnspentTalents} hasAffordableHomestead={hasAffordableHomestead} /> : null}
               {renderedScreen === "character-select" ? <CharacterSelectScreen onConfirm={run.handleCharacterSelect} onBack={() => run.goToScreen("menu")} /> : null}
               {renderedScreen === "battle" ? <BattleScreen battleState={run.battleState} heroArt={heroArt} hoveredCardId={run.hoveredCardId} setHoveredCardId={run.setHoveredCardId} shimmerState={run.shimmerState} onHoverShimmer={run.maybeTriggerShimmer} playerStatusChips={run.playerStatusChips} enemyStatusChips={run.enemyStatusChips} playerCombatTexts={run.playerCombatTexts} enemyCombatTexts={run.enemyCombatTexts} handCardRefs={run.handCardRefs} onCardClick={run.handleCardClick} onOpenMenu={(rect) => { setMenuAnchorRect(rect ?? null); setGameMenuOpen(true); }} onWishChoice={run.handleWishChoice} cardGhosts={run.cardGhosts} onRemoveCardGhost={run.removeCardGhost} onSkipCombatDevMode={run.skipCombatDevMode} onEndTurn={run.handleEndTurn} battleSceneRef={run.battleSceneRef} playerPanelRef={run.playerPanelRef} enemyPanelRef={run.enemyPanelRef} playerShaking={run.playerShaking} enemyShaking={run.enemyShaking} companionShaking={run.companionShaking} isMobileLandscape={isMobileLandscape} /> : null}
               {renderedScreen === "rewards" ? <RewardsScreen rewardType={run.rewardType} rewardChoices={run.rewardChoices} rewardGold={run.rewardGold} rewardMaterials={run.rewardMaterials} hoveredCardId={run.hoveredCardId} onHoverChange={run.setHoveredCardId} shimmerState={run.shimmerState} onHoverShimmer={run.maybeTriggerShimmer} selectedRewardId={run.selectedRewardId} onSelectReward={run.setSelectedRewardId} onAddReward={() => run.finishRewards()} onSkip={() => run.finishRewards()} /> : null}

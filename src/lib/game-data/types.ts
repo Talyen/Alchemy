@@ -97,6 +97,8 @@ export type KeywordDefinition = {
   label: string;
   description: string;
   colorClass: string;
+  borderClass: string;
+  shineColors: string[];
 };
 
 export const ailmentStatusIds: PlayerStatusId[] = ["burn", "poison", "bleed", "freeze", "stun"];

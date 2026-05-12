@@ -163,7 +163,9 @@ function tickPlayerBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
   const damage = state.playerStatuses.burn;
   if (damage <= 0) return state;
   const actualDamage = state.talentEffects.receiveHalfBurnDamage ? Math.floor(damage / 2) : damage;
-  const reducedDamage = Math.max(0, actualDamage - state.talentEffects.armorAilmentReduction);
+  const reducedDamage = state.talentEffects.armorMitigatesBurn
+    ? Math.max(0, actualDamage - state.playerStatuses.armor)
+    : actualDamage;
   if (reducedDamage > 0) {
     mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "burn", amount: reducedDamage });
   }
@@ -177,8 +179,7 @@ function tickPlayerBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
 function tickPlayerPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
   const damage = state.playerStatuses.poison;
   if (damage <= 0) return state;
-  const actualDamage = state.talentEffects.receiveHalfPoisonDamage ? Math.floor(damage / 2) : damage;
-  const reducedDamage = Math.max(0, actualDamage - state.talentEffects.armorAilmentReduction);
+  const reducedDamage = state.talentEffects.receiveHalfPoisonDamage ? Math.floor(damage / 2) : damage;
   if (reducedDamage > 0) {
     mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "poison", amount: reducedDamage });
   }
@@ -189,31 +190,28 @@ function tickPlayerPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
 function tickPlayerBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
   const damage = state.playerStatuses.bleed;
   if (damage <= 0) return state;
-  const reducedDamage = Math.max(0, damage - state.talentEffects.armorAilmentReduction);
-  if (reducedDamage > 0) {
-    mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "bleed", amount: reducedDamage });
+  if (damage > 0) {
+    mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "bleed", amount: damage });
   }
-  return { ...state, playerHealth: Math.max(0, state.playerHealth - reducedDamage), playerStatuses: { ...state.playerStatuses, bleed: 0 } };
+  return { ...state, playerHealth: Math.max(0, state.playerHealth - damage), playerStatuses: { ...state.playerStatuses, bleed: 0 } };
 }
 
 function tickPlayerStun(state: BattleState, combatTexts: CombatTextEvent[]) {
   const damage = state.playerStatuses.stun;
   if (damage <= 0) return state;
-  const reducedDamage = Math.max(0, damage - state.talentEffects.armorAilmentReduction);
-  if (reducedDamage > 0) {
-    mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "stun", amount: reducedDamage });
+  if (damage > 0) {
+    mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "stun", amount: damage });
   }
-  return { ...state, playerHealth: Math.max(0, state.playerHealth - reducedDamage), playerStatuses: { ...state.playerStatuses, stun: 0 } };
+  return { ...state, playerHealth: Math.max(0, state.playerHealth - damage), playerStatuses: { ...state.playerStatuses, stun: 0 } };
 }
 
 function tickPlayerFreeze(state: BattleState, combatTexts: CombatTextEvent[]) {
   const damage = state.playerStatuses.freeze;
   if (damage <= 0) return state;
-  const reducedDamage = Math.max(0, damage - state.talentEffects.armorAilmentReduction);
-  if (reducedDamage > 0) {
-    mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "freeze", amount: reducedDamage });
+  if (damage > 0) {
+    mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "freeze", amount: damage });
   }
-  return { ...state, playerHealth: Math.max(0, state.playerHealth - reducedDamage), playerStatuses: { ...state.playerStatuses, freeze: 0 } };
+  return { ...state, playerHealth: Math.max(0, state.playerHealth - damage), playerStatuses: { ...state.playerStatuses, freeze: 0 } };
 }
 
 function tickPlayerStatuses(state: BattleState, combatTexts: CombatTextEvent[]) {
@@ -344,7 +342,9 @@ function processEnemyDamageEffect(state: BattleState, effect: EnemyAttackEffect 
     mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "block", amount: blockAbsorb });
   }
 
-  const rawDamage = Math.max(0, remainingDamage - state.playerStatuses.armor);
+  const rawDamage = effect.damageType === "physical"
+    ? Math.max(0, remainingDamage - state.playerStatuses.armor)
+    : remainingDamage;
   const damageType: string = effect.damageType;
   const actualDamage = damageType === "holy" && state.talentEffects.receiveHalfHolyDamage ? Math.floor(rawDamage / 2) : rawDamage;
 

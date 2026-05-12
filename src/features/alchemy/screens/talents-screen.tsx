@@ -77,11 +77,11 @@ export function TalentsScreen({
 
             <AnimatedHeight deps={[selectedKeyword]}>
               <div className="surface-muted rounded-[22px] border border-border/70 p-3">
-                <div className="flex items-center justify-between">
-                  <p className="text-lg font-semibold text-foreground"><KeywordTag keywordId={selectedKeyword} className="text-base" /></p>
-                  <p className="text-xs text-muted-foreground">{totalXP} XP / {nextXP} XP — {totalPoints} point{totalPoints !== 1 ? "s" : ""}</p>
+                <div className="flex items-end justify-between">
+                  <span className="text-lg font-semibold text-foreground"><KeywordTag keywordId={selectedKeyword} className="text-base" /></span>
+                  <span className="text-xs text-muted-foreground">{nextXP - progress} / {nextXP} XP</span>
                 </div>
-                <ProgressBar value={progressPercent} className="mt-1.5" style={{ transition: "width 0.3s ease" }} />
+                <ProgressBar value={progressPercent} className="mt-1.5" color="bg-primary" style={{ transition: "width 0.3s ease", backgroundColor: keywordDefinitions[selectedKeyword]?.shineColors?.[0] ?? undefined }} />
               </div>
 
               <div className="mt-4 px-5">

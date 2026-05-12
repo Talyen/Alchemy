@@ -19,7 +19,7 @@ function makeState(overrides: Partial<BattleState> = {}): BattleState {
       startBlock: 0, blockToPhysicalDamage: false, blockPreventsBleed: false, blockPreventsPoison: false,
       blockPreventsStun: false, blockAbsorbPhysicalBonus: 0,
       forgeToBurn: false, forgeToHoly: false, forgeToBlock: false, forgeBurnThreshold: 0, forgeBurnDamage: 0,
-      armorAilmentReduction: 0, armorBlockThreshold: 0, armorBlockAmount: 0, armorDoubledBelowHalfHealth: false,
+      armorMitigatesBurn: false, armorBlockThreshold: 0, armorBlockAmount: 0, armorDoubledBelowHalfHealth: false,
       firstArmorCardDoubled: false,
       campfireHealBonus: 0, healthThresholdBlock: null, maxHealthPerCombat: 0, startHealth: 0, healMultiplier: 1,
       healthThresholdArmor: null,

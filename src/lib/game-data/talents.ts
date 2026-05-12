@@ -32,6 +32,12 @@ export const talentPool: TalentDefinition[] = [
   { id: "stun-draw", keywordId: "stun", description: "When you Stun an enemy, draw a card" },
   { id: "stun-next-free", keywordId: "stun", description: "When you Stun an enemy, your next card is free" },
   { id: "stun-duration-1", keywordId: "stun", description: "Stun effects last 1 turn longer" },
+  { id: "stun-placeholder-1", keywordId: "stun", description: "Placeholder Stun talent" },
+  { id: "stun-placeholder-2", keywordId: "stun", description: "Placeholder Stun talent" },
+  { id: "stun-placeholder-3", keywordId: "stun", description: "Placeholder Stun talent" },
+  { id: "stun-placeholder-4", keywordId: "stun", description: "Placeholder Stun talent" },
+  { id: "stun-placeholder-5", keywordId: "stun", description: "Placeholder Stun talent" },
+  { id: "stun-placeholder-6", keywordId: "stun", description: "Placeholder Stun talent" },
 
   // --- Block ---
   { id: "block-start", keywordId: "block", description: "Start combat with 10 Block" },
@@ -58,7 +64,7 @@ export const talentPool: TalentDefinition[] = [
   { id: "forge-strength-6", keywordId: "forge", description: "Forge effects are 1 stronger" },
 
   // --- Armor ---
-  { id: "armor-ailment-reduce", keywordId: "armor", description: "Armor reduces Ailment damage you take by 1" },
+  { id: "armor-ailment-reduce", keywordId: "armor", description: "Armor now mitigates Burn damage taken" },
   { id: "armor-block-burst", keywordId: "armor", description: "Upon reaching 4 Armor, gain 8 Block" },
   { id: "armor-desperate-double", keywordId: "armor", description: "Armor gained is doubled when Health is below 50%" },
   { id: "armor-first-double", keywordId: "armor", description: "Your first Armor card each combat is doubled" },
@@ -302,7 +308,7 @@ export function computeTalentEffects(unlockedTalents: UnlockedTalents): TalentEf
     forgeBurnThreshold: forgeIds.includes("forge-burn-burst") ? 4 : 0,
     forgeBurnDamage: forgeIds.includes("forge-burn-burst") ? 8 : 0,
 
-    armorAilmentReduction: armorIds.includes("armor-ailment-reduce") ? 1 : 0,
+    armorMitigatesBurn: armorIds.includes("armor-ailment-reduce"),
     armorBlockThreshold: armorIds.includes("armor-block-burst") ? 4 : 0,
     armorBlockAmount: armorIds.includes("armor-block-burst") ? 8 : 0,
     armorDoubledBelowHalfHealth: armorIds.includes("armor-desperate-double"),

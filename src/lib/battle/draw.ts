@@ -47,7 +47,7 @@ export const defaultTalentEffects: TalentEffectManifest = {
   forgeBurnThreshold: 0,
   forgeBurnDamage: 0,
 
-  armorAilmentReduction: 0,
+  armorMitigatesBurn: false,
   armorBlockThreshold: 0,
   armorBlockAmount: 0,
   armorDoubledBelowHalfHealth: false,

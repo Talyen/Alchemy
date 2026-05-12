@@ -1,7 +1,7 @@
 // Visual metadata for destinations, collection tabs, and keyword iconography.
 // Depends on Lucide icons, game-data image assets, and alchemy UI types.
 import type { LucideIcon } from "lucide-react";
-import { BookOpen, Coins, Crosshair, Flame, Gem, Hammer, Heart, HeartPulse, Leaf, PawPrint, Shield, ShieldAlert, Skull, Snowflake, Sparkles, Sun, Swords, TriangleAlert, WandSparkles, Zap, Trophy } from "lucide-react";
+import { BookOpen, CircleOff, Coins, Crosshair, Droplet, Flame, FlaskConical, Gem, Hammer, Heart, HeartPulse, Leaf, PawPrint, Shield, ShieldAlert, ShieldHalf, Skull, Snowflake, Sparkles, Sun, Swords, WandSparkles, Zap, Trophy } from "lucide-react";
 
 import { alchemistShopBg, campfire, eliteEnemyBg, merchantShopBg, mysteryBg, normalEnemyBg, placeholderDestination, type KeywordId } from "@/lib/game-data";
 
@@ -27,9 +27,9 @@ export const destinationMeta: Record<Destination, { icon: LucideIcon; className:
 
 // Maps each keyword to its Lucide icon across status chips and card displays.
 export const keywordIcons: Record<KeywordId, LucideIcon> = {
-  physical: Swords, stun: Zap, block: Shield, forge: Hammer, armor: ShieldAlert,
+  physical: Swords, stun: Zap, block: Shield, forge: Hammer, armor: ShieldHalf,
   health: Heart, burn: Flame, gold: Coins, holy: Sun, wish: Sparkles,
-  ailment: TriangleAlert, consume: TriangleAlert, poison: Flame, bleed: Heart,
+  ailment: Skull, consume: CircleOff, poison: FlaskConical, bleed: Droplet,
   leech: HeartPulse, freeze: Snowflake, mana: Gem, nature: Leaf,
   companion: PawPrint, trap: Crosshair,
 };

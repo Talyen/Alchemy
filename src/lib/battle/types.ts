@@ -87,7 +87,7 @@ export type TalentEffectManifest = {
   forgeBurnDamage: number;    // burn burst damage amount
 
   // --- Armor ---
-  armorAilmentReduction: number; // flat reduction to player ailment tick damage
+  armorMitigatesBurn: boolean;   // armor stacks also reduce burn damage
   armorBlockThreshold: number;   // armor count that triggers block burst
   armorBlockAmount: number;      // block burst amount
   armorDoubledBelowHalfHealth: boolean;

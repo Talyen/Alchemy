@@ -24,7 +24,7 @@ import type { BestiaryEntry } from "@/lib/game-data";
 import type { FloatingCombatText, StatusChip } from "../types";
 import { clearTiltFromEvent, getCombatTextColorClass, getCombatTextIcon, setTiltFromEvent } from "../utils";
 import { KeywordTag } from "./keyword-tag";
-import { DescriptionLines } from "./card-ui";
+import { DescriptionLines, renderColoredKeywords } from "./card-ui";
 import { EnemyTooltip } from "./enemy-tooltip";
 import { ShimmerOverlay } from "./shared-ui";
 
@@ -112,7 +112,7 @@ function StatusIcon({ chip }: { chip: StatusChip }) {
           <KeywordTag keywordId={kw} />
           <span className="rounded-full bg-background px-2 py-0.5 text-[11px] font-semibold text-foreground">{chip.value}</span>
         </div>
-        <p className="mt-2 text-sm leading-6 text-muted-foreground">{definition.description}</p>
+        <p className="mt-2 text-sm leading-6 text-muted-foreground">{renderColoredKeywords(definition.description)}</p>
       </div>
     </div>
   );

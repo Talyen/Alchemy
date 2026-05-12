@@ -1,7 +1,7 @@
 // Reusable card rendering: descriptions, keyword popups, detail popups, hand buttons, and ghosts.
 // Depends on game-data keyword metadata, shared styling, tilt utilities, and ghost animation types.
 // Used by battle, shop, rewards, collection, and alchemist UI.
-import type { CSSProperties, MouseEvent, PointerEvent as ReactPointerEvent } from "react";
+import { Fragment, type CSSProperties, type MouseEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { useLayoutEffect, useRef, useState } from "react";
 
 import {
@@ -21,17 +21,31 @@ import { clearTiltFromEvent, setTiltFromEvent, tokenizeDescription } from "../ut
 import { ShimmerOverlay } from "./shared-ui";
 import { KeywordTag } from "./keyword-tag";
 
-function KeywordToken({ keywordId, matchedText }: { keywordId: KeywordId; matchedText: string }) {
+export function renderColoredKeywords(description: string) {
+  const parts = tokenizeDescription(description);
+  return parts.map((part, i) => {
+    if (part.keywordId) {
+      return (
+        <span key={i} className={keywordDefinitions[part.keywordId]?.colorClass}>
+          {part.text}
+        </span>
+      );
+    }
+    return <Fragment key={i}>{part.text}</Fragment>;
+  });
+}
+
+export function KeywordToken({ keywordId, matchedText }: { keywordId: KeywordId; matchedText: string }) {
   const definition = keywordDefinitions[keywordId];
 
   return (
     <span className="group/keyword relative inline-flex items-center">
       <span className={cn("cursor-help font-semibold", definition.colorClass)}>{matchedText}</span>
       <span className={cn(popupClassName, "hover-popup-panel pointer-events-none opacity-0 group-hover/keyword:opacity-100")}>
-        <span className="flex items-center gap-2">
+        <span className="flex items-center gap-2 text-base">
           <KeywordTag keywordId={keywordId} />
         </span>
-        <span className="mt-2 block text-sm leading-6 text-muted-foreground">{definition.description}</span>
+        <span className="mt-2 block text-sm leading-6 text-muted-foreground">{renderColoredKeywords(definition.description)}</span>
       </span>
     </span>
   );

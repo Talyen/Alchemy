@@ -2,18 +2,22 @@
 // Depends on battle state, game-data status IDs, alchemy config, and shared UI types.
 // Used by battle controller and widgets to keep presentation derivation out of combat logic.
 import type { BattleState, CombatTextEvent } from "@/lib/battle";
-import { type EnemyStatusId, type PlayerStatusId } from "@/lib/game-data";
-import { combatTextColorClasses, combatTextIconClasses, keywordIcons } from "../config";
+import { type EnemyStatusId, type KeywordId, type PlayerStatusId, keywordDefinitions } from "@/lib/game-data";
+import { combatTextIconClasses, keywordIcons } from "../config";
 import type { StatusChip } from "../types";
 
 export function getCombatTextColorClass(event: CombatTextEvent): string {
-  if (event.kind === "damage" && event.stat === "health") return "text-red-400";
-  if (event.kind === "damage" || event.kind === "status") return combatTextColorClasses[event.stat] ?? "text-muted-foreground";
-  return "text-green-400";
+  if (event.kind === "heal") return "text-green-400";
+  const kw = keywordDefinitions[event.stat as KeywordId];
+  if (kw) return kw.colorClass;
+  if (event.stat === "haste") return "text-fuchsia-300";
+  return "text-muted-foreground";
 }
 
 export function getCombatTextIcon(event: CombatTextEvent) {
   if (event.kind === "heal") return keywordIcons.health;
+  const kw = keywordIcons[event.stat as KeywordId];
+  if (kw) return kw;
   return combatTextIconClasses[event.stat];
 }
 

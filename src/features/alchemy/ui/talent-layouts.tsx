@@ -3,12 +3,12 @@
 
 import { useState, useEffect, Fragment } from "react";
 import { motion } from "motion/react";
-import type { KeywordId } from "@/lib/game-data";
-import { keywordDefinitions } from "@/lib/game-data";
+import { type KeywordId, keywordDefinitions } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 import { tokenizeDescription } from "../utils";
 import type { TalentDefinition } from "../talent-pool";
 import { ShineBorder } from "@/components/ui/shine-border";
+import { KeywordToken } from "./card-ui";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -21,51 +21,13 @@ export interface TalentLayoutProps {
 
 // ─── Helpers ────────────────────────────────────────────────────────────────────
 
-const keywordBorderClasses: Record<KeywordId, string> = {
-  physical: "border-slate-300",   stun: "border-amber-300",
-  block: "border-sky-300",        forge: "border-yellow-300",
-  armor: "border-yellow-200",     health: "border-rose-400",
-  burn: "border-orange-400",      gold: "border-yellow-300",
-  holy: "border-amber-200",       wish: "border-fuchsia-300",
-  ailment: "border-violet-300",   consume: "border-zinc-300",
-  poison: "border-lime-300",      bleed: "border-red-400",
-  leech: "border-pink-300",       freeze: "border-cyan-300",
-  mana: "border-sky-400",         nature: "border-green-700",
-  companion: "border-[#a36a32]",  trap: "border-stone-300",
-};
 
-const keywordShineColors: Record<string, string[]> = {
-  physical:   ["#cbd5e1", "#94a3b8", "#cbd5e1"],
-  stun:       ["#fcd34d", "#d97706", "#fcd34d"],
-  block:      ["#7dd3fc", "#0ea5e9", "#7dd3fc"],
-  forge:      ["#fde047", "#ca8a04", "#fde047"],
-  armor:      ["#fef08a", "#eab308", "#fef08a"],
-  health:     ["#fb7185", "#e11d48", "#fb7185"],
-  burn:       ["#fb923c", "#ea580c", "#fb923c"],
-  gold:       ["#fde047", "#ca8a04", "#fde047"],
-  holy:       ["#fde68a", "#d97706", "#fde68a"],
-  wish:       ["#f0abfc", "#c026d3", "#f0abfc"],
-  ailment:    ["#c4b5fd", "#7c3aed", "#c4b5fd"],
-  consume:    ["#d4d4d8", "#52525b", "#d4d4d8"],
-  poison:     ["#bef264", "#65a30d", "#bef264"],
-  bleed:      ["#f87171", "#dc2626", "#f87171"],
-  leech:      ["#f9a8d4", "#db2777", "#f9a8d4"],
-  freeze:     ["#67e8f9", "#06b6d4", "#67e8f9"],
-  mana:       ["#38bdf8", "#0284c7", "#38bdf8"],
-  nature:     ["#4ade80", "#166534", "#4ade80"],
-  companion:  ["#a36a32", "#6b4226", "#a36a32"],
-  trap:       ["#d6d3d1", "#78716c", "#d6d3d1"],
-};
 
 function renderDescription(description: string) {
   const parts = tokenizeDescription(description);
   return parts.map((part, i) => {
     if (part.keywordId) {
-      return (
-        <span key={i} className={keywordDefinitions[part.keywordId]?.colorClass}>
-          {part.text}
-        </span>
-      );
+      return <KeywordToken key={i} keywordId={part.keywordId} matchedText={part.text} />;
     }
     return <Fragment key={i}>{part.text}</Fragment>;
   });
@@ -139,7 +101,7 @@ export function TalentLayout({ unlockedTalents, allTalents, choices, onUnlock }:
   const rows = gridRows(allTalents);
   const tierLabels = ["Beginner", "Adept", "Expert", "Master"];
   const kwColor = allTalents.length > 0
-    ? (keywordShineColors[allTalents[0].keywordId]?.[0] ?? "#fcd34d")
+    ? (keywordDefinitions[allTalents[0].keywordId]?.shineColors?.[0] ?? "#fcd34d")
     : "#fcd34d";
 
   if (allTalents.length === 0) {
@@ -147,7 +109,7 @@ export function TalentLayout({ unlockedTalents, allTalents, choices, onUnlock }:
   }
 
   return (
-    <div className="flex flex-col items-center gap-2">
+    <div className="flex flex-col items-center gap-5">
       {rows.map((row, ri) => (
         <div key={ri} className="flex w-full flex-col items-center gap-2">
           <div className="flex w-full items-center gap-3" style={{ maxWidth: 320 }}>
@@ -159,8 +121,9 @@ export function TalentLayout({ unlockedTalents, allTalents, choices, onUnlock }:
             {row.map((talent) => {
               const isUnlocked = unlockedIds.has(talent.id);
               const isChoice = choiceIds.has(talent.id);
-              const bColor = keywordBorderClasses[talent.keywordId] ?? "border-border/60";
-              const shineColors = keywordShineColors[talent.keywordId] ?? ["#fcd34d", "#d97706", "#fcd34d"];
+              const def = keywordDefinitions[talent.keywordId];
+              const bColor = def?.borderClass ?? "border-border/60";
+              const shineColors = def?.shineColors ?? ["#fcd34d", "#d97706", "#fcd34d"];
               const baseColor = shineColors[0];
 
               return (
@@ -176,7 +139,7 @@ export function TalentLayout({ unlockedTalents, allTalents, choices, onUnlock }:
                   {isUnlocked ? (
                     <div
                       className={cn(
-                        "flex w-[140px] items-center justify-center rounded-[14px] border-2 px-3 py-3 text-[12px] font-bold leading-snug text-center min-h-[5rem] bg-popover text-muted-foreground",
+                        "flex w-[168px] items-center justify-center rounded-[14px] border-2 px-3 py-3 text-sm font-bold leading-snug text-center min-h-[6rem] bg-popover text-muted-foreground",
                       )}
                       style={{ borderColor: `${baseColor}33` }}
                     >
@@ -189,7 +152,7 @@ export function TalentLayout({ unlockedTalents, allTalents, choices, onUnlock }:
                   ) : isChoice ? (
                     <button type="button" onClick={() => { setRevealingId(talent.id); onUnlock?.(talent.id); }}
                       className={cn(
-                        "relative flex w-[140px] cursor-pointer items-center justify-center rounded-[14px] border-2 bg-popover px-3 py-3 text-[12px] font-bold leading-snug text-center min-h-[5rem] transition-all",
+                        "relative flex w-[168px] cursor-pointer items-center justify-center rounded-[14px] border-2 bg-popover px-3 py-3 text-sm font-bold leading-snug text-center min-h-[6rem] transition-all",
                         bColor
                       )}
                       style={{ boxShadow: `0 0 18px 4px ${baseColor}40` }}
@@ -198,7 +161,7 @@ export function TalentLayout({ unlockedTalents, allTalents, choices, onUnlock }:
                     </button>
                   ) : (
                     <div className={cn(
-                      "relative flex w-[140px] items-center justify-center rounded-[14px] border border-dashed px-3 py-3 text-[12px] font-bold leading-snug text-center min-h-[5rem] text-muted-foreground bg-popover",
+                      "relative flex w-[168px] items-center justify-center rounded-[14px] border border-dashed px-3 py-3 text-sm font-bold leading-snug text-center min-h-[6rem] text-muted-foreground bg-popover",
                     )}
                       style={{ borderColor: `${baseColor}33` }}>
                       <span>Undiscovered</span>
