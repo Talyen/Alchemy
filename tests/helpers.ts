@@ -1,5 +1,33 @@
 import { expect, type Page } from "@playwright/test";
 
+// Sets up a partial active run in localStorage before each navigation.
+// Empty runDeck falls back to the character's starting deck via normalizeActiveRun.
+export async function injectSaveState(page: Page, overrides: Record<string, unknown> = {}) {
+  await page.addInitScript((data) => {
+    const SAVE_KEY = "alchemy-save-v1";
+    const save = JSON.parse(localStorage.getItem(SAVE_KEY) || "{}");
+    save.activeRun = {
+      characterId: "knight",
+      runDeck: [],
+      runGold: 0,
+      runPlayerHealth: 30,
+      runMaxHealth: 30,
+      roomsEncountered: 0,
+      currentAct: 1,
+      destinationIndexInAct: 0,
+      completedDestinations: [],
+      runTrinkets: [],
+      ...data,
+    };
+    if (!Array.isArray(save.discoveredCardIds) || save.discoveredCardIds.length === 0) {
+      save.discoveredCardIds = [
+        "slash", "bash", "block", "anvil", "plate-mail", "apple", "meteor", "blessed-aegis",
+      ];
+    }
+    localStorage.setItem(SAVE_KEY, JSON.stringify(save));
+  }, overrides);
+}
+
 export async function startRun(page: Page, character: "Knight" | "Ranger" | "Rogue" | "Wizard" = "Knight") {
   await page.goto("/");
   await page.getByRole("button", { name: "Play" }).click();

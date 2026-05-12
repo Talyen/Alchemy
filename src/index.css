@@ -89,6 +89,11 @@
     border-color: rgba(255, 253, 245, 0.08);
   }
 
+  .boss-title-shine {
+    animation: boss-title-shine 10s linear infinite;
+    will-change: background-position;
+  }
+
   .ease-alchemy-out {
     transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
   }
@@ -406,6 +411,16 @@
   100% { background-position: -50% 50%; }
 }
 
+@keyframes boss-title-shine {
+  from {
+    background-position: 200% 50%;
+  }
+
+  to {
+    background-position: -100% 50%;
+  }
+}
+
 @keyframes startupBarFill {
   from { transform: scaleX(0); }
   to { transform: scaleX(1); }
@@ -603,4 +618,3 @@
   .mobile-landscape .max-w-\[400px\] { max-width: 160px !important; }
   .mobile-landscape .max-w-\[352px\] { max-width: 160px !important; }
 }
-

@@ -288,7 +288,7 @@ test.describe("Talents", () => {
     await page.getByRole("button", { name: "Talents" }).click();
 
     await expect(page.getByRole("heading", { name: "Talents" })).toBeVisible();
-    await expect(page.getByText(/0 XP \/ 10 XP/)).toBeVisible();
+    await expect(page.getByText("0 / 10 XP")).toBeVisible();
   });
 
   test("talents screen shows all keyword categories", async ({ page }) => {

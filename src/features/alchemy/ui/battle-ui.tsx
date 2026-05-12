@@ -277,7 +277,7 @@ export function ArtPanel({
       <div className={cn("surface-muted rounded-[24px] px-4 py-3 relative", cardWidthClass ?? battleCardWidthClass, isDead && "animate-frame-fade surface-transparent")}>
         <div className={isDead ? "opacity-0" : ""}>
           <div className="flex items-center justify-between gap-3">
-            <p className="text-sm text-foreground">{title}</p>
+            <p className="text-sm leading-6 text-muted-foreground">{title}</p>
             <p key={healthToken} className={cn("hp-number-pop text-xs font-medium text-muted-foreground")}>
               {health}/{maxHealth}
             </p>

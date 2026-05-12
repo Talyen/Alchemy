@@ -9,7 +9,7 @@ export const enemyBestiary: BestiaryEntry[] = [
     descriptionLines: [],
     art: placeholderEnemy,
     enemyType: "boss",
-    traits: [{ id: "rusting-carapace", title: "Rusting Carapace", description: "Gains 1 Armor and 1 Forge each turn" }],
+    traits: [{ id: "rusting-carapace", title: "Rusting Carapace", description: "Gains 1 Armor each turn\nGains 1 Forge each turn" }],
     attackEffects: [
       { kind: "damage", damageType: "physical", amount: 5 },
       { kind: "player-status", status: "stun", amount: 2 },
@@ -48,7 +48,7 @@ export const enemyBestiary: BestiaryEntry[] = [
     descriptionLines: [],
     art: skeleton,
     enemyType: "normal",
-    traits: [{ id: "brittle-bones", title: "Brittle Bones", description: "Receives double Holy and Stun damage" }],
+    traits: [{ id: "brittle-bones", title: "Brittle Bones", description: "Receives double Holy damage\nReceives double Stun damage" }],
     attackEffects: [{ kind: "damage", damageType: "physical", amount: 8 }],
   },
   {
@@ -58,7 +58,7 @@ export const enemyBestiary: BestiaryEntry[] = [
     descriptionLines: [],
     art: goblin,
     enemyType: "normal",
-    traits: [{ id: "fear-the-light", title: "Fear the Light", description: "Receives double Burn and Holy damage" }],
+    traits: [{ id: "fear-the-light", title: "Fear the Light", description: "Receives double Burn damage\nReceives double Holy damage" }],
     attackEffects: [{ kind: "damage", damageType: "physical", amount: 8 }],
   },
   {

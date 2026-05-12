@@ -44,10 +44,12 @@ export function BattleScreen({
   enemyShaking,
   companionShaking,
   heroArt,
+  playerName,
   isMobileLandscape = false,
 }: {
   battleState: Pick<BattleState, 'playerHealth' | 'playerMaxHealth' | 'enemyHealth' | 'enemyMaxHealth' | 'mana' | 'maxMana' | 'gold' | 'deck' | 'discard' | 'hand' | 'wishOptions' | 'activeCompanion' | 'currentEnemy' | 'turnPhase'>;
   heroArt: string;
+  playerName: string;
   hoveredCardId: string | null;
   setHoveredCardId: (value: string | null | ((current: string | null) => string | null)) => void;
   shimmerState: { cardId: string; token: number } | null;
@@ -111,7 +113,7 @@ export function BattleScreen({
           <div className={hasCompanion ? "relative transition-transform duration-500 ease-out -translate-x-[clamp(12px,1.2vw,22px)]" : "relative transition-transform duration-500 ease-out"}>
             <ArtPanel
               side="player"
-              title="Knight"
+              title={playerName}
               art={heroArt}
               health={battleState.playerHealth}
               maxHealth={battleState.playerMaxHealth}

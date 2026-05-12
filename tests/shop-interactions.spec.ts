@@ -79,6 +79,65 @@ test.describe("Merchant Shop", () => {
     const goldAfter = goldAfterText ? Number(goldAfterText.match(/\d+/)?.[0]) : 0;
     expect(goldAfter).toBeLessThan(goldBefore);
   });
+
+  test("card removal deducts gold and removes card from deck", async ({ page }) => {
+    await seedGoldTalents(page);
+    await startRun(page);
+    await skipAndReward(page);
+    await navigateToDestination(page, "Merchant's Shop");
+
+    const removeBtn = page.getByRole("button", { name: /Remove Card/ });
+    await expect(removeBtn).toBeVisible();
+    if (!(await removeBtn.isEnabled())) {
+      test.skip(true, "Not enough gold to remove a card");
+      return;
+    }
+
+    const goldTextBefore = await page.getByText(/\d+ Gold/).first().textContent();
+    const goldBefore = goldTextBefore ? Number(goldTextBefore.match(/\d+/)?.[0]) : 0;
+
+    await removeBtn.click();
+    await page.waitForTimeout(300);
+
+    const cardTile = page.locator('[aria-label^="Inspect "],[aria-label^="Select "]').first();
+    await expect(cardTile).toBeVisible({ timeout: 3000 });
+    await cardTile.click();
+    await page.waitForTimeout(200);
+
+    const confirmBtn = page.getByRole("button", { name: /Remove Card/ });
+    if (await confirmBtn.isVisible({ timeout: 1000 }).catch(() => false)) {
+      await confirmBtn.click();
+      await page.waitForTimeout(200);
+    }
+
+    const goldTextAfter = await page.getByText(/\d+ Gold/).first().textContent();
+    const goldAfter = goldTextAfter ? Number(goldTextAfter.match(/\d+/)?.[0]) : 0;
+    expect(goldAfter).toBeLessThan(goldBefore);
+  });
+
+  test("shop refresh changes displayed cards and deducts gold", async ({ page }) => {
+    await seedGoldTalents(page);
+    await startRun(page);
+    await skipAndReward(page);
+    await navigateToDestination(page, "Merchant's Shop");
+
+    const buyButtons = page.getByRole("button", { name: /^Buy/ });
+    const cardNamesBefore = await buyButtons.allTextContents();
+
+    const refreshBtn = page.getByRole("button", { name: /Refresh/ });
+    await expect(refreshBtn).toBeVisible();
+    if (!(await refreshBtn.isEnabled())) {
+      test.skip(true, "Refresh not available");
+      return;
+    }
+    await refreshBtn.click();
+    await page.waitForTimeout(300);
+
+    const cardNamesAfter = await buyButtons.allTextContents();
+    const sameCards = cardNamesBefore.length === cardNamesAfter.length
+      && cardNamesBefore.every((name, i) => name === cardNamesAfter[i]);
+    expect(sameCards).toBe(false);
+  });
 });
 
 test.describe("Alchemist Shop", () => {

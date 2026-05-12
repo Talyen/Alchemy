@@ -10,7 +10,7 @@ import { DescriptionLines } from "./card-ui";
 
 export function EnemyTooltip({ entry, discovered = true }: { entry: BestiaryEntry; discovered?: boolean }) {
   const attackLines = formatEnemyAttackLines(entry.attackEffects);
-  const traitLines = entry.traits.map((t) => t.description);
+  const traitLines = entry.traits.flatMap((t) => t.description.split("\n"));
 
   return (
     <div className={cn(popupClassName, "hover-popup-panel pointer-events-auto")}>
