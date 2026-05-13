@@ -5,7 +5,6 @@ import { BOSS_TRINKET_REWARD_CHOICES, ELITE_TRINKET_REWARD_CHANCE, REWARD_CARD_C
 import { computeTrinketManifest } from "@/lib/trinkets";
 import { emptyInventory, type MaterialInventory } from "@/lib/homestead/types";
 import type { BattleState } from "@/lib/battle";
-
 import { selectRewardCards, selectRewardTrinkets, REWARD_TRINKET_CHANCE } from "../reward-utils";
 import type { Destination } from "../types";
 
@@ -23,6 +22,7 @@ type BossRewardInput = {
   bossBonus: number;
   talentGoldPerCombat: number;
   materials: MaterialInventory;
+  trinketIds: string[];
 };
 
 type CombatRewardInput = {
@@ -33,6 +33,7 @@ type CombatRewardInput = {
   talentGoldPerCombat: number;
   materials: MaterialInventory;
   destinations: Destination[];
+  trinketIds: string[];
 };
 
 // Empty reward state is reused by initialization, reward cleanup, and full run reset.
@@ -41,11 +42,12 @@ export function createEmptyRewardState(destinations: Destination[] = []): Reward
 }
 
 // Bosses always offer trinkets and route into act-complete handling rather than another node.
-export function createBossRewardState({ gold, bossBonus, talentGoldPerCombat, materials }: BossRewardInput): RewardState {
+export function createBossRewardState({ gold, bossBonus, talentGoldPerCombat, materials, trinketIds }: BossRewardInput): RewardState {
+  const trinketGoldBonus = computeTrinketManifest(trinketIds).smugglersMapGoldBonus;
   return {
     rewardType: "trinket",
     choices: selectRewardTrinkets(trinketLibrary, BOSS_TRINKET_REWARD_CHOICES),
-    gold: gold + bossBonus + talentGoldPerCombat,
+    gold: gold + bossBonus + talentGoldPerCombat + trinketGoldBonus,
     materials,
     selectedId: null,
     destinations: [],
@@ -54,13 +56,14 @@ export function createBossRewardState({ gold, bossBonus, talentGoldPerCombat, ma
 
 // Combat rewards can be cards or trinkets. Destination choices are supplied by the hook
 // because they depend on post-victory run HP/gold and act progression.
-export function createCombatRewardState({ battleState, runDeck, gold, eliteBonus, talentGoldPerCombat, materials, destinations }: CombatRewardInput): RewardState {
+export function createCombatRewardState({ battleState, runDeck, gold, eliteBonus, talentGoldPerCombat, materials, destinations, trinketIds }: CombatRewardInput): RewardState {
   const trinketChance = battleState.currentEnemy.enemyType === "elite" ? ELITE_TRINKET_REWARD_CHANCE : REWARD_TRINKET_CHANCE;
   const offerTrinket = Math.random() < trinketChance;
+  const trinketGoldBonus = computeTrinketManifest(trinketIds).smugglersMapGoldBonus;
   return {
     rewardType: offerTrinket ? "trinket" : "card",
     choices: offerTrinket ? selectRewardTrinkets(trinketLibrary, REWARD_CARD_CHOICES) : selectRewardCards(runDeck, cardLibrary, REWARD_CARD_CHOICES),
-    gold: offerTrinket ? 0 : gold + eliteBonus + talentGoldPerCombat,
+    gold: gold + eliteBonus + talentGoldPerCombat + trinketGoldBonus,
     materials,
     selectedId: null,
     destinations,

@@ -57,7 +57,7 @@ export function drawCards(deck: BattleCard[], discard: BattleCard[], hand: Battl
 // Enemy scaling is centralized so every battle start uses the same act, room, and type
 // multipliers. The fallback physical attack keeps malformed/new bestiary entries playable
 // instead of crashing combat with an enemy that has no action.
-function buildScaledEnemy(_roomsEncountered: number, enemy: BestiaryEntry, destinationIndexInAct = 0, currentAct = 1) {
+function buildScaledEnemy(enemy: BestiaryEntry, destinationIndexInAct = 0, currentAct = 1) {
   const scaler = Math.max(0, destinationIndexInAct - 1);
   const roomMul = 1 + scaler * ROOM_SCALING_INCREMENT;
   const actMul = 1 + (currentAct - 1) * ACT_SCALING_INCREMENT;
@@ -82,7 +82,7 @@ function buildScaledEnemy(_roomsEncountered: number, enemy: BestiaryEntry, desti
   const regenBase = enemy.traits.some((t) => t.id === "regeneration")
     ? (enemy.enemyType === "boss" ? ENEMY_BOSS_REGENERATION : ENEMY_BASE_REGENERATION)
     : 0;
-  const enemyRegeneration = regenBase > 0 ? scaleAmount(regenBase) : 0;
+  const enemyRegeneration = regenBase > 0 ? Math.floor(regenBase * hpMultiplier) : 0;
 
   return { enemy, scaledEnemyHealth, scaledEnemyAttackEffects, enemyRegeneration, hpMultiplier, typeMul: atkTypeMul };
 }
@@ -95,7 +95,7 @@ function buildScaledEnemy(_roomsEncountered: number, enemy: BestiaryEntry, desti
 export function createBattleState(
   runDeck: BattleCard[] = starterDeck,
   gold = 0,
-  roomsEncountered = 0,
+  _roomsEncountered = 0,
   currentEnemy?: BestiaryEntry,
   playerHealth = maxPlayerHealth,
   talentEffects: TalentEffectManifest = defaultTalentEffects,
@@ -115,9 +115,9 @@ export function createBattleState(
     : null;
 
   const enemy = currentEnemy ?? enemyBestiary[0];
-  const { scaledEnemyHealth, scaledEnemyAttackEffects, enemyRegeneration } = buildScaledEnemy(roomsEncountered, enemy, destinationIndexInAct, currentAct);
+  const { scaledEnemyHealth, scaledEnemyAttackEffects, enemyRegeneration } = buildScaledEnemy(enemy, destinationIndexInAct, currentAct);
 
-  const effectiveMaxHealth = maxHealth + talentEffects.maxHealthPerCombat * roomsEncountered;
+  const effectiveMaxHealth = maxHealth;
   const startingHealth = Math.min(effectiveMaxHealth, playerHealth + talentEffects.startHealth);
 
   return {

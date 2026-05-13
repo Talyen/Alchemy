@@ -213,36 +213,6 @@ describe("computeHomesteadEffects", () => {
     expect(effects.forgeToBurn).toBe(1);
   });
 
-  it("carpentry adds buildingCostReduction", () => {
-    const effects = computeHomesteadEffects([], [], ["carpentry"]);
-    expect(effects.buildingCostReduction).toBeCloseTo(0.1);
-  });
-
-  it("masonry adds buildingCostReduction", () => {
-    const effects = computeHomesteadEffects([], [], ["masonry"]);
-    expect(effects.buildingCostReduction).toBeCloseTo(0.1);
-  });
-
-  it("crop-rotation adds farmYieldMultiplier", () => {
-    const effects = computeHomesteadEffects([], [], ["crop-rotation"]);
-    expect(effects.farmYieldMultiplier).toBeCloseTo(0.5);
-  });
-
-  it("animal-husbandry adds farmYieldMultiplier", () => {
-    const effects = computeHomesteadEffects([], [], ["animal-husbandry"]);
-    expect(effects.farmYieldMultiplier).toBeCloseTo(0.25);
-  });
-
-  it("fortified-walls adds startBlock", () => {
-    const effects = computeHomesteadEffects([], [], ["fortified-walls"]);
-    expect(effects.startBlock).toBe(5);
-  });
-
-  it("metallurgy adds physicalCritChance", () => {
-    const effects = computeHomesteadEffects([], [], ["metallurgy"]);
-    expect(effects.physicalCritChance).toBe(2);
-  });
-
   it("combines multiple buildings", () => {
     const effects = computeHomesteadEffects(["blacksmiths-forge", "hunters-lodge", "alchemy-lab"], [], []);
     expect(effects.flatPhysicalDamage).toBe(1);
@@ -250,19 +220,6 @@ describe("computeHomesteadEffects", () => {
     expect(effects.companionDamage).toBe(1);
     expect(effects.potionHealMultiplier).toBeCloseTo(0.2);
     expect(effects.potionDiscount).toBeCloseTo(0.1);
-  });
-
-  it("combines multiple research upgrades", () => {
-    const effects = computeHomesteadEffects([], [], ["carpentry", "masonry", "crop-rotation"]);
-    expect(effects.buildingCostReduction).toBeCloseTo(0.2);
-    expect(effects.farmYieldMultiplier).toBeCloseTo(0.5);
-  });
-
-  it("combines buildings and research together", () => {
-    const effects = computeHomesteadEffects(["blacksmiths-forge"], [], ["carpentry", "metallurgy"]);
-    expect(effects.flatPhysicalDamage).toBe(1);
-    expect(effects.buildingCostReduction).toBeCloseTo(0.1);
-    expect(effects.physicalCritChance).toBe(2);
   });
 
   it("ignores unknown building IDs", () => {
@@ -366,8 +323,6 @@ describe("mergeIntoManifest", () => {
     campfireHealBonus: 0.05,
     physicalCritChance: 2,
     startMaxHealthBonus: 5,
-    buildingCostReduction: 0.1,
-    farmYieldMultiplier: 0.5,
   });
 
   it("adds homestead effects to talent effects", () => {
@@ -380,7 +335,7 @@ describe("mergeIntoManifest", () => {
     expect(merged.potionDiscount).toBeCloseTo(0.1);
     expect(merged.potionManaBonus).toBe(1);
     expect(merged.forgeToBurn).toBe(true);
-    expect(merged.healMultiplier).toBeCloseTo(0.2);
+    expect(merged.healMultiplier).toBe(0);
   });
 
   it("preserves non-merged talent fields", () => {
@@ -395,8 +350,6 @@ describe("mergeIntoManifest", () => {
   it("does not spread homestead-only fields into talent manifest", () => {
     const merged = mergeIntoManifest(makeTalentManifest(), makeHomesteadEffects());
     expect((merged as Record<string, unknown>).startMaxHealthBonus).toBeUndefined();
-    expect((merged as Record<string, unknown>).buildingCostReduction).toBeUndefined();
-    expect((merged as Record<string, unknown>).farmYieldMultiplier).toBeUndefined();
   });
 });
 

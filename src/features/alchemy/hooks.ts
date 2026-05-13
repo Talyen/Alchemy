@@ -6,7 +6,18 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { CombatTextEvent } from "@/lib/battle";
 
 import type { CardGhost, FloatingCombatText, ResolutionOption } from "./types";
-import { COMBAT_TEXT_LANE_DELAY_MS, COMBAT_TEXT_LIFETIME_MS, SHIMMER_COOLDOWN_MS } from "@/lib/game-constants";
+import {
+  COMBAT_TEXT_LANE_DELAY_MS,
+  COMBAT_TEXT_LIFETIME_MS,
+  DESIGN_STAGE_HEIGHT,
+  MAX_STAGE_SCALE,
+  MIN_STAGE_SCALE,
+  MOBILE_LANDSCAPE_MAX_WIDTH,
+  MOBILE_STAGE_HEIGHT,
+  ORIENTATION_CHANGE_DEBOUNCE_MS,
+  PORTRAIT_MOBILE_MAX_WIDTH,
+  SHIMMER_COOLDOWN_MS,
+} from "@/lib/game-constants";
 
 // ---- Card Shimmer (Hover Effect) ----
 // Manages the "shimmer" animation that sweeps across card art on mouse hover.
@@ -115,17 +126,19 @@ export function useMobileDetection() {
       || navigator.maxTouchPoints > 0;
     const vw = window.innerWidth;
     const vh = window.innerHeight;
-    setIsMobileLandscape(isCoarse && vw > vh && vw <= 1024);
-    setIsPortraitMobile(isCoarse && vh > vw && vw <= 768);
+    setIsMobileLandscape(isCoarse && vw > vh && vw <= MOBILE_LANDSCAPE_MAX_WIDTH);
+    setIsPortraitMobile(isCoarse && vh > vw && vw <= PORTRAIT_MOBILE_MAX_WIDTH);
   }, []);
 
   useEffect(() => {
+    function handleOrientationChange() { setTimeout(check, ORIENTATION_CHANGE_DEBOUNCE_MS); }
+
     check(); // eslint-disable-line react-hooks/set-state-in-effect
     window.addEventListener("resize", check);
-    window.addEventListener("orientationchange", () => setTimeout(check, 100));
+    window.addEventListener("orientationchange", handleOrientationChange);
     return () => {
       window.removeEventListener("resize", check);
-      window.removeEventListener("orientationchange", () => setTimeout(check, 100));
+      window.removeEventListener("orientationchange", handleOrientationChange);
     };
   }, [check]);
 
@@ -133,16 +146,6 @@ export function useMobileDetection() {
 }
 
 // ---- Virtual Resolution ----
-// Design canvas height. All screens render onto a virtual canvas of this height
-// (width derived from selected resolution's aspect ratio) and are CSS-scaled to
-// fit the viewport. This ensures consistent layout proportions across all displays.
-const designStageHeight = 1080;
-
-// The minimum scale floor — lowered from 0.45 to 0.3 so that very small viewports
-// (mobile landscape ~375px tall) still produce a frame that fits without overflow.
-const MIN_STAGE_SCALE = 0.3;
-const MAX_STAGE_SCALE = 1.35;
-
 // Wraps the game canvas in a CSS scale transform so it fits the window. The
 // selected resolution contributes aspect ratio only on desktop; mobile landscape
 // uses the live phone aspect ratio so battle can keep the desktop composition
@@ -166,7 +169,7 @@ export function useVirtualResolution(selectedResolution: ResolutionOption, bypas
   }
 
   const [selectedWidth, selectedHeight] = selectedResolution.split("x").map(Number);
-  const stageHeight = mobileLandscape ? 900 : designStageHeight;
+  const stageHeight = mobileLandscape ? MOBILE_STAGE_HEIGHT : DESIGN_STAGE_HEIGHT;
   const stageWidth = mobileLandscape
     ? Math.round(stageHeight * (viewportSize.width / viewportSize.height))
     : Math.round(stageHeight * (selectedWidth / selectedHeight));

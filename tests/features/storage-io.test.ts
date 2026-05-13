@@ -1,21 +1,23 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+import { describe, expect, it, beforeEach, afterEach } from "vitest";
+import { defaultSaveData, type SaveData } from "@/features/alchemy/storage/types";
 
 const { SAVE_KEY } = await import("@/lib/game-constants");
 
 const mockStorage: Record<string, string> = {};
+const globalWithWindow = globalThis as typeof globalThis & { window?: Pick<Window, "localStorage"> };
 
 function setupWindow() {
-  (globalThis as any).window = {
+  globalWithWindow.window = {
     localStorage: {
       getItem: (key: string) => mockStorage[key] ?? null,
       setItem: (key: string, value: string) => { mockStorage[key] = value; },
       removeItem: (key: string) => { delete mockStorage[key]; },
-    },
+    } as Storage,
   };
 }
 
 function teardownWindow() {
-  delete (globalThis as any).window;
+  delete globalWithWindow.window;
 }
 
 describe("storage io", () => {
@@ -51,7 +53,7 @@ describe("storage io", () => {
 
   it("saveAlchemySaveData writes to localStorage", async () => {
     const { saveAlchemySaveData } = await import("@/features/alchemy/storage/io");
-    const data = { selectedResolution: "1920x1080" } as any;
+    const data: SaveData = { ...defaultSaveData, selectedResolution: "1920x1080" };
     saveAlchemySaveData(data);
     expect(mockStorage[SAVE_KEY]).toBe(JSON.stringify(data));
   });

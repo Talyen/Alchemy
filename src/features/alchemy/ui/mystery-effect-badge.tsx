@@ -29,7 +29,7 @@ export function MysteryEffectBadge({
       );
     case "loseGold":
       return (
-        <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold bg-red-400/15 text-red-400">
+        <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold bg-yellow-300/15 text-yellow-300">
           <Coins className="h-4 w-4" />
           {tooltip ? "Gold" : `${effect.amount} Gold`}
         </span>
@@ -41,15 +41,17 @@ export function MysteryEffectBadge({
           {tooltip ? materialLabels[effect.material] : `${effect.amount} ${materialLabels[effect.material]}`}
         </span>
       );
-    case "healHP":
+    case "healHP": {
+      const healthDef = keywordDefinitions.health;
       return (
-        <span className="font-semibold text-green-400">
+        <span className="font-semibold">
           {tooltip
-            ? "Restore HP"
-            : `Restore ${effect.amount} HP${effect.chance !== undefined ? ` (${Math.round(effect.chance * 100)}% chance)` : ""}`
+            ? <>Restore <span className={healthDef?.colorClass}>Health</span></>
+            : <>Restore {effect.amount} <span className={healthDef?.colorClass}>Health</span>{effect.chance !== undefined ? ` (${Math.round(effect.chance * 100)}% chance)` : ""}</>
           }
         </span>
       );
+    }
     case "damageHP":
       return (
         <span className="font-semibold text-red-400">
@@ -65,10 +67,10 @@ export function MysteryEffectBadge({
     case "gainXP": {
       const def = keywordDefinitions[effect.keyword];
       return (
-        <span className={cn("font-semibold", def?.colorClass)}>
+        <span className="font-semibold">
           {tooltip
-            ? `Gain ${def?.label ?? effect.keyword} XP`
-            : `Gain ${effect.amount} ${def?.label ?? effect.keyword} XP`
+            ? <>Gain <span className={def?.colorClass}>{def?.label ?? effect.keyword}</span> XP</>
+            : <>Gain {effect.amount} <span className={def?.colorClass}>{def?.label ?? effect.keyword}</span> XP</>
           }
         </span>
       );
@@ -105,14 +107,16 @@ export function MysteryEffectList({
   effects,
   findCard,
   findTrinket,
+  choiceLabel,
 }: {
   effects: MysteryEffect[];
   findCard: ((id: string) => { title: string } | undefined) | undefined;
   findTrinket: ((id: string) => { title: string } | undefined) | undefined;
+  choiceLabel?: string;
 }) {
   return (
     <div className="flex flex-col items-start gap-1.5">
-      <p className="text-base text-foreground">Outcome</p>
+      <p className="text-base text-foreground">{choiceLabel ?? "Outcome"}</p>
       {effects.map((effect, i) => {
         if (effect.kind === "none") return null;
 

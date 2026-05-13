@@ -77,4 +77,40 @@ describe("computeTalentEffects", () => {
     const without = computeTalentEffects({ physical: [] });
     expect(without.physicalCritChance).toBe(0);
   });
+
+  it("applies object-valued threshold effects", () => {
+    const effects = computeTalentEffects({ health: ["health-threshold-block", "health-threshold-armor"] });
+    expect(effects.healthThresholdBlock).toEqual({ threshold: 50, amount: 6 });
+    expect(effects.healthThresholdArmor).toEqual({ threshold: 25, amount: 3 });
+  });
+
+  it("applies implemented effects across multiple keywords", () => {
+    const effects = computeTalentEffects({
+      block: ["block-start", "block-prevent-poison"],
+      gold: ["gold-start", "gold-enemy-drop"],
+      holy: ["holy-lifesteal", "holy-block-grant"],
+      bleed: ["bleed-execute", "bleed-desperate"],
+    });
+
+    expect(effects.startBlock).toBe(10);
+    expect(effects.blockPreventsPoison).toBe(true);
+    expect(effects.startGold).toBe(20);
+    expect(effects.enemyGoldDropBonus).toBe(0.1);
+    expect(effects.holyLifestealPercent).toBe(10);
+    expect(effects.holyBlockPercentFromDamage).toBe(15);
+    expect(effects.bleedExecuteThreshold).toBe(30);
+    expect(effects.bleedDesperateMultiplier).toBe(2);
+  });
+
+  it("ignores unknown and currently no-op talent IDs", () => {
+    const effects = computeTalentEffects({
+      physical: ["unknown-talent"],
+      health: ["health-max-1"],
+      burn: ["burn-dmg-1"],
+    });
+
+    expect(effects.flatPhysicalDamage).toBe(0);
+    expect(effects.startHealth).toBe(0);
+    expect(effects.healMultiplier).toBe(1);
+  });
 });

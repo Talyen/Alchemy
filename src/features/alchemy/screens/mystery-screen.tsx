@@ -101,7 +101,6 @@ export function MysteryScreen({
           <RemoveCardPicker
             runDeck={runDeck}
             onSelect={handleRemoveConfirm}
-            onCancel={() => setPendingRemoval(null)}
           />
         ) : chosen ? (
           <RewardScreen choice={chosen} runDeck={runDeck} findCard={findCard} findTrinket={findTrinket} onContinue={onContinue} eventTitle={event.title} />
@@ -156,7 +155,7 @@ export function MysteryScreen({
                       {choice.label}
                     </Button>
                     <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-3 w-64 -translate-x-1/2 translate-y-1 rounded-[16px] border border-border/80 bg-card px-3 py-2 text-left text-sm leading-6 text-muted-foreground opacity-0 transition-[opacity,transform] duration-150 ease-alchemy-out will-change-[opacity,transform] group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100">
-                      <MysteryEffectList effects={choice.effects} findCard={findCard} findTrinket={findTrinket} />
+                      <MysteryEffectList effects={choice.effects} findCard={findCard} findTrinket={findTrinket} choiceLabel={choice.label} />
                     </div>
                   </div>
                 </BlurFade>

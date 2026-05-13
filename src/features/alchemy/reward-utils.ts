@@ -2,6 +2,7 @@
 // Depends on battle card/trinket shapes and shared sampling utilities.
 // Used by run navigation after combat victories and other reward-generating screens.
 import type { BattleCard, KeywordId, TrinketEntry } from "@/lib/game-data";
+import { MIXED_POTION_CARD_ID } from "@/lib/game-constants";
 import { sampleItems } from "./utils";
 
 export const REWARD_TRINKET_CHANCE = 0.25;
@@ -62,7 +63,7 @@ export function selectRewardTrinkets(allTrinkets: TrinketEntry[], count: number)
 export function selectRewardCards(deck: BattleCard[], allCards: BattleCard[], count: number): BattleCard[] {
   // Rewards are usually biased toward keywords already present in the deck, but occasional
   // random offers and a small new-card bonus keep drafts from becoming too deterministic.
-  const candidates = allCards.filter((c) => c.id !== "mixed-potion");
+  const candidates = allCards.filter((c) => c.id !== MIXED_POTION_CARD_ID);
 
   if (Math.random() < REWARD_RANDOM_CHANCE) return sampleItems(candidates, count);
 

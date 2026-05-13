@@ -26,13 +26,13 @@ describe("createEmptyRewardState", () => {
 
 describe("createBossRewardState", () => {
   it("creates trinket reward with summed gold", () => {
-    const result = createBossRewardState({ gold: 10, bossBonus: 5, talentGoldPerCombat: 2, materials: emptyInventory() });
+    const result = createBossRewardState({ gold: 10, bossBonus: 5, talentGoldPerCombat: 2, materials: emptyInventory(), trinketIds: [] });
     expect(result.rewardType).toBe("trinket");
     expect(result.gold).toBe(17);
   });
 
   it("handles zero bonuses", () => {
-    const result = createBossRewardState({ gold: 0, bossBonus: 0, talentGoldPerCombat: 0, materials: emptyInventory() });
+    const result = createBossRewardState({ gold: 0, bossBonus: 0, talentGoldPerCombat: 0, materials: emptyInventory(), trinketIds: [] });
     expect(result.gold).toBe(0);
     expect(result.choices.length).toBeGreaterThan(0);
   });
@@ -46,7 +46,7 @@ describe("createCombatRewardState", () => {
     const result = createCombatRewardState({
       battleState: baseState as never,
       runDeck: [], gold: 10, eliteBonus: 3, talentGoldPerCombat: 2,
-      materials: emptyInventory(), destinations: ["Campfire"],
+      materials: emptyInventory(), destinations: ["Campfire"], trinketIds: [],
     });
     expect(result.rewardType).toBe("card");
     expect(result.gold).toBe(15);
@@ -59,9 +59,10 @@ describe("createCombatRewardState", () => {
     const result = createCombatRewardState({
       battleState: eliteState as never,
       runDeck: [], gold: 10, eliteBonus: 5, talentGoldPerCombat: 2,
-      materials: emptyInventory(), destinations: [],
+      materials: emptyInventory(), destinations: [], trinketIds: [],
     });
     expect(result.rewardType).toBe("trinket");
+    expect(result.gold).toBe(17);
     vi.restoreAllMocks();
   });
 
@@ -70,7 +71,7 @@ describe("createCombatRewardState", () => {
     const result = createCombatRewardState({
       battleState: baseState as never,
       runDeck: [], gold: 0, eliteBonus: 0, talentGoldPerCombat: 0,
-      materials: emptyInventory(), destinations: ["Normal Combat", "Mystery"],
+      materials: emptyInventory(), destinations: ["Normal Combat", "Mystery"], trinketIds: [],
     });
     expect(result.destinations).toEqual(["Normal Combat", "Mystery"]);
     vi.restoreAllMocks();

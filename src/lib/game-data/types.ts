@@ -51,7 +51,7 @@ export type BattleCardEffect =
   | { kind: "gain-gold"; amount: number }
   | { kind: "wish"; amount: number }
   | { kind: "summon-companion"; companionId: CompanionId }
-  | { kind: "remove-ailment"; mode: "one" | "all" };
+  | { kind: "remove-ailment"; amount: number };
 
 export type CompanionDefinition = {
   id: CompanionId;
@@ -192,6 +192,8 @@ export type TalentEffectManifest = {
   receiveHalfPoisonDamage: boolean;
   goldOnFirstPoison: number;
   poisonHalvesHealing: boolean;
+
+  companionDamage: number;
 
   // --- Bleed ---
   firstBleedCardFree: boolean;

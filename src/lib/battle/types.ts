@@ -10,7 +10,6 @@ export const cardsPerTurn = 4;
 export const maxHandSize = 7;
 export const maxPlayerHealth = 30;
 export const baseEnemyHealth = 30;
-export const baseEnemyAttack = 8;
 export const basePlayerMana = 4;
 
 // Both player and enemy use the same status ID union, but enemies never gain
@@ -150,7 +149,7 @@ export function applyPlayerCombatDamage(state: BattleState, damage: number): Bat
   if (!state.deathsDoorUsed) {
     return { ...state, playerHealth: 0, deathsDoorUsed: true, deathsDoorActive: true, deathsDoorTriggeredTurn: state.turn };
   }
-  return { ...state, playerHealth: 0, deathsDoorActive: false };
+  return { ...state, playerHealth: 0, deathsDoorActive: state.deathsDoorActive };
 }
 
 // Healing above 0 ends the warning window, but the one-shot trigger stays consumed.

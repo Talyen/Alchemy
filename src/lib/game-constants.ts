@@ -19,6 +19,10 @@ export const ENEMY_BASE_REGENERATION = 2;       // Base enemy regeneration per t
 export const ENEMY_BOSS_REGENERATION = 4;       // Base regen for regeneration-trait bosses.
 export const BLEED_EXECUTE_MULTIPLIER = 2;      // Bleed damage multiplier when enemy is below execute threshold.
 export const FREE_CARD_SENTINEL = 99;           // nextCardCostReduction value that guarantees a card costs 0.
+export const PERCENT_DENOMINATOR = 100;         // Percent-based talent and trait values use 0-100 authoring.
+export const HALF_DIVISOR = 2;                  // Shared halving divisor for decay and below-half thresholds.
+export const FIRST_EFFECT_MULTIPLIER = 2;       // First-card double effects intentionally share a 2x multiplier.
+export const GOLD_TROVE_DAMAGE_REWARD = 1;      // Mimic trait gold gained each time it takes damage.
 
 // ============ Timing (ms) ============
 export const AUTO_END_TURN_DELAY = 1220;       // How long the system waits before auto-ending turn when conditions are met (no mana, no cards).
@@ -73,6 +77,11 @@ export const BOSS_TRINKET_REWARD_CHOICES = 3;  // Trinket choices offered after 
 export const ELITE_TRINKET_REWARD_CHANCE = 0.75; // Elite rewards strongly favor trinkets but still allow card rewards.
 export const MYSTERY_CARD_CHOICES = 3;          // Card-choice mystery events offer the same count as normal reward choices.
 export const MIXED_POTION_CARD_ID = "mixed-potion"; // Generated alchemy card excluded from random permanent card rewards.
+export const POTION_CARD_ID_FRAGMENT = "potion";     // Base potion cards share this ID fragment.
+export const MIXED_POTION_TITLE = "Mixed Potion";    // Crafted alchemy card title shown in deck/reveal UI.
+export const MIXED_POTION_COST = 1;                  // Crafted potions keep normal potion play cost.
+export const MIXED_POTION_TEMPLATE = "alchemy";      // Crafted potions use the alchemy card frame.
+export const CONSUME_DESCRIPTION_LINE = "Consume";  // Card text line used by consumable cards.
 
 // ============ Audio ============
 export const MASTER_GAIN = 0.3;                 // Master volume level. 0.3 prevents ear fatigue during extended sessions.
@@ -82,10 +91,8 @@ export const MUSIC_BASE_PATH = "Music/";        // Relative path from BASE_URL f
 // ============ Animation / Timing ============
 export const SHIMMER_DURATION_MS = 1250;        // Card shimmer sweep animation runtime.
 export const SHIMMER_COOLDOWN_MS = 2600;        // Minimum time between shimmer triggers. Prevents rapid-fire re-triggers from spamming hover.
-export const SHIMMER_INTRO_DELAY_MS = 500;      // Delay before first shimmer when entering a screen.
 export const COMBAT_TEXT_LIFETIME_MS = 3300;     // How long floating combat text stays mounted; visual fade is slightly shorter so cleanup never clips it.
 export const COMBAT_TEXT_LANE_DELAY_MS = 80;     // Stagger between multi-line combat text entries (creates a stacking effect).
-export const GHOST_EXTRA_BUFFER_MS = 90;        // Extra buffer on ghost animation cleanup. Prevents visual flicker at animation end.
 export const GHOST_DRAW_IN_MS = 520;            // Duration of card ghost draw-from-deck animation.
 export const GHOST_DISCARD_OUT_MS = 320;        // Duration of card ghost discard-to-pile animation.
 export const GHOST_ACTIVATE_MS = 672;           // Duration of card ghost activation (play) animation.
@@ -95,15 +102,30 @@ export const CARD_ACTIVATION_ROTATION_DEGREES = 4.2; // Fan angle applied while 
 // ============ Drag ============
 export const DRAG_START_THRESHOLD_PX = 10;       // Pixels of movement before a click becomes a drag. 10px prevents accidental drags on click.
 export const DRAG_ROTATION_CLAMP = 12;           // Max drag preview rotation in degrees.
-export const DRAG_ROTATION_DIVISOR = 18;         // Rotation sensitivity divisor (higher = less rotation per pixel).
 
 // ============ Layout ============
 export const GHOST_TRAVEL_SCALE = 0.74;          // Scale factor for card ghost when traveling between zones.
 export const BATTLEFIELD_HIT_FRACTION = 0.74;    // Fraction of battle scene height used for drag-to-play hit detection.
-export const PLAYER_PANEL_OFFSET_FRACTION = 0.16;
+export const MOBILE_LANDSCAPE_MAX_WIDTH = 1024;  // Coarse-pointer viewport width that still uses mobile landscape UI.
+export const PORTRAIT_MOBILE_MAX_WIDTH = 768;    // Coarse-pointer portrait width that shows rotate prompt.
+export const ORIENTATION_CHANGE_DEBOUNCE_MS = 100; // Lets mobile browsers settle viewport dimensions after rotation.
+export const DESIGN_STAGE_HEIGHT = 1080;         // Desktop virtual canvas height used for consistent composition.
+export const MOBILE_STAGE_HEIGHT = 900;          // Mobile landscape virtual canvas height.
+export const MIN_STAGE_SCALE = 0.3;              // Lowered so small landscape phones still fit without overflow.
+export const MAX_STAGE_SCALE = 1.35;             // Upper bound prevents oversized UI on very large displays.
 
 // ============ Collection ============
 export const COLLECTION_PAGE_SIZE = 10;          // Items per page in the collection compendium.
+export const BATTLE_ACTOR_TOP_DESKTOP = "42%";  // Desktop vertical anchor for player/enemy cards.
+export const BATTLE_ACTOR_TOP_MOBILE = "36%";   // Mobile landscape vertical anchor for player/enemy cards.
+export const HAND_FAN_VERTICAL_STEP_PX = 10;     // Per-card vertical offset for resting hand fan.
+export const HAND_FAN_ROTATION_DEGREES = 4.2;   // Per-card resting rotation for hand fan.
+export const HAND_HOVER_LIFT_PX = 34;            // Hovered cards lift out of the fan by this amount.
+export const HAND_HOVER_ROTATION_DEGREES = 2.6;  // Hover rotation keeps selected cards readable.
+export const HAND_HOVER_SCALE = 1.03;            // Slight scale-up for hovered hand cards.
+export const HAND_CARD_BASE_Z_INDEX = 10;        // Resting hand z-index start for overlap ordering.
+export const HAND_CARD_HOVER_Z_INDEX = 40;       // Hovered card z-index so popups stay above neighbors.
+export const WISH_OVERLAY_Z_INDEX = 90;          // Wish choices block all battle controls.
 
 // ============ Storage ============
 export const SAVE_KEY = "alchemy-save-v1";       // localStorage key. Version suffix enables migration if shape changes.

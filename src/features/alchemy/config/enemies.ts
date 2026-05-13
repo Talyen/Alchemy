@@ -3,13 +3,10 @@
 import { enemyBestiary, type EnemyType } from "@/lib/game-data";
 import { pickRandom } from "@/lib/utils";
 
-// Picks an enemy for the current room. Room 0 of a run always starts with the
-// Skeleton as a tutorial fight. Subsequent rooms pick from normal or elite pools
-// based on the current destination type.
-export function getCurrentEnemy(roomsEncountered: number, enemyType?: EnemyType) {
-  if (roomsEncountered === 0) {
-    return enemyBestiary.find((e) => e.id === "skeleton") ?? enemyBestiary[0];
-  }
+// Picks an enemy for the current room. Room 0 of a run always starts with a
+// normal combat encounter without a tutorial guarantee. Subsequent rooms pick
+// from normal or elite pools based on the current destination type.
+export function getCurrentEnemy(enemyType?: EnemyType) {
   const pool = enemyType ? enemyBestiary.filter((e) => e.enemyType === enemyType) : enemyBestiary.filter((e) => e.id !== "skeleton");
   const available = pool.length > 0 ? pool : enemyBestiary.filter((e) => e.id !== "skeleton");
   return pickRandom(available) ?? enemyBestiary[0];

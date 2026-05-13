@@ -96,8 +96,6 @@ export type HomesteadEffectManifest = {
   campfireHealBonus: number;
   physicalCritChance: number;
   startMaxHealthBonus: number;
-  buildingCostReduction: number;
-  farmYieldMultiplier: number;
   forgeToBurn: number;
 };
 
@@ -112,7 +110,5 @@ export const defaultHomesteadEffects: HomesteadEffectManifest = {
   campfireHealBonus: 0,
   physicalCritChance: 0,
   startMaxHealthBonus: 0,
-  buildingCostReduction: 0,
-  farmYieldMultiplier: 0,
   forgeToBurn: 0,
 };

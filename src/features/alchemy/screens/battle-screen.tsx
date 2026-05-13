@@ -8,6 +8,7 @@ import { Coins, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { type BattleCard } from "@/lib/game-data";
 import type { BattleState } from "@/lib/battle";
+import { BATTLE_ACTOR_TOP_DESKTOP, BATTLE_ACTOR_TOP_MOBILE, HAND_CARD_BASE_Z_INDEX, HAND_CARD_HOVER_Z_INDEX, HAND_FAN_ROTATION_DEGREES, HAND_FAN_VERTICAL_STEP_PX, HAND_HOVER_LIFT_PX, HAND_HOVER_ROTATION_DEGREES, HAND_HOVER_SCALE, WISH_OVERLAY_Z_INDEX } from "@/lib/game-constants";
 
 
 import {
@@ -86,13 +87,23 @@ export function BattleScreen({
     : `translateX(calc(-50% - clamp(111px,11cqh,168px) - ${battleActorHalfGap}))`;
   const [wishSelectedCard, setWishSelectedCard] = useState<BattleCard | null>(null);
 
+  function getRestingHandTransform(offset: number) {
+    // Hand transforms use named balance constants so fan shape stays consistent across UI edits.
+    return `translateY(${Math.abs(offset) * HAND_FAN_VERTICAL_STEP_PX}px) rotate(${offset * HAND_FAN_ROTATION_DEGREES}deg)`;
+  }
+
+  function getHoverHandTransform(offset: number) {
+    // Hover transform lifts and straightens a card enough to make rules text readable.
+    return `translateY(-${HAND_HOVER_LIFT_PX}px) rotate(${offset * HAND_HOVER_ROTATION_DEGREES}deg) scale(${HAND_HOVER_SCALE})`;
+  }
+
   return (
     <div ref={battleSceneRef} data-testid="battle-scene" className="relative h-full w-full overflow-hidden [container-type:size]">
       {/* Battle actors use fixed stage anchors/container queries instead of document flow so
           actor panels, combat text rails, and the hand fan keep stable coordinates at every scale. */}
       <section
         className={`absolute inset-x-0 flex -translate-y-1/2 items-start justify-center px-4 ${isMobileLandscape ? "gap-[clamp(260px,16cqw,360px)]" : "gap-[clamp(336px,20cqw,420px)]"}`}
-        style={{ top: isMobileLandscape ? '36%' : '42%' }}
+        style={{ top: isMobileLandscape ? BATTLE_ACTOR_TOP_MOBILE : BATTLE_ACTOR_TOP_DESKTOP }}
       >
         <div
           className={`pointer-events-none absolute -top-10 left-1/2 z-20 whitespace-nowrap rounded-md px-3 py-1 text-sm transition-all duration-500 ${
@@ -178,8 +189,8 @@ export function BattleScreen({
             const hoverId = getHoverId("hand", `${card.id}-${card.uid}`);
             const isHovered = hoveredCardId === hoverId;
             const offset = index - (battleState.hand.length - 1) / 2;
-            const restingTransform = `translateY(${Math.abs(offset) * 10}px) rotate(${offset * 4.2}deg)`;
-            const hoverTransform = `translateY(-34px) rotate(${offset * 2.6}deg) scale(1.03)`;
+            const restingTransform = getRestingHandTransform(offset);
+            const hoverTransform = getHoverHandTransform(offset);
             const isShimmering = shimmerState?.cardId === hoverId;
             const canPlay = battleState.turnPhase === "player" && battleState.mana >= card.cost && !battleState.wishOptions;
 
@@ -207,7 +218,7 @@ export function BattleScreen({
                 className={handWidthClass}
                 disabled={!canPlay}
                 wrapperClassName={`stagger-item relative flex justify-center ${isMobileLandscape ? "-mx-7" : "-mx-5 sm:-mx-6"}`}
-                wrapperStyle={{ zIndex: isHovered ? 40 : 10 + index, "--stagger-index": index } as CSSProperties}
+                wrapperStyle={{ zIndex: isHovered ? HAND_CARD_HOVER_Z_INDEX : HAND_CARD_BASE_Z_INDEX + index, "--stagger-index": index } as CSSProperties}
               />
             );
           })}
@@ -252,7 +263,7 @@ export function BattleScreen({
       </section>
 
       {battleState.wishOptions ? (
-        <div className="motion-overlay absolute inset-0 z-[90] flex items-center justify-center bg-black/70 px-6">
+        <div className="motion-overlay absolute inset-0 flex items-center justify-center bg-black/70 px-6" style={{ zIndex: WISH_OVERLAY_Z_INDEX }}>
           <div className="motion-panel alchemy-shell w-full max-w-5xl rounded-[28px] border border-border/80 px-6 py-6">
             <div className="text-center">
               <h2 className="text-2xl text-foreground">Wish 1</h2>

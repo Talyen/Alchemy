@@ -10,7 +10,7 @@ import {
   type BattleState,
   type CombatTextEvent,
 } from "./types";
-import { BLEED_EXECUTE_MULTIPLIER, BLEED_STATUS_MULTIPLIER, CRIT_MULTIPLIER, FREE_CARD_SENTINEL, FREEZE_THRESHOLD_FRACTION, GLOBAL_CRIT_CHANCE, MIN_MAX_MANA_FLOOR, STUN_THRESHOLD_FRACTION, WISH_CHOICE_COUNT } from "../game-constants";
+import { BLEED_EXECUTE_MULTIPLIER, BLEED_STATUS_MULTIPLIER, CRIT_MULTIPLIER, FIRST_EFFECT_MULTIPLIER, FREE_CARD_SENTINEL, FREEZE_THRESHOLD_FRACTION, GLOBAL_CRIT_CHANCE, GOLD_TROVE_DAMAGE_REWARD, HALF_DIVISOR, MIN_MAX_MANA_FLOOR, PERCENT_DENOMINATOR, STUN_THRESHOLD_FRACTION, WISH_CHOICE_COUNT } from "../game-constants";
 
 // Deduplicates combat text events by (target, kind, stat) so that three separate
 // "physical damage" events from one card become a single "-15" instead of "-5 -5 -5".
@@ -41,7 +41,7 @@ function computeBaseDamage(state: BattleState, effect: Extract<BattleCardEffect,
   if (isBurn && state.talentEffects.forgeToBurn) forgeBonus = state.playerStatuses.forge;
   if (isHoly && state.talentEffects.forgeToHoly) forgeBonus = state.playerStatuses.forge;
 
-  let rawAmount = effect.fromBlock ? state.playerStatuses.block : effect.amount + forgeBonus;
+  let rawAmount = effect.fromBlock ? state.playerStatuses.block + forgeBonus : effect.amount + forgeBonus;
 
   if (effect.damageType === "physical") {
     rawAmount += state.talentEffects.flatPhysicalDamage;
@@ -49,13 +49,13 @@ function computeBaseDamage(state: BattleState, effect: Extract<BattleCardEffect,
       rawAmount += state.playerStatuses.armor;
     }
     if (state.talentEffects.blockToPhysicalDamage) {
-      rawAmount += Math.floor(state.playerStatuses.block / 2);
+      rawAmount += Math.floor(state.playerStatuses.block / HALF_DIVISOR);
     }
     if (state.enemyStunSkipTurns > 0) {
-      rawAmount = Math.floor(rawAmount * (1 + state.talentEffects.physicalVsStunnedMultiplier / 100));
+      rawAmount = Math.floor(rawAmount * (1 + state.talentEffects.physicalVsStunnedMultiplier / PERCENT_DENOMINATOR));
     }
     if (state.enemyFreezeSkipTurns > 0) {
-      rawAmount = Math.floor(rawAmount * (1 + state.talentEffects.physicalVsFrozenMultiplier / 100));
+      rawAmount = Math.floor(rawAmount * (1 + state.talentEffects.physicalVsFrozenMultiplier / PERCENT_DENOMINATOR));
     }
     if (state.enemyStatuses.poison > 0) {
       rawAmount += state.talentEffects.poisonPhysicalBonus;
@@ -66,18 +66,18 @@ function computeBaseDamage(state: BattleState, effect: Extract<BattleCardEffect,
   }
 
   if (effect.damageType === "holy") {
-    rawAmount += Math.floor(state.gold * state.talentEffects.holyGoldPercent / 100);
-    rawAmount += Math.floor(state.playerStatuses.block * state.talentEffects.holyBlockPercent / 100);
+    rawAmount += Math.floor(state.gold * state.talentEffects.holyGoldPercent / PERCENT_DENOMINATOR);
+    rawAmount += Math.floor(state.playerStatuses.block * state.talentEffects.holyBlockPercent / PERCENT_DENOMINATOR);
     if (state.enemyStatuses.burn > 0) {
-      rawAmount = Math.floor(rawAmount * (1 + state.talentEffects.holyVsBurnMultiplier / 100));
+      rawAmount = Math.floor(rawAmount * (1 + state.talentEffects.holyVsBurnMultiplier / PERCENT_DENOMINATOR));
     }
   }
 
   if (effect.damageType === "bleed") {
-    if (state.playerHealth <= state.playerMaxHealth / 2 && state.talentEffects.bleedDesperateMultiplier > 1) {
+    if (state.playerHealth <= state.playerMaxHealth / HALF_DIVISOR && state.talentEffects.bleedDesperateMultiplier > 1) {
       rawAmount = Math.floor(rawAmount * state.talentEffects.bleedDesperateMultiplier);
     }
-    if (state.enemyHealth <= state.enemyMaxHealth * state.talentEffects.bleedExecuteThreshold / 100) {
+    if (state.enemyHealth <= state.enemyMaxHealth * state.talentEffects.bleedExecuteThreshold / PERCENT_DENOMINATOR) {
       rawAmount = Math.floor(rawAmount * BLEED_EXECUTE_MULTIPLIER);
     }
   }
@@ -90,7 +90,7 @@ function computeBaseDamage(state: BattleState, effect: Extract<BattleCardEffect,
 function applyCrit(damage: number, damageType: string, state: BattleState) {
   const physCritChance = damageType === "physical" ? state.talentEffects.physicalCritChance : 0;
   const totalChance = GLOBAL_CRIT_CHANCE + physCritChance;
-  const isCrit = totalChance > 0 && Math.random() * 100 < totalChance;
+  const isCrit = totalChance > 0 && Math.random() * PERCENT_DENOMINATOR < totalChance;
   return isCrit ? damage * CRIT_MULTIPLIER : damage;
 }
 
@@ -105,7 +105,7 @@ function applyLifesteal(state: BattleState, damage: number, combatTexts: CombatT
 // Holy lifesteal: heals for a percentage of holy damage dealt.
 function applyHolyLifesteal(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
   if (damage <= 0 || state.talentEffects.holyLifestealPercent <= 0) return state;
-  const healAmount = Math.floor(damage * state.talentEffects.holyLifestealPercent / 100 * state.talentEffects.healMultiplier);
+  const healAmount = Math.floor(damage * state.talentEffects.holyLifestealPercent / PERCENT_DENOMINATOR * state.talentEffects.healMultiplier);
   if (healAmount <= 0) return state;
   mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: healAmount });
   return applyPlayerHealing(state, healAmount);
@@ -114,7 +114,7 @@ function applyHolyLifesteal(state: BattleState, damage: number, combatTexts: Com
 // Grants block equal to a percentage of damage dealt.
 function applyDamageBlock(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
   if (damage <= 0 || state.talentEffects.holyBlockPercentFromDamage <= 0) return state;
-  const blockAmount = Math.floor(damage * state.talentEffects.holyBlockPercentFromDamage / 100);
+  const blockAmount = Math.floor(damage * state.talentEffects.holyBlockPercentFromDamage / PERCENT_DENOMINATOR);
   if (blockAmount <= 0) return state;
   mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "block", amount: blockAmount });
   return {
@@ -156,11 +156,10 @@ function applyDamageStatuses(state: BattleState, effect: Extract<BattleCardEffec
     case "bleed": {
       const bleedAmount = actualDamage * BLEED_STATUS_MULTIPLIER;
       nextStatuses.bleed += bleedAmount;
-      if (bleedAmount > 0 && effect.lifesteal) nextStatuses.bleedLeech += bleedAmount;
-      if (bleedAmount > 0 && nextState.talentEffects.bleedLeechChance > 0 && Math.random() * 100 < nextState.talentEffects.bleedLeechChance) {
+      if (bleedAmount > 0 && (effect.lifesteal || (nextState.talentEffects.bleedLeechChance > 0 && Math.random() * PERCENT_DENOMINATOR < nextState.talentEffects.bleedLeechChance))) {
         nextStatuses.bleedLeech += bleedAmount;
       }
-      if (actualDamage > 0 && nextState.talentEffects.bleedPoisonChance > 0 && Math.random() * 100 < nextState.talentEffects.bleedPoisonChance) {
+      if (actualDamage > 0 && nextState.talentEffects.bleedPoisonChance > 0 && Math.random() * PERCENT_DENOMINATOR < nextState.talentEffects.bleedPoisonChance) {
         nextStatuses.poison += actualDamage;
       }
       // Cutpurse Knife: gain gold when applying bleed
@@ -187,7 +186,6 @@ function applyDamageStatuses(state: BattleState, effect: Extract<BattleCardEffec
         if (nextState.talentEffects.nextCardFreeOnStun) {
           nextState = { ...nextState, flags: { ...nextState.flags, nextCardCostReduction: FREE_CARD_SENTINEL } };
         }
-        return nextState;
       }
       break;
     }
@@ -196,7 +194,7 @@ function applyDamageStatuses(state: BattleState, effect: Extract<BattleCardEffec
       const isFreezeImmune = state.currentEnemy.traits.some((t) => t.id === "glacial-shell");
       if (!isFreezeImmune && state.enemyHealth > 0 && nextStatuses.freeze >= state.enemyHealth * FREEZE_THRESHOLD_FRACTION) {
         nextStatuses.freeze = 0;
-        return { ...nextState, enemyStatuses: nextStatuses, enemyFreezeSkipTurns: nextState.enemyFreezeSkipTurns + 1 };
+        nextState = { ...nextState, enemyStatuses: nextStatuses, enemyFreezeSkipTurns: nextState.enemyFreezeSkipTurns + 1 };
       }
       break;
     }
@@ -217,6 +215,96 @@ export function getEnemyDamageMultiplier(state: BattleState, damageType: string)
   return 1;
 }
 
+function applyFirstDamageModifiers(state: BattleState, effect: Extract<BattleCardEffect, { kind: "damage" }>, rawDamage: number) {
+  // First-hit talents and trinkets consume flags before crit/armor so their bonuses scale naturally.
+  let nextState = state;
+  let nextDamage = rawDamage;
+
+  if (effect.damageType === "burn" && nextState.talentEffects.firstBurnCardDoubled && !nextState.flags.firstBurnCardDoubledUsed) {
+    nextDamage *= FIRST_EFFECT_MULTIPLIER;
+    nextState = { ...nextState, flags: { ...nextState.flags, firstBurnCardDoubledUsed: true } };
+  }
+  if (effect.damageType === "burn" && nextState.trinketEffects.firstBurnDoubled && !nextState.flags.firstBurnTrinketDoubledUsed) {
+    nextDamage *= FIRST_EFFECT_MULTIPLIER;
+    nextState = { ...nextState, flags: { ...nextState.flags, firstBurnTrinketDoubledUsed: true } };
+  }
+  if (effect.damageType === "holy" && nextState.trinketEffects.firstHolyDamageBonus > 0 && !nextState.flags.firstHolyDamageBonusUsed) {
+    nextDamage += nextState.trinketEffects.firstHolyDamageBonus;
+    nextState = { ...nextState, flags: { ...nextState.flags, firstHolyDamageBonusUsed: true } };
+  }
+
+  return { state: nextState, rawDamage: nextDamage };
+}
+
+function applyForgeStunRider(state: BattleState, effect: Extract<BattleCardEffect, { kind: "damage" }>, combatTexts: CombatTextEvent[]) {
+  // Obsidian Hammer converts a large forge stack into extra stun on physical hits.
+  if (effect.damageType !== "physical" || state.trinketEffects.forgeStunThreshold <= 0 || state.playerStatuses.forge < state.trinketEffects.forgeStunThreshold) return state;
+
+  const nextStun = state.enemyStatuses.stun + state.trinketEffects.forgeStunAmount;
+  const threshold = STUN_THRESHOLD_FRACTION - state.talentEffects.stunThresholdReduction;
+
+  mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "stun", amount: state.trinketEffects.forgeStunAmount });
+
+  if (state.enemyHealth > 0 && nextStun > state.enemyHealth * threshold) {
+    let nextState = {
+      ...state,
+      enemyStatuses: { ...state.enemyStatuses, stun: 0 },
+      enemyStunSkipTurns: state.enemyStunSkipTurns + 1 + state.talentEffects.stunDurationExtension,
+    };
+    if (nextState.talentEffects.drawOnStun > 0) {
+      const draw = drawCards(nextState.deck, nextState.discard, nextState.hand, nextState.talentEffects.drawOnStun, nextState.nextCardUid);
+      nextState = { ...nextState, deck: draw.deck, discard: draw.discard, hand: draw.hand, nextCardUid: draw.nextCardUid };
+    }
+    if (nextState.talentEffects.nextCardFreeOnStun) {
+      nextState = { ...nextState, flags: { ...nextState.flags, nextCardCostReduction: FREE_CARD_SENTINEL } };
+    }
+    return nextState;
+  }
+
+  return {
+    ...state,
+    enemyStatuses: { ...state.enemyStatuses, stun: nextStun },
+  };
+}
+
+function applyHolyDamageRiders(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
+  // Holy damage owns its healing, block, burn, and wish riders so the main damage path stays linear.
+  let nextState = applyHolyLifesteal(state, damage, combatTexts);
+  nextState = applyDamageBlock(nextState, damage, combatTexts);
+
+  if (nextState.talentEffects.holyBurnChance > 0 && Math.random() * PERCENT_DENOMINATOR < nextState.talentEffects.holyBurnChance) {
+    nextState = {
+      ...nextState,
+      enemyStatuses: { ...nextState.enemyStatuses, burn: nextState.enemyStatuses.burn + damage },
+    };
+  }
+
+  if (nextState.talentEffects.holyWishChance > 0 && Math.random() * PERCENT_DENOMINATOR < nextState.talentEffects.holyWishChance) {
+    nextState = { ...nextState, wishOptions: shuffleCards(cardLibrary).slice(0, WISH_CHOICE_COUNT) };
+  }
+
+  return nextState;
+}
+
+function applyGoldTroveReward(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
+  // Gold Trove pays on real damage dealt to make mimic fights visibly lucrative.
+  if (!state.currentEnemy.traits.some((t) => t.id === "gold-trove") || damage <= 0) return state;
+  mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "gold", amount: GOLD_TROVE_DAMAGE_REWARD });
+  return { ...state, gold: state.gold + GOLD_TROVE_DAMAGE_REWARD };
+}
+
+function consumeForgeAfterPhysicalDamage(state: BattleState, effect: Extract<BattleCardEffect, { kind: "damage" }>, damage: number) {
+  // Forge is a temporary weapon charge that is spent only by successful physical/stun hits.
+  if ((effect.damageType !== "physical" && effect.damageType !== "stun") || damage <= 0 || state.playerStatuses.forge <= 0) return state;
+  return {
+    ...state,
+    playerStatuses: {
+      ...state.playerStatuses,
+      forge: state.playerStatuses.forge - 1,
+    },
+  };
+}
+
 // Full enemy damage is an ordering contract for balance: base bonuses and one-shot
 // boosts happen before crit, armor and traits reduce the final hit, then health changes
 // unlock death/trinket/status/lifesteal side effects before the visible damage text emits.
@@ -225,25 +313,9 @@ function dealEnemyDamage(
   effect: Extract<BattleCardEffect, { kind: "damage" }>,
   combatTexts: CombatTextEvent[],
 ) {
-  let rawDamage = computeBaseDamage(state, effect);
-
-  // First burn card doubled (talent)
-  if (effect.damageType === "burn" && state.talentEffects.firstBurnCardDoubled && !state.flags.firstBurnCardDoubledUsed) {
-    rawDamage *= 2;
-    state = { ...state, flags: { ...state.flags, firstBurnCardDoubledUsed: true } };
-  }
-
-  // First burn doubled (Meteorite trinket)
-  if (effect.damageType === "burn" && state.trinketEffects.firstBurnDoubled && !state.flags.firstBurnTrinketDoubledUsed) {
-    rawDamage *= 2;
-    state = { ...state, flags: { ...state.flags, firstBurnTrinketDoubledUsed: true } };
-  }
-
-  // First holy damage bonus (Brass Censer trinket)
-  if (effect.damageType === "holy" && state.trinketEffects.firstHolyDamageBonus > 0 && !state.flags.firstHolyDamageBonusUsed) {
-    rawDamage += state.trinketEffects.firstHolyDamageBonus;
-    state = { ...state, flags: { ...state.flags, firstHolyDamageBonusUsed: true } };
-  }
+  const modifiedBase = applyFirstDamageModifiers(state, effect, computeBaseDamage(state, effect));
+  state = modifiedBase.state;
+  const rawDamage = modifiedBase.rawDamage;
 
   const finalDamage = applyCrit(rawDamage, effect.damageType, state);
 
@@ -266,76 +338,38 @@ function dealEnemyDamage(
 
   nextState = applyDamageStatuses(nextState, effect, modifiedDamage, combatTexts);
 
-  // Obsidian Hammer: 4+ forge → physical attacks stun
-  if (effect.damageType === "physical" && nextState.trinketEffects.forgeStunThreshold > 0 && nextState.playerStatuses.forge >= nextState.trinketEffects.forgeStunThreshold) {
-    nextState = {
-      ...nextState,
-      enemyStatuses: { ...nextState.enemyStatuses, stun: nextState.enemyStatuses.stun + nextState.trinketEffects.forgeStunAmount },
-    };
-    mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "stun", amount: nextState.trinketEffects.forgeStunAmount });
-  }
+  nextState = applyForgeStunRider(nextState, effect, combatTexts);
 
   if (effect.lifesteal) {
     nextState = applyLifesteal(nextState, modifiedDamage, combatTexts);
   }
 
   if (effect.damageType === "holy") {
-    nextState = applyHolyLifesteal(nextState, modifiedDamage, combatTexts);
-    nextState = applyDamageBlock(nextState, modifiedDamage, combatTexts);
-
-    if (nextState.talentEffects.holyBurnChance > 0 && Math.random() * 100 < nextState.talentEffects.holyBurnChance) {
-      nextState = {
-        ...nextState,
-        enemyStatuses: { ...nextState.enemyStatuses, burn: nextState.enemyStatuses.burn + modifiedDamage },
-      };
-    }
-
-    if (nextState.talentEffects.holyWishChance > 0 && Math.random() * 100 < nextState.talentEffects.holyWishChance) {
-      nextState = { ...nextState, wishOptions: shuffleCards(cardLibrary).slice(0, WISH_CHOICE_COUNT) };
-    }
+    nextState = applyHolyDamageRiders(nextState, modifiedDamage, combatTexts);
   }
 
-  // Mimic trait: gain 1 gold each time you deal damage to it.
-  if (nextState.currentEnemy.traits.some((t) => t.id === "gold-trove") && modifiedDamage > 0) {
-    const goldAmount = 1;
-    mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "gold", amount: goldAmount });
-    nextState = { ...nextState, gold: nextState.gold + goldAmount };
-  }
+  nextState = applyGoldTroveReward(nextState, modifiedDamage, combatTexts);
 
   if (modifiedDamage > 0) {
     mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: effect.damageType, amount: modifiedDamage });
   }
 
-  // Dealing Physical or Stun damage removes 1 Forge
-  if ((effect.damageType === "physical" || effect.damageType === "stun") && modifiedDamage > 0 && nextState.playerStatuses.forge > 0) {
-    nextState = {
-      ...nextState,
-      playerStatuses: {
-        ...nextState.playerStatuses,
-        forge: nextState.playerStatuses.forge - 1,
-      },
-    };
-  }
+  nextState = consumeForgeAfterPhysicalDamage(nextState, effect, modifiedDamage);
 
   return nextState;
 }
 
 // Ailment removal is deterministic by ailmentStatusIds order, not random. That makes
 // save/replay behavior predictable and lets trinket rewards attach to exactly one removal.
-function removePlayerAilments(state: BattleState, mode: "one" | "all", combatTexts?: CombatTextEvent[]) {
+function removePlayerAilments(state: BattleState, amount: number, combatTexts?: CombatTextEvent[]) {
   const nextPlayerStatuses = { ...state.playerStatuses };
-  let removed = false;
+  let removed = 0;
 
-  if (mode === "all") {
-    for (const statusId of ailmentStatusIds) {
-      if (nextPlayerStatuses[statusId] > 0) removed = true;
+  for (const statusId of ailmentStatusIds) {
+    if (removed >= amount) break;
+    if (nextPlayerStatuses[statusId] > 0) {
       nextPlayerStatuses[statusId] = 0;
-    }
-  } else {
-    const firstAilment = ailmentStatusIds.find((statusId) => nextPlayerStatuses[statusId] > 0);
-    if (firstAilment) {
-      nextPlayerStatuses[firstAilment] = 0;
-      removed = true;
+      removed++;
     }
   }
 
@@ -361,7 +395,7 @@ function removePlayerAilments(state: BattleState, mode: "one" | "all", combatTex
 // Wish excludes the card that created it to avoid self-looping. Undiscovered bias only
 // takes over when enough choices exist, so the player still receives a full offer set.
 function buildWishOptions(state: BattleState, card: BattleCard): BattleCard[] {
-  const baseCount = WISH_CHOICE_COUNT + (Math.random() * 100 < state.talentEffects.wishExtraChoiceChance ? 1 : 0);
+  const baseCount = WISH_CHOICE_COUNT + (Math.random() * PERCENT_DENOMINATOR < state.talentEffects.wishExtraChoiceChance ? 1 : 0);
 
   let candidates = cardLibrary.filter((candidate) => candidate.id !== card.id);
 
@@ -381,11 +415,11 @@ function applyPlayerStatusEffect(state: BattleState, effect: Extract<BattleCardE
   let amount = effect.amount;
 
   if (effect.status === "armor") {
-    if (state.talentEffects.armorDoubledBelowHalfHealth && state.playerHealth <= state.playerMaxHealth / 2) {
-      amount *= 2;
+    if (state.talentEffects.armorDoubledBelowHalfHealth && state.playerHealth <= state.playerMaxHealth / HALF_DIVISOR) {
+      amount *= FIRST_EFFECT_MULTIPLIER;
     }
     if (state.talentEffects.firstArmorCardDoubled && !state.flags.firstArmorCardDoubledUsed) {
-      amount *= 2;
+      amount *= FIRST_EFFECT_MULTIPLIER;
       state = { ...state, flags: { ...state.flags, firstArmorCardDoubledUsed: true } };
     }
     const newArmor = state.playerStatuses.armor + amount;
@@ -452,7 +486,7 @@ function applyWishEffect(state: BattleState, card: BattleCard, combatTexts: Comb
     mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: nextState.talentEffects.healthOnWish });
   }
   if (nextState.talentEffects.removeAilmentOnWish) {
-    nextState = removePlayerAilments(nextState, "one", combatTexts);
+    nextState = removePlayerAilments(nextState, 1, combatTexts);
   }
   if (nextState.talentEffects.wishDrawsCard) {
     const draw = drawCards(nextState.deck, nextState.discard, nextState.hand, 1, nextState.nextCardUid);
@@ -529,7 +563,7 @@ export function applyCardEffects(state: BattleState, card: BattleCard, combatTex
       case "summon-companion":
         return { ...currentState, activeCompanion: companionLibrary[effect.companionId] };
       case "remove-ailment":
-        return removePlayerAilments(currentState, effect.mode, combatTexts);
+        return removePlayerAilments(currentState, effect.amount, combatTexts);
       default:
         return currentState;
     }

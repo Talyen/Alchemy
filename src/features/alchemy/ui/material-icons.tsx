@@ -29,17 +29,6 @@ export const matPillStyle: Record<MaterialId, string> = {
   crystal: "bg-sky-400/15",
 };
 
-export function matColorHex(mat: MaterialId): string {
-  const colors: Record<MaterialId, string> = {
-    wood: "#8B5E3C",
-    iron: "#9CA3AF",
-    herbs: "#15803D",
-    food: "#EF4444",
-    crystal: "#38BDF8",
-  };
-  return colors[mat] ?? "#6B7280";
-}
-
 export function MaterialIcon({ material, className }: { material: MaterialId; className?: string }) {
   const icons: Record<MaterialId, ReactNode> = {
     wood: <TreePine className={cn("text-amber-600", className ?? "h-4 w-4")} />,

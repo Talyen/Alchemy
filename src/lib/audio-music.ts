@@ -101,13 +101,3 @@ export function playMusic(key: string) {
 
   startTrack(selectedTrack);
 }
-
-// Stops streamed music and resets the active music key.
-export function stopMusic() {
-  audioState.currentMusicKey = null;
-  if (audioState.currentMusic) {
-    audioState.currentMusic.pause();
-    audioState.currentMusic.currentTime = 0;
-    audioState.currentMusic = null;
-  }
-}

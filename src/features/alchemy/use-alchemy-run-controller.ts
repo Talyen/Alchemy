@@ -18,7 +18,7 @@ export function useAlchemyRunController({
   discoveredCardIds, setDiscoveredCardIds, setEncounteredEnemyIds,
   setDiscoveredTrinketIds,
   initialTalentXP, initialUnlockedTalents, initialActiveRun, autoEndTurn,
-  onAddMaterials, onTriggerFarmYield, homesteadEffects,
+  onAddMaterials, homesteadEffects,
 }: {
   discoveredCardIds: string[];
   setDiscoveredCardIds: React.Dispatch<React.SetStateAction<string[]>>;
@@ -28,7 +28,6 @@ export function useAlchemyRunController({
   initialActiveRun: ActiveRunData | null;
   autoEndTurn: boolean;
   onAddMaterials: (materials: MaterialInventory) => void;
-  onTriggerFarmYield: () => void;
   homesteadEffects: HomesteadEffectManifest;
 }) {
   // This hook composes domain controllers and exposes a stable UI API; it intentionally
@@ -54,10 +53,8 @@ export function useAlchemyRunController({
 
   // ============ Ref Wrappers ============
   const onAddMaterialsRef = useRef(onAddMaterials);
-  const onTriggerFarmYieldRef = useRef(onTriggerFarmYield);
   const homesteadEffectsRef = useRef(homesteadEffects);
   useEffect(() => { onAddMaterialsRef.current = onAddMaterials; }, [onAddMaterials]);
-  useEffect(() => { onTriggerFarmYieldRef.current = onTriggerFarmYield; }, [onTriggerFarmYield]);
   useEffect(() => { homesteadEffectsRef.current = homesteadEffects; }, [homesteadEffects]);
 
   // ============ Domain Controllers ============
@@ -87,7 +84,7 @@ export function useAlchemyRunController({
     setBattleState: battle.setBattleState,
     setDiscoveredCardIds,
     setEncounteredEnemyIds, setDiscoveredTrinketIds,
-    onAddMaterialsRef, onTriggerFarmYieldRef, homesteadEffectsRef,
+    onAddMaterialsRef, homesteadEffectsRef,
     setHoveredCardId,
     onStartBattle: battle.startBattle,
     onStartBossBattle: battle.startBossBattle,
@@ -118,6 +115,9 @@ export function useAlchemyRunController({
     get selectedRewardId() { return nav.selectedRewardId; },
     get destinationOptions() { return nav.destinationOptions; },
     get shopCards() { return shop.shopCards; },
+    get shopCardPrice() { return shop.shopCardPrice; },
+    get shopRemovePrice() { return shop.shopRemovePrice; },
+    get shopRefreshPrice() { return shop.shopRefreshPrice; },
     get shopRefreshesLeft() { return shop.shopRefreshesLeft; },
     get shopRemoveUsed() { return shop.shopRemoveUsed; },
     get alchemistPotions() { return shop.alchemistPotions; },
@@ -125,8 +125,7 @@ export function useAlchemyRunController({
     get alchemistPotionPrice() { return shop.alchemistPotionPrice; },
     get alchemistMixPrice() { return shop.alchemistMixPrice; },
     get alchemistMixUsed() { return shop.alchemistMixUsed; },
-    get runEndHerbs() { return nav.runEndHerbs; },
-    get runEndFood() { return nav.runEndFood; },
+    get runEndMaterials() { return nav.runEndMaterials; },
     get mysteryEvent() { return nav.mysteryEvent; },
     get activeRunData() { return nav.activeRunData; },
     handCardRefs: battle.handCardRefs,

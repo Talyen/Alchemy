@@ -76,7 +76,6 @@ export function normalizeSaveData(parsed: Partial<SaveData>): SaveData {
     constructedBuildings: migrateBuildingIds(parsed.constructedBuildings),
     plantedFarms: migrateFarmIds(parsed.plantedFarms),
     completedResearch: Array.isArray(parsed.completedResearch) ? parsed.completedResearch as ResearchId[] : defaultSaveData.completedResearch,
-    pendingFarmYield: typeof parsed.pendingFarmYield === "boolean" ? parsed.pendingFarmYield : defaultSaveData.pendingFarmYield,
   };
 }
 

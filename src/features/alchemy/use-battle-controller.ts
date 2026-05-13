@@ -75,7 +75,7 @@ export function useBattleController({
   const { scheduleAutoEndTurn } = useBattleAutoEndTurn({ autoEndTurn, screen, battleState, onEndTurn: handleEndTurn });
 
   function startBattle(deck: BattleCard[] = run.runDeck, gold: number = run.runGold, enemyType: "normal" | "elite" = "normal") {
-    beginBattle(getCurrentEnemy(run.roomsEncountered, enemyType), deck, gold);
+    beginBattle(getCurrentEnemy(enemyType), deck, gold);
   }
 
   function startBossBattle() {
@@ -153,6 +153,15 @@ export function useBattleController({
     clearCompanionTimeout();
 
     const companionResult = resolveQueuedCompanionTurn(battleState);
+
+    // If the companion killed the enemy, skip the enemy phase entirely — otherwise
+    // processEnemyHealing would resurrect the enemy from below-50% HP healing.
+    if (companionResult.state.enemyHealth <= 0) {
+      setBattleState(companionResult.state);
+      if (companionResult.combatTexts.length > 0) showCombatTexts(companionResult.combatTexts);
+      return;
+    }
+
     const result = endPlayerTurn(companionResult.state);
     const combinedCombatTexts = [...companionResult.combatTexts, ...result.combatTexts];
 
@@ -207,7 +216,7 @@ export function useBattleController({
   function scheduleCompanionFollowUp(resultState: BattleState) {
     // Companion follow-up is tracked with refs because the timeout can outlive renders;
     // the flags prevent overlapping or duplicate companion animations/effects.
-    if (!resultState.activeCompanion) return;
+    if (!resultState.activeCompanion || resultState.enemyHealth <= 0) return;
     companionTimeoutRef.current = setTimeout(() => {
       const texts = resolveCompanionFollowUpTexts();
       if (texts.length > 0) showCombatTexts(texts);

@@ -4,6 +4,7 @@
 import { cardHasDamageType } from "./turns";
 import type { BattleState } from "./types";
 import type { BattleCard } from "@/lib/game-data";
+import { POTION_CARD_ID_FRAGMENT } from "../game-constants";
 
 export function getEffectiveCost(state: BattleState, card: BattleCard): number {
   // This is intentionally side-effect free so hover/playable UI can call it repeatedly
@@ -25,7 +26,7 @@ export function getEffectiveCost(state: BattleState, card: BattleCard): number {
     cost = 0;
   }
   // Mortar and Pestle trinket: first potion is free (mirrors playBattleCardResolved)
-  if (!state.flags.firstPotionFreeUsed && state.trinketEffects.mortarPestleFreeFirstPotion && card.id.includes("potion")) {
+  if (!state.flags.firstPotionFreeUsed && state.trinketEffects.mortarPestleFreeFirstPotion && card.id.includes(POTION_CARD_ID_FRAGMENT)) {
     cost = 0;
   }
   return cost;

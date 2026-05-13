@@ -1,5 +1,4 @@
 import { expect, test } from "@playwright/test";
-import { injectSaveState } from "./helpers";
 
 test.describe("Auto-End Turn", () => {
   test("auto-end turn toggle is accessible in options", async ({ page }) => {

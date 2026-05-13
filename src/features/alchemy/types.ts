@@ -14,7 +14,17 @@ export type DisplayMode = "windowed" | "borderless-fullscreen" | "fullscreen";
 
 export type UiScale = "90" | "100" | "110" | "120";
 
-export type Destination = "Normal Combat" | "Elite Combat" | "Merchant's Shop" | "Alchemist's Shop" | "Mystery" | "Campfire" | "Boss Combat";
+export const DESTINATIONS = {
+  NORMAL_COMBAT: "Normal Combat",
+  ELITE_COMBAT: "Elite Combat",
+  MERCHANT_SHOP: "Merchant's Shop",
+  ALCHEMIST_SHOP: "Alchemist's Shop",
+  MYSTERY: "Mystery",
+  CAMPFIRE: "Campfire",
+  BOSS_COMBAT: "Boss Combat",
+} as const;
+
+export type Destination = typeof DESTINATIONS[keyof typeof DESTINATIONS];
 
 export type CollectionTab = "cards" | "bestiary" | "trinkets";
 

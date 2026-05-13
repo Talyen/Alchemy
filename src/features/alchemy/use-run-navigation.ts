@@ -1,12 +1,12 @@
 // Run-flow controller for routing, rewards, mysteries, campfires, act transitions, and reset.
 // Depends on battle/run/talent/shop callbacks, homestead effects, game data, and audio feedback.
 // Used by the top-level alchemy controller to keep screen changes and run mutations synchronized.
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import { createBattleState, isPlayerDefeated, maxPlayerHealth } from "@/lib/battle";
 import { cardLibrary, characters, starterDeck, type BattleCard, type CharacterId } from "@/lib/game-data";
 import { playVictory, playDefeat, playGoldGain } from "@/lib/audio";
 import { appendUnique, appendUniqueMany, pickRandom } from "@/lib/utils";
-import type { Destination, Screen } from "./types";
+import { DESTINATIONS, type Destination, type Screen } from "./types";
 import { getEnemyMaterialLoot } from "@/lib/homestead/loot";
 import { type HomesteadEffectManifest, type MaterialInventory } from "@/lib/homestead/types";
 import { mysteryPool, type MysteryChoice, type MysteryEvent } from "./mystery-events";
@@ -32,7 +32,7 @@ export function useRunNavigation({
   clearCardGhosts, setBattleState,
   setDiscoveredCardIds,
   setEncounteredEnemyIds, setDiscoveredTrinketIds,
-  onAddMaterialsRef, onTriggerFarmYieldRef, homesteadEffectsRef,
+  onAddMaterialsRef, homesteadEffectsRef,
   setHoveredCardId,
   onStartBattle, onStartBossBattle,
   onInitShop, onInitAlchemist,
@@ -54,7 +54,6 @@ export function useRunNavigation({
   setEncounteredEnemyIds: React.Dispatch<React.SetStateAction<string[]>>;
   setDiscoveredTrinketIds: React.Dispatch<React.SetStateAction<string[]>>;
   onAddMaterialsRef: React.MutableRefObject<(materials: MaterialInventory) => void>;
-  onTriggerFarmYieldRef: React.MutableRefObject<() => void>;
   homesteadEffectsRef: React.MutableRefObject<HomesteadEffectManifest>;
   setHoveredCardId: React.Dispatch<React.SetStateAction<string | null>>;
   onStartBattle: (deck?: BattleCard[], gold?: number, enemyType?: "normal" | "elite") => void;
@@ -67,8 +66,7 @@ export function useRunNavigation({
   const [rewardState, setRewardState] = useState<RewardState>(() => createEmptyRewardState());
   const [mysteryEvent, setMysteryEvent] = useState<MysteryEvent | null>(null);
   const [mysteryCardChoices, setMysteryCardChoices] = useState<BattleCard[] | null>(null);
-  const [runEndHerbs, setRunEndHerbs] = useState(0);
-  const [runEndFood, setRunEndFood] = useState(0);
+  const [runEndMaterials, setRunEndMaterials] = useState<MaterialInventory>({ wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 });
 
   const destinationButtonRefs = useRef<Partial<Record<Destination, HTMLButtonElement | null>>>({});
 
@@ -96,26 +94,23 @@ export function useRunNavigation({
 
   // ============ Victory / Defeat Effects ============
 
+  const handleBattleDefeatEvent = useEffectEvent(handleBattleDefeat);
+  const handleBattleVictoryEvent = useEffectEvent(handleBattleVictory);
+
   useEffect(() => {
     if (screen !== "battle" || !isPlayerDefeated(battleState)) return;
-    handleBattleDefeat();
-  }, [battleState.playerHealth, battleState.deathsDoorActive, screen]);
+    handleBattleDefeatEvent();
+  }, [battleState, screen]);
 
   useEffect(() => {
     if (screen !== "battle" || battleState.enemyHealth > 0) return;
     if (isPlayerDefeated(battleState)) return;
-    const transitionTimer = handleBattleVictory();
+    const transitionTimer = handleBattleVictoryEvent();
     return () => clearTimeout(transitionTimer);
-  }, [battleState.enemyHealth, battleState.gold, screen]);
+  }, [battleState, screen]);
 
   function handleBattleDefeat() {
-    const herbs = homesteadEffectsRef.current.potionManaBonus > 0 ? run.roomsEncountered : 0;
-    if (herbs > 0) onAddMaterialsRef.current({ wood: 0, iron: 0, herbs, food: 0, crystal: 0 });
-    setRunEndHerbs(herbs);
-    const food = homesteadEffectsRef.current.companionDamage > 0 ? run.roomsEncountered : 0;
-    if (food > 0) onAddMaterialsRef.current({ wood: 0, iron: 0, herbs: 0, food, crystal: 0 });
-    setRunEndFood(food);
-    onTriggerFarmYieldRef.current();
+    awardRunEndMaterials();
     playDefeat();
     setHasActiveBattle(false);
     setHoveredCardId(null);
@@ -160,7 +155,7 @@ export function useRunNavigation({
   }
 
   function createBossRewardState(gold: number, bossBonus: number, materials: MaterialInventory) {
-    return createBossRewardStateFromFlow({ gold, bossBonus, talentGoldPerCombat: talents.talentEffects.goldPerCombat, materials });
+    return createBossRewardStateFromFlow({ gold, bossBonus, talentGoldPerCombat: talents.talentEffects.goldPerCombat, materials, trinketIds: run.runTrinkets });
   }
 
   function createCombatRewardState(gold: number, eliteBonus: number, newGold: number, materials: MaterialInventory) {
@@ -172,6 +167,7 @@ export function useRunNavigation({
       talentGoldPerCombat: talents.talentEffects.goldPerCombat,
       materials,
       destinations: sampleDestinationChoices(getAvailableDestinations(battleState.playerHealth, newGold)),
+      trinketIds: run.runTrinkets,
     });
   }
 
@@ -215,7 +211,8 @@ export function useRunNavigation({
     setEncounteredEnemyIds([]);
     setHoveredCardId(null);
     setHasActiveRun(true);
-    navigateTo("destination");
+    onStartBattle();
+    navigateTo("battle");
   }
 
   function returnToBattle() { if (hasActiveBattle) { navigateTo("battle"); } }
@@ -257,13 +254,25 @@ export function useRunNavigation({
     run.setDestinationIndexInAct((p) => p + 1);
 
     setHoveredCardId(null);
-    if (destination === "Campfire") navigateTo("campfire");
-    else if (destination === "Merchant's Shop") { onInitShop(); navigateTo("shop"); }
-    else if (destination === "Alchemist's Shop") { onInitAlchemist(); navigateTo("alchemist"); }
-    else if (destination === "Mystery") { setMysteryEvent(pickRandom(mysteryPool) ?? mysteryPool[0]); setMysteryCardChoices(null); navigateTo("mystery"); }
-    else if (destination === "Elite Combat") { onStartBattle(undefined, undefined, "elite"); navigateTo("battle"); }
-    else if (destination === "Boss Combat") { onStartBossBattle(); navigateTo("battle"); }
+    routeDestination(destination);
+  }
+
+  function routeDestination(destination: Destination) {
+    // Destination routing is centralized so label constants and side effects cannot drift.
+    if (destination === DESTINATIONS.CAMPFIRE) navigateTo("campfire");
+    else if (destination === DESTINATIONS.MERCHANT_SHOP) { onInitShop(); navigateTo("shop"); }
+    else if (destination === DESTINATIONS.ALCHEMIST_SHOP) { onInitAlchemist(); navigateTo("alchemist"); }
+    else if (destination === DESTINATIONS.MYSTERY) { beginMysteryEvent(); }
+    else if (destination === DESTINATIONS.ELITE_COMBAT) { onStartBattle(undefined, undefined, "elite"); navigateTo("battle"); }
+    else if (destination === DESTINATIONS.BOSS_COMBAT) { onStartBossBattle(); navigateTo("battle"); }
     else { onStartBattle(undefined, undefined, "normal"); navigateTo("battle"); }
+  }
+
+  function beginMysteryEvent() {
+    // Mystery screens need both the selected event and any prior card sub-choice cleared.
+    setMysteryEvent(pickRandom(mysteryPool) ?? mysteryPool[0]);
+    setMysteryCardChoices(null);
+    navigateTo("mystery");
   }
 
   function handleActComplete() {
@@ -273,13 +282,7 @@ export function useRunNavigation({
     setHasActiveBattle(false);
 
     if (run.currentAct >= ACTS_PER_RUN) {
-      const herbs = homesteadEffectsRef.current.potionManaBonus > 0 ? run.roomsEncountered : 0;
-      if (herbs > 0) onAddMaterialsRef.current({ wood: 0, iron: 0, herbs, food: 0, crystal: 0 });
-      setRunEndHerbs(herbs);
-      const food = homesteadEffectsRef.current.companionDamage > 0 ? run.roomsEncountered : 0;
-      if (food > 0) onAddMaterialsRef.current({ wood: 0, iron: 0, herbs: 0, food, crystal: 0 });
-      setRunEndFood(food);
-      onTriggerFarmYieldRef.current();
+      awardRunEndMaterials();
       navigateTo("run-victory");
     } else {
       run.setCurrentAct((p) => p + 1);
@@ -291,6 +294,14 @@ export function useRunNavigation({
       }));
       navigateTo("destination");
     }
+  }
+
+  function awardRunEndMaterials() {
+    const herbs = homesteadEffectsRef.current.potionManaBonus > 0 ? run.roomsEncountered : 0;
+    const food = homesteadEffectsRef.current.companionDamage > 0 ? run.roomsEncountered : 0;
+    const mats: MaterialInventory = { wood: 0, iron: 0, herbs, food, crystal: 0 };
+    if (herbs > 0 || food > 0) onAddMaterialsRef.current(mats);
+    setRunEndMaterials(mats);
   }
 
   function advanceToNextDestination() {
@@ -361,11 +372,10 @@ export function useRunNavigation({
     get rewardType() { return rewardState.rewardType; },
     get selectedRewardId() { return rewardState.selectedId; },
     get destinationOptions() { return rewardState.destinations; },
-    get runEndHerbs() { return runEndHerbs; },
-    get runEndFood() { return runEndFood; },
+    get runEndMaterials() { return runEndMaterials; },
     get mysteryEvent() { return mysteryEvent; },
     get mysteryCardChoices() { return mysteryCardChoices; },
-    get activeRunData() { return currentActiveRunData; },
+    get activeRunData() { return hasActiveRun ? currentActiveRunData : null; },
     destinationButtonRefs,
     getAvailableDestinations, advanceToNextDestination,
     beginRun, handleCharacterSelect, returnToBattle, goToScreen,

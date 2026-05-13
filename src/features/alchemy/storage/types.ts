@@ -28,7 +28,6 @@ export type SaveData = {
   constructedBuildings: BuildingId[];
   plantedFarms: FarmId[];
   completedResearch: ResearchId[];
-  pendingFarmYield: boolean;
 };
 
 // Default save state is used both for first boot and as a per-field fallback when old
@@ -53,5 +52,4 @@ export const defaultSaveData: SaveData = {
   constructedBuildings: [],
   plantedFarms: [],
   completedResearch: [],
-  pendingFarmYield: false,
 };

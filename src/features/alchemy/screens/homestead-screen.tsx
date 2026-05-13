@@ -2,8 +2,8 @@
 // All nodes show in a 3-column grid; any uncompleted node can be built if
 // materials are sufficient. Completed nodes are dimmed with a checkmark.
 
-import { useEffect, useState, type ReactNode } from "react";
-import { Check, FlaskConical, Hammer, House, Sprout, Swords, Wheat } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { Check, FlaskConical, Hammer, House, Swords, Wheat } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -12,13 +12,11 @@ import {
   type BuildingId,
   type FarmId,
   type HomesteadBuilding,
-  type HomesteadEffectManifest,
   type HomesteadFarm,
   type HomesteadResearch,
   type MaterialInventory,
   type ResearchId,
   canAfford,
-  emptyInventory,
   materialLabels,
 } from "@/lib/homestead/types";
 import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
@@ -55,15 +53,6 @@ function getItems(tab: Tab): GoalItem[] {
 
 function totalCount(tab: Tab): number {
   return tab === "buildings" ? buildings.length : tab === "farm" ? farmPlots.length : researchUpgrades.length;
-}
-
-function getEffectiveCost(cost: MaterialInventory, costReduction: number): MaterialInventory {
-  const effective = emptyInventory();
-  for (const mat of MATERIAL_IDS) {
-    const base = cost[mat] ?? 0;
-    effective[mat] = base > 0 ? Math.ceil(base * (1 - costReduction)) : 0;
-  }
-  return effective;
 }
 
 const itemArt: Record<string, string> = {
@@ -113,59 +102,31 @@ export function HomesteadScreen({
   constructedBuildings,
   plantedFarms,
   completedResearch,
-  effects,
-  pendingFarmYield,
-  lastFarmYield,
   hasActiveBattle,
   onMainMenu,
   onReturnToBattle,
   onConstructBuilding,
   onPlantFarm,
   onCompleteResearch,
-  onCollectFarmYield,
-  onClearFarmYield,
 }: {
   materialInventory: MaterialInventory;
   constructedBuildings: BuildingId[];
   plantedFarms: FarmId[];
   completedResearch: ResearchId[];
-  effects: HomesteadEffectManifest;
-  pendingFarmYield: boolean;
-  lastFarmYield: MaterialInventory | null;
   hasActiveBattle: boolean;
   onMainMenu: () => void;
   onReturnToBattle: () => void;
   onConstructBuilding: (id: BuildingId) => boolean;
   onPlantFarm: (id: FarmId) => boolean;
   onCompleteResearch: (id: ResearchId) => boolean;
-  onCollectFarmYield: () => MaterialInventory | null;
-  onClearFarmYield: () => void;
 }) {
   const [tab, setTab] = useState<Tab>("buildings");
   const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
-  const [showYieldNotification, setShowYieldNotification] = useState(false);
-
-  useEffect(() => {
-    if (pendingFarmYield) onCollectFarmYield();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    if (lastFarmYield) {
-      setShowYieldNotification(true); // eslint-disable-line react-hooks/set-state-in-effect
-      const timer = setTimeout(() => {
-        setShowYieldNotification(false);
-        onClearFarmYield();
-      }, 4000);
-      return () => clearTimeout(timer);
-    }
-  }, [lastFarmYield, onClearFarmYield]);
 
   const completed = tab === "buildings" ? constructedBuildings : tab === "farm" ? plantedFarms : completedResearch;
   const allItems = getItems(tab);
   const doneCount = completed.length;
   const total = totalCount(tab);
-
-  const costReduction = tab === "buildings" ? effects.buildingCostReduction : 0;
 
   function handleAction(item: GoalItem) {
     const success = item.kind === "building"
@@ -180,20 +141,6 @@ export function HomesteadScreen({
     <PageLayout>
       <div className="alchemy-shell relative flex min-h-[520px] w-full max-w-6xl flex-col rounded-[28px] px-6 py-7 sm:px-8">
         <ScreenHeader title="Homestead" />
-
-        {/* Farm yield notification */}
-        {showYieldNotification && lastFarmYield && (
-          <div className="absolute left-1/2 top-20 z-10 -translate-x-1/2 rounded-xl border border-emerald-600/40 bg-emerald-950/90 px-5 py-3 text-center text-sm text-emerald-300 shadow-lg backdrop-blur-sm">
-            <div className="mb-1 flex items-center justify-center gap-2 font-semibold">
-              <Sprout className="h-4 w-4" /> Farm Yield Collected
-            </div>
-            <div className="flex flex-wrap justify-center gap-x-3 gap-y-1">
-              {MATERIAL_IDS.filter((mat) => lastFarmYield[mat] > 0).map((mat) => (
-                <span key={mat} className="text-xs">+{lastFarmYield[mat]} {materialLabels[mat]}</span>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* Materials bar */}
         <div className="mx-auto mt-5 flex w-full max-w-2xl flex-nowrap items-center justify-center gap-x-3">
@@ -229,7 +176,7 @@ export function HomesteadScreen({
         <div className="mx-auto mt-6 grid w-full grid-cols-3 gap-x-2 gap-y-6">
           {allItems.map((item, index) => {
               const isCompleted = (completed as string[]).includes(item.data.id);
-              const itemCost = getEffectiveCost(item.data.cost, costReduction);
+              const itemCost = item.data.cost;
               const itemAffordable = canAfford(materialInventory, itemCost);
               const costItems = MATERIAL_IDS.filter((m) => (itemCost[m] ?? 0) > 0);
 

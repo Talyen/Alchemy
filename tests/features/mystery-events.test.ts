@@ -147,19 +147,6 @@ describe("mysteryPool", () => {
     }
   });
 
-  it("Wisdom Tree 'Memorize a Lesson' adds Wish and removes random card", () => {
-    const tree = mysteryPool.find((e) => e.id === "wisdom-tree");
-    expect(tree).toBeDefined();
-    const memorize = tree!.choices.find((c) => c.label === "Memorize a Lesson");
-    expect(memorize).toBeDefined();
-    expect(memorize!.effects).toEqual(
-      expect.arrayContaining([
-        { kind: "addCard", cardId: "wish" },
-        { kind: "removeCard", mode: "random" },
-      ])
-    );
-  });
-
   it("Abandoned Study 'Search the Scrolls' uses chooseCard effect", () => {
     const study = mysteryPool.find((e) => e.id === "abandoned-study");
     expect(study).toBeDefined();

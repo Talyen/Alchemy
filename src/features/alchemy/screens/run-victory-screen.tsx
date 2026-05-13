@@ -1,16 +1,16 @@
 // Run victory screen — shown after defeating the Act III boss.
-import { Sprout } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { MATERIAL_IDS, materialLabels, type MaterialInventory } from "@/lib/homestead/types";
 
 import { ScreenHeader } from "../ui/shared-ui";
+import { matIconMap, matPillStyle, matTextColor } from "../ui/material-icons";
 
 export function RunVictoryScreen({
-  herbGardenHerbs,
-  hunterLodgeFood,
+  runEndMaterials,
   onMainMenu,
 }: {
-  herbGardenHerbs: number;
-  hunterLodgeFood: number;
+  runEndMaterials: MaterialInventory;
   onMainMenu: () => void;
 }) {
   return (
@@ -22,16 +22,17 @@ export function RunVictoryScreen({
         </p>
       </div>
 
-      {herbGardenHerbs > 0 && (
-        <div className="flex items-center gap-2 rounded-xl border border-emerald-600/40 bg-emerald-950/60 px-5 py-3 text-emerald-300">
-          <Sprout className="h-5 w-5" />
-          <span className="text-sm font-semibold">+{herbGardenHerbs} Herbs from Herb Garden</span>
-        </div>
-      )}
-      {hunterLodgeFood > 0 && (
-        <div className="flex items-center gap-2 rounded-xl border border-amber-600/40 bg-amber-950/60 px-5 py-3 text-amber-300">
-          <Sprout className="h-5 w-5" />
-          <span className="text-sm font-semibold">+{hunterLodgeFood} Food from Hunter&apos;s Lodge</span>
+      {MATERIAL_IDS.filter((mat) => runEndMaterials[mat] > 0).length > 0 && (
+        <div className="flex flex-col items-center gap-2">
+          {MATERIAL_IDS.filter((mat) => runEndMaterials[mat] > 0).map((mat) => (
+            <span key={mat} className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground">
+              Found
+              <span className={cn("inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold", matPillStyle[mat], matTextColor[mat])}>
+                {matIconMap[mat]}
+                {runEndMaterials[mat]} {materialLabels[mat]}
+              </span>
+            </span>
+          ))}
         </div>
       )}
 

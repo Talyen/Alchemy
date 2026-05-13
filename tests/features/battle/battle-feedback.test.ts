@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { shouldPlayCardGoldGain, shouldShakeEnemyFromCombatTexts, shouldShakePlayerFromCombatTexts } from "@/features/alchemy/battle/battle-feedback";
-import type { BattleState, CombatTextEvent } from "@/lib/battle";
+import type { BattleState } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
 import { defaultTalentEffects } from "@/lib/battle/draw";
 import { defaultTrinketEffects } from "@/lib/trinkets";

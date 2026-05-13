@@ -45,26 +45,6 @@ export function computeHomesteadEffects(
   for (const researchId of completedResearch) {
     const research = researchUpgrades.find((r) => r.id === researchId);
     if (!research) continue;
-    switch (research.id) {
-      case "carpentry":
-        effects.buildingCostReduction += 0.1;
-        break;
-      case "masonry":
-        effects.buildingCostReduction += 0.1;
-        break;
-      case "crop-rotation":
-        effects.farmYieldMultiplier += 0.5;
-        break;
-      case "animal-husbandry":
-        effects.farmYieldMultiplier += 0.25;
-        break;
-      case "fortified-walls":
-        effects.startBlock += 5;
-        break;
-      case "metallurgy":
-        effects.physicalCritChance += 2;
-        break;
-    }
   }
 
   return effects;
@@ -79,12 +59,12 @@ export function mergeIntoManifest(
   return {
     ...talentEffects,
     flatPhysicalDamage: talentEffects.flatPhysicalDamage + homesteadEffects.flatPhysicalDamage,
+    companionDamage: talentEffects.companionDamage + homesteadEffects.companionDamage,
     startGold: talentEffects.startGold + homesteadEffects.startGold,
     startBlock: talentEffects.startBlock + homesteadEffects.startBlock,
     campfireHealBonus: talentEffects.campfireHealBonus + homesteadEffects.campfireHealBonus,
     physicalCritChance: talentEffects.physicalCritChance + homesteadEffects.physicalCritChance,
     potionDiscount: talentEffects.potionDiscount + Math.round(homesteadEffects.potionDiscount * 100) / 100,
-    healMultiplier: talentEffects.healMultiplier + homesteadEffects.potionHealMultiplier,
     potionManaBonus: talentEffects.potionManaBonus + homesteadEffects.potionManaBonus,
     forgeToBurn: talentEffects.forgeToBurn || homesteadEffects.forgeToBurn > 0,
   };

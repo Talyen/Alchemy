@@ -714,10 +714,12 @@ describe("createBattleState", () => {
     expect(result.activeCompanion).toBeNull();
   });
 
-  it("scales enemy stats based on rooms encountered", () => {
+  it("scales enemy stats by destination position within act", () => {
+    // destinationIndexInAct=5 → scaler=4, roomMul=1+4*0.1=1.4, currentAct=1 → actMul=1
+    // Normal skeleton: hpTypeMul=1, atkTypeMul=1
     const result = createBattleState(undefined, 0, 5, skeleton, undefined, undefined, undefined, undefined, undefined, 5);
-    expect(result.enemyHealth).toBe(42); // 30 * 1.4 = 42
-    expect(result.enemyAttackEffects[0].amount).toBe(11); // 8 * 1.4 = 11.2 → floor 11
+    expect(result.enemyHealth).toBe(42); // floor(30 * 1.4 * 1) = 42
+    expect(result.enemyAttackEffects[0].amount).toBe(11); // floor(8 * 1.4 * 1) = 11
   });
 });
 
@@ -889,7 +891,7 @@ describe("Trinket — Ironwood Buckler (6+ block → 1 armor)", () => {
 describe("Trinket — Sin-Eater's Lantern (gold on ailment removal)", () => {
   it("gains 1 gold when removing an ailment", () => {
     const manifest = computeTrinketManifest(["sin-eaters-lantern"]);
-    const card = makeCard({ effects: [{ kind: "remove-ailment", mode: "one" }] });
+    const card = makeCard({ effects: [{ kind: "remove-ailment", amount: 1 }] });
     const state = makeState({
       mana: 10, gold: 5,
       playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 2, poison: 0, bleed: 0, freeze: 0, stun: 0 },

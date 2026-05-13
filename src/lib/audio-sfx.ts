@@ -71,9 +71,3 @@ export function playVictory() {
 export function playDefeat() {
   playBuffer(stingerSounds.defeat, 0.7);
 }
-
-// Preserves old call sites while mapping them to typed battle events.
-export function playDamage() { playBattleEvent("enemyHit"); }
-
-// Preserves old call sites while mapping them to typed battle events.
-export function playBuff() { playBattleEvent("playerHeal"); }

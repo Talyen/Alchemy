@@ -113,6 +113,8 @@ export function RewardScreen({
                 <MysteryEffectBadge effect={effect} findCard={undefined} findTrinket={undefined} />
               </div>
             );
+          case "removeCard":
+            return null;
           case "none":
             return null;
           default:
@@ -129,11 +131,9 @@ export function RewardScreen({
 export function RemoveCardPicker({
   runDeck,
   onSelect,
-  onCancel,
 }: {
   runDeck: BattleCard[];
   onSelect: (index: number) => void;
-  onCancel: () => void;
 }) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [page, setPage] = useState(0);
@@ -163,7 +163,6 @@ export function RemoveCardPicker({
       </div>
       <PaginationControls page={page} totalPages={totalPages} onPageChange={(p) => setPage(p)} size="sm" />
       <div className="flex justify-center gap-4">
-        <Button size="lg" variant="outline" onClick={onCancel}>Cancel</Button>
         <Button size="lg" disabled={selectedIndex === null} onClick={() => { if (selectedIndex !== null) onSelect(selectedIndex); }}>Remove Card</Button>
       </div>
     </div>

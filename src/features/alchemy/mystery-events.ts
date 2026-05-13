@@ -146,14 +146,6 @@ export const mysteryPool: MysteryEvent[] = [
           { kind: "gainMaterial", material: "herbs", amount: 2 },
         ],
       },
-      {
-        label: "Memorize a Lesson",
-        description: "Add Wish to your deck, then remove a random card",
-        effects: [
-          { kind: "addCard", cardId: "wish" },
-          { kind: "removeCard", mode: "random" },
-        ],
-      },
     ],
   },
   {

@@ -3,7 +3,7 @@
 import { DESTINATION_CHOICES, DESTINATIONS_PER_ACT } from "@/lib/game-constants";
 
 import { getAvailableDestinations as getFilteredDestinations } from "../config";
-import type { Destination } from "../types";
+import { DESTINATIONS, type Destination } from "../types";
 import { sampleItems } from "../utils";
 
 type DestinationAvailabilityInput = {
@@ -17,7 +17,7 @@ type DestinationAvailabilityInput = {
 // gates can be reused without knowing run progression.
 export function getRunAvailableDestinations({ destinationIndexInAct, currentHp, currentGold, maxHp }: DestinationAvailabilityInput): Destination[] {
   if (destinationIndexInAct >= DESTINATIONS_PER_ACT - 1) {
-    return ["Boss Combat"];
+    return [DESTINATIONS.BOSS_COMBAT];
   }
   return getFilteredDestinations(currentHp, currentGold, maxHp);
 }

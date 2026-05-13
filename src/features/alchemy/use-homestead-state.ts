@@ -6,7 +6,6 @@ import { useState, useMemo, useCallback } from "react";
 import {
   type BuildingId,
   type FarmId,
-  type MaterialId,
   type MaterialInventory,
   type ResearchId,
   emptyInventory,
@@ -27,8 +26,6 @@ export function useHomesteadState(initial: {
   const [constructedBuildings, setConstructedBuildings] = useState<BuildingId[]>(initial.constructedBuildings);
   const [plantedFarms, setPlantedFarms] = useState<FarmId[]>(initial.plantedFarms);
   const [completedResearch, setCompletedResearch] = useState<ResearchId[]>(initial.completedResearch);
-  const [pendingFarmYield, setPendingFarmYield] = useState(false);
-  const [lastFarmYield, setLastFarmYield] = useState<MaterialInventory | null>(null);
 
   const effects = useMemo(
     () => computeHomesteadEffects(constructedBuildings, plantedFarms, completedResearch),
@@ -48,21 +45,12 @@ export function useHomesteadState(initial: {
       const building = buildings.find((b) => b.id === id);
       if (!building || constructedBuildings.includes(id)) return false;
 
-      // Apply cost reduction from carpentry/masonry research
-      const costReduction = effects.buildingCostReduction;
-      const cost: MaterialInventory = emptyInventory();
-      for (const [mat, amount] of Object.entries(building.cost)) {
-        if (amount > 0) {
-          cost[mat as MaterialId] = Math.ceil(amount * (1 - costReduction));
-        }
-      }
-
-      if (!canAfford(materialInventory, cost)) return false;
-      setMaterialInventory((prev) => subtractInventory(prev, cost));
+      if (!canAfford(materialInventory, building.cost)) return false;
+      setMaterialInventory((prev) => subtractInventory(prev, building.cost));
       setConstructedBuildings((prev) => [...prev, id]);
       return true;
     },
-    [constructedBuildings, materialInventory, effects.buildingCostReduction],
+    [constructedBuildings, materialInventory],
   );
 
   const plantFarm = useCallback(
@@ -90,38 +78,7 @@ export function useHomesteadState(initial: {
   );
 
   const triggerFarmYield = useCallback(() => {
-    setPendingFarmYield(true);
-  }, []);
-
-  const collectFarmYield = useCallback((): MaterialInventory | null => {
-    if (!pendingFarmYield || plantedFarms.length === 0) {
-      setPendingFarmYield(false);
-      return null;
-    }
-
-    let totalYield = emptyInventory();
-    for (const farmId of plantedFarms) {
-      const farm = farmPlots.find((f) => f.id === farmId);
-      if (!farm) continue;
-      const baseYield = { ...farm.yield };
-      if (effects.farmYieldMultiplier > 0) {
-        for (const mat of Object.keys(baseYield) as Array<keyof MaterialInventory>) {
-          if (baseYield[mat] > 0) {
-            baseYield[mat] = Math.floor(baseYield[mat] * (1 + effects.farmYieldMultiplier));
-          }
-        }
-      }
-      totalYield = addInventory(totalYield, baseYield);
-    }
-
-    setMaterialInventory((prev) => addInventory(prev, totalYield));
-    setPendingFarmYield(false);
-    setLastFarmYield(totalYield);
-    return totalYield;
-  }, [pendingFarmYield, plantedFarms, effects.farmYieldMultiplier]);
-
-  const clearLastFarmYield = useCallback(() => {
-    setLastFarmYield(null);
+    // No-op: farm yield is now shown on the Run End screen.
   }, []);
 
   const reset = useCallback(() => {
@@ -129,8 +86,6 @@ export function useHomesteadState(initial: {
     setConstructedBuildings([]);
     setPlantedFarms([]);
     setCompletedResearch([]);
-    setPendingFarmYield(false);
-    setLastFarmYield(null);
   }, []);
 
   return {
@@ -140,15 +95,11 @@ export function useHomesteadState(initial: {
     plantedFarms,
     completedResearch,
     effects,
-    pendingFarmYield,
-    lastFarmYield,
     addMaterials,
     constructBuilding,
     plantFarm,
     completeResearch,
     triggerFarmYield,
-    collectFarmYield,
-    clearLastFarmYield,
     reset,
   };
 }

@@ -1,14 +1,4 @@
-// Shared card sizing, surface classes, and animation timing metadata.
-// Depends on combat timing constants and alchemy UI types.
-import { GHOST_ACTIVATE_MS, GHOST_DISCARD_OUT_MS, GHOST_DRAW_IN_MS, GHOST_PLAY_TRAVEL_MS } from "@/lib/game-constants";
-
-import type { CardGhostVariant } from "../types";
-
-// Duration (ms) of each card ghost animation variant. Used by the card UI to
-// auto-remove ghost elements after their animation completes.
-export const ghostDurations: Record<CardGhostVariant, number> = {
-  "draw-in": GHOST_DRAW_IN_MS, "discard-out": GHOST_DISCARD_OUT_MS, activate: GHOST_ACTIVATE_MS, "play-travel": GHOST_PLAY_TRAVEL_MS,
-};
+// Shared card sizing and surface classes for battle, collection, and popup card UI.
 
 // These clamp() CSS values size cards from the virtual stage rather than the
 // browser viewport so preview emulation and desktop scaling stay consistent.
@@ -26,4 +16,3 @@ export const mobileStageHandCardWidthClass = "w-[clamp(200px,24cqh,250px)]";
 export const cardSurfaceClass = "relative overflow-hidden rounded-[30px] bg-black";
 export const staticCardTransform = "translate3d(0px, 0px, 0px)";
 export const popupClassName = "absolute bottom-full left-1/2 z-40 mb-4 w-60 -translate-x-1/2 rounded-[20px] border border-border/80 bg-card px-3 py-3 text-left";
-export const cardPopupClassName = "hover-popup-panel absolute left-1/2 top-0 z-40 w-full origin-bottom rounded-[20px] border border-border/80 bg-card px-4 py-3 text-left";

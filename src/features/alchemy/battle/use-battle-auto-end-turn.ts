@@ -1,6 +1,6 @@
 // Auto-end-turn scheduler for battle when the player has no playable actions.
 // Depends on battle cost prediction, React timers, and screen/turn state.
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
 import { getEffectiveCost, type BattleState } from "@/lib/battle";
 import { AUTO_END_TURN_DELAY } from "@/lib/game-constants";
@@ -21,23 +21,23 @@ export function useBattleAutoEndTurn({ autoEndTurn, screen, battleState, onEndTu
 
   useEffect(() => { onEndTurnRef.current = onEndTurn; }, [onEndTurn]);
 
-  function clearAutoEndTurn() {
+  const clearAutoEndTurn = useCallback(() => {
     if (autoEndTimerRef.current) clearTimeout(autoEndTimerRef.current);
     autoEndTimerRef.current = null;
-  }
+  }, []);
 
-  function scheduleAutoEndTurn(state: BattleState = battleState) {
+  const scheduleAutoEndTurn = useCallback((state: BattleState = battleState) => {
     clearAutoEndTurn();
     if (!autoEndTurn || screen !== "battle" || state.turnPhase !== "player" || state.enemyHealth <= 0 || (state.playerHealth <= 0 && !state.deathsDoorActive) || state.wishOptions) return;
     const hasPlayableCard = state.hand.some((card) => state.mana >= getEffectiveCost(state, card));
     if (hasPlayableCard) return;
     autoEndTimerRef.current = setTimeout(() => onEndTurnRef.current(), AUTO_END_TURN_DELAY);
-  }
+  }, [autoEndTurn, battleState, clearAutoEndTurn, screen]);
 
   useEffect(() => {
     scheduleAutoEndTurn();
     return clearAutoEndTurn;
-  }, [autoEndTurn, battleState, screen]);
+  }, [scheduleAutoEndTurn, clearAutoEndTurn]);
 
   return { scheduleAutoEndTurn, clearAutoEndTurn };
 }

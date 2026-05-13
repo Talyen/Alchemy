@@ -3,6 +3,7 @@
 // Used by shop controller and UI previews so mixing behavior stays testable outside React.
 import type { BattleCard } from "@/lib/game-data";
 import { mixedPotion } from "@/lib/game-data";
+import { CONSUME_DESCRIPTION_LINE, MIXED_POTION_CARD_ID, MIXED_POTION_COST, MIXED_POTION_TEMPLATE, MIXED_POTION_TITLE } from "@/lib/game-constants";
 
 /** Pure logic for combining two potion cards into a Mixed Potion.
  * Used by the Alchemist's Shop controller so the mixing logic is independently testable. */
@@ -10,7 +11,7 @@ export function createMixedPotion(cardA: BattleCard, cardB: BattleCard): BattleC
   // Existing Mixed Potions are rejected to avoid recursively combining generated effects.
   // Same potion doubles numeric effects; different potions concatenate effects, and Consume
   // is normalized to one final line so descriptions do not accumulate duplicates.
-  if (cardA.id === "mixed-potion" || cardB.id === "mixed-potion") {
+  if (cardA.id === MIXED_POTION_CARD_ID || cardB.id === MIXED_POTION_CARD_ID) {
     throw new Error("Cannot mix with an existing Mixed Potion");
   }
 
@@ -28,7 +29,7 @@ export function createMixedPotion(cardA: BattleCard, cardB: BattleCard): BattleC
   // Strip "Consume" during aggregation, then add it once at the end.
   const descs = new Set<string>();
   for (const line of [...cardA.descriptionLines, ...cardB.descriptionLines]) {
-    if (line === "Consume") continue;
+    if (line === CONSUME_DESCRIPTION_LINE) continue;
     if (sameCard) {
       const numMatch = line.match(/(\d+)/);
       if (numMatch) descs.add(line.replace(numMatch[0], String(Number(numMatch[0]) * 2)));
@@ -37,15 +38,15 @@ export function createMixedPotion(cardA: BattleCard, cardB: BattleCard): BattleC
       descs.add(line);
     }
   }
-  const descriptionLines = [...descs, "Consume"];
+  const descriptionLines = [...descs, CONSUME_DESCRIPTION_LINE];
 
   return {
-    id: `mixed-potion-${Date.now()}`,
-    title: "Mixed Potion",
+    id: `${MIXED_POTION_CARD_ID}-${Date.now()}`,
+    title: MIXED_POTION_TITLE,
     descriptionLines,
     art: mixedPotion,
-    cost: 1,
-    template: "alchemy",
+    cost: MIXED_POTION_COST,
+    template: MIXED_POTION_TEMPLATE,
     consume: true,
     effects: effects as BattleCard["effects"],
   };

@@ -116,7 +116,7 @@ export const researchUpgrades: HomesteadResearch[] = [
     title: "Advanced Carpentry",
     description: "",
     cost: { wood: 20, iron: 0, herbs: 0, food: 0, crystal: 0 },
-    benefitDescription: "Building costs -10%",
+    benefitDescription: "TBD",
     buttonLabel: "Research",
   },
   {
@@ -124,7 +124,7 @@ export const researchUpgrades: HomesteadResearch[] = [
     title: "Stone Masonry",
     description: "",
     cost: { iron: 25, wood: 0, herbs: 0, food: 0, crystal: 0 },
-    benefitDescription: "Building costs -10%",
+    benefitDescription: "TBD",
     buttonLabel: "Research",
   },
   {
@@ -132,7 +132,7 @@ export const researchUpgrades: HomesteadResearch[] = [
     title: "Crop Rotation",
     description: "",
     cost: { herbs: 15, food: 0, wood: 0, iron: 0, crystal: 0 },
-    benefitDescription: "Farm yields +50%",
+    benefitDescription: "TBD",
     buttonLabel: "Research",
   },
   {
@@ -140,7 +140,7 @@ export const researchUpgrades: HomesteadResearch[] = [
     title: "Animal Husbandry",
     description: "",
     cost: { food: 25, wood: 0, iron: 0, herbs: 0, crystal: 0 },
-    benefitDescription: "Farm yields +25%",
+    benefitDescription: "TBD",
     buttonLabel: "Research",
   },
   {
@@ -148,7 +148,7 @@ export const researchUpgrades: HomesteadResearch[] = [
     title: "Fortified Walls",
     description: "",
     cost: { iron: 30, wood: 0, herbs: 0, food: 0, crystal: 0 },
-    benefitDescription: "+5 Starting Block",
+    benefitDescription: "TBD",
     buttonLabel: "Research",
   },
   {
@@ -156,7 +156,7 @@ export const researchUpgrades: HomesteadResearch[] = [
     title: "Metallurgy",
     description: "",
     cost: { iron: 15, crystal: 0, wood: 0, herbs: 0, food: 0 },
-    benefitDescription: "+2% Physical Crit Chance",
+    benefitDescription: "TBD",
     buttonLabel: "Research",
   },
 ];

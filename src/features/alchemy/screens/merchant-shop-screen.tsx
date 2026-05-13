@@ -6,7 +6,7 @@ import { Coins, RefreshCw, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { BattleCard } from "@/lib/game-data";
-import { SHOP_CARD_PRICE, SHOP_REFRESH_PRICE, SHOP_REMOVE_PRICE, COLLECTION_PAGE_SIZE } from "@/lib/game-constants";
+import { COLLECTION_PAGE_SIZE } from "@/lib/game-constants";
 
 import { BattleCardButton } from "../ui/card-ui";
 import { AnimatedHeight } from "../ui/animated-height";
@@ -83,9 +83,11 @@ function DeckGridPaginated({
 
 export function MerchantShopScreen({
   gold, shopCards, runDeck, refreshesLeft, removeUsed,
+  cardPrice, removePrice, refreshPrice,
   onBuyCard, onRemoveCard, onRefresh, onContinue,
 }: {
   gold: number; shopCards: BattleCard[]; runDeck: BattleCard[]; refreshesLeft: number; removeUsed: boolean;
+  cardPrice: number; removePrice: number; refreshPrice: number;
   onBuyCard: (card: BattleCard) => void; onRemoveCard: (cardIndex: number) => void;
   onRefresh: () => void; onContinue: () => void;
 }) {
@@ -117,7 +119,7 @@ export function MerchantShopScreen({
           <>
             <div key={shopCards.map((card) => card.id).join("-")} className="state-swap grid grid-cols-1 gap-4 sm:grid-cols-3">
               {shopCards.map((card, i) => (
-                <ShopCardItem key={`${card.id}-${i}`} card={card} price={SHOP_CARD_PRICE} gold={gold} purchased={purchasedIds.has(card.id)} onBuy={() => handleBuyCard(card)} index={i} />
+                <ShopCardItem key={`${card.id}-${i}`} card={card} price={cardPrice} gold={gold} purchased={purchasedIds.has(card.id)} onBuy={() => handleBuyCard(card)} index={i} />
               ))}
             </div>
 
@@ -125,14 +127,14 @@ export function MerchantShopScreen({
               {removeUsed ? (
                 <Button variant="outline" disabled className="text-muted-foreground/40"><Trash2 className="h-4 w-4" /> Remove Card — Sold Out</Button>
               ) : (
-                <DisabledTooltip show={gold < SHOP_REMOVE_PRICE} message="Not Enough Gold">
-                  <Button variant="outline" disabled={gold < SHOP_REMOVE_PRICE} onClick={() => { setRemoveMode(true); setRemovePage(0); }} >
-                    <Trash2 className="h-4 w-4" /> Remove Card <GoldCost amount={SHOP_REMOVE_PRICE} />
+                <DisabledTooltip show={gold < removePrice} message="Not Enough Gold">
+                  <Button variant="outline" disabled={gold < removePrice} onClick={() => { setRemoveMode(true); setRemovePage(0); }} >
+                    <Trash2 className="h-4 w-4" /> Remove Card <GoldCost amount={removePrice} />
                   </Button>
                 </DisabledTooltip>
               )}
-              <Button variant="outline" disabled={refreshesLeft <= 0 || gold < SHOP_REFRESH_PRICE} onClick={onRefresh} >
-                <RefreshCw className="h-4 w-4" /> Refresh <GoldCost amount={SHOP_REFRESH_PRICE} />
+              <Button variant="outline" disabled={refreshesLeft <= 0 || gold < refreshPrice} onClick={onRefresh} >
+                <RefreshCw className="h-4 w-4" /> Refresh <GoldCost amount={refreshPrice} />
               </Button>
             </div>
           </>
@@ -142,8 +144,8 @@ export function MerchantShopScreen({
             <DeckGridPaginated cards={runDeck} selectedIndex={selectedRemoveIndex} onSelect={(realIndex) => setSelectedRemoveIndex(realIndex)} page={removePage} onPageChange={setRemovePage} pageSize={deckPageSize} />
             <div className="mt-5 flex justify-center gap-3">
               <Button variant="ghost" onClick={() => { setRemoveMode(false); setSelectedRemoveIndex(null); setRemovePage(0); }}>Cancel</Button>
-              <Button size="lg" disabled={selectedRemoveIndex === null || gold < SHOP_REMOVE_PRICE} onClick={handleRemoveConfirm}>
-                <Trash2 className="h-4 w-4" /> Remove Card <GoldCost amount={SHOP_REMOVE_PRICE} />
+              <Button size="lg" disabled={selectedRemoveIndex === null || gold < removePrice} onClick={handleRemoveConfirm}>
+                <Trash2 className="h-4 w-4" /> Remove Card <GoldCost amount={removePrice} />
               </Button>
             </div>
           </div>

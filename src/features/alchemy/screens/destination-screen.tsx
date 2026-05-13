@@ -5,7 +5,7 @@ import { keywordDefinitions } from "@/lib/game-data";
 
 import { getBossEnemy, keywordAliases } from "../config";
 import { DestinationChoices, ScreenHeader } from "../ui/shared-ui";
-import type { Destination } from "../types";
+import { DESTINATIONS, type Destination } from "../types";
 
 export function DestinationScreen({
   destinationOptions,
@@ -18,7 +18,7 @@ export function DestinationScreen({
   destinationButtonRefs: MutableRefObject<Partial<Record<Destination, HTMLButtonElement | null>>>;
   currentAct: number;
 }) {
-  const bossOnly = destinationOptions.length === 1 && destinationOptions[0] === "Boss Combat";
+  const bossOnly = destinationOptions.length === 1 && destinationOptions[0] === DESTINATIONS.BOSS_COMBAT;
   const boss = bossOnly ? getBossEnemy(currentAct) : null;
 
   const bossShineColors = useMemo(() => {

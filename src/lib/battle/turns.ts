@@ -5,10 +5,42 @@ import { drawCards } from "./draw";
 import { applyBoneCharmHeal, applyCardEffects, applyIronwoodBuckler, getEnemyDamageMultiplier, mergeCombatText } from "./effects";
 import { ailmentStatusIds, type EnemyAttackEffect, type BattleCard } from "@/lib/game-data";
 import { applyPlayerCombatDamage, applyPlayerHealing, cardsPerTurn, clampHealth, maxHandSize, type BattleResolution, type BattleState, type CombatTextEvent, type TurnPhase } from "./types";
-import { ENEMY_HEAL_FRACTION } from "../game-constants";
+import { ENEMY_HEAL_FRACTION, HALF_DIVISOR, PERCENT_DENOMINATOR, POTION_CARD_ID_FRAGMENT } from "../game-constants";
 
 export function cardHasDamageType(card: BattleCard, damageType: string): boolean {
   return card.effects.some((e) => e.kind === "damage" && e.damageType === damageType);
+}
+
+function resolveCardPlayCost(state: BattleState, card: BattleCard) {
+  // One-shot free-card effects consume flags during cost resolution, before effects run.
+  let effectiveCost = card.cost;
+  let nextState = state;
+
+  if (nextState.flags.nextCardCostReduction > 0) {
+    effectiveCost = Math.max(0, effectiveCost - nextState.flags.nextCardCostReduction);
+  }
+  if (!nextState.flags.firstPhysicalCardFreeUsed && nextState.talentEffects.firstPhysicalCardFree && cardHasDamageType(card, "physical")) {
+    effectiveCost = 0;
+    nextState = { ...nextState, flags: { ...nextState.flags, firstPhysicalCardFreeUsed: true } };
+  }
+  if (!nextState.flags.firstHolyCardFreeUsed && nextState.talentEffects.firstHolyCardFree && cardHasDamageType(card, "holy")) {
+    effectiveCost = 0;
+    nextState = { ...nextState, flags: { ...nextState.flags, firstHolyCardFreeUsed: true } };
+  }
+  if (!nextState.flags.firstPoisonCardFreeUsed && nextState.talentEffects.firstPoisonCardFree && cardHasDamageType(card, "poison")) {
+    effectiveCost = 0;
+    nextState = { ...nextState, flags: { ...nextState.flags, firstPoisonCardFreeUsed: true } };
+  }
+  if (!nextState.flags.firstBleedCardFreeUsed && nextState.talentEffects.firstBleedCardFree && cardHasDamageType(card, "bleed")) {
+    effectiveCost = 0;
+    nextState = { ...nextState, flags: { ...nextState.flags, firstBleedCardFreeUsed: true } };
+  }
+  if (!nextState.flags.firstPotionFreeUsed && nextState.trinketEffects.mortarPestleFreeFirstPotion && card.id.includes(POTION_CARD_ID_FRAGMENT)) {
+    effectiveCost = 0;
+    nextState = { ...nextState, flags: { ...nextState.flags, firstPotionFreeUsed: true } };
+  }
+
+  return { state: nextState, effectiveCost };
 }
 
 // Card play is intentionally funneled through one gateway so cost prediction, one-shot
@@ -26,32 +58,9 @@ export function playBattleCardResolved(state: BattleState, cardId: string, index
     return { state, combatTexts };
   }
 
-  let effectiveCost = card.cost;
-
-  if (state.flags.nextCardCostReduction > 0) {
-    effectiveCost = Math.max(0, effectiveCost - state.flags.nextCardCostReduction);
-  }
-  if (!state.flags.firstPhysicalCardFreeUsed && state.talentEffects.firstPhysicalCardFree && cardHasDamageType(card, "physical")) {
-    effectiveCost = 0;
-    state = { ...state, flags: { ...state.flags, firstPhysicalCardFreeUsed: true } };
-  }
-  if (!state.flags.firstHolyCardFreeUsed && state.talentEffects.firstHolyCardFree && cardHasDamageType(card, "holy")) {
-    effectiveCost = 0;
-    state = { ...state, flags: { ...state.flags, firstHolyCardFreeUsed: true } };
-  }
-  if (!state.flags.firstPoisonCardFreeUsed && state.talentEffects.firstPoisonCardFree && cardHasDamageType(card, "poison")) {
-    effectiveCost = 0;
-    state = { ...state, flags: { ...state.flags, firstPoisonCardFreeUsed: true } };
-  }
-  if (!state.flags.firstBleedCardFreeUsed && state.talentEffects.firstBleedCardFree && cardHasDamageType(card, "bleed")) {
-    effectiveCost = 0;
-    state = { ...state, flags: { ...state.flags, firstBleedCardFreeUsed: true } };
-  }
-  // Mortar and Pestle trinket: first potion is free
-  if (!state.flags.firstPotionFreeUsed && state.trinketEffects.mortarPestleFreeFirstPotion && card.id.includes("potion")) {
-    effectiveCost = 0;
-    state = { ...state, flags: { ...state.flags, firstPotionFreeUsed: true } };
-  }
+  const costResolution = resolveCardPlayCost(state, card);
+  state = costResolution.state;
+  const effectiveCost = costResolution.effectiveCost;
 
   if (state.mana < effectiveCost) {
     return { state, combatTexts };
@@ -101,10 +110,10 @@ function tickBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
   const finalDamage = Math.floor(damage * multiplier);
   mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "burn", amount: finalDamage });
   let nextBurn = state.enemyStatuses.burn;
-  if (state.talentEffects.burnDoubleChance > 0 && Math.random() * 100 < state.talentEffects.burnDoubleChance) {
-    nextBurn *= 2;
+  if (state.talentEffects.burnDoubleChance > 0 && Math.random() * PERCENT_DENOMINATOR < state.talentEffects.burnDoubleChance) {
+    nextBurn *= HALF_DIVISOR;
   } else {
-    nextBurn = Math.floor(nextBurn / 2);
+    nextBurn = Math.floor(nextBurn / HALF_DIVISOR);
   }
   return { ...state, enemyHealth: clampHealth(state.enemyHealth, -finalDamage, state.enemyMaxHealth), enemyStatuses: { ...state.enemyStatuses, burn: nextBurn } };
 }
@@ -116,7 +125,7 @@ function tickPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
   const finalDamage = Math.floor(damage * multiplier);
   mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "poison", amount: finalDamage });
   let nextPoison = state.enemyStatuses.poison;
-  if (state.talentEffects.poisonGainChance > 0 && Math.random() * 100 < state.talentEffects.poisonGainChance) {
+  if (state.talentEffects.poisonGainChance > 0 && Math.random() * PERCENT_DENOMINATOR < state.talentEffects.poisonGainChance) {
     nextPoison += 1;
   } else {
     nextPoison = Math.max(0, nextPoison - 1);
@@ -159,105 +168,66 @@ function tickEnemyStatuses(state: BattleState, combatTexts: CombatTextEvent[]) {
 // Player-side ailments stay separate from enemy ticks because armor mitigation and
 // half-damage talents apply only here, while stun/freeze are damaging ailments, not turn skips.
 
+function decayArmorAfterAilmentDamage(state: BattleState, damage: number) {
+  // Ailment hits chip armor once per damaging status, so each tick delegates that rule here.
+  if (damage <= 0 || state.playerStatuses.armor <= 0) return state;
+  return {
+    ...state,
+    playerStatuses: {
+      ...state.playerStatuses,
+      armor: state.playerStatuses.armor - 1,
+    },
+  };
+}
+
 function tickPlayerBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
   const damage = state.playerStatuses.burn;
   if (damage <= 0) return state;
-  const actualDamage = state.talentEffects.receiveHalfBurnDamage ? Math.floor(damage / 2) : damage;
+  const actualDamage = state.talentEffects.receiveHalfBurnDamage ? Math.floor(damage / HALF_DIVISOR) : damage;
   const reducedDamage = state.talentEffects.armorMitigatesBurn
     ? Math.max(0, actualDamage - state.playerStatuses.armor)
     : actualDamage;
   if (reducedDamage > 0) {
     mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "burn", amount: reducedDamage });
   }
-  let nextState = { ...applyPlayerCombatDamage(state, reducedDamage), playerStatuses: { ...state.playerStatuses, burn: Math.floor(state.playerStatuses.burn / 2) } };
-  if (reducedDamage > 0 && nextState.playerStatuses.armor > 0) {
-    nextState = {
-      ...nextState,
-      playerStatuses: {
-        ...nextState.playerStatuses,
-        armor: nextState.playerStatuses.armor - 1,
-      },
-    };
-  }
-  return nextState;
+  const nextState = { ...applyPlayerCombatDamage(state, reducedDamage), playerStatuses: { ...state.playerStatuses, burn: Math.floor(state.playerStatuses.burn / HALF_DIVISOR) } };
+  return decayArmorAfterAilmentDamage(nextState, reducedDamage);
 }
 
 function tickPlayerPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
   const damage = state.playerStatuses.poison;
   if (damage <= 0) return state;
-  const reducedDamage = state.talentEffects.receiveHalfPoisonDamage ? Math.floor(damage / 2) : damage;
+  const reducedDamage = state.talentEffects.receiveHalfPoisonDamage ? Math.floor(damage / HALF_DIVISOR) : damage;
   if (reducedDamage > 0) {
     mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "poison", amount: reducedDamage });
   }
   const nextPoison = Math.max(0, state.playerStatuses.poison - 1);
-  let nextState = { ...applyPlayerCombatDamage(state, reducedDamage), playerStatuses: { ...state.playerStatuses, poison: nextPoison } };
-  if (reducedDamage > 0 && nextState.playerStatuses.armor > 0) {
-    nextState = {
-      ...nextState,
-      playerStatuses: {
-        ...nextState.playerStatuses,
-        armor: nextState.playerStatuses.armor - 1,
-      },
-    };
-  }
-  return nextState;
+  const nextState = { ...applyPlayerCombatDamage(state, reducedDamage), playerStatuses: { ...state.playerStatuses, poison: nextPoison } };
+  return decayArmorAfterAilmentDamage(nextState, reducedDamage);
 }
 
 function tickPlayerBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
   const damage = state.playerStatuses.bleed;
   if (damage <= 0) return state;
-  if (damage > 0) {
-    mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "bleed", amount: damage });
-  }
-  let nextState = { ...applyPlayerCombatDamage(state, damage), playerStatuses: { ...state.playerStatuses, bleed: 0 } };
-  if (damage > 0 && nextState.playerStatuses.armor > 0) {
-    nextState = {
-      ...nextState,
-      playerStatuses: {
-        ...nextState.playerStatuses,
-        armor: nextState.playerStatuses.armor - 1,
-      },
-    };
-  }
-  return nextState;
+  mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "bleed", amount: damage });
+  const nextState = { ...applyPlayerCombatDamage(state, damage), playerStatuses: { ...state.playerStatuses, bleed: 0 } };
+  return decayArmorAfterAilmentDamage(nextState, damage);
 }
 
 function tickPlayerStun(state: BattleState, combatTexts: CombatTextEvent[]) {
   const damage = state.playerStatuses.stun;
   if (damage <= 0) return state;
-  if (damage > 0) {
-    mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "stun", amount: damage });
-  }
-  let nextState = { ...applyPlayerCombatDamage(state, damage), playerStatuses: { ...state.playerStatuses, stun: 0 } };
-  if (damage > 0 && nextState.playerStatuses.armor > 0) {
-    nextState = {
-      ...nextState,
-      playerStatuses: {
-        ...nextState.playerStatuses,
-        armor: nextState.playerStatuses.armor - 1,
-      },
-    };
-  }
-  return nextState;
+  mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "stun", amount: damage });
+  const nextState = { ...applyPlayerCombatDamage(state, damage), playerStatuses: { ...state.playerStatuses, stun: 0 } };
+  return decayArmorAfterAilmentDamage(nextState, damage);
 }
 
 function tickPlayerFreeze(state: BattleState, combatTexts: CombatTextEvent[]) {
   const damage = state.playerStatuses.freeze;
   if (damage <= 0) return state;
-  if (damage > 0) {
-    mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "freeze", amount: damage });
-  }
-  let nextState = { ...applyPlayerCombatDamage(state, damage), playerStatuses: { ...state.playerStatuses, freeze: 0 } };
-  if (damage > 0 && nextState.playerStatuses.armor > 0) {
-    nextState = {
-      ...nextState,
-      playerStatuses: {
-        ...nextState.playerStatuses,
-        armor: nextState.playerStatuses.armor - 1,
-      },
-    };
-  }
-  return nextState;
+  mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "freeze", amount: damage });
+  const nextState = { ...applyPlayerCombatDamage(state, damage), playerStatuses: { ...state.playerStatuses, freeze: 0 } };
+  return decayArmorAfterAilmentDamage(nextState, damage);
 }
 
 function tickPlayerStatuses(state: BattleState, combatTexts: CombatTextEvent[]) {
@@ -289,7 +259,7 @@ export function chooseWishCard(state: BattleState, cardId: string) {
 // ----- Enemy turn helpers -----
 
 export function processCompanionTurnStart(state: BattleState, combatTexts: CombatTextEvent[]) {
-  if (!state.activeCompanion) return state;
+  if (!state.activeCompanion || state.enemyHealth <= 0) return state;
 
   // Companions masquerade as a zero-cost card so their turn-start powers reuse the
   // normal card-effect pipeline, including combat text merging and status side effects.
@@ -300,10 +270,21 @@ export function processCompanionTurnStart(state: BattleState, combatTexts: Comba
     art: state.activeCompanion.art,
     cost: 0,
     template: "nature",
-    effects: state.activeCompanion.turnStartEffects,
+    effects: state.activeCompanion.turnStartEffects.map((e) =>
+      e.kind === "damage" ? { ...e, amount: e.amount + state.talentEffects.companionDamage } : e,
+    ),
   };
 
-  return applyCardEffects(state, companionCard, combatTexts);
+  // Save first-hit flags so the companion's attack doesn't consume player card/tinker bonuses
+  const savedFlags = {
+    firstBurnCardDoubledUsed: state.flags.firstBurnCardDoubledUsed,
+    firstBurnTrinketDoubledUsed: state.flags.firstBurnTrinketDoubledUsed,
+    firstHolyDamageBonusUsed: state.flags.firstHolyDamageBonusUsed,
+  };
+
+  const result = applyCardEffects(state, companionCard, combatTexts);
+
+  return { ...result, flags: { ...result.flags, ...savedFlags } };
 }
 
 function advanceToPlayerTurn(state: BattleState, _combatTexts: CombatTextEvent[]) {
@@ -319,7 +300,7 @@ function advanceToPlayerTurn(state: BattleState, _combatTexts: CombatTextEvent[]
     discard: nextDraw.discard,
     nextCardUid: nextDraw.nextCardUid,
     mana: state.maxMana,
-    playerStatuses: { ...state.playerStatuses, block: Math.floor((state.playerStatuses.block ?? 0) / 2) },
+    playerStatuses: { ...state.playerStatuses, block: Math.floor((state.playerStatuses.block ?? 0) / HALF_DIVISOR) },
     cardsPlayedThisTurn: 0,
     flags: { ...state.flags, resonantChimeUsedThisTurn: false, nextCardCostReduction: 0 },
   };
@@ -328,10 +309,10 @@ function advanceToPlayerTurn(state: BattleState, _combatTexts: CombatTextEvent[]
 function processEnemyHealing(state: BattleState, combatTexts: CombatTextEvent[]) {
   // Enemy self-heal is an early enemy-phase pressure valve: poison can halve it before
   // DoTs tick, so poison decks can counter sustain instead of only racing damage.
-  if (state.enemyHealth >= state.enemyMaxHealth / 2) return state;
+  if (state.enemyHealth >= state.enemyMaxHealth / HALF_DIVISOR) return state;
   let healAmount = Math.floor(state.enemyMaxHealth * ENEMY_HEAL_FRACTION);
   if (state.enemyStatuses.poison > 0 && state.talentEffects.poisonHalvesHealing) {
-    healAmount = Math.floor(healAmount / 2);
+    healAmount = Math.floor(healAmount / HALF_DIVISOR);
   }
   if (healAmount <= 0) return state;
   mergeCombatText(combatTexts, { target: "enemy", kind: "heal", stat: "health", amount: healAmount });
@@ -344,7 +325,7 @@ function checkHealthThresholds(prevHealth: number, nextHealth: number, state: Ba
   let nextState = state;
   if (state.talentEffects.healthThresholdBlock) {
     const { threshold, amount } = state.talentEffects.healthThresholdBlock;
-    const thresholdHp = state.playerMaxHealth * threshold / 100;
+    const thresholdHp = state.playerMaxHealth * threshold / PERCENT_DENOMINATOR;
     if (prevHealth > thresholdHp && nextHealth <= thresholdHp) {
       nextState = {
         ...nextState,
@@ -355,7 +336,7 @@ function checkHealthThresholds(prevHealth: number, nextHealth: number, state: Ba
   }
   if (state.talentEffects.healthThresholdArmor) {
     const { threshold, amount } = state.talentEffects.healthThresholdArmor;
-    const thresholdHp = state.playerMaxHealth * threshold / 100;
+    const thresholdHp = state.playerMaxHealth * threshold / PERCENT_DENOMINATOR;
     if (prevHealth > thresholdHp && nextHealth <= thresholdHp) {
       nextState = {
         ...nextState,
@@ -379,7 +360,7 @@ function processEnemyDamageEffect(state: BattleState, effect: EnemyAttackEffect 
 
   let effectiveBlock = state.playerStatuses.block;
   if (effect.damageType === "physical" && state.talentEffects.blockAbsorbPhysicalBonus > 0) {
-    effectiveBlock = Math.floor(effectiveBlock * (1 + state.talentEffects.blockAbsorbPhysicalBonus / 100));
+    effectiveBlock = Math.floor(effectiveBlock * (1 + state.talentEffects.blockAbsorbPhysicalBonus / PERCENT_DENOMINATOR));
   }
 
   const blockAbsorb = Math.min(remainingDamage, effectiveBlock);
@@ -393,7 +374,7 @@ function processEnemyDamageEffect(state: BattleState, effect: EnemyAttackEffect 
     ? Math.max(0, remainingDamage - state.playerStatuses.armor)
     : remainingDamage;
   const damageType: string = effect.damageType;
-  const actualDamage = damageType === "holy" && state.talentEffects.receiveHalfHolyDamage ? Math.floor(rawDamage / 2) : rawDamage;
+  const actualDamage = damageType === "holy" && state.talentEffects.receiveHalfHolyDamage ? Math.floor(rawDamage / HALF_DIVISOR) : rawDamage;
 
   if (actualDamage > 0) {
     const stat = effect.damageType === "physical" ? "health" : effect.damageType;
@@ -520,14 +501,22 @@ export function endPlayerTurn(state: BattleState): { state: BattleState; combatT
   };
 
   // Haste gives the player an extra turn immediately, skipping the enemy phase.
+  // Player status ticks still apply so haste doesn't freeze ailments.
   if (state.playerStatuses.haste > 0) {
     nextState = { ...nextState, playerStatuses: { ...nextState.playerStatuses, haste: nextState.playerStatuses.haste - 1 } };
+    nextState = tickPlayerStatuses(nextState, combatTexts);
+    nextState = applyIronwoodBuckler(nextState, combatTexts);
+    nextState = resolveDeathsDoorEndOfEnemyTurn(nextState);
     return { state: advanceToPlayerTurn(nextState, combatTexts), combatTexts };
   }
 
   if (state.enemyStunSkipTurns + state.enemyFreezeSkipTurns > 0) {
     nextState = reduceSkipTurns(nextState);
     mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "stun", amount: 0 });
+
+    // Player status ticks still apply during skipped enemy turns so ailments
+    // don't pause when the enemy can't act.
+    nextState = tickPlayerStatuses(nextState, combatTexts);
 
     // Frozen Heart: enemy loses turn to stun/freeze → take damage
     if (nextState.trinketEffects.frozenHeartDamage > 0) {

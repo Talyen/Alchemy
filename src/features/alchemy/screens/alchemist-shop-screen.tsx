@@ -6,7 +6,7 @@ import { Coins, FlaskConical, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { BattleCard } from "@/lib/game-data";
-import { ALCHEMIST_REFRESH_PRICE, COLLECTION_PAGE_SIZE } from "@/lib/game-constants";
+import { ALCHEMIST_REFRESH_PRICE, COLLECTION_PAGE_SIZE, MIXED_POTION_CARD_ID, MIXED_POTION_TITLE, POTION_CARD_ID_FRAGMENT } from "@/lib/game-constants";
 
 import { BattleCardButton } from "../ui/card-ui";
 import { AnimatedHeight } from "../ui/animated-height";
@@ -105,7 +105,7 @@ export function AlchemistShopScreen({
   function selectMixCard(index: number) {
     // Potion mixing is a two-step selection machine: generated Mixed Potions are excluded,
     // re-clicking the first pick backs up to step one, and the second pick toggles freely.
-    if (runDeck[index].id === "mixed-potion") return;
+    if (runDeck[index].id === MIXED_POTION_CARD_ID) return;
     if (mixStep === 1) {
       setSelectedA(index); setMixStep(2);
     } else if (mixStep === 2) {
@@ -128,7 +128,7 @@ export function AlchemistShopScreen({
     } catch { return; }
   }
 
-  const mixableCards = runDeck.map((c, i) => ({ card: c, index: i })).filter(({ card }) => card.id.includes("potion") && card.id !== "mixed-potion");
+  const mixableCards = runDeck.map((c, i) => ({ card: c, index: i })).filter(({ card }) => card.id.includes(POTION_CARD_ID_FRAGMENT) && card.id !== MIXED_POTION_CARD_ID);
   const hasEnoughPotionsToMix = mixableCards.length >= 2;
   const mixDisabled = gold < mixPrice || !hasEnoughPotionsToMix;
   const mixDisabledMessage = hasEnoughPotionsToMix ? "Not Enough Gold" : "Not Enough Potions to Mix";
@@ -141,10 +141,10 @@ export function AlchemistShopScreen({
       <AnimatedHeight deps={[mixMode, mixedCard]}>
         {mixedCard ? (
           <div className="state-swap flex flex-col items-center gap-6">
-            <p className="text-lg font-semibold text-emerald-400">Added to Deck: Mixed Potion</p>
+            <p className="text-lg font-semibold text-emerald-400">Added to Deck: {MIXED_POTION_TITLE}</p>
             <div className="flex flex-col items-center gap-3">
               <div onMouseEnter={() => setMixedCardHovered(true)} onMouseLeave={() => setMixedCardHovered(false)}>
-                <BattleCardButton card={mixedCard} hovered={mixedCardHovered} onHoverStart={() => setMixedCardHovered(true)} onHoverEnd={() => setMixedCardHovered(false)} ariaLabel="Mixed Potion" shimmerActive={false} shimmerToken={undefined} className={handCardWidthClass} />
+                <BattleCardButton card={mixedCard} hovered={mixedCardHovered} onHoverStart={() => setMixedCardHovered(true)} onHoverEnd={() => setMixedCardHovered(false)} ariaLabel={MIXED_POTION_TITLE} shimmerActive={false} shimmerToken={undefined} className={handCardWidthClass} />
               </div>
             </div>
             <Button size="lg" onClick={() => { setMixedCard(null); cancelMix(); }}>Continue</Button>
