@@ -27,7 +27,7 @@ type LookupProps = {
 /** True when any mystery effect is a net positive (card gain, heal, gold, materials, etc). */
 export function hasPositiveMysteryEffect(effects: MysteryEffect[]) {
   return effects.some((e) =>
-    ["addCard", "addRandomCard", "chooseCard", "gainTrinket", "gainRandomTrinket", "healHP", "gainGold", "gainMaxMana", "gainXP", "gainMaterial"].includes(e.kind)
+    ["addCard", "chooseCard", "gainTrinket", "gainRandomTrinket", "healHP", "gainGold", "gainMaxMana", "gainXP", "gainMaterial"].includes(e.kind)
   );
 }
 
@@ -87,7 +87,6 @@ export function MysteryRewardSummary({
             const card = findCard(effect.cardId);
             return card ? renderCardReward(card, i) : null;
           }
-          case "addRandomCard":
           case "chooseCard": {
             const card = runDeck[runDeck.length - 1];
             return card ? renderCardReward(card, i) : null;
@@ -250,17 +249,7 @@ export function MysteryEventIntro({
 
   return (
     <div className="state-swap flex flex-col items-center gap-6">
-      {featuredCard ? (
-        <BattleCardButton
-          card={featuredCard}
-          hovered={isHovered}
-          onHoverStart={() => setHoveredCardId(event.id)}
-          onHoverEnd={() => setHoveredCardId(null)}
-          ariaLabel={featuredCard.title}
-          shimmerActive={false} shimmerToken={undefined}
-          className={handCardWidthClass}
-        />
-      ) : event.art ? (
+      {event.art ? (
         <div
           className={cn("tilt-surface", cardSurfaceClass, handCardWidthClass)}
           data-tilt-strength="15"
@@ -275,6 +264,16 @@ export function MysteryEventIntro({
             loading="eager"
           />
         </div>
+      ) : featuredCard ? (
+        <BattleCardButton
+          card={featuredCard}
+          hovered={isHovered}
+          onHoverStart={() => setHoveredCardId(event.id)}
+          onHoverEnd={() => setHoveredCardId(null)}
+          ariaLabel={featuredCard.title}
+          shimmerActive={false} shimmerToken={undefined}
+          className={handCardWidthClass}
+        />
       ) : null}
       <ScreenHeader title={event.title} />
       <TextAnimate

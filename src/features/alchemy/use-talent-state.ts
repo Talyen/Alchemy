@@ -19,7 +19,11 @@ export function useTalentState(initialTalentXP: TalentXP, initialUnlockedTalents
   }
 
   function awardMysteryXP(keywordId: KeywordId, amount: number) {
-    setState((prev) => ({ ...prev, runTalentXP: addTalentXP(prev.runTalentXP, [keywordId], amount) }));
+    setState((prev) => ({
+      ...prev,
+      talentXP: addTalentXP(prev.talentXP, [keywordId], amount),
+      runTalentXP: addTalentXP(prev.runTalentXP, [keywordId], amount),
+    }));
   }
 
   function unlockTalent(keywordId: KeywordId, talentId: string) {

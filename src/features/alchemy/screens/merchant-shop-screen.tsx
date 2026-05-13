@@ -7,30 +7,9 @@ import { Button } from "@/components/ui/button";
 import type { BattleCard } from "@/lib/game-data";
 import { SELECTION_GRID_PAGE_SIZE } from "@/lib/game-constants";
 
-import { BattleCardButton, PurchasableCardItem, getCardDisplayTitle } from "../ui/card-ui";
+import { PurchasableCardItem, SelectableShopCard } from "../ui/card-ui";
 import { CardSelectionGrid } from "../ui/card-selection-grid";
 import { GoldCost, GoldDisplay, ScreenDescription, ScreenHeader, ServiceButton, staggerDelay } from "../ui/shared-ui";
-import { collectionCardWidthClass } from "../config";
-
-
-
-function SelectableCard({ card, isSelected, onSelect }: { card: BattleCard; isSelected: boolean; onSelect: () => void }) {
-  const [hovered, setHovered] = useState(false);
-  return (
-    <BattleCardButton
-      card={card}
-      hovered={hovered}
-      onHoverStart={() => setHovered(true)}
-      onHoverEnd={() => setHovered(false)}
-      onClick={onSelect}
-      ariaLabel={`Select ${getCardDisplayTitle(card)}`}
-      shimmerActive={false}
-      shimmerToken={undefined}
-      className={collectionCardWidthClass}
-      selected={isSelected}
-    />
-  );
-}
 
 function DeckGridPaginated({
   cards, selectedIndex, onSelect, page, onPageChange, pageSize, revealDelay, paginationSize = "sm", paginationReserveSpace = false,
@@ -51,7 +30,7 @@ function DeckGridPaginated({
       paginationSize={paginationSize}
       paginationReserveSpace={paginationReserveSpace}
       renderItem={({ card, index }) => (
-        <SelectableCard card={card} isSelected={selectedIndex === index} onSelect={() => onSelect(index)} />
+        <SelectableShopCard card={card} isSelected={selectedIndex === index} onSelect={() => onSelect(index)} />
       )}
     />
   );

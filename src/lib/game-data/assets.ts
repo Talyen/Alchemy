@@ -73,6 +73,7 @@ import placeholderEnemy from "@/assets/optimized/placeholder-enemy.webp";
 import placeholderTrinket from "@/assets/optimized/placeholder-trinket.webp";
 import placeholderDestination from "@/assets/optimized/placeholder-destination.webp";
 import placeholderHomestead from "@/assets/optimized/placeholder-homestead.webp";
+import placeholderMystery from "@/assets/optimized/placeholder-mystery.webp";
 
 export {
   alchemyLogo,
@@ -145,6 +146,7 @@ export {
   placeholderTrinket,
   placeholderDestination,
   placeholderHomestead,
+  placeholderMystery,
   alchemistShopBg,
   merchantShopBg,
   eliteEnemyBg,

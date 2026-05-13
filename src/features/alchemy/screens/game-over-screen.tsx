@@ -55,7 +55,7 @@ export function GameOverScreen({ runTalentXP, talentXP, runEndMaterials, onMainM
           <div className="flex flex-wrap justify-center gap-2">
             {keywordIds.map((kw) => (
               <div key={kw} className="flex-none w-[210px]">
-                <KeywordProgressCard kw={kw} runXP={runTalentXP[kw] ?? 0} totalXP={(talentXP[kw] ?? 0) + (runTalentXP[kw] ?? 0)} animate={animate} />
+                <KeywordProgressCard kw={kw} runXP={runTalentXP[kw] ?? 0} totalXP={talentXP[kw] ?? 0} animate={animate} />
               </div>
             ))}
           </div>

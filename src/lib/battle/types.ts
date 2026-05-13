@@ -132,14 +132,9 @@ export type BattleResolution = {
   combatTexts: CombatTextEvent[];
 };
 
-// Clamps a value between min and max. Used everywhere for health/mana bounds.
-export function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
-}
-
 // Shortcut for health changes: health + delta, clamped to [0, max].
 export function clampHealth(current: number, delta: number, max: number): number {
-  return clamp(current + delta, 0, max);
+  return Math.max(0, Math.min(max, current + delta));
 }
 
 // Combat damage at 0 HP gets one battle-scoped grace window instead of immediate defeat.

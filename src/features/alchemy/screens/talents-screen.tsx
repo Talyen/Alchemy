@@ -15,11 +15,11 @@ import { playUISound } from "@/lib/audio";
 import { TalentTree } from "../talents/talent-tree";
 
 export function TalentsScreen({
-  hasActiveBattle, onMainMenu, onReturnToBattle, talentXP, runTalentXP,
+  hasActiveBattle, onMainMenu, onReturnToBattle, talentXP,
   unlockedTalents, onUnlockTalent, onResetTalents,
 }: {
   hasActiveBattle: boolean; onMainMenu: () => void; onReturnToBattle: () => void;
-  talentXP: TalentXP; runTalentXP?: TalentXP; unlockedTalents: UnlockedTalents;
+  talentXP: TalentXP; unlockedTalents: UnlockedTalents;
   onUnlockTalent: (keywordId: KeywordId, talentId: string) => void; onResetTalents: () => void;
 }) {
   const [selectedKeyword, setSelectedKeyword] = useState<KeywordId>("physical");
@@ -29,7 +29,7 @@ export function TalentsScreen({
 
   const unlockedIds = useMemo(() => unlockedTalents[selectedKeyword] ?? [], [selectedKeyword, unlockedTalents]);
   const progress = getTalentKeywordProgress(
-    (talentXP[selectedKeyword] ?? 0) + (runTalentXP?.[selectedKeyword] ?? 0),
+    talentXP[selectedKeyword] ?? 0,
     unlockedIds.length,
   );
   const allTalentsForKeyword = getTalentsForKeyword(selectedKeyword);
@@ -55,7 +55,7 @@ export function TalentsScreen({
           <div className="flex flex-wrap justify-center gap-2">
             {keywordIds.map((kw) => {
               const kwProgress = getTalentKeywordProgress(
-                (talentXP[kw] ?? 0) + (runTalentXP?.[kw] ?? 0),
+                talentXP[kw] ?? 0,
                 (unlockedTalents[kw] ?? []).length,
               );
               return <TalentKeywordButton key={kw} keywordId={kw} hasUnspent={kwProgress.hasUnspent} isSelected={selectedKeyword === kw} onClick={() => setSelectedKeyword(kw)} />;

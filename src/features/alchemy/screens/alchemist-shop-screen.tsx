@@ -7,31 +7,11 @@ import { Button } from "@/components/ui/button";
 import type { BattleCard } from "@/lib/game-data";
 import { ALCHEMIST_REFRESH_PRICE, MIXED_POTION_CARD_ID, MIXED_POTION_TITLE, POTION_CARD_ID_FRAGMENT, SELECTION_GRID_PAGE_SIZE } from "@/lib/game-constants";
 
-import { BattleCardButton, PurchasableCardItem, getCardDisplayTitle } from "../ui/card-ui";
+import { BattleCardButton, PurchasableCardItem, SelectableShopCard } from "../ui/card-ui";
 import { CardSelectionGrid } from "../ui/card-selection-grid";
 import { GoldDisplay, ScreenDescription, ScreenHeader, ServiceButton, staggerDelay } from "../ui/shared-ui";
-import { collectionCardWidthClass, handCardWidthClass } from "../config";
+import { handCardWidthClass } from "../config";
 import { createMixedPotion } from "../potion-mixer";
-
-function SelectableCard({ card, isSelected, onSelect }: { card: BattleCard; isSelected: boolean; onSelect: () => void }) {
-  const [hovered, setHovered] = useState(false);
-  return (
-    <BattleCardButton
-      card={card}
-      hovered={hovered}
-      onHoverStart={() => setHovered(true)}
-      onHoverEnd={() => setHovered(false)}
-      onClick={onSelect}
-      ariaLabel={`Select ${getCardDisplayTitle(card)}`}
-      shimmerActive={false}
-      shimmerToken={undefined}
-      className={collectionCardWidthClass}
-      selected={isSelected}
-    />
-  );
-}
-
-
 
 export function AlchemistShopScreen({
   gold, potionCards, runDeck, refreshesLeft, mixUsed, potionPrice, mixPrice,
@@ -154,7 +134,7 @@ export function AlchemistShopScreen({
             paginationSize="default"
             paginationReserveSpace
             renderItem={({ card, index }) => (
-              <SelectableCard
+              <SelectableShopCard
                 card={card}
                 isSelected={selectedA === index || selectedB === index}
                 onSelect={() => selectMixCard(index)}

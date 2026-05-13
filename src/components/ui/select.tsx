@@ -6,7 +6,6 @@ import { cn } from "@/lib/utils";
 import { Check, ChevronDown } from "lucide-react";
 
 const Select = SelectPrimitive.Root;
-const SelectGroup = SelectPrimitive.Group;
 const SelectValue = SelectPrimitive.Value;
 
 const SelectTrigger = ({ className, children, ...props }: React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger> & { ref?: React.Ref<HTMLButtonElement> }) => (
@@ -61,4 +60,4 @@ const SelectItem = ({ className, children, ...props }: React.ComponentPropsWitho
   </SelectPrimitive.Item>
 );
 
-export { Select, SelectGroup, SelectValue, SelectTrigger, SelectContent, SelectItem };
+export { Select, SelectValue, SelectTrigger, SelectContent, SelectItem };

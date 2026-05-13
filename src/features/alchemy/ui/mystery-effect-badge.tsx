@@ -7,6 +7,9 @@ import { materialLabels } from "@/lib/homestead/types";
 import { matIconMap, matPillStyle, matTextColor } from "./material-icons";
 import type { MysteryEffect } from "../mystery-events";
 
+const goldDef = keywordDefinitions.gold;
+const manaDef = keywordDefinitions.mana;
+
 /** Compact rendering of a single mystery effect — used in both tooltip and reward screen. */
 export function MysteryEffectBadge({
   effect,
@@ -21,22 +24,16 @@ export function MysteryEffectBadge({
 }) {
   switch (effect.kind) {
     case "gainGold":
-      return (
-        <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold bg-yellow-300/15 text-yellow-300">
-          <Coins className="h-4 w-4" />
-          {tooltip ? "Gold" : `${effect.amount} Gold`}
-        </span>
-      );
     case "loseGold":
       return (
-        <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold bg-yellow-300/15 text-yellow-300">
+        <span className={cn("inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold", goldDef.colorClass.replace("text-", "bg-") + "/15", goldDef.colorClass)}>
           <Coins className="h-4 w-4" />
           {tooltip ? "Gold" : `${effect.amount} Gold`}
         </span>
       );
     case "gainMaterial":
       return (
-        <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold", matPillStyle[effect.material], matTextColor[effect.material])}>
+        <span className={cn("inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold", matPillStyle[effect.material], matTextColor[effect.material])}>
           <span>{matIconMap[effect.material]}</span>
           {tooltip ? materialLabels[effect.material] : `${effect.amount} ${materialLabels[effect.material]}`}
         </span>
@@ -60,7 +57,7 @@ export function MysteryEffectBadge({
       );
     case "gainMaxMana":
       return (
-        <span className="font-semibold text-sky-400">
+        <span className={cn("font-semibold", manaDef.colorClass)}>
           {tooltip ? "Mana Crystal" : `Gain +${effect.amount} Mana Crystal${effect.amount > 1 ? "s" : ""}`}
         </span>
       );
@@ -79,10 +76,6 @@ export function MysteryEffectBadge({
       return tooltip
         ? <span>Add {findCard?.(effect.cardId)?.title ?? "a card"} card to your deck</span>
         : <span>Add {findCard?.(effect.cardId)?.title ?? "a card"}</span>;
-    case "addRandomCard":
-      return tooltip
-        ? <span>Add a random card to your deck</span>
-        : <span>Add a random card</span>;
     case "chooseCard":
       return tooltip
         ? <span>Choose a card to add to your deck</span>

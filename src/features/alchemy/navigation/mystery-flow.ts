@@ -3,7 +3,7 @@
 import { cardLibrary, trinketLibrary, type BattleCard, type KeywordId } from "@/lib/game-data";
 import { playGoldGain, playGoldSpend } from "@/lib/audio";
 import { MIXED_POTION_CARD_ID, MYSTERY_CARD_CHOICES } from "@/lib/game-constants";
-import { appendUnique, pickRandom } from "@/lib/utils";
+import { appendUnique } from "@/lib/utils";
 import { emptyInventory, type MaterialId, type MaterialInventory } from "@/lib/homestead/types";
 import type { Dispatch, SetStateAction } from "react";
 
@@ -32,7 +32,6 @@ type MysteryEffectContext = {
 export function applyMysteryEffect(effect: MysteryEffect, context: MysteryEffectContext): MysteryEffectResult {
   switch (effect.kind) {
     case "addCard": return addSpecificMysteryCard(effect.cardId, context);
-    case "addRandomCard": return addRandomMysteryCard(context);
     case "chooseCard": return offerMysteryCardChoices(context);
     case "healHP": return healFromMystery(effect.amount, effect.chance, context);
     case "damageHP": return damageFromMystery(effect.amount, context);
@@ -61,12 +60,6 @@ export function addCardToRun(card: BattleCard, context: Pick<MysteryEffectContex
 
 function addSpecificMysteryCard(cardId: string, context: MysteryEffectContext) {
   const card = cardLibrary.find((c) => c.id === cardId);
-  if (card) addCardToRun(card, context);
-  return { followUp: null };
-}
-
-function addRandomMysteryCard(context: MysteryEffectContext) {
-  const card = pickRandom(getMysteryCardPool());
   if (card) addCardToRun(card, context);
   return { followUp: null };
 }

@@ -223,7 +223,7 @@ export default function App() {
 
   const hasUnspentTalents = Object.keys(keywordDefinitions).some((kw) => {
     const kwId = kw as KeywordId;
-    const xp = (run.talentXP[kwId] ?? 0) + (run.runTalentXP?.[kwId] ?? 0);
+    const xp = run.talentXP[kwId] ?? 0;
     return getTalentKeywordProgress(xp, (run.unlockedTalents[kwId] ?? []).length).hasUnspent;
   });
 
@@ -506,7 +506,6 @@ export default function App() {
                       onMainMenu={() => run.goToScreen("menu")}
                       onReturnToBattle={run.returnToBattle}
                       talentXP={run.talentXP}
-                      runTalentXP={run.runTalentXP}
                       unlockedTalents={run.unlockedTalents}
                       onUnlockTalent={run.unlockTalent}
                       onResetTalents={run.resetUnlockedTalents}

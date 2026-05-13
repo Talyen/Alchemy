@@ -117,6 +117,24 @@ export function PurchasableCardItem({ card, price, gold, purchased, onBuy, width
   );
 }
 
+export function SelectableShopCard({ card, isSelected, onSelect }: { card: BattleCard; isSelected: boolean; onSelect: () => void }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <BattleCardButton
+      card={card}
+      hovered={hovered}
+      onHoverStart={() => setHovered(true)}
+      onHoverEnd={() => setHovered(false)}
+      onClick={onSelect}
+      ariaLabel={`Select ${getCardDisplayTitle(card)}`}
+      shimmerActive={false}
+      shimmerToken={undefined}
+      className={collectionCardWidthClass}
+      selected={isSelected}
+    />
+  );
+}
+
 export function SelectableCardItem({ card, isSelected, onSelect, widthClass = collectionCardWidthClass }: { card: BattleCard; isSelected: boolean; onSelect: () => void; widthClass?: string }) {
   const [hovered, setHovered] = useState(false);
 

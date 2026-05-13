@@ -13,7 +13,7 @@ export { OptionsScreen } from "./options-screen";
 export { CollectionScreen } from "./collection-screen";
 export { TalentsScreen } from "./talents-screen";
 export { GameOverScreen } from "./game-over-screen";
-export { MysteryScreen } from "./mystery";
+export { MysteryScreen } from "./mystery/mystery-screen";
 export { CorruptionScreen } from "./corruption-screen";
 export { ActCompleteScreen } from "./act-complete-screen";
 export { RunVictoryScreen } from "./run-victory-screen";

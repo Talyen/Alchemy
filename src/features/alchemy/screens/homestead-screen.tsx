@@ -74,7 +74,7 @@ function renderTextWithMaterials(text: string): ReactNode {
         const mat = MATERIAL_IDS.find((m) => materialLabels[m] === sub);
         if (mat) {
           result.push(
-            <span key={result.length} className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold align-middle", matPillStyle[mat], matTextColor[mat])}>
+            <span key={result.length} className={cn("inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold align-middle", matPillStyle[mat], matTextColor[mat])}>
               {matIconMap[mat]}{sub}
             </span>
           );
