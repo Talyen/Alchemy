@@ -74,10 +74,7 @@ export function useBattleController({
   const companionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const companionScheduledRef = useRef(false);
   const battleStateRef = useRef(battleState);
-
-  useEffect(() => {
-    battleStateRef.current = battleState;
-  }, [battleState]);
+  battleStateRef.current = battleState;
   useEffect(
     () => () => {
       if (companionTimeoutRef.current) clearTimeout(companionTimeoutRef.current);

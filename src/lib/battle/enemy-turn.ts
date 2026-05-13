@@ -128,7 +128,7 @@ function processEnemyDamageEffect(state: BattleState, effect: EnemyAttackEffect 
   }
 
   const prevHealth = state.playerHealth;
-  let nextState = {
+  let st: BattleState = {
     ...state,
     ...applyPlayerCombatDamage(state, actualDamage),
     playerStatuses: {
@@ -137,35 +137,35 @@ function processEnemyDamageEffect(state: BattleState, effect: EnemyAttackEffect 
     },
   };
 
-  if (nextState.trinketEffects.vanguardCrestForgeOnBlockAbsorb > 0 && blockAbsorb > 0 && remainingDamage === 0) {
-    nextState = {
-      ...nextState,
+  if (st.trinketEffects.vanguardCrestForgeOnBlockAbsorb > 0 && blockAbsorb > 0 && remainingDamage === 0) {
+    st = {
+      ...st,
       playerStatuses: {
-        ...nextState.playerStatuses,
-        forge: nextState.playerStatuses.forge + nextState.trinketEffects.vanguardCrestForgeOnBlockAbsorb,
+        ...st.playerStatuses,
+        forge: st.playerStatuses.forge + st.trinketEffects.vanguardCrestForgeOnBlockAbsorb,
       },
     };
-    mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "forge", amount: nextState.trinketEffects.vanguardCrestForgeOnBlockAbsorb });
+    mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "forge", amount: st.trinketEffects.vanguardCrestForgeOnBlockAbsorb });
   }
 
-  nextState = checkHealthThresholds(prevHealth, nextState.playerHealth, nextState, combatTexts);
+  st = checkHealthThresholds(prevHealth, st.playerHealth, st, combatTexts);
 
-  if (effect.amount > 0 && nextState.playerStatuses.armor > 0) {
-    nextState = {
-      ...nextState,
+  if (effect.amount > 0 && st.playerStatuses.armor > 0) {
+    st = {
+      ...st,
       playerStatuses: {
-        ...nextState.playerStatuses,
-        armor: nextState.playerStatuses.armor - 1,
+        ...st.playerStatuses,
+        armor: st.playerStatuses.armor - 1,
       },
     };
   }
 
   if (effect.lifesteal && actualDamage > 0) {
-    nextState = { ...nextState, enemyHealth: clampHealth(nextState.enemyHealth, actualDamage, nextState.enemyMaxHealth) };
+    st = { ...st, enemyHealth: clampHealth(st.enemyHealth, actualDamage, st.enemyMaxHealth) };
     mergeCombatText(combatTexts, { target: "enemy", kind: "heal", stat: "health", amount: actualDamage });
   }
 
-  return nextState;
+  return st;
 }
 
 function processEnemyAttack(state: BattleState, combatTexts: CombatTextEvent[]) {

@@ -46,36 +46,21 @@ export function useRunState(initialActiveRun: ActiveRunData | null) {
   // Run data is stored as one object so multi-field transitions describe one coherent run.
   const [state, setState] = useState<RunState>(() => createInitialRunState(initialActiveRun));
 
-  const setRunDeck: React.Dispatch<React.SetStateAction<BattleCard[]>> = (action) =>
-    setState((prev) => ({ ...prev, runDeck: typeof action === "function" ? action(prev.runDeck) : action }));
-  const setRunGold: React.Dispatch<React.SetStateAction<number>> = (action) =>
-    setState((prev) => ({ ...prev, runGold: typeof action === "function" ? action(prev.runGold) : action }));
-  const setRunPlayerHealth: React.Dispatch<React.SetStateAction<number>> = (action) =>
-    setState((prev) => ({
-      ...prev,
-      runPlayerHealth: typeof action === "function" ? action(prev.runPlayerHealth) : action,
-    }));
-  const setRunMaxHealth: React.Dispatch<React.SetStateAction<number>> = (action) =>
-    setState((prev) => ({ ...prev, runMaxHealth: typeof action === "function" ? action(prev.runMaxHealth) : action }));
-  const setRoomsEncountered: React.Dispatch<React.SetStateAction<number>> = (action) =>
-    setState((prev) => ({
-      ...prev,
-      roomsEncountered: typeof action === "function" ? action(prev.roomsEncountered) : action,
-    }));
-  const setCurrentAct: React.Dispatch<React.SetStateAction<number>> = (action) =>
-    setState((prev) => ({ ...prev, currentAct: typeof action === "function" ? action(prev.currentAct) : action }));
-  const setDestinationIndexInAct: React.Dispatch<React.SetStateAction<number>> = (action) =>
-    setState((prev) => ({
-      ...prev,
-      destinationIndexInAct: typeof action === "function" ? action(prev.destinationIndexInAct) : action,
-    }));
-  const setCompletedDestinations: React.Dispatch<React.SetStateAction<Destination[]>> = (action) =>
-    setState((prev) => ({
-      ...prev,
-      completedDestinations: typeof action === "function" ? action(prev.completedDestinations) : action,
-    }));
-  const setRunTrinkets: React.Dispatch<React.SetStateAction<string[]>> = (action) =>
-    setState((prev) => ({ ...prev, runTrinkets: typeof action === "function" ? action(prev.runTrinkets) : action }));
+  function fieldSetter<K extends keyof RunState>(key: K) {
+    return (action: RunState[K] | ((prev: RunState[K]) => RunState[K])) => {
+      setState((prev) => ({ ...prev, [key]: typeof action === "function" ? action(prev[key]) : action }));
+    };
+  }
+
+  const setRunDeck = fieldSetter("runDeck");
+  const setRunGold = fieldSetter("runGold");
+  const setRunPlayerHealth = fieldSetter("runPlayerHealth");
+  const setRunMaxHealth = fieldSetter("runMaxHealth");
+  const setRoomsEncountered = fieldSetter("roomsEncountered");
+  const setCurrentAct = fieldSetter("currentAct");
+  const setDestinationIndexInAct = fieldSetter("destinationIndexInAct");
+  const setCompletedDestinations = fieldSetter("completedDestinations");
+  const setRunTrinkets = fieldSetter("runTrinkets");
 
   function setCharacter(selectedId: CharacterId) {
     setState((prev) => ({ ...prev, characterId: selectedId }));
