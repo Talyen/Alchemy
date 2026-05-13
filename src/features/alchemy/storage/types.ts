@@ -10,7 +10,7 @@ import {
   type ResearchId,
 } from "@/lib/homestead/types";
 
-import type { UnlockedTalents } from "../talent-pool";
+import type { UnlockedTalents } from "@/lib/game-data";
 import type { ActiveRunData } from "../run/types";
 import type { DisplayMode, ResolutionOption, UiScale } from "../types";
 

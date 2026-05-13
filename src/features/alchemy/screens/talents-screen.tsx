@@ -1,18 +1,18 @@
 // Talent tree screen — spend XP to unlock keyword-specific talents.
-import { useState, useRef, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { House, Swords } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { keywordDefinitions, type KeywordId } from "@/lib/game-data";
 import { getTalentKeywordProgress, type TalentXP } from "@/lib/talents";
-import { TALENT_CHOICES_OFFERED } from "@/lib/game-constants";
 
-import { TalentKeywordButton } from "../ui/talents-ui";
+import { TalentKeywordButton } from "../talents/talents-ui";
 import { ConfirmationDialog, PageLayout, ProgressBar, ScreenHeader } from "../ui/shared-ui";
 import { KeywordTag } from "../ui/keyword-tag";
-import { getTalentsForKeyword, sampleTalentChoices, type UnlockedTalents, type TalentDefinition } from "../talent-pool";
+import { getTalentsForKeyword, type UnlockedTalents } from "@/lib/game-data";
+import { useTalentChoices } from "../talents/use-talent-choices";
 import { playUISound } from "@/lib/audio";
-import { TalentLayout } from "../ui/talent-layouts";
+import { TalentTree } from "../talents/talent-tree";
 
 export function TalentsScreen({
   hasActiveBattle, onMainMenu, onReturnToBattle, talentXP, runTalentXP,
@@ -25,9 +25,7 @@ export function TalentsScreen({
   const [selectedKeyword, setSelectedKeyword] = useState<KeywordId>("physical");
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const keywordIds = Object.keys(keywordDefinitions) as KeywordId[];
-  // Choices are cached per keyword so rerenders or tab changes do not reroll talent offers
-  // until the player unlocks/refunds something that changes availability.
-  const choicesCache = useRef<Record<string, TalentDefinition[]>>({});
+
 
   const unlockedIds = useMemo(() => unlockedTalents[selectedKeyword] ?? [], [selectedKeyword, unlockedTalents]);
   const progress = getTalentKeywordProgress(
@@ -38,18 +36,15 @@ export function TalentsScreen({
   const allUnlocked = progress.spentPoints >= allTalentsForKeyword.length;
   const unlockedTalentsForKeyword = allTalentsForKeyword.filter((t) => unlockedIds.includes(t.id));
 
-  const currentChoices = useMemo(() => {
-    const cached = choicesCache.current[selectedKeyword];
-    if (cached) return cached; // eslint-disable-line react-hooks/refs
-    if (allUnlocked || progress.unspentPoints <= 0) return null;
-    const c = sampleTalentChoices(selectedKeyword, unlockedIds, TALENT_CHOICES_OFFERED);
-    if (c.length > 0) choicesCache.current[selectedKeyword] = c; // eslint-disable-line react-hooks/refs
-    return c.length > 0 ? c : null;
-  }, [selectedKeyword, unlockedIds, progress.unspentPoints, allUnlocked]);
+  const { currentChoices, invalidateKeyword, invalidateAll } = useTalentChoices(
+    selectedKeyword,
+    unlockedIds,
+    progress.unspentPoints > 0,
+    allUnlocked,
+  );
 
-  function handleUnlockTalent(talentId: string) { onUnlockTalent(selectedKeyword, talentId); delete choicesCache.current[selectedKeyword]; playUISound("talentUnlock"); }
-  // Clearing cached choices forces the next offer to reflect the newly unlocked/refunded state.
-  function handleReset() { onResetTalents(); choicesCache.current = {}; setShowResetConfirm(false); }
+  function handleUnlockTalent(talentId: string) { onUnlockTalent(selectedKeyword, talentId); invalidateKeyword(selectedKeyword); playUISound("talentUnlock"); }
+  function handleReset() { onResetTalents(); invalidateAll(); setShowResetConfirm(false); }
 
   return (
     <PageLayout>
@@ -78,7 +73,7 @@ export function TalentsScreen({
               </div>
 
               <div className="mt-4 min-h-[524px] min-w-[708px] px-0">
-                <TalentLayout unlockedTalents={unlockedTalentsForKeyword} allTalents={allTalentsForKeyword} choices={currentChoices} onUnlock={handleUnlockTalent} /> {/* eslint-disable-line react-hooks/refs */}
+                <TalentTree unlockedTalents={unlockedTalentsForKeyword} allTalents={allTalentsForKeyword} choices={currentChoices} onUnlock={handleUnlockTalent} /> {/* eslint-disable-line react-hooks/refs */}
               </div>
             </div>
         </div>

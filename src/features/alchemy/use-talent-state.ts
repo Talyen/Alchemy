@@ -4,8 +4,7 @@
 import { useState } from "react";
 import type { BattleCard, KeywordId } from "@/lib/game-data";
 import { addTalentXP, extractCardKeywords, type TalentXP } from "@/lib/talents";
-import { computeTalentEffects, talentPool } from "./talent-pool";
-import type { UnlockedTalents } from "./talent-pool";
+import { computeTalentEffects, talentPool, type UnlockedTalents } from "@/lib/game-data";
 
 export function useTalentState(initialTalentXP: TalentXP, initialUnlockedTalents: UnlockedTalents) {
   // XP, run XP, and unlocks are owned by one store so progression mutations stay grouped.

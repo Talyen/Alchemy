@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { cardLibrary, trinketLibrary } from "@/lib/game-data";
 import type { TalentXP } from "@/lib/talents";
 import type { HomesteadEffectManifest, MaterialInventory } from "@/lib/homestead/types";
-import type { UnlockedTalents } from "./talent-pool";
+import type { UnlockedTalents } from "@/lib/game-data";
 import { useTalentState } from "./use-talent-state";
 import { useRunState } from "./use-run-state";
 import { useBattleController } from "./use-battle-controller";

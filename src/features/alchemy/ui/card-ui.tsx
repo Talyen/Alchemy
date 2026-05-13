@@ -26,7 +26,7 @@ export function renderColoredKeywords(description: string) {
   return parts.map((part, i) => {
     if (part.keywordId) {
       return (
-        <span key={i} className={keywordDefinitions[part.keywordId]?.colorClass}>
+        <span key={i} className={cn(keywordDefinitions[part.keywordId]?.colorClass, "font-semibold")}>
           {part.text}
         </span>
       );

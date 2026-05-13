@@ -1,9 +1,11 @@
 // Minimal startup-only loading bar for the initial main menu reveal.
+// Uses a looping indeterminate fill animation — real asset loading happens in
+// the background and the screen is dismissed once everything is decoded.
+
 const LOADING_WORDS = [
   "Forging", "Growing", "Brewing", "Simmering",
   "Tinkering", "Prestidigitating", "Discombobulating",
 ];
-
 const loadingWord = LOADING_WORDS[Math.floor(Math.random() * LOADING_WORDS.length)];
 
 export function StartupLoadingScreen() {

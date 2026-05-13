@@ -85,7 +85,7 @@
 
 @layer components {
   .alchemy-shell {
-    background: rgba(12, 10, 7, 0.95);
+    background: rgb(12, 10, 7);
     border-color: rgba(255, 253, 245, 0.08);
   }
 
@@ -269,7 +269,7 @@
 
   .alchemy-startup-bar {
     background: hsl(var(--primary));
-    animation: startupBarFill 500ms ease-out forwards;
+    animation: startupBarCycle 1300ms ease-in-out infinite;
     transform-origin: left;
   }
 
@@ -289,7 +289,7 @@
 
 @layer utilities {
   .surface-muted {
-    background: rgba(14, 12, 9, 0.96);
+    background: rgb(14, 12, 9);
   }
 
   .page-enter {
@@ -421,14 +421,10 @@
   }
 }
 
-@keyframes startupBarFill {
-  from { transform: scaleX(0); }
-  to { transform: scaleX(1); }
-}
-
-@keyframes startupBlurFadeIn {
-  from { opacity: 0; filter: blur(4px); }
-  to { opacity: 1; filter: blur(0); }
+@keyframes startupBarCycle {
+  0% { transform: scaleX(0); }
+  50% { transform: scaleX(1); }
+  100% { transform: scaleX(0); }
 }
 
 @keyframes hoverPopupQuickInAbove {

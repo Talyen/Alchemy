@@ -1,8 +1,7 @@
-// Talent UI widgets for selecting pending unlocks and reviewing unlocked nodes.
 import { type KeywordId, keywordDefinitions } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 import { ShineBorder } from "@/components/ui/shine-border";
-import { KeywordTag } from "./keyword-tag";
+import { KeywordTag } from "../ui/keyword-tag";
 
 export function TalentKeywordButton({
   keywordId,

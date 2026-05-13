@@ -3,7 +3,7 @@
 import type { TalentXP } from "@/lib/talents";
 import type { ResearchId } from "@/lib/homestead/types";
 
-import type { UnlockedTalents } from "../talent-pool";
+import type { UnlockedTalents } from "@/lib/game-data";
 import { normalizeActiveRun } from "./active-run";
 import { migrateBuildingIds, migrateFarmIds, migrateMaterialInventory } from "./homestead";
 import { normalizeDisplayMode, normalizeUiScale } from "./options";

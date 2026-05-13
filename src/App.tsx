@@ -4,6 +4,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import {
+  allGameArt,
   cardLibrary,
   characterArt,
   characters,
@@ -15,10 +16,11 @@ import {
 } from "@/lib/game-data";
 import { getTalentKeywordProgress } from "@/lib/talents";
 import { platform } from "@/lib/platform";
+import { preloadAllSounds } from "@/lib/audio";
 
 import { useAppAudioEffects } from "@/app/use-app-audio-effects";
 import { useAppDisplayEffects } from "@/app/use-app-display-effects";
-import { useScreenAssetPreloadEffects, useStartupPreloadEffects } from "@/app/use-app-preload-effects";
+import { useScreenAssetPreloadEffects } from "@/app/use-app-preload-effects";
 import { useAlchemyAutosave, useAppSaveState } from "@/app/use-app-save-state";
 import { useInitialLoadReady } from "@/app/use-initial-load-ready";
 import { StartupLoadingScreen } from "@/app/startup-loading-screen";
@@ -49,7 +51,6 @@ import { ErrorBoundary } from "@/components/error-boundary";
 import { HomesteadScreen } from "@/features/alchemy/screens/homestead-screen";
 
 const PAGE_EXIT_MS = 130;
-const INITIAL_LOAD_IMAGE_URLS = [menuLogo];
 
 export default function App() {
   const save = useAppSaveState();
@@ -94,9 +95,9 @@ export default function App() {
   const [pagePhase, setPagePhase] = useState<"enter" | "exit">("enter");
   const pendingScreenRef = useRef(renderedScreen);
   const vrStageRef = useRef<HTMLDivElement>(null);
-  const initialLoadReady = useInitialLoadReady({ imageUrls: INITIAL_LOAD_IMAGE_URLS });
+  const initialLoadReady = useInitialLoadReady({ imageUrls: allGameArt });
   useAppDisplayEffects({ displayMode, uiScale, brightness, stageRef: vrStageRef });
-  useStartupPreloadEffects();
+  useEffect(() => { preloadAllSounds(); }, []);
 
   const gameMenuOpenRef = useRef(gameMenuOpen);
   const renderedScreenRef = useRef(renderedScreen);

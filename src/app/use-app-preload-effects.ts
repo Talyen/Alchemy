@@ -1,21 +1,14 @@
-// Root-level startup and screen-aware asset preloading.
-// Depends on game-data assets, image preload helpers, and audio preload.
+// Screen-aware asset preloading for edge-case images not covered by upfront decode.
+// Depends on game-data assets, image preload helpers.
+// All main art is decoded during the startup loading screen — this is a safety net
+// for any images that are dynamically constructed or added after initial load.
 import { useEffect } from "react";
 
 import {
-  alchemistShopBg,
-  campfire,
-  characterArt,
-  eliteEnemyBg,
-  merchantShopBg,
-  mysteryBg,
-  normalEnemyBg,
   pileDiscardArt,
   pileDrawArt,
-  menuLogo,
 } from "@/lib/game-data";
-import { preloadAllSounds } from "@/lib/audio";
-import { preloadImages, preloadImagesWhenIdle } from "@/lib/image-preload";
+import { preloadImages } from "@/lib/image-preload";
 import type { Screen } from "@/features/alchemy/types";
 
 type ScreenAssetPreloadOptions = {
@@ -28,25 +21,6 @@ type ScreenAssetPreloadOptions = {
   alchemistPotions: Array<{ art: string }>;
   mysteryEvent: { art?: string } | null;
 };
-
-// Warms core sounds and shell artwork after first mount without blocking startup.
-export function useStartupPreloadEffects() {
-  useEffect(() => {
-    preloadAllSounds();
-    preloadImagesWhenIdle([
-      menuLogo,
-      ...Object.values(characterArt),
-      pileDrawArt,
-      pileDiscardArt,
-      normalEnemyBg,
-      eliteEnemyBg,
-      merchantShopBg,
-      alchemistShopBg,
-      mysteryBg,
-      campfire,
-    ]);
-  }, []);
-}
 
 // Preloads only assets for the current or imminent screen so card/enemy art does not
 // pop in, without forcing the entire collection into memory on startup.

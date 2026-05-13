@@ -8,9 +8,12 @@ type InitialLoadReadyOptions = {
   maxDurationMs?: number;
 };
 
-// Holds the initial menu until key visual assets are decoded so the first visible frame
-// feels intentional instead of letting the logo and layout pop into place.
-export function useInitialLoadReady({ imageUrls, minDurationMs = 650, maxDurationMs = 1800 }: InitialLoadReadyOptions) {
+// Holds the initial menu until every game asset is decoded so the first visible frame
+// feels intentional and no image pop-in occurs during gameplay.
+// Enforces a minimum duration (650ms default) so the loading screen is visible long
+// enough for the user to register it. If assets take longer, the loading bar loops
+// until they complete.
+export function useInitialLoadReady({ imageUrls, minDurationMs = 650, maxDurationMs = 12000 }: InitialLoadReadyOptions) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -18,8 +21,12 @@ export function useInitialLoadReady({ imageUrls, minDurationMs = 650, maxDuratio
 
     async function waitForStartupAssets() {
       const startedAt = performance.now();
+
       await Promise.race([
-        Promise.all([waitForImages(imageUrls), waitForFonts()]),
+        Promise.all([
+          waitForFonts(),
+          ...imageUrls.map((url) => waitForImage(url)),
+        ]),
         delay(maxDurationMs),
       ]);
 
@@ -36,10 +43,6 @@ export function useInitialLoadReady({ imageUrls, minDurationMs = 650, maxDuratio
   }, [imageUrls, minDurationMs, maxDurationMs]);
 
   return ready;
-}
-
-function waitForImages(urls: string[]) {
-  return Promise.all(urls.map((url) => waitForImage(url))).then(() => undefined);
 }
 
 function waitForImage(url: string) {

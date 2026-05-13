@@ -162,3 +162,12 @@ export const characterArt = {
   rogue,
   wizard,
 } as const;
+
+// Auto-discovered art assets for upfront preloading during the startup loading screen.
+// import.meta.glob resolves at build time — any .webp added to src/assets/optimized/ is
+// automatically included without touching this file.
+const assetModules = import.meta.glob("@/assets/optimized/*.webp", {
+  eager: true,
+  import: "default",
+});
+export const allGameArt = Object.values(assetModules) as string[];
