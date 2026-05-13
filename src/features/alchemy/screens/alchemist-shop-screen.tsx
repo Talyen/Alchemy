@@ -1,80 +1,37 @@
 // Alchemist's Shop screen — buy potions, refresh, or mix two potions from your deck.
 import { useState } from "react";
-import type { CSSProperties } from "react";
-import { Coins, FlaskConical, RefreshCw } from "lucide-react";
+import { FlaskConical, RefreshCw } from "lucide-react";
 
+import { BlurFade } from "@/components/ui/blur-fade";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import type { BattleCard } from "@/lib/game-data";
-import { ALCHEMIST_REFRESH_PRICE, COLLECTION_PAGE_SIZE, MIXED_POTION_CARD_ID, MIXED_POTION_TITLE, POTION_CARD_ID_FRAGMENT } from "@/lib/game-constants";
+import { ALCHEMIST_REFRESH_PRICE, MIXED_POTION_CARD_ID, MIXED_POTION_TITLE, POTION_CARD_ID_FRAGMENT, SELECTION_GRID_PAGE_SIZE } from "@/lib/game-constants";
 
-import { BattleCardButton } from "../ui/card-ui";
-import { AnimatedHeight } from "../ui/animated-height";
-import { DisabledTooltip, GoldCost, PaginationControls, ScreenHeader } from "../ui/shared-ui";
+import { BattleCardButton, PurchasableCardItem, getCardDisplayTitle } from "../ui/card-ui";
+import { CardSelectionGrid } from "../ui/card-selection-grid";
+import { GoldDisplay, ScreenDescription, ScreenHeader, ServiceButton, staggerDelay } from "../ui/shared-ui";
 import { collectionCardWidthClass, handCardWidthClass } from "../config";
 import { createMixedPotion } from "../potion-mixer";
 
-function PotionCardItem({ card, price, gold, purchased, onBuy, index }: { card: BattleCard; price: number; gold: number; purchased: boolean; onBuy: () => void; index: number }) {
+function SelectableCard({ card, isSelected, onSelect }: { card: BattleCard; isSelected: boolean; onSelect: () => void }) {
   const [hovered, setHovered] = useState(false);
-
-  if (purchased) {
-    return (
-      <div className="stagger-item flex flex-col items-center gap-3 rounded-[18px] border border-border/30 bg-card/30 p-4 text-center opacity-50" style={{ "--stagger-index": index } as CSSProperties}>
-        <BattleCardButton card={card} hovered={false} onHoverStart={() => {}} onHoverEnd={() => {}} ariaLabel={card.title} shimmerActive={false} shimmerToken={undefined} className={handCardWidthClass} />
-        <p className="text-sm font-semibold text-muted-foreground">{card.title}</p>
-        <span className="text-xs text-muted-foreground">Purchased</span>
-      </div>
-    );
-  }
-
   return (
-    <div className="stagger-item flex flex-col items-center gap-3 rounded-[18px] border border-border/70 bg-card/60 p-4 text-center" style={{ "--stagger-index": index } as CSSProperties}>
-      <div onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
-        <BattleCardButton card={card} hovered={hovered} onHoverStart={() => setHovered(true)} onHoverEnd={() => setHovered(false)} ariaLabel={`Inspect ${card.title}`} shimmerActive={false} shimmerToken={undefined} className={handCardWidthClass} />
-      </div>
-      <p className="text-sm font-semibold text-foreground">{card.title}</p>
-      <DisabledTooltip show={gold < price} message="Not Enough Gold">
-        <Button variant="outline" disabled={gold < price} onClick={onBuy} >
-          Buy <GoldCost amount={price} />
-        </Button>
-      </DisabledTooltip>
-    </div>
+    <BattleCardButton
+      card={card}
+      hovered={hovered}
+      onHoverStart={() => setHovered(true)}
+      onHoverEnd={() => setHovered(false)}
+      onClick={onSelect}
+      ariaLabel={`Select ${getCardDisplayTitle(card)}`}
+      shimmerActive={false}
+      shimmerToken={undefined}
+      className={collectionCardWidthClass}
+      selected={isSelected}
+    />
   );
 }
 
-function MixPotionCardItem({ card, visualIndex, isSelected, onSelect }: { card: BattleCard; visualIndex: number; isSelected: boolean; onSelect: () => void }) {
-  const [hovered, setHovered] = useState(false);
 
-  return (
-    <div
-      className={cn("stagger-item cursor-pointer rounded-[18px] border p-2 text-center transition-all", isSelected ? "border-primary bg-primary/10 ring-1 ring-primary" : "border-border/60 bg-card/40 hover:border-border")}
-      style={{ "--stagger-index": visualIndex } as CSSProperties}
-      onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
-      onClick={onSelect}>
-      <BattleCardButton card={card} hovered={hovered} onHoverStart={() => setHovered(true)} onHoverEnd={() => setHovered(false)} ariaLabel={`Inspect ${card.title}`} shimmerActive={false} shimmerToken={undefined} className={collectionCardWidthClass} />
-      <p className="mt-1 text-xs font-semibold text-foreground">{card.title}</p>
-    </div>
-  );
-}
-
-function ServiceButton({ icon: Icon, label, cost, disabled, disabledMessage, used, soldOutText, onClick }: { icon: React.ComponentType<{ className?: string }>; label: string; cost: number; disabled: boolean; disabledMessage: string; used: boolean; soldOutText: string; onClick: () => void }) {
-  if (used) {
-    return <Button variant="outline" disabled className="text-muted-foreground/40">{soldOutText}</Button>;
-  }
-  return (
-    <DisabledTooltip show={disabled} message={disabledMessage}>
-      <Button variant="outline" disabled={disabled} onClick={onClick} >
-        <Icon className="h-4 w-4" />
-        <span className="text-sm font-normal">{label}</span>
-        <GoldCost amount={cost} />
-      </Button>
-    </DisabledTooltip>
-  );
-}
-
-function GoldDisplay({ gold }: { gold: number }) {
-  return <p className="flex items-center gap-2 text-lg font-medium text-yellow-300"><Coins className="h-5 w-5" />{gold} Gold</p>;
-}
 
 export function AlchemistShopScreen({
   gold, potionCards, runDeck, refreshesLeft, mixUsed, potionPrice, mixPrice,
@@ -136,28 +93,36 @@ export function AlchemistShopScreen({
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-6 overflow-y-auto px-4 py-6 text-center">
       <ScreenHeader title="Alchemist's Shop" />
-      {!mixedCard ? <GoldDisplay gold={gold} /> : null}
+      <BlurFade delay={staggerDelay(1)} direction="up" offset={6}>
+        {!mixedCard ? <GoldDisplay gold={gold} /> : null}
+      </BlurFade>
 
-      <AnimatedHeight deps={[mixMode, mixedCard]}>
-        {mixedCard ? (
-          <div className="state-swap flex flex-col items-center gap-6">
-            <p className="text-lg font-semibold text-emerald-400">Added to Deck: {MIXED_POTION_TITLE}</p>
+      {mixedCard ? (
+        <div className="state-swap flex flex-col items-center gap-6">
+          <p className="text-lg font-semibold text-emerald-400">Added to Deck: {MIXED_POTION_TITLE}</p>
+          <BlurFade delay={staggerDelay(1)} direction="up" offset={8}>
             <div className="flex flex-col items-center gap-3">
               <div onMouseEnter={() => setMixedCardHovered(true)} onMouseLeave={() => setMixedCardHovered(false)}>
                 <BattleCardButton card={mixedCard} hovered={mixedCardHovered} onHoverStart={() => setMixedCardHovered(true)} onHoverEnd={() => setMixedCardHovered(false)} ariaLabel={MIXED_POTION_TITLE} shimmerActive={false} shimmerToken={undefined} className={handCardWidthClass} />
               </div>
             </div>
+          </BlurFade>
+          <BlurFade delay={staggerDelay(2)} direction="up" offset={6}>
             <Button size="lg" onClick={() => { setMixedCard(null); cancelMix(); }}>Continue</Button>
+          </BlurFade>
+        </div>
+      ) : !mixMode ? (
+        <div className="state-swap flex flex-col items-center gap-6">
+          <div key={potionCards.map((card) => card.id).join("-")} className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            {potionCards.map((card, i) => (
+              <BlurFade key={`${card.id}-${i}`} delay={staggerDelay(2 + i)} direction="up" offset={8}>
+                <PurchasableCardItem card={card} price={potionPrice} gold={gold} purchased={purchasedIds.has(card.id)} onBuy={() => handleBuyCard(card)} />
+              </BlurFade>
+            ))}
           </div>
-        ) : !mixMode ? (
-          <>
-            <div key={potionCards.map((card) => card.id).join("-")} className="state-swap grid grid-cols-1 gap-4 sm:grid-cols-3">
-              {potionCards.map((card, i) => (
-                <PotionCardItem key={`${card.id}-${i}`} card={card} price={potionPrice} gold={gold} purchased={purchasedIds.has(card.id)} onBuy={() => handleBuyCard(card)} index={i} />
-              ))}
-            </div>
 
-            <div className="mt-6 flex flex-wrap justify-center gap-4">
+          <BlurFade delay={staggerDelay(5)} direction="up" offset={6}>
+            <div className="flex flex-wrap justify-center gap-4">
               <ServiceButton
                 icon={FlaskConical} label="Mix Potions" cost={mixPrice}
                 disabled={mixDisabled} disabledMessage={mixDisabledMessage}
@@ -171,41 +136,41 @@ export function AlchemistShopScreen({
                 onClick={onRefresh}
               />
             </div>
-          </>
-        ) : (
-          <div className="state-swap">
-            <p className="mb-3 text-sm font-semibold text-foreground">Select two Potions to Combine</p>
-            {(() => {
-              const pageSize = COLLECTION_PAGE_SIZE;
-              const totalPages = Math.max(1, Math.ceil(mixableCards.length / pageSize));
-              const pageItems = mixableCards.slice(mixPage * pageSize, (mixPage + 1) * pageSize);
+          </BlurFade>
 
-              return (
-                <>
-                  <div className="flex flex-wrap justify-center gap-x-4 gap-y-5">
-                    {pageItems.map(({ card, index }, visualIndex) => {
-                      const isSelected = selectedA === index || selectedB === index;
-                      return (
-                        <MixPotionCardItem key={`${card.id}-${index}`} card={card}
-                          visualIndex={visualIndex}
-                          isSelected={isSelected}
-                          onSelect={() => selectMixCard(index)} />
-                      );
-                    })}
-                  </div>
-                  <PaginationControls page={mixPage} totalPages={totalPages} onPageChange={setMixPage} />
-                </>
-              );
-            })()}
-            <div className="mt-5 flex justify-center gap-3">
+          <BlurFade delay={staggerDelay(6)} direction="up" offset={6}>
+            <Button size="lg" className="min-w-44" onClick={onContinue}>Leave</Button>
+          </BlurFade>
+        </div>
+      ) : (
+        <div className="state-swap">
+          <ScreenDescription className="mb-3">Select two Potions to Combine</ScreenDescription>
+          <CardSelectionGrid
+            items={mixableCards}
+            page={mixPage}
+            onPageChange={setMixPage}
+            pageSize={SELECTION_GRID_PAGE_SIZE}
+            revealDelay={staggerDelay(2)}
+            paginationSize="default"
+            paginationReserveSpace
+            renderItem={({ card, index }) => (
+              <SelectableCard
+                card={card}
+                isSelected={selectedA === index || selectedB === index}
+                onSelect={() => selectMixCard(index)}
+              />
+            )}
+          />
+          <div className="mt-5 flex justify-center gap-3">
+            <BlurFade delay={staggerDelay(10)} direction="up" offset={6}>
               <Button variant="ghost" onClick={cancelMix}>Cancel</Button>
+            </BlurFade>
+            <BlurFade delay={staggerDelay(11)} direction="up" offset={6}>
               <Button size="lg" disabled={selectedA === null || selectedB === null} onClick={handleMixConfirm}>Combine</Button>
-            </div>
+            </BlurFade>
           </div>
-        )}
-      </AnimatedHeight>
-
-      {!mixMode && !mixedCard ? <Button size="lg" className="mt-2 min-w-44" onClick={onContinue}>Continue</Button> : null}
+        </div>
+      )}
     </div>
   );
 }

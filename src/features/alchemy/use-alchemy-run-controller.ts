@@ -202,6 +202,9 @@ export function useAlchemyRunController({
     get mysteryEvent() {
       return nav.mysteryEvent;
     },
+    get corruptionResult() {
+      return nav.corruptionResult;
+    },
     get activeRunData() {
       return nav.activeRunData;
     },
@@ -241,6 +244,9 @@ export function useAlchemyRunController({
     handleMysteryChooseCard: nav.handleMysteryChooseCard,
     handleMysteryRemoveCard: nav.handleMysteryRemoveCard,
     handleMysteryContinue: nav.handleMysteryContinue,
+    handleCorruptCard: nav.handleCorruptCard,
+    handleCorruptionContinue: nav.handleCorruptionContinue,
+    handleCorruptionLeave: nav.handleCorruptionLeave,
     get mysteryCardChoices() {
       return nav.mysteryCardChoices;
     },

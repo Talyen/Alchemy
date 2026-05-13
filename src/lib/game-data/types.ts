@@ -68,6 +68,8 @@ export type BattleCard = {
   cost: number;
   template: CardTemplate;
   consume?: boolean;
+  corrupted?: boolean;
+  baseTitle?: string;
   effects: BattleCardEffect[];
 };
 

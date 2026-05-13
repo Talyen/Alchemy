@@ -32,6 +32,7 @@ import {
 } from "./navigation/reward-flow";
 import { useMysteryFlow } from "./navigation/use-mystery-flow";
 import { createActiveRunData } from "./run/active-run-data";
+import { corruptDeckCard, type CorruptionResult } from "./corruption";
 
 export function useRunNavigation({
   run,
@@ -92,6 +93,7 @@ export function useRunNavigation({
     food: 0,
     crystal: 0,
   });
+  const [corruptionResult, setCorruptionResult] = useState<CorruptionResult | null>(null);
 
   const destinationButtonRefs = useRef<Partial<Record<Destination, HTMLButtonElement | null>>>({});
 
@@ -138,11 +140,14 @@ export function useRunNavigation({
   );
 
   function getAvailableDestinations(currentHp?: number, currentGold?: number, destIdxInAct?: number): Destination[] {
+    const destinationIndexInAct = destIdxInAct ?? run.destinationIndexInAct;
+    const previousDestination = destinationIndexInAct === 0 ? undefined : run.completedDestinations[run.completedDestinations.length - 1];
     return getRunAvailableDestinations({
-      destinationIndexInAct: destIdxInAct ?? run.destinationIndexInAct,
+      destinationIndexInAct,
       currentHp: currentHp ?? run.runPlayerHealth,
       currentGold: currentGold ?? run.runGold,
       maxHp: run.runMaxHealth,
+      previousDestination,
     });
   }
 
@@ -364,6 +369,9 @@ export function useRunNavigation({
       navigateTo("alchemist");
     } else if (destination === DESTINATIONS.MYSTERY) {
       beginMysteryEvent();
+    } else if (destination === DESTINATIONS.CORRUPTION) {
+      setCorruptionResult(null);
+      navigateTo("corruption");
     } else if (destination === DESTINATIONS.ELITE_COMBAT) {
       onStartBattle(undefined, undefined, "elite");
       navigateTo("battle");
@@ -420,6 +428,27 @@ export function useRunNavigation({
   function handleCampfireContinue() {
     const healFraction = CAMPFIRE_HEAL_FRACTION + talents.talentEffects.campfireHealBonus;
     run.setRunPlayerHealth((prev) => Math.min(run.runMaxHealth, prev + Math.floor(run.runMaxHealth * healFraction)));
+    advanceToNextDestination();
+  }
+
+  // ============ Corruption ============
+
+  function handleCorruptCard(cardIndex: number) {
+    // The altar replaces the selected run-deck slot immediately so later battles and saves
+    // see the altered card object, then the screen reveals exactly what changed.
+    const { deck, result } = corruptDeckCard(run.runDeck, cardIndex);
+    run.setRunDeck(deck);
+    setCorruptionResult(result);
+    setDiscoveredCardIds((current) => appendUnique(current, result.corruptedCard.id));
+  }
+
+  function handleCorruptionContinue() {
+    setCorruptionResult(null);
+    advanceToNextDestination();
+  }
+
+  function handleCorruptionLeave() {
+    setCorruptionResult(null);
     advanceToNextDestination();
   }
 
@@ -480,6 +509,9 @@ export function useRunNavigation({
     get mysteryCardChoices() {
       return mystery.mysteryCardChoices;
     },
+    get corruptionResult() {
+      return corruptionResult;
+    },
     get activeRunData() {
       return hasActiveRun ? currentActiveRunData : null;
     },
@@ -494,6 +526,9 @@ export function useRunNavigation({
     handleActComplete,
     finishRewards,
     handleCampfireContinue,
+    handleCorruptCard,
+    handleCorruptionContinue,
+    handleCorruptionLeave,
     handleMysteryChoice,
     handleMysteryChooseCard,
     handleMysteryRemoveCard,

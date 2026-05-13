@@ -32,7 +32,7 @@ test.describe("Boss Fight", () => {
     await page.goto("/");
     await page.getByRole("button", { name: "Resume Run" }).click();
 
-    await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole("heading", { name: "The Forge Golem" })).toBeVisible({ timeout: 10000 });
     const bossBtn = page.getByRole("button", { name: "Boss Combat" });
     await expect(bossBtn).toBeVisible();
 

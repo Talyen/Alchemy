@@ -6,7 +6,7 @@ import { Skull } from "lucide-react";
 
 import { Progress } from "@/components/ui/progress";
 import { ShineBorder } from "@/components/ui/shine-border";
-import { animateParticles, createParticles, createStatusParticles } from "@/lib/animation/particle-burst";
+import { animateParticles, createParticles } from "@/lib/animation/particle-burst";
 import { keywordDefinitions, type BestiaryEntry, type KeywordId } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
@@ -85,40 +85,6 @@ function DeathsDoorStatusIcon() {
   );
 }
 
-function StatusParticleBurst() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useLayoutEffect(() => {
-    // Measure after layout so the synthetic particle burst exactly overlays the status
-    // panel during death fade, including responsive card widths.
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const parent = canvas.parentElement;
-    if (!parent) return;
-    const rect = parent.getBoundingClientRect();
-    const w = Math.round(rect.width);
-    const h = Math.round(rect.height);
-    if (w === 0 || h === 0) return;
-    canvas.width = w;
-    canvas.height = h;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    const particles = createStatusParticles(w, h);
-    const stop = animateParticles(ctx, particles, w, h, 1000, () => {});
-    return () => {
-      stop();
-    };
-  }, []);
-
-  return (
-    <canvas
-      ref={canvasRef}
-      className="absolute inset-0 z-10 w-full h-full rounded-[24px]"
-      style={{ pointerEvents: "none" }}
-    />
-  );
-}
-
 function ParticleBurst({ imageUrl }: { imageUrl: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -136,8 +102,10 @@ function ParticleBurst({ imageUrl }: { imageUrl: string }) {
     const h = Math.round(rect.height);
     if (w === 0 || h === 0) return;
 
-    canvas.width = w;
-    canvas.height = h;
+    const cw = w * 2;
+    const ch = h * 2;
+    canvas.width = cw;
+    canvas.height = ch;
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
@@ -150,10 +118,10 @@ function ParticleBurst({ imageUrl }: { imageUrl: string }) {
 
     img.onload = () => {
       if (cancelled) return;
-      ctx.drawImage(img, 0, 0, w, h);
-      const particles = createParticles(ctx, w, h);
-      ctx.clearRect(0, 0, w, h);
-      stop = animateParticles(ctx, particles, w, h, 1000, () => {});
+      ctx.drawImage(img, (cw - w) / 2, (ch - h) / 2, w, h);
+      const particles = createParticles(ctx, cw, ch);
+      ctx.clearRect(0, 0, cw, ch);
+      stop = animateParticles(ctx, particles, cw, ch, 2400, () => {});
     };
 
     img.onerror = () => {
@@ -171,7 +139,7 @@ function ParticleBurst({ imageUrl }: { imageUrl: string }) {
   return (
     <canvas
       ref={canvasRef}
-      className="absolute inset-0 z-10 w-full h-full rounded-[30px]"
+      className="absolute z-10 w-[200%] h-[200%] -left-[50%] -top-[50%]"
       style={{ pointerEvents: "none" }}
     />
   );
@@ -285,7 +253,7 @@ export function ArtPanel({
             className="rounded-[24px]"
           />
         ) : null}
-        <div className={isDead ? "opacity-0" : ""}>
+        <div className={isDead ? "opacity-0 transition-opacity duration-700" : ""}>
           <div className="flex items-center justify-between gap-3">
             <p className="text-base leading-6 font-bold text-foreground">{title}</p>
             <p key={healthToken} className={cn("hp-number-pop text-xs font-medium text-muted-foreground")}>
@@ -304,7 +272,6 @@ export function ArtPanel({
               : null}
           </div>
         </div>
-        {isDead && <StatusParticleBurst />}
       </div>
     </div>
   );

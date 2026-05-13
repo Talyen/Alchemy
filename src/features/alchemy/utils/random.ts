@@ -18,5 +18,6 @@ export function sampleItems<T>(items: T[], count: number): T[] {
 // Returns as many unique items as are available up to count.
 export function resampleItems<T>(items: T[], exclude: T[], count: number): T[] {
   const available = items.filter((item) => !exclude.includes(item));
-  return sampleItems(available, Math.min(count, available.length));
+  const pool = available.length > 0 ? available : items;
+  return sampleItems(pool, Math.min(count, pool.length));
 }

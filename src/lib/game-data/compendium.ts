@@ -82,7 +82,7 @@ export const enemyBestiary: BestiaryEntry[] = [
     enemyType: "normal",
     traits: [{ id: "poison-resistance", title: "Poison Resistance", description: "Receives half Poison damage" }],
     attackEffects: [
-      { kind: "player-status", status: "poison", amount: 1 },
+      { kind: "player-status", status: "poison", amount: 2 },
     ],
   },
   {

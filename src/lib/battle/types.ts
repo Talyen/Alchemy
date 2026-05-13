@@ -102,6 +102,7 @@ export type BattleState = {
   enemyStunSkipTurns: number;     // turns skipped from stun triggers
   enemyFreezeSkipTurns: number;   // turns skipped from freeze triggers
   wishOptions: BattleCard[] | null; // non-null = Wish selection is active
+  wishQueue: BattleCard[][];        // additional Wish selections waiting behind the active modal
   activeCompanion: CompanionDefinition | null; // persistent ally effect for this battle only
   currentEnemy: BestiaryEntry;
   talentEffects: TalentEffectManifest;

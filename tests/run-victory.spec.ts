@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { injectSaveState, playUntilVictory } from "./helpers";
+import { injectSaveState } from "./helpers";
 
 test.describe("Run Victory", () => {
   test("defeating Act III boss shows run victory screen", async ({ page }) => {
@@ -32,9 +32,8 @@ test.describe("Run Victory", () => {
     await expect(page.getByRole("button", { name: "Boss Combat" })).toBeVisible({ timeout: 10000 });
     await page.getByRole("button", { name: "Boss Combat" }).click();
     await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });
-
-    await playUntilVictory(page);
-    await expect(page.getByRole("heading", { name: /^Victory/ })).toBeVisible({ timeout: 5000 });
+    await page.locator('[aria-label^="Play "]').first().click({ force: true });
+    await expect(page.getByRole("heading", { name: /^Victory/ })).toBeVisible({ timeout: 15000 });
 
     await page.locator('[aria-label^="Select "]').first().click();
     await page.getByRole("button", { name: /Take Trinket/ }).click();

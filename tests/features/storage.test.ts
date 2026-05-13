@@ -46,6 +46,15 @@ describe("normalizeActiveRun", () => {
     expect(result?.characterId).toBe("knight");
   });
 
+  it("preserves corrupted cards in active runs", () => {
+    const result = normalizeActiveRun(activeRun({
+      runDeck: [{ id: "slash", title: "Slash", descriptionLines: ["Deal 6 Physical damage"], art: "", cost: 1, template: "mechanical", effects: [{ kind: "damage", damageType: "physical", amount: 6 }], corrupted: true }],
+    }));
+
+    expect(result?.runDeck[0].corrupted).toBe(true);
+    expect(result?.runDeck[0].effects[0]).toMatchObject({ amount: 6 });
+  });
+
   it("passes through valid ranger characterId", () => {
     const result = normalizeActiveRun(activeRun({ characterId: "ranger" }));
     expect(result?.characterId).toBe("ranger");

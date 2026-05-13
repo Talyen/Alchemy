@@ -267,7 +267,7 @@ function applyForgeStunRider(state: BattleState, effect: Extract<BattleCardEffec
   };
 }
 
-function applyHolyDamageRiders(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
+function applyHolyDamageRiders(state: BattleState, card: BattleCard, damage: number, combatTexts: CombatTextEvent[]) {
   // Holy damage owns its healing, block, burn, and wish riders so the main damage path stays linear.
   let nextState = applyHolyLifesteal(state, damage, combatTexts);
   nextState = applyDamageBlock(nextState, damage, combatTexts);
@@ -280,7 +280,10 @@ function applyHolyDamageRiders(state: BattleState, damage: number, combatTexts: 
   }
 
   if (nextState.talentEffects.holyWishChance > 0 && Math.random() * PERCENT_DENOMINATOR < nextState.talentEffects.holyWishChance) {
-    nextState = { ...nextState, wishOptions: shuffleCards(cardLibrary).slice(0, WISH_CHOICE_COUNT) };
+    const wishOptions = buildWishOptions(nextState, card);
+    nextState = nextState.wishOptions
+      ? { ...nextState, wishQueue: [...nextState.wishQueue, wishOptions] }
+      : { ...nextState, wishOptions };
   }
 
   return nextState;
@@ -310,6 +313,7 @@ function consumeForgeAfterPhysicalDamage(state: BattleState, effect: Extract<Bat
 // unlock death/trinket/status/lifesteal side effects before the visible damage text emits.
 function dealEnemyDamage(
   state: BattleState,
+  card: BattleCard,
   effect: Extract<BattleCardEffect, { kind: "damage" }>,
   combatTexts: CombatTextEvent[],
 ) {
@@ -345,7 +349,7 @@ function dealEnemyDamage(
   }
 
   if (effect.damageType === "holy") {
-    nextState = applyHolyDamageRiders(nextState, modifiedDamage, combatTexts);
+    nextState = applyHolyDamageRiders(nextState, card, modifiedDamage, combatTexts);
   }
 
   nextState = applyGoldTroveReward(nextState, modifiedDamage, combatTexts);
@@ -463,34 +467,42 @@ function applyPlayerStatusEffect(state: BattleState, effect: Extract<BattleCardE
   };
 }
 
-function applyWishEffect(state: BattleState, card: BattleCard, combatTexts: CombatTextEvent[]) {
-  // Wish pauses normal hand play via wishOptions, but all on-wish talents/trinkets apply
-  // immediately so the reward state is visible before the player picks a card.
-  let nextState: BattleState = { ...state, wishOptions: buildWishOptions(state, card) };
+function applyWishEffect(state: BattleState, card: BattleCard, amount: number, combatTexts: CombatTextEvent[]) {
+  // Wish pauses normal hand play via wishOptions; extra Wish counts wait in a queue
+  // so corrupted or repeated Wish effects still require one player choice each.
+  const wishCount = Math.max(0, Math.floor(amount));
+  if (wishCount <= 0) return state;
 
-  if (nextState.talentEffects.goldOnWish > 0) {
-    nextState = { ...nextState, gold: nextState.gold + nextState.talentEffects.goldOnWish };
-    mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "gold", amount: nextState.talentEffects.goldOnWish });
-  }
-  if (nextState.talentEffects.goldOnWishAmount > 0) {
-    nextState = { ...nextState, gold: nextState.gold + nextState.talentEffects.goldOnWishAmount };
-    mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "gold", amount: nextState.talentEffects.goldOnWishAmount });
-  }
-  // Wishing Well Coin trinket
-  if (nextState.trinketEffects.wishingWellGoldOnWish > 0) {
-    nextState = { ...nextState, gold: nextState.gold + nextState.trinketEffects.wishingWellGoldOnWish };
-    mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "gold", amount: nextState.trinketEffects.wishingWellGoldOnWish });
-  }
-  if (nextState.talentEffects.healthOnWish > 0) {
-    nextState = applyPlayerHealing(nextState, nextState.talentEffects.healthOnWish);
-    mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: nextState.talentEffects.healthOnWish });
-  }
-  if (nextState.talentEffects.removeHarmfulStatusOnWish) {
-    nextState = removeHarmfulPlayerStatuses(nextState, 1, combatTexts);
-  }
-  if (nextState.talentEffects.wishDrawsCard) {
-    const draw = drawCards(nextState.deck, nextState.discard, nextState.hand, 1, nextState.nextCardUid);
-    nextState = { ...nextState, deck: draw.deck, discard: draw.discard, hand: draw.hand, nextCardUid: draw.nextCardUid };
+  const nextWishOptions = Array.from({ length: wishCount }, () => buildWishOptions(state, card));
+  let nextState: BattleState = state.wishOptions
+    ? { ...state, wishQueue: [...state.wishQueue, ...nextWishOptions] }
+    : { ...state, wishOptions: nextWishOptions[0], wishQueue: [...state.wishQueue, ...nextWishOptions.slice(1)] };
+
+  for (let i = 0; i < wishCount; i += 1) {
+    if (nextState.talentEffects.goldOnWish > 0) {
+      nextState = { ...nextState, gold: nextState.gold + nextState.talentEffects.goldOnWish };
+      mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "gold", amount: nextState.talentEffects.goldOnWish });
+    }
+    if (nextState.talentEffects.goldOnWishAmount > 0) {
+      nextState = { ...nextState, gold: nextState.gold + nextState.talentEffects.goldOnWishAmount };
+      mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "gold", amount: nextState.talentEffects.goldOnWishAmount });
+    }
+    // Wishing Well Coin trinket
+    if (nextState.trinketEffects.wishingWellGoldOnWish > 0) {
+      nextState = { ...nextState, gold: nextState.gold + nextState.trinketEffects.wishingWellGoldOnWish };
+      mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "gold", amount: nextState.trinketEffects.wishingWellGoldOnWish });
+    }
+    if (nextState.talentEffects.healthOnWish > 0) {
+      nextState = applyPlayerHealing(nextState, nextState.talentEffects.healthOnWish);
+      mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: nextState.talentEffects.healthOnWish });
+    }
+    if (nextState.talentEffects.removeHarmfulStatusOnWish) {
+      nextState = removeHarmfulPlayerStatuses(nextState, 1, combatTexts);
+    }
+    if (nextState.talentEffects.wishDrawsCard) {
+      const draw = drawCards(nextState.deck, nextState.discard, nextState.hand, 1, nextState.nextCardUid);
+      nextState = { ...nextState, deck: draw.deck, discard: draw.discard, hand: draw.hand, nextCardUid: draw.nextCardUid };
+    }
   }
 
   return nextState;
@@ -533,7 +545,7 @@ export function applyCardEffects(state: BattleState, card: BattleCard, combatTex
   return card.effects.reduce((currentState, effect) => {
     switch (effect.kind) {
       case "damage":
-        return dealEnemyDamage(currentState, effect, combatTexts);
+        return dealEnemyDamage(currentState, card, effect, combatTexts);
       case "player-status":
         return applyPlayerStatusEffect(currentState, effect, combatTexts);
       case "heal": {
@@ -559,7 +571,7 @@ export function applyCardEffects(state: BattleState, card: BattleCard, combatTex
         mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "gold", amount: effect.amount });
         return { ...currentState, gold: currentState.gold + effect.amount };
       case "wish":
-        return applyWishEffect(currentState, card, combatTexts);
+        return applyWishEffect(currentState, card, effect.amount, combatTexts);
       case "summon-companion":
         return { ...currentState, activeCompanion: companionLibrary[effect.companionId] };
       case "remove-harmful-status":

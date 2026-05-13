@@ -9,16 +9,19 @@ import {
   type BattleCard,
   type KeywordId,
 } from "@/lib/game-data";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 import {
   cardSurfaceClass,
+  collectionCardWidthClass,
+  handCardWidthClass,
   popupClassName,
   staticCardTransform,
 } from "../config";
 import type { CardGhost, GhostStyle } from "../types";
 import { clearTiltFromEvent, setTiltFromEvent, tokenizeDescription } from "../utils";
-import { ShimmerOverlay } from "./shared-ui";
+import { DisabledTooltip, GoldCost, ShimmerOverlay } from "./shared-ui";
 import { KeywordTag } from "./keyword-tag";
 
 export function renderColoredKeywords(description: string) {
@@ -73,6 +76,62 @@ export function DescriptionLines({ lines, idPrefix }: { lines: string[]; idPrefi
   );
 }
 
+export function getCardDisplayTitle(card: Pick<BattleCard, "title" | "corrupted">) {
+  return card.corrupted ? `Corrupted ${card.title}` : card.title;
+}
+
+export function CardTitle({ card, className }: { card: Pick<BattleCard, "title" | "corrupted">; className?: string }) {
+  return (
+    <span className={className}>
+      {card.corrupted ? <span className="text-red-400">Corrupted </span> : null}
+      {card.title}
+    </span>
+  );
+}
+
+export function PurchasableCardItem({ card, price, gold, purchased, onBuy, widthClass = handCardWidthClass }: { card: BattleCard; price: number; gold: number; purchased: boolean; onBuy: () => void; widthClass?: string }) {
+  const [hovered, setHovered] = useState(false);
+
+  if (purchased) {
+    return (
+      <div className="flex flex-col items-center gap-3 rounded-[18px] border border-border/30 bg-card/30 p-4 text-center opacity-50">
+        <BattleCardButton card={card} hovered={false} onHoverStart={() => {}} onHoverEnd={() => {}} ariaLabel={getCardDisplayTitle(card)} shimmerActive={false} shimmerToken={undefined} className={widthClass} />
+        <p className="text-sm font-semibold text-muted-foreground"><CardTitle card={card} /></p>
+        <span className="text-xs text-muted-foreground">Purchased</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col items-center gap-3 rounded-[18px] border border-border/70 bg-card/60 p-4 text-center">
+      <div onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
+        <BattleCardButton card={card} hovered={hovered} onHoverStart={() => setHovered(true)} onHoverEnd={() => setHovered(false)} ariaLabel={`Inspect ${getCardDisplayTitle(card)}`} shimmerActive={false} shimmerToken={undefined} className={widthClass} />
+      </div>
+      <p className="text-sm font-semibold text-foreground"><CardTitle card={card} /></p>
+      <DisabledTooltip show={gold < price} message="Not Enough Gold">
+        <Button variant="outline" disabled={gold < price} onClick={onBuy}>
+          Buy <GoldCost amount={price} />
+        </Button>
+      </DisabledTooltip>
+    </div>
+  );
+}
+
+export function SelectableCardItem({ card, isSelected, onSelect, widthClass = collectionCardWidthClass }: { card: BattleCard; isSelected: boolean; onSelect: () => void; widthClass?: string }) {
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <div
+      className={cn("cursor-pointer rounded-[18px] border p-2 text-center transition-all", isSelected ? "border-primary bg-primary/10 ring-1 ring-primary" : "border-border/60 bg-card/40 hover:border-border")}
+      onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
+      onClick={onSelect}
+    >
+      <BattleCardButton card={card} hovered={hovered} onHoverStart={() => setHovered(true)} onHoverEnd={() => setHovered(false)} ariaLabel={`Inspect ${getCardDisplayTitle(card)}`} shimmerActive={false} shimmerToken={undefined} className={widthClass} />
+      <p className="mt-1 text-xs font-semibold text-foreground"><CardTitle card={card} /></p>
+    </div>
+  );
+}
+
 export function DetailPopup({
   idPrefix,
   title,
@@ -81,7 +140,7 @@ export function DetailPopup({
   descriptionNodes,
 }: {
   idPrefix: string;
-  title: string;
+  title: ReactNode;
   subtitle: string | undefined;
   descriptionLines: string[];
   descriptionNodes?: ReactNode[];
@@ -104,7 +163,7 @@ export function DetailPopup({
       className={cn("hover-popup-panel absolute left-1/2 z-40 w-full origin-bottom rounded-[20px] border border-border/80 bg-card px-4 py-3 text-left", "hover-popup-quick-in pointer-events-auto", flip ? "hover-popup-below" : "hover-popup-above")}
       style={{ top: flip ? "100%" : 0, transform: flip ? "translate(-50%, 12px)" : "translate(-50%, calc(-100% - 26px))" } as CSSProperties}
     >
-      <p className="text-base text-foreground sm:text-lg">{title}</p>
+        <p className="text-base text-foreground sm:text-lg">{title}</p>
       {subtitle ? <p className="mt-1 text-xs uppercase tracking-[0.18em] text-muted-foreground">{subtitle}</p> : null}
       <DescriptionLines lines={descriptionLines} idPrefix={idPrefix} />
       {descriptionNodes?.map((node, i) => (
@@ -164,7 +223,7 @@ export function BattleCardButton({
   return (
     <div className={cn("relative", wrapperClassName)} style={wrapperStyle} onMouseEnter={handleHoverStart} onMouseLeave={onHoverEnd}>
       {hovered ? (
-        <DetailPopup idPrefix={card.id} title={card.title} subtitle={undefined} descriptionLines={card.descriptionLines} />
+        <DetailPopup idPrefix={card.id} title={<CardTitle card={card} />} subtitle={undefined} descriptionLines={card.descriptionLines} />
       ) : null}
 
       <button
@@ -191,7 +250,7 @@ export function BattleCardButton({
       >
         <ShimmerOverlay active={shimmerActive} token={shimmerToken} />
 
-        <img src={card.art} alt={card.title} className="block h-auto w-full rounded-[30px] aspect-[3/4]" loading="lazy" />
+        <img src={card.art} alt={getCardDisplayTitle(card)} className="block h-auto w-full rounded-[30px] aspect-[3/4]" loading="lazy" />
       </button>
     </div>
   );

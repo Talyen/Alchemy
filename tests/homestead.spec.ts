@@ -17,8 +17,8 @@ test.describe("Homestead Screen", () => {
     const buildingsTab = page.getByRole("button", { name: "Buildings" });
     await expect(buildingsTab).toBeVisible();
     await expect(page.getByText("Blacksmith's Forge")).toBeVisible();
-    await expect(page.getByText("Workshop")).toBeVisible();
-    await expect(page.getByText("Storehouse")).toBeVisible();
+    await expect(page.getByText("Hunter's Lodge")).toBeVisible();
+    await expect(page.getByText("Alchemy Lab")).toBeVisible();
     // Build buttons (with cost suffix e.g. "Build 20") are disabled since we have 0 materials
     const buildButtons = page.getByRole("button", { name: /^Build \d+/ });
     const buildCount = await buildButtons.count();

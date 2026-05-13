@@ -17,7 +17,7 @@ function makeState(overrides: Partial<BattleState> = {}): BattleState {
     enemyMaxHealth: 30, enemyAttackEffects: [], enemyArmor: 0, enemyForge: 0, enemyRegeneration: 0,
     playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
     enemyStatuses: { burn: 0, poison: 0, bleed: 0, bleedLeech: 0, freeze: 0, stun: 0 },
-    enemyStunSkipTurns: 0, enemyFreezeSkipTurns: 0, wishOptions: null, activeCompanion: null,
+    enemyStunSkipTurns: 0, enemyFreezeSkipTurns: 0, wishOptions: null, wishQueue: [], activeCompanion: null,
     currentEnemy: { id: "skeleton", title: "Skeleton", subtitle: "", descriptionLines: [""], art: "", enemyType: "normal", traits: [], attackEffects: [] },
     talentEffects: defaultTalentEffects,
     trinketEffects: defaultTrinketEffects,
@@ -86,6 +86,15 @@ describe("applyCardEffects", () => {
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);
     expect(result.enemyHealth).toBe(25);
+  });
+
+  it("uses corrupted card effect values mechanically", () => {
+    const card = makeCard({ id: "slash", corrupted: true, descriptionLines: ["Deal 6 Physical damage"], effects: [{ kind: "damage", damageType: "physical", amount: 6 }] });
+    const state = makeState({ mana: 10, enemyHealth: 30, hand: [card] });
+
+    const result = playBattleCardResolved(state, "slash", 0);
+
+    expect(result.state.enemyHealth).toBe(24);
   });
 
   it("applies player block status", () => {
@@ -649,6 +658,7 @@ describe("chooseWishCard", () => {
     expect(result.hand).toHaveLength(1);
     expect(result.hand[0].id).toBe("wish-card");
     expect(result.wishOptions).toBeNull();
+    expect(result.wishQueue).toEqual([]);
   });
 
   it("puts card in discard if hand is full", () => {
@@ -658,6 +668,23 @@ describe("chooseWishCard", () => {
     const result = chooseWishCard(state, "wish-card");
     expect(result.discard).toContainEqual(card);
     expect(result.wishOptions).toBeNull();
+    expect(result.wishQueue).toEqual([]);
+  });
+
+  it("opens the next queued Wish after choosing a card", () => {
+    const firstCard = makeCard({ id: "first-wish-card" });
+    const secondCard = makeCard({ id: "second-wish-card" });
+    const state = makeState({ hand: [], wishOptions: [firstCard], wishQueue: [[secondCard]] });
+
+    const firstChoice = chooseWishCard(state, "first-wish-card");
+    expect(firstChoice.hand.map((card) => card.id)).toEqual(["first-wish-card"]);
+    expect(firstChoice.wishOptions).toEqual([secondCard]);
+    expect(firstChoice.wishQueue).toEqual([]);
+
+    const secondChoice = chooseWishCard(firstChoice, "second-wish-card");
+    expect(secondChoice.hand.map((card) => card.id)).toEqual(["first-wish-card", "second-wish-card"]);
+    expect(secondChoice.wishOptions).toBeNull();
+    expect(secondChoice.wishQueue).toEqual([]);
   });
 });
 
@@ -674,6 +701,35 @@ describe("wish combat effects", () => {
 
     expect(result.gold).toBe(5);
     expect(texts).toContainEqual({ target: "player", kind: "status", stat: "gold", amount: 3 });
+  });
+
+  it("queues one choice per Wish amount", () => {
+    const card = makeCard({ effects: [{ kind: "wish", amount: 2 }] });
+    const state = makeState();
+    const texts: CombatTextEvent[] = [];
+
+    const result = applyCardEffects(state, card, texts);
+
+    expect(result.wishOptions).toHaveLength(3);
+    expect(result.wishQueue).toHaveLength(1);
+    expect(result.wishQueue[0]).toHaveLength(3);
+  });
+
+  it("applies on-Wish rewards once per Wish amount", () => {
+    const card = makeCard({ effects: [{ kind: "wish", amount: 2 }] });
+    const state = makeState({
+      gold: 2,
+      talentEffects: { ...defaultTalentEffects, goldOnWish: 3, healthOnWish: 2 },
+      playerHealth: 20,
+    });
+    const texts: CombatTextEvent[] = [];
+
+    const result = applyCardEffects(state, card, texts);
+
+    expect(result.gold).toBe(8);
+    expect(result.playerHealth).toBe(24);
+    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "gold", amount: 6 });
+    expect(texts).toContainEqual({ target: "player", kind: "heal", stat: "health", amount: 4 });
   });
 });
 
@@ -932,7 +988,7 @@ describe("Trinket — Cutpurse Knife (gold on bleed application)", () => {
 describe("Trinket — Wishing Well Coin (gold on wish)", () => {
   it("gains 3 extra gold when wishing", () => {
     const manifest = computeTrinketManifest(["wishing-well-coin"]);
-    const card = makeCard({ effects: [{ kind: "wish" }] });
+    const card = makeCard({ effects: [{ kind: "wish", amount: 1 }] });
     const state = makeState({ mana: 10, gold: 2, trinketEffects: manifest });
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);

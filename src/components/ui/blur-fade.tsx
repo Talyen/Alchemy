@@ -13,6 +13,7 @@ import {
   type UseInViewOptions,
   type Variants,
 } from "motion/react"
+import { ANIMATION_BLUR, ANIMATION_DURATION } from "@/lib/game-constants"
 
 type MarginType = UseInViewOptions["margin"]
 
@@ -41,13 +42,13 @@ export function BlurFade({
   children,
   className,
   variant,
-  duration = 0.4,
+  duration = ANIMATION_DURATION,
   delay = 0,
   offset = 6,
   direction = "down",
   inView = false,
   inViewMargin = "-50px",
-  blur = "6px",
+  blur = ANIMATION_BLUR,
   ...props
 }: BlurFadeProps) {
   const ref = useRef(null)
@@ -87,7 +88,7 @@ export function BlurFade({
         exit="hidden"
         variants={combinedVariants}
         transition={{
-          delay: 0.04 + delay,
+          delay,
           duration,
           ease: "easeOut",
           ...(shouldTransitionFilter ? { filter: { duration } } : {}),

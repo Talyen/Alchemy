@@ -5,6 +5,7 @@ import { useRef, useLayoutEffect, type ReactNode } from "react";
 
 const DURATION = 250;
 const EASE = "cubic-bezier(0.16, 1, 0.3, 1)";
+const MIN_HEIGHT_DELTA = 2;
 
 export function AnimatedHeight({ deps, children }: { deps: unknown[]; children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -19,7 +20,7 @@ export function AnimatedHeight({ deps, children }: { deps: unknown[]; children: 
 
     const newHeight = el.scrollHeight;
 
-    if (mounted.current && prevHeight.current > 0 && prevHeight.current !== newHeight) {
+    if (mounted.current && prevHeight.current > 0 && Math.abs(prevHeight.current - newHeight) > MIN_HEIGHT_DELTA) {
       el.style.overflow = "hidden";
       el.style.height = `${prevHeight.current}px`;
       void el.scrollHeight;

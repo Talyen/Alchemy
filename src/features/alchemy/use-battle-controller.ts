@@ -331,7 +331,7 @@ export function useBattleController({
   }
   function skipCombatDevMode() {
     if (screen === "battle") {
-      setBattleState((c) => ({ ...c, enemyHealth: 0, wishOptions: null }));
+      setBattleState((c) => ({ ...c, enemyHealth: 0, wishOptions: null, wishQueue: [] }));
     }
   }
 

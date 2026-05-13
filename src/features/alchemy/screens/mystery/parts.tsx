@@ -5,17 +5,19 @@ import { useState } from "react";
 import type { CSSProperties } from "react";
 import { Button } from "@/components/ui/button";
 import { BlurFade } from "@/components/ui/blur-fade";
+import { ANIMATION_STAGGER_UNIT } from "@/lib/game-constants";
 import { TextAnimate } from "@/components/ui/text-animate";
-import { COLLECTION_PAGE_SIZE } from "@/lib/game-constants";
+import { SELECTION_GRID_PAGE_SIZE } from "@/lib/game-constants";
 import { type BattleCard, type TrinketEntry } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
 import { cardSurfaceClass, collectionCardWidthClass, handCardWidthClass, staticCardTransform } from "../../config";
 import type { MysteryChoice, MysteryEvent, MysteryEffect } from "../../mystery-events";
 import { clearTiltFromEvent, setTiltFromEvent } from "../../utils";
-import { BattleCardButton, DetailPopup } from "../../ui/card-ui";
+import { CardSelectionGrid } from "../../ui/card-selection-grid";
+import { BattleCardButton, CardTitle, DetailPopup, getCardDisplayTitle } from "../../ui/card-ui";
 import { MysteryEffectBadge, MysteryEffectList } from "../../ui/mystery-effect-badge";
-import { PaginationControls, ScreenHeader } from "../../ui/shared-ui";
+import { ScreenHeader } from "../../ui/shared-ui";
 
 type LookupProps = {
   findCard: (id: string) => BattleCard | undefined;
@@ -64,19 +66,19 @@ export function MysteryRewardSummary({
           hovered={isHovered}
           onHoverStart={() => setHoveredItemId(card.id)}
           onHoverEnd={() => setHoveredItemId(null)}
-          ariaLabel={card.title}
+          ariaLabel={getCardDisplayTitle(card)}
           shimmerActive={false}
           shimmerToken={undefined}
           className={handCardWidthClass}
         />
-        <p className="text-sm font-semibold text-foreground">{card.title}</p>
-        <p className="text-sm text-muted-foreground">Added {card.title} to your Deck</p>
+        <p className="text-sm font-semibold text-foreground"><CardTitle card={card} /></p>
+        <p className="text-sm text-muted-foreground">Added <CardTitle card={card} /> to your Deck</p>
       </div>
     );
   }
 
   return (
-    <div className="state-swap space-y-6 text-center">
+    <div className="state-fade space-y-6 text-center">
       <ScreenHeader title={eventTitle} />
 
       {choice.effects.map((effect, i) => {
@@ -156,31 +158,30 @@ export function RemoveCardPicker({
 }) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [page, setPage] = useState(0);
-  const totalPages = Math.ceil(runDeck.length / COLLECTION_PAGE_SIZE);
-  const start = page * COLLECTION_PAGE_SIZE;
-  const visible = runDeck.slice(start, start + COLLECTION_PAGE_SIZE);
+  const items = runDeck.map((card, index) => ({ card, index }));
 
   return (
     <div className="state-swap space-y-6 text-center">
       <h2 className="text-3xl text-foreground">Select a card to remove</h2>
-      <div className="flex flex-wrap justify-center gap-3">
-        {visible.map((card, i) => {
-          const idx = start + i;
-          const isSelected = selectedIndex === idx;
+      <CardSelectionGrid
+        items={items}
+        page={page}
+        onPageChange={setPage}
+        pageSize={SELECTION_GRID_PAGE_SIZE}
+        renderItem={({ card, index }) => {
+          const isSelected = selectedIndex === index;
           return (
             <button
-              key={idx}
               type="button"
-              onClick={() => setSelectedIndex(idx)}
+              onClick={() => setSelectedIndex(index)}
               className={cn("flex flex-col items-center gap-2 rounded-xl border-2 p-2 transition-colors", isSelected ? "border-primary bg-primary/10 ring-1 ring-primary" : "border-transparent hover:border-border")}
             >
-              <BattleCardButton card={card} hovered={isSelected} onHoverStart={() => {}} onHoverEnd={() => {}} ariaLabel={card.title} shimmerActive={false} shimmerToken={undefined} className={collectionCardWidthClass} />
-              <p className="text-xs text-foreground">{card.title}</p>
+              <BattleCardButton card={card} hovered={isSelected} onHoverStart={() => {}} onHoverEnd={() => {}} ariaLabel={getCardDisplayTitle(card)} shimmerActive={false} shimmerToken={undefined} className={collectionCardWidthClass} />
+              <p className="text-xs text-foreground"><CardTitle card={card} /></p>
             </button>
           );
-        })}
-      </div>
-      <PaginationControls page={page} totalPages={totalPages} onPageChange={(p) => setPage(p)} size="sm" />
+        }}
+      />
       <div className="flex justify-center gap-4">
         <Button size="lg" disabled={selectedIndex === null} onClick={() => { if (selectedIndex !== null) onSelect(selectedIndex); }}>Remove Card</Button>
       </div>
@@ -197,6 +198,7 @@ export function CardChoicePicker({
   onSelect: (cardId: string) => void;
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   return (
     <div className="state-swap space-y-6 text-center">
@@ -209,11 +211,11 @@ export function CardChoicePicker({
             <BattleCardButton
               key={card.id}
               card={card}
-              hovered={isSelected}
-              onHoverStart={() => setSelectedId(card.id)}
-              onHoverEnd={() => {}}
+              hovered={hoveredId === card.id}
+              onHoverStart={() => setHoveredId(card.id)}
+              onHoverEnd={() => setHoveredId(null)}
               onClick={() => setSelectedId(card.id)}
-              ariaLabel={`Select ${card.title}`}
+              ariaLabel={`Select ${getCardDisplayTitle(card)}`}
               shimmerActive={false}
               shimmerToken={undefined}
               className={collectionCardWidthClass}
@@ -286,7 +288,7 @@ export function MysteryEventIntro({
 
       <div className="flex flex-wrap justify-center gap-4">
         {event.choices.map((choice, i) => (
-          <BlurFade key={i} delay={0.6 + i * 0.15} direction="up" offset={8}>
+          <BlurFade key={i} delay={ANIMATION_STAGGER_UNIT * (1 + i)} direction="up" offset={8}>
             <div className="group relative">
               <Button
                 size="lg"

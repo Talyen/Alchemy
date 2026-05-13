@@ -1,8 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import { getRunAvailableDestinations, sampleDestinationChoices } from "@/features/alchemy/navigation/destination-flow";
+import { getDestinationWeight, getRunAvailableDestinations, sampleDestinationChoices } from "@/features/alchemy/navigation/destination-flow";
+import { CORRUPTION_DESTINATION_WEIGHT, DEFAULT_DESTINATION_WEIGHT } from "@/lib/game-constants";
 
 vi.mock("@/features/alchemy/config", () => ({
-  getAvailableDestinations: vi.fn(() => ["Normal Combat", "Elite Combat", "Merchant's Shop", "Alchemist's Shop", "Mystery", "Campfire"]),
+  getAvailableDestinations: vi.fn(() => ["Normal Combat", "Elite Combat", "Merchant's Shop", "Alchemist's Shop", "Mystery", "Corruption", "Campfire"]),
 }));
 
 describe("getRunAvailableDestinations", () => {
@@ -14,6 +15,7 @@ describe("getRunAvailableDestinations", () => {
   it("returns filtered destinations for non-last positions", () => {
     const result = getRunAvailableDestinations({ destinationIndexInAct: 2, currentHp: 30, currentGold: 100, maxHp: 30 });
     expect(result).toContain("Normal Combat");
+    expect(result).toContain("Corruption");
     expect(result).not.toContain("Boss Combat");
   });
 
@@ -22,11 +24,16 @@ describe("getRunAvailableDestinations", () => {
     expect(result).toContain("Normal Combat");
     expect(result).not.toContain("Boss Combat");
   });
+
+  it("prevents Corruption after a Corruption destination", () => {
+    const result = getRunAvailableDestinations({ destinationIndexInAct: 2, currentHp: 30, currentGold: 100, maxHp: 30, previousDestination: "Corruption" });
+    expect(result).not.toContain("Corruption");
+  });
 });
 
 describe("sampleDestinationChoices", () => {
   it("returns N sampled destinations", () => {
-    const destinations: string[] = ["Normal Combat", "Elite Combat", "Campfire", "Mystery"];
+    const destinations = ["Normal Combat", "Elite Combat", "Campfire", "Mystery"] as const;
     const result = sampleDestinationChoices(destinations);
     expect(result.length).toBeGreaterThanOrEqual(1);
     expect(result.every((d) => destinations.includes(d))).toBe(true);
@@ -40,5 +47,11 @@ describe("sampleDestinationChoices", () => {
   it("handles empty array", () => {
     const result = sampleDestinationChoices([]);
     expect(result).toEqual([]);
+  });
+
+  it("weights Corruption like ordinary destinations", () => {
+    expect(getDestinationWeight("Corruption")).toBe(CORRUPTION_DESTINATION_WEIGHT);
+    expect(getDestinationWeight("Normal Combat")).toBe(DEFAULT_DESTINATION_WEIGHT);
+    expect(getDestinationWeight("Corruption")).toBe(DEFAULT_DESTINATION_WEIGHT);
   });
 });

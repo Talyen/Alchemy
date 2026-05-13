@@ -237,6 +237,10 @@
     animation: stateSwapIn 180ms ease-out both;
   }
 
+  .state-fade {
+    animation: stateFadeIn 160ms ease-out both;
+  }
+
   .hp-number-pop {
     animation: numberPop 280ms ease-out both;
   }
@@ -474,6 +478,11 @@
 @keyframes stateSwapIn {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes stateFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes numberPop {

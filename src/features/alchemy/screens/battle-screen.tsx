@@ -26,6 +26,7 @@ import {
   ArtPanel,
   BattleCardButton,
   CardGhostOverlay,
+  getCardDisplayTitle,
   CompanionPanel,
   CombatTextRail,
   ManaPanel,
@@ -335,7 +336,7 @@ function BattleHand({
             buttonRef={(node) => {
               handCardRefs.current[`${card.id}-${card.uid}`] = node;
             }}
-            ariaLabel={`Play ${card.title}`}
+            ariaLabel={`Play ${getCardDisplayTitle(card)}`}
             tiltStrength={18}
             shimmerActive={isShimmering}
             shimmerToken={shimmerState?.token}
@@ -451,7 +452,7 @@ function WishOverlay({
     >
       <div className="motion-panel alchemy-shell w-full max-w-5xl rounded-[28px] border border-border/80 px-6 py-6">
         <div className="text-center">
-          <h2 className="text-2xl text-foreground">Wish 1</h2>
+          <h2 className="text-2xl text-foreground">Wish</h2>
           <p className="mt-2 text-sm text-muted-foreground">Choose one card to add to your hand.</p>
         </div>
 
@@ -471,7 +472,7 @@ function WishOverlay({
                 }}
                 onHoverEnd={() => setHoveredCardId((current) => (current === hoverId ? null : current))}
                 onClick={() => setWishSelectedCard(card)}
-                ariaLabel={`Choose ${card.title}`}
+                ariaLabel={`Choose ${getCardDisplayTitle(card)}`}
                 tiltStrength={15}
                 shimmerActive={shimmerState?.cardId === hoverId}
                 shimmerToken={shimmerState?.token}

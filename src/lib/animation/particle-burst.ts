@@ -38,12 +38,12 @@ function sampleParticles(
       particles.push({
         x,
         y,
-        vx: 2 + Math.random() * 4,
-        vy: (Math.random() - 0.5) * 3,
+        vx: (Math.random() - 0.5) * 6,
+        vy: (Math.random() - 0.5) * 6,
         rot: Math.random() * Math.PI * 2,
         rotSpeed: (Math.random() - 0.5) * 0.1,
         alpha: 1,
-        size: 2 + Math.random() * 3,
+        size: 1 + Math.random() * 3,
         color: `rgb(${r},${g},${b})`,
       });
     }
@@ -67,7 +67,7 @@ function stepParticle(p: Particle, dt: number): void {
   p.y += p.vy * dt;
   p.vx *= 0.97;
   p.vy *= 0.97;
-  p.vy += 0.04 * dt;
+  p.vy += 0 * dt;
   p.rot += p.rotSpeed * dt;
 }
 
@@ -75,7 +75,7 @@ export function createParticles(
   ctx: CanvasRenderingContext2D,
   width: number,
   height: number,
-  maxParticles: number = 400,
+  maxParticles: number = 1600,
 ): Particle[] {
   // Convert already-rendered canvas pixels into particles so the caller can sample card art
   // once, clear the canvas, and let the burst replace the original image visually.
@@ -100,12 +100,12 @@ export function createStatusParticles(width: number, height: number): Particle[]
       particles.push({
         x: x + Math.random() * w,
         y: y + Math.random() * h,
-        vx: 2 + Math.random() * 4,
-        vy: (Math.random() - 0.5) * 3,
+        vx: (Math.random() - 0.5) * 6,
+        vy: (Math.random() - 0.5) * 6,
         rot: Math.random() * Math.PI * 2,
         rotSpeed: (Math.random() - 0.5) * 0.1,
         alpha: 1,
-        size: 2 + Math.random() * 3,
+        size: 1 + Math.random() * 3,
         color,
       });
     }
@@ -116,7 +116,7 @@ export function createStatusParticles(width: number, height: number): Particle[]
   // Lighter patch behind HP
   scatter(padX, barY, width - padX * 2, barH, 'rgb(30, 25, 20)', 10);
   // HP bar fill
-  scatter(padX, barY, (width - padX * 2) * 0.6, barH, 'rgb(200, 50, 50)', 15);
+  scatter(padX, barY, (width - padX * 2) * 0.6, barH, 'rgb(200, 50, 50)', 14);
   // Title text (left)
   scatter(padX, padY, width * 0.5, textH, 'rgb(210, 195, 170)', 20);
   // HP numbers (right)

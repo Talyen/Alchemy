@@ -146,6 +146,7 @@ export function createBattleState(
     enemyStunSkipTurns: 0,
     enemyFreezeSkipTurns: 0,
     wishOptions: null,
+    wishQueue: [],
     activeCompanion: null,
     currentEnemy: enemy,
     talentEffects,

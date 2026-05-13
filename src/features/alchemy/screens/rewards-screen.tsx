@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { MATERIAL_IDS, materialLabels, type MaterialInventory } from "@/lib/homestead/types";
 import { matIconMap, matPillStyle, matTextColor } from "../ui/material-icons";
 
-import { BattleCardButton, DetailPopup } from "../ui/card-ui";
+import { BattleCardButton, DetailPopup, getCardDisplayTitle } from "../ui/card-ui";
 import { ScreenHeader, ShimmerOverlay } from "../ui/shared-ui";
 import { cardSurfaceClass, collectionCardWidthClass, staticCardTransform } from "../config";
 import { clearTiltFromEvent, getHoverId, setTiltFromEvent } from "../utils";
@@ -134,7 +134,7 @@ export function RewardsScreen({
                 onHoverStart={() => { onHoverChange(hoverId); onHoverShimmer(hoverId); }}
                 onHoverEnd={() => onHoverChange((current) => (current === hoverId ? null : current))}
                 onClick={() => onSelectReward(card.id)}
-                ariaLabel={`Select ${card.title}`}
+                ariaLabel={`Select ${getCardDisplayTitle(card)}`}
                 tiltStrength={15}
                 shimmerActive={shimmerState?.cardId === hoverId}
                 shimmerToken={shimmerState?.token}
@@ -171,11 +171,11 @@ export function RewardsScreen({
         ) : null}
 
         <div className="mt-5 flex flex-wrap justify-center gap-3">
-          <Button size="lg" className="min-w-40" disabled={!selectedRewardItem} onClick={onAddReward}>
-            {isTrinket ? "Take Trinket" : "Add Card"}
-          </Button>
           <Button size="lg" variant="outline" className="min-w-40" onClick={onSkip}>
             Skip
+          </Button>
+          <Button size="lg" className="min-w-40" disabled={!selectedRewardItem} onClick={onAddReward}>
+            {isTrinket ? "Take Trinket" : "Add Card"}
           </Button>
         </div>
       </div>

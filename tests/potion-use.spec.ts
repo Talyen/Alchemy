@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { injectSaveState } from "./helpers";
+import { injectSaveState, navigateToDestination } from "./helpers";
 
 function potionCard(id: string, title: string, effects: Record<string, unknown>[]) {
   return { id, title, descriptionLines: ["Test potion", "Consume"], art: "placeholder", cost: 1, template: "alchemy", consume: true, effects };
@@ -21,7 +21,7 @@ test.describe("Potion Use", () => {
     await page.goto("/");
     await page.getByRole("button", { name: "Resume Run" }).click();
     await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 10000 });
-    await page.getByRole("button", { name: /Combat/ }).first().click();
+    await navigateToDestination(page, "Normal Combat");
     await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });
 
     const healPotion = page.getByRole("button", { name: /Play Health Potion/ });
@@ -55,7 +55,7 @@ test.describe("Potion Use", () => {
     await page.goto("/");
     await page.getByRole("button", { name: "Resume Run" }).click();
     await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 10000 });
-    await page.getByRole("button", { name: /Combat/ }).first().click();
+    await navigateToDestination(page, "Normal Combat");
     await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });
 
     const manaPanel = page.getByTestId("mana-panel");

@@ -249,11 +249,13 @@ export function chooseWishCard(state: BattleState, cardId: string) {
     return state;
   }
 
+  const [nextWishOptions = null, ...wishQueue] = state.wishQueue;
+
   if (state.hand.length < maxHandSize) {
-    return { ...state, hand: [...state.hand, chosenCard], wishOptions: null };
+    return { ...state, hand: [...state.hand, chosenCard], wishOptions: nextWishOptions, wishQueue };
   }
 
-  return { ...state, discard: [...state.discard, chosenCard], wishOptions: null };
+  return { ...state, discard: [...state.discard, chosenCard], wishOptions: nextWishOptions, wishQueue };
 }
 
 // ----- Enemy turn helpers -----

@@ -1,12 +1,12 @@
 // Campfire rest screen — restores a percentage of max HP.
 import { useState, useEffect, useRef } from "react";
 
-import { AnimatedHeight } from "../ui/animated-height";
-import { ScreenHeader } from "../ui/shared-ui";
+import { BlurFade } from "@/components/ui/blur-fade";
+import { ScreenDescription, ScreenHeader } from "../ui/shared-ui";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { campfire } from "@/lib/game-data";
-import { CAMPFIRE_ANIMATION_MS, CAMPFIRE_CONTINUE_DELAY, CAMPFIRE_HEAL_FRACTION } from "@/lib/game-constants";
+import { ANIMATION_STAGGER_UNIT, CAMPFIRE_ANIMATION_MS, CAMPFIRE_CONTINUE_DELAY, CAMPFIRE_HEAL_FRACTION } from "@/lib/game-constants";
 
 export function CampfireScreen({
   playerHealth,
@@ -68,26 +68,30 @@ export function CampfireScreen({
     <div className="flex h-full w-full flex-col items-center justify-center gap-8 px-4 py-6 text-center">
       <div>
         <ScreenHeader title="Campfire" />
-        <p className="mt-3 text-base text-muted-foreground">Rest to Restore 30% HP</p>
+        <ScreenDescription className="mt-5 text-muted-foreground">Rest to Restore 30% HP</ScreenDescription>
       </div>
 
-      <img src={campfire} alt="Campfire" className="w-full max-w-[400px] rounded-[22px] object-contain" />
+      <BlurFade delay={ANIMATION_STAGGER_UNIT} direction="up" offset={8}>
+        <img src={campfire} alt="Campfire" className="w-full max-w-[400px] rounded-[22px] object-contain" />
+      </BlurFade>
 
-      <AnimatedHeight deps={[resting]}>
-        {!resting ? (
-          <Button size="lg" onClick={handleRest}>
-            Rest
-          </Button>
-        ) : (
-          <div className="surface-muted w-[clamp(222px,22vh,336px)] rounded-[24px] px-4 py-3">
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-sm font-semibold text-foreground">HP</p>
-              <p className="hp-number-pop text-xs font-medium text-muted-foreground">{displayHp} / {maxHp}</p>
+      <BlurFade delay={ANIMATION_STAGGER_UNIT * 2} direction="up" offset={6}>
+        <div className="min-h-[64px] min-w-[clamp(222px,22vh,336px)]">
+          {!resting ? (
+            <Button size="lg" onClick={handleRest}>
+              Rest
+            </Button>
+          ) : (
+            <div className="surface-muted rounded-[24px] px-4 py-3">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm font-semibold text-foreground">HP</p>
+                <p className="hp-number-pop text-xs font-medium text-muted-foreground">{displayHp} / {maxHp}</p>
+              </div>
+              <Progress value={(targetHp / maxHp) * 100} className="campfire-hp-progress mt-2.5 h-2 bg-background/80 [&>div]:bg-destructive" />
             </div>
-            <Progress value={(targetHp / maxHp) * 100} className="campfire-hp-progress mt-2.5 h-2 bg-background/80 [&>div]:bg-destructive" />
-          </div>
-        )}
-      </AnimatedHeight>
+          )}
+        </div>
+      </BlurFade>
     </div>
   );
 }

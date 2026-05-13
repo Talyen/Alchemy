@@ -1,15 +1,18 @@
 // Shared alchemy UI primitives for destinations, settings controls, dialogs, shimmer, and menus.
 // Depends on base UI components, icons, route metadata, and tilt utilities.
 // Used across screens to keep game-native presentation consistent.
-import type { CSSProperties, MutableRefObject, ReactNode } from "react";
+import type { ComponentType, CSSProperties, MutableRefObject, ReactNode } from "react";
 import { AlertTriangle, BookOpen, ChevronLeft, ChevronRight, Cog, Coins, House, Swords, TreePine, WandSparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { ShineBorder } from "@/components/ui/shine-border";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { TextAnimate } from "@/components/ui/text-animate";
+import { ANIMATION_STAGGER_UNIT } from "@/lib/game-constants";
 import { cn } from "@/lib/utils";
 
 import { destinationMeta, staticCardTransform } from "../config";
-import type { Destination, DisplayMode, ResolutionOption, UiScale } from "../types";
+import { DESTINATIONS, type Destination, type DisplayMode, type ResolutionOption, type UiScale } from "../types";
 import { clearTiltFromEvent, setTiltFromEvent } from "../utils";
 
 // Destination choice buttons shown after victory. Each destination gets its own
@@ -27,6 +30,7 @@ export function DestinationChoices({
     <div className="flex flex-wrap justify-center gap-8">
       {destinationOptions.map((destination, index) => {
         const { icon: Icon, className, art } = destinationMeta[destination];
+        const isCorruption = destination === DESTINATIONS.CORRUPTION;
         return (
           <div key={destination} className="stagger-item flex flex-col items-center gap-4" style={{ "--stagger-index": index } as CSSProperties}>
             <div
@@ -38,15 +42,25 @@ export function DestinationChoices({
             >
               <img src={art} alt={destination} className="w-full max-w-[352px] rounded-[18px] object-contain" />
             </div>
-            <button
-              ref={(node) => { buttonRefs.current[destination] = node; }}
-              type="button"
-              onClick={() => onChoose(destination)}
-              className={cn("inline-flex min-h-[48px] items-center justify-start gap-2 rounded-full border border-border/80 px-4 py-2 text-left text-sm font-semibold transition-colors active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background", className)}
-            >
-              <span className="rounded-full bg-black/16 p-1.5"><Icon className="h-4 w-4" /></span>
-              <span className="leading-none">{destination}</span>
-            </button>
+            <div className="relative rounded-full">
+              {isCorruption && (
+                <ShineBorder
+                  shineColor={["#450a0a", "#ef4444", "#991b1b", "#7f1d1d"]}
+                  borderWidth={2}
+                  duration={8}
+                  className="z-10 rounded-full"
+                />
+              )}
+              <button
+                ref={(node) => { buttonRefs.current[destination] = node; }}
+                type="button"
+                onClick={() => onChoose(destination)}
+                className={cn("relative inline-flex min-h-[48px] items-center justify-start gap-2 rounded-full border border-border/80 px-4 py-2 text-left text-sm font-semibold transition-colors active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background", className)}
+              >
+                <span className="rounded-full bg-black/16 p-1.5"><Icon className="h-4 w-4" /></span>
+                <span className="leading-none">{destination}</span>
+              </button>
+            </div>
           </div>
         );
       })}
@@ -168,6 +182,16 @@ export function GoldCost({ amount }: { amount: number }) {
   return <span className="flex items-center gap-1 text-xs text-yellow-300"><Coins className="h-3 w-3" />{amount}</span>;
 }
 
+// Gold wallet display for shop headers.
+export function GoldDisplay({ gold }: { gold: number }) {
+  return <p className="flex items-center gap-2 text-lg font-medium text-yellow-300"><Coins className="h-5 w-5" />{gold} Gold</p>;
+}
+
+// BlurFade delay helper that keeps stagger positions readable and avoids magic numbers.
+export function staggerDelay(position: number): number {
+  return ANIMATION_STAGGER_UNIT * position;
+}
+
 // Prev/Next pagination controls with page counter. Supports two visual sizes.
 export function PaginationControls({ page, totalPages, onPageChange, size = "sm", reserveSpace = false }: { page: number; totalPages: number; onPageChange: (page: number) => void; size?: "sm" | "default"; reserveSpace?: boolean }) {
   const buttonClass = size === "sm" ? "h-9 w-9" : "h-11 w-11";
@@ -260,6 +284,23 @@ export function GameMenu({ isOpen, onClose, onMainMenu, onCollection, onTalents,
   );
 }
 
+// Shared shop service button with gold cost, sold-out state, and disabled tooltip.
+// Used by both merchant and alchemist shops for refresh, remove, and mix actions.
+export function ServiceButton({ icon: Icon, label, cost, disabled, disabledMessage, used, soldOutText, onClick }: { icon: ComponentType<{ className?: string }>; label: string; cost: number; disabled: boolean; disabledMessage: string; used: boolean; soldOutText: string; onClick: () => void }) {
+  if (used) {
+    return <Button variant="outline" disabled className="text-muted-foreground/40">{soldOutText}</Button>;
+  }
+  return (
+    <DisabledTooltip show={disabled} message={disabledMessage}>
+      <Button variant="outline" disabled={disabled} onClick={onClick} >
+        <Icon className="h-4 w-4" />
+        <span className="text-sm font-normal">{label}</span>
+        <GoldCost amount={cost} />
+      </Button>
+    </DisabledTooltip>
+  );
+}
+
 // Wraps disabled buttons to show a hover tooltip explaining why it's disabled.
 export function DisabledTooltip({ show, message, children }: { show: boolean; message: string; children: ReactNode }) {
   if (!show) return <>{children}</>;
@@ -270,5 +311,19 @@ export function DisabledTooltip({ show, message, children }: { show: boolean; me
         {message}
       </div>
     </div>
+  );
+}
+
+// Animated descriptive text used by event screens for consistent word-by-word reveal.
+export function ScreenDescription({ children, className }: { children: string; className?: string }) {
+  return (
+    <TextAnimate
+      animation="blurInUp"
+      by="word"
+      once
+      className={cn("mx-auto max-w-lg text-center text-base leading-relaxed text-muted-foreground", className)}
+    >
+      {children}
+    </TextAnimate>
   );
 }

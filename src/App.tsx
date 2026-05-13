@@ -31,6 +31,7 @@ import {
   CampfireScreen,
   CharacterSelectScreen,
   CollectionScreen,
+  CorruptionScreen,
   DestinationScreen,
   GameOverScreen,
   MenuScreen,
@@ -49,8 +50,22 @@ import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
 import { canAfford } from "@/lib/homestead/types";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { HomesteadScreen } from "@/features/alchemy/screens/homestead-screen";
+import { BackgroundParticles } from "@/features/alchemy/ui/background-particles";
 
 const PAGE_EXIT_MS = 130;
+
+const SCREEN_PARTICLE_COLORS: Partial<Record<Screen, readonly string[]>> = {
+  battle: ["rgba(255, 150, 70, X)", "rgba(255, 100, 40, X)"],
+  campfire: ["rgba(255, 180, 60, X)", "rgba(240, 120, 40, X)"],
+  corruption: ["rgba(255, 90, 70, X)", "rgba(230, 60, 50, X)"],
+  "run-victory": ["rgba(245, 196, 93, X)", "rgba(255, 220, 120, X)"],
+};
+const SCREEN_PARTICLE_ALPHA: Partial<Record<Screen, number>> = {
+  battle: 1.7,
+  corruption: 2.0,
+};
+
+const BOSS_ALPHA_MULTIPLIER = 2.5;
 
 export default function App() {
   const save = useAppSaveState();
@@ -262,6 +277,10 @@ export default function App() {
     },
   };
 
+  const particleColors = SCREEN_PARTICLE_COLORS[renderedScreen];
+  const isBossBattle = renderedScreen === "battle" && run.battleState.currentEnemy.enemyType === "boss";
+  const particleAlphaMultiplier = isBossBattle ? BOSS_ALPHA_MULTIPLIER : SCREEN_PARTICLE_ALPHA[renderedScreen];
+
   return (
     <ErrorBoundary>
       {isPortraitMobile ? (
@@ -294,6 +313,7 @@ export default function App() {
         >
           <div className="relative" style={frameStyle}>
             <div ref={vrStageRef} className="absolute left-0 top-0 overflow-hidden bg-background" style={stageStyle}>
+              <BackgroundParticles variant="embers" {...(particleColors ? { colors: particleColors } : {})} {...(particleAlphaMultiplier ? { alphaMultiplier: particleAlphaMultiplier } : {})} />
               {!initialLoadReady ? (
                 <StartupLoadingScreen />
               ) : (
@@ -397,6 +417,15 @@ export default function App() {
                       findCard={run.findCard}
                       findTrinket={run.findTrinket}
                       mysteryCardChoices={run.mysteryCardChoices}
+                    />
+                  ) : null}
+                  {renderedScreen === "corruption" ? (
+                    <CorruptionScreen
+                      runDeck={run.runDeck}
+                      result={run.corruptionResult}
+                      onCorrupt={run.handleCorruptCard}
+                      onLeave={run.handleCorruptionLeave}
+                      onContinue={run.handleCorruptionContinue}
                     />
                   ) : null}
                   {renderedScreen === "options" ? (

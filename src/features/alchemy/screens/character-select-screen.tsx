@@ -47,8 +47,8 @@ export function CharacterSelectScreen({ onConfirm, onBack }: { onConfirm: (chara
 
       <div className="mt-6 flex flex-col items-center gap-4">
         <div className="flex gap-4">
-        <Button size="lg" className="w-40" disabled={!selectedChar} onClick={() => { if (selectedChar) onConfirm(selectedChar.id); }}>Continue</Button>
         <Button size="lg" variant="outline" className="w-40" onClick={onBack}>Back</Button>
+        <Button size="lg" className="w-40" disabled={!selectedChar} onClick={() => { if (selectedChar) onConfirm(selectedChar.id); }}>Continue</Button>
         </div>
       </div>
     </div>

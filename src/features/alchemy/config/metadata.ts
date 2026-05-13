@@ -1,7 +1,7 @@
 // Visual metadata for destinations, collection tabs, and keyword iconography.
 // Depends on Lucide icons, game-data image assets, and alchemy UI types.
 import type { LucideIcon } from "lucide-react";
-import { BookOpen, CircleOff, Coins, Crosshair, Droplet, Flame, FlaskConical, Gem, Hammer, Heart, HeartPulse, Leaf, PawPrint, Shield, ShieldAlert, ShieldHalf, Skull, Snowflake, Sparkles, Sun, Swords, WandSparkles, Zap, Trophy } from "lucide-react";
+import { BookOpen, CircleOff, Coins, Crosshair, Dices, Droplet, Flame, FlaskConical, Gem, Hammer, Heart, HeartPulse, Leaf, PawPrint, Shield, ShieldAlert, ShieldHalf, Skull, Snowflake, Sparkles, Sun, Swords, WandSparkles, Zap, Trophy } from "lucide-react";
 
 import { alchemistShopBg, campfire, eliteEnemyBg, merchantShopBg, mysteryBg, normalEnemyBg, placeholderDestination, type KeywordId } from "@/lib/game-data";
 
@@ -21,6 +21,7 @@ export const destinationMeta: Record<Destination, { icon: LucideIcon; className:
   "Merchant's Shop": { icon: Coins, className: "bg-amber-800/85 text-white", art: merchantShopBg },
   "Alchemist's Shop": { icon: WandSparkles, className: "bg-emerald-800/85 text-white", art: alchemistShopBg },
   Mystery: { icon: Sparkles, className: "bg-zinc-800/90 text-zinc-100", art: mysteryBg },
+  Corruption: { icon: Dices, className: "bg-black text-red-400 border-red-700/90 hover:bg-red-950/95 hover:text-red-200", art: placeholderDestination },
   Campfire: { icon: Flame, className: "bg-emerald-800/85 text-white", art: campfire },
   "Boss Combat": { icon: Skull, className: "bg-red-950/90 text-red-300", art: placeholderDestination },
 };

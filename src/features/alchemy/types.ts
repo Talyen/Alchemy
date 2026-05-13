@@ -6,7 +6,7 @@ import type { CSSProperties } from "react";
 import type { CombatTextEvent } from "@/lib/battle";
 import type { KeywordId } from "@/lib/game-data";
 
-export type Screen = "menu" | "character-select" | "battle" | "rewards" | "destination" | "options" | "collection" | "talents" | "homestead" | "game-over" | "campfire" | "shop" | "alchemist" | "mystery" | "act-complete" | "run-victory";
+export type Screen = "menu" | "character-select" | "battle" | "rewards" | "destination" | "options" | "collection" | "talents" | "homestead" | "game-over" | "campfire" | "shop" | "alchemist" | "mystery" | "corruption" | "act-complete" | "run-victory";
 
 export type ResolutionOption = "1366x768" | "1600x900" | "1920x1080" | "1920x1200" | "2560x1080" | "2560x1440" | "3440x1440" | "3840x2160";
 
@@ -20,6 +20,7 @@ export const DESTINATIONS = {
   MERCHANT_SHOP: "Merchant's Shop",
   ALCHEMIST_SHOP: "Alchemist's Shop",
   MYSTERY: "Mystery",
+  CORRUPTION: "Corruption",
   CAMPFIRE: "Campfire",
   BOSS_COMBAT: "Boss Combat",
 } as const;

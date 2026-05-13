@@ -61,6 +61,10 @@ export const ELITE_GOLD_BONUS_FRACTION = 0.3;  // Elite fights pay a modest bonu
 export const BOSS_GOLD_BONUS_FRACTION = 0.5;   // Boss fights pay a larger bonus to mark act completion.
 export const REWARD_CARD_CHOICES = 3;          // Card rewards offered after each victory.
 export const DESTINATION_CHOICES = 3;          // Path choices offered after each victory.
+export const DEFAULT_DESTINATION_WEIGHT = 10;  // Normal route choices use even weighting before rare-route modifiers.
+export const CORRUPTION_DESTINATION_WEIGHT = DEFAULT_DESTINATION_WEIGHT; // Corruption appears like ordinary routes, but route flow prevents repeats.
+export const CORRUPTION_MUTATION_DELTA = 1;    // Corruption nudges one authored number up or down by exactly 1.
+export const CORRUPTION_MIN_VALUE = 0;         // Corruption can reduce values to 0, but never negative.
 export const DESTINATIONS_PER_ACT = 8;         // Number of destination slots per act (slot 8 = boss).
 export const ACTS_PER_RUN = 3;                 // Number of acts in a full run.
 export const SHOP_MIN_GOLD = 40;               // Player needs at least this much gold to see shop destinations.
@@ -93,6 +97,9 @@ export const SHIMMER_DURATION_MS = 1250;        // Card shimmer sweep animation 
 export const SHIMMER_COOLDOWN_MS = 2600;        // Minimum time between shimmer triggers. Prevents rapid-fire re-triggers from spamming hover.
 export const COMBAT_TEXT_LIFETIME_MS = 3300;     // How long floating combat text stays mounted; visual fade is slightly shorter so cleanup never clips it.
 export const COMBAT_TEXT_LANE_DELAY_MS = 80;     // Stagger between multi-line combat text entries (creates a stacking effect).
+export const ANIMATION_STAGGER_UNIT = 0.08;      // Base delay step (80ms) between consecutive animated elements.
+export const ANIMATION_BLUR = "6px";             // BlurFade default blur strength.
+export const ANIMATION_DURATION = 0.4;           // BlurFade default animation duration (seconds).
 export const GHOST_DRAW_IN_MS = 520;            // Duration of card ghost draw-from-deck animation.
 export const GHOST_DISCARD_OUT_MS = 320;        // Duration of card ghost discard-to-pile animation.
 export const GHOST_ACTIVATE_MS = 672;           // Duration of card ghost activation (play) animation.
@@ -116,6 +123,7 @@ export const MAX_STAGE_SCALE = 1.35;             // Upper bound prevents oversiz
 
 // ============ Collection ============
 export const COLLECTION_PAGE_SIZE = 10;          // Items per page in the collection compendium.
+export const SELECTION_GRID_PAGE_SIZE = 8;       // Items per page in deck selection grids (4 cols × 2 rows).
 export const BATTLE_ACTOR_TOP_DESKTOP = "42%";  // Desktop vertical anchor for player/enemy cards.
 export const BATTLE_ACTOR_TOP_MOBILE = "36%";   // Mobile landscape vertical anchor for player/enemy cards.
 export const HAND_FAN_VERTICAL_STEP_PX = 10;     // Per-card vertical offset for resting hand fan.
@@ -139,6 +147,7 @@ export const SCREENS = {
   REWARDS: "rewards",
   DESTINATION: "destination",
   CAMPFIRE: "campfire",
+  CORRUPTION: "corruption",
   GAME_OVER: "game-over",
   COLLECTION: "collection",
   OPTIONS: "options",

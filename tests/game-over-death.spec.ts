@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { injectSaveState, startRun } from "./helpers";
+import { injectSaveState, navigateToDestination, startRun } from "./helpers";
 
 test.describe("Game Over via Death", () => {
   test("taking fatal damage in battle shows game over screen", async ({ page }) => {
@@ -21,13 +21,13 @@ test.describe("Game Over via Death", () => {
     await page.getByRole("button", { name: "Resume Run" }).click();
 
     await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 10000 });
-    await page.getByRole("button", { name: /Combat/ }).first().click();
+    await navigateToDestination(page, "Normal Combat");
     await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });
 
     await page.getByRole("button", { name: "End Turn" }).click();
     await expect(page.getByRole("button", { name: "Death's Door" })).toBeVisible({ timeout: 15000 });
     await page.getByRole("button", { name: "Death's Door" }).hover();
-    await expect(page.getByText("Heal before the end of the next enemy turn or you will die.")).toBeVisible();
+    await expect(page.getByText(/Because I could not stop for Death/)).toBeVisible();
     await page.getByRole("button", { name: "End Turn" }).click();
     await expect(page.getByRole("heading", { name: "Defeat" })).toBeVisible({ timeout: 15000 });
     await expect(page.getByRole("button", { name: "Return to Main Menu" })).toBeVisible();

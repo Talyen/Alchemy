@@ -27,11 +27,11 @@ export function ActCompleteScreen({
       </div>
 
       <div className="flex flex-wrap justify-center gap-3">
-        <Button size="lg" className="min-w-44" onClick={onContinue}>
-          {isFinalAct ? "Enter Final Battle" : `Enter Act ${currentAct + 1}`}
-        </Button>
         <Button size="lg" variant="outline" className="min-w-44" onClick={onMainMenu}>
           Return to Menu
+        </Button>
+        <Button size="lg" className="min-w-44" onClick={onContinue}>
+          {isFinalAct ? "Enter Final Battle" : `Enter Act ${currentAct + 1}`}
         </Button>
       </div>
     </div>
