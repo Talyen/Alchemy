@@ -7,24 +7,32 @@ import type { TalentXP } from "@/lib/talents";
 import type { HomesteadEffectManifest, MaterialInventory } from "@/lib/homestead/types";
 import type { UnlockedTalents } from "./talent-pool";
 import { useTalentState } from "./use-talent-state";
-import { useRunState, type ActiveRunData } from "./use-run-state";
+import { useRunState } from "./use-run-state";
 import { useBattleController } from "./use-battle-controller";
 import { useShopController } from "./use-shop-controller";
 import { useRunNavigation } from "./use-run-navigation";
 import type { Screen } from "./types";
+import type { ActiveRunData } from "./run/types";
 import { NAVIGATION_DELAY_MS } from "@/lib/game-constants";
 
 export function useAlchemyRunController({
-  discoveredCardIds, setDiscoveredCardIds, setEncounteredEnemyIds,
+  discoveredCardIds,
+  setDiscoveredCardIds,
+  setEncounteredEnemyIds,
   setDiscoveredTrinketIds,
-  initialTalentXP, initialUnlockedTalents, initialActiveRun, autoEndTurn,
-  onAddMaterials, homesteadEffects,
+  initialTalentXP,
+  initialUnlockedTalents,
+  initialActiveRun,
+  autoEndTurn,
+  onAddMaterials,
+  homesteadEffects,
 }: {
   discoveredCardIds: string[];
   setDiscoveredCardIds: React.Dispatch<React.SetStateAction<string[]>>;
   setEncounteredEnemyIds: React.Dispatch<React.SetStateAction<string[]>>;
   setDiscoveredTrinketIds: React.Dispatch<React.SetStateAction<string[]>>;
-  initialTalentXP: TalentXP; initialUnlockedTalents: UnlockedTalents;
+  initialTalentXP: TalentXP;
+  initialUnlockedTalents: UnlockedTalents;
   initialActiveRun: ActiveRunData | null;
   autoEndTurn: boolean;
   onAddMaterials: (materials: MaterialInventory) => void;
@@ -54,26 +62,39 @@ export function useAlchemyRunController({
   // ============ Ref Wrappers ============
   const onAddMaterialsRef = useRef(onAddMaterials);
   const homesteadEffectsRef = useRef(homesteadEffects);
-  useEffect(() => { onAddMaterialsRef.current = onAddMaterials; }, [onAddMaterials]);
-  useEffect(() => { homesteadEffectsRef.current = homesteadEffects; }, [homesteadEffects]);
+  useEffect(() => {
+    onAddMaterialsRef.current = onAddMaterials;
+  }, [onAddMaterials]);
+  useEffect(() => {
+    homesteadEffectsRef.current = homesteadEffects;
+  }, [homesteadEffects]);
 
   // ============ Domain Controllers ============
   const battle = useBattleController({
-    run, talents,
-    discoveredCardIds, setDiscoveredCardIds, setEncounteredEnemyIds,
-    autoEndTurn, homesteadEffectsRef, screen,
+    run,
+    talents,
+    discoveredCardIds,
+    setDiscoveredCardIds,
+    setEncounteredEnemyIds,
+    autoEndTurn,
+    homesteadEffectsRef,
+    screen,
     setHoveredCardId,
     initialHasActiveBattle: false,
   });
 
   const shop = useShopController({
-    run, talents,
+    run,
+    talents,
     setDiscoveredCardIds,
   });
 
   const nav = useRunNavigation({
-    run, talents,
-    screen, setScreen, navigateTo,
+    run,
+    talents,
+    screen,
+    setScreen,
+    navigateTo,
     battleState: battle.battleState,
     hasActiveBattle: battle.hasActiveBattle,
     setHasActiveBattle: battle.setHasActiveBattle,
@@ -83,8 +104,10 @@ export function useAlchemyRunController({
     clearCardGhosts: battle.clearCardGhosts,
     setBattleState: battle.setBattleState,
     setDiscoveredCardIds,
-    setEncounteredEnemyIds, setDiscoveredTrinketIds,
-    onAddMaterialsRef, homesteadEffectsRef,
+    setEncounteredEnemyIds,
+    setDiscoveredTrinketIds,
+    onAddMaterialsRef,
+    homesteadEffectsRef,
     setHoveredCardId,
     onStartBattle: battle.startBattle,
     onStartBossBattle: battle.startBossBattle,
@@ -92,42 +115,96 @@ export function useAlchemyRunController({
     onInitAlchemist: shop.initAlchemist,
   });
 
-  function clearPermanentData() { talents.clearPermanentData(); }
+  function clearPermanentData() {
+    talents.clearPermanentData();
+  }
 
   return {
     screen,
     battleState: battle.battleState,
-    hoveredCardId, hasActiveBattle: battle.hasActiveBattle, hasActiveRun,
-    runDeck: run.runDeck, runGold: run.runGold, runPlayerHealth: run.runPlayerHealth, runMaxHealth: run.runMaxHealth,
-    runTrinkets: run.runTrinkets, roomsEncountered: run.roomsEncountered,
-    currentAct: run.currentAct, destinationIndexInAct: run.destinationIndexInAct,
+    hoveredCardId,
+    hasActiveBattle: battle.hasActiveBattle,
+    hasActiveRun,
+    runDeck: run.runDeck,
+    runGold: run.runGold,
+    runPlayerHealth: run.runPlayerHealth,
+    runMaxHealth: run.runMaxHealth,
+    runTrinkets: run.runTrinkets,
+    roomsEncountered: run.roomsEncountered,
+    currentAct: run.currentAct,
+    destinationIndexInAct: run.destinationIndexInAct,
     completedDestinations: run.completedDestinations,
     characterId: run.characterId,
-    talentXP: talents.talentXP, runTalentXP: talents.runTalentXP, unlockedTalents: talents.unlockedTalents,
-    unlockTalent: talents.unlockTalent, unlockAllTalents: talents.unlockAllTalents, resetUnlockedTalents: talents.resetUnlockedTalents,
+    talentXP: talents.talentXP,
+    runTalentXP: talents.runTalentXP,
+    unlockedTalents: talents.unlockedTalents,
+    unlockTalent: talents.unlockTalent,
+    unlockAllTalents: talents.unlockAllTalents,
+    resetUnlockedTalents: talents.resetUnlockedTalents,
     clearPermanentData,
-    setRewardState: nav.setRewardState, setHoveredCardId,
+    setRewardState: nav.setRewardState,
+    setHoveredCardId,
     setSelectedRewardId: nav.setSelectedRewardId,
-    get rewardChoices() { return nav.rewardChoices; },
-    get rewardGold() { return nav.rewardGold; },
-    get rewardMaterials() { return nav.rewardMaterials; },
-    get rewardType() { return nav.rewardType; },
-    get selectedRewardId() { return nav.selectedRewardId; },
-    get destinationOptions() { return nav.destinationOptions; },
-    get shopCards() { return shop.shopCards; },
-    get shopCardPrice() { return shop.shopCardPrice; },
-    get shopRemovePrice() { return shop.shopRemovePrice; },
-    get shopRefreshPrice() { return shop.shopRefreshPrice; },
-    get shopRefreshesLeft() { return shop.shopRefreshesLeft; },
-    get shopRemoveUsed() { return shop.shopRemoveUsed; },
-    get alchemistPotions() { return shop.alchemistPotions; },
-    get alchemistRefreshesLeft() { return shop.alchemistRefreshesLeft; },
-    get alchemistPotionPrice() { return shop.alchemistPotionPrice; },
-    get alchemistMixPrice() { return shop.alchemistMixPrice; },
-    get alchemistMixUsed() { return shop.alchemistMixUsed; },
-    get runEndMaterials() { return nav.runEndMaterials; },
-    get mysteryEvent() { return nav.mysteryEvent; },
-    get activeRunData() { return nav.activeRunData; },
+    get rewardChoices() {
+      return nav.rewardChoices;
+    },
+    get rewardGold() {
+      return nav.rewardGold;
+    },
+    get rewardMaterials() {
+      return nav.rewardMaterials;
+    },
+    get rewardType() {
+      return nav.rewardType;
+    },
+    get selectedRewardId() {
+      return nav.selectedRewardId;
+    },
+    get destinationOptions() {
+      return nav.destinationOptions;
+    },
+    get shopCards() {
+      return shop.shopCards;
+    },
+    get shopCardPrice() {
+      return shop.shopCardPrice;
+    },
+    get shopRemovePrice() {
+      return shop.shopRemovePrice;
+    },
+    get shopRefreshPrice() {
+      return shop.shopRefreshPrice;
+    },
+    get shopRefreshesLeft() {
+      return shop.shopRefreshesLeft;
+    },
+    get shopRemoveUsed() {
+      return shop.shopRemoveUsed;
+    },
+    get alchemistPotions() {
+      return shop.alchemistPotions;
+    },
+    get alchemistRefreshesLeft() {
+      return shop.alchemistRefreshesLeft;
+    },
+    get alchemistPotionPrice() {
+      return shop.alchemistPotionPrice;
+    },
+    get alchemistMixPrice() {
+      return shop.alchemistMixPrice;
+    },
+    get alchemistMixUsed() {
+      return shop.alchemistMixUsed;
+    },
+    get runEndMaterials() {
+      return nav.runEndMaterials;
+    },
+    get mysteryEvent() {
+      return nav.mysteryEvent;
+    },
+    get activeRunData() {
+      return nav.activeRunData;
+    },
     handCardRefs: battle.handCardRefs,
     battleSceneRef: battle.battleSceneRef,
     playerPanelRef: battle.playerPanelRef,
@@ -135,29 +212,41 @@ export function useAlchemyRunController({
     destinationButtonRefs: nav.destinationButtonRefs,
     cardGhosts: battle.cardGhosts,
     shimmerState: battle.shimmerState,
-    playerStatusChips: battle.playerStatusChips, enemyStatusChips: battle.enemyStatusChips,
-    playerCombatTexts: battle.playerCombatTexts, enemyCombatTexts: battle.enemyCombatTexts,
-    enemyShaking: battle.enemyShaking, playerShaking: battle.playerShaking, companionShaking: battle.companionShaking,
-    beginRun: nav.beginRun, handleCharacterSelect: nav.handleCharacterSelect,
-    returnToBattle: nav.returnToBattle, goToScreen: nav.goToScreen,
+    playerStatusChips: battle.playerStatusChips,
+    enemyStatusChips: battle.enemyStatusChips,
+    playerCombatTexts: battle.playerCombatTexts,
+    enemyCombatTexts: battle.enemyCombatTexts,
+    enemyShaking: battle.enemyShaking,
+    playerShaking: battle.playerShaking,
+    companionShaking: battle.companionShaking,
+    beginRun: nav.beginRun,
+    handleCharacterSelect: nav.handleCharacterSelect,
+    returnToBattle: nav.returnToBattle,
+    goToScreen: nav.goToScreen,
     maybeTriggerShimmer: battle.maybeTriggerShimmer,
-    handleCardClick: battle.handleCardClick, handleWishChoice: battle.handleWishChoice,
+    handleCardClick: battle.handleCardClick,
+    handleWishChoice: battle.handleWishChoice,
     finishRewards: nav.finishRewards,
     handleDestinationChoice: nav.handleDestinationChoice,
     handleCampfireContinue: nav.handleCampfireContinue,
-    handleShopBuyCard: shop.handleShopBuyCard, handleShopRemoveCard: shop.handleShopRemoveCard,
+    handleShopBuyCard: shop.handleShopBuyCard,
+    handleShopRemoveCard: shop.handleShopRemoveCard,
     handleShopRefresh: shop.handleShopRefresh,
     handleShopContinue: nav.advanceToNextDestination,
-    handleAlchemistBuyCard: shop.handleAlchemistBuyCard, handleAlchemistRefresh: shop.handleAlchemistRefresh,
+    handleAlchemistBuyCard: shop.handleAlchemistBuyCard,
+    handleAlchemistRefresh: shop.handleAlchemistRefresh,
     handleAlchemistMixPotions: shop.handleAlchemistMixPotions,
     handleAlchemistContinue: nav.advanceToNextDestination,
     handleMysteryChoice: nav.handleMysteryChoice,
     handleMysteryChooseCard: nav.handleMysteryChooseCard,
     handleMysteryRemoveCard: nav.handleMysteryRemoveCard,
     handleMysteryContinue: nav.handleMysteryContinue,
-    get mysteryCardChoices() { return nav.mysteryCardChoices; },
+    get mysteryCardChoices() {
+      return nav.mysteryCardChoices;
+    },
     handleActComplete: nav.handleActComplete,
-    handleEndTurn: battle.handleEndTurn, handleEndRun: battle.handleEndRun,
+    handleEndTurn: battle.handleEndTurn,
+    handleEndRun: battle.handleEndRun,
     skipCombatDevMode: battle.skipCombatDevMode,
     removeCardGhost: battle.removeCardGhost,
     resetRunState: nav.resetRunState,

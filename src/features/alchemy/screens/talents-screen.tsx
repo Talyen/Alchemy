@@ -4,7 +4,7 @@ import { House, Swords } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { keywordDefinitions, type KeywordId } from "@/lib/game-data";
-import { computeTalentPoints, xpForNextPoint, xpToNextPoint, type TalentXP } from "@/lib/talents";
+import { getTalentKeywordProgress, type TalentXP } from "@/lib/talents";
 import { TALENT_CHOICES_OFFERED } from "@/lib/game-constants";
 
 import { TalentKeywordButton } from "../ui/talents-ui";
@@ -29,29 +29,23 @@ export function TalentsScreen({
   // until the player unlocks/refunds something that changes availability.
   const choicesCache = useRef<Record<string, TalentDefinition[]>>({});
 
-  const currentXP = talentXP[selectedKeyword] ?? 0;
-  const runXP = runTalentXP?.[selectedKeyword] ?? 0;
-  const totalXP = currentXP + runXP;
-  const totalPoints = computeTalentPoints(totalXP);
-  const nextXP = xpForNextPoint(totalPoints);
-  const progress = xpToNextPoint(totalXP);
-  const progressPercent = Math.min(100, Math.round(((nextXP - progress) / nextXP) * 100));
-
   const unlockedIds = useMemo(() => unlockedTalents[selectedKeyword] ?? [], [selectedKeyword, unlockedTalents]);
-  const spentPoints = unlockedIds.length;
-  const unspentPoints = Math.max(0, totalPoints - spentPoints);
+  const progress = getTalentKeywordProgress(
+    (talentXP[selectedKeyword] ?? 0) + (runTalentXP?.[selectedKeyword] ?? 0),
+    unlockedIds.length,
+  );
   const allTalentsForKeyword = getTalentsForKeyword(selectedKeyword);
-  const allUnlocked = spentPoints >= allTalentsForKeyword.length;
+  const allUnlocked = progress.spentPoints >= allTalentsForKeyword.length;
   const unlockedTalentsForKeyword = allTalentsForKeyword.filter((t) => unlockedIds.includes(t.id));
 
   const currentChoices = useMemo(() => {
     const cached = choicesCache.current[selectedKeyword];
     if (cached) return cached; // eslint-disable-line react-hooks/refs
-    if (allUnlocked || unspentPoints <= 0) return null;
+    if (allUnlocked || progress.unspentPoints <= 0) return null;
     const c = sampleTalentChoices(selectedKeyword, unlockedIds, TALENT_CHOICES_OFFERED);
     if (c.length > 0) choicesCache.current[selectedKeyword] = c; // eslint-disable-line react-hooks/refs
     return c.length > 0 ? c : null;
-  }, [selectedKeyword, unlockedIds, unspentPoints, allUnlocked]);
+  }, [selectedKeyword, unlockedIds, progress.unspentPoints, allUnlocked]);
 
   function handleUnlockTalent(talentId: string) { onUnlockTalent(selectedKeyword, talentId); delete choicesCache.current[selectedKeyword]; playUISound("talentUnlock"); }
   // Clearing cached choices forces the next offer to reflect the newly unlocked/refunded state.
@@ -65,11 +59,11 @@ export function TalentsScreen({
         <div className="mx-auto mt-6 flex w-full max-w-[760px] flex-col gap-6 text-left">
           <div className="flex flex-wrap justify-center gap-2">
             {keywordIds.map((kw) => {
-              const kwXP = (talentXP[kw] ?? 0) + (runTalentXP?.[kw] ?? 0);
-              const kwPoints = computeTalentPoints(kwXP);
-              const kwUnlockedIds = unlockedTalents[kw] ?? [];
-              const hasUnspent = kwPoints - kwUnlockedIds.length > 0;
-              return <TalentKeywordButton key={kw} keywordId={kw} hasUnspent={hasUnspent} isSelected={selectedKeyword === kw} onClick={() => setSelectedKeyword(kw)} />;
+              const kwProgress = getTalentKeywordProgress(
+                (talentXP[kw] ?? 0) + (runTalentXP?.[kw] ?? 0),
+                (unlockedTalents[kw] ?? []).length,
+              );
+              return <TalentKeywordButton key={kw} keywordId={kw} hasUnspent={kwProgress.hasUnspent} isSelected={selectedKeyword === kw} onClick={() => setSelectedKeyword(kw)} />;
             })}
             <button type="button" onClick={() => setShowResetConfirm(true)} className="rounded-full border border-border/40 px-3 py-1.5 text-xs font-medium text-muted-foreground/60 hover:border-border/60 hover:text-muted-foreground transition-transform active:scale-95">Reset Talents</button>
           </div>
@@ -78,9 +72,9 @@ export function TalentsScreen({
               <div className="surface-muted rounded-[22px] border border-border/70 p-3">
                 <div className="flex items-end justify-between">
                   <span className="text-lg font-semibold text-foreground"><KeywordTag keywordId={selectedKeyword} className="text-base" /></span>
-                  <span className="text-xs text-muted-foreground">{nextXP - progress} / {nextXP} XP</span>
+                  <span className="text-xs text-muted-foreground">{progress.xpForNext - progress.xpRemaining} / {progress.xpForNext} XP</span>
                 </div>
-                <ProgressBar value={progressPercent} className="mt-1.5" color="bg-primary" style={{ transition: "width 0.3s ease", backgroundColor: keywordDefinitions[selectedKeyword]?.shineColors?.[0] ?? undefined }} />
+                  <ProgressBar value={progress.progressPercent} className="mt-1.5" color="bg-primary" style={{ transition: "width 0.3s ease", backgroundColor: keywordDefinitions[selectedKeyword]?.shineColors?.[0] ?? undefined }} />
               </div>
 
               <div className="mt-4 min-h-[524px] min-w-[708px] px-0">

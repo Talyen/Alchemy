@@ -13,12 +13,13 @@ import {
   trinketLibrary,
   type KeywordId,
 } from "@/lib/game-data";
-import { computeTalentPoints } from "@/lib/talents";
+import { getTalentKeywordProgress } from "@/lib/talents";
 import { platform } from "@/lib/platform";
 
 import { useAppAudioEffects } from "@/app/use-app-audio-effects";
 import { useAppDisplayEffects } from "@/app/use-app-display-effects";
 import { useScreenAssetPreloadEffects, useStartupPreloadEffects } from "@/app/use-app-preload-effects";
+import { useAlchemyAutosave, useAppSaveState } from "@/app/use-app-save-state";
 import { useInitialLoadReady } from "@/app/use-initial-load-ready";
 import { StartupLoadingScreen } from "@/app/startup-loading-screen";
 import { useMobileDetection, useVirtualResolution } from "@/features/alchemy/hooks";
@@ -38,13 +39,7 @@ import {
   RunVictoryScreen,
   TalentsScreen,
 } from "@/features/alchemy/screens";
-import {
-  clearAlchemySaveData,
-  defaultSaveData,
-  loadAlchemySaveData,
-  saveAlchemySaveData,
-} from "@/features/alchemy/storage";
-import type { CollectionTab, DisplayMode, ResolutionOption, Screen, UiScale } from "@/features/alchemy/types";
+import type { Screen } from "@/features/alchemy/types";
 import { GameMenu } from "@/features/alchemy/ui/shared-ui";
 import { useAlchemyRunController } from "@/features/alchemy/use-alchemy-run-controller";
 import { useHomesteadState } from "@/features/alchemy/use-homestead-state";
@@ -56,37 +51,48 @@ import { HomesteadScreen } from "@/features/alchemy/screens/homestead-screen";
 const PAGE_EXIT_MS = 130;
 const INITIAL_LOAD_IMAGE_URLS = [menuLogo];
 
-type CollectionPages = Record<CollectionTab, number>;
-
-const initialCollectionPages: CollectionPages = {
-  cards: 0,
-  bestiary: 0,
-  trinkets: 0,
-};
-
 export default function App() {
-  const initialSaveRef = useRef(loadAlchemySaveData());
-  const initialSave = initialSaveRef.current;
-  const [selectedResolution, setSelectedResolution] = useState<ResolutionOption>(initialSave.selectedResolution);
-  const [displayMode, setDisplayMode] = useState<DisplayMode>(initialSave.displayMode);
-  const [uiScale, setUiScale] = useState<UiScale>(initialSave.uiScale);
-  const [showClearSaveConfirm, setShowClearSaveConfirm] = useState(false);
-  const [collectionTab, setCollectionTab] = useState<CollectionTab>("cards");
-  const [collectionPages, setCollectionPages] = useState<CollectionPages>(initialCollectionPages);
-  const [discoveredCardIds, setDiscoveredCardIds] = useState<string[]>(initialSave.discoveredCardIds);
-  const [encounteredEnemyIds, setEncounteredEnemyIds] = useState<string[]>(initialSave.encounteredEnemyIds);
-  const [discoveredTrinketIds, setDiscoveredTrinketIds] = useState<string[]>(initialSave.discoveredTrinketIds);
-  const [musicVol, setMusicVol] = useState(initialSave.musicVolume);
-  const [sfxVol, setSfxVol] = useState(initialSave.sfxVolume);
-  const [masterVol, setMasterVol] = useState(initialSave.masterVolume);
-  const [muteInBackground, setMuteInBackground] = useState(initialSave.muteInBackground);
-  const [autoEndTurn, setAutoEndTurn] = useState(initialSave.autoEndTurn);
+  const save = useAppSaveState();
+  const {
+    initialSave,
+    selectedResolution,
+    setSelectedResolution,
+    displayMode,
+    setDisplayMode,
+    uiScale,
+    setUiScale,
+    brightness,
+    setBrightness,
+    musicVol,
+    setMusicVol,
+    sfxVol,
+    setSfxVol,
+    masterVol,
+    setMasterVol,
+    muteInBackground,
+    setMuteInBackground,
+    autoEndTurn,
+    setAutoEndTurn,
+    showClearSaveConfirm,
+    setShowClearSaveConfirm,
+    collectionTab,
+    collectionPages,
+    handleCollectionTabChange,
+    setCollectionPage,
+    discoveredCardIds,
+    setDiscoveredCardIds,
+    encounteredEnemyIds,
+    setEncounteredEnemyIds,
+    discoveredTrinketIds,
+    setDiscoveredTrinketIds,
+    resetOptionsToDefault,
+    clearSavedAppState,
+  } = save;
   const [gameMenuOpen, setGameMenuOpen] = useState(false);
   const [menuAnchorRect, setMenuAnchorRect] = useState<DOMRect | null>(null);
   const [renderedScreen, setRenderedScreen] = useState<Screen>("menu");
   const [pagePhase, setPagePhase] = useState<"enter" | "exit">("enter");
   const pendingScreenRef = useRef(renderedScreen);
-  const [brightness, setBrightness] = useState(initialSave.brightness);
   const vrStageRef = useRef<HTMLDivElement>(null);
   const initialLoadReady = useInitialLoadReady({ imageUrls: INITIAL_LOAD_IMAGE_URLS });
   useAppDisplayEffects({ displayMode, uiScale, brightness, stageRef: vrStageRef });
@@ -162,83 +168,33 @@ export default function App() {
     mysteryEvent: run.mysteryEvent,
   });
 
-  useEffect(() => {
-    saveAlchemySaveData({
-      selectedResolution,
-      displayMode,
-      uiScale,
-      discoveredCardIds,
-      encounteredEnemyIds,
-      discoveredTrinketIds,
-      talentXP: run.talentXP,
-      unlockedTalents: run.unlockedTalents,
-      musicVolume: musicVol,
-      sfxVolume: sfxVol,
-      masterVolume: masterVol,
-      muteInBackground,
-      autoEndTurn,
-      brightness,
-      activeRun: run.activeRunData,
-      materialInventory: homestead.materialInventory,
-      constructedBuildings: homestead.constructedBuildings,
-      plantedFarms: homestead.plantedFarms,
-      completedResearch: homestead.completedResearch,
-    });
-  }, [
+  useAlchemyAutosave({
     selectedResolution,
     displayMode,
     uiScale,
     discoveredCardIds,
     encounteredEnemyIds,
     discoveredTrinketIds,
-    run.talentXP,
-    run.unlockedTalents,
-    brightness,
-    musicVol,
-    sfxVol,
-    masterVol,
+    talentXP: run.talentXP,
+    unlockedTalents: run.unlockedTalents,
+    musicVolume: musicVol,
+    sfxVolume: sfxVol,
+    masterVolume: masterVol,
     muteInBackground,
     autoEndTurn,
-    run.activeRunData,
-    homestead.materialInventory,
-    homestead.constructedBuildings,
-    homestead.plantedFarms,
-    homestead.completedResearch,
-  ]);
-
-  function handleCollectionTabChange(nextTab: CollectionTab) {
-    setCollectionTab(nextTab);
-    setCollectionPages((current) => ({ ...current, [nextTab]: current[nextTab] ?? 0 }));
-  }
-
-  function setCollectionPage(tab: CollectionTab, page: number) {
-    setCollectionPages((current) => ({ ...current, [tab]: Math.max(0, page) }));
-  }
+    brightness,
+    activeRun: run.activeRunData,
+    materialInventory: homestead.materialInventory,
+    constructedBuildings: homestead.constructedBuildings,
+    plantedFarms: homestead.plantedFarms,
+    completedResearch: homestead.completedResearch,
+  });
 
   function clearSaveData() {
-    clearAlchemySaveData();
-    resetOptionsToDefault();
-    setDiscoveredCardIds(defaultSaveData.discoveredCardIds);
-    setEncounteredEnemyIds(defaultSaveData.encounteredEnemyIds);
-    setDiscoveredTrinketIds(defaultSaveData.discoveredTrinketIds);
-    setCollectionPages(initialCollectionPages);
-    setCollectionTab("cards");
-    setShowClearSaveConfirm(false);
+    clearSavedAppState();
     run.resetRunState();
     run.clearPermanentData();
     homestead.reset();
-  }
-
-  function resetOptionsToDefault() {
-    setSelectedResolution(defaultSaveData.selectedResolution);
-    setDisplayMode(defaultSaveData.displayMode);
-    setUiScale(defaultSaveData.uiScale);
-    setBrightness(defaultSaveData.brightness);
-    setMasterVol(defaultSaveData.masterVolume);
-    setMusicVol(defaultSaveData.musicVolume);
-    setSfxVol(defaultSaveData.sfxVolume);
-    setMuteInBackground(defaultSaveData.muteInBackground);
-    setAutoEndTurn(defaultSaveData.autoEndTurn);
   }
 
   function unlockAllDevMode() {
@@ -252,9 +208,7 @@ export default function App() {
   const hasUnspentTalents = Object.keys(keywordDefinitions).some((kw) => {
     const kwId = kw as KeywordId;
     const xp = (run.talentXP[kwId] ?? 0) + (run.runTalentXP?.[kwId] ?? 0);
-    const points = computeTalentPoints(xp);
-    const unlocked = run.unlockedTalents[kwId] ?? [];
-    return points - unlocked.length > 0;
+    return getTalentKeywordProgress(xp, (run.unlockedTalents[kwId] ?? []).length).hasUnspent;
   });
 
   const hasAffordableHomestead = (() => {
@@ -446,34 +400,44 @@ export default function App() {
                   ) : null}
                   {renderedScreen === "options" ? (
                     <OptionsScreen
-                      hasActiveBattle={run.hasActiveBattle}
-                      onMainMenu={() => run.goToScreen("menu")}
-                      onReturnToBattle={run.returnToBattle}
-                      selectedResolution={selectedResolution}
-                      onResolutionChange={setSelectedResolution}
-                      displayMode={displayMode}
-                      onDisplayModeChange={setDisplayMode}
-                      showDisplayMode={platform.isDesktop}
-                      uiScale={uiScale}
-                      onUiScaleChange={setUiScale}
-                      brightness={brightness}
-                      onBrightnessChange={setBrightness}
-                      masterVol={masterVol}
-                      musicVol={musicVol}
-                      sfxVol={sfxVol}
-                      onMasterVolChange={setMasterVol}
-                      onMusicVolChange={setMusicVol}
-                      onSfxVolChange={setSfxVol}
-                      muteInBackground={muteInBackground}
-                      onMuteInBackgroundChange={setMuteInBackground}
-                      autoEndTurn={autoEndTurn}
-                      onAutoEndTurnChange={setAutoEndTurn}
-                      onResetOptions={resetOptionsToDefault}
-                      showClearSaveConfirm={showClearSaveConfirm}
-                      onOpenClearSaveConfirm={() => setShowClearSaveConfirm(true)}
-                      onCloseClearSaveConfirm={() => setShowClearSaveConfirm(false)}
-                      onConfirmClearSave={clearSaveData}
-                      onUnlockAll={unlockAllDevMode}
+                      navigation={{
+                        hasActiveBattle: run.hasActiveBattle,
+                        onMainMenu: () => run.goToScreen("menu"),
+                        onReturnToBattle: run.returnToBattle,
+                      }}
+                      display={{
+                        selectedResolution,
+                        onResolutionChange: setSelectedResolution,
+                        displayMode,
+                        onDisplayModeChange: setDisplayMode,
+                        showDisplayMode: platform.isDesktop,
+                        uiScale,
+                        onUiScaleChange: setUiScale,
+                        brightness,
+                        onBrightnessChange: setBrightness,
+                      }}
+                      audio={{
+                        masterVol,
+                        musicVol,
+                        sfxVol,
+                        onMasterVolChange: setMasterVol,
+                        onMusicVolChange: setMusicVol,
+                        onSfxVolChange: setSfxVol,
+                        muteInBackground,
+                        onMuteInBackgroundChange: setMuteInBackground,
+                      }}
+                      gameplay={{
+                        autoEndTurn,
+                        onAutoEndTurnChange: setAutoEndTurn,
+                      }}
+                      saveData={{
+                        showClearSaveConfirm,
+                        onOpenClearSaveConfirm: () => setShowClearSaveConfirm(true),
+                        onCloseClearSaveConfirm: () => setShowClearSaveConfirm(false),
+                        onConfirmClearSave: clearSaveData,
+                        onResetOptions: resetOptionsToDefault,
+                      }}
+                      dev={{ onUnlockAll: unlockAllDevMode }}
                     />
                   ) : null}
                   {renderedScreen === "collection" ? (

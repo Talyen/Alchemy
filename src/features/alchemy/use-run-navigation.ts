@@ -3,39 +3,60 @@
 // Used by the top-level alchemy controller to keep screen changes and run mutations synchronized.
 import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import { createBattleState, isPlayerDefeated, maxPlayerHealth } from "@/lib/battle";
-import { cardLibrary, getStartingDeck, type BattleCard, type CharacterId } from "@/lib/game-data";
+import { getStartingDeck, type BattleCard, type CharacterId } from "@/lib/game-data";
 import { playVictory, playDefeat, playGoldGain } from "@/lib/audio";
-import { appendUnique, appendUniqueMany, pickRandom } from "@/lib/utils";
+import { appendUnique, appendUniqueMany } from "@/lib/utils";
 import { DESTINATIONS, type Destination, type Screen } from "./types";
 import { getEnemyMaterialLoot } from "@/lib/homestead/loot";
 import { type HomesteadEffectManifest, type MaterialInventory } from "@/lib/homestead/types";
-import { mysteryPool, type MysteryChoice, type MysteryEvent } from "./mystery-events";
 import {
-  ACTS_PER_RUN, CAMPFIRE_HEAL_FRACTION,
-  ELITE_GOLD_BONUS_FRACTION, BOSS_GOLD_BONUS_FRACTION, GOLD_REWARD_MAX,
-  GOLD_REWARD_MIN, VICTORY_TRANSITION_DELAY,
+  ACTS_PER_RUN,
+  CAMPFIRE_HEAL_FRACTION,
+  ELITE_GOLD_BONUS_FRACTION,
+  BOSS_GOLD_BONUS_FRACTION,
+  GOLD_REWARD_MAX,
+  GOLD_REWARD_MIN,
+  VICTORY_TRANSITION_DELAY,
 } from "@/lib/game-constants";
 import { randomBetween } from "./utils";
 import type { BattleState } from "@/lib/battle";
 import type { useRunState } from "./use-run-state";
 import type { useTalentState } from "./use-talent-state";
 import { getRunAvailableDestinations, sampleDestinationChoices } from "./navigation/destination-flow";
-import { createBossRewardState as createBossRewardStateFromFlow, createCombatRewardState as createCombatRewardStateFromFlow, createEmptyRewardState, getVictoryGoldTotal, type RewardState } from "./navigation/reward-flow";
-import { addCardToRun, applyMysteryEffect } from "./navigation/mystery-flow";
+import {
+  createBossRewardState as createBossRewardStateFromFlow,
+  createCombatRewardState as createCombatRewardStateFromFlow,
+  createEmptyRewardState,
+  getVictoryGoldTotal,
+  type RewardState,
+} from "./navigation/reward-flow";
+import { useMysteryFlow } from "./navigation/use-mystery-flow";
+import { createActiveRunData } from "./run/active-run-data";
 
 export function useRunNavigation({
-  run, talents,
-  screen, setScreen, navigateTo,
-  battleState, hasActiveBattle, setHasActiveBattle,
-  hasActiveRun, setHasActiveRun,
+  run,
+  talents,
+  screen,
+  setScreen,
+  navigateTo,
+  battleState,
+  hasActiveBattle,
+  setHasActiveBattle,
+  hasActiveRun,
+  setHasActiveRun,
   battleStateRef,
-  clearCardGhosts, setBattleState,
+  clearCardGhosts,
+  setBattleState,
   setDiscoveredCardIds,
-  setEncounteredEnemyIds, setDiscoveredTrinketIds,
-  onAddMaterialsRef, homesteadEffectsRef,
+  setEncounteredEnemyIds,
+  setDiscoveredTrinketIds,
+  onAddMaterialsRef,
+  homesteadEffectsRef,
   setHoveredCardId,
-  onStartBattle, onStartBossBattle,
-  onInitShop, onInitAlchemist,
+  onStartBattle,
+  onStartBossBattle,
+  onInitShop,
+  onInitAlchemist,
 }: {
   run: ReturnType<typeof useRunState>;
   talents: ReturnType<typeof useTalentState>;
@@ -64,25 +85,57 @@ export function useRunNavigation({
   // Run-flow side effects live here because screens, rewards, destination routing,
   // mystery outcomes, act completion, and reset all need the same run/battle snapshot.
   const [rewardState, setRewardState] = useState<RewardState>(() => createEmptyRewardState());
-  const [mysteryEvent, setMysteryEvent] = useState<MysteryEvent | null>(null);
-  const [mysteryCardChoices, setMysteryCardChoices] = useState<BattleCard[] | null>(null);
-  const [runEndMaterials, setRunEndMaterials] = useState<MaterialInventory>({ wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 });
+  const [runEndMaterials, setRunEndMaterials] = useState<MaterialInventory>({
+    wood: 0,
+    iron: 0,
+    herbs: 0,
+    food: 0,
+    crystal: 0,
+  });
 
   const destinationButtonRefs = useRef<Partial<Record<Destination, HTMLButtonElement | null>>>({});
+
+  const mystery = useMysteryFlow({
+    runMaxHealth: run.runMaxHealth,
+    setRunDeck: run.setRunDeck,
+    setRunGold: run.setRunGold,
+    setRunPlayerHealth: run.setRunPlayerHealth,
+    setRunTrinkets: run.setRunTrinkets,
+    setDiscoveredCardIds,
+    setDiscoveredTrinketIds,
+    awardMysteryXP: talents.awardMysteryXP,
+    onAddMaterials: onAddMaterialsRef.current,
+    advanceToNextDestination,
+  });
   const battleVictoryHandledRef = useRef(false);
 
-  const currentActiveRunData = useMemo(() => ({
-    characterId: run.characterId,
-    runDeck: run.runDeck,
-    runGold: run.runGold,
-    runPlayerHealth: run.runPlayerHealth,
-    runMaxHealth: run.runMaxHealth,
-    roomsEncountered: run.roomsEncountered,
-    currentAct: run.currentAct,
-    destinationIndexInAct: run.destinationIndexInAct,
-    completedDestinations: run.completedDestinations,
-    runTrinkets: run.runTrinkets,
-  }), [run.characterId, run.runDeck, run.runGold, run.runPlayerHealth, run.runMaxHealth, run.roomsEncountered, run.currentAct, run.destinationIndexInAct, run.completedDestinations, run.runTrinkets]);
+  const currentActiveRunData = useMemo(
+    () =>
+      createActiveRunData({
+        characterId: run.characterId,
+        runDeck: run.runDeck,
+        runGold: run.runGold,
+        runPlayerHealth: run.runPlayerHealth,
+        runMaxHealth: run.runMaxHealth,
+        roomsEncountered: run.roomsEncountered,
+        currentAct: run.currentAct,
+        destinationIndexInAct: run.destinationIndexInAct,
+        completedDestinations: run.completedDestinations,
+        runTrinkets: run.runTrinkets,
+      }),
+    [
+      run.characterId,
+      run.runDeck,
+      run.runGold,
+      run.runPlayerHealth,
+      run.runMaxHealth,
+      run.roomsEncountered,
+      run.currentAct,
+      run.destinationIndexInAct,
+      run.completedDestinations,
+      run.runTrinkets,
+    ],
+  );
 
   function getAvailableDestinations(currentHp?: number, currentGold?: number, destIdxInAct?: number): Destination[] {
     return getRunAvailableDestinations({
@@ -128,7 +181,8 @@ export function useRunNavigation({
     // reward choices, battle cleanup, audio, and delayed routing agree on the same result.
     const baseGold = randomBetween(GOLD_REWARD_MIN, GOLD_REWARD_MAX);
     const gold = Math.floor(baseGold * (1 + talents.talentEffects.enemyGoldDropBonus));
-    const eliteBonus = battleState.currentEnemy.enemyType === "elite" ? Math.floor(gold * ELITE_GOLD_BONUS_FRACTION) : 0;
+    const eliteBonus =
+      battleState.currentEnemy.enemyType === "elite" ? Math.floor(gold * ELITE_GOLD_BONUS_FRACTION) : 0;
     const bossBonus = battleState.currentEnemy.enemyType === "boss" ? Math.floor(gold * BOSS_GOLD_BONUS_FRACTION) : 0;
     const newGold = awardVictoryGold(gold, eliteBonus, bossBonus);
     run.setRunPlayerHealth(battleState.playerHealth);
@@ -137,12 +191,21 @@ export function useRunNavigation({
       run.setRunMaxHealth((p) => p + talents.talentEffects.maxHealthPerCombat);
     }
     setRewardState(createVictoryRewardState(gold, eliteBonus, bossBonus, newGold, getVictoryMaterials()));
-    setHasActiveBattle(false); setHoveredCardId(null); playVictory();
+    setHasActiveBattle(false);
+    setHoveredCardId(null);
+    playVictory();
     return setTimeout(() => setScreen("rewards"), VICTORY_TRANSITION_DELAY);
   }
 
   function awardVictoryGold(gold: number, eliteBonus: number, bossBonus: number) {
-    const newGold = getVictoryGoldTotal(battleState, run.runTrinkets, gold, eliteBonus, bossBonus, talents.talentEffects.goldPerCombat);
+    const newGold = getVictoryGoldTotal(
+      battleState,
+      run.runTrinkets,
+      gold,
+      eliteBonus,
+      bossBonus,
+      talents.talentEffects.goldPerCombat,
+    );
     run.setRunGold(newGold);
     return newGold;
   }
@@ -151,7 +214,13 @@ export function useRunNavigation({
     return getEnemyMaterialLoot(battleState.currentEnemy.id, battleState.currentEnemy.enemyType);
   }
 
-  function createVictoryRewardState(gold: number, eliteBonus: number, bossBonus: number, newGold: number, materials: MaterialInventory) {
+  function createVictoryRewardState(
+    gold: number,
+    eliteBonus: number,
+    bossBonus: number,
+    newGold: number,
+    materials: MaterialInventory,
+  ) {
     // Boss rewards branch here because bosses advance acts and always offer trinkets,
     // while normal/elite fights continue the destination route with card/trinket rolls.
     if (battleState.currentEnemy.enemyType === "boss") {
@@ -161,7 +230,13 @@ export function useRunNavigation({
   }
 
   function createBossRewardState(gold: number, bossBonus: number, materials: MaterialInventory) {
-    return createBossRewardStateFromFlow({ gold, bossBonus, talentGoldPerCombat: talents.talentEffects.goldPerCombat, materials, trinketIds: run.runTrinkets });
+    return createBossRewardStateFromFlow({
+      gold,
+      bossBonus,
+      talentGoldPerCombat: talents.talentEffects.goldPerCombat,
+      materials,
+      trinketIds: run.runTrinkets,
+    });
   }
 
   function createCombatRewardState(gold: number, eliteBonus: number, newGold: number, materials: MaterialInventory) {
@@ -182,11 +257,15 @@ export function useRunNavigation({
   function beginRun() {
     // The Play button resumes active progress first; only a truly inactive save should
     // enter character select and create a fresh route.
-    if (hasActiveBattle) { returnToBattle(); return; }
+    if (hasActiveBattle) {
+      returnToBattle();
+      return;
+    }
     if (hasActiveRun) {
       setRewardState((prev) => ({
         ...prev,
-        destinations: prev.destinations.length > 0 ? prev.destinations : sampleDestinationChoices(getAvailableDestinations()),
+        destinations:
+          prev.destinations.length > 0 ? prev.destinations : sampleDestinationChoices(getAvailableDestinations()),
       }));
       navigateTo("destination");
       return;
@@ -212,7 +291,12 @@ export function useRunNavigation({
     run.setDestinationIndexInAct(0);
     run.setCompletedDestinations([]);
     setRewardState(createEmptyRewardState(sampleDestinationChoices(getAvailableDestinations())));
-    setDiscoveredCardIds((current) => appendUniqueMany(current, freshDeck.map((c) => c.id)));
+    setDiscoveredCardIds((current) =>
+      appendUniqueMany(
+        current,
+        freshDeck.map((c) => c.id),
+      ),
+    );
     setEncounteredEnemyIds([]);
     setHoveredCardId(null);
     setHasActiveRun(true);
@@ -220,8 +304,15 @@ export function useRunNavigation({
     navigateTo("battle");
   }
 
-  function returnToBattle() { if (hasActiveBattle) { navigateTo("battle"); } }
-  function goToScreen(nextScreen: Screen) { setHoveredCardId(null); navigateTo(nextScreen); }
+  function returnToBattle() {
+    if (hasActiveBattle) {
+      navigateTo("battle");
+    }
+  }
+  function goToScreen(nextScreen: Screen) {
+    setHoveredCardId(null);
+    navigateTo(nextScreen);
+  }
 
   // ============ Rewards & Destinations ============
 
@@ -265,19 +356,28 @@ export function useRunNavigation({
   function routeDestination(destination: Destination) {
     // Destination routing is centralized so label constants and side effects cannot drift.
     if (destination === DESTINATIONS.CAMPFIRE) navigateTo("campfire");
-    else if (destination === DESTINATIONS.MERCHANT_SHOP) { onInitShop(); navigateTo("shop"); }
-    else if (destination === DESTINATIONS.ALCHEMIST_SHOP) { onInitAlchemist(); navigateTo("alchemist"); }
-    else if (destination === DESTINATIONS.MYSTERY) { beginMysteryEvent(); }
-    else if (destination === DESTINATIONS.ELITE_COMBAT) { onStartBattle(undefined, undefined, "elite"); navigateTo("battle"); }
-    else if (destination === DESTINATIONS.BOSS_COMBAT) { onStartBossBattle(); navigateTo("battle"); }
-    else { onStartBattle(undefined, undefined, "normal"); navigateTo("battle"); }
+    else if (destination === DESTINATIONS.MERCHANT_SHOP) {
+      onInitShop();
+      navigateTo("shop");
+    } else if (destination === DESTINATIONS.ALCHEMIST_SHOP) {
+      onInitAlchemist();
+      navigateTo("alchemist");
+    } else if (destination === DESTINATIONS.MYSTERY) {
+      beginMysteryEvent();
+    } else if (destination === DESTINATIONS.ELITE_COMBAT) {
+      onStartBattle(undefined, undefined, "elite");
+      navigateTo("battle");
+    } else if (destination === DESTINATIONS.BOSS_COMBAT) {
+      onStartBossBattle();
+      navigateTo("battle");
+    } else {
+      onStartBattle(undefined, undefined, "normal");
+      navigateTo("battle");
+    }
   }
 
   function beginMysteryEvent() {
-    // Mystery screens need both the selected event and any prior card sub-choice cleared.
-    setMysteryEvent(pickRandom(mysteryPool) ?? mysteryPool[0]);
-    setMysteryCardChoices(null);
-    navigateTo("mystery");
+    mystery.beginMysteryEvent(() => navigateTo("mystery"));
   }
 
   function handleActComplete() {
@@ -312,7 +412,9 @@ export function useRunNavigation({
   function advanceToNextDestination() {
     run.setRoomsEncountered((p) => p + 1);
     setRewardState((prev) => ({ ...prev, destinations: sampleDestinationChoices(getAvailableDestinations()) }));
-    setHoveredCardId(null); setMysteryCardChoices(null); navigateTo("destination");
+    setHoveredCardId(null);
+    mystery.clearCardChoices();
+    navigateTo("destination");
   }
 
   function handleCampfireContinue() {
@@ -323,70 +425,79 @@ export function useRunNavigation({
 
   // ============ Mystery ============
 
-  function handleMysteryChoice(choice: MysteryChoice) {
-    // applyMysteryEffect returns true when an effect opens follow-up UI; that pauses the
-    // remaining event flow until the player picks a card/removal target.
-    for (const effect of choice.effects) {
-      if (applyMysteryEffect(effect, {
-        runMaxHealth: run.runMaxHealth,
-        setRunDeck: run.setRunDeck,
-        setRunGold: run.setRunGold,
-        setRunPlayerHealth: run.setRunPlayerHealth,
-        setRunTrinkets: run.setRunTrinkets,
-        setDiscoveredCardIds,
-        setDiscoveredTrinketIds,
-        setMysteryCardChoices,
-        awardMysteryXP: talents.awardMysteryXP,
-        onAddMaterials: onAddMaterialsRef.current,
-      })) return;
-    }
-  }
-
-  function handleMysteryChooseCard(cardId: string) {
-    const card = cardLibrary.find((c) => c.id === cardId);
-    if (card) {
-      addCardToRun(card, { setRunDeck: run.setRunDeck, setDiscoveredCardIds });
-    }
-    setMysteryCardChoices(null);
-  }
-
-  function handleMysteryRemoveCard(index: number) {
-    run.setRunDeck((p) => p.filter((_, i) => i !== index));
-  }
-
-  function handleMysteryContinue() { advanceToNextDestination(); }
+  const handleMysteryChoice = mystery.handleMysteryChoice;
+  const handleMysteryChooseCard = mystery.handleMysteryChooseCard;
+  const handleMysteryRemoveCard = mystery.handleMysteryRemoveCard;
+  const handleMysteryContinue = mystery.handleMysteryContinue;
 
   // ============ State Reset ============
 
   function resetRunState() {
     // Reset must clear combat animation state, battle/run/talent session state, reward
     // and mystery UI, active flags, and routing together to avoid resuming stale runs.
-    clearCardGhosts(); setBattleState(createBattleState(getStartingDeck(run.characterId), 0));
-    run.reset(); talents.resetRunXP();
+    clearCardGhosts();
+    setBattleState(createBattleState(getStartingDeck(run.characterId), 0));
+    run.reset();
+    talents.resetRunXP();
     setRewardState(createEmptyRewardState());
-    setMysteryCardChoices(null); setHoveredCardId(null); setHasActiveBattle(false); setHasActiveRun(false); navigateTo("menu");
+    mystery.clearCardChoices();
+    setHoveredCardId(null);
+    setHasActiveBattle(false);
+    setHasActiveRun(false);
+    navigateTo("menu");
   }
 
   return {
-    screen, setScreen,
-    rewardState, setRewardState,
+    screen,
+    setScreen,
+    rewardState,
+    setRewardState,
     setSelectedRewardId: (id: string | null) => setRewardState((p) => ({ ...p, selectedId: id })),
-    get rewardChoices() { return rewardState.choices; },
-    get rewardGold() { return rewardState.gold; },
-    get rewardMaterials() { return rewardState.materials; },
-    get rewardType() { return rewardState.rewardType; },
-    get selectedRewardId() { return rewardState.selectedId; },
-    get destinationOptions() { return rewardState.destinations; },
-    get runEndMaterials() { return runEndMaterials; },
-    get mysteryEvent() { return mysteryEvent; },
-    get mysteryCardChoices() { return mysteryCardChoices; },
-    get activeRunData() { return hasActiveRun ? currentActiveRunData : null; },
+    get rewardChoices() {
+      return rewardState.choices;
+    },
+    get rewardGold() {
+      return rewardState.gold;
+    },
+    get rewardMaterials() {
+      return rewardState.materials;
+    },
+    get rewardType() {
+      return rewardState.rewardType;
+    },
+    get selectedRewardId() {
+      return rewardState.selectedId;
+    },
+    get destinationOptions() {
+      return rewardState.destinations;
+    },
+    get runEndMaterials() {
+      return runEndMaterials;
+    },
+    get mysteryEvent() {
+      return mystery.mysteryEvent;
+    },
+    get mysteryCardChoices() {
+      return mystery.mysteryCardChoices;
+    },
+    get activeRunData() {
+      return hasActiveRun ? currentActiveRunData : null;
+    },
     destinationButtonRefs,
-    getAvailableDestinations, advanceToNextDestination,
-    beginRun, handleCharacterSelect, returnToBattle, goToScreen,
-    handleDestinationChoice, handleActComplete, finishRewards,
+    getAvailableDestinations,
+    advanceToNextDestination,
+    beginRun,
+    handleCharacterSelect,
+    returnToBattle,
+    goToScreen,
+    handleDestinationChoice,
+    handleActComplete,
+    finishRewards,
     handleCampfireContinue,
-    handleMysteryChoice, handleMysteryChooseCard, handleMysteryRemoveCard, handleMysteryContinue,
+    handleMysteryChoice,
+    handleMysteryChooseCard,
+    handleMysteryRemoveCard,
+    handleMysteryContinue,
     resetRunState,
   };
 }

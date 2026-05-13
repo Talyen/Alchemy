@@ -4,24 +4,43 @@
 import { useState } from "react";
 import type { CSSProperties } from "react";
 import { Button } from "@/components/ui/button";
+import { BlurFade } from "@/components/ui/blur-fade";
+import { TextAnimate } from "@/components/ui/text-animate";
 import { COLLECTION_PAGE_SIZE } from "@/lib/game-constants";
 import { type BattleCard, type TrinketEntry } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
-import { cardSurfaceClass, collectionCardWidthClass, handCardWidthClass, staticCardTransform } from "../config";
-import type { MysteryChoice } from "../mystery-events";
-import { clearTiltFromEvent, setTiltFromEvent } from "../utils";
-import { BattleCardButton, DetailPopup } from "../ui/card-ui";
-import { MysteryEffectBadge } from "../ui/mystery-effect-badge";
-import { PaginationControls, ScreenHeader } from "../ui/shared-ui";
+import { cardSurfaceClass, collectionCardWidthClass, handCardWidthClass, staticCardTransform } from "../../config";
+import type { MysteryChoice, MysteryEvent, MysteryEffect } from "../../mystery-events";
+import { clearTiltFromEvent, setTiltFromEvent } from "../../utils";
+import { BattleCardButton, DetailPopup } from "../../ui/card-ui";
+import { MysteryEffectBadge, MysteryEffectList } from "../../ui/mystery-effect-badge";
+import { PaginationControls, ScreenHeader } from "../../ui/shared-ui";
 
 type LookupProps = {
   findCard: (id: string) => BattleCard | undefined;
   findTrinket: (id: string) => TrinketEntry | undefined;
 };
 
+/** True when any mystery effect is a net positive (card gain, heal, gold, materials, etc). */
+export function hasPositiveMysteryEffect(effects: MysteryEffect[]) {
+  return effects.some((e) =>
+    ["addCard", "addRandomCard", "chooseCard", "gainTrinket", "gainRandomTrinket", "healHP", "gainGold", "gainMaxMana", "gainXP", "gainMaterial"].includes(e.kind)
+  );
+}
+
+/** True when the choice opens a card-selection picker that pauses further effect resolution. */
+export function choiceOffersCardSelection(choice: MysteryChoice) {
+  return choice.effects.some((e) => e.kind === "chooseCard");
+}
+
+/** True when the choice opens a remove-card picker that pauses further effect resolution. */
+export function choiceRequiresCardRemoval(choice: MysteryChoice) {
+  return choice.effects.some((e) => e.kind === "removeCard" && e.mode === "choose");
+}
+
 // Renders the final consequence summary after the controller has already mutated run state.
-export function RewardScreen({
+export function MysteryRewardSummary({
   choice,
   runDeck,
   findCard,
@@ -206,6 +225,84 @@ export function CardChoicePicker({
         })}
       </div>
       <Button size="lg" disabled={selectedId === null} onClick={() => { if (selectedId !== null) onSelect(selectedId); }}>Add Card</Button>
+    </div>
+  );
+}
+
+// Renders the event narrative, featured card art, and choice buttons with effect tooltips.
+// Used as the initial state of the mystery screen before the player picks a choice.
+export function MysteryEventIntro({
+  event,
+  findCard,
+  findTrinket,
+  onPick,
+}: {
+  event: MysteryEvent;
+  findCard: (id: string) => BattleCard | undefined;
+  findTrinket: (id: string) => TrinketEntry | undefined;
+  onPick: (choice: MysteryChoice) => void;
+}) {
+  const [hoveredCardId, setHoveredCardId] = useState<string | null>(null);
+  const featuredCard = findCard(event.id);
+  const isHovered = hoveredCardId === event.id;
+
+  return (
+    <div className="state-swap flex flex-col items-center gap-6">
+      {featuredCard ? (
+        <BattleCardButton
+          card={featuredCard}
+          hovered={isHovered}
+          onHoverStart={() => setHoveredCardId(event.id)}
+          onHoverEnd={() => setHoveredCardId(null)}
+          ariaLabel={featuredCard.title}
+          shimmerActive={false} shimmerToken={undefined}
+          className={handCardWidthClass}
+        />
+      ) : event.art ? (
+        <div
+          className={cn("tilt-surface", cardSurfaceClass, handCardWidthClass)}
+          data-tilt-strength="15"
+          onMouseMove={setTiltFromEvent}
+          onMouseLeave={clearTiltFromEvent}
+          style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
+        >
+          <img
+            src={event.art}
+            alt={event.title}
+            className="block h-auto w-full rounded-[30px] aspect-[3/4]"
+            loading="eager"
+          />
+        </div>
+      ) : null}
+      <ScreenHeader title={event.title} />
+      <TextAnimate
+        animation="blurInUp"
+        by="word"
+        once
+        className="max-w-lg text-base leading-relaxed text-muted-foreground"
+      >
+        {event.narrative}
+      </TextAnimate>
+
+      <div className="flex flex-wrap justify-center gap-4">
+        {event.choices.map((choice, i) => (
+          <BlurFade key={i} delay={0.6 + i * 0.15} direction="up" offset={8}>
+            <div className="group relative">
+              <Button
+                size="lg"
+                variant="outline"
+                className="min-w-32"
+                onClick={() => onPick(choice)}
+              >
+                {choice.label}
+              </Button>
+              <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-3 w-64 -translate-x-1/2 translate-y-1 rounded-[16px] border border-border/80 bg-card px-3 py-2 text-left text-sm leading-6 text-muted-foreground opacity-0 transition-[opacity,transform] duration-150 ease-alchemy-out will-change-[opacity,transform] group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100">
+                <MysteryEffectList effects={choice.effects} findCard={findCard} findTrinket={findTrinket} choiceLabel={choice.label} />
+              </div>
+            </div>
+          </BlurFade>
+        ))}
+      </div>
     </div>
   );
 }

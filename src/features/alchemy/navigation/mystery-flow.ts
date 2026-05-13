@@ -10,6 +10,11 @@ import type { Dispatch, SetStateAction } from "react";
 import type { MysteryEffect } from "../mystery-events";
 import { sampleItems } from "../utils";
 
+export type MysteryEffectResult = {
+  /** When non-null, the effect opened a sub-picker that pauses further effect processing. */
+  followUp: "choose-card" | null;
+};
+
 type MysteryEffectContext = {
   runMaxHealth: number;
   setRunDeck: Dispatch<SetStateAction<BattleCard[]>>;
@@ -23,8 +28,8 @@ type MysteryEffectContext = {
   onAddMaterials: (materials: MaterialInventory) => void;
 };
 
-// Applies a single mystery effect and returns true only when follow-up UI should pause the event.
-export function applyMysteryEffect(effect: MysteryEffect, context: MysteryEffectContext): boolean {
+// Applies a single mystery effect and returns a result indicating whether follow-up UI should pause.
+export function applyMysteryEffect(effect: MysteryEffect, context: MysteryEffectContext): MysteryEffectResult {
   switch (effect.kind) {
     case "addCard": return addSpecificMysteryCard(effect.cardId, context);
     case "addRandomCard": return addRandomMysteryCard(context);
@@ -33,13 +38,13 @@ export function applyMysteryEffect(effect: MysteryEffect, context: MysteryEffect
     case "damageHP": return damageFromMystery(effect.amount, context);
     case "gainGold": return gainMysteryGold(effect.amount, context);
     case "loseGold": return loseMysteryGold(effect.amount, context);
-    case "gainMaxMana": return false;
-    case "gainXP": context.awardMysteryXP(effect.keyword, effect.amount); return false;
+    case "gainMaxMana": return { followUp: null };
+    case "gainXP": context.awardMysteryXP(effect.keyword, effect.amount); return { followUp: null };
     case "removeCard": return removeMysteryCard(effect.mode, context);
     case "gainTrinket": return gainMysteryTrinket(effect.trinketId, context);
     case "gainRandomTrinket": return gainRandomMysteryTrinket(context);
     case "gainMaterial": return gainMysteryMaterial(effect.material, effect.amount, context);
-    case "none": return false;
+    case "none": return { followUp: null };
   }
 }
 
@@ -57,69 +62,69 @@ export function addCardToRun(card: BattleCard, context: Pick<MysteryEffectContex
 function addSpecificMysteryCard(cardId: string, context: MysteryEffectContext) {
   const card = cardLibrary.find((c) => c.id === cardId);
   if (card) addCardToRun(card, context);
-  return false;
+  return { followUp: null };
 }
 
 function addRandomMysteryCard(context: MysteryEffectContext) {
   const card = pickRandom(getMysteryCardPool());
   if (card) addCardToRun(card, context);
-  return false;
+  return { followUp: null };
 }
 
-function offerMysteryCardChoices(context: MysteryEffectContext) {
+function offerMysteryCardChoices(context: MysteryEffectContext): MysteryEffectResult {
   context.setMysteryCardChoices(sampleItems(getMysteryCardPool(), MYSTERY_CARD_CHOICES));
-  return true;
+  return { followUp: "choose-card" };
 }
 
 function healFromMystery(amount: number, chance: number | undefined, context: MysteryEffectContext) {
-  if (chance !== undefined && Math.random() >= chance) return false;
+  if (chance !== undefined && Math.random() >= chance) return { followUp: null };
   context.setRunPlayerHealth((p) => Math.min(context.runMaxHealth, p + amount));
-  return false;
+  return { followUp: null };
 }
 
 function damageFromMystery(amount: number, context: MysteryEffectContext) {
   context.setRunPlayerHealth((p) => Math.max(0, p - amount));
-  return false;
+  return { followUp: null };
 }
 
 function gainMysteryGold(amount: number, context: MysteryEffectContext) {
   if (amount > 0) playGoldGain();
   context.setRunGold((p) => p + amount);
-  return false;
+  return { followUp: null };
 }
 
 function loseMysteryGold(amount: number, context: MysteryEffectContext) {
   if (amount > 0) playGoldSpend();
   context.setRunGold((p) => Math.max(0, p - amount));
-  return false;
+  return { followUp: null };
 }
 
 function removeMysteryCard(mode: "random" | "choose", context: MysteryEffectContext) {
   // Choice-based removal is handled by the screen picker; this helper only mutates immediately.
-  if (mode !== "random") return false;
+  if (mode !== "random") return { followUp: null };
   context.setRunDeck((p) => {
     if (p.length === 0) return p;
     const idx = Math.floor(Math.random() * p.length);
     return p.filter((_, i) => i !== idx);
   });
-  return false;
+  return { followUp: null };
 }
 
 function gainMysteryTrinket(trinketId: string, context: MysteryEffectContext) {
   context.setRunTrinkets((p) => [...p, trinketId]);
   context.setDiscoveredTrinketIds((cur) => appendUnique(cur, trinketId));
-  return false;
+  return { followUp: null };
 }
 
 function gainRandomMysteryTrinket(context: MysteryEffectContext) {
   const randomTrinket = sampleItems(trinketLibrary, 1)[0];
   if (randomTrinket) gainMysteryTrinket(randomTrinket.id, context);
-  return false;
+  return { followUp: null };
 }
 
 function gainMysteryMaterial(material: MaterialId, amount: number, context: MysteryEffectContext) {
   const matInv = emptyInventory();
   matInv[material] = amount;
   context.onAddMaterials(matInv);
-  return false;
+  return { followUp: null };
 }

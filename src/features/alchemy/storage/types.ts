@@ -2,11 +2,17 @@
 // Depends on character game data plus talent, homestead, run, and option type contracts.
 import { allStartingDeckCardIds } from "@/lib/game-data";
 import type { TalentXP } from "@/lib/talents";
-import { emptyInventory, type BuildingId, type FarmId, type MaterialInventory, type ResearchId } from "@/lib/homestead/types";
+import {
+  emptyInventory,
+  type BuildingId,
+  type FarmId,
+  type MaterialInventory,
+  type ResearchId,
+} from "@/lib/homestead/types";
 
 import type { UnlockedTalents } from "../talent-pool";
+import type { ActiveRunData } from "../run/types";
 import type { DisplayMode, ResolutionOption, UiScale } from "../types";
-import type { ActiveRunData } from "../use-run-state";
 
 export type SaveData = {
   selectedResolution: ResolutionOption;

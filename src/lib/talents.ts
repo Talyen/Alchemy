@@ -85,3 +85,28 @@ export function addTalentXP(xp: TalentXP, keywordIds: KeywordId[], amount = 1): 
   }
   return next;
 }
+
+export interface TalentKeywordProgress {
+  totalXP: number;
+  points: number;
+  xpForNext: number;
+  xpRemaining: number;
+  progressPercent: number;
+  spentPoints: number;
+  unspentPoints: number;
+  hasUnspent: boolean;
+}
+
+export function getTalentKeywordProgress(totalXP: number, unlockedCount: number): TalentKeywordProgress {
+  const points = computeTalentPoints(totalXP);
+  const xpForNext = xpForNextPoint(points);
+  const xpRemaining = xpToNextPoint(totalXP);
+  const progressPercent = Math.min(100, Math.round(((xpForNext - xpRemaining) / xpForNext) * 100));
+  const spentPoints = unlockedCount;
+  const unspentPoints = Math.max(0, points - spentPoints);
+  return {
+    totalXP, points, xpForNext, xpRemaining, progressPercent,
+    spentPoints, unspentPoints,
+    hasUnspent: unspentPoints > 0,
+  };
+}

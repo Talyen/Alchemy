@@ -31,21 +31,21 @@ beforeEach(() => {
 describe("applyMysteryEffect", () => {
   it("dispatches addCard for addCard effect", () => {
     const result = applyMysteryEffect({ kind: "addCard", cardId: "fireball" }, context);
-    expect(result).toBe(false);
+    expect(result.followUp).toBeNull();
     expect(mockSetRunDeck).toHaveBeenCalledOnce();
     expect(mockSetDiscoveredCardIds).toHaveBeenCalledOnce();
   });
 
   it("dispatches healHP with amount", () => {
     const result = applyMysteryEffect({ kind: "healHP", amount: 5 }, context);
-    expect(result).toBe(false);
+    expect(result.followUp).toBeNull();
     expect(mockSetRunPlayerHealth).toHaveBeenCalledOnce();
   });
 
   it("healHP with chance high enough heals", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.3);
     const result = applyMysteryEffect({ kind: "healHP", amount: 10, chance: 0.5 }, context);
-    expect(result).toBe(false);
+    expect(result.followUp).toBeNull();
     expect(mockSetRunPlayerHealth).toHaveBeenCalledOnce();
     vi.restoreAllMocks();
   });
@@ -53,63 +53,63 @@ describe("applyMysteryEffect", () => {
   it("healHP with chance too low does not heal", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.9);
     const result = applyMysteryEffect({ kind: "healHP", amount: 10, chance: 0.5 }, context);
-    expect(result).toBe(false);
+    expect(result.followUp).toBeNull();
     expect(mockSetRunPlayerHealth).not.toHaveBeenCalled();
     vi.restoreAllMocks();
   });
 
   it("dispatches damageHP with amount", () => {
     const result = applyMysteryEffect({ kind: "damageHP", amount: 8 }, context);
-    expect(result).toBe(false);
+    expect(result.followUp).toBeNull();
     expect(mockSetRunPlayerHealth).toHaveBeenCalledOnce();
   });
 
   it("dispatches gainGold", () => {
     const result = applyMysteryEffect({ kind: "gainGold", amount: 15 }, context);
-    expect(result).toBe(false);
+    expect(result.followUp).toBeNull();
     expect(mockSetRunGold).toHaveBeenCalledOnce();
   });
 
   it("dispatches loseGold", () => {
     const result = applyMysteryEffect({ kind: "loseGold", amount: 10 }, context);
-    expect(result).toBe(false);
+    expect(result.followUp).toBeNull();
     expect(mockSetRunGold).toHaveBeenCalledOnce();
   });
 
   it("gainMaxMana returns false without side effects", () => {
     const result = applyMysteryEffect({ kind: "gainMaxMana" }, context);
-    expect(result).toBe(false);
+    expect(result.followUp).toBeNull();
     expect(mockSetRunDeck).not.toHaveBeenCalled();
   });
 
   it("dispatches gainXP", () => {
     const result = applyMysteryEffect({ kind: "gainXP", keyword: "physical", amount: 5 }, context);
-    expect(result).toBe(false);
+    expect(result.followUp).toBeNull();
     expect(mockAwardMysteryXP).toHaveBeenCalledWith("physical", 5);
   });
 
   it("dispatches gainTrinket", () => {
     const result = applyMysteryEffect({ kind: "gainTrinket", trinketId: "bone-charm" }, context);
-    expect(result).toBe(false);
+    expect(result.followUp).toBeNull();
     expect(mockSetRunTrinkets).toHaveBeenCalledOnce();
     expect(mockSetDiscoveredTrinketIds).toHaveBeenCalledOnce();
   });
 
   it("dispatches gainMaterial", () => {
     const result = applyMysteryEffect({ kind: "gainMaterial", material: "wood", amount: 3 }, context);
-    expect(result).toBe(false);
+    expect(result.followUp).toBeNull();
     expect(mockOnAddMaterials).toHaveBeenCalledOnce();
   });
 
   it("chooseCard returns true to pause for UI", () => {
     const result = applyMysteryEffect({ kind: "chooseCard" }, context);
-    expect(result).toBe(true);
+    expect(result.followUp).toBe("choose-card");
     expect(mockSetMysteryCardChoices).toHaveBeenCalledOnce();
   });
 
   it("none effect returns false", () => {
     const result = applyMysteryEffect({ kind: "none" }, context);
-    expect(result).toBe(false);
+    expect(result.followUp).toBeNull();
   });
 });
 
