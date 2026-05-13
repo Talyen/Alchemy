@@ -52,7 +52,7 @@ export function GameOverScreen({ runTalentXP, talentXP, runEndMaterials, onMainM
 
       {keywordIds.length > 0 ? (
         <div className="w-full max-w-2xl">
-          <p className="mb-3 text-sm font-semibold text-foreground">Talent Progress This Run</p>
+          <p className="mb-3 text-sm font-semibold text-foreground">Talents</p>
           <div className="flex flex-wrap justify-center gap-2">
             {keywordIds.map((kw) => (
               <div key={kw} className="flex-none w-[210px]">

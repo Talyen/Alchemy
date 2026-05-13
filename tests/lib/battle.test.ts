@@ -32,7 +32,7 @@ function makeState(overrides: Partial<BattleState> = {}): BattleState {
       goldOnFirstPoisonThisCombat: false,
       firstHolyDamageBonusUsed: false,
       firstBurnTrinketDoubledUsed: false,
-      firstAilmentPrevented: false,
+      firstHarmfulStatusPrevented: false,
       firstPotionFreeUsed: false,
       boneCharmUsed: false,
       resonantChimeUsedThisTurn: false,
@@ -533,7 +533,7 @@ describe("endPlayerTurn", () => {
     expect(result.combatTexts).not.toContainEqual({ target: "player", kind: "status", stat: "stun", amount: 2 });
   });
 
-  it("uses Plague Doctor's Mask only on actual ailments", () => {
+  it("uses Plague Doctor's Mask only on harmful status effects", () => {
     const manifest = computeTrinketManifest(["plague-doctors-mask"]);
     const state = makeState({
       enemyAttackEffects: [
@@ -550,7 +550,7 @@ describe("endPlayerTurn", () => {
 
     expect(result.state.playerStatuses.block).toBe(1);
     expect(result.state.playerStatuses.poison).toBe(0);
-    expect(result.state.flags.firstAilmentPrevented).toBe(true);
+    expect(result.state.flags.firstHarmfulStatusPrevented).toBe(true);
   });
 
   it("does not trigger companion attack (now handled by controller timing)", () => {
@@ -703,9 +703,10 @@ describe("drawCards", () => {
 
 describe("createBattleState", () => {
   const skeleton = enemyBestiary.find((e) => e.id === "skeleton")!;
+  const battleDeck = [makeCard({ id: "slash" }), makeCard({ id: "block" })];
 
   it("creates a valid battle state with starting hand", () => {
-    const result = createBattleState(undefined, 0, 0, skeleton);
+    const result = createBattleState(battleDeck, 0, 0, skeleton);
     expect(result.turn).toBe(1);
     expect(result.playerHealth).toBe(maxPlayerHealth);
     expect(result.enemyHealth).toBe(30);
@@ -717,7 +718,7 @@ describe("createBattleState", () => {
   it("scales enemy stats by destination position within act", () => {
     // destinationIndexInAct=5 → scaler=4, roomMul=1+4*0.1=1.4, currentAct=1 → actMul=1
     // Normal skeleton: hpTypeMul=1, atkTypeMul=1
-    const result = createBattleState(undefined, 0, 5, skeleton, undefined, undefined, undefined, undefined, undefined, 5);
+    const result = createBattleState(battleDeck, 0, 5, skeleton, undefined, undefined, undefined, undefined, undefined, 5);
     expect(result.enemyHealth).toBe(42); // floor(30 * 1.4 * 1) = 42
     expect(result.enemyAttackEffects[0].amount).toBe(11); // floor(8 * 1.4 * 1) = 11
   });
@@ -836,7 +837,7 @@ describe("Trinket — Mortar and Pestle (first potion free)", () => {
         firstArmorCardDoubledUsed: false, firstPoisonCardFreeUsed: false, firstBleedCardFreeUsed: false,
         nextCardCostReduction: 0, goldOnFirstPoisonThisCombat: false,
         firstHolyDamageBonusUsed: false, firstBurnTrinketDoubledUsed: false,
-        firstAilmentPrevented: false, firstPotionFreeUsed: true,
+        firstHarmfulStatusPrevented: false, firstPotionFreeUsed: true,
         boneCharmUsed: false, resonantChimeUsedThisTurn: false,
       },
     });
@@ -888,10 +889,10 @@ describe("Trinket — Ironwood Buckler (6+ block → 1 armor)", () => {
   });
 });
 
-describe("Trinket — Sin-Eater's Lantern (gold on ailment removal)", () => {
-  it("gains 1 gold when removing an ailment", () => {
+describe("Trinket — Sin-Eater's Lantern (gold on harmful status removal)", () => {
+  it("gains 1 gold when removing a harmful status", () => {
     const manifest = computeTrinketManifest(["sin-eaters-lantern"]);
-    const card = makeCard({ effects: [{ kind: "remove-ailment", amount: 1 }] });
+    const card = makeCard({ effects: [{ kind: "remove-harmful-status", amount: 1 }] });
     const state = makeState({
       mana: 10, gold: 5,
       playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 2, poison: 0, bleed: 0, freeze: 0, stun: 0 },

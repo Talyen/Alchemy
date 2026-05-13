@@ -74,9 +74,9 @@ describe("extractCardKeywords", () => {
     expect(extractCardKeywords(c)).toEqual(["wish"]);
   });
 
-  it("extracts ailment for remove-ailment effects", () => {
-    const c = card({ effects: [{ kind: "remove-ailment", amount: 1 }] });
-    expect(extractCardKeywords(c)).toEqual(["ailment"]);
+  it("does not extract a keyword for remove-harmful-status effects", () => {
+    const c = card({ effects: [{ kind: "remove-harmful-status", amount: 1 }] });
+    expect(extractCardKeywords(c)).toEqual([]);
   });
 
   it("extracts consume keyword for consume cards", () => {

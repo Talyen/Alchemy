@@ -68,7 +68,7 @@ export function OptionsScreen({
 
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           {(["display", "sound", "gameplay", "other"] as const).map((t) => (
-            <button key={t} type="button" className={cn("rounded-full border px-4 py-2 text-sm font-semibold capitalize transition-transform active:scale-95", tab === t ? "border-primary bg-primary/20 text-primary" : "border-border/80 bg-card text-foreground")} onClick={() => setTab(t)}>{t.charAt(0).toUpperCase() + t.slice(1)}</button>
+            <button key={t} type="button" className={cn("rounded-full border px-4 py-2 text-sm font-semibold capitalize transition-transform active:scale-95", tab === t ? "border-primary bg-primary/20 text-primary" : "border-border/80 bg-card text-amber-100/75")} onClick={() => setTab(t)}>{t.charAt(0).toUpperCase() + t.slice(1)}</button>
           ))}
         </div>
 

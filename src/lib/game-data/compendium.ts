@@ -186,7 +186,7 @@ export const trinketLibrary: TrinketEntry[] = [
   {
     id: "sin-eaters-lantern",
     title: "Sin-Eater's Lantern",
-    descriptionLines: ["When you remove an ailment from yourself, gain 1 Gold."],
+    descriptionLines: ["When you remove a harmful status effect from yourself, gain 1 Gold."],
     art: sinEatersLantern,
   },
   {
@@ -222,7 +222,7 @@ export const trinketLibrary: TrinketEntry[] = [
   {
     id: "plague-doctors-mask",
     title: "Plague Doctor's Mask",
-    descriptionLines: ["You are immune to the first ailment you would receive each battle."],
+    descriptionLines: ["You are immune to the first harmful status effect you would receive each battle."],
     art: plagueDoctorsMask,
   },
   {

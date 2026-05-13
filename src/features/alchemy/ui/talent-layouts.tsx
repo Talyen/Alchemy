@@ -139,7 +139,7 @@ export function TalentLayout({ unlockedTalents, allTalents, choices, onUnlock }:
                   {isUnlocked ? (
                     <div
                       className={cn(
-                        "flex w-[168px] items-center justify-center rounded-[14px] border-2 px-3 py-3 text-sm font-bold leading-snug text-center min-h-[6rem] bg-popover text-muted-foreground",
+                        "flex w-[168px] items-center justify-center rounded-[14px] border-2 px-3 py-3 text-xs font-bold leading-snug text-center min-h-[6rem] bg-popover text-muted-foreground",
                       )}
                       style={{ borderColor: `${baseColor}33` }}
                     >
@@ -152,7 +152,7 @@ export function TalentLayout({ unlockedTalents, allTalents, choices, onUnlock }:
                   ) : isChoice ? (
                     <button type="button" onClick={() => { setRevealingId(talent.id); onUnlock?.(talent.id); }}
                       className={cn(
-                        "relative flex w-[168px] cursor-pointer items-center justify-center rounded-[14px] border-2 bg-popover px-3 py-3 text-sm font-bold leading-snug text-center min-h-[6rem] transition-all",
+                        "relative flex w-[168px] cursor-pointer items-center justify-center rounded-[14px] border-2 bg-popover px-3 py-3 text-xs font-bold leading-snug text-center min-h-[6rem] transition-all",
                         bColor
                       )}
                       style={{ boxShadow: `0 0 18px 4px ${baseColor}40` }}
@@ -161,7 +161,7 @@ export function TalentLayout({ unlockedTalents, allTalents, choices, onUnlock }:
                     </button>
                   ) : (
                     <div className={cn(
-                      "relative flex w-[168px] items-center justify-center rounded-[14px] border border-dashed px-3 py-3 text-sm font-bold leading-snug text-center min-h-[6rem] text-muted-foreground bg-popover",
+                      "relative flex w-[168px] items-center justify-center rounded-[14px] border border-dashed px-3 py-3 text-xs font-bold leading-snug text-center min-h-[6rem] text-muted-foreground bg-popover",
                     )}
                       style={{ borderColor: `${baseColor}33` }}>
                       <span>Undiscovered</span>

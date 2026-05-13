@@ -19,20 +19,33 @@ export function useBattleAutoEndTurn({ autoEndTurn, screen, battleState, onEndTu
   const onEndTurnRef = useRef(onEndTurn);
   const autoEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => { onEndTurnRef.current = onEndTurn; }, [onEndTurn]);
+  useEffect(() => {
+    onEndTurnRef.current = onEndTurn;
+  }, [onEndTurn]);
 
   const clearAutoEndTurn = useCallback(() => {
     if (autoEndTimerRef.current) clearTimeout(autoEndTimerRef.current);
     autoEndTimerRef.current = null;
   }, []);
 
-  const scheduleAutoEndTurn = useCallback((state: BattleState = battleState) => {
-    clearAutoEndTurn();
-    if (!autoEndTurn || screen !== "battle" || state.turnPhase !== "player" || state.enemyHealth <= 0 || (state.playerHealth <= 0 && !state.deathsDoorActive) || state.wishOptions) return;
-    const hasPlayableCard = state.hand.some((card) => state.mana >= getEffectiveCost(state, card));
-    if (hasPlayableCard) return;
-    autoEndTimerRef.current = setTimeout(() => onEndTurnRef.current(), AUTO_END_TURN_DELAY);
-  }, [autoEndTurn, battleState, clearAutoEndTurn, screen]);
+  const scheduleAutoEndTurn = useCallback(
+    (state: BattleState = battleState) => {
+      clearAutoEndTurn();
+      if (
+        !autoEndTurn ||
+        screen !== "battle" ||
+        state.turnPhase !== "player" ||
+        state.enemyHealth <= 0 ||
+        (state.playerHealth <= 0 && !state.deathsDoorActive) ||
+        state.wishOptions
+      )
+        return;
+      const hasPlayableCard = state.hand.some((card) => state.mana >= getEffectiveCost(state, card));
+      if (hasPlayableCard) return;
+      autoEndTimerRef.current = setTimeout(() => onEndTurnRef.current(), AUTO_END_TURN_DELAY);
+    },
+    [autoEndTurn, battleState, clearAutoEndTurn, screen],
+  );
 
   useEffect(() => {
     scheduleAutoEndTurn();

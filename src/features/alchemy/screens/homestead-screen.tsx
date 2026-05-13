@@ -3,7 +3,7 @@
 // materials are sufficient. Completed nodes are dimmed with a checkmark.
 
 import { useState, type ReactNode } from "react";
-import { Check, FlaskConical, Hammer, House, Swords, Wheat } from "lucide-react";
+import { FlaskConical, Hammer, House, Swords, Wheat } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -49,10 +49,6 @@ function getItems(tab: Tab): GoalItem[] {
     if (tab === "farm") return { kind: "farm" as const, data: data as HomesteadFarm };
     return { kind: "research" as const, data: data as HomesteadResearch };
   });
-}
-
-function totalCount(tab: Tab): number {
-  return tab === "buildings" ? buildings.length : tab === "farm" ? farmPlots.length : researchUpgrades.length;
 }
 
 const itemArt: Record<string, string> = {
@@ -125,9 +121,6 @@ export function HomesteadScreen({
 
   const completed = tab === "buildings" ? constructedBuildings : tab === "farm" ? plantedFarms : completedResearch;
   const allItems = getItems(tab);
-  const doneCount = completed.length;
-  const total = totalCount(tab);
-
   function handleAction(item: GoalItem) {
     const success = item.kind === "building"
       ? onConstructBuilding(item.data.id as BuildingId)
@@ -163,7 +156,7 @@ export function HomesteadScreen({
                 "inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                 tab === t.id
                   ? "border-primary/70 bg-primary/15 text-primary"
-                  : "border-border/80 bg-card text-foreground hover:bg-secondary/50",
+                  : "border-border/80 bg-card text-amber-100/75 hover:bg-secondary/50",
               )}
             >
               {t.id === "buildings" ? <Hammer className="h-4 w-4" /> : t.id === "farm" ? <Wheat className="h-4 w-4" /> : <FlaskConical className="h-4 w-4" />}
@@ -281,18 +274,11 @@ export function HomesteadScreen({
                       </div>
                     ) : null;
                   })()}
+                  {isCompleted && <div className="mt-1.5 h-9" />}
                 </div>
               );
             })}
           </div>
-
-        {/* All-completed message */}
-        {doneCount === total && total > 0 && (
-          <div className="mx-auto mt-6 flex items-center gap-3 rounded-[18px] border border-border/70 p-6 text-center">
-            <Check className="h-6 w-6 text-emerald-400 shrink-0" />
-            <span className="text-muted-foreground">All {tab} completed!</span>
-          </div>
-        )}
 
         {/* Navigation */}
         <div className="mx-auto mt-6 flex flex-wrap justify-center gap-3">

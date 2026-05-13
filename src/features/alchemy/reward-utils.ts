@@ -45,8 +45,7 @@ export function getCardKeywords(card: BattleCard): KeywordId[] {
       case "summon-companion":
         keywords.add("companion");
         break;
-      case "remove-ailment":
-        keywords.add("ailment");
+      case "remove-harmful-status":
         break;
     }
   }

@@ -54,9 +54,9 @@ describe("computeTrinketManifest", () => {
     expect(manifest.runicQuillDrawOnConsume).toBe(1);
   });
 
-  it("Sin-Eater's Lantern → sinEaterGoldOnAilmentRemove: 1", () => {
+  it("Sin-Eater's Lantern -> sinEaterGoldOnHarmfulStatusRemove: 1", () => {
     const manifest = computeTrinketManifest(["sin-eaters-lantern"]);
-    expect(manifest.sinEaterGoldOnAilmentRemove).toBe(1);
+    expect(manifest.sinEaterGoldOnHarmfulStatusRemove).toBe(1);
   });
 
   it("Vanguard's Crest → vanguardCrestForgeOnBlockAbsorb: 1", () => {

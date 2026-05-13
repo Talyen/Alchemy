@@ -29,7 +29,7 @@ export const destinationMeta: Record<Destination, { icon: LucideIcon; className:
 export const keywordIcons: Record<KeywordId, LucideIcon> = {
   physical: Swords, stun: Zap, block: Shield, forge: Hammer, armor: ShieldHalf,
   health: Heart, burn: Flame, gold: Coins, holy: Sun, wish: Sparkles,
-  ailment: Skull, consume: CircleOff, poison: FlaskConical, bleed: Droplet,
+  consume: CircleOff, poison: FlaskConical, bleed: Droplet,
   leech: HeartPulse, freeze: Snowflake, mana: Gem, nature: Leaf,
   companion: PawPrint, trap: Crosshair,
 };

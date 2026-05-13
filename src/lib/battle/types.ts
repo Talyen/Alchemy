@@ -37,7 +37,7 @@ export type TrinketManifest = {
   blockToArmorThreshold: number;
   blockToArmorAmount: number;
   runicQuillDrawOnConsume: number;
-  sinEaterGoldOnAilmentRemove: number;
+  sinEaterGoldOnHarmfulStatusRemove: number;
   vanguardCrestForgeOnBlockAbsorb: number;
   parasiticBloomHealPerPoisonTick: number;
   cutpurseGoldOnBleed: number;
@@ -68,7 +68,7 @@ export type CombatFlags = {
   goldOnFirstPoisonThisCombat: boolean;
   firstHolyDamageBonusUsed: boolean;
   firstBurnTrinketDoubledUsed: boolean;
-  firstAilmentPrevented: boolean;
+  firstHarmfulStatusPrevented: boolean;
   firstPotionFreeUsed: boolean;
   boneCharmUsed: boolean;
   resonantChimeUsedThisTurn: boolean;

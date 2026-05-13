@@ -18,10 +18,13 @@ export function useBattleShake() {
     timeoutsRef.current.push(timeout);
   }
 
-  useEffect(() => () => {
-    for (const timeout of timeoutsRef.current) clearTimeout(timeout);
-    timeoutsRef.current = [];
-  }, []);
+  useEffect(
+    () => () => {
+      for (const timeout of timeoutsRef.current) clearTimeout(timeout);
+      timeoutsRef.current = [];
+    },
+    [],
+  );
 
   return {
     enemyShaking,

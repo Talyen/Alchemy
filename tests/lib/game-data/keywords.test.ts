@@ -35,7 +35,7 @@ describe("keywordDefinitions", () => {
   it("covers expected keywords", () => {
     const expected = [
       "physical", "stun", "block", "forge", "armor", "health", "burn",
-      "gold", "holy", "wish", "ailment", "consume", "poison", "bleed",
+      "gold", "holy", "wish", "consume", "poison", "bleed",
       "leech", "freeze", "mana", "nature", "companion", "trap",
     ];
     for (const id of expected) {

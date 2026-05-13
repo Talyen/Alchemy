@@ -1,14 +1,10 @@
-// React hooks for card shimmer, combat text lifetimes, card ghosts, mobile detection, and scaling.
-// Depends on battle combat text contracts, alchemy UI types, and timing constants.
+// React hooks for card shimmer, mobile detection, and virtual-resolution scaling.
+// Depends on alchemy UI types and viewport/timing constants.
 // Used by controllers/App to keep animation and viewport side effects reusable.
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import type { CombatTextEvent } from "@/lib/battle";
-
-import type { CardGhost, FloatingCombatText, ResolutionOption } from "./types";
+import type { ResolutionOption } from "./types";
 import {
-  COMBAT_TEXT_LANE_DELAY_MS,
-  COMBAT_TEXT_LIFETIME_MS,
   DESIGN_STAGE_HEIGHT,
   MAX_STAGE_SCALE,
   MIN_STAGE_SCALE,
@@ -40,78 +36,6 @@ export function useShimmerController() {
   return { shimmerState, maybeTriggerShimmer };
 }
 
-// ---- Floating Combat Text ----
-// Manages the lifecycle of floating damage/heal numbers. Events are grouped
-// by (target, kind, stat) via mergeCombatText in effects.ts, so multi-hit
-// cards produce a single float instead of overlapping numbers.
-// Entries are staggered by lane so simultaneous texts queue visually.
-
-const combatTextLifetimeMs = COMBAT_TEXT_LIFETIME_MS;
-const combatTextLaneDelayMs = COMBAT_TEXT_LANE_DELAY_MS;
-
-export function useFloatingCombatTexts() {
-  const [floatingCombatTexts, setFloatingCombatTexts] = useState<FloatingCombatText[]>([]);
-  const timerRefs = useRef<number[]>([]);
-
-  useEffect(() => {
-    return () => {
-      timerRefs.current.forEach((timer) => window.clearTimeout(timer));
-      timerRefs.current = [];
-    };
-  }, []);
-
-  function getSignedAmountText(event: CombatTextEvent) {
-    if (event.kind === "damage") return `-${event.amount}`;
-    const showPlus = event.kind === "heal" || event.kind === "status";
-    return `${showPlus ? "+" : ""}${event.amount}`;
-  }
-
-  function scheduleExpiry(entry: FloatingCombatText) {
-    const timer = window.setTimeout(() => setFloatingCombatTexts((current) => current.filter((c) => c.id !== entry.id)), combatTextLifetimeMs + entry.lane * combatTextLaneDelayMs);
-    timerRefs.current.push(timer);
-  }
-
-  function showCombatTexts(events: CombatTextEvent[]) {
-    if (events.length === 0) return;
-    const laneCounts: Record<"player" | "enemy", number> = { player: 0, enemy: 0 };
-    const createdAt = performance.now();
-    const nextEntries = events.map((event, index) => {
-      const lane = laneCounts[event.target];
-      laneCounts[event.target] += 1;
-      return { ...event, lane, id: `${createdAt}-${event.target}-${event.stat}-${index}`, signedAmountText: getSignedAmountText(event) } satisfies FloatingCombatText;
-    });
-
-    nextEntries.forEach((entry) => {
-      const delay = entry.lane * combatTextLaneDelayMs;
-      const timer = window.setTimeout(() => {
-        setFloatingCombatTexts((current) => [...current, entry]);
-        scheduleExpiry(entry);
-      }, delay);
-      timerRefs.current.push(timer);
-    });
-  }
-
-  return { floatingCombatTexts, showCombatTexts };
-}
-
-// ---- Card Ghosts (Play Animations) ----
-// Manages card "ghosts" — clone images that fly from hand to target zone during
-// card play. Each ghost has a variant (draw-in, discard-out, activate, play-travel)
-// that determines its animation CSS.
-
-export function useCardGhosts() {
-  const [cardGhosts, setCardGhosts] = useState<CardGhost[]>([]);
-
-  function removeCardGhost(id: string) { setCardGhosts((current) => current.filter((ghost) => ghost.id !== id)); }
-  function clearCardGhosts() { setCardGhosts([]); }
-  function spawnCardGhost(ghost: Omit<CardGhost, "id">) {
-    const id = `${performance.now()}-${Math.random()}`;
-    setCardGhosts((current) => [...current, { ...ghost, id }]);
-  }
-
-  return { cardGhosts, removeCardGhost, clearCardGhosts, spawnCardGhost };
-}
-
 // ---- Mobile Detection ----
 // Detects mobile landscape and portrait viewports using viewport dimensions
 // and pointer media queries. Portrait mobile shows a rotate-device prompt;
@@ -121,9 +45,8 @@ export function useMobileDetection() {
   const [isPortraitMobile, setIsPortraitMobile] = useState(false);
 
   const check = useCallback(() => {
-    const isCoarse = window.matchMedia("(pointer: coarse)").matches
-      || "ontouchstart" in window
-      || navigator.maxTouchPoints > 0;
+    const isCoarse =
+      window.matchMedia("(pointer: coarse)").matches || "ontouchstart" in window || navigator.maxTouchPoints > 0;
     const vw = window.innerWidth;
     const vh = window.innerHeight;
     setIsMobileLandscape(isCoarse && vw > vh && vw <= MOBILE_LANDSCAPE_MAX_WIDTH);
@@ -131,7 +54,9 @@ export function useMobileDetection() {
   }, []);
 
   useEffect(() => {
-    function handleOrientationChange() { setTimeout(check, ORIENTATION_CHANGE_DEBOUNCE_MS); }
+    function handleOrientationChange() {
+      setTimeout(check, ORIENTATION_CHANGE_DEBOUNCE_MS);
+    }
 
     check(); // eslint-disable-line react-hooks/set-state-in-effect
     window.addEventListener("resize", check);
@@ -154,7 +79,9 @@ export function useVirtualResolution(selectedResolution: ResolutionOption, bypas
   const [viewportSize, setViewportSize] = useState(() => ({ width: window.innerWidth, height: window.innerHeight }));
 
   useEffect(() => {
-    function handleResize() { setViewportSize({ width: window.innerWidth, height: window.innerHeight }); }
+    function handleResize() {
+      setViewportSize({ width: window.innerWidth, height: window.innerHeight });
+    }
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
@@ -189,6 +116,13 @@ export function useVirtualResolution(selectedResolution: ResolutionOption, bypas
 
   return {
     frameStyle: { width: `${frameWidth}px`, height: `${frameHeight}px` },
-    stageStyle: { width: `${stageWidth}px`, height: `${stageHeight}px`, transform: `scale(${scale})`, transformOrigin: "top left", left: 0, top: 0 },
+    stageStyle: {
+      width: `${stageWidth}px`,
+      height: `${stageHeight}px`,
+      transform: `scale(${scale})`,
+      transformOrigin: "top left",
+      left: 0,
+      top: 0,
+    },
   };
 }

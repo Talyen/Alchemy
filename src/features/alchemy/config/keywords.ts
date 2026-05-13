@@ -10,7 +10,6 @@ export const keywordAliases: Array<{ match: string; keywordId: KeywordId }> = [
   { match: "Armor", keywordId: "armor" }, { match: "Health", keywordId: "health" },
   { match: "Burn", keywordId: "burn" }, { match: "Gold", keywordId: "gold" },
   { match: "Holy", keywordId: "holy" }, { match: "Wish", keywordId: "wish" },
-  { match: "Ailment", keywordId: "ailment" }, { match: "Ailments", keywordId: "ailment" },
   { match: "Consume", keywordId: "consume" }, { match: "Poison", keywordId: "poison" },
   { match: "Bleed", keywordId: "bleed" }, { match: "Leech", keywordId: "leech" },
   { match: "Freeze", keywordId: "freeze" }, { match: "Mana Crystal", keywordId: "mana" },

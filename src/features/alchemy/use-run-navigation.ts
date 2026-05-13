@@ -3,7 +3,7 @@
 // Used by the top-level alchemy controller to keep screen changes and run mutations synchronized.
 import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import { createBattleState, isPlayerDefeated, maxPlayerHealth } from "@/lib/battle";
-import { cardLibrary, characters, starterDeck, type BattleCard, type CharacterId } from "@/lib/game-data";
+import { cardLibrary, getStartingDeck, type BattleCard, type CharacterId } from "@/lib/game-data";
 import { playVictory, playDefeat, playGoldGain } from "@/lib/audio";
 import { appendUnique, appendUniqueMany, pickRandom } from "@/lib/utils";
 import { DESTINATIONS, type Destination, type Screen } from "./types";
@@ -69,6 +69,7 @@ export function useRunNavigation({
   const [runEndMaterials, setRunEndMaterials] = useState<MaterialInventory>({ wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 });
 
   const destinationButtonRefs = useRef<Partial<Record<Destination, HTMLButtonElement | null>>>({});
+  const battleVictoryHandledRef = useRef(false);
 
   const currentActiveRunData = useMemo(() => ({
     characterId: run.characterId,
@@ -103,11 +104,17 @@ export function useRunNavigation({
   }, [battleState, screen]);
 
   useEffect(() => {
-    if (screen !== "battle" || battleState.enemyHealth > 0) return;
+    if (screen === "battle" && hasActiveBattle && battleState.enemyHealth > 0) battleVictoryHandledRef.current = false;
+  }, [battleState.enemyHealth, hasActiveBattle, screen]);
+
+  useEffect(() => {
+    if (screen !== "battle" || !hasActiveBattle || battleState.enemyHealth > 0) return;
     if (isPlayerDefeated(battleState)) return;
+    if (battleVictoryHandledRef.current) return;
+    battleVictoryHandledRef.current = true;
     const transitionTimer = handleBattleVictoryEvent();
     return () => clearTimeout(transitionTimer);
-  }, [battleState, screen]);
+  }, [battleState, hasActiveBattle, screen]);
 
   function handleBattleDefeat() {
     awardRunEndMaterials();
@@ -191,8 +198,7 @@ export function useRunNavigation({
   function handleCharacterSelect(selectedId: CharacterId) {
     // Fresh-run fields are initialized together so deck, HP, gold bonuses, route state,
     // discoveries, and active-run flags cannot describe different runs for one render.
-    const character = characters[selectedId];
-    const freshDeck = [...character.startingDeck];
+    const freshDeck = getStartingDeck(selectedId);
     run.setCharacter(selectedId);
     run.setRunDeck(freshDeck);
     const homesteadGoldBonus = homesteadEffectsRef.current.startGold;
@@ -356,7 +362,7 @@ export function useRunNavigation({
   function resetRunState() {
     // Reset must clear combat animation state, battle/run/talent session state, reward
     // and mystery UI, active flags, and routing together to avoid resuming stale runs.
-    clearCardGhosts(); setBattleState(createBattleState(starterDeck, 0));
+    clearCardGhosts(); setBattleState(createBattleState(getStartingDeck(run.characterId), 0));
     run.reset(); talents.resetRunXP();
     setRewardState(createEmptyRewardState());
     setMysteryCardChoices(null); setHoveredCardId(null); setHasActiveBattle(false); setHasActiveRun(false); navigateTo("menu");

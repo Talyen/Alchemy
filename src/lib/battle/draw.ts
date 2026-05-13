@@ -1,7 +1,7 @@
 // Deck drawing and battle-state creation for new encounters.
 // Depends on game data, combat constants, talent manifests, and trinket manifests.
 // Used by turn logic and battle controllers whenever cards or fresh battles are needed.
-import { createEmptyTalentManifest, enemyBestiary, starterDeck, type BattleCard, type BestiaryEntry, type EnemyAttackEffect } from "@/lib/game-data";
+import { createEmptyTalentManifest, enemyBestiary, type BattleCard, type BestiaryEntry, type EnemyAttackEffect } from "@/lib/game-data";
 
 import {
   baseEnemyHealth,
@@ -93,7 +93,7 @@ function buildScaledEnemy(enemy: BestiaryEntry, destinationIndexInAct = 0, curre
 // 1.8x multiplier. `roomsEncountered` tracks total rooms across all acts for
 // talent bonuses.
 export function createBattleState(
-  runDeck: BattleCard[] = starterDeck,
+  runDeck: BattleCard[],
   gold = 0,
   _roomsEncountered = 0,
   currentEnemy?: BestiaryEntry,
@@ -161,7 +161,7 @@ export function createBattleState(
       goldOnFirstPoisonThisCombat: false,
       firstHolyDamageBonusUsed: false,
       firstBurnTrinketDoubledUsed: false,
-      firstAilmentPrevented: false,
+      firstHarmfulStatusPrevented: false,
       firstPotionFreeUsed: false,
       boneCharmUsed: false,
       resonantChimeUsedThisTurn: false,

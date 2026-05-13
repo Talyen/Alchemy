@@ -1,8 +1,8 @@
 // Transient per-run React state restored from active save data or initialized from defaults.
-// Depends on starter game data, battle health defaults, and destination/run type shapes.
+// Depends on character game data, battle health defaults, and destination/run type shapes.
 // Used by controllers; battle, shop, and navigation rules intentionally live elsewhere.
 import { useState } from "react";
-import { starterDeck, type BattleCard, type CharacterId } from "@/lib/game-data";
+import { getStartingDeck, type BattleCard, type CharacterId } from "@/lib/game-data";
 import { maxPlayerHealth } from "@/lib/battle";
 import type { Destination } from "./types";
 
@@ -32,11 +32,12 @@ type RunState = {
   runTrinkets: string[];
 };
 
-function createInitialRunState(initialActiveRun: ActiveRunData | null): RunState {
+function createInitialRunState(initialActiveRun: ActiveRunData | null, fallbackCharacterId: CharacterId = "knight"): RunState {
   // Hydration copies mutable arrays so the active run store is independent of save data.
+  const characterId = initialActiveRun?.characterId ?? fallbackCharacterId;
   return {
-    characterId: initialActiveRun?.characterId ?? "knight",
-    runDeck: initialActiveRun ? [...initialActiveRun.runDeck] : [...starterDeck],
+    characterId,
+    runDeck: initialActiveRun ? [...initialActiveRun.runDeck] : getStartingDeck(characterId),
     runGold: initialActiveRun?.runGold ?? 0,
     runPlayerHealth: initialActiveRun?.runPlayerHealth ?? maxPlayerHealth,
     runMaxHealth: initialActiveRun?.runMaxHealth ?? maxPlayerHealth,
@@ -67,7 +68,7 @@ export function useRunState(initialActiveRun: ActiveRunData | null) {
   }
 
   function reset() {
-    setState((prev) => ({ ...createInitialRunState(null), characterId: prev.characterId }));
+    setState((prev) => createInitialRunState(null, prev.characterId));
   }
 
   return {

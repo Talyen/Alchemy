@@ -64,8 +64,8 @@ export const talentPool: TalentDefinition[] = [
   // --- Block ---
   { id: "block-start", keywordId: "block", description: "Start combat with 10 Block", effects: [setEffect("startBlock", 10)] },
   { id: "block-to-physical", keywordId: "block", description: "Increase Physical damage by half your Block", effects: [setEffect("blockToPhysicalDamage", true)] },
-  { id: "block-prevent-bleed", keywordId: "block", description: "Block prevents receiving Bleed Ailments", effects: [setEffect("blockPreventsBleed", true)] },
-  { id: "block-prevent-poison", keywordId: "block", description: "Block prevents receiving Poison Ailments", effects: [setEffect("blockPreventsPoison", true)] },
+  { id: "block-prevent-bleed", keywordId: "block", description: "Block prevents receiving Bleed status effects", effects: [setEffect("blockPreventsBleed", true)] },
+  { id: "block-prevent-poison", keywordId: "block", description: "Block prevents receiving Poison status effects", effects: [setEffect("blockPreventsPoison", true)] },
   { id: "block-prevent-stun", keywordId: "block", description: "Block prevents receiving Stun buildup", effects: [setEffect("blockPreventsStun", true)] },
   { id: "block-absorb-physical", keywordId: "block", description: "Block absorbs 20% more Physical damage", effects: [setEffect("blockAbsorbPhysicalBonus", 20)] },
   { id: "block-amount-1", keywordId: "block", description: "Placeholder talent (NYI)" },
@@ -86,7 +86,7 @@ export const talentPool: TalentDefinition[] = [
   { id: "forge-strength-6", keywordId: "forge", description: "Placeholder talent (NYI)" },
 
   // --- Armor ---
-  { id: "armor-ailment-reduce", keywordId: "armor", description: "Armor now mitigates Burn damage taken", effects: [setEffect("armorMitigatesBurn", true)] },
+  { id: "armor-burn-mitigate", keywordId: "armor", description: "Armor now mitigates Burn damage taken", effects: [setEffect("armorMitigatesBurn", true)] },
   { id: "armor-block-burst", keywordId: "armor", description: "Upon reaching 4 Armor, gain 8 Block", effects: [setEffect("armorBlockThreshold", 4), setEffect("armorBlockAmount", 8)] },
   { id: "armor-desperate-double", keywordId: "armor", description: "Armor gained is doubled when Health is below 50%", effects: [setEffect("armorDoubledBelowHalfHealth", true)] },
   { id: "armor-first-double", keywordId: "armor", description: "Your first Armor card each combat is doubled", effects: [setEffect("firstArmorCardDoubled", true)] },
@@ -149,7 +149,7 @@ export const talentPool: TalentDefinition[] = [
   { id: "wish-gold", keywordId: "wish", description: "Gain 2 Gold when you Wish", effects: [setEffect("goldOnWishAmount", 2)] },
   { id: "wish-undiscovered", keywordId: "wish", description: "Wish can offer cards not yet in your collection", effects: [setEffect("wishUndiscoveredCards", true)] },
   { id: "wish-health", keywordId: "wish", description: "Gain 2 Health when you Wish", effects: [setEffect("healthOnWish", 2)] },
-  { id: "wish-cleanse", keywordId: "wish", description: "Remove an Ailment when you Wish", effects: [setEffect("removeAilmentOnWish", true)] },
+  { id: "wish-cleanse", keywordId: "wish", description: "Remove a harmful status effect when you Wish", effects: [setEffect("removeHarmfulStatusOnWish", true)] },
   { id: "wish-extra-choice", keywordId: "wish", description: "Wish has a 20% chance to offer an extra card choice", effects: [setEffect("wishExtraChoiceChance", 20)] },
   { id: "wish-draw", keywordId: "wish", description: "Wish also draws a card", effects: [setEffect("wishDrawsCard", true)] },
   { id: "wish-choice-1", keywordId: "wish", description: "Placeholder talent (NYI)" },
@@ -182,17 +182,6 @@ export const talentPool: TalentDefinition[] = [
   { id: "bleed-dmg-2", keywordId: "bleed", description: "Placeholder talent (NYI)" },
 
   // --- Other keywords (placeholders retained for grid completeness) ---
-  { id: "ailment-duration-1", keywordId: "ailment", description: "Placeholder talent (NYI)" },
-  { id: "ailment-duration-2", keywordId: "ailment", description: "Placeholder talent (NYI)" },
-  { id: "ailment-duration-3", keywordId: "ailment", description: "Placeholder talent (NYI)" },
-  { id: "ailment-duration-4", keywordId: "ailment", description: "Placeholder talent (NYI)" },
-  { id: "ailment-duration-5", keywordId: "ailment", description: "Placeholder talent (NYI)" },
-  { id: "ailment-duration-6", keywordId: "ailment", description: "Placeholder talent (NYI)" },
-  { id: "ailment-duration-7", keywordId: "ailment", description: "Placeholder talent (NYI)" },
-  { id: "ailment-duration-8", keywordId: "ailment", description: "Placeholder talent (NYI)" },
-  { id: "ailment-duration-9", keywordId: "ailment", description: "Placeholder talent (NYI)" },
-  { id: "ailment-duration-10", keywordId: "ailment", description: "Placeholder talent (NYI)" },
-
   { id: "consume-draw-1", keywordId: "consume", description: "Placeholder talent (NYI)" },
   { id: "consume-draw-2", keywordId: "consume", description: "Placeholder talent (NYI)" },
   { id: "consume-draw-3", keywordId: "consume", description: "Placeholder talent (NYI)" },
@@ -359,7 +348,7 @@ export function createEmptyTalentManifest(): TalentEffectManifest {
     goldOnWishAmount: 0,
     wishUndiscoveredCards: false,
     healthOnWish: 0,
-    removeAilmentOnWish: false,
+    removeHarmfulStatusOnWish: false,
     wishExtraChoiceChance: 0,
     wishDrawsCard: false,
 

@@ -292,7 +292,7 @@ describe("mergeIntoManifest", () => {
     goldOnWishAmount: 0,
     wishUndiscoveredCards: false,
     healthOnWish: 0,
-    removeAilmentOnWish: false,
+    removeHarmfulStatusOnWish: false,
     wishExtraChoiceChance: 0,
     wishDrawsCard: false,
     firstPoisonCardFree: false,

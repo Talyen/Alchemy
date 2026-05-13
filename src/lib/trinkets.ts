@@ -14,7 +14,7 @@ export const defaultTrinketEffects: TrinketManifest = {
   blockToArmorThreshold: 0,
   blockToArmorAmount: 0,
   runicQuillDrawOnConsume: 0,
-  sinEaterGoldOnAilmentRemove: 0,
+  sinEaterGoldOnHarmfulStatusRemove: 0,
   vanguardCrestForgeOnBlockAbsorb: 0,
   parasiticBloomHealPerPoisonTick: 0,
   cutpurseGoldOnBleed: 0,
@@ -61,7 +61,7 @@ export function computeTrinketManifest(trinketIds: string[]): TrinketManifest {
         manifest.runicQuillDrawOnConsume = 1;
         break;
       case "sin-eaters-lantern":
-        manifest.sinEaterGoldOnAilmentRemove = 1;
+        manifest.sinEaterGoldOnHarmfulStatusRemove = 1;
         break;
       case "vanguards-crest":
         manifest.vanguardCrestForgeOnBlockAbsorb = 1;

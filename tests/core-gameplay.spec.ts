@@ -225,7 +225,7 @@ test.describe("Full Run Flow", () => {
     await page.getByRole("button", { name: "End Run" }).click();
 
     await expect(page.getByRole("heading", { name: "Defeat" })).toBeVisible({ timeout: 5000 });
-    await expect(page.getByText("Talent Progress This Run")).toBeVisible();
+    await expect(page.getByText("Talents")).toBeVisible();
 
     await page.getByRole("button", { name: "Return to Main Menu" }).click();
     await expect(page.getByRole("button", { name: "Play" })).toBeVisible();
@@ -295,7 +295,7 @@ test.describe("Talents", () => {
     await page.goto("/");
     await page.getByRole("button", { name: "Talents" }).click();
 
-    const keywords = ["Physical", "Stun", "Block", "Forge", "Armor", "Health", "Burn", "Gold", "Holy", "Wish", "Ailment", "Poison", "Bleed", "Leech", "Freeze", "Mana"];
+    const keywords = ["Physical", "Stun", "Block", "Forge", "Armor", "Health", "Burn", "Gold", "Holy", "Wish", "Poison", "Bleed", "Leech", "Freeze", "Mana"];
     for (const kw of keywords) {
       await expect(page.getByRole("button", { name: kw })).toBeVisible();
     }

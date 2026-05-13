@@ -84,3 +84,12 @@ export const characters: Record<CharacterId, CharacterDefinition> = {
     keywords: ["nature", "companion", "trap"],
   },
 };
+
+// Starting decks are cloned for each run so run mutations never alter static character data.
+export function getStartingDeck(characterId: CharacterId): BattleCard[] {
+  return [...characters[characterId].startingDeck];
+}
+
+export const allStartingDeckCardIds = Array.from(
+  new Set(Object.values(characters).flatMap((character) => character.startingDeck.map((card) => card.id))),
+);

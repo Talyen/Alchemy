@@ -9,7 +9,6 @@ export type KeywordId =
   | "gold"
   | "holy"
   | "wish"
-  | "ailment"
   | "consume"
   | "poison"
   | "bleed"
@@ -51,7 +50,7 @@ export type BattleCardEffect =
   | { kind: "gain-gold"; amount: number }
   | { kind: "wish"; amount: number }
   | { kind: "summon-companion"; companionId: CompanionId }
-  | { kind: "remove-ailment"; amount: number };
+  | { kind: "remove-harmful-status"; amount: number };
 
 export type CompanionDefinition = {
   id: CompanionId;
@@ -181,7 +180,7 @@ export type TalentEffectManifest = {
   goldOnWishAmount: number;
   wishUndiscoveredCards: boolean;
   healthOnWish: number;
-  removeAilmentOnWish: boolean;
+  removeHarmfulStatusOnWish: boolean;
   wishExtraChoiceChance: number;
   wishDrawsCard: boolean;
 
@@ -206,4 +205,4 @@ export type TalentEffectManifest = {
   bleedPoisonChance: number;
 };
 
-export const ailmentStatusIds: PlayerStatusId[] = ["burn", "poison", "bleed", "freeze", "stun"];
+export const harmfulPlayerStatusIds: PlayerStatusId[] = ["burn", "poison", "bleed", "freeze", "stun"];

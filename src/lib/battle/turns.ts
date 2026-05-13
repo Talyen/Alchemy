@@ -3,7 +3,7 @@
 // Used by the React battle controller as the only way to advance combat state.
 import { drawCards } from "./draw";
 import { applyBoneCharmHeal, applyCardEffects, applyIronwoodBuckler, getEnemyDamageMultiplier, mergeCombatText } from "./effects";
-import { ailmentStatusIds, type EnemyAttackEffect, type BattleCard } from "@/lib/game-data";
+import { harmfulPlayerStatusIds, type EnemyAttackEffect, type BattleCard } from "@/lib/game-data";
 import { applyPlayerCombatDamage, applyPlayerHealing, cardsPerTurn, clampHealth, maxHandSize, type BattleResolution, type BattleState, type CombatTextEvent, type TurnPhase } from "./types";
 import { ENEMY_HEAL_FRACTION, HALF_DIVISOR, PERCENT_DENOMINATOR, POTION_CARD_ID_FRAGMENT } from "../game-constants";
 
@@ -100,7 +100,7 @@ export function playBattleCardResolved(state: BattleState, cardId: string, index
 }
 
 // ----- Enemy DoT tick functions -----
-// Enemy ailments are split because each stack decays differently: burn halves or doubles,
+// Enemy harmful statuses are split because each stack decays differently: burn halves or doubles,
 // poison usually drains by one and can feed healing, and bleed is a one-shot delayed hit.
 
 function tickBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
@@ -165,11 +165,11 @@ function tickEnemyStatuses(state: BattleState, combatTexts: CombatTextEvent[]) {
 }
 
 // ----- Player DoT tick functions -----
-// Player-side ailments stay separate from enemy ticks because armor mitigation and
-// half-damage talents apply only here, while stun/freeze are damaging ailments, not turn skips.
+// Player-side harmful statuses stay separate from enemy ticks because armor mitigation and
+// half-damage talents apply only here, while stun/freeze are damaging statuses, not turn skips.
 
-function decayArmorAfterAilmentDamage(state: BattleState, damage: number) {
-  // Ailment hits chip armor once per damaging status, so each tick delegates that rule here.
+function decayArmorAfterHarmfulStatusDamage(state: BattleState, damage: number) {
+  // Harmful statuses chip armor once per damage tick, so each tick delegates that rule here.
   if (damage <= 0 || state.playerStatuses.armor <= 0) return state;
   return {
     ...state,
@@ -191,7 +191,7 @@ function tickPlayerBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
     mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "burn", amount: reducedDamage });
   }
   const nextState = { ...applyPlayerCombatDamage(state, reducedDamage), playerStatuses: { ...state.playerStatuses, burn: Math.floor(state.playerStatuses.burn / HALF_DIVISOR) } };
-  return decayArmorAfterAilmentDamage(nextState, reducedDamage);
+  return decayArmorAfterHarmfulStatusDamage(nextState, reducedDamage);
 }
 
 function tickPlayerPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
@@ -203,7 +203,7 @@ function tickPlayerPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
   }
   const nextPoison = Math.max(0, state.playerStatuses.poison - 1);
   const nextState = { ...applyPlayerCombatDamage(state, reducedDamage), playerStatuses: { ...state.playerStatuses, poison: nextPoison } };
-  return decayArmorAfterAilmentDamage(nextState, reducedDamage);
+  return decayArmorAfterHarmfulStatusDamage(nextState, reducedDamage);
 }
 
 function tickPlayerBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
@@ -211,7 +211,7 @@ function tickPlayerBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
   if (damage <= 0) return state;
   mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "bleed", amount: damage });
   const nextState = { ...applyPlayerCombatDamage(state, damage), playerStatuses: { ...state.playerStatuses, bleed: 0 } };
-  return decayArmorAfterAilmentDamage(nextState, damage);
+  return decayArmorAfterHarmfulStatusDamage(nextState, damage);
 }
 
 function tickPlayerStun(state: BattleState, combatTexts: CombatTextEvent[]) {
@@ -219,7 +219,7 @@ function tickPlayerStun(state: BattleState, combatTexts: CombatTextEvent[]) {
   if (damage <= 0) return state;
   mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "stun", amount: damage });
   const nextState = { ...applyPlayerCombatDamage(state, damage), playerStatuses: { ...state.playerStatuses, stun: 0 } };
-  return decayArmorAfterAilmentDamage(nextState, damage);
+  return decayArmorAfterHarmfulStatusDamage(nextState, damage);
 }
 
 function tickPlayerFreeze(state: BattleState, combatTexts: CombatTextEvent[]) {
@@ -227,11 +227,11 @@ function tickPlayerFreeze(state: BattleState, combatTexts: CombatTextEvent[]) {
   if (damage <= 0) return state;
   mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "freeze", amount: damage });
   const nextState = { ...applyPlayerCombatDamage(state, damage), playerStatuses: { ...state.playerStatuses, freeze: 0 } };
-  return decayArmorAfterAilmentDamage(nextState, damage);
+  return decayArmorAfterHarmfulStatusDamage(nextState, damage);
 }
 
 function tickPlayerStatuses(state: BattleState, combatTexts: CombatTextEvent[]) {
-  // This fixed order keeps simultaneous ailments deterministic for combat text merging
+  // This fixed order keeps simultaneous harmful statuses deterministic for combat text merging
   // and for edge cases where the player dies during end-of-turn cleanup.
   let nextState = tickPlayerBurn(state, combatTexts);
   nextState = tickPlayerPoison(nextState, combatTexts);
@@ -425,7 +425,7 @@ function processEnemyDamageEffect(state: BattleState, effect: EnemyAttackEffect 
 }
 
 // Enemy attacks resolve effect-by-effect so multi-part attacks can spend block, have
-// status riders prevented by remaining block, and consume first-ailment immunity once.
+// status riders prevented by remaining block, and consume first-harmful-status immunity once.
 function processEnemyAttack(state: BattleState, combatTexts: CombatTextEvent[]) {
   let nextState = state;
 
@@ -442,9 +442,9 @@ function processEnemyAttack(state: BattleState, combatTexts: CombatTextEvent[]) 
         if (status === "stun" && state.talentEffects.blockPreventsStun) continue;
       }
 
-      // Plague Doctor's Mask trinket: immune to first ailment each battle
-      if (ailmentStatusIds.includes(status) && nextState.trinketEffects.plagueDoctorImmunity && !nextState.flags.firstAilmentPrevented) {
-        nextState = { ...nextState, flags: { ...nextState.flags, firstAilmentPrevented: true } };
+      // Plague Doctor's Mask trinket: immune to first harmful status each battle.
+      if (harmfulPlayerStatusIds.includes(status) && nextState.trinketEffects.plagueDoctorImmunity && !nextState.flags.firstHarmfulStatusPrevented) {
+        nextState = { ...nextState, flags: { ...nextState.flags, firstHarmfulStatusPrevented: true } };
         continue;
       }
 
@@ -488,7 +488,7 @@ function resolveDeathsDoorEndOfEnemyTurn(state: BattleState): BattleState {
 }
 
 // Canonical enemy-phase pipeline: discard hand, handle haste/skips, heal, enemy DoTs,
-// enemy attack, player ailments, regeneration, trinket cleanup, then return to player.
+// enemy attack, player harmful statuses, regeneration, trinket cleanup, then return to player.
 // Keeping this order centralized prevents UI timing from changing combat outcomes.
 export function endPlayerTurn(state: BattleState): { state: BattleState; combatTexts: CombatTextEvent[] } {
   const combatTexts: CombatTextEvent[] = [];
@@ -501,7 +501,7 @@ export function endPlayerTurn(state: BattleState): { state: BattleState; combatT
   };
 
   // Haste gives the player an extra turn immediately, skipping the enemy phase.
-  // Player status ticks still apply so haste doesn't freeze ailments.
+  // Player status ticks still apply so haste doesn't freeze harmful statuses.
   if (state.playerStatuses.haste > 0) {
     nextState = { ...nextState, playerStatuses: { ...nextState.playerStatuses, haste: nextState.playerStatuses.haste - 1 } };
     nextState = tickPlayerStatuses(nextState, combatTexts);
@@ -514,7 +514,7 @@ export function endPlayerTurn(state: BattleState): { state: BattleState; combatT
     nextState = reduceSkipTurns(nextState);
     mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "stun", amount: 0 });
 
-    // Player status ticks still apply during skipped enemy turns so ailments
+    // Player status ticks still apply during skipped enemy turns so harmful statuses
     // don't pause when the enemy can't act.
     nextState = tickPlayerStatuses(nextState, combatTexts);
 

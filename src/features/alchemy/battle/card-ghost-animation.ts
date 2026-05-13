@@ -1,11 +1,13 @@
 // Visual helper utilities for card ghost animation and battle-stage coordinate conversion.
 // Depends on card targeting utilities, ghost types, battle cards, and animation constants.
 // Used by the battle controller so animation math stays outside pure combat logic.
-import { getBattleCardPlayTarget, getCardRect } from "./utils";
-import type { CardGhost, CardRect } from "./types";
-import type { BattleCard } from "@/lib/game-data";
 import { GHOST_TRAVEL_SCALE } from "@/lib/game-constants";
+import type { BattleCard } from "@/lib/game-data";
 
+import type { CardGhost, CardRect } from "../types";
+import { getBattleCardPlayTarget, getCardRect } from "../utils";
+
+// Sends a card ghost from the hand toward its actor target without mutating combat state.
 export function animateCardActivation(
   card: BattleCard,
   rect: CardRect,
@@ -49,9 +51,16 @@ function getCardPlayGhostTargetRect(
   // Player-targeted cards are offset slightly left to keep the ghost readable next to the
   // hero card; missing panel refs still get a stable center-stage endpoint.
   const target = getBattleCardPlayTarget(card);
-  const panelRect = target === "player" ? playerPanelRef.current?.getBoundingClientRect() : target === "enemy" ? enemyPanelRef.current?.getBoundingClientRect() : null;
+  const panelRect =
+    target === "player"
+      ? playerPanelRef.current?.getBoundingClientRect()
+      : target === "enemy"
+        ? enemyPanelRef.current?.getBoundingClientRect()
+        : null;
   if (panelRect) {
-    const panelTarget = sceneRect ? viewportRectToBattleSceneRect(getCardRect(panelRect), sceneRect) : getCardRect(panelRect);
+    const panelTarget = sceneRect
+      ? viewportRectToBattleSceneRect(getCardRect(panelRect), sceneRect)
+      : getCardRect(panelRect);
 
     if (target === "player") {
       return {
@@ -66,7 +75,12 @@ function getCardPlayGhostTargetRect(
   const battleRect = battleSceneRef.current?.getBoundingClientRect();
   if (!battleRect) return null;
 
-  const fallback = { x: battleRect.left + battleRect.width / 2 - 80, y: battleRect.top + battleRect.height * 0.3, width: 160, height: 220 };
+  const fallback = {
+    x: battleRect.left + battleRect.width / 2 - 80,
+    y: battleRect.top + battleRect.height * 0.3,
+    width: 160,
+    height: 220,
+  };
   return sceneRect ? viewportRectToBattleSceneRect(fallback, sceneRect) : fallback;
 }
 

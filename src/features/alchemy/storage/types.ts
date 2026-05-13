@@ -1,6 +1,6 @@
 // Save-data types and defaults for settings, collection, run, talents, and homestead state.
-// Depends on starter game data plus talent, homestead, run, and option type contracts.
-import { starterDeck } from "@/lib/game-data";
+// Depends on character game data plus talent, homestead, run, and option type contracts.
+import { allStartingDeckCardIds } from "@/lib/game-data";
 import type { TalentXP } from "@/lib/talents";
 import { emptyInventory, type BuildingId, type FarmId, type MaterialInventory, type ResearchId } from "@/lib/homestead/types";
 
@@ -36,7 +36,7 @@ export const defaultSaveData: SaveData = {
   selectedResolution: "1920x1080",
   displayMode: "borderless-fullscreen",
   uiScale: "100",
-  discoveredCardIds: starterDeck.map((card) => card.id),
+  discoveredCardIds: [...allStartingDeckCardIds],
   encounteredEnemyIds: [],
   discoveredTrinketIds: [],
   talentXP: {},

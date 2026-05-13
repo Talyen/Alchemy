@@ -35,12 +35,12 @@ function panaceaPotionCard(): BattleCard {
   return {
     id: "panacea-potion",
     title: "Panacea Potion",
-    descriptionLines: ["Remove 1 Ailment", "Consume"],
+    descriptionLines: ["Remove 1 harmful status effect", "Consume"],
     art: "panacea-potion-art",
     cost: 1,
     template: "alchemy",
     consume: true,
-    effects: [{ kind: "remove-ailment", amount: 1 }],
+    effects: [{ kind: "remove-harmful-status", amount: 1 }],
   };
 }
 
@@ -68,18 +68,18 @@ describe("createMixedPotion", () => {
       expect(mixed.descriptionLines).toContain("Restore 16 Health");
     });
 
-    it("doubles remove-ailment amount for two Panacea Potions", () => {
+    it("doubles remove-harmful-status amount for two Panacea Potions", () => {
       const mixed = createMixedPotion(panaceaPotionCard(), panaceaPotionCard());
 
       expect(mixed.effects).toHaveLength(1);
-      expect(mixed.effects[0].kind).toBe("remove-ailment");
-      expect((mixed.effects[0] as { kind: "remove-ailment"; amount: number }).amount).toBe(2);
+      expect(mixed.effects[0].kind).toBe("remove-harmful-status");
+      expect((mixed.effects[0] as { kind: "remove-harmful-status"; amount: number }).amount).toBe(2);
     });
 
-    it("doubles numbers in remove-ailment description", () => {
+    it("doubles numbers in remove-harmful-status description", () => {
       const mixed = createMixedPotion(panaceaPotionCard(), panaceaPotionCard());
 
-      expect(mixed.descriptionLines).toContain("Remove 2 Ailment");
+      expect(mixed.descriptionLines).toContain("Remove 2 harmful status effect");
     });
   });
 

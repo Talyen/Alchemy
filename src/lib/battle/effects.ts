@@ -1,7 +1,7 @@
 // Card-effect resolver for battle: damage, status, healing, wish, companions, and rewards.
 // Depends on immutable battle state, draw helpers, game data, and combat constants.
 // Called by turn sequencing and companion logic whenever a card-like effect resolves.
-import { ailmentStatusIds, cardLibrary, companionLibrary, type BattleCard, type BattleCardEffect } from "@/lib/game-data";
+import { cardLibrary, companionLibrary, harmfulPlayerStatusIds, type BattleCard, type BattleCardEffect } from "@/lib/game-data";
 import { drawCards, shuffleCards } from "./draw";
 
 import {
@@ -359,13 +359,13 @@ function dealEnemyDamage(
   return nextState;
 }
 
-// Ailment removal is deterministic by ailmentStatusIds order, not random. That makes
+// Harmful status removal is deterministic by harmfulPlayerStatusIds order, not random. That makes
 // save/replay behavior predictable and lets trinket rewards attach to exactly one removal.
-function removePlayerAilments(state: BattleState, amount: number, combatTexts?: CombatTextEvent[]) {
+function removeHarmfulPlayerStatuses(state: BattleState, amount: number, combatTexts?: CombatTextEvent[]) {
   const nextPlayerStatuses = { ...state.playerStatuses };
   let removed = 0;
 
-  for (const statusId of ailmentStatusIds) {
+  for (const statusId of harmfulPlayerStatusIds) {
     if (removed >= amount) break;
     if (nextPlayerStatuses[statusId] > 0) {
       nextPlayerStatuses[statusId] = 0;
@@ -378,14 +378,14 @@ function removePlayerAilments(state: BattleState, amount: number, combatTexts?: 
     playerStatuses: nextPlayerStatuses,
   };
 
-  // Sin-Eater's Lantern: gain gold when removing an ailment
-  if (removed && nextState.trinketEffects.sinEaterGoldOnAilmentRemove > 0) {
+  // Sin-Eater's Lantern: gain gold when removing a harmful status.
+  if (removed && nextState.trinketEffects.sinEaterGoldOnHarmfulStatusRemove > 0) {
     nextState = {
       ...nextState,
-      gold: nextState.gold + nextState.trinketEffects.sinEaterGoldOnAilmentRemove,
+      gold: nextState.gold + nextState.trinketEffects.sinEaterGoldOnHarmfulStatusRemove,
     };
     if (combatTexts) {
-      mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "gold", amount: nextState.trinketEffects.sinEaterGoldOnAilmentRemove });
+      mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "gold", amount: nextState.trinketEffects.sinEaterGoldOnHarmfulStatusRemove });
     }
   }
 
@@ -485,8 +485,8 @@ function applyWishEffect(state: BattleState, card: BattleCard, combatTexts: Comb
     nextState = applyPlayerHealing(nextState, nextState.talentEffects.healthOnWish);
     mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: nextState.talentEffects.healthOnWish });
   }
-  if (nextState.talentEffects.removeAilmentOnWish) {
-    nextState = removePlayerAilments(nextState, 1, combatTexts);
+  if (nextState.talentEffects.removeHarmfulStatusOnWish) {
+    nextState = removeHarmfulPlayerStatuses(nextState, 1, combatTexts);
   }
   if (nextState.talentEffects.wishDrawsCard) {
     const draw = drawCards(nextState.deck, nextState.discard, nextState.hand, 1, nextState.nextCardUid);
@@ -562,8 +562,8 @@ export function applyCardEffects(state: BattleState, card: BattleCard, combatTex
         return applyWishEffect(currentState, card, combatTexts);
       case "summon-companion":
         return { ...currentState, activeCompanion: companionLibrary[effect.companionId] };
-      case "remove-ailment":
-        return removePlayerAilments(currentState, effect.amount, combatTexts);
+      case "remove-harmful-status":
+        return removeHarmfulPlayerStatuses(currentState, effect.amount, combatTexts);
       default:
         return currentState;
     }

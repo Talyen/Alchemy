@@ -16,7 +16,7 @@ const defaultFlags: CombatFlags = {
   goldOnFirstPoisonThisCombat: false,
   firstHolyDamageBonusUsed: false,
   firstBurnTrinketDoubledUsed: false,
-  firstAilmentPrevented: false,
+  firstHarmfulStatusPrevented: false,
   firstPotionFreeUsed: false,
   boneCharmUsed: false,
   resonantChimeUsedThisTurn: false,

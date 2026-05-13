@@ -69,8 +69,7 @@ export function extractCardKeywords(card: BattleCard): KeywordId[] {
       case "lose-max-mana":
         keywords.add("mana");
         break;
-      case "remove-ailment":
-        keywords.add("ailment");
+      case "remove-harmful-status":
         break;
     }
   }

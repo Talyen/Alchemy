@@ -20,7 +20,7 @@ function makeState(): BattleState {
       firstPhysicalCardFreeUsed: false, firstHolyCardFreeUsed: false, firstBurnCardDoubledUsed: false,
       firstArmorCardDoubledUsed: false, firstPoisonCardFreeUsed: false, firstBleedCardFreeUsed: false,
       nextCardCostReduction: 0, goldOnFirstPoisonThisCombat: false, firstHolyDamageBonusUsed: false,
-      firstBurnTrinketDoubledUsed: false, firstAilmentPrevented: false, firstPotionFreeUsed: false,
+      firstBurnTrinketDoubledUsed: false, firstHarmfulStatusPrevented: false, firstPotionFreeUsed: false,
       boneCharmUsed: false, resonantChimeUsedThisTurn: false,
     },
     discoveredCardIds: [],

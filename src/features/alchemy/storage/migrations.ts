@@ -1,7 +1,6 @@
 // Save normalization and migration helpers for legacy or partial localStorage payloads.
 // Depends on current game data, battle health defaults, homestead IDs, and save defaults.
-import { characters, type BattleCard, type CharacterId } from "@/lib/game-data";
-import { maxPlayerHealth } from "@/lib/battle";
+import { getStartingDeck, type BattleCard, type CharacterId } from "@/lib/game-data";
 import type { TalentXP } from "@/lib/talents";
 import type { BuildingId, FarmId, MaterialInventory, ResearchId } from "@/lib/homestead/types";
 
@@ -10,9 +9,51 @@ import type { DisplayMode, UiScale } from "../types";
 import type { ActiveRunData } from "../use-run-state";
 import { defaultSaveData, type SaveData } from "./types";
 
+type PersistedRunCandidate = Record<string, unknown> & {
+  runDeck: unknown[];
+  runGold: number;
+  runPlayerHealth: number;
+  runMaxHealth: number;
+  roomsEncountered: number;
+  currentAct: number;
+  destinationIndexInAct: number;
+  completedDestinations: unknown[];
+  runTrinkets: unknown[];
+};
+
+const legacyStarterDeckIds = ["slash", "bash", "block", "anvil", "plate-mail", "apple", "meteor", "blessed-aegis"];
+
 // Character IDs are persisted, so renamed or invalid IDs need explicit guarding before hydration.
 function isValidCharacterId(id: string): id is CharacterId {
   return id === "knight" || id === "ranger" || id === "rogue" || id === "wizard";
+}
+
+// Active-run snapshots must include real run fields; a lone characterId is only a
+// default/legacy fragment and should not make the main menu offer Resume Run.
+function hasPersistedRunShape(candidate: Record<string, unknown>): candidate is PersistedRunCandidate {
+  return Array.isArray(candidate.runDeck)
+    && typeof candidate.runGold === "number"
+    && typeof candidate.runPlayerHealth === "number"
+    && typeof candidate.runMaxHealth === "number"
+    && typeof candidate.roomsEncountered === "number"
+    && typeof candidate.currentAct === "number"
+    && typeof candidate.destinationIndexInAct === "number"
+    && Array.isArray(candidate.completedDestinations)
+    && Array.isArray(candidate.runTrinkets);
+}
+
+// Deck comparison uses IDs because saves store card objects whose other fields may be stale.
+function deckIdsMatch(deck: unknown[], ids: string[]): boolean {
+  return deck.length === ids.length
+    && deck.every((card, index) => typeof card === "object" && card !== null && (card as BattleCard).id === ids[index]);
+}
+
+// Only unstarted active-run snapshots are safe to repair without deleting legitimate run progress.
+function isUnstartedRun(candidate: PersistedRunCandidate): boolean {
+  return candidate.roomsEncountered === 0
+    && candidate.currentAct === 1
+    && candidate.destinationIndexInAct === 0
+    && candidate.completedDestinations.length === 0;
 }
 
 // Active runs are sanitized before hydration because localStorage can contain stale
@@ -29,15 +70,21 @@ export function normalizeActiveRun(activeRun: unknown): ActiveRunData | null {
     return null;
   }
 
-  const runDeck = Array.isArray(candidate.runDeck) && candidate.runDeck.length > 0 ? candidate.runDeck as BattleCard[] : [...characters[characterId].startingDeck];
-  const runGold = typeof candidate.runGold === "number" ? candidate.runGold : 0;
-  const runPlayerHealth = typeof candidate.runPlayerHealth === "number" ? candidate.runPlayerHealth : maxPlayerHealth;
-  const runMaxHealth = typeof candidate.runMaxHealth === "number" ? candidate.runMaxHealth : maxPlayerHealth;
-  const roomsEncountered = typeof candidate.roomsEncountered === "number" ? candidate.roomsEncountered : 0;
-  const currentAct = typeof candidate.currentAct === "number" ? candidate.currentAct : 1;
-  const destinationIndexInAct = typeof candidate.destinationIndexInAct === "number" ? candidate.destinationIndexInAct : 0;
-  const completedDestinations = Array.isArray(candidate.completedDestinations) ? candidate.completedDestinations as string[] : [];
-  const runTrinkets = Array.isArray(candidate.runTrinkets) ? candidate.runTrinkets as string[] : [];
+  if (!hasPersistedRunShape(candidate)) {
+    return null;
+  }
+
+  const shouldUseClassDeck = candidate.runDeck.length === 0
+    || (isUnstartedRun(candidate) && deckIdsMatch(candidate.runDeck, legacyStarterDeckIds));
+  const runDeck = shouldUseClassDeck ? getStartingDeck(characterId) : candidate.runDeck as BattleCard[];
+  const runGold = candidate.runGold;
+  const runPlayerHealth = candidate.runPlayerHealth;
+  const runMaxHealth = candidate.runMaxHealth;
+  const roomsEncountered = candidate.roomsEncountered;
+  const currentAct = candidate.currentAct;
+  const destinationIndexInAct = candidate.destinationIndexInAct;
+  const completedDestinations = candidate.completedDestinations as string[];
+  const runTrinkets = candidate.runTrinkets as string[];
 
   return {
     characterId,

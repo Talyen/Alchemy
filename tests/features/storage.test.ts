@@ -1,6 +1,22 @@
 import { describe, expect, it } from "vitest";
 import { normalizeActiveRun, normalizeSaveData, normalizeDisplayMode, normalizeUiScale, migrateMaterialInventory, migrateBuildingIds, migrateFarmIds } from "@/features/alchemy/storage";
 
+function activeRun(overrides: Record<string, unknown> = {}) {
+  return {
+    characterId: "knight",
+    runDeck: [],
+    runGold: 0,
+    runPlayerHealth: 30,
+    runMaxHealth: 30,
+    roomsEncountered: 0,
+    currentAct: 1,
+    destinationIndexInAct: 0,
+    completedDestinations: [],
+    runTrinkets: [],
+    ...overrides,
+  };
+}
+
 describe("normalizeActiveRun", () => {
   it("returns null for null input", () => {
     expect(normalizeActiveRun(null)).toBeNull();
@@ -16,37 +32,42 @@ describe("normalizeActiveRun", () => {
   });
 
   it("maps legacy sorcerer to wizard", () => {
-    const result = normalizeActiveRun({ characterId: "sorcerer" });
+    const result = normalizeActiveRun(activeRun({ characterId: "sorcerer" }));
     expect(result?.characterId).toBe("wizard");
   });
 
   it("maps legacy warden to ranger", () => {
-    const result = normalizeActiveRun({ characterId: "warden" });
+    const result = normalizeActiveRun(activeRun({ characterId: "warden" }));
     expect(result?.characterId).toBe("ranger");
   });
 
   it("passes through valid knight characterId", () => {
-    const result = normalizeActiveRun({ characterId: "knight" });
+    const result = normalizeActiveRun(activeRun({ characterId: "knight" }));
     expect(result?.characterId).toBe("knight");
   });
 
   it("passes through valid ranger characterId", () => {
-    const result = normalizeActiveRun({ characterId: "ranger" });
+    const result = normalizeActiveRun(activeRun({ characterId: "ranger" }));
     expect(result?.characterId).toBe("ranger");
   });
 
   it("passes through valid rogue characterId", () => {
-    const result = normalizeActiveRun({ characterId: "rogue" });
+    const result = normalizeActiveRun(activeRun({ characterId: "rogue" }));
     expect(result?.characterId).toBe("rogue");
   });
 
   it("passes through valid wizard characterId", () => {
-    const result = normalizeActiveRun({ characterId: "wizard" });
+    const result = normalizeActiveRun(activeRun({ characterId: "wizard" }));
     expect(result?.characterId).toBe("wizard");
   });
 
   it("returns null for unknown characterId", () => {
-    const result = normalizeActiveRun({ characterId: "bard" });
+    const result = normalizeActiveRun(activeRun({ characterId: "bard" }));
+    expect(result).toBeNull();
+  });
+
+  it("returns null for character-only fragments", () => {
+    const result = normalizeActiveRun({ characterId: "knight" });
     expect(result).toBeNull();
   });
 });
@@ -205,6 +226,11 @@ describe("normalizeSaveData", () => {
     expect(result.activeRun).toBeNull();
     expect(result.materialInventory).toEqual({ wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 });
     expect(result.constructedBuildings).toEqual([]);
+  });
+
+  it("ignores character-only active run fragments", () => {
+    const result = normalizeSaveData({ activeRun: { characterId: "knight" } as never });
+    expect(result.activeRun).toBeNull();
   });
 
   it("preserves valid partial data", () => {
