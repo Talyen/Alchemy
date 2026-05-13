@@ -175,18 +175,8 @@ function applyDamageStatuses(state: BattleState, effect: Extract<BattleCardEffec
     }
     case "stun": {
       nextStatuses.stun += actualDamage;
-      const threshold = STUN_THRESHOLD_FRACTION - nextState.talentEffects.stunThresholdReduction;
-      if (state.enemyHealth > 0 && nextStatuses.stun > state.enemyHealth * threshold) {
-        nextStatuses.stun = 0;
-        nextState = { ...nextState, enemyStatuses: nextStatuses, enemyStunSkipTurns: nextState.enemyStunSkipTurns + 1 + nextState.talentEffects.stunDurationExtension };
-        if (nextState.talentEffects.drawOnStun > 0) {
-          const draw = drawCards(nextState.deck, nextState.discard, nextState.hand, nextState.talentEffects.drawOnStun, nextState.nextCardUid);
-          nextState = { ...nextState, deck: draw.deck, discard: draw.discard, hand: draw.hand, nextCardUid: draw.nextCardUid };
-        }
-        if (nextState.talentEffects.nextCardFreeOnStun) {
-          nextState = { ...nextState, flags: { ...nextState.flags, nextCardCostReduction: FREE_CARD_SENTINEL } };
-        }
-      }
+      nextState = { ...nextState, enemyStatuses: nextStatuses };
+      nextState = resolveStunTrigger(nextState);
       break;
     }
     case "freeze": {
@@ -236,35 +226,36 @@ function applyFirstDamageModifiers(state: BattleState, effect: Extract<BattleCar
   return { state: nextState, rawDamage: nextDamage };
 }
 
+// Shared stun trigger: checks if accumulated stun exceeds threshold and resolves
+// the stun effect (reset stun, skip turns, draw, free card) when triggered.
+function resolveStunTrigger(state: BattleState) {
+  const threshold = STUN_THRESHOLD_FRACTION - state.talentEffects.stunThresholdReduction;
+  if (state.enemyHealth <= 0 || state.enemyStatuses.stun <= state.enemyHealth * threshold) return state;
+
+  let nextState = {
+    ...state,
+    enemyStatuses: { ...state.enemyStatuses, stun: 0 },
+    enemyStunSkipTurns: state.enemyStunSkipTurns + 1 + state.talentEffects.stunDurationExtension,
+  };
+  if (nextState.talentEffects.drawOnStun > 0) {
+    const draw = drawCards(nextState.deck, nextState.discard, nextState.hand, nextState.talentEffects.drawOnStun, nextState.nextCardUid);
+    nextState = { ...nextState, deck: draw.deck, discard: draw.discard, hand: draw.hand, nextCardUid: draw.nextCardUid };
+  }
+  if (nextState.talentEffects.nextCardFreeOnStun) {
+    nextState = { ...nextState, flags: { ...nextState.flags, nextCardCostReduction: FREE_CARD_SENTINEL } };
+  }
+  return nextState;
+}
+
 function applyForgeStunRider(state: BattleState, effect: Extract<BattleCardEffect, { kind: "damage" }>, combatTexts: CombatTextEvent[]) {
   // Obsidian Hammer converts a large forge stack into extra stun on physical hits.
   if (effect.damageType !== "physical" || state.trinketEffects.forgeStunThreshold <= 0 || state.playerStatuses.forge < state.trinketEffects.forgeStunThreshold) return state;
 
   const nextStun = state.enemyStatuses.stun + state.trinketEffects.forgeStunAmount;
-  const threshold = STUN_THRESHOLD_FRACTION - state.talentEffects.stunThresholdReduction;
-
   mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "stun", amount: state.trinketEffects.forgeStunAmount });
 
-  if (state.enemyHealth > 0 && nextStun > state.enemyHealth * threshold) {
-    let nextState = {
-      ...state,
-      enemyStatuses: { ...state.enemyStatuses, stun: 0 },
-      enemyStunSkipTurns: state.enemyStunSkipTurns + 1 + state.talentEffects.stunDurationExtension,
-    };
-    if (nextState.talentEffects.drawOnStun > 0) {
-      const draw = drawCards(nextState.deck, nextState.discard, nextState.hand, nextState.talentEffects.drawOnStun, nextState.nextCardUid);
-      nextState = { ...nextState, deck: draw.deck, discard: draw.discard, hand: draw.hand, nextCardUid: draw.nextCardUid };
-    }
-    if (nextState.talentEffects.nextCardFreeOnStun) {
-      nextState = { ...nextState, flags: { ...nextState.flags, nextCardCostReduction: FREE_CARD_SENTINEL } };
-    }
-    return nextState;
-  }
-
-  return {
-    ...state,
-    enemyStatuses: { ...state.enemyStatuses, stun: nextStun },
-  };
+  let nextState = { ...state, enemyStatuses: { ...state.enemyStatuses, stun: nextStun } };
+  return resolveStunTrigger(nextState);
 }
 
 function applyHolyDamageRiders(state: BattleState, card: BattleCard, damage: number, combatTexts: CombatTextEvent[]) {

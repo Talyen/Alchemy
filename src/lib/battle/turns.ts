@@ -4,37 +4,36 @@
 import { drawCards } from "./draw";
 import { applyBoneCharmHeal, applyCardEffects, applyIronwoodBuckler, getEnemyDamageMultiplier, mergeCombatText } from "./effects";
 import { harmfulPlayerStatusIds, type EnemyAttackEffect, type BattleCard } from "@/lib/game-data";
-import { applyPlayerCombatDamage, applyPlayerHealing, cardsPerTurn, clampHealth, maxHandSize, type BattleResolution, type BattleState, type CombatTextEvent, type TurnPhase } from "./types";
+import { applyPlayerCombatDamage, applyPlayerHealing, cardsPerTurn, clampHealth, maxHandSize, type BattleResolution, type BattleState, type CombatFlags, type CombatTextEvent, type TurnPhase } from "./types";
 import { ENEMY_HEAL_FRACTION, HALF_DIVISOR, PERCENT_DENOMINATOR, POTION_CARD_ID_FRAGMENT } from "../game-constants";
 
 export function cardHasDamageType(card: BattleCard, damageType: string): boolean {
   return card.effects.some((e) => e.kind === "damage" && e.damageType === damageType);
 }
 
+const FIRST_CARD_FREE_RULES: { flag: keyof CombatFlags; condition: (state: BattleState, card: BattleCard) => boolean }[] = [
+  { flag: "firstPhysicalCardFreeUsed", condition: (s, c) => s.talentEffects.firstPhysicalCardFree && cardHasDamageType(c, "physical") },
+  { flag: "firstHolyCardFreeUsed", condition: (s, c) => s.talentEffects.firstHolyCardFree && cardHasDamageType(c, "holy") },
+  { flag: "firstPoisonCardFreeUsed", condition: (s, c) => s.talentEffects.firstPoisonCardFree && cardHasDamageType(c, "poison") },
+  { flag: "firstBleedCardFreeUsed", condition: (s, c) => s.talentEffects.firstBleedCardFree && cardHasDamageType(c, "bleed") },
+];
+
 function resolveCardPlayCost(state: BattleState, card: BattleCard) {
-  // One-shot free-card effects consume flags during cost resolution, before effects run.
   let effectiveCost = card.cost;
   let nextState = state;
 
   if (nextState.flags.nextCardCostReduction > 0) {
     effectiveCost = Math.max(0, effectiveCost - nextState.flags.nextCardCostReduction);
   }
-  if (!nextState.flags.firstPhysicalCardFreeUsed && nextState.talentEffects.firstPhysicalCardFree && cardHasDamageType(card, "physical")) {
-    effectiveCost = 0;
-    nextState = { ...nextState, flags: { ...nextState.flags, firstPhysicalCardFreeUsed: true } };
+
+  for (const rule of FIRST_CARD_FREE_RULES) {
+    if (!(nextState.flags[rule.flag] as boolean) && rule.condition(nextState, card)) {
+      effectiveCost = 0;
+      nextState = { ...nextState, flags: { ...nextState.flags, [rule.flag]: true } as CombatFlags };
+    }
   }
-  if (!nextState.flags.firstHolyCardFreeUsed && nextState.talentEffects.firstHolyCardFree && cardHasDamageType(card, "holy")) {
-    effectiveCost = 0;
-    nextState = { ...nextState, flags: { ...nextState.flags, firstHolyCardFreeUsed: true } };
-  }
-  if (!nextState.flags.firstPoisonCardFreeUsed && nextState.talentEffects.firstPoisonCardFree && cardHasDamageType(card, "poison")) {
-    effectiveCost = 0;
-    nextState = { ...nextState, flags: { ...nextState.flags, firstPoisonCardFreeUsed: true } };
-  }
-  if (!nextState.flags.firstBleedCardFreeUsed && nextState.talentEffects.firstBleedCardFree && cardHasDamageType(card, "bleed")) {
-    effectiveCost = 0;
-    nextState = { ...nextState, flags: { ...nextState.flags, firstBleedCardFreeUsed: true } };
-  }
+
+  // Potion free card uses a trinket effect so it stays explicit
   if (!nextState.flags.firstPotionFreeUsed && nextState.trinketEffects.mortarPestleFreeFirstPotion && card.id.includes(POTION_CARD_ID_FRAGMENT)) {
     effectiveCost = 0;
     nextState = { ...nextState, flags: { ...nextState.flags, firstPotionFreeUsed: true } };
@@ -206,27 +205,11 @@ function tickPlayerPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
   return decayArmorAfterHarmfulStatusDamage(nextState, reducedDamage);
 }
 
-function tickPlayerBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
-  const damage = state.playerStatuses.bleed;
+function tickPlayerHarmfulStatus(state: BattleState, status: "bleed" | "stun" | "freeze", combatTexts: CombatTextEvent[]) {
+  const damage = state.playerStatuses[status];
   if (damage <= 0) return state;
-  mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "bleed", amount: damage });
-  const nextState = { ...applyPlayerCombatDamage(state, damage), playerStatuses: { ...state.playerStatuses, bleed: 0 } };
-  return decayArmorAfterHarmfulStatusDamage(nextState, damage);
-}
-
-function tickPlayerStun(state: BattleState, combatTexts: CombatTextEvent[]) {
-  const damage = state.playerStatuses.stun;
-  if (damage <= 0) return state;
-  mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "stun", amount: damage });
-  const nextState = { ...applyPlayerCombatDamage(state, damage), playerStatuses: { ...state.playerStatuses, stun: 0 } };
-  return decayArmorAfterHarmfulStatusDamage(nextState, damage);
-}
-
-function tickPlayerFreeze(state: BattleState, combatTexts: CombatTextEvent[]) {
-  const damage = state.playerStatuses.freeze;
-  if (damage <= 0) return state;
-  mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "freeze", amount: damage });
-  const nextState = { ...applyPlayerCombatDamage(state, damage), playerStatuses: { ...state.playerStatuses, freeze: 0 } };
+  mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: status, amount: damage });
+  const nextState = { ...applyPlayerCombatDamage(state, damage), playerStatuses: { ...state.playerStatuses, [status]: 0 } };
   return decayArmorAfterHarmfulStatusDamage(nextState, damage);
 }
 
@@ -235,9 +218,9 @@ function tickPlayerStatuses(state: BattleState, combatTexts: CombatTextEvent[]) 
   // and for edge cases where the player dies during end-of-turn cleanup.
   let nextState = tickPlayerBurn(state, combatTexts);
   nextState = tickPlayerPoison(nextState, combatTexts);
-  nextState = tickPlayerBleed(nextState, combatTexts);
-  nextState = tickPlayerStun(nextState, combatTexts);
-  nextState = tickPlayerFreeze(nextState, combatTexts);
+  nextState = tickPlayerHarmfulStatus(nextState, "bleed", combatTexts);
+  nextState = tickPlayerHarmfulStatus(nextState, "stun", combatTexts);
+  nextState = tickPlayerHarmfulStatus(nextState, "freeze", combatTexts);
   return nextState;
 }
 
@@ -325,28 +308,21 @@ function checkHealthThresholds(prevHealth: number, nextHealth: number, state: Ba
   // Threshold talents trigger only when crossing downward from above; otherwise a player
   // who stays below the threshold would re-trigger block/armor on every later hit.
   let nextState = state;
-  if (state.talentEffects.healthThresholdBlock) {
-    const { threshold, amount } = state.talentEffects.healthThresholdBlock;
-    const thresholdHp = state.playerMaxHealth * threshold / PERCENT_DENOMINATOR;
+
+  function applyThreshold(config: { threshold: number; amount: number } | null, stat: "block" | "armor") {
+    if (!config) return;
+    const thresholdHp = state.playerMaxHealth * config.threshold / PERCENT_DENOMINATOR;
     if (prevHealth > thresholdHp && nextHealth <= thresholdHp) {
       nextState = {
         ...nextState,
-        playerStatuses: { ...nextState.playerStatuses, block: nextState.playerStatuses.block + amount },
+        playerStatuses: { ...nextState.playerStatuses, [stat]: nextState.playerStatuses[stat] + config.amount },
       };
-      mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "block", amount });
+      mergeCombatText(combatTexts, { target: "player", kind: "status", stat, amount: config.amount });
     }
   }
-  if (state.talentEffects.healthThresholdArmor) {
-    const { threshold, amount } = state.talentEffects.healthThresholdArmor;
-    const thresholdHp = state.playerMaxHealth * threshold / PERCENT_DENOMINATOR;
-    if (prevHealth > thresholdHp && nextHealth <= thresholdHp) {
-      nextState = {
-        ...nextState,
-        playerStatuses: { ...nextState.playerStatuses, armor: nextState.playerStatuses.armor + amount },
-      };
-      mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "armor", amount });
-    }
-  }
+
+  applyThreshold(state.talentEffects.healthThresholdBlock, "block");
+  applyThreshold(state.talentEffects.healthThresholdArmor, "armor");
   return nextState;
 }
 
@@ -489,6 +465,13 @@ function resolveDeathsDoorEndOfEnemyTurn(state: BattleState): BattleState {
   return { ...state, deathsDoorActive: false, deathsDoorTriggeredTurn: null };
 }
 
+// Shared cleanup tail: Ironwood Buckler, Death's Door expiry, then advance to player turn.
+function finalizePlayerTurn(state: BattleState, combatTexts: CombatTextEvent[]) {
+  let nextState = applyIronwoodBuckler(state, combatTexts);
+  nextState = resolveDeathsDoorEndOfEnemyTurn(nextState);
+  return { state: advanceToPlayerTurn(nextState, combatTexts), combatTexts };
+}
+
 // Canonical enemy-phase pipeline: discard hand, handle haste/skips, heal, enemy DoTs,
 // enemy attack, player harmful statuses, regeneration, trinket cleanup, then return to player.
 // Keeping this order centralized prevents UI timing from changing combat outcomes.
@@ -507,9 +490,7 @@ export function endPlayerTurn(state: BattleState): { state: BattleState; combatT
   if (state.playerStatuses.haste > 0) {
     nextState = { ...nextState, playerStatuses: { ...nextState.playerStatuses, haste: nextState.playerStatuses.haste - 1 } };
     nextState = tickPlayerStatuses(nextState, combatTexts);
-    nextState = applyIronwoodBuckler(nextState, combatTexts);
-    nextState = resolveDeathsDoorEndOfEnemyTurn(nextState);
-    return { state: advanceToPlayerTurn(nextState, combatTexts), combatTexts };
+    return finalizePlayerTurn(nextState, combatTexts);
   }
 
   if (state.enemyStunSkipTurns + state.enemyFreezeSkipTurns > 0) {
@@ -529,9 +510,7 @@ export function endPlayerTurn(state: BattleState): { state: BattleState; combatT
       mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "stun", amount: nextState.trinketEffects.frozenHeartDamage });
     }
 
-    nextState = applyIronwoodBuckler(nextState, combatTexts);
-    nextState = resolveDeathsDoorEndOfEnemyTurn(nextState);
-    return { state: advanceToPlayerTurn(nextState, combatTexts), combatTexts };
+    return finalizePlayerTurn(nextState, combatTexts);
   }
 
   nextState = processEnemyHealing(nextState, combatTexts);
@@ -539,8 +518,7 @@ export function endPlayerTurn(state: BattleState): { state: BattleState; combatT
 
   if (nextState.enemyHealth <= 0) {
     nextState = applyBoneCharmHeal(nextState, true, combatTexts);
-    nextState = applyIronwoodBuckler(nextState, combatTexts);
-    return { state: advanceToPlayerTurn(nextState, combatTexts), combatTexts };
+    return finalizePlayerTurn(nextState, combatTexts);
   }
 
   if (nextState.currentEnemy.traits.some((t) => t.id === "rusting-carapace")) {
@@ -556,8 +534,5 @@ export function endPlayerTurn(state: BattleState): { state: BattleState; combatT
   nextState = tickPlayerStatuses(nextState, combatTexts);
   nextState = processEnemyRegeneration(nextState, combatTexts);
 
-  nextState = applyIronwoodBuckler(nextState, combatTexts);
-  nextState = resolveDeathsDoorEndOfEnemyTurn(nextState);
-
-  return { state: advanceToPlayerTurn(nextState, combatTexts), combatTexts };
+  return finalizePlayerTurn(nextState, combatTexts);
 }
