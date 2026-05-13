@@ -112,8 +112,7 @@ export function useRunNavigation({
     if (isPlayerDefeated(battleState)) return;
     if (battleVictoryHandledRef.current) return;
     battleVictoryHandledRef.current = true;
-    const transitionTimer = handleBattleVictoryEvent();
-    return () => clearTimeout(transitionTimer);
+    handleBattleVictoryEvent();
   }, [battleState, hasActiveBattle, screen]);
 
   function handleBattleDefeat() {
@@ -217,7 +216,7 @@ export function useRunNavigation({
     setEncounteredEnemyIds([]);
     setHoveredCardId(null);
     setHasActiveRun(true);
-    onStartBattle();
+    onStartBattle(freshDeck, totalStartGold);
     navigateTo("battle");
   }
 

@@ -1,7 +1,7 @@
 // Height-transition wrapper for swapping screen sections without layout jumps.
 // Depends only on React and direct DOM height measurement.
 // Used by alchemy UI where content changes size but should animate smoothly.
-import { useRef, useEffect, type ReactNode } from "react";
+import { useRef, useLayoutEffect, type ReactNode } from "react";
 
 const DURATION = 250;
 const EASE = "cubic-bezier(0.16, 1, 0.3, 1)";
@@ -11,7 +11,7 @@ export function AnimatedHeight({ deps, children }: { deps: unknown[]; children: 
   const prevHeight = useRef(0);
   const mounted = useRef(false);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     // Store previous scrollHeight, force one reflow, then animate to the new height.
     // Callers own deps intentionally because only they know what content changes matter.
     const el = ref.current;
@@ -27,7 +27,9 @@ export function AnimatedHeight({ deps, children }: { deps: unknown[]; children: 
       el.style.transition = `height ${DURATION}ms ${EASE}`;
       el.style.height = `${newHeight}px`;
 
-      const onEnd = () => {
+      const onEnd = (event: TransitionEvent) => {
+        if (event.target !== el || event.propertyName !== "height") return;
+
         el.style.height = "";
         el.style.overflow = "";
         el.style.transition = "";

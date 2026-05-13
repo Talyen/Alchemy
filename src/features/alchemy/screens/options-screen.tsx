@@ -7,7 +7,6 @@ import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 
 import { displayModeOptions, resolutionOptions, uiScaleOptions } from "../config";
-import { AnimatedHeight } from "../ui/animated-height";
 import { ConfirmationDialog, DisplayModeSelect, PageLayout, ResolutionSelect, ScreenHeader, UiScaleSelect } from "../ui/shared-ui";
 import type { DisplayMode, ResolutionOption, UiScale } from "../types";
 
@@ -60,6 +59,7 @@ export function OptionsScreen({
   onUnlockAll: () => void;
 }) {
   const [tab, setTab] = useState<OptionsTab>("display");
+  const tabPanelClass = "col-start-1 row-start-1 pt-6 text-left";
 
   return (
     <PageLayout>
@@ -68,37 +68,36 @@ export function OptionsScreen({
 
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           {(["display", "sound", "gameplay", "other"] as const).map((t) => (
-            <button key={t} type="button" className={cn("rounded-full border px-4 py-2 text-sm font-semibold capitalize transition-transform active:scale-95", tab === t ? "border-primary bg-primary/20 text-primary" : "border-border/80 bg-card text-amber-100/75")} onClick={() => setTab(t)}>{t.charAt(0).toUpperCase() + t.slice(1)}</button>
+            <button key={t} type="button" className={cn("rounded-full border px-4 py-2 text-sm font-semibold capitalize transition-transform active:scale-95", tab === t ? "border-primary bg-primary/20 text-foreground" : "border-border/80 bg-card text-foreground")} onClick={() => setTab(t)}>{t.charAt(0).toUpperCase() + t.slice(1)}</button>
           ))}
         </div>
 
-        <AnimatedHeight deps={[tab]}>
-        <div key={tab} className="state-swap mt-6 text-left">
-          {tab === "display" ? (
+        <div className="grid">
+          <div className={cn(tabPanelClass, tab === "display" ? "state-swap" : "invisible pointer-events-none")} aria-hidden={tab !== "display"}>
             <div className="space-y-4">
               <ResolutionSelect selectedResolution={selectedResolution} resolutionOptions={resolutionOptions} onChange={onResolutionChange} />
               {showDisplayMode ? <DisplayModeSelect displayMode={displayMode} displayModeOptions={displayModeOptions} onChange={onDisplayModeChange} /> : null}
               <UiScaleSelect uiScale={uiScale} uiScaleOptions={uiScaleOptions} onChange={onUiScaleChange} />
               <SliderOption label="Brightness" value={brightness} onChange={onBrightnessChange} min={50} max={150} />
             </div>
-          ) : null}
+          </div>
 
-          {tab === "sound" ? (
+          <div className={cn(tabPanelClass, tab === "sound" ? "state-swap" : "invisible pointer-events-none")} aria-hidden={tab !== "sound"}>
             <div className="space-y-4">
               <SliderOption label="Master Volume" value={masterVol} onChange={onMasterVolChange} />
               <SliderOption label="Music Volume" value={musicVol} onChange={onMusicVolChange} />
               <SliderOption label="Sound Effects Volume" value={sfxVol} onChange={onSfxVolChange} />
               <ToggleOption label="Mute in Background" description="Silence music and effects while the game window is not focused." checked={muteInBackground} onChange={onMuteInBackgroundChange} />
             </div>
-          ) : null}
+          </div>
 
-          {tab === "gameplay" ? (
+          <div className={cn(tabPanelClass, tab === "gameplay" ? "state-swap" : "invisible pointer-events-none")} aria-hidden={tab !== "gameplay"}>
             <div className="space-y-4">
               <ToggleOption label="Auto-End Turn" description="Automatically end your turn when no cards in hand can be played." checked={autoEndTurn} onChange={onAutoEndTurnChange} />
             </div>
-          ) : null}
+          </div>
 
-          {tab === "other" ? (
+          <div className={cn(tabPanelClass, tab === "other" ? "state-swap" : "invisible pointer-events-none")} aria-hidden={tab !== "other"}>
             <div className="space-y-4">
               {import.meta.env.DEV ? (
                 <>
@@ -132,9 +131,8 @@ export function OptionsScreen({
                 </div>
               </div>
             </div>
-          ) : null}
+          </div>
         </div>
-        </AnimatedHeight>
 
         <div className="mt-auto flex flex-wrap justify-center gap-3 pt-6">
           <Button variant="outline" onClick={onMainMenu}><House className="h-4 w-4" /> Main Menu</Button>

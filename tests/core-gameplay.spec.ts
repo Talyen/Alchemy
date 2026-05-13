@@ -45,6 +45,20 @@ test.describe("Character Select", () => {
     await page.getByRole("button", { name: "Back" }).click();
     await expect(page.getByRole("button", { name: "Play" })).toBeVisible();
   });
+
+  test("fresh wizard run starts with wizard cards", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: "Play" }).click();
+    await page.getByRole("button", { name: "Wizard" }).click();
+    await page.getByRole("button", { name: "Continue" }).click();
+    await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });
+
+    const wizardCards = new Set(["Fireball", "Frostbolt", "Mana Berries", "Mana Crystals", "Mana Potion", "Meteor", "Health Potion"]);
+    const playableLabels = await page.locator('[aria-label^="Play "]').evaluateAll((cards) => cards.map((card) => card.getAttribute("aria-label")?.replace(/^Play /, "") ?? ""));
+
+    expect(playableLabels.length).toBeGreaterThan(0);
+    expect(playableLabels.every((label) => wizardCards.has(label))).toBe(true);
+  });
 });
 
 test.describe("Battle Mechanics", () => {

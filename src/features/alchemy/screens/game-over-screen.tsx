@@ -50,9 +50,8 @@ export function GameOverScreen({ runTalentXP, talentXP, runEndMaterials, onMainM
         <p className="mt-3 text-lg text-muted-foreground">Your run has ended.</p>
       </div>
 
-      {keywordIds.length > 0 ? (
+      {keywordIds.length > 0 && (
         <div className="w-full max-w-2xl">
-          <p className="mb-3 text-sm font-semibold text-foreground">Talents</p>
           <div className="flex flex-wrap justify-center gap-2">
             {keywordIds.map((kw) => (
               <div key={kw} className="flex-none w-[210px]">
@@ -61,7 +60,7 @@ export function GameOverScreen({ runTalentXP, talentXP, runEndMaterials, onMainM
             ))}
           </div>
         </div>
-      ) : <p className="text-sm text-muted-foreground">No talent XP earned this run.</p>}
+      )}
 
       {MATERIAL_IDS.filter((mat) => runEndMaterials[mat] > 0).length > 0 && (
         <div className="flex flex-col items-center gap-2">

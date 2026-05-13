@@ -287,7 +287,7 @@ export function ArtPanel({
         ) : null}
         <div className={isDead ? "opacity-0" : ""}>
           <div className="flex items-center justify-between gap-3">
-            <p className="text-base leading-6 font-bold text-muted-foreground">{title}</p>
+            <p className="text-base leading-6 font-bold text-foreground">{title}</p>
             <p key={healthToken} className={cn("hp-number-pop text-xs font-medium text-muted-foreground")}>
               {health}/{maxHealth}
             </p>
