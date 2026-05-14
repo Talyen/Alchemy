@@ -1,4 +1,4 @@
-// Damage computation, crit, lifesteal, and enemy damage dealing with all riders.
+// Player card damage to the current enemy: base damage, crit, armor reduction, trait multipliers, and riders.
 import { applyDamageStatuses, getEnemyDamageMultiplier, resolveStunTrigger } from "./status-effects";
 import { applyBoneCharmHeal, applyLuckyCloverGold } from "./trinket-utils";
 import { mergeCombatText } from "./combat-text";
@@ -136,7 +136,7 @@ function applyForgeStunRider(state: BattleState, effect: Extract<BattleCardEffec
   const nextStun = state.enemyStatuses.stun + state.trinketEffects.forgeStunAmount;
   mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "stun", amount: state.trinketEffects.forgeStunAmount });
 
-  let nextState = { ...state, enemyStatuses: { ...state.enemyStatuses, stun: nextStun } };
+  const nextState = { ...state, enemyStatuses: { ...state.enemyStatuses, stun: nextStun } };
   return resolveStunTrigger(nextState, combatTexts);
 }
 
@@ -178,26 +178,19 @@ function consumeForgeAfterPhysicalDamage(state: BattleState, effect: Extract<Bat
   };
 }
 
-export function dealEnemyDamage(
-  state: BattleState,
-  card: BattleCard,
-  effect: Extract<BattleCardEffect, { kind: "damage" }>,
-  combatTexts: CombatTextEvent[],
-) {
+function computeCardDamageToEnemy(state: BattleState, effect: Extract<BattleCardEffect, { kind: "damage" }>) {
   const modifiedBase = applyFirstDamageModifiers(state, effect, computeBaseDamage(state, effect));
-  state = modifiedBase.state;
   const rawDamage = modifiedBase.rawDamage;
-
-  const finalDamage = applyCrit(rawDamage, effect.damageType, state);
-
+  const finalDamage = applyCrit(rawDamage, effect.damageType, modifiedBase.state);
   const effectiveArmor = effect.damageType === "physical"
     ? Math.max(0, state.enemyArmor - state.trinketEffects.sunderingArmorPiercing)
     : state.enemyArmor;
-
   const damageAfterArmor = Math.max(0, finalDamage - effectiveArmor);
   const multiplier = getEnemyDamageMultiplier(state, effect.damageType);
-  const modifiedDamage = Math.floor(damageAfterArmor * multiplier);
+  return { nextState: modifiedBase.state, modifiedDamage: Math.floor(damageAfterArmor * multiplier) };
+}
 
+function applyDamageRiders(state: BattleState, card: BattleCard, effect: Extract<BattleCardEffect, { kind: "damage" }>, modifiedDamage: number, combatTexts: CombatTextEvent[]) {
   let nextState: BattleState = {
     ...state,
     enemyHealth: clampHealth(state.enemyHealth, -modifiedDamage, state.enemyMaxHealth),
@@ -207,25 +200,25 @@ export function dealEnemyDamage(
   nextState = applyDamageStatuses(nextState, effect, modifiedDamage, combatTexts);
   nextState = applyForgeStunRider(nextState, effect, combatTexts);
 
-  if (effect.lifesteal) {
-    nextState = applyLifesteal(nextState, modifiedDamage, combatTexts);
-  }
-
-  if (effect.damageType === "holy") {
-    nextState = applyHolyDamageRiders(nextState, card, modifiedDamage, combatTexts);
-  }
+  if (effect.lifesteal) nextState = applyLifesteal(nextState, modifiedDamage, combatTexts);
+  if (effect.damageType === "holy") nextState = applyHolyDamageRiders(nextState, card, modifiedDamage, combatTexts);
 
   nextState = applyGoldTroveReward(nextState, modifiedDamage, combatTexts);
-
-  if (effect.damageType === "nature") {
-    nextState = applyLuckyCloverGold(nextState, modifiedDamage, combatTexts);
-  }
+  if (effect.damageType === "nature") nextState = applyLuckyCloverGold(nextState, modifiedDamage, combatTexts);
 
   if (modifiedDamage > 0) {
     mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: effect.damageType, amount: modifiedDamage });
   }
 
-  nextState = consumeForgeAfterPhysicalDamage(nextState, effect, modifiedDamage);
+  return consumeForgeAfterPhysicalDamage(nextState, effect, modifiedDamage);
+}
 
-  return nextState;
+export function dealDamageToEnemy(
+  state: BattleState,
+  card: BattleCard,
+  effect: Extract<BattleCardEffect, { kind: "damage" }>,
+  combatTexts: CombatTextEvent[],
+) {
+  const { nextState, modifiedDamage } = computeCardDamageToEnemy(state, effect);
+  return applyDamageRiders(nextState, card, effect, modifiedDamage, combatTexts);
 }

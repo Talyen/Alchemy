@@ -1,11 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
-import { mergeCombatText, applyCardEffects, getEnemyDamageMultiplier } from "@/lib/battle/effects";
+import { mergeCombatText, applyCardEffects, getEnemyDamageMultiplier } from "@/lib/battle";
 import { playBattleCardResolved, endPlayerTurn, chooseWishCard, processCompanionTurnStart } from "@/lib/battle/turns";
 import { drawCards, createBattleState, defaultTalentEffects, shuffleCards } from "@/lib/battle/draw";
 import { companionLibrary, enemyBestiary } from "@/lib/game-data";
 import type { BattleCard, BestiaryEntry, DifficultyModifier } from "@/lib/game-data";
 import type { BattleState, CombatTextEvent } from "@/lib/battle/types";
-import { basePlayerMana, clampHealth, isPlayerDefeated, maxHandSize, maxPlayerHealth } from "@/lib/battle/types";
+import { clampHealth, isPlayerDefeated } from "@/lib/battle/types";
+import { MAX_PLAYER_HEALTH, MAX_HAND_SIZE, BASE_PLAYER_MANA } from "@/lib/game-constants";
 import { clamp } from "@/lib/utils";
 import { defaultTrinketEffects, computeTrinketManifest } from "@/lib/trinkets";
 
@@ -858,10 +859,10 @@ describe("drawCards", () => {
     expect(result.deck).toHaveLength(1);
   });
 
-  it("respects maxHandSize", () => {
+  it("respects MAX_HAND_SIZE", () => {
     const deck = Array(10).fill(null).map((_, i) => makeCard({ id: `c${i}` }));
     const result = drawCards(deck, [], Array(6).fill(null).map((_, i) => makeCard({ id: `h${i}` })), 10);
-    expect(result.hand).toHaveLength(maxHandSize);
+    expect(result.hand).toHaveLength(MAX_HAND_SIZE);
   });
 
   it("reshuffles discard into deck when deck is empty", () => {
@@ -879,10 +880,10 @@ describe("createBattleState", () => {
   it("creates a valid battle state with starting hand", () => {
     const result = createBattleState(battleDeck, 0, 0, skeleton);
     expect(result.turn).toBe(1);
-    expect(result.playerHealth).toBe(maxPlayerHealth);
+    expect(result.playerHealth).toBe(MAX_PLAYER_HEALTH);
     expect(result.enemyHealth).toBe(30);
     expect(result.hand.length).toBeGreaterThanOrEqual(1);
-    expect(result.mana).toBe(basePlayerMana);
+    expect(result.mana).toBe(BASE_PLAYER_MANA);
     expect(result.activeCompanion).toBeNull();
   });
 
@@ -914,8 +915,8 @@ describe("createBattleState", () => {
 
     it("Wizard Novice (d1): start-max-mana 1 adds extra mana", () => {
       const result = createBattleState(battleDeck, 0, 0, skeleton, undefined, undefined, undefined, undefined, undefined, undefined, undefined, [{ kind: "start-max-mana", amount: 1 }]);
-      expect(result.mana).toBe(basePlayerMana + 1);
-      expect(result.maxMana).toBe(basePlayerMana + 1);
+      expect(result.mana).toBe(BASE_PLAYER_MANA + 1);
+      expect(result.maxMana).toBe(BASE_PLAYER_MANA + 1);
     });
 
     it("Ranger Novice (d1): start-companion spawns wolf", () => {
@@ -978,8 +979,8 @@ describe("createBattleState", () => {
       const result = createBattleState(battleDeck, 0, 0, skeleton, undefined, undefined, undefined, undefined, undefined, undefined, undefined, mods);
       expect(result.playerStatuses.block).toBe(5);
       expect(result.enemyArmor).toBe(2);
-      expect(result.mana).toBe(basePlayerMana + 1);
-      expect(result.maxMana).toBe(basePlayerMana + 1);
+      expect(result.mana).toBe(BASE_PLAYER_MANA + 1);
+      expect(result.maxMana).toBe(BASE_PLAYER_MANA + 1);
     });
 
     it("increase-enemy-status does not affect non-matching status", () => {

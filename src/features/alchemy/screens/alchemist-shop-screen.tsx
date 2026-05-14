@@ -62,7 +62,7 @@ export function AlchemistShopScreen({
       const result = createMixedPotion(cardA, cardB);
       onMixPotions(selectedA, selectedB);
       setMixedCard(result);
-    } catch { return; }
+    } catch { console.error("Mix failed: source cards may include an existing Mixed Potion"); return; }
   }
 
   const mixableCards = runDeck.map((c, i) => ({ card: c, index: i })).filter(({ card }) => card.id.includes(POTION_CARD_ID_FRAGMENT) && card.id !== MIXED_POTION_CARD_ID);

@@ -14,38 +14,16 @@ export const materialLabels: Record<MaterialId, string> = {
 };
 
 export const materialIcons: Record<MaterialId, string> = {
-  wood: "\u{1FAB5}",
-  iron: "\u{2692}",
-  herbs: "\u{1F33F}",
-  food: "\u{1F36E}",
-  crystal: "\u{1F48E}",
+  wood: "icon-logs",
+  iron: "icon-hammer",
+  herbs: "icon-sprout",
+  food: "icon-cake",
+  crystal: "icon-gem",
 };
 
 export type MaterialInventory = Record<MaterialId, number>;
 
-export function emptyInventory(): MaterialInventory {
-  return { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 };
-}
-
-export function addInventory(a: MaterialInventory, b: MaterialInventory): MaterialInventory {
-  const result = { ...a };
-  for (const mat of MATERIAL_IDS) {
-    result[mat] = (result[mat] ?? 0) + (b[mat] ?? 0);
-  }
-  return result;
-}
-
-export function canAfford(inventory: MaterialInventory, cost: MaterialInventory): boolean {
-  return MATERIAL_IDS.every((mat) => (inventory[mat] ?? 0) >= (cost[mat] ?? 0));
-}
-
-export function subtractInventory(inventory: MaterialInventory, cost: MaterialInventory): MaterialInventory {
-  const result = { ...inventory };
-  for (const mat of MATERIAL_IDS) {
-    result[mat] = Math.max(0, (result[mat] ?? 0) - (cost[mat] ?? 0));
-  }
-  return result;
-}
+export { emptyInventory, addInventory, canAfford, subtractInventory } from "./inventory";
 
 export type BuildingId = "blacksmiths-forge" | "hunters-lodge" | "alchemy-lab" | "placeholder-1" | "placeholder-2" | "placeholder-3";
 
@@ -96,19 +74,7 @@ export type HomesteadEffectManifest = {
   campfireHealBonus: number;
   physicalCritChance: number;
   startMaxHealthBonus: number;
-  forgeToBurn: number;
+  forgeToBurn: boolean;
 };
 
-export const defaultHomesteadEffects: HomesteadEffectManifest = {
-  flatPhysicalDamage: 0,
-  companionDamage: 0,
-  potionHealMultiplier: 0,
-  potionManaBonus: 0,
-  potionDiscount: 0,
-  startGold: 0,
-  startBlock: 0,
-  campfireHealBonus: 0,
-  physicalCritChance: 0,
-  startMaxHealthBonus: 0,
-  forgeToBurn: 0,
-};
+export { defaultHomesteadEffects } from "./defaults";

@@ -2,7 +2,7 @@
 // Depends on card game data, random selection, and corruption tuning constants.
 // Used by run navigation and tests so corrupted cards remain normal playable BattleCard objects.
 import { cardLibrary, type BattleCard, type BattleCardEffect } from "@/lib/game-data";
-import { CORRUPTION_MIN_VALUE, CORRUPTION_MUTATION_DELTA, MIXED_POTION_CARD_ID } from "@/lib/game-constants";
+import { CORRUPTION_DELTA_CHANCE, CORRUPTION_MIN_VALUE, CORRUPTION_MUTATION_DELTA, CORRUPTION_TRANSFORM_CHANCE, MIXED_POTION_CARD_ID } from "@/lib/game-constants";
 
 type NumericEffect = BattleCardEffect & { amount: number };
 
@@ -97,7 +97,7 @@ function applyNumericCorruption(card: BattleCard, target: CorruptionTarget, delt
 export function corruptCard(selectedCard: BattleCard, library: BattleCard[] = cardLibrary): CorruptionResult {
   const selectedTargets = getEditableCorruptionTargets(selectedCard);
   const candidates = getTransformCandidates(selectedCard, library);
-  const shouldTransform = selectedTargets.length === 0 || (candidates.length > 0 && Math.random() < 0.5);
+  const shouldTransform = selectedTargets.length === 0 || (candidates.length > 0 && Math.random() < CORRUPTION_TRANSFORM_CHANCE);
   const sourceCard = shouldTransform ? candidates[Math.floor(Math.random() * candidates.length)] : selectedCard;
   if (!sourceCard) {
     throw new Error("No valid card is available for corruption");
@@ -109,7 +109,7 @@ export function corruptCard(selectedCard: BattleCard, library: BattleCard[] = ca
   }
 
   const target = targets[Math.floor(Math.random() * targets.length)];
-  const delta: 1 | -1 = Math.random() < 0.5 ? -1 : 1;
+  const delta: 1 | -1 = Math.random() < CORRUPTION_DELTA_CHANCE ? -1 : 1;
   return {
     originalCard: selectedCard,
     corruptedCard: applyNumericCorruption(sourceCard, target, delta, selectedCard.title),

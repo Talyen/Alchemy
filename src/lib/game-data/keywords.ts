@@ -1,4 +1,44 @@
-import type { KeywordDefinition, KeywordId } from "./types";
+import type { BattleCard, KeywordDefinition, KeywordId } from "./types";
+
+export function getCardKeywords(card: BattleCard): KeywordId[] {
+  const keywords = new Set<KeywordId>();
+
+  for (const effect of card.effects) {
+    switch (effect.kind) {
+      case "damage":
+        keywords.add(effect.damageType as KeywordId);
+        if (effect.lifesteal) keywords.add("leech");
+        break;
+      case "player-status":
+        keywords.add(effect.status as KeywordId);
+        break;
+      case "heal":
+        keywords.add("health");
+        break;
+      case "restore-mana":
+      case "lose-mana":
+      case "lose-max-mana":
+      case "gain-max-mana":
+        keywords.add("mana");
+        break;
+      case "gain-gold":
+        keywords.add("gold");
+        break;
+      case "wish":
+        keywords.add("wish");
+        break;
+      case "summon-companion":
+        keywords.add("companion");
+        break;
+      case "remove-harmful-status":
+        break;
+    }
+  }
+
+  if (card.consume) keywords.add("consume");
+
+  return Array.from(keywords);
+}
 
 export const keywordDefinitions: Record<KeywordId, KeywordDefinition> = {
   physical: { id: "physical", label: "Physical", description: "Physical damage type", colorClass: "text-slate-300", borderClass: "border-slate-300", shineColors: ["#cbd5e1", "#64748b", "#cbd5e1"] },

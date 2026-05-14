@@ -30,9 +30,9 @@ describe("getCardKeywords", () => {
     expect(getCardKeywords(c3)).toEqual(["forge"]);
   });
 
-  it("ignores haste player-status (not a keyword)", () => {
+  it("extracts haste player-status as keyword", () => {
     const c = card({ effects: [{ kind: "player-status", status: "haste", amount: 1 }] });
-    expect(getCardKeywords(c)).toEqual([]);
+    expect(getCardKeywords(c)).toEqual(["haste"]);
   });
 
   it("extracts health for heal", () => {

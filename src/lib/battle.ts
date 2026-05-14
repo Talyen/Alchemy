@@ -3,6 +3,6 @@ export * from "./battle/types";
 // Re-exports state creation, turn sequencing, effects, and types for UI/controllers.
 // Consumers should import from here instead of binding to battle submodule paths.
 export * from "./battle/draw";
-export * from "./battle/effects";
+export { applyCardEffects, mergeCombatText, applyIronwoodBuckler, applyBoneCharmHeal, getEnemyDamageMultiplier } from "./battle/apply-effects";
 export * from "./battle/turns";
 export * from "./battle/cost";

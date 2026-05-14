@@ -5,6 +5,7 @@ import { battleEventSounds, cardSounds, enemyAttackSounds, stingerSounds, uiSoun
 import { audioState } from "./audio-state";
 import { getAudioContext, loadSoundBuffer, resumeAudioContext } from "./audio-buffer-cache";
 import { pickRandom } from "./utils";
+import { SFX_DEFEAT_VOLUME, SFX_UI_VOLUME, SFX_VICTORY_VOLUME } from "./game-constants";
 
 // Creates a one-shot source with per-play gain so cached buffers remain immutable.
 function playBuffer(name: string, volume = 1) {
@@ -59,15 +60,15 @@ export function playBattleEvent(event: keyof typeof battleEventSounds) {
 
 // Plays quieter UI feedback so menus do not compete with combat sounds.
 export function playUISound(event: keyof typeof uiSounds) {
-  playBuffer(uiSounds[event], 0.6);
+  playBuffer(uiSounds[event], SFX_UI_VOLUME);
 }
 
 // Plays the victory stinger at a controlled volume.
 export function playVictory() {
-  playBuffer(stingerSounds.victory, 0.8);
+  playBuffer(stingerSounds.victory, SFX_VICTORY_VOLUME);
 }
 
 // Plays the defeat stinger at a controlled volume.
 export function playDefeat() {
-  playBuffer(stingerSounds.defeat, 0.7);
+  playBuffer(stingerSounds.defeat, SFX_DEFEAT_VOLUME);
 }

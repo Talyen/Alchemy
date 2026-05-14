@@ -51,6 +51,7 @@ export async function loadSoundBuffer(name: string): Promise<AudioBuffer | null>
       soundCache.set(name, buffer);
       return buffer;
     } catch {
+      console.error("Failed to load or decode sound:", name);
       return null;
     }
   })();

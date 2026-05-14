@@ -35,7 +35,7 @@ import { DetailPopup } from "../ui/card-ui";
 import { DisabledTooltip, PageLayout, ScreenHeader } from "../ui/shared-ui";
 import { MaterialIcon, matIconMap, matPillStyle, matTextColor } from "../ui/material-icons";
 import { playUISound } from "@/lib/audio";
-import { keywordDefinitions } from "@/lib/game-data/keywords";
+import { keywordDefinitions } from "@/lib/game-data";
 
 import { clearTiltFromEvent, setTiltFromEvent, tokenizeDescription } from "../utils";
 

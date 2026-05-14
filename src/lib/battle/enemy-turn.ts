@@ -4,8 +4,9 @@ import { drawCards } from "./draw";
 import { applyCardEffects, applyIronwoodBuckler, mergeCombatText } from "./apply-effects";
 import { tickEnemyStatuses, tickPlayerStatuses } from "./status-ticks";
 import { harmfulPlayerStatusIds, type BattleCard, type DifficultyModifier, type EnemyAttackEffect } from "@/lib/game-data";
-import { applyPlayerCombatDamage, cardsPerTurn, clampHealth, maxHandSize, type BattleState, type CombatTextEvent, type TurnPhase } from "./types";
-import { ENEMY_HEAL_FRACTION, HALF_DIVISOR, PERCENT_DENOMINATOR } from "../game-constants";
+import { applyPlayerCombatDamage, clampHealth, type BattleState, type CombatTextEvent, type TurnPhase } from "./types";
+import { CARDS_PER_TURN, MAX_HAND_SIZE } from "../game-constants";
+import { DIFFICULTY_FORGE_PER_TURN, ENEMY_HEAL_FRACTION, HALF_DIVISOR, PERCENT_DENOMINATOR, TRAIT_ARMOR_PER_TURN, TRAIT_FORGE_PER_TURN, TRAIT_FREEZE_BONUS_PER_TURN } from "../game-constants";
 
 export function chooseWishCard(state: BattleState, cardId: string) {
   const chosenCard = state.wishOptions?.find((card) => card.id === cardId);
@@ -15,7 +16,7 @@ export function chooseWishCard(state: BattleState, cardId: string) {
 
   const [nextWishOptions = null, ...wishQueue] = state.wishQueue;
 
-  if (state.hand.length < maxHandSize) {
+  if (state.hand.length < MAX_HAND_SIZE) {
     return { ...state, hand: [...state.hand, chosenCard], wishOptions: nextWishOptions, wishQueue };
   }
 
@@ -49,8 +50,8 @@ export function processCompanionTurnStart(state: BattleState, combatTexts: Comba
   return { ...result, flags: { ...result.flags, ...savedFlags } };
 }
 
-function advanceToPlayerTurn(state: BattleState, _combatTexts: CombatTextEvent[]) {
-  const nextDraw = drawCards(state.deck, state.discard, [], cardsPerTurn, state.nextCardUid);
+function advanceToPlayerTurn(state: BattleState) {
+  const nextDraw = drawCards(state.deck, state.discard, [], CARDS_PER_TURN, state.nextCardUid);
   return {
     ...state,
     turn: state.turn + 1,
@@ -80,7 +81,7 @@ function processEnemyHealing(state: BattleState, combatTexts: CombatTextEvent[])
 function checkHealthThresholds(prevHealth: number, nextHealth: number, state: BattleState, combatTexts: CombatTextEvent[]) {
   let nextState = state;
 
-  function applyThreshold(config: { threshold: number; amount: number } | null, stat: "block" | "armor") {
+  function applyHealthThresholdStatBonus(config: { threshold: number; amount: number } | null, stat: "block" | "armor") {
     if (!config) return;
     const thresholdHp = state.playerMaxHealth * config.threshold / PERCENT_DENOMINATOR;
     if (prevHealth > thresholdHp && nextHealth <= thresholdHp) {
@@ -92,8 +93,8 @@ function checkHealthThresholds(prevHealth: number, nextHealth: number, state: Ba
     }
   }
 
-  applyThreshold(state.talentEffects.healthThresholdBlock, "block");
-  applyThreshold(state.talentEffects.healthThresholdArmor, "armor");
+  applyHealthThresholdStatBonus(state.talentEffects.healthThresholdBlock, "block");
+  applyHealthThresholdStatBonus(state.talentEffects.healthThresholdArmor, "armor");
   return nextState;
 }
 
@@ -120,8 +121,7 @@ function processEnemyDamageEffect(state: BattleState, effect: EnemyAttackEffect 
   const rawDamage = effect.damageType === "physical"
     ? Math.max(0, remainingDamage - state.playerStatuses.armor)
     : remainingDamage;
-  const damageType: string = effect.damageType;
-  const actualDamage = damageType === "holy" && state.talentEffects.receiveHalfHolyDamage ? Math.floor(rawDamage / HALF_DIVISOR) : rawDamage;
+  const actualDamage = effect.damageType === "holy" && state.talentEffects.receiveHalfHolyDamage ? Math.floor(rawDamage / HALF_DIVISOR) : rawDamage;
 
   if (actualDamage > 0) {
     const stat = effect.damageType === "physical" ? "health" : effect.damageType;
@@ -129,7 +129,7 @@ function processEnemyDamageEffect(state: BattleState, effect: EnemyAttackEffect 
   }
 
   const prevHealth = state.playerHealth;
-  let st: BattleState = {
+  let nextState: BattleState = {
     ...state,
     ...applyPlayerCombatDamage(state, actualDamage),
     playerStatuses: {
@@ -138,35 +138,35 @@ function processEnemyDamageEffect(state: BattleState, effect: EnemyAttackEffect 
     },
   };
 
-  if (st.trinketEffects.vanguardCrestForgeOnBlockAbsorb > 0 && blockAbsorb > 0 && remainingDamage === 0) {
-    st = {
-      ...st,
+  if (nextState.trinketEffects.vanguardCrestForgeOnBlockAbsorb > 0 && blockAbsorb > 0 && remainingDamage === 0) {
+    nextState = {
+      ...nextState,
       playerStatuses: {
-        ...st.playerStatuses,
-        forge: st.playerStatuses.forge + st.trinketEffects.vanguardCrestForgeOnBlockAbsorb,
+        ...nextState.playerStatuses,
+        forge: nextState.playerStatuses.forge + nextState.trinketEffects.vanguardCrestForgeOnBlockAbsorb,
       },
     };
-    mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "forge", amount: st.trinketEffects.vanguardCrestForgeOnBlockAbsorb });
+    mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "forge", amount: nextState.trinketEffects.vanguardCrestForgeOnBlockAbsorb });
   }
 
-  st = checkHealthThresholds(prevHealth, st.playerHealth, st, combatTexts);
+  nextState = checkHealthThresholds(prevHealth, nextState.playerHealth, nextState, combatTexts);
 
-  if (effect.amount > 0 && st.playerStatuses.armor > 0) {
-    st = {
-      ...st,
+  if (effect.amount > 0 && nextState.playerStatuses.armor > 0) {
+    nextState = {
+      ...nextState,
       playerStatuses: {
-        ...st.playerStatuses,
-        armor: st.playerStatuses.armor - 1,
+        ...nextState.playerStatuses,
+        armor: nextState.playerStatuses.armor - 1,
       },
     };
   }
 
   if (effect.lifesteal && actualDamage > 0) {
-    st = { ...st, enemyHealth: clampHealth(st.enemyHealth, actualDamage, st.enemyMaxHealth) };
+    nextState = { ...nextState, enemyHealth: clampHealth(nextState.enemyHealth, actualDamage, nextState.enemyMaxHealth) };
     mergeCombatText(combatTexts, { target: "enemy", kind: "heal", stat: "health", amount: actualDamage });
   }
 
-  return st;
+  return nextState;
 }
 
 function processEnemyAttack(state: BattleState, combatTexts: CombatTextEvent[]) {
@@ -239,34 +239,73 @@ function resolveDeathsDoorEndOfEnemyTurn(state: BattleState): BattleState {
   return { ...state, deathsDoorActive: false, deathsDoorTriggeredTurn: null };
 }
 
+function processEnemyTraits(state: BattleState, combatTexts: CombatTextEvent[]) {
+  let nextState = state;
+
+  if (nextState.currentEnemy.traits.some((t) => t.id === "rusting-carapace")) {
+    nextState = {
+      ...nextState,
+      enemyArmor: nextState.enemyArmor + TRAIT_ARMOR_PER_TURN,
+      enemyForge: nextState.enemyForge + TRAIT_FORGE_PER_TURN,
+    };
+    mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "armor", amount: TRAIT_ARMOR_PER_TURN });
+  }
+
+  if (nextState.currentEnemy.traits.some((t) => t.id === "glacial-shell")) {
+    nextState = { ...nextState, enemyFreezeBonus: nextState.enemyFreezeBonus + TRAIT_FREEZE_BONUS_PER_TURN };
+  }
+
+  if (nextState.difficultyModifiers.some((m: DifficultyModifier) => m.kind === "enemy-gains-forge-each-turn")) {
+    nextState = {
+      ...nextState,
+      enemyForge: nextState.enemyForge + DIFFICULTY_FORGE_PER_TURN,
+    };
+    mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "forge", amount: DIFFICULTY_FORGE_PER_TURN });
+  }
+
+  return nextState;
+}
+
+function processHasteEarlyTurn(state: BattleState, combatTexts: CombatTextEvent[]) {
+  const nextState = {
+    ...state,
+    playerStatuses: { ...state.playerStatuses, haste: state.playerStatuses.haste - 1 },
+  };
+  return tickPlayerStatuses(nextState, combatTexts);
+}
+
+function processStunSkipTurn(state: BattleState, combatTexts: CombatTextEvent[]) {
+  const nextState = reduceSkipTurns(state);
+  mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "stun", amount: 0 });
+  return tickPlayerStatuses(nextState, combatTexts);
+}
+
+function beginEnemyPhase(state: BattleState): BattleState {
+  return {
+    ...state,
+    turnPhase: "enemy" as TurnPhase,
+    hand: [] as BattleCard[],
+    discard: [...state.discard, ...state.hand],
+  };
+}
+
 function finalizePlayerTurn(state: BattleState, combatTexts: CombatTextEvent[]) {
   let nextState = applyIronwoodBuckler(state, combatTexts);
   nextState = resolveDeathsDoorEndOfEnemyTurn(nextState);
-  return { state: advanceToPlayerTurn(nextState, combatTexts), combatTexts };
+  return { state: advanceToPlayerTurn(nextState), combatTexts };
 }
 
 export function endPlayerTurn(state: BattleState): { state: BattleState; combatTexts: CombatTextEvent[] } {
   const combatTexts: CombatTextEvent[] = [];
-
-  let nextState: BattleState = {
-    ...state,
-    turnPhase: "enemy" as TurnPhase,
-    hand: [],
-    discard: [...state.discard, ...state.hand],
-  };
+  let nextState = beginEnemyPhase(state);
 
   if (state.playerStatuses.haste > 0) {
-    nextState = { ...nextState, playerStatuses: { ...nextState.playerStatuses, haste: nextState.playerStatuses.haste - 1 } };
-    nextState = tickPlayerStatuses(nextState, combatTexts);
+    nextState = processHasteEarlyTurn(nextState, combatTexts);
     return finalizePlayerTurn(nextState, combatTexts);
   }
 
   if (state.enemyStunSkipTurns + state.enemyFreezeSkipTurns > 0) {
-    nextState = reduceSkipTurns(nextState);
-    mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "stun", amount: 0 });
-
-    nextState = tickPlayerStatuses(nextState, combatTexts);
-
+    nextState = processStunSkipTurn(nextState, combatTexts);
     return finalizePlayerTurn(nextState, combatTexts);
   }
 
@@ -277,27 +316,7 @@ export function endPlayerTurn(state: BattleState): { state: BattleState; combatT
     return finalizePlayerTurn(nextState, combatTexts);
   }
 
-  if (nextState.currentEnemy.traits.some((t) => t.id === "rusting-carapace")) {
-    nextState = {
-      ...nextState,
-      enemyArmor: nextState.enemyArmor + 1,
-      enemyForge: nextState.enemyForge + 1,
-    };
-    mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "armor", amount: 1 });
-  }
-
-  if (nextState.currentEnemy.traits.some((t) => t.id === "glacial-shell")) {
-    nextState = { ...nextState, enemyFreezeBonus: nextState.enemyFreezeBonus + 1 };
-  }
-
-  if (nextState.difficultyModifiers.some((m: DifficultyModifier) => m.kind === "enemy-gains-forge-each-turn")) {
-    nextState = {
-      ...nextState,
-      enemyForge: nextState.enemyForge + 1,
-    };
-    mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "forge", amount: 1 });
-  }
-
+  nextState = processEnemyTraits(nextState, combatTexts);
   nextState = processEnemyAttack(nextState, combatTexts);
   nextState = tickPlayerStatuses(nextState, combatTexts);
   nextState = processEnemyRegeneration(nextState, combatTexts);

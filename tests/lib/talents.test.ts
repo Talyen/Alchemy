@@ -79,9 +79,9 @@ describe("extractCardKeywords", () => {
     expect(extractCardKeywords(c)).toEqual([]);
   });
 
-  it("does not extract consume keyword from consume cards (removed from system)", () => {
+  it("extracts consume keyword from consume cards", () => {
     const c = card({ consume: true, effects: [] });
-    expect(extractCardKeywords(c)).toEqual([]);
+    expect(extractCardKeywords(c)).toEqual(["consume"]);
   });
 
   it("deduplicates keywords from multiple effects", () => {

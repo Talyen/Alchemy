@@ -21,6 +21,7 @@ export function loadAlchemySaveData(): SaveData {
   try {
     return normalizeSaveData(JSON.parse(raw) as Partial<SaveData>);
   } catch {
+    console.error("Save data corrupt, falling back to defaults");
     return defaultSaveData;
   }
 }

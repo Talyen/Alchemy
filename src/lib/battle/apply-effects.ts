@@ -1,6 +1,6 @@
 // Main card-effect reducer: dispatches each card effect to the appropriate handler.
 import { companionLibrary, type BattleCard } from "@/lib/game-data";
-import { dealEnemyDamage } from "./damage";
+import { dealDamageToEnemy } from "./damage";
 import { applyPlayerStatusEffect } from "./status-effects";
 import { applyWishEffect } from "./wish";
 import { mergeCombatText } from "./combat-text";
@@ -16,7 +16,7 @@ export function applyCardEffects(state: BattleState, card: BattleCard, combatTex
   return card.effects.reduce((currentState, effect) => {
     switch (effect.kind) {
       case "damage":
-        return dealEnemyDamage(currentState, card, effect, combatTexts);
+        return dealDamageToEnemy(currentState, card, effect, combatTexts);
       case "player-status":
         return applyPlayerStatusEffect(currentState, effect, combatTexts);
       case "heal": {

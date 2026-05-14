@@ -1,7 +1,8 @@
 // Talent XP math and card-to-keyword extraction helpers.
 // Depends on game-data card/keyword types and XP tuning constants.
 // Used by talent state and UI to award, total, and display progression.
-import type { BattleCard, KeywordId } from "@/lib/game-data";
+import { getCardKeywords, type KeywordId } from "@/lib/game-data";
+import type { BattleCard } from "@/lib/game-data";
 import { XP_BASE_PER_POINT, XP_MIN_THRESHOLD, XP_ROOT_DIVISOR, XP_TRIANGULAR_MULTIPLIER } from "./game-constants";
 
 // XP is tracked per keyword (damage type). Each keyword has its own progress bar
@@ -43,36 +44,7 @@ export function xpToNextPoint(xp: number): number {
 // A single card can grant XP to multiple keywords (e.g. a physical burn card).
 // The keyword → XP mapping is how the talent system incentivizes certain play styles.
 export function extractCardKeywords(card: BattleCard): KeywordId[] {
-  const keywords = new Set<KeywordId>();
-  for (const effect of card.effects) {
-    switch (effect.kind) {
-      case "damage":
-        keywords.add(effect.damageType as KeywordId);
-        if (effect.lifesteal) keywords.add("leech");
-        break;
-      case "player-status":
-        keywords.add(effect.status as KeywordId);
-        break;
-      case "heal":
-        keywords.add("health");
-        break;
-      case "wish":
-        keywords.add("wish");
-        break;
-      case "gain-gold":
-        keywords.add("gold");
-        break;
-      case "restore-mana":
-      case "lose-mana":
-      case "gain-max-mana":
-      case "lose-max-mana":
-        keywords.add("mana");
-        break;
-      case "remove-harmful-status":
-        break;
-    }
-  }
-  return Array.from(keywords);
+  return getCardKeywords(card);
 }
 
 // Adds XP to one or more keywords. Used both for permanent (cross-run) XP and

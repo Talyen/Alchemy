@@ -1,8 +1,9 @@
 // Image preloading helpers for warming likely-next game art without blocking the
 // current interaction. Used by the app shell to reduce visible image pop-in.
+import { IMAGE_PRELOAD_BATCH_SIZE, IMAGE_PRELOAD_IDLE_TIMEOUT } from "./game-constants";
+
 const imageCache = new Set<string>();
 const imageLoads = new Map<string, Promise<void>>();
-const PRELOAD_BATCH_SIZE = 4;
 
 // Decodes an image once and caches the promise so repeated route predictions can
 // share work instead of creating competing network requests.
@@ -24,7 +25,7 @@ export function preloadImage(src: string) {
       image.decode().then(() => {
         imageCache.add(src);
         resolve();
-      }).catch(() => {});
+      }).catch(() => { console.warn("Image decode failed:", src); });
     }
   });
 
@@ -45,8 +46,8 @@ export function preloadImagesWhenIdle(srcs: string[]) {
   let index = 0;
 
   function preloadNextBatch() {
-    preloadImages(uniqueSrcs.slice(index, index + PRELOAD_BATCH_SIZE));
-    index += PRELOAD_BATCH_SIZE;
+    preloadImages(uniqueSrcs.slice(index, index + IMAGE_PRELOAD_BATCH_SIZE));
+    index += IMAGE_PRELOAD_BATCH_SIZE;
     if (index < uniqueSrcs.length) schedulePreloadBatch(preloadNextBatch);
   }
 
@@ -61,7 +62,7 @@ function schedulePreloadBatch(callback: () => void) {
   };
 
   if (scheduler.requestIdleCallback) {
-    scheduler.requestIdleCallback(callback, { timeout: 900 });
+    scheduler.requestIdleCallback(callback, { timeout: IMAGE_PRELOAD_IDLE_TIMEOUT });
     return;
   }
 

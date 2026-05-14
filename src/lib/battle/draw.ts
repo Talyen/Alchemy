@@ -3,19 +3,31 @@
 // Used by turn logic and battle controllers whenever cards or fresh battles are needed.
 import { companionLibrary, createEmptyTalentManifest, enemyBestiary, type BattleCard, type BestiaryEntry, type DifficultyModifier, type EnemyAttackEffect } from "@/lib/game-data";
 
+import { shuffle } from "../utils";
 import {
-  baseEnemyHealth,
-  basePlayerMana,
-  cardsPerTurn,
-  maxHandSize,
-  maxPlayerHealth,
+  BASE_ENEMY_HEALTH,
+  BASE_PLAYER_MANA,
+  CARDS_PER_TURN,
+  FALLBACK_ENEMY_ATTACK,
+  LIVING_ARMOR_STARTING_ARMOR,
+  MAX_HAND_SIZE,
+  MAX_PLAYER_HEALTH,
+  ROOM_SCALING_INCREMENT,
+  ELITE_STAT_MULTIPLIER,
+  BOSS_HP_MULTIPLIER,
+  BOSS_ATTACK_MULTIPLIER,
+  ACT_SCALING_INCREMENT,
+  STARTING_TURN,
+  ENEMY_BASE_REGENERATION,
+  ENEMY_BOSS_REGENERATION,
+} from "../game-constants";
+import {
   type BattleState,
   type EnemyStatusValues,
   type PlayerStatusValues,
   type TalentEffectManifest,
   type TurnPhase,
 } from "./types";
-import { ROOM_SCALING_INCREMENT, ELITE_STAT_MULTIPLIER, BOSS_HP_MULTIPLIER, BOSS_ATTACK_MULTIPLIER, ACT_SCALING_INCREMENT, STARTING_TURN, ENEMY_BASE_REGENERATION, ENEMY_BOSS_REGENERATION } from "../game-constants";
 import { computeTrinketManifest } from "../trinkets";
 
 // Default talent manifest used when no talents are unlocked. Every field must have a safe
@@ -38,7 +50,7 @@ export function drawCards(deck: BattleCard[], discard: BattleCard[], hand: Battl
   const nextHand = [...hand];
   let uid = nextCardUid;
 
-  for (let i = 0; i < amount && nextHand.length < maxHandSize; i++) {
+  for (let i = 0; i < amount && nextHand.length < MAX_HAND_SIZE; i++) {
     const refilled = refillDeck(nextDeck, nextDiscard);
     if (!refilled) break;
     nextDeck = refilled.deck;
@@ -67,12 +79,12 @@ function buildScaledEnemy(enemy: BestiaryEntry, destinationIndexInAct = 0, curre
   const bossAtkMul = enemy.enemyType === "boss" ? BOSS_ATTACK_MULTIPLIER : 1;
   const hpTypeMul = Math.max(1, eliteMul, bossHpMul);
   const atkTypeMul = Math.max(1, eliteMul, bossAtkMul);
-  const scaledEnemyHealth = Math.floor(baseEnemyHealth * hpMultiplier * hpTypeMul);
+  const scaledEnemyHealth = Math.floor(BASE_ENEMY_HEALTH * hpMultiplier * hpTypeMul);
   const scaleAmount = (amount: number) => Math.floor(amount * hpMultiplier * atkTypeMul);
 
   const baseEffects = enemy.attackEffects.length > 0
     ? enemy.attackEffects
-    : [{ kind: "damage" as const, damageType: "physical" as const, amount: 8 }];
+    : [{ kind: "damage" as const, damageType: "physical" as const, amount: FALLBACK_ENEMY_ATTACK }];
   const scaledEnemyAttackEffects: EnemyAttackEffect[] = baseEffects.map((effect) => {
     if (effect.kind === "damage") {
       return { kind: "damage", damageType: effect.damageType, amount: scaleAmount(effect.amount), ...("lifesteal" in effect ? { lifesteal: effect.lifesteal } : {}) };
@@ -87,78 +99,102 @@ function buildScaledEnemy(enemy: BestiaryEntry, destinationIndexInAct = 0, curre
   return { enemy, scaledEnemyHealth, scaledEnemyAttackEffects, enemyRegeneration, hpMultiplier, typeMul: atkTypeMul };
 }
 
+function setupOpeningHand(deck: BattleCard[], trinketEffects: ReturnType<typeof computeTrinketManifest>) {
+  const openingHand = drawCards(shuffleCards(deck), [], [], CARDS_PER_TURN, 0);
+  if (trinketEffects.extraDrawPerBattle <= 0) return { ...openingHand, extraHand: null };
+  const extraHand = drawCards(openingHand.deck, openingHand.discard, openingHand.hand, trinketEffects.extraDrawPerBattle, openingHand.nextCardUid);
+  return { deck: extraHand.deck, hand: extraHand.hand, discard: extraHand.discard, nextCardUid: extraHand.nextCardUid, extraHand };
+}
+
+function applyDifficultyAttackModifiers(effects: EnemyAttackEffect[], modifiers: DifficultyModifier[]) {
+  let modified = [...effects];
+  for (const mod of modifiers) {
+    if (mod.kind === "increase-enemy-physical-damage" || mod.kind === "increase-enemy-damage") {
+      modified = modified.map((e) =>
+        e.kind === "damage" ? { ...e, amount: e.amount + mod.amount } : e,
+      );
+    }
+    if (mod.kind === "increase-enemy-status") {
+      modified = modified.map((e) =>
+        e.kind === "player-status" && e.status === mod.status ? { ...e, amount: e.amount + mod.amount } : e,
+      );
+    }
+    if (mod.kind === "enemy-attacks-gain-leech") {
+      modified = modified.map((e) =>
+        e.kind === "damage" ? { ...e, lifesteal: true } : e,
+      );
+    }
+  }
+  return modified;
+}
+
+function computeStartingStatuses(modifiers: DifficultyModifier[], enemy: BestiaryEntry) {
+  const startingArmor = modifiers.find((m) => m.kind === "enemy-starting-armor")?.amount ?? 0;
+  const traitStartingArmor = enemy.traits.some((t) => t.id === "living-armor") ? LIVING_ARMOR_STARTING_ARMOR : 0;
+  const startBlock = modifiers.find((m) => m.kind === "start-block")?.amount ?? 0;
+  const manaBonus = modifiers.find((m) => m.kind === "start-max-mana")?.amount ?? 0;
+  const startCompanion = modifiers.some((m) => m.kind === "start-companion");
+  return { startingArmor: startingArmor + traitStartingArmor, startBlock, manaBonus, startCompanion };
+}
+
+function createInitialFlags() {
+  return {
+    firstPhysicalCardFreeUsed: false,
+    firstHolyCardFreeUsed: false,
+    firstBurnCardDoubledUsed: false,
+    firstArmorCardDoubledUsed: false,
+    firstPoisonCardFreeUsed: false,
+    firstBleedCardFreeUsed: false,
+    nextCardCostReduction: 0,
+    goldOnFirstPoisonThisCombat: false,
+    firstHolyDamageBonusUsed: false,
+    firstBurnTrinketDoubledUsed: false,
+    firstHarmfulStatusPrevented: false,
+    firstPotionFreeUsed: false,
+    resonantChimeUsedThisTurn: false,
+  };
+}
+
 // Creates the initial BattleState for a fresh encounter. Enemy HP and attack
 // scale per destination within an act (multiplicative by 1.1x per slot after the
 // first) and per act baseline (1.2x per act). Boss-type enemies get an additional
-// 1.8x multiplier. `roomsEncountered` tracks total rooms across all acts for
-// talent bonuses.
+// 1.8x multiplier. Delegates to focused helpers for opening hand, enemy scaling,
+// difficulty modifiers, and initial status setup.
 export function createBattleState(
   runDeck: BattleCard[],
   gold = 0,
   _roomsEncountered = 0,
   currentEnemy?: BestiaryEntry,
-  playerHealth = maxPlayerHealth,
+  playerHealth = MAX_PLAYER_HEALTH,
   talentEffects: TalentEffectManifest = defaultTalentEffects,
   discoveredCardIds: string[] = [],
-  maxHealth = maxPlayerHealth,
+  maxHealth = MAX_PLAYER_HEALTH,
   trinketIds: string[] = [],
   destinationIndexInAct = 0,
   currentAct = 1,
   difficultyModifiers: DifficultyModifier[] = [],
 ): BattleState {
-  const openingHand = drawCards(shuffleCards(runDeck), [], [], cardsPerTurn, 0);
-
   const trinketEffects = computeTrinketManifest(trinketIds);
-
-  // Tattered Pages: draw extra cards after the initial opening hand
-  const extraHand = trinketEffects.extraDrawPerBattle > 0
-    ? drawCards(openingHand.deck, openingHand.discard, openingHand.hand, trinketEffects.extraDrawPerBattle, openingHand.nextCardUid)
-    : null;
+  const { deck, hand, discard, nextCardUid } = setupOpeningHand(runDeck, trinketEffects);
 
   const enemy = currentEnemy ?? enemyBestiary[0];
   const { scaledEnemyHealth, scaledEnemyAttackEffects, enemyRegeneration } = buildScaledEnemy(enemy, destinationIndexInAct, currentAct);
-
-  const effectiveMaxHealth = maxHealth;
-  const startingHealth = Math.min(effectiveMaxHealth, playerHealth + talentEffects.startHealth);
-
-  // Apply difficulty modifiers to attack effects
-  let modifiedEffects = [...scaledEnemyAttackEffects];
-  for (const mod of difficultyModifiers) {
-    if (mod.kind === "increase-enemy-physical-damage" || mod.kind === "increase-enemy-damage") {
-      modifiedEffects = modifiedEffects.map((e) =>
-        e.kind === "damage" ? { ...e, amount: e.amount + mod.amount } : e,
-      );
-    }
-    if (mod.kind === "increase-enemy-status") {
-      modifiedEffects = modifiedEffects.map((e) =>
-        e.kind === "player-status" && e.status === mod.status ? { ...e, amount: e.amount + mod.amount } : e,
-      );
-    }
-    if (mod.kind === "enemy-attacks-gain-leech") {
-      modifiedEffects = modifiedEffects.map((e) =>
-        e.kind === "damage" ? { ...e, lifesteal: true } : e,
-      );
-    }
-  }
-
-  const startingArmor = difficultyModifiers.find((m) => m.kind === "enemy-starting-armor")?.amount ?? 0;
-  const traitStartingArmor = enemy.traits.some((t) => t.id === "living-armor") ? 8 : 0;
-  const startBlock = difficultyModifiers.find((m) => m.kind === "start-block")?.amount ?? 0;
-  const manaBonus = difficultyModifiers.find((m) => m.kind === "start-max-mana")?.amount ?? 0;
-  const startCompanion = difficultyModifiers.some((m) => m.kind === "start-companion");
+  const modifiedEffects = applyDifficultyAttackModifiers(scaledEnemyAttackEffects, difficultyModifiers);
+  const { startingArmor, startBlock, manaBonus, startCompanion } = computeStartingStatuses(difficultyModifiers, enemy);
+  const startingHealth = Math.min(maxHealth, playerHealth + talentEffects.startHealth);
 
   return {
-    deck: extraHand ? extraHand.deck : openingHand.deck,
-    hand: extraHand ? extraHand.hand : openingHand.hand,
-    discard: extraHand ? extraHand.discard : openingHand.discard,
+    deck,
+    hand,
+    discard,
     exhausted: [],
-    mana: basePlayerMana + manaBonus,
-    maxMana: basePlayerMana + manaBonus,
+    mana: BASE_PLAYER_MANA + manaBonus,
+    maxMana: BASE_PLAYER_MANA + manaBonus,
     gold,
     turn: STARTING_TURN,
     turnPhase: "player" as TurnPhase,
     playerHealth: startingHealth,
-    playerMaxHealth: effectiveMaxHealth,
+    playerMaxHealth: maxHealth,
     deathsDoorUsed: false,
     deathsDoorActive: false,
     deathsDoorTriggeredTurn: null,
@@ -166,7 +202,7 @@ export function createBattleState(
     enemyMaxHealth: scaledEnemyHealth,
     enemyAttackEffects: modifiedEffects,
     enemyRegeneration,
-    enemyArmor: startingArmor + traitStartingArmor,
+    enemyArmor: startingArmor,
     enemyForge: 0,
     enemyFreezeBonus: 0,
     playerStatuses: { block: talentEffects.startBlock + startBlock, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 } as PlayerStatusValues,
@@ -179,36 +215,14 @@ export function createBattleState(
     currentEnemy: enemy,
     talentEffects,
     trinketEffects,
-    flags: {
-      firstPhysicalCardFreeUsed: false,
-      firstHolyCardFreeUsed: false,
-      firstBurnCardDoubledUsed: false,
-      firstArmorCardDoubledUsed: false,
-      firstPoisonCardFreeUsed: false,
-      firstBleedCardFreeUsed: false,
-      nextCardCostReduction: 0,
-      goldOnFirstPoisonThisCombat: false,
-      firstHolyDamageBonusUsed: false,
-      firstBurnTrinketDoubledUsed: false,
-      firstHarmfulStatusPrevented: false,
-      firstPotionFreeUsed: false,
-      resonantChimeUsedThisTurn: false,
-    },
+    flags: createInitialFlags(),
     discoveredCardIds,
     cardsPlayedThisTurn: 0,
-    nextCardUid: extraHand ? extraHand.nextCardUid : openingHand.nextCardUid,
+    nextCardUid,
     difficultyModifiers,
   };
 }
 
-// Fisher-Yates shuffle — O(n), unbiased, in-place on a clone.
 export function shuffleCards(cards: BattleCard[]) {
-  const shuffled = [...cards];
-
-  for (let index = shuffled.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.floor(Math.random() * (index + 1));
-    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
-  }
-
-  return shuffled;
+  return shuffle(cards);
 }

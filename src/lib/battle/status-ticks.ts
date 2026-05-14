@@ -3,7 +3,7 @@
 import { applyPlayerCombatDamage, applyPlayerHealing, clampHealth, type BattleState, type CombatTextEvent } from "./types";
 import { getEnemyDamageMultiplier } from "./status-effects";
 import { mergeCombatText } from "./combat-text";
-import { HALF_DIVISOR, PERCENT_DENOMINATOR } from "../game-constants";
+import { HALF_DIVISOR, PERCENT_DENOMINATOR, POISON_DECAY_AMOUNT, POISON_GAIN_AMOUNT } from "../game-constants";
 
 // ----- Enemy DoT ticks -----
 
@@ -30,9 +30,9 @@ function tickPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
   mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "poison", amount: finalDamage });
   let nextPoison = state.enemyStatuses.poison;
   if (state.talentEffects.poisonGainChance > 0 && Math.random() * PERCENT_DENOMINATOR < state.talentEffects.poisonGainChance) {
-    nextPoison += 1;
-  } else {
-    nextPoison = Math.max(0, nextPoison - 1);
+      nextPoison += POISON_GAIN_AMOUNT;
+    } else {
+      nextPoison = Math.max(0, nextPoison - POISON_DECAY_AMOUNT);
   }
   let nextState = { ...state, enemyHealth: clampHealth(state.enemyHealth, -finalDamage, state.enemyMaxHealth), enemyStatuses: { ...state.enemyStatuses, poison: nextPoison } };
 

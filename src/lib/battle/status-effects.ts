@@ -17,20 +17,22 @@ import {
   HALF_DIVISOR,
   PERCENT_DENOMINATOR,
   STUN_THRESHOLD_FRACTION,
+  TRAIT_DAMAGE_RESISTANCE,
+  TRAIT_DAMAGE_WEAKNESS,
 } from "../game-constants";
 
 export function getEnemyDamageMultiplier(state: BattleState, damageType: string): number {
   const traitIds = state.currentEnemy.traits.map((t) => t.id);
-  if (traitIds.includes("brittle-bones") && (damageType === "holy" || damageType === "stun")) return 2;
-  if (traitIds.includes("trinket-hoarder") && damageType === "burn") return 2;
-  if (traitIds.includes("holy-vulnerability") && damageType === "holy") return 2;
-  if (traitIds.includes("burn-resistance") && damageType === "burn") return 0.5;
-  if (traitIds.includes("living-armor") && damageType === "bleed") return 0.5;
-  if (traitIds.includes("poison-resistance") && damageType === "poison") return 0.5;
-  if (traitIds.includes("glacial-shell") && damageType === "freeze") return 0.5;
-  if (traitIds.includes("glacial-shell") && damageType === "burn") return 2;
-  if (state.enemyStunSkipTurns > 0 && state.talentEffects.stunDoubleDamage) return 2;
-  if (state.enemyFreezeSkipTurns > 0 && state.talentEffects.freezeDoubleDamage) return 2;
+  if (traitIds.includes("brittle-bones") && (damageType === "holy" || damageType === "stun")) return TRAIT_DAMAGE_WEAKNESS;
+  if (traitIds.includes("trinket-hoarder") && damageType === "burn") return TRAIT_DAMAGE_WEAKNESS;
+  if (traitIds.includes("holy-vulnerability") && damageType === "holy") return TRAIT_DAMAGE_WEAKNESS;
+  if (traitIds.includes("burn-resistance") && damageType === "burn") return TRAIT_DAMAGE_RESISTANCE;
+  if (traitIds.includes("living-armor") && damageType === "bleed") return TRAIT_DAMAGE_RESISTANCE;
+  if (traitIds.includes("poison-resistance") && damageType === "poison") return TRAIT_DAMAGE_RESISTANCE;
+  if (traitIds.includes("glacial-shell") && damageType === "freeze") return TRAIT_DAMAGE_RESISTANCE;
+  if (traitIds.includes("glacial-shell") && damageType === "burn") return TRAIT_DAMAGE_WEAKNESS;
+  if (state.enemyStunSkipTurns > 0 && state.talentEffects.stunDoubleDamage) return TRAIT_DAMAGE_WEAKNESS;
+  if (state.enemyFreezeSkipTurns > 0 && state.talentEffects.freezeDoubleDamage) return TRAIT_DAMAGE_WEAKNESS;
   return 1;
 }
 

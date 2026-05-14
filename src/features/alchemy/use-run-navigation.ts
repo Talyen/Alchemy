@@ -2,7 +2,8 @@
 // Depends on battle/run/talent/shop callbacks, homestead effects, game data, and audio feedback.
 // Used by the top-level alchemy controller to keep screen changes and run mutations synchronized.
 import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
-import { createBattleState, isPlayerDefeated, maxPlayerHealth } from "@/lib/battle";
+import { createBattleState, isPlayerDefeated } from "@/lib/battle";
+import { MAX_PLAYER_HEALTH } from "@/lib/game-constants";
 import { getDifficultyModifiers, getGoldMultiplier, getStartingDeck, type BattleCard, type CharacterId, type DifficultyId, type DifficultyModifier } from "@/lib/game-data";
 import { playVictory, playDefeat, playGoldGain } from "@/lib/audio";
 import { appendUnique, appendUniqueMany } from "@/lib/utils";
@@ -12,6 +13,8 @@ import { type HomesteadEffectManifest, type MaterialInventory } from "@/lib/home
 import {
   ACTS_PER_RUN,
   CAMPFIRE_HEAL_FRACTION,
+  COMPANION_GOLD_FIND_CHANCE,
+  COMPANION_GOLD_MULTIPLIER,
   ELITE_GOLD_BONUS_FRACTION,
   BOSS_GOLD_BONUS_FRACTION,
   GOLD_REWARD_MAX,
@@ -193,8 +196,8 @@ export function useRunNavigation({
     const baseGold = randomBetween(GOLD_REWARD_MIN, GOLD_REWARD_MAX);
     let gold = Math.floor(baseGold * (1 + talents.talentEffects.enemyGoldDropBonus));
 
-    if (talents.talentEffects.companionGoldFindActive && battleState.activeCompanion && Math.random() < 0.5) {
-      gold = Math.floor(gold * 1.2);
+    if (talents.talentEffects.companionGoldFindActive && battleState.activeCompanion && Math.random() < COMPANION_GOLD_FIND_CHANCE) {
+      gold = Math.floor(gold * COMPANION_GOLD_MULTIPLIER);
     }
 
     const eliteBonus =
@@ -302,20 +305,16 @@ export function useRunNavigation({
     navigateTo("difficulty-select");
   }
 
-  function handleDifficultySelect(difficultyId: DifficultyId) {
-    if (!pendingCharacterId) return;
-    const selectedId = pendingCharacterId;
-    setPendingCharacterId(null);
-    const freshDeck = getStartingDeck(selectedId);
-    run.setCharacter(selectedId);
+  function initializeRunForDifficulty(characterId: CharacterId, difficultyId: DifficultyId) {
+    const freshDeck = getStartingDeck(characterId);
+    run.setCharacter(characterId);
     run.setRunDeck(freshDeck);
     run.setSelectedDifficulty(difficultyId);
-    const homesteadGoldBonus = homesteadEffectsRef.current.startGold;
-    const totalStartGold = talents.talentEffects.startGold + homesteadGoldBonus;
+    const totalStartGold = talents.talentEffects.startGold + homesteadEffectsRef.current.startGold;
     if (totalStartGold > 0) playGoldGain();
     run.setRunGold(totalStartGold);
     run.setRoomsEncountered(0);
-    const maxHp = maxPlayerHealth + homesteadEffectsRef.current.startMaxHealthBonus;
+    const maxHp = MAX_PLAYER_HEALTH + homesteadEffectsRef.current.startMaxHealthBonus;
     run.setRunPlayerHealth(maxHp);
     run.setRunMaxHealth(maxHp);
     run.setCurrentAct(1);
@@ -323,14 +322,19 @@ export function useRunNavigation({
     run.setCompletedDestinations([]);
     setRewardState(createEmptyRewardState(sampleDestinationChoices(getAvailableDestinations())));
     setDiscoveredCardIds((current) =>
-      appendUniqueMany(
-        current,
-        freshDeck.map((c) => c.id),
-      ),
+      appendUniqueMany(current, freshDeck.map((c) => c.id)),
     );
     setEncounteredEnemyIds([]);
     setHoveredCardId(null);
     setHasActiveRun(true);
+    return { freshDeck, totalStartGold };
+  }
+
+  function handleDifficultySelect(difficultyId: DifficultyId) {
+    if (!pendingCharacterId) return;
+    const selectedId = pendingCharacterId;
+    setPendingCharacterId(null);
+    const { freshDeck, totalStartGold } = initializeRunForDifficulty(selectedId, difficultyId);
     const modifiers = getDifficultyModifiers(selectedId, difficultyId);
     onStartBattle(freshDeck, totalStartGold, "normal", modifiers);
     navigateTo("battle");

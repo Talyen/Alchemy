@@ -1,15 +1,11 @@
 // Streaming MP3 music playback and transitions.
 // Depends on shared audio state and music path constants.
 // Used by App/controllers through the public lib/audio facade.
-import { MUSIC_BASE_PATH } from "./game-constants";
+import { FADE_IN_DELAY, FADE_IN_DURATION, FADE_OUT_DURATION, MUSIC_BASE_PATH, MUSIC_MASTER_GAIN } from "./game-constants";
 import { audioState } from "./audio-state";
 import { pickRandom } from "./utils";
 
 const musicBase = import.meta.env.BASE_URL + MUSIC_BASE_PATH;
-const FADE_OUT_DURATION = 300;
-const FADE_IN_DELAY = 600;
-const FADE_IN_DURATION = 1400;
-const MUSIC_MASTER_GAIN = 0.5;
 
 const musicTracks: Record<string, string[]> = {
   menu: ["Menu 1.mp3"],
@@ -32,7 +28,7 @@ function replaceCurrentTrack(track: string, volume: number) {
   el.loop = true;
   el.volume = volume;
   el.muted = audioState.muted;
-  el.play().catch(() => {});
+  el.play().catch(() => { console.warn("Music autoplay blocked"); });
   audioState.currentMusic = el;
   return el;
 }
@@ -72,7 +68,7 @@ export function playMusicImmediate(key: string) {
 export function playMusic(key: string) {
   if (key === audioState.currentMusicKey) {
     if (audioState.currentMusic?.paused) {
-      audioState.currentMusic.play().catch(() => {});
+      audioState.currentMusic.play().catch(() => { console.warn("Music resume playback blocked"); });
     }
     return;
   }

@@ -1,7 +1,6 @@
 // Wish card generation and wish effect resolution.
 import { cardLibrary, type BattleCard } from "@/lib/game-data";
-import { shuffleCards } from "./draw";
-import { drawCards } from "./draw";
+import { drawCards, shuffleCards } from "./draw";
 import { applyPlayerHealing, type BattleState, type CombatTextEvent } from "./types";
 import { mergeCombatText } from "./combat-text";
 import { removeHarmfulPlayerStatuses } from "./status-effects";

@@ -3,8 +3,8 @@
 // Used by controllers; battle, shop, and navigation rules intentionally live elsewhere.
 import { useState } from "react";
 import { getGoldMultiplier, getStartingDeck, type BattleCard, type CharacterId, type DifficultyId } from "@/lib/game-data";
-import { maxPlayerHealth } from "@/lib/battle";
-import type { Destination } from "./types";
+import { MAX_PLAYER_HEALTH } from "@/lib/game-constants";
+import { DESTINATIONS, type Destination } from "./types";
 import type { ActiveRunData } from "./run/types";
 
 type RunState = {
@@ -31,13 +31,13 @@ function createInitialRunState(
     characterId,
     runDeck: initialActiveRun ? [...initialActiveRun.runDeck] : getStartingDeck(characterId),
     runGold: initialActiveRun?.runGold ?? 0,
-    runPlayerHealth: initialActiveRun?.runPlayerHealth ?? maxPlayerHealth,
-    runMaxHealth: initialActiveRun?.runMaxHealth ?? maxPlayerHealth,
+    runPlayerHealth: initialActiveRun?.runPlayerHealth ?? MAX_PLAYER_HEALTH,
+    runMaxHealth: initialActiveRun?.runMaxHealth ?? MAX_PLAYER_HEALTH,
     roomsEncountered: initialActiveRun?.roomsEncountered ?? 0,
     currentAct: initialActiveRun?.currentAct ?? 1,
     destinationIndexInAct: initialActiveRun?.destinationIndexInAct ?? 0,
     completedDestinations: initialActiveRun?.completedDestinations?.length
-      ? (initialActiveRun.completedDestinations as Destination[])
+      ? initialActiveRun.completedDestinations.filter((d): d is Destination => DESTINATIONS[d as keyof typeof DESTINATIONS] !== undefined)
       : [],
     runTrinkets: initialActiveRun?.runTrinkets ? [...initialActiveRun.runTrinkets] : [],
     selectedDifficulty: initialActiveRun?.selectedDifficulty ?? null,

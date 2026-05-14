@@ -3,15 +3,6 @@
 // Keep these state shapes explicit so save/load, animation, and combat stay in sync.
 import type { BattleCard, BestiaryEntry, CompanionDefinition, DamageType, DifficultyModifier, EnemyAttackEffect, EnemyStatusId, PlayerStatusId, TalentEffectManifest } from "@/lib/game-data";
 
-// Baseline balance knobs — tuned so the Knight starter deck (8 cards, 8 turns avg per fight)
-// can consistently beat the first enemy with some health remaining. Scaling per room
-// increments these via draw.ts.
-export const cardsPerTurn = 4;
-export const maxHandSize = 7;
-export const maxPlayerHealth = 30;
-export const baseEnemyHealth = 30;
-export const basePlayerMana = 4;
-
 // Both player and enemy use the same status ID union, but enemies never gain
 // block/armor/forge/haste — those are filtered out at the BattleCardEffect level.
 // bleedLeech is a separate counter so bleed-lifesteal can track how much to heal
@@ -137,30 +128,5 @@ export type BattleResolution = {
   combatTexts: CombatTextEvent[];
 };
 
-// Shortcut for health changes: health + delta, clamped to [0, max].
-export function clampHealth(current: number, delta: number, max: number): number {
-  return Math.max(0, Math.min(max, current + delta));
-}
-
-// Combat damage at 0 HP gets one battle-scoped grace window instead of immediate defeat.
-export function applyPlayerCombatDamage(state: BattleState, damage: number): BattleState {
-  if (damage <= 0) return state;
-  const nextHealth = clampHealth(state.playerHealth, -damage, state.playerMaxHealth);
-  if (nextHealth > 0) return { ...state, playerHealth: nextHealth };
-  if (!state.deathsDoorUsed) {
-    return { ...state, playerHealth: 0, deathsDoorUsed: true, deathsDoorActive: true, deathsDoorTriggeredTurn: state.turn };
-  }
-  return { ...state, playerHealth: 0, deathsDoorActive: state.deathsDoorActive };
-}
-
-// Healing above 0 ends the warning window, but the one-shot trigger stays consumed.
-export function applyPlayerHealing(state: BattleState, amount: number): BattleState {
-  const playerHealth = clampHealth(state.playerHealth, amount, state.playerMaxHealth);
-  return { ...state, playerHealth, deathsDoorActive: playerHealth <= 0 && state.deathsDoorActive };
-}
-
-// Defeat checks use this so 0 HP can be survivable only during Death's Door.
-export function isPlayerDefeated(state: Pick<BattleState, "playerHealth" | "deathsDoorActive">): boolean {
-  return state.playerHealth <= 0 && !state.deathsDoorActive;
-}
+export { clampHealth, applyPlayerCombatDamage, applyPlayerHealing, isPlayerDefeated } from "./health";
 

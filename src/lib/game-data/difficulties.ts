@@ -1,4 +1,5 @@
 import type { CharacterId } from "./characters";
+import type { EnemyStatusId } from "./types";
 
 export type DifficultyId = "difficulty-1" | "difficulty-2" | "difficulty-3";
 
@@ -7,7 +8,7 @@ export type DifficultyModifier =
   | { kind: "enemy-gains-forge-each-turn" }
   | { kind: "increase-enemy-physical-damage"; amount: number }
   | { kind: "increase-enemy-damage"; amount: number }
-  | { kind: "increase-enemy-status"; status: "burn" | "freeze" | "poison" | "bleed"; amount: number }
+  | { kind: "increase-enemy-status"; status: Exclude<EnemyStatusId, "stun">; amount: number }
   | { kind: "enemy-attacks-gain-leech" }
   | { kind: "start-block"; amount: number }
   | { kind: "start-max-mana"; amount: number }

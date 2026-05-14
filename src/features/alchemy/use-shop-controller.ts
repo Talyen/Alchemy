@@ -116,6 +116,7 @@ export function useShopController({
     try {
       mixed = createMixedPotion(cardA, cardB);
     } catch {
+      console.error("Mix failed: source cards may include an existing Mixed Potion");
       return;
     }
 

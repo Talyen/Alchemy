@@ -17,10 +17,10 @@ export function cardHasDamageType(card: BattleCard, damageType: string): boolean
 }
 
 const FIRST_CARD_FREE_RULES: { flag: keyof CombatFlags; condition: (state: BattleState, card: BattleCard) => boolean }[] = [
-  { flag: "firstPhysicalCardFreeUsed", condition: (s, c) => s.talentEffects.firstPhysicalCardFree && cardHasDamageType(c, "physical") },
-  { flag: "firstHolyCardFreeUsed", condition: (s, c) => s.talentEffects.firstHolyCardFree && cardHasDamageType(c, "holy") },
-  { flag: "firstPoisonCardFreeUsed", condition: (s, c) => s.talentEffects.firstPoisonCardFree && cardHasDamageType(c, "poison") },
-  { flag: "firstBleedCardFreeUsed", condition: (s, c) => s.talentEffects.firstBleedCardFree && cardHasDamageType(c, "bleed") },
+  { flag: "firstPhysicalCardFreeUsed", condition: (state, card) => state.talentEffects.firstPhysicalCardFree && cardHasDamageType(card, "physical") },
+  { flag: "firstHolyCardFreeUsed", condition: (state, card) => state.talentEffects.firstHolyCardFree && cardHasDamageType(card, "holy") },
+  { flag: "firstPoisonCardFreeUsed", condition: (state, card) => state.talentEffects.firstPoisonCardFree && cardHasDamageType(card, "poison") },
+  { flag: "firstBleedCardFreeUsed", condition: (state, card) => state.talentEffects.firstBleedCardFree && cardHasDamageType(card, "bleed") },
 ];
 
 function resolveCardPlayCost(state: BattleState, card: BattleCard) {

@@ -24,6 +24,13 @@ export const HALF_DIVISOR = 2;                  // Shared halving divisor for de
 export const FIRST_EFFECT_MULTIPLIER = 2;       // First-card double effects intentionally share a 2x multiplier.
 export const GOLD_TROVE_DAMAGE_REWARD = 1;      // Mimic trait gold gained each time it takes damage.
 
+// ============ Battle Tuning ============
+export const CARDS_PER_TURN = 4;                // Cards drawn at turn start. Tuned to Knight starter deck (8 cards, ~8 turns avg).
+export const MAX_HAND_SIZE = 7;                 // Hand size cap; excess draws are skipped.
+export const MAX_PLAYER_HEALTH = 30;            // Starting and default max HP for all characters.
+export const BASE_ENEMY_HEALTH = 30;            // Base enemy HP before room/act/type scaling.
+export const BASE_PLAYER_MANA = 4;              // Starting and max mana per turn.
+
 // ============ Timing (ms) ============
 export const AUTO_END_TURN_DELAY = 1220;       // How long the system waits before auto-ending turn when conditions are met (no mana, no cards).
 export const VICTORY_TRANSITION_DELAY = 1200;  // Brief pause after enemy dies so the death animation can play before the victory screen.
@@ -91,6 +98,30 @@ export const MASTER_GAIN = 0.3;                 // Master volume level. 0.3 prev
 export const DEFAULT_MUSIC_VOLUME = 0.0875;     // Music baseline — reduced so it sits under SFX without overpowering.
 export const MUSIC_BASE_PATH = "Music/";        // Relative path from BASE_URL for music files.
 
+// Music transition timing and gain staging. MUSIC_MASTER_GAIN is an additional layer
+// on top of user music volume and master volume — the final volume is userMusic * master * MUSIC_MASTER_GAIN.
+export const FADE_OUT_DURATION = 300;           // ms — crossfade-out when switching tracks.
+export const FADE_IN_DELAY = 600;               // ms — silence before a new track fades in.
+export const FADE_IN_DURATION = 1400;           // ms — ramp time for incoming track to full volume.
+export const MUSIC_MASTER_GAIN = 0.5;           // Additional gain cap so music sits under SFX.
+
+// ============ SFX Volume ============
+export const DEFAULT_SFX_VOLUME = 0.35;         // Initial SFX slider value.
+export const SFX_UI_VOLUME = 0.6;               // UI sounds play quieter to avoid competing with combat.
+export const SFX_VICTORY_VOLUME = 0.8;          // Victory stinger plays slightly louder.
+export const SFX_DEFEAT_VOLUME = 0.7;           // Defeat stinger plays at moderate volume.
+
+// ============ Image / Asset Preloading ============
+export const IMAGE_PRELOAD_BATCH_SIZE = 4;      // How many speculative images to decode per idle callback.
+export const IMAGE_PRELOAD_IDLE_TIMEOUT = 900;  // ms — max deferral for idle callback scheduling.
+
+// ============ Screen Transitions ============
+export const PAGE_EXIT_MS = 130;                // ms — exit animation duration before next screen mounts.
+
+// ============ Startup Loading ============
+export const INITIAL_LOAD_MIN_DURATION_MS = 650;     // Minimum loading screen display time.
+export const INITIAL_LOAD_MAX_DURATION_MS = 12000;   // Hard cap — show the game even if assets are slow.
+
 // ============ Animation / Timing ============
 export const SHIMMER_DURATION_MS = 1250;        // Card shimmer sweep animation runtime.
 export const SHIMMER_COOLDOWN_MS = 2600;        // Minimum time between shimmer triggers. Prevents rapid-fire re-triggers from spamming hover.
@@ -136,6 +167,30 @@ export const WISH_OVERLAY_Z_INDEX = 90;          // Wish choices block all battl
 
 // ============ Storage ============
 export const SAVE_KEY = "alchemy-save-v1";       // localStorage key. Version suffix enables migration if shape changes.
+
+// ============ Enemy Trait Tuning ============
+export const TRAIT_ARMOR_PER_TURN = 1;             // Rusting-Carapace: armor gained each enemy turn.
+export const TRAIT_FORGE_PER_TURN = 1;             // Rusting-Carapace: forge gained each enemy turn.
+export const TRAIT_FREEZE_BONUS_PER_TURN = 1;      // Glacial-Shell: freeze status bonus gained each turn.
+export const DIFFICULTY_FORGE_PER_TURN = 1;         // Difficulty modifier: forge gained each enemy turn.
+export const LIVING_ARMOR_STARTING_ARMOR = 8;       // Living-Armor trait initial armor value.
+export const FALLBACK_ENEMY_ATTACK = 8;             // Default attack for malformed bestiary entries.
+
+// ============ Enemy Trait Damage Modifiers ============
+export const TRAIT_DAMAGE_WEAKNESS = 2;          // Enemy trait weakness multiplier (double damage).
+export const TRAIT_DAMAGE_RESISTANCE = 0.5;       // Enemy trait resistance multiplier (half damage).
+
+// ============ Status Tick Tuning ============
+export const POISON_DECAY_AMOUNT = 1;              // Poison stack decreases by this each tick.
+export const POISON_GAIN_AMOUNT = 1;               // Poison gain from talent proc.
+
+// ============ Companion ============
+export const COMPANION_GOLD_FIND_CHANCE = 0.5;      // 50% chance for companion gold find on victory.
+export const COMPANION_GOLD_MULTIPLIER = 1.2;       // Companion gold find multiplies base gold by 1.2x.
+
+// ============ Corruption ============
+export const CORRUPTION_TRANSFORM_CHANCE = 0.5;     // 50% chance corruption transforms card vs mutating in-place.
+export const CORRUPTION_DELTA_CHANCE = 0.5;          // 50% chance delta is +1 vs -1.
 
 // ============ Named string enums ============
 // String constants to prevent typos in state machine transitions and event dispatch.

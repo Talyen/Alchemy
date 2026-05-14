@@ -14,6 +14,16 @@ export function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
 }
 
+// Fisher-Yates shuffle — O(n), unbiased, in-place on a clone.
+export function shuffle<T>(items: readonly T[]): T[] {
+  const shuffled = [...items];
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+  }
+  return shuffled;
+}
+
 // Picks one item from a non-empty collection without each caller repeating random index math.
 export function pickRandom<T>(items: readonly T[]): T | undefined {
   return items[Math.floor(Math.random() * items.length)];

@@ -51,11 +51,10 @@ import { useAlchemyRunController } from "@/features/alchemy/use-alchemy-run-cont
 import { useHomesteadState } from "@/features/alchemy/use-homestead-state";
 import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
 import { canAfford } from "@/lib/homestead/types";
+import { PAGE_EXIT_MS } from "@/lib/game-constants";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { HomesteadScreen } from "@/features/alchemy/screens/homestead-screen";
 import { BackgroundParticles } from "@/features/alchemy/ui/background-particles";
-
-const PAGE_EXIT_MS = 130;
 
 const SCREEN_PARTICLE_COLORS: Partial<Record<Screen, readonly string[]>> = {
   battle: ["rgba(255, 150, 70, X)", "rgba(255, 100, 40, X)"],

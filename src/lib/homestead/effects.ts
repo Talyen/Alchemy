@@ -5,12 +5,12 @@
 import type { TalentEffectManifest } from "@/lib/battle";
 import type { BuildingId, FarmId, HomesteadEffectManifest, ResearchId } from "./types";
 import { defaultHomesteadEffects } from "./types";
-import { buildings, farmPlots, researchUpgrades } from "./data";
+import { buildings, farmPlots } from "./data";
 
 export function computeHomesteadEffects(
   constructedBuildings: BuildingId[],
   plantedFarms: FarmId[],
-  completedResearch: ResearchId[],
+  _completedResearch: ResearchId[],
 ): HomesteadEffectManifest {
   const effects = { ...defaultHomesteadEffects };
 
@@ -20,7 +20,7 @@ export function computeHomesteadEffects(
     switch (building.id) {
       case "blacksmiths-forge":
         effects.flatPhysicalDamage += 1;
-        effects.forgeToBurn = 1;
+        effects.forgeToBurn = true;
         break;
       case "hunters-lodge":
         effects.companionDamage += 1;
@@ -42,11 +42,6 @@ export function computeHomesteadEffects(
     }
   }
 
-  for (const researchId of completedResearch) {
-    const research = researchUpgrades.find((r) => r.id === researchId);
-    if (!research) continue;
-  }
-
   return effects;
 }
 
@@ -66,6 +61,6 @@ export function mergeIntoManifest(
     physicalCritChance: talentEffects.physicalCritChance + homesteadEffects.physicalCritChance,
     potionDiscount: talentEffects.potionDiscount + Math.round(homesteadEffects.potionDiscount * 100) / 100,
     potionManaBonus: talentEffects.potionManaBonus + homesteadEffects.potionManaBonus,
-    forgeToBurn: talentEffects.forgeToBurn || homesteadEffects.forgeToBurn > 0,
+    forgeToBurn: talentEffects.forgeToBurn || homesteadEffects.forgeToBurn,
   };
 }

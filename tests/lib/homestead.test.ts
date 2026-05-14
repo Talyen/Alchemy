@@ -108,9 +108,9 @@ describe("MATERIAL_IDS and labels", () => {
 });
 
 describe("defaultHomesteadEffects", () => {
-  it("all values are 0", () => {
+  it("all values are at default (0 or false)", () => {
     for (const value of Object.values(defaultHomesteadEffects)) {
-      expect(value).toBe(0);
+      expect(value).toBe(typeof value === "boolean" ? false : 0);
     }
   });
 });
@@ -210,13 +210,13 @@ describe("computeHomesteadEffects", () => {
   it("blacksmiths-forge adds flatPhysicalDamage and forgeToBurn", () => {
     const effects = computeHomesteadEffects(["blacksmiths-forge"], [], []);
     expect(effects.flatPhysicalDamage).toBe(1);
-    expect(effects.forgeToBurn).toBe(1);
+    expect(effects.forgeToBurn).toBe(true);
   });
 
   it("combines multiple buildings", () => {
     const effects = computeHomesteadEffects(["blacksmiths-forge", "hunters-lodge", "alchemy-lab"], [], []);
     expect(effects.flatPhysicalDamage).toBe(1);
-    expect(effects.forgeToBurn).toBe(1);
+    expect(effects.forgeToBurn).toBe(true);
     expect(effects.companionDamage).toBe(1);
     expect(effects.potionHealMultiplier).toBeCloseTo(0.2);
     expect(effects.potionDiscount).toBeCloseTo(0.1);
@@ -314,7 +314,7 @@ describe("mergeIntoManifest", () => {
   const makeHomesteadEffects = () => ({
     flatPhysicalDamage: 1,
     companionDamage: 1,
-    forgeToBurn: 1,
+    forgeToBurn: true,
     potionHealMultiplier: 0.2,
     potionManaBonus: 1,
     potionDiscount: 0.1,

@@ -6,4 +6,4 @@ export * from "./config/layout";
 export * from "./config/metadata";
 export * from "./config/options";
 export * from "./config/routes";
-export * from "./config/theme";
+export * from "./config/combat-text-icons";

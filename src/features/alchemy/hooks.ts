@@ -1,9 +1,4 @@
-// React hooks for card shimmer, mobile detection, and virtual-resolution scaling.
-// Depends on alchemy UI types and viewport/timing constants.
-// Used by controllers/App to keep animation and viewport side effects reusable.
 import { useCallback, useEffect, useRef, useState } from "react";
-
-import type { ResolutionOption } from "./types";
 import {
   DESIGN_STAGE_HEIGHT,
   MAX_STAGE_SCALE,
@@ -14,13 +9,7 @@ import {
   PORTRAIT_MOBILE_MAX_WIDTH,
   SHIMMER_COOLDOWN_MS,
 } from "@/lib/game-constants";
-
-// ---- Card Shimmer (Hover Effect) ----
-// Manages the "shimmer" animation that sweeps across card art on mouse hover.
-// Cooldown prevents rapid re-triggering; intro delay ensures the first hover
-// on a screen doesn't feel delayed.
-
-const shimmerCooldownMs = SHIMMER_COOLDOWN_MS;
+import type { ResolutionOption } from "./types";
 
 export function useShimmerController() {
   const [shimmerState, setShimmerState] = useState<{ cardId: string; token: number } | null>(null);
@@ -28,7 +17,7 @@ export function useShimmerController() {
 
   function maybeTriggerShimmer(cardId: string) {
     const now = performance.now();
-    if (now - lastTriggerTimeRef.current < shimmerCooldownMs) return;
+    if (now - lastTriggerTimeRef.current < SHIMMER_COOLDOWN_MS) return;
     lastTriggerTimeRef.current = now;
     setShimmerState({ cardId, token: performance.now() });
   }
@@ -36,10 +25,6 @@ export function useShimmerController() {
   return { shimmerState, maybeTriggerShimmer };
 }
 
-// ---- Mobile Detection ----
-// Detects mobile landscape and portrait viewports using viewport dimensions
-// and pointer media queries. Portrait mobile shows a rotate-device prompt;
-// mobile landscape gets a full-viewport layout without virtual-resolution scaling.
 export function useMobileDetection() {
   const [isMobileLandscape, setIsMobileLandscape] = useState(false);
   const [isPortraitMobile, setIsPortraitMobile] = useState(false);
@@ -58,7 +43,7 @@ export function useMobileDetection() {
       setTimeout(check, ORIENTATION_CHANGE_DEBOUNCE_MS);
     }
 
-    check(); // eslint-disable-line react-hooks/set-state-in-effect
+    check();
     window.addEventListener("resize", check);
     window.addEventListener("orientationchange", handleOrientationChange);
     return () => {
@@ -70,11 +55,6 @@ export function useMobileDetection() {
   return { isMobileLandscape, isPortraitMobile };
 }
 
-// ---- Virtual Resolution ----
-// Wraps the game canvas in a CSS scale transform so it fits the window. The
-// selected resolution contributes aspect ratio only on desktop; mobile landscape
-// uses the live phone aspect ratio so battle can keep the desktop composition
-// without rendering into a narrow 16:9 letterbox.
 export function useVirtualResolution(selectedResolution: ResolutionOption, bypassVr = false, mobileLandscape = false) {
   const [viewportSize, setViewportSize] = useState(() => ({ width: window.innerWidth, height: window.innerHeight }));
 
@@ -86,8 +66,6 @@ export function useVirtualResolution(selectedResolution: ResolutionOption, bypas
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Bypass VR for the mobile battle layout — it uses a compact flex layout
-  // designed for the native viewport.
   if (bypassVr) {
     return {
       frameStyle: { width: "100%", height: "100%" },
