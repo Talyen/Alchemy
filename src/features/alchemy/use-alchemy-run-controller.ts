@@ -102,7 +102,7 @@ export function useAlchemyRunController({
     setHasActiveBattle: battle.setHasActiveBattle,
     hasActiveRun,
     setHasActiveRun,
-    battleStateRef: battle.battleStateRef,
+    currentEnemyType: battle.battleState.currentEnemy.enemyType,
     clearCardGhosts: battle.clearCardGhosts,
     setBattleState: battle.setBattleState,
     setDiscoveredCardIds,

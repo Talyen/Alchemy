@@ -1,7 +1,7 @@
 // Run-flow controller for routing, rewards, mysteries, campfires, act transitions, and reset.
 // Depends on battle/run/talent/shop callbacks, homestead effects, game data, and audio feedback.
 // Used by the top-level alchemy controller to keep screen changes and run mutations synchronized.
-import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createBattleState, isPlayerDefeated } from "@/lib/battle";
 import { MAX_PLAYER_HEALTH } from "@/lib/game-constants";
 import { getDifficultyModifiers, getGoldMultiplier, getStartingDeck, type BattleCard, type CharacterId, type DifficultyId, type DifficultyModifier } from "@/lib/game-data";
@@ -48,7 +48,7 @@ export function useRunNavigation({
   setHasActiveBattle,
   hasActiveRun,
   setHasActiveRun,
-  battleStateRef,
+  currentEnemyType,
   clearCardGhosts,
   setBattleState,
   setDiscoveredCardIds,
@@ -73,7 +73,7 @@ export function useRunNavigation({
   setHasActiveBattle: React.Dispatch<React.SetStateAction<boolean>>;
   hasActiveRun: boolean;
   setHasActiveRun: React.Dispatch<React.SetStateAction<boolean>>;
-  battleStateRef: React.MutableRefObject<BattleState>;
+  currentEnemyType: string;
   clearCardGhosts: () => void;
   setBattleState: React.Dispatch<React.SetStateAction<BattleState>>;
   setDiscoveredCardIds: React.Dispatch<React.SetStateAction<string[]>>;
@@ -162,12 +162,14 @@ export function useRunNavigation({
 
   // ============ Victory / Defeat Effects ============
 
-  const handleBattleDefeatEvent = useEffectEvent(handleBattleDefeat);
-  const handleBattleVictoryEvent = useEffectEvent(handleBattleVictory);
+  const handleBattleDefeatRef = useRef(handleBattleDefeat);
+  const handleBattleVictoryRef = useRef(handleBattleVictory);
+  useEffect(() => { handleBattleDefeatRef.current = handleBattleDefeat; });
+  useEffect(() => { handleBattleVictoryRef.current = handleBattleVictory; });
 
   useEffect(() => {
     if (screen !== "battle" || !isPlayerDefeated(battleState)) return;
-    handleBattleDefeatEvent();
+    handleBattleDefeatRef.current();
   }, [battleState, screen]);
 
   useEffect(() => {
@@ -179,7 +181,7 @@ export function useRunNavigation({
     if (isPlayerDefeated(battleState)) return;
     if (battleVictoryHandledRef.current) return;
     battleVictoryHandledRef.current = true;
-    handleBattleVictoryEvent();
+    handleBattleVictoryRef.current();
   }, [battleState, hasActiveBattle, screen]);
 
   function handleBattleDefeat() {
@@ -376,7 +378,7 @@ export function useRunNavigation({
     setRewardState((prev) => createEmptyRewardState(prev.destinations));
     setHoveredCardId(null);
 
-    if (battleStateRef.current.currentEnemy.enemyType === "boss") {
+    if (currentEnemyType === "boss") {
       handleActComplete();
       return;
     }

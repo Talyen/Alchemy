@@ -295,6 +295,207 @@ export default function App() {
   const isBossBattle = renderedScreen === "battle" && run.battleState.currentEnemy.enemyType === "boss";
   const particleAlphaMultiplier = isBossBattle ? BOSS_ALPHA_MULTIPLIER : SCREEN_PARTICLE_ALPHA[renderedScreen];
 
+  function renderScreen(screen: Screen) {
+    switch (screen) {
+      case "menu":
+        return <MenuScreen
+          onPlay={run.beginRun}
+          hasActiveBattle={run.hasActiveBattle}
+          hasActiveRun={run.hasActiveRun}
+          onCollection={() => run.goToScreen("collection")}
+          onOptions={() => run.goToScreen("options")}
+          onHomestead={() => run.goToScreen("homestead")}
+          onTalents={() => run.goToScreen("talents")}
+          {...(platform.canQuit ? { onQuit: platform.quit } : {})}
+          logoSrc={menuLogo}
+          isMobileLandscape={isMobileLandscape}
+          hasUnspentTalents={hasUnspentTalents}
+          hasAffordableHomestead={hasAffordableHomestead}
+        />;
+      case "character-select":
+        return <CharacterSelectScreen
+          onConfirm={run.handleCharacterSelect}
+          onBack={() => run.goToScreen("menu")}
+        />;
+      case "difficulty-select":
+        return run.pendingCharacterId ? <DifficultySelectScreen
+          characterId={run.pendingCharacterId}
+          completedDifficulties={completedDifficulties[run.pendingCharacterId] ?? []}
+          onSelect={run.handleDifficultySelect}
+          onBack={run.handleBackFromDifficultySelect}
+        /> : null;
+      case "battle":
+        return <BattleScreen {...battleScreenProps} />;
+      case "rewards":
+        return <RewardsScreen
+          rewardType={run.rewardType}
+          rewardChoices={run.rewardChoices}
+          rewardGold={run.rewardGold}
+          rewardMaterials={run.rewardMaterials}
+          hoveredCardId={run.hoveredCardId}
+          onHoverChange={run.setHoveredCardId}
+          shimmerState={run.shimmerState}
+          onHoverShimmer={run.maybeTriggerShimmer}
+          selectedRewardId={run.selectedRewardId}
+          onSelectReward={run.setSelectedRewardId}
+          onAddReward={() => run.finishRewards()}
+          onSkip={() => run.finishRewards()}
+        />;
+      case "destination":
+        return <DestinationScreen
+          destinationOptions={run.destinationOptions}
+          onChoose={(dest) => run.handleDestinationChoice(dest)}
+          destinationButtonRefs={run.destinationButtonRefs}
+          currentAct={run.currentAct}
+        />;
+      case "campfire":
+        return <CampfireScreen
+          playerHealth={run.runPlayerHealth}
+          maxHp={run.runMaxHealth}
+          onContinue={run.handleCampfireContinue}
+        />;
+      case "shop":
+        return <MerchantShopScreen
+          gold={run.runGold}
+          shopCards={run.shopCards}
+          runDeck={run.runDeck}
+          refreshesLeft={run.shopRefreshesLeft}
+          removeUsed={run.shopRemoveUsed}
+          cardPrice={run.shopCardPrice}
+          removePrice={run.shopRemovePrice}
+          refreshPrice={run.shopRefreshPrice}
+          onBuyCard={run.handleShopBuyCard}
+          onRemoveCard={run.handleShopRemoveCard}
+          onRefresh={run.handleShopRefresh}
+          onContinue={run.handleShopContinue}
+        />;
+      case "alchemist":
+        return <AlchemistShopScreen
+          gold={run.runGold}
+          potionCards={run.alchemistPotions}
+          runDeck={run.runDeck}
+          refreshesLeft={run.alchemistRefreshesLeft}
+          mixUsed={run.alchemistMixUsed}
+          potionPrice={run.alchemistPotionPrice}
+          mixPrice={run.alchemistMixPrice}
+          onBuyCard={run.handleAlchemistBuyCard}
+          onRefresh={run.handleAlchemistRefresh}
+          onMixPotions={run.handleAlchemistMixPotions}
+          onContinue={run.handleAlchemistContinue}
+        />;
+      case "mystery":
+        return run.mysteryEvent ? <MysteryScreen
+          event={run.mysteryEvent}
+          onChoose={run.handleMysteryChoice}
+          onChooseCard={run.handleMysteryChooseCard}
+          onRemoveCard={run.handleMysteryRemoveCard}
+          onContinue={run.handleMysteryContinue}
+          runDeck={run.runDeck}
+          findCard={run.findCard}
+          findTrinket={run.findTrinket}
+          mysteryCardChoices={run.mysteryCardChoices}
+        /> : null;
+      case "corruption":
+        return <CorruptionScreen
+          runDeck={run.runDeck}
+          result={run.corruptionResult}
+          onCorrupt={run.handleCorruptCard}
+          onLeave={run.handleCorruptionLeave}
+          onContinue={run.handleCorruptionContinue}
+        />;
+      case "options":
+        return <OptionsScreen
+          navigation={{
+            hasActiveBattle: run.hasActiveBattle,
+            onMainMenu: () => run.goToScreen("menu"),
+            onReturnToBattle: run.returnToBattle,
+          }}
+          display={{
+            selectedResolution,
+            onResolutionChange: setSelectedResolution,
+            displayMode,
+            onDisplayModeChange: setDisplayMode,
+            showDisplayMode: platform.isDesktop,
+            uiScale,
+            onUiScaleChange: setUiScale,
+            brightness,
+            onBrightnessChange: setBrightness,
+          }}
+          audio={{
+            masterVol,
+            musicVol,
+            sfxVol,
+            onMasterVolChange: setMasterVol,
+            onMusicVolChange: setMusicVol,
+            onSfxVolChange: setSfxVol,
+            muteInBackground,
+            onMuteInBackgroundChange: setMuteInBackground,
+          }}
+          gameplay={{
+            autoEndTurn,
+            onAutoEndTurnChange: setAutoEndTurn,
+          }}
+          saveData={{
+            showClearSaveConfirm,
+            onOpenClearSaveConfirm: () => setShowClearSaveConfirm(true),
+            onCloseClearSaveConfirm: () => setShowClearSaveConfirm(false),
+            onConfirmClearSave: clearSaveData,
+            onResetOptions: resetOptionsToDefault,
+          }}
+          dev={{ onUnlockAll: unlockAllDevMode }}
+        />;
+      case "collection":
+        return <CollectionScreen
+          hasActiveBattle={run.hasActiveBattle}
+          onMainMenu={() => run.goToScreen("menu")}
+          onReturnToBattle={run.returnToBattle}
+          collectionTab={collectionTab}
+          onSelectTab={handleCollectionTabChange}
+          hoveredCardId={run.hoveredCardId}
+          onHoverChange={run.setHoveredCardId}
+          discoveredCardIds={discoveredCardIds}
+          encounteredEnemyIds={encounteredEnemyIds}
+          discoveredTrinketIds={discoveredTrinketIds}
+          collectionPages={collectionPages}
+          onPageChange={setCollectionPage}
+        />;
+      case "homestead":
+        return <HomesteadScreen
+          materialInventory={homestead.materialInventory}
+          constructedBuildings={homestead.constructedBuildings}
+          plantedFarms={homestead.plantedFarms}
+          completedResearch={homestead.completedResearch}
+          hasActiveBattle={run.hasActiveBattle}
+          onMainMenu={() => run.goToScreen("menu")}
+          onReturnToBattle={run.returnToBattle}
+          onConstructBuilding={homestead.constructBuilding}
+          onPlantFarm={homestead.plantFarm}
+          onCompleteResearch={homestead.completeResearch}
+        />;
+      case "talents":
+        return <TalentsScreen
+          hasActiveBattle={run.hasActiveBattle}
+          onMainMenu={() => run.goToScreen("menu")}
+          onReturnToBattle={run.returnToBattle}
+          talentXP={run.talentXP}
+          unlockedTalents={run.unlockedTalents}
+          onUnlockTalent={run.unlockTalent}
+          onResetTalents={run.resetUnlockedTalents}
+        />;
+      case "game-over":
+        return <GameOverScreen
+          runTalentXP={run.runTalentXP}
+          talentXP={run.talentXP}
+          runEndMaterials={run.runEndMaterials}
+          onMainMenu={() => run.resetRunState()}
+        />;
+      case "run-victory":
+        return <RunVictoryScreen runEndMaterials={run.runEndMaterials} onMainMenu={() => run.resetRunState()} />;
+      default:
+        return null;
+    }
+  }
+
   return (
     <ErrorBoundary>
       {isPortraitMobile ? (
@@ -335,215 +536,7 @@ export default function App() {
                   key={renderedScreen}
                   className={`${pagePhase === "exit" ? "page-exit" : "page-enter"} h-full w-full overflow-hidden`}
                 >
-                  {renderedScreen === "menu" ? (
-                    <MenuScreen
-                      onPlay={run.beginRun}
-                      hasActiveBattle={run.hasActiveBattle}
-                      hasActiveRun={run.hasActiveRun}
-                      onCollection={() => run.goToScreen("collection")}
-                      onOptions={() => run.goToScreen("options")}
-                      onHomestead={() => run.goToScreen("homestead")}
-                      onTalents={() => run.goToScreen("talents")}
-                      {...(platform.canQuit ? { onQuit: platform.quit } : {})}
-                      logoSrc={menuLogo}
-                      isMobileLandscape={isMobileLandscape}
-                      hasUnspentTalents={hasUnspentTalents}
-                      hasAffordableHomestead={hasAffordableHomestead}
-                    />
-                  ) : null}
-                  {renderedScreen === "character-select" ? (
-                    <CharacterSelectScreen
-                      onConfirm={run.handleCharacterSelect}
-                      onBack={() => run.goToScreen("menu")}
-                    />
-                  ) : null}
-                  {renderedScreen === "difficulty-select" && run.pendingCharacterId ? (
-                    <DifficultySelectScreen
-                      characterId={run.pendingCharacterId}
-                      completedDifficulties={completedDifficulties[run.pendingCharacterId] ?? []}
-                      onSelect={run.handleDifficultySelect}
-                      onBack={run.handleBackFromDifficultySelect}
-                    />
-                  ) : null}
-                  {renderedScreen === "battle" ? <BattleScreen {...battleScreenProps} /> : null}
-                  {renderedScreen === "rewards" ? (
-                    <RewardsScreen
-                      rewardType={run.rewardType}
-                      rewardChoices={run.rewardChoices}
-                      rewardGold={run.rewardGold}
-                      rewardMaterials={run.rewardMaterials}
-                      hoveredCardId={run.hoveredCardId}
-                      onHoverChange={run.setHoveredCardId}
-                      shimmerState={run.shimmerState}
-                      onHoverShimmer={run.maybeTriggerShimmer}
-                      selectedRewardId={run.selectedRewardId}
-                      onSelectReward={run.setSelectedRewardId}
-                      onAddReward={() => run.finishRewards()}
-                      onSkip={() => run.finishRewards()}
-                    />
-                  ) : null}
-                  {renderedScreen === "destination" ? (
-                    <DestinationScreen
-                      destinationOptions={run.destinationOptions}
-                      onChoose={(dest) => run.handleDestinationChoice(dest)}
-                      destinationButtonRefs={run.destinationButtonRefs}
-                      currentAct={run.currentAct}
-                    />
-                  ) : null}
-                  {renderedScreen === "campfire" ? (
-                    <CampfireScreen
-                      playerHealth={run.runPlayerHealth}
-                      maxHp={run.runMaxHealth}
-                      onContinue={run.handleCampfireContinue}
-                    />
-                  ) : null}
-                  {renderedScreen === "shop" ? (
-                    <MerchantShopScreen
-                      gold={run.runGold}
-                      shopCards={run.shopCards}
-                      runDeck={run.runDeck}
-                      refreshesLeft={run.shopRefreshesLeft}
-                      removeUsed={run.shopRemoveUsed}
-                      cardPrice={run.shopCardPrice}
-                      removePrice={run.shopRemovePrice}
-                      refreshPrice={run.shopRefreshPrice}
-                      onBuyCard={run.handleShopBuyCard}
-                      onRemoveCard={run.handleShopRemoveCard}
-                      onRefresh={run.handleShopRefresh}
-                      onContinue={run.handleShopContinue}
-                    />
-                  ) : null}
-                  {renderedScreen === "alchemist" ? (
-                    <AlchemistShopScreen
-                      gold={run.runGold}
-                      potionCards={run.alchemistPotions}
-                      runDeck={run.runDeck}
-                      refreshesLeft={run.alchemistRefreshesLeft}
-                      mixUsed={run.alchemistMixUsed}
-                      potionPrice={run.alchemistPotionPrice}
-                      mixPrice={run.alchemistMixPrice}
-                      onBuyCard={run.handleAlchemistBuyCard}
-                      onRefresh={run.handleAlchemistRefresh}
-                      onMixPotions={run.handleAlchemistMixPotions}
-                      onContinue={run.handleAlchemistContinue}
-                    />
-                  ) : null}
-                  {renderedScreen === "mystery" && run.mysteryEvent ? (
-                    <MysteryScreen
-                      event={run.mysteryEvent}
-                      onChoose={run.handleMysteryChoice}
-                      onChooseCard={run.handleMysteryChooseCard}
-                      onRemoveCard={run.handleMysteryRemoveCard}
-                      onContinue={run.handleMysteryContinue}
-                      runDeck={run.runDeck}
-                      findCard={run.findCard}
-                      findTrinket={run.findTrinket}
-                      mysteryCardChoices={run.mysteryCardChoices}
-                    />
-                  ) : null}
-                  {renderedScreen === "corruption" ? (
-                    <CorruptionScreen
-                      runDeck={run.runDeck}
-                      result={run.corruptionResult}
-                      onCorrupt={run.handleCorruptCard}
-                      onLeave={run.handleCorruptionLeave}
-                      onContinue={run.handleCorruptionContinue}
-                    />
-                  ) : null}
-                  {renderedScreen === "options" ? (
-                    <OptionsScreen
-                      navigation={{
-                        hasActiveBattle: run.hasActiveBattle,
-                        onMainMenu: () => run.goToScreen("menu"),
-                        onReturnToBattle: run.returnToBattle,
-                      }}
-                      display={{
-                        selectedResolution,
-                        onResolutionChange: setSelectedResolution,
-                        displayMode,
-                        onDisplayModeChange: setDisplayMode,
-                        showDisplayMode: platform.isDesktop,
-                        uiScale,
-                        onUiScaleChange: setUiScale,
-                        brightness,
-                        onBrightnessChange: setBrightness,
-                      }}
-                      audio={{
-                        masterVol,
-                        musicVol,
-                        sfxVol,
-                        onMasterVolChange: setMasterVol,
-                        onMusicVolChange: setMusicVol,
-                        onSfxVolChange: setSfxVol,
-                        muteInBackground,
-                        onMuteInBackgroundChange: setMuteInBackground,
-                      }}
-                      gameplay={{
-                        autoEndTurn,
-                        onAutoEndTurnChange: setAutoEndTurn,
-                      }}
-                      saveData={{
-                        showClearSaveConfirm,
-                        onOpenClearSaveConfirm: () => setShowClearSaveConfirm(true),
-                        onCloseClearSaveConfirm: () => setShowClearSaveConfirm(false),
-                        onConfirmClearSave: clearSaveData,
-                        onResetOptions: resetOptionsToDefault,
-                      }}
-                      dev={{ onUnlockAll: unlockAllDevMode }}
-                    />
-                  ) : null}
-                  {renderedScreen === "collection" ? (
-                    <CollectionScreen
-                      hasActiveBattle={run.hasActiveBattle}
-                      onMainMenu={() => run.goToScreen("menu")}
-                      onReturnToBattle={run.returnToBattle}
-                      collectionTab={collectionTab}
-                      onSelectTab={handleCollectionTabChange}
-                      hoveredCardId={run.hoveredCardId}
-                      onHoverChange={run.setHoveredCardId}
-                      discoveredCardIds={discoveredCardIds}
-                      encounteredEnemyIds={encounteredEnemyIds}
-                      discoveredTrinketIds={discoveredTrinketIds}
-                      collectionPages={collectionPages}
-                      onPageChange={setCollectionPage}
-                    />
-                  ) : null}
-                  {renderedScreen === "homestead" ? (
-                    <HomesteadScreen
-                      materialInventory={homestead.materialInventory}
-                      constructedBuildings={homestead.constructedBuildings}
-                      plantedFarms={homestead.plantedFarms}
-                      completedResearch={homestead.completedResearch}
-                      hasActiveBattle={run.hasActiveBattle}
-                      onMainMenu={() => run.goToScreen("menu")}
-                      onReturnToBattle={run.returnToBattle}
-                      onConstructBuilding={homestead.constructBuilding}
-                      onPlantFarm={homestead.plantFarm}
-                      onCompleteResearch={homestead.completeResearch}
-                    />
-                  ) : null}
-                  {renderedScreen === "talents" ? (
-                    <TalentsScreen
-                      hasActiveBattle={run.hasActiveBattle}
-                      onMainMenu={() => run.goToScreen("menu")}
-                      onReturnToBattle={run.returnToBattle}
-                      talentXP={run.talentXP}
-                      unlockedTalents={run.unlockedTalents}
-                      onUnlockTalent={run.unlockTalent}
-                      onResetTalents={run.resetUnlockedTalents}
-                    />
-                  ) : null}
-                  {renderedScreen === "game-over" ? (
-                    <GameOverScreen
-                      runTalentXP={run.runTalentXP}
-                      talentXP={run.talentXP}
-                      runEndMaterials={run.runEndMaterials}
-                      onMainMenu={() => run.resetRunState()}
-                    />
-                  ) : null}
-                  {renderedScreen === "run-victory" ? (
-                    <RunVictoryScreen runEndMaterials={run.runEndMaterials} onMainMenu={() => run.resetRunState()} />
-                  ) : null}
+                  {renderScreen(renderedScreen)}
                 </div>
               )}
               <GameMenu
