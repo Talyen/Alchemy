@@ -1,14 +1,17 @@
 // Status effect application: damage-type riders, player status effects, stun resolution, and harmful removal.
 import { drawCards } from "./draw";
-import { harmfulPlayerStatusIds, type BattleCardEffect } from "@/lib/game-data";
+import { harmfulPlayerStatusIds } from "@/lib/game-data";
+import type { BattleCardEffect } from "@/lib/game-data/types";
 import {
+  addGold,
+  addPlayerStatus,
   applyPlayerHealing,
   clampHealth,
+  setFlag,
   type BattleState,
   type CombatTextEvent,
 } from "./types";
-import { mergeCombatText } from "./combat-text";
-import { applyLuckyCloverGold } from "./trinket-utils";
+import { mergeCombatText, applyLuckyCloverGold } from "./apply-effects";
 import {
   BLEED_STATUS_MULTIPLIER,
   FIRST_EFFECT_MULTIPLIER,
@@ -24,7 +27,7 @@ import {
 // Returns the damage multiplier against the current enemy for a given damage type.
 // Checks enemy traits (weakness = 2x, resistance = 0.5x) in priority order — first
 // matching trait wins. Also checks stun/freeze skip for double-damage talents.
-export function getEnemyDamageMultiplier(state: BattleState, damageType: string): number {
+export function getEnemyDamageMultiplier(state: Pick<BattleState, "currentEnemy" | "enemyStunSkipTurns" | "enemyFreezeSkipTurns" | "talentEffects">, damageType: string): number {
   const traitIds = state.currentEnemy.traits.map((t) => t.id);
   if (traitIds.includes("brittle-bones") && (damageType === "holy" || damageType === "stun")) return TRAIT_DAMAGE_WEAKNESS;
   if (traitIds.includes("trinket-hoarder") && damageType === "burn") return TRAIT_DAMAGE_WEAKNESS;
@@ -55,7 +58,7 @@ export function resolveStunTrigger(state: BattleState, combatTexts?: CombatTextE
     nextState = { ...nextState, deck: draw.deck, discard: draw.discard, hand: draw.hand, nextCardUid: draw.nextCardUid };
   }
   if (nextState.talentEffects.nextCardFreeOnStun) {
-    nextState = { ...nextState, flags: { ...nextState.flags, nextCardCostReduction: FREE_CARD_SENTINEL } };
+    nextState = setFlag(nextState, "nextCardCostReduction", FREE_CARD_SENTINEL);
   }
 
   if (nextState.trinketEffects.thunderstoneDamageOnStun > 0) {
@@ -91,11 +94,7 @@ export function applyDamageStatuses(state: BattleState, effect: Extract<BattleCa
     case "poison": {
       nextStatuses.poison += actualDamage;
       if (actualDamage > 0 && nextState.talentEffects.goldOnFirstPoison > 0 && !nextState.flags.goldOnFirstPoisonThisCombat) {
-        nextState = {
-          ...nextState,
-          gold: nextState.gold + nextState.talentEffects.goldOnFirstPoison,
-          flags: { ...nextState.flags, goldOnFirstPoisonThisCombat: true },
-        };
+        nextState = setFlag(addGold(nextState, nextState.talentEffects.goldOnFirstPoison), "goldOnFirstPoisonThisCombat", true);
         mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "gold", amount: nextState.talentEffects.goldOnFirstPoison });
       }
       break;
@@ -110,11 +109,7 @@ export function applyDamageStatuses(state: BattleState, effect: Extract<BattleCa
         nextStatuses.poison += actualDamage;
       }
       if (bleedAmount > 0 && nextState.trinketEffects.cutpurseGoldOnBleed > 0) {
-        nextState = {
-          ...nextState,
-          gold: nextState.gold + nextState.trinketEffects.cutpurseGoldOnBleed,
-          enemyStatuses: nextStatuses,
-        };
+        nextState = { ...addGold(nextState, nextState.trinketEffects.cutpurseGoldOnBleed), enemyStatuses: nextStatuses };
         mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "gold", amount: nextState.trinketEffects.cutpurseGoldOnBleed });
       }
       break;
@@ -185,7 +180,7 @@ export function applyPlayerStatusEffect(state: BattleState, effect: Extract<Batt
     }
     if (state.talentEffects.firstArmorCardDoubled && !state.flags.firstArmorCardDoubledUsed) {
       amount *= FIRST_EFFECT_MULTIPLIER;
-      state = { ...state, flags: { ...state.flags, firstArmorCardDoubledUsed: true } };
+      state = setFlag(state, "firstArmorCardDoubledUsed", true);
     }
     const newArmor = state.playerStatuses.armor + amount;
     if (state.talentEffects.armorBlockThreshold > 0 && state.playerStatuses.armor < state.talentEffects.armorBlockThreshold && newArmor >= state.talentEffects.armorBlockThreshold) {
@@ -219,11 +214,5 @@ export function applyPlayerStatusEffect(state: BattleState, effect: Extract<Batt
   }
 
   mergeCombatText(combatTexts, { target: "player", kind: "status", stat: effect.status, amount });
-  return {
-    ...state,
-    playerStatuses: {
-      ...state.playerStatuses,
-      [effect.status]: state.playerStatuses[effect.status] + amount,
-    },
-  };
+  return addPlayerStatus(state, effect.status, amount);
 }

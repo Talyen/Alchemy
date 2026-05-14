@@ -484,12 +484,10 @@ export function useRunNavigation({
   }
 
   function handleCorruptionContinue() {
-    setCorruptionResult(null);
     advanceToNextDestination();
   }
 
   function handleCorruptionLeave() {
-    setCorruptionResult(null);
     advanceToNextDestination();
   }
 

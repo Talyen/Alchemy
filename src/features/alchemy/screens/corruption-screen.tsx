@@ -98,7 +98,7 @@ function CorruptionIntro({ onBegin, onLeave }: { onBegin: () => void; onLeave: (
 }
 
 function CorruptionResultView({ result, onContinue }: { result: CorruptionResult; onContinue: () => void }) {
-  const [hovered, setHovered] = useState(true);
+  const [hovered, setHovered] = useState(false);
 
   return (
     <div className="flex flex-col items-center gap-5">

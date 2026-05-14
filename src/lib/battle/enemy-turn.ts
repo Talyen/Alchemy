@@ -14,7 +14,9 @@
 import { drawCards } from "./draw";
 import { applyCardEffects, applyIronwoodBuckler, mergeCombatText } from "./apply-effects";
 import { tickEnemyStatuses, tickPlayerStatuses } from "./status-ticks";
-import { harmfulPlayerStatusIds, type BattleCard, type DifficultyModifier, type EnemyAttackEffect } from "@/lib/game-data";
+import { harmfulPlayerStatusIds } from "@/lib/game-data";
+import type { BattleCard, EnemyAttackEffect } from "@/lib/game-data/types";
+import type { DifficultyModifier } from "@/lib/game-data/difficulties";
 import { applyPlayerCombatDamage, clampHealth, type BattleState, type CombatTextEvent, type TurnPhase } from "./types";
 import { CARDS_PER_TURN, MAX_HAND_SIZE } from "../game-constants";
 import { DIFFICULTY_FORGE_PER_TURN, ENEMY_HEAL_FRACTION, HALF_DIVISOR, PERCENT_DENOMINATOR, TRAIT_ARMOR_PER_TURN, TRAIT_FORGE_PER_TURN, TRAIT_FREEZE_BONUS_PER_TURN } from "../game-constants";

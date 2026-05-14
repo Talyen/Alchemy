@@ -16,30 +16,14 @@ export function computeHomesteadEffects(
 
   for (const buildingId of constructedBuildings) {
     const building = buildings.find((b) => b.id === buildingId);
-    if (!building) continue;
-    switch (building.id) {
-      case "blacksmiths-forge":
-        effects.flatPhysicalDamage += 1;
-        effects.forgeToBurn = true;
-        break;
-      case "hunters-lodge":
-        effects.companionDamage += 1;
-        break;
-      case "alchemy-lab":
-        effects.potionHealMultiplier += 0.2;
-        effects.potionDiscount += 0.1;
-        break;
-    }
+    if (!building || !building.effects) continue;
+    Object.assign(effects, building.effects);
   }
 
   for (const farmId of plantedFarms) {
     const farm = farmPlots.find((f) => f.id === farmId);
-    if (!farm) continue;
-    switch (farm.id) {
-      case "herb-garden":
-        effects.potionManaBonus += 1;
-        break;
-    }
+    if (!farm || !farm.effects) continue;
+    Object.assign(effects, farm.effects);
   }
 
   return effects;

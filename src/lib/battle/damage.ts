@@ -1,12 +1,15 @@
 // Player card damage to the current enemy: base damage, crit, armor reduction, trait multipliers, and riders.
 import { applyDamageStatuses, getEnemyDamageMultiplier, resolveStunTrigger } from "./status-effects";
-import { applyBoneCharmHeal, applyLuckyCloverGold } from "./trinket-utils";
-import { mergeCombatText } from "./combat-text";
-import { buildWishOptions } from "./wish";
+import { applyBoneCharmHeal, applyLuckyCloverGold, mergeCombatText } from "./apply-effects";
+import { applyWishEffect } from "./wish";
 import { type BattleCard, type BattleCardEffect } from "@/lib/game-data";
 import {
+  addEnemyStatus,
+  addGold,
+  addPlayerStatus,
   applyPlayerHealing,
   clampHealth,
+  setFlag,
   type BattleState,
   type CombatTextEvent,
 } from "./types";
@@ -101,13 +104,7 @@ function applyDamageBlock(state: BattleState, damage: number, combatTexts: Comba
   const blockAmount = Math.floor(damage * state.talentEffects.holyBlockPercentFromDamage / PERCENT_DENOMINATOR);
   if (blockAmount <= 0) return state;
   mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "block", amount: blockAmount });
-  return {
-    ...state,
-    playerStatuses: {
-      ...state.playerStatuses,
-      block: state.playerStatuses.block + blockAmount,
-    },
-  };
+  return addPlayerStatus(state, "block", blockAmount);
 }
 
 function applyFirstDamageModifiers(state: BattleState, effect: Extract<BattleCardEffect, { kind: "damage" }>, rawDamage: number) {
@@ -116,15 +113,15 @@ function applyFirstDamageModifiers(state: BattleState, effect: Extract<BattleCar
 
   if (effect.damageType === "burn" && nextState.talentEffects.firstBurnCardDoubled && !nextState.flags.firstBurnCardDoubledUsed) {
     nextDamage *= FIRST_EFFECT_MULTIPLIER;
-    nextState = { ...nextState, flags: { ...nextState.flags, firstBurnCardDoubledUsed: true } };
+    nextState = setFlag(nextState, "firstBurnCardDoubledUsed", true);
   }
   if (effect.damageType === "burn" && nextState.trinketEffects.firstBurnDoubled && !nextState.flags.firstBurnTrinketDoubledUsed) {
     nextDamage *= FIRST_EFFECT_MULTIPLIER;
-    nextState = { ...nextState, flags: { ...nextState.flags, firstBurnTrinketDoubledUsed: true } };
+    nextState = setFlag(nextState, "firstBurnTrinketDoubledUsed", true);
   }
   if (effect.damageType === "holy" && nextState.trinketEffects.firstHolyDamageDoubled && !nextState.flags.firstHolyDamageBonusUsed) {
     nextDamage *= FIRST_EFFECT_MULTIPLIER;
-    nextState = { ...nextState, flags: { ...nextState.flags, firstHolyDamageBonusUsed: true } };
+    nextState = setFlag(nextState, "firstHolyDamageBonusUsed", true);
   }
 
   return { state: nextState, rawDamage: nextDamage };
@@ -133,11 +130,9 @@ function applyFirstDamageModifiers(state: BattleState, effect: Extract<BattleCar
 function applyForgeStunRider(state: BattleState, effect: Extract<BattleCardEffect, { kind: "damage" }>, combatTexts: CombatTextEvent[]) {
   if (effect.damageType !== "physical" || state.trinketEffects.forgeStunThreshold <= 0 || state.playerStatuses.forge < state.trinketEffects.forgeStunThreshold) return state;
 
-  const nextStun = state.enemyStatuses.stun + state.trinketEffects.forgeStunAmount;
   mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "stun", amount: state.trinketEffects.forgeStunAmount });
 
-  const nextState = { ...state, enemyStatuses: { ...state.enemyStatuses, stun: nextStun } };
-  return resolveStunTrigger(nextState, combatTexts);
+  return resolveStunTrigger(addEnemyStatus(state, "stun", state.trinketEffects.forgeStunAmount), combatTexts);
 }
 
 function applyHolyDamageRiders(state: BattleState, card: BattleCard, damage: number, combatTexts: CombatTextEvent[]) {
@@ -152,10 +147,7 @@ function applyHolyDamageRiders(state: BattleState, card: BattleCard, damage: num
   }
 
   if (nextState.talentEffects.holyWishChance > 0 && Math.random() * PERCENT_DENOMINATOR < nextState.talentEffects.holyWishChance) {
-    const wishOptions = buildWishOptions(nextState, card);
-    nextState = nextState.wishOptions
-      ? { ...nextState, wishQueue: [...nextState.wishQueue, wishOptions] }
-      : { ...nextState, wishOptions };
+    nextState = applyWishEffect(nextState, card, 1, combatTexts);
   }
 
   return nextState;
@@ -164,7 +156,7 @@ function applyHolyDamageRiders(state: BattleState, card: BattleCard, damage: num
 function applyGoldTroveReward(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
   if (!state.currentEnemy.traits.some((t) => t.id === "gold-trove") || damage <= 0) return state;
   mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "gold", amount: GOLD_TROVE_DAMAGE_REWARD });
-  return { ...state, gold: state.gold + GOLD_TROVE_DAMAGE_REWARD };
+  return addGold(state, GOLD_TROVE_DAMAGE_REWARD);
 }
 
 function consumeForgeAfterPhysicalDamage(state: BattleState, effect: Extract<BattleCardEffect, { kind: "damage" }>, damage: number) {

@@ -2,7 +2,7 @@
 // Depends on draw/effect helpers, game-data card shapes, and combat constants.
 import { drawCards } from "./draw";
 import { applyCardEffects } from "./apply-effects";
-import { mergeCombatText } from "./combat-text";
+import { mergeCombatText } from "./apply-effects";
 import { POTION_CARD_ID_FRAGMENT } from "../game-constants";
 import { type BattleCard } from "@/lib/game-data";
 import {
@@ -23,27 +23,39 @@ const FIRST_CARD_FREE_RULES: { flag: keyof CombatFlags; condition: (state: Battl
   { flag: "firstBleedCardFreeUsed", condition: (state, card) => state.talentEffects.firstBleedCardFree && cardHasDamageType(card, "bleed") },
 ];
 
-function resolveCardPlayCost(state: BattleState, card: BattleCard) {
+// Pure cost computation shared by UI (getEffectiveCost) and card play (resolveCardPlayCost).
+// Returns the effective cost and which one-shot free-card flags were consumed.
+// The UI discards consumedFlags; the resolver applies them to state.
+export function computeEffectiveCost(state: BattleState, card: BattleCard): { effectiveCost: number; consumedFlags: Partial<CombatFlags> } {
   let effectiveCost = card.cost;
-  let nextState = state;
+  const consumedFlags: Partial<CombatFlags> = {};
 
-  if (nextState.flags.nextCardCostReduction > 0) {
-    effectiveCost = Math.max(0, effectiveCost - nextState.flags.nextCardCostReduction);
+  if (state.flags.nextCardCostReduction > 0) {
+    effectiveCost = Math.max(0, effectiveCost - state.flags.nextCardCostReduction);
   }
 
   for (const rule of FIRST_CARD_FREE_RULES) {
-    if (!(nextState.flags[rule.flag] as boolean) && rule.condition(nextState, card)) {
+    if (!(state.flags[rule.flag] as boolean) && rule.condition(state, card)) {
       effectiveCost = 0;
-      nextState = { ...nextState, flags: { ...nextState.flags, [rule.flag]: true } as CombatFlags };
+      consumedFlags[rule.flag] = true as never;
     }
   }
 
-  if (!nextState.flags.firstPotionFreeUsed && nextState.trinketEffects.mortarPestleFreeFirstPotion && card.id.includes(POTION_CARD_ID_FRAGMENT)) {
+  if (!state.flags.firstPotionFreeUsed && state.trinketEffects.mortarPestleFreeFirstPotion && card.id.includes(POTION_CARD_ID_FRAGMENT)) {
     effectiveCost = 0;
-    nextState = { ...nextState, flags: { ...nextState.flags, firstPotionFreeUsed: true } };
+    consumedFlags.firstPotionFreeUsed = true;
   }
 
-  return { state: nextState, effectiveCost };
+  return { effectiveCost, consumedFlags };
+}
+
+function resolveCardPlayCost(state: BattleState, card: BattleCard) {
+  const { effectiveCost, consumedFlags } = computeEffectiveCost(state, card);
+  const hasChanges = Object.keys(consumedFlags).length > 0;
+  return {
+    state: hasChanges ? { ...state, flags: { ...state.flags, ...consumedFlags } as CombatFlags } : state,
+    effectiveCost,
+  };
 }
 
 export function playBattleCardResolved(state: BattleState, cardId: string, index: number): BattleResolution {

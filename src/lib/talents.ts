@@ -1,8 +1,8 @@
 // Talent XP math and card-to-keyword extraction helpers.
 // Depends on game-data card/keyword types and XP tuning constants.
 // Used by talent state and UI to award, total, and display progression.
-import { getCardKeywords, type KeywordId } from "@/lib/game-data";
-import type { BattleCard } from "@/lib/game-data";
+import { getCardKeywords } from "@/lib/game-data";
+import type { BattleCard, KeywordId } from "@/lib/game-data/types";
 import { XP_BASE_PER_POINT, XP_MIN_THRESHOLD, XP_ROOT_DIVISOR, XP_TRIANGULAR_MULTIPLIER } from "./game-constants";
 
 // XP is tracked per keyword (damage type). Each keyword has its own progress bar

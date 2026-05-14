@@ -39,6 +39,7 @@ export type HomesteadBuilding = {
   benefitDescription: string;
   nonCombatBenefitDescription?: string;
   buttonLabel: string;
+  effects?: Partial<HomesteadEffectManifest>;
 };
 
 export type HomesteadFarm = {
@@ -50,6 +51,7 @@ export type HomesteadFarm = {
   benefitDescription?: string;
   nonCombatBenefitDescription?: string;
   buttonLabel: string;
+  effects?: Partial<HomesteadEffectManifest>;
 };
 
 export type HomesteadResearch = {

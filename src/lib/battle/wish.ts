@@ -1,8 +1,9 @@
 // Wish card generation and wish effect resolution.
-import { cardLibrary, type BattleCard } from "@/lib/game-data";
+import { cardLibrary } from "@/lib/game-data";
+import type { BattleCard } from "@/lib/game-data/types";
 import { drawCards, shuffleCards } from "./draw";
-import { applyPlayerHealing, type BattleState, type CombatTextEvent } from "./types";
-import { mergeCombatText } from "./combat-text";
+import { addGold, applyPlayerHealing, type BattleState, type CombatTextEvent } from "./types";
+import { mergeCombatText } from "./apply-effects";
 import { removeHarmfulPlayerStatuses } from "./status-effects";
 import { PERCENT_DENOMINATOR, WISH_CHOICE_COUNT } from "../game-constants";
 
@@ -32,15 +33,15 @@ export function applyWishEffect(state: BattleState, card: BattleCard, amount: nu
 
   for (let i = 0; i < wishCount; i += 1) {
     if (nextState.talentEffects.goldOnWish > 0) {
-      nextState = { ...nextState, gold: nextState.gold + nextState.talentEffects.goldOnWish };
+      nextState = addGold(nextState, nextState.talentEffects.goldOnWish);
       mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "gold", amount: nextState.talentEffects.goldOnWish });
     }
     if (nextState.talentEffects.goldOnWishAmount > 0) {
-      nextState = { ...nextState, gold: nextState.gold + nextState.talentEffects.goldOnWishAmount };
+      nextState = addGold(nextState, nextState.talentEffects.goldOnWishAmount);
       mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "gold", amount: nextState.talentEffects.goldOnWishAmount });
     }
     if (nextState.trinketEffects.wishingWellGoldOnWish > 0) {
-      nextState = { ...nextState, gold: nextState.gold + nextState.trinketEffects.wishingWellGoldOnWish };
+      nextState = addGold(nextState, nextState.trinketEffects.wishingWellGoldOnWish);
       mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "gold", amount: nextState.trinketEffects.wishingWellGoldOnWish });
     }
     if (nextState.talentEffects.healthOnWish > 0) {

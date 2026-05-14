@@ -1,7 +1,9 @@
 // Deck drawing and battle-state creation for new encounters.
 // Depends on game data, combat constants, talent manifests, and trinket manifests.
 // Used by turn logic and battle controllers whenever cards or fresh battles are needed.
-import { companionLibrary, createEmptyTalentManifest, enemyBestiary, type BattleCard, type BestiaryEntry, type DifficultyModifier, type EnemyAttackEffect } from "@/lib/game-data";
+import { companionLibrary, createEmptyTalentManifest, enemyBestiary } from "@/lib/game-data";
+import type { BattleCard, BestiaryEntry, EnemyAttackEffect } from "@/lib/game-data/types";
+import type { DifficultyModifier } from "@/lib/game-data/difficulties";
 
 import { shuffle } from "../utils";
 import {
@@ -34,6 +36,35 @@ import { computeTrinketManifest } from "../trinkets";
 // zero/false value so battle logic can read talentEffects without existence checks.
 // Defined via the shared factory so new manifest fields are caught at compile time.
 export const defaultTalentEffects: TalentEffectManifest = createEmptyTalentManifest();
+
+const skeletonEnemy = { id: "skeleton", title: "Skeleton", subtitle: "", descriptionLines: [""], art: "", enemyType: "normal" as const, traits: [], attackEffects: [] };
+
+export function defaultBattleState(): BattleState {
+  return {
+    deck: [], hand: [], discard: [], exhausted: [], mana: 0, maxMana: 0, gold: 0,
+    turn: 1, turnPhase: "player", playerHealth: 30, playerMaxHealth: 30,
+    deathsDoorUsed: false, deathsDoorActive: false, deathsDoorTriggeredTurn: null,
+    enemyHealth: 30, enemyMaxHealth: 30, enemyAttackEffects: [], enemyArmor: 0,
+    enemyForge: 0, enemyFreezeBonus: 0, enemyRegeneration: 0,
+    playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+    enemyStatuses: { burn: 0, poison: 0, bleed: 0, bleedLeech: 0, freeze: 0, stun: 0 },
+    enemyStunSkipTurns: 0, enemyFreezeSkipTurns: 0, wishOptions: null, wishQueue: [], activeCompanion: null,
+    currentEnemy: skeletonEnemy,
+    talentEffects: defaultTalentEffects,
+    trinketEffects: { extraDrawPerBattle: 0, firstHolyDamageDoubled: false, firstBurnDoubled: false, boneCharmHealOnKill: 0, forgeStunThreshold: 0, forgeStunAmount: 0, frozenHeartDamage: 0, blockToArmorThreshold: 0, blockToArmorAmount: 0, runicQuillDrawOnConsume: 0, sinEaterHealOnHarmfulStatusRemove: 0, vanguardCrestForgeOnBlockAbsorb: 0, parasiticBloomLeechChance: 0, cutpurseGoldOnBleed: 0, wishingWellGoldOnWish: 0, plagueDoctorImmunity: false, mortarPestleFreeFirstPotion: false, sunderingArmorPiercing: 0, resonantChimeCardsRequired: 0, resonantChimeMana: 0, smugglersMapGoldBonus: 0, grovesFavorStartHeal: 0, merchantsFavorDiscount: 0, companionDamageBonus: 0, freezeDurationExtension: 0, thunderstoneDamageOnStun: 0, luckyCloverGoldChance: 0 },
+    flags: {
+      firstPhysicalCardFreeUsed: false, firstHolyCardFreeUsed: false, firstBurnCardDoubledUsed: false,
+      firstArmorCardDoubledUsed: false, firstPoisonCardFreeUsed: false, firstBleedCardFreeUsed: false,
+      nextCardCostReduction: 0, goldOnFirstPoisonThisCombat: false, firstHolyDamageBonusUsed: false,
+      firstBurnTrinketDoubledUsed: false, firstHarmfulStatusPrevented: false, firstPotionFreeUsed: false,
+      resonantChimeUsedThisTurn: false,
+    },
+    discoveredCardIds: [],
+    cardsPlayedThisTurn: 0,
+    nextCardUid: 0,
+    difficultyModifiers: [],
+  };
+}
 
 // Returns a fresh (deck, discard) pair after possibly reshuffling discard into deck.
 function refillDeck(deck: BattleCard[], discard: BattleCard[]) {

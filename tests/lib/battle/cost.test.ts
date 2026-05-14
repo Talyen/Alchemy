@@ -1,42 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { getEffectiveCost } from "@/lib/battle/cost";
-import { defaultTalentEffects } from "@/lib/battle/draw";
-import { defaultTrinketEffects } from "@/lib/trinkets";
+import { defaultBattleState, defaultTalentEffects } from "@/lib/battle/draw";
 import type { BattleState, CombatFlags } from "@/lib/battle/types";
 import type { BattleCard } from "@/lib/game-data";
 
-const defaultFlags: CombatFlags = {
-  firstPhysicalCardFreeUsed: false,
-  firstHolyCardFreeUsed: false,
-  firstBurnCardDoubledUsed: false,
-  firstArmorCardDoubledUsed: false,
-  firstPoisonCardFreeUsed: false,
-  firstBleedCardFreeUsed: false,
-  nextCardCostReduction: 0,
-  goldOnFirstPoisonThisCombat: false,
-  firstHolyDamageBonusUsed: false,
-  firstBurnTrinketDoubledUsed: false,
-  firstHarmfulStatusPrevented: false,
-  firstPotionFreeUsed: false,
-  resonantChimeUsedThisTurn: false,
-};
-
 function makeState(flags: Partial<CombatFlags> = {}, talentOverrides: Record<string, unknown> = {}): BattleState {
-  return {
-    deck: [], hand: [], discard: [], exhausted: [], mana: 5, maxMana: 5, gold: 0,
-    turn: 1, turnPhase: "player", playerHealth: 30, playerMaxHealth: 30, deathsDoorUsed: false, deathsDoorActive: false, deathsDoorTriggeredTurn: null, enemyHealth: 30,
-    enemyMaxHealth: 30, enemyAttackEffects: [], enemyArmor: 0, enemyForge: 0, enemyRegeneration: 0,
-    playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
-    enemyStatuses: { burn: 0, poison: 0, bleed: 0, bleedLeech: 0, freeze: 0, stun: 0 },
-    enemyStunSkipTurns: 0, enemyFreezeSkipTurns: 0, wishOptions: null, wishQueue: [], activeCompanion: null,
-    currentEnemy: { id: "skeleton", title: "Skeleton", subtitle: "", descriptionLines: [""], art: "", enemyType: "normal", traits: [], attackEffects: [] },
-    talentEffects: { ...defaultTalentEffects, ...talentOverrides },
-    trinketEffects: defaultTrinketEffects,
-    flags: { ...defaultFlags, ...flags },
-    discoveredCardIds: [],
-    cardsPlayedThisTurn: 0,
-    nextCardUid: 0,
-  };
+  return { ...defaultBattleState(), mana: 5, maxMana: 5, flags: { ...defaultBattleState().flags, ...flags }, talentEffects: { ...defaultTalentEffects, ...talentOverrides } };
 }
 
 function physicalCard(overrides: Partial<BattleCard> = {}): BattleCard {

@@ -1,16 +1,55 @@
 // Main card-effect reducer: dispatches each card effect to the appropriate handler.
-import { companionLibrary, type BattleCard } from "@/lib/game-data";
+import { companionLibrary } from "@/lib/game-data";
+import type { BattleCard } from "@/lib/game-data/types";
 import { dealDamageToEnemy } from "./damage";
-import { applyPlayerStatusEffect } from "./status-effects";
+import { applyPlayerStatusEffect, removeHarmfulPlayerStatuses } from "./status-effects";
 import { applyWishEffect } from "./wish";
-import { mergeCombatText } from "./combat-text";
-import { removeHarmfulPlayerStatuses } from "./status-effects";
-import { applyPlayerCombatDamage, applyPlayerHealing, type BattleState, type CombatTextEvent } from "./types";
-import { MIN_MAX_MANA_FLOOR } from "../game-constants";
+import { addGold, addPlayerStatus, applyPlayerCombatDamage, applyPlayerHealing, type BattleState, type CombatTextEvent } from "./types";
+import { MIN_MAX_MANA_FLOOR, PERCENT_DENOMINATOR } from "../game-constants";
 
-export { mergeCombatText } from "./combat-text";
-export { applyIronwoodBuckler, applyBoneCharmHeal } from "./trinket-utils";
-export { getEnemyDamageMultiplier } from "./status-effects";
+export function mergeCombatText(combatTexts: CombatTextEvent[], nextEvent: CombatTextEvent) {
+  const existingEvent = combatTexts.find(
+    (event) => event.target === nextEvent.target && event.kind === nextEvent.kind && event.stat === nextEvent.stat,
+  );
+  if (existingEvent) {
+    existingEvent.amount += nextEvent.amount;
+    return;
+  }
+  combatTexts.push(nextEvent);
+}
+
+export function applyIronwoodBuckler(state: BattleState, combatTexts: CombatTextEvent[]) {
+  if (state.trinketEffects.blockToArmorThreshold > 0 && state.playerStatuses.block >= state.trinketEffects.blockToArmorThreshold) {
+    state = {
+      ...state,
+      playerStatuses: {
+        ...state.playerStatuses,
+        armor: state.playerStatuses.armor + state.trinketEffects.blockToArmorAmount,
+      },
+    };
+    mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "armor", amount: state.trinketEffects.blockToArmorAmount });
+  }
+  return state;
+}
+
+export function applyBoneCharmHeal(state: BattleState, enemyWasAlive: boolean, combatTexts: CombatTextEvent[]) {
+  if (state.enemyHealth <= 0 && enemyWasAlive && state.trinketEffects.boneCharmHealOnKill > 0) {
+    const healAmount = state.trinketEffects.boneCharmHealOnKill;
+    state = applyPlayerHealing(state, healAmount);
+    mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: healAmount });
+  }
+  return state;
+}
+
+export function applyLuckyCloverGold(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
+  if (state.trinketEffects.luckyCloverGoldChance <= 0 || damage <= 0) return state;
+  if (Math.random() * PERCENT_DENOMINATOR < state.trinketEffects.luckyCloverGoldChance) {
+    const nextState = addGold(state, damage);
+    mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "gold", amount: damage });
+    return nextState;
+  }
+  return state;
+}
 
 export function applyCardEffects(state: BattleState, card: BattleCard, combatTexts: CombatTextEvent[]) {
   return card.effects.reduce((currentState, effect) => {
@@ -40,7 +79,7 @@ export function applyCardEffects(state: BattleState, card: BattleCard, combatTex
       }
       case "gain-gold":
         mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "gold", amount: effect.amount });
-        return { ...currentState, gold: currentState.gold + effect.amount };
+        return addGold(currentState, effect.amount);
       case "wish":
         return applyWishEffect(currentState, card, effect.amount, combatTexts);
       case "summon-companion":
@@ -50,13 +89,7 @@ export function applyCardEffects(state: BattleState, card: BattleCard, combatTex
       case "self-damage": {
         const postDamage = applyPlayerCombatDamage(currentState, effect.amount);
         mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: effect.damageType, amount: effect.amount });
-        return {
-          ...postDamage,
-          playerStatuses: {
-            ...postDamage.playerStatuses,
-            [effect.damageType]: postDamage.playerStatuses[effect.damageType] + effect.amount,
-          },
-        };
+        return addPlayerStatus(postDamage, effect.damageType, effect.amount);
       }
       default:
         return currentState;

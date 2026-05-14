@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { mergeCombatText, applyCardEffects, getEnemyDamageMultiplier } from "@/lib/battle";
-import { playBattleCardResolved, endPlayerTurn, chooseWishCard, processCompanionTurnStart } from "@/lib/battle/turns";
+import { playBattleCardResolved } from "@/lib/battle/card-play";
+import { endPlayerTurn, chooseWishCard, processCompanionTurnStart } from "@/lib/battle/enemy-turn";
 import { drawCards, createBattleState, defaultTalentEffects, shuffleCards } from "@/lib/battle/draw";
 import { companionLibrary, enemyBestiary } from "@/lib/game-data";
 import type { BattleCard, BestiaryEntry, DifficultyModifier } from "@/lib/game-data";
@@ -9,41 +10,12 @@ import { clampHealth, isPlayerDefeated } from "@/lib/battle/types";
 import { MAX_PLAYER_HEALTH, MAX_HAND_SIZE, BASE_PLAYER_MANA } from "@/lib/game-constants";
 import { clamp } from "@/lib/utils";
 import { defaultTrinketEffects, computeTrinketManifest } from "@/lib/trinkets";
+import { defaultBattleState } from "@/lib/battle/draw";
 
 vi.spyOn(Math, "random").mockReturnValue(0.99);
 
 function makeState(overrides: Partial<BattleState> = {}): BattleState {
-  const empty: BattleState = {
-    deck: [], hand: [], discard: [], exhausted: [], mana: 0, maxMana: 0, gold: 0,
-    turn: 1, turnPhase: "player", playerHealth: 30, playerMaxHealth: 30, deathsDoorUsed: false, deathsDoorActive: false, deathsDoorTriggeredTurn: null, enemyHealth: 30,
-    enemyMaxHealth: 30, enemyAttackEffects: [], enemyArmor: 0, enemyForge: 0, enemyFreezeBonus: 0, enemyRegeneration: 0,
-    playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
-    enemyStatuses: { burn: 0, poison: 0, bleed: 0, bleedLeech: 0, freeze: 0, stun: 0 },
-    enemyStunSkipTurns: 0, enemyFreezeSkipTurns: 0, wishOptions: null, wishQueue: [], activeCompanion: null,
-    currentEnemy: { id: "skeleton", title: "Skeleton", subtitle: "", descriptionLines: [""], art: "", enemyType: "normal", traits: [], attackEffects: [] },
-    talentEffects: defaultTalentEffects,
-    trinketEffects: defaultTrinketEffects,
-    flags: {
-      firstPhysicalCardFreeUsed: false,
-      firstHolyCardFreeUsed: false,
-      firstBurnCardDoubledUsed: false,
-      firstArmorCardDoubledUsed: false,
-      firstPoisonCardFreeUsed: false,
-      firstBleedCardFreeUsed: false,
-      nextCardCostReduction: 0,
-      goldOnFirstPoisonThisCombat: false,
-      firstHolyDamageBonusUsed: false,
-      firstBurnTrinketDoubledUsed: false,
-      firstHarmfulStatusPrevented: false,
-      firstPotionFreeUsed: false,
-      resonantChimeUsedThisTurn: false,
-    },
-    discoveredCardIds: [],
-    cardsPlayedThisTurn: 0,
-    nextCardUid: 0,
-    difficultyModifiers: [],
-  };
-  return { ...empty, ...overrides };
+  return { ...defaultBattleState(), ...overrides };
 }
 
 function makeCard(overrides: Partial<BattleCard> = {}): BattleCard {

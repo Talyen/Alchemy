@@ -33,87 +33,39 @@ export const defaultTrinketEffects: TrinketManifest = {
   luckyCloverGoldChance: 0,
 };
 
+const trinketEffects: Record<string, Partial<TrinketManifest>> = {
+  "brass-censer": { firstHolyDamageDoubled: true },
+  "tattered-pages": { extraDrawPerBattle: 1 },
+  "meteorite": { firstBurnDoubled: true },
+  "bone-charm": { boneCharmHealOnKill: 3 },
+  "obsidian-hammer": { forgeStunThreshold: 4, forgeStunAmount: 1 },
+  "frozen-heart": { frozenHeartDamage: 6 },
+  "ironwood-buckler": { blockToArmorThreshold: 6, blockToArmorAmount: 1 },
+  "runic-quill": { runicQuillDrawOnConsume: 1 },
+  "sin-eaters-lantern": { sinEaterHealOnHarmfulStatusRemove: 6 },
+  "vanguards-crest": { vanguardCrestForgeOnBlockAbsorb: 1 },
+  "parasitic-bloom": { parasiticBloomLeechChance: 10 },
+  "cutpurse-knife": { cutpurseGoldOnBleed: 1 },
+  "wishing-well-coin": { wishingWellGoldOnWish: 3 },
+  "merchants-favor": { merchantsFavorDiscount: 7 },
+  "plague-doctors-mask": { plagueDoctorImmunity: true },
+  "mortar-and-pestle": { mortarPestleFreeFirstPotion: true },
+  "sundering-charm": { sunderingArmorPiercing: 2 },
+  "resonant-chime": { resonantChimeCardsRequired: 3, resonantChimeMana: 1 },
+  "smugglers-map": { smugglersMapGoldBonus: 2 },
+  "groves-favor": { grovesFavorStartHeal: 2 },
+  "companions-collar": { companionDamageBonus: 1 },
+  "polar-pendant": { freezeDurationExtension: 1 },
+  "thunderstone": { thunderstoneDamageOnStun: 6 },
+  "lucky-clover": { luckyCloverGoldChance: 10 },
+};
+
 export function computeTrinketManifest(trinketIds: string[]): TrinketManifest {
   const manifest = { ...defaultTrinketEffects };
 
   for (const id of trinketIds) {
-    switch (id) {
-      case "brass-censer":
-        manifest.firstHolyDamageDoubled = true;
-        break;
-      case "tattered-pages":
-        manifest.extraDrawPerBattle = 1;
-        break;
-      case "meteorite":
-        manifest.firstBurnDoubled = true;
-        break;
-      case "bone-charm":
-        manifest.boneCharmHealOnKill = 3;
-        break;
-      case "obsidian-hammer":
-        manifest.forgeStunThreshold = 4;
-        manifest.forgeStunAmount = 1;
-        break;
-      case "frozen-heart":
-        manifest.frozenHeartDamage = 6;
-        break;
-      case "ironwood-buckler":
-        manifest.blockToArmorThreshold = 6;
-        manifest.blockToArmorAmount = 1;
-        break;
-      case "runic-quill":
-        manifest.runicQuillDrawOnConsume = 1;
-        break;
-      case "sin-eaters-lantern":
-        manifest.sinEaterHealOnHarmfulStatusRemove = 6;
-        break;
-      case "vanguards-crest":
-        manifest.vanguardCrestForgeOnBlockAbsorb = 1;
-        break;
-      case "parasitic-bloom":
-        manifest.parasiticBloomLeechChance = 10;
-        break;
-      case "cutpurse-knife":
-        manifest.cutpurseGoldOnBleed = 1;
-        break;
-      case "wishing-well-coin":
-        manifest.wishingWellGoldOnWish = 3;
-        break;
-      case "merchants-favor":
-        manifest.merchantsFavorDiscount = 7;
-        break;
-      case "plague-doctors-mask":
-        manifest.plagueDoctorImmunity = true;
-        break;
-      case "mortar-and-pestle":
-        manifest.mortarPestleFreeFirstPotion = true;
-        break;
-      case "sundering-charm":
-        manifest.sunderingArmorPiercing = 2;
-        break;
-      case "resonant-chime":
-        manifest.resonantChimeCardsRequired = 3;
-        manifest.resonantChimeMana = 1;
-        break;
-      case "smugglers-map":
-        manifest.smugglersMapGoldBonus = 2;
-        break;
-      case "groves-favor":
-        manifest.grovesFavorStartHeal = 2;
-        break;
-      case "companions-collar":
-        manifest.companionDamageBonus = 1;
-        break;
-      case "polar-pendant":
-        manifest.freezeDurationExtension = 1;
-        break;
-      case "thunderstone":
-        manifest.thunderstoneDamageOnStun = 6;
-        break;
-      case "lucky-clover":
-        manifest.luckyCloverGoldChance = 10;
-        break;
-    }
+    const effects = trinketEffects[id];
+    if (effects) Object.assign(manifest, effects);
   }
 
   return manifest;

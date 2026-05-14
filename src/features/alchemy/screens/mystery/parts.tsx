@@ -260,7 +260,7 @@ export function MysteryEventIntro({
           <img
             src={event.art}
             alt={event.title}
-            className="block h-auto w-full rounded-[30px] aspect-[3/4]"
+            className="block h-auto w-full rounded-[30px] aspect-[4/3]"
             loading="eager"
           />
         </div>

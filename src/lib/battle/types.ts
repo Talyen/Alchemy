@@ -128,5 +128,53 @@ export type BattleResolution = {
   combatTexts: CombatTextEvent[];
 };
 
-export { clampHealth, applyPlayerCombatDamage, applyPlayerHealing, isPlayerDefeated } from "./health";
+// Immutable update helpers for BattleState. Replaces the error-prone nested spread
+// pattern used ~25 times across the battle engine with one-line focused updaters.
+
+export function addPlayerStatus(state: BattleState, status: PlayerStatusId, delta: number): BattleState {
+  return { ...state, playerStatuses: { ...state.playerStatuses, [status]: state.playerStatuses[status] + delta } };
+}
+
+export function setPlayerStatus(state: BattleState, status: PlayerStatusId, value: number): BattleState {
+  return { ...state, playerStatuses: { ...state.playerStatuses, [status]: value } };
+}
+
+export function addEnemyStatus(state: BattleState, status: EnemyStatusId, delta: number): BattleState {
+  return { ...state, enemyStatuses: { ...state.enemyStatuses, [status]: state.enemyStatuses[status] + delta } };
+}
+
+export function setEnemyStatus(state: BattleState, status: EnemyStatusId, value: number): BattleState {
+  return { ...state, enemyStatuses: { ...state.enemyStatuses, [status]: value } };
+}
+
+export function addGold(state: BattleState, delta: number): BattleState {
+  return { ...state, gold: state.gold + delta };
+}
+
+export function setFlag(state: BattleState, flag: keyof CombatFlags, value: boolean | number): BattleState {
+  return { ...state, flags: { ...state.flags, [flag]: value as never } };
+}
+
+export function clampHealth(current: number, delta: number, max: number): number {
+  return Math.max(0, Math.min(max, current + delta));
+}
+
+export function applyPlayerCombatDamage(state: BattleState, damage: number): BattleState {
+  if (damage <= 0) return state;
+  const nextHealth = clampHealth(state.playerHealth, -damage, state.playerMaxHealth);
+  if (nextHealth > 0) return { ...state, playerHealth: nextHealth };
+  if (!state.deathsDoorUsed) {
+    return { ...state, playerHealth: 0, deathsDoorUsed: true, deathsDoorActive: true, deathsDoorTriggeredTurn: state.turn };
+  }
+  return { ...state, playerHealth: 0, deathsDoorActive: state.deathsDoorActive };
+}
+
+export function applyPlayerHealing(state: BattleState, amount: number): BattleState {
+  const playerHealth = clampHealth(state.playerHealth, amount, state.playerMaxHealth);
+  return { ...state, playerHealth, deathsDoorActive: playerHealth <= 0 && state.deathsDoorActive };
+}
+
+export function isPlayerDefeated(state: Pick<BattleState, "playerHealth" | "deathsDoorActive">): boolean {
+  return state.playerHealth <= 0 && !state.deathsDoorActive;
+}
 

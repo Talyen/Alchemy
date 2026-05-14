@@ -11,6 +11,7 @@ export const buildings: HomesteadBuilding[] = [
     cost: { iron: 20, wood: 0, herbs: 0, food: 0, crystal: 0 },
     benefitDescription: "Increases Physical damage dealt by 1\nForge effect also increases Burn damage",
     buttonLabel: "Build",
+    effects: { flatPhysicalDamage: 1, forgeToBurn: true },
   },
   {
     id: "hunters-lodge",
@@ -20,6 +21,7 @@ export const buildings: HomesteadBuilding[] = [
     benefitDescription: "Increases Companion damage by 1",
     nonCombatBenefitDescription: "Gain Food after each run",
     buttonLabel: "Build",
+    effects: { companionDamage: 1 },
   },
   {
     id: "alchemy-lab",
@@ -29,6 +31,7 @@ export const buildings: HomesteadBuilding[] = [
     benefitDescription: "Potions restore 20% more Health",
     nonCombatBenefitDescription: "Potions cost 10% less Gold",
     buttonLabel: "Build",
+    effects: { potionHealMultiplier: 0.2, potionDiscount: 0.1 },
   },
   {
     id: "placeholder-1",
@@ -67,6 +70,7 @@ export const farmPlots: HomesteadFarm[] = [
     benefitDescription: "Potions restore +1 Mana",
     nonCombatBenefitDescription: "Gain Herbs after each run",
     buttonLabel: "Build",
+    effects: { potionManaBonus: 1 },
   },
   {
     id: "wheat-field",

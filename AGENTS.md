@@ -1,5 +1,9 @@
 # Alchemy — AGENTS.md
 
+**Alchemy** is a fantasy roguelite deckbuilder. Each **Run** starts by picking a **Character** with a unique starter deck. Battles are turn-based: draw cards, spend **Mana** to play them (deal damage, apply **Statuses**, gain **Block**, summon allies, etc.), then the enemy acts. Winning a battle rewards **Gold** and card choices, and the player picks a **Destination** to travel to next — more combat, a **Campfire** to heal, a **Merchant** or **Alchemist** shop, a **Mystery** event, or a **Corruption** altar that mutates a card. Die and the run ends. Survive through the final boss and win.
+
+Between runs, the **Homestead** lets the player spend **Materials** on permanent upgrades. **Talent XP** earned during runs — awarded per **Keyword** when matching cards are played — unlocks passive bonuses that persist across future runs.
+
 ## Commands
 
 ```sh
@@ -89,3 +93,50 @@ This is a fantasy roguelite deckbuilder. The interface must feel like a polished
 ## Stable Files (don't re-read within a session)
 
 `src/lib/game-constants.ts`, `src/lib/game-data/cards.ts`, `keywords.ts`, `assets.ts`, `vite.config.ts`, `tsconfig.json`, `playwright.config.ts`
+
+## Domain Glossary
+
+### Run & Progression
+
+| Term | Definition |
+|------|-----------|
+| **Run** | A full playthrough from character select to victory or defeat. |
+| **Destination** | A map node chosen between battles (e.g. Combat, Elite, Boss, Campfire, Merchant). |
+
+### Battle Concepts
+
+| Term | Definition |
+|------|-----------|
+| **Consume** | A card property removing it from the current battle after play. |
+| **Death's Door** | A one-shot survival mechanic granting one final turn after player health reaches zero. |
+| **Wish** | An effect presenting card choices from the full card library. |
+| **Companion** | A persistent ally that acts at the start of each player turn. |
+| **Haste** | Grants an extra player turn by skipping the enemy phase. |
+| **Combat Text** | Floating battle numbers merged per (target, kind, stat) for deduplication. |
+
+### Status Effects (by category)
+
+| Term | Definition |
+|------|-----------|
+| **Protective Statuses** | Absorb or reduce incoming damage (Block, Armor). |
+| **Empowering Statuses** | Amplify outgoing damage or grant extra actions (Forge, Haste). |
+| **Damage-over-Time Statuses** | Tick damage each turn on the bearer, then decay or burst reset (Burn, Poison, Bleed). |
+| **Crowd Control Statuses** | Prevent the enemy from acting when accumulated above a threshold (Freeze, Stun). |
+
+### Card & Economy
+
+| Term | Definition |
+|------|-----------|
+| **Corruption** | A destination event that mutates a card in the player's deck. |
+| **Mixed Potion** | A card created by combining two potions at the Alchemist. |
+| **Trinket** | A passive equippable item with a persistent effect. |
+| **Talent XP** | Per-keyword cross-run experience awarded when matching cards are played. |
+| **Talent Effect Manifest** | All active talent bonuses pre-computed into one object per battle. |
+
+### Between-Run Progression
+
+| Term | Definition |
+|------|-----------|
+| **Homestead** | The persistent hub between runs for spending materials on permanent upgrades. |
+| **Material** | A resource type earned between runs and spent in the Homestead. |
+| **Farm** | A Homestead building that produces materials.
