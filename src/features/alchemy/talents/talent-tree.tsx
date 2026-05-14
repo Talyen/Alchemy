@@ -1,3 +1,5 @@
+// Interactive talent tree — keyword-level XP progress, unlock buttons, and reveal animations.
+// Depends on game-data keywords, shared UI primitives, and talent XP math.
 import { useState, useEffect, Fragment } from "react";
 import { motion } from "motion/react";
 import { type KeywordId, keywordDefinitions } from "@/lib/game-data";

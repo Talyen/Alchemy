@@ -1,3 +1,5 @@
+// Card library — every playable BattleCard in the game, authored as data.
+// Depends on art assets and card type shapes. Each card is an effect pipeline; no logic.
 import {
   anvil,
   apple,

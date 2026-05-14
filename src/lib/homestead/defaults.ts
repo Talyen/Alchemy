@@ -1,3 +1,5 @@
+// Default homestead effect manifest — all zeros/false. Used as the base state
+// before applying building/farm/research bonuses from computeHomesteadEffects.
 import type { HomesteadEffectManifest } from "./types";
 
 export const defaultHomesteadEffects: HomesteadEffectManifest = {

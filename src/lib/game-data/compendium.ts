@@ -1,3 +1,5 @@
+// Compendium data — all enemies (bestiary), trinkets, and their stat/effect definitions.
+// Depends on art assets and type contracts. Pure configuration arrays, no game logic.
 import { boneCharm, brassCenser, cutpurseKnife, frozenHeart, goblin, imp, ironwoodBuckler, livingArmor, lizardScout, meteorite, mimic, mortarAndPestle, mudElemental, necromancer, merchantsFavor, obsidianHammer, parasiticBloom, plagueDoctor, plagueDoctorsMask, placeholderTrinket, resonantChime, runicQuill, skeleton, sinEatersLantern, smugglersMap, sunderingCharm, tatteredPages, theBlightTreant, theForgeGolem, theFrostwarden, vanguardsCrest, wishingWellCoin, grovesFavor } from "./assets";
 import type { BestiaryEntry, TrinketEntry } from "./types";
 

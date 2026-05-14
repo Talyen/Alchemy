@@ -1,3 +1,5 @@
+// Material inventory math: empty, add, canAfford, subtract. All functions handle
+// missing keys by treating them as 0. subtractInventory clamps to 0.
 import { MATERIAL_IDS, type MaterialInventory } from "./types";
 
 export function emptyInventory(): MaterialInventory {

@@ -1,3 +1,5 @@
+// Character class definitions — starting decks, gold multipliers, and keyword XP preferences.
+// Depends on card library and type contracts. Each character is a play-style preset.
 import type { BattleCard } from "./types";
 import { cardLibrary } from "./cards";
 import type { KeywordId } from "./types";

@@ -1,6 +1,7 @@
-// Type contracts and tiny clamp helpers for the immutable battle engine.
+// Type contracts for the immutable battle engine — BattleState shape, manifests, flags.
 // Depends only on game-data shape types and is imported by draw, effects, turns, and UI.
 // Keep these state shapes explicit so save/load, animation, and combat stay in sync.
+// Runtime health helpers live in ./health; this file is pure types + re-exports.
 import type { BattleCard, BestiaryEntry, CompanionDefinition, DamageType, DifficultyModifier, EnemyAttackEffect, EnemyStatusId, PlayerStatusId, TalentEffectManifest } from "@/lib/game-data";
 
 // Both player and enemy use the same status ID union, but enemies never gain
@@ -47,8 +48,7 @@ export type TrinketManifest = {
   luckyCloverGoldChance: number;
 };
 
-// TalentEffectManifest moved to game-data/types.ts to resolve cross-layer dependency.
-// Re-exported here so existing barrel consumers still find it at @/lib/battle.
+// Re-exported from game-data/types.ts so @/lib/battle barrel consumers still find it.
 export type { TalentEffectManifest } from "@/lib/game-data";
 
 // Threshold-driven combat flags that reset each battle.

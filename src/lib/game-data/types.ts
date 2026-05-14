@@ -1,3 +1,6 @@
+// Core game-data type contracts shared across lib and features: card shapes, status IDs,
+// talent manifest, enemy/trait/trinket definitions. No runtime code — pure types only so other
+// modules can import shapes without dragging in data or side effects.
 export type KeywordId =
   | "physical"
   | "stun"

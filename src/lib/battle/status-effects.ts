@@ -21,6 +21,9 @@ import {
   TRAIT_DAMAGE_WEAKNESS,
 } from "../game-constants";
 
+// Returns the damage multiplier against the current enemy for a given damage type.
+// Checks enemy traits (weakness = 2x, resistance = 0.5x) in priority order — first
+// matching trait wins. Also checks stun/freeze skip for double-damage talents.
 export function getEnemyDamageMultiplier(state: BattleState, damageType: string): number {
   const traitIds = state.currentEnemy.traits.map((t) => t.id);
   if (traitIds.includes("brittle-bones") && (damageType === "holy" || damageType === "stun")) return TRAIT_DAMAGE_WEAKNESS;
@@ -70,6 +73,9 @@ export function resolveStunTrigger(state: BattleState, combatTexts?: CombatTextE
   return nextState;
 }
 
+// Applies status riders after an enemy is damaged: burn removes armor, poison adds bonus
+// gold on first hit, bleed stacks damage and heals via leech, freeze adds stacks and
+// checks for skip, stun checks threshold. Each damage type's rider is applied here.
 export function applyDamageStatuses(state: BattleState, effect: Extract<BattleCardEffect, { kind: "damage" }>, actualDamage: number, combatTexts: CombatTextEvent[]) {
   const nextStatuses = { ...state.enemyStatuses };
   let nextState: BattleState = { ...state, enemyStatuses: nextStatuses };
@@ -141,6 +147,8 @@ export function applyDamageStatuses(state: BattleState, effect: Extract<BattleCa
   return nextState;
 }
 
+// Removes harmful statuses (burn/poison/bleed/freeze/stun) in priority order, up to
+// `amount`. Sin-Eater trinket heals the player proportional to the number removed.
 export function removeHarmfulPlayerStatuses(state: BattleState, amount: number, combatTexts?: CombatTextEvent[]) {
   const nextPlayerStatuses = { ...state.playerStatuses };
   let removed = 0;

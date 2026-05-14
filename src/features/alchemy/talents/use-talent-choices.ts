@@ -1,3 +1,5 @@
+// Memoized talent-pick sampling with an invalidation cache for re-rolls.
+// Depends on game-data talent pool and XP constants. Used by talent tree screen.
 import { useRef, useMemo } from "react";
 import type { KeywordId } from "@/lib/game-data";
 import { TALENT_CHOICES_OFFERED } from "@/lib/game-constants";

@@ -1,5 +1,16 @@
 // Enemy turn processing: wish resolution, companion turn, enemy phase, and turn reset.
 // Depends on draw/effect helpers, status ticks, game-data attack shapes, and combat constants.
+//
+// Turn lifecycle (TurnPhase: "player" | "enemy"):
+//   1. Player turn starts: draw cards, process haste (skip enemy phase if hasted),
+//      process companion attack, player plays cards.
+//   2. End player turn: resolve companion effects, tick player DoTs.
+//   3. Enemy turn: tick enemy DoTs, enemy heals (below 50% HP), apply traits
+//      (armor/forge/freeze per turn), run attack effects, tick player DoTs again
+//      (if enemy hit), check Death's Door (0-HP grace for one full turn).
+//   4. Advance to player turn: draw cards, reset cardsPlayedThisTurn.
+// Branching: stun/freeze skip enemy attack phase entirely; Wish intercepts player
+// card play; haste skips enemy phase and returns to player immediately.
 import { drawCards } from "./draw";
 import { applyCardEffects, applyIronwoodBuckler, mergeCombatText } from "./apply-effects";
 import { tickEnemyStatuses, tickPlayerStatuses } from "./status-ticks";

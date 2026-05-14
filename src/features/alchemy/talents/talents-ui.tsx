@@ -1,3 +1,5 @@
+// Talent UI primitives — keyword progress card, talent counter display.
+// Depends on game-data keywords, shine-border, and keyword-tag components.
 import { type KeywordId, keywordDefinitions } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 import { ShineBorder } from "@/components/ui/shine-border";

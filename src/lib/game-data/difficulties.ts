@@ -1,3 +1,5 @@
+// Difficulty definitions — stat modifiers per character per difficulty tier.
+// Depends on character/enemy types. Used by run initialization to inject modifiers.
 import type { CharacterId } from "./characters";
 import type { EnemyStatusId } from "./types";
 

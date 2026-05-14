@@ -1,3 +1,5 @@
+// Imported asset references (all .webp) consumed by game-data barrel readers and UI.
+// The prebuild step optimizes PNG source files into webp; this file only sees the output.
 import alchemyLogo from "@/assets/optimized/alchemy-logo.webp";
 import anvil from "@/assets/optimized/anvil.webp";
 import campfire from "@/assets/optimized/campfire.webp";

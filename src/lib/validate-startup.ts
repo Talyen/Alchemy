@@ -1,3 +1,6 @@
+// Startup validation: asserts critical game constants are positive and data arrays
+// are non-empty. Runs once at import time via main.tsx. Only fires console.error
+// on failure — does not block the game from loading.
 import {
   BASE_ENEMY_HEALTH,
   BASE_PLAYER_MANA,
