@@ -32,6 +32,7 @@ const assets = [
   { source: "Enemies/The Frostwarden.png", target: "the-frostwarden.webp", width: 720, quality: 82 },
   { source: "Enemies/The Forge Golem.png", target: "the-forge-golem.webp", width: 720, quality: 82 },
   { source: "Enemies/The Blight Treant.png", target: "the-blight-treant.webp", width: 720, quality: 82 },
+  { source: "Enemies/Living Armor.png", target: "living-armor.webp", width: 720, quality: 82 },
   // Characters
   { source: "Player Characters/Knight.png", target: "knight.webp", width: characterWidth, quality: 82 },
   { source: "Player Characters/Ranger.png", target: "ranger.webp", width: characterWidth, quality: 82 },

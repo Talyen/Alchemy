@@ -1,6 +1,6 @@
 // Damage computation, crit, lifesteal, and enemy damage dealing with all riders.
 import { applyDamageStatuses, getEnemyDamageMultiplier, resolveStunTrigger } from "./status-effects";
-import { applyBoneCharmHeal } from "./trinket-utils";
+import { applyBoneCharmHeal, applyLuckyCloverGold } from "./trinket-utils";
 import { mergeCombatText } from "./combat-text";
 import { buildWishOptions } from "./wish";
 import { type BattleCard, type BattleCardEffect } from "@/lib/game-data";
@@ -122,8 +122,8 @@ function applyFirstDamageModifiers(state: BattleState, effect: Extract<BattleCar
     nextDamage *= FIRST_EFFECT_MULTIPLIER;
     nextState = { ...nextState, flags: { ...nextState.flags, firstBurnTrinketDoubledUsed: true } };
   }
-  if (effect.damageType === "holy" && nextState.trinketEffects.firstHolyDamageBonus > 0 && !nextState.flags.firstHolyDamageBonusUsed) {
-    nextDamage += nextState.trinketEffects.firstHolyDamageBonus;
+  if (effect.damageType === "holy" && nextState.trinketEffects.firstHolyDamageDoubled && !nextState.flags.firstHolyDamageBonusUsed) {
+    nextDamage *= FIRST_EFFECT_MULTIPLIER;
     nextState = { ...nextState, flags: { ...nextState.flags, firstHolyDamageBonusUsed: true } };
   }
 
@@ -137,7 +137,7 @@ function applyForgeStunRider(state: BattleState, effect: Extract<BattleCardEffec
   mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "stun", amount: state.trinketEffects.forgeStunAmount });
 
   let nextState = { ...state, enemyStatuses: { ...state.enemyStatuses, stun: nextStun } };
-  return resolveStunTrigger(nextState);
+  return resolveStunTrigger(nextState, combatTexts);
 }
 
 function applyHolyDamageRiders(state: BattleState, card: BattleCard, damage: number, combatTexts: CombatTextEvent[]) {
@@ -216,6 +216,10 @@ export function dealEnemyDamage(
   }
 
   nextState = applyGoldTroveReward(nextState, modifiedDamage, combatTexts);
+
+  if (effect.damageType === "nature") {
+    nextState = applyLuckyCloverGold(nextState, modifiedDamage, combatTexts);
+  }
 
   if (modifiedDamage > 0) {
     mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: effect.damageType, amount: modifiedDamage });

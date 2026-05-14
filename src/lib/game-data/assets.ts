@@ -27,6 +27,7 @@ import imp from "@/assets/optimized/imp.webp";
 import impCompanion from "@/assets/optimized/imp-companion.webp";
 import knight from "@/assets/optimized/knight.webp";
 import lizardScout from "@/assets/optimized/lizard-scout.webp";
+import livingArmor from "@/assets/optimized/living-armor.webp";
 import lizardScoutCompanion from "@/assets/optimized/lizard-scout-companion.webp";
 import manaBerries from "@/assets/optimized/mana-berries.webp";
 import manaCrystal from "@/assets/optimized/mana-crystal.webp";
@@ -113,6 +114,7 @@ export {
   impCompanion,
   knight,
   lizardScout,
+  livingArmor,
   lizardScoutCompanion,
   manaBerries,
   manaCrystal,

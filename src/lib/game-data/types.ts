@@ -19,7 +19,7 @@ export type KeywordId =
   | "companion"
   | "trap";
 
-export type DamageType = "physical" | "stun" | "holy" | "burn" | "poison" | "bleed" | "freeze";
+export type DamageType = "physical" | "stun" | "holy" | "burn" | "poison" | "bleed" | "freeze" | "nature";
 
 export type PlayerStatusId = "block" | "armor" | "forge" | "haste" | "burn" | "poison" | "bleed" | "freeze" | "stun";
 
@@ -28,7 +28,7 @@ export type EnemyStatusId = "burn" | "poison" | "bleed" | "freeze" | "stun";
 export type CompanionId = "wolf" | "lizard-scout" | "imp";
 
 export type EnemyAttackEffect =
-  | { kind: "damage"; damageType: "physical"; amount: number; lifesteal?: boolean }
+  | { kind: "damage"; damageType: DamageType; amount: number; lifesteal?: boolean }
   | { kind: "player-status"; status: PlayerStatusId; amount: number };
 
 export type EnemyTrait = {
@@ -117,6 +117,7 @@ export type TalentEffectManifest = {
   drawOnStun: number;
   nextCardFreeOnStun: boolean;
   stunDurationExtension: number;
+  stunDoubleDamage: boolean;
 
   // --- Block ---
   startBlock: number;
@@ -163,6 +164,7 @@ export type TalentEffectManifest = {
   potionManaBonus: number;
   removeCardDiscount: number;
   enemyGoldDropBonus: number;
+  eliteGoldDropBonus: number;
   goldOnWish: number;
   mixPotionDiscount: number;
 
@@ -194,6 +196,14 @@ export type TalentEffectManifest = {
   poisonHalvesHealing: boolean;
 
   companionDamage: number;
+  companionGoldFindActive: boolean;
+
+  // --- Freeze ---
+  freezeThresholdReduction: number;
+  freezeDoubleDamage: boolean;
+
+  // --- Trap ---
+  flatTrapDamage: number;
 
   // --- Bleed ---
   firstBleedCardFree: boolean;

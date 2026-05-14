@@ -15,10 +15,12 @@ function joinAttackTypes(types: string[]): string {
 }
 
 function formatStatusAttackTypes(attackEffects: Extract<EnemyAttackEffect, { kind: "player-status" }>[]) {
-  // A single status reads like damage text; multiple statuses omit the repeated suffix.
-  const statusTypes = attackEffects.map((effect) => capitalize(effect.status));
-  if (statusTypes.length === 1) return `Deals ${statusTypes[0]} damage`;
-  return `Deals ${joinAttackTypes(statusTypes)}`;
+  if (attackEffects.length === 1) {
+    const e = attackEffects[0];
+    return `Deals ${e.amount} ${capitalize(e.status)} damage`;
+  }
+  const statusWithAmounts = attackEffects.map((e) => `${e.amount} ${capitalize(e.status)}`);
+  return `Deals ${joinAttackTypes(statusWithAmounts)}`;
 }
 
 // Converts attack effects into number-free description lines for tooltips.
@@ -33,17 +35,22 @@ export function formatEnemyAttackLines(attackEffects: EnemyAttackEffect[]): stri
   const damageEffects = attackEffects.filter((e) => e.kind === "damage");
   const statusEffects = attackEffects.filter((e) => e.kind === "player-status");
   if (damageEffects.length === 1 && statusEffects.length === 1 && !damageEffects[0].lifesteal) {
-    return [`Deals ${joinAttackTypes([capitalize(damageEffects[0].damageType), capitalize(statusEffects[0].status)])} damage`];
+    return [`Deals ${joinAttackTypes([`${damageEffects[0].amount} ${capitalize(damageEffects[0].damageType)}`, `${statusEffects[0].amount} ${capitalize(statusEffects[0].status)}`])}`];
+  }
+
+  if (statusEffects.length === 0 && damageEffects.length > 1) {
+    const parts = damageEffects.map((e) => `${e.amount} ${capitalize(e.damageType)}`);
+    return [`Deals ${joinAttackTypes(parts)}`];
   }
 
   // Mixed damage + status with lifesteal, or pure damage
   const lines: string[] = [];
   for (const effect of attackEffects) {
     if (effect.kind === "damage") {
-      lines.push("Deals Physical damage");
+      lines.push(`Deals ${effect.amount} ${capitalize(effect.damageType)} damage`);
       if (effect.lifesteal) lines.push("Leech");
     } else {
-      lines.push(`Deals ${capitalize(effect.status)} damage`);
+      lines.push(`Deals ${effect.amount} ${capitalize(effect.status)} damage`);
     }
   }
   return lines;

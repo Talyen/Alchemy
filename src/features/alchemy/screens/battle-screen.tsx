@@ -51,6 +51,7 @@ type BattleScreenState = Pick<
   | "wishOptions"
   | "activeCompanion"
   | "currentEnemy"
+  | "enemyAttackEffects"
   | "turnPhase"
 >;
 
@@ -244,6 +245,7 @@ function BattleActors({
           isDead={battleState.enemyHealth <= 0}
           shaking={enemyShaking}
           currentEnemy={battleState.currentEnemy}
+          currentEnemyAttackEffects={battleState.enemyAttackEffects}
           cardWidthClass={actorCardWidthClass}
         />
       </div>

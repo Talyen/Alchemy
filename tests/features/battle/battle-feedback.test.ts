@@ -9,7 +9,7 @@ function makeState(): BattleState {
   return {
     deck: [], hand: [], discard: [], exhausted: [], mana: 0, maxMana: 0, gold: 0,
     turn: 1, turnPhase: "player", playerHealth: 30, playerMaxHealth: 30, deathsDoorUsed: false, deathsDoorActive: false, deathsDoorTriggeredTurn: null, enemyHealth: 30,
-    enemyMaxHealth: 30, enemyAttackEffects: [], enemyArmor: 0, enemyForge: 0, enemyRegeneration: 0,
+    enemyMaxHealth: 30, enemyAttackEffects: [], enemyArmor: 0, enemyForge: 0, enemyFreezeBonus: 0, enemyRegeneration: 0,
     playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
     enemyStatuses: { burn: 0, poison: 0, bleed: 0, bleedLeech: 0, freeze: 0, stun: 0 },
     enemyStunSkipTurns: 0, enemyFreezeSkipTurns: 0, wishOptions: null, wishQueue: [], activeCompanion: null,
@@ -21,7 +21,7 @@ function makeState(): BattleState {
       firstArmorCardDoubledUsed: false, firstPoisonCardFreeUsed: false, firstBleedCardFreeUsed: false,
       nextCardCostReduction: 0, goldOnFirstPoisonThisCombat: false, firstHolyDamageBonusUsed: false,
       firstBurnTrinketDoubledUsed: false, firstHarmfulStatusPrevented: false, firstPotionFreeUsed: false,
-      boneCharmUsed: false, resonantChimeUsedThisTurn: false,
+      resonantChimeUsedThisTurn: false,
     },
     discoveredCardIds: [],
     cardsPlayedThisTurn: 0,

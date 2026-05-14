@@ -7,7 +7,7 @@ import { Skull } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { ShineBorder } from "@/components/ui/shine-border";
 import { animateParticles, createParticles } from "@/lib/animation/particle-burst";
-import { keywordDefinitions, type BestiaryEntry, type KeywordId } from "@/lib/game-data";
+import { keywordDefinitions, type BestiaryEntry, type EnemyAttackEffect, type KeywordId } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
 import {
@@ -164,6 +164,7 @@ export function ArtPanel({
   cardWidthClass,
   descriptionLines,
   currentEnemy,
+  currentEnemyAttackEffects,
   deathsDoorActive = false,
 }: {
   side: "player" | "enemy";
@@ -183,6 +184,7 @@ export function ArtPanel({
   cardWidthClass: string | undefined;
   descriptionLines?: string[];
   currentEnemy?: BestiaryEntry;
+  currentEnemyAttackEffects?: EnemyAttackEffect[];
   deathsDoorActive?: boolean;
 }) {
   const healthToken = useChangeToken(health);
@@ -191,7 +193,7 @@ export function ArtPanel({
     <div className={cn("group/enemy-panel relative flex flex-col items-center gap-3", shaking && "animate-shake")}>
       {currentEnemy ? (
         <div className="opacity-0 group-hover/enemy-panel:opacity-100">
-          <EnemyTooltip entry={currentEnemy} />
+          <EnemyTooltip entry={currentEnemy} attackEffects={currentEnemyAttackEffects} />
         </div>
       ) : descriptionLines ? (
         <div

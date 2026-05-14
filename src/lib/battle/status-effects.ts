@@ -2,10 +2,13 @@
 import { drawCards } from "./draw";
 import { harmfulPlayerStatusIds, type BattleCardEffect } from "@/lib/game-data";
 import {
+  applyPlayerHealing,
+  clampHealth,
   type BattleState,
   type CombatTextEvent,
 } from "./types";
 import { mergeCombatText } from "./combat-text";
+import { applyLuckyCloverGold } from "./trinket-utils";
 import {
   BLEED_STATUS_MULTIPLIER,
   FIRST_EFFECT_MULTIPLIER,
@@ -19,17 +22,21 @@ import {
 export function getEnemyDamageMultiplier(state: BattleState, damageType: string): number {
   const traitIds = state.currentEnemy.traits.map((t) => t.id);
   if (traitIds.includes("brittle-bones") && (damageType === "holy" || damageType === "stun")) return 2;
-  if (traitIds.includes("fear-the-light") && (damageType === "burn" || damageType === "holy")) return 2;
+  if (traitIds.includes("trinket-hoarder") && damageType === "burn") return 2;
   if (traitIds.includes("holy-vulnerability") && damageType === "holy") return 2;
   if (traitIds.includes("burn-resistance") && damageType === "burn") return 0.5;
+  if (traitIds.includes("living-armor") && damageType === "bleed") return 0.5;
   if (traitIds.includes("poison-resistance") && damageType === "poison") return 0.5;
+  if (traitIds.includes("glacial-shell") && damageType === "freeze") return 0.5;
   if (traitIds.includes("glacial-shell") && damageType === "burn") return 2;
+  if (state.enemyStunSkipTurns > 0 && state.talentEffects.stunDoubleDamage) return 2;
+  if (state.enemyFreezeSkipTurns > 0 && state.talentEffects.freezeDoubleDamage) return 2;
   return 1;
 }
 
 // Shared stun trigger: checks if accumulated stun exceeds threshold and resolves
-// the stun effect (reset stun, skip turns, draw, free card) when triggered.
-export function resolveStunTrigger(state: BattleState) {
+// the stun effect (reset stun, skip turns, draw, free card, thunderstone) when triggered.
+export function resolveStunTrigger(state: BattleState, combatTexts?: CombatTextEvent[]) {
   const threshold = STUN_THRESHOLD_FRACTION - state.talentEffects.stunThresholdReduction;
   if (state.enemyHealth <= 0 || state.enemyStatuses.stun <= state.enemyHealth * threshold) return state;
 
@@ -45,6 +52,19 @@ export function resolveStunTrigger(state: BattleState) {
   if (nextState.talentEffects.nextCardFreeOnStun) {
     nextState = { ...nextState, flags: { ...nextState.flags, nextCardCostReduction: FREE_CARD_SENTINEL } };
   }
+
+  if (nextState.trinketEffects.thunderstoneDamageOnStun > 0) {
+    const dmg = nextState.trinketEffects.thunderstoneDamageOnStun;
+    nextState = {
+      ...nextState,
+      enemyHealth: clampHealth(nextState.enemyHealth, -dmg, nextState.enemyMaxHealth),
+    };
+    if (combatTexts) {
+      mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "nature", amount: dmg });
+      nextState = applyLuckyCloverGold(nextState, dmg, combatTexts);
+    }
+  }
+
   return nextState;
 }
 
@@ -94,15 +114,23 @@ export function applyDamageStatuses(state: BattleState, effect: Extract<BattleCa
     case "stun": {
       nextStatuses.stun += actualDamage;
       nextState = { ...nextState, enemyStatuses: nextStatuses };
-      nextState = resolveStunTrigger(nextState);
+      nextState = resolveStunTrigger(nextState, combatTexts);
       break;
     }
     case "freeze": {
       nextStatuses.freeze += actualDamage;
       const isFreezeImmune = state.currentEnemy.traits.some((t) => t.id === "glacial-shell");
-      if (!isFreezeImmune && state.enemyHealth > 0 && nextStatuses.freeze >= state.enemyHealth * FREEZE_THRESHOLD_FRACTION) {
+      const freezeThreshold = FREEZE_THRESHOLD_FRACTION - (state.talentEffects.freezeThresholdReduction ?? 0);
+      if (!isFreezeImmune && state.enemyHealth > 0 && nextStatuses.freeze >= state.enemyHealth * freezeThreshold) {
         nextStatuses.freeze = 0;
-        nextState = { ...nextState, enemyStatuses: nextStatuses, enemyFreezeSkipTurns: nextState.enemyFreezeSkipTurns + 1 };
+        nextState = { ...nextState, enemyStatuses: nextStatuses, enemyFreezeSkipTurns: nextState.enemyFreezeSkipTurns + 1 + nextState.trinketEffects.freezeDurationExtension };
+        if (nextState.trinketEffects.frozenHeartDamage > 0) {
+          nextState = {
+            ...nextState,
+            enemyHealth: clampHealth(nextState.enemyHealth, -nextState.trinketEffects.frozenHeartDamage, nextState.enemyMaxHealth),
+          };
+          mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "physical", amount: nextState.trinketEffects.frozenHeartDamage });
+        }
       }
       break;
     }
@@ -128,13 +156,10 @@ export function removeHarmfulPlayerStatuses(state: BattleState, amount: number, 
     playerStatuses: nextPlayerStatuses,
   };
 
-  if (removed && nextState.trinketEffects.sinEaterGoldOnHarmfulStatusRemove > 0) {
-    nextState = {
-      ...nextState,
-      gold: nextState.gold + nextState.trinketEffects.sinEaterGoldOnHarmfulStatusRemove,
-    };
+  if (removed && nextState.trinketEffects.sinEaterHealOnHarmfulStatusRemove > 0) {
+    nextState = applyPlayerHealing(nextState, nextState.trinketEffects.sinEaterHealOnHarmfulStatusRemove);
     if (combatTexts) {
-      mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "gold", amount: nextState.trinketEffects.sinEaterGoldOnHarmfulStatusRemove });
+      mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: nextState.trinketEffects.sinEaterHealOnHarmfulStatusRemove });
     }
   }
 

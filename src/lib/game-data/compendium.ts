@@ -1,4 +1,4 @@
-import { boneCharm, brassCenser, cutpurseKnife, frozenHeart, goblin, imp, ironwoodBuckler, lizardScout, meteorite, mimic, mortarAndPestle, mudElemental, necromancer, merchantsFavor, obsidianHammer, parasiticBloom, plagueDoctor, plagueDoctorsMask, resonantChime, runicQuill, skeleton, sinEatersLantern, smugglersMap, sunderingCharm, tatteredPages, theBlightTreant, theForgeGolem, theFrostwarden, vanguardsCrest, wishingWellCoin, grovesFavor } from "./assets";
+import { boneCharm, brassCenser, cutpurseKnife, frozenHeart, goblin, imp, ironwoodBuckler, livingArmor, lizardScout, meteorite, mimic, mortarAndPestle, mudElemental, necromancer, merchantsFavor, obsidianHammer, parasiticBloom, plagueDoctor, plagueDoctorsMask, placeholderTrinket, resonantChime, runicQuill, skeleton, sinEatersLantern, smugglersMap, sunderingCharm, tatteredPages, theBlightTreant, theForgeGolem, theFrostwarden, vanguardsCrest, wishingWellCoin, grovesFavor } from "./assets";
 import type { BestiaryEntry, TrinketEntry } from "./types";
 
 export const enemyBestiary: BestiaryEntry[] = [
@@ -22,10 +22,10 @@ export const enemyBestiary: BestiaryEntry[] = [
     descriptionLines: [],
     art: theFrostwarden,
     enemyType: "boss",
-    traits: [{ id: "glacial-shell", title: "Glacial Shell", description: "Immune to Freeze. Receives double Burn damage" }],
+    traits: [{ id: "glacial-shell", title: "Glacial Shell", description: "Receives half Freeze damage\nReceives double Burn damage\nGains 1 Freeze damage each turn" }],
     attackEffects: [
-      { kind: "damage", damageType: "physical", amount: 4 },
-      { kind: "player-status", status: "freeze", amount: 3 },
+      { kind: "damage", damageType: "physical", amount: 8 },
+      { kind: "player-status", status: "freeze", amount: 2 },
     ],
   },
   {
@@ -37,8 +37,8 @@ export const enemyBestiary: BestiaryEntry[] = [
     enemyType: "boss",
     traits: [{ id: "regeneration", title: "Rotting Regrowth", description: "Gains 4 Health each turn" }],
     attackEffects: [
-      { kind: "damage", damageType: "physical", amount: 3 },
-      { kind: "player-status", status: "poison", amount: 2 },
+      { kind: "damage", damageType: "nature", amount: 5 },
+      { kind: "player-status", status: "poison", amount: 3 },
     ],
   },
   {
@@ -58,7 +58,7 @@ export const enemyBestiary: BestiaryEntry[] = [
     descriptionLines: [],
     art: goblin,
     enemyType: "normal",
-    traits: [{ id: "fear-the-light", title: "Fear the Light", description: "Receives double Burn damage\nReceives double Holy damage" }],
+    traits: [{ id: "trinket-hoarder", title: "Trinket Hoarder", description: "Receives double Burn damage\nMore likely to drop Trinkets" }],
     attackEffects: [{ kind: "damage", damageType: "physical", amount: 8 }],
   },
   {
@@ -70,7 +70,7 @@ export const enemyBestiary: BestiaryEntry[] = [
     enemyType: "normal",
     traits: [{ id: "burn-resistance", title: "Burn Resistance", description: "Receives half Burn damage" }],
     attackEffects: [
-      { kind: "player-status", status: "burn", amount: 2 },
+      { kind: "player-status", status: "burn", amount: 3 },
     ],
   },
   {
@@ -92,7 +92,7 @@ export const enemyBestiary: BestiaryEntry[] = [
     descriptionLines: [],
     art: mimic,
     enemyType: "elite",
-    traits: [{ id: "gold-trove", title: "Gold Trove", description: "Gain 1 Gold when damaging a Mimic" }],
+    traits: [{ id: "gold-trove", title: "Gold Trove", description: "Drops 1 Gold when damaged" }],
     attackEffects: [{ kind: "damage", damageType: "physical", amount: 8 }],
   },
   {
@@ -117,7 +117,7 @@ export const enemyBestiary: BestiaryEntry[] = [
     enemyType: "elite",
     traits: [{ id: "holy-vulnerability", title: "Holy Vulnerability", description: "Receives double Holy damage" }],
     attackEffects: [
-      { kind: "player-status", status: "bleed", amount: 2 },
+      { kind: "player-status", status: "bleed", amount: 4 },
     ],
   },
   {
@@ -129,7 +129,20 @@ export const enemyBestiary: BestiaryEntry[] = [
     enemyType: "elite",
     traits: [{ id: "poison-resistance", title: "Poison Resistance", description: "Receives half Poison damage" }],
     attackEffects: [
-      { kind: "player-status", status: "poison", amount: 2 },
+      { kind: "player-status", status: "poison", amount: 4 },
+    ],
+  },
+  {
+    id: "living-armor",
+    title: "Living Armor",
+    subtitle: "Elite",
+    descriptionLines: [],
+    art: livingArmor,
+    enemyType: "elite",
+    traits: [{ id: "living-armor", title: "Living Armor", description: "Starts combat with 8 Armor\nReceives half Bleed damage" }],
+    attackEffects: [
+      { kind: "damage", damageType: "physical", amount: 5 },
+      { kind: "damage", damageType: "nature", amount: 5 },
     ],
   },
 ];
@@ -138,25 +151,25 @@ export const trinketLibrary: TrinketEntry[] = [
   {
     id: "brass-censer",
     title: "Brass Censer",
-    descriptionLines: ["Your first Holy attack each battle deals 2 extra damage."],
+    descriptionLines: ["Your first Holy damage each combat is doubled."],
     art: brassCenser,
   },
   {
     id: "tattered-pages",
     title: "Tattered Pages",
-    descriptionLines: ["Draw 1 additional card at the start of each battle."],
+    descriptionLines: ["Draw 1 additional card at the start of combat."],
     art: tatteredPages,
   },
   {
     id: "meteorite",
     title: "Meteorite",
-    descriptionLines: ["The first Burn you apply each battle is doubled."],
+    descriptionLines: ["Your first Burn damage each combat is doubled."],
     art: meteorite,
   },
   {
     id: "bone-charm",
     title: "Bone Charm",
-    descriptionLines: ["When an enemy dies, heal 3 HP."],
+    descriptionLines: ["Gain 3 Health when you defeat an enemy."],
     art: boneCharm,
   },
   {
@@ -168,7 +181,7 @@ export const trinketLibrary: TrinketEntry[] = [
   {
     id: "frozen-heart",
     title: "Frozen Heart",
-    descriptionLines: ["Enemies that miss a turn to Freeze or Stun take 3 damage."],
+    descriptionLines: ["When you Freeze an enemy, deal 6 Physical damage."],
     art: frozenHeart,
   },
   {
@@ -180,13 +193,13 @@ export const trinketLibrary: TrinketEntry[] = [
   {
     id: "runic-quill",
     title: "Runic Quill",
-    descriptionLines: ["When you consume a card, draw 1 card."],
+    descriptionLines: ["Draw a card when you Consume a card."],
     art: runicQuill,
   },
   {
     id: "sin-eaters-lantern",
     title: "Sin-Eater's Lantern",
-    descriptionLines: ["When you remove a harmful status effect from yourself, gain 1 Gold."],
+    descriptionLines: ["Gain 6 Health when you remove a harmful status effect from yourself."],
     art: sinEatersLantern,
   },
   {
@@ -198,7 +211,7 @@ export const trinketLibrary: TrinketEntry[] = [
   {
     id: "parasitic-bloom",
     title: "Parasitic Bloom",
-    descriptionLines: ["When Poison ticks on an enemy, heal 1 HP."],
+    descriptionLines: ["Poison has a 10% chance to Leech."],
     art: parasiticBloom,
   },
   {
@@ -254,5 +267,29 @@ export const trinketLibrary: TrinketEntry[] = [
     title: "Grove's Favor",
     descriptionLines: ["Restore 2 Health at the start of each battle."],
     art: grovesFavor,
+  },
+  {
+    id: "companions-collar",
+    title: "Companion's Collar",
+    descriptionLines: ["Increases Companion damage by 1."],
+    art: placeholderTrinket,
+  },
+  {
+    id: "polar-pendant",
+    title: "Polar Pendant",
+    descriptionLines: ["Freeze effects last 1 turn longer."],
+    art: placeholderTrinket,
+  },
+  {
+    id: "thunderstone",
+    title: "Thunderstone",
+    descriptionLines: ["When you Stun an enemy, deal 6 Nature damage."],
+    art: placeholderTrinket,
+  },
+  {
+    id: "lucky-clover",
+    title: "Lucky Clover",
+    descriptionLines: ["Nature damage has a 10% chance to grant Gold equal to the damage dealt."],
+    art: placeholderTrinket,
   },
 ];

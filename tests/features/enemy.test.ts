@@ -10,17 +10,17 @@ describe("formatEnemyAttackLines", () => {
 
   it("formats pure physical damage", () => {
     const effects: EnemyAttackEffect[] = [{ kind: "damage", damageType: "physical", amount: 8 }];
-    expect(formatEnemyAttackLines(effects)).toEqual(["Deals Physical damage"]);
+    expect(formatEnemyAttackLines(effects)).toEqual(["Deals 8 Physical damage"]);
   });
 
   it("formats physical damage with lifesteal", () => {
     const effects: EnemyAttackEffect[] = [{ kind: "damage", damageType: "physical", amount: 2, lifesteal: true }];
-    expect(formatEnemyAttackLines(effects)).toEqual(["Deals Physical damage", "Leech"]);
+    expect(formatEnemyAttackLines(effects)).toEqual(["Deals 2 Physical damage", "Leech"]);
   });
 
   it("formats a single status effect", () => {
     const effects: EnemyAttackEffect[] = [{ kind: "player-status", status: "burn", amount: 2 }];
-    expect(formatEnemyAttackLines(effects)).toEqual(["Deals Burn damage"]);
+    expect(formatEnemyAttackLines(effects)).toEqual(["Deals 2 Burn damage"]);
   });
 
   it("formats two status effects combined", () => {
@@ -28,7 +28,7 @@ describe("formatEnemyAttackLines", () => {
       { kind: "player-status", status: "stun", amount: 2 },
       { kind: "player-status", status: "poison", amount: 2 },
     ];
-    expect(formatEnemyAttackLines(effects)).toEqual(["Deals Stun and Poison"]);
+    expect(formatEnemyAttackLines(effects)).toEqual(["Deals 2 Stun and 2 Poison"]);
   });
 
   it("formats three status effects", () => {
@@ -37,7 +37,7 @@ describe("formatEnemyAttackLines", () => {
       { kind: "player-status", status: "poison", amount: 1 },
       { kind: "player-status", status: "freeze", amount: 1 },
     ];
-    expect(formatEnemyAttackLines(effects)).toEqual(["Deals Burn, Poison and Freeze"]);
+    expect(formatEnemyAttackLines(effects)).toEqual(["Deals 1 Burn, 1 Poison and 1 Freeze"]);
   });
 
   it("formats single physical + single status as a combined line", () => {
@@ -45,7 +45,7 @@ describe("formatEnemyAttackLines", () => {
       { kind: "damage", damageType: "physical", amount: 3 },
       { kind: "player-status", status: "burn", amount: 2 },
     ];
-    expect(formatEnemyAttackLines(effects)).toEqual(["Deals Physical and Burn damage"]);
+    expect(formatEnemyAttackLines(effects)).toEqual(["Deals 3 Physical and 2 Burn"]);
   });
 
   it("formats mixed damage (with lifesteal) + status", () => {
@@ -53,7 +53,7 @@ describe("formatEnemyAttackLines", () => {
       { kind: "damage", damageType: "physical", amount: 2, lifesteal: true },
       { kind: "player-status", status: "bleed", amount: 2 },
     ];
-    expect(formatEnemyAttackLines(effects)).toEqual(["Deals Physical damage", "Leech", "Deals Bleed damage"]);
+    expect(formatEnemyAttackLines(effects)).toEqual(["Deals 2 Physical damage", "Leech", "Deals 2 Bleed damage"]);
   });
 
   it("formats damage + two statuses as separate lines", () => {
@@ -62,7 +62,7 @@ describe("formatEnemyAttackLines", () => {
       { kind: "player-status", status: "poison", amount: 2 },
       { kind: "player-status", status: "freeze", amount: 2 },
     ];
-    expect(formatEnemyAttackLines(effects)).toEqual(["Deals Physical damage", "Deals Poison damage", "Deals Freeze damage"]);
+    expect(formatEnemyAttackLines(effects)).toEqual(["Deals 5 Physical damage", "Deals 2 Poison damage", "Deals 2 Freeze damage"]);
   });
 });
 
@@ -74,46 +74,50 @@ describe("enemyBestiary attack lines integration", () => {
   }
 
   it("Skeleton — pure physical", () => {
-    expect(getAttackLines("skeleton")).toEqual(["Deals Physical damage"]);
+    expect(getAttackLines("skeleton")).toEqual(["Deals 8 Physical damage"]);
   });
 
   it("Goblin — pure physical", () => {
-    expect(getAttackLines("goblin")).toEqual(["Deals Physical damage"]);
+    expect(getAttackLines("goblin")).toEqual(["Deals 8 Physical damage"]);
   });
 
   it("Imp — pure Burn", () => {
-    expect(getAttackLines("imp")).toEqual(["Deals Burn damage"]);
+    expect(getAttackLines("imp")).toEqual(["Deals 3 Burn damage"]);
   });
 
   it("Lizard Scout — pure Poison", () => {
-    expect(getAttackLines("lizard-scout")).toEqual(["Deals Poison damage"]);
+    expect(getAttackLines("lizard-scout")).toEqual(["Deals 2 Poison damage"]);
   });
 
   it("Mimic — pure physical", () => {
-    expect(getAttackLines("mimic")).toEqual(["Deals Physical damage"]);
+    expect(getAttackLines("mimic")).toEqual(["Deals 8 Physical damage"]);
   });
 
   it("Mud Elemental — Stun and Poison combined", () => {
-    expect(getAttackLines("mud-elemental")).toEqual(["Deals Stun and Poison"]);
+    expect(getAttackLines("mud-elemental")).toEqual(["Deals 2 Stun and 2 Poison"]);
   });
 
   it("Necromancer — pure Bleed", () => {
-    expect(getAttackLines("necromancer")).toEqual(["Deals Bleed damage"]);
+    expect(getAttackLines("necromancer")).toEqual(["Deals 4 Bleed damage"]);
   });
 
   it("Plague Doctor — pure Poison", () => {
-    expect(getAttackLines("plague-doctor")).toEqual(["Deals Poison damage"]);
+    expect(getAttackLines("plague-doctor")).toEqual(["Deals 4 Poison damage"]);
   });
 
   it("The Forge Golem — physical + stun combined", () => {
-    expect(getAttackLines("rusted-colossus")).toEqual(["Deals Physical and Stun damage"]);
+    expect(getAttackLines("rusted-colossus")).toEqual(["Deals 5 Physical and 2 Stun"]);
   });
 
   it("The Frostwarden — physical + freeze combined", () => {
-    expect(getAttackLines("frostwarden")).toEqual(["Deals Physical and Freeze damage"]);
+    expect(getAttackLines("frostwarden")).toEqual(["Deals 8 Physical and 2 Freeze"]);
   });
 
-  it("The Blight Treant — physical + poison combined", () => {
-    expect(getAttackLines("blight-treant")).toEqual(["Deals Physical and Poison damage"]);
+  it("The Blight Treant — nature + poison combined", () => {
+    expect(getAttackLines("blight-treant")).toEqual(["Deals 5 Nature and 3 Poison"]);
+  });
+
+  it("Living Armor — physical + nature combined", () => {
+    expect(getAttackLines("living-armor")).toEqual(["Deals 5 Physical and 5 Nature"]);
   });
 });

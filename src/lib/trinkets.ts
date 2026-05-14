@@ -5,7 +5,7 @@ import type { TrinketManifest } from "./battle";
 
 export const defaultTrinketEffects: TrinketManifest = {
   extraDrawPerBattle: 0,
-  firstHolyDamageBonus: 0,
+  firstHolyDamageDoubled: false,
   firstBurnDoubled: false,
   boneCharmHealOnKill: 0,
   forgeStunThreshold: 0,
@@ -14,9 +14,9 @@ export const defaultTrinketEffects: TrinketManifest = {
   blockToArmorThreshold: 0,
   blockToArmorAmount: 0,
   runicQuillDrawOnConsume: 0,
-  sinEaterGoldOnHarmfulStatusRemove: 0,
+  sinEaterHealOnHarmfulStatusRemove: 0,
   vanguardCrestForgeOnBlockAbsorb: 0,
-  parasiticBloomHealPerPoisonTick: 0,
+  parasiticBloomLeechChance: 0,
   cutpurseGoldOnBleed: 0,
   wishingWellGoldOnWish: 0,
   plagueDoctorImmunity: false,
@@ -27,6 +27,10 @@ export const defaultTrinketEffects: TrinketManifest = {
   smugglersMapGoldBonus: 0,
   grovesFavorStartHeal: 0,
   merchantsFavorDiscount: 0,
+  companionDamageBonus: 0,
+  freezeDurationExtension: 0,
+  thunderstoneDamageOnStun: 0,
+  luckyCloverGoldChance: 0,
 };
 
 export function computeTrinketManifest(trinketIds: string[]): TrinketManifest {
@@ -35,7 +39,7 @@ export function computeTrinketManifest(trinketIds: string[]): TrinketManifest {
   for (const id of trinketIds) {
     switch (id) {
       case "brass-censer":
-        manifest.firstHolyDamageBonus = 2;
+        manifest.firstHolyDamageDoubled = true;
         break;
       case "tattered-pages":
         manifest.extraDrawPerBattle = 1;
@@ -51,7 +55,7 @@ export function computeTrinketManifest(trinketIds: string[]): TrinketManifest {
         manifest.forgeStunAmount = 1;
         break;
       case "frozen-heart":
-        manifest.frozenHeartDamage = 3;
+        manifest.frozenHeartDamage = 6;
         break;
       case "ironwood-buckler":
         manifest.blockToArmorThreshold = 6;
@@ -61,13 +65,13 @@ export function computeTrinketManifest(trinketIds: string[]): TrinketManifest {
         manifest.runicQuillDrawOnConsume = 1;
         break;
       case "sin-eaters-lantern":
-        manifest.sinEaterGoldOnHarmfulStatusRemove = 1;
+        manifest.sinEaterHealOnHarmfulStatusRemove = 6;
         break;
       case "vanguards-crest":
         manifest.vanguardCrestForgeOnBlockAbsorb = 1;
         break;
       case "parasitic-bloom":
-        manifest.parasiticBloomHealPerPoisonTick = 1;
+        manifest.parasiticBloomLeechChance = 10;
         break;
       case "cutpurse-knife":
         manifest.cutpurseGoldOnBleed = 1;
@@ -96,6 +100,18 @@ export function computeTrinketManifest(trinketIds: string[]): TrinketManifest {
         break;
       case "groves-favor":
         manifest.grovesFavorStartHeal = 2;
+        break;
+      case "companions-collar":
+        manifest.companionDamageBonus = 1;
+        break;
+      case "polar-pendant":
+        manifest.freezeDurationExtension = 1;
+        break;
+      case "thunderstone":
+        manifest.thunderstoneDamageOnStun = 6;
+        break;
+      case "lucky-clover":
+        manifest.luckyCloverGoldChance = 10;
         break;
     }
   }

@@ -59,8 +59,9 @@ export function createBossRewardState({ gold, bossBonus, talentGoldPerCombat, ma
 // Combat rewards can be cards or trinkets. Destination choices are supplied by the hook
 // because they depend on post-victory run HP/gold and act progression.
 export function createCombatRewardState({ battleState, runDeck, gold, eliteBonus, talentGoldPerCombat, materials, destinations, trinketIds, goldMultiplier = 1 }: CombatRewardInput): RewardState {
-  const trinketChance = battleState.currentEnemy.enemyType === "elite" ? ELITE_TRINKET_REWARD_CHANCE : REWARD_TRINKET_CHANCE;
-  const offerTrinket = Math.random() < trinketChance;
+  const baseTrinketChance = battleState.currentEnemy.enemyType === "elite" ? ELITE_TRINKET_REWARD_CHANCE : REWARD_TRINKET_CHANCE;
+  const trinketHoarderBonus = battleState.currentEnemy.traits?.some((t) => t.id === "trinket-hoarder") ? 0.1 : 0;
+  const offerTrinket = Math.random() < baseTrinketChance + trinketHoarderBonus;
   const trinketGoldBonus = computeTrinketManifest(trinketIds).smugglersMapGoldBonus;
   return {
     rewardType: offerTrinket ? "trinket" : "card",

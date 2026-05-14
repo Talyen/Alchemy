@@ -1,6 +1,7 @@
-// Trinket-specific battle effects: Ironwood Buckler and Bone Charm.
+// Trinket-specific battle effects: Ironwood Buckler, Bone Charm, and Lucky Clover.
 import { applyPlayerHealing, type BattleState, type CombatTextEvent } from "./types";
 import { mergeCombatText } from "./combat-text";
+import { PERCENT_DENOMINATOR } from "../game-constants";
 
 export function applyIronwoodBuckler(state: BattleState, combatTexts: CombatTextEvent[]) {
   if (state.trinketEffects.blockToArmorThreshold > 0 && state.playerStatuses.block >= state.trinketEffects.blockToArmorThreshold) {
@@ -17,14 +18,20 @@ export function applyIronwoodBuckler(state: BattleState, combatTexts: CombatText
 }
 
 export function applyBoneCharmHeal(state: BattleState, enemyWasAlive: boolean, combatTexts: CombatTextEvent[]) {
-  if (state.enemyHealth <= 0 && enemyWasAlive && state.trinketEffects.boneCharmHealOnKill > 0 && !state.flags.boneCharmUsed) {
+  if (state.enemyHealth <= 0 && enemyWasAlive && state.trinketEffects.boneCharmHealOnKill > 0) {
     const healAmount = state.trinketEffects.boneCharmHealOnKill;
-    state = {
-      ...state,
-      flags: { ...state.flags, boneCharmUsed: true },
-    };
     state = applyPlayerHealing(state, healAmount);
     mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: healAmount });
+  }
+  return state;
+}
+
+export function applyLuckyCloverGold(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
+  if (state.trinketEffects.luckyCloverGoldChance <= 0 || damage <= 0) return state;
+  if (Math.random() * PERCENT_DENOMINATOR < state.trinketEffects.luckyCloverGoldChance) {
+    const nextState = { ...state, gold: state.gold + damage };
+    mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "gold", amount: damage });
+    return nextState;
   }
   return state;
 }

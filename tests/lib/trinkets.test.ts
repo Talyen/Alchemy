@@ -12,9 +12,9 @@ describe("computeTrinketManifest", () => {
     expect(manifest).toEqual(defaultTrinketEffects);
   });
 
-  it("Brass Censer → firstHolyDamageBonus: 2", () => {
+  it("Brass Censer → firstHolyDamageDoubled: true", () => {
     const manifest = computeTrinketManifest(["brass-censer"]);
-    expect(manifest.firstHolyDamageBonus).toBe(2);
+    expect(manifest.firstHolyDamageDoubled).toBe(true);
   });
 
   it("Tattered Pages → extraDrawPerBattle: 1", () => {
@@ -38,9 +38,9 @@ describe("computeTrinketManifest", () => {
     expect(manifest.forgeStunAmount).toBe(1);
   });
 
-  it("Frozen Heart → frozenHeartDamage: 3", () => {
+  it("Frozen Heart → frozenHeartDamage: 6", () => {
     const manifest = computeTrinketManifest(["frozen-heart"]);
-    expect(manifest.frozenHeartDamage).toBe(3);
+    expect(manifest.frozenHeartDamage).toBe(6);
   });
 
   it("Ironwood Buckler → blockToArmorThreshold: 6, blockToArmorAmount: 1", () => {
@@ -54,9 +54,9 @@ describe("computeTrinketManifest", () => {
     expect(manifest.runicQuillDrawOnConsume).toBe(1);
   });
 
-  it("Sin-Eater's Lantern -> sinEaterGoldOnHarmfulStatusRemove: 1", () => {
+  it("Sin-Eater's Lantern → sinEaterHealOnHarmfulStatusRemove: 6", () => {
     const manifest = computeTrinketManifest(["sin-eaters-lantern"]);
-    expect(manifest.sinEaterGoldOnHarmfulStatusRemove).toBe(1);
+    expect(manifest.sinEaterHealOnHarmfulStatusRemove).toBe(6);
   });
 
   it("Vanguard's Crest → vanguardCrestForgeOnBlockAbsorb: 1", () => {
@@ -64,9 +64,9 @@ describe("computeTrinketManifest", () => {
     expect(manifest.vanguardCrestForgeOnBlockAbsorb).toBe(1);
   });
 
-  it("Parasitic Bloom → parasiticBloomHealPerPoisonTick: 1", () => {
+  it("Parasitic Bloom → parasiticBloomLeechChance: 10", () => {
     const manifest = computeTrinketManifest(["parasitic-bloom"]);
-    expect(manifest.parasiticBloomHealPerPoisonTick).toBe(1);
+    expect(manifest.parasiticBloomLeechChance).toBe(10);
   });
 
   it("Cutpurse Knife → cutpurseGoldOnBleed: 1", () => {
@@ -107,13 +107,33 @@ describe("computeTrinketManifest", () => {
 
   it("combines multiple trinkets", () => {
     const manifest = computeTrinketManifest(["brass-censer", "tattered-pages", "sundering-charm"]);
-    expect(manifest.firstHolyDamageBonus).toBe(2);
+    expect(manifest.firstHolyDamageDoubled).toBe(true);
     expect(manifest.extraDrawPerBattle).toBe(1);
     expect(manifest.sunderingArmorPiercing).toBe(2);
   });
 
   it("handles duplicate trinket IDs (no double-counting)", () => {
     const manifest = computeTrinketManifest(["brass-censer", "brass-censer"]);
-    expect(manifest.firstHolyDamageBonus).toBe(2);
+    expect(manifest.firstHolyDamageDoubled).toBe(true);
+  });
+
+  it("Companion's Collar → companionDamageBonus: 1", () => {
+    const manifest = computeTrinketManifest(["companions-collar"]);
+    expect(manifest.companionDamageBonus).toBe(1);
+  });
+
+  it("Polar Pendant → freezeDurationExtension: 1", () => {
+    const manifest = computeTrinketManifest(["polar-pendant"]);
+    expect(manifest.freezeDurationExtension).toBe(1);
+  });
+
+  it("Thunderstone → thunderstoneDamageOnStun: 6", () => {
+    const manifest = computeTrinketManifest(["thunderstone"]);
+    expect(manifest.thunderstoneDamageOnStun).toBe(6);
+  });
+
+  it("Lucky Clover → luckyCloverGoldChance: 10", () => {
+    const manifest = computeTrinketManifest(["lucky-clover"]);
+    expect(manifest.luckyCloverGoldChance).toBe(10);
   });
 });

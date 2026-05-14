@@ -28,7 +28,7 @@ export type TurnPhase = "player" | "enemy";
 // the duration of the battle.
 export type TrinketManifest = {
   extraDrawPerBattle: number;
-  firstHolyDamageBonus: number;
+  firstHolyDamageDoubled: boolean;
   firstBurnDoubled: boolean;
   boneCharmHealOnKill: number;
   forgeStunThreshold: number;
@@ -37,9 +37,9 @@ export type TrinketManifest = {
   blockToArmorThreshold: number;
   blockToArmorAmount: number;
   runicQuillDrawOnConsume: number;
-  sinEaterGoldOnHarmfulStatusRemove: number;
+  sinEaterHealOnHarmfulStatusRemove: number;
   vanguardCrestForgeOnBlockAbsorb: number;
-  parasiticBloomHealPerPoisonTick: number;
+  parasiticBloomLeechChance: number;
   cutpurseGoldOnBleed: number;
   wishingWellGoldOnWish: number;
   plagueDoctorImmunity: boolean;
@@ -50,6 +50,10 @@ export type TrinketManifest = {
   smugglersMapGoldBonus: number;
   grovesFavorStartHeal: number;
   merchantsFavorDiscount: number;
+  companionDamageBonus: number;
+  freezeDurationExtension: number;
+  thunderstoneDamageOnStun: number;
+  luckyCloverGoldChance: number;
 };
 
 // TalentEffectManifest moved to game-data/types.ts to resolve cross-layer dependency.
@@ -70,7 +74,6 @@ export type CombatFlags = {
   firstBurnTrinketDoubledUsed: boolean;
   firstHarmfulStatusPrevented: boolean;
   firstPotionFreeUsed: boolean;
-  boneCharmUsed: boolean;
   resonantChimeUsedThisTurn: boolean;
 };
 
@@ -97,6 +100,7 @@ export type BattleState = {
   enemyRegeneration: number;       // health restored at end of each enemy turn
   enemyArmor: number;             // flat damage reduction for the enemy
   enemyForge: number;             // bonus physical damage added per stack (rusting-carapace)
+  enemyFreezeBonus: number;       // per-turn freeze status bonus (glacial-shell)
   playerStatuses: PlayerStatusValues;
   enemyStatuses: EnemyStatusValues;
   enemyStunSkipTurns: number;     // turns skipped from stun triggers

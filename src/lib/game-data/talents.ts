@@ -54,7 +54,7 @@ export const talentPool: TalentDefinition[] = [
   { id: "stun-draw", keywordId: "stun", description: "When you Stun an enemy, draw a card", effects: [setEffect("drawOnStun", 1)] },
   { id: "stun-next-free", keywordId: "stun", description: "When you Stun an enemy, your next card is free", effects: [setEffect("nextCardFreeOnStun", true)] },
   { id: "stun-duration-1", keywordId: "stun", description: "Stun effects last 1 turn longer", effects: [setEffect("stunDurationExtension", 1)] },
-  { id: "stun-placeholder-1", keywordId: "stun", description: "Placeholder talent (NYI)" },
+  { id: "stun-double-damage", keywordId: "stun", description: "Stunned enemies take double damage", effects: [setEffect("stunDoubleDamage", true)] },
   { id: "stun-placeholder-2", keywordId: "stun", description: "Placeholder talent (NYI)" },
   { id: "stun-placeholder-3", keywordId: "stun", description: "Placeholder talent (NYI)" },
   { id: "stun-placeholder-4", keywordId: "stun", description: "Placeholder talent (NYI)" },
@@ -131,7 +131,7 @@ export const talentPool: TalentDefinition[] = [
   { id: "gold-enemy-drop", keywordId: "gold", description: "Enemies drop 10% more Gold", effects: [setEffect("enemyGoldDropBonus", 0.1)] },
   { id: "gold-on-wish", keywordId: "gold", description: "Gain 3 Gold when you Wish", effects: [setEffect("goldOnWish", 3)] },
   { id: "gold-mix-discount", keywordId: "gold", description: "Mix Potions costs 10 less Gold", effects: [setEffect("mixPotionDiscount", 10)] },
-  { id: "gold-per-combat-extra", keywordId: "gold", description: "Placeholder talent (NYI)" },
+  { id: "gold-elite-drop", keywordId: "gold", description: "Elites drop 10% more Gold", effects: [setEffect("eliteGoldDropBonus", 0.1)] },
 
   // --- Holy ---
   { id: "holy-lifesteal", keywordId: "holy", description: "Holy damage heals you for 10% of the amount dealt", effects: [setEffect("holyLifestealPercent", 10)] },
@@ -193,16 +193,16 @@ export const talentPool: TalentDefinition[] = [
   { id: "leech-heal-9", keywordId: "leech", description: "Placeholder talent (NYI)" },
   { id: "leech-heal-10", keywordId: "leech", description: "Placeholder talent (NYI)" },
 
-  { id: "freeze-duration-1", keywordId: "freeze", description: "Placeholder talent (NYI)" },
-  { id: "freeze-duration-2", keywordId: "freeze", description: "Placeholder talent (NYI)" },
-  { id: "freeze-duration-3", keywordId: "freeze", description: "Placeholder talent (NYI)" },
-  { id: "freeze-duration-4", keywordId: "freeze", description: "Placeholder talent (NYI)" },
-  { id: "freeze-duration-5", keywordId: "freeze", description: "Placeholder talent (NYI)" },
-  { id: "freeze-duration-6", keywordId: "freeze", description: "Placeholder talent (NYI)" },
-  { id: "freeze-duration-7", keywordId: "freeze", description: "Placeholder talent (NYI)" },
-  { id: "freeze-duration-8", keywordId: "freeze", description: "Placeholder talent (NYI)" },
-  { id: "freeze-duration-9", keywordId: "freeze", description: "Placeholder talent (NYI)" },
-  { id: "freeze-duration-10", keywordId: "freeze", description: "Placeholder talent (NYI)" },
+  { id: "freeze-threshold", keywordId: "freeze", description: "Freeze threshold reduced by 10%", effects: [setEffect("freezeThresholdReduction", 0.1)] },
+  { id: "freeze-double-damage", keywordId: "freeze", description: "Frozen enemies take double damage", effects: [setEffect("freezeDoubleDamage", true)] },
+  { id: "freeze-placeholder-3", keywordId: "freeze", description: "Placeholder talent (NYI)" },
+  { id: "freeze-placeholder-4", keywordId: "freeze", description: "Placeholder talent (NYI)" },
+  { id: "freeze-placeholder-5", keywordId: "freeze", description: "Placeholder talent (NYI)" },
+  { id: "freeze-placeholder-6", keywordId: "freeze", description: "Placeholder talent (NYI)" },
+  { id: "freeze-placeholder-7", keywordId: "freeze", description: "Placeholder talent (NYI)" },
+  { id: "freeze-placeholder-8", keywordId: "freeze", description: "Placeholder talent (NYI)" },
+  { id: "freeze-placeholder-9", keywordId: "freeze", description: "Placeholder talent (NYI)" },
+  { id: "freeze-placeholder-10", keywordId: "freeze", description: "Placeholder talent (NYI)" },
 
   { id: "mana-max-1", keywordId: "mana", description: "Placeholder talent (NYI)" },
   { id: "mana-max-2", keywordId: "mana", description: "Placeholder talent (NYI)" },
@@ -226,8 +226,8 @@ export const talentPool: TalentDefinition[] = [
   { id: "nature-placeholder-9", keywordId: "nature", description: "Placeholder talent (NYI)" },
   { id: "nature-placeholder-10", keywordId: "nature", description: "Placeholder talent (NYI)" },
 
-  { id: "companion-placeholder-1", keywordId: "companion", description: "Placeholder talent (NYI)" },
-  { id: "companion-placeholder-2", keywordId: "companion", description: "Placeholder talent (NYI)" },
+  { id: "companion-damage", keywordId: "companion", description: "Increase Companion damage by 1", effects: [addEffect("companionDamage", 1)] },
+  { id: "companion-gold-find", keywordId: "companion", description: "Companions sometimes find Gold after combat", effects: [setEffect("companionGoldFindActive", true)] },
   { id: "companion-placeholder-3", keywordId: "companion", description: "Placeholder talent (NYI)" },
   { id: "companion-placeholder-4", keywordId: "companion", description: "Placeholder talent (NYI)" },
   { id: "companion-placeholder-5", keywordId: "companion", description: "Placeholder talent (NYI)" },
@@ -237,7 +237,7 @@ export const talentPool: TalentDefinition[] = [
   { id: "companion-placeholder-9", keywordId: "companion", description: "Placeholder talent (NYI)" },
   { id: "companion-placeholder-10", keywordId: "companion", description: "Placeholder talent (NYI)" },
 
-  { id: "trap-placeholder-1", keywordId: "trap", description: "Placeholder talent (NYI)" },
+  { id: "trap-damage", keywordId: "trap", description: "Increase Trap damage by 1", effects: [addEffect("flatTrapDamage", 1)] },
   { id: "trap-placeholder-2", keywordId: "trap", description: "Placeholder talent (NYI)" },
   { id: "trap-placeholder-3", keywordId: "trap", description: "Placeholder talent (NYI)" },
   { id: "trap-placeholder-4", keywordId: "trap", description: "Placeholder talent (NYI)" },
@@ -281,6 +281,7 @@ export function createEmptyTalentManifest(): TalentEffectManifest {
     drawOnStun: 0,
     nextCardFreeOnStun: false,
     stunDurationExtension: 0,
+    stunDoubleDamage: false,
 
     startBlock: 0,
     blockToPhysicalDamage: false,
@@ -321,6 +322,7 @@ export function createEmptyTalentManifest(): TalentEffectManifest {
     potionManaBonus: 0,
     removeCardDiscount: 0,
     enemyGoldDropBonus: 0,
+    eliteGoldDropBonus: 0,
     goldOnWish: 0,
     mixPotionDiscount: 0,
 
@@ -349,6 +351,12 @@ export function createEmptyTalentManifest(): TalentEffectManifest {
     poisonHalvesHealing: false,
 
     companionDamage: 0,
+    companionGoldFindActive: false,
+
+    freezeThresholdReduction: 0,
+    freezeDoubleDamage: false,
+
+    flatTrapDamage: 0,
 
     firstBleedCardFree: false,
     bleedPhysicalBonus: 0,

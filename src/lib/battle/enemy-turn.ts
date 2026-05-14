@@ -1,7 +1,7 @@
 // Enemy turn processing: wish resolution, companion turn, enemy phase, and turn reset.
 // Depends on draw/effect helpers, status ticks, game-data attack shapes, and combat constants.
 import { drawCards } from "./draw";
-import { applyBoneCharmHeal, applyCardEffects, applyIronwoodBuckler, mergeCombatText } from "./apply-effects";
+import { applyCardEffects, applyIronwoodBuckler, mergeCombatText } from "./apply-effects";
 import { tickEnemyStatuses, tickPlayerStatuses } from "./status-ticks";
 import { harmfulPlayerStatusIds, type BattleCard, type DifficultyModifier, type EnemyAttackEffect } from "@/lib/game-data";
 import { applyPlayerCombatDamage, cardsPerTurn, clampHealth, maxHandSize, type BattleState, type CombatTextEvent, type TurnPhase } from "./types";
@@ -32,7 +32,9 @@ export function processCompanionTurnStart(state: BattleState, combatTexts: Comba
     art: state.activeCompanion.art,
     cost: 0,
     effects: state.activeCompanion.turnStartEffects.map((e) =>
-      e.kind === "damage" ? { ...e, amount: e.amount + state.talentEffects.companionDamage } : e,
+      e.kind === "damage"
+        ? { ...e, amount: e.amount + state.talentEffects.companionDamage + state.trinketEffects.companionDamageBonus }
+        : e,
     ),
   };
 
@@ -175,7 +177,9 @@ function processEnemyAttack(state: BattleState, combatTexts: CombatTextEvent[]) 
       nextState = processEnemyDamageEffect(nextState, effect, combatTexts);
     } else if (effect.kind === "player-status") {
       const status = effect.status;
-      const amount = effect.amount;
+      const baseAmount = effect.amount;
+      const extraFreeze = status === "freeze" ? state.enemyFreezeBonus : 0;
+      const amount = baseAmount + extraFreeze;
 
       if (nextState.playerStatuses.block > 0) {
         if (status === "bleed" && state.talentEffects.blockPreventsBleed) continue;
@@ -263,14 +267,6 @@ export function endPlayerTurn(state: BattleState): { state: BattleState; combatT
 
     nextState = tickPlayerStatuses(nextState, combatTexts);
 
-    if (nextState.trinketEffects.frozenHeartDamage > 0) {
-      nextState = {
-        ...nextState,
-        enemyHealth: clampHealth(nextState.enemyHealth, -nextState.trinketEffects.frozenHeartDamage, nextState.enemyMaxHealth),
-      };
-      mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "stun", amount: nextState.trinketEffects.frozenHeartDamage });
-    }
-
     return finalizePlayerTurn(nextState, combatTexts);
   }
 
@@ -278,7 +274,6 @@ export function endPlayerTurn(state: BattleState): { state: BattleState; combatT
   nextState = tickEnemyStatuses(nextState, combatTexts);
 
   if (nextState.enemyHealth <= 0) {
-    nextState = applyBoneCharmHeal(nextState, true, combatTexts);
     return finalizePlayerTurn(nextState, combatTexts);
   }
 
@@ -289,6 +284,10 @@ export function endPlayerTurn(state: BattleState): { state: BattleState; combatT
       enemyForge: nextState.enemyForge + 1,
     };
     mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "armor", amount: 1 });
+  }
+
+  if (nextState.currentEnemy.traits.some((t) => t.id === "glacial-shell")) {
+    nextState = { ...nextState, enemyFreezeBonus: nextState.enemyFreezeBonus + 1 };
   }
 
   if (nextState.difficultyModifiers.some((m: DifficultyModifier) => m.kind === "enemy-gains-forge-each-turn")) {

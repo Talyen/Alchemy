@@ -109,6 +109,19 @@ describe("createCombatRewardState", () => {
     expect(result.gold).toBe(15); // 10 + 3 + 2 = 15
     vi.restoreAllMocks();
   });
+
+  it("trinket-hoarder trait adds +10pp trinket chance", () => {
+    const goblinState = { currentEnemy: { enemyType: "normal", traits: [{ id: "trinket-hoarder", title: "Trinket Hoarder", description: "" }] }, gold: 10 } as const;
+    // Roll 0.15 — below base (0.1) + hoarder bonus (0.1) = 0.2, so trinket is offered
+    vi.spyOn(Math, "random").mockReturnValue(0.15);
+    const result = createCombatRewardState({
+      battleState: goblinState as never,
+      runDeck: [], gold: 10, eliteBonus: 3, talentGoldPerCombat: 2,
+      materials: emptyInventory(), destinations: [], trinketIds: [],
+    });
+    expect(result.rewardType).toBe("trinket");
+    vi.restoreAllMocks();
+  });
 });
 
 describe("getVictoryGoldTotal", () => {

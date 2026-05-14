@@ -36,10 +36,9 @@ function tickPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
   }
   let nextState = { ...state, enemyHealth: clampHealth(state.enemyHealth, -finalDamage, state.enemyMaxHealth), enemyStatuses: { ...state.enemyStatuses, poison: nextPoison } };
 
-  if (state.trinketEffects.parasiticBloomHealPerPoisonTick > 0) {
-    const healAmount = state.trinketEffects.parasiticBloomHealPerPoisonTick;
-    nextState = applyPlayerHealing(nextState, healAmount);
-    mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: healAmount });
+  if (state.trinketEffects.parasiticBloomLeechChance > 0 && Math.random() * PERCENT_DENOMINATOR < state.trinketEffects.parasiticBloomLeechChance) {
+    nextState = applyPlayerHealing(nextState, finalDamage);
+    mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: finalDamage });
   }
 
   return nextState;

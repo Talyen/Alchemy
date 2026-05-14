@@ -142,6 +142,7 @@ export function createBattleState(
   }
 
   const startingArmor = difficultyModifiers.find((m) => m.kind === "enemy-starting-armor")?.amount ?? 0;
+  const traitStartingArmor = enemy.traits.some((t) => t.id === "living-armor") ? 8 : 0;
   const startBlock = difficultyModifiers.find((m) => m.kind === "start-block")?.amount ?? 0;
   const manaBonus = difficultyModifiers.find((m) => m.kind === "start-max-mana")?.amount ?? 0;
   const startCompanion = difficultyModifiers.some((m) => m.kind === "start-companion");
@@ -165,8 +166,9 @@ export function createBattleState(
     enemyMaxHealth: scaledEnemyHealth,
     enemyAttackEffects: modifiedEffects,
     enemyRegeneration,
-    enemyArmor: startingArmor,
+    enemyArmor: startingArmor + traitStartingArmor,
     enemyForge: 0,
+    enemyFreezeBonus: 0,
     playerStatuses: { block: talentEffects.startBlock + startBlock, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 } as PlayerStatusValues,
     enemyStatuses: { burn: 0, poison: 0, bleed: 0, bleedLeech: 0, freeze: 0, stun: 0 } as EnemyStatusValues,
     enemyStunSkipTurns: 0,
@@ -190,7 +192,6 @@ export function createBattleState(
       firstBurnTrinketDoubledUsed: false,
       firstHarmfulStatusPrevented: false,
       firstPotionFreeUsed: false,
-      boneCharmUsed: false,
       resonantChimeUsedThisTurn: false,
     },
     discoveredCardIds,

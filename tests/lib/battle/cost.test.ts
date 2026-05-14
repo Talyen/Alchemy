@@ -18,7 +18,6 @@ const defaultFlags: CombatFlags = {
   firstBurnTrinketDoubledUsed: false,
   firstHarmfulStatusPrevented: false,
   firstPotionFreeUsed: false,
-  boneCharmUsed: false,
   resonantChimeUsedThisTurn: false,
 };
 

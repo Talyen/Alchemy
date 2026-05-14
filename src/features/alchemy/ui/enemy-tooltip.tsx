@@ -1,15 +1,15 @@
 // Structured hover popup for enemy data in battle and bestiary collection.
 // Depends on enemy formatting utilities and the shared popup class from layout config.
 // Used by ArtPanel (battle) and CompendiumTile (collection) to show attacks and traits.
-import type { BestiaryEntry } from "@/lib/game-data";
+import type { BestiaryEntry, EnemyAttackEffect } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
 import { popupClassName } from "../config";
 import { formatEnemyAttackLines } from "../utils";
 import { DescriptionLines } from "./card-ui";
 
-export function EnemyTooltip({ entry, discovered = true }: { entry: BestiaryEntry; discovered?: boolean }) {
-  const attackLines = formatEnemyAttackLines(entry.attackEffects);
+export function EnemyTooltip({ entry, discovered = true, attackEffects }: { entry: BestiaryEntry; discovered?: boolean; attackEffects?: EnemyAttackEffect[] | undefined }) {
+  const attackLines = formatEnemyAttackLines(attackEffects ?? entry.attackEffects);
   const traitLines = entry.traits.flatMap((t) => t.description.split("\n"));
 
   return (

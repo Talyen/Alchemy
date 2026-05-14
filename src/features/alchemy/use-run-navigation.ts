@@ -191,7 +191,12 @@ export function useRunNavigation({
     // Victory state is captured in one sequence so persisted HP, gold/material rewards,
     // reward choices, battle cleanup, audio, and delayed routing agree on the same result.
     const baseGold = randomBetween(GOLD_REWARD_MIN, GOLD_REWARD_MAX);
-    const gold = Math.floor(baseGold * (1 + talents.talentEffects.enemyGoldDropBonus));
+    let gold = Math.floor(baseGold * (1 + talents.talentEffects.enemyGoldDropBonus));
+
+    if (talents.talentEffects.companionGoldFindActive && battleState.activeCompanion && Math.random() < 0.5) {
+      gold = Math.floor(gold * 1.2);
+    }
+
     const eliteBonus =
       battleState.currentEnemy.enemyType === "elite" ? Math.floor(gold * ELITE_GOLD_BONUS_FRACTION) : 0;
     const bossBonus = battleState.currentEnemy.enemyType === "boss" ? Math.floor(gold * BOSS_GOLD_BONUS_FRACTION) : 0;
