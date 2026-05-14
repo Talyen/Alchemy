@@ -24,6 +24,11 @@ import blacksmithsForge from "@/assets/optimized/blacksmiths-forge.webp";
 import chickenCoop from "@/assets/optimized/chicken-coop.webp";
 import herbGarden from "@/assets/optimized/herb-garden.webp";
 import pasture from "@/assets/optimized/pasture.webp";
+import huntersLodge from "@/assets/optimized/hunters-lodge.webp";
+import alchemyLab from "@/assets/optimized/alchemy-lab.webp";
+import crystalGarden from "@/assets/optimized/crystal-garden.webp";
+import wheatField from "@/assets/optimized/wheat-field.webp";
+import orchard from "@/assets/optimized/orchard.webp";
 import placeholderHomestead from "@/assets/optimized/placeholder-homestead.webp";
 
 import { DetailPopup } from "../ui/card-ui";
@@ -56,6 +61,11 @@ const itemArt: Record<string, string> = {
   "chicken-coop": chickenCoop,
   "herb-garden": herbGarden,
   "pasture": pasture,
+  "hunters-lodge": huntersLodge,
+  "alchemy-lab": alchemyLab,
+  "crystal-garden": crystalGarden,
+  "wheat-field": wheatField,
+  "orchard": orchard,
 };
 
 function getArt(id: string): string {

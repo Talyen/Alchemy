@@ -1,4 +1,4 @@
-import { boneCharm, brassCenser, cutpurseKnife, frozenHeart, goblin, imp, ironwoodBuckler, lizardScout, meteorite, mimic, mortarAndPestle, mudElemental, necromancer, merchantsFavor, obsidianHammer, parasiticBloom, placeholderEnemy, plagueDoctor, plagueDoctorsMask, resonantChime, runicQuill, skeleton, sinEatersLantern, smugglersMap, sunderingCharm, tatteredPages, vanguardsCrest, wishingWellCoin, grovesFavor } from "./assets";
+import { boneCharm, brassCenser, cutpurseKnife, frozenHeart, goblin, imp, ironwoodBuckler, lizardScout, meteorite, mimic, mortarAndPestle, mudElemental, necromancer, merchantsFavor, obsidianHammer, parasiticBloom, plagueDoctor, plagueDoctorsMask, resonantChime, runicQuill, skeleton, sinEatersLantern, smugglersMap, sunderingCharm, tatteredPages, theBlightTreant, theForgeGolem, theFrostwarden, vanguardsCrest, wishingWellCoin, grovesFavor } from "./assets";
 import type { BestiaryEntry, TrinketEntry } from "./types";
 
 export const enemyBestiary: BestiaryEntry[] = [
@@ -7,7 +7,7 @@ export const enemyBestiary: BestiaryEntry[] = [
     title: "The Forge Golem",
     subtitle: "Boss",
     descriptionLines: [],
-    art: placeholderEnemy,
+    art: theForgeGolem,
     enemyType: "boss",
     traits: [{ id: "rusting-carapace", title: "Rusting Carapace", description: "Gains 1 Armor each turn\nGains 1 Forge each turn" }],
     attackEffects: [
@@ -20,7 +20,7 @@ export const enemyBestiary: BestiaryEntry[] = [
     title: "The Frostwarden",
     subtitle: "Boss",
     descriptionLines: [],
-    art: placeholderEnemy,
+    art: theFrostwarden,
     enemyType: "boss",
     traits: [{ id: "glacial-shell", title: "Glacial Shell", description: "Immune to Freeze. Receives double Burn damage" }],
     attackEffects: [
@@ -33,7 +33,7 @@ export const enemyBestiary: BestiaryEntry[] = [
     title: "The Blight Treant",
     subtitle: "Boss",
     descriptionLines: [],
-    art: placeholderEnemy,
+    art: theBlightTreant,
     enemyType: "boss",
     traits: [{ id: "regeneration", title: "Rotting Regrowth", description: "Gains 4 Health each turn" }],
     attackEffects: [

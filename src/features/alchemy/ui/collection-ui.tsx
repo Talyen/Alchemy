@@ -202,7 +202,10 @@ function getCardItems(discoveredCardIds: string[]) {
 }
 
 function getBestiaryItems(encounteredEnemyIds: string[]) {
-  return enemyBestiary.map((entry: BestiaryEntry) => {
+  const sortOrder: Record<string, number> = { normal: 0, elite: 1, boss: 2 };
+  return [...enemyBestiary]
+    .sort((a, b) => sortOrder[a.enemyType] - sortOrder[b.enemyType])
+    .map((entry: BestiaryEntry) => {
     const discovered = encounteredEnemyIds.includes(entry.id);
     return { id: entry.id, title: discovered ? entry.title : "Undiscovered", subtitle: discovered ? entry.subtitle : undefined, descriptionLines: discovered ? entry.descriptionLines : ["Encounter this enemy to record its details."], art: entry.art, discovered, hoverScope: "collection-bestiary" as const, frameType: "bestiary" as const };
   });

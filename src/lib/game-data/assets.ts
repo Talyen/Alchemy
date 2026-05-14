@@ -12,6 +12,7 @@ import blessedAegis from "@/assets/optimized/blessed-aegis.webp";
 import block from "@/assets/optimized/block.webp";
 import bread from "@/assets/optimized/bread.webp";
 import cleanse from "@/assets/optimized/cleanse.webp";
+import corruptionAltar from "@/assets/optimized/corruption-altar.webp";
 import discardPile from "@/assets/optimized/discard-pile.webp";
 import drawPile from "@/assets/optimized/draw-pile.webp";
 import fangs from "@/assets/optimized/fangs.webp";
@@ -37,6 +38,9 @@ import necromancer from "@/assets/optimized/necromancer.webp";
 import panaceaPotion from "@/assets/optimized/panacea-potion.webp";
 import mixedPotion from "@/assets/optimized/mixed-potion.webp";
 import plagueDoctor from "@/assets/optimized/plague-doctor.webp";
+import theFrostwarden from "@/assets/optimized/the-frostwarden.webp";
+import theForgeGolem from "@/assets/optimized/the-forge-golem.webp";
+import theBlightTreant from "@/assets/optimized/the-blight-treant.webp";
 import plateMail from "@/assets/optimized/plate-mail.webp";
 import poisonDagger from "@/assets/optimized/poison-dagger.webp";
 import ranger from "@/assets/optimized/ranger.webp";
@@ -72,6 +76,11 @@ import placeholderCard from "@/assets/optimized/placeholder-card.webp";
 import placeholderEnemy from "@/assets/optimized/placeholder-enemy.webp";
 import placeholderTrinket from "@/assets/optimized/placeholder-trinket.webp";
 import placeholderDestination from "@/assets/optimized/placeholder-destination.webp";
+import huntersLodge from "@/assets/optimized/hunters-lodge.webp";
+import alchemyLab from "@/assets/optimized/alchemy-lab.webp";
+import crystalGarden from "@/assets/optimized/crystal-garden.webp";
+import wheatField from "@/assets/optimized/wheat-field.webp";
+import orchard from "@/assets/optimized/orchard.webp";
 import placeholderHomestead from "@/assets/optimized/placeholder-homestead.webp";
 import placeholderMystery from "@/assets/optimized/placeholder-mystery.webp";
 import placeholderDifficulty from "@/assets/optimized/placeholder-difficulty.webp";
@@ -89,6 +98,7 @@ export {
   bread,
   campfire,
   cleanse,
+  corruptionAltar,
   discardPile,
   drawPile,
   fangs,
@@ -147,8 +157,16 @@ export {
   grovesFavor,
   placeholderCard,
   placeholderEnemy,
+  theFrostwarden,
+  theForgeGolem,
+  theBlightTreant,
   placeholderTrinket,
   placeholderDestination,
+  huntersLodge,
+  alchemyLab,
+  crystalGarden,
+  wheatField,
+  orchard,
   placeholderHomestead,
   placeholderMystery,
   placeholderDifficulty,

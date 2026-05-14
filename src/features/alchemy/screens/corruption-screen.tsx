@@ -8,7 +8,7 @@ import { BlurFade } from "@/components/ui/blur-fade";
 import { Button } from "@/components/ui/button";
 import { ShineBorder } from "@/components/ui/shine-border";
 import { ANIMATION_STAGGER_UNIT, SELECTION_GRID_PAGE_SIZE } from "@/lib/game-constants";
-import { placeholderDestination, type BattleCard } from "@/lib/game-data";
+import { corruptionAltar, type BattleCard } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 import type { CorruptionResult } from "../corruption";
 import { collectionCardWidthClass, handCardWidthClass } from "../config";
@@ -83,7 +83,7 @@ function CorruptionIntro({ onBegin, onLeave }: { onBegin: () => void; onLeave: (
       <ScreenHeader title="Altar of Corruption" />
       <ScreenDescription className="text-red-100/75">Select a Card to Corrupt</ScreenDescription>
       <BlurFade delay={ANIMATION_STAGGER_UNIT} direction="up" offset={8}>
-        <img src={placeholderDestination} alt="Altar of Corruption" className="block w-full max-w-[420px] rounded-[22px] object-contain" loading="eager" decoding="sync" />
+        <img src={corruptionAltar} alt="Altar of Corruption" className="block w-full max-w-[420px] rounded-[22px] object-contain" loading="eager" decoding="sync" />
       </BlurFade>
       <div className="flex flex-wrap justify-center gap-3">
         <BlurFade delay={ANIMATION_STAGGER_UNIT * 2} direction="up" offset={6}>

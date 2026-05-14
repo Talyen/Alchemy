@@ -29,6 +29,9 @@ const assets = [
   { source: "Enemies/Mud Elemental.png", target: "mud-elemental.webp", width: 720, quality: 82 },
   { source: "Enemies/Necromancer.png", target: "necromancer.webp", width: 720, quality: 82 },
   { source: "Enemies/Plague Doctor.png", target: "plague-doctor.webp", width: 720, quality: 82 },
+  { source: "Enemies/The Frostwarden.png", target: "the-frostwarden.webp", width: 720, quality: 82 },
+  { source: "Enemies/The Forge Golem.png", target: "the-forge-golem.webp", width: 720, quality: 82 },
+  { source: "Enemies/The Blight Treant.png", target: "the-blight-treant.webp", width: 720, quality: 82 },
   // Characters
   { source: "Player Characters/Knight.png", target: "knight.webp", width: characterWidth, quality: 82 },
   { source: "Player Characters/Ranger.png", target: "ranger.webp", width: characterWidth, quality: 82 },
@@ -71,11 +74,17 @@ const assets = [
   { source: "Destinations/Elite Enemy.png", target: "elite-enemy.webp", width: 900, quality: 84 },
   { source: "Destinations/Normal Enemy.png", target: "normal-enemy.webp", width: 900, quality: 84 },
   { source: "Destinations/Mystery.png", target: "mystery.webp", width: 900, quality: 84 },
+  { source: "Destinations/Corruption Altar.png", target: "corruption-altar.webp", width: 900, quality: 84 },
   // Homestead
   { source: "Homestead/Blacksmith's Forge.png", target: "blacksmiths-forge.webp", width: 900, quality: 84 },
   { source: "Homestead/Chicken Coop.png", target: "chicken-coop.webp", width: 900, quality: 84 },
   { source: "Homestead/Herb Garden.png", target: "herb-garden.webp", width: 900, quality: 84 },
   { source: "Homestead/Pasture.png", target: "pasture.webp", width: 900, quality: 84 },
+  { source: "Homestead/Hunter's Lodge.png", target: "hunters-lodge.webp", width: 900, quality: 84 },
+  { source: "Homestead/Alchemy Lab.png", target: "alchemy-lab.webp", width: 900, quality: 84 },
+  { source: "Homestead/Crystal Garden.png", target: "crystal-garden.webp", width: 900, quality: 84 },
+  { source: "Homestead/Wheat Field.png", target: "wheat-field.webp", width: 900, quality: 84 },
+  { source: "Homestead/Orchard.png", target: "orchard.webp", width: 900, quality: 84 },
   // Trinkets
   { source: "Trinkets/Bone Charm.png", target: "bone-charm.webp", width: 420, quality: 82 },
   { source: "Trinkets/Brass Censer.png", target: "brass-censer.webp", width: 420, quality: 82 },
