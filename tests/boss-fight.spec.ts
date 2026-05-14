@@ -8,7 +8,7 @@ function injectBossState(page: Parameters<typeof test>[0]["page"], act = 1) {
     descriptionLines: ["Deal massive damage"],
     art: "placeholder",
     cost: 0,
-    template: "arcane" as const,
+
     effects: [{ kind: "damage" as const, damageType: "burn" as const, amount: 500 }],
   };
   return injectSaveState(page, {

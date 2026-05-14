@@ -5,7 +5,7 @@ import { applyPlayerStatusEffect } from "./status-effects";
 import { applyWishEffect } from "./wish";
 import { mergeCombatText } from "./combat-text";
 import { removeHarmfulPlayerStatuses } from "./status-effects";
-import { applyPlayerHealing, type BattleState, type CombatTextEvent } from "./types";
+import { applyPlayerCombatDamage, applyPlayerHealing, type BattleState, type CombatTextEvent } from "./types";
 import { MIN_MAX_MANA_FLOOR } from "../game-constants";
 
 export { mergeCombatText } from "./combat-text";
@@ -47,6 +47,17 @@ export function applyCardEffects(state: BattleState, card: BattleCard, combatTex
         return { ...currentState, activeCompanion: companionLibrary[effect.companionId] };
       case "remove-harmful-status":
         return removeHarmfulPlayerStatuses(currentState, effect.amount, combatTexts);
+      case "self-damage": {
+        const postDamage = applyPlayerCombatDamage(currentState, effect.amount);
+        mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: effect.damageType, amount: effect.amount });
+        return {
+          ...postDamage,
+          playerStatuses: {
+            ...postDamage.playerStatuses,
+            [effect.damageType]: postDamage.playerStatuses[effect.damageType] + effect.amount,
+          },
+        };
+      }
       default:
         return currentState;
     }

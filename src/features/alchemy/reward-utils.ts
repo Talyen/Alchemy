@@ -13,9 +13,6 @@ export function getCardKeywords(card: BattleCard): KeywordId[] {
   // so reward scoring can understand deck themes without running combat effect logic.
   const keywords = new Set<KeywordId>();
 
-  if (card.template === "nature") keywords.add("nature");
-  if (card.template === "holy") keywords.add("holy");
-
   for (const effect of card.effects) {
     switch (effect.kind) {
       case "damage":

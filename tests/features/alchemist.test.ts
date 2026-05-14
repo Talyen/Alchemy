@@ -10,7 +10,7 @@ function healthPotion(overrides: Partial<BattleCard> = {}): BattleCard {
     descriptionLines: ["Restore 8 Health", "Consume"],
     art: "health-potion-art",
     cost: 1,
-    template: "alchemy",
+
     consume: true,
     effects: [{ kind: "heal", amount: 8 }],
     ...overrides,
@@ -24,7 +24,7 @@ function manaPotion(overrides: Partial<BattleCard> = {}): BattleCard {
     descriptionLines: ["Restore 2 Mana", "Consume"],
     art: "mana-potion-art",
     cost: 1,
-    template: "alchemy",
+
     consume: true,
     effects: [{ kind: "restore-mana", amount: 2 }],
     ...overrides,
@@ -38,7 +38,7 @@ function panaceaPotionCard(): BattleCard {
     descriptionLines: ["Remove 1 harmful status effect", "Consume"],
     art: "panacea-potion-art",
     cost: 1,
-    template: "alchemy",
+
     consume: true,
     effects: [{ kind: "remove-harmful-status", amount: 1 }],
   };
@@ -153,7 +153,7 @@ describe("createMixedPotion", () => {
         descriptionLines: ["Test"],
         art: "",
         cost: 1,
-        template: "alchemy",
+    
         consume: true,
         effects: [],
       };
@@ -170,7 +170,7 @@ describe("createMixedPotion", () => {
         descriptionLines: ["Test"],
         art: "",
         cost: 1,
-        template: "alchemy",
+    
         consume: true,
         effects: [],
       };
@@ -192,12 +192,6 @@ describe("createMixedPotion", () => {
       const mixed = createMixedPotion(healthPotion(), manaPotion());
 
       expect(mixed.title).toBe("Mixed Potion");
-    });
-
-    it("has template 'alchemy'", () => {
-      const mixed = createMixedPotion(healthPotion(), manaPotion());
-
-      expect(mixed.template).toBe("alchemy");
     });
 
     it("has cost 1", () => {

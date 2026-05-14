@@ -31,7 +31,6 @@ export function processCompanionTurnStart(state: BattleState, combatTexts: Comba
     descriptionLines: [],
     art: state.activeCompanion.art,
     cost: 0,
-    template: "nature",
     effects: state.activeCompanion.turnStartEffects.map((e) =>
       e.kind === "damage" ? { ...e, amount: e.amount + state.talentEffects.companionDamage } : e,
     ),
@@ -184,19 +183,31 @@ function processEnemyAttack(state: BattleState, combatTexts: CombatTextEvent[]) 
         if (status === "stun" && state.talentEffects.blockPreventsStun) continue;
       }
 
-      if (harmfulPlayerStatusIds.includes(status) && nextState.trinketEffects.plagueDoctorImmunity && !nextState.flags.firstHarmfulStatusPrevented) {
-        nextState = { ...nextState, flags: { ...nextState.flags, firstHarmfulStatusPrevented: true } };
-        continue;
+      if (harmfulPlayerStatusIds.includes(status)) {
+        if (nextState.trinketEffects.plagueDoctorImmunity && !nextState.flags.firstHarmfulStatusPrevented) {
+          nextState = { ...nextState, flags: { ...nextState.flags, firstHarmfulStatusPrevented: true } };
+          continue;
+        }
+        const newHealth = clampHealth(nextState.playerHealth, -amount, nextState.playerMaxHealth);
+        nextState = {
+          ...nextState,
+          playerHealth: newHealth,
+          playerStatuses: {
+            ...nextState.playerStatuses,
+            [status]: nextState.playerStatuses[status] + amount,
+          },
+        };
+        mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: status, amount });
+      } else {
+        nextState = {
+          ...nextState,
+          playerStatuses: {
+            ...nextState.playerStatuses,
+            [status]: nextState.playerStatuses[status] + amount,
+          },
+        };
+        mergeCombatText(combatTexts, { target: "player", kind: "status", stat: status, amount });
       }
-
-      nextState = {
-        ...nextState,
-        playerStatuses: {
-          ...nextState.playerStatuses,
-          [status]: nextState.playerStatuses[status] + amount,
-        },
-      };
-      mergeCombatText(combatTexts, { target: "player", kind: "status", stat: status, amount });
     }
   }
 

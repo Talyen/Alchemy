@@ -31,7 +31,7 @@ function makeState(): BattleState {
 }
 
 function makeCard(overrides: Partial<BattleCard> = {}): BattleCard {
-  return { id: "test-card", title: "Test", descriptionLines: [""], art: "", cost: 1, template: "mechanical", effects: [], ...overrides };
+  return { id: "test-card", title: "Test", descriptionLines: [""], art: "", cost: 1, effects: [], ...overrides };
 }
 
 describe("shouldPlayCardGoldGain", () => {

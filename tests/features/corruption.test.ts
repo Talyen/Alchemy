@@ -10,7 +10,7 @@ function makeCard(overrides: Partial<BattleCard> = {}): BattleCard {
     descriptionLines: ["Deal 5 Physical damage"],
     art: "slash-art",
     cost: 1,
-    template: "mechanical",
+
     effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
     ...overrides,
   };

@@ -3,23 +3,13 @@ import { getCardKeywords, selectRewardCards, selectRewardTrinkets } from "@/feat
 import type { BattleCard } from "@/lib/game-data";
 
 function card(overrides: Partial<BattleCard> = {}): BattleCard {
-  return { id: "test", title: "Test", descriptionLines: [""], art: "", cost: 1, template: "mechanical", effects: [], ...overrides };
+  return { id: "test", title: "Test", descriptionLines: [""], art: "", cost: 1, effects: [], ...overrides };
 }
 
 describe("getCardKeywords", () => {
   it("extracts damage type keyword", () => {
     const c = card({ effects: [{ kind: "damage", damageType: "physical", amount: 5 }] });
     expect(getCardKeywords(c)).toEqual(["physical"]);
-  });
-
-  it("adds nature for nature template", () => {
-    const c = card({ template: "nature", effects: [{ kind: "heal", amount: 5 }] });
-    expect(getCardKeywords(c)).toContain("nature");
-  });
-
-  it("adds holy for holy template", () => {
-    const c = card({ template: "holy", effects: [] });
-    expect(getCardKeywords(c)).toContain("holy");
   });
 
   it("adds leech when damage has lifesteal", () => {
@@ -116,7 +106,7 @@ describe("selectRewardCards", () => {
     const deck: BattleCard[] = [card({ id: "stab", effects: [{ kind: "damage", damageType: "physical", amount: 5 }] })];
     const allCards: BattleCard[] = [
       card({ id: "slash", effects: [{ kind: "damage", damageType: "physical", amount: 5 }] }),
-      { id: "mixed-potion", title: "Mixed Potion", descriptionLines: [""], art: "", cost: 1, template: "alchemy", consume: true, effects: [] },
+      { id: "mixed-potion", title: "Mixed Potion", descriptionLines: [""], art: "", cost: 1, consume: true, effects: [] },
     ];
     const result = selectRewardCards(deck, allCards, 1);
     expect(result).toHaveLength(1);

@@ -85,7 +85,7 @@ describe("getEnemyStatusChips", () => {
 
 describe("getBattleCardPlayTarget", () => {
   function card(overrides = {}) {
-    return { id: "c", title: "T", descriptionLines: [""], art: "", cost: 1, template: "mechanical" as const, effects: [], ...overrides };
+    return { id: "c", title: "T", descriptionLines: [""], art: "", cost: 1, effects: [], ...overrides };
   }
 
   it("returns 'enemy' for damage cards", () => {

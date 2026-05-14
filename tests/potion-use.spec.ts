@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { injectSaveState, navigateToDestination } from "./helpers";
 
 function potionCard(id: string, title: string, effects: Record<string, unknown>[]) {
-  return { id, title, descriptionLines: ["Test potion", "Consume"], art: "placeholder", cost: 1, template: "alchemy", consume: true, effects };
+  return { id, title, descriptionLines: ["Test potion", "Consume"], art: "placeholder", cost: 1, consume: true, effects };
 }
 
 test.describe("Potion Use", () => {

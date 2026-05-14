@@ -41,19 +41,19 @@ function makeState(flags: Partial<CombatFlags> = {}, talentOverrides: Record<str
 }
 
 function physicalCard(overrides: Partial<BattleCard> = {}): BattleCard {
-  return { id: "test", title: "Test", descriptionLines: [""], art: "", cost: 2, template: "mechanical", effects: [{ kind: "damage", damageType: "physical", amount: 5 }], ...overrides };
+  return { id: "test", title: "Test", descriptionLines: [""], art: "", cost: 2, effects: [{ kind: "damage", damageType: "physical", amount: 5 }], ...overrides };
 }
 
 function holyCard(): BattleCard {
-  return { id: "holy", title: "Holy", descriptionLines: [""], art: "", cost: 2, template: "holy", effects: [{ kind: "damage", damageType: "holy", amount: 5 }] };
+  return { id: "holy", title: "Holy", descriptionLines: [""], art: "", cost: 2, effects: [{ kind: "damage", damageType: "holy", amount: 5 }] };
 }
 
 function poisonCard(): BattleCard {
-  return { id: "poison", title: "Poison", descriptionLines: [""], art: "", cost: 2, template: "alchemy", effects: [{ kind: "damage", damageType: "poison", amount: 2 }] };
+  return { id: "poison", title: "Poison", descriptionLines: [""], art: "", cost: 2, effects: [{ kind: "damage", damageType: "poison", amount: 2 }] };
 }
 
 function bleedCard(): BattleCard {
-  return { id: "bleed", title: "Bleed", descriptionLines: [""], art: "", cost: 2, template: "alchemy", effects: [{ kind: "damage", damageType: "bleed", amount: 2 }] };
+  return { id: "bleed", title: "Bleed", descriptionLines: [""], art: "", cost: 2, effects: [{ kind: "damage", damageType: "bleed", amount: 2 }] };
 }
 
 describe("getEffectiveCost", () => {

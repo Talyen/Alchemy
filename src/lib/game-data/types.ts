@@ -19,8 +19,6 @@ export type KeywordId =
   | "companion"
   | "trap";
 
-export type CardTemplate = "mechanical" | "nature" | "arcane" | "holy" | "alchemy";
-
 export type DamageType = "physical" | "stun" | "holy" | "burn" | "poison" | "bleed" | "freeze";
 
 export type PlayerStatusId = "block" | "armor" | "forge" | "haste" | "burn" | "poison" | "bleed" | "freeze" | "stun";
@@ -50,7 +48,8 @@ export type BattleCardEffect =
   | { kind: "gain-gold"; amount: number }
   | { kind: "wish"; amount: number }
   | { kind: "summon-companion"; companionId: CompanionId }
-  | { kind: "remove-harmful-status"; amount: number };
+  | { kind: "remove-harmful-status"; amount: number }
+  | { kind: "self-damage"; damageType: EnemyStatusId; amount: number };
 
 export type CompanionDefinition = {
   id: CompanionId;
@@ -66,7 +65,6 @@ export type BattleCard = {
   descriptionLines: string[];
   art: string;
   cost: number;
-  template: CardTemplate;
   consume?: boolean;
   corrupted?: boolean;
   baseTitle?: string;

@@ -22,7 +22,7 @@ test.describe("Wish Card", () => {
   test("corrupted wish with extra amount queues multiple wish selections", async ({ page }) => {
     test.setTimeout(60000);
     const corruptedWish = {
-      id: "wish", title: "Wish", art: "", cost: 1, template: "arcane" as const,
+      id: "wish", title: "Wish", art: "", cost: 1,
       descriptionLines: ["Wish"],
       corrupted: true,
       effects: [{ kind: "wish", amount: 2 }],

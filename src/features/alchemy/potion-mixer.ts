@@ -3,7 +3,7 @@
 // Used by shop controller and UI previews so mixing behavior stays testable outside React.
 import type { BattleCard } from "@/lib/game-data";
 import { mixedPotion } from "@/lib/game-data";
-import { CONSUME_DESCRIPTION_LINE, MIXED_POTION_CARD_ID, MIXED_POTION_COST, MIXED_POTION_TEMPLATE, MIXED_POTION_TITLE } from "@/lib/game-constants";
+import { CONSUME_DESCRIPTION_LINE, MIXED_POTION_CARD_ID, MIXED_POTION_COST, MIXED_POTION_TITLE } from "@/lib/game-constants";
 
 /** Pure logic for combining two potion cards into a Mixed Potion.
  * Used by the Alchemist's Shop controller so the mixing logic is independently testable. */
@@ -46,7 +46,6 @@ export function createMixedPotion(cardA: BattleCard, cardB: BattleCard): BattleC
     descriptionLines,
     art: mixedPotion,
     cost: MIXED_POTION_COST,
-    template: MIXED_POTION_TEMPLATE,
     consume: true,
     effects: effects as BattleCard["effects"],
   };

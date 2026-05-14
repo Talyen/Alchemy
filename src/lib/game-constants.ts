@@ -84,7 +84,6 @@ export const MIXED_POTION_CARD_ID = "mixed-potion"; // Generated alchemy card ex
 export const POTION_CARD_ID_FRAGMENT = "potion";     // Base potion cards share this ID fragment.
 export const MIXED_POTION_TITLE = "Mixed Potion";    // Crafted alchemy card title shown in deck/reveal UI.
 export const MIXED_POTION_COST = 1;                  // Crafted potions keep normal potion play cost.
-export const MIXED_POTION_TEMPLATE = "alchemy";      // Crafted potions use the alchemy card frame.
 export const CONSUME_DESCRIPTION_LINE = "Consume";  // Card text line used by consumable cards.
 
 // ============ Audio ============

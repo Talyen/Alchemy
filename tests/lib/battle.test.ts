@@ -49,7 +49,7 @@ function makeState(overrides: Partial<BattleState> = {}): BattleState {
 function makeCard(overrides: Partial<BattleCard> = {}): BattleCard {
   return {
     id: "test-card", title: "Test", descriptionLines: [""], art: "",
-    cost: 1, template: "mechanical", effects: [], ...overrides,
+    cost: 1, effects: [], ...overrides,
   };
 }
 
@@ -138,6 +138,76 @@ describe("applyCardEffects", () => {
     const result = applyCardEffects(state, card, texts);
     expect(result.maxMana).toBe(2);
     expect(result.mana).toBe(2);
+  });
+
+  it("self-damage applies HP loss and status stack", () => {
+    const state = makeState({ playerHealth: 20, playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 } });
+    const card = makeCard({ effects: [{ kind: "self-damage", damageType: "burn", amount: 3 }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    expect(result.playerHealth).toBe(17);
+    expect(result.playerStatuses.burn).toBe(3);
+    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "burn", amount: 3 });
+  });
+
+  it("self-damage clamps health to 0", () => {
+    const state = makeState({ playerHealth: 2, playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 } });
+    const card = makeCard({ effects: [{ kind: "self-damage", damageType: "poison", amount: 5 }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    expect(result.playerHealth).toBe(0);
+    expect(result.playerStatuses.poison).toBe(5);
+  });
+
+  it("self-damage supports all harmful status types", () => {
+    const baseStatuses = { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 };
+    const state = makeState({ playerHealth: 30, playerStatuses: { ...baseStatuses } });
+    const card = makeCard({ effects: [
+      { kind: "self-damage", damageType: "burn", amount: 1 },
+      { kind: "self-damage", damageType: "poison", amount: 2 },
+      { kind: "self-damage", damageType: "bleed", amount: 3 },
+      { kind: "self-damage", damageType: "freeze", amount: 4 },
+      { kind: "self-damage", damageType: "stun", amount: 5 },
+    ]});
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    expect(result.playerHealth).toBe(15);
+    expect(result.playerStatuses.burn).toBe(1);
+    expect(result.playerStatuses.poison).toBe(2);
+    expect(result.playerStatuses.bleed).toBe(3);
+    expect(result.playerStatuses.freeze).toBe(4);
+    expect(result.playerStatuses.stun).toBe(5);
+  });
+
+  it("Cauterize removes harmful status and applies self-burn", () => {
+    const state = makeState({
+      playerHealth: 20,
+      playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 3, bleed: 0, freeze: 0, stun: 0 },
+    });
+    const card = makeCard({ effects: [
+      { kind: "remove-harmful-status", amount: 1 },
+      { kind: "self-damage", damageType: "burn", amount: 1 },
+    ]});
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    expect(result.playerStatuses.poison).toBe(0);
+    expect(result.playerStatuses.burn).toBe(1);
+    expect(result.playerHealth).toBe(19);
+  });
+
+  it("self-damage triggers Death's Door instead of defeat on first fatal hit", () => {
+    const state = makeState({
+      playerHealth: 1,
+      playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+    });
+    const card = makeCard({ effects: [{ kind: "self-damage", damageType: "bleed", amount: 5 }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    expect(result.playerHealth).toBe(0);
+    expect(result.deathsDoorUsed).toBe(true);
+    expect(result.deathsDoorActive).toBe(true);
+    expect(result.deathsDoorTriggeredTurn).toBe(1);
+    expect(isPlayerDefeated(result)).toBe(false);
   });
 
   it("handles consume cards (exhaust instead of discard)", () => {
@@ -562,6 +632,27 @@ describe("endPlayerTurn", () => {
     expect(result.state.playerStatuses.block).toBe(1);
     expect(result.state.playerStatuses.poison).toBe(0);
     expect(result.state.flags.firstHarmfulStatusPrevented).toBe(true);
+    expect(result.state.playerHealth).toBe(30); // no damage when prevented
+  });
+
+  it.each([
+    { status: "burn", amount: 2, expectedHealth: 26, expectedStack: 1, note: "burn halves to 1" },
+    { status: "poison", amount: 3, expectedHealth: 24, expectedStack: 2, note: "poison reduces by 1 to 2" },
+    { status: "bleed", amount: 2, expectedHealth: 26, expectedStack: 0, note: "bleed resets to 0" },
+    { status: "freeze", amount: 3, expectedHealth: 24, expectedStack: 0, note: "freeze resets to 0" },
+    { status: "stun", amount: 2, expectedHealth: 26, expectedStack: 0, note: "stun resets to 0" },
+  ] as const)("enemy $status attack deals damage, applies $status, and tick deals further damage ($note)", ({ status, amount, expectedHealth, expectedStack }) => {
+    const state = makeState({
+      playerHealth: 30,
+      playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      enemyAttackEffects: [{ kind: "player-status", status, amount } as const],
+      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
+      mana: 4,
+      maxMana: 4,
+    });
+    const result = endPlayerTurn(state);
+    expect(result.state.playerHealth).toBe(expectedHealth);
+    expect(result.state.playerStatuses[status]).toBe(expectedStack);
   });
 
   it("does not trigger companion attack (now handled by controller timing)", () => {

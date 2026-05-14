@@ -3,7 +3,7 @@ import { createEmptyRewardState, createBossRewardState, createCombatRewardState,
 import { emptyInventory } from "@/lib/homestead/types";
 
 vi.mock("@/features/alchemy/reward-utils", () => ({
-  selectRewardCards: vi.fn(() => [{ id: "mock-card", title: "Mock", descriptionLines: [""], art: "", cost: 1, template: "mechanical" as const, effects: [] }]),
+  selectRewardCards: vi.fn(() => [{ id: "mock-card", title: "Mock", descriptionLines: [""], art: "", cost: 1, effects: [] }]),
   selectRewardTrinkets: vi.fn(() => [{ id: "mock-trinket", title: "Mock Trinket", description: "", art: "" }]),
   REWARD_TRINKET_CHANCE: 0.1,
   REWARD_RANDOM_CHANCE: 0,

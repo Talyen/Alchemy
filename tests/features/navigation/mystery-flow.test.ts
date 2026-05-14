@@ -129,7 +129,7 @@ describe("getMysteryCardPool", () => {
 
 describe("addCardToRun", () => {
   it("appends card to deck and updates discovered IDs", () => {
-    const card = { id: "fireball", title: "Fireball", descriptionLines: [""], art: "", cost: 2, template: "mechanical" as const, effects: [] };
+    const card = { id: "fireball", title: "Fireball", descriptionLines: [""], art: "", cost: 2, effects: [] };
     const deckSetter = vi.fn();
     const discoverySetter = vi.fn();
 

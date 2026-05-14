@@ -34,7 +34,7 @@ describe("xpToNextPoint", () => {
 
 describe("extractCardKeywords", () => {
   function card(overrides: Partial<BattleCard> = {}): BattleCard {
-    return { id: "t", title: "T", descriptionLines: [""], art: "", cost: 1, template: "mechanical", effects: [], ...overrides };
+    return { id: "t", title: "T", descriptionLines: [""], art: "", cost: 1, effects: [], ...overrides };
   }
 
   it("extracts damage type keyword", () => {
