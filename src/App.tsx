@@ -12,6 +12,8 @@ import {
   keywordDefinitions,
   menuLogo,
   trinketLibrary,
+  type CharacterId,
+  type DifficultyId,
   type KeywordId,
 } from "@/lib/game-data";
 import { getTalentKeywordProgress } from "@/lib/talents";
@@ -33,6 +35,7 @@ import {
   CollectionScreen,
   CorruptionScreen,
   DestinationScreen,
+  DifficultySelectScreen,
   GameOverScreen,
   MenuScreen,
   MerchantShopScreen,
@@ -101,6 +104,8 @@ export default function App() {
     setEncounteredEnemyIds,
     discoveredTrinketIds,
     setDiscoveredTrinketIds,
+    completedDifficulties,
+    setCompletedDifficulties,
     resetOptionsToDefault,
     clearSavedAppState,
   } = save;
@@ -144,6 +149,14 @@ export default function App() {
     plantedFarms: initialSave.plantedFarms,
     completedResearch: initialSave.completedResearch,
   });
+  function handleMarkDifficultyCompleted(characterId: CharacterId, difficultyId: DifficultyId) {
+    setCompletedDifficulties((prev) => {
+      const current = prev[characterId] ?? [];
+      if (current.includes(difficultyId)) return prev;
+      return { ...prev, [characterId]: [...current, difficultyId] };
+    });
+  }
+
   const run = useAlchemyRunController({
     discoveredCardIds,
     setDiscoveredCardIds,
@@ -155,6 +168,7 @@ export default function App() {
     autoEndTurn,
     onAddMaterials: homestead.addMaterials,
     homesteadEffects: homestead.effects,
+    onMarkDifficultyCompleted: handleMarkDifficultyCompleted,
   });
   useAppAudioEffects({ masterVol, musicVol, sfxVol, muteInBackground, screen: run.screen });
   const heroArt = characterArt[run.characterId] ?? characterArt.knight;
@@ -204,6 +218,7 @@ export default function App() {
     constructedBuildings: homestead.constructedBuildings,
     plantedFarms: homestead.plantedFarms,
     completedResearch: homestead.completedResearch,
+    completedDifficulties,
   });
 
   function clearSaveData() {
@@ -341,6 +356,14 @@ export default function App() {
                     <CharacterSelectScreen
                       onConfirm={run.handleCharacterSelect}
                       onBack={() => run.goToScreen("menu")}
+                    />
+                  ) : null}
+                  {renderedScreen === "difficulty-select" && run.pendingCharacterId ? (
+                    <DifficultySelectScreen
+                      characterId={run.pendingCharacterId}
+                      completedDifficulties={completedDifficulties[run.pendingCharacterId] ?? []}
+                      onSelect={run.handleDifficultySelect}
+                      onBack={run.handleBackFromDifficultySelect}
                     />
                   ) : null}
                   {renderedScreen === "battle" ? <BattleScreen {...battleScreenProps} /> : null}

@@ -79,6 +79,26 @@ describe("normalizeActiveRun", () => {
     const result = normalizeActiveRun({ characterId: "knight" });
     expect(result).toBeNull();
   });
+
+  it("preserves valid selectedDifficulty", () => {
+    const result = normalizeActiveRun(activeRun({ selectedDifficulty: "difficulty-2" }));
+    expect(result?.selectedDifficulty).toBe("difficulty-2");
+  });
+
+  it("sets selectedDifficulty to null for invalid value", () => {
+    const result = normalizeActiveRun(activeRun({ selectedDifficulty: "difficulty-999" }));
+    expect(result?.selectedDifficulty).toBeNull();
+  });
+
+  it("sets selectedDifficulty to null when missing", () => {
+    const result = normalizeActiveRun(activeRun({}));
+    expect(result?.selectedDifficulty).toBeNull();
+  });
+
+  it("sets selectedDifficulty to null for non-string value", () => {
+    const result = normalizeActiveRun(activeRun({ selectedDifficulty: 42 }));
+    expect(result?.selectedDifficulty).toBeNull();
+  });
 });
 
 describe("normalizeDisplayMode", () => {
@@ -235,6 +255,7 @@ describe("normalizeSaveData", () => {
     expect(result.activeRun).toBeNull();
     expect(result.materialInventory).toEqual({ wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 });
     expect(result.constructedBuildings).toEqual([]);
+    expect(result.completedDifficulties).toEqual({ knight: [], rogue: [], wizard: [], ranger: [] });
   });
 
   it("ignores character-only active run fragments", () => {
@@ -251,5 +272,15 @@ describe("normalizeSaveData", () => {
   it("normalizes invalid display mode to default", () => {
     const result = normalizeSaveData({ displayMode: "fake-mode" as never });
     expect(result.displayMode).toBe("borderless-fullscreen");
+  });
+
+  it("preserves completedDifficulties from saved data", () => {
+    const result = normalizeSaveData({ completedDifficulties: { knight: ["difficulty-1", "difficulty-2"], rogue: [], wizard: ["difficulty-1"], ranger: [] } });
+    expect(result.completedDifficulties).toEqual({ knight: ["difficulty-1", "difficulty-2"], rogue: [], wizard: ["difficulty-1"], ranger: [] });
+  });
+
+  it("falls back to default completedDifficulties for non-object", () => {
+    const result = normalizeSaveData({ completedDifficulties: "invalid" as never });
+    expect(result.completedDifficulties).toEqual({ knight: [], rogue: [], wizard: [], ranger: [] });
   });
 });

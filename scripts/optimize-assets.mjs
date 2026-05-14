@@ -104,6 +104,11 @@ const assets = [
   { source: "Destinations/Placeholder Destination.png", target: "placeholder-destination.webp", width: 900, quality: 60 },
   { source: "Homestead/Placeholder Homestead.png", target: "placeholder-homestead.webp", width: 900, quality: 60 },
   { source: "Mystery Events/Placeholder Mystery.png", target: "placeholder-mystery.webp", width: 900, quality: 60 },
+  // Difficulties
+  { source: "Difficulties/Placeholder Difficulty.png", target: "placeholder-difficulty.webp", width: 720, quality: 60 },
+  { source: "Difficulties/Difficulty 1.png", target: "difficulty-1.webp", width: 720, quality: 82 },
+  { source: "Difficulties/Difficulty 2.png", target: "difficulty-2.webp", width: 720, quality: 82 },
+  { source: "Difficulties/Difficulty 3.png", target: "difficulty-3.webp", width: 720, quality: 82 },
 ];
 
 async function fileIsFresh(sourcePath, outputPath) {

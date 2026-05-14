@@ -100,6 +100,7 @@ export type KeywordDefinition = {
   colorClass: string;
   borderClass: string;
   shineColors: string[];
+  hidden?: boolean;
 };
 
 // Pre-computed bonuses from unlocked talents, recalculated each battle start.

@@ -10,6 +10,7 @@ const mockSetDiscoveredTrinketIds = vi.fn();
 const mockSetMysteryCardChoices = vi.fn();
 const mockAwardMysteryXP = vi.fn();
 const mockOnAddMaterials = vi.fn();
+const mockOnAwardGold = vi.fn();
 
 const context = {
   runMaxHealth: 30,
@@ -22,6 +23,7 @@ const context = {
   setMysteryCardChoices: mockSetMysteryCardChoices,
   awardMysteryXP: mockAwardMysteryXP,
   onAddMaterials: mockOnAddMaterials,
+  onAwardGold: mockOnAwardGold,
 };
 
 beforeEach(() => {
@@ -64,10 +66,10 @@ describe("applyMysteryEffect", () => {
     expect(mockSetRunPlayerHealth).toHaveBeenCalledOnce();
   });
 
-  it("dispatches gainGold", () => {
+  it("dispatches gainGold via onAwardGold", () => {
     const result = applyMysteryEffect({ kind: "gainGold", amount: 15 }, context);
     expect(result.followUp).toBeNull();
-    expect(mockSetRunGold).toHaveBeenCalledOnce();
+    expect(mockOnAwardGold).toHaveBeenCalledWith(15);
   });
 
   it("dispatches loseGold", () => {

@@ -9,6 +9,7 @@ import {
   saveAlchemySaveData,
   type SaveData,
 } from "@/features/alchemy/storage";
+import type { CharacterId, DifficultyId } from "@/lib/game-data";
 import type { CollectionTab, DisplayMode, ResolutionOption, UiScale } from "@/features/alchemy/types";
 
 type CollectionPages = Record<CollectionTab, number>;
@@ -38,6 +39,7 @@ export function useAppSaveState() {
   const [discoveredCardIds, setDiscoveredCardIds] = useState<string[]>(initialSave.discoveredCardIds);
   const [encounteredEnemyIds, setEncounteredEnemyIds] = useState<string[]>(initialSave.encounteredEnemyIds);
   const [discoveredTrinketIds, setDiscoveredTrinketIds] = useState<string[]>(initialSave.discoveredTrinketIds);
+  const [completedDifficulties, setCompletedDifficulties] = useState<Record<CharacterId, DifficultyId[]>>(initialSave.completedDifficulties);
 
   function resetOptionsToDefault() {
     setSelectedResolution(defaultSaveData.selectedResolution);
@@ -66,6 +68,7 @@ export function useAppSaveState() {
     setDiscoveredCardIds(defaultSaveData.discoveredCardIds);
     setEncounteredEnemyIds(defaultSaveData.encounteredEnemyIds);
     setDiscoveredTrinketIds(defaultSaveData.discoveredTrinketIds);
+    setCompletedDifficulties(defaultSaveData.completedDifficulties);
     setCollectionPages(initialCollectionPages);
     setCollectionTab("cards");
     setShowClearSaveConfirm(false);
@@ -103,6 +106,8 @@ export function useAppSaveState() {
     setEncounteredEnemyIds,
     discoveredTrinketIds,
     setDiscoveredTrinketIds,
+    completedDifficulties,
+    setCompletedDifficulties,
     resetOptionsToDefault,
     clearSavedAppState,
   };
@@ -132,5 +137,6 @@ export function useAlchemyAutosave(saveData: SaveData) {
     saveData.constructedBuildings,
     saveData.plantedFarms,
     saveData.completedResearch,
+    saveData.completedDifficulties,
   ]);
 }

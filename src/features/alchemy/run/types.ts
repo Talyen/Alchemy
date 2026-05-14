@@ -1,6 +1,6 @@
 // Persisted run-state contracts shared by controllers and save migration code.
 // Depends only on game-data card and character type shapes, not React hooks.
-import type { BattleCard, CharacterId } from "@/lib/game-data";
+import type { BattleCard, CharacterId, DifficultyId } from "@/lib/game-data";
 
 export type ActiveRunData = {
   characterId: CharacterId;
@@ -13,4 +13,5 @@ export type ActiveRunData = {
   destinationIndexInAct: number;
   completedDestinations: string[];
   runTrinkets: string[];
+  selectedDifficulty: DifficultyId | null;
 };

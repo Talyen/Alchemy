@@ -1,6 +1,6 @@
 // Pure helpers for converting live run state into persisted active-run snapshots.
 // Depends only on run save contracts and game-data card/character type shapes.
-import type { BattleCard, CharacterId } from "@/lib/game-data";
+import type { BattleCard, CharacterId, DifficultyId } from "@/lib/game-data";
 
 import type { ActiveRunData } from "./types";
 
@@ -15,6 +15,7 @@ type ActiveRunSource = {
   destinationIndexInAct: number;
   completedDestinations: string[];
   runTrinkets: string[];
+  selectedDifficulty: DifficultyId | null;
 };
 
 // Save snapshots intentionally copy only persisted run fields so transient UI/combat state stays out of storage.
@@ -30,5 +31,6 @@ export function createActiveRunData(source: ActiveRunSource): ActiveRunData {
     destinationIndexInAct: source.destinationIndexInAct,
     completedDestinations: source.completedDestinations,
     runTrinkets: source.runTrinkets,
+    selectedDifficulty: source.selectedDifficulty,
   };
 }

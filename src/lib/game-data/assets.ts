@@ -74,6 +74,10 @@ import placeholderTrinket from "@/assets/optimized/placeholder-trinket.webp";
 import placeholderDestination from "@/assets/optimized/placeholder-destination.webp";
 import placeholderHomestead from "@/assets/optimized/placeholder-homestead.webp";
 import placeholderMystery from "@/assets/optimized/placeholder-mystery.webp";
+import placeholderDifficulty from "@/assets/optimized/placeholder-difficulty.webp";
+import difficulty1Art from "@/assets/optimized/difficulty-1.webp";
+import difficulty2Art from "@/assets/optimized/difficulty-2.webp";
+import difficulty3Art from "@/assets/optimized/difficulty-3.webp";
 
 export {
   alchemyLogo,
@@ -147,6 +151,10 @@ export {
   placeholderDestination,
   placeholderHomestead,
   placeholderMystery,
+  placeholderDifficulty,
+  difficulty1Art,
+  difficulty2Art,
+  difficulty3Art,
   alchemistShopBg,
   merchantShopBg,
   eliteEnemyBg,

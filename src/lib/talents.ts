@@ -44,7 +44,6 @@ export function xpToNextPoint(xp: number): number {
 // The keyword → XP mapping is how the talent system incentivizes certain play styles.
 export function extractCardKeywords(card: BattleCard): KeywordId[] {
   const keywords = new Set<KeywordId>();
-  if (card.consume) keywords.add("consume");
   for (const effect of card.effects) {
     switch (effect.kind) {
       case "damage":

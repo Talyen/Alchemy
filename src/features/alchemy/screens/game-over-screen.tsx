@@ -36,7 +36,7 @@ function KeywordProgressCard({ kw, runXP, totalXP, animate }: { kw: KeywordId; r
 
 export function GameOverScreen({ runTalentXP, talentXP, runEndMaterials, onMainMenu }: { runTalentXP: TalentXP; talentXP: TalentXP; runEndMaterials: MaterialInventory; onMainMenu: () => void }) {
   const [animate, setAnimate] = useState(false);
-  const keywordIds = (Object.keys(runTalentXP) as KeywordId[]).filter((kw) => (runTalentXP[kw] ?? 0) > 0);
+  const keywordIds = (Object.keys(runTalentXP) as KeywordId[]).filter((kw) => !keywordDefinitions[kw]?.hidden && (runTalentXP[kw] ?? 0) > 0);
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => setAnimate(true));

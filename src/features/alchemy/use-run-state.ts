@@ -2,7 +2,7 @@
 // Depends on character game data, battle health defaults, and destination/run type shapes.
 // Used by controllers; battle, shop, and navigation rules intentionally live elsewhere.
 import { useState } from "react";
-import { getStartingDeck, type BattleCard, type CharacterId } from "@/lib/game-data";
+import { getGoldMultiplier, getStartingDeck, type BattleCard, type CharacterId, type DifficultyId } from "@/lib/game-data";
 import { maxPlayerHealth } from "@/lib/battle";
 import type { Destination } from "./types";
 import type { ActiveRunData } from "./run/types";
@@ -18,6 +18,7 @@ type RunState = {
   destinationIndexInAct: number;
   completedDestinations: Destination[];
   runTrinkets: string[];
+  selectedDifficulty: DifficultyId | null;
 };
 
 function createInitialRunState(
@@ -39,6 +40,7 @@ function createInitialRunState(
       ? (initialActiveRun.completedDestinations as Destination[])
       : [],
     runTrinkets: initialActiveRun?.runTrinkets ? [...initialActiveRun.runTrinkets] : [],
+    selectedDifficulty: initialActiveRun?.selectedDifficulty ?? null,
   };
 }
 
@@ -83,5 +85,12 @@ export function useRunState(initialActiveRun: ActiveRunData | null) {
     setCharacter,
     reset,
     setRunTrinkets,
+    setSelectedDifficulty: fieldSetter("selectedDifficulty"),
+    addRunGold: (amount: number) => {
+      setState((prev) => {
+        const mult = getGoldMultiplier(prev.characterId, prev.selectedDifficulty);
+        return { ...prev, runGold: prev.runGold + Math.floor(amount * mult) };
+      });
+    },
   };
 }

@@ -3,7 +3,7 @@
 // Used by the top-level alchemy controller to keep screen changes and run mutations synchronized.
 import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import { createBattleState, isPlayerDefeated, maxPlayerHealth } from "@/lib/battle";
-import { getStartingDeck, type BattleCard, type CharacterId } from "@/lib/game-data";
+import { getDifficultyModifiers, getGoldMultiplier, getStartingDeck, type BattleCard, type CharacterId, type DifficultyId, type DifficultyModifier } from "@/lib/game-data";
 import { playVictory, playDefeat, playGoldGain } from "@/lib/audio";
 import { appendUnique, appendUniqueMany } from "@/lib/utils";
 import { DESTINATIONS, type Destination, type Screen } from "./types";
@@ -58,6 +58,7 @@ export function useRunNavigation({
   onStartBossBattle,
   onInitShop,
   onInitAlchemist,
+  onMarkDifficultyCompleted,
 }: {
   run: ReturnType<typeof useRunState>;
   talents: ReturnType<typeof useTalentState>;
@@ -78,10 +79,11 @@ export function useRunNavigation({
   onAddMaterialsRef: React.MutableRefObject<(materials: MaterialInventory) => void>;
   homesteadEffectsRef: React.MutableRefObject<HomesteadEffectManifest>;
   setHoveredCardId: React.Dispatch<React.SetStateAction<string | null>>;
-  onStartBattle: (deck?: BattleCard[], gold?: number, enemyType?: "normal" | "elite") => void;
+  onStartBattle: (deck?: BattleCard[], gold?: number, enemyType?: "normal" | "elite", modifiers?: DifficultyModifier[]) => void;
   onStartBossBattle: () => void;
   onInitShop: () => void;
   onInitAlchemist: () => void;
+  onMarkDifficultyCompleted: (characterId: CharacterId, difficultyId: DifficultyId) => void;
 }) {
   // Run-flow side effects live here because screens, rewards, destination routing,
   // mystery outcomes, act completion, and reset all need the same run/battle snapshot.
@@ -94,6 +96,7 @@ export function useRunNavigation({
     crystal: 0,
   });
   const [corruptionResult, setCorruptionResult] = useState<CorruptionResult | null>(null);
+  const [pendingCharacterId, setPendingCharacterId] = useState<CharacterId | null>(null);
 
   const destinationButtonRefs = useRef<Partial<Record<Destination, HTMLButtonElement | null>>>({});
 
@@ -108,6 +111,7 @@ export function useRunNavigation({
     awardMysteryXP: talents.awardMysteryXP,
     onAddMaterials: onAddMaterialsRef.current,
     advanceToNextDestination,
+    onAwardGold: run.addRunGold,
   });
   const battleVictoryHandledRef = useRef(false);
 
@@ -124,6 +128,7 @@ export function useRunNavigation({
         destinationIndexInAct: run.destinationIndexInAct,
         completedDestinations: run.completedDestinations,
         runTrinkets: run.runTrinkets,
+        selectedDifficulty: run.selectedDifficulty,
       }),
     [
       run.characterId,
@@ -136,6 +141,7 @@ export function useRunNavigation({
       run.destinationIndexInAct,
       run.completedDestinations,
       run.runTrinkets,
+      run.selectedDifficulty,
     ],
   );
 
@@ -211,8 +217,10 @@ export function useRunNavigation({
       bossBonus,
       talents.talentEffects.goldPerCombat,
     );
-    run.setRunGold(newGold);
-    return newGold;
+    const earned = newGold - run.runGold;
+    run.addRunGold(earned);
+    const mult = getGoldMultiplier(run.characterId, run.selectedDifficulty);
+    return run.runGold + Math.floor(earned * mult);
   }
 
   function getVictoryMaterials() {
@@ -235,16 +243,19 @@ export function useRunNavigation({
   }
 
   function createBossRewardState(gold: number, bossBonus: number, materials: MaterialInventory) {
+    const goldMultiplier = getGoldMultiplier(run.characterId, run.selectedDifficulty);
     return createBossRewardStateFromFlow({
       gold,
       bossBonus,
       talentGoldPerCombat: talents.talentEffects.goldPerCombat,
       materials,
       trinketIds: run.runTrinkets,
+      goldMultiplier,
     });
   }
 
   function createCombatRewardState(gold: number, eliteBonus: number, newGold: number, materials: MaterialInventory) {
+    const goldMultiplier = getGoldMultiplier(run.characterId, run.selectedDifficulty);
     return createCombatRewardStateFromFlow({
       battleState,
       runDeck: run.runDeck,
@@ -254,6 +265,7 @@ export function useRunNavigation({
       materials,
       destinations: sampleDestinationChoices(getAvailableDestinations(battleState.playerHealth, newGold)),
       trinketIds: run.runTrinkets,
+      goldMultiplier,
     });
   }
 
@@ -279,11 +291,20 @@ export function useRunNavigation({
   }
 
   function handleCharacterSelect(selectedId: CharacterId) {
-    // Fresh-run fields are initialized together so deck, HP, gold bonuses, route state,
-    // discoveries, and active-run flags cannot describe different runs for one render.
+    // Stores the chosen character and waits for difficulty selection before initializing
+    // the full run state, so backing out never leaves partial data.
+    setPendingCharacterId(selectedId);
+    navigateTo("difficulty-select");
+  }
+
+  function handleDifficultySelect(difficultyId: DifficultyId) {
+    if (!pendingCharacterId) return;
+    const selectedId = pendingCharacterId;
+    setPendingCharacterId(null);
     const freshDeck = getStartingDeck(selectedId);
     run.setCharacter(selectedId);
     run.setRunDeck(freshDeck);
+    run.setSelectedDifficulty(difficultyId);
     const homesteadGoldBonus = homesteadEffectsRef.current.startGold;
     const totalStartGold = talents.talentEffects.startGold + homesteadGoldBonus;
     if (totalStartGold > 0) playGoldGain();
@@ -305,8 +326,14 @@ export function useRunNavigation({
     setEncounteredEnemyIds([]);
     setHoveredCardId(null);
     setHasActiveRun(true);
-    onStartBattle(freshDeck, totalStartGold);
+    const modifiers = getDifficultyModifiers(selectedId, difficultyId);
+    onStartBattle(freshDeck, totalStartGold, "normal", modifiers);
     navigateTo("battle");
+  }
+
+  function handleBackFromDifficultySelect() {
+    setPendingCharacterId(null);
+    navigateTo("character-select");
   }
 
   function returnToBattle() {
@@ -396,6 +423,9 @@ export function useRunNavigation({
 
     if (run.currentAct >= ACTS_PER_RUN) {
       awardRunEndMaterials();
+      if (run.selectedDifficulty) {
+        onMarkDifficultyCompleted(run.characterId, run.selectedDifficulty);
+      }
       navigateTo("run-victory");
     } else {
       run.setCurrentAct((p) => p + 1);
@@ -515,11 +545,16 @@ export function useRunNavigation({
     get activeRunData() {
       return hasActiveRun ? currentActiveRunData : null;
     },
+    get pendingCharacterId() {
+      return pendingCharacterId;
+    },
     destinationButtonRefs,
     getAvailableDestinations,
     advanceToNextDestination,
     beginRun,
     handleCharacterSelect,
+    handleDifficultySelect,
+    handleBackFromDifficultySelect,
     returnToBattle,
     goToScreen,
     handleDestinationChoice,

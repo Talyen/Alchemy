@@ -10,7 +10,7 @@ import {
   type ResearchId,
 } from "@/lib/homestead/types";
 
-import type { UnlockedTalents } from "@/lib/game-data";
+import type { CharacterId, DifficultyId, UnlockedTalents } from "@/lib/game-data";
 import type { ActiveRunData } from "../run/types";
 import type { DisplayMode, ResolutionOption, UiScale } from "../types";
 
@@ -34,6 +34,7 @@ export type SaveData = {
   constructedBuildings: BuildingId[];
   plantedFarms: FarmId[];
   completedResearch: ResearchId[];
+  completedDifficulties: Record<CharacterId, DifficultyId[]>;
 };
 
 // Default save state is used both for first boot and as a per-field fallback when old
@@ -58,4 +59,5 @@ export const defaultSaveData: SaveData = {
   constructedBuildings: [],
   plantedFarms: [],
   completedResearch: [],
+  completedDifficulties: { knight: [], rogue: [], wizard: [], ranger: [] },
 };

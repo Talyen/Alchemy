@@ -1,7 +1,7 @@
 // Type contracts and tiny clamp helpers for the immutable battle engine.
 // Depends only on game-data shape types and is imported by draw, effects, turns, and UI.
 // Keep these state shapes explicit so save/load, animation, and combat stay in sync.
-import type { BattleCard, BestiaryEntry, CompanionDefinition, DamageType, EnemyAttackEffect, EnemyStatusId, PlayerStatusId, TalentEffectManifest } from "@/lib/game-data";
+import type { BattleCard, BestiaryEntry, CompanionDefinition, DamageType, DifficultyModifier, EnemyAttackEffect, EnemyStatusId, PlayerStatusId, TalentEffectManifest } from "@/lib/game-data";
 
 // Baseline balance knobs — tuned so the Knight starter deck (8 cards, 8 turns avg per fight)
 // can consistently beat the first enemy with some health remaining. Scaling per room
@@ -111,6 +111,7 @@ export type BattleState = {
   discoveredCardIds: string[];    // used by wish undiscovered talent
   cardsPlayedThisTurn: number;
   nextCardUid: number;             // battle-owned source for unique rendered card keys
+  difficultyModifiers: DifficultyModifier[];
 };
 
 // Combat texts are emitted by battle functions and consumed by the floating-text

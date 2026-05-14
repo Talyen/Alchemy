@@ -26,6 +26,7 @@ type MysteryEffectContext = {
   setMysteryCardChoices: Dispatch<SetStateAction<BattleCard[] | null>>;
   awardMysteryXP: (keyword: KeywordId, amount: number) => void;
   onAddMaterials: (materials: MaterialInventory) => void;
+  onAwardGold: (amount: number) => void;
 };
 
 // Applies a single mystery effect and returns a result indicating whether follow-up UI should pause.
@@ -82,7 +83,7 @@ function damageFromMystery(amount: number, context: MysteryEffectContext) {
 
 function gainMysteryGold(amount: number, context: MysteryEffectContext) {
   if (amount > 0) playGoldGain();
-  context.setRunGold((p) => p + amount);
+  context.onAwardGold(amount);
   return { followUp: null };
 }
 

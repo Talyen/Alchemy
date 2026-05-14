@@ -1,6 +1,6 @@
 // Active-run save migration helpers for legacy or partial localStorage payloads.
 // Depends on current character/card data and the persisted active-run contract.
-import { getStartingDeck, type BattleCard, type CharacterId } from "@/lib/game-data";
+import { getStartingDeck, type BattleCard, type CharacterId, type DifficultyId } from "@/lib/game-data";
 
 import type { ActiveRunData } from "../run/types";
 
@@ -14,7 +14,14 @@ type PersistedRunCandidate = Record<string, unknown> & {
   destinationIndexInAct: number;
   completedDestinations: unknown[];
   runTrinkets: unknown[];
+  selectedDifficulty?: unknown;
 };
+
+const VALID_DIFFICULTY_IDS = ["difficulty-1", "difficulty-2", "difficulty-3"];
+
+function isValidDifficultyId(id: unknown): id is DifficultyId {
+  return typeof id === "string" && VALID_DIFFICULTY_IDS.includes(id);
+}
 
 const legacyStarterDeckIds = ["slash", "bash", "block", "anvil", "plate-mail", "apple", "meteor", "blessed-aegis"];
 
@@ -85,6 +92,9 @@ export function normalizeActiveRun(activeRun: unknown): ActiveRunData | null {
     (isUnstartedRun(candidate) && deckIdsMatch(candidate.runDeck, legacyStarterDeckIds));
   const runDeck = shouldUseClassDeck ? getStartingDeck(characterId) : (candidate.runDeck as BattleCard[]);
 
+  const persistedDifficulty = candidate.selectedDifficulty;
+  const selectedDifficulty = isValidDifficultyId(persistedDifficulty) ? persistedDifficulty : null;
+
   return {
     characterId,
     runDeck,
@@ -96,5 +106,6 @@ export function normalizeActiveRun(activeRun: unknown): ActiveRunData | null {
     destinationIndexInAct: candidate.destinationIndexInAct,
     completedDestinations: candidate.completedDestinations as string[],
     runTrinkets: candidate.runTrinkets as string[],
+    selectedDifficulty,
   };
 }

@@ -17,6 +17,7 @@ describe("createActiveRunData", () => {
       destinationIndexInAct: 1,
       completedDestinations: ["Normal Combat", "Campfire"],
       runTrinkets: ["bone-charm"],
+      selectedDifficulty: null,
     });
 
     expect(result).toEqual({
@@ -30,6 +31,7 @@ describe("createActiveRunData", () => {
       destinationIndexInAct: 1,
       completedDestinations: ["Normal Combat", "Campfire"],
       runTrinkets: ["bone-charm"],
+      selectedDifficulty: null,
     });
   });
 });

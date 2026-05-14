@@ -36,6 +36,16 @@ describe("createBossRewardState", () => {
     expect(result.gold).toBe(0);
     expect(result.choices.length).toBeGreaterThan(0);
   });
+
+  it("applies goldMultiplier to boss reward gold", () => {
+    const result = createBossRewardState({ gold: 10, bossBonus: 5, talentGoldPerCombat: 2, materials: emptyInventory(), trinketIds: [], goldMultiplier: 2 });
+    expect(result.gold).toBe(34); // floor((10 + 5 + 2) * 2) = floor(34) = 34
+  });
+
+  it("goldMultiplier defaults to 1 for boss rewards", () => {
+    const result = createBossRewardState({ gold: 10, bossBonus: 5, talentGoldPerCombat: 2, materials: emptyInventory(), trinketIds: [] });
+    expect(result.gold).toBe(17); // 10 + 5 + 2 = 17
+  });
 });
 
 describe("createCombatRewardState", () => {
@@ -74,6 +84,29 @@ describe("createCombatRewardState", () => {
       materials: emptyInventory(), destinations: ["Normal Combat", "Mystery"], trinketIds: [],
     });
     expect(result.destinations).toEqual(["Normal Combat", "Mystery"]);
+    vi.restoreAllMocks();
+  });
+
+  it("applies goldMultiplier to combat reward gold", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.99);
+    const result = createCombatRewardState({
+      battleState: baseState as never,
+      runDeck: [], gold: 10, eliteBonus: 3, talentGoldPerCombat: 2,
+      materials: emptyInventory(), destinations: [], trinketIds: [],
+      goldMultiplier: 1.5,
+    });
+    expect(result.gold).toBe(22); // floor((10 + 3 + 2) * 1.5) = floor(22.5) = 22
+    vi.restoreAllMocks();
+  });
+
+  it("goldMultiplier defaults to 1 for combat rewards", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.99);
+    const result = createCombatRewardState({
+      battleState: baseState as never,
+      runDeck: [], gold: 10, eliteBonus: 3, talentGoldPerCombat: 2,
+      materials: emptyInventory(), destinations: [], trinketIds: [],
+    });
+    expect(result.gold).toBe(15); // 10 + 3 + 2 = 15
     vi.restoreAllMocks();
   });
 });

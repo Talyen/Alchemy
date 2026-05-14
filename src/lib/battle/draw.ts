@@ -1,7 +1,7 @@
 // Deck drawing and battle-state creation for new encounters.
 // Depends on game data, combat constants, talent manifests, and trinket manifests.
 // Used by turn logic and battle controllers whenever cards or fresh battles are needed.
-import { createEmptyTalentManifest, enemyBestiary, type BattleCard, type BestiaryEntry, type EnemyAttackEffect } from "@/lib/game-data";
+import { companionLibrary, createEmptyTalentManifest, enemyBestiary, type BattleCard, type BestiaryEntry, type DifficultyModifier, type EnemyAttackEffect } from "@/lib/game-data";
 
 import {
   baseEnemyHealth,
@@ -104,6 +104,7 @@ export function createBattleState(
   trinketIds: string[] = [],
   destinationIndexInAct = 0,
   currentAct = 1,
+  difficultyModifiers: DifficultyModifier[] = [],
 ): BattleState {
   const openingHand = drawCards(shuffleCards(runDeck), [], [], cardsPerTurn, 0);
 
@@ -120,13 +121,38 @@ export function createBattleState(
   const effectiveMaxHealth = maxHealth;
   const startingHealth = Math.min(effectiveMaxHealth, playerHealth + talentEffects.startHealth);
 
+  // Apply difficulty modifiers to attack effects
+  let modifiedEffects = [...scaledEnemyAttackEffects];
+  for (const mod of difficultyModifiers) {
+    if (mod.kind === "increase-enemy-physical-damage" || mod.kind === "increase-enemy-damage") {
+      modifiedEffects = modifiedEffects.map((e) =>
+        e.kind === "damage" ? { ...e, amount: e.amount + mod.amount } : e,
+      );
+    }
+    if (mod.kind === "increase-enemy-status") {
+      modifiedEffects = modifiedEffects.map((e) =>
+        e.kind === "player-status" && e.status === mod.status ? { ...e, amount: e.amount + mod.amount } : e,
+      );
+    }
+    if (mod.kind === "enemy-attacks-gain-leech") {
+      modifiedEffects = modifiedEffects.map((e) =>
+        e.kind === "damage" ? { ...e, lifesteal: true } : e,
+      );
+    }
+  }
+
+  const startingArmor = difficultyModifiers.find((m) => m.kind === "enemy-starting-armor")?.amount ?? 0;
+  const startBlock = difficultyModifiers.find((m) => m.kind === "start-block")?.amount ?? 0;
+  const manaBonus = difficultyModifiers.find((m) => m.kind === "start-max-mana")?.amount ?? 0;
+  const startCompanion = difficultyModifiers.some((m) => m.kind === "start-companion");
+
   return {
     deck: extraHand ? extraHand.deck : openingHand.deck,
     hand: extraHand ? extraHand.hand : openingHand.hand,
     discard: extraHand ? extraHand.discard : openingHand.discard,
     exhausted: [],
-    mana: basePlayerMana,
-    maxMana: basePlayerMana,
+    mana: basePlayerMana + manaBonus,
+    maxMana: basePlayerMana + manaBonus,
     gold,
     turn: STARTING_TURN,
     turnPhase: "player" as TurnPhase,
@@ -137,17 +163,17 @@ export function createBattleState(
     deathsDoorTriggeredTurn: null,
     enemyHealth: scaledEnemyHealth,
     enemyMaxHealth: scaledEnemyHealth,
-    enemyAttackEffects: scaledEnemyAttackEffects,
+    enemyAttackEffects: modifiedEffects,
     enemyRegeneration,
-    enemyArmor: 0,
+    enemyArmor: startingArmor,
     enemyForge: 0,
-    playerStatuses: { block: talentEffects.startBlock, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 } as PlayerStatusValues,
+    playerStatuses: { block: talentEffects.startBlock + startBlock, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 } as PlayerStatusValues,
     enemyStatuses: { burn: 0, poison: 0, bleed: 0, bleedLeech: 0, freeze: 0, stun: 0 } as EnemyStatusValues,
     enemyStunSkipTurns: 0,
     enemyFreezeSkipTurns: 0,
     wishOptions: null,
     wishQueue: [],
-    activeCompanion: null,
+    activeCompanion: startCompanion ? companionLibrary["wolf"] : null,
     currentEnemy: enemy,
     talentEffects,
     trinketEffects,
@@ -170,6 +196,7 @@ export function createBattleState(
     discoveredCardIds,
     cardsPlayedThisTurn: 0,
     nextCardUid: extraHand ? extraHand.nextCardUid : openingHand.nextCardUid,
+    difficultyModifiers,
   };
 }
 

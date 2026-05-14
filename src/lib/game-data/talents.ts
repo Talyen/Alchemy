@@ -182,17 +182,6 @@ export const talentPool: TalentDefinition[] = [
   { id: "bleed-dmg-2", keywordId: "bleed", description: "Placeholder talent (NYI)" },
 
   // --- Other keywords (placeholders retained for grid completeness) ---
-  { id: "consume-draw-1", keywordId: "consume", description: "Placeholder talent (NYI)" },
-  { id: "consume-draw-2", keywordId: "consume", description: "Placeholder talent (NYI)" },
-  { id: "consume-draw-3", keywordId: "consume", description: "Placeholder talent (NYI)" },
-  { id: "consume-draw-4", keywordId: "consume", description: "Placeholder talent (NYI)" },
-  { id: "consume-draw-5", keywordId: "consume", description: "Placeholder talent (NYI)" },
-  { id: "consume-draw-6", keywordId: "consume", description: "Placeholder talent (NYI)" },
-  { id: "consume-draw-7", keywordId: "consume", description: "Placeholder talent (NYI)" },
-  { id: "consume-draw-8", keywordId: "consume", description: "Placeholder talent (NYI)" },
-  { id: "consume-draw-9", keywordId: "consume", description: "Placeholder talent (NYI)" },
-  { id: "consume-draw-10", keywordId: "consume", description: "Placeholder talent (NYI)" },
-
   { id: "leech-heal-1", keywordId: "leech", description: "Placeholder talent (NYI)" },
   { id: "leech-heal-2", keywordId: "leech", description: "Placeholder talent (NYI)" },
   { id: "leech-heal-3", keywordId: "leech", description: "Placeholder talent (NYI)" },

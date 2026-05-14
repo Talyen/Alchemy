@@ -32,6 +32,8 @@ export async function startRun(page: Page, character: "Knight" | "Ranger" | "Rog
   await page.getByRole("button", { name: "Play" }).click();
   await page.getByRole("button", { name: character }).click();
   await page.getByRole("button", { name: "Continue" }).click();
+  await page.getByAltText("Novice").click();
+  await page.getByRole("button", { name: "Play" }).first().click();
   await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });
 }
 

@@ -3,9 +3,10 @@ import { mergeCombatText, applyCardEffects, getEnemyDamageMultiplier } from "@/l
 import { playBattleCardResolved, endPlayerTurn, chooseWishCard, processCompanionTurnStart } from "@/lib/battle/turns";
 import { drawCards, createBattleState, defaultTalentEffects, shuffleCards } from "@/lib/battle/draw";
 import { companionLibrary, enemyBestiary } from "@/lib/game-data";
-import type { BattleCard } from "@/lib/game-data";
+import type { BattleCard, BestiaryEntry, DifficultyModifier } from "@/lib/game-data";
 import type { BattleState, CombatTextEvent } from "@/lib/battle/types";
-import { basePlayerMana, clamp, clampHealth, isPlayerDefeated, maxHandSize, maxPlayerHealth } from "@/lib/battle/types";
+import { basePlayerMana, clampHealth, isPlayerDefeated, maxHandSize, maxPlayerHealth } from "@/lib/battle/types";
+import { clamp } from "@/lib/utils";
 import { defaultTrinketEffects, computeTrinketManifest } from "@/lib/trinkets";
 
 vi.spyOn(Math, "random").mockReturnValue(0.99);
@@ -40,6 +41,7 @@ function makeState(overrides: Partial<BattleState> = {}): BattleState {
     discoveredCardIds: [],
     cardsPlayedThisTurn: 0,
     nextCardUid: 0,
+    difficultyModifiers: [],
   };
   return { ...empty, ...overrides };
 }
@@ -579,6 +581,22 @@ describe("endPlayerTurn", () => {
     expect(result.state.enemyHealth).toBe(30);
     expect(result.state.enemyStatuses.bleed).toBe(0);
   });
+
+  it("difficulty modifier enemy-gains-forge-each-turn increments enemyForge", () => {
+    const state = makeState({
+      enemyAttackEffects: [],
+      difficultyModifiers: [{ kind: "enemy-gains-forge-each-turn" }] as DifficultyModifier[],
+      enemyForge: 0,
+      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
+      mana: 4,
+      maxMana: 4,
+    });
+
+    const result = endPlayerTurn(state);
+
+    expect(result.state.enemyForge).toBe(1);
+    expect(result.combatTexts).toContainEqual({ target: "enemy", kind: "status", stat: "forge", amount: 1 });
+  });
 });
 
 describe("processCompanionTurnStart", () => {
@@ -777,6 +795,108 @@ describe("createBattleState", () => {
     const result = createBattleState(battleDeck, 0, 5, skeleton, undefined, undefined, undefined, undefined, undefined, 5);
     expect(result.enemyHealth).toBe(42); // floor(30 * 1.4 * 1) = 42
     expect(result.enemyAttackEffects[0].amount).toBe(11); // floor(8 * 1.4 * 1) = 11
+  });
+
+  describe("difficulty modifiers", () => {
+    it("Knight Novice (d1): start-block 5 adds to player block", () => {
+      const result = createBattleState(battleDeck, 0, 0, skeleton, undefined, undefined, undefined, undefined, undefined, undefined, undefined, [{ kind: "start-block", amount: 5 }]);
+      expect(result.playerStatuses.block).toBe(5);
+      expect(result.enemyArmor).toBe(0);
+    });
+
+    it("Knight Adventurer (d2): enemy-starting-armor 2", () => {
+      const result = createBattleState(battleDeck, 0, 0, skeleton, undefined, undefined, undefined, undefined, undefined, undefined, undefined, [{ kind: "enemy-starting-armor", amount: 2 }]);
+      expect(result.enemyArmor).toBe(2);
+    });
+
+    it("Knight Legend (d3): enemy-gains-forge-each-turn is stored in difficultyModifiers", () => {
+      const mods: DifficultyModifier[] = [{ kind: "enemy-gains-forge-each-turn" }];
+      const result = createBattleState(battleDeck, 0, 0, skeleton, undefined, undefined, undefined, undefined, undefined, undefined, undefined, mods);
+      expect(result.difficultyModifiers).toEqual(mods);
+    });
+
+    it("Wizard Novice (d1): start-max-mana 1 adds extra mana", () => {
+      const result = createBattleState(battleDeck, 0, 0, skeleton, undefined, undefined, undefined, undefined, undefined, undefined, undefined, [{ kind: "start-max-mana", amount: 1 }]);
+      expect(result.mana).toBe(basePlayerMana + 1);
+      expect(result.maxMana).toBe(basePlayerMana + 1);
+    });
+
+    it("Ranger Novice (d1): start-companion spawns wolf", () => {
+      const result = createBattleState(battleDeck, 0, 0, skeleton, undefined, undefined, undefined, undefined, undefined, undefined, undefined, [{ kind: "start-companion" }]);
+      expect(result.activeCompanion).not.toBeNull();
+      expect(result.activeCompanion?.id).toBe("wolf");
+    });
+
+    it("increase-enemy-physical-damage boosts matching damage effect", () => {
+      const withBoss: BestiaryEntry = {
+        ...skeleton,
+        attackEffects: [{ kind: "damage", damageType: "physical", amount: 8 }],
+      };
+      const result = createBattleState(battleDeck, 0, 0, withBoss, undefined, undefined, undefined, undefined, undefined, undefined, undefined, [{ kind: "increase-enemy-physical-damage", amount: 3 }]);
+      const dmgEffect = result.enemyAttackEffects.find((e) => e.kind === "damage")!;
+      expect(dmgEffect.amount).toBe(11);
+    });
+
+    it("increase-enemy-damage boosts any damage effect", () => {
+      const withBoss: BestiaryEntry = {
+        ...skeleton,
+        attackEffects: [{ kind: "damage", damageType: "physical", amount: 8 }],
+      };
+      const result = createBattleState(battleDeck, 0, 0, withBoss, undefined, undefined, undefined, undefined, undefined, undefined, undefined, [{ kind: "increase-enemy-damage", amount: 4 }]);
+      const dmgEffect = result.enemyAttackEffects.find((e) => e.kind === "damage")!;
+      expect(dmgEffect.amount).toBe(12);
+    });
+
+    it("increase-enemy-status boosts matching status effect", () => {
+      const withBoss: BestiaryEntry = {
+        ...skeleton,
+        attackEffects: [
+          { kind: "damage", damageType: "physical", amount: 6 },
+          { kind: "player-status" as const, status: "poison" as const, amount: 2 },
+        ],
+      };
+      const result = createBattleState(battleDeck, 0, 0, withBoss, undefined, undefined, undefined, undefined, undefined, undefined, undefined, [{ kind: "increase-enemy-status", status: "poison", amount: 2 }]);
+      const poisonEffect = result.enemyAttackEffects.find((e) => e.kind === "player-status" && e.status === "poison")!;
+      expect(poisonEffect.amount).toBe(4);
+      const dmgEffect = result.enemyAttackEffects.find((e) => e.kind === "damage")!;
+      expect(dmgEffect.amount).toBe(6); // unchanged
+    });
+
+    it("enemy-attacks-gain-leech adds lifesteal to damage effects", () => {
+      const withBoss: BestiaryEntry = {
+        ...skeleton,
+        attackEffects: [{ kind: "damage", damageType: "physical", amount: 8 }],
+      };
+      const result = createBattleState(battleDeck, 0, 0, withBoss, undefined, undefined, undefined, undefined, undefined, undefined, undefined, [{ kind: "enemy-attacks-gain-leech" }]);
+      const dmgEffect = result.enemyAttackEffects.find((e) => e.kind === "damage")!;
+      expect((dmgEffect as typeof dmgEffect & { lifesteal: boolean }).lifesteal).toBe(true);
+    });
+
+    it("multiple modifiers apply simultaneously", () => {
+      const mods: DifficultyModifier[] = [
+        { kind: "start-block", amount: 5 },
+        { kind: "enemy-starting-armor", amount: 2 },
+        { kind: "start-max-mana", amount: 1 },
+      ];
+      const result = createBattleState(battleDeck, 0, 0, skeleton, undefined, undefined, undefined, undefined, undefined, undefined, undefined, mods);
+      expect(result.playerStatuses.block).toBe(5);
+      expect(result.enemyArmor).toBe(2);
+      expect(result.mana).toBe(basePlayerMana + 1);
+      expect(result.maxMana).toBe(basePlayerMana + 1);
+    });
+
+    it("increase-enemy-status does not affect non-matching status", () => {
+      const withBoss: BestiaryEntry = {
+        ...skeleton,
+        attackEffects: [
+          { kind: "damage", damageType: "physical", amount: 6 },
+          { kind: "player-status" as const, status: "burn" as const, amount: 2 },
+        ],
+      };
+      const result = createBattleState(battleDeck, 0, 0, withBoss, undefined, undefined, undefined, undefined, undefined, undefined, undefined, [{ kind: "increase-enemy-status", status: "poison", amount: 2 }]);
+      const burnEffect = result.enemyAttackEffects.find((e) => e.kind === "player-status" && e.status === "burn")!;
+      expect(burnEffect.amount).toBe(2); // unchanged, wrong status
+    });
   });
 });
 

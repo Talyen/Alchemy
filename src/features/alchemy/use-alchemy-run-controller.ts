@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { cardLibrary, trinketLibrary } from "@/lib/game-data";
 import type { TalentXP } from "@/lib/talents";
 import type { HomesteadEffectManifest, MaterialInventory } from "@/lib/homestead/types";
-import type { UnlockedTalents } from "@/lib/game-data";
+import type { CharacterId, DifficultyId, UnlockedTalents } from "@/lib/game-data";
 import { useTalentState } from "./use-talent-state";
 import { useRunState } from "./use-run-state";
 import { useBattleController } from "./use-battle-controller";
@@ -26,6 +26,7 @@ export function useAlchemyRunController({
   autoEndTurn,
   onAddMaterials,
   homesteadEffects,
+  onMarkDifficultyCompleted,
 }: {
   discoveredCardIds: string[];
   setDiscoveredCardIds: React.Dispatch<React.SetStateAction<string[]>>;
@@ -37,6 +38,7 @@ export function useAlchemyRunController({
   autoEndTurn: boolean;
   onAddMaterials: (materials: MaterialInventory) => void;
   homesteadEffects: HomesteadEffectManifest;
+  onMarkDifficultyCompleted: (characterId: CharacterId, difficultyId: DifficultyId) => void;
 }) {
   // This hook composes domain controllers and exposes a stable UI API; it intentionally
   // avoids owning combat/shop/navigation rules directly so those modules stay testable.
@@ -113,6 +115,7 @@ export function useAlchemyRunController({
     onStartBossBattle: battle.startBossBattle,
     onInitShop: shop.initShop,
     onInitAlchemist: shop.initAlchemist,
+    onMarkDifficultyCompleted,
   });
 
   function clearPermanentData() {
@@ -135,6 +138,7 @@ export function useAlchemyRunController({
     destinationIndexInAct: run.destinationIndexInAct,
     completedDestinations: run.completedDestinations,
     characterId: run.characterId,
+    pendingCharacterId: nav.pendingCharacterId,
     talentXP: talents.talentXP,
     runTalentXP: talents.runTalentXP,
     unlockedTalents: talents.unlockedTalents,
@@ -224,6 +228,8 @@ export function useAlchemyRunController({
     companionShaking: battle.companionShaking,
     beginRun: nav.beginRun,
     handleCharacterSelect: nav.handleCharacterSelect,
+    handleDifficultySelect: nav.handleDifficultySelect,
+    handleBackFromDifficultySelect: nav.handleBackFromDifficultySelect,
     returnToBattle: nav.returnToBattle,
     goToScreen: nav.goToScreen,
     maybeTriggerShimmer: battle.maybeTriggerShimmer,

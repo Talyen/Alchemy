@@ -4,6 +4,7 @@
 export { HomesteadScreen } from "./homestead-screen";
 export { MenuScreen } from "./menu-screen";
 export { CharacterSelectScreen } from "./character-select-screen";
+export { DifficultySelectScreen } from "./difficulty-select-screen";
 export { RewardsScreen } from "./rewards-screen";
 export { DestinationScreen } from "./destination-screen";
 export { CampfireScreen } from "./campfire-screen";

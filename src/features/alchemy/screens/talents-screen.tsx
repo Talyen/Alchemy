@@ -24,7 +24,7 @@ export function TalentsScreen({
 }) {
   const [selectedKeyword, setSelectedKeyword] = useState<KeywordId>("physical");
   const [showResetConfirm, setShowResetConfirm] = useState(false);
-  const keywordIds = Object.keys(keywordDefinitions) as KeywordId[];
+  const keywordIds = (Object.keys(keywordDefinitions) as KeywordId[]).filter((kw) => !keywordDefinitions[kw].hidden);
 
 
   const unlockedIds = useMemo(() => unlockedTalents[selectedKeyword] ?? [], [selectedKeyword, unlockedTalents]);

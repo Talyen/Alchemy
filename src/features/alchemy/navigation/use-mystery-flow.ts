@@ -22,6 +22,7 @@ export type MysteryFlowContext = {
   awardMysteryXP: (keyword: KeywordId, amount: number) => void;
   onAddMaterials: (materials: MaterialInventory) => void;
   advanceToNextDestination: () => void;
+  onAwardGold: (amount: number) => void;
 };
 
 export function useMysteryFlow(context: MysteryFlowContext) {
@@ -47,6 +48,7 @@ export function useMysteryFlow(context: MysteryFlowContext) {
         setMysteryCardChoices,
         awardMysteryXP: context.awardMysteryXP,
         onAddMaterials: context.onAddMaterials,
+        onAwardGold: context.onAwardGold,
       });
       if (result.followUp) return;
     }

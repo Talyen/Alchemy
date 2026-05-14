@@ -26,6 +26,7 @@ function makeState(): BattleState {
     discoveredCardIds: [],
     cardsPlayedThisTurn: 0,
     nextCardUid: 0,
+    difficultyModifiers: [],
   };
 }
 

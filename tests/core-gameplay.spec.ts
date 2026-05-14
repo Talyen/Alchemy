@@ -51,6 +51,8 @@ test.describe("Character Select", () => {
     await page.getByRole("button", { name: "Play" }).click();
     await page.getByRole("button", { name: "Wizard" }).click();
     await page.getByRole("button", { name: "Continue" }).click();
+    await page.getByAltText("Novice").click();
+    await page.getByRole("button", { name: "Play" }).first().click();
     await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });
 
     const wizardCards = new Set(["Fireball", "Frostbolt", "Mana Berries", "Mana Crystals", "Mana Potion", "Meteor", "Health Potion"]);
@@ -337,6 +339,99 @@ test.describe("Talents", () => {
     await resetBtn.click();
     await expect(page.getByText("Reset Talents?")).toBeVisible();
     await expect(page.getByRole("button", { name: "Cancel" })).toBeVisible();
+  });
+});
+
+test.describe("Difficulty Select", () => {
+  test("difficulty screen shows after character selection", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: "Play" }).click();
+    await page.getByRole("button", { name: "Knight" }).click();
+    await page.getByRole("button", { name: "Continue" }).click();
+
+    await expect(page.getByRole("heading", { name: "A Knight's Journey" })).toBeVisible();
+    await expect(page.getByAltText("Knight")).toBeVisible();
+  });
+
+  test("all three difficulty cards are visible", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: "Play" }).click();
+    await page.getByRole("button", { name: "Knight" }).click();
+    await page.getByRole("button", { name: "Continue" }).click();
+
+    await expect(page.getByAltText("Novice")).toBeVisible();
+    await expect(page.getByAltText("Adventurer")).toBeVisible();
+    await expect(page.getByAltText("Legend")).toBeVisible();
+  });
+
+  test("Novice is unlocked, Adventurer and Legend show as locked initially", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: "Play" }).click();
+    await page.getByRole("button", { name: "Knight" }).click();
+    await page.getByRole("button", { name: "Continue" }).click();
+
+    await expect(page.getByAltText("Novice")).toBeVisible();
+    await expect(page.getByText("Locked")).toHaveCount(2);
+  });
+
+  test("locked difficulty cannot start a run", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: "Play" }).click();
+    await page.getByRole("button", { name: "Knight" }).click();
+    await page.getByRole("button", { name: "Continue" }).click();
+
+    // Play button should be disabled before any selection
+    const playBtn = page.getByRole("button", { name: "Play" }).first();
+    await expect(playBtn).toBeDisabled();
+
+    // Clicking a locked difficulty should not enable play
+    const lockedCard = page.getByAltText("Adventurer");
+    await lockedCard.click({ force: true });
+    await expect(playBtn).toBeDisabled();
+  });
+
+  test("selecting Novice enables the Play button", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: "Play" }).click();
+    await page.getByRole("button", { name: "Knight" }).click();
+    await page.getByRole("button", { name: "Continue" }).click();
+
+    await page.getByAltText("Novice").click();
+    await expect(page.getByRole("button", { name: "Play" }).first()).toBeEnabled();
+  });
+
+  test("Back from difficulty select returns to character select", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: "Play" }).click();
+    await page.getByRole("button", { name: "Knight" }).click();
+    await page.getByRole("button", { name: "Continue" }).click();
+
+    await page.getByRole("button", { name: "Back" }).click();
+    await expect(page.getByRole("heading", { name: "Choose Your Hero" })).toBeVisible();
+  });
+
+  test("selecting Novice and Play starts a battle", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: "Play" }).click();
+    await page.getByRole("button", { name: "Knight" }).click();
+    await page.getByRole("button", { name: "Continue" }).click();
+
+    await page.getByAltText("Novice").click();
+    await page.getByRole("button", { name: "Play" }).first().click();
+
+    await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });
+  });
+
+  test("Wizard shows different difficulty config", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: "Play" }).click();
+    await page.getByRole("button", { name: "Wizard" }).click();
+    await page.getByRole("button", { name: "Continue" }).click();
+
+    await expect(page.getByRole("heading", { name: "A Wizard's Saga" })).toBeVisible();
+    await expect(page.getByAltText("Novice")).toBeVisible();
+    await expect(page.getByAltText("Adventurer")).toBeVisible();
+    await expect(page.getByAltText("Legend")).toBeVisible();
   });
 });
 

@@ -4,7 +4,7 @@ import { getTalentsForKeyword, sampleTalentChoices, computeTalentEffects } from 
 
 describe("talentPool", () => {
   it("contains talents for all keywords", () => {
-    const keywords = ["physical", "stun", "block", "forge", "armor", "health", "burn", "gold", "holy", "wish", "consume", "poison", "bleed", "leech", "freeze", "mana"];
+    const keywords = ["physical", "stun", "block", "forge", "armor", "health", "burn", "gold", "holy", "wish", "poison", "bleed", "leech", "freeze", "mana"];
     for (const kw of keywords) {
       expect(getTalentsForKeyword(kw as unknown as KeywordId).length).toBeGreaterThan(0);
     }

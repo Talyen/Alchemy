@@ -3,7 +3,7 @@
 import { drawCards } from "./draw";
 import { applyBoneCharmHeal, applyCardEffects, applyIronwoodBuckler, mergeCombatText } from "./apply-effects";
 import { tickEnemyStatuses, tickPlayerStatuses } from "./status-ticks";
-import { harmfulPlayerStatusIds, type EnemyAttackEffect, type BattleCard } from "@/lib/game-data";
+import { harmfulPlayerStatusIds, type BattleCard, type DifficultyModifier, type EnemyAttackEffect } from "@/lib/game-data";
 import { applyPlayerCombatDamage, cardsPerTurn, clampHealth, maxHandSize, type BattleState, type CombatTextEvent, type TurnPhase } from "./types";
 import { ENEMY_HEAL_FRACTION, HALF_DIVISOR, PERCENT_DENOMINATOR } from "../game-constants";
 
@@ -278,6 +278,14 @@ export function endPlayerTurn(state: BattleState): { state: BattleState; combatT
       enemyForge: nextState.enemyForge + 1,
     };
     mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "armor", amount: 1 });
+  }
+
+  if (nextState.difficultyModifiers.some((m: DifficultyModifier) => m.kind === "enemy-gains-forge-each-turn")) {
+    nextState = {
+      ...nextState,
+      enemyForge: nextState.enemyForge + 1,
+    };
+    mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "forge", amount: 1 });
   }
 
   nextState = processEnemyAttack(nextState, combatTexts);
