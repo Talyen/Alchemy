@@ -14,13 +14,12 @@ import { cn } from "@/lib/utils";
 
 import {
   cardSurfaceClass,
-  collectionCardWidthClass,
-  handCardWidthClass,
   popupClassName,
   staticCardTransform,
+  viewCardWidthClass,
 } from "../config";
 import type { CardGhost, GhostStyle } from "../types";
-import { clearTiltFromEvent, setTiltFromEvent, tokenizeDescription } from "../utils";
+import { clearTiltFromEvent, DEFAULT_TILT_STRENGTH, setTiltFromEvent, tokenizeDescription } from "../utils";
 import { DisabledTooltip, GoldCost, ShimmerOverlay } from "./shared-ui";
 import { KeywordTag } from "./keyword-tag";
 
@@ -54,21 +53,48 @@ export function KeywordToken({ keywordId, matchedText }: { keywordId: KeywordId;
   );
 }
 
-export function DescriptionLines({ lines, idPrefix }: { lines: string[]; idPrefix: string }) {
+function splitCorruptedNumericParts(text: string, baseOffset: number, corruptedOffsets: Set<number>): { text: string; corrupted: boolean }[] {
+  const fragments: { text: string; corrupted: boolean }[] = [];
+  const numRegex = /\d+/g;
+  let lastIndex = 0;
+  for (const match of text.matchAll(numRegex)) {
+    const matchIndex = match.index ?? 0;
+    if (matchIndex > lastIndex) {
+      fragments.push({ text: text.slice(lastIndex, matchIndex), corrupted: false });
+    }
+    fragments.push({ text: match[0], corrupted: corruptedOffsets.has(baseOffset + matchIndex) });
+    lastIndex = matchIndex + match[0].length;
+  }
+  if (lastIndex < text.length) {
+    fragments.push({ text: text.slice(lastIndex), corrupted: false });
+  }
+  return fragments.length > 0 ? fragments : [{ text, corrupted: false }];
+}
+
+export function DescriptionLines({ lines, idPrefix, card }: { lines: string[]; idPrefix: string; card?: Pick<BattleCard, "corruptedValuePositions"> }) {
   return (
     <div className="mt-2 space-y-1.5 text-sm leading-6 text-muted-foreground">
       {lines.map((line, lineIndex) => {
         const parts = tokenizeDescription(line);
+        const corruptedOffsets = new Set<number>(
+          card?.corruptedValuePositions?.filter((p) => p.lineIndex === lineIndex).map((p) => p.matchIndex) ?? [],
+        );
 
         return (
           <div key={`${idPrefix}-${lineIndex}-${line}`}>
-            {parts.map((part, index) =>
-              part.keywordId ? (
-                <KeywordToken key={`${idPrefix}-${lineIndex}-${index}`} keywordId={part.keywordId} matchedText={part.text} />
-              ) : (
-                <span key={`${idPrefix}-${lineIndex}-${index}`}>{part.text}</span>
-              ),
-            )}
+            {parts.map((part, index) => {
+              if (part.keywordId) {
+                return <KeywordToken key={`${idPrefix}-${lineIndex}-${index}`} keywordId={part.keywordId} matchedText={part.text} />;
+              }
+              const offset = parts.slice(0, index).reduce((acc, p) => acc + p.text.length, 0);
+              return splitCorruptedNumericParts(part.text, offset, corruptedOffsets).map((frag, fi) =>
+                frag.corrupted ? (
+                  <span key={`${idPrefix}-${lineIndex}-${index}-${fi}`} className="text-red-400">{frag.text}</span>
+                ) : (
+                  <span key={`${idPrefix}-${lineIndex}-${index}-${fi}`}>{frag.text}</span>
+                ),
+              );
+            })}
           </div>
         );
       })}
@@ -89,7 +115,7 @@ export function CardTitle({ card, className }: { card: Pick<BattleCard, "title" 
   );
 }
 
-export function PurchasableCardItem({ card, price, gold, purchased, onBuy, widthClass = handCardWidthClass }: { card: BattleCard; price: number; gold: number; purchased: boolean; onBuy: () => void; widthClass?: string }) {
+export function PurchasableCardItem({ card, price, gold, purchased, onBuy, widthClass = viewCardWidthClass }: { card: BattleCard; price: number; gold: number; purchased: boolean; onBuy: () => void; widthClass?: string }) {
   const [hovered, setHovered] = useState(false);
 
   if (purchased) {
@@ -129,13 +155,13 @@ export function SelectableShopCard({ card, isSelected, onSelect }: { card: Battl
       ariaLabel={`Select ${getCardDisplayTitle(card)}`}
       shimmerActive={false}
       shimmerToken={undefined}
-      className={collectionCardWidthClass}
+      className={viewCardWidthClass}
       selected={isSelected}
     />
   );
 }
 
-export function SelectableCardItem({ card, isSelected, onSelect, widthClass = collectionCardWidthClass }: { card: BattleCard; isSelected: boolean; onSelect: () => void; widthClass?: string }) {
+export function SelectableCardItem({ card, isSelected, onSelect, widthClass = viewCardWidthClass }: { card: BattleCard; isSelected: boolean; onSelect: () => void; widthClass?: string }) {
   const [hovered, setHovered] = useState(false);
 
   return (
@@ -156,12 +182,14 @@ export function DetailPopup({
   subtitle,
   descriptionLines,
   descriptionNodes,
+  card,
 }: {
   idPrefix: string;
   title: ReactNode;
   subtitle: string | undefined;
   descriptionLines: string[];
   descriptionNodes?: ReactNode[];
+  card?: Pick<BattleCard, "corruptedValuePositions">;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [flip, setFlip] = useState(false);
@@ -183,7 +211,7 @@ export function DetailPopup({
     >
         <p className="text-base text-foreground sm:text-lg">{title}</p>
       {subtitle ? <p className="mt-1 text-xs uppercase tracking-[0.18em] text-muted-foreground">{subtitle}</p> : null}
-      <DescriptionLines lines={descriptionLines} idPrefix={idPrefix} />
+      <DescriptionLines lines={descriptionLines} idPrefix={idPrefix} {...(card ? { card } : {})} />
       {descriptionNodes?.map((node, i) => (
         <div key={i} className="mt-1.5 text-sm leading-6">{node}</div>
       ))}
@@ -200,7 +228,6 @@ export function BattleCardButton({
   onPointerDown,
   buttonRef,
   ariaLabel,
-  tiltStrength = 16,
   shimmerActive,
   shimmerToken,
   baseTransform = staticCardTransform,
@@ -219,7 +246,6 @@ export function BattleCardButton({
   onPointerDown?: (event: ReactPointerEvent<HTMLButtonElement>) => void;
   buttonRef?: (node: HTMLButtonElement | null) => void;
   ariaLabel: string;
-  tiltStrength?: number;
   shimmerActive: boolean;
   shimmerToken: number | undefined;
   baseTransform?: string;
@@ -241,7 +267,7 @@ export function BattleCardButton({
   return (
     <div className={cn("relative", wrapperClassName)} style={wrapperStyle} onMouseEnter={handleHoverStart} onMouseLeave={onHoverEnd}>
       {hovered ? (
-        <DetailPopup idPrefix={card.id} title={<CardTitle card={card} />} subtitle={undefined} descriptionLines={card.descriptionLines} />
+        <DetailPopup idPrefix={card.id} title={<CardTitle card={card} />} subtitle={undefined} descriptionLines={card.descriptionLines} {...(card.corrupted ? { card } : {})} />
       ) : null}
 
       <button
@@ -255,7 +281,7 @@ export function BattleCardButton({
         onBlur={onHoverEnd}
         onMouseMove={setTiltFromEvent}
         onMouseLeave={clearTiltFromEvent}
-        data-tilt-strength={String(tiltStrength)}
+        data-tilt-strength={String(DEFAULT_TILT_STRENGTH)}
         className={cn(
           "tilt-surface group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
           cardSurfaceClass,
@@ -268,7 +294,7 @@ export function BattleCardButton({
       >
         <ShimmerOverlay active={shimmerActive} token={shimmerToken} />
 
-        <img src={card.art} alt={getCardDisplayTitle(card)} className="block h-auto w-full rounded-[30px] aspect-[3/4]" loading="lazy" />
+        <img src={card.art} alt={getCardDisplayTitle(card)} className="block h-auto w-full rounded-[30px] aspect-[3/4] object-cover" loading="eager" />
       </button>
     </div>
   );

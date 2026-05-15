@@ -89,6 +89,10 @@ function applyNumericCorruption(card: BattleCard, target: CorruptionTarget, delt
   );
   effect.amount = nextValue;
   nextCard.corrupted = true;
+  nextCard.corruptedValuePositions = [
+    ...(card.corruptedValuePositions ?? []),
+    { lineIndex: target.lineIndex, matchIndex: target.matchIndex },
+  ];
   nextCard.baseTitle = originalTitle ?? card.title;
   return nextCard;
 }

@@ -260,7 +260,6 @@ export function HomesteadScreen({
                       className={cn(
                         "group tilt-surface w-full overflow-hidden rounded-[18px] p-3",
                       )}
-                      data-tilt-strength="8"
                       onMouseMove={setTiltFromEvent}
                       onMouseLeave={clearTiltFromEvent}
                     >

@@ -5,6 +5,7 @@
 export const battleCardWidthClass = "w-[clamp(222px,22cqh,336px)]";
 export const handCardWidthClass = "w-[clamp(189px,18.7cqh,286px)]";
 export const collectionCardWidthClass = "w-[clamp(156px,15vw,210px)]";
+export const viewCardWidthClass = "w-[clamp(189px,10vw,286px)]";
 export const pileCardWidthClass = "w-[clamp(144px,14.4cqh,219px)]";
 
 // Mobile landscape uses the same virtual-stage battle composition as desktop.

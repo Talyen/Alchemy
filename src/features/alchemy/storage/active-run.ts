@@ -1,6 +1,6 @@
 // Active-run save migration helpers for legacy or partial localStorage payloads.
 // Depends on current character/card data and the persisted active-run contract.
-import { getStartingDeck, type BattleCard, type CharacterId, type DifficultyId } from "@/lib/game-data";
+import { cardLibrary, getStartingDeck, type BattleCard, type CharacterId, type DifficultyId } from "@/lib/game-data";
 
 import type { ActiveRunData } from "../run/types";
 
@@ -64,6 +64,13 @@ function isUnstartedRun(candidate: PersistedRunCandidate): boolean {
   );
 }
 
+// Save data owns run-specific card mutations, while library data refreshes build-hashed art assets.
+function hydrateSavedCard(savedCard: BattleCard): BattleCard {
+  const libraryCard = cardLibrary.find((card) => card.id === savedCard.id);
+  if (!libraryCard) return savedCard;
+  return { ...libraryCard, ...savedCard, art: libraryCard.art };
+}
+
 // Active runs are sanitized before hydration because localStorage can contain stale
 // character IDs, renamed heroes, missing route fields, or hand-edited invalid payloads.
 export function normalizeActiveRun(activeRun: unknown): ActiveRunData | null {
@@ -90,7 +97,9 @@ export function normalizeActiveRun(activeRun: unknown): ActiveRunData | null {
   const shouldUseClassDeck =
     candidate.runDeck.length === 0 ||
     (isUnstartedRun(candidate) && deckIdsMatch(candidate.runDeck, legacyStarterDeckIds));
-  const runDeck = shouldUseClassDeck ? getStartingDeck(characterId) : (candidate.runDeck as BattleCard[]);
+  const runDeck = shouldUseClassDeck
+    ? getStartingDeck(characterId)
+    : (candidate.runDeck as BattleCard[]).map(hydrateSavedCard);
 
   const persistedDifficulty = candidate.selectedDifficulty;
   const selectedDifficulty = isValidDifficultyId(persistedDifficulty) ? persistedDifficulty : null;

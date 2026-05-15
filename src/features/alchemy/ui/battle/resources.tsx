@@ -41,12 +41,11 @@ export function PilePanel({
       className={cn("tilt-surface", cardSurfaceClass, pileCardWidthClass, "bg-transparent")}
       data-testid={`${type}-pile`}
       data-count={count}
-      data-tilt-strength="12"
       onMouseMove={setTiltFromEvent}
       onMouseLeave={clearTiltFromEvent}
       style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
     >
-      <img src={art} alt={`${label} pile`} className="block w-full rounded-[30px] aspect-[3/4]" loading="lazy" />
+      <img src={art} alt={`${label} pile`} className="block w-full rounded-[30px] aspect-[3/4] object-cover" loading="lazy" />
     </div>
   );
 }

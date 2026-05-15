@@ -10,7 +10,7 @@ import { ALCHEMIST_REFRESH_PRICE, MIXED_POTION_CARD_ID, MIXED_POTION_TITLE, POTI
 import { BattleCardButton, PurchasableCardItem, SelectableShopCard } from "../ui/card-ui";
 import { CardSelectionGrid } from "../ui/card-selection-grid";
 import { GoldDisplay, ScreenDescription, ScreenHeader, ServiceButton, staggerDelay } from "../ui/shared-ui";
-import { handCardWidthClass } from "../config";
+import { viewCardWidthClass } from "../config";
 
 export function AlchemistShopScreen({
   gold, potionCards, runDeck, refreshesLeft, mixUsed, potionPrice, mixPrice,
@@ -77,7 +77,7 @@ export function AlchemistShopScreen({
           <BlurFade delay={staggerDelay(1)} direction="up" offset={8}>
             <div className="flex flex-col items-center gap-3">
               <div onMouseEnter={() => setMixedCardHovered(true)} onMouseLeave={() => setMixedCardHovered(false)}>
-                <BattleCardButton card={mixedCard} hovered={mixedCardHovered} onHoverStart={() => setMixedCardHovered(true)} onHoverEnd={() => setMixedCardHovered(false)} ariaLabel={MIXED_POTION_TITLE} shimmerActive={false} shimmerToken={undefined} className={handCardWidthClass} />
+                <BattleCardButton card={mixedCard} hovered={mixedCardHovered} onHoverStart={() => setMixedCardHovered(true)} onHoverEnd={() => setMixedCardHovered(false)} ariaLabel={MIXED_POTION_TITLE} shimmerActive={false} shimmerToken={undefined} className={viewCardWidthClass} />
               </div>
             </div>
           </BlurFade>

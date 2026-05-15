@@ -18,7 +18,6 @@ export function MenuScreen({ onPlay, onCollection, onOptions, onTalents, onHomes
           WebkitMaskImage: "radial-gradient(ellipse 72% 72% at center, black 60%, transparent 76%)",
           maxWidth: isMobileLandscape ? "220px" : "430px",
         } as CSSProperties}
-        data-tilt-strength="6"
         onMouseMove={setTiltFromEvent}
         onMouseLeave={clearTiltFromEvent}
       >

@@ -71,6 +71,8 @@ export type BattleCard = {
   cost: number;
   consume?: boolean;
   corrupted?: boolean;
+  /** Positions of numeric values in descriptionLines that were modified by corruption, used to highlight them in the UI. */
+  corruptedValuePositions?: { lineIndex: number; matchIndex: number }[];
   baseTitle?: string;
   effects: BattleCardEffect[];
 };

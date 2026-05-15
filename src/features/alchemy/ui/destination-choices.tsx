@@ -24,7 +24,6 @@ export function DestinationChoices({
             <div
               className="tilt-surface rounded-[18px]"
               style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
-              data-tilt-strength="12"
               onMouseMove={setTiltFromEvent}
               onMouseLeave={clearTiltFromEvent}
             >

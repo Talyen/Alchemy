@@ -20,7 +20,7 @@ function CharacterCard({ id, index, isSelected, isShimmer, shimmerToken, onSelec
 
   return (
     <div className={cn("stagger-item flex flex-col items-center gap-3 rounded-[26px] border border-border/60 bg-card/60 px-6 pb-6 pt-5", isSelected && "ring-2 ring-primary")} style={{ "--stagger-index": index } as CSSProperties}>
-      <button type="button" className={cn("tilt-surface relative rounded-[22px]", battleCardWidthClass)} style={{ "--card-base-transform": staticCardTransform } as CSSProperties} data-tilt-strength="15" onMouseMove={setTiltFromEvent} onMouseEnter={() => onHoverShimmer(id)} onMouseLeave={clearTiltFromEvent} onClick={() => onSelect(id)}>
+      <button type="button" className={cn("tilt-surface relative rounded-[22px]", battleCardWidthClass)} style={{ "--card-base-transform": staticCardTransform } as CSSProperties} onMouseMove={setTiltFromEvent} onMouseEnter={() => onHoverShimmer(id)} onMouseLeave={clearTiltFromEvent} onClick={() => onSelect(id)}>
         <ShimmerOverlay active={isShimmer} token={shimmerToken} rounded="rounded-[22px]" />
         <img src={art} alt={char.name} className={cn(cardSurfaceClass, "w-full rounded-[22px]")} />
       </button>

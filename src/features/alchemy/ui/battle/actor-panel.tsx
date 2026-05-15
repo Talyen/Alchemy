@@ -215,7 +215,6 @@ export function ArtPanel({
           cardWidthClass ?? battleCardWidthClass,
           isDead && "overflow-visible animate-frame-fade surface-transparent",
         )}
-        data-tilt-strength="15"
         onMouseEnter={() => onHoverShimmer(shimmerId)}
         onMouseMove={setTiltFromEvent}
         onMouseLeave={clearTiltFromEvent}
@@ -233,7 +232,7 @@ export function ArtPanel({
         <img
           src={art}
           alt={title}
-          className={cn("block w-full rounded-[30px] aspect-[3/4]", isDead && "opacity-0")}
+          className={cn("block w-full rounded-[30px] aspect-[3/4] object-cover", isDead && "opacity-0")}
           loading="eager"
         />
         {isDead && <ParticleBurst imageUrl={art} />}

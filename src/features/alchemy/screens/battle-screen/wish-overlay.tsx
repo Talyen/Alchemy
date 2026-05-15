@@ -52,7 +52,6 @@ export function WishOverlay({
                 onHoverEnd={() => setHoveredCardId((current) => (current === hoverId ? null : current))}
                 onClick={() => setWishSelectedCard(card)}
                 ariaLabel={`Choose ${getCardDisplayTitle(card)}`}
-                tiltStrength={15}
                 shimmerActive={shimmerState?.cardId === hoverId}
                 shimmerToken={shimmerState?.token}
                 className={handWidthClass}

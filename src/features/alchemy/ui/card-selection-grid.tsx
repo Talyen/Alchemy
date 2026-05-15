@@ -19,14 +19,24 @@ export function CardSelectionGrid({ items, page, onPageChange, pageSize, revealD
   const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
   const safePage = Math.min(page, totalPages - 1);
   const pageItems = items.slice(safePage * pageSize, (safePage + 1) * pageSize);
+  const rows = Array.from({ length: Math.ceil(pageItems.length / 4) }, (_, rowIndex) =>
+    pageItems.slice(rowIndex * 4, rowIndex * 4 + 4),
+  );
 
   return (
     <div>
-      <div className="mx-auto flex max-w-[calc(4*228px+3*1rem)] flex-wrap justify-center gap-x-4 gap-y-5" data-testid="card-selection-grid">
-        {pageItems.map((item, visualIndex) => (
-          <BlurFade key={`${item.card.id}-${item.index}`} delay={revealDelay + visualIndex * ANIMATION_STAGGER_UNIT} direction="up" offset={6}>
-            {renderItem(item, visualIndex)}
-          </BlurFade>
+      <div className="mx-auto flex max-w-[calc(4*286px+3*1rem)] flex-col gap-y-5" data-testid="card-selection-grid">
+        {rows.map((rowItems, rowIndex) => (
+          <div key={`row-${rowIndex}`} className="flex justify-center gap-x-4">
+            {rowItems.map((item, columnIndex) => {
+              const visualIndex = rowIndex * 4 + columnIndex;
+              return (
+                <BlurFade key={`${item.card.id}-${item.index}`} delay={revealDelay + visualIndex * ANIMATION_STAGGER_UNIT} direction="up" offset={6} className="flex justify-center">
+                  {renderItem(item, visualIndex)}
+                </BlurFade>
+              );
+            })}
+          </div>
         ))}
       </div>
       {pageItems.length === 0 && emptyMessage ? <p className="mt-4 text-sm text-muted-foreground">{emptyMessage}</p> : null}

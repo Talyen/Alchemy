@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { normalizeActiveRun, normalizeSaveData, normalizeDisplayMode, normalizeUiScale, migrateMaterialInventory, migrateBuildingIds, migrateFarmIds } from "@/features/alchemy/storage";
+import { cardLibrary } from "@/lib/game-data";
 
 function activeRun(overrides: Record<string, unknown> = {}) {
   return {
@@ -48,11 +49,29 @@ describe("normalizeActiveRun", () => {
 
   it("preserves corrupted cards in active runs", () => {
     const result = normalizeActiveRun(activeRun({
-      runDeck: [{ id: "slash", title: "Slash", descriptionLines: ["Deal 6 Physical damage"], art: "", cost: 1, effects: [{ kind: "damage", damageType: "physical", amount: 6 }], corrupted: true }],
+      runDeck: [{ id: "slash", title: "Slash", descriptionLines: ["Deal 8 Physical damage"], art: "", cost: 1, effects: [{ kind: "damage", damageType: "physical", amount: 8 }], corrupted: true, corruptedValuePositions: [{ lineIndex: 0, matchIndex: 5 }] }],
     }));
 
     expect(result?.runDeck[0].corrupted).toBe(true);
-    expect(result?.runDeck[0].effects[0]).toMatchObject({ amount: 6 });
+    expect(result?.runDeck[0].descriptionLines).toEqual(["Deal 8 Physical damage"]);
+    expect(result?.runDeck[0].effects[0]).toMatchObject({ amount: 8 });
+    expect(result?.runDeck[0].corruptedValuePositions).toEqual([{ lineIndex: 0, matchIndex: 5 }]);
+    expect(result?.runDeck[0].art).toBe(cardLibrary.find((card) => card.id === "slash")?.art);
+  });
+
+  it("refreshes known saved card art without changing saved gameplay fields", () => {
+    const result = normalizeActiveRun(activeRun({
+      runDeck: [{ id: "block", title: "Block", descriptionLines: ["Gain 9 Block"], art: "stale-build-url.webp", cost: 2, effects: [{ kind: "player-status", status: "block", amount: 9 }] }],
+    }));
+
+    expect(result?.runDeck[0]).toMatchObject({
+      id: "block",
+      title: "Block",
+      descriptionLines: ["Gain 9 Block"],
+      cost: 2,
+      effects: [{ kind: "player-status", status: "block", amount: 9 }],
+    });
+    expect(result?.runDeck[0].art).toBe(cardLibrary.find((card) => card.id === "block")?.art);
   });
 
   it("passes through valid ranger characterId", () => {

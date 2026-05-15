@@ -2,7 +2,7 @@
 // Depends on card UI primitives, placeholder destination art, and corruption result shape.
 // Used by run navigation as a free rare route event with possible upside or downside.
 import { useState, type ReactNode } from "react";
-import { Dices } from "lucide-react";
+import { Dices, MoveRight } from "lucide-react";
 
 import { BlurFade } from "@/components/ui/blur-fade";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import { ANIMATION_STAGGER_UNIT, SELECTION_GRID_PAGE_SIZE } from "@/lib/game-con
 import { corruptionAltar, type BattleCard } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 import type { CorruptionResult } from "../corruption";
-import { collectionCardWidthClass, handCardWidthClass } from "../config";
+import { viewCardWidthClass } from "../config";
 import { CardSelectionGrid } from "../ui/card-selection-grid";
 import { BattleCardButton, CardTitle, getCardDisplayTitle } from "../ui/card-ui";
 import { ScreenDescription, ScreenHeader } from "../ui/shared-ui";
@@ -28,7 +28,7 @@ function CorruptionDeckCard({ card, isSelected, onSelect }: { card: BattleCard; 
       ariaLabel={`Select ${getCardDisplayTitle(card)}`}
       shimmerActive={false}
       shimmerToken={undefined}
-      className={cn(collectionCardWidthClass, isSelected && "ring-2 ring-red-500/70 ring-offset-4 ring-offset-background")}
+      className={cn(viewCardWidthClass, isSelected && "ring-2 ring-red-500/70 ring-offset-4 ring-offset-background")}
       selected={false}
     />
   );
@@ -98,7 +98,33 @@ function CorruptionIntro({ onBegin, onLeave }: { onBegin: () => void; onLeave: (
 }
 
 function CorruptionResultView({ result, onContinue }: { result: CorruptionResult; onContinue: () => void }) {
-  const [hovered, setHovered] = useState(false);
+  const [hoveredOriginal, setHoveredOriginal] = useState(false);
+  const [hoveredResult, setHoveredResult] = useState(false);
+
+  if (result.transformed) {
+    return (
+      <div className="flex flex-col items-center gap-5">
+        <ScreenHeader title="Altar of Corruption" />
+        <ScreenDescription className="text-red-100/75">The altar returns your card changed.</ScreenDescription>
+        <BlurFade delay={ANIMATION_STAGGER_UNIT} direction="up" offset={8}>
+          <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-x-8 gap-y-3">
+            <div className="col-start-1 flex flex-col items-center">
+              <BattleCardButton card={result.originalCard} hovered={hoveredOriginal} onHoverStart={() => setHoveredOriginal(true)} onHoverEnd={() => setHoveredOriginal(false)} ariaLabel={`Original: ${getCardDisplayTitle(result.originalCard)}`} shimmerActive={false} shimmerToken={undefined} className={viewCardWidthClass} />
+            </div>
+            <MoveRight className="col-start-2 h-8 w-8 shrink-0 self-center text-red-800" />
+            <div className="col-start-3 flex flex-col items-center">
+              <BattleCardButton card={result.corruptedCard} hovered={hoveredResult} onHoverStart={() => setHoveredResult(true)} onHoverEnd={() => setHoveredResult(false)} ariaLabel={`Result: ${getCardDisplayTitle(result.corruptedCard)}`} shimmerActive={false} shimmerToken={undefined} className={viewCardWidthClass} />
+            </div>
+            <p className="col-start-1 text-base font-semibold text-foreground"><CardTitle card={result.originalCard} /></p>
+            <p className="col-start-3 text-base font-semibold text-foreground"><CardTitle card={result.corruptedCard} /></p>
+          </div>
+        </BlurFade>
+        <BlurFade delay={ANIMATION_STAGGER_UNIT * 2} direction="up" offset={6}>
+          <Button size="lg" onClick={onContinue}>Continue</Button>
+        </BlurFade>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col items-center gap-5">
@@ -106,7 +132,7 @@ function CorruptionResultView({ result, onContinue }: { result: CorruptionResult
       <ScreenDescription className="text-red-100/75">The altar returns your card changed.</ScreenDescription>
       <BlurFade delay={ANIMATION_STAGGER_UNIT} direction="up" offset={8}>
         <div className="flex flex-col items-center gap-3">
-          <BattleCardButton card={result.corruptedCard} hovered={hovered} onHoverStart={() => setHovered(true)} onHoverEnd={() => setHovered(false)} ariaLabel={`Inspect ${getCardDisplayTitle(result.corruptedCard)}`} shimmerActive={false} shimmerToken={undefined} className={handCardWidthClass} />
+          <BattleCardButton card={result.corruptedCard} hovered={hoveredResult} onHoverStart={() => setHoveredResult(true)} onHoverEnd={() => setHoveredResult(false)} ariaLabel={`Inspect ${getCardDisplayTitle(result.corruptedCard)}`} shimmerActive={false} shimmerToken={undefined} className={viewCardWidthClass} />
           <p className="text-base font-semibold text-foreground"><CardTitle card={result.corruptedCard} /></p>
         </div>
       </BlurFade>

@@ -45,7 +45,6 @@ export function CompanionPanel({
           compact ? "w-[clamp(78px,17cqh,120px)]" : "w-[clamp(96px,11cqh,150px)]",
           shaking && "animate-shake",
         )}
-        data-tilt-strength="10"
         onMouseMove={setTiltFromEvent}
         onMouseLeave={clearTiltFromEvent}
         style={{ "--card-base-transform": staticCardTransform } as CSSProperties}

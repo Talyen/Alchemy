@@ -14,6 +14,8 @@ type TiltFrame = {
 
 const tiltFrames = new WeakMap<HTMLElement, TiltFrame>();
 
+export const DEFAULT_TILT_STRENGTH = 15;
+
 export function getCardRect(element: DOMRect): CardRect {
   return { x: element.x, y: element.y, width: element.width, height: element.height };
 }
@@ -35,7 +37,7 @@ export function setTiltFromEvent(event: MouseEvent<HTMLElement>) {
   frame.rafId = requestAnimationFrame(() => {
     const latest = tiltFrames.get(target);
     if (!latest) return;
-    const strength = Number(target.dataset.tiltStrength ?? 10);
+    const strength = Number(target.dataset.tiltStrength ?? DEFAULT_TILT_STRENGTH);
     target.style.setProperty("--tilt-rotate-y", `${(latest.x - 0.5) * strength}deg`);
     target.style.setProperty("--tilt-rotate-x", `${(0.5 - latest.y) * strength}deg`);
     latest.rafId = null;

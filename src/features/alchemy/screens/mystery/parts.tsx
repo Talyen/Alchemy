@@ -11,7 +11,7 @@ import { SELECTION_GRID_PAGE_SIZE } from "@/lib/game-constants";
 import { type BattleCard, type TrinketEntry } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
-import { cardSurfaceClass, collectionCardWidthClass, handCardWidthClass, staticCardTransform } from "../../config";
+import { cardSurfaceClass, collectionCardWidthClass, staticCardTransform, viewCardWidthClass } from "../../config";
 import type { MysteryChoice, MysteryEvent, MysteryEffect } from "../../mystery-events";
 import { clearTiltFromEvent, setTiltFromEvent } from "../../utils";
 import { CardSelectionGrid } from "../../ui/card-selection-grid";
@@ -69,7 +69,7 @@ export function MysteryRewardSummary({
           ariaLabel={getCardDisplayTitle(card)}
           shimmerActive={false}
           shimmerToken={undefined}
-          className={handCardWidthClass}
+          className={viewCardWidthClass}
         />
         <p className="text-sm font-semibold text-foreground"><CardTitle card={card} /></p>
         <p className="text-sm text-muted-foreground">Added <CardTitle card={card} /> to your Deck</p>
@@ -103,7 +103,6 @@ export function MysteryRewardSummary({
                   ) : null}
                   <div
                     className={cn("tilt-surface", cardSurfaceClass, collectionCardWidthClass)}
-                    data-tilt-strength="11"
                     onMouseMove={setTiltFromEvent}
                     onMouseLeave={clearTiltFromEvent}
                     style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
@@ -175,7 +174,7 @@ export function RemoveCardPicker({
               onClick={() => setSelectedIndex(index)}
               className={cn("flex flex-col items-center gap-2 rounded-xl border-2 p-2 transition-colors", isSelected ? "border-primary bg-primary/10 ring-1 ring-primary" : "border-transparent hover:border-border")}
             >
-              <BattleCardButton card={card} hovered={isSelected} onHoverStart={() => {}} onHoverEnd={() => {}} ariaLabel={getCardDisplayTitle(card)} shimmerActive={false} shimmerToken={undefined} className={collectionCardWidthClass} />
+              <BattleCardButton card={card} hovered={isSelected} onHoverStart={() => {}} onHoverEnd={() => {}} ariaLabel={getCardDisplayTitle(card)} shimmerActive={false} shimmerToken={undefined} className={viewCardWidthClass} />
               <p className="text-xs text-foreground"><CardTitle card={card} /></p>
             </button>
           );
@@ -198,17 +197,22 @@ export function CardChoicePicker({
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const items = choices.map((card, index) => ({ card, index }));
 
   return (
     <div className="state-swap space-y-6 text-center">
       <ScreenHeader title="Choose a Card" />
       <p className="text-base text-muted-foreground">Select one of the scrolls to add to your deck</p>
-      <div className="flex flex-wrap items-start justify-center gap-6">
-        {choices.map((card, i) => {
+      <CardSelectionGrid
+        items={items}
+        page={0}
+        onPageChange={() => {}}
+        pageSize={choices.length}
+        revealDelay={ANIMATION_STAGGER_UNIT}
+        renderItem={({ card }) => {
           const isSelected = selectedId === card.id;
           return (
             <BattleCardButton
-              key={card.id}
               card={card}
               hovered={hoveredId === card.id}
               onHoverStart={() => setHoveredId(card.id)}
@@ -217,14 +221,12 @@ export function CardChoicePicker({
               ariaLabel={`Select ${getCardDisplayTitle(card)}`}
               shimmerActive={false}
               shimmerToken={undefined}
-              className={collectionCardWidthClass}
-              wrapperClassName="stagger-item relative flex justify-center"
-              wrapperStyle={{ "--stagger-index": i } as CSSProperties}
+              className={viewCardWidthClass}
               selected={isSelected}
             />
           );
-        })}
-      </div>
+        }}
+      />
       <Button size="lg" disabled={selectedId === null} onClick={() => { if (selectedId !== null) onSelect(selectedId); }}>Add Card</Button>
     </div>
   );
@@ -254,7 +256,6 @@ export function MysteryEventIntro({
         <div
           className="tilt-surface rounded-[18px]"
           style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
-          data-tilt-strength="12"
           onMouseMove={setTiltFromEvent}
           onMouseLeave={clearTiltFromEvent}
         >
@@ -273,7 +274,7 @@ export function MysteryEventIntro({
           onHoverEnd={() => setHoveredCardId(null)}
           ariaLabel={featuredCard.title}
           shimmerActive={false} shimmerToken={undefined}
-          className={handCardWidthClass}
+          className={viewCardWidthClass}
         />
       ) : null}
       <TextAnimate

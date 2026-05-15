@@ -13,7 +13,7 @@ import {
 import { cn } from "@/lib/utils";
 
 import { PaginationControls } from "./shared-ui";
-import { cardSurfaceClass, collectionCardWidthClass, collectionTabMeta, staticCardTransform } from "../config";
+import { cardSurfaceClass, collectionTabMeta, staticCardTransform, viewCardWidthClass } from "../config";
 import type { CollectionTab } from "../types";
 import { clearTiltFromEvent, getHoverId, setTiltFromEvent } from "../utils";
 import { DetailPopup } from "./card-ui";
@@ -80,11 +80,10 @@ function CompendiumTile({
           if (item.hoverScope === "collection-card") playCardSound(item.id);
           else if (item.hoverScope === "collection-bestiary") playEnemyAttack(item.id);
         }}
-        data-tilt-strength="11"
         className={cn(
           "tilt-surface group w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
           cardSurfaceClass,
-          collectionCardWidthClass,
+          viewCardWidthClass,
         )}
         style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
       >
@@ -95,6 +94,7 @@ function CompendiumTile({
           className={cn(
             "block w-full rounded-[30px] transition duration-300",
             item.frameType === "trinket" ? "aspect-square" : "aspect-[3/4]",
+            "object-cover",
             item.discovered ? "opacity-100" : "grayscale opacity-45",
           )}
           loading="eager"
@@ -151,7 +151,7 @@ export function CollectionGrid({
         );
       })}
       {Array.from({ length: Math.max(0, collectionPageSize - pageItems.length) }).map((_, index) => (
-        <div key={`collection-filler-${index}`} className="w-[clamp(156px,15vw,210px)]" aria-hidden="true" />
+        <div key={`collection-filler-${index}`} className={viewCardWidthClass} aria-hidden="true" />
       ))}
     </div>
   );

@@ -91,7 +91,7 @@ function DifficultyCard({
           />
         )}
         {showTilt ? (
-          <div className={cn("tilt-surface relative overflow-hidden rounded-[22px] aspect-[5/6]", battleCardWidthClass)} style={{ "--card-base-transform": staticCardTransform } as CSSProperties} data-tilt-strength="12" onMouseMove={setTiltFromEvent} onMouseEnter={() => onHoverShimmer(difficultyId)} onMouseLeave={clearTiltFromEvent}>
+          <div className={cn("tilt-surface relative overflow-hidden rounded-[22px] aspect-[5/6]", battleCardWidthClass)} style={{ "--card-base-transform": staticCardTransform } as CSSProperties} onMouseMove={setTiltFromEvent} onMouseEnter={() => onHoverShimmer(difficultyId)} onMouseLeave={clearTiltFromEvent}>
             <ShimmerOverlay active={isShimmer} token={shimmerToken} rounded="rounded-[22px]" />
             <img
               src={diffArt}
@@ -168,7 +168,7 @@ export function DifficultySelectScreen({
 
       <div className="flex flex-wrap items-start justify-center gap-6">
         <div className="flex flex-col items-center gap-3 rounded-[26px] border border-border/60 bg-card/60 px-4 pb-6 pt-5">
-          <div className={cn("tilt-surface relative overflow-hidden rounded-[22px] aspect-[3/4]", battleCardWidthClass)} style={{ "--card-base-transform": staticCardTransform } as CSSProperties} data-tilt-strength="15" onMouseMove={setTiltFromEvent} onMouseEnter={() => maybeTriggerShimmer("character")} onMouseLeave={clearTiltFromEvent}>
+          <div className={cn("tilt-surface relative overflow-hidden rounded-[22px] aspect-[3/4]", battleCardWidthClass)} style={{ "--card-base-transform": staticCardTransform } as CSSProperties} onMouseMove={setTiltFromEvent} onMouseEnter={() => maybeTriggerShimmer("character")} onMouseLeave={clearTiltFromEvent}>
             <ShimmerOverlay active={shimmerState?.cardId === "character"} token={shimmerState?.token} rounded="rounded-[22px]" />
             <img
               src={art}

@@ -10,7 +10,7 @@ import { matIconMap, matPillStyle, matTextColor } from "../ui/material-icons";
 
 import { BattleCardButton, DetailPopup, getCardDisplayTitle } from "../ui/card-ui";
 import { ScreenHeader, ShimmerOverlay } from "../ui/shared-ui";
-import { cardSurfaceClass, collectionCardWidthClass, staticCardTransform } from "../config";
+import { cardSurfaceClass, staticCardTransform, viewCardWidthClass } from "../config";
 import { clearTiltFromEvent, getHoverId, setTiltFromEvent } from "../utils";
 
 function TrinketRewardButton({
@@ -45,11 +45,10 @@ function TrinketRewardButton({
         onBlur={onHoverEnd}
         onMouseMove={setTiltFromEvent}
         onMouseLeave={clearTiltFromEvent}
-        data-tilt-strength="11"
         className={cn(
           "tilt-surface group w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
           cardSurfaceClass,
-          collectionCardWidthClass,
+          viewCardWidthClass,
           selected ? "ring-2 ring-primary ring-offset-4 ring-offset-background" : null,
         )}
         style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
@@ -135,10 +134,9 @@ export function RewardsScreen({
                 onHoverEnd={() => onHoverChange((current) => (current === hoverId ? null : current))}
                 onClick={() => onSelectReward(card.id)}
                 ariaLabel={`Select ${getCardDisplayTitle(card)}`}
-                tiltStrength={15}
                 shimmerActive={shimmerState?.cardId === hoverId}
                 shimmerToken={shimmerState?.token}
-                className={collectionCardWidthClass}
+                className={viewCardWidthClass}
                 wrapperClassName="stagger-item relative flex justify-center"
                 wrapperStyle={{ "--stagger-index": index } as CSSProperties}
                 selected={selectedRewardId === card.id}
