@@ -1,7 +1,7 @@
 // Option save migration helpers for display and UI preference fields.
 // Depends on save defaults and persisted option type contracts.
 import type { DisplayMode, UiScale } from "../types";
-import { defaultSaveData } from "./types";
+import { defaultSaveData } from "./defaults";
 
 // Display mode is platform-facing, so unknown persisted values fall back to the default mode.
 export function normalizeDisplayMode(displayMode: unknown): DisplayMode {

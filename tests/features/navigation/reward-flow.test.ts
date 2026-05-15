@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { createEmptyRewardState, createBossRewardState, createCombatRewardState, getVictoryGoldTotal } from "@/features/alchemy/navigation/reward-flow";
-import { emptyInventory } from "@/lib/homestead/types";
+import { emptyInventory } from "@/lib/homestead/inventory";
 
 vi.mock("@/features/alchemy/reward-utils", () => ({
   selectRewardCards: vi.fn(() => [{ id: "mock-card", title: "Mock", descriptionLines: [""], art: "", cost: 1, effects: [] }]),

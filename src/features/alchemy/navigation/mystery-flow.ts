@@ -4,7 +4,8 @@ import { cardLibrary, trinketLibrary, type BattleCard, type KeywordId } from "@/
 import { playGoldGain, playGoldSpend } from "@/lib/audio";
 import { MIXED_POTION_CARD_ID, MYSTERY_CARD_CHOICES } from "@/lib/game-constants";
 import { appendUnique } from "@/lib/utils";
-import { emptyInventory, type MaterialId, type MaterialInventory } from "@/lib/homestead/types";
+import type { MaterialId, MaterialInventory } from "@/lib/homestead/types";
+import { emptyInventory } from "@/lib/homestead/inventory";
 import type { Dispatch, SetStateAction } from "react";
 
 import type { MysteryEffect } from "../mystery-events";

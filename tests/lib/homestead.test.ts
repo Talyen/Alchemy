@@ -1,8 +1,9 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import {
-  emptyInventory, addInventory, canAfford, subtractInventory,
-  MATERIAL_IDS, materialLabels, materialIcons, defaultHomesteadEffects,
+  MATERIAL_IDS, materialLabels, materialIcons,
 } from "@/lib/homestead/types";
+import { emptyInventory, addInventory, canAfford, subtractInventory } from "@/lib/homestead/inventory";
+import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
 import { computeHomesteadEffects, mergeIntoManifest } from "@/lib/homestead/effects";
 import { getEnemyMaterialLoot, getEndOfRunMaterials } from "@/lib/homestead/loot";

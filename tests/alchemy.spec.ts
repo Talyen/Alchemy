@@ -1,5 +1,11 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { startRun, playUntilVictory, waitForEnemyTurn } from "./helpers";
+
+async function readPlayerBlock(page: Page) {
+  const blockChip = page.getByRole("button", { name: /^Block \d+$/ });
+  const label = await blockChip.first().getAttribute("aria-label");
+  return Number(label?.match(/\d+/)?.[0] ?? 0);
+}
 
 test.describe("Block Mechanics", () => {
   test("block card absorbs attack damage and halves at end of turn", async ({ page }) => {
@@ -13,10 +19,11 @@ test.describe("Block Mechanics", () => {
 
     const hpText = await page.locator("text=/\\d+\\/30/").first().textContent();
     const hpBefore = Number(hpText?.split("/")[0]);
+    const blockBefore = await readPlayerBlock(page);
 
     await blockCard.click();
     await page.waitForTimeout(300);
-    await expect(page.getByRole("button", { name: "Block 5" })).toBeVisible();
+    await expect(page.getByRole("button", { name: `Block ${blockBefore + 5}` })).toBeVisible();
 
     await waitForEnemyTurn(page);
 
@@ -41,13 +48,14 @@ test.describe("Block Mechanics", () => {
 
     await blockCard.click();
     await page.waitForTimeout(300);
-    await expect(page.getByRole("button", { name: "Block 5" })).toBeVisible();
+    const blockAfterBlockCard = await readPlayerBlock(page);
+    await expect(page.getByRole("button", { name: `Block ${blockAfterBlockCard}` })).toBeVisible();
 
     await aegisCard.click();
     await page.waitForTimeout(300);
 
-    await expect(page.locator("text=/25\\/30/").last()).toBeVisible({ timeout: 3000 });
-    await expect(page.getByRole("button", { name: "Block 5" })).toBeVisible();
+    await expect(page.locator(`text=/${30 - blockAfterBlockCard}\\/30/`).last()).toBeVisible({ timeout: 3000 });
+    await expect(page.getByRole("button", { name: `Block ${blockAfterBlockCard}` })).toBeVisible();
   });
 });
 

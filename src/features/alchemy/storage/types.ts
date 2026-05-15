@@ -28,5 +28,3 @@ export type SaveData = {
   completedResearch: ResearchId[];
   completedDifficulties: Record<CharacterId, DifficultyId[]>;
 };
-
-export { defaultSaveData } from "./defaults";

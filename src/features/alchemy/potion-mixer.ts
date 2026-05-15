@@ -5,6 +5,8 @@ import type { BattleCard } from "@/lib/game-data";
 import { mixedPotion } from "@/lib/game-data";
 import { CONSUME_DESCRIPTION_LINE, MIXED_POTION_CARD_ID, MIXED_POTION_COST, MIXED_POTION_TITLE } from "@/lib/game-constants";
 
+export const MIXED_POTION_ERROR = "Cannot mix with an existing Mixed Potion";
+
 /** Pure logic for combining two potion cards into a Mixed Potion.
  * Used by the Alchemist's Shop controller so the mixing logic is independently testable. */
 export function createMixedPotion(cardA: BattleCard, cardB: BattleCard): BattleCard {
@@ -12,7 +14,7 @@ export function createMixedPotion(cardA: BattleCard, cardB: BattleCard): BattleC
   // Same potion doubles numeric effects; different potions concatenate effects, and Consume
   // is normalized to one final line so descriptions do not accumulate duplicates.
   if (cardA.id === MIXED_POTION_CARD_ID || cardB.id === MIXED_POTION_CARD_ID) {
-    throw new Error("Cannot mix with an existing Mixed Potion");
+    throw new Error(MIXED_POTION_ERROR);
   }
 
   const sameCard = cardA.id === cardB.id;
@@ -49,6 +51,16 @@ export function createMixedPotion(cardA: BattleCard, cardB: BattleCard): BattleC
     consume: true,
     effects: effects as BattleCard["effects"],
   };
+}
+
+export function tryCreateMixedPotion(cardA: BattleCard | undefined, cardB: BattleCard | undefined): BattleCard | null {
+  if (!cardA || !cardB) return null;
+  try {
+    return createMixedPotion(cardA, cardB);
+  } catch {
+    console.error(`Mix failed: ${MIXED_POTION_ERROR}`);
+    return null;
+  }
 }
 
 /** Removes the two cards at the given indices from the deck and appends the mixed potion.

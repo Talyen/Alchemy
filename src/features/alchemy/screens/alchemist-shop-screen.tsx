@@ -11,7 +11,6 @@ import { BattleCardButton, PurchasableCardItem, SelectableShopCard } from "../ui
 import { CardSelectionGrid } from "../ui/card-selection-grid";
 import { GoldDisplay, ScreenDescription, ScreenHeader, ServiceButton, staggerDelay } from "../ui/shared-ui";
 import { handCardWidthClass } from "../config";
-import { createMixedPotion } from "../potion-mixer";
 
 export function AlchemistShopScreen({
   gold, potionCards, runDeck, refreshesLeft, mixUsed, potionPrice, mixPrice,
@@ -19,7 +18,7 @@ export function AlchemistShopScreen({
 }: {
   gold: number; potionCards: BattleCard[]; runDeck: BattleCard[]; refreshesLeft: number; mixUsed: boolean; potionPrice: number; mixPrice: number;
   onBuyCard: (card: BattleCard) => void; onRefresh: () => void;
-  onMixPotions: (indexA: number, indexB: number) => void; onContinue: () => void;
+  onMixPotions: (indexA: number, indexB: number) => BattleCard | null; onContinue: () => void;
 }) {
   const [mixMode, setMixMode] = useState(false);
   const [mixStep, setMixStep] = useState(0);
@@ -56,13 +55,8 @@ export function AlchemistShopScreen({
     // Build a preview result before mutating the deck so the reveal can show the crafted
     // card after the controller removes the two source potions.
     if (selectedA === null || selectedB === null) return;
-    const cardA = runDeck[selectedA];
-    const cardB = runDeck[selectedB];
-    try {
-      const result = createMixedPotion(cardA, cardB);
-      onMixPotions(selectedA, selectedB);
-      setMixedCard(result);
-    } catch { console.error("Mix failed: source cards may include an existing Mixed Potion"); return; }
+    const result = onMixPotions(selectedA, selectedB);
+    if (result) setMixedCard(result);
   }
 
   const mixableCards = runDeck.map((c, i) => ({ card: c, index: i })).filter(({ card }) => card.id.includes(POTION_CARD_ID_FRAGMENT) && card.id !== MIXED_POTION_CARD_ID);

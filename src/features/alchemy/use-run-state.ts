@@ -21,6 +21,24 @@ type RunState = {
   selectedDifficulty: DifficultyId | null;
 };
 
+type RunFieldSetter<T> = (action: T | ((prev: T) => T)) => void;
+
+export type RunStateController = RunState & {
+  setRunDeck: RunFieldSetter<BattleCard[]>;
+  setRunGold: RunFieldSetter<number>;
+  setRunPlayerHealth: RunFieldSetter<number>;
+  setRunMaxHealth: RunFieldSetter<number>;
+  setRoomsEncountered: RunFieldSetter<number>;
+  setCurrentAct: RunFieldSetter<number>;
+  setDestinationIndexInAct: RunFieldSetter<number>;
+  setCompletedDestinations: RunFieldSetter<Destination[]>;
+  setRunTrinkets: RunFieldSetter<string[]>;
+  setSelectedDifficulty: RunFieldSetter<DifficultyId | null>;
+  setCharacter: (selectedId: CharacterId) => void;
+  reset: () => void;
+  addRunGold: (amount: number) => void;
+};
+
 function createInitialRunState(
   initialActiveRun: ActiveRunData | null,
   fallbackCharacterId: CharacterId = "knight",
@@ -44,7 +62,7 @@ function createInitialRunState(
   };
 }
 
-export function useRunState(initialActiveRun: ActiveRunData | null) {
+export function useRunState(initialActiveRun: ActiveRunData | null): RunStateController {
   // Run data is stored as one object so multi-field transitions describe one coherent run.
   const [state, setState] = useState<RunState>(() => createInitialRunState(initialActiveRun));
 

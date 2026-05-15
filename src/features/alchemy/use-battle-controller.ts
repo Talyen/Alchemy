@@ -27,8 +27,8 @@ import { mergeIntoManifest } from "@/lib/homestead/effects";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import { CARD_ACTIVATION_ROTATION_DEGREES, COMPANION_ATTACK_DELAY, ENEMY_PHASE_DELAY } from "@/lib/game-constants";
 import { getCardRect, getEnemyStatusChips, getHoverId, getPlayerStatusChips } from "./utils";
-import type { useRunState } from "./use-run-state";
-import type { useTalentState } from "./use-talent-state";
+import type { RunStateController } from "./use-run-state";
+import type { TalentStateController } from "./use-talent-state";
 import {
   shouldPlayCardGoldGain,
   shouldShakeEnemyFromCombatTexts,
@@ -49,8 +49,8 @@ export function useBattleController({
   setHoveredCardId,
   initialHasActiveBattle,
 }: {
-  run: ReturnType<typeof useRunState>;
-  talents: ReturnType<typeof useTalentState>;
+  run: RunStateController;
+  talents: TalentStateController;
   discoveredCardIds: string[];
   setDiscoveredCardIds: React.Dispatch<React.SetStateAction<string[]>>;
   setEncounteredEnemyIds: React.Dispatch<React.SetStateAction<string[]>>;

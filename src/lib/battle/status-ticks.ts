@@ -2,7 +2,7 @@
 // Depends on effect helpers, combat constants, and battle state types.
 import { applyPlayerCombatDamage, applyPlayerHealing, clampHealth, type BattleState, type CombatTextEvent } from "./types";
 import { getEnemyDamageMultiplier } from "./status-effects";
-import { mergeCombatText } from "./apply-effects";
+import { mergeCombatText } from "./combat-text";
 import { HALF_DIVISOR, PERCENT_DENOMINATOR, POISON_DECAY_AMOUNT, POISON_GAIN_AMOUNT } from "../game-constants";
 
 // ----- Enemy DoT ticks -----

@@ -2,7 +2,7 @@
 // Each enemy drops thematic materials based on its identity.
 
 import type { MaterialId, MaterialInventory } from "./types";
-import { emptyInventory, addInventory } from "./types";
+import { emptyInventory, addInventory } from "./inventory";
 
 // Per-enemy loot table: a guaranteed drop, plus possible bonus drops with weight.
 type MaterialLootEntry = { material: MaterialId; min: number; max: number; weight: number };

@@ -1,7 +1,7 @@
 // Trinket manifest defaults and ID-to-effect conversion for run trinkets.
 // Depends on the battle TrinketManifest shape only.
 // Used during battle creation and shop pricing so combat reads flat trinket bonuses.
-import type { TrinketManifest } from "./battle";
+import type { TrinketManifest } from "./battle/types";
 
 export const defaultTrinketEffects: TrinketManifest = {
   extraDrawPerBattle: 0,

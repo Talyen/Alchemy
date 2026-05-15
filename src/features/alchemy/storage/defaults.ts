@@ -1,7 +1,7 @@
 // Default save data for first boot and per-field fallback when loading older saves.
 // Every SaveData field has a safe default here so null-coalescing elsewhere is optional.
 import { allStartingDeckCardIds } from "@/lib/game-data";
-import { emptyInventory } from "@/lib/homestead/types";
+import { emptyInventory } from "@/lib/homestead/inventory";
 import type { SaveData } from "./types";
 
 export const defaultSaveData: SaveData = {

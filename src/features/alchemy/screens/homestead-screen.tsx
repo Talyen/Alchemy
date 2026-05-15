@@ -16,9 +16,9 @@ import {
   type HomesteadResearch,
   type MaterialInventory,
   type ResearchId,
-  canAfford,
   materialLabels,
 } from "@/lib/homestead/types";
+import { canAfford } from "@/lib/homestead/inventory";
 import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
 import blacksmithsForge from "@/assets/optimized/blacksmiths-forge.webp";
 import chickenCoop from "@/assets/optimized/chicken-coop.webp";

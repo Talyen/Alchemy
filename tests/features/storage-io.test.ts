@@ -1,5 +1,6 @@
 import { describe, expect, it, beforeEach, afterEach } from "vitest";
-import { defaultSaveData, type SaveData } from "@/features/alchemy/storage/types";
+import type { SaveData } from "@/features/alchemy/storage/types";
+import { defaultSaveData } from "@/features/alchemy/storage/defaults";
 
 const { SAVE_KEY } = await import("@/lib/game-constants");
 

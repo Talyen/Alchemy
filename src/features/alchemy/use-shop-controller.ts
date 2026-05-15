@@ -6,7 +6,7 @@ import { cardLibrary, type BattleCard } from "@/lib/game-data";
 import { playGoldSpend } from "@/lib/audio";
 import { computeTrinketManifest } from "@/lib/trinkets";
 import { appendUnique } from "@/lib/utils";
-import { createMixedPotion, applyMixToDeck } from "./potion-mixer";
+import { applyMixToDeck, tryCreateMixedPotion } from "./potion-mixer";
 import { useShopState } from "./use-shop-state";
 import {
   ALCHEMIST_MIX_PRICE, ALCHEMIST_POTION_PRICE, ALCHEMIST_REFRESH_PRICE,
@@ -14,15 +14,15 @@ import {
   SHOP_CARDS_OFFERED, ALCHEMIST_POTIONS_OFFERED, MIXED_POTION_CARD_ID, POTION_CARD_ID_FRAGMENT,
 } from "@/lib/game-constants";
 import { resampleItems } from "./utils";
-import type { useRunState } from "./use-run-state";
-import type { useTalentState } from "./use-talent-state";
+import type { RunStateController } from "./use-run-state";
+import type { TalentStateController } from "./use-talent-state";
 
 export function useShopController({
   run, talents,
   setDiscoveredCardIds,
 }: {
-  run: ReturnType<typeof useRunState>;
-  talents: ReturnType<typeof useTalentState>;
+  run: RunStateController;
+  talents: TalentStateController;
   setDiscoveredCardIds: React.Dispatch<React.SetStateAction<string[]>>;
 }) {
   // Purchase/removal/refresh/mixing rules are grouped here so sampled offer state remains
@@ -52,7 +52,7 @@ export function useShopController({
       price = Math.max(0, price - computeTrinketManifest(run.runTrinkets).merchantsFavorDiscount);
       shopDiscountConsumed.current = true;
     }
-    if (run.runGold < price) return;
+    if (run.runGold < price) return null;
     if (price > 0) playGoldSpend();
     run.setRunGold((p) => Math.max(0, p - price)); run.setRunDeck((p) => [...p, card]);
     setDiscoveredCardIds((cur) => appendUnique(cur, card.id));
@@ -62,7 +62,7 @@ export function useShopController({
   function handleShopRemoveCard(index: number) {
     if (shopState.removeUsed) return;
     const price = Math.max(0, SHOP_REMOVE_PRICE - talents.talentEffects.removeCardDiscount);
-    if (run.runGold < price) return;
+    if (run.runGold < price) return null;
     if (price > 0) playGoldSpend();
     run.setRunGold((p) => Math.max(0, p - price)); run.setRunDeck((p) => p.filter((_, i) => i !== index));
     setShopState((p) => ({ ...p, removeUsed: true }));
@@ -86,7 +86,7 @@ export function useShopController({
       price = Math.max(0, price - computeTrinketManifest(run.runTrinkets).merchantsFavorDiscount);
       alchemistDiscountConsumed.current = true;
     }
-    if (run.runGold < price) return;
+    if (run.runGold < price) return null;
     if (price > 0) playGoldSpend();
     run.setRunGold((p) => Math.max(0, p - price)); run.setRunDeck((p) => [...p, card]);
     setDiscoveredCardIds((cur) => appendUnique(cur, card.id));
@@ -103,28 +103,24 @@ export function useShopController({
     setAlchemistState((p) => ({ ...p, potions: resampleItems(potionPool, p.potions, ALCHEMIST_POTIONS_OFFERED), refreshesLeft: p.refreshesLeft - 1 }));
   }
 
-  function handleAlchemistMixPotions(indexA: number, indexB: number) {
+  function handleAlchemistMixPotions(indexA: number, indexB: number): BattleCard | null {
     // Validate deck indices through createMixedPotion before spending gold. Only a valid
     // mix removes originals, appends the crafted card, and records Mixed Potion discovery.
     const price = Math.max(0, ALCHEMIST_MIX_PRICE - talents.talentEffects.mixPotionDiscount);
-    if (run.runGold < price) return;
+    if (run.runGold < price) return null;
     const deck = run.runDeck;
     const cardA = deck[indexA];
     const cardB = deck[indexB];
 
-    let mixed: BattleCard;
-    try {
-      mixed = createMixedPotion(cardA, cardB);
-    } catch {
-      console.error("Mix failed: source cards may include an existing Mixed Potion");
-      return;
-    }
+    const mixed = tryCreateMixedPotion(cardA, cardB);
+    if (!mixed) return null;
 
     if (price > 0) playGoldSpend();
     run.setRunGold((p) => Math.max(0, p - price));
     run.setRunDeck((p) => applyMixToDeck(p, indexA, indexB, mixed));
     setAlchemistState((p) => ({ ...p, mixUsed: true }));
     setDiscoveredCardIds((cur) => appendUnique(cur, MIXED_POTION_CARD_ID));
+    return mixed;
   }
 
   return {

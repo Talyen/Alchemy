@@ -12,7 +12,9 @@
 // Branching: stun/freeze skip enemy attack phase entirely; Wish intercepts player
 // card play; haste skips enemy phase and returns to player immediately.
 import { drawCards } from "./draw";
-import { applyCardEffects, applyIronwoodBuckler, mergeCombatText } from "./apply-effects";
+import { applyCardEffects } from "./apply-effects";
+import { mergeCombatText } from "./combat-text";
+import { applyIronwoodBuckler } from "./trinket-effects";
 import { tickEnemyStatuses, tickPlayerStatuses } from "./status-ticks";
 import { harmfulPlayerStatusIds } from "@/lib/game-data";
 import type { BattleCard, EnemyAttackEffect } from "@/lib/game-data/types";

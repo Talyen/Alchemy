@@ -11,7 +11,8 @@ import {
   type BattleState,
   type CombatTextEvent,
 } from "./types";
-import { mergeCombatText, applyLuckyCloverGold } from "./apply-effects";
+import { mergeCombatText } from "./combat-text";
+import { applyLuckyCloverGold } from "./trinket-effects";
 import {
   BLEED_STATUS_MULTIPLIER,
   FIRST_EFFECT_MULTIPLIER,

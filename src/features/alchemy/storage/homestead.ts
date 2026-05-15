@@ -2,7 +2,7 @@
 // Depends on homestead persisted type contracts and save defaults.
 import type { BuildingId, FarmId, MaterialInventory } from "@/lib/homestead/types";
 
-import { defaultSaveData } from "./types";
+import { defaultSaveData } from "./defaults";
 
 // Rebuild key-by-key so saves from before a material existed receive a zero default while
 // preserving any resources the player had already earned.

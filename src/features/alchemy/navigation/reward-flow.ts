@@ -3,7 +3,8 @@
 import { cardLibrary, trinketLibrary, type BattleCard, type TrinketEntry } from "@/lib/game-data";
 import { BOSS_TRINKET_REWARD_CHOICES, ELITE_TRINKET_REWARD_CHANCE, REWARD_CARD_CHOICES } from "@/lib/game-constants";
 import { computeTrinketManifest } from "@/lib/trinkets";
-import { emptyInventory, type MaterialInventory } from "@/lib/homestead/types";
+import type { MaterialInventory } from "@/lib/homestead/types";
+import { emptyInventory } from "@/lib/homestead/inventory";
 import type { BattleState } from "@/lib/battle";
 import { selectRewardCards, selectRewardTrinkets, REWARD_TRINKET_CHANCE } from "../reward-utils";
 import type { Destination } from "../types";
@@ -36,6 +37,23 @@ type CombatRewardInput = {
   destinations: Destination[];
   trinketIds: string[];
   goldMultiplier?: number;
+};
+
+export type VictoryGoldInput = {
+  battleState: Pick<BattleState, "gold">;
+  runGold: number;
+  runTrinkets: string[];
+  gold: number;
+  eliteBonus: number;
+  bossBonus: number;
+  talentGoldPerCombat: number;
+  goldMultiplier: number;
+};
+
+export type VictoryGoldResult = {
+  unmultipliedTotal: number;
+  earnedBeforeMultiplier: number;
+  persistedRunGold: number;
 };
 
 // Empty reward state is reused by initialization, reward cleanup, and full run reset.
@@ -74,7 +92,26 @@ export function createCombatRewardState({ battleState, runDeck, gold, eliteBonus
 }
 
 // Computes the total post-victory gold with all run/talent/trinket modifiers applied.
-export function getVictoryGoldTotal(battleState: BattleState, runTrinkets: string[], gold: number, eliteBonus: number, bossBonus: number, talentGoldPerCombat: number): number {
+export function getVictoryGoldTotal(battleState: Pick<BattleState, "gold">, runTrinkets: string[], gold: number, eliteBonus: number, bossBonus: number, talentGoldPerCombat: number): number {
   const trinketGoldBonus = computeTrinketManifest(runTrinkets).smugglersMapGoldBonus;
   return battleState.gold + gold + eliteBonus + bossBonus + talentGoldPerCombat + trinketGoldBonus;
+}
+
+export function computeVictoryGoldResult({
+  battleState,
+  runGold,
+  runTrinkets,
+  gold,
+  eliteBonus,
+  bossBonus,
+  talentGoldPerCombat,
+  goldMultiplier,
+}: VictoryGoldInput): VictoryGoldResult {
+  const unmultipliedTotal = getVictoryGoldTotal(battleState, runTrinkets, gold, eliteBonus, bossBonus, talentGoldPerCombat);
+  const earnedBeforeMultiplier = unmultipliedTotal - runGold;
+  return {
+    unmultipliedTotal,
+    earnedBeforeMultiplier,
+    persistedRunGold: runGold + Math.floor(earnedBeforeMultiplier * goldMultiplier),
+  };
 }

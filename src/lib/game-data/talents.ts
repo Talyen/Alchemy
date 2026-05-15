@@ -35,6 +35,14 @@ function setEffect<K extends keyof TalentEffectManifest>(field: K, value: Talent
   return { kind: "set", field, value } as TalentEffectSetOperation;
 }
 
+function placeholderTalents(keywordId: KeywordId, idPrefix: string, start: number, end: number): TalentDefinition[] {
+  return Array.from({ length: end - start + 1 }, (_, index) => ({
+    id: `${idPrefix}-${start + index}`,
+    keywordId,
+    description: "Placeholder talent (NYI)",
+  }));
+}
+
 // The full pool of unlockable talents. Most keywords have 10 talents for a 2x5 or equivalent grid.
 export const talentPool: TalentDefinition[] = [
   // --- Physical ---
@@ -55,11 +63,7 @@ export const talentPool: TalentDefinition[] = [
   { id: "stun-next-free", keywordId: "stun", description: "When you Stun an enemy, your next card is free", effects: [setEffect("nextCardFreeOnStun", true)] },
   { id: "stun-duration-1", keywordId: "stun", description: "Stun effects last 1 turn longer", effects: [setEffect("stunDurationExtension", 1)] },
   { id: "stun-double-damage", keywordId: "stun", description: "Stunned enemies take double damage", effects: [setEffect("stunDoubleDamage", true)] },
-  { id: "stun-placeholder-2", keywordId: "stun", description: "Placeholder talent (NYI)" },
-  { id: "stun-placeholder-3", keywordId: "stun", description: "Placeholder talent (NYI)" },
-  { id: "stun-placeholder-4", keywordId: "stun", description: "Placeholder talent (NYI)" },
-  { id: "stun-placeholder-5", keywordId: "stun", description: "Placeholder talent (NYI)" },
-  { id: "stun-placeholder-6", keywordId: "stun", description: "Placeholder talent (NYI)" },
+  ...placeholderTalents("stun", "stun-placeholder", 2, 6),
 
   // --- Block ---
   { id: "block-start", keywordId: "block", description: "Start combat with 10 Block", effects: [setEffect("startBlock", 10)] },
@@ -68,34 +72,21 @@ export const talentPool: TalentDefinition[] = [
   { id: "block-prevent-poison", keywordId: "block", description: "Block prevents receiving Poison status effects", effects: [setEffect("blockPreventsPoison", true)] },
   { id: "block-prevent-stun", keywordId: "block", description: "Block prevents receiving Stun buildup", effects: [setEffect("blockPreventsStun", true)] },
   { id: "block-absorb-physical", keywordId: "block", description: "Block absorbs 20% more Physical damage", effects: [setEffect("blockAbsorbPhysicalBonus", 20)] },
-  { id: "block-amount-1", keywordId: "block", description: "Placeholder talent (NYI)" },
-  { id: "block-amount-2", keywordId: "block", description: "Placeholder talent (NYI)" },
-  { id: "block-amount-3", keywordId: "block", description: "Placeholder talent (NYI)" },
-  { id: "block-amount-4", keywordId: "block", description: "Placeholder talent (NYI)" },
+  ...placeholderTalents("block", "block-amount", 1, 4),
 
   // --- Forge ---
   { id: "forge-to-burn", keywordId: "forge", description: "Forge also increases Burn damage", effects: [setEffect("forgeToBurn", true)] },
   { id: "forge-to-holy", keywordId: "forge", description: "Forge also increases Holy damage", effects: [setEffect("forgeToHoly", true)] },
   { id: "forge-to-block", keywordId: "forge", description: "Forge also increases Block amount", effects: [setEffect("forgeToBlock", true)] },
   { id: "forge-burn-burst", keywordId: "forge", description: "Upon reaching 4 Forge, deal 8 Burn", effects: [setEffect("forgeBurnThreshold", 4), setEffect("forgeBurnDamage", 8)] },
-  { id: "forge-strength-1", keywordId: "forge", description: "Placeholder talent (NYI)" },
-  { id: "forge-strength-2", keywordId: "forge", description: "Placeholder talent (NYI)" },
-  { id: "forge-strength-3", keywordId: "forge", description: "Placeholder talent (NYI)" },
-  { id: "forge-strength-4", keywordId: "forge", description: "Placeholder talent (NYI)" },
-  { id: "forge-strength-5", keywordId: "forge", description: "Placeholder talent (NYI)" },
-  { id: "forge-strength-6", keywordId: "forge", description: "Placeholder talent (NYI)" },
+  ...placeholderTalents("forge", "forge-strength", 1, 6),
 
   // --- Armor ---
   { id: "armor-burn-mitigate", keywordId: "armor", description: "Armor now mitigates Burn damage taken", effects: [setEffect("armorMitigatesBurn", true)] },
   { id: "armor-block-burst", keywordId: "armor", description: "Upon reaching 4 Armor, gain 8 Block", effects: [setEffect("armorBlockThreshold", 4), setEffect("armorBlockAmount", 8)] },
   { id: "armor-desperate-double", keywordId: "armor", description: "Armor gained is doubled when Health is below 50%", effects: [setEffect("armorDoubledBelowHalfHealth", true)] },
   { id: "armor-first-double", keywordId: "armor", description: "Your first Armor card each combat is doubled", effects: [setEffect("firstArmorCardDoubled", true)] },
-  { id: "armor-amount-1", keywordId: "armor", description: "Placeholder talent (NYI)" },
-  { id: "armor-amount-2", keywordId: "armor", description: "Placeholder talent (NYI)" },
-  { id: "armor-amount-3", keywordId: "armor", description: "Placeholder talent (NYI)" },
-  { id: "armor-amount-4", keywordId: "armor", description: "Placeholder talent (NYI)" },
-  { id: "armor-amount-5", keywordId: "armor", description: "Placeholder talent (NYI)" },
-  { id: "armor-amount-6", keywordId: "armor", description: "Placeholder talent (NYI)" },
+  ...placeholderTalents("armor", "armor-amount", 1, 6),
 
   // --- Health ---
   { id: "health-campfire", keywordId: "health", description: "Campfire heals 10% more Health", effects: [setEffect("campfireHealBonus", 0.1)] },
@@ -104,22 +95,14 @@ export const talentPool: TalentDefinition[] = [
   { id: "health-start", keywordId: "health", description: "Gain 4 Health at the start of combat", effects: [setEffect("startHealth", 4)] },
   { id: "health-heal-boost", keywordId: "health", description: "Healing effects are 10% stronger", effects: [setEffect("healMultiplier", 1.1)] },
   { id: "health-threshold-armor", keywordId: "health", description: "When Health drops below 25%, gain 3 Armor", effects: [setEffect("healthThresholdArmor", { threshold: 25, amount: 3 })] },
-  { id: "health-max-1", keywordId: "health", description: "Placeholder talent (NYI)" },
-  { id: "health-max-2", keywordId: "health", description: "Placeholder talent (NYI)" },
-  { id: "health-max-3", keywordId: "health", description: "Placeholder talent (NYI)" },
-  { id: "health-max-4", keywordId: "health", description: "Placeholder talent (NYI)" },
+  ...placeholderTalents("health", "health-max", 1, 4),
 
   // --- Burn ---
   { id: "burn-first-double", keywordId: "burn", description: "Your first Burn card each combat is doubled", effects: [setEffect("firstBurnCardDoubled", true)] },
   { id: "burn-remove-armor", keywordId: "burn", description: "Burn damage removes that amount of enemy Armor", effects: [setEffect("burnRemovesEnemyArmor", true)] },
   { id: "burn-double-chance", keywordId: "burn", description: "Burn stacks have a 5% chance to double instead of halve", effects: [setEffect("burnDoubleChance", 5)] },
   { id: "burn-half-damage", keywordId: "burn", description: "Receive half Burn damage", effects: [setEffect("receiveHalfBurnDamage", true)] },
-  { id: "burn-dmg-1", keywordId: "burn", description: "Placeholder talent (NYI)" },
-  { id: "burn-dmg-2", keywordId: "burn", description: "Placeholder talent (NYI)" },
-  { id: "burn-dmg-3", keywordId: "burn", description: "Placeholder talent (NYI)" },
-  { id: "burn-dmg-4", keywordId: "burn", description: "Placeholder talent (NYI)" },
-  { id: "burn-dmg-5", keywordId: "burn", description: "Placeholder talent (NYI)" },
-  { id: "burn-dmg-6", keywordId: "burn", description: "Placeholder talent (NYI)" },
+  ...placeholderTalents("burn", "burn-dmg", 1, 6),
 
   // --- Gold ---
   { id: "gold-shop-discount", keywordId: "gold", description: "Shop cards cost 5 less Gold", effects: [setEffect("shopCardDiscount", 5)] },
@@ -152,10 +135,7 @@ export const talentPool: TalentDefinition[] = [
   { id: "wish-cleanse", keywordId: "wish", description: "Remove a harmful status effect when you Wish", effects: [setEffect("removeHarmfulStatusOnWish", true)] },
   { id: "wish-extra-choice", keywordId: "wish", description: "Wish has a 20% chance to offer an extra card choice", effects: [setEffect("wishExtraChoiceChance", 20)] },
   { id: "wish-draw", keywordId: "wish", description: "Wish also draws a card", effects: [setEffect("wishDrawsCard", true)] },
-  { id: "wish-choice-1", keywordId: "wish", description: "Placeholder talent (NYI)" },
-  { id: "wish-choice-2", keywordId: "wish", description: "Placeholder talent (NYI)" },
-  { id: "wish-choice-3", keywordId: "wish", description: "Placeholder talent (NYI)" },
-  { id: "wish-choice-4", keywordId: "wish", description: "Placeholder talent (NYI)" },
+  ...placeholderTalents("wish", "wish-choice", 1, 4),
 
   // --- Poison ---
   { id: "poison-first-free", keywordId: "poison", description: "Your first Poison card each combat is free", effects: [setEffect("firstPoisonCardFree", true)] },
@@ -164,10 +144,7 @@ export const talentPool: TalentDefinition[] = [
   { id: "poison-half-damage", keywordId: "poison", description: "Receive half Poison damage", effects: [setEffect("receiveHalfPoisonDamage", true)] },
   { id: "poison-gold-first", keywordId: "poison", description: "The first time you Poison each combat, gain 4 Gold", effects: [setEffect("goldOnFirstPoison", 4)] },
   { id: "poison-heal-reduce", keywordId: "poison", description: "Poison reduces enemy healing by half", effects: [setEffect("poisonHalvesHealing", true)] },
-  { id: "poison-dmg-1", keywordId: "poison", description: "Placeholder talent (NYI)" },
-  { id: "poison-dmg-2", keywordId: "poison", description: "Placeholder talent (NYI)" },
-  { id: "poison-dmg-3", keywordId: "poison", description: "Placeholder talent (NYI)" },
-  { id: "poison-dmg-4", keywordId: "poison", description: "Placeholder talent (NYI)" },
+  ...placeholderTalents("poison", "poison-dmg", 1, 4),
 
   // --- Bleed ---
   { id: "bleed-first-free", keywordId: "bleed", description: "Your first Bleed card each combat is free", effects: [setEffect("firstBleedCardFree", true)] },
@@ -178,75 +155,25 @@ export const talentPool: TalentDefinition[] = [
   { id: "bleed-execute", keywordId: "bleed", description: "Bleed deals double damage against enemies below 30% Health", effects: [setEffect("bleedExecuteThreshold", 30)] },
   { id: "bleed-desperate", keywordId: "bleed", description: "You deal double Bleed damage if you are below 50% Health", effects: [setEffect("bleedDesperateMultiplier", 2)] },
   { id: "bleed-poison-chance", keywordId: "bleed", description: "Bleed has a 10% chance to Poison", effects: [setEffect("bleedPoisonChance", 10)] },
-  { id: "bleed-dmg-1", keywordId: "bleed", description: "Placeholder talent (NYI)" },
-  { id: "bleed-dmg-2", keywordId: "bleed", description: "Placeholder talent (NYI)" },
+  ...placeholderTalents("bleed", "bleed-dmg", 1, 2),
 
   // --- Other keywords (placeholders retained for grid completeness) ---
-  { id: "leech-heal-1", keywordId: "leech", description: "Placeholder talent (NYI)" },
-  { id: "leech-heal-2", keywordId: "leech", description: "Placeholder talent (NYI)" },
-  { id: "leech-heal-3", keywordId: "leech", description: "Placeholder talent (NYI)" },
-  { id: "leech-heal-4", keywordId: "leech", description: "Placeholder talent (NYI)" },
-  { id: "leech-heal-5", keywordId: "leech", description: "Placeholder talent (NYI)" },
-  { id: "leech-heal-6", keywordId: "leech", description: "Placeholder talent (NYI)" },
-  { id: "leech-heal-7", keywordId: "leech", description: "Placeholder talent (NYI)" },
-  { id: "leech-heal-8", keywordId: "leech", description: "Placeholder talent (NYI)" },
-  { id: "leech-heal-9", keywordId: "leech", description: "Placeholder talent (NYI)" },
-  { id: "leech-heal-10", keywordId: "leech", description: "Placeholder talent (NYI)" },
+  ...placeholderTalents("leech", "leech-heal", 1, 10),
 
   { id: "freeze-threshold", keywordId: "freeze", description: "Freeze threshold reduced by 10%", effects: [setEffect("freezeThresholdReduction", 0.1)] },
   { id: "freeze-double-damage", keywordId: "freeze", description: "Frozen enemies take double damage", effects: [setEffect("freezeDoubleDamage", true)] },
-  { id: "freeze-placeholder-3", keywordId: "freeze", description: "Placeholder talent (NYI)" },
-  { id: "freeze-placeholder-4", keywordId: "freeze", description: "Placeholder talent (NYI)" },
-  { id: "freeze-placeholder-5", keywordId: "freeze", description: "Placeholder talent (NYI)" },
-  { id: "freeze-placeholder-6", keywordId: "freeze", description: "Placeholder talent (NYI)" },
-  { id: "freeze-placeholder-7", keywordId: "freeze", description: "Placeholder talent (NYI)" },
-  { id: "freeze-placeholder-8", keywordId: "freeze", description: "Placeholder talent (NYI)" },
-  { id: "freeze-placeholder-9", keywordId: "freeze", description: "Placeholder talent (NYI)" },
-  { id: "freeze-placeholder-10", keywordId: "freeze", description: "Placeholder talent (NYI)" },
+  ...placeholderTalents("freeze", "freeze-placeholder", 3, 10),
 
-  { id: "mana-max-1", keywordId: "mana", description: "Placeholder talent (NYI)" },
-  { id: "mana-max-2", keywordId: "mana", description: "Placeholder talent (NYI)" },
-  { id: "mana-max-3", keywordId: "mana", description: "Placeholder talent (NYI)" },
-  { id: "mana-max-4", keywordId: "mana", description: "Placeholder talent (NYI)" },
-  { id: "mana-max-5", keywordId: "mana", description: "Placeholder talent (NYI)" },
-  { id: "mana-max-6", keywordId: "mana", description: "Placeholder talent (NYI)" },
-  { id: "mana-max-7", keywordId: "mana", description: "Placeholder talent (NYI)" },
-  { id: "mana-max-8", keywordId: "mana", description: "Placeholder talent (NYI)" },
-  { id: "mana-max-9", keywordId: "mana", description: "Placeholder talent (NYI)" },
-  { id: "mana-max-10", keywordId: "mana", description: "Placeholder talent (NYI)" },
+  ...placeholderTalents("mana", "mana-max", 1, 10),
 
-  { id: "nature-placeholder-1", keywordId: "nature", description: "Placeholder talent (NYI)" },
-  { id: "nature-placeholder-2", keywordId: "nature", description: "Placeholder talent (NYI)" },
-  { id: "nature-placeholder-3", keywordId: "nature", description: "Placeholder talent (NYI)" },
-  { id: "nature-placeholder-4", keywordId: "nature", description: "Placeholder talent (NYI)" },
-  { id: "nature-placeholder-5", keywordId: "nature", description: "Placeholder talent (NYI)" },
-  { id: "nature-placeholder-6", keywordId: "nature", description: "Placeholder talent (NYI)" },
-  { id: "nature-placeholder-7", keywordId: "nature", description: "Placeholder talent (NYI)" },
-  { id: "nature-placeholder-8", keywordId: "nature", description: "Placeholder talent (NYI)" },
-  { id: "nature-placeholder-9", keywordId: "nature", description: "Placeholder talent (NYI)" },
-  { id: "nature-placeholder-10", keywordId: "nature", description: "Placeholder talent (NYI)" },
+  ...placeholderTalents("nature", "nature-placeholder", 1, 10),
 
   { id: "companion-damage", keywordId: "companion", description: "Increase Companion damage by 1", effects: [addEffect("companionDamage", 1)] },
   { id: "companion-gold-find", keywordId: "companion", description: "Companions sometimes find Gold after combat", effects: [setEffect("companionGoldFindActive", true)] },
-  { id: "companion-placeholder-3", keywordId: "companion", description: "Placeholder talent (NYI)" },
-  { id: "companion-placeholder-4", keywordId: "companion", description: "Placeholder talent (NYI)" },
-  { id: "companion-placeholder-5", keywordId: "companion", description: "Placeholder talent (NYI)" },
-  { id: "companion-placeholder-6", keywordId: "companion", description: "Placeholder talent (NYI)" },
-  { id: "companion-placeholder-7", keywordId: "companion", description: "Placeholder talent (NYI)" },
-  { id: "companion-placeholder-8", keywordId: "companion", description: "Placeholder talent (NYI)" },
-  { id: "companion-placeholder-9", keywordId: "companion", description: "Placeholder talent (NYI)" },
-  { id: "companion-placeholder-10", keywordId: "companion", description: "Placeholder talent (NYI)" },
+  ...placeholderTalents("companion", "companion-placeholder", 3, 10),
 
   { id: "trap-damage", keywordId: "trap", description: "Increase Trap damage by 1", effects: [addEffect("flatTrapDamage", 1)] },
-  { id: "trap-placeholder-2", keywordId: "trap", description: "Placeholder talent (NYI)" },
-  { id: "trap-placeholder-3", keywordId: "trap", description: "Placeholder talent (NYI)" },
-  { id: "trap-placeholder-4", keywordId: "trap", description: "Placeholder talent (NYI)" },
-  { id: "trap-placeholder-5", keywordId: "trap", description: "Placeholder talent (NYI)" },
-  { id: "trap-placeholder-6", keywordId: "trap", description: "Placeholder talent (NYI)" },
-  { id: "trap-placeholder-7", keywordId: "trap", description: "Placeholder talent (NYI)" },
-  { id: "trap-placeholder-8", keywordId: "trap", description: "Placeholder talent (NYI)" },
-  { id: "trap-placeholder-9", keywordId: "trap", description: "Placeholder talent (NYI)" },
-  { id: "trap-placeholder-10", keywordId: "trap", description: "Placeholder talent (NYI)" },
+  ...placeholderTalents("trap", "trap-placeholder", 2, 10),
 ];
 
 // Filter helpers for the talent selection UI.

@@ -2,7 +2,7 @@
 // Depends on draw/effect helpers, game-data card shapes, and combat constants.
 import { drawCards } from "./draw";
 import { applyCardEffects } from "./apply-effects";
-import { mergeCombatText } from "./apply-effects";
+import { mergeCombatText } from "./combat-text";
 import { POTION_CARD_ID_FRAGMENT } from "../game-constants";
 import { type BattleCard } from "@/lib/game-data";
 import {
@@ -16,7 +16,9 @@ export function cardHasDamageType(card: BattleCard, damageType: string): boolean
   return card.effects.some((e) => e.kind === "damage" && e.damageType === damageType);
 }
 
-const FIRST_CARD_FREE_RULES: { flag: keyof CombatFlags; condition: (state: BattleState, card: BattleCard) => boolean }[] = [
+type CardCostState = Pick<BattleState, "flags" | "talentEffects" | "trinketEffects">;
+
+const FIRST_CARD_FREE_RULES: { flag: keyof CombatFlags; condition: (state: CardCostState, card: BattleCard) => boolean }[] = [
   { flag: "firstPhysicalCardFreeUsed", condition: (state, card) => state.talentEffects.firstPhysicalCardFree && cardHasDamageType(card, "physical") },
   { flag: "firstHolyCardFreeUsed", condition: (state, card) => state.talentEffects.firstHolyCardFree && cardHasDamageType(card, "holy") },
   { flag: "firstPoisonCardFreeUsed", condition: (state, card) => state.talentEffects.firstPoisonCardFree && cardHasDamageType(card, "poison") },
@@ -26,7 +28,7 @@ const FIRST_CARD_FREE_RULES: { flag: keyof CombatFlags; condition: (state: Battl
 // Pure cost computation shared by UI (getEffectiveCost) and card play (resolveCardPlayCost).
 // Returns the effective cost and which one-shot free-card flags were consumed.
 // The UI discards consumedFlags; the resolver applies them to state.
-export function computeEffectiveCost(state: BattleState, card: BattleCard): { effectiveCost: number; consumedFlags: Partial<CombatFlags> } {
+export function computeEffectiveCost(state: CardCostState, card: BattleCard): { effectiveCost: number; consumedFlags: Partial<CombatFlags> } {
   let effectiveCost = card.cost;
   const consumedFlags: Partial<CombatFlags> = {};
 

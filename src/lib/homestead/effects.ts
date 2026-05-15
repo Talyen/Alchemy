@@ -4,7 +4,7 @@
 
 import type { TalentEffectManifest } from "@/lib/battle";
 import type { BuildingId, FarmId, HomesteadEffectManifest, ResearchId } from "./types";
-import { defaultHomesteadEffects } from "./types";
+import { defaultHomesteadEffects } from "./defaults";
 import { buildings, farmPlots } from "./data";
 
 export function computeHomesteadEffects(

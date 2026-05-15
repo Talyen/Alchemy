@@ -3,7 +3,7 @@ import { cardLibrary } from "@/lib/game-data";
 import type { BattleCard } from "@/lib/game-data/types";
 import { drawCards, shuffleCards } from "./draw";
 import { addGold, applyPlayerHealing, type BattleState, type CombatTextEvent } from "./types";
-import { mergeCombatText } from "./apply-effects";
+import { mergeCombatText } from "./combat-text";
 import { removeHarmfulPlayerStatuses } from "./status-effects";
 import { PERCENT_DENOMINATOR, WISH_CHOICE_COUNT } from "../game-constants";
 

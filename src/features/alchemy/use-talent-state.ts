@@ -5,8 +5,23 @@ import { useState } from "react";
 import type { BattleCard, KeywordId } from "@/lib/game-data";
 import { addTalentXP, extractCardKeywords, type TalentXP } from "@/lib/talents";
 import { computeTalentEffects, talentPool, type UnlockedTalents } from "@/lib/game-data";
+import type { TalentEffectManifest } from "@/lib/battle";
 
-export function useTalentState(initialTalentXP: TalentXP, initialUnlockedTalents: UnlockedTalents) {
+export type TalentStateController = {
+  talentXP: TalentXP;
+  runTalentXP: TalentXP;
+  unlockedTalents: UnlockedTalents;
+  talentEffects: TalentEffectManifest;
+  awardCardXP: (card: BattleCard) => void;
+  unlockTalent: (keywordId: KeywordId, talentId: string) => void;
+  unlockAllTalents: () => void;
+  resetUnlockedTalents: () => void;
+  resetRunXP: () => void;
+  clearPermanentData: () => void;
+  awardMysteryXP: (keywordId: KeywordId, amount: number) => void;
+};
+
+export function useTalentState(initialTalentXP: TalentXP, initialUnlockedTalents: UnlockedTalents): TalentStateController {
   // XP, run XP, and unlocks are owned by one store so progression mutations stay grouped.
   const [state, setState] = useState({ talentXP: initialTalentXP, runTalentXP: {} as TalentXP, unlockedTalents: initialUnlockedTalents });
 

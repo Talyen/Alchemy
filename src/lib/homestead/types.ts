@@ -23,8 +23,6 @@ export const materialIcons: Record<MaterialId, string> = {
 
 export type MaterialInventory = Record<MaterialId, number>;
 
-export { emptyInventory, addInventory, canAfford, subtractInventory } from "./inventory";
-
 export type BuildingId = "blacksmiths-forge" | "hunters-lodge" | "alchemy-lab" | "placeholder-1" | "placeholder-2" | "placeholder-3";
 
 export type FarmId = "wheat-field" | "herb-garden" | "chicken-coop" | "pasture" | "orchard" | "crystal-garden";
@@ -78,5 +76,3 @@ export type HomesteadEffectManifest = {
   startMaxHealthBonus: number;
   forgeToBurn: boolean;
 };
-
-export { defaultHomesteadEffects } from "./defaults";

@@ -3,7 +3,8 @@
 import { SAVE_KEY } from "@/lib/game-constants";
 
 import { normalizeSaveData } from "./migrations";
-import { defaultSaveData, type SaveData } from "./types";
+import type { SaveData } from "./types";
+import { defaultSaveData } from "./defaults";
 
 const storageKey = SAVE_KEY;
 

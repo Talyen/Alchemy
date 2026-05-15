@@ -7,7 +7,8 @@ import type { CharacterId, DifficultyId, UnlockedTalents } from "@/lib/game-data
 import { normalizeActiveRun } from "./active-run";
 import { migrateBuildingIds, migrateFarmIds, migrateMaterialInventory } from "./homestead";
 import { normalizeDisplayMode, normalizeUiScale } from "./options";
-import { defaultSaveData, type SaveData } from "./types";
+import type { SaveData } from "./types";
+import { defaultSaveData } from "./defaults";
 
 export { normalizeActiveRun } from "./active-run";
 export { migrateBuildingIds, migrateFarmIds, migrateMaterialInventory } from "./homestead";

@@ -1,6 +1,7 @@
 // Player card damage to the current enemy: base damage, crit, armor reduction, trait multipliers, and riders.
 import { applyDamageStatuses, getEnemyDamageMultiplier, resolveStunTrigger } from "./status-effects";
-import { applyBoneCharmHeal, applyLuckyCloverGold, mergeCombatText } from "./apply-effects";
+import { mergeCombatText } from "./combat-text";
+import { applyBoneCharmHeal, applyLuckyCloverGold } from "./trinket-effects";
 import { applyWishEffect } from "./wish";
 import { type BattleCard, type BattleCardEffect } from "@/lib/game-data";
 import {

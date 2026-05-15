@@ -7,7 +7,7 @@ import { MAX_PLAYER_HEALTH } from "@/lib/game-constants";
 import { getDifficultyModifiers, getGoldMultiplier, getStartingDeck, type BattleCard, type CharacterId, type DifficultyId, type DifficultyModifier } from "@/lib/game-data";
 import { playVictory, playDefeat, playGoldGain } from "@/lib/audio";
 import { appendUnique, appendUniqueMany } from "@/lib/utils";
-import { DESTINATIONS, type Destination, type Screen } from "./types";
+import type { Destination, Screen } from "./types";
 import { getEnemyMaterialLoot } from "@/lib/homestead/loot";
 import { type HomesteadEffectManifest, type MaterialInventory } from "@/lib/homestead/types";
 import {
@@ -23,17 +23,18 @@ import {
 } from "@/lib/game-constants";
 import { randomBetween } from "./utils";
 import type { BattleState } from "@/lib/battle";
-import type { useRunState } from "./use-run-state";
-import type { useTalentState } from "./use-talent-state";
+import type { RunStateController } from "./use-run-state";
+import type { TalentStateController } from "./use-talent-state";
 import { getRunAvailableDestinations, sampleDestinationChoices } from "./navigation/destination-flow";
 import {
   createBossRewardState as createBossRewardStateFromFlow,
   createCombatRewardState as createCombatRewardStateFromFlow,
   createEmptyRewardState,
-  getVictoryGoldTotal,
+  computeVictoryGoldResult,
   type RewardState,
 } from "./navigation/reward-flow";
 import { useMysteryFlow } from "./navigation/use-mystery-flow";
+import { routeDestinationChoice } from "./navigation/routing-flow";
 import { createActiveRunData } from "./run/active-run-data";
 import { corruptDeckCard, type CorruptionResult } from "./corruption";
 
@@ -63,8 +64,8 @@ export function useRunNavigation({
   onInitAlchemist,
   onMarkDifficultyCompleted,
 }: {
-  run: ReturnType<typeof useRunState>;
-  talents: ReturnType<typeof useTalentState>;
+  run: RunStateController;
+  talents: TalentStateController;
   screen: Screen;
   setScreen: React.Dispatch<React.SetStateAction<Screen>>;
   navigateTo: (nextScreen: Screen) => void;
@@ -219,18 +220,18 @@ export function useRunNavigation({
   }
 
   function awardVictoryGold(gold: number, eliteBonus: number, bossBonus: number) {
-    const newGold = getVictoryGoldTotal(
+    const goldResult = computeVictoryGoldResult({
       battleState,
-      run.runTrinkets,
+      runGold: run.runGold,
+      runTrinkets: run.runTrinkets,
       gold,
       eliteBonus,
       bossBonus,
-      talents.talentEffects.goldPerCombat,
-    );
-    const earned = newGold - run.runGold;
-    run.addRunGold(earned);
-    const mult = getGoldMultiplier(run.characterId, run.selectedDifficulty);
-    return run.runGold + Math.floor(earned * mult);
+      talentGoldPerCombat: talents.talentEffects.goldPerCombat,
+      goldMultiplier: getGoldMultiplier(run.characterId, run.selectedDifficulty),
+    });
+    run.addRunGold(goldResult.earnedBeforeMultiplier);
+    return goldResult.persistedRunGold;
   }
 
   function getVictoryMaterials() {
@@ -393,33 +394,15 @@ export function useRunNavigation({
     run.setDestinationIndexInAct((p) => p + 1);
 
     setHoveredCardId(null);
-    routeDestination(destination);
-  }
-
-  function routeDestination(destination: Destination) {
-    // Destination routing is centralized so label constants and side effects cannot drift.
-    if (destination === DESTINATIONS.CAMPFIRE) navigateTo("campfire");
-    else if (destination === DESTINATIONS.MERCHANT_SHOP) {
-      onInitShop();
-      navigateTo("shop");
-    } else if (destination === DESTINATIONS.ALCHEMIST_SHOP) {
-      onInitAlchemist();
-      navigateTo("alchemist");
-    } else if (destination === DESTINATIONS.MYSTERY) {
-      beginMysteryEvent();
-    } else if (destination === DESTINATIONS.CORRUPTION) {
-      setCorruptionResult(null);
-      navigateTo("corruption");
-    } else if (destination === DESTINATIONS.ELITE_COMBAT) {
-      onStartBattle(undefined, undefined, "elite");
-      navigateTo("battle");
-    } else if (destination === DESTINATIONS.BOSS_COMBAT) {
-      onStartBossBattle();
-      navigateTo("battle");
-    } else {
-      onStartBattle(undefined, undefined, "normal");
-      navigateTo("battle");
-    }
+    routeDestinationChoice(destination, {
+      navigateTo,
+      beginMysteryEvent,
+      resetCorruption: () => setCorruptionResult(null),
+      startShop: onInitShop,
+      startAlchemist: onInitAlchemist,
+      startBattle: (enemyType) => onStartBattle(undefined, undefined, enemyType),
+      startBossBattle: onStartBossBattle,
+    });
   }
 
   function beginMysteryEvent() {

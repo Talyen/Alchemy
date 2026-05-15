@@ -4,11 +4,11 @@ import { useEffect, useRef, useState } from "react";
 
 import {
   clearAlchemySaveData,
-  defaultSaveData,
   loadAlchemySaveData,
   saveAlchemySaveData,
   type SaveData,
 } from "@/features/alchemy/storage";
+import { defaultSaveData } from "@/features/alchemy/storage/defaults";
 import type { CharacterId, DifficultyId } from "@/lib/game-data";
 import type { CollectionTab, DisplayMode, ResolutionOption, UiScale } from "@/features/alchemy/types";
 

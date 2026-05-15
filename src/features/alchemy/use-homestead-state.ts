@@ -8,11 +8,8 @@ import {
   type FarmId,
   type MaterialInventory,
   type ResearchId,
-  emptyInventory,
-  addInventory,
-  subtractInventory,
-  canAfford,
 } from "@/lib/homestead/types";
+import { emptyInventory, addInventory, subtractInventory, canAfford } from "@/lib/homestead/inventory";
 import { computeHomesteadEffects } from "@/lib/homestead/effects";
 import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
 
