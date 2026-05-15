@@ -34,7 +34,14 @@ function computeBaseDamage(state: BattleState, effect: Extract<BattleCardEffect,
   if (isBurn && state.talentEffects.forgeToBurn) forgeBonus = state.playerStatuses.forge;
   if (isHoly && state.talentEffects.forgeToHoly) forgeBonus = state.playerStatuses.forge;
 
-  let rawAmount = effect.fromBlock ? state.playerStatuses.block + forgeBonus : effect.amount + forgeBonus;
+  let rawAmount: number;
+  if (effect.equalToBlock) {
+    rawAmount = state.playerStatuses.block + forgeBonus;
+  } else if (effect.equalToArmor) {
+    rawAmount = state.playerStatuses.armor + forgeBonus;
+  } else {
+    rawAmount = effect.amount + forgeBonus;
+  }
 
   if (effect.damageType === "physical") {
     rawAmount += state.talentEffects.flatPhysicalDamage;

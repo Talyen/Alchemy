@@ -2,7 +2,7 @@
 // All nodes show in a 3-column grid; any uncompleted node can be built if
 // materials are sufficient. Completed nodes are dimmed with a checkmark.
 
-import { useState, type ReactNode } from "react";
+import { useState, useMemo, type ReactNode } from "react";
 import { FlaskConical, Hammer, House, Swords, Wheat } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -128,9 +128,9 @@ export function HomesteadScreen({
 }) {
   const [tab, setTab] = useState<Tab>("buildings");
   const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
-
-  const completed = tab === "buildings" ? constructedBuildings : tab === "farm" ? plantedFarms : completedResearch;
-  const allItems = getItems(tab);
+  const buildingsItems = useMemo(() => getItems("buildings"), []);
+  const farmItems = useMemo(() => getItems("farm"), []);
+  const researchItems = useMemo(() => getItems("research"), []);
   function handleAction(item: GoalItem) {
     const success = item.kind === "building"
       ? onConstructBuilding(item.data.id as BuildingId)
@@ -175,9 +175,21 @@ export function HomesteadScreen({
           ))}
         </div>
 
-        {/* Grid of all items */}
-        <div className="mx-auto mt-6 grid w-full grid-cols-3 gap-x-2 gap-y-6">
-          {allItems.map((item, index) => {
+        {/* Grid — all tabs pre-rendered, only active one visible in flow */}
+        <div className="relative mx-auto mt-6 w-full">
+          {(["buildings", "farm", "research"] as const).map((t) => {
+            const isActive = tab === t;
+            const items = t === "buildings" ? buildingsItems : t === "farm" ? farmItems : researchItems;
+            const completed = t === "buildings" ? constructedBuildings : t === "farm" ? plantedFarms : completedResearch;
+            return (
+              <div
+                key={t}
+                className={cn(
+                  isActive ? "relative" : "pointer-events-none invisible absolute left-0 top-0 w-full",
+                  "grid grid-cols-3 gap-x-2 gap-y-6",
+                )}
+              >
+                {items.map((item, index) => {
               const isCompleted = (completed as string[]).includes(item.data.id);
               const itemCost = item.data.cost;
               const itemAffordable = canAfford(materialInventory, itemCost);
@@ -288,7 +300,10 @@ export function HomesteadScreen({
                 </div>
               );
             })}
-          </div>
+              </div>
+            );
+          })}
+        </div>
 
         {/* Navigation */}
         <div className="mx-auto mt-6 flex flex-wrap justify-center gap-3">

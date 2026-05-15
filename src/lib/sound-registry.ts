@@ -34,6 +34,10 @@ export const cardSounds: Record<string, string[]> = {
   "mana-crystals": ["buff-pickup.ogg"],
   "mana-potion": ["ice-in-water.ogg"],
   "panacea-potion": ["ice-in-water.ogg"],
+  "stoneskin-potion": ["ice-in-water.ogg"],
+  "acid-potion": ["ice-in-water.ogg"],
+  "luck-potion": ["ice-in-water.ogg"],
+  "wishing-potion": ["ice-in-water.ogg"],
   "mixed-potion": ["ice-in-water.ogg"],
 };
 

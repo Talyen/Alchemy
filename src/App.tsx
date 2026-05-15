@@ -76,6 +76,7 @@ export default function App() {
   const [menuAnchorRect, setMenuAnchorRect] = useState<DOMRect | null>(null);
   const [renderedScreen, setRenderedScreen] = useState<Screen>("menu");
   const [pagePhase, setPagePhase] = useState<"enter" | "exit">("enter");
+  const [tooltipBlocked, setTooltipBlocked] = useState(true);
   const pendingScreenRef = useRef(renderedScreen);
   const vrStageRef = useRef<HTMLDivElement>(null);
   const initialLoadReady = useInitialLoadReady({ imageUrls: allGameArt });
@@ -105,7 +106,7 @@ export default function App() {
   }, []);
 
   const { isMobileLandscape, isPortraitMobile } = useMobileDetection();
-  const { frameStyle, stageStyle } = useVirtualResolution(selectedResolution, false, isMobileLandscape);
+  const { frameStyle, stageStyle, aspectMode } = useVirtualResolution(selectedResolution, false, isMobileLandscape);
   const homestead = useHomesteadState({
     materialInventory: initialSave.materialInventory,
     constructedBuildings: initialSave.constructedBuildings,
@@ -149,6 +150,14 @@ export default function App() {
     }, PAGE_EXIT_MS);
     return () => window.clearTimeout(timeout);
   }, [run.screen, renderedScreen]);
+
+  // On every renderedScreen change (including initial mount), block hover tooltips for 800ms
+  // to prevent jarring popups during page-enter animation when the mouse is over a trigger.
+  useEffect(() => {
+    setTooltipBlocked(true);
+    const timer = window.setTimeout(() => setTooltipBlocked(false), 400);
+    return () => window.clearTimeout(timer);
+  }, [renderedScreen]);
 
   useScreenAssetPreloadEffects({
     heroArt,
@@ -258,7 +267,7 @@ export default function App() {
           className={`flex h-screen w-screen items-center justify-center overflow-hidden bg-background ${isMobileLandscape ? "mobile-landscape p-0" : "p-4"}`}
         >
           <div className="relative" style={frameStyle}>
-            <div ref={vrStageRef} className="absolute left-0 top-0 overflow-hidden bg-background" style={stageStyle}>
+            <div ref={vrStageRef} className={`absolute left-0 top-0 overflow-hidden bg-background ${tooltipBlocked ? "tooltips-disabled" : ""}`} style={stageStyle}>
               <BackgroundParticles variant="embers" {...(particleColors ? { colors: particleColors } : {})} {...(particleAlphaMultiplier ? { alphaMultiplier: particleAlphaMultiplier } : {})} />
               {!initialLoadReady ? (
                 <StartupLoadingScreen />
@@ -275,6 +284,7 @@ export default function App() {
                     heroArt,
                     playerName,
                     isMobileLandscape,
+                    aspectMode,
                     hasUnspentTalents,
                     hasAffordableHomestead,
                     onOpenBattleMenu: openBattleMenu,

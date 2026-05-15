@@ -41,6 +41,8 @@ export function applyCardEffects(state: BattleState, card: BattleCard, combatTex
         return applyWishEffect(currentState, card, effect.amount, combatTexts);
       case "summon-companion":
         return { ...currentState, activeCompanion: companionLibrary[effect.companionId] };
+      case "buff-companion":
+        return { ...currentState, companionDamageBuff: currentState.companionDamageBuff + effect.amount };
       case "remove-harmful-status":
         return removeHarmfulPlayerStatuses(currentState, effect.amount, combatTexts);
       case "self-damage": {

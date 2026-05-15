@@ -70,6 +70,7 @@ export function useVirtualResolution(selectedResolution: ResolutionOption, bypas
     return {
       frameStyle: { width: "100%", height: "100%" },
       stageStyle: { width: "100%", height: "100%", transform: "none", transformOrigin: "top left", left: 0, top: 0 },
+      aspectMode: "standard" as "standard" | "narrow" | "ultrawide",
     };
   }
 
@@ -92,6 +93,12 @@ export function useVirtualResolution(selectedResolution: ResolutionOption, bypas
   const frameWidth = stageWidth * scale;
   const frameHeight = stageHeight * scale;
 
+  const aspectMode = stageWidth < 1800
+    ? "narrow" as const
+    : stageWidth < 2200
+      ? "standard" as const
+      : "ultrawide" as const;
+
   return {
     frameStyle: { width: `${frameWidth}px`, height: `${frameHeight}px` },
     stageStyle: {
@@ -102,5 +109,6 @@ export function useVirtualResolution(selectedResolution: ResolutionOption, bypas
       left: 0,
       top: 0,
     },
+    aspectMode,
   };
 }

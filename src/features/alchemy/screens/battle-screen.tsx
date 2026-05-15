@@ -15,11 +15,11 @@ type BattleScreenProps = {
 };
 
 export function BattleScreen({ view, hover, feedback, refs, actions }: BattleScreenProps) {
-  const { battleState, isMobileLandscape = false } = view;
+  const { battleState, isMobileLandscape = false, aspectMode = "standard" } = view;
   const { cardGhosts } = feedback;
   const { battleSceneRef } = refs;
   const { onRemoveCardGhost } = actions;
-  const requiredView = { ...view, isMobileLandscape };
+  const requiredView = { ...view, isMobileLandscape, aspectMode };
 
   return (
     <div ref={battleSceneRef} data-testid="battle-scene" className="relative h-full w-full overflow-hidden [container-type:size]">

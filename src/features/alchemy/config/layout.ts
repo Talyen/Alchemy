@@ -20,11 +20,13 @@ export const popupClassName = "absolute bottom-full left-1/2 z-40 mb-4 w-60 -tra
 export const battleActorHalfGapClass = {
   desktop: "clamp(168px,10cqw,210px)",
   mobile: "clamp(130px,8cqw,180px)",
+  ultrawide: "clamp(168px,10cqw,300px)",
 } as const;
 
 export const battleActorSectionClass = {
   desktop: "absolute inset-x-0 flex -translate-y-1/2 items-start justify-center px-4 gap-[clamp(336px,20cqw,420px)]",
   mobile: "absolute inset-x-0 flex -translate-y-1/2 items-start justify-center px-4 gap-[clamp(260px,16cqw,360px)]",
+  ultrawide: "absolute inset-x-0 flex -translate-y-1/2 items-start justify-center px-4 gap-[clamp(336px,20cqw,600px)]",
 } as const;
 
 export const battleBottomBarClass = {

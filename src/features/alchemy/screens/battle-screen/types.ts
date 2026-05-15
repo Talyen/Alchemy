@@ -20,6 +20,7 @@ export type BattleScreenState = Pick<
   | "hand"
   | "wishOptions"
   | "activeCompanion"
+  | "companionDamageBuff"
   | "currentEnemy"
   | "enemyAttackEffects"
   | "turnPhase"
@@ -33,6 +34,7 @@ export type BattleScreenViewProps = {
   heroArt: string;
   playerName: string;
   isMobileLandscape?: boolean;
+  aspectMode?: "standard" | "narrow" | "ultrawide";
 };
 
 export type BattleHoverProps = {

@@ -99,6 +99,7 @@ export type BattleState = {
   wishOptions: BattleCard[] | null; // non-null = Wish selection is active
   wishQueue: BattleCard[][];        // additional Wish selections waiting behind the active modal
   activeCompanion: CompanionDefinition | null; // persistent ally effect for this battle only
+  companionDamageBuff: number; // persistent buff from Pack Tactics-style cards
   currentEnemy: BestiaryEntry;
   talentEffects: TalentEffectManifest;
   trinketEffects: TrinketManifest;

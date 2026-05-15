@@ -41,7 +41,7 @@ export type EnemyTrait = {
 };
 
 export type BattleCardEffect =
-  | { kind: "damage"; damageType: DamageType; amount: number; lifesteal?: boolean; fromBlock?: boolean }
+  | { kind: "damage"; damageType: DamageType; amount: number; lifesteal?: boolean; equalToBlock?: boolean; equalToArmor?: boolean }
   | { kind: "player-status"; status: Extract<PlayerStatusId, "block" | "armor" | "forge" | "haste">; amount: number }
   | { kind: "heal"; amount: number }
   | { kind: "restore-mana"; amount: number }
@@ -52,7 +52,8 @@ export type BattleCardEffect =
   | { kind: "wish"; amount: number }
   | { kind: "summon-companion"; companionId: CompanionId }
   | { kind: "remove-harmful-status"; amount: number }
-  | { kind: "self-damage"; damageType: EnemyStatusId; amount: number };
+  | { kind: "self-damage"; damageType: EnemyStatusId; amount: number }
+  | { kind: "buff-companion"; amount: number };
 
 export type CompanionDefinition = {
   id: CompanionId;

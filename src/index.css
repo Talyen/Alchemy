@@ -185,6 +185,12 @@
     transform: translateX(-50%) translateY(0) scale(1);
   }
 
+  .tooltips-disabled .hover-popup-panel,
+  .tooltips-disabled .hover-popup-quick-in {
+    opacity: 0 !important;
+    pointer-events: none;
+  }
+
   .card-ghost-overlay {
     animation-duration: 420ms;
     animation-fill-mode: both;
@@ -273,7 +279,7 @@
 
   .alchemy-startup-bar {
     background: hsl(var(--primary));
-    animation: startupBarCycle 1300ms ease-in-out infinite;
+    animation: startupBarCycle 900ms ease-in-out infinite;
     transform-origin: left;
   }
 
@@ -427,8 +433,8 @@
 
 @keyframes startupBarCycle {
   0% { transform: scaleX(0); }
-  50% { transform: scaleX(1); }
-  100% { transform: scaleX(0); }
+  70% { transform: scaleX(1); }
+  100% { transform: scaleX(1); }
 }
 
 @keyframes hoverPopupQuickInAbove {

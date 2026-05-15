@@ -2,8 +2,13 @@
 // Depends only on alchemy option types.
 import type { DisplayMode, ResolutionOption, UiScale } from "../types";
 
-// Resolution choices are virtual canvas targets, not direct browser CSS sizes.
-export const resolutionOptions: ResolutionOption[] = ["1366x768", "1600x900", "1920x1080", "1920x1200", "2560x1080", "2560x1440", "3440x1440", "3840x2160"];
+// Aspect ratio choices determine virtual canvas width (height is fixed at 1080).
+// Only distinct aspect ratios are offered: 16:9 (standard), 16:10 (narrow), ~21:9 (ultrawide).
+export const resolutionOptions: Array<{ value: ResolutionOption; label: string }> = [
+  { value: "1920x1080", label: "Standard (16:9)" },
+  { value: "1920x1200", label: "Narrow (16:10)" },
+  { value: "2560x1080", label: "Ultrawide (21:9)" },
+];
 
 // Display modes are passed through the platform adapter so browser and desktop
 // builds can share one options screen.

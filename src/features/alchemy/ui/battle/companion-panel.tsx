@@ -10,13 +10,14 @@ import { cardSurfaceClass, popupClassName, staticCardTransform } from "../../con
 import { clearTiltFromEvent, setTiltFromEvent } from "../../utils";
 import { DescriptionLines } from "../card-ui";
 
-function getCompanionDescriptionLines(companion: CompanionDefinition): string[] {
+function getCompanionDescriptionLines(companion: CompanionDefinition, damageBonus: number): string[] {
   const attack = companion.turnStartEffects.find((effect) => effect.kind === "damage");
   if (!attack) return ["Acts at the start of each turn"];
 
-  const displayAmount = attack.damageType === "bleed" ? attack.amount * 2 : attack.amount;
+  const baseDisplay = attack.damageType === "bleed" ? attack.amount * 2 : attack.amount;
+  const displayAmount = baseDisplay + damageBonus;
   const displayType = attack.damageType.charAt(0).toUpperCase() + attack.damageType.slice(1);
-  return [`Attacks for ${displayAmount} ${displayType} each turn`];
+  return [`Deals ${displayAmount} ${displayType} damage each turn`];
 }
 
 // Shows the active companion with enough tooltip detail to explain its automatic attack.
@@ -24,10 +25,12 @@ export function CompanionPanel({
   companion,
   compact = false,
   shaking = false,
+  damageBonus = 0,
 }: {
   companion: CompanionDefinition;
   compact?: boolean;
   shaking?: boolean;
+  damageBonus?: number;
 }) {
   return (
     <div
@@ -61,7 +64,7 @@ export function CompanionPanel({
         )}
       >
         <p className="text-sm text-foreground">{companion.title}</p>
-        <DescriptionLines lines={getCompanionDescriptionLines(companion)} idPrefix={`companion-${companion.id}`} />
+        <DescriptionLines lines={getCompanionDescriptionLines(companion, damageBonus)} idPrefix={`companion-${companion.id}`} />
       </div>
     </div>
   );

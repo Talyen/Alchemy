@@ -30,6 +30,7 @@ export function getCardKeywords(card: BattleCard): KeywordId[] {
         keywords.add("wish");
         break;
       case "summon-companion":
+      case "buff-companion":
         keywords.add("companion");
         break;
       case "remove-harmful-status":
@@ -59,7 +60,7 @@ export const keywordDefinitions: Record<KeywordId, KeywordDefinition> = {
   leech: { id: "leech", label: "Leech", description: "Leech heals you for the damage dealt", colorClass: "text-pink-600", borderClass: "border-pink-600", shineColors: ["#db2777", "#9d174d", "#db2777"] },
   freeze: { id: "freeze", label: "Freeze", description: "Freeze damage causes the enemy to lose their turn if it accumulates to half their remaining HP", colorClass: "text-cyan-300", borderClass: "border-cyan-300", shineColors: ["#67e8f9", "#06b6d4", "#67e8f9"] },
   mana: { id: "mana", label: "Mana", description: "Mana is used to play cards", colorClass: "text-sky-400", borderClass: "border-sky-400", shineColors: ["#38bdf8", "#0284c7", "#38bdf8"] },
-  nature: { id: "nature", label: "Nature", description: "Nature cards support Ranger growth and wild magic synergies", colorClass: "text-emerald-400", borderClass: "border-emerald-400", shineColors: ["#34d399", "#047857", "#34d399"] },
+  nature: { id: "nature", label: "Nature", description: "Nature damage type", colorClass: "text-emerald-400", borderClass: "border-emerald-400", shineColors: ["#34d399", "#047857", "#34d399"] },
   companion: { id: "companion", label: "Companion", description: "Companion cards call allied creatures to aid the Ranger", colorClass: "text-pink-300", borderClass: "border-pink-300", shineColors: ["#f9a8d4", "#db2777", "#f9a8d4"] },
   trap: { id: "trap", label: "Trap", description: "Trap cards will prepare delayed effects for unsuspecting enemies", colorClass: "text-stone-300", borderClass: "border-stone-300", shineColors: ["#d6d3d1", "#78716c", "#d6d3d1"] },
 };

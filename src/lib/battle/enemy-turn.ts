@@ -49,7 +49,7 @@ export function processCompanionTurnStart(state: BattleState, combatTexts: Comba
     cost: 0,
     effects: state.activeCompanion.turnStartEffects.map((e) =>
       e.kind === "damage"
-        ? { ...e, amount: e.amount + state.talentEffects.companionDamage + state.trinketEffects.companionDamageBonus }
+        ? { ...e, amount: e.amount + state.talentEffects.companionDamage + state.trinketEffects.companionDamageBonus + state.companionDamageBuff }
         : e,
     ),
   };

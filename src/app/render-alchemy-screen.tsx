@@ -34,6 +34,7 @@ type RenderAlchemyScreenProps = {
   heroArt: string;
   playerName: string;
   isMobileLandscape: boolean;
+  aspectMode: "standard" | "narrow" | "ultrawide";
   hasUnspentTalents: boolean;
   hasAffordableHomestead: boolean;
   onOpenBattleMenu: (rect?: DOMRect) => void;
@@ -49,6 +50,7 @@ export function renderAlchemyScreen({
   heroArt,
   playerName,
   isMobileLandscape,
+  aspectMode,
   hasUnspentTalents,
   hasAffordableHomestead,
   onOpenBattleMenu,
@@ -82,7 +84,7 @@ export function renderAlchemyScreen({
       /> : null;
     case "battle":
       return <BattleScreen
-        view={{ battleState: run.battleState, heroArt, playerName, isMobileLandscape }}
+        view={{ battleState: run.battleState, heroArt, playerName, isMobileLandscape, aspectMode }}
         hover={{
           hoveredCardId: run.hoveredCardId,
           setHoveredCardId: run.setHoveredCardId,

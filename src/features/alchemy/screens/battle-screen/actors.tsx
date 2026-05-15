@@ -16,7 +16,7 @@ export function BattleActors({
   feedback: BattleFeedbackProps;
   refs: BattleRefsProps;
 }) {
-  const { battleState, heroArt, playerName, isMobileLandscape } = view;
+  const { battleState, heroArt, playerName, isMobileLandscape, aspectMode = "standard" } = view;
   const { shimmerState, onHoverShimmer } = hover;
   const {
     playerStatusChips,
@@ -30,7 +30,7 @@ export function BattleActors({
   const { playerPanelRef, enemyPanelRef } = refs;
   const isPlayerTurn = battleState.turnPhase === "player";
   const hasCompanion = Boolean(battleState.activeCompanion);
-  const battleActorHalfGap = isMobileLandscape ? battleActorHalfGapClass.mobile : battleActorHalfGapClass.desktop;
+  const battleActorHalfGap = aspectMode === "ultrawide" ? battleActorHalfGapClass.ultrawide : (isMobileLandscape ? battleActorHalfGapClass.mobile : battleActorHalfGapClass.desktop);
   const actorCardWidthClass = isMobileLandscape ? mobileStageBattleCardWidthClass : undefined;
   const playerTurnBadgeTransform = hasCompanion
     ? `translateX(calc(-50% - clamp(111px,11cqh,168px) - ${battleActorHalfGap} - clamp(12px,1.2cqw,22px)))`
@@ -38,7 +38,7 @@ export function BattleActors({
 
   return (
     <section
-      className={isMobileLandscape ? battleActorSectionClass.mobile : battleActorSectionClass.desktop}
+      className={aspectMode === "ultrawide" ? battleActorSectionClass.ultrawide : (isMobileLandscape ? battleActorSectionClass.mobile : battleActorSectionClass.desktop)}
       style={{ top: isMobileLandscape ? BATTLE_ACTOR_TOP_MOBILE : BATTLE_ACTOR_TOP_DESKTOP }}
     >
       <div
@@ -85,7 +85,7 @@ export function BattleActors({
           />
           {battleState.activeCompanion ? (
             <div className="absolute bottom-[clamp(88px,8.5cqh,118px)] left-[calc(100%-clamp(42px,4.6cqh,68px))] z-20">
-              <CompanionPanel companion={battleState.activeCompanion} shaking={companionShaking} />
+              <CompanionPanel companion={battleState.activeCompanion} shaking={companionShaking} damageBonus={battleState.companionDamageBuff} />
             </div>
           ) : null}
         </div>

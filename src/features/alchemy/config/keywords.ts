@@ -13,7 +13,8 @@ export const keywordAliases: Array<{ match: string; keywordId: KeywordId }> = [
   { match: "Consume", keywordId: "consume" }, { match: "Poison", keywordId: "poison" },
   { match: "Bleed", keywordId: "bleed" }, { match: "Leech", keywordId: "leech" },
   { match: "Freeze", keywordId: "freeze" }, { match: "Mana Crystal", keywordId: "mana" },
-  { match: "Mana", keywordId: "mana" },   { match: "Companion", keywordId: "companion" },
+  { match: "Mana", keywordId: "mana" },   { match: "Nature", keywordId: "nature" },
+  { match: "Companion", keywordId: "companion" },
   { match: "HP", keywordId: "health" },
 ];
 
