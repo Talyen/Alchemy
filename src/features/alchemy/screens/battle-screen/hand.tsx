@@ -58,6 +58,7 @@ export function BattleHand({
               handCardRefs.current[`${card.id}-${card.uid}`] = node;
             }}
             ariaLabel={`Play ${getCardDisplayTitle(card)}`}
+            descriptionContext={{ ...battleState.talentEffects, companionDamageBonus: battleState.trinketEffects.companionDamageBonus, companionDamageBuff: battleState.companionDamageBuff }}
             shimmerActive={isShimmering}
             shimmerToken={shimmerState?.token}
             baseTransform={isHovered ? getHoverHandTransform(offset) : getRestingHandTransform(offset)}

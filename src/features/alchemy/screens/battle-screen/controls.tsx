@@ -50,7 +50,7 @@ function BattleControls({
     <div className={isMobileLandscape ? battleBottomColumnClass.mobile : battleBottomColumnClass.desktop}>
       <div className="relative flex flex-col items-center gap-2">
         <Button
-          variant="ghost"
+          variant="outline"
           size="icon"
           className={isMobileLandscape ? "h-20 w-20 text-muted-foreground hover:text-foreground" : "h-8 w-8 text-muted-foreground hover:text-foreground"}
           onClick={(e) => onOpenMenu(e.currentTarget.getBoundingClientRect())}
@@ -71,7 +71,7 @@ function BattleControls({
 
         {import.meta.env.DEV ? (
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
             className={isMobileLandscape ? "h-20 w-20 text-amber-200 hover:text-amber-100 text-2xl" : "w-full text-amber-200 hover:text-amber-100 text-xs"}
             onClick={onSkipCombatDevMode}

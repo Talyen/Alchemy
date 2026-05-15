@@ -1,8 +1,10 @@
 // Manages homestead persistent state: material inventory, constructed buildings,
-// planted farm plots, and completed research. Provides actions for spending
-// materials and collecting farm yields between runs.
+// planted farm plots, completed research, and bonded companions. Provides actions
+// for spending materials and bonding with companions.
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useRef } from "react";
+import type { CompanionId } from "@/lib/game-data";
+import { companionLibrary } from "@/lib/game-data";
 import {
   type BuildingId,
   type FarmId,
@@ -12,66 +14,128 @@ import {
 import { emptyInventory, addInventory, subtractInventory, canAfford } from "@/lib/homestead/inventory";
 import { computeHomesteadEffects } from "@/lib/homestead/effects";
 import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
+import { createEmptyTierRecord } from "@/lib/homestead/tiers";
+
+const companionTierItems = Object.keys(companionLibrary).map((id) => ({ id, tiers: [null, null, null] }));
+
+export const COMPANION_BOND_TIERS = [
+  { wood: 0, iron: 0, herbs: 0, food: 20, crystal: 0 },
+  { wood: 0, iron: 0, herbs: 0, food: 30, crystal: 0 },
+  { wood: 0, iron: 0, herbs: 0, food: 40, crystal: 0 },
+] as const;
+
+export const COMPANION_MAX_TIER = COMPANION_BOND_TIERS.length;
+
+type HomesteadState = {
+  materialInventory: MaterialInventory;
+  constructedBuildings: Record<BuildingId, number>;
+  plantedFarms: Record<FarmId, number>;
+  completedResearch: Record<ResearchId, number>;
+  bondedCompanions: Record<CompanionId, number>;
+};
 
 export function useHomesteadState(initial: {
   materialInventory: MaterialInventory;
-  constructedBuildings: BuildingId[];
-  plantedFarms: FarmId[];
-  completedResearch: ResearchId[];
+  constructedBuildings: Record<BuildingId, number>;
+  plantedFarms: Record<FarmId, number>;
+  completedResearch: Record<ResearchId, number>;
+  bondedCompanions: Record<CompanionId, number>;
 }) {
-  const [materialInventory, setMaterialInventory] = useState<MaterialInventory>(initial.materialInventory);
-  const [constructedBuildings, setConstructedBuildings] = useState<BuildingId[]>(initial.constructedBuildings);
-  const [plantedFarms, setPlantedFarms] = useState<FarmId[]>(initial.plantedFarms);
-  const [completedResearch, setCompletedResearch] = useState<ResearchId[]>(initial.completedResearch);
+  const [state, setState] = useState<HomesteadState>(initial);
+  const stateRef = useRef(state);
+
+  function commit(next: HomesteadState) {
+    stateRef.current = next;
+    setState(next);
+  }
 
   const effects = useMemo(
-    () => computeHomesteadEffects(constructedBuildings, plantedFarms, completedResearch),
-    [constructedBuildings, plantedFarms, completedResearch],
+    () => computeHomesteadEffects(state.constructedBuildings, state.plantedFarms, state.completedResearch, state.bondedCompanions),
+    [state],
   );
 
   const addMaterials = useCallback((materials: MaterialInventory) => {
-    setMaterialInventory((prev) => addInventory(prev, materials));
+    const current = stateRef.current;
+    commit({ ...current, materialInventory: addInventory(current.materialInventory, materials) });
   }, []);
 
   const setMaterials = useCallback((materials: MaterialInventory) => {
-    setMaterialInventory(materials);
+    commit({ ...stateRef.current, materialInventory: materials });
   }, []);
 
   const constructBuilding = useCallback(
     (id: BuildingId): boolean => {
       const building = buildings.find((b) => b.id === id);
-      if (!building || constructedBuildings.includes(id)) return false;
+      const current = stateRef.current;
+      const currentLevel = current.constructedBuildings[id] ?? 0;
+      if (!building || currentLevel >= building.tiers.length) return false;
 
-      if (!canAfford(materialInventory, building.cost)) return false;
-      setMaterialInventory((prev) => subtractInventory(prev, building.cost));
-      setConstructedBuildings((prev) => [...prev, id]);
+      const tier = building.tiers[currentLevel];
+      if (!canAfford(current.materialInventory, tier.cost)) return false;
+      commit({
+        ...current,
+        materialInventory: subtractInventory(current.materialInventory, tier.cost),
+        constructedBuildings: { ...current.constructedBuildings, [id]: currentLevel + 1 },
+      });
       return true;
     },
-    [constructedBuildings, materialInventory],
+    [],
   );
 
   const plantFarm = useCallback(
     (id: FarmId): boolean => {
       const farm = farmPlots.find((f) => f.id === id);
-      if (!farm || plantedFarms.includes(id)) return false;
-      if (!canAfford(materialInventory, farm.cost)) return false;
-      setMaterialInventory((prev) => subtractInventory(prev, farm.cost));
-      setPlantedFarms((prev) => [...prev, id]);
+      const current = stateRef.current;
+      const currentLevel = current.plantedFarms[id] ?? 0;
+      if (!farm || currentLevel >= farm.tiers.length) return false;
+
+      const tier = farm.tiers[currentLevel];
+      if (!canAfford(current.materialInventory, tier.cost)) return false;
+      commit({
+        ...current,
+        materialInventory: subtractInventory(current.materialInventory, tier.cost),
+        plantedFarms: { ...current.plantedFarms, [id]: currentLevel + 1 },
+      });
       return true;
     },
-    [plantedFarms, materialInventory],
+    [],
   );
 
   const completeResearch = useCallback(
     (id: ResearchId): boolean => {
       const research = researchUpgrades.find((r) => r.id === id);
-      if (!research || completedResearch.includes(id)) return false;
-      if (!canAfford(materialInventory, research.cost)) return false;
-      setMaterialInventory((prev) => subtractInventory(prev, research.cost));
-      setCompletedResearch((prev) => [...prev, id]);
+      const current = stateRef.current;
+      const currentLevel = current.completedResearch[id] ?? 0;
+      if (!research || currentLevel >= research.tiers.length) return false;
+
+      const tier = research.tiers[currentLevel];
+      if (!canAfford(current.materialInventory, tier.cost)) return false;
+      commit({
+        ...current,
+        materialInventory: subtractInventory(current.materialInventory, tier.cost),
+        completedResearch: { ...current.completedResearch, [id]: currentLevel + 1 },
+      });
       return true;
     },
-    [completedResearch, materialInventory],
+    [],
+  );
+
+  const bondCompanion = useCallback(
+    (id: CompanionId): boolean => {
+      const current = stateRef.current;
+      const currentLevel = current.bondedCompanions[id] ?? 0;
+      if (currentLevel >= COMPANION_MAX_TIER) return false;
+
+      const cost = COMPANION_BOND_TIERS[currentLevel];
+      if (!canAfford(current.materialInventory, cost)) return false;
+      commit({
+        ...current,
+        materialInventory: subtractInventory(current.materialInventory, cost),
+        bondedCompanions: { ...current.bondedCompanions, [id]: currentLevel + 1 },
+      });
+      return true;
+    },
+    [],
   );
 
   const triggerFarmYield = useCallback(() => {
@@ -79,23 +143,28 @@ export function useHomesteadState(initial: {
   }, []);
 
   const reset = useCallback(() => {
-    setMaterialInventory(emptyInventory());
-    setConstructedBuildings([]);
-    setPlantedFarms([]);
-    setCompletedResearch([]);
+    commit({
+      materialInventory: emptyInventory(),
+      constructedBuildings: createEmptyTierRecord(buildings),
+      plantedFarms: createEmptyTierRecord(farmPlots),
+      completedResearch: createEmptyTierRecord(researchUpgrades),
+      bondedCompanions: createEmptyTierRecord(companionTierItems) as Record<CompanionId, number>,
+    });
   }, []);
 
   return {
-    materialInventory,
+    materialInventory: state.materialInventory,
     setMaterials,
-    constructedBuildings,
-    plantedFarms,
-    completedResearch,
+    constructedBuildings: state.constructedBuildings,
+    plantedFarms: state.plantedFarms,
+    completedResearch: state.completedResearch,
+    bondedCompanions: state.bondedCompanions,
     effects,
     addMaterials,
     constructBuilding,
     plantFarm,
     completeResearch,
+    bondCompanion,
     triggerFarmYield,
     reset,
   };

@@ -8,7 +8,7 @@ import { getDifficultyModifiers, getGoldMultiplier, getStartingDeck, type Battle
 import { playVictory, playDefeat, playGoldGain } from "@/lib/audio";
 import { appendUnique, appendUniqueMany } from "@/lib/utils";
 import type { Destination, Screen } from "./types";
-import { getEnemyMaterialLoot } from "@/lib/homestead/loot";
+import { applyMaterialFindBonus, getEnemyMaterialLoot } from "@/lib/homestead/loot";
 import { type HomesteadEffectManifest, type MaterialInventory } from "@/lib/homestead/types";
 import {
   ACTS_PER_RUN,
@@ -113,7 +113,7 @@ export function useRunNavigation({
     setDiscoveredCardIds,
     setDiscoveredTrinketIds,
     awardMysteryXP: talents.awardMysteryXP,
-    onAddMaterials: onAddMaterialsRef.current,
+    onAddMaterials: (materials) => onAddMaterialsRef.current(applyMaterialFindBonus(materials, homesteadEffectsRef.current)),
     advanceToNextDestination,
     onAwardGold: run.addRunGold,
   });
@@ -235,7 +235,7 @@ export function useRunNavigation({
   }
 
   function getVictoryMaterials() {
-    return getEnemyMaterialLoot(battleState.currentEnemy.id, battleState.currentEnemy.enemyType);
+    return applyMaterialFindBonus(getEnemyMaterialLoot(battleState.currentEnemy.id, battleState.currentEnemy.enemyType), homesteadEffectsRef.current);
   }
 
   function createVictoryRewardState(
@@ -434,9 +434,10 @@ export function useRunNavigation({
   }
 
   function awardRunEndMaterials() {
-    const herbs = homesteadEffectsRef.current.potionManaBonus > 0 ? run.roomsEncountered : 0;
+    const baseHerbs = homesteadEffectsRef.current.herbFindBonus > 0 ? run.roomsEncountered : 0;
     const food = homesteadEffectsRef.current.companionDamage > 0 ? run.roomsEncountered : 0;
-    const mats: MaterialInventory = { wood: 0, iron: 0, herbs, food, crystal: 0 };
+    const mats = applyMaterialFindBonus({ wood: 0, iron: 0, herbs: baseHerbs, food, crystal: 0 }, homesteadEffectsRef.current);
+    const herbs = mats.herbs;
     if (herbs > 0 || food > 0) onAddMaterialsRef.current(mats);
     setRunEndMaterials(mats);
   }

@@ -40,6 +40,7 @@ export function chooseWishCard(state: BattleState, cardId: string) {
 
 export function processCompanionTurnStart(state: BattleState, combatTexts: CombatTextEvent[]) {
   if (!state.activeCompanion || state.enemyHealth <= 0) return state;
+  const companionBondLevel = state.talentEffects.companionBondLevels[state.activeCompanion.id] ?? 0;
 
   const companionCard: BattleCard = {
     id: `companion-${state.activeCompanion.id}`,
@@ -49,7 +50,7 @@ export function processCompanionTurnStart(state: BattleState, combatTexts: Comba
     cost: 0,
     effects: state.activeCompanion.turnStartEffects.map((e) =>
       e.kind === "damage"
-        ? { ...e, amount: e.amount + state.talentEffects.companionDamage + state.trinketEffects.companionDamageBonus + state.companionDamageBuff }
+        ? { ...e, amount: e.amount + companionBondLevel + state.talentEffects.companionDamage + state.trinketEffects.companionDamageBonus + state.companionDamageBuff }
         : e,
     ),
   };

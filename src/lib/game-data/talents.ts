@@ -247,11 +247,13 @@ export function createEmptyTalentManifest(): TalentEffectManifest {
     goldPerCombat: 0,
     potionDiscount: 0,
     potionManaBonus: 0,
+    potionPotency: 1,
     removeCardDiscount: 0,
     enemyGoldDropBonus: 0,
     eliteGoldDropBonus: 0,
     goldOnWish: 0,
     mixPotionDiscount: 0,
+    companionBondLevels: { wolf: 0, "lizard-scout": 0, imp: 0, "frost-whelp": 0, bear: 0, panther: 0, phoenix: 0 },
 
     holyLifestealPercent: 0,
     firstHolyCardFree: false,

@@ -12,6 +12,7 @@ import {
   keywordDefinitions,
   trinketLibrary,
   type CharacterId,
+  type CompanionId,
   type DifficultyId,
   type KeywordId,
 } from "@/lib/game-data";
@@ -29,7 +30,8 @@ import { useMobileDetection, useVirtualResolution } from "@/features/alchemy/hoo
 import type { Screen } from "@/features/alchemy/types";
 import { GameMenu } from "@/features/alchemy/ui/shared-ui";
 import { useAlchemyRunController } from "@/features/alchemy/use-alchemy-run-controller";
-import { useHomesteadState } from "@/features/alchemy/use-homestead-state";
+import { useHomesteadState, COMPANION_BOND_TIERS, COMPANION_MAX_TIER } from "@/features/alchemy/use-homestead-state";
+import { HomesteadProvider } from "@/features/alchemy/homestead-context";
 import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
 import { canAfford } from "@/lib/homestead/inventory";
 import { PAGE_EXIT_MS } from "@/lib/game-constants";
@@ -112,6 +114,7 @@ export default function App() {
     constructedBuildings: initialSave.constructedBuildings,
     plantedFarms: initialSave.plantedFarms,
     completedResearch: initialSave.completedResearch,
+    bondedCompanions: initialSave.bondedCompanions,
   });
   function handleMarkDifficultyCompleted(characterId: CharacterId, difficultyId: DifficultyId) {
     setCompletedDifficulties((prev) => {
@@ -190,6 +193,7 @@ export default function App() {
     constructedBuildings: homestead.constructedBuildings,
     plantedFarms: homestead.plantedFarms,
     completedResearch: homestead.completedResearch,
+    bondedCompanions: homestead.bondedCompanions,
     completedDifficulties,
   });
 
@@ -215,16 +219,31 @@ export default function App() {
   });
 
   const hasAffordableHomestead = (() => {
-    const { materialInventory, constructedBuildings, plantedFarms, completedResearch } = homestead;
+    const { materialInventory, constructedBuildings, plantedFarms, completedResearch, bondedCompanions } = homestead;
     const affordableBuilding = buildings.some((b) => {
-      if (constructedBuildings.includes(b.id)) return false;
-      return canAfford(materialInventory, b.cost);
+      const currentLevel = constructedBuildings[b.id] ?? 0;
+      if (currentLevel >= b.tiers.length) return false;
+      return canAfford(materialInventory, b.tiers[currentLevel].cost);
     });
-    const affordableFarm = farmPlots.some((f) => !plantedFarms.includes(f.id) && canAfford(materialInventory, f.cost));
-    const affordableResearch = researchUpgrades.some(
-      (r) => !completedResearch.includes(r.id) && canAfford(materialInventory, r.cost),
-    );
-    return affordableBuilding || affordableFarm || affordableResearch;
+    const affordableFarm = farmPlots.some((f) => {
+      const currentLevel = plantedFarms[f.id] ?? 0;
+      if (currentLevel >= f.tiers.length) return false;
+      return canAfford(materialInventory, f.tiers[currentLevel].cost);
+    });
+    const affordableResearch = researchUpgrades.some((r) => {
+      const currentLevel = completedResearch[r.id] ?? 0;
+      if (currentLevel >= r.tiers.length) return false;
+      return canAfford(materialInventory, r.tiers[currentLevel].cost);
+    });
+    const affordableBond = cardLibrary.some((c) => {
+      const effect = c.effects.find((e): e is { kind: "summon-companion"; companionId: CompanionId } => e.kind === "summon-companion");
+      if (!effect) return false;
+      if (!discoveredCardIds.includes(c.id)) return false;
+      const currentLevel = bondedCompanions[effect.companionId] ?? 0;
+      if (currentLevel >= COMPANION_MAX_TIER) return false;
+      return canAfford(materialInventory, COMPANION_BOND_TIERS[currentLevel]);
+    });
+    return affordableBuilding || affordableFarm || affordableResearch || affordableBond;
   })();
 
   function openBattleMenu(rect?: DOMRect) {
@@ -276,7 +295,8 @@ export default function App() {
                   key={renderedScreen}
                   className={`${pagePhase === "exit" ? "page-exit" : "page-enter"} h-full w-full overflow-hidden`}
                 >
-                  {renderAlchemyScreen({
+                  <HomesteadProvider cardDescriptionContext={{ flatPhysicalDamage: homestead.effects.flatPhysicalDamage, companionDamage: homestead.effects.companionDamage, companionBondLevels: homestead.bondedCompanions, potionPotency: 1 + homestead.effects.potionPotency }}>
+                    {renderAlchemyScreen({
                     screen: renderedScreen,
                     run,
                     save,
@@ -291,6 +311,7 @@ export default function App() {
                     onClearSaveData: clearSaveData,
                     onUnlockAllDevMode: unlockAllDevMode,
                   })}
+                  </HomesteadProvider>
                 </div>
               )}
               <GameMenu

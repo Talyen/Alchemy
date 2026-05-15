@@ -28,7 +28,7 @@ export type PlayerStatusId = "block" | "armor" | "forge" | "haste" | "burn" | "p
 
 export type EnemyStatusId = "burn" | "poison" | "bleed" | "freeze" | "stun";
 
-export type CompanionId = "wolf" | "lizard-scout" | "imp";
+export type CompanionId = "wolf" | "lizard-scout" | "imp" | "frost-whelp" | "bear" | "panther" | "phoenix";
 
 export type EnemyAttackEffect =
   | { kind: "damage"; damageType: DamageType; amount: number; lifesteal?: boolean }
@@ -168,11 +168,15 @@ export type TalentEffectManifest = {
   goldPerCombat: number;
   potionDiscount: number;
   potionManaBonus: number;
+  potionPotency: number;
   removeCardDiscount: number;
   enemyGoldDropBonus: number;
   eliteGoldDropBonus: number;
   goldOnWish: number;
   mixPotionDiscount: number;
+
+  // --- Companions ---
+  companionBondLevels: Record<CompanionId, number>;
 
   // --- Holy ---
   holyLifestealPercent: number;

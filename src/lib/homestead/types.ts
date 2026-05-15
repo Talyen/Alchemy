@@ -29,35 +29,36 @@ export type FarmId = "wheat-field" | "herb-garden" | "chicken-coop" | "pasture" 
 
 export type ResearchId = "carpentry" | "masonry" | "crop-rotation" | "animal-husbandry" | "fortified-walls" | "metallurgy";
 
+export type HomesteadUpgradeTier = {
+  cost: MaterialInventory;
+  effects?: Partial<HomesteadEffectManifest>;
+  benefitDescription: string;
+  nonCombatBenefitDescription?: string;
+};
+
 export type HomesteadBuilding = {
   id: BuildingId;
   title: string;
   description: string;
-  cost: MaterialInventory;
-  benefitDescription: string;
-  nonCombatBenefitDescription?: string;
+  tiers: HomesteadUpgradeTier[];
   buttonLabel: string;
-  effects?: Partial<HomesteadEffectManifest>;
+  yield?: MaterialInventory;
 };
 
 export type HomesteadFarm = {
   id: FarmId;
   title: string;
   description: string;
-  cost: MaterialInventory;
+  tiers: HomesteadUpgradeTier[];
   yield: MaterialInventory;
-  benefitDescription?: string;
-  nonCombatBenefitDescription?: string;
   buttonLabel: string;
-  effects?: Partial<HomesteadEffectManifest>;
 };
 
 export type HomesteadResearch = {
   id: ResearchId;
   title: string;
   description: string;
-  cost: MaterialInventory;
-  benefitDescription: string;
+  tiers: HomesteadUpgradeTier[];
   buttonLabel: string;
 };
 
@@ -66,9 +67,12 @@ export type HomesteadResearch = {
 export type HomesteadEffectManifest = {
   flatPhysicalDamage: number;
   companionDamage: number;
+  companionBondLevels: Record<import("@/lib/game-data").CompanionId, number>;
   potionHealMultiplier: number;
   potionManaBonus: number;
   potionDiscount: number;
+  potionPotency: number;
+  herbFindBonus: number;
   startGold: number;
   startBlock: number;
   campfireHealBonus: number;

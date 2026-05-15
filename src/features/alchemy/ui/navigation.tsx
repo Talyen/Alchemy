@@ -2,16 +2,16 @@ import { BookOpen, ChevronLeft, ChevronRight, Cog, House, Swords, TreePine, Wand
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
-export function PaginationControls({ page, totalPages, onPageChange, size = "sm", reserveSpace = false }: { page: number; totalPages: number; onPageChange: (page: number) => void; size?: "sm" | "default"; reserveSpace?: boolean }) {
+export function PaginationControls({ page, totalPages, onPageChange, size = "sm", reserveSpace = false, className }: { page: number; totalPages: number; onPageChange: (page: number) => void; size?: "sm" | "default"; reserveSpace?: boolean; className?: string }) {
   const buttonClass = size === "sm" ? "h-9 w-9" : "h-11 w-11";
   const widthClass = size === "sm" ? "max-w-28" : "max-w-36";
 
   if (totalPages <= 1) {
-    return reserveSpace ? <div className={cn("mt-4 min-h-[44px] w-full", widthClass)} aria-hidden="true" /> : null;
+    return reserveSpace ? <div className={cn("mt-4 min-h-[44px] w-full", widthClass, className)} aria-hidden="true" /> : null;
   }
 
   return (
-    <div className={cn("mt-4 flex min-h-[44px] w-full items-center justify-center gap-4", widthClass)}>
+    <div className={cn("mt-4 flex min-h-[44px] w-full items-center justify-center gap-4", widthClass, className)}>
       <Button aria-label="Previous page" className={buttonClass} variant="outline" size="icon" disabled={page === 0} onClick={() => onPageChange(page - 1)}>
         <ChevronLeft className="h-5 w-5" />
       </Button>
@@ -28,25 +28,25 @@ export function GameMenu({ isOpen, onClose, onMainMenu, onCollection, onTalents,
   const panel = (
     <div className="motion-panel alchemy-shell bg-[#0c0a07] w-full max-w-sm rounded-[26px] border border-border/80 px-4 py-5" onClick={(e) => e.stopPropagation()}>
       <div className="grid gap-2">
-        <Button variant="ghost" className="justify-start" onClick={() => { onMainMenu(); onClose(); }}>
+        <Button variant="outline" className="justify-start border-0 bg-transparent" onClick={() => { onMainMenu(); onClose(); }}>
           <House className="h-4 w-4" /> Main Menu
         </Button>
-        <Button variant="ghost" className="justify-start" onClick={() => { onCollection(); onClose(); }}>
+        <Button variant="outline" className="justify-start border-0 bg-transparent" onClick={() => { onCollection(); onClose(); }}>
           <BookOpen className="h-4 w-4" /> Collection
         </Button>
-        <Button variant="ghost" className="justify-start" onClick={() => { onTalents(); onClose(); }}>
+        <Button variant="outline" className="justify-start border-0 bg-transparent" onClick={() => { onTalents(); onClose(); }}>
           <WandSparkles className="h-4 w-4" /> Talents
         </Button>
-        <Button variant="ghost" className="justify-start" onClick={() => { onHomestead(); onClose(); }}>
+        <Button variant="outline" className="justify-start border-0 bg-transparent" onClick={() => { onHomestead(); onClose(); }}>
           <TreePine className="h-4 w-4" /> Homestead
         </Button>
-        <Button variant="ghost" className="justify-start" onClick={() => { onOptions(); onClose(); }}>
+        <Button variant="outline" className="justify-start border-0 bg-transparent" onClick={() => { onOptions(); onClose(); }}>
           <Cog className="h-4 w-4" /> Options
         </Button>
         {onEndRun ? (
           <>
             <div className="my-1 border-t border-border/60" />
-            <Button variant="ghost" className="justify-start text-red-400 hover:text-red-300 hover:bg-red-950/40" onClick={() => { onEndRun(); onClose(); }}>
+            <Button variant="outline" className="justify-start border-0 bg-transparent text-red-400 hover:text-red-300 hover:bg-red-950/40" onClick={() => { onEndRun(); onClose(); }}>
               <Swords className="h-4 w-4" /> End Run
             </Button>
           </>

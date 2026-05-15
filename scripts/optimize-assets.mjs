@@ -85,6 +85,10 @@ const assets = [
   { source: "Cards/Briar Shield.png", target: "briar-shield.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Thorn Mail.png", target: "thorn-mail.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Pack Tactics.png", target: "pack-tactics.webp", width: cardWidth, quality: cardQuality },
+  { source: "Cards/Frost Whelp Companion.png", target: "frost-whelp-companion.webp", width: cardWidth, quality: cardQuality },
+  { source: "Cards/Bear Companion.png", target: "bear-companion.webp", width: cardWidth, quality: cardQuality },
+  { source: "Cards/Panther Companion.png", target: "panther-companion.webp", width: cardWidth, quality: cardQuality },
+  { source: "Cards/Phoenix Companion.png", target: "phoenix-companion.webp", width: cardWidth, quality: cardQuality },
   // Destinations
   { source: "Destinations/Campfire.png", target: "campfire.webp", width: 900, quality: 84 },
   { source: "Destinations/Alchemist's Shop.png", target: "alchemist-shop.webp", width: 900, quality: 84 },

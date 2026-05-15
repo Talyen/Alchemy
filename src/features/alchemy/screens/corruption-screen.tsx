@@ -164,7 +164,7 @@ export function CorruptionScreen({ runDeck, result, onCorrupt, onLeave, onContin
           <CorruptionDeckPicker runDeck={runDeck} selectedIndex={selectedIndex} onSelect={setSelectedIndex} page={page} onPageChange={setPage} cardRevealDelay={ANIMATION_STAGGER_UNIT} />
           <div className="mt-5 flex justify-center gap-3">
             <BlurFade delay={ANIMATION_STAGGER_UNIT * 9} direction="up" offset={6}>
-              <Button variant="ghost" onClick={() => { setSelecting(false); setSelectedIndex(null); setPage(0); }}>Cancel</Button>
+              <Button variant="outline" onClick={() => { setSelecting(false); setSelectedIndex(null); setPage(0); }}>Cancel</Button>
             </BlurFade>
             <BlurFade delay={ANIMATION_STAGGER_UNIT * 10} direction="up" offset={6}>
               <CorruptionActionButton disabled={selectedIndex === null} onClick={handleConfirm}>Corrupt</CorruptionActionButton>

@@ -1,17 +1,19 @@
 // Save normalization and migration helpers for legacy or partial localStorage payloads.
 // Depends on domain-specific migration helpers and save defaults.
 import type { TalentXP } from "@/lib/talents";
-import type { ResearchId } from "@/lib/homestead/types";
+import type { BuildingId, FarmId, ResearchId } from "@/lib/homestead/types";
+import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
+import { companionLibrary } from "@/lib/game-data";
 
-import type { CharacterId, DifficultyId, UnlockedTalents } from "@/lib/game-data";
+import type { CharacterId, CompanionId, DifficultyId, UnlockedTalents } from "@/lib/game-data";
 import { normalizeActiveRun } from "./active-run";
-import { migrateBuildingIds, migrateFarmIds, migrateMaterialInventory } from "./homestead";
+import { migrateMaterialInventory, migrateToTierLevels } from "./homestead";
 import { normalizeDisplayMode, normalizeUiScale } from "./options";
 import type { SaveData } from "./types";
 import { defaultSaveData } from "./defaults";
 
 export { normalizeActiveRun } from "./active-run";
-export { migrateBuildingIds, migrateFarmIds, migrateMaterialInventory } from "./homestead";
+export { migrateBuildingIds, migrateFarmIds, migrateMaterialInventory, migrateToTierLevels } from "./homestead";
 export { normalizeDisplayMode, normalizeUiScale } from "./options";
 
 // Normalize each field independently so one corrupt/old value falls back without wiping
@@ -45,11 +47,24 @@ export function normalizeSaveData(parsed: Partial<SaveData>): SaveData {
     brightness: typeof parsed.brightness === "number" ? parsed.brightness : defaultSaveData.brightness,
     activeRun: normalizeActiveRun(parsed.activeRun),
     materialInventory: migrateMaterialInventory(parsed.materialInventory),
-    constructedBuildings: migrateBuildingIds(parsed.constructedBuildings),
-    plantedFarms: migrateFarmIds(parsed.plantedFarms),
-    completedResearch: Array.isArray(parsed.completedResearch)
-      ? (parsed.completedResearch as ResearchId[])
-      : defaultSaveData.completedResearch,
+    constructedBuildings: migrateToTierLevels(
+      parsed.constructedBuildings,
+      buildings,
+      { smithy: "blacksmiths-forge" },
+    ) as Record<BuildingId, number>,
+    plantedFarms: migrateToTierLevels(
+      parsed.plantedFarms,
+      farmPlots,
+      { "sheep-pasture": "pasture" },
+    ) as Record<FarmId, number>,
+    completedResearch: migrateToTierLevels(
+      parsed.completedResearch ?? defaultSaveData.completedResearch,
+      researchUpgrades,
+    ) as Record<ResearchId, number>,
+    bondedCompanions: migrateToTierLevels(
+      parsed.bondedCompanions ?? defaultSaveData.bondedCompanions,
+      Object.keys(companionLibrary).map((id) => ({ id, tiers: [null, null, null] })),
+    ) as Record<CompanionId, number>,
     completedDifficulties:
       typeof parsed.completedDifficulties === "object" && parsed.completedDifficulties
         ? (parsed.completedDifficulties as Record<CharacterId, DifficultyId[]>)

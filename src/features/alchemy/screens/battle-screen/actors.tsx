@@ -85,7 +85,7 @@ export function BattleActors({
           />
           {battleState.activeCompanion ? (
             <div className="absolute bottom-[clamp(88px,8.5cqh,118px)] left-[calc(100%-clamp(42px,4.6cqh,68px))] z-20">
-              <CompanionPanel companion={battleState.activeCompanion} shaking={companionShaking} damageBonus={battleState.companionDamageBuff} />
+              <CompanionPanel companion={battleState.activeCompanion} shaking={companionShaking} damageBonus={battleState.companionDamageBuff + battleState.talentEffects.companionDamage + battleState.trinketEffects.companionDamageBonus + (battleState.talentEffects.companionBondLevels[battleState.activeCompanion.id] ?? 0)} />
             </div>
           ) : null}
         </div>

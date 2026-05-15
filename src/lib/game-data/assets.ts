@@ -31,6 +31,10 @@ import luckPotion from "@/assets/optimized/luck-potion.webp";
 import luckyClover from "@/assets/optimized/lucky-clover.webp";
 import fangs from "@/assets/optimized/fangs.webp";
 import packTactics from "@/assets/optimized/pack-tactics.webp";
+import frostWhelpCompanion from "@/assets/optimized/frost-whelp-companion.webp";
+import bearCompanion from "@/assets/optimized/bear-companion.webp";
+import pantherCompanion from "@/assets/optimized/panther-companion.webp";
+import phoenixCompanion from "@/assets/optimized/phoenix-companion.webp";
 import polarPendant from "@/assets/optimized/polar-pendant.webp";
 import fireball from "@/assets/optimized/fireball.webp";
 import shieldBash from "@/assets/optimized/shield-bash.webp";
@@ -159,6 +163,10 @@ export {
   mudElemental,
   necromancer,
   packTactics,
+  frostWhelpCompanion,
+  bearCompanion,
+  pantherCompanion,
+  phoenixCompanion,
   panaceaPotion,
   mixedPotion,
   polarPendant,

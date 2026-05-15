@@ -2,10 +2,10 @@
 // All three tab grids are rendered simultaneously (preloaded) — only the active
 // one is visible, so switching tabs is instant with no image re-loading.
 import { cn } from "@/lib/utils";
-import { House, Swords } from "lucide-react";
+import { ChevronLeft, ChevronRight, House, Swords } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageLayout, ScreenHeader } from "../ui/shared-ui";
-import { CollectionGrid, CollectionPagination, CollectionTabs, getCollectionTotalPages } from "../ui/collection-ui";
+import { CollectionGrid, CollectionTabs, getCollectionTotalPages } from "../ui/collection-ui";
 import { useShimmerController } from "../hooks";
 import type { CollectionTab } from "../types";
 
@@ -14,7 +14,7 @@ const COLLECTION_TABS: CollectionTab[] = ["cards", "bestiary", "trinkets"];
 export function CollectionScreen({
   hasActiveBattle, onMainMenu, onReturnToBattle, collectionTab, onSelectTab,
   hoveredCardId, onHoverChange, discoveredCardIds, encounteredEnemyIds,
-  discoveredTrinketIds, collectionPages, onPageChange,
+  discoveredTrinketIds, collectionPages, onPageChange, bondedCompanions,
 }: {
   hasActiveBattle: boolean; onMainMenu: () => void; onReturnToBattle: () => void;
   collectionTab: CollectionTab; onSelectTab: (tab: CollectionTab) => void;
@@ -23,6 +23,7 @@ export function CollectionScreen({
   discoveredCardIds: string[]; encounteredEnemyIds: string[]; discoveredTrinketIds: string[];
   collectionPages: Record<CollectionTab, number>;
   onPageChange: (tab: CollectionTab, page: number) => void;
+  bondedCompanions: Record<string, number>;
 }) {
   const { shimmerState, maybeTriggerShimmer } = useShimmerController();
   const totalPages = getCollectionTotalPages(collectionTab);
@@ -57,16 +58,26 @@ export function CollectionScreen({
                 page={collectionPages[tab]}
                 shimmerState={shimmerState}
                 onHoverShimmer={maybeTriggerShimmer}
+                bondedCompanions={bondedCompanions}
               />
             </div>
           ))}
         </div>
-        <div className="min-h-[48px]"><CollectionPagination page={activePage} totalPages={totalPages} onPageChange={handlePageChange} /></div>
       </div>
 
-      <div className="mt-6 flex items-center justify-center gap-3">
+      <div className="mt-6 flex flex-wrap items-center justify-center gap-x-2 gap-y-2">
+        {totalPages > 1 && (
+          <Button aria-label="Previous page" variant="outline" size="icon" className="h-9 w-9" disabled={activePage === 0} onClick={() => handlePageChange(activePage - 1)}>
+            <ChevronLeft className="h-5 w-5" />
+          </Button>
+        )}
         <Button variant="outline" onClick={onMainMenu}><House className="h-4 w-4" /> Main Menu</Button>
         {hasActiveBattle && <Button onClick={onReturnToBattle}><Swords className="h-4 w-4" /> Return to Battle</Button>}
+        {totalPages > 1 && (
+          <Button aria-label="Next page" variant="outline" size="icon" className="h-9 w-9" disabled={activePage >= totalPages - 1} onClick={() => handlePageChange(activePage + 1)}>
+            <ChevronRight className="h-5 w-5" />
+          </Button>
+        )}
       </div>
     </PageLayout>
   );

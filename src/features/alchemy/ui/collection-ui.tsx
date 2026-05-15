@@ -19,6 +19,7 @@ import { clearTiltFromEvent, getHoverId, setTiltFromEvent } from "../utils";
 import { DetailPopup } from "./card-ui";
 import { EnemyTooltip } from "./enemy-tooltip";
 import { ShimmerOverlay } from "./shared-ui";
+import { getEffectiveCardDescriptionLines } from "../utils/card-description";
 import { COLLECTION_PAGE_SIZE } from "@/lib/game-constants";
 import { playCardSound, playEnemyAttack } from "@/lib/audio";
 
@@ -114,6 +115,7 @@ export function CollectionGrid({
   page,
   shimmerState,
   onHoverShimmer,
+  bondedCompanions,
 }: {
   collectionTab: CollectionTab;
   hoveredCardId: string | null;
@@ -124,12 +126,14 @@ export function CollectionGrid({
   page: number;
   shimmerState: { cardId: string; token: number } | null;
   onHoverShimmer: (cardId: string) => void;
+  bondedCompanions: Record<string, number>;
 }) {
   const pageItems = getCollectionPageItems({
     collectionTab,
     discoveredCardIds,
     encounteredEnemyIds,
     discoveredTrinketIds,
+    bondedCompanions,
   }).slice(page * collectionPageSize, (page + 1) * collectionPageSize);
 
   return (
@@ -194,12 +198,15 @@ export function CollectionPagination({ page, totalPages, onPageChange }: { page:
   return <PaginationControls page={page} totalPages={totalPages} onPageChange={onPageChange} size="default" reserveSpace />;
 }
 
-function getCardItems(discoveredCardIds: string[]) {
+function getCardItems(discoveredCardIds: string[], bondedCompanions: Record<string, number> = {}) {
   return [...cardLibrary]
     .sort((a, b) => a.title.localeCompare(b.title))
     .map((card) => {
     const discovered = discoveredCardIds.includes(card.id);
-    return { id: card.id, title: discovered ? card.title : "Undiscovered", subtitle: undefined, descriptionLines: discovered ? card.descriptionLines : ["Discover this card during a run to reveal it here."], art: card.art, discovered, hoverScope: "collection-card" as const, frameType: "card" as const };
+    const descriptionLines = discovered
+      ? getEffectiveCardDescriptionLines(card, { companionBondLevels: bondedCompanions })
+      : ["Discover this card during a run to reveal it here."];
+    return { id: card.id, title: discovered ? card.title : "Undiscovered", subtitle: undefined, descriptionLines, art: card.art, discovered, hoverScope: "collection-card" as const, frameType: "card" as const };
   });
 }
 
@@ -226,13 +233,15 @@ function getCollectionPageItems({
   discoveredCardIds,
   encounteredEnemyIds,
   discoveredTrinketIds,
+  bondedCompanions = {},
 }: {
   collectionTab: CollectionTab;
   discoveredCardIds: string[];
   encounteredEnemyIds: string[];
   discoveredTrinketIds: string[];
+  bondedCompanions?: Record<string, number>;
 }) {
-  if (collectionTab === "cards") return getCardItems(discoveredCardIds);
+  if (collectionTab === "cards") return getCardItems(discoveredCardIds, bondedCompanions);
   if (collectionTab === "bestiary") return getBestiaryItems(encounteredEnemyIds);
   return getTrinketItems(discoveredTrinketIds);
 }

@@ -22,6 +22,8 @@ import type { CardGhost, GhostStyle } from "../types";
 import { clearTiltFromEvent, DEFAULT_TILT_STRENGTH, setTiltFromEvent, tokenizeDescription } from "../utils";
 import { DisabledTooltip, GoldCost, ShimmerOverlay } from "./shared-ui";
 import { KeywordTag } from "./keyword-tag";
+import { getEffectiveCardDescriptionLines, type CardDescriptionContext } from "../utils/card-description";
+import { useCardDescriptionContext } from "../homestead-context";
 
 export function renderColoredKeywords(description: string) {
   const parts = tokenizeDescription(description);
@@ -237,6 +239,7 @@ export function BattleCardButton({
   selected = false,
   disabled = false,
   dragging = false,
+  descriptionContext,
 }: {
   card: BattleCard;
   hovered: boolean;
@@ -255,7 +258,11 @@ export function BattleCardButton({
   selected?: boolean;
   disabled?: boolean;
   dragging?: boolean;
+  descriptionContext?: CardDescriptionContext;
 }) {
+  const inheritedDescriptionContext = useCardDescriptionContext();
+  const descriptionLines = getEffectiveCardDescriptionLines(card, descriptionContext ?? inheritedDescriptionContext);
+
   const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
     onClick?.(event);
   };
@@ -267,7 +274,7 @@ export function BattleCardButton({
   return (
     <div className={cn("relative", wrapperClassName)} style={wrapperStyle} onMouseEnter={handleHoverStart} onMouseLeave={onHoverEnd}>
       {hovered ? (
-        <DetailPopup idPrefix={card.id} title={<CardTitle card={card} />} subtitle={undefined} descriptionLines={card.descriptionLines} {...(card.corrupted ? { card } : {})} />
+        <DetailPopup idPrefix={card.id} title={<CardTitle card={card} />} subtitle={undefined} descriptionLines={descriptionLines} {...(card.corrupted ? { card } : {})} />
       ) : null}
 
       <button

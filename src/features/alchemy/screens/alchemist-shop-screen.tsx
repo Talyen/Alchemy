@@ -137,7 +137,7 @@ export function AlchemistShopScreen({
           />
           <div className="mt-5 flex justify-center gap-3">
             <BlurFade delay={staggerDelay(10)} direction="up" offset={6}>
-              <Button variant="ghost" onClick={cancelMix}>Cancel</Button>
+              <Button variant="outline" onClick={cancelMix}>Cancel</Button>
             </BlurFade>
             <BlurFade delay={staggerDelay(11)} direction="up" offset={6}>
               <Button size="lg" disabled={selectedA === null || selectedB === null} onClick={handleMixConfirm}>Combine</Button>

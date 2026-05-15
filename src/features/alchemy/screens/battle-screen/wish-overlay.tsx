@@ -52,6 +52,7 @@ export function WishOverlay({
                 onHoverEnd={() => setHoveredCardId((current) => (current === hoverId ? null : current))}
                 onClick={() => setWishSelectedCard(card)}
                 ariaLabel={`Choose ${getCardDisplayTitle(card)}`}
+                descriptionContext={{ ...battleState.talentEffects, companionDamageBonus: battleState.trinketEffects.companionDamageBonus, companionDamageBuff: battleState.companionDamageBuff }}
                 shimmerActive={shimmerState?.cardId === hoverId}
                 shimmerToken={shimmerState?.token}
                 className={handWidthClass}

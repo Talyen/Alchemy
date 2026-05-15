@@ -226,6 +226,7 @@ export function renderAlchemyScreen({
         discoveredTrinketIds={save.discoveredTrinketIds}
         collectionPages={save.collectionPages}
         onPageChange={save.setCollectionPage}
+        bondedCompanions={homestead.bondedCompanions}
       />;
     case "homestead":
       return <HomesteadScreen
@@ -233,12 +234,15 @@ export function renderAlchemyScreen({
         constructedBuildings={homestead.constructedBuildings}
         plantedFarms={homestead.plantedFarms}
         completedResearch={homestead.completedResearch}
+        bondedCompanions={homestead.bondedCompanions}
+        discoveredCardIds={save.discoveredCardIds}
         hasActiveBattle={run.hasActiveBattle}
         onMainMenu={() => run.goToScreen("menu")}
         onReturnToBattle={run.returnToBattle}
         onConstructBuilding={homestead.constructBuilding}
         onPlantFarm={homestead.plantFarm}
         onCompleteResearch={homestead.completeResearch}
+        onBondCompanion={homestead.bondCompanion}
       />;
     case "talents":
       return <TalentsScreen hasActiveBattle={run.hasActiveBattle} onMainMenu={() => run.goToScreen("menu")} onReturnToBattle={run.returnToBattle} talentXP={run.talentXP} unlockedTalents={run.unlockedTalents} onUnlockTalent={run.unlockTalent} onResetTalents={run.resetUnlockedTalents} />;

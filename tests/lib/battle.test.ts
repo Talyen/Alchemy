@@ -727,6 +727,25 @@ describe("processCompanionTurnStart", () => {
     expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "burn", amount: 2 });
   });
 
+  it("applies only the active companion's bond level", () => {
+    const wolfState = makeState({
+      activeCompanion: companionLibrary.wolf,
+      enemyAttackEffects: [],
+      talentEffects: { ...defaultTalentEffects, companionBondLevels: { ...defaultTalentEffects.companionBondLevels, wolf: 2 } },
+    });
+    const impState = makeState({
+      activeCompanion: companionLibrary.imp,
+      enemyAttackEffects: [],
+      talentEffects: { ...defaultTalentEffects, companionBondLevels: { ...defaultTalentEffects.companionBondLevels, wolf: 2 } },
+    });
+
+    const wolfResult = processCompanionTurnStart(wolfState, []);
+    const impResult = processCompanionTurnStart(impState, []);
+
+    expect(wolfResult.enemyHealth).toBe(27);
+    expect(impResult.enemyHealth).toBe(28);
+  });
+
   it("returns state unchanged when no active companion", () => {
     const state = makeState();
 

@@ -2,7 +2,7 @@
 // Depends on character game data plus talent, homestead, run, and option type contracts.
 import type { TalentXP } from "@/lib/talents";
 import type { BuildingId, FarmId, MaterialInventory, ResearchId } from "@/lib/homestead/types";
-import type { CharacterId, DifficultyId, UnlockedTalents } from "@/lib/game-data";
+import type { CompanionId, CharacterId, DifficultyId, UnlockedTalents } from "@/lib/game-data";
 import type { ActiveRunData } from "../run/types";
 import type { DisplayMode, ResolutionOption, UiScale } from "../types";
 
@@ -23,8 +23,9 @@ export type SaveData = {
   autoEndTurn: boolean;
   activeRun: ActiveRunData | null;
   materialInventory: MaterialInventory;
-  constructedBuildings: BuildingId[];
-  plantedFarms: FarmId[];
-  completedResearch: ResearchId[];
+  constructedBuildings: Record<BuildingId, number>;
+  plantedFarms: Record<FarmId, number>;
+  completedResearch: Record<ResearchId, number>;
+  bondedCompanions: Record<CompanionId, number>;
   completedDifficulties: Record<CharacterId, DifficultyId[]>;
 };

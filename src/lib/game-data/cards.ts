@@ -46,6 +46,10 @@ import {
   wish,
   wishingPotion,
   wolfCompanion,
+  frostWhelpCompanion,
+  bearCompanion,
+  pantherCompanion,
+  phoenixCompanion,
 } from "./assets";
 import type { BattleCard } from "./types";
 
@@ -79,9 +83,13 @@ export const cardLibrary: BattleCard[] = [
   { id: "luck-potion", title: "Luck Potion", descriptionLines: ["Gain 7 Gold", "Consume"], art: luckPotion, cost: 1, consume: true, effects: [{ kind: "gain-gold", amount: 7 }] },
   { id: "wishing-potion", title: "Wishing Potion", descriptionLines: ["Wish 2", "Consume"], art: wishingPotion, cost: 1, consume: true, effects: [{ kind: "wish", amount: 2 }] },
   { id: "mixed-potion", title: "Mixed Potion", descriptionLines: ["Mixed at an Alchemist's Shop"], art: mixedPotion, cost: 1, consume: true, effects: [] },
-  { id: "wolf-companion", title: "Wolf Companion", descriptionLines: ["Summon a Wolf Companion", "Consume"], art: wolfCompanion, cost: 1, consume: true, effects: [{ kind: "summon-companion", companionId: "wolf" }] },
-  { id: "lizard-scout-companion", title: "Lizard Scout Companion", descriptionLines: ["Summon a Lizard Scout Companion", "Consume"], art: lizardScoutCompanion, cost: 1, consume: true, effects: [{ kind: "summon-companion", companionId: "lizard-scout" }] },
-  { id: "imp-companion", title: "Imp Companion", descriptionLines: ["Summon an Imp Companion", "Consume"], art: impCompanion, cost: 1, consume: true, effects: [{ kind: "summon-companion", companionId: "imp" }] },
+  { id: "wolf-companion", title: "Wolf", descriptionLines: ["Deals 1 Bleed damage each turn", "Companion"], art: wolfCompanion, cost: 1, consume: true, effects: [{ kind: "summon-companion", companionId: "wolf" }] },
+  { id: "lizard-scout-companion", title: "Lizard Scout", descriptionLines: ["Deals 1 Poison damage each turn", "Companion"], art: lizardScoutCompanion, cost: 1, consume: true, effects: [{ kind: "summon-companion", companionId: "lizard-scout" }] },
+  { id: "imp-companion", title: "Imp", descriptionLines: ["Deals 2 Burn damage each turn", "Companion"], art: impCompanion, cost: 1, consume: true, effects: [{ kind: "summon-companion", companionId: "imp" }] },
+  { id: "frost-whelp-companion", title: "Frost Whelp", descriptionLines: ["Deals 2 Freeze damage each turn", "Companion"], art: frostWhelpCompanion, cost: 1, consume: true, effects: [{ kind: "summon-companion", companionId: "frost-whelp" }] },
+  { id: "bear-companion", title: "Bear", descriptionLines: ["Deals 2 Stun damage each turn", "Companion"], art: bearCompanion, cost: 1, consume: true, effects: [{ kind: "summon-companion", companionId: "bear" }] },
+  { id: "panther-companion", title: "Panther", descriptionLines: ["Deals 1 Bleed damage each turn", "Companion"], art: pantherCompanion, cost: 1, consume: true, effects: [{ kind: "summon-companion", companionId: "panther" }] },
+  { id: "phoenix-companion", title: "Phoenix", descriptionLines: ["Deals 2 Burn damage each turn", "Companion"], art: phoenixCompanion, cost: 1, consume: true, effects: [{ kind: "summon-companion", companionId: "phoenix" }] },
   { id: "shield-bash", title: "Shield Bash", descriptionLines: ["Deal 2 Stun damage", "Gain 2 Block"], art: shieldBash, cost: 1, effects: [{ kind: "damage", damageType: "stun", amount: 2 }, { kind: "player-status", status: "block", amount: 2 }] },
   { id: "burning-blade", title: "Burning Blade", descriptionLines: ["Deal 2 Physical damage", "Deal 2 Burn damage"], art: burningBlade, cost: 1, effects: [{ kind: "damage", damageType: "physical", amount: 2 }, { kind: "damage", damageType: "burn", amount: 2 }] },
   // remove-harmful-status must come before self-damage so the burn cost is not instantly cleansed

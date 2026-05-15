@@ -2,6 +2,7 @@
 // Each enemy drops thematic materials based on its identity.
 
 import type { MaterialId, MaterialInventory } from "./types";
+import type { HomesteadEffectManifest } from "./types";
 import { emptyInventory, addInventory } from "./inventory";
 
 // Per-enemy loot table: a guaranteed drop, plus possible bonus drops with weight.
@@ -91,6 +92,12 @@ export function getEnemyMaterialLoot(enemyId: string, enemyType: string): Materi
   const bonuses = rollBonuses(table);
   const combined = addInventory(guaranteed, bonuses);
   return applyTypeMultiplier(combined, enemyType);
+}
+
+// Applies persistent material find multipliers to discovered material rewards.
+export function applyMaterialFindBonus(materials: MaterialInventory, effects: Pick<HomesteadEffectManifest, "herbFindBonus">): MaterialInventory {
+  if (effects.herbFindBonus <= 0 || materials.herbs <= 0) return materials;
+  return { ...materials, herbs: Math.floor(materials.herbs * (1 + effects.herbFindBonus)) };
 }
 
 // End-of-run material bonus based on performance.

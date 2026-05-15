@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { normalizeActiveRun, normalizeSaveData, normalizeDisplayMode, normalizeUiScale, migrateMaterialInventory, migrateBuildingIds, migrateFarmIds } from "@/features/alchemy/storage";
+import { normalizeActiveRun, normalizeSaveData, normalizeDisplayMode, normalizeUiScale, migrateMaterialInventory, migrateBuildingIds, migrateFarmIds, migrateToTierLevels } from "@/features/alchemy/storage";
 import { cardLibrary } from "@/lib/game-data";
+import { buildings, farmPlots } from "@/lib/homestead/data";
 
 function activeRun(overrides: Record<string, unknown> = {}) {
   return {
@@ -265,6 +266,47 @@ describe("migrateFarmIds", () => {
   });
 });
 
+describe("migrateToTierLevels", () => {
+  it("converts legacy arrays to level 1 records", () => {
+    const result = migrateToTierLevels(["blacksmiths-forge"], buildings);
+    expect(result["blacksmiths-forge"]).toBe(1);
+    expect(result["hunters-lodge"]).toBe(0);
+  });
+
+  it("preserves current record-shaped saves", () => {
+    const result = migrateToTierLevels({ "blacksmiths-forge": 2, "hunters-lodge": 1 }, buildings);
+    expect(result["blacksmiths-forge"]).toBe(2);
+    expect(result["hunters-lodge"]).toBe(1);
+  });
+
+  it("maps renamed IDs in arrays and records", () => {
+    const fromArray = migrateToTierLevels(["smithy"], buildings, { smithy: "blacksmiths-forge" });
+    const fromRecord = migrateToTierLevels({ smithy: 2 }, buildings, { smithy: "blacksmiths-forge" });
+    expect(fromArray["blacksmiths-forge"]).toBe(1);
+    expect(fromRecord["blacksmiths-forge"]).toBe(2);
+  });
+
+  it("ignores unknown IDs", () => {
+    const result = migrateToTierLevels({ "future-building": 3 }, buildings);
+    expect(Object.keys(result)).not.toContain("future-building");
+  });
+
+  it("clamps invalid record levels", () => {
+    const result = migrateToTierLevels({
+      "blacksmiths-forge": 99,
+      "hunters-lodge": -1,
+      "alchemy-lab": 1.8,
+      "placeholder-1": Number.NaN,
+      "placeholder-2": "2",
+    }, buildings);
+    expect(result["blacksmiths-forge"]).toBe(3);
+    expect(result["hunters-lodge"]).toBe(0);
+    expect(result["alchemy-lab"]).toBe(1);
+    expect(result["placeholder-1"]).toBe(0);
+    expect(result["placeholder-2"]).toBe(0);
+  });
+});
+
 describe("normalizeSaveData", () => {
   it("fills all defaults for empty input", () => {
     const result = normalizeSaveData({});
@@ -273,8 +315,30 @@ describe("normalizeSaveData", () => {
     expect(result.uiScale).toBe("100");
     expect(result.activeRun).toBeNull();
     expect(result.materialInventory).toEqual({ wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 });
-    expect(result.constructedBuildings).toEqual([]);
+    expect(result.constructedBuildings["blacksmiths-forge"]).toBe(0);
     expect(result.completedDifficulties).toEqual({ knight: [], rogue: [], wizard: [], ranger: [] });
+  });
+
+  it("preserves current-format homestead tier records", () => {
+    const result = normalizeSaveData({
+      constructedBuildings: { "blacksmiths-forge": 2 } as never,
+      plantedFarms: { "herb-garden": 3 } as never,
+      completedResearch: { carpentry: 1 } as never,
+      bondedCompanions: { wolf: 2 } as never,
+    });
+    expect(result.constructedBuildings["blacksmiths-forge"]).toBe(2);
+    expect(result.plantedFarms["herb-garden"]).toBe(3);
+    expect(result.completedResearch.carpentry).toBe(1);
+    expect(result.bondedCompanions.wolf).toBe(2);
+  });
+
+  it("migrates legacy homestead arrays without dropping progress", () => {
+    const result = normalizeSaveData({
+      constructedBuildings: ["smithy"] as never,
+      plantedFarms: ["sheep-pasture"] as never,
+    });
+    expect(result.constructedBuildings["blacksmiths-forge"]).toBe(1);
+    expect(result.plantedFarms.pasture).toBe(1);
   });
 
   it("ignores character-only active run fragments", () => {

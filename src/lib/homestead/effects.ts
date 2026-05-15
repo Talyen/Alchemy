@@ -1,29 +1,59 @@
 // Computes the HomesteadEffectManifest from constructed buildings, farm plots,
-// and completed research. Also provides a merge helper that folds homestead
-// effects into a TalentEffectManifest for battle use.
+// completed research, and bonded companions. Also provides a merge helper that
+// folds homestead effects into a TalentEffectManifest for battle use.
 
 import type { TalentEffectManifest } from "@/lib/battle";
-import type { BuildingId, FarmId, HomesteadEffectManifest, ResearchId } from "./types";
+import type { HomesteadEffectManifest } from "./types";
 import { defaultHomesteadEffects } from "./defaults";
-import { buildings, farmPlots } from "./data";
+import { buildings, farmPlots, researchUpgrades } from "./data";
+
+function applyTierEffects(
+  base: HomesteadEffectManifest,
+  partial?: Partial<HomesteadEffectManifest>,
+): void {
+  if (!partial) return;
+  const b = base as unknown as Record<string, number | boolean>;
+  for (const key of Object.keys(partial) as (keyof HomesteadEffectManifest)[]) {
+    const val = partial[key];
+    if (typeof val === "number") {
+      b[key] = ((b[key] as number) ?? 0) + val;
+    } else if (typeof val === "boolean") {
+      b[key] = (b[key] as boolean) || val;
+    }
+  }
+}
+
+function applyItemTiers<I extends { id: string; tiers: { effects?: Partial<HomesteadEffectManifest> }[] }>(
+  base: HomesteadEffectManifest,
+  items: I[],
+  levels: Record<string, number>,
+): void {
+  for (const [id, level] of Object.entries(levels)) {
+    const item = items.find((i) => i.id === id);
+    if (!item) continue;
+    for (let i = 0; i < level; i++) {
+      applyTierEffects(base, item.tiers[i]?.effects);
+    }
+  }
+}
 
 export function computeHomesteadEffects(
-  constructedBuildings: BuildingId[],
-  plantedFarms: FarmId[],
-  _completedResearch: ResearchId[],
+  constructedBuildings: Record<string, number>,
+  plantedFarms: Record<string, number>,
+  completedResearch: Record<string, number>,
+  bondedCompanions: Record<string, number> = {},
 ): HomesteadEffectManifest {
   const effects = { ...defaultHomesteadEffects };
 
-  for (const buildingId of constructedBuildings) {
-    const building = buildings.find((b) => b.id === buildingId);
-    if (!building || !building.effects) continue;
-    Object.assign(effects, building.effects);
-  }
+  applyItemTiers(effects, buildings, constructedBuildings);
+  applyItemTiers(effects, farmPlots, plantedFarms);
+  applyItemTiers(effects, researchUpgrades, completedResearch);
 
-  for (const farmId of plantedFarms) {
-    const farm = farmPlots.find((f) => f.id === farmId);
-    if (!farm || !farm.effects) continue;
-    Object.assign(effects, farm.effects);
+  effects.companionBondLevels = { ...effects.companionBondLevels };
+  for (const [id, level] of Object.entries(bondedCompanions)) {
+    if (id in effects.companionBondLevels) {
+      effects.companionBondLevels[id as keyof typeof effects.companionBondLevels] = level;
+    }
   }
 
   return effects;
@@ -43,8 +73,10 @@ export function mergeIntoManifest(
     startBlock: talentEffects.startBlock + homesteadEffects.startBlock,
     campfireHealBonus: talentEffects.campfireHealBonus + homesteadEffects.campfireHealBonus,
     physicalCritChance: talentEffects.physicalCritChance + homesteadEffects.physicalCritChance,
+    companionBondLevels: homesteadEffects.companionBondLevels,
     potionDiscount: talentEffects.potionDiscount + Math.round(homesteadEffects.potionDiscount * 100) / 100,
     potionManaBonus: talentEffects.potionManaBonus + homesteadEffects.potionManaBonus,
+    potionPotency: talentEffects.potionPotency + homesteadEffects.potionPotency,
     forgeToBurn: talentEffects.forgeToBurn || homesteadEffects.forgeToBurn,
   };
 }

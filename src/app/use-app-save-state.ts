@@ -137,6 +137,7 @@ export function useAlchemyAutosave(saveData: SaveData) {
     saveData.constructedBuildings,
     saveData.plantedFarms,
     saveData.completedResearch,
+    saveData.bondedCompanions,
     saveData.completedDifficulties,
   ]);
 }

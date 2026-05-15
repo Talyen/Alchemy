@@ -107,7 +107,7 @@ export function MerchantShopScreen({
           <DeckGridPaginated cards={runDeck} selectedIndex={selectedRemoveIndex} onSelect={(realIndex) => setSelectedRemoveIndex(realIndex)} page={removePage} onPageChange={setRemovePage} pageSize={deckPageSize} revealDelay={staggerDelay(2)} paginationSize="default" paginationReserveSpace />
           <div className="mt-5 flex justify-center gap-3">
             <BlurFade delay={staggerDelay(10)} direction="up" offset={6}>
-              <Button variant="ghost" onClick={() => { setRemoveMode(false); setSelectedRemoveIndex(null); setRemovePage(0); }}>Cancel</Button>
+              <Button variant="outline" onClick={() => { setRemoveMode(false); setSelectedRemoveIndex(null); setRemovePage(0); }}>Cancel</Button>
             </BlurFade>
             <BlurFade delay={staggerDelay(11)} direction="up" offset={6}>
               <Button variant="outline" disabled={selectedRemoveIndex === null || gold < removePrice} onClick={handleRemoveConfirm}>

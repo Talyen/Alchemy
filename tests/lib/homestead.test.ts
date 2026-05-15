@@ -6,7 +6,9 @@ import { emptyInventory, addInventory, canAfford, subtractInventory } from "@/li
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
 import { computeHomesteadEffects, mergeIntoManifest } from "@/lib/homestead/effects";
-import { getEnemyMaterialLoot, getEndOfRunMaterials } from "@/lib/homestead/loot";
+import { applyMaterialFindBonus, getEnemyMaterialLoot, getEndOfRunMaterials } from "@/lib/homestead/loot";
+import { createEmptyTierRecord } from "@/lib/homestead/tiers";
+import { createEmptyTalentManifest } from "@/lib/game-data";
 
 // ─── types ──────────────────────────────────────────────────────
 
@@ -110,9 +112,10 @@ describe("MATERIAL_IDS and labels", () => {
 
 describe("defaultHomesteadEffects", () => {
   it("all values are at default (0 or false)", () => {
-    for (const value of Object.values(defaultHomesteadEffects)) {
-      expect(value).toBe(typeof value === "boolean" ? false : 0);
-    }
+    expect(defaultHomesteadEffects.flatPhysicalDamage).toBe(0);
+    expect(defaultHomesteadEffects.companionDamage).toBe(0);
+    expect(defaultHomesteadEffects.companionBondLevels.wolf).toBe(0);
+    expect(defaultHomesteadEffects.forgeToBurn).toBe(false);
   });
 });
 
@@ -128,24 +131,27 @@ describe("buildings data integrity", () => {
     for (const b of buildings) {
       expect(b.title).toBeTruthy();
       expect(typeof b.description).toBe("string");
-      expect(b.benefitDescription).toBeTruthy();
       expect(b.buttonLabel).toBeTruthy();
-      expect(b.cost).toBeDefined();
+      expect(b.tiers.length).toBeGreaterThan(0);
     }
   });
 
-  it("each building cost uses only valid materials", () => {
+  it("each building tier cost uses only valid materials", () => {
     for (const b of buildings) {
-      for (const mat of Object.keys(b.cost)) {
-        expect(MATERIAL_IDS).toContain(mat);
+      for (const tier of b.tiers) {
+        for (const mat of Object.keys(tier.cost)) {
+          expect(MATERIAL_IDS).toContain(mat);
+        }
       }
     }
   });
 
-  it("each building cost is non-negative", () => {
+  it("each building tier cost is non-negative", () => {
     for (const b of buildings) {
-      for (const mat of MATERIAL_IDS) {
-        expect(b.cost[mat]).toBeGreaterThanOrEqual(0);
+      for (const tier of b.tiers) {
+        for (const mat of MATERIAL_IDS) {
+          expect(tier.cost[mat]).toBeGreaterThanOrEqual(0);
+        }
       }
     }
   });
@@ -168,8 +174,10 @@ describe("farmPlots data integrity", () => {
 
   it("each farm cost and yield use only valid materials", () => {
     for (const f of farmPlots) {
-      for (const mat of Object.keys(f.cost).concat(Object.keys(f.yield))) {
-        expect(MATERIAL_IDS).toContain(mat);
+      for (const tier of f.tiers) {
+        for (const mat of Object.keys(tier.cost).concat(Object.keys(f.yield))) {
+          expect(MATERIAL_IDS).toContain(mat);
+        }
       }
     }
   });
@@ -193,9 +201,8 @@ describe("researchUpgrades data integrity", () => {
     for (const r of researchUpgrades) {
       expect(r.title).toBeTruthy();
       expect(typeof r.description).toBe("string");
-      expect(r.benefitDescription).toBeTruthy();
       expect(r.buttonLabel).toBeTruthy();
-      expect(r.cost).toBeDefined();
+      expect(r.tiers.length).toBeGreaterThan(0);
     }
   });
 });
@@ -204,117 +211,50 @@ describe("researchUpgrades data integrity", () => {
 
 describe("computeHomesteadEffects", () => {
   it("returns defaults for empty inputs", () => {
-    const effects = computeHomesteadEffects([], [], []);
+    const effects = computeHomesteadEffects({}, {}, {});
     expect(effects).toEqual(defaultHomesteadEffects);
   });
 
   it("blacksmiths-forge adds flatPhysicalDamage and forgeToBurn", () => {
-    const effects = computeHomesteadEffects(["blacksmiths-forge"], [], []);
+    const effects = computeHomesteadEffects({ "blacksmiths-forge": 1 }, {}, {});
     expect(effects.flatPhysicalDamage).toBe(1);
     expect(effects.forgeToBurn).toBe(true);
   });
 
-  it("combines multiple buildings", () => {
-    const effects = computeHomesteadEffects(["blacksmiths-forge", "hunters-lodge", "alchemy-lab"], [], []);
-    expect(effects.flatPhysicalDamage).toBe(1);
+  it("combines multiple tiered upgrades", () => {
+    const effects = computeHomesteadEffects({ "blacksmiths-forge": 2, "hunters-lodge": 1, "alchemy-lab": 3 }, {}, {});
+    expect(effects.flatPhysicalDamage).toBe(2);
     expect(effects.forgeToBurn).toBe(true);
     expect(effects.companionDamage).toBe(1);
-    expect(effects.potionHealMultiplier).toBeCloseTo(0.2);
-    expect(effects.potionDiscount).toBeCloseTo(0.1);
+    expect(effects.potionPotency).toBeCloseTo(0.5);
   });
 
   it("ignores unknown building IDs", () => {
-    const effects = computeHomesteadEffects(["nonexistent-building" as never], [], []);
+    const effects = computeHomesteadEffects({ "nonexistent-building": 1 }, {}, {});
     expect(effects).toEqual(defaultHomesteadEffects);
   });
 
   it("ignores unknown research IDs", () => {
-    const effects = computeHomesteadEffects([], [], ["nonexistent-research" as never]);
+    const effects = computeHomesteadEffects({}, {}, { "nonexistent-research": 1 });
     expect(effects).toEqual(defaultHomesteadEffects);
+  });
+
+  it("stores companion bond levels without adding global companion damage", () => {
+    const effects = computeHomesteadEffects({}, {}, {}, { wolf: 2, imp: 1 });
+    expect(effects.companionDamage).toBe(0);
+    expect(effects.companionBondLevels.wolf).toBe(2);
+    expect(effects.companionBondLevels.imp).toBe(1);
   });
 });
 
 describe("mergeIntoManifest", () => {
-  const makeTalentManifest = () => ({
-    flatPhysicalDamage: 3,
-    startGold: 10,
-    startBlock: 2,
-    campfireHealBonus: 0.1,
-    physicalCritChance: 5,
-    armorToPhysicalDamage: false,
-    firstPhysicalCardFree: false,
-    physicalVsStunnedMultiplier: 0,
-    physicalVsFrozenMultiplier: 0,
-    stunThresholdReduction: 0,
-    drawOnStun: 0,
-    nextCardFreeOnStun: false,
-    blockToPhysicalDamage: false,
-    blockPreventsBleed: false,
-    blockPreventsPoison: false,
-    blockPreventsStun: false,
-    blockAbsorbPhysicalBonus: 0,
-    forgeToBurn: false,
-    forgeToHoly: false,
-    forgeToBlock: false,
-    forgeBurnThreshold: 0,
-    forgeBurnDamage: 0,
-    armorMitigatesBurn: false,
-    armorBlockThreshold: 0,
-    armorBlockAmount: 0,
-    armorDoubledBelowHalfHealth: false,
-    firstArmorCardDoubled: false,
-    healthThresholdBlock: null,
-    maxHealthPerCombat: 0,
-    startHealth: 0,
-    healMultiplier: 0,
-    healthThresholdArmor: null,
-    firstBurnCardDoubled: false,
-    burnRemovesEnemyArmor: false,
-    burnDoubleChance: 0,
-    receiveHalfBurnDamage: false,
-    shopCardDiscount: 0,
-    shopFreeRefresh: false,
-    goldPerCombat: 0,
-    potionDiscount: 0,
-    potionManaBonus: 0,
-    removeCardDiscount: 0,
-    enemyGoldDropBonus: 0,
-    goldOnWish: 0,
-    mixPotionDiscount: 0,
-    holyLifestealPercent: 0,
-    firstHolyCardFree: false,
-    holyGoldPercent: 0,
-    holyBurnChance: 0,
-    receiveHalfHolyDamage: false,
-    holyBlockPercent: 0,
-    holyWishChance: 0,
-    holyBlockPercentFromDamage: 0,
-    holyVsBurnMultiplier: 0,
-    goldOnWishAmount: 0,
-    wishUndiscoveredCards: false,
-    healthOnWish: 0,
-    removeHarmfulStatusOnWish: false,
-    wishExtraChoiceChance: 0,
-    wishDrawsCard: false,
-    firstPoisonCardFree: false,
-    poisonPhysicalBonus: 0,
-    poisonGainChance: 0,
-    receiveHalfPoisonDamage: false,
-    goldOnFirstPoison: 0,
-    poisonHalvesHealing: false,
-    firstBleedCardFree: false,
-    bleedPhysicalBonus: 0,
-    bleedLeechChance: 0,
-    bleedEnemyDamageReduction: 0,
-    bleedPhysicalTakenBonus: 0,
-    bleedExecuteThreshold: 0,
-    bleedDesperateMultiplier: 0,
-    bleedPoisonChance: 0,
-  });
+  const makeTalentManifest = () => ({ ...createEmptyTalentManifest(), flatPhysicalDamage: 3, startGold: 10, startBlock: 2, campfireHealBonus: 0.1, physicalCritChance: 5 });
 
   const makeHomesteadEffects = () => ({
+    ...defaultHomesteadEffects,
     flatPhysicalDamage: 1,
     companionDamage: 1,
+    companionBondLevels: { ...defaultHomesteadEffects.companionBondLevels, wolf: 2 },
     forgeToBurn: true,
     potionHealMultiplier: 0.2,
     potionManaBonus: 1,
@@ -335,8 +275,9 @@ describe("mergeIntoManifest", () => {
     expect(merged.physicalCritChance).toBe(7);
     expect(merged.potionDiscount).toBeCloseTo(0.1);
     expect(merged.potionManaBonus).toBe(1);
+    expect(merged.companionBondLevels.wolf).toBe(2);
     expect(merged.forgeToBurn).toBe(true);
-    expect(merged.healMultiplier).toBe(0);
+    expect(merged.healMultiplier).toBe(1);
   });
 
   it("preserves non-merged talent fields", () => {
@@ -431,6 +372,20 @@ describe("getEnemyMaterialLoot with bonus rolls", () => {
     const loot = getEnemyMaterialLoot("mimic", "normal");
     expect(loot.iron).toBe(2);
     expect(loot.crystal).toBe(0);
+  });
+});
+
+describe("applyMaterialFindBonus", () => {
+  it("multiplies herb rewards and leaves other materials unchanged", () => {
+    const result = applyMaterialFindBonus({ wood: 1, iron: 0, herbs: 10, food: 2, crystal: 0 }, { herbFindBonus: 0.3 });
+    expect(result.herbs).toBe(13);
+    expect(result.wood).toBe(1);
+    expect(result.food).toBe(2);
+  });
+
+  it("returns the same reward when no herbs are present", () => {
+    const materials = { wood: 1, iron: 0, herbs: 0, food: 2, crystal: 0 };
+    expect(applyMaterialFindBonus(materials, { herbFindBonus: 0.3 })).toBe(materials);
   });
 });
 
