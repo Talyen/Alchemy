@@ -249,18 +249,19 @@ export function MysteryEventIntro({
 
   return (
     <div className="state-swap flex flex-col items-center gap-6">
+      <ScreenHeader title={event.title} />
       {event.art ? (
         <div
-          className={cn("tilt-surface", cardSurfaceClass, handCardWidthClass)}
-          data-tilt-strength="15"
+          className="tilt-surface rounded-[18px]"
+          style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
+          data-tilt-strength="12"
           onMouseMove={setTiltFromEvent}
           onMouseLeave={clearTiltFromEvent}
-          style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
         >
           <img
             src={event.art}
             alt={event.title}
-            className="block h-auto w-full rounded-[30px] aspect-[4/3]"
+            className="w-full max-w-[352px] rounded-[18px] object-contain"
             loading="eager"
           />
         </div>
@@ -275,7 +276,6 @@ export function MysteryEventIntro({
           className={handCardWidthClass}
         />
       ) : null}
-      <ScreenHeader title={event.title} />
       <TextAnimate
         animation="blurInUp"
         by="word"

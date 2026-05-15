@@ -17,6 +17,7 @@ import difficulty1Art from "@/assets/optimized/difficulty-1.webp";
 import difficulty2Art from "@/assets/optimized/difficulty-2.webp";
 import difficulty3Art from "@/assets/optimized/difficulty-3.webp";
 
+import { ShineBorder } from "@/components/ui/shine-border";
 import { KeywordToken } from "../ui/card-ui";
 import { KeywordTag } from "../ui/keyword-tag";
 import { ScreenHeader, ShimmerOverlay } from "../ui/shared-ui";
@@ -75,13 +76,22 @@ function DifficultyCard({
     <div className="relative group flex flex-col items-center">
       <div
         className={cn(
-          "flex flex-col items-center gap-3 rounded-[26px] border border-border/60 bg-card/60 px-4 pb-6 pt-5 text-center transition-all",
+          "relative flex flex-col items-center gap-3 rounded-[26px] border border-border/60 bg-card/60 px-4 pb-6 pt-5 text-center transition-all",
           locked && "grayscale border-muted/40",
-          isSelected && "ring-2 ring-primary",
+          !locked && "cursor-pointer",
         )}
+        onClick={!locked ? () => onSelect(difficultyId) : undefined}
       >
+        {isSelected && (
+          <ShineBorder
+            shineColor={["#450a0a", "#ef4444", "#991b1b", "#7f1d1d"]}
+            borderWidth={2}
+            duration={8}
+            className="z-10"
+          />
+        )}
         {showTilt ? (
-          <button type="button" className={cn("tilt-surface relative overflow-hidden rounded-[22px] aspect-[5/6]", battleCardWidthClass)} style={{ "--card-base-transform": staticCardTransform } as CSSProperties} data-tilt-strength="12" onMouseMove={setTiltFromEvent} onMouseEnter={() => onHoverShimmer(difficultyId)} onMouseLeave={clearTiltFromEvent} onClick={() => onSelect(difficultyId)}>
+          <div className={cn("tilt-surface relative overflow-hidden rounded-[22px] aspect-[5/6]", battleCardWidthClass)} style={{ "--card-base-transform": staticCardTransform } as CSSProperties} data-tilt-strength="12" onMouseMove={setTiltFromEvent} onMouseEnter={() => onHoverShimmer(difficultyId)} onMouseLeave={clearTiltFromEvent}>
             <ShimmerOverlay active={isShimmer} token={shimmerToken} rounded="rounded-[22px]" />
             <img
               src={diffArt}
@@ -93,7 +103,7 @@ function DifficultyCard({
                 Completed
               </div>
             )}
-          </button>
+          </div>
         ) : (
           <div className={cn("relative overflow-hidden rounded-[22px] aspect-[5/6]", battleCardWidthClass)}>
             <img
@@ -156,22 +166,28 @@ export function DifficultySelectScreen({
     <div className="flex h-full w-full flex-col items-center justify-center gap-6 px-4 py-6 text-center">
       <ScreenHeader title={config.headerTitle} />
 
-      <div className="flex flex-wrap items-start justify-center gap-12">
+      <div className="flex flex-wrap items-start justify-center gap-6">
         <div className="flex flex-col items-center gap-3 rounded-[26px] border border-border/60 bg-card/60 px-4 pb-6 pt-5">
-          <button type="button" className={cn("tilt-surface relative overflow-hidden rounded-[22px] aspect-[3/4]", battleCardWidthClass)} style={{ "--card-base-transform": staticCardTransform } as CSSProperties} data-tilt-strength="15" onMouseMove={setTiltFromEvent} onMouseEnter={() => maybeTriggerShimmer("character")} onMouseLeave={clearTiltFromEvent}>
+          <div className={cn("tilt-surface relative overflow-hidden rounded-[22px] aspect-[3/4]", battleCardWidthClass)} style={{ "--card-base-transform": staticCardTransform } as CSSProperties} data-tilt-strength="15" onMouseMove={setTiltFromEvent} onMouseEnter={() => maybeTriggerShimmer("character")} onMouseLeave={clearTiltFromEvent}>
             <ShimmerOverlay active={shimmerState?.cardId === "character"} token={shimmerState?.token} rounded="rounded-[22px]" />
             <img
               src={art}
               alt={char.name}
               className={cn(cardSurfaceClass, "w-full rounded-[22px] object-cover")}
             />
-          </button>
+          </div>
           <p className="text-[22px] text-foreground">{char.name}</p>
           <div className="flex flex-wrap justify-center gap-1">
             {char.keywords.map((kw) => (
               <KeywordTag key={kw} keywordId={kw} pill showTooltip />
             ))}
           </div>
+        </div>
+
+        <div className="hidden lg:flex flex-col items-center self-stretch shrink-0">
+          <div className="flex-1 w-px bg-gradient-to-b from-transparent via-amber-100/75 to-transparent" />
+          <Swords className="h-4 w-4 text-amber-100/75 my-1" aria-hidden="true" />
+          <div className="flex-1 w-px bg-gradient-to-b from-transparent via-amber-100/75 to-transparent" />
         </div>
 
         <div className="flex flex-wrap items-start justify-center gap-6">

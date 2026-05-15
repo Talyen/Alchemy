@@ -28,8 +28,8 @@ function CorruptionDeckCard({ card, isSelected, onSelect }: { card: BattleCard; 
       ariaLabel={`Select ${getCardDisplayTitle(card)}`}
       shimmerActive={false}
       shimmerToken={undefined}
-      className={collectionCardWidthClass}
-      selected={isSelected}
+      className={cn(collectionCardWidthClass, isSelected && "ring-2 ring-red-500/70 ring-offset-4 ring-offset-background")}
+      selected={false}
     />
   );
 }
