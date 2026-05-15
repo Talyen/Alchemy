@@ -1,6 +1,6 @@
 // Compendium data — all enemies (bestiary), trinkets, and their stat/effect definitions.
 // Depends on art assets and type contracts. Pure configuration arrays, no game logic.
-import { boneCharm, brassCenser, cutpurseKnife, frozenHeart, goblin, imp, ironwoodBuckler, livingArmor, lizardScout, meteorite, mimic, mortarAndPestle, mudElemental, necromancer, merchantsFavor, obsidianHammer, parasiticBloom, plagueDoctor, plagueDoctorsMask, placeholderTrinket, resonantChime, runicQuill, skeleton, sinEatersLantern, smugglersMap, sunderingCharm, tatteredPages, theBlightTreant, theForgeGolem, theFrostwarden, vanguardsCrest, wishingWellCoin, grovesFavor } from "./assets";
+import { boneCharm, brassCenser, companionsCollar, cutpurseKnife, frozenHeart, goblin, grovesFavor, imp, ironwoodBuckler, livingArmor, lizardScout, luckyClover, meteorite, mimic, mortarAndPestle, mudElemental, necromancer, merchantsFavor, obsidianHammer, parasiticBloom, plagueDoctor, plagueDoctorsMask, polarPendant, resonantChime, runicQuill, skeleton, sinEatersLantern, smugglersMap, sunderingCharm, tatteredPages, theBlightTreant, theForgeGolem, theFrostwarden, thunderstone, vanguardsCrest, wishingWellCoin } from "./assets";
 import type { BestiaryEntry, TrinketEntry } from "./types";
 
 export const enemyBestiary: BestiaryEntry[] = [
@@ -274,24 +274,24 @@ export const trinketLibrary: TrinketEntry[] = [
     id: "companions-collar",
     title: "Companion's Collar",
     descriptionLines: ["Increases Companion damage by 1."],
-    art: placeholderTrinket,
+    art: companionsCollar,
   },
   {
     id: "polar-pendant",
     title: "Polar Pendant",
     descriptionLines: ["Freeze effects last 1 turn longer."],
-    art: placeholderTrinket,
+    art: polarPendant,
   },
   {
     id: "thunderstone",
     title: "Thunderstone",
     descriptionLines: ["When you Stun an enemy, deal 6 Nature damage."],
-    art: placeholderTrinket,
+    art: thunderstone,
   },
   {
     id: "lucky-clover",
     title: "Lucky Clover",
     descriptionLines: ["Nature damage has a 10% chance to grant Gold equal to the damage dealt."],
-    art: placeholderTrinket,
+    art: luckyClover,
   },
 ];

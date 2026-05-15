@@ -195,16 +195,17 @@ export function CollectionPagination({ page, totalPages, onPageChange }: { page:
 }
 
 function getCardItems(discoveredCardIds: string[]) {
-  return cardLibrary.map((card) => {
+  return [...cardLibrary]
+    .sort((a, b) => a.title.localeCompare(b.title))
+    .map((card) => {
     const discovered = discoveredCardIds.includes(card.id);
     return { id: card.id, title: discovered ? card.title : "Undiscovered", subtitle: undefined, descriptionLines: discovered ? card.descriptionLines : ["Discover this card during a run to reveal it here."], art: card.art, discovered, hoverScope: "collection-card" as const, frameType: "card" as const };
   });
 }
 
 function getBestiaryItems(encounteredEnemyIds: string[]) {
-  const sortOrder: Record<string, number> = { normal: 0, elite: 1, boss: 2 };
   return [...enemyBestiary]
-    .sort((a, b) => sortOrder[a.enemyType] - sortOrder[b.enemyType])
+    .sort((a, b) => a.title.localeCompare(b.title))
     .map((entry: BestiaryEntry) => {
     const discovered = encounteredEnemyIds.includes(entry.id);
     return { id: entry.id, title: discovered ? entry.title : "Undiscovered", subtitle: discovered ? entry.subtitle : undefined, descriptionLines: discovered ? entry.descriptionLines : ["Encounter this enemy to record its details."], art: entry.art, discovered, hoverScope: "collection-bestiary" as const, frameType: "bestiary" as const };
@@ -212,7 +213,9 @@ function getBestiaryItems(encounteredEnemyIds: string[]) {
 }
 
 function getTrinketItems(discoveredTrinketIds: string[]) {
-  return trinketLibrary.map((entry: TrinketEntry) => {
+  return [...trinketLibrary]
+    .sort((a, b) => a.title.localeCompare(b.title))
+    .map((entry: TrinketEntry) => {
     const discovered = discoveredTrinketIds.includes(entry.id);
     return { id: entry.id, title: discovered ? entry.title : "Undiscovered", subtitle: undefined, descriptionLines: discovered ? entry.descriptionLines : ["Find this trinket to reveal its effect."], art: entry.art, discovered, hoverScope: "collection-trinket" as const, frameType: "trinket" as const };
   });

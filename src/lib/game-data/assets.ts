@@ -1,7 +1,12 @@
 // Imported asset references (all .webp) consumed by game-data barrel readers and UI.
 // The prebuild step optimizes PNG source files into webp; this file only sees the output.
+import acidPotion from "@/assets/optimized/acid-potion.webp";
 import alchemyLogo from "@/assets/optimized/alchemy-logo.webp";
 import anvil from "@/assets/optimized/anvil.webp";
+import blackjack from "@/assets/optimized/blackjack.webp";
+import bloodthorn from "@/assets/optimized/bloodthorn.webp";
+import briarShield from "@/assets/optimized/briar-shield.webp";
+import burningBlade from "@/assets/optimized/burning-blade.webp";
 import campfire from "@/assets/optimized/campfire.webp";
 import alchemistShopBg from "@/assets/optimized/alchemist-shop.webp";
 import merchantShopBg from "@/assets/optimized/merchant-shop.webp";
@@ -13,15 +18,31 @@ import bash from "@/assets/optimized/bash.webp";
 import blessedAegis from "@/assets/optimized/blessed-aegis.webp";
 import block from "@/assets/optimized/block.webp";
 import bread from "@/assets/optimized/bread.webp";
+import cauterize from "@/assets/optimized/cauterize.webp";
+import cinderbloom from "@/assets/optimized/cinderbloom.webp";
 import cleanse from "@/assets/optimized/cleanse.webp";
+import companionsCollar from "@/assets/optimized/companions-collar.webp";
 import corruptionAltar from "@/assets/optimized/corruption-altar.webp";
+import graspingVines from "@/assets/optimized/grasping-vines.webp";
 import discardPile from "@/assets/optimized/discard-pile.webp";
+import holyRadiance from "@/assets/optimized/holy-radiance.webp";
 import drawPile from "@/assets/optimized/draw-pile.webp";
+import luckPotion from "@/assets/optimized/luck-potion.webp";
+import luckyClover from "@/assets/optimized/lucky-clover.webp";
 import fangs from "@/assets/optimized/fangs.webp";
+import packTactics from "@/assets/optimized/pack-tactics.webp";
+import polarPendant from "@/assets/optimized/polar-pendant.webp";
 import fireball from "@/assets/optimized/fireball.webp";
+import shieldBash from "@/assets/optimized/shield-bash.webp";
+import stoneskinPotion from "@/assets/optimized/stoneskin-potion.webp";
+import sunburst from "@/assets/optimized/sunburst.webp";
 import frostbolt from "@/assets/optimized/frostbolt.webp";
+import thornMail from "@/assets/optimized/thorn-mail.webp";
+import thunderstone from "@/assets/optimized/thunderstone.webp";
 import goblin from "@/assets/optimized/goblin.webp";
+import venomFangs from "@/assets/optimized/venom-fangs.webp";
 import haste from "@/assets/optimized/haste.webp";
+import wishingPotion from "@/assets/optimized/wishing-potion.webp";
 import herbGarden from "@/assets/optimized/herb-garden.webp";
 import heal from "@/assets/optimized/heal.webp";
 import healthPotion from "@/assets/optimized/health-potion.webp";
@@ -92,18 +113,27 @@ import difficulty2Art from "@/assets/optimized/difficulty-2.webp";
 import difficulty3Art from "@/assets/optimized/difficulty-3.webp";
 
 export {
+  acidPotion,
   alchemyLogo,
   anvil,
   apple,
   bash,
+  blackjack,
   blessedAegis,
   block,
+  bloodthorn,
   bread,
+  briarShield,
+  burningBlade,
   campfire,
+  cauterize,
+  cinderbloom,
   cleanse,
+  companionsCollar,
   corruptionAltar,
   discardPile,
   drawPile,
+  graspingVines,
   fangs,
   fireball,
   frostbolt,
@@ -112,12 +142,15 @@ export {
   heal,
   herbGarden,
   healthPotion,
+  holyRadiance,
   imp,
   impCompanion,
   knight,
   lizardScout,
   livingArmor,
   lizardScoutCompanion,
+  luckPotion,
+  luckyClover,
   manaBerries,
   manaCrystal,
   manaPotion,
@@ -125,20 +158,28 @@ export {
   mimic,
   mudElemental,
   necromancer,
+  packTactics,
   panaceaPotion,
   mixedPotion,
+  polarPendant,
   plagueDoctor,
   plateMail,
   poisonDagger,
+  shieldBash,
+  stoneskinPotion,
+  sunburst,
   ranger,
   rogue,
   skeleton,
   slash,
   stab,
   steal,
+  thornMail,
+  thunderstone,
   wish,
   wizard,
   wolfCompanion,
+  wishingPotion,
   boneCharm,
   brassCenser,
   frozenHeart,
@@ -150,6 +191,7 @@ export {
   sinEatersLantern,
   vanguardsCrest,
   parasiticBloom,
+  venomFangs,
   cutpurseKnife,
   wishingWellCoin,
   merchantsFavor,
