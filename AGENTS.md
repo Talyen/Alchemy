@@ -77,7 +77,7 @@ This is a fantasy roguelite deckbuilder. The interface must feel like a polished
 ## Project Gotchas
 
 - **Shell is PowerShell**: chain with `;` not `&&`; double quotes for interpolation, single for verbatim.
-- **Vite base path**: `/Alchemy/` (GitHub Pages); dev at `http://127.0.0.1:4173/Alchemy/`.
+- **Vite base path**: `/` (Vercel default); dev at `http://127.0.0.1:4173/`.
 - **Assets**: `prebuild`/`predev` auto-run optimize scripts.
 
 ## Test Gotchas
