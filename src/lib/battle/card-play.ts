@@ -35,13 +35,16 @@ export function computeEffectiveCost(state: CardCostState, card: BattleCard): { 
   if (state.flags.nextCardCostReduction > 0) {
     effectiveCost = Math.max(0, effectiveCost - state.flags.nextCardCostReduction);
   }
+  if (effectiveCost === 0) return { effectiveCost, consumedFlags };
 
   for (const rule of FIRST_CARD_FREE_RULES) {
     if (!(state.flags[rule.flag] as boolean) && rule.condition(state, card)) {
       effectiveCost = 0;
       consumedFlags[rule.flag] = true as never;
+      break;
     }
   }
+  if (effectiveCost === 0) return { effectiveCost, consumedFlags };
 
   if (!state.flags.firstPotionFreeUsed && state.trinketEffects.mortarPestleFreeFirstPotion && card.id.includes(POTION_CARD_ID_FRAGMENT)) {
     effectiveCost = 0;

@@ -1,5 +1,30 @@
 import { expect, test, type Page } from "@playwright/test";
 
+// Injects a save state and navigates directly to the destination choice screen,
+// bypassing the startRun + skipAndReward dance. Saves ~10s per test.
+// The run lands with the given overrides applied to the default Knight run state.
+const STARTING_DECK = [
+  { id: "slash", title: "Slash", descriptionLines: ["Deal 6 Physical damage"], art: "placeholder", cost: 1, effects: [{ kind: "damage", damageType: "physical", amount: 6 }] },
+  { id: "bash", title: "Bash", descriptionLines: ["Deal 4 Stun damage"], art: "placeholder", cost: 1, effects: [{ kind: "damage", damageType: "stun", amount: 4 }] },
+  { id: "block", title: "Block", descriptionLines: ["Gain 5 Block"], art: "placeholder", cost: 1, effects: [{ kind: "player-status", status: "block", amount: 5 }] },
+  { id: "anvil", title: "Anvil", descriptionLines: ["Gain 1 Forge"], art: "placeholder", cost: 1, effects: [{ kind: "player-status", status: "forge", amount: 1 }] },
+  { id: "plate-mail", title: "Plate Mail", descriptionLines: ["Gain 1 Armor"], art: "placeholder", cost: 1, effects: [{ kind: "player-status", status: "armor", amount: 1 }] },
+  { id: "bread", title: "Bread", descriptionLines: ["Gain 5 Health", "Consume"], art: "placeholder", cost: 1, consume: true, effects: [{ kind: "heal", amount: 5 }] },
+];
+
+export async function startAtDestination(page: Page, overrides: Record<string, unknown> = {}) {
+  await injectSaveState(page, {
+    runGold: 50,
+    runPlayerHealth: 30,
+    runMaxHealth: 30,
+    runDeck: STARTING_DECK,
+    ...overrides,
+  });
+  await page.goto("/");
+  await page.getByRole("button", { name: "Resume Run" }).click();
+  await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 10000 });
+}
+
 export async function injectSaveState(page: Page, overrides: Record<string, unknown> = {}) {
   await page.addInitScript((data) => {
     const SAVE_KEY = "alchemy-save-v1";
@@ -27,13 +52,12 @@ export async function injectSaveState(page: Page, overrides: Record<string, unkn
 }
 
 // Fresh run lands directly in the first forced Normal Combat battle.
+// Novice difficulty is the default and skips the difficulty select screen for first-time players.
 export async function startRun(page: Page, character: "Knight" | "Ranger" | "Rogue" | "Wizard" = "Knight") {
   await page.goto("/");
   await page.getByRole("button", { name: "Play" }).click();
   await page.getByRole("button", { name: character }).click();
   await page.getByRole("button", { name: "Continue" }).click();
-  await page.getByAltText("Novice").click();
-  await page.getByRole("button", { name: "Play" }).first().click();
   await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });
 }
 

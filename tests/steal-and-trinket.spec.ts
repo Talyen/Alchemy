@@ -1,24 +1,26 @@
 import { expect, test } from "@playwright/test";
-import { startRun } from "./helpers";
+import { injectSaveState, navigateToDestination } from "./helpers";
 
 test.describe("Steal Card", () => {
   test("steal card increases gold in battle", async ({ page }) => {
-    await startRun(page);
+    const STEAL = { id: "steal", title: "Steal", descriptionLines: ["Steal 4 Gold"], art: "placeholder", cost: 1, effects: [{ kind: "gain-gold" as const, amount: 4 }] };
+    await injectSaveState(page, {
+      characterId: "rogue",
+      runDeck: [STEAL, STEAL, STEAL, STEAL],
+      runGold: 0,
+    });
+    await page.goto("/");
+    await page.getByRole("button", { name: "Resume Run" }).click();
+    await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 10000 });
+    await navigateToDestination(page, "Normal Combat");
+    await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });
 
-    const stealCard = page.getByRole("button", { name: /Play Steal/ });
-    if (!(await stealCard.isVisible({ timeout: 500 }).catch(() => false))) {
-      test.skip(true, "Steal card not in initial hand");
-      return;
-    }
+    const goldBefore = Number((await page.getByTestId("mana-panel").locator("span").first().textContent()) ?? 0);
 
-    const goldBefore = await page.getByTestId("gold-display").textContent();
-    const goldValueBefore = Number(goldBefore?.replace(/\D/g, ""));
-
-    await stealCard.click();
+    await page.locator('[aria-label="Play Steal"]').first().click();
     await page.waitForTimeout(300);
 
-    const goldAfter = await page.getByTestId("gold-display").textContent();
-    const goldValueAfter = Number(goldAfter?.replace(/\D/g, ""));
-    expect(goldValueAfter).toBeGreaterThan(goldValueBefore);
+    const goldAfter = Number((await page.getByTestId("mana-panel").locator("span").first().textContent()) ?? 0);
+    expect(goldAfter).toBeGreaterThan(goldBefore);
   });
 });

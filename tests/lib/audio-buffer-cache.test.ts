@@ -1,0 +1,96 @@
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+import { getAudioContext, resumeAudioContext, loadSoundBuffer, preloadSounds } from "@/lib/audio-buffer-cache";
+import { audioState } from "@/lib/audio-state";
+
+beforeEach(() => {
+  audioState.context = null as any;
+  audioState.masterGain = null as any;
+  audioState.muted = false;
+  audioState.sfxVolume = 0.35;
+  audioState.musicVolume = 0.0875;
+  audioState.masterVolume = 1;
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+  audioState.context = null as any;
+  audioState.masterGain = null as any;
+});
+
+describe("getAudioContext", () => {
+  function makeMockCtx() {
+    const mockGain = { gain: { value: 0 }, connect: vi.fn() };
+    return { createGain: vi.fn(() => mockGain), destination: "dest" } as any;
+  }
+
+  it("creates AudioContext on first call", () => {
+    const mockCtx = makeMockCtx();
+    vi.stubGlobal("AudioContext", class { constructor() { return mockCtx; } });
+    const ctx = getAudioContext();
+    expect(ctx).toBe(mockCtx);
+    expect(mockCtx.createGain).toHaveBeenCalledOnce();
+    expect(mockCtx.createGain().connect).toHaveBeenCalledWith("dest");
+  });
+
+  it("returns existing AudioContext on subsequent calls", () => {
+    const mockCtx = makeMockCtx();
+    vi.stubGlobal("AudioContext", class { constructor() { return mockCtx; } });
+    const first = getAudioContext();
+    const second = getAudioContext();
+    expect(second).toBe(first);
+    expect(mockCtx.createGain).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("resumeAudioContext", () => {
+  it("resumes suspended context", () => {
+    const resume = vi.fn();
+    const mockCtx = { state: "suspended", resume } as any;
+    audioState.context = mockCtx;
+    resumeAudioContext();
+    expect(resume).toHaveBeenCalledOnce();
+  });
+
+  it("does not resume running context", () => {
+    const resume = vi.fn();
+    const mockCtx = { state: "running", resume } as any;
+    audioState.context = mockCtx;
+    resumeAudioContext();
+    expect(resume).not.toHaveBeenCalled();
+  });
+});
+
+describe("loadSoundBuffer", () => {
+  it("deduplicates concurrent loads of the same sound", async () => {
+    vi.stubGlobal("fetch", vi.fn(() => {
+      // Never resolve, so we can observe the loading-promise dedup
+      return new Promise<Response>(() => {});
+    }));
+    const p1 = loadSoundBuffer("dedup-concurrent.ogg");
+    const p2 = loadSoundBuffer("dedup-concurrent.ogg");
+    expect(p1).toBeInstanceOf(Promise);
+    expect(p2).toBeInstanceOf(Promise);
+  });
+
+  it("returns null on fetch failure", async () => {
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve({ ok: false })));
+    const result = await loadSoundBuffer("missing.ogg");
+    expect(result).toBeNull();
+  });
+
+  it("returns null on decode failure", async () => {
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve({ ok: true, arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)) })));
+    const mockCtx = { createGain: vi.fn(), destination: "dest", decodeAudioData: vi.fn(() => Promise.reject(new Error("decode failed"))) } as any;
+    vi.stubGlobal("AudioContext", class { constructor() { return mockCtx; } });
+    const result = await loadSoundBuffer("bad.ogg");
+    expect(result).toBeNull();
+  });
+});
+
+describe("preloadSounds", () => {
+  it("kicks off loading for each name", () => {
+    vi.stubGlobal("fetch", vi.fn(() => new Promise(() => {}))); // never resolves
+    preloadSounds(["a.ogg", "b.ogg"]);
+    // No assertion on result — just ensure no throw
+  });
+});

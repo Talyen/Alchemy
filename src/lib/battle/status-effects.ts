@@ -47,7 +47,7 @@ export function getEnemyDamageMultiplier(state: Pick<BattleState, "currentEnemy"
 // the stun effect (reset stun, skip turns, draw, free card, thunderstone) when triggered.
 export function resolveStunTrigger(state: BattleState, combatTexts?: CombatTextEvent[]) {
   const threshold = STUN_THRESHOLD_FRACTION - state.talentEffects.stunThresholdReduction;
-  if (state.enemyHealth <= 0 || state.enemyStatuses.stun <= state.enemyHealth * threshold) return state;
+  if (state.enemyHealth <= 0 || state.enemyStatuses.stun < state.enemyHealth * threshold) return state;
 
   let nextState = {
     ...state,

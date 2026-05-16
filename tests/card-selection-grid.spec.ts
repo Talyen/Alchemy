@@ -1,11 +1,9 @@
 import { expect, test } from "@playwright/test";
-import { startRun, skipAndReward, navigateToDestination } from "./helpers";
+import { startAtDestination, navigateToDestination } from "./helpers";
 
 test.describe("Card Selection Grid", () => {
   test("cards are centered within the viewport", async ({ page }) => {
-    test.setTimeout(120000);
-    await startRun(page);
-    await skipAndReward(page);
+    await startAtDestination(page, { runGold: 200 });
     await navigateToDestination(page, "Merchant's Shop");
     await expect(page.getByRole("heading", { name: "Merchant's Shop" })).toBeVisible();
 

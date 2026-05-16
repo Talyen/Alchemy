@@ -197,14 +197,14 @@ function processEnemyAttack(state: BattleState, combatTexts: CombatTextEvent[]) 
       const extraFreeze = status === "freeze" ? state.enemyFreezeBonus : 0;
       const amount = baseAmount + extraFreeze;
 
-      if (nextState.playerStatuses.block > 0) {
-        if (status === "bleed" && state.talentEffects.blockPreventsBleed) continue;
-        if (status === "poison" && state.talentEffects.blockPreventsPoison) continue;
-        if (status === "stun" && state.talentEffects.blockPreventsStun) continue;
-      }
+      const blockPreventsStatus = nextState.playerStatuses.block > 0 && (
+        (status === "bleed" && state.talentEffects.blockPreventsBleed) ||
+        (status === "poison" && state.talentEffects.blockPreventsPoison) ||
+        (status === "stun" && state.talentEffects.blockPreventsStun)
+      );
 
       if (harmfulPlayerStatusIds.includes(status)) {
-        if (nextState.trinketEffects.plagueDoctorImmunity && !nextState.flags.firstHarmfulStatusPrevented) {
+        if (!blockPreventsStatus && nextState.trinketEffects.plagueDoctorImmunity && !nextState.flags.firstHarmfulStatusPrevented) {
           nextState = { ...nextState, flags: { ...nextState.flags, firstHarmfulStatusPrevented: true } };
           continue;
         }
@@ -214,7 +214,7 @@ function processEnemyAttack(state: BattleState, combatTexts: CombatTextEvent[]) 
           playerHealth: newHealth,
           playerStatuses: {
             ...nextState.playerStatuses,
-            [status]: nextState.playerStatuses[status] + amount,
+            ...(blockPreventsStatus ? {} : { [status]: nextState.playerStatuses[status] + amount }),
           },
         };
         mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: status, amount });
@@ -242,10 +242,11 @@ function processEnemyRegeneration(state: BattleState, combatTexts: CombatTextEve
 }
 
 function reduceSkipTurns(state: BattleState): BattleState {
-  const newStun = state.enemyStunSkipTurns > 0 ? state.enemyStunSkipTurns - 1 : 0;
-  const decFromStun = state.enemyStunSkipTurns - newStun;
-  const newFreeze = state.enemyFreezeSkipTurns > 0 ? state.enemyFreezeSkipTurns - (1 - decFromStun) : 0;
-  return { ...state, enemyStunSkipTurns: newStun, enemyFreezeSkipTurns: newFreeze };
+  return {
+    ...state,
+    enemyStunSkipTurns: Math.max(0, state.enemyStunSkipTurns - 1),
+    enemyFreezeSkipTurns: Math.max(0, state.enemyFreezeSkipTurns - 1),
+  };
 }
 
 function resolveDeathsDoorEndOfEnemyTurn(state: BattleState): BattleState {

@@ -1,21 +1,9 @@
 import { expect, test } from "@playwright/test";
-import { startRun, skipAndReward, navigateToDestination } from "./helpers";
-
-const GOLD_TALENTS = ["gold-start", "gold-potion-discount", "gold-mix-discount"];
-
-function seedGoldTalents(page: ReturnType<typeof test>["page"]) {
-  return page.addInitScript((talents) => {
-    const save = JSON.parse(localStorage.getItem("alchemy-save-v1") || "{}");
-    save.unlockedTalents = { ...save.unlockedTalents, gold: talents };
-    localStorage.setItem("alchemy-save-v1", JSON.stringify(save));
-  }, GOLD_TALENTS);
-}
+import { startAtDestination, navigateToDestination } from "./helpers";
 
 test.describe("Merchant Shop", () => {
   test("buying a card deducts gold and marks as purchased", async ({ page }) => {
-    await seedGoldTalents(page);
-    await startRun(page);
-    await skipAndReward(page);
+    await startAtDestination(page, { runGold: 200 });
     await navigateToDestination(page, "Merchant's Shop");
 
     await expect(page.getByRole("heading", { name: "Merchant's Shop" })).toBeVisible();
@@ -40,9 +28,7 @@ test.describe("Merchant Shop", () => {
   });
 
   test("card removal deducts gold and removes card from deck", async ({ page }) => {
-    await seedGoldTalents(page);
-    await startRun(page);
-    await skipAndReward(page);
+    await startAtDestination(page, { runGold: 200 });
     await navigateToDestination(page, "Merchant's Shop");
 
     const removeBtn = page.getByRole("button", { name: /Remove Card/ });
@@ -77,9 +63,7 @@ test.describe("Merchant Shop", () => {
   });
 
   test("shop refresh changes displayed cards and deducts gold", async ({ page }) => {
-    await seedGoldTalents(page);
-    await startRun(page);
-    await skipAndReward(page);
+    await startAtDestination(page, { runGold: 200 });
     await navigateToDestination(page, "Merchant's Shop");
 
     const buyButtons = page.getByRole("button", { name: /^Buy/ });
@@ -103,32 +87,10 @@ test.describe("Merchant Shop", () => {
 
 test.describe("Alchemist Shop", () => {
   test("buy potions and mix them", async ({ page }) => {
-    test.setTimeout(60000);
-    await seedGoldTalents(page);
-    await startRun(page);
-
-    // Accumulate gold via extra skip combats (need ~60g: 2 potions × 15 + mix 30)
-    for (let i = 0; i < 3; i++) {
-      await skipAndReward(page);
-      // First 2: pick another combat; last: stay at destination for shop search
-      if (i < 2) {
-        const combatBtn = page.getByRole("button", { name: /Combat/ }).first();
-        if (!(await combatBtn.isVisible({ timeout: 1000 }).catch(() => false))) {
-          test.skip(true, "No combat destination for gold farming");
-          return;
-        }
-        await combatBtn.click();
-        await page.waitForSelector('[aria-label^="Play "]');
-      }
-    }
-
-    // Allow navigateTo debounce + page exit animation to complete
-    await page.waitForTimeout(500);
-
+    await startAtDestination(page, { runGold: 200 });
     await navigateToDestination(page, "Alchemist's Shop");
     await expect(page.getByRole("heading", { name: "Alchemist's Shop" })).toBeVisible();
 
-    // Buy 2 potions
     for (let i = 0; i < 2; i++) {
       const buyButton = page.getByRole("button", { name: /^Buy/ }).nth(0);
       if (!(await buyButton.isVisible({ timeout: 1000 }).catch(() => false)) || !(await buyButton.isEnabled())) {
@@ -140,7 +102,6 @@ test.describe("Alchemist Shop", () => {
     }
     await expect(page.getByText("Purchased").nth(0)).toBeVisible();
 
-    // Check if Mix Potions is affordable
     const mixButton = page.getByRole("button", { name: /Mix Potions/ });
     if (!(await mixButton.isEnabled())) {
       test.skip(true, "Not enough gold to mix potions");

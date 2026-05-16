@@ -1454,3 +1454,462 @@ describe("Trinket — Lucky Clover (10% nature damage → gold)", () => {
     expect(result.gold).toBe(0);
   });
 });
+
+// ─── Enemy Traits (endPlayerTurn) ───
+
+describe("enemy traits via endPlayerTurn", () => {
+  it("rusting-carapace adds armor and forge each turn", () => {
+    const state = makeState({
+      enemyAttackEffects: [],
+      currentEnemy: { id: "rust-monster", title: "Rust Monster", subtitle: "", descriptionLines: [""], art: "", enemyType: "normal", traits: [{ id: "rusting-carapace", title: "Rusting Carapace", description: "Gains armor and forge each turn" }], attackEffects: [] },
+      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
+      mana: 4, maxMana: 4,
+    });
+    const result = endPlayerTurn(state);
+    expect(result.state.enemyArmor).toBe(1);
+    expect(result.state.enemyForge).toBe(1);
+    expect(result.combatTexts).toContainEqual({ target: "enemy", kind: "status", stat: "armor", amount: 1 });
+  });
+
+  it("glacial-shell adds freeze bonus each turn", () => {
+    const state = makeState({
+      enemyAttackEffects: [],
+      currentEnemy: { id: "ice-golem", title: "Ice Golem", subtitle: "", descriptionLines: [""], art: "", enemyType: "normal", traits: [{ id: "glacial-shell", title: "Glacial Shell", description: "Gains freeze bonus each turn" }], attackEffects: [{ kind: "player-status", status: "freeze", amount: 2 }] },
+      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
+      mana: 4, maxMana: 4,
+    });
+    const result = endPlayerTurn(state);
+    expect(result.state.enemyFreezeBonus).toBe(1);
+  });
+
+  it("regeneration heals enemy at end of turn", () => {
+    const state = makeState({
+      enemyHealth: 20, enemyMaxHealth: 30, enemyRegeneration: 4,
+      enemyAttackEffects: [],
+      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
+      mana: 4, maxMana: 4,
+    });
+    const result = endPlayerTurn(state);
+    expect(result.state.enemyHealth).toBe(24);
+    expect(result.combatTexts).toContainEqual({ target: "enemy", kind: "heal", stat: "health", amount: 4 });
+  });
+
+  it("enemy heals when below 50% HP", () => {
+    const state = makeState({
+      enemyHealth: 10, enemyMaxHealth: 30,
+      enemyAttackEffects: [],
+      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
+      mana: 4, maxMana: 4,
+    });
+    const result = endPlayerTurn(state);
+    expect(result.state.enemyHealth).toBeGreaterThan(10);
+  });
+
+  it("poison halves enemy healing when poisonHalvesHealing talent is active", () => {
+    const state = makeState({
+      enemyHealth: 10, enemyMaxHealth: 30,
+      enemyStatuses: { burn: 0, poison: 3, bleed: 0, bleedLeech: 0, freeze: 0, stun: 0 },
+      talentEffects: { ...defaultTalentEffects, poisonHalvesHealing: true },
+      enemyAttackEffects: [],
+      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
+      mana: 4, maxMana: 4,
+    });
+    const result = endPlayerTurn(state);
+    // Poison tick: 3 damage (health 10→7). Heal: floor(30*0.1)=3, halved to floor(3/2)=1. Health 7+1=8.
+    expect(result.state.enemyHealth).toBe(8);
+  });
+});
+
+// ─── Health Threshold Talents (endPlayerTurn) ───
+
+describe("health threshold talents via endPlayerTurn", () => {
+  it("healthThresholdBlock grants block when crossing threshold", () => {
+    const state = makeState({
+      playerHealth: 25, playerMaxHealth: 30,
+      talentEffects: { ...defaultTalentEffects, healthThresholdBlock: { threshold: 50, amount: 5 } },
+      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 12 }],
+      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
+      mana: 4, maxMana: 4,
+    });
+    const result = endPlayerTurn(state);
+    // 25 HP - 12 damage = 13 (43%), crossing 50% threshold → grants 5 block.
+    // advanceToPlayerTurn then halves block: floor(5/2) = 2
+    expect(result.state.playerStatuses.block).toBe(2);
+  });
+
+  it("healthThresholdArmor grants armor when crossing threshold", () => {
+    const state = makeState({
+      playerHealth: 25, playerMaxHealth: 30,
+      talentEffects: { ...defaultTalentEffects, healthThresholdArmor: { threshold: 50, amount: 3 } },
+      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 12 }],
+      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
+      mana: 4, maxMana: 4,
+    });
+    const result = endPlayerTurn(state);
+    // Armor = 3 granted, then -1 from armor decrement in processEnemyDamageEffect
+    expect(result.state.playerStatuses.armor).toBe(2);
+  });
+
+  it("does not grant threshold bonus when health stays above threshold", () => {
+    const state = makeState({
+      playerHealth: 20, playerMaxHealth: 30,
+      talentEffects: { ...defaultTalentEffects, healthThresholdBlock: { threshold: 50, amount: 5 } },
+      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 2 }],
+      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
+      mana: 4, maxMana: 4,
+    });
+    const result = endPlayerTurn(state);
+    // 20 HP → 18 HP = 60% of 30, above 50% threshold
+    expect(result.state.playerStatuses.block).toBe(0);
+  });
+});
+
+// ─── Block & Armor Absorption (enemy damage) ───
+
+describe("enemy damage absorption via endPlayerTurn", () => {
+  it("block absorbs physical damage", () => {
+    const state = makeState({
+      playerStatuses: { block: 5, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 8 }],
+      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
+      mana: 4, maxMana: 4,
+    });
+    const result = endPlayerTurn(state);
+    // 8 - 5 block = 3, then 3 - 0 armor = 3 damage
+    expect(result.state.playerHealth).toBe(27);
+    expect(result.state.playerStatuses.block).toBe(0);
+  });
+
+  it("armor reduces physical damage after block", () => {
+    const state = makeState({
+      playerStatuses: { block: 3, armor: 4, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 10 }],
+      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
+      mana: 4, maxMana: 4,
+    });
+    const result = endPlayerTurn(state);
+    // 10 - 3 block = 7, then 7 - 4 armor = 3 damage → health = 27
+    expect(result.state.playerHealth).toBe(27);
+    expect(result.state.playerStatuses.armor).toBe(3); // armor - 1 after taking damage
+  });
+
+  it("vanguard crest grants forge when block fully absorbs physical damage", () => {
+    const manifest = computeTrinketManifest(["vanguards-crest"]);
+    const state = makeState({
+      playerStatuses: { block: 10, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 6 }],
+      trinketEffects: manifest,
+      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
+      mana: 4, maxMana: 4,
+    });
+    const result = endPlayerTurn(state);
+    expect(result.state.playerHealth).toBe(30);
+    expect(result.state.playerStatuses.forge).toBeGreaterThan(0);
+    expect(result.combatTexts).toContainEqual({ target: "player", kind: "status", stat: "forge", amount: 1 });
+  });
+
+  it("blockAbsorbPhysicalBonus makes block more effective against physical", () => {
+    const state = makeState({
+      playerStatuses: { block: 10, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      talentEffects: { ...defaultTalentEffects, blockAbsorbPhysicalBonus: 20 },
+      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 15 }],
+      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
+      mana: 4, maxMana: 4,
+    });
+    const result = endPlayerTurn(state);
+    // blockAbsorbPhysicalBonus 20%: effective block = floor(10 * 1.2) = 12
+    // 15 - 12 = 3 damage → health = 27
+    expect(result.state.playerHealth).toBe(27);
+  });
+});
+
+// ─── Damage Riders (dealDamageToEnemy via applyCardEffects) ───
+
+describe("damage riders via applyCardEffects", () => {
+  it("applyForgeStunRider triggers stun when forge exceeds threshold", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.99);
+    const state = makeState({
+      mana: 10, enemyHealth: 50, enemyMaxHealth: 50,
+      playerStatuses: { block: 0, armor: 0, forge: 8, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      trinketEffects: { ...defaultTrinketEffects, forgeStunThreshold: 5, forgeStunAmount: 3 },
+      deck: [], hand: [], discard: [], exhausted: [],
+    });
+    const card = makeCard({ effects: [{ kind: "damage", damageType: "physical", amount: 5 }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    // Physical damage + forge consumed
+    expect(result.playerStatuses.forge).toBe(7); // consumed forge by 1
+    // Stun rider triggered: stun = 3 + current stun
+    expect(result.enemyStatuses.stun).toBeGreaterThanOrEqual(3);
+  });
+
+  it("holy burn chance applies burn on holy damage", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.01); // trigger the holy burn chance
+    const state = makeState({
+      mana: 10, enemyHealth: 50, enemyMaxHealth: 50,
+      talentEffects: { ...defaultTalentEffects, holyBurnChance: 50 },
+      deck: [], hand: [], discard: [], exhausted: [],
+    });
+    const card = makeCard({ effects: [{ kind: "damage", damageType: "holy", amount: 5 }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    expect(result.enemyStatuses.burn).toBeGreaterThanOrEqual(5);
+  });
+
+  it("gold-trove trait grants 1 gold per hit", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.99);
+    const state = makeState({
+      mana: 10, enemyHealth: 50, enemyMaxHealth: 50, gold: 0,
+      currentEnemy: { id: "mimic", title: "Mimic", subtitle: "", descriptionLines: [""], art: "", enemyType: "normal", traits: [{ id: "gold-trove", title: "Gold Trove", description: "Grants gold when hit" }], attackEffects: [] },
+      deck: [], hand: [], discard: [], exhausted: [],
+    });
+    const card = makeCard({ effects: [{ kind: "damage", damageType: "physical", amount: 5 }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    expect(result.gold).toBe(1);
+    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "gold", amount: 1 });
+  });
+
+  it("bleed desperate multiplier applies when player is below half health", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.99);
+    const state = makeState({
+      mana: 10, enemyHealth: 50, enemyMaxHealth: 50,
+      playerHealth: 10, playerMaxHealth: 30,
+      talentEffects: { ...defaultTalentEffects, bleedDesperateMultiplier: 1.5 },
+      deck: [], hand: [], discard: [], exhausted: [],
+    });
+    const card = makeCard({ effects: [{ kind: "damage", damageType: "bleed", amount: 10 }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    // base 10 * 1.5 desperate = 15 damage
+    expect(result.enemyHealth).toBe(35);
+  });
+
+  it("bleed execute threshold doubles damage when enemy is low", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.99);
+    const state = makeState({
+      mana: 10, enemyHealth: 8, enemyMaxHealth: 50,
+      talentEffects: { ...defaultTalentEffects, bleedExecuteThreshold: 25 }, // 25% of max = 12.5
+      deck: [], hand: [], discard: [], exhausted: [],
+    });
+    const card = makeCard({ effects: [{ kind: "damage", damageType: "bleed", amount: 5 }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    // 8 <= 12.5? Yes. base 5 * 2 execute = 10 damage
+    expect(result.enemyHealth).toBe(0);  // Actually, 8 - 10 = 0 (clamped)
+  });
+
+  it("holy gold percent adds bonus from gold", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.99);
+    const state = makeState({
+      mana: 10, enemyHealth: 50, enemyMaxHealth: 50, gold: 20,
+      talentEffects: { ...defaultTalentEffects, holyGoldPercent: 25 }, // 25% of gold
+      deck: [], hand: [], discard: [], exhausted: [],
+    });
+    const card = makeCard({ effects: [{ kind: "damage", damageType: "holy", amount: 5 }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    // base 5 + floor(20 * 25/100) = 5 + 5 = 10 damage
+    expect(result.enemyHealth).toBe(40);
+  });
+
+  it("armorToPhysicalDamage adds armor to physical damage", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.99);
+    const state = makeState({
+      mana: 10, enemyHealth: 50, enemyMaxHealth: 50,
+      playerStatuses: { block: 0, armor: 6, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      talentEffects: { ...defaultTalentEffects, armorToPhysicalDamage: true },
+      deck: [], hand: [], discard: [], exhausted: [],
+    });
+    const card = makeCard({ effects: [{ kind: "damage", damageType: "physical", amount: 5 }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    // 5 + 6 armor = 11 damage
+    expect(result.enemyHealth).toBe(39);
+  });
+
+  it("blockToPhysicalDamage adds half block to physical damage", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.99);
+    const state = makeState({
+      mana: 10, enemyHealth: 50, enemyMaxHealth: 50,
+      playerStatuses: { block: 8, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      talentEffects: { ...defaultTalentEffects, blockToPhysicalDamage: true },
+      deck: [], hand: [], discard: [], exhausted: [],
+    });
+    const card = makeCard({ effects: [{ kind: "damage", damageType: "physical", amount: 5 }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    // 5 + floor(8/2) = 5 + 4 = 9 damage
+    expect(result.enemyHealth).toBe(41);
+  });
+
+  it("sunderingArmorPiercing reduces enemy armor against physical", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.99);
+    const state = makeState({
+      mana: 10, enemyHealth: 50, enemyMaxHealth: 50, enemyArmor: 5,
+      trinketEffects: { ...defaultTrinketEffects, sunderingArmorPiercing: 3 },
+      deck: [], hand: [], discard: [], exhausted: [],
+    });
+    const card = makeCard({ effects: [{ kind: "damage", damageType: "physical", amount: 10 }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    // Armor piercing: effective armor = max(0, 5-3) = 2. 10 - 2 = 8 damage.
+    expect(result.enemyHealth).toBe(42);
+  });
+
+  it("poison physical bonus adds damage when enemy is poisoned", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.99);
+    const state = makeState({
+      mana: 10, enemyHealth: 50, enemyMaxHealth: 50,
+      enemyStatuses: { burn: 0, poison: 3, bleed: 0, bleedLeech: 0, freeze: 0, stun: 0 },
+      talentEffects: { ...defaultTalentEffects, poisonPhysicalBonus: 4 },
+      deck: [], hand: [], discard: [], exhausted: [],
+    });
+    const card = makeCard({ effects: [{ kind: "damage", damageType: "physical", amount: 5 }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    // 5 + 4 poison bonus = 9 damage
+    expect(result.enemyHealth).toBe(41);
+  });
+
+  it("burnRemovesEnemyArmor strips armor on burn damage", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.99);
+    const state = makeState({
+      mana: 10, enemyHealth: 50, enemyMaxHealth: 50, enemyArmor: 8,
+      talentEffects: { ...defaultTalentEffects, burnRemovesEnemyArmor: true },
+      deck: [], hand: [], discard: [], exhausted: [],
+    });
+    const card = makeCard({ effects: [{ kind: "damage", damageType: "burn", amount: 12, lifesteal: true }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    // 12 damage - 8 armor = 4 actual damage, then armor removed: max(0, 8-max(0,8-0)) = max(0,8-4) = 4
+    // Actually armor piercing is 0 for burn, so effective armor = 8, damage = max(0, 12-8) = 4
+    // burnRemovesEnemyArmor: armor = max(0, 8-4) = 4
+    expect(result.enemyArmor).toBe(4);
+  });
+
+  it("equalToBlock deals damage equal to block", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.99);
+    const state = makeState({
+      mana: 10, enemyHealth: 50, enemyMaxHealth: 50,
+      playerStatuses: { block: 7, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      deck: [], hand: [], discard: [], exhausted: [],
+    });
+    const card = makeCard({ effects: [{ kind: "damage", damageType: "physical", amount: 0, equalToBlock: true }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    expect(result.enemyHealth).toBe(43);
+  });
+
+  it("consume forge after physical damage", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.99);
+    const state = makeState({
+      mana: 10, enemyHealth: 50, enemyMaxHealth: 50,
+      playerStatuses: { block: 0, armor: 0, forge: 3, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      deck: [], hand: [], discard: [], exhausted: [],
+    });
+    const card = makeCard({ effects: [{ kind: "damage", damageType: "physical", amount: 5 }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    // forge contributed to damage, then forge -= 1
+    expect(result.playerStatuses.forge).toBe(2);
+  });
+
+  it("enemy lifesteal heals enemy when dealing damage", () => {
+    const state = makeState({
+      enemyHealth: 15, enemyMaxHealth: 30,
+      playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 6, lifesteal: true }],
+      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
+      mana: 4, maxMana: 4,
+    });
+    const result = endPlayerTurn(state);
+    // player health: 30 - 6 = 24, enemy health: 15 + 6 = 21
+    expect(result.state.playerHealth).toBe(24);
+    expect(result.state.enemyHealth).toBe(21);
+    expect(result.combatTexts).toContainEqual({ target: "enemy", kind: "heal", stat: "health", amount: 6 });
+  });
+
+  it("block prevents poison buildup when blockPreventsPoison talent is active", () => {
+    const state = makeState({
+      playerStatuses: { block: 1, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      talentEffects: { ...defaultTalentEffects, blockPreventsPoison: true },
+      enemyAttackEffects: [{ kind: "player-status", status: "poison", amount: 3 }],
+      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
+      mana: 4, maxMana: 4,
+    });
+    const result = endPlayerTurn(state);
+    expect(result.state.playerStatuses.poison).toBe(0);
+  });
+
+  it("poison deals damage to player (stun path via enemy attack)", () => {
+    const state = makeState({
+      playerHealth: 30,
+      playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      enemyAttackEffects: [{ kind: "player-status", status: "poison", amount: 4 }],
+      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
+      mana: 4, maxMana: 4,
+    });
+    const result = endPlayerTurn(state);
+    // Status attack damage = 4 (health 30→26), poison tick = 4 (health 26→22), then poison decays by 1
+    expect(result.state.playerStatuses.poison).toBe(3);
+    expect(result.state.playerHealth).toBe(22);
+  });
+
+  it("receiveHalfHolyDamage reduces holy enemy damage", () => {
+    const state = makeState({
+      playerHealth: 30,
+      playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      talentEffects: { ...defaultTalentEffects, receiveHalfHolyDamage: true },
+      enemyAttackEffects: [{ kind: "damage", damageType: "holy", amount: 8 }],
+      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
+      mana: 4, maxMana: 4,
+    });
+    const result = endPlayerTurn(state);
+    // 8 / 2 = 4 damage
+    expect(result.state.playerHealth).toBe(26);
+  });
+
+  it("bleedEnemyDamageReduction reduces physical enemy damage", () => {
+    const state = makeState({
+      playerHealth: 30,
+      playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      talentEffects: { ...defaultTalentEffects, bleedEnemyDamageReduction: 3 },
+      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 10 }],
+      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
+      mana: 4, maxMana: 4,
+    });
+    const result = endPlayerTurn(state);
+    // 10 - 3 = 7 damage
+    expect(result.state.playerHealth).toBe(23);
+  });
+
+  it("enemy forge bonus adds to physical attack damage", () => {
+    const state = makeState({
+      playerHealth: 30,
+      playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      enemyForge: 4,
+      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 8 }],
+      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
+      mana: 4, maxMana: 4,
+    });
+    const result = endPlayerTurn(state);
+    // 8 + 4 forge = 12 damage
+    expect(result.state.playerHealth).toBe(18);
+  });
+
+  it("freeze enemy status attack respects freeze bonus from glacial-shell", () => {
+    const state = makeState({
+      playerHealth: 30,
+      playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      enemyFreezeBonus: 2,
+      enemyAttackEffects: [{ kind: "player-status", status: "freeze", amount: 3 }],
+      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
+      mana: 4, maxMana: 4,
+    });
+    const result = endPlayerTurn(state);
+    // Status damage = 3 + 2 freeze bonus = 5 (health 30→25). Then freeze tick = 5 (health 25→20).
+    expect(result.state.playerStatuses.freeze).toBe(0);
+    expect(result.state.playerHealth).toBe(20);
+  });
+});

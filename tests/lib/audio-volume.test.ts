@@ -1,0 +1,77 @@
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+import { setMuted, setSfxVolume, setMasterVolume, setMusicVolume } from "@/lib/audio-volume";
+import { audioState } from "@/lib/audio-state";
+
+beforeEach(() => {
+  audioState.muted = false;
+  audioState.sfxVolume = 0.35;
+  audioState.masterVolume = 1;
+  audioState.musicVolume = 0.0875;
+  audioState.currentMusic = null;
+  audioState.masterGain = null;
+});
+
+describe("setMuted", () => {
+  it("sets muted on audioState", () => {
+    setMuted(true);
+    expect(audioState.muted).toBe(true);
+  });
+
+  it("mutes the current music element", () => {
+    const el = { muted: false } as any;
+    audioState.currentMusic = el;
+    setMuted(true);
+    expect(el.muted).toBe(true);
+  });
+});
+
+describe("setSfxVolume", () => {
+  it("sets sfxVolume within bounds", () => {
+    setSfxVolume(0.5);
+    expect(audioState.sfxVolume).toBe(0.5);
+  });
+
+  it("clamps above max", () => {
+    setSfxVolume(1.5);
+    expect(audioState.sfxVolume).toBe(1);
+  });
+
+  it("clamps below min", () => {
+    setSfxVolume(-0.5);
+    expect(audioState.sfxVolume).toBe(0);
+  });
+});
+
+describe("setMasterVolume", () => {
+  it("sets masterVolume and updates masterGain", () => {
+    const gain = { value: 0 };
+    audioState.masterGain = { gain } as any;
+    setMasterVolume(0.5);
+    expect(audioState.masterVolume).toBe(0.5);
+    expect(gain.value).toBe(0.3 * 0.5); // MASTER_GAIN * masterVolume
+  });
+
+  it("updates current music volume", () => {
+    const el = { volume: 0 } as any;
+    audioState.musicVolume = 0.5;
+    audioState.currentMusic = el;
+    setMasterVolume(0.5);
+    expect(el.volume).toBe(0.5 * 0.5 * 0.5); // musicVolume * masterVolume * MUSIC_MASTER_GAIN
+  });
+});
+
+describe("setMusicVolume", () => {
+  it("sets musicVolume", () => {
+    setMusicVolume(0.2);
+    expect(audioState.musicVolume).toBe(0.2);
+  });
+
+  it("updates current music element volume", () => {
+    const el = { volume: 0 } as any;
+    audioState.masterVolume = 0.5;
+    audioState.musicVolume = 0.5;
+    audioState.currentMusic = el;
+    setMusicVolume(0.5);
+    expect(el.volume).toBe(0.5 * 0.5 * 0.5); // musicVolume * masterVolume * MUSIC_MASTER_GAIN
+  });
+});

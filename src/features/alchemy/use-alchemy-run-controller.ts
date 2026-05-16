@@ -27,6 +27,7 @@ export function useAlchemyRunController({
   onAddMaterials,
   homesteadEffects,
   onMarkDifficultyCompleted,
+  completedDifficulties,
 }: {
   discoveredCardIds: string[];
   setDiscoveredCardIds: React.Dispatch<React.SetStateAction<string[]>>;
@@ -39,6 +40,7 @@ export function useAlchemyRunController({
   onAddMaterials: (materials: MaterialInventory) => void;
   homesteadEffects: HomesteadEffectManifest;
   onMarkDifficultyCompleted: (characterId: CharacterId, difficultyId: DifficultyId) => void;
+  completedDifficulties: Record<CharacterId, DifficultyId[]>;
 }) {
   // This hook composes domain controllers and exposes a stable UI API; it intentionally
   // avoids owning combat/shop/navigation rules directly so those modules stay testable.
@@ -116,6 +118,7 @@ export function useAlchemyRunController({
     onInitShop: shop.initShop,
     onInitAlchemist: shop.initAlchemist,
     onMarkDifficultyCompleted,
+    completedDifficulties,
   });
 
   function clearPermanentData() {

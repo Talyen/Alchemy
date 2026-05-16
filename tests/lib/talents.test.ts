@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { xpForNextPoint, xpThresholdForPoints, computeTalentPoints, xpToNextPoint, extractCardKeywords, addTalentXP } from "@/lib/talents";
+import { xpForNextPoint, xpThresholdForPoints, computeTalentPoints, xpToNextPoint, extractCardKeywords, addTalentXP, getTalentKeywordProgress } from "@/lib/talents";
 import type { BattleCard } from "@/lib/game-data";
 
 describe("xpForNextPoint", () => {
@@ -118,5 +118,91 @@ describe("addTalentXP", () => {
     expect(input).toEqual({ physical: 1 });
     expect(result.physical).toBe(2);
     expect(result).not.toBe(input);
+  });
+});
+
+describe("getTalentKeywordProgress", () => {
+  it("returns zero progress for 0 XP and 0 unlocked", () => {
+    const result = getTalentKeywordProgress(0, 0);
+    expect(result.totalXP).toBe(0);
+    expect(result.points).toBe(0);
+    expect(result.spentPoints).toBe(0);
+    expect(result.unspentPoints).toBe(0);
+    expect(result.hasUnspent).toBe(false);
+    expect(result.progressPercent).toBe(0);
+  });
+
+  it("reports 0 points below XP threshold", () => {
+    const result = getTalentKeywordProgress(9, 0);
+    expect(result.points).toBe(0);
+    expect(result.xpForNext).toBe(10);
+    expect(result.xpRemaining).toBe(1);
+    expect(result.progressPercent).toBe(90);
+  });
+
+  it("reports 1 point at exactly 10 XP", () => {
+    const result = getTalentKeywordProgress(10, 0);
+    expect(result.points).toBe(1);
+    expect(result.xpForNext).toBe(20);
+    expect(result.xpRemaining).toBe(20);
+    expect(result.progressPercent).toBe(0);
+    expect(result.hasUnspent).toBe(true);
+  });
+
+  it("computes progress percentage correctly", () => {
+    const result = getTalentKeywordProgress(15, 0);
+    expect(result.points).toBe(1);
+    expect(result.xpForNext).toBe(20);
+    expect(result.xpRemaining).toBe(15);
+    expect(result.progressPercent).toBe(25);
+  });
+
+  it("distinguishes spent vs unspent points", () => {
+    const result = getTalentKeywordProgress(30, 1);
+    expect(result.points).toBe(2);
+    expect(result.spentPoints).toBe(1);
+    expect(result.unspentPoints).toBe(1);
+    expect(result.hasUnspent).toBe(true);
+  });
+
+  it("reports hasUnspent false when all points are spent", () => {
+    const result = getTalentKeywordProgress(30, 2);
+    expect(result.points).toBe(2);
+    expect(result.spentPoints).toBe(2);
+    expect(result.unspentPoints).toBe(0);
+    expect(result.hasUnspent).toBe(false);
+  });
+
+  it("handles high XP values", () => {
+    const result = getTalentKeywordProgress(100, 3);
+    expect(result.points).toBe(4);
+    expect(result.xpForNext).toBe(50);
+    expect(result.spentPoints).toBe(3);
+    expect(result.unspentPoints).toBe(1);
+  });
+
+  it("clamps progress percent at 100", () => {
+    const result = getTalentKeywordProgress(0, 0);
+    expect(result.progressPercent).toBe(0);
+  });
+
+  it("handles more spent than available points", () => {
+    const result = getTalentKeywordProgress(10, 5);
+    expect(result.points).toBe(1);
+    expect(result.spentPoints).toBe(5);
+    expect(result.unspentPoints).toBe(0);
+    expect(result.hasUnspent).toBe(false);
+  });
+
+  it("returns correct structure", () => {
+    const result = getTalentKeywordProgress(0, 0);
+    expect(result).toHaveProperty("totalXP");
+    expect(result).toHaveProperty("points");
+    expect(result).toHaveProperty("xpForNext");
+    expect(result).toHaveProperty("xpRemaining");
+    expect(result).toHaveProperty("progressPercent");
+    expect(result).toHaveProperty("spentPoints");
+    expect(result).toHaveProperty("unspentPoints");
+    expect(result).toHaveProperty("hasUnspent");
   });
 });

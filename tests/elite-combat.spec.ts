@@ -1,10 +1,9 @@
 import { expect, test } from "@playwright/test";
-import { skipAndReward, startRun, playUntilVictory } from "./helpers";
+import { startAtDestination, playUntilVictory } from "./helpers";
 
 test.describe("Elite Combat", () => {
   test("elite combat destination starts a battle that can be won", async ({ page }) => {
-    await startRun(page);
-    await skipAndReward(page);
+    await startAtDestination(page);
 
     const eliteBtn = page.getByRole("button", { name: "Elite Combat" });
     if (!(await eliteBtn.isVisible({ timeout: 500 }).catch(() => false))) {

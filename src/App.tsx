@@ -136,6 +136,7 @@ export default function App() {
     onAddMaterials: homestead.addMaterials,
     homesteadEffects: homestead.effects,
     onMarkDifficultyCompleted: handleMarkDifficultyCompleted,
+    completedDifficulties,
   });
   useAppAudioEffects({ masterVol, musicVol, sfxVol, muteInBackground, screen: run.screen });
   const heroArt = characterArt[run.characterId] ?? characterArt.knight;

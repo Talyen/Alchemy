@@ -63,6 +63,7 @@ export function useRunNavigation({
   onInitShop,
   onInitAlchemist,
   onMarkDifficultyCompleted,
+  completedDifficulties,
 }: {
   run: RunStateController;
   talents: TalentStateController;
@@ -88,6 +89,7 @@ export function useRunNavigation({
   onInitShop: () => void;
   onInitAlchemist: () => void;
   onMarkDifficultyCompleted: (characterId: CharacterId, difficultyId: DifficultyId) => void;
+  completedDifficulties: Record<CharacterId, DifficultyId[]>;
 }) {
   // Run-flow side effects live here because screens, rewards, destination routing,
   // mystery outcomes, act completion, and reset all need the same run/battle snapshot.
@@ -302,10 +304,19 @@ export function useRunNavigation({
   }
 
   function handleCharacterSelect(selectedId: CharacterId) {
-    // Stores the chosen character and waits for difficulty selection before initializing
-    // the full run state, so backing out never leaves partial data.
-    setPendingCharacterId(selectedId);
-    navigateTo("difficulty-select");
+    // Skips difficulty selection if the player hasn't beaten Novice for this class yet;
+    // starts a Normal (Novice) run directly. Once Novice is beaten, difficulty selection
+    // unlocks so the player can choose Adventurer or higher.
+    const hasCompletedNovice = (completedDifficulties[selectedId] ?? []).includes("difficulty-1");
+    if (!hasCompletedNovice) {
+      const { freshDeck, totalStartGold } = initializeRunForDifficulty(selectedId, "difficulty-1");
+      const modifiers = getDifficultyModifiers(selectedId, "difficulty-1");
+      onStartBattle(freshDeck, totalStartGold, "normal", modifiers);
+      navigateTo("battle");
+    } else {
+      setPendingCharacterId(selectedId);
+      navigateTo("difficulty-select");
+    }
   }
 
   function initializeRunForDifficulty(characterId: CharacterId, difficultyId: DifficultyId) {

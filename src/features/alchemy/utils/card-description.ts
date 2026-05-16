@@ -72,6 +72,7 @@ export function getEffectiveCardDescriptionLines(
     if (companionLine && line.startsWith("Deals ")) return companionLine;
     if (line.startsWith("Deal ")) {
       const effect = damageEffects[damageIndex++];
+      if (effect?.equalToBlock || effect?.equalToArmor) return line;
       return effect ? `Deal ${adjustedDamageAmount(effect, context, potionMultiplier)} ${displayDamageType(effect.damageType)} damage` : line;
     }
     if (line.startsWith("Gain ") && line.includes(" Gold")) {

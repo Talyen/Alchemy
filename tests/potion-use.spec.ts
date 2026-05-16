@@ -12,8 +12,8 @@ test.describe("Potion Use", () => {
       runDeck: [
         potionCard("health-potion", "Health Potion", [{ kind: "heal", amount: 99 }]),
         potionCard("health-potion", "Health Potion", [{ kind: "heal", amount: 99 }]),
-        potionCard("mana-potion", "Mana Potion", [{ kind: "restore-mana", amount: 99 }]),
-        potionCard("mana-potion", "Mana Potion", [{ kind: "restore-mana", amount: 99 }]),
+        potionCard("health-potion", "Health Potion", [{ kind: "heal", amount: 99 }]),
+        potionCard("health-potion", "Health Potion", [{ kind: "heal", amount: 99 }]),
       ],
       runPlayerHealth: 1,
       runMaxHealth: 30,
@@ -24,17 +24,11 @@ test.describe("Potion Use", () => {
     await navigateToDestination(page, "Normal Combat");
     await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });
 
-    const healPotion = page.getByRole("button", { name: /Play Health Potion/ });
-    if (!(await healPotion.isVisible({ timeout: 1000 }).catch(() => false))) {
-      test.skip(true, "No Health Potion in initial hand");
-      return;
-    }
-
     const hpText = await page.locator("text=/\\d+\\/30/").first().textContent();
     const hpBefore = Number(hpText?.split("/")[0]);
     expect(hpBefore).toBeLessThan(30);
 
-    await healPotion.click();
+    await page.locator('[aria-label="Play Health Potion"]').first().click();
     await page.waitForTimeout(300);
 
     const hpAfterText = await page.locator("text=/\\d+\\/30/").first().textContent();
@@ -46,8 +40,8 @@ test.describe("Potion Use", () => {
     await injectSaveState(page, {
       characterId: "wizard",
       runDeck: [
-        potionCard("health-potion", "Health Potion", [{ kind: "heal", amount: 1 }]),
-        potionCard("health-potion", "Health Potion", [{ kind: "heal", amount: 1 }]),
+        potionCard("mana-potion", "Mana Potion", [{ kind: "restore-mana", amount: 99 }]),
+        potionCard("mana-potion", "Mana Potion", [{ kind: "restore-mana", amount: 99 }]),
         potionCard("mana-potion", "Mana Potion", [{ kind: "restore-mana", amount: 99 }]),
         potionCard("mana-potion", "Mana Potion", [{ kind: "restore-mana", amount: 99 }]),
       ],
@@ -61,13 +55,7 @@ test.describe("Potion Use", () => {
     const manaPanel = page.getByTestId("mana-panel");
     const manaBefore = Number(await manaPanel.getAttribute("data-mana"));
 
-    const manaPotion = page.getByRole("button", { name: /Play Mana Potion/ });
-    if (!(await manaPotion.isVisible({ timeout: 1000 }).catch(() => false))) {
-      test.skip(true, "No Mana Potion in initial hand");
-      return;
-    }
-
-    await manaPotion.click();
+    await page.locator('[aria-label="Play Mana Potion"]').first().click();
     await page.waitForTimeout(300);
 
     const manaAfter = Number(await manaPanel.getAttribute("data-mana"));

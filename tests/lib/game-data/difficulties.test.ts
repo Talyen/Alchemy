@@ -41,10 +41,14 @@ describe("difficultyConfigs data integrity", () => {
     }
   });
 
-  it("each difficulty has at least one modifier", () => {
+  it("Adventurer and Legend have at least one modifier", () => {
     for (const char of ALL_CHARACTERS) {
       for (const diff of difficultyConfigs[char].difficulties) {
-        expect(diff.modifiers.length).toBeGreaterThanOrEqual(1);
+        if (diff.id === "difficulty-1") {
+          expect(diff.modifiers.length).toBe(0);
+        } else {
+          expect(diff.modifiers.length).toBeGreaterThanOrEqual(1);
+        }
       }
     }
   });
@@ -104,9 +108,9 @@ describe("isDifficultyUnlocked", () => {
 
 describe("getDifficultyModifiers", () => {
   describe("Knight", () => {
-    it("Novice (d1) grants 5 start block", () => {
+    it("Novice (d1) has no modifiers", () => {
       const mods = getDifficultyModifiers("knight", "difficulty-1");
-      expect(mods).toEqual([{ kind: "start-block", amount: 5 }]);
+      expect(mods).toEqual([]);
     });
 
     it("Adventurer (d2) grants 2 enemy starting armor", () => {
@@ -121,9 +125,9 @@ describe("getDifficultyModifiers", () => {
   });
 
   describe("Rogue", () => {
-    it("Novice (d1) grants 1.1 gold multiplier", () => {
+    it("Novice (d1) has no modifiers", () => {
       const mods = getDifficultyModifiers("rogue", "difficulty-1");
-      expect(mods).toEqual([{ kind: "gold-multiplier", amount: 1.1 }]);
+      expect(mods).toEqual([]);
     });
 
     it("Adventurer (d2) increases enemy poison by 2", () => {
@@ -138,9 +142,9 @@ describe("getDifficultyModifiers", () => {
   });
 
   describe("Wizard", () => {
-    it("Novice (d1) grants 1 max mana", () => {
+    it("Novice (d1) has no modifiers", () => {
       const mods = getDifficultyModifiers("wizard", "difficulty-1");
-      expect(mods).toEqual([{ kind: "start-max-mana", amount: 1 }]);
+      expect(mods).toEqual([]);
     });
 
     it("Adventurer (d2) increases enemy burn by 2", () => {
@@ -155,9 +159,9 @@ describe("getDifficultyModifiers", () => {
   });
 
   describe("Ranger", () => {
-    it("Novice (d1) grants start companion", () => {
+    it("Novice (d1) has no modifiers", () => {
       const mods = getDifficultyModifiers("ranger", "difficulty-1");
-      expect(mods).toEqual([{ kind: "start-companion" }]);
+      expect(mods).toEqual([]);
     });
 
     it("Adventurer (d2) increases enemy damage by 2", () => {
@@ -182,8 +186,8 @@ describe("getGoldMultiplier", () => {
     expect(getGoldMultiplier("knight", null)).toBe(1);
   });
 
-  it("returns 1.1 for Rogue Novice (d1)", () => {
-    expect(getGoldMultiplier("rogue", "difficulty-1")).toBe(1.1);
+  it("returns 1 for Rogue Novice (d1) — no gold modifier", () => {
+    expect(getGoldMultiplier("rogue", "difficulty-1")).toBe(1);
   });
 
   it("returns 1 for Knight Novice (no gold modifier)", () => {

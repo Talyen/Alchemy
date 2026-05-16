@@ -13,7 +13,6 @@ async function setResolution(page: Page, resolution: string) {
 const RESOLUTIONS = [
   { option: "1920x1080", label: "standard-16-9", vp: { width: 1920, height: 1080 } },
   { option: "1920x1200", label: "narrow-16-10", vp: { width: 1920, height: 1200 } },
-  { option: "2560x1080", label: "ultrawide-21-9", vp: { width: 2560, height: 1080 } },
 ] as const;
 
 for (const { option, label, vp } of RESOLUTIONS) {

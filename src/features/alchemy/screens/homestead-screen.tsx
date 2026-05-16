@@ -5,6 +5,8 @@
 import { useState, useMemo, type ReactNode } from "react";
 import { ChevronLeft, ChevronRight, FlaskConical, Hammer, House, PawPrint, Star, Swords, Wheat } from "lucide-react";
 
+import { AnimatedHeight } from "@/features/alchemy/ui/animated-height";
+
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -205,8 +207,9 @@ export function HomesteadScreen({
               const pageItems = companionCards.slice(companionPage * COMPANION_PAGE_SIZE, (companionPage + 1) * COMPANION_PAGE_SIZE);
               return (
                 <div key={t} className={cn(isActive ? "relative" : "pointer-events-none invisible absolute left-0 top-0 w-full")}>
-                  <div className="grid grid-cols-3 gap-x-2 gap-y-4">
-                    {pageItems.map((card, index) => {
+                  <AnimatedHeight deps={[companionPage]}>
+                    <div key={companionPage} className="state-swap grid min-h-[400px] grid-cols-3 gap-x-2 gap-y-4">
+                      {pageItems.map((card, index) => {
                       const companionEffect = card.effects.find((e): e is { kind: "summon-companion"; companionId: CompanionId } => e.kind === "summon-companion");
                       const companionId = companionEffect?.companionId ?? null;
                       const discovered = discoveredCardIds.includes(card.id);
@@ -288,6 +291,7 @@ export function HomesteadScreen({
                       );
                     })}
                   </div>
+                  </AnimatedHeight>
                 </div>
               );
             }
