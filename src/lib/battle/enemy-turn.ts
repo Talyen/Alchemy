@@ -21,7 +21,7 @@ import type { BattleCard, EnemyAttackEffect } from "@/lib/game-data/types";
 import type { DifficultyModifier } from "@/lib/game-data/difficulties";
 import { applyPlayerCombatDamage, clampHealth, type BattleState, type CombatTextEvent, type TurnPhase } from "./types";
 import { CARDS_PER_TURN, MAX_HAND_SIZE } from "../game-constants";
-import { DIFFICULTY_FORGE_PER_TURN, ENEMY_HEAL_FRACTION, HALF_DIVISOR, PERCENT_DENOMINATOR, TRAIT_ARMOR_PER_TURN, TRAIT_FORGE_PER_TURN, TRAIT_FREEZE_BONUS_PER_TURN } from "../game-constants";
+import { DIFFICULTY_FORGE_PER_TURN, ENEMY_HEAL_FRACTION, FORGE_REGENERATION_PER_TURN, HALF_DIVISOR, IRON_HIDE_ARMOR_PER_TURN, LABYRINTH_BURNING_GROUND_DAMAGE, LABYRINTH_LEECH_HEAL, PERCENT_DENOMINATOR, TRAIT_ARMOR_PER_TURN, TRAIT_FORGE_PER_TURN, TRAIT_FREEZE_BONUS_PER_TURN } from "../game-constants";
 
 export function chooseWishCard(state: BattleState, cardId: string) {
   const chosenCard = state.wishOptions?.find((card) => card.id === cardId);
@@ -268,6 +268,22 @@ function processEnemyTraits(state: BattleState, combatTexts: CombatTextEvent[]) 
     mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "armor", amount: TRAIT_ARMOR_PER_TURN });
   }
 
+  if (nextState.currentEnemy.traits.some((t) => t.id === "iron-hide")) {
+    nextState = {
+      ...nextState,
+      enemyArmor: nextState.enemyArmor + IRON_HIDE_ARMOR_PER_TURN,
+    };
+    mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "armor", amount: IRON_HIDE_ARMOR_PER_TURN });
+  }
+
+  if (nextState.currentEnemy.traits.some((t) => t.id === "forge-regeneration")) {
+    nextState = {
+      ...nextState,
+      enemyForge: nextState.enemyForge + FORGE_REGENERATION_PER_TURN,
+    };
+    mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "forge", amount: FORGE_REGENERATION_PER_TURN });
+  }
+
   if (nextState.currentEnemy.traits.some((t) => t.id === "glacial-shell")) {
     nextState = { ...nextState, enemyFreezeBonus: nextState.enemyFreezeBonus + TRAIT_FREEZE_BONUS_PER_TURN };
   }
@@ -278,6 +294,22 @@ function processEnemyTraits(state: BattleState, combatTexts: CombatTextEvent[]) 
       enemyForge: nextState.enemyForge + DIFFICULTY_FORGE_PER_TURN,
     };
     mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "forge", amount: DIFFICULTY_FORGE_PER_TURN });
+  }
+
+  if (nextState.difficultyModifiers.some((m: DifficultyModifier) => m.kind === "labyrinth-leeching")) {
+    nextState = {
+      ...nextState,
+      enemyHealth: clampHealth(nextState.enemyHealth, LABYRINTH_LEECH_HEAL, nextState.enemyMaxHealth),
+    };
+    mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "health", amount: LABYRINTH_LEECH_HEAL });
+  }
+
+  if (nextState.difficultyModifiers.some((m: DifficultyModifier) => m.kind === "labyrinth-burning-ground")) {
+    nextState = {
+      ...nextState,
+      playerStatuses: { ...nextState.playerStatuses, burn: nextState.playerStatuses.burn + LABYRINTH_BURNING_GROUND_DAMAGE },
+    };
+    mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "burn", amount: LABYRINTH_BURNING_GROUND_DAMAGE });
   }
 
   return nextState;

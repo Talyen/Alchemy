@@ -10,6 +10,7 @@ import {
   addPlayerStatus,
   applyPlayerHealing,
   clampHealth,
+  isNullFieldActive,
   setFlag,
   type BattleState,
   type CombatTextEvent,
@@ -148,9 +149,10 @@ function applyHolyDamageRiders(state: BattleState, card: BattleCard, damage: num
   nextState = applyDamageBlock(nextState, damage, combatTexts);
 
   if (nextState.talentEffects.holyBurnChance > 0 && Math.random() * PERCENT_DENOMINATOR < nextState.talentEffects.holyBurnChance) {
+    const burnAmount = isNullFieldActive(nextState) ? Math.max(1, Math.floor(damage / 2)) : damage;
     nextState = {
       ...nextState,
-      enemyStatuses: { ...nextState.enemyStatuses, burn: nextState.enemyStatuses.burn + damage },
+      enemyStatuses: { ...nextState.enemyStatuses, burn: nextState.enemyStatuses.burn + burnAmount },
     };
   }
 

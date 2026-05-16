@@ -9,7 +9,7 @@ test.describe("Game Over via Death", () => {
     await expect(page.getByRole("heading", { name: "Defeat" })).toBeVisible({ timeout: 5000 });
     await expect(page.getByRole("button", { name: "Return to Main Menu" })).toBeVisible();
     await page.getByRole("button", { name: "Return to Main Menu" }).click();
-    await expect(page.getByRole("button", { name: "Play" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Campaign" })).toBeVisible();
   });
 
   test("natural death via HP depletion from enemy damage", async ({ page }) => {

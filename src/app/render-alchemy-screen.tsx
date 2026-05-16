@@ -13,6 +13,7 @@ import {
   DestinationScreen,
   DifficultySelectScreen,
   GameOverScreen,
+  LabyrinthMapScreen,
   MenuScreen,
   MerchantShopScreen,
   MysteryScreen,
@@ -20,6 +21,7 @@ import {
   RewardsScreen,
   RunVictoryScreen,
   TalentsScreen,
+  WildwoodSelectScreen,
 } from "@/features/alchemy/screens";
 import { HomesteadScreen } from "@/features/alchemy/screens/homestead-screen";
 import type { useAlchemyRunController } from "@/features/alchemy/use-alchemy-run-controller";
@@ -60,9 +62,11 @@ export function renderAlchemyScreen({
   switch (screen) {
     case "menu":
       return <MenuScreen
-        onPlay={run.beginRun}
-        hasActiveBattle={run.hasActiveBattle}
-        hasActiveRun={run.hasActiveRun}
+        onCampaign={run.beginCampaign}
+        onLabyrinth={run.beginLabyrinth}
+        onWildwood={run.beginWildwood}
+        hasActiveCampaign={run.hasActiveRun && run.activeRunData?.contentSystemType === "campaign"}
+        hasActiveLabyrinth={run.hasActiveRun && run.activeRunData?.contentSystemType === "labyrinth"}
         onCollection={() => run.goToScreen("collection")}
         onOptions={() => run.goToScreen("options")}
         onHomestead={() => run.goToScreen("homestead")}
@@ -116,6 +120,13 @@ export function renderAlchemyScreen({
           onEndTurn: run.handleEndTurn,
         }}
       />;
+    case "labyrinth-map":
+      return <LabyrinthMapScreen
+        labyrinthMap={run.labyrinthMap}
+        onNodeClick={run.handleLabyrinthNodeEnter}
+      />;
+    case "wildwood-select":
+      return <WildwoodSelectScreen onSelect={run.handleWildwoodBossSelect} onBack={() => run.goToScreen("menu")} />;
     case "rewards":
       return <RewardsScreen
         rewardType={run.rewardType}

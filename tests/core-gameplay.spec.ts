@@ -4,24 +4,54 @@ import { startAtDestination, startRun, playUntilVictory, waitForEnemyTurn, compl
 test.describe("Menu", () => {
   test("all menu buttons are visible on the main menu", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByRole("button", { name: "Play" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Campaign" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Labyrinth" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Wildwood" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Collection" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Options" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Talents" })).toBeVisible();
   });
 
-  test("menu shows Resume Run when a battle is active", async ({ page }) => {
+  test("menu shows Resume Run when a campaign battle is active", async ({ page }) => {
     await startRun(page);
     await page.getByRole("button", { name: "Menu" }).click();
     await page.getByRole("button", { name: "Main Menu" }).click();
     await expect(page.getByRole("button", { name: "Resume Run" })).toBeVisible();
+  });
+
+  test("Labyrinth button shows Resume when a labyrinth run is active", async ({ page }) => {
+    // Inject a labyrinth save state
+    await page.addInitScript(() => {
+      const SAVE_KEY = "alchemy-save-v1";
+      const save = JSON.parse(localStorage.getItem(SAVE_KEY) || "{}");
+      save.activeRun = {
+        characterId: "knight",
+        runDeck: [{ id: "slash", title: "Slash", descriptionLines: ["Deal 6 Physical damage"], art: "placeholder", cost: 1, effects: [{ kind: "damage", damageType: "physical", amount: 6 }] }],
+        runGold: 0,
+        runPlayerHealth: 30,
+        runMaxHealth: 30,
+        roomsEncountered: 1,
+        currentAct: 1,
+        destinationIndexInAct: 1,
+        completedDestinations: [],
+        runTrinkets: [],
+        selectedDifficulty: null,
+        contentSystemType: "labyrinth",
+      };
+      if (!Array.isArray(save.discoveredCardIds) || save.discoveredCardIds.length === 0) {
+        save.discoveredCardIds = ["slash", "bash", "block"];
+      }
+      localStorage.setItem(SAVE_KEY, JSON.stringify(save));
+    });
+    await page.goto("/");
+    await expect(page.getByRole("button", { name: "Resume" })).toBeVisible();
   });
 });
 
 test.describe("Character Select", () => {
   test("all characters are selectable", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("button", { name: "Play" }).click();
+    await page.getByRole("button", { name: "Campaign" }).click();
 
     await expect(page.getByRole("heading", { name: "Choose Your Hero" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Knight" })).toBeVisible();
@@ -41,14 +71,14 @@ test.describe("Character Select", () => {
 
   test("back button returns to main menu", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("button", { name: "Play" }).click();
+    await page.getByRole("button", { name: "Campaign" }).click();
     await page.getByRole("button", { name: "Back" }).click();
-    await expect(page.getByRole("button", { name: "Play" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Campaign" })).toBeVisible();
   });
 
   test("fresh wizard run starts with wizard cards", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("button", { name: "Play" }).click();
+    await page.getByRole("button", { name: "Campaign" }).click();
     await page.getByRole("button", { name: "Wizard" }).click();
     await page.getByRole("button", { name: "Continue" }).click();
     // With no Novice completed, difficulty select is skipped and battle starts directly
@@ -244,7 +274,7 @@ test.describe("Full Run Flow", () => {
     await expect(page.getByText("Your run has ended.")).toBeVisible();
 
     await page.getByRole("button", { name: "Return to Main Menu" }).click();
-    await expect(page.getByRole("button", { name: "Play" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Campaign" })).toBeVisible();
   });
 });
 
@@ -351,7 +381,7 @@ test.describe("Difficulty Select", () => {
 
   test("difficulty screen shows after character selection", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("button", { name: "Play" }).click();
+    await page.getByRole("button", { name: "Campaign" }).click();
     await page.getByRole("button", { name: "Knight" }).click();
     await page.getByRole("button", { name: "Continue" }).click();
 
@@ -361,7 +391,7 @@ test.describe("Difficulty Select", () => {
 
   test("all three difficulty cards are visible", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("button", { name: "Play" }).click();
+    await page.getByRole("button", { name: "Campaign" }).click();
     await page.getByRole("button", { name: "Knight" }).click();
     await page.getByRole("button", { name: "Continue" }).click();
 
@@ -372,7 +402,7 @@ test.describe("Difficulty Select", () => {
 
   test("Novice and Adventurer are unlocked, Legend shows as locked", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("button", { name: "Play" }).click();
+    await page.getByRole("button", { name: "Campaign" }).click();
     await page.getByRole("button", { name: "Knight" }).click();
     await page.getByRole("button", { name: "Continue" }).click();
 
@@ -383,7 +413,7 @@ test.describe("Difficulty Select", () => {
 
   test("Play is disabled before a difficulty is selected", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("button", { name: "Play" }).click();
+    await page.getByRole("button", { name: "Campaign" }).click();
     await page.getByRole("button", { name: "Knight" }).click();
     await page.getByRole("button", { name: "Continue" }).click();
 
@@ -393,7 +423,7 @@ test.describe("Difficulty Select", () => {
 
   test("selecting Novice enables the Play button", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("button", { name: "Play" }).click();
+    await page.getByRole("button", { name: "Campaign" }).click();
     await page.getByRole("button", { name: "Knight" }).click();
     await page.getByRole("button", { name: "Continue" }).click();
 
@@ -403,7 +433,7 @@ test.describe("Difficulty Select", () => {
 
   test("Back from difficulty select returns to character select", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("button", { name: "Play" }).click();
+    await page.getByRole("button", { name: "Campaign" }).click();
     await page.getByRole("button", { name: "Knight" }).click();
     await page.getByRole("button", { name: "Continue" }).click();
 
@@ -413,7 +443,7 @@ test.describe("Difficulty Select", () => {
 
   test("selecting Novice and Play starts a battle", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("button", { name: "Play" }).click();
+    await page.getByRole("button", { name: "Campaign" }).click();
     await page.getByRole("button", { name: "Knight" }).click();
     await page.getByRole("button", { name: "Continue" }).click();
 
@@ -425,7 +455,7 @@ test.describe("Difficulty Select", () => {
 
   test("Wizard shows different difficulty config", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("button", { name: "Play" }).click();
+    await page.getByRole("button", { name: "Campaign" }).click();
     await page.getByRole("button", { name: "Wizard" }).click();
     await page.getByRole("button", { name: "Continue" }).click();
 
@@ -439,7 +469,7 @@ test.describe("Difficulty Select", () => {
 test.describe("Difficulty Skip (first-time player)", () => {
   test("selecting a character with no completed difficulties skips to battle", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("button", { name: "Play" }).click();
+    await page.getByRole("button", { name: "Campaign" }).click();
     await page.getByRole("button", { name: "Knight" }).click();
     await page.getByRole("button", { name: "Continue" }).click();
 

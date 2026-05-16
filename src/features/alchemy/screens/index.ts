@@ -18,3 +18,5 @@ export { MysteryScreen } from "./mystery/mystery-screen";
 export { CorruptionScreen } from "./corruption-screen";
 export { ActCompleteScreen } from "./act-complete-screen";
 export { RunVictoryScreen } from "./run-victory-screen";
+export { LabyrinthMapScreen } from "./labyrinth-map-screen";
+export { WildwoodSelectScreen } from "./wildwood-select-screen";

@@ -153,8 +153,8 @@ test.describe("Mobile Landscape", () => {
     test(`menu and character select work at ${vp.width}x${vp.height}`, async ({ page }) => {
       await page.setViewportSize({ width: vp.width, height: vp.height });
       await page.goto("/");
-      await expect(page.getByRole("button", { name: "Play" })).toBeVisible();
-      await page.getByRole("button", { name: "Play" }).click();
+      await expect(page.getByRole("button", { name: "Campaign" })).toBeVisible();
+      await page.getByRole("button", { name: "Campaign" }).click();
       await expect(page.getByRole("heading", { name: "Choose Your Hero" })).toBeVisible();
     });
 

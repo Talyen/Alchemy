@@ -6,7 +6,7 @@ import type { CSSProperties } from "react";
 import type { CombatTextEvent } from "@/lib/battle";
 import type { KeywordId } from "@/lib/game-data";
 
-export type Screen = "menu" | "character-select" | "difficulty-select" | "battle" | "rewards" | "destination" | "options" | "collection" | "talents" | "homestead" | "game-over" | "campfire" | "shop" | "alchemist" | "mystery" | "corruption" | "act-complete" | "run-victory";
+export type Screen = "menu" | "character-select" | "difficulty-select" | "battle" | "rewards" | "destination" | "options" | "collection" | "talents" | "homestead" | "game-over" | "campfire" | "shop" | "alchemist" | "mystery" | "corruption" | "act-complete" | "run-victory" | "labyrinth-map" | "wildwood-select" | "wildwood-battle";
 
 export type ResolutionOption = "1920x1080" | "1920x1200" | "2560x1080";
 

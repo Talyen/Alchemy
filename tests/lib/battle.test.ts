@@ -6,8 +6,8 @@ import { drawCards, createBattleState, defaultTalentEffects, shuffleCards } from
 import { companionLibrary, enemyBestiary } from "@/lib/game-data";
 import type { BattleCard, BestiaryEntry, DifficultyModifier } from "@/lib/game-data";
 import type { BattleState, CombatTextEvent } from "@/lib/battle/types";
-import { clampHealth, isPlayerDefeated } from "@/lib/battle/types";
-import { MAX_PLAYER_HEALTH, MAX_HAND_SIZE, BASE_PLAYER_MANA } from "@/lib/game-constants";
+import { addEnemyStatus, clampHealth, isNullFieldActive, isPlayerDefeated } from "@/lib/battle/types";
+import { MAX_PLAYER_HEALTH, MAX_HAND_SIZE, BASE_PLAYER_MANA, LABYRINTH_STURDY_MULTIPLIER, LABYRINTH_BURNING_GROUND_DAMAGE, LABYRINTH_LEECH_HEAL } from "@/lib/game-constants";
 import { clamp } from "@/lib/utils";
 import { defaultTrinketEffects, computeTrinketManifest } from "@/lib/trinkets";
 import { defaultBattleState } from "@/lib/battle/draw";
@@ -986,6 +986,128 @@ describe("createBattleState", () => {
       const burnEffect = result.enemyAttackEffects.find((e) => e.kind === "player-status" && e.status === "burn")!;
       expect(burnEffect.amount).toBe(2); // unchanged, wrong status
     });
+  });
+});
+
+// ─── Labyrinth Modifier Integration ───
+
+describe("labyrinth modifiers on createBattleState", () => {
+  const skeleton = enemyBestiary.find((e) => e.id === "skeleton")!;
+  const battleDeck = [makeCard({ id: "slash" }), makeCard({ id: "block" })];
+  const BASE_ENEMY_HP = 30;
+
+  it("labyrinth-sturdy scales enemyMaxHealth by 1.3x", () => {
+    const result = createBattleState(battleDeck, 0, 0, skeleton, undefined, undefined, undefined, undefined, undefined, undefined, undefined, [{ kind: "labyrinth-sturdy" }]);
+    expect(result.enemyMaxHealth).toBe(Math.floor(BASE_ENEMY_HP * LABYRINTH_STURDY_MULTIPLIER));
+    expect(result.enemyHealth).toBe(result.enemyMaxHealth);
+  });
+
+  it("labyrinth-null-field modifier is detected by isNullFieldActive", () => {
+    const result = createBattleState(battleDeck, 0, 0, skeleton, undefined, undefined, undefined, undefined, undefined, undefined, undefined, [{ kind: "labyrinth-null-field" }]);
+    expect(isNullFieldActive(result)).toBe(true);
+  });
+
+  it("labyrinth-null-field is false without the modifier", () => {
+    const result = createBattleState(battleDeck, 0, 0, skeleton);
+    expect(isNullFieldActive(result)).toBe(false);
+  });
+
+  it("sturdy and null-field stack correctly", () => {
+    const result = createBattleState(battleDeck, 0, 0, skeleton, undefined, undefined, undefined, undefined, undefined, undefined, undefined, [
+      { kind: "labyrinth-sturdy" },
+      { kind: "labyrinth-null-field" },
+    ]);
+    expect(result.enemyMaxHealth).toBe(Math.floor(BASE_ENEMY_HP * LABYRINTH_STURDY_MULTIPLIER));
+    expect(isNullFieldActive(result)).toBe(true);
+  });
+});
+
+describe("labyrinth modifiers on endPlayerTurn", () => {
+  it("labyrinth-burning-ground adds burn to player each turn", () => {
+    const state = makeState({
+      difficultyModifiers: [{ kind: "labyrinth-burning-ground" }] as DifficultyModifier[],
+      playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      playerHealth: 30,
+      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
+      mana: 0,
+      maxMana: 1,
+    });
+    const result = endPlayerTurn(state);
+    // 2 burn added, then tick halves to 1 and deals 2 damage.
+    expect(result.state.playerStatuses.burn).toBe(1);
+    expect(result.state.playerHealth).toBe(28); // 30 - 2 burn damage
+    expect(result.combatTexts).toContainEqual({ target: "player", kind: "status", stat: "burn", amount: LABYRINTH_BURNING_GROUND_DAMAGE });
+    expect(result.combatTexts).toContainEqual({ target: "player", kind: "damage", stat: "burn", amount: LABYRINTH_BURNING_GROUND_DAMAGE });
+  });
+
+  it("labyrinth-leeching heals enemy each turn", () => {
+    const state = makeState({
+      difficultyModifiers: [{ kind: "labyrinth-leeching" }] as DifficultyModifier[],
+      enemyHealth: 20,
+      enemyMaxHealth: 30,
+      playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
+      mana: 0,
+      maxMana: 1,
+    });
+    const result = endPlayerTurn(state);
+    expect(result.state.enemyHealth).toBe(23); // 20 + 3
+    expect(result.combatTexts).toContainEqual({ target: "enemy", kind: "status", stat: "health", amount: LABYRINTH_LEECH_HEAL });
+  });
+
+  it("labyrinth-leeching does not overheal", () => {
+    const state = makeState({
+      difficultyModifiers: [{ kind: "labyrinth-leeching" }] as DifficultyModifier[],
+      enemyHealth: 30,
+      enemyMaxHealth: 30,
+      playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
+      mana: 0,
+      maxMana: 1,
+    });
+    const result = endPlayerTurn(state);
+    expect(result.state.enemyHealth).toBe(30); // capped at max
+  });
+
+  it("burning-ground and leeching apply together", () => {
+    const state = makeState({
+      difficultyModifiers: [
+        { kind: "labyrinth-burning-ground" },
+        { kind: "labyrinth-leeching" },
+      ] as DifficultyModifier[],
+      enemyHealth: 20,
+      enemyMaxHealth: 30,
+      playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      playerHealth: 30,
+      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
+      mana: 0,
+      maxMana: 1,
+    });
+    const result = endPlayerTurn(state);
+    // Burn: 2 added, tick halves to 1. Leech: enemy heals 3 from 20 → 23.
+    expect(result.state.playerStatuses.burn).toBe(1);
+    expect(result.state.playerHealth).toBe(28); // 30 - 2 burn damage
+    expect(result.state.enemyHealth).toBe(23); // 20 + 3
+  });
+});
+
+describe("null-field in addEnemyStatus", () => {
+  it("halves the delta when labyrinth-null-field modifier is present", () => {
+    const state = makeState({ difficultyModifiers: [{ kind: "labyrinth-null-field" }] as DifficultyModifier[] });
+    const result = addEnemyStatus(state, "burn", 10);
+    expect(result.enemyStatuses.burn).toBe(5);
+  });
+
+  it("does not halve when modifier is absent", () => {
+    const state = makeState();
+    const result = addEnemyStatus(state, "burn", 10);
+    expect(result.enemyStatuses.burn).toBe(10);
+  });
+
+  it("minimum value is 1 even for small deltas", () => {
+    const state = makeState({ difficultyModifiers: [{ kind: "labyrinth-null-field" }] as DifficultyModifier[] });
+    const result = addEnemyStatus(state, "poison", 1);
+    expect(result.enemyStatuses.poison).toBe(1);
   });
 });
 

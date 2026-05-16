@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { normalizeActiveRun, normalizeSaveData, normalizeDisplayMode, normalizeUiScale, migrateMaterialInventory, migrateBuildingIds, migrateFarmIds, migrateToTierLevels } from "@/features/alchemy/storage";
 import { cardLibrary } from "@/lib/game-data";
 import { buildings, farmPlots } from "@/lib/homestead/data";
+import { createSeededRng, generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
 
 function activeRun(overrides: Record<string, unknown> = {}) {
   return {
@@ -118,6 +119,33 @@ describe("normalizeActiveRun", () => {
   it("sets selectedDifficulty to null for non-string value", () => {
     const result = normalizeActiveRun(activeRun({ selectedDifficulty: 42 }));
     expect(result?.selectedDifficulty).toBeNull();
+  });
+
+  it("defaults contentSystemType to campaign when missing", () => {
+    const result = normalizeActiveRun(activeRun({}));
+    expect(result?.contentSystemType).toBe("campaign");
+  });
+
+  it("preserves contentSystemType labyrinth when set", () => {
+    const result = normalizeActiveRun(activeRun({ contentSystemType: "labyrinth" }));
+    expect(result?.contentSystemType).toBe("labyrinth");
+  });
+
+  it("preserves valid labyrinth map state", () => {
+    const labyrinthMap = generateLabyrinthMap(createSeededRng(42));
+    const result = normalizeActiveRun(activeRun({ contentSystemType: "labyrinth", labyrinthMap }));
+    expect(result?.labyrinthMap).toEqual(labyrinthMap);
+  });
+
+  it("drops labyrinth map state for campaign runs", () => {
+    const labyrinthMap = generateLabyrinthMap(createSeededRng(42));
+    const result = normalizeActiveRun(activeRun({ contentSystemType: "campaign", labyrinthMap }));
+    expect(result?.labyrinthMap).toBeNull();
+  });
+
+  it("coerces unknown contentSystemType to campaign", () => {
+    const result = normalizeActiveRun(activeRun({ contentSystemType: "wildwood" }));
+    expect(result?.contentSystemType).toBe("campaign");
   });
 });
 

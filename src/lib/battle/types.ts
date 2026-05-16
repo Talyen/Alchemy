@@ -141,7 +141,8 @@ export function setPlayerStatus(state: BattleState, status: PlayerStatusId, valu
 }
 
 export function addEnemyStatus(state: BattleState, status: EnemyStatusId, delta: number): BattleState {
-  return { ...state, enemyStatuses: { ...state.enemyStatuses, [status]: state.enemyStatuses[status] + delta } };
+  const adjustedDelta = isNullFieldActive(state) ? Math.max(1, Math.floor(delta / 2)) : delta;
+  return { ...state, enemyStatuses: { ...state.enemyStatuses, [status]: state.enemyStatuses[status] + adjustedDelta } };
 }
 
 export function setEnemyStatus(state: BattleState, status: EnemyStatusId, value: number): BattleState {
@@ -152,8 +153,8 @@ export function addGold(state: BattleState, delta: number): BattleState {
   return { ...state, gold: state.gold + delta };
 }
 
-export function setFlag(state: BattleState, flag: keyof CombatFlags, value: boolean | number): BattleState {
-  return { ...state, flags: { ...state.flags, [flag]: value as never } };
+export function setFlag<K extends keyof CombatFlags>(state: BattleState, flag: K, value: CombatFlags[K]): BattleState {
+  return { ...state, flags: { ...state.flags, [flag]: value } };
 }
 
 export function clampHealth(current: number, delta: number, max: number): number {
@@ -177,5 +178,11 @@ export function applyPlayerHealing(state: BattleState, amount: number): BattleSt
 
 export function isPlayerDefeated(state: Pick<BattleState, "playerHealth" | "deathsDoorActive">): boolean {
   return state.playerHealth <= 0 && !state.deathsDoorActive;
+}
+
+// Derives null-field status from difficulty modifiers rather than storing it
+// as a separate field, preventing desync between the flag and modifier array.
+export function isNullFieldActive(state: Pick<BattleState, "difficultyModifiers">): boolean {
+  return state.difficultyModifiers.some((m) => m.kind === "labyrinth-null-field");
 }
 

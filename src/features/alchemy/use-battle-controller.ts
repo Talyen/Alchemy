@@ -16,7 +16,7 @@ import {
 import { getDifficultyModifiers, getStartingDeck, type BattleCard, type BestiaryEntry, type DifficultyModifier } from "@/lib/game-data";
 import { playBattleEvent, playCardSound, playEnemyAttack, playGoldGain } from "@/lib/audio";
 import { appendUnique } from "@/lib/utils";
-import { getCurrentEnemy, getBossEnemy } from "./config";
+import { getBossById, getCurrentEnemy, getBossEnemy } from "./config";
 import { useShimmerController } from "./hooks";
 import { animateCardActivation } from "./battle/card-ghost-animation";
 import { useCardGhosts } from "./battle/use-card-ghosts";
@@ -109,6 +109,11 @@ export function useBattleController({
 
   function startBossBattle(modifiers?: DifficultyModifier[]) {
     beginBattle(getBossEnemy(run.currentAct), run.runDeck, run.runGold, modifiers);
+  }
+
+  function startBossById(bossId: string, modifiers?: DifficultyModifier[]) {
+    const boss = getBossById(bossId);
+    if (boss) beginBattle(boss, run.runDeck, run.runGold, modifiers);
   }
 
   function beginBattle(enemy: BestiaryEntry, deck: BattleCard[], gold: number, modifiers?: DifficultyModifier[]) {
@@ -359,6 +364,7 @@ export function useBattleController({
     enemyCombatTexts,
     startBattle,
     startBossBattle,
+    startBossById,
     handleCardClick,
     handleWishChoice,
     handleEndTurn,

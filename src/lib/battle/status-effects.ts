@@ -7,6 +7,7 @@ import {
   addPlayerStatus,
   applyPlayerHealing,
   clampHealth,
+  isNullFieldActive,
   setFlag,
   type BattleState,
   type CombatTextEvent,
@@ -35,6 +36,7 @@ export function getEnemyDamageMultiplier(state: Pick<BattleState, "currentEnemy"
   if (traitIds.includes("holy-vulnerability") && damageType === "holy") return TRAIT_DAMAGE_WEAKNESS;
   if (traitIds.includes("burn-resistance") && damageType === "burn") return TRAIT_DAMAGE_RESISTANCE;
   if (traitIds.includes("living-armor") && damageType === "bleed") return TRAIT_DAMAGE_RESISTANCE;
+  if (traitIds.includes("thick-hide") && damageType === "physical") return TRAIT_DAMAGE_RESISTANCE;
   if (traitIds.includes("poison-resistance") && damageType === "poison") return TRAIT_DAMAGE_RESISTANCE;
   if (traitIds.includes("glacial-shell") && damageType === "freeze") return TRAIT_DAMAGE_RESISTANCE;
   if (traitIds.includes("glacial-shell") && damageType === "burn") return TRAIT_DAMAGE_WEAKNESS;
@@ -84,16 +86,19 @@ export function applyDamageStatuses(state: BattleState, effect: Extract<BattleCa
   const nextStatuses = { ...state.enemyStatuses };
   let nextState: BattleState = { ...state, enemyStatuses: nextStatuses };
 
+  // Null Field: status application to enemies is halved (min 1).
+  const statusDamage = isNullFieldActive(state) ? Math.max(1, Math.floor(actualDamage / 2)) : actualDamage;
+
   switch (effect.damageType) {
     case "burn": {
-      nextStatuses.burn += actualDamage;
+      nextStatuses.burn += statusDamage;
       if (nextState.talentEffects.burnRemovesEnemyArmor) {
         nextState = { ...nextState, enemyArmor: Math.max(0, nextState.enemyArmor - actualDamage) };
       }
       break;
     }
     case "poison": {
-      nextStatuses.poison += actualDamage;
+      nextStatuses.poison += statusDamage;
       if (actualDamage > 0 && nextState.talentEffects.goldOnFirstPoison > 0 && !nextState.flags.goldOnFirstPoisonThisCombat) {
         nextState = setFlag(addGold(nextState, nextState.talentEffects.goldOnFirstPoison), "goldOnFirstPoisonThisCombat", true);
         mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "gold", amount: nextState.talentEffects.goldOnFirstPoison });
@@ -101,7 +106,7 @@ export function applyDamageStatuses(state: BattleState, effect: Extract<BattleCa
       break;
     }
     case "bleed": {
-      const bleedAmount = actualDamage * BLEED_STATUS_MULTIPLIER;
+      const bleedAmount = statusDamage * BLEED_STATUS_MULTIPLIER;
       nextStatuses.bleed += bleedAmount;
       if (bleedAmount > 0 && (effect.lifesteal || (nextState.talentEffects.bleedLeechChance > 0 && Math.random() * PERCENT_DENOMINATOR < nextState.talentEffects.bleedLeechChance))) {
         nextStatuses.bleedLeech += bleedAmount;
@@ -116,13 +121,13 @@ export function applyDamageStatuses(state: BattleState, effect: Extract<BattleCa
       break;
     }
     case "stun": {
-      nextStatuses.stun += actualDamage;
+      nextStatuses.stun += statusDamage;
       nextState = { ...nextState, enemyStatuses: nextStatuses };
       nextState = resolveStunTrigger(nextState, combatTexts);
       break;
     }
     case "freeze": {
-      nextStatuses.freeze += actualDamage;
+      nextStatuses.freeze += statusDamage;
       const isFreezeImmune = state.currentEnemy.traits.some((t) => t.id === "glacial-shell");
       const freezeThreshold = FREEZE_THRESHOLD_FRACTION - (state.talentEffects.freezeThresholdReduction ?? 0);
       if (!isFreezeImmune && state.enemyHealth > 0 && nextStatuses.freeze >= state.enemyHealth * freezeThreshold) {
@@ -203,14 +208,15 @@ export function applyPlayerStatusEffect(state: BattleState, effect: Extract<Batt
   if (effect.status === "forge") {
     const newForge = state.playerStatuses.forge + amount;
     if (state.talentEffects.forgeBurnThreshold > 0 && state.playerStatuses.forge < state.talentEffects.forgeBurnThreshold && newForge >= state.talentEffects.forgeBurnThreshold) {
+      const burnAmount = isNullFieldActive(state) ? Math.max(1, Math.floor(state.talentEffects.forgeBurnDamage / 2)) : state.talentEffects.forgeBurnDamage;
       state = {
         ...state,
         enemyStatuses: {
           ...state.enemyStatuses,
-          burn: state.enemyStatuses.burn + state.talentEffects.forgeBurnDamage,
+          burn: state.enemyStatuses.burn + burnAmount,
         },
       };
-      mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "burn", amount: state.talentEffects.forgeBurnDamage });
+      mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "burn", amount: burnAmount });
     }
   }
 

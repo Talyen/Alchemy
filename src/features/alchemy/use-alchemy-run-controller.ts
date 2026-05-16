@@ -6,11 +6,13 @@ import { cardLibrary, trinketLibrary } from "@/lib/game-data";
 import type { TalentXP } from "@/lib/talents";
 import type { HomesteadEffectManifest, MaterialInventory } from "@/lib/homestead/types";
 import type { CharacterId, DifficultyId, UnlockedTalents } from "@/lib/game-data";
+import { labyrinthModifiersToDifficulty } from "@/lib/content-systems/labyrinth/modifiers";
 import { useTalentState } from "./use-talent-state";
 import { useRunState } from "./use-run-state";
 import { useBattleController } from "./use-battle-controller";
 import { useShopController } from "./use-shop-controller";
 import { useRunNavigation } from "./use-run-navigation";
+import { useLabyrinthController } from "./use-labyrinth-controller";
 import type { Screen } from "./types";
 import type { ActiveRunData } from "./run/types";
 import { NAVIGATION_DELAY_MS } from "@/lib/game-constants";
@@ -93,6 +95,8 @@ export function useAlchemyRunController({
     setDiscoveredCardIds,
   });
 
+  const labyrinth = useLabyrinthController(initialActiveRun?.labyrinthMap ?? null);
+
   const nav = useRunNavigation({
     run,
     talents,
@@ -115,14 +119,57 @@ export function useAlchemyRunController({
     setHoveredCardId,
     onStartBattle: battle.startBattle,
     onStartBossBattle: battle.startBossBattle,
+    onStartBossById: battle.startBossById,
+    onLabyrinthClearNode: labyrinth.onNodeCleared,
+    onLabyrinthFailNode: labyrinth.onNodeFailed,
     onInitShop: shop.initShop,
     onInitAlchemist: shop.initAlchemist,
     onMarkDifficultyCompleted,
     completedDifficulties,
+    labyrinthMap: labyrinth.labyrinthMap,
   });
 
   function clearPermanentData() {
     talents.clearPermanentData();
+  }
+
+  function handleBeginLabyrinth() {
+    if (!(hasActiveRun && run.contentSystemType === "labyrinth") && !(battle.hasActiveBattle && run.contentSystemType === "labyrinth")) {
+      labyrinth.resetMap();
+    }
+    nav.beginLabyrinth();
+  }
+
+  function handleLabyrinthNodeEnter(row: number, col: number) {
+    labyrinth.enterNode(row, col, {
+      onStartBattleWithModifiers: (enemyType, modifiers) => {
+        battle.startBattle(undefined, undefined, enemyType, labyrinthModifiersToDifficulty(modifiers));
+        navigateTo("battle");
+      },
+      onStartBossBattleWithModifiers: (modifiers) => {
+        battle.startBossBattle(labyrinthModifiersToDifficulty(modifiers));
+        navigateTo("battle");
+      },
+      onGrantTreasure: () => {
+        const gold = 15 + Math.floor(Math.random() * 15);
+        run.addRunGold(gold);
+        navigateTo("labyrinth-map");
+      },
+      onStartRest: () => {
+        navigateTo("campfire");
+      },
+      onStartMystery: () => {
+        navigateTo("mystery");
+      },
+      onStartShop: () => {
+        shop.initShop();
+        navigateTo("shop");
+      },
+      onStartAlchemist: () => {
+        shop.initAlchemist();
+        navigateTo("alchemist");
+      },
+    });
   }
 
   return {
@@ -131,6 +178,7 @@ export function useAlchemyRunController({
     hoveredCardId,
     hasActiveBattle: battle.hasActiveBattle,
     hasActiveRun,
+    labyrinthMap: labyrinth.labyrinthMap,
     runDeck: run.runDeck,
     runGold: run.runGold,
     runPlayerHealth: run.runPlayerHealth,
@@ -229,10 +277,14 @@ export function useAlchemyRunController({
     enemyShaking: battle.enemyShaking,
     playerShaking: battle.playerShaking,
     companionShaking: battle.companionShaking,
-    beginRun: nav.beginRun,
+    beginCampaign: nav.beginCampaign,
+    beginLabyrinth: handleBeginLabyrinth,
+    beginWildwood: nav.beginWildwood,
+    handleLabyrinthNodeEnter,
     handleCharacterSelect: nav.handleCharacterSelect,
     handleDifficultySelect: nav.handleDifficultySelect,
     handleBackFromDifficultySelect: nav.handleBackFromDifficultySelect,
+    handleWildwoodBossSelect: nav.handleWildwoodBossSelect,
     returnToBattle: nav.returnToBattle,
     goToScreen: nav.goToScreen,
     maybeTriggerShimmer: battle.maybeTriggerShimmer,

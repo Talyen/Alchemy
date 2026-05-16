@@ -22,6 +22,7 @@ import {
   STARTING_TURN,
   ENEMY_BASE_REGENERATION,
   ENEMY_BOSS_REGENERATION,
+  LABYRINTH_STURDY_MULTIPLIER,
 } from "../game-constants";
 import {
   type BattleState,
@@ -212,6 +213,10 @@ export function createBattleState(
   const { scaledEnemyHealth, scaledEnemyAttackEffects, enemyRegeneration } = buildScaledEnemy(enemy, destinationIndexInAct, currentAct);
   const modifiedEffects = applyDifficultyAttackModifiers(scaledEnemyAttackEffects, difficultyModifiers);
   const { startingArmor, startBlock, manaBonus, startCompanion } = computeStartingStatuses(difficultyModifiers, enemy);
+
+  const hasSturdy = difficultyModifiers.some((m) => m.kind === "labyrinth-sturdy");
+  const enemyMaxHp = hasSturdy ? Math.floor(scaledEnemyHealth * LABYRINTH_STURDY_MULTIPLIER) : scaledEnemyHealth;
+
   const startingHealth = Math.min(maxHealth, playerHealth + talentEffects.startHealth);
 
   return {
@@ -229,8 +234,8 @@ export function createBattleState(
     deathsDoorUsed: false,
     deathsDoorActive: false,
     deathsDoorTriggeredTurn: null,
-    enemyHealth: scaledEnemyHealth,
-    enemyMaxHealth: scaledEnemyHealth,
+    enemyHealth: enemyMaxHp,
+    enemyMaxHealth: enemyMaxHp,
     enemyAttackEffects: modifiedEffects,
     enemyRegeneration,
     enemyArmor: startingArmor,

@@ -171,9 +171,16 @@ export const SAVE_KEY = "alchemy-save-v1";       // localStorage key. Version su
 // ============ Enemy Trait Tuning ============
 export const TRAIT_ARMOR_PER_TURN = 1;             // Rusting-Carapace: armor gained each enemy turn.
 export const TRAIT_FORGE_PER_TURN = 1;             // Rusting-Carapace: forge gained each enemy turn.
+export const IRON_HIDE_ARMOR_PER_TURN = 2;          // Iron-Hide: armor gained each enemy turn.
+export const FORGE_REGENERATION_PER_TURN = 2;       // Forge-Regeneration: forge gained each enemy turn.
 export const TRAIT_FREEZE_BONUS_PER_TURN = 1;      // Glacial-Shell: freeze status bonus gained each turn.
 export const DIFFICULTY_FORGE_PER_TURN = 1;         // Difficulty modifier: forge gained each enemy turn.
 export const LIVING_ARMOR_STARTING_ARMOR = 8;       // Living-Armor trait initial armor value.
+
+// ============ Labyrinth ============
+export const LABYRINTH_STURDY_MULTIPLIER = 1.3;     // Sturdy modifier: +30% enemy max HP (same as ELITE_STAT_MULTIPLIER).
+export const LABYRINTH_BURNING_GROUND_DAMAGE = 2;   // Burning Ground: 2 Burn to player each turn.
+export const LABYRINTH_LEECH_HEAL = 3;              // Leeching: enemy heals 3 HP on their turn.
 export const FALLBACK_ENEMY_ATTACK = 8;             // Default attack for malformed bestiary entries.
 
 // ============ Enemy Trait Damage Modifiers ============

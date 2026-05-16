@@ -69,6 +69,7 @@ import plagueDoctor from "@/assets/optimized/plague-doctor.webp";
 import theFrostwarden from "@/assets/optimized/the-frostwarden.webp";
 import theForgeGolem from "@/assets/optimized/the-forge-golem.webp";
 import theBlightTreant from "@/assets/optimized/the-blight-treant.webp";
+import ironBear from "@/assets/optimized/iron-bear.webp";
 import plateMail from "@/assets/optimized/plate-mail.webp";
 import poisonDagger from "@/assets/optimized/poison-dagger.webp";
 import ranger from "@/assets/optimized/ranger.webp";
@@ -214,6 +215,7 @@ export {
   theFrostwarden,
   theForgeGolem,
   theBlightTreant,
+  ironBear,
   placeholderTrinket,
   placeholderDestination,
   huntersLodge,

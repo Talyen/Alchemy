@@ -15,7 +15,12 @@ export type DifficultyModifier =
   | { kind: "start-block"; amount: number }
   | { kind: "start-max-mana"; amount: number }
   | { kind: "gold-multiplier"; amount: number }
-  | { kind: "start-companion" };
+  | { kind: "start-companion" }
+  // Labyrinth-only modifiers
+  | { kind: "labyrinth-sturdy" }
+  | { kind: "labyrinth-burning-ground" }
+  | { kind: "labyrinth-leeching" }
+  | { kind: "labyrinth-null-field" };
 
 export type DifficultyDefinition = {
   id: DifficultyId;

@@ -6,6 +6,7 @@ import { getGoldMultiplier, getStartingDeck, type BattleCard, type CharacterId, 
 import { MAX_PLAYER_HEALTH } from "@/lib/game-constants";
 import { DESTINATIONS, type Destination } from "./types";
 import type { ActiveRunData } from "./run/types";
+import type { ContentSystemId } from "@/lib/content-systems/types";
 
 type RunState = {
   characterId: CharacterId;
@@ -19,6 +20,7 @@ type RunState = {
   completedDestinations: Destination[];
   runTrinkets: string[];
   selectedDifficulty: DifficultyId | null;
+  contentSystemType: ContentSystemId;
 };
 
 type RunFieldSetter<T> = (action: T | ((prev: T) => T)) => void;
@@ -34,6 +36,7 @@ export type RunStateController = RunState & {
   setCompletedDestinations: RunFieldSetter<Destination[]>;
   setRunTrinkets: RunFieldSetter<string[]>;
   setSelectedDifficulty: RunFieldSetter<DifficultyId | null>;
+  setContentSystemType: RunFieldSetter<ContentSystemId>;
   setCharacter: (selectedId: CharacterId) => void;
   reset: () => void;
   addRunGold: (amount: number) => void;
@@ -59,6 +62,7 @@ function createInitialRunState(
       : [],
     runTrinkets: initialActiveRun?.runTrinkets ? [...initialActiveRun.runTrinkets] : [],
     selectedDifficulty: initialActiveRun?.selectedDifficulty ?? null,
+    contentSystemType: initialActiveRun?.contentSystemType ?? "campaign",
   };
 }
 
@@ -104,6 +108,7 @@ export function useRunState(initialActiveRun: ActiveRunData | null): RunStateCon
     reset,
     setRunTrinkets,
     setSelectedDifficulty: fieldSetter("selectedDifficulty"),
+    setContentSystemType: fieldSetter("contentSystemType"),
     addRunGold: (amount: number) => {
       setState((prev) => {
         const mult = getGoldMultiplier(prev.characterId, prev.selectedDifficulty);

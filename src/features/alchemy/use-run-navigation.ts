@@ -37,6 +37,7 @@ import { useMysteryFlow } from "./navigation/use-mystery-flow";
 import { routeDestinationChoice } from "./navigation/routing-flow";
 import { createActiveRunData } from "./run/active-run-data";
 import { corruptDeckCard, type CorruptionResult } from "./corruption";
+import type { ContentSystemId, LabyrinthMap } from "@/lib/content-systems/types";
 
 export function useRunNavigation({
   run,
@@ -60,10 +61,14 @@ export function useRunNavigation({
   setHoveredCardId,
   onStartBattle,
   onStartBossBattle,
+  onStartBossById,
+  onLabyrinthClearNode,
+  onLabyrinthFailNode,
   onInitShop,
   onInitAlchemist,
   onMarkDifficultyCompleted,
   completedDifficulties,
+  labyrinthMap,
 }: {
   run: RunStateController;
   talents: TalentStateController;
@@ -86,10 +91,14 @@ export function useRunNavigation({
   setHoveredCardId: React.Dispatch<React.SetStateAction<string | null>>;
   onStartBattle: (deck?: BattleCard[], gold?: number, enemyType?: "normal" | "elite", modifiers?: DifficultyModifier[]) => void;
   onStartBossBattle: () => void;
+  onStartBossById: (bossId: string, modifiers?: DifficultyModifier[]) => void;
+  onLabyrinthClearNode: () => void;
+  onLabyrinthFailNode: () => void;
   onInitShop: () => void;
   onInitAlchemist: () => void;
   onMarkDifficultyCompleted: (characterId: CharacterId, difficultyId: DifficultyId) => void;
   completedDifficulties: Record<CharacterId, DifficultyId[]>;
+  labyrinthMap: LabyrinthMap;
 }) {
   // Run-flow side effects live here because screens, rewards, destination routing,
   // mystery outcomes, act completion, and reset all need the same run/battle snapshot.
@@ -103,6 +112,7 @@ export function useRunNavigation({
   });
   const [corruptionResult, setCorruptionResult] = useState<CorruptionResult | null>(null);
   const [pendingCharacterId, setPendingCharacterId] = useState<CharacterId | null>(null);
+  const [pendingContentSystemType, setPendingContentSystemType] = useState<ContentSystemId>(run.contentSystemType);
 
   const destinationButtonRefs = useRef<Partial<Record<Destination, HTMLButtonElement | null>>>({});
 
@@ -135,6 +145,8 @@ export function useRunNavigation({
         completedDestinations: run.completedDestinations,
         runTrinkets: run.runTrinkets,
         selectedDifficulty: run.selectedDifficulty,
+        contentSystemType: run.contentSystemType,
+        labyrinthMap,
       }),
     [
       run.characterId,
@@ -148,6 +160,8 @@ export function useRunNavigation({
       run.completedDestinations,
       run.runTrinkets,
       run.selectedDifficulty,
+      run.contentSystemType,
+      labyrinthMap,
     ],
   );
 
@@ -188,6 +202,13 @@ export function useRunNavigation({
   }, [battleState, hasActiveBattle, screen]);
 
   function handleBattleDefeat() {
+    if (run.contentSystemType === "labyrinth") {
+      onLabyrinthFailNode();
+      setHasActiveBattle(false);
+      setHoveredCardId(null);
+      navigateTo("labyrinth-map");
+      return;
+    }
     awardRunEndMaterials();
     playDefeat();
     setHasActiveBattle(false);
@@ -282,16 +303,15 @@ export function useRunNavigation({
     });
   }
 
-  // ============ Game Flow ============
+  // ============ Content System Flow ============
 
-  function beginRun() {
-    // The Play button resumes active progress first; only a truly inactive save should
-    // enter character select and create a fresh route.
-    if (hasActiveBattle) {
+  function beginCampaign() {
+    // Campaign resume logic checks for existing campaign-type active run.
+    if (hasActiveBattle && run.contentSystemType === "campaign") {
       returnToBattle();
       return;
     }
-    if (hasActiveRun) {
+    if (hasActiveRun && run.contentSystemType === "campaign") {
       setRewardState((prev) => ({
         ...prev,
         destinations:
@@ -300,27 +320,97 @@ export function useRunNavigation({
       navigateTo("destination");
       return;
     }
+    setPendingContentSystemType("campaign");
+    navigateTo("character-select");
+  }
+
+  function beginLabyrinth() {
+    // Labyrinth resume logic checks for existing labyrinth-type active run.
+    if (hasActiveBattle && run.contentSystemType === "labyrinth") {
+      returnToBattle();
+      return;
+    }
+    if (hasActiveRun && run.contentSystemType === "labyrinth") {
+      navigateTo("labyrinth-map");
+      return;
+    }
+    setPendingContentSystemType("labyrinth");
+    navigateTo("character-select");
+  }
+
+  function beginWildwood() {
+    // Wildwood has no run state to resume — always starts fresh.
+    setPendingContentSystemType("wildwood");
     navigateTo("character-select");
   }
 
   function handleCharacterSelect(selectedId: CharacterId) {
-    // Skips difficulty selection if the player hasn't beaten Novice for this class yet;
-    // starts a Normal (Novice) run directly. Once Novice is beaten, difficulty selection
-    // unlocks so the player can choose Adventurer or higher.
-    const hasCompletedNovice = (completedDifficulties[selectedId] ?? []).includes("difficulty-1");
-    if (!hasCompletedNovice) {
-      const { freshDeck, totalStartGold } = initializeRunForDifficulty(selectedId, "difficulty-1");
-      const modifiers = getDifficultyModifiers(selectedId, "difficulty-1");
-      onStartBattle(freshDeck, totalStartGold, "normal", modifiers);
-      navigateTo("battle");
-    } else {
-      setPendingCharacterId(selectedId);
-      navigateTo("difficulty-select");
+    const systemType = pendingContentSystemType;
+
+    if (systemType === "campaign") {
+      // Existing campaign flow: Novice auto-starts, otherwise show difficulty select.
+      const hasCompletedNovice = (completedDifficulties[selectedId] ?? []).includes("difficulty-1");
+      if (!hasCompletedNovice) {
+        const { freshDeck, totalStartGold } = initializeRunForDifficulty(selectedId, "difficulty-1");
+        const modifiers = getDifficultyModifiers(selectedId, "difficulty-1");
+        onStartBattle(freshDeck, totalStartGold, "normal", modifiers);
+        navigateTo("battle");
+      } else {
+        setPendingCharacterId(selectedId);
+        navigateTo("difficulty-select");
+      }
+    } else if (systemType === "labyrinth") {
+      initializeLabyrinthRun(selectedId);
+    } else if (systemType === "wildwood") {
+      initializeWildwoodRun(selectedId);
     }
+  }
+
+  function initializeLabyrinthRun(characterId: CharacterId) {
+    const freshDeck = getStartingDeck(characterId);
+    run.setContentSystemType("labyrinth");
+    run.setCharacter(characterId);
+    run.setRunDeck(freshDeck);
+    run.setSelectedDifficulty(null);
+    const totalStartGold = talents.talentEffects.startGold + homesteadEffectsRef.current.startGold;
+    if (totalStartGold > 0) playGoldGain();
+    run.setRunGold(totalStartGold);
+    const maxHp = MAX_PLAYER_HEALTH + homesteadEffectsRef.current.startMaxHealthBonus;
+    run.setRunPlayerHealth(maxHp);
+    run.setRunMaxHealth(maxHp);
+    run.setCurrentAct(1);
+    run.setDestinationIndexInAct(0);
+    run.setCompletedDestinations([]);
+    setDiscoveredCardIds((current) => appendUniqueMany(current, freshDeck.map((c) => c.id)));
+    setHoveredCardId(null);
+    setHasActiveRun(true);
+    navigateTo("labyrinth-map");
+  }
+
+  function initializeWildwoodRun(characterId: CharacterId) {
+    const freshDeck = getStartingDeck(characterId);
+    run.setContentSystemType("wildwood");
+    run.setCharacter(characterId);
+    run.setRunDeck(freshDeck);
+    run.setSelectedDifficulty(null);
+    const maxHp = MAX_PLAYER_HEALTH + homesteadEffectsRef.current.startMaxHealthBonus;
+    run.setRunPlayerHealth(maxHp);
+    run.setRunMaxHealth(maxHp);
+    setHoveredCardId(null);
+    setHasActiveRun(false);
+    navigateTo("wildwood-select");
+  }
+
+  function handleWildwoodBossSelect(bossId: string) {
+    onStartBossById(bossId);
+    setHoveredCardId(null);
+    setHasActiveBattle(true);
+    navigateTo("battle");
   }
 
   function initializeRunForDifficulty(characterId: CharacterId, difficultyId: DifficultyId) {
     const freshDeck = getStartingDeck(characterId);
+    run.setContentSystemType("campaign");
     run.setCharacter(characterId);
     run.setRunDeck(freshDeck);
     run.setSelectedDifficulty(difficultyId);
@@ -390,6 +480,18 @@ export function useRunNavigation({
     setRewardState((prev) => createEmptyRewardState(prev.destinations));
     setHoveredCardId(null);
 
+    if (run.contentSystemType === "labyrinth") {
+      if (currentEnemyType === "boss") {
+        awardRunEndMaterials();
+        setHasActiveBattle(false);
+        navigateTo("run-victory");
+      } else {
+        onLabyrinthClearNode();
+        navigateTo("labyrinth-map");
+      }
+      return;
+    }
+
     if (currentEnemyType === "boss") {
       handleActComplete();
       return;
@@ -455,6 +557,11 @@ export function useRunNavigation({
 
   function advanceToNextDestination() {
     run.setRoomsEncountered((p) => p + 1);
+    if (run.contentSystemType === "labyrinth") {
+      setHoveredCardId(null);
+      navigateTo("labyrinth-map");
+      return;
+    }
     setRewardState((prev) => ({ ...prev, destinations: sampleDestinationChoices(getAvailableDestinations()) }));
     setHoveredCardId(null);
     mystery.clearCardChoices();
@@ -502,6 +609,7 @@ export function useRunNavigation({
     setBattleState(createBattleState(getStartingDeck(run.characterId), 0));
     run.reset();
     talents.resetRunXP();
+    setPendingContentSystemType("campaign");
     setRewardState(createEmptyRewardState());
     mystery.clearCardChoices();
     setHoveredCardId(null);
@@ -555,10 +663,13 @@ export function useRunNavigation({
     destinationButtonRefs,
     getAvailableDestinations,
     advanceToNextDestination,
-    beginRun,
+    beginCampaign,
+    beginLabyrinth,
+    beginWildwood,
     handleCharacterSelect,
     handleDifficultySelect,
     handleBackFromDifficultySelect,
+    handleWildwoodBossSelect,
     returnToBattle,
     goToScreen,
     handleDestinationChoice,

@@ -55,7 +55,7 @@ export async function injectSaveState(page: Page, overrides: Record<string, unkn
 // Novice difficulty is the default and skips the difficulty select screen for first-time players.
 export async function startRun(page: Page, character: "Knight" | "Ranger" | "Rogue" | "Wizard" = "Knight") {
   await page.goto("/");
-  await page.getByRole("button", { name: "Play" }).click();
+  await page.getByRole("button", { name: "Campaign" }).click();
   await page.getByRole("button", { name: character }).click();
   await page.getByRole("button", { name: "Continue" }).click();
   await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });

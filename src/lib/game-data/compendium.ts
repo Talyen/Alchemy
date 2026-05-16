@@ -1,6 +1,6 @@
 // Compendium data — all enemies (bestiary), trinkets, and their stat/effect definitions.
 // Depends on art assets and type contracts. Pure configuration arrays, no game logic.
-import { boneCharm, brassCenser, companionsCollar, cutpurseKnife, frozenHeart, goblin, grovesFavor, imp, ironwoodBuckler, livingArmor, lizardScout, luckyClover, meteorite, mimic, mortarAndPestle, mudElemental, necromancer, merchantsFavor, obsidianHammer, parasiticBloom, plagueDoctor, plagueDoctorsMask, polarPendant, resonantChime, runicQuill, skeleton, sinEatersLantern, smugglersMap, sunderingCharm, tatteredPages, theBlightTreant, theForgeGolem, theFrostwarden, thunderstone, vanguardsCrest, wishingWellCoin } from "./assets";
+import { boneCharm, brassCenser, companionsCollar, cutpurseKnife, frozenHeart, goblin, grovesFavor, imp, ironBear, ironwoodBuckler, livingArmor, lizardScout, luckyClover, meteorite, mimic, mortarAndPestle, mudElemental, necromancer, merchantsFavor, obsidianHammer, parasiticBloom, plagueDoctor, plagueDoctorsMask, polarPendant, resonantChime, runicQuill, skeleton, sinEatersLantern, smugglersMap, sunderingCharm, tatteredPages, theBlightTreant, theForgeGolem, theFrostwarden, thunderstone, vanguardsCrest, wishingWellCoin } from "./assets";
 import type { BestiaryEntry, TrinketEntry } from "./types";
 
 export const enemyBestiary: BestiaryEntry[] = [
@@ -146,6 +146,20 @@ export const enemyBestiary: BestiaryEntry[] = [
       { kind: "damage", damageType: "physical", amount: 5 },
       { kind: "damage", damageType: "nature", amount: 5 },
     ],
+  },
+  {
+    id: "iron-bear",
+    title: "The Iron Bear",
+    subtitle: "Wildwood Boss",
+    descriptionLines: [],
+    art: ironBear,
+    enemyType: "boss",
+    traits: [
+      { id: "forge-regeneration", title: "Forge Regeneration", description: "Gains 2 Forge each turn" },
+      { id: "iron-hide", title: "Iron Hide", description: "Gains 2 Armor each turn" },
+      { id: "thick-hide", title: "Thick Hide", description: "Receives half Physical damage" },
+    ],
+    attackEffects: [{ kind: "damage", damageType: "physical", amount: 10 }],
   },
 ];
 
