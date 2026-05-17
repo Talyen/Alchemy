@@ -17,7 +17,6 @@ const assets = [
   // Logo
   { source: "Logo/Alchemy Logo.png", target: "alchemy-logo.webp", width: 1200, quality: 84 },
   // Misc
-  { source: "Misc/Card Back.png", target: "card-back.webp", width: 420, quality: 82 },
   { source: "Misc/Draw Pile.png", target: "draw-pile.webp", width: 420, quality: 82 },
   { source: "Misc/Discard Pile.png", target: "discard-pile.webp", width: 420, quality: 82 },
   // Enemies
@@ -50,7 +49,6 @@ const assets = [
   { source: "Cards/Fangs.png", target: "fangs.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Fireball.png", target: "fireball.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Frostbolt.png", target: "frostbolt.webp", width: cardWidth, quality: cardQuality },
-  { source: "Cards/Gold.png", target: "gold.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Haste.png", target: "haste.webp", width: cardWidth, quality: 88 },
   { source: "Cards/Heal.png", target: "heal.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Health Potion.png", target: "health-potion.webp", width: cardWidth, quality: cardQuality },

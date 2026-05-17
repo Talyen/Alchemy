@@ -1,15 +1,16 @@
 // Top-level alchemy controller composition hook.
 // Depends on run, battle, shop, navigation, talent, persistence-facing, and homestead state.
 // Used by App as the single UI-facing API while domain rules stay in smaller controllers.
-import { useEffect, useRef, useState } from "react";
-import { cardLibrary, trinketLibrary } from "@/lib/game-data";
+import { useEffect, useRef, useState, useMemo } from "react";
+import { cardLibrary, trinketLibrary, computeTalentEffects } from "@/lib/game-data";
 import type { TalentXP } from "@/lib/talents";
 import type { HomesteadEffectManifest, MaterialInventory } from "@/lib/homestead/types";
 import type { CharacterId, DifficultyId, UnlockedTalents } from "@/lib/game-data";
 import { labyrinthModifiersToDifficulty } from "@/lib/content-systems/labyrinth/modifiers";
 import type { LabyrinthModifierKind } from "@/lib/content-systems/types";
-import { useTalentState } from "./use-talent-state";
-import { useRunState } from "./use-run-state";
+import { useRunStore } from "./stores/run-store";
+import type { RunStateController } from "./use-run-state";
+import type { TalentStateController } from "./use-talent-state";
 import { useBattleController } from "./use-battle-controller";
 import { useShopController } from "./use-shop-controller";
 import { useRunNavigation } from "./use-run-navigation";
@@ -47,9 +48,59 @@ export function useAlchemyRunController({
 }) {
   // This hook composes domain controllers and exposes a stable UI API; it intentionally
   // avoids owning combat/shop/navigation rules directly so those modules stay testable.
-  // ============ Sub-hooks ============
-  const talents = useTalentState(initialTalentXP, initialUnlockedTalents);
-  const run = useRunState(initialActiveRun);
+  // ============ Zustand Store (replaces useTalentState + useRunState) ============
+  const storeInitializedRef = useRef(false);
+  if (!storeInitializedRef.current) {
+    storeInitializedRef.current = true;
+    useRunStore.getState().initialize(initialActiveRun, initialTalentXP, initialUnlockedTalents);
+  }
+  const runStoreFields = useRunStore((s) => ({
+    characterId: s.characterId,
+    runDeck: s.runDeck,
+    runGold: s.runGold,
+    runPlayerHealth: s.runPlayerHealth,
+    runMaxHealth: s.runMaxHealth,
+    roomsEncountered: s.roomsEncountered,
+    currentAct: s.currentAct,
+    destinationIndexInAct: s.destinationIndexInAct,
+    completedDestinations: s.completedDestinations,
+    runTrinkets: s.runTrinkets,
+    selectedDifficulty: s.selectedDifficulty,
+    contentSystemType: s.contentSystemType,
+  }));
+  const runStoreActions = useRunStore((s) => ({
+    setRunDeck: s.setRunDeck,
+    setRunGold: s.setRunGold,
+    setRunPlayerHealth: s.setRunPlayerHealth,
+    setRunMaxHealth: s.setRunMaxHealth,
+    setRoomsEncountered: s.setRoomsEncountered,
+    setCurrentAct: s.setCurrentAct,
+    setDestinationIndexInAct: s.setDestinationIndexInAct,
+    setCompletedDestinations: s.setCompletedDestinations,
+    setRunTrinkets: s.setRunTrinkets,
+    setSelectedDifficulty: s.setSelectedDifficulty,
+    setContentSystemType: s.setContentSystemType,
+    setCharacter: s.setCharacter,
+    reset: s.reset,
+    addRunGold: s.addRunGold,
+  }));
+  const talentStore = useRunStore((s) => ({
+    talentXP: s.talentXP,
+    runTalentXP: s.runTalentXP,
+    unlockedTalents: s.unlockedTalents,
+    awardCardXP: s.awardCardXP,
+    unlockTalent: s.unlockTalent,
+    unlockAllTalents: s.unlockAllTalents,
+    resetUnlockedTalents: s.resetUnlockedTalents,
+    resetRunXP: s.resetRunXP,
+    clearPermanentData: s.clearPermanentData,
+    awardMysteryXP: s.awardMysteryXP,
+  }));
+  const talentEffects = useMemo(() => computeTalentEffects(talentStore.unlockedTalents), [talentStore.unlockedTalents]);
+
+  // Adapter objects matching previous useRunState/useTalentState interfaces
+  const run: RunStateController = { ...runStoreFields, ...runStoreActions };
+  const talents: TalentStateController = { ...talentStore, talentEffects };
 
   // ============ Shared State ============
   const [screen, setScreen] = useState<Screen>("menu");

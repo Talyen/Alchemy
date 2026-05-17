@@ -1,8 +1,8 @@
 // Browser localStorage IO for alchemy save data.
-// Depends on the save key constant, save defaults, and migration helpers.
+// Depends on the save key constant, save defaults, and Zod validation schemas.
 import { SAVE_KEY } from "@/lib/game-constants";
 
-import { getRawSaveSchemaVersion, isUnsupportedFutureSaveData, normalizeSaveData } from "./migrations";
+import { SaveDataSchema, getRawSaveSchemaVersion, isUnsupportedFutureSaveData } from "@/lib/validation";
 import type { SaveData } from "./types";
 import { defaultSaveData } from "./defaults";
 
@@ -47,7 +47,8 @@ export function loadAlchemySaveState(): SaveLoadState {
     }
 
     writesDisabledForSession = false;
-    return { data: normalizeSaveData(parsed), status: { kind: "ok" } };
+    const result = SaveDataSchema.safeParse(parsed);
+    return { data: result.data as SaveData, status: { kind: "ok" } };
   } catch {
     writesDisabledForSession = false;
     console.error("Save data unavailable or corrupt, falling back to defaults");

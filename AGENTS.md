@@ -7,11 +7,18 @@ Between runs, the **Homestead** lets the player spend **Materials** on permanent
 ## Commands
 
 ```sh
-npm run dev          # Vite dev server
-npm run build        # tsc + vite build
-npm run test:e2e     # Playwright tests
-npm run assets:optimize   # PNGs → webp
-npm run sounds:optimize   # sounds → OGG
+npm run dev              # Vite dev server
+npm run build            # tsc + vite build
+npm test                 # vitest (unit tests)
+npm run test:watch       # vitest in watch mode
+npm run test:coverage    # vitest with coverage
+npm run test:e2e         # Playwright tests
+npm run lint             # ESLint
+npm run lint:fix         # ESLint auto-fix
+npm run format           # Prettier write
+npm run format:check     # Prettier check
+npm run assets:optimize  # PNGs → webp
+npm run sounds:optimize  # sounds → OGG
 ```
 
 Add a new raw asset:
@@ -19,11 +26,18 @@ Add a new raw asset:
 2. `npm run assets:optimize`
 3. Import from `@/assets/optimized/` in `src/lib/game-data/assets.ts`
 
+Add a new raw art asset:
+1. Place art in `public/assets/card-art/` or `public/assets/templates/frames/`
+2. Add entry to `scripts/optimize-art.mjs`
+3. `npm run assets:optimize`
+
 ## Architecture
 
-- `src/lib/` — Pure game logic (no React): `battle/` (state machine, effects, draw), `talents.ts` (XP math), `audio.ts` (Web Audio buffer playback), `game-constants.ts` (all tuning knobs).
+- `src/lib/` — Pure game logic (no React): `battle/` (state machine, effects, draw), `content-systems/` (map & encounter generation), `homestead/` (between-run hub), `animation/` (particle systems), `talents.ts` (XP math), `audio.ts` + `audio-*.ts` (Web Audio buffer playback), `trinkets.ts`, `game-constants.ts` (all tuning knobs).
 - `src/features/alchemy/` — React UI. `use-alchemy-run-controller.ts` is the central orchestrator; `screens/` are pages, `ui/` are reusable widgets.
 - `src/lib/game-data/` — Cards, keywords, enemies. Barrel export at `src/lib/game-data.ts`.
+- `src/app/` — App-level bootstrapping: startup screen, save version checks, initial-load hook.
+- `src/components/` — Shared UI primitives (`button.tsx`, `select.tsx`, `progress.tsx`, etc.).
 - `@/` path alias → `src/`. Import game data through the barrel, not submodule paths.
 
 ## Key Conventions
@@ -48,6 +62,10 @@ Add a new raw asset:
 | Talent maths | `src/lib/talents.ts` |
 | UI screen | `src/features/alchemy/screens/` |
 | Reusable widget | `src/features/alchemy/ui/` |
+| Homestead logic | `src/lib/homestead/` |
+| Map/encounter generation | `src/lib/content-systems/` |
+| Shared UI components | `src/components/` |
+| Particle/animation system | `src/lib/animation/` |
 | Game data imports | always through `@/lib/game-data` barrel |
 
 ## UI Design Rules
@@ -77,7 +95,7 @@ This is a fantasy roguelite deckbuilder. The interface must feel like a polished
 ## Project Gotchas
 
 - **Shell is PowerShell**: chain with `;` not `&&`; double quotes for interpolation, single for verbatim.
-- **Vite base path**: `/` (Vercel default); dev at `http://127.0.0.1:4173/`.
+- **Vite base path**: `/` (Vercel default); `npm run dev` opens browser automatically.
 - **Assets**: `prebuild`/`predev` auto-run optimize scripts.
 
 ## Test Gotchas
@@ -92,7 +110,7 @@ This is a fantasy roguelite deckbuilder. The interface must feel like a polished
 
 ## Stable Files (don't re-read within a session)
 
-`src/lib/game-constants.ts`, `src/lib/game-data/cards.ts`, `keywords.ts`, `assets.ts`, `vite.config.ts`, `tsconfig.json`, `playwright.config.ts`
+`src/lib/game-constants.ts`, `src/lib/game-data/cards.ts`, `src/lib/game-data/keywords.ts`, `src/lib/game-data/assets.ts`, `vite.config.ts`, `tsconfig.json`, `playwright.config.ts`
 
 ## Domain Glossary
 

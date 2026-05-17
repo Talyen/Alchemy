@@ -1,16 +1,54 @@
 # Alchemy
 
-Alchemy is a browser-first fantasy roguelite deckbuilder prototype built with React, Vite, Tailwind, shadcn-style components, Playwright, and Vercel-ready output.
+**Alchemy** is a browser-first fantasy roguelite deckbuilder prototype. Build a deck, survive encounters, unlock talents between runs, and push through to the final boss.
 
-## Scripts
+## Features
 
-- `npm install`
-- `npm run dev`
-- `npm run build`
-- `npm run test:e2e`
+- **Turn-based card combat** — spend Mana to deal damage, gain Block, apply statuses, and summon allies
+- **Roguelite progression** — each Run is unique; Talent XP and Homestead upgrades persist across runs
+- **Rich status system** — Burn, Poison, Bleed, Freeze, Stun, Forge, Haste, and more
 
-## Design workflow
+## Prerequisites
 
-Project UI work is guided by the repo-local skill in `.github/skills/hig-fantasy-ui/SKILL.md` and the always-on rules in `.github/copilot-instructions.md`.
+- Node.js 20+ (LTS recommended)
+- npm 10+
 
-The skill uses Apple Human Interface Guidelines as a principle-level reference only. It does not copy Apple text, screenshots, diagrams, or visual assets.
+## Quick Start
+
+```sh
+git clone <repo-url>
+cd alchemy
+npm install
+npm run dev
+```
+
+## Key Scripts
+
+| Command | Action |
+|---|---|
+| `npm run dev` | Start Vite dev server (opens browser automatically) |
+| `npm run build` | TypeScript check + production build |
+| `npm run test:e2e` | Run Playwright end-to-end tests |
+| `npm run lint` | Lint all source files |
+| `npm run format` | Format with Prettier |
+
+## Project Structure
+
+```
+src/
+├── lib/                  # Pure game logic (no React)
+│   ├── battle/           # State machine, effects, draw
+│   └── game-data/        # Cards, keywords, enemies
+├── features/alchemy/     # React UI
+│   ├── screens/          # Pages
+│   └── ui/               # Reusable widgets
+└── assets/optimized/     # Pre-optimized images and sounds
+```
+
+## Tech Stack
+
+React • TypeScript • Vite • Tailwind CSS • Playwright
+
+## Contributing
+
+See [`AGENTS.md`](./AGENTS.md) for the full development guide — architecture, conventions, tuning knobs, and domain glossary.
