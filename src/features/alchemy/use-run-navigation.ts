@@ -3,7 +3,6 @@
 // Used by the top-level alchemy controller to keep screen changes and run mutations synchronized.
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createBattleState, isPlayerDefeated } from "@/lib/battle";
-import { MAX_PLAYER_HEALTH } from "@/lib/game-constants";
 import { getDifficultyModifiers, getGoldMultiplier, getStartingDeck, type BattleCard, type CharacterId, type DifficultyId, type DifficultyModifier } from "@/lib/game-data";
 import { playVictory, playDefeat, playGoldGain } from "@/lib/audio";
 import { appendUnique, appendUniqueMany } from "@/lib/utils";
@@ -40,11 +39,13 @@ import {
   shouldForceTrinketReward,
   shouldGrantAlchemistReward,
   shouldGrantCompanionReward,
+  finalizeRewardState,
   type RewardState,
 } from "./navigation/reward-flow";
 import { useMysteryFlow } from "./navigation/use-mystery-flow";
 import { routeDestinationChoice } from "./navigation/routing-flow";
 import { createActiveRunData } from "./run/active-run-data";
+import { createRunStartSnapshot, type RunStartSnapshot } from "./run/run-start";
 import { corruptDeckCard, type CorruptionResult } from "./corruption";
 import type { ContentSystemId, LabyrinthMap, LabyrinthModifierKind } from "@/lib/content-systems/types";
 
@@ -101,7 +102,7 @@ export function useRunNavigation({
   setHoveredCardId: React.Dispatch<React.SetStateAction<string | null>>;
   onStartBattle: (deck?: BattleCard[], gold?: number, enemyType?: "normal" | "elite", modifiers?: DifficultyModifier[]) => void;
   onStartBossBattle: () => void;
-  onStartBossById: (bossId: string, modifiers?: DifficultyModifier[]) => void;
+  onStartBossById: (bossId: string, modifiers?: DifficultyModifier[]) => boolean;
   onLabyrinthClearNode: () => void;
   onLabyrinthFailNode: () => void;
   onInitShop: () => void;
@@ -177,14 +178,14 @@ export function useRunNavigation({
     ],
   );
 
-  function getAvailableDestinations(currentHp?: number, currentGold?: number, destIdxInAct?: number): Destination[] {
+  function getAvailableDestinations(currentHp?: number, currentGold?: number, destIdxInAct?: number, maxHp?: number): Destination[] {
     const destinationIndexInAct = destIdxInAct ?? run.destinationIndexInAct;
     const previousDestination = destinationIndexInAct === 0 ? undefined : run.completedDestinations[run.completedDestinations.length - 1];
     return getRunAvailableDestinations({
       destinationIndexInAct,
       currentHp: currentHp ?? run.runPlayerHealth,
       currentGold: currentGold ?? run.runGold,
-      maxHp: run.runMaxHealth,
+      maxHp: maxHp ?? run.runMaxHealth,
       previousDestination,
     });
   }
@@ -391,71 +392,66 @@ export function useRunNavigation({
   }
 
   function initializeLabyrinthRun(characterId: CharacterId) {
-    const freshDeck = getStartingDeck(characterId);
-    run.setContentSystemType("labyrinth");
-    run.setCharacter(characterId);
-    run.setRunDeck(freshDeck);
-    run.setSelectedDifficulty(null);
-    const totalStartGold = talents.talentEffects.startGold + homesteadEffectsRef.current.startGold;
-    if (totalStartGold > 0) playGoldGain();
-    run.setRunGold(totalStartGold);
-    const maxHp = MAX_PLAYER_HEALTH + homesteadEffectsRef.current.startMaxHealthBonus;
-    run.setRunPlayerHealth(maxHp);
-    run.setRunMaxHealth(maxHp);
-    run.setCurrentAct(1);
-    run.setDestinationIndexInAct(0);
-    run.setCompletedDestinations([]);
-    setDiscoveredCardIds((current) => appendUniqueMany(current, freshDeck.map((c) => c.id)));
+    const snapshot = createStartSnapshot(characterId, "labyrinth");
+    applyRunStartSnapshot(snapshot);
+    if (snapshot.runGold > 0) playGoldGain();
+    setDiscoveredCardIds((current) => appendUniqueMany(current, snapshot.freshDeck.map((c) => c.id)));
     setHoveredCardId(null);
-    setHasActiveRun(true);
     navigateTo("labyrinth-map");
   }
 
   function initializeWildwoodRun(characterId: CharacterId) {
-    const freshDeck = getStartingDeck(characterId);
-    run.setContentSystemType("wildwood");
-    run.setCharacter(characterId);
-    run.setRunDeck(freshDeck);
-    run.setSelectedDifficulty(null);
-    const maxHp = MAX_PLAYER_HEALTH + homesteadEffectsRef.current.startMaxHealthBonus;
-    run.setRunPlayerHealth(maxHp);
-    run.setRunMaxHealth(maxHp);
+    const snapshot = createStartSnapshot(characterId, "wildwood");
+    applyRunStartSnapshot(snapshot);
     setHoveredCardId(null);
-    setHasActiveRun(false);
     navigateTo("wildwood-select");
   }
 
   function handleWildwoodBossSelect(bossId: string) {
-    onStartBossById(bossId);
+    if (!onStartBossById(bossId)) return;
     setHoveredCardId(null);
     setHasActiveBattle(true);
     navigateTo("battle");
   }
 
   function initializeRunForDifficulty(characterId: CharacterId, difficultyId: DifficultyId) {
-    const freshDeck = getStartingDeck(characterId);
-    run.setContentSystemType("campaign");
-    run.setCharacter(characterId);
-    run.setRunDeck(freshDeck);
-    run.setSelectedDifficulty(difficultyId);
-    const totalStartGold = talents.talentEffects.startGold + homesteadEffectsRef.current.startGold;
-    if (totalStartGold > 0) playGoldGain();
-    run.setRunGold(totalStartGold);
-    run.setRoomsEncountered(0);
-    const maxHp = MAX_PLAYER_HEALTH + homesteadEffectsRef.current.startMaxHealthBonus;
-    run.setRunPlayerHealth(maxHp);
-    run.setRunMaxHealth(maxHp);
-    run.setCurrentAct(1);
-    run.setDestinationIndexInAct(0);
-    run.setCompletedDestinations([]);
-    setRewardState(createEmptyRewardState(sampleDestinationChoices(getAvailableDestinations())));
+    const snapshot = createStartSnapshot(characterId, "campaign", difficultyId);
+    applyRunStartSnapshot(snapshot);
+    if (snapshot.runGold > 0) playGoldGain();
+    setRewardState(createEmptyRewardState(sampleDestinationChoices(getAvailableDestinations(snapshot.runMaxHealth, snapshot.runGold, 0, snapshot.runMaxHealth))));
     setDiscoveredCardIds((current) =>
-      appendUniqueMany(current, freshDeck.map((c) => c.id)),
+      appendUniqueMany(current, snapshot.freshDeck.map((c) => c.id)),
     );
     setEncounteredEnemyIds([]);
     setHoveredCardId(null);
-    setHasActiveRun(true);
-    return { freshDeck, totalStartGold };
+    return { freshDeck: snapshot.freshDeck, totalStartGold: snapshot.runGold };
+  }
+
+  function createStartSnapshot(characterId: CharacterId, contentSystemType: ContentSystemId, difficultyId?: DifficultyId | null) {
+    return createRunStartSnapshot({
+      characterId,
+      contentSystemType,
+      difficultyId,
+      talentStartGold: talents.talentEffects.startGold,
+      homesteadStartGold: homesteadEffectsRef.current.startGold,
+      homesteadStartMaxHealthBonus: homesteadEffectsRef.current.startMaxHealthBonus,
+    });
+  }
+
+  function applyRunStartSnapshot(snapshot: RunStartSnapshot) {
+    run.setContentSystemType(snapshot.contentSystemType);
+    run.setCharacter(snapshot.characterId);
+    run.setRunDeck(snapshot.freshDeck);
+    run.setSelectedDifficulty(snapshot.selectedDifficulty);
+    run.setRunGold(snapshot.runGold);
+    run.setRunPlayerHealth(snapshot.runPlayerHealth);
+    run.setRunMaxHealth(snapshot.runMaxHealth);
+    run.setRoomsEncountered(snapshot.roomsEncountered);
+    run.setCurrentAct(snapshot.currentAct);
+    run.setDestinationIndexInAct(snapshot.destinationIndexInAct);
+    run.setCompletedDestinations(snapshot.completedDestinations);
+    run.setRunTrinkets(snapshot.runTrinkets);
+    setHasActiveRun(snapshot.hasActiveRun);
   }
 
   function handleDifficultySelect(difficultyId: DifficultyId) {
@@ -488,60 +484,59 @@ export function useRunNavigation({
   function finishRewards() {
     // Apply materials/card/trinket rewards before routing so the next screen sees the
     // updated deck and collection; boss rewards then diverge into act completion.
-    onAddMaterialsRef.current(rewardState.materials);
-    if (rewardState.selectedId) {
-      const chosen = rewardState.choices.find((c) => c.id === rewardState.selectedId);
-      if (chosen) {
-        if (rewardState.rewardType === "card") {
-          run.setRunDeck((prev) => [...prev, chosen as BattleCard]);
-          setDiscoveredCardIds((cur) => appendUnique(cur, chosen.id));
-        } else {
-          run.setRunTrinkets((prev) => [...prev, chosen.id]);
-          setDiscoveredTrinketIds((cur) => appendUnique(cur, chosen.id));
-        }
+    const result = finalizeRewardState({
+      rewardState,
+      companionRewardCards,
+      contentSystemType: run.contentSystemType,
+      currentEnemyType,
+      grantAlchemistReward: shouldGrantAlchemistReward(getActiveRewardModifiersForContentSystem(run.contentSystemType, activeLabyrinthRewardModifiers)),
+    });
+
+    onAddMaterialsRef.current(result.materials);
+    if (result.selectedChoice) {
+      const selectedId = result.selectedChoice.id;
+      if (result.selectedRewardType === "card") {
+        run.setRunDeck((prev) => [...prev, result.selectedChoice as BattleCard]);
+        setDiscoveredCardIds((cur) => appendUnique(cur, selectedId));
+      } else {
+        run.setRunTrinkets((prev) => [...prev, selectedId]);
+        setDiscoveredTrinketIds((cur) => appendUnique(cur, selectedId));
       }
     }
 
     // Alchemist reward modifier: add a random potion card alongside the chosen reward.
-    if (shouldGrantAlchemistReward(getActiveRewardModifiersForContentSystem(run.contentSystemType, activeLabyrinthRewardModifiers))) {
+    if (result.grantAlchemistReward) {
       const potion = getRandomPotionCard();
       run.setRunDeck((prev) => [...prev, potion]);
       setDiscoveredCardIds((cur) => appendUnique(cur, potion.id));
     }
 
-    setRewardState((prev) => createEmptyRewardState(prev.destinations));
+    setRewardState(result.nextRewardState);
     setHoveredCardId(null);
 
     // Companion reward modifier: show second reward step with companion card choices.
-    if (companionRewardCards && companionRewardCards.length > 0) {
-      setRewardState({
-        choices: companionRewardCards,
-        gold: 0,
-        materials: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 },
-        selectedId: null,
-        destinations: rewardState.destinations,
-        rewardType: "card",
-      });
-      setCompanionRewardCards(null);
+    if (result.route === "companion-reward") {
+      if (result.clearCompanionRewardCards) setCompanionRewardCards(null);
       setHoveredCardId(null);
       navigateTo("rewards");
       return;
     }
 
-    if (run.contentSystemType === "labyrinth") {
-      if (currentEnemyType === "boss") {
-        awardRunEndMaterials(rewardState.materials);
-        setHasActiveBattle(false);
-        setHasActiveRun(false);
-        navigateTo("run-victory");
-      } else {
-        onLabyrinthClearNode();
-        navigateTo("labyrinth-map");
-      }
+    if (result.route === "labyrinth-victory") {
+      awardRunEndMaterials(result.materials);
+      setHasActiveBattle(false);
+      setHasActiveRun(false);
+      navigateTo("run-victory");
       return;
     }
 
-    if (currentEnemyType === "boss") {
+    if (result.route === "labyrinth-map") {
+      onLabyrinthClearNode();
+      navigateTo("labyrinth-map");
+      return;
+    }
+
+    if (result.route === "act-complete") {
       handleActComplete();
       return;
     }

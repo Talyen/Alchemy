@@ -3,3 +3,4 @@
 export * from "./storage/io";
 export * from "./storage/migrations";
 export * from "./storage/types";
+export * from "./storage/metadata";

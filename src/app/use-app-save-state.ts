@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 import {
   clearAlchemySaveData,
-  loadAlchemySaveData,
+  loadAlchemySaveState,
   saveAlchemySaveData,
   type SaveData,
 } from "@/features/alchemy/storage";
@@ -22,8 +22,9 @@ const initialCollectionPages: CollectionPages = {
 
 // Owns persisted shell state so App can focus on controller composition and screen rendering.
 export function useAppSaveState() {
-  const initialSaveRef = useRef(loadAlchemySaveData());
-  const initialSave = initialSaveRef.current;
+  const initialSaveRef = useRef(loadAlchemySaveState());
+  const initialSave = initialSaveRef.current.data;
+  const saveLoadStatus = initialSaveRef.current.status;
   const [selectedResolution, setSelectedResolution] = useState<ResolutionOption>(initialSave.selectedResolution);
   const [displayMode, setDisplayMode] = useState<DisplayMode>(initialSave.displayMode);
   const [uiScale, setUiScale] = useState<UiScale>(initialSave.uiScale);
@@ -76,6 +77,7 @@ export function useAppSaveState() {
 
   return {
     initialSave,
+    saveLoadStatus,
     selectedResolution,
     setSelectedResolution,
     displayMode,
@@ -118,6 +120,9 @@ export function useAlchemyAutosave(saveData: SaveData) {
   useEffect(() => {
     saveAlchemySaveData(saveData);
   }, [
+    saveData.saveSchemaVersion,
+    saveData.gameBuildVersion,
+    saveData.contentVersion,
     saveData.selectedResolution,
     saveData.displayMode,
     saveData.uiScale,

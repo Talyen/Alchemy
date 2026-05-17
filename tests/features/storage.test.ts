@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { normalizeActiveRun, normalizeSaveData, normalizeDisplayMode, normalizeUiScale, migrateMaterialInventory, migrateBuildingIds, migrateFarmIds, migrateToTierLevels } from "@/features/alchemy/storage";
+import { CURRENT_CONTENT_VERSION, CURRENT_GAME_BUILD_VERSION, CURRENT_SAVE_SCHEMA_VERSION, getRawSaveSchemaVersion, isUnsupportedFutureSaveData, migrateSaveDataToCurrent, normalizeActiveRun, normalizeSaveData, normalizeDisplayMode, normalizeUiScale, migrateMaterialInventory, migrateBuildingIds, migrateFarmIds, migrateToTierLevels } from "@/features/alchemy/storage";
 import { cardLibrary } from "@/lib/game-data";
 import { buildings, farmPlots } from "@/lib/homestead/data";
 import { createSeededRng, generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
+import { legacyCampaignRunSave, legacyCorruptedCardRunSave, legacyLabyrinthRunSave } from "../fixtures/legacy-saves";
 
 function activeRun(overrides: Record<string, unknown> = {}) {
   return {
@@ -76,6 +77,48 @@ describe("normalizeActiveRun", () => {
     expect(result?.runDeck[0].art).toBe(cardLibrary.find((card) => card.id === "block")?.art);
   });
 
+  it("does not let saved card data override library-owned fields", () => {
+    const result = normalizeActiveRun(activeRun({
+      runDeck: [{
+        id: "slash",
+        uid: 7,
+        title: "Malicious Slash",
+        descriptionLines: ["Deal 8 Physical damage"],
+        art: "stale-build-url.webp",
+        cost: 1,
+        effects: [{ kind: "damage", damageType: "physical", amount: 8 }],
+        hackedField: true,
+      }],
+    }));
+
+    const card = result?.runDeck[0];
+    expect(card?.title).toBe(cardLibrary.find((c) => c.id === "slash")?.title);
+    expect(card?.art).toBe(cardLibrary.find((c) => c.id === "slash")?.art);
+    expect(card?.uid).toBe(7);
+    expect((card as unknown as { hackedField?: boolean })?.hackedField).toBeUndefined();
+  });
+
+  it("drops malformed saved card mutation fields", () => {
+    const result = normalizeActiveRun(activeRun({
+      runDeck: [{
+        id: "bash",
+        title: "Bash",
+        descriptionLines: ["bad", 42],
+        art: "stale-build-url.webp",
+        cost: Number.NaN,
+        effects: [null],
+        corrupted: true,
+        corruptedValuePositions: [{ lineIndex: 0, matchIndex: 3 }, null, { lineIndex: -1, matchIndex: 2 }],
+      } as never],
+    }));
+
+    const libraryCard = cardLibrary.find((card) => card.id === "bash");
+    expect(result?.runDeck[0].descriptionLines).toEqual(libraryCard?.descriptionLines);
+    expect(result?.runDeck[0].cost).toBe(libraryCard?.cost);
+    expect(result?.runDeck[0].effects).toEqual(libraryCard?.effects);
+    expect(result?.runDeck[0].corruptedValuePositions).toEqual([{ lineIndex: 0, matchIndex: 3 }]);
+  });
+
   it("passes through valid ranger characterId", () => {
     const result = normalizeActiveRun(activeRun({ characterId: "ranger" }));
     expect(result?.characterId).toBe("ranger");
@@ -121,6 +164,15 @@ describe("normalizeActiveRun", () => {
     expect(result?.selectedDifficulty).toBeNull();
   });
 
+  it("returns null for invalid numeric run fields", () => {
+    expect(normalizeActiveRun(activeRun({ runGold: Number.NaN }))).toBeNull();
+    expect(normalizeActiveRun(activeRun({ runPlayerHealth: 31 }))).toBeNull();
+    expect(normalizeActiveRun(activeRun({ runMaxHealth: 0 }))).toBeNull();
+    expect(normalizeActiveRun(activeRun({ roomsEncountered: -1 }))).toBeNull();
+    expect(normalizeActiveRun(activeRun({ currentAct: 999 }))).toBeNull();
+    expect(normalizeActiveRun(activeRun({ destinationIndexInAct: 1.5 }))).toBeNull();
+  });
+
   it("defaults contentSystemType to campaign when missing", () => {
     const result = normalizeActiveRun(activeRun({}));
     expect(result?.contentSystemType).toBe("campaign");
@@ -149,6 +201,43 @@ describe("normalizeActiveRun", () => {
     const normalizedCombat = result?.labyrinthMap?.grid.flat().find((node) => node?.type === "combat");
     expect(normalizedCombat?.modifiers).toEqual(["armored"]);
     expect(normalizedCombat?.rewardModifiers).toEqual(["generous"]);
+  });
+
+  it("drops malformed labyrinth maps", () => {
+    const mismatchedRows = generateLabyrinthMap(createSeededRng(42));
+    mismatchedRows.rows += 1;
+
+    const fractionalCurrent = generateLabyrinthMap(createSeededRng(42));
+    fractionalCurrent.currentNode = { row: 0.5, col: 4 };
+
+    const invalidConnection = generateLabyrinthMap(createSeededRng(42));
+    const firstNode = invalidConnection.grid.flat().find(Boolean);
+    firstNode!.connections = [{ row: 999, col: 999 }];
+
+    expect(normalizeActiveRun(activeRun({ contentSystemType: "labyrinth", labyrinthMap: mismatchedRows }))?.labyrinthMap).toBeNull();
+    expect(normalizeActiveRun(activeRun({ contentSystemType: "labyrinth", labyrinthMap: fractionalCurrent }))?.labyrinthMap).toBeNull();
+    expect(normalizeActiveRun(activeRun({ contentSystemType: "labyrinth", labyrinthMap: invalidConnection }))?.labyrinthMap).toBeNull();
+  });
+
+  it("drops labyrinth maps with impossible current or endpoint state", () => {
+    const multipleCurrent = generateLabyrinthMap(createSeededRng(42));
+    const firstVisible = multipleCurrent.grid.flat().find((node) => node?.state === "visible");
+    firstVisible!.state = "current";
+
+    const mismatchedCurrent = generateLabyrinthMap(createSeededRng(42));
+    mismatchedCurrent.currentNode = { row: 1, col: 4 };
+
+    const missingEntrance = generateLabyrinthMap(createSeededRng(42));
+    missingEntrance.grid[0][4]!.type = "combat";
+
+    const missingBoss = generateLabyrinthMap(createSeededRng(42));
+    const boss = missingBoss.grid.flat().find((node) => node?.type === "boss");
+    boss!.type = "combat";
+
+    expect(normalizeActiveRun(activeRun({ contentSystemType: "labyrinth", labyrinthMap: multipleCurrent }))?.labyrinthMap).toBeNull();
+    expect(normalizeActiveRun(activeRun({ contentSystemType: "labyrinth", labyrinthMap: mismatchedCurrent }))?.labyrinthMap).toBeNull();
+    expect(normalizeActiveRun(activeRun({ contentSystemType: "labyrinth", labyrinthMap: missingEntrance }))?.labyrinthMap).toBeNull();
+    expect(normalizeActiveRun(activeRun({ contentSystemType: "labyrinth", labyrinthMap: missingBoss }))?.labyrinthMap).toBeNull();
   });
 
   it("drops labyrinth map state for campaign runs", () => {
@@ -350,8 +439,25 @@ describe("migrateToTierLevels", () => {
 });
 
 describe("normalizeSaveData", () => {
+  it("treats saves without metadata as legacy v0", () => {
+    expect(getRawSaveSchemaVersion({ discoveredCardIds: ["slash"] })).toBe(0);
+  });
+
+  it("migrates legacy v0 saves to the current schema", () => {
+    const migrated = migrateSaveDataToCurrent({ discoveredCardIds: ["slash"], materialInventory: { wood: 5 } });
+
+    expect(migrated.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
+    expect(migrated.gameBuildVersion).toBe(CURRENT_GAME_BUILD_VERSION);
+    expect(migrated.contentVersion).toBe(CURRENT_CONTENT_VERSION);
+    expect(migrated.discoveredCardIds).toEqual(["slash"]);
+    expect(migrated.materialInventory).toEqual({ wood: 5 });
+  });
+
   it("fills all defaults for empty input", () => {
     const result = normalizeSaveData({});
+    expect(result.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
+    expect(result.gameBuildVersion).toBe(CURRENT_GAME_BUILD_VERSION);
+    expect(result.contentVersion).toBe(CURRENT_CONTENT_VERSION);
     expect(result.selectedResolution).toBe("1920x1080");
     expect(result.displayMode).toBe("borderless-fullscreen");
     expect(result.uiScale).toBe("100");
@@ -394,6 +500,103 @@ describe("normalizeSaveData", () => {
     expect(result.uiScale).toBe("120");
   });
 
+  it("loads legacy pre-metadata saves without wiping unrelated progress", () => {
+    const result = normalizeSaveData({
+      selectedResolution: "2560x1080",
+      discoveredCardIds: ["slash", "future-card"],
+      encounteredEnemyIds: ["goblin"],
+      discoveredTrinketIds: ["bone-charm"],
+      talentXP: { physical: 25 },
+      unlockedTalents: { physical: ["physical-dmg-1"] },
+      materialInventory: { wood: 7, iron: 3 },
+      constructedBuildings: ["smithy"],
+      plantedFarms: ["sheep-pasture"],
+      completedDifficulties: { knight: ["difficulty-1"] },
+    } as never);
+
+    expect(result.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
+    expect(result.selectedResolution).toBe("2560x1080");
+    expect(result.discoveredCardIds).toEqual(["slash", "future-card"]);
+    expect(result.encounteredEnemyIds).toEqual(["goblin"]);
+    expect(result.discoveredTrinketIds).toEqual(["bone-charm"]);
+    expect(result.talentXP.physical).toBe(25);
+    expect(result.unlockedTalents.physical).toEqual(["physical-dmg-1"]);
+    expect(result.materialInventory).toEqual({ wood: 7, iron: 3, herbs: 0, food: 0, crystal: 0 });
+    expect(result.constructedBuildings["blacksmiths-forge"]).toBe(1);
+    expect(result.plantedFarms.pasture).toBe(1);
+    expect(result.completedDifficulties.knight).toEqual(["difficulty-1"]);
+  });
+
+  it("loads the legacy campaign fixture into current save data", () => {
+    const result = normalizeSaveData(legacyCampaignRunSave());
+
+    expect(result.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
+    expect(result.displayMode).toBe("fullscreen");
+    expect(result.uiScale).toBe("110");
+    expect(result.discoveredCardIds).toEqual(["slash", "block", "future-card"]);
+    expect(result.talentXP).toMatchObject({ physical: 18, block: 7 });
+    expect(result.activeRun).toMatchObject({ characterId: "knight", runGold: 42, roomsEncountered: 3, contentSystemType: "campaign" });
+    expect(result.activeRun?.runDeck[0].art).toBe(cardLibrary.find((card) => card.id === "slash")?.art);
+    expect(result.materialInventory).toEqual({ wood: 4, iron: 2, herbs: 0, food: 0, crystal: 0 });
+    expect(result.constructedBuildings["blacksmiths-forge"]).toBe(1);
+    expect(result.plantedFarms.pasture).toBe(1);
+    expect(result.completedResearch.carpentry).toBe(1);
+    expect(result.bondedCompanions.wolf).toBe(1);
+  });
+
+  it("loads the legacy labyrinth fixture with its map intact", () => {
+    const result = normalizeSaveData(legacyLabyrinthRunSave());
+
+    expect(result.activeRun?.contentSystemType).toBe("labyrinth");
+    expect(result.activeRun?.characterId).toBe("ranger");
+    expect(result.activeRun?.labyrinthMap?.currentNode).toEqual({ row: 0, col: 4 });
+    expect(result.activeRun?.labyrinthMap?.grid[0]?.[4]?.type).toBe("entrance");
+  });
+
+  it("loads the legacy corrupted-card fixture without stale library-owned card fields", () => {
+    const result = normalizeSaveData(legacyCorruptedCardRunSave());
+    const card = result.activeRun?.runDeck[0];
+
+    expect(card?.id).toBe("fireball");
+    expect(card?.title).toBe(cardLibrary.find((entry) => entry.id === "fireball")?.title);
+    expect(card?.art).toBe(cardLibrary.find((entry) => entry.id === "fireball")?.art);
+    expect(card?.descriptionLines).toEqual(["Deal 9 Burn damage"]);
+    expect(card?.effects[0]).toMatchObject({ amount: 9 });
+    expect(card?.corrupted).toBe(true);
+    expect(card?.corruptedValuePositions).toEqual([{ lineIndex: 0, matchIndex: 5 }]);
+  });
+
+  it("normalizes corrupt discovery arrays while preserving unknown string ids", () => {
+    const result = normalizeSaveData({
+      discoveredCardIds: ["slash", 123, "future-card", "slash", null] as never,
+      encounteredEnemyIds: ["goblin", {}, "future-enemy", "goblin"] as never,
+      discoveredTrinketIds: ["bone-charm", false, "future-trinket", "bone-charm"] as never,
+    });
+
+    expect(result.discoveredCardIds).toEqual(["slash", "future-card"]);
+    expect(result.encounteredEnemyIds).toEqual(["goblin", "future-enemy"]);
+    expect(result.discoveredTrinketIds).toEqual(["bone-charm", "future-trinket"]);
+  });
+
+  it("normalizes volume and brightness bounds", () => {
+    const result = normalizeSaveData({ musicVolume: -20, sfxVolume: 200, masterVolume: Number.NaN, brightness: 999 });
+
+    expect(result.musicVolume).toBe(0);
+    expect(result.sfxVolume).toBe(100);
+    expect(result.masterVolume).toBe(100);
+    expect(result.brightness).toBe(150);
+  });
+
+  it("normalizes talent progress without keeping non-finite values", () => {
+    const result = normalizeSaveData({
+      talentXP: { physical: 12.8, burn: Number.NaN, "future-keyword": 4 } as never,
+      unlockedTalents: { physical: ["physical-dmg-1", 42, "future-talent", "physical-dmg-1"], burn: "bad" } as never,
+    });
+
+    expect(result.talentXP).toEqual({ physical: 12, "future-keyword": 4 });
+    expect(result.unlockedTalents).toEqual({ physical: ["physical-dmg-1", "future-talent"] });
+  });
+
   it("normalizes invalid display mode to default", () => {
     const result = normalizeSaveData({ displayMode: "fake-mode" as never });
     expect(result.displayMode).toBe("borderless-fullscreen");
@@ -404,8 +607,20 @@ describe("normalizeSaveData", () => {
     expect(result.completedDifficulties).toEqual({ knight: ["difficulty-1", "difficulty-2"], rogue: [], wizard: ["difficulty-1"], ranger: [] });
   });
 
+  it("normalizes completedDifficulties while preserving future string ids", () => {
+    const result = normalizeSaveData({ completedDifficulties: { knight: ["difficulty-1", 3, "difficulty-future", "difficulty-1"], futureHero: ["difficulty-9"] } as never });
+
+    expect(result.completedDifficulties).toEqual({ knight: ["difficulty-1", "difficulty-future"], rogue: [], wizard: [], ranger: [], futureHero: ["difficulty-9"] });
+  });
+
   it("falls back to default completedDifficulties for non-object", () => {
     const result = normalizeSaveData({ completedDifficulties: "invalid" as never });
     expect(result.completedDifficulties).toEqual({ knight: [], rogue: [], wizard: [], ranger: [] });
+  });
+
+  it("detects saves from a newer schema", () => {
+    expect(isUnsupportedFutureSaveData({ saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 1 })).toBe(true);
+    expect(isUnsupportedFutureSaveData({ saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION })).toBe(false);
+    expect(isUnsupportedFutureSaveData({})).toBe(false);
   });
 });

@@ -22,7 +22,6 @@ import { animateCardActivation } from "./battle/card-ghost-animation";
 import { useCardGhosts } from "./battle/use-card-ghosts";
 import { useFloatingCombatTexts } from "./battle/use-floating-combat-texts";
 import type { Screen } from "./types";
-import { computeTrinketManifest } from "@/lib/trinkets";
 import { mergeIntoManifest } from "@/lib/homestead/effects";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import { CARD_ACTIVATION_ROTATION_DEGREES, COMPANION_ATTACK_DELAY, ENEMY_PHASE_DELAY } from "@/lib/game-constants";
@@ -36,6 +35,7 @@ import {
 } from "./battle/battle-feedback";
 import { useBattleAutoEndTurn } from "./battle/use-battle-auto-end-turn";
 import { useBattleShake } from "./battle/use-battle-shake";
+import { getBattleStartPlayerHealth } from "./battle/battle-start";
 
 export function useBattleController({
   run,
@@ -72,12 +72,13 @@ export function useBattleController({
   const enemyPanelRef = useRef<HTMLDivElement | null>(null);
   const cardPlayInProgressRef = useRef(false);
   const companionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const enemyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const companionScheduledRef = useRef(false);
   const battleStateRef = useRef(battleState);
   battleStateRef.current = battleState;
   useEffect(
     () => () => {
-      if (companionTimeoutRef.current) clearTimeout(companionTimeoutRef.current);
+      clearPendingBattleTimeouts();
     },
     [],
   );
@@ -112,28 +113,29 @@ export function useBattleController({
     beginBattle(getBossEnemy(run.currentAct), run.runDeck, run.runGold, modifiers, scalingDepth);
   }
 
-  function startBossById(bossId: string, modifiers?: DifficultyModifier[]) {
+  function startBossById(bossId: string, modifiers?: DifficultyModifier[]): boolean {
     const boss = getBossById(bossId);
-    if (boss) beginBattle(boss, run.runDeck, run.runGold, modifiers);
+    if (!boss) return false;
+    beginBattle(boss, run.runDeck, run.runGold, modifiers);
+    return true;
   }
 
   function beginBattle(enemy: BestiaryEntry, deck: BattleCard[], gold: number, modifiers?: DifficultyModifier[], scalingDepth?: number) {
     // Battle setup batches start-heal trinkets, room count, ghost cleanup, immutable
     // state creation, and bestiary discovery so the first battle render is coherent.
-    applyGrovesFavorHeal();
+    clearPendingBattleTimeouts();
+    const startingHealth = getBattleStartPlayerHealth(run.runPlayerHealth, run.runMaxHealth, run.runTrinkets);
+    run.setRunPlayerHealth(startingHealth);
     run.setRoomsEncountered((p) => p + 1);
     clearCardGhosts();
-    setBattleState(createBattleForEnemy(enemy, deck, gold, modifiers, scalingDepth));
+    const nextBattleState = createBattleForEnemy(enemy, deck, gold, startingHealth, modifiers, scalingDepth);
+    battleStateRef.current = nextBattleState;
+    setBattleState(nextBattleState);
     setHasActiveBattle(true);
     setEncounteredEnemyIds((current) => appendUnique(current, enemy.id));
   }
 
-  function applyGrovesFavorHeal() {
-    const grovesHeal = computeTrinketManifest(run.runTrinkets).grovesFavorStartHeal;
-    if (grovesHeal > 0) run.setRunPlayerHealth((p) => Math.min(run.runMaxHealth, p + grovesHeal));
-  }
-
-  function createBattleForEnemy(enemy: BestiaryEntry, deck: BattleCard[], gold: number, modifiers?: DifficultyModifier[], scalingDepth?: number) {
+  function createBattleForEnemy(enemy: BestiaryEntry, deck: BattleCard[], gold: number, playerHealth: number, modifiers?: DifficultyModifier[], scalingDepth?: number) {
     // Talent and homestead bonuses are merged before state creation so the battle engine
     // reads one precomputed manifest instead of consulting React/controller state mid-fight.
     const mergedEffects = mergeIntoManifest(talents.talentEffects, homesteadEffectsRef.current);
@@ -145,7 +147,7 @@ export function useBattleController({
       gold,
       run.roomsEncountered,
       enemy,
-      run.runPlayerHealth,
+      playerHealth,
       mergedEffects,
       discoveredCardIds,
       run.runMaxHealth,
@@ -163,11 +165,13 @@ export function useBattleController({
   ) {
     // Play validation happens before animation/audio, then pure resolution drives XP,
     // combat text, hover cleanup, and any auto-end scheduling from the resolved state.
-    if (!canPlayCard(card)) return;
+    const currentState = battleStateRef.current;
+    if (!canPlayCard(card, index, currentState)) return;
     cardPlayInProgressRef.current = true;
     animatePlayedCard(card, index, sourceRect);
     playCardSound(card.id);
-    const resolution = playBattleCardResolved(battleState, card.id, index);
+    const resolution = playBattleCardResolved(currentState, card.id, index);
+    battleStateRef.current = resolution.state;
     playCardResolutionFeedback(card, resolution.state, resolution.combatTexts);
     setBattleState(resolution.state);
     showCombatTexts(resolution.combatTexts);
@@ -177,12 +181,15 @@ export function useBattleController({
     scheduleAutoEndTurn(resolution.state);
   }
 
-  function canPlayCard(card: BattleCard) {
+  function canPlayCard(card: BattleCard, index: number, state: BattleState) {
+    const currentCard = state.hand[index];
     return (
       screen === "battle" &&
-      battleState.mana >= getEffectiveCost(battleState, card) &&
-      !battleState.wishOptions &&
-      battleState.turnPhase === "player" &&
+      currentCard?.id === card.id &&
+      currentCard?.uid === card.uid &&
+      state.mana >= getEffectiveCost(state, currentCard) &&
+      !state.wishOptions &&
+      state.turnPhase === "player" &&
       !cardPlayInProgressRef.current
     );
   }
@@ -221,21 +228,23 @@ export function useBattleController({
   function handleEndTurn() {
     // Queued companion effects resolve before the enemy action, then enemy damage is
     // delayed for readability while the pure end-turn result remains already computed.
+    const currentState = battleStateRef.current;
     if (
       screen !== "battle" ||
-      battleState.turnPhase !== "player" ||
-      battleState.wishOptions ||
+      currentState.turnPhase !== "player" ||
+      currentState.wishOptions ||
       cardPlayInProgressRef.current
     )
       return;
     clearCompanionTimeout();
 
-    const companionResult = resolveQueuedCompanionTurn(battleState);
+    const companionResult = resolveQueuedCompanionTurn(currentState);
 
     // If the companion killed the enemy, skip the enemy phase entirely — otherwise
     // processEnemyHealing would resurrect the enemy from below-50% HP healing.
     if (companionResult.state.enemyHealth <= 0) {
       setBattleState(companionResult.state);
+      battleStateRef.current = companionResult.state;
       if (companionResult.combatTexts.length > 0) showCombatTexts(companionResult.combatTexts);
       return;
     }
@@ -252,6 +261,18 @@ export function useBattleController({
     if (!companionTimeoutRef.current) return;
     clearTimeout(companionTimeoutRef.current);
     companionTimeoutRef.current = null;
+  }
+
+  function clearEnemyTimeout() {
+    if (!enemyTimeoutRef.current) return;
+    clearTimeout(enemyTimeoutRef.current);
+    enemyTimeoutRef.current = null;
+  }
+
+  function clearPendingBattleTimeouts() {
+    clearCompanionTimeout();
+    clearEnemyTimeout();
+    companionScheduledRef.current = false;
   }
 
   function resolveQueuedCompanionTurn(state: BattleState) {
@@ -272,13 +293,15 @@ export function useBattleController({
   function showEnemyTurnStart(resultState: BattleState, currentState: BattleState, combatTexts: CombatTextEvent[]) {
     // The UI briefly shows enemy phase with the hand cleared but preserves pre-attack
     // player HP/status so enemy-target DoT text can read before player damage lands.
-    setBattleState({
+    const displayState: BattleState = {
       ...resultState,
       turnPhase: "enemy",
       hand: [],
       playerHealth: currentState.playerHealth,
       playerStatuses: currentState.playerStatuses,
-    });
+    };
+    battleStateRef.current = displayState;
+    setBattleState(displayState);
     const dotTexts = combatTexts.filter((ct) => ct.target === "enemy");
     if (dotTexts.length > 0) showCombatTexts(dotTexts);
   }
@@ -291,9 +314,12 @@ export function useBattleController({
     // Enemy audio, player damage text, and shake are delayed to make the phase transition
     // legible; resultState was already computed, so this is presentation timing only.
     const playerTexts = combatTexts.filter((ct) => ct.target === "player");
-    setTimeout(() => {
+    clearEnemyTimeout();
+    enemyTimeoutRef.current = setTimeout(() => {
+      enemyTimeoutRef.current = null;
       playEnemyAttack(currentState.currentEnemy.id);
       if (!currentState.deathsDoorActive && resultState.deathsDoorActive) playBattleEvent("deathsDoor");
+      battleStateRef.current = resultState;
       setBattleState(resultState);
       if (playerTexts.length > 0) showCombatTexts(playerTexts);
       if (shouldShakePlayerFromCombatTexts(playerTexts)) shakePlayer();
@@ -329,17 +355,27 @@ export function useBattleController({
 
   function handleEndRun() {
     if (screen !== "battle") return;
-    setBattleState((c) => ({
-      ...c,
-      playerHealth: 0,
-      deathsDoorUsed: true,
-      deathsDoorActive: false,
-      deathsDoorTriggeredTurn: null,
-    }));
+    clearPendingBattleTimeouts();
+    setBattleState((c) => {
+      const next = {
+        ...c,
+        playerHealth: 0,
+        deathsDoorUsed: true,
+        deathsDoorActive: false,
+        deathsDoorTriggeredTurn: null,
+      };
+      battleStateRef.current = next;
+      return next;
+    });
   }
   function skipCombatDevMode() {
     if (screen === "battle") {
-      setBattleState((c) => ({ ...c, enemyHealth: 0, wishOptions: null, wishQueue: [] }));
+      clearPendingBattleTimeouts();
+      setBattleState((c) => {
+        const next = { ...c, enemyHealth: 0, wishOptions: null, wishQueue: [] };
+        battleStateRef.current = next;
+        return next;
+      });
     }
   }
 

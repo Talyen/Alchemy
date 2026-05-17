@@ -8,12 +8,14 @@ import {
   getCompanionCardChoices,
   getGenerousGoldBonus,
   getVictoryGoldTotal,
+  finalizeRewardState,
   shouldForceTrinketReward,
   shouldGrantAlchemistReward,
   shouldGrantCompanionReward,
 } from "@/features/alchemy/navigation/reward-flow";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import type { LabyrinthModifierKind } from "@/lib/content-systems/types";
+import type { BattleCard, TrinketEntry } from "@/lib/game-data";
 
 vi.mock("@/features/alchemy/reward-utils", () => ({
   selectRewardCards: vi.fn(() => [{ id: "mock-card", title: "Mock", descriptionLines: [""], art: "", cost: 1, effects: [] }]),
@@ -216,5 +218,90 @@ describe("getCompanionCardChoices", () => {
     const choices = getCompanionCardChoices(() => 0).map((card) => card.id);
 
     expect(choices).toEqual(["lizard-scout-companion", "imp-companion", "frost-whelp-companion"]);
+  });
+});
+
+describe("finalizeRewardState", () => {
+  const cardChoice: BattleCard = { id: "slash", title: "Slash", descriptionLines: ["Deal damage"], art: "", cost: 1, effects: [] };
+  const companionChoice: BattleCard = { id: "wolf-companion", title: "Wolf", descriptionLines: ["Summon wolf"], art: "", cost: 1, effects: [] };
+  const trinketChoice: TrinketEntry = { id: "bone-charm", title: "Bone Charm", description: "Heal on kill", art: "" };
+
+  it("returns the selected card reward and routes normal campaign fights to destination", () => {
+    const result = finalizeRewardState({
+      rewardState: { choices: [cardChoice], gold: 10, materials: emptyInventory(), selectedId: "slash", destinations: ["Campfire"], rewardType: "card" },
+      companionRewardCards: null,
+      contentSystemType: "campaign",
+      currentEnemyType: "normal",
+      grantAlchemistReward: false,
+    });
+
+    expect(result.selectedChoice).toBe(cardChoice);
+    expect(result.selectedRewardType).toBe("card");
+    expect(result.route).toBe("destination");
+    expect(result.nextRewardState).toEqual(expect.objectContaining({ choices: [], destinations: ["Campfire"] }));
+  });
+
+  it("returns the selected trinket reward", () => {
+    const result = finalizeRewardState({
+      rewardState: { choices: [trinketChoice], gold: 10, materials: emptyInventory(), selectedId: "bone-charm", destinations: [], rewardType: "trinket" },
+      companionRewardCards: null,
+      contentSystemType: "campaign",
+      currentEnemyType: "normal",
+      grantAlchemistReward: false,
+    });
+
+    expect(result.selectedChoice).toBe(trinketChoice);
+    expect(result.selectedRewardType).toBe("trinket");
+  });
+
+  it("creates the companion reward step before routing onward", () => {
+    const result = finalizeRewardState({
+      rewardState: { choices: [cardChoice], gold: 10, materials: emptyInventory(), selectedId: "slash", destinations: ["Mystery"], rewardType: "card" },
+      companionRewardCards: [companionChoice],
+      contentSystemType: "labyrinth",
+      currentEnemyType: "normal",
+      grantAlchemistReward: true,
+    });
+
+    expect(result.route).toBe("companion-reward");
+    expect(result.clearCompanionRewardCards).toBe(true);
+    expect(result.grantAlchemistReward).toBe(true);
+    expect(result.nextRewardState).toEqual({ choices: [companionChoice], gold: 0, materials: emptyInventory(), selectedId: null, destinations: ["Mystery"], rewardType: "card" });
+  });
+
+  it("routes labyrinth non-boss rewards back to the labyrinth map", () => {
+    const result = finalizeRewardState({
+      rewardState: createEmptyRewardState(),
+      companionRewardCards: null,
+      contentSystemType: "labyrinth",
+      currentEnemyType: "elite",
+      grantAlchemistReward: false,
+    });
+
+    expect(result.route).toBe("labyrinth-map");
+  });
+
+  it("routes labyrinth boss rewards to run victory", () => {
+    const result = finalizeRewardState({
+      rewardState: createEmptyRewardState(),
+      companionRewardCards: null,
+      contentSystemType: "labyrinth",
+      currentEnemyType: "boss",
+      grantAlchemistReward: false,
+    });
+
+    expect(result.route).toBe("labyrinth-victory");
+  });
+
+  it("routes campaign boss rewards to act completion", () => {
+    const result = finalizeRewardState({
+      rewardState: createEmptyRewardState(),
+      companionRewardCards: null,
+      contentSystemType: "campaign",
+      currentEnemyType: "boss",
+      grantAlchemistReward: false,
+    });
+
+    expect(result.route).toBe("act-complete");
   });
 });

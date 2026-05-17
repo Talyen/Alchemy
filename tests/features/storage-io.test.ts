@@ -1,8 +1,9 @@
-import { describe, expect, it, beforeEach, afterEach } from "vitest";
+import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
 import type { SaveData } from "@/features/alchemy/storage/types";
 import { defaultSaveData } from "@/features/alchemy/storage/defaults";
 
 const { SAVE_KEY } = await import("@/lib/game-constants");
+const { CURRENT_SAVE_SCHEMA_VERSION } = await import("@/features/alchemy/storage/metadata");
 
 const mockStorage: Record<string, string> = {};
 const globalWithWindow = globalThis as typeof globalThis & { window?: Pick<Window, "localStorage"> };
@@ -23,11 +24,13 @@ function teardownWindow() {
 
 describe("storage io", () => {
   beforeEach(() => {
+    vi.restoreAllMocks();
     Object.keys(mockStorage).forEach((k) => delete mockStorage[k]);
     setupWindow();
   });
 
   afterEach(() => {
+    vi.restoreAllMocks();
     teardownWindow();
   });
 
@@ -40,9 +43,10 @@ describe("storage io", () => {
 
   it("loadAlchemySaveData returns defaults on corrupt JSON", async () => {
     mockStorage[SAVE_KEY] = "not-json";
-    const { loadAlchemySaveData } = await import("@/features/alchemy/storage/io");
+    const { loadAlchemySaveData, loadAlchemySaveState } = await import("@/features/alchemy/storage/io");
     const data = loadAlchemySaveData();
     expect(data.selectedResolution).toBe("1920x1080");
+    expect(loadAlchemySaveState().status.kind).toBe("corrupt");
   });
 
   it("loadAlchemySaveData loads valid save data", async () => {
@@ -64,5 +68,35 @@ describe("storage io", () => {
     const { clearAlchemySaveData } = await import("@/features/alchemy/storage/io");
     clearAlchemySaveData();
     expect(mockStorage[SAVE_KEY]).toBeUndefined();
+  });
+
+  it("storage operations tolerate unavailable localStorage", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    globalWithWindow.window = {
+      localStorage: {
+        getItem: () => { throw new Error("blocked"); },
+        setItem: () => { throw new Error("blocked"); },
+        removeItem: () => { throw new Error("blocked"); },
+      } as unknown as Storage,
+    };
+
+    const { loadAlchemySaveData, saveAlchemySaveData, clearAlchemySaveData } = await import("@/features/alchemy/storage/io");
+
+    expect(loadAlchemySaveData()).toEqual(defaultSaveData);
+    expect(() => saveAlchemySaveData(defaultSaveData)).not.toThrow();
+    expect(() => clearAlchemySaveData()).not.toThrow();
+  });
+
+  it("does not overwrite saves from a newer schema", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    mockStorage[SAVE_KEY] = JSON.stringify({ saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 1, discoveredCardIds: ["future-card"] });
+
+    const { loadAlchemySaveState, saveAlchemySaveData } = await import("@/features/alchemy/storage/io");
+    const loaded = loadAlchemySaveState();
+
+    expect(loaded.data).toEqual(defaultSaveData);
+    expect(loaded.status).toEqual({ kind: "unsupported-newer-schema", detectedSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 1 });
+    saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["slash"] });
+    expect(JSON.parse(mockStorage[SAVE_KEY])).toEqual({ saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 1, discoveredCardIds: ["future-card"] });
   });
 });

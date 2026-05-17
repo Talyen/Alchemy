@@ -62,6 +62,26 @@ export type VictoryGoldResult = {
   persistedRunGold: number;
 };
 
+export type FinalizeRewardRoute = "companion-reward" | "labyrinth-victory" | "labyrinth-map" | "act-complete" | "destination";
+
+export type FinalizeRewardInput = {
+  rewardState: RewardState;
+  companionRewardCards: BattleCard[] | null;
+  contentSystemType: ContentSystemId;
+  currentEnemyType: string;
+  grantAlchemistReward: boolean;
+};
+
+export type FinalizeRewardResult = {
+  selectedChoice: BattleCard | TrinketEntry | null;
+  selectedRewardType: RewardState["rewardType"];
+  materials: MaterialInventory;
+  grantAlchemistReward: boolean;
+  nextRewardState: RewardState;
+  clearCompanionRewardCards: boolean;
+  route: FinalizeRewardRoute;
+};
+
 const GENEROUS_GOLD_BONUS_FRACTION = 0.5;
 
 // Checks if a reward modifier kind is active in the given array.
@@ -129,6 +149,46 @@ export function getCompanionCardChoices(rng: () => number = Math.random): Battle
 // Empty reward state is reused by initialization, reward cleanup, and full run reset.
 export function createEmptyRewardState(destinations: Destination[] = []): RewardState {
   return { choices: [], gold: 0, materials: emptyInventory(), selectedId: null, destinations, rewardType: "card" };
+}
+
+// Resolves reward-finalization decisions without mutating React state or performing navigation.
+export function finalizeRewardState({ rewardState, companionRewardCards, contentSystemType, currentEnemyType, grantAlchemistReward }: FinalizeRewardInput): FinalizeRewardResult {
+  const selectedChoice = rewardState.selectedId
+    ? rewardState.choices.find((choice) => choice.id === rewardState.selectedId) ?? null
+    : null;
+
+  if (companionRewardCards && companionRewardCards.length > 0) {
+    return {
+      selectedChoice,
+      selectedRewardType: rewardState.rewardType,
+      materials: rewardState.materials,
+      grantAlchemistReward,
+      nextRewardState: {
+        choices: companionRewardCards,
+        gold: 0,
+        materials: emptyInventory(),
+        selectedId: null,
+        destinations: rewardState.destinations,
+        rewardType: "card",
+      },
+      clearCompanionRewardCards: true,
+      route: "companion-reward",
+    };
+  }
+
+  const route: FinalizeRewardRoute = contentSystemType === "labyrinth"
+    ? currentEnemyType === "boss" ? "labyrinth-victory" : "labyrinth-map"
+    : currentEnemyType === "boss" ? "act-complete" : "destination";
+
+  return {
+    selectedChoice,
+    selectedRewardType: rewardState.rewardType,
+    materials: rewardState.materials,
+    grantAlchemistReward,
+    nextRewardState: createEmptyRewardState(rewardState.destinations),
+    clearCompanionRewardCards: false,
+    route,
+  };
 }
 
 // Bosses always offer trinkets and route into act-complete handling rather than another node.

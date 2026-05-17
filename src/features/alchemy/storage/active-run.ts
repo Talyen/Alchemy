@@ -3,6 +3,7 @@
 import { cardLibrary, getStartingDeck, type BattleCard, type CharacterId, type DifficultyId } from "@/lib/game-data";
 import type { LabyrinthMap, LabyrinthNode, LabyrinthNodeState, LabyrinthNodeType, LabyrinthModifierKind } from "@/lib/content-systems/types";
 import { ALL_LABYRINTH_MODIFIERS } from "@/lib/content-systems/labyrinth/modifiers";
+import { ACTS_PER_RUN } from "@/lib/game-constants";
 
 import type { ActiveRunData } from "../run/types";
 
@@ -51,6 +52,31 @@ function hasPersistedRunShape(candidate: Record<string, unknown>): candidate is 
   );
 }
 
+// Run counters and resources must be finite integers before React hydrates them.
+function isNonNegativeInteger(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value) && Number.isInteger(value) && value >= 0;
+}
+
+// Acts are bounded by the campaign rules; labyrinth uses act 1 but shares the field.
+function isValidAct(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value) && Number.isInteger(value) && value >= 1 && value <= ACTS_PER_RUN;
+}
+
+// Active runs can be saved at low health, but max HP must remain a positive finite cap.
+function hasValidHealth(playerHealth: unknown, maxHealth: unknown): playerHealth is number {
+  return (
+    typeof playerHealth === "number" &&
+    typeof maxHealth === "number" &&
+    Number.isFinite(playerHealth) &&
+    Number.isFinite(maxHealth) &&
+    Number.isInteger(playerHealth) &&
+    Number.isInteger(maxHealth) &&
+    maxHealth > 0 &&
+    playerHealth >= 0 &&
+    playerHealth <= maxHealth
+  );
+}
+
 // Deck comparison uses IDs because saves store card objects whose other fields may be stale.
 function deckIdsMatch(deck: unknown[], ids: string[]): boolean {
   return (
@@ -69,11 +95,40 @@ function isUnstartedRun(candidate: PersistedRunCandidate): boolean {
   );
 }
 
-// Save data owns run-specific card mutations, while library data refreshes build-hashed art assets.
+// Save data owns only run-specific card mutations, while library data owns identity, title, and art.
 function hydrateSavedCard(savedCard: BattleCard): BattleCard {
   const libraryCard = cardLibrary.find((card) => card.id === savedCard.id);
   if (!libraryCard) return savedCard;
-  return { ...libraryCard, ...savedCard, art: libraryCard.art };
+  const nextCard: BattleCard = {
+    ...libraryCard,
+    descriptionLines: [...libraryCard.descriptionLines],
+    effects: libraryCard.effects.map((effect) => ({ ...effect })),
+  };
+
+  if (typeof savedCard.uid === "number" && Number.isInteger(savedCard.uid)) nextCard.uid = savedCard.uid;
+  if (typeof savedCard.cost === "number" && Number.isFinite(savedCard.cost) && savedCard.cost >= 0) nextCard.cost = Math.floor(savedCard.cost);
+  if (typeof savedCard.consume === "boolean") nextCard.consume = savedCard.consume;
+  if (typeof savedCard.corrupted === "boolean") nextCard.corrupted = savedCard.corrupted;
+  if (typeof savedCard.baseTitle === "string") nextCard.baseTitle = savedCard.baseTitle;
+  if (Array.isArray(savedCard.descriptionLines) && savedCard.descriptionLines.every((line) => typeof line === "string")) {
+    nextCard.descriptionLines = [...savedCard.descriptionLines];
+  }
+  if (Array.isArray(savedCard.effects) && savedCard.effects.every((effect) => effect && typeof effect === "object")) {
+    nextCard.effects = savedCard.effects.map((effect) => ({ ...effect }));
+  }
+  if (Array.isArray(savedCard.corruptedValuePositions)) {
+    const positions = savedCard.corruptedValuePositions.filter((position) =>
+      position &&
+      typeof position === "object" &&
+      Number.isInteger(position.lineIndex) &&
+      Number.isInteger(position.matchIndex) &&
+      position.lineIndex >= 0 &&
+      position.matchIndex >= 0,
+    );
+    if (positions.length > 0) nextCard.corruptedValuePositions = positions;
+  }
+
+  return nextCard;
 }
 
 // Modifier definitions can change between builds, so persisted maps drop unknown
@@ -89,25 +144,40 @@ function normalizeLabyrinthMap(value: unknown): LabyrinthMap | null {
   if (!value || typeof value !== "object") return null;
   const candidate = value as Record<string, unknown>;
   if (!Array.isArray(candidate.grid)) return null;
-  if (typeof candidate.rows !== "number" || typeof candidate.cols !== "number") return null;
+  if (!isNonNegativeInteger(candidate.rows) || !isNonNegativeInteger(candidate.cols)) return null;
+  if (candidate.rows <= 0 || candidate.cols <= 0) return null;
+  if (candidate.grid.length !== candidate.rows) return null;
   const currentNode = candidate.currentNode as Record<string, unknown> | undefined;
-  if (!currentNode || typeof currentNode.row !== "number" || typeof currentNode.col !== "number") return null;
+  if (!currentNode || !isNonNegativeInteger(currentNode.row) || !isNonNegativeInteger(currentNode.col)) return null;
+  if (currentNode.row >= candidate.rows || currentNode.col >= candidate.cols) return null;
 
   const grid = candidate.grid.map((row) => {
     if (!Array.isArray(row)) return null;
+    if (row.length !== candidate.cols) return null;
     return row.map((node) => normalizeLabyrinthNode(node));
   });
   if (grid.some((row) => row === null)) return null;
 
   const typedGrid = grid as (LabyrinthNode | null)[][];
   if (!typedGrid[currentNode.row]?.[currentNode.col]) return null;
+  let currentCount = 0;
+  let entranceCount = 0;
+  let bossCount = 0;
   for (let row = 0; row < typedGrid.length; row += 1) {
     for (let col = 0; col < (typedGrid[row]?.length ?? 0); col += 1) {
       const node = typedGrid[row]?.[col];
       if (!node) continue;
+      if (node.type === "entrance") entranceCount += 1;
+      if (node.type === "boss") bossCount += 1;
+      if (node.state === "current") {
+        currentCount += 1;
+        if (currentNode.row !== row || currentNode.col !== col) return null;
+      }
       if (node.connections.length < 1 || node.connections.length > 3) return null;
       for (const connection of node.connections) {
         const target = typedGrid[connection.row]?.[connection.col];
+        if (!isNonNegativeInteger(connection.row) || !isNonNegativeInteger(connection.col)) return null;
+        if (connection.row >= candidate.rows || connection.col >= candidate.cols) return null;
         if (!target) return null;
         const dr = Math.abs(connection.row - row);
         const dc = Math.abs(connection.col - col);
@@ -115,6 +185,7 @@ function normalizeLabyrinthMap(value: unknown): LabyrinthMap | null {
       }
     }
   }
+  if (currentCount !== 1 || entranceCount !== 1 || bossCount !== 1) return null;
 
   return {
     grid: typedGrid,
@@ -137,7 +208,7 @@ function normalizeLabyrinthNode(value: unknown): LabyrinthNode | null {
   const connections = node.connections.map((conn) => {
     if (!conn || typeof conn !== "object") return null;
     const c = conn as Record<string, unknown>;
-    if (typeof c.row !== "number" || typeof c.col !== "number") return null;
+    if (!isNonNegativeInteger(c.row) || !isNonNegativeInteger(c.col)) return null;
     return { row: c.row, col: c.col };
   });
   if (connections.some((conn) => conn === null)) return null;
@@ -171,6 +242,16 @@ export function normalizeActiveRun(activeRun: unknown): ActiveRunData | null {
   }
 
   if (!hasPersistedRunShape(candidate)) {
+    return null;
+  }
+
+  if (
+    !isNonNegativeInteger(candidate.runGold) ||
+    !hasValidHealth(candidate.runPlayerHealth, candidate.runMaxHealth) ||
+    !isNonNegativeInteger(candidate.roomsEncountered) ||
+    !isValidAct(candidate.currentAct) ||
+    !isNonNegativeInteger(candidate.destinationIndexInAct)
+  ) {
     return null;
   }
 

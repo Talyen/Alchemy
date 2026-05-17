@@ -5,10 +5,14 @@ import { emptyInventory } from "@/lib/homestead/inventory";
 import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
 import { createEmptyTierRecord } from "@/lib/homestead/tiers";
 import type { SaveData } from "./types";
+import { CURRENT_CONTENT_VERSION, CURRENT_GAME_BUILD_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "./metadata";
 
 const companionItems = Object.keys(companionLibrary).map((id) => ({ id, tiers: [null, null, null] }));
 
 export const defaultSaveData: SaveData = {
+  saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
+  gameBuildVersion: CURRENT_GAME_BUILD_VERSION,
+  contentVersion: CURRENT_CONTENT_VERSION,
   selectedResolution: "1920x1080",
   displayMode: "borderless-fullscreen",
   uiScale: "100",

@@ -7,6 +7,9 @@ import type { ActiveRunData } from "../run/types";
 import type { DisplayMode, ResolutionOption, UiScale } from "../types";
 
 export type SaveData = {
+  saveSchemaVersion: number;
+  gameBuildVersion: string;
+  contentVersion: number;
   selectedResolution: ResolutionOption;
   displayMode: DisplayMode;
   uiScale: UiScale;

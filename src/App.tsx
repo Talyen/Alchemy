@@ -26,6 +26,7 @@ import { useAlchemyAutosave, useAppSaveState } from "@/app/use-app-save-state";
 import { useInitialLoadReady } from "@/app/use-initial-load-ready";
 import { renderAlchemyScreen } from "@/app/render-alchemy-screen";
 import { StartupLoadingScreen } from "@/app/startup-loading-screen";
+import { UnsupportedSaveVersionScreen } from "@/app/unsupported-save-version-screen";
 import { useMobileDetection, useVirtualResolution } from "@/features/alchemy/hooks";
 import type { Screen } from "@/features/alchemy/types";
 import { GameMenu } from "@/features/alchemy/ui/shared-ui";
@@ -37,6 +38,8 @@ import { canAfford } from "@/lib/homestead/inventory";
 import { PAGE_EXIT_MS } from "@/lib/game-constants";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { BackgroundParticles } from "@/features/alchemy/ui/background-particles";
+import { CURRENT_CONTENT_VERSION, CURRENT_GAME_BUILD_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "@/features/alchemy/storage/metadata";
+import { platform } from "@/lib/platform";
 
 const SCREEN_PARTICLE_COLORS: Partial<Record<Screen, readonly string[]>> = {
   battle: ["rgba(255, 150, 70, X)", "rgba(255, 100, 40, X)"],
@@ -55,6 +58,7 @@ export default function App() {
   const save = useAppSaveState();
   const {
     initialSave,
+    saveLoadStatus,
     selectedResolution,
     displayMode,
     uiScale,
@@ -175,6 +179,9 @@ export default function App() {
   });
 
   useAlchemyAutosave({
+    saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
+    gameBuildVersion: CURRENT_GAME_BUILD_VERSION,
+    contentVersion: CURRENT_CONTENT_VERSION,
     selectedResolution,
     displayMode,
     uiScale,
@@ -255,6 +262,34 @@ export default function App() {
   const particleColors = SCREEN_PARTICLE_COLORS[renderedScreen];
   const isBossBattle = renderedScreen === "battle" && run.battleState.currentEnemy.enemyType === "boss";
   const particleAlphaMultiplier = isBossBattle ? BOSS_ALPHA_MULTIPLIER : SCREEN_PARTICLE_ALPHA[renderedScreen];
+  const content = saveLoadStatus.kind === "unsupported-newer-schema"
+    ? <UnsupportedSaveVersionScreen canQuit={platform.canQuit} onQuit={platform.quit} />
+    : !initialLoadReady
+      ? <StartupLoadingScreen />
+      : (
+        <div
+          key={renderedScreen}
+          className={`${pagePhase === "exit" ? "page-exit" : "page-enter"} h-full w-full overflow-hidden`}
+        >
+          <HomesteadProvider cardDescriptionContext={{ flatPhysicalDamage: homestead.effects.flatPhysicalDamage, companionDamage: homestead.effects.companionDamage, companionBondLevels: homestead.bondedCompanions, potionPotency: 1 + homestead.effects.potionPotency }}>
+            {renderAlchemyScreen({
+              screen: renderedScreen,
+              run,
+              save,
+              homestead,
+              heroArt,
+              playerName,
+              isMobileLandscape,
+              aspectMode,
+              hasUnspentTalents,
+              hasAffordableHomestead,
+              onOpenBattleMenu: openBattleMenu,
+              onClearSaveData: clearSaveData,
+              onUnlockAllDevMode: unlockAllDevMode,
+            })}
+          </HomesteadProvider>
+        </div>
+      );
 
   return (
     <ErrorBoundary>
@@ -289,34 +324,9 @@ export default function App() {
           <div className="relative" style={frameStyle}>
             <div ref={vrStageRef} className={`absolute left-0 top-0 overflow-hidden bg-background ${tooltipBlocked ? "tooltips-disabled" : ""}`} style={stageStyle}>
               <BackgroundParticles variant="embers" {...(particleColors ? { colors: particleColors } : {})} {...(particleAlphaMultiplier ? { alphaMultiplier: particleAlphaMultiplier } : {})} />
-              {!initialLoadReady ? (
-                <StartupLoadingScreen />
-              ) : (
-                <div
-                  key={renderedScreen}
-                  className={`${pagePhase === "exit" ? "page-exit" : "page-enter"} h-full w-full overflow-hidden`}
-                >
-                  <HomesteadProvider cardDescriptionContext={{ flatPhysicalDamage: homestead.effects.flatPhysicalDamage, companionDamage: homestead.effects.companionDamage, companionBondLevels: homestead.bondedCompanions, potionPotency: 1 + homestead.effects.potionPotency }}>
-                    {renderAlchemyScreen({
-                    screen: renderedScreen,
-                    run,
-                    save,
-                    homestead,
-                    heroArt,
-                    playerName,
-                    isMobileLandscape,
-                    aspectMode,
-                    hasUnspentTalents,
-                    hasAffordableHomestead,
-                    onOpenBattleMenu: openBattleMenu,
-                    onClearSaveData: clearSaveData,
-                    onUnlockAllDevMode: unlockAllDevMode,
-                  })}
-                  </HomesteadProvider>
-                </div>
-              )}
+              {content}
               <GameMenu
-                isOpen={gameMenuOpen}
+                isOpen={saveLoadStatus.kind === "unsupported-newer-schema" ? false : gameMenuOpen}
                 anchorRect={menuAnchorRect}
                 anchorPlacement={renderedScreen === "labyrinth-map" ? "down-right" : "up-left"}
                 onClose={() => {
