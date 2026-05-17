@@ -111,10 +111,7 @@ export function useAlchemyRunController({
 
   // ============ Shared State ============
   const [screen, setScreen] = useState<Screen>("menu");
-  const hoveredCardId = useScreenStore((s) => s.hoveredCardId);
   const hasActiveRun = useScreenStore((s) => s.hasActiveRun);
-  const activeLabyrinthModifiers = useScreenStore((s) => s.activeLabyrinthModifiers);
-  const activeLabyrinthRewardModifiers = useScreenStore((s) => s.activeLabyrinthRewardModifiers);
 
   // ============ Screen Navigation ============
   const navTimerRef = useRef<number>(0);
@@ -203,7 +200,7 @@ export function useAlchemyRunController({
     onMarkDifficultyCompleted,
     completedDifficulties,
     labyrinthMap: labyrinth.labyrinthMap,
-    activeLabyrinthRewardModifiers,
+    activeLabyrinthRewardModifiers: useScreenStore.getState().activeLabyrinthRewardModifiers,
   });
 
   function clearPermanentData() {
@@ -262,110 +259,23 @@ export function useAlchemyRunController({
   return {
     screen,
     battleState: battle.battleState,
-    hoveredCardId,
     hasActiveBattle: battle.hasActiveBattle,
-    hasActiveRun,
-    labyrinthMap: labyrinth.labyrinthMap,
-    activeLabyrinthModifiers,
-    activeLabyrinthRewardModifiers,
-    runDeck: run.runDeck,
-    runGold: run.runGold,
-    runPlayerHealth: run.runPlayerHealth,
-    runMaxHealth: run.runMaxHealth,
-    runTrinkets: run.runTrinkets,
-    roomsEncountered: run.roomsEncountered,
-    currentAct: run.currentAct,
-    destinationIndexInAct: run.destinationIndexInAct,
-    completedDestinations: run.completedDestinations,
     characterId: run.characterId,
-    pendingCharacterId: nav.pendingCharacterId,
     talentXP: talents.talentXP,
-    runTalentXP: talents.runTalentXP,
     unlockedTalents: talents.unlockedTalents,
     unlockTalent: talents.unlockTalent,
     unlockAllTalents: talents.unlockAllTalents,
     resetUnlockedTalents: talents.resetUnlockedTalents,
     clearPermanentData,
-    setRewardState: nav.setRewardState,
-    setHoveredCardId,
-    setSelectedRewardId: nav.setSelectedRewardId,
-    get rewardChoices() {
-      return nav.rewardChoices;
-    },
-    get rewardGold() {
-      return nav.rewardGold;
-    },
-    get rewardMaterials() {
-      return nav.rewardMaterials;
-    },
-    get rewardType() {
-      return nav.rewardType;
-    },
-    get selectedRewardId() {
-      return nav.selectedRewardId;
-    },
-    get destinationOptions() {
-      return nav.destinationOptions;
-    },
-    get shopCards() {
-      return shop.shopCards;
-    },
-    get shopCardPrice() {
-      return shop.shopCardPrice;
-    },
-    get shopRemovePrice() {
-      return shop.shopRemovePrice;
-    },
-    get shopRefreshPrice() {
-      return shop.shopRefreshPrice;
-    },
-    get shopRefreshesLeft() {
-      return shop.shopRefreshesLeft;
-    },
-    get shopRemoveUsed() {
-      return shop.shopRemoveUsed;
-    },
-    get alchemistPotions() {
-      return shop.alchemistPotions;
-    },
-    get alchemistRefreshesLeft() {
-      return shop.alchemistRefreshesLeft;
-    },
-    get alchemistPotionPrice() {
-      return shop.alchemistPotionPrice;
-    },
-    get alchemistMixPrice() {
-      return shop.alchemistMixPrice;
-    },
-    get alchemistMixUsed() {
-      return shop.alchemistMixUsed;
-    },
-    get runEndMaterials() {
-      return nav.runEndMaterials;
-    },
-    get mysteryEvent() {
-      return nav.mysteryEvent;
-    },
-    get corruptionResult() {
-      return nav.corruptionResult;
-    },
-    get activeRunData() {
-      return nav.activeRunData;
-    },
+    get rewardChoices() { return nav.rewardChoices; },
+    get shopCards() { return shop.shopCards; },
+    get alchemistPotions() { return shop.alchemistPotions; },
+    get mysteryEvent() { return nav.mysteryEvent; },
+    get activeRunData() { return nav.activeRunData; },
     handCardRefs: battle.handCardRefs,
     battleSceneRef: battle.battleSceneRef,
     playerPanelRef: battle.playerPanelRef,
     enemyPanelRef: battle.enemyPanelRef,
-    destinationButtonRefs: nav.destinationButtonRefs,
-    cardGhosts: battle.cardGhosts,
-    shimmerState: battle.shimmerState,
-    playerStatusChips: battle.playerStatusChips,
-    enemyStatusChips: battle.enemyStatusChips,
-    playerCombatTexts: battle.playerCombatTexts,
-    enemyCombatTexts: battle.enemyCombatTexts,
-    enemyShaking: battle.enemyShaking,
-    playerShaking: battle.playerShaking,
-    companionShaking: battle.companionShaking,
     beginCampaign: nav.beginCampaign,
     beginLabyrinth: handleBeginLabyrinth,
     beginWildwood: nav.beginWildwood,
@@ -377,7 +287,6 @@ export function useAlchemyRunController({
     handleWildwoodBossSelect: nav.handleWildwoodBossSelect,
     returnToBattle: nav.returnToBattle,
     goToScreen: nav.goToScreen,
-    maybeTriggerShimmer: battle.maybeTriggerShimmer,
     handleCardClick: battle.handleCardClick,
     handleWishChoice: battle.handleWishChoice,
     finishRewards: nav.finishRewards,
@@ -398,9 +307,6 @@ export function useAlchemyRunController({
     handleCorruptCard: nav.handleCorruptCard,
     handleCorruptionContinue: nav.handleCorruptionContinue,
     handleCorruptionLeave: nav.handleCorruptionLeave,
-    get mysteryCardChoices() {
-      return nav.mysteryCardChoices;
-    },
     handleActComplete: nav.handleActComplete,
     handleEndTurn: battle.handleEndTurn,
     handleEndRun: battle.handleEndRun,

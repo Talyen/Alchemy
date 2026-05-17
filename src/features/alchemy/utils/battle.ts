@@ -21,7 +21,8 @@ export function getCombatTextIcon(event: CombatTextEvent) {
   return combatTextIconClasses[event.stat];
 }
 
-export function getPlayerStatusChips(state: BattleState): StatusChip[] {
+export function getPlayerStatusChips(state: BattleState | null | undefined): StatusChip[] {
+  if (!state) return [];
   const order: PlayerStatusId[] = ["block", "armor", "forge", "haste", "burn", "poison", "bleed", "freeze", "stun"];
   return order.reduce<StatusChip[]>((chips, id) => {
     const value = state.playerStatuses[id];
@@ -30,7 +31,8 @@ export function getPlayerStatusChips(state: BattleState): StatusChip[] {
   }, []);
 }
 
-export function getEnemyStatusChips(state: BattleState): StatusChip[] {
+export function getEnemyStatusChips(state: BattleState | null | undefined): StatusChip[] {
+  if (!state) return [];
   const order: EnemyStatusId[] = ["burn", "poison", "bleed", "freeze", "stun"];
   return order.reduce<StatusChip[]>((chips, id) => {
     const value = state.enemyStatuses[id];

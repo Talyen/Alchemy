@@ -6,6 +6,8 @@ import type { Screen, Destination } from "@/features/alchemy/types";
 import type { BattleCard, CharacterId, DifficultyId, KeywordId } from "@/lib/game-data";
 import type { MysteryChoice } from "@/features/alchemy/mystery-events";
 import { useScreenStore } from "@/features/alchemy/stores/screen-store";
+import { useAppStore } from "@/features/alchemy/stores/app-store";
+import { useHomesteadStore } from "@/features/alchemy/stores/homestead-store";
 import { BattleScreen } from "@/features/alchemy/screens/battle-screen";
 import {
   AlchemistShopScreen,
@@ -28,8 +30,6 @@ import {
   WildwoodSelectScreen,
 } from "@/features/alchemy/screens";
 import { HomesteadScreen } from "@/features/alchemy/screens/homestead-screen";
-import type { useHomesteadState } from "@/features/alchemy/use-homestead-state";
-import type { useAppSaveState } from "@/app/use-app-save-state";
 
 export type ControllerActions = {
   navigateTo: (screen: Screen) => void;
@@ -75,8 +75,6 @@ export type ControllerActions = {
 type RenderAlchemyScreenProps = {
   screen: Screen;
   actions: ControllerActions;
-  save: ReturnType<typeof useAppSaveState>;
-  homestead: ReturnType<typeof useHomesteadState>;
   handCardRefs: React.MutableRefObject<Record<string, HTMLButtonElement | null>>;
   battleSceneRef: React.MutableRefObject<HTMLDivElement | null>;
   playerPanelRef: React.MutableRefObject<HTMLDivElement | null>;
@@ -95,8 +93,6 @@ type RenderAlchemyScreenProps = {
 export function renderAlchemyScreen({
   screen,
   actions: a,
-  save,
-  homestead,
   handCardRefs,
   battleSceneRef,
   playerPanelRef,
@@ -111,6 +107,7 @@ export function renderAlchemyScreen({
   onClearSaveData,
   onUnlockAllDevMode,
 }: RenderAlchemyScreenProps) {
+  const appState = useAppStore.getState();
   switch (screen) {
     case "menu":
       return (
@@ -141,9 +138,7 @@ export function renderAlchemyScreen({
     case "difficulty-select":
       return (
         <DifficultySelectScreen
-          completedDifficulties={
-            save.completedDifficulties[useScreenStore.getState().pendingCharacterId ?? "knight"] ?? []
-          }
+          completedDifficulties={useAppStore.getState().completedDifficulties[useScreenStore.getState().pendingCharacterId ?? "knight"] ?? []}
           onSelect={a.handleDifficultySelect}
           onBack={a.handleBackFromDifficultySelect}
         />
@@ -222,33 +217,33 @@ export function renderAlchemyScreen({
             onReturnToBattle: a.returnToBattle,
           }}
           display={{
-            selectedResolution: save.selectedResolution,
-            onResolutionChange: save.setSelectedResolution,
-            displayMode: save.displayMode,
-            onDisplayModeChange: save.setDisplayMode,
+            selectedResolution: appState.selectedResolution,
+            onResolutionChange: appState.setSelectedResolution,
+            displayMode: appState.displayMode,
+            onDisplayModeChange: appState.setDisplayMode,
             showDisplayMode: platform.isDesktop,
-            uiScale: save.uiScale,
-            onUiScaleChange: save.setUiScale,
-            brightness: save.brightness,
-            onBrightnessChange: save.setBrightness,
+            uiScale: appState.uiScale,
+            onUiScaleChange: appState.setUiScale,
+            brightness: appState.brightness,
+            onBrightnessChange: appState.setBrightness,
           }}
           audio={{
-            masterVol: save.masterVol,
-            musicVol: save.musicVol,
-            sfxVol: save.sfxVol,
-            onMasterVolChange: save.setMasterVol,
-            onMusicVolChange: save.setMusicVol,
-            onSfxVolChange: save.setSfxVol,
-            muteInBackground: save.muteInBackground,
-            onMuteInBackgroundChange: save.setMuteInBackground,
+            masterVol: appState.masterVol,
+            musicVol: appState.musicVol,
+            sfxVol: appState.sfxVol,
+            onMasterVolChange: appState.setMasterVol,
+            onMusicVolChange: appState.setMusicVol,
+            onSfxVolChange: appState.setSfxVol,
+            muteInBackground: appState.muteInBackground,
+            onMuteInBackgroundChange: appState.setMuteInBackground,
           }}
-          gameplay={{ autoEndTurn: save.autoEndTurn, onAutoEndTurnChange: save.setAutoEndTurn }}
+          gameplay={{ autoEndTurn: appState.autoEndTurn, onAutoEndTurnChange: appState.setAutoEndTurn }}
           saveData={{
-            showClearSaveConfirm: save.showClearSaveConfirm,
-            onOpenClearSaveConfirm: () => save.setShowClearSaveConfirm(true),
-            onCloseClearSaveConfirm: () => save.setShowClearSaveConfirm(false),
+            showClearSaveConfirm: appState.showClearSaveConfirm,
+            onOpenClearSaveConfirm: () => appState.setShowClearSaveConfirm(true),
+            onCloseClearSaveConfirm: () => appState.setShowClearSaveConfirm(false),
             onConfirmClearSave: onClearSaveData,
-            onResetOptions: save.resetOptionsToDefault,
+            onResetOptions: appState.resetOptionsToDefault,
           }}
           dev={{ onUnlockAll: onUnlockAllDevMode }}
         />
@@ -258,14 +253,14 @@ export function renderAlchemyScreen({
         <CollectionScreen
           onMainMenu={() => a.goToScreen("menu")}
           onReturnToBattle={a.returnToBattle}
-          collectionTab={save.collectionTab}
-          onSelectTab={save.handleCollectionTabChange}
-          onPageChange={save.setCollectionPage}
-          bondedCompanions={homestead.bondedCompanions}
-          discoveredCardIds={save.discoveredCardIds}
-          encounteredEnemyIds={save.encounteredEnemyIds}
-          discoveredTrinketIds={save.discoveredTrinketIds}
-          collectionPages={save.collectionPages}
+          collectionTab={appState.collectionTab}
+          onSelectTab={appState.handleCollectionTabChange}
+          onPageChange={appState.setCollectionPage}
+          bondedCompanions={useHomesteadStore.getState().bondedCompanions}
+          discoveredCardIds={appState.discoveredCardIds}
+          encounteredEnemyIds={appState.encounteredEnemyIds}
+          discoveredTrinketIds={appState.discoveredTrinketIds}
+          collectionPages={appState.collectionPages}
         />
       );
     case "homestead":
@@ -273,16 +268,16 @@ export function renderAlchemyScreen({
         <HomesteadScreen
           onMainMenu={() => a.goToScreen("menu")}
           onReturnToBattle={a.returnToBattle}
-          materialInventory={homestead.materialInventory}
-          constructedBuildings={homestead.constructedBuildings}
-          plantedFarms={homestead.plantedFarms}
-          completedResearch={homestead.completedResearch}
-          bondedCompanions={homestead.bondedCompanions}
-          discoveredCardIds={save.discoveredCardIds}
-          onConstructBuilding={homestead.constructBuilding}
-          onPlantFarm={homestead.plantFarm}
-          onCompleteResearch={homestead.completeResearch}
-          onBondCompanion={homestead.bondCompanion}
+          materialInventory={useHomesteadStore.getState().materialInventory}
+          constructedBuildings={useHomesteadStore.getState().constructedBuildings}
+          plantedFarms={useHomesteadStore.getState().plantedFarms}
+          completedResearch={useHomesteadStore.getState().completedResearch}
+          bondedCompanions={useHomesteadStore.getState().bondedCompanions}
+          discoveredCardIds={appState.discoveredCardIds}
+          onConstructBuilding={useHomesteadStore.getState().constructBuilding}
+          onPlantFarm={useHomesteadStore.getState().plantFarm}
+          onCompleteResearch={useHomesteadStore.getState().completeResearch}
+          onBondCompanion={useHomesteadStore.getState().bondCompanion}
         />
       );
     case "talents":

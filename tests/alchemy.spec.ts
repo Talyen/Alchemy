@@ -7,6 +7,13 @@ async function readPlayerBlock(page: Page) {
   return Number(label?.match(/\d+/)?.[0] ?? 0);
 }
 
+test.describe("App Boot", () => {
+  test("main menu renders without crashing on desktop", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByRole("button", { name: "Play" })).toBeVisible({ timeout: 10000 });
+  });
+});
+
 test.describe("Block Mechanics", () => {
   test("block card absorbs attack damage and halves at end of turn", async ({ page }) => {
     await startRun(page);

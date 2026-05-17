@@ -100,8 +100,8 @@ export function useBattleController({
     [],
   );
 
-  const playerStatusChips = useMemo(() => getPlayerStatusChips(battleState), [battleState]);
-  const enemyStatusChips = useMemo(() => getEnemyStatusChips(battleState), [battleState]);
+  const playerStatusChips = useMemo(() => (hasActiveBattle ? getPlayerStatusChips(battleState) : []), [battleState, hasActiveBattle]);
+  const enemyStatusChips = useMemo(() => (hasActiveBattle ? getEnemyStatusChips(battleState) : []), [battleState, hasActiveBattle]);
   const playerCombatTexts = useMemo(
     () => floatingCombatTexts.filter((e) => e.target === "player"),
     [floatingCombatTexts],

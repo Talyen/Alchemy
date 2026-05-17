@@ -1,7 +1,7 @@
 // Root app shell for save data, audio/display side effects, routing, and global layout.
 // Depends on alchemy controllers, homestead state, screen modules, assets, and platform/audio helpers.
 // Everything visible flows through here, but domain rules stay in feature/lib controllers.
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 
 import {
   allGameArt,
@@ -22,7 +22,7 @@ import { preloadAllSounds } from "@/lib/audio";
 import { useAppAudioEffects } from "@/app/use-app-audio-effects";
 import { useAppDisplayEffects } from "@/app/use-app-display-effects";
 import { useScreenAssetPreloadEffects } from "@/app/use-app-preload-effects";
-import { useAlchemyAutosave, useAppSaveState } from "@/app/use-app-save-state";
+import { useAlchemyAutosave } from "@/app/use-app-save-state";
 import { useInitialLoadReady } from "@/app/use-initial-load-ready";
 import { renderAlchemyScreen } from "@/app/render-alchemy-screen";
 import { StartupLoadingScreen } from "@/app/startup-loading-screen";
@@ -31,7 +31,7 @@ import { useMobileDetection, useVirtualResolution } from "@/features/alchemy/hoo
 import type { Screen } from "@/features/alchemy/types";
 import { GameMenu } from "@/features/alchemy/ui/shared-ui";
 import { useAlchemyRunController } from "@/features/alchemy/use-alchemy-run-controller";
-import { useHomesteadState, COMPANION_BOND_TIERS, COMPANION_MAX_TIER } from "@/features/alchemy/use-homestead-state";
+import { useHomesteadStore, COMPANION_BOND_TIERS, COMPANION_MAX_TIER } from "@/features/alchemy/stores/homestead-store";
 import { HomesteadProvider } from "@/features/alchemy/homestead-context";
 import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
 import { canAfford } from "@/lib/homestead/inventory";
@@ -44,6 +44,8 @@ import {
   CURRENT_SAVE_SCHEMA_VERSION,
 } from "@/features/alchemy/storage/metadata";
 import { platform } from "@/lib/platform";
+import { loadAlchemySaveState } from "@/features/alchemy/storage";
+import { useAppStore } from "@/features/alchemy/stores/app-store";
 
 const SCREEN_PARTICLE_COLORS: Partial<Record<Screen, readonly string[]>> = {
   battle: ["rgba(255, 150, 70, X)", "rgba(255, 100, 40, X)"],
@@ -59,29 +61,46 @@ const SCREEN_PARTICLE_ALPHA: Partial<Record<Screen, number>> = {
 const BOSS_ALPHA_MULTIPLIER = 2.5;
 
 export default function App() {
-  const save = useAppSaveState();
-  const {
-    initialSave,
-    saveLoadStatus,
-    selectedResolution,
-    displayMode,
-    uiScale,
-    brightness,
-    musicVol,
-    sfxVol,
-    masterVol,
-    muteInBackground,
-    autoEndTurn,
-    discoveredCardIds,
-    setDiscoveredCardIds,
-    encounteredEnemyIds,
-    setEncounteredEnemyIds,
-    discoveredTrinketIds,
-    setDiscoveredTrinketIds,
-    completedDifficulties,
-    setCompletedDifficulties,
-    clearSavedAppState,
-  } = save;
+  // ============ Bootstrap: load save data once, initialize stores ============
+  const bootstrapResult = useMemo(() => loadAlchemySaveState(), []);
+  const { data: initialSave, status: saveLoadStatus } = bootstrapResult;
+  const storesInitRef = useRef(false);
+  if (!storesInitRef.current) {
+    storesInitRef.current = true;
+    useAppStore.getState().initialize(initialSave);
+    useHomesteadStore.getState().initialize({
+      materialInventory: initialSave.materialInventory,
+      constructedBuildings: initialSave.constructedBuildings,
+      plantedFarms: initialSave.plantedFarms,
+      completedResearch: initialSave.completedResearch,
+      bondedCompanions: initialSave.bondedCompanions,
+    });
+  }
+
+  // ============ Store subscriptions ============
+  const selectedResolution = useAppStore((s) => s.selectedResolution);
+  const displayMode = useAppStore((s) => s.displayMode);
+  const uiScale = useAppStore((s) => s.uiScale);
+  const brightness = useAppStore((s) => s.brightness);
+  const musicVol = useAppStore((s) => s.musicVol);
+  const sfxVol = useAppStore((s) => s.sfxVol);
+  const masterVol = useAppStore((s) => s.masterVol);
+  const muteInBackground = useAppStore((s) => s.muteInBackground);
+  const autoEndTurn = useAppStore((s) => s.autoEndTurn);
+  const discoveredCardIds = useAppStore((s) => s.discoveredCardIds);
+  const completedDifficulties = useAppStore((s) => s.completedDifficulties);
+
+  // Store-backed setters (wrapped for Dispatch<SetStateAction> compatibility)
+  function setDiscoveredCardIds(v: string[] | ((prev: string[]) => string[])) {
+    useAppStore.getState().setDiscoveredCardIds(typeof v === "function" ? v(useAppStore.getState().discoveredCardIds) : v);
+  }
+  function setEncounteredEnemyIds(v: string[] | ((prev: string[]) => string[])) {
+    useAppStore.getState().setEncounteredEnemyIds(typeof v === "function" ? v(useAppStore.getState().encounteredEnemyIds) : v);
+  }
+  function setDiscoveredTrinketIds(v: string[] | ((prev: string[]) => string[])) {
+    useAppStore.getState().setDiscoveredTrinketIds(typeof v === "function" ? v(useAppStore.getState().discoveredTrinketIds) : v);
+  }
+  const clearSavedAppState = useAppStore((s) => s.clearSavedAppState);
   const [gameMenuOpen, setGameMenuOpen] = useState(false);
   const [menuAnchorRect, setMenuAnchorRect] = useState<DOMRect | null>(null);
   const [renderedScreen, setRenderedScreen] = useState<Screen>("menu");
@@ -120,19 +139,17 @@ export default function App() {
 
   const { isMobileLandscape, isPortraitMobile } = useMobileDetection();
   const { frameStyle, stageStyle, aspectMode } = useVirtualResolution(selectedResolution, false, isMobileLandscape);
-  const homestead = useHomesteadState({
-    materialInventory: initialSave.materialInventory,
-    constructedBuildings: initialSave.constructedBuildings,
-    plantedFarms: initialSave.plantedFarms,
-    completedResearch: initialSave.completedResearch,
-    bondedCompanions: initialSave.bondedCompanions,
-  });
+  const homesteadMaterialInventory = useHomesteadStore((s) => s.materialInventory);
+  const homesteadConstructedBuildings = useHomesteadStore((s) => s.constructedBuildings);
+  const homesteadPlantedFarms = useHomesteadStore((s) => s.plantedFarms);
+  const homesteadCompletedResearch = useHomesteadStore((s) => s.completedResearch);
+  const homesteadBondedCompanions = useHomesteadStore((s) => s.bondedCompanions);
+  const homesteadEffects = useHomesteadStore((s) => s.effects);
   function handleMarkDifficultyCompleted(characterId: CharacterId, difficultyId: DifficultyId) {
-    setCompletedDifficulties((prev) => {
-      const current = prev[characterId] ?? [];
-      if (current.includes(difficultyId)) return prev;
-      return { ...prev, [characterId]: [...current, difficultyId] };
-    });
+    const prev = useAppStore.getState().completedDifficulties;
+    const current = prev[characterId] ?? [];
+    if (current.includes(difficultyId)) return;
+    useAppStore.getState().setCompletedDifficulties({ ...prev, [characterId]: [...current, difficultyId] });
   }
 
   const run = useAlchemyRunController({
@@ -144,8 +161,8 @@ export default function App() {
     initialUnlockedTalents: initialSave.unlockedTalents,
     initialActiveRun: initialSave.activeRun,
     autoEndTurn,
-    onAddMaterials: homestead.addMaterials,
-    homesteadEffects: homestead.effects,
+    onAddMaterials: (materials) => useHomesteadStore.getState().addMaterials(materials),
+    homesteadEffects,
     onMarkDifficultyCompleted: handleMarkDifficultyCompleted,
     completedDifficulties,
   });
@@ -189,34 +206,34 @@ export default function App() {
     saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
     gameBuildVersion: CURRENT_GAME_BUILD_VERSION,
     contentVersion: CURRENT_CONTENT_VERSION,
-    selectedResolution,
-    displayMode,
-    uiScale,
-    discoveredCardIds,
-    encounteredEnemyIds,
-    discoveredTrinketIds,
+    selectedResolution: useAppStore.getState().selectedResolution,
+    displayMode: useAppStore.getState().displayMode,
+    uiScale: useAppStore.getState().uiScale,
+    discoveredCardIds: useAppStore.getState().discoveredCardIds,
+    encounteredEnemyIds: useAppStore.getState().encounteredEnemyIds,
+    discoveredTrinketIds: useAppStore.getState().discoveredTrinketIds,
     talentXP: run.talentXP,
     unlockedTalents: run.unlockedTalents,
-    musicVolume: musicVol,
-    sfxVolume: sfxVol,
-    masterVolume: masterVol,
-    muteInBackground,
-    autoEndTurn,
-    brightness,
+    musicVolume: useAppStore.getState().musicVol,
+    sfxVolume: useAppStore.getState().sfxVol,
+    masterVolume: useAppStore.getState().masterVol,
+    muteInBackground: useAppStore.getState().muteInBackground,
+    autoEndTurn: useAppStore.getState().autoEndTurn,
+    brightness: useAppStore.getState().brightness,
     activeRun: run.activeRunData,
-    materialInventory: homestead.materialInventory,
-    constructedBuildings: homestead.constructedBuildings,
-    plantedFarms: homestead.plantedFarms,
-    completedResearch: homestead.completedResearch,
-    bondedCompanions: homestead.bondedCompanions,
-    completedDifficulties,
+    materialInventory: useHomesteadStore.getState().materialInventory,
+    constructedBuildings: useHomesteadStore.getState().constructedBuildings,
+    plantedFarms: useHomesteadStore.getState().plantedFarms,
+    completedResearch: useHomesteadStore.getState().completedResearch,
+    bondedCompanions: useHomesteadStore.getState().bondedCompanions,
+    completedDifficulties: useAppStore.getState().completedDifficulties,
   });
 
   function clearSaveData() {
     clearSavedAppState();
     run.resetRunState();
     run.clearPermanentData();
-    homestead.reset();
+    useHomesteadStore.getState().reset();
   }
 
   function unlockAllDevMode() {
@@ -224,7 +241,7 @@ export default function App() {
     setEncounteredEnemyIds(enemyBestiary.map((enemy) => enemy.id));
     setDiscoveredTrinketIds(trinketLibrary.map((trinket) => trinket.id));
     run.unlockAllTalents();
-    homestead.setMaterials({ wood: 99, iron: 99, herbs: 99, food: 99, crystal: 99 });
+    useHomesteadStore.getState().setMaterials({ wood: 99, iron: 99, herbs: 99, food: 99, crystal: 99 });
   }
 
   const hasUnspentTalents = Object.keys(keywordDefinitions).some((kw) => {
@@ -234,7 +251,11 @@ export default function App() {
   });
 
   const hasAffordableHomestead = (() => {
-    const { materialInventory, constructedBuildings, plantedFarms, completedResearch, bondedCompanions } = homestead;
+    const materialInventory = homesteadMaterialInventory;
+    const constructedBuildings = homesteadConstructedBuildings;
+    const plantedFarms = homesteadPlantedFarms;
+    const completedResearch = homesteadCompletedResearch;
+    const bondedCompanions = homesteadBondedCompanions;
     const affordableBuilding = buildings.some((b) => {
       const currentLevel = constructedBuildings[b.id] ?? 0;
       if (currentLevel >= b.tiers.length) return false;
@@ -283,10 +304,10 @@ export default function App() {
       >
         <HomesteadProvider
           cardDescriptionContext={{
-            flatPhysicalDamage: homestead.effects.flatPhysicalDamage,
-            companionDamage: homestead.effects.companionDamage,
-            companionBondLevels: homestead.bondedCompanions,
-            potionPotency: 1 + homestead.effects.potionPotency,
+            flatPhysicalDamage: homesteadEffects.flatPhysicalDamage,
+            companionDamage: homesteadEffects.companionDamage,
+            companionBondLevels: homesteadBondedCompanions,
+            potionPotency: 1 + homesteadEffects.potionPotency,
           }}
         >
           {renderAlchemyScreen({
@@ -335,8 +356,6 @@ export default function App() {
             battleSceneRef: run.battleSceneRef,
             playerPanelRef: run.playerPanelRef,
             enemyPanelRef: run.enemyPanelRef,
-            save,
-            homestead,
             heroArt,
             playerName,
             isMobileLandscape,

@@ -46,6 +46,7 @@ Add a new raw art asset:
 ## Key Conventions
 
 - **Immutability**: Battle state never mutated — `createBattleState`, `playBattleCardResolved`, `endPlayerTurn` all return new `BattleState`. Reducer pattern through `applyCardEffects`.
+- **Store initialization**: Never initialize Zustand store fields with `null as Type` or `null as unknown as Type` — use a factory function or a valid default value. The type assertion bypasses `strictNullChecks` and can cause runtime crashes in subscribers.
 - **Combat texts**: Merged by `(target, kind, stat)` — multi-hit cards produce a single floating number.
 - **Talent effects**: Pre-computed once per battle into `TalentEffectManifest` on state.
 - **No audio files**: Web Audio API buffer playback (`lib/audio.ts`); music MP3s from `Music/`.
