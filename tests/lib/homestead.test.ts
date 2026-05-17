@@ -7,7 +7,6 @@ import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
 import { computeHomesteadEffects, mergeIntoManifest } from "@/lib/homestead/effects";
 import { applyMaterialFindBonus, getEnemyMaterialLoot, getEndOfRunMaterials } from "@/lib/homestead/loot";
-import { createEmptyTierRecord } from "@/lib/homestead/tiers";
 import { createEmptyTalentManifest } from "@/lib/game-data";
 
 // ─── types ──────────────────────────────────────────────────────

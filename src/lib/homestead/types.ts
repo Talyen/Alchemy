@@ -23,11 +23,23 @@ export const materialIcons: Record<MaterialId, string> = {
 
 export type MaterialInventory = Record<MaterialId, number>;
 
-export type BuildingId = "blacksmiths-forge" | "hunters-lodge" | "alchemy-lab" | "placeholder-1" | "placeholder-2" | "placeholder-3";
+export type BuildingId =
+  | "blacksmiths-forge"
+  | "hunters-lodge"
+  | "alchemy-lab"
+  | "placeholder-1"
+  | "placeholder-2"
+  | "placeholder-3";
 
 export type FarmId = "wheat-field" | "herb-garden" | "chicken-coop" | "pasture" | "orchard" | "crystal-garden";
 
-export type ResearchId = "carpentry" | "masonry" | "crop-rotation" | "animal-husbandry" | "fortified-walls" | "metallurgy";
+export type ResearchId =
+  | "carpentry"
+  | "masonry"
+  | "crop-rotation"
+  | "animal-husbandry"
+  | "fortified-walls"
+  | "metallurgy";
 
 export type HomesteadUpgradeTier = {
   cost: MaterialInventory;

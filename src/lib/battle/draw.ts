@@ -38,26 +38,92 @@ import { computeTrinketManifest } from "../trinkets";
 // Defined via the shared factory so new manifest fields are caught at compile time.
 export const defaultTalentEffects: TalentEffectManifest = createEmptyTalentManifest();
 
-const skeletonEnemy = { id: "skeleton", title: "Skeleton", subtitle: "", descriptionLines: [""], art: "", enemyType: "normal" as const, traits: [], attackEffects: [] };
+const skeletonEnemy = {
+  id: "skeleton",
+  title: "Skeleton",
+  subtitle: "",
+  descriptionLines: [""],
+  art: "",
+  enemyType: "normal" as const,
+  traits: [],
+  attackEffects: [],
+};
 
 export function defaultBattleState(): BattleState {
   return {
-    deck: [], hand: [], discard: [], exhausted: [], mana: 0, maxMana: 0, gold: 0,
-    turn: 1, turnPhase: "player", playerHealth: 30, playerMaxHealth: 30,
-    deathsDoorUsed: false, deathsDoorActive: false, deathsDoorTriggeredTurn: null,
-    enemyHealth: 30, enemyMaxHealth: 30, enemyAttackEffects: [], enemyArmor: 0,
-    enemyForge: 0, enemyFreezeBonus: 0, enemyRegeneration: 0,
+    deck: [],
+    hand: [],
+    discard: [],
+    exhausted: [],
+    mana: 0,
+    maxMana: 0,
+    gold: 0,
+    turn: 1,
+    turnPhase: "player",
+    playerHealth: 30,
+    playerMaxHealth: 30,
+    deathsDoorUsed: false,
+    deathsDoorActive: false,
+    deathsDoorTriggeredTurn: null,
+    enemyHealth: 30,
+    enemyMaxHealth: 30,
+    enemyAttackEffects: [],
+    enemyArmor: 0,
+    enemyForge: 0,
+    enemyFreezeBonus: 0,
+    enemyRegeneration: 0,
     playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
     enemyStatuses: { burn: 0, poison: 0, bleed: 0, bleedLeech: 0, freeze: 0, stun: 0 },
-    enemyStunSkipTurns: 0, enemyFreezeSkipTurns: 0, wishOptions: null, wishQueue: [], activeCompanion: null, companionDamageBuff: 0,
+    enemyStunSkipTurns: 0,
+    enemyFreezeSkipTurns: 0,
+    wishOptions: null,
+    wishQueue: [],
+    activeCompanion: null,
+    companionDamageBuff: 0,
     currentEnemy: skeletonEnemy,
     talentEffects: defaultTalentEffects,
-    trinketEffects: { extraDrawPerBattle: 0, firstHolyDamageDoubled: false, firstBurnDoubled: false, boneCharmHealOnKill: 0, forgeStunThreshold: 0, forgeStunAmount: 0, frozenHeartDamage: 0, blockToArmorThreshold: 0, blockToArmorAmount: 0, runicQuillDrawOnConsume: 0, sinEaterHealOnHarmfulStatusRemove: 0, vanguardCrestForgeOnBlockAbsorb: 0, parasiticBloomLeechChance: 0, cutpurseGoldOnBleed: 0, wishingWellGoldOnWish: 0, plagueDoctorImmunity: false, mortarPestleFreeFirstPotion: false, sunderingArmorPiercing: 0, resonantChimeCardsRequired: 0, resonantChimeMana: 0, smugglersMapGoldBonus: 0, grovesFavorStartHeal: 0, merchantsFavorDiscount: 0, companionDamageBonus: 0, freezeDurationExtension: 0, thunderstoneDamageOnStun: 0, luckyCloverGoldChance: 0 },
+    trinketEffects: {
+      extraDrawPerBattle: 0,
+      firstHolyDamageDoubled: false,
+      firstBurnDoubled: false,
+      boneCharmHealOnKill: 0,
+      forgeStunThreshold: 0,
+      forgeStunAmount: 0,
+      frozenHeartDamage: 0,
+      blockToArmorThreshold: 0,
+      blockToArmorAmount: 0,
+      runicQuillDrawOnConsume: 0,
+      sinEaterHealOnHarmfulStatusRemove: 0,
+      vanguardCrestForgeOnBlockAbsorb: 0,
+      parasiticBloomLeechChance: 0,
+      cutpurseGoldOnBleed: 0,
+      wishingWellGoldOnWish: 0,
+      plagueDoctorImmunity: false,
+      mortarPestleFreeFirstPotion: false,
+      sunderingArmorPiercing: 0,
+      resonantChimeCardsRequired: 0,
+      resonantChimeMana: 0,
+      smugglersMapGoldBonus: 0,
+      grovesFavorStartHeal: 0,
+      merchantsFavorDiscount: 0,
+      companionDamageBonus: 0,
+      freezeDurationExtension: 0,
+      thunderstoneDamageOnStun: 0,
+      luckyCloverGoldChance: 0,
+    },
     flags: {
-      firstPhysicalCardFreeUsed: false, firstHolyCardFreeUsed: false, firstBurnCardDoubledUsed: false,
-      firstArmorCardDoubledUsed: false, firstPoisonCardFreeUsed: false, firstBleedCardFreeUsed: false,
-      nextCardCostReduction: 0, goldOnFirstPoisonThisCombat: false, firstHolyDamageBonusUsed: false,
-      firstBurnTrinketDoubledUsed: false, firstHarmfulStatusPrevented: false, firstPotionFreeUsed: false,
+      firstPhysicalCardFreeUsed: false,
+      firstHolyCardFreeUsed: false,
+      firstBurnCardDoubledUsed: false,
+      firstArmorCardDoubledUsed: false,
+      firstPoisonCardFreeUsed: false,
+      firstBleedCardFreeUsed: false,
+      nextCardCostReduction: 0,
+      goldOnFirstPoisonThisCombat: false,
+      firstHolyDamageBonusUsed: false,
+      firstBurnTrinketDoubledUsed: false,
+      firstHarmfulStatusPrevented: false,
+      firstPotionFreeUsed: false,
       resonantChimeUsedThisTurn: false,
     },
     discoveredCardIds: [],
@@ -76,7 +142,13 @@ function refillDeck(deck: BattleCard[], discard: BattleCard[]) {
 
 // Draws cards from the deck into the hand. If the deck runs out, the discard pile
 // is shuffled back into the deck. Stops at maxHandSize.
-export function drawCards(deck: BattleCard[], discard: BattleCard[], hand: BattleCard[], amount: number, nextCardUid = 0) {
+export function drawCards(
+  deck: BattleCard[],
+  discard: BattleCard[],
+  hand: BattleCard[],
+  amount: number,
+  nextCardUid = 0,
+) {
   let nextDeck = [...deck];
   let nextDiscard = [...discard];
   const nextHand = [...hand];
@@ -114,17 +186,25 @@ function buildScaledEnemy(enemy: BestiaryEntry, destinationIndexInAct = 0, curre
   const scaledEnemyHealth = Math.floor(BASE_ENEMY_HEALTH * hpMultiplier * hpTypeMul);
   const scaleAmount = (amount: number) => Math.floor(amount * hpMultiplier * atkTypeMul);
 
-  const baseEffects = enemy.attackEffects.length > 0
-    ? enemy.attackEffects
-    : [{ kind: "damage" as const, damageType: "physical" as const, amount: FALLBACK_ENEMY_ATTACK }];
+  const baseEffects =
+    enemy.attackEffects.length > 0
+      ? enemy.attackEffects
+      : [{ kind: "damage" as const, damageType: "physical" as const, amount: FALLBACK_ENEMY_ATTACK }];
   const scaledEnemyAttackEffects: EnemyAttackEffect[] = baseEffects.map((effect) => {
     if (effect.kind === "damage") {
-      return { kind: "damage", damageType: effect.damageType, amount: scaleAmount(effect.amount), ...("lifesteal" in effect ? { lifesteal: effect.lifesteal } : {}) };
+      return {
+        kind: "damage",
+        damageType: effect.damageType,
+        amount: scaleAmount(effect.amount),
+        ...("lifesteal" in effect ? { lifesteal: effect.lifesteal } : {}),
+      };
     }
     return { kind: "player-status", status: effect.status, amount: scaleAmount(effect.amount) };
   });
   const regenBase = enemy.traits.some((t) => t.id === "regeneration")
-    ? (enemy.enemyType === "boss" ? ENEMY_BOSS_REGENERATION : ENEMY_BASE_REGENERATION)
+    ? enemy.enemyType === "boss"
+      ? ENEMY_BOSS_REGENERATION
+      : ENEMY_BASE_REGENERATION
     : 0;
   const enemyRegeneration = regenBase > 0 ? Math.floor(regenBase * hpMultiplier) : 0;
 
@@ -134,17 +214,27 @@ function buildScaledEnemy(enemy: BestiaryEntry, destinationIndexInAct = 0, curre
 function setupOpeningHand(deck: BattleCard[], trinketEffects: ReturnType<typeof computeTrinketManifest>) {
   const openingHand = drawCards(shuffleCards(deck), [], [], CARDS_PER_TURN, 0);
   if (trinketEffects.extraDrawPerBattle <= 0) return { ...openingHand, extraHand: null };
-  const extraHand = drawCards(openingHand.deck, openingHand.discard, openingHand.hand, trinketEffects.extraDrawPerBattle, openingHand.nextCardUid);
-  return { deck: extraHand.deck, hand: extraHand.hand, discard: extraHand.discard, nextCardUid: extraHand.nextCardUid, extraHand };
+  const extraHand = drawCards(
+    openingHand.deck,
+    openingHand.discard,
+    openingHand.hand,
+    trinketEffects.extraDrawPerBattle,
+    openingHand.nextCardUid,
+  );
+  return {
+    deck: extraHand.deck,
+    hand: extraHand.hand,
+    discard: extraHand.discard,
+    nextCardUid: extraHand.nextCardUid,
+    extraHand,
+  };
 }
 
 function applyDifficultyAttackModifiers(effects: EnemyAttackEffect[], modifiers: DifficultyModifier[]) {
   let modified = [...effects];
   for (const mod of modifiers) {
     if (mod.kind === "increase-enemy-physical-damage" || mod.kind === "increase-enemy-damage") {
-      modified = modified.map((e) =>
-        e.kind === "damage" ? { ...e, amount: e.amount + mod.amount } : e,
-      );
+      modified = modified.map((e) => (e.kind === "damage" ? { ...e, amount: e.amount + mod.amount } : e));
     }
     if (mod.kind === "increase-enemy-status") {
       modified = modified.map((e) =>
@@ -152,9 +242,7 @@ function applyDifficultyAttackModifiers(effects: EnemyAttackEffect[], modifiers:
       );
     }
     if (mod.kind === "enemy-attacks-gain-leech") {
-      modified = modified.map((e) =>
-        e.kind === "damage" ? { ...e, lifesteal: true } : e,
-      );
+      modified = modified.map((e) => (e.kind === "damage" ? { ...e, lifesteal: true } : e));
     }
   }
   return modified;
@@ -210,7 +298,11 @@ export function createBattleState(
   const { deck, hand, discard, nextCardUid } = setupOpeningHand(runDeck, trinketEffects);
 
   const enemy = currentEnemy ?? enemyBestiary[0];
-  const { scaledEnemyHealth, scaledEnemyAttackEffects, enemyRegeneration } = buildScaledEnemy(enemy, destinationIndexInAct, currentAct);
+  const { scaledEnemyHealth, scaledEnemyAttackEffects, enemyRegeneration } = buildScaledEnemy(
+    enemy,
+    destinationIndexInAct,
+    currentAct,
+  );
   const modifiedEffects = applyDifficultyAttackModifiers(scaledEnemyAttackEffects, difficultyModifiers);
   const { startingArmor, startBlock, manaBonus, startCompanion } = computeStartingStatuses(difficultyModifiers, enemy);
 
@@ -241,7 +333,17 @@ export function createBattleState(
     enemyArmor: startingArmor,
     enemyForge: 0,
     enemyFreezeBonus: 0,
-    playerStatuses: { block: talentEffects.startBlock + startBlock, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 } as PlayerStatusValues,
+    playerStatuses: {
+      block: talentEffects.startBlock + startBlock,
+      armor: 0,
+      forge: 0,
+      haste: 0,
+      burn: 0,
+      poison: 0,
+      bleed: 0,
+      freeze: 0,
+      stun: 0,
+    } as PlayerStatusValues,
     enemyStatuses: { burn: 0, poison: 0, bleed: 0, bleedLeech: 0, freeze: 0, stun: 0 } as EnemyStatusValues,
     enemyStunSkipTurns: 0,
     enemyFreezeSkipTurns: 0,

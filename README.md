@@ -31,6 +31,7 @@ npm run dev
 | `npm run test:e2e` | Run Playwright end-to-end tests |
 | `npm run lint` | Lint all source files |
 | `npm run format` | Format with Prettier |
+| `npm run release` | Bump version + generate changelog + create git tag |
 
 ## Project Structure
 

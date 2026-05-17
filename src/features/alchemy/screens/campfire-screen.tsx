@@ -6,17 +6,17 @@ import { ScreenDescription, ScreenHeader } from "../ui/shared-ui";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { campfire } from "@/lib/game-data";
-import { ANIMATION_STAGGER_UNIT, CAMPFIRE_ANIMATION_MS, CAMPFIRE_CONTINUE_DELAY, CAMPFIRE_HEAL_FRACTION } from "@/lib/game-constants";
+import {
+  ANIMATION_STAGGER_UNIT,
+  CAMPFIRE_ANIMATION_MS,
+  CAMPFIRE_CONTINUE_DELAY,
+  CAMPFIRE_HEAL_FRACTION,
+} from "@/lib/game-constants";
+import { useRunStore } from "../stores/run-store";
 
-export function CampfireScreen({
-  playerHealth,
-  maxHp,
-  onContinue,
-}: {
-  playerHealth: number;
-  maxHp: number;
-  onContinue: () => void;
-}) {
+export function CampfireScreen({ onContinue }: { onContinue: () => void }) {
+  const playerHealth = useRunStore((s) => s.runPlayerHealth);
+  const maxHp = useRunStore((s) => s.runMaxHealth);
   const [resting, setResting] = useState(false);
   const [displayHp, setDisplayHp] = useState(playerHealth);
   const [targetHp, setTargetHp] = useState(playerHealth);
@@ -85,9 +85,14 @@ export function CampfireScreen({
             <div className="surface-muted rounded-[24px] px-4 py-3">
               <div className="flex items-center justify-between gap-3">
                 <p className="text-sm font-semibold text-foreground">HP</p>
-                <p className="hp-number-pop text-xs font-medium text-muted-foreground">{displayHp} / {maxHp}</p>
+                <p className="hp-number-pop text-xs font-medium text-muted-foreground">
+                  {displayHp} / {maxHp}
+                </p>
               </div>
-              <Progress value={(targetHp / maxHp) * 100} className="campfire-hp-progress mt-2.5 h-2 bg-background/80 [&>div]:bg-destructive" />
+              <Progress
+                value={(targetHp / maxHp) * 100}
+                className="campfire-hp-progress mt-2.5 h-2 bg-background/80 [&>div]:bg-destructive"
+              />
             </div>
           )}
         </div>

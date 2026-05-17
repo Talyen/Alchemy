@@ -5,15 +5,7 @@ export type ContentSystemId = "campaign" | "labyrinth" | "wildwood";
 
 // ============ Labyrinth ============
 
-export type LabyrinthNodeType =
-  | "entrance"
-  | "combat"
-  | "elite"
-  | "rest"
-  | "mystery"
-  | "shop"
-  | "alchemist"
-  | "boss";
+export type LabyrinthNodeType = "entrance" | "combat" | "elite" | "rest" | "mystery" | "shop" | "alchemist" | "boss";
 
 export type LabyrinthModifierKind =
   | "armored"

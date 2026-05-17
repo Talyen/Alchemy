@@ -1,15 +1,14 @@
 // Mystery event state and handlers for run navigation.
-// Depends on the effect dispatcher (mystery-flow.ts), game data, audio, and run state setters.
-// Consumed by useRunNavigation to keep mystery UI state co-located with the mutation callbacks.
-import { useState } from "react";
+// Uses useScreenStore for state, keeps logic in the hook.
 import { cardLibrary, type BattleCard } from "@/lib/game-data";
 import { pickRandom } from "@/lib/utils";
 import type { Dispatch, SetStateAction } from "react";
 
-import { mysteryPool, type MysteryChoice, type MysteryEvent } from "../mystery-events";
+import { mysteryPool, type MysteryChoice } from "../mystery-events";
 import { addCardToRun, applyMysteryEffect } from "./mystery-flow";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { KeywordId } from "@/lib/game-data";
+import { useScreenStore } from "../stores/screen-store";
 
 export type MysteryFlowContext = {
   runMaxHealth: number;
@@ -26,12 +25,16 @@ export type MysteryFlowContext = {
 };
 
 export function useMysteryFlow(context: MysteryFlowContext) {
-  const [mysteryEvent, setMysteryEvent] = useState<MysteryEvent | null>(null);
-  const [mysteryCardChoices, setMysteryCardChoices] = useState<BattleCard[] | null>(null);
+  const mysteryEvent = useScreenStore((s) => s.mysteryEvent);
+  const mysteryCardChoices = useScreenStore((s) => s.mysteryCardChoices);
+
+  function getStore() {
+    return useScreenStore.getState();
+  }
 
   function beginMysteryEvent(navigateToMystery: () => void) {
-    setMysteryEvent(pickRandom(mysteryPool) ?? mysteryPool[0]);
-    setMysteryCardChoices(null);
+    getStore().setMysteryEvent(pickRandom(mysteryPool) ?? mysteryPool[0]);
+    getStore().setMysteryCardChoices(null);
     navigateToMystery();
   }
 
@@ -45,7 +48,7 @@ export function useMysteryFlow(context: MysteryFlowContext) {
         setRunTrinkets: context.setRunTrinkets,
         setDiscoveredCardIds: context.setDiscoveredCardIds,
         setDiscoveredTrinketIds: context.setDiscoveredTrinketIds,
-        setMysteryCardChoices,
+        setMysteryCardChoices: getStore().setMysteryCardChoices,
         awardMysteryXP: context.awardMysteryXP,
         onAddMaterials: context.onAddMaterials,
         onAwardGold: context.onAwardGold,
@@ -59,7 +62,7 @@ export function useMysteryFlow(context: MysteryFlowContext) {
     if (card) {
       addCardToRun(card, { setRunDeck: context.setRunDeck, setDiscoveredCardIds: context.setDiscoveredCardIds });
     }
-    setMysteryCardChoices(null);
+    getStore().setMysteryCardChoices(null);
   }
 
   function handleMysteryRemoveCard(index: number) {
@@ -71,12 +74,12 @@ export function useMysteryFlow(context: MysteryFlowContext) {
   }
 
   function clearCardChoices() {
-    setMysteryCardChoices(null);
+    getStore().setMysteryCardChoices(null);
   }
 
   function reset() {
-    setMysteryEvent(null);
-    setMysteryCardChoices(null);
+    getStore().setMysteryEvent(null);
+    getStore().setMysteryCardChoices(null);
   }
 
   return {

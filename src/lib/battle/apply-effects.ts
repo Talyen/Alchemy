@@ -4,7 +4,14 @@ import type { BattleCard } from "@/lib/game-data/types";
 import { dealDamageToEnemy } from "./damage";
 import { applyPlayerStatusEffect, removeHarmfulPlayerStatuses } from "./status-effects";
 import { applyWishEffect } from "./wish";
-import { addGold, addPlayerStatus, applyPlayerCombatDamage, applyPlayerHealing, type BattleState, type CombatTextEvent } from "./types";
+import {
+  addGold,
+  addPlayerStatus,
+  applyPlayerCombatDamage,
+  applyPlayerHealing,
+  type BattleState,
+  type CombatTextEvent,
+} from "./types";
 import { MIN_MAX_MANA_FLOOR, POTION_CARD_ID_FRAGMENT } from "../game-constants";
 import { mergeCombatText } from "./combat-text";
 
@@ -43,7 +50,11 @@ export function applyCardEffects(state: BattleState, card: BattleCard, combatTex
         return { ...currentState, mana: Math.max(0, currentState.mana - effect.amount) };
       case "gain-max-mana":
         mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "mana", amount: effect.amount });
-        return { ...currentState, maxMana: currentState.maxMana + effect.amount, mana: currentState.mana + effect.amount };
+        return {
+          ...currentState,
+          maxMana: currentState.maxMana + effect.amount,
+          mana: currentState.mana + effect.amount,
+        };
       case "lose-max-mana": {
         mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "mana", amount: effect.amount });
         const newMaxMana = Math.max(MIN_MAX_MANA_FLOOR, currentState.maxMana - effect.amount);
@@ -68,7 +79,12 @@ export function applyCardEffects(state: BattleState, card: BattleCard, combatTex
       }
       case "self-damage": {
         const postDamage = applyPlayerCombatDamage(currentState, effect.amount);
-        mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: effect.damageType, amount: effect.amount });
+        mergeCombatText(combatTexts, {
+          target: "player",
+          kind: "damage",
+          stat: effect.damageType,
+          amount: effect.amount,
+        });
         return addPlayerStatus(postDamage, effect.damageType, effect.amount);
       }
       default:

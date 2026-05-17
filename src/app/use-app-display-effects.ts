@@ -14,8 +14,12 @@ type AppDisplayEffectsOptions = {
 
 // Keeps browser/document and desktop display settings synchronized with options state.
 export function useAppDisplayEffects({ displayMode, uiScale, brightness, stageRef }: AppDisplayEffectsOptions) {
-  useEffect(() => { platform.setDisplayMode(displayMode); }, [displayMode]);
-  useEffect(() => { document.documentElement.style.setProperty("--alchemy-ui-scale", String(Number(uiScale) / 100)); }, [uiScale]);
+  useEffect(() => {
+    platform.setDisplayMode(displayMode);
+  }, [displayMode]);
+  useEffect(() => {
+    document.documentElement.style.setProperty("--alchemy-ui-scale", String(Number(uiScale) / 100));
+  }, [uiScale]);
   useEffect(() => {
     if (stageRef.current) {
       stageRef.current.style.filter = `brightness(${brightness / 100})`;

@@ -5,6 +5,9 @@ import { computeEffectiveCost } from "./card-play";
 import type { BattleState } from "./types";
 import type { BattleCard } from "@/lib/game-data";
 
-export function getEffectiveCost(state: Pick<BattleState, "flags" | "talentEffects" | "trinketEffects">, card: BattleCard): number {
+export function getEffectiveCost(
+  state: Pick<BattleState, "flags" | "talentEffects" | "trinketEffects">,
+  card: BattleCard,
+): number {
   return computeEffectiveCost(state, card).effectiveCost;
 }

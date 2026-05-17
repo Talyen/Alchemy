@@ -1,6 +1,6 @@
 // Memoized talent-pick sampling with an invalidation cache for re-rolls.
 // Depends on game-data talent pool and XP constants. Used by talent tree screen.
-import { useRef, useMemo } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { KeywordId } from "@/lib/game-data";
 import { TALENT_CHOICES_OFFERED } from "@/lib/game-constants";
 import { sampleTalentChoices, type TalentDefinition } from "@/lib/game-data";
@@ -12,14 +12,25 @@ export function useTalentChoices(
   allUnlocked: boolean,
 ) {
   const cacheRef = useRef<Record<string, TalentDefinition[]>>({});
+  const [currentChoices, setCurrentChoices] = useState<TalentDefinition[] | null>(null);
 
-  const currentChoices = useMemo(() => {
+  useEffect(() => {
+    if (allUnlocked || !hasUnspentPoints) {
+      setCurrentChoices(null); // eslint-disable-line react-hooks/set-state-in-effect
+      return;
+    }
     const cached = cacheRef.current[selectedKeyword];
-    if (cached) return cached;
-    if (allUnlocked || !hasUnspentPoints) return null;
+    if (cached) {
+      setCurrentChoices(cached);
+      return;
+    }
     const c = sampleTalentChoices(selectedKeyword, unlockedIds, TALENT_CHOICES_OFFERED);
-    if (c.length > 0) cacheRef.current[selectedKeyword] = c;
-    return c.length > 0 ? c : null;
+    if (c.length > 0) {
+      cacheRef.current[selectedKeyword] = c;
+      setCurrentChoices(c);
+    } else {
+      setCurrentChoices(null);
+    }
   }, [selectedKeyword, unlockedIds, hasUnspentPoints, allUnlocked]);
 
   function invalidateKeyword(keyword: KeywordId) {

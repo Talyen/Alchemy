@@ -4,6 +4,7 @@ import { BATTLE_ACTOR_TOP_DESKTOP, BATTLE_ACTOR_TOP_MOBILE } from "@/lib/game-co
 import { ArtPanel, CompanionPanel, CombatTextRail } from "../../components";
 import { mobileStageBattleCardWidthClass, battleActorHalfGapClass, battleActorSectionClass } from "../../config";
 import type { BattleFeedbackProps, BattleHoverProps, BattleRefsProps, RequiredBattleViewProps } from "./types";
+import { useBattleStore } from "../../stores/battle-store";
 
 export function BattleActors({
   view,
@@ -17,7 +18,8 @@ export function BattleActors({
   refs: BattleRefsProps;
 }) {
   const { battleState, heroArt, playerName, isMobileLandscape, aspectMode = "standard" } = view;
-  const { shimmerState, onHoverShimmer } = hover;
+  const { shimmerState } = hover;
+  const onHoverShimmer = useBattleStore((s) => s.maybeTriggerShimmer);
   const {
     playerStatusChips,
     enemyStatusChips,
@@ -31,7 +33,12 @@ export function BattleActors({
   const { playerPanelRef, enemyPanelRef } = refs;
   const isPlayerTurn = battleState.turnPhase === "player";
   const hasCompanion = Boolean(battleState.activeCompanion);
-  const battleActorHalfGap = aspectMode === "ultrawide" ? battleActorHalfGapClass.ultrawide : (isMobileLandscape ? battleActorHalfGapClass.mobile : battleActorHalfGapClass.desktop);
+  const battleActorHalfGap =
+    aspectMode === "ultrawide"
+      ? battleActorHalfGapClass.ultrawide
+      : isMobileLandscape
+        ? battleActorHalfGapClass.mobile
+        : battleActorHalfGapClass.desktop;
   const actorCardWidthClass = isMobileLandscape ? mobileStageBattleCardWidthClass : undefined;
   const playerTurnBadgeTransform = hasCompanion
     ? `translateX(calc(-50% - clamp(111px,11cqh,168px) - ${battleActorHalfGap} - clamp(12px,1.2cqw,22px)))`
@@ -39,7 +46,13 @@ export function BattleActors({
 
   return (
     <section
-      className={aspectMode === "ultrawide" ? battleActorSectionClass.ultrawide : (isMobileLandscape ? battleActorSectionClass.mobile : battleActorSectionClass.desktop)}
+      className={
+        aspectMode === "ultrawide"
+          ? battleActorSectionClass.ultrawide
+          : isMobileLandscape
+            ? battleActorSectionClass.mobile
+            : battleActorSectionClass.desktop
+      }
       style={{ top: isMobileLandscape ? BATTLE_ACTOR_TOP_MOBILE : BATTLE_ACTOR_TOP_DESKTOP }}
     >
       <div
@@ -86,7 +99,16 @@ export function BattleActors({
           />
           {battleState.activeCompanion ? (
             <div className="absolute bottom-[clamp(88px,8.5cqh,118px)] left-[calc(100%-clamp(42px,4.6cqh,68px))] z-20">
-              <CompanionPanel companion={battleState.activeCompanion} shaking={companionShaking} damageBonus={battleState.companionDamageBuff + battleState.talentEffects.companionDamage + battleState.trinketEffects.companionDamageBonus + (battleState.talentEffects.companionBondLevels[battleState.activeCompanion.id] ?? 0)} />
+              <CompanionPanel
+                companion={battleState.activeCompanion}
+                shaking={companionShaking}
+                damageBonus={
+                  battleState.companionDamageBuff +
+                  battleState.talentEffects.companionDamage +
+                  battleState.trinketEffects.companionDamageBonus +
+                  (battleState.talentEffects.companionBondLevels[battleState.activeCompanion.id] ?? 0)
+                }
+              />
             </div>
           ) : null}
         </div>

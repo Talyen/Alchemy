@@ -5,7 +5,7 @@ import { useState } from "react";
 import { playVictory } from "@/lib/audio";
 import { type BattleCard, type TrinketEntry } from "@/lib/game-data";
 
-import type { MysteryEvent, MysteryChoice } from "../../mystery-events";
+import type { MysteryChoice } from "../../mystery-events";
 import { AnimatedHeight } from "../../ui/animated-height";
 import {
   CardChoicePicker,
@@ -16,28 +16,27 @@ import {
   choiceRequiresCardRemoval,
   hasPositiveMysteryEffect,
 } from "./parts";
+import { useRunStore } from "../../stores/run-store";
+import { useScreenStore } from "../../stores/screen-store";
 
 export function MysteryScreen({
-  event,
   onChoose,
   onChooseCard,
   onRemoveCard,
   onContinue,
-  runDeck,
   findCard,
   findTrinket,
-  mysteryCardChoices,
 }: {
-  event: MysteryEvent;
   onChoose: (choice: MysteryChoice) => void;
   onChooseCard: (cardId: string) => void;
   onRemoveCard: (index: number) => void;
   onContinue: () => void;
-  runDeck: BattleCard[];
   findCard: (id: string) => BattleCard | undefined;
   findTrinket: (id: string) => TrinketEntry | undefined;
-  mysteryCardChoices: BattleCard[] | null;
 }) {
+  const event = useScreenStore((s) => s.mysteryEvent)!;
+  const runDeck = useRunStore((s) => s.runDeck);
+  const mysteryCardChoices = useScreenStore((s) => s.mysteryCardChoices);
   const [chosen, setChosen] = useState<MysteryChoice | null>(null);
   const [pendingRemoval, setPendingRemoval] = useState<MysteryChoice | null>(null);
 
@@ -83,10 +82,7 @@ export function MysteryScreen({
         {mysteryCardChoices ? (
           <CardChoicePicker choices={mysteryCardChoices} onSelect={handleCardChoiceConfirm} />
         ) : pendingRemoval ? (
-          <RemoveCardPicker
-            runDeck={runDeck}
-            onSelect={handleRemoveConfirm}
-          />
+          <RemoveCardPicker runDeck={runDeck} onSelect={handleRemoveConfirm} />
         ) : chosen ? (
           <MysteryRewardSummary
             choice={chosen}
@@ -97,12 +93,7 @@ export function MysteryScreen({
             eventTitle={event.title}
           />
         ) : (
-          <MysteryEventIntro
-            event={event}
-            findCard={findCard}
-            findTrinket={findTrinket}
-            onPick={handlePick}
-          />
+          <MysteryEventIntro event={event} findCard={findCard} findTrinket={findTrinket} onPick={handlePick} />
         )}
       </AnimatedHeight>
     </div>

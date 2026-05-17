@@ -2,10 +2,8 @@ import { describe, it, expect } from "vitest";
 import {
   SaveDataSchema,
   ActiveRunDataSchema,
-  BattleCardSchema,
   BattleCardEffectSchema,
   LabyrinthMapSchema,
-  LabyrinthNodeSchema,
   MaterialInventorySchema,
   CompletedDifficultiesSchema,
   CURRENT_SAVE_SCHEMA_VERSION,

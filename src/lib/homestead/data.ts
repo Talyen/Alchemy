@@ -11,9 +11,21 @@ export const buildings: HomesteadBuilding[] = [
     description: "",
     buttonLabel: "Build",
     tiers: [
-      { cost: { iron: 20, wood: 0, herbs: 0, food: 0, crystal: 0 }, effects: { flatPhysicalDamage: 1, forgeToBurn: true }, benefitDescription: "Increases Physical damage dealt by 1\nForge effect also increases Burn damage" },
-      { cost: { iron: 30, wood: 0, herbs: 0, food: 0, crystal: 0 }, effects: { flatPhysicalDamage: 1 }, benefitDescription: "Increases Physical damage dealt by 2" },
-      { cost: { iron: 40, wood: 0, herbs: 0, food: 0, crystal: 0 }, effects: { flatPhysicalDamage: 1 }, benefitDescription: "Increases Physical damage dealt by 3" },
+      {
+        cost: { iron: 20, wood: 0, herbs: 0, food: 0, crystal: 0 },
+        effects: { flatPhysicalDamage: 1, forgeToBurn: true },
+        benefitDescription: "Increases Physical damage dealt by 1\nForge effect also increases Burn damage",
+      },
+      {
+        cost: { iron: 30, wood: 0, herbs: 0, food: 0, crystal: 0 },
+        effects: { flatPhysicalDamage: 1 },
+        benefitDescription: "Increases Physical damage dealt by 2",
+      },
+      {
+        cost: { iron: 40, wood: 0, herbs: 0, food: 0, crystal: 0 },
+        effects: { flatPhysicalDamage: 1 },
+        benefitDescription: "Increases Physical damage dealt by 3",
+      },
     ],
   },
   {
@@ -22,9 +34,24 @@ export const buildings: HomesteadBuilding[] = [
     description: "",
     buttonLabel: "Build",
     tiers: [
-      { cost: { wood: 10, food: 10, iron: 0, herbs: 0, crystal: 0 }, effects: { companionDamage: 1 }, benefitDescription: "Increases Companion damage by 1", nonCombatBenefitDescription: "Gain Food after each run" },
-      { cost: { wood: 15, food: 15, iron: 0, herbs: 0, crystal: 0 }, effects: { companionDamage: 1 }, benefitDescription: "Increases Companion damage by 2", nonCombatBenefitDescription: "Gain Food after each run" },
-      { cost: { wood: 20, food: 20, iron: 0, herbs: 0, crystal: 0 }, effects: { companionDamage: 1 }, benefitDescription: "Increases Companion damage by 3", nonCombatBenefitDescription: "Gain Food after each run" },
+      {
+        cost: { wood: 10, food: 10, iron: 0, herbs: 0, crystal: 0 },
+        effects: { companionDamage: 1 },
+        benefitDescription: "Increases Companion damage by 1",
+        nonCombatBenefitDescription: "Gain Food after each run",
+      },
+      {
+        cost: { wood: 15, food: 15, iron: 0, herbs: 0, crystal: 0 },
+        effects: { companionDamage: 1 },
+        benefitDescription: "Increases Companion damage by 2",
+        nonCombatBenefitDescription: "Gain Food after each run",
+      },
+      {
+        cost: { wood: 20, food: 20, iron: 0, herbs: 0, crystal: 0 },
+        effects: { companionDamage: 1 },
+        benefitDescription: "Increases Companion damage by 3",
+        nonCombatBenefitDescription: "Gain Food after each run",
+      },
     ],
   },
   {
@@ -33,9 +60,21 @@ export const buildings: HomesteadBuilding[] = [
     description: "",
     buttonLabel: "Build",
     tiers: [
-      { cost: { herbs: 20, wood: 0, iron: 0, food: 0, crystal: 0 }, effects: { potionPotency: 0.20 }, benefitDescription: "Potions are 20% more potent" },
-      { cost: { herbs: 30, wood: 0, iron: 0, food: 0, crystal: 0 }, effects: { potionPotency: 0.15 }, benefitDescription: "Potions are 35% more potent" },
-      { cost: { herbs: 40, wood: 0, iron: 0, food: 0, crystal: 0 }, effects: { potionPotency: 0.15 }, benefitDescription: "Potions are 50% more potent" },
+      {
+        cost: { herbs: 20, wood: 0, iron: 0, food: 0, crystal: 0 },
+        effects: { potionPotency: 0.2 },
+        benefitDescription: "Potions are 20% more potent",
+      },
+      {
+        cost: { herbs: 30, wood: 0, iron: 0, food: 0, crystal: 0 },
+        effects: { potionPotency: 0.15 },
+        benefitDescription: "Potions are 35% more potent",
+      },
+      {
+        cost: { herbs: 40, wood: 0, iron: 0, food: 0, crystal: 0 },
+        effects: { potionPotency: 0.15 },
+        benefitDescription: "Potions are 50% more potent",
+      },
     ],
   },
   {
@@ -81,9 +120,24 @@ export const farmPlots: HomesteadFarm[] = [
     yield: { herbs: 0, wood: 0, iron: 0, food: 0, crystal: 0 },
     buttonLabel: "Build",
     tiers: [
-      { cost: { herbs: 20, food: 0, wood: 0, iron: 0, crystal: 0 }, effects: { herbFindBonus: 0.10 }, benefitDescription: "Find 10% more Herbs", nonCombatBenefitDescription: "Gain Herbs after each run" },
-      { cost: { herbs: 30, food: 0, wood: 0, iron: 0, crystal: 0 }, effects: { herbFindBonus: 0.10 }, benefitDescription: "Find 20% more Herbs", nonCombatBenefitDescription: "Gain Herbs after each run" },
-      { cost: { herbs: 40, food: 0, wood: 0, iron: 0, crystal: 0 }, effects: { herbFindBonus: 0.10 }, benefitDescription: "Find 30% more Herbs", nonCombatBenefitDescription: "Gain Herbs after each run" },
+      {
+        cost: { herbs: 20, food: 0, wood: 0, iron: 0, crystal: 0 },
+        effects: { herbFindBonus: 0.1 },
+        benefitDescription: "Find 10% more Herbs",
+        nonCombatBenefitDescription: "Gain Herbs after each run",
+      },
+      {
+        cost: { herbs: 30, food: 0, wood: 0, iron: 0, crystal: 0 },
+        effects: { herbFindBonus: 0.1 },
+        benefitDescription: "Find 20% more Herbs",
+        nonCombatBenefitDescription: "Gain Herbs after each run",
+      },
+      {
+        cost: { herbs: 40, food: 0, wood: 0, iron: 0, crystal: 0 },
+        effects: { herbFindBonus: 0.1 },
+        benefitDescription: "Find 30% more Herbs",
+        nonCombatBenefitDescription: "Gain Herbs after each run",
+      },
     ],
   },
   {

@@ -26,14 +26,26 @@ export function generateLabyrinthMap(rng: () => number = Math.random): Labyrinth
   const graph = generateRouteGraph(rng);
   const firstCombat = { row: 1, col: Math.floor(LABYRINTH_COLS / 2) };
 
-  const upperPoints = graph.points.filter((p) => !isStart(p) && !isBoss(p) && !samePoint(p, firstCombat) && p.row >= 1 && p.row <= 3);
-  const lowerPoints = graph.points.filter((p) => !isStart(p) && !isBoss(p) && !samePoint(p, firstCombat) && p.row >= 4 && p.row <= 6);
+  const upperPoints = graph.points.filter(
+    (p) => !isStart(p) && !isBoss(p) && !samePoint(p, firstCombat) && p.row >= 1 && p.row <= 3,
+  );
+  const lowerPoints = graph.points.filter(
+    (p) => !isStart(p) && !isBoss(p) && !samePoint(p, firstCombat) && p.row >= 4 && p.row <= 6,
+  );
 
-  const upperTypes = distributeNodeTypes(upperPoints.length, rng, 0.55, 0.20);
-  const lowerTypes = distributeNodeTypes(lowerPoints.length, rng, 0.35, 0.30);
+  const upperTypes = distributeNodeTypes(upperPoints.length, rng, 0.55, 0.2);
+  const lowerTypes = distributeNodeTypes(lowerPoints.length, rng, 0.35, 0.3);
 
   graph.points.forEach((point) => {
-    const type = isStart(point) ? "entrance" : isBoss(point) ? "boss" : samePoint(point, firstCombat) ? "combat" : point.row >= 1 && point.row <= 3 ? upperTypes.shift()! : lowerTypes.shift()!;
+    const type = isStart(point)
+      ? "entrance"
+      : isBoss(point)
+        ? "boss"
+        : samePoint(point, firstCombat)
+          ? "combat"
+          : point.row >= 1 && point.row <= 3
+            ? upperTypes.shift()!
+            : lowerTypes.shift()!;
     grid[point.row][point.col] = makeNode(type, rng, isStart(point) ? "current" : "visible");
   });
 
@@ -61,14 +73,62 @@ function generateRouteGraph(rng: () => number): { points: Point[]; edges: { from
   addPath(points, edges, used, degree, mainRoute);
 
   const detours = [
-    [{ row: 1, col: 3 }, { row: 1, col: 2 }, { row: 2, col: 2 }, { row: 2, col: 3 }],
-    [{ row: 1, col: 2 }, { row: 1, col: 1 }, { row: 2, col: 1 }, { row: 3, col: 1 }, { row: 3, col: 2 }, { row: 2, col: 2 }],
-    [{ row: 2, col: 4 }, { row: 2, col: 5 }, { row: 2, col: 6 }, { row: 3, col: 6 }, { row: 3, col: 5 }],
-    [{ row: 2, col: 6 }, { row: 2, col: 7 }, { row: 3, col: 7 }, { row: 4, col: 7 }, { row: 4, col: 6 }, { row: 3, col: 6 }],
-    [{ row: 4, col: 5 }, { row: 4, col: 6 }, { row: 5, col: 6 }, { row: 5, col: 5 }, { row: 5, col: 4 }],
-    [{ row: 5, col: 6 }, { row: 5, col: 7 }, { row: 6, col: 7 }, { row: 6, col: 6 }, { row: 6, col: 5 }, { row: 6, col: 4 }],
-    [{ row: 5, col: 3 }, { row: 5, col: 2 }, { row: 6, col: 2 }, { row: 6, col: 3 }],
-    [{ row: 5, col: 2 }, { row: 5, col: 1 }, { row: 6, col: 1 }, { row: 6, col: 2 }],
+    [
+      { row: 1, col: 3 },
+      { row: 1, col: 2 },
+      { row: 2, col: 2 },
+      { row: 2, col: 3 },
+    ],
+    [
+      { row: 1, col: 2 },
+      { row: 1, col: 1 },
+      { row: 2, col: 1 },
+      { row: 3, col: 1 },
+      { row: 3, col: 2 },
+      { row: 2, col: 2 },
+    ],
+    [
+      { row: 2, col: 4 },
+      { row: 2, col: 5 },
+      { row: 2, col: 6 },
+      { row: 3, col: 6 },
+      { row: 3, col: 5 },
+    ],
+    [
+      { row: 2, col: 6 },
+      { row: 2, col: 7 },
+      { row: 3, col: 7 },
+      { row: 4, col: 7 },
+      { row: 4, col: 6 },
+      { row: 3, col: 6 },
+    ],
+    [
+      { row: 4, col: 5 },
+      { row: 4, col: 6 },
+      { row: 5, col: 6 },
+      { row: 5, col: 5 },
+      { row: 5, col: 4 },
+    ],
+    [
+      { row: 5, col: 6 },
+      { row: 5, col: 7 },
+      { row: 6, col: 7 },
+      { row: 6, col: 6 },
+      { row: 6, col: 5 },
+      { row: 6, col: 4 },
+    ],
+    [
+      { row: 5, col: 3 },
+      { row: 5, col: 2 },
+      { row: 6, col: 2 },
+      { row: 6, col: 3 },
+    ],
+    [
+      { row: 5, col: 2 },
+      { row: 5, col: 1 },
+      { row: 6, col: 1 },
+      { row: 6, col: 2 },
+    ],
   ];
   for (const detour of shuffleArray(detours, rng)) {
     if (detour.some((point) => !used.has(keyOf(point)) && !isInBounds(point))) continue;
@@ -101,7 +161,13 @@ function buildMainRoute(start: Point, boss: Point): Point[] {
   ];
 }
 
-function addPath(points: Point[], edges: { from: Point; to: Point }[], used: Set<string>, degree: Map<string, number>, path: Point[]) {
+function addPath(
+  points: Point[],
+  edges: { from: Point; to: Point }[],
+  used: Set<string>,
+  degree: Map<string, number>,
+  path: Point[],
+) {
   for (const point of path) addPoint(points, used, point);
   for (let index = 0; index < path.length - 1; index += 1) {
     addEdge(edges, degree, path[index], path[index + 1]);
@@ -131,7 +197,12 @@ function distributeNodeTypes(count: number, rng: () => number, combatPct = 0.45,
     shop: 0,
     alchemist: 0,
   };
-  const supportTypes: Array<Exclude<LabyrinthNodeType, "entrance" | "combat" | "elite" | "boss">> = ["rest", "mystery", "shop", "alchemist"];
+  const supportTypes: Array<Exclude<LabyrinthNodeType, "entrance" | "combat" | "elite" | "boss">> = [
+    "rest",
+    "mystery",
+    "shop",
+    "alchemist",
+  ];
   let assigned = counts.combat + counts.elite;
   let supportIndex = Math.floor(rng() * supportTypes.length);
   while (assigned < count) {
@@ -146,7 +217,9 @@ function distributeNodeTypes(count: number, rng: () => number, combatPct = 0.45,
     assigned -= 1;
   }
 
-  const pool = Object.entries(counts).flatMap(([type, amount]) => Array.from({ length: amount }, () => type as LabyrinthNodeType));
+  const pool = Object.entries(counts).flatMap(([type, amount]) =>
+    Array.from({ length: amount }, () => type as LabyrinthNodeType),
+  );
   for (let index = pool.length - 1; index > 0; index -= 1) {
     const swapIndex = Math.floor(rng() * (index + 1));
     [pool[index], pool[swapIndex]] = [pool[swapIndex], pool[index]];
@@ -158,7 +231,8 @@ function makeNode(type: LabyrinthNodeType, rng: () => number, state: LabyrinthNo
   return {
     type,
     modifiers: type === "combat" || type === "elite" || type === "boss" ? getEnemyModifiersForNodeType(type, rng) : [],
-    rewardModifiers: type === "combat" || type === "elite" || type === "boss" ? getRewardModifiersForNodeType(type, rng) : [],
+    rewardModifiers:
+      type === "combat" || type === "elite" || type === "boss" ? getRewardModifiersForNodeType(type, rng) : [],
     connections: [],
     state,
   };

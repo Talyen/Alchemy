@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { routeDestinationChoice, type DestinationRouteHandlers } from "@/features/alchemy/navigation/routing-flow";
-import { DESTINATIONS } from "@/features/alchemy/types";
+import { DESTINATIONS, type Destination } from "@/features/alchemy/types";
 
 function makeHandlers(): DestinationRouteHandlers {
   return {
@@ -79,7 +79,7 @@ describe("routeDestinationChoice", () => {
 
   it("falls through to normal combat for unknown destinations", () => {
     const handlers = makeHandlers();
-    routeDestinationChoice("Unknown Destination" as any, handlers);
+    routeDestinationChoice("Unknown Destination" as unknown as Destination, handlers);
     expect(handlers.startBattle).toHaveBeenCalledWith("normal");
     expect(handlers.navigateTo).toHaveBeenCalledWith("battle");
   });

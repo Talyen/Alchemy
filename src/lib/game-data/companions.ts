@@ -1,5 +1,13 @@
 // Companion data used by battle state and summon effects; depends on optimized art assets.
-import { impCompanion, lizardScoutCompanion, wolfCompanion, frostWhelpCompanion, bearCompanion, pantherCompanion, phoenixCompanion } from "./assets";
+import {
+  impCompanion,
+  lizardScoutCompanion,
+  wolfCompanion,
+  frostWhelpCompanion,
+  bearCompanion,
+  pantherCompanion,
+  phoenixCompanion,
+} from "./assets";
 import type { CompanionDefinition } from "./types";
 
 // Companion definitions describe persistent battle allies and the player-originated

@@ -17,9 +17,13 @@ export function UnsupportedSaveVersionScreen({ canQuit, onQuit }: { canQuit: boo
             Your progress is safe and has not been changed. Please update the game to continue.
           </p>
           {canQuit ? (
-            <Button size="lg" className="mt-3 min-w-40" onClick={onQuit}>Exit</Button>
+            <Button size="lg" className="mt-3 min-w-40" onClick={onQuit}>
+              Exit
+            </Button>
           ) : (
-            <p className="pt-2 text-xs uppercase tracking-[0.22em] text-stone-500">You can close this window after updating the game.</p>
+            <p className="pt-2 text-xs uppercase tracking-[0.22em] text-stone-500">
+              You can close this window after updating the game.
+            </p>
           )}
         </div>
       </section>

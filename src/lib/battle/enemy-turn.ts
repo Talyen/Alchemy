@@ -21,7 +21,19 @@ import type { BattleCard, EnemyAttackEffect } from "@/lib/game-data/types";
 import type { DifficultyModifier } from "@/lib/game-data/difficulties";
 import { applyPlayerCombatDamage, clampHealth, type BattleState, type CombatTextEvent, type TurnPhase } from "./types";
 import { CARDS_PER_TURN, MAX_HAND_SIZE } from "../game-constants";
-import { DIFFICULTY_FORGE_PER_TURN, ENEMY_HEAL_FRACTION, FORGE_REGENERATION_PER_TURN, HALF_DIVISOR, IRON_HIDE_ARMOR_PER_TURN, LABYRINTH_BURNING_GROUND_DAMAGE, LABYRINTH_LEECH_HEAL, PERCENT_DENOMINATOR, TRAIT_ARMOR_PER_TURN, TRAIT_FORGE_PER_TURN, TRAIT_FREEZE_BONUS_PER_TURN } from "../game-constants";
+import {
+  DIFFICULTY_FORGE_PER_TURN,
+  ENEMY_HEAL_FRACTION,
+  FORGE_REGENERATION_PER_TURN,
+  HALF_DIVISOR,
+  IRON_HIDE_ARMOR_PER_TURN,
+  LABYRINTH_BURNING_GROUND_DAMAGE,
+  LABYRINTH_LEECH_HEAL,
+  PERCENT_DENOMINATOR,
+  TRAIT_ARMOR_PER_TURN,
+  TRAIT_FORGE_PER_TURN,
+  TRAIT_FREEZE_BONUS_PER_TURN,
+} from "../game-constants";
 
 export function chooseWishCard(state: BattleState, cardId: string) {
   const chosenCard = state.wishOptions?.find((card) => card.id === cardId);
@@ -50,7 +62,15 @@ export function processCompanionTurnStart(state: BattleState, combatTexts: Comba
     cost: 0,
     effects: state.activeCompanion.turnStartEffects.map((e) =>
       e.kind === "damage"
-        ? { ...e, amount: e.amount + companionBondLevel + state.talentEffects.companionDamage + state.trinketEffects.companionDamageBonus + state.companionDamageBuff }
+        ? {
+            ...e,
+            amount:
+              e.amount +
+              companionBondLevel +
+              state.talentEffects.companionDamage +
+              state.trinketEffects.companionDamageBonus +
+              state.companionDamageBuff,
+          }
         : e,
     ),
   };
@@ -94,12 +114,20 @@ function processEnemyHealing(state: BattleState, combatTexts: CombatTextEvent[])
   return { ...state, enemyHealth: clampHealth(state.enemyHealth, healAmount, state.enemyMaxHealth) };
 }
 
-function checkHealthThresholds(prevHealth: number, nextHealth: number, state: BattleState, combatTexts: CombatTextEvent[]) {
+function checkHealthThresholds(
+  prevHealth: number,
+  nextHealth: number,
+  state: BattleState,
+  combatTexts: CombatTextEvent[],
+) {
   let nextState = state;
 
-  function applyHealthThresholdStatBonus(config: { threshold: number; amount: number } | null, stat: "block" | "armor") {
+  function applyHealthThresholdStatBonus(
+    config: { threshold: number; amount: number } | null,
+    stat: "block" | "armor",
+  ) {
     if (!config) return;
-    const thresholdHp = state.playerMaxHealth * config.threshold / PERCENT_DENOMINATOR;
+    const thresholdHp = (state.playerMaxHealth * config.threshold) / PERCENT_DENOMINATOR;
     if (prevHealth > thresholdHp && nextHealth <= thresholdHp) {
       nextState = {
         ...nextState,
@@ -114,7 +142,11 @@ function checkHealthThresholds(prevHealth: number, nextHealth: number, state: Ba
   return nextState;
 }
 
-function processEnemyDamageEffect(state: BattleState, effect: EnemyAttackEffect & { kind: "damage" }, combatTexts: CombatTextEvent[]) {
+function processEnemyDamageEffect(
+  state: BattleState,
+  effect: EnemyAttackEffect & { kind: "damage" },
+  combatTexts: CombatTextEvent[],
+) {
   let remainingDamage = effect.amount;
 
   if (effect.damageType === "physical") {
@@ -124,7 +156,9 @@ function processEnemyDamageEffect(state: BattleState, effect: EnemyAttackEffect 
 
   let effectiveBlock = state.playerStatuses.block;
   if (effect.damageType === "physical" && state.talentEffects.blockAbsorbPhysicalBonus > 0) {
-    effectiveBlock = Math.floor(effectiveBlock * (1 + state.talentEffects.blockAbsorbPhysicalBonus / PERCENT_DENOMINATOR));
+    effectiveBlock = Math.floor(
+      effectiveBlock * (1 + state.talentEffects.blockAbsorbPhysicalBonus / PERCENT_DENOMINATOR),
+    );
   }
 
   const blockAbsorb = Math.min(remainingDamage, effectiveBlock);
@@ -134,10 +168,12 @@ function processEnemyDamageEffect(state: BattleState, effect: EnemyAttackEffect 
     mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "block", amount: blockAbsorb });
   }
 
-  const rawDamage = effect.damageType === "physical"
-    ? Math.max(0, remainingDamage - state.playerStatuses.armor)
-    : remainingDamage;
-  const actualDamage = effect.damageType === "holy" && state.talentEffects.receiveHalfHolyDamage ? Math.floor(rawDamage / HALF_DIVISOR) : rawDamage;
+  const rawDamage =
+    effect.damageType === "physical" ? Math.max(0, remainingDamage - state.playerStatuses.armor) : remainingDamage;
+  const actualDamage =
+    effect.damageType === "holy" && state.talentEffects.receiveHalfHolyDamage
+      ? Math.floor(rawDamage / HALF_DIVISOR)
+      : rawDamage;
 
   if (actualDamage > 0) {
     const stat = effect.damageType === "physical" ? "health" : effect.damageType;
@@ -162,7 +198,12 @@ function processEnemyDamageEffect(state: BattleState, effect: EnemyAttackEffect 
         forge: nextState.playerStatuses.forge + nextState.trinketEffects.vanguardCrestForgeOnBlockAbsorb,
       },
     };
-    mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "forge", amount: nextState.trinketEffects.vanguardCrestForgeOnBlockAbsorb });
+    mergeCombatText(combatTexts, {
+      target: "player",
+      kind: "status",
+      stat: "forge",
+      amount: nextState.trinketEffects.vanguardCrestForgeOnBlockAbsorb,
+    });
   }
 
   nextState = checkHealthThresholds(prevHealth, nextState.playerHealth, nextState, combatTexts);
@@ -178,7 +219,10 @@ function processEnemyDamageEffect(state: BattleState, effect: EnemyAttackEffect 
   }
 
   if (effect.lifesteal && actualDamage > 0) {
-    nextState = { ...nextState, enemyHealth: clampHealth(nextState.enemyHealth, actualDamage, nextState.enemyMaxHealth) };
+    nextState = {
+      ...nextState,
+      enemyHealth: clampHealth(nextState.enemyHealth, actualDamage, nextState.enemyMaxHealth),
+    };
     mergeCombatText(combatTexts, { target: "enemy", kind: "heal", stat: "health", amount: actualDamage });
   }
 
@@ -197,14 +241,18 @@ function processEnemyAttack(state: BattleState, combatTexts: CombatTextEvent[]) 
       const extraFreeze = status === "freeze" ? state.enemyFreezeBonus : 0;
       const amount = baseAmount + extraFreeze;
 
-      const blockPreventsStatus = nextState.playerStatuses.block > 0 && (
-        (status === "bleed" && state.talentEffects.blockPreventsBleed) ||
-        (status === "poison" && state.talentEffects.blockPreventsPoison) ||
-        (status === "stun" && state.talentEffects.blockPreventsStun)
-      );
+      const blockPreventsStatus =
+        nextState.playerStatuses.block > 0 &&
+        ((status === "bleed" && state.talentEffects.blockPreventsBleed) ||
+          (status === "poison" && state.talentEffects.blockPreventsPoison) ||
+          (status === "stun" && state.talentEffects.blockPreventsStun));
 
       if (harmfulPlayerStatusIds.includes(status)) {
-        if (!blockPreventsStatus && nextState.trinketEffects.plagueDoctorImmunity && !nextState.flags.firstHarmfulStatusPrevented) {
+        if (
+          !blockPreventsStatus &&
+          nextState.trinketEffects.plagueDoctorImmunity &&
+          !nextState.flags.firstHarmfulStatusPrevented
+        ) {
           nextState = { ...nextState, flags: { ...nextState.flags, firstHarmfulStatusPrevented: true } };
           continue;
         }
@@ -281,7 +329,12 @@ function processEnemyTraits(state: BattleState, combatTexts: CombatTextEvent[]) 
       ...nextState,
       enemyForge: nextState.enemyForge + FORGE_REGENERATION_PER_TURN,
     };
-    mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "forge", amount: FORGE_REGENERATION_PER_TURN });
+    mergeCombatText(combatTexts, {
+      target: "enemy",
+      kind: "status",
+      stat: "forge",
+      amount: FORGE_REGENERATION_PER_TURN,
+    });
   }
 
   if (nextState.currentEnemy.traits.some((t) => t.id === "glacial-shell")) {
@@ -307,9 +360,17 @@ function processEnemyTraits(state: BattleState, combatTexts: CombatTextEvent[]) 
   if (nextState.difficultyModifiers.some((m: DifficultyModifier) => m.kind === "labyrinth-burning-ground")) {
     nextState = {
       ...nextState,
-      playerStatuses: { ...nextState.playerStatuses, burn: nextState.playerStatuses.burn + LABYRINTH_BURNING_GROUND_DAMAGE },
+      playerStatuses: {
+        ...nextState.playerStatuses,
+        burn: nextState.playerStatuses.burn + LABYRINTH_BURNING_GROUND_DAMAGE,
+      },
     };
-    mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "burn", amount: LABYRINTH_BURNING_GROUND_DAMAGE });
+    mergeCombatText(combatTexts, {
+      target: "player",
+      kind: "status",
+      stat: "burn",
+      amount: LABYRINTH_BURNING_GROUND_DAMAGE,
+    });
   }
 
   return nextState;

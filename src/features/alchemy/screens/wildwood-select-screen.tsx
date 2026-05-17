@@ -23,13 +23,13 @@ export function WildwoodSelectScreen({ onSelect, onBack }: { onSelect: (bossId: 
               key={entry.bossId}
               type="button"
               className={`flex w-56 flex-col items-center gap-2 rounded-xl border p-4 transition-colors ${
-                isSelected ? "border-primary bg-primary/10" : "border-border/60 bg-card/60 hover:border-muted-foreground/40"
+                isSelected
+                  ? "border-primary bg-primary/10"
+                  : "border-border/60 bg-card/60 hover:border-muted-foreground/40"
               }`}
               onClick={() => setSelectedBossId(entry.bossId)}
             >
-              {enemy ? (
-                <img src={enemy.art} alt={entry.title} className="h-32 w-32 rounded-lg object-cover" />
-              ) : null}
+              {enemy ? <img src={enemy.art} alt={entry.title} className="h-32 w-32 rounded-lg object-cover" /> : null}
               <p className="text-lg font-semibold text-foreground">{entry.title}</p>
               <p className="text-sm text-muted-foreground">{entry.subtitle}</p>
               <div className="mt-2 flex flex-col gap-1 text-xs text-muted-foreground">
@@ -43,8 +43,17 @@ export function WildwoodSelectScreen({ onSelect, onBack }: { onSelect: (bossId: 
       </div>
 
       <div className="flex gap-4">
-        <Button size="lg" variant="outline" className="w-40" onClick={onBack}>Back</Button>
-        <Button size="lg" className="w-40" disabled={!selectedBossId} onClick={() => { if (selectedBossId) onSelect(selectedBossId); }}>
+        <Button size="lg" variant="outline" className="w-40" onClick={onBack}>
+          Back
+        </Button>
+        <Button
+          size="lg"
+          className="w-40"
+          disabled={!selectedBossId}
+          onClick={() => {
+            if (selectedBossId) onSelect(selectedBossId);
+          }}
+        >
           Hunt
         </Button>
       </div>

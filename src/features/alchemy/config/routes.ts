@@ -23,7 +23,8 @@ export function getAvailableDestinations(currentHp: number, currentGold: number,
   return destinationPool.filter((d) => {
     if (d === DESTINATIONS.BOSS_COMBAT) return false;
     if (d === DESTINATIONS.CAMPFIRE && currentHp >= Math.floor(maxHp * CAMPFIRE_HP_THRESHOLD)) return false;
-    if ((d === DESTINATIONS.MERCHANT_SHOP || d === DESTINATIONS.ALCHEMIST_SHOP) && currentGold < SHOP_MIN_GOLD) return false;
+    if ((d === DESTINATIONS.MERCHANT_SHOP || d === DESTINATIONS.ALCHEMIST_SHOP) && currentGold < SHOP_MIN_GOLD)
+      return false;
     if (d === DESTINATIONS.ELITE_COMBAT && currentHp < Math.floor(maxHp * ELITE_HP_THRESHOLD)) return false;
     return true;
   });

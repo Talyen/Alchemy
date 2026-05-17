@@ -76,8 +76,13 @@ export function getTalentKeywordProgress(totalXP: number, unlockedCount: number)
   const spentPoints = unlockedCount;
   const unspentPoints = Math.max(0, points - spentPoints);
   return {
-    totalXP, points, xpForNext, xpRemaining, progressPercent,
-    spentPoints, unspentPoints,
+    totalXP,
+    points,
+    xpForNext,
+    xpRemaining,
+    progressPercent,
+    spentPoints,
+    unspentPoints,
     hasUnspent: unspentPoints > 0,
   };
 }

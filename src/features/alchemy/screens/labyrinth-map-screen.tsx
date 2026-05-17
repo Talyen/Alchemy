@@ -10,9 +10,9 @@ import type { LabyrinthMap, LabyrinthModifierKind, LabyrinthNodeType } from "@/l
 import { NODE_TYPE_LABELS } from "@/lib/content-systems/labyrinth/data";
 import { ALL_LABYRINTH_MODIFIERS, REWARD_MODIFIER_KINDS } from "@/lib/content-systems/labyrinth/modifiers";
 import { ScreenHeader } from "../ui/shared-ui";
+import { useScreenStore } from "../stores/screen-store";
 
 type Props = {
-  labyrinthMap: LabyrinthMap;
   onNodeClick: (row: number, col: number) => void;
   onOpenMenu: (rect?: DOMRect) => void;
 };
@@ -25,14 +25,54 @@ type NodeMeta = {
 };
 
 const NODE_META: Record<LabyrinthNodeType, NodeMeta> = {
-  entrance: { icon: <DoorOpen className="h-6 w-6" />, className: "bg-black text-stone-600", hoverBorder: "hover:border-stone-500", shineColors: ["#292524", "#57534e", "#a8a29e", "#44403c"] },
-  combat: { icon: <Swords className="h-6 w-6" />, className: "bg-black text-red-500", hoverBorder: "hover:border-red-500", shineColors: ["#450a0a", "#dc2626", "#f87171", "#7f1d1d"] },
-  elite: { icon: <Skull className="h-6 w-6" />, className: "bg-black text-violet-500", hoverBorder: "hover:border-violet-500", shineColors: ["#3b0764", "#9333ea", "#c084fc", "#581c87"] },
-  rest: { icon: <Heart className="h-6 w-6" />, className: "bg-black text-orange-500", hoverBorder: "hover:border-orange-500", shineColors: ["#431407", "#d97706", "#fb923c", "#78350f"] },
-  mystery: { icon: <Sparkles className="h-6 w-6" />, className: "bg-black text-zinc-400", hoverBorder: "hover:border-zinc-400", shineColors: ["#27272a", "#a1a1aa", "#e4e4e7", "#525252"] },
-  shop: { icon: <ShoppingCart className="h-6 w-6" />, className: "bg-black text-yellow-500", hoverBorder: "hover:border-yellow-500", shineColors: ["#422006", "#eab308", "#fde047", "#78350f"] },
-  alchemist: { icon: <FlaskConical className="h-6 w-6" />, className: "bg-black text-emerald-500", hoverBorder: "hover:border-emerald-500", shineColors: ["#022c22", "#10b981", "#6ee7b7", "#064e3b"] },
-  boss: { icon: <Crown className="h-7 w-7" />, className: "bg-black text-red-400", hoverBorder: "hover:border-red-400", shineColors: ["#450a0a", "#b91c1c", "#fca5a5", "#7f1d1d"] },
+  entrance: {
+    icon: <DoorOpen className="h-6 w-6" />,
+    className: "bg-black text-stone-600",
+    hoverBorder: "hover:border-stone-500",
+    shineColors: ["#292524", "#57534e", "#a8a29e", "#44403c"],
+  },
+  combat: {
+    icon: <Swords className="h-6 w-6" />,
+    className: "bg-black text-red-500",
+    hoverBorder: "hover:border-red-500",
+    shineColors: ["#450a0a", "#dc2626", "#f87171", "#7f1d1d"],
+  },
+  elite: {
+    icon: <Skull className="h-6 w-6" />,
+    className: "bg-black text-violet-500",
+    hoverBorder: "hover:border-violet-500",
+    shineColors: ["#3b0764", "#9333ea", "#c084fc", "#581c87"],
+  },
+  rest: {
+    icon: <Heart className="h-6 w-6" />,
+    className: "bg-black text-orange-500",
+    hoverBorder: "hover:border-orange-500",
+    shineColors: ["#431407", "#d97706", "#fb923c", "#78350f"],
+  },
+  mystery: {
+    icon: <Sparkles className="h-6 w-6" />,
+    className: "bg-black text-zinc-400",
+    hoverBorder: "hover:border-zinc-400",
+    shineColors: ["#27272a", "#a1a1aa", "#e4e4e7", "#525252"],
+  },
+  shop: {
+    icon: <ShoppingCart className="h-6 w-6" />,
+    className: "bg-black text-yellow-500",
+    hoverBorder: "hover:border-yellow-500",
+    shineColors: ["#422006", "#eab308", "#fde047", "#78350f"],
+  },
+  alchemist: {
+    icon: <FlaskConical className="h-6 w-6" />,
+    className: "bg-black text-emerald-500",
+    hoverBorder: "hover:border-emerald-500",
+    shineColors: ["#022c22", "#10b981", "#6ee7b7", "#064e3b"],
+  },
+  boss: {
+    icon: <Crown className="h-7 w-7" />,
+    className: "bg-black text-red-400",
+    hoverBorder: "hover:border-red-400",
+    shineColors: ["#450a0a", "#b91c1c", "#fca5a5", "#7f1d1d"],
+  },
 };
 
 const NODE_DESCRIPTIONS: Record<LabyrinthNodeType, string> = {
@@ -46,7 +86,8 @@ const NODE_DESCRIPTIONS: Record<LabyrinthNodeType, string> = {
   boss: "Challenge the Labyrinth guardian",
 };
 
-export function LabyrinthMapScreen({ labyrinthMap, onNodeClick, onOpenMenu }: Props) {
+export function LabyrinthMapScreen({ onNodeClick, onOpenMenu }: Props) {
+  const labyrinthMap = useScreenStore((s) => s.labyrinthMap);
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-4 overflow-hidden px-3 py-4 text-center sm:gap-5 sm:px-5 sm:py-6">
       <ScreenHeader title="Labyrinth" />
@@ -74,13 +115,21 @@ export function LabyrinthMapScreen({ labyrinthMap, onNodeClick, onOpenMenu }: Pr
             <ConnectionLayer labyrinthMap={labyrinthMap} />
 
             {labyrinthMap.grid.map((row, r) =>
-              row.map((node, c) => node ? (
-                <LabyrinthNodeButton key={`${r}-${c}`} row={r} col={c} node={node} labyrinthMap={labyrinthMap} onNodeClick={onNodeClick} />
-              ) : null),
+              row.map((node, c) =>
+                node ? (
+                  <LabyrinthNodeButton
+                    key={`${r}-${c}`}
+                    row={r}
+                    col={c}
+                    node={node}
+                    labyrinthMap={labyrinthMap}
+                    onNodeClick={onNodeClick}
+                  />
+                ) : null,
+              ),
             )}
           </div>
         </div>
-
       </section>
     </div>
   );
@@ -102,9 +151,11 @@ function LabyrinthNodeButton({
   const isCleared = node.state === "cleared";
   const isFailed = node.state === "failed";
   const isCurrent = node.state === "current";
-  const connectedToCurrent = Boolean(labyrinthMap.grid[labyrinthMap.currentNode.row]?.[labyrinthMap.currentNode.col]?.connections.some(
-    (connection) => connection.row === row && connection.col === col,
-  ));
+  const connectedToCurrent = Boolean(
+    labyrinthMap.grid[labyrinthMap.currentNode.row]?.[labyrinthMap.currentNode.col]?.connections.some(
+      (connection) => connection.row === row && connection.col === col,
+    ),
+  );
   const isEnterable = node.state === "visible" && connectedToCurrent;
   const meta = NODE_META[node.type];
 
@@ -140,7 +191,12 @@ function LabyrinthNodeButton({
 function ConnectionLayer({ labyrinthMap }: { labyrinthMap: LabyrinthMap }) {
   const connections = getUniqueConnections(labyrinthMap);
   return (
-    <svg className="pointer-events-none absolute inset-0 z-0 h-full w-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+    <svg
+      className="pointer-events-none absolute inset-0 z-0 h-full w-full overflow-visible"
+      viewBox="0 0 100 100"
+      preserveAspectRatio="none"
+      aria-hidden="true"
+    >
       {connections.map((connection) => {
         const from = pointFor(connection.from.row, connection.from.col, labyrinthMap.rows, labyrinthMap.cols);
         const to = pointFor(connection.to.row, connection.to.col, labyrinthMap.rows, labyrinthMap.cols);
@@ -162,7 +218,15 @@ function ConnectionLayer({ labyrinthMap }: { labyrinthMap: LabyrinthMap }) {
   );
 }
 
-function NodeTooltip({ type, modifiers, rewardModifiers }: { type: LabyrinthNodeType; modifiers: LabyrinthModifierKind[]; rewardModifiers: LabyrinthModifierKind[] }) {
+function NodeTooltip({
+  type,
+  modifiers,
+  rewardModifiers,
+}: {
+  type: LabyrinthNodeType;
+  modifiers: LabyrinthModifierKind[];
+  rewardModifiers: LabyrinthModifierKind[];
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const [flip, setFlip] = useState(false);
   const [dx, setDx] = useState(0);
@@ -194,7 +258,8 @@ function NodeTooltip({ type, modifiers, rewardModifiers }: { type: LabyrinthNode
           ? "top-[calc(100%+0.75rem)] -translate-y-1 group-hover/node:translate-y-0 group-focus-within/node:translate-y-0"
           : "bottom-[calc(100%+0.75rem)] translate-y-1 group-hover/node:translate-y-0 group-focus-within/node:translate-y-0",
       )}
-      style={dx !== 0 ? { marginLeft: dx } as CSSProperties : undefined}>
+      style={dx !== 0 ? ({ marginLeft: dx } as CSSProperties) : undefined}
+    >
       <p className="text-sm font-black uppercase tracking-[0.2em] text-amber-100/80">{NODE_TYPE_LABELS[type]}</p>
       <p className="mt-1 text-xs leading-snug text-stone-300">{highlightKeywords(NODE_DESCRIPTIONS[type])}</p>
       {enemyModifiers.length > 0 ? (
@@ -206,7 +271,9 @@ function NodeTooltip({ type, modifiers, rewardModifiers }: { type: LabyrinthNode
               return (
                 <div key={modifier} className="rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-2">
                   <p className="text-xs font-bold text-amber-100">{definition.label}</p>
-                  <p className="mt-0.5 text-xs leading-snug text-stone-300">{highlightKeywords(definition.description)}</p>
+                  <p className="mt-0.5 text-xs leading-snug text-stone-300">
+                    {highlightKeywords(definition.description)}
+                  </p>
                 </div>
               );
             })}
@@ -215,14 +282,18 @@ function NodeTooltip({ type, modifiers, rewardModifiers }: { type: LabyrinthNode
       ) : null}
       {rewardModifiers.length > 0 ? (
         <>
-          <p className="mb-2 mt-3 text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400">Reward Modifiers</p>
+          <p className="mb-2 mt-3 text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400">
+            Reward Modifiers
+          </p>
           <div className="grid gap-2">
             {rewardModifiers.map((modifier) => {
               const definition = ALL_LABYRINTH_MODIFIERS[modifier];
               return (
                 <div key={modifier} className="rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-2">
                   <p className="text-xs font-bold text-amber-100">{definition.label}</p>
-                  <p className="mt-0.5 text-xs leading-snug text-stone-300">{highlightKeywords(definition.description)}</p>
+                  <p className="mt-0.5 text-xs leading-snug text-stone-300">
+                    {highlightKeywords(definition.description)}
+                  </p>
                 </div>
               );
             })}
@@ -252,7 +323,11 @@ function highlightKeywords(text: string): ReactNode {
     const clean = word.replace(/[^a-zA-Z]/g, "");
     const color = KEYWORD_COLORS[clean] ?? KEYWORD_COLORS[`${clean}s`] ?? KEYWORD_COLORS[`${clean}ing`];
     if (color) {
-      return <span key={index} className={`${color} font-semibold`}>{word}</span>;
+      return (
+        <span key={index} className={`${color} font-semibold`}>
+          {word}
+        </span>
+      );
     }
     return word;
   });
@@ -260,7 +335,10 @@ function highlightKeywords(text: string): ReactNode {
 
 function getNodeAriaLabel(type: LabyrinthNodeType, state: string, modifierCount: number, isEnterable: boolean) {
   const label = NODE_TYPE_LABELS[type];
-  const modifiers = modifierCount === 0 ? "no special modifiers" : `${modifierCount} special ${modifierCount === 1 ? "modifier" : "modifiers"}`;
+  const modifiers =
+    modifierCount === 0
+      ? "no special modifiers"
+      : `${modifierCount} special ${modifierCount === 1 ? "modifier" : "modifiers"}`;
   return `${label} chamber, ${state}, ${modifiers}${isEnterable ? ", enterable" : ""}`;
 }
 

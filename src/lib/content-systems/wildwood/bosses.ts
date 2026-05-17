@@ -25,11 +25,7 @@ export const WILDWOOD_BOSSES: WildwoodBossEntry[] = [
     bossId: "iron-bear",
     title: "The Iron Bear",
     subtitle: "Wildwood Boss",
-    descriptionLines: [
-      "Gains 2 Forge each turn",
-      "Gains 2 Armor each turn",
-      "Receives half Physical damage",
-    ],
+    descriptionLines: ["Gains 2 Forge each turn", "Gains 2 Armor each turn", "Receives half Physical damage"],
   },
 ];
 

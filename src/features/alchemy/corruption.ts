@@ -2,7 +2,13 @@
 // Depends on card game data, random selection, and corruption tuning constants.
 // Used by run navigation and tests so corrupted cards remain normal playable BattleCard objects.
 import { cardLibrary, type BattleCard, type BattleCardEffect } from "@/lib/game-data";
-import { CORRUPTION_DELTA_CHANCE, CORRUPTION_MIN_VALUE, CORRUPTION_MUTATION_DELTA, CORRUPTION_TRANSFORM_CHANCE, MIXED_POTION_CARD_ID } from "@/lib/game-constants";
+import {
+  CORRUPTION_DELTA_CHANCE,
+  CORRUPTION_MIN_VALUE,
+  CORRUPTION_MUTATION_DELTA,
+  CORRUPTION_TRANSFORM_CHANCE,
+  MIXED_POTION_CARD_ID,
+} from "@/lib/game-constants";
 
 type NumericEffect = BattleCardEffect & { amount: number };
 
@@ -53,9 +59,7 @@ export function getEditableCorruptionTargets(card: BattleCard): CorruptionTarget
 function getTransformCandidates(selectedCard: BattleCard, library: BattleCard[]) {
   return library.filter(
     (card) =>
-      card.id !== selectedCard.id &&
-      !isSpecialCorruptionCard(card) &&
-      getEditableCorruptionTargets(card).length > 0,
+      card.id !== selectedCard.id && !isSpecialCorruptionCard(card) && getEditableCorruptionTargets(card).length > 0,
   );
 }
 
@@ -101,7 +105,8 @@ function applyNumericCorruption(card: BattleCard, target: CorruptionTarget, delt
 export function corruptCard(selectedCard: BattleCard, library: BattleCard[] = cardLibrary): CorruptionResult {
   const selectedTargets = getEditableCorruptionTargets(selectedCard);
   const candidates = getTransformCandidates(selectedCard, library);
-  const shouldTransform = selectedTargets.length === 0 || (candidates.length > 0 && Math.random() < CORRUPTION_TRANSFORM_CHANCE);
+  const shouldTransform =
+    selectedTargets.length === 0 || (candidates.length > 0 && Math.random() < CORRUPTION_TRANSFORM_CHANCE);
   const sourceCard = shouldTransform ? candidates[Math.floor(Math.random() * candidates.length)] : selectedCard;
   if (!sourceCard) {
     throw new Error("No valid card is available for corruption");
@@ -123,7 +128,11 @@ export function corruptCard(selectedCard: BattleCard, library: BattleCard[] = ca
 }
 
 // Deck replacement is centralized so the selected physical deck slot is preserved immutably.
-export function corruptDeckCard(deck: BattleCard[], cardIndex: number, library: BattleCard[] = cardLibrary): { deck: BattleCard[]; result: CorruptionResult } {
+export function corruptDeckCard(
+  deck: BattleCard[],
+  cardIndex: number,
+  library: BattleCard[] = cardLibrary,
+): { deck: BattleCard[]; result: CorruptionResult } {
   const selectedCard = deck[cardIndex];
   if (!selectedCard) throw new Error("Cannot corrupt a missing card");
   const result = corruptCard(selectedCard, library);

@@ -12,7 +12,17 @@ import { popupClassName } from "../config";
 import { formatEnemyAttackLines } from "../utils";
 import { DescriptionLines } from "./card-ui";
 
-export function EnemyTooltip({ entry, discovered = true, attackEffects, labyrinthModifiers = [] }: { entry: BestiaryEntry; discovered?: boolean; attackEffects?: EnemyAttackEffect[] | undefined; labyrinthModifiers?: LabyrinthModifierKind[] }) {
+export function EnemyTooltip({
+  entry,
+  discovered = true,
+  attackEffects,
+  labyrinthModifiers = [],
+}: {
+  entry: BestiaryEntry;
+  discovered?: boolean;
+  attackEffects?: EnemyAttackEffect[] | undefined;
+  labyrinthModifiers?: LabyrinthModifierKind[];
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const [flip, setFlip] = useState(false);
 
@@ -35,20 +45,33 @@ export function EnemyTooltip({ entry, discovered = true, attackEffects, labyrint
           : popupClassName,
         "pointer-events-auto",
       )}
-      style={flip ? { transform: "translateY(6px) scale(0.985)", transformOrigin: "left center" } as CSSProperties : undefined}>
+      style={
+        flip
+          ? ({ transform: "translateY(6px) scale(0.985)", transformOrigin: "left center" } as CSSProperties)
+          : undefined
+      }
+    >
       <p className="text-base text-foreground sm:text-lg">{discovered ? entry.title : "Undiscovered"}</p>
       <div className="mt-2 space-y-1 text-sm leading-6 text-muted-foreground">
-        {discovered
-          ? [...attackLines, ...traitLines].map((line, i) => (
-              <DescriptionLines key={`enemy-${entry.id}-${i}`} lines={[line]} idPrefix={`enemy-${entry.id}-${i}`} />
-            ))
-          : <p>Undiscovered</p>}
+        {discovered ? (
+          [...attackLines, ...traitLines].map((line, i) => (
+            <DescriptionLines key={`enemy-${entry.id}-${i}`} lines={[line]} idPrefix={`enemy-${entry.id}-${i}`} />
+          ))
+        ) : (
+          <p>Undiscovered</p>
+        )}
         {discovered && labyrinthModifiers.length > 0 ? (
           <div className="mt-3 border-t border-border/60 pt-3">
-            <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-amber-100/80">Special Modifiers</p>
+            <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-amber-100/80">
+              Special Modifiers
+            </p>
             {labyrinthModifiers.map((modifier) => {
               const definition = ALL_LABYRINTH_MODIFIERS[modifier];
-              return <p key={modifier}><span className="text-foreground">{definition.label}:</span> {definition.description}</p>;
+              return (
+                <p key={modifier}>
+                  <span className="text-foreground">{definition.label}:</span> {definition.description}
+                </p>
+              );
             })}
           </div>
         ) : null}

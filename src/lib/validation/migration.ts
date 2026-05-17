@@ -18,7 +18,8 @@ function migrateV0ToV1(parsed: RawSaveData): RawSaveData {
   return {
     ...parsed,
     saveSchemaVersion: 1,
-    gameBuildVersion: typeof parsed.gameBuildVersion === "string" ? parsed.gameBuildVersion : CURRENT_GAME_BUILD_VERSION,
+    gameBuildVersion:
+      typeof parsed.gameBuildVersion === "string" ? parsed.gameBuildVersion : CURRENT_GAME_BUILD_VERSION,
     contentVersion: normalizePositiveInteger(parsed.contentVersion, CURRENT_CONTENT_VERSION),
   };
 }

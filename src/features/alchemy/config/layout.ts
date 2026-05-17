@@ -16,7 +16,8 @@ export const mobileStageHandCardWidthClass = "w-[clamp(200px,24cqh,250px)]";
 // same tactile fantasy material treatment.
 export const cardSurfaceClass = "relative overflow-hidden rounded-[30px] bg-black";
 export const staticCardTransform = "translate3d(0px, 0px, 0px)";
-export const popupClassName = "absolute bottom-full left-1/2 z-40 mb-4 w-60 -translate-x-1/2 rounded-[20px] border border-border/80 bg-card px-3 py-3 text-left";
+export const popupClassName =
+  "absolute bottom-full left-1/2 z-40 mb-4 w-60 -translate-x-1/2 rounded-[20px] border border-border/80 bg-card px-3 py-3 text-left";
 
 export const battleActorHalfGapClass = {
   desktop: "clamp(168px,10cqw,210px)",
@@ -31,8 +32,10 @@ export const battleActorSectionClass = {
 } as const;
 
 export const battleBottomBarClass = {
-  desktop: "absolute inset-x-0 grid items-end gap-[clamp(16px,2vw,28px)] px-2 bottom-2 grid-cols-[minmax(110px,0.24fr)_1fr_minmax(110px,0.24fr)] pb-1",
-  mobile: "absolute inset-x-0 grid items-end gap-[clamp(16px,2vw,28px)] px-2 bottom-[calc(70px+env(safe-area-inset-bottom))] grid-cols-[minmax(170px,0.18fr)_1fr_minmax(220px,0.18fr)] pb-0",
+  desktop:
+    "absolute inset-x-0 grid items-end gap-[clamp(16px,2vw,28px)] px-2 bottom-2 grid-cols-[minmax(110px,0.24fr)_1fr_minmax(110px,0.24fr)] pb-1",
+  mobile:
+    "absolute inset-x-0 grid items-end gap-[clamp(16px,2vw,28px)] px-2 bottom-[calc(70px+env(safe-area-inset-bottom))] grid-cols-[minmax(170px,0.18fr)_1fr_minmax(220px,0.18fr)] pb-0",
 } as const;
 
 export const battleBottomColumnClass = {

@@ -99,11 +99,8 @@
   }
 
   .tilt-surface {
-    transform:
-      var(--card-base-transform, translate3d(0px, 0px, 0px))
-      perspective(900px)
-      rotateX(var(--tilt-rotate-x, 0deg))
-      rotateY(var(--tilt-rotate-y, 0deg));
+    transform: var(--card-base-transform, translate3d(0px, 0px, 0px)) perspective(900px)
+      rotateX(var(--tilt-rotate-x, 0deg)) rotateY(var(--tilt-rotate-y, 0deg));
     transform-style: preserve-3d;
     transition: transform 460ms cubic-bezier(0.16, 1, 0.3, 1);
     will-change: transform;
@@ -114,7 +111,14 @@
   .card-shimmer-sweep {
     position: absolute;
     inset: -15%;
-    background: linear-gradient(110deg, transparent 22%, rgba(255, 255, 255, 0.12) 36%, rgba(255, 250, 225, 0.42) 49%, rgba(255, 255, 255, 0.16) 60%, transparent 76%);
+    background: linear-gradient(
+      110deg,
+      transparent 22%,
+      rgba(255, 255, 255, 0.12) 36%,
+      rgba(255, 250, 225, 0.42) 49%,
+      rgba(255, 255, 255, 0.16) 60%,
+      transparent 76%
+    );
     filter: blur(1px);
     mix-blend-mode: screen;
     transform: translateX(-165%) skewX(-18deg);
@@ -142,8 +146,12 @@
   }
 
   @keyframes deathFade {
-    0% { opacity: 1; }
-    100% { opacity: 0; }
+    0% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+    }
   }
 
   @keyframes frameFade {
@@ -313,13 +321,25 @@
 }
 
 @keyframes pageEnter {
-  from { opacity: 0; transform: translateY(8px) scale(0.988); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.988);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 @keyframes pageExit {
-  from { opacity: 1; transform: scale(1); }
-  to { opacity: 0; transform: translateY(-6px) scale(0.992); }
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.992);
+  }
 }
 
 @keyframes cardShimmer {
@@ -402,23 +422,42 @@
 
   100% {
     opacity: 0;
-    transform: translate3d(var(--ghost-travel-x, 0px), var(--ghost-travel-y, 0px), 0px) scale(var(--ghost-scale, 0.74)) rotate(0deg);
+    transform: translate3d(var(--ghost-travel-x, 0px), var(--ghost-travel-y, 0px), 0px) scale(var(--ghost-scale, 0.74))
+      rotate(0deg);
   }
 }
 
 @keyframes shake {
-  0% { transform: translateX(0); }
-  12% { transform: translateX(-12px); }
-  28% { transform: translateX(10px); }
-  44% { transform: translateX(-8px); }
-  60% { transform: translateX(5px); }
-  76% { transform: translateX(-3px); }
-  100% { transform: translateX(0); }
+  0% {
+    transform: translateX(0);
+  }
+  12% {
+    transform: translateX(-12px);
+  }
+  28% {
+    transform: translateX(10px);
+  }
+  44% {
+    transform: translateX(-8px);
+  }
+  60% {
+    transform: translateX(5px);
+  }
+  76% {
+    transform: translateX(-3px);
+  }
+  100% {
+    transform: translateX(0);
+  }
 }
 
 @keyframes shinySweep {
-  0% { background-position: 150% 50%; }
-  100% { background-position: -50% 50%; }
+  0% {
+    background-position: 150% 50%;
+  }
+  100% {
+    background-position: -50% 50%;
+  }
 }
 
 @keyframes boss-title-shine {
@@ -432,9 +471,15 @@
 }
 
 @keyframes startupBarCycle {
-  0% { transform: scaleX(0); }
-  70% { transform: scaleX(1); }
-  100% { transform: scaleX(1); }
+  0% {
+    transform: scaleX(0);
+  }
+  70% {
+    transform: scaleX(1);
+  }
+  100% {
+    transform: scaleX(1);
+  }
 }
 
 @keyframes hoverPopupQuickInAbove {
@@ -462,78 +507,152 @@
 }
 
 @keyframes overlayFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes panelPopIn {
-  from { opacity: 0; transform: translateY(10px) scale(0.975); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.975);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 @keyframes battleMenuPop {
-  from { opacity: 0; transform: translateY(8px) scale(0.965); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.965);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 @keyframes staggerItemIn {
-  from { opacity: 0; transform: translateY(14px) scale(0.985); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 @keyframes stateSwapIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes stateFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes numberPop {
-  0% { transform: translateY(2px) scale(0.96); }
-  48% { transform: translateY(-1px) scale(1.08); }
-  100% { transform: translateY(0) scale(1); }
+  0% {
+    transform: translateY(2px) scale(0.96);
+  }
+  48% {
+    transform: translateY(-1px) scale(1.08);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
 }
 
 @keyframes manaGemSettle {
-  0% { transform: translateY(2px) scale(0.82); opacity: 0.5; }
-  58% { transform: translateY(-2px) scale(1.12); opacity: 1; }
-  100% { transform: translateY(0) scale(1); opacity: 1; }
+  0% {
+    transform: translateY(2px) scale(0.82);
+    opacity: 0.5;
+  }
+  58% {
+    transform: translateY(-2px) scale(1.12);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
 }
 
 @keyframes statusChipPop {
-  from { opacity: 0; transform: translateY(4px) scale(0.82); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.82);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 @keyframes companionEnter {
-  from { opacity: 0; transform: translate3d(-14px, 10px, 0) scale(0.94); }
-  to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translate3d(-14px, 10px, 0) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
 }
 
 @keyframes talentChoicePulse {
   0%,
   100% {
-    box-shadow: 0 0 0 1px rgba(245, 196, 93, 0.12), 0 0 16px rgba(245, 196, 93, 0.12);
+    box-shadow:
+      0 0 0 1px rgba(245, 196, 93, 0.12),
+      0 0 16px rgba(245, 196, 93, 0.12);
     filter: brightness(1);
   }
 
   50% {
-    box-shadow: 0 0 0 1px rgba(245, 196, 93, 0.32), 0 0 24px rgba(245, 196, 93, 0.24);
+    box-shadow:
+      0 0 0 1px rgba(245, 196, 93, 0.32),
+      0 0 24px rgba(245, 196, 93, 0.24);
     filter: brightness(1.12);
   }
 }
 
 @keyframes unlockTextPulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.06); }
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06);
+  }
 }
 
 @keyframes talentReveal {
-  from { opacity: 0; transform: translateY(8px) scale(0.95); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .animate-unlock-text-pulse {
@@ -576,56 +695,117 @@
   }
 
   /* Reduce title sizes */
-  .mobile-landscape .text-5xl { font-size: 1.75rem !important; }
-  .mobile-landscape .text-4xl { font-size: 1.25rem !important; line-height: 1.3 !important; }
-  .mobile-landscape .text-3xl { font-size: 1.125rem !important; }
+  .mobile-landscape .text-5xl {
+    font-size: 1.75rem !important;
+  }
+  .mobile-landscape .text-4xl {
+    font-size: 1.25rem !important;
+    line-height: 1.3 !important;
+  }
+  .mobile-landscape .text-3xl {
+    font-size: 1.125rem !important;
+  }
 
   /* Reduce body & label text */
   .mobile-landscape h1 + .text-base,
-  .mobile-landscape h1 + p { font-size: 0.75rem !important; }
+  .mobile-landscape h1 + p {
+    font-size: 0.75rem !important;
+  }
 
   /* Tighter gaps between major sections */
-  .mobile-landscape .gap-8 { gap: 0.5rem !important; }
-  .mobile-landscape .gap-6 { gap: 0.5rem !important; }
-  .mobile-landscape .gap-5 { gap: 0.5rem !important; }
-  .mobile-landscape .gap-4 { gap: 0.375rem !important; }
-  .mobile-landscape .gap-3 { gap: 0.25rem !important; }
+  .mobile-landscape .gap-8 {
+    gap: 0.5rem !important;
+  }
+  .mobile-landscape .gap-6 {
+    gap: 0.5rem !important;
+  }
+  .mobile-landscape .gap-5 {
+    gap: 0.5rem !important;
+  }
+  .mobile-landscape .gap-4 {
+    gap: 0.375rem !important;
+  }
+  .mobile-landscape .gap-3 {
+    gap: 0.25rem !important;
+  }
 
   /* Tighter vertical padding on cards/panels */
-  .mobile-landscape .px-6 { padding-left: 1rem !important; padding-right: 1rem !important; }
-  .mobile-landscape .py-7 { padding-top: 0.75rem !important; padding-bottom: 0.75rem !important; }
-  .mobile-landscape .py-6 { padding-top: 0.5rem !important; padding-bottom: 0.5rem !important; }
+  .mobile-landscape .px-6 {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+  .mobile-landscape .py-7 {
+    padding-top: 0.75rem !important;
+    padding-bottom: 0.75rem !important;
+  }
+  .mobile-landscape .py-6 {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+  }
 
   /* Tighter margins on inner sections */
-  .mobile-landscape .mt-8 { margin-top: 0.75rem !important; }
-  .mobile-landscape .mt-6 { margin-top: 0.5rem !important; }
-  .mobile-landscape .mt-5 { margin-top: 0.375rem !important; }
-  .mobile-landscape .mt-4 { margin-top: 0.25rem !important; }
-  .mobile-landscape .mt-3 { margin-top: 0.25rem !important; }
-  .mobile-landscape .mb-4 { margin-bottom: 0.5rem !important; }
-  .mobile-landscape .mb-3 { margin-bottom: 0.25rem !important; }
+  .mobile-landscape .mt-8 {
+    margin-top: 0.75rem !important;
+  }
+  .mobile-landscape .mt-6 {
+    margin-top: 0.5rem !important;
+  }
+  .mobile-landscape .mt-5 {
+    margin-top: 0.375rem !important;
+  }
+  .mobile-landscape .mt-4 {
+    margin-top: 0.25rem !important;
+  }
+  .mobile-landscape .mt-3 {
+    margin-top: 0.25rem !important;
+  }
+  .mobile-landscape .mb-4 {
+    margin-bottom: 0.5rem !important;
+  }
+  .mobile-landscape .mb-3 {
+    margin-bottom: 0.25rem !important;
+  }
 
   /* Reduce button sizes */
   .mobile-landscape .min-w-40,
-  .mobile-landscape .min-w-44 { min-width: 0 !important; }
-  .mobile-landscape .w-56 { width: 10rem !important; }
-  .mobile-landscape .w-40 { width: 8rem !important; }
+  .mobile-landscape .min-w-44 {
+    min-width: 0 !important;
+  }
+  .mobile-landscape .w-56 {
+    width: 10rem !important;
+  }
+  .mobile-landscape .w-40 {
+    width: 8rem !important;
+  }
 
   /* Make large buttons more compact */
-  .mobile-landscape .h-12 { height: 2.25rem !important; }
+  .mobile-landscape .h-12 {
+    height: 2.25rem !important;
+  }
 
   /* Reduce card image sizes in shop, rewards, etc. */
   .mobile-landscape .max-w-6xl,
   .mobile-landscape .max-w-5xl,
   .mobile-landscape .max-w-4xl,
   .mobile-landscape .max-w-3xl,
-  .mobile-landscape .max-w-2xl { max-width: 100% !important; }
+  .mobile-landscape .max-w-2xl {
+    max-width: 100% !important;
+  }
 
   /* Tighter shop grid */
-  .mobile-landscape .sm\:grid-cols-3 { grid-template-columns: repeat(3, 1fr) !important; gap: 0.5rem !important; }
+  .mobile-landscape .sm\:grid-cols-3 {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 0.5rem !important;
+  }
 
   /* Compact destination image */
-  .mobile-landscape .max-w-\[430px\] { max-width: 220px !important; }
-  .mobile-landscape .max-w-\[400px\] { max-width: 160px !important; }
-  .mobile-landscape .max-w-\[352px\] { max-width: 160px !important; }
+  .mobile-landscape .max-w-\[430px\] {
+    max-width: 220px !important;
+  }
+  .mobile-landscape .max-w-\[400px\] {
+    max-width: 160px !important;
+  }
+  .mobile-landscape .max-w-\[352px\] {
+    max-width: 160px !important;
+  }
 }

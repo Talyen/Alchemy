@@ -14,7 +14,27 @@ export type CardSelectionGridItem = {
   index: number;
 };
 
-export function CardSelectionGrid({ items, page, onPageChange, pageSize, revealDelay = 0, renderItem, emptyMessage, paginationSize = "sm", paginationReserveSpace = false }: { items: CardSelectionGridItem[]; page: number; onPageChange: (page: number) => void; pageSize: number; revealDelay?: number | undefined; renderItem: (item: CardSelectionGridItem, visualIndex: number) => ReactNode; emptyMessage?: string; paginationSize?: "sm" | "default"; paginationReserveSpace?: boolean }) {
+export function CardSelectionGrid({
+  items,
+  page,
+  onPageChange,
+  pageSize,
+  revealDelay = 0,
+  renderItem,
+  emptyMessage,
+  paginationSize = "sm",
+  paginationReserveSpace = false,
+}: {
+  items: CardSelectionGridItem[];
+  page: number;
+  onPageChange: (page: number) => void;
+  pageSize: number;
+  revealDelay?: number | undefined;
+  renderItem: (item: CardSelectionGridItem, visualIndex: number) => ReactNode;
+  emptyMessage?: string;
+  paginationSize?: "sm" | "default";
+  paginationReserveSpace?: boolean;
+}) {
   // The original deck index travels with each item so paginated/filtered pickers still mutate the correct slot.
   const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
   const safePage = Math.min(page, totalPages - 1);
@@ -31,7 +51,13 @@ export function CardSelectionGrid({ items, page, onPageChange, pageSize, revealD
             {rowItems.map((item, columnIndex) => {
               const visualIndex = rowIndex * 4 + columnIndex;
               return (
-                <BlurFade key={`${item.card.id}-${item.index}`} delay={revealDelay + visualIndex * ANIMATION_STAGGER_UNIT} direction="up" offset={6} className="flex justify-center">
+                <BlurFade
+                  key={`${item.card.id}-${item.index}`}
+                  delay={revealDelay + visualIndex * ANIMATION_STAGGER_UNIT}
+                  direction="up"
+                  offset={6}
+                  className="flex justify-center"
+                >
                   {renderItem(item, visualIndex)}
                 </BlurFade>
               );
@@ -39,9 +65,17 @@ export function CardSelectionGrid({ items, page, onPageChange, pageSize, revealD
           </div>
         ))}
       </div>
-      {pageItems.length === 0 && emptyMessage ? <p className="mt-4 text-sm text-muted-foreground">{emptyMessage}</p> : null}
+      {pageItems.length === 0 && emptyMessage ? (
+        <p className="mt-4 text-sm text-muted-foreground">{emptyMessage}</p>
+      ) : null}
       <div className="flex justify-center">
-        <PaginationControls page={safePage} totalPages={totalPages} onPageChange={onPageChange} size={paginationSize} reserveSpace={paginationReserveSpace} />
+        <PaginationControls
+          page={safePage}
+          totalPages={totalPages}
+          onPageChange={onPageChange}
+          size={paginationSize}
+          reserveSpace={paginationReserveSpace}
+        />
       </div>
     </div>
   );

@@ -18,9 +18,15 @@ type AppAudioEffectsOptions = {
 export function useAppAudioEffects({ masterVol, musicVol, sfxVol, muteInBackground, screen }: AppAudioEffectsOptions) {
   const musicStartedRef = useRef(false);
 
-  useEffect(() => { setMasterVolume(masterVol / 100); }, [masterVol]);
-  useEffect(() => { setMusicVolume(musicVol / 100); }, [musicVol]);
-  useEffect(() => { setSfxVolume(sfxVol / 100); }, [sfxVol]);
+  useEffect(() => {
+    setMasterVolume(masterVol / 100);
+  }, [masterVol]);
+  useEffect(() => {
+    setMusicVolume(musicVol / 100);
+  }, [musicVol]);
+  useEffect(() => {
+    setSfxVolume(sfxVol / 100);
+  }, [sfxVol]);
 
   useEffect(() => {
     // Background mute must respond to both tab visibility and focus changes, then always

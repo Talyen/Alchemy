@@ -8,11 +8,15 @@ import { Check, ChevronDown } from "lucide-react";
 const Select = SelectPrimitive.Root;
 const SelectValue = SelectPrimitive.Value;
 
-const SelectTrigger = ({ className, children, ...props }: React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger> & { ref?: React.Ref<HTMLButtonElement> }) => (
+const SelectTrigger = ({
+  className,
+  children,
+  ...props
+}: React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger> & { ref?: React.Ref<HTMLButtonElement> }) => (
   <SelectPrimitive.Trigger
     className={cn(
       "flex w-full items-center justify-between rounded-[16px] border border-border/80 bg-background px-4 py-3 text-base text-foreground outline-none transition-colors focus:border-primary data-[placeholder]:text-muted-foreground [&>span]:line-clamp-1",
-      className
+      className,
     )}
     {...props}
   >
@@ -23,19 +27,28 @@ const SelectTrigger = ({ className, children, ...props }: React.ComponentPropsWi
   </SelectPrimitive.Trigger>
 );
 
-const SelectContent = ({ className, children, position = "popper", ...props }: React.ComponentPropsWithoutRef<typeof SelectPrimitive.Content> & { ref?: React.Ref<HTMLDivElement> }) => (
+const SelectContent = ({
+  className,
+  children,
+  position = "popper",
+  ...props
+}: React.ComponentPropsWithoutRef<typeof SelectPrimitive.Content> & { ref?: React.Ref<HTMLDivElement> }) => (
   <SelectPrimitive.Portal>
     <SelectPrimitive.Content
       className={cn(
         "relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-[16px] border border-border/80 bg-popover text-popover-foreground shadow-md",
         position === "popper" && "data-[side=bottom]:translate-y-1 data-[side=top]:-translate-y-1",
-        className
+        className,
       )}
       position={position}
       {...props}
     >
       <SelectPrimitive.Viewport
-        className={cn("p-1", position === "popper" && "h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)]")}
+        className={cn(
+          "p-1",
+          position === "popper" &&
+            "h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)]",
+        )}
       >
         {children}
       </SelectPrimitive.Viewport>
@@ -43,11 +56,15 @@ const SelectContent = ({ className, children, position = "popper", ...props }: R
   </SelectPrimitive.Portal>
 );
 
-const SelectItem = ({ className, children, ...props }: React.ComponentPropsWithoutRef<typeof SelectPrimitive.Item> & { ref?: React.Ref<HTMLDivElement> }) => (
+const SelectItem = ({
+  className,
+  children,
+  ...props
+}: React.ComponentPropsWithoutRef<typeof SelectPrimitive.Item> & { ref?: React.Ref<HTMLDivElement> }) => (
   <SelectPrimitive.Item
     className={cn(
       "relative flex w-full cursor-default select-none items-center rounded-[12px] py-2.5 pl-10 pr-4 text-sm text-foreground outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
-      className
+      className,
     )}
     {...props}
   >

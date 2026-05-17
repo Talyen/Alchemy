@@ -36,7 +36,7 @@ export const defaultTrinketEffects: TrinketManifest = {
 const trinketEffects: Record<string, Partial<TrinketManifest>> = {
   "brass-censer": { firstHolyDamageDoubled: true },
   "tattered-pages": { extraDrawPerBattle: 1 },
-  "meteorite": { firstBurnDoubled: true },
+  meteorite: { firstBurnDoubled: true },
   "bone-charm": { boneCharmHealOnKill: 3 },
   "obsidian-hammer": { forgeStunThreshold: 4, forgeStunAmount: 1 },
   "frozen-heart": { frozenHeartDamage: 6 },
@@ -56,7 +56,7 @@ const trinketEffects: Record<string, Partial<TrinketManifest>> = {
   "groves-favor": { grovesFavorStartHeal: 2 },
   "companions-collar": { companionDamageBonus: 1 },
   "polar-pendant": { freezeDurationExtension: 1 },
-  "thunderstone": { thunderstoneDamageOnStun: 6 },
+  thunderstone: { thunderstoneDamageOnStun: 6 },
   "lucky-clover": { luckyCloverGoldChance: 10 },
 };
 

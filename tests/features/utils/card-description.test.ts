@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getEffectiveCardDescriptionLines, type CardDescriptionContext } from "@/features/alchemy/utils/card-description";
+import { getEffectiveCardDescriptionLines } from "@/features/alchemy/utils/card-description";
 import type { BattleCard } from "@/lib/game-data";
 
 function makeCard(overrides: Partial<BattleCard> = {}): BattleCard {

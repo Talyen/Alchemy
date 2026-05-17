@@ -1,6 +1,44 @@
 // Compendium data — all enemies (bestiary), trinkets, and their stat/effect definitions.
 // Depends on art assets and type contracts. Pure configuration arrays, no game logic.
-import { boneCharm, brassCenser, companionsCollar, cutpurseKnife, frozenHeart, goblin, grovesFavor, imp, ironBear, ironwoodBuckler, livingArmor, lizardScout, luckyClover, meteorite, mimic, mortarAndPestle, mudElemental, necromancer, merchantsFavor, obsidianHammer, parasiticBloom, plagueDoctor, plagueDoctorsMask, polarPendant, resonantChime, runicQuill, skeleton, sinEatersLantern, smugglersMap, sunderingCharm, tatteredPages, theBlightTreant, theForgeGolem, theFrostwarden, thunderstone, vanguardsCrest, wishingWellCoin } from "./assets";
+import {
+  boneCharm,
+  brassCenser,
+  companionsCollar,
+  cutpurseKnife,
+  frozenHeart,
+  goblin,
+  grovesFavor,
+  imp,
+  ironBear,
+  ironwoodBuckler,
+  livingArmor,
+  lizardScout,
+  luckyClover,
+  meteorite,
+  mimic,
+  mortarAndPestle,
+  mudElemental,
+  necromancer,
+  merchantsFavor,
+  obsidianHammer,
+  parasiticBloom,
+  plagueDoctor,
+  plagueDoctorsMask,
+  polarPendant,
+  resonantChime,
+  runicQuill,
+  skeleton,
+  sinEatersLantern,
+  smugglersMap,
+  sunderingCharm,
+  tatteredPages,
+  theBlightTreant,
+  theForgeGolem,
+  theFrostwarden,
+  thunderstone,
+  vanguardsCrest,
+  wishingWellCoin,
+} from "./assets";
 import type { BestiaryEntry, TrinketEntry } from "./types";
 
 export const enemyBestiary: BestiaryEntry[] = [
@@ -11,7 +49,13 @@ export const enemyBestiary: BestiaryEntry[] = [
     descriptionLines: [],
     art: theForgeGolem,
     enemyType: "boss",
-    traits: [{ id: "rusting-carapace", title: "Rusting Carapace", description: "Gains 1 Armor each turn\nGains 1 Forge each turn" }],
+    traits: [
+      {
+        id: "rusting-carapace",
+        title: "Rusting Carapace",
+        description: "Gains 1 Armor each turn\nGains 1 Forge each turn",
+      },
+    ],
     attackEffects: [
       { kind: "damage", damageType: "physical", amount: 5 },
       { kind: "player-status", status: "stun", amount: 2 },
@@ -24,7 +68,13 @@ export const enemyBestiary: BestiaryEntry[] = [
     descriptionLines: [],
     art: theFrostwarden,
     enemyType: "boss",
-    traits: [{ id: "glacial-shell", title: "Glacial Shell", description: "Receives half Freeze damage\nReceives double Burn damage\nGains 1 Freeze damage each turn" }],
+    traits: [
+      {
+        id: "glacial-shell",
+        title: "Glacial Shell",
+        description: "Receives half Freeze damage\nReceives double Burn damage\nGains 1 Freeze damage each turn",
+      },
+    ],
     attackEffects: [
       { kind: "damage", damageType: "physical", amount: 8 },
       { kind: "player-status", status: "freeze", amount: 2 },
@@ -50,7 +100,13 @@ export const enemyBestiary: BestiaryEntry[] = [
     descriptionLines: [],
     art: skeleton,
     enemyType: "normal",
-    traits: [{ id: "brittle-bones", title: "Brittle Bones", description: "Receives double Holy damage\nReceives double Stun damage" }],
+    traits: [
+      {
+        id: "brittle-bones",
+        title: "Brittle Bones",
+        description: "Receives double Holy damage\nReceives double Stun damage",
+      },
+    ],
     attackEffects: [{ kind: "damage", damageType: "physical", amount: 8 }],
   },
   {
@@ -60,7 +116,13 @@ export const enemyBestiary: BestiaryEntry[] = [
     descriptionLines: [],
     art: goblin,
     enemyType: "normal",
-    traits: [{ id: "trinket-hoarder", title: "Trinket Hoarder", description: "Receives double Burn damage\nMore likely to drop Trinkets" }],
+    traits: [
+      {
+        id: "trinket-hoarder",
+        title: "Trinket Hoarder",
+        description: "Receives double Burn damage\nMore likely to drop Trinkets",
+      },
+    ],
     attackEffects: [{ kind: "damage", damageType: "physical", amount: 8 }],
   },
   {
@@ -71,9 +133,7 @@ export const enemyBestiary: BestiaryEntry[] = [
     art: imp,
     enemyType: "normal",
     traits: [{ id: "burn-resistance", title: "Burn Resistance", description: "Receives half Burn damage" }],
-    attackEffects: [
-      { kind: "player-status", status: "burn", amount: 3 },
-    ],
+    attackEffects: [{ kind: "player-status", status: "burn", amount: 3 }],
   },
   {
     id: "lizard-scout",
@@ -83,9 +143,7 @@ export const enemyBestiary: BestiaryEntry[] = [
     art: lizardScout,
     enemyType: "normal",
     traits: [{ id: "poison-resistance", title: "Poison Resistance", description: "Receives half Poison damage" }],
-    attackEffects: [
-      { kind: "player-status", status: "poison", amount: 2 },
-    ],
+    attackEffects: [{ kind: "player-status", status: "poison", amount: 2 }],
   },
   {
     id: "mimic",
@@ -118,9 +176,7 @@ export const enemyBestiary: BestiaryEntry[] = [
     art: necromancer,
     enemyType: "elite",
     traits: [{ id: "holy-vulnerability", title: "Holy Vulnerability", description: "Receives double Holy damage" }],
-    attackEffects: [
-      { kind: "player-status", status: "bleed", amount: 4 },
-    ],
+    attackEffects: [{ kind: "player-status", status: "bleed", amount: 4 }],
   },
   {
     id: "plague-doctor",
@@ -130,9 +186,7 @@ export const enemyBestiary: BestiaryEntry[] = [
     art: plagueDoctor,
     enemyType: "elite",
     traits: [{ id: "poison-resistance", title: "Poison Resistance", description: "Receives half Poison damage" }],
-    attackEffects: [
-      { kind: "player-status", status: "poison", amount: 4 },
-    ],
+    attackEffects: [{ kind: "player-status", status: "poison", amount: 4 }],
   },
   {
     id: "living-armor",
@@ -141,7 +195,13 @@ export const enemyBestiary: BestiaryEntry[] = [
     descriptionLines: [],
     art: livingArmor,
     enemyType: "elite",
-    traits: [{ id: "living-armor", title: "Living Armor", description: "Starts combat with 8 Armor\nReceives half Bleed damage" }],
+    traits: [
+      {
+        id: "living-armor",
+        title: "Living Armor",
+        description: "Starts combat with 8 Armor\nReceives half Bleed damage",
+      },
+    ],
     attackEffects: [
       { kind: "damage", damageType: "physical", amount: 5 },
       { kind: "damage", damageType: "nature", amount: 5 },

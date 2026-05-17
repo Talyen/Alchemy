@@ -10,6 +10,8 @@ import { BattleCardButton, getCardDisplayTitle } from "../../components";
 import { handCardWidthClass, mobileStageHandCardWidthClass } from "../../config";
 import { getHoverId } from "../../utils";
 import type { BattleActionsProps, BattleHoverProps, BattleScreenState } from "./types";
+import { useScreenStore } from "../../stores/screen-store";
+import { useBattleStore } from "../../stores/battle-store";
 
 export function WishOverlay({
   battleState,
@@ -22,13 +24,18 @@ export function WishOverlay({
   actions: BattleActionsProps;
   isMobileLandscape: boolean;
 }) {
-  const { hoveredCardId, setHoveredCardId, shimmerState, onHoverShimmer } = hover;
+  const { hoveredCardId, shimmerState } = hover;
   const { onWishChoice } = actions;
+  const setHoveredCardId = useScreenStore((s) => s.setHoveredCardId);
+  const maybeTriggerShimmer = useBattleStore((s) => s.maybeTriggerShimmer);
   const [wishSelectedCard, setWishSelectedCard] = useState<BattleCard | null>(null);
   const handWidthClass = isMobileLandscape ? mobileStageHandCardWidthClass : handCardWidthClass;
 
   return (
-    <div className="motion-overlay absolute inset-0 flex items-center justify-center bg-black/70 px-6" style={{ zIndex: WISH_OVERLAY_Z_INDEX }}>
+    <div
+      className="motion-overlay absolute inset-0 flex items-center justify-center bg-black/70 px-6"
+      style={{ zIndex: WISH_OVERLAY_Z_INDEX }}
+    >
       <div className="motion-panel alchemy-shell w-full max-w-5xl rounded-[28px] border border-border/80 px-6 py-6">
         <div className="text-center">
           <h2 className="text-2xl text-foreground">Wish</h2>
@@ -47,12 +54,16 @@ export function WishOverlay({
                 hovered={hoveredCardId === hoverId}
                 onHoverStart={() => {
                   setHoveredCardId(hoverId);
-                  onHoverShimmer(hoverId);
+                  maybeTriggerShimmer(hoverId);
                 }}
                 onHoverEnd={() => setHoveredCardId((current) => (current === hoverId ? null : current))}
                 onClick={() => setWishSelectedCard(card)}
                 ariaLabel={`Choose ${getCardDisplayTitle(card)}`}
-                descriptionContext={{ ...battleState.talentEffects, companionDamageBonus: battleState.trinketEffects.companionDamageBonus, companionDamageBuff: battleState.companionDamageBuff }}
+                descriptionContext={{
+                  ...battleState.talentEffects,
+                  companionDamageBonus: battleState.trinketEffects.companionDamageBonus,
+                  companionDamageBuff: battleState.companionDamageBuff,
+                }}
                 shimmerActive={shimmerState?.cardId === hoverId}
                 shimmerToken={shimmerState?.token}
                 className={handWidthClass}

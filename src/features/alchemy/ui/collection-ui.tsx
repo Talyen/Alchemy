@@ -3,13 +3,7 @@
 // Used by CollectionScreen to render encyclopedia-style grids without owning screen routing.
 import type { CSSProperties } from "react";
 
-import {
-  cardLibrary,
-  enemyBestiary,
-  trinketLibrary,
-  type BestiaryEntry,
-  type TrinketEntry,
-} from "@/lib/game-data";
+import { cardLibrary, enemyBestiary, trinketLibrary, type BestiaryEntry, type TrinketEntry } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
 import { PaginationControls } from "./shared-ui";
@@ -38,7 +32,11 @@ type CollectionTileItem = {
 
 export function getCollectionTotalPages(collectionTab: CollectionTab) {
   const itemCount =
-    collectionTab === "cards" ? cardLibrary.length : collectionTab === "bestiary" ? enemyBestiary.length : trinketLibrary.length;
+    collectionTab === "cards"
+      ? cardLibrary.length
+      : collectionTab === "bestiary"
+        ? enemyBestiary.length
+        : trinketLibrary.length;
 
   return Math.max(1, Math.ceil(itemCount / collectionPageSize));
 }
@@ -67,7 +65,12 @@ function CompendiumTile({
       {hovered && item.frameType === "bestiary" && enemyEntry ? (
         <EnemyTooltip entry={enemyEntry} discovered={item.discovered} />
       ) : hovered ? (
-        <DetailPopup idPrefix={item.id} title={item.title} subtitle={item.subtitle} descriptionLines={item.descriptionLines} />
+        <DetailPopup
+          idPrefix={item.id}
+          title={item.title}
+          subtitle={item.subtitle}
+          descriptionLines={item.descriptionLines}
+        />
       ) : null}
 
       <button
@@ -137,7 +140,10 @@ export function CollectionGrid({
   }).slice(page * collectionPageSize, (page + 1) * collectionPageSize);
 
   return (
-    <div key={`${collectionTab}-${page}`} className="state-swap grid min-h-[540px] grid-cols-5 grid-rows-2 justify-items-center gap-x-6 gap-y-7 overflow-visible">
+    <div
+      key={`${collectionTab}-${page}`}
+      className="state-swap grid min-h-[540px] grid-cols-5 grid-rows-2 justify-items-center gap-x-6 gap-y-7 overflow-visible"
+    >
       {pageItems.map((item, index) => {
         const hoverId = getHoverId(item.hoverScope, item.id);
 
@@ -146,7 +152,10 @@ export function CollectionGrid({
             key={`${item.hoverScope}-${item.id}`}
             item={item}
             hovered={hoveredCardId === hoverId}
-            onHoverStart={() => { onHoverChange(hoverId); onHoverShimmer(hoverId); }}
+            onHoverStart={() => {
+              onHoverChange(hoverId);
+              onHoverShimmer(hoverId);
+            }}
             onHoverEnd={() => onHoverChange((current) => (current === hoverId ? null : current))}
             shimmerActive={shimmerState?.cardId === hoverId}
             shimmerToken={shimmerState?.token}
@@ -194,38 +203,75 @@ export function CollectionTabs({
   );
 }
 
-export function CollectionPagination({ page, totalPages, onPageChange }: { page: number; totalPages: number; onPageChange: (page: number) => void }) {
-  return <PaginationControls page={page} totalPages={totalPages} onPageChange={onPageChange} size="default" reserveSpace />;
+export function CollectionPagination({
+  page,
+  totalPages,
+  onPageChange,
+}: {
+  page: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+}) {
+  return (
+    <PaginationControls page={page} totalPages={totalPages} onPageChange={onPageChange} size="default" reserveSpace />
+  );
 }
 
 function getCardItems(discoveredCardIds: string[], bondedCompanions: Record<string, number> = {}) {
   return [...cardLibrary]
     .sort((a, b) => a.title.localeCompare(b.title))
     .map((card) => {
-    const discovered = discoveredCardIds.includes(card.id);
-    const descriptionLines = discovered
-      ? getEffectiveCardDescriptionLines(card, { companionBondLevels: bondedCompanions })
-      : ["Discover this card during a run to reveal it here."];
-    return { id: card.id, title: discovered ? card.title : "Undiscovered", subtitle: undefined, descriptionLines, art: card.art, discovered, hoverScope: "collection-card" as const, frameType: "card" as const };
-  });
+      const discovered = discoveredCardIds.includes(card.id);
+      const descriptionLines = discovered
+        ? getEffectiveCardDescriptionLines(card, { companionBondLevels: bondedCompanions })
+        : ["Discover this card during a run to reveal it here."];
+      return {
+        id: card.id,
+        title: discovered ? card.title : "Undiscovered",
+        subtitle: undefined,
+        descriptionLines,
+        art: card.art,
+        discovered,
+        hoverScope: "collection-card" as const,
+        frameType: "card" as const,
+      };
+    });
 }
 
 function getBestiaryItems(encounteredEnemyIds: string[]) {
   return [...enemyBestiary]
     .sort((a, b) => a.title.localeCompare(b.title))
     .map((entry: BestiaryEntry) => {
-    const discovered = encounteredEnemyIds.includes(entry.id);
-    return { id: entry.id, title: discovered ? entry.title : "Undiscovered", subtitle: discovered ? entry.subtitle : undefined, descriptionLines: discovered ? entry.descriptionLines : ["Encounter this enemy to record its details."], art: entry.art, discovered, hoverScope: "collection-bestiary" as const, frameType: "bestiary" as const };
-  });
+      const discovered = encounteredEnemyIds.includes(entry.id);
+      return {
+        id: entry.id,
+        title: discovered ? entry.title : "Undiscovered",
+        subtitle: discovered ? entry.subtitle : undefined,
+        descriptionLines: discovered ? entry.descriptionLines : ["Encounter this enemy to record its details."],
+        art: entry.art,
+        discovered,
+        hoverScope: "collection-bestiary" as const,
+        frameType: "bestiary" as const,
+      };
+    });
 }
 
 function getTrinketItems(discoveredTrinketIds: string[]) {
   return [...trinketLibrary]
     .sort((a, b) => a.title.localeCompare(b.title))
     .map((entry: TrinketEntry) => {
-    const discovered = discoveredTrinketIds.includes(entry.id);
-    return { id: entry.id, title: discovered ? entry.title : "Undiscovered", subtitle: undefined, descriptionLines: discovered ? entry.descriptionLines : ["Find this trinket to reveal its effect."], art: entry.art, discovered, hoverScope: "collection-trinket" as const, frameType: "trinket" as const };
-  });
+      const discovered = discoveredTrinketIds.includes(entry.id);
+      return {
+        id: entry.id,
+        title: discovered ? entry.title : "Undiscovered",
+        subtitle: undefined,
+        descriptionLines: discovered ? entry.descriptionLines : ["Find this trinket to reveal its effect."],
+        art: entry.art,
+        discovered,
+        hoverScope: "collection-trinket" as const,
+        frameType: "trinket" as const,
+      };
+    });
 }
 
 function getCollectionPageItems({

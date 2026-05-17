@@ -5,7 +5,10 @@ import { addGold, applyPlayerHealing, type BattleState, type CombatTextEvent } f
 import { mergeCombatText } from "./combat-text";
 
 export function applyIronwoodBuckler(state: BattleState, combatTexts: CombatTextEvent[]) {
-  if (state.trinketEffects.blockToArmorThreshold > 0 && state.playerStatuses.block >= state.trinketEffects.blockToArmorThreshold) {
+  if (
+    state.trinketEffects.blockToArmorThreshold > 0 &&
+    state.playerStatuses.block >= state.trinketEffects.blockToArmorThreshold
+  ) {
     state = {
       ...state,
       playerStatuses: {
@@ -13,7 +16,12 @@ export function applyIronwoodBuckler(state: BattleState, combatTexts: CombatText
         armor: state.playerStatuses.armor + state.trinketEffects.blockToArmorAmount,
       },
     };
-    mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "armor", amount: state.trinketEffects.blockToArmorAmount });
+    mergeCombatText(combatTexts, {
+      target: "player",
+      kind: "status",
+      stat: "armor",
+      amount: state.trinketEffects.blockToArmorAmount,
+    });
   }
   return state;
 }

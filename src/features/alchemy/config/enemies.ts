@@ -7,7 +7,9 @@ import { pickRandom } from "@/lib/utils";
 // normal combat encounter without a tutorial guarantee. Subsequent rooms pick
 // from normal or elite pools based on the current destination type.
 export function getCurrentEnemy(enemyType?: EnemyType): BestiaryEntry {
-  const pool = enemyType ? enemyBestiary.filter((e) => e.enemyType === enemyType) : enemyBestiary.filter((e) => e.id !== "skeleton");
+  const pool = enemyType
+    ? enemyBestiary.filter((e) => e.enemyType === enemyType)
+    : enemyBestiary.filter((e) => e.id !== "skeleton");
   const available = pool.length > 0 ? pool : enemyBestiary.filter((e) => e.id !== "skeleton");
   return pickRandom(available) ?? enemyBestiary[0];
 }

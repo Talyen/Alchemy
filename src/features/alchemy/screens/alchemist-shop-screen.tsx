@@ -5,21 +5,41 @@ import { FlaskConical, RefreshCw } from "lucide-react";
 import { BlurFade } from "@/components/ui/blur-fade";
 import { Button } from "@/components/ui/button";
 import type { BattleCard } from "@/lib/game-data";
-import { ALCHEMIST_REFRESH_PRICE, MIXED_POTION_CARD_ID, MIXED_POTION_TITLE, POTION_CARD_ID_FRAGMENT, SELECTION_GRID_PAGE_SIZE } from "@/lib/game-constants";
+import {
+  ALCHEMIST_POTION_PRICE,
+  ALCHEMIST_MIX_PRICE,
+  ALCHEMIST_REFRESH_PRICE,
+  MIXED_POTION_CARD_ID,
+  MIXED_POTION_TITLE,
+  POTION_CARD_ID_FRAGMENT,
+  SELECTION_GRID_PAGE_SIZE,
+} from "@/lib/game-constants";
 
 import { BattleCardButton, PurchasableCardItem, SelectableShopCard } from "../ui/card-ui";
 import { CardSelectionGrid } from "../ui/card-selection-grid";
 import { GoldDisplay, ScreenDescription, ScreenHeader, ServiceButton, staggerDelay } from "../ui/shared-ui";
 import { viewCardWidthClass } from "../config";
+import { useRunStore } from "../stores/run-store";
+import { useScreenStore } from "../stores/screen-store";
 
 export function AlchemistShopScreen({
-  gold, potionCards, runDeck, refreshesLeft, mixUsed, potionPrice, mixPrice,
-  onBuyCard, onRefresh, onMixPotions, onContinue,
+  onBuyCard,
+  onRefresh,
+  onMixPotions,
+  onContinue,
 }: {
-  gold: number; potionCards: BattleCard[]; runDeck: BattleCard[]; refreshesLeft: number; mixUsed: boolean; potionPrice: number; mixPrice: number;
-  onBuyCard: (card: BattleCard) => void; onRefresh: () => void;
-  onMixPotions: (indexA: number, indexB: number) => BattleCard | null; onContinue: () => void;
+  onBuyCard: (card: BattleCard) => void;
+  onRefresh: () => void;
+  onMixPotions: (indexA: number, indexB: number) => BattleCard | null;
+  onContinue: () => void;
 }) {
+  const gold = useRunStore((s) => s.runGold);
+  const runDeck = useRunStore((s) => s.runDeck);
+  const potionCards = useScreenStore((s) => s.alchemistState.potions);
+  const refreshesLeft = useScreenStore((s) => s.alchemistState.refreshesLeft);
+  const mixUsed = useScreenStore((s) => s.alchemistState.mixUsed);
+  const potionPrice = ALCHEMIST_POTION_PRICE;
+  const mixPrice = ALCHEMIST_MIX_PRICE;
   const [mixMode, setMixMode] = useState(false);
   const [mixStep, setMixStep] = useState(0);
   const [selectedA, setSelectedA] = useState<number | null>(null);
@@ -35,19 +55,35 @@ export function AlchemistShopScreen({
     setPurchasedIds((prev) => new Set(prev).add(card.id));
   }
 
-  function startMix() { setMixMode(true); setMixStep(1); setSelectedA(null); setSelectedB(null); setMixPage(0); }
-  function cancelMix() { setMixMode(false); setMixStep(0); setSelectedA(null); setSelectedB(null); setMixPage(0); }
+  function startMix() {
+    setMixMode(true);
+    setMixStep(1);
+    setSelectedA(null);
+    setSelectedB(null);
+    setMixPage(0);
+  }
+  function cancelMix() {
+    setMixMode(false);
+    setMixStep(0);
+    setSelectedA(null);
+    setSelectedB(null);
+    setMixPage(0);
+  }
 
   function selectMixCard(index: number) {
     // Potion mixing is a two-step selection machine: generated Mixed Potions are excluded,
     // re-clicking the first pick backs up to step one, and the second pick toggles freely.
     if (runDeck[index].id === MIXED_POTION_CARD_ID) return;
     if (mixStep === 1) {
-      setSelectedA(index); setMixStep(2);
+      setSelectedA(index);
+      setMixStep(2);
     } else if (mixStep === 2) {
-      if (index === selectedA) { setSelectedA(null); setMixStep(1); }
-      else if (index === selectedB) { setSelectedB(null); }
-      else setSelectedB(index);
+      if (index === selectedA) {
+        setSelectedA(null);
+        setMixStep(1);
+      } else if (index === selectedB) {
+        setSelectedB(null);
+      } else setSelectedB(index);
     }
   }
 
@@ -59,7 +95,9 @@ export function AlchemistShopScreen({
     if (result) setMixedCard(result);
   }
 
-  const mixableCards = runDeck.map((c, i) => ({ card: c, index: i })).filter(({ card }) => card.id.includes(POTION_CARD_ID_FRAGMENT) && card.id !== MIXED_POTION_CARD_ID);
+  const mixableCards = runDeck
+    .map((c, i) => ({ card: c, index: i }))
+    .filter(({ card }) => card.id.includes(POTION_CARD_ID_FRAGMENT) && card.id !== MIXED_POTION_CARD_ID);
   const hasEnoughPotionsToMix = mixableCards.length >= 2;
   const mixDisabled = gold < mixPrice || !hasEnoughPotionsToMix;
   const mixDisabledMessage = hasEnoughPotionsToMix ? "Not Enough Gold" : "Not Enough Potions to Mix";
@@ -77,12 +115,29 @@ export function AlchemistShopScreen({
           <BlurFade delay={staggerDelay(1)} direction="up" offset={8}>
             <div className="flex flex-col items-center gap-3">
               <div onMouseEnter={() => setMixedCardHovered(true)} onMouseLeave={() => setMixedCardHovered(false)}>
-                <BattleCardButton card={mixedCard} hovered={mixedCardHovered} onHoverStart={() => setMixedCardHovered(true)} onHoverEnd={() => setMixedCardHovered(false)} ariaLabel={MIXED_POTION_TITLE} shimmerActive={false} shimmerToken={undefined} className={viewCardWidthClass} />
+                <BattleCardButton
+                  card={mixedCard}
+                  hovered={mixedCardHovered}
+                  onHoverStart={() => setMixedCardHovered(true)}
+                  onHoverEnd={() => setMixedCardHovered(false)}
+                  ariaLabel={MIXED_POTION_TITLE}
+                  shimmerActive={false}
+                  shimmerToken={undefined}
+                  className={viewCardWidthClass}
+                />
               </div>
             </div>
           </BlurFade>
           <BlurFade delay={staggerDelay(2)} direction="up" offset={6}>
-            <Button size="lg" onClick={() => { setMixedCard(null); cancelMix(); }}>Continue</Button>
+            <Button
+              size="lg"
+              onClick={() => {
+                setMixedCard(null);
+                cancelMix();
+              }}
+            >
+              Continue
+            </Button>
           </BlurFade>
         </div>
       ) : !mixMode ? (
@@ -90,7 +145,13 @@ export function AlchemistShopScreen({
           <div key={potionCards.map((card) => card.id).join("-")} className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             {potionCards.map((card, i) => (
               <BlurFade key={`${card.id}-${i}`} delay={staggerDelay(2 + i)} direction="up" offset={8}>
-                <PurchasableCardItem card={card} price={potionPrice} gold={gold} purchased={purchasedIds.has(card.id)} onBuy={() => handleBuyCard(card)} />
+                <PurchasableCardItem
+                  card={card}
+                  price={potionPrice}
+                  gold={gold}
+                  purchased={purchasedIds.has(card.id)}
+                  onBuy={() => handleBuyCard(card)}
+                />
               </BlurFade>
             ))}
           </div>
@@ -98,22 +159,32 @@ export function AlchemistShopScreen({
           <BlurFade delay={staggerDelay(5)} direction="up" offset={6}>
             <div className="flex flex-wrap justify-center gap-4">
               <ServiceButton
-                icon={FlaskConical} label="Mix Potions" cost={mixPrice}
-                disabled={mixDisabled} disabledMessage={mixDisabledMessage}
-                used={mixUsed} soldOutText="Mix Potions — Sold Out"
+                icon={FlaskConical}
+                label="Mix Potions"
+                cost={mixPrice}
+                disabled={mixDisabled}
+                disabledMessage={mixDisabledMessage}
+                used={mixUsed}
+                soldOutText="Mix Potions — Sold Out"
                 onClick={startMix}
               />
               <ServiceButton
-                icon={RefreshCw} label="Refresh Shop" cost={ALCHEMIST_REFRESH_PRICE}
-                disabled={refreshesLeft <= 0 || gold < ALCHEMIST_REFRESH_PRICE} disabledMessage="Not Enough Gold"
-                used={refreshesLeft <= 0} soldOutText="Refresh — Sold Out"
+                icon={RefreshCw}
+                label="Refresh Shop"
+                cost={ALCHEMIST_REFRESH_PRICE}
+                disabled={refreshesLeft <= 0 || gold < ALCHEMIST_REFRESH_PRICE}
+                disabledMessage="Not Enough Gold"
+                used={refreshesLeft <= 0}
+                soldOutText="Refresh — Sold Out"
                 onClick={onRefresh}
               />
             </div>
           </BlurFade>
 
           <BlurFade delay={staggerDelay(6)} direction="up" offset={6}>
-            <Button size="lg" className="min-w-44" onClick={onContinue}>Leave</Button>
+            <Button size="lg" className="min-w-44" onClick={onContinue}>
+              Leave
+            </Button>
           </BlurFade>
         </div>
       ) : (
@@ -137,10 +208,14 @@ export function AlchemistShopScreen({
           />
           <div className="mt-5 flex justify-center gap-3">
             <BlurFade delay={staggerDelay(10)} direction="up" offset={6}>
-              <Button variant="outline" onClick={cancelMix}>Cancel</Button>
+              <Button variant="outline" onClick={cancelMix}>
+                Cancel
+              </Button>
             </BlurFade>
             <BlurFade delay={staggerDelay(11)} direction="up" offset={6}>
-              <Button size="lg" disabled={selectedA === null || selectedB === null} onClick={handleMixConfirm}>Combine</Button>
+              <Button size="lg" disabled={selectedA === null || selectedB === null} onClick={handleMixConfirm}>
+                Combine
+              </Button>
             </BlurFade>
           </div>
         </div>

@@ -1,6 +1,12 @@
 // Player and enemy DoT tick functions, split from turns.ts for focused testing.
 // Depends on effect helpers, combat constants, and battle state types.
-import { applyPlayerCombatDamage, applyPlayerHealing, clampHealth, type BattleState, type CombatTextEvent } from "./types";
+import {
+  applyPlayerCombatDamage,
+  applyPlayerHealing,
+  clampHealth,
+  type BattleState,
+  type CombatTextEvent,
+} from "./types";
 import { getEnemyDamageMultiplier } from "./status-effects";
 import { mergeCombatText } from "./combat-text";
 import { HALF_DIVISOR, PERCENT_DENOMINATOR, POISON_DECAY_AMOUNT, POISON_GAIN_AMOUNT } from "../game-constants";
@@ -14,12 +20,19 @@ function tickBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
   const finalDamage = Math.floor(damage * multiplier);
   mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "burn", amount: finalDamage });
   let nextBurn = state.enemyStatuses.burn;
-  if (state.talentEffects.burnDoubleChance > 0 && Math.random() * PERCENT_DENOMINATOR < state.talentEffects.burnDoubleChance) {
+  if (
+    state.talentEffects.burnDoubleChance > 0 &&
+    Math.random() * PERCENT_DENOMINATOR < state.talentEffects.burnDoubleChance
+  ) {
     nextBurn *= HALF_DIVISOR;
   } else {
     nextBurn = Math.floor(nextBurn / HALF_DIVISOR);
   }
-  return { ...state, enemyHealth: clampHealth(state.enemyHealth, -finalDamage, state.enemyMaxHealth), enemyStatuses: { ...state.enemyStatuses, burn: nextBurn } };
+  return {
+    ...state,
+    enemyHealth: clampHealth(state.enemyHealth, -finalDamage, state.enemyMaxHealth),
+    enemyStatuses: { ...state.enemyStatuses, burn: nextBurn },
+  };
 }
 
 function tickPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
@@ -29,14 +42,24 @@ function tickPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
   const finalDamage = Math.floor(damage * multiplier);
   mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "poison", amount: finalDamage });
   let nextPoison = state.enemyStatuses.poison;
-  if (state.talentEffects.poisonGainChance > 0 && Math.random() * PERCENT_DENOMINATOR < state.talentEffects.poisonGainChance) {
-      nextPoison += POISON_GAIN_AMOUNT;
-    } else {
-      nextPoison = Math.max(0, nextPoison - POISON_DECAY_AMOUNT);
+  if (
+    state.talentEffects.poisonGainChance > 0 &&
+    Math.random() * PERCENT_DENOMINATOR < state.talentEffects.poisonGainChance
+  ) {
+    nextPoison += POISON_GAIN_AMOUNT;
+  } else {
+    nextPoison = Math.max(0, nextPoison - POISON_DECAY_AMOUNT);
   }
-  let nextState = { ...state, enemyHealth: clampHealth(state.enemyHealth, -finalDamage, state.enemyMaxHealth), enemyStatuses: { ...state.enemyStatuses, poison: nextPoison } };
+  let nextState = {
+    ...state,
+    enemyHealth: clampHealth(state.enemyHealth, -finalDamage, state.enemyMaxHealth),
+    enemyStatuses: { ...state.enemyStatuses, poison: nextPoison },
+  };
 
-  if (state.trinketEffects.parasiticBloomLeechChance > 0 && Math.random() * PERCENT_DENOMINATOR < state.trinketEffects.parasiticBloomLeechChance) {
+  if (
+    state.trinketEffects.parasiticBloomLeechChance > 0 &&
+    Math.random() * PERCENT_DENOMINATOR < state.trinketEffects.parasiticBloomLeechChance
+  ) {
     nextState = applyPlayerHealing(nextState, finalDamage);
     mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: finalDamage });
   }
@@ -47,7 +70,11 @@ function tickPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
 function tickBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
   const damage = state.enemyStatuses.bleed;
   if (damage <= 0) return state;
-  let nextState = { ...state, enemyHealth: clampHealth(state.enemyHealth, -damage, state.enemyMaxHealth), enemyStatuses: { ...state.enemyStatuses, bleed: 0, bleedLeech: 0 } };
+  let nextState = {
+    ...state,
+    enemyHealth: clampHealth(state.enemyHealth, -damage, state.enemyMaxHealth),
+    enemyStatuses: { ...state.enemyStatuses, bleed: 0, bleedLeech: 0 },
+  };
   const leechAmount = state.enemyStatuses.bleedLeech;
   if (leechAmount > 0) {
     nextState = applyPlayerHealing(nextState, leechAmount);
@@ -87,7 +114,10 @@ function tickPlayerBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
   if (reducedDamage > 0) {
     mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "burn", amount: reducedDamage });
   }
-  const nextState = { ...applyPlayerCombatDamage(state, reducedDamage), playerStatuses: { ...state.playerStatuses, burn: Math.floor(state.playerStatuses.burn / HALF_DIVISOR) } };
+  const nextState = {
+    ...applyPlayerCombatDamage(state, reducedDamage),
+    playerStatuses: { ...state.playerStatuses, burn: Math.floor(state.playerStatuses.burn / HALF_DIVISOR) },
+  };
   return decayArmorAfterHarmfulStatusDamage(nextState, reducedDamage);
 }
 
@@ -99,15 +129,25 @@ function tickPlayerPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
     mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "poison", amount: reducedDamage });
   }
   const nextPoison = Math.max(0, state.playerStatuses.poison - 1);
-  const nextState = { ...applyPlayerCombatDamage(state, reducedDamage), playerStatuses: { ...state.playerStatuses, poison: nextPoison } };
+  const nextState = {
+    ...applyPlayerCombatDamage(state, reducedDamage),
+    playerStatuses: { ...state.playerStatuses, poison: nextPoison },
+  };
   return decayArmorAfterHarmfulStatusDamage(nextState, reducedDamage);
 }
 
-function tickPlayerHarmfulStatus(state: BattleState, status: "bleed" | "stun" | "freeze", combatTexts: CombatTextEvent[]) {
+function tickPlayerHarmfulStatus(
+  state: BattleState,
+  status: "bleed" | "stun" | "freeze",
+  combatTexts: CombatTextEvent[],
+) {
   const damage = state.playerStatuses[status];
   if (damage <= 0) return state;
   mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: status, amount: damage });
-  const nextState = { ...applyPlayerCombatDamage(state, damage), playerStatuses: { ...state.playerStatuses, [status]: 0 } };
+  const nextState = {
+    ...applyPlayerCombatDamage(state, damage),
+    playerStatuses: { ...state.playerStatuses, [status]: 0 },
+  };
   return decayArmorAfterHarmfulStatusDamage(nextState, damage);
 }
 

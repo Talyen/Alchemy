@@ -1,5 +1,11 @@
 import { create } from "zustand";
-import { getGoldMultiplier, getStartingDeck, type BattleCard, type CharacterId, type DifficultyId } from "@/lib/game-data";
+import {
+  getGoldMultiplier,
+  getStartingDeck,
+  type BattleCard,
+  type CharacterId,
+  type DifficultyId,
+} from "@/lib/game-data";
 import { MAX_PLAYER_HEALTH } from "@/lib/game-constants";
 import { DESTINATIONS, type Destination } from "@/features/alchemy/types";
 import type { ActiveRunData } from "@/features/alchemy/run/types";
@@ -51,12 +57,20 @@ type RunStoreActions = {
   clearPermanentData: () => void;
   awardCardXP: (card: BattleCard) => void;
   awardMysteryXP: (keywordId: KeywordId, amount: number) => void;
-  initialize: (activeRun: ActiveRunData | null, talentXP: TalentXP, unlockedTalents: UnlockedTalents, fallbackCharacterId?: CharacterId) => void;
+  initialize: (
+    activeRun: ActiveRunData | null,
+    talentXP: TalentXP,
+    unlockedTalents: UnlockedTalents,
+    fallbackCharacterId?: CharacterId,
+  ) => void;
 };
 
 type RunStore = RunStateFields & RunStoreActions;
 
-function createInitialRunState(initialActiveRun: ActiveRunData | null, fallbackCharacterId: CharacterId = "knight"): RunStateFields {
+function createInitialRunState(
+  initialActiveRun: ActiveRunData | null,
+  fallbackCharacterId: CharacterId = "knight",
+): RunStateFields {
   const characterId = initialActiveRun?.characterId ?? fallbackCharacterId;
   return {
     characterId,
@@ -68,7 +82,9 @@ function createInitialRunState(initialActiveRun: ActiveRunData | null, fallbackC
     currentAct: initialActiveRun?.currentAct ?? 1,
     destinationIndexInAct: initialActiveRun?.destinationIndexInAct ?? 0,
     completedDestinations: initialActiveRun?.completedDestinations?.length
-      ? initialActiveRun.completedDestinations.filter((d): d is Destination => DESTINATIONS[d as keyof typeof DESTINATIONS] !== undefined)
+      ? initialActiveRun.completedDestinations.filter(
+          (d): d is Destination => DESTINATIONS[d as keyof typeof DESTINATIONS] !== undefined,
+        )
       : [],
     runTrinkets: initialActiveRun?.runTrinkets ? [...initialActiveRun.runTrinkets] : [],
     selectedDifficulty: initialActiveRun?.selectedDifficulty ?? null,
@@ -79,7 +95,10 @@ function createInitialRunState(initialActiveRun: ActiveRunData | null, fallbackC
   };
 }
 
-function createInitialTalentState(initialTalentXP: TalentXP, initialUnlockedTalents: UnlockedTalents): Pick<RunStateFields, "talentXP" | "runTalentXP" | "unlockedTalents"> {
+function createInitialTalentState(
+  initialTalentXP: TalentXP,
+  initialUnlockedTalents: UnlockedTalents,
+): Pick<RunStateFields, "talentXP" | "runTalentXP" | "unlockedTalents"> {
   return { talentXP: initialTalentXP, runTalentXP: {} as TalentXP, unlockedTalents: initialUnlockedTalents };
 }
 
@@ -89,33 +108,44 @@ export const useRunStore = create<RunStore>()((set) => ({
 
   setRunDeck: (action) => set((s) => ({ runDeck: typeof action === "function" ? action(s.runDeck) : action })),
   setRunGold: (action) => set((s) => ({ runGold: typeof action === "function" ? action(s.runGold) : action })),
-  setRunPlayerHealth: (action) => set((s) => ({ runPlayerHealth: typeof action === "function" ? action(s.runPlayerHealth) : action })),
-  setRunMaxHealth: (action) => set((s) => ({ runMaxHealth: typeof action === "function" ? action(s.runMaxHealth) : action })),
-  setRoomsEncountered: (action) => set((s) => ({ roomsEncountered: typeof action === "function" ? action(s.roomsEncountered) : action })),
+  setRunPlayerHealth: (action) =>
+    set((s) => ({ runPlayerHealth: typeof action === "function" ? action(s.runPlayerHealth) : action })),
+  setRunMaxHealth: (action) =>
+    set((s) => ({ runMaxHealth: typeof action === "function" ? action(s.runMaxHealth) : action })),
+  setRoomsEncountered: (action) =>
+    set((s) => ({ roomsEncountered: typeof action === "function" ? action(s.roomsEncountered) : action })),
   setCurrentAct: (action) => set((s) => ({ currentAct: typeof action === "function" ? action(s.currentAct) : action })),
-  setDestinationIndexInAct: (action) => set((s) => ({ destinationIndexInAct: typeof action === "function" ? action(s.destinationIndexInAct) : action })),
-  setCompletedDestinations: (action) => set((s) => ({ completedDestinations: typeof action === "function" ? action(s.completedDestinations) : action })),
-  setRunTrinkets: (action) => set((s) => ({ runTrinkets: typeof action === "function" ? action(s.runTrinkets) : action })),
-  setSelectedDifficulty: (action) => set((s) => ({ selectedDifficulty: typeof action === "function" ? action(s.selectedDifficulty) : action })),
-  setContentSystemType: (action) => set((s) => ({ contentSystemType: typeof action === "function" ? action(s.contentSystemType) : action })),
+  setDestinationIndexInAct: (action) =>
+    set((s) => ({ destinationIndexInAct: typeof action === "function" ? action(s.destinationIndexInAct) : action })),
+  setCompletedDestinations: (action) =>
+    set((s) => ({ completedDestinations: typeof action === "function" ? action(s.completedDestinations) : action })),
+  setRunTrinkets: (action) =>
+    set((s) => ({ runTrinkets: typeof action === "function" ? action(s.runTrinkets) : action })),
+  setSelectedDifficulty: (action) =>
+    set((s) => ({ selectedDifficulty: typeof action === "function" ? action(s.selectedDifficulty) : action })),
+  setContentSystemType: (action) =>
+    set((s) => ({ contentSystemType: typeof action === "function" ? action(s.contentSystemType) : action })),
 
   setCharacter: (selectedId) => set({ characterId: selectedId }),
 
-  reset: () => set((s) => ({
-    ...createInitialRunState(null, s.characterId),
-    talentXP: s.talentXP,
-    unlockedTalents: s.unlockedTalents,
-    runTalentXP: {} as TalentXP,
-  })),
+  reset: () =>
+    set((s) => ({
+      ...createInitialRunState(null, s.characterId),
+      talentXP: s.talentXP,
+      unlockedTalents: s.unlockedTalents,
+      runTalentXP: {} as TalentXP,
+    })),
 
-  addRunGold: (amount) => set((s) => {
-    const mult = getGoldMultiplier(s.characterId, s.selectedDifficulty);
-    return { runGold: s.runGold + Math.floor(amount * mult) };
-  }),
+  addRunGold: (amount) =>
+    set((s) => {
+      const mult = getGoldMultiplier(s.characterId, s.selectedDifficulty);
+      return { runGold: s.runGold + Math.floor(amount * mult) };
+    }),
 
-  unlockTalent: (keywordId, talentId) => set((s) => ({
-    unlockedTalents: { ...s.unlockedTalents, [keywordId]: [...(s.unlockedTalents[keywordId] ?? []), talentId] },
-  })),
+  unlockTalent: (keywordId, talentId) =>
+    set((s) => ({
+      unlockedTalents: { ...s.unlockedTalents, [keywordId]: [...(s.unlockedTalents[keywordId] ?? []), talentId] },
+    })),
 
   unlockAllTalents: () => {
     const next: UnlockedTalents = {};
@@ -128,11 +158,12 @@ export const useRunStore = create<RunStore>()((set) => ({
   resetUnlockedTalents: () => set({ unlockedTalents: {} as UnlockedTalents }),
   resetRunXP: () => set({ runTalentXP: {} as TalentXP }),
 
-  clearPermanentData: () => set({
-    talentXP: {} as TalentXP,
-    runTalentXP: {} as TalentXP,
-    unlockedTalents: {} as UnlockedTalents,
-  }),
+  clearPermanentData: () =>
+    set({
+      talentXP: {} as TalentXP,
+      runTalentXP: {} as TalentXP,
+      unlockedTalents: {} as UnlockedTalents,
+    }),
 
   awardCardXP: (card) => {
     const keywords = extractCardKeywords(card);
@@ -143,10 +174,11 @@ export const useRunStore = create<RunStore>()((set) => ({
     }));
   },
 
-  awardMysteryXP: (keywordId, amount) => set((s) => ({
-    talentXP: addTalentXP(s.talentXP, [keywordId], amount),
-    runTalentXP: addTalentXP(s.runTalentXP, [keywordId], amount),
-  })),
+  awardMysteryXP: (keywordId, amount) =>
+    set((s) => ({
+      talentXP: addTalentXP(s.talentXP, [keywordId], amount),
+      runTalentXP: addTalentXP(s.runTalentXP, [keywordId], amount),
+    })),
 
   initialize: (activeRun, talentXP, unlockedTalents, fallbackCharacterId = "knight") => {
     const runState = createInitialRunState(activeRun, fallbackCharacterId);

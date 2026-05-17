@@ -3,8 +3,12 @@
 // Used at the root so render failures do not leave the game on a blank page.
 import { Component, type ErrorInfo, type ReactNode } from "react";
 
-interface Props { children: ReactNode; }
-interface State { hasError: boolean; }
+interface Props {
+  children: ReactNode;
+}
+interface State {
+  hasError: boolean;
+}
 
 export class ErrorBoundary extends Component<Props, State> {
   state: State = { hasError: false };
@@ -26,7 +30,10 @@ export class ErrorBoundary extends Component<Props, State> {
             <p className="mb-6 text-muted-foreground">An unexpected error occurred. Please reload the page.</p>
             <button
               className="rounded-lg bg-primary px-6 py-2 text-primary-foreground hover:bg-primary/90"
-              onClick={() => { this.setState({ hasError: false }); window.location.reload(); }}
+              onClick={() => {
+                this.setState({ hasError: false });
+                window.location.reload();
+              }}
             >
               Reload
             </button>

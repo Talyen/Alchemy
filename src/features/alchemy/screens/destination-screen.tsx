@@ -1,23 +1,17 @@
 // Destination choice screen — pick the next node on the map.
-import { useMemo, type MutableRefObject } from "react";
+import { useMemo } from "react";
 
 import { keywordDefinitions } from "@/lib/game-data";
 
 import { getBossEnemy, keywordAliases } from "../config";
 import { DestinationChoices, ScreenHeader } from "../ui/shared-ui";
 import { DESTINATIONS, type Destination } from "../types";
+import { useScreenStore } from "../stores/screen-store";
+import { useRunStore } from "../stores/run-store";
 
-export function DestinationScreen({
-  destinationOptions,
-  onChoose,
-  destinationButtonRefs,
-  currentAct,
-}: {
-  destinationOptions: Destination[];
-  onChoose: (destination: Destination) => void;
-  destinationButtonRefs: MutableRefObject<Partial<Record<Destination, HTMLButtonElement | null>>>;
-  currentAct: number;
-}) {
+export function DestinationScreen({ onChoose }: { onChoose: (destination: Destination) => void }) {
+  const destinationOptions = useScreenStore((s) => s.rewardState.destinations);
+  const currentAct = useRunStore((s) => s.currentAct);
   const bossOnly = destinationOptions.length === 1 && destinationOptions[0] === DESTINATIONS.BOSS_COMBAT;
   const boss = bossOnly ? getBossEnemy(currentAct) : null;
 
@@ -57,23 +51,19 @@ export function DestinationScreen({
     <div className="flex h-full w-full flex-col items-center justify-center gap-6 px-4 py-6 text-center">
       {bossOnly ? (
         <ScreenHeader
-          title={(
+          title={
             <span
               className="boss-title-shine bg-clip-text text-transparent [background-size:300%_300%]"
               style={{ backgroundImage: bossTextGradient }}
             >
               {boss?.title}
             </span>
-          )}
+          }
         />
       ) : (
         <ScreenHeader title="Choose Destination" />
       )}
-      <DestinationChoices
-        destinationOptions={destinationOptions}
-        onChoose={onChoose}
-        buttonRefs={destinationButtonRefs}
-      />
+      <DestinationChoices destinationOptions={destinationOptions} onChoose={onChoose} />
     </div>
   );
 }

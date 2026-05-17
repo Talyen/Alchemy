@@ -7,10 +7,7 @@ import type { HomesteadEffectManifest } from "./types";
 import { defaultHomesteadEffects } from "./defaults";
 import { buildings, farmPlots, researchUpgrades } from "./data";
 
-function applyTierEffects(
-  base: HomesteadEffectManifest,
-  partial?: Partial<HomesteadEffectManifest>,
-): void {
+function applyTierEffects(base: HomesteadEffectManifest, partial?: Partial<HomesteadEffectManifest>): void {
   if (!partial) return;
   const b = base as unknown as Record<string, number | boolean>;
   for (const key of Object.keys(partial) as (keyof HomesteadEffectManifest)[]) {

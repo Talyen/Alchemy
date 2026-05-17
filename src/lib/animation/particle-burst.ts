@@ -112,19 +112,19 @@ export function createStatusParticles(width: number, height: number): Particle[]
   }
 
   // Muted background
-  scatter(0, 0, width, height, 'rgb(50, 43, 36)', 120);
+  scatter(0, 0, width, height, "rgb(50, 43, 36)", 120);
   // Lighter patch behind HP
-  scatter(padX, barY, width - padX * 2, barH, 'rgb(30, 25, 20)', 10);
+  scatter(padX, barY, width - padX * 2, barH, "rgb(30, 25, 20)", 10);
   // HP bar fill
-  scatter(padX, barY, (width - padX * 2) * 0.6, barH, 'rgb(200, 50, 50)', 14);
+  scatter(padX, barY, (width - padX * 2) * 0.6, barH, "rgb(200, 50, 50)", 14);
   // Title text (left)
-  scatter(padX, padY, width * 0.5, textH, 'rgb(210, 195, 170)', 20);
+  scatter(padX, padY, width * 0.5, textH, "rgb(210, 195, 170)", 20);
   // HP numbers (right)
-  scatter(width * 0.5, padY, width * 0.45, textH, 'rgb(160, 148, 130)', 12);
+  scatter(width * 0.5, padY, width * 0.45, textH, "rgb(160, 148, 130)", 12);
   // Status icon colors
-  scatter(padX, iconY, width * 0.35, iconH, 'rgb(180, 140, 60)', 10);
-  scatter(padX + width * 0.15, iconY, width * 0.2, iconH, 'rgb(100, 160, 180)', 8);
-  scatter(padX + width * 0.3, iconY, width * 0.2, iconH, 'rgb(60, 180, 80)', 6);
+  scatter(padX, iconY, width * 0.35, iconH, "rgb(180, 140, 60)", 10);
+  scatter(padX + width * 0.15, iconY, width * 0.2, iconH, "rgb(100, 160, 180)", 8);
+  scatter(padX + width * 0.3, iconY, width * 0.2, iconH, "rgb(60, 180, 80)", 6);
 
   return particles;
 }

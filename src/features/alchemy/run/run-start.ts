@@ -31,7 +31,14 @@ export type RunStartInput = {
 };
 
 // Builds a coherent new-run state so every mode starts from a fresh, testable snapshot.
-export function createRunStartSnapshot({ characterId, contentSystemType, difficultyId = null, talentStartGold, homesteadStartGold, homesteadStartMaxHealthBonus }: RunStartInput): RunStartSnapshot {
+export function createRunStartSnapshot({
+  characterId,
+  contentSystemType,
+  difficultyId = null,
+  talentStartGold,
+  homesteadStartGold,
+  homesteadStartMaxHealthBonus,
+}: RunStartInput): RunStartSnapshot {
   const runMaxHealth = MAX_PLAYER_HEALTH + homesteadStartMaxHealthBonus;
   const runGold = contentSystemType === "wildwood" ? 0 : talentStartGold + homesteadStartGold;
 

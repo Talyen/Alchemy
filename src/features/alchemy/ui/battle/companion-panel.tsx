@@ -63,7 +63,10 @@ export function CompanionPanel({
         )}
       >
         <p className="text-sm text-foreground">{companion.title}</p>
-        <DescriptionLines lines={getCompanionDescriptionLines(companion, damageBonus)} idPrefix={`companion-${companion.id}`} />
+        <DescriptionLines
+          lines={getCompanionDescriptionLines(companion, damageBonus)}
+          idPrefix={`companion-${companion.id}`}
+        />
       </div>
     </div>
   );

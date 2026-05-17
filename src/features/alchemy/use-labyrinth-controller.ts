@@ -1,10 +1,10 @@
 // Labyrinth controller — owns map state, node traversal, and entry routing for
-// labyrinth content system runs. Used by the alchemy controller to manage screen
-// transitions distinct from the campaign's act/destination flow.
-import { useCallback, useRef, useState } from "react";
-import { generateLabyrinthMap, withCurrentNode } from "@/lib/content-systems/labyrinth/map-generation";
+// labyrinth content system runs. Uses useScreenStore for labyrinthMap state.
+import { useCallback, useRef } from "react";
+import { withCurrentNode } from "@/lib/content-systems/labyrinth/map-generation";
 import { LABYRINTH_COLS } from "@/lib/content-systems/labyrinth/data";
 import type { LabyrinthMap, LabyrinthModifierKind } from "@/lib/content-systems/types";
+import { useScreenStore } from "./stores/screen-store";
 
 export type LabyrinthController = {
   labyrinthMap: LabyrinthMap;
@@ -15,26 +15,37 @@ export type LabyrinthController = {
 };
 
 export type LabyrinthNodeHandlers = {
-  onStartBattleWithModifiers: (enemyType: "normal" | "elite", modifiers: LabyrinthModifierKind[], rewardModifiers: LabyrinthModifierKind[], depth: number) => void;
-  onStartBossBattleWithModifiers: (modifiers: LabyrinthModifierKind[], rewardModifiers: LabyrinthModifierKind[], depth: number) => void;
+  onStartBattleWithModifiers: (
+    enemyType: "normal" | "elite",
+    modifiers: LabyrinthModifierKind[],
+    rewardModifiers: LabyrinthModifierKind[],
+    depth: number,
+  ) => void;
+  onStartBossBattleWithModifiers: (
+    modifiers: LabyrinthModifierKind[],
+    rewardModifiers: LabyrinthModifierKind[],
+    depth: number,
+  ) => void;
   onStartRest: () => void;
   onStartMystery: () => void;
   onStartShop: () => void;
   onStartAlchemist: () => void;
 };
 
-export function useLabyrinthController(initialMap: LabyrinthMap | null = null): LabyrinthController {
-  const [labyrinthMap, setLabyrinthMap] = useState<LabyrinthMap>(() => initialMap ?? generateLabyrinthMap());
+export function useLabyrinthController(): LabyrinthController {
+  const labyrinthMap = useScreenStore((s) => s.labyrinthMap);
   const pendingNodeRef = useRef<{ row: number; col: number } | null>(null);
 
   const resetMap = useCallback(() => {
     pendingNodeRef.current = null;
-    setLabyrinthMap(generateLabyrinthMap());
+    useScreenStore.getState().resetLabyrinthMap();
   }, []);
 
   const enterNode = useCallback((row: number, col: number, handlers: LabyrinthNodeHandlers) => {
-    const node = labyrinthMap.grid[row]?.[col];
-    if (!node || !canEnterLabyrinthNode(labyrinthMap, row, col)) return;
+    const store = useScreenStore.getState();
+    const map = store.labyrinthMap;
+    const node = map.grid[row]?.[col];
+    if (!node || !canEnterLabyrinthNode(map, row, col)) return;
 
     pendingNodeRef.current = { row, col };
 
@@ -49,39 +60,31 @@ export function useLabyrinthController(initialMap: LabyrinthMap | null = null): 
         handlers.onStartBossBattleWithModifiers(node.modifiers, node.rewardModifiers, row);
         break;
       }
-      case "entrance": {
+      case "entrance":
         break;
-      }
-      case "rest": {
+      case "rest":
         handlers.onStartRest();
         break;
-      }
-      case "mystery": {
+      case "mystery":
         handlers.onStartMystery();
         break;
-      }
-      case "shop": {
+      case "shop":
         handlers.onStartShop();
         break;
-      }
-      case "alchemist": {
+      case "alchemist":
         handlers.onStartAlchemist();
         break;
-      }
     }
-  }, [labyrinthMap]);
+  }, []);
 
   const onNodeCleared = useCallback(() => {
     const pending = pendingNodeRef.current;
     pendingNodeRef.current = null;
     if (!pending) return;
-
-    setLabyrinthMap((prev) => {
+    useScreenStore.getState().setLabyrinthMap((prev) => {
       const next = withCurrentNode(prev, pending.row, pending.col);
       const cleared = next.grid[pending.row]?.[pending.col];
-      if (cleared && cleared.state === "current") {
-        cleared.state = "cleared";
-      }
+      if (cleared && cleared.state === "current") cleared.state = "cleared";
       return next;
     });
   }, []);
@@ -90,15 +93,13 @@ export function useLabyrinthController(initialMap: LabyrinthMap | null = null): 
     const pending = pendingNodeRef.current;
     pendingNodeRef.current = null;
     if (!pending) return;
-
-    setLabyrinthMap((prev) => failPendingLabyrinthNode(prev, pending));
+    const store = useScreenStore.getState();
+    store.setLabyrinthMap(failPendingLabyrinthNode(store.labyrinthMap, pending));
   }, []);
 
   return { labyrinthMap, enterNode, onNodeCleared, onNodeFailed, resetMap };
 }
 
-// Failure returns the player to the entrance and clears any previous current marker
-// so the map never renders multiple active positions after a lost encounter.
 export function failPendingLabyrinthNode(map: LabyrinthMap, pending: { row: number; col: number }): LabyrinthMap {
   const next: LabyrinthMap = {
     ...map,
@@ -120,13 +121,13 @@ export function failPendingLabyrinthNode(map: LabyrinthMap, pending: { row: numb
   return next;
 }
 
-// Labyrinth traversal is graph-based: only visible nodes connected to the current
-// position can be entered, while the current entrance/chamber itself cannot replay.
 export function canEnterLabyrinthNode(map: LabyrinthMap, row: number, col: number): boolean {
   const node = map.grid[row]?.[col];
   if (!node) return false;
   const current = map.grid[map.currentNode.row]?.[map.currentNode.col];
-  const connectedToCurrent = Boolean(current?.connections.some((connection) => connection.row === row && connection.col === col));
+  const connectedToCurrent = Boolean(
+    current?.connections.some((connection) => connection.row === row && connection.col === col),
+  );
   if (node.state === "visible") return connectedToCurrent;
   return false;
 }

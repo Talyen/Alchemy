@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { cn, clamp, shuffle, pickRandom, appendUnique, appendUniqueMany } from "@/lib/utils";
+import { clamp, shuffle, pickRandom, appendUnique, appendUniqueMany } from "@/lib/utils";
 
 vi.spyOn(Math, "random").mockReturnValue(0.5);
 

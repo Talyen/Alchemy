@@ -6,7 +6,13 @@ import { Button } from "@/components/ui/button";
 import { ManaPanel, PilePanel } from "../../components";
 import { battleBottomBarClass, battleBottomColumnClass } from "../../config";
 import { BattleHand } from "./hand";
-import type { BattleActionsProps, BattleHoverProps, BattleRefsProps, BattleScreenState, RequiredBattleViewProps } from "./types";
+import type {
+  BattleActionsProps,
+  BattleHoverProps,
+  BattleRefsProps,
+  BattleScreenState,
+  RequiredBattleViewProps,
+} from "./types";
 
 export function BattleBottomBar({
   view,
@@ -25,7 +31,12 @@ export function BattleBottomBar({
     <section className={isMobileLandscape ? battleBottomBarClass.mobile : battleBottomBarClass.desktop}>
       <div className={isMobileLandscape ? battleBottomColumnClass.mobile : battleBottomColumnClass.desktop}>
         <ManaPanel mana={battleState.mana} maxMana={battleState.maxMana} gold={battleState.gold} />
-        <PilePanel label={isMobileLandscape ? "Deck" : "Draw Pile"} count={battleState.deck.length} type="draw" compact={isMobileLandscape} />
+        <PilePanel
+          label={isMobileLandscape ? "Deck" : "Draw Pile"}
+          count={battleState.deck.length}
+          type="draw"
+          compact={isMobileLandscape}
+        />
       </div>
 
       <BattleHand view={view} hover={hover} refs={refs} actions={actions} />
@@ -52,7 +63,11 @@ function BattleControls({
         <Button
           variant="outline"
           size="icon"
-          className={isMobileLandscape ? "h-20 w-20 text-muted-foreground hover:text-foreground" : "h-8 w-8 text-muted-foreground hover:text-foreground"}
+          className={
+            isMobileLandscape
+              ? "h-20 w-20 text-muted-foreground hover:text-foreground"
+              : "h-8 w-8 text-muted-foreground hover:text-foreground"
+          }
           onClick={(e) => onOpenMenu(e.currentTarget.getBoundingClientRect())}
           aria-label="Open battle menu"
         >
@@ -62,7 +77,11 @@ function BattleControls({
         <Button
           variant="default"
           size="sm"
-          className={isMobileLandscape ? "h-20 bg-amber-600 px-10 text-2xl font-bold text-white hover:bg-amber-700" : "bg-amber-600 hover:bg-amber-700 text-white font-bold"}
+          className={
+            isMobileLandscape
+              ? "h-20 bg-amber-600 px-10 text-2xl font-bold text-white hover:bg-amber-700"
+              : "bg-amber-600 hover:bg-amber-700 text-white font-bold"
+          }
           onClick={onEndTurn}
           disabled={battleState.turnPhase !== "player"}
         >
@@ -73,7 +92,11 @@ function BattleControls({
           <Button
             variant="outline"
             size="sm"
-            className={isMobileLandscape ? "h-20 w-20 text-amber-200 hover:text-amber-100 text-2xl" : "w-full text-amber-200 hover:text-amber-100 text-xs"}
+            className={
+              isMobileLandscape
+                ? "h-20 w-20 text-amber-200 hover:text-amber-100 text-2xl"
+                : "w-full text-amber-200 hover:text-amber-100 text-xs"
+            }
             onClick={onSkipCombatDevMode}
           >
             <Coins className={isMobileLandscape ? "h-11 w-11" : "h-3.5 w-3.5"} />{" "}
@@ -82,7 +105,12 @@ function BattleControls({
         ) : null}
       </div>
 
-      <PilePanel label={isMobileLandscape ? "Discard" : "Discard Pile"} count={battleState.discard.length} type="discard" compact={isMobileLandscape} />
+      <PilePanel
+        label={isMobileLandscape ? "Discard" : "Discard Pile"}
+        count={battleState.discard.length}
+        type="discard"
+        compact={isMobileLandscape}
+      />
     </div>
   );
 }

@@ -26,8 +26,20 @@ export function useShimmerController() {
 }
 
 export function useMobileDetection() {
-  const [isMobileLandscape, setIsMobileLandscape] = useState(false);
-  const [isPortraitMobile, setIsPortraitMobile] = useState(false);
+  const [isMobileLandscape, setIsMobileLandscape] = useState(() => {
+    const isCoarse =
+      window.matchMedia("(pointer: coarse)").matches || "ontouchstart" in window || navigator.maxTouchPoints > 0;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    return isCoarse && vw > vh && vw <= MOBILE_LANDSCAPE_MAX_WIDTH;
+  });
+  const [isPortraitMobile, setIsPortraitMobile] = useState(() => {
+    const isCoarse =
+      window.matchMedia("(pointer: coarse)").matches || "ontouchstart" in window || navigator.maxTouchPoints > 0;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    return isCoarse && vh > vw && vw <= PORTRAIT_MOBILE_MAX_WIDTH;
+  });
 
   const check = useCallback(() => {
     const isCoarse =
@@ -43,7 +55,6 @@ export function useMobileDetection() {
       setTimeout(check, ORIENTATION_CHANGE_DEBOUNCE_MS);
     }
 
-    check();
     window.addEventListener("resize", check);
     window.addEventListener("orientationchange", handleOrientationChange);
     return () => {
@@ -93,11 +104,8 @@ export function useVirtualResolution(selectedResolution: ResolutionOption, bypas
   const frameWidth = stageWidth * scale;
   const frameHeight = stageHeight * scale;
 
-  const aspectMode = stageWidth < 1800
-    ? "narrow" as const
-    : stageWidth < 2200
-      ? "standard" as const
-      : "ultrawide" as const;
+  const aspectMode =
+    stageWidth < 1800 ? ("narrow" as const) : stageWidth < 2200 ? ("standard" as const) : ("ultrawide" as const);
 
   return {
     frameStyle: { width: `${frameWidth}px`, height: `${frameHeight}px` },

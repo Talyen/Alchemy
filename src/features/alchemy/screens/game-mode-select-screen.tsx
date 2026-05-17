@@ -6,25 +6,23 @@ import { cn } from "@/lib/utils";
 import { gameModeMeta, staticCardTransform } from "../config";
 import { ScreenHeader } from "../ui/shared-ui";
 import { clearTiltFromEvent, setTiltFromEvent } from "../utils";
+import { useScreenStore } from "../stores/screen-store";
 
 const GAME_MODE_IDS = ["campaign", "labyrinth", "wildwood"] as const;
-type GameModeId = typeof GAME_MODE_IDS[number];
+type GameModeId = (typeof GAME_MODE_IDS)[number];
 
 export function GameModeSelectScreen({
   onSelectCampaign,
   onSelectLabyrinth,
   onSelectWildwood,
-  hasActiveCampaign = false,
-  hasActiveLabyrinth = false,
   onBack,
 }: {
   onSelectCampaign: () => void;
   onSelectLabyrinth: () => void;
   onSelectWildwood: () => void;
-  hasActiveCampaign?: boolean;
-  hasActiveLabyrinth?: boolean;
   onBack: () => void;
 }) {
+  const hasActiveRun = useScreenStore((s) => s.hasActiveRun);
   const [selectedModeId, setSelectedModeId] = useState<GameModeId | null>(null);
 
   const handlers: Record<GameModeId, () => void> = {
@@ -33,13 +31,13 @@ export function GameModeSelectScreen({
     wildwood: onSelectWildwood,
   };
   const hasResume: Record<GameModeId, boolean> = {
-    campaign: hasActiveCampaign,
-    labyrinth: hasActiveLabyrinth,
+    campaign: hasActiveRun,
+    labyrinth: hasActiveRun,
     wildwood: false,
   };
 
   const selected = selectedModeId ? handlers[selectedModeId] : null;
-  const buttonLabel = (selectedModeId && hasResume[selectedModeId]) ? "Resume" : "Play";
+  const buttonLabel = selectedModeId && hasResume[selectedModeId] ? "Resume" : "Play";
 
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-6 px-4 py-6 text-center">
@@ -65,26 +63,29 @@ export function GameModeSelectScreen({
                 onMouseMove={setTiltFromEvent}
                 onMouseLeave={clearTiltFromEvent}
               >
-                <img
-                  src={meta.art}
-                  alt={meta.title}
-                  className="w-full max-w-[352px] rounded-[18px] object-contain"
-                />
+                <img src={meta.art} alt={meta.title} className="w-full max-w-[352px] rounded-[18px] object-contain" />
               </div>
-              <h2 className="text-lg font-bold uppercase tracking-[0.1em] text-amber-100/80">
-                {meta.title}
-              </h2>
-              <p className="text-sm leading-relaxed text-muted-foreground">
-                {meta.description}
-              </p>
+              <h2 className="text-lg font-bold uppercase tracking-[0.1em] text-amber-100/80">{meta.title}</h2>
+              <p className="text-sm leading-relaxed text-muted-foreground">{meta.description}</p>
             </button>
           );
         })}
       </div>
 
       <div className="flex gap-4">
-        <Button size="lg" variant="outline" className="w-40" onClick={onBack}>Back</Button>
-        <Button size="lg" className="w-40" disabled={!selected} onClick={() => { selected?.(); }}>{buttonLabel}</Button>
+        <Button size="lg" variant="outline" className="w-40" onClick={onBack}>
+          Back
+        </Button>
+        <Button
+          size="lg"
+          className="w-40"
+          disabled={!selected}
+          onClick={() => {
+            selected?.();
+          }}
+        >
+          {buttonLabel}
+        </Button>
       </div>
     </div>
   );

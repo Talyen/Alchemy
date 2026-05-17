@@ -3,26 +3,21 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { keywordDefinitions, type KeywordId } from "@/lib/game-data";
-import { MATERIAL_IDS, materialLabels, type MaterialInventory } from "@/lib/homestead/types";
-import type { TalentXP } from "@/lib/talents";
+import { MATERIAL_IDS, materialLabels } from "@/lib/homestead/types";
 
 import { ScreenHeader } from "../ui/shared-ui";
 import { matIconMap, matPillStyle, matTextColor } from "../ui/material-icons";
 import { KeywordProgressCard } from "./game-over-screen";
+import { useRunStore } from "../stores/run-store";
+import { useScreenStore } from "../stores/screen-store";
 
-export function RunVictoryScreen({
-  runTalentXP,
-  talentXP,
-  runEndMaterials,
-  onMainMenu,
-}: {
-  runTalentXP: TalentXP;
-  talentXP: TalentXP;
-  runEndMaterials: MaterialInventory;
-  onMainMenu: () => void;
-}) {
+export function RunVictoryScreen({ onMainMenu }: { onMainMenu: () => void }) {
+  const { runTalentXP, talentXP } = useRunStore((s) => ({ runTalentXP: s.runTalentXP, talentXP: s.talentXP }));
+  const runEndMaterials = useScreenStore((s) => s.runEndMaterials);
   const [animate, setAnimate] = useState(false);
-  const keywordIds = (Object.keys(runTalentXP) as KeywordId[]).filter((kw) => !keywordDefinitions[kw]?.hidden && (runTalentXP[kw] ?? 0) > 0);
+  const keywordIds = (Object.keys(runTalentXP) as KeywordId[]).filter(
+    (kw) => !keywordDefinitions[kw]?.hidden && (runTalentXP[kw] ?? 0) > 0,
+  );
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => setAnimate(true));
@@ -43,7 +38,12 @@ export function RunVictoryScreen({
           <div className="flex flex-wrap justify-center gap-2">
             {keywordIds.map((kw) => (
               <div key={kw} className="flex-none w-[210px]">
-                <KeywordProgressCard kw={kw} runXP={runTalentXP[kw] ?? 0} totalXP={talentXP[kw] ?? 0} animate={animate} />
+                <KeywordProgressCard
+                  kw={kw}
+                  runXP={runTalentXP[kw] ?? 0}
+                  totalXP={talentXP[kw] ?? 0}
+                  animate={animate}
+                />
               </div>
             ))}
           </div>
@@ -55,7 +55,13 @@ export function RunVictoryScreen({
           {MATERIAL_IDS.filter((mat) => runEndMaterials[mat] > 0).map((mat) => (
             <span key={mat} className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground">
               Found
-              <span className={cn("inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold", matPillStyle[mat], matTextColor[mat])}>
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold",
+                  matPillStyle[mat],
+                  matTextColor[mat],
+                )}
+              >
                 {matIconMap[mat]}
                 {runEndMaterials[mat]} {materialLabels[mat]}
               </span>

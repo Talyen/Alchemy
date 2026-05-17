@@ -5,12 +5,7 @@
 import { useState, useMemo, useCallback, useRef } from "react";
 import type { CompanionId } from "@/lib/game-data";
 import { companionLibrary } from "@/lib/game-data";
-import {
-  type BuildingId,
-  type FarmId,
-  type MaterialInventory,
-  type ResearchId,
-} from "@/lib/homestead/types";
+import { type BuildingId, type FarmId, type MaterialInventory, type ResearchId } from "@/lib/homestead/types";
 import { emptyInventory, addInventory, subtractInventory, canAfford } from "@/lib/homestead/inventory";
 import { computeHomesteadEffects } from "@/lib/homestead/effects";
 import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
@@ -50,7 +45,13 @@ export function useHomesteadState(initial: {
   }
 
   const effects = useMemo(
-    () => computeHomesteadEffects(state.constructedBuildings, state.plantedFarms, state.completedResearch, state.bondedCompanions),
+    () =>
+      computeHomesteadEffects(
+        state.constructedBuildings,
+        state.plantedFarms,
+        state.completedResearch,
+        state.bondedCompanions,
+      ),
     [state],
   );
 
@@ -63,80 +64,68 @@ export function useHomesteadState(initial: {
     commit({ ...stateRef.current, materialInventory: materials });
   }, []);
 
-  const constructBuilding = useCallback(
-    (id: BuildingId): boolean => {
-      const building = buildings.find((b) => b.id === id);
-      const current = stateRef.current;
-      const currentLevel = current.constructedBuildings[id] ?? 0;
-      if (!building || currentLevel >= building.tiers.length) return false;
+  const constructBuilding = useCallback((id: BuildingId): boolean => {
+    const building = buildings.find((b) => b.id === id);
+    const current = stateRef.current;
+    const currentLevel = current.constructedBuildings[id] ?? 0;
+    if (!building || currentLevel >= building.tiers.length) return false;
 
-      const tier = building.tiers[currentLevel];
-      if (!canAfford(current.materialInventory, tier.cost)) return false;
-      commit({
-        ...current,
-        materialInventory: subtractInventory(current.materialInventory, tier.cost),
-        constructedBuildings: { ...current.constructedBuildings, [id]: currentLevel + 1 },
-      });
-      return true;
-    },
-    [],
-  );
+    const tier = building.tiers[currentLevel];
+    if (!canAfford(current.materialInventory, tier.cost)) return false;
+    commit({
+      ...current,
+      materialInventory: subtractInventory(current.materialInventory, tier.cost),
+      constructedBuildings: { ...current.constructedBuildings, [id]: currentLevel + 1 },
+    });
+    return true;
+  }, []);
 
-  const plantFarm = useCallback(
-    (id: FarmId): boolean => {
-      const farm = farmPlots.find((f) => f.id === id);
-      const current = stateRef.current;
-      const currentLevel = current.plantedFarms[id] ?? 0;
-      if (!farm || currentLevel >= farm.tiers.length) return false;
+  const plantFarm = useCallback((id: FarmId): boolean => {
+    const farm = farmPlots.find((f) => f.id === id);
+    const current = stateRef.current;
+    const currentLevel = current.plantedFarms[id] ?? 0;
+    if (!farm || currentLevel >= farm.tiers.length) return false;
 
-      const tier = farm.tiers[currentLevel];
-      if (!canAfford(current.materialInventory, tier.cost)) return false;
-      commit({
-        ...current,
-        materialInventory: subtractInventory(current.materialInventory, tier.cost),
-        plantedFarms: { ...current.plantedFarms, [id]: currentLevel + 1 },
-      });
-      return true;
-    },
-    [],
-  );
+    const tier = farm.tiers[currentLevel];
+    if (!canAfford(current.materialInventory, tier.cost)) return false;
+    commit({
+      ...current,
+      materialInventory: subtractInventory(current.materialInventory, tier.cost),
+      plantedFarms: { ...current.plantedFarms, [id]: currentLevel + 1 },
+    });
+    return true;
+  }, []);
 
-  const completeResearch = useCallback(
-    (id: ResearchId): boolean => {
-      const research = researchUpgrades.find((r) => r.id === id);
-      const current = stateRef.current;
-      const currentLevel = current.completedResearch[id] ?? 0;
-      if (!research || currentLevel >= research.tiers.length) return false;
+  const completeResearch = useCallback((id: ResearchId): boolean => {
+    const research = researchUpgrades.find((r) => r.id === id);
+    const current = stateRef.current;
+    const currentLevel = current.completedResearch[id] ?? 0;
+    if (!research || currentLevel >= research.tiers.length) return false;
 
-      const tier = research.tiers[currentLevel];
-      if (!canAfford(current.materialInventory, tier.cost)) return false;
-      commit({
-        ...current,
-        materialInventory: subtractInventory(current.materialInventory, tier.cost),
-        completedResearch: { ...current.completedResearch, [id]: currentLevel + 1 },
-      });
-      return true;
-    },
-    [],
-  );
+    const tier = research.tiers[currentLevel];
+    if (!canAfford(current.materialInventory, tier.cost)) return false;
+    commit({
+      ...current,
+      materialInventory: subtractInventory(current.materialInventory, tier.cost),
+      completedResearch: { ...current.completedResearch, [id]: currentLevel + 1 },
+    });
+    return true;
+  }, []);
 
-  const bondCompanion = useCallback(
-    (id: CompanionId): boolean => {
-      const current = stateRef.current;
-      const currentLevel = current.bondedCompanions[id] ?? 0;
-      if (currentLevel >= COMPANION_MAX_TIER) return false;
+  const bondCompanion = useCallback((id: CompanionId): boolean => {
+    const current = stateRef.current;
+    const currentLevel = current.bondedCompanions[id] ?? 0;
+    if (currentLevel >= COMPANION_MAX_TIER) return false;
 
-      const cost = COMPANION_BOND_TIERS[currentLevel];
-      if (!canAfford(current.materialInventory, cost)) return false;
-      commit({
-        ...current,
-        materialInventory: subtractInventory(current.materialInventory, cost),
-        bondedCompanions: { ...current.bondedCompanions, [id]: currentLevel + 1 },
-      });
-      return true;
-    },
-    [],
-  );
+    const cost = COMPANION_BOND_TIERS[currentLevel];
+    if (!canAfford(current.materialInventory, cost)) return false;
+    commit({
+      ...current,
+      materialInventory: subtractInventory(current.materialInventory, cost),
+      bondedCompanions: { ...current.bondedCompanions, [id]: currentLevel + 1 },
+    });
+    return true;
+  }, []);
 
   const triggerFarmYield = useCallback(() => {
     // No-op: farm yield is now shown on the Run End screen.

@@ -27,14 +27,22 @@ export function mergeCombatText(combatTexts: CombatTextEvent[], nextEvent: Comba
 
   if (isNoticeCombatText(nextEvent)) {
     const existingNotice = combatTexts.find(
-      (event) => isNoticeCombatText(event) && event.target === nextEvent.target && event.stat === nextEvent.stat && event.text === nextEvent.text,
+      (event) =>
+        isNoticeCombatText(event) &&
+        event.target === nextEvent.target &&
+        event.stat === nextEvent.stat &&
+        event.text === nextEvent.text,
     );
     if (!existingNotice) combatTexts.push(nextEvent);
     return;
   }
 
   const existingEvent = combatTexts.find(
-    (event): event is NumericCombatTextEvent => isNumericCombatText(event) && event.target === nextEvent.target && event.kind === nextEvent.kind && event.stat === nextEvent.stat,
+    (event): event is NumericCombatTextEvent =>
+      isNumericCombatText(event) &&
+      event.target === nextEvent.target &&
+      event.kind === nextEvent.kind &&
+      event.stat === nextEvent.stat,
   );
   if (existingEvent) {
     existingEvent.amount += nextEvent.amount;

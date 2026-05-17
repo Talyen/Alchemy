@@ -39,7 +39,8 @@ export const mysteryPool: MysteryEvent[] = [
     id: "mana-berries",
     title: "Mana Berries",
     art: placeholderMystery,
-    narrative: "You stumble upon a lush field of glowing Mana Berries. Their faint blue radiance pulses gently, promising restored mana.",
+    narrative:
+      "You stumble upon a lush field of glowing Mana Berries. Their faint blue radiance pulses gently, promising restored mana.",
     choices: [
       {
         label: "Harvest",
@@ -68,7 +69,8 @@ export const mysteryPool: MysteryEvent[] = [
     id: "enchanted-spring",
     title: "Enchanted Spring",
     art: placeholderMystery,
-    narrative: "A pool of iridescent water steams gently in the cool air. Its surface shimmers with an inviting warmth, promising restoration.",
+    narrative:
+      "A pool of iridescent water steams gently in the cool air. Its surface shimmers with an inviting warmth, promising restoration.",
     choices: [
       {
         label: "Bathe in the Spring",
@@ -98,7 +100,8 @@ export const mysteryPool: MysteryEvent[] = [
     id: "fungal-grotto",
     title: "Fungal Grotto",
     art: placeholderMystery,
-    narrative: "Bioluminescent mushrooms pulse in the dark, their spores hanging thick in the air. The cave walls glitter with an otherworldly light.",
+    narrative:
+      "Bioluminescent mushrooms pulse in the dark, their spores hanging thick in the air. The cave walls glitter with an otherworldly light.",
     choices: [
       {
         label: "Harvest Carefully",
@@ -130,7 +133,8 @@ export const mysteryPool: MysteryEvent[] = [
     id: "wisdom-tree",
     title: "Wisdom Tree",
     art: placeholderMystery,
-    narrative: "An immense oak with a weathered face carved into its bark speaks in rustling leaves. Ancient wisdom emanates from its gnarled branches.",
+    narrative:
+      "An immense oak with a weathered face carved into its bark speaks in rustling leaves. Ancient wisdom emanates from its gnarled branches.",
     choices: [
       {
         label: "Ask for Knowledge",
@@ -151,7 +155,8 @@ export const mysteryPool: MysteryEvent[] = [
     id: "fairy-ring",
     title: "Fairy Ring",
     art: placeholderMystery,
-    narrative: "A circle of glowing mushrooms hums with fey energy in a moonlit clearing. The air feels thick with mischief and ancient magic.",
+    narrative:
+      "A circle of glowing mushrooms hums with fey energy in a moonlit clearing. The air feels thick with mischief and ancient magic.",
     choices: [
       {
         label: "Leave an Offering",
@@ -180,7 +185,8 @@ export const mysteryPool: MysteryEvent[] = [
     id: "ancient-altar",
     title: "Ancient Altar",
     art: placeholderMystery,
-    narrative: "A weathered stone altar stands beneath a shaft of light piercing the canopy. A rusted offering bowl rests before it, etched with forgotten symbols.",
+    narrative:
+      "A weathered stone altar stands beneath a shaft of light piercing the canopy. A rusted offering bowl rests before it, etched with forgotten symbols.",
     choices: [
       {
         label: "Pray",
@@ -206,7 +212,8 @@ export const mysteryPool: MysteryEvent[] = [
     id: "hidden-cache",
     title: "Hidden Cache",
     art: placeholderMystery,
-    narrative: "A leather-wrapped bundle tucked between exposed roots catches your eye. Whatever is inside has been hidden here for a long time.",
+    narrative:
+      "A leather-wrapped bundle tucked between exposed roots catches your eye. Whatever is inside has been hidden here for a long time.",
     choices: [
       {
         label: "Take Everything",
@@ -239,15 +246,13 @@ export const mysteryPool: MysteryEvent[] = [
     id: "overgrown-temple",
     title: "Overgrown Temple",
     art: placeholderMystery,
-    narrative: "Vines carpet ancient mosaic floors. A faint glow pulses from a cracked sarcophagus in the chamber beyond, hinting at preserved treasures.",
+    narrative:
+      "Vines carpet ancient mosaic floors. A faint glow pulses from a cracked sarcophagus in the chamber beyond, hinting at preserved treasures.",
     choices: [
       {
         label: "Explore the Crypt",
         description: "Take 6 damage and gain a random trinket",
-        effects: [
-          { kind: "damageHP", amount: 6 },
-          { kind: "gainRandomTrinket" },
-        ],
+        effects: [{ kind: "damageHP", amount: 6 }, { kind: "gainRandomTrinket" }],
       },
       {
         label: "Decipher the Inscriptions",
@@ -271,7 +276,8 @@ export const mysteryPool: MysteryEvent[] = [
     id: "abandoned-study",
     title: "Abandoned Study",
     art: placeholderMystery,
-    narrative: "Dusty shelves line a circular tower room. A half-written thesis lies open on the desk, quill dried beside it centuries ago.",
+    narrative:
+      "Dusty shelves line a circular tower room. A half-written thesis lies open on the desk, quill dried beside it centuries ago.",
     choices: [
       {
         label: "Search the Scrolls",
@@ -300,7 +306,8 @@ export const mysteryPool: MysteryEvent[] = [
     id: "mysterious-tome",
     title: "Mysterious Tome",
     art: placeholderMystery,
-    narrative: "A leather-bound book floats above a pedestal, pages turning on their own. Arcane energy crackles around it as if it has been waiting for a reader.",
+    narrative:
+      "A leather-bound book floats above a pedestal, pages turning on their own. Arcane energy crackles around it as if it has been waiting for a reader.",
     choices: [
       {
         label: "Read Carefully",
@@ -329,7 +336,8 @@ export const mysteryPool: MysteryEvent[] = [
     id: "crystal-geode",
     title: "Crystal Geode",
     art: placeholderMystery,
-    narrative: "A massive amethyst geode splits the cave floor, its resonant hum filling the chamber with a deep, soothing vibration.",
+    narrative:
+      "A massive amethyst geode splits the cave floor, its resonant hum filling the chamber with a deep, soothing vibration.",
     choices: [
       {
         label: "Mine the Crystals",
@@ -359,7 +367,8 @@ export const mysteryPool: MysteryEvent[] = [
     id: "meteorite-crash",
     title: "Meteorite Crash",
     art: placeholderMystery,
-    narrative: "A smoldering crater scars the forest floor. A strange metallic rock from beyond the sky sits at its center, radiating unfamiliar energy.",
+    narrative:
+      "A smoldering crater scars the forest floor. A strange metallic rock from beyond the sky sits at its center, radiating unfamiliar energy.",
     choices: [
       {
         label: "Collect a Fragment",
@@ -388,7 +397,8 @@ export const mysteryPool: MysteryEvent[] = [
     id: "forgotten-hoard",
     title: "Forgotten Hoard",
     art: placeholderMystery,
-    narrative: "Gold coins glitter among scattered bones beside a massive, ancient skeleton. The remains of a once-great beast guard its treasure even in death.",
+    narrative:
+      "Gold coins glitter among scattered bones beside a massive, ancient skeleton. The remains of a once-great beast guard its treasure even in death.",
     choices: [
       {
         label: "Take the Coins",
@@ -418,7 +428,8 @@ export const mysteryPool: MysteryEvent[] = [
     id: "sacred-grove",
     title: "Sacred Grove",
     art: placeholderMystery,
-    narrative: "Sunlight breaks through the canopy in golden rays. The air is thick with peace, and the ground hums with quiet vitality.",
+    narrative:
+      "Sunlight breaks through the canopy in golden rays. The air is thick with peace, and the ground hums with quiet vitality.",
     choices: [
       {
         label: "Bask in the Light",
@@ -448,7 +459,8 @@ export const mysteryPool: MysteryEvent[] = [
     id: "mountain-pass",
     title: "Mountain Pass",
     art: placeholderMystery,
-    narrative: "A narrow pass winds through jagged peaks. The wind howls and loose rocks scatter the path, but valuable minerals glint in the sunlight.",
+    narrative:
+      "A narrow pass winds through jagged peaks. The wind howls and loose rocks scatter the path, but valuable minerals glint in the sunlight.",
     choices: [
       {
         label: "Scout the Path Ahead",
@@ -481,7 +493,8 @@ export const mysteryPool: MysteryEvent[] = [
     id: "murky-pond",
     title: "Murky Pond",
     art: placeholderMystery,
-    narrative: "A still pond reflects the gnarled trees surrounding it. Bubbles rise from its murky depths, hinting at secrets beneath the surface.",
+    narrative:
+      "A still pond reflects the gnarled trees surrounding it. Bubbles rise from its murky depths, hinting at secrets beneath the surface.",
     choices: [
       {
         label: "Fish for Dinner",

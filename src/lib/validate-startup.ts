@@ -30,7 +30,5 @@ check("enemyBestiary is non-empty", enemyBestiary.length > 0);
 check("cardLibrary is non-empty", cardLibrary.length > 0);
 
 if (checks.some((c) => !c.ok)) {
-  console.error(
-    `${checks.filter((c) => !c.ok).length} startup checks failed — game may behave unexpectedly`,
-  );
+  console.error(`${checks.filter((c) => !c.ok).length} startup checks failed — game may behave unexpectedly`);
 }

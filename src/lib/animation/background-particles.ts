@@ -132,7 +132,12 @@ export function startBackgroundParticles(
     const config = CONFIGS[variant];
     const resolvedColors = colors ?? config.colors;
     const mult = alphaMultiplier ?? 1;
-    const patchedConfig = { ...config, colors: resolvedColors, minAlpha: config.minAlpha * mult, maxAlpha: config.maxAlpha * mult };
+    const patchedConfig = {
+      ...config,
+      colors: resolvedColors,
+      minAlpha: config.minAlpha * mult,
+      maxAlpha: config.maxAlpha * mult,
+    };
     particles = Array.from({ length: config.particleCount }, () => spawnParticle(w, h, patchedConfig));
   }
 

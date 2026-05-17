@@ -54,7 +54,7 @@ const enemyLootTables: Record<string, EnemyLootTable> = {
     guaranteed: { wood: 0, iron: 3, herbs: 0, food: 0, crystal: 1 },
     bonuses: [lootEntry("iron", 0, 2, 0.6), lootEntry("crystal", 0, 1, 0.4)],
   },
-  "frostwarden": {
+  frostwarden: {
     guaranteed: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 3 },
     bonuses: [lootEntry("crystal", 0, 2, 0.6), lootEntry("iron", 0, 1, 0.3)],
   },
@@ -95,7 +95,10 @@ export function getEnemyMaterialLoot(enemyId: string, enemyType: string): Materi
 }
 
 // Applies persistent material find multipliers to discovered material rewards.
-export function applyMaterialFindBonus(materials: MaterialInventory, effects: Pick<HomesteadEffectManifest, "herbFindBonus">): MaterialInventory {
+export function applyMaterialFindBonus(
+  materials: MaterialInventory,
+  effects: Pick<HomesteadEffectManifest, "herbFindBonus">,
+): MaterialInventory {
   if (effects.herbFindBonus <= 0 || materials.herbs <= 0) return materials;
   return { ...materials, herbs: Math.floor(materials.herbs * (1 + effects.herbFindBonus)) };
 }

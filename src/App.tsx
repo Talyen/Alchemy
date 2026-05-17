@@ -38,7 +38,11 @@ import { canAfford } from "@/lib/homestead/inventory";
 import { PAGE_EXIT_MS } from "@/lib/game-constants";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { BackgroundParticles } from "@/features/alchemy/ui/background-particles";
-import { CURRENT_CONTENT_VERSION, CURRENT_GAME_BUILD_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "@/features/alchemy/storage/metadata";
+import {
+  CURRENT_CONTENT_VERSION,
+  CURRENT_GAME_BUILD_VERSION,
+  CURRENT_SAVE_SCHEMA_VERSION,
+} from "@/features/alchemy/storage/metadata";
 import { platform } from "@/lib/platform";
 
 const SCREEN_PARTICLE_COLORS: Partial<Record<Screen, readonly string[]>> = {
@@ -83,11 +87,14 @@ export default function App() {
   const [renderedScreen, setRenderedScreen] = useState<Screen>("menu");
   const [pagePhase, setPagePhase] = useState<"enter" | "exit">("enter");
   const [tooltipBlocked, setTooltipBlocked] = useState(true);
+  // tooltipBlocked starts true, so the first effect only needs to clear it
   const pendingScreenRef = useRef(renderedScreen);
   const vrStageRef = useRef<HTMLDivElement>(null);
   const initialLoadReady = useInitialLoadReady({ imageUrls: allGameArt });
   useAppDisplayEffects({ displayMode, uiScale, brightness, stageRef: vrStageRef });
-  useEffect(() => { preloadAllSounds(); }, []);
+  useEffect(() => {
+    preloadAllSounds();
+  }, []);
 
   const gameMenuOpenRef = useRef(gameMenuOpen);
   const renderedScreenRef = useRef(renderedScreen);
@@ -162,7 +169,7 @@ export default function App() {
   // On every renderedScreen change (including initial mount), block hover tooltips for 800ms
   // to prevent jarring popups during page-enter animation when the mouse is over a trigger.
   useEffect(() => {
-    setTooltipBlocked(true);
+    setTooltipBlocked(true); // eslint-disable-line react-hooks/set-state-in-effect
     const timer = window.setTimeout(() => setTooltipBlocked(false), 400);
     return () => window.clearTimeout(timer);
   }, [renderedScreen]);
@@ -244,7 +251,9 @@ export default function App() {
       return canAfford(materialInventory, r.tiers[currentLevel].cost);
     });
     const affordableBond = cardLibrary.some((c) => {
-      const effect = c.effects.find((e): e is { kind: "summon-companion"; companionId: CompanionId } => e.kind === "summon-companion");
+      const effect = c.effects.find(
+        (e): e is { kind: "summon-companion"; companionId: CompanionId } => e.kind === "summon-companion",
+      );
       if (!effect) return false;
       if (!discoveredCardIds.includes(c.id)) return false;
       const currentLevel = bondedCompanions[effect.companionId] ?? 0;
@@ -262,34 +271,85 @@ export default function App() {
   const particleColors = SCREEN_PARTICLE_COLORS[renderedScreen];
   const isBossBattle = renderedScreen === "battle" && run.battleState.currentEnemy.enemyType === "boss";
   const particleAlphaMultiplier = isBossBattle ? BOSS_ALPHA_MULTIPLIER : SCREEN_PARTICLE_ALPHA[renderedScreen];
-  const content = saveLoadStatus.kind === "unsupported-newer-schema"
-    ? <UnsupportedSaveVersionScreen canQuit={platform.canQuit} onQuit={platform.quit} />
-    : !initialLoadReady
-      ? <StartupLoadingScreen />
-      : (
-        <div
-          key={renderedScreen}
-          className={`${pagePhase === "exit" ? "page-exit" : "page-enter"} h-full w-full overflow-hidden`}
+  const content =
+    saveLoadStatus.kind === "unsupported-newer-schema" ? (
+      <UnsupportedSaveVersionScreen canQuit={platform.canQuit} onQuit={platform.quit} />
+    ) : !initialLoadReady ? (
+      <StartupLoadingScreen />
+    ) : (
+      <div
+        key={renderedScreen}
+        className={`${pagePhase === "exit" ? "page-exit" : "page-enter"} h-full w-full overflow-hidden`}
+      >
+        <HomesteadProvider
+          cardDescriptionContext={{
+            flatPhysicalDamage: homestead.effects.flatPhysicalDamage,
+            companionDamage: homestead.effects.companionDamage,
+            companionBondLevels: homestead.bondedCompanions,
+            potionPotency: 1 + homestead.effects.potionPotency,
+          }}
         >
-          <HomesteadProvider cardDescriptionContext={{ flatPhysicalDamage: homestead.effects.flatPhysicalDamage, companionDamage: homestead.effects.companionDamage, companionBondLevels: homestead.bondedCompanions, potionPotency: 1 + homestead.effects.potionPotency }}>
-            {renderAlchemyScreen({
-              screen: renderedScreen,
-              run,
-              save,
-              homestead,
-              heroArt,
-              playerName,
-              isMobileLandscape,
-              aspectMode,
-              hasUnspentTalents,
-              hasAffordableHomestead,
-              onOpenBattleMenu: openBattleMenu,
-              onClearSaveData: clearSaveData,
-              onUnlockAllDevMode: unlockAllDevMode,
-            })}
-          </HomesteadProvider>
-        </div>
-      );
+          {renderAlchemyScreen({
+            screen: renderedScreen,
+            actions: {
+              goToScreen: run.goToScreen,
+              navigateTo: run.goToScreen,
+              beginCampaign: run.beginCampaign,
+              beginLabyrinth: run.beginLabyrinth,
+              beginWildwood: run.beginWildwood,
+              handleCharacterSelect: run.handleCharacterSelect,
+              handleDifficultySelect: run.handleDifficultySelect,
+              handleBackFromDifficultySelect: run.handleBackFromDifficultySelect,
+              handleWildwoodBossSelect: run.handleWildwoodBossSelect,
+              handleCardClick: run.handleCardClick,
+              handleWishChoice: run.handleWishChoice,
+              handleEndTurn: run.handleEndTurn,
+              handleEndRun: run.handleEndRun,
+              skipCombatDevMode: run.skipCombatDevMode,
+              removeCardGhost: run.removeCardGhost,
+              finishRewards: run.finishRewards,
+              handleDestinationChoice: run.handleDestinationChoice,
+              handleCampfireContinue: run.handleCampfireContinue,
+              handleShopBuyCard: run.handleShopBuyCard,
+              handleShopRemoveCard: run.handleShopRemoveCard,
+              handleShopRefresh: run.handleShopRefresh,
+              handleAlchemistBuyCard: run.handleAlchemistBuyCard,
+              handleAlchemistRefresh: run.handleAlchemistRefresh,
+              handleAlchemistMixPotions: run.handleAlchemistMixPotions,
+              handleMysteryChoice: run.handleMysteryChoice,
+              handleMysteryChooseCard: run.handleMysteryChooseCard,
+              handleMysteryRemoveCard: run.handleMysteryRemoveCard,
+              handleMysteryContinue: run.handleMysteryContinue,
+              handleCorruptCard: run.handleCorruptCard,
+              handleCorruptionContinue: run.handleCorruptionContinue,
+              handleCorruptionLeave: run.handleCorruptionLeave,
+              handleActComplete: run.handleActComplete,
+              handleLabyrinthNodeEnter: run.handleLabyrinthNodeEnter,
+              handleLabyrinthEndRun: run.handleLabyrinthEndRun,
+              resetRunState: run.resetRunState,
+              returnToBattle: run.returnToBattle,
+              unlockTalent: run.unlockTalent,
+              resetUnlockedTalents: run.resetUnlockedTalents,
+            },
+            handCardRefs: run.handCardRefs,
+            battleSceneRef: run.battleSceneRef,
+            playerPanelRef: run.playerPanelRef,
+            enemyPanelRef: run.enemyPanelRef,
+            save,
+            homestead,
+            heroArt,
+            playerName,
+            isMobileLandscape,
+            aspectMode,
+            hasUnspentTalents,
+            hasAffordableHomestead,
+            onOpenBattleMenu: openBattleMenu,
+            onClearSaveData: clearSaveData,
+            onUnlockAllDevMode: unlockAllDevMode,
+          })}
+        </HomesteadProvider>
+      </div>
+    );
 
   return (
     <ErrorBoundary>
@@ -322,8 +382,16 @@ export default function App() {
           className={`flex h-screen w-screen items-center justify-center overflow-hidden bg-background ${isMobileLandscape ? "mobile-landscape p-0" : "p-4"}`}
         >
           <div className="relative" style={frameStyle}>
-            <div ref={vrStageRef} className={`absolute left-0 top-0 overflow-hidden bg-background ${tooltipBlocked ? "tooltips-disabled" : ""}`} style={stageStyle}>
-              <BackgroundParticles variant="embers" {...(particleColors ? { colors: particleColors } : {})} {...(particleAlphaMultiplier ? { alphaMultiplier: particleAlphaMultiplier } : {})} />
+            <div
+              ref={vrStageRef}
+              className={`absolute left-0 top-0 overflow-hidden bg-background ${tooltipBlocked ? "tooltips-disabled" : ""}`}
+              style={stageStyle}
+            >
+              <BackgroundParticles
+                variant="embers"
+                {...(particleColors ? { colors: particleColors } : {})}
+                {...(particleAlphaMultiplier ? { alphaMultiplier: particleAlphaMultiplier } : {})}
+              />
               {content}
               <GameMenu
                 isOpen={saveLoadStatus.kind === "unsupported-newer-schema" ? false : gameMenuOpen}

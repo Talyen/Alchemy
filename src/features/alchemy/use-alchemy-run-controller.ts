@@ -9,6 +9,7 @@ import type { CharacterId, DifficultyId, UnlockedTalents } from "@/lib/game-data
 import { labyrinthModifiersToDifficulty } from "@/lib/content-systems/labyrinth/modifiers";
 import type { LabyrinthModifierKind } from "@/lib/content-systems/types";
 import { useRunStore } from "./stores/run-store";
+import { useScreenStore } from "./stores/screen-store";
 import type { RunStateController } from "./use-run-state";
 import type { TalentStateController } from "./use-talent-state";
 import { useBattleController } from "./use-battle-controller";
@@ -48,12 +49,18 @@ export function useAlchemyRunController({
 }) {
   // This hook composes domain controllers and exposes a stable UI API; it intentionally
   // avoids owning combat/shop/navigation rules directly so those modules stay testable.
-  // ============ Zustand Store (replaces useTalentState + useRunState) ============
-  const storeInitializedRef = useRef(false);
-  if (!storeInitializedRef.current) {
-    storeInitializedRef.current = true;
+  // ============ Zustand Stores ============
+  const [storesInitialized] = useState(() => {
     useRunStore.getState().initialize(initialActiveRun, initialTalentXP, initialUnlockedTalents);
-  }
+    if (initialActiveRun) {
+      useScreenStore.getState().setHasActiveRun(true);
+      if (initialActiveRun.labyrinthMap) {
+        useScreenStore.getState().setLabyrinthMap(initialActiveRun.labyrinthMap);
+      }
+    }
+    return true;
+  });
+  void storesInitialized;
   const runStoreFields = useRunStore((s) => ({
     characterId: s.characterId,
     runDeck: s.runDeck,
@@ -104,10 +111,10 @@ export function useAlchemyRunController({
 
   // ============ Shared State ============
   const [screen, setScreen] = useState<Screen>("menu");
-  const [hoveredCardId, setHoveredCardId] = useState<string | null>(null);
-  const [hasActiveRun, setHasActiveRun] = useState(initialActiveRun !== null);
-  const [activeLabyrinthModifiers, setActiveLabyrinthModifiers] = useState<LabyrinthModifierKind[]>([]);
-  const [activeLabyrinthRewardModifiers, setActiveLabyrinthRewardModifiers] = useState<LabyrinthModifierKind[]>([]);
+  const hoveredCardId = useScreenStore((s) => s.hoveredCardId);
+  const hasActiveRun = useScreenStore((s) => s.hasActiveRun);
+  const activeLabyrinthModifiers = useScreenStore((s) => s.activeLabyrinthModifiers);
+  const activeLabyrinthRewardModifiers = useScreenStore((s) => s.activeLabyrinthRewardModifiers);
 
   // ============ Screen Navigation ============
   const navTimerRef = useRef<number>(0);
@@ -129,6 +136,22 @@ export function useAlchemyRunController({
     homesteadEffectsRef.current = homesteadEffects;
   }, [homesteadEffects]);
 
+  // ============ Store-backed Setters ============
+  function setHoveredCardId(id: string | null | ((prev: string | null) => string | null)) {
+    const store = useScreenStore.getState();
+    store.setHoveredCardId(typeof id === "function" ? id(store.hoveredCardId) : id);
+  }
+  function setHasActiveRun(active: boolean | ((prev: boolean) => boolean)) {
+    const store = useScreenStore.getState();
+    store.setHasActiveRun(typeof active === "function" ? active(store.hasActiveRun) : active);
+  }
+  function setActiveLabyrinthModifiers(modifiers: LabyrinthModifierKind[]) {
+    useScreenStore.getState().setActiveLabyrinthModifiers(modifiers);
+  }
+  function setActiveLabyrinthRewardModifiers(modifiers: LabyrinthModifierKind[]) {
+    useScreenStore.getState().setActiveLabyrinthRewardModifiers(modifiers);
+  }
+
   // ============ Domain Controllers ============
   const battle = useBattleController({
     run,
@@ -140,7 +163,6 @@ export function useAlchemyRunController({
     homesteadEffectsRef,
     screen,
     setHoveredCardId,
-    initialHasActiveBattle: false,
   });
 
   const shop = useShopController({
@@ -149,7 +171,7 @@ export function useAlchemyRunController({
     setDiscoveredCardIds,
   });
 
-  const labyrinth = useLabyrinthController(initialActiveRun?.labyrinthMap ?? null);
+  const labyrinth = useLabyrinthController();
 
   const nav = useRunNavigation({
     run,
@@ -189,7 +211,10 @@ export function useAlchemyRunController({
   }
 
   function handleBeginLabyrinth() {
-    if (!(hasActiveRun && run.contentSystemType === "labyrinth") && !(battle.hasActiveBattle && run.contentSystemType === "labyrinth")) {
+    if (
+      !(hasActiveRun && run.contentSystemType === "labyrinth") &&
+      !(battle.hasActiveBattle && run.contentSystemType === "labyrinth")
+    ) {
       labyrinth.resetMap();
     }
     nav.beginLabyrinth();

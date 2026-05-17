@@ -5,12 +5,7 @@ import { applyCardEffects } from "./apply-effects";
 import { mergeCombatText } from "./combat-text";
 import { POTION_CARD_ID_FRAGMENT } from "../game-constants";
 import { type BattleCard } from "@/lib/game-data";
-import {
-  type BattleResolution,
-  type BattleState,
-  type CombatFlags,
-  type CombatTextEvent,
-} from "./types";
+import { type BattleResolution, type BattleState, type CombatFlags, type CombatTextEvent } from "./types";
 
 export function cardHasDamageType(card: BattleCard, damageType: string): boolean {
   return card.effects.some((e) => e.kind === "damage" && e.damageType === damageType);
@@ -18,17 +13,35 @@ export function cardHasDamageType(card: BattleCard, damageType: string): boolean
 
 type CardCostState = Pick<BattleState, "flags" | "talentEffects" | "trinketEffects">;
 
-const FIRST_CARD_FREE_RULES: { flag: keyof CombatFlags; condition: (state: CardCostState, card: BattleCard) => boolean }[] = [
-  { flag: "firstPhysicalCardFreeUsed", condition: (state, card) => state.talentEffects.firstPhysicalCardFree && cardHasDamageType(card, "physical") },
-  { flag: "firstHolyCardFreeUsed", condition: (state, card) => state.talentEffects.firstHolyCardFree && cardHasDamageType(card, "holy") },
-  { flag: "firstPoisonCardFreeUsed", condition: (state, card) => state.talentEffects.firstPoisonCardFree && cardHasDamageType(card, "poison") },
-  { flag: "firstBleedCardFreeUsed", condition: (state, card) => state.talentEffects.firstBleedCardFree && cardHasDamageType(card, "bleed") },
+const FIRST_CARD_FREE_RULES: {
+  flag: keyof CombatFlags;
+  condition: (state: CardCostState, card: BattleCard) => boolean;
+}[] = [
+  {
+    flag: "firstPhysicalCardFreeUsed",
+    condition: (state, card) => state.talentEffects.firstPhysicalCardFree && cardHasDamageType(card, "physical"),
+  },
+  {
+    flag: "firstHolyCardFreeUsed",
+    condition: (state, card) => state.talentEffects.firstHolyCardFree && cardHasDamageType(card, "holy"),
+  },
+  {
+    flag: "firstPoisonCardFreeUsed",
+    condition: (state, card) => state.talentEffects.firstPoisonCardFree && cardHasDamageType(card, "poison"),
+  },
+  {
+    flag: "firstBleedCardFreeUsed",
+    condition: (state, card) => state.talentEffects.firstBleedCardFree && cardHasDamageType(card, "bleed"),
+  },
 ];
 
 // Pure cost computation shared by UI (getEffectiveCost) and card play (resolveCardPlayCost).
 // Returns the effective cost and which one-shot free-card flags were consumed.
 // The UI discards consumedFlags; the resolver applies them to state.
-export function computeEffectiveCost(state: CardCostState, card: BattleCard): { effectiveCost: number; consumedFlags: Partial<CombatFlags> } {
+export function computeEffectiveCost(
+  state: CardCostState,
+  card: BattleCard,
+): { effectiveCost: number; consumedFlags: Partial<CombatFlags> } {
   let effectiveCost = card.cost;
   const consumedFlags: Partial<CombatFlags> = {};
 
@@ -46,7 +59,11 @@ export function computeEffectiveCost(state: CardCostState, card: BattleCard): { 
   }
   if (effectiveCost === 0) return { effectiveCost, consumedFlags };
 
-  if (!state.flags.firstPotionFreeUsed && state.trinketEffects.mortarPestleFreeFirstPotion && card.id.includes(POTION_CARD_ID_FRAGMENT)) {
+  if (
+    !state.flags.firstPotionFreeUsed &&
+    state.trinketEffects.mortarPestleFreeFirstPotion &&
+    card.id.includes(POTION_CARD_ID_FRAGMENT)
+  ) {
     effectiveCost = 0;
     consumedFlags.firstPotionFreeUsed = true;
   }
@@ -94,19 +111,41 @@ export function playBattleCardResolved(state: BattleState, cardId: string, index
 
   nextState = { ...nextState, mana: Math.max(0, nextState.mana - effectiveCost) };
 
-  if (nextState.trinketEffects.resonantChimeCardsRequired > 0 && nextState.trinketEffects.resonantChimeMana > 0 && !nextState.flags.resonantChimeUsedThisTurn && nextState.cardsPlayedThisTurn >= nextState.trinketEffects.resonantChimeCardsRequired) {
+  if (
+    nextState.trinketEffects.resonantChimeCardsRequired > 0 &&
+    nextState.trinketEffects.resonantChimeMana > 0 &&
+    !nextState.flags.resonantChimeUsedThisTurn &&
+    nextState.cardsPlayedThisTurn >= nextState.trinketEffects.resonantChimeCardsRequired
+  ) {
     nextState = {
       ...nextState,
       mana: nextState.mana + nextState.trinketEffects.resonantChimeMana,
       flags: { ...nextState.flags, resonantChimeUsedThisTurn: true },
     };
-    mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "mana", amount: nextState.trinketEffects.resonantChimeMana });
+    mergeCombatText(combatTexts, {
+      target: "player",
+      kind: "status",
+      stat: "mana",
+      amount: nextState.trinketEffects.resonantChimeMana,
+    });
   }
 
   if (card.consume) {
     if (nextState.trinketEffects.runicQuillDrawOnConsume > 0) {
-      const draw = drawCards(nextState.deck, nextState.discard, nextState.hand, nextState.trinketEffects.runicQuillDrawOnConsume, nextState.nextCardUid);
-      nextState = { ...nextState, deck: draw.deck, discard: draw.discard, hand: draw.hand, nextCardUid: draw.nextCardUid };
+      const draw = drawCards(
+        nextState.deck,
+        nextState.discard,
+        nextState.hand,
+        nextState.trinketEffects.runicQuillDrawOnConsume,
+        nextState.nextCardUid,
+      );
+      nextState = {
+        ...nextState,
+        deck: draw.deck,
+        discard: draw.discard,
+        hand: draw.hand,
+        nextCardUid: draw.nextCardUid,
+      };
     }
     return { state: { ...nextState, exhausted: [...nextState.exhausted, card] }, combatTexts };
   }

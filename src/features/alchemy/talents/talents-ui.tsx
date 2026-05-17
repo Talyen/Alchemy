@@ -24,19 +24,12 @@ export function TalentKeywordButton({
       type="button"
       className={cn(
         "relative rounded-full border px-3 py-1.5 text-sm font-semibold inline-flex items-center gap-1.5 transition-transform active:scale-95",
-        isSelected
-          ? "border-primary bg-primary/20 text-primary"
-          : "border-border/80 bg-card text-foreground",
+        isSelected ? "border-primary bg-primary/20 text-primary" : "border-border/80 bg-card text-foreground",
       )}
       onClick={onClick}
     >
       {hasUnspent && (
-        <ShineBorder
-          shineColor={shineColors}
-          borderWidth={1}
-          duration={8}
-          className="rounded-full z-10"
-        />
+        <ShineBorder shineColor={shineColors} borderWidth={1} duration={8} className="rounded-full z-10" />
       )}
       <KeywordTag keywordId={keywordId} />
     </button>

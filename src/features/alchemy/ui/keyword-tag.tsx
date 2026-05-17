@@ -32,9 +32,15 @@ export function KeywordTag({
         pill && "rounded-full px-2.5 py-1",
         className,
       )}
-      style={pill ? { backgroundColor: "color-mix(in srgb, currentColor 15%, transparent)" } as React.CSSProperties : undefined}
+      style={
+        pill
+          ? ({ backgroundColor: "color-mix(in srgb, currentColor 15%, transparent)" } as React.CSSProperties)
+          : undefined
+      }
     >
-      {showIcon ? <Icon className={cn("relative top-[0.15em] h-[1em] w-[1em] shrink-0", pill && "top-0 h-3 w-3")} /> : null}
+      {showIcon ? (
+        <Icon className={cn("relative top-[0.15em] h-[1em] w-[1em] shrink-0", pill && "top-0 h-3 w-3")} />
+      ) : null}
       {def.label}
     </span>
   );
@@ -44,7 +50,12 @@ export function KeywordTag({
   return (
     <span className="group/keyword relative inline-flex items-center">
       <span className="cursor-help">{tag}</span>
-      <span className={cn(popupClassName, "hover-popup-panel pointer-events-none opacity-0 group-hover/keyword:opacity-100")}>
+      <span
+        className={cn(
+          popupClassName,
+          "hover-popup-panel pointer-events-none opacity-0 group-hover/keyword:opacity-100",
+        )}
+      >
         <span className="flex items-center gap-2 text-base">
           <KeywordTag keywordId={keywordId} showIcon />
         </span>

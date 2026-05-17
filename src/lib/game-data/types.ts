@@ -41,7 +41,14 @@ export type EnemyTrait = {
 };
 
 export type BattleCardEffect =
-  | { kind: "damage"; damageType: DamageType; amount: number; lifesteal?: boolean; equalToBlock?: boolean; equalToArmor?: boolean }
+  | {
+      kind: "damage";
+      damageType: DamageType;
+      amount: number;
+      lifesteal?: boolean;
+      equalToBlock?: boolean;
+      equalToArmor?: boolean;
+    }
   | { kind: "player-status"; status: Extract<PlayerStatusId, "block" | "armor" | "forge" | "haste">; amount: number }
   | { kind: "heal"; amount: number }
   | { kind: "restore-mana"; amount: number }

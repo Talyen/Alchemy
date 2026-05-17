@@ -33,19 +33,33 @@ type MysteryEffectContext = {
 // Applies a single mystery effect and returns a result indicating whether follow-up UI should pause.
 export function applyMysteryEffect(effect: MysteryEffect, context: MysteryEffectContext): MysteryEffectResult {
   switch (effect.kind) {
-    case "addCard": return addSpecificMysteryCard(effect.cardId, context);
-    case "chooseCard": return offerMysteryCardChoices(context);
-    case "healHP": return healFromMystery(effect.amount, effect.chance, context);
-    case "damageHP": return damageFromMystery(effect.amount, context);
-    case "gainGold": return gainMysteryGold(effect.amount, context);
-    case "loseGold": return loseMysteryGold(effect.amount, context);
-    case "gainMaxMana": return { followUp: null };
-    case "gainXP": context.awardMysteryXP(effect.keyword, effect.amount); return { followUp: null };
-    case "removeCard": return removeMysteryCard(effect.mode, context);
-    case "gainTrinket": return gainMysteryTrinket(effect.trinketId, context);
-    case "gainRandomTrinket": return gainRandomMysteryTrinket(context);
-    case "gainMaterial": return gainMysteryMaterial(effect.material, effect.amount, context);
-    case "none": return { followUp: null };
+    case "addCard":
+      return addSpecificMysteryCard(effect.cardId, context);
+    case "chooseCard":
+      return offerMysteryCardChoices(context);
+    case "healHP":
+      return healFromMystery(effect.amount, effect.chance, context);
+    case "damageHP":
+      return damageFromMystery(effect.amount, context);
+    case "gainGold":
+      return gainMysteryGold(effect.amount, context);
+    case "loseGold":
+      return loseMysteryGold(effect.amount, context);
+    case "gainMaxMana":
+      return { followUp: null };
+    case "gainXP":
+      context.awardMysteryXP(effect.keyword, effect.amount);
+      return { followUp: null };
+    case "removeCard":
+      return removeMysteryCard(effect.mode, context);
+    case "gainTrinket":
+      return gainMysteryTrinket(effect.trinketId, context);
+    case "gainRandomTrinket":
+      return gainRandomMysteryTrinket(context);
+    case "gainMaterial":
+      return gainMysteryMaterial(effect.material, effect.amount, context);
+    case "none":
+      return { followUp: null };
   }
 }
 
@@ -55,7 +69,10 @@ export function getMysteryCardPool() {
 }
 
 // Shared card reward mutation keeps discovery tracking aligned with deck changes.
-export function addCardToRun(card: BattleCard, context: Pick<MysteryEffectContext, "setRunDeck" | "setDiscoveredCardIds">): void {
+export function addCardToRun(
+  card: BattleCard,
+  context: Pick<MysteryEffectContext, "setRunDeck" | "setDiscoveredCardIds">,
+): void {
   context.setRunDeck((p) => [...p, card]);
   context.setDiscoveredCardIds((cur) => appendUnique(cur, card.id));
 }

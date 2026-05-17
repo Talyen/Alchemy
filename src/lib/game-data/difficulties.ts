@@ -40,32 +40,80 @@ export const difficultyConfigs: Record<CharacterId, ClassDifficultyConfig> = {
     headerTitle: "A Knight's Journey",
     difficulties: [
       { id: "difficulty-1", name: "Novice", description: "No modifiers", order: 1, modifiers: [] },
-      { id: "difficulty-2", name: "Adventurer", description: "Enemies start combat with 2 Armor", order: 2, modifiers: [{ kind: "enemy-starting-armor", amount: 2 }] },
-      { id: "difficulty-3", name: "Legend", description: "Enemies gain 1 Forge each turn", order: 3, modifiers: [{ kind: "enemy-gains-forge-each-turn" }] },
+      {
+        id: "difficulty-2",
+        name: "Adventurer",
+        description: "Enemies start combat with 2 Armor",
+        order: 2,
+        modifiers: [{ kind: "enemy-starting-armor", amount: 2 }],
+      },
+      {
+        id: "difficulty-3",
+        name: "Legend",
+        description: "Enemies gain 1 Forge each turn",
+        order: 3,
+        modifiers: [{ kind: "enemy-gains-forge-each-turn" }],
+      },
     ],
   },
   rogue: {
     headerTitle: "A Rogue's Tale",
     difficulties: [
       { id: "difficulty-1", name: "Novice", description: "No modifiers", order: 1, modifiers: [] },
-      { id: "difficulty-2", name: "Adventurer", description: "Enemy Poison damage is increased", order: 2, modifiers: [{ kind: "increase-enemy-status", status: "poison", amount: 2 }] },
-      { id: "difficulty-3", name: "Legend", description: "Enemy Bleed damage is increased", order: 3, modifiers: [{ kind: "increase-enemy-status", status: "bleed", amount: 3 }] },
+      {
+        id: "difficulty-2",
+        name: "Adventurer",
+        description: "Enemy Poison damage is increased",
+        order: 2,
+        modifiers: [{ kind: "increase-enemy-status", status: "poison", amount: 2 }],
+      },
+      {
+        id: "difficulty-3",
+        name: "Legend",
+        description: "Enemy Bleed damage is increased",
+        order: 3,
+        modifiers: [{ kind: "increase-enemy-status", status: "bleed", amount: 3 }],
+      },
     ],
   },
   wizard: {
     headerTitle: "A Wizard's Saga",
     difficulties: [
       { id: "difficulty-1", name: "Novice", description: "No modifiers", order: 1, modifiers: [] },
-      { id: "difficulty-2", name: "Adventurer", description: "Enemy Burn damage is increased", order: 2, modifiers: [{ kind: "increase-enemy-status", status: "burn", amount: 2 }] },
-      { id: "difficulty-3", name: "Legend", description: "Enemy Freeze damage is increased", order: 3, modifiers: [{ kind: "increase-enemy-status", status: "freeze", amount: 3 }] },
+      {
+        id: "difficulty-2",
+        name: "Adventurer",
+        description: "Enemy Burn damage is increased",
+        order: 2,
+        modifiers: [{ kind: "increase-enemy-status", status: "burn", amount: 2 }],
+      },
+      {
+        id: "difficulty-3",
+        name: "Legend",
+        description: "Enemy Freeze damage is increased",
+        order: 3,
+        modifiers: [{ kind: "increase-enemy-status", status: "freeze", amount: 3 }],
+      },
     ],
   },
   ranger: {
     headerTitle: "A Ranger's Fable",
     difficulties: [
       { id: "difficulty-1", name: "Novice", description: "No modifiers", order: 1, modifiers: [] },
-      { id: "difficulty-2", name: "Adventurer", description: "Enemy Nature damage is increased by 2", order: 2, modifiers: [{ kind: "increase-enemy-damage", amount: 2 }] },
-      { id: "difficulty-3", name: "Legend", description: "Enemy Bleed damage is increased", order: 3, modifiers: [{ kind: "increase-enemy-status", status: "bleed", amount: 3 }] },
+      {
+        id: "difficulty-2",
+        name: "Adventurer",
+        description: "Enemy Nature damage is increased by 2",
+        order: 2,
+        modifiers: [{ kind: "increase-enemy-damage", amount: 2 }],
+      },
+      {
+        id: "difficulty-3",
+        name: "Legend",
+        description: "Enemy Bleed damage is increased",
+        order: 3,
+        modifiers: [{ kind: "increase-enemy-status", status: "bleed", amount: 3 }],
+      },
     ],
   },
 };

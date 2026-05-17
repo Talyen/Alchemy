@@ -16,6 +16,8 @@ import { BattleCardButton, getCardDisplayTitle } from "../../components";
 import { battleHandContainerClass, handCardWidthClass, mobileStageHandCardWidthClass } from "../../config";
 import { getHoverId } from "../../utils";
 import type { BattleActionsProps, BattleHoverProps, BattleRefsProps, RequiredBattleViewProps } from "./types";
+import { useScreenStore } from "../../stores/screen-store";
+import { useBattleStore } from "../../stores/battle-store";
 
 export function BattleHand({
   view,
@@ -29,19 +31,27 @@ export function BattleHand({
   actions: BattleActionsProps;
 }) {
   const { battleState, isMobileLandscape } = view;
-  const { hoveredCardId, setHoveredCardId, shimmerState, onHoverShimmer } = hover;
+  const { hoveredCardId, shimmerState } = hover;
   const { handCardRefs } = refs;
+  const setHoveredCardId = useScreenStore((s) => s.setHoveredCardId);
+  const maybeTriggerShimmer = useBattleStore((s) => s.maybeTriggerShimmer);
   const { onCardClick } = actions;
   const handWidthClass = isMobileLandscape ? mobileStageHandCardWidthClass : handCardWidthClass;
 
   return (
-    <div className={isMobileLandscape ? battleHandContainerClass.mobile : battleHandContainerClass.desktop} aria-label="Player hand">
+    <div
+      className={isMobileLandscape ? battleHandContainerClass.mobile : battleHandContainerClass.desktop}
+      aria-label="Player hand"
+    >
       {battleState.hand.map((card, index) => {
         const hoverId = getHoverId("hand", `${card.id}-${card.uid}`);
         const isHovered = hoveredCardId === hoverId;
         const offset = index - (battleState.hand.length - 1) / 2;
         const isShimmering = shimmerState?.cardId === hoverId;
-        const canPlay = battleState.turnPhase === "player" && battleState.mana >= getEffectiveCost(battleState, card) && !battleState.wishOptions;
+        const canPlay =
+          battleState.turnPhase === "player" &&
+          battleState.mana >= getEffectiveCost(battleState, card) &&
+          !battleState.wishOptions;
 
         return (
           <BattleCardButton
@@ -50,7 +60,7 @@ export function BattleHand({
             hovered={isHovered}
             onHoverStart={() => {
               setHoveredCardId(hoverId);
-              onHoverShimmer(hoverId);
+              maybeTriggerShimmer(hoverId);
             }}
             onHoverEnd={() => setHoveredCardId((current) => (current === hoverId ? null : current))}
             onClick={(event) => onCardClick(card, index, event)}
@@ -58,7 +68,11 @@ export function BattleHand({
               handCardRefs.current[`${card.id}-${card.uid}`] = node;
             }}
             ariaLabel={`Play ${getCardDisplayTitle(card)}`}
-            descriptionContext={{ ...battleState.talentEffects, companionDamageBonus: battleState.trinketEffects.companionDamageBonus, companionDamageBuff: battleState.companionDamageBuff }}
+            descriptionContext={{
+              ...battleState.talentEffects,
+              companionDamageBonus: battleState.trinketEffects.companionDamageBonus,
+              companionDamageBuff: battleState.companionDamageBuff,
+            }}
             shimmerActive={isShimmering}
             shimmerToken={shimmerState?.token}
             baseTransform={isHovered ? getHoverHandTransform(offset) : getRestingHandTransform(offset)}

@@ -67,18 +67,21 @@ function computeBaseDamage(state: BattleState, effect: Extract<BattleCardEffect,
   }
 
   if (effect.damageType === "holy") {
-    rawAmount += Math.floor(state.gold * state.talentEffects.holyGoldPercent / PERCENT_DENOMINATOR);
-    rawAmount += Math.floor(state.playerStatuses.block * state.talentEffects.holyBlockPercent / PERCENT_DENOMINATOR);
+    rawAmount += Math.floor((state.gold * state.talentEffects.holyGoldPercent) / PERCENT_DENOMINATOR);
+    rawAmount += Math.floor((state.playerStatuses.block * state.talentEffects.holyBlockPercent) / PERCENT_DENOMINATOR);
     if (state.enemyStatuses.burn > 0) {
       rawAmount = Math.floor(rawAmount * (1 + state.talentEffects.holyVsBurnMultiplier / PERCENT_DENOMINATOR));
     }
   }
 
   if (effect.damageType === "bleed") {
-    if (state.playerHealth <= state.playerMaxHealth / HALF_DIVISOR && state.talentEffects.bleedDesperateMultiplier > 1) {
+    if (
+      state.playerHealth <= state.playerMaxHealth / HALF_DIVISOR &&
+      state.talentEffects.bleedDesperateMultiplier > 1
+    ) {
       rawAmount = Math.floor(rawAmount * state.talentEffects.bleedDesperateMultiplier);
     }
-    if (state.enemyHealth <= state.enemyMaxHealth * state.talentEffects.bleedExecuteThreshold / PERCENT_DENOMINATOR) {
+    if (state.enemyHealth <= (state.enemyMaxHealth * state.talentEffects.bleedExecuteThreshold) / PERCENT_DENOMINATOR) {
       rawAmount = Math.floor(rawAmount * BLEED_EXECUTE_MULTIPLIER);
     }
   }
@@ -102,7 +105,9 @@ function applyLifesteal(state: BattleState, damage: number, combatTexts: CombatT
 
 function applyHolyLifesteal(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
   if (damage <= 0 || state.talentEffects.holyLifestealPercent <= 0) return state;
-  const healAmount = Math.floor(damage * state.talentEffects.holyLifestealPercent / PERCENT_DENOMINATOR * state.talentEffects.healMultiplier);
+  const healAmount = Math.floor(
+    ((damage * state.talentEffects.holyLifestealPercent) / PERCENT_DENOMINATOR) * state.talentEffects.healMultiplier,
+  );
   if (healAmount <= 0) return state;
   mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: healAmount });
   return applyPlayerHealing(state, healAmount);
@@ -110,25 +115,41 @@ function applyHolyLifesteal(state: BattleState, damage: number, combatTexts: Com
 
 function applyDamageBlock(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
   if (damage <= 0 || state.talentEffects.holyBlockPercentFromDamage <= 0) return state;
-  const blockAmount = Math.floor(damage * state.talentEffects.holyBlockPercentFromDamage / PERCENT_DENOMINATOR);
+  const blockAmount = Math.floor((damage * state.talentEffects.holyBlockPercentFromDamage) / PERCENT_DENOMINATOR);
   if (blockAmount <= 0) return state;
   mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "block", amount: blockAmount });
   return addPlayerStatus(state, "block", blockAmount);
 }
 
-function applyFirstDamageModifiers(state: BattleState, effect: Extract<BattleCardEffect, { kind: "damage" }>, rawDamage: number) {
+function applyFirstDamageModifiers(
+  state: BattleState,
+  effect: Extract<BattleCardEffect, { kind: "damage" }>,
+  rawDamage: number,
+) {
   let nextState = state;
   let nextDamage = rawDamage;
 
-  if (effect.damageType === "burn" && nextState.talentEffects.firstBurnCardDoubled && !nextState.flags.firstBurnCardDoubledUsed) {
+  if (
+    effect.damageType === "burn" &&
+    nextState.talentEffects.firstBurnCardDoubled &&
+    !nextState.flags.firstBurnCardDoubledUsed
+  ) {
     nextDamage *= FIRST_EFFECT_MULTIPLIER;
     nextState = setFlag(nextState, "firstBurnCardDoubledUsed", true);
   }
-  if (effect.damageType === "burn" && nextState.trinketEffects.firstBurnDoubled && !nextState.flags.firstBurnTrinketDoubledUsed) {
+  if (
+    effect.damageType === "burn" &&
+    nextState.trinketEffects.firstBurnDoubled &&
+    !nextState.flags.firstBurnTrinketDoubledUsed
+  ) {
     nextDamage *= FIRST_EFFECT_MULTIPLIER;
     nextState = setFlag(nextState, "firstBurnTrinketDoubledUsed", true);
   }
-  if (effect.damageType === "holy" && nextState.trinketEffects.firstHolyDamageDoubled && !nextState.flags.firstHolyDamageBonusUsed) {
+  if (
+    effect.damageType === "holy" &&
+    nextState.trinketEffects.firstHolyDamageDoubled &&
+    !nextState.flags.firstHolyDamageBonusUsed
+  ) {
     nextDamage *= FIRST_EFFECT_MULTIPLIER;
     nextState = setFlag(nextState, "firstHolyDamageBonusUsed", true);
   }
@@ -136,10 +157,24 @@ function applyFirstDamageModifiers(state: BattleState, effect: Extract<BattleCar
   return { state: nextState, rawDamage: nextDamage };
 }
 
-function applyForgeStunRider(state: BattleState, effect: Extract<BattleCardEffect, { kind: "damage" }>, combatTexts: CombatTextEvent[]) {
-  if (effect.damageType !== "physical" || state.trinketEffects.forgeStunThreshold <= 0 || state.playerStatuses.forge < state.trinketEffects.forgeStunThreshold) return state;
+function applyForgeStunRider(
+  state: BattleState,
+  effect: Extract<BattleCardEffect, { kind: "damage" }>,
+  combatTexts: CombatTextEvent[],
+) {
+  if (
+    effect.damageType !== "physical" ||
+    state.trinketEffects.forgeStunThreshold <= 0 ||
+    state.playerStatuses.forge < state.trinketEffects.forgeStunThreshold
+  )
+    return state;
 
-  mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "stun", amount: state.trinketEffects.forgeStunAmount });
+  mergeCombatText(combatTexts, {
+    target: "enemy",
+    kind: "status",
+    stat: "stun",
+    amount: state.trinketEffects.forgeStunAmount,
+  });
 
   return resolveStunTrigger(addEnemyStatus(state, "stun", state.trinketEffects.forgeStunAmount), combatTexts);
 }
@@ -148,7 +183,10 @@ function applyHolyDamageRiders(state: BattleState, card: BattleCard, damage: num
   let nextState = applyHolyLifesteal(state, damage, combatTexts);
   nextState = applyDamageBlock(nextState, damage, combatTexts);
 
-  if (nextState.talentEffects.holyBurnChance > 0 && Math.random() * PERCENT_DENOMINATOR < nextState.talentEffects.holyBurnChance) {
+  if (
+    nextState.talentEffects.holyBurnChance > 0 &&
+    Math.random() * PERCENT_DENOMINATOR < nextState.talentEffects.holyBurnChance
+  ) {
     const burnAmount = isNullFieldActive(nextState) ? Math.max(1, Math.floor(damage / 2)) : damage;
     nextState = {
       ...nextState,
@@ -156,7 +194,10 @@ function applyHolyDamageRiders(state: BattleState, card: BattleCard, damage: num
     };
   }
 
-  if (nextState.talentEffects.holyWishChance > 0 && Math.random() * PERCENT_DENOMINATOR < nextState.talentEffects.holyWishChance) {
+  if (
+    nextState.talentEffects.holyWishChance > 0 &&
+    Math.random() * PERCENT_DENOMINATOR < nextState.talentEffects.holyWishChance
+  ) {
     nextState = applyWishEffect(nextState, card, 1, combatTexts);
   }
 
@@ -169,8 +210,17 @@ function applyGoldTroveReward(state: BattleState, damage: number, combatTexts: C
   return addGold(state, GOLD_TROVE_DAMAGE_REWARD);
 }
 
-function consumeForgeAfterPhysicalDamage(state: BattleState, effect: Extract<BattleCardEffect, { kind: "damage" }>, damage: number) {
-  if ((effect.damageType !== "physical" && effect.damageType !== "stun") || damage <= 0 || state.playerStatuses.forge <= 0) return state;
+function consumeForgeAfterPhysicalDamage(
+  state: BattleState,
+  effect: Extract<BattleCardEffect, { kind: "damage" }>,
+  damage: number,
+) {
+  if (
+    (effect.damageType !== "physical" && effect.damageType !== "stun") ||
+    damage <= 0 ||
+    state.playerStatuses.forge <= 0
+  )
+    return state;
   return {
     ...state,
     playerStatuses: {
@@ -184,15 +234,22 @@ function computeCardDamageToEnemy(state: BattleState, effect: Extract<BattleCard
   const modifiedBase = applyFirstDamageModifiers(state, effect, computeBaseDamage(state, effect));
   const rawDamage = modifiedBase.rawDamage;
   const finalDamage = applyCrit(rawDamage, effect.damageType, modifiedBase.state);
-  const effectiveArmor = effect.damageType === "physical"
-    ? Math.max(0, state.enemyArmor - state.trinketEffects.sunderingArmorPiercing)
-    : state.enemyArmor;
+  const effectiveArmor =
+    effect.damageType === "physical"
+      ? Math.max(0, state.enemyArmor - state.trinketEffects.sunderingArmorPiercing)
+      : state.enemyArmor;
   const damageAfterArmor = Math.max(0, finalDamage - effectiveArmor);
   const multiplier = getEnemyDamageMultiplier(state, effect.damageType);
   return { nextState: modifiedBase.state, modifiedDamage: Math.floor(damageAfterArmor * multiplier) };
 }
 
-function applyDamageRiders(state: BattleState, card: BattleCard, effect: Extract<BattleCardEffect, { kind: "damage" }>, modifiedDamage: number, combatTexts: CombatTextEvent[]) {
+function applyDamageRiders(
+  state: BattleState,
+  card: BattleCard,
+  effect: Extract<BattleCardEffect, { kind: "damage" }>,
+  modifiedDamage: number,
+  combatTexts: CombatTextEvent[],
+) {
   let nextState: BattleState = {
     ...state,
     enemyHealth: clampHealth(state.enemyHealth, -modifiedDamage, state.enemyMaxHealth),

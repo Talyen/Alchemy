@@ -1,6 +1,11 @@
 // Destination availability and sampling helpers for run navigation.
 // Depends on route filtering config, run progression constants, and alchemy destination types.
-import { CORRUPTION_DESTINATION_WEIGHT, DEFAULT_DESTINATION_WEIGHT, DESTINATION_CHOICES, DESTINATIONS_PER_ACT } from "@/lib/game-constants";
+import {
+  CORRUPTION_DESTINATION_WEIGHT,
+  DEFAULT_DESTINATION_WEIGHT,
+  DESTINATION_CHOICES,
+  DESTINATIONS_PER_ACT,
+} from "@/lib/game-constants";
 
 import { getAvailableDestinations as getFilteredDestinations } from "../config";
 import { DESTINATIONS, type Destination } from "../types";
@@ -15,7 +20,13 @@ type DestinationAvailabilityInput = {
 
 // Boss routing is injected by act progress; normal filtering stays in config so HP/gold
 // gates can be reused without knowing run progression.
-export function getRunAvailableDestinations({ destinationIndexInAct, currentHp, currentGold, maxHp, previousDestination }: DestinationAvailabilityInput): Destination[] {
+export function getRunAvailableDestinations({
+  destinationIndexInAct,
+  currentHp,
+  currentGold,
+  maxHp,
+  previousDestination,
+}: DestinationAvailabilityInput): Destination[] {
   if (destinationIndexInAct >= DESTINATIONS_PER_ACT - 1) {
     return [DESTINATIONS.BOSS_COMBAT];
   }

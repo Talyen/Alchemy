@@ -2,7 +2,17 @@
 // Depends only on game-data shape types and is imported by draw, effects, turns, and UI.
 // Keep these state shapes explicit so save/load, animation, and combat stay in sync.
 // Runtime health helpers live in ./health; this file is pure types + re-exports.
-import type { BattleCard, BestiaryEntry, CompanionDefinition, DamageType, DifficultyModifier, EnemyAttackEffect, EnemyStatusId, PlayerStatusId, TalentEffectManifest } from "@/lib/game-data";
+import type {
+  BattleCard,
+  BestiaryEntry,
+  CompanionDefinition,
+  DamageType,
+  DifficultyModifier,
+  EnemyAttackEffect,
+  EnemyStatusId,
+  PlayerStatusId,
+  TalentEffectManifest,
+} from "@/lib/game-data";
 
 // Both player and enemy use the same status ID union, but enemies never gain
 // block/armor/forge/haste — those are filtered out at the BattleCardEffect level.
@@ -74,39 +84,39 @@ export type BattleState = {
   deck: BattleCard[];
   hand: BattleCard[];
   discard: BattleCard[];
-  exhausted: BattleCard[];       // consumed cards removed for the battle
+  exhausted: BattleCard[]; // consumed cards removed for the battle
   mana: number;
   maxMana: number;
   gold: number;
   turn: number;
   turnPhase: TurnPhase;
   playerHealth: number;
-  playerMaxHealth: number;       // current max health (can increase from talents)
-  deathsDoorUsed: boolean;       // one-shot combat survival trigger for this battle
-  deathsDoorActive: boolean;     // true while the player has one turn to heal from 0 HP
+  playerMaxHealth: number; // current max health (can increase from talents)
+  deathsDoorUsed: boolean; // one-shot combat survival trigger for this battle
+  deathsDoorActive: boolean; // true while the player has one turn to heal from 0 HP
   deathsDoorTriggeredTurn: number | null; // enemy-turn marker so the grace window lasts one full player turn
   enemyHealth: number;
-  enemyMaxHealth: number;        // stored so UI can render % even after damage
+  enemyMaxHealth: number; // stored so UI can render % even after damage
   enemyAttackEffects: EnemyAttackEffect[]; // scaled per room, applied during enemy phase
-  enemyRegeneration: number;       // health restored at end of each enemy turn
-  enemyArmor: number;             // flat damage reduction for the enemy
-  enemyForge: number;             // bonus physical damage added per stack (rusting-carapace)
-  enemyFreezeBonus: number;       // per-turn freeze status bonus (glacial-shell)
+  enemyRegeneration: number; // health restored at end of each enemy turn
+  enemyArmor: number; // flat damage reduction for the enemy
+  enemyForge: number; // bonus physical damage added per stack (rusting-carapace)
+  enemyFreezeBonus: number; // per-turn freeze status bonus (glacial-shell)
   playerStatuses: PlayerStatusValues;
   enemyStatuses: EnemyStatusValues;
-  enemyStunSkipTurns: number;     // turns skipped from stun triggers
-  enemyFreezeSkipTurns: number;   // turns skipped from freeze triggers
+  enemyStunSkipTurns: number; // turns skipped from stun triggers
+  enemyFreezeSkipTurns: number; // turns skipped from freeze triggers
   wishOptions: BattleCard[] | null; // non-null = Wish selection is active
-  wishQueue: BattleCard[][];        // additional Wish selections waiting behind the active modal
+  wishQueue: BattleCard[][]; // additional Wish selections waiting behind the active modal
   activeCompanion: CompanionDefinition | null; // persistent ally effect for this battle only
   companionDamageBuff: number; // persistent buff from Pack Tactics-style cards
   currentEnemy: BestiaryEntry;
   talentEffects: TalentEffectManifest;
   trinketEffects: TrinketManifest;
   flags: CombatFlags;
-  discoveredCardIds: string[];    // used by wish undiscovered talent
+  discoveredCardIds: string[]; // used by wish undiscovered talent
   cardsPlayedThisTurn: number;
-  nextCardUid: number;             // battle-owned source for unique rendered card keys
+  nextCardUid: number; // battle-owned source for unique rendered card keys
   difficultyModifiers: DifficultyModifier[];
 };
 
@@ -175,7 +185,13 @@ export function applyPlayerCombatDamage(state: BattleState, damage: number): Bat
   const nextHealth = clampHealth(state.playerHealth, -damage, state.playerMaxHealth);
   if (nextHealth > 0) return { ...state, playerHealth: nextHealth };
   if (!state.deathsDoorUsed) {
-    return { ...state, playerHealth: 0, deathsDoorUsed: true, deathsDoorActive: true, deathsDoorTriggeredTurn: state.turn };
+    return {
+      ...state,
+      playerHealth: 0,
+      deathsDoorUsed: true,
+      deathsDoorActive: true,
+      deathsDoorTriggeredTurn: state.turn,
+    };
   }
   return { ...state, playerHealth: 0, deathsDoorActive: state.deathsDoorActive };
 }
@@ -194,4 +210,3 @@ export function isPlayerDefeated(state: Pick<BattleState, "playerHealth" | "deat
 export function isNullFieldActive(state: Pick<BattleState, "difficultyModifiers">): boolean {
   return state.difficultyModifiers.some((m) => m.kind === "labyrinth-null-field");
 }
-

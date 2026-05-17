@@ -1,23 +1,20 @@
 // Reusable card rendering: descriptions, keyword popups, detail popups, hand buttons, and ghosts.
 // Depends on game-data keyword metadata, shared styling, tilt utilities, and ghost animation types.
 // Used by battle, shop, rewards, collection, and alchemist UI.
-import { Fragment, type CSSProperties, type MouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
+import {
+  Fragment,
+  type CSSProperties,
+  type MouseEvent,
+  type PointerEvent as ReactPointerEvent,
+  type ReactNode,
+} from "react";
 import { useLayoutEffect, useRef, useState } from "react";
 
-import {
-  keywordDefinitions,
-  type BattleCard,
-  type KeywordId,
-} from "@/lib/game-data";
+import { keywordDefinitions, type BattleCard, type KeywordId } from "@/lib/game-data";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-import {
-  cardSurfaceClass,
-  popupClassName,
-  staticCardTransform,
-  viewCardWidthClass,
-} from "../config";
+import { cardSurfaceClass, popupClassName, staticCardTransform, viewCardWidthClass } from "../config";
 import type { CardGhost, GhostStyle } from "../types";
 import { clearTiltFromEvent, DEFAULT_TILT_STRENGTH, setTiltFromEvent, tokenizeDescription } from "../utils";
 import { DisabledTooltip, GoldCost, ShimmerOverlay } from "./shared-ui";
@@ -45,17 +42,28 @@ export function KeywordToken({ keywordId, matchedText }: { keywordId: KeywordId;
   return (
     <span className="group/keyword relative inline-flex items-center">
       <span className={cn("cursor-help font-semibold", definition.colorClass)}>{matchedText}</span>
-      <span className={cn(popupClassName, "hover-popup-panel pointer-events-none opacity-0 group-hover/keyword:opacity-100")}>
+      <span
+        className={cn(
+          popupClassName,
+          "hover-popup-panel pointer-events-none opacity-0 group-hover/keyword:opacity-100",
+        )}
+      >
         <span className="flex items-center gap-2 text-base">
           <KeywordTag keywordId={keywordId} />
         </span>
-        <span className="mt-2 block text-sm leading-6 text-muted-foreground">{renderColoredKeywords(definition.description)}</span>
+        <span className="mt-2 block text-sm leading-6 text-muted-foreground">
+          {renderColoredKeywords(definition.description)}
+        </span>
       </span>
     </span>
   );
 }
 
-function splitCorruptedNumericParts(text: string, baseOffset: number, corruptedOffsets: Set<number>): { text: string; corrupted: boolean }[] {
+function splitCorruptedNumericParts(
+  text: string,
+  baseOffset: number,
+  corruptedOffsets: Set<number>,
+): { text: string; corrupted: boolean }[] {
   const fragments: { text: string; corrupted: boolean }[] = [];
   const numRegex = /\d+/g;
   let lastIndex = 0;
@@ -73,7 +81,15 @@ function splitCorruptedNumericParts(text: string, baseOffset: number, corruptedO
   return fragments.length > 0 ? fragments : [{ text, corrupted: false }];
 }
 
-export function DescriptionLines({ lines, idPrefix, card }: { lines: string[]; idPrefix: string; card?: Pick<BattleCard, "corruptedValuePositions"> }) {
+export function DescriptionLines({
+  lines,
+  idPrefix,
+  card,
+}: {
+  lines: string[];
+  idPrefix: string;
+  card?: Pick<BattleCard, "corruptedValuePositions">;
+}) {
   return (
     <div className="mt-2 space-y-1.5 text-sm leading-6 text-muted-foreground">
       {lines.map((line, lineIndex) => {
@@ -86,12 +102,20 @@ export function DescriptionLines({ lines, idPrefix, card }: { lines: string[]; i
           <div key={`${idPrefix}-${lineIndex}-${line}`}>
             {parts.map((part, index) => {
               if (part.keywordId) {
-                return <KeywordToken key={`${idPrefix}-${lineIndex}-${index}`} keywordId={part.keywordId} matchedText={part.text} />;
+                return (
+                  <KeywordToken
+                    key={`${idPrefix}-${lineIndex}-${index}`}
+                    keywordId={part.keywordId}
+                    matchedText={part.text}
+                  />
+                );
               }
               const offset = parts.slice(0, index).reduce((acc, p) => acc + p.text.length, 0);
               return splitCorruptedNumericParts(part.text, offset, corruptedOffsets).map((frag, fi) =>
                 frag.corrupted ? (
-                  <span key={`${idPrefix}-${lineIndex}-${index}-${fi}`} className="text-red-400">{frag.text}</span>
+                  <span key={`${idPrefix}-${lineIndex}-${index}-${fi}`} className="text-red-400">
+                    {frag.text}
+                  </span>
                 ) : (
                   <span key={`${idPrefix}-${lineIndex}-${index}-${fi}`}>{frag.text}</span>
                 ),
@@ -117,14 +141,39 @@ export function CardTitle({ card, className }: { card: Pick<BattleCard, "title" 
   );
 }
 
-export function PurchasableCardItem({ card, price, gold, purchased, onBuy, widthClass = viewCardWidthClass }: { card: BattleCard; price: number; gold: number; purchased: boolean; onBuy: () => void; widthClass?: string }) {
+export function PurchasableCardItem({
+  card,
+  price,
+  gold,
+  purchased,
+  onBuy,
+  widthClass = viewCardWidthClass,
+}: {
+  card: BattleCard;
+  price: number;
+  gold: number;
+  purchased: boolean;
+  onBuy: () => void;
+  widthClass?: string;
+}) {
   const [hovered, setHovered] = useState(false);
 
   if (purchased) {
     return (
       <div className="flex flex-col items-center gap-3 rounded-[18px] border border-border/30 bg-card/30 p-4 text-center opacity-50">
-        <BattleCardButton card={card} hovered={false} onHoverStart={() => {}} onHoverEnd={() => {}} ariaLabel={getCardDisplayTitle(card)} shimmerActive={false} shimmerToken={undefined} className={widthClass} />
-        <p className="text-sm font-semibold text-muted-foreground"><CardTitle card={card} /></p>
+        <BattleCardButton
+          card={card}
+          hovered={false}
+          onHoverStart={() => {}}
+          onHoverEnd={() => {}}
+          ariaLabel={getCardDisplayTitle(card)}
+          shimmerActive={false}
+          shimmerToken={undefined}
+          className={widthClass}
+        />
+        <p className="text-sm font-semibold text-muted-foreground">
+          <CardTitle card={card} />
+        </p>
         <span className="text-xs text-muted-foreground">Purchased</span>
       </div>
     );
@@ -133,9 +182,20 @@ export function PurchasableCardItem({ card, price, gold, purchased, onBuy, width
   return (
     <div className="flex flex-col items-center gap-3 rounded-[18px] border border-border/70 bg-card/60 p-4 text-center">
       <div onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
-        <BattleCardButton card={card} hovered={hovered} onHoverStart={() => setHovered(true)} onHoverEnd={() => setHovered(false)} ariaLabel={`Inspect ${getCardDisplayTitle(card)}`} shimmerActive={false} shimmerToken={undefined} className={widthClass} />
+        <BattleCardButton
+          card={card}
+          hovered={hovered}
+          onHoverStart={() => setHovered(true)}
+          onHoverEnd={() => setHovered(false)}
+          ariaLabel={`Inspect ${getCardDisplayTitle(card)}`}
+          shimmerActive={false}
+          shimmerToken={undefined}
+          className={widthClass}
+        />
       </div>
-      <p className="text-sm font-semibold text-foreground"><CardTitle card={card} /></p>
+      <p className="text-sm font-semibold text-foreground">
+        <CardTitle card={card} />
+      </p>
       <DisabledTooltip show={gold < price} message="Not Enough Gold">
         <Button variant="outline" disabled={gold < price} onClick={onBuy}>
           Buy <GoldCost amount={price} />
@@ -145,7 +205,15 @@ export function PurchasableCardItem({ card, price, gold, purchased, onBuy, width
   );
 }
 
-export function SelectableShopCard({ card, isSelected, onSelect }: { card: BattleCard; isSelected: boolean; onSelect: () => void }) {
+export function SelectableShopCard({
+  card,
+  isSelected,
+  onSelect,
+}: {
+  card: BattleCard;
+  isSelected: boolean;
+  onSelect: () => void;
+}) {
   const [hovered, setHovered] = useState(false);
   return (
     <BattleCardButton
@@ -163,17 +231,44 @@ export function SelectableShopCard({ card, isSelected, onSelect }: { card: Battl
   );
 }
 
-export function SelectableCardItem({ card, isSelected, onSelect, widthClass = viewCardWidthClass }: { card: BattleCard; isSelected: boolean; onSelect: () => void; widthClass?: string }) {
+export function SelectableCardItem({
+  card,
+  isSelected,
+  onSelect,
+  widthClass = viewCardWidthClass,
+}: {
+  card: BattleCard;
+  isSelected: boolean;
+  onSelect: () => void;
+  widthClass?: string;
+}) {
   const [hovered, setHovered] = useState(false);
 
   return (
     <div
-      className={cn("cursor-pointer rounded-[18px] border p-2 text-center transition-all", isSelected ? "border-primary bg-primary/10 ring-1 ring-primary" : "border-border/60 bg-card/40 hover:border-border")}
-      onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
+      className={cn(
+        "cursor-pointer rounded-[18px] border p-2 text-center transition-all",
+        isSelected
+          ? "border-primary bg-primary/10 ring-1 ring-primary"
+          : "border-border/60 bg-card/40 hover:border-border",
+      )}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       onClick={onSelect}
     >
-      <BattleCardButton card={card} hovered={hovered} onHoverStart={() => setHovered(true)} onHoverEnd={() => setHovered(false)} ariaLabel={`Inspect ${getCardDisplayTitle(card)}`} shimmerActive={false} shimmerToken={undefined} className={widthClass} />
-      <p className="mt-1 text-xs font-semibold text-foreground"><CardTitle card={card} /></p>
+      <BattleCardButton
+        card={card}
+        hovered={hovered}
+        onHoverStart={() => setHovered(true)}
+        onHoverEnd={() => setHovered(false)}
+        ariaLabel={`Inspect ${getCardDisplayTitle(card)}`}
+        shimmerActive={false}
+        shimmerToken={undefined}
+        className={widthClass}
+      />
+      <p className="mt-1 text-xs font-semibold text-foreground">
+        <CardTitle card={card} />
+      </p>
     </div>
   );
 }
@@ -208,14 +303,25 @@ export function DetailPopup({
   return (
     <div
       ref={ref}
-      className={cn("hover-popup-panel absolute left-1/2 z-40 w-full origin-bottom rounded-[20px] border border-border/80 bg-card px-4 py-3 text-left", "hover-popup-quick-in pointer-events-auto", flip ? "hover-popup-below" : "hover-popup-above")}
-      style={{ top: flip ? "100%" : 0, transform: flip ? "translate(-50%, 12px)" : "translate(-50%, calc(-100% - 26px))" } as CSSProperties}
+      className={cn(
+        "hover-popup-panel absolute left-1/2 z-40 w-full origin-bottom rounded-[20px] border border-border/80 bg-card px-4 py-3 text-left",
+        "hover-popup-quick-in pointer-events-auto",
+        flip ? "hover-popup-below" : "hover-popup-above",
+      )}
+      style={
+        {
+          top: flip ? "100%" : 0,
+          transform: flip ? "translate(-50%, 12px)" : "translate(-50%, calc(-100% - 26px))",
+        } as CSSProperties
+      }
     >
-        <p className="text-base text-foreground sm:text-lg">{title}</p>
+      <p className="text-base text-foreground sm:text-lg">{title}</p>
       {subtitle ? <p className="mt-1 text-xs uppercase tracking-[0.18em] text-muted-foreground">{subtitle}</p> : null}
       <DescriptionLines lines={descriptionLines} idPrefix={idPrefix} {...(card ? { card } : {})} />
       {descriptionNodes?.map((node, i) => (
-        <div key={i} className="mt-1.5 text-sm leading-6">{node}</div>
+        <div key={i} className="mt-1.5 text-sm leading-6">
+          {node}
+        </div>
       ))}
     </div>
   );
@@ -272,9 +378,20 @@ export function BattleCardButton({
   };
 
   return (
-    <div className={cn("relative", wrapperClassName)} style={wrapperStyle} onMouseEnter={handleHoverStart} onMouseLeave={onHoverEnd}>
+    <div
+      className={cn("relative", wrapperClassName)}
+      style={wrapperStyle}
+      onMouseEnter={handleHoverStart}
+      onMouseLeave={onHoverEnd}
+    >
       {hovered ? (
-        <DetailPopup idPrefix={card.id} title={<CardTitle card={card} />} subtitle={undefined} descriptionLines={descriptionLines} {...(card.corrupted ? { card } : {})} />
+        <DetailPopup
+          idPrefix={card.id}
+          title={<CardTitle card={card} />}
+          subtitle={undefined}
+          descriptionLines={descriptionLines}
+          {...(card.corrupted ? { card } : {})}
+        />
       ) : null}
 
       <button
@@ -301,7 +418,12 @@ export function BattleCardButton({
       >
         <ShimmerOverlay active={shimmerActive} token={shimmerToken} />
 
-        <img src={card.art} alt={getCardDisplayTitle(card)} className="block h-auto w-full rounded-[30px] aspect-[3/4] object-cover" loading="eager" />
+        <img
+          src={card.art}
+          alt={getCardDisplayTitle(card)}
+          className="block h-auto w-full rounded-[30px] aspect-[3/4] object-cover"
+          loading="eager"
+        />
       </button>
     </div>
   );
@@ -339,5 +461,3 @@ export function CardGhostOverlay({ ghost, onDone }: { ghost: CardGhost; onDone: 
     />
   );
 }
-
-

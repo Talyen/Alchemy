@@ -11,11 +11,42 @@ export const CharacterIdSchema = z.enum(["knight", "ranger", "rogue", "wizard"])
 export const DifficultyIdSchema = z.enum(["difficulty-1", "difficulty-2", "difficulty-3"]);
 export const ContentSystemIdSchema = z.enum(["campaign", "labyrinth", "wildwood"]);
 export const DamageTypeSchema = z.enum(["physical", "stun", "holy", "burn", "poison", "bleed", "freeze", "nature"]);
-export const PlayerStatusIdSchema = z.enum(["block", "armor", "forge", "haste", "burn", "poison", "bleed", "freeze", "stun"]);
+export const PlayerStatusIdSchema = z.enum([
+  "block",
+  "armor",
+  "forge",
+  "haste",
+  "burn",
+  "poison",
+  "bleed",
+  "freeze",
+  "stun",
+]);
 export const EnemyStatusIdSchema = z.enum(["burn", "poison", "bleed", "freeze", "stun"]);
 export const CompanionIdSchema = z.enum(["wolf", "lizard-scout", "imp", "frost-whelp", "bear", "panther", "phoenix"]);
-export const LabyrinthNodeTypeSchema = z.enum(["entrance", "combat", "elite", "rest", "mystery", "shop", "alchemist", "boss"]);
-export const LabyrinthModifierKindSchema = z.enum(["armored", "sturdy", "burning-ground", "overwhelming", "leeching", "null-field", "collector", "generous", "alchemist", "scavenger", "companion"]);
+export const LabyrinthNodeTypeSchema = z.enum([
+  "entrance",
+  "combat",
+  "elite",
+  "rest",
+  "mystery",
+  "shop",
+  "alchemist",
+  "boss",
+]);
+export const LabyrinthModifierKindSchema = z.enum([
+  "armored",
+  "sturdy",
+  "burning-ground",
+  "overwhelming",
+  "leeching",
+  "null-field",
+  "collector",
+  "generous",
+  "alchemist",
+  "scavenger",
+  "companion",
+]);
 export const LabyrinthNodeStateSchema = z.enum(["hidden", "visible", "current", "cleared", "failed"]);
 export const ResolutionOptionSchema = z.enum(["1920x1080", "1920x1200", "2560x1080"]);
 export const DisplayModeSchema = z.enum(["windowed", "borderless-fullscreen", "fullscreen"]);
@@ -23,26 +54,26 @@ export const UiScaleSchema = z.enum(["90", "100", "110", "120"]);
 
 // ===== Material Inventory =====
 const MATERIAL_IDS = ["wood", "iron", "herbs", "food", "crystal"] as const;
-export const MaterialInventorySchema = z.object(
-  Object.fromEntries(
-    MATERIAL_IDS.map((id) => [id, z.number().int().nonnegative().catch(0)])
-  ) as unknown as Record<(typeof MATERIAL_IDS)[number], z.ZodNumber>,
-).catch({ wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 });
+export const MaterialInventorySchema = z
+  .object(
+    Object.fromEntries(MATERIAL_IDS.map((id) => [id, z.number().int().nonnegative().catch(0)])) as unknown as Record<
+      (typeof MATERIAL_IDS)[number],
+      z.ZodNumber
+    >,
+  )
+  .catch({ wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 });
 
 // ===== Talent / Progression =====
-export const TalentXPSchema = z.preprocess(
-  (val) => {
-    if (!val || typeof val !== "object") return {};
-    const result: Record<string, number> = {};
-    for (const [key, xp] of Object.entries(val as Record<string, unknown>)) {
-      if (typeof xp === "number" && Number.isFinite(xp) && xp >= 0) {
-        result[key] = Math.floor(xp);
-      }
+export const TalentXPSchema = z.preprocess((val) => {
+  if (!val || typeof val !== "object") return {};
+  const result: Record<string, number> = {};
+  for (const [key, xp] of Object.entries(val as Record<string, unknown>)) {
+    if (typeof xp === "number" && Number.isFinite(xp) && xp >= 0) {
+      result[key] = Math.floor(xp);
     }
-    return result;
-  },
-  z.record(z.string(), z.number().int().nonnegative()).catch({}),
-);
+  }
+  return result;
+}, z.record(z.string(), z.number().int().nonnegative()).catch({}));
 
 export const UnlockedTalentsSchema = z.preprocess(
   (val) => {
@@ -185,10 +216,13 @@ export const BattleCardSchema = z
     corrupted: z.boolean().optional(),
     corruptedValuePositions: z
       .array(
-        z.object({
-          lineIndex: z.number().int().nonnegative().catch(0),
-          matchIndex: z.number().int().nonnegative().catch(0),
-        }).nullable().catch(null),
+        z
+          .object({
+            lineIndex: z.number().int().nonnegative().catch(0),
+            matchIndex: z.number().int().nonnegative().catch(0),
+          })
+          .nullable()
+          .catch(null),
       )
       .optional(),
     baseTitle: z.string().optional(),
@@ -207,10 +241,19 @@ export const BattleCardSchema = z
         : libraryCard.effects.map((e) => ({ ...e }));
     const corruptedValuePositions = Array.isArray(saved.corruptedValuePositions)
       ? saved.corruptedValuePositions.filter(
-          (p) => p && typeof p === "object" && Number.isInteger(p.lineIndex) && Number.isInteger(p.matchIndex) && p.lineIndex >= 0 && p.matchIndex >= 0,
+          (p) =>
+            p &&
+            typeof p === "object" &&
+            Number.isInteger(p.lineIndex) &&
+            Number.isInteger(p.matchIndex) &&
+            p.lineIndex >= 0 &&
+            p.matchIndex >= 0,
         )
       : undefined;
-    const cost = Number.isFinite(saved.cost) && Number.isInteger(saved.cost) && saved.cost >= 0 ? Math.floor(saved.cost) : libraryCard.cost;
+    const cost =
+      Number.isFinite(saved.cost) && Number.isInteger(saved.cost) && saved.cost >= 0
+        ? Math.floor(saved.cost)
+        : libraryCard.cost;
     return {
       ...libraryCard,
       descriptionLines,
@@ -220,14 +263,24 @@ export const BattleCardSchema = z
       consume: saved.consume,
       corrupted: saved.corrupted,
       baseTitle: saved.baseTitle,
-      corruptedValuePositions: corruptedValuePositions && corruptedValuePositions.length > 0 ? corruptedValuePositions : undefined,
+      corruptedValuePositions:
+        corruptedValuePositions && corruptedValuePositions.length > 0 ? corruptedValuePositions : undefined,
     };
   });
 
 // ===== Labyrinth Node + Map =====
 const VALID_LABYRINTH_MODIFIER_KINDS = new Set([
-  "armored", "sturdy", "burning-ground", "overwhelming", "leeching", "null-field",
-  "collector", "generous", "alchemist", "scavenger", "companion",
+  "armored",
+  "sturdy",
+  "burning-ground",
+  "overwhelming",
+  "leeching",
+  "null-field",
+  "collector",
+  "generous",
+  "alchemist",
+  "scavenger",
+  "companion",
 ]);
 
 export function filterLabyrinthModifiers(val: unknown): string[] {
@@ -310,14 +363,11 @@ const LEGACY_STARTER_DECK_IDS = ["slash", "bash", "block", "anvil", "plate-mail"
 
 export const ActiveRunDataSchema = z
   .object({
-    characterId: z.preprocess(
-      (val) => {
-        if (typeof val === "string" && val === "sorcerer") return "wizard";
-        if (typeof val === "string" && val === "warden") return "ranger";
-        return val;
-      },
-      CharacterIdSchema,
-    ),
+    characterId: z.preprocess((val) => {
+      if (typeof val === "string" && val === "sorcerer") return "wizard";
+      if (typeof val === "string" && val === "warden") return "ranger";
+      return val;
+    }, CharacterIdSchema),
     runDeck: z.array(BattleCardSchema),
     runGold: z.number().int().nonnegative().catch(0),
     runPlayerHealth: z.number().int().nonnegative().catch(0),
@@ -328,10 +378,10 @@ export const ActiveRunDataSchema = z
     completedDestinations: z.array(z.string()).catch([]),
     runTrinkets: z.array(z.string()).catch([]),
     selectedDifficulty: DifficultyIdSchema.nullable().catch(null).default(null),
-    contentSystemType: z.preprocess(
-      (val) => (val === "wildwood" ? "campaign" : val),
-      ContentSystemIdSchema,
-    ).default("campaign").catch("campaign"),
+    contentSystemType: z
+      .preprocess((val) => (val === "wildwood" ? "campaign" : val), ContentSystemIdSchema)
+      .default("campaign")
+      .catch("campaign"),
     labyrinthMap: LabyrinthMapSchema.nullable().catch(null),
   })
   .refine(
@@ -350,7 +400,8 @@ export const ActiveRunDataSchema = z
     const hasLegacyDeck =
       data.runDeck.length === LEGACY_STARTER_DECK_IDS.length &&
       data.runDeck.every((card, i) => card.id === LEGACY_STARTER_DECK_IDS[i]);
-    const runDeck = data.runDeck.length === 0 || (isUnstarted && hasLegacyDeck) ? getStartingDeck(data.characterId) : data.runDeck;
+    const runDeck =
+      data.runDeck.length === 0 || (isUnstarted && hasLegacyDeck) ? getStartingDeck(data.characterId) : data.runDeck;
     return {
       ...data,
       runDeck,
@@ -368,24 +419,46 @@ export const SaveDataSchema = z.preprocess(
     selectedResolution: ResolutionOptionSchema.catch("1920x1080"),
     displayMode: DisplayModeSchema.catch("borderless-fullscreen"),
     uiScale: UiScaleSchema.catch("100"),
-    brightness: z.number().finite().catch(100).transform((v) => Math.max(50, Math.min(150, v))),
-    discoveredCardIds: z.preprocess(
-      (val) => (Array.isArray(val) ? [...new Set(val.filter((v) => typeof v === "string"))] : []),
-      z.array(z.string()),
-    ).catch([]),
-    encounteredEnemyIds: z.preprocess(
-      (val) => (Array.isArray(val) ? [...new Set(val.filter((v) => typeof v === "string"))] : []),
-      z.array(z.string()),
-    ).catch([]),
-    discoveredTrinketIds: z.preprocess(
-      (val) => (Array.isArray(val) ? [...new Set(val.filter((v) => typeof v === "string"))] : []),
-      z.array(z.string()),
-    ).catch([]),
+    brightness: z
+      .number()
+      .finite()
+      .catch(100)
+      .transform((v) => Math.max(50, Math.min(150, v))),
+    discoveredCardIds: z
+      .preprocess(
+        (val) => (Array.isArray(val) ? [...new Set(val.filter((v) => typeof v === "string"))] : []),
+        z.array(z.string()),
+      )
+      .catch([]),
+    encounteredEnemyIds: z
+      .preprocess(
+        (val) => (Array.isArray(val) ? [...new Set(val.filter((v) => typeof v === "string"))] : []),
+        z.array(z.string()),
+      )
+      .catch([]),
+    discoveredTrinketIds: z
+      .preprocess(
+        (val) => (Array.isArray(val) ? [...new Set(val.filter((v) => typeof v === "string"))] : []),
+        z.array(z.string()),
+      )
+      .catch([]),
     talentXP: TalentXPSchema,
     unlockedTalents: UnlockedTalentsSchema,
-    musicVolume: z.number().finite().catch(35).transform((v) => Math.max(0, Math.min(100, v))),
-    sfxVolume: z.number().finite().catch(70).transform((v) => Math.max(0, Math.min(100, v))),
-    masterVolume: z.number().finite().catch(100).transform((v) => Math.max(0, Math.min(100, v))),
+    musicVolume: z
+      .number()
+      .finite()
+      .catch(35)
+      .transform((v) => Math.max(0, Math.min(100, v))),
+    sfxVolume: z
+      .number()
+      .finite()
+      .catch(70)
+      .transform((v) => Math.max(0, Math.min(100, v))),
+    masterVolume: z
+      .number()
+      .finite()
+      .catch(100)
+      .transform((v) => Math.max(0, Math.min(100, v))),
     muteInBackground: z.boolean().catch(true),
     autoEndTurn: z.boolean().catch(true),
     activeRun: ActiveRunDataSchema.nullable().catch(null),
@@ -394,7 +467,10 @@ export const SaveDataSchema = z.preprocess(
     plantedFarms: createTierRecordSchema(farmPlots, { "sheep-pasture": "pasture" }),
     completedResearch: createTierRecordSchema(researchUpgrades),
     bondedCompanions: createTierRecordSchema(
-      Object.keys(companionLibrary).map((id) => ({ id: id as keyof typeof companionLibrary, tiers: [null, null, null] })),
+      Object.keys(companionLibrary).map((id) => ({
+        id: id as keyof typeof companionLibrary,
+        tiers: [null, null, null],
+      })),
     ),
     completedDifficulties: CompletedDifficultiesSchema,
   }),

@@ -6,7 +6,6 @@ import {
   getDifficultyModifiers,
   getGoldMultiplier,
   type CharacterId,
-  type DifficultyModifier,
 } from "@/lib/game-data/difficulties";
 
 const ALL_CHARACTERS: CharacterId[] = ["knight", "rogue", "wizard", "ranger"];
@@ -176,7 +175,7 @@ describe("getDifficultyModifiers", () => {
   });
 
   it("returns empty array for unknown difficulty ID", () => {
-    const mods = getDifficultyModifiers("knight", "difficulty-999" as any);
+    const mods = getDifficultyModifiers("knight", "difficulty-999" as unknown as Parameters<typeof getDifficultyModifiers>[1]);
     expect(mods).toEqual([]);
   });
 });

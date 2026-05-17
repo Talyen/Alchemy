@@ -62,7 +62,12 @@ export type VictoryGoldResult = {
   persistedRunGold: number;
 };
 
-export type FinalizeRewardRoute = "companion-reward" | "labyrinth-victory" | "labyrinth-map" | "act-complete" | "destination";
+export type FinalizeRewardRoute =
+  | "companion-reward"
+  | "labyrinth-victory"
+  | "labyrinth-map"
+  | "act-complete"
+  | "destination";
 
 export type FinalizeRewardInput = {
   rewardState: RewardState;
@@ -90,7 +95,10 @@ export function hasRewardModifier(modifiers: LabyrinthModifierKind[], kind: Laby
 }
 
 // Labyrinth reward modifiers are node-scoped and must not leak into other modes.
-export function getActiveRewardModifiersForContentSystem(contentSystemType: ContentSystemId, modifiers: LabyrinthModifierKind[]): LabyrinthModifierKind[] {
+export function getActiveRewardModifiersForContentSystem(
+  contentSystemType: ContentSystemId,
+  modifiers: LabyrinthModifierKind[],
+): LabyrinthModifierKind[] {
   return contentSystemType === "labyrinth" ? modifiers : [];
 }
 
@@ -100,7 +108,10 @@ export function getGenerousGoldBonus(modifiers: LabyrinthModifierKind[], gold: n
 }
 
 // Applies material reward modifiers without mutating the source inventory.
-export function applyLabyrinthRewardMaterialModifiers(materials: MaterialInventory, modifiers: LabyrinthModifierKind[]): MaterialInventory {
+export function applyLabyrinthRewardMaterialModifiers(
+  materials: MaterialInventory,
+  modifiers: LabyrinthModifierKind[],
+): MaterialInventory {
   if (!hasRewardModifier(modifiers, "scavenger")) return materials;
   return {
     wood: Math.floor(materials.wood * 2),
@@ -135,9 +146,7 @@ export function getRandomPotionCard(rng: () => number = Math.random): BattleCard
 
 // Returns 3 random companion cards for the companion reward step.
 export function getCompanionCardChoices(rng: () => number = Math.random): BattleCard[] {
-  const companions = cardLibrary.filter((c) =>
-    c.effects?.some((e) => e.kind === "summon-companion"),
-  );
+  const companions = cardLibrary.filter((c) => c.effects?.some((e) => e.kind === "summon-companion"));
   const shuffled = [...companions];
   for (let i = shuffled.length - 1; i > 0; i -= 1) {
     const j = Math.floor(rng() * (i + 1));
@@ -152,9 +161,15 @@ export function createEmptyRewardState(destinations: Destination[] = []): Reward
 }
 
 // Resolves reward-finalization decisions without mutating React state or performing navigation.
-export function finalizeRewardState({ rewardState, companionRewardCards, contentSystemType, currentEnemyType, grantAlchemistReward }: FinalizeRewardInput): FinalizeRewardResult {
+export function finalizeRewardState({
+  rewardState,
+  companionRewardCards,
+  contentSystemType,
+  currentEnemyType,
+  grantAlchemistReward,
+}: FinalizeRewardInput): FinalizeRewardResult {
   const selectedChoice = rewardState.selectedId
-    ? rewardState.choices.find((choice) => choice.id === rewardState.selectedId) ?? null
+    ? (rewardState.choices.find((choice) => choice.id === rewardState.selectedId) ?? null)
     : null;
 
   if (companionRewardCards && companionRewardCards.length > 0) {
@@ -176,9 +191,14 @@ export function finalizeRewardState({ rewardState, companionRewardCards, content
     };
   }
 
-  const route: FinalizeRewardRoute = contentSystemType === "labyrinth"
-    ? currentEnemyType === "boss" ? "labyrinth-victory" : "labyrinth-map"
-    : currentEnemyType === "boss" ? "act-complete" : "destination";
+  const route: FinalizeRewardRoute =
+    contentSystemType === "labyrinth"
+      ? currentEnemyType === "boss"
+        ? "labyrinth-victory"
+        : "labyrinth-map"
+      : currentEnemyType === "boss"
+        ? "act-complete"
+        : "destination";
 
   return {
     selectedChoice,
@@ -192,7 +212,14 @@ export function finalizeRewardState({ rewardState, companionRewardCards, content
 }
 
 // Bosses always offer trinkets and route into act-complete handling rather than another node.
-export function createBossRewardState({ gold, bossBonus, talentGoldPerCombat, materials, trinketIds, goldMultiplier = 1 }: BossRewardInput): RewardState {
+export function createBossRewardState({
+  gold,
+  bossBonus,
+  talentGoldPerCombat,
+  materials,
+  trinketIds,
+  goldMultiplier = 1,
+}: BossRewardInput): RewardState {
   const trinketGoldBonus = computeTrinketManifest(trinketIds).smugglersMapGoldBonus;
   return {
     rewardType: "trinket",
@@ -206,14 +233,29 @@ export function createBossRewardState({ gold, bossBonus, talentGoldPerCombat, ma
 
 // Combat rewards can be cards or trinkets. Destination choices are supplied by the hook
 // because they depend on post-victory run HP/gold and act progression.
-export function createCombatRewardState({ battleState, runDeck, gold, eliteBonus, generousBonus, talentGoldPerCombat, materials, destinations, trinketIds, goldMultiplier = 1, forceTrinket = false }: CombatRewardInput): RewardState {
-  const baseTrinketChance = battleState.currentEnemy.enemyType === "elite" ? ELITE_TRINKET_REWARD_CHANCE : REWARD_TRINKET_CHANCE;
+export function createCombatRewardState({
+  battleState,
+  runDeck,
+  gold,
+  eliteBonus,
+  generousBonus,
+  talentGoldPerCombat,
+  materials,
+  destinations,
+  trinketIds,
+  goldMultiplier = 1,
+  forceTrinket = false,
+}: CombatRewardInput): RewardState {
+  const baseTrinketChance =
+    battleState.currentEnemy.enemyType === "elite" ? ELITE_TRINKET_REWARD_CHANCE : REWARD_TRINKET_CHANCE;
   const trinketHoarderBonus = battleState.currentEnemy.traits?.some((t) => t.id === "trinket-hoarder") ? 0.1 : 0;
   const offerTrinket = forceTrinket || Math.random() < baseTrinketChance + trinketHoarderBonus;
   const trinketGoldBonus = computeTrinketManifest(trinketIds).smugglersMapGoldBonus;
   return {
     rewardType: offerTrinket ? "trinket" : "card",
-    choices: offerTrinket ? selectRewardTrinkets(trinketLibrary, REWARD_CARD_CHOICES) : selectRewardCards(runDeck, cardLibrary, REWARD_CARD_CHOICES),
+    choices: offerTrinket
+      ? selectRewardTrinkets(trinketLibrary, REWARD_CARD_CHOICES)
+      : selectRewardCards(runDeck, cardLibrary, REWARD_CARD_CHOICES),
     gold: Math.floor((gold + eliteBonus + generousBonus + talentGoldPerCombat + trinketGoldBonus) * goldMultiplier),
     materials,
     selectedId: null,
@@ -246,7 +288,15 @@ export function computeVictoryGoldResult({
   talentGoldPerCombat,
   goldMultiplier,
 }: VictoryGoldInput): VictoryGoldResult {
-  const unmultipliedTotal = getVictoryGoldTotal({ battleState, runTrinkets, gold, eliteBonus, generousBonus, bossBonus, talentGoldPerCombat });
+  const unmultipliedTotal = getVictoryGoldTotal({
+    battleState,
+    runTrinkets,
+    gold,
+    eliteBonus,
+    generousBonus,
+    bossBonus,
+    talentGoldPerCombat,
+  });
   const earnedBeforeMultiplier = unmultipliedTotal - runGold;
   return {
     unmultipliedTotal,

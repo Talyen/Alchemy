@@ -5,14 +5,7 @@ import { Swords } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import {
-  characters,
-  characterArt,
-  difficultyConfigs,
-  isDifficultyUnlocked,
-  type CharacterId,
-  type DifficultyId,
-} from "@/lib/game-data";
+import { characters, characterArt, difficultyConfigs, isDifficultyUnlocked, type DifficultyId } from "@/lib/game-data";
 import difficulty1Art from "@/assets/optimized/difficulty-1.webp";
 import difficulty2Art from "@/assets/optimized/difficulty-2.webp";
 import difficulty3Art from "@/assets/optimized/difficulty-3.webp";
@@ -24,6 +17,8 @@ import { ScreenHeader, ShimmerOverlay } from "../ui/shared-ui";
 import { useShimmerController } from "../hooks";
 import { clearTiltFromEvent, setTiltFromEvent, tokenizeDescription } from "../utils";
 import { battleCardWidthClass, cardSurfaceClass, popupClassName, staticCardTransform } from "../config";
+import { useScreenStore } from "../stores/screen-store";
+import { useRunStore } from "../stores/run-store";
 
 function renderDescription(text: string) {
   const lines = text.split("\n");
@@ -67,10 +62,16 @@ function DifficultyCard({
   onHoverShimmer: (id: DifficultyId) => void;
   onSelect: (id: DifficultyId) => void;
 }) {
-  const bonusLine = difficultyId === "difficulty-2" ? "10% Bonus XP" : difficultyId === "difficulty-3" ? "20% Bonus XP" : "";
+  const bonusLine =
+    difficultyId === "difficulty-2" ? "10% Bonus XP" : difficultyId === "difficulty-3" ? "20% Bonus XP" : "";
   const fullDescription = description + (bonusLine ? "\n" + bonusLine : "");
   const showTilt = !locked;
-  const diffArt = difficultyId === "difficulty-1" ? difficulty1Art : difficultyId === "difficulty-2" ? difficulty2Art : difficulty3Art;
+  const diffArt =
+    difficultyId === "difficulty-1"
+      ? difficulty1Art
+      : difficultyId === "difficulty-2"
+        ? difficulty2Art
+        : difficulty3Art;
 
   return (
     <div className="relative group flex flex-col items-center">
@@ -91,13 +92,15 @@ function DifficultyCard({
           />
         )}
         {showTilt ? (
-          <div className={cn("tilt-surface relative overflow-hidden rounded-[22px] aspect-[5/6]", battleCardWidthClass)} style={{ "--card-base-transform": staticCardTransform } as CSSProperties} onMouseMove={setTiltFromEvent} onMouseEnter={() => onHoverShimmer(difficultyId)} onMouseLeave={clearTiltFromEvent}>
+          <div
+            className={cn("tilt-surface relative overflow-hidden rounded-[22px] aspect-[5/6]", battleCardWidthClass)}
+            style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
+            onMouseMove={setTiltFromEvent}
+            onMouseEnter={() => onHoverShimmer(difficultyId)}
+            onMouseLeave={clearTiltFromEvent}
+          >
             <ShimmerOverlay active={isShimmer} token={shimmerToken} rounded="rounded-[22px]" />
-            <img
-              src={diffArt}
-              alt={name}
-              className={cn(cardSurfaceClass, "w-full rounded-[22px] object-cover")}
-            />
+            <img src={diffArt} alt={name} className={cn(cardSurfaceClass, "w-full rounded-[22px] object-cover")} />
             {completed && (
               <div className="absolute right-2 top-2 rounded-md bg-emerald-600/90 px-2 py-0.5 text-xs font-bold uppercase tracking-wide text-emerald-100">
                 Completed
@@ -118,7 +121,7 @@ function DifficultyCard({
         )}
         <p className={cn("text-[16px]", locked && "text-muted-foreground")}>{name}</p>
         <div className="flex flex-col justify-center min-h-[60px]">
-            <p className="text-center text-[13px] leading-relaxed text-muted-foreground max-w-[220px]">
+          <p className="text-center text-[13px] leading-relaxed text-muted-foreground max-w-[220px]">
             {renderDescription(fullDescription)}
           </p>
         </div>
@@ -134,17 +137,17 @@ function DifficultyCard({
 }
 
 export function DifficultySelectScreen({
-  characterId,
   completedDifficulties,
   onSelect,
   onBack,
 }: {
-  characterId: CharacterId;
   completedDifficulties: DifficultyId[];
   onSelect: (difficultyId: DifficultyId) => void;
   onBack: () => void;
 }) {
-  const [selectedDifficultyId, setSelectedDifficultyId] = useState<DifficultyId | null>(null);
+  const characterId = useScreenStore((s) => s.pendingCharacterId)!;
+  const selectedDifficultyFromStore = useRunStore((s) => s.selectedDifficulty);
+  const [selectedDifficultyId, setSelectedDifficultyId] = useState<DifficultyId | null>(selectedDifficultyFromStore);
   const config = difficultyConfigs[characterId];
   const char = characters[characterId];
   const art = characterArt[char.id];
@@ -168,13 +171,19 @@ export function DifficultySelectScreen({
 
       <div className="flex flex-wrap items-start justify-center gap-6">
         <div className="flex flex-col items-center gap-3 rounded-[26px] border border-border/60 bg-card/60 px-4 pb-6 pt-5">
-          <div className={cn("tilt-surface relative overflow-hidden rounded-[22px] aspect-[3/4]", battleCardWidthClass)} style={{ "--card-base-transform": staticCardTransform } as CSSProperties} onMouseMove={setTiltFromEvent} onMouseEnter={() => maybeTriggerShimmer("character")} onMouseLeave={clearTiltFromEvent}>
-            <ShimmerOverlay active={shimmerState?.cardId === "character"} token={shimmerState?.token} rounded="rounded-[22px]" />
-            <img
-              src={art}
-              alt={char.name}
-              className={cn(cardSurfaceClass, "w-full rounded-[22px] object-cover")}
+          <div
+            className={cn("tilt-surface relative overflow-hidden rounded-[22px] aspect-[3/4]", battleCardWidthClass)}
+            style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
+            onMouseMove={setTiltFromEvent}
+            onMouseEnter={() => maybeTriggerShimmer("character")}
+            onMouseLeave={clearTiltFromEvent}
+          >
+            <ShimmerOverlay
+              active={shimmerState?.cardId === "character"}
+              token={shimmerState?.token}
+              rounded="rounded-[22px]"
             />
+            <img src={art} alt={char.name} className={cn(cardSurfaceClass, "w-full rounded-[22px] object-cover")} />
           </div>
           <p className="text-[22px] text-foreground">{char.name}</p>
           <div className="flex flex-wrap justify-center gap-1">

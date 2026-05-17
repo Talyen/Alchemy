@@ -3,4 +3,9 @@
 export * from "./storage/io";
 export * from "./storage/types";
 export * from "./storage/metadata";
-export { SaveDataSchema, migrateSaveDataToCurrent, getRawSaveSchemaVersion, isUnsupportedFutureSaveData } from "@/lib/validation";
+export {
+  SaveDataSchema,
+  migrateSaveDataToCurrent,
+  getRawSaveSchemaVersion,
+  isUnsupportedFutureSaveData,
+} from "@/lib/validation";

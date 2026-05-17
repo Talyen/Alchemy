@@ -14,7 +14,11 @@ type InitialLoadReadyOptions = {
 // Enforces a minimum duration (650ms default) so the loading screen is visible long
 // enough for the user to register it. If assets take longer, the loading bar loops
 // until they complete.
-export function useInitialLoadReady({ imageUrls, minDurationMs = INITIAL_LOAD_MIN_DURATION_MS, maxDurationMs = INITIAL_LOAD_MAX_DURATION_MS }: InitialLoadReadyOptions) {
+export function useInitialLoadReady({
+  imageUrls,
+  minDurationMs = INITIAL_LOAD_MIN_DURATION_MS,
+  maxDurationMs = INITIAL_LOAD_MAX_DURATION_MS,
+}: InitialLoadReadyOptions) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -24,10 +28,7 @@ export function useInitialLoadReady({ imageUrls, minDurationMs = INITIAL_LOAD_MI
       const startedAt = performance.now();
 
       await Promise.race([
-        Promise.all([
-          waitForFonts(),
-          ...imageUrls.map((url) => waitForImage(url)),
-        ]),
+        Promise.all([waitForFonts(), ...imageUrls.map((url) => waitForImage(url))]),
         delay(maxDurationMs),
       ]);
 
@@ -40,7 +41,9 @@ export function useInitialLoadReady({ imageUrls, minDurationMs = INITIAL_LOAD_MI
     }
 
     waitForStartupAssets();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [imageUrls, minDurationMs, maxDurationMs]);
 
   return ready;
@@ -53,14 +56,25 @@ function waitForImage(url: string) {
     image.onerror = () => resolve();
     image.src = url;
     if (image.complete) {
-      image.decode?.().then(() => resolve()).catch(() => { console.warn("Image decode failed:", url); resolve(); });
+      image
+        .decode?.()
+        .then(() => resolve())
+        .catch(() => {
+          console.warn("Image decode failed:", url);
+          resolve();
+        });
     }
   });
 }
 
 function waitForFonts() {
   if (!("fonts" in document)) return Promise.resolve();
-  return document.fonts.ready.then(() => undefined).catch(() => { console.warn("Font loading failed"); return undefined; });
+  return document.fonts.ready
+    .then(() => undefined)
+    .catch(() => {
+      console.warn("Font loading failed");
+      return undefined;
+    });
 }
 
 function delay(ms: number) {

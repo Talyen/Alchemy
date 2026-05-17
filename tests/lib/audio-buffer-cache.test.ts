@@ -3,8 +3,8 @@ import { getAudioContext, resumeAudioContext, loadSoundBuffer, preloadSounds } f
 import { audioState } from "@/lib/audio-state";
 
 beforeEach(() => {
-  audioState.context = null as any;
-  audioState.masterGain = null as any;
+  audioState.context = null;
+  audioState.masterGain = null;
   audioState.muted = false;
   audioState.sfxVolume = 0.35;
   audioState.musicVolume = 0.0875;
@@ -13,14 +13,14 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.restoreAllMocks();
-  audioState.context = null as any;
-  audioState.masterGain = null as any;
+  audioState.context = null;
+  audioState.masterGain = null;
 });
 
 describe("getAudioContext", () => {
   function makeMockCtx() {
     const mockGain = { gain: { value: 0 }, connect: vi.fn() };
-    return { createGain: vi.fn(() => mockGain), destination: "dest" } as any;
+    return { createGain: vi.fn(() => mockGain), destination: "dest" } as Partial<AudioContext>;
   }
 
   it("creates AudioContext on first call", () => {
@@ -45,7 +45,7 @@ describe("getAudioContext", () => {
 describe("resumeAudioContext", () => {
   it("resumes suspended context", () => {
     const resume = vi.fn();
-    const mockCtx = { state: "suspended", resume } as any;
+    const mockCtx = { state: "suspended", resume } as Partial<AudioContext>;
     audioState.context = mockCtx;
     resumeAudioContext();
     expect(resume).toHaveBeenCalledOnce();
@@ -53,7 +53,7 @@ describe("resumeAudioContext", () => {
 
   it("does not resume running context", () => {
     const resume = vi.fn();
-    const mockCtx = { state: "running", resume } as any;
+    const mockCtx = { state: "running", resume } as Partial<AudioContext>;
     audioState.context = mockCtx;
     resumeAudioContext();
     expect(resume).not.toHaveBeenCalled();
@@ -80,7 +80,7 @@ describe("loadSoundBuffer", () => {
 
   it("returns null on decode failure", async () => {
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve({ ok: true, arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)) })));
-    const mockCtx = { createGain: vi.fn(), destination: "dest", decodeAudioData: vi.fn(() => Promise.reject(new Error("decode failed"))) } as any;
+    const mockCtx = { createGain: vi.fn(), destination: "dest", decodeAudioData: vi.fn(() => Promise.reject(new Error("decode failed"))) } as Partial<AudioContext>;
     vi.stubGlobal("AudioContext", class { constructor() { return mockCtx; } });
     const result = await loadSoundBuffer("bad.ogg");
     expect(result).toBeNull();

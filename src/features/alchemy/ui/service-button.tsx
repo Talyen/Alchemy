@@ -14,13 +14,35 @@ export function DisabledTooltip({ show, message, children }: { show: boolean; me
   );
 }
 
-export function ServiceButton({ icon: Icon, label, cost, disabled, disabledMessage, used, soldOutText, onClick }: { icon: ComponentType<{ className?: string }>; label: string; cost: number; disabled: boolean; disabledMessage: string; used: boolean; soldOutText: string; onClick: () => void }) {
+export function ServiceButton({
+  icon: Icon,
+  label,
+  cost,
+  disabled,
+  disabledMessage,
+  used,
+  soldOutText,
+  onClick,
+}: {
+  icon: ComponentType<{ className?: string }>;
+  label: string;
+  cost: number;
+  disabled: boolean;
+  disabledMessage: string;
+  used: boolean;
+  soldOutText: string;
+  onClick: () => void;
+}) {
   if (used) {
-    return <Button variant="outline" disabled className="text-muted-foreground/40">{soldOutText}</Button>;
+    return (
+      <Button variant="outline" disabled className="text-muted-foreground/40">
+        {soldOutText}
+      </Button>
+    );
   }
   return (
     <DisabledTooltip show={disabled} message={disabledMessage}>
-      <Button variant="outline" disabled={disabled} onClick={onClick} >
+      <Button variant="outline" disabled={disabled} onClick={onClick}>
         <Icon className="h-4 w-4" />
         <span className="text-sm font-normal">{label}</span>
         <GoldCost amount={cost} />

@@ -16,11 +16,11 @@ import {
   UiScaleSelect,
 } from "../ui/shared-ui";
 import type { DisplayMode, ResolutionOption, UiScale } from "../types";
+import { useBattleStore } from "../stores/battle-store";
 
 type OptionsTab = "display" | "sound" | "gameplay" | "other";
 
 type OptionsNavigationProps = {
-  hasActiveBattle: boolean;
   onMainMenu: () => void;
   onReturnToBattle: () => void;
 };
@@ -245,6 +245,7 @@ export function OptionsScreen({
 }) {
   const [tab, setTab] = useState<OptionsTab>("display");
   const tabPanelClass = "col-start-1 row-start-1 pt-6 text-left";
+  const hasActiveBattle = useBattleStore((s) => s.hasActiveBattle);
 
   return (
     <PageLayout>
@@ -301,7 +302,7 @@ export function OptionsScreen({
           <Button variant="outline" onClick={navigation.onMainMenu}>
             <House className="h-4 w-4" /> Main Menu
           </Button>
-          {navigation.hasActiveBattle ? (
+          {hasActiveBattle ? (
             <Button onClick={navigation.onReturnToBattle}>
               <Swords className="h-4 w-4" /> Return to Battle
             </Button>

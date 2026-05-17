@@ -22,10 +22,15 @@ export function preloadImage(src: string) {
     image.onerror = () => resolve();
     image.src = src;
     if (image.decode) {
-      image.decode().then(() => {
-        imageCache.add(src);
-        resolve();
-      }).catch(() => { console.warn("Image decode failed:", src); });
+      image
+        .decode()
+        .then(() => {
+          imageCache.add(src);
+          resolve();
+        })
+        .catch(() => {
+          console.warn("Image decode failed:", src);
+        });
     }
   });
 
@@ -36,7 +41,9 @@ export function preloadImage(src: string) {
 // Warms a list immediately for high-confidence assets, such as the current battle
 // enemy and hand images, while still allowing the browser to prioritize rendering.
 export function preloadImages(srcs: string[]) {
-  srcs.forEach((src) => { void preloadImage(src); });
+  srcs.forEach((src) => {
+    void preloadImage(src);
+  });
 }
 
 // Spreads speculative image decoding across idle time so menu and battle input

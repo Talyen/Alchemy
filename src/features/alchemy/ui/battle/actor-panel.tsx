@@ -38,7 +38,10 @@ function StatusIcon({ chip }: { chip: StatusChip }) {
           <Sparkles className="h-[18px] w-[18px] text-fuchsia-300" />
         </button>
         <div
-          className={cn(popupClassName, "hover-popup-panel pointer-events-none opacity-0 group-hover/status:opacity-100")}
+          className={cn(
+            popupClassName,
+            "hover-popup-panel pointer-events-none opacity-0 group-hover/status:opacity-100",
+          )}
         >
           <div className="flex items-center justify-between gap-3">
             <span className="inline-flex items-center gap-2 rounded-full border border-fuchsia-300 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-fuchsia-300">
@@ -48,7 +51,9 @@ function StatusIcon({ chip }: { chip: StatusChip }) {
               {chip.value}
             </span>
           </div>
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">Skips the next enemy phase and grants another player turn.</p>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">
+            Skips the next enemy phase and grants another player turn.
+          </p>
         </div>
       </div>
     );
@@ -223,7 +228,11 @@ export function ArtPanel({
     <div className={cn("group/enemy-panel relative flex flex-col items-center gap-3", shaking && "animate-shake")}>
       {currentEnemy ? (
         <div className="opacity-0 transition-opacity duration-150 group-hover/enemy-panel:opacity-100">
-          <EnemyTooltip entry={currentEnemy} attackEffects={currentEnemyAttackEffects} labyrinthModifiers={activeLabyrinthModifiers} />
+          <EnemyTooltip
+            entry={currentEnemy}
+            attackEffects={currentEnemyAttackEffects}
+            labyrinthModifiers={activeLabyrinthModifiers}
+          />
         </div>
       ) : descriptionLines ? (
         <div

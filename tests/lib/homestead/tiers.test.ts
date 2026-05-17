@@ -38,7 +38,7 @@ describe("normalizeTierRecord", () => {
   });
 
   it("handles record format with string level values", () => {
-    expect(normalizeTierRecord({ a: "2", b: "1" } as any, testItems)).toEqual({ a: 0, b: 0, c: 0 });
+    expect(normalizeTierRecord({ a: "2", b: "1" } as Record<string, unknown>, testItems)).toEqual({ a: 0, b: 0, c: 0 });
   });
 
   it("ignores unknown IDs", () => {

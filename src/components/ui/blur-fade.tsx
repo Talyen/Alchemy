@@ -1,10 +1,10 @@
-"use client"
+"use client";
 
 // Motion wrapper that fades, slides, and blurs children, optionally on viewport entry.
 // Depends on motion/react and React refs.
 // Used by decorative UI reveals where CSS-only transitions are not expressive enough.
 
-import { useRef } from "react"
+import { useRef } from "react";
 import {
   AnimatePresence,
   motion,
@@ -12,31 +12,30 @@ import {
   type MotionProps,
   type UseInViewOptions,
   type Variants,
-} from "motion/react"
-import { ANIMATION_BLUR, ANIMATION_DURATION } from "@/lib/game-constants"
+} from "motion/react";
+import { ANIMATION_BLUR, ANIMATION_DURATION } from "@/lib/game-constants";
 
-type MarginType = UseInViewOptions["margin"]
+type MarginType = UseInViewOptions["margin"];
 
 interface BlurFadeProps extends MotionProps {
-  children: React.ReactNode
-  className?: string
+  children: React.ReactNode;
+  className?: string;
   variant?: {
-    hidden: { y: number }
-    visible: { y: number }
-  }
-  duration?: number
-  delay?: number
-  offset?: number
-  direction?: "up" | "down" | "left" | "right"
-  inView?: boolean
-  inViewMargin?: MarginType
-  blur?: string
+    hidden: { y: number };
+    visible: { y: number };
+  };
+  duration?: number;
+  delay?: number;
+  offset?: number;
+  direction?: "up" | "down" | "left" | "right";
+  inView?: boolean;
+  inViewMargin?: MarginType;
+  blur?: string;
 }
 
 // Function variants cannot be inspected for a concrete filter value, so filter-specific
 // transition timing is added only when both variant states expose comparable filters.
-const getFilter = (v: Variants[string]) =>
-  typeof v === "function" ? undefined : v.filter
+const getFilter = (v: Variants[string]) => (typeof v === "function" ? undefined : v.filter);
 
 export function BlurFade({
   children,
@@ -51,9 +50,9 @@ export function BlurFade({
   blur = ANIMATION_BLUR,
   ...props
 }: BlurFadeProps) {
-  const ref = useRef(null)
-  const inViewResult = useInView(ref, { once: true, margin: inViewMargin })
-  const isInView = !inView || inViewResult
+  const ref = useRef(null);
+  const inViewResult = useInView(ref, { once: true, margin: inViewMargin });
+  const isInView = !inView || inViewResult;
   const defaultVariants: Variants = {
     hidden: {
       [direction === "left" || direction === "right" ? "x" : "y"]:
@@ -66,18 +65,15 @@ export function BlurFade({
       opacity: 1,
       filter: `blur(0px)`,
     },
-  }
-  const combinedVariants = variant ?? defaultVariants
+  };
+  const combinedVariants = variant ?? defaultVariants;
 
-  const hiddenFilter = getFilter(combinedVariants.hidden)
-  const visibleFilter = getFilter(combinedVariants.visible)
+  const hiddenFilter = getFilter(combinedVariants.hidden);
+  const visibleFilter = getFilter(combinedVariants.visible);
 
   // Avoid animating filter unless it actually changes; unnecessary blur transitions are
   // expensive and can make simple opacity/position variants feel sluggish.
-  const shouldTransitionFilter =
-    hiddenFilter != null &&
-    visibleFilter != null &&
-    hiddenFilter !== visibleFilter
+  const shouldTransitionFilter = hiddenFilter != null && visibleFilter != null && hiddenFilter !== visibleFilter;
 
   return (
     <AnimatePresence>
@@ -99,5 +95,5 @@ export function BlurFade({
         {children}
       </motion.div>
     </AnimatePresence>
-  )
+  );
 }

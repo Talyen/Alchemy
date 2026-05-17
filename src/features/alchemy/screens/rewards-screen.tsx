@@ -5,13 +5,15 @@ import { Coins } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { BattleCard, TrinketEntry } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
-import { MATERIAL_IDS, materialLabels, type MaterialInventory } from "@/lib/homestead/types";
+import { MATERIAL_IDS, materialLabels } from "@/lib/homestead/types";
 import { matIconMap, matPillStyle, matTextColor } from "../ui/material-icons";
 
 import { BattleCardButton, DetailPopup, getCardDisplayTitle } from "../ui/card-ui";
 import { ScreenHeader, ShimmerOverlay } from "../ui/shared-ui";
 import { cardSurfaceClass, staticCardTransform, viewCardWidthClass } from "../config";
 import { clearTiltFromEvent, getHoverId, setTiltFromEvent } from "../utils";
+import { useBattleStore } from "../stores/battle-store";
+import { useScreenStore } from "../stores/screen-store";
 
 function TrinketRewardButton({
   trinket,
@@ -35,7 +37,12 @@ function TrinketRewardButton({
   return (
     <div className="relative" onMouseEnter={onHoverStart} onMouseLeave={onHoverEnd}>
       {hovered ? (
-        <DetailPopup idPrefix={trinket.id} title={trinket.title} subtitle={undefined} descriptionLines={trinket.descriptionLines} />
+        <DetailPopup
+          idPrefix={trinket.id}
+          title={trinket.title}
+          subtitle={undefined}
+          descriptionLines={trinket.descriptionLines}
+        />
       ) : null}
       <button
         type="button"
@@ -65,35 +72,22 @@ function TrinketRewardButton({
   );
 }
 
-export function RewardsScreen({
-  rewardType,
-  rewardChoices,
-  rewardGold,
-  rewardMaterials,
-  hoveredCardId,
-  onHoverChange,
-  shimmerState,
-  onHoverShimmer,
-  selectedRewardId,
-  onSelectReward,
-  onAddReward,
-  onSkip,
-}: {
-  rewardType: "card" | "trinket";
-  rewardChoices: (BattleCard | TrinketEntry)[];
-  rewardGold: number;
-  rewardMaterials: MaterialInventory;
-  hoveredCardId: string | null;
-  onHoverChange: (value: string | null | ((current: string | null) => string | null)) => void;
-  shimmerState: { cardId: string; token: number } | null;
-  onHoverShimmer: (cardId: string) => void;
-  selectedRewardId: string | null;
-  onSelectReward: (cardId: string) => void;
-  onAddReward: () => void;
-  onSkip: () => void;
-}) {
+export function RewardsScreen({ onAddReward, onSkip }: { onAddReward: () => void; onSkip: () => void }) {
+  const rewardState = useScreenStore((s) => s.rewardState);
+  const setRewardState = useScreenStore((s) => s.setRewardState);
+  const rewardType = rewardState.rewardType;
+  const rewardChoices = rewardState.choices;
+  const rewardGold = rewardState.gold;
+  const rewardMaterials = rewardState.materials;
+  const hoveredCardId = useScreenStore((s) => s.hoveredCardId);
+  const setHoveredCardId = useScreenStore((s) => s.setHoveredCardId);
+  const shimmerState = useBattleStore((s) => s.shimmerState);
+  const maybeTriggerShimmer = useBattleStore((s) => s.maybeTriggerShimmer);
+  const selectedRewardId = rewardState.selectedId;
   const isTrinket = rewardType === "trinket";
-  const selectedRewardItem = selectedRewardId ? rewardChoices.find((item) => item.id === selectedRewardId) ?? null : null;
+  const selectedRewardItem = selectedRewardId
+    ? (rewardChoices.find((item) => "id" in item && item.id === selectedRewardId) ?? null)
+    : null;
 
   return (
     <div className="flex h-full w-full items-center justify-center px-4 py-6">
@@ -114,9 +108,12 @@ export function RewardsScreen({
                   key={trinket.id}
                   trinket={trinket}
                   hovered={hoveredCardId === hoverId}
-                  onHoverStart={() => { onHoverChange(hoverId); onHoverShimmer(hoverId); }}
-                  onHoverEnd={() => onHoverChange((current) => (current === hoverId ? null : current))}
-                  onClick={() => onSelectReward(trinket.id)}
+                  onHoverStart={() => {
+                    setHoveredCardId(hoverId);
+                    maybeTriggerShimmer(hoverId);
+                  }}
+                  onHoverEnd={() => setHoveredCardId((current) => (current === hoverId ? null : current))}
+                  onClick={() => setRewardState((prev) => ({ ...prev, selectedId: trinket.id }))}
                   shimmerActive={shimmerState?.cardId === hoverId}
                   shimmerToken={shimmerState?.token}
                   selected={selectedRewardId === trinket.id}
@@ -130,9 +127,12 @@ export function RewardsScreen({
                 key={card.id}
                 card={card}
                 hovered={hoveredCardId === hoverId}
-                onHoverStart={() => { onHoverChange(hoverId); onHoverShimmer(hoverId); }}
-                onHoverEnd={() => onHoverChange((current) => (current === hoverId ? null : current))}
-                onClick={() => onSelectReward(card.id)}
+                onHoverStart={() => {
+                  setHoveredCardId(hoverId);
+                  maybeTriggerShimmer(hoverId);
+                }}
+                onHoverEnd={() => setHoveredCardId((current) => (current === hoverId ? null : current))}
+                onClick={() => setRewardState((prev) => ({ ...prev, selectedId: card.id }))}
                 ariaLabel={`Select ${getCardDisplayTitle(card)}`}
                 shimmerActive={shimmerState?.cardId === hoverId}
                 shimmerToken={shimmerState?.token}
@@ -145,7 +145,7 @@ export function RewardsScreen({
           })}
         </div>
 
-        {(rewardGold > 0 || MATERIAL_IDS.some((mat) => rewardMaterials[mat] > 0)) ? (
+        {rewardGold > 0 || MATERIAL_IDS.some((mat) => rewardMaterials[mat] > 0) ? (
           <div className="state-swap mt-8 flex flex-col items-center gap-2 text-sm font-medium">
             {rewardGold > 0 ? (
               <span className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground">
@@ -159,7 +159,13 @@ export function RewardsScreen({
             {MATERIAL_IDS.filter((mat) => rewardMaterials[mat] > 0).map((mat) => (
               <span key={mat} className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground">
                 Found
-                <span className={cn("inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold", matPillStyle[mat], matTextColor[mat])}>
+                <span
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold",
+                    matPillStyle[mat],
+                    matTextColor[mat],
+                  )}
+                >
                   {matIconMap[mat]}
                   {rewardMaterials[mat]} {materialLabels[mat]}
                 </span>

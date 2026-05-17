@@ -105,12 +105,7 @@ function TalentNode({
   return (
     <div className="relative">
       {isChoice && (
-        <ShineBorder
-          shineColor={shineColors}
-          borderWidth={3}
-          duration={8}
-          className="rounded-[14px] z-10"
-        />
+        <ShineBorder shineColor={shineColors} borderWidth={3} duration={8} className="rounded-[14px] z-10" />
       )}
       {isUnlocked ? (
         <div
@@ -126,20 +121,26 @@ function TalentNode({
           )}
         </div>
       ) : isChoice ? (
-        <button type="button" onClick={() => { onUnlock?.(talent.id); }}
+        <button
+          type="button"
+          onClick={() => {
+            onUnlock?.(talent.id);
+          }}
           className={cn(
             "relative flex w-[168px] cursor-pointer items-center justify-center rounded-[14px] border-2 bg-popover px-3 py-3 text-xs font-bold leading-snug text-center min-h-[6rem] transition-all",
-            bColor
+            bColor,
           )}
           style={{ boxShadow: `0 0 18px 4px ${baseColor}40` }}
         >
           <span className="animate-unlock-text-pulse text-muted-foreground">Unlock Talent</span>
         </button>
       ) : (
-        <div className={cn(
-          "relative flex w-[168px] items-center justify-center rounded-[14px] border border-dashed px-3 py-3 text-xs font-bold leading-snug text-center min-h-[6rem] text-muted-foreground bg-popover",
-        )}
-          style={{ borderColor: `${baseColor}33` }}>
+        <div
+          className={cn(
+            "relative flex w-[168px] items-center justify-center rounded-[14px] border border-dashed px-3 py-3 text-xs font-bold leading-snug text-center min-h-[6rem] text-muted-foreground bg-popover",
+          )}
+          style={{ borderColor: `${baseColor}33` }}
+        >
           <span>Undiscovered</span>
         </div>
       )}
@@ -164,16 +165,23 @@ function TalentTierRow({
   revealingId: string | null;
   onUnlock: ((talentId: string) => void) | undefined;
 }) {
-  const kwColor = talents.length > 0
-    ? (keywordDefinitions[talents[0].keywordId]?.shineColors?.[0] ?? "#fcd34d")
-    : "#fcd34d";
+  const kwColor =
+    talents.length > 0 ? (keywordDefinitions[talents[0].keywordId]?.shineColors?.[0] ?? "#fcd34d") : "#fcd34d";
 
   return (
     <div className="flex w-full flex-col items-center gap-2">
       <div className="flex w-full items-center gap-3" style={{ maxWidth: 320 }}>
-        <div className="h-px flex-1" style={{ background: `linear-gradient(to right, transparent, ${kwColor}33, transparent)` }} />
-        <span className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: `${kwColor}99` }}>{TIER_LABELS[tierIndex]}</span>
-        <div className="h-px flex-1" style={{ background: `linear-gradient(to right, transparent, ${kwColor}33, transparent)` }} />
+        <div
+          className="h-px flex-1"
+          style={{ background: `linear-gradient(to right, transparent, ${kwColor}33, transparent)` }}
+        />
+        <span className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: `${kwColor}99` }}>
+          {TIER_LABELS[tierIndex]}
+        </span>
+        <div
+          className="h-px flex-1"
+          style={{ background: `linear-gradient(to right, transparent, ${kwColor}33, transparent)` }}
+        />
       </div>
       <div className="flex justify-center gap-3">
         {talents.map((talent) => (

@@ -40,9 +40,7 @@ export type BattleScreenViewProps = {
 
 export type BattleHoverProps = {
   hoveredCardId: string | null;
-  setHoveredCardId: (value: string | null | ((current: string | null) => string | null)) => void;
   shimmerState: { cardId: string; token: number } | null;
-  onHoverShimmer: (cardId: string) => void;
 };
 
 export type BattleFeedbackProps = {

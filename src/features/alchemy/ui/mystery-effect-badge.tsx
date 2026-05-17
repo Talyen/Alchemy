@@ -26,14 +26,26 @@ export function MysteryEffectBadge({
     case "gainGold":
     case "loseGold":
       return (
-        <span className={cn("inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold", goldDef.colorClass.replace("text-", "bg-") + "/15", goldDef.colorClass)}>
+        <span
+          className={cn(
+            "inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold",
+            goldDef.colorClass.replace("text-", "bg-") + "/15",
+            goldDef.colorClass,
+          )}
+        >
           <Coins className="h-4 w-4" />
           {tooltip ? "Gold" : `${effect.amount} Gold`}
         </span>
       );
     case "gainMaterial":
       return (
-        <span className={cn("inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold", matPillStyle[effect.material], matTextColor[effect.material])}>
+        <span
+          className={cn(
+            "inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold",
+            matPillStyle[effect.material],
+            matTextColor[effect.material],
+          )}
+        >
           <span>{matIconMap[effect.material]}</span>
           {tooltip ? materialLabels[effect.material] : `${effect.amount} ${materialLabels[effect.material]}`}
         </span>
@@ -42,18 +54,22 @@ export function MysteryEffectBadge({
       const healthDef = keywordDefinitions.health;
       return (
         <span className="font-semibold">
-          {tooltip
-            ? <>Restore <span className={healthDef?.colorClass}>Health</span></>
-            : <>Restore {effect.amount} <span className={healthDef?.colorClass}>Health</span>{effect.chance !== undefined ? ` (${Math.round(effect.chance * 100)}% chance)` : ""}</>
-          }
+          {tooltip ? (
+            <>
+              Restore <span className={healthDef?.colorClass}>Health</span>
+            </>
+          ) : (
+            <>
+              Restore {effect.amount} <span className={healthDef?.colorClass}>Health</span>
+              {effect.chance !== undefined ? ` (${Math.round(effect.chance * 100)}% chance)` : ""}
+            </>
+          )}
         </span>
       );
     }
     case "damageHP":
       return (
-        <span className="font-semibold text-red-400">
-          {tooltip ? "Take damage" : `Take ${effect.amount} damage`}
-        </span>
+        <span className="font-semibold text-red-400">{tooltip ? "Take damage" : `Take ${effect.amount} damage`}</span>
       );
     case "gainMaxMana":
       return (
@@ -65,31 +81,36 @@ export function MysteryEffectBadge({
       const def = keywordDefinitions[effect.keyword];
       return (
         <span className="font-semibold">
-          {tooltip
-            ? <>Gain <span className={def?.colorClass}>{def?.label ?? effect.keyword}</span> XP</>
-            : <>Gain {effect.amount} <span className={def?.colorClass}>{def?.label ?? effect.keyword}</span> XP</>
-          }
+          {tooltip ? (
+            <>
+              Gain <span className={def?.colorClass}>{def?.label ?? effect.keyword}</span> XP
+            </>
+          ) : (
+            <>
+              Gain {effect.amount} <span className={def?.colorClass}>{def?.label ?? effect.keyword}</span> XP
+            </>
+          )}
         </span>
       );
     }
     case "addCard":
-      return tooltip
-        ? <span>Add {findCard?.(effect.cardId)?.title ?? "a card"} card to your deck</span>
-        : <span>Add {findCard?.(effect.cardId)?.title ?? "a card"}</span>;
+      return tooltip ? (
+        <span>Add {findCard?.(effect.cardId)?.title ?? "a card"} card to your deck</span>
+      ) : (
+        <span>Add {findCard?.(effect.cardId)?.title ?? "a card"}</span>
+      );
     case "chooseCard":
-      return tooltip
-        ? <span>Choose a card to add to your deck</span>
-        : <span>Choose a card</span>;
+      return tooltip ? <span>Choose a card to add to your deck</span> : <span>Choose a card</span>;
     case "gainTrinket":
-      return tooltip
-        ? <span>Add {findTrinket?.(effect.trinketId)?.title ?? "a trinket"} to your Inventory</span>
-        : <span>Add {findTrinket?.(effect.trinketId)?.title ?? "a trinket"}</span>;
+      return tooltip ? (
+        <span>Add {findTrinket?.(effect.trinketId)?.title ?? "a trinket"} to your Inventory</span>
+      ) : (
+        <span>Add {findTrinket?.(effect.trinketId)?.title ?? "a trinket"}</span>
+      );
     case "gainRandomTrinket":
       return <span>Gain a random trinket</span>;
     case "removeCard":
-      return effect.mode === "random"
-        ? <span>Remove a random card</span>
-        : <span>Choose a card to remove</span>;
+      return effect.mode === "random" ? <span>Remove a random card</span> : <span>Choose a card to remove</span>;
     case "none":
       return null;
   }

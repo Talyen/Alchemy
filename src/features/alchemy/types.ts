@@ -6,7 +6,28 @@ import type { CSSProperties } from "react";
 import type { CombatTextEvent } from "@/lib/battle";
 import type { KeywordId } from "@/lib/game-data";
 
-export type Screen = "menu" | "game-mode-select" | "character-select" | "difficulty-select" | "battle" | "rewards" | "destination" | "options" | "collection" | "talents" | "homestead" | "game-over" | "campfire" | "shop" | "alchemist" | "mystery" | "corruption" | "act-complete" | "run-victory" | "labyrinth-map" | "wildwood-select";
+export type Screen =
+  | "menu"
+  | "game-mode-select"
+  | "character-select"
+  | "difficulty-select"
+  | "battle"
+  | "rewards"
+  | "destination"
+  | "options"
+  | "collection"
+  | "talents"
+  | "homestead"
+  | "game-over"
+  | "campfire"
+  | "shop"
+  | "alchemist"
+  | "mystery"
+  | "corruption"
+  | "act-complete"
+  | "run-victory"
+  | "labyrinth-map"
+  | "wildwood-select";
 
 export type ResolutionOption = "1920x1080" | "1920x1200" | "2560x1080";
 
@@ -25,7 +46,7 @@ export const DESTINATIONS = {
   BOSS_COMBAT: "Boss Combat",
 } as const;
 
-export type Destination = typeof DESTINATIONS[keyof typeof DESTINATIONS];
+export type Destination = (typeof DESTINATIONS)[keyof typeof DESTINATIONS];
 
 export type CollectionTab = "cards" | "bestiary" | "trinkets";
 
@@ -69,5 +90,3 @@ export type GhostStyle = CSSProperties & {
   "--ghost-travel-x"?: string;
   "--ghost-travel-y"?: string;
 };
-
-

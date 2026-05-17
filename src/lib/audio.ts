@@ -13,9 +13,4 @@ export {
   playUISound,
   playVictory,
 } from "./audio-sfx";
-export {
-  setMasterVolume,
-  setMusicVolume,
-  setMuted,
-  setSfxVolume,
-} from "./audio-volume";
+export { setMasterVolume, setMusicVolume, setMuted, setSfxVolume } from "./audio-volume";

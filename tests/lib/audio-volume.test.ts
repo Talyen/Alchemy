@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+import { describe, expect, it, beforeEach } from "vitest";
 import { setMuted, setSfxVolume, setMasterVolume, setMusicVolume } from "@/lib/audio-volume";
 import { audioState } from "@/lib/audio-state";
 
@@ -18,8 +18,8 @@ describe("setMuted", () => {
   });
 
   it("mutes the current music element", () => {
-    const el = { muted: false } as any;
-    audioState.currentMusic = el;
+    const el = { muted: false } as Partial<HTMLAudioElement>;
+    audioState.currentMusic = el as HTMLAudioElement;
     setMuted(true);
     expect(el.muted).toBe(true);
   });
@@ -45,16 +45,16 @@ describe("setSfxVolume", () => {
 describe("setMasterVolume", () => {
   it("sets masterVolume and updates masterGain", () => {
     const gain = { value: 0 };
-    audioState.masterGain = { gain } as any;
+    audioState.masterGain = { gain } as unknown as GainNode;
     setMasterVolume(0.5);
     expect(audioState.masterVolume).toBe(0.5);
     expect(gain.value).toBe(0.3 * 0.5); // MASTER_GAIN * masterVolume
   });
 
   it("updates current music volume", () => {
-    const el = { volume: 0 } as any;
+    const el = { volume: 0 } as Partial<HTMLAudioElement>;
+    audioState.currentMusic = el as HTMLAudioElement;
     audioState.musicVolume = 0.5;
-    audioState.currentMusic = el;
     setMasterVolume(0.5);
     expect(el.volume).toBe(0.5 * 0.5 * 0.5); // musicVolume * masterVolume * MUSIC_MASTER_GAIN
   });
@@ -67,7 +67,8 @@ describe("setMusicVolume", () => {
   });
 
   it("updates current music element volume", () => {
-    const el = { volume: 0 } as any;
+    const el = { volume: 0 } as Partial<HTMLAudioElement>;
+    audioState.currentMusic = el as HTMLAudioElement;
     audioState.masterVolume = 0.5;
     audioState.musicVolume = 0.5;
     audioState.currentMusic = el;

@@ -1,13 +1,13 @@
 // Animated shine-border overlay for highlighting interactive elements (corruption, heroes).
 // Depends on tailwind-merge for class composition. Used by destination choices and hero cards.
-import * as React from "react"
+import * as React from "react";
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 
 interface ShineBorderProps extends React.HTMLAttributes<HTMLDivElement> {
-  borderWidth?: number
-  duration?: number
-  shineColor?: string | string[]
+  borderWidth?: number;
+  duration?: number;
+  shineColor?: string | string[];
 }
 
 export function ShineBorder({
@@ -38,9 +38,9 @@ export function ShineBorder({
       }
       className={cn(
         "animate-shine pointer-events-none absolute inset-0 rounded-[inherit] will-change-[background-position]",
-        className
+        className,
       )}
       {...props}
     />
-  )
+  );
 }

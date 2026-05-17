@@ -1,6 +1,6 @@
 // App-level save state and autosave wiring for options, discoveries, and collection UI.
 // Depends on alchemy storage helpers plus persisted option and collection type contracts.
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
   clearAlchemySaveData,
@@ -22,9 +22,9 @@ const initialCollectionPages: CollectionPages = {
 
 // Owns persisted shell state so App can focus on controller composition and screen rendering.
 export function useAppSaveState() {
-  const initialSaveRef = useRef(loadAlchemySaveState());
-  const initialSave = initialSaveRef.current.data;
-  const saveLoadStatus = initialSaveRef.current.status;
+  const initialLoad = loadAlchemySaveState();
+  const initialSave = initialLoad.data;
+  const saveLoadStatus = initialLoad.status;
   const [selectedResolution, setSelectedResolution] = useState<ResolutionOption>(initialSave.selectedResolution);
   const [displayMode, setDisplayMode] = useState<DisplayMode>(initialSave.displayMode);
   const [uiScale, setUiScale] = useState<UiScale>(initialSave.uiScale);
@@ -40,7 +40,9 @@ export function useAppSaveState() {
   const [discoveredCardIds, setDiscoveredCardIds] = useState<string[]>(initialSave.discoveredCardIds);
   const [encounteredEnemyIds, setEncounteredEnemyIds] = useState<string[]>(initialSave.encounteredEnemyIds);
   const [discoveredTrinketIds, setDiscoveredTrinketIds] = useState<string[]>(initialSave.discoveredTrinketIds);
-  const [completedDifficulties, setCompletedDifficulties] = useState<Record<CharacterId, DifficultyId[]>>(initialSave.completedDifficulties);
+  const [completedDifficulties, setCompletedDifficulties] = useState<Record<CharacterId, DifficultyId[]>>(
+    initialSave.completedDifficulties,
+  );
 
   function resetOptionsToDefault() {
     setSelectedResolution(defaultSaveData.selectedResolution);
@@ -119,6 +121,7 @@ export function useAppSaveState() {
 export function useAlchemyAutosave(saveData: SaveData) {
   useEffect(() => {
     saveAlchemySaveData(saveData);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     saveData.saveSchemaVersion,
     saveData.gameBuildVersion,

@@ -3,7 +3,12 @@
 // Used by shop controller and UI previews so mixing behavior stays testable outside React.
 import type { BattleCard } from "@/lib/game-data";
 import { mixedPotion } from "@/lib/game-data";
-import { CONSUME_DESCRIPTION_LINE, MIXED_POTION_CARD_ID, MIXED_POTION_COST, MIXED_POTION_TITLE } from "@/lib/game-constants";
+import {
+  CONSUME_DESCRIPTION_LINE,
+  MIXED_POTION_CARD_ID,
+  MIXED_POTION_COST,
+  MIXED_POTION_TITLE,
+} from "@/lib/game-constants";
 
 export const MIXED_POTION_ERROR = "Cannot mix with an existing Mixed Potion";
 
@@ -22,7 +27,7 @@ export function createMixedPotion(cardA: BattleCard, cardB: BattleCard): BattleC
   // Build effects: duplicate & double amounts for same card, concatenate for different cards.
   const effects = sameCard
     ? cardA.effects.map((e) => {
-        if ('amount' in e) return { ...e, amount: e.amount * 2 };
+        if ("amount" in e) return { ...e, amount: e.amount * 2 };
         return { ...e };
       })
     : [...cardA.effects, ...cardB.effects];
@@ -65,12 +70,7 @@ export function tryCreateMixedPotion(cardA: BattleCard | undefined, cardB: Battl
 
 /** Removes the two cards at the given indices from the deck and appends the mixed potion.
  * Higher index is identified to safely reconstruct the array without shift issues. */
-export function applyMixToDeck(
-  deck: BattleCard[],
-  indexA: number,
-  indexB: number,
-  mixed: BattleCard,
-): BattleCard[] {
+export function applyMixToDeck(deck: BattleCard[], indexA: number, indexB: number, mixed: BattleCard): BattleCard[] {
   const highIdx = Math.max(indexA, indexB);
   const lowIdx = Math.min(indexA, indexB);
   const next = deck.filter((_, i) => i !== highIdx && i !== lowIdx);

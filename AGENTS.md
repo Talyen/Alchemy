@@ -19,6 +19,9 @@ npm run format           # Prettier write
 npm run format:check     # Prettier check
 npm run assets:optimize  # PNGs → webp
 npm run sounds:optimize  # sounds → OGG
+npm run release          # Auto-bump + changelog + tag (patch)
+npm run release:minor    # Force minor bump
+npm run release:major    # Force major bump
 ```
 
 Add a new raw asset:
@@ -49,6 +52,7 @@ Add a new raw art asset:
 - **All tuning values** in `src/lib/game-constants.ts` — no magic numbers.
 - **State mutated only through defined state functions**, never directly.
 - **Comments**: Every function gets a "why" comment; every file gets a top-of-file summary of what it does and its dependencies.
+- **Commit messages**: Follow [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `refactor:`, etc.) — enforced by commitlint + lefthook locally, validated in CI. `standard-version` reads these to generate the changelog and bump the version automatically.
 
 ## Navigation Hints
 

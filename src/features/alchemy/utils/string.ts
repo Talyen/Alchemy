@@ -13,7 +13,9 @@ export function tokenizeDescription(line: string) {
   for (const match of matches) {
     const matchedText = match[0];
     const matchIndex = match.index ?? 0;
-    const keywordId = keywordAliases.find((alias) => alias.match.toLowerCase() === matchedText.toLowerCase())?.keywordId;
+    const keywordId = keywordAliases.find(
+      (alias) => alias.match.toLowerCase() === matchedText.toLowerCase(),
+    )?.keywordId;
     if (matchIndex > lastIndex) pieces.push({ text: line.slice(lastIndex, matchIndex) });
     if (keywordId) pieces.push({ text: matchedText, keywordId });
     else pieces.push({ text: matchedText });

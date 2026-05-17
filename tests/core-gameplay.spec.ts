@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { openGameModeSelect, selectGameMode, startAtDestination, startRun, playUntilVictory, waitForEnemyTurn, completeVictoryFlow, navigateToDestination, skipAndReward } from "./helpers";
+import { openGameModeSelect, selectGameMode, startAtDestination, startRun, playUntilVictory, waitForEnemyTurn, completeVictoryFlow, skipAndReward } from "./helpers";
 
 test.describe("Menu", () => {
   test("all menu buttons are visible on the main menu", async ({ page }) => {

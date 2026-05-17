@@ -4,10 +4,7 @@
 // for any images that are dynamically constructed or added after initial load.
 import { useEffect } from "react";
 
-import {
-  pileDiscardArt,
-  pileDrawArt,
-} from "@/lib/game-data";
+import { pileDiscardArt, pileDrawArt } from "@/lib/game-data";
 import { preloadImages } from "@/lib/image-preload";
 import type { Screen } from "@/features/alchemy/types";
 
@@ -24,7 +21,16 @@ type ScreenAssetPreloadOptions = {
 
 // Preloads only assets for the current or imminent screen so card/enemy art does not
 // pop in, without forcing the entire collection into memory on startup.
-export function useScreenAssetPreloadEffects({ heroArt, screen, battleEnemyArt, battleHand, rewardChoices, shopCards, alchemistPotions, mysteryEvent }: ScreenAssetPreloadOptions) {
+export function useScreenAssetPreloadEffects({
+  heroArt,
+  screen,
+  battleEnemyArt,
+  battleHand,
+  rewardChoices,
+  shopCards,
+  alchemistPotions,
+  mysteryEvent,
+}: ScreenAssetPreloadOptions) {
   useEffect(() => {
     const priorityImages = [heroArt];
     if (screen === "battle") {
