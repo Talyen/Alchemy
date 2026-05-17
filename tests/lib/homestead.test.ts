@@ -344,11 +344,11 @@ describe("getEnemyMaterialLoot with elite multiplier", () => {
     vi.restoreAllMocks();
   });
 
-  it("doubles loot for elite enemies", () => {
+  it("applies 1.3x material multiplier for elite enemies", () => {
     const normal = getEnemyMaterialLoot("goblin", "normal");
     const elite = getEnemyMaterialLoot("goblin", "elite");
-    expect(elite.wood).toBe(normal.wood * 2);
-    expect(elite.food).toBe(normal.food * 2);
+    expect(elite.wood).toBe(Math.floor(normal.wood * 1.3));
+    expect(elite.food).toBe(Math.floor(normal.food * 1.3));
   });
 
   it("triples loot for boss enemies", () => {

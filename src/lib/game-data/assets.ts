@@ -113,9 +113,15 @@ import orchard from "@/assets/optimized/orchard.webp";
 import placeholderHomestead from "@/assets/optimized/placeholder-homestead.webp";
 import placeholderMystery from "@/assets/optimized/placeholder-mystery.webp";
 import placeholderDifficulty from "@/assets/optimized/placeholder-difficulty.webp";
+import theCampaign from "@/assets/optimized/the-campaign.webp";
+import theLabyrinth from "@/assets/optimized/the-labyrinth.webp";
+import theWildwoods from "@/assets/optimized/the-wildwoods.webp";
+import placeholderGameMode from "@/assets/optimized/placeholder-game-mode.webp";
 import difficulty1Art from "@/assets/optimized/difficulty-1.webp";
 import difficulty2Art from "@/assets/optimized/difficulty-2.webp";
 import difficulty3Art from "@/assets/optimized/difficulty-3.webp";
+
+export { theCampaign, theLabyrinth, theWildwoods, placeholderGameMode };
 
 export {
   acidPotion,

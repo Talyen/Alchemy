@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { startRun } from "./helpers";
+import { selectGameMode, startRun } from "./helpers";
 
 async function setResolution(page: Page, resolution: string) {
   await page.addInitScript((res) => {
@@ -22,7 +22,7 @@ for (const { option, label, vp } of RESOLUTIONS) {
       await page.setViewportSize(vp);
       await page.goto("/");
 
-      await expect(page.getByRole("button", { name: "Campaign" })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Play" })).toBeVisible();
 
       const layout = await page.evaluate(() => ({
         width: document.documentElement.scrollWidth,
@@ -40,7 +40,7 @@ for (const { option, label, vp } of RESOLUTIONS) {
       await page.setViewportSize(vp);
       await page.goto("/");
 
-      await page.getByRole("button", { name: "Campaign" }).click();
+      await selectGameMode(page, "campaign");
       await expect(page.getByRole("heading", { name: "Choose Your Hero" })).toBeVisible();
 
       const layout = await page.evaluate(() => ({

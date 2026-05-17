@@ -137,6 +137,20 @@ describe("normalizeActiveRun", () => {
     expect(result?.labyrinthMap).toEqual(labyrinthMap);
   });
 
+  it("drops unknown labyrinth modifiers from persisted maps", () => {
+    const labyrinthMap = generateLabyrinthMap(createSeededRng(42));
+    const firstCombat = labyrinthMap.grid.flat().find((node) => node?.type === "combat");
+    expect(firstCombat).toBeDefined();
+    firstCombat!.modifiers = ["armored", "missing-modifier" as never];
+    firstCombat!.rewardModifiers = ["generous", "old-reward" as never];
+
+    const result = normalizeActiveRun(activeRun({ contentSystemType: "labyrinth", labyrinthMap }));
+
+    const normalizedCombat = result?.labyrinthMap?.grid.flat().find((node) => node?.type === "combat");
+    expect(normalizedCombat?.modifiers).toEqual(["armored"]);
+    expect(normalizedCombat?.rewardModifiers).toEqual(["generous"]);
+  });
+
   it("drops labyrinth map state for campaign runs", () => {
     const labyrinthMap = generateLabyrinthMap(createSeededRng(42));
     const result = normalizeActiveRun(activeRun({ contentSystemType: "campaign", labyrinthMap }));

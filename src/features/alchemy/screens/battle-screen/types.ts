@@ -2,6 +2,7 @@
 import type { MouseEvent, MutableRefObject } from "react";
 
 import type { BattleState } from "@/lib/battle";
+import type { LabyrinthModifierKind } from "@/lib/content-systems/types";
 import type { BattleCard } from "@/lib/game-data";
 import type { CardGhost, FloatingCombatText, StatusChip } from "../../types";
 
@@ -53,6 +54,7 @@ export type BattleFeedbackProps = {
   playerShaking: boolean;
   enemyShaking: boolean;
   companionShaking: boolean;
+  activeLabyrinthModifiers: LabyrinthModifierKind[];
 };
 
 export type BattleRefsProps = {

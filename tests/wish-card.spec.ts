@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { injectSaveState, navigateToDestination } from "./helpers";
+import { injectSaveState, navigateToDestination, resumeGameMode } from "./helpers";
 
 test.describe("Wish Card", () => {
   test("playing wish card shows overlay with three choices", async ({ page }) => {
@@ -9,7 +9,7 @@ test.describe("Wish Card", () => {
       discoveredCardIds: ["wish"],
     });
     await page.goto("/");
-    await page.getByRole("button", { name: "Resume Run" }).click();
+    await resumeGameMode(page, "campaign");
     await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 10000 });
     await navigateToDestination(page, "Normal Combat");
     await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });
@@ -34,12 +34,12 @@ test.describe("Wish Card", () => {
       discoveredCardIds: ["wish"],
     });
     await page.goto("/");
-    await page.getByRole("button", { name: "Resume Run" }).click();
+    await resumeGameMode(page, "campaign");
     await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 10000 });
     await navigateToDestination(page, "Normal Combat");
     await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });
 
-    await page.locator('[aria-label="Play Wish"]').first().click();
+    await page.locator('[aria-label="Play Corrupted Wish"]').first().click();
     await page.waitForTimeout(400);
 
     await expect(page.getByText("Choose one card to add to your hand.")).toBeVisible();

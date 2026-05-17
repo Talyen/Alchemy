@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { startRun, playUntilVictory, waitForEnemyTurn } from "./helpers";
+import { selectGameMode, startRun, playUntilVictory, waitForEnemyTurn } from "./helpers";
 
 async function readPlayerBlock(page: Page) {
   const blockChip = page.getByRole("button", { name: /^Block \d+$/ });
@@ -61,8 +61,8 @@ test.describe("Block Mechanics", () => {
 
 test.describe("Collection", () => {
   test("collection tabs expose known and undiscovered compendium entries", async ({ page }) => {
-    await page.goto("/");
-
+    await startRun(page);
+    await page.getByRole("button", { name: "Menu" }).click();
     await page.getByRole("button", { name: "Collection" }).click();
 
     await expect(page.getByRole("heading", { name: "Collection" })).toBeVisible();
@@ -70,8 +70,8 @@ test.describe("Collection", () => {
     await expect(page.getByRole("button", { name: "Bestiary" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Trinkets" })).toBeVisible();
 
-    await page.getByRole("button", { name: "Inspect Slash" }).hover();
-    await expect(page.getByText("Deal 5")).toBeVisible();
+    await page.getByRole("button", { name: "Inspect Anvil" }).hover();
+    await expect(page.getByText("Gain 1 Forge")).toBeVisible();
 
     await page.getByRole("button", { name: "Bestiary" }).click();
     await page.getByRole("button", { name: "Inspect Undiscovered Entry" }).first().hover();
@@ -153,8 +153,8 @@ test.describe("Mobile Landscape", () => {
     test(`menu and character select work at ${vp.width}x${vp.height}`, async ({ page }) => {
       await page.setViewportSize({ width: vp.width, height: vp.height });
       await page.goto("/");
-      await expect(page.getByRole("button", { name: "Campaign" })).toBeVisible();
-      await page.getByRole("button", { name: "Campaign" }).click();
+      await expect(page.getByRole("button", { name: "Play" })).toBeVisible();
+      await selectGameMode(page, "campaign");
       await expect(page.getByRole("heading", { name: "Choose Your Hero" })).toBeVisible();
     });
 

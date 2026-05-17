@@ -1,17 +1,17 @@
 // E2E tests for the Wildwood single-boss challenge mode.
 import { test, expect } from "@playwright/test";
-import { injectSaveState } from "./helpers";
+import { selectGameMode } from "./helpers";
 
 test.describe("Wildwood Mode", () => {
   test("Wildwood button navigates to Character Select", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("button", { name: "Wildwood" }).click();
+    await selectGameMode(page, "wildwood");
     await expect(page.getByRole("heading", { name: "Choose Your Hero" })).toBeVisible({ timeout: 5000 });
   });
 
   test("selecting character shows boss select with 4 bosses", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("button", { name: "Wildwood" }).click();
+    await selectGameMode(page, "wildwood");
     await page.getByRole("button", { name: "Knight" }).click();
     await page.getByRole("button", { name: "Continue" }).click();
     await expect(page.getByRole("heading", { name: "Choose Your Prey" })).toBeVisible({ timeout: 5000 });
@@ -24,7 +24,7 @@ test.describe("Wildwood Mode", () => {
 
   test("Iron Bear card displays correct traits", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("button", { name: "Wildwood" }).click();
+    await selectGameMode(page, "wildwood");
     await page.getByRole("button", { name: "Knight" }).click();
     await page.getByRole("button", { name: "Continue" }).click();
     // Click Iron Bear to see details
@@ -36,7 +36,7 @@ test.describe("Wildwood Mode", () => {
 
   test("select boss and Hunt starts a battle", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("button", { name: "Wildwood" }).click();
+    await selectGameMode(page, "wildwood");
     await page.getByRole("button", { name: "Knight" }).click();
     await page.getByRole("button", { name: "Continue" }).click();
     await page.getByText("The Iron Bear").click();
@@ -47,34 +47,26 @@ test.describe("Wildwood Mode", () => {
 
   test("back button from boss select returns to main menu", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("button", { name: "Wildwood" }).click();
+    await selectGameMode(page, "wildwood");
     await page.getByRole("button", { name: "Knight" }).click();
     await page.getByRole("button", { name: "Continue" }).click();
     await page.getByRole("button", { name: "Back" }).click();
-    await expect(page.getByRole("button", { name: "Campaign" })).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole("button", { name: "Play" })).toBeVisible({ timeout: 5000 });
   });
 
   test("Wildwood boss defeat shows game over", async ({ page }) => {
-    // Inject a minimal save state, then navigate via Wildwood.
-    await injectSaveState(page, {
-      characterId: "knight",
-      runPlayerHealth: 1,
-      runMaxHealth: 30,
-    });
     await page.goto("/");
-    await page.getByRole("button", { name: "Wildwood" }).click();
+    await selectGameMode(page, "wildwood");
     await page.getByRole("button", { name: "Knight" }).click();
     await page.getByRole("button", { name: "Continue" }).click();
     await page.getByText("The Iron Bear").click();
     await page.getByRole("button", { name: "Hunt" }).click();
-    // End turn without playing — boss should kill us.
-    // First turn: Death's Door triggers.
-    await page.getByRole("button", { name: "End Turn" }).click();
-    // If Death's Door procs, click End Turn again to die.
-    await page.waitForTimeout(2000);
-    const endTurnBtn = page.getByRole("button", { name: "End Turn" });
-    if (await endTurnBtn.isVisible({ timeout: 1000 }).catch(() => false)) {
-      await endTurnBtn.click();
+
+    const defeatHeading = page.getByRole("heading", { name: /Defeat/ });
+    for (let turn = 0; turn < 8; turn += 1) {
+      if (await defeatHeading.isVisible().catch(() => false)) break;
+      await page.getByRole("button", { name: "End Turn" }).click();
+      await page.waitForTimeout(1200);
     }
     await expect(page.getByRole("heading", { name: /Defeat/ })).toBeVisible({ timeout: 15000 });
   });

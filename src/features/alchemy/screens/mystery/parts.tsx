@@ -169,14 +169,10 @@ export function RemoveCardPicker({
         renderItem={({ card, index }) => {
           const isSelected = selectedIndex === index;
           return (
-            <button
-              type="button"
-              onClick={() => setSelectedIndex(index)}
-              className={cn("flex flex-col items-center gap-2 rounded-xl border-2 p-2 transition-colors", isSelected ? "border-primary bg-primary/10 ring-1 ring-primary" : "border-transparent hover:border-border")}
-            >
-              <BattleCardButton card={card} hovered={isSelected} onHoverStart={() => {}} onHoverEnd={() => {}} ariaLabel={getCardDisplayTitle(card)} shimmerActive={false} shimmerToken={undefined} className={viewCardWidthClass} />
+            <div className={cn("flex flex-col items-center gap-2 rounded-xl border-2 p-2 transition-colors", isSelected ? "border-primary bg-primary/10 ring-1 ring-primary" : "border-transparent hover:border-border")}>
+              <BattleCardButton card={card} hovered={isSelected} onHoverStart={() => {}} onHoverEnd={() => {}} onClick={() => setSelectedIndex(index)} ariaLabel={`Select ${getCardDisplayTitle(card)}`} shimmerActive={false} shimmerToken={undefined} className={viewCardWidthClass} />
               <p className="text-xs text-foreground"><CardTitle card={card} /></p>
-            </button>
+            </div>
           );
         }}
       />

@@ -9,11 +9,12 @@ import {
   setCurrentNode,
 } from "@/lib/content-systems/labyrinth/map-generation";
 
-const ROWS = 5;
-const COLS = 5;
+const ROWS = 8;
+const COLS = 9;
+const START_COL = Math.floor(COLS / 2);
 
 describe("generateLabyrinthMap", () => {
-  it("generates a 5x5 grid", () => {
+  it("generates an 8x9 grid", () => {
     const map = generateLabyrinthMap(createSeededRng(42));
     expect(map.grid).toHaveLength(ROWS);
     for (const row of map.grid) {
@@ -21,15 +22,35 @@ describe("generateLabyrinthMap", () => {
     }
   });
 
-  it("start node is at (0, 2), combat type, current state", () => {
+  it("start node is at the top center, entrance type, current state", () => {
     const map = generateLabyrinthMap(createSeededRng(42));
-    const start = map.grid[0][2];
+    const start = map.grid[0][START_COL];
     expect(start).not.toBeNull();
-    expect(start!.type).toBe("combat");
+    expect(start!.type).toBe("entrance");
     expect(start!.state).toBe("current");
     // All other row-0 cells must be empty.
     for (let c = 0; c < COLS; c++) {
-      if (c !== 2) expect(map.grid[0][c]).toBeNull();
+      if (c !== START_COL) expect(map.grid[0][c]).toBeNull();
+    }
+  });
+
+  it("first node after the entrance is always normal combat", () => {
+    for (let seed = 1; seed <= 25; seed += 1) {
+      const map = generateLabyrinthMap(createSeededRng(seed));
+      expect(map.grid[1][START_COL]?.type).toBe("combat");
+    }
+  });
+
+  it("fills substantially more of the map", () => {
+    const map = generateLabyrinthMap(createSeededRng(42));
+    const placedNodes = map.grid.flat().filter(Boolean).length;
+    expect(placedNodes).toBeGreaterThanOrEqual(36);
+  });
+
+  it("requires more than 10 nodes to reach the boss by the shortest path", () => {
+    for (let seed = 1; seed <= 100; seed += 1) {
+      const map = generateLabyrinthMap(createSeededRng(seed));
+      expect(shortestBossPathNodeCount(map)).toBeGreaterThan(10);
     }
   });
 
@@ -54,6 +75,62 @@ describe("generateLabyrinthMap", () => {
     expect(hasReachableBoss(map)).toBe(true);
   });
 
+  it("does not generate treasure nodes", () => {
+    const map = generateLabyrinthMap(createSeededRng(42));
+    for (const row of map.grid) {
+      for (const node of row) {
+        expect(node?.type).not.toBe("treasure");
+      }
+    }
+  });
+
+  it("every placed node has one to three connections", () => {
+    const map = generateLabyrinthMap(createSeededRng(42));
+    for (const row of map.grid) {
+      for (const node of row) {
+        if (!node) continue;
+        expect(node.connections.length).toBeGreaterThanOrEqual(1);
+        expect(node.connections.length).toBeLessThanOrEqual(3);
+      }
+    }
+  });
+
+  it("creates branching choice points", () => {
+    const map = generateLabyrinthMap(createSeededRng(42));
+    const branchCount = map.grid.flat().filter((node) => node && node.connections.length === 3).length;
+    expect(branchCount).toBeGreaterThanOrEqual(2);
+  });
+
+  it("uses fixed modifier counts for combat and elite nodes", () => {
+    const map = generateLabyrinthMap(createSeededRng(42));
+    for (const node of map.grid.flat()) {
+      if (node?.type === "combat") expect(node.modifiers).toHaveLength(1);
+      if (node?.type === "elite") expect(node.modifiers).toHaveLength(2);
+    }
+  });
+
+  it("assigns reward modifiers on some combat and all elite nodes", () => {
+    const map = generateLabyrinthMap(createSeededRng(42));
+    for (const node of map.grid.flat()) {
+      if (node?.type === "elite") expect(node.rewardModifiers).toHaveLength(1);
+      if (node?.type === "combat") expect(node.rewardModifiers.length).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it("every connection points back to its source", () => {
+    const map = generateLabyrinthMap(createSeededRng(42));
+    for (let row = 0; row < ROWS; row += 1) {
+      for (let col = 0; col < COLS; col += 1) {
+        const node = map.grid[row][col];
+        if (!node) continue;
+        for (const connection of node.connections) {
+          const target = map.grid[connection.row][connection.col];
+          expect(target?.connections).toContainEqual({ row, col });
+        }
+      }
+    }
+  });
+
   it("every checked seed has a reachable boss path", () => {
     for (let seed = 1; seed <= 100; seed++) {
       const map = generateLabyrinthMap(createSeededRng(seed));
@@ -61,9 +138,9 @@ describe("generateLabyrinthMap", () => {
     }
   });
 
-  it("row 4 contains at least one boss node", () => {
+  it("final row contains at least one boss node", () => {
     const map = generateLabyrinthMap(createSeededRng(42));
-    const bossNodes = map.grid[4].filter((n) => n?.type === "boss");
+    const bossNodes = map.grid[ROWS - 1].filter((n) => n?.type === "boss");
     expect(bossNodes.length).toBeGreaterThanOrEqual(1);
   });
 
@@ -107,8 +184,8 @@ describe("generateLabyrinthMap", () => {
 describe("revealConnected", () => {
   it("marks hidden neighbors as visible", () => {
     const map = generateLabyrinthMap(createSeededRng(42));
-    // After generation, start node's connections should already be visible.
-    const start = map.grid[0][2]!;
+    // After generation, the full route is visible.
+    const start = map.grid[0][START_COL]!;
     expect(start.state).toBe("current");
     for (const conn of start.connections) {
       const neighbor = map.grid[conn.row][conn.col];
@@ -120,7 +197,7 @@ describe("revealConnected", () => {
   it("does nothing if current node has no connections", () => {
     const map = generateLabyrinthMap(createSeededRng(42));
     // Force a node at (0, 0) with no connections.
-    map.grid[0][0] = { type: "combat", modifiers: [], connections: [], state: "hidden" };
+    map.grid[0][0] = { type: "combat", modifiers: [], rewardModifiers: [], connections: [], state: "hidden" };
     map.currentNode = { row: 0, col: 0 };
     revealConnected(map);
     expect(map.grid[0][0]!.state).toBe("hidden"); // unchanged, no connections
@@ -131,7 +208,7 @@ describe("setCurrentNode", () => {
   it("marks previous current as cleared and sets new current", () => {
     const map = generateLabyrinthMap(createSeededRng(42));
     // Start node is "current" after generation.
-    const start = map.grid[0][2]!;
+    const start = map.grid[0][START_COL]!;
     expect(start.state).toBe("current");
 
     // Move to a connected node.
@@ -149,7 +226,7 @@ describe("setCurrentNode", () => {
 describe("failNode", () => {
   it("marks node as failed and resets position to start", () => {
     const map = generateLabyrinthMap(createSeededRng(42));
-    const start = map.grid[0][2]!;
+    const start = map.grid[0][START_COL]!;
     // Move to a connected node first.
     if (start.connections.length > 0) {
       const target = start.connections[0];
@@ -157,7 +234,7 @@ describe("failNode", () => {
       failNode(map, target.row, target.col);
       const failed = map.grid[target.row][target.col]!;
       expect(failed.state).toBe("failed");
-      expect(map.currentNode).toEqual({ row: 0, col: 2 });
+      expect(map.currentNode).toEqual({ row: 0, col: START_COL });
     }
   });
 });
@@ -183,7 +260,7 @@ describe("createSeededRng", () => {
 
 function hasReachableBoss(map: ReturnType<typeof generateLabyrinthMap>): boolean {
   const visited = new Set<string>();
-  const queue = [{ row: 0, col: 2 }];
+  const queue = [{ row: 0, col: START_COL }];
   while (queue.length > 0) {
     const { row, col } = queue.shift()!;
     const key = `${row},${col}`;
@@ -197,4 +274,22 @@ function hasReachableBoss(map: ReturnType<typeof generateLabyrinthMap>): boolean
     }
   }
   return false;
+}
+
+function shortestBossPathNodeCount(map: ReturnType<typeof generateLabyrinthMap>): number {
+  const visited = new Set<string>();
+  const queue = [{ row: 0, col: START_COL, count: 1 }];
+  while (queue.length > 0) {
+    const { row, col, count } = queue.shift()!;
+    const key = `${row},${col}`;
+    if (visited.has(key)) continue;
+    visited.add(key);
+    const node = map.grid[row][col];
+    if (!node) continue;
+    if (node.type === "boss") return count;
+    for (const conn of node.connections) {
+      queue.push({ ...conn, count: count + 1 });
+    }
+  }
+  return 0;
 }

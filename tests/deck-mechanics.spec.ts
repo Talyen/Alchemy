@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { injectSaveState, navigateToDestination, startRun } from "./helpers";
+import { injectSaveState, navigateToDestination, resumeGameMode, startRun } from "./helpers";
 
 function parseCount(value: string | null): number {
   return value ? Number(value) : 0;
@@ -12,7 +12,7 @@ test.describe("Deck Mechanics", () => {
       runDeck: [SLASH, SLASH, SLASH, SLASH],
     });
     await page.goto("/");
-    await page.getByRole("button", { name: "Resume Run" }).click();
+    await resumeGameMode(page, "campaign");
     await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 10000 });
     await navigateToDestination(page, "Normal Combat");
     await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });
@@ -32,7 +32,7 @@ test.describe("Deck Mechanics", () => {
       runDeck: [BREAD, BREAD, BREAD, BREAD],
     });
     await page.goto("/");
-    await page.getByRole("button", { name: "Resume Run" }).click();
+    await resumeGameMode(page, "campaign");
     await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 10000 });
     await navigateToDestination(page, "Normal Combat");
     await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });

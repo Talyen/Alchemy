@@ -3,6 +3,7 @@
 // App imports from here for most screens while battle/homestead can still be direct imports.
 export { HomesteadScreen } from "./homestead-screen";
 export { MenuScreen } from "./menu-screen";
+export { GameModeSelectScreen } from "./game-mode-select-screen";
 export { CharacterSelectScreen } from "./character-select-screen";
 export { DifficultySelectScreen } from "./difficulty-select-screen";
 export { RewardsScreen } from "./rewards-screen";

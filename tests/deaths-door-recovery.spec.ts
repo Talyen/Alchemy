@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { injectSaveState, navigateToDestination } from "./helpers";
+import { injectSaveState, navigateToDestination, resumeGameMode } from "./helpers";
 
 test.describe("Death's Door Recovery", () => {
   test("healing during Death's Door grace turn saves the player", async ({ page }) => {
@@ -15,7 +15,7 @@ test.describe("Death's Door Recovery", () => {
       runMaxHealth: 30,
     });
     await page.goto("/");
-    await page.getByRole("button", { name: "Resume Run" }).click();
+    await resumeGameMode(page, "campaign");
     await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 10000 });
     await navigateToDestination(page, "Normal Combat");
     await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });
@@ -36,7 +36,7 @@ test.describe("Death's Door Recovery", () => {
       runMaxHealth: 30,
     });
     await page.goto("/");
-    await page.getByRole("button", { name: "Resume Run" }).click();
+    await resumeGameMode(page, "campaign");
     await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 10000 });
     await navigateToDestination(page, "Normal Combat");
     await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });

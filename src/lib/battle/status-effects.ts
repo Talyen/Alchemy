@@ -56,6 +56,9 @@ export function resolveStunTrigger(state: BattleState, combatTexts?: CombatTextE
     enemyStatuses: { ...state.enemyStatuses, stun: 0 },
     enemyStunSkipTurns: state.enemyStunSkipTurns + 1 + state.talentEffects.stunDurationExtension,
   };
+  if (combatTexts) {
+    mergeCombatText(combatTexts, { target: "enemy", kind: "notice", stat: "stun", text: "Stunned" });
+  }
   if (nextState.talentEffects.drawOnStun > 0) {
     const draw = drawCards(nextState.deck, nextState.discard, nextState.hand, nextState.talentEffects.drawOnStun, nextState.nextCardUid);
     nextState = { ...nextState, deck: draw.deck, discard: draw.discard, hand: draw.hand, nextCardUid: draw.nextCardUid };
@@ -133,6 +136,7 @@ export function applyDamageStatuses(state: BattleState, effect: Extract<BattleCa
       if (!isFreezeImmune && state.enemyHealth > 0 && nextStatuses.freeze >= state.enemyHealth * freezeThreshold) {
         nextStatuses.freeze = 0;
         nextState = { ...nextState, enemyStatuses: nextStatuses, enemyFreezeSkipTurns: nextState.enemyFreezeSkipTurns + 1 + nextState.trinketEffects.freezeDurationExtension };
+        mergeCombatText(combatTexts, { target: "enemy", kind: "notice", stat: "freeze", text: "Frozen" });
         if (nextState.trinketEffects.frozenHeartDamage > 0) {
           nextState = {
             ...nextState,

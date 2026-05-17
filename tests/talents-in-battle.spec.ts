@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { injectSaveState, navigateToDestination } from "./helpers";
+import { injectSaveState, navigateToDestination, resumeGameMode } from "./helpers";
 
 test.describe("Talents in Battle", () => {
   test("block-start talent gives starting block in combat", async ({ page }) => {
@@ -17,7 +17,7 @@ test.describe("Talents in Battle", () => {
       runMaxHealth: 30,
     });
     await page.goto("/");
-    await page.getByRole("button", { name: "Resume Run" }).click();
+    await resumeGameMode(page, "campaign");
     await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 10000 });
     await navigateToDestination(page, "Normal Combat");
     await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });
@@ -40,7 +40,7 @@ test.describe("Talents in Battle", () => {
       runMaxHealth: 30,
     });
     await page.goto("/");
-    await page.getByRole("button", { name: "Resume Run" }).click();
+    await resumeGameMode(page, "campaign");
     await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 10000 });
     await navigateToDestination(page, "Normal Combat");
     await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });

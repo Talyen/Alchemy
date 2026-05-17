@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { injectSaveState, navigateToDestination } from "./helpers";
+import { injectSaveState, navigateToDestination, resumeGameMode } from "./helpers";
 
 const SLASH = { id: "slash", title: "Slash", descriptionLines: ["Deal 6 Physical damage"], art: "placeholder", cost: 1, effects: [{ kind: "damage" as const, damageType: "physical" as const, amount: 6 }] };
 
@@ -13,7 +13,7 @@ test.describe("Difficulty Modifiers", () => {
       runMaxHealth: 30,
     });
     await page.goto("/");
-    await page.getByRole("button", { name: "Resume Run" }).click();
+    await resumeGameMode(page, "campaign");
     await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 10000 });
     await navigateToDestination(page, "Normal Combat");
     await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });
@@ -47,7 +47,7 @@ test.describe("Difficulty Modifiers", () => {
       runMaxHealth: 30,
     });
     await page.goto("/");
-    await page.getByRole("button", { name: "Resume Run" }).click();
+    await resumeGameMode(page, "campaign");
     await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 10000 });
     await navigateToDestination(page, "Normal Combat");
     await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });
@@ -75,7 +75,7 @@ test.describe("Difficulty Modifiers", () => {
       runMaxHealth: 30,
     });
     await page.goto("/");
-    await page.getByRole("button", { name: "Resume Run" }).click();
+    await resumeGameMode(page, "campaign");
     await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 10000 });
     await navigateToDestination(page, "Normal Combat");
     await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });

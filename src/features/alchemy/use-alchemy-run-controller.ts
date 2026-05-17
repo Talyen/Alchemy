@@ -7,6 +7,7 @@ import type { TalentXP } from "@/lib/talents";
 import type { HomesteadEffectManifest, MaterialInventory } from "@/lib/homestead/types";
 import type { CharacterId, DifficultyId, UnlockedTalents } from "@/lib/game-data";
 import { labyrinthModifiersToDifficulty } from "@/lib/content-systems/labyrinth/modifiers";
+import type { LabyrinthModifierKind } from "@/lib/content-systems/types";
 import { useTalentState } from "./use-talent-state";
 import { useRunState } from "./use-run-state";
 import { useBattleController } from "./use-battle-controller";
@@ -54,6 +55,8 @@ export function useAlchemyRunController({
   const [screen, setScreen] = useState<Screen>("menu");
   const [hoveredCardId, setHoveredCardId] = useState<string | null>(null);
   const [hasActiveRun, setHasActiveRun] = useState(initialActiveRun !== null);
+  const [activeLabyrinthModifiers, setActiveLabyrinthModifiers] = useState<LabyrinthModifierKind[]>([]);
+  const [activeLabyrinthRewardModifiers, setActiveLabyrinthRewardModifiers] = useState<LabyrinthModifierKind[]>([]);
 
   // ============ Screen Navigation ============
   const navTimerRef = useRef<number>(0);
@@ -127,6 +130,7 @@ export function useAlchemyRunController({
     onMarkDifficultyCompleted,
     completedDifficulties,
     labyrinthMap: labyrinth.labyrinthMap,
+    activeLabyrinthRewardModifiers,
   });
 
   function clearPermanentData() {
@@ -142,30 +146,37 @@ export function useAlchemyRunController({
 
   function handleLabyrinthNodeEnter(row: number, col: number) {
     labyrinth.enterNode(row, col, {
-      onStartBattleWithModifiers: (enemyType, modifiers) => {
-        battle.startBattle(undefined, undefined, enemyType, labyrinthModifiersToDifficulty(modifiers));
+      onStartBattleWithModifiers: (enemyType, modifiers, rewardModifiers, depth) => {
+        setActiveLabyrinthModifiers(modifiers);
+        setActiveLabyrinthRewardModifiers(rewardModifiers);
+        battle.startBattle(undefined, undefined, enemyType, labyrinthModifiersToDifficulty(modifiers), depth);
         navigateTo("battle");
       },
-      onStartBossBattleWithModifiers: (modifiers) => {
-        battle.startBossBattle(labyrinthModifiersToDifficulty(modifiers));
+      onStartBossBattleWithModifiers: (modifiers, rewardModifiers, depth) => {
+        setActiveLabyrinthModifiers(modifiers);
+        setActiveLabyrinthRewardModifiers(rewardModifiers);
+        battle.startBossBattle(labyrinthModifiersToDifficulty(modifiers), depth);
         navigateTo("battle");
-      },
-      onGrantTreasure: () => {
-        const gold = 15 + Math.floor(Math.random() * 15);
-        run.addRunGold(gold);
-        navigateTo("labyrinth-map");
       },
       onStartRest: () => {
+        setActiveLabyrinthModifiers([]);
+        setActiveLabyrinthRewardModifiers([]);
         navigateTo("campfire");
       },
       onStartMystery: () => {
-        navigateTo("mystery");
+        setActiveLabyrinthModifiers([]);
+        setActiveLabyrinthRewardModifiers([]);
+        nav.beginMysteryEvent();
       },
       onStartShop: () => {
+        setActiveLabyrinthModifiers([]);
+        setActiveLabyrinthRewardModifiers([]);
         shop.initShop();
         navigateTo("shop");
       },
       onStartAlchemist: () => {
+        setActiveLabyrinthModifiers([]);
+        setActiveLabyrinthRewardModifiers([]);
         shop.initAlchemist();
         navigateTo("alchemist");
       },
@@ -179,6 +190,8 @@ export function useAlchemyRunController({
     hasActiveBattle: battle.hasActiveBattle,
     hasActiveRun,
     labyrinthMap: labyrinth.labyrinthMap,
+    activeLabyrinthModifiers,
+    activeLabyrinthRewardModifiers,
     runDeck: run.runDeck,
     runGold: run.runGold,
     runPlayerHealth: run.runPlayerHealth,
@@ -281,6 +294,7 @@ export function useAlchemyRunController({
     beginLabyrinth: handleBeginLabyrinth,
     beginWildwood: nav.beginWildwood,
     handleLabyrinthNodeEnter,
+    handleLabyrinthEndRun: nav.endLabyrinthRun,
     handleCharacterSelect: nav.handleCharacterSelect,
     handleDifficultySelect: nav.handleDifficultySelect,
     handleBackFromDifficultySelect: nav.handleBackFromDifficultySelect,

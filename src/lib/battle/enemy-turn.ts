@@ -325,7 +325,6 @@ function processHasteEarlyTurn(state: BattleState, combatTexts: CombatTextEvent[
 
 function processStunSkipTurn(state: BattleState, combatTexts: CombatTextEvent[]) {
   const nextState = reduceSkipTurns(state);
-  mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "stun", amount: 0 });
   return tickPlayerStatuses(nextState, combatTexts);
 }
 

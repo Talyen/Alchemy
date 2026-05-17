@@ -1,0 +1,56 @@
+// Combat text aggregation tests for filtering UI-only floating number events.
+// Depends on the battle combat-text helper and type contracts.
+import { describe, expect, it } from "vitest";
+
+import { mergeCombatText, shouldShowCombatText } from "@/lib/battle/combat-text";
+import type { CombatTextEvent } from "@/lib/battle/types";
+
+function makeTexts(): CombatTextEvent[] {
+  return [];
+}
+
+describe("shouldShowCombatText", () => {
+  it("hides harmful status application text", () => {
+    expect(shouldShowCombatText({ target: "player", kind: "status", stat: "burn", amount: 2 })).toBe(false);
+    expect(shouldShowCombatText({ target: "enemy", kind: "status", stat: "poison", amount: 3 })).toBe(false);
+    expect(shouldShowCombatText({ target: "enemy", kind: "status", stat: "bleed", amount: 4 })).toBe(false);
+    expect(shouldShowCombatText({ target: "enemy", kind: "status", stat: "freeze", amount: 5 })).toBe(false);
+    expect(shouldShowCombatText({ target: "enemy", kind: "status", stat: "stun", amount: 6 })).toBe(false);
+  });
+
+  it("keeps harmful status damage text visible", () => {
+    expect(shouldShowCombatText({ target: "player", kind: "damage", stat: "burn", amount: 2 })).toBe(true);
+  });
+
+  it("keeps control notices visible", () => {
+    expect(shouldShowCombatText({ target: "enemy", kind: "notice", stat: "stun", text: "Stunned" })).toBe(true);
+    expect(shouldShowCombatText({ target: "enemy", kind: "notice", stat: "freeze", text: "Frozen" })).toBe(true);
+  });
+
+  it("keeps beneficial status and resource text visible", () => {
+    expect(shouldShowCombatText({ target: "player", kind: "status", stat: "block", amount: 5 })).toBe(true);
+    expect(shouldShowCombatText({ target: "player", kind: "status", stat: "gold", amount: 3 })).toBe(true);
+  });
+});
+
+describe("mergeCombatText", () => {
+  it("does not add harmful status application events", () => {
+    const texts = makeTexts();
+    mergeCombatText(texts, { target: "player", kind: "status", stat: "burn", amount: 2 });
+    expect(texts).toEqual([]);
+  });
+
+  it("still merges visible events", () => {
+    const texts = makeTexts();
+    mergeCombatText(texts, { target: "player", kind: "status", stat: "block", amount: 2 });
+    mergeCombatText(texts, { target: "player", kind: "status", stat: "block", amount: 3 });
+    expect(texts).toEqual([{ target: "player", kind: "status", stat: "block", amount: 5 }]);
+  });
+
+  it("deduplicates matching control notices", () => {
+    const texts = makeTexts();
+    mergeCombatText(texts, { target: "enemy", kind: "notice", stat: "stun", text: "Stunned" });
+    mergeCombatText(texts, { target: "enemy", kind: "notice", stat: "stun", text: "Stunned" });
+    expect(texts).toEqual([{ target: "enemy", kind: "notice", stat: "stun", text: "Stunned" }]);
+  });
+});

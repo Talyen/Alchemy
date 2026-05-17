@@ -1,7 +1,8 @@
 // Active-run save migration helpers for legacy or partial localStorage payloads.
 // Depends on current character/card data and the persisted active-run contract.
 import { cardLibrary, getStartingDeck, type BattleCard, type CharacterId, type DifficultyId } from "@/lib/game-data";
-import type { LabyrinthMap, LabyrinthNode, LabyrinthNodeState, LabyrinthNodeType } from "@/lib/content-systems/types";
+import type { LabyrinthMap, LabyrinthNode, LabyrinthNodeState, LabyrinthNodeType, LabyrinthModifierKind } from "@/lib/content-systems/types";
+import { ALL_LABYRINTH_MODIFIERS } from "@/lib/content-systems/labyrinth/modifiers";
 
 import type { ActiveRunData } from "../run/types";
 
@@ -19,8 +20,9 @@ type PersistedRunCandidate = Record<string, unknown> & {
 };
 
 const VALID_DIFFICULTY_IDS = ["difficulty-1", "difficulty-2", "difficulty-3"];
-const VALID_LABYRINTH_NODE_TYPES = new Set<LabyrinthNodeType>(["combat", "elite", "treasure", "rest", "mystery", "shop", "alchemist", "boss"]);
+const VALID_LABYRINTH_NODE_TYPES = new Set<LabyrinthNodeType>(["entrance", "combat", "elite", "rest", "mystery", "shop", "alchemist", "boss"]);
 const VALID_LABYRINTH_NODE_STATES = new Set<LabyrinthNodeState>(["hidden", "visible", "current", "cleared", "failed"]);
+const VALID_LABYRINTH_MODIFIER_KINDS = new Set(Object.keys(ALL_LABYRINTH_MODIFIERS) as LabyrinthModifierKind[]);
 
 function isValidDifficultyId(id: unknown): id is DifficultyId {
   return typeof id === "string" && VALID_DIFFICULTY_IDS.includes(id);
@@ -74,6 +76,13 @@ function hydrateSavedCard(savedCard: BattleCard): BattleCard {
   return { ...libraryCard, ...savedCard, art: libraryCard.art };
 }
 
+// Modifier definitions can change between builds, so persisted maps drop unknown
+// strings rather than letting stale values crash map tooltips after hydration.
+function normalizeLabyrinthModifierKinds(value: unknown): LabyrinthModifierKind[] | null {
+  if (!Array.isArray(value)) return null;
+  return value.filter((m): m is LabyrinthModifierKind => typeof m === "string" && VALID_LABYRINTH_MODIFIER_KINDS.has(m as LabyrinthModifierKind));
+}
+
 // Labyrinth maps are persisted mid-run, so corrupt/hand-edited maps are discarded
 // instead of partially repaired into impossible traversal state.
 function normalizeLabyrinthMap(value: unknown): LabyrinthMap | null {
@@ -92,6 +101,20 @@ function normalizeLabyrinthMap(value: unknown): LabyrinthMap | null {
 
   const typedGrid = grid as (LabyrinthNode | null)[][];
   if (!typedGrid[currentNode.row]?.[currentNode.col]) return null;
+  for (let row = 0; row < typedGrid.length; row += 1) {
+    for (let col = 0; col < (typedGrid[row]?.length ?? 0); col += 1) {
+      const node = typedGrid[row]?.[col];
+      if (!node) continue;
+      if (node.connections.length < 1 || node.connections.length > 3) return null;
+      for (const connection of node.connections) {
+        const target = typedGrid[connection.row]?.[connection.col];
+        if (!target) return null;
+        const dr = Math.abs(connection.row - row);
+        const dc = Math.abs(connection.col - col);
+        if (!((dr === 1 && dc === 0) || (dr === 0 && dc === 1))) return null;
+      }
+    }
+  }
 
   return {
     grid: typedGrid,
@@ -107,7 +130,9 @@ function normalizeLabyrinthNode(value: unknown): LabyrinthNode | null {
   const node = value as Record<string, unknown>;
   if (typeof node.type !== "string" || !VALID_LABYRINTH_NODE_TYPES.has(node.type as LabyrinthNodeType)) return null;
   if (typeof node.state !== "string" || !VALID_LABYRINTH_NODE_STATES.has(node.state as LabyrinthNodeState)) return null;
-  if (!Array.isArray(node.modifiers) || !node.modifiers.every((m) => typeof m === "string")) return null;
+  const modifiers = normalizeLabyrinthModifierKinds(node.modifiers);
+  if (!modifiers) return null;
+  const rewardModifiers = normalizeLabyrinthModifierKinds(node.rewardModifiers) ?? [];
   if (!Array.isArray(node.connections)) return null;
   const connections = node.connections.map((conn) => {
     if (!conn || typeof conn !== "object") return null;
@@ -118,7 +143,8 @@ function normalizeLabyrinthNode(value: unknown): LabyrinthNode | null {
   if (connections.some((conn) => conn === null)) return null;
   return {
     type: node.type as LabyrinthNodeType,
-    modifiers: node.modifiers as LabyrinthNode["modifiers"],
+    modifiers,
+    rewardModifiers,
     connections: connections as { row: number; col: number }[],
     state: node.state as LabyrinthNodeState,
     ...(typeof node.enemyId === "string" ? { enemyId: node.enemyId } : {}),

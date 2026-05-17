@@ -12,6 +12,7 @@ import {
   CorruptionScreen,
   DestinationScreen,
   DifficultySelectScreen,
+  GameModeSelectScreen,
   GameOverScreen,
   LabyrinthMapScreen,
   MenuScreen,
@@ -62,11 +63,7 @@ export function renderAlchemyScreen({
   switch (screen) {
     case "menu":
       return <MenuScreen
-        onCampaign={run.beginCampaign}
-        onLabyrinth={run.beginLabyrinth}
-        onWildwood={run.beginWildwood}
-        hasActiveCampaign={run.hasActiveRun && run.activeRunData?.contentSystemType === "campaign"}
-        hasActiveLabyrinth={run.hasActiveRun && run.activeRunData?.contentSystemType === "labyrinth"}
+        onPlay={() => run.goToScreen("game-mode-select")}
         onCollection={() => run.goToScreen("collection")}
         onOptions={() => run.goToScreen("options")}
         onHomestead={() => run.goToScreen("homestead")}
@@ -76,6 +73,15 @@ export function renderAlchemyScreen({
         isMobileLandscape={isMobileLandscape}
         hasUnspentTalents={hasUnspentTalents}
         hasAffordableHomestead={hasAffordableHomestead}
+      />;
+    case "game-mode-select":
+      return <GameModeSelectScreen
+        onSelectCampaign={run.beginCampaign}
+        onSelectLabyrinth={run.beginLabyrinth}
+        onSelectWildwood={run.beginWildwood}
+        hasActiveCampaign={run.hasActiveRun && run.activeRunData?.contentSystemType === "campaign"}
+        hasActiveLabyrinth={run.hasActiveRun && run.activeRunData?.contentSystemType === "labyrinth"}
+        onBack={() => run.goToScreen("menu")}
       />;
     case "character-select":
       return <CharacterSelectScreen onConfirm={run.handleCharacterSelect} onBack={() => run.goToScreen("menu")} />;
@@ -104,6 +110,7 @@ export function renderAlchemyScreen({
           playerShaking: run.playerShaking,
           enemyShaking: run.enemyShaking,
           companionShaking: run.companionShaking,
+          activeLabyrinthModifiers: run.activeLabyrinthModifiers,
         }}
         refs={{
           handCardRefs: run.handCardRefs,
@@ -124,6 +131,7 @@ export function renderAlchemyScreen({
       return <LabyrinthMapScreen
         labyrinthMap={run.labyrinthMap}
         onNodeClick={run.handleLabyrinthNodeEnter}
+        onOpenMenu={onOpenBattleMenu}
       />;
     case "wildwood-select":
       return <WildwoodSelectScreen onSelect={run.handleWildwoodBossSelect} onBack={() => run.goToScreen("menu")} />;
@@ -260,7 +268,7 @@ export function renderAlchemyScreen({
     case "game-over":
       return <GameOverScreen runTalentXP={run.runTalentXP} talentXP={run.talentXP} runEndMaterials={run.runEndMaterials} onMainMenu={() => run.resetRunState()} />;
     case "run-victory":
-      return <RunVictoryScreen runEndMaterials={run.runEndMaterials} onMainMenu={() => run.resetRunState()} />;
+      return <RunVictoryScreen runTalentXP={run.runTalentXP} talentXP={run.talentXP} runEndMaterials={run.runEndMaterials} onMainMenu={() => run.resetRunState()} />;
     default:
       return null;
   }

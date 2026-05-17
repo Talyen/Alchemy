@@ -11,7 +11,7 @@ import { keywordIcons } from "../config";
 import { ProgressBar, ScreenHeader } from "../ui/shared-ui";
 import { matIconMap, matPillStyle, matTextColor } from "../ui/material-icons";
 
-function KeywordProgressCard({ kw, runXP, totalXP, animate }: { kw: KeywordId; runXP: number; totalXP: number; animate: boolean }) {
+export function KeywordProgressCard({ kw, runXP, totalXP, animate }: { kw: KeywordId; runXP: number; totalXP: number; animate: boolean }) {
   const points = computeTalentPoints(totalXP);
   const nextXP = xpForNextPoint(points);
   const progress = xpToNextPoint(totalXP);

@@ -22,25 +22,25 @@ export function PaginationControls({ page, totalPages, onPageChange, size = "sm"
   );
 }
 
-export function GameMenu({ isOpen, onClose, onMainMenu, onCollection, onTalents, onHomestead, onOptions, onEndRun, anchorRect }: { isOpen: boolean; onClose: () => void; onMainMenu: () => void; onCollection: () => void; onTalents: () => void; onHomestead: () => void; onOptions: () => void; onEndRun?: () => void; anchorRect?: DOMRect | null }) {
+export function GameMenu({ isOpen, onClose, onMainMenu, onCollection, onTalents, onHomestead, onOptions, onEndRun, anchorRect, anchorPlacement = "up-left" }: { isOpen: boolean; onClose: () => void; onMainMenu: () => void; onCollection: () => void; onTalents: () => void; onHomestead: () => void; onOptions: () => void; onEndRun?: () => void; anchorRect?: DOMRect | null; anchorPlacement?: "up-left" | "down-right" }) {
   if (!isOpen) return null;
 
   const panel = (
     <div className="motion-panel alchemy-shell bg-[#0c0a07] w-full max-w-sm rounded-[26px] border border-border/80 px-4 py-5" onClick={(e) => e.stopPropagation()}>
       <div className="grid gap-2">
-        <Button variant="outline" className="justify-start border-0 bg-transparent" onClick={() => { onMainMenu(); onClose(); }}>
+        <Button variant="outline" className="justify-start border-0 bg-transparent hover:bg-white/[0.07]" onClick={() => { onMainMenu(); onClose(); }}>
           <House className="h-4 w-4" /> Main Menu
         </Button>
-        <Button variant="outline" className="justify-start border-0 bg-transparent" onClick={() => { onCollection(); onClose(); }}>
+        <Button variant="outline" className="justify-start border-0 bg-transparent hover:bg-white/[0.07]" onClick={() => { onCollection(); onClose(); }}>
           <BookOpen className="h-4 w-4" /> Collection
         </Button>
-        <Button variant="outline" className="justify-start border-0 bg-transparent" onClick={() => { onTalents(); onClose(); }}>
+        <Button variant="outline" className="justify-start border-0 bg-transparent hover:bg-white/[0.07]" onClick={() => { onTalents(); onClose(); }}>
           <WandSparkles className="h-4 w-4" /> Talents
         </Button>
-        <Button variant="outline" className="justify-start border-0 bg-transparent" onClick={() => { onHomestead(); onClose(); }}>
+        <Button variant="outline" className="justify-start border-0 bg-transparent hover:bg-white/[0.07]" onClick={() => { onHomestead(); onClose(); }}>
           <TreePine className="h-4 w-4" /> Homestead
         </Button>
-        <Button variant="outline" className="justify-start border-0 bg-transparent" onClick={() => { onOptions(); onClose(); }}>
+        <Button variant="outline" className="justify-start border-0 bg-transparent hover:bg-white/[0.07]" onClick={() => { onOptions(); onClose(); }}>
           <Cog className="h-4 w-4" /> Options
         </Button>
         {onEndRun ? (
@@ -56,14 +56,14 @@ export function GameMenu({ isOpen, onClose, onMainMenu, onCollection, onTalents,
   );
 
   if (anchorRect) {
+    const anchorStyle = anchorPlacement === "down-right"
+      ? { left: Math.max(100, Math.min((anchorRect.left + anchorRect.right) / 2, window.innerWidth - 100)), top: anchorRect.bottom + 4, transform: "translateX(-50%)" }
+      : { right: window.innerWidth - anchorRect.right + 8, bottom: window.innerHeight - anchorRect.top + 8 };
     return (
       <div className="absolute inset-0 z-[120]" onClick={onClose}>
         <div
           className="fixed z-[121]"
-          style={{
-            right: window.innerWidth - anchorRect.right + 8,
-            bottom: window.innerHeight - anchorRect.top + 8,
-          }}
+          style={anchorStyle}
         >
           {panel}
         </div>

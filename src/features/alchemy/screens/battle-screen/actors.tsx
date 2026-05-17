@@ -26,6 +26,7 @@ export function BattleActors({
     playerShaking,
     enemyShaking,
     companionShaking,
+    activeLabyrinthModifiers,
   } = feedback;
   const { playerPanelRef, enemyPanelRef } = refs;
   const isPlayerTurn = battleState.turnPhase === "player";
@@ -114,6 +115,7 @@ export function BattleActors({
           shaking={enemyShaking}
           currentEnemy={battleState.currentEnemy}
           currentEnemyAttackEffects={battleState.enemyAttackEffects}
+          activeLabyrinthModifiers={activeLabyrinthModifiers}
           cardWidthClass={actorCardWidthClass}
         />
       </div>

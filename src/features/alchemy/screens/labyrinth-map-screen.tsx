@@ -1,77 +1,318 @@
-// Labyrinth map screen — a 5×5 node grid with cardinal-direction connections.
-// Shows revealed nodes, current position, and allows traversal by clicking connected nodes.
-import { Swords, Skull, Coins, Heart, Sparkles, ShoppingCart, FlaskConical, Crown } from "lucide-react";
+// Labyrinth map screen — a simple route map with visible nodes, dotted paths,
+// and hoverable special modifier details. Depends on Labyrinth content metadata.
+import { type CSSProperties, type ReactNode, useLayoutEffect, useRef, useState } from "react";
+import { Crown, DoorOpen, FlaskConical, Heart, Menu, ShoppingCart, Skull, Sparkles, Star, Swords } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { ShineBorder } from "@/components/ui/shine-border";
 import { cn } from "@/lib/utils";
-import type { LabyrinthMap, LabyrinthNodeType } from "@/lib/content-systems/types";
+import type { LabyrinthMap, LabyrinthModifierKind, LabyrinthNodeType } from "@/lib/content-systems/types";
 import { NODE_TYPE_LABELS } from "@/lib/content-systems/labyrinth/data";
+import { ALL_LABYRINTH_MODIFIERS, REWARD_MODIFIER_KINDS } from "@/lib/content-systems/labyrinth/modifiers";
+import { ScreenHeader } from "../ui/shared-ui";
 
 type Props = {
   labyrinthMap: LabyrinthMap;
   onNodeClick: (row: number, col: number) => void;
+  onOpenMenu: (rect?: DOMRect) => void;
 };
 
-const NODE_ICONS: Record<LabyrinthNodeType, React.ReactNode> = {
-  combat: <Swords className="h-5 w-5" />,
-  elite: <Skull className="h-5 w-5" />,
-  treasure: <Coins className="h-5 w-5" />,
-  rest: <Heart className="h-5 w-5" />,
-  mystery: <Sparkles className="h-5 w-5" />,
-  shop: <ShoppingCart className="h-5 w-5" />,
-  alchemist: <FlaskConical className="h-5 w-5" />,
-  boss: <Crown className="h-5 w-5" />,
+type NodeMeta = {
+  icon: ReactNode;
+  className: string;
+  hoverBorder: string;
+  shineColors: string[];
 };
 
-export function LabyrinthMapScreen({ labyrinthMap, onNodeClick }: Props) {
+const NODE_META: Record<LabyrinthNodeType, NodeMeta> = {
+  entrance: { icon: <DoorOpen className="h-6 w-6" />, className: "bg-black text-stone-600", hoverBorder: "hover:border-stone-500", shineColors: ["#292524", "#57534e", "#a8a29e", "#44403c"] },
+  combat: { icon: <Swords className="h-6 w-6" />, className: "bg-black text-red-500", hoverBorder: "hover:border-red-500", shineColors: ["#450a0a", "#dc2626", "#f87171", "#7f1d1d"] },
+  elite: { icon: <Skull className="h-6 w-6" />, className: "bg-black text-violet-500", hoverBorder: "hover:border-violet-500", shineColors: ["#3b0764", "#9333ea", "#c084fc", "#581c87"] },
+  rest: { icon: <Heart className="h-6 w-6" />, className: "bg-black text-orange-500", hoverBorder: "hover:border-orange-500", shineColors: ["#431407", "#d97706", "#fb923c", "#78350f"] },
+  mystery: { icon: <Sparkles className="h-6 w-6" />, className: "bg-black text-zinc-400", hoverBorder: "hover:border-zinc-400", shineColors: ["#27272a", "#a1a1aa", "#e4e4e7", "#525252"] },
+  shop: { icon: <ShoppingCart className="h-6 w-6" />, className: "bg-black text-yellow-500", hoverBorder: "hover:border-yellow-500", shineColors: ["#422006", "#eab308", "#fde047", "#78350f"] },
+  alchemist: { icon: <FlaskConical className="h-6 w-6" />, className: "bg-black text-emerald-500", hoverBorder: "hover:border-emerald-500", shineColors: ["#022c22", "#10b981", "#6ee7b7", "#064e3b"] },
+  boss: { icon: <Crown className="h-7 w-7" />, className: "bg-black text-red-400", hoverBorder: "hover:border-red-400", shineColors: ["#450a0a", "#b91c1c", "#fca5a5", "#7f1d1d"] },
+};
+
+const NODE_DESCRIPTIONS: Record<LabyrinthNodeType, string> = {
+  entrance: "Where this descent began",
+  combat: "Fight a standard enemy encounter",
+  elite: "Face a stronger foe with extra danger",
+  rest: "Recover before pressing deeper",
+  mystery: "Encounter an unpredictable event",
+  shop: "Spend gold on cards and services",
+  alchemist: "Buy or mix potions",
+  boss: "Challenge the Labyrinth guardian",
+};
+
+export function LabyrinthMapScreen({ labyrinthMap, onNodeClick, onOpenMenu }: Props) {
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center gap-4 px-4 py-6">
-      <h2 className="text-xl font-semibold text-foreground">Labyrinth</h2>
-      <p className="text-sm text-muted-foreground">Choose your path through the depths</p>
+    <div className="flex h-full w-full flex-col items-center justify-center gap-4 overflow-hidden px-3 py-4 text-center sm:gap-5 sm:px-5 sm:py-6">
+      <ScreenHeader title="Labyrinth" />
+      <p className="max-w-xl text-xs uppercase tracking-[0.22em] text-amber-100 sm:text-sm">
+        Choose your path through the depths
+      </p>
 
-      <div className="flex flex-col items-center gap-3">
-        {labyrinthMap.grid.map((row, r) => (
-          <div key={r} className="flex items-center gap-3">
-            {row.map((node, c) => {
-              if (!node) return <div key={c} className="h-16 w-16" />;
+      <section
+        aria-label="Labyrinth map"
+        className="relative w-full max-w-[920px] rounded-[22px] border border-stone-500 bg-stone-950 p-4 sm:p-5"
+        style={{ "--labyrinth-node-size": "clamp(2.35rem, 4.8vw, 3.45rem)" } as CSSProperties}
+      >
+        <Button
+          variant="outline"
+          size="icon"
+          className="absolute right-4 top-4 z-30 h-9 w-9 text-amber-100 hover:text-amber-100"
+          onClick={(event) => onOpenMenu(event.currentTarget.getBoundingClientRect())}
+          aria-label="Open labyrinth menu"
+        >
+          <Menu className="h-4 w-4" />
+        </Button>
 
-              const isCurrent = node.state === "current";
-              const isVisible = node.state === "visible" || isCurrent;
-              const isCleared = node.state === "cleared";
-              const isFailed = node.state === "failed";
+        <div className="relative mx-auto aspect-[9/8] w-full max-w-[920px] p-[clamp(0.6rem,1.4vw,1rem)]">
+          <div className="relative h-full w-full">
+            <ConnectionLayer labyrinthMap={labyrinthMap} />
 
+            {labyrinthMap.grid.map((row, r) =>
+              row.map((node, c) => node ? (
+                <LabyrinthNodeButton key={`${r}-${c}`} row={r} col={c} node={node} labyrinthMap={labyrinthMap} onNodeClick={onNodeClick} />
+              ) : null),
+            )}
+          </div>
+        </div>
+
+      </section>
+    </div>
+  );
+}
+
+function LabyrinthNodeButton({
+  row,
+  col,
+  node,
+  labyrinthMap,
+  onNodeClick,
+}: {
+  row: number;
+  col: number;
+  node: NonNullable<LabyrinthMap["grid"][number][number]>;
+  labyrinthMap: LabyrinthMap;
+  onNodeClick: (row: number, col: number) => void;
+}) {
+  const isCleared = node.state === "cleared";
+  const isFailed = node.state === "failed";
+  const isCurrent = node.state === "current";
+  const connectedToCurrent = Boolean(labyrinthMap.grid[labyrinthMap.currentNode.row]?.[labyrinthMap.currentNode.col]?.connections.some(
+    (connection) => connection.row === row && connection.col === col,
+  ));
+  const isEnterable = node.state === "visible" && connectedToCurrent;
+  const meta = NODE_META[node.type];
+
+  return (
+    <div
+      className="group/node absolute z-10 group-hover/node:z-50 flex h-[var(--labyrinth-node-size)] w-[var(--labyrinth-node-size)] -translate-x-1/2 -translate-y-1/2 items-center justify-center"
+      style={{ ...positionStyle(row, col, labyrinthMap.rows, labyrinthMap.cols), willChange: "transform" }}
+    >
+      <button
+        type="button"
+        disabled={!isEnterable}
+        aria-label={getNodeAriaLabel(node.type, node.state, node.modifiers.length, isEnterable)}
+        onClick={() => onNodeClick(row, col)}
+        className={cn(
+          "relative flex aspect-square h-full w-full items-center justify-center rounded-full border-2 text-xs transition-[transform,border-color] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-950",
+          meta.className,
+          isCurrent && "border-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.5)]",
+          isEnterable && "hover:-translate-y-0.5 active:scale-95",
+          isCleared && "border-emerald-200 opacity-30",
+          isFailed && "border-red-400 opacity-30",
+          !isEnterable && "cursor-default border-2 border-white/20",
+        )}
+      >
+        {isEnterable ? <ShineBorder borderWidth={2} duration={10} shineColor={meta.shineColors} /> : null}
+        <span className="relative z-10">{isCurrent ? <Star className="h-6 w-6 text-amber-400" /> : meta.icon}</span>
+      </button>
+
+      <NodeTooltip type={node.type} modifiers={node.modifiers} rewardModifiers={node.rewardModifiers} />
+    </div>
+  );
+}
+
+function ConnectionLayer({ labyrinthMap }: { labyrinthMap: LabyrinthMap }) {
+  const connections = getUniqueConnections(labyrinthMap);
+  return (
+    <svg className="pointer-events-none absolute inset-0 z-0 h-full w-full overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+      {connections.map((connection) => {
+        const from = pointFor(connection.from.row, connection.from.col, labyrinthMap.rows, labyrinthMap.cols);
+        const to = pointFor(connection.to.row, connection.to.col, labyrinthMap.rows, labyrinthMap.cols);
+        const trimmed = trimLine(from, to, 3.35);
+        return (
+          <line
+            key={`${connection.from.row}-${connection.from.col}-${connection.to.row}-${connection.to.col}`}
+            x1={trimmed.from.x}
+            y1={trimmed.from.y}
+            x2={trimmed.to.x}
+            y2={trimmed.to.y}
+            stroke="#333"
+            strokeWidth="0.3"
+            strokeLinecap="round"
+          />
+        );
+      })}
+    </svg>
+  );
+}
+
+function NodeTooltip({ type, modifiers, rewardModifiers }: { type: LabyrinthNodeType; modifiers: LabyrinthModifierKind[]; rewardModifiers: LabyrinthModifierKind[] }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [flip, setFlip] = useState(false);
+  const [dx, setDx] = useState(0);
+
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+
+    if (rect.top < 0) setFlip(true);
+
+    const padding = 8;
+    let horizontalShift = 0;
+    if (rect.left < 0) {
+      horizontalShift = -rect.left + padding;
+    } else if (rect.right > window.innerWidth) {
+      horizontalShift = window.innerWidth - rect.right - padding;
+    }
+    if (horizontalShift !== 0) setDx(horizontalShift);
+  }, []);
+
+  const enemyModifiers = modifiers.filter((m) => !REWARD_MODIFIER_KINDS.has(m));
+  return (
+    <div
+      ref={ref}
+      className={cn(
+        "pointer-events-none absolute left-1/2 z-50 w-64 -translate-x-1/2 rounded-xl border border-amber-100/20 bg-stone-950 p-3 text-left opacity-0 transition-all duration-150 group-hover/node:opacity-100 group-focus-within/node:opacity-100",
+        flip
+          ? "top-[calc(100%+0.75rem)] -translate-y-1 group-hover/node:translate-y-0 group-focus-within/node:translate-y-0"
+          : "bottom-[calc(100%+0.75rem)] translate-y-1 group-hover/node:translate-y-0 group-focus-within/node:translate-y-0",
+      )}
+      style={dx !== 0 ? { marginLeft: dx } as CSSProperties : undefined}>
+      <p className="text-sm font-black uppercase tracking-[0.2em] text-amber-100/80">{NODE_TYPE_LABELS[type]}</p>
+      <p className="mt-1 text-xs leading-snug text-stone-300">{highlightKeywords(NODE_DESCRIPTIONS[type])}</p>
+      {enemyModifiers.length > 0 ? (
+        <>
+          <p className="mb-2 mt-3 text-[10px] font-black uppercase tracking-[0.2em] text-red-400">Enemy Modifiers</p>
+          <div className="grid gap-2">
+            {enemyModifiers.map((modifier) => {
+              const definition = ALL_LABYRINTH_MODIFIERS[modifier];
               return (
-                <button
-                  key={c}
-                  type="button"
-                  disabled={!isVisible || isCleared || isFailed}
-                  onClick={() => onNodeClick(r, c)}
-                  className={cn(
-                    "flex h-16 w-16 flex-col items-center justify-center rounded-lg border text-xs transition-all",
-                    isCurrent && "border-primary bg-primary/20 ring-2 ring-primary scale-110",
-                    isVisible && !isCurrent && !isCleared && !isFailed && "border-border bg-card/60 hover:border-muted-foreground/40 hover:bg-card/80 cursor-pointer",
-                    isCleared && "border-border/30 bg-card/30 opacity-50",
-                    isFailed && "border-red-900/50 bg-red-950/20 opacity-40",
-                    !isVisible && "border-transparent",
-                  )}
-                >
-                  {isVisible ? (
-                    <>
-                      <div className={cn(isCleared && "opacity-40", isFailed && "opacity-40")}>
-                        {NODE_ICONS[node.type]}
-                      </div>
-                      <span className="mt-0.5 text-[10px] leading-none text-muted-foreground">
-                        {NODE_TYPE_LABELS[node.type]}
-                      </span>
-                      {node.modifiers.length > 0 && (
-                        <span className="text-[8px] text-yellow-500">+{node.modifiers.length}</span>
-                      )}
-                    </>
-                  ) : null}
-                </button>
+                <div key={modifier} className="rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-2">
+                  <p className="text-xs font-bold text-amber-100">{definition.label}</p>
+                  <p className="mt-0.5 text-xs leading-snug text-stone-300">{highlightKeywords(definition.description)}</p>
+                </div>
               );
             })}
           </div>
-        ))}
-      </div>
+        </>
+      ) : null}
+      {rewardModifiers.length > 0 ? (
+        <>
+          <p className="mb-2 mt-3 text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400">Reward Modifiers</p>
+          <div className="grid gap-2">
+            {rewardModifiers.map((modifier) => {
+              const definition = ALL_LABYRINTH_MODIFIERS[modifier];
+              return (
+                <div key={modifier} className="rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-2">
+                  <p className="text-xs font-bold text-amber-100">{definition.label}</p>
+                  <p className="mt-0.5 text-xs leading-snug text-stone-300">{highlightKeywords(definition.description)}</p>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      ) : null}
     </div>
   );
+}
+
+// Wraps known game keywords in description text with a colored span.
+const KEYWORD_COLORS: Record<string, string> = {
+  Armor: "text-amber-400",
+  Health: "text-green-400",
+  Burn: "text-orange-400",
+  Gold: "text-yellow-400",
+  Trinket: "text-cyan-400",
+  Companion: "text-pink-400",
+  Potion: "text-emerald-400",
+  Guardian: "text-red-400",
+  Materials: "text-stone-400",
+};
+
+function highlightKeywords(text: string): ReactNode {
+  const words = text.split(/(\s+)/);
+  return words.map((word, index) => {
+    const clean = word.replace(/[^a-zA-Z]/g, "");
+    const color = KEYWORD_COLORS[clean] ?? KEYWORD_COLORS[`${clean}s`] ?? KEYWORD_COLORS[`${clean}ing`];
+    if (color) {
+      return <span key={index} className={`${color} font-semibold`}>{word}</span>;
+    }
+    return word;
+  });
+}
+
+function getNodeAriaLabel(type: LabyrinthNodeType, state: string, modifierCount: number, isEnterable: boolean) {
+  const label = NODE_TYPE_LABELS[type];
+  const modifiers = modifierCount === 0 ? "no special modifiers" : `${modifierCount} special ${modifierCount === 1 ? "modifier" : "modifiers"}`;
+  return `${label} chamber, ${state}, ${modifiers}${isEnterable ? ", enterable" : ""}`;
+}
+
+function getUniqueConnections(map: LabyrinthMap) {
+  const seen = new Set<string>();
+  const result: { from: { row: number; col: number }; to: { row: number; col: number } }[] = [];
+  for (let row = 0; row < map.rows; row += 1) {
+    for (let col = 0; col < map.cols; col += 1) {
+      const node = map.grid[row]?.[col];
+      if (!node) continue;
+      for (const connection of node.connections) {
+        const keyA = `${row},${col}`;
+        const keyB = `${connection.row},${connection.col}`;
+        const key = keyA < keyB ? `${keyA}-${keyB}` : `${keyB}-${keyA}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        result.push({ from: { row, col }, to: connection });
+      }
+    }
+  }
+  return result;
+}
+
+function pointFor(row: number, col: number, rows: number, cols: number) {
+  const position = positionFor(row, col, rows, cols);
+  return {
+    x: position.left,
+    y: position.top,
+  };
+}
+
+function positionStyle(row: number, col: number, rows: number, cols: number): CSSProperties {
+  const position = positionFor(row, col, rows, cols);
+  return { left: `${position.left}%`, top: `${position.top}%` };
+}
+
+function positionFor(row: number, col: number, rows: number, cols: number) {
+  const gutter = 4.5;
+  return {
+    left: gutter + (col * (100 - gutter * 2)) / Math.max(1, cols - 1),
+    top: gutter + (row * (100 - gutter * 2)) / Math.max(1, rows - 1),
+  };
+}
+
+function trimLine(from: { x: number; y: number }, to: { x: number; y: number }, amount: number) {
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const length = Math.hypot(dx, dy) || 1;
+  const ux = dx / length;
+  const uy = dy / length;
+  return {
+    from: { x: from.x + ux * amount, y: from.y + uy * amount },
+    to: { x: to.x - ux * amount, y: to.y - uy * amount },
+  };
 }

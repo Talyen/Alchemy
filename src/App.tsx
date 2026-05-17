@@ -318,6 +318,7 @@ export default function App() {
               <GameMenu
                 isOpen={gameMenuOpen}
                 anchorRect={menuAnchorRect}
+                anchorPlacement={renderedScreen === "labyrinth-map" ? "down-right" : "up-left"}
                 onClose={() => {
                   setGameMenuOpen(false);
                   setMenuAnchorRect(null);
@@ -328,6 +329,7 @@ export default function App() {
                 onHomestead={() => run.goToScreen("homestead")}
                 onOptions={() => run.goToScreen("options")}
                 {...(renderedScreen === "battle" ? { onEndRun: run.handleEndRun } : {})}
+                {...(renderedScreen === "labyrinth-map" ? { onEndRun: run.handleLabyrinthEndRun } : {})}
               />
             </div>
           </div>

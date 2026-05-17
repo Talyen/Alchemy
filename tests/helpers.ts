@@ -1,5 +1,31 @@
 import { expect, test, type Page } from "@playwright/test";
 
+type GameMode = "campaign" | "labyrinth" | "wildwood";
+
+const GAME_MODE_TITLES: Record<GameMode, string> = {
+  campaign: "The Campaign",
+  labyrinth: "The Labyrinth",
+  wildwood: "The Wildwoods",
+};
+
+// Opens the mode picker from the main menu; game mode buttons live one screen past Play.
+export async function openGameModeSelect(page: Page) {
+  await page.getByRole("button", { name: "Play", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Choose Your Adventure" })).toBeVisible({ timeout: 5000 });
+}
+
+// Selects a mode card and presses the footer action, which is Play for fresh runs
+// and Resume when the selected mode has persisted progress.
+export async function selectGameMode(page: Page, mode: GameMode, action: "Play" | "Resume" = "Play") {
+  await openGameModeSelect(page);
+  await page.getByRole("button", { name: new RegExp(GAME_MODE_TITLES[mode]) }).click();
+  await page.getByRole("button", { name: action, exact: true }).click();
+}
+
+export async function resumeGameMode(page: Page, mode: Exclude<GameMode, "wildwood"> = "campaign") {
+  await selectGameMode(page, mode, "Resume");
+}
+
 // Injects a save state and navigates directly to the destination choice screen,
 // bypassing the startRun + skipAndReward dance. Saves ~10s per test.
 // The run lands with the given overrides applied to the default Knight run state.
@@ -21,7 +47,7 @@ export async function startAtDestination(page: Page, overrides: Record<string, u
     ...overrides,
   });
   await page.goto("/");
-  await page.getByRole("button", { name: "Resume Run" }).click();
+  await resumeGameMode(page, "campaign");
   await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 10000 });
 }
 
@@ -29,6 +55,7 @@ export async function injectSaveState(page: Page, overrides: Record<string, unkn
   await page.addInitScript((data) => {
     const SAVE_KEY = "alchemy-save-v1";
     const save = JSON.parse(localStorage.getItem(SAVE_KEY) || "{}");
+    const { discoveredCardIds, encounteredEnemyIds, discoveredTrinketIds, ...activeRunData } = data;
     save.activeRun = {
       characterId: "knight",
       runDeck: [],
@@ -40,8 +67,11 @@ export async function injectSaveState(page: Page, overrides: Record<string, unkn
       destinationIndexInAct: 0,
       completedDestinations: [],
       runTrinkets: [],
-      ...data,
+      ...activeRunData,
     };
+    if (Array.isArray(discoveredCardIds)) save.discoveredCardIds = discoveredCardIds;
+    if (Array.isArray(encounteredEnemyIds)) save.encounteredEnemyIds = encounteredEnemyIds;
+    if (Array.isArray(discoveredTrinketIds)) save.discoveredTrinketIds = discoveredTrinketIds;
     if (!Array.isArray(save.discoveredCardIds) || save.discoveredCardIds.length === 0) {
       save.discoveredCardIds = [
         "slash", "bash", "block", "anvil", "plate-mail", "apple", "meteor", "blessed-aegis",
@@ -55,7 +85,7 @@ export async function injectSaveState(page: Page, overrides: Record<string, unkn
 // Novice difficulty is the default and skips the difficulty select screen for first-time players.
 export async function startRun(page: Page, character: "Knight" | "Ranger" | "Rogue" | "Wizard" = "Knight") {
   await page.goto("/");
-  await page.getByRole("button", { name: "Campaign" }).click();
+  await selectGameMode(page, "campaign");
   await page.getByRole("button", { name: character }).click();
   await page.getByRole("button", { name: "Continue" }).click();
   await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });
@@ -73,6 +103,11 @@ export async function skipAndReward(page: Page) {
 // advanced through automatically.
 export async function navigateToDestination(page: Page, name: string) {
   for (let attempt = 0; attempt < 10; attempt++) {
+    const leaveButton = page.getByRole("button", { name: "Leave" });
+    if (await leaveButton.isVisible({ timeout: 500 }).catch(() => false)) {
+      await leaveButton.click({ force: true });
+      await page.waitForTimeout(300);
+    }
     await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 10000 });
     const target = page.getByRole("button", { name });
     if (await target.isVisible({ timeout: 500 }).catch(() => false)) {
@@ -87,9 +122,17 @@ export async function navigateToDestination(page: Page, name: string) {
     } else {
       await page.getByRole("button").last().click();
       await page.waitForTimeout(500);
+      const leaveAfterEntry = page.getByRole("button", { name: "Leave" });
+      if (await leaveAfterEntry.isVisible({ timeout: 500 }).catch(() => false)) {
+        await leaveAfterEntry.click({ force: true });
+        await page.waitForTimeout(300);
+        continue;
+      }
       const cont = page.getByRole("button", { name: "Continue" });
       if (await cont.isVisible({ timeout: 2000 }).catch(() => false)) {
         await cont.click();
+        await page.waitForTimeout(300);
+        continue;
       } else {
         const choiceBtn = page.locator("button").filter({ hasNotText: /Cancel|Menu|Remove Card|Previous|Next/ }).first();
         if (await choiceBtn.isVisible({ timeout: 1000 }).catch(() => false)) {
@@ -117,8 +160,8 @@ export async function playUntilVictory(page: Page) {
   for (let turn = 0; turn < 12; turn += 1) {
     if (await victoryHeading.isVisible().catch(() => false)) return;
 
-    while ((await page.locator('[aria-label^="Play "]').count()) > 0) {
-      const card = page.locator('[aria-label^="Play "]').first();
+    while ((await page.locator('[aria-label^="Play "]:visible').count()) > 0) {
+      const card = page.locator('[aria-label^="Play "]:visible').first();
       if (!(await card.isEnabled({ timeout: 500 }).catch(() => false))) break;
       await card.click({ force: true });
       await page.waitForTimeout(220);
@@ -128,7 +171,7 @@ export async function playUntilVictory(page: Page) {
 
     if (await victoryHeading.isVisible().catch(() => false)) return;
 
-    await expect(page.locator('[aria-label^="Play "]').first()).toBeEnabled({ timeout: 8000 }).catch(async (e) => {
+    await expect(page.locator('[aria-label^="Play "]:visible').first()).toBeEnabled({ timeout: 8000 }).catch(async (e) => {
       if (await victoryHeading.isVisible().catch(() => false)) return;
       throw e;
     });

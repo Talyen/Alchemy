@@ -74,9 +74,9 @@ function rollBonuses(table: EnemyLootTable): MaterialInventory {
   return result;
 }
 
-// Apply enemy-type multiplier to loot: elites get 2x, bosses get 3x.
+// Apply enemy-type multiplier to loot: elites get 1.3x, bosses get 3x.
 function applyTypeMultiplier(loot: MaterialInventory, enemyType: string): MaterialInventory {
-  const mul = enemyType === "boss" ? 3 : enemyType === "elite" ? 2 : 1;
+  const mul = enemyType === "boss" ? 3 : enemyType === "elite" ? 1.3 : 1;
   if (mul === 1) return loot;
   const result = { ...loot };
   for (const mat of Object.keys(result) as MaterialId[]) {

@@ -1,9 +1,10 @@
 // Labyrinth controller — owns map state, node traversal, and entry routing for
 // labyrinth content system runs. Used by the alchemy controller to manage screen
 // transitions distinct from the campaign's act/destination flow.
-import { useCallback, useState } from "react";
-import { generateLabyrinthMap, failNode, withCurrentNode } from "@/lib/content-systems/labyrinth/map-generation";
-import type { LabyrinthMap } from "@/lib/content-systems/types";
+import { useCallback, useRef, useState } from "react";
+import { generateLabyrinthMap, withCurrentNode } from "@/lib/content-systems/labyrinth/map-generation";
+import { LABYRINTH_COLS } from "@/lib/content-systems/labyrinth/data";
+import type { LabyrinthMap, LabyrinthModifierKind } from "@/lib/content-systems/types";
 
 export type LabyrinthController = {
   labyrinthMap: LabyrinthMap;
@@ -14,9 +15,8 @@ export type LabyrinthController = {
 };
 
 export type LabyrinthNodeHandlers = {
-  onStartBattleWithModifiers: (enemyType: "normal" | "elite", modifiers: string[]) => void;
-  onStartBossBattleWithModifiers: (modifiers: string[]) => void;
-  onGrantTreasure: () => void;
+  onStartBattleWithModifiers: (enemyType: "normal" | "elite", modifiers: LabyrinthModifierKind[], rewardModifiers: LabyrinthModifierKind[], depth: number) => void;
+  onStartBossBattleWithModifiers: (modifiers: LabyrinthModifierKind[], rewardModifiers: LabyrinthModifierKind[], depth: number) => void;
   onStartRest: () => void;
   onStartMystery: () => void;
   onStartShop: () => void;
@@ -25,8 +25,10 @@ export type LabyrinthNodeHandlers = {
 
 export function useLabyrinthController(initialMap: LabyrinthMap | null = null): LabyrinthController {
   const [labyrinthMap, setLabyrinthMap] = useState<LabyrinthMap>(() => initialMap ?? generateLabyrinthMap());
+  const pendingNodeRef = useRef<{ row: number; col: number } | null>(null);
 
   const resetMap = useCallback(() => {
+    pendingNodeRef.current = null;
     setLabyrinthMap(generateLabyrinthMap());
   }, []);
 
@@ -34,21 +36,20 @@ export function useLabyrinthController(initialMap: LabyrinthMap | null = null): 
     const node = labyrinthMap.grid[row]?.[col];
     if (!node || !canEnterLabyrinthNode(labyrinthMap, row, col)) return;
 
-    setLabyrinthMap((prev) => withCurrentNode(prev, row, col));
+    pendingNodeRef.current = { row, col };
 
     switch (node.type) {
       case "combat":
       case "elite": {
         const enemyType = node.type === "elite" ? "elite" : "normal";
-        handlers.onStartBattleWithModifiers(enemyType, node.modifiers);
+        handlers.onStartBattleWithModifiers(enemyType, node.modifiers, node.rewardModifiers, row);
         break;
       }
       case "boss": {
-        handlers.onStartBossBattleWithModifiers(node.modifiers);
+        handlers.onStartBossBattleWithModifiers(node.modifiers, node.rewardModifiers, row);
         break;
       }
-      case "treasure": {
-        handlers.onGrantTreasure();
+      case "entrance": {
         break;
       }
       case "rest": {
@@ -71,32 +72,61 @@ export function useLabyrinthController(initialMap: LabyrinthMap | null = null): 
   }, [labyrinthMap]);
 
   const onNodeCleared = useCallback(() => {
+    const pending = pendingNodeRef.current;
+    pendingNodeRef.current = null;
+    if (!pending) return;
+
     setLabyrinthMap((prev) => {
-      const next = { ...prev, grid: prev.grid.map((r) => r.map((n) => (n ? { ...n } : n))) };
-      const node = next.grid[next.currentNode.row]?.[next.currentNode.col];
-      if (node && node.state === "current") {
-        node.state = "cleared";
+      const next = withCurrentNode(prev, pending.row, pending.col);
+      const cleared = next.grid[pending.row]?.[pending.col];
+      if (cleared && cleared.state === "current") {
+        cleared.state = "cleared";
       }
       return next;
     });
   }, []);
 
   const onNodeFailed = useCallback(() => {
-    setLabyrinthMap((prev) => {
-      const next = { ...prev, grid: prev.grid.map((r) => r.map((n) => (n ? { ...n } : n))) };
-      failNode(next, next.currentNode.row, next.currentNode.col);
-      return next;
-    });
+    const pending = pendingNodeRef.current;
+    pendingNodeRef.current = null;
+    if (!pending) return;
+
+    setLabyrinthMap((prev) => failPendingLabyrinthNode(prev, pending));
   }, []);
 
   return { labyrinthMap, enterNode, onNodeCleared, onNodeFailed, resetMap };
 }
 
-// The first Labyrinth node starts as current but still represents the opening
-// combat; later current nodes have already been entered and should not re-fire.
+// Failure returns the player to the entrance and clears any previous current marker
+// so the map never renders multiple active positions after a lost encounter.
+export function failPendingLabyrinthNode(map: LabyrinthMap, pending: { row: number; col: number }): LabyrinthMap {
+  const next: LabyrinthMap = {
+    ...map,
+    grid: map.grid.map((r) => r.map((n) => (n ? { ...n, connections: [...n.connections] } : n))),
+  };
+  for (const row of next.grid) {
+    for (const node of row) {
+      if (node?.state === "current") node.state = "cleared";
+    }
+  }
+  const failed = next.grid[pending.row]?.[pending.col];
+  if (failed) failed.state = "failed";
+  const startCol = Math.floor(LABYRINTH_COLS / 2);
+  const start = next.grid[0]?.[startCol];
+  if (start && start.state !== "failed") {
+    start.state = "current";
+    next.currentNode = { row: 0, col: startCol };
+  }
+  return next;
+}
+
+// Labyrinth traversal is graph-based: only visible nodes connected to the current
+// position can be entered, while the current entrance/chamber itself cannot replay.
 export function canEnterLabyrinthNode(map: LabyrinthMap, row: number, col: number): boolean {
   const node = map.grid[row]?.[col];
   if (!node) return false;
-  if (node.state === "visible") return true;
-  return row === 0 && col === 2 && node.state === "current" && node.type === "combat";
+  const current = map.grid[map.currentNode.row]?.[map.currentNode.col];
+  const connectedToCurrent = Boolean(current?.connections.some((connection) => connection.row === row && connection.col === col));
+  if (node.state === "visible") return connectedToCurrent;
+  return false;
 }

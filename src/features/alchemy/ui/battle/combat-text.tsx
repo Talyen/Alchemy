@@ -66,7 +66,7 @@ function CombatTextBubble({ entry, side }: { entry: FloatingCombatText; side: "p
       exit={{ opacity: 0, transition: { duration: 0.1 } }}
     >
       {createElement(icon, { className: "h-[30px] w-[30px]" })}
-      <span>{entry.signedAmountText}</span>
+      <span>{entry.displayText}</span>
     </motion.div>
   );
 }

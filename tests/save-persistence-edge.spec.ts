@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { injectSaveState } from "./helpers";
+import { injectSaveState, openGameModeSelect, resumeGameMode } from "./helpers";
 
 test.describe("Save Persistence Edge Cases", () => {
   test("resume run restores exact state after reload", async ({ page }) => {
@@ -25,8 +25,10 @@ test.describe("Save Persistence Edge Cases", () => {
     expect(savedBefore.currentAct).toBe(1);
     expect(savedBefore.destinationIndexInAct).toBe(2);
 
-    await expect(page.getByRole("button", { name: "Resume Run" })).toBeVisible({ timeout: 5000 });
-    await page.getByRole("button", { name: "Resume Run" }).click();
+    await openGameModeSelect(page);
+    await page.getByRole("button", { name: /The Campaign/ }).click();
+    await expect(page.getByRole("button", { name: "Resume" })).toBeVisible({ timeout: 5000 });
+    await page.getByRole("button", { name: "Resume" }).click();
     await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 10000 });
 
     const savedAfter = await page.evaluate(() => {
@@ -48,11 +50,10 @@ test.describe("Save Persistence Edge Cases", () => {
     });
     await page.goto("/");
 
-    // After reload: player sees "Resume Run" and clicks it
-    await page.getByRole("button", { name: "Resume Run" }).click();
+    await resumeGameMode(page, "campaign");
 
     // Should land on destination screen, NOT battle
     await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 10000 });
-    expect(page.locator('[aria-label^="Play "]')).toHaveCount(0);
+    await expect(page.locator('[aria-label^="Play "]')).toHaveCount(0);
   });
 });

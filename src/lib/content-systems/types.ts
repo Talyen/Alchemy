@@ -6,9 +6,9 @@ export type ContentSystemId = "campaign" | "labyrinth" | "wildwood";
 // ============ Labyrinth ============
 
 export type LabyrinthNodeType =
+  | "entrance"
   | "combat"
   | "elite"
-  | "treasure"
   | "rest"
   | "mystery"
   | "shop"
@@ -21,7 +21,12 @@ export type LabyrinthModifierKind =
   | "burning-ground"
   | "overwhelming"
   | "leeching"
-  | "null-field";
+  | "null-field"
+  | "collector"
+  | "generous"
+  | "alchemist"
+  | "scavenger"
+  | "companion";
 
 export type LabyrinthModifier = {
   kind: LabyrinthModifierKind;
@@ -34,6 +39,7 @@ export type LabyrinthNodeState = "hidden" | "visible" | "current" | "cleared" | 
 export type LabyrinthNode = {
   type: LabyrinthNodeType;
   modifiers: LabyrinthModifierKind[];
+  rewardModifiers: LabyrinthModifierKind[];
   connections: { row: number; col: number }[];
   state: LabyrinthNodeState;
   enemyId?: string;

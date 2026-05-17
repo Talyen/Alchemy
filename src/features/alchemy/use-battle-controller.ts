@@ -103,12 +103,13 @@ export function useBattleController({
     gold: number = run.runGold,
     enemyType: "normal" | "elite" = "normal",
     modifiers?: DifficultyModifier[],
+    scalingDepth?: number,
   ) {
-    beginBattle(getCurrentEnemy(enemyType), deck, gold, modifiers);
+    beginBattle(getCurrentEnemy(enemyType), deck, gold, modifiers, scalingDepth);
   }
 
-  function startBossBattle(modifiers?: DifficultyModifier[]) {
-    beginBattle(getBossEnemy(run.currentAct), run.runDeck, run.runGold, modifiers);
+  function startBossBattle(modifiers?: DifficultyModifier[], scalingDepth?: number) {
+    beginBattle(getBossEnemy(run.currentAct), run.runDeck, run.runGold, modifiers, scalingDepth);
   }
 
   function startBossById(bossId: string, modifiers?: DifficultyModifier[]) {
@@ -116,13 +117,13 @@ export function useBattleController({
     if (boss) beginBattle(boss, run.runDeck, run.runGold, modifiers);
   }
 
-  function beginBattle(enemy: BestiaryEntry, deck: BattleCard[], gold: number, modifiers?: DifficultyModifier[]) {
+  function beginBattle(enemy: BestiaryEntry, deck: BattleCard[], gold: number, modifiers?: DifficultyModifier[], scalingDepth?: number) {
     // Battle setup batches start-heal trinkets, room count, ghost cleanup, immutable
     // state creation, and bestiary discovery so the first battle render is coherent.
     applyGrovesFavorHeal();
     run.setRoomsEncountered((p) => p + 1);
     clearCardGhosts();
-    setBattleState(createBattleForEnemy(enemy, deck, gold, modifiers));
+    setBattleState(createBattleForEnemy(enemy, deck, gold, modifiers, scalingDepth));
     setHasActiveBattle(true);
     setEncounteredEnemyIds((current) => appendUnique(current, enemy.id));
   }
@@ -132,7 +133,7 @@ export function useBattleController({
     if (grovesHeal > 0) run.setRunPlayerHealth((p) => Math.min(run.runMaxHealth, p + grovesHeal));
   }
 
-  function createBattleForEnemy(enemy: BestiaryEntry, deck: BattleCard[], gold: number, modifiers?: DifficultyModifier[]) {
+  function createBattleForEnemy(enemy: BestiaryEntry, deck: BattleCard[], gold: number, modifiers?: DifficultyModifier[], scalingDepth?: number) {
     // Talent and homestead bonuses are merged before state creation so the battle engine
     // reads one precomputed manifest instead of consulting React/controller state mid-fight.
     const mergedEffects = mergeIntoManifest(talents.talentEffects, homesteadEffectsRef.current);
@@ -149,7 +150,7 @@ export function useBattleController({
       discoveredCardIds,
       run.runMaxHealth,
       run.runTrinkets,
-      run.destinationIndexInAct,
+      scalingDepth ?? run.destinationIndexInAct,
       run.currentAct,
       activeModifiers,
     );

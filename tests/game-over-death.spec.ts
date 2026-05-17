@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { injectSaveState, navigateToDestination, startRun } from "./helpers";
+import { injectSaveState, navigateToDestination, resumeGameMode, startRun } from "./helpers";
 
 test.describe("Game Over via Death", () => {
   test("taking fatal damage in battle shows game over screen", async ({ page }) => {
@@ -9,7 +9,7 @@ test.describe("Game Over via Death", () => {
     await expect(page.getByRole("heading", { name: "Defeat" })).toBeVisible({ timeout: 5000 });
     await expect(page.getByRole("button", { name: "Return to Main Menu" })).toBeVisible();
     await page.getByRole("button", { name: "Return to Main Menu" }).click();
-    await expect(page.getByRole("button", { name: "Campaign" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Play" })).toBeVisible();
   });
 
   test("natural death via HP depletion from enemy damage", async ({ page }) => {
@@ -18,7 +18,7 @@ test.describe("Game Over via Death", () => {
       runMaxHealth: 30,
     });
     await page.goto("/");
-    await page.getByRole("button", { name: "Resume Run" }).click();
+    await resumeGameMode(page, "campaign");
 
     await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 10000 });
     await navigateToDestination(page, "Normal Combat");

@@ -254,6 +254,7 @@ describe("applyDamageStatuses", () => {
     const result = applyDamageStatuses(state, effect, 5, texts);
     expect(result.enemyStatuses.stun).toBe(0);
     expect(result.enemyStunSkipTurns).toBe(1);
+    expect(texts).toContainEqual({ target: "enemy", kind: "notice", stat: "stun", text: "Stunned" });
   });
 
   it("freeze adds to freeze stack", () => {
@@ -266,9 +267,11 @@ describe("applyDamageStatuses", () => {
   it("freeze triggers skip when above threshold", () => {
     const state = baseState({ enemyHealth: 30, enemyMaxHealth: 30, enemyStatuses: { ...baseState().enemyStatuses, freeze: 15 } });
     const effect = { kind: "damage" as const, damageType: "freeze" as const, amount: 10 };
-    const result = applyDamageStatuses(state, effect, 10, []);
+    const texts = makeTexts();
+    const result = applyDamageStatuses(state, effect, 10, texts);
     expect(result.enemyStatuses.freeze).toBe(0);
     expect(result.enemyFreezeSkipTurns).toBe(1);
+    expect(texts).toContainEqual({ target: "enemy", kind: "notice", stat: "freeze", text: "Frozen" });
   });
 
   it("freeze skip adds freezeDurationExtension", () => {

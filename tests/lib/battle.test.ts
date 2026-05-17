@@ -7,7 +7,7 @@ import { companionLibrary, enemyBestiary } from "@/lib/game-data";
 import type { BattleCard, BestiaryEntry, DifficultyModifier } from "@/lib/game-data";
 import type { BattleState, CombatTextEvent } from "@/lib/battle/types";
 import { addEnemyStatus, clampHealth, isNullFieldActive, isPlayerDefeated } from "@/lib/battle/types";
-import { MAX_PLAYER_HEALTH, MAX_HAND_SIZE, BASE_PLAYER_MANA, LABYRINTH_STURDY_MULTIPLIER, LABYRINTH_BURNING_GROUND_DAMAGE, LABYRINTH_LEECH_HEAL } from "@/lib/game-constants";
+import { MAX_PLAYER_HEALTH, MAX_HAND_SIZE, BASE_PLAYER_MANA, LABYRINTH_STURDY_MULTIPLIER, LABYRINTH_BURNING_GROUND_DAMAGE, LABYRINTH_LEECH_HEAL, IRON_HIDE_ARMOR_PER_TURN, FORGE_REGENERATION_PER_TURN } from "@/lib/game-constants";
 import { clamp } from "@/lib/utils";
 import { defaultTrinketEffects, computeTrinketManifest } from "@/lib/trinkets";
 import { defaultBattleState } from "@/lib/battle/draw";
@@ -237,6 +237,12 @@ describe("getEnemyDamageMultiplier", () => {
     const state = makeState({ currentEnemy: { id: "living-armor", title: "Living Armor", subtitle: "", descriptionLines: [""], art: "", enemyType: "elite", traits: [{ id: "living-armor", title: "Living Armor", description: "" }], attackEffects: [] } });
     expect(getEnemyDamageMultiplier(state, "bleed")).toBe(0.5);
     expect(getEnemyDamageMultiplier(state, "physical")).toBe(1);
+    expect(getEnemyDamageMultiplier(state, "burn")).toBe(1);
+  });
+
+  it("returns 0.5 for physical against thick-hide", () => {
+    const state = makeState({ currentEnemy: { id: "iron-bear", title: "The Iron Bear", subtitle: "", descriptionLines: [""], art: "", enemyType: "boss", traits: [{ id: "thick-hide", title: "Thick Hide", description: "Receives half Physical damage" }], attackEffects: [] } });
+    expect(getEnemyDamageMultiplier(state, "physical")).toBe(0.5);
     expect(getEnemyDamageMultiplier(state, "burn")).toBe(1);
   });
 });
@@ -479,6 +485,7 @@ describe("endPlayerTurn", () => {
     const result = endPlayerTurn(state);
     expect(result.state.enemyStunSkipTurns).toBe(0);
     expect(result.state.playerHealth).toBe(30); // no damage taken
+    expect(result.combatTexts).not.toContainEqual({ target: "enemy", kind: "status", stat: "stun", amount: 0 });
   });
 
   it("applies enemy attack damage", () => {
@@ -1036,7 +1043,7 @@ describe("labyrinth modifiers on endPlayerTurn", () => {
     // 2 burn added, then tick halves to 1 and deals 2 damage.
     expect(result.state.playerStatuses.burn).toBe(1);
     expect(result.state.playerHealth).toBe(28); // 30 - 2 burn damage
-    expect(result.combatTexts).toContainEqual({ target: "player", kind: "status", stat: "burn", amount: LABYRINTH_BURNING_GROUND_DAMAGE });
+    expect(result.combatTexts).not.toContainEqual({ target: "player", kind: "status", stat: "burn", amount: LABYRINTH_BURNING_GROUND_DAMAGE });
     expect(result.combatTexts).toContainEqual({ target: "player", kind: "damage", stat: "burn", amount: LABYRINTH_BURNING_GROUND_DAMAGE });
   });
 
@@ -1591,6 +1598,56 @@ describe("enemy traits via endPlayerTurn", () => {
     expect(result.state.enemyArmor).toBe(1);
     expect(result.state.enemyForge).toBe(1);
     expect(result.combatTexts).toContainEqual({ target: "enemy", kind: "status", stat: "armor", amount: 1 });
+  });
+
+  it("iron-hide adds 2 armor each turn", () => {
+    const state = makeState({
+      enemyAttackEffects: [],
+      currentEnemy: { id: "iron-bear", title: "The Iron Bear", subtitle: "", descriptionLines: [""], art: "", enemyType: "boss", traits: [{ id: "iron-hide", title: "Iron Hide", description: "Gains 2 Armor each turn" }], attackEffects: [] },
+      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
+      mana: 4, maxMana: 4,
+    });
+    const result = endPlayerTurn(state);
+    expect(result.state.enemyArmor).toBe(IRON_HIDE_ARMOR_PER_TURN);
+    expect(result.state.enemyForge).toBe(0);
+    expect(result.combatTexts).toContainEqual({ target: "enemy", kind: "status", stat: "armor", amount: IRON_HIDE_ARMOR_PER_TURN });
+  });
+
+  it("forge-regeneration adds 2 forge each turn", () => {
+    const state = makeState({
+      enemyAttackEffects: [],
+      currentEnemy: { id: "iron-bear", title: "The Iron Bear", subtitle: "", descriptionLines: [""], art: "", enemyType: "boss", traits: [{ id: "forge-regeneration", title: "Forge Regeneration", description: "Gains 2 Forge each turn" }], attackEffects: [] },
+      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
+      mana: 4, maxMana: 4,
+    });
+    const result = endPlayerTurn(state);
+    expect(result.state.enemyArmor).toBe(0);
+    expect(result.state.enemyForge).toBe(FORGE_REGENERATION_PER_TURN);
+    expect(result.combatTexts).toContainEqual({ target: "enemy", kind: "status", stat: "forge", amount: FORGE_REGENERATION_PER_TURN });
+  });
+
+  it("Iron Bear armor and forge traits stack together", () => {
+    const state = makeState({
+      enemyAttackEffects: [],
+      currentEnemy: {
+        id: "iron-bear",
+        title: "The Iron Bear",
+        subtitle: "",
+        descriptionLines: [""],
+        art: "",
+        enemyType: "boss",
+        traits: [
+          { id: "iron-hide", title: "Iron Hide", description: "Gains 2 Armor each turn" },
+          { id: "forge-regeneration", title: "Forge Regeneration", description: "Gains 2 Forge each turn" },
+        ],
+        attackEffects: [],
+      },
+      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
+      mana: 4, maxMana: 4,
+    });
+    const result = endPlayerTurn(state);
+    expect(result.state.enemyArmor).toBe(IRON_HIDE_ARMOR_PER_TURN);
+    expect(result.state.enemyForge).toBe(FORGE_REGENERATION_PER_TURN);
   });
 
   it("glacial-shell adds freeze bonus each turn", () => {

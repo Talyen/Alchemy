@@ -114,15 +114,24 @@ export type BattleState = {
 // animation system. They're merged by (target, kind, stat) so rapid-fire damage
 // from multi-hit cards shows "-5" instead of "-2 -3".
 export type CombatTextTarget = "player" | "enemy";
-export type CombatTextKind = "damage" | "heal" | "status";
+export type CombatTextKind = "damage" | "heal" | "status" | "notice";
 export type CombatTextStat = DamageType | PlayerStatusId | EnemyStatusId | "health" | "mana" | "gold";
 
-export type CombatTextEvent = {
+export type NumericCombatTextEvent = {
   target: CombatTextTarget;
-  kind: CombatTextKind;
+  kind: Exclude<CombatTextKind, "notice">;
   stat: CombatTextStat;
   amount: number;
 };
+
+export type NoticeCombatTextEvent = {
+  target: CombatTextTarget;
+  kind: "notice";
+  stat: Extract<CombatTextStat, "freeze" | "stun">;
+  text: "Frozen" | "Stunned";
+};
+
+export type CombatTextEvent = NumericCombatTextEvent | NoticeCombatTextEvent;
 
 export type BattleResolution = {
   state: BattleState;

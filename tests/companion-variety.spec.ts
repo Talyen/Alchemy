@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { injectSaveState, navigateToDestination } from "./helpers";
+import { injectSaveState, navigateToDestination, resumeGameMode } from "./helpers";
 
 type CompanionSpec = {
   cardId: string;
@@ -42,7 +42,7 @@ test.describe("Companion Summoning", () => {
         runDeck: [companionCard, companionCard, companionCard, companionCard],
       });
       await page.goto("/");
-      await page.getByRole("button", { name: "Resume Run" }).click();
+      await resumeGameMode(page, "campaign");
       await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 10000 });
       await navigateToDestination(page, "Normal Combat");
       await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });
@@ -86,7 +86,7 @@ test.describe("Pack Tactics", () => {
       discoveredCardIds: ["wolf-companion", "pack-tactics"],
     });
     await page.goto("/");
-    await page.getByRole("button", { name: "Resume Run" }).click();
+    await resumeGameMode(page, "campaign");
     await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 10000 });
     await navigateToDestination(page, "Normal Combat");
     await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });

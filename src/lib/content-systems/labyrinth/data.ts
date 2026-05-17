@@ -2,9 +2,9 @@
 import type { LabyrinthNodeType } from "../types";
 
 export const NODE_TYPE_LABELS: Record<LabyrinthNodeType, string> = {
+  entrance: "Entrance",
   combat: "Combat",
   elite: "Elite",
-  treasure: "Treasure",
   rest: "Rest",
   mystery: "Mystery",
   shop: "Merchant",
@@ -12,5 +12,5 @@ export const NODE_TYPE_LABELS: Record<LabyrinthNodeType, string> = {
   boss: "Boss",
 };
 
-export const LABYRINTH_ROWS = 5;
-export const LABYRINTH_COLS = 5;
+export const LABYRINTH_ROWS = 8;
+export const LABYRINTH_COLS = 9;

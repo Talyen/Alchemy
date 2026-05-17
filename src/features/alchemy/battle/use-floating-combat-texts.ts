@@ -23,7 +23,8 @@ export function useFloatingCombatTexts() {
     };
   }, []);
 
-  function getSignedAmountText(event: CombatTextEvent) {
+  function getCombatTextDisplayText(event: CombatTextEvent) {
+    if (event.kind === "notice") return event.text;
     if (event.kind === "damage") return `-${event.amount}`;
     const showPlus = event.kind === "heal" || event.kind === "status";
     return `${showPlus ? "+" : ""}${event.amount}`;
@@ -48,7 +49,7 @@ export function useFloatingCombatTexts() {
         ...event,
         lane,
         id: `${createdAt}-${event.target}-${event.stat}-${index}`,
-        signedAmountText: getSignedAmountText(event),
+        displayText: getCombatTextDisplayText(event),
       } satisfies FloatingCombatText;
     });
 

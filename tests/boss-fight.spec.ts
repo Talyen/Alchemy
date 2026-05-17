@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { injectSaveState, playUntilVictory } from "./helpers";
+import { injectSaveState, playUntilVictory, resumeGameMode } from "./helpers";
 
 function injectBossState(page: Parameters<typeof test>[0]["page"], act = 1) {
   const highDamageCard = {
@@ -30,7 +30,7 @@ test.describe("Boss Fight", () => {
   test("Act I boss combat starts and transitions to Act II", async ({ page }) => {
     await injectBossState(page);
     await page.goto("/");
-    await page.getByRole("button", { name: "Resume Run" }).click();
+    await resumeGameMode(page, "campaign");
 
     await expect(page.getByRole("heading", { name: "The Forge Golem" })).toBeVisible({ timeout: 10000 });
     const bossBtn = page.getByRole("button", { name: "Boss Combat" });

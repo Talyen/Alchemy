@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { injectSaveState, playUntilVictory } from "./helpers";
+import { injectSaveState, playUntilVictory, resumeGameMode } from "./helpers";
 
 test.describe("Act Transition", () => {
   test("beating Act I boss advances to Act II destination choices", async ({ page }) => {
@@ -28,7 +28,7 @@ test.describe("Act Transition", () => {
     });
 
     await page.goto("/");
-    await page.getByRole("button", { name: "Resume Run" }).click();
+    await resumeGameMode(page, "campaign");
 
     await expect(page.getByRole("heading", { name: "The Forge Golem" })).toBeVisible({ timeout: 10000 });
     const bossBtn = page.getByRole("button", { name: "Boss Combat" });

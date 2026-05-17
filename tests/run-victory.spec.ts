@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { injectSaveState } from "./helpers";
+import { injectSaveState, resumeGameMode } from "./helpers";
 
 test.describe("Run Victory", () => {
   test("defeating Act III boss shows run victory screen", async ({ page }) => {
@@ -27,7 +27,7 @@ test.describe("Run Victory", () => {
       runMaxHealth: 30,
     });
     await page.goto("/");
-    await page.getByRole("button", { name: "Resume Run" }).click();
+    await resumeGameMode(page, "campaign");
 
     await expect(page.getByRole("button", { name: "Boss Combat" })).toBeVisible({ timeout: 10000 });
     await page.getByRole("button", { name: "Boss Combat" }).click();

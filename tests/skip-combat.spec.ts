@@ -1,11 +1,11 @@
 import { expect, test } from "@playwright/test";
-import { injectSaveState } from "./helpers";
+import { injectSaveState, resumeGameMode } from "./helpers";
 
 test.describe("Skip Combat", () => {
   test("skip combat button resolves battle without playing cards", async ({ page }) => {
     await injectSaveState(page);
     await page.goto("/");
-    await page.getByRole("button", { name: "Resume Run" }).click();
+    await resumeGameMode(page, "campaign");
     await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 10000 });
     await page.getByRole("button", { name: /Combat/ }).first().click();
     await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });

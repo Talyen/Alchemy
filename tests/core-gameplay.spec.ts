@@ -1,22 +1,26 @@
 import { expect, test } from "@playwright/test";
-import { startAtDestination, startRun, playUntilVictory, waitForEnemyTurn, completeVictoryFlow, navigateToDestination, skipAndReward } from "./helpers";
+import { openGameModeSelect, selectGameMode, startAtDestination, startRun, playUntilVictory, waitForEnemyTurn, completeVictoryFlow, navigateToDestination, skipAndReward } from "./helpers";
 
 test.describe("Menu", () => {
   test("all menu buttons are visible on the main menu", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByRole("button", { name: "Campaign" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Labyrinth" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Wildwood" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Play" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Collection" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Options" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Talents" })).toBeVisible();
+    await openGameModeSelect(page);
+    await expect(page.getByRole("button", { name: /The Campaign/ })).toBeVisible();
+    await expect(page.getByRole("button", { name: /The Labyrinth/ })).toBeVisible();
+    await expect(page.getByRole("button", { name: /The Wildwoods/ })).toBeVisible();
   });
 
   test("menu shows Resume Run when a campaign battle is active", async ({ page }) => {
     await startRun(page);
     await page.getByRole("button", { name: "Menu" }).click();
     await page.getByRole("button", { name: "Main Menu" }).click();
-    await expect(page.getByRole("button", { name: "Resume Run" })).toBeVisible();
+    await openGameModeSelect(page);
+    await page.getByRole("button", { name: /The Campaign/ }).click();
+    await expect(page.getByRole("button", { name: "Resume" })).toBeVisible();
   });
 
   test("Labyrinth button shows Resume when a labyrinth run is active", async ({ page }) => {
@@ -44,6 +48,8 @@ test.describe("Menu", () => {
       localStorage.setItem(SAVE_KEY, JSON.stringify(save));
     });
     await page.goto("/");
+    await openGameModeSelect(page);
+    await page.getByRole("button", { name: /The Labyrinth/ }).click();
     await expect(page.getByRole("button", { name: "Resume" })).toBeVisible();
   });
 });
@@ -51,7 +57,7 @@ test.describe("Menu", () => {
 test.describe("Character Select", () => {
   test("all characters are selectable", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("button", { name: "Campaign" }).click();
+    await selectGameMode(page, "campaign");
 
     await expect(page.getByRole("heading", { name: "Choose Your Hero" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Knight" })).toBeVisible();
@@ -71,14 +77,14 @@ test.describe("Character Select", () => {
 
   test("back button returns to main menu", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("button", { name: "Campaign" }).click();
+    await selectGameMode(page, "campaign");
     await page.getByRole("button", { name: "Back" }).click();
-    await expect(page.getByRole("button", { name: "Campaign" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Play" })).toBeVisible();
   });
 
   test("fresh wizard run starts with wizard cards", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("button", { name: "Campaign" }).click();
+    await selectGameMode(page, "campaign");
     await page.getByRole("button", { name: "Wizard" }).click();
     await page.getByRole("button", { name: "Continue" }).click();
     // With no Novice completed, difficulty select is skipped and battle starts directly
@@ -274,7 +280,7 @@ test.describe("Full Run Flow", () => {
     await expect(page.getByText("Your run has ended.")).toBeVisible();
 
     await page.getByRole("button", { name: "Return to Main Menu" }).click();
-    await expect(page.getByRole("button", { name: "Campaign" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Play" })).toBeVisible();
   });
 });
 
@@ -284,7 +290,7 @@ test.describe("Options", () => {
     await page.getByRole("button", { name: "Options" }).click();
 
     await expect(page.getByRole("heading", { name: "Options" })).toBeVisible();
-    await expect(page.getByLabel("Resolution")).toBeVisible();
+    await expect(page.getByLabel("Aspect Ratio")).toBeVisible();
 
     await page.getByRole("button", { name: "Sound" }).click();
     await expect(page.getByText("Music Volume")).toBeVisible();
@@ -314,7 +320,7 @@ test.describe("Options", () => {
     await expect(page.getByText("Save Data", { exact: true })).toBeVisible();
 
     await displayBtn.click();
-    await expect(page.getByLabel("Resolution")).toBeVisible();
+    await expect(page.getByLabel("Aspect Ratio")).toBeVisible();
   });
 
   test("main menu and return to battle buttons in options", async ({ page }) => {
@@ -381,7 +387,7 @@ test.describe("Difficulty Select", () => {
 
   test("difficulty screen shows after character selection", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("button", { name: "Campaign" }).click();
+    await selectGameMode(page, "campaign");
     await page.getByRole("button", { name: "Knight" }).click();
     await page.getByRole("button", { name: "Continue" }).click();
 
@@ -391,7 +397,7 @@ test.describe("Difficulty Select", () => {
 
   test("all three difficulty cards are visible", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("button", { name: "Campaign" }).click();
+    await selectGameMode(page, "campaign");
     await page.getByRole("button", { name: "Knight" }).click();
     await page.getByRole("button", { name: "Continue" }).click();
 
@@ -402,7 +408,7 @@ test.describe("Difficulty Select", () => {
 
   test("Novice and Adventurer are unlocked, Legend shows as locked", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("button", { name: "Campaign" }).click();
+    await selectGameMode(page, "campaign");
     await page.getByRole("button", { name: "Knight" }).click();
     await page.getByRole("button", { name: "Continue" }).click();
 
@@ -413,7 +419,7 @@ test.describe("Difficulty Select", () => {
 
   test("Play is disabled before a difficulty is selected", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("button", { name: "Campaign" }).click();
+    await selectGameMode(page, "campaign");
     await page.getByRole("button", { name: "Knight" }).click();
     await page.getByRole("button", { name: "Continue" }).click();
 
@@ -423,7 +429,7 @@ test.describe("Difficulty Select", () => {
 
   test("selecting Novice enables the Play button", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("button", { name: "Campaign" }).click();
+    await selectGameMode(page, "campaign");
     await page.getByRole("button", { name: "Knight" }).click();
     await page.getByRole("button", { name: "Continue" }).click();
 
@@ -433,7 +439,7 @@ test.describe("Difficulty Select", () => {
 
   test("Back from difficulty select returns to character select", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("button", { name: "Campaign" }).click();
+    await selectGameMode(page, "campaign");
     await page.getByRole("button", { name: "Knight" }).click();
     await page.getByRole("button", { name: "Continue" }).click();
 
@@ -443,7 +449,7 @@ test.describe("Difficulty Select", () => {
 
   test("selecting Novice and Play starts a battle", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("button", { name: "Campaign" }).click();
+    await selectGameMode(page, "campaign");
     await page.getByRole("button", { name: "Knight" }).click();
     await page.getByRole("button", { name: "Continue" }).click();
 
@@ -455,7 +461,7 @@ test.describe("Difficulty Select", () => {
 
   test("Wizard shows different difficulty config", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("button", { name: "Campaign" }).click();
+    await selectGameMode(page, "campaign");
     await page.getByRole("button", { name: "Wizard" }).click();
     await page.getByRole("button", { name: "Continue" }).click();
 
@@ -469,7 +475,7 @@ test.describe("Difficulty Select", () => {
 test.describe("Difficulty Skip (first-time player)", () => {
   test("selecting a character with no completed difficulties skips to battle", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("button", { name: "Campaign" }).click();
+    await selectGameMode(page, "campaign");
     await page.getByRole("button", { name: "Knight" }).click();
     await page.getByRole("button", { name: "Continue" }).click();
 
