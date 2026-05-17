@@ -2,6 +2,7 @@
 // Depends on run, battle, shop, navigation, talent, persistence-facing, and homestead state.
 // Used by App as the single UI-facing API while domain rules stay in smaller controllers.
 import { useEffect, useRef, useState, useMemo } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { cardLibrary, trinketLibrary, computeTalentEffects } from "@/lib/game-data";
 import type { TalentXP } from "@/lib/talents";
 import type { HomesteadEffectManifest, MaterialInventory } from "@/lib/homestead/types";
@@ -61,7 +62,7 @@ export function useAlchemyRunController({
     return true;
   });
   void storesInitialized;
-  const runStoreFields = useRunStore((s) => ({
+  const runStoreFields = useRunStore(useShallow((s) => ({
     characterId: s.characterId,
     runDeck: s.runDeck,
     runGold: s.runGold,
@@ -74,8 +75,8 @@ export function useAlchemyRunController({
     runTrinkets: s.runTrinkets,
     selectedDifficulty: s.selectedDifficulty,
     contentSystemType: s.contentSystemType,
-  }));
-  const runStoreActions = useRunStore((s) => ({
+  })));
+  const runStoreActions = useRunStore(useShallow((s) => ({
     setRunDeck: s.setRunDeck,
     setRunGold: s.setRunGold,
     setRunPlayerHealth: s.setRunPlayerHealth,
@@ -90,8 +91,8 @@ export function useAlchemyRunController({
     setCharacter: s.setCharacter,
     reset: s.reset,
     addRunGold: s.addRunGold,
-  }));
-  const talentStore = useRunStore((s) => ({
+  })));
+  const talentStore = useRunStore(useShallow((s) => ({
     talentXP: s.talentXP,
     runTalentXP: s.runTalentXP,
     unlockedTalents: s.unlockedTalents,
@@ -102,7 +103,7 @@ export function useAlchemyRunController({
     resetRunXP: s.resetRunXP,
     clearPermanentData: s.clearPermanentData,
     awardMysteryXP: s.awardMysteryXP,
-  }));
+  })));
   const talentEffects = useMemo(() => computeTalentEffects(talentStore.unlockedTalents), [talentStore.unlockedTalents]);
 
   // Adapter objects matching previous useRunState/useTalentState interfaces

@@ -7,14 +7,13 @@ const DURATION = 250;
 const EASE = "cubic-bezier(0.16, 1, 0.3, 1)";
 const MIN_HEIGHT_DELTA = 2;
 
-export function AnimatedHeight({ deps, children }: { deps: unknown[]; children: ReactNode }) {
+export function AnimatedHeight({ children }: { children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
   const prevHeight = useRef(0);
   const mounted = useRef(false);
 
   useLayoutEffect(() => {
     // Store previous scrollHeight, force one reflow, then animate to the new height.
-    // Callers own deps intentionally because only they know what content changes matter.
     const el = ref.current;
     if (!el) return;
 
@@ -41,7 +40,7 @@ export function AnimatedHeight({ deps, children }: { deps: unknown[]; children: 
 
     prevHeight.current = newHeight;
     mounted.current = true;
-  }, deps); // eslint-disable-line react-hooks/exhaustive-deps
+  });
 
   return <div ref={ref}>{children}</div>;
 }

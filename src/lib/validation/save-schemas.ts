@@ -2,7 +2,7 @@ import { z } from "zod";
 import { cardLibrary, getStartingDeck } from "@/lib/game-data";
 import { ACTS_PER_RUN } from "@/lib/game-constants";
 import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
-import { companionLibrary } from "@/lib/game-data";
+import { companionTierItems } from "@/lib/homestead/companions";
 import { CURRENT_SAVE_SCHEMA_VERSION, CURRENT_GAME_BUILD_VERSION, CURRENT_CONTENT_VERSION } from "./metadata";
 import { migrateSaveDataToCurrent } from "./migration";
 
@@ -203,13 +203,25 @@ export const BattleCardEffectSchema = z.discriminatedUnion("kind", [
   BuffCompanionEffectSchema,
 ]);
 
+function isObjectRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function cloneSavedObjectList(values: unknown[]): Record<string, unknown>[] {
+  return values.filter(isObjectRecord).map((value) => ({ ...value }));
+}
+
+function cloneSavedDescriptionLines(values: unknown[]): string[] | null {
+  return values.every((line) => typeof line === "string") ? [...values] : null;
+}
+
 // ===== BattleCard =====
 export const BattleCardSchema = z
   .object({
     id: z.string(),
     uid: z.number().int().optional(),
     title: z.string(),
-    descriptionLines: z.array(z.union([z.string(), z.any()])),
+    descriptionLines: z.array(z.unknown()).catch([]),
     art: z.string(),
     cost: z.union([z.number(), z.nan()]).catch(-1),
     consume: z.boolean().optional(),
@@ -226,19 +238,15 @@ export const BattleCardSchema = z
       )
       .optional(),
     baseTitle: z.string().optional(),
-    effects: z.array(z.union([BattleCardEffectSchema, z.any()])),
+    effects: z.array(z.unknown()).catch([]),
   })
   .transform((saved) => {
     const libraryCard = cardLibrary.find((c) => c.id === saved.id);
-    if (!libraryCard) return saved;
-    const descriptionLines: string[] =
-      Array.isArray(saved.descriptionLines) && saved.descriptionLines.every((l) => typeof l === "string")
-        ? [...saved.descriptionLines]
-        : [...libraryCard.descriptionLines];
-    const effects =
-      Array.isArray(saved.effects) && saved.effects.every((e) => e && typeof e === "object")
-        ? saved.effects.map((e) => ({ ...e }))
-        : libraryCard.effects.map((e) => ({ ...e }));
+    const savedDescriptionLines = cloneSavedDescriptionLines(saved.descriptionLines);
+    const savedEffects = cloneSavedObjectList(saved.effects);
+    if (!libraryCard) return { ...saved, descriptionLines: savedDescriptionLines ?? [], effects: savedEffects };
+    const descriptionLines: string[] = savedDescriptionLines ?? [...libraryCard.descriptionLines];
+    const effects = savedEffects.length > 0 ? savedEffects : libraryCard.effects.map((e) => ({ ...e }));
     const corruptedValuePositions = Array.isArray(saved.corruptedValuePositions)
       ? saved.corruptedValuePositions.filter(
           (p) =>
@@ -466,12 +474,7 @@ export const SaveDataSchema = z.preprocess(
     constructedBuildings: createTierRecordSchema(buildings, { smithy: "blacksmiths-forge" }),
     plantedFarms: createTierRecordSchema(farmPlots, { "sheep-pasture": "pasture" }),
     completedResearch: createTierRecordSchema(researchUpgrades),
-    bondedCompanions: createTierRecordSchema(
-      Object.keys(companionLibrary).map((id) => ({
-        id: id as keyof typeof companionLibrary,
-        tiers: [null, null, null],
-      })),
-    ),
+    bondedCompanions: createTierRecordSchema(companionTierItems),
     completedDifficulties: CompletedDifficultiesSchema,
   }),
 );

@@ -94,9 +94,12 @@ export function useBattleController({
 
   useEffect(
     () => () => {
-      clearPendingBattleTimeouts();
+      if (companionTimeoutRef.current) clearTimeout(companionTimeoutRef.current);
+      if (enemyTimeoutRef.current) clearTimeout(enemyTimeoutRef.current);
+      companionTimeoutRef.current = null;
+      enemyTimeoutRef.current = null;
+      companionScheduledRef.current = false;
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
 

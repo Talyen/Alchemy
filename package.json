@@ -25,14 +25,15 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
+    "test:e2e:smoke": "playwright test tests/alchemy.spec.ts -g \"App Boot\"",
     "test:e2e:ui": "playwright test --ui",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\"",
-    "release": "standard-version",
-    "release:minor": "standard-version --release-as minor",
-    "release:major": "standard-version --release-as major"
+    "release": "commit-and-tag-version",
+    "release:minor": "commit-and-tag-version --release-as minor",
+    "release:major": "commit-and-tag-version --release-as major"
   },
   "dependencies": {
     "@radix-ui/react-switch": "^1.2.6",
@@ -72,7 +73,7 @@
     "react-dom": "^19.2.5",
     "react-router-dom": "^7.1.1",
     "sharp": "^0.34.5",
-    "standard-version": "^9.5.0",
+    "commit-and-tag-version": "^12.6.0",
     "tailwind-merge": "^3.5.0",
     "tailwindcss": "^3.4.17",
     "tailwindcss-animate": "^1.0.7",

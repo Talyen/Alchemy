@@ -40,7 +40,7 @@ export function TalentsScreen({
   const allUnlocked = progress.spentPoints >= allTalentsForKeyword.length;
   const unlockedTalentsForKeyword = allTalentsForKeyword.filter((t) => unlockedIds.includes(t.id));
 
-  const { currentChoices, invalidateKeyword, invalidateAll } = useTalentChoices(
+  const { currentChoices } = useTalentChoices(
     selectedKeyword,
     unlockedIds,
     progress.unspentPoints > 0,
@@ -49,12 +49,10 @@ export function TalentsScreen({
 
   function handleUnlockTalent(talentId: string) {
     onUnlockTalent(selectedKeyword, talentId);
-    invalidateKeyword(selectedKeyword);
     playUISound("talentUnlock");
   }
   function handleReset() {
     onResetTalents();
-    invalidateAll();
     setShowResetConfirm(false);
   }
 

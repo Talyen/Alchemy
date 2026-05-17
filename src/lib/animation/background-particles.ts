@@ -114,21 +114,25 @@ export function startBackgroundParticles(
   const ctx = canvas.getContext("2d");
   if (!ctx) return () => {};
 
+  const parent = canvas.parentElement;
+  if (!parent) return () => {};
+  const activeCanvas: HTMLCanvasElement = canvas;
+  const activeCtx: CanvasRenderingContext2D = ctx;
+  const activeParent: HTMLElement = parent;
+
   let running = true;
   let particles: BackgroundParticle[] = [];
   let lastTime = performance.now();
   const dpr = devicePixelRatio || 1;
 
   function resize() {
-    const parent = canvas!.parentElement;
-    if (!parent) return;
-    const w = parent.clientWidth;
-    const h = parent.clientHeight;
-    canvas!.width = w * dpr;
-    canvas!.height = h * dpr;
-    canvas!.style.width = `${w}px`;
-    canvas!.style.height = `${h}px`;
-    ctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const w = activeParent.clientWidth;
+    const h = activeParent.clientHeight;
+    activeCanvas.width = w * dpr;
+    activeCanvas.height = h * dpr;
+    activeCanvas.style.width = `${w}px`;
+    activeCanvas.style.height = `${h}px`;
+    activeCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
     const config = CONFIGS[variant];
     const resolvedColors = colors ?? config.colors;
     const mult = alphaMultiplier ?? 1;
@@ -144,20 +148,20 @@ export function startBackgroundParticles(
   resize();
 
   const ro = new ResizeObserver(resize);
-  ro.observe(canvas.parentElement!);
+  ro.observe(activeParent);
 
   function frame(now: number) {
     if (!running) return;
     const dt = Math.min((now - lastTime) / 16.67, 3);
     lastTime = now;
-    const w = canvas!.width / dpr;
-    const h = canvas!.height / dpr;
+    const w = activeCanvas.width / dpr;
+    const h = activeCanvas.height / dpr;
 
-    ctx!.clearRect(0, 0, w, h);
+    activeCtx.clearRect(0, 0, w, h);
 
     for (const p of particles) {
       updateParticle(p, dt, w, h);
-      renderParticle(ctx!, p);
+      renderParticle(activeCtx, p);
     }
 
     requestAnimationFrame(frame);

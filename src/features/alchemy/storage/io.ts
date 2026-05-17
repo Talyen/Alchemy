@@ -9,6 +9,28 @@ import { defaultSaveData } from "./defaults";
 const storageKey = SAVE_KEY;
 let writesDisabledForSession = false;
 
+function readStorageItem(key: string): string | null {
+  return window.localStorage.getItem(key);
+}
+
+function writeStorageItem(key: string, value: string): boolean {
+  try {
+    window.localStorage.setItem(key, value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function removeStorageItem(key: string): boolean {
+  try {
+    window.localStorage.removeItem(key);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export type SaveLoadStatus =
   | { kind: "ok" }
   | { kind: "unsupported-newer-schema"; detectedSchemaVersion: number }
@@ -31,7 +53,7 @@ export function loadAlchemySaveState(): SaveLoadState {
   }
 
   try {
-    const raw = window.localStorage.getItem(storageKey);
+    const raw = readStorageItem(storageKey);
     if (!raw) {
       return { data: defaultSaveData, status: { kind: "ok" } };
     }
@@ -64,10 +86,11 @@ export function saveAlchemySaveData(data: SaveData) {
   if (writesDisabledForSession) return;
 
   try {
-    window.localStorage.setItem(storageKey, JSON.stringify(data));
+    if (writeStorageItem(storageKey, JSON.stringify(data))) return;
   } catch {
-    console.error("Save data could not be written");
+    // Fall through to the shared write failure log.
   }
+  console.error("Save data could not be written");
 }
 
 // Removes the persisted save while leaving in-memory React state reset to callers.
@@ -76,10 +99,9 @@ export function clearAlchemySaveData() {
     return;
   }
 
-  try {
-    window.localStorage.removeItem(storageKey);
+  if (removeStorageItem(storageKey)) {
     writesDisabledForSession = false;
-  } catch {
-    console.error("Save data could not be cleared");
+    return;
   }
+  console.error("Save data could not be cleared");
 }

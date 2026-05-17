@@ -242,7 +242,7 @@ export function HomesteadScreen({
                   key={t}
                   className={cn(isActive ? "relative" : "pointer-events-none invisible absolute left-0 top-0 w-full")}
                 >
-                  <AnimatedHeight deps={[companionPage]}>
+                  <AnimatedHeight>
                     <div key={companionPage} className="state-swap grid min-h-[400px] grid-cols-3 gap-x-2 gap-y-4">
                       {pageItems.map((card, index) => {
                         const companionEffect = card.effects.find(

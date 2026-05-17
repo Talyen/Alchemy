@@ -1,5 +1,6 @@
 // Run victory screen — shown after defeating the Act III boss.
 import { useEffect, useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { keywordDefinitions, type KeywordId } from "@/lib/game-data";
@@ -12,7 +13,9 @@ import { useRunStore } from "../stores/run-store";
 import { useScreenStore } from "../stores/screen-store";
 
 export function RunVictoryScreen({ onMainMenu }: { onMainMenu: () => void }) {
-  const { runTalentXP, talentXP } = useRunStore((s) => ({ runTalentXP: s.runTalentXP, talentXP: s.talentXP }));
+  const { runTalentXP, talentXP } = useRunStore(
+    useShallow((s) => ({ runTalentXP: s.runTalentXP, talentXP: s.talentXP })),
+  );
   const runEndMaterials = useScreenStore((s) => s.runEndMaterials);
   const [animate, setAnimate] = useState(false);
   const keywordIds = (Object.keys(runTalentXP) as KeywordId[]).filter(

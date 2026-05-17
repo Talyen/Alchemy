@@ -32,8 +32,8 @@ const config: Config = {
         sm: "calc(var(--radius) - 4px)",
       },
       fontFamily: {
-        body: ["Inter", "sans-serif"],
-        display: ["Inter", "sans-serif"],
+        body: ['"DM Sans"', "sans-serif"],
+        display: ["Cinzel", "serif"],
       },
       keyframes: {
         float: {

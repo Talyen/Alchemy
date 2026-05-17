@@ -47,7 +47,6 @@ function CombatTextBubble({ entry, side }: { entry: FloatingCombatText; side: "p
       style={
         {
           top: `${entry.lane * 56}px`,
-          fontFamily: "Inter, sans-serif",
         } as Record<string, string>
       }
       initial={{ y: 0, opacity: 1, filter: "blur(0px)", scale: 1 }}

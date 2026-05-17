@@ -7,10 +7,22 @@ async function readPlayerBlock(page: Page) {
   return Number(label?.match(/\d+/)?.[0] ?? 0);
 }
 
+// Fails boot smoke on browser runtime failures so deploy-blocking crashes are reported directly.
+function failOnRuntimeErrors(page: Page) {
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  page.on("console", (message) => {
+    if (message.type() === "error") errors.push(message.text());
+  });
+  return errors;
+}
+
 test.describe("App Boot", () => {
   test("main menu renders without crashing on desktop", async ({ page }) => {
+    const runtimeErrors = failOnRuntimeErrors(page);
     await page.goto("/");
     await expect(page.getByRole("button", { name: "Play" })).toBeVisible({ timeout: 10000 });
+    expect(runtimeErrors).toEqual([]);
   });
 });
 

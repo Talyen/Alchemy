@@ -20,7 +20,8 @@ function playBuffer(name: string, volume = 1) {
     const gain = ctx.createGain();
     gain.gain.value = volume * audioState.sfxVolume;
     source.connect(gain);
-    gain.connect(audioState.masterGain!);
+    if (!audioState.masterGain) return;
+    gain.connect(audioState.masterGain);
     source.start();
   });
 }

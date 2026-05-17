@@ -1,5 +1,6 @@
 // Game over screen — shows defeat message and talent XP earned this run.
 import { useState, useEffect } from "react";
+import { useShallow } from "zustand/react/shallow";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -57,7 +58,9 @@ export function KeywordProgressCard({
 }
 
 export function GameOverScreen({ onMainMenu }: { onMainMenu: () => void }) {
-  const { runTalentXP, talentXP } = useRunStore((s) => ({ runTalentXP: s.runTalentXP, talentXP: s.talentXP }));
+  const { runTalentXP, talentXP } = useRunStore(
+    useShallow((s) => ({ runTalentXP: s.runTalentXP, talentXP: s.talentXP })),
+  );
   const runEndMaterials = useScreenStore((s) => s.runEndMaterials);
   const [animate, setAnimate] = useState(false);
   const keywordIds = (Object.keys(runTalentXP) as KeywordId[]).filter(

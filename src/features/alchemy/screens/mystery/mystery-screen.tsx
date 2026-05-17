@@ -78,7 +78,7 @@ export function MysteryScreen({
 
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-6 overflow-hidden px-4 py-6 text-center">
-      <AnimatedHeight deps={[pendingRemoval, chosen, mysteryCardChoices]}>
+      <AnimatedHeight>
         {mysteryCardChoices ? (
           <CardChoicePicker choices={mysteryCardChoices} onSelect={handleCardChoiceConfirm} />
         ) : pendingRemoval ? (

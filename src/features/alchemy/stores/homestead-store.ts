@@ -1,13 +1,11 @@
 import { create } from "zustand";
 import type { CompanionId } from "@/lib/game-data";
-import { companionLibrary } from "@/lib/game-data";
 import type { BuildingId, FarmId, MaterialInventory, ResearchId, HomesteadEffectManifest } from "@/lib/homestead/types";
 import { emptyInventory, addInventory, subtractInventory, canAfford } from "@/lib/homestead/inventory";
 import { computeHomesteadEffects } from "@/lib/homestead/effects";
 import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
 import { createEmptyTierRecord } from "@/lib/homestead/tiers";
-
-const companionTierItems = Object.keys(companionLibrary).map((id) => ({ id, tiers: [null, null, null] }));
+import { companionTierItems, COMPANION_BOND_TIERS, COMPANION_MAX_TIER } from "@/lib/homestead/companions";
 
 type HomesteadState = {
   materialInventory: MaterialInventory;
@@ -140,10 +138,4 @@ export const useHomesteadStore = create<HomesteadStore>()((set) => ({
     set((s) => ({ ...s, ...initial, effects: computeEffects(initial) })),
 }));
 
-export const COMPANION_BOND_TIERS = [
-  { wood: 0, iron: 0, herbs: 0, food: 20, crystal: 0 },
-  { wood: 0, iron: 0, herbs: 0, food: 30, crystal: 0 },
-  { wood: 0, iron: 0, herbs: 0, food: 40, crystal: 0 },
-] as const;
-
-export const COMPANION_MAX_TIER = COMPANION_BOND_TIERS.length;
+export { COMPANION_BOND_TIERS, COMPANION_MAX_TIER } from "@/lib/homestead/companions";

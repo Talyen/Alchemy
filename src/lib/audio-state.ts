@@ -3,13 +3,24 @@
 // Used only by the audio implementation modules so public callers keep importing from lib/audio.
 import { DEFAULT_MUSIC_VOLUME, DEFAULT_SFX_VOLUME } from "./game-constants";
 
-export const audioState = {
-  context: null as AudioContext | null,
-  masterGain: null as GainNode | null,
+type AudioRuntimeState = {
+  context: AudioContext | null;
+  masterGain: GainNode | null;
+  muted: boolean;
+  sfxVolume: number;
+  musicVolume: number;
+  masterVolume: number;
+  currentMusic: HTMLAudioElement | null;
+  currentMusicKey: string | null;
+};
+
+export const audioState: AudioRuntimeState = {
+  context: null,
+  masterGain: null,
   muted: false,
   sfxVolume: DEFAULT_SFX_VOLUME,
   musicVolume: DEFAULT_MUSIC_VOLUME,
   masterVolume: 1,
-  currentMusic: null as HTMLAudioElement | null,
-  currentMusicKey: null as string | null,
+  currentMusic: null,
+  currentMusicKey: null,
 };

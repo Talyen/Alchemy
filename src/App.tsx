@@ -1,7 +1,7 @@
 // Root app shell for save data, audio/display side effects, routing, and global layout.
 // Depends on alchemy controllers, homestead state, screen modules, assets, and platform/audio helpers.
 // Everything visible flows through here, but domain rules stay in feature/lib controllers.
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
   allGameArt,
@@ -62,20 +62,19 @@ const BOSS_ALPHA_MULTIPLIER = 2.5;
 
 export default function App() {
   // ============ Bootstrap: load save data once, initialize stores ============
-  const bootstrapResult = useMemo(() => loadAlchemySaveState(), []);
-  const { data: initialSave, status: saveLoadStatus } = bootstrapResult;
-  const storesInitRef = useRef(false);
-  if (!storesInitRef.current) {
-    storesInitRef.current = true;
-    useAppStore.getState().initialize(initialSave);
+  const [bootstrapResult] = useState(() => {
+    const result = loadAlchemySaveState();
+    useAppStore.getState().initialize(result.data);
     useHomesteadStore.getState().initialize({
-      materialInventory: initialSave.materialInventory,
-      constructedBuildings: initialSave.constructedBuildings,
-      plantedFarms: initialSave.plantedFarms,
-      completedResearch: initialSave.completedResearch,
-      bondedCompanions: initialSave.bondedCompanions,
+      materialInventory: result.data.materialInventory,
+      constructedBuildings: result.data.constructedBuildings,
+      plantedFarms: result.data.plantedFarms,
+      completedResearch: result.data.completedResearch,
+      bondedCompanions: result.data.bondedCompanions,
     });
-  }
+    return result;
+  });
+  const { data: initialSave, status: saveLoadStatus } = bootstrapResult;
 
   // ============ Store subscriptions ============
   const selectedResolution = useAppStore((s) => s.selectedResolution);

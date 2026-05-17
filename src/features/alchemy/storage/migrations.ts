@@ -3,7 +3,7 @@
 import type { TalentXP } from "@/lib/talents";
 import type { BuildingId, FarmId, ResearchId } from "@/lib/homestead/types";
 import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
-import { companionLibrary } from "@/lib/game-data";
+import { companionTierItems } from "@/lib/homestead/companions";
 
 import type { CharacterId, CompanionId, DifficultyId, UnlockedTalents } from "@/lib/game-data";
 import { normalizeActiveRun } from "./active-run";
@@ -61,7 +61,7 @@ export function normalizeSaveData(parsed: Partial<SaveData> | RawSaveData): Save
     ) as Record<ResearchId, number>,
     bondedCompanions: migrateToTierLevels(
       migrated.bondedCompanions ?? defaultSaveData.bondedCompanions,
-      Object.keys(companionLibrary).map((id) => ({ id, tiers: [null, null, null] })),
+      companionTierItems,
     ) as Record<CompanionId, number>,
     completedDifficulties: normalizeCompletedDifficulties(migrated.completedDifficulties),
   };

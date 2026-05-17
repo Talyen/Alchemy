@@ -51,7 +51,7 @@ export function DestinationChoices({
                 <span className="rounded-full bg-black/16 p-1.5">
                   <Icon className="h-4 w-4" />
                 </span>
-                <span className="leading-none">{destination}</span>
+                <span className="font-display leading-none">{destination}</span>
               </button>
             </div>
           </div>
