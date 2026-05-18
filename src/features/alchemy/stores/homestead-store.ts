@@ -28,7 +28,12 @@ type HomesteadStore = HomesteadState & {
 };
 
 function computeEffects(state: HomesteadState): HomesteadEffectManifest {
-  return computeHomesteadEffects(state.constructedBuildings, state.plantedFarms, state.completedResearch, state.bondedCompanions);
+  return computeHomesteadEffects(
+    state.constructedBuildings,
+    state.plantedFarms,
+    state.completedResearch,
+    state.bondedCompanions,
+  );
 }
 
 export const useHomesteadStore = create<HomesteadStore>()((set) => ({
@@ -134,8 +139,7 @@ export const useHomesteadStore = create<HomesteadStore>()((set) => ({
       return { ...next, effects: computeEffects(next) };
     }),
 
-  initialize: (initial) =>
-    set((s) => ({ ...s, ...initial, effects: computeEffects(initial) })),
+  initialize: (initial) => set((s) => ({ ...s, ...initial, effects: computeEffects(initial) })),
 }));
 
 export { COMPANION_BOND_TIERS, COMPANION_MAX_TIER } from "@/lib/homestead/companions";

@@ -65,9 +65,7 @@ export function EnemyTooltip({
         )}
         {discovered && labyrinthModifiers.length > 0 ? (
           <div className="mt-3 border-t border-border/60 pt-3">
-            <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-amber-100/80">
-              Special Modifiers
-            </p>
+            <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-amber-100/80">Special Modifiers</p>
             {labyrinthModifiers.map((modifier) => {
               const definition = ALL_LABYRINTH_MODIFIERS[modifier];
               return (

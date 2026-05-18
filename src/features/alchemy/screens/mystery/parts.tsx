@@ -90,7 +90,7 @@ export function MysteryRewardSummary({
   }
 
   return (
-    <div className="state-fade space-y-6 text-center">
+    <div className="state-swap space-y-6 text-center">
       <ScreenHeader title={eventTitle} />
 
       {choice.effects.map((effect, i) => {

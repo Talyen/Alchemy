@@ -55,7 +55,9 @@ function getWrapperLayoutClassName(className: string | undefined) {
     .split(/\s+/)
     .filter((token) => {
       const baseToken = token.slice(token.lastIndexOf(":") + 1);
-      return wrapperLayoutClassPrefixes.some((prefix) => baseToken === prefix.slice(0, -1) || baseToken.startsWith(prefix));
+      return wrapperLayoutClassPrefixes.some(
+        (prefix) => baseToken === prefix.slice(0, -1) || baseToken.startsWith(prefix),
+      );
     })
     .join(" ");
 }

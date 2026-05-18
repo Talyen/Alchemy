@@ -5,11 +5,7 @@ import { ScreenDescription, ScreenHeader } from "../ui/shared-ui";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { campfire } from "@/lib/game-data";
-import {
-  CAMPFIRE_ANIMATION_MS,
-  CAMPFIRE_CONTINUE_DELAY,
-  CAMPFIRE_HEAL_FRACTION,
-} from "@/lib/game-constants";
+import { CAMPFIRE_ANIMATION_MS, CAMPFIRE_CONTINUE_DELAY, CAMPFIRE_HEAL_FRACTION } from "@/lib/game-constants";
 import { useRunStore } from "../stores/run-store";
 
 export function CampfireScreen({ onContinue }: { onContinue: () => void }) {

@@ -270,9 +270,7 @@ export function useBattleController({
     const enemyTurnStartTexts = result.enemyTurnStartState
       ? [...companionResult.combatTexts, ...result.enemyTurnStartCombatTexts]
       : [...companionResult.combatTexts, ...result.combatTexts];
-    const enemyResolutionTexts = result.enemyTurnStartState
-      ? result.enemyResolutionCombatTexts
-      : result.combatTexts;
+    const enemyResolutionTexts = result.enemyTurnStartState ? result.enemyResolutionCombatTexts : result.combatTexts;
 
     showEnemyTurnStart(
       result.enemyTurnStartState ?? result.state,
@@ -310,7 +308,9 @@ export function useBattleController({
       ...resultState,
       turnPhase: "enemy",
       hand: [],
-      ...(showPlayerUpdates ? {} : { playerHealth: currentState.playerHealth, playerStatuses: currentState.playerStatuses }),
+      ...(showPlayerUpdates
+        ? {}
+        : { playerHealth: currentState.playerHealth, playerStatuses: currentState.playerStatuses }),
     };
     getStore().setBattleState(displayState);
     const dotTexts = combatTexts.filter((ct) => ct.target === "enemy" || ct.kind === "heal");

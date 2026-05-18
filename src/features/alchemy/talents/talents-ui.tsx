@@ -2,9 +2,9 @@
 // Depends on game-data keywords, shine-border, and keyword-tag components.
 import { type KeywordId, keywordDefinitions } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
-import { motion } from "motion/react";
 import { ShineBorder } from "@/components/ui/shine-border";
 import { KeywordTag } from "../ui/keyword-tag";
+import { PressableMotion } from "../ui/pressable-motion";
 
 export function TalentKeywordButton({
   keywordId,
@@ -21,18 +21,14 @@ export function TalentKeywordButton({
   const shineColors = def?.shineColors ?? ["#fcd34d", "#d97706", "#fcd34d"];
 
   return (
-    <motion.span
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.97 }}
-      transition={{ type: "spring", stiffness: 400, damping: 15 }}
-    >
+    <PressableMotion>
       <button
         type="button"
         className={cn(
           "relative inline-flex items-center gap-1.5 rounded-full bg-card px-3 py-1.5 text-sm font-semibold text-foreground ring-1 ring-offset-1 ring-offset-card transition-all duration-200",
           isSelected ? "" : "ring-border/30 hover:ring-border/50",
         )}
-        style={isSelected ? { "--tw-ring-color": shineColors[0] } as React.CSSProperties : undefined}
+        style={isSelected ? ({ "--tw-ring-color": shineColors[0] } as React.CSSProperties) : undefined}
         onClick={onClick}
       >
         {hasUnspent && (
@@ -40,6 +36,6 @@ export function TalentKeywordButton({
         )}
         <KeywordTag keywordId={keywordId} />
       </button>
-    </motion.span>
+    </PressableMotion>
   );
 }

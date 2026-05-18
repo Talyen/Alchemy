@@ -98,13 +98,19 @@ export default function App() {
 
   // Store-backed setters (wrapped for Dispatch<SetStateAction> compatibility)
   function setDiscoveredCardIds(v: string[] | ((prev: string[]) => string[])) {
-    useAppStore.getState().setDiscoveredCardIds(typeof v === "function" ? v(useAppStore.getState().discoveredCardIds) : v);
+    useAppStore
+      .getState()
+      .setDiscoveredCardIds(typeof v === "function" ? v(useAppStore.getState().discoveredCardIds) : v);
   }
   function setEncounteredEnemyIds(v: string[] | ((prev: string[]) => string[])) {
-    useAppStore.getState().setEncounteredEnemyIds(typeof v === "function" ? v(useAppStore.getState().encounteredEnemyIds) : v);
+    useAppStore
+      .getState()
+      .setEncounteredEnemyIds(typeof v === "function" ? v(useAppStore.getState().encounteredEnemyIds) : v);
   }
   function setDiscoveredTrinketIds(v: string[] | ((prev: string[]) => string[])) {
-    useAppStore.getState().setDiscoveredTrinketIds(typeof v === "function" ? v(useAppStore.getState().discoveredTrinketIds) : v);
+    useAppStore
+      .getState()
+      .setDiscoveredTrinketIds(typeof v === "function" ? v(useAppStore.getState().discoveredTrinketIds) : v);
   }
   const clearSavedAppState = useAppStore((s) => s.clearSavedAppState);
   const [gameMenuOpen, setGameMenuOpen] = useState(false);

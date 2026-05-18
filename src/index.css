@@ -24,6 +24,32 @@
     --ring: 36 55% 56%;
     --radius: 1.5rem;
     --mana-gem: 217 58% 35%;
+    --motion-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --motion-page-enter-duration: 240ms;
+    --motion-page-exit-duration: 120ms;
+    --motion-page-enter-y: 6px;
+    --motion-page-exit-y: -4px;
+    --motion-page-enter-scale: 1;
+    --motion-page-exit-scale: 1;
+    --motion-state-duration: 170ms;
+    --motion-state-ease: cubic-bezier(0.16, 1, 0.3, 1);
+    --motion-state-y: 4px;
+    --motion-state-scale: 0.995;
+    --motion-stagger-duration: 230ms;
+    --motion-stagger-delay: 36ms;
+    --motion-stagger-y: 10px;
+    --motion-stagger-scale: 0.99;
+    --motion-overlay-duration: 150ms;
+    --motion-panel-duration: 190ms;
+    --motion-panel-y: 8px;
+    --motion-panel-scale: 0.98;
+    --motion-battle-menu-duration: 150ms;
+    --motion-battle-menu-y: 6px;
+    --motion-battle-menu-scale: 0.98;
+    --motion-crossfade-duration: 170ms;
+    --motion-crossfade-y: 4px;
+    --motion-crossfade-scale: 1;
+    --motion-startup-fade-duration: 320ms;
   }
 
   * {
@@ -228,31 +254,27 @@
   }
 
   .motion-overlay {
-    animation: overlayFadeIn 160ms ease-out both;
+    animation: overlayFadeIn var(--motion-overlay-duration) ease-out both;
   }
 
   .motion-panel {
-    animation: panelPopIn 190ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: panelPopIn var(--motion-panel-duration) var(--motion-ease-out) both;
     will-change: opacity, transform;
   }
 
   .battle-menu-pop {
-    animation: battleMenuPop 140ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: battleMenuPop var(--motion-battle-menu-duration) var(--motion-ease-out) both;
     transform-origin: bottom right;
     will-change: opacity, transform;
   }
 
   .stagger-item {
-    animation: staggerItemIn 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
-    animation-delay: calc(var(--stagger-index, 0) * 42ms);
+    animation: staggerItemIn var(--motion-stagger-duration) var(--motion-ease-out) both;
+    animation-delay: calc(var(--stagger-index, 0) * var(--motion-stagger-delay));
   }
 
   .state-swap {
-    animation: stateFadeIn 160ms ease-out both;
-  }
-
-  .state-fade {
-    animation: stateFadeIn 160ms ease-out both;
+    animation: stateSwapIn var(--motion-state-duration) var(--motion-state-ease) both;
   }
 
   .hp-number-pop {
@@ -292,7 +314,17 @@
   }
 
   .alchemy-loading-fade {
-    animation: startupBlurFadeIn 350ms ease-out both;
+    animation: startupBlurFadeIn var(--motion-startup-fade-duration) var(--motion-state-ease) both;
+  }
+
+  .motion-crossfade {
+    transition:
+      opacity var(--motion-crossfade-duration) var(--motion-state-ease),
+      transform var(--motion-crossfade-duration) var(--motion-state-ease);
+  }
+
+  .motion-crossfade-hidden {
+    transform: translateY(var(--motion-crossfade-y)) scale(var(--motion-crossfade-scale));
   }
 
   .mobile-landscape .game-page-scroll {
@@ -311,11 +343,11 @@
   }
 
   .page-enter {
-    animation: pageEnter 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: pageEnter var(--motion-page-enter-duration) var(--motion-ease-out) both;
   }
 
   .page-exit {
-    animation: pageExit 130ms ease-in both;
+    animation: pageExit var(--motion-page-exit-duration) ease-in both;
     pointer-events: none;
   }
 }
@@ -323,7 +355,7 @@
 @keyframes pageEnter {
   from {
     opacity: 0;
-    transform: translateY(8px) scale(0.988);
+    transform: translateY(var(--motion-page-enter-y)) scale(var(--motion-page-enter-scale));
   }
   to {
     opacity: 1;
@@ -338,7 +370,7 @@
   }
   to {
     opacity: 0;
-    transform: translateY(-6px) scale(0.992);
+    transform: translateY(var(--motion-page-exit-y)) scale(var(--motion-page-exit-scale));
   }
 }
 
@@ -482,6 +514,19 @@
   }
 }
 
+@keyframes startupBlurFadeIn {
+  from {
+    opacity: 0;
+    filter: blur(6px);
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+  }
+}
+
 @keyframes hoverPopupQuickInAbove {
   0% {
     opacity: 0;
@@ -518,7 +563,7 @@
 @keyframes panelPopIn {
   from {
     opacity: 0;
-    transform: translateY(10px) scale(0.975);
+    transform: translateY(var(--motion-panel-y)) scale(var(--motion-panel-scale));
   }
   to {
     opacity: 1;
@@ -529,7 +574,7 @@
 @keyframes battleMenuPop {
   from {
     opacity: 0;
-    transform: translateY(8px) scale(0.965);
+    transform: translateY(var(--motion-battle-menu-y)) scale(var(--motion-battle-menu-scale));
   }
   to {
     opacity: 1;
@@ -540,7 +585,7 @@
 @keyframes staggerItemIn {
   from {
     opacity: 0;
-    transform: translateY(14px) scale(0.985);
+    transform: translateY(var(--motion-stagger-y)) scale(var(--motion-stagger-scale));
   }
   to {
     opacity: 1;
@@ -548,12 +593,14 @@
   }
 }
 
-@keyframes stateFadeIn {
+@keyframes stateSwapIn {
   from {
     opacity: 0;
+    transform: translateY(var(--motion-state-y)) scale(var(--motion-state-scale));
   }
   to {
     opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 

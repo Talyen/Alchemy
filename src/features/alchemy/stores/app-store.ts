@@ -85,7 +85,7 @@ export const useAppStore = create<AppStore>()((set) => ({
   setCollectionPage: (tab, page) =>
     set((s) => ({ collectionPages: { ...s.collectionPages, [tab]: Math.max(0, page) } })),
 
-  resetOptionsToDefault: () =>
+  resetOptionsToDefault: () => {
     set({
       selectedResolution: defaultSaveData.selectedResolution,
       displayMode: defaultSaveData.displayMode,
@@ -96,7 +96,8 @@ export const useAppStore = create<AppStore>()((set) => ({
       sfxVol: defaultSaveData.sfxVolume,
       muteInBackground: defaultSaveData.muteInBackground,
       autoEndTurn: defaultSaveData.autoEndTurn,
-    }),
+    });
+  },
 
   handleCollectionTabChange: (nextTab) =>
     set((s) => ({

@@ -63,11 +63,7 @@ function BattleControls({
         <Button
           variant="outline"
           size="icon"
-          className={
-            isMobileLandscape
-              ? "h-20 w-20 text-muted-foreground"
-              : "h-8 w-8 text-muted-foreground"
-          }
+          className={isMobileLandscape ? "h-20 w-20 text-muted-foreground" : "h-8 w-8 text-muted-foreground"}
           onClick={(e) => onOpenMenu(e.currentTarget.getBoundingClientRect())}
           aria-label="Open battle menu"
         >
@@ -92,11 +88,7 @@ function BattleControls({
           <Button
             variant="outline"
             size="sm"
-            className={
-              isMobileLandscape
-                ? "h-20 w-20 text-amber-200 text-2xl"
-                : "w-full text-amber-200 text-xs"
-            }
+            className={isMobileLandscape ? "h-20 w-20 text-amber-200 text-2xl" : "w-full text-amber-200 text-xs"}
             onClick={onSkipCombatDevMode}
           >
             <Coins className={isMobileLandscape ? "h-11 w-11" : "h-3.5 w-3.5"} />{" "}

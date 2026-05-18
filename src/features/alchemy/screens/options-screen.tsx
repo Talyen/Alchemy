@@ -1,7 +1,6 @@
 // Options screen with display, sound, gameplay, and save-data tabs.
 import { useState } from "react";
 import { House, Swords } from "lucide-react";
-import { motion } from "motion/react";
 
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -16,6 +15,7 @@ import {
   ScreenHeader,
   UiScaleSelect,
 } from "../ui/shared-ui";
+import { PressableMotion } from "../ui/pressable-motion";
 import type { DisplayMode, ResolutionOption, UiScale } from "../types";
 import { useBattleStore } from "../stores/battle-store";
 
@@ -255,12 +255,7 @@ export function OptionsScreen({
 
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           {(["display", "sound", "gameplay", "other"] as const).map((t) => (
-            <motion.span
-              key={t}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.97 }}
-              transition={{ type: "spring", stiffness: 400, damping: 15 }}
-            >
+            <PressableMotion key={t}>
               <button
                 type="button"
                 className={cn(
@@ -271,7 +266,7 @@ export function OptionsScreen({
               >
                 {t.charAt(0).toUpperCase() + t.slice(1)}
               </button>
-            </motion.span>
+            </PressableMotion>
           ))}
         </div>
 

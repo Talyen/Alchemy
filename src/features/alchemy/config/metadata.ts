@@ -63,7 +63,8 @@ export const destinationMeta: Record<Destination, { icon: LucideIcon; className:
   Mystery: { icon: Sparkles, className: "bg-zinc-800/90 text-zinc-100", art: mysteryBg },
   Corruption: {
     icon: Dices,
-    className: "bg-gradient-to-br from-red-950 via-black to-red-950 bg-[length:200%_200%] animate-shine text-red-400 border-0",
+    className:
+      "bg-gradient-to-br from-red-950 via-black to-red-950 bg-[length:200%_200%] animate-shine text-red-400 border-0",
     art: corruptionAltar,
   },
   Campfire: { icon: Flame, className: "bg-orange-800/85 text-white", art: campfire },

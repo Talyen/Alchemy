@@ -1,9 +1,9 @@
 import type { CSSProperties } from "react";
 import { cn } from "@/lib/utils";
-import { motion } from "motion/react";
 import { destinationMeta, staticCardTransform } from "../config";
 import { type Destination } from "../types";
 import { clearTiltFromEvent, setTiltFromEvent } from "../utils";
+import { PressableMotion } from "./pressable-motion";
 
 export function DestinationChoices({
   destinationOptions,
@@ -31,12 +31,7 @@ export function DestinationChoices({
               <img src={art} alt={destination} className="w-full max-w-[352px] rounded-[18px] object-contain" />
             </div>
             <div className="relative rounded-full">
-              <motion.span
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.97 }}
-                transition={{ type: "spring", stiffness: 400, damping: 15 }}
-                style={{ display: "inline-block" }}
-              >
+              <PressableMotion style={{ display: "inline-block" }}>
                 <button
                   type="button"
                   onClick={() => onChoose(destination)}
@@ -50,7 +45,7 @@ export function DestinationChoices({
                   </span>
                   <span className="font-display leading-none">{destination}</span>
                 </button>
-              </motion.span>
+              </PressableMotion>
             </div>
           </div>
         );

@@ -62,48 +62,54 @@ export function useAlchemyRunController({
     return true;
   });
   void storesInitialized;
-  const runStoreFields = useRunStore(useShallow((s) => ({
-    characterId: s.characterId,
-    runDeck: s.runDeck,
-    runGold: s.runGold,
-    runPlayerHealth: s.runPlayerHealth,
-    runMaxHealth: s.runMaxHealth,
-    roomsEncountered: s.roomsEncountered,
-    currentAct: s.currentAct,
-    destinationIndexInAct: s.destinationIndexInAct,
-    completedDestinations: s.completedDestinations,
-    runTrinkets: s.runTrinkets,
-    selectedDifficulty: s.selectedDifficulty,
-    contentSystemType: s.contentSystemType,
-  })));
-  const runStoreActions = useRunStore(useShallow((s) => ({
-    setRunDeck: s.setRunDeck,
-    setRunGold: s.setRunGold,
-    setRunPlayerHealth: s.setRunPlayerHealth,
-    setRunMaxHealth: s.setRunMaxHealth,
-    setRoomsEncountered: s.setRoomsEncountered,
-    setCurrentAct: s.setCurrentAct,
-    setDestinationIndexInAct: s.setDestinationIndexInAct,
-    setCompletedDestinations: s.setCompletedDestinations,
-    setRunTrinkets: s.setRunTrinkets,
-    setSelectedDifficulty: s.setSelectedDifficulty,
-    setContentSystemType: s.setContentSystemType,
-    setCharacter: s.setCharacter,
-    reset: s.reset,
-    addRunGold: s.addRunGold,
-  })));
-  const talentStore = useRunStore(useShallow((s) => ({
-    talentXP: s.talentXP,
-    runTalentXP: s.runTalentXP,
-    unlockedTalents: s.unlockedTalents,
-    awardCardXP: s.awardCardXP,
-    unlockTalent: s.unlockTalent,
-    unlockAllTalents: s.unlockAllTalents,
-    resetUnlockedTalents: s.resetUnlockedTalents,
-    resetRunXP: s.resetRunXP,
-    clearPermanentData: s.clearPermanentData,
-    awardMysteryXP: s.awardMysteryXP,
-  })));
+  const runStoreFields = useRunStore(
+    useShallow((s) => ({
+      characterId: s.characterId,
+      runDeck: s.runDeck,
+      runGold: s.runGold,
+      runPlayerHealth: s.runPlayerHealth,
+      runMaxHealth: s.runMaxHealth,
+      roomsEncountered: s.roomsEncountered,
+      currentAct: s.currentAct,
+      destinationIndexInAct: s.destinationIndexInAct,
+      completedDestinations: s.completedDestinations,
+      runTrinkets: s.runTrinkets,
+      selectedDifficulty: s.selectedDifficulty,
+      contentSystemType: s.contentSystemType,
+    })),
+  );
+  const runStoreActions = useRunStore(
+    useShallow((s) => ({
+      setRunDeck: s.setRunDeck,
+      setRunGold: s.setRunGold,
+      setRunPlayerHealth: s.setRunPlayerHealth,
+      setRunMaxHealth: s.setRunMaxHealth,
+      setRoomsEncountered: s.setRoomsEncountered,
+      setCurrentAct: s.setCurrentAct,
+      setDestinationIndexInAct: s.setDestinationIndexInAct,
+      setCompletedDestinations: s.setCompletedDestinations,
+      setRunTrinkets: s.setRunTrinkets,
+      setSelectedDifficulty: s.setSelectedDifficulty,
+      setContentSystemType: s.setContentSystemType,
+      setCharacter: s.setCharacter,
+      reset: s.reset,
+      addRunGold: s.addRunGold,
+    })),
+  );
+  const talentStore = useRunStore(
+    useShallow((s) => ({
+      talentXP: s.talentXP,
+      runTalentXP: s.runTalentXP,
+      unlockedTalents: s.unlockedTalents,
+      awardCardXP: s.awardCardXP,
+      unlockTalent: s.unlockTalent,
+      unlockAllTalents: s.unlockAllTalents,
+      resetUnlockedTalents: s.resetUnlockedTalents,
+      resetRunXP: s.resetRunXP,
+      clearPermanentData: s.clearPermanentData,
+      awardMysteryXP: s.awardMysteryXP,
+    })),
+  );
   const talentEffects = useMemo(() => computeTalentEffects(talentStore.unlockedTalents), [talentStore.unlockedTalents]);
 
   // Adapter objects matching previous useRunState/useTalentState interfaces
@@ -284,11 +290,21 @@ export function useAlchemyRunController({
     unlockAllTalents: talents.unlockAllTalents,
     resetUnlockedTalents: talents.resetUnlockedTalents,
     clearPermanentData,
-    get rewardChoices() { return nav.rewardChoices; },
-    get shopCards() { return shop.shopCards; },
-    get alchemistPotions() { return shop.alchemistPotions; },
-    get mysteryEvent() { return nav.mysteryEvent; },
-    get activeRunData() { return nav.activeRunData; },
+    get rewardChoices() {
+      return nav.rewardChoices;
+    },
+    get shopCards() {
+      return shop.shopCards;
+    },
+    get alchemistPotions() {
+      return shop.alchemistPotions;
+    },
+    get mysteryEvent() {
+      return nav.mysteryEvent;
+    },
+    get activeRunData() {
+      return nav.activeRunData;
+    },
     handCardRefs: battle.handCardRefs,
     battleSceneRef: battle.battleSceneRef,
     playerPanelRef: battle.playerPanelRef,

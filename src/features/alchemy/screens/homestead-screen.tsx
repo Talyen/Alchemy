@@ -4,7 +4,6 @@
 
 import { useState, useMemo, type ReactNode } from "react";
 import { ChevronLeft, ChevronRight, FlaskConical, Hammer, House, PawPrint, Star, Swords, Wheat } from "lucide-react";
-import { motion } from "motion/react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -15,6 +14,7 @@ import {
   type HomesteadBuilding,
   type HomesteadFarm,
   type HomesteadResearch,
+  type MaterialId,
   type MaterialInventory,
   type ResearchId,
   materialLabels,
@@ -34,6 +34,7 @@ import placeholderHomestead from "@/assets/optimized/placeholder-homestead.webp"
 
 import { DetailPopup } from "../ui/card-ui";
 import { DisabledTooltip, PageLayout, ScreenHeader } from "../ui/shared-ui";
+import { PressableMotion } from "../ui/pressable-motion";
 import { MaterialIcon, matIconMap, matPillStyle, matTextColor } from "../ui/material-icons";
 import { playUISound } from "@/lib/audio";
 import { cardLibrary, keywordDefinitions, type CompanionId } from "@/lib/game-data";
@@ -75,6 +76,17 @@ const itemArt: Record<string, string> = {
 
 function getArt(id: string): string {
   return itemArt[id] ?? placeholderHomestead;
+}
+
+function MaterialCost({ material, amount }: { material: MaterialId; amount: number }) {
+  return (
+    <span className="ml-1.5 inline-flex h-5 shrink-0 items-center gap-1 leading-none">
+      <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center overflow-hidden">
+        <MaterialIcon material={material} />
+      </span>
+      <span className={cn("tabular-nums leading-none", matTextColor[material])}>{amount}</span>
+    </span>
+  );
 }
 
 function renderTextWithMaterials(text: string): ReactNode {
@@ -202,20 +214,13 @@ export function HomesteadScreen({
         {/* Tabs */}
         <div className="mx-auto mt-5 flex flex-wrap justify-center gap-3">
           {tabs.map((t) => (
-            <motion.span
-              key={t.id}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.97 }}
-              transition={{ type: "spring", stiffness: 400, damping: 15 }}
-            >
+            <PressableMotion key={t.id}>
               <button
                 type="button"
                 onClick={() => setTab(t.id)}
                 className={cn(
                   "inline-flex items-center gap-2 rounded-full bg-card px-4 py-2 text-sm font-semibold text-foreground ring-1 ring-offset-1 ring-offset-card transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                  tab === t.id
-                    ? "ring-primary/70"
-                    : "ring-border/30 hover:ring-border/50",
+                  tab === t.id ? "ring-primary/70" : "ring-border/30 hover:ring-border/50",
                 )}
               >
                 {t.id === "buildings" ? (
@@ -229,7 +234,7 @@ export function HomesteadScreen({
                 )}
                 {t.label}
               </button>
-            </motion.span>
+            </PressableMotion>
           ))}
         </div>
 
@@ -242,8 +247,8 @@ export function HomesteadScreen({
                 <div
                   key={t}
                   className={cn(
-                    "col-start-1 row-start-1 transition-opacity duration-200",
-                    isActive ? "opacity-100" : "pointer-events-none opacity-0",
+                    "motion-crossfade col-start-1 row-start-1",
+                    isActive ? "opacity-100" : "motion-crossfade-hidden pointer-events-none opacity-0",
                   )}
                 >
                   <div className="grid">
@@ -256,8 +261,10 @@ export function HomesteadScreen({
                         <div
                           key={pageIndex}
                           className={cn(
-                            "col-start-1 row-start-1 grid grid-cols-3 gap-x-1 gap-y-4 transition-opacity duration-200",
-                            companionPage === pageIndex ? "opacity-100" : "pointer-events-none opacity-0",
+                            "motion-crossfade col-start-1 row-start-1 grid grid-cols-3 gap-x-1 gap-y-4",
+                            companionPage === pageIndex
+                              ? "opacity-100"
+                              : "motion-crossfade-hidden pointer-events-none opacity-0",
                           )}
                         >
                           {pageItems.map((card, index) => {
@@ -303,7 +310,10 @@ export function HomesteadScreen({
                                       <img
                                         src={card.art}
                                         alt={card.title}
-                                        className={cn("h-full w-full object-cover", !discovered && "grayscale opacity-45")}
+                                        className={cn(
+                                          "h-full w-full object-cover",
+                                          !discovered && "grayscale opacity-45",
+                                        )}
                                       />
                                     </div>
                                   </div>
@@ -317,10 +327,7 @@ export function HomesteadScreen({
                                         onClick={() => handleBondCompanion(card)}
                                       >
                                         {card.title}
-                                        <span className="ml-1.5 flex items-center gap-1">
-                                          <MaterialIcon material="food" />
-                                          <span className={matTextColor.food}>{bondCost.food}</span>
-                                        </span>
+                                        <MaterialCost material="food" amount={bondCost.food} />
                                       </Button>
                                     </DisabledTooltip>
                                     <span className="flex items-center gap-0.5">
@@ -365,8 +372,8 @@ export function HomesteadScreen({
               <div
                 key={t}
                 className={cn(
-                  "col-start-1 row-start-1 transition-opacity duration-200",
-                  isActive ? "opacity-100" : "pointer-events-none opacity-0",
+                  "motion-crossfade col-start-1 row-start-1",
+                  isActive ? "opacity-100" : "motion-crossfade-hidden pointer-events-none opacity-0",
                   "grid grid-cols-3 gap-x-2 gap-y-6",
                 )}
               >
@@ -482,10 +489,7 @@ export function HomesteadScreen({
                                 <Button variant="outline" disabled={!itemAffordable} onClick={() => handleAction(item)}>
                                   {item.data.title}
                                   {costItems.map((m) => (
-                                    <span key={m} className="ml-1.5 flex items-center gap-1">
-                                      <MaterialIcon material={m} />
-                                      <span className={matTextColor[m]}>{itemCost[m]}</span>
-                                    </span>
+                                    <MaterialCost key={m} material={m} amount={itemCost[m]} />
                                   ))}
                                 </Button>
                               </DisabledTooltip>

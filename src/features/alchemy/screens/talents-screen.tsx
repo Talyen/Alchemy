@@ -1,7 +1,6 @@
 // Talent tree screen — spend XP to unlock keyword-specific talents.
 import { useState, useMemo } from "react";
 import { House, Swords } from "lucide-react";
-import { motion } from "motion/react";
 
 import { Button } from "@/components/ui/button";
 import { keywordDefinitions, type KeywordId } from "@/lib/game-data";
@@ -9,6 +8,7 @@ import { getTalentKeywordProgress } from "@/lib/talents";
 
 import { TalentKeywordButton } from "../talents/talents-ui";
 import { ConfirmationDialog, PageLayout, ProgressBar, ScreenHeader } from "../ui/shared-ui";
+import { PressableMotion } from "../ui/pressable-motion";
 import { KeywordTag } from "../ui/keyword-tag";
 import { getTalentsForKeyword } from "@/lib/game-data";
 import { useTalentChoices } from "../talents/use-talent-choices";
@@ -41,12 +41,7 @@ export function TalentsScreen({
   const allUnlocked = progress.spentPoints >= allTalentsForKeyword.length;
   const unlockedTalentsForKeyword = allTalentsForKeyword.filter((t) => unlockedIds.includes(t.id));
 
-  const { currentChoices } = useTalentChoices(
-    selectedKeyword,
-    unlockedIds,
-    progress.unspentPoints > 0,
-    allUnlocked,
-  );
+  const { currentChoices } = useTalentChoices(selectedKeyword, unlockedIds, progress.unspentPoints > 0, allUnlocked);
 
   function handleUnlockTalent(talentId: string) {
     onUnlockTalent(selectedKeyword, talentId);
@@ -76,11 +71,7 @@ export function TalentsScreen({
                 />
               );
             })}
-            <motion.span
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.97 }}
-              transition={{ type: "spring", stiffness: 400, damping: 15 }}
-            >
+            <PressableMotion>
               <button
                 type="button"
                 onClick={() => setShowResetConfirm(true)}
@@ -88,7 +79,7 @@ export function TalentsScreen({
               >
                 Reset Talents
               </button>
-            </motion.span>
+            </PressableMotion>
           </div>
 
           <div>

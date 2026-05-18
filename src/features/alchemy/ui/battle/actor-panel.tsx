@@ -295,7 +295,10 @@ export function ArtPanel({
         <div className={isDead ? "opacity-0 transition-opacity duration-700" : ""}>
           <div className="flex items-baseline justify-between gap-3">
             <p className="font-display text-base font-bold text-amber-100/75">{title}</p>
-            <p key={healthToken} className={cn("hp-number-pop text-sm font-semibold text-foreground")}>
+            <p
+              key={healthToken}
+              className={cn("text-sm font-semibold text-foreground", healthToken > 0 && "hp-number-pop")}
+            >
               {health}/{maxHealth}
             </p>
           </div>

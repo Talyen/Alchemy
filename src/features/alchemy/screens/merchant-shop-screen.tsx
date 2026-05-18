@@ -159,7 +159,11 @@ export function MerchantShopScreen({
             >
               Cancel
             </Button>
-            <Button variant="outline" disabled={selectedRemoveIndex === null || gold < removePrice} onClick={handleRemoveConfirm}>
+            <Button
+              variant="outline"
+              disabled={selectedRemoveIndex === null || gold < removePrice}
+              onClick={handleRemoveConfirm}
+            >
               <Trash2 className="h-4 w-4" /> Remove Card <GoldCost amount={removePrice} />
             </Button>
           </div>

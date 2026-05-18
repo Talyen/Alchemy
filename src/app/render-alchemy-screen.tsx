@@ -147,11 +147,15 @@ export function renderAlchemyScreen({
         />
       );
     case "character-select":
-      return <CharacterSelectScreen onConfirm={a.handleCharacterSelect} onBack={() => a.goToScreen("game-mode-select")} />;
+      return (
+        <CharacterSelectScreen onConfirm={a.handleCharacterSelect} onBack={() => a.goToScreen("game-mode-select")} />
+      );
     case "difficulty-select":
       return (
         <DifficultySelectScreen
-          completedDifficulties={useAppStore.getState().completedDifficulties[(pendingCharacterId ?? "knight") as CharacterId] ?? []}
+          completedDifficulties={
+            useAppStore.getState().completedDifficulties[(pendingCharacterId ?? "knight") as CharacterId] ?? []
+          }
           onSelect={a.handleDifficultySelect}
           onBack={a.handleBackFromDifficultySelect}
         />
@@ -178,7 +182,9 @@ export function renderAlchemyScreen({
     case "labyrinth-map":
       return <LabyrinthMapScreen onNodeClick={a.handleLabyrinthNodeEnter} onOpenMenu={onOpenBattleMenu} />;
     case "wildwood-select":
-      return <WildwoodSelectScreen onSelect={a.handleWildwoodBossSelect} onBack={() => a.goToScreen("character-select")} />;
+      return (
+        <WildwoodSelectScreen onSelect={a.handleWildwoodBossSelect} onBack={() => a.goToScreen("character-select")} />
+      );
     case "rewards":
       return <RewardsScreen onAddReward={a.finishRewards} onSkip={a.finishRewards} />;
     case "destination":

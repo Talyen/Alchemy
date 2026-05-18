@@ -95,22 +95,36 @@ export function MysteryEffectBadge({
     }
     case "addCard":
       return tooltip ? (
-        <span className="text-sm text-muted-foreground">Add {findCard?.(effect.cardId)?.title ?? "a card"} card to your deck</span>
+        <span className="text-sm text-muted-foreground">
+          Add {findCard?.(effect.cardId)?.title ?? "a card"} card to your deck
+        </span>
       ) : (
         <span className="text-sm text-muted-foreground">Add {findCard?.(effect.cardId)?.title ?? "a card"}</span>
       );
     case "chooseCard":
-      return tooltip ? <span className="text-sm text-muted-foreground">Choose a card to add to your deck</span> : <span className="text-sm text-muted-foreground">Choose a card</span>;
+      return tooltip ? (
+        <span className="text-sm text-muted-foreground">Choose a card to add to your deck</span>
+      ) : (
+        <span className="text-sm text-muted-foreground">Choose a card</span>
+      );
     case "gainTrinket":
       return tooltip ? (
-        <span className="text-sm text-muted-foreground">Add {findTrinket?.(effect.trinketId)?.title ?? "a trinket"} to your Inventory</span>
+        <span className="text-sm text-muted-foreground">
+          Add {findTrinket?.(effect.trinketId)?.title ?? "a trinket"} to your Inventory
+        </span>
       ) : (
-        <span className="text-sm text-muted-foreground">Add {findTrinket?.(effect.trinketId)?.title ?? "a trinket"}</span>
+        <span className="text-sm text-muted-foreground">
+          Add {findTrinket?.(effect.trinketId)?.title ?? "a trinket"}
+        </span>
       );
     case "gainRandomTrinket":
       return <span className="text-sm text-muted-foreground">Gain a random trinket</span>;
     case "removeCard":
-      return effect.mode === "random" ? <span className="text-sm text-muted-foreground">Remove a random card</span> : <span className="text-sm text-muted-foreground">Choose a card to remove</span>;
+      return effect.mode === "random" ? (
+        <span className="text-sm text-muted-foreground">Remove a random card</span>
+      ) : (
+        <span className="text-sm text-muted-foreground">Choose a card to remove</span>
+      );
     case "none":
       return null;
   }

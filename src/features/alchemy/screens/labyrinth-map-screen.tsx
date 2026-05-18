@@ -102,9 +102,7 @@ export function LabyrinthMapScreen({ onNodeClick, onOpenMenu }: Props) {
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-4 overflow-hidden px-3 py-4 text-center sm:gap-5 sm:px-5 sm:py-6">
       <ScreenHeader title="Labyrinth" />
-      <p className="max-w-xl text-sm text-amber-100/75">
-        Choose your path through the depths
-      </p>
+      <p className="max-w-xl text-sm text-amber-100/75">Choose your path through the depths</p>
 
       <section
         aria-label="Labyrinth map"
@@ -320,9 +318,7 @@ function NodeTooltip({
       ) : null}
       {rewardModifiers.length > 0 ? (
         <>
-          <p className="mb-2 mt-3 text-xs font-semibold uppercase tracking-widest text-emerald-400">
-            Reward Modifiers
-          </p>
+          <p className="mb-2 mt-3 text-xs font-semibold uppercase tracking-widest text-emerald-400">Reward Modifiers</p>
           <div className="grid gap-2">
             {rewardModifiers.map((modifier) => {
               const definition = ALL_LABYRINTH_MODIFIERS[modifier];

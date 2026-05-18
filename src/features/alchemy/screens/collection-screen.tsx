@@ -58,8 +58,8 @@ export function CollectionScreen({
             <div
               key={tab}
               className={cn(
-                "col-start-1 row-start-1 overflow-visible",
-                collectionTab !== tab && "invisible pointer-events-none",
+                "motion-crossfade col-start-1 row-start-1 overflow-visible",
+                collectionTab === tab ? "opacity-100" : "motion-crossfade-hidden pointer-events-none opacity-0",
               )}
             >
               <CollectionGrid

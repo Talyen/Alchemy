@@ -6,11 +6,11 @@ import { cn } from "@/lib/utils";
 import type { MaterialId } from "@/lib/homestead/types";
 
 export const matIconMap: Record<MaterialId, ReactNode> = {
-  wood: <TreePine className="h-4 w-4" />,
-  iron: <Pickaxe className="h-4 w-4" />,
-  herbs: <Leaf className="h-4 w-4" />,
-  food: <Apple className="h-4 w-4" />,
-  crystal: <Gem className="h-4 w-4" />,
+  wood: <TreePine absoluteStrokeWidth aria-hidden="true" className="block h-4 w-4 shrink-0" />,
+  iron: <Pickaxe absoluteStrokeWidth aria-hidden="true" className="block h-4 w-4 shrink-0" />,
+  herbs: <Leaf absoluteStrokeWidth aria-hidden="true" className="block h-4 w-4 shrink-0" />,
+  food: <Apple absoluteStrokeWidth aria-hidden="true" className="block h-4 w-4 shrink-0" />,
+  crystal: <Gem absoluteStrokeWidth aria-hidden="true" className="block h-4 w-4 shrink-0" />,
 };
 
 export const matTextColor: Record<MaterialId, string> = {
@@ -30,12 +30,13 @@ export const matPillStyle: Record<MaterialId, string> = {
 };
 
 export function MaterialIcon({ material, className }: { material: MaterialId; className?: string }) {
+  const iconClassName = cn("block h-4 w-4 shrink-0", className);
   const icons: Record<MaterialId, ReactNode> = {
-    wood: <TreePine className={cn("text-amber-600", className ?? "h-4 w-4")} />,
-    iron: <Pickaxe className={cn("text-gray-400", className ?? "h-4 w-4")} />,
-    herbs: <Leaf className={cn("text-green-600", className ?? "h-4 w-4")} />,
-    food: <Apple className={cn("text-red-400", className ?? "h-4 w-4")} />,
-    crystal: <Gem className={cn("text-sky-400", className ?? "h-4 w-4")} />,
+    wood: <TreePine absoluteStrokeWidth aria-hidden="true" className={cn("text-amber-600", iconClassName)} />,
+    iron: <Pickaxe absoluteStrokeWidth aria-hidden="true" className={cn("text-gray-400", iconClassName)} />,
+    herbs: <Leaf absoluteStrokeWidth aria-hidden="true" className={cn("text-green-600", iconClassName)} />,
+    food: <Apple absoluteStrokeWidth aria-hidden="true" className={cn("text-red-400", iconClassName)} />,
+    crystal: <Gem absoluteStrokeWidth aria-hidden="true" className={cn("text-sky-400", iconClassName)} />,
   };
   return icons[material];
 }
