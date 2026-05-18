@@ -27,7 +27,7 @@ export function PilePanel({
   if (compact) {
     return (
       <div
-        className="flex items-center gap-1.5 text-xs text-muted-foreground"
+        className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground"
         data-testid={`${type}-pile`}
         data-count={count}
       >
@@ -79,8 +79,8 @@ export function ManaPanel({ mana, maxMana, gold }: { mana: number; maxMana: numb
                 "h-[22px] w-[22px] transition-opacity duration-200",
                 isFilled && "mana-gem-active",
                 isFilled && isOverflow && "text-sky-300 drop-shadow-[0_0_3px_rgba(125,211,252,0.6)]",
-                isFilled && !isOverflow && "text-[#2c4f88]",
-                !isFilled && "text-[#2c4f88]/20",
+                isFilled && !isOverflow && "text-[hsl(var(--mana-gem))]",
+                !isFilled && "text-[hsl(var(--mana-gem))/0.2]",
               )}
               strokeWidth={2.2}
             />

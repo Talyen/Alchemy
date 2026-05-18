@@ -17,11 +17,13 @@ export function EnemyTooltip({
   discovered = true,
   attackEffects,
   labyrinthModifiers = [],
+  className,
 }: {
   entry: BestiaryEntry;
   discovered?: boolean;
   attackEffects?: EnemyAttackEffect[] | undefined;
   labyrinthModifiers?: LabyrinthModifierKind[];
+  className?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [flip, setFlip] = useState(false);
@@ -44,6 +46,7 @@ export function EnemyTooltip({
           ? "absolute left-[calc(100%+12px)] top-0 z-40 w-60 rounded-[20px] border border-border/80 bg-card px-3 py-3 text-left"
           : popupClassName,
         "pointer-events-auto",
+        className,
       )}
       style={
         flip
@@ -51,7 +54,7 @@ export function EnemyTooltip({
           : undefined
       }
     >
-      <p className="text-base text-foreground sm:text-lg">{discovered ? entry.title : "Undiscovered"}</p>
+      <p className="font-display text-base font-bold text-amber-100/75">{discovered ? entry.title : "Undiscovered"}</p>
       <div className="mt-2 space-y-1 text-sm leading-6 text-muted-foreground">
         {discovered ? (
           [...attackLines, ...traitLines].map((line, i) => (
@@ -62,14 +65,14 @@ export function EnemyTooltip({
         )}
         {discovered && labyrinthModifiers.length > 0 ? (
           <div className="mt-3 border-t border-border/60 pt-3">
-            <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-amber-100/80">
+            <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-amber-100/80">
               Special Modifiers
             </p>
             {labyrinthModifiers.map((modifier) => {
               const definition = ALL_LABYRINTH_MODIFIERS[modifier];
               return (
                 <p key={modifier}>
-                  <span className="text-foreground">{definition.label}:</span> {definition.description}
+                  <span className="text-amber-100">{definition.label}:</span> {definition.description}
                 </p>
               );
             })}

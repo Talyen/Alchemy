@@ -4,6 +4,7 @@
 
 import { useState, useMemo, type ReactNode } from "react";
 import { ChevronLeft, ChevronRight, FlaskConical, Hammer, House, PawPrint, Star, Swords, Wheat } from "lucide-react";
+import { motion } from "motion/react";
 
 import { AnimatedHeight } from "@/features/alchemy/ui/animated-height";
 
@@ -203,28 +204,34 @@ export function HomesteadScreen({
         {/* Tabs */}
         <div className="mx-auto mt-5 flex flex-wrap justify-center gap-3">
           {tabs.map((t) => (
-            <button
+            <motion.span
               key={t.id}
-              type="button"
-              onClick={() => setTab(t.id)}
-              className={cn(
-                "inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                tab === t.id
-                  ? "border-primary/70 bg-primary/15 text-foreground"
-                  : "border-border/80 bg-card text-foreground hover:bg-secondary/50",
-              )}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.97 }}
+              transition={{ type: "spring", stiffness: 400, damping: 15 }}
             >
-              {t.id === "buildings" ? (
-                <Hammer className="h-4 w-4" />
-              ) : t.id === "farm" ? (
-                <Wheat className="h-4 w-4" />
-              ) : t.id === "research" ? (
-                <FlaskConical className="h-4 w-4" />
-              ) : (
-                <PawPrint className="h-4 w-4" />
-              )}
-              {t.label}
-            </button>
+              <button
+                type="button"
+                onClick={() => setTab(t.id)}
+                className={cn(
+                  "inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                  tab === t.id
+                    ? "border-primary/70 bg-primary/15 text-foreground"
+                    : "border-border/80 bg-card text-foreground",
+                )}
+              >
+                {t.id === "buildings" ? (
+                  <Hammer className="h-4 w-4" />
+                ) : t.id === "farm" ? (
+                  <Wheat className="h-4 w-4" />
+                ) : t.id === "research" ? (
+                  <FlaskConical className="h-4 w-4" />
+                ) : (
+                  <PawPrint className="h-4 w-4" />
+                )}
+                {t.label}
+              </button>
+            </motion.span>
           ))}
         </div>
 
@@ -321,7 +328,7 @@ export function HomesteadScreen({
                                 </span>
                               </div>
                             ) : (
-                              <div className="mt-1.5 flex h-9 items-center justify-center gap-1.5 text-sm font-semibold text-muted-foreground">
+                              <div className="mt-1.5 flex h-9 items-center justify-center gap-1.5 text-sm font-semibold text-amber-100/75">
                                 <span>{discovered ? card.title : "Undiscovered"}</span>
                                 {discovered && (
                                   <span className="flex items-center gap-0.5 text-amber-400">
@@ -446,7 +453,7 @@ export function HomesteadScreen({
 
                       {/* Bottom label / action button */}
                       {isCompleted ? (
-                        <div className="mt-1.5 flex h-9 items-center justify-center gap-1.5 text-sm font-semibold text-muted-foreground">
+                        <div className="mt-1.5 flex h-9 items-center justify-center gap-1.5 text-sm font-semibold text-amber-100/75">
                           <span>{item.data.title}</span>
                           <span className="flex items-center gap-0.5 text-amber-400">
                             {Array.from({ length: maxTiers }, (_, i) => (

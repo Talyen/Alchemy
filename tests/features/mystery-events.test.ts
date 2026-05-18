@@ -128,16 +128,6 @@ describe("mysteryPool", () => {
     }
   });
 
-  it("healHP with chance is 0.5 (Fairy Ring dance)", () => {
-    const fairyRing = mysteryPool.find((e) => e.id === "fairy-ring");
-    expect(fairyRing).toBeDefined();
-    const dance = fairyRing!.choices.find((c) => c.label === "Dance Until Dawn");
-    expect(dance).toBeDefined();
-    const chanceHeal = dance!.effects.find((e) => e.kind === "healHP" && e.chance !== undefined);
-    expect(chanceHeal).toBeDefined();
-    expect(chanceHeal!.chance).toBe(0.5);
-  });
-
   it("each event has at least one non-none effect across all choices", () => {
     for (const event of mysteryPool) {
       const hasRealEffect = event.choices.some((choice) =>

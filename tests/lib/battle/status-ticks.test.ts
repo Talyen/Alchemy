@@ -12,7 +12,8 @@ function baseState(overrides: Partial<BattleState> = {}): BattleState {
     enemyHealth: 30, enemyMaxHealth: 30, enemyAttackEffects: [], enemyArmor: 0,
     enemyForge: 0, enemyFreezeBonus: 0, enemyRegeneration: 0,
     playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
-    enemyStatuses: { burn: 0, poison: 0, bleed: 0, bleedLeech: 0, freeze: 0, stun: 0 },
+    enemyStatuses: { burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+    pendingBleedLeechHealing: 0,
     enemyStunSkipTurns: 0, enemyFreezeSkipTurns: 0, wishOptions: null, wishQueue: [],
     activeCompanion: null, companionDamageBuff: 0,
     currentEnemy: { id: "skeleton", title: "Skeleton", subtitle: "", descriptionLines: [""], art: "", enemyType: "normal", traits: [], attackEffects: [] },
@@ -100,7 +101,7 @@ describe("tickEnemyStatuses", () => {
   it("deals bleed damage equal to stack and resets bleed to 0", () => {
     const state = baseState({
       enemyHealth: 30,
-      enemyStatuses: { ...baseState().enemyStatuses, bleed: 6, bleedLeech: 0 },
+      enemyStatuses: { ...baseState().enemyStatuses, bleed: 6 },
     });
     const texts = makeTexts();
     const next = tickEnemyStatuses(state, texts);
@@ -109,16 +110,17 @@ describe("tickEnemyStatuses", () => {
     expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "bleed", amount: 6 });
   });
 
-  it("heals player from bleedLeech", () => {
+  it("heals player from pending bleed leech healing", () => {
     const state = baseState({
       enemyHealth: 30,
       playerHealth: 20,
-      enemyStatuses: { ...baseState().enemyStatuses, bleed: 6, bleedLeech: 3 },
+      enemyStatuses: { ...baseState().enemyStatuses, bleed: 6 },
+      pendingBleedLeechHealing: 3,
     });
     const texts = makeTexts();
     const next = tickEnemyStatuses(state, texts);
     expect(next.playerHealth).toBe(23);
-    expect(next.enemyStatuses.bleedLeech).toBe(0);
+    expect(next.pendingBleedLeechHealing).toBe(0);
     expect(texts).toContainEqual({ target: "player", kind: "heal", stat: "health", amount: 3 });
   });
 
@@ -134,7 +136,8 @@ describe("tickEnemyStatuses", () => {
     const state = baseState({
       enemyHealth: 50,
       enemyMaxHealth: 50,
-      enemyStatuses: { ...baseState().enemyStatuses, burn: 10, poison: 5, bleed: 8, bleedLeech: 2 },
+      enemyStatuses: { ...baseState().enemyStatuses, burn: 10, poison: 5, bleed: 8 },
+      pendingBleedLeechHealing: 2,
     });
     const texts = makeTexts();
     const next = tickEnemyStatuses(state, texts);

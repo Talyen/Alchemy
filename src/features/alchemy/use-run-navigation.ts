@@ -92,7 +92,7 @@ export function useRunNavigation({
   talents: TalentStateController;
   screen: Screen;
   setScreen: React.Dispatch<React.SetStateAction<Screen>>;
-  navigateTo: (nextScreen: Screen) => void;
+  navigateTo: (nextScreen: Screen, onRenderedScreenCommit?: () => void) => void;
   battleState: BattleState;
   hasActiveBattle: boolean;
   setHasActiveBattle: React.Dispatch<React.SetStateAction<boolean>>;
@@ -496,15 +496,13 @@ export function useRunNavigation({
   function handleDifficultySelect(difficultyId: DifficultyId) {
     if (!pendingCharacterId) return;
     const selectedId = pendingCharacterId;
-    getStore().setPendingCharacterId(null);
     const { freshDeck, totalStartGold } = initializeRunForDifficulty(selectedId, difficultyId);
     const modifiers = getDifficultyModifiers(selectedId, difficultyId);
     onStartBattle(freshDeck, totalStartGold, "normal", modifiers);
-    navigateTo("battle");
+    navigateTo("battle", () => getStore().setPendingCharacterId(null));
   }
 
   function handleBackFromDifficultySelect() {
-    getStore().setPendingCharacterId(null);
     navigateTo("character-select");
   }
 
@@ -555,12 +553,11 @@ export function useRunNavigation({
       setDiscoveredCardIds((cur) => appendUnique(cur, potion.id));
     }
 
-    getStore().setRewardState(result.nextRewardState);
     setHoveredCardId(null);
 
     if (result.route === "companion-reward") {
+      getStore().setRewardState(result.nextRewardState);
       if (result.clearCompanionRewardCards) getStore().setCompanionRewardCards(null);
-      setHoveredCardId(null);
       navigateTo("rewards");
       return;
     }
@@ -569,22 +566,23 @@ export function useRunNavigation({
       awardRunEndMaterials(result.materials);
       setHasActiveBattle(false);
       getStore().setHasActiveRun(false);
-      navigateTo("run-victory");
+      navigateTo("run-victory", () => getStore().setRewardState(result.nextRewardState));
       return;
     }
 
     if (result.route === "labyrinth-map") {
       onLabyrinthClearNode();
-      navigateTo("labyrinth-map");
+      navigateTo("labyrinth-map", () => getStore().setRewardState(result.nextRewardState));
       return;
     }
 
     if (result.route === "act-complete") {
+      getStore().setRewardState(result.nextRewardState);
       handleActComplete();
       return;
     }
 
-    navigateTo("destination");
+    navigateTo("destination", () => getStore().setRewardState(result.nextRewardState));
   }
 
   function handleDestinationChoice(destination: Destination) {
@@ -698,16 +696,17 @@ export function useRunNavigation({
 
   function resetRunState() {
     clearCardGhosts();
-    setBattleState(createBattleState(getStartingDeck(run.characterId), 0));
-    run.reset();
-    talents.resetRunXP();
-    getStore().setPendingContentSystemType("campaign");
-    getStore().setRewardState(createEmptyRewardState());
-    mystery.clearCardChoices();
     setHoveredCardId(null);
     setHasActiveBattle(false);
-    getStore().setHasActiveRun(false);
-    navigateTo("menu");
+    navigateTo("menu", () => {
+      setBattleState(createBattleState(getStartingDeck(run.characterId), 0));
+      run.reset();
+      talents.resetRunXP();
+      getStore().setPendingContentSystemType("campaign");
+      getStore().setRewardState(createEmptyRewardState());
+      mystery.clearCardChoices();
+      getStore().setHasActiveRun(false);
+    });
   }
 
   return {

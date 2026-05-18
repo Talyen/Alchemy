@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import type { LabyrinthMap, LabyrinthModifierKind, LabyrinthNodeType } from "@/lib/content-systems/types";
 import { NODE_TYPE_LABELS } from "@/lib/content-systems/labyrinth/data";
 import { ALL_LABYRINTH_MODIFIERS, REWARD_MODIFIER_KINDS } from "@/lib/content-systems/labyrinth/modifiers";
+import { keywordDefinitions, type KeywordId } from "@/lib/game-data";
 import { ScreenHeader } from "../ui/shared-ui";
 import { useScreenStore } from "../stores/screen-store";
 
@@ -22,6 +23,14 @@ type NodeMeta = {
   className: string;
   hoverBorder: string;
   shineColors: string[];
+};
+
+type HoveredLabyrinthNode = {
+  row: number;
+  col: number;
+  type: LabyrinthNodeType;
+  modifiers: LabyrinthModifierKind[];
+  rewardModifiers: LabyrinthModifierKind[];
 };
 
 const NODE_META: Record<LabyrinthNodeType, NodeMeta> = {
@@ -88,10 +97,12 @@ const NODE_DESCRIPTIONS: Record<LabyrinthNodeType, string> = {
 
 export function LabyrinthMapScreen({ onNodeClick, onOpenMenu }: Props) {
   const labyrinthMap = useScreenStore((s) => s.labyrinthMap);
+  const [hoveredNode, setHoveredNode] = useState<HoveredLabyrinthNode | null>(null);
+
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-4 overflow-hidden px-3 py-4 text-center sm:gap-5 sm:px-5 sm:py-6">
       <ScreenHeader title="Labyrinth" />
-      <p className="max-w-xl text-xs uppercase tracking-[0.22em] text-amber-100 sm:text-sm">
+      <p className="max-w-xl text-sm text-amber-100/75">
         Choose your path through the depths
       </p>
 
@@ -124,10 +135,26 @@ export function LabyrinthMapScreen({ onNodeClick, onOpenMenu }: Props) {
                     node={node}
                     labyrinthMap={labyrinthMap}
                     onNodeClick={onNodeClick}
+                    onHover={setHoveredNode}
+                    onLeave={() => setHoveredNode(null)}
                   />
                 ) : null,
               ),
             )}
+
+            {hoveredNode ? (
+              <div
+                key={`${hoveredNode.row}-${hoveredNode.col}`}
+                className="pointer-events-none absolute z-[60] flex h-[var(--labyrinth-node-size)] w-[var(--labyrinth-node-size)] -translate-x-1/2 -translate-y-1/2 items-center justify-center"
+                style={positionStyle(hoveredNode.row, hoveredNode.col, labyrinthMap.rows, labyrinthMap.cols)}
+              >
+                <NodeTooltip
+                  type={hoveredNode.type}
+                  modifiers={hoveredNode.modifiers}
+                  rewardModifiers={hoveredNode.rewardModifiers}
+                />
+              </div>
+            ) : null}
           </div>
         </div>
       </section>
@@ -141,12 +168,16 @@ function LabyrinthNodeButton({
   node,
   labyrinthMap,
   onNodeClick,
+  onHover,
+  onLeave,
 }: {
   row: number;
   col: number;
   node: NonNullable<LabyrinthMap["grid"][number][number]>;
   labyrinthMap: LabyrinthMap;
   onNodeClick: (row: number, col: number) => void;
+  onHover: (node: HoveredLabyrinthNode) => void;
+  onLeave: () => void;
 }) {
   const isCleared = node.state === "cleared";
   const isFailed = node.state === "failed";
@@ -163,6 +194,17 @@ function LabyrinthNodeButton({
     <div
       className="group/node absolute z-10 group-hover/node:z-50 flex h-[var(--labyrinth-node-size)] w-[var(--labyrinth-node-size)] -translate-x-1/2 -translate-y-1/2 items-center justify-center"
       style={{ ...positionStyle(row, col, labyrinthMap.rows, labyrinthMap.cols), willChange: "transform" }}
+      onPointerEnter={() =>
+        onHover({ row, col, type: node.type, modifiers: node.modifiers, rewardModifiers: node.rewardModifiers })
+      }
+      onPointerLeave={onLeave}
+      onFocusCapture={() =>
+        onHover({ row, col, type: node.type, modifiers: node.modifiers, rewardModifiers: node.rewardModifiers })
+      }
+      onBlurCapture={(event) => {
+        const nextTarget = event.relatedTarget;
+        if (!(nextTarget instanceof Node) || !event.currentTarget.contains(nextTarget)) onLeave();
+      }}
     >
       <button
         type="button"
@@ -182,8 +224,6 @@ function LabyrinthNodeButton({
         {isEnterable ? <ShineBorder borderWidth={2} duration={10} shineColor={meta.shineColors} /> : null}
         <span className="relative z-10">{isCurrent ? <Star className="h-6 w-6 text-amber-400" /> : meta.icon}</span>
       </button>
-
-      <NodeTooltip type={node.type} modifiers={node.modifiers} rewardModifiers={node.rewardModifiers} />
     </div>
   );
 }
@@ -253,18 +293,16 @@ function NodeTooltip({
     <div
       ref={ref}
       className={cn(
-        "pointer-events-none absolute left-1/2 z-50 w-64 -translate-x-1/2 rounded-xl border border-amber-100/20 bg-stone-950 p-3 text-left opacity-0 transition-all duration-150 group-hover/node:opacity-100 group-focus-within/node:opacity-100",
-        flip
-          ? "top-[calc(100%+0.75rem)] -translate-y-1 group-hover/node:translate-y-0 group-focus-within/node:translate-y-0"
-          : "bottom-[calc(100%+0.75rem)] translate-y-1 group-hover/node:translate-y-0 group-focus-within/node:translate-y-0",
+        "pointer-events-none absolute left-1/2 z-50 w-64 -translate-x-1/2 rounded-xl border border-amber-100/20 bg-stone-950 p-3 text-left",
+        flip ? "top-[calc(100%+0.75rem)]" : "bottom-[calc(100%+0.75rem)]",
       )}
       style={dx !== 0 ? ({ marginLeft: dx } as CSSProperties) : undefined}
     >
-      <p className="text-sm font-black uppercase tracking-[0.2em] text-amber-100/80">{NODE_TYPE_LABELS[type]}</p>
+      <p className="text-sm font-black uppercase tracking-widest text-amber-100/80">{NODE_TYPE_LABELS[type]}</p>
       <p className="mt-1 text-xs leading-snug text-stone-300">{highlightKeywords(NODE_DESCRIPTIONS[type])}</p>
       {enemyModifiers.length > 0 ? (
         <>
-          <p className="mb-2 mt-3 text-[10px] font-black uppercase tracking-[0.2em] text-red-400">Enemy Modifiers</p>
+          <p className="mb-2 mt-3 text-xs font-semibold uppercase tracking-widest text-red-400">Enemy Modifiers</p>
           <div className="grid gap-2">
             {enemyModifiers.map((modifier) => {
               const definition = ALL_LABYRINTH_MODIFIERS[modifier];
@@ -282,7 +320,7 @@ function NodeTooltip({
       ) : null}
       {rewardModifiers.length > 0 ? (
         <>
-          <p className="mb-2 mt-3 text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400">
+          <p className="mb-2 mt-3 text-xs font-semibold uppercase tracking-widest text-emerald-400">
             Reward Modifiers
           </p>
           <div className="grid gap-2">
@@ -304,27 +342,16 @@ function NodeTooltip({
   );
 }
 
-// Wraps known game keywords in description text with a colored span.
-const KEYWORD_COLORS: Record<string, string> = {
-  Armor: "text-amber-400",
-  Health: "text-green-400",
-  Burn: "text-orange-400",
-  Gold: "text-yellow-400",
-  Trinket: "text-cyan-400",
-  Companion: "text-pink-400",
-  Potion: "text-emerald-400",
-  Guardian: "text-red-400",
-  Materials: "text-stone-400",
-};
-
+// Wraps known game keywords in modifier description text with a colored span.
 function highlightKeywords(text: string): ReactNode {
   const words = text.split(/(\s+)/);
   return words.map((word, index) => {
     const clean = word.replace(/[^a-zA-Z]/g, "");
-    const color = KEYWORD_COLORS[clean] ?? KEYWORD_COLORS[`${clean}s`] ?? KEYWORD_COLORS[`${clean}ing`];
-    if (color) {
+    if (!clean) return word;
+    const def = keywordDefinitions[clean.toLowerCase() as KeywordId];
+    if (def) {
       return (
-        <span key={index} className={`${color} font-semibold`}>
+        <span key={index} className={`${def.colorClass} font-semibold`}>
           {word}
         </span>
       );

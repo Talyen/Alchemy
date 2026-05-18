@@ -44,10 +44,10 @@ function StatusIcon({ chip }: { chip: StatusChip }) {
           )}
         >
           <div className="flex items-center justify-between gap-3">
-            <span className="inline-flex items-center gap-2 rounded-full border border-fuchsia-300 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-fuchsia-300">
+            <span className="inline-flex items-center gap-2 rounded-full border border-fuchsia-300 px-2.5 py-1 text-xs font-semibold uppercase tracking-widest text-fuchsia-300">
               <Sparkles className="h-3.5 w-3.5" /> Haste
             </span>
-            <span className="rounded-full bg-background px-2 py-0.5 text-[11px] font-semibold text-foreground">
+            <span className="rounded-full bg-background px-2 py-0.5 text-xs font-semibold text-foreground">
               {chip.value}
             </span>
           </div>
@@ -77,7 +77,7 @@ function StatusIcon({ chip }: { chip: StatusChip }) {
       >
         <div className="flex items-center justify-between gap-3">
           <KeywordTag keywordId={kw} />
-          <span className="rounded-full bg-background px-2 py-0.5 text-[11px] font-semibold text-foreground">
+          <span className="rounded-full bg-background px-2 py-0.5 text-xs font-semibold text-foreground">
             {chip.value}
           </span>
         </div>
@@ -104,7 +104,7 @@ function DeathsDoorStatusIcon() {
         )}
       >
         <div className="flex items-center justify-between gap-3">
-          <span className="inline-flex items-center gap-2 rounded-full border border-red-400/50 bg-red-950/70 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-red-200">
+          <span className="inline-flex items-center gap-2 rounded-full border border-red-400/50 bg-red-950/70 px-2.5 py-1 text-xs font-semibold uppercase tracking-widest text-red-200">
             <Skull className="h-3.5 w-3.5" /> Death's Door
           </span>
         </div>
@@ -227,13 +227,12 @@ export function ArtPanel({
   return (
     <div className={cn("group/enemy-panel relative flex flex-col items-center gap-3", shaking && "animate-shake")}>
       {currentEnemy ? (
-        <div className="opacity-0 transition-opacity duration-150 group-hover/enemy-panel:opacity-100">
-          <EnemyTooltip
-            entry={currentEnemy}
-            attackEffects={currentEnemyAttackEffects}
-            labyrinthModifiers={activeLabyrinthModifiers}
-          />
-        </div>
+        <EnemyTooltip
+          entry={currentEnemy}
+          attackEffects={currentEnemyAttackEffects}
+          labyrinthModifiers={activeLabyrinthModifiers}
+          className="opacity-0 transition-opacity duration-150 group-hover/enemy-panel:opacity-100"
+        />
       ) : descriptionLines ? (
         <div
           className={cn(
@@ -294,15 +293,15 @@ export function ArtPanel({
           />
         ) : null}
         <div className={isDead ? "opacity-0 transition-opacity duration-700" : ""}>
-          <div className="flex items-center justify-between gap-3">
-            <p className="font-display text-base leading-6 font-bold text-foreground">{title}</p>
-            <p key={healthToken} className={cn("hp-number-pop text-xs font-medium text-muted-foreground")}>
+          <div className="flex items-baseline justify-between gap-3">
+            <p className="font-display text-base font-bold text-amber-100/75">{title}</p>
+            <p key={healthToken} className={cn("hp-number-pop text-sm font-semibold text-foreground")}>
               {health}/{maxHealth}
             </p>
           </div>
           <Progress
             value={(health / maxHealth) * 100}
-            className={cn("mt-2.5 h-2 bg-background/80 [&>div]:bg-destructive", isDead && "[&>div]:bg-destructive/30")}
+            className={cn("mt-1 h-2 bg-background/80 [&>div]:bg-destructive", isDead && "[&>div]:bg-destructive/30")}
           />
 
           <div className="mt-2.5 flex min-h-7 items-center gap-1">

@@ -65,7 +65,7 @@ export function GameModeSelectScreen({
               >
                 <img src={meta.art} alt={meta.title} className="w-full max-w-[352px] rounded-[18px] object-contain" />
               </div>
-              <h2 className="text-lg font-bold uppercase tracking-[0.1em] text-amber-100/80">{meta.title}</h2>
+              <h2 className="font-display text-base font-bold text-amber-100/75">{meta.title}</h2>
               <p className="text-sm leading-relaxed text-muted-foreground">{meta.description}</p>
             </button>
           );

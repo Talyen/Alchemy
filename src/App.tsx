@@ -46,6 +46,7 @@ import {
 import { platform } from "@/lib/platform";
 import { loadAlchemySaveState } from "@/features/alchemy/storage";
 import { useAppStore } from "@/features/alchemy/stores/app-store";
+import { useScreenStore } from "@/features/alchemy/stores/screen-store";
 
 const SCREEN_PARTICLE_COLORS: Partial<Record<Screen, readonly string[]>> = {
   battle: ["rgba(255, 150, 70, X)", "rgba(255, 100, 40, X)"],
@@ -87,7 +88,13 @@ export default function App() {
   const muteInBackground = useAppStore((s) => s.muteInBackground);
   const autoEndTurn = useAppStore((s) => s.autoEndTurn);
   const discoveredCardIds = useAppStore((s) => s.discoveredCardIds);
+  const collectionTab = useAppStore((s) => s.collectionTab);
+  const collectionPages = useAppStore((s) => s.collectionPages);
+  const encounteredEnemyIds = useAppStore((s) => s.encounteredEnemyIds);
+  const discoveredTrinketIds = useAppStore((s) => s.discoveredTrinketIds);
   const completedDifficulties = useAppStore((s) => s.completedDifficulties);
+  const showClearSaveConfirm = useAppStore((s) => s.showClearSaveConfirm);
+  const pendingCharacterId = useScreenStore((s) => s.pendingCharacterId);
 
   // Store-backed setters (wrapped for Dispatch<SetStateAction> compatibility)
   function setDiscoveredCardIds(v: string[] | ((prev: string[]) => string[])) {
@@ -165,22 +172,24 @@ export default function App() {
     onMarkDifficultyCompleted: handleMarkDifficultyCompleted,
     completedDifficulties,
   });
+  const { screen: controllerScreen, commitPendingTransition } = run;
   useAppAudioEffects({ masterVol, musicVol, sfxVol, muteInBackground, screen: run.screen });
   const heroArt = characterArt[run.characterId] ?? characterArt.knight;
   const playerName = characters[run.characterId]?.name ?? "Knight";
 
   useEffect(() => {
-    if (run.screen === renderedScreen) return;
+    if (controllerScreen === renderedScreen) return;
     // renderedScreen intentionally lags the controller screen so exit animation can finish
     // before the next screen mounts and starts its enter animation.
-    pendingScreenRef.current = run.screen;
+    pendingScreenRef.current = controllerScreen;
     setPagePhase("exit"); // eslint-disable-line react-hooks/set-state-in-effect
     const timeout = window.setTimeout(() => {
+      commitPendingTransition();
       setRenderedScreen(pendingScreenRef.current);
       setPagePhase("enter");
     }, PAGE_EXIT_MS);
     return () => window.clearTimeout(timeout);
-  }, [run.screen, renderedScreen]);
+  }, [controllerScreen, renderedScreen, commitPendingTransition]);
 
   // On every renderedScreen change (including initial mount), block hover tooltips for 800ms
   // to prevent jarring popups during page-enter animation when the mouse is over a trigger.
@@ -330,9 +339,11 @@ export default function App() {
               finishRewards: run.finishRewards,
               handleDestinationChoice: run.handleDestinationChoice,
               handleCampfireContinue: run.handleCampfireContinue,
+              handleShopContinue: run.handleShopContinue,
               handleShopBuyCard: run.handleShopBuyCard,
               handleShopRemoveCard: run.handleShopRemoveCard,
               handleShopRefresh: run.handleShopRefresh,
+              handleAlchemistContinue: run.handleAlchemistContinue,
               handleAlchemistBuyCard: run.handleAlchemistBuyCard,
               handleAlchemistRefresh: run.handleAlchemistRefresh,
               handleAlchemistMixPotions: run.handleAlchemistMixPotions,
@@ -361,6 +372,12 @@ export default function App() {
             aspectMode,
             hasUnspentTalents,
             hasAffordableHomestead,
+            collectionTab,
+            collectionPages,
+            encounteredEnemyIds,
+            discoveredTrinketIds,
+            showClearSaveConfirm,
+            pendingCharacterId,
             onOpenBattleMenu: openBattleMenu,
             onClearSaveData: clearSaveData,
             onUnlockAllDevMode: unlockAllDevMode,
@@ -411,23 +428,23 @@ export default function App() {
                 {...(particleAlphaMultiplier ? { alphaMultiplier: particleAlphaMultiplier } : {})}
               />
               {content}
-              <GameMenu
-                isOpen={saveLoadStatus.kind === "unsupported-newer-schema" ? false : gameMenuOpen}
-                anchorRect={menuAnchorRect}
-                anchorPlacement={renderedScreen === "labyrinth-map" ? "down-right" : "up-left"}
-                onClose={() => {
-                  setGameMenuOpen(false);
-                  setMenuAnchorRect(null);
-                }}
-                onMainMenu={() => run.goToScreen("menu")}
-                onCollection={() => run.goToScreen("collection")}
-                onTalents={() => run.goToScreen("talents")}
-                onHomestead={() => run.goToScreen("homestead")}
-                onOptions={() => run.goToScreen("options")}
-                {...(renderedScreen === "battle" ? { onEndRun: run.handleEndRun } : {})}
-                {...(renderedScreen === "labyrinth-map" ? { onEndRun: run.handleLabyrinthEndRun } : {})}
-              />
             </div>
+            <GameMenu
+              isOpen={saveLoadStatus.kind === "unsupported-newer-schema" ? false : gameMenuOpen}
+              anchorRect={menuAnchorRect}
+              anchorPlacement={renderedScreen === "labyrinth-map" ? "down-right" : "up-left"}
+              onClose={() => {
+                setGameMenuOpen(false);
+                setMenuAnchorRect(null);
+              }}
+              onMainMenu={() => run.goToScreen("menu")}
+              onCollection={() => run.goToScreen("collection")}
+              onTalents={() => run.goToScreen("talents")}
+              onHomestead={() => run.goToScreen("homestead")}
+              onOptions={() => run.goToScreen("options")}
+              {...(renderedScreen === "battle" ? { onEndRun: run.handleEndRun } : {})}
+              {...(renderedScreen === "labyrinth-map" ? { onEndRun: run.handleLabyrinthEndRun } : {})}
+            />
           </div>
         </div>
       )}

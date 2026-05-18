@@ -82,6 +82,13 @@ describe("getEnemyStatusChips", () => {
     expect(chips).not.toContainEqual({ id: "poison", value: 0 });
     expect(chips).toContainEqual({ id: "bleed", value: 2 });
   });
+
+  it("does not expose pending bleed leech healing as a status chip", () => {
+    const state = createBattleState([makeCard()], 0);
+    state.enemyStatuses.bleed = 2;
+    state.pendingBleedLeechHealing = 4;
+    expect(getEnemyStatusChips(state)).toEqual([{ id: "bleed", value: 2 }]);
+  });
 });
 
 describe("createBattleState", () => {

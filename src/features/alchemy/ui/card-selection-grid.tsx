@@ -1,11 +1,9 @@
 // Shared paginated card-selection layout for deck pickers.
-// Depends on battle card data, BlurFade reveal wrappers, collection sizing, and pagination controls.
+// Depends on battle card data, collection sizing, and pagination controls.
 // Used by corruption, card removal, and potion-mixing flows so selection rows cap at four centered cards.
 import type { ReactNode } from "react";
 
-import { BlurFade } from "@/components/ui/blur-fade";
 import type { BattleCard } from "@/lib/game-data";
-import { ANIMATION_STAGGER_UNIT } from "@/lib/game-constants";
 
 import { PaginationControls } from "./shared-ui";
 
@@ -19,7 +17,6 @@ export function CardSelectionGrid({
   page,
   onPageChange,
   pageSize,
-  revealDelay = 0,
   renderItem,
   emptyMessage,
   paginationSize = "sm",
@@ -29,7 +26,6 @@ export function CardSelectionGrid({
   page: number;
   onPageChange: (page: number) => void;
   pageSize: number;
-  revealDelay?: number | undefined;
   renderItem: (item: CardSelectionGridItem, visualIndex: number) => ReactNode;
   emptyMessage?: string;
   paginationSize?: "sm" | "default";
@@ -51,15 +47,9 @@ export function CardSelectionGrid({
             {rowItems.map((item, columnIndex) => {
               const visualIndex = rowIndex * 4 + columnIndex;
               return (
-                <BlurFade
-                  key={`${item.card.id}-${item.index}`}
-                  delay={revealDelay + visualIndex * ANIMATION_STAGGER_UNIT}
-                  direction="up"
-                  offset={6}
-                  className="flex justify-center"
-                >
+                <div key={`${item.card.id}-${item.index}`} className="flex justify-center">
                   {renderItem(item, visualIndex)}
-                </BlurFade>
+                </div>
               );
             })}
           </div>

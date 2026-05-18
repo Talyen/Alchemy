@@ -16,22 +16,28 @@ test.describe("Wildwood Mode", () => {
     await page.getByRole("button", { name: "Continue" }).click();
     await expect(page.getByRole("heading", { name: "Choose Your Prey" })).toBeVisible({ timeout: 5000 });
     // All 4 boss names visible
-    await expect(page.getByText("The Forge Golem")).toBeVisible();
-    await expect(page.getByText("The Frostwarden")).toBeVisible();
-    await expect(page.getByText("The Blight Treant")).toBeVisible();
-    await expect(page.getByText("The Iron Bear")).toBeVisible();
+    await expect(page.getByRole("button", { name: "The Forge Golem" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "The Frostwarden" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "The Blight Treant" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "The Iron Bear" })).toBeVisible();
+    await expect(page.getByText("Act 1 Boss")).not.toBeVisible();
+    await expect(page.getByText("Wildwood Boss")).not.toBeVisible();
   });
 
-  test("Iron Bear card displays correct traits", async ({ page }) => {
+  test("Iron Bear card displays attacks and traits on hover", async ({ page }) => {
     await page.goto("/");
     await selectGameMode(page, "wildwood");
     await page.getByRole("button", { name: "Knight" }).click();
     await page.getByRole("button", { name: "Continue" }).click();
-    // Click Iron Bear to see details
-    await page.getByText("The Iron Bear").click();
-    await expect(page.getByText("Gains 2 Forge each turn")).toBeVisible();
-    await expect(page.getByText("Gains 2 Armor each turn")).toBeVisible();
-    await expect(page.getByText("Receives half Physical damage")).toBeVisible();
+    const ironBear = page.getByRole("button", { name: "The Iron Bear" });
+    const tooltip = page.getByTestId("wildwood-boss-tooltip-iron-bear");
+    await expect(tooltip).toHaveCSS("opacity", "0");
+    await ironBear.hover();
+    await expect(tooltip).toHaveCSS("opacity", "1");
+    await expect(tooltip).toContainText(/Deals 10\s+Physical.*damage/);
+    await expect(tooltip).toContainText(/Gains 2\s+Forge.*each turn/);
+    await expect(tooltip).toContainText(/Gains 2\s+Armor.*each turn/);
+    await expect(tooltip).toContainText(/Receives half\s+Physical.*damage/);
   });
 
   test("select boss and Hunt starts a battle", async ({ page }) => {
@@ -39,19 +45,19 @@ test.describe("Wildwood Mode", () => {
     await selectGameMode(page, "wildwood");
     await page.getByRole("button", { name: "Knight" }).click();
     await page.getByRole("button", { name: "Continue" }).click();
-    await page.getByText("The Iron Bear").click();
+    await page.getByRole("button", { name: "The Iron Bear" }).click();
     await page.getByRole("button", { name: "Hunt" }).click();
     // Battle screen appears with playable cards
     await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });
   });
 
-  test("back button from boss select returns to main menu", async ({ page }) => {
+  test("back button from boss select returns to character select", async ({ page }) => {
     await page.goto("/");
     await selectGameMode(page, "wildwood");
     await page.getByRole("button", { name: "Knight" }).click();
     await page.getByRole("button", { name: "Continue" }).click();
     await page.getByRole("button", { name: "Back" }).click();
-    await expect(page.getByRole("button", { name: "Play" })).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole("heading", { name: "Choose Your Hero" })).toBeVisible({ timeout: 5000 });
   });
 
   test("Wildwood boss defeat shows game over", async ({ page }) => {
@@ -59,7 +65,7 @@ test.describe("Wildwood Mode", () => {
     await selectGameMode(page, "wildwood");
     await page.getByRole("button", { name: "Knight" }).click();
     await page.getByRole("button", { name: "Continue" }).click();
-    await page.getByText("The Iron Bear").click();
+    await page.getByRole("button", { name: "The Iron Bear" }).click();
     await page.getByRole("button", { name: "Hunt" }).click();
 
     const defeatHeading = page.getByRole("heading", { name: /Defeat/ });

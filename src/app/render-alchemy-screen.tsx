@@ -2,10 +2,9 @@
 // Reads data from Zustand stores instead of the run controller object.
 import { platform } from "@/lib/platform";
 import { menuLogo, cardLibrary, trinketLibrary } from "@/lib/game-data";
-import type { Screen, Destination } from "@/features/alchemy/types";
+import type { Screen, Destination, CollectionTab } from "@/features/alchemy/types";
 import type { BattleCard, CharacterId, DifficultyId, KeywordId } from "@/lib/game-data";
 import type { MysteryChoice } from "@/features/alchemy/mystery-events";
-import { useScreenStore } from "@/features/alchemy/stores/screen-store";
 import { useAppStore } from "@/features/alchemy/stores/app-store";
 import { useHomesteadStore } from "@/features/alchemy/stores/homestead-store";
 import { BattleScreen } from "@/features/alchemy/screens/battle-screen";
@@ -50,10 +49,12 @@ export type ControllerActions = {
   finishRewards: () => void;
   handleDestinationChoice: (dest: Destination) => void;
   handleCampfireContinue: () => void;
+  handleShopContinue: () => void;
   handleShopBuyCard: (card: BattleCard) => void | null;
   handleShopRemoveCard: (index: number) => void;
   handleShopRefresh: () => void;
   handleAlchemistBuyCard: (card: BattleCard) => void | null;
+  handleAlchemistContinue: () => void;
   handleAlchemistRefresh: () => void;
   handleAlchemistMixPotions: (a: number, b: number) => BattleCard | null;
   handleMysteryChoice: (choice: MysteryChoice) => void;
@@ -85,6 +86,12 @@ type RenderAlchemyScreenProps = {
   aspectMode: "standard" | "narrow" | "ultrawide";
   hasUnspentTalents: boolean;
   hasAffordableHomestead: boolean;
+  collectionTab: CollectionTab;
+  collectionPages: Record<CollectionTab, number>;
+  encounteredEnemyIds: string[];
+  discoveredTrinketIds: string[];
+  showClearSaveConfirm: boolean;
+  pendingCharacterId: string | null;
   onOpenBattleMenu: (rect?: DOMRect) => void;
   onClearSaveData: () => void;
   onUnlockAllDevMode: () => void;
@@ -103,6 +110,12 @@ export function renderAlchemyScreen({
   aspectMode,
   hasUnspentTalents,
   hasAffordableHomestead,
+  collectionTab,
+  collectionPages,
+  encounteredEnemyIds,
+  discoveredTrinketIds,
+  showClearSaveConfirm,
+  pendingCharacterId,
   onOpenBattleMenu,
   onClearSaveData,
   onUnlockAllDevMode,
@@ -134,11 +147,11 @@ export function renderAlchemyScreen({
         />
       );
     case "character-select":
-      return <CharacterSelectScreen onConfirm={a.handleCharacterSelect} onBack={() => a.goToScreen("menu")} />;
+      return <CharacterSelectScreen onConfirm={a.handleCharacterSelect} onBack={() => a.goToScreen("game-mode-select")} />;
     case "difficulty-select":
       return (
         <DifficultySelectScreen
-          completedDifficulties={useAppStore.getState().completedDifficulties[useScreenStore.getState().pendingCharacterId ?? "knight"] ?? []}
+          completedDifficulties={useAppStore.getState().completedDifficulties[(pendingCharacterId ?? "knight") as CharacterId] ?? []}
           onSelect={a.handleDifficultySelect}
           onBack={a.handleBackFromDifficultySelect}
         />
@@ -165,7 +178,7 @@ export function renderAlchemyScreen({
     case "labyrinth-map":
       return <LabyrinthMapScreen onNodeClick={a.handleLabyrinthNodeEnter} onOpenMenu={onOpenBattleMenu} />;
     case "wildwood-select":
-      return <WildwoodSelectScreen onSelect={a.handleWildwoodBossSelect} onBack={() => a.goToScreen("menu")} />;
+      return <WildwoodSelectScreen onSelect={a.handleWildwoodBossSelect} onBack={() => a.goToScreen("character-select")} />;
     case "rewards":
       return <RewardsScreen onAddReward={a.finishRewards} onSkip={a.finishRewards} />;
     case "destination":
@@ -178,7 +191,7 @@ export function renderAlchemyScreen({
           onBuyCard={a.handleShopBuyCard}
           onRemoveCard={a.handleShopRemoveCard}
           onRefresh={a.handleShopRefresh}
-          onContinue={() => a.goToScreen("destination")}
+          onContinue={a.handleShopContinue}
         />
       );
     case "alchemist":
@@ -187,7 +200,7 @@ export function renderAlchemyScreen({
           onBuyCard={a.handleAlchemistBuyCard}
           onRefresh={a.handleAlchemistRefresh}
           onMixPotions={a.handleAlchemistMixPotions}
-          onContinue={() => a.goToScreen("destination")}
+          onContinue={a.handleAlchemistContinue}
         />
       );
     case "mystery":
@@ -239,7 +252,7 @@ export function renderAlchemyScreen({
           }}
           gameplay={{ autoEndTurn: appState.autoEndTurn, onAutoEndTurnChange: appState.setAutoEndTurn }}
           saveData={{
-            showClearSaveConfirm: appState.showClearSaveConfirm,
+            showClearSaveConfirm,
             onOpenClearSaveConfirm: () => appState.setShowClearSaveConfirm(true),
             onCloseClearSaveConfirm: () => appState.setShowClearSaveConfirm(false),
             onConfirmClearSave: onClearSaveData,
@@ -253,14 +266,14 @@ export function renderAlchemyScreen({
         <CollectionScreen
           onMainMenu={() => a.goToScreen("menu")}
           onReturnToBattle={a.returnToBattle}
-          collectionTab={appState.collectionTab}
+          collectionTab={collectionTab}
           onSelectTab={appState.handleCollectionTabChange}
           onPageChange={appState.setCollectionPage}
           bondedCompanions={useHomesteadStore.getState().bondedCompanions}
           discoveredCardIds={appState.discoveredCardIds}
-          encounteredEnemyIds={appState.encounteredEnemyIds}
-          discoveredTrinketIds={appState.discoveredTrinketIds}
-          collectionPages={appState.collectionPages}
+          encounteredEnemyIds={encounteredEnemyIds}
+          discoveredTrinketIds={discoveredTrinketIds}
+          collectionPages={collectionPages}
         />
       );
     case "homestead":

@@ -39,7 +39,7 @@ export function KeywordProgressCard({
           {Icon ? <Icon className={cn("h-3.5 w-3.5", def?.colorClass)} /> : null}
           <span className={cn("text-xs font-semibold", def?.colorClass)}>{def?.label ?? kw}</span>
         </div>
-        <span className="text-[10px] text-muted-foreground">+{runXP}</span>
+        <span className="text-xs font-semibold text-muted-foreground">+{runXP}</span>
       </div>
       <ProgressBar
         value={animate ? percent : 0}
@@ -50,7 +50,7 @@ export function KeywordProgressCard({
           backgroundColor: def?.shineColors?.[0] ?? undefined,
         }}
       />
-      <p className="mt-1 text-right text-[10px] text-muted-foreground">
+      <p className="mt-1 text-right text-xs font-semibold text-muted-foreground">
         {nextXP - progress}/{nextXP}
       </p>
     </div>
@@ -76,7 +76,7 @@ export function GameOverScreen({ onMainMenu }: { onMainMenu: () => void }) {
     <div className="flex h-full w-full flex-col items-center justify-center gap-6 px-4 py-6 text-center">
       <div>
         <ScreenHeader title="Defeat" />
-        <p className="mt-3 text-lg text-muted-foreground">Your run has ended.</p>
+        <p className="mt-3 text-sm text-muted-foreground">Your run has ended.</p>
       </div>
 
       {keywordIds.length > 0 && (

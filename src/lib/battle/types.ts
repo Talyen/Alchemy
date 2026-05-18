@@ -14,14 +14,10 @@ import type {
   TalentEffectManifest,
 } from "@/lib/game-data";
 
-// Both player and enemy use the same status ID union, but enemies never gain
+// Both player and enemy use status ID unions, but enemies never gain
 // block/armor/forge/haste — those are filtered out at the BattleCardEffect level.
-// bleedLeech is a separate counter so bleed-lifesteal can track how much to heal
-// without mixing into the bleed-damage stack.
 export type PlayerStatusValues = Record<PlayerStatusId, number>;
-export type EnemyStatusValues = Record<EnemyStatusId, number> & {
-  bleedLeech: number;
-};
+export type EnemyStatusValues = Record<EnemyStatusId, number>;
 
 export type TurnPhase = "player" | "enemy";
 
@@ -104,6 +100,7 @@ export type BattleState = {
   enemyFreezeBonus: number; // per-turn freeze status bonus (glacial-shell)
   playerStatuses: PlayerStatusValues;
   enemyStatuses: EnemyStatusValues;
+  pendingBleedLeechHealing: number; // internal bleed-lifesteal healing due when bleed ticks
   enemyStunSkipTurns: number; // turns skipped from stun triggers
   enemyFreezeSkipTurns: number; // turns skipped from freeze triggers
   wishOptions: BattleCard[] | null; // non-null = Wish selection is active

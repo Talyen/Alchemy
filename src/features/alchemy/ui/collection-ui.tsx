@@ -2,6 +2,7 @@
 // Depends on game-data libraries, collection config, audio samples, tilt, and shared UI.
 // Used by CollectionScreen to render encyclopedia-style grids without owning screen routing.
 import type { CSSProperties } from "react";
+import { motion } from "motion/react";
 
 import { cardLibrary, enemyBestiary, trinketLibrary, type BestiaryEntry, type TrinketEntry } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
@@ -183,20 +184,26 @@ export function CollectionTabs({
         const Icon = tab.icon;
 
         return (
-          <button
+          <motion.span
             key={tab.id}
-            type="button"
-            onClick={() => onSelectTab(tab.id)}
-            className={cn(
-              "inline-flex min-h-[44px] items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-              collectionTab === tab.id
-                ? "border-primary/70 bg-primary/15 text-foreground"
-                : "border-border/80 bg-card text-foreground hover:bg-secondary/50",
-            )}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.97 }}
+            transition={{ type: "spring", stiffness: 400, damping: 15 }}
           >
-            <Icon className="h-4 w-4" />
-            {tab.label}
-          </button>
+            <button
+              type="button"
+              onClick={() => onSelectTab(tab.id)}
+              className={cn(
+                "inline-flex min-h-[44px] items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                collectionTab === tab.id
+                  ? "border-primary/70 bg-primary/15 text-foreground"
+                  : "border-border/80 bg-card text-foreground",
+              )}
+            >
+              <Icon className="h-4 w-4" />
+              {tab.label}
+            </button>
+          </motion.span>
         );
       })}
     </div>

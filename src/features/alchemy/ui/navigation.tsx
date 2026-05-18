@@ -79,13 +79,14 @@ export function GameMenu({
 
   const panel = (
     <div
+      data-testid="game-menu"
       className="motion-panel alchemy-shell bg-[#0c0a07] w-full max-w-sm rounded-[26px] border border-border/80 px-4 py-5"
       onClick={(e) => e.stopPropagation()}
     >
       <div className="grid gap-2">
         <Button
           variant="outline"
-          className="justify-start border-0 bg-transparent hover:bg-white/[0.07]"
+          className="justify-start border-0 bg-transparent"
           onClick={() => {
             onMainMenu();
             onClose();
@@ -95,7 +96,7 @@ export function GameMenu({
         </Button>
         <Button
           variant="outline"
-          className="justify-start border-0 bg-transparent hover:bg-white/[0.07]"
+          className="justify-start border-0 bg-transparent"
           onClick={() => {
             onCollection();
             onClose();
@@ -105,7 +106,7 @@ export function GameMenu({
         </Button>
         <Button
           variant="outline"
-          className="justify-start border-0 bg-transparent hover:bg-white/[0.07]"
+          className="justify-start border-0 bg-transparent"
           onClick={() => {
             onTalents();
             onClose();
@@ -115,7 +116,7 @@ export function GameMenu({
         </Button>
         <Button
           variant="outline"
-          className="justify-start border-0 bg-transparent hover:bg-white/[0.07]"
+          className="justify-start border-0 bg-transparent"
           onClick={() => {
             onHomestead();
             onClose();
@@ -125,7 +126,7 @@ export function GameMenu({
         </Button>
         <Button
           variant="outline"
-          className="justify-start border-0 bg-transparent hover:bg-white/[0.07]"
+          className="justify-start border-0 bg-transparent"
           onClick={() => {
             onOptions();
             onClose();
@@ -138,7 +139,7 @@ export function GameMenu({
             <div className="my-1 border-t border-border/60" />
             <Button
               variant="outline"
-              className="justify-start border-0 bg-transparent text-red-400 hover:text-red-300 hover:bg-red-950/40"
+              className="justify-start border-0 bg-transparent text-red-400"
               onClick={() => {
                 onEndRun();
                 onClose();

@@ -73,9 +73,10 @@ function tickBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
   let nextState = {
     ...state,
     enemyHealth: clampHealth(state.enemyHealth, -damage, state.enemyMaxHealth),
-    enemyStatuses: { ...state.enemyStatuses, bleed: 0, bleedLeech: 0 },
+    enemyStatuses: { ...state.enemyStatuses, bleed: 0 },
+    pendingBleedLeechHealing: 0,
   };
-  const leechAmount = state.enemyStatuses.bleedLeech;
+  const leechAmount = state.pendingBleedLeechHealing;
   if (leechAmount > 0) {
     nextState = applyPlayerHealing(nextState, leechAmount);
     mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: leechAmount });

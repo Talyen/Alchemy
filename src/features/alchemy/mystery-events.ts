@@ -167,14 +167,6 @@ export const mysteryPool: MysteryEvent[] = [
         ],
       },
       {
-        label: "Dance Until Dawn",
-        description: "Restore 5 HP (50% chance for 8 more)",
-        effects: [
-          { kind: "healHP", amount: 5 },
-          { kind: "healHP", amount: 8, chance: 0.5 },
-        ],
-      },
-      {
         label: "Make a Wish",
         description: "Add Wish to your deck",
         effects: [{ kind: "addCard", cardId: "wish" }],

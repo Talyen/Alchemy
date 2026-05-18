@@ -19,13 +19,17 @@ export function PageLayout({ children }: { children: ReactNode }) {
   );
 }
 
-export function ScreenDescription({ children, className }: { children: string; className?: string }) {
+export function ScreenDescription({ children, className, tone }: { children: string; className?: string; tone?: "default" | "danger" }) {
   return (
     <TextAnimate
       animation="blurInUp"
       by="word"
       once
-      className={cn("mx-auto max-w-lg text-center text-base leading-relaxed text-muted-foreground", className)}
+      className={cn(
+        "mx-auto max-w-lg text-center text-sm leading-relaxed",
+        tone === "danger" ? "text-red-100/75" : "text-muted-foreground",
+        className,
+      )}
     >
       {children}
     </TextAnimate>

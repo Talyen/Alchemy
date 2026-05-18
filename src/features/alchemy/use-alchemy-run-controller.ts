@@ -1,7 +1,7 @@
 // Top-level alchemy controller composition hook.
 // Depends on run, battle, shop, navigation, talent, persistence-facing, and homestead state.
 // Used by App as the single UI-facing API while domain rules stay in smaller controllers.
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { cardLibrary, trinketLibrary, computeTalentEffects } from "@/lib/game-data";
 import type { TalentXP } from "@/lib/talents";
@@ -113,15 +113,30 @@ export function useAlchemyRunController({
   // ============ Shared State ============
   const [screen, setScreen] = useState<Screen>("menu");
   const hasActiveRun = useScreenStore((s) => s.hasActiveRun);
+  const activeLabyrinthRewardModifiers = useScreenStore((s) => s.activeLabyrinthRewardModifiers);
 
   // ============ Screen Navigation ============
   const navTimerRef = useRef<number>(0);
+  const pendingTransitionCommitRef = useRef<(() => void) | null>(null);
 
-  function navigateTo(nextScreen: Screen) {
-    // Screen changes are delayed for transition pacing, and clearing the previous timer
-    // prevents rapid clicks from racing multiple navigation commits.
+  const commitPendingTransition = useCallback(() => {
+    const commit = pendingTransitionCommitRef.current;
+    pendingTransitionCommitRef.current = null;
+    commit?.();
+  }, []);
+
+  function navigateTo(nextScreen: Screen, onRenderedScreenCommit?: () => void) {
+    // Screen changes are delayed for transition pacing, and transition commits wait until
+    // the old rendered screen is about to unmount so it cannot flash with next-screen data.
     window.clearTimeout(navTimerRef.current);
-    navTimerRef.current = window.setTimeout(() => setScreen(nextScreen), NAVIGATION_DELAY_MS);
+    pendingTransitionCommitRef.current = onRenderedScreenCommit ?? null;
+    navTimerRef.current = window.setTimeout(() => {
+      if (nextScreen === screen) {
+        commitPendingTransition();
+        return;
+      }
+      setScreen(nextScreen);
+    }, NAVIGATION_DELAY_MS);
   }
 
   // ============ Ref Wrappers ============
@@ -201,7 +216,7 @@ export function useAlchemyRunController({
     onMarkDifficultyCompleted,
     completedDifficulties,
     labyrinthMap: labyrinth.labyrinthMap,
-    activeLabyrinthRewardModifiers: useScreenStore.getState().activeLabyrinthRewardModifiers,
+    activeLabyrinthRewardModifiers,
   });
 
   function clearPermanentData() {
@@ -259,6 +274,7 @@ export function useAlchemyRunController({
 
   return {
     screen,
+    commitPendingTransition,
     battleState: battle.battleState,
     hasActiveBattle: battle.hasActiveBattle,
     characterId: run.characterId,

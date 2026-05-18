@@ -31,7 +31,7 @@ export function RunVictoryScreen({ onMainMenu }: { onMainMenu: () => void }) {
     <div className="flex h-full w-full flex-col items-center justify-center gap-6 px-4 py-6 text-center">
       <div>
         <ScreenHeader title="Victory" />
-        <p className="mt-3 text-lg text-muted-foreground">
+        <p className="mt-3 text-sm text-muted-foreground">
           The primordial evils have been vanquished. Alchemy is saved.
         </p>
       </div>

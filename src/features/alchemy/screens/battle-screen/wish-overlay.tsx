@@ -7,6 +7,7 @@ import { WISH_OVERLAY_Z_INDEX } from "@/lib/game-constants";
 import type { BattleCard } from "@/lib/game-data";
 
 import { BattleCardButton, getCardDisplayTitle } from "../../components";
+import { ScreenHeader } from "../../ui/shared-ui";
 import { handCardWidthClass, mobileStageHandCardWidthClass } from "../../config";
 import { getHoverId } from "../../utils";
 import type { BattleActionsProps, BattleHoverProps, BattleScreenState } from "./types";
@@ -37,10 +38,8 @@ export function WishOverlay({
       style={{ zIndex: WISH_OVERLAY_Z_INDEX }}
     >
       <div className="motion-panel alchemy-shell w-full max-w-5xl rounded-[28px] border border-border/80 px-6 py-6">
-        <div className="text-center">
-          <h2 className="text-2xl text-foreground">Wish</h2>
-          <p className="mt-2 text-sm text-muted-foreground">Choose one card to add to your hand.</p>
-        </div>
+        <ScreenHeader title="Wish" />
+        <p className="mt-2 text-sm text-muted-foreground">Choose one card to add to your hand.</p>
 
         <div className="mt-6 flex flex-wrap items-start justify-center gap-5">
           {battleState.wishOptions?.map((card, index) => {

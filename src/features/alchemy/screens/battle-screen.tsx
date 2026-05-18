@@ -15,7 +15,7 @@ import type {
 } from "./battle-screen/types";
 import { useBattleStore } from "../stores/battle-store";
 import { useScreenStore } from "../stores/screen-store";
-import type { StatusChip } from "../types";
+import { getEnemyStatusChips, getPlayerStatusChips } from "../utils";
 
 type BattleScreenProps = {
   heroArt: string;
@@ -62,19 +62,8 @@ export function BattleScreen(props: BattleScreenProps) {
   const hoveredCardId = useScreenStore((s) => s.hoveredCardId);
   const activeLabyrinthModifiers = useScreenStore((s) => s.activeLabyrinthModifiers);
 
-  const playerStatusChips = useMemo<StatusChip[]>(() => {
-    if (!battleState.playerStatuses) return [];
-    return (Object.keys(battleState.playerStatuses) as Array<keyof typeof battleState.playerStatuses>)
-      .filter((key) => battleState.playerStatuses[key] > 0)
-      .map((key) => ({ id: key, value: battleState.playerStatuses[key] }));
-  }, [battleState.playerStatuses]);
-
-  const enemyStatusChips = useMemo<StatusChip[]>(() => {
-    if (!battleState.enemyStatuses) return [];
-    return (Object.keys(battleState.enemyStatuses) as Array<keyof typeof battleState.enemyStatuses>)
-      .filter((key) => battleState.enemyStatuses[key] > 0)
-      .map((key) => ({ id: key, value: battleState.enemyStatuses[key] }));
-  }, [battleState.enemyStatuses]);
+  const playerStatusChips = useMemo(() => getPlayerStatusChips(battleState), [battleState]);
+  const enemyStatusChips = useMemo(() => getEnemyStatusChips(battleState), [battleState]);
 
   const playerCombatTexts = useMemo(
     () => floatingCombatTexts.filter((t) => t.target === "player"),

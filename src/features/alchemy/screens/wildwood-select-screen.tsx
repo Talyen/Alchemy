@@ -5,6 +5,10 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { enemyBestiary } from "@/lib/game-data";
 import { WILDWOOD_BOSSES } from "@/lib/content-systems/wildwood/bosses";
+import { ShineBorder } from "@/components/ui/shine-border";
+import { cn } from "@/lib/utils";
+import { battleCardWidthClass, cardSurfaceClass } from "../config";
+import { EnemyTooltip } from "../ui/enemy-tooltip";
 import { ScreenHeader } from "../ui/shared-ui";
 
 export function WildwoodSelectScreen({ onSelect, onBack }: { onSelect: (bossId: string) => void; onBack: () => void }) {
@@ -18,24 +22,46 @@ export function WildwoodSelectScreen({ onSelect, onBack }: { onSelect: (bossId: 
         {WILDWOOD_BOSSES.map((entry) => {
           const enemy = enemyBestiary.find((e) => e.id === entry.bossId);
           const isSelected = selectedBossId === entry.bossId;
+
           return (
             <button
               key={entry.bossId}
               type="button"
-              className={`flex w-56 flex-col items-center gap-2 rounded-xl border p-4 transition-colors ${
-                isSelected
-                  ? "border-primary bg-primary/10"
-                  : "border-border/60 bg-card/60 hover:border-muted-foreground/40"
-              }`}
+              className={cn(
+                "group/wildwood-boss relative flex h-[clamp(388px,calc(29.4cqh+92px),540px)] w-[clamp(270px,24cqh,368px)] flex-col items-center rounded-[30px] border border-border/60 bg-card/60 p-4 text-center",
+              )}
+              aria-label={entry.title}
+              data-testid={`wildwood-boss-${entry.bossId}`}
               onClick={() => setSelectedBossId(entry.bossId)}
             >
-              {enemy ? <img src={enemy.art} alt={entry.title} className="h-32 w-32 rounded-lg object-cover" /> : null}
-              <p className="text-lg font-semibold text-foreground">{entry.title}</p>
-              <p className="text-sm text-muted-foreground">{entry.subtitle}</p>
-              <div className="mt-2 flex flex-col gap-1 text-xs text-muted-foreground">
-                {entry.descriptionLines.map((line, i) => (
-                  <span key={i}>{line}</span>
-                ))}
+              {enemy ? (
+                <div
+                  data-testid={`wildwood-boss-tooltip-${entry.bossId}`}
+                  className="pointer-events-none opacity-0 transition-opacity duration-150 group-hover/wildwood-boss:pointer-events-auto group-hover/wildwood-boss:opacity-100 group-focus-visible/wildwood-boss:pointer-events-auto group-focus-visible/wildwood-boss:opacity-100"
+                >
+                  <EnemyTooltip entry={enemy} />
+                </div>
+              ) : null}
+              {isSelected && (
+                <ShineBorder
+                  shineColor={["#450a0a", "#ef4444", "#991b1b", "#7f1d1d"]}
+                  borderWidth={2}
+                  duration={8}
+                  className="z-10 rounded-[30px]"
+                />
+              )}
+              {enemy ? (
+                <div className={cn(cardSurfaceClass, battleCardWidthClass)}>
+                  <img
+                    src={enemy.art}
+                    alt={entry.title}
+                    className="block w-full rounded-[30px] aspect-[3/4] object-cover"
+                    loading="eager"
+                  />
+                </div>
+              ) : null}
+              <div className={cn("mt-3 flex h-12 flex-col items-center justify-start", battleCardWidthClass)}>
+                <p className="font-display text-base font-bold leading-tight text-amber-100/75">{entry.title}</p>
               </div>
             </button>
           );

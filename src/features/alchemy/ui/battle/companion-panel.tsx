@@ -62,7 +62,7 @@ export function CompanionPanel({
           "hover-popup-panel pointer-events-auto opacity-0 group-hover/companion:opacity-100",
         )}
       >
-        <p className="text-sm text-foreground">{companion.title}</p>
+        <p className="font-display text-base font-bold text-amber-100/75">{companion.title}</p>
         <DescriptionLines
           lines={getCompanionDescriptionLines(companion, damageBonus)}
           idPrefix={`companion-${companion.id}`}

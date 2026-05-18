@@ -1,6 +1,7 @@
 // Options screen with display, sound, gameplay, and save-data tabs.
 import { useState } from "react";
 import { House, Swords } from "lucide-react";
+import { motion } from "motion/react";
 
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -254,17 +255,23 @@ export function OptionsScreen({
 
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           {(["display", "sound", "gameplay", "other"] as const).map((t) => (
-            <button
+            <motion.span
               key={t}
-              type="button"
-              className={cn(
-                "rounded-full border px-4 py-2 text-sm font-semibold capitalize transition-transform active:scale-95",
-                tab === t ? "border-primary bg-primary/20 text-foreground" : "border-border/80 bg-card text-foreground",
-              )}
-              onClick={() => setTab(t)}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.97 }}
+              transition={{ type: "spring", stiffness: 400, damping: 15 }}
             >
-              {t.charAt(0).toUpperCase() + t.slice(1)}
-            </button>
+              <button
+                type="button"
+                className={cn(
+                  "rounded-full border px-4 py-2 text-sm font-semibold capitalize",
+                  tab === t ? "border-primary bg-primary/20 text-foreground" : "border-border/80 bg-card text-foreground",
+                )}
+                onClick={() => setTab(t)}
+              >
+                {t.charAt(0).toUpperCase() + t.slice(1)}
+              </button>
+            </motion.span>
           ))}
         </div>
 

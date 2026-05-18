@@ -19,7 +19,7 @@ export function ActCompleteScreen({
     <div className="flex h-full w-full flex-col items-center justify-center gap-6 px-4 py-6 text-center">
       <div>
         <ScreenHeader title={isFinalAct ? "Final Act Complete" : `Act ${currentAct} Complete`} />
-        <p className="mt-3 text-lg text-muted-foreground">
+        <p className="mt-3 text-sm text-muted-foreground">
           {isFinalAct
             ? "The final boss lies ahead. Prepare for the ultimate challenge."
             : `The path to Act ${currentAct + 1} opens before you.`}

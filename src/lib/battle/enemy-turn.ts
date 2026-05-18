@@ -398,37 +398,60 @@ function beginEnemyPhase(state: BattleState): BattleState {
   };
 }
 
+export type EndPlayerTurnResolution = {
+  state: BattleState;
+  combatTexts: CombatTextEvent[];
+  enemyTurnStartState?: BattleState;
+  enemyTurnStartCombatTexts: CombatTextEvent[];
+  enemyResolutionCombatTexts: CombatTextEvent[];
+};
+
 function finalizePlayerTurn(state: BattleState, combatTexts: CombatTextEvent[]) {
   let nextState = applyIronwoodBuckler(state, combatTexts);
   nextState = resolveDeathsDoorEndOfEnemyTurn(nextState);
   return { state: advanceToPlayerTurn(nextState), combatTexts };
 }
 
-export function endPlayerTurn(state: BattleState): { state: BattleState; combatTexts: CombatTextEvent[] } {
+export function endPlayerTurn(state: BattleState): EndPlayerTurnResolution {
   const combatTexts: CombatTextEvent[] = [];
+  const enemyTurnStartCombatTexts: CombatTextEvent[] = [];
+  const enemyResolutionCombatTexts: CombatTextEvent[] = [];
   let nextState = beginEnemyPhase(state);
 
   if (state.playerStatuses.haste > 0) {
     nextState = processHasteEarlyTurn(nextState, combatTexts);
-    return finalizePlayerTurn(nextState, combatTexts);
+    return { ...finalizePlayerTurn(nextState, combatTexts), enemyTurnStartCombatTexts, enemyResolutionCombatTexts };
   }
 
   if (state.enemyStunSkipTurns + state.enemyFreezeSkipTurns > 0) {
     nextState = processStunSkipTurn(nextState, combatTexts);
-    return finalizePlayerTurn(nextState, combatTexts);
+    return { ...finalizePlayerTurn(nextState, combatTexts), enemyTurnStartCombatTexts, enemyResolutionCombatTexts };
   }
 
-  nextState = processEnemyHealing(nextState, combatTexts);
-  nextState = tickEnemyStatuses(nextState, combatTexts);
+  nextState = processEnemyHealing(nextState, enemyTurnStartCombatTexts);
+  nextState = tickEnemyStatuses(nextState, enemyTurnStartCombatTexts);
+  combatTexts.push(...enemyTurnStartCombatTexts);
+  const enemyTurnStartState = nextState;
 
   if (nextState.enemyHealth <= 0) {
-    return finalizePlayerTurn(nextState, combatTexts);
+    return {
+      ...finalizePlayerTurn(nextState, combatTexts),
+      enemyTurnStartState,
+      enemyTurnStartCombatTexts,
+      enemyResolutionCombatTexts,
+    };
   }
 
-  nextState = processEnemyTraits(nextState, combatTexts);
-  nextState = processEnemyAttack(nextState, combatTexts);
-  nextState = tickPlayerStatuses(nextState, combatTexts);
-  nextState = processEnemyRegeneration(nextState, combatTexts);
+  nextState = processEnemyTraits(nextState, enemyResolutionCombatTexts);
+  nextState = processEnemyAttack(nextState, enemyResolutionCombatTexts);
+  nextState = tickPlayerStatuses(nextState, enemyResolutionCombatTexts);
+  nextState = processEnemyRegeneration(nextState, enemyResolutionCombatTexts);
+  combatTexts.push(...enemyResolutionCombatTexts);
 
-  return finalizePlayerTurn(nextState, combatTexts);
+  return {
+    ...finalizePlayerTurn(nextState, combatTexts),
+    enemyTurnStartState,
+    enemyTurnStartCombatTexts,
+    enemyResolutionCombatTexts,
+  };
 }

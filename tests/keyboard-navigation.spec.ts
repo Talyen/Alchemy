@@ -12,6 +12,26 @@ test.describe("Keyboard Navigation", () => {
     await expect(page.getByRole("button", { name: "Main Menu" })).not.toBeVisible({ timeout: 2000 });
   });
 
+  test("battle hamburger anchors menu near the trigger", async ({ page }) => {
+    await startRun(page);
+
+    const trigger = page.getByRole("button", { name: "Open battle menu" });
+    await trigger.click();
+    const menu = page.getByTestId("game-menu");
+    await expect(menu).toBeVisible({ timeout: 2000 });
+
+    const triggerBox = await trigger.boundingBox();
+    const menuBox = await menu.boundingBox();
+    expect(triggerBox).not.toBeNull();
+    expect(menuBox).not.toBeNull();
+    if (!triggerBox || !menuBox) return;
+
+    const triggerRight = triggerBox.x + triggerBox.width;
+    const menuRight = menuBox.x + menuBox.width;
+    expect(Math.abs(menuRight - triggerRight)).toBeLessThan(80);
+    expect(menuBox.y + menuBox.height).toBeLessThanOrEqual(triggerBox.y + 8);
+  });
+
   test("focused card is playable with enter key", async ({ page }) => {
     await startRun(page);
 

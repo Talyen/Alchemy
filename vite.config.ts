@@ -4,9 +4,15 @@ import { fileURLToPath, URL } from "node:url";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
+const devPort = Number.parseInt(process.env.ALCHEMY_DEV_PORT ?? "5173", 10);
+
+if (!Number.isInteger(devPort) || devPort <= 0) {
+  throw new Error(`Invalid ALCHEMY_DEV_PORT: ${process.env.ALCHEMY_DEV_PORT}`);
+}
+
 export default defineConfig(({ mode }) => ({
   base: process.env.VERCEL ? "/" : mode === "desktop" ? "./" : "/",
-  server: { open: true },
+  server: { open: true, port: devPort, strictPort: true },
   plugins: [react()],
   build: {
     rollupOptions: {

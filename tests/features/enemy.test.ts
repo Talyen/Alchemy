@@ -62,7 +62,11 @@ describe("formatEnemyAttackLines", () => {
       { kind: "player-status", status: "poison", amount: 2 },
       { kind: "player-status", status: "freeze", amount: 2 },
     ];
-    expect(formatEnemyAttackLines(effects)).toEqual(["Deals 5 Physical damage", "Deals 2 Poison damage", "Deals 2 Freeze damage"]);
+    expect(formatEnemyAttackLines(effects)).toEqual([
+      "Deals 5 Physical damage",
+      "Deals 2 Poison damage",
+      "Deals 2 Freeze damage",
+    ]);
   });
 });
 
@@ -119,5 +123,9 @@ describe("enemyBestiary attack lines integration", () => {
 
   it("Living Armor — physical + nature combined", () => {
     expect(getAttackLines("living-armor")).toEqual(["Deals 5 Physical and 5 Nature"]);
+  });
+
+  it("The Iron Bear — pure physical", () => {
+    expect(getAttackLines("iron-bear")).toEqual(["Deals 10 Physical damage"]);
   });
 });

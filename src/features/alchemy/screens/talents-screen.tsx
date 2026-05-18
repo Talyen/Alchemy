@@ -1,6 +1,7 @@
 // Talent tree screen — spend XP to unlock keyword-specific talents.
 import { useState, useMemo } from "react";
 import { House, Swords } from "lucide-react";
+import { motion } from "motion/react";
 
 import { Button } from "@/components/ui/button";
 import { keywordDefinitions, type KeywordId } from "@/lib/game-data";
@@ -75,22 +76,28 @@ export function TalentsScreen({
                 />
               );
             })}
-            <button
-              type="button"
-              onClick={() => setShowResetConfirm(true)}
-              className="rounded-full border border-border/40 px-3 py-1.5 text-xs font-medium text-muted-foreground/60 hover:border-border/60 hover:text-muted-foreground transition-transform active:scale-95"
+            <motion.span
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.97 }}
+              transition={{ type: "spring", stiffness: 400, damping: 15 }}
             >
-              Reset Talents
-            </button>
+              <button
+                type="button"
+                onClick={() => setShowResetConfirm(true)}
+                className="rounded-full border border-border/40 px-3 py-1.5 text-xs font-medium text-muted-foreground/60"
+              >
+                Reset Talents
+              </button>
+            </motion.span>
           </div>
 
           <div>
             <div className="surface-muted rounded-[22px] border border-border/70 p-3">
               <div className="flex items-end justify-between">
-                <span className="text-lg font-semibold text-foreground">
+                <span className="font-display text-base font-bold text-amber-100/75">
                   <KeywordTag keywordId={selectedKeyword} className="text-base" />
                 </span>
-                <span className="text-xs text-muted-foreground">
+                <span className="text-xs font-semibold text-muted-foreground">
                   {progress.xpForNext - progress.xpRemaining} / {progress.xpForNext} XP
                 </span>
               </div>

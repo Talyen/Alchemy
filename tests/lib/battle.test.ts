@@ -554,18 +554,53 @@ describe("endPlayerTurn", () => {
     const state = makeState({
       playerHealth: 20,
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 8 }],
-      enemyStatuses: { burn: 0, poison: 0, bleed: 10, bleedLeech: 4, freeze: 0, stun: 0 },
+      enemyStatuses: { burn: 0, poison: 0, bleed: 10, freeze: 0, stun: 0 },
+      pendingBleedLeechHealing: 4,
       deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
       mana: 4,
       maxMana: 4,
     });
     const result = endPlayerTurn(state);
+    expect(result.enemyTurnStartState?.enemyHealth).toBe(20);
+    expect(result.enemyTurnStartState?.playerHealth).toBe(24);
+    expect(result.enemyTurnStartCombatTexts).toEqual([
+      { target: "player", kind: "heal", stat: "health", amount: 4 },
+      { target: "enemy", kind: "damage", stat: "bleed", amount: 10 },
+    ]);
+    expect(result.enemyResolutionCombatTexts).toContainEqual({
+      target: "player",
+      kind: "damage",
+      stat: "health",
+      amount: 8,
+    });
     // Enemy takes 10 bleed damage
     expect(result.state.enemyHealth).toBe(20);
     // Player takes 8 enemy attack then heals 4 from leech: 20 - 8 + 4 = 16
     expect(result.state.playerHealth).toBe(16);
     expect(result.state.enemyStatuses.bleed).toBe(0);
-    expect(result.state.enemyStatuses.bleedLeech).toBe(0);
+    expect(result.state.pendingBleedLeechHealing).toBe(0);
+  });
+
+  it("applies bleed leech healing when bleed kills the enemy before their attack", () => {
+    const state = makeState({
+      playerHealth: 20,
+      enemyHealth: 6,
+      enemyMaxHealth: 30,
+      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 8 }],
+      enemyStatuses: { burn: 0, poison: 0, bleed: 10, freeze: 0, stun: 0 },
+      pendingBleedLeechHealing: 4,
+      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
+      mana: 4,
+      maxMana: 4,
+    });
+
+    const result = endPlayerTurn(state);
+
+    expect(result.enemyTurnStartState?.enemyHealth).toBe(0);
+    expect(result.enemyTurnStartState?.playerHealth).toBe(24);
+    expect(result.state.enemyHealth).toBe(0);
+    expect(result.state.playerHealth).toBe(24);
+    expect(result.enemyResolutionCombatTexts).toEqual([]);
   });
 
   it("ticks player Burn damage and halves the remaining Burn stack", () => {
@@ -1246,7 +1281,7 @@ describe("Trinket — Parasitic Bloom (10% chance to leech poison damage)", () =
     const manifest = computeTrinketManifest(["parasitic-bloom"]);
     const state = makeState({
       mana: 4, maxMana: 4, playerHealth: 20,
-      enemyStatuses: { burn: 0, poison: 3, bleed: 0, bleedLeech: 0, freeze: 0, stun: 0 },
+      enemyStatuses: { burn: 0, poison: 3, bleed: 0, freeze: 0, stun: 0 },
       enemyAttackEffects: [],
       trinketEffects: manifest,
       deck: [makeCard(), makeCard(), makeCard(), makeCard()],
@@ -1261,7 +1296,7 @@ describe("Trinket — Parasitic Bloom (10% chance to leech poison damage)", () =
     const manifest = computeTrinketManifest(["parasitic-bloom"]);
     const state = makeState({
       mana: 4, maxMana: 4, playerHealth: 20,
-      enemyStatuses: { burn: 0, poison: 3, bleed: 0, bleedLeech: 0, freeze: 0, stun: 0 },
+      enemyStatuses: { burn: 0, poison: 3, bleed: 0, freeze: 0, stun: 0 },
       enemyAttackEffects: [],
       trinketEffects: manifest,
       deck: [makeCard(), makeCard(), makeCard(), makeCard()],
@@ -1373,7 +1408,7 @@ describe("Trinket — Bone Charm (heal on enemy defeat)", () => {
     const manifest = computeTrinketManifest(["bone-charm"]);
     const state = makeState({
       mana: 4, maxMana: 4, playerHealth: 15, enemyHealth: 1, enemyMaxHealth: 1,
-      enemyStatuses: { burn: 0, poison: 3, bleed: 0, bleedLeech: 0, freeze: 0, stun: 0 },
+      enemyStatuses: { burn: 0, poison: 3, bleed: 0, freeze: 0, stun: 0 },
       enemyAttackEffects: [],
       trinketEffects: manifest,
       deck: [makeCard(), makeCard(), makeCard(), makeCard()],
@@ -1687,7 +1722,7 @@ describe("enemy traits via endPlayerTurn", () => {
   it("poison halves enemy healing when poisonHalvesHealing talent is active", () => {
     const state = makeState({
       enemyHealth: 10, enemyMaxHealth: 30,
-      enemyStatuses: { burn: 0, poison: 3, bleed: 0, bleedLeech: 0, freeze: 0, stun: 0 },
+      enemyStatuses: { burn: 0, poison: 3, bleed: 0, freeze: 0, stun: 0 },
       talentEffects: { ...defaultTalentEffects, poisonHalvesHealing: true },
       enemyAttackEffects: [],
       deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
@@ -1940,7 +1975,7 @@ describe("damage riders via applyCardEffects", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
     const state = makeState({
       mana: 10, enemyHealth: 50, enemyMaxHealth: 50,
-      enemyStatuses: { burn: 0, poison: 3, bleed: 0, bleedLeech: 0, freeze: 0, stun: 0 },
+      enemyStatuses: { burn: 0, poison: 3, bleed: 0, freeze: 0, stun: 0 },
       talentEffects: { ...defaultTalentEffects, poisonPhysicalBonus: 4 },
       deck: [], hand: [], discard: [], exhausted: [],
     });

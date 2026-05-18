@@ -119,9 +119,9 @@ function DifficultyCard({
             </div>
           </div>
         )}
-        <p className={cn("text-[16px]", locked && "text-muted-foreground")}>{name}</p>
+        <p className={cn("font-display text-base font-bold text-amber-100/75", locked && "text-muted-foreground")}>{name}</p>
         <div className="flex flex-col justify-center min-h-[60px]">
-          <p className="text-center text-[13px] leading-relaxed text-muted-foreground max-w-[220px]">
+          <p className="text-center text-sm leading-relaxed text-muted-foreground max-w-[220px]">
             {renderDescription(fullDescription)}
           </p>
         </div>
@@ -185,7 +185,7 @@ export function DifficultySelectScreen({
             />
             <img src={art} alt={char.name} className={cn(cardSurfaceClass, "w-full rounded-[22px] object-cover")} />
           </div>
-          <p className="text-[22px] text-foreground">{char.name}</p>
+          <p className="font-display text-base font-bold text-amber-100/75">{char.name}</p>
           <div className="flex flex-wrap justify-center gap-1">
             {char.keywords.map((kw) => (
               <KeywordTag key={kw} keywordId={kw} pill showTooltip />

@@ -65,8 +65,8 @@ function BattleControls({
           size="icon"
           className={
             isMobileLandscape
-              ? "h-20 w-20 text-muted-foreground hover:text-foreground"
-              : "h-8 w-8 text-muted-foreground hover:text-foreground"
+              ? "h-20 w-20 text-muted-foreground"
+              : "h-8 w-8 text-muted-foreground"
           }
           onClick={(e) => onOpenMenu(e.currentTarget.getBoundingClientRect())}
           aria-label="Open battle menu"
@@ -79,8 +79,8 @@ function BattleControls({
           size="sm"
           className={
             isMobileLandscape
-              ? "h-20 bg-amber-600 px-10 text-2xl font-bold text-white hover:bg-amber-700"
-              : "bg-amber-600 hover:bg-amber-700 text-white font-bold"
+              ? "h-20 bg-amber-600 px-10 text-2xl font-bold text-white"
+              : "bg-amber-600 text-white font-bold"
           }
           onClick={onEndTurn}
           disabled={battleState.turnPhase !== "player"}
@@ -94,8 +94,8 @@ function BattleControls({
             size="sm"
             className={
               isMobileLandscape
-                ? "h-20 w-20 text-amber-200 hover:text-amber-100 text-2xl"
-                : "w-full text-amber-200 hover:text-amber-100 text-xs"
+                ? "h-20 w-20 text-amber-200 text-2xl"
+                : "w-full text-amber-200 text-xs"
             }
             onClick={onSkipCombatDevMode}
           >

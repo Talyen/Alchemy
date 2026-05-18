@@ -4,10 +4,8 @@
 import { useState, type ReactNode } from "react";
 import { Dices, MoveRight } from "lucide-react";
 
-import { BlurFade } from "@/components/ui/blur-fade";
 import { Button } from "@/components/ui/button";
-import { ShineBorder } from "@/components/ui/shine-border";
-import { ANIMATION_STAGGER_UNIT, SELECTION_GRID_PAGE_SIZE } from "@/lib/game-constants";
+import { SELECTION_GRID_PAGE_SIZE } from "@/lib/game-constants";
 import { corruptionAltar, type BattleCard } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 import type { CorruptionResult } from "../corruption";
@@ -50,14 +48,12 @@ function CorruptionDeckPicker({
   onSelect,
   page,
   onPageChange,
-  cardRevealDelay = 0,
 }: {
   runDeck: BattleCard[];
   selectedIndex: number | null;
   onSelect: (index: number) => void;
   page: number;
   onPageChange: (page: number) => void;
-  cardRevealDelay?: number;
 }) {
   const corruptionOptions = runDeck.map((card, index) => ({ card, index })).filter(({ card }) => !card.corrupted);
 
@@ -67,7 +63,6 @@ function CorruptionDeckPicker({
       page={page}
       onPageChange={onPageChange}
       pageSize={SELECTION_GRID_PAGE_SIZE}
-      revealDelay={cardRevealDelay}
       emptyMessage="No uncorrupted cards remain."
       renderItem={({ card, index }) => (
         <CorruptionDeckCard card={card} isSelected={selectedIndex === index} onSelect={() => onSelect(index)} />
@@ -87,17 +82,9 @@ function CorruptionActionButton({
 }) {
   return (
     <div className={cn("relative rounded-xl", disabled && "opacity-50")}>
-      {!disabled && (
-        <ShineBorder
-          shineColor={["#450a0a", "#ef4444", "#991b1b", "#7f1d1d"]}
-          borderWidth={2}
-          duration={8}
-          className="z-10 rounded-xl"
-        />
-      )}
       <Button
         size="lg"
-        className="relative border border-red-700/90 bg-black text-red-400 hover:bg-red-950/95 hover:text-red-200 disabled:opacity-100"
+        className="relative bg-gradient-to-br from-red-950 via-black to-red-950 bg-[length:200%_200%] animate-shine text-red-400 disabled:opacity-100"
         disabled={disabled}
         onClick={onClick}
       >
@@ -111,25 +98,19 @@ function CorruptionIntro({ onBegin, onLeave }: { onBegin: () => void; onLeave: (
   return (
     <div className="state-swap flex flex-col items-center gap-5">
       <ScreenHeader title="Altar of Corruption" />
-      <ScreenDescription className="text-red-100/75">Select a Card to Corrupt</ScreenDescription>
-      <BlurFade delay={ANIMATION_STAGGER_UNIT} direction="up" offset={8}>
-        <img
-          src={corruptionAltar}
-          alt="Altar of Corruption"
-          className="block w-full max-w-[420px] rounded-[22px] object-contain"
-          loading="eager"
-          decoding="sync"
-        />
-      </BlurFade>
+      <ScreenDescription tone="danger">Select a Card to Corrupt</ScreenDescription>
+      <img
+        src={corruptionAltar}
+        alt="Altar of Corruption"
+        className="block w-full max-w-[420px] rounded-[22px] object-contain"
+        loading="eager"
+        decoding="sync"
+      />
       <div className="flex flex-wrap justify-center gap-3">
-        <BlurFade delay={ANIMATION_STAGGER_UNIT * 2} direction="up" offset={6}>
-          <Button size="lg" variant="outline" onClick={onLeave}>
-            Leave
-          </Button>
-        </BlurFade>
-        <BlurFade delay={ANIMATION_STAGGER_UNIT * 3} direction="up" offset={6}>
-          <CorruptionActionButton onClick={onBegin}>Corrupt a Card</CorruptionActionButton>
-        </BlurFade>
+        <Button size="lg" variant="outline" onClick={onLeave}>
+          Leave
+        </Button>
+        <CorruptionActionButton onClick={onBegin}>Corrupt a Card</CorruptionActionButton>
       </div>
     </div>
   );
@@ -144,46 +125,42 @@ function CorruptionResultView({ result, onContinue }: { result: CorruptionResult
       <div className="flex flex-col items-center gap-5">
         <ScreenHeader title="Altar of Corruption" />
         <ScreenDescription className="text-red-100/75">The altar returns your card changed.</ScreenDescription>
-        <BlurFade delay={ANIMATION_STAGGER_UNIT} direction="up" offset={8}>
-          <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-x-8 gap-y-3">
-            <div className="col-start-1 flex flex-col items-center">
-              <BattleCardButton
-                card={result.originalCard}
-                hovered={hoveredOriginal}
-                onHoverStart={() => setHoveredOriginal(true)}
-                onHoverEnd={() => setHoveredOriginal(false)}
-                ariaLabel={`Original: ${getCardDisplayTitle(result.originalCard)}`}
-                shimmerActive={false}
-                shimmerToken={undefined}
-                className={viewCardWidthClass}
-              />
-            </div>
-            <MoveRight className="col-start-2 h-8 w-8 shrink-0 self-center text-red-800" />
-            <div className="col-start-3 flex flex-col items-center">
-              <BattleCardButton
-                card={result.corruptedCard}
-                hovered={hoveredResult}
-                onHoverStart={() => setHoveredResult(true)}
-                onHoverEnd={() => setHoveredResult(false)}
-                ariaLabel={`Result: ${getCardDisplayTitle(result.corruptedCard)}`}
-                shimmerActive={false}
-                shimmerToken={undefined}
-                className={viewCardWidthClass}
-              />
-            </div>
-            <p className="col-start-1 text-base font-semibold text-foreground">
-              <CardTitle card={result.originalCard} />
-            </p>
-            <p className="col-start-3 text-base font-semibold text-foreground">
-              <CardTitle card={result.corruptedCard} />
-            </p>
+        <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-x-8 gap-y-3">
+          <div className="col-start-1 flex flex-col items-center">
+            <BattleCardButton
+              card={result.originalCard}
+              hovered={hoveredOriginal}
+              onHoverStart={() => setHoveredOriginal(true)}
+              onHoverEnd={() => setHoveredOriginal(false)}
+              ariaLabel={`Original: ${getCardDisplayTitle(result.originalCard)}`}
+              shimmerActive={false}
+              shimmerToken={undefined}
+              className={viewCardWidthClass}
+            />
           </div>
-        </BlurFade>
-        <BlurFade delay={ANIMATION_STAGGER_UNIT * 2} direction="up" offset={6}>
-          <Button size="lg" onClick={onContinue}>
-            Continue
-          </Button>
-        </BlurFade>
+          <MoveRight className="col-start-2 h-8 w-8 shrink-0 self-center text-red-800" />
+          <div className="col-start-3 flex flex-col items-center">
+            <BattleCardButton
+              card={result.corruptedCard}
+              hovered={hoveredResult}
+              onHoverStart={() => setHoveredResult(true)}
+              onHoverEnd={() => setHoveredResult(false)}
+              ariaLabel={`Result: ${getCardDisplayTitle(result.corruptedCard)}`}
+              shimmerActive={false}
+              shimmerToken={undefined}
+              className={viewCardWidthClass}
+            />
+          </div>
+          <p className="col-start-1 text-sm font-semibold text-foreground">
+            <CardTitle card={result.originalCard} />
+          </p>
+          <p className="col-start-3 text-sm font-semibold text-foreground">
+            <CardTitle card={result.corruptedCard} />
+          </p>
+        </div>
+        <Button size="lg" onClick={onContinue}>
+          Continue
+        </Button>
       </div>
     );
   }
@@ -192,28 +169,24 @@ function CorruptionResultView({ result, onContinue }: { result: CorruptionResult
     <div className="flex flex-col items-center gap-5">
       <ScreenHeader title="Altar of Corruption" />
       <ScreenDescription className="text-red-100/75">The altar returns your card changed.</ScreenDescription>
-      <BlurFade delay={ANIMATION_STAGGER_UNIT} direction="up" offset={8}>
-        <div className="flex flex-col items-center gap-3">
-          <BattleCardButton
-            card={result.corruptedCard}
-            hovered={hoveredResult}
-            onHoverStart={() => setHoveredResult(true)}
-            onHoverEnd={() => setHoveredResult(false)}
-            ariaLabel={`Inspect ${getCardDisplayTitle(result.corruptedCard)}`}
-            shimmerActive={false}
-            shimmerToken={undefined}
-            className={viewCardWidthClass}
-          />
-          <p className="text-base font-semibold text-foreground">
-            <CardTitle card={result.corruptedCard} />
-          </p>
-        </div>
-      </BlurFade>
-      <BlurFade delay={ANIMATION_STAGGER_UNIT * 2} direction="up" offset={6}>
-        <Button size="lg" onClick={onContinue}>
-          Continue
-        </Button>
-      </BlurFade>
+      <div className="flex flex-col items-center gap-3">
+        <BattleCardButton
+          card={result.corruptedCard}
+          hovered={hoveredResult}
+          onHoverStart={() => setHoveredResult(true)}
+          onHoverEnd={() => setHoveredResult(false)}
+          ariaLabel={`Inspect ${getCardDisplayTitle(result.corruptedCard)}`}
+          shimmerActive={false}
+          shimmerToken={undefined}
+          className={viewCardWidthClass}
+        />
+        <p className="text-base font-semibold text-foreground">
+          <CardTitle card={result.corruptedCard} />
+        </p>
+      </div>
+      <Button size="lg" onClick={onContinue}>
+        Continue
+      </Button>
     </div>
   );
 }
@@ -254,26 +227,21 @@ export function CorruptionScreen({
             onSelect={setSelectedIndex}
             page={page}
             onPageChange={setPage}
-            cardRevealDelay={ANIMATION_STAGGER_UNIT}
           />
           <div className="mt-5 flex justify-center gap-3">
-            <BlurFade delay={ANIMATION_STAGGER_UNIT * 9} direction="up" offset={6}>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setSelecting(false);
-                  setSelectedIndex(null);
-                  setPage(0);
-                }}
-              >
-                Cancel
-              </Button>
-            </BlurFade>
-            <BlurFade delay={ANIMATION_STAGGER_UNIT * 10} direction="up" offset={6}>
-              <CorruptionActionButton disabled={selectedIndex === null} onClick={handleConfirm}>
-                Corrupt
-              </CorruptionActionButton>
-            </BlurFade>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setSelecting(false);
+                setSelectedIndex(null);
+                setPage(0);
+              }}
+            >
+              Cancel
+            </Button>
+            <CorruptionActionButton disabled={selectedIndex === null} onClick={handleConfirm}>
+              Corrupt
+            </CorruptionActionButton>
           </div>
         </div>
       ) : (

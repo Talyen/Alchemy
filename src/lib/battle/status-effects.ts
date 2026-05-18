@@ -151,7 +151,7 @@ export function applyDamageStatuses(
           (nextState.talentEffects.bleedLeechChance > 0 &&
             Math.random() * PERCENT_DENOMINATOR < nextState.talentEffects.bleedLeechChance))
       ) {
-        nextStatuses.bleedLeech += bleedAmount;
+        nextState = { ...nextState, pendingBleedLeechHealing: nextState.pendingBleedLeechHealing + bleedAmount };
       }
       if (
         actualDamage > 0 &&

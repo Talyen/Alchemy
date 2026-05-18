@@ -127,7 +127,7 @@ function TalentNode({
             onUnlock?.(talent.id);
           }}
           className={cn(
-            "relative flex w-[168px] cursor-pointer items-center justify-center rounded-[14px] border-2 bg-popover px-3 py-3 text-xs font-bold leading-snug text-center min-h-[6rem] transition-all",
+            "relative flex w-[168px] cursor-pointer items-center justify-center rounded-[14px] border-2 bg-popover px-3 py-3 text-xs font-bold leading-snug text-center min-h-[6rem]",
             bColor,
           )}
           style={{ boxShadow: `0 0 18px 4px ${baseColor}40` }}
@@ -175,7 +175,7 @@ function TalentTierRow({
           className="h-px flex-1"
           style={{ background: `linear-gradient(to right, transparent, ${kwColor}33, transparent)` }}
         />
-        <span className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: `${kwColor}99` }}>
+        <span className="text-2xs font-bold uppercase tracking-widest" style={{ color: `${kwColor}99` }}>
           {TIER_LABELS[tierIndex]}
         </span>
         <div

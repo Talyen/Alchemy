@@ -2,6 +2,7 @@
 // Depends on game-data keywords, shine-border, and keyword-tag components.
 import { type KeywordId, keywordDefinitions } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
+import { motion } from "motion/react";
 import { ShineBorder } from "@/components/ui/shine-border";
 import { KeywordTag } from "../ui/keyword-tag";
 
@@ -20,18 +21,24 @@ export function TalentKeywordButton({
   const shineColors = def?.shineColors ?? ["#fcd34d", "#d97706", "#fcd34d"];
 
   return (
-    <button
-      type="button"
-      className={cn(
-        "relative rounded-full border px-3 py-1.5 text-sm font-semibold inline-flex items-center gap-1.5 transition-transform active:scale-95",
-        isSelected ? "border-primary bg-primary/20 text-primary" : "border-border/80 bg-card text-foreground",
-      )}
-      onClick={onClick}
+    <motion.span
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.97 }}
+      transition={{ type: "spring", stiffness: 400, damping: 15 }}
     >
-      {hasUnspent && (
-        <ShineBorder shineColor={shineColors} borderWidth={1} duration={8} className="rounded-full z-10" />
-      )}
-      <KeywordTag keywordId={keywordId} />
-    </button>
+      <button
+        type="button"
+        className={cn(
+          "relative rounded-full border px-3 py-1.5 text-sm font-semibold inline-flex items-center gap-1.5",
+          isSelected ? "border-primary bg-primary/20 text-primary" : "border-border/80 bg-card text-foreground",
+        )}
+        onClick={onClick}
+      >
+        {hasUnspent && (
+          <ShineBorder shineColor={shineColors} borderWidth={1} duration={8} className="rounded-full z-10" />
+        )}
+        <KeywordTag keywordId={keywordId} />
+      </button>
+    </motion.span>
   );
 }

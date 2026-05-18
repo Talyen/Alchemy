@@ -54,7 +54,7 @@ function CharacterCard({
         <ShimmerOverlay active={isShimmer} token={shimmerToken} rounded="rounded-[22px]" />
         <img src={art} alt={char.name} className={cn(cardSurfaceClass, "w-full rounded-[22px]")} />
       </button>
-      <p className="font-display text-[22px] text-amber-100/80">{char.name}</p>
+      <p className="font-display text-base font-bold text-amber-100/75">{char.name}</p>
       <div className="flex flex-wrap justify-center gap-1">
         {char.keywords.map((kw) => (
           <KeywordTag key={kw} keywordId={kw} pill showTooltip />

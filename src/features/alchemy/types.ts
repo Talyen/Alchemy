@@ -4,7 +4,7 @@
 import type { CSSProperties } from "react";
 
 import type { CombatTextEvent } from "@/lib/battle";
-import type { KeywordId } from "@/lib/game-data";
+import type { EnemyStatusId, KeywordId, PlayerStatusId } from "@/lib/game-data";
 
 export type Screen =
   | "menu"
@@ -75,7 +75,7 @@ export type FloatingCombatText = CombatTextEvent & {
 };
 
 export type StatusChip = {
-  id: string;
+  id: PlayerStatusId | EnemyStatusId;
   value: number;
 };
 

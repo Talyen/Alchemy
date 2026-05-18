@@ -31,9 +31,12 @@ const config: Config = {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      fontSize: {
+        "2xs": ["0.625rem", { lineHeight: "0.875rem" }],
+      },
       fontFamily: {
-        body: ['"DM Sans"', "sans-serif"],
-        display: ["Cinzel", "serif"],
+        body: ["Inter", "sans-serif"],
+        display: ["Inter", "sans-serif"],
       },
       keyframes: {
         float: {

@@ -7,8 +7,8 @@
   "scripts": {
     "assets:optimize": "node scripts/optimize-assets.mjs",
     "sounds:optimize": "node scripts/optimize-sounds.mjs",
-    "predev": "npm run assets:optimize && npm run sounds:optimize",
-    "predev:desktop": "npm run assets:optimize && npm run sounds:optimize",
+    "predev": "node scripts/stop-dev-server.mjs && npm run assets:optimize && npm run sounds:optimize",
+    "predev:desktop": "node scripts/stop-dev-server.mjs && npm run assets:optimize && npm run sounds:optimize",
     "prebuild": "npm run assets:optimize && npm run sounds:optimize",
     "prebuild:desktop": "npm run assets:optimize && npm run sounds:optimize",
     "dev": "vite",

@@ -22,7 +22,8 @@ function baseState(overrides: Partial<BattleState> = {}): BattleState {
     enemyHealth: 30, enemyMaxHealth: 30, enemyAttackEffects: [], enemyArmor: 0,
     enemyForge: 0, enemyFreezeBonus: 0, enemyRegeneration: 0,
     playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
-    enemyStatuses: { burn: 0, poison: 0, bleed: 0, bleedLeech: 0, freeze: 0, stun: 0 },
+    enemyStatuses: { burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+    pendingBleedLeechHealing: 0,
     enemyStunSkipTurns: 0, enemyFreezeSkipTurns: 0, wishOptions: null, wishQueue: [],
     activeCompanion: null, companionDamageBuff: 0,
     currentEnemy: { id: "skeleton", title: "Skeleton", subtitle: "", descriptionLines: [""], art: "", enemyType: "normal", traits: [], attackEffects: [] },
@@ -142,7 +143,7 @@ describe("addEnemyStatus", () => {
     expect(next.enemyStatuses.burn).toBe(3);
   });
 
-  it("works for all enemy status IDs including bleedLeech", () => {
+  it("works for all enemy status IDs", () => {
     const state = baseState();
     const ids: EnemyStatusId[] = ["burn", "poison", "bleed", "freeze", "stun"];
     for (const id of ids) {

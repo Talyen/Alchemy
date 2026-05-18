@@ -4,8 +4,6 @@
 import { useState } from "react";
 import type { CSSProperties } from "react";
 import { Button } from "@/components/ui/button";
-import { BlurFade } from "@/components/ui/blur-fade";
-import { ANIMATION_STAGGER_UNIT } from "@/lib/game-constants";
 import { TextAnimate } from "@/components/ui/text-animate";
 import { SELECTION_GRID_PAGE_SIZE } from "@/lib/game-constants";
 import { type BattleCard, type TrinketEntry } from "@/lib/game-data";
@@ -17,7 +15,7 @@ import { clearTiltFromEvent, setTiltFromEvent } from "../../utils";
 import { CardSelectionGrid } from "../../ui/card-selection-grid";
 import { BattleCardButton, CardTitle, DetailPopup, getCardDisplayTitle } from "../../ui/card-ui";
 import { MysteryEffectBadge, MysteryEffectList } from "../../ui/mystery-effect-badge";
-import { ScreenHeader } from "../../ui/shared-ui";
+import { ScreenDescription, ScreenHeader } from "../../ui/shared-ui";
 
 type LookupProps = {
   findCard: (id: string) => BattleCard | undefined;
@@ -145,7 +143,7 @@ export function MysteryRewardSummary({
           }
           case "gainRandomTrinket":
             return (
-              <p key={i} className="text-base font-semibold text-foreground">
+              <p key={i} className="text-sm font-semibold text-foreground">
                 Gained a random trinket
               </p>
             );
@@ -192,7 +190,7 @@ export function RemoveCardPicker({ runDeck, onSelect }: { runDeck: BattleCard[];
 
   return (
     <div className="state-swap space-y-6 text-center">
-      <h2 className="text-3xl text-foreground">Select a card to remove</h2>
+      <ScreenDescription>Select a card to remove from your deck</ScreenDescription>
       <CardSelectionGrid
         items={items}
         page={page}
@@ -220,7 +218,7 @@ export function RemoveCardPicker({ runDeck, onSelect }: { runDeck: BattleCard[];
                 shimmerToken={undefined}
                 className={viewCardWidthClass}
               />
-              <p className="text-xs text-foreground">
+              <p className="text-sm font-semibold text-foreground">
                 <CardTitle card={card} />
               </p>
             </div>
@@ -257,7 +255,6 @@ export function CardChoicePicker({ choices, onSelect }: { choices: BattleCard[];
         page={0}
         onPageChange={() => {}}
         pageSize={choices.length}
-        revealDelay={ANIMATION_STAGGER_UNIT}
         renderItem={({ card }) => {
           const isSelected = selectedId === card.id;
           return (
@@ -311,7 +308,7 @@ export function MysteryEventIntro({
       <ScreenHeader title={event.title} />
       {event.art ? (
         <div
-          className="tilt-surface rounded-[18px]"
+          className="tilt-surface aspect-[4/3] w-full max-w-[352px] overflow-hidden rounded-[18px] transition-none"
           style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
           onMouseMove={setTiltFromEvent}
           onMouseLeave={clearTiltFromEvent}
@@ -319,7 +316,9 @@ export function MysteryEventIntro({
           <img
             src={event.art}
             alt={event.title}
-            className="w-full max-w-[352px] rounded-[18px] object-contain"
+            width={900}
+            height={675}
+            className="h-full w-full rounded-[18px] object-contain"
             loading="eager"
           />
         </div>
@@ -346,21 +345,19 @@ export function MysteryEventIntro({
 
       <div className="flex flex-wrap justify-center gap-4">
         {event.choices.map((choice, i) => (
-          <BlurFade key={i} delay={ANIMATION_STAGGER_UNIT * (1 + i)} direction="up" offset={8}>
-            <div className="group relative">
-              <Button size="lg" variant="outline" className="min-w-32" onClick={() => onPick(choice)}>
-                {choice.label}
-              </Button>
-              <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-3 w-64 -translate-x-1/2 translate-y-1 rounded-[16px] border border-border/80 bg-card px-3 py-2 text-left text-sm leading-6 text-muted-foreground opacity-0 transition-[opacity,transform] duration-150 ease-alchemy-out will-change-[opacity,transform] group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100">
-                <MysteryEffectList
-                  effects={choice.effects}
-                  findCard={findCard}
-                  findTrinket={findTrinket}
-                  choiceLabel={choice.label}
-                />
-              </div>
+          <div key={i} className="group relative">
+            <Button size="lg" variant="outline" className="min-w-32" onClick={() => onPick(choice)}>
+              {choice.label}
+            </Button>
+            <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-3 w-64 -translate-x-1/2 translate-y-1 rounded-[16px] border border-border/80 bg-card px-3 py-2 text-left text-sm leading-6 text-muted-foreground opacity-0 transition-[opacity,transform] duration-150 ease-alchemy-out will-change-[opacity,transform] group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100">
+              <MysteryEffectList
+                effects={choice.effects}
+                findCard={findCard}
+                findTrinket={findTrinket}
+                choiceLabel={choice.label}
+              />
             </div>
-          </BlurFade>
+          </div>
         ))}
       </div>
     </div>

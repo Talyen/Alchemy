@@ -22,7 +22,7 @@ import type { Screen } from "./types";
 import { mergeIntoManifest } from "@/lib/homestead/effects";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import { CARD_ACTIVATION_ROTATION_DEGREES, COMPANION_ATTACK_DELAY, ENEMY_PHASE_DELAY } from "@/lib/game-constants";
-import { getCardRect, getEnemyStatusChips, getHoverId, getPlayerStatusChips } from "./utils";
+import { getCardRect, getHoverId } from "./utils";
 import type { RunStateController } from "./use-run-state";
 import type { TalentStateController } from "./use-talent-state";
 import {
@@ -103,8 +103,6 @@ export function useBattleController({
     [],
   );
 
-  const playerStatusChips = useMemo(() => (hasActiveBattle ? getPlayerStatusChips(battleState) : []), [battleState, hasActiveBattle]);
-  const enemyStatusChips = useMemo(() => (hasActiveBattle ? getEnemyStatusChips(battleState) : []), [battleState, hasActiveBattle]);
   const playerCombatTexts = useMemo(
     () => floatingCombatTexts.filter((e) => e.target === "player"),
     [floatingCombatTexts],
@@ -269,11 +267,24 @@ export function useBattleController({
     }
 
     const result = endPlayerTurn(companionResult.state);
-    const combinedCombatTexts = [...companionResult.combatTexts, ...result.combatTexts];
+    const enemyTurnStartTexts = result.enemyTurnStartState
+      ? [...companionResult.combatTexts, ...result.enemyTurnStartCombatTexts]
+      : [...companionResult.combatTexts, ...result.combatTexts];
+    const enemyResolutionTexts = result.enemyTurnStartState
+      ? result.enemyResolutionCombatTexts
+      : result.combatTexts;
 
-    showEnemyTurnStart(result.state, companionResult.state, combinedCombatTexts);
-    if (result.state.enemyHealth <= 0) return;
-    scheduleEnemyTurnResolution(result.state, companionResult.state, combinedCombatTexts);
+    showEnemyTurnStart(
+      result.enemyTurnStartState ?? result.state,
+      companionResult.state,
+      enemyTurnStartTexts,
+      Boolean(result.enemyTurnStartState),
+    );
+    if (result.state.enemyHealth <= 0) {
+      getStore().setBattleState({ ...result.state, turnPhase: "enemy", hand: [] });
+      return;
+    }
+    scheduleEnemyTurnResolution(result.state, companionResult.state, enemyResolutionTexts);
   }
 
   function resolveQueuedCompanionTurn(state: BattleState) {
@@ -289,16 +300,20 @@ export function useBattleController({
     return { state, combatTexts };
   }
 
-  function showEnemyTurnStart(resultState: BattleState, currentState: BattleState, combatTexts: CombatTextEvent[]) {
+  function showEnemyTurnStart(
+    resultState: BattleState,
+    currentState: BattleState,
+    combatTexts: CombatTextEvent[],
+    showPlayerUpdates: boolean,
+  ) {
     const displayState: BattleState = {
       ...resultState,
       turnPhase: "enemy",
       hand: [],
-      playerHealth: currentState.playerHealth,
-      playerStatuses: currentState.playerStatuses,
+      ...(showPlayerUpdates ? {} : { playerHealth: currentState.playerHealth, playerStatuses: currentState.playerStatuses }),
     };
     getStore().setBattleState(displayState);
-    const dotTexts = combatTexts.filter((ct) => ct.target === "enemy");
+    const dotTexts = combatTexts.filter((ct) => ct.target === "enemy" || ct.kind === "heal");
     if (dotTexts.length > 0) getStore().showCombatTexts(dotTexts);
   }
 
@@ -314,7 +329,7 @@ export function useBattleController({
       playEnemyAttack(currentState.currentEnemy.id);
       if (!currentState.deathsDoorActive && resultState.deathsDoorActive) playBattleEvent("deathsDoor");
       getStore().setBattleState(resultState);
-      if (playerTexts.length > 0) getStore().showCombatTexts(playerTexts);
+      if (combatTexts.length > 0) getStore().showCombatTexts(combatTexts);
       if (shouldShakePlayerFromCombatTexts(playerTexts)) getStore().shakePlayer();
       scheduleCompanionFollowUp(resultState);
     }, ENEMY_PHASE_DELAY);
@@ -377,8 +392,6 @@ export function useBattleController({
     cardGhosts,
     shimmerState,
     floatingCombatTexts,
-    playerStatusChips,
-    enemyStatusChips,
     playerCombatTexts,
     enemyCombatTexts,
     startBattle,

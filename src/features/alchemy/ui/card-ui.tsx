@@ -134,7 +134,7 @@ export function getCardDisplayTitle(card: Pick<BattleCard, "title" | "corrupted"
 
 export function CardTitle({ card, className }: { card: Pick<BattleCard, "title" | "corrupted">; className?: string }) {
   return (
-    <span className={cn("font-display", className)}>
+    <span className={cn("font-display font-semibold", className)}>
       {card.corrupted ? <span className="text-red-400">Corrupted </span> : null}
       {card.title}
     </span>
@@ -171,10 +171,10 @@ export function PurchasableCardItem({
           shimmerToken={undefined}
           className={widthClass}
         />
-        <p className="text-sm font-semibold text-muted-foreground">
+        <p className="text-sm font-semibold text-amber-100/75">
           <CardTitle card={card} />
         </p>
-        <span className="text-xs text-muted-foreground">Purchased</span>
+        <span className="text-xs font-semibold text-muted-foreground">Purchased</span>
       </div>
     );
   }
@@ -247,7 +247,7 @@ export function SelectableCardItem({
   return (
     <div
       className={cn(
-        "cursor-pointer rounded-[18px] border p-2 text-center transition-all",
+        "cursor-pointer rounded-[18px] border p-2 text-center",
         isSelected
           ? "border-primary bg-primary/10 ring-1 ring-primary"
           : "border-border/60 bg-card/40 hover:border-border",
@@ -266,7 +266,7 @@ export function SelectableCardItem({
         shimmerToken={undefined}
         className={widthClass}
       />
-      <p className="mt-1 text-xs font-semibold text-foreground">
+      <p className="mt-1 text-sm font-semibold text-foreground">
         <CardTitle card={card} />
       </p>
     </div>
@@ -316,7 +316,7 @@ export function DetailPopup({
       }
     >
       <p className="text-base text-foreground sm:text-lg">{title}</p>
-      {subtitle ? <p className="mt-1 text-xs uppercase tracking-[0.18em] text-muted-foreground">{subtitle}</p> : null}
+      {subtitle ? <p className="mt-1 text-xs uppercase tracking-widest text-muted-foreground">{subtitle}</p> : null}
       <DescriptionLines lines={descriptionLines} idPrefix={idPrefix} {...(card ? { card } : {})} />
       {descriptionNodes?.map((node, i) => (
         <div key={i} className="mt-1.5 text-sm leading-6">

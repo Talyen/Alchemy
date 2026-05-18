@@ -9,7 +9,8 @@ function makeState(overrides: Partial<BattleState> = {}): BattleState {
     enemyHealth: 30, enemyMaxHealth: 30,
     enemyAttackEffects: [], enemyArmor: 0, enemyForge: 0, enemyFreezeBonus: 0, enemyRegeneration: 0,
     playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
-    enemyStatuses: { burn: 0, poison: 0, bleed: 0, bleedLeech: 0, freeze: 0, stun: 0 },
+    enemyStatuses: { burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+    pendingBleedLeechHealing: 0,
     enemyStunSkipTurns: 0, enemyFreezeSkipTurns: 0, wishOptions: null, wishQueue: [], activeCompanion: null,
     currentEnemy: { id: "skeleton", title: "Skeleton", subtitle: "", descriptionLines: [""], art: "", enemyType: "normal", traits: [], attackEffects: [] },
     talentEffects: {
@@ -77,7 +78,7 @@ describe("getPlayerStatusChips", () => {
 
 describe("getEnemyStatusChips", () => {
   it("returns enemy statuses with positive values", () => {
-    const state = makeState({ enemyStatuses: { burn: 4, poison: 0, bleed: 0, bleedLeech: 0, freeze: 0, stun: 1 } });
+    const state = makeState({ enemyStatuses: { burn: 4, poison: 0, bleed: 0, freeze: 0, stun: 1 } });
     const chips = getEnemyStatusChips(state);
     expect(chips).toEqual([{ id: "burn", value: 4 }, { id: "stun", value: 1 }]);
   });
