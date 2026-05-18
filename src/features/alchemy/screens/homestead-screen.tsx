@@ -6,8 +6,6 @@ import { useState, useMemo, type ReactNode } from "react";
 import { ChevronLeft, ChevronRight, FlaskConical, Hammer, House, PawPrint, Star, Swords, Wheat } from "lucide-react";
 import { motion } from "motion/react";
 
-import { AnimatedHeight } from "@/features/alchemy/ui/animated-height";
-
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -214,10 +212,10 @@ export function HomesteadScreen({
                 type="button"
                 onClick={() => setTab(t.id)}
                 className={cn(
-                  "inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                  "inline-flex items-center gap-2 rounded-full bg-card px-4 py-2 text-sm font-semibold text-foreground ring-1 ring-offset-1 ring-offset-card transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                   tab === t.id
-                    ? "border-primary/70 bg-primary/15 text-foreground"
-                    : "border-border/80 bg-card text-foreground",
+                    ? "ring-primary/70"
+                    : "ring-border/30 hover:ring-border/50",
                 )}
               >
                 {t.id === "buildings" ? (
@@ -236,114 +234,127 @@ export function HomesteadScreen({
         </div>
 
         {/* Grid — all tabs pre-rendered, only active one visible in flow */}
-        <div className="relative mx-auto mt-6 w-full">
+        <div className="mx-auto mt-6 grid w-full">
           {(["buildings", "farm", "research", "companions"] as const).map((t) => {
             const isActive = tab === t;
             if (t === "companions") {
-              const pageItems = companionCards.slice(
-                companionPage * COMPANION_PAGE_SIZE,
-                (companionPage + 1) * COMPANION_PAGE_SIZE,
-              );
               return (
                 <div
                   key={t}
-                  className={cn(isActive ? "relative" : "pointer-events-none invisible absolute left-0 top-0 w-full")}
+                  className={cn(
+                    "col-start-1 row-start-1 transition-opacity duration-200",
+                    isActive ? "opacity-100" : "pointer-events-none opacity-0",
+                  )}
                 >
-                  <AnimatedHeight>
-                    <div key={companionPage} className="state-swap grid min-h-[400px] grid-cols-3 gap-x-2 gap-y-4">
-                      {pageItems.map((card, index) => {
-                        const companionEffect = card.effects.find(
-                          (e): e is { kind: "summon-companion"; companionId: CompanionId } =>
-                            e.kind === "summon-companion",
-                        );
-                        const companionId = companionEffect?.companionId ?? null;
-                        const discovered = discoveredCardIds.includes(card.id);
-                        const currentLevel = companionId ? (bondedCompanions[companionId] ?? 0) : 0;
-                        const isComplete = currentLevel >= COMPANION_MAX_TIER;
-                        const bondCost = COMPANION_BOND_TIERS[Math.min(currentLevel, COMPANION_MAX_TIER - 1)];
-                        const bondAffordable = discovered && !isComplete && canAfford(materialInventory, bondCost);
-                        const showButton = discovered && !isComplete;
+                  <div className="grid">
+                    {Array.from({ length: companionPages }, (_, pageIndex) => {
+                      const pageItems = companionCards.slice(
+                        pageIndex * COMPANION_PAGE_SIZE,
+                        (pageIndex + 1) * COMPANION_PAGE_SIZE,
+                      );
+                      return (
+                        <div
+                          key={pageIndex}
+                          className={cn(
+                            "col-start-1 row-start-1 grid grid-cols-3 gap-x-1 gap-y-4 transition-opacity duration-200",
+                            companionPage === pageIndex ? "opacity-100" : "pointer-events-none opacity-0",
+                          )}
+                        >
+                          {pageItems.map((card, index) => {
+                            const companionEffect = card.effects.find(
+                              (e): e is { kind: "summon-companion"; companionId: CompanionId } =>
+                                e.kind === "summon-companion",
+                            );
+                            const companionId = companionEffect?.companionId ?? null;
+                            const discovered = discoveredCardIds.includes(card.id);
+                            const currentLevel = companionId ? (bondedCompanions[companionId] ?? 0) : 0;
+                            const isComplete = currentLevel >= COMPANION_MAX_TIER;
+                            const bondCost = COMPANION_BOND_TIERS[Math.min(currentLevel, COMPANION_MAX_TIER - 1)];
+                            const bondAffordable = discovered && !isComplete && canAfford(materialInventory, bondCost);
+                            const showButton = discovered && !isComplete;
 
-                        return (
-                          <div key={card.id} className={cn("flex flex-col items-center", index < 3 && "mb-2")}>
-                            <div className="relative">
-                              {hoveredItemId === card.id && (
-                                <DetailPopup
-                                  idPrefix={card.id}
-                                  title={discovered ? card.title : "Undiscovered"}
-                                  subtitle={undefined}
-                                  descriptionLines={
-                                    discovered
-                                      ? getEffectiveCardDescriptionLines(card, {
-                                          companionBondLevels: bondedCompanions,
-                                        })
-                                      : ["Discover this card during a run to reveal it here."]
-                                  }
-                                />
-                              )}
-                              <div className={cn("group tilt-surface w-full overflow-hidden rounded-[18px] p-3")}>
-                                <div
-                                  className={cn(
-                                    "relative mx-auto flex aspect-[3/4] w-[65%] items-center justify-center overflow-hidden rounded-[18px] bg-stone-900",
-                                    isComplete && "bg-stone-800/70",
-                                  )}
-                                  onMouseEnter={() => setHoveredItemId(card.id)}
-                                  onMouseLeave={() => setHoveredItemId(null)}
-                                  onMouseMove={setTiltFromEvent}
-                                >
-                                  <img
-                                    src={card.art}
-                                    alt={card.title}
-                                    className={cn("h-full w-full object-cover", !discovered && "grayscale opacity-45")}
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                            {showButton ? (
-                              <div className="mt-1.5 flex items-center gap-2">
-                                <DisabledTooltip show={!bondAffordable} message="Not Enough Resources">
-                                  <Button
-                                    variant="outline"
-                                    disabled={!bondAffordable}
-                                    onClick={() => handleBondCompanion(card)}
-                                  >
-                                    {card.title}
-                                    <span className="ml-1.5 flex items-center gap-1">
-                                      <MaterialIcon material="food" />
-                                      <span className={matTextColor.food}>{bondCost.food}</span>
-                                    </span>
-                                  </Button>
-                                </DisabledTooltip>
-                                <span className="flex items-center gap-0.5">
-                                  {Array.from({ length: COMPANION_MAX_TIER }, (_, i) => (
-                                    <Star
-                                      key={i}
-                                      className={cn(
-                                        "h-3 w-3",
-                                        i < currentLevel ? "text-amber-400" : "text-muted-foreground",
-                                      )}
-                                      fill={i < currentLevel ? "currentColor" : "none"}
+                            return (
+                              <div key={card.id} className={cn("flex flex-col items-center", index < 3 && "mb-2")}>
+                                <div className="relative">
+                                  {hoveredItemId === card.id && (
+                                    <DetailPopup
+                                      idPrefix={card.id}
+                                      title={discovered ? card.title : "Undiscovered"}
+                                      subtitle={undefined}
+                                      descriptionLines={
+                                        discovered
+                                          ? getEffectiveCardDescriptionLines(card, {
+                                              companionBondLevels: bondedCompanions,
+                                            })
+                                          : ["Discover this card during a run to reveal it here."]
+                                      }
                                     />
-                                  ))}
-                                </span>
-                              </div>
-                            ) : (
-                              <div className="mt-1.5 flex h-9 items-center justify-center gap-1.5 text-sm font-semibold text-amber-100/75">
-                                <span>{discovered ? card.title : "Undiscovered"}</span>
-                                {discovered && (
-                                  <span className="flex items-center gap-0.5 text-amber-400">
-                                    {Array.from({ length: COMPANION_MAX_TIER }, (_, i) => (
-                                      <Star key={i} className="h-3 w-3" fill="currentColor" />
-                                    ))}
-                                  </span>
+                                  )}
+                                  <div className={cn("group tilt-surface w-full overflow-hidden rounded-[18px] p-3")}>
+                                    <div
+                                      className={cn(
+                                        "relative mx-auto flex aspect-[3/4] w-[65%] items-center justify-center overflow-hidden rounded-[18px] bg-stone-900",
+                                        isComplete && "bg-stone-800/70",
+                                      )}
+                                      onMouseEnter={() => setHoveredItemId(card.id)}
+                                      onMouseLeave={() => setHoveredItemId(null)}
+                                      onMouseMove={setTiltFromEvent}
+                                    >
+                                      <img
+                                        src={card.art}
+                                        alt={card.title}
+                                        className={cn("h-full w-full object-cover", !discovered && "grayscale opacity-45")}
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                                {showButton ? (
+                                  <div className="mt-1.5 flex items-center gap-2">
+                                    <DisabledTooltip show={!bondAffordable} message="Not Enough Resources">
+                                      <Button
+                                        variant="outline"
+                                        disabled={!bondAffordable}
+                                        onClick={() => handleBondCompanion(card)}
+                                      >
+                                        {card.title}
+                                        <span className="ml-1.5 flex items-center gap-1">
+                                          <MaterialIcon material="food" />
+                                          <span className={matTextColor.food}>{bondCost.food}</span>
+                                        </span>
+                                      </Button>
+                                    </DisabledTooltip>
+                                    <span className="flex items-center gap-0.5">
+                                      {Array.from({ length: COMPANION_MAX_TIER }, (_, i) => (
+                                        <Star
+                                          key={i}
+                                          className={cn(
+                                            "h-3 w-3",
+                                            i < currentLevel ? "text-amber-400" : "text-muted-foreground",
+                                          )}
+                                          fill={i < currentLevel ? "currentColor" : "none"}
+                                        />
+                                      ))}
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <div className="mt-1.5 flex h-9 items-center justify-center gap-1.5 text-sm font-semibold text-amber-100/75">
+                                    <span>{discovered ? card.title : "Undiscovered"}</span>
+                                    {discovered && (
+                                      <span className="flex items-center gap-0.5 text-amber-400">
+                                        {Array.from({ length: COMPANION_MAX_TIER }, (_, i) => (
+                                          <Star key={i} className="h-3 w-3" fill="currentColor" />
+                                        ))}
+                                      </span>
+                                    )}
+                                  </div>
                                 )}
                               </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </AnimatedHeight>
+                            );
+                          })}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               );
             }
@@ -354,7 +365,8 @@ export function HomesteadScreen({
               <div
                 key={t}
                 className={cn(
-                  isActive ? "relative" : "pointer-events-none invisible absolute left-0 top-0 w-full",
+                  "col-start-1 row-start-1 transition-opacity duration-200",
+                  isActive ? "opacity-100" : "pointer-events-none opacity-0",
                   "grid grid-cols-3 gap-x-2 gap-y-6",
                 )}
               >
@@ -436,7 +448,7 @@ export function HomesteadScreen({
                         <div className={cn("group tilt-surface w-full overflow-hidden rounded-[18px] p-3")}>
                           <div
                             className={cn(
-                              "relative mx-auto flex aspect-[4/3] w-[90%] items-center justify-center overflow-hidden rounded-[18px] bg-stone-900",
+                              "relative mx-auto flex aspect-[4/3] w-full items-center justify-center overflow-hidden rounded-[18px] bg-stone-900",
                               isCompleted && "bg-stone-800/70",
                             )}
                             onMouseMove={setTiltFromEvent}

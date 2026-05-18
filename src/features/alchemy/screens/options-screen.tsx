@@ -264,8 +264,8 @@ export function OptionsScreen({
               <button
                 type="button"
                 className={cn(
-                  "rounded-full border px-4 py-2 text-sm font-semibold capitalize",
-                  tab === t ? "border-primary bg-primary/20 text-foreground" : "border-border/80 bg-card text-foreground",
+                  "rounded-full bg-card px-4 py-2 text-sm font-semibold capitalize text-foreground ring-1 ring-offset-1 ring-offset-card transition-all duration-200",
+                  tab === t ? "ring-primary/70" : "ring-border/30 hover:ring-border/50",
                 )}
                 onClick={() => setTab(t)}
               >

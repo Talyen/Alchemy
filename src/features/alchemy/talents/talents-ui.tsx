@@ -29,9 +29,10 @@ export function TalentKeywordButton({
       <button
         type="button"
         className={cn(
-          "relative rounded-full border px-3 py-1.5 text-sm font-semibold inline-flex items-center gap-1.5",
-          isSelected ? "border-primary bg-primary/20 text-primary" : "border-border/80 bg-card text-foreground",
+          "relative inline-flex items-center gap-1.5 rounded-full bg-card px-3 py-1.5 text-sm font-semibold text-foreground ring-1 ring-offset-1 ring-offset-card transition-all duration-200",
+          isSelected ? "" : "ring-border/30 hover:ring-border/50",
         )}
+        style={isSelected ? { "--tw-ring-color": shineColors[0] } as React.CSSProperties : undefined}
         onClick={onClick}
       >
         {hasUnspent && (

@@ -194,10 +194,10 @@ export function CollectionTabs({
               type="button"
               onClick={() => onSelectTab(tab.id)}
               className={cn(
-                "inline-flex min-h-[44px] items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                "inline-flex min-h-[44px] items-center gap-2 rounded-full bg-card px-4 py-2 text-sm font-semibold text-foreground ring-1 ring-offset-1 ring-offset-card transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                 collectionTab === tab.id
-                  ? "border-primary/70 bg-primary/15 text-foreground"
-                  : "border-border/80 bg-card text-foreground",
+                  ? "ring-primary/70"
+                  : "ring-border/30 hover:ring-border/50",
               )}
             >
               <Icon className="h-4 w-4" />
