@@ -9,6 +9,7 @@ import {
   characterArt,
   characters,
   enemyBestiary,
+  getTalentsForKeyword,
   keywordDefinitions,
   trinketLibrary,
   type CharacterId,
@@ -261,7 +262,7 @@ export default function App() {
   const hasUnspentTalents = Object.keys(keywordDefinitions).some((kw) => {
     const kwId = kw as KeywordId;
     const xp = run.talentXP[kwId] ?? 0;
-    return getTalentKeywordProgress(xp, (run.unlockedTalents[kwId] ?? []).length).hasUnspent;
+    return getTalentKeywordProgress(xp, (run.unlockedTalents[kwId] ?? []).length, getTalentsForKeyword(kwId).length).hasUnspent;
   });
 
   const hasAffordableHomestead = (() => {
@@ -369,6 +370,8 @@ export default function App() {
               resetUnlockedTalents: run.resetUnlockedTalents,
             },
             handCardRefs: run.handCardRefs,
+            drawPileRef: run.drawPileRef,
+            discardPileRef: run.discardPileRef,
             battleSceneRef: run.battleSceneRef,
             playerPanelRef: run.playerPanelRef,
             enemyPanelRef: run.enemyPanelRef,
@@ -377,6 +380,9 @@ export default function App() {
             isMobileLandscape,
             aspectMode,
             stagePixelRatio,
+            cardTransfers: run.cardTransfers,
+            hiddenHandCardKeys: run.hiddenHandCardKeys,
+            cardTransferInProgress: run.cardTransferInProgress,
             hasUnspentTalents,
             hasAffordableHomestead,
             collectionTab,

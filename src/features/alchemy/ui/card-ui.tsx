@@ -342,6 +342,7 @@ export function BattleCardButton({
   className,
   wrapperClassName,
   wrapperStyle,
+  wrapperDataCardKey,
   selected = false,
   disabled = false,
   dragging = false,
@@ -361,6 +362,7 @@ export function BattleCardButton({
   className?: string;
   wrapperClassName?: string;
   wrapperStyle?: CSSProperties;
+  wrapperDataCardKey?: string;
   selected?: boolean;
   disabled?: boolean;
   dragging?: boolean;
@@ -380,11 +382,13 @@ export function BattleCardButton({
   return (
     <div
       className={cn("relative", wrapperClassName)}
+      data-hand-card={wrapperDataCardKey ? "true" : undefined}
+      data-hand-card-id={wrapperDataCardKey}
       style={wrapperStyle}
       onMouseEnter={handleHoverStart}
       onMouseLeave={onHoverEnd}
     >
-      {hovered ? (
+      {hovered && !dragging ? (
         <DetailPopup
           idPrefix={card.id}
           title={<CardTitle card={card} />}

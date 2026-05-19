@@ -58,6 +58,8 @@ export type BattleFeedbackProps = {
 
 export type BattleRefsProps = {
   handCardRefs: MutableRefObject<Record<string, HTMLButtonElement | null>>;
+  drawPileRef: MutableRefObject<HTMLDivElement | null>;
+  discardPileRef: MutableRefObject<HTMLDivElement | null>;
   battleSceneRef: MutableRefObject<HTMLDivElement | null>;
   playerPanelRef: MutableRefObject<HTMLDivElement | null>;
   enemyPanelRef: MutableRefObject<HTMLDivElement | null>;
@@ -70,6 +72,8 @@ export type BattleActionsProps = {
   onRemoveCardGhost: (id: string) => void;
   onSkipCombatDevMode: () => void;
   onEndTurn: () => void;
+  hiddenHandCardKeys: Set<string>;
+  cardTransferInProgress: boolean;
 };
 
 export type RequiredBattleViewProps = Required<BattleScreenViewProps>;

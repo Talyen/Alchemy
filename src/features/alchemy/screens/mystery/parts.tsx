@@ -30,7 +30,7 @@ export function hasPositiveMysteryEffect(effects: MysteryEffect[]) {
       "chooseCard",
       "gainTrinket",
       "gainRandomTrinket",
-      "healHP",
+      "healHealth",
       "gainGold",
       "gainMaxMana",
       "gainXP",

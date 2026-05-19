@@ -244,7 +244,7 @@ export function createBossRewardState({
 }
 
 // Combat rewards can be cards or trinkets. Destination choices are supplied by the hook
-// because they depend on post-victory run HP/gold and act progression.
+// because they depend on post-victory run Health/gold and act progression.
 export function createCombatRewardState({
   battleState,
   runDeck,

@@ -5,9 +5,9 @@
 //   1. Player turn starts: draw cards, process haste (skip enemy phase if hasted),
 //      process companion attack, player plays cards.
 //   2. End player turn: resolve companion effects, tick player DoTs.
-//   3. Enemy turn: tick enemy DoTs, enemy heals (below 50% HP), apply traits
+//   3. Enemy turn: tick enemy DoTs, enemy heals (below 50% Health), apply traits
 //      (armor/forge/freeze per turn), run attack effects, tick player DoTs again
-//      (if enemy hit), check Death's Door (0-HP grace for one full turn).
+//      (if enemy hit), check Death's Door (0-Health grace for one full turn).
 //   4. Advance to player turn: draw cards, reset cardsPlayedThisTurn.
 // Branching: stun/freeze skip enemy attack phase entirely; Wish intercepts player
 // card play; haste skips enemy phase and returns to player immediately.

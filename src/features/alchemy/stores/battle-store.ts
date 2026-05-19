@@ -21,6 +21,7 @@ type BattleStore = {
   playerShaking: boolean;
   companionShaking: boolean;
   shimmerState: ShimmerState;
+  revealedCardKeys: Set<string>;
 
   setBattleState: (state: BattleState | ((prev: BattleState) => BattleState)) => void;
   setHasActiveBattle: (active: boolean | ((prev: boolean) => boolean)) => void;
@@ -33,6 +34,8 @@ type BattleStore = {
   showCombatTexts: (events: CombatTextEvent[]) => void;
   maybeTriggerShimmer: (cardId: string) => void;
   clearFloatingCombatTexts: () => void;
+  addRevealedCardKey: (key: string) => void;
+  clearRevealedCardKeys: () => void;
 };
 
 const shimmerCooldownMs = 500;
@@ -49,6 +52,7 @@ export const useBattleStore = create<BattleStore>()((set, get) => ({
   playerShaking: false,
   companionShaking: false,
   shimmerState: null,
+  revealedCardKeys: new Set(),
 
   setBattleState: (action) =>
     set((s) => ({ battleState: typeof action === "function" ? action(s.battleState) : action })),
@@ -110,6 +114,10 @@ export const useBattleStore = create<BattleStore>()((set, get) => ({
   },
 
   clearFloatingCombatTexts: () => set({ floatingCombatTexts: [] }),
+
+  addRevealedCardKey: (key) => set((s) => ({ revealedCardKeys: new Set(s.revealedCardKeys).add(key) })),
+
+  clearRevealedCardKeys: () => set({ revealedCardKeys: new Set() }),
 
   maybeTriggerShimmer: (cardId) => {
     const state = get();

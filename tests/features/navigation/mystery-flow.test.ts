@@ -38,15 +38,15 @@ describe("applyMysteryEffect", () => {
     expect(mockSetDiscoveredCardIds).toHaveBeenCalledOnce();
   });
 
-  it("dispatches healHP with amount", () => {
-    const result = applyMysteryEffect({ kind: "healHP", amount: 5 }, context);
+  it("dispatches healHealth with amount", () => {
+    const result = applyMysteryEffect({ kind: "healHealth", amount: 5 }, context);
     expect(result.followUp).toBeNull();
     expect(mockSetRunPlayerHealth).toHaveBeenCalledOnce();
   });
 
   it("healHP with chance high enough heals", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.3);
-    const result = applyMysteryEffect({ kind: "healHP", amount: 10, chance: 0.5 }, context);
+    const result = applyMysteryEffect({ kind: "healHealth", amount: 10, chance: 0.5 }, context);
     expect(result.followUp).toBeNull();
     expect(mockSetRunPlayerHealth).toHaveBeenCalledOnce();
     vi.restoreAllMocks();
@@ -54,14 +54,14 @@ describe("applyMysteryEffect", () => {
 
   it("healHP with chance too low does not heal", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.9);
-    const result = applyMysteryEffect({ kind: "healHP", amount: 10, chance: 0.5 }, context);
+    const result = applyMysteryEffect({ kind: "healHealth", amount: 10, chance: 0.5 }, context);
     expect(result.followUp).toBeNull();
     expect(mockSetRunPlayerHealth).not.toHaveBeenCalled();
     vi.restoreAllMocks();
   });
 
-  it("dispatches damageHP with amount", () => {
-    const result = applyMysteryEffect({ kind: "damageHP", amount: 8 }, context);
+  it("dispatches damageHealth with amount", () => {
+    const result = applyMysteryEffect({ kind: "damageHealth", amount: 8 }, context);
     expect(result.followUp).toBeNull();
     expect(mockSetRunPlayerHealth).toHaveBeenCalledOnce();
   });

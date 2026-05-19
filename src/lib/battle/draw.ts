@@ -16,7 +16,7 @@ import {
   MAX_PLAYER_HEALTH,
   ROOM_SCALING_INCREMENT,
   ELITE_STAT_MULTIPLIER,
-  BOSS_HP_MULTIPLIER,
+  BOSS_HEALTH_MULTIPLIER,
   BOSS_ATTACK_MULTIPLIER,
   ACT_SCALING_INCREMENT,
   STARTING_TURN,
@@ -180,9 +180,9 @@ function buildScaledEnemy(enemy: BestiaryEntry, destinationIndexInAct = 0, curre
   const actMul = 1 + (currentAct - 1) * ACT_SCALING_INCREMENT;
   const hpMultiplier = actMul * roomMul;
   const eliteMul = enemy.enemyType === "elite" ? ELITE_STAT_MULTIPLIER : 1;
-  const bossHpMul = enemy.enemyType === "boss" ? BOSS_HP_MULTIPLIER : 1;
+  const bossHealthMul = enemy.enemyType === "boss" ? BOSS_HEALTH_MULTIPLIER : 1;
   const bossAtkMul = enemy.enemyType === "boss" ? BOSS_ATTACK_MULTIPLIER : 1;
-  const hpTypeMul = Math.max(1, eliteMul, bossHpMul);
+  const hpTypeMul = Math.max(1, eliteMul, bossHealthMul);
   const atkTypeMul = Math.max(1, eliteMul, bossAtkMul);
   const scaledEnemyHealth = Math.floor(BASE_ENEMY_HEALTH * hpMultiplier * hpTypeMul);
   const scaleAmount = (amount: number) => Math.floor(amount * hpMultiplier * atkTypeMul);
@@ -276,7 +276,7 @@ function createInitialFlags() {
   };
 }
 
-// Creates the initial BattleState for a fresh encounter. Enemy HP and attack
+// Creates the initial BattleState for a fresh encounter. Enemy Health and attack
 // scale per destination within an act (multiplicative by 1.1x per slot after the
 // first) and per act baseline (1.2x per act). Boss-type enemies get an additional
 // 1.8x multiplier. Delegates to focused helpers for opening hand, enemy scaling,
@@ -308,7 +308,7 @@ export function createBattleState(
   const { startingArmor, startBlock, manaBonus, startCompanion } = computeStartingStatuses(difficultyModifiers, enemy);
 
   const hasSturdy = difficultyModifiers.some((m) => m.kind === "labyrinth-sturdy");
-  const enemyMaxHp = hasSturdy ? Math.floor(scaledEnemyHealth * LABYRINTH_STURDY_MULTIPLIER) : scaledEnemyHealth;
+  const enemyMaxHealth = hasSturdy ? Math.floor(scaledEnemyHealth * LABYRINTH_STURDY_MULTIPLIER) : scaledEnemyHealth;
 
   const startingHealth = Math.min(maxHealth, playerHealth + talentEffects.startHealth);
 
@@ -327,8 +327,8 @@ export function createBattleState(
     deathsDoorUsed: false,
     deathsDoorActive: false,
     deathsDoorTriggeredTurn: null,
-    enemyHealth: enemyMaxHp,
-    enemyMaxHealth: enemyMaxHp,
+    enemyHealth: enemyMaxHealth,
+    enemyMaxHealth: enemyMaxHealth,
     enemyAttackEffects: modifiedEffects,
     enemyRegeneration,
     enemyArmor: startingArmor,

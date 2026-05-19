@@ -83,7 +83,7 @@ function isValidAct(value: unknown): value is number {
   );
 }
 
-// Active runs can be saved at low health, but max HP must remain a positive finite cap.
+// Active runs can be saved at low health, but max Health must remain a positive finite cap.
 function hasValidHealth(playerHealth: unknown, maxHealth: unknown): playerHealth is number {
   return (
     typeof playerHealth === "number" &&

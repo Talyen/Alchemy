@@ -9,14 +9,14 @@ async function readGold(page: import("@playwright/test").Page) {
   return Number(text ?? 0);
 }
 
-async function readEnemyHp(page: import("@playwright/test").Page) {
+async function readEnemyHealth(page: import("@playwright/test").Page) {
   const all = page.locator("text=/\\d+\\//");
   const count = await all.count();
   const text = await all.nth(count - 1).textContent();
   return Number(text?.split("/")[0] ?? 0);
 }
 
-async function readPlayerHp(page: import("@playwright/test").Page) {
+async function readPlayerHealth(page: import("@playwright/test").Page) {
   const text = await page.locator("text=/\\d+\\//").first().textContent();
   return Number(text?.split("/")[0] ?? 0);
 }
@@ -120,15 +120,15 @@ test.describe("Companion's Collar", () => {
     await page.waitForTimeout(300);
     await expect(page.getByTestId("active-companion")).toBeVisible();
 
-    const enemyHpBefore = await readEnemyHp(page);
+    const enemyHealthBefore = await readEnemyHealth(page);
 
     await page.getByRole("button", { name: "End Turn" }).click();
     await expect(page.getByRole("button", { name: "End Turn" })).toBeEnabled({ timeout: 8000 });
 
-    const enemyHpAfter = await readEnemyHp(page);
+    const enemyHealthAfter = await readEnemyHealth(page);
 
-    test.skip(enemyHpAfter >= enemyHpBefore, "Enemy HP did not decrease — may be reading player HP");
-    expect(enemyHpAfter).toBeLessThan(enemyHpBefore);
+    test.skip(enemyHealthAfter >= enemyHealthBefore, "Enemy Health did not decrease — may be reading player Health");
+    expect(enemyHealthAfter).toBeLessThan(enemyHealthBefore);
   });
 });
 
@@ -152,15 +152,15 @@ test.describe("Frozen Heart", () => {
       return;
     }
 
-    const enemyHpBefore = await readEnemyHp(page);
+    const enemyHealthBefore = await readEnemyHealth(page);
 
     for (let i = 0; i < count; i++) {
       await frostboltButtons.nth(0).click();
       await page.waitForTimeout(250);
     }
 
-    const enemyHpAfter = await readEnemyHp(page);
-    const totalDamage = enemyHpBefore - enemyHpAfter;
+    const enemyHealthAfter = await readEnemyHealth(page);
+    const totalDamage = enemyHealthBefore - enemyHealthAfter;
 
     expect(totalDamage).toBeGreaterThan(12);
   });
@@ -221,7 +221,7 @@ test.describe("Bone Charm", () => {
     await navigateToDestination(page, "Normal Combat");
     await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });
 
-    const playerHpBefore = Number((await page.locator("text=/\\d+\\//").first().textContent())?.split("/")[0]);
+    const playerHealthBefore = Number((await page.locator("text=/\\d+\\//").first().textContent())?.split("/")[0]);
 
     const bigSwing = page.locator('[aria-label="Play Big Swing"]').first();
     await expect(bigSwing).toBeVisible({ timeout: 2000 });
@@ -229,21 +229,21 @@ test.describe("Bone Charm", () => {
     const victoryHeading = page.getByRole("heading", { name: /^Victory/ });
     bigSwing.click();
 
-    // Wait for either victory screen or card resolution HP update
+    // Wait for either victory screen or card resolution Health update
     await Promise.race([
       victoryHeading.waitFor({ timeout: 5000 }).catch(() => {}),
       page.waitForTimeout(1000),
     ]);
 
     // Bone Charm heal-on-kill happens during enemy defeat resolution
-    // Read player HP before the victory screen replaces the battle HUD
+    // Read player Health before the victory screen replaces the battle HUD
     const hpEl = page.locator("text=/\\d+\\//").first();
     if (!(await hpEl.isVisible({ timeout: 500 }).catch(() => false))) {
       test.skip(true, "Battle HUD hidden after kill");
       return;
     }
-    const playerHpAfter = Number((await hpEl.textContent())?.split("/")[0] ?? 0);
-    expect(playerHpAfter).toBeGreaterThan(playerHpBefore);
+    const playerHealthAfter = Number((await hpEl.textContent())?.split("/")[0] ?? 0);
+    expect(playerHealthAfter).toBeGreaterThan(playerHealthBefore);
   });
 });
 
@@ -260,7 +260,7 @@ test.describe("Brass Censer", () => {
     await navigateToDestination(page, "Normal Combat");
     await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });
 
-    const enemyHpBefore = await readEnemyHp(page);
+    const enemyHealthBefore = await readEnemyHealth(page);
 
     const holyStrike = page.locator('[aria-label="Play Holy Strike"]').first();
     if (!(await holyStrike.isVisible({ timeout: 2000 }).catch(() => false))) {
@@ -270,8 +270,8 @@ test.describe("Brass Censer", () => {
     await holyStrike.click();
     await page.waitForTimeout(400);
 
-    const enemyHpAfter = await readEnemyHp(page);
-    const damageDealt = enemyHpBefore - enemyHpAfter;
+    const enemyHealthAfter = await readEnemyHealth(page);
+    const damageDealt = enemyHealthBefore - enemyHealthAfter;
     // First holy is doubled: 2 * 2 = 4
     expect(damageDealt).toBeGreaterThanOrEqual(4);
   });
@@ -290,7 +290,7 @@ test.describe("Meteorite", () => {
     await navigateToDestination(page, "Normal Combat");
     await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });
 
-    const enemyHpBefore = await readEnemyHp(page);
+    const enemyHealthBefore = await readEnemyHealth(page);
 
     const fireball = page.locator('[aria-label="Play Fireball"]').first();
     if (!(await fireball.isVisible({ timeout: 2000 }).catch(() => false))) {
@@ -300,8 +300,8 @@ test.describe("Meteorite", () => {
     await fireball.click();
     await page.waitForTimeout(400);
 
-    const enemyHpAfter = await readEnemyHp(page);
-    const damageDealt = enemyHpBefore - enemyHpAfter;
+    const enemyHealthAfter = await readEnemyHealth(page);
+    const damageDealt = enemyHealthBefore - enemyHealthAfter;
     // First burn is doubled: 3 * 2 = 6
     expect(damageDealt).toBeGreaterThanOrEqual(6);
   });
@@ -411,7 +411,7 @@ test.describe("Sin-Eater's Lantern", () => {
       return;
     }
 
-    const playerHpBefore = await readPlayerHp(page);
+    const playerHealthBefore = await readPlayerHealth(page);
 
     const cleanse = page.locator('[aria-label="Play Cleanse"]').first();
     if (!(await cleanse.isVisible({ timeout: 2000 }).catch(() => false))) {
@@ -421,9 +421,9 @@ test.describe("Sin-Eater's Lantern", () => {
     await cleanse.click();
     await page.waitForTimeout(400);
 
-    const playerHpAfter = await readPlayerHp(page);
+    const playerHealthAfter = await readPlayerHealth(page);
     // Sin-Eater's Lantern heals 6 when removing a harmful status
-    expect(playerHpAfter).toBeGreaterThan(playerHpBefore);
+    expect(playerHealthAfter).toBeGreaterThan(playerHealthBefore);
   });
 });
 
@@ -475,9 +475,9 @@ test.describe("Grove's Favor", () => {
     await navigateToDestination(page, "Normal Combat");
     await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });
 
-    const playerHp = await readPlayerHp(page);
+    const playerHealth = await readPlayerHealth(page);
     // Grove's Favor restores 2 HP at start of battle (25 + 2 = 27)
-    expect(playerHp).toBeGreaterThan(25);
+    expect(playerHealth).toBeGreaterThan(25);
   });
 });
 
@@ -498,7 +498,7 @@ test.describe("Sundering Charm", () => {
     await navigateToDestination(page, "Normal Combat");
     await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });
 
-    const enemyHpBefore = 30;
+    const enemyHealthBefore = 30;
 
     const slash = page.locator('[aria-label="Play Slash"]').first();
     if (!(await slash.isVisible({ timeout: 2000 }).catch(() => false))) {
@@ -508,8 +508,8 @@ test.describe("Sundering Charm", () => {
     await slash.click();
     await page.waitForTimeout(400);
 
-    const enemyHpAfter = Number((await page.locator("text=/\\d+\\//").last().textContent())?.split("/")[0] ?? 30);
-    const damageDealt = enemyHpBefore - enemyHpAfter;
+    const enemyHealthAfter = Number((await page.locator("text=/\\d+\\//").last().textContent())?.split("/")[0] ?? 30);
+    const damageDealt = enemyHealthBefore - enemyHealthAfter;
 
     // Without Sundering Charm: enemy armor 2 blocks 2 of 6 damage = 4 dealt
     // With Sundering Charm: ignores 2 armor = full 6 damage dealt
@@ -539,15 +539,15 @@ test.describe("Thunderstone", () => {
       return;
     }
 
-    const enemyHpBefore = await readEnemyHp(page);
+    const enemyHealthBefore = await readEnemyHealth(page);
 
     for (let i = 0; i < count; i++) {
       await bashCards.nth(0).click();
       await page.waitForTimeout(200);
     }
 
-    const enemyHpAfter = await readEnemyHp(page);
-    const totalDamage = enemyHpBefore - enemyHpAfter;
+    const enemyHealthAfter = await readEnemyHealth(page);
+    const totalDamage = enemyHealthBefore - enemyHealthAfter;
 
     // 4 Bashes * 4 stun = 16 stun damage + Thunderstone 6 nature on stun
     // The enemy should take significantly more than base stun damage

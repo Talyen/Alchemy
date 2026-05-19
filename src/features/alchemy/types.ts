@@ -4,7 +4,7 @@
 import type { CSSProperties } from "react";
 
 import type { CombatTextEvent } from "@/lib/battle";
-import type { EnemyStatusId, KeywordId, PlayerStatusId } from "@/lib/game-data";
+import type { BattleCard, EnemyStatusId, KeywordId, PlayerStatusId } from "@/lib/game-data";
 
 export type Screen =
   | "menu"
@@ -67,6 +67,19 @@ export type CardGhost = {
     y: number;
     scale: number;
   };
+};
+
+export type CardTransfer = {
+  id: string;
+  card: BattleCard;
+  from: CardRect;
+  to: CardRect;
+  fromScale: number;
+  toScale: number;
+  fromRotation: number;
+  toRotation: number;
+  rotateY: number[];
+  duration: number;
 };
 
 export type FloatingCombatText = CombatTextEvent & {

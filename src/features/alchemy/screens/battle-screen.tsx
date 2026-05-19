@@ -2,7 +2,9 @@
 // Driven by useBattleController; focused child modules own the layout slices.
 import { useMemo, type MouseEvent, type MutableRefObject } from "react";
 import type { BattleCard } from "@/lib/game-data";
+import type { CardTransfer } from "../types";
 import { CardGhostOverlay } from "../components";
+import { CardTransferOverlay } from "./battle-screen/card-transfer-overlay";
 import { BattleActors } from "./battle-screen/actors";
 import { BattleBottomBar } from "./battle-screen/controls";
 import { WishOverlay } from "./battle-screen/wish-overlay";
@@ -24,6 +26,8 @@ type BattleScreenProps = {
   aspectMode: "standard" | "narrow" | "ultrawide";
   stagePixelRatio: number;
   handCardRefs: MutableRefObject<Record<string, HTMLButtonElement | null>>;
+  drawPileRef: MutableRefObject<HTMLDivElement | null>;
+  discardPileRef: MutableRefObject<HTMLDivElement | null>;
   battleSceneRef: MutableRefObject<HTMLDivElement | null>;
   playerPanelRef: MutableRefObject<HTMLDivElement | null>;
   enemyPanelRef: MutableRefObject<HTMLDivElement | null>;
@@ -33,6 +37,9 @@ type BattleScreenProps = {
   onRemoveCardGhost: (id: string) => void;
   onSkipCombatDevMode: () => void;
   onEndTurn: () => void;
+  cardTransfers: CardTransfer[];
+  hiddenHandCardKeys: Set<string>;
+  cardTransferInProgress: boolean;
 };
 
 export function BattleScreen(props: BattleScreenProps) {
@@ -43,6 +50,8 @@ export function BattleScreen(props: BattleScreenProps) {
     aspectMode,
     stagePixelRatio,
     handCardRefs,
+    drawPileRef,
+    discardPileRef,
     battleSceneRef,
     playerPanelRef,
     enemyPanelRef,
@@ -52,6 +61,9 @@ export function BattleScreen(props: BattleScreenProps) {
     onRemoveCardGhost,
     onSkipCombatDevMode,
     onEndTurn,
+    cardTransfers,
+    hiddenHandCardKeys,
+    cardTransferInProgress,
   } = props;
 
   const battleState = useBattleStore((s) => s.battleState);
@@ -104,6 +116,8 @@ export function BattleScreen(props: BattleScreenProps) {
 
   const refs: BattleRefsProps = {
     handCardRefs,
+    drawPileRef,
+    discardPileRef,
     battleSceneRef,
     playerPanelRef,
     enemyPanelRef,
@@ -116,6 +130,8 @@ export function BattleScreen(props: BattleScreenProps) {
     onRemoveCardGhost,
     onSkipCombatDevMode,
     onEndTurn,
+    hiddenHandCardKeys,
+    cardTransferInProgress,
   };
 
   const { battleSceneRef: sceneRef } = refs;
@@ -138,6 +154,10 @@ export function BattleScreen(props: BattleScreenProps) {
 
       {cardGhosts.map((ghost) => (
         <CardGhostOverlay key={ghost.id} ghost={ghost} onDone={() => removeGhost(ghost.id)} />
+      ))}
+
+      {cardTransfers.map((transfer) => (
+        <CardTransferOverlay key={transfer.id} transfer={transfer} />
       ))}
     </div>
   );

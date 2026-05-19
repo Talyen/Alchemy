@@ -40,7 +40,7 @@ test.describe("Save Persistence Edge Cases", () => {
   });
 
   test("mid-battle reload returns to destination not battle", async ({ page }) => {
-    // Simulate a save made during an active battle (HP is mid-battle value)
+    // Simulate a save made during an active battle (Health is mid-battle value)
     await injectSaveState(page, {
       runPlayerHealth: 22,
       runMaxHealth: 30,

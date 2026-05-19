@@ -12,25 +12,25 @@ import { DESTINATIONS, type Destination } from "../types";
 
 type DestinationAvailabilityInput = {
   destinationIndexInAct: number;
-  currentHp: number;
+  currentHealth: number;
   currentGold: number;
-  maxHp: number;
+  maxHealth: number;
   previousDestination?: Destination | undefined;
 };
 
-// Boss routing is injected by act progress; normal filtering stays in config so HP/gold
+// Boss routing is injected by act progress; normal filtering stays in config so Health/gold
 // gates can be reused without knowing run progression.
 export function getRunAvailableDestinations({
   destinationIndexInAct,
-  currentHp,
+  currentHealth,
   currentGold,
-  maxHp,
+  maxHealth,
   previousDestination,
 }: DestinationAvailabilityInput): Destination[] {
   if (destinationIndexInAct >= DESTINATIONS_PER_ACT - 1) {
     return [DESTINATIONS.BOSS_COMBAT];
   }
-  const destinations = getFilteredDestinations(currentHp, currentGold, maxHp);
+  const destinations = getFilteredDestinations(currentHealth, currentGold, maxHealth);
   return previousDestination === DESTINATIONS.CORRUPTION
     ? destinations.filter((destination) => destination !== DESTINATIONS.CORRUPTION)
     : destinations;

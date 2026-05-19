@@ -228,14 +228,14 @@ test.describe("Status Mechanics", () => {
     await poisonDagger.click();
     await page.waitForTimeout(300);
 
-    const enemyHpBefore = 30;
+    const enemyHealthBefore = 30;
 
     await page.getByRole("button", { name: "End Turn" }).click();
     await expect(page.getByRole("button", { name: "End Turn" })).toBeEnabled({ timeout: 8000 });
 
-    const enemyHpText = await page.locator("text=/\\d+\\/30/").last().textContent();
-    const enemyHpAfter = Number(enemyHpText?.split("/")[0]);
-    expect(enemyHpAfter).toBeLessThan(enemyHpBefore);
+    const enemyHealthText = await page.locator("text=/\\d+\\/30/").last().textContent();
+    const enemyHealthAfter = Number(enemyHealthText?.split("/")[0]);
+    expect(enemyHealthAfter).toBeLessThan(enemyHealthBefore);
   });
 });
 
@@ -560,7 +560,7 @@ test.describe("Card Interactions", () => {
     expect(handAfterSecond).toBe(handAfterFirst - 1);
   });
 
-  test("campfire screen restores HP and continues to next battle", async ({ page }) => {
+  test("campfire screen restores Health and continues to next battle", async ({ page }) => {
     await startAtDestination(page);
 
     const campfireBtn = page.getByRole("button", { name: "Campfire" });

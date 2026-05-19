@@ -8,7 +8,7 @@ export const battleCardWidthClass = "w-[clamp(20.56cqh,22cqh,31.11cqh)]";
 export const handCardWidthClass = "w-[clamp(17.5cqh,18.7cqh,26.48cqh)]";
 export const collectionCardWidthClass = "w-[clamp(14.44cqh,18.7cqh,19.44cqh)]";
 export const viewCardWidthClass = "w-[clamp(17.5cqh,17.78cqh,26.48cqh)]";
-export const pileCardWidthClass = "w-[clamp(13.33cqh,14.4cqh,20.28cqh)]";
+export const pileCardWidthClass = "w-[clamp(12cqh,12.96cqh,18.25cqh)]";
 
 // Mobile landscape uses the same virtual-stage battle composition as desktop.
 export const mobileStageBattleCardWidthClass = "w-[clamp(30cqh,33cqh,36.67cqh)]";
@@ -38,7 +38,7 @@ export const battleActorSectionClass = {
 
 export const battleBottomBarClass = {
   desktop:
-    "absolute inset-x-0 grid items-end gap-[clamp(0.83cqw,2cqw,1.46cqw)] px-2 bottom-2 grid-cols-[minmax(10.19cqh,0.24fr)_1fr_minmax(10.19cqh,0.24fr)] pb-1",
+    "absolute inset-x-0 grid items-end gap-[clamp(1.25cqw,3cqw,2.19cqw)] px-2 bottom-2 grid-cols-[minmax(10.19cqh,0.24fr)_1fr_minmax(10.19cqh,0.24fr)] pb-1",
   mobile:
     "absolute inset-x-0 grid items-end gap-[clamp(0.83cqw,2cqw,1.46cqw)] px-2 bottom-[calc(7.78cqh+env(safe-area-inset-bottom))] grid-cols-[minmax(18.89cqh,0.18fr)_1fr_minmax(24.44cqh,0.18fr)] pb-0",
 } as const;

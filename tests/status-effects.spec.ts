@@ -5,14 +5,14 @@ function statusCard(id: string, title: string, damageType: string, amount: numbe
   return { id, title, descriptionLines: [`Deal ${amount} ${damageType} damage`], art: "placeholder", cost: 1, effects: [{ kind: "damage" as const, damageType: damageType as const, amount }] };
 }
 
-async function readEnemyHp(page: import("@playwright/test").Page) {
+async function readEnemyHealth(page: import("@playwright/test").Page) {
   const all = page.locator("text=/\\d+\\//");
   const count = await all.count();
   const text = await all.nth(count - 1).textContent();
   return Number(text?.split("/")[0] ?? 0);
 }
 
-async function readPlayerHp(page: import("@playwright/test").Page) {
+async function readPlayerHealth(page: import("@playwright/test").Page) {
   const text = await page.locator("text=/\\d+\\//").first().textContent();
   return Number(text?.split("/")[0] ?? 0);
 }
@@ -29,21 +29,21 @@ test.describe("Burn Status", () => {
     await navigateToDestination(page, "Normal Combat");
     await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });
 
-    const enemyHpBefore = await readEnemyHp(page);
+    const enemyHealthBefore = await readEnemyHealth(page);
 
     await page.locator('[aria-label="Play Fireball"]').first().click();
     await page.waitForTimeout(300);
 
     await expect(page.getByRole("button", { name: /^Burn \d+$/ })).toBeVisible({ timeout: 2000 });
 
-    const enemyHpAfterFireball = await readEnemyHp(page);
-    expect(enemyHpAfterFireball).toBeLessThan(enemyHpBefore);
+    const enemyHealthAfterFireball = await readEnemyHealth(page);
+    expect(enemyHealthAfterFireball).toBeLessThan(enemyHealthBefore);
 
     await page.getByRole("button", { name: "End Turn" }).click();
     await expect(page.getByRole("button", { name: "End Turn" })).toBeEnabled({ timeout: 8000 });
 
-    const enemyHpAfterTick = await readEnemyHp(page);
-    expect(enemyHpAfterTick).toBeLessThanOrEqual(enemyHpAfterFireball);
+    const enemyHealthAfterTick = await readEnemyHealth(page);
+    expect(enemyHealthAfterTick).toBeLessThanOrEqual(enemyHealthAfterFireball);
   });
 });
 
@@ -59,21 +59,21 @@ test.describe("Bleed Status", () => {
     await navigateToDestination(page, "Normal Combat");
     await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });
 
-    const enemyHpBefore = await readEnemyHp(page);
+    const enemyHealthBefore = await readEnemyHealth(page);
 
     await page.locator('[aria-label="Play Stab"]').first().click();
     await page.waitForTimeout(300);
 
     await expect(page.getByRole("button", { name: /^Bleed \d+$/ })).toBeVisible({ timeout: 2000 });
 
-    const enemyHpAfterStab = await readEnemyHp(page);
-    expect(enemyHpAfterStab).toBeLessThan(enemyHpBefore);
+    const enemyHealthAfterStab = await readEnemyHealth(page);
+    expect(enemyHealthAfterStab).toBeLessThan(enemyHealthBefore);
 
     await page.getByRole("button", { name: "End Turn" }).click();
     await expect(page.getByRole("button", { name: "End Turn" })).toBeEnabled({ timeout: 8000 });
 
-    const enemyHpAfterTick = await readEnemyHp(page);
-    expect(enemyHpAfterTick).toBeLessThanOrEqual(enemyHpAfterStab);
+    const enemyHealthAfterTick = await readEnemyHealth(page);
+    expect(enemyHealthAfterTick).toBeLessThanOrEqual(enemyHealthAfterStab);
   });
 });
 
@@ -96,13 +96,13 @@ test.describe("Stun Status", () => {
       await page.waitForTimeout(250);
     }
 
-    const playerHpBefore = await readPlayerHp(page);
+    const playerHealthBefore = await readPlayerHealth(page);
 
     await page.getByRole("button", { name: "End Turn" }).click();
     await expect(page.getByRole("button", { name: "End Turn" })).toBeEnabled({ timeout: 8000 });
 
-    const playerHpAfter = await readPlayerHp(page);
-    expect(playerHpAfter).toBe(playerHpBefore);
+    const playerHealthAfter = await readPlayerHealth(page);
+    expect(playerHealthAfter).toBe(playerHealthBefore);
   });
 });
 
@@ -126,13 +126,13 @@ test.describe("Freeze Status", () => {
       await page.waitForTimeout(250);
     }
 
-    const playerHpBefore = await readPlayerHp(page);
+    const playerHealthBefore = await readPlayerHealth(page);
 
     await page.getByRole("button", { name: "End Turn" }).click();
     await expect(page.getByRole("button", { name: "End Turn" })).toBeEnabled({ timeout: 8000 });
 
-    const playerHpAfter = await readPlayerHp(page);
-    expect(playerHpAfter).toBe(playerHpBefore);
+    const playerHealthAfter = await readPlayerHealth(page);
+    expect(playerHealthAfter).toBe(playerHealthBefore);
   });
 });
 
@@ -154,13 +154,13 @@ test.describe("Armor Status", () => {
     await page.waitForTimeout(300);
     await expect(page.getByRole("button", { name: "Armor 1" })).toBeVisible({ timeout: 2000 });
 
-    const playerHpBefore = await readPlayerHp(page);
+    const playerHealthBefore = await readPlayerHealth(page);
 
     await page.getByRole("button", { name: "End Turn" }).click();
     await expect(page.getByRole("button", { name: "End Turn" })).toBeEnabled({ timeout: 8000 });
 
-    const playerHpAfter = await readPlayerHp(page);
-    const damageTaken = playerHpBefore - playerHpAfter;
+    const playerHealthAfter = await readPlayerHealth(page);
+    const damageTaken = playerHealthBefore - playerHealthAfter;
 
     expect(damageTaken).toBeGreaterThan(0);
     expect(damageTaken).toBeLessThanOrEqual(9);
@@ -182,7 +182,7 @@ test.describe("Haste Status", () => {
     await navigateToDestination(page, "Normal Combat");
     await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });
 
-    const playerHpBefore = await readPlayerHp(page);
+    const playerHealthBefore = await readPlayerHealth(page);
 
     const venom = page.locator('[aria-label="Play Venom Fangs"]').first();
     if (!(await venom.isVisible({ timeout: 2000 }).catch(() => false))) {
@@ -192,8 +192,8 @@ test.describe("Haste Status", () => {
     await venom.click();
     await page.waitForTimeout(400);
 
-    const playerHpAfter = await readPlayerHp(page);
-    expect(playerHpAfter).toBeGreaterThan(playerHpBefore);
+    const playerHealthAfter = await readPlayerHealth(page);
+    expect(playerHealthAfter).toBeGreaterThan(playerHealthBefore);
   });
 
   test("haste card grants extra turn skipping enemy phase", async ({ page }) => {
@@ -218,13 +218,13 @@ test.describe("Haste Status", () => {
       return;
     }
 
-    const playerHpBefore = await readPlayerHp(page);
+    const playerHealthBefore = await readPlayerHealth(page);
 
     const endTurn = page.getByRole("button", { name: "End Turn" });
     await endTurn.click();
     await expect(endTurn).toBeEnabled({ timeout: 3000 });
 
-    const playerHpAfter = await readPlayerHp(page);
-    expect(playerHpAfter).toBe(playerHpBefore);
+    const playerHealthAfter = await readPlayerHealth(page);
+    expect(playerHealthAfter).toBe(playerHealthBefore);
   });
 });

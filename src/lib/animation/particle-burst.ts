@@ -85,7 +85,7 @@ export function createParticles(
 
 export function createStatusParticles(width: number, height: number): Particle[] {
   // Status panels have no source image to sample, so synthetic clusters approximate the
-  // panel background, HP bar, text, and icons for a matching death breakup.
+  // panel background, Health bar, text, and icons for a matching death breakup.
   const particles: Particle[] = [];
   const padX = Math.round(width * 0.08);
   const padY = Math.round(height * 0.1);
@@ -113,13 +113,13 @@ export function createStatusParticles(width: number, height: number): Particle[]
 
   // Muted background
   scatter(0, 0, width, height, "rgb(50, 43, 36)", 120);
-  // Lighter patch behind HP
+  // Lighter patch behind Health
   scatter(padX, barY, width - padX * 2, barH, "rgb(30, 25, 20)", 10);
-  // HP bar fill
+  // Health bar fill
   scatter(padX, barY, (width - padX * 2) * 0.6, barH, "rgb(200, 50, 50)", 14);
   // Title text (left)
   scatter(padX, padY, width * 0.5, textH, "rgb(210, 195, 170)", 20);
-  // HP numbers (right)
+  // Health numbers (right)
   scatter(width * 0.5, padY, width * 0.45, textH, "rgb(160, 148, 130)", 12);
   // Status icon colors
   scatter(padX, iconY, width * 0.35, iconH, "rgb(180, 140, 60)", 10);

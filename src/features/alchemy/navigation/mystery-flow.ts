@@ -37,9 +37,9 @@ export function applyMysteryEffect(effect: MysteryEffect, context: MysteryEffect
       return addSpecificMysteryCard(effect.cardId, context);
     case "chooseCard":
       return offerMysteryCardChoices(context);
-    case "healHP":
+    case "healHealth":
       return healFromMystery(effect.amount, effect.chance, context);
-    case "damageHP":
+    case "damageHealth":
       return damageFromMystery(effect.amount, context);
     case "gainGold":
       return gainMysteryGold(effect.amount, context);

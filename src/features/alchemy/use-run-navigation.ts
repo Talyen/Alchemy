@@ -188,19 +188,19 @@ export function useRunNavigation({
   );
 
   function getAvailableDestinations(
-    currentHp?: number,
+    currentHealth?: number,
     currentGold?: number,
     destIdxInAct?: number,
-    maxHp?: number,
+    maxHealth?: number,
   ): Destination[] {
     const destinationIndexInAct = destIdxInAct ?? run.destinationIndexInAct;
     const previousDestination =
       destinationIndexInAct === 0 ? undefined : run.completedDestinations[run.completedDestinations.length - 1];
     return getRunAvailableDestinations({
       destinationIndexInAct,
-      currentHp: currentHp ?? run.runPlayerHealth,
+      currentHealth: currentHealth ?? run.runPlayerHealth,
       currentGold: currentGold ?? run.runGold,
-      maxHp: maxHp ?? run.runMaxHealth,
+      maxHealth: maxHealth ?? run.runMaxHealth,
       previousDestination,
     });
   }

@@ -12,7 +12,7 @@ test.describe("Game Over via Death", () => {
     await expect(page.getByRole("button", { name: "Play" })).toBeVisible();
   });
 
-  test("natural death via HP depletion from enemy damage", async ({ page }) => {
+  test("natural death via Health depletion from enemy damage", async ({ page }) => {
     await injectSaveState(page, {
       runPlayerHealth: 1,
       runMaxHealth: 30,

@@ -6,7 +6,7 @@ function potionCard(id: string, title: string, effects: Record<string, unknown>[
 }
 
 test.describe("Potion Use", () => {
-  test("playing a health potion restores HP in battle", async ({ page }) => {
+  test("playing a health potion restores Health in battle", async ({ page }) => {
     await injectSaveState(page, {
       characterId: "wizard",
       runDeck: [

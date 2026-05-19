@@ -39,7 +39,7 @@ export function WishOverlay({
     >
       <div className="motion-panel alchemy-shell w-full max-w-5xl rounded-[28px] border border-border/80 px-6 py-6">
         <ScreenHeader title="Wish" />
-        <p className="mt-2 text-sm text-muted-foreground">Choose one card to add to your hand.</p>
+        <p className="mt-2 text-center text-sm text-muted-foreground">Choose one card to add to your hand.</p>
 
         <div className="mt-6 flex flex-wrap items-start justify-center gap-5">
           {battleState.wishOptions?.map((card, index) => {

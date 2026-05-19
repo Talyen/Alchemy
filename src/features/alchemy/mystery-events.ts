@@ -8,8 +8,8 @@ import type { MaterialId } from "@/lib/homestead/types";
 export type MysteryEffect =
   | { kind: "addCard"; cardId: string }
   | { kind: "chooseCard" }
-  | { kind: "healHP"; amount: number; chance?: number }
-  | { kind: "damageHP"; amount: number }
+  | { kind: "healHealth"; amount: number; chance?: number }
+  | { kind: "damageHealth"; amount: number }
   | { kind: "gainGold"; amount: number }
   | { kind: "loseGold"; amount: number }
   | { kind: "gainMaxMana"; amount: number }
@@ -57,9 +57,9 @@ export const mysteryPool: MysteryEvent[] = [
       },
       {
         label: "Feast",
-        description: "Restore 6 HP",
+        description: "Restore 6 Health",
         effects: [
-          { kind: "healHP", amount: 6 },
+          { kind: "healHealth", amount: 6 },
           { kind: "gainMaterial", material: "food", amount: 2 },
         ],
       },
@@ -74,9 +74,9 @@ export const mysteryPool: MysteryEvent[] = [
     choices: [
       {
         label: "Bathe in the Spring",
-        description: "Restore 12 HP",
+        description: "Restore 12 Health",
         effects: [
-          { kind: "healHP", amount: 12 },
+          { kind: "healHealth", amount: 12 },
           { kind: "gainMaterial", material: "herbs", amount: 2 },
         ],
       },
@@ -89,7 +89,7 @@ export const mysteryPool: MysteryEvent[] = [
         label: "Search the Springbed",
         description: "Take 2 damage, gain 4 Crystal",
         effects: [
-          { kind: "damageHP", amount: 2 },
+          { kind: "damageHealth", amount: 2 },
           { kind: "gainMaterial", material: "crystal", amount: 4 },
           { kind: "gainMaterial", material: "food", amount: 2 },
         ],
@@ -115,7 +115,7 @@ export const mysteryPool: MysteryEvent[] = [
         label: "Inhale the Spores",
         description: "Take 4 damage, gain 12 Mana XP",
         effects: [
-          { kind: "damageHP", amount: 4 },
+          { kind: "damageHealth", amount: 4 },
           { kind: "gainXP", keyword: "mana", amount: 12 },
         ],
       },
@@ -143,9 +143,9 @@ export const mysteryPool: MysteryEvent[] = [
       },
       {
         label: "Rest in its Shade",
-        description: "Restore 15 HP",
+        description: "Restore 15 Health",
         effects: [
-          { kind: "healHP", amount: 15 },
+          { kind: "healHealth", amount: 15 },
           { kind: "gainMaterial", material: "herbs", amount: 2 },
         ],
       },
@@ -182,8 +182,8 @@ export const mysteryPool: MysteryEvent[] = [
     choices: [
       {
         label: "Pray",
-        description: "Restore 15 HP",
-        effects: [{ kind: "healHP", amount: 15 }],
+        description: "Restore 15 Health",
+        effects: [{ kind: "healHealth", amount: 15 }],
       },
       {
         label: "Make an Offering",
@@ -227,7 +227,7 @@ export const mysteryPool: MysteryEvent[] = [
         label: "Follow the Trail",
         description: "Take 3 damage, gain 30 Gold",
         effects: [
-          { kind: "damageHP", amount: 3 },
+          { kind: "damageHealth", amount: 3 },
           { kind: "gainGold", amount: 30 },
           { kind: "gainMaterial", material: "iron", amount: 2 },
         ],
@@ -244,7 +244,7 @@ export const mysteryPool: MysteryEvent[] = [
       {
         label: "Explore the Crypt",
         description: "Take 6 damage and gain a random trinket",
-        effects: [{ kind: "damageHP", amount: 6 }, { kind: "gainRandomTrinket" }],
+        effects: [{ kind: "damageHealth", amount: 6 }, { kind: "gainRandomTrinket" }],
       },
       {
         label: "Decipher the Inscriptions",
@@ -404,7 +404,7 @@ export const mysteryPool: MysteryEvent[] = [
         label: "Search the Bones",
         description: "Take 4 damage, gain 40 Gold, and add Bone Charm to your Inventory",
         effects: [
-          { kind: "damageHP", amount: 4 },
+          { kind: "damageHealth", amount: 4 },
           { kind: "gainGold", amount: 40 },
           { kind: "gainTrinket", trinketId: "bone-charm" },
         ],
@@ -425,9 +425,9 @@ export const mysteryPool: MysteryEvent[] = [
     choices: [
       {
         label: "Bask in the Light",
-        description: "Restore 20 HP",
+        description: "Restore 20 Health",
         effects: [
-          { kind: "healHP", amount: 20 },
+          { kind: "healHealth", amount: 20 },
           { kind: "gainMaterial", material: "herbs", amount: 3 },
         ],
       },
@@ -440,7 +440,7 @@ export const mysteryPool: MysteryEvent[] = [
         label: "Plant a Seed",
         description: "Take 3 damage, gain 15 Health XP, and add Grove's Favor to your Inventory",
         effects: [
-          { kind: "damageHP", amount: 3 },
+          { kind: "damageHealth", amount: 3 },
           { kind: "gainXP", keyword: "health", amount: 15 },
           { kind: "gainTrinket", trinketId: "groves-favor" },
         ],
@@ -456,9 +456,9 @@ export const mysteryPool: MysteryEvent[] = [
     choices: [
       {
         label: "Scout the Path Ahead",
-        description: "Restore 5 HP",
+        description: "Restore 5 Health",
         effects: [
-          { kind: "healHP", amount: 5 },
+          { kind: "healHealth", amount: 5 },
           { kind: "gainMaterial", material: "food", amount: 3 },
         ],
       },
@@ -466,7 +466,7 @@ export const mysteryPool: MysteryEvent[] = [
         label: "Mine the Cliffside",
         description: "Take 3 damage, gain 5 Iron and 2 Crystal",
         effects: [
-          { kind: "damageHP", amount: 3 },
+          { kind: "damageHealth", amount: 3 },
           { kind: "gainMaterial", material: "iron", amount: 5 },
           { kind: "gainMaterial", material: "crystal", amount: 2 },
         ],
@@ -497,7 +497,7 @@ export const mysteryPool: MysteryEvent[] = [
         label: "Dredge the Bottom",
         description: "Take 2 damage, gain 20 Gold and 2 Crystal",
         effects: [
-          { kind: "damageHP", amount: 2 },
+          { kind: "damageHealth", amount: 2 },
           { kind: "gainGold", amount: 20 },
           { kind: "gainMaterial", material: "crystal", amount: 2 },
         ],

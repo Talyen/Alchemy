@@ -84,7 +84,7 @@ function getCardPlayGhostTargetRect(
   return sceneRect ? viewportRectToBattleSceneRect(fallback, sceneRect) : fallback;
 }
 
-type BattleSceneLocalRect = {
+export type BattleSceneLocalRect = {
   left: number;
   top: number;
   scaleX: number;
@@ -93,7 +93,7 @@ type BattleSceneLocalRect = {
 
 // Ghosts render inside the virtual battle scene, so browser viewport rects must
 // be converted back through the stage scale before CSS positions are applied.
-function getBattleSceneLocalRect(scene: HTMLDivElement | null): BattleSceneLocalRect | null {
+export function getBattleSceneLocalRect(scene: HTMLDivElement | null): BattleSceneLocalRect | null {
   if (!scene) return null;
 
   const rect = scene.getBoundingClientRect();
@@ -106,7 +106,7 @@ function getBattleSceneLocalRect(scene: HTMLDivElement | null): BattleSceneLocal
 
 // Keeps source, target, and travel deltas in one local coordinate system, which
 // prevents transformed desktop stages and mobile native layouts from diverging.
-function viewportRectToBattleSceneRect(rect: CardRect, sceneRect: BattleSceneLocalRect): CardRect {
+export function viewportRectToBattleSceneRect(rect: CardRect, sceneRect: BattleSceneLocalRect): CardRect {
   return {
     x: (rect.x - sceneRect.left) / sceneRect.scaleX,
     y: (rect.y - sceneRect.top) / sceneRect.scaleY,

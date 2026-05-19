@@ -33,8 +33,10 @@ export function BattleHand({
   const { battleState, isMobileLandscape, stagePixelRatio } = view;
   const { hoveredCardId, shimmerState } = hover;
   const { handCardRefs } = refs;
+  const { hiddenHandCardKeys } = actions;
   const setHoveredCardId = useScreenStore((s) => s.setHoveredCardId);
   const maybeTriggerShimmer = useBattleStore((s) => s.maybeTriggerShimmer);
+  const revealedCardKeys = useBattleStore((s) => s.revealedCardKeys);
   const { onCardClick } = actions;
   const handWidthClass = isMobileLandscape ? mobileStageHandCardWidthClass : handCardWidthClass;
 
@@ -45,9 +47,12 @@ export function BattleHand({
     >
       {battleState.hand.map((card, index) => {
         const hoverId = getHoverId("hand", `${card.id}-${card.uid}`);
+        const cardKey = `${card.id}-${card.uid}`;
         const isHovered = hoveredCardId === hoverId;
         const offset = index - (battleState.hand.length - 1) / 2;
         const isShimmering = shimmerState?.cardId === hoverId;
+        const isRevealedFromTransfer = revealedCardKeys.has(cardKey);
+        const shouldStagger = !hiddenHandCardKeys.has(cardKey) && !isRevealedFromTransfer;
         const canPlay =
           battleState.turnPhase === "player" &&
           battleState.mana >= getEffectiveCost(battleState, card) &&
@@ -65,7 +70,7 @@ export function BattleHand({
             onHoverEnd={() => setHoveredCardId((current) => (current === hoverId ? null : current))}
             onClick={(event) => onCardClick(card, index, event)}
             buttonRef={(node) => {
-              handCardRefs.current[`${card.id}-${card.uid}`] = node;
+              handCardRefs.current[cardKey] = node;
             }}
             ariaLabel={`Play ${getCardDisplayTitle(card)}`}
             descriptionContext={{
@@ -82,7 +87,9 @@ export function BattleHand({
             }
             className={handWidthClass}
             disabled={!canPlay}
-            wrapperClassName={`stagger-item relative flex justify-center ${isMobileLandscape ? "-mx-7" : "-mx-5 sm:-mx-6"}`}
+            dragging={hiddenHandCardKeys.has(cardKey)}
+            wrapperClassName={`${shouldStagger ? "stagger-item" : ""} relative flex justify-center ${isMobileLandscape ? "-mx-7" : "-mx-5 sm:-mx-6"}`}
+            wrapperDataCardKey={cardKey}
             wrapperStyle={
               {
                 zIndex: isHovered ? HAND_CARD_HOVER_Z_INDEX : HAND_CARD_BASE_Z_INDEX + index,

@@ -50,7 +50,7 @@ export function MysteryEffectBadge({
           {tooltip ? materialLabels[effect.material] : `${effect.amount} ${materialLabels[effect.material]}`}
         </span>
       );
-    case "healHP": {
+    case "healHealth": {
       const healthDef = keywordDefinitions.health;
       return (
         <span className="font-semibold">
@@ -67,7 +67,7 @@ export function MysteryEffectBadge({
         </span>
       );
     }
-    case "damageHP":
+    case "damageHealth":
       return (
         <span className="font-semibold text-red-400">{tooltip ? "Take damage" : `Take ${effect.amount} damage`}</span>
       );

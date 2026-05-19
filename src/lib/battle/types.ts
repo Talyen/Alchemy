@@ -89,7 +89,7 @@ export type BattleState = {
   playerHealth: number;
   playerMaxHealth: number; // current max health (can increase from talents)
   deathsDoorUsed: boolean; // one-shot combat survival trigger for this battle
-  deathsDoorActive: boolean; // true while the player has one turn to heal from 0 HP
+  deathsDoorActive: boolean; // true while the player has one turn to heal from 0 Health
   deathsDoorTriggeredTurn: number | null; // enemy-turn marker so the grace window lasts one full player turn
   enemyHealth: number;
   enemyMaxHealth: number; // stored so UI can render % even after damage

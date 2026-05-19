@@ -1,6 +1,6 @@
 // Route destination pool and availability rules for run navigation.
 // Depends on run tuning constants and alchemy destination types.
-import { CAMPFIRE_HP_THRESHOLD, ELITE_HP_THRESHOLD, SHOP_MIN_GOLD } from "@/lib/game-constants";
+import { CAMPFIRE_HEALTH_THRESHOLD, ELITE_HEALTH_THRESHOLD, SHOP_MIN_GOLD } from "@/lib/game-constants";
 
 import { DESTINATIONS, type Destination } from "../types";
 
@@ -19,13 +19,13 @@ export const destinationPool: Destination[] = [
 
 // Filters the destination pool to remove inappropriate choices for the current
 // game state before navigation fills the final reward route slots.
-export function getAvailableDestinations(currentHp: number, currentGold: number, maxHp: number) {
+export function getAvailableDestinations(currentHealth: number, currentGold: number, maxHealth: number) {
   return destinationPool.filter((d) => {
     if (d === DESTINATIONS.BOSS_COMBAT) return false;
-    if (d === DESTINATIONS.CAMPFIRE && currentHp >= Math.floor(maxHp * CAMPFIRE_HP_THRESHOLD)) return false;
+    if (d === DESTINATIONS.CAMPFIRE && currentHealth >= Math.floor(maxHealth * CAMPFIRE_HEALTH_THRESHOLD)) return false;
     if ((d === DESTINATIONS.MERCHANT_SHOP || d === DESTINATIONS.ALCHEMIST_SHOP) && currentGold < SHOP_MIN_GOLD)
       return false;
-    if (d === DESTINATIONS.ELITE_COMBAT && currentHp < Math.floor(maxHp * ELITE_HP_THRESHOLD)) return false;
+    if (d === DESTINATIONS.ELITE_COMBAT && currentHealth < Math.floor(maxHealth * ELITE_HEALTH_THRESHOLD)) return false;
     return true;
   });
 }

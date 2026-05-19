@@ -1,7 +1,7 @@
 // Battle resource widgets for draw/discard piles, mana, and gold.
 // Depends on game-data pile art, card styling, and value-change animation tokens.
 // Used by BattleScreen controls.
-import { type CSSProperties } from "react";
+import { forwardRef, type CSSProperties } from "react";
 import { Coins, Gem } from "lucide-react";
 
 import { pileDiscardArt, pileDrawArt } from "@/lib/game-data";
@@ -12,21 +12,20 @@ import { clearTiltFromEvent, setTiltFromEvent } from "../../utils";
 import { useChangeToken } from "./use-change-token";
 
 // Shows a tactile pile card on desktop and a compact counter on mobile battle layout.
-export function PilePanel({
-  label,
-  count,
-  type,
-  compact = false,
-}: {
-  label: string;
-  count: number;
-  type: "draw" | "discard";
-  compact?: boolean;
-}) {
+export const PilePanel = forwardRef<
+  HTMLDivElement,
+  {
+    label: string;
+    count: number;
+    type: "draw" | "discard";
+    compact?: boolean;
+  }
+>(function PilePanel({ label, count, type, compact = false }, ref) {
   const art = type === "draw" ? pileDrawArt : pileDiscardArt;
   if (compact) {
     return (
       <div
+        ref={ref}
         className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground"
         data-testid={`${type}-pile`}
         data-count={count}
@@ -38,6 +37,7 @@ export function PilePanel({
   }
   return (
     <div
+      ref={ref}
       className={cn("tilt-surface", cardSurfaceClass, pileCardWidthClass, "bg-transparent")}
       data-testid={`${type}-pile`}
       data-count={count}
@@ -53,7 +53,7 @@ export function PilePanel({
       />
     </div>
   );
-}
+});
 
 // Renders gold plus mana gems, including temporary mana overflow above the max.
 export function ManaPanel({ mana, maxMana, gold }: { mana: number; maxMana: number; gold: number }) {

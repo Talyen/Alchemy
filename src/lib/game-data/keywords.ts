@@ -55,7 +55,7 @@ export const keywordDefinitions: Record<KeywordId, KeywordDefinition> = {
   stun: {
     id: "stun",
     label: "Stun",
-    description: "Stun damage causes the enemy to lose a turn when it reaches more than half the remaining HP",
+    description: "Stun damage causes the enemy to lose a turn when it reaches more than half the remaining Health",
     colorClass: "text-amber-300",
     borderClass: "border-amber-300",
     shineColors: ["#fcd34d", "#d97706", "#fcd34d"],
@@ -161,7 +161,7 @@ export const keywordDefinitions: Record<KeywordId, KeywordDefinition> = {
   freeze: {
     id: "freeze",
     label: "Freeze",
-    description: "Freeze damage causes the enemy to lose their turn if it accumulates to half their remaining HP",
+    description: "Freeze damage causes the enemy to lose their turn if it accumulates to half their remaining Health",
     colorClass: "text-cyan-300",
     borderClass: "border-cyan-300",
     shineColors: ["#67e8f9", "#06b6d4", "#67e8f9"],

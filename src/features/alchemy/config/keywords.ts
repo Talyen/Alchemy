@@ -24,7 +24,7 @@ export const keywordAliases: Array<{ match: string; keywordId: KeywordId }> = [
   { match: "Mana", keywordId: "mana" },
   { match: "Nature", keywordId: "nature" },
   { match: "Companion", keywordId: "companion" },
-  { match: "HP", keywordId: "health" },
+  { match: "HP", keywordId: "health" }, // kept as alias for backward compat with card text
 ];
 
 // Pre-compiled regex for keyword highlighting so card description rendering

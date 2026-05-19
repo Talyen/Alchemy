@@ -292,7 +292,7 @@ describe("applyPlayerHealing", () => {
     expect(next.deathsDoorActive).toBe(false);
   });
 
-  it("preserves Death's Door active when still at 0 HP after heal", () => {
+  it("preserves Death's Door active when still at 0 Health after heal", () => {
     const state = baseState({ playerHealth: 0, deathsDoorUsed: true, deathsDoorActive: true, deathsDoorTriggeredTurn: 3 });
     const next = applyPlayerHealing(state, 0);
     expect(next.playerHealth).toBe(0);
@@ -311,7 +311,7 @@ describe("isPlayerDefeated", () => {
     expect(isPlayerDefeated({ playerHealth: 5, deathsDoorActive: false })).toBe(false);
   });
 
-  it("returns false when Death's Door is active even at 0 HP", () => {
+  it("returns false when Death's Door is active even at 0 Health", () => {
     expect(isPlayerDefeated({ playerHealth: 0, deathsDoorActive: true })).toBe(false);
   });
 

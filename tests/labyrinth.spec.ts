@@ -41,7 +41,7 @@ test.describe("Labyrinth Mode", () => {
   });
 
   test("defeat in labyrinth returns to map (not game over)", async ({ page }) => {
-    // Resume a real labyrinth save; starting a fresh Labyrinth run resets HP to max.
+    // Resume a real labyrinth save; starting a fresh Labyrinth run resets Health to max.
     await injectSaveState(page, {
       characterId: "knight",
       runPlayerHealth: 1,

@@ -2,7 +2,7 @@
 // Reads data from Zustand stores instead of the run controller object.
 import { platform } from "@/lib/platform";
 import { menuLogo, cardLibrary, trinketLibrary } from "@/lib/game-data";
-import type { Screen, Destination, CollectionTab } from "@/features/alchemy/types";
+import type { CardTransfer, Screen, Destination, CollectionTab } from "@/features/alchemy/types";
 import type { BattleCard, CharacterId, DifficultyId, KeywordId } from "@/lib/game-data";
 import type { MysteryChoice } from "@/features/alchemy/mystery-events";
 import { useAppStore } from "@/features/alchemy/stores/app-store";
@@ -78,6 +78,8 @@ type RenderAlchemyScreenProps = {
   screen: Screen;
   actions: ControllerActions;
   handCardRefs: React.MutableRefObject<Record<string, HTMLButtonElement | null>>;
+  drawPileRef: React.MutableRefObject<HTMLDivElement | null>;
+  discardPileRef: React.MutableRefObject<HTMLDivElement | null>;
   battleSceneRef: React.MutableRefObject<HTMLDivElement | null>;
   playerPanelRef: React.MutableRefObject<HTMLDivElement | null>;
   enemyPanelRef: React.MutableRefObject<HTMLDivElement | null>;
@@ -86,6 +88,9 @@ type RenderAlchemyScreenProps = {
   isMobileLandscape: boolean;
   aspectMode: "standard" | "narrow" | "ultrawide";
   stagePixelRatio: number;
+  cardTransfers: CardTransfer[];
+  hiddenHandCardKeys: Set<string>;
+  cardTransferInProgress: boolean;
   hasUnspentTalents: boolean;
   hasAffordableHomestead: boolean;
   collectionTab: CollectionTab;
@@ -103,6 +108,8 @@ export function renderAlchemyScreen({
   screen,
   actions: a,
   handCardRefs,
+  drawPileRef,
+  discardPileRef,
   battleSceneRef,
   playerPanelRef,
   enemyPanelRef,
@@ -111,6 +118,9 @@ export function renderAlchemyScreen({
   isMobileLandscape,
   aspectMode,
   stagePixelRatio,
+  cardTransfers,
+  hiddenHandCardKeys,
+  cardTransferInProgress,
   hasUnspentTalents,
   hasAffordableHomestead,
   collectionTab,
@@ -172,6 +182,8 @@ export function renderAlchemyScreen({
           aspectMode={aspectMode}
           stagePixelRatio={stagePixelRatio}
           handCardRefs={handCardRefs}
+          drawPileRef={drawPileRef}
+          discardPileRef={discardPileRef}
           battleSceneRef={battleSceneRef}
           playerPanelRef={playerPanelRef}
           enemyPanelRef={enemyPanelRef}
@@ -181,6 +193,9 @@ export function renderAlchemyScreen({
           onRemoveCardGhost={a.removeCardGhost}
           onSkipCombatDevMode={a.skipCombatDevMode}
           onEndTurn={a.handleEndTurn}
+          cardTransfers={cardTransfers}
+          hiddenHandCardKeys={hiddenHandCardKeys}
+          cardTransferInProgress={cardTransferInProgress}
         />
       );
     case "labyrinth-map":

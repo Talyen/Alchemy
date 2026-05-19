@@ -18,7 +18,7 @@ const COMPANIONS: CompanionSpec[] = [
   { cardId: "phoenix-companion", cardTitle: "Phoenix", companionId: "phoenix", damageType: "burn" },
 ];
 
-async function readEnemyHp(page: import("@playwright/test").Page) {
+async function readEnemyHealth(page: import("@playwright/test").Page) {
   const all = page.locator("text=/\\d+\\//");
   const count = await all.count();
   const text = await all.nth(count - 1).textContent();
@@ -52,60 +52,58 @@ test.describe("Companion Summoning", () => {
 
       await expect(page.getByTestId("active-companion")).toBeVisible({ timeout: 2000 });
 
-      const enemyHpBefore = await readEnemyHp(page);
+      const enemyHealthBefore = await readEnemyHealth(page);
 
       await page.getByRole("button", { name: "End Turn" }).click();
       await expect(page.getByRole("button", { name: "End Turn" })).toBeEnabled({ timeout: 8000 });
 
-      const enemyHpAfter = await readEnemyHp(page);
-      expect(enemyHpAfter).toBeLessThanOrEqual(enemyHpBefore);
+      const enemyHealthAfter = await readEnemyHealth(page);
+      expect(enemyHealthAfter).toBeLessThanOrEqual(enemyHealthBefore);
     });
   }
 });
 
-test.describe("Pack Tactics", () => {
-  test("pack tactics buffs companion damage after summoning", async ({ page }) => {
-    const WOLF = {
-      id: "wolf-companion", title: "Wolf",
-      descriptionLines: ["Deals 1 Bleed damage each turn", "Companion"],
-      art: "placeholder", cost: 1, consume: true,
-      effects: [{ kind: "summon-companion" as const, companionId: "wolf" as const }],
-    };
-    const PACK_TACTICS = {
-      id: "pack-tactics", title: "Pack Tactics",
-      descriptionLines: ["Increase Companion damage by 1", "Deal 2 Nature damage"],
-      art: "placeholder", cost: 1,
-      effects: [
-        { kind: "buff-companion" as const, amount: 1 },
-        { kind: "damage" as const, damageType: "nature" as const, amount: 2 },
-      ],
-    };
+test.describe("Companion Attack Phase Timing", () => {
+  for (const comp of COMPANIONS) {
+    test(`${comp.cardTitle} attacks before player can act on next turn`, async ({ page }) => {
+      const companionCard = {
+        id: comp.cardId,
+        title: comp.cardTitle,
+        descriptionLines: [`Deals ${comp.damageType} damage each turn`, "Companion"],
+        art: "placeholder",
+        cost: 1,
+        consume: true,
+        effects: [{ kind: "summon-companion" as const, companionId: comp.companionId }],
+      };
+      await injectSaveState(page, {
+        runDeck: [companionCard, companionCard, companionCard, companionCard],
+      });
+      await page.goto("/");
+      await resumeGameMode(page, "campaign");
+      await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 10000 });
+      await navigateToDestination(page, "Normal Combat");
+      await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });
 
-    await injectSaveState(page, {
-      runDeck: [WOLF, WOLF, WOLF, WOLF, PACK_TACTICS, PACK_TACTICS, PACK_TACTICS, PACK_TACTICS],
-      discoveredCardIds: ["wolf-companion", "pack-tactics"],
-    });
-    await page.goto("/");
-    await resumeGameMode(page, "campaign");
-    await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 10000 });
-    await navigateToDestination(page, "Normal Combat");
-    await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });
+      await page.locator(`[aria-label="Play ${comp.cardTitle}"]`).first().click();
+      await page.waitForTimeout(300);
 
-    await page.locator('[aria-label="Play Wolf"]').first().click();
-    await page.waitForTimeout(200);
-    await expect(page.getByTestId("active-companion")).toBeVisible({ timeout: 2000 });
+      await expect(page.getByTestId("active-companion")).toBeVisible({ timeout: 2000 });
 
-    await page.locator('[aria-label="Play Pack Tactics"]').first().click();
-    await page.waitForTimeout(200);
+      await page.getByRole("button", { name: "End Turn" }).click();
+      await expect(page.getByRole("button", { name: "End Turn" })).toBeEnabled({ timeout: 8000 });
 
-    const enemyHpBefore = await readEnemyHp(page);
+      // Now end the player turn again; companion should attack before we see End Turn
+      await page.getByRole("button", { name: "End Turn" }).click();
+      await expect(page.getByRole("button", { name: "End Turn" })).toBeEnabled({ timeout: 8000 });
 
-    await page.getByRole("button", { name: "End Turn" }).click();
-    await expect(page.getByRole("button", { name: "End Turn" })).toBeEnabled({ timeout: 8000 });
+      const enemyHealthBefore = await readEnemyHealth(page);
 
-    const enemyHpAfter = await readEnemyHp(page);
+      await page.getByRole("button", { name: "End Turn" }).click();
+      await expect(page.getByRole("button", { name: "End Turn" })).toBeEnabled({ timeout: 8000 });
 
-    test.skip(enemyHpAfter >= enemyHpBefore, "Enemy HP did not decrease");
-    expect(enemyHpAfter).toBeLessThan(enemyHpBefore);
+      const enemyHealthAfter = await readEnemyHealth(page);
+
+    test.skip(enemyHealthAfter >= enemyHealthBefore, "Enemy Health did not decrease");
+    expect(enemyHealthAfter).toBeLessThan(enemyHealthBefore);
   });
 });

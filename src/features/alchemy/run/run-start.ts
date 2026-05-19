@@ -1,5 +1,5 @@
 // Pure run-start snapshot builder for campaign, labyrinth, and wildwood entry points.
-// Depends on character starter decks and HP constants; React controllers apply the snapshot.
+// Depends on character starter decks and Health constants; React controllers apply the snapshot.
 import { MAX_PLAYER_HEALTH } from "@/lib/game-constants";
 import { getStartingDeck, type BattleCard, type CharacterId, type DifficultyId } from "@/lib/game-data";
 import type { ContentSystemId } from "@/lib/content-systems/types";

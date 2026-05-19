@@ -54,8 +54,8 @@ test.describe("Talents in Battle", () => {
     await slash.click();
     await page.waitForTimeout(300);
 
-    const enemyHpText = await page.locator("text=/\\d+\\//").last().textContent();
-    const enemyHpAfter = Number(enemyHpText?.split("/")[0] ?? 30);
+    const enemyHealthText = await page.locator("text=/\\d+\\//").last().textContent();
+    const enemyHealthAfter = Number(enemyHealthText?.split("/")[0] ?? 30);
     expect(enemyHpAfter).toBeLessThan(30);
   });
 

@@ -24,17 +24,17 @@ test.describe("Difficulty Modifiers", () => {
       return;
     }
 
-    const enemyHpBefore = 30;
+    const enemyHealthBefore = 30;
 
     await slash.click();
     await page.waitForTimeout(300);
 
-    const enemyHpAfterMatch = await page.locator("text=/\\d+\\//").last().textContent();
-    const enemyHpAfter = Number(enemyHpAfterMatch?.split("/")[0] ?? 30);
+    const enemyHealthAfterMatch = await page.locator("text=/\\d+\\//").last().textContent();
+    const enemyHealthAfter = Number(enemyHealthAfterMatch?.split("/")[0] ?? 30);
 
     // Without armor: 30 - 6 = 24. With armor (2): 30 - (6 - 2) = 28.
     // If enemy took less than full 6 damage, armor is working.
-    const damageDealt = enemyHpBefore - enemyHpAfter;
+    const damageDealt = enemyHealthBefore - enemyHealthAfter;
     expect(damageDealt).toBeLessThan(6);
   });
 
@@ -52,13 +52,13 @@ test.describe("Difficulty Modifiers", () => {
     await navigateToDestination(page, "Normal Combat");
     await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });
 
-    const playerHpBefore = Number((await page.locator("text=/\\d+\\//").first().textContent())?.split("/")[0]);
+    const playerHealthBefore = Number((await page.locator("text=/\\d+\\//").first().textContent())?.split("/")[0]);
 
     await page.getByRole("button", { name: "End Turn" }).click();
     await expect(page.getByRole("button", { name: "End Turn" })).toBeEnabled({ timeout: 8000 });
 
-    const playerHpAfter = Number((await page.locator("text=/\\d+\\//").first().textContent())?.split("/")[0]);
-    const damageTaken = playerHpBefore - playerHpAfter;
+    const playerHealthAfter = Number((await page.locator("text=/\\d+\\//").first().textContent())?.split("/")[0]);
+    const damageTaken = playerHealthBefore - playerHealthAfter;
 
     // Wizard's first enemy (Imp) deals 3 burn base. Adventurer adds +2 burn = 5 burn.
     // The Imp has burn resistance (halves burn), so effective is 2-3 damage.
@@ -106,13 +106,13 @@ test.describe("Difficulty Modifiers", () => {
     await navigateToDestination(page, "Normal Combat");
     await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });
 
-    const playerHpBefore = Number((await page.locator("text=/\\d+\\//").first().textContent())?.split("/")[0]);
+    const playerHealthBefore = Number((await page.locator("text=/\\d+\\//").first().textContent())?.split("/")[0]);
 
     await page.getByRole("button", { name: "End Turn" }).click();
     await expect(page.getByRole("button", { name: "End Turn" })).toBeEnabled({ timeout: 8000 });
 
-    const playerHpAfter = Number((await page.locator("text=/\\d+\\//").first().textContent())?.split("/")[0]);
-    const damageTaken = playerHpBefore - playerHpAfter;
+    const playerHealthAfter = Number((await page.locator("text=/\\d+\\//").first().textContent())?.split("/")[0]);
+    const damageTaken = playerHealthBefore - playerHealthAfter;
 
     // Rogue's first enemy deals poison damage; Adventurer adds +2 poison
     expect(damageTaken).toBeGreaterThan(0);

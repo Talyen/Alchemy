@@ -112,7 +112,7 @@ describe("applyCardEffects", () => {
     expect(result.mana).toBe(2);
   });
 
-  it("self-damage applies HP loss and status stack", () => {
+  it("self-damage applies Health loss and status stack", () => {
     const state = makeState({ playerHealth: 20, playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 } });
     const card = makeCard({ effects: [{ kind: "self-damage", damageType: "burn", amount: 3 }] });
     const texts: CombatTextEvent[] = [];
@@ -1036,11 +1036,11 @@ describe("createBattleState", () => {
 describe("labyrinth modifiers on createBattleState", () => {
   const skeleton = enemyBestiary.find((e) => e.id === "skeleton")!;
   const battleDeck = [makeCard({ id: "slash" }), makeCard({ id: "block" })];
-  const BASE_ENEMY_HP = 30;
+  const BASE_ENEMY_HEALTH = 30;
 
   it("labyrinth-sturdy scales enemyMaxHealth by 1.3x", () => {
     const result = createBattleState(battleDeck, 0, 0, skeleton, undefined, undefined, undefined, undefined, undefined, undefined, undefined, [{ kind: "labyrinth-sturdy" }]);
-    expect(result.enemyMaxHealth).toBe(Math.floor(BASE_ENEMY_HP * LABYRINTH_STURDY_MULTIPLIER));
+    expect(result.enemyMaxHealth).toBe(Math.floor(BASE_ENEMY_HEALTH * LABYRINTH_STURDY_MULTIPLIER));
     expect(result.enemyHealth).toBe(result.enemyMaxHealth);
   });
 
@@ -1059,7 +1059,7 @@ describe("labyrinth modifiers on createBattleState", () => {
       { kind: "labyrinth-sturdy" },
       { kind: "labyrinth-null-field" },
     ]);
-    expect(result.enemyMaxHealth).toBe(Math.floor(BASE_ENEMY_HP * LABYRINTH_STURDY_MULTIPLIER));
+    expect(result.enemyMaxHealth).toBe(Math.floor(BASE_ENEMY_HEALTH * LABYRINTH_STURDY_MULTIPLIER));
     expect(isNullFieldActive(result)).toBe(true);
   });
 });
@@ -1394,7 +1394,7 @@ describe("Trinket — Wishing Well Coin (gold on wish)", () => {
 });
 
 describe("Trinket — Bone Charm (heal on enemy defeat)", () => {
-  it("heals 3 HP when enemy is killed by an attack", () => {
+  it("heals 3 Health when enemy is killed by an attack", () => {
     const manifest = computeTrinketManifest(["bone-charm"]);
     const card = makeCard({ effects: [{ kind: "damage", damageType: "physical", amount: 40 }] });
     const state = makeState({ mana: 10, playerHealth: 15, enemyHealth: 30, trinketEffects: manifest });
@@ -1708,7 +1708,7 @@ describe("enemy traits via endPlayerTurn", () => {
     expect(result.combatTexts).toContainEqual({ target: "enemy", kind: "heal", stat: "health", amount: 4 });
   });
 
-  it("enemy heals when below 50% HP", () => {
+  it("enemy heals when below 50% Health", () => {
     const state = makeState({
       enemyHealth: 10, enemyMaxHealth: 30,
       enemyAttackEffects: [],
@@ -1746,7 +1746,7 @@ describe("health threshold talents via endPlayerTurn", () => {
       mana: 4, maxMana: 4,
     });
     const result = endPlayerTurn(state);
-    // 25 HP - 12 damage = 13 (43%), crossing 50% threshold → grants 5 block.
+    // 25 Health - 12 damage = 13 (43%), crossing 50% threshold → grants 5 block.
     // advanceToPlayerTurn then halves block: floor(5/2) = 2
     expect(result.state.playerStatuses.block).toBe(2);
   });
@@ -1773,7 +1773,7 @@ describe("health threshold talents via endPlayerTurn", () => {
       mana: 4, maxMana: 4,
     });
     const result = endPlayerTurn(state);
-    // 20 HP → 18 HP = 60% of 30, above 50% threshold
+    // 20 Health → 18 Health = 60% of 30, above 50% threshold
     expect(result.state.playerStatuses.block).toBe(0);
   });
 });

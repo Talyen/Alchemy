@@ -306,6 +306,8 @@ export function useAlchemyRunController({
       return nav.activeRunData;
     },
     handCardRefs: battle.handCardRefs,
+    drawPileRef: battle.drawPileRef,
+    discardPileRef: battle.discardPileRef,
     battleSceneRef: battle.battleSceneRef,
     playerPanelRef: battle.playerPanelRef,
     enemyPanelRef: battle.enemyPanelRef,
@@ -342,6 +344,9 @@ export function useAlchemyRunController({
     handleCorruptionLeave: nav.handleCorruptionLeave,
     handleActComplete: nav.handleActComplete,
     handleEndTurn: battle.handleEndTurn,
+    cardTransfers: battle.cardTransfers,
+    hiddenHandCardKeys: battle.hiddenHandCardKeys,
+    cardTransferInProgress: battle.cardTransferInProgress,
     handleEndRun: battle.handleEndRun,
     skipCombatDevMode: battle.skipCombatDevMode,
     removeCardGhost: battle.removeCardGhost,

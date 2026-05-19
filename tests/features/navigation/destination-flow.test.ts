@@ -8,25 +8,25 @@ vi.mock("@/features/alchemy/config", () => ({
 
 describe("getRunAvailableDestinations", () => {
   it("returns only Boss Combat at last index in act", () => {
-    const result = getRunAvailableDestinations({ destinationIndexInAct: 7, currentHp: 30, currentGold: 100, maxHp: 30 });
+    const result = getRunAvailableDestinations({ destinationIndexInAct: 7, currentHealth: 30, currentGold: 100, maxHealth: 30 });
     expect(result).toEqual(["Boss Combat"]);
   });
 
   it("returns filtered destinations for non-last positions", () => {
-    const result = getRunAvailableDestinations({ destinationIndexInAct: 2, currentHp: 30, currentGold: 100, maxHp: 30 });
+    const result = getRunAvailableDestinations({ destinationIndexInAct: 2, currentHealth: 30, currentGold: 100, maxHealth: 30 });
     expect(result).toContain("Normal Combat");
     expect(result).toContain("Corruption");
     expect(result).not.toContain("Boss Combat");
   });
 
   it("returns filtered destinations at index 0", () => {
-    const result = getRunAvailableDestinations({ destinationIndexInAct: 0, currentHp: 30, currentGold: 100, maxHp: 30 });
+    const result = getRunAvailableDestinations({ destinationIndexInAct: 0, currentHealth: 30, currentGold: 100, maxHealth: 30 });
     expect(result).toContain("Normal Combat");
     expect(result).not.toContain("Boss Combat");
   });
 
   it("prevents Corruption after a Corruption destination", () => {
-    const result = getRunAvailableDestinations({ destinationIndexInAct: 2, currentHp: 30, currentGold: 100, maxHp: 30, previousDestination: "Corruption" });
+    const result = getRunAvailableDestinations({ destinationIndexInAct: 2, currentHp: 30, currentGold: 100, maxHealth: 30, previousDestination: "Corruption" });
     expect(result).not.toContain("Corruption");
   });
 });

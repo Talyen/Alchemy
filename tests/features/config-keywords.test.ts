@@ -39,7 +39,7 @@ describe("keywordPattern", () => {
     expect(matches!.length).toBe(3);
   });
 
-  it("matches 'HP' as health", () => {
+  it("matches 'HP' as health (backward compat alias)", () => {
     const text = "Heal 5 HP";
     const matches = text.match(keywordPattern);
     expect(matches).not.toBeNull();

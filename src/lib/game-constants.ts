@@ -5,16 +5,16 @@
 export const GLOBAL_CRIT_CHANCE = 5; // 5% base crit for ALL damage types. Keeps fights unpredictable without making crits the primary strategy.
 export const CRIT_MULTIPLIER = 2; // Crits double damage. 2x is the industry standard — feels satisfying without being game-breaking.
 export const BLEED_STATUS_MULTIPLIER = 2; // Bleed adds DOUBLE the damage dealt to its status stack. This makes bleed the highest-potential DoT (burst on tick) vs burn/poison's sustained damage.
-export const STUN_THRESHOLD_FRACTION = 0.5; // Stun procs when accumulated >50% of current enemy HP. Uses current (post-damage) HP so it's harder to stun healthy enemies.
-export const FREEZE_THRESHOLD_FRACTION = 0.5; // Freeze same as stun but uses >= instead of > (identical in practice due to integer HP).
+export const STUN_THRESHOLD_FRACTION = 0.5; // Stun procs when accumulated >50% of current enemy Health. Uses current (post-damage) Health so it's harder to stun healthy enemies.
+export const FREEZE_THRESHOLD_FRACTION = 0.5; // Freeze same as stun but uses >= instead of > (identical in practice due to integer Health).
 export const WISH_CHOICE_COUNT = 3; // Wish offers 3 cards from the full library. 3 is the "rule of three" for meaningful choice without option paralysis.
 export const MIN_MAX_MANA_FLOOR = 1; // Minimum maxMana after reductions. Prevents softlock — with 0 max mana no card can ever be played.
 
 // ============ Battle / Rooms ============
-export const ROOM_SCALING_INCREMENT = 0.1; // +10% enemy HP/attack per room (multiplicative)
-export const ELITE_STAT_MULTIPLIER = 1.3; // Elite enemies get 30% more HP and attack
+export const ROOM_SCALING_INCREMENT = 0.1; // +10% enemy Health/attack per room (multiplicative)
+export const ELITE_STAT_MULTIPLIER = 1.3; // Elite enemies get 30% more Health and attack
 export const STARTING_TURN = 1; // Turn counter starts at 1 for readability.
-export const ENEMY_HEAL_FRACTION = 0.1; // Enemy heals 10% of max HP when below 50% HP.
+export const ENEMY_HEAL_FRACTION = 0.1; // Enemy heals 10% of max Health when below 50% Health.
 export const ENEMY_BASE_REGENERATION = 2; // Base enemy regeneration per turn (scaled by room).
 export const ENEMY_BOSS_REGENERATION = 4; // Base regen for regeneration-trait bosses.
 export const BLEED_EXECUTE_MULTIPLIER = 2; // Bleed damage multiplier when enemy is below execute threshold.
@@ -27,8 +27,8 @@ export const GOLD_TROVE_DAMAGE_REWARD = 1; // Mimic trait gold gained each time 
 // ============ Battle Tuning ============
 export const CARDS_PER_TURN = 4; // Cards drawn at turn start. Tuned to Knight starter deck (8 cards, ~8 turns avg).
 export const MAX_HAND_SIZE = 7; // Hand size cap; excess draws are skipped.
-export const MAX_PLAYER_HEALTH = 30; // Starting and default max HP for all characters.
-export const BASE_ENEMY_HEALTH = 30; // Base enemy HP before room/act/type scaling.
+export const MAX_PLAYER_HEALTH = 30; // Starting and default max Health for all characters.
+export const BASE_ENEMY_HEALTH = 30; // Base enemy Health before room/act/type scaling.
 export const BASE_PLAYER_MANA = 4; // Starting and max mana per turn.
 
 // ============ Timing (ms) ============
@@ -38,11 +38,11 @@ export const ENEMY_PHASE_DELAY = 900; // Gap between enemy turn start and enemy 
 export const SHAKE_DURATION = 420; // Screen shake on hit. 420ms is long enough to feel impactful but short enough to not delay gameplay.
 export const COMPANION_ATTACK_DELAY = 1000; // Delay before companion attacks at start of player turn.
 export const NAVIGATION_DELAY_MS = 100; // Short delay lets page exit transitions begin before the next screen mounts.
-export const CAMPFIRE_ANIMATION_MS = 1250; // HP bar animation duration. Long enough to feel satisfying, short enough to not bore.
-export const CAMPFIRE_CONTINUE_DELAY = 600; // Brief pause after animation completes before auto-advancing. Gives player time to register the new HP value.
+export const CAMPFIRE_ANIMATION_MS = 1250; // Health bar animation duration. Long enough to feel satisfying, short enough to not bore.
+export const CAMPFIRE_CONTINUE_DELAY = 600; // Brief pause after animation completes before auto-advancing. Gives player time to register the new Health value.
 
 // ============ Campfire ============
-export const CAMPFIRE_HEAL_FRACTION = 0.3; // Restores 30% of max HP. High enough to be meaningful, low enough that you still need to play well.
+export const CAMPFIRE_HEAL_FRACTION = 0.3; // Restores 30% of max Health. High enough to be meaningful, low enough that you still need to play well.
 
 // ============ Talents / XP ============
 export const XP_BASE_PER_POINT = 10; // First talent point costs 10 XP. Subsequent points cost (n+1)*10 (20, 30, 40…).
@@ -75,13 +75,13 @@ export const CORRUPTION_MIN_VALUE = 0; // Corruption can reduce values to 0, but
 export const DESTINATIONS_PER_ACT = 8; // Number of destination slots per act (slot 8 = boss).
 export const ACTS_PER_RUN = 3; // Number of acts in a full run.
 export const SHOP_MIN_GOLD = 40; // Player needs at least this much gold to see shop destinations.
-export const CAMPFIRE_HP_THRESHOLD = 0.8; // Skip campfire destination if HP >= 80% of max.
-export const ELITE_HP_THRESHOLD = 0.5; // Skip elite combat destination if HP < 50% of max.
+export const CAMPFIRE_HEALTH_THRESHOLD = 0.8; // Skip campfire destination if Health >= 80% of max.
+export const ELITE_HEALTH_THRESHOLD = 0.5; // Skip elite combat destination if Health < 50% of max.
 export const SHOP_CARDS_OFFERED = 3; // Cards displayed in the merchant shop.
 export const SHOP_REFRESHES = 1; // Free refreshes per shop visit.
 export const ALCHEMIST_POTIONS_OFFERED = 3; // Potions displayed in the alchemist shop.
 export const ALCHEMIST_REFRESHES = 1; // Free refreshes per alchemist visit.
-export const BOSS_HP_MULTIPLIER = 2.2; // Boss enemies get 120% more HP.
+export const BOSS_HEALTH_MULTIPLIER = 2.2; // Boss enemies get 120% more Health.
 export const BOSS_ATTACK_MULTIPLIER = 1.8; // Boss enemies get 80% more attack.
 export const ACT_SCALING_INCREMENT = 0.2; // +20% enemy stats per act (baseline).
 export const BOSS_TRINKET_REWARD_CHOICES = 3; // Trinket choices offered after a boss kill.
@@ -176,9 +176,9 @@ export const DIFFICULTY_FORGE_PER_TURN = 1; // Difficulty modifier: forge gained
 export const LIVING_ARMOR_STARTING_ARMOR = 8; // Living-Armor trait initial armor value.
 
 // ============ Labyrinth ============
-export const LABYRINTH_STURDY_MULTIPLIER = 1.3; // Sturdy modifier: +30% enemy max HP (same as ELITE_STAT_MULTIPLIER).
+export const LABYRINTH_STURDY_MULTIPLIER = 1.3; // Sturdy modifier: +30% enemy max Health (same as ELITE_STAT_MULTIPLIER).
 export const LABYRINTH_BURNING_GROUND_DAMAGE = 2; // Burning Ground: 2 Burn to player each turn.
-export const LABYRINTH_LEECH_HEAL = 3; // Leeching: enemy heals 3 HP on their turn.
+export const LABYRINTH_LEECH_HEAL = 3; // Leeching: enemy heals 3 Health on their turn.
 export const FALLBACK_ENEMY_ATTACK = 8; // Default attack for malformed bestiary entries.
 
 // ============ Enemy Trait Damage Modifiers ============

@@ -92,11 +92,11 @@ describe("mysteryPool", () => {
     }
   });
 
-  it("healHP and damageHP amounts are positive", () => {
+  it("healHealth and damageHealth amounts are positive", () => {
     for (const event of mysteryPool) {
       for (const choice of event.choices) {
         for (const effect of choice.effects) {
-          if (effect.kind === "healHP" || effect.kind === "damageHP") {
+          if (effect.kind === "healHealth" || effect.kind === "damageHealth") {
             expect(effect.amount).toBeGreaterThan(0);
           }
         }

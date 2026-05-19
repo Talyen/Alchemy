@@ -7,18 +7,18 @@ describe("getAvailableDestinations", () => {
     expect(destinations).not.toContain("Boss Combat");
   });
 
-  it("excludes Campfire when HP >= 80% of max and >= half max", () => {
+  it("excludes Campfire when Health >= 80% of max and >= half max", () => {
     const destinations = getAvailableDestinations(24, 100, 30); // 80% = 24
     expect(destinations).not.toContain("Campfire");
   });
 
-  it("includes Campfire when HP is below 80%", () => {
+  it("includes Campfire when Health is below 80%", () => {
     const destinations = getAvailableDestinations(23, 100, 30);
     expect(destinations).toContain("Campfire");
   });
 
-  it("includes Campfire when HP is at 80% but below half Max", () => {
-    const destinations = getAvailableDestinations(12, 100, 30); // 40% HP, 80% threshold = 24
+  it("includes Campfire when Health is at 80% but below half Max", () => {
+    const destinations = getAvailableDestinations(12, 100, 30); // 40% Health, 80% threshold = 24
     // 12 >= floor(30*0.8)=24 is false, 12 >= 15 is false → campfire included
     expect(destinations).toContain("Campfire");
   });
@@ -43,12 +43,12 @@ describe("getAvailableDestinations", () => {
     expect(destinations).toContain("Alchemist's Shop");
   });
 
-  it("excludes Elite Combat when HP < half max", () => {
+  it("excludes Elite Combat when Health < half max", () => {
     const destinations = getAvailableDestinations(14, 100, 30);
     expect(destinations).not.toContain("Elite Combat");
   });
 
-  it("includes Elite Combat when HP >= half max", () => {
+  it("includes Elite Combat when Health >= half max", () => {
     const destinations = getAvailableDestinations(15, 100, 30);
     expect(destinations).toContain("Elite Combat");
   });

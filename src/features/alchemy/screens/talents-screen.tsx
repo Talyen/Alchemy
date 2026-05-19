@@ -36,8 +36,12 @@ export function TalentsScreen({
   const keywordIds = (Object.keys(keywordDefinitions) as KeywordId[]).filter((kw) => !keywordDefinitions[kw].hidden);
 
   const unlockedIds = useMemo(() => unlockedTalents[selectedKeyword] ?? [], [selectedKeyword, unlockedTalents]);
-  const progress = getTalentKeywordProgress(talentXP[selectedKeyword] ?? 0, unlockedIds.length);
   const allTalentsForKeyword = getTalentsForKeyword(selectedKeyword);
+  const progress = getTalentKeywordProgress(
+    talentXP[selectedKeyword] ?? 0,
+    unlockedIds.length,
+    allTalentsForKeyword.length,
+  );
   const allUnlocked = progress.spentPoints >= allTalentsForKeyword.length;
   const unlockedTalentsForKeyword = allTalentsForKeyword.filter((t) => unlockedIds.includes(t.id));
 
@@ -60,7 +64,11 @@ export function TalentsScreen({
         <div className="mx-auto mt-6 flex w-full max-w-[70.37cqh] flex-col gap-6 text-left">
           <div className="flex flex-wrap justify-center gap-2">
             {keywordIds.map((kw) => {
-              const kwProgress = getTalentKeywordProgress(talentXP[kw] ?? 0, (unlockedTalents[kw] ?? []).length);
+              const kwProgress = getTalentKeywordProgress(
+                talentXP[kw] ?? 0,
+                (unlockedTalents[kw] ?? []).length,
+                getTalentsForKeyword(kw).length,
+              );
               return (
                 <TalentKeywordButton
                   key={kw}
