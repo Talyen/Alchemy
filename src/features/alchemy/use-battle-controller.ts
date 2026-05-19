@@ -45,8 +45,8 @@ import { useBattleStore } from "./stores/battle-store";
 import { getBattleStartPlayerHealth } from "./battle/battle-start";
 import { getAudioContext, loadSoundBuffer, resumeAudioContext } from "@/lib/audio-buffer-cache";
 
-const CARD_TRANSFER_DRAW_DURATION_SECONDS = 0.55;
-const CARD_TRANSFER_DISCARD_DURATION_SECONDS = 0.45;
+const CARD_TRANSFER_DRAW_DURATION_SECONDS = 0.5;
+const CARD_TRANSFER_DISCARD_DURATION_SECONDS = 0.5;
 const CARD_TRANSFER_COMPLETION_BUFFER_MS = 120;
 const REQUIRED_STABLE_SLOT_FRAMES = 2;
 const MAX_SLOT_STABILIZE_FRAMES = 12;
@@ -156,7 +156,8 @@ export function useBattleController({
     return `${card.id}-${card.uid}`;
   }
 
-  function playTransferSound() {
+  function playTransferSound(delay = 0) {
+    if (!getStore().hasActiveBattle) return;
     resumeAudioContext();
     loadSoundBuffer("card-draw-2.ogg").then((buffer) => {
       if (!buffer) return;
@@ -167,7 +168,7 @@ export function useBattleController({
       gain.gain.value = 0.4;
       source.connect(gain);
       gain.connect(ctx.destination);
-      source.start();
+      source.start(ctx.currentTime + delay);
     });
   }
 
@@ -207,10 +208,11 @@ export function useBattleController({
   function runCardTransfer(transfer: Omit<CardTransfer, "id">, onComplete?: () => void): Promise<void> {
     return new Promise((resolve) => {
       const id = `${performance.now()}-${Math.random()}`;
-      playTransferSound();
+      if (import.meta.env.DEV) console.log("[flying] create", id.slice(-8));
       setCardTransfers([{ ...transfer, id }]);
       transferTimeoutRef.current = setTimeout(
         () => {
+          if (import.meta.env.DEV) console.log("[flying] remove", id.slice(-8));
           transferTimeoutRef.current = null;
           setCardTransfers((current) => current.filter((item) => item.id !== id));
           onComplete?.();
@@ -266,6 +268,10 @@ export function useBattleController({
   async function animateDiscardedHand(cards: BattleCard[]) {
     const discardPileRect = localRectFromElement(discardPileRef.current);
     if (!discardPileRect || cards.length === 0) return;
+    const speedMul = cards.length <= 2 ? 1 : cards.length === 3 ? 1.4 : 1.6;
+    const cardInterval =
+      ((CARD_TRANSFER_DISCARD_DURATION_SECONDS / speedMul) * 1000 + CARD_TRANSFER_COMPLETION_BUFFER_MS) / 1000;
+    for (let i = 0; i < cards.length; i++) playTransferSound(i * cardInterval);
     setCardTransferInProgress(true);
     cardPlayInProgressRef.current = true;
     for (let index = cards.length - 1; index >= 0; index -= 1) {
@@ -284,7 +290,7 @@ export function useBattleController({
         fromRotation: (index - (cards.length - 1) / 2) * HAND_FAN_ROTATION_DEGREES,
         toRotation: 0,
         rotateY: [0, 90, 180],
-        duration: CARD_TRANSFER_DISCARD_DURATION_SECONDS,
+        duration: CARD_TRANSFER_DISCARD_DURATION_SECONDS / speedMul,
       });
     }
   }
@@ -292,6 +298,10 @@ export function useBattleController({
   async function animateDrawnHand(cards: BattleCard[], allHandCards: BattleCard[]) {
     const drawPileRect = localRectFromElement(drawPileRef.current);
     if (!drawPileRect || cards.length === 0) return;
+    const speedMul = cards.length <= 2 ? 1 : cards.length === 3 ? 1.4 : 1.6;
+    const cardInterval =
+      ((CARD_TRANSFER_DRAW_DURATION_SECONDS / speedMul) * 1000 + CARD_TRANSFER_COMPLETION_BUFFER_MS) / 1000;
+    for (let i = 0; i < cards.length; i++) playTransferSound(i * cardInterval);
     for (const card of cards) {
       const index = allHandCards.findIndex((item) => item.uid === card.uid && item.id === card.id);
       const cardKey = getCardKey(card);
@@ -308,9 +318,29 @@ export function useBattleController({
           fromRotation: 0,
           toRotation: (index - (allHandCards.length - 1) / 2) * HAND_FAN_ROTATION_DEGREES,
           rotateY: [180, 90, 0],
-          duration: CARD_TRANSFER_DRAW_DURATION_SECONDS,
+          duration: CARD_TRANSFER_DRAW_DURATION_SECONDS / speedMul,
         },
         () => {
+          if (import.meta.env.DEV) {
+            const btn = handCardRefs.current[cardKey];
+            const overlay = document.querySelector("[data-flying-card]") as HTMLElement | null;
+            if (btn && overlay) {
+              const sceneRect = getBattleSceneLocalRect(battleSceneRef.current);
+              if (sceneRect) {
+                const br = btn.getBoundingClientRect();
+                const or = overlay.getBoundingClientRect();
+                const dx = Math.abs((br.left - or.left) / sceneRect.scaleX);
+                const dy = Math.abs((br.top - or.top) / sceneRect.scaleY);
+                const dw = Math.abs((br.width - or.width) / sceneRect.scaleX);
+                const dh = Math.abs((br.height - or.height) / sceneRect.scaleY);
+                if (dx > 0.5 || dy > 0.5 || dw > 0.5 || dh > 0.5) {
+                  console.warn(
+                    `[snap] card=${cardKey} dx:${dx.toFixed(2)} dy:${dy.toFixed(2)} dw:${dw.toFixed(2)} dh:${dh.toFixed(2)}`,
+                  );
+                }
+              }
+            }
+          }
           setHiddenHandCardKeys((current) => {
             const next = new Set(current);
             next.delete(cardKey);
@@ -408,7 +438,10 @@ export function useBattleController({
   ): Promise<boolean> {
     const drawnCards = detectNewHandCards(oldHand, newState.hand);
     if (drawnCards.length === 0) {
-      applyState();
+      flushSync(() => {
+        applyState();
+        setCardTransferInProgress(false);
+      });
       return false;
     }
     const hiddenDrawKeys = new Set(drawnCards.map(getCardKey));

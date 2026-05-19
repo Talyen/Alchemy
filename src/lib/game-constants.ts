@@ -111,6 +111,9 @@ export const SFX_UI_VOLUME = 0.6; // UI sounds play quieter to avoid competing w
 export const SFX_VICTORY_VOLUME = 0.8; // Victory stinger plays slightly louder.
 export const SFX_DEFEAT_VOLUME = 0.7; // Defeat stinger plays at moderate volume.
 
+// ============ SFX Cooldown ============
+export const SFX_COOLDOWN_MS = 80; // Minimum gap (ms) between plays of the same sound to prevent rapid-fire.
+
 // ============ Image / Asset Preloading ============
 export const IMAGE_PRELOAD_BATCH_SIZE = 4; // How many speculative images to decode per idle callback.
 export const IMAGE_PRELOAD_IDLE_TIMEOUT = 900; // ms — max deferral for idle callback scheduling.

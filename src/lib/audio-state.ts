@@ -12,6 +12,7 @@ type AudioRuntimeState = {
   masterVolume: number;
   currentMusic: HTMLAudioElement | null;
   currentMusicKey: string | null;
+  lastPlayedAt: Map<string, number>;
 };
 
 export const audioState: AudioRuntimeState = {
@@ -23,4 +24,5 @@ export const audioState: AudioRuntimeState = {
   masterVolume: 1,
   currentMusic: null,
   currentMusicKey: null,
+  lastPlayedAt: new Map(),
 };

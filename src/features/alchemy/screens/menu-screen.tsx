@@ -1,9 +1,11 @@
 // Main menu screen with logo and navigation buttons. Entry point for all other screens.
+import { useCallback, useState } from "react";
 import type { CSSProperties } from "react";
 import { BookOpen, Cog, Swords, TreePine, WandSparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { ShineBorder } from "@/components/ui/shine-border";
+import { CardFlip } from "../ui/card-flip";
 import { staticCardTransform } from "../config";
 import { clearTiltFromEvent, setTiltFromEvent } from "../utils";
 
@@ -15,6 +17,7 @@ export function MenuScreen({
   onHomestead,
   onQuit,
   logoSrc,
+  logoSrcVariants,
   hasUnspentTalents = false,
   hasAffordableHomestead = false,
   isMobileLandscape = false,
@@ -26,27 +29,44 @@ export function MenuScreen({
   onHomestead: () => void;
   onQuit?: () => void;
   logoSrc: string;
+  logoSrcVariants?: string[];
   hasUnspentTalents?: boolean;
   hasAffordableHomestead?: boolean;
   isMobileLandscape?: boolean;
 }) {
+  const variants = logoSrcVariants ?? [logoSrc];
+  const [variantIdx, setVariantIdx] = useState(1);
+  const [flipped, setFlipped] = useState(false);
+
+  const handleLogoClick = useCallback(() => {
+    if (!flipped) {
+      let next: number;
+      do {
+        next = 1 + Math.floor(Math.random() * (variants.length - 1));
+      } while (next === variantIdx);
+      setVariantIdx(next);
+    }
+    setFlipped((prev) => !prev);
+  }, [flipped, variantIdx, variants.length]);
+
   return (
     <div
       className={`flex h-full w-full flex-col items-center justify-center text-center ${isMobileLandscape ? "gap-2" : "gap-8"}`}
     >
       <div
         className={`tilt-surface relative w-full ${isMobileLandscape ? "max-w-[24.44cqh]" : "max-w-[39.81cqh]"}`}
-        style={
-          {
-            "--card-base-transform": staticCardTransform,
-            maskImage: "radial-gradient(ellipse 72% 72% at center, black 60%, transparent 76%)",
-            WebkitMaskImage: "radial-gradient(ellipse 72% 72% at center, black 60%, transparent 76%)",
-          } as CSSProperties
-        }
+        style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
         onMouseMove={setTiltFromEvent}
         onMouseLeave={clearTiltFromEvent}
+        onClick={handleLogoClick}
       >
-        <img src={logoSrc} alt="Alchemy logo" className="w-full object-contain" loading="eager" />
+        <CardFlip
+          flipped={flipped}
+          transition="transform 800ms cubic-bezier(0.16, 1, 0.3, 1)"
+          className="w-full aspect-square"
+          front={<img src={variants[0]} alt="Alchemy logo" className="w-full object-contain" loading="eager" />}
+          back={<img src={variants[variantIdx]} alt="Alchemy logo" className="w-full object-contain" loading="eager" />}
+        />
       </div>
 
       <div className="grid gap-2">

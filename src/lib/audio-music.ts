@@ -14,8 +14,8 @@ import { pickRandom } from "./utils";
 const musicBase = import.meta.env.BASE_URL + MUSIC_BASE_PATH;
 
 const musicTracks: Record<string, string[]> = {
-  menu: ["Menu 1.mp3"],
-  battle: ["Battle 1.mp3", "Battle 2.mp3", "Battle 3.mp3", "Battle 4.mp3"],
+  menu: ["Menu 1.mp3", "Menu 2.mp3", "Menu 3.mp3", "Menu 4.mp3"],
+  battle: ["Battle 1.mp3", "Battle 2.mp3", "Battle 3.mp3", "Battle 4.mp3", "Battle 5.mp3"],
 };
 
 // Applies all active volume layers to a streaming music element.

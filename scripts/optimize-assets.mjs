@@ -16,6 +16,12 @@ const characterWidth = 720;
 const assets = [
   // Logo
   { source: "Logo/Alchemy Logo.png", target: "alchemy-logo.webp", width: 1200, quality: 84 },
+  { source: "Logo/Alchemy Logo Arcane Mana.png", target: "alchemy-logo-arcane-mana.webp", width: 1200, quality: 84 },
+  { source: "Logo/Alchemy Logo Fire Iron.png", target: "alchemy-logo-fire-iron.webp", width: 1200, quality: 84 },
+  { source: "Logo/Alchemy Logo Frost.png", target: "alchemy-logo-frost.webp", width: 1200, quality: 84 },
+  { source: "Logo/Alchemy Logo Holy Block.png", target: "alchemy-logo-holy-block.webp", width: 1200, quality: 84 },
+  { source: "Logo/Alchemy Logo Nature Bleed.png", target: "alchemy-logo-nature-bleed.webp", width: 1200, quality: 84 },
+  { source: "Logo/Alchemy Logo Poison.png", target: "alchemy-logo-poison.webp", width: 1200, quality: 84 },
   // Misc
   { source: "Misc/Draw Pile.png", target: "draw-pile.webp", width: 420, quality: 82 },
   { source: "Misc/Discard Pile.png", target: "discard-pile.webp", width: 420, quality: 82 },

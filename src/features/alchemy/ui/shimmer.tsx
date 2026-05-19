@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { cn } from "@/lib/utils";
 import { ANIMATION_STAGGER_UNIT } from "@/lib/game-constants";
 

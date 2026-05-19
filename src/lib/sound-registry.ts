@@ -81,7 +81,7 @@ export type BattleEventSound = keyof typeof battleEventSounds;
 
 // ── UI ──
 export const uiSounds = {
-  buttonHover: "pop-2.ogg",
+  buttonHover: "button-hover-3.ogg",
   cardHover: "card-draw-3.ogg",
   cardDrag: "whoosh-1.ogg",
   screenTransition: "whoosh-2.ogg",

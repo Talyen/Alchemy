@@ -1,12 +1,21 @@
 // Collection widgets for cards, bestiary, trinkets, discovery state, pagination, and previews.
 // Depends on game-data libraries, collection config, audio samples, tilt, and shared UI.
 // Used by CollectionScreen to render encyclopedia-style grids without owning screen routing.
-import type { CSSProperties } from "react";
+/* eslint-disable react-refresh/only-export-components */
+import { useState, type CSSProperties } from "react";
 
-import { cardLibrary, enemyBestiary, trinketLibrary, type BestiaryEntry, type TrinketEntry } from "@/lib/game-data";
+import {
+  cardBack,
+  cardLibrary,
+  enemyBestiary,
+  trinketLibrary,
+  type BestiaryEntry,
+  type TrinketEntry,
+} from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
 import { PaginationControls } from "./shared-ui";
+import { CardFlip } from "./card-flip";
 import { cardSurfaceClass, collectionTabMeta, staticCardTransform, viewCardWidthClass } from "../config";
 import type { CollectionTab } from "../types";
 import { clearTiltFromEvent, getHoverId, setTiltFromEvent } from "../utils";
@@ -60,6 +69,7 @@ function CompendiumTile({
   wrapperStyle?: CSSProperties;
 }) {
   const enemyEntry = item.frameType === "bestiary" ? enemyBestiary.find((e) => e.id === item.id) : undefined;
+  const [flipped, setFlipped] = useState(false);
 
   return (
     <div className="stagger-item relative" style={wrapperStyle} onMouseEnter={onHoverStart} onMouseLeave={onHoverEnd}>
@@ -82,28 +92,59 @@ function CompendiumTile({
         onMouseMove={setTiltFromEvent}
         onMouseLeave={clearTiltFromEvent}
         onClick={() => {
-          if (item.hoverScope === "collection-card") playCardSound(item.id);
-          else if (item.hoverScope === "collection-bestiary") playEnemyAttack(item.id);
+          if (item.hoverScope === "collection-card") {
+            playCardSound(item.id);
+            setFlipped((f) => !f);
+          } else if (item.hoverScope === "collection-bestiary") {
+            playEnemyAttack(item.id);
+          }
         }}
         className={cn(
           "tilt-surface group w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
           cardSurfaceClass,
           viewCardWidthClass,
+          item.frameType === "card" && "bg-transparent",
         )}
         style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
       >
         <ShimmerOverlay active={shimmerActive} token={shimmerToken} />
-        <img
-          src={item.art}
-          alt={item.title}
-          className={cn(
-            "block w-full rounded-[30px] transition duration-300",
-            item.frameType === "trinket" ? "aspect-square" : "aspect-[3/4]",
-            "object-cover",
-            item.discovered ? "opacity-100" : "grayscale opacity-45",
-          )}
-          loading="eager"
-        />
+        {item.frameType === "card" ? (
+          <CardFlip
+            flipped={flipped}
+            className="w-full aspect-[3/4]"
+            front={
+              <img
+                src={item.art}
+                alt={item.title}
+                className={cn(
+                  "block h-full w-full rounded-[30px] object-cover transition duration-300",
+                  item.discovered ? "opacity-100" : "grayscale opacity-45",
+                )}
+                loading="eager"
+              />
+            }
+            back={
+              <img
+                src={cardBack}
+                alt=""
+                aria-hidden="true"
+                className="block h-full w-full rounded-[30px] object-cover"
+              />
+            }
+          />
+        ) : (
+          <img
+            src={item.art}
+            alt={item.title}
+            className={cn(
+              "block w-full rounded-[30px] transition duration-300",
+              item.frameType === "trinket" ? "aspect-square" : "aspect-[3/4]",
+              "object-cover",
+              item.discovered ? "opacity-100" : "grayscale opacity-45",
+            )}
+            loading="eager"
+          />
+        )}
       </button>
     </div>
   );

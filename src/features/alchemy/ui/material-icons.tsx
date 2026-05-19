@@ -1,4 +1,5 @@
 // Shared material icon and color utilities for reward/UI screens.
+/* eslint-disable react-refresh/only-export-components */
 import type { ReactNode } from "react";
 import { Apple, Gem, Leaf, Pickaxe, TreePine } from "lucide-react";
 

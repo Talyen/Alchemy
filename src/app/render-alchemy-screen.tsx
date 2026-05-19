@@ -1,7 +1,7 @@
 // Screen route renderer for the root app shell.
 // Reads data from Zustand stores instead of the run controller object.
 import { platform } from "@/lib/platform";
-import { menuLogo, cardLibrary, trinketLibrary } from "@/lib/game-data";
+import { menuLogo, menuLogoVariants, cardLibrary, trinketLibrary } from "@/lib/game-data";
 import type { CardTransfer, Screen, Destination, CollectionTab } from "@/features/alchemy/types";
 import type { BattleCard, CharacterId, DifficultyId, KeywordId } from "@/lib/game-data";
 import type { MysteryChoice } from "@/features/alchemy/mystery-events";
@@ -28,7 +28,6 @@ import {
   TalentsScreen,
   WildwoodSelectScreen,
 } from "@/features/alchemy/screens";
-import { ExperimentsHub } from "@/features/alchemy/experiments/experiments-hub";
 import { HomesteadScreen } from "@/features/alchemy/screens/homestead-screen";
 
 export type ControllerActions = {
@@ -145,6 +144,7 @@ export function renderAlchemyScreen({
           onTalents={() => a.goToScreen("talents")}
           {...(platform.canQuit ? { onQuit: platform.quit } : {})}
           logoSrc={menuLogo}
+          logoSrcVariants={menuLogoVariants}
           isMobileLandscape={isMobileLandscape}
           hasUnspentTalents={hasUnspentTalents}
           hasAffordableHomestead={hasAffordableHomestead}
@@ -283,7 +283,7 @@ export function renderAlchemyScreen({
             onConfirmClearSave: onClearSaveData,
             onResetOptions: appState.resetOptionsToDefault,
           }}
-          dev={{ onUnlockAll: onUnlockAllDevMode, onExperiments: () => a.goToScreen("experiments") }}
+          dev={{ onUnlockAll: onUnlockAllDevMode }}
         />
       );
     case "collection":
@@ -331,8 +331,6 @@ export function renderAlchemyScreen({
       return <GameOverScreen onMainMenu={a.resetRunState} />;
     case "run-victory":
       return <RunVictoryScreen onMainMenu={a.resetRunState} />;
-    case "experiments":
-      return <ExperimentsHub onBack={() => a.goToScreen("options")} />;
     default:
       return null;
   }

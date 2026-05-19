@@ -5,11 +5,16 @@ import { battleEventSounds, cardSounds, enemyAttackSounds, stingerSounds, uiSoun
 import { audioState } from "./audio-state";
 import { getAudioContext, loadSoundBuffer, resumeAudioContext } from "./audio-buffer-cache";
 import { pickRandom } from "./utils";
-import { SFX_DEFEAT_VOLUME, SFX_UI_VOLUME, SFX_VICTORY_VOLUME } from "./game-constants";
+import { SFX_COOLDOWN_MS, SFX_DEFEAT_VOLUME, SFX_UI_VOLUME, SFX_VICTORY_VOLUME } from "./game-constants";
 
 // Creates a one-shot source with per-play gain so cached buffers remain immutable.
+// Enforces a per-sound cooldown so rapid-fire hovers don't stack up.
 function playBuffer(name: string, volume = 1) {
   if (audioState.muted) return;
+  const now = performance.now();
+  const last = audioState.lastPlayedAt.get(name) ?? 0;
+  if (now - last < SFX_COOLDOWN_MS) return;
+  audioState.lastPlayedAt.set(name, now);
   resumeAudioContext();
 
   loadSoundBuffer(name).then((buffer) => {

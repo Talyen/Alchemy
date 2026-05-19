@@ -63,8 +63,8 @@ type SaveDataOptionsProps = {
 };
 
 type DevOptionsProps = {
+  onClearSave?: () => void;
   onUnlockAll: () => void;
-  onExperiments?: () => void;
 };
 
 // Keeps slider rows consistent so volume settings read as one sound board.
@@ -200,17 +200,6 @@ function OtherOptionsPanel({ saveData, dev }: { saveData: SaveDataOptionsProps; 
               <Button onClick={dev.onUnlockAll}>Unlock All</Button>
             </div>
           </div>
-          {dev.onExperiments ? (
-            <div className="surface-muted rounded-[22px] border border-primary/40 p-5">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <p className="text-sm font-semibold text-foreground">Experiments</p>
-                  <p className="mt-1 text-sm text-muted-foreground">Prototype 3D effects and visual experiments.</p>
-                </div>
-                <Button onClick={dev.onExperiments}>Open</Button>
-              </div>
-            </div>
-          ) : null}
         </>
       ) : null}
       <div className="surface-muted rounded-[22px] border border-border/70 p-5">

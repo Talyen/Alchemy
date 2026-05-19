@@ -1,6 +1,7 @@
 // Reusable card rendering: descriptions, keyword popups, detail popups, hand buttons, and ghosts.
 // Depends on game-data keyword metadata, shared styling, tilt utilities, and ghost animation types.
 // Used by battle, shop, rewards, collection, and alchemist UI.
+/* eslint-disable react-refresh/only-export-components */
 import {
   Fragment,
   type CSSProperties,

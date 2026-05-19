@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 export { DestinationChoices } from "./destination-choices";
 export { AspectRatioSelect, DisplayModeSelect, UiScaleSelect } from "./settings-controls";
 export { ConfirmationDialog } from "./dialogs";

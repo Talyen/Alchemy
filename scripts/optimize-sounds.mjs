@@ -52,6 +52,7 @@ const sounds = [
   // ── UI ──
   { source: "UI/pop_1.wav", target: "pop-1.ogg" },
   { source: "UI/pop_2.wav", target: "pop-2.ogg" },
+  { source: "UI/Minimalist3.ogg", target: "button-hover-3.ogg" },
   { source: "Card and Board/card_draw_3.wav", target: "card-draw-3.ogg" },
   { source: "UI/toggle_on.wav", target: "toggle-on.ogg" },
   { source: "Environment/fire_lighting.wav", target: "fire-lighting.ogg" },

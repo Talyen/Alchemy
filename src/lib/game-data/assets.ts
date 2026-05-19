@@ -2,6 +2,12 @@
 // The prebuild step optimizes PNG source files into webp; this file only sees the output.
 import acidPotion from "@/assets/optimized/acid-potion.webp";
 import alchemyLogo from "@/assets/optimized/alchemy-logo.webp";
+import alchemyLogoArcaneMana from "@/assets/optimized/alchemy-logo-arcane-mana.webp";
+import alchemyLogoFireIron from "@/assets/optimized/alchemy-logo-fire-iron.webp";
+import alchemyLogoFrost from "@/assets/optimized/alchemy-logo-frost.webp";
+import alchemyLogoHolyBlock from "@/assets/optimized/alchemy-logo-holy-block.webp";
+import alchemyLogoNatureBleed from "@/assets/optimized/alchemy-logo-nature-bleed.webp";
+import alchemyLogoPoison from "@/assets/optimized/alchemy-logo-poison.webp";
 import anvil from "@/assets/optimized/anvil.webp";
 import blackjack from "@/assets/optimized/blackjack.webp";
 import bloodthorn from "@/assets/optimized/bloodthorn.webp";
@@ -127,6 +133,12 @@ export { theCampaign, theLabyrinth, theWildwoods, placeholderGameMode };
 export {
   acidPotion,
   alchemyLogo,
+  alchemyLogoArcaneMana,
+  alchemyLogoFireIron,
+  alchemyLogoFrost,
+  alchemyLogoHolyBlock,
+  alchemyLogoNatureBleed,
+  alchemyLogoPoison,
   anvil,
   apple,
   bash,
@@ -245,6 +257,15 @@ export {
 };
 
 export const menuLogo = alchemyLogo;
+export const menuLogoVariants = [
+  alchemyLogo,
+  alchemyLogoArcaneMana,
+  alchemyLogoFireIron,
+  alchemyLogoFrost,
+  alchemyLogoHolyBlock,
+  alchemyLogoNatureBleed,
+  alchemyLogoPoison,
+];
 export const pileDrawArt = drawPile;
 export const pileDiscardArt = discardPile;
 

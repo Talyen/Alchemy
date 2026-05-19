@@ -1,6 +1,7 @@
 // Focused mystery-screen subviews for rewards and follow-up choices.
 // Depends on shared card/trinket UI and mystery effect badges.
 // Used only by MysteryScreen to keep event flow separate from rendering details.
+/* eslint-disable react-refresh/only-export-components */
 import { useState } from "react";
 import type { CSSProperties } from "react";
 import { Button } from "@/components/ui/button";

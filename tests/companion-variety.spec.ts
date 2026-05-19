@@ -103,7 +103,11 @@ test.describe("Companion Attack Phase Timing", () => {
 
       const enemyHealthAfter = await readEnemyHealth(page);
 
-    test.skip(enemyHealthAfter >= enemyHealthBefore, "Enemy Health did not decrease");
-    expect(enemyHealthAfter).toBeLessThan(enemyHealthBefore);
-  });
+      if (enemyHealthAfter >= enemyHealthBefore) {
+        test.skip(true, "Enemy Health did not decrease");
+        return;
+      }
+      expect(enemyHealthAfter).toBeLessThan(enemyHealthBefore);
+    });
+  }
 });
