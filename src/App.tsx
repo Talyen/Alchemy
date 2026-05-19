@@ -151,7 +151,11 @@ export default function App() {
   }, []);
 
   const { isMobileLandscape, isPortraitMobile } = useMobileDetection();
-  const { frameStyle, stageStyle, aspectMode, stagePixelRatio } = useVirtualResolution(selectedAspectRatio, false, isMobileLandscape);
+  const { frameStyle, stageStyle, aspectMode, stagePixelRatio } = useVirtualResolution(
+    selectedAspectRatio,
+    false,
+    isMobileLandscape,
+  );
   const homesteadMaterialInventory = useHomesteadStore((s) => s.materialInventory);
   const homesteadConstructedBuildings = useHomesteadStore((s) => s.constructedBuildings);
   const homesteadPlantedFarms = useHomesteadStore((s) => s.plantedFarms);
@@ -262,7 +266,8 @@ export default function App() {
   const hasUnspentTalents = Object.keys(keywordDefinitions).some((kw) => {
     const kwId = kw as KeywordId;
     const xp = run.talentXP[kwId] ?? 0;
-    return getTalentKeywordProgress(xp, (run.unlockedTalents[kwId] ?? []).length, getTalentsForKeyword(kwId).length).hasUnspent;
+    return getTalentKeywordProgress(xp, (run.unlockedTalents[kwId] ?? []).length, getTalentsForKeyword(kwId).length)
+      .hasUnspent;
   });
 
   const hasAffordableHomestead = (() => {
