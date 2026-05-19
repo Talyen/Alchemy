@@ -41,25 +41,25 @@ describe("createEmptyRewardState", () => {
 
 describe("createBossRewardState", () => {
   it("creates trinket reward with summed gold", () => {
-    const result = createBossRewardState({ gold: 10, bossBonus: 5, talentGoldPerCombat: 2, materials: emptyInventory(), trinketIds: [] });
+    const result = createBossRewardState({ gold: 10, bossBonus: 5, generousBonus: 0, talentGoldPerCombat: 2, materials: emptyInventory(), trinketIds: [] });
     expect(result.rewardType).toBe("trinket");
     expect(result.gold).toBe(17);
   });
 
   it("handles zero bonuses", () => {
-    const result = createBossRewardState({ gold: 0, bossBonus: 0, talentGoldPerCombat: 0, materials: emptyInventory(), trinketIds: [] });
+    const result = createBossRewardState({ gold: 0, bossBonus: 0, generousBonus: 0, talentGoldPerCombat: 0, materials: emptyInventory(), trinketIds: [] });
     expect(result.gold).toBe(0);
     expect(result.choices.length).toBeGreaterThan(0);
   });
 
   it("applies goldMultiplier to boss reward gold", () => {
-    const result = createBossRewardState({ gold: 10, bossBonus: 5, talentGoldPerCombat: 2, materials: emptyInventory(), trinketIds: [], goldMultiplier: 2 });
-    expect(result.gold).toBe(34); // floor((10 + 5 + 2) * 2) = floor(34) = 34
+    const result = createBossRewardState({ gold: 10, bossBonus: 5, generousBonus: 0, talentGoldPerCombat: 2, materials: emptyInventory(), trinketIds: [], goldMultiplier: 2 });
+    expect(result.gold).toBe(34); // floor((10 + 5 + 0 + 2) * 2) = floor(34) = 34
   });
 
   it("goldMultiplier defaults to 1 for boss rewards", () => {
-    const result = createBossRewardState({ gold: 10, bossBonus: 5, talentGoldPerCombat: 2, materials: emptyInventory(), trinketIds: [] });
-    expect(result.gold).toBe(17); // 10 + 5 + 2 = 17
+    const result = createBossRewardState({ gold: 10, bossBonus: 5, generousBonus: 0, talentGoldPerCombat: 2, materials: emptyInventory(), trinketIds: [] });
+    expect(result.gold).toBe(17); // 10 + 5 + 0 + 2 = 17
   });
 });
 

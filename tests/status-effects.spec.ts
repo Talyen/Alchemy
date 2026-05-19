@@ -169,6 +169,33 @@ test.describe("Armor Status", () => {
 });
 
 test.describe("Haste Status", () => {
+  test("venom fangs leech restores health on poison damage", async ({ page }) => {
+    const VENOM = { id: "venom-fangs", title: "Venom Fangs", descriptionLines: ["Deal 2 Poison damage", "Leech"], art: "placeholder", cost: 1, effects: [{ kind: "damage" as const, damageType: "poison" as const, amount: 2, lifesteal: true as const }] };
+    await injectSaveState(page, {
+      runPlayerHealth: 20,
+      runMaxHealth: 30,
+      runDeck: [VENOM, VENOM, VENOM, VENOM, VENOM, VENOM, VENOM, VENOM],
+    });
+    await page.goto("/");
+    await resumeGameMode(page, "campaign");
+    await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 10000 });
+    await navigateToDestination(page, "Normal Combat");
+    await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });
+
+    const playerHpBefore = await readPlayerHp(page);
+
+    const venom = page.locator('[aria-label="Play Venom Fangs"]').first();
+    if (!(await venom.isVisible({ timeout: 2000 }).catch(() => false))) {
+      test.skip(true, "Venom Fangs not in initial hand");
+      return;
+    }
+    await venom.click();
+    await page.waitForTimeout(400);
+
+    const playerHpAfter = await readPlayerHp(page);
+    expect(playerHpAfter).toBeGreaterThan(playerHpBefore);
+  });
+
   test("haste card grants extra turn skipping enemy phase", async ({ page }) => {
     const HASTE = { id: "haste", title: "Haste", descriptionLines: ["Take an extra turn after this one", "Consume"], art: "placeholder", cost: 1, consume: true, effects: [{ kind: "player-status" as const, status: "haste" as const, amount: 1 }] };
     await injectSaveState(page, {

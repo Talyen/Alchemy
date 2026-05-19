@@ -35,6 +35,23 @@ describe("canEnterLabyrinthNode", () => {
     setCurrentNode(map, target.row, target.col);
     expect(canEnterLabyrinthNode(map, target.row, target.col)).toBe(false);
   });
+
+  it("maintains exactly one current node through multi-step traversal", () => {
+    const map = generateLabyrinthMap(createSeededRng(42));
+    const countCurrent = (m: typeof map) => m.grid.flat().filter((n) => n?.state === "current").length;
+    expect(countCurrent(map)).toBe(1);
+
+    let pos = { row: 0, col: START_COL };
+    for (let step = 0; step < 5; step++) {
+      const node = map.grid[pos.row]?.[pos.col];
+      if (!node || node.connections.length === 0) break;
+      const next = node.connections[0];
+      setCurrentNode(map, next.row, next.col);
+      expect(countCurrent(map)).toBe(1);
+      expect(map.currentNode).toEqual({ row: next.row, col: next.col });
+      pos = next;
+    }
+  });
 });
 
 describe("failPendingLabyrinthNode", () => {

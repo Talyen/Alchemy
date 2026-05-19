@@ -6,17 +6,17 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 
-import { displayModeOptions, resolutionOptions, uiScaleOptions } from "../config";
+import { aspectRatioOptions, displayModeOptions, uiScaleOptions } from "../config";
 import {
   ConfirmationDialog,
   DisplayModeSelect,
   PageLayout,
-  ResolutionSelect,
+  AspectRatioSelect,
   ScreenHeader,
   UiScaleSelect,
 } from "../ui/shared-ui";
 import { PressableMotion } from "../ui/pressable-motion";
-import type { DisplayMode, ResolutionOption, UiScale } from "../types";
+import type { AspectRatioOption, DisplayMode, UiScale } from "../types";
 import { useBattleStore } from "../stores/battle-store";
 
 type OptionsTab = "display" | "sound" | "gameplay" | "other";
@@ -27,8 +27,8 @@ type OptionsNavigationProps = {
 };
 
 type DisplayOptionsProps = {
-  selectedResolution: ResolutionOption;
-  onResolutionChange: (resolution: ResolutionOption) => void;
+  selectedAspectRatio: AspectRatioOption;
+  onAspectRatioChange: (aspectRatio: AspectRatioOption) => void;
   displayMode: DisplayMode;
   onDisplayModeChange: (mode: DisplayMode) => void;
   showDisplayMode: boolean;
@@ -127,10 +127,10 @@ function ToggleOption({
 function DisplayOptionsPanel({ display }: { display: DisplayOptionsProps }) {
   return (
     <div className="space-y-4">
-      <ResolutionSelect
-        selectedResolution={display.selectedResolution}
-        resolutionOptions={resolutionOptions}
-        onChange={display.onResolutionChange}
+      <AspectRatioSelect
+        selectedAspectRatio={display.selectedAspectRatio}
+        aspectRatioOptions={aspectRatioOptions}
+        onChange={display.onAspectRatioChange}
       />
       {display.showDisplayMode ? (
         <DisplayModeSelect
@@ -250,7 +250,7 @@ export function OptionsScreen({
 
   return (
     <PageLayout>
-      <div className="alchemy-shell flex min-h-[520px] w-full max-w-3xl flex-col rounded-[28px] px-6 py-7 sm:px-8">
+      <div className="alchemy-shell flex min-h-[48.15cqh] w-full max-w-3xl flex-col rounded-[28px] px-6 py-7 sm:px-8">
         <ScreenHeader title="Options" />
 
         <div className="mt-6 flex flex-wrap justify-center gap-2">

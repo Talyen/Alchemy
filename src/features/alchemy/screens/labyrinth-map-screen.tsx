@@ -119,7 +119,7 @@ export function LabyrinthMapScreen({ onNodeClick, onOpenMenu }: Props) {
           <Menu className="h-4 w-4" />
         </Button>
 
-        <div className="relative mx-auto aspect-[9/8] w-full max-w-[920px] p-[clamp(0.6rem,1.4vw,1rem)]">
+        <div className="relative mx-auto aspect-[9/8] w-full max-w-[85.19cqh] p-[clamp(0.6rem,1.4vw,1rem)]">
           <div className="relative h-full w-full">
             <ConnectionLayer labyrinthMap={labyrinthMap} />
 
@@ -291,7 +291,7 @@ function NodeTooltip({
     <div
       ref={ref}
       className={cn(
-        "pointer-events-none absolute left-1/2 z-50 w-64 -translate-x-1/2 rounded-xl border border-amber-100/20 bg-stone-950 p-3 text-left",
+        "pointer-events-none absolute left-1/2 z-50 w-[23.7cqh] -translate-x-1/2 rounded-xl border border-amber-100/20 bg-stone-950 p-3 text-left",
         flip ? "top-[calc(100%+0.75rem)]" : "bottom-[calc(100%+0.75rem)]",
       )}
       style={dx !== 0 ? ({ marginLeft: dx } as CSSProperties) : undefined}

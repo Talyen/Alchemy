@@ -77,7 +77,7 @@
   }
 
   body {
-    @apply min-h-screen bg-background font-body text-foreground antialiased;
+    @apply min-h-screen bg-background font-body text-foreground;
     background-color: hsl(30 10% 3%);
     overflow: hidden;
     scrollbar-width: none;
@@ -397,46 +397,46 @@
 @keyframes cardGhostDrawIn {
   0% {
     opacity: 0;
-    transform: translateY(42px) scale(0.84) rotate(var(--ghost-rotation, 0deg));
+    transform: translateY(3.89cqh) scale(0.84) rotate(var(--ghost-rotation, 0deg));
   }
 
   62% {
     opacity: 0.92;
-    transform: translateY(-2px) scale(1.02) rotate(var(--ghost-rotation, 0deg));
+    transform: translateY(-0.19cqh) scale(1.02) rotate(var(--ghost-rotation, 0deg));
   }
 
   100% {
     opacity: 0;
-    transform: translateY(0px) scale(1) rotate(var(--ghost-rotation, 0deg));
+    transform: translateY(0cqh) scale(1) rotate(var(--ghost-rotation, 0deg));
   }
 }
 
 @keyframes cardGhostDiscardOut {
   0% {
     opacity: 1;
-    transform: translateY(0px) scale(1) rotate(var(--ghost-rotation, 0deg));
+    transform: translateY(0cqh) scale(1) rotate(var(--ghost-rotation, 0deg));
   }
 
   100% {
     opacity: 0;
-    transform: translateY(42px) scale(0.86) rotate(calc(var(--ghost-rotation, 0deg) + 6deg));
+    transform: translateY(3.89cqh) scale(0.86) rotate(calc(var(--ghost-rotation, 0deg) + 6deg));
   }
 }
 
 @keyframes cardGhostActivate {
   0% {
     opacity: 1;
-    transform: translateY(0px) scale(1) rotate(var(--ghost-rotation, 0deg));
+    transform: translateY(0cqh) scale(1) rotate(var(--ghost-rotation, 0deg));
   }
 
   45% {
     opacity: 1;
-    transform: translateY(-42px) scale(1.04) rotate(calc(var(--ghost-rotation, 0deg) * 0.5));
+    transform: translateY(-3.89cqh) scale(1.04) rotate(calc(var(--ghost-rotation, 0deg) * 0.5));
   }
 
   100% {
     opacity: 0;
-    transform: translateY(-122px) scale(1.08) rotate(calc(var(--ghost-rotation, 0deg) * 0.2));
+    transform: translateY(-11.3cqh) scale(1.08) rotate(calc(var(--ghost-rotation, 0deg) * 0.2));
   }
 }
 

@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import type { CharacterId, DifficultyId } from "@/lib/game-data";
-import type { CollectionTab, DisplayMode, ResolutionOption, UiScale } from "@/features/alchemy/types";
+import type { AspectRatioOption, CollectionTab, DisplayMode, UiScale } from "@/features/alchemy/types";
 import type { SaveData } from "@/features/alchemy/storage/types";
 import { clearAlchemySaveData } from "@/features/alchemy/storage";
 import { defaultSaveData } from "@/features/alchemy/storage/defaults";
@@ -10,7 +10,7 @@ type CollectionPages = Record<CollectionTab, number>;
 const initialCollectionPages: CollectionPages = { cards: 0, bestiary: 0, trinkets: 0 };
 
 type AppStore = {
-  selectedResolution: ResolutionOption;
+  selectedAspectRatio: AspectRatioOption;
   displayMode: DisplayMode;
   uiScale: UiScale;
   brightness: number;
@@ -27,7 +27,7 @@ type AppStore = {
   discoveredTrinketIds: string[];
   completedDifficulties: Record<CharacterId, DifficultyId[]>;
 
-  setSelectedResolution: (v: ResolutionOption) => void;
+  setSelectedAspectRatio: (v: AspectRatioOption) => void;
   setDisplayMode: (v: DisplayMode) => void;
   setUiScale: (v: UiScale) => void;
   setBrightness: (v: number) => void;
@@ -50,7 +50,7 @@ type AppStore = {
 };
 
 export const useAppStore = create<AppStore>()((set) => ({
-  selectedResolution: "1920x1080",
+  selectedAspectRatio: "auto",
   displayMode: "borderless-fullscreen",
   uiScale: "100",
   brightness: 100,
@@ -67,7 +67,7 @@ export const useAppStore = create<AppStore>()((set) => ({
   discoveredTrinketIds: [],
   completedDifficulties: { knight: [], rogue: [], wizard: [], ranger: [] },
 
-  setSelectedResolution: (v) => set({ selectedResolution: v }),
+  setSelectedAspectRatio: (v) => set({ selectedAspectRatio: v }),
   setDisplayMode: (v) => set({ displayMode: v }),
   setUiScale: (v) => set({ uiScale: v }),
   setBrightness: (v) => set({ brightness: v }),
@@ -87,7 +87,7 @@ export const useAppStore = create<AppStore>()((set) => ({
 
   resetOptionsToDefault: () => {
     set({
-      selectedResolution: defaultSaveData.selectedResolution,
+      selectedAspectRatio: defaultSaveData.selectedAspectRatio,
       displayMode: defaultSaveData.displayMode,
       uiScale: defaultSaveData.uiScale,
       brightness: defaultSaveData.brightness,
@@ -108,7 +108,7 @@ export const useAppStore = create<AppStore>()((set) => ({
   clearSavedAppState: () => {
     clearAlchemySaveData();
     set({
-      selectedResolution: defaultSaveData.selectedResolution,
+      selectedAspectRatio: defaultSaveData.selectedAspectRatio,
       displayMode: defaultSaveData.displayMode,
       uiScale: defaultSaveData.uiScale,
       brightness: defaultSaveData.brightness,
@@ -129,7 +129,7 @@ export const useAppStore = create<AppStore>()((set) => ({
 
   initialize: (save) =>
     set({
-      selectedResolution: save.selectedResolution,
+      selectedAspectRatio: save.selectedAspectRatio,
       displayMode: save.displayMode,
       uiScale: save.uiScale,
       brightness: save.brightness,

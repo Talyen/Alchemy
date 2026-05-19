@@ -10,6 +10,15 @@ async function setResolution(page: Page, resolution: string) {
   }, resolution);
 }
 
+async function setAspectRatio(page: Page, aspectRatio: string) {
+  await page.addInitScript((ar) => {
+    const KEY = "alchemy-save-v1";
+    const save = JSON.parse(localStorage.getItem(KEY) || "{}");
+    save.selectedAspectRatio = ar;
+    localStorage.setItem(KEY, JSON.stringify(save));
+  }, aspectRatio);
+}
+
 const RESOLUTIONS = [
   { option: "1920x1080", label: "standard-16-9", vp: { width: 1920, height: 1080 } },
   { option: "1920x1200", label: "narrow-16-10", vp: { width: 1920, height: 1200 } },
@@ -108,3 +117,55 @@ for (const { option, label, vp } of RESOLUTIONS) {
     });
   });
 }
+
+test.describe("Ultra HD 3840x2160 (4K)", () => {
+  test("menu and battle fit viewport without overflow", async ({ page }) => {
+    await setAspectRatio(page, "16:9");
+    await page.setViewportSize({ width: 3840, height: 2160 });
+    await page.goto("/");
+
+    await expect(page.getByRole("button", { name: "Play" })).toBeVisible();
+
+    const menuLayout = await page.evaluate(() => ({
+      width: document.documentElement.scrollWidth,
+      height: document.documentElement.scrollHeight,
+      vw: window.innerWidth,
+      vh: window.innerHeight,
+    }));
+    expect(menuLayout.width).toBeLessThanOrEqual(menuLayout.vw);
+    expect(menuLayout.height).toBeLessThanOrEqual(menuLayout.vh);
+
+    await startRun(page);
+    const playableCards = page.locator('[aria-label^="Play "]');
+    await expect(playableCards.first()).toBeVisible();
+    expect(await playableCards.count()).toBeGreaterThanOrEqual(1);
+
+    const battleLayout = await page.evaluate(() => ({
+      width: document.documentElement.scrollWidth,
+      height: document.documentElement.scrollHeight,
+      vw: window.innerWidth,
+      vh: window.innerHeight,
+      cardsInViewport: [...document.querySelectorAll('[aria-label^="Play "]')].every((card) => {
+        const rect = card.getBoundingClientRect();
+        return rect.left >= 0 && rect.right <= window.innerWidth && rect.top >= 0 && rect.bottom <= window.innerHeight;
+      }),
+    }));
+    expect(battleLayout.width).toBeLessThanOrEqual(battleLayout.vw);
+    expect(battleLayout.height).toBeLessThanOrEqual(battleLayout.vh);
+    expect(battleLayout.cardsInViewport).toBe(true);
+  });
+
+  test("stage uses native resolution (no CSS transform scaling)", async ({ page }) => {
+    await setAspectRatio(page, "16:9");
+    await page.setViewportSize({ width: 3840, height: 2160 });
+    await page.goto("/");
+
+    const transform = await page.evaluate(() => {
+      const stage = document.querySelector('[class*="overflow-hidden"][class*="bg-background"]');
+      if (!stage) return "not-found";
+      return window.getComputedStyle(stage).transform;
+    });
+
+    expect(transform).toBe("none");
+  });
+});

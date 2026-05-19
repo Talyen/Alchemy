@@ -29,7 +29,7 @@ export type Screen =
   | "labyrinth-map"
   | "wildwood-select";
 
-export type ResolutionOption = "1920x1080" | "1920x1200" | "2560x1080";
+export type AspectRatioOption = "auto" | "16:9" | "16:10" | "21:9";
 
 export type DisplayMode = "windowed" | "borderless-fullscreen" | "fullscreen";
 

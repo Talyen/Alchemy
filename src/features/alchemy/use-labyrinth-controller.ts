@@ -81,12 +81,7 @@ export function useLabyrinthController(): LabyrinthController {
     const pending = pendingNodeRef.current;
     pendingNodeRef.current = null;
     if (!pending) return;
-    useScreenStore.getState().setLabyrinthMap((prev) => {
-      const next = withCurrentNode(prev, pending.row, pending.col);
-      const cleared = next.grid[pending.row]?.[pending.col];
-      if (cleared && cleared.state === "current") cleared.state = "cleared";
-      return next;
-    });
+    useScreenStore.getState().setLabyrinthMap((prev) => withCurrentNode(prev, pending.row, pending.col));
   }, []);
 
   const onNodeFailed = useCallback(() => {

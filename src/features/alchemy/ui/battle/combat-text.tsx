@@ -40,7 +40,7 @@ function CombatTextBubble({ entry, side }: { entry: FloatingCombatText; side: "p
   return (
     <motion.div
       className={cn(
-        "absolute whitespace-nowrap inline-flex items-center gap-2 text-[32px] font-semibold",
+        "absolute whitespace-nowrap inline-flex items-center gap-2 text-[2.96cqh] font-semibold",
         colorClass,
         side === "player" ? "left-0" : "right-0",
       )}
@@ -64,7 +64,7 @@ function CombatTextBubble({ entry, side }: { entry: FloatingCombatText; side: "p
       }}
       exit={{ opacity: 0, transition: { duration: 0.1 } }}
     >
-      {createElement(icon, { className: "h-[30px] w-[30px]" })}
+      {createElement(icon, { className: "h-[2.78cqh] w-[2.78cqh]" })}
       <span>{entry.displayText}</span>
     </motion.div>
   );

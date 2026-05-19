@@ -65,9 +65,9 @@ export function CampfireScreen({ onContinue }: { onContinue: () => void }) {
         <ScreenDescription className="mt-5 text-muted-foreground">Rest to Restore 30% HP</ScreenDescription>
       </div>
 
-      <img src={campfire} alt="Campfire" className="w-full max-w-[400px] rounded-[22px] object-contain" />
+      <img src={campfire} alt="Campfire" className="w-full max-w-[37.04cqh] rounded-[22px] object-contain" />
 
-      <div className="min-h-[64px] min-w-[clamp(222px,22vh,336px)]">
+      <div className="min-h-[64px] min-w-[clamp(20.56cqh,22cqh,31.11cqh)]">
         {!resting ? (
           <Button size="lg" onClick={handleRest}>
             Rest

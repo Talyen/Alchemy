@@ -13,7 +13,7 @@ export {
   PageLayout,
   PaginationControls,
   ProgressBar,
-  ResolutionSelect,
+  AspectRatioSelect,
   ShimmerOverlay,
 } from "./ui/shared-ui";
 export { TalentKeywordButton } from "./talents/talents-ui";

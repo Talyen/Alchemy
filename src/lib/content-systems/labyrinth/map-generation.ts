@@ -335,7 +335,7 @@ export function setCurrentNode(map: LabyrinthMap, row: number, col: number): voi
 // Immutable variant of setCurrentNode — returns a new map instead of mutating.
 // Used by React state to avoid in-place mutation inside setState callbacks.
 export function withCurrentNode(map: LabyrinthMap, row: number, col: number): LabyrinthMap {
-  const grid = map.grid.map((r) => r.map((n) => (n ? { ...n, connections: [...n.connections] } : n)));
+  const grid = map.grid.map((r) => r.map((n) => (n ? { ...n } : n)));
   const next: LabyrinthMap = { ...map, grid };
   setCurrentNode(next, row, col);
   return next;

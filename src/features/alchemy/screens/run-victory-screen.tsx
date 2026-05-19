@@ -40,7 +40,7 @@ export function RunVictoryScreen({ onMainMenu }: { onMainMenu: () => void }) {
         <div className="w-full max-w-2xl">
           <div className="flex flex-wrap justify-center gap-2">
             {keywordIds.map((kw) => (
-              <div key={kw} className="flex-none w-[210px]">
+              <div key={kw} className="flex-none w-[19.44cqh]">
                 <KeywordProgressCard
                   kw={kw}
                   runXP={runTalentXP[kw] ?? 0}

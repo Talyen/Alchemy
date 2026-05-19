@@ -12,11 +12,14 @@ import { normalizeDisplayMode, normalizeUiScale } from "./options";
 import type { SaveData } from "./types";
 import { defaultSaveData } from "./defaults";
 import { CURRENT_CONTENT_VERSION, CURRENT_GAME_BUILD_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "./metadata";
-import { resolutionOptions } from "../config/options";
+import { aspectRatioOptions } from "../config/options";
 
 export { normalizeActiveRun } from "./active-run";
 export { migrateBuildingIds, migrateFarmIds, migrateMaterialInventory, migrateToTierLevels } from "./homestead";
 export { normalizeDisplayMode, normalizeUiScale } from "./options";
+
+// Legacy resolution → aspect ratio conversion handled by lib/validation/migration.ts
+// (runs as a Zod preprocessor before this module sees the data).
 
 const CHARACTER_IDS: CharacterId[] = ["knight", "rogue", "wizard", "ranger"];
 
@@ -31,7 +34,7 @@ export function normalizeSaveData(parsed: Partial<SaveData> | RawSaveData): Save
     gameBuildVersion:
       typeof migrated.gameBuildVersion === "string" ? migrated.gameBuildVersion : CURRENT_GAME_BUILD_VERSION,
     contentVersion: normalizePositiveInteger(migrated.contentVersion, CURRENT_CONTENT_VERSION),
-    selectedResolution: normalizeResolution(migrated.selectedResolution),
+    selectedAspectRatio: normalizeAspectRatio(migrated.selectedAspectRatio ?? migrated.selectedResolution),
     displayMode: normalizeDisplayMode(migrated.displayMode),
     uiScale: normalizeUiScale(migrated.uiScale),
     discoveredCardIds: normalizeStringList(migrated.discoveredCardIds, defaultSaveData.discoveredCardIds),
@@ -104,10 +107,10 @@ export function isUnsupportedFutureSaveData(parsed: unknown): boolean {
   return getRawSaveSchemaVersion(parsed) > CURRENT_SAVE_SCHEMA_VERSION;
 }
 
-function normalizeResolution(value: unknown): SaveData["selectedResolution"] {
-  return resolutionOptions.some((option) => option.value === value)
-    ? (value as SaveData["selectedResolution"])
-    : defaultSaveData.selectedResolution;
+function normalizeAspectRatio(value: unknown): SaveData["selectedAspectRatio"] {
+  return aspectRatioOptions.some((option) => option.value === value)
+    ? (value as SaveData["selectedAspectRatio"])
+    : defaultSaveData.selectedAspectRatio;
 }
 
 function normalizeStringList(value: unknown, fallback: string[]): string[] {

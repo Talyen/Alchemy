@@ -4,13 +4,13 @@ import type { TalentXP } from "@/lib/talents";
 import type { BuildingId, FarmId, MaterialInventory, ResearchId } from "@/lib/homestead/types";
 import type { CompanionId, CharacterId, DifficultyId, UnlockedTalents } from "@/lib/game-data";
 import type { ActiveRunData } from "../run/types";
-import type { DisplayMode, ResolutionOption, UiScale } from "../types";
+import type { AspectRatioOption, DisplayMode, UiScale } from "../types";
 
 export type SaveData = {
   saveSchemaVersion: number;
   gameBuildVersion: string;
   contentVersion: number;
-  selectedResolution: ResolutionOption;
+  selectedAspectRatio: AspectRatioOption;
   displayMode: DisplayMode;
   uiScale: UiScale;
   brightness: number;

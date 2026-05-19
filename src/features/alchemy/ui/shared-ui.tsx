@@ -1,5 +1,5 @@
 export { DestinationChoices } from "./destination-choices";
-export { ResolutionSelect, DisplayModeSelect, UiScaleSelect } from "./settings-controls";
+export { AspectRatioSelect, DisplayModeSelect, UiScaleSelect } from "./settings-controls";
 export { ConfirmationDialog } from "./dialogs";
 export { ScreenHeader, PageLayout, ScreenDescription } from "./layout-components";
 export { ShimmerOverlay, staggerDelay } from "./shimmer";

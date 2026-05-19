@@ -41,7 +41,7 @@ export function CardSelectionGrid({
 
   return (
     <div>
-      <div className="mx-auto flex max-w-[calc(4*286px+3*1rem)] flex-col gap-y-5" data-testid="card-selection-grid">
+      <div className="mx-auto flex max-w-[calc(4*26.48cqh+3*1rem)] flex-col gap-y-5" data-testid="card-selection-grid">
         {rows.map((rowItems, rowIndex) => (
           <div key={`row-${rowIndex}`} className="flex justify-center gap-x-4">
             {rowItems.map((item, columnIndex) => {

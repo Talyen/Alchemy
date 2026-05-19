@@ -1,13 +1,14 @@
 // Display and audio-facing option lists for the options screen.
 // Depends only on alchemy option types.
-import type { DisplayMode, ResolutionOption, UiScale } from "../types";
+import type { AspectRatioOption, DisplayMode, UiScale } from "../types";
 
 // Aspect ratio choices determine virtual canvas width (height is fixed at 1080).
-// Only distinct aspect ratios are offered: 16:9 (standard), 16:10 (narrow), ~21:9 (ultrawide).
-export const resolutionOptions: Array<{ value: ResolutionOption; label: string }> = [
-  { value: "1920x1080", label: "Standard (16:9)" },
-  { value: "1920x1200", label: "Narrow (16:10)" },
-  { value: "2560x1080", label: "Ultrawide (21:9)" },
+// Auto currently preserves the standard 16:9 baseline until viewport-aware selection lands.
+export const aspectRatioOptions: Array<{ value: AspectRatioOption; label: string }> = [
+  { value: "auto", label: "Auto" },
+  { value: "16:9", label: "Standard (16:9)" },
+  { value: "16:10", label: "Narrow (16:10)" },
+  { value: "21:9", label: "Ultrawide (21:9)" },
 ];
 
 // Display modes are passed through the platform adapter so browser and desktop

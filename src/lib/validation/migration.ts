@@ -2,6 +2,20 @@ import { CURRENT_CONTENT_VERSION, CURRENT_GAME_BUILD_VERSION, CURRENT_SAVE_SCHEM
 
 type RawSaveData = Record<string, unknown>;
 
+const LEGACY_RESOLUTION_TO_ASPECT_RATIO = {
+  "1920x1080": "16:9",
+  "1920x1200": "16:10",
+  "2560x1080": "21:9",
+} as const;
+
+function normalizeLegacyAspectRatio(parsed: RawSaveData): RawSaveData {
+  if (typeof parsed.selectedAspectRatio === "string") return parsed;
+  if (typeof parsed.selectedResolution !== "string") return parsed;
+  const selectedAspectRatio =
+    LEGACY_RESOLUTION_TO_ASPECT_RATIO[parsed.selectedResolution as keyof typeof LEGACY_RESOLUTION_TO_ASPECT_RATIO];
+  return selectedAspectRatio ? { ...parsed, selectedAspectRatio } : parsed;
+}
+
 function normalizePositiveInteger(value: unknown, fallback: number): number {
   if (typeof value !== "number" || !Number.isFinite(value) || !Number.isInteger(value) || value < 0) return fallback;
   return value;
@@ -32,7 +46,7 @@ export function migrateSaveDataToCurrent(parsed: unknown): RawSaveData {
     current = migrateV0ToV1(current);
     version = 1;
   }
-  return { ...current, saveSchemaVersion: version };
+  return normalizeLegacyAspectRatio({ ...current, saveSchemaVersion: version });
 }
 
 export function isUnsupportedFutureSaveData(parsed: unknown): boolean {

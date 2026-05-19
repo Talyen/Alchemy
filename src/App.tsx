@@ -78,7 +78,7 @@ export default function App() {
   const { data: initialSave, status: saveLoadStatus } = bootstrapResult;
 
   // ============ Store subscriptions ============
-  const selectedResolution = useAppStore((s) => s.selectedResolution);
+  const selectedAspectRatio = useAppStore((s) => s.selectedAspectRatio);
   const displayMode = useAppStore((s) => s.displayMode);
   const uiScale = useAppStore((s) => s.uiScale);
   const brightness = useAppStore((s) => s.brightness);
@@ -150,7 +150,7 @@ export default function App() {
   }, []);
 
   const { isMobileLandscape, isPortraitMobile } = useMobileDetection();
-  const { frameStyle, stageStyle, aspectMode } = useVirtualResolution(selectedResolution, false, isMobileLandscape);
+  const { frameStyle, stageStyle, aspectMode, stagePixelRatio } = useVirtualResolution(selectedAspectRatio, false, isMobileLandscape);
   const homesteadMaterialInventory = useHomesteadStore((s) => s.materialInventory);
   const homesteadConstructedBuildings = useHomesteadStore((s) => s.constructedBuildings);
   const homesteadPlantedFarms = useHomesteadStore((s) => s.plantedFarms);
@@ -220,7 +220,7 @@ export default function App() {
     saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
     gameBuildVersion: CURRENT_GAME_BUILD_VERSION,
     contentVersion: CURRENT_CONTENT_VERSION,
-    selectedResolution: useAppStore.getState().selectedResolution,
+    selectedAspectRatio: useAppStore.getState().selectedAspectRatio,
     displayMode: useAppStore.getState().displayMode,
     uiScale: useAppStore.getState().uiScale,
     discoveredCardIds: useAppStore.getState().discoveredCardIds,
@@ -376,6 +376,7 @@ export default function App() {
             playerName,
             isMobileLandscape,
             aspectMode,
+            stagePixelRatio,
             hasUnspentTalents,
             hasAffordableHomestead,
             collectionTab,
@@ -425,7 +426,7 @@ export default function App() {
           <div className="relative" style={frameStyle}>
             <div
               ref={vrStageRef}
-              className={`absolute left-0 top-0 overflow-hidden bg-background ${tooltipBlocked ? "tooltips-disabled" : ""}`}
+              className={`absolute left-0 top-0 overflow-hidden bg-background [container-type:size] ${tooltipBlocked ? "tooltips-disabled" : ""}`}
               style={stageStyle}
             >
               <BackgroundParticles

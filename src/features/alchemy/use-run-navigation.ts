@@ -264,8 +264,10 @@ export function useRunNavigation({
       gold = Math.floor(gold * COMPANION_GOLD_MULTIPLIER);
     }
 
-    const eliteBonus =
-      battleState.currentEnemy.enemyType === "elite" ? Math.floor(gold * ELITE_GOLD_BONUS_FRACTION) : 0;
+    const eliteFraction =
+      ELITE_GOLD_BONUS_FRACTION +
+      (battleState.currentEnemy.enemyType === "elite" ? talents.talentEffects.eliteGoldDropBonus : 0);
+    const eliteBonus = battleState.currentEnemy.enemyType === "elite" ? Math.floor(gold * eliteFraction) : 0;
     const bossBonus = battleState.currentEnemy.enemyType === "boss" ? Math.floor(gold * BOSS_GOLD_BONUS_FRACTION) : 0;
     const generousBonus = getGenerousGoldBonus(labyrinthRewardModifiers, gold);
     const newGold = awardVictoryGold(gold, eliteBonus, generousBonus, bossBonus);
@@ -319,16 +321,17 @@ export function useRunNavigation({
     materials: MaterialInventory,
   ) {
     if (battleState.currentEnemy.enemyType === "boss") {
-      return createBossRewardState(gold, bossBonus, materials);
+      return createBossRewardState(gold, bossBonus, generousBonus, materials);
     }
     return createCombatRewardState(gold, eliteBonus, generousBonus, newGold, materials);
   }
 
-  function createBossRewardState(gold: number, bossBonus: number, materials: MaterialInventory) {
+  function createBossRewardState(gold: number, bossBonus: number, generousBonus: number, materials: MaterialInventory) {
     const goldMultiplier = getGoldMultiplier(run.characterId, run.selectedDifficulty);
     return createBossRewardStateFromFlow({
       gold,
       bossBonus,
+      generousBonus,
       talentGoldPerCombat: talents.talentEffects.goldPerCombat,
       materials,
       trinketIds: run.runTrinkets,
@@ -547,12 +550,6 @@ export function useRunNavigation({
       }
     }
 
-    if (result.grantAlchemistReward) {
-      const potion = getRandomPotionCard();
-      run.setRunDeck((prev) => [...prev, potion]);
-      setDiscoveredCardIds((cur) => appendUnique(cur, potion.id));
-    }
-
     setHoveredCardId(null);
 
     if (result.route === "companion-reward") {
@@ -562,7 +559,21 @@ export function useRunNavigation({
       return;
     }
 
+    if (result.grantAlchemistReward) {
+      const potion = getRandomPotionCard();
+      run.setRunDeck((prev) => [...prev, potion]);
+      setDiscoveredCardIds((cur) => appendUnique(cur, potion.id));
+    }
+
     if (result.route === "labyrinth-victory") {
+      awardRunEndMaterials(result.materials);
+      setHasActiveBattle(false);
+      getStore().setHasActiveRun(false);
+      navigateTo("run-victory", () => getStore().setRewardState(result.nextRewardState));
+      return;
+    }
+
+    if (result.route === "wildwood-victory") {
       awardRunEndMaterials(result.materials);
       setHasActiveBattle(false);
       getStore().setHasActiveRun(false);
@@ -578,7 +589,7 @@ export function useRunNavigation({
 
     if (result.route === "act-complete") {
       getStore().setRewardState(result.nextRewardState);
-      handleActComplete();
+      handleActComplete(result.materials);
       return;
     }
 
@@ -614,12 +625,12 @@ export function useRunNavigation({
     setScreen("game-over");
   }
 
-  function handleActComplete() {
+  function handleActComplete(displayMaterials?: MaterialInventory) {
     setHoveredCardId(null);
     setHasActiveBattle(false);
 
     if (run.currentAct >= ACTS_PER_RUN) {
-      awardRunEndMaterials();
+      awardRunEndMaterials(displayMaterials);
       if (run.selectedDifficulty) onMarkDifficultyCompleted(run.characterId, run.selectedDifficulty);
       navigateTo("run-victory");
     } else {

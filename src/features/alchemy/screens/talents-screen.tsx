@@ -54,10 +54,10 @@ export function TalentsScreen({
 
   return (
     <PageLayout>
-      <div className="alchemy-shell flex min-h-[520px] w-full max-w-4xl flex-col rounded-[28px] px-6 py-7 sm:px-8">
+      <div className="alchemy-shell flex min-h-[48.15cqh] w-full max-w-4xl flex-col rounded-[28px] px-6 py-7 sm:px-8">
         <ScreenHeader title="Talents" />
 
-        <div className="mx-auto mt-6 flex w-full max-w-[760px] flex-col gap-6 text-left">
+        <div className="mx-auto mt-6 flex w-full max-w-[70.37cqh] flex-col gap-6 text-left">
           <div className="flex flex-wrap justify-center gap-2">
             {keywordIds.map((kw) => {
               const kwProgress = getTalentKeywordProgress(talentXP[kw] ?? 0, (unlockedTalents[kw] ?? []).length);
@@ -103,7 +103,7 @@ export function TalentsScreen({
               />
             </div>
 
-            <div className="mt-4 min-h-[524px] min-w-[708px] px-0">
+            <div className="mt-4 min-h-[48.52cqh] min-w-[65.56cqh] px-0">
               <TalentTree
                 unlockedTalents={unlockedTalentsForKeyword}
                 allTalents={allTalentsForKeyword}

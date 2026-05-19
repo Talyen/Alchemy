@@ -10,7 +10,17 @@ import { migrateSaveDataToCurrent } from "./migration";
 export const CharacterIdSchema = z.enum(["knight", "ranger", "rogue", "wizard"]);
 export const DifficultyIdSchema = z.enum(["difficulty-1", "difficulty-2", "difficulty-3"]);
 export const ContentSystemIdSchema = z.enum(["campaign", "labyrinth", "wildwood"]);
-export const DamageTypeSchema = z.enum(["physical", "stun", "holy", "burn", "poison", "bleed", "freeze", "nature"]);
+export const DamageTypeSchema = z.enum([
+  "physical",
+  "stun",
+  "holy",
+  "burn",
+  "poison",
+  "bleed",
+  "freeze",
+  "nature",
+  "trap",
+]);
 export const PlayerStatusIdSchema = z.enum([
   "block",
   "armor",
@@ -48,7 +58,7 @@ export const LabyrinthModifierKindSchema = z.enum([
   "companion",
 ]);
 export const LabyrinthNodeStateSchema = z.enum(["hidden", "visible", "current", "cleared", "failed"]);
-export const ResolutionOptionSchema = z.enum(["1920x1080", "1920x1200", "2560x1080"]);
+export const AspectRatioOptionSchema = z.enum(["auto", "16:9", "16:10", "21:9"]);
 export const DisplayModeSchema = z.enum(["windowed", "borderless-fullscreen", "fullscreen"]);
 export const UiScaleSchema = z.enum(["90", "100", "110", "120"]);
 
@@ -424,7 +434,7 @@ export const SaveDataSchema = z.preprocess(
     saveSchemaVersion: z.literal(CURRENT_SAVE_SCHEMA_VERSION).catch(CURRENT_SAVE_SCHEMA_VERSION),
     gameBuildVersion: z.string().catch(CURRENT_GAME_BUILD_VERSION),
     contentVersion: z.number().int().nonnegative().catch(CURRENT_CONTENT_VERSION),
-    selectedResolution: ResolutionOptionSchema.catch("1920x1080"),
+    selectedAspectRatio: AspectRatioOptionSchema.catch("auto"),
     displayMode: DisplayModeSchema.catch("borderless-fullscreen"),
     uiScale: UiScaleSchema.catch("100"),
     brightness: z

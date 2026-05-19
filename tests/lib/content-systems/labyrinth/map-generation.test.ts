@@ -7,6 +7,7 @@ import {
   failNode,
   revealConnected,
   setCurrentNode,
+  withCurrentNode,
 } from "@/lib/content-systems/labyrinth/map-generation";
 
 const ROWS = 8;
@@ -235,6 +236,47 @@ describe("failNode", () => {
       const failed = map.grid[target.row][target.col]!;
       expect(failed.state).toBe("failed");
       expect(map.currentNode).toEqual({ row: 0, col: START_COL });
+    }
+  });
+});
+
+describe("withCurrentNode", () => {
+  it("marks previous current as cleared and sets new node to current without mutating the original", () => {
+    const map = generateLabyrinthMap(createSeededRng(42));
+    const entrance = map.grid[0][START_COL]!;
+    expect(entrance.state).toBe("current");
+
+    const target = entrance.connections[0];
+    const next = withCurrentNode(map, target.row, target.col);
+
+    // Original map is unchanged
+    expect(entrance.state).toBe("current");
+    expect(map.grid[target.row][target.col]!.state).toBe("visible");
+    expect(map.currentNode).toEqual({ row: 0, col: START_COL });
+
+    // New map has the state transition
+    expect(next.grid[0][START_COL]!.state).toBe("cleared");
+    expect(next.grid[target.row][target.col]!.state).toBe("current");
+    expect(next.currentNode).toEqual({ row: target.row, col: target.col });
+  });
+
+  it("always leaves exactly one current node after transition", () => {
+    const map = generateLabyrinthMap(createSeededRng(42));
+    const countCurrent = (m: ReturnType<typeof generateLabyrinthMap>) =>
+      m.grid.flat().filter((n) => n?.state === "current").length;
+    expect(countCurrent(map)).toBe(1);
+
+    // Walk along the main route checking the invariant after each step.
+    let pos = { row: 0, col: START_COL };
+    let current = map;
+    for (let step = 0; step < 6; step++) {
+      const node = current.grid[pos.row]?.[pos.col];
+      if (!node || node.connections.length === 0) break;
+      const next = node.connections[0];
+      current = withCurrentNode(current, next.row, next.col);
+      expect(countCurrent(current)).toBe(1);
+      expect(current.currentNode).toEqual({ row: next.row, col: next.col });
+      pos = next;
     }
   });
 });

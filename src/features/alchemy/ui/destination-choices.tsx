@@ -28,7 +28,7 @@ export function DestinationChoices({
               onMouseMove={setTiltFromEvent}
               onMouseLeave={clearTiltFromEvent}
             >
-              <img src={art} alt={destination} className="w-full max-w-[352px] rounded-[18px] object-contain" />
+              <img src={art} alt={destination} className="w-full max-w-[32.59cqh] rounded-[18px] object-contain" />
             </div>
             <div className="relative rounded-full">
               <PressableMotion style={{ display: "inline-block" }}>
@@ -36,7 +36,7 @@ export function DestinationChoices({
                   type="button"
                   onClick={() => onChoose(destination)}
                   className={cn(
-                    "relative inline-flex min-h-[48px] items-center justify-start gap-2 rounded-full border border-border/80 px-4 py-2 text-left text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                    "relative inline-flex min-h-[4.44cqh] items-center justify-start gap-2 rounded-full border border-border/80 px-4 py-2 text-left text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                     className,
                   )}
                 >

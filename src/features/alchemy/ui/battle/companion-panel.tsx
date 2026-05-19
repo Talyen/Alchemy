@@ -14,8 +14,8 @@ function getCompanionDescriptionLines(companion: CompanionDefinition, damageBonu
   const attack = companion.turnStartEffects.find((effect) => effect.kind === "damage");
   if (!attack) return ["Acts at the start of each turn"];
 
-  const baseDisplay = attack.damageType === "bleed" ? attack.amount * 2 : attack.amount;
-  const displayAmount = baseDisplay + damageBonus;
+  const totalAmount = attack.amount + damageBonus;
+  const displayAmount = attack.damageType === "bleed" ? totalAmount * 2 : totalAmount;
   const displayType = attack.damageType.charAt(0).toUpperCase() + attack.damageType.slice(1);
   return [`Deals ${displayAmount} ${displayType} damage each turn`];
 }
@@ -42,7 +42,7 @@ export function CompanionPanel({
         className={cn(
           "tilt-surface",
           cardSurfaceClass,
-          compact ? "w-[clamp(78px,17cqh,120px)]" : "w-[clamp(96px,11cqh,150px)]",
+          compact ? "w-[clamp(8.67cqh,17cqh,13.33cqh)]" : "w-[clamp(8.89cqh,11cqh,13.89cqh)]",
           shaking && "animate-shake",
         )}
         onMouseMove={setTiltFromEvent}

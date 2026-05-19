@@ -30,7 +30,7 @@ export function BattleHand({
   refs: BattleRefsProps;
   actions: BattleActionsProps;
 }) {
-  const { battleState, isMobileLandscape } = view;
+  const { battleState, isMobileLandscape, stagePixelRatio } = view;
   const { hoveredCardId, shimmerState } = hover;
   const { handCardRefs } = refs;
   const setHoveredCardId = useScreenStore((s) => s.setHoveredCardId);
@@ -75,7 +75,11 @@ export function BattleHand({
             }}
             shimmerActive={isShimmering}
             shimmerToken={shimmerState?.token}
-            baseTransform={isHovered ? getHoverHandTransform(offset) : getRestingHandTransform(offset)}
+            baseTransform={
+              isHovered
+                ? getHoverHandTransform(offset, stagePixelRatio)
+                : getRestingHandTransform(offset, stagePixelRatio)
+            }
             className={handWidthClass}
             disabled={!canPlay}
             wrapperClassName={`stagger-item relative flex justify-center ${isMobileLandscape ? "-mx-7" : "-mx-5 sm:-mx-6"}`}
@@ -92,10 +96,10 @@ export function BattleHand({
   );
 }
 
-function getRestingHandTransform(offset: number) {
-  return `translateY(${Math.abs(offset) * HAND_FAN_VERTICAL_STEP_PX}px) rotate(${offset * HAND_FAN_ROTATION_DEGREES}deg)`;
+function getRestingHandTransform(offset: number, stagePixelRatio: number) {
+  return `translateY(${Math.abs(offset) * HAND_FAN_VERTICAL_STEP_PX * stagePixelRatio}px) rotate(${offset * HAND_FAN_ROTATION_DEGREES}deg)`;
 }
 
-function getHoverHandTransform(offset: number) {
-  return `translateY(-${HAND_HOVER_LIFT_PX}px) rotate(${offset * HAND_HOVER_ROTATION_DEGREES}deg) scale(${HAND_HOVER_SCALE})`;
+function getHoverHandTransform(offset: number, stagePixelRatio: number) {
+  return `translateY(-${HAND_HOVER_LIFT_PX * stagePixelRatio}px) rotate(${offset * HAND_HOVER_ROTATION_DEGREES}deg) scale(${HAND_HOVER_SCALE})`;
 }

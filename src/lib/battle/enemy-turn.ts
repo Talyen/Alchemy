@@ -79,6 +79,7 @@ export function processCompanionTurnStart(state: BattleState, combatTexts: Comba
     firstBurnCardDoubledUsed: state.flags.firstBurnCardDoubledUsed,
     firstBurnTrinketDoubledUsed: state.flags.firstBurnTrinketDoubledUsed,
     firstHolyDamageBonusUsed: state.flags.firstHolyDamageBonusUsed,
+    goldOnFirstPoisonThisCombat: state.flags.goldOnFirstPoisonThisCombat,
   };
 
   const result = applyCardEffects(state, companionCard, combatTexts);
@@ -208,7 +209,7 @@ function processEnemyDamageEffect(
 
   nextState = checkHealthThresholds(prevHealth, nextState.playerHealth, nextState, combatTexts);
 
-  if (effect.amount > 0 && nextState.playerStatuses.armor > 0) {
+  if (actualDamage > 0 && nextState.playerStatuses.armor > 0) {
     nextState = {
       ...nextState,
       playerStatuses: {
@@ -256,10 +257,8 @@ function processEnemyAttack(state: BattleState, combatTexts: CombatTextEvent[]) 
           nextState = { ...nextState, flags: { ...nextState.flags, firstHarmfulStatusPrevented: true } };
           continue;
         }
-        const newHealth = clampHealth(nextState.playerHealth, -amount, nextState.playerMaxHealth);
         nextState = {
           ...nextState,
-          playerHealth: newHealth,
           playerStatuses: {
             ...nextState.playerStatuses,
             ...(blockPreventsStatus ? {} : { [status]: nextState.playerStatuses[status] + amount }),
@@ -376,12 +375,11 @@ function processEnemyTraits(state: BattleState, combatTexts: CombatTextEvent[]) 
   return nextState;
 }
 
-function processHasteEarlyTurn(state: BattleState, combatTexts: CombatTextEvent[]) {
-  const nextState = {
+function processHasteEarlyTurn(state: BattleState, _combatTexts: CombatTextEvent[]) {
+  return {
     ...state,
     playerStatuses: { ...state.playerStatuses, haste: state.playerStatuses.haste - 1 },
   };
-  return tickPlayerStatuses(nextState, combatTexts);
 }
 
 function processStunSkipTurn(state: BattleState, combatTexts: CombatTextEvent[]) {

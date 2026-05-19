@@ -1,7 +1,12 @@
 // Reward-state construction helpers for battle victory and routing.
 // Depends on game data, reward selectors, trinket manifest rules, and material inventory types.
 import { cardLibrary, trinketLibrary, type BattleCard, type TrinketEntry } from "@/lib/game-data";
-import { BOSS_TRINKET_REWARD_CHOICES, ELITE_TRINKET_REWARD_CHANCE, REWARD_CARD_CHOICES } from "@/lib/game-constants";
+import {
+  BOSS_TRINKET_REWARD_CHOICES,
+  ELITE_TRINKET_REWARD_CHANCE,
+  MIXED_POTION_CARD_ID,
+  REWARD_CARD_CHOICES,
+} from "@/lib/game-constants";
 import { computeTrinketManifest } from "@/lib/trinkets";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import { emptyInventory } from "@/lib/homestead/inventory";
@@ -22,6 +27,7 @@ export type RewardState = {
 type BossRewardInput = {
   gold: number;
   bossBonus: number;
+  generousBonus: number;
   talentGoldPerCombat: number;
   materials: MaterialInventory;
   trinketIds: string[];
@@ -66,6 +72,7 @@ export type FinalizeRewardRoute =
   | "companion-reward"
   | "labyrinth-victory"
   | "labyrinth-map"
+  | "wildwood-victory"
   | "act-complete"
   | "destination";
 
@@ -139,7 +146,9 @@ export function shouldGrantAlchemistReward(modifiers: LabyrinthModifierKind[]): 
 
 // Returns a random potion card from the card library.
 export function getRandomPotionCard(rng: () => number = Math.random): BattleCard {
-  const potionCards = cardLibrary.filter((c) => c.id.endsWith("potion") || c.id.includes("potion-"));
+  const potionCards = cardLibrary.filter(
+    (c) => (c.id.endsWith("potion") || c.id.includes("potion-")) && c.id !== MIXED_POTION_CARD_ID,
+  );
   if (potionCards.length === 0) return cardLibrary[0];
   return potionCards[Math.floor(rng() * potionCards.length)];
 }
@@ -196,9 +205,11 @@ export function finalizeRewardState({
       ? currentEnemyType === "boss"
         ? "labyrinth-victory"
         : "labyrinth-map"
-      : currentEnemyType === "boss"
-        ? "act-complete"
-        : "destination";
+      : contentSystemType === "wildwood"
+        ? "wildwood-victory"
+        : currentEnemyType === "boss"
+          ? "act-complete"
+          : "destination";
 
   return {
     selectedChoice,
@@ -215,6 +226,7 @@ export function finalizeRewardState({
 export function createBossRewardState({
   gold,
   bossBonus,
+  generousBonus,
   talentGoldPerCombat,
   materials,
   trinketIds,
@@ -224,7 +236,7 @@ export function createBossRewardState({
   return {
     rewardType: "trinket",
     choices: selectRewardTrinkets(trinketLibrary, BOSS_TRINKET_REWARD_CHOICES),
-    gold: Math.floor((gold + bossBonus + talentGoldPerCombat + trinketGoldBonus) * goldMultiplier),
+    gold: Math.floor((gold + bossBonus + generousBonus + talentGoldPerCombat + trinketGoldBonus) * goldMultiplier),
     materials,
     selectedId: null,
     destinations: [],

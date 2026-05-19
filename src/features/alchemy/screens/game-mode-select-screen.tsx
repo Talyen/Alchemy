@@ -63,7 +63,11 @@ export function GameModeSelectScreen({
                 onMouseMove={setTiltFromEvent}
                 onMouseLeave={clearTiltFromEvent}
               >
-                <img src={meta.art} alt={meta.title} className="w-full max-w-[352px] rounded-[18px] object-contain" />
+                <img
+                  src={meta.art}
+                  alt={meta.title}
+                  className="w-full max-w-[32.59cqh] rounded-[18px] object-contain"
+                />
               </div>
               <h2 className="font-display text-base font-bold text-amber-100/75">{meta.title}</h2>
               <p className="text-sm leading-relaxed text-muted-foreground">{meta.description}</p>

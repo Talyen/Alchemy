@@ -2,15 +2,17 @@
 
 // These clamp() CSS values size cards from the virtual stage rather than the
 // browser viewport so preview emulation and desktop scaling stay consistent.
-export const battleCardWidthClass = "w-[clamp(222px,22cqh,336px)]";
-export const handCardWidthClass = "w-[clamp(189px,18.7cqh,286px)]";
-export const collectionCardWidthClass = "w-[clamp(156px,15vw,210px)]";
-export const viewCardWidthClass = "w-[clamp(189px,10vw,286px)]";
-export const pileCardWidthClass = "w-[clamp(144px,14.4cqh,219px)]";
+// Pixel bounds converted to cqh/cqw so the layout is resolution-independent
+// (the stage container may be 1080, 2160, or any other height in the future).
+export const battleCardWidthClass = "w-[clamp(20.56cqh,22cqh,31.11cqh)]";
+export const handCardWidthClass = "w-[clamp(17.5cqh,18.7cqh,26.48cqh)]";
+export const collectionCardWidthClass = "w-[clamp(14.44cqh,18.7cqh,19.44cqh)]";
+export const viewCardWidthClass = "w-[clamp(17.5cqh,17.78cqh,26.48cqh)]";
+export const pileCardWidthClass = "w-[clamp(13.33cqh,14.4cqh,20.28cqh)]";
 
 // Mobile landscape uses the same virtual-stage battle composition as desktop.
-export const mobileStageBattleCardWidthClass = "w-[clamp(270px,33cqh,330px)]";
-export const mobileStageHandCardWidthClass = "w-[clamp(200px,24cqh,250px)]";
+export const mobileStageBattleCardWidthClass = "w-[clamp(30cqh,33cqh,36.67cqh)]";
+export const mobileStageHandCardWidthClass = "w-[clamp(22.22cqh,24cqh,27.78cqh)]";
 
 // Card and popup surfaces stay centralized so repeated game widgets share the
 // same tactile fantasy material treatment.
@@ -20,22 +22,25 @@ export const popupClassName =
   "absolute bottom-full left-1/2 z-40 mb-4 w-60 -translate-x-1/2 rounded-[20px] border border-border/80 bg-card px-3 py-3 text-left";
 
 export const battleActorHalfGapClass = {
-  desktop: "clamp(168px,10cqw,210px)",
-  mobile: "clamp(130px,8cqw,180px)",
-  ultrawide: "clamp(168px,10cqw,300px)",
+  desktop: "clamp(8.75cqw,10cqw,10.94cqw)",
+  mobile: "clamp(6.67cqw,8cqw,9.23cqw)",
+  ultrawide: "clamp(8.75cqw,10cqw,11.72cqw)",
 } as const;
 
 export const battleActorSectionClass = {
-  desktop: "absolute inset-x-0 flex -translate-y-1/2 items-start justify-center px-4 gap-[clamp(336px,20cqw,420px)]",
-  mobile: "absolute inset-x-0 flex -translate-y-1/2 items-start justify-center px-4 gap-[clamp(260px,16cqw,360px)]",
-  ultrawide: "absolute inset-x-0 flex -translate-y-1/2 items-start justify-center px-4 gap-[clamp(336px,20cqw,600px)]",
+  desktop:
+    "absolute inset-x-0 flex -translate-y-1/2 items-start justify-center px-4 gap-[clamp(17.5cqw,20cqw,21.88cqw)]",
+  mobile:
+    "absolute inset-x-0 flex -translate-y-1/2 items-start justify-center px-4 gap-[clamp(13.33cqw,16cqw,18.46cqw)]",
+  ultrawide:
+    "absolute inset-x-0 flex -translate-y-1/2 items-start justify-center px-4 gap-[clamp(13.125cqw,20cqw,23.44cqw)]",
 } as const;
 
 export const battleBottomBarClass = {
   desktop:
-    "absolute inset-x-0 grid items-end gap-[clamp(16px,2vw,28px)] px-2 bottom-2 grid-cols-[minmax(110px,0.24fr)_1fr_minmax(110px,0.24fr)] pb-1",
+    "absolute inset-x-0 grid items-end gap-[clamp(0.83cqw,2cqw,1.46cqw)] px-2 bottom-2 grid-cols-[minmax(10.19cqh,0.24fr)_1fr_minmax(10.19cqh,0.24fr)] pb-1",
   mobile:
-    "absolute inset-x-0 grid items-end gap-[clamp(16px,2vw,28px)] px-2 bottom-[calc(70px+env(safe-area-inset-bottom))] grid-cols-[minmax(170px,0.18fr)_1fr_minmax(220px,0.18fr)] pb-0",
+    "absolute inset-x-0 grid items-end gap-[clamp(0.83cqw,2cqw,1.46cqw)] px-2 bottom-[calc(7.78cqh+env(safe-area-inset-bottom))] grid-cols-[minmax(18.89cqh,0.18fr)_1fr_minmax(24.44cqh,0.18fr)] pb-0",
 } as const;
 
 export const battleBottomColumnClass = {
@@ -44,6 +49,6 @@ export const battleBottomColumnClass = {
 } as const;
 
 export const battleHandContainerClass = {
-  desktop: "flex min-w-0 items-end justify-center min-h-[334px] pb-3 pt-10",
-  mobile: "flex min-w-0 items-end justify-center min-h-[320px] pb-0 pt-12",
+  desktop: "flex min-w-0 items-end justify-center min-h-[30.9cqh] pb-3 pt-10",
+  mobile: "flex min-w-0 items-end justify-center min-h-[35.6cqh] pb-0 pt-12",
 } as const;

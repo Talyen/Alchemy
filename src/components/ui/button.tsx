@@ -31,7 +31,20 @@ const buttonVariants = cva(
   },
 );
 
-const wrapperLayoutClassPrefixes = [
+const positioningPrefixes = [
+  "absolute",
+  "relative",
+  "fixed",
+  "sticky",
+  "left-",
+  "right-",
+  "top-",
+  "bottom-",
+  "inset-",
+  "z-",
+];
+
+const sizingPrefixes = [
   "basis-",
   "col-",
   "flex-",
@@ -46,6 +59,8 @@ const wrapperLayoutClassPrefixes = [
   "shrink",
   "w-",
 ];
+
+const wrapperLayoutClassPrefixes = [...positioningPrefixes, ...sizingPrefixes];
 
 // Mirrors only layout-affecting utilities onto the motion wrapper because it becomes
 // the flex/grid item while the inner button keeps the visual styling classes.
@@ -62,6 +77,20 @@ function getWrapperLayoutClassName(className: string | undefined) {
     .join(" ");
 }
 
+// Strips positioning utilities from the inner button so they live only on the motion
+// wrapper. Without this, hover transforms on the wrapper create a new containing block
+// and the inner button's absolute positioning teleports between ancestors.
+function getVisualClassName(className: string | undefined) {
+  if (!className) return undefined;
+  return className
+    .split(/\s+/)
+    .filter((token) => {
+      const baseToken = token.slice(token.lastIndexOf(":") + 1);
+      return !positioningPrefixes.some((prefix) => baseToken === prefix.slice(0, -1) || baseToken.startsWith(prefix));
+    })
+    .join(" ");
+}
+
 export interface ButtonProps extends ComponentPropsWithoutRef<"button">, VariantProps<typeof buttonVariants> {
   asChild?: boolean;
 }
@@ -69,12 +98,19 @@ export interface ButtonProps extends ComponentPropsWithoutRef<"button">, Variant
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, asChild = false, ...props }, ref) => {
     const wrapperClassName = getWrapperLayoutClassName(className);
+    const visualClassName = getVisualClassName(className);
     const button = (
-      <button className={cn(buttonVariants({ variant, size, className }), "w-full")} ref={ref} {...props} />
+      <button
+        className={cn(buttonVariants({ variant, size, className: visualClassName }), size !== "icon" && "w-full")}
+        ref={ref}
+        {...props}
+      />
     );
 
     if (asChild) {
-      return <Slot className={cn(buttonVariants({ variant, size, className }))} ref={ref} {...props} />;
+      return (
+        <Slot className={cn(buttonVariants({ variant, size, className: visualClassName }))} ref={ref} {...props} />
+      );
     }
 
     return (

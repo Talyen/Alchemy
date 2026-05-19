@@ -143,7 +143,7 @@ export function CollectionGrid({
   return (
     <div
       key={`${collectionTab}-${page}`}
-      className="state-swap grid min-h-[540px] grid-cols-5 grid-rows-2 justify-items-center gap-x-6 gap-y-7 overflow-visible"
+      className="state-swap grid min-h-[50cqh] grid-cols-5 grid-rows-2 justify-items-center gap-x-6 gap-y-7 overflow-visible"
     >
       {pageItems.map((item, index) => {
         const hoverId = getHoverId(item.hoverScope, item.id);
@@ -189,7 +189,7 @@ export function CollectionTabs({
               type="button"
               onClick={() => onSelectTab(tab.id)}
               className={cn(
-                "inline-flex min-h-[44px] items-center gap-2 rounded-full bg-card px-4 py-2 text-sm font-semibold text-foreground ring-1 ring-offset-1 ring-offset-card transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                "inline-flex min-h-[4.07cqh] items-center gap-2 rounded-full bg-card px-4 py-2 text-sm font-semibold text-foreground ring-1 ring-offset-1 ring-offset-card transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                 collectionTab === tab.id ? "ring-primary/70" : "ring-border/30 hover:ring-border/50",
               )}
             >

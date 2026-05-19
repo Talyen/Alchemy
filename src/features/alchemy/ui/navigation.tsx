@@ -22,12 +22,12 @@ export function PaginationControls({
 
   if (totalPages <= 1) {
     return reserveSpace ? (
-      <div className={cn("mt-4 min-h-[44px] w-full", widthClass, className)} aria-hidden="true" />
+      <div className={cn("mt-4 min-h-[4.07cqh] w-full", widthClass, className)} aria-hidden="true" />
     ) : null;
   }
 
   return (
-    <div className={cn("mt-4 flex min-h-[44px] w-full items-center justify-center gap-4", widthClass, className)}>
+    <div className={cn("mt-4 flex min-h-[4.07cqh] w-full items-center justify-center gap-4", widthClass, className)}>
       <Button
         aria-label="Previous page"
         className={buttonClass}
@@ -80,7 +80,7 @@ export function GameMenu({
   const panel = (
     <div
       data-testid="game-menu"
-      className="motion-panel alchemy-shell bg-[#0c0a07] w-full max-w-sm rounded-[26px] border border-border/80 px-4 py-5"
+      className="motion-panel alchemy-shell bg-[#0c0a07] w-full max-w-[35.56cqh] rounded-[26px] border border-border/80 px-4 py-5"
       onClick={(e) => e.stopPropagation()}
     >
       <div className="grid gap-2">
@@ -157,9 +157,9 @@ export function GameMenu({
     const anchorStyle =
       anchorPlacement === "down-right"
         ? {
-            left: Math.max(100, Math.min((anchorRect.left + anchorRect.right) / 2, window.innerWidth - 100)),
-            top: anchorRect.bottom + 4,
-            transform: "translateX(-50%)",
+            // Right-align below anchor but clamp so the menu (~384px wide) doesn't overflow the left edge.
+            right: Math.min(window.innerWidth - anchorRect.right + 8, window.innerWidth - 392),
+            top: anchorRect.bottom + 8,
           }
         : { right: window.innerWidth - anchorRect.right + 8, bottom: window.innerHeight - anchorRect.top + 8 };
     return (

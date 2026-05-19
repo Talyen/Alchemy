@@ -147,7 +147,7 @@ export const ORIENTATION_CHANGE_DEBOUNCE_MS = 100; // Lets mobile browsers settl
 export const DESIGN_STAGE_HEIGHT = 1080; // Desktop virtual canvas height used for consistent composition.
 export const MOBILE_STAGE_HEIGHT = 900; // Mobile landscape virtual canvas height.
 export const MIN_STAGE_SCALE = 0.3; // Lowered so small landscape phones still fit without overflow.
-export const MAX_STAGE_SCALE = 1.35; // Upper bound prevents oversized UI on very large displays.
+export const MAX_STAGE_SCALE = 2.0; // Upper bound that still keeps card dimensions reasonable on 5K+ screens (2.0×1080 = 2160px fills 4K).
 
 // ============ Collection ============
 export const COLLECTION_PAGE_SIZE = 10; // Items per page in the collection compendium.

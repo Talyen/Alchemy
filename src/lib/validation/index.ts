@@ -11,7 +11,7 @@ export {
   LabyrinthNodeTypeSchema,
   LabyrinthModifierKindSchema,
   LabyrinthNodeStateSchema,
-  ResolutionOptionSchema,
+  AspectRatioOptionSchema,
   DisplayModeSchema,
   UiScaleSchema,
   MaterialInventorySchema,

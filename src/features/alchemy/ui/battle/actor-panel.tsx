@@ -35,7 +35,7 @@ function StatusIcon({ chip }: { chip: StatusChip }) {
           className="relative flex h-7 w-7 items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           aria-label={`Haste ${chip.value}`}
         >
-          <Sparkles className="h-[18px] w-[18px] text-fuchsia-300" />
+          <Sparkles className="h-[1.67cqh] w-[1.67cqh] text-fuchsia-300" />
         </button>
         <div
           className={cn(
@@ -70,7 +70,7 @@ function StatusIcon({ chip }: { chip: StatusChip }) {
         className="relative flex h-7 w-7 items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         aria-label={`${definition.label} ${chip.value}`}
       >
-        <Icon className={cn("h-[18px] w-[18px]", definition.colorClass)} />
+        <Icon className={cn("h-[1.67cqh] w-[1.67cqh]", definition.colorClass)} />
       </button>
       <div
         className={cn(popupClassName, "hover-popup-panel pointer-events-none opacity-0 group-hover/status:opacity-100")}
@@ -95,7 +95,7 @@ function DeathsDoorStatusIcon() {
         className="relative flex h-7 w-7 items-center justify-center rounded-full bg-red-950/70 text-red-200 ring-1 ring-red-400/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         aria-label="Death's Door"
       >
-        <Skull className="h-[18px] w-[18px]" />
+        <Skull className="h-[1.67cqh] w-[1.67cqh]" />
       </button>
       <div
         className={cn(

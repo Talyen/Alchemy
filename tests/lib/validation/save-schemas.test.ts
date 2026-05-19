@@ -8,6 +8,11 @@ import {
   CompletedDifficultiesSchema,
   CURRENT_SAVE_SCHEMA_VERSION,
 } from "@/lib/validation";
+import {
+  createSeededRng,
+  generateLabyrinthMap,
+  withCurrentNode,
+} from "@/lib/content-systems/labyrinth/map-generation";
 
 describe("SaveDataSchema", () => {
   it("parses a valid minimal save", () => {
@@ -54,7 +59,7 @@ describe("SaveDataSchema", () => {
       muteInBackground: false,
       autoEndTurn: false,
       brightness: 120,
-      selectedResolution: "1920x1200",
+      selectedAspectRatio: "16:10",
       uiScale: "120",
     });
     expect(result.success).toBe(true);
@@ -65,8 +70,17 @@ describe("SaveDataSchema", () => {
       expect(result.data.muteInBackground).toBe(false);
       expect(result.data.autoEndTurn).toBe(false);
       expect(result.data.brightness).toBe(120);
-      expect(result.data.selectedResolution).toBe("1920x1200");
+      expect(result.data.selectedAspectRatio).toBe("16:10");
       expect(result.data.uiScale).toBe("120");
+    }
+  });
+
+  it("migrates legacy resolution values to aspect ratio values", () => {
+    const result = SaveDataSchema.safeParse({ selectedResolution: "2560x1080" });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.selectedAspectRatio).toBe("21:9");
     }
   });
 });
@@ -208,6 +222,35 @@ describe("LabyrinthMapSchema", () => {
     const result = LabyrinthMapSchema.safeParse({ grid: "invalid" });
     expect(result.success).toBe(true);
     if (result.success) expect(result.data).toBeNull();
+  });
+
+  it("parses a freshly generated map (one current node)", () => {
+    const map = generateLabyrinthMap(createSeededRng(42));
+    const result = LabyrinthMapSchema.safeParse(map);
+    expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
+  });
+
+  it("parses a map after a node transition (one current node)", () => {
+    const map = generateLabyrinthMap(createSeededRng(42));
+    const entrance = map.grid[0][Math.floor(9 / 2)]!;
+    const target = entrance.connections[0];
+    const next = withCurrentNode(map, target.row, target.col);
+    const result = LabyrinthMapSchema.safeParse(next);
+    expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
+  });
+
+  it("catches a map with zero current nodes", () => {
+    const map = generateLabyrinthMap(createSeededRng(42));
+    // Simulate the bug: remove all "current" state from the grid.
+    for (const row of map.grid) {
+      for (const node of row) {
+        if (node && node.state === "current") node.state = "cleared";
+      }
+    }
+    const result = LabyrinthMapSchema.safeParse(map);
+    // Schema uses .catch(null), so failures produce null instead of throwing.
+    expect(result.success).toBe(true);
+    expect(result.data).toBeNull();
   });
 });
 

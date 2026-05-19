@@ -10,7 +10,7 @@ import {
 } from "@/features/alchemy/storage";
 import { defaultSaveData } from "@/features/alchemy/storage/defaults";
 import type { CharacterId, DifficultyId } from "@/lib/game-data";
-import type { CollectionTab, DisplayMode, ResolutionOption, UiScale } from "@/features/alchemy/types";
+import type { AspectRatioOption, CollectionTab, DisplayMode, UiScale } from "@/features/alchemy/types";
 
 type CollectionPages = Record<CollectionTab, number>;
 
@@ -25,7 +25,7 @@ export function useAppSaveState() {
   const initialLoad = loadAlchemySaveState();
   const initialSave = initialLoad.data;
   const saveLoadStatus = initialLoad.status;
-  const [selectedResolution, setSelectedResolution] = useState<ResolutionOption>(initialSave.selectedResolution);
+  const [selectedAspectRatio, setSelectedAspectRatio] = useState<AspectRatioOption>(initialSave.selectedAspectRatio);
   const [displayMode, setDisplayMode] = useState<DisplayMode>(initialSave.displayMode);
   const [uiScale, setUiScale] = useState<UiScale>(initialSave.uiScale);
   const [brightness, setBrightness] = useState(initialSave.brightness);
@@ -45,7 +45,7 @@ export function useAppSaveState() {
   );
 
   function resetOptionsToDefault() {
-    setSelectedResolution(defaultSaveData.selectedResolution);
+    setSelectedAspectRatio(defaultSaveData.selectedAspectRatio);
     setDisplayMode(defaultSaveData.displayMode);
     setUiScale(defaultSaveData.uiScale);
     setBrightness(defaultSaveData.brightness);
@@ -80,8 +80,8 @@ export function useAppSaveState() {
   return {
     initialSave,
     saveLoadStatus,
-    selectedResolution,
-    setSelectedResolution,
+    selectedAspectRatio,
+    setSelectedAspectRatio,
     displayMode,
     setDisplayMode,
     uiScale,
@@ -123,7 +123,7 @@ export function useAlchemyAutosave(saveData: SaveData) {
     saveSchemaVersion,
     gameBuildVersion,
     contentVersion,
-    selectedResolution,
+    selectedAspectRatio,
     displayMode,
     uiScale,
     discoveredCardIds,
@@ -151,7 +151,7 @@ export function useAlchemyAutosave(saveData: SaveData) {
       saveSchemaVersion,
       gameBuildVersion,
       contentVersion,
-      selectedResolution,
+      selectedAspectRatio,
       displayMode,
       uiScale,
       discoveredCardIds,
@@ -177,7 +177,7 @@ export function useAlchemyAutosave(saveData: SaveData) {
     saveSchemaVersion,
     gameBuildVersion,
     contentVersion,
-    selectedResolution,
+    selectedAspectRatio,
     displayMode,
     uiScale,
     discoveredCardIds,

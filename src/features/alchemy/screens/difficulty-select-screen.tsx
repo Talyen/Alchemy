@@ -122,8 +122,8 @@ function DifficultyCard({
         <p className={cn("font-display text-base font-bold text-amber-100/75", locked && "text-muted-foreground")}>
           {name}
         </p>
-        <div className="flex flex-col justify-center min-h-[60px]">
-          <p className="text-center text-sm leading-relaxed text-muted-foreground max-w-[220px]">
+        <div className="flex flex-col justify-center min-h-[5.56cqh]">
+          <p className="text-center text-sm leading-relaxed text-muted-foreground max-w-[20.37cqh]">
             {renderDescription(fullDescription)}
           </p>
         </div>

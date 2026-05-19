@@ -52,8 +52,8 @@ export function CollectionScreen({
       <ScreenHeader title="Collection" />
       <CollectionTabs collectionTab={collectionTab} onSelectTab={onSelectTab} />
 
-      <div className="mt-6 flex min-h-[640px] flex-col items-center overflow-visible">
-        <div className="grid min-h-[540px] w-full grid-cols-1 overflow-visible">
+      <div className="mt-6 flex min-h-[59.26cqh] flex-col items-center overflow-visible">
+        <div className="grid min-h-[50cqh] w-full grid-cols-1 overflow-visible">
           {COLLECTION_TABS.map((tab) => (
             <div
               key={tab}

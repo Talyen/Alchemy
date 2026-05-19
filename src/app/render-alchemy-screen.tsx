@@ -84,6 +84,7 @@ type RenderAlchemyScreenProps = {
   playerName: string;
   isMobileLandscape: boolean;
   aspectMode: "standard" | "narrow" | "ultrawide";
+  stagePixelRatio: number;
   hasUnspentTalents: boolean;
   hasAffordableHomestead: boolean;
   collectionTab: CollectionTab;
@@ -108,6 +109,7 @@ export function renderAlchemyScreen({
   playerName,
   isMobileLandscape,
   aspectMode,
+  stagePixelRatio,
   hasUnspentTalents,
   hasAffordableHomestead,
   collectionTab,
@@ -167,6 +169,7 @@ export function renderAlchemyScreen({
           playerName={playerName}
           isMobileLandscape={isMobileLandscape}
           aspectMode={aspectMode}
+          stagePixelRatio={stagePixelRatio}
           handCardRefs={handCardRefs}
           battleSceneRef={battleSceneRef}
           playerPanelRef={playerPanelRef}
@@ -236,8 +239,8 @@ export function renderAlchemyScreen({
             onReturnToBattle: a.returnToBattle,
           }}
           display={{
-            selectedResolution: appState.selectedResolution,
-            onResolutionChange: appState.setSelectedResolution,
+            selectedAspectRatio: appState.selectedAspectRatio,
+            onAspectRatioChange: appState.setSelectedAspectRatio,
             displayMode: appState.displayMode,
             onDisplayModeChange: appState.setDisplayMode,
             showDisplayMode: platform.isDesktop,

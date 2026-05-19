@@ -70,7 +70,7 @@ export function mergeIntoManifest(
     startBlock: talentEffects.startBlock + homesteadEffects.startBlock,
     campfireHealBonus: talentEffects.campfireHealBonus + homesteadEffects.campfireHealBonus,
     physicalCritChance: talentEffects.physicalCritChance + homesteadEffects.physicalCritChance,
-    companionBondLevels: homesteadEffects.companionBondLevels,
+    companionBondLevels: { ...talentEffects.companionBondLevels, ...homesteadEffects.companionBondLevels },
     potionDiscount: talentEffects.potionDiscount + Math.round(homesteadEffects.potionDiscount * 100) / 100,
     potionManaBonus: talentEffects.potionManaBonus + homesteadEffects.potionManaBonus,
     potionPotency: talentEffects.potionPotency + homesteadEffects.potionPotency,

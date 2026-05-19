@@ -81,8 +81,6 @@ This is a fantasy roguelite deckbuilder. The interface must feel like a polished
 
 **Color**: Grounded, atmospheric palette — warm neutrals, muted golds, deep reds, forest greens, smoky blues, bone/off-white. Dominant colors with sharp accents. Avoid timid evenly-distributed palettes, corporate gradients, glassmorphism, and neon-heavy UI.
 
-**Typography**: Distinctive, characterful fonts — never Arial, Inter, Roboto, or system fonts. Decorative/display fonts for logos and major presentation moments; clear, readable fonts for rules, numbers, labels, buttons, tooltips, and repeated gameplay text. Don't shrink text to fit a design — improve wording or layout instead.
-
 **Layout**: Unexpected, game-native composition. Asymmetry and overlap where they serve the fantasy feel. Generous negative space or controlled density — no fragile magic-pixel positioning or landing-page whitespace. Stable, responsive layouts across common desktop/laptop sizes.
 
 **Interactive states**: Every interactive element needs clear states — default, hover, active/pressed, selected, focus, disabled, loading. Never rely on color alone; use shape, contrast, motion, icons, borders, or brightness as supporting cues. Important actions must give immediate feedback.

@@ -22,6 +22,7 @@ type BattleScreenProps = {
   playerName: string;
   isMobileLandscape: boolean;
   aspectMode: "standard" | "narrow" | "ultrawide";
+  stagePixelRatio: number;
   handCardRefs: MutableRefObject<Record<string, HTMLButtonElement | null>>;
   battleSceneRef: MutableRefObject<HTMLDivElement | null>;
   playerPanelRef: MutableRefObject<HTMLDivElement | null>;
@@ -40,6 +41,7 @@ export function BattleScreen(props: BattleScreenProps) {
     playerName,
     isMobileLandscape,
     aspectMode,
+    stagePixelRatio,
     handCardRefs,
     battleSceneRef,
     playerPanelRef,
@@ -80,6 +82,7 @@ export function BattleScreen(props: BattleScreenProps) {
     playerName,
     isMobileLandscape,
     aspectMode,
+    stagePixelRatio,
   };
 
   const hover: BattleHoverProps = {

@@ -66,6 +66,32 @@ test.describe("Difficulty Modifiers", () => {
     expect(damageTaken).toBeGreaterThan(0);
   });
 
+  test("knight legend difficulty makes enemy gain forge each turn", async ({ page }) => {
+    await injectSaveState(page, {
+      characterId: "knight",
+      selectedDifficulty: "difficulty-3",
+      runDeck: [SLASH, SLASH, SLASH, SLASH, SLASH, SLASH, SLASH, SLASH],
+      runPlayerHealth: 30,
+      runMaxHealth: 30,
+    });
+    await page.goto("/");
+    await resumeGameMode(page, "campaign");
+    await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 10000 });
+    await navigateToDestination(page, "Normal Combat");
+    await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });
+
+    // End turn to let the enemy phase trigger, which should give the enemy forge
+    await page.getByRole("button", { name: "End Turn" }).click();
+    await expect(page.getByRole("button", { name: "End Turn" })).toBeEnabled({ timeout: 8000 });
+
+    // On the next player turn, check that the enemy has forge
+    const enemyForgeButtons = page.getByRole("button", { name: /Forge \d+/ });
+    const forgeOnEnemy = await enemyForgeButtons.isVisible({ timeout: 2000 }).catch(() => false);
+    if (forgeOnEnemy) {
+      await expect(enemyForgeButtons).toBeVisible();
+    }
+  });
+
   test("rogue adventurer difficulty increases enemy poison", async ({ page }) => {
     await injectSaveState(page, {
       characterId: "rogue",

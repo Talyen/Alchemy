@@ -657,12 +657,12 @@ describe("endPlayerTurn", () => {
   });
 
   it.each([
-    { status: "burn", amount: 2, expectedHealth: 26, expectedStack: 1, note: "burn halves to 1" },
-    { status: "poison", amount: 3, expectedHealth: 24, expectedStack: 2, note: "poison reduces by 1 to 2" },
-    { status: "bleed", amount: 2, expectedHealth: 26, expectedStack: 0, note: "bleed resets to 0" },
-    { status: "freeze", amount: 3, expectedHealth: 24, expectedStack: 0, note: "freeze resets to 0" },
-    { status: "stun", amount: 2, expectedHealth: 26, expectedStack: 0, note: "stun resets to 0" },
-  ] as const)("enemy $status attack deals damage, applies $status, and tick deals further damage ($note)", ({ status, amount, expectedHealth, expectedStack }) => {
+    { status: "burn", amount: 2, expectedHealth: 28, expectedStack: 1, note: "burn halves to 1" },
+    { status: "poison", amount: 3, expectedHealth: 27, expectedStack: 2, note: "poison reduces by 1 to 2" },
+    { status: "bleed", amount: 2, expectedHealth: 28, expectedStack: 0, note: "bleed resets to 0" },
+    { status: "freeze", amount: 3, expectedHealth: 27, expectedStack: 0, note: "freeze resets to 0" },
+    { status: "stun", amount: 2, expectedHealth: 28, expectedStack: 0, note: "stun resets to 0" },
+  ] as const)("enemy $status attack applies $status and tick deals damage ($note)", ({ status, amount, expectedHealth, expectedStack }) => {
     const state = makeState({
       playerHealth: 30,
       playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
@@ -2065,9 +2065,9 @@ describe("damage riders via applyCardEffects", () => {
       mana: 4, maxMana: 4,
     });
     const result = endPlayerTurn(state);
-    // Status attack damage = 4 (health 30→26), poison tick = 4 (health 26→22), then poison decays by 1
+    // Poison tick = 4 (health 30→26), then poison decays by 1
     expect(result.state.playerStatuses.poison).toBe(3);
-    expect(result.state.playerHealth).toBe(22);
+    expect(result.state.playerHealth).toBe(26);
   });
 
   it("receiveHalfHolyDamage reduces holy enemy damage", () => {
@@ -2122,8 +2122,8 @@ describe("damage riders via applyCardEffects", () => {
       mana: 4, maxMana: 4,
     });
     const result = endPlayerTurn(state);
-    // Status damage = 3 + 2 freeze bonus = 5 (health 30→25). Then freeze tick = 5 (health 25→20).
+    // Freeze applied = 3 + 2 bonus = 5. Freeze tick = 5 (health 30→25). Freeze resets to 0.
     expect(result.state.playerStatuses.freeze).toBe(0);
-    expect(result.state.playerHealth).toBe(20);
+    expect(result.state.playerHealth).toBe(25);
   });
 });

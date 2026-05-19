@@ -41,8 +41,8 @@ export function BattleActors({
         : battleActorHalfGapClass.desktop;
   const actorCardWidthClass = isMobileLandscape ? mobileStageBattleCardWidthClass : undefined;
   const playerTurnBadgeTransform = hasCompanion
-    ? `translateX(calc(-50% - clamp(111px,11cqh,168px) - ${battleActorHalfGap} - clamp(12px,1.2cqw,22px)))`
-    : `translateX(calc(-50% - clamp(111px,11cqh,168px) - ${battleActorHalfGap}))`;
+    ? `translateX(calc(-50% - clamp(10.28cqh,11cqh,15.56cqh) - ${battleActorHalfGap} - clamp(0.625cqw,1.2cqw,1.146cqw)))`
+    : `translateX(calc(-50% - clamp(10.28cqh,11cqh,15.56cqh) - ${battleActorHalfGap}))`;
 
   return (
     <section
@@ -62,19 +62,19 @@ export function BattleActors({
         style={{
           transform: isPlayerTurn
             ? playerTurnBadgeTransform
-            : `translateX(calc(-50% + clamp(111px,11cqh,168px) + ${battleActorHalfGap}))`,
+            : `translateX(calc(-50% + clamp(10.28cqh,11cqh,15.56cqh) + ${battleActorHalfGap}))`,
         }}
       >
         {isPlayerTurn ? "Your Turn" : "Enemy Turn"}
       </div>
       <div className="relative flex items-start justify-center transition-transform duration-500 ease-out">
-        <div className="absolute left-[calc(100%+clamp(28px,3cqw,44px))] top-[30%] z-30 w-40">
+        <div className="absolute left-[calc(100%+clamp(1.46cqw,3cqw,2.29cqw))] top-[30%] z-30 w-40">
           <CombatTextRail entries={playerCombatTexts} side="player" />
         </div>
         <div
           className={
             hasCompanion
-              ? "relative transition-transform duration-500 ease-out -translate-x-[clamp(12px,1.2vw,22px)]"
+              ? "relative transition-transform duration-500 ease-out -translate-x-[clamp(0.625cqw,1.2cqw,1.146cqw)]"
               : "relative transition-transform duration-500 ease-out"
           }
         >
@@ -98,7 +98,7 @@ export function BattleActors({
             cardWidthClass={actorCardWidthClass}
           />
           {battleState.activeCompanion ? (
-            <div className="absolute bottom-[clamp(88px,8.5cqh,118px)] left-[calc(100%-clamp(42px,4.6cqh,68px))] z-20">
+            <div className="absolute bottom-[clamp(8.15cqh,8.5cqh,10.93cqh)] left-[calc(100%-clamp(3.89cqh,4.6cqh,6.3cqh))] z-20">
               <CompanionPanel
                 companion={battleState.activeCompanion}
                 shaking={companionShaking}
@@ -115,7 +115,7 @@ export function BattleActors({
       </div>
 
       <div className="relative flex flex-col items-center">
-        <div className="absolute right-[calc(100%+clamp(28px,3cqw,44px))] top-[30%] z-30 w-40">
+        <div className="absolute right-[calc(100%+clamp(1.46cqw,3cqw,2.29cqw))] top-[30%] z-30 w-40">
           <CombatTextRail entries={enemyCombatTexts} side="enemy" />
         </div>
         <ArtPanel

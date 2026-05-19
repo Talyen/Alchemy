@@ -191,7 +191,7 @@ export function HomesteadScreen({
 
   return (
     <PageLayout>
-      <div className="alchemy-shell relative flex min-h-[520px] w-full max-w-6xl flex-col rounded-[28px] px-6 py-7 sm:px-8">
+      <div className="alchemy-shell relative flex min-h-[48.15cqh] w-full max-w-6xl flex-col rounded-[28px] px-6 py-7 sm:px-8">
         <ScreenHeader title="Homestead" />
 
         {/* Materials bar */}

@@ -3,6 +3,7 @@ import type { CompanionId } from "@/lib/game-data";
 import type { BuildingId, FarmId, MaterialInventory, ResearchId, HomesteadEffectManifest } from "@/lib/homestead/types";
 import { emptyInventory, addInventory, subtractInventory, canAfford } from "@/lib/homestead/inventory";
 import { computeHomesteadEffects } from "@/lib/homestead/effects";
+import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
 import { createEmptyTierRecord } from "@/lib/homestead/tiers";
 import { companionTierItems, COMPANION_BOND_TIERS, COMPANION_MAX_TIER } from "@/lib/homestead/companions";
@@ -42,7 +43,7 @@ export const useHomesteadStore = create<HomesteadStore>()((set) => ({
   plantedFarms: createEmptyTierRecord(farmPlots),
   completedResearch: createEmptyTierRecord(researchUpgrades),
   bondedCompanions: createEmptyTierRecord(companionTierItems) as Record<CompanionId, number>,
-  effects: {} as HomesteadEffectManifest,
+  effects: { ...defaultHomesteadEffects },
 
   addMaterials: (materials) =>
     set((s) => {

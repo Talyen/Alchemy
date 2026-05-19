@@ -35,13 +35,12 @@ export function MenuScreen({
       className={`flex h-full w-full flex-col items-center justify-center text-center ${isMobileLandscape ? "gap-2" : "gap-8"}`}
     >
       <div
-        className="tilt-surface relative w-full"
+        className={`tilt-surface relative w-full ${isMobileLandscape ? "max-w-[24.44cqh]" : "max-w-[39.81cqh]"}`}
         style={
           {
             "--card-base-transform": staticCardTransform,
             maskImage: "radial-gradient(ellipse 72% 72% at center, black 60%, transparent 76%)",
             WebkitMaskImage: "radial-gradient(ellipse 72% 72% at center, black 60%, transparent 76%)",
-            maxWidth: isMobileLandscape ? "220px" : "430px",
           } as CSSProperties
         }
         onMouseMove={setTiltFromEvent}

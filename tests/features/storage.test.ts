@@ -386,7 +386,7 @@ describe("SaveDataSchema", () => {
     expect(result.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
     expect(result.gameBuildVersion).toBe(CURRENT_GAME_BUILD_VERSION);
     expect(result.contentVersion).toBe(CURRENT_CONTENT_VERSION);
-    expect(result.selectedResolution).toBe("1920x1080");
+    expect(result.selectedAspectRatio).toBe("auto");
     expect(result.displayMode).toBe("borderless-fullscreen");
     expect(result.uiScale).toBe("100");
     expect(result.activeRun).toBeNull();
@@ -443,7 +443,7 @@ describe("SaveDataSchema", () => {
     });
 
     expect(result.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
-    expect(result.selectedResolution).toBe("2560x1080");
+    expect(result.selectedAspectRatio).toBe("21:9");
     expect(result.discoveredCardIds).toEqual(["slash", "future-card"]);
     expect(result.encounteredEnemyIds).toEqual(["goblin"]);
     expect(result.discoveredTrinketIds).toEqual(["bone-charm"]);

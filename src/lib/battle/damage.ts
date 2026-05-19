@@ -86,6 +86,10 @@ function computeBaseDamage(state: BattleState, effect: Extract<BattleCardEffect,
     }
   }
 
+  if (effect.damageType === "trap") {
+    rawAmount += state.talentEffects.flatTrapDamage;
+  }
+
   return Math.max(0, rawAmount);
 }
 

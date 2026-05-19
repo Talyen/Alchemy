@@ -1,26 +1,26 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import type { DisplayMode, ResolutionOption, UiScale } from "../types";
+import type { AspectRatioOption, DisplayMode, UiScale } from "../types";
 
-export function ResolutionSelect({
-  selectedResolution,
-  resolutionOptions,
+export function AspectRatioSelect({
+  selectedAspectRatio,
+  aspectRatioOptions,
   onChange,
 }: {
-  selectedResolution: ResolutionOption;
-  resolutionOptions: Array<{ value: ResolutionOption; label: string }>;
-  onChange: (resolution: ResolutionOption) => void;
+  selectedAspectRatio: AspectRatioOption;
+  aspectRatioOptions: Array<{ value: AspectRatioOption; label: string }>;
+  onChange: (aspectRatio: AspectRatioOption) => void;
 }) {
   return (
     <div className="surface-muted rounded-[22px] border border-border/70 p-5 text-left">
       <label htmlFor="resolution" className="block text-sm font-semibold text-foreground">
         Aspect Ratio
       </label>
-      <Select value={selectedResolution} onValueChange={(value) => onChange(value as ResolutionOption)}>
+      <Select value={selectedAspectRatio} onValueChange={(value) => onChange(value as AspectRatioOption)}>
         <SelectTrigger id="resolution" className="mt-3">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          {resolutionOptions.map(({ value, label }) => (
+          {aspectRatioOptions.map(({ value, label }) => (
             <SelectItem key={value} value={value}>
               {label}
             </SelectItem>

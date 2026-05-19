@@ -76,11 +76,11 @@ export function ManaPanel({ mana, maxMana, gold }: { mana: number; maxMana: numb
             <Gem
               key={`mana-${index}-${manaToken}-${isFilled}`}
               className={cn(
-                "h-[22px] w-[22px] transition-opacity duration-200",
+                "h-[2.04cqh] w-[2.04cqh] transition-opacity duration-200",
                 isFilled && "mana-gem-active",
                 isFilled && isOverflow && "text-sky-300 drop-shadow-[0_0_3px_rgba(125,211,252,0.6)]",
                 isFilled && !isOverflow && "text-[hsl(var(--mana-gem))]",
-                !isFilled && "text-[hsl(var(--mana-gem))/0.2]",
+                !isFilled && "text-[hsl(var(--mana-gem)_/_0.2)]",
               )}
               strokeWidth={2.2}
             />

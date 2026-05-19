@@ -12,7 +12,7 @@ export const defaultSaveData: SaveData = {
   saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
   gameBuildVersion: CURRENT_GAME_BUILD_VERSION,
   contentVersion: CURRENT_CONTENT_VERSION,
-  selectedResolution: "1920x1080",
+  selectedAspectRatio: "auto",
   displayMode: "borderless-fullscreen",
   uiScale: "100",
   discoveredCardIds: [...allStartingDeckCardIds],

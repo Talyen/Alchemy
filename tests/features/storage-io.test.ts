@@ -12,8 +12,12 @@ function setupWindow() {
   globalWithWindow.window = {
     localStorage: {
       getItem: (key: string) => mockStorage[key] ?? null,
-      setItem: (key: string, value: string) => { mockStorage[key] = value; },
-      removeItem: (key: string) => { delete mockStorage[key]; },
+      setItem: (key: string, value: string) => {
+        mockStorage[key] = value;
+      },
+      removeItem: (key: string) => {
+        delete mockStorage[key];
+      },
     } as Storage,
   };
 }
@@ -37,7 +41,7 @@ describe("storage io", () => {
   it("loadAlchemySaveData returns defaults when localStorage empty", async () => {
     const { loadAlchemySaveData } = await import("@/features/alchemy/storage/io");
     const data = loadAlchemySaveData();
-    expect(data.selectedResolution).toBe("1920x1080");
+    expect(data.selectedAspectRatio).toBe("auto");
     expect(data.activeRun).toBeNull();
   });
 
@@ -45,7 +49,7 @@ describe("storage io", () => {
     mockStorage[SAVE_KEY] = "not-json";
     const { loadAlchemySaveData, loadAlchemySaveState } = await import("@/features/alchemy/storage/io");
     const data = loadAlchemySaveData();
-    expect(data.selectedResolution).toBe("1920x1080");
+    expect(data.selectedAspectRatio).toBe("auto");
     expect(loadAlchemySaveState().status.kind).toBe("corrupt");
   });
 
@@ -58,7 +62,7 @@ describe("storage io", () => {
 
   it("saveAlchemySaveData writes to localStorage", async () => {
     const { saveAlchemySaveData } = await import("@/features/alchemy/storage/io");
-    const data: SaveData = { ...defaultSaveData, selectedResolution: "1920x1080" };
+    const data: SaveData = { ...defaultSaveData, selectedAspectRatio: "16:9" };
     saveAlchemySaveData(data);
     expect(mockStorage[SAVE_KEY]).toBe(JSON.stringify(data));
   });
@@ -74,13 +78,21 @@ describe("storage io", () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     globalWithWindow.window = {
       localStorage: {
-        getItem: () => { throw new Error("blocked"); },
-        setItem: () => { throw new Error("blocked"); },
-        removeItem: () => { throw new Error("blocked"); },
+        getItem: () => {
+          throw new Error("blocked");
+        },
+        setItem: () => {
+          throw new Error("blocked");
+        },
+        removeItem: () => {
+          throw new Error("blocked");
+        },
       } as unknown as Storage,
     };
 
-    const { loadAlchemySaveData, saveAlchemySaveData, clearAlchemySaveData } = await import("@/features/alchemy/storage/io");
+    const { loadAlchemySaveData, saveAlchemySaveData, clearAlchemySaveData } = await import(
+      "@/features/alchemy/storage/io"
+    );
 
     expect(loadAlchemySaveData()).toEqual(defaultSaveData);
     expect(() => saveAlchemySaveData(defaultSaveData)).not.toThrow();
@@ -89,14 +101,23 @@ describe("storage io", () => {
 
   it("does not overwrite saves from a newer schema", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
-    mockStorage[SAVE_KEY] = JSON.stringify({ saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 1, discoveredCardIds: ["future-card"] });
+    mockStorage[SAVE_KEY] = JSON.stringify({
+      saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 1,
+      discoveredCardIds: ["future-card"],
+    });
 
     const { loadAlchemySaveState, saveAlchemySaveData } = await import("@/features/alchemy/storage/io");
     const loaded = loadAlchemySaveState();
 
     expect(loaded.data).toEqual(defaultSaveData);
-    expect(loaded.status).toEqual({ kind: "unsupported-newer-schema", detectedSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 1 });
+    expect(loaded.status).toEqual({
+      kind: "unsupported-newer-schema",
+      detectedSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 1,
+    });
     saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["slash"] });
-    expect(JSON.parse(mockStorage[SAVE_KEY])).toEqual({ saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 1, discoveredCardIds: ["future-card"] });
+    expect(JSON.parse(mockStorage[SAVE_KEY])).toEqual({
+      saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 1,
+      discoveredCardIds: ["future-card"],
+    });
   });
 });
