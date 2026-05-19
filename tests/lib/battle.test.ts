@@ -2127,3 +2127,66 @@ describe("damage riders via applyCardEffects", () => {
     expect(result.state.playerHealth).toBe(25);
   });
 });
+
+// ─── applyCardEffects ───
+
+describe("applyCardEffects — lose-mana", () => {
+  it("reduces current mana, flooring at 0", () => {
+    const state = makeState({ mana: 3 });
+    const card = makeCard({ effects: [{ kind: "lose-mana", amount: 5 }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    expect(result.mana).toBe(0);
+    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "mana", amount: 5 });
+  });
+});
+
+describe("applyCardEffects — gain-gold", () => {
+  it("adds gold with potion potency multiplier", () => {
+    const state = makeState({ gold: 10 });
+    state.talentEffects.potionPotency = 1.5;
+    const card = makeCard({ id: "luck-potion", effects: [{ kind: "gain-gold", amount: 10 }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    // Potion card: 10 * 1.5 = 15 gold
+    expect(result.gold).toBe(25);
+    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "gold", amount: 15 });
+  });
+});
+
+describe("applyCardEffects — remove-harmful-status", () => {
+  it("removes each harmful status type counted individually with potion potency", () => {
+    const state = makeState({ playerStatuses: { ...defaultBattleState().playerStatuses, burn: 5, poison: 3, bleed: 2 } });
+    state.talentEffects.potionPotency = 2;
+    const card = makeCard({ id: "panacea-potion", effects: [{ kind: "remove-harmful-status", amount: 1 }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    // amount=1, potency=2 → Math.round(2) = 2 status types cleared (burn, poison)
+    expect(result.playerStatuses.burn).toBe(0);
+    expect(result.playerStatuses.poison).toBe(0);
+    expect(result.playerStatuses.bleed).toBe(2);
+  });
+});
+
+describe("applyCardEffects — self-damage", () => {
+  it("damages player and adds matching status", () => {
+    const state = makeState({ playerHealth: 25, playerStatuses: { ...defaultBattleState().playerStatuses } });
+    const card = makeCard({ effects: [{ kind: "self-damage", damageType: "burn", amount: 5 }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    expect(result.playerHealth).toBe(20);
+    expect(result.playerStatuses.burn).toBe(5);
+    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "burn", amount: 5 });
+  });
+});
+
+describe("applyCardEffects — unknown effect kind", () => {
+  it("ignores unknown effect kinds (default case)", () => {
+    const state = makeState({ mana: 3 });
+    const card = makeCard({ effects: [{ kind: "unknown" as never, amount: 99 }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    expect(result).toBe(state);
+    expect(texts).toEqual([]);
+  });
+});

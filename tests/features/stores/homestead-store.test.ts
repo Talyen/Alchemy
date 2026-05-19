@@ -80,7 +80,6 @@ describe("constructBuilding", () => {
   it("returns false when at max tier", () => {
     const buildings = useHomesteadStore.getState().constructedBuildings;
     const firstBuilding = Object.keys(buildings)[0] as BuildingId;
-    const maxLevel = buildings[firstBuilding] ?? 0;
     useHomesteadStore.setState((s) => ({
       constructedBuildings: { ...s.constructedBuildings, [firstBuilding]: 99 },
     }));

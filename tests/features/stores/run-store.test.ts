@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeEach } from "vitest";
 import { useRunStore } from "@/features/alchemy/stores/run-store";
-import type { BattleCard, CharacterId, DifficultyId } from "@/lib/game-data";
+import type { BattleCard } from "@/lib/game-data";
 import type { ActiveRunData } from "@/features/alchemy/run/types";
 
 beforeEach(() => {

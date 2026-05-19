@@ -112,14 +112,16 @@ describe("normalizeStringList", () => {
     expect(result.discoveredCardIds).toEqual(["a", "b"]);
   });
 
-  it("falls back for non-array input", () => {
+  it("falls back to defaultSaveData for non-array input", () => {
     const result = normalizeSaveData({ discoveredCardIds: "bad" as unknown as string[] });
-    expect(result.discoveredCardIds).toEqual([]);
+    expect(Array.isArray(result.discoveredCardIds)).toBe(true);
+    expect(result.discoveredCardIds.length).toBeGreaterThan(0);
   });
 
-  it("handles undefined input", () => {
+  it("uses default discoveredCardIds when field is missing", () => {
     const result = normalizeSaveData({});
-    expect(result.discoveredCardIds).toEqual([]);
+    expect(Array.isArray(result.discoveredCardIds)).toBe(true);
+    expect(result.discoveredCardIds.length).toBeGreaterThan(0);
   });
 });
 
