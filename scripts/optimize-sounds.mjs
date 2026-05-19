@@ -46,6 +46,7 @@ const sounds = [
   { source: "Torch/Torch Impact 1.ogg", target: "torch-impact-1.ogg" },
   { source: "Card and Board/card_fan.wav", target: "card-fan.ogg" },
   { source: "Card and Board/card_draw_1.wav", target: "card-draw-1.ogg" },
+  { source: "Card and Board/card_draw_2.wav", target: "card-draw-2.ogg" },
   { source: "UI/toggle_off.wav", target: "toggle-off.ogg" },
 
   // ── UI ──

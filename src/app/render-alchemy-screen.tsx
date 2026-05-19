@@ -28,6 +28,7 @@ import {
   TalentsScreen,
   WildwoodSelectScreen,
 } from "@/features/alchemy/screens";
+import { ExperimentsHub } from "@/features/alchemy/experiments/experiments-hub";
 import { HomesteadScreen } from "@/features/alchemy/screens/homestead-screen";
 
 export type ControllerActions = {
@@ -267,7 +268,7 @@ export function renderAlchemyScreen({
             onConfirmClearSave: onClearSaveData,
             onResetOptions: appState.resetOptionsToDefault,
           }}
-          dev={{ onUnlockAll: onUnlockAllDevMode }}
+          dev={{ onUnlockAll: onUnlockAllDevMode, onExperiments: () => a.goToScreen("experiments") }}
         />
       );
     case "collection":
@@ -315,6 +316,8 @@ export function renderAlchemyScreen({
       return <GameOverScreen onMainMenu={a.resetRunState} />;
     case "run-victory":
       return <RunVictoryScreen onMainMenu={a.resetRunState} />;
+    case "experiments":
+      return <ExperimentsHub onBack={() => a.goToScreen("options")} />;
     default:
       return null;
   }

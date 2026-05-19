@@ -27,7 +27,8 @@ export type Screen =
   | "act-complete"
   | "run-victory"
   | "labyrinth-map"
-  | "wildwood-select";
+  | "wildwood-select"
+  | "experiments";
 
 export type AspectRatioOption = "auto" | "16:9" | "16:10" | "21:9";
 

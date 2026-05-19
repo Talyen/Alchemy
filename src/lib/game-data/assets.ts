@@ -83,6 +83,7 @@ import wizard from "@/assets/optimized/wizard.webp";
 import wolfCompanion from "@/assets/optimized/wolf-companion.webp";
 import boneCharm from "@/assets/optimized/bone-charm.webp";
 import brassCenser from "@/assets/optimized/brass-censer.webp";
+import cardBack from "@/assets/optimized/card-back.webp";
 import frozenHeart from "@/assets/optimized/frozen-heart.webp";
 import ironwoodBuckler from "@/assets/optimized/ironwood-buckler.webp";
 import meteorite from "@/assets/optimized/meteorite.webp";
@@ -137,6 +138,7 @@ export {
   briarShield,
   burningBlade,
   campfire,
+  cardBack,
   cauterize,
   cinderbloom,
   cleanse,

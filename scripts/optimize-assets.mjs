@@ -19,6 +19,7 @@ const assets = [
   // Misc
   { source: "Misc/Draw Pile.png", target: "draw-pile.webp", width: 420, quality: 82 },
   { source: "Misc/Discard Pile.png", target: "discard-pile.webp", width: 420, quality: 82 },
+  { source: "Misc/Card Back.png", target: "card-back.webp", width: 420, quality: 82 },
   // Enemies
   { source: "Enemies/Skeleton.png", target: "skeleton.webp", width: 720, quality: 82 },
   { source: "Enemies/Goblin.png", target: "goblin.webp", width: 720, quality: 82 },

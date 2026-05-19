@@ -64,6 +64,7 @@ type SaveDataOptionsProps = {
 
 type DevOptionsProps = {
   onUnlockAll: () => void;
+  onExperiments?: () => void;
 };
 
 // Keeps slider rows consistent so volume settings read as one sound board.
@@ -187,17 +188,30 @@ function OtherOptionsPanel({ saveData, dev }: { saveData: SaveDataOptionsProps; 
   return (
     <div className="space-y-4">
       {import.meta.env.DEV ? (
-        <div className="surface-muted rounded-[22px] border border-primary/40 p-5">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <p className="text-sm font-semibold text-foreground">Dev / QA Unlocks</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Unlock every compendium entry and grant every talent node for testing.
-              </p>
+        <>
+          <div className="surface-muted rounded-[22px] border border-primary/40 p-5">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold text-foreground">Dev / QA Unlocks</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Unlock every compendium entry and grant every talent node for testing.
+                </p>
+              </div>
+              <Button onClick={dev.onUnlockAll}>Unlock All</Button>
             </div>
-            <Button onClick={dev.onUnlockAll}>Unlock All</Button>
           </div>
-        </div>
+          {dev.onExperiments ? (
+            <div className="surface-muted rounded-[22px] border border-primary/40 p-5">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Experiments</p>
+                  <p className="mt-1 text-sm text-muted-foreground">Prototype 3D effects and visual experiments.</p>
+                </div>
+                <Button onClick={dev.onExperiments}>Open</Button>
+              </div>
+            </div>
+          ) : null}
+        </>
       ) : null}
       <div className="surface-muted rounded-[22px] border border-border/70 p-5">
         <div className="flex items-center justify-between gap-4">
