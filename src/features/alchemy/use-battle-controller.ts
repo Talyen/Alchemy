@@ -28,6 +28,7 @@ import { mergeIntoManifest } from "@/lib/homestead/effects";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import {
   CARD_ACTIVATION_ROTATION_DEGREES,
+  ENEMY_ATTACK_RECOVERY_DELAY,
   COMPANION_ATTACK_DELAY,
   ENEMY_PHASE_DELAY,
   HAND_FAN_ROTATION_DEGREES,
@@ -43,7 +44,6 @@ import {
 import { useBattleAutoEndTurn } from "./battle/use-battle-auto-end-turn";
 import { useBattleStore } from "./stores/battle-store";
 import { getBattleStartPlayerHealth } from "./battle/battle-start";
-import { getAudioContext, loadSoundBuffer, resumeAudioContext } from "@/lib/audio-buffer-cache";
 
 const CARD_TRANSFER_DRAW_DURATION_SECONDS = 0.5;
 const CARD_TRANSFER_DISCARD_DURATION_SECONDS = 0.5;
@@ -158,18 +158,7 @@ export function useBattleController({
 
   function playTransferSound(delay = 0) {
     if (!getStore().hasActiveBattle) return;
-    resumeAudioContext();
-    loadSoundBuffer("card-draw-2.ogg").then((buffer) => {
-      if (!buffer) return;
-      const ctx = getAudioContext();
-      const source = ctx.createBufferSource();
-      source.buffer = buffer;
-      const gain = ctx.createGain();
-      gain.gain.value = 0.4;
-      source.connect(gain);
-      gain.connect(ctx.destination);
-      source.start(ctx.currentTime + delay);
-    });
+    playBattleEvent("drawTransfer", { volume: 0.4, delay });
   }
 
   function localRectFromElement(element: HTMLElement | null): CardRect | null {
@@ -647,11 +636,14 @@ export function useBattleController({
       if (!currentState.deathsDoorActive && resultState.deathsDoorActive) playBattleEvent("deathsDoor");
       if (combatTexts.length > 0) getStore().showCombatTexts(combatTexts);
       if (shouldShakePlayerFromCombatTexts(playerTexts)) getStore().shakePlayer();
-      void handleDrawSequence(currentState.hand, resultState, () => {
-        getStore().setBattleState(resultState);
-      }).finally(() => {
-        scheduleCompanionFollowUp(resultState);
-      });
+      enemyTimeoutRef.current = setTimeout(() => {
+        enemyTimeoutRef.current = null;
+        void handleDrawSequence(currentState.hand, resultState, () => {
+          getStore().setBattleState(resultState);
+        }).finally(() => {
+          scheduleCompanionFollowUp(resultState);
+        });
+      }, ENEMY_ATTACK_RECOVERY_DELAY);
     }, ENEMY_PHASE_DELAY);
   }
 

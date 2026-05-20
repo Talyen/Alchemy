@@ -71,6 +71,7 @@ export const battleEventSounds = {
   playerBuff: "8bit-chime-quick.ogg",
   consumeCard: "card-fan.ogg",
   drawCards: "card-draw-1.ogg",
+  drawTransfer: "card-draw-2.ogg",
   endTurn: "toggle-off.ogg",
   wishAppear: "harpsichord-mystery.ogg",
   gainGold: "coin-collect.ogg",

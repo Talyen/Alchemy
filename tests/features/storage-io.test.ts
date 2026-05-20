@@ -54,10 +54,10 @@ describe("storage io", () => {
   });
 
   it("loadAlchemySaveData loads valid save data", async () => {
-    mockStorage[SAVE_KEY] = JSON.stringify({ musicVolume: 35, sfxVolume: 70 });
+    mockStorage[SAVE_KEY] = JSON.stringify({ musicVolume: 50, sfxVolume: 50 });
     const { loadAlchemySaveData } = await import("@/features/alchemy/storage/io");
     const data = loadAlchemySaveData();
-    expect(data.musicVolume).toBe(35);
+    expect(data.musicVolume).toBe(50);
   });
 
   it("saveAlchemySaveData writes to localStorage", async () => {

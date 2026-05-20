@@ -2,6 +2,7 @@
 // Depends on browser image/font readiness APIs and React state/effects.
 import { useEffect, useState } from "react";
 import { INITIAL_LOAD_MIN_DURATION_MS, INITIAL_LOAD_MAX_DURATION_MS } from "@/lib/game-constants";
+import { preloadImage } from "@/lib/image-preload";
 
 type InitialLoadReadyOptions = {
   imageUrls: string[];
@@ -28,7 +29,7 @@ export function useInitialLoadReady({
       const startedAt = performance.now();
 
       await Promise.race([
-        Promise.all([waitForFonts(), ...imageUrls.map((url) => waitForImage(url))]),
+        Promise.all([waitForFonts(), ...imageUrls.map((url) => preloadImage(url))]),
         delay(maxDurationMs),
       ]);
 
@@ -47,24 +48,6 @@ export function useInitialLoadReady({
   }, [imageUrls, minDurationMs, maxDurationMs]);
 
   return ready;
-}
-
-function waitForImage(url: string) {
-  return new Promise<void>((resolve) => {
-    const image = new Image();
-    image.onload = () => resolve();
-    image.onerror = () => resolve();
-    image.src = url;
-    if (image.complete) {
-      image
-        .decode?.()
-        .then(() => resolve())
-        .catch(() => {
-          console.warn("Image decode failed:", url);
-          resolve();
-        });
-    }
-  });
 }
 
 function waitForFonts() {

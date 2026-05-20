@@ -27,6 +27,11 @@ export function resumeAudioContext() {
   }
 }
 
+// Synchronous cache lookup so playBuffer can avoid the Promise/microtask path for cached sounds.
+export function getCachedBuffer(name: string): AudioBuffer | null {
+  return soundCache.get(name) ?? null;
+}
+
 // Builds sound URLs through Vite's base path so GitHub Pages deployments resolve assets.
 function getSoundUrl(name: string): string {
   return import.meta.env.BASE_URL + "sounds/" + name;
@@ -74,6 +79,9 @@ export function preloadAllSounds() {
     ...Object.values(uiSounds),
     ...Object.values(stingerSounds),
   ]);
+  // Eagerly preload latency-critical sounds so first interactions and first card transfers are instant.
+  preloadSounds([...Object.values(uiSounds), battleEventSounds.drawTransfer]);
+  // Defer the rest to idle time so they don't block the initial render.
   preloadSoundsWhenIdle([...names]);
 }
 

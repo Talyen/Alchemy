@@ -14,24 +14,39 @@ export function preloadImage(src: string) {
 
   const promise = new Promise<void>((resolve) => {
     const image = new Image();
+    let settled = false;
     image.decoding = "async";
-    image.onload = () => {
+
+    function resolveOnce() {
+      if (settled) return;
+      settled = true;
       imageCache.add(src);
       resolve();
-    };
-    image.onerror = () => resolve();
-    image.src = src;
-    if (image.decode) {
+    }
+
+    function decodeLoadedImage() {
+      if (!image.decode) {
+        resolveOnce();
+        return;
+      }
+
       image
         .decode()
-        .then(() => {
-          imageCache.add(src);
-          resolve();
-        })
+        .then(resolveOnce)
         .catch(() => {
           console.warn("Image decode failed:", src);
+          resolveOnce();
         });
     }
+
+    image.onload = decodeLoadedImage;
+    image.onerror = () => {
+      if (settled) return;
+      settled = true;
+      resolve();
+    };
+    image.src = src;
+    if (image.complete) decodeLoadedImage();
   });
 
   imageLoads.set(src, promise);

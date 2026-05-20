@@ -3,31 +3,47 @@
 // Used by controllers/screens through the public lib/audio facade.
 import { battleEventSounds, cardSounds, enemyAttackSounds, stingerSounds, uiSounds } from "./sound-registry";
 import { audioState } from "./audio-state";
-import { getAudioContext, loadSoundBuffer, resumeAudioContext } from "./audio-buffer-cache";
+import { getAudioContext, getCachedBuffer, loadSoundBuffer, resumeAudioContext } from "./audio-buffer-cache";
 import { pickRandom } from "./utils";
 import { SFX_COOLDOWN_MS, SFX_DEFEAT_VOLUME, SFX_UI_VOLUME, SFX_VICTORY_VOLUME } from "./game-constants";
 
-// Creates a one-shot source with per-play gain so cached buffers remain immutable.
-// Enforces a per-sound cooldown so rapid-fire hovers don't stack up.
-function playBuffer(name: string, volume = 1) {
+type PlaySoundOptions = {
+  volume?: number;
+  delay?: number;
+  cooldownMs?: number;
+};
+
+// Shared source-node setup so both sync and async paths don't duplicate code.
+function playDecodedBuffer(buffer: AudioBuffer, volume: number, delay = 0) {
+  const ctx = getAudioContext();
+  const source = ctx.createBufferSource();
+  source.buffer = buffer;
+  const gain = ctx.createGain();
+  gain.gain.value = volume * audioState.sfxVolume;
+  source.connect(gain);
+  if (!audioState.masterGain) return;
+  gain.connect(audioState.masterGain);
+  source.start(ctx.currentTime + delay);
+}
+
+// Checks the sound cache synchronously first, so cached sounds play in the
+// same event-handler tick without any microtask delay from `loadSoundBuffer`.
+function playBuffer(name: string, { volume = 1, delay = 0, cooldownMs = SFX_COOLDOWN_MS }: PlaySoundOptions = {}) {
   if (audioState.muted) return;
-  const now = performance.now();
+  const scheduledAt = performance.now() + delay * 1000;
   const last = audioState.lastPlayedAt.get(name) ?? 0;
-  if (now - last < SFX_COOLDOWN_MS) return;
-  audioState.lastPlayedAt.set(name, now);
+  if (scheduledAt - last < cooldownMs) return;
+  audioState.lastPlayedAt.set(name, scheduledAt);
   resumeAudioContext();
 
+  const cached = getCachedBuffer(name);
+  if (cached) {
+    playDecodedBuffer(cached, volume, delay);
+    return;
+  }
+
   loadSoundBuffer(name).then((buffer) => {
-    if (!buffer) return;
-    const ctx = getAudioContext();
-    const source = ctx.createBufferSource();
-    source.buffer = buffer;
-    const gain = ctx.createGain();
-    gain.gain.value = volume * audioState.sfxVolume;
-    source.connect(gain);
-    if (!audioState.masterGain) return;
-    gain.connect(audioState.masterGain);
-    source.start();
+    if (buffer) playDecodedBuffer(buffer, volume, delay);
   });
 }
 
@@ -60,21 +76,21 @@ export function playEnemyAttack(enemyId: string) {
 }
 
 // Plays a named battle feedback event.
-export function playBattleEvent(event: keyof typeof battleEventSounds) {
-  playBuffer(battleEventSounds[event]);
+export function playBattleEvent(event: keyof typeof battleEventSounds, options: PlaySoundOptions = {}) {
+  playBuffer(battleEventSounds[event], options);
 }
 
 // Plays quieter UI feedback so menus do not compete with combat sounds.
 export function playUISound(event: keyof typeof uiSounds) {
-  playBuffer(uiSounds[event], SFX_UI_VOLUME);
+  playBuffer(uiSounds[event], { volume: SFX_UI_VOLUME });
 }
 
 // Plays the victory stinger at a controlled volume.
 export function playVictory() {
-  playBuffer(stingerSounds.victory, SFX_VICTORY_VOLUME);
+  playBuffer(stingerSounds.victory, { volume: SFX_VICTORY_VOLUME });
 }
 
 // Plays the defeat stinger at a controlled volume.
 export function playDefeat() {
-  playBuffer(stingerSounds.defeat, SFX_DEFEAT_VOLUME);
+  playBuffer(stingerSounds.defeat, { volume: SFX_DEFEAT_VOLUME });
 }

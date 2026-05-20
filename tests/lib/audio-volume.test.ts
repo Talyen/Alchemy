@@ -1,6 +1,7 @@
 import { describe, expect, it, beforeEach } from "vitest";
 import { setMuted, setSfxVolume, setMasterVolume, setMusicVolume } from "@/lib/audio-volume";
 import { audioState } from "@/lib/audio-state";
+import { MUSIC_MASTER_GAIN } from "@/lib/game-constants";
 
 beforeEach(() => {
   audioState.muted = false;
@@ -56,7 +57,7 @@ describe("setMasterVolume", () => {
     audioState.currentMusic = el as HTMLAudioElement;
     audioState.musicVolume = 0.5;
     setMasterVolume(0.5);
-    expect(el.volume).toBe(0.5 * 0.5 * 0.5); // musicVolume * masterVolume * MUSIC_MASTER_GAIN
+    expect(el.volume).toBe(0.5 * 0.5 * MUSIC_MASTER_GAIN);
   });
 });
 
@@ -73,6 +74,6 @@ describe("setMusicVolume", () => {
     audioState.musicVolume = 0.5;
     audioState.currentMusic = el;
     setMusicVolume(0.5);
-    expect(el.volume).toBe(0.5 * 0.5 * 0.5); // musicVolume * masterVolume * MUSIC_MASTER_GAIN
+    expect(el.volume).toBe(0.5 * 0.5 * MUSIC_MASTER_GAIN);
   });
 });

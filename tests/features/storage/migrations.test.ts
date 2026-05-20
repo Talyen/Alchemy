@@ -143,12 +143,12 @@ describe("normalizeBoundedNumber", () => {
 
   it("falls back for NaN", () => {
     const result = normalizeSaveData({ musicVolume: NaN });
-    expect(result.musicVolume).toBe(35);
+    expect(result.musicVolume).toBe(50);
   });
 
   it("falls back for Infinity", () => {
     const result = normalizeSaveData({ musicVolume: Infinity });
-    expect(result.musicVolume).toBe(35);
+    expect(result.musicVolume).toBe(50);
   });
 });
 

@@ -34,7 +34,8 @@ export const BASE_PLAYER_MANA = 4; // Starting and max mana per turn.
 // ============ Timing (ms) ============
 export const AUTO_END_TURN_DELAY = 1220; // How long the system waits before auto-ending turn when conditions are met (no mana, no cards).
 export const VICTORY_TRANSITION_DELAY = 1200; // Brief pause after enemy dies so the death animation can play before the victory screen.
-export const ENEMY_PHASE_DELAY = 900; // Gap between enemy turn start and enemy action. Short enough to keep turns snappy while still readable.
+export const ENEMY_PHASE_DELAY = 900; // Gap before enemy action. Gives status/start-of-turn feedback time to land before the hit.
+export const ENEMY_ATTACK_RECOVERY_DELAY = 500; // Pause after enemy hit feedback before the next player draw begins.
 export const SHAKE_DURATION = 420; // Screen shake on hit. 420ms is long enough to feel impactful but short enough to not delay gameplay.
 export const COMPANION_ATTACK_DELAY = 1000; // Delay before companion attacks at start of player turn.
 export const NAVIGATION_DELAY_MS = 100; // Short delay lets page exit transitions begin before the next screen mounts.
@@ -103,7 +104,7 @@ export const MUSIC_BASE_PATH = "Music/"; // Relative path from BASE_URL for musi
 export const FADE_OUT_DURATION = 300; // ms — crossfade-out when switching tracks.
 export const FADE_IN_DELAY = 600; // ms — silence before a new track fades in.
 export const FADE_IN_DURATION = 1400; // ms — ramp time for incoming track to full volume.
-export const MUSIC_MASTER_GAIN = 0.5; // Additional gain cap so music sits under SFX.
+export const MUSIC_MASTER_GAIN = 0.2; // Additional gain cap so music sits under SFX.
 
 // ============ SFX Volume ============
 export const DEFAULT_SFX_VOLUME = 0.35; // Initial SFX slider value.
