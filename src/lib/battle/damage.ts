@@ -25,13 +25,14 @@ import {
   CRIT_MULTIPLIER,
   FIRST_EFFECT_MULTIPLIER,
   GLOBAL_CRIT_CHANCE,
+  ENEMY_TRAIT_IDS,
   GOLD_TROVE_DAMAGE_REWARD,
   HALF_DIVISOR,
   PERCENT_DENOMINATOR,
+  STATUS_CONFIG,
 } from "../game-constants";
 
 const DAMAGE_CONFIG = {
-  MIN_BURN_AMOUNT: 1,
   WISH_COUNT_SINGLE: 1,
 };
 
@@ -268,12 +269,9 @@ function applyHolyDamageRiders(state: BattleState, card: BattleCard, damage: num
     Math.random() * PERCENT_DENOMINATOR < nextState.talentEffects.holyBurnChance
   ) {
     const burnAmount = isNullFieldActive(nextState)
-      ? Math.max(DAMAGE_CONFIG.MIN_BURN_AMOUNT, Math.round(damage / HALF_DIVISOR))
+      ? Math.max(STATUS_CONFIG.MIN_STACK_AMOUNT, Math.round(damage / HALF_DIVISOR))
       : damage;
-    nextState = {
-      ...nextState,
-      enemyStatuses: { ...nextState.enemyStatuses, burn: nextState.enemyStatuses.burn + burnAmount },
-    };
+    nextState = addEnemyStatus(nextState, "burn", burnAmount);
   }
 
   if (
@@ -290,7 +288,7 @@ function applyHolyDamageRiders(state: BattleState, card: BattleCard, damage: num
  * Awards player gold if the enemy has the "gold-trove" trait (e.g. Mimic).
  */
 function applyGoldTroveReward(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
-  if (!state.currentEnemy.traits.some((t) => t.id === "gold-trove") || damage <= 0) return state;
+  if (!state.currentEnemy.traits.some((t) => t.id === ENEMY_TRAIT_IDS.GOLD_TROVE) || damage <= 0) return state;
   mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "gold", amount: GOLD_TROVE_DAMAGE_REWARD });
   return addGold(state, GOLD_TROVE_DAMAGE_REWARD);
 }
@@ -326,7 +324,9 @@ function computeCardDamageToEnemy(state: BattleState, effect: Extract<BattleCard
   const rawDamage = modifiedBase.rawDamage;
   const finalDamage = applyCrit(rawDamage, effect.damageType, modifiedBase.state);
   const effectiveArmor =
-    effect.damageType === "physical" ? Math.max(0, state.enemyArmor - state.trinketEffects.sunderingArmorPiercing) : 0;
+    effect.damageType === "physical"
+      ? Math.max(0, state.enemyMitigation.armor - state.trinketEffects.sunderingArmorPiercing)
+      : 0;
   const damageAfterArmor = Math.max(0, finalDamage - effectiveArmor);
   const multiplier = getEnemyDamageMultiplier(state, effect.damageType);
   return { nextState: modifiedBase.state, modifiedDamage: Math.round(damageAfterArmor * multiplier) };
@@ -336,8 +336,14 @@ function computeCardDamageToEnemy(state: BattleState, effect: Extract<BattleCard
  * Decreases enemy armor stacks by decay configuration on health-hitting damage.
  */
 function decayEnemyArmorOnHit(state: BattleState, modifiedDamage: number): BattleState {
-  if (modifiedDamage > 0 && state.enemyArmor > 0) {
-    return { ...state, enemyArmor: state.enemyArmor - BATTLE_CONFIG.ARMOR_DECAY_AMOUNT };
+  if (modifiedDamage > 0 && state.enemyMitigation.armor > 0) {
+    return {
+      ...state,
+      enemyMitigation: {
+        ...state.enemyMitigation,
+        armor: state.enemyMitigation.armor - BATTLE_CONFIG.ARMOR_DECAY_AMOUNT,
+      },
+    };
   }
   return state;
 }

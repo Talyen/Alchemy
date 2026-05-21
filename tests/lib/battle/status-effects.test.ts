@@ -28,9 +28,7 @@ function baseState(overrides: Partial<BattleState> = {}): BattleState {
     enemyHealth: 30,
     enemyMaxHealth: 30,
     enemyAttackEffects: [],
-    enemyArmor: 0,
-    enemyForge: 0,
-    enemyFreezeBonus: 0,
+    enemyMitigation: { armor: 0, forge: 0, freezeBonus: 0 },
     enemyRegeneration: 0,
     playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
     enemyStatuses: { burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
@@ -434,26 +432,26 @@ describe("resolveStunTrigger", () => {
     const state = baseState({
       enemyHealth: 30,
       enemyMaxHealth: 30,
-      enemyArmor: 5,
+      enemyMitigation: { armor: 5, forge: 0, freezeBonus: 0 },
       enemyStunSkipTurns: 0,
       enemyStatuses: { ...baseState().enemyStatuses, stun: 20 },
       talentEffects: { ...baseState().talentEffects, stunStripArmor: true },
     });
     const result = resolveStunTrigger(state);
-    expect(result.enemyArmor).toBe(0);
+    expect(result.enemyMitigation.armor).toBe(0);
   });
 
   it("stunStripArmor does nothing when enemy has no armor", () => {
     const state = baseState({
       enemyHealth: 30,
       enemyMaxHealth: 30,
-      enemyArmor: 0,
+      enemyMitigation: { armor: 0, forge: 0, freezeBonus: 0 },
       enemyStunSkipTurns: 0,
       enemyStatuses: { ...baseState().enemyStatuses, stun: 20 },
       talentEffects: { ...baseState().talentEffects, stunStripArmor: true },
     });
     const result = resolveStunTrigger(state);
-    expect(result.enemyArmor).toBe(0);
+    expect(result.enemyMitigation.armor).toBe(0);
   });
 
   it("restores mana on stun with manaOnStun talent", () => {
@@ -484,22 +482,22 @@ describe("applyDamageStatuses", () => {
 
   it("burn removes enemy armor with burnRemovesEnemyArmor", () => {
     const state = baseState({
-      enemyArmor: 5,
+      enemyMitigation: { armor: 5, forge: 0, freezeBonus: 0 },
       talentEffects: { ...baseState().talentEffects, burnRemovesEnemyArmor: true },
     });
     const effect = { kind: "damage" as const, damageType: "burn" as const, amount: 5 };
     const result = applyDamageStatuses(state, effect, 3, []);
-    expect(result.enemyArmor).toBe(2);
+    expect(result.enemyMitigation.armor).toBe(2);
   });
 
   it("burn removes armor but not below 0", () => {
     const state = baseState({
-      enemyArmor: 2,
+      enemyMitigation: { armor: 2, forge: 0, freezeBonus: 0 },
       talentEffects: { ...baseState().talentEffects, burnRemovesEnemyArmor: true },
     });
     const effect = { kind: "damage" as const, damageType: "burn" as const, amount: 5 };
     const result = applyDamageStatuses(state, effect, 5, []);
-    expect(result.enemyArmor).toBe(0);
+    expect(result.enemyMitigation.armor).toBe(0);
   });
 
   it("poison adds to enemy poison stack", () => {

@@ -2,7 +2,12 @@
 // Depends on battle state, game-data status IDs, alchemy config, and shared UI types.
 // Used by battle controller and widgets to keep presentation derivation out of combat logic.
 import type { BattleState, CombatTextEvent } from "@/lib/battle";
-import { type EnemyStatusId, type KeywordId, type PlayerStatusId, keywordDefinitions } from "@/lib/game-data";
+import {
+  ENEMY_STATUS_DISPLAY_ORDER,
+  PLAYER_STATUS_DISPLAY_ORDER,
+  type KeywordId,
+  keywordDefinitions,
+} from "@/lib/game-data";
 import { combatTextIconClasses, keywordIcons } from "../config";
 import type { StatusChip } from "../types";
 
@@ -23,8 +28,7 @@ export function getCombatTextIcon(event: CombatTextEvent) {
 
 export function getPlayerStatusChips(state: BattleState | null | undefined): StatusChip[] {
   if (!state) return [];
-  const order: PlayerStatusId[] = ["block", "armor", "forge", "haste", "burn", "poison", "bleed", "freeze", "stun"];
-  return order.reduce<StatusChip[]>((chips, id) => {
+  return PLAYER_STATUS_DISPLAY_ORDER.reduce<StatusChip[]>((chips, id) => {
     const value = state.playerStatuses[id];
     if (value > 0) chips.push({ id, value });
     return chips;
@@ -33,8 +37,7 @@ export function getPlayerStatusChips(state: BattleState | null | undefined): Sta
 
 export function getEnemyStatusChips(state: BattleState | null | undefined): StatusChip[] {
   if (!state) return [];
-  const order: EnemyStatusId[] = ["burn", "poison", "bleed", "freeze", "stun"];
-  return order.reduce<StatusChip[]>((chips, id) => {
+  return ENEMY_STATUS_DISPLAY_ORDER.reduce<StatusChip[]>((chips, id) => {
     const value = state.enemyStatuses[id];
     if (value > 0) chips.push({ id, value });
     return chips;

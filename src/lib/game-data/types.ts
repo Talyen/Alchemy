@@ -238,3 +238,19 @@ export type TalentEffectManifest = {
 };
 
 export const harmfulPlayerStatusIds: PlayerStatusId[] = ["burn", "poison", "bleed", "freeze", "stun"];
+
+/** UI chip order — keep aligned with PlayerStatusId union. */
+export const PLAYER_STATUS_DISPLAY_ORDER: readonly PlayerStatusId[] = [
+  "block",
+  "armor",
+  "forge",
+  "haste",
+  "burn",
+  "poison",
+  "bleed",
+  "freeze",
+  "stun",
+];
+
+/** UI chip order — keep aligned with EnemyStatusId union. */
+export const ENEMY_STATUS_DISPLAY_ORDER: readonly EnemyStatusId[] = ["burn", "poison", "bleed", "freeze", "stun"];

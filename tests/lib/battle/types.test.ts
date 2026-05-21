@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
   addPlayerStatus,
-  setPlayerStatus,
   addEnemyStatus,
   setEnemyStatus,
   addGold,
@@ -19,8 +18,9 @@ function baseState(overrides: Partial<BattleState> = {}): BattleState {
     deck: [], hand: [], discard: [], exhausted: [], mana: 4, maxMana: 4, gold: 0,
     turn: 1, turnPhase: "player", playerHealth: 30, playerMaxHealth: 30,
     deathsDoorUsed: false, deathsDoorActive: false, deathsDoorTriggeredTurn: null,
-    enemyHealth: 30, enemyMaxHealth: 30, enemyAttackEffects: [], enemyArmor: 0,
-    enemyForge: 0, enemyFreezeBonus: 0, enemyRegeneration: 0,
+    enemyHealth: 30, enemyMaxHealth: 30, enemyAttackEffects: [],
+    enemyMitigation: { armor: 0, forge: 0, freezeBonus: 0 },
+    enemyRegeneration: 0,
     playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
     enemyStatuses: { burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
     pendingBleedLeechHealing: 0,
@@ -107,20 +107,6 @@ describe("addPlayerStatus", () => {
       const next = addPlayerStatus(state, id, 1);
       expect(next.playerStatuses[id]).toBe(1);
     }
-  });
-});
-
-describe("setPlayerStatus", () => {
-  it("sets the given player status to a specific value", () => {
-    const state = baseState();
-    const next = setPlayerStatus(state, "block", 10);
-    expect(next.playerStatuses.block).toBe(10);
-  });
-
-  it("overwrites existing value", () => {
-    const state = baseState({ playerStatuses: { ...baseState().playerStatuses, block: 3 } });
-    const next = setPlayerStatus(state, "block", 7);
-    expect(next.playerStatuses.block).toBe(7);
   });
 });
 

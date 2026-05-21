@@ -107,9 +107,7 @@ export function defaultBattleState(): BattleState {
     enemyHealth: BASE_ENEMY_HEALTH,
     enemyMaxHealth: BASE_ENEMY_HEALTH,
     enemyAttackEffects: [],
-    enemyArmor: 0,
-    enemyForge: 0,
-    enemyFreezeBonus: 0,
+    enemyMitigation: { armor: 0, forge: 0, freezeBonus: 0 },
     enemyRegeneration: 0,
     playerStatuses: createEmptyPlayerStatuses(),
     enemyStatuses: createEmptyEnemyStatuses(),
@@ -378,7 +376,7 @@ function buildInitialBattleState(
     enemyHealth: number;
     enemyAttackEffects: EnemyAttackEffect[];
     enemyRegeneration: number;
-    enemyArmor: number;
+    enemyArmor: number; // folded into enemyMitigation at build time
     startingBlock: number;
     activeCompanion: CompanionDefinition | null;
     currentEnemy: BestiaryEntry;
@@ -404,7 +402,7 @@ function buildInitialBattleState(
     enemyMaxHealth: setup.enemyHealth,
     enemyAttackEffects: setup.enemyAttackEffects,
     enemyRegeneration: setup.enemyRegeneration,
-    enemyArmor: setup.enemyArmor,
+    enemyMitigation: { armor: setup.enemyArmor, forge: 0, freezeBonus: 0 },
     playerStatuses: {
       ...baseState.playerStatuses,
       block: setup.startingBlock,

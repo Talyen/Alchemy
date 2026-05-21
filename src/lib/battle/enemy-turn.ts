@@ -15,8 +15,9 @@ import { drawCards } from "./draw";
 import { applyCardEffects } from "./apply-effects";
 import { mergeCombatText } from "./combat-text";
 import { applyIronwoodBuckler } from "./trinket-effects";
-import { decayHalvedStatus, tickEnemyStatuses, tickPlayerStatuses } from "./status-ticks";
-import { harmfulPlayerStatusIds } from "@/lib/game-data";
+import { applyPlayerStatusFromAttack } from "./status-application";
+import { decayHalvedStatus } from "./status-helpers";
+import { tickEnemyStatuses, tickPlayerStatuses } from "./status-ticks";
 import type { BattleCard, EnemyAttackEffect, TalentEffectManifest } from "@/lib/game-data/types";
 import type { DifficultyModifier } from "@/lib/game-data/difficulties";
 import { applyPlayerCombatDamage, clampHealth, type BattleState, type CombatTextEvent, type TurnPhase } from "./types";
@@ -175,44 +176,55 @@ function checkHealthThresholds(
   return nextState;
 }
 
-function calculateBlockAndArmorMitigation(
-  state: BattleState,
-  effect: EnemyAttackEffect & { kind: "damage" },
-  combatTexts: CombatTextEvent[],
-) {
+function applyPhysicalForgeBonus(state: BattleState, effect: EnemyAttackEffect & { kind: "damage" }) {
   let remainingDamage = effect.amount;
+  if (effect.damageType !== "physical") return remainingDamage;
+  remainingDamage = Math.max(0, remainingDamage - state.talentEffects.bleedEnemyDamageReduction);
+  return remainingDamage + state.enemyMitigation.forge;
+}
 
-  if (effect.damageType === "physical") {
-    remainingDamage = Math.max(0, remainingDamage - state.talentEffects.bleedEnemyDamageReduction);
-    remainingDamage += state.enemyForge;
-  }
-
+function computeEffectiveBlock(state: BattleState, effect: EnemyAttackEffect & { kind: "damage" }) {
   let effectiveBlock = state.playerStatuses.block;
   if (effect.damageType === "physical" && state.talentEffects.blockAbsorbPhysicalBonus > 0) {
     effectiveBlock = Math.round(
       effectiveBlock * (1 + state.talentEffects.blockAbsorbPhysicalBonus / PERCENT_DENOMINATOR),
     );
   }
+  return effectiveBlock;
+}
 
-  const blockAbsorb = Math.min(remainingDamage, effectiveBlock);
-  remainingDamage -= blockAbsorb;
-
-  if (blockAbsorb > 0) {
-    mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "block", amount: blockAbsorb });
-  }
-
+function computeMitigatedDamage(
+  state: BattleState,
+  effect: EnemyAttackEffect & { kind: "damage" },
+  remainingDamage: number,
+  combatTexts: CombatTextEvent[],
+) {
   const rawDamage =
     effect.damageType === "physical" ? Math.max(0, remainingDamage - state.playerStatuses.armor) : remainingDamage;
   const actualDamage =
     effect.damageType === "holy" && state.talentEffects.receiveHalfHolyDamage
       ? Math.round(rawDamage / HALF_DIVISOR)
       : rawDamage;
-
   if (actualDamage > 0) {
     const stat = effect.damageType === "physical" ? "health" : effect.damageType;
     mergeCombatText(combatTexts, { target: "player", kind: "damage", stat, amount: actualDamage });
   }
+  return actualDamage;
+}
 
+function calculateBlockAndArmorMitigation(
+  state: BattleState,
+  effect: EnemyAttackEffect & { kind: "damage" },
+  combatTexts: CombatTextEvent[],
+) {
+  let remainingDamage = applyPhysicalForgeBonus(state, effect);
+  const effectiveBlock = computeEffectiveBlock(state, effect);
+  const blockAbsorb = Math.min(remainingDamage, effectiveBlock);
+  remainingDamage -= blockAbsorb;
+  if (blockAbsorb > 0) {
+    mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "block", amount: blockAbsorb });
+  }
+  const actualDamage = computeMitigatedDamage(state, effect, remainingDamage, combatTexts);
   return { remainingDamage, blockAbsorb, actualDamage };
 }
 
@@ -256,8 +268,14 @@ function resolvePostDamageThresholds(
   }
 
   // Enemy forge decays by 1 per physical attack that deals damage (mirrors player forge consumption).
-  if (actualDamage > 0 && damageType === "physical" && nextState.enemyForge > 0) {
-    nextState = { ...nextState, enemyForge: nextState.enemyForge - BATTLE_CONFIG.FORGE_DECAY_AMOUNT };
+  if (actualDamage > 0 && damageType === "physical" && nextState.enemyMitigation.forge > 0) {
+    nextState = {
+      ...nextState,
+      enemyMitigation: {
+        ...nextState.enemyMitigation,
+        forge: nextState.enemyMitigation.forge - BATTLE_CONFIG.FORGE_DECAY_AMOUNT,
+      },
+    };
   }
 
   return nextState;
@@ -309,52 +327,6 @@ function processEnemyDamageEffect(
   return nextState;
 }
 
-function applyPlayerStatusFromAttack(
-  state: BattleState,
-  effect: EnemyAttackEffect & { kind: "player-status" },
-  combatTexts: CombatTextEvent[],
-): BattleState {
-  let nextState = state;
-  const status = effect.status;
-  const baseAmount = effect.amount;
-  const extraFreeze = status === "freeze" ? state.enemyFreezeBonus : 0;
-  const amount = baseAmount + extraFreeze;
-
-  const blockPreventsStatus =
-    nextState.playerStatuses.block > 0 &&
-    ((status === "bleed" && state.talentEffects.blockPreventsBleed) ||
-      (status === "poison" && state.talentEffects.blockPreventsPoison) ||
-      (status === "stun" && state.talentEffects.blockPreventsStun));
-
-  if (harmfulPlayerStatusIds.includes(status)) {
-    if (
-      !blockPreventsStatus &&
-      nextState.trinketEffects.plagueDoctorImmunity &&
-      !nextState.flags.firstHarmfulStatusPrevented
-    ) {
-      return { ...nextState, flags: { ...nextState.flags, firstHarmfulStatusPrevented: true } };
-    }
-    nextState = {
-      ...nextState,
-      playerStatuses: {
-        ...nextState.playerStatuses,
-        ...(blockPreventsStatus ? {} : { [status]: nextState.playerStatuses[status] + amount }),
-      },
-    };
-    mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: status, amount });
-  } else {
-    nextState = {
-      ...nextState,
-      playerStatuses: {
-        ...nextState.playerStatuses,
-        [status]: nextState.playerStatuses[status] + amount,
-      },
-    };
-    mergeCombatText(combatTexts, { target: "player", kind: "status", stat: status, amount });
-  }
-  return nextState;
-}
-
 function processEnemyAttack(state: BattleState, combatTexts: CombatTextEvent[]) {
   let nextState = state;
 
@@ -385,18 +357,27 @@ type EnemyTurnStartHandler = (state: BattleState, combatTexts: CombatTextEvent[]
 const enemyTraitTurnStartHandlers: Record<string, EnemyTurnStartHandler> = {
   "rusting-carapace": (state) => ({
     ...state,
-    enemyForge: state.enemyForge + TRAIT_FORGE_PER_TURN,
+    enemyMitigation: {
+      ...state.enemyMitigation,
+      forge: state.enemyMitigation.forge + TRAIT_FORGE_PER_TURN,
+    },
   }),
   "iron-hide": (state, combatTexts) => {
     mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "armor", amount: IRON_HIDE_ARMOR_PER_TURN });
     return {
       ...state,
-      enemyArmor: state.enemyArmor + IRON_HIDE_ARMOR_PER_TURN,
+      enemyMitigation: {
+        ...state.enemyMitigation,
+        armor: state.enemyMitigation.armor + IRON_HIDE_ARMOR_PER_TURN,
+      },
     };
   },
   "glacial-shell": (state) => ({
     ...state,
-    enemyFreezeBonus: state.enemyFreezeBonus + TRAIT_FREEZE_BONUS_PER_TURN,
+    enemyMitigation: {
+      ...state.enemyMitigation,
+      freezeBonus: state.enemyMitigation.freezeBonus + TRAIT_FREEZE_BONUS_PER_TURN,
+    },
   }),
 };
 
@@ -405,7 +386,10 @@ const difficultyTurnStartHandlers: Record<DifficultyModifier["kind"], EnemyTurnS
     mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "forge", amount: DIFFICULTY_FORGE_PER_TURN });
     return {
       ...state,
-      enemyForge: state.enemyForge + DIFFICULTY_FORGE_PER_TURN,
+      enemyMitigation: {
+        ...state.enemyMitigation,
+        forge: state.enemyMitigation.forge + DIFFICULTY_FORGE_PER_TURN,
+      },
     };
   },
   "labyrinth-leeching": (state, combatTexts) => {

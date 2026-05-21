@@ -241,6 +241,25 @@ export const BATTLE_CONFIG = {
 export const POISON_DECAY_AMOUNT = 1; // Poison stack decreases by this each tick.
 export const POISON_GAIN_AMOUNT = 1; // Poison gain from talent proc.
 
+export const STATUS_CONFIG = {
+  MIN_STACK_AMOUNT: 1, // Minimum burn/poison stack after null-field halving.
+  CC_NOTICE_STUN: "Stunned",
+  CC_NOTICE_FREEZE: "Frozen",
+} as const;
+
+// ============ Enemy Trait IDs (status/damage lookups) ============
+export const ENEMY_TRAIT_IDS = {
+  BRITTLE_BONES: "brittle-bones",
+  TRINKET_HOARDER: "trinket-hoarder",
+  HOLY_VULNERABILITY: "holy-vulnerability",
+  BURN_RESISTANCE: "burn-resistance",
+  LIVING_ARMOR: "living-armor",
+  THICK_HIDE: "thick-hide",
+  POISON_RESISTANCE: "poison-resistance",
+  GLACIAL_SHELL: "glacial-shell",
+  GOLD_TROVE: "gold-trove",
+} as const;
+
 // ============ Companion ============
 export const COMPANION_GOLD_FIND_CHANCE = 0.5; // 50% chance for companion gold find on victory.
 export const COMPANION_GOLD_MULTIPLIER = 1.2; // Companion gold find multiplies base gold by 1.2x.

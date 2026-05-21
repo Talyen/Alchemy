@@ -23,15 +23,17 @@ function baseState(overrides: Partial<BattleState> = {}): BattleState {
     enemyHealth: 30,
     enemyMaxHealth: 30,
     enemyAttackEffects: [],
-    enemyArmor: 0,
-    enemyForge: 0,
-    enemyFreezeBonus: 0,
+    enemyMitigation: { armor: 0, forge: 0, freezeBonus: 0 },
     enemyRegeneration: 0,
     playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
     enemyStatuses: { burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
     pendingBleedLeechHealing: 0,
     enemyStunSkipTurns: 0,
     enemyFreezeSkipTurns: 0,
+    playerStunSkipTurns: 0,
+    playerFreezeSkipTurns: 0,
+    playerCCCooldown: 0,
+    enemyCCCooldown: 0,
     wishOptions: null,
     wishQueue: [],
     activeCompanion: null,
@@ -813,7 +815,7 @@ describe("dealDamageToEnemy — lifesteal", () => {
 describe("dealDamageToEnemy — enemy armor", () => {
   it("physical damage is reduced by enemy armor", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
-    const state = baseState({ enemyArmor: 3 });
+    const state = baseState({ enemyMitigation: { armor: 3, forge: 0, freezeBonus: 0 } });
     const card = makeCard({ effects: [makeEffect("physical", 10)] });
     const texts = makeTexts();
     const result = dealDamageToEnemy(
@@ -829,7 +831,7 @@ describe("dealDamageToEnemy — enemy armor", () => {
   it("sunderingArmorPiercing reduces effective armor", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
     const state = baseState({
-      enemyArmor: 5,
+      enemyMitigation: { armor: 5, forge: 0, freezeBonus: 0 },
       trinketEffects: { ...baseState().trinketEffects, sunderingArmorPiercing: 2 },
     });
     const card = makeCard({ effects: [makeEffect("physical", 10)] });
@@ -846,7 +848,7 @@ describe("dealDamageToEnemy — enemy armor", () => {
 
   it("non-physical damage ignores enemy armor", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
-    const state = baseState({ enemyArmor: 5 });
+    const state = baseState({ enemyMitigation: { armor: 5, forge: 0, freezeBonus: 0 } });
     const card = makeCard({ effects: [makeEffect("burn", 10)] });
     const texts = makeTexts();
     const result = dealDamageToEnemy(
@@ -875,7 +877,7 @@ describe("dealDamageToEnemy — edge cases", () => {
   });
 
   it("handles zero damage gracefully", () => {
-    const state = baseState({ enemyHealth: 30, enemyArmor: 0 });
+    const state = baseState({ enemyHealth: 30, enemyMitigation: { armor: 0, forge: 0, freezeBonus: 0 } });
     const card = makeCard({ effects: [makeEffect("physical", 0)] });
     const texts = makeTexts();
     const result = dealDamageToEnemy(

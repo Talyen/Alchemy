@@ -901,7 +901,7 @@ describe("endPlayerTurn", () => {
     const state = makeState({
       enemyAttackEffects: [],
       difficultyModifiers: [{ kind: "enemy-gains-forge-each-turn" }] as DifficultyModifier[],
-      enemyForge: 0,
+      enemyMitigation: { armor: 0, forge: 0, freezeBonus: 0 },
       deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
       mana: 4,
       maxMana: 4,
@@ -909,7 +909,7 @@ describe("endPlayerTurn", () => {
 
     const result = endPlayerTurn(state);
 
-    expect(result.state.enemyForge).toBe(1);
+    expect(result.state.enemyMitigation.forge).toBe(1);
     expect(result.combatTexts).toContainEqual({ target: "enemy", kind: "status", stat: "forge", amount: 1 });
   });
 });
@@ -1167,7 +1167,7 @@ describe("createBattleState", () => {
         [{ kind: "start-block", amount: 5 }],
       );
       expect(result.playerStatuses.block).toBe(5);
-      expect(result.enemyArmor).toBe(0);
+      expect(result.enemyMitigation.armor).toBe(0);
     });
 
     it("Knight Adventurer (d2): enemy-starting-armor 2", () => {
@@ -1183,13 +1183,13 @@ describe("createBattleState", () => {
         undefined,
         [{ kind: "enemy-starting-armor", amount: 2 }],
       );
-      expect(result.enemyArmor).toBe(2);
+      expect(result.enemyMitigation.armor).toBe(2);
     });
 
     it("Iron Bear starts combat with 0 starting armor", () => {
       const ironBear = enemyBestiary.find((e) => e.id === "iron-bear")!;
       const result = createBattleState(battleDeck, 0, 0, ironBear);
-      expect(result.enemyArmor).toBe(0);
+      expect(result.enemyMitigation.armor).toBe(0);
     });
 
     it("Knight Legend (d3): enemy-gains-forge-each-turn is stored in difficultyModifiers", () => {
@@ -1351,7 +1351,7 @@ describe("createBattleState", () => {
         mods,
       );
       expect(result.playerStatuses.block).toBe(5);
-      expect(result.enemyArmor).toBe(2);
+      expect(result.enemyMitigation.armor).toBe(2);
       expect(result.mana).toBe(BASE_PLAYER_MANA + 1);
       expect(result.maxMana).toBe(BASE_PLAYER_MANA + 1);
     });
@@ -1621,7 +1621,13 @@ describe("Trinket — Sundering Charm (ignore 2 enemy armor)", () => {
   it("physical attack ignores 2 enemy armor", () => {
     const manifest = computeTrinketManifest(["sundering-charm"]);
     const card = makeCard({ effects: [{ kind: "damage", damageType: "physical", amount: 10 }] });
-    const state = makeState({ mana: 10, enemyHealth: 30, enemyArmor: 5, trinketEffects: manifest, hand: [card] });
+    const state = makeState({
+      mana: 10,
+      enemyHealth: 30,
+      enemyMitigation: { armor: 5, forge: 0, freezeBonus: 0 },
+      trinketEffects: manifest,
+      hand: [card],
+    });
     const result = playBattleCardResolved(state, card.id, 0);
     // 5 armor - 2 piercing = 3 effective armor. 10 - 3 = 7 damage
     expect(result.state.enemyHealth).toBe(23);
@@ -1975,7 +1981,7 @@ describe("Trinket — Thunderstone (6 nature damage on stun)", () => {
       mana: 10,
       enemyHealth: 3,
       enemyMaxHealth: 3,
-      enemyArmor: 3,
+      enemyMitigation: { armor: 3, forge: 0, freezeBonus: 0 },
       playerStatuses: { block: 0, armor: 0, forge: 4, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
       trinketEffects: manifest,
     });
@@ -2072,7 +2078,7 @@ describe("enemy traits via endPlayerTurn", () => {
       maxMana: 4,
     });
     const result = endPlayerTurn(state);
-    expect(result.state.enemyForge).toBe(1);
+    expect(result.state.enemyMitigation.forge).toBe(1);
   });
 
   it("iron-hide adds 2 armor each turn", () => {
@@ -2093,8 +2099,8 @@ describe("enemy traits via endPlayerTurn", () => {
       maxMana: 4,
     });
     const result = endPlayerTurn(state);
-    expect(result.state.enemyArmor).toBe(IRON_HIDE_ARMOR_PER_TURN);
-    expect(result.state.enemyForge).toBe(0);
+    expect(result.state.enemyMitigation.armor).toBe(IRON_HIDE_ARMOR_PER_TURN);
+    expect(result.state.enemyMitigation.forge).toBe(0);
     expect(result.combatTexts).toContainEqual({
       target: "enemy",
       kind: "status",
@@ -2121,7 +2127,7 @@ describe("enemy traits via endPlayerTurn", () => {
       maxMana: 4,
     });
     const result = endPlayerTurn(state);
-    expect(result.state.enemyFreezeBonus).toBe(1);
+    expect(result.state.enemyMitigation.freezeBonus).toBe(1);
   });
 
   it("regeneration heals enemy at end of turn", () => {
@@ -2431,7 +2437,7 @@ describe("damage riders via applyCardEffects", () => {
       mana: 10,
       enemyHealth: 50,
       enemyMaxHealth: 50,
-      enemyArmor: 5,
+      enemyMitigation: { armor: 5, forge: 0, freezeBonus: 0 },
       trinketEffects: { ...defaultTrinketEffects, sunderingArmorPiercing: 3 },
       deck: [],
       hand: [],
@@ -2471,7 +2477,7 @@ describe("damage riders via applyCardEffects", () => {
       mana: 10,
       enemyHealth: 50,
       enemyMaxHealth: 50,
-      enemyArmor: 8,
+      enemyMitigation: { armor: 8, forge: 0, freezeBonus: 0 },
       talentEffects: { ...defaultTalentEffects, burnRemovesEnemyArmor: true },
       deck: [],
       hand: [],
@@ -2484,7 +2490,7 @@ describe("damage riders via applyCardEffects", () => {
     // 12 burn damage ignores armor entirely (effectiveArmor=0), modifiedDamage=12.
     // per-hit reduces armor by 1 (armor: 7).
     // burnRemovesEnemyArmor: armor = max(0, 7-12) = 0
-    expect(result.enemyArmor).toBe(0);
+    expect(result.enemyMitigation.armor).toBe(0);
   });
 
   it("equalToBlock deals damage equal to block", () => {
@@ -2603,7 +2609,7 @@ describe("damage riders via applyCardEffects", () => {
     const state = makeState({
       playerHealth: 30,
       playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
-      enemyForge: 4,
+      enemyMitigation: { armor: 0, forge: 4, freezeBonus: 0 },
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 8 }],
       deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
       mana: 4,
@@ -2618,7 +2624,7 @@ describe("damage riders via applyCardEffects", () => {
     const state = makeState({
       playerHealth: 30,
       playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
-      enemyFreezeBonus: 2,
+      enemyMitigation: { armor: 0, forge: 0, freezeBonus: 2 },
       enemyAttackEffects: [{ kind: "player-status", status: "freeze", amount: 3 }],
       deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
       mana: 4,

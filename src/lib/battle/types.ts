@@ -3,6 +3,7 @@
  * Depends on: @/lib/game-data.
  * Depended on by: all modules in the battle subsystem, features/alchemy controllers/UI.
  */
+import { STATUS_CONFIG } from "../game-constants";
 import type {
   BattleCard,
   BestiaryEntry,
@@ -21,6 +22,16 @@ export type PlayerStatusValues = Record<PlayerStatusId, number>;
 export type EnemyStatusValues = Record<EnemyStatusId, number>;
 
 export type TurnPhase = "player" | "enemy";
+
+// Enemy mitigation lives outside enemyStatuses: armor reduces incoming damage,
+// forge adds physical attack bonus (decays per hit), freezeBonus adds freeze stacks from attacks.
+export type EnemyMitigation = {
+  armor: number;
+  forge: number;
+  freezeBonus: number;
+};
+
+export const EMPTY_ENEMY_MITIGATION: EnemyMitigation = { armor: 0, forge: 0, freezeBonus: 0 };
 
 // Pre-computed bonuses from trinkets acquired during the run. Follows the same
 // pattern as TalentEffectManifest — computed once at battle start, immutable for
@@ -96,9 +107,7 @@ export type BattleState = {
   enemyMaxHealth: number; // stored so UI can render % even after damage
   enemyAttackEffects: EnemyAttackEffect[]; // scaled per room, applied during enemy phase
   enemyRegeneration: number; // health restored at end of each enemy turn
-  enemyArmor: number; // flat damage reduction for the enemy
-  enemyForge: number; // bonus physical damage added per stack (rusting-carapace)
-  enemyFreezeBonus: number; // per-turn freeze status bonus (glacial-shell)
+  enemyMitigation: EnemyMitigation;
   playerStatuses: PlayerStatusValues;
   enemyStatuses: EnemyStatusValues;
   pendingBleedLeechHealing: number; // internal bleed-lifesteal healing due when bleed ticks
@@ -140,7 +149,7 @@ export type NoticeCombatTextEvent = {
   target: CombatTextTarget;
   kind: "notice";
   stat: Extract<CombatTextStat, "freeze" | "stun">;
-  text: "Frozen" | "Stunned";
+  text: typeof STATUS_CONFIG.CC_NOTICE_STUN | typeof STATUS_CONFIG.CC_NOTICE_FREEZE;
 };
 
 export type CombatTextEvent = NumericCombatTextEvent | NoticeCombatTextEvent;
@@ -155,10 +164,6 @@ export type BattleResolution = {
 
 export function addPlayerStatus(state: BattleState, status: PlayerStatusId, delta: number): BattleState {
   return { ...state, playerStatuses: { ...state.playerStatuses, [status]: state.playerStatuses[status] + delta } };
-}
-
-export function setPlayerStatus(state: BattleState, status: PlayerStatusId, value: number): BattleState {
-  return { ...state, playerStatuses: { ...state.playerStatuses, [status]: value } };
 }
 
 export function adjustEnemyStatusDelta(state: Pick<BattleState, "difficultyModifiers">, delta: number): number {
