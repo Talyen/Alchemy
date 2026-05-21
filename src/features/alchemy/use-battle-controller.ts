@@ -469,18 +469,18 @@ export function useBattleController({
     const mergedEffects = mergeIntoManifest(talents.talentEffects, homesteadEffectsRef.current);
     const activeModifiers =
       modifiers ?? (run.selectedDifficulty ? getDifficultyModifiers(run.characterId, run.selectedDifficulty) : []);
-    return createBattleState(
-      deck,
+    return createBattleState({
+      runDeck: deck,
       gold,
-      roomsEncountered,
-      enemy,
+      totalRooms: roomsEncountered,
+      currentEnemy: enemy,
       playerHealth,
-      mergedEffects,
+      talentEffects: mergedEffects,
       discoveredCardIds,
-      run.runMaxHealth,
-      run.runTrinkets,
-      activeModifiers,
-    );
+      maxHealth: run.runMaxHealth,
+      trinketIds: run.runTrinkets,
+      difficultyModifiers: activeModifiers,
+    });
   }
 
   function detectNewHandCards(oldHand: BattleCard[], newHand: BattleCard[]): BattleCard[] {

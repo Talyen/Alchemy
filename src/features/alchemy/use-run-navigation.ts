@@ -1,11 +1,10 @@
 // Run-flow controller for routing, rewards, mysteries, campfires, act transitions, and reset.
 // Uses useScreenStore (Zustand) for navigation state instead of local useState.
 import { useEffect, useMemo, useRef } from "react";
-import { createBattleState, isPlayerDefeated } from "@/lib/battle";
+import { defaultBattleState, isPlayerDefeated } from "@/lib/battle";
 import {
   getDifficultyModifiers,
   getGoldMultiplier,
-  getStartingDeck,
   type BattleCard,
   type CharacterId,
   type DifficultyId,
@@ -766,7 +765,7 @@ export function useRunNavigation({
     setHoveredCardId(null);
     setHasActiveBattle(false);
     navigateTo("menu", () => {
-      setBattleState(createBattleState(getStartingDeck(run.characterId), 0));
+      setBattleState(defaultBattleState());
       run.reset();
       talents.resetRunXP();
       getStore().setPendingContentSystemType("campaign");

@@ -305,6 +305,69 @@ function processEnemyRegeneration(state: BattleState, combatTexts: CombatTextEve
   return { ...state, enemyHealth: clampHealth(state.enemyHealth, healAmount, state.enemyMaxHealth) };
 }
 
+type EnemyTurnStartHandler = (state: BattleState, combatTexts: CombatTextEvent[]) => BattleState;
+
+const enemyTraitTurnStartHandlers: Record<string, EnemyTurnStartHandler> = {
+  "rusting-carapace": (state) => ({
+    ...state,
+    enemyForge: state.enemyForge + TRAIT_FORGE_PER_TURN,
+  }),
+  "iron-hide": (state, combatTexts) => {
+    mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "armor", amount: IRON_HIDE_ARMOR_PER_TURN });
+    return {
+      ...state,
+      enemyArmor: state.enemyArmor + IRON_HIDE_ARMOR_PER_TURN,
+    };
+  },
+  "glacial-shell": (state) => ({
+    ...state,
+    enemyFreezeBonus: state.enemyFreezeBonus + TRAIT_FREEZE_BONUS_PER_TURN,
+  }),
+};
+
+const difficultyTurnStartHandlers: Record<DifficultyModifier["kind"], EnemyTurnStartHandler | undefined> = {
+  "enemy-gains-forge-each-turn": (state, combatTexts) => {
+    mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "forge", amount: DIFFICULTY_FORGE_PER_TURN });
+    return {
+      ...state,
+      enemyForge: state.enemyForge + DIFFICULTY_FORGE_PER_TURN,
+    };
+  },
+  "labyrinth-leeching": (state, combatTexts) => {
+    mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "health", amount: LABYRINTH_LEECH_HEAL });
+    return {
+      ...state,
+      enemyHealth: clampHealth(state.enemyHealth, LABYRINTH_LEECH_HEAL, state.enemyMaxHealth),
+    };
+  },
+  "labyrinth-burning-ground": (state, combatTexts) => {
+    mergeCombatText(combatTexts, {
+      target: "player",
+      kind: "status",
+      stat: "burn",
+      amount: LABYRINTH_BURNING_GROUND_DAMAGE,
+    });
+    return {
+      ...state,
+      playerStatuses: {
+        ...state.playerStatuses,
+        burn: state.playerStatuses.burn + LABYRINTH_BURNING_GROUND_DAMAGE,
+      },
+    };
+  },
+  "increase-enemy-physical-damage": undefined,
+  "increase-enemy-damage": undefined,
+  "increase-enemy-status": undefined,
+  "enemy-attacks-gain-leech": undefined,
+  "enemy-starting-armor": undefined,
+  "start-block": undefined,
+  "start-max-mana": undefined,
+  "start-companion": undefined,
+  "gold-multiplier": undefined,
+  "labyrinth-sturdy": undefined,
+  "labyrinth-null-field": undefined,
+};
+
 function reduceSkipTurns(state: BattleState): BattleState {
   return {
     ...state,
@@ -323,55 +386,14 @@ function resolveDeathsDoorEndOfEnemyTurn(state: BattleState): BattleState {
 function processEnemyTraits(state: BattleState, combatTexts: CombatTextEvent[]) {
   let nextState = state;
 
-  if (nextState.currentEnemy.traits.some((t) => t.id === "rusting-carapace")) {
-    nextState = {
-      ...nextState,
-      enemyForge: nextState.enemyForge + TRAIT_FORGE_PER_TURN,
-    };
+  for (const trait of nextState.currentEnemy.traits) {
+    const handler = enemyTraitTurnStartHandlers[trait.id];
+    if (handler) nextState = handler(nextState, combatTexts);
   }
 
-  if (nextState.currentEnemy.traits.some((t) => t.id === "iron-hide")) {
-    nextState = {
-      ...nextState,
-      enemyArmor: nextState.enemyArmor + IRON_HIDE_ARMOR_PER_TURN,
-    };
-    mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "armor", amount: IRON_HIDE_ARMOR_PER_TURN });
-  }
-
-  if (nextState.currentEnemy.traits.some((t) => t.id === "glacial-shell")) {
-    nextState = { ...nextState, enemyFreezeBonus: nextState.enemyFreezeBonus + TRAIT_FREEZE_BONUS_PER_TURN };
-  }
-
-  if (nextState.difficultyModifiers.some((m: DifficultyModifier) => m.kind === "enemy-gains-forge-each-turn")) {
-    nextState = {
-      ...nextState,
-      enemyForge: nextState.enemyForge + DIFFICULTY_FORGE_PER_TURN,
-    };
-    mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "forge", amount: DIFFICULTY_FORGE_PER_TURN });
-  }
-
-  if (nextState.difficultyModifiers.some((m: DifficultyModifier) => m.kind === "labyrinth-leeching")) {
-    nextState = {
-      ...nextState,
-      enemyHealth: clampHealth(nextState.enemyHealth, LABYRINTH_LEECH_HEAL, nextState.enemyMaxHealth),
-    };
-    mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "health", amount: LABYRINTH_LEECH_HEAL });
-  }
-
-  if (nextState.difficultyModifiers.some((m: DifficultyModifier) => m.kind === "labyrinth-burning-ground")) {
-    nextState = {
-      ...nextState,
-      playerStatuses: {
-        ...nextState.playerStatuses,
-        burn: nextState.playerStatuses.burn + LABYRINTH_BURNING_GROUND_DAMAGE,
-      },
-    };
-    mergeCombatText(combatTexts, {
-      target: "player",
-      kind: "status",
-      stat: "burn",
-      amount: LABYRINTH_BURNING_GROUND_DAMAGE,
-    });
+  for (const modifier of nextState.difficultyModifiers) {
+    const handler = difficultyTurnStartHandlers[modifier.kind];
+    if (handler) nextState = handler(nextState, combatTexts);
   }
 
   return nextState;
@@ -414,6 +436,41 @@ function finalizePlayerTurn(state: BattleState, combatTexts: CombatTextEvent[]) 
   return { state: finalState, combatTexts, playerTurnSkipped: finalState.turnPhase === "enemy" };
 }
 
+function resolveHasteTurn(
+  state: BattleState,
+  combatTexts: CombatTextEvent[],
+  enemyTurnStartCombatTexts: CombatTextEvent[],
+  enemyResolutionCombatTexts: CombatTextEvent[],
+) {
+  const nextState = processHasteEarlyTurn(state, combatTexts);
+  return { ...finalizePlayerTurn(nextState, combatTexts), enemyTurnStartCombatTexts, enemyResolutionCombatTexts };
+}
+
+function resolveSkippedEnemyTurn(
+  state: BattleState,
+  combatTexts: CombatTextEvent[],
+  enemyTurnStartCombatTexts: CombatTextEvent[],
+  enemyResolutionCombatTexts: CombatTextEvent[],
+) {
+  const nextState = processStunSkipTurn(state, combatTexts);
+  return { ...finalizePlayerTurn(nextState, combatTexts), enemyTurnStartCombatTexts, enemyResolutionCombatTexts };
+}
+
+function resolveEnemyTurnStart(state: BattleState, combatTexts: CombatTextEvent[], phaseTexts: CombatTextEvent[]) {
+  const nextState = tickEnemyStatuses(state, phaseTexts);
+  combatTexts.push(...phaseTexts);
+  return nextState;
+}
+
+function resolveEnemyAction(state: BattleState, combatTexts: CombatTextEvent[], phaseTexts: CombatTextEvent[]) {
+  let nextState = processEnemyTraits(state, phaseTexts);
+  nextState = processEnemyAttack(nextState, phaseTexts);
+  nextState = tickPlayerStatuses(nextState, phaseTexts);
+  nextState = processEnemyRegeneration(nextState, phaseTexts);
+  combatTexts.push(...phaseTexts);
+  return nextState;
+}
+
 export function endPlayerTurn(state: BattleState): EndPlayerTurnResolution {
   const combatTexts: CombatTextEvent[] = [];
   const enemyTurnStartCombatTexts: CombatTextEvent[] = [];
@@ -421,17 +478,14 @@ export function endPlayerTurn(state: BattleState): EndPlayerTurnResolution {
   let nextState = beginEnemyPhase(state);
 
   if (state.playerStatuses.haste > 0) {
-    nextState = processHasteEarlyTurn(nextState, combatTexts);
-    return { ...finalizePlayerTurn(nextState, combatTexts), enemyTurnStartCombatTexts, enemyResolutionCombatTexts };
+    return resolveHasteTurn(nextState, combatTexts, enemyTurnStartCombatTexts, enemyResolutionCombatTexts);
   }
 
   if (state.enemyStunSkipTurns + state.enemyFreezeSkipTurns > 0) {
-    nextState = processStunSkipTurn(nextState, combatTexts);
-    return { ...finalizePlayerTurn(nextState, combatTexts), enemyTurnStartCombatTexts, enemyResolutionCombatTexts };
+    return resolveSkippedEnemyTurn(nextState, combatTexts, enemyTurnStartCombatTexts, enemyResolutionCombatTexts);
   }
 
-  nextState = tickEnemyStatuses(nextState, enemyTurnStartCombatTexts);
-  combatTexts.push(...enemyTurnStartCombatTexts);
+  nextState = resolveEnemyTurnStart(nextState, combatTexts, enemyTurnStartCombatTexts);
   const enemyTurnStartState = nextState;
 
   if (nextState.enemyHealth <= 0) {
@@ -443,11 +497,7 @@ export function endPlayerTurn(state: BattleState): EndPlayerTurnResolution {
     };
   }
 
-  nextState = processEnemyTraits(nextState, enemyResolutionCombatTexts);
-  nextState = processEnemyAttack(nextState, enemyResolutionCombatTexts);
-  nextState = tickPlayerStatuses(nextState, enemyResolutionCombatTexts);
-  nextState = processEnemyRegeneration(nextState, enemyResolutionCombatTexts);
-  combatTexts.push(...enemyResolutionCombatTexts);
+  nextState = resolveEnemyAction(nextState, combatTexts, enemyResolutionCombatTexts);
 
   return {
     ...finalizePlayerTurn(nextState, combatTexts),

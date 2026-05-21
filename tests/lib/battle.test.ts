@@ -1140,6 +1140,10 @@ describe("createBattleState", () => {
     expect(result.activeCompanion).toBeNull();
   });
 
+  it("throws when no enemy is provided", () => {
+    expect(() => createBattleState(battleDeck, 0)).toThrow("createBattleState requires currentEnemy");
+  });
+
   it("scales enemy stats by cumulative rooms in run", () => {
     // totalRooms=5 → scaler=4, roomMul=1+4*0.05=1.20
     // Normal skeleton: hpTypeMul=1
@@ -1607,7 +1611,8 @@ describe("Trinket — Brass Censer (first Holy damage doubled)", () => {
 describe("Trinket — Tattered Pages (extra draw at battle start)", () => {
   it("deals 5 cards in opening hand instead of 4", () => {
     const deck = [makeCard(), makeCard(), makeCard(), makeCard(), makeCard(), makeCard(), makeCard()];
-    const state = createBattleState(deck, 0, 0, undefined, 30, defaultTalentEffects, [], 30, ["tattered-pages"]);
+    const skeleton = enemyBestiary.find((e) => e.id === "skeleton")!;
+    const state = createBattleState(deck, 0, 0, skeleton, 30, defaultTalentEffects, [], 30, ["tattered-pages"]);
     expect(state.hand).toHaveLength(5);
   });
 });

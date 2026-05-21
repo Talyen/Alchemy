@@ -1,7 +1,7 @@
 // Deck drawing and battle-state creation for new encounters.
 // Depends on game data, combat constants, talent manifests, and trinket manifests.
 // Used by turn logic and battle controllers whenever cards or fresh battles are needed.
-import { companionLibrary, createEmptyTalentManifest, enemyBestiary } from "@/lib/game-data";
+import { companionLibrary, createEmptyTalentManifest } from "@/lib/game-data";
 import type { BattleCard, BestiaryEntry, EnemyAttackEffect } from "@/lib/game-data/types";
 import type { DifficultyModifier } from "@/lib/game-data/difficulties";
 
@@ -17,7 +17,6 @@ import {
   ROOM_SCALING_INCREMENT,
   ELITE_HP_MULTIPLIER,
   BOSS_HEALTH_MULTIPLIER,
-  STARTING_TURN,
   ENEMY_BASE_REGENERATION,
   ENEMY_BOSS_REGENERATION,
   LABYRINTH_STURDY_MULTIPLIER,
@@ -27,9 +26,10 @@ import {
   type EnemyStatusValues,
   type PlayerStatusValues,
   type TalentEffectManifest,
+  type CombatFlags,
   type TurnPhase,
 } from "./types";
-import { computeTrinketManifest } from "../trinkets";
+import { computeTrinketManifest, defaultTrinketEffects } from "../trinkets";
 
 // Default talent manifest used when no talents are unlocked. Every field must have a safe
 // zero/false value so battle logic can read talentEffects without existence checks.
@@ -46,6 +46,42 @@ const skeletonEnemy = {
   traits: [],
   attackEffects: [],
 };
+
+function createEmptyPlayerStatuses(): PlayerStatusValues {
+  return {
+    block: 0,
+    armor: 0,
+    forge: 0,
+    haste: 0,
+    burn: 0,
+    poison: 0,
+    bleed: 0,
+    freeze: 0,
+    stun: 0,
+  } satisfies PlayerStatusValues;
+}
+
+function createEmptyEnemyStatuses(): EnemyStatusValues {
+  return { burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 } satisfies EnemyStatusValues;
+}
+
+function createInitialFlags(): CombatFlags {
+  return {
+    firstPhysicalCardFreeUsed: false,
+    firstHolyCardFreeUsed: false,
+    firstBurnCardDoubledUsed: false,
+    firstArmorCardDoubledUsed: false,
+    firstPoisonCardFreeUsed: false,
+    firstBleedCardFreeUsed: false,
+    nextCardCostReduction: 0,
+    goldOnFirstPoisonThisCombat: false,
+    firstHolyDamageBonusUsed: false,
+    firstBurnTrinketDoubledUsed: false,
+    firstHarmfulStatusPrevented: false,
+    firstPotionFreeUsed: false,
+    resonantChimeUsedThisTurn: false,
+  };
+}
 
 export function defaultBattleState(): BattleState {
   return {
@@ -70,8 +106,8 @@ export function defaultBattleState(): BattleState {
     enemyForge: 0,
     enemyFreezeBonus: 0,
     enemyRegeneration: 0,
-    playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
-    enemyStatuses: { burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+    playerStatuses: createEmptyPlayerStatuses(),
+    enemyStatuses: createEmptyEnemyStatuses(),
     pendingBleedLeechHealing: 0,
     enemyStunSkipTurns: 0,
     enemyFreezeSkipTurns: 0,
@@ -85,50 +121,8 @@ export function defaultBattleState(): BattleState {
     companionDamageBuff: 0,
     currentEnemy: skeletonEnemy,
     talentEffects: defaultTalentEffects,
-    trinketEffects: {
-      extraDrawPerBattle: 0,
-      firstHolyDamageDoubled: false,
-      firstBurnDoubled: false,
-      boneCharmHealOnKill: 0,
-      forgeStunThreshold: 0,
-      forgeStunAmount: 0,
-      frozenHeartDamage: 0,
-      blockToArmorThreshold: 0,
-      blockToArmorAmount: 0,
-      runicQuillDrawOnConsume: 0,
-      sinEaterHealOnHarmfulStatusRemove: 0,
-      vanguardCrestForgeOnBlockAbsorb: 0,
-      parasiticBloomLeechChance: 0,
-      cutpurseGoldOnBleed: 0,
-      wishingWellGoldOnWish: 0,
-      plagueDoctorImmunity: false,
-      mortarPestleFreeFirstPotion: false,
-      sunderingArmorPiercing: 0,
-      resonantChimeCardsRequired: 0,
-      resonantChimeMana: 0,
-      smugglersMapGoldBonus: 0,
-      grovesFavorStartHeal: 0,
-      merchantsFavorDiscount: 0,
-      companionDamageBonus: 0,
-      freezeDurationExtension: 0,
-      thunderstoneDamageOnStun: 0,
-      luckyCloverGoldChance: 0,
-    },
-    flags: {
-      firstPhysicalCardFreeUsed: false,
-      firstHolyCardFreeUsed: false,
-      firstBurnCardDoubledUsed: false,
-      firstArmorCardDoubledUsed: false,
-      firstPoisonCardFreeUsed: false,
-      firstBleedCardFreeUsed: false,
-      nextCardCostReduction: 0,
-      goldOnFirstPoisonThisCombat: false,
-      firstHolyDamageBonusUsed: false,
-      firstBurnTrinketDoubledUsed: false,
-      firstHarmfulStatusPrevented: false,
-      firstPotionFreeUsed: false,
-      resonantChimeUsedThisTurn: false,
-    },
+    trinketEffects: { ...defaultTrinketEffects },
+    flags: createInitialFlags(),
     discoveredCardIds: [],
     cardsPlayedThisTurn: 0,
     nextCardUid: 0,
@@ -254,30 +248,38 @@ function computeStartingStatuses(modifiers: DifficultyModifier[], enemy: Bestiar
   return { startingArmor: startingArmor + traitStartingArmor, startBlock, manaBonus, startCompanion };
 }
 
-function createInitialFlags() {
-  return {
-    firstPhysicalCardFreeUsed: false,
-    firstHolyCardFreeUsed: false,
-    firstBurnCardDoubledUsed: false,
-    firstArmorCardDoubledUsed: false,
-    firstPoisonCardFreeUsed: false,
-    firstBleedCardFreeUsed: false,
-    nextCardCostReduction: 0,
-    goldOnFirstPoisonThisCombat: false,
-    firstHolyDamageBonusUsed: false,
-    firstBurnTrinketDoubledUsed: false,
-    firstHarmfulStatusPrevented: false,
-    firstPotionFreeUsed: false,
-    resonantChimeUsedThisTurn: false,
-  };
-}
+export type CreateBattleStateOptions = {
+  runDeck: BattleCard[];
+  gold?: number;
+  totalRooms?: number;
+  currentEnemy: BestiaryEntry;
+  playerHealth?: number;
+  talentEffects?: TalentEffectManifest;
+  discoveredCardIds?: string[];
+  maxHealth?: number;
+  trinketIds?: string[];
+  difficultyModifiers?: DifficultyModifier[];
+};
 
 // Creates the initial BattleState for a fresh encounter. Enemy Health and attack
 // scale by cumulative rooms across the run (10% per room after the first). Type
 // multipliers (Elite 1.5×, Boss 2×) only affect Health. Delegates to focused
 // helpers for opening hand, enemy scaling, difficulty modifiers, and status setup.
+export function createBattleState(options: CreateBattleStateOptions): BattleState;
 export function createBattleState(
   runDeck: BattleCard[],
+  gold?: number,
+  totalRooms?: number,
+  currentEnemy?: BestiaryEntry,
+  playerHealth?: number,
+  talentEffects?: TalentEffectManifest,
+  discoveredCardIds?: string[],
+  maxHealth?: number,
+  trinketIds?: string[],
+  difficultyModifiers?: DifficultyModifier[],
+): BattleState;
+export function createBattleState(
+  optionsOrRunDeck: CreateBattleStateOptions | BattleCard[],
   gold = 0,
   totalRooms = 0,
   currentEnemy?: BestiaryEntry,
@@ -288,43 +290,74 @@ export function createBattleState(
   trinketIds: string[] = [],
   difficultyModifiers: DifficultyModifier[] = [],
 ): BattleState {
-  const trinketEffects = computeTrinketManifest(trinketIds);
+  const options = Array.isArray(optionsOrRunDeck)
+    ? {
+        runDeck: optionsOrRunDeck,
+        gold,
+        totalRooms,
+        currentEnemy,
+        playerHealth,
+        talentEffects,
+        discoveredCardIds,
+        maxHealth,
+        trinketIds,
+        difficultyModifiers,
+      }
+    : optionsOrRunDeck;
+
+  const {
+    runDeck,
+    gold: battleGold = 0,
+    totalRooms: battleTotalRooms = 0,
+    currentEnemy: battleEnemy,
+    playerHealth: battlePlayerHealth = MAX_PLAYER_HEALTH,
+    talentEffects: battleTalentEffects = defaultTalentEffects,
+    discoveredCardIds: battleDiscoveredCardIds = [],
+    maxHealth: battleMaxHealth = MAX_PLAYER_HEALTH,
+    trinketIds: battleTrinketIds = [],
+    difficultyModifiers: battleDifficultyModifiers = [],
+  } = options;
+
+  const trinketEffects = computeTrinketManifest(battleTrinketIds);
   const { deck, hand, discard, nextCardUid } = setupOpeningHand(runDeck, trinketEffects);
 
-  const enemy = currentEnemy ?? enemyBestiary[0];
-  const { scaledEnemyHealth, scaledEnemyAttackEffects, enemyRegeneration } = buildScaledEnemy(enemy, totalRooms);
-  const modifiedEffects = applyDifficultyAttackModifiers(scaledEnemyAttackEffects, difficultyModifiers);
-  const { startingArmor, startBlock, manaBonus, startCompanion } = computeStartingStatuses(difficultyModifiers, enemy);
+  if (!battleEnemy) {
+    throw new Error("createBattleState requires currentEnemy; use defaultBattleState for inactive placeholder state.");
+  }
 
-  const hasSturdy = difficultyModifiers.some((m) => m.kind === "labyrinth-sturdy");
+  const enemy = battleEnemy;
+  const { scaledEnemyHealth, scaledEnemyAttackEffects, enemyRegeneration } = buildScaledEnemy(enemy, battleTotalRooms);
+  const modifiedEffects = applyDifficultyAttackModifiers(scaledEnemyAttackEffects, battleDifficultyModifiers);
+  const { startingArmor, startBlock, manaBonus, startCompanion } = computeStartingStatuses(
+    battleDifficultyModifiers,
+    enemy,
+  );
+
+  const hasSturdy = battleDifficultyModifiers.some((m) => m.kind === "labyrinth-sturdy");
   const enemyMaxHealth = hasSturdy ? Math.round(scaledEnemyHealth * LABYRINTH_STURDY_MULTIPLIER) : scaledEnemyHealth;
 
-  const startingHealth = Math.min(maxHealth, playerHealth + talentEffects.startHealth);
+  const startingHealth = Math.min(battleMaxHealth, battlePlayerHealth + battleTalentEffects.startHealth);
+  const baseState = defaultBattleState();
 
   return {
+    ...baseState,
     deck,
     hand,
     discard,
-    exhausted: [],
     mana: BASE_PLAYER_MANA + manaBonus,
     maxMana: BASE_PLAYER_MANA + manaBonus,
-    gold,
-    turn: STARTING_TURN,
+    gold: battleGold,
     turnPhase: "player" as TurnPhase,
     playerHealth: startingHealth,
-    playerMaxHealth: maxHealth,
-    deathsDoorUsed: false,
-    deathsDoorActive: false,
-    deathsDoorTriggeredTurn: null,
+    playerMaxHealth: battleMaxHealth,
     enemyHealth: enemyMaxHealth,
     enemyMaxHealth: enemyMaxHealth,
     enemyAttackEffects: modifiedEffects,
     enemyRegeneration,
     enemyArmor: startingArmor,
-    enemyForge: 0,
-    enemyFreezeBonus: 0,
     playerStatuses: {
-      block: talentEffects.startBlock + startBlock,
+      ...createEmptyPlayerStatuses(),
+      block: battleTalentEffects.startBlock + startBlock,
       armor: 0,
       forge: 0,
       haste: 0,
@@ -333,27 +366,16 @@ export function createBattleState(
       bleed: 0,
       freeze: 0,
       stun: 0,
-    } as PlayerStatusValues,
-    enemyStatuses: { burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 } as EnemyStatusValues,
-    pendingBleedLeechHealing: 0,
-    enemyStunSkipTurns: 0,
-    enemyFreezeSkipTurns: 0,
-    playerStunSkipTurns: 0,
-    playerFreezeSkipTurns: 0,
-    playerCCCooldown: 0,
-    enemyCCCooldown: 0,
-    wishOptions: null,
-    wishQueue: [],
+    },
+    enemyStatuses: createEmptyEnemyStatuses(),
     activeCompanion: startCompanion ? companionLibrary["wolf"] : null,
-    companionDamageBuff: 0,
     currentEnemy: enemy,
-    talentEffects,
+    talentEffects: battleTalentEffects,
     trinketEffects,
     flags: createInitialFlags(),
-    discoveredCardIds,
-    cardsPlayedThisTurn: 0,
+    discoveredCardIds: battleDiscoveredCardIds,
     nextCardUid,
-    difficultyModifiers,
+    difficultyModifiers: battleDifficultyModifiers,
   };
 }
 

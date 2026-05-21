@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { createBattleState, type BattleState, type CombatTextEvent } from "@/lib/battle";
+import { defaultBattleState, type BattleState, type CombatTextEvent } from "@/lib/battle";
 import { COMBAT_TEXT_LANE_DELAY_MS, COMBAT_TEXT_LIFETIME_MS, SHAKE_DURATION } from "@/lib/game-constants";
 import type { CardGhost, FloatingCombatText } from "@/features/alchemy/types";
 
@@ -44,7 +44,7 @@ const combatTextLifetimeMs = COMBAT_TEXT_LIFETIME_MS;
 const combatTextLaneDelayMs = COMBAT_TEXT_LANE_DELAY_MS;
 
 export const useBattleStore = create<BattleStore>()((set, get) => ({
-  battleState: createBattleState([], 0),
+  battleState: defaultBattleState(),
   hasActiveBattle: false,
   cardGhosts: [],
   floatingCombatTexts: [],

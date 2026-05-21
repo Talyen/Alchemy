@@ -309,6 +309,25 @@ describe("resolveStunTrigger", () => {
     expect(result.enemyHealth).toBe(25);
   });
 
+  it("applies lucky clover gold from thunderstone even when texts are omitted", () => {
+    vi.spyOn(Math, "random").mockReturnValueOnce(0);
+    const state = baseState({
+      enemyHealth: 30,
+      enemyMaxHealth: 30,
+      enemyStunSkipTurns: 0,
+      enemyStatuses: { ...baseState().enemyStatuses, stun: 20 },
+      trinketEffects: {
+        ...baseState().trinketEffects,
+        thunderstoneDamageOnStun: 5,
+        luckyCloverGoldChance: 100,
+      },
+    });
+
+    const result = resolveStunTrigger(state);
+
+    expect(result.gold).toBe(5);
+  });
+
   it("uses stunThresholdReduction to lower threshold", () => {
     const base = baseState();
     const state = {

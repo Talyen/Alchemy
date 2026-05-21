@@ -160,8 +160,12 @@ export function setPlayerStatus(state: BattleState, status: PlayerStatusId, valu
   return { ...state, playerStatuses: { ...state.playerStatuses, [status]: value } };
 }
 
+export function adjustEnemyStatusDelta(state: Pick<BattleState, "difficultyModifiers">, delta: number): number {
+  return isNullFieldActive(state) ? Math.max(1, Math.round(delta / 2)) : delta;
+}
+
 export function addEnemyStatus(state: BattleState, status: EnemyStatusId, delta: number): BattleState {
-  const adjustedDelta = isNullFieldActive(state) ? Math.max(1, Math.round(delta / 2)) : delta;
+  const adjustedDelta = adjustEnemyStatusDelta(state, delta);
   return { ...state, enemyStatuses: { ...state.enemyStatuses, [status]: state.enemyStatuses[status] + adjustedDelta } };
 }
 

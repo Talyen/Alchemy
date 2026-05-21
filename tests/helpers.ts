@@ -353,7 +353,7 @@ export async function navigateToCombat(page: Page) {
 // and navigating to the first combat. Skips the startRun UI dance entirely.
 // Returns when the battle hand is visible.
 export async function startBattleWithDeck(page: Page, deck: Record<string, unknown>[], overrides: Record<string, unknown> = {}) {
-  await page.addInitScript(seedRandomScript(42));
+  await forceNextDestinationChoice(page, "Normal Combat");
   await injectSaveState(page, {
     runDeck: deck,
     runPlayerHealth: 30,
@@ -363,6 +363,6 @@ export async function startBattleWithDeck(page: Page, deck: Record<string, unkno
   await page.goto("/");
   await resumeGameMode(page, "campaign");
   await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 10000 });
-  await navigateToDestination(page, "Normal Combat");
+  await page.getByRole("button", { name: "Normal Combat" }).click();
   await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });
 }

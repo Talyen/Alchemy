@@ -3,11 +3,14 @@ import { drawCards } from "./draw";
 import { harmfulPlayerStatusIds } from "@/lib/game-data";
 import type { BattleCardEffect } from "@/lib/game-data/types";
 import {
+  addEnemyStatus,
   addGold,
   addPlayerStatus,
+  adjustEnemyStatusDelta,
   applyPlayerHealing,
   clampHealth,
   isNullFieldActive,
+  setEnemyStatus,
   setFlag,
   type BattleState,
   type CombatTextEvent,
@@ -165,8 +168,8 @@ export function resolveStunTrigger(state: BattleState, combatTexts?: CombatTextE
     };
     if (combatTexts) {
       mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "nature", amount: dmg });
-      nextState = applyLuckyCloverGold(nextState, dmg, combatTexts);
     }
+    nextState = applyLuckyCloverGold(nextState, dmg, combatTexts ?? []);
   }
 
   return nextState;
@@ -181,22 +184,19 @@ export function applyDamageStatuses(
   actualDamage: number,
   combatTexts: CombatTextEvent[],
 ) {
-  const nextStatuses = { ...state.enemyStatuses };
-  let nextState: BattleState = { ...state, enemyStatuses: nextStatuses };
-
-  // Null Field: status application to enemies is halved (min 1).
-  const statusDamage = isNullFieldActive(state) ? Math.max(1, Math.round(actualDamage / 2)) : actualDamage;
+  let nextState = state;
+  const statusDamage = adjustEnemyStatusDelta(state, actualDamage);
 
   switch (effect.damageType) {
     case "burn": {
-      nextStatuses.burn += statusDamage;
+      nextState = addEnemyStatus(nextState, "burn", actualDamage);
       if (nextState.talentEffects.burnRemovesEnemyArmor) {
         nextState = { ...nextState, enemyArmor: Math.max(0, nextState.enemyArmor - actualDamage) };
       }
       break;
     }
     case "poison": {
-      nextStatuses.poison += statusDamage;
+      nextState = addEnemyStatus(nextState, "poison", actualDamage);
       if (
         actualDamage > 0 &&
         nextState.talentEffects.goldOnFirstPoison > 0 &&
@@ -218,7 +218,7 @@ export function applyDamageStatuses(
     }
     case "bleed": {
       const bleedAmount = statusDamage * BLEED_STATUS_MULTIPLIER;
-      nextStatuses.bleed += bleedAmount;
+      nextState = setEnemyStatus(nextState, "bleed", nextState.enemyStatuses.bleed + bleedAmount);
       if (
         bleedAmount > 0 &&
         (effect.lifesteal ||
@@ -232,13 +232,10 @@ export function applyDamageStatuses(
         nextState.talentEffects.bleedPoisonChance > 0 &&
         Math.random() * PERCENT_DENOMINATOR < nextState.talentEffects.bleedPoisonChance
       ) {
-        nextStatuses.poison += actualDamage;
+        nextState = addEnemyStatus(nextState, "poison", actualDamage);
       }
       if (bleedAmount > 0 && nextState.trinketEffects.cutpurseGoldOnBleed > 0) {
-        nextState = {
-          ...addGold(nextState, nextState.trinketEffects.cutpurseGoldOnBleed),
-          enemyStatuses: nextStatuses,
-        };
+        nextState = addGold(nextState, nextState.trinketEffects.cutpurseGoldOnBleed);
         mergeCombatText(combatTexts, {
           target: "player",
           kind: "status",
@@ -249,26 +246,26 @@ export function applyDamageStatuses(
       break;
     }
     case "stun": {
-      nextStatuses.stun += statusDamage;
-      nextState = { ...nextState, enemyStatuses: nextStatuses };
+      nextState = addEnemyStatus(nextState, "stun", actualDamage);
       nextState = resolveStunTrigger(nextState, combatTexts);
       break;
     }
     case "freeze": {
-      nextStatuses.freeze += statusDamage;
+      nextState = addEnemyStatus(nextState, "freeze", actualDamage);
       const isFreezeImmune = state.currentEnemy.traits.some((t) => t.id === "glacial-shell");
       const freezeThreshold = FREEZE_THRESHOLD_FRACTION - (state.talentEffects.freezeThresholdReduction ?? 0);
-      if (!isFreezeImmune && state.enemyHealth > 0 && nextStatuses.freeze >= state.enemyHealth * freezeThreshold) {
+      if (
+        !isFreezeImmune &&
+        state.enemyHealth > 0 &&
+        nextState.enemyStatuses.freeze >= state.enemyHealth * freezeThreshold
+      ) {
         // If CC immunity is active, clear the status without triggering a skip.
         if (state.enemyCCCooldown > 0) {
-          nextStatuses.freeze = 0;
-          nextState = { ...nextState, enemyStatuses: nextStatuses };
+          nextState = setEnemyStatus(nextState, "freeze", 0);
           break;
         }
-        nextStatuses.freeze = 0;
         nextState = {
-          ...nextState,
-          enemyStatuses: nextStatuses,
+          ...setEnemyStatus(nextState, "freeze", 0),
           enemyFreezeSkipTurns: nextState.enemyFreezeSkipTurns + 1 + nextState.trinketEffects.freezeDurationExtension,
           enemyCCCooldown: 2,
         };

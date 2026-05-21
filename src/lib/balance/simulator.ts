@@ -227,18 +227,17 @@ export function simulateBattle(config: BattleSimulationConfig): BattleSimulation
       (config.talentPreset
         ? buildPresetManifest(characters[config.characterId].keywords, config.talentPreset)
         : defaultTalentEffects);
-    let state = createBattleState(
-      playerDeck,
-      config.gold ?? 0,
-      config.depth ?? 0,
-      enemy,
-      config.playerHealth ?? playerMaxHealth,
+    let state = createBattleState({
+      runDeck: playerDeck,
+      gold: config.gold ?? 0,
+      totalRooms: config.depth ?? 0,
+      currentEnemy: enemy,
+      playerHealth: config.playerHealth ?? playerMaxHealth,
       talentEffects,
-      [],
-      playerMaxHealth,
+      maxHealth: playerMaxHealth,
       trinketIds,
-      config.difficultyModifiers ?? [],
-    );
+      difficultyModifiers: config.difficultyModifiers ?? [],
+    });
 
     const cardsPlayed: Record<string, number> = {};
     const maxTurns = config.maxTurns ?? DEFAULT_MAX_TURNS;
