@@ -69,16 +69,33 @@ function baseState(overrides: Partial<BattleState> = {}): BattleState {
       blockPreventsPoison: false,
       blockPreventsStun: false,
       blockAbsorbPhysicalBonus: 0,
+      blockReduceBurnDamage: 0,
+      blockDepletedHeal: 0,
+      blockToHolyDamage: false,
+      blockToStunDamage: false,
       forgeToBurn: false,
       forgeToHoly: false,
       forgeToBlock: false,
+      forgeToBleed: false,
       forgeBurnThreshold: 0,
       forgeBurnDamage: 0,
+      startForge: 0,
+      forgeStripArmorThreshold: 0,
+      flatForgeGained: 0,
+      forgeDoubledBelowHalfHealth: false,
+      forgeBlockThreshold: 0,
+      forgeBlockAmount: 0,
       armorMitigatesBurn: false,
       armorBlockThreshold: 0,
       armorBlockAmount: 0,
       armorDoubledBelowHalfHealth: false,
       firstArmorCardDoubled: false,
+      startArmor: 0,
+      armorMitigatesBleed: false,
+      armorBreakBlock: 0,
+      armorMitigatesStun: false,
+      armorCleanseThreshold: 0,
+      flatArmorAmount: 0,
       campfireHealBonus: 0,
       healthThresholdBlock: null,
       maxHealthPerCombat: 0,
@@ -406,6 +423,55 @@ describe("tickPlayerStatuses", () => {
     expect(next.playerHealth).toBe(30);
     expect(next.playerStatuses.armor).toBe(10);
     expect(next.playerStatuses.burn).toBe(2);
+  });
+
+  it("blockReduceBurnDamage reduces burn damage when block is active", () => {
+    const state = baseState({
+      playerHealth: 30,
+      playerStatuses: { ...baseState().playerStatuses, burn: 8, block: 5 },
+      talentEffects: { ...baseState().talentEffects, blockReduceBurnDamage: 1 },
+    });
+    const texts = makeTexts();
+    const next = tickPlayerStatuses(state, texts);
+    expect(next.playerHealth).toBe(23);
+    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "burn", amount: 7 });
+  });
+
+  it("blockReduceBurnDamage reduces burn to 0 when block is active and damage is 1", () => {
+    const state = baseState({
+      playerHealth: 30,
+      playerStatuses: { ...baseState().playerStatuses, burn: 1, block: 5 },
+      talentEffects: { ...baseState().talentEffects, blockReduceBurnDamage: 1 },
+    });
+    const texts = makeTexts();
+    const next = tickPlayerStatuses(state, texts);
+    expect(next.playerHealth).toBe(30);
+    expect(next.playerStatuses.burn).toBe(0);
+  });
+
+  it("blockReduceBurnDamage does nothing when block is 0", () => {
+    const state = baseState({
+      playerHealth: 30,
+      playerStatuses: { ...baseState().playerStatuses, burn: 8, block: 0 },
+      talentEffects: { ...baseState().talentEffects, blockReduceBurnDamage: 1 },
+    });
+    const texts = makeTexts();
+    const next = tickPlayerStatuses(state, texts);
+    expect(next.playerHealth).toBe(22);
+    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "burn", amount: 8 });
+  });
+
+  it("blockReduceBurnDamage stacks with armorMitigatesBurn", () => {
+    const state = baseState({
+      playerHealth: 30,
+      playerStatuses: { ...baseState().playerStatuses, burn: 8, block: 5, armor: 3 },
+      talentEffects: { ...baseState().talentEffects, blockReduceBurnDamage: 1, armorMitigatesBurn: true },
+    });
+    const texts = makeTexts();
+    const next = tickPlayerStatuses(state, texts);
+    // block reduces: 8 -> 7, armor reduces: 7 -> 4
+    expect(next.playerHealth).toBe(26);
+    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "burn", amount: 4 });
   });
 
   it("deals poison damage to player and decrements poison", () => {

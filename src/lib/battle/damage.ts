@@ -44,11 +44,13 @@ function computeBaseRawAmount(state: BattleState, effect: Extract<BattleCardEffe
   const isPhysicalOrStun = effect.damageType === "physical" || effect.damageType === "stun";
   const isBurn = effect.damageType === "burn";
   const isHoly = effect.damageType === "holy";
+  const isBleed = effect.damageType === "bleed";
 
   let forgeBonus = 0;
   if (isPhysicalOrStun) forgeBonus = state.playerStatuses.forge;
   if (isBurn && state.talentEffects.forgeToBurn) forgeBonus = state.playerStatuses.forge;
   if (isHoly && state.talentEffects.forgeToHoly) forgeBonus = state.playerStatuses.forge;
+  if (isBleed && state.talentEffects.forgeToBleed) forgeBonus = state.playerStatuses.forge;
 
   if (effect.equalToBlock) {
     return state.playerStatuses.block + forgeBonus;
@@ -94,6 +96,9 @@ function applyHolyDamageModifiers(state: BattleState, rawAmount: number): number
   let nextAmount = rawAmount;
   nextAmount += Math.round((state.gold * state.talentEffects.holyGoldPercent) / PERCENT_DENOMINATOR);
   nextAmount += Math.round((state.playerStatuses.block * state.talentEffects.holyBlockPercent) / PERCENT_DENOMINATOR);
+  if (state.talentEffects.blockToHolyDamage) {
+    nextAmount += Math.round(state.playerStatuses.block / HALF_DIVISOR);
+  }
   if (state.enemyStatuses.burn > 0) {
     nextAmount = Math.round(nextAmount * (1 + state.talentEffects.holyVsBurnMultiplier / PERCENT_DENOMINATOR));
   }
@@ -128,6 +133,9 @@ function computeBaseDamage(state: BattleState, effect: Extract<BattleCardEffect,
     rawAmount = applyBleedDamageModifiers(state, rawAmount);
   } else if (effect.damageType === "stun") {
     rawAmount += state.talentEffects.flatStunDamage;
+    if (state.talentEffects.blockToStunDamage) {
+      rawAmount += Math.round(state.playerStatuses.block / HALF_DIVISOR);
+    }
   } else if (effect.damageType === "trap") {
     rawAmount += state.talentEffects.flatTrapDamage;
   }
@@ -294,19 +302,24 @@ function applyGoldTroveReward(state: BattleState, damage: number, combatTexts: C
 }
 
 /**
- * Consumes player forge charge after executing a physical/stun hit.
+ * Consumes player forge charge after executing a damage hit.
+ * Forge is consumed whenever it contributed to the damage — whether
+ * through physical/stun natively or burn/holy via talent effects.
  */
-function consumeForgeAfterPhysicalDamage(
+function consumeForgeAfterDamage(
   state: BattleState,
   effect: Extract<BattleCardEffect, { kind: "damage" }>,
   damage: number,
 ) {
-  if (
-    (effect.damageType !== "physical" && effect.damageType !== "stun") ||
-    damage <= 0 ||
-    state.playerStatuses.forge <= 0
-  )
-    return state;
+  const forgeWasApplied =
+    effect.damageType === "physical" ||
+    effect.damageType === "stun" ||
+    (effect.damageType === "burn" && state.talentEffects.forgeToBurn) ||
+    (effect.damageType === "holy" && state.talentEffects.forgeToHoly) ||
+    (effect.damageType === "bleed" && state.talentEffects.forgeToBleed);
+
+  if (!forgeWasApplied || damage <= 0 || state.playerStatuses.forge <= 0) return state;
+
   return {
     ...state,
     playerStatuses: {
@@ -378,7 +391,7 @@ function applyDamageRiders(
     mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: effect.damageType, amount: modifiedDamage });
   }
 
-  return consumeForgeAfterPhysicalDamage(nextState, effect, modifiedDamage);
+  return consumeForgeAfterDamage(nextState, effect, modifiedDamage);
 }
 
 /**

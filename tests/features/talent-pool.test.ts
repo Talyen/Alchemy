@@ -113,4 +113,45 @@ describe("computeTalentEffects", () => {
     expect(effects.startHealth).toBe(0);
     expect(effects.healMultiplier).toBe(1);
   });
+
+  it("applies forge talent startForge", () => {
+    const effects = computeTalentEffects({ forge: ["forge-strength-1"] });
+    expect(effects.startForge).toBe(2);
+  });
+
+  it("applies forge talent forgeToBleed", () => {
+    const effects = computeTalentEffects({ forge: ["forge-strength-2"] });
+    expect(effects.forgeToBleed).toBe(true);
+  });
+
+  it("applies forge talent forgeStripArmorThreshold", () => {
+    const effects = computeTalentEffects({ forge: ["forge-strength-3"] });
+    expect(effects.forgeStripArmorThreshold).toBe(6);
+  });
+
+  it("applies forge talent flatForgeGained", () => {
+    const effects = computeTalentEffects({ forge: ["forge-strength-4"] });
+    expect(effects.flatForgeGained).toBe(1);
+  });
+
+  it("applies forge talent forgeDoubledBelowHalfHealth", () => {
+    const effects = computeTalentEffects({ forge: ["forge-strength-5"] });
+    expect(effects.forgeDoubledBelowHalfHealth).toBe(true);
+  });
+
+  it("applies forge talent forgeBlockBurst", () => {
+    const effects = computeTalentEffects({ forge: ["forge-strength-6"] });
+    expect(effects.forgeBlockThreshold).toBe(6);
+    expect(effects.forgeBlockAmount).toBe(10);
+  });
+
+  it("forge keyword has 10 talents", () => {
+    const forgeTalents = getTalentsForKeyword("forge");
+    expect(forgeTalents).toHaveLength(10);
+  });
+
+  it("no forge talents have placeholder description", () => {
+    const forgeTalents = getTalentsForKeyword("forge");
+    expect(forgeTalents.every((t) => t.description !== "Placeholder talent (NYI)")).toBe(true);
+  });
 });

@@ -266,7 +266,7 @@ export const COMPANION_GOLD_MULTIPLIER = 1.2; // Companion gold find multiplies 
 
 // ============ Corruption ============
 export const CORRUPTION_TRANSFORM_CHANCE = 0.5; // 50% chance corruption transforms card vs mutating in-place.
-export const CORRUPTION_DELTA_CHANCE = 0.5; // 50% chance delta is +1 vs -1.
+export const CORRUPTION_DELTA_CHANCE = 0.2; // 80% chance +1 (buff), 20% chance -1 (nerf).
 export const CORRUPTION_TEXT_PATTERNS = {
   authoredNumber: /\d+/g,
   leadingNumber: /^\d+/,

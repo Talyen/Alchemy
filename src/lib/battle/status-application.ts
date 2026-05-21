@@ -60,7 +60,10 @@ export function applyPlayerStatusFromAttack(
   combatTexts: CombatTextEvent[],
 ): BattleState {
   const status = effect.status;
-  const amount = computeAttackStatusAmount(state, status, effect.amount);
+  let amount = computeAttackStatusAmount(state, status, effect.amount);
+  if (status === "stun" && state.talentEffects.armorMitigatesStun) {
+    amount = Math.max(0, amount - state.playerStatuses.armor);
+  }
   const blockPreventsStatus = shouldBlockPreventStatus(state, status);
 
   if (harmfulPlayerStatusIds.includes(status)) {

@@ -20,7 +20,14 @@ import { decayHalvedStatus } from "./status-helpers";
 import { tickEnemyStatuses, tickPlayerStatuses } from "./status-ticks";
 import type { BattleCard, EnemyAttackEffect, TalentEffectManifest } from "@/lib/game-data/types";
 import type { DifficultyModifier } from "@/lib/game-data/difficulties";
-import { applyPlayerCombatDamage, clampHealth, type BattleState, type CombatTextEvent, type TurnPhase } from "./types";
+import {
+  applyPlayerCombatDamage,
+  applyPlayerHealing,
+  clampHealth,
+  type BattleState,
+  type CombatTextEvent,
+  type TurnPhase,
+} from "./types";
 import { CARDS_PER_TURN, MAX_HAND_SIZE, BATTLE_CONFIG } from "../game-constants";
 import {
   DIFFICULTY_FORGE_PER_TURN,
@@ -258,6 +265,7 @@ function resolvePostDamageThresholds(
   nextState = checkHealthThresholds(prevHealth, nextState.playerHealth, nextState, combatTexts);
 
   if (actualDamage > 0 && nextState.playerStatuses.armor > 0) {
+    const armorBefore = nextState.playerStatuses.armor;
     nextState = {
       ...nextState,
       playerStatuses: {
@@ -265,6 +273,21 @@ function resolvePostDamageThresholds(
         armor: nextState.playerStatuses.armor - BATTLE_CONFIG.ARMOR_DECAY_AMOUNT,
       },
     };
+    if (armorBefore > 0 && nextState.playerStatuses.armor === 0 && nextState.talentEffects.armorBreakBlock > 0) {
+      nextState = {
+        ...nextState,
+        playerStatuses: {
+          ...nextState.playerStatuses,
+          block: nextState.playerStatuses.block + nextState.talentEffects.armorBreakBlock,
+        },
+      };
+      mergeCombatText(combatTexts, {
+        target: "player",
+        kind: "status",
+        stat: "block",
+        amount: nextState.talentEffects.armorBreakBlock,
+      });
+    }
   }
 
   // Enemy forge decays by 1 per physical attack that deals damage (mirrors player forge consumption).
@@ -309,6 +332,14 @@ function processEnemyDamageEffect(
       block: state.playerStatuses.block - Math.min(blockAbsorb, state.playerStatuses.block),
     },
   };
+
+  if (
+    state.talentEffects.blockDepletedHeal > 0 &&
+    state.playerStatuses.block > 0 &&
+    nextState.playerStatuses.block <= 0
+  ) {
+    nextState = applyPlayerHealing(nextState, state.talentEffects.blockDepletedHeal);
+  }
 
   nextState = resolvePostDamageThresholds(
     nextState,

@@ -36,7 +36,7 @@ function tickBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
     enemyHealth: clampHealth(state.enemyHealth, -finalDamage, state.enemyMaxHealth),
     enemyStatuses: { ...state.enemyStatuses, burn: nextBurn },
   };
-  return decayArmorAfterDamage(nextState, finalDamage, "enemy");
+  return decayArmorAfterDamage(nextState, finalDamage, "enemy", combatTexts);
 }
 
 function applyParasiticBloomLeech(state: BattleState, damage: number, combatTexts: CombatTextEvent[]): BattleState {
@@ -63,7 +63,7 @@ function tickPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
     enemyStatuses: { ...state.enemyStatuses, poison: nextPoison },
   };
   nextState = applyParasiticBloomLeech(nextState, finalDamage, combatTexts);
-  return decayArmorAfterDamage(nextState, finalDamage, "enemy");
+  return decayArmorAfterDamage(nextState, finalDamage, "enemy", combatTexts);
 }
 
 function tickBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
@@ -81,7 +81,7 @@ function tickBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
     mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: leechAmount });
   }
   mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "bleed", amount: damage });
-  return decayArmorAfterDamage(nextState, damage, "enemy");
+  return decayArmorAfterDamage(nextState, damage, "enemy", combatTexts);
 }
 
 export function tickEnemyStatuses(state: BattleState, combatTexts: CombatTextEvent[]) {
@@ -95,9 +95,13 @@ function tickPlayerBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
   const damage = state.playerStatuses.burn;
   if (damage <= 0) return state;
   const actualDamage = state.talentEffects.receiveHalfBurnDamage ? Math.round(damage / HALF_DIVISOR) : damage;
+  const afterBlockReduction =
+    state.talentEffects.blockReduceBurnDamage > 0 && state.playerStatuses.block > 0
+      ? Math.max(0, actualDamage - state.talentEffects.blockReduceBurnDamage)
+      : actualDamage;
   const reducedDamage = state.talentEffects.armorMitigatesBurn
-    ? Math.max(0, actualDamage - state.playerStatuses.armor)
-    : actualDamage;
+    ? Math.max(0, afterBlockReduction - state.playerStatuses.armor)
+    : afterBlockReduction;
   if (reducedDamage > 0) {
     mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "burn", amount: reducedDamage });
   }
@@ -105,7 +109,7 @@ function tickPlayerBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
     ...applyPlayerCombatDamage(state, reducedDamage),
     playerStatuses: { ...state.playerStatuses, burn: decayHalvedStatus(state.playerStatuses.burn) },
   };
-  return decayArmorAfterDamage(nextState, reducedDamage, "player");
+  return decayArmorAfterDamage(nextState, reducedDamage, "player", combatTexts);
 }
 
 function tickPlayerPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
@@ -120,18 +124,23 @@ function tickPlayerPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
     ...applyPlayerCombatDamage(state, reducedDamage),
     playerStatuses: { ...state.playerStatuses, poison: nextPoison },
   };
-  return decayArmorAfterDamage(nextState, reducedDamage, "player");
+  return decayArmorAfterDamage(nextState, reducedDamage, "player", combatTexts);
 }
 
 function tickPlayerBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
   const damage = state.playerStatuses.bleed;
   if (damage <= 0) return state;
-  mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "bleed", amount: damage });
+  const reducedDamage = state.talentEffects.armorMitigatesBleed
+    ? Math.max(0, damage - state.playerStatuses.armor)
+    : damage;
+  if (reducedDamage > 0) {
+    mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "bleed", amount: reducedDamage });
+  }
   const nextState = {
-    ...applyPlayerCombatDamage(state, damage),
+    ...applyPlayerCombatDamage(state, reducedDamage),
     playerStatuses: { ...state.playerStatuses, bleed: 0 },
   };
-  return decayArmorAfterDamage(nextState, damage, "player");
+  return decayArmorAfterDamage(nextState, reducedDamage, "player", combatTexts);
 }
 
 export function tickPlayerStatuses(state: BattleState, combatTexts: CombatTextEvent[]) {

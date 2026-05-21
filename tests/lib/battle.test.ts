@@ -2257,6 +2257,40 @@ describe("enemy damage absorption via endPlayerTurn", () => {
     // 15 - 12 = 3 damage → health = 27
     expect(result.state.playerHealth).toBe(27);
   });
+
+  it("blockDepletedHeal restores health when block is fully consumed", () => {
+    const state = makeState({
+      playerHealth: 20,
+      playerMaxHealth: 30,
+      playerStatuses: { block: 5, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      talentEffects: { ...defaultTalentEffects, blockDepletedHeal: 2 },
+      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 10 }],
+      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
+      mana: 4,
+      maxMana: 4,
+    });
+    const result = endPlayerTurn(state);
+    // block absorbs 5, remaining 5 damage → health 20-5=15, then +2 heal = 17
+    expect(result.state.playerHealth).toBe(17);
+    expect(result.state.playerStatuses.block).toBe(0);
+  });
+
+  it("blockDepletedHeal does not trigger when block is not fully consumed", () => {
+    const state = makeState({
+      playerHealth: 20,
+      playerMaxHealth: 30,
+      playerStatuses: { block: 10, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      talentEffects: { ...defaultTalentEffects, blockDepletedHeal: 2 },
+      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 5 }],
+      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
+      mana: 4,
+      maxMana: 4,
+    });
+    const result = endPlayerTurn(state);
+    // block absorbs 5, 0 damage to health, block=5, no depletion heal
+    expect(result.state.playerHealth).toBe(20);
+    expect(result.state.playerStatuses.block).toBe(5);
+  });
 });
 
 // ─── Damage Riders (dealDamageToEnemy via applyCardEffects) ───
@@ -2429,6 +2463,50 @@ describe("damage riders via applyCardEffects", () => {
     const result = applyCardEffects(state, card, texts);
     // 5 + floor(8/2) = 5 + 4 = 9 damage
     expect(result.enemyHealth).toBe(41);
+  });
+
+  it("blockToHolyDamage adds half block to holy damage", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.99);
+    const state = makeState({
+      gold: 0,
+      mana: 10,
+      enemyHealth: 50,
+      enemyMaxHealth: 50,
+      enemyStatuses: { burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      playerStatuses: { block: 8, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      talentEffects: { ...defaultTalentEffects, blockToHolyDamage: true },
+      deck: [],
+      hand: [],
+      discard: [],
+      exhausted: [],
+    });
+    const card = makeCard({ effects: [{ kind: "damage", damageType: "holy", amount: 5 }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    // 5 + floor(8/2) = 5 + 4 = 9 damage
+    expect(result.enemyHealth).toBe(41);
+  });
+
+  it("blockToStunDamage adds half block to stun damage", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.99);
+    const state = makeState({
+      mana: 10,
+      enemyHealth: 50,
+      enemyMaxHealth: 50,
+      playerStatuses: { block: 8, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      talentEffects: { ...defaultTalentEffects, blockToStunDamage: true },
+      deck: [],
+      hand: [],
+      discard: [],
+      exhausted: [],
+    });
+    const card = makeCard({ effects: [{ kind: "damage", damageType: "stun", amount: 5 }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    // 5 + floor(8/2) = 5 + 4 = 9 damage
+    expect(result.enemyHealth).toBe(41);
+    // stun damage also adds stun buildup equal to damage dealt
+    expect(result.enemyStatuses.stun).toBe(9);
   });
 
   it("sunderingArmorPiercing reduces enemy armor against physical", () => {

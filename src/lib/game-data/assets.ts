@@ -131,6 +131,7 @@ import coldSnap from "@/assets/optimized/cold-snap.webp";
 import combustion from "@/assets/optimized/combustion.webp";
 import goldArt from "@/assets/optimized/gold.webp";
 import rayOfFrost from "@/assets/optimized/ray-of-frost.webp";
+import pointerCursor from "@/assets/optimized/pointer-c-shaded.webp";
 
 export { theCampaign, theLabyrinth, theWildwoods, placeholderGameMode };
 
@@ -282,6 +283,10 @@ export const characterArt = {
   ranger,
   rogue,
   wizard,
+} as const;
+
+export const cursorArt = {
+  pointer: pointerCursor,
 } as const;
 
 // Auto-discovered art assets for upfront preloading during the startup loading screen.

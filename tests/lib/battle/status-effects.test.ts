@@ -76,16 +76,33 @@ function baseState(overrides: Partial<BattleState> = {}): BattleState {
       blockPreventsPoison: false,
       blockPreventsStun: false,
       blockAbsorbPhysicalBonus: 0,
+      blockReduceBurnDamage: 0,
+      blockDepletedHeal: 0,
+      blockToHolyDamage: false,
+      blockToStunDamage: false,
       forgeToBurn: false,
       forgeToHoly: false,
       forgeToBlock: false,
+      forgeToBleed: false,
       forgeBurnThreshold: 0,
       forgeBurnDamage: 0,
+      startForge: 0,
+      forgeStripArmorThreshold: 0,
+      flatForgeGained: 0,
+      forgeDoubledBelowHalfHealth: false,
+      forgeBlockThreshold: 0,
+      forgeBlockAmount: 0,
       armorMitigatesBurn: false,
       armorBlockThreshold: 0,
       armorBlockAmount: 0,
       armorDoubledBelowHalfHealth: false,
       firstArmorCardDoubled: false,
+      startArmor: 0,
+      armorMitigatesBleed: false,
+      armorBreakBlock: 0,
+      armorMitigatesStun: false,
+      armorCleanseThreshold: 0,
+      flatArmorAmount: 0,
       campfireHealBonus: 0,
       healthThresholdBlock: null,
       maxHealthPerCombat: 0,
@@ -804,5 +821,101 @@ describe("applyPlayerStatusEffect", () => {
     const result = applyPlayerStatusEffect(state, effect, []);
     expect(result.playerStatuses.forge).toBe(4);
     expect(result.enemyStatuses.burn).toBe(0);
+  });
+
+  it("flatForgeGained increases forge from card effects", () => {
+    const state = baseState({
+      talentEffects: { ...baseState().talentEffects, flatForgeGained: 1 },
+    });
+    const effect = { kind: "player-status" as const, status: "forge" as const, amount: 3 };
+    const texts = makeTexts();
+    const result = applyPlayerStatusEffect(state, effect, texts);
+    expect(result.playerStatuses.forge).toBe(4);
+    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "forge", amount: 4 });
+  });
+
+  it("forgeDoubledBelowHalfHealth doubles forge gain when health is low", () => {
+    const state = baseState({
+      playerHealth: 10,
+      playerMaxHealth: 30,
+      talentEffects: { ...baseState().talentEffects, forgeDoubledBelowHalfHealth: true },
+    });
+    const effect = { kind: "player-status" as const, status: "forge" as const, amount: 2 };
+    const texts = makeTexts();
+    const result = applyPlayerStatusEffect(state, effect, texts);
+    expect(result.playerStatuses.forge).toBe(4);
+    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "forge", amount: 4 });
+  });
+
+  it("forgeDoubledBelowHalfHealth does not double when health is above 50%", () => {
+    const state = baseState({
+      playerHealth: 20,
+      playerMaxHealth: 30,
+      talentEffects: { ...baseState().talentEffects, forgeDoubledBelowHalfHealth: true },
+    });
+    const effect = { kind: "player-status" as const, status: "forge" as const, amount: 2 };
+    const result = applyPlayerStatusEffect(state, effect, []);
+    expect(result.playerStatuses.forge).toBe(2);
+  });
+
+  it("strips enemy armor when forge crosses forgeStripArmorThreshold", () => {
+    const state = baseState({
+      playerStatuses: { ...baseState().playerStatuses, forge: 5 },
+      enemyMitigation: { armor: 4, forge: 0, freezeBonus: 0 },
+      talentEffects: { ...baseState().talentEffects, forgeStripArmorThreshold: 6 },
+    });
+    const effect = { kind: "player-status" as const, status: "forge" as const, amount: 2 };
+    const result = applyPlayerStatusEffect(state, effect, []);
+    expect(result.playerStatuses.forge).toBe(7);
+    expect(result.enemyMitigation.armor).toBe(0);
+  });
+
+  it("does not strip enemy armor when forge does not cross threshold", () => {
+    const state = baseState({
+      playerStatuses: { ...baseState().playerStatuses, forge: 3 },
+      enemyMitigation: { armor: 4, forge: 0, freezeBonus: 0 },
+      talentEffects: { ...baseState().talentEffects, forgeStripArmorThreshold: 6 },
+    });
+    const effect = { kind: "player-status" as const, status: "forge" as const, amount: 2 };
+    const result = applyPlayerStatusEffect(state, effect, []);
+    expect(result.playerStatuses.forge).toBe(5);
+    expect(result.enemyMitigation.armor).toBe(4);
+  });
+
+  it("grants block when forge crosses forgeBlockThreshold", () => {
+    const state = baseState({
+      playerStatuses: { ...baseState().playerStatuses, forge: 5 },
+      talentEffects: { ...baseState().talentEffects, forgeBlockThreshold: 6, forgeBlockAmount: 10 },
+    });
+    const effect = { kind: "player-status" as const, status: "forge" as const, amount: 2 };
+    const texts = makeTexts();
+    const result = applyPlayerStatusEffect(state, effect, texts);
+    expect(result.playerStatuses.forge).toBe(7);
+    expect(result.playerStatuses.block).toBe(10);
+    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "block", amount: 10 });
+  });
+
+  it("forgeBlockBurst respects forgeToBlock synergy", () => {
+    const state = baseState({
+      playerStatuses: { ...baseState().playerStatuses, forge: 5 },
+      talentEffects: { ...baseState().talentEffects, forgeToBlock: true, forgeBlockThreshold: 6, forgeBlockAmount: 10 },
+    });
+    const effect = { kind: "player-status" as const, status: "forge" as const, amount: 2 };
+    const result = applyPlayerStatusEffect(state, effect, []);
+    expect(result.playerStatuses.forge).toBe(7);
+    expect(result.playerStatuses.block).toBe(17);
+  });
+
+  it("flatForgeGained and forgeDoubledBelowHalfHealth stack together", () => {
+    const state = baseState({
+      playerHealth: 10,
+      playerMaxHealth: 30,
+      talentEffects: { ...baseState().talentEffects, flatForgeGained: 1, forgeDoubledBelowHalfHealth: true },
+    });
+    const effect = { kind: "player-status" as const, status: "forge" as const, amount: 2 };
+    const texts = makeTexts();
+    const result = applyPlayerStatusEffect(state, effect, texts);
+    expect(result.playerStatuses.forge).toBe(6);
+    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "forge", amount: 6 });
   });
 });

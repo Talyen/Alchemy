@@ -341,7 +341,8 @@ function initializePlayerHealthAndBlock(
   const playerHealth = options.playerHealth ?? MAX_PLAYER_HEALTH;
   const startingHealth = Math.min(maxHealth, playerHealth + talentEffects.startHealth);
   const startingBlock = talentEffects.startBlock + startBlock;
-  return { startingHealth, maxHealth, startingBlock };
+  const startingArmor = talentEffects.startArmor;
+  return { startingHealth, maxHealth, startingBlock, startingArmor };
 }
 
 function initializeEnemyState(battleEnemy: BestiaryEntry, battleRooms: number, battleDiffs: DifficultyModifier[]) {
@@ -378,6 +379,7 @@ function buildInitialBattleState(
     enemyRegeneration: number;
     enemyArmor: number; // folded into enemyMitigation at build time
     startingBlock: number;
+    startingArmor: number;
     activeCompanion: CompanionDefinition | null;
     currentEnemy: BestiaryEntry;
     talentEffects: TalentEffectManifest;
@@ -406,6 +408,7 @@ function buildInitialBattleState(
     playerStatuses: {
       ...baseState.playerStatuses,
       block: setup.startingBlock,
+      forge: setup.talentEffects.startForge,
     },
     enemyStatuses: baseState.enemyStatuses,
     activeCompanion: setup.activeCompanion,
@@ -482,6 +485,7 @@ export function createBattleState(
     startingHealth,
     maxHealth: finalMaxHealth,
     startingBlock,
+    startingArmor: playerStartingArmor,
   } = initializePlayerHealthAndBlock(options, battleTalents, startBlock);
 
   return buildInitialBattleState(defaultBattleState(), {
@@ -497,6 +501,7 @@ export function createBattleState(
     enemyRegeneration,
     enemyArmor: startingArmor,
     startingBlock,
+    startingArmor: playerStartingArmor,
     activeCompanion: startCompanion ? companionLibrary["wolf"] : null,
     currentEnemy: battleEnemy,
     talentEffects: battleTalents,

@@ -144,13 +144,24 @@ export type TalentEffectManifest = {
   blockPreventsPoison: boolean;
   blockPreventsStun: boolean;
   blockAbsorbPhysicalBonus: number;
+  blockReduceBurnDamage: number;
+  blockDepletedHeal: number;
+  blockToHolyDamage: boolean;
+  blockToStunDamage: boolean;
 
   // --- Forge ---
+  startForge: number;
   forgeToBurn: boolean;
   forgeToHoly: boolean;
   forgeToBlock: boolean;
+  forgeToBleed: boolean;
   forgeBurnThreshold: number;
   forgeBurnDamage: number;
+  forgeStripArmorThreshold: number;
+  flatForgeGained: number;
+  forgeDoubledBelowHalfHealth: boolean;
+  forgeBlockThreshold: number;
+  forgeBlockAmount: number;
 
   // --- Armor ---
   armorMitigatesBurn: boolean;
@@ -158,6 +169,12 @@ export type TalentEffectManifest = {
   armorBlockAmount: number;
   armorDoubledBelowHalfHealth: boolean;
   firstArmorCardDoubled: boolean;
+  startArmor: number;
+  armorMitigatesBleed: boolean;
+  armorBreakBlock: number;
+  armorMitigatesStun: boolean;
+  armorCleanseThreshold: number;
+  flatArmorAmount: number;
 
   // --- Health ---
   campfireHealBonus: number;

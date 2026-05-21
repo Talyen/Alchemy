@@ -215,7 +215,30 @@ export const talentPool: TalentDefinition[] = [
     description: "Block absorbs 20% more Physical damage",
     effects: [setEffect("blockAbsorbPhysicalBonus", 20)],
   },
-  ...placeholderTalents("block", "block-amount", 1, 4),
+  {
+    id: "block-reduce-burn",
+    keywordId: "block",
+    description: "Block reduces Burn damage by 1",
+    effects: [setEffect("blockReduceBurnDamage", 1)],
+  },
+  {
+    id: "block-depleted-heal",
+    keywordId: "block",
+    description: "When Block is depleted, Restore 2 Health",
+    effects: [setEffect("blockDepletedHeal", 2)],
+  },
+  {
+    id: "block-to-holy",
+    keywordId: "block",
+    description: "Increase Holy damage by half your Block",
+    effects: [setEffect("blockToHolyDamage", true)],
+  },
+  {
+    id: "block-to-stun",
+    keywordId: "block",
+    description: "Increase Stun damage by half your Block",
+    effects: [setEffect("blockToStunDamage", true)],
+  },
 
   // --- Forge ---
   {
@@ -242,7 +265,42 @@ export const talentPool: TalentDefinition[] = [
     description: "Upon reaching 4 Forge, deal 8 Burn",
     effects: [setEffect("forgeBurnThreshold", 4), setEffect("forgeBurnDamage", 8)],
   },
-  ...placeholderTalents("forge", "forge-strength", 1, 6),
+  {
+    id: "forge-strength-1",
+    keywordId: "forge",
+    description: "Start combat with 2 Forge",
+    effects: [setEffect("startForge", 2)],
+  },
+  {
+    id: "forge-strength-2",
+    keywordId: "forge",
+    description: "Forge also increases Bleed damage",
+    effects: [setEffect("forgeToBleed", true)],
+  },
+  {
+    id: "forge-strength-3",
+    keywordId: "forge",
+    description: "When you reach 6 Forge, remove all enemy Armor",
+    effects: [setEffect("forgeStripArmorThreshold", 6)],
+  },
+  {
+    id: "forge-strength-4",
+    keywordId: "forge",
+    description: "Increase Forge gained by 1",
+    effects: [addEffect("flatForgeGained", 1)],
+  },
+  {
+    id: "forge-strength-5",
+    keywordId: "forge",
+    description: "Forge gained is doubled when Health is below 50%",
+    effects: [setEffect("forgeDoubledBelowHalfHealth", true)],
+  },
+  {
+    id: "forge-strength-6",
+    keywordId: "forge",
+    description: "Upon reaching 6 Forge, gain 10 Block",
+    effects: [setEffect("forgeBlockThreshold", 6), setEffect("forgeBlockAmount", 10)],
+  },
 
   // --- Armor ---
   {
@@ -269,7 +327,42 @@ export const talentPool: TalentDefinition[] = [
     description: "Your first Armor card each combat is doubled",
     effects: [setEffect("firstArmorCardDoubled", true)],
   },
-  ...placeholderTalents("armor", "armor-amount", 1, 6),
+  {
+    id: "armor-start-combat",
+    keywordId: "armor",
+    description: "Start each combat with 2 Armor",
+    effects: [setEffect("startArmor", 2)],
+  },
+  {
+    id: "armor-mitigate-bleed",
+    keywordId: "armor",
+    description: "Armor now mitigates Bleed damage taken",
+    effects: [setEffect("armorMitigatesBleed", true)],
+  },
+  {
+    id: "armor-break-block",
+    keywordId: "armor",
+    description: "When your Armor breaks, gain 5 Block",
+    effects: [setEffect("armorBreakBlock", 5)],
+  },
+  {
+    id: "armor-mitigate-stun",
+    keywordId: "armor",
+    description: "Armor now reduces Stun buildup",
+    effects: [setEffect("armorMitigatesStun", true)],
+  },
+  {
+    id: "armor-cleanse-threshold",
+    keywordId: "armor",
+    description: "Upon reaching 6 Armor, cleanse all harmful status effects",
+    effects: [setEffect("armorCleanseThreshold", 6)],
+  },
+  {
+    id: "armor-flat-bonus",
+    keywordId: "armor",
+    description: "Increase Armor gained by 1",
+    effects: [addEffect("flatArmorAmount", 1)],
+  },
 
   // --- Health ---
   {
@@ -682,18 +775,35 @@ function createBlockForgeAndArmorDefaults() {
     blockPreventsPoison: false,
     blockPreventsStun: false,
     blockAbsorbPhysicalBonus: 0,
+    blockReduceBurnDamage: 0,
+    blockDepletedHeal: 0,
+    blockToHolyDamage: false,
+    blockToStunDamage: false,
 
+    startForge: 0,
     forgeToBurn: false,
     forgeToHoly: false,
     forgeToBlock: false,
+    forgeToBleed: false,
     forgeBurnThreshold: 0,
     forgeBurnDamage: 0,
+    forgeStripArmorThreshold: 0,
+    flatForgeGained: 0,
+    forgeDoubledBelowHalfHealth: false,
+    forgeBlockThreshold: 0,
+    forgeBlockAmount: 0,
 
     armorMitigatesBurn: false,
     armorBlockThreshold: 0,
     armorBlockAmount: 0,
     armorDoubledBelowHalfHealth: false,
     firstArmorCardDoubled: false,
+    startArmor: 0,
+    armorMitigatesBleed: false,
+    armorBreakBlock: 0,
+    armorMitigatesStun: false,
+    armorCleanseThreshold: 0,
+    flatArmorAmount: 0,
   };
 }
 

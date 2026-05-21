@@ -85,6 +85,59 @@ function applyForgeBurnBurst(state: BattleState, oldForge: number, newForge: num
   return nextState;
 }
 
+function applyForgeStripArmorBurst(state: BattleState, oldForge: number, newForge: number): BattleState {
+  if (
+    state.talentEffects.forgeStripArmorThreshold <= 0 ||
+    oldForge >= state.talentEffects.forgeStripArmorThreshold ||
+    newForge < state.talentEffects.forgeStripArmorThreshold ||
+    state.enemyMitigation.armor <= 0
+  ) {
+    return state;
+  }
+  return { ...state, enemyMitigation: { ...state.enemyMitigation, armor: 0 } };
+}
+
+function applyForgeBlockBurst(
+  state: BattleState,
+  oldForge: number,
+  newForge: number,
+  combatTexts?: CombatTextEvent[],
+): BattleState {
+  if (
+    state.talentEffects.forgeBlockThreshold <= 0 ||
+    oldForge >= state.talentEffects.forgeBlockThreshold ||
+    newForge < state.talentEffects.forgeBlockThreshold
+  ) {
+    return state;
+  }
+  let amount = state.talentEffects.forgeBlockAmount;
+  if (state.talentEffects.forgeToBlock) {
+    amount += newForge;
+  }
+  if (combatTexts) {
+    mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "block", amount });
+  }
+  return addPlayerStatus(state, "block", amount);
+}
+
+function addForgeToPlayer(state: BattleState, baseAmount: number, combatTexts?: CombatTextEvent[]): BattleState {
+  let amount = baseAmount + state.talentEffects.flatForgeGained;
+  if (state.talentEffects.forgeDoubledBelowHalfHealth && state.playerHealth <= state.playerMaxHealth / 2) {
+    amount *= 2;
+  }
+  if (amount <= 0) return state;
+  const oldForge = state.playerStatuses.forge;
+  const newForge = oldForge + amount;
+  let nextState = addPlayerStatus(state, "forge", amount);
+  nextState = applyForgeBurnBurst(nextState, oldForge, newForge, combatTexts);
+  nextState = applyForgeStripArmorBurst(nextState, oldForge, newForge);
+  nextState = applyForgeBlockBurst(nextState, oldForge, newForge, combatTexts);
+  if (combatTexts) {
+    mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "forge", amount });
+  }
+  return nextState;
+}
+
 function applyStunTalentEffects(state: BattleState, combatTexts?: CombatTextEvent[]): BattleState {
   let nextState = state;
 
@@ -122,18 +175,7 @@ function applyStunTalentEffects(state: BattleState, combatTexts?: CombatTextEven
   }
 
   if (nextState.talentEffects.forgeOnStun > 0) {
-    const oldForge = nextState.playerStatuses.forge;
-    const forgeAmount = nextState.talentEffects.forgeOnStun;
-    nextState = addPlayerStatus(nextState, "forge", forgeAmount);
-    nextState = applyForgeBurnBurst(nextState, oldForge, oldForge + forgeAmount, combatTexts);
-    if (combatTexts) {
-      mergeCombatText(combatTexts, {
-        target: "player",
-        kind: "status",
-        stat: "forge",
-        amount: forgeAmount,
-      });
-    }
+    nextState = addForgeToPlayer(nextState, nextState.talentEffects.forgeOnStun, combatTexts);
   }
 
   if (nextState.talentEffects.stunStripArmor && nextState.enemyMitigation.armor > 0) {
@@ -417,11 +459,23 @@ function procArmorBlockThreshold(state: BattleState, newArmor: number, combatTex
   };
 }
 
+function procArmorCleanseThreshold(state: BattleState, newArmor: number, combatTexts: CombatTextEvent[]) {
+  if (
+    state.talentEffects.armorCleanseThreshold <= 0 ||
+    state.playerStatuses.armor >= state.talentEffects.armorCleanseThreshold ||
+    newArmor < state.talentEffects.armorCleanseThreshold
+  ) {
+    return state;
+  }
+  return removeHarmfulPlayerStatuses(state, harmfulPlayerStatusIds.length, combatTexts);
+}
+
 function applyArmorTalentChecks(state: BattleState, amount: number, combatTexts: CombatTextEvent[]) {
   const scaled = scaleArmorAmount(state, amount);
   const newArmor = scaled.state.playerStatuses.armor + scaled.amount;
   const withBlock = procArmorBlockThreshold(scaled.state, newArmor, combatTexts);
-  return { state: withBlock, amount: scaled.amount };
+  const withCleanse = procArmorCleanseThreshold(withBlock, newArmor, combatTexts);
+  return { state: withCleanse, amount: scaled.amount };
 }
 
 export function applyPlayerStatusEffect(
@@ -431,6 +485,7 @@ export function applyPlayerStatusEffect(
 ) {
   let amount = effect.amount;
   if (effect.status === "armor") {
+    amount += state.talentEffects.flatArmorAmount;
     const checked = applyArmorTalentChecks(state, amount, combatTexts);
     state = checked.state;
     amount = checked.amount;
@@ -439,8 +494,7 @@ export function applyPlayerStatusEffect(
     amount += state.playerStatuses.forge;
   }
   if (effect.status === "forge") {
-    const oldForge = state.playerStatuses.forge;
-    state = applyForgeBurnBurst(state, oldForge, oldForge + amount, combatTexts);
+    return addForgeToPlayer(state, amount, combatTexts);
   }
   mergeCombatText(combatTexts, { target: "player", kind: "status", stat: effect.status, amount });
   return addPlayerStatus(state, effect.status, amount);

@@ -71,16 +71,33 @@ function baseState(overrides: Partial<BattleState> = {}): BattleState {
       blockPreventsPoison: false,
       blockPreventsStun: false,
       blockAbsorbPhysicalBonus: 0,
+      blockReduceBurnDamage: 0,
+      blockDepletedHeal: 0,
+      blockToHolyDamage: false,
+      blockToStunDamage: false,
       forgeToBurn: false,
       forgeToHoly: false,
       forgeToBlock: false,
+      forgeToBleed: false,
       forgeBurnThreshold: 0,
       forgeBurnDamage: 0,
+      startForge: 0,
+      forgeStripArmorThreshold: 0,
+      flatForgeGained: 0,
+      forgeDoubledBelowHalfHealth: false,
+      forgeBlockThreshold: 0,
+      forgeBlockAmount: 0,
       armorMitigatesBurn: false,
       armorBlockThreshold: 0,
       armorBlockAmount: 0,
       armorDoubledBelowHalfHealth: false,
       firstArmorCardDoubled: false,
+      startArmor: 0,
+      armorMitigatesBleed: false,
+      armorBreakBlock: 0,
+      armorMitigatesStun: false,
+      armorCleanseThreshold: 0,
+      flatArmorAmount: 0,
       campfireHealBonus: 0,
       healthThresholdBlock: null,
       maxHealthPerCombat: 0,
@@ -271,6 +288,7 @@ describe("computeBaseDamage — forge bonus", () => {
       texts,
     );
     expect(result.enemyHealth).toBeLessThan(30);
+    expect(result.playerStatuses.forge).toBe(1);
   });
 
   it("adds forge to holy when forgeToHoly talent is active", () => {
@@ -287,6 +305,23 @@ describe("computeBaseDamage — forge bonus", () => {
       texts,
     );
     expect(result.enemyHealth).toBeLessThan(30);
+    expect(result.playerStatuses.forge).toBe(1);
+  });
+
+  it("adds forge to bleed when forgeToBleed talent is active", () => {
+    const state = baseState({
+      playerStatuses: { ...baseState().playerStatuses, forge: 2 },
+      talentEffects: { ...baseState().talentEffects, forgeToBleed: true },
+    });
+    const card = makeCard({ effects: [makeEffect("bleed", 5)] });
+    const texts = makeTexts();
+    const result = dealDamageToEnemy(
+      state,
+      card,
+      card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
+      texts,
+    );
+    expect(result.playerStatuses.forge).toBe(1);
   });
 });
 
@@ -752,7 +787,7 @@ describe("applyGoldTroveReward", () => {
   });
 });
 
-describe("consumeForgeAfterPhysicalDamage", () => {
+describe("consumeForgeAfterDamage", () => {
   it("consumes 1 forge after physical damage", () => {
     const state = baseState({ playerStatuses: { ...baseState().playerStatuses, forge: 3 } });
     const card = makeCard({ effects: [makeEffect("physical", 5)] });
@@ -779,9 +814,54 @@ describe("consumeForgeAfterPhysicalDamage", () => {
     expect(result.playerStatuses.forge).toBe(2);
   });
 
-  it("does not consume forge for non-physical/non-stun damage", () => {
+  it("consumes 1 forge after burn damage when forgeToBurn talent is active", () => {
+    const state = baseState({
+      playerStatuses: { ...baseState().playerStatuses, forge: 3 },
+      talentEffects: { ...baseState().talentEffects, forgeToBurn: true },
+    });
+    const card = makeCard({ effects: [makeEffect("burn", 5)] });
+    const texts = makeTexts();
+    const result = dealDamageToEnemy(
+      state,
+      card,
+      card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
+      texts,
+    );
+    expect(result.playerStatuses.forge).toBe(2);
+  });
+
+  it("consumes 1 forge after holy damage when forgeToHoly talent is active", () => {
+    const state = baseState({
+      playerStatuses: { ...baseState().playerStatuses, forge: 3 },
+      talentEffects: { ...baseState().talentEffects, forgeToHoly: true },
+    });
+    const card = makeCard({ effects: [makeEffect("holy", 5)] });
+    const texts = makeTexts();
+    const result = dealDamageToEnemy(
+      state,
+      card,
+      card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
+      texts,
+    );
+    expect(result.playerStatuses.forge).toBe(2);
+  });
+
+  it("does not consume forge for burn damage without talent", () => {
     const state = baseState({ playerStatuses: { ...baseState().playerStatuses, forge: 3 } });
     const card = makeCard({ effects: [makeEffect("burn", 5)] });
+    const texts = makeTexts();
+    const result = dealDamageToEnemy(
+      state,
+      card,
+      card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
+      texts,
+    );
+    expect(result.playerStatuses.forge).toBe(3);
+  });
+
+  it("does not consume forge for holy damage without talent", () => {
+    const state = baseState({ playerStatuses: { ...baseState().playerStatuses, forge: 3 } });
+    const card = makeCard({ effects: [makeEffect("holy", 5)] });
     const texts = makeTexts();
     const result = dealDamageToEnemy(
       state,

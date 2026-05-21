@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 
 import sharp from "sharp";
 
+
 const currentFile = fileURLToPath(import.meta.url);
 const rootDir = path.resolve(path.dirname(currentFile), "..");
 const sourceDir = path.join(rootDir, "Raw Assets");
@@ -26,6 +27,7 @@ const assets = [
   { source: "Misc/Draw Pile.png", target: "draw-pile.webp", width: 420, quality: 82 },
   { source: "Misc/Discard Pile.png", target: "discard-pile.webp", width: 420, quality: 82 },
   { source: "Misc/Card Back.png", target: "card-back.webp", width: 420, quality: 82 },
+  { source: "Misc/pointer_c_shaded.png", target: "pointer-c-shaded.webp", width: 26, quality: 90 },
   // Enemies
   { source: "Enemies/Skeleton.png", target: "skeleton.webp", width: 720, quality: 82 },
   { source: "Enemies/Goblin.jpeg", target: "goblin.webp", width: 720, quality: 82 },
@@ -63,10 +65,10 @@ const assets = [
   { source: "Cards/Mana Berries.png", target: "mana-berries.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Mana Crystals.jpeg", target: "mana-crystal.webp", width: cardWidth, quality: 88 },
   { source: "Cards/Mana Potion.png", target: "mana-potion.webp", width: cardWidth, quality: cardQuality },
-  { source: "Cards/Meteor.png", target: "meteor.webp", width: cardWidth, quality: cardQuality },
+  { source: "Cards/Meteor.jpeg", target: "meteor.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Panacea Potion.png", target: "panacea-potion.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Plate Mail.png", target: "plate-mail.webp", width: cardWidth, quality: cardQuality },
-  { source: "Cards/Poison Dagger.png", target: "poison-dagger.webp", width: cardWidth, quality: cardQuality },
+  { source: "Cards/Poison Dagger.jpeg", target: "poison-dagger.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Slash.png", target: "slash.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Stab.png", target: "stab.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Steal.jpeg", target: "steal.webp", width: cardWidth, quality: cardQuality },
@@ -74,7 +76,7 @@ const assets = [
   { source: "Cards/Wolf Companion.jpeg", target: "wolf-companion.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Lizard Scout Companion.png", target: "lizard-scout-companion.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Imp Companion.png", target: "imp-companion.webp", width: cardWidth, quality: cardQuality },
-  { source: "Cards/Mixed Potion.png", target: "mixed-potion.webp", width: cardWidth, quality: 84 },
+  { source: "Cards/Mixed Potion.jpeg", target: "mixed-potion.webp", width: cardWidth, quality: 84 },
   { source: "Cards/Stoneskin Potion.jpeg", target: "stoneskin-potion.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Acid Potion.jpeg", target: "acid-potion.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Luck Potion.jpeg", target: "luck-potion.webp", width: cardWidth, quality: cardQuality },
@@ -129,8 +131,8 @@ const assets = [
   { source: "Trinkets/Wishing Well Coin.jpeg", target: "wishing-well-coin.webp", width: 420, quality: 82 },
   // Destinations
   { source: "Destinations/Campfire.jpeg", target: "campfire.webp", width: 900, quality: 84 },
-  { source: "Destinations/Alchemist's Shop.png", target: "alchemist-shop.webp", width: 900, quality: 84 },
-  { source: "Destinations/Merchant's Shop.png", target: "merchant-shop.webp", width: 900, quality: 84 },
+  { source: "Destinations/Alchemist's Shop.jpeg", target: "alchemist-shop.webp", width: 900, quality: 84 },
+  { source: "Destinations/Merchant's Shop.jpeg", target: "merchant-shop.webp", width: 900, quality: 84 },
   { source: "Destinations/Elite Enemy.jpeg", target: "elite-enemy.webp", width: 900, quality: 84 },
   { source: "Destinations/Normal Enemy.png", target: "normal-enemy.webp", width: 900, quality: 84 },
   { source: "Destinations/Mystery.jpeg", target: "mystery.webp", width: 900, quality: 84 },
@@ -155,9 +157,9 @@ const assets = [
   { source: "Mystery Events/Placeholder Mystery.png", target: "placeholder-mystery.webp", width: 900, quality: 60 },
   // Difficulties
   { source: "Difficulties/Placeholder Difficulty.png", target: "placeholder-difficulty.webp", width: 720, quality: 60 },
-  { source: "Difficulties/Difficulty 1.png", target: "difficulty-1.webp", width: 720, quality: 82 },
-  { source: "Difficulties/Difficulty 2.png", target: "difficulty-2.webp", width: 720, quality: 82 },
-  { source: "Difficulties/Difficulty 3.png", target: "difficulty-3.webp", width: 720, quality: 82 },
+  { source: "Difficulties/Difficulty 1.jpeg", target: "difficulty-1.webp", width: 720, quality: 82 },
+  { source: "Difficulties/Difficulty 2.jpeg", target: "difficulty-2.webp", width: 720, quality: 82 },
+  { source: "Difficulties/Difficulty 3.jpeg", target: "difficulty-3.webp", width: 720, quality: 82 },
 ];
 
 async function fileIsFresh(sourcePath, outputPath) {
