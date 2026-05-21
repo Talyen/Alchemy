@@ -6,7 +6,7 @@ import { playVictory } from "@/lib/audio";
 import { type BattleCard, type TrinketEntry } from "@/lib/game-data";
 
 import type { MysteryChoice } from "../../mystery-events";
-import { AnimatedHeight } from "../../ui/animated-height";
+
 import {
   CardChoicePicker,
   RemoveCardPicker,
@@ -77,25 +77,23 @@ export function MysteryScreen({
   }
 
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center gap-6 overflow-hidden px-4 py-6 text-center">
-      <AnimatedHeight>
-        {mysteryCardChoices ? (
-          <CardChoicePicker choices={mysteryCardChoices} onSelect={handleCardChoiceConfirm} />
-        ) : pendingRemoval ? (
-          <RemoveCardPicker runDeck={runDeck} onSelect={handleRemoveConfirm} />
-        ) : chosen ? (
-          <MysteryRewardSummary
-            choice={chosen}
-            runDeck={runDeck}
-            findCard={findCard}
-            findTrinket={findTrinket}
-            onContinue={onContinue}
-            eventTitle={event.title}
-          />
-        ) : (
-          <MysteryEventIntro event={event} findCard={findCard} findTrinket={findTrinket} onPick={handlePick} />
-        )}
-      </AnimatedHeight>
+    <div className="flex h-full w-full flex-col items-center justify-center gap-6 overflow-y-auto px-4 py-6 text-center">
+      {mysteryCardChoices ? (
+        <CardChoicePicker choices={mysteryCardChoices} onSelect={handleCardChoiceConfirm} />
+      ) : pendingRemoval ? (
+        <RemoveCardPicker runDeck={runDeck} onSelect={handleRemoveConfirm} />
+      ) : chosen ? (
+        <MysteryRewardSummary
+          choice={chosen}
+          runDeck={runDeck}
+          findCard={findCard}
+          findTrinket={findTrinket}
+          onContinue={onContinue}
+          eventTitle={event.title}
+        />
+      ) : (
+        <MysteryEventIntro event={event} findCard={findCard} findTrinket={findTrinket} onPick={handlePick} />
+      )}
     </div>
   );
 }

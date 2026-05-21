@@ -78,15 +78,15 @@ describe("enemyBestiary attack lines integration", () => {
   }
 
   it("Skeleton — pure physical", () => {
-    expect(getAttackLines("skeleton")).toEqual(["Deals 8 Physical damage"]);
+    expect(getAttackLines("skeleton")).toEqual(["Deals 9 Physical damage"]);
   });
 
   it("Goblin — pure physical", () => {
-    expect(getAttackLines("goblin")).toEqual(["Deals 8 Physical damage"]);
+    expect(getAttackLines("goblin")).toEqual(["Deals 9 Physical damage"]);
   });
 
   it("Imp — pure Burn", () => {
-    expect(getAttackLines("imp")).toEqual(["Deals 3 Burn damage"]);
+    expect(getAttackLines("imp")).toEqual(["Deals 4 Burn damage"]);
   });
 
   it("Lizard Scout — pure Poison", () => {
@@ -94,7 +94,7 @@ describe("enemyBestiary attack lines integration", () => {
   });
 
   it("Mimic — pure physical", () => {
-    expect(getAttackLines("mimic")).toEqual(["Deals 8 Physical damage"]);
+    expect(getAttackLines("mimic")).toEqual(["Deals 7 Physical damage"]);
   });
 
   it("Mud Elemental — Stun and Poison combined", () => {
@@ -106,26 +106,26 @@ describe("enemyBestiary attack lines integration", () => {
   });
 
   it("Plague Doctor — pure Poison", () => {
-    expect(getAttackLines("plague-doctor")).toEqual(["Deals 4 Poison damage"]);
+    expect(getAttackLines("plague-doctor")).toEqual(["Deals 2 Poison damage"]);
   });
 
   it("The Forge Golem — physical + stun combined", () => {
-    expect(getAttackLines("rusted-colossus")).toEqual(["Deals 5 Physical and 2 Stun"]);
+    expect(getAttackLines("forge-golem")).toEqual(["Deals 5 Physical and 1 Stun"]);
   });
 
   it("The Frostwarden — physical + freeze combined", () => {
-    expect(getAttackLines("frostwarden")).toEqual(["Deals 8 Physical and 2 Freeze"]);
+    expect(getAttackLines("frostwarden")).toEqual(["Deals 6 Physical and 1 Freeze"]);
   });
 
   it("The Blight Treant — nature + poison combined", () => {
-    expect(getAttackLines("blight-treant")).toEqual(["Deals 5 Nature and 3 Poison"]);
+    expect(getAttackLines("blight-treant")).toEqual(["Deals 3 Nature and 1 Poison"]);
   });
 
   it("Living Armor — physical + nature combined", () => {
-    expect(getAttackLines("living-armor")).toEqual(["Deals 5 Physical and 5 Nature"]);
+    expect(getAttackLines("living-armor")).toEqual(["Deals 3 Physical and 3 Nature"]);
   });
 
-  it("The Iron Bear — pure physical", () => {
-    expect(getAttackLines("iron-bear")).toEqual(["Deals 10 Physical damage"]);
+  it("The Iron Bear — physical and burn", () => {
+    expect(getAttackLines("iron-bear")).toEqual(["Deals 4 Physical and 2 Burn"]);
   });
 });

@@ -50,13 +50,13 @@ function computeBaseDamage(state: BattleState, effect: Extract<BattleCardEffect,
       rawAmount += state.playerStatuses.armor;
     }
     if (state.talentEffects.blockToPhysicalDamage) {
-      rawAmount += Math.floor(state.playerStatuses.block / HALF_DIVISOR);
+      rawAmount += Math.round(state.playerStatuses.block / HALF_DIVISOR);
     }
     if (state.enemyStunSkipTurns > 0) {
-      rawAmount = Math.floor(rawAmount * (1 + state.talentEffects.physicalVsStunnedMultiplier / PERCENT_DENOMINATOR));
+      rawAmount = Math.round(rawAmount * (1 + state.talentEffects.physicalVsStunnedMultiplier / PERCENT_DENOMINATOR));
     }
     if (state.enemyFreezeSkipTurns > 0) {
-      rawAmount = Math.floor(rawAmount * (1 + state.talentEffects.physicalVsFrozenMultiplier / PERCENT_DENOMINATOR));
+      rawAmount = Math.round(rawAmount * (1 + state.talentEffects.physicalVsFrozenMultiplier / PERCENT_DENOMINATOR));
     }
     if (state.enemyStatuses.poison > 0) {
       rawAmount += state.talentEffects.poisonPhysicalBonus;
@@ -67,10 +67,10 @@ function computeBaseDamage(state: BattleState, effect: Extract<BattleCardEffect,
   }
 
   if (effect.damageType === "holy") {
-    rawAmount += Math.floor((state.gold * state.talentEffects.holyGoldPercent) / PERCENT_DENOMINATOR);
-    rawAmount += Math.floor((state.playerStatuses.block * state.talentEffects.holyBlockPercent) / PERCENT_DENOMINATOR);
+    rawAmount += Math.round((state.gold * state.talentEffects.holyGoldPercent) / PERCENT_DENOMINATOR);
+    rawAmount += Math.round((state.playerStatuses.block * state.talentEffects.holyBlockPercent) / PERCENT_DENOMINATOR);
     if (state.enemyStatuses.burn > 0) {
-      rawAmount = Math.floor(rawAmount * (1 + state.talentEffects.holyVsBurnMultiplier / PERCENT_DENOMINATOR));
+      rawAmount = Math.round(rawAmount * (1 + state.talentEffects.holyVsBurnMultiplier / PERCENT_DENOMINATOR));
     }
   }
 
@@ -79,11 +79,15 @@ function computeBaseDamage(state: BattleState, effect: Extract<BattleCardEffect,
       state.playerHealth <= state.playerMaxHealth / HALF_DIVISOR &&
       state.talentEffects.bleedDesperateMultiplier > 1
     ) {
-      rawAmount = Math.floor(rawAmount * state.talentEffects.bleedDesperateMultiplier);
+      rawAmount = Math.round(rawAmount * state.talentEffects.bleedDesperateMultiplier);
     }
     if (state.enemyHealth <= (state.enemyMaxHealth * state.talentEffects.bleedExecuteThreshold) / PERCENT_DENOMINATOR) {
-      rawAmount = Math.floor(rawAmount * BLEED_EXECUTE_MULTIPLIER);
+      rawAmount = Math.round(rawAmount * BLEED_EXECUTE_MULTIPLIER);
     }
+  }
+
+  if (effect.damageType === "stun") {
+    rawAmount += state.talentEffects.flatStunDamage;
   }
 
   if (effect.damageType === "trap") {
@@ -102,14 +106,14 @@ function applyCrit(damage: number, damageType: string, state: BattleState) {
 
 function applyLifesteal(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
   if (damage <= 0) return state;
-  const healAmount = Math.floor(damage * state.talentEffects.healMultiplier);
+  const healAmount = Math.round(damage * state.talentEffects.healMultiplier);
   mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: healAmount });
   return applyPlayerHealing(state, healAmount);
 }
 
 function applyHolyLifesteal(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
   if (damage <= 0 || state.talentEffects.holyLifestealPercent <= 0) return state;
-  const healAmount = Math.floor(
+  const healAmount = Math.round(
     ((damage * state.talentEffects.holyLifestealPercent) / PERCENT_DENOMINATOR) * state.talentEffects.healMultiplier,
   );
   if (healAmount <= 0) return state;
@@ -119,7 +123,7 @@ function applyHolyLifesteal(state: BattleState, damage: number, combatTexts: Com
 
 function applyDamageBlock(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
   if (damage <= 0 || state.talentEffects.holyBlockPercentFromDamage <= 0) return state;
-  const blockAmount = Math.floor((damage * state.talentEffects.holyBlockPercentFromDamage) / PERCENT_DENOMINATOR);
+  const blockAmount = Math.round((damage * state.talentEffects.holyBlockPercentFromDamage) / PERCENT_DENOMINATOR);
   if (blockAmount <= 0) return state;
   mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "block", amount: blockAmount });
   return addPlayerStatus(state, "block", blockAmount);
@@ -191,7 +195,7 @@ function applyHolyDamageRiders(state: BattleState, card: BattleCard, damage: num
     nextState.talentEffects.holyBurnChance > 0 &&
     Math.random() * PERCENT_DENOMINATOR < nextState.talentEffects.holyBurnChance
   ) {
-    const burnAmount = isNullFieldActive(nextState) ? Math.max(1, Math.floor(damage / 2)) : damage;
+    const burnAmount = isNullFieldActive(nextState) ? Math.max(1, Math.round(damage / 2)) : damage;
     nextState = {
       ...nextState,
       enemyStatuses: { ...nextState.enemyStatuses, burn: nextState.enemyStatuses.burn + burnAmount },
@@ -239,12 +243,10 @@ function computeCardDamageToEnemy(state: BattleState, effect: Extract<BattleCard
   const rawDamage = modifiedBase.rawDamage;
   const finalDamage = applyCrit(rawDamage, effect.damageType, modifiedBase.state);
   const effectiveArmor =
-    effect.damageType === "physical"
-      ? Math.max(0, state.enemyArmor - state.trinketEffects.sunderingArmorPiercing)
-      : state.enemyArmor;
+    effect.damageType === "physical" ? Math.max(0, state.enemyArmor - state.trinketEffects.sunderingArmorPiercing) : 0;
   const damageAfterArmor = Math.max(0, finalDamage - effectiveArmor);
   const multiplier = getEnemyDamageMultiplier(state, effect.damageType);
-  return { nextState: modifiedBase.state, modifiedDamage: Math.floor(damageAfterArmor * multiplier) };
+  return { nextState: modifiedBase.state, modifiedDamage: Math.round(damageAfterArmor * multiplier) };
 }
 
 function applyDamageRiders(
@@ -258,6 +260,11 @@ function applyDamageRiders(
     ...state,
     enemyHealth: clampHealth(state.enemyHealth, -modifiedDamage, state.enemyMaxHealth),
   };
+
+  // Enemy armor reduces by 1 per hit that deals health damage (matches player armor behavior).
+  if (modifiedDamage > 0 && nextState.enemyArmor > 0) {
+    nextState = { ...nextState, enemyArmor: nextState.enemyArmor - 1 };
+  }
 
   nextState = applyBoneCharmHeal(nextState, state.enemyHealth > 0, combatTexts);
   nextState = applyDamageStatuses(nextState, effect, modifiedDamage, combatTexts);

@@ -103,6 +103,10 @@ export type BattleState = {
   pendingBleedLeechHealing: number; // internal bleed-lifesteal healing due when bleed ticks
   enemyStunSkipTurns: number; // turns skipped from stun triggers
   enemyFreezeSkipTurns: number; // turns skipped from freeze triggers
+  playerStunSkipTurns: number; // player turns skipped from stun
+  playerFreezeSkipTurns: number; // player turns skipped from freeze
+  playerCCCooldown: number; // turns of CC immunity after being stunned or frozen
+  enemyCCCooldown: number; // turns of CC immunity for the enemy after being stunned or frozen
   wishOptions: BattleCard[] | null; // non-null = Wish selection is active
   wishQueue: BattleCard[][]; // additional Wish selections waiting behind the active modal
   activeCompanion: CompanionDefinition | null; // persistent ally effect for this battle only
@@ -157,7 +161,7 @@ export function setPlayerStatus(state: BattleState, status: PlayerStatusId, valu
 }
 
 export function addEnemyStatus(state: BattleState, status: EnemyStatusId, delta: number): BattleState {
-  const adjustedDelta = isNullFieldActive(state) ? Math.max(1, Math.floor(delta / 2)) : delta;
+  const adjustedDelta = isNullFieldActive(state) ? Math.max(1, Math.round(delta / 2)) : delta;
   return { ...state, enemyStatuses: { ...state.enemyStatuses, [status]: state.enemyStatuses[status] + adjustedDelta } };
 }
 

@@ -64,6 +64,28 @@ describe("initialize", () => {
     expect(useRunStore.getState().unlockedTalents.physical).toEqual(["talent-1"]);
   });
 
+  it("restores valid completed destination labels", () => {
+    const activeRun: ActiveRunData = {
+      characterId: "rogue",
+      runDeck: [],
+      runGold: 50,
+      runPlayerHealth: 25,
+      runMaxHealth: 30,
+      roomsEncountered: 3,
+      currentAct: 1,
+      destinationIndexInAct: 2,
+      completedDestinations: ["Normal Combat", "Corruption"],
+      runTrinkets: [],
+      selectedDifficulty: null,
+      contentSystemType: "campaign",
+      labyrinthMap: null,
+    };
+
+    useRunStore.getState().initialize(activeRun, {}, {});
+
+    expect(useRunStore.getState().completedDestinations).toEqual(["Normal Combat", "Corruption"]);
+  });
+
   it("uses fallback character when no active run", () => {
     useRunStore.getState().initialize(null, {}, {}, "wizard");
     expect(useRunStore.getState().characterId).toBe("wizard");

@@ -64,7 +64,6 @@ export type ControllerActions = {
   handleCorruptCard: (index: number) => void;
   handleCorruptionContinue: () => void;
   handleCorruptionLeave: () => void;
-  handleActComplete: () => void;
   handleLabyrinthNodeEnter: (row: number, col: number) => void;
   handleLabyrinthEndRun: () => void;
   resetRunState: () => void;

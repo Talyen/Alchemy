@@ -241,6 +241,26 @@ describe("finalizeRewardState", () => {
     expect(result.nextRewardState).toEqual(expect.objectContaining({ choices: [], destinations: ["Campfire"] }));
   });
 
+  it("preserves selected boss metadata for the destination preview", () => {
+    const result = finalizeRewardState({
+      rewardState: {
+        choices: [cardChoice],
+        gold: 10,
+        materials: emptyInventory(),
+        selectedId: "slash",
+        destinations: ["Boss Combat"],
+        rewardType: "card",
+        selectedBossId: "frostwarden",
+      },
+      companionRewardCards: null,
+      contentSystemType: "campaign",
+      currentEnemyType: "normal",
+      grantAlchemistReward: false,
+    });
+
+    expect(result.nextRewardState.selectedBossId).toBe("frostwarden");
+  });
+
   it("returns the selected trinket reward", () => {
     const result = finalizeRewardState({
       rewardState: { choices: [trinketChoice], gold: 10, materials: emptyInventory(), selectedId: "bone-charm", destinations: [], rewardType: "trinket" },

@@ -11,8 +11,7 @@ import { DESTINATIONS, type Destination } from "@/features/alchemy/types";
 import type { ActiveRunData } from "@/features/alchemy/run/types";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import { addTalentXP, extractCardKeywords, type TalentXP } from "@/lib/talents";
-import { computeTalentEffects, talentPool, type UnlockedTalents } from "@/lib/game-data";
-import type { TalentEffectManifest } from "@/lib/battle";
+import { talentPool, type UnlockedTalents } from "@/lib/game-data";
 import type { KeywordId } from "@/lib/game-data";
 
 type RunStateFields = {
@@ -67,6 +66,8 @@ type RunStoreActions = {
 
 type RunStore = RunStateFields & RunStoreActions;
 
+const VALID_DESTINATIONS = new Set<Destination>(Object.values(DESTINATIONS));
+
 function createInitialRunState(
   initialActiveRun: ActiveRunData | null,
   fallbackCharacterId: CharacterId = "knight",
@@ -82,9 +83,7 @@ function createInitialRunState(
     currentAct: initialActiveRun?.currentAct ?? 1,
     destinationIndexInAct: initialActiveRun?.destinationIndexInAct ?? 0,
     completedDestinations: initialActiveRun?.completedDestinations?.length
-      ? initialActiveRun.completedDestinations.filter(
-          (d): d is Destination => DESTINATIONS[d as keyof typeof DESTINATIONS] !== undefined,
-        )
+      ? initialActiveRun.completedDestinations.filter((d): d is Destination => VALID_DESTINATIONS.has(d as Destination))
       : [],
     runTrinkets: initialActiveRun?.runTrinkets ? [...initialActiveRun.runTrinkets] : [],
     selectedDifficulty: initialActiveRun?.selectedDifficulty ?? null,
@@ -186,7 +185,3 @@ export const useRunStore = create<RunStore>()((set) => ({
     set({ ...runState, ...talentState });
   },
 }));
-
-export function getTalentEffects(): TalentEffectManifest {
-  return computeTalentEffects(useRunStore.getState().unlockedTalents);
-}

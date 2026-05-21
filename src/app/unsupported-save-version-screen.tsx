@@ -1,4 +1,4 @@
-// Blocking screen shown when a local save requires a newer game schema than this build supports.
+// Blocking screen shown when a local save requires newer game data than this build supports.
 // Depends only on the shared Button primitive so unsupported saves cannot enter normal game UI.
 import { Button } from "@/components/ui/button";
 
@@ -9,9 +9,9 @@ export function UnsupportedSaveVersionScreen({ canQuit, onQuit }: { canQuit: boo
         <div className="absolute inset-3 rounded-[1.5rem] border border-amber-500/10" />
         <div className="relative space-y-5">
           <p className="text-xs font-semibold uppercase tracking-[0.32em] text-amber-300/70">Save Protected</p>
-          <h1 className="text-3xl font-bold text-amber-100">Newer Save Version Detected</h1>
+          <h1 className="text-3xl font-bold text-amber-100">Newer Save Data Detected</h1>
           <p className="text-base leading-relaxed text-stone-200">
-            This save was created by a newer version of Alchemy than this build can read.
+            This save was created with a newer version of Alchemy or newer game content than this build can read.
           </p>
           <p className="text-sm leading-relaxed text-stone-300">
             Your progress is safe and has not been changed. Please update the game to continue.

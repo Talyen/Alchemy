@@ -28,6 +28,13 @@ export function getRawSaveSchemaVersion(parsed: unknown): number {
   return version;
 }
 
+export function getRawContentVersion(parsed: unknown): number {
+  if (!parsed || typeof parsed !== "object") return 0;
+  const version = (parsed as RawSaveData).contentVersion;
+  if (typeof version !== "number" || !Number.isFinite(version) || !Number.isInteger(version) || version < 0) return 0;
+  return version;
+}
+
 function migrateV0ToV1(parsed: RawSaveData): RawSaveData {
   return {
     ...parsed,
@@ -51,4 +58,8 @@ export function migrateSaveDataToCurrent(parsed: unknown): RawSaveData {
 
 export function isUnsupportedFutureSaveData(parsed: unknown): boolean {
   return getRawSaveSchemaVersion(parsed) > CURRENT_SAVE_SCHEMA_VERSION;
+}
+
+export function isUnsupportedFutureContentData(parsed: unknown): boolean {
+  return getRawContentVersion(parsed) > CURRENT_CONTENT_VERSION;
 }

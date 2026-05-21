@@ -6,6 +6,7 @@ import {
   CORRUPTION_DELTA_CHANCE,
   CORRUPTION_MIN_VALUE,
   CORRUPTION_MUTATION_DELTA,
+  CORRUPTION_TEXT_PATTERNS,
   CORRUPTION_TRANSFORM_CHANCE,
   MIXED_POTION_CARD_ID,
 } from "@/lib/game-constants";
@@ -26,8 +27,6 @@ export type CorruptionResult = {
   delta: 1 | -1;
 };
 
-const numberPattern = /\d+/g;
-
 // Generated/special cards do not have stable base content, so corruption transforms avoid them.
 export function isSpecialCorruptionCard(card: Pick<BattleCard, "id">) {
   return card.id === MIXED_POTION_CARD_ID || card.id.startsWith(`${MIXED_POTION_CARD_ID}-`);
@@ -39,7 +38,7 @@ export function getEditableCorruptionTargets(card: BattleCard): CorruptionTarget
   const usedEffectIndexes = new Set<number>();
 
   card.descriptionLines.forEach((line, lineIndex) => {
-    const matches = [...line.matchAll(numberPattern)];
+    const matches = [...line.matchAll(CORRUPTION_TEXT_PATTERNS.authoredNumber)];
     matches.forEach((match) => {
       const value = Number(match[0]);
       const effectIndex = card.effects.findIndex((effect, index) => {
@@ -74,7 +73,7 @@ function cloneCard(card: BattleCard): BattleCard {
 
 // Replaces one numeric occurrence without touching other numbers on the same line.
 function replaceNumberAt(line: string, matchIndex: number, nextValue: number) {
-  const match = line.slice(matchIndex).match(/^\d+/);
+  const match = line.slice(matchIndex).match(CORRUPTION_TEXT_PATTERNS.leadingNumber);
   if (!match) return line;
   return `${line.slice(0, matchIndex)}${nextValue}${line.slice(matchIndex + match[0].length)}`;
 }

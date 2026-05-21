@@ -41,7 +41,7 @@ import frostWhelpCompanion from "@/assets/optimized/frost-whelp-companion.webp";
 import bearCompanion from "@/assets/optimized/bear-companion.webp";
 import pantherCompanion from "@/assets/optimized/panther-companion.webp";
 import phoenixCompanion from "@/assets/optimized/phoenix-companion.webp";
-import polarPendant from "@/assets/optimized/polar-pendant.webp";
+import frozenPocketwatch from "@/assets/optimized/frozen-pocketwatch.webp";
 import fireball from "@/assets/optimized/fireball.webp";
 import shieldBash from "@/assets/optimized/shield-bash.webp";
 import stoneskinPotion from "@/assets/optimized/stoneskin-potion.webp";
@@ -90,7 +90,7 @@ import wolfCompanion from "@/assets/optimized/wolf-companion.webp";
 import boneCharm from "@/assets/optimized/bone-charm.webp";
 import brassCenser from "@/assets/optimized/brass-censer.webp";
 import cardBack from "@/assets/optimized/card-back.webp";
-import frozenHeart from "@/assets/optimized/frozen-heart.webp";
+import icyHeart from "@/assets/optimized/icy-heart.webp";
 import ironwoodBuckler from "@/assets/optimized/ironwood-buckler.webp";
 import meteorite from "@/assets/optimized/meteorite.webp";
 import obsidianHammer from "@/assets/optimized/obsidian-hammer.webp";
@@ -105,7 +105,7 @@ import merchantsFavor from "@/assets/optimized/merchants-favor.webp";
 import plagueDoctorsMask from "@/assets/optimized/plague-doctors-mask.webp";
 import mortarAndPestle from "@/assets/optimized/mortar-and-pestle.webp";
 import sunderingCharm from "@/assets/optimized/sundering-charm.webp";
-import resonantChime from "@/assets/optimized/resonant-chime.webp";
+import resonantChimes from "@/assets/optimized/resonant-chimes.webp";
 import smugglersMap from "@/assets/optimized/smugglers-map.webp";
 import grovesFavor from "@/assets/optimized/groves-favor.webp";
 import placeholderCard from "@/assets/optimized/placeholder-card.webp";
@@ -127,6 +127,10 @@ import placeholderGameMode from "@/assets/optimized/placeholder-game-mode.webp";
 import difficulty1Art from "@/assets/optimized/difficulty-1.webp";
 import difficulty2Art from "@/assets/optimized/difficulty-2.webp";
 import difficulty3Art from "@/assets/optimized/difficulty-3.webp";
+import coldSnap from "@/assets/optimized/cold-snap.webp";
+import combustion from "@/assets/optimized/combustion.webp";
+import goldArt from "@/assets/optimized/gold.webp";
+import rayOfFrost from "@/assets/optimized/ray-of-frost.webp";
 
 export { theCampaign, theLabyrinth, theWildwoods, placeholderGameMode };
 
@@ -190,7 +194,7 @@ export {
   phoenixCompanion,
   panaceaPotion,
   mixedPotion,
-  polarPendant,
+  frozenPocketwatch,
   plagueDoctor,
   plateMail,
   poisonDagger,
@@ -211,7 +215,7 @@ export {
   wishingPotion,
   boneCharm,
   brassCenser,
-  frozenHeart,
+  icyHeart,
   ironwoodBuckler,
   meteorite,
   obsidianHammer,
@@ -227,7 +231,7 @@ export {
   plagueDoctorsMask,
   mortarAndPestle,
   sunderingCharm,
-  resonantChime,
+  resonantChimes,
   smugglersMap,
   grovesFavor,
   placeholderCard,
@@ -249,6 +253,10 @@ export {
   difficulty1Art,
   difficulty2Art,
   difficulty3Art,
+  coldSnap,
+  combustion,
+  goldArt,
+  rayOfFrost,
   alchemistShopBg,
   merchantShopBg,
   eliteEnemyBg,

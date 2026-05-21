@@ -241,16 +241,16 @@ export function useAlchemyRunController({
 
   function handleLabyrinthNodeEnter(row: number, col: number) {
     labyrinth.enterNode(row, col, {
-      onStartBattleWithModifiers: (enemyType, modifiers, rewardModifiers, depth) => {
+      onStartBattleWithModifiers: (enemyType, modifiers, rewardModifiers) => {
         setActiveLabyrinthModifiers(modifiers);
         setActiveLabyrinthRewardModifiers(rewardModifiers);
-        battle.startBattle(undefined, undefined, enemyType, labyrinthModifiersToDifficulty(modifiers), depth);
+        battle.startBattle(undefined, undefined, enemyType, labyrinthModifiersToDifficulty(modifiers));
         navigateTo("battle");
       },
-      onStartBossBattleWithModifiers: (modifiers, rewardModifiers, depth) => {
+      onStartBossBattleWithModifiers: (modifiers, rewardModifiers) => {
         setActiveLabyrinthModifiers(modifiers);
         setActiveLabyrinthRewardModifiers(rewardModifiers);
-        battle.startBossBattle(labyrinthModifiersToDifficulty(modifiers), depth);
+        battle.startBossBattle(labyrinthModifiersToDifficulty(modifiers));
         navigateTo("battle");
       },
       onStartRest: () => {

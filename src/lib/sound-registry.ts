@@ -78,8 +78,6 @@ export const battleEventSounds = {
   deathsDoor: "horror-sting.ogg",
 } as const;
 
-export type BattleEventSound = keyof typeof battleEventSounds;
-
 // ── UI ──
 export const uiSounds = {
   buttonHover: "button-hover-3.ogg",
@@ -112,5 +110,3 @@ export const stingerSounds = {
   menuOpen: "click-double-on.ogg",
   menuClose: "click-double-off.ogg",
 } as const;
-
-export type StingerSound = keyof typeof stingerSounds;

@@ -2,7 +2,13 @@
 // Depends on the save key constant, save defaults, and Zod validation schemas.
 import { SAVE_KEY } from "@/lib/game-constants";
 
-import { SaveDataSchema, getRawSaveSchemaVersion, isUnsupportedFutureSaveData } from "@/lib/validation";
+import {
+  SaveDataSchema,
+  getRawContentVersion,
+  getRawSaveSchemaVersion,
+  isUnsupportedFutureContentData,
+  isUnsupportedFutureSaveData,
+} from "@/lib/validation";
 import type { SaveData } from "./types";
 import { defaultSaveData } from "./defaults";
 
@@ -13,27 +19,47 @@ function readStorageItem(key: string): string | null {
   return window.localStorage.getItem(key);
 }
 
-function writeStorageItem(key: string, value: string): boolean {
+type StorageOperationResult = { ok: true } | { ok: false; error: unknown };
+
+function writeStorageItem(key: string, value: string): StorageOperationResult {
   try {
     window.localStorage.setItem(key, value);
-    return true;
-  } catch {
-    return false;
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error };
   }
 }
 
-function removeStorageItem(key: string): boolean {
+function removeStorageItem(key: string): StorageOperationResult {
   try {
     window.localStorage.removeItem(key);
-    return true;
-  } catch {
-    return false;
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error };
   }
+}
+
+// Keeps storage failures readable without crashing gameplay when browsers block persistence.
+function logStorageFailure(message: string, error?: unknown) {
+  if (error === undefined) {
+    console.error(message);
+    return;
+  }
+  console.error(message, error);
+}
+
+function collectSaveRepairWarnings(raw: Partial<SaveData>, normalized: SaveData): string[] {
+  const warnings: string[] = [];
+  if (raw.activeRun && !normalized.activeRun) {
+    warnings.push("active run could not be restored");
+  }
+  return warnings;
 }
 
 export type SaveLoadStatus =
-  | { kind: "ok" }
+  | { kind: "ok"; warnings?: string[] }
   | { kind: "unsupported-newer-schema"; detectedSchemaVersion: number }
+  | { kind: "unsupported-newer-content"; detectedContentVersion: number }
   | { kind: "corrupt" };
 
 export type SaveLoadState = {
@@ -68,12 +94,32 @@ export function loadAlchemySaveState(): SaveLoadState {
       };
     }
 
+    if (isUnsupportedFutureContentData(parsed)) {
+      writesDisabledForSession = true;
+      console.error("Save data contains newer game content; update the game to continue this save.");
+      return {
+        data: defaultSaveData,
+        status: { kind: "unsupported-newer-content", detectedContentVersion: getRawContentVersion(parsed) },
+      };
+    }
+
     writesDisabledForSession = false;
     const result = SaveDataSchema.safeParse(parsed);
-    return { data: result.data as SaveData, status: { kind: "ok" } };
-  } catch {
-    writesDisabledForSession = false;
-    console.error("Save data unavailable or corrupt, falling back to defaults");
+    if (!result.success) {
+      writesDisabledForSession = true;
+      logStorageFailure("Save data failed validation, falling back to defaults", result.error);
+      return { data: defaultSaveData, status: { kind: "corrupt" } };
+    }
+    const data = result.data as SaveData;
+    const warnings = collectSaveRepairWarnings(parsed, data);
+    if (warnings.length > 0) {
+      writesDisabledForSession = true;
+      console.info("Save data was normalized during load", warnings);
+    }
+    return { data, status: warnings.length > 0 ? { kind: "ok", warnings } : { kind: "ok" } };
+  } catch (error) {
+    writesDisabledForSession = true;
+    logStorageFailure("Save data unavailable or corrupt, falling back to defaults", error);
     return { data: defaultSaveData, status: { kind: "corrupt" } };
   }
 }
@@ -86,11 +132,13 @@ export function saveAlchemySaveData(data: SaveData) {
   if (writesDisabledForSession) return;
 
   try {
-    if (writeStorageItem(storageKey, JSON.stringify(data))) return;
-  } catch {
-    // Fall through to the shared write failure log.
+    const result = writeStorageItem(storageKey, JSON.stringify(data));
+    if (result.ok) return;
+    logStorageFailure("Save data could not be written", result.error);
+    return;
+  } catch (error) {
+    logStorageFailure("Save data could not be serialized", error);
   }
-  console.error("Save data could not be written");
 }
 
 // Removes the persisted save while leaving in-memory React state reset to callers.
@@ -99,9 +147,10 @@ export function clearAlchemySaveData() {
     return;
   }
 
-  if (removeStorageItem(storageKey)) {
+  const result = removeStorageItem(storageKey);
+  if (result.ok) {
     writesDisabledForSession = false;
     return;
   }
-  console.error("Save data could not be cleared");
+  logStorageFailure("Save data could not be cleared", result.error);
 }

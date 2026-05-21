@@ -19,12 +19,10 @@ export type LabyrinthNodeHandlers = {
     enemyType: "normal" | "elite",
     modifiers: LabyrinthModifierKind[],
     rewardModifiers: LabyrinthModifierKind[],
-    depth: number,
   ) => void;
   onStartBossBattleWithModifiers: (
     modifiers: LabyrinthModifierKind[],
     rewardModifiers: LabyrinthModifierKind[],
-    depth: number,
   ) => void;
   onStartRest: () => void;
   onStartMystery: () => void;
@@ -53,11 +51,11 @@ export function useLabyrinthController(): LabyrinthController {
       case "combat":
       case "elite": {
         const enemyType = node.type === "elite" ? "elite" : "normal";
-        handlers.onStartBattleWithModifiers(enemyType, node.modifiers, node.rewardModifiers, row);
+        handlers.onStartBattleWithModifiers(enemyType, node.modifiers, node.rewardModifiers);
         break;
       }
       case "boss": {
-        handlers.onStartBossBattleWithModifiers(node.modifiers, node.rewardModifiers, row);
+        handlers.onStartBossBattleWithModifiers(node.modifiers, node.rewardModifiers);
         break;
       }
       case "entrance":

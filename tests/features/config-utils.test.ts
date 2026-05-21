@@ -61,28 +61,16 @@ describe("getAvailableDestinations", () => {
 });
 
 describe("getBossEnemy", () => {
-  it("returns Act I boss for act 1", () => {
-    const boss = getBossEnemy(1);
-    expect(boss.id).toBe("rusted-colossus");
+  it("returns a random boss from the full boss pool", () => {
+    const boss = getBossEnemy();
+    expect(boss.enemyType).toBe("boss");
+    expect(["forge-golem", "frostwarden", "blight-treant", "iron-bear"]).toContain(boss.id);
   });
 
-  it("returns Act II boss for act 2", () => {
-    const boss = getBossEnemy(2);
-    expect(boss.id).toBe("frostwarden");
-  });
-
-  it("returns Act III boss for act 3", () => {
-    const boss = getBossEnemy(3);
-    expect(boss.id).toBe("blight-treant");
-  });
-
-  it("returns Act III boss for act beyond 3", () => {
-    const boss = getBossEnemy(99);
-    expect(boss.id).toBe("blight-treant");
-  });
-
-  it("returns Act III boss for act 0", () => {
-    const boss = getBossEnemy(0);
-    expect(boss.id).toBe("blight-treant");
+  it("returns a boss from the full pool on repeated calls", () => {
+    for (let i = 0; i < 5; i++) {
+      const boss = getBossEnemy();
+      expect(boss.enemyType).toBe("boss");
+    }
   });
 });

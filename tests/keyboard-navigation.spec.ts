@@ -1,9 +1,9 @@
 import { expect, test } from "@playwright/test";
-import { startRun } from "./helpers";
+import { startCampaignBattle } from "./helpers";
 
 test.describe("Keyboard Navigation", () => {
   test("escape opens and closes the in-battle menu", async ({ page }) => {
-    await startRun(page);
+    await startCampaignBattle(page);
 
     await page.keyboard.press("Escape");
     await expect(page.getByRole("button", { name: "Main Menu" })).toBeVisible({ timeout: 2000 });
@@ -13,7 +13,7 @@ test.describe("Keyboard Navigation", () => {
   });
 
   test("battle hamburger anchors menu near the trigger", async ({ page }) => {
-    await startRun(page);
+    await startCampaignBattle(page);
 
     const trigger = page.getByRole("button", { name: "Open battle menu" });
     await trigger.click();
@@ -33,7 +33,7 @@ test.describe("Keyboard Navigation", () => {
   });
 
   test("focused card is playable with enter key", async ({ page }) => {
-    await startRun(page);
+    await startCampaignBattle(page);
 
     const manaBefore = Number(await page.getByTestId("mana-panel").getAttribute("data-mana"));
 
@@ -42,14 +42,12 @@ test.describe("Keyboard Navigation", () => {
     await expect(firstCard).toBeFocused();
 
     await page.keyboard.press("Enter");
-    await page.waitForTimeout(300);
-
     const manaAfter = Number(await page.getByTestId("mana-panel").getAttribute("data-mana"));
     expect(manaAfter).toBeLessThan(manaBefore);
   });
 
   test("focus end turn and activate with enter", async ({ page }) => {
-    await startRun(page);
+    await startCampaignBattle(page);
 
     const endTurn = page.getByRole("button", { name: "End Turn" });
     await endTurn.focus();

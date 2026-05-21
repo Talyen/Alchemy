@@ -25,6 +25,20 @@ export default tseslint.config(
 
   prettierConfig,
 
+  // Battle engine rounding: use Math.round() instead of Math.floor() for all math.
+  {
+    files: ["src/lib/battle/**/*.ts"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: 'CallExpression[callee.object.name="Math"][callee.property.name="floor"]',
+          message: "Use Math.round() instead of Math.floor() in battle engine code.",
+        },
+      ],
+    },
+  },
+
   // Allow unused args prefixed with _
   {
     rules: {

@@ -24,7 +24,7 @@ export function buildWishOptions(state: BattleState, card: BattleCard): BattleCa
 }
 
 export function applyWishEffect(state: BattleState, card: BattleCard, amount: number, combatTexts: CombatTextEvent[]) {
-  const wishCount = Math.max(0, Math.floor(amount));
+  const wishCount = Math.max(0, Math.round(amount));
   if (wishCount <= 0) return state;
 
   const nextWishOptions = Array.from({ length: wishCount }, () => buildWishOptions(state, card));

@@ -5,6 +5,7 @@ release-desktop/
 playwright-report/
 test-results/
 coverage/
+reports/
 .env
 .DS_Store
 screenshot-*

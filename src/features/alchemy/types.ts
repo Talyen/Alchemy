@@ -24,7 +24,6 @@ export type Screen =
   | "alchemist"
   | "mystery"
   | "corruption"
-  | "act-complete"
   | "run-victory"
   | "labyrinth-map"
   | "wildwood-select";

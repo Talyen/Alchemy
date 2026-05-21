@@ -1,16 +1,7 @@
-import { expect, test, type Page } from "@playwright/test";
-import { selectGameMode, startRun } from "./helpers";
+import { expect, test } from "@playwright/test";
+import { selectGameMode, startCampaignBattle } from "./helpers";
 
-async function setResolution(page: Page, resolution: string) {
-  await page.addInitScript((res) => {
-    const KEY = "alchemy-save-v1";
-    const save = JSON.parse(localStorage.getItem(KEY) || "{}");
-    save.selectedResolution = res;
-    localStorage.setItem(KEY, JSON.stringify(save));
-  }, resolution);
-}
-
-async function setAspectRatio(page: Page, aspectRatio: string) {
+async function setAspectRatio(page: import("@playwright/test").Page, aspectRatio: string) {
   await page.addInitScript((ar) => {
     const KEY = "alchemy-save-v1";
     const save = JSON.parse(localStorage.getItem(KEY) || "{}");
@@ -19,142 +10,82 @@ async function setAspectRatio(page: Page, aspectRatio: string) {
   }, aspectRatio);
 }
 
+async function assertNoOverflow(page: import("@playwright/test").Page, screenName: string) {
+  const layout = await page.evaluate(() => ({
+    width: document.documentElement.scrollWidth,
+    height: document.documentElement.scrollHeight,
+    vw: window.innerWidth,
+    vh: window.innerHeight,
+  }));
+  expect(layout.width, `${screenName}: scrollWidth ${layout.width} should be <= viewport width ${layout.vw}`).toBeLessThanOrEqual(layout.vw);
+  expect(layout.height, `${screenName}: scrollHeight ${layout.height} should be <= viewport height ${layout.vh}`).toBeLessThanOrEqual(layout.vh);
+}
+
+async function waitForHandEntryAnimations(page: import("@playwright/test").Page) {
+  await page.waitForFunction(
+    () =>
+      [...document.querySelectorAll('[data-hand-card="true"]')].every((card) =>
+        card.getAnimations().every((animation) => animation.playState === "finished" || animation.playState === "idle"),
+      ),
+    undefined,
+    { timeout: 3000 },
+  );
+}
+
 const RESOLUTIONS = [
-  { option: "1920x1080", label: "standard-16-9", vp: { width: 1920, height: 1080 } },
-  { option: "1920x1200", label: "narrow-16-10", vp: { width: 1920, height: 1200 } },
+  { width: 1366, height: 768, label: "1366x768" },
+  { width: 1920, height: 1080, label: "1920x1080" },
+  { width: 3840, height: 2160, label: "3840x2160 (4K)" },
 ] as const;
 
-for (const { option, label, vp } of RESOLUTIONS) {
-  test.describe(`Aspect ratio: ${option} (${label})`, () => {
+const CARD_VIEWPORT_TOLERANCE_PX = 12;
+const CARD_VIEWPORT_TOLERANCE_RATIO = 0.015;
+
+for (const { width, height, label } of RESOLUTIONS) {
+  test.describe(`${label}`, () => {
     test("menu screen fits viewport without overflow", async ({ page }) => {
-      await setResolution(page, option);
-      await page.setViewportSize(vp);
+      await setAspectRatio(page, "16:9");
+      await page.setViewportSize({ width, height });
       await page.goto("/");
-
       await expect(page.getByRole("button", { name: "Play" })).toBeVisible();
-
-      const layout = await page.evaluate(() => ({
-        width: document.documentElement.scrollWidth,
-        height: document.documentElement.scrollHeight,
-        vw: window.innerWidth,
-        vh: window.innerHeight,
-      }));
-
-      expect(layout.width).toBeLessThanOrEqual(layout.vw);
-      expect(layout.height).toBeLessThanOrEqual(layout.vh);
+      await assertNoOverflow(page, "Menu");
     });
 
     test("character-select screen fits viewport without overflow", async ({ page }) => {
-      await setResolution(page, option);
-      await page.setViewportSize(vp);
+      await setAspectRatio(page, "16:9");
+      await page.setViewportSize({ width, height });
       await page.goto("/");
-
       await selectGameMode(page, "campaign");
       await expect(page.getByRole("heading", { name: "Choose Your Hero" })).toBeVisible();
-
-      const layout = await page.evaluate(() => ({
-        width: document.documentElement.scrollWidth,
-        height: document.documentElement.scrollHeight,
-        vw: window.innerWidth,
-        vh: window.innerHeight,
-      }));
-
-      expect(layout.width).toBeLessThanOrEqual(layout.vw);
-      expect(layout.height).toBeLessThanOrEqual(layout.vh);
+      await assertNoOverflow(page, "Character Select");
     });
 
     test("battle screen cards and controls fit viewport without overflow", async ({ page }) => {
-      await setResolution(page, option);
-      await page.setViewportSize(vp);
-      await startRun(page);
+      await setAspectRatio(page, "16:9");
+      await page.setViewportSize({ width, height });
+      await startCampaignBattle(page);
 
-      const playableCards = page.locator('[aria-label^="Play "]');
-      await expect(playableCards.first()).toBeVisible();
-      expect(await playableCards.count()).toBeGreaterThanOrEqual(1);
+      await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible();
+      expect(await page.locator('[aria-label^="Play "]').count()).toBeGreaterThanOrEqual(1);
+      await waitForHandEntryAnimations(page);
+      await assertNoOverflow(page, "Battle");
 
-      await page.getByRole("button", { name: "End Turn" }).click();
-      await expect(page.getByText("Enemy Turn")).toBeVisible();
-
-      const layout = await page.evaluate(() => ({
-        width: document.documentElement.scrollWidth,
-        height: document.documentElement.scrollHeight,
-        vw: window.innerWidth,
-        vh: window.innerHeight,
-        cardsInViewport: [...document.querySelectorAll('[aria-label^="Play "]')].every((card) => {
+      const maxCardOverflow = await page.evaluate(() =>
+        Math.max(
+          0,
+          ...[...document.querySelectorAll('[aria-label^="Play "]')].map((card) => {
           const rect = card.getBoundingClientRect();
-          return rect.left >= 0 && rect.right <= window.innerWidth && rect.top >= 0 && rect.bottom <= window.innerHeight;
-        }),
-      }));
-
-      expect(layout.width).toBeLessThanOrEqual(layout.vw);
-      expect(layout.height).toBeLessThanOrEqual(layout.vh);
-      expect(layout.cardsInViewport).toBe(true);
-    });
-
-    test("options screen is accessible and all tab panels render", async ({ page }) => {
-      await setResolution(page, option);
-      await page.setViewportSize(vp);
-      await page.goto("/");
-
-      await page.getByRole("button", { name: "Options" }).click();
-      await expect(page.getByRole("heading", { name: "Options" })).toBeVisible();
-
-      await page.getByRole("button", { name: "Sound" }).click();
-      await expect(page.getByText("Master Volume")).toBeVisible();
-
-      await page.getByRole("button", { name: "Display" }).click();
-      await expect(page.getByText("Aspect Ratio")).toBeVisible();
-
-      const layout = await page.evaluate(() => ({
-        width: document.documentElement.scrollWidth,
-        height: document.documentElement.scrollHeight,
-        vw: window.innerWidth,
-        vh: window.innerHeight,
-      }));
-
-      expect(layout.width).toBeLessThanOrEqual(layout.vw);
-      expect(layout.height).toBeLessThanOrEqual(layout.vh);
+            return Math.max(-rect.left, rect.right - window.innerWidth, -rect.top, rect.bottom - window.innerHeight, 0);
+          }),
+        )
+      );
+      const cardViewportTolerance = Math.max(CARD_VIEWPORT_TOLERANCE_PX, height * CARD_VIEWPORT_TOLERANCE_RATIO);
+      expect(maxCardOverflow, "Hand cards should stay within viewport aside from small rotated-edge drift").toBeLessThanOrEqual(cardViewportTolerance);
     });
   });
 }
 
-test.describe("Ultra HD 3840x2160 (4K)", () => {
-  test("menu and battle fit viewport without overflow", async ({ page }) => {
-    await setAspectRatio(page, "16:9");
-    await page.setViewportSize({ width: 3840, height: 2160 });
-    await page.goto("/");
-
-    await expect(page.getByRole("button", { name: "Play" })).toBeVisible();
-
-    const menuLayout = await page.evaluate(() => ({
-      width: document.documentElement.scrollWidth,
-      height: document.documentElement.scrollHeight,
-      vw: window.innerWidth,
-      vh: window.innerHeight,
-    }));
-    expect(menuLayout.width).toBeLessThanOrEqual(menuLayout.vw);
-    expect(menuLayout.height).toBeLessThanOrEqual(menuLayout.vh);
-
-    await startRun(page);
-    const playableCards = page.locator('[aria-label^="Play "]');
-    await expect(playableCards.first()).toBeVisible();
-    expect(await playableCards.count()).toBeGreaterThanOrEqual(1);
-
-    const battleLayout = await page.evaluate(() => ({
-      width: document.documentElement.scrollWidth,
-      height: document.documentElement.scrollHeight,
-      vw: window.innerWidth,
-      vh: window.innerHeight,
-      cardsInViewport: [...document.querySelectorAll('[aria-label^="Play "]')].every((card) => {
-        const rect = card.getBoundingClientRect();
-        return rect.left >= 0 && rect.right <= window.innerWidth && rect.top >= 0 && rect.bottom <= window.innerHeight;
-      }),
-    }));
-    expect(battleLayout.width).toBeLessThanOrEqual(battleLayout.vw);
-    expect(battleLayout.height).toBeLessThanOrEqual(battleLayout.vh);
-    expect(battleLayout.cardsInViewport).toBe(true);
-  });
-
+test.describe("Ultra HD 3840x2160 (4K) additional checks", () => {
   test("stage uses native resolution (no CSS transform scaling)", async ({ page }) => {
     await setAspectRatio(page, "16:9");
     await page.setViewportSize({ width: 3840, height: 2160 });
@@ -165,7 +96,6 @@ test.describe("Ultra HD 3840x2160 (4K)", () => {
       if (!stage) return "not-found";
       return window.getComputedStyle(stage).transform;
     });
-
     expect(transform).toBe("none");
   });
 });

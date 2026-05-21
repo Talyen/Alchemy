@@ -3,7 +3,7 @@ import type { SaveData } from "@/features/alchemy/storage/types";
 import { defaultSaveData } from "@/features/alchemy/storage/defaults";
 
 const { SAVE_KEY } = await import("@/lib/game-constants");
-const { CURRENT_SAVE_SCHEMA_VERSION } = await import("@/features/alchemy/storage/metadata");
+const { CURRENT_CONTENT_VERSION, CURRENT_SAVE_SCHEMA_VERSION } = await import("@/features/alchemy/storage/metadata");
 
 const mockStorage: Record<string, string> = {};
 const globalWithWindow = globalThis as typeof globalThis & { window?: Pick<Window, "localStorage"> };
@@ -29,6 +29,7 @@ function teardownWindow() {
 describe("storage io", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    vi.resetModules();
     Object.keys(mockStorage).forEach((k) => delete mockStorage[k]);
     setupWindow();
   });
@@ -54,10 +55,53 @@ describe("storage io", () => {
   });
 
   it("loadAlchemySaveData loads valid save data", async () => {
+    vi.spyOn(console, "info").mockImplementation(() => {});
     mockStorage[SAVE_KEY] = JSON.stringify({ musicVolume: 50, sfxVolume: 50 });
     const { loadAlchemySaveData } = await import("@/features/alchemy/storage/io");
     const data = loadAlchemySaveData();
     expect(data.musicVolume).toBe(50);
+  });
+
+  it("does not report warnings for harmless save defaults", async () => {
+    vi.spyOn(console, "info").mockImplementation(() => {});
+    mockStorage[SAVE_KEY] = JSON.stringify({ musicVolume: 50 });
+    const { loadAlchemySaveState } = await import("@/features/alchemy/storage/io");
+
+    const loaded = loadAlchemySaveState();
+
+    expect(loaded.status.kind).toBe("ok");
+    expect(loaded.status.kind === "ok" ? loaded.status.warnings : []).toBeUndefined();
+  });
+
+  it("reports warnings when an active run cannot be restored", async () => {
+    vi.spyOn(console, "info").mockImplementation(() => {});
+    mockStorage[SAVE_KEY] = JSON.stringify({
+      activeRun: {
+        characterId: "knight",
+        runDeck: [],
+        runGold: 0,
+        runPlayerHealth: 50,
+        runMaxHealth: 30,
+        roomsEncountered: 1,
+        currentAct: 1,
+        destinationIndexInAct: 0,
+        completedDestinations: [],
+        runTrinkets: [],
+        selectedDifficulty: null,
+        contentSystemType: "campaign",
+        labyrinthMap: null,
+      },
+    });
+    const { loadAlchemySaveState } = await import("@/features/alchemy/storage/io");
+
+    const loaded = loadAlchemySaveState();
+
+    expect(loaded.status.kind).toBe("ok");
+    expect(loaded.status.kind === "ok" ? loaded.status.warnings : []).toContain("active run could not be restored");
+
+    const { saveAlchemySaveData } = await import("@/features/alchemy/storage/io");
+    saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["slash"] });
+    expect(JSON.parse(mockStorage[SAVE_KEY]).activeRun).toMatchObject({ runPlayerHealth: 50 });
   });
 
   it("saveAlchemySaveData writes to localStorage", async () => {
@@ -117,6 +161,30 @@ describe("storage io", () => {
     saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["slash"] });
     expect(JSON.parse(mockStorage[SAVE_KEY])).toEqual({
       saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 1,
+      discoveredCardIds: ["future-card"],
+    });
+  });
+
+  it("does not overwrite saves with newer content", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    mockStorage[SAVE_KEY] = JSON.stringify({
+      saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
+      contentVersion: CURRENT_CONTENT_VERSION + 1,
+      discoveredCardIds: ["future-card"],
+    });
+
+    const { loadAlchemySaveState, saveAlchemySaveData } = await import("@/features/alchemy/storage/io");
+    const loaded = loadAlchemySaveState();
+
+    expect(loaded.data).toEqual(defaultSaveData);
+    expect(loaded.status).toEqual({
+      kind: "unsupported-newer-content",
+      detectedContentVersion: CURRENT_CONTENT_VERSION + 1,
+    });
+    saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["slash"] });
+    expect(JSON.parse(mockStorage[SAVE_KEY])).toEqual({
+      saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
+      contentVersion: CURRENT_CONTENT_VERSION + 1,
       discoveredCardIds: ["future-card"],
     });
   });

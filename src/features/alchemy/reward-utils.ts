@@ -2,7 +2,7 @@
 // Depends on battle card/trinket shapes and shared sampling utilities.
 // Used by run navigation after combat victories and other reward-generating screens.
 import { getCardKeywords as getCardKeywordsShared, type BattleCard, type TrinketEntry } from "@/lib/game-data";
-import { MIXED_POTION_CARD_ID } from "@/lib/game-constants";
+import { MIXED_POTION_CARD_ID, REWARD_SELECTION_CONFIG } from "@/lib/game-constants";
 import { sampleItems } from "./utils";
 
 export const REWARD_TRINKET_CHANCE = 0.25;
@@ -33,11 +33,13 @@ export function selectRewardCards(deck: BattleCard[], allCards: BattleCard[], co
   const scored = candidates.map((card) => {
     let score = 0;
     for (const kw of getCardKeywords(card)) score += freq[kw] || 0;
-    if (!deckIds.has(card.id)) score += 2;
+    if (!deckIds.has(card.id)) score += REWARD_SELECTION_CONFIG.newCardScoreBonus;
     return { card, score };
   });
 
   scored.sort((a, b) => b.score - a.score);
-  const pool = scored.slice(0, Math.min(count * 2, scored.length)).map((s) => s.card);
+  const pool = scored
+    .slice(0, Math.min(count * REWARD_SELECTION_CONFIG.affinityPoolMultiplier, scored.length))
+    .map((s) => s.card);
   return sampleItems(pool, count);
 }

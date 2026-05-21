@@ -118,7 +118,7 @@ export function useAppSaveState() {
 }
 
 // Persists the normalized App/controller snapshot whenever any saved field changes.
-export function useAlchemyAutosave(saveData: SaveData) {
+export function useAlchemyAutosave(saveData: SaveData, enabled = true) {
   const {
     saveSchemaVersion,
     gameBuildVersion,
@@ -147,6 +147,7 @@ export function useAlchemyAutosave(saveData: SaveData) {
   } = saveData;
 
   useEffect(() => {
+    if (!enabled) return;
     saveAlchemySaveData({
       saveSchemaVersion,
       gameBuildVersion,
@@ -198,5 +199,6 @@ export function useAlchemyAutosave(saveData: SaveData) {
     completedResearch,
     bondedCompanions,
     completedDifficulties,
+    enabled,
   ]);
 }

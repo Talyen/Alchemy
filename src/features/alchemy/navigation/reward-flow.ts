@@ -4,6 +4,7 @@ import { cardLibrary, trinketLibrary, type BattleCard, type TrinketEntry } from 
 import {
   BOSS_TRINKET_REWARD_CHOICES,
   ELITE_TRINKET_REWARD_CHANCE,
+  LABYRINTH_REWARD_CONFIG,
   MIXED_POTION_CARD_ID,
   REWARD_CARD_CHOICES,
 } from "@/lib/game-constants";
@@ -22,6 +23,7 @@ export type RewardState = {
   selectedId: string | null;
   destinations: Destination[];
   rewardType: "card" | "trinket";
+  selectedBossId?: string | null;
 };
 
 type BossRewardInput = {
@@ -94,8 +96,6 @@ export type FinalizeRewardResult = {
   route: FinalizeRewardRoute;
 };
 
-const GENEROUS_GOLD_BONUS_FRACTION = 0.5;
-
 // Checks if a reward modifier kind is active in the given array.
 export function hasRewardModifier(modifiers: LabyrinthModifierKind[], kind: LabyrinthModifierKind): boolean {
   return modifiers.includes(kind);
@@ -111,7 +111,9 @@ export function getActiveRewardModifiersForContentSystem(
 
 // Computes the extra gold granted by the Labyrinth generous reward modifier.
 export function getGenerousGoldBonus(modifiers: LabyrinthModifierKind[], gold: number): number {
-  return hasRewardModifier(modifiers, "generous") ? Math.floor(gold * GENEROUS_GOLD_BONUS_FRACTION) : 0;
+  return hasRewardModifier(modifiers, "generous")
+    ? Math.floor(gold * LABYRINTH_REWARD_CONFIG.generousGoldBonusFraction)
+    : 0;
 }
 
 // Applies material reward modifiers without mutating the source inventory.
@@ -121,11 +123,11 @@ export function applyLabyrinthRewardMaterialModifiers(
 ): MaterialInventory {
   if (!hasRewardModifier(modifiers, "scavenger")) return materials;
   return {
-    wood: Math.floor(materials.wood * 2),
-    iron: Math.floor(materials.iron * 2),
-    herbs: Math.floor(materials.herbs * 2),
-    food: Math.floor(materials.food * 2),
-    crystal: Math.floor(materials.crystal * 2),
+    wood: Math.floor(materials.wood * LABYRINTH_REWARD_CONFIG.scavengerMaterialMultiplier),
+    iron: Math.floor(materials.iron * LABYRINTH_REWARD_CONFIG.scavengerMaterialMultiplier),
+    herbs: Math.floor(materials.herbs * LABYRINTH_REWARD_CONFIG.scavengerMaterialMultiplier),
+    food: Math.floor(materials.food * LABYRINTH_REWARD_CONFIG.scavengerMaterialMultiplier),
+    crystal: Math.floor(materials.crystal * LABYRINTH_REWARD_CONFIG.scavengerMaterialMultiplier),
   };
 }
 
@@ -153,7 +155,7 @@ export function getRandomPotionCard(rng: () => number = Math.random): BattleCard
   return potionCards[Math.floor(rng() * potionCards.length)];
 }
 
-// Returns 3 random companion cards for the companion reward step.
+// Returns random companion cards for the companion reward step.
 export function getCompanionCardChoices(rng: () => number = Math.random): BattleCard[] {
   const companions = cardLibrary.filter((c) => c.effects?.some((e) => e.kind === "summon-companion"));
   const shuffled = [...companions];
@@ -161,12 +163,19 @@ export function getCompanionCardChoices(rng: () => number = Math.random): Battle
     const j = Math.floor(rng() * (i + 1));
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
-  return shuffled.slice(0, 3);
+  return shuffled.slice(0, LABYRINTH_REWARD_CONFIG.companionCardChoices);
 }
 
 // Empty reward state is reused by initialization, reward cleanup, and full run reset.
 export function createEmptyRewardState(destinations: Destination[] = []): RewardState {
   return { choices: [], gold: 0, materials: emptyInventory(), selectedId: null, destinations, rewardType: "card" };
+}
+
+// Keeps transient destination metadata when moving from rewards to destination choice.
+function createNextRewardState(rewardState: RewardState): RewardState {
+  const nextRewardState = createEmptyRewardState(rewardState.destinations);
+  if ("selectedBossId" in rewardState) nextRewardState.selectedBossId = rewardState.selectedBossId ?? null;
+  return nextRewardState;
 }
 
 // Resolves reward-finalization decisions without mutating React state or performing navigation.
@@ -194,6 +203,7 @@ export function finalizeRewardState({
         selectedId: null,
         destinations: rewardState.destinations,
         rewardType: "card",
+        ...("selectedBossId" in rewardState ? { selectedBossId: rewardState.selectedBossId ?? null } : {}),
       },
       clearCompanionRewardCards: true,
       route: "companion-reward",
@@ -216,7 +226,7 @@ export function finalizeRewardState({
     selectedRewardType: rewardState.rewardType,
     materials: rewardState.materials,
     grantAlchemistReward,
-    nextRewardState: createEmptyRewardState(rewardState.destinations),
+    nextRewardState: createNextRewardState(rewardState),
     clearCompanionRewardCards: false,
     route,
   };
@@ -260,7 +270,9 @@ export function createCombatRewardState({
 }: CombatRewardInput): RewardState {
   const baseTrinketChance =
     battleState.currentEnemy.enemyType === "elite" ? ELITE_TRINKET_REWARD_CHANCE : REWARD_TRINKET_CHANCE;
-  const trinketHoarderBonus = battleState.currentEnemy.traits?.some((t) => t.id === "trinket-hoarder") ? 0.1 : 0;
+  const trinketHoarderBonus = battleState.currentEnemy.traits?.some((t) => t.id === "trinket-hoarder")
+    ? LABYRINTH_REWARD_CONFIG.trinketHoarderRewardChanceBonus
+    : 0;
   const offerTrinket = forceTrinket || Math.random() < baseTrinketChance + trinketHoarderBonus;
   const trinketGoldBonus = computeTrinketManifest(trinketIds).smugglersMapGoldBonus;
   return {

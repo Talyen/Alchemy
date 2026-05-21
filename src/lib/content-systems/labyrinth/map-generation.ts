@@ -5,74 +5,13 @@ import { LABYRINTH_COLS, LABYRINTH_ROWS } from "./data";
 import { getEnemyModifiersForNodeType, getRewardModifiersForNodeType } from "./modifiers";
 
 type Point = { row: number; col: number };
-const MIN_BOSS_PATH_NODES = 11;
 
-// Mulberry32 seeded PRNG — returns a function that produces deterministic
-// values in [0, 1) for a given integer seed. Used by tests for reproducible maps.
-export function createSeededRng(seed: number): () => number {
-  let s = seed | 0;
-  return () => {
-    s = (s + 0x6d2b79f5) | 0;
-    let t = Math.imul(s ^ (s >>> 15), 1 | s);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-export function generateLabyrinthMap(rng: () => number = Math.random): LabyrinthMap {
-  const grid: (LabyrinthNode | null)[][] = Array.from({ length: LABYRINTH_ROWS }, () =>
-    Array.from({ length: LABYRINTH_COLS }, () => null),
-  );
-  const graph = generateRouteGraph(rng);
-  const firstCombat = { row: 1, col: Math.floor(LABYRINTH_COLS / 2) };
-
-  const upperPoints = graph.points.filter(
-    (p) => !isStart(p) && !isBoss(p) && !samePoint(p, firstCombat) && p.row >= 1 && p.row <= 3,
-  );
-  const lowerPoints = graph.points.filter(
-    (p) => !isStart(p) && !isBoss(p) && !samePoint(p, firstCombat) && p.row >= 4 && p.row <= 6,
-  );
-
-  const upperTypes = distributeNodeTypes(upperPoints.length, rng, 0.55, 0.2);
-  const lowerTypes = distributeNodeTypes(lowerPoints.length, rng, 0.35, 0.3);
-
-  graph.points.forEach((point) => {
-    const type = isStart(point)
-      ? "entrance"
-      : isBoss(point)
-        ? "boss"
-        : samePoint(point, firstCombat)
-          ? "combat"
-          : point.row >= 1 && point.row <= 3
-            ? upperTypes.shift()!
-            : lowerTypes.shift()!;
-    grid[point.row][point.col] = makeNode(type, rng, isStart(point) ? "current" : "visible");
-  });
-
-  for (const edge of graph.edges) {
-    connect(grid, edge.from, edge.to);
-  }
-
-  return {
-    grid,
-    rows: LABYRINTH_ROWS,
-    cols: LABYRINTH_COLS,
-    currentNode: graph.points[0],
-  };
-}
-
-function generateRouteGraph(rng: () => number): { points: Point[]; edges: { from: Point; to: Point }[] } {
-  const start: Point = { row: 0, col: Math.floor(LABYRINTH_COLS / 2) };
-  const points: Point[] = [];
-  const edges: { from: Point; to: Point }[] = [];
-  const used = new Set<string>();
-  const degree = new Map<string, number>();
-  const boss: Point = { row: LABYRINTH_ROWS - 1, col: start.col };
-  const mainRoute = buildMainRoute(start, boss);
-
-  addPath(points, edges, used, degree, mainRoute);
-
-  const detours = [
+const LABYRINTH_MAP_CONFIG = {
+  minBossPathNodes: 11,
+  maxNodeDegree: 3,
+  upperRowBand: { min: 1, max: 3, combatPct: 0.55, elitePct: 0.2 },
+  lowerRowBand: { min: 4, max: 6, combatPct: 0.35, elitePct: 0.3 },
+  detourPaths: [
     [
       { row: 1, col: 3 },
       { row: 1, col: 2 },
@@ -129,14 +68,86 @@ function generateRouteGraph(rng: () => number): { points: Point[]; edges: { from
       { row: 6, col: 1 },
       { row: 6, col: 2 },
     ],
-  ];
-  for (const detour of shuffleArray(detours, rng)) {
+  ],
+} as const;
+
+function isInRowBand(point: Point, band: Readonly<{ min: number; max: number }>) {
+  return point.row >= band.min && point.row <= band.max;
+}
+
+// Mulberry32 seeded PRNG — returns a function that produces deterministic
+// values in [0, 1) for a given integer seed. Used by tests for reproducible maps.
+export function createSeededRng(seed: number): () => number {
+  let s = seed | 0;
+  return () => {
+    s = (s + 0x6d2b79f5) | 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+export function generateLabyrinthMap(rng: () => number = Math.random): LabyrinthMap {
+  const grid: (LabyrinthNode | null)[][] = Array.from({ length: LABYRINTH_ROWS }, () =>
+    Array.from({ length: LABYRINTH_COLS }, () => null),
+  );
+  const graph = generateRouteGraph(rng);
+  const firstCombat = { row: 1, col: Math.floor(LABYRINTH_COLS / 2) };
+  const { upperRowBand, lowerRowBand } = LABYRINTH_MAP_CONFIG;
+
+  const upperPoints = graph.points.filter(
+    (p) => !isStart(p) && !isBoss(p) && !samePoint(p, firstCombat) && isInRowBand(p, upperRowBand),
+  );
+  const lowerPoints = graph.points.filter(
+    (p) => !isStart(p) && !isBoss(p) && !samePoint(p, firstCombat) && isInRowBand(p, lowerRowBand),
+  );
+
+  const upperTypes = distributeNodeTypes(upperPoints.length, rng, upperRowBand.combatPct, upperRowBand.elitePct);
+  const lowerTypes = distributeNodeTypes(lowerPoints.length, rng, lowerRowBand.combatPct, lowerRowBand.elitePct);
+
+  graph.points.forEach((point) => {
+    const type = isStart(point)
+      ? "entrance"
+      : isBoss(point)
+        ? "boss"
+        : samePoint(point, firstCombat)
+          ? "combat"
+          : isInRowBand(point, upperRowBand)
+            ? upperTypes.shift()!
+            : lowerTypes.shift()!;
+    grid[point.row][point.col] = makeNode(type, rng, isStart(point) ? "current" : "visible");
+  });
+
+  for (const edge of graph.edges) {
+    connect(grid, edge.from, edge.to);
+  }
+
+  return {
+    grid,
+    rows: LABYRINTH_ROWS,
+    cols: LABYRINTH_COLS,
+    currentNode: graph.points[0],
+  };
+}
+
+function generateRouteGraph(rng: () => number): { points: Point[]; edges: { from: Point; to: Point }[] } {
+  const start: Point = { row: 0, col: Math.floor(LABYRINTH_COLS / 2) };
+  const points: Point[] = [];
+  const edges: { from: Point; to: Point }[] = [];
+  const used = new Set<string>();
+  const degree = new Map<string, number>();
+  const boss: Point = { row: LABYRINTH_ROWS - 1, col: start.col };
+  const mainRoute = buildMainRoute(start, boss);
+
+  addPath(points, edges, used, degree, mainRoute);
+
+  for (const detour of shuffleArray(LABYRINTH_MAP_CONFIG.detourPaths, rng)) {
     if (detour.some((point) => !used.has(keyOf(point)) && !isInBounds(point))) continue;
     if (!canAddPath(detour, used, degree)) continue;
     addPath(points, edges, used, degree, detour);
   }
 
-  if (shortestPathNodeCount(points, edges, start, boss) < MIN_BOSS_PATH_NODES) {
+  if (shortestPathNodeCount(points, edges, start, boss) < LABYRINTH_MAP_CONFIG.minBossPathNodes) {
     throw new Error("Labyrinth route generation produced a boss shortcut");
   }
   return { points, edges };
@@ -166,7 +177,7 @@ function addPath(
   edges: { from: Point; to: Point }[],
   used: Set<string>,
   degree: Map<string, number>,
-  path: Point[],
+  path: readonly Point[],
 ) {
   for (const point of path) addPoint(points, used, point);
   for (let index = 0; index < path.length - 1; index += 1) {
@@ -174,7 +185,7 @@ function addPath(
   }
 }
 
-function canAddPath(path: Point[], used: Set<string>, degree: Map<string, number>) {
+function canAddPath(path: readonly Point[], used: Set<string>, degree: Map<string, number>) {
   for (let index = 0; index < path.length - 1; index += 1) {
     const from = path[index];
     const to = path[index + 1];
@@ -182,8 +193,8 @@ function canAddPath(path: Point[], used: Set<string>, degree: Map<string, number
     const toExisting = used.has(keyOf(to));
     const fromDegree = degree.get(keyOf(from)) ?? 0;
     const toDegree = degree.get(keyOf(to)) ?? 0;
-    if (fromExisting && fromDegree >= 3) return false;
-    if (toExisting && toDegree >= 3) return false;
+    if (fromExisting && fromDegree >= LABYRINTH_MAP_CONFIG.maxNodeDegree) return false;
+    if (toExisting && toDegree >= LABYRINTH_MAP_CONFIG.maxNodeDegree) return false;
   }
   return true;
 }
@@ -255,13 +266,18 @@ function connect(grid: (LabyrinthNode | null)[][], a: Point, b: Point) {
 function addEdge(edges: { from: Point; to: Point }[], degree: Map<string, number>, from: Point, to: Point) {
   const fromKey = keyOf(from);
   const toKey = keyOf(to);
-  if ((degree.get(fromKey) ?? 0) >= 3 || (degree.get(toKey) ?? 0) >= 3) return;
+  if (
+    (degree.get(fromKey) ?? 0) >= LABYRINTH_MAP_CONFIG.maxNodeDegree ||
+    (degree.get(toKey) ?? 0) >= LABYRINTH_MAP_CONFIG.maxNodeDegree
+  ) {
+    return;
+  }
   edges.push({ from, to });
   degree.set(fromKey, (degree.get(fromKey) ?? 0) + 1);
   degree.set(toKey, (degree.get(toKey) ?? 0) + 1);
 }
 
-function shuffleArray<T>(items: T[], rng: () => number) {
+function shuffleArray<T>(items: readonly T[], rng: () => number) {
   const result = [...items];
   for (let index = result.length - 1; index > 0; index -= 1) {
     const swapIndex = Math.floor(rng() * (index + 1));

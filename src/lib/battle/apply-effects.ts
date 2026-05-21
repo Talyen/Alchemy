@@ -36,7 +36,7 @@ export function applyCardEffects(state: BattleState, card: BattleCard, combatTex
       }
       case "heal": {
         const adjustedHeal = Math.round(effect.amount * potionMult);
-        const healAmount = Math.floor(adjustedHeal * currentState.talentEffects.healMultiplier);
+        const healAmount = Math.round(adjustedHeal * currentState.talentEffects.healMultiplier);
         mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: healAmount });
         return applyPlayerHealing(currentState, healAmount);
       }

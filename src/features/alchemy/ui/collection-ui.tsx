@@ -16,7 +16,13 @@ import { cn } from "@/lib/utils";
 
 import { PaginationControls } from "./shared-ui";
 import { CardFlip } from "./card-flip";
-import { cardSurfaceClass, collectionTabMeta, staticCardTransform, viewCardWidthClass } from "../config";
+import {
+  cardSurfaceClass,
+  collectionTabMeta,
+  collectionTileWidthClass,
+  staticCardTransform,
+  trinketCardWidthClass,
+} from "../config";
 import type { CollectionTab } from "../types";
 import { clearTiltFromEvent, getHoverId, setTiltFromEvent } from "../utils";
 import { DetailPopup } from "./card-ui";
@@ -102,7 +108,7 @@ function CompendiumTile({
         className={cn(
           "tilt-surface group w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
           cardSurfaceClass,
-          viewCardWidthClass,
+          item.frameType === "trinket" ? trinketCardWidthClass : collectionTileWidthClass,
           item.frameType === "card" && "bg-transparent",
         )}
         style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
@@ -184,7 +190,7 @@ export function CollectionGrid({
   return (
     <div
       key={`${collectionTab}-${page}`}
-      className="state-swap grid min-h-[50cqh] grid-cols-5 grid-rows-2 justify-items-center gap-x-6 gap-y-7 overflow-visible"
+      className="state-swap grid min-h-[50cqh] grid-cols-4 grid-rows-2 justify-items-center gap-x-6 gap-y-7 overflow-visible"
     >
       {pageItems.map((item, index) => {
         const hoverId = getHoverId(item.hoverScope, item.id);
@@ -206,7 +212,11 @@ export function CollectionGrid({
         );
       })}
       {Array.from({ length: Math.max(0, collectionPageSize - pageItems.length) }).map((_, index) => (
-        <div key={`collection-filler-${index}`} className={viewCardWidthClass} aria-hidden="true" />
+        <div
+          key={`collection-filler-${index}`}
+          className={collectionTab === "trinkets" ? trinketCardWidthClass : collectionTileWidthClass}
+          aria-hidden="true"
+        />
       ))}
     </div>
   );

@@ -45,10 +45,4 @@ export type LabyrinthMap = {
 };
 
 // ============ Wildwood ============
-
-export type WildwoodBossEntry = {
-  bossId: string;
-  title: string;
-  subtitle: string;
-  descriptionLines: string[];
-};
+// No separate entry type — display data comes from compendium.

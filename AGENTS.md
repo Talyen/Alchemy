@@ -51,6 +51,7 @@ Add a new raw art asset:
 - **Talent effects**: Pre-computed once per battle into `TalentEffectManifest` on state.
 - **No audio files**: Web Audio API buffer playback (`lib/audio.ts`); music MP3s from `Music/`.
 - **All tuning values** in `src/lib/game-constants.ts` — no magic numbers.
+- **Rounding**: Battle math uses `Math.round()` — never `Math.floor()`. Enforced by ESLint `no-restricted-syntax` rule in battle files.
 - **State mutated only through defined state functions**, never directly.
 - **Comments**: Every function gets a "why" comment; every file gets a top-of-file summary of what it does and its dependencies.
 - **Commit messages**: Follow [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `refactor:`, etc.) — enforced by commitlint + lefthook locally, validated in CI. `standard-version` reads these to generate the changelog and bump the version automatically.

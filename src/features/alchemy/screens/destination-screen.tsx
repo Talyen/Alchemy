@@ -1,23 +1,33 @@
 // Destination choice screen — pick the next node on the map.
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 
 import { keywordDefinitions } from "@/lib/game-data";
 
-import { getBossEnemy, keywordAliases } from "../config";
+import { getBossById, getBossEnemy, keywordAliases } from "../config";
 import { DestinationChoices, ScreenHeader } from "../ui/shared-ui";
 import { DESTINATIONS, type Destination } from "../types";
 import { useScreenStore } from "../stores/screen-store";
-import { useRunStore } from "../stores/run-store";
 
 export function DestinationScreen({ onChoose }: { onChoose: (destination: Destination) => void }) {
-  const destinationOptions = useScreenStore((s) => s.rewardState.destinations);
-  const currentAct = useRunStore((s) => s.currentAct);
+  const rewardState = useScreenStore((s) => s.rewardState);
+  const setRewardState = useScreenStore((s) => s.setRewardState);
+  const destinationOptions = rewardState.destinations;
   const bossOnly = destinationOptions.length === 1 && destinationOptions[0] === DESTINATIONS.BOSS_COMBAT;
-  const boss = bossOnly ? getBossEnemy(currentAct) : null;
+
+  useEffect(() => {
+    if (!bossOnly) return;
+    if (rewardState.selectedBossId && getBossById(rewardState.selectedBossId)) return;
+    const selectedBossId = getBossEnemy().id;
+    setRewardState((prev) => ({ ...prev, selectedBossId }));
+  }, [bossOnly, rewardState.selectedBossId, setRewardState]);
+
+  const boss = useMemo(
+    () => (bossOnly && rewardState.selectedBossId ? (getBossById(rewardState.selectedBossId) ?? null) : null),
+    [bossOnly, rewardState.selectedBossId],
+  );
 
   const bossShineColors = useMemo(() => {
-    if (!bossOnly) return [];
-    const boss = getBossEnemy(currentAct);
+    if (!boss) return [];
     const matchedIds = new Set<string>();
 
     // Boss headers borrow the enemy's combat vocabulary so the warning colors match the fight.
@@ -44,8 +54,8 @@ export function DestinationScreen({ onChoose }: { onChoose: (destination: Destin
       }
     }
     return colors.length > 0 ? colors : ["#cbd5e1", "#64748b", "#cbd5e1"];
-  }, [bossOnly, currentAct]);
-  const bossTextGradient = `linear-gradient(60deg, ${bossShineColors.join(",")})`;
+  }, [boss]);
+  const bossTextGradient = `linear-gradient(60deg, ${(bossShineColors.length > 0 ? bossShineColors : ["#cbd5e1", "#64748b", "#cbd5e1"]).join(",")})`;
 
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-6 px-4 py-6 text-center">
@@ -56,7 +66,7 @@ export function DestinationScreen({ onChoose }: { onChoose: (destination: Destin
               className="boss-title-shine bg-clip-text text-transparent [background-size:300%_300%]"
               style={{ backgroundImage: bossTextGradient }}
             >
-              {boss?.title}
+              {boss?.title ?? "Unknown Boss"}
             </span>
           }
         />

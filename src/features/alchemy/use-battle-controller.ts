@@ -15,7 +15,7 @@ import {
   type CombatTextEvent,
 } from "@/lib/battle";
 import { getDifficultyModifiers, type BattleCard, type BestiaryEntry, type DifficultyModifier } from "@/lib/game-data";
-import { playBattleEvent, playCardSound, playEnemyAttack, playGoldGain } from "@/lib/audio";
+import { playBattleEvent, playCardSound, playEnemyAttack, playGoldGain, stopAllSfx } from "@/lib/audio";
 import { appendUnique } from "@/lib/utils";
 import {
   animateCardActivation,
@@ -28,6 +28,7 @@ import { mergeIntoManifest } from "@/lib/homestead/effects";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import {
   CARD_ACTIVATION_ROTATION_DEGREES,
+  CARD_TRANSFER_CONFIG,
   ENEMY_ATTACK_RECOVERY_DELAY,
   COMPANION_ATTACK_DELAY,
   ENEMY_PHASE_DELAY,
@@ -44,12 +45,14 @@ import {
 import { useBattleAutoEndTurn } from "./battle/use-battle-auto-end-turn";
 import { useBattleStore } from "./stores/battle-store";
 import { getBattleStartPlayerHealth } from "./battle/battle-start";
+import { createTransferCancelRegistry } from "./battle/transfer-lifecycle";
 
-const CARD_TRANSFER_DRAW_DURATION_SECONDS = 0.5;
-const CARD_TRANSFER_DISCARD_DURATION_SECONDS = 0.5;
-const CARD_TRANSFER_COMPLETION_BUFFER_MS = 120;
-const REQUIRED_STABLE_SLOT_FRAMES = 2;
-const MAX_SLOT_STABILIZE_FRAMES = 12;
+function getCardTransferBatchSpeed(cardCount: number) {
+  const { batchSpeedMultipliers } = CARD_TRANSFER_CONFIG;
+  if (cardCount <= batchSpeedMultipliers.smallMaxCardCount) return batchSpeedMultipliers.small;
+  if (cardCount === batchSpeedMultipliers.mediumCardCount) return batchSpeedMultipliers.medium;
+  return batchSpeedMultipliers.large;
+}
 
 export function useBattleController({
   run,
@@ -96,9 +99,24 @@ export function useBattleController({
   const transferMeasureFrameRef = useRef<number | null>(null);
   const transferSafetyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const companionScheduledRef = useRef(false);
+  const battleSessionRef = useRef(0);
+  const transferCancelRegistryRef = useRef(createTransferCancelRegistry());
   const [cardTransfers, setCardTransfers] = useState<CardTransfer[]>([]);
   const [hiddenHandCardKeys, setHiddenHandCardKeys] = useState<Set<string>>(new Set());
   const [cardTransferInProgress, setCardTransferInProgress] = useState(false);
+
+  function invalidateBattleSession() {
+    battleSessionRef.current += 1;
+  }
+
+  function isCurrentBattleSession(session: number) {
+    return session === battleSessionRef.current && getStore().hasActiveBattle;
+  }
+
+  function registerTransferCancelCallback(callback: () => void) {
+    return transferCancelRegistryRef.current.register(callback);
+  }
+
   function clearCompanionTimeout() {
     if (!companionTimeoutRef.current) return;
     clearTimeout(companionTimeoutRef.current);
@@ -118,12 +136,17 @@ export function useBattleController({
     transferTimeoutRef.current = null;
     transferMeasureFrameRef.current = null;
     transferSafetyTimerRef.current = null;
+    transferCancelRegistryRef.current.cancelAll();
   }
 
   function clearPendingBattleTimeouts() {
     clearCompanionTimeout();
     clearEnemyTimeout();
     companionScheduledRef.current = false;
+  }
+
+  function stopBattleFeedback() {
+    stopAllSfx();
   }
 
   useEffect(
@@ -137,6 +160,16 @@ export function useBattleController({
     },
     [],
   );
+
+  useEffect(() => {
+    if (hasActiveBattle) return;
+    invalidateBattleSession();
+    clearPendingBattleTimeouts();
+    clearTransferHandles();
+    cardPlayInProgressRef.current = false;
+    // hasActiveBattle is the only lifecycle edge this cleanup should react to.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasActiveBattle]);
 
   const playerCombatTexts = useMemo(
     () => floatingCombatTexts.filter((e) => e.target === "player"),
@@ -158,7 +191,7 @@ export function useBattleController({
 
   function playTransferSound(delay = 0) {
     if (!getStore().hasActiveBattle) return;
-    playBattleEvent("drawTransfer", { volume: 0.4, delay });
+    playBattleEvent("drawTransfer", { volume: CARD_TRANSFER_CONFIG.soundVolume, delay });
   }
 
   function localRectFromElement(element: HTMLElement | null): CardRect | null {
@@ -197,18 +230,30 @@ export function useBattleController({
   function runCardTransfer(transfer: Omit<CardTransfer, "id">, onComplete?: () => void): Promise<void> {
     return new Promise((resolve) => {
       const id = `${performance.now()}-${Math.random()}`;
+      let completed = false;
+      let unregisterCancel = () => {};
+      let timeout: ReturnType<typeof setTimeout> | null = null;
+      const finish = (completeTransfer: boolean) => {
+        if (completed) return;
+        completed = true;
+        unregisterCancel();
+        if (timeout) clearTimeout(timeout);
+        if (transferTimeoutRef.current === timeout) {
+          transferTimeoutRef.current = null;
+        }
+        if (import.meta.env.DEV) console.log("[flying] remove", id.slice(-8));
+        setCardTransfers((current) => current.filter((item) => item.id !== id));
+        if (completeTransfer) onComplete?.();
+        resolve();
+      };
+      unregisterCancel = registerTransferCancelCallback(() => finish(false));
       if (import.meta.env.DEV) console.log("[flying] create", id.slice(-8));
       setCardTransfers([{ ...transfer, id }]);
-      transferTimeoutRef.current = setTimeout(
-        () => {
-          if (import.meta.env.DEV) console.log("[flying] remove", id.slice(-8));
-          transferTimeoutRef.current = null;
-          setCardTransfers((current) => current.filter((item) => item.id !== id));
-          onComplete?.();
-          resolve();
-        },
-        Math.round(transfer.duration * 1000) + CARD_TRANSFER_COMPLETION_BUFFER_MS,
+      timeout = setTimeout(
+        () => finish(true),
+        Math.round(transfer.duration * 1000) + CARD_TRANSFER_CONFIG.completionBufferMs,
       );
+      transferTimeoutRef.current = timeout;
     });
   }
 
@@ -217,49 +262,75 @@ export function useBattleController({
       let frameCount = 0;
       let stableFrames = 0;
       let lastRect: CardRect | null = null;
+      let completed = false;
+      let unregisterCancel = () => {};
+      let safetyTimer: ReturnType<typeof setTimeout> | null = null;
+      let measureFrame: number | null = null;
 
-      transferSafetyTimerRef.current = setTimeout(() => {
-        transferSafetyTimerRef.current = null;
-        if (transferMeasureFrameRef.current !== null) {
-          cancelAnimationFrame(transferMeasureFrameRef.current);
+      const finish = (rect: CardRect) => {
+        if (completed) return;
+        completed = true;
+        unregisterCancel();
+        if (safetyTimer !== null) clearTimeout(safetyTimer);
+        if (transferSafetyTimerRef.current === safetyTimer) {
+          transferSafetyTimerRef.current = null;
+        }
+        if (measureFrame !== null) cancelAnimationFrame(measureFrame);
+        if (transferMeasureFrameRef.current === measureFrame) {
           transferMeasureFrameRef.current = null;
         }
-        resolve(localVisualCardRect(handCardRefs.current[cardKey]) ?? fallback);
-      }, 2000);
+        resolve(rect);
+      };
+
+      unregisterCancel = registerTransferCancelCallback(() => {
+        finish(localVisualCardRect(handCardRefs.current[cardKey]) ?? fallback);
+      });
+
+      safetyTimer = setTimeout(() => {
+        finish(localVisualCardRect(handCardRefs.current[cardKey]) ?? fallback);
+      }, CARD_TRANSFER_CONFIG.stableRectTimeoutMs);
+      transferSafetyTimerRef.current = safetyTimer;
 
       function tick() {
-        transferMeasureFrameRef.current = null;
+        if (transferMeasureFrameRef.current === measureFrame) transferMeasureFrameRef.current = null;
+        measureFrame = null;
         frameCount += 1;
         const rect = localVisualCardRect(handCardRefs.current[cardKey]) ?? fallback;
-        if (lastRect && Math.abs(rect.x - lastRect.x) < 0.5 && Math.abs(rect.y - lastRect.y) < 0.5) {
+        if (
+          lastRect &&
+          Math.abs(rect.x - lastRect.x) < CARD_TRANSFER_CONFIG.rectEpsilonPx &&
+          Math.abs(rect.y - lastRect.y) < CARD_TRANSFER_CONFIG.rectEpsilonPx
+        ) {
           stableFrames += 1;
         } else {
           stableFrames = 0;
         }
         lastRect = rect;
 
-        if (stableFrames >= REQUIRED_STABLE_SLOT_FRAMES || frameCount >= MAX_SLOT_STABILIZE_FRAMES) {
-          if (transferSafetyTimerRef.current !== null) {
-            clearTimeout(transferSafetyTimerRef.current);
-            transferSafetyTimerRef.current = null;
-          }
-          resolve(rect);
+        if (
+          stableFrames >= CARD_TRANSFER_CONFIG.requiredStableSlotFrames ||
+          frameCount >= CARD_TRANSFER_CONFIG.maxSlotStabilizeFrames
+        ) {
+          finish(rect);
           return;
         }
 
-        transferMeasureFrameRef.current = requestAnimationFrame(tick);
+        measureFrame = requestAnimationFrame(tick);
+        transferMeasureFrameRef.current = measureFrame;
       }
 
-      transferMeasureFrameRef.current = requestAnimationFrame(tick);
+      measureFrame = requestAnimationFrame(tick);
+      transferMeasureFrameRef.current = measureFrame;
     });
   }
 
   async function animateDiscardedHand(cards: BattleCard[]) {
     const discardPileRect = localRectFromElement(discardPileRef.current);
     if (!discardPileRect || cards.length === 0) return;
-    const speedMul = cards.length <= 2 ? 1 : cards.length === 3 ? 1.4 : 1.6;
+    const speedMul = getCardTransferBatchSpeed(cards.length);
     const cardInterval =
-      ((CARD_TRANSFER_DISCARD_DURATION_SECONDS / speedMul) * 1000 + CARD_TRANSFER_COMPLETION_BUFFER_MS) / 1000;
+      ((CARD_TRANSFER_CONFIG.discardDurationSeconds / speedMul) * 1000 + CARD_TRANSFER_CONFIG.completionBufferMs) /
+      1000;
     for (let i = 0; i < cards.length; i++) playTransferSound(i * cardInterval);
     setCardTransferInProgress(true);
     cardPlayInProgressRef.current = true;
@@ -278,8 +349,8 @@ export function useBattleController({
         toScale: discardPileRect.width / sourceRect.width,
         fromRotation: (index - (cards.length - 1) / 2) * HAND_FAN_ROTATION_DEGREES,
         toRotation: 0,
-        rotateY: [0, 90, 180],
-        duration: CARD_TRANSFER_DISCARD_DURATION_SECONDS / speedMul,
+        rotateY: [...CARD_TRANSFER_CONFIG.discardFlipKeyframes],
+        duration: CARD_TRANSFER_CONFIG.discardDurationSeconds / speedMul,
       });
     }
   }
@@ -287,9 +358,9 @@ export function useBattleController({
   async function animateDrawnHand(cards: BattleCard[], allHandCards: BattleCard[]) {
     const drawPileRect = localRectFromElement(drawPileRef.current);
     if (!drawPileRect || cards.length === 0) return;
-    const speedMul = cards.length <= 2 ? 1 : cards.length === 3 ? 1.4 : 1.6;
+    const speedMul = getCardTransferBatchSpeed(cards.length);
     const cardInterval =
-      ((CARD_TRANSFER_DRAW_DURATION_SECONDS / speedMul) * 1000 + CARD_TRANSFER_COMPLETION_BUFFER_MS) / 1000;
+      ((CARD_TRANSFER_CONFIG.drawDurationSeconds / speedMul) * 1000 + CARD_TRANSFER_CONFIG.completionBufferMs) / 1000;
     for (let i = 0; i < cards.length; i++) playTransferSound(i * cardInterval);
     for (const card of cards) {
       const index = allHandCards.findIndex((item) => item.uid === card.uid && item.id === card.id);
@@ -306,8 +377,8 @@ export function useBattleController({
           toScale: 1,
           fromRotation: 0,
           toRotation: (index - (allHandCards.length - 1) / 2) * HAND_FAN_ROTATION_DEGREES,
-          rotateY: [180, 90, 0],
-          duration: CARD_TRANSFER_DRAW_DURATION_SECONDS / speedMul,
+          rotateY: [...CARD_TRANSFER_CONFIG.drawFlipKeyframes],
+          duration: CARD_TRANSFER_CONFIG.drawDurationSeconds / speedMul,
         },
         () => {
           if (import.meta.env.DEV) {
@@ -322,7 +393,12 @@ export function useBattleController({
                 const dy = Math.abs((br.top - or.top) / sceneRect.scaleY);
                 const dw = Math.abs((br.width - or.width) / sceneRect.scaleX);
                 const dh = Math.abs((br.height - or.height) / sceneRect.scaleY);
-                if (dx > 0.5 || dy > 0.5 || dw > 0.5 || dh > 0.5) {
+                if (
+                  dx > CARD_TRANSFER_CONFIG.rectEpsilonPx ||
+                  dy > CARD_TRANSFER_CONFIG.rectEpsilonPx ||
+                  dw > CARD_TRANSFER_CONFIG.rectEpsilonPx ||
+                  dh > CARD_TRANSFER_CONFIG.rectEpsilonPx
+                ) {
                   console.warn(
                     `[snap] card=${cardKey} dx:${dx.toFixed(2)} dy:${dy.toFixed(2)} dw:${dw.toFixed(2)} dh:${dh.toFixed(2)}`,
                   );
@@ -346,13 +422,12 @@ export function useBattleController({
     gold: number = run.runGold,
     enemyType: "normal" | "elite" = "normal",
     modifiers?: DifficultyModifier[],
-    scalingDepth?: number,
   ) {
-    beginBattle(getCurrentEnemy(enemyType), deck, gold, modifiers, scalingDepth);
+    beginBattle(getCurrentEnemy(enemyType), deck, gold, modifiers);
   }
 
-  function startBossBattle(modifiers?: DifficultyModifier[], scalingDepth?: number) {
-    beginBattle(getBossEnemy(run.currentAct), run.runDeck, run.runGold, modifiers, scalingDepth);
+  function startBossBattle(modifiers?: DifficultyModifier[]) {
+    beginBattle(getBossEnemy(), run.runDeck, run.runGold, modifiers);
   }
 
   function startBossById(bossId: string, modifiers?: DifficultyModifier[]): boolean {
@@ -362,15 +437,11 @@ export function useBattleController({
     return true;
   }
 
-  function beginBattle(
-    enemy: BestiaryEntry,
-    deck: BattleCard[],
-    gold: number,
-    modifiers?: DifficultyModifier[],
-    scalingDepth?: number,
-  ) {
+  function beginBattle(enemy: BestiaryEntry, deck: BattleCard[], gold: number, modifiers?: DifficultyModifier[]) {
+    invalidateBattleSession();
     clearPendingBattleTimeouts();
     clearTransferHandles();
+    stopBattleFeedback();
     setCardTransfers([]);
     setHiddenHandCardKeys(new Set());
     setCardTransferInProgress(false);
@@ -378,9 +449,10 @@ export function useBattleController({
     getStore().clearRevealedCardKeys();
     const startingHealth = getBattleStartPlayerHealth(run.runPlayerHealth, run.runMaxHealth, run.runTrinkets);
     run.setRunPlayerHealth(startingHealth);
-    run.setRoomsEncountered((p) => p + 1);
+    const nextRoomsEncountered = run.roomsEncountered + 1;
+    run.setRoomsEncountered(nextRoomsEncountered);
     getStore().clearCardGhosts();
-    const nextBattleState = createBattleForEnemy(enemy, deck, gold, startingHealth, modifiers, scalingDepth);
+    const nextBattleState = createBattleForEnemy(enemy, deck, gold, startingHealth, nextRoomsEncountered, modifiers);
     getStore().setBattleState(nextBattleState);
     getStore().setHasActiveBattle(true);
     setEncounteredEnemyIds((current) => appendUnique(current, enemy.id));
@@ -391,8 +463,8 @@ export function useBattleController({
     deck: BattleCard[],
     gold: number,
     playerHealth: number,
+    roomsEncountered: number,
     modifiers?: DifficultyModifier[],
-    scalingDepth?: number,
   ) {
     const mergedEffects = mergeIntoManifest(talents.talentEffects, homesteadEffectsRef.current);
     const activeModifiers =
@@ -400,15 +472,13 @@ export function useBattleController({
     return createBattleState(
       deck,
       gold,
-      run.roomsEncountered,
+      roomsEncountered,
       enemy,
       playerHealth,
       mergedEffects,
       discoveredCardIds,
       run.runMaxHealth,
       run.runTrinkets,
-      scalingDepth ?? run.destinationIndexInAct,
-      run.currentAct,
       activeModifiers,
     );
   }
@@ -424,10 +494,14 @@ export function useBattleController({
     oldHand: BattleCard[],
     newState: BattleState,
     applyState: () => void,
+    session = battleSessionRef.current,
   ): Promise<boolean> {
+    if (!isCurrentBattleSession(session)) return false;
     const drawnCards = detectNewHandCards(oldHand, newState.hand);
     if (drawnCards.length === 0) {
+      if (!isCurrentBattleSession(session)) return false;
       flushSync(() => {
+        if (!isCurrentBattleSession(session)) return;
         applyState();
         setCardTransferInProgress(false);
       });
@@ -436,10 +510,12 @@ export function useBattleController({
     const hiddenDrawKeys = new Set(drawnCards.map(getCardKey));
     setCardTransferInProgress(true);
     flushSync(() => {
+      if (!isCurrentBattleSession(session)) return;
       setHiddenHandCardKeys(hiddenDrawKeys);
       applyState();
     });
     await animateDrawnHand(drawnCards, newState.hand);
+    if (!isCurrentBattleSession(session)) return false;
     setCardTransferInProgress(false);
     return true;
   }
@@ -451,6 +527,7 @@ export function useBattleController({
   ) {
     const currentState = getStore().battleState;
     if (!canPlayCard(card, index, currentState)) return;
+    const session = battleSessionRef.current;
     cardPlayInProgressRef.current = true;
     animatePlayedCard(card, index, sourceRect);
     playCardSound(card.id);
@@ -460,12 +537,17 @@ export function useBattleController({
     setHoveredCardId((current) => (current === getHoverId("hand", `${card.id}-${card.uid}`) ? null : current));
     talents.awardCardXP(card);
 
-    void handleDrawSequence(currentState.hand, resolution.state, () => {
-      getStore().setBattleState(resolution.state);
-    }).finally(() => {
-      cardPlayInProgressRef.current = false;
+    void handleDrawSequence(
+      currentState.hand,
+      resolution.state,
+      () => {
+        getStore().setBattleState(resolution.state);
+      },
+      session,
+    ).finally(() => {
+      if (isCurrentBattleSession(session)) cardPlayInProgressRef.current = false;
     });
-    scheduleAutoEndTurn(resolution.state);
+    if (isCurrentBattleSession(session)) scheduleAutoEndTurn(resolution.state);
   }
 
   function canPlayCard(card: BattleCard, index: number, state: BattleState) {
@@ -511,10 +593,16 @@ export function useBattleController({
   function handleWishChoice(card: BattleCard) {
     const currentState = getStore().battleState;
     const newState = chooseWishCard(currentState, card.id);
+    const session = battleSessionRef.current;
     setDiscoveredCardIds((current) => appendUnique(current, card.id));
-    void handleDrawSequence(currentState.hand, newState, () => {
-      getStore().setBattleState(newState);
-    });
+    void handleDrawSequence(
+      currentState.hand,
+      newState,
+      () => {
+        getStore().setBattleState(newState);
+      },
+      session,
+    );
   }
 
   function handleEndTurn() {
@@ -528,17 +616,19 @@ export function useBattleController({
     )
       return;
     clearCompanionTimeout();
+    const session = battleSessionRef.current;
 
-    void animateEndTurnThenResolve(currentState);
+    void animateEndTurnThenResolve(currentState, session);
   }
 
-  async function animateEndTurnThenResolve(currentState: BattleState) {
+  async function animateEndTurnThenResolve(currentState: BattleState, session: number) {
     try {
       await animateDiscardedHand(currentState.hand);
-      resolveEndTurn(currentState);
+      if (!isCurrentBattleSession(session)) return;
+      resolveEndTurn(currentState, session);
     } finally {
       // haste/stun path manages its own transfer lifecycle; only clear if we didn't go there
-      if (!resolvedAsHasteOrStunRef.current) {
+      if (isCurrentBattleSession(session) && !resolvedAsHasteOrStunRef.current) {
         setHiddenHandCardKeys(new Set());
         setCardTransferInProgress(false);
         cardPlayInProgressRef.current = false;
@@ -548,10 +638,12 @@ export function useBattleController({
 
   const resolvedAsHasteOrStunRef = useRef(false);
 
-  function resolveEndTurn(currentState: BattleState) {
+  function resolveEndTurn(currentState: BattleState, session: number) {
+    if (!isCurrentBattleSession(session)) return;
     const companionResult = resolveQueuedCompanionTurn(currentState);
 
     if (companionResult.state.enemyHealth <= 0) {
+      if (!isCurrentBattleSession(session)) return;
       getStore().setBattleState(companionResult.state);
       if (companionResult.combatTexts.length > 0) getStore().showCombatTexts(companionResult.combatTexts);
       return;
@@ -559,16 +651,26 @@ export function useBattleController({
 
     const result = endPlayerTurn(companionResult.state);
 
-    // Haste or stun skip: immediately show player turn and animate draw
+    // Haste or stun skip: immediately show the next turn and animate any draw
     // (enemyTurnStartState is undefined in these paths)
     if (!result.enemyTurnStartState) {
       resolvedAsHasteOrStunRef.current = true;
       if (result.combatTexts.length > 0) getStore().showCombatTexts(result.combatTexts);
-      void handleDrawSequence(companionResult.state.hand, result.state, () => {
-        getStore().setBattleState(result.state);
-      }).finally(() => {
+      void handleDrawSequence(
+        companionResult.state.hand,
+        result.state,
+        () => {
+          getStore().setBattleState(result.state);
+        },
+        session,
+      ).finally(() => {
+        if (!isCurrentBattleSession(session)) return;
         resolvedAsHasteOrStunRef.current = false;
-        scheduleCompanionFollowUp(result.state);
+        if (result.playerTurnSkipped) {
+          resolveEndTurn(result.state, session);
+          return;
+        }
+        scheduleCompanionFollowUp(result.state, session);
       });
       return;
     }
@@ -578,6 +680,7 @@ export function useBattleController({
       : [...companionResult.combatTexts, ...result.combatTexts];
     const enemyResolutionTexts = result.enemyTurnStartState ? result.enemyResolutionCombatTexts : result.combatTexts;
 
+    if (!isCurrentBattleSession(session)) return;
     showEnemyTurnStart(
       result.enemyTurnStartState ?? result.state,
       companionResult.state,
@@ -585,10 +688,17 @@ export function useBattleController({
       Boolean(result.enemyTurnStartState),
     );
     if (result.state.enemyHealth <= 0) {
+      if (!isCurrentBattleSession(session)) return;
       getStore().setBattleState({ ...result.state, turnPhase: "enemy", hand: [] });
       return;
     }
-    scheduleEnemyTurnResolution(result.state, companionResult.state, enemyResolutionTexts);
+    scheduleEnemyTurnResolution(
+      result.state,
+      companionResult.state,
+      enemyResolutionTexts,
+      session,
+      result.playerTurnSkipped,
+    );
   }
 
   function resolveQueuedCompanionTurn(state: BattleState) {
@@ -627,44 +737,61 @@ export function useBattleController({
     resultState: BattleState,
     currentState: BattleState,
     combatTexts: CombatTextEvent[],
+    session: number,
+    playerTurnSkipped: boolean,
   ) {
     const playerTexts = combatTexts.filter((ct) => ct.target === "player");
     clearEnemyTimeout();
     enemyTimeoutRef.current = setTimeout(() => {
       enemyTimeoutRef.current = null;
+      if (!isCurrentBattleSession(session)) return;
       playEnemyAttack(currentState.currentEnemy.id);
       if (!currentState.deathsDoorActive && resultState.deathsDoorActive) playBattleEvent("deathsDoor");
       if (combatTexts.length > 0) getStore().showCombatTexts(combatTexts);
       if (shouldShakePlayerFromCombatTexts(playerTexts)) getStore().shakePlayer();
       enemyTimeoutRef.current = setTimeout(() => {
         enemyTimeoutRef.current = null;
-        void handleDrawSequence(currentState.hand, resultState, () => {
-          getStore().setBattleState(resultState);
-        }).finally(() => {
-          scheduleCompanionFollowUp(resultState);
+        if (!isCurrentBattleSession(session)) return;
+        void handleDrawSequence(
+          currentState.hand,
+          resultState,
+          () => {
+            getStore().setBattleState(resultState);
+          },
+          session,
+        ).finally(() => {
+          if (!isCurrentBattleSession(session)) return;
+          if (playerTurnSkipped) {
+            resolveEndTurn(resultState, session);
+            return;
+          }
+          scheduleCompanionFollowUp(resultState, session);
         });
       }, ENEMY_ATTACK_RECOVERY_DELAY);
     }, ENEMY_PHASE_DELAY);
   }
 
-  function scheduleCompanionFollowUp(resultState: BattleState) {
+  function scheduleCompanionFollowUp(resultState: BattleState, session: number) {
     if (!resultState.activeCompanion || resultState.enemyHealth <= 0) return;
     companionTimeoutRef.current = setTimeout(() => {
-      const texts = resolveCompanionFollowUpTexts();
-      if (texts.length > 0) getStore().showCombatTexts(texts);
       companionTimeoutRef.current = null;
       companionScheduledRef.current = false;
+      if (!isCurrentBattleSession(session)) return;
+      const texts = resolveCompanionFollowUpTexts(session);
+      if (texts.length > 0) getStore().showCombatTexts(texts);
     }, COMPANION_ATTACK_DELAY);
     companionScheduledRef.current = true;
   }
 
-  function resolveCompanionFollowUpTexts() {
+  function resolveCompanionFollowUpTexts(session: number) {
+    if (!isCurrentBattleSession(session)) return [];
     const store = getStore();
     const texts: CombatTextEvent[] = [];
     if (store.battleState.activeCompanion) {
       playCardSound(`companion-${store.battleState.activeCompanion.id}`);
     }
     const newState = processCompanionTurnStart(store.battleState, texts);
+    if (!isCurrentBattleSession(session)) return [];
     store.setBattleState(newState);
     store.shakeCompanion();
     return texts;
@@ -672,7 +799,10 @@ export function useBattleController({
 
   function handleEndRun() {
     if (screen !== "battle") return;
+    invalidateBattleSession();
     clearPendingBattleTimeouts();
+    clearTransferHandles();
+    stopBattleFeedback();
     getStore().setBattleState((c) => ({
       ...c,
       playerHealth: 0,
@@ -684,7 +814,10 @@ export function useBattleController({
 
   function skipCombatDevMode() {
     if (screen === "battle") {
+      invalidateBattleSession();
       clearPendingBattleTimeouts();
+      clearTransferHandles();
+      stopBattleFeedback();
       getStore().setBattleState((c) => ({ ...c, enemyHealth: 0, wishOptions: null, wishQueue: [] }));
     }
   }

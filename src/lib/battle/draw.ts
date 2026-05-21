@@ -15,10 +15,8 @@ import {
   MAX_HAND_SIZE,
   MAX_PLAYER_HEALTH,
   ROOM_SCALING_INCREMENT,
-  ELITE_STAT_MULTIPLIER,
+  ELITE_HP_MULTIPLIER,
   BOSS_HEALTH_MULTIPLIER,
-  BOSS_ATTACK_MULTIPLIER,
-  ACT_SCALING_INCREMENT,
   STARTING_TURN,
   ENEMY_BASE_REGENERATION,
   ENEMY_BOSS_REGENERATION,
@@ -77,6 +75,10 @@ export function defaultBattleState(): BattleState {
     pendingBleedLeechHealing: 0,
     enemyStunSkipTurns: 0,
     enemyFreezeSkipTurns: 0,
+    playerStunSkipTurns: 0,
+    playerFreezeSkipTurns: 0,
+    playerCCCooldown: 0,
+    enemyCCCooldown: 0,
     wishOptions: null,
     wishQueue: [],
     activeCompanion: null,
@@ -171,21 +173,15 @@ export function drawCards(
   return { deck: nextDeck, discard: nextDiscard, hand: nextHand, nextCardUid: uid };
 }
 
-// Enemy scaling is centralized so every battle start uses the same act, room, and type
-// multipliers. The fallback physical attack keeps malformed/new bestiary entries playable
-// instead of crashing combat with an enemy that has no action.
-function buildScaledEnemy(enemy: BestiaryEntry, destinationIndexInAct = 0, currentAct = 1) {
-  const scaler = Math.max(0, destinationIndexInAct - 1);
+// Enemy scaling using cumulative rooms across the entire run (no per-act reset).
+// Only Health scales by enemy type constants. Attack scales by room alone.
+function buildScaledEnemy(enemy: BestiaryEntry, totalRoomsInRun = 0) {
+  const scaler = Math.max(0, totalRoomsInRun - 1);
   const roomMul = 1 + scaler * ROOM_SCALING_INCREMENT;
-  const actMul = 1 + (currentAct - 1) * ACT_SCALING_INCREMENT;
-  const hpMultiplier = actMul * roomMul;
-  const eliteMul = enemy.enemyType === "elite" ? ELITE_STAT_MULTIPLIER : 1;
-  const bossHealthMul = enemy.enemyType === "boss" ? BOSS_HEALTH_MULTIPLIER : 1;
-  const bossAtkMul = enemy.enemyType === "boss" ? BOSS_ATTACK_MULTIPLIER : 1;
-  const hpTypeMul = Math.max(1, eliteMul, bossHealthMul);
-  const atkTypeMul = Math.max(1, eliteMul, bossAtkMul);
-  const scaledEnemyHealth = Math.floor(BASE_ENEMY_HEALTH * hpMultiplier * hpTypeMul);
-  const scaleAmount = (amount: number) => Math.floor(amount * hpMultiplier * atkTypeMul);
+  const hpTypeMul =
+    enemy.enemyType === "elite" ? ELITE_HP_MULTIPLIER : enemy.enemyType === "boss" ? BOSS_HEALTH_MULTIPLIER : 1;
+  const scaledEnemyHealth = Math.round(BASE_ENEMY_HEALTH * roomMul * hpTypeMul);
+  const scaleAmount = (amount: number) => Math.round(amount * roomMul);
 
   const baseEffects =
     enemy.attackEffects.length > 0
@@ -207,9 +203,9 @@ function buildScaledEnemy(enemy: BestiaryEntry, destinationIndexInAct = 0, curre
       ? ENEMY_BOSS_REGENERATION
       : ENEMY_BASE_REGENERATION
     : 0;
-  const enemyRegeneration = regenBase > 0 ? Math.floor(regenBase * hpMultiplier) : 0;
+  const enemyRegeneration = regenBase;
 
-  return { enemy, scaledEnemyHealth, scaledEnemyAttackEffects, enemyRegeneration, hpMultiplier, typeMul: atkTypeMul };
+  return { enemy, scaledEnemyHealth, scaledEnemyAttackEffects, enemyRegeneration };
 }
 
 function setupOpeningHand(deck: BattleCard[], trinketEffects: ReturnType<typeof computeTrinketManifest>) {
@@ -277,38 +273,31 @@ function createInitialFlags() {
 }
 
 // Creates the initial BattleState for a fresh encounter. Enemy Health and attack
-// scale per destination within an act (multiplicative by 1.1x per slot after the
-// first) and per act baseline (1.2x per act). Boss-type enemies get an additional
-// 1.8x multiplier. Delegates to focused helpers for opening hand, enemy scaling,
-// difficulty modifiers, and initial status setup.
+// scale by cumulative rooms across the run (10% per room after the first). Type
+// multipliers (Elite 1.5×, Boss 2×) only affect Health. Delegates to focused
+// helpers for opening hand, enemy scaling, difficulty modifiers, and status setup.
 export function createBattleState(
   runDeck: BattleCard[],
   gold = 0,
-  _roomsEncountered = 0,
+  totalRooms = 0,
   currentEnemy?: BestiaryEntry,
   playerHealth = MAX_PLAYER_HEALTH,
   talentEffects: TalentEffectManifest = defaultTalentEffects,
   discoveredCardIds: string[] = [],
   maxHealth = MAX_PLAYER_HEALTH,
   trinketIds: string[] = [],
-  destinationIndexInAct = 0,
-  currentAct = 1,
   difficultyModifiers: DifficultyModifier[] = [],
 ): BattleState {
   const trinketEffects = computeTrinketManifest(trinketIds);
   const { deck, hand, discard, nextCardUid } = setupOpeningHand(runDeck, trinketEffects);
 
   const enemy = currentEnemy ?? enemyBestiary[0];
-  const { scaledEnemyHealth, scaledEnemyAttackEffects, enemyRegeneration } = buildScaledEnemy(
-    enemy,
-    destinationIndexInAct,
-    currentAct,
-  );
+  const { scaledEnemyHealth, scaledEnemyAttackEffects, enemyRegeneration } = buildScaledEnemy(enemy, totalRooms);
   const modifiedEffects = applyDifficultyAttackModifiers(scaledEnemyAttackEffects, difficultyModifiers);
   const { startingArmor, startBlock, manaBonus, startCompanion } = computeStartingStatuses(difficultyModifiers, enemy);
 
   const hasSturdy = difficultyModifiers.some((m) => m.kind === "labyrinth-sturdy");
-  const enemyMaxHealth = hasSturdy ? Math.floor(scaledEnemyHealth * LABYRINTH_STURDY_MULTIPLIER) : scaledEnemyHealth;
+  const enemyMaxHealth = hasSturdy ? Math.round(scaledEnemyHealth * LABYRINTH_STURDY_MULTIPLIER) : scaledEnemyHealth;
 
   const startingHealth = Math.min(maxHealth, playerHealth + talentEffects.startHealth);
 
@@ -349,6 +338,10 @@ export function createBattleState(
     pendingBleedLeechHealing: 0,
     enemyStunSkipTurns: 0,
     enemyFreezeSkipTurns: 0,
+    playerStunSkipTurns: 0,
+    playerFreezeSkipTurns: 0,
+    playerCCCooldown: 0,
+    enemyCCCooldown: 0,
     wishOptions: null,
     wishQueue: [],
     activeCompanion: startCompanion ? companionLibrary["wolf"] : null,

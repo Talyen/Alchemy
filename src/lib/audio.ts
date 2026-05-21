@@ -12,5 +12,6 @@ export {
   playGoldSpend,
   playUISound,
   playVictory,
+  stopAllSfx,
 } from "./audio-sfx";
 export { setMasterVolume, setMusicVolume, setMuted, setSfxVolume } from "./audio-volume";

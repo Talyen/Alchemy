@@ -38,8 +38,8 @@ describe("computeTrinketManifest", () => {
     expect(manifest.forgeStunAmount).toBe(1);
   });
 
-  it("Frozen Heart → frozenHeartDamage: 6", () => {
-    const manifest = computeTrinketManifest(["frozen-heart"]);
+  it("Icy Heart → frozenHeartDamage: 6", () => {
+    const manifest = computeTrinketManifest(["icy-heart"]);
     expect(manifest.frozenHeartDamage).toBe(6);
   });
 
@@ -99,8 +99,8 @@ describe("computeTrinketManifest", () => {
     expect(manifest.sunderingArmorPiercing).toBe(2);
   });
 
-  it("Resonant Chime → resonantChimeCardsRequired: 3, resonantChimeMana: 1", () => {
-    const manifest = computeTrinketManifest(["resonant-chime"]);
+  it("Resonant Chimes → resonantChimeCardsRequired: 3, resonantChimeMana: 1", () => {
+    const manifest = computeTrinketManifest(["resonant-chimes"]);
     expect(manifest.resonantChimeCardsRequired).toBe(3);
     expect(manifest.resonantChimeMana).toBe(1);
   });
@@ -123,7 +123,7 @@ describe("computeTrinketManifest", () => {
   });
 
   it("Polar Pendant → freezeDurationExtension: 1", () => {
-    const manifest = computeTrinketManifest(["polar-pendant"]);
+    const manifest = computeTrinketManifest(["frozen-pocketwatch"]);
     expect(manifest.freezeDurationExtension).toBe(1);
   });
 

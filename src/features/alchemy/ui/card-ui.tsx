@@ -232,48 +232,6 @@ export function SelectableShopCard({
   );
 }
 
-export function SelectableCardItem({
-  card,
-  isSelected,
-  onSelect,
-  widthClass = viewCardWidthClass,
-}: {
-  card: BattleCard;
-  isSelected: boolean;
-  onSelect: () => void;
-  widthClass?: string;
-}) {
-  const [hovered, setHovered] = useState(false);
-
-  return (
-    <div
-      className={cn(
-        "cursor-pointer rounded-[18px] border p-2 text-center",
-        isSelected
-          ? "border-primary bg-primary/10 ring-1 ring-primary"
-          : "border-border/60 bg-card/40 hover:border-border",
-      )}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      onClick={onSelect}
-    >
-      <BattleCardButton
-        card={card}
-        hovered={hovered}
-        onHoverStart={() => setHovered(true)}
-        onHoverEnd={() => setHovered(false)}
-        ariaLabel={`Inspect ${getCardDisplayTitle(card)}`}
-        shimmerActive={false}
-        shimmerToken={undefined}
-        className={widthClass}
-      />
-      <p className="mt-1 text-sm font-semibold text-foreground">
-        <CardTitle card={card} />
-      </p>
-    </div>
-  );
-}
-
 export function DetailPopup({
   idPrefix,
   title,

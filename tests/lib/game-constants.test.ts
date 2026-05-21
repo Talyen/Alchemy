@@ -1,28 +1,53 @@
 import { describe, expect, it } from "vitest";
 import {
-  GLOBAL_CRIT_CHANCE, CRIT_MULTIPLIER, BLEED_STATUS_MULTIPLIER,
-  STUN_THRESHOLD_FRACTION, FREEZE_THRESHOLD_FRACTION,
-  WISH_CHOICE_COUNT, MIN_MAX_MANA_FLOOR,
-  ROOM_SCALING_INCREMENT, ELITE_STAT_MULTIPLIER, STARTING_TURN,
-  ENEMY_HEAL_FRACTION, ENEMY_BASE_REGENERATION, BLEED_EXECUTE_MULTIPLIER,
-  AUTO_END_TURN_DELAY, VICTORY_TRANSITION_DELAY, ENEMY_PHASE_DELAY,
-  SHAKE_DURATION, COMPANION_ATTACK_DELAY,
-  CAMPFIRE_ANIMATION_MS, CAMPFIRE_CONTINUE_DELAY,
+  GLOBAL_CRIT_CHANCE,
+  CRIT_MULTIPLIER,
+  BLEED_STATUS_MULTIPLIER,
+  STUN_THRESHOLD_FRACTION,
+  FREEZE_THRESHOLD_FRACTION,
+  WISH_CHOICE_COUNT,
+  MIN_MAX_MANA_FLOOR,
+  ROOM_SCALING_INCREMENT,
+  ELITE_HP_MULTIPLIER,
+  STARTING_TURN,
+  ENEMY_BASE_REGENERATION,
+  BLEED_EXECUTE_MULTIPLIER,
+  AUTO_END_TURN_DELAY,
+  VICTORY_TRANSITION_DELAY,
+  ENEMY_PHASE_DELAY,
+  SHAKE_DURATION,
+  COMPANION_ATTACK_DELAY,
+  CAMPFIRE_ANIMATION_MS,
+  CAMPFIRE_CONTINUE_DELAY,
   CAMPFIRE_HEAL_FRACTION,
-  XP_BASE_PER_POINT, XP_TRIANGULAR_MULTIPLIER, XP_MIN_THRESHOLD,
-  XP_ROOT_DIVISOR, TALENT_CHOICES_OFFERED,
-  SHOP_CARD_PRICE, SHOP_REMOVE_PRICE, SHOP_REFRESH_PRICE,
-  ALCHEMIST_POTION_PRICE, ALCHEMIST_REFRESH_PRICE, ALCHEMIST_MIX_PRICE,
-  GOLD_REWARD_MIN, GOLD_REWARD_MAX, REWARD_CARD_CHOICES,
-  DESTINATION_CHOICES, ACTS_PER_RUN,
-  BOSS_HEALTH_MULTIPLIER, BOSS_ATTACK_MULTIPLIER, BOSS_TRINKET_REWARD_CHOICES,
-  MASTER_GAIN, DEFAULT_MUSIC_VOLUME, MUSIC_BASE_PATH,
-  SHIMMER_DURATION_MS, SHIMMER_COOLDOWN_MS,
+  XP_BASE_PER_POINT,
+  XP_TRIANGULAR_MULTIPLIER,
+  XP_MIN_THRESHOLD,
+  XP_ROOT_DIVISOR,
+  TALENT_CHOICES_OFFERED,
+  SHOP_CARD_PRICE,
+  SHOP_REMOVE_PRICE,
+  SHOP_REFRESH_PRICE,
+  ALCHEMIST_POTION_PRICE,
+  ALCHEMIST_REFRESH_PRICE,
+  ALCHEMIST_MIX_PRICE,
+  GOLD_REWARD_MIN,
+  GOLD_REWARD_MAX,
+  REWARD_CARD_CHOICES,
+  DESTINATION_CHOICES,
+  ACTS_PER_RUN,
+  BOSS_HEALTH_MULTIPLIER,
+  BOSS_TRINKET_REWARD_CHOICES,
+  MASTER_GAIN,
+  DEFAULT_MUSIC_VOLUME,
+  MUSIC_BASE_PATH,
+  SHIMMER_COOLDOWN_MS,
   COMBAT_TEXT_LIFETIME_MS,
-  DRAG_START_THRESHOLD_PX, DRAG_ROTATION_CLAMP,
-  GHOST_TRAVEL_SCALE, BATTLEFIELD_HIT_FRACTION,
-  COLLECTION_PAGE_SIZE, SAVE_KEY,
-  SCREENS, MUSIC_KEYS,
+  CARD_TRANSFER_CONFIG,
+  GHOST_TRAVEL_SCALE,
+  COLLECTION_PAGE_SIZE,
+  SAVE_KEY,
+  MUSIC_KEYS,
 } from "@/lib/game-constants";
 
 describe("Combat constants", () => {
@@ -64,18 +89,13 @@ describe("Battle / Room constants", () => {
     expect(ROOM_SCALING_INCREMENT).toBeLessThan(1);
   });
 
-  it("ELITE_STAT_MULTIPLIER is at least 1", () => {
-    expect(ELITE_STAT_MULTIPLIER).toBeGreaterThanOrEqual(1);
+  it("ELITE_HP_MULTIPLIER is at least 1", () => {
+    expect(ELITE_HP_MULTIPLIER).toBeGreaterThanOrEqual(1);
   });
 
   it("STARTING_TURN is a positive integer", () => {
     expect(STARTING_TURN).toBeGreaterThan(0);
     expect(Number.isInteger(STARTING_TURN)).toBe(true);
-  });
-
-  it("ENEMY_HEAL_FRACTION is between 0 and 1", () => {
-    expect(ENEMY_HEAL_FRACTION).toBeGreaterThan(0);
-    expect(ENEMY_HEAL_FRACTION).toBeLessThanOrEqual(1);
   });
 
   it("ENEMY_BASE_REGENERATION is non-negative", () => {
@@ -171,11 +191,6 @@ describe("Reward constants", () => {
     expect(Number.isFinite(BOSS_HEALTH_MULTIPLIER)).toBe(true);
   });
 
-  it("BOSS_ATTACK_MULTIPLIER is at least 1", () => {
-    expect(BOSS_ATTACK_MULTIPLIER).toBeGreaterThanOrEqual(1);
-    expect(Number.isFinite(BOSS_ATTACK_MULTIPLIER)).toBe(true);
-  });
-
   it("BOSS_TRINKET_REWARD_CHOICES is at least 1", () => {
     expect(BOSS_TRINKET_REWARD_CHOICES).toBeGreaterThanOrEqual(1);
   });
@@ -199,26 +214,18 @@ describe("Audio constants", () => {
 });
 
 describe("Animation constants", () => {
-  it("SHIMMER_DURATION_MS is positive", () => {
-    expect(SHIMMER_DURATION_MS).toBeGreaterThan(0);
-  });
-
-  it("SHIMMER_COOLDOWN_MS is longer than SHIMMER_DURATION_MS", () => {
-    expect(SHIMMER_COOLDOWN_MS).toBeGreaterThan(SHIMMER_DURATION_MS);
+  it("SHIMMER_COOLDOWN_MS is positive", () => {
+    expect(SHIMMER_COOLDOWN_MS).toBeGreaterThan(0);
   });
 
   it("COMBAT_TEXT_LIFETIME_MS is positive", () => {
     expect(COMBAT_TEXT_LIFETIME_MS).toBeGreaterThan(0);
   });
-});
-
-describe("Drag constants", () => {
-  it("DRAG_START_THRESHOLD_PX is positive", () => {
-    expect(DRAG_START_THRESHOLD_PX).toBeGreaterThan(0);
-  });
-
-  it("DRAG_ROTATION_CLAMP is positive", () => {
-    expect(DRAG_ROTATION_CLAMP).toBeGreaterThan(0);
+  it("CARD_TRANSFER_CONFIG timing values are positive", () => {
+    expect(CARD_TRANSFER_CONFIG.drawDurationSeconds).toBeGreaterThan(0);
+    expect(CARD_TRANSFER_CONFIG.discardDurationSeconds).toBeGreaterThan(0);
+    expect(CARD_TRANSFER_CONFIG.completionBufferMs).toBeGreaterThan(0);
+    expect(CARD_TRANSFER_CONFIG.stableRectTimeoutMs).toBeGreaterThan(0);
   });
 });
 
@@ -226,11 +233,6 @@ describe("Layout constants", () => {
   it("GHOST_TRAVEL_SCALE is between 0 and 1", () => {
     expect(GHOST_TRAVEL_SCALE).toBeGreaterThan(0);
     expect(GHOST_TRAVEL_SCALE).toBeLessThan(1);
-  });
-
-  it("BATTLEFIELD_HIT_FRACTION is between 0 and 1", () => {
-    expect(BATTLEFIELD_HIT_FRACTION).toBeGreaterThan(0);
-    expect(BATTLEFIELD_HIT_FRACTION).toBeLessThan(1);
   });
 });
 
@@ -244,31 +246,6 @@ describe("Storage constants", () => {
   it("SAVE_KEY is a non-empty string", () => {
     expect(SAVE_KEY).toBeTruthy();
     expect(typeof SAVE_KEY).toBe("string");
-  });
-});
-
-describe("SCREENS enum", () => {
-  it("has all expected screen keys", () => {
-    const expected = [
-      "MENU", "CHARACTER_SELECT", "BATTLE", "REWARDS", "DESTINATION",
-      "CAMPFIRE", "GAME_OVER", "COLLECTION", "OPTIONS", "TALENTS",
-      "ACT_COMPLETE", "RUN_VICTORY",
-    ];
-    for (const key of expected) {
-      expect(SCREENS).toHaveProperty(key);
-    }
-  });
-
-  it("all screen values are non-empty strings", () => {
-    for (const value of Object.values(SCREENS)) {
-      expect(value).toBeTruthy();
-      expect(typeof value).toBe("string");
-    }
-  });
-
-  it("all screen values are unique", () => {
-    const values = Object.values(SCREENS);
-    expect(new Set(values).size).toBe(values.length);
   });
 });
 

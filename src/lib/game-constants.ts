@@ -11,12 +11,11 @@ export const WISH_CHOICE_COUNT = 3; // Wish offers 3 cards from the full library
 export const MIN_MAX_MANA_FLOOR = 1; // Minimum maxMana after reductions. Prevents softlock — with 0 max mana no card can ever be played.
 
 // ============ Battle / Rooms ============
-export const ROOM_SCALING_INCREMENT = 0.1; // +10% enemy Health/attack per room (multiplicative)
-export const ELITE_STAT_MULTIPLIER = 1.3; // Elite enemies get 30% more Health and attack
+export const ROOM_SCALING_INCREMENT = 0.05; // +5% enemy Health/attack per room (multiplicative)
+export const ELITE_HP_MULTIPLIER = 1.4; // Elite enemies get 40% more Health (no attack scaling)
 export const STARTING_TURN = 1; // Turn counter starts at 1 for readability.
-export const ENEMY_HEAL_FRACTION = 0.1; // Enemy heals 10% of max Health when below 50% Health.
-export const ENEMY_BASE_REGENERATION = 2; // Base enemy regeneration per turn (scaled by room).
-export const ENEMY_BOSS_REGENERATION = 4; // Base regen for regeneration-trait bosses.
+export const ENEMY_BASE_REGENERATION = 2; // Base enemy regeneration per turn (flat, not scaled by room).
+export const ENEMY_BOSS_REGENERATION = 3; // Base regen for regeneration-trait bosses (flat, not scaled by room).
 export const BLEED_EXECUTE_MULTIPLIER = 2; // Bleed damage multiplier when enemy is below execute threshold.
 export const FREE_CARD_SENTINEL = 99; // nextCardCostReduction value that guarantees a card costs 0.
 export const PERCENT_DENOMINATOR = 100; // Percent-based talent and trait values use 0-100 authoring.
@@ -30,6 +29,7 @@ export const MAX_HAND_SIZE = 7; // Hand size cap; excess draws are skipped.
 export const MAX_PLAYER_HEALTH = 30; // Starting and default max Health for all characters.
 export const BASE_ENEMY_HEALTH = 30; // Base enemy Health before room/act/type scaling.
 export const BASE_PLAYER_MANA = 4; // Starting and max mana per turn.
+export const DEFAULT_BATTLE_ENEMY_TYPE = "normal"; // New runs begin with a normal combat encounter.
 
 // ============ Timing (ms) ============
 export const AUTO_END_TURN_DELAY = 1220; // How long the system waits before auto-ending turn when conditions are met (no mana, no cards).
@@ -75,6 +75,7 @@ export const CORRUPTION_MUTATION_DELTA = 1; // Corruption nudges one authored nu
 export const CORRUPTION_MIN_VALUE = 0; // Corruption can reduce values to 0, but never negative.
 export const DESTINATIONS_PER_ACT = 8; // Number of destination slots per act (slot 8 = boss).
 export const ACTS_PER_RUN = 3; // Number of acts in a full run.
+export const DEFAULT_CAMPAIGN_DIFFICULTY_ID = "difficulty-1"; // Novice campaign difficulty used before difficulty select unlocks.
 export const SHOP_MIN_GOLD = 40; // Player needs at least this much gold to see shop destinations.
 export const CAMPFIRE_HEALTH_THRESHOLD = 0.8; // Skip campfire destination if Health >= 80% of max.
 export const ELITE_HEALTH_THRESHOLD = 0.5; // Skip elite combat destination if Health < 50% of max.
@@ -82,9 +83,7 @@ export const SHOP_CARDS_OFFERED = 3; // Cards displayed in the merchant shop.
 export const SHOP_REFRESHES = 1; // Free refreshes per shop visit.
 export const ALCHEMIST_POTIONS_OFFERED = 3; // Potions displayed in the alchemist shop.
 export const ALCHEMIST_REFRESHES = 1; // Free refreshes per alchemist visit.
-export const BOSS_HEALTH_MULTIPLIER = 2.2; // Boss enemies get 120% more Health.
-export const BOSS_ATTACK_MULTIPLIER = 1.8; // Boss enemies get 80% more attack.
-export const ACT_SCALING_INCREMENT = 0.2; // +20% enemy stats per act (baseline).
+export const BOSS_HEALTH_MULTIPLIER = 1.7; // Boss enemies get 70% more Health (no attack scaling).
 export const BOSS_TRINKET_REWARD_CHOICES = 3; // Trinket choices offered after a boss kill.
 export const ELITE_TRINKET_REWARD_CHANCE = 0.75; // Elite rewards strongly favor trinkets but still allow card rewards.
 export const MYSTERY_CARD_CHOICES = 3; // Card-choice mystery events offer the same count as normal reward choices.
@@ -93,6 +92,18 @@ export const POTION_CARD_ID_FRAGMENT = "potion"; // Base potion cards share this
 export const MIXED_POTION_TITLE = "Mixed Potion"; // Crafted alchemy card title shown in deck/reveal UI.
 export const MIXED_POTION_COST = 1; // Crafted potions keep normal potion play cost.
 export const CONSUME_DESCRIPTION_LINE = "Consume"; // Card text line used by consumable cards.
+
+export const LABYRINTH_REWARD_CONFIG = {
+  generousGoldBonusFraction: 0.5,
+  scavengerMaterialMultiplier: 2,
+  companionCardChoices: 3,
+  trinketHoarderRewardChanceBonus: 0.1,
+} as const;
+
+export const REWARD_SELECTION_CONFIG = {
+  newCardScoreBonus: 2,
+  affinityPoolMultiplier: 2,
+} as const;
 
 // ============ Audio ============
 export const MASTER_GAIN = 0.3; // Master volume level. 0.3 prevents ear fatigue during extended sessions.
@@ -127,24 +138,34 @@ export const INITIAL_LOAD_MIN_DURATION_MS = 650; // Minimum loading screen displ
 export const INITIAL_LOAD_MAX_DURATION_MS = 12000; // Hard cap — show the game even if assets are slow.
 
 // ============ Animation / Timing ============
-export const SHIMMER_DURATION_MS = 1250; // Card shimmer sweep animation runtime.
 export const SHIMMER_COOLDOWN_MS = 2600; // Minimum time between shimmer triggers. Prevents rapid-fire re-triggers from spamming hover.
 export const COMBAT_TEXT_LIFETIME_MS = 3300; // How long floating combat text stays mounted; visual fade is slightly shorter so cleanup never clips it.
 export const COMBAT_TEXT_LANE_DELAY_MS = 80; // Stagger between multi-line combat text entries (creates a stacking effect).
 export const ANIMATION_STAGGER_UNIT = 0.08; // Base delay step (80ms) between consecutive animated elements.
-export const GHOST_DRAW_IN_MS = 520; // Duration of card ghost draw-from-deck animation.
-export const GHOST_DISCARD_OUT_MS = 320; // Duration of card ghost discard-to-pile animation.
-export const GHOST_ACTIVATE_MS = 672; // Duration of card ghost activation (play) animation.
-export const GHOST_PLAY_TRAVEL_MS = 528; // Duration of card ghost travel-from-hand animation.
 export const CARD_ACTIVATION_ROTATION_DEGREES = 4.2; // Fan angle applied while animating played cards from hand.
 
-// ============ Drag ============
-export const DRAG_START_THRESHOLD_PX = 10; // Pixels of movement before a click becomes a drag. 10px prevents accidental drags on click.
-export const DRAG_ROTATION_CLAMP = 12; // Max drag preview rotation in degrees.
+export const CARD_TRANSFER_CONFIG = {
+  drawDurationSeconds: 0.5,
+  discardDurationSeconds: 0.5,
+  completionBufferMs: 120,
+  requiredStableSlotFrames: 2,
+  maxSlotStabilizeFrames: 12,
+  soundVolume: 0.4,
+  stableRectTimeoutMs: 2000,
+  rectEpsilonPx: 0.5,
+  batchSpeedMultipliers: {
+    small: 1,
+    medium: 1.4,
+    large: 1.6,
+    mediumCardCount: 3,
+    smallMaxCardCount: 2,
+  },
+  discardFlipKeyframes: [0, 90, 180],
+  drawFlipKeyframes: [180, 90, 0],
+} as const;
 
 // ============ Layout ============
 export const GHOST_TRAVEL_SCALE = 0.74; // Scale factor for card ghost when traveling between zones.
-export const BATTLEFIELD_HIT_FRACTION = 0.74; // Fraction of battle scene height used for drag-to-play hit detection.
 export const MOBILE_LANDSCAPE_MAX_WIDTH = 1024; // Coarse-pointer viewport width that still uses mobile landscape UI.
 export const PORTRAIT_MOBILE_MAX_WIDTH = 768; // Coarse-pointer portrait width that shows rotate prompt.
 export const ORIENTATION_CHANGE_DEBOUNCE_MS = 100; // Lets mobile browsers settle viewport dimensions after rotation.
@@ -154,7 +175,7 @@ export const MIN_STAGE_SCALE = 0.3; // Lowered so small landscape phones still f
 export const MAX_STAGE_SCALE = 2.0; // Upper bound that still keeps card dimensions reasonable on 5K+ screens (2.0×1080 = 2160px fills 4K).
 
 // ============ Collection ============
-export const COLLECTION_PAGE_SIZE = 10; // Items per page in the collection compendium.
+export const COLLECTION_PAGE_SIZE = 8; // Items per page in the collection compendium (4 cols × 2 rows).
 export const SELECTION_GRID_PAGE_SIZE = 8; // Items per page in deck selection grids (4 cols × 2 rows).
 export const BATTLE_ACTOR_TOP_DESKTOP = "42%"; // Desktop vertical anchor for player/enemy cards.
 export const BATTLE_ACTOR_TOP_MOBILE = "36%"; // Mobile landscape vertical anchor for player/enemy cards.
@@ -171,16 +192,15 @@ export const WISH_OVERLAY_Z_INDEX = 90; // Wish choices block all battle control
 export const SAVE_KEY = "alchemy-save-v1"; // localStorage key. Version suffix enables migration if shape changes.
 
 // ============ Enemy Trait Tuning ============
-export const TRAIT_ARMOR_PER_TURN = 1; // Rusting-Carapace: armor gained each enemy turn.
 export const TRAIT_FORGE_PER_TURN = 1; // Rusting-Carapace: forge gained each enemy turn.
-export const IRON_HIDE_ARMOR_PER_TURN = 2; // Iron-Hide: armor gained each enemy turn.
-export const FORGE_REGENERATION_PER_TURN = 2; // Forge-Regeneration: forge gained each enemy turn.
+export const IRON_HIDE_ARMOR_PER_TURN = 1; // Iron-Hide: armor gained each enemy turn.
+export const FORGE_REGENERATION_PER_TURN = 1; // Forge-Regeneration: forge gained each enemy turn.
 export const TRAIT_FREEZE_BONUS_PER_TURN = 1; // Glacial-Shell: freeze status bonus gained each turn.
 export const DIFFICULTY_FORGE_PER_TURN = 1; // Difficulty modifier: forge gained each enemy turn.
-export const LIVING_ARMOR_STARTING_ARMOR = 8; // Living-Armor trait initial armor value.
+export const LIVING_ARMOR_STARTING_ARMOR = 5; // Living-Armor trait initial armor value.
 
 // ============ Labyrinth ============
-export const LABYRINTH_STURDY_MULTIPLIER = 1.3; // Sturdy modifier: +30% enemy max Health (same as ELITE_STAT_MULTIPLIER).
+export const LABYRINTH_STURDY_MULTIPLIER = 1.3; // Sturdy modifier: +30% enemy max Health.
 export const LABYRINTH_BURNING_GROUND_DAMAGE = 2; // Burning Ground: 2 Burn to player each turn.
 export const LABYRINTH_LEECH_HEAL = 3; // Leeching: enemy heals 3 Health on their turn.
 export const FALLBACK_ENEMY_ATTACK = 8; // Default attack for malformed bestiary entries.
@@ -200,23 +220,26 @@ export const COMPANION_GOLD_MULTIPLIER = 1.2; // Companion gold find multiplies 
 // ============ Corruption ============
 export const CORRUPTION_TRANSFORM_CHANCE = 0.5; // 50% chance corruption transforms card vs mutating in-place.
 export const CORRUPTION_DELTA_CHANCE = 0.5; // 50% chance delta is +1 vs -1.
+export const CORRUPTION_TEXT_PATTERNS = {
+  authoredNumber: /\d+/g,
+  leadingNumber: /^\d+/,
+} as const;
 
-// ============ Named string enums ============
-// String constants to prevent typos in state machine transitions and event dispatch.
-export const SCREENS = {
-  MENU: "menu",
-  CHARACTER_SELECT: "character-select",
-  BATTLE: "battle",
-  REWARDS: "rewards",
-  DESTINATION: "destination",
-  CAMPFIRE: "campfire",
-  CORRUPTION: "corruption",
-  GAME_OVER: "game-over",
-  COLLECTION: "collection",
-  OPTIONS: "options",
-  TALENTS: "talents",
-  ACT_COMPLETE: "act-complete",
-  RUN_VICTORY: "run-victory",
+// ============ Homestead Loot ============
+export const HOMESTEAD_LOOT_CONFIG = {
+  enemyTypeMultipliers: {
+    normal: 1,
+    elite: 1.3,
+    boss: 3,
+  },
+  endRunRates: {
+    woodPerRoom: 2,
+    ironBasePerRoom: 1,
+    ironBonusPerRoom: 1.5,
+    herbsPerRoom: 1,
+    foodPerRoom: 1.5,
+    crystalRoomsDivisor: 4,
+  },
 } as const;
 
 export const MUSIC_KEYS = {

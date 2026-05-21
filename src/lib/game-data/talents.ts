@@ -141,7 +141,36 @@ export const talentPool: TalentDefinition[] = [
     description: "Stunned enemies take double damage",
     effects: [setEffect("stunDoubleDamage", true)],
   },
-  ...placeholderTalents("stun", "stun-placeholder", 2, 6),
+  {
+    id: "stun-placeholder-2",
+    keywordId: "stun",
+    description: "Stun damage +1",
+    effects: [addEffect("flatStunDamage", 1)],
+  },
+  {
+    id: "stun-placeholder-3",
+    keywordId: "stun",
+    description: "When you Stun an enemy, gain 3 Block",
+    effects: [setEffect("blockOnStun", 3)],
+  },
+  {
+    id: "stun-placeholder-4",
+    keywordId: "stun",
+    description: "When you Stun an enemy, gain 2 Forge",
+    effects: [setEffect("forgeOnStun", 2)],
+  },
+  {
+    id: "stun-placeholder-5",
+    keywordId: "stun",
+    description: "Stunned enemies lose all Armor",
+    effects: [setEffect("stunStripArmor", true)],
+  },
+  {
+    id: "stun-placeholder-6",
+    keywordId: "stun",
+    description: "When you Stun an enemy, gain 1 Mana",
+    effects: [setEffect("manaOnStun", 1)],
+  },
 
   // --- Block ---
   {
@@ -631,6 +660,11 @@ export function createEmptyTalentManifest(): TalentEffectManifest {
     nextCardFreeOnStun: false,
     stunDurationExtension: 0,
     stunDoubleDamage: false,
+    flatStunDamage: 0,
+    blockOnStun: 0,
+    forgeOnStun: 0,
+    stunStripArmor: false,
+    manaOnStun: 0,
 
     startBlock: 0,
     blockToPhysicalDamage: false,

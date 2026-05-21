@@ -1,14 +1,49 @@
 import { z } from "zod";
-import { cardLibrary, getStartingDeck } from "@/lib/game-data";
+import {
+  cardLibrary,
+  characters,
+  companionLibrary,
+  DIFFICULTY_ORDER,
+  getStartingDeck,
+  type CharacterId,
+  type CompanionId,
+  type DifficultyId,
+} from "@/lib/game-data";
 import { ACTS_PER_RUN } from "@/lib/game-constants";
 import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
 import { companionTierItems } from "@/lib/homestead/companions";
+import { MATERIAL_IDS, type MaterialId } from "@/lib/homestead/types";
+import { ALL_LABYRINTH_MODIFIERS } from "@/lib/content-systems/labyrinth/modifiers";
+import type { LabyrinthModifierKind } from "@/lib/content-systems/types";
 import { CURRENT_SAVE_SCHEMA_VERSION, CURRENT_GAME_BUILD_VERSION, CURRENT_CONTENT_VERSION } from "./metadata";
 import { migrateSaveDataToCurrent } from "./migration";
 
+// Zod enums need a non-empty tuple; this preserves runtime single sources of truth for save IDs.
+function toNonEmptyTuple<T extends string>(values: readonly T[], label: string): [T, ...T[]] {
+  if (values.length === 0) throw new Error(`${label} must define at least one value`);
+  return values as [T, ...T[]];
+}
+
+const CHARACTER_IDS = toNonEmptyTuple(Object.keys(characters) as CharacterId[], "Character IDs");
+const DIFFICULTY_IDS = toNonEmptyTuple(DIFFICULTY_ORDER as readonly DifficultyId[], "Difficulty IDs");
+const COMPANION_IDS = toNonEmptyTuple(Object.keys(companionLibrary) as CompanionId[], "Companion IDs");
+const LABYRINTH_MODIFIER_KINDS = toNonEmptyTuple(
+  Object.keys(ALL_LABYRINTH_MODIFIERS) as LabyrinthModifierKind[],
+  "Labyrinth modifier kinds",
+);
+const MATERIAL_ZERO_INVENTORY: Record<MaterialId, number> = { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 };
+
+// Builds a material schema from homestead material IDs so inventory validation follows content changes.
+function createMaterialInventoryShape() {
+  return MATERIAL_IDS.reduce(
+    (shape, id) => ({ ...shape, [id]: z.number().int().nonnegative().catch(0) }),
+    {} as Record<MaterialId, z.ZodCatch<z.ZodNumber>>,
+  );
+}
+
 // ===== String Enums =====
-export const CharacterIdSchema = z.enum(["knight", "ranger", "rogue", "wizard"]);
-export const DifficultyIdSchema = z.enum(["difficulty-1", "difficulty-2", "difficulty-3"]);
+export const CharacterIdSchema = z.enum(CHARACTER_IDS);
+export const DifficultyIdSchema = z.enum(DIFFICULTY_IDS);
 export const ContentSystemIdSchema = z.enum(["campaign", "labyrinth", "wildwood"]);
 export const DamageTypeSchema = z.enum([
   "physical",
@@ -33,7 +68,7 @@ export const PlayerStatusIdSchema = z.enum([
   "stun",
 ]);
 export const EnemyStatusIdSchema = z.enum(["burn", "poison", "bleed", "freeze", "stun"]);
-export const CompanionIdSchema = z.enum(["wolf", "lizard-scout", "imp", "frost-whelp", "bear", "panther", "phoenix"]);
+export const CompanionIdSchema = z.enum(COMPANION_IDS);
 export const LabyrinthNodeTypeSchema = z.enum([
   "entrance",
   "combat",
@@ -44,34 +79,14 @@ export const LabyrinthNodeTypeSchema = z.enum([
   "alchemist",
   "boss",
 ]);
-export const LabyrinthModifierKindSchema = z.enum([
-  "armored",
-  "sturdy",
-  "burning-ground",
-  "overwhelming",
-  "leeching",
-  "null-field",
-  "collector",
-  "generous",
-  "alchemist",
-  "scavenger",
-  "companion",
-]);
+export const LabyrinthModifierKindSchema = z.enum(LABYRINTH_MODIFIER_KINDS);
 export const LabyrinthNodeStateSchema = z.enum(["hidden", "visible", "current", "cleared", "failed"]);
 export const AspectRatioOptionSchema = z.enum(["auto", "16:9", "16:10", "21:9"]);
 export const DisplayModeSchema = z.enum(["windowed", "borderless-fullscreen", "fullscreen"]);
 export const UiScaleSchema = z.enum(["90", "100", "110", "120"]);
 
 // ===== Material Inventory =====
-const MATERIAL_IDS = ["wood", "iron", "herbs", "food", "crystal"] as const;
-export const MaterialInventorySchema = z
-  .object(
-    Object.fromEntries(MATERIAL_IDS.map((id) => [id, z.number().int().nonnegative().catch(0)])) as unknown as Record<
-      (typeof MATERIAL_IDS)[number],
-      z.ZodNumber
-    >,
-  )
-  .catch({ wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 });
+export const MaterialInventorySchema = z.object(createMaterialInventoryShape()).catch(MATERIAL_ZERO_INVENTORY);
 
 // ===== Talent / Progression =====
 export const TalentXPSchema = z.preprocess((val) => {
@@ -213,12 +228,12 @@ export const BattleCardEffectSchema = z.discriminatedUnion("kind", [
   BuffCompanionEffectSchema,
 ]);
 
-function isObjectRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
-}
-
-function cloneSavedObjectList(values: unknown[]): Record<string, unknown>[] {
-  return values.filter(isObjectRecord).map((value) => ({ ...value }));
+function parseSavedEffectList(values: unknown[]) {
+  const effects = values.flatMap((value) => {
+    const result = BattleCardEffectSchema.safeParse(value);
+    return result.success ? [{ ...result.data }] : [];
+  });
+  return { effects, fullyValid: effects.length === values.length };
 }
 
 function cloneSavedDescriptionLines(values: unknown[]): string[] | null {
@@ -253,10 +268,13 @@ export const BattleCardSchema = z
   .transform((saved) => {
     const libraryCard = cardLibrary.find((c) => c.id === saved.id);
     const savedDescriptionLines = cloneSavedDescriptionLines(saved.descriptionLines);
-    const savedEffects = cloneSavedObjectList(saved.effects);
-    if (!libraryCard) return { ...saved, descriptionLines: savedDescriptionLines ?? [], effects: savedEffects };
+    const savedEffects = parseSavedEffectList(saved.effects);
+    if (!libraryCard) return { ...saved, descriptionLines: savedDescriptionLines ?? [], effects: savedEffects.effects };
     const descriptionLines: string[] = savedDescriptionLines ?? [...libraryCard.descriptionLines];
-    const effects = savedEffects.length > 0 ? savedEffects : libraryCard.effects.map((e) => ({ ...e }));
+    const effects =
+      savedEffects.fullyValid && savedEffects.effects.length > 0
+        ? savedEffects.effects
+        : libraryCard.effects.map((e) => ({ ...e }));
     const corruptedValuePositions = Array.isArray(saved.corruptedValuePositions)
       ? saved.corruptedValuePositions.filter(
           (p) =>
@@ -287,19 +305,7 @@ export const BattleCardSchema = z
   });
 
 // ===== Labyrinth Node + Map =====
-const VALID_LABYRINTH_MODIFIER_KINDS = new Set([
-  "armored",
-  "sturdy",
-  "burning-ground",
-  "overwhelming",
-  "leeching",
-  "null-field",
-  "collector",
-  "generous",
-  "alchemist",
-  "scavenger",
-  "companion",
-]);
+const VALID_LABYRINTH_MODIFIER_KINDS: ReadonlySet<string> = new Set(LABYRINTH_MODIFIER_KINDS);
 
 export function filterLabyrinthModifiers(val: unknown): string[] {
   if (!Array.isArray(val)) return [];
@@ -409,6 +415,9 @@ export const ActiveRunDataSchema = z
     },
     { message: "Player health exceeds max health" },
   )
+  .refine((data) => data.contentSystemType !== "labyrinth" || data.labyrinthMap !== null, {
+    message: "Labyrinth runs require a valid labyrinth map",
+  })
   .transform((data) => {
     const isUnstarted =
       data.roomsEncountered === 0 &&

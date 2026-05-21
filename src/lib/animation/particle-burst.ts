@@ -83,52 +83,6 @@ export function createParticles(
   return sampleParticles(imageData, width, height, maxParticles);
 }
 
-export function createStatusParticles(width: number, height: number): Particle[] {
-  // Status panels have no source image to sample, so synthetic clusters approximate the
-  // panel background, Health bar, text, and icons for a matching death breakup.
-  const particles: Particle[] = [];
-  const padX = Math.round(width * 0.08);
-  const padY = Math.round(height * 0.1);
-  const textH = Math.round(height * 0.18);
-  const barY = Math.round(height * 0.35);
-  const barH = Math.max(3, Math.round(height * 0.08));
-  const iconY = Math.round(height * 0.55);
-  const iconH = Math.round(height * 0.3);
-
-  function scatter(x: number, y: number, w: number, h: number, color: string, count: number) {
-    for (let i = 0; i < count; i++) {
-      particles.push({
-        x: x + Math.random() * w,
-        y: y + Math.random() * h,
-        vx: (Math.random() - 0.5) * 6,
-        vy: (Math.random() - 0.5) * 6,
-        rot: Math.random() * Math.PI * 2,
-        rotSpeed: (Math.random() - 0.5) * 0.1,
-        alpha: 1,
-        size: 1 + Math.random() * 3,
-        color,
-      });
-    }
-  }
-
-  // Muted background
-  scatter(0, 0, width, height, "rgb(50, 43, 36)", 120);
-  // Lighter patch behind Health
-  scatter(padX, barY, width - padX * 2, barH, "rgb(30, 25, 20)", 10);
-  // Health bar fill
-  scatter(padX, barY, (width - padX * 2) * 0.6, barH, "rgb(200, 50, 50)", 14);
-  // Title text (left)
-  scatter(padX, padY, width * 0.5, textH, "rgb(210, 195, 170)", 20);
-  // Health numbers (right)
-  scatter(width * 0.5, padY, width * 0.45, textH, "rgb(160, 148, 130)", 12);
-  // Status icon colors
-  scatter(padX, iconY, width * 0.35, iconH, "rgb(180, 140, 60)", 10);
-  scatter(padX + width * 0.15, iconY, width * 0.2, iconH, "rgb(100, 160, 180)", 8);
-  scatter(padX + width * 0.3, iconY, width * 0.2, iconH, "rgb(60, 180, 80)", 6);
-
-  return particles;
-}
-
 export function animateParticles(
   ctx: CanvasRenderingContext2D,
   particles: Particle[],

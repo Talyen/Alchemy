@@ -131,6 +131,11 @@ export type TalentEffectManifest = {
   nextCardFreeOnStun: boolean;
   stunDurationExtension: number;
   stunDoubleDamage: boolean;
+  flatStunDamage: number;
+  blockOnStun: number;
+  forgeOnStun: number;
+  stunStripArmor: boolean;
+  manaOnStun: number;
 
   // --- Block ---
   startBlock: number;

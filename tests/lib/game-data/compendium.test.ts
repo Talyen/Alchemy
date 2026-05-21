@@ -17,33 +17,25 @@ describe("Iron Bear", () => {
     expect(ironBear!.enemyType).toBe("boss");
   });
 
-  it("has exactly 3 traits", () => {
-    expect(ironBear!.traits).toHaveLength(3);
-  });
-
-  it("has Forge Regeneration trait", () => {
-    const trait = ironBear!.traits.find((t) => t.id === "forge-regeneration");
-    expect(trait).toBeDefined();
-    expect(trait!.description).toContain("Gains 2 Forge");
+  it("has exactly 1 trait", () => {
+    expect(ironBear!.traits).toHaveLength(1);
   });
 
   it("has Iron Hide trait", () => {
     const trait = ironBear!.traits.find((t) => t.id === "iron-hide");
     expect(trait).toBeDefined();
-    expect(trait!.description).toContain("Gains 2 Armor");
+    expect(trait!.description).toContain("Gains 1 Armor");
   });
 
-  it("has Thick Hide trait (half physical)", () => {
-    const trait = ironBear!.traits.find((t) => t.id === "thick-hide");
-    expect(trait).toBeDefined();
-    expect(trait!.description).toContain("half Physical");
-  });
-
-  it("has attack dealing 10 physical damage", () => {
-    expect(ironBear!.attackEffects).toHaveLength(1);
-    const attack = ironBear!.attackEffects[0];
-    expect(attack.kind).toBe("damage");
-    expect(attack.damageType).toBe("physical");
-    expect(attack.amount).toBe(10);
+  it("has attack dealing 4 physical and 2 burn damage", () => {
+    expect(ironBear!.attackEffects).toHaveLength(2);
+    const phys = ironBear!.attackEffects[0];
+    expect(phys.kind).toBe("damage");
+    expect(phys.damageType).toBe("physical");
+    expect(phys.amount).toBe(4);
+    const burn = ironBear!.attackEffects[1];
+    expect(burn.kind).toBe("damage");
+    expect(burn.damageType).toBe("burn");
+    expect(burn.amount).toBe(2);
   });
 });

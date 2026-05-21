@@ -14,10 +14,10 @@ export function getCurrentEnemy(enemyType?: EnemyType): BestiaryEntry {
   return pickRandom(available) ?? enemyBestiary[0];
 }
 
-// Returns the boss enemy for a given act. Each act has a unique boss.
-export function getBossEnemy(act: number): BestiaryEntry {
-  const bossId = act === 1 ? "rusted-colossus" : act === 2 ? "frostwarden" : "blight-treant";
-  return enemyBestiary.find((e) => e.id === bossId) ?? enemyBestiary[0];
+// Returns a random boss enemy from the full boss pool. Any boss can appear in any act.
+export function getBossEnemy(): BestiaryEntry {
+  const pool = enemyBestiary.filter((e) => e.enemyType === "boss");
+  return pickRandom(pool) ?? enemyBestiary[0];
 }
 
 // Returns a boss by its enemy ID (used by Wildwood boss selection).

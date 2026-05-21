@@ -13,6 +13,9 @@ type PlaySoundOptions = {
   cooldownMs?: number;
 };
 
+const activeSfxSources = new Set<AudioBufferSourceNode>();
+let sfxStopToken = 0;
+
 // Shared source-node setup so both sync and async paths don't duplicate code.
 function playDecodedBuffer(buffer: AudioBuffer, volume: number, delay = 0) {
   const ctx = getAudioContext();
@@ -23,13 +26,29 @@ function playDecodedBuffer(buffer: AudioBuffer, volume: number, delay = 0) {
   source.connect(gain);
   if (!audioState.masterGain) return;
   gain.connect(audioState.masterGain);
+  activeSfxSources.add(source);
+  source.onended = () => activeSfxSources.delete(source);
   source.start(ctx.currentTime + delay);
+}
+
+// Stops currently playing or scheduled SFX so combat cleanup cannot leak sounds into the next screen.
+export function stopAllSfx() {
+  sfxStopToken += 1;
+  for (const source of activeSfxSources) {
+    try {
+      source.stop();
+    } catch {
+      // Already-ended sources can throw; they will be removed below.
+    }
+  }
+  activeSfxSources.clear();
 }
 
 // Checks the sound cache synchronously first, so cached sounds play in the
 // same event-handler tick without any microtask delay from `loadSoundBuffer`.
 function playBuffer(name: string, { volume = 1, delay = 0, cooldownMs = SFX_COOLDOWN_MS }: PlaySoundOptions = {}) {
   if (audioState.muted) return;
+  const playToken = sfxStopToken;
   const scheduledAt = performance.now() + delay * 1000;
   const last = audioState.lastPlayedAt.get(name) ?? 0;
   if (scheduledAt - last < cooldownMs) return;
@@ -43,6 +62,7 @@ function playBuffer(name: string, { volume = 1, delay = 0, cooldownMs = SFX_COOL
   }
 
   loadSoundBuffer(name).then((buffer) => {
+    if (playToken !== sfxStopToken) return;
     if (buffer) playDecodedBuffer(buffer, volume, delay);
   });
 }

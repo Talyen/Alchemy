@@ -5,9 +5,9 @@
 //   1. Player turn starts: draw cards, process haste (skip enemy phase if hasted),
 //      process companion attack, player plays cards.
 //   2. End player turn: resolve companion effects, tick player DoTs.
-//   3. Enemy turn: tick enemy DoTs, enemy heals (below 50% Health), apply traits
-//      (armor/forge/freeze per turn), run attack effects, tick player DoTs again
-//      (if enemy hit), check Death's Door (0-Health grace for one full turn).
+//   3. Enemy turn: tick enemy DoTs, apply traits (armor/forge/freeze per turn),
+//      run attack effects, tick player DoTs again (if enemy hit), check Death's Door
+//      (0-Health grace for one full turn).
 //   4. Advance to player turn: draw cards, reset cardsPlayedThisTurn.
 // Branching: stun/freeze skip enemy attack phase entirely; Wish intercepts player
 // card play; haste skips enemy phase and returns to player immediately.
@@ -15,7 +15,7 @@ import { drawCards } from "./draw";
 import { applyCardEffects } from "./apply-effects";
 import { mergeCombatText } from "./combat-text";
 import { applyIronwoodBuckler } from "./trinket-effects";
-import { tickEnemyStatuses, tickPlayerStatuses } from "./status-ticks";
+import { decayHalvedStatus, tickEnemyStatuses, tickPlayerStatuses } from "./status-ticks";
 import { harmfulPlayerStatusIds } from "@/lib/game-data";
 import type { BattleCard, EnemyAttackEffect } from "@/lib/game-data/types";
 import type { DifficultyModifier } from "@/lib/game-data/difficulties";
@@ -23,14 +23,11 @@ import { applyPlayerCombatDamage, clampHealth, type BattleState, type CombatText
 import { CARDS_PER_TURN, MAX_HAND_SIZE } from "../game-constants";
 import {
   DIFFICULTY_FORGE_PER_TURN,
-  ENEMY_HEAL_FRACTION,
-  FORGE_REGENERATION_PER_TURN,
   HALF_DIVISOR,
   IRON_HIDE_ARMOR_PER_TURN,
   LABYRINTH_BURNING_GROUND_DAMAGE,
   LABYRINTH_LEECH_HEAL,
   PERCENT_DENOMINATOR,
-  TRAIT_ARMOR_PER_TURN,
   TRAIT_FORGE_PER_TURN,
   TRAIT_FREEZE_BONUS_PER_TURN,
 } from "../game-constants";
@@ -88,6 +85,24 @@ export function processCompanionTurnStart(state: BattleState, combatTexts: Comba
 }
 
 function advanceToPlayerTurn(state: BattleState) {
+  // If the player is stunned or frozen, skip their turn — don't draw, don't refill mana,
+  // and immediately go back to enemy phase.
+  const deathsDoorNeedsRecoveryTurn = state.deathsDoorActive && state.playerHealth <= 0;
+  if (!deathsDoorNeedsRecoveryTurn && state.playerStunSkipTurns + state.playerFreezeSkipTurns > 0) {
+    return {
+      ...state,
+      turn: state.turn + 1,
+      turnPhase: "enemy" as TurnPhase,
+      playerStunSkipTurns: Math.max(0, state.playerStunSkipTurns - 1),
+      playerFreezeSkipTurns: Math.max(0, state.playerFreezeSkipTurns - 1),
+      playerCCCooldown: Math.max(0, state.playerCCCooldown - 1),
+      enemyCCCooldown: Math.max(0, state.enemyCCCooldown - 1),
+      playerStatuses: { ...state.playerStatuses, block: decayHalvedStatus(state.playerStatuses.block ?? 0) },
+      cardsPlayedThisTurn: 0,
+      flags: { ...state.flags, resonantChimeUsedThisTurn: false, nextCardCostReduction: 0 },
+    };
+  }
+
   const nextDraw = drawCards(state.deck, state.discard, [], CARDS_PER_TURN, state.nextCardUid);
   return {
     ...state,
@@ -98,21 +113,14 @@ function advanceToPlayerTurn(state: BattleState) {
     discard: nextDraw.discard,
     nextCardUid: nextDraw.nextCardUid,
     mana: state.maxMana,
-    playerStatuses: { ...state.playerStatuses, block: Math.floor((state.playerStatuses.block ?? 0) / HALF_DIVISOR) },
+    playerStunSkipTurns: deathsDoorNeedsRecoveryTurn ? 0 : state.playerStunSkipTurns,
+    playerFreezeSkipTurns: deathsDoorNeedsRecoveryTurn ? 0 : state.playerFreezeSkipTurns,
+    playerCCCooldown: Math.max(0, state.playerCCCooldown - 1),
+    enemyCCCooldown: Math.max(0, state.enemyCCCooldown - 1),
+    playerStatuses: { ...state.playerStatuses, block: decayHalvedStatus(state.playerStatuses.block ?? 0) },
     cardsPlayedThisTurn: 0,
     flags: { ...state.flags, resonantChimeUsedThisTurn: false, nextCardCostReduction: 0 },
   };
-}
-
-function processEnemyHealing(state: BattleState, combatTexts: CombatTextEvent[]) {
-  if (state.enemyHealth >= state.enemyMaxHealth / HALF_DIVISOR) return state;
-  let healAmount = Math.floor(state.enemyMaxHealth * ENEMY_HEAL_FRACTION);
-  if (state.enemyStatuses.poison > 0 && state.talentEffects.poisonHalvesHealing) {
-    healAmount = Math.floor(healAmount / HALF_DIVISOR);
-  }
-  if (healAmount <= 0) return state;
-  mergeCombatText(combatTexts, { target: "enemy", kind: "heal", stat: "health", amount: healAmount });
-  return { ...state, enemyHealth: clampHealth(state.enemyHealth, healAmount, state.enemyMaxHealth) };
 }
 
 function checkHealthThresholds(
@@ -157,7 +165,7 @@ function processEnemyDamageEffect(
 
   let effectiveBlock = state.playerStatuses.block;
   if (effect.damageType === "physical" && state.talentEffects.blockAbsorbPhysicalBonus > 0) {
-    effectiveBlock = Math.floor(
+    effectiveBlock = Math.round(
       effectiveBlock * (1 + state.talentEffects.blockAbsorbPhysicalBonus / PERCENT_DENOMINATOR),
     );
   }
@@ -173,7 +181,7 @@ function processEnemyDamageEffect(
     effect.damageType === "physical" ? Math.max(0, remainingDamage - state.playerStatuses.armor) : remainingDamage;
   const actualDamage =
     effect.damageType === "holy" && state.talentEffects.receiveHalfHolyDamage
-      ? Math.floor(rawDamage / HALF_DIVISOR)
+      ? Math.round(rawDamage / HALF_DIVISOR)
       : rawDamage;
 
   if (actualDamage > 0) {
@@ -217,6 +225,11 @@ function processEnemyDamageEffect(
         armor: nextState.playerStatuses.armor - 1,
       },
     };
+  }
+
+  // Enemy forge decays by 1 per physical attack that deals damage (mirrors player forge consumption).
+  if (actualDamage > 0 && effect.damageType === "physical" && nextState.enemyForge > 0) {
+    nextState = { ...nextState, enemyForge: nextState.enemyForge - 1 };
   }
 
   if (effect.lifesteal && actualDamage > 0) {
@@ -283,7 +296,11 @@ function processEnemyAttack(state: BattleState, combatTexts: CombatTextEvent[]) 
 
 function processEnemyRegeneration(state: BattleState, combatTexts: CombatTextEvent[]) {
   if (state.enemyRegeneration <= 0) return state;
-  const healAmount = state.enemyRegeneration;
+  let healAmount = state.enemyRegeneration;
+  if (state.enemyStatuses.poison > 0 && state.talentEffects.poisonHalvesHealing) {
+    healAmount = Math.round(healAmount / HALF_DIVISOR);
+  }
+  if (healAmount <= 0) return state;
   mergeCombatText(combatTexts, { target: "enemy", kind: "heal", stat: "health", amount: healAmount });
   return { ...state, enemyHealth: clampHealth(state.enemyHealth, healAmount, state.enemyMaxHealth) };
 }
@@ -309,10 +326,8 @@ function processEnemyTraits(state: BattleState, combatTexts: CombatTextEvent[]) 
   if (nextState.currentEnemy.traits.some((t) => t.id === "rusting-carapace")) {
     nextState = {
       ...nextState,
-      enemyArmor: nextState.enemyArmor + TRAIT_ARMOR_PER_TURN,
       enemyForge: nextState.enemyForge + TRAIT_FORGE_PER_TURN,
     };
-    mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "armor", amount: TRAIT_ARMOR_PER_TURN });
   }
 
   if (nextState.currentEnemy.traits.some((t) => t.id === "iron-hide")) {
@@ -321,19 +336,6 @@ function processEnemyTraits(state: BattleState, combatTexts: CombatTextEvent[]) 
       enemyArmor: nextState.enemyArmor + IRON_HIDE_ARMOR_PER_TURN,
     };
     mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "armor", amount: IRON_HIDE_ARMOR_PER_TURN });
-  }
-
-  if (nextState.currentEnemy.traits.some((t) => t.id === "forge-regeneration")) {
-    nextState = {
-      ...nextState,
-      enemyForge: nextState.enemyForge + FORGE_REGENERATION_PER_TURN,
-    };
-    mergeCombatText(combatTexts, {
-      target: "enemy",
-      kind: "status",
-      stat: "forge",
-      amount: FORGE_REGENERATION_PER_TURN,
-    });
   }
 
   if (nextState.currentEnemy.traits.some((t) => t.id === "glacial-shell")) {
@@ -399,6 +401,7 @@ function beginEnemyPhase(state: BattleState): BattleState {
 export type EndPlayerTurnResolution = {
   state: BattleState;
   combatTexts: CombatTextEvent[];
+  playerTurnSkipped: boolean;
   enemyTurnStartState?: BattleState;
   enemyTurnStartCombatTexts: CombatTextEvent[];
   enemyResolutionCombatTexts: CombatTextEvent[];
@@ -407,7 +410,8 @@ export type EndPlayerTurnResolution = {
 function finalizePlayerTurn(state: BattleState, combatTexts: CombatTextEvent[]) {
   let nextState = applyIronwoodBuckler(state, combatTexts);
   nextState = resolveDeathsDoorEndOfEnemyTurn(nextState);
-  return { state: advanceToPlayerTurn(nextState), combatTexts };
+  const finalState = advanceToPlayerTurn(nextState);
+  return { state: finalState, combatTexts, playerTurnSkipped: finalState.turnPhase === "enemy" };
 }
 
 export function endPlayerTurn(state: BattleState): EndPlayerTurnResolution {
@@ -426,7 +430,6 @@ export function endPlayerTurn(state: BattleState): EndPlayerTurnResolution {
     return { ...finalizePlayerTurn(nextState, combatTexts), enemyTurnStartCombatTexts, enemyResolutionCombatTexts };
   }
 
-  nextState = processEnemyHealing(nextState, enemyTurnStartCombatTexts);
   nextState = tickEnemyStatuses(nextState, enemyTurnStartCombatTexts);
   combatTexts.push(...enemyTurnStartCombatTexts);
   const enemyTurnStartState = nextState;

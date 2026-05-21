@@ -5,7 +5,7 @@ import {
   brassCenser,
   companionsCollar,
   cutpurseKnife,
-  frozenHeart,
+  icyHeart,
   goblin,
   grovesFavor,
   imp,
@@ -24,8 +24,8 @@ import {
   parasiticBloom,
   plagueDoctor,
   plagueDoctorsMask,
-  polarPendant,
-  resonantChime,
+  frozenPocketwatch,
+  resonantChimes,
   runicQuill,
   skeleton,
   sinEatersLantern,
@@ -43,7 +43,7 @@ import type { BestiaryEntry, TrinketEntry } from "./types";
 
 export const enemyBestiary: BestiaryEntry[] = [
   {
-    id: "rusted-colossus",
+    id: "forge-golem",
     title: "The Forge Golem",
     subtitle: "Boss",
     descriptionLines: [],
@@ -53,12 +53,12 @@ export const enemyBestiary: BestiaryEntry[] = [
       {
         id: "rusting-carapace",
         title: "Rusting Carapace",
-        description: "Gains 1 Armor each turn\nGains 1 Forge each turn",
+        description: "Gains 1 Forge each turn",
       },
     ],
     attackEffects: [
       { kind: "damage", damageType: "physical", amount: 5 },
-      { kind: "player-status", status: "stun", amount: 2 },
+      { kind: "player-status", status: "stun", amount: 1 },
     ],
   },
   {
@@ -76,8 +76,8 @@ export const enemyBestiary: BestiaryEntry[] = [
       },
     ],
     attackEffects: [
-      { kind: "damage", damageType: "physical", amount: 8 },
-      { kind: "player-status", status: "freeze", amount: 2 },
+      { kind: "damage", damageType: "physical", amount: 6 },
+      { kind: "player-status", status: "freeze", amount: 1 },
     ],
   },
   {
@@ -87,10 +87,10 @@ export const enemyBestiary: BestiaryEntry[] = [
     descriptionLines: [],
     art: theBlightTreant,
     enemyType: "boss",
-    traits: [{ id: "regeneration", title: "Rotting Regrowth", description: "Gains 4 Health each turn" }],
+    traits: [{ id: "regeneration", title: "Rotting Regrowth", description: "Gains 3 Health each turn" }],
     attackEffects: [
-      { kind: "damage", damageType: "nature", amount: 5 },
-      { kind: "player-status", status: "poison", amount: 3 },
+      { kind: "damage", damageType: "nature", amount: 3 },
+      { kind: "player-status", status: "poison", amount: 1 },
     ],
   },
   {
@@ -107,7 +107,7 @@ export const enemyBestiary: BestiaryEntry[] = [
         description: "Receives double Holy damage\nReceives double Stun damage",
       },
     ],
-    attackEffects: [{ kind: "damage", damageType: "physical", amount: 8 }],
+    attackEffects: [{ kind: "damage", damageType: "physical", amount: 9 }],
   },
   {
     id: "goblin",
@@ -123,7 +123,7 @@ export const enemyBestiary: BestiaryEntry[] = [
         description: "Receives double Burn damage\nMore likely to drop Trinkets",
       },
     ],
-    attackEffects: [{ kind: "damage", damageType: "physical", amount: 8 }],
+    attackEffects: [{ kind: "damage", damageType: "physical", amount: 9 }],
   },
   {
     id: "imp",
@@ -133,7 +133,7 @@ export const enemyBestiary: BestiaryEntry[] = [
     art: imp,
     enemyType: "normal",
     traits: [{ id: "burn-resistance", title: "Burn Resistance", description: "Receives half Burn damage" }],
-    attackEffects: [{ kind: "player-status", status: "burn", amount: 3 }],
+    attackEffects: [{ kind: "player-status", status: "burn", amount: 4 }],
   },
   {
     id: "lizard-scout",
@@ -153,7 +153,7 @@ export const enemyBestiary: BestiaryEntry[] = [
     art: mimic,
     enemyType: "elite",
     traits: [{ id: "gold-trove", title: "Gold Trove", description: "Drops 1 Gold when damaged" }],
-    attackEffects: [{ kind: "damage", damageType: "physical", amount: 8 }],
+    attackEffects: [{ kind: "damage", damageType: "physical", amount: 7 }],
   },
   {
     id: "mud-elemental",
@@ -186,7 +186,7 @@ export const enemyBestiary: BestiaryEntry[] = [
     art: plagueDoctor,
     enemyType: "elite",
     traits: [{ id: "poison-resistance", title: "Poison Resistance", description: "Receives half Poison damage" }],
-    attackEffects: [{ kind: "player-status", status: "poison", amount: 4 }],
+    attackEffects: [{ kind: "player-status", status: "poison", amount: 2 }],
   },
   {
     id: "living-armor",
@@ -203,23 +203,22 @@ export const enemyBestiary: BestiaryEntry[] = [
       },
     ],
     attackEffects: [
-      { kind: "damage", damageType: "physical", amount: 5 },
-      { kind: "damage", damageType: "nature", amount: 5 },
+      { kind: "damage", damageType: "physical", amount: 3 },
+      { kind: "damage", damageType: "nature", amount: 3 },
     ],
   },
   {
     id: "iron-bear",
     title: "The Iron Bear",
-    subtitle: "Wildwood Boss",
+    subtitle: "Boss",
     descriptionLines: [],
     art: ironBear,
     enemyType: "boss",
-    traits: [
-      { id: "forge-regeneration", title: "Forge Regeneration", description: "Gains 2 Forge each turn" },
-      { id: "iron-hide", title: "Iron Hide", description: "Gains 2 Armor each turn" },
-      { id: "thick-hide", title: "Thick Hide", description: "Receives half Physical damage" },
+    traits: [{ id: "iron-hide", title: "Iron Hide", description: "Gains 1 Armor each turn" }],
+    attackEffects: [
+      { kind: "damage", damageType: "physical", amount: 4 },
+      { kind: "damage", damageType: "burn", amount: 2 },
     ],
-    attackEffects: [{ kind: "damage", damageType: "physical", amount: 10 }],
   },
 ];
 
@@ -255,10 +254,10 @@ export const trinketLibrary: TrinketEntry[] = [
     art: obsidianHammer,
   },
   {
-    id: "frozen-heart",
-    title: "Frozen Heart",
+    id: "icy-heart",
+    title: "Icy Heart",
     descriptionLines: ["When you Freeze an enemy, deal 6 Physical damage."],
-    art: frozenHeart,
+    art: icyHeart,
   },
   {
     id: "ironwood-buckler",
@@ -327,10 +326,10 @@ export const trinketLibrary: TrinketEntry[] = [
     art: sunderingCharm,
   },
   {
-    id: "resonant-chime",
-    title: "Resonant Chime",
+    id: "resonant-chimes",
+    title: "Resonant Chimes",
     descriptionLines: ["When you play 3 or more cards in a single turn, gain 1 Mana."],
-    art: resonantChime,
+    art: resonantChimes,
   },
   {
     id: "smugglers-map",
@@ -351,10 +350,10 @@ export const trinketLibrary: TrinketEntry[] = [
     art: companionsCollar,
   },
   {
-    id: "polar-pendant",
-    title: "Polar Pendant",
+    id: "frozen-pocketwatch",
+    title: "Frozen Pocketwatch",
     descriptionLines: ["Freeze effects last 1 turn longer."],
-    art: polarPendant,
+    art: frozenPocketwatch,
   },
   {
     id: "thunderstone",

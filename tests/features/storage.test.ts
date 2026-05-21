@@ -136,6 +136,63 @@ describe("ActiveRunDataSchema", () => {
     ]);
   });
 
+  it("falls back to library effects when a known card has malformed saved effects", () => {
+    const result = parseActiveRun(activeRun({
+      runDeck: [{
+        id: "slash",
+        title: "Slash",
+        descriptionLines: ["Deal broken damage"],
+        art: "stale-build-url.webp",
+        cost: 1,
+        effects: [
+          { kind: "damage", damageType: "physical", amount: "bad" },
+          { kind: "summon-companion", companionId: "missing" },
+          { kind: "unknown", amount: 99 },
+        ],
+      }],
+    }));
+
+    const libraryCard = cardLibrary.find((card) => card.id === "slash");
+    expect(result?.runDeck[0].effects).toEqual(libraryCard?.effects);
+  });
+
+  it("falls back to library effects when a known card has mixed valid and invalid saved effects", () => {
+    const result = parseActiveRun(activeRun({
+      runDeck: [{
+        id: "fireball",
+        title: "Fireball",
+        descriptionLines: ["Deal 10 Burn damage", "Gain 3 Gold"],
+        art: "stale-build-url.webp",
+        cost: 2,
+        effects: [
+          { kind: "damage", damageType: "burn", amount: 10 },
+          { kind: "gain-gold", amount: "bad" },
+        ],
+      }],
+    }));
+
+    const libraryCard = cardLibrary.find((card) => card.id === "fireball");
+    expect(result?.runDeck[0].effects).toEqual(libraryCard?.effects);
+  });
+
+  it("keeps only valid saved effects for unknown cards", () => {
+    const result = parseActiveRun(activeRun({
+      runDeck: [{
+        id: "custom-card",
+        title: "Custom Card",
+        descriptionLines: ["Custom"],
+        art: "custom.webp",
+        cost: 1,
+        effects: [
+          { kind: "heal", amount: 4 },
+          { kind: "damage", damageType: "physical", amount: "bad" },
+        ],
+      }],
+    }));
+
+    expect(result?.runDeck[0].effects).toEqual([{ kind: "heal", amount: 4 }]);
+  });
+
   it("passes through valid ranger characterId", () => {
     const result = parseActiveRun(activeRun({ characterId: "ranger" }));
     expect(result?.characterId).toBe("ranger");
@@ -197,9 +254,14 @@ describe("ActiveRunDataSchema", () => {
     expect(result?.contentSystemType).toBe("campaign");
   });
 
-  it("preserves contentSystemType labyrinth when set", () => {
-    const result = parseActiveRun(activeRun({ contentSystemType: "labyrinth" }));
+  it("preserves contentSystemType labyrinth when set with a valid map", () => {
+    const labyrinthMap = generateLabyrinthMap(createSeededRng(42));
+    const result = parseActiveRun(activeRun({ contentSystemType: "labyrinth", labyrinthMap }));
     expect(result?.contentSystemType).toBe("labyrinth");
+  });
+
+  it("rejects labyrinth runs without a valid map", () => {
+    expect(parseActiveRun(activeRun({ contentSystemType: "labyrinth" }))).toBeNull();
   });
 
   it("preserves valid labyrinth map state", () => {
@@ -222,7 +284,7 @@ describe("ActiveRunDataSchema", () => {
     expect(normalizedCombat?.rewardModifiers).toEqual(["generous"]);
   });
 
-  it("drops malformed labyrinth maps", () => {
+  it("rejects malformed labyrinth maps", () => {
     const mismatchedRows = generateLabyrinthMap(createSeededRng(42));
     mismatchedRows.rows += 1;
 
@@ -232,11 +294,11 @@ describe("ActiveRunDataSchema", () => {
 
     // Fractional currentNode is recovered by Zod catch() — row 0.5 becomes 0, col 4 stays 4,
     // pointing to a valid entrance node, so the map passes validation.
-    expect(parseActiveRun(activeRun({ contentSystemType: "labyrinth", labyrinthMap: mismatchedRows }))?.labyrinthMap).toBeNull();
-    expect(parseActiveRun(activeRun({ contentSystemType: "labyrinth", labyrinthMap: invalidConnection }))?.labyrinthMap).toBeNull();
+    expect(parseActiveRun(activeRun({ contentSystemType: "labyrinth", labyrinthMap: mismatchedRows }))).toBeNull();
+    expect(parseActiveRun(activeRun({ contentSystemType: "labyrinth", labyrinthMap: invalidConnection }))).toBeNull();
   });
 
-  it("drops labyrinth maps with impossible current or endpoint state", () => {
+  it("rejects labyrinth maps with impossible current or endpoint state", () => {
     const multipleCurrent = generateLabyrinthMap(createSeededRng(42));
     const firstVisible = multipleCurrent.grid.flat().find((node) => node?.state === "visible");
     firstVisible!.state = "current";
@@ -251,10 +313,10 @@ describe("ActiveRunDataSchema", () => {
     const boss = missingBoss.grid.flat().find((node) => node?.type === "boss");
     boss!.type = "combat";
 
-    expect(parseActiveRun(activeRun({ contentSystemType: "labyrinth", labyrinthMap: multipleCurrent }))?.labyrinthMap).toBeNull();
-    expect(parseActiveRun(activeRun({ contentSystemType: "labyrinth", labyrinthMap: mismatchedCurrent }))?.labyrinthMap).toBeNull();
-    expect(parseActiveRun(activeRun({ contentSystemType: "labyrinth", labyrinthMap: missingEntrance }))?.labyrinthMap).toBeNull();
-    expect(parseActiveRun(activeRun({ contentSystemType: "labyrinth", labyrinthMap: missingBoss }))?.labyrinthMap).toBeNull();
+    expect(parseActiveRun(activeRun({ contentSystemType: "labyrinth", labyrinthMap: multipleCurrent }))).toBeNull();
+    expect(parseActiveRun(activeRun({ contentSystemType: "labyrinth", labyrinthMap: mismatchedCurrent }))).toBeNull();
+    expect(parseActiveRun(activeRun({ contentSystemType: "labyrinth", labyrinthMap: missingEntrance }))).toBeNull();
+    expect(parseActiveRun(activeRun({ contentSystemType: "labyrinth", labyrinthMap: missingBoss }))).toBeNull();
   });
 
   it("drops labyrinth map state for campaign runs", () => {

@@ -1,5 +1,11 @@
 export { CURRENT_SAVE_SCHEMA_VERSION, CURRENT_GAME_BUILD_VERSION, CURRENT_CONTENT_VERSION } from "./metadata";
-export { getRawSaveSchemaVersion, migrateSaveDataToCurrent, isUnsupportedFutureSaveData } from "./migration";
+export {
+  getRawContentVersion,
+  getRawSaveSchemaVersion,
+  isUnsupportedFutureContentData,
+  isUnsupportedFutureSaveData,
+  migrateSaveDataToCurrent,
+} from "./migration";
 export {
   CharacterIdSchema,
   DifficultyIdSchema,

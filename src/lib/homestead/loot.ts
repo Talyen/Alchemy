@@ -4,6 +4,7 @@
 import type { MaterialId, MaterialInventory } from "./types";
 import type { HomesteadEffectManifest } from "./types";
 import { emptyInventory, addInventory } from "./inventory";
+import { HOMESTEAD_LOOT_CONFIG } from "../game-constants";
 
 // Per-enemy loot table: a guaranteed drop, plus possible bonus drops with weight.
 type MaterialLootEntry = { material: MaterialId; min: number; max: number; weight: number };
@@ -50,7 +51,7 @@ const enemyLootTables: Record<string, EnemyLootTable> = {
     guaranteed: { wood: 0, iron: 0, herbs: 2, food: 0, crystal: 0 },
     bonuses: [lootEntry("herbs", 0, 1, 0.4)],
   },
-  "rusted-colossus": {
+  "forge-golem": {
     guaranteed: { wood: 0, iron: 3, herbs: 0, food: 0, crystal: 1 },
     bonuses: [lootEntry("iron", 0, 2, 0.6), lootEntry("crystal", 0, 1, 0.4)],
   },
@@ -76,11 +77,17 @@ function rollBonuses(table: EnemyLootTable): MaterialInventory {
 
 // Apply enemy-type multiplier to loot: elites get 1.3x, bosses get 3x.
 function applyTypeMultiplier(loot: MaterialInventory, enemyType: string): MaterialInventory {
-  const mul = enemyType === "boss" ? 3 : enemyType === "elite" ? 1.3 : 1;
-  if (mul === 1) return loot;
+  const { enemyTypeMultipliers } = HOMESTEAD_LOOT_CONFIG;
+  const multiplier =
+    enemyType === "boss"
+      ? enemyTypeMultipliers.boss
+      : enemyType === "elite"
+        ? enemyTypeMultipliers.elite
+        : enemyTypeMultipliers.normal;
+  if (multiplier === enemyTypeMultipliers.normal) return loot;
   const result = { ...loot };
   for (const mat of Object.keys(result) as MaterialId[]) {
-    result[mat] = Math.floor(result[mat] * mul);
+    result[mat] = Math.floor(result[mat] * multiplier);
   }
   return result;
 }
@@ -106,11 +113,12 @@ export function applyMaterialFindBonus(
 // End-of-run material bonus based on performance.
 // More rooms cleared, acts reached, and bosses killed = more materials.
 export function getEndOfRunMaterials(roomsEncountered: number, currentAct: number): MaterialInventory {
+  const { endRunRates } = HOMESTEAD_LOOT_CONFIG;
   return {
-    wood: roomsEncountered * 2,
-    iron: roomsEncountered + Math.floor(roomsEncountered * 1.5),
-    herbs: roomsEncountered,
-    food: Math.floor(roomsEncountered * 1.5),
-    crystal: currentAct - 1 + Math.floor(roomsEncountered / 4),
+    wood: roomsEncountered * endRunRates.woodPerRoom,
+    iron: roomsEncountered * endRunRates.ironBasePerRoom + Math.floor(roomsEncountered * endRunRates.ironBonusPerRoom),
+    herbs: roomsEncountered * endRunRates.herbsPerRoom,
+    food: Math.floor(roomsEncountered * endRunRates.foodPerRoom),
+    crystal: currentAct - 1 + Math.floor(roomsEncountered / endRunRates.crystalRoomsDivisor),
   };
 }

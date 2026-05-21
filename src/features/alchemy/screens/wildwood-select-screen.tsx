@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { enemyBestiary } from "@/lib/game-data";
-import { WILDWOOD_BOSSES } from "@/lib/content-systems/wildwood/bosses";
+import { WILDWOOD_BOSS_IDS } from "@/lib/content-systems/wildwood/bosses";
 import { ShineBorder } from "@/components/ui/shine-border";
 import { cn } from "@/lib/utils";
 import { battleCardWidthClass, cardSurfaceClass } from "../config";
@@ -19,24 +19,24 @@ export function WildwoodSelectScreen({ onSelect, onBack }: { onSelect: (bossId: 
       <ScreenHeader title="Choose Your Prey" />
 
       <div className="flex flex-wrap items-start justify-center gap-6">
-        {WILDWOOD_BOSSES.map((entry) => {
-          const enemy = enemyBestiary.find((e) => e.id === entry.bossId);
-          const isSelected = selectedBossId === entry.bossId;
+        {WILDWOOD_BOSS_IDS.map((bossId) => {
+          const enemy = enemyBestiary.find((e) => e.id === bossId);
+          const isSelected = selectedBossId === bossId;
 
           return (
             <button
-              key={entry.bossId}
+              key={bossId}
               type="button"
               className={cn(
                 "group/wildwood-boss relative flex h-[clamp(388px,calc(29.4cqh+92px),540px)] w-[clamp(270px,24cqh,368px)] flex-col items-center rounded-[30px] border border-border/60 bg-card/60 p-4 text-center",
               )}
-              aria-label={entry.title}
-              data-testid={`wildwood-boss-${entry.bossId}`}
-              onClick={() => setSelectedBossId(entry.bossId)}
+              aria-label={enemy?.title ?? bossId}
+              data-testid={`wildwood-boss-${bossId}`}
+              onClick={() => setSelectedBossId(bossId)}
             >
               {enemy ? (
                 <div
-                  data-testid={`wildwood-boss-tooltip-${entry.bossId}`}
+                  data-testid={`wildwood-boss-tooltip-${bossId}`}
                   className="pointer-events-none opacity-0 transition-opacity duration-150 group-hover/wildwood-boss:pointer-events-auto group-hover/wildwood-boss:opacity-100 group-focus-visible/wildwood-boss:pointer-events-auto group-focus-visible/wildwood-boss:opacity-100"
                 >
                   <EnemyTooltip entry={enemy} />
@@ -54,14 +54,16 @@ export function WildwoodSelectScreen({ onSelect, onBack }: { onSelect: (bossId: 
                 <div className={cn(cardSurfaceClass, battleCardWidthClass)}>
                   <img
                     src={enemy.art}
-                    alt={entry.title}
+                    alt={enemy.title}
                     className="block w-full rounded-[30px] aspect-[3/4] object-cover"
                     loading="eager"
                   />
                 </div>
               ) : null}
               <div className={cn("mt-3 flex h-12 flex-col items-center justify-start", battleCardWidthClass)}>
-                <p className="font-display text-base font-bold leading-tight text-amber-100/75">{entry.title}</p>
+                <p className="font-display text-base font-bold leading-tight text-amber-100/75">
+                  {enemy?.title ?? bossId}
+                </p>
               </div>
             </button>
           );

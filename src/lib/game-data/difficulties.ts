@@ -65,7 +65,7 @@ export const difficultyConfigs: Record<CharacterId, ClassDifficultyConfig> = {
         name: "Adventurer",
         description: "Enemy Poison damage is increased",
         order: 2,
-        modifiers: [{ kind: "increase-enemy-status", status: "poison", amount: 2 }],
+        modifiers: [{ kind: "increase-enemy-status", status: "poison", amount: 1 }],
       },
       {
         id: "difficulty-3",

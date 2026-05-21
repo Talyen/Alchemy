@@ -49,16 +49,47 @@ export function getEnemyDamageMultiplier(
   return 1;
 }
 
+// Checks if forge crossed the forge burn burst threshold and applies the burst if so.
+// Extracted so the check fires for any forge source (card play, talent procs, etc.).
+function applyForgeBurnBurst(state: BattleState, oldForge: number, newForge: number, combatTexts?: CombatTextEvent[]) {
+  if (
+    state.talentEffects.forgeBurnThreshold > 0 &&
+    oldForge < state.talentEffects.forgeBurnThreshold &&
+    newForge >= state.talentEffects.forgeBurnThreshold
+  ) {
+    const burnAmount = isNullFieldActive(state)
+      ? Math.max(1, Math.round(state.talentEffects.forgeBurnDamage / 2))
+      : state.talentEffects.forgeBurnDamage;
+    state = {
+      ...state,
+      enemyStatuses: {
+        ...state.enemyStatuses,
+        burn: state.enemyStatuses.burn + burnAmount,
+      },
+    };
+    if (combatTexts) {
+      mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "burn", amount: burnAmount });
+    }
+  }
+  return state;
+}
+
 // Shared stun trigger: checks if accumulated stun exceeds threshold and resolves
 // the stun effect (reset stun, skip turns, draw, free card, thunderstone) when triggered.
 export function resolveStunTrigger(state: BattleState, combatTexts?: CombatTextEvent[]) {
   const threshold = STUN_THRESHOLD_FRACTION - state.talentEffects.stunThresholdReduction;
   if (state.enemyHealth <= 0 || state.enemyStatuses.stun < state.enemyHealth * threshold) return state;
 
+  // If CC immunity is active, clear the status without triggering a skip.
+  if (state.enemyCCCooldown > 0) {
+    return { ...state, enemyStatuses: { ...state.enemyStatuses, stun: 0 } };
+  }
+
   let nextState = {
     ...state,
     enemyStatuses: { ...state.enemyStatuses, stun: 0 },
     enemyStunSkipTurns: state.enemyStunSkipTurns + 1 + state.talentEffects.stunDurationExtension,
+    enemyCCCooldown: 2,
   };
   if (combatTexts) {
     mergeCombatText(combatTexts, { target: "enemy", kind: "notice", stat: "stun", text: "Stunned" });
@@ -81,6 +112,49 @@ export function resolveStunTrigger(state: BattleState, combatTexts?: CombatTextE
   }
   if (nextState.talentEffects.nextCardFreeOnStun) {
     nextState = setFlag(nextState, "nextCardCostReduction", FREE_CARD_SENTINEL);
+  }
+
+  if (nextState.talentEffects.blockOnStun > 0) {
+    nextState = addPlayerStatus(nextState, "block", nextState.talentEffects.blockOnStun);
+    if (combatTexts) {
+      mergeCombatText(combatTexts, {
+        target: "player",
+        kind: "status",
+        stat: "block",
+        amount: nextState.talentEffects.blockOnStun,
+      });
+    }
+  }
+
+  if (nextState.talentEffects.forgeOnStun > 0) {
+    const oldForge = nextState.playerStatuses.forge;
+    const forgeAmount = nextState.talentEffects.forgeOnStun;
+    nextState = addPlayerStatus(nextState, "forge", forgeAmount);
+    nextState = applyForgeBurnBurst(nextState, oldForge, oldForge + forgeAmount, combatTexts);
+    if (combatTexts) {
+      mergeCombatText(combatTexts, {
+        target: "player",
+        kind: "status",
+        stat: "forge",
+        amount: forgeAmount,
+      });
+    }
+  }
+
+  if (nextState.talentEffects.stunStripArmor && nextState.enemyArmor > 0) {
+    nextState = { ...nextState, enemyArmor: 0 };
+  }
+
+  if (nextState.talentEffects.manaOnStun > 0) {
+    nextState = { ...nextState, mana: nextState.mana + nextState.talentEffects.manaOnStun };
+    if (combatTexts) {
+      mergeCombatText(combatTexts, {
+        target: "player",
+        kind: "status",
+        stat: "mana",
+        amount: nextState.talentEffects.manaOnStun,
+      });
+    }
   }
 
   if (nextState.trinketEffects.thunderstoneDamageOnStun > 0) {
@@ -111,7 +185,7 @@ export function applyDamageStatuses(
   let nextState: BattleState = { ...state, enemyStatuses: nextStatuses };
 
   // Null Field: status application to enemies is halved (min 1).
-  const statusDamage = isNullFieldActive(state) ? Math.max(1, Math.floor(actualDamage / 2)) : actualDamage;
+  const statusDamage = isNullFieldActive(state) ? Math.max(1, Math.round(actualDamage / 2)) : actualDamage;
 
   switch (effect.damageType) {
     case "burn": {
@@ -185,11 +259,18 @@ export function applyDamageStatuses(
       const isFreezeImmune = state.currentEnemy.traits.some((t) => t.id === "glacial-shell");
       const freezeThreshold = FREEZE_THRESHOLD_FRACTION - (state.talentEffects.freezeThresholdReduction ?? 0);
       if (!isFreezeImmune && state.enemyHealth > 0 && nextStatuses.freeze >= state.enemyHealth * freezeThreshold) {
+        // If CC immunity is active, clear the status without triggering a skip.
+        if (state.enemyCCCooldown > 0) {
+          nextStatuses.freeze = 0;
+          nextState = { ...nextState, enemyStatuses: nextStatuses };
+          break;
+        }
         nextStatuses.freeze = 0;
         nextState = {
           ...nextState,
           enemyStatuses: nextStatuses,
           enemyFreezeSkipTurns: nextState.enemyFreezeSkipTurns + 1 + nextState.trinketEffects.freezeDurationExtension,
+          enemyCCCooldown: 2,
         };
         mergeCombatText(combatTexts, { target: "enemy", kind: "notice", stat: "freeze", text: "Frozen" });
         if (nextState.trinketEffects.frozenHeartDamage > 0) {
@@ -292,24 +373,8 @@ export function applyPlayerStatusEffect(
   }
 
   if (effect.status === "forge") {
-    const newForge = state.playerStatuses.forge + amount;
-    if (
-      state.talentEffects.forgeBurnThreshold > 0 &&
-      state.playerStatuses.forge < state.talentEffects.forgeBurnThreshold &&
-      newForge >= state.talentEffects.forgeBurnThreshold
-    ) {
-      const burnAmount = isNullFieldActive(state)
-        ? Math.max(1, Math.floor(state.talentEffects.forgeBurnDamage / 2))
-        : state.talentEffects.forgeBurnDamage;
-      state = {
-        ...state,
-        enemyStatuses: {
-          ...state.enemyStatuses,
-          burn: state.enemyStatuses.burn + burnAmount,
-        },
-      };
-      mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "burn", amount: burnAmount });
-    }
+    const oldForge = state.playerStatuses.forge;
+    state = applyForgeBurnBurst(state, oldForge, oldForge + amount, combatTexts);
   }
 
   mergeCombatText(combatTexts, { target: "player", kind: "status", stat: effect.status, amount });

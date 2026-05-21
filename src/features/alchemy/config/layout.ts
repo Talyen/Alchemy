@@ -8,6 +8,8 @@ export const battleCardWidthClass = "w-[clamp(20.56cqh,22cqh,31.11cqh)]";
 export const handCardWidthClass = "w-[clamp(17.5cqh,18.7cqh,26.48cqh)]";
 export const collectionCardWidthClass = "w-[clamp(14.44cqh,18.7cqh,19.44cqh)]";
 export const viewCardWidthClass = "w-[clamp(17.5cqh,17.78cqh,26.48cqh)]";
+export const collectionTileWidthClass = "w-[clamp(21cqh,21.34cqh,31.78cqh)]"; // 1.2× viewCardWidthClass for collection cards/bestiary tiles.
+export const trinketCardWidthClass = "w-[clamp(24.5cqh,24.89cqh,37.07cqh)]"; // 1.4× viewCardWidthClass for larger trinket tiles.
 export const pileCardWidthClass = "w-[clamp(12cqh,12.96cqh,18.25cqh)]";
 
 // Mobile landscape uses the same virtual-stage battle composition as desktop.

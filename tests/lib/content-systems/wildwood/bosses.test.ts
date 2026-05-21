@@ -1,38 +1,26 @@
-// Unit tests for Wildwood boss definitions — data integrity and accessor.
+// Unit tests for Wildwood boss definitions — data integrity via compendium.
 import { describe, expect, it } from "vitest";
-import { WILDWOOD_BOSSES, getWildwoodBoss } from "@/lib/content-systems/wildwood/bosses";
+import { WILDWOOD_BOSS_IDS } from "@/lib/content-systems/wildwood/bosses";
 import { enemyBestiary } from "@/lib/game-data";
 
-describe("WILDWOOD_BOSSES", () => {
+describe("WILDWOOD_BOSS_IDS", () => {
   it("contains exactly 4 entries", () => {
-    expect(WILDWOOD_BOSSES).toHaveLength(4);
+    expect(WILDWOOD_BOSS_IDS).toHaveLength(4);
   });
 
   it("each bossId exists in enemyBestiary", () => {
-    for (const entry of WILDWOOD_BOSSES) {
-      const enemy = enemyBestiary.find((e) => e.id === entry.bossId);
+    for (const bossId of WILDWOOD_BOSS_IDS) {
+      const enemy = enemyBestiary.find((e) => e.id === bossId);
       expect(enemy).toBeDefined();
-      expect(enemy!.title).toBe(entry.title);
+      expect(enemy!.enemyType).toBe("boss");
     }
   });
 
-  it("each entry has non-empty title, subtitle, and descriptionLines", () => {
-    for (const entry of WILDWOOD_BOSSES) {
-      expect(entry.title.length).toBeGreaterThan(0);
-      expect(entry.subtitle.length).toBeGreaterThan(0);
-      expect(entry.descriptionLines.length).toBeGreaterThan(0);
+  it("each boss has at least one trait and one attack effect", () => {
+    for (const bossId of WILDWOOD_BOSS_IDS) {
+      const enemy = enemyBestiary.find((e) => e.id === bossId)!;
+      expect(enemy.traits.length).toBeGreaterThan(0);
+      expect(enemy.attackEffects.length).toBeGreaterThan(0);
     }
-  });
-});
-
-describe("getWildwoodBoss", () => {
-  it("returns the correct boss by ID", () => {
-    const boss = getWildwoodBoss("iron-bear");
-    expect(boss).toBeDefined();
-    expect(boss!.title).toBe("The Iron Bear");
-  });
-
-  it("returns undefined for unknown boss ID", () => {
-    expect(getWildwoodBoss("nonexistent")).toBeUndefined();
   });
 });

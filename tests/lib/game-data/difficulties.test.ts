@@ -131,7 +131,7 @@ describe("getDifficultyModifiers", () => {
 
     it("Adventurer (d2) increases enemy poison by 2", () => {
       const mods = getDifficultyModifiers("rogue", "difficulty-2");
-      expect(mods).toEqual([{ kind: "increase-enemy-status", status: "poison", amount: 2 }]);
+      expect(mods).toEqual([{ kind: "increase-enemy-status", status: "poison", amount: 1 }]);
     });
 
     it("Legend (d3) increases enemy bleed by 3", () => {

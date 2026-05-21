@@ -221,32 +221,36 @@ export default function App() {
     mysteryEvent: run.mysteryEvent,
   });
 
-  useAlchemyAutosave({
-    saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
-    gameBuildVersion: CURRENT_GAME_BUILD_VERSION,
-    contentVersion: CURRENT_CONTENT_VERSION,
-    selectedAspectRatio: useAppStore.getState().selectedAspectRatio,
-    displayMode: useAppStore.getState().displayMode,
-    uiScale: useAppStore.getState().uiScale,
-    discoveredCardIds: useAppStore.getState().discoveredCardIds,
-    encounteredEnemyIds: useAppStore.getState().encounteredEnemyIds,
-    discoveredTrinketIds: useAppStore.getState().discoveredTrinketIds,
-    talentXP: run.talentXP,
-    unlockedTalents: run.unlockedTalents,
-    musicVolume: useAppStore.getState().musicVol,
-    sfxVolume: useAppStore.getState().sfxVol,
-    masterVolume: useAppStore.getState().masterVol,
-    muteInBackground: useAppStore.getState().muteInBackground,
-    autoEndTurn: useAppStore.getState().autoEndTurn,
-    brightness: useAppStore.getState().brightness,
-    activeRun: run.activeRunData,
-    materialInventory: useHomesteadStore.getState().materialInventory,
-    constructedBuildings: useHomesteadStore.getState().constructedBuildings,
-    plantedFarms: useHomesteadStore.getState().plantedFarms,
-    completedResearch: useHomesteadStore.getState().completedResearch,
-    bondedCompanions: useHomesteadStore.getState().bondedCompanions,
-    completedDifficulties: useAppStore.getState().completedDifficulties,
-  });
+  const autosaveEnabled = run.screen !== "rewards" && run.rewardChoices.length === 0;
+  useAlchemyAutosave(
+    {
+      saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
+      gameBuildVersion: CURRENT_GAME_BUILD_VERSION,
+      contentVersion: CURRENT_CONTENT_VERSION,
+      selectedAspectRatio: useAppStore.getState().selectedAspectRatio,
+      displayMode: useAppStore.getState().displayMode,
+      uiScale: useAppStore.getState().uiScale,
+      discoveredCardIds: useAppStore.getState().discoveredCardIds,
+      encounteredEnemyIds: useAppStore.getState().encounteredEnemyIds,
+      discoveredTrinketIds: useAppStore.getState().discoveredTrinketIds,
+      talentXP: run.talentXP,
+      unlockedTalents: run.unlockedTalents,
+      musicVolume: useAppStore.getState().musicVol,
+      sfxVolume: useAppStore.getState().sfxVol,
+      masterVolume: useAppStore.getState().masterVol,
+      muteInBackground: useAppStore.getState().muteInBackground,
+      autoEndTurn: useAppStore.getState().autoEndTurn,
+      brightness: useAppStore.getState().brightness,
+      activeRun: run.activeRunData,
+      materialInventory: useHomesteadStore.getState().materialInventory,
+      constructedBuildings: useHomesteadStore.getState().constructedBuildings,
+      plantedFarms: useHomesteadStore.getState().plantedFarms,
+      completedResearch: useHomesteadStore.getState().completedResearch,
+      bondedCompanions: useHomesteadStore.getState().bondedCompanions,
+      completedDifficulties: useAppStore.getState().completedDifficulties,
+    },
+    autosaveEnabled,
+  );
 
   function clearSaveData() {
     clearSavedAppState();
@@ -312,97 +316,97 @@ export default function App() {
   const particleColors = SCREEN_PARTICLE_COLORS[renderedScreen];
   const isBossBattle = renderedScreen === "battle" && run.battleState.currentEnemy.enemyType === "boss";
   const particleAlphaMultiplier = isBossBattle ? BOSS_ALPHA_MULTIPLIER : SCREEN_PARTICLE_ALPHA[renderedScreen];
-  const content =
-    saveLoadStatus.kind === "unsupported-newer-schema" ? (
-      <UnsupportedSaveVersionScreen canQuit={platform.canQuit} onQuit={platform.quit} />
-    ) : !initialLoadReady ? (
-      <StartupLoadingScreen />
-    ) : (
-      <div
-        key={renderedScreen}
-        className={`${pagePhase === "exit" ? "page-exit" : "page-enter"} h-full w-full overflow-hidden`}
+  const saveBlockedByNewerVersion =
+    saveLoadStatus.kind === "unsupported-newer-schema" || saveLoadStatus.kind === "unsupported-newer-content";
+  const content = saveBlockedByNewerVersion ? (
+    <UnsupportedSaveVersionScreen canQuit={platform.canQuit} onQuit={platform.quit} />
+  ) : !initialLoadReady ? (
+    <StartupLoadingScreen />
+  ) : (
+    <div
+      key={renderedScreen}
+      className={`${pagePhase === "exit" ? "page-exit" : "page-enter"} h-full w-full overflow-hidden`}
+    >
+      <HomesteadProvider
+        cardDescriptionContext={{
+          flatPhysicalDamage: homesteadEffects.flatPhysicalDamage,
+          companionDamage: homesteadEffects.companionDamage,
+          companionBondLevels: homesteadBondedCompanions,
+          potionPotency: 1 + homesteadEffects.potionPotency,
+        }}
       >
-        <HomesteadProvider
-          cardDescriptionContext={{
-            flatPhysicalDamage: homesteadEffects.flatPhysicalDamage,
-            companionDamage: homesteadEffects.companionDamage,
-            companionBondLevels: homesteadBondedCompanions,
-            potionPotency: 1 + homesteadEffects.potionPotency,
-          }}
-        >
-          {renderAlchemyScreen({
-            screen: renderedScreen,
-            actions: {
-              goToScreen: run.goToScreen,
-              navigateTo: run.goToScreen,
-              beginCampaign: run.beginCampaign,
-              beginLabyrinth: run.beginLabyrinth,
-              beginWildwood: run.beginWildwood,
-              handleCharacterSelect: run.handleCharacterSelect,
-              handleDifficultySelect: run.handleDifficultySelect,
-              handleBackFromDifficultySelect: run.handleBackFromDifficultySelect,
-              handleWildwoodBossSelect: run.handleWildwoodBossSelect,
-              handleCardClick: run.handleCardClick,
-              handleWishChoice: run.handleWishChoice,
-              handleEndTurn: run.handleEndTurn,
-              handleEndRun: run.handleEndRun,
-              skipCombatDevMode: run.skipCombatDevMode,
-              removeCardGhost: run.removeCardGhost,
-              finishRewards: run.finishRewards,
-              handleDestinationChoice: run.handleDestinationChoice,
-              handleCampfireContinue: run.handleCampfireContinue,
-              handleShopContinue: run.handleShopContinue,
-              handleShopBuyCard: run.handleShopBuyCard,
-              handleShopRemoveCard: run.handleShopRemoveCard,
-              handleShopRefresh: run.handleShopRefresh,
-              handleAlchemistContinue: run.handleAlchemistContinue,
-              handleAlchemistBuyCard: run.handleAlchemistBuyCard,
-              handleAlchemistRefresh: run.handleAlchemistRefresh,
-              handleAlchemistMixPotions: run.handleAlchemistMixPotions,
-              handleMysteryChoice: run.handleMysteryChoice,
-              handleMysteryChooseCard: run.handleMysteryChooseCard,
-              handleMysteryRemoveCard: run.handleMysteryRemoveCard,
-              handleMysteryContinue: run.handleMysteryContinue,
-              handleCorruptCard: run.handleCorruptCard,
-              handleCorruptionContinue: run.handleCorruptionContinue,
-              handleCorruptionLeave: run.handleCorruptionLeave,
-              handleActComplete: run.handleActComplete,
-              handleLabyrinthNodeEnter: run.handleLabyrinthNodeEnter,
-              handleLabyrinthEndRun: run.handleLabyrinthEndRun,
-              resetRunState: run.resetRunState,
-              returnToBattle: run.returnToBattle,
-              unlockTalent: run.unlockTalent,
-              resetUnlockedTalents: run.resetUnlockedTalents,
-            },
-            handCardRefs: run.handCardRefs,
-            drawPileRef: run.drawPileRef,
-            discardPileRef: run.discardPileRef,
-            battleSceneRef: run.battleSceneRef,
-            playerPanelRef: run.playerPanelRef,
-            enemyPanelRef: run.enemyPanelRef,
-            heroArt,
-            playerName,
-            isMobileLandscape,
-            aspectMode,
-            stagePixelRatio,
-            cardTransfers: run.cardTransfers,
-            hiddenHandCardKeys: run.hiddenHandCardKeys,
-            cardTransferInProgress: run.cardTransferInProgress,
-            hasUnspentTalents,
-            hasAffordableHomestead,
-            collectionTab,
-            collectionPages,
-            encounteredEnemyIds,
-            discoveredTrinketIds,
-            showClearSaveConfirm,
-            pendingCharacterId,
-            onOpenBattleMenu: openBattleMenu,
-            onClearSaveData: clearSaveData,
-            onUnlockAllDevMode: unlockAllDevMode,
-          })}
-        </HomesteadProvider>
-      </div>
-    );
+        {renderAlchemyScreen({
+          screen: renderedScreen,
+          actions: {
+            goToScreen: run.goToScreen,
+            navigateTo: run.goToScreen,
+            beginCampaign: run.beginCampaign,
+            beginLabyrinth: run.beginLabyrinth,
+            beginWildwood: run.beginWildwood,
+            handleCharacterSelect: run.handleCharacterSelect,
+            handleDifficultySelect: run.handleDifficultySelect,
+            handleBackFromDifficultySelect: run.handleBackFromDifficultySelect,
+            handleWildwoodBossSelect: run.handleWildwoodBossSelect,
+            handleCardClick: run.handleCardClick,
+            handleWishChoice: run.handleWishChoice,
+            handleEndTurn: run.handleEndTurn,
+            handleEndRun: run.handleEndRun,
+            skipCombatDevMode: run.skipCombatDevMode,
+            removeCardGhost: run.removeCardGhost,
+            finishRewards: run.finishRewards,
+            handleDestinationChoice: run.handleDestinationChoice,
+            handleCampfireContinue: run.handleCampfireContinue,
+            handleShopContinue: run.handleShopContinue,
+            handleShopBuyCard: run.handleShopBuyCard,
+            handleShopRemoveCard: run.handleShopRemoveCard,
+            handleShopRefresh: run.handleShopRefresh,
+            handleAlchemistContinue: run.handleAlchemistContinue,
+            handleAlchemistBuyCard: run.handleAlchemistBuyCard,
+            handleAlchemistRefresh: run.handleAlchemistRefresh,
+            handleAlchemistMixPotions: run.handleAlchemistMixPotions,
+            handleMysteryChoice: run.handleMysteryChoice,
+            handleMysteryChooseCard: run.handleMysteryChooseCard,
+            handleMysteryRemoveCard: run.handleMysteryRemoveCard,
+            handleMysteryContinue: run.handleMysteryContinue,
+            handleCorruptCard: run.handleCorruptCard,
+            handleCorruptionContinue: run.handleCorruptionContinue,
+            handleCorruptionLeave: run.handleCorruptionLeave,
+            handleLabyrinthNodeEnter: run.handleLabyrinthNodeEnter,
+            handleLabyrinthEndRun: run.handleLabyrinthEndRun,
+            resetRunState: run.resetRunState,
+            returnToBattle: run.returnToBattle,
+            unlockTalent: run.unlockTalent,
+            resetUnlockedTalents: run.resetUnlockedTalents,
+          },
+          handCardRefs: run.handCardRefs,
+          drawPileRef: run.drawPileRef,
+          discardPileRef: run.discardPileRef,
+          battleSceneRef: run.battleSceneRef,
+          playerPanelRef: run.playerPanelRef,
+          enemyPanelRef: run.enemyPanelRef,
+          heroArt,
+          playerName,
+          isMobileLandscape,
+          aspectMode,
+          stagePixelRatio,
+          cardTransfers: run.cardTransfers,
+          hiddenHandCardKeys: run.hiddenHandCardKeys,
+          cardTransferInProgress: run.cardTransferInProgress,
+          hasUnspentTalents,
+          hasAffordableHomestead,
+          collectionTab,
+          collectionPages,
+          encounteredEnemyIds,
+          discoveredTrinketIds,
+          showClearSaveConfirm,
+          pendingCharacterId,
+          onOpenBattleMenu: openBattleMenu,
+          onClearSaveData: clearSaveData,
+          onUnlockAllDevMode: unlockAllDevMode,
+        })}
+      </HomesteadProvider>
+    </div>
+  );
 
   return (
     <ErrorBoundary>
@@ -448,7 +452,7 @@ export default function App() {
               {content}
             </div>
             <GameMenu
-              isOpen={saveLoadStatus.kind === "unsupported-newer-schema" ? false : gameMenuOpen}
+              isOpen={saveBlockedByNewerVersion ? false : gameMenuOpen}
               anchorRect={menuAnchorRect}
               anchorPlacement={renderedScreen === "labyrinth-map" ? "down-right" : "up-left"}
               onClose={() => {
