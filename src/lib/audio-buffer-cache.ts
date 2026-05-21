@@ -15,15 +15,20 @@ export function getAudioContext(): AudioContext {
     audioState.context = new AudioContext();
     audioState.masterGain = audioState.context.createGain();
     audioState.masterGain.connect(audioState.context.destination);
-    audioState.masterGain.gain.value = MASTER_GAIN * audioState.masterVolume;
+    audioState.masterGain.gain.value = audioState.muted ? 0 : MASTER_GAIN * audioState.masterVolume;
   }
   return audioState.context;
 }
 
 // Resumes suspended audio after a gesture so queued play calls can become audible.
 export function resumeAudioContext() {
-  if (audioState.context?.state === "suspended") {
-    audioState.context.resume();
+  if (!audioState.context) return;
+  if (audioState.context.state === "suspended") {
+    audioState.context.resume().then(() => {
+      audioState.audioUnlocked = true;
+    });
+  } else if (audioState.context.state === "running") {
+    audioState.audioUnlocked = true;
   }
 }
 
@@ -58,6 +63,8 @@ export async function loadSoundBuffer(name: string): Promise<AudioBuffer | null>
     } catch {
       console.error("Failed to load or decode sound:", name);
       return null;
+    } finally {
+      loadingPromises.delete(name);
     }
   })();
 
@@ -72,6 +79,8 @@ export function preloadSounds(names: string[]) {
 
 // Collects every registered sound and decodes it gradually after startup.
 export function preloadAllSounds() {
+  getAudioContext();
+  resumeAudioContext();
   const names = new Set<string>([
     ...Object.values(cardSounds).flat(),
     ...Object.values(enemyAttackSounds).flat(),

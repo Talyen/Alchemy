@@ -18,6 +18,14 @@ const musicTracks: Record<string, string[]> = {
   battle: ["Battle 1.mp3", "Battle 2.mp3", "Battle 3.mp3", "Battle 4.mp3", "Battle 5.mp3"],
 };
 
+let musicTransitionToken = 0;
+
+function playElement(el: HTMLAudioElement) {
+  el.play().catch(() => {
+    console.debug("Music playback blocked until user interaction");
+  });
+}
+
 // Applies all active volume layers to a streaming music element.
 export function applyMusicVolume(el: HTMLAudioElement) {
   el.volume = audioState.musicVolume * audioState.masterVolume * MUSIC_MASTER_GAIN;
@@ -34,9 +42,7 @@ function replaceCurrentTrack(track: string, volume: number) {
   el.loop = true;
   el.volume = volume;
   el.muted = audioState.muted;
-  el.play().catch(() => {
-    console.warn("Music autoplay blocked");
-  });
+  playElement(el);
   audioState.currentMusic = el;
   return el;
 }
@@ -66,6 +72,7 @@ function startTrackImmediate(track: string) {
 
 // Starts a keyed music group immediately, choosing one registered track at random.
 export function playMusicImmediate(key: string) {
+  musicTransitionToken += 1;
   audioState.currentMusicKey = key;
   const track = pickRandom(musicTracks[key] ?? []);
   if (!track) return;
@@ -76,12 +83,12 @@ export function playMusicImmediate(key: string) {
 export function playMusic(key: string) {
   if (key === audioState.currentMusicKey) {
     if (audioState.currentMusic?.paused) {
-      audioState.currentMusic.play().catch(() => {
-        console.warn("Music resume playback blocked");
-      });
+      playElement(audioState.currentMusic);
     }
     return;
   }
+  const transitionToken = musicTransitionToken + 1;
+  musicTransitionToken = transitionToken;
   audioState.currentMusicKey = key;
   const track = pickRandom(musicTracks[key] ?? []);
   if (!track) return;
@@ -93,12 +100,13 @@ export function playMusic(key: string) {
     const startTime = performance.now();
 
     function fadeOut() {
+      if (transitionToken !== musicTransitionToken) return;
       const elapsed = performance.now() - startTime;
       const t = Math.min(1, elapsed / FADE_OUT_DURATION);
       old.volume = Math.max(0, oldVol * (1 - t));
       if (t < 1) return void requestAnimationFrame(fadeOut);
       old.pause();
-      audioState.currentMusic = null;
+      if (audioState.currentMusic === old) audioState.currentMusic = null;
       startTrack(selectedTrack);
     }
 

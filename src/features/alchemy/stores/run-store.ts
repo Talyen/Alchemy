@@ -25,6 +25,7 @@ type RunStateFields = {
   destinationIndexInAct: number;
   completedDestinations: Destination[];
   runTrinkets: string[];
+  encounteredRunEnemyIds: string[];
   selectedDifficulty: DifficultyId | null;
   contentSystemType: ContentSystemId;
   talentXP: TalentXP;
@@ -44,6 +45,7 @@ type RunStoreActions = {
   setDestinationIndexInAct: Setter<number>;
   setCompletedDestinations: Setter<Destination[]>;
   setRunTrinkets: Setter<string[]>;
+  setEncounteredRunEnemyIds: Setter<string[]>;
   setSelectedDifficulty: Setter<DifficultyId | null>;
   setContentSystemType: Setter<ContentSystemId>;
   setCharacter: (selectedId: CharacterId) => void;
@@ -86,6 +88,9 @@ function createInitialRunState(
       ? initialActiveRun.completedDestinations.filter((d): d is Destination => VALID_DESTINATIONS.has(d as Destination))
       : [],
     runTrinkets: initialActiveRun?.runTrinkets ? [...initialActiveRun.runTrinkets] : [],
+    encounteredRunEnemyIds: initialActiveRun?.encounteredRunEnemyIds
+      ? [...initialActiveRun.encounteredRunEnemyIds]
+      : [],
     selectedDifficulty: initialActiveRun?.selectedDifficulty ?? null,
     contentSystemType: initialActiveRun?.contentSystemType ?? "campaign",
     talentXP: {} as TalentXP,
@@ -120,6 +125,10 @@ export const useRunStore = create<RunStore>()((set) => ({
     set((s) => ({ completedDestinations: typeof action === "function" ? action(s.completedDestinations) : action })),
   setRunTrinkets: (action) =>
     set((s) => ({ runTrinkets: typeof action === "function" ? action(s.runTrinkets) : action })),
+  setEncounteredRunEnemyIds: (action) =>
+    set((s) => ({
+      encounteredRunEnemyIds: typeof action === "function" ? action(s.encounteredRunEnemyIds) : action,
+    })),
   setSelectedDifficulty: (action) =>
     set((s) => ({ selectedDifficulty: typeof action === "function" ? action(s.selectedDifficulty) : action })),
   setContentSystemType: (action) =>

@@ -7,6 +7,10 @@ import type { BattleCard } from "@/lib/game-data";
 
 import { PaginationControls } from "./shared-ui";
 
+const CARD_SELECTION_GRID_CONFIG = {
+  cardsPerRow: 4,
+} as const;
+
 export type CardSelectionGridItem = {
   card: BattleCard;
   index: number;
@@ -35,8 +39,13 @@ export function CardSelectionGrid({
   const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
   const safePage = Math.min(page, totalPages - 1);
   const pageItems = items.slice(safePage * pageSize, (safePage + 1) * pageSize);
-  const rows = Array.from({ length: Math.ceil(pageItems.length / 4) }, (_, rowIndex) =>
-    pageItems.slice(rowIndex * 4, rowIndex * 4 + 4),
+  const rows = Array.from(
+    { length: Math.ceil(pageItems.length / CARD_SELECTION_GRID_CONFIG.cardsPerRow) },
+    (_, rowIndex) =>
+      pageItems.slice(
+        rowIndex * CARD_SELECTION_GRID_CONFIG.cardsPerRow,
+        rowIndex * CARD_SELECTION_GRID_CONFIG.cardsPerRow + CARD_SELECTION_GRID_CONFIG.cardsPerRow,
+      ),
   );
 
   return (
@@ -45,7 +54,7 @@ export function CardSelectionGrid({
         {rows.map((rowItems, rowIndex) => (
           <div key={`row-${rowIndex}`} className="flex justify-center gap-x-4">
             {rowItems.map((item, columnIndex) => {
-              const visualIndex = rowIndex * 4 + columnIndex;
+              const visualIndex = rowIndex * CARD_SELECTION_GRID_CONFIG.cardsPerRow + columnIndex;
               return (
                 <div key={`${item.card.id}-${item.index}`} className="flex justify-center">
                   {renderItem(item, visualIndex)}

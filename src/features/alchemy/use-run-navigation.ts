@@ -59,6 +59,7 @@ import { corruptDeckCard } from "./corruption";
 import type { ContentSystemId, LabyrinthMap, LabyrinthModifierKind } from "@/lib/content-systems/types";
 import { useScreenStore } from "./stores/screen-store";
 import { getBossEnemy } from "./config";
+import type { LabyrinthNodePosition } from "./run/types";
 
 type DestinationOptionsInput = {
   currentHealth?: number;
@@ -113,6 +114,8 @@ export function useRunNavigation({
   onMarkDifficultyCompleted,
   completedDifficulties,
   labyrinthMap,
+  labyrinthPendingNode,
+  activeLabyrinthModifiers,
   activeLabyrinthRewardModifiers,
 }: {
   run: RunStateController;
@@ -148,6 +151,8 @@ export function useRunNavigation({
   onMarkDifficultyCompleted: (characterId: CharacterId, difficultyId: DifficultyId) => void;
   completedDifficulties: Record<CharacterId, DifficultyId[]>;
   labyrinthMap: LabyrinthMap;
+  labyrinthPendingNode: LabyrinthNodePosition | null;
+  activeLabyrinthModifiers: LabyrinthModifierKind[];
   activeLabyrinthRewardModifiers: LabyrinthModifierKind[];
 }) {
   const rewardState = useScreenStore((s) => s.rewardState);
@@ -201,9 +206,15 @@ export function useRunNavigation({
         destinationIndexInAct: run.destinationIndexInAct,
         completedDestinations: run.completedDestinations,
         runTrinkets: run.runTrinkets,
+        encounteredRunEnemyIds: run.encounteredRunEnemyIds,
         selectedDifficulty: run.selectedDifficulty,
         contentSystemType: run.contentSystemType,
         labyrinthMap,
+        hasActiveBattle,
+        battleState,
+        labyrinthPendingNode,
+        activeLabyrinthModifiers,
+        activeLabyrinthRewardModifiers,
       }),
     [
       run.characterId,
@@ -216,9 +227,15 @@ export function useRunNavigation({
       run.destinationIndexInAct,
       run.completedDestinations,
       run.runTrinkets,
+      run.encounteredRunEnemyIds,
       run.selectedDifficulty,
       run.contentSystemType,
       labyrinthMap,
+      hasActiveBattle,
+      battleState,
+      labyrinthPendingNode,
+      activeLabyrinthModifiers,
+      activeLabyrinthRewardModifiers,
     ],
   );
 
@@ -587,6 +604,7 @@ export function useRunNavigation({
     run.setCurrentAct(snapshot.currentAct);
     run.setDestinationIndexInAct(snapshot.destinationIndexInAct);
     run.setCompletedDestinations(snapshot.completedDestinations);
+    run.setEncounteredRunEnemyIds([]);
     run.setRunTrinkets(snapshot.runTrinkets);
     getStore().setHasActiveRun(snapshot.hasActiveRun);
   }

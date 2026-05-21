@@ -3,7 +3,17 @@
 import { useEffect, useRef } from "react";
 
 import { MUSIC_KEYS } from "@/lib/game-constants";
-import { playMusic, playMusicImmediate, setMasterVolume, setMusicVolume, setMuted, setSfxVolume } from "@/lib/audio";
+import {
+  playMusic,
+  playMusicImmediate,
+  preloadAllSounds,
+  resumeAudioContext,
+  setMasterVolume,
+  setMusicVolume,
+  setMuted,
+  setSfxVolume,
+} from "@/lib/audio";
+import { audioState } from "@/lib/audio-state";
 import type { Screen } from "@/features/alchemy/types";
 
 type AppAudioEffectsOptions = {
@@ -16,7 +26,8 @@ type AppAudioEffectsOptions = {
 
 // Applies persisted audio options and swaps menu/battle music as the route changes.
 export function useAppAudioEffects({ masterVol, musicVol, sfxVol, muteInBackground, screen }: AppAudioEffectsOptions) {
-  const musicStartedRef = useRef(false);
+  const screenRef = useRef(screen);
+  const gestureFiredRef = useRef(false);
 
   useEffect(() => {
     setMasterVolume(masterVol / 100);
@@ -48,14 +59,33 @@ export function useAppAudioEffects({ masterVol, musicVol, sfxVol, muteInBackgrou
   }, [muteInBackground]);
 
   useEffect(() => {
-    const key = screen === "battle" ? MUSIC_KEYS.BATTLE : MUSIC_KEYS.MENU;
-    if (!musicStartedRef.current) {
-      // First music start is immediate to avoid fade-from-silence; later screen changes
-      // use crossfade so battle/menu transitions still feel deliberate.
-      musicStartedRef.current = true;
-      playMusicImmediate(key);
-    } else {
-      playMusic(key);
-    }
+    screenRef.current = screen;
+    playMusic(screen === "battle" ? MUSIC_KEYS.BATTLE : MUSIC_KEYS.MENU);
   }, [screen]);
+
+  useEffect(() => {
+    // Eagerly start audio — works immediately when Chrome's Media Engagement Index
+    // allows it for this origin. Silently caught by the browser otherwise.
+    preloadAllSounds();
+    playMusicImmediate(screenRef.current === "battle" ? MUSIC_KEYS.BATTLE : MUSIC_KEYS.MENU);
+
+    // Gesture fallback: if the browser blocked audio (low MEI), retrying inside a
+    // user gesture handler bypasses autoplay restrictions. Only fires once so
+    // subsequent keyboard/mouse input does not restart music.
+    function resumeOnGesture() {
+      if (gestureFiredRef.current) return;
+      gestureFiredRef.current = true;
+      resumeAudioContext();
+      if (!audioState.currentMusic || audioState.currentMusic.paused) {
+        playMusicImmediate(screenRef.current === "battle" ? MUSIC_KEYS.BATTLE : MUSIC_KEYS.MENU);
+      }
+    }
+
+    window.addEventListener("pointerdown", resumeOnGesture, { capture: true, once: true });
+    window.addEventListener("keydown", resumeOnGesture, { capture: true, once: true });
+    return () => {
+      window.removeEventListener("pointerdown", resumeOnGesture, true);
+      window.removeEventListener("keydown", resumeOnGesture, true);
+    };
+  }, []);
 }

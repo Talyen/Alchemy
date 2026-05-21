@@ -12,6 +12,11 @@ import { popupClassName } from "../config";
 import { formatEnemyAttackLines } from "../utils";
 import { DescriptionLines } from "./card-ui";
 
+const ENEMY_TOOLTIP_CONFIG = {
+  flippedTransform: "translateY(6px) scale(0.985)",
+  flippedTransformOrigin: "left center",
+} as const;
+
 export function EnemyTooltip({
   entry,
   discovered = true,
@@ -29,6 +34,7 @@ export function EnemyTooltip({
   const [flip, setFlip] = useState(false);
 
   useLayoutEffect(() => {
+    // Tooltips are initially positioned above their anchor; flip after layout if that would clip off-screen.
     const el = ref.current;
     if (!el) return;
     const rect = el.getBoundingClientRect();
@@ -50,7 +56,10 @@ export function EnemyTooltip({
       )}
       style={
         flip
-          ? ({ transform: "translateY(6px) scale(0.985)", transformOrigin: "left center" } as CSSProperties)
+          ? ({
+              transform: ENEMY_TOOLTIP_CONFIG.flippedTransform,
+              transformOrigin: ENEMY_TOOLTIP_CONFIG.flippedTransformOrigin,
+            } as CSSProperties)
           : undefined
       }
     >
@@ -68,6 +77,8 @@ export function EnemyTooltip({
             <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-amber-100/80">Special Modifiers</p>
             {labyrinthModifiers.map((modifier) => {
               const definition = ALL_LABYRINTH_MODIFIERS[modifier];
+              if (!definition) return null;
+
               return (
                 <p key={modifier}>
                   <span className="text-amber-100">{definition.label}:</span> {definition.description}

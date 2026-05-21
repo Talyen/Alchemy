@@ -7,7 +7,7 @@ import { Coins, Gem } from "lucide-react";
 import { pileDiscardArt, pileDrawArt } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
-import { cardSurfaceClass, pileCardWidthClass, staticCardTransform } from "../../config";
+import { cardArtImageClass, cardSurfaceClass, pileCardWidthClass, staticCardTransform } from "../../config";
 import { clearTiltFromEvent, setTiltFromEvent } from "../../utils";
 import { useChangeToken } from "./use-change-token";
 
@@ -45,12 +45,7 @@ export const PilePanel = forwardRef<
       onMouseLeave={clearTiltFromEvent}
       style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
     >
-      <img
-        src={art}
-        alt={`${label} pile`}
-        className="block w-full rounded-[30px] aspect-[3/4] object-cover"
-        loading="lazy"
-      />
+      <img src={art} alt={`${label} pile`} className={`block w-full ${cardArtImageClass}`} loading="lazy" />
     </div>
   );
 });

@@ -1,13 +1,22 @@
+// Shop/service action buttons with disabled explanatory tooltips.
+// Depends on the shared Button primitive and gold display element.
+// Used by merchant, alchemist, and service-like destination screens.
 import type { ComponentType, ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { GoldCost } from "./display-elements";
+
+const SERVICE_BUTTON_CONFIG = {
+  tooltipText: "text-white",
+} as const;
 
 export function DisabledTooltip({ show, message, children }: { show: boolean; message: string; children: ReactNode }) {
   if (!show) return <>{children}</>;
   return (
     <div className="relative group">
       {children}
-      <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-md bg-black/90 px-3 py-1.5 text-xs text-white opacity-0 transition-all duration-150 group-hover:translate-y-0 group-hover:opacity-100">
+      <div
+        className={`pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 translate-y-1 whitespace-nowrap rounded-md bg-black/90 px-3 py-1.5 text-xs ${SERVICE_BUTTON_CONFIG.tooltipText} opacity-0 transition-all duration-150 group-hover:translate-y-0 group-hover:opacity-100`}
+      >
         {message}
       </div>
     </div>

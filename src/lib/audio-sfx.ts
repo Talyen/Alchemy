@@ -48,6 +48,7 @@ export function stopAllSfx() {
 // same event-handler tick without any microtask delay from `loadSoundBuffer`.
 function playBuffer(name: string, { volume = 1, delay = 0, cooldownMs = SFX_COOLDOWN_MS }: PlaySoundOptions = {}) {
   if (audioState.muted) return;
+  if (!audioState.audioUnlocked) return;
   const playToken = sfxStopToken;
   const scheduledAt = performance.now() + delay * 1000;
   const last = audioState.lastPlayedAt.get(name) ?? 0;

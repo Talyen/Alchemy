@@ -9,6 +9,9 @@ import { clamp } from "./utils";
 // Mutes both Web Audio playback gate and the current streamed music element.
 export function setMuted(value: boolean) {
   audioState.muted = value;
+  if (audioState.masterGain) {
+    audioState.masterGain.gain.value = audioState.muted ? 0 : MASTER_GAIN * audioState.masterVolume;
+  }
   if (audioState.currentMusic) {
     audioState.currentMusic.muted = audioState.muted;
   }
@@ -23,7 +26,7 @@ export function setSfxVolume(value: number) {
 export function setMasterVolume(value: number) {
   audioState.masterVolume = clamp(value, 0, 1);
   if (audioState.masterGain) {
-    audioState.masterGain.gain.value = MASTER_GAIN * audioState.masterVolume;
+    audioState.masterGain.gain.value = audioState.muted ? 0 : MASTER_GAIN * audioState.masterVolume;
   }
   if (audioState.currentMusic) {
     applyMusicVolume(audioState.currentMusic);

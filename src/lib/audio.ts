@@ -1,7 +1,7 @@
 // Public audio facade for game SFX, music, volume, mute, and preloading.
 // Depends on focused audio implementation modules.
 // Used by controllers/App/screens so call sites do not need to know audio internals.
-export { preloadAllSounds, preloadSounds } from "./audio-buffer-cache";
+export { preloadAllSounds, preloadSounds, resumeAudioContext } from "./audio-buffer-cache";
 export { playMusic, playMusicImmediate } from "./audio-music";
 export {
   playBattleEvent,

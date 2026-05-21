@@ -1,4 +1,6 @@
 // Actor rail for the battle screen: hero/enemy panels, companion, turn badge, and combat text.
+// Depends on battle store shimmer actions, actor UI widgets, and battle layout constants.
+// Used only by BattleScreen to keep the main screen composition smaller.
 import { BATTLE_ACTOR_TOP_DESKTOP, BATTLE_ACTOR_TOP_MOBILE } from "@/lib/game-constants";
 
 import { ArtPanel, CompanionPanel, CombatTextRail } from "../../components";

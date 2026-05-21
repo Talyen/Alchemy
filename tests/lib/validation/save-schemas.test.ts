@@ -103,6 +103,33 @@ describe("ActiveRunDataSchema", () => {
       labyrinthMap: null,
     });
     expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
+    if (result.success) {
+      expect(result.data.encounteredRunEnemyIds).toEqual([]);
+    }
+  });
+
+  it("normalizes encountered run enemy IDs", () => {
+    const result = ActiveRunDataSchema.safeParse({
+      characterId: "knight",
+      runDeck: [],
+      runGold: 0,
+      runPlayerHealth: 30,
+      runMaxHealth: 30,
+      roomsEncountered: 0,
+      currentAct: 1,
+      destinationIndexInAct: 0,
+      completedDestinations: [],
+      runTrinkets: [],
+      encounteredRunEnemyIds: ["goblin", "goblin", 1],
+      selectedDifficulty: null,
+      contentSystemType: "campaign",
+      labyrinthMap: null,
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.encounteredRunEnemyIds).toEqual(["goblin"]);
+    }
   });
 
   it("migrates sorcerer to wizard", () => {

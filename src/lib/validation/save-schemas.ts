@@ -3,6 +3,8 @@
 // Depends on: game-data, homestead data, labyrinth modifiers, validation metadata, migration.
 // Used by: storage/io.ts (SaveDataSchema.safeParse), storage/migrations.ts (normalizeSaveData wrapper).
 import { z } from "zod";
+import { defaultBattleState, type BattleState } from "@/lib/battle";
+import { isPersistedBattleState } from "@/features/alchemy/storage/active-run";
 import {
   cardLibrary,
   characters,
@@ -396,6 +398,26 @@ export const LabyrinthMapSchema = z
   .nullable()
   .catch(null);
 
+const LabyrinthNodePositionSchema = z
+  .object({ row: z.number().int().nonnegative(), col: z.number().int().nonnegative() })
+  .nullable()
+  .catch(null);
+
+export const ActiveCombatDataSchema = z
+  .object({
+    battleState: z.custom<BattleState>(isPersistedBattleState),
+    activeLabyrinthModifiers: z.preprocess(filterLabyrinthModifiers, z.array(LabyrinthModifierKindSchema)).catch([]),
+    activeLabyrinthRewardModifiers: z
+      .preprocess(filterLabyrinthModifiers, z.array(LabyrinthModifierKindSchema))
+      .catch([]),
+  })
+  .transform((data) => ({
+    ...data,
+    battleState: { ...defaultBattleState(), ...data.battleState } as BattleState,
+  }))
+  .nullable()
+  .catch(null);
+
 // ===== ActiveRunData =====
 // Imported from game-constants — single source of truth shared with active-run.ts.
 
@@ -415,12 +437,21 @@ export const ActiveRunDataSchema = z
     destinationIndexInAct: z.number().int().nonnegative().catch(0),
     completedDestinations: z.array(z.string()).catch([]),
     runTrinkets: z.array(z.string()).catch([]),
+    encounteredRunEnemyIds: z
+      .preprocess(
+        (val) => (Array.isArray(val) ? [...new Set(val.filter((v) => typeof v === "string"))] : []),
+        z.array(z.string()),
+      )
+      .catch([])
+      .default([]),
     selectedDifficulty: DifficultyIdSchema.nullable().catch(null).default(null),
     contentSystemType: z
       .preprocess((val) => (val === "wildwood" ? "campaign" : val), ContentSystemIdSchema)
       .default("campaign")
       .catch("campaign"),
     labyrinthMap: LabyrinthMapSchema.nullable().catch(null),
+    labyrinthPendingNode: LabyrinthNodePositionSchema,
+    activeCombat: ActiveCombatDataSchema.default(null),
   })
   .refine(
     (data) => {
@@ -447,6 +478,16 @@ export const ActiveRunDataSchema = z
       ...data,
       runDeck,
       labyrinthMap: data.contentSystemType === "labyrinth" ? data.labyrinthMap : null,
+      labyrinthPendingNode: data.contentSystemType === "labyrinth" ? data.labyrinthPendingNode : null,
+      activeCombat: data.activeCombat
+        ? {
+            ...data.activeCombat,
+            activeLabyrinthModifiers:
+              data.contentSystemType === "labyrinth" ? data.activeCombat.activeLabyrinthModifiers : [],
+            activeLabyrinthRewardModifiers:
+              data.contentSystemType === "labyrinth" ? data.activeCombat.activeLabyrinthRewardModifiers : [],
+          }
+        : null,
     };
   });
 

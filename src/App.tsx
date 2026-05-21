@@ -18,8 +18,6 @@ import {
   type KeywordId,
 } from "@/lib/game-data";
 import { getTalentKeywordProgress } from "@/lib/talents";
-import { preloadAllSounds } from "@/lib/audio";
-
 import { useAppAudioEffects } from "@/app/use-app-audio-effects";
 import { useAppDisplayEffects } from "@/app/use-app-display-effects";
 import { useScreenAssetPreloadEffects } from "@/app/use-app-preload-effects";
@@ -124,10 +122,6 @@ export default function App() {
   const vrStageRef = useRef<HTMLDivElement>(null);
   const initialLoadReady = useInitialLoadReady({ imageUrls: allGameArt });
   useAppDisplayEffects({ displayMode, uiScale, brightness, stageRef: vrStageRef });
-  useEffect(() => {
-    preloadAllSounds();
-  }, []);
-
   const gameMenuOpenRef = useRef(gameMenuOpen);
   const renderedScreenRef = useRef(renderedScreen);
   // Refs let the global Escape listener read current screen/menu state without re-registering
@@ -221,7 +215,10 @@ export default function App() {
     mysteryEvent: run.mysteryEvent,
   });
 
-  const autosaveEnabled = run.screen !== "rewards" && run.rewardChoices.length === 0;
+  const autosaveEnabled =
+    run.screen !== "rewards" &&
+    run.rewardChoices.length === 0 &&
+    !(run.screen === "battle" && run.battleState.enemyHealth <= 0);
   useAlchemyAutosave(
     {
       saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,

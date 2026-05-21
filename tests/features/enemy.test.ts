@@ -89,8 +89,8 @@ describe("enemyBestiary attack lines integration", () => {
     expect(getAttackLines("imp")).toEqual(["Deals 4 Burn damage"]);
   });
 
-  it("Lizard Scout — pure Poison", () => {
-    expect(getAttackLines("lizard-scout")).toEqual(["Deals 2 Poison damage"]);
+  it("Lizard Scout — Physical + Poison", () => {
+    expect(getAttackLines("lizard-scout")).toEqual(["Deals 1 Physical and 1 Poison"]);
   });
 
   it("Mimic — pure physical", () => {
@@ -105,8 +105,8 @@ describe("enemyBestiary attack lines integration", () => {
     expect(getAttackLines("necromancer")).toEqual(["Deals 4 Bleed damage"]);
   });
 
-  it("Plague Doctor — pure Poison", () => {
-    expect(getAttackLines("plague-doctor")).toEqual(["Deals 2 Poison damage"]);
+  it("Plague Doctor — Bleed + Poison", () => {
+    expect(getAttackLines("plague-doctor")).toEqual(["Deals 2 Bleed and 1 Poison"]);
   });
 
   it("The Forge Golem — physical + stun combined", () => {

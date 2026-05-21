@@ -1,0 +1,69 @@
+// Hover detail popup for cards and collection tiles.
+// Depends on direct layout measurement, shared popup styles, and description rendering.
+// Used by battle cards, shop cards, and collection previews.
+import { type CSSProperties, type ReactNode, useLayoutEffect, useRef, useState } from "react";
+
+import type { BattleCard } from "@/lib/game-data";
+import { cn } from "@/lib/utils";
+
+import { DescriptionLines } from "./card-description-ui";
+
+const CARD_POPUP_CONFIG = {
+  belowTop: "100%",
+  belowTransform: "translate(-50%, 12px)",
+  aboveTransform: "translate(-50%, calc(-100% - 26px))",
+} as const;
+
+export function DetailPopup({
+  idPrefix,
+  title,
+  subtitle,
+  descriptionLines,
+  descriptionNodes,
+  card,
+}: {
+  idPrefix: string;
+  title: ReactNode;
+  subtitle: string | undefined;
+  descriptionLines: string[];
+  descriptionNodes?: ReactNode[];
+  card?: Pick<BattleCard, "corruptedValuePositions">;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [flip, setFlip] = useState(false);
+
+  useLayoutEffect(() => {
+    // Measure after layout and flip below if the popup would leave the viewport; cards near
+    // the top edge should remain readable instead of clipping off-screen.
+    const el = ref.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    if (rect.top < 0) setFlip(true);
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      className={cn(
+        "hover-popup-panel absolute left-1/2 z-40 w-full origin-bottom rounded-[20px] border border-border/80 bg-card px-4 py-3 text-left",
+        "hover-popup-quick-in pointer-events-auto",
+        flip ? "hover-popup-below" : "hover-popup-above",
+      )}
+      style={
+        {
+          top: flip ? CARD_POPUP_CONFIG.belowTop : 0,
+          transform: flip ? CARD_POPUP_CONFIG.belowTransform : CARD_POPUP_CONFIG.aboveTransform,
+        } as CSSProperties
+      }
+    >
+      <p className="text-base text-foreground sm:text-lg">{title}</p>
+      {subtitle ? <p className="mt-1 text-xs uppercase tracking-widest text-muted-foreground">{subtitle}</p> : null}
+      <DescriptionLines lines={descriptionLines} idPrefix={idPrefix} {...(card ? { card } : {})} />
+      {descriptionNodes?.map((node, i) => (
+        <div key={i} className="mt-1.5 text-sm leading-6">
+          {node}
+        </div>
+      ))}
+    </div>
+  );
+}

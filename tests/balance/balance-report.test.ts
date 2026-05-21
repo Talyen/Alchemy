@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
   simulateBatch,
-  buildPresetManifest,
   type BalanceBatchResult,
   type BalancePlayPolicy,
   type TalentPreset,
@@ -58,10 +57,6 @@ function cardTitle(id: string): string {
 
 function percent(value: number): string {
   return `${(value * 100).toFixed(1)}%`;
-}
-
-function fixed(value: number): string {
-  return value.toFixed(1);
 }
 
 // --- Core scenario runner ---

@@ -3,6 +3,7 @@
 // Used by health, XP, and other meter displays.
 import { forwardRef, type HTMLAttributes } from "react";
 
+import { clampProgressPercent } from "@/lib/ui/progress";
 import { cn } from "@/lib/utils";
 
 interface ProgressProps extends HTMLAttributes<HTMLDivElement> {
@@ -13,7 +14,7 @@ const Progress = forwardRef<HTMLDivElement, ProgressProps>(({ className, value, 
   <div ref={ref} className={cn("relative h-4 w-full overflow-hidden rounded-full bg-secondary", className)} {...props}>
     <div
       className="h-full w-full flex-1 bg-primary transition-transform duration-300 ease-out"
-      style={{ transform: `translateX(-${100 - (value || 0)}%)` }}
+      style={{ transform: `translateX(-${100 - clampProgressPercent(value)}%)` }}
     />
   </div>
 ));

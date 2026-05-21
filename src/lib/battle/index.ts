@@ -1,0 +1,13 @@
+// Public barrel for the battle engine.
+// Re-exports state creation, turn sequencing, effects, and types for UI/controllers.
+// Consumers should import from here instead of binding to battle submodule paths.
+export * from "./types";
+export * from "./draw";
+export { applyCardEffects } from "./apply-effects";
+export { mergeCombatText } from "./combat-text";
+export { applyIronwoodBuckler, applyBoneCharmHeal } from "./trinket-effects";
+export { getEnemyDamageMultiplier } from "./status-effects";
+export { cardHasDamageType, playBattleCardResolved } from "./card-play";
+export { tickEnemyStatuses, tickPlayerStatuses } from "./status-ticks";
+export { chooseWishCard, endPlayerTurn, processCompanionTurnStart } from "./enemy-turn";
+export * from "./cost";

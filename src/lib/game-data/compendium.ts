@@ -87,7 +87,7 @@ export const enemyBestiary: BestiaryEntry[] = [
     descriptionLines: [],
     art: theBlightTreant,
     enemyType: "boss",
-    traits: [{ id: "regeneration", title: "Rotting Regrowth", description: "Gains 3 Health each turn" }],
+    traits: [{ id: "regeneration", title: "Rotting Regrowth", description: "Gains 2 Health each turn" }],
     attackEffects: [
       { kind: "damage", damageType: "nature", amount: 3 },
       { kind: "player-status", status: "poison", amount: 1 },
@@ -143,7 +143,10 @@ export const enemyBestiary: BestiaryEntry[] = [
     art: lizardScout,
     enemyType: "normal",
     traits: [{ id: "poison-resistance", title: "Poison Resistance", description: "Receives half Poison damage" }],
-    attackEffects: [{ kind: "player-status", status: "poison", amount: 2 }],
+    attackEffects: [
+      { kind: "damage", damageType: "physical", amount: 1 },
+      { kind: "player-status", status: "poison", amount: 1 },
+    ],
   },
   {
     id: "mimic",
@@ -186,7 +189,10 @@ export const enemyBestiary: BestiaryEntry[] = [
     art: plagueDoctor,
     enemyType: "elite",
     traits: [{ id: "poison-resistance", title: "Poison Resistance", description: "Receives half Poison damage" }],
-    attackEffects: [{ kind: "player-status", status: "poison", amount: 2 }],
+    attackEffects: [
+      { kind: "player-status", status: "bleed", amount: 2 },
+      { kind: "player-status", status: "poison", amount: 1 },
+    ],
   },
   {
     id: "living-armor",

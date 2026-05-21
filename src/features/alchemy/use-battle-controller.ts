@@ -44,8 +44,20 @@ import {
 } from "./battle/battle-feedback";
 import { useBattleAutoEndTurn } from "./battle/use-battle-auto-end-turn";
 import { useBattleStore } from "./stores/battle-store";
+import { useRunStore } from "./stores/run-store";
 import { getBattleStartPlayerHealth } from "./battle/battle-start";
 import { createTransferCancelRegistry } from "./battle/transfer-lifecycle";
+
+const companionSoundCardIds: Partial<Record<string, string>> = {
+  wolf: "wolf-companion",
+  imp: "imp-companion",
+  "lizard-scout": "lizard-scout-companion",
+};
+
+function playCompanionSound(companionId: string) {
+  const soundCardId = companionSoundCardIds[companionId];
+  if (soundCardId) playCardSound(soundCardId);
+}
 
 function getCardTransferBatchSpeed(cardCount: number) {
   const { batchSpeedMultipliers } = CARD_TRANSFER_CONFIG;
@@ -78,6 +90,7 @@ export function useBattleController({
   // React owns timing, refs, animation, and audio here; pure combat resolution stays in
   // @/lib/battle so UI delays cannot silently change battle outcomes.
   const battleState = useBattleStore((s) => s.battleState);
+  const battleStartState = useBattleStore((s) => s.battleStartState);
   const hasActiveBattle = useBattleStore((s) => s.hasActiveBattle);
   const enemyShaking = useBattleStore((s) => s.enemyShaking);
   const playerShaking = useBattleStore((s) => s.playerShaking);
@@ -167,6 +180,7 @@ export function useBattleController({
     clearPendingBattleTimeouts();
     clearTransferHandles();
     cardPlayInProgressRef.current = false;
+    getStore().setBattleStartState(null);
     // hasActiveBattle is the only lifecycle edge this cleanup should react to.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasActiveBattle]);
@@ -241,13 +255,11 @@ export function useBattleController({
         if (transferTimeoutRef.current === timeout) {
           transferTimeoutRef.current = null;
         }
-        if (import.meta.env.DEV) console.log("[flying] remove", id.slice(-8));
         setCardTransfers((current) => current.filter((item) => item.id !== id));
         if (completeTransfer) onComplete?.();
         resolve();
       };
       unregisterCancel = registerTransferCancelCallback(() => finish(false));
-      if (import.meta.env.DEV) console.log("[flying] create", id.slice(-8));
       setCardTransfers([{ ...transfer, id }]);
       timeout = setTimeout(
         () => finish(true),
@@ -381,31 +393,6 @@ export function useBattleController({
           duration: CARD_TRANSFER_CONFIG.drawDurationSeconds / speedMul,
         },
         () => {
-          if (import.meta.env.DEV) {
-            const btn = handCardRefs.current[cardKey];
-            const overlay = document.querySelector("[data-flying-card]") as HTMLElement | null;
-            if (btn && overlay) {
-              const sceneRect = getBattleSceneLocalRect(battleSceneRef.current);
-              if (sceneRect) {
-                const br = btn.getBoundingClientRect();
-                const or = overlay.getBoundingClientRect();
-                const dx = Math.abs((br.left - or.left) / sceneRect.scaleX);
-                const dy = Math.abs((br.top - or.top) / sceneRect.scaleY);
-                const dw = Math.abs((br.width - or.width) / sceneRect.scaleX);
-                const dh = Math.abs((br.height - or.height) / sceneRect.scaleY);
-                if (
-                  dx > CARD_TRANSFER_CONFIG.rectEpsilonPx ||
-                  dy > CARD_TRANSFER_CONFIG.rectEpsilonPx ||
-                  dw > CARD_TRANSFER_CONFIG.rectEpsilonPx ||
-                  dh > CARD_TRANSFER_CONFIG.rectEpsilonPx
-                ) {
-                  console.warn(
-                    `[snap] card=${cardKey} dx:${dx.toFixed(2)} dy:${dy.toFixed(2)} dw:${dw.toFixed(2)} dh:${dh.toFixed(2)}`,
-                  );
-                }
-              }
-            }
-          }
           setHiddenHandCardKeys((current) => {
             const next = new Set(current);
             next.delete(cardKey);
@@ -423,11 +410,11 @@ export function useBattleController({
     enemyType: "normal" | "elite" = "normal",
     modifiers?: DifficultyModifier[],
   ) {
-    beginBattle(getCurrentEnemy(enemyType), deck, gold, modifiers);
+    beginBattle(getCurrentEnemy(enemyType, useRunStore.getState().encounteredRunEnemyIds), deck, gold, modifiers);
   }
 
   function startBossBattle(modifiers?: DifficultyModifier[]) {
-    beginBattle(getBossEnemy(), run.runDeck, run.runGold, modifiers);
+    beginBattle(getBossEnemy(useRunStore.getState().encounteredRunEnemyIds), run.runDeck, run.runGold, modifiers);
   }
 
   function startBossById(bossId: string, modifiers?: DifficultyModifier[]): boolean {
@@ -454,7 +441,9 @@ export function useBattleController({
     getStore().clearCardGhosts();
     const nextBattleState = createBattleForEnemy(enemy, deck, gold, startingHealth, nextRoomsEncountered, modifiers);
     getStore().setBattleState(nextBattleState);
+    getStore().setBattleStartState(nextBattleState);
     getStore().setHasActiveBattle(true);
+    run.setEncounteredRunEnemyIds((current) => appendUnique(current, enemy.id));
     setEncounteredEnemyIds((current) => appendUnique(current, enemy.id));
   }
 
@@ -704,7 +693,7 @@ export function useBattleController({
   function resolveQueuedCompanionTurn(state: BattleState) {
     const combatTexts: CombatTextEvent[] = [];
     if (companionScheduledRef.current && state.activeCompanion) {
-      playCardSound(`companion-${state.activeCompanion.id}`);
+      playCompanionSound(state.activeCompanion.id);
       const nextState = processCompanionTurnStart(state, combatTexts);
       getStore().shakeCompanion();
       companionScheduledRef.current = false;
@@ -788,7 +777,7 @@ export function useBattleController({
     const store = getStore();
     const texts: CombatTextEvent[] = [];
     if (store.battleState.activeCompanion) {
-      playCardSound(`companion-${store.battleState.activeCompanion.id}`);
+      playCompanionSound(store.battleState.activeCompanion.id);
     }
     const newState = processCompanionTurnStart(store.battleState, texts);
     if (!isCurrentBattleSession(session)) return [];
@@ -824,6 +813,7 @@ export function useBattleController({
 
   return {
     battleState,
+    battleStartState,
     setBattleState: getStore().setBattleState,
     hasActiveBattle,
     setHasActiveBattle: getStore().setHasActiveBattle,

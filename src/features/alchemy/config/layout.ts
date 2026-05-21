@@ -19,6 +19,8 @@ export const mobileStageHandCardWidthClass = "w-[clamp(22.22cqh,24cqh,27.78cqh)]
 // Card and popup surfaces stay centralized so repeated game widgets share the
 // same tactile fantasy material treatment.
 export const cardSurfaceClass = "relative overflow-hidden rounded-[30px] bg-black";
+export const cardArtImageClass = "rounded-[30px] aspect-[3/4] object-cover";
+export const squareArtImageClass = "rounded-[30px] aspect-square object-cover";
 export const staticCardTransform = "translate3d(0px, 0px, 0px)";
 export const popupClassName =
   "absolute bottom-full left-1/2 z-40 mb-4 w-60 -translate-x-1/2 rounded-[20px] border border-border/80 bg-card px-3 py-3 text-left";

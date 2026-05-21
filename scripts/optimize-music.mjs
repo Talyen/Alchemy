@@ -22,6 +22,7 @@ async function main() {
   const files = ["Menu 1.mp3", "Menu 2.mp3", "Menu 3.mp3", "Menu 4.mp3", "Battle 1.mp3", "Battle 2.mp3", "Battle 3.mp3", "Battle 4.mp3", "Battle 5.mp3"];
 
   const results = [];
+  let failed = false;
   for (const file of files) {
     const sourcePath = path.join(sourceDir, file);
     const outputPath = path.join(outputDir, file);
@@ -35,6 +36,7 @@ async function main() {
       await copyFile(sourcePath, outputPath);
       results.push(`${file} copied`);
     } catch (error) {
+      failed = true;
       results.push(`FAILED ${file}: ${error.message}`);
     }
   }
@@ -42,6 +44,9 @@ async function main() {
   console.log(`Processed ${results.length} music files.`);
   for (const result of results) {
     console.log(`- ${result}`);
+  }
+  if (failed) {
+    process.exitCode = 1;
   }
 }
 

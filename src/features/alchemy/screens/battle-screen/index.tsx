@@ -2,22 +2,22 @@
 // Driven by useBattleController; focused child modules own the layout slices.
 import { useMemo, type MouseEvent, type MutableRefObject } from "react";
 import type { BattleCard } from "@/lib/game-data";
-import type { CardTransfer } from "../types";
-import { CardGhostOverlay } from "../components";
-import { CardTransferOverlay } from "./battle-screen/card-transfer-overlay";
-import { BattleActors } from "./battle-screen/actors";
-import { BattleBottomBar } from "./battle-screen/controls";
-import { WishOverlay } from "./battle-screen/wish-overlay";
+import type { CardTransfer } from "../../types";
+import { CardGhostOverlay } from "../../components";
+import { CardTransferOverlay } from "./card-transfer-overlay";
+import { BattleActors } from "./actors";
+import { BattleBottomBar } from "./controls";
+import { WishOverlay } from "./wish-overlay";
 import type {
   BattleActionsProps,
   BattleFeedbackProps,
   BattleHoverProps,
   BattleRefsProps,
   BattleScreenState,
-} from "./battle-screen/types";
-import { useBattleStore } from "../stores/battle-store";
-import { useScreenStore } from "../stores/screen-store";
-import { getEnemyStatusChips, getPlayerStatusChips } from "../utils";
+} from "./types";
+import { useBattleStore } from "../../stores/battle-store";
+import { useScreenStore } from "../../stores/screen-store";
+import { getEnemyStatusChips, getPlayerStatusChips } from "../../utils";
 
 type BattleScreenProps = {
   heroArt: string;

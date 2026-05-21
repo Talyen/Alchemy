@@ -16,10 +16,12 @@ import type {
   LabyrinthNodeType,
   LabyrinthModifierKind,
 } from "@/lib/content-systems/types";
+import { defaultBattleState, type BattleState } from "@/lib/battle";
 import { ALL_LABYRINTH_MODIFIERS } from "@/lib/content-systems/labyrinth/modifiers";
 import { ACTS_PER_RUN, LEGACY_STARTER_DECK_IDS } from "@/lib/game-constants";
 
 import type { ActiveRunData } from "../run/types";
+import type { ActiveCombatData, LabyrinthNodePosition } from "../run/types";
 
 type PersistedRunCandidate = Record<string, unknown> & {
   runDeck: unknown[];
@@ -31,7 +33,9 @@ type PersistedRunCandidate = Record<string, unknown> & {
   destinationIndexInAct: number;
   completedDestinations: unknown[];
   runTrinkets: unknown[];
+  encounteredRunEnemyIds?: unknown;
   selectedDifficulty?: unknown;
+  activeCombat?: unknown;
 };
 
 const VALID_DIFFICULTY_IDS = ["difficulty-1", "difficulty-2", "difficulty-3"];
@@ -260,6 +264,58 @@ function normalizeLabyrinthNode(value: unknown): LabyrinthNode | null {
   };
 }
 
+function normalizeLabyrinthPosition(value: unknown): LabyrinthNodePosition | null {
+  if (!value || typeof value !== "object") return null;
+  const candidate = value as Record<string, unknown>;
+  if (!isNonNegativeInteger(candidate.row) || !isNonNegativeInteger(candidate.col)) return null;
+  return { row: candidate.row, col: candidate.col };
+}
+
+export function isPersistedBattleState(value: unknown): value is BattleState {
+  if (!value || typeof value !== "object") return false;
+  const state = value as Partial<BattleState>;
+  return (
+    Array.isArray(state.deck) &&
+    Array.isArray(state.hand) &&
+    Array.isArray(state.discard) &&
+    Array.isArray(state.exhausted) &&
+    typeof state.mana === "number" &&
+    typeof state.maxMana === "number" &&
+    typeof state.gold === "number" &&
+    typeof state.turn === "number" &&
+    (state.turnPhase === "player" || state.turnPhase === "enemy") &&
+    typeof state.playerHealth === "number" &&
+    typeof state.playerMaxHealth === "number" &&
+    typeof state.enemyHealth === "number" &&
+    typeof state.enemyMaxHealth === "number" &&
+    Boolean(state.currentEnemy) &&
+    typeof state.currentEnemy === "object" &&
+    Array.isArray(state.enemyAttackEffects) &&
+    Boolean(state.playerStatuses) &&
+    Boolean(state.enemyStatuses) &&
+    Boolean(state.flags) &&
+    Array.isArray(state.discoveredCardIds) &&
+    Array.isArray(state.difficultyModifiers)
+  );
+}
+
+function normalizeActiveCombat(value: unknown, contentSystemType: "campaign" | "labyrinth"): ActiveCombatData | null {
+  if (!value || typeof value !== "object") return null;
+  const candidate = value as Record<string, unknown>;
+  if (!isPersistedBattleState(candidate.battleState)) return null;
+  return {
+    battleState: { ...defaultBattleState(), ...(candidate.battleState as Partial<BattleState>) } as BattleState,
+    activeLabyrinthModifiers:
+      contentSystemType === "labyrinth"
+        ? (normalizeLabyrinthModifierKinds(candidate.activeLabyrinthModifiers) ?? [])
+        : [],
+    activeLabyrinthRewardModifiers:
+      contentSystemType === "labyrinth"
+        ? (normalizeLabyrinthModifierKinds(candidate.activeLabyrinthRewardModifiers) ?? [])
+        : [],
+  };
+}
+
 // Active runs are sanitized before hydration because localStorage can contain stale
 // character IDs, renamed heroes, missing route fields, or hand-edited invalid payloads.
 export function normalizeActiveRun(activeRun: unknown): ActiveRunData | null {
@@ -306,6 +362,7 @@ export function normalizeActiveRun(activeRun: unknown): ActiveRunData | null {
     candidate.contentSystemType === "labyrinth" ? "labyrinth" : "campaign";
   // Wildwood runs are never persisted; only campaign and labyrinth are valid stored values.
   const labyrinthMap = contentSystemType === "labyrinth" ? normalizeLabyrinthMap(candidate.labyrinthMap) : null;
+  const activeCombat = normalizeActiveCombat(candidate.activeCombat, contentSystemType);
 
   return {
     characterId,
@@ -318,8 +375,14 @@ export function normalizeActiveRun(activeRun: unknown): ActiveRunData | null {
     destinationIndexInAct: candidate.destinationIndexInAct,
     completedDestinations: candidate.completedDestinations as string[],
     runTrinkets: candidate.runTrinkets as string[],
+    encounteredRunEnemyIds: Array.isArray(candidate.encounteredRunEnemyIds)
+      ? [...new Set(candidate.encounteredRunEnemyIds.filter((id): id is string => typeof id === "string"))]
+      : [],
     selectedDifficulty,
     contentSystemType,
     labyrinthMap,
+    labyrinthPendingNode:
+      contentSystemType === "labyrinth" ? normalizeLabyrinthPosition(candidate.labyrinthPendingNode) : null,
+    activeCombat,
   };
 }

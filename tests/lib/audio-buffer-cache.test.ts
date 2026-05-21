@@ -9,6 +9,7 @@ beforeEach(() => {
   audioState.sfxVolume = 0.35;
   audioState.musicVolume = 0.0875;
   audioState.masterVolume = 1;
+  audioState.audioUnlocked = false;
 });
 
 afterEach(() => {
@@ -43,16 +44,20 @@ describe("getAudioContext", () => {
 });
 
 describe("resumeAudioContext", () => {
-  it("resumes suspended context", () => {
-    const resume = vi.fn();
+  it("resumes suspended context", async () => {
+    const resume = vi.fn(() => Promise.resolve());
     const mockCtx = { state: "suspended", resume } as Partial<AudioContext>;
     audioState.context = mockCtx;
+    audioState.audioUnlocked = false;
     resumeAudioContext();
     expect(resume).toHaveBeenCalledOnce();
+    // audioUnlocked should be set after the resume promise resolves
+    await Promise.resolve();
+    expect(audioState.audioUnlocked).toBe(true);
   });
 
   it("does not resume running context", () => {
-    const resume = vi.fn();
+    const resume = vi.fn(() => Promise.resolve());
     const mockCtx = { state: "running", resume } as Partial<AudioContext>;
     audioState.context = mockCtx;
     resumeAudioContext();
@@ -76,6 +81,14 @@ describe("loadSoundBuffer", () => {
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve({ ok: false })));
     const result = await loadSoundBuffer("missing.ogg");
     expect(result).toBeNull();
+  });
+
+  it("retries after a failed load", async () => {
+    const fetchMock = vi.fn(() => Promise.resolve({ ok: false }));
+    vi.stubGlobal("fetch", fetchMock);
+    await loadSoundBuffer("retry-missing.ogg");
+    await loadSoundBuffer("retry-missing.ogg");
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it("returns null on decode failure", async () => {

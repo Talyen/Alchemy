@@ -24,6 +24,16 @@ describe("setMuted", () => {
     setMuted(true);
     expect(el.muted).toBe(true);
   });
+
+  it("silences and restores the Web Audio master gain", () => {
+    const gain = { value: 0.3 };
+    audioState.masterGain = { gain } as unknown as GainNode;
+    audioState.masterVolume = 0.5;
+    setMuted(true);
+    expect(gain.value).toBe(0);
+    setMuted(false);
+    expect(gain.value).toBe(0.3 * 0.5);
+  });
 });
 
 describe("setSfxVolume", () => {
@@ -50,6 +60,14 @@ describe("setMasterVolume", () => {
     setMasterVolume(0.5);
     expect(audioState.masterVolume).toBe(0.5);
     expect(gain.value).toBe(0.3 * 0.5); // MASTER_GAIN * masterVolume
+  });
+
+  it("keeps masterGain silent while muted", () => {
+    const gain = { value: 0.3 };
+    audioState.masterGain = { gain } as unknown as GainNode;
+    audioState.muted = true;
+    setMasterVolume(0.5);
+    expect(gain.value).toBe(0);
   });
 
   it("updates current music volume", () => {

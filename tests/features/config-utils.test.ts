@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { getAvailableDestinations, getBossEnemy } from "@/features/alchemy/config";
+import { enemyBestiary } from "@/lib/game-data";
 
 describe("getAvailableDestinations", () => {
   it("never includes Boss Combat", () => {
@@ -72,5 +73,19 @@ describe("getBossEnemy", () => {
       const boss = getBossEnemy();
       expect(boss.enemyType).toBe("boss");
     }
+  });
+
+  it("prefers bosses not encountered this run", () => {
+    const bosses = enemyBestiary.filter((enemy) => enemy.enemyType === "boss");
+    const remaining = bosses[bosses.length - 1];
+    const encountered = bosses.slice(0, -1).map((enemy) => enemy.id);
+
+    expect(getBossEnemy(encountered).id).toBe(remaining.id);
+  });
+
+  it("falls back to the boss pool after all bosses were encountered", () => {
+    const bossIds = enemyBestiary.filter((enemy) => enemy.enemyType === "boss").map((enemy) => enemy.id);
+
+    expect(getBossEnemy(bossIds).enemyType).toBe("boss");
   });
 });

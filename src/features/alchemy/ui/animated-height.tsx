@@ -3,9 +3,11 @@
 // Used by alchemy UI where content changes size but should animate smoothly.
 import { useRef, useLayoutEffect, type ReactNode } from "react";
 
-const DURATION = 250;
-const EASE = "cubic-bezier(0.16, 1, 0.3, 1)";
-const MIN_HEIGHT_DELTA = 2;
+const ANIMATED_HEIGHT_CONFIG = {
+  durationMs: 250,
+  easing: "cubic-bezier(0.16, 1, 0.3, 1)",
+  minHeightDeltaPx: 2,
+} as const;
 
 export function AnimatedHeight({ children }: { children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -19,12 +21,17 @@ export function AnimatedHeight({ children }: { children: ReactNode }) {
 
     const newHeight = el.scrollHeight;
 
-    if (mounted.current && prevHeight.current > 0 && Math.abs(prevHeight.current - newHeight) > MIN_HEIGHT_DELTA) {
+    if (
+      mounted.current &&
+      prevHeight.current > 0 &&
+      Math.abs(prevHeight.current - newHeight) > ANIMATED_HEIGHT_CONFIG.minHeightDeltaPx
+    ) {
       el.style.overflow = "hidden";
       el.style.height = `${prevHeight.current}px`;
+      // Force the browser to commit the old height before transitioning to the new one.
       void el.scrollHeight;
 
-      el.style.transition = `height ${DURATION}ms ${EASE}`;
+      el.style.transition = `height ${ANIMATED_HEIGHT_CONFIG.durationMs}ms ${ANIMATED_HEIGHT_CONFIG.easing}`;
       el.style.height = `${newHeight}px`;
 
       const onEnd = (event: TransitionEvent) => {

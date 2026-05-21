@@ -14,6 +14,7 @@ import { useScreenStore } from "./stores/screen-store";
 import type { RunStateController } from "./use-run-state";
 import type { TalentStateController } from "./use-talent-state";
 import { useBattleController } from "./use-battle-controller";
+import { useBattleStore } from "./stores/battle-store";
 import { useShopController } from "./use-shop-controller";
 import { useRunNavigation } from "./use-run-navigation";
 import { useLabyrinthController } from "./use-labyrinth-controller";
@@ -53,10 +54,20 @@ export function useAlchemyRunController({
   // ============ Zustand Stores ============
   const [storesInitialized] = useState(() => {
     useRunStore.getState().initialize(initialActiveRun, initialTalentXP, initialUnlockedTalents);
+    useBattleStore.getState().initializeActiveBattle(initialActiveRun?.activeCombat?.battleState ?? null);
     if (initialActiveRun) {
       useScreenStore.getState().setHasActiveRun(true);
       if (initialActiveRun.labyrinthMap) {
         useScreenStore.getState().setLabyrinthMap(initialActiveRun.labyrinthMap);
+      }
+      if (initialActiveRun.activeCombat) {
+        useScreenStore.getState().setActiveLabyrinthModifiers(initialActiveRun.activeCombat.activeLabyrinthModifiers);
+        useScreenStore
+          .getState()
+          .setActiveLabyrinthRewardModifiers(initialActiveRun.activeCombat.activeLabyrinthRewardModifiers);
+      }
+      if (initialActiveRun.labyrinthPendingNode) {
+        useScreenStore.getState().setActiveLabyrinthPendingNode(initialActiveRun.labyrinthPendingNode);
       }
     }
     return true;
@@ -74,6 +85,7 @@ export function useAlchemyRunController({
       destinationIndexInAct: s.destinationIndexInAct,
       completedDestinations: s.completedDestinations,
       runTrinkets: s.runTrinkets,
+      encounteredRunEnemyIds: s.encounteredRunEnemyIds,
       selectedDifficulty: s.selectedDifficulty,
       contentSystemType: s.contentSystemType,
     })),
@@ -89,6 +101,7 @@ export function useAlchemyRunController({
       setDestinationIndexInAct: s.setDestinationIndexInAct,
       setCompletedDestinations: s.setCompletedDestinations,
       setRunTrinkets: s.setRunTrinkets,
+      setEncounteredRunEnemyIds: s.setEncounteredRunEnemyIds,
       setSelectedDifficulty: s.setSelectedDifficulty,
       setContentSystemType: s.setContentSystemType,
       setCharacter: s.setCharacter,
@@ -119,6 +132,7 @@ export function useAlchemyRunController({
   // ============ Shared State ============
   const [screen, setScreen] = useState<Screen>("menu");
   const hasActiveRun = useScreenStore((s) => s.hasActiveRun);
+  const activeLabyrinthModifiers = useScreenStore((s) => s.activeLabyrinthModifiers);
   const activeLabyrinthRewardModifiers = useScreenStore((s) => s.activeLabyrinthRewardModifiers);
 
   // ============ Screen Navigation ============
@@ -217,6 +231,8 @@ export function useAlchemyRunController({
     onMarkDifficultyCompleted,
     completedDifficulties,
     labyrinthMap: labyrinth.labyrinthMap,
+    labyrinthPendingNode: labyrinth.pendingNode,
+    activeLabyrinthModifiers,
     activeLabyrinthRewardModifiers,
   });
 

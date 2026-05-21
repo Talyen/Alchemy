@@ -1,3 +1,6 @@
+// Shared page scaffolding for game screens.
+// Depends on text animation and class-name utilities.
+// Used by screens that need consistent header, description, and scroll layout.
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { TextAnimate } from "@/components/ui/text-animate";

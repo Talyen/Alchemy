@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { useBattleStore } from "@/features/alchemy/stores/battle-store";
+import { defaultBattleState } from "@/lib/battle";
 
 describe("battle-store initialization", () => {
   it("initializes battleState as a valid BattleState (not null)", () => {
@@ -39,5 +40,17 @@ describe("battle-store initialization", () => {
     const state = useBattleStore.getState().battleState;
     expect(getPlayerStatusChips(state)).toEqual([]);
     expect(getEnemyStatusChips(state)).toEqual([]);
+  });
+
+  it("hydrates a persisted active battle", () => {
+    const persisted = { ...defaultBattleState(), turn: 4, playerHealth: 9 };
+
+    useBattleStore.getState().initializeActiveBattle(persisted);
+
+    expect(useBattleStore.getState().hasActiveBattle).toBe(true);
+    expect(useBattleStore.getState().battleState.turn).toBe(4);
+    expect(useBattleStore.getState().battleState.playerHealth).toBe(9);
+
+    useBattleStore.getState().initializeActiveBattle(null);
   });
 });

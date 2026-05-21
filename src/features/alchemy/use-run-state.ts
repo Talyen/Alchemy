@@ -14,6 +14,7 @@ export type RunState = {
   destinationIndexInAct: number;
   completedDestinations: Destination[];
   runTrinkets: string[];
+  encounteredRunEnemyIds: string[];
   selectedDifficulty: DifficultyId | null;
   contentSystemType: ContentSystemId;
 };
@@ -30,6 +31,7 @@ export type RunStateController = RunState & {
   setDestinationIndexInAct: RunFieldSetter<number>;
   setCompletedDestinations: RunFieldSetter<Destination[]>;
   setRunTrinkets: RunFieldSetter<string[]>;
+  setEncounteredRunEnemyIds: RunFieldSetter<string[]>;
   setSelectedDifficulty: RunFieldSetter<DifficultyId | null>;
   setContentSystemType: RunFieldSetter<ContentSystemId>;
   setCharacter: (selectedId: CharacterId) => void;

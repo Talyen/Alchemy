@@ -8,17 +8,27 @@ Between runs, the **Homestead** lets the player spend **Materials** on permanent
 
 ```sh
 npm run dev              # Vite dev server
-npm run build            # tsc + vite build
+npm run dev:desktop      # Vite dev server + Electron shell
+npm run build            # tsc + vite build + format
+npm run build:desktop    # tsc + vite build in desktop mode
+npm run package:win      # Build unpacked Windows desktop app
+npm run dist:win         # Build Windows desktop installer
+npm run preview          # Preview production web build
 npm test                 # vitest (unit tests)
 npm run test:watch       # vitest in watch mode
 npm run test:coverage    # vitest with coverage
 npm run test:e2e         # Playwright tests
+npm run test:e2e:smoke   # Playwright boot smoke test
+npm run test:e2e:critical # Playwright critical flow subset
+npm run test:e2e:ui      # Playwright UI mode
+npm run balance:sim      # Balance simulator report
 npm run lint             # ESLint
 npm run lint:fix         # ESLint auto-fix
 npm run format           # Prettier write
 npm run format:check     # Prettier check
 npm run assets:optimize  # PNGs → webp
 npm run sounds:optimize  # sounds → OGG
+npm run music:optimize   # music optimization
 npm run release          # Auto-bump + changelog + tag (patch)
 npm run release:minor    # Force minor bump
 npm run release:major    # Force major bump
@@ -32,15 +42,20 @@ Add a new raw asset:
 Add a new raw art asset:
 1. Place art in `public/assets/card-art/` or `public/assets/templates/frames/`
 2. Add entry to `scripts/optimize-art.mjs`
-3. `npm run assets:optimize`
+3. `node scripts/optimize-art.mjs`
 
 ## Architecture
 
 - `src/lib/` — Pure game logic (no React): `battle/` (state machine, effects, draw), `content-systems/` (map & encounter generation), `homestead/` (between-run hub), `animation/` (particle systems), `talents.ts` (XP math), `audio.ts` + `audio-*.ts` (Web Audio buffer playback), `trinkets.ts`, `game-constants.ts` (all tuning knobs).
 - `src/features/alchemy/` — React UI. `use-alchemy-run-controller.ts` is the central orchestrator; `screens/` are pages, `ui/` are reusable widgets.
+- `src/features/alchemy/stores/` — Zustand stores for app, screen, run, battle, and homestead state.
+- `src/features/alchemy/storage/` — Save/load, persistence defaults, active-run storage, options, and migrations.
 - `src/lib/game-data/` — Cards, keywords, enemies. Barrel export at `src/lib/game-data.ts`.
+- `src/lib/validation/` — Zod schemas and migration validation for persisted saves.
 - `src/app/` — App-level bootstrapping: startup screen, save version checks, initial-load hook.
 - `src/components/` — Shared UI primitives (`button.tsx`, `select.tsx`, `progress.tsx`, etc.).
+- `desktop/` — Electron main/preload entry points for desktop builds.
+- `tests/` — Vitest unit/integration tests and Playwright e2e specs.
 - `@/` path alias → `src/`. Import game data through the barrel, not submodule paths.
 
 ## Key Conventions
@@ -53,8 +68,11 @@ Add a new raw art asset:
 - **All tuning values** in `src/lib/game-constants.ts` — no magic numbers.
 - **Rounding**: Battle math uses `Math.round()` — never `Math.floor()`. Enforced by ESLint `no-restricted-syntax` rule in battle files.
 - **State mutated only through defined state functions**, never directly.
-- **Comments**: Every function gets a "why" comment; every file gets a top-of-file summary of what it does and its dependencies.
-- **Commit messages**: Follow [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `refactor:`, etc.) — enforced by commitlint + lefthook locally, validated in CI. `standard-version` reads these to generate the changelog and bump the version automatically.
+- **Comments**: Files should have a top-of-file summary. Public or non-obvious functions should have a brief "why" comment; avoid comments that only restate the code.
+- **Persistence**: Treat save data as external API. When changing stored shape, update defaults, schemas, migrations, and legacy save fixtures/tests together.
+- **Randomness**: Prefer existing seeded/test helpers for generated content and random draws. Avoid tests that depend on lucky random outcomes.
+- **Card/data consistency**: When changing card effects, update descriptions and tests together. Keep game data imports through the barrel.
+- **Commit messages**: Follow [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `refactor:`, etc.) — enforced by commitlint + lefthook locally, validated in CI. `commit-and-tag-version` reads these to generate the changelog and bump the version automatically.
 
 ## Navigation Hints
 
@@ -64,10 +82,15 @@ Add a new raw art asset:
 | Card effects | `src/lib/game-data/cards.ts` |
 | Battle state shape | `src/lib/battle/` |
 | Run-level state | `src/features/alchemy/use-alchemy-run-controller.ts` |
+| Zustand stores | `src/features/alchemy/stores/` |
+| Save/load and migrations | `src/features/alchemy/storage/`, `src/lib/validation/` |
 | Sound behaviour | `src/lib/audio.ts` |
 | Talent maths | `src/lib/talents.ts` |
+| Desktop shell | `desktop/` |
 | UI screen | `src/features/alchemy/screens/` |
 | Reusable widget | `src/features/alchemy/ui/` |
+| Unit/integration tests | `tests/**/*.test.ts` |
+| Playwright flows | `tests/**/*.spec.ts`, `tests/pages/` |
 | Homestead logic | `src/lib/homestead/` |
 | Map/encounter generation | `src/lib/content-systems/` |
 | Shared UI components | `src/components/` |
@@ -100,21 +123,33 @@ This is a fantasy roguelite deckbuilder. The interface must feel like a polished
 
 - **Shell is PowerShell**: chain with `;` not `&&`; double quotes for interpolation, single for verbatim.
 - **Vite base path**: `/` (Vercel default); `npm run dev` opens browser automatically.
-- **Assets**: `prebuild`/`predev` auto-run optimize scripts.
+- **Build side effect**: `npm run build` runs `npm run format`, so it can modify `src/**/*.{ts,tsx,css}`.
+- **Assets**: `prebuild`/`predev` auto-run asset, sound, and music optimize scripts.
+- **Desktop**: Web builds use Vite directly; desktop builds use Electron entry points in `desktop/` and Vite desktop mode.
+
+## Verification Strategy
+
+- Battle logic: run focused Vitest files under `tests/lib/battle/`, then broader `npm test` when changes are cross-cutting.
+- Card data/effects: run game-data tests plus `tests/lib/game-data/descriptions-match-effects.test.ts` and relevant battle tests.
+- Save, storage, or schema changes: run storage, migration, validation, active-run, and legacy save fixture tests.
+- UI flow changes: run the relevant Playwright spec; use `npm run test:e2e:critical` for broad flow confidence.
+- Store/controller changes: run matching `tests/features/stores/`, navigation flow tests, and affected Playwright specs.
+- Desktop changes: run `npm run build:desktop` or a narrower desktop package command when packaging behaviour is affected.
 
 ## Test Gotchas
 
 - `test.skip(true, "reason")` when a required card isn't in the random opening hand.
 - `startRun(page)`: navigates to `/`, clicks Play → Knight → Continue, waits for cards.
 - `playUntilVictory(page)`: loops up to 12 turns playing all playable cards.
+- Prefer deterministic setup helpers over relying on random opening hands or generated maps.
 
-## Skip These Files
+## Generated And Heavy Files
 
-`package-lock.json`, `Raw Assets/**`, `src/assets/optimized/**`, `Music/**`, `dist/**`, `.vite/**`
+Avoid editing or re-reading unless directly relevant: `package-lock.json`, `Raw Assets/**`, `src/assets/optimized/**`, `Music/**`, `dist/**`, `.vite/**`, `release-desktop/**`, `coverage/**`, `reports/**`.
 
-## Stable Files (don't re-read within a session)
+## Large Stable Files
 
-`src/lib/game-constants.ts`, `src/lib/game-data/cards.ts`, `src/lib/game-data/keywords.ts`, `src/lib/game-data/assets.ts`, `vite.config.ts`, `tsconfig.json`, `playwright.config.ts`
+These are central and may be large. Avoid repeated reads within a session unless they are relevant to the task: `src/lib/game-constants.ts`, `src/lib/game-data/cards.ts`, `src/lib/game-data/keywords.ts`, `src/lib/game-data/assets.ts`, `vite.config.ts`, `tsconfig.json`, `playwright.config.ts`.
 
 ## Domain Glossary
 

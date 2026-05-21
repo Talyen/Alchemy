@@ -1,4 +1,6 @@
 // Player hand fan for battle cards.
+// Depends on battle/screen stores, card cost logic, and hand layout constants.
+// Used by BattleBottomBar to render playable cards and animation refs.
 import type { CSSProperties } from "react";
 
 import {
@@ -48,6 +50,7 @@ export function BattleHand({
       {battleState.hand.map((card, index) => {
         const hoverId = getHoverId("hand", `${card.id}-${card.uid}`);
         const cardKey = `${card.id}-${card.uid}`;
+        // This key is the shared identity for refs, hidden transfer state, and reveal animations.
         const isHovered = hoveredCardId === hoverId;
         const offset = index - (battleState.hand.length - 1) / 2;
         const isShimmering = shimmerState?.cardId === hoverId;

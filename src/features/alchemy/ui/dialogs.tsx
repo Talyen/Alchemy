@@ -1,5 +1,12 @@
+// Modal confirmation overlays for destructive or blocking game actions.
+// Depends on the shared Button primitive and Lucide warning icon.
+// Used by menus and screens that need explicit player confirmation.
 import { AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+
+const DIALOG_CONFIG = {
+  dangerTone: "danger",
+} as const;
 
 export function ConfirmationDialog({
   title,
@@ -34,7 +41,7 @@ export function ConfirmationDialog({
           <Button variant="outline" onClick={onCancel}>
             {cancelLabel}
           </Button>
-          <Button variant={tone === "danger" ? "destructive" : "default"} onClick={onConfirm}>
+          <Button variant={tone === DIALOG_CONFIG.dangerTone ? "destructive" : "default"} onClick={onConfirm}>
             {confirmLabel}
           </Button>
         </div>

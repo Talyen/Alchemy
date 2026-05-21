@@ -42,7 +42,6 @@ describe("card descriptions vs effects", () => {
     (_id, title) => {
       const card = cardLibrary.find((c) => c.title === title)!;
       const { effects, descriptionLines } = card;
-      const consumeLine = "consume" in card && card.consume === true;
 
       const dealLines = countLinesStartingWith(descriptionLines, "Deal ");
       const damageEffects = countByKind(effects, "damage");
@@ -74,9 +73,6 @@ describe("card descriptions vs effects", () => {
 
       const buffCompanionLines = countLinesStartingWith(descriptionLines, "Increase ");
       const buffCompanionEffects = countByKind(effects, "buff-companion");
-
-      const selfDamageLines = countLinesStartingWith(descriptionLines, "Deal ") - dealLines;
-      const selfDamageEffects = countByKind(effects, "self-damage");
 
       if (!hasKind(effects, "equal-to-block") && !hasKind(effects, "equal-to-armor") && !hasKind(effects, "self-damage")) {
         expect(dealLines).toBe(damageEffects);

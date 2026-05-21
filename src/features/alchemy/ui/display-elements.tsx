@@ -1,6 +1,10 @@
+// Small display primitives for gold and percentage bars.
+// Depends on Lucide icons, shared progress math, and class-name utilities.
+// Used by shop, rewards, and battle-adjacent screens.
 import type { CSSProperties } from "react";
-import { cn } from "@/lib/utils";
 import { Coins } from "lucide-react";
+import { clampProgressPercent } from "@/lib/ui/progress";
+import { cn } from "@/lib/utils";
 
 export function ProgressBar({
   value,
@@ -13,9 +17,11 @@ export function ProgressBar({
   className?: string;
   style?: CSSProperties;
 }) {
+  const safeValue = clampProgressPercent(value);
+
   return (
     <div className={cn("h-1 w-full overflow-hidden rounded-full bg-muted", className)}>
-      <div className={cn("h-full rounded-full", color)} style={{ width: `${value}%`, ...style }} />
+      <div className={cn("h-full rounded-full", color)} style={{ width: `${safeValue}%`, ...style }} />
     </div>
   );
 }

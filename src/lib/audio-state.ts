@@ -10,6 +10,7 @@ type AudioRuntimeState = {
   sfxVolume: number;
   musicVolume: number;
   masterVolume: number;
+  audioUnlocked: boolean;
   currentMusic: HTMLAudioElement | null;
   currentMusicKey: string | null;
   lastPlayedAt: Map<string, number>;
@@ -22,6 +23,7 @@ export const audioState: AudioRuntimeState = {
   sfxVolume: DEFAULT_SFX_VOLUME,
   musicVolume: DEFAULT_MUSIC_VOLUME,
   masterVolume: 1,
+  audioUnlocked: false,
   currentMusic: null,
   currentMusicKey: null,
   lastPlayedAt: new Map(),

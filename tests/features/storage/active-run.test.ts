@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { normalizeActiveRun } from "@/features/alchemy/storage/active-run";
+import { defaultBattleState } from "@/lib/battle";
 
 function makeRunCandidate(overrides: Record<string, unknown> = {}): Record<string, unknown> {
   return {
@@ -101,7 +102,16 @@ describe("normalizeActiveRun", () => {
     expect(result!.currentAct).toBe(1);
     expect(result!.contentSystemType).toBe("campaign");
     expect(result!.selectedDifficulty).toBe("difficulty-1");
+    expect(result!.encounteredRunEnemyIds).toEqual([]);
     expect(result!.labyrinthMap).toBeNull();
+    expect(result!.activeCombat).toBeNull();
+  });
+
+  it("normalizes encountered run enemy IDs", () => {
+    const result = normalizeActiveRun(makeRunCandidate({ encounteredRunEnemyIds: ["goblin", "goblin", 7] }));
+
+    expect(result).not.toBeNull();
+    expect(result!.encounteredRunEnemyIds).toEqual(["goblin"]);
   });
 
   it("uses class starting deck when runDeck matches legacy starter deck IDs", () => {
@@ -165,6 +175,21 @@ describe("normalizeActiveRun", () => {
   it("sets labyrinth type for labyrinth runs", () => {
     const result = normalizeActiveRun(makeRunCandidate({ contentSystemType: "labyrinth" }));
     expect(result!.contentSystemType).toBe("labyrinth");
+  });
+
+  it("normalizes valid active combat data", () => {
+    const battleState = { ...defaultBattleState(), turn: 2, playerHealth: 11 };
+    const result = normalizeActiveRun(makeRunCandidate({ activeCombat: { battleState } }));
+
+    expect(result!.activeCombat?.battleState.turn).toBe(2);
+    expect(result!.activeCombat?.battleState.playerHealth).toBe(11);
+    expect(result!.labyrinthPendingNode).toBeNull();
+  });
+
+  it("drops invalid active combat data", () => {
+    const result = normalizeActiveRun(makeRunCandidate({ activeCombat: { battleState: { turn: 2 } } }));
+
+    expect(result!.activeCombat).toBeNull();
   });
 });
 
@@ -261,6 +286,23 @@ describe("normalizeActiveRun with labyrinth map", () => {
     expect(result).not.toBeNull();
     expect(result!.labyrinthMap).not.toBeNull();
     expect(result!.labyrinthMap!.grid[0][0]!.modifiers).toEqual([]);
+  });
+
+  it("normalizes labyrinth combat pending node and modifiers", () => {
+    const result = normalizeActiveRun(makeRunCandidate({
+      contentSystemType: "labyrinth",
+      labyrinthMap: { rows: 1, cols: 2, currentNode: { row: 0, col: 0 }, grid: valid1x2Grid },
+      labyrinthPendingNode: { row: 0, col: 1 },
+      activeCombat: {
+        battleState: defaultBattleState(),
+        activeLabyrinthModifiers: ["armored", "unknown"],
+        activeLabyrinthRewardModifiers: ["generous"],
+      },
+    }));
+
+    expect(result!.labyrinthPendingNode).toEqual({ row: 0, col: 1 });
+    expect(result!.activeCombat?.activeLabyrinthModifiers).toEqual(["armored"]);
+    expect(result!.activeCombat?.activeLabyrinthRewardModifiers).toEqual(["generous"]);
   });
 });
 

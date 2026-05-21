@@ -21,6 +21,7 @@ import { mysteryPool } from "@/features/alchemy/mystery-events";
 import type { CorruptionResult } from "@/features/alchemy/corruption";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { CharacterId } from "@/lib/game-data";
+import type { LabyrinthNodePosition } from "@/features/alchemy/run/types";
 
 type ShopState = {
   cards: BattleCard[];
@@ -52,6 +53,7 @@ type ScreenStore = {
   hasActiveRun: boolean;
   activeLabyrinthModifiers: LabyrinthModifierKind[];
   activeLabyrinthRewardModifiers: LabyrinthModifierKind[];
+  activeLabyrinthPendingNode: LabyrinthNodePosition | null;
   rewardState: RewardState;
   companionRewardCards: BattleCard[] | null;
   runEndMaterials: MaterialInventory;
@@ -69,6 +71,7 @@ type ScreenStore = {
   setHasActiveRun: (active: boolean) => void;
   setActiveLabyrinthModifiers: (modifiers: LabyrinthModifierKind[]) => void;
   setActiveLabyrinthRewardModifiers: (modifiers: LabyrinthModifierKind[]) => void;
+  setActiveLabyrinthPendingNode: (node: LabyrinthNodePosition | null) => void;
   setRewardState: Setter<RewardState>;
   setCompanionRewardCards: (cards: BattleCard[] | null) => void;
   setRunEndMaterials: (materials: MaterialInventory) => void;
@@ -96,6 +99,7 @@ export const useScreenStore = create<ScreenStore>()((set) => ({
   hasActiveRun: false,
   activeLabyrinthModifiers: [],
   activeLabyrinthRewardModifiers: [],
+  activeLabyrinthPendingNode: null,
   rewardState: createEmptyRewardState(),
   companionRewardCards: null,
   runEndMaterials: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 },
@@ -113,6 +117,7 @@ export const useScreenStore = create<ScreenStore>()((set) => ({
   setHasActiveRun: (active) => set({ hasActiveRun: active }),
   setActiveLabyrinthModifiers: (modifiers) => set({ activeLabyrinthModifiers: modifiers }),
   setActiveLabyrinthRewardModifiers: (modifiers) => set({ activeLabyrinthRewardModifiers: modifiers }),
+  setActiveLabyrinthPendingNode: (node) => set({ activeLabyrinthPendingNode: node }),
   setRewardState: (action) =>
     set((s) => ({ rewardState: typeof action === "function" ? action(s.rewardState) : action })),
   setCompanionRewardCards: (cards) => set({ companionRewardCards: cards }),

@@ -14,6 +14,7 @@ function getCombatTextDisplayText(event: CombatTextEvent): string {
 
 type BattleStore = {
   battleState: BattleState;
+  battleStartState: BattleState | null;
   hasActiveBattle: boolean;
   cardGhosts: CardGhost[];
   floatingCombatTexts: FloatingCombatText[];
@@ -24,7 +25,9 @@ type BattleStore = {
   revealedCardKeys: Set<string>;
 
   setBattleState: (state: BattleState | ((prev: BattleState) => BattleState)) => void;
+  setBattleStartState: (state: BattleState | null) => void;
   setHasActiveBattle: (active: boolean | ((prev: boolean) => boolean)) => void;
+  initializeActiveBattle: (battleState: BattleState | null) => void;
   spawnCardGhost: (ghost: Omit<CardGhost, "id">) => void;
   removeCardGhost: (id: string) => void;
   clearCardGhosts: () => void;
@@ -45,6 +48,7 @@ const combatTextLaneDelayMs = COMBAT_TEXT_LANE_DELAY_MS;
 
 export const useBattleStore = create<BattleStore>()((set, get) => ({
   battleState: defaultBattleState(),
+  battleStartState: null,
   hasActiveBattle: false,
   cardGhosts: [],
   floatingCombatTexts: [],
@@ -57,8 +61,17 @@ export const useBattleStore = create<BattleStore>()((set, get) => ({
   setBattleState: (action) =>
     set((s) => ({ battleState: typeof action === "function" ? action(s.battleState) : action })),
 
+  setBattleStartState: (state) => set({ battleStartState: state }),
+
   setHasActiveBattle: (active) =>
     set((s) => ({ hasActiveBattle: typeof active === "function" ? active(s.hasActiveBattle) : active })),
+
+  initializeActiveBattle: (battleState) =>
+    set({
+      battleState: battleState ?? defaultBattleState(),
+      battleStartState: battleState,
+      hasActiveBattle: battleState !== null,
+    }),
 
   spawnCardGhost: (ghost) => {
     const id = `${performance.now()}-${Math.random()}`;

@@ -1,6 +1,15 @@
+// Navigation controls for pagination and the in-game menu overlay.
+// Depends on shared Button styling, Lucide icons, and direct viewport anchoring.
+// Used by collection-style grids and battle/menu screens.
 import { BookOpen, ChevronLeft, ChevronRight, Cog, House, Swords, TreePine, WandSparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+
+const NAVIGATION_CONFIG = {
+  paginationMinHeightClass: "min-h-[4.07cqh]",
+  anchoredMenuOffsetPx: 8,
+  anchoredMenuWidthPx: 392,
+} as const;
 
 export function PaginationControls({
   page,
@@ -22,12 +31,22 @@ export function PaginationControls({
 
   if (totalPages <= 1) {
     return reserveSpace ? (
-      <div className={cn("mt-4 min-h-[4.07cqh] w-full", widthClass, className)} aria-hidden="true" />
+      <div
+        className={cn("mt-4 w-full", NAVIGATION_CONFIG.paginationMinHeightClass, widthClass, className)}
+        aria-hidden="true"
+      />
     ) : null;
   }
 
   return (
-    <div className={cn("mt-4 flex min-h-[4.07cqh] w-full items-center justify-center gap-4", widthClass, className)}>
+    <div
+      className={cn(
+        "mt-4 flex w-full items-center justify-center gap-4",
+        NAVIGATION_CONFIG.paginationMinHeightClass,
+        widthClass,
+        className,
+      )}
+    >
       <Button
         aria-label="Previous page"
         className={buttonClass}
@@ -154,14 +173,21 @@ export function GameMenu({
   );
 
   if (anchorRect) {
+    const offset = NAVIGATION_CONFIG.anchoredMenuOffsetPx;
     const anchorStyle =
       anchorPlacement === "down-right"
         ? {
-            // Right-align below anchor but clamp so the menu (~384px wide) doesn't overflow the left edge.
-            right: Math.min(window.innerWidth - anchorRect.right + 8, window.innerWidth - 392),
-            top: anchorRect.bottom + 8,
+            // Right-align below the anchor, but clamp so fixed positioning cannot push the menu off-screen.
+            right: Math.min(
+              window.innerWidth - anchorRect.right + offset,
+              window.innerWidth - NAVIGATION_CONFIG.anchoredMenuWidthPx,
+            ),
+            top: anchorRect.bottom + offset,
           }
-        : { right: window.innerWidth - anchorRect.right + 8, bottom: window.innerHeight - anchorRect.top + 8 };
+        : {
+            right: window.innerWidth - anchorRect.right + offset,
+            bottom: window.innerHeight - anchorRect.top + offset,
+          };
     return (
       <div className="absolute inset-0 z-[120]" onClick={onClose}>
         <div className="fixed z-[121]" style={anchorStyle}>

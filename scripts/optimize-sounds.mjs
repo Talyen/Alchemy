@@ -139,10 +139,12 @@ async function main() {
   await mkdir(outputDir, { recursive: true });
 
   const results = [];
+  let failed = false;
   for (const sound of sounds) {
     try {
       results.push(await optimizeSound(sound));
     } catch (error) {
+      failed = true;
       results.push(`FAILED ${sound.target}: ${error.message}`);
     }
   }
@@ -150,6 +152,9 @@ async function main() {
   console.log(`Processed ${results.length} sounds.`);
   for (const result of results) {
     console.log(`- ${result}`);
+  }
+  if (failed) {
+    process.exitCode = 1;
   }
 }
 
