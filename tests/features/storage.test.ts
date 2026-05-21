@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+﻿import { describe, expect, it } from "vitest";
 import {
   CURRENT_SAVE_SCHEMA_VERSION,
   CURRENT_CONTENT_VERSION,
@@ -9,7 +9,7 @@ import {
   UiScaleSchema,
   MaterialInventorySchema,
 } from "@/lib/validation";
-import { getRawSaveSchemaVersion, isUnsupportedFutureSaveData, migrateSaveDataToCurrent } from "@/features/alchemy/storage";
+import { getRawSaveSchemaVersion, isUnsupportedFutureSaveData, migrateSaveDataToCurrent } from "@/lib/validation";
 import { cardLibrary } from "@/lib/game-data";
 import { createSeededRng, generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
 import { legacyCampaignRunSave, legacyCorruptedCardRunSave, legacyLabyrinthRunSave } from "../fixtures/legacy-saves";
@@ -543,6 +543,15 @@ describe("SaveDataSchema", () => {
     expect(result.activeRun?.labyrinthMap?.grid[0]?.[4]?.type).toBe("entrance");
   });
 
+  it("loads the legacy labyrinth fixture with its map intact", () => {
+    const result = parseSave(legacyLabyrinthRunSave());
+
+    expect(result.activeRun?.contentSystemType).toBe("labyrinth");
+    expect(result.activeRun?.characterId).toBe("ranger");
+    expect(result.activeRun?.labyrinthMap?.currentNode).toEqual({ row: 0, col: 4 });
+    expect(result.activeRun?.labyrinthMap?.grid[0]?.[4]?.type).toBe("entrance");
+  });
+
   it("loads the legacy corrupted-card fixture without stale library-owned card fields", () => {
     const result = parseSave(legacyCorruptedCardRunSave());
     const card = result.activeRun?.runDeck[0];
@@ -573,7 +582,8 @@ describe("SaveDataSchema", () => {
 
     expect(result.musicVolume).toBe(0);
     expect(result.sfxVolume).toBe(100);
-    expect(result.masterVolume).toBe(100);
+    // masterVolume NaN falls back to DEFAULT_MASTER_VOLUME_PCT (50), not the old stale catch(100).
+    expect(result.masterVolume).toBe(50);
     expect(result.brightness).toBe(150);
   });
 

@@ -191,6 +191,26 @@ export const WISH_OVERLAY_Z_INDEX = 90; // Wish choices block all battle control
 // ============ Storage ============
 export const SAVE_KEY = "alchemy-save-v1"; // localStorage key. Version suffix enables migration if shape changes.
 
+// Default UI slider values (0–100 scale). Used by both defaults.ts (first-boot state) and
+// save-schemas.ts (.catch() fallbacks for corrupt saves) so the two always agree.
+export const DEFAULT_MUSIC_VOLUME_PCT = 50;
+export const DEFAULT_SFX_VOLUME_PCT = 50;
+export const DEFAULT_MASTER_VOLUME_PCT = 50;
+export const DEFAULT_BRIGHTNESS_PCT = 100;
+
+// The original Knight starter deck IDs from save schema v0. Stored here rather than inside
+// each validator so active-run.ts and save-schemas.ts share a single source of truth.
+export const LEGACY_STARTER_DECK_IDS = [
+  "slash",
+  "bash",
+  "block",
+  "anvil",
+  "plate-mail",
+  "apple",
+  "meteor",
+  "blessed-aegis",
+] as const;
+
 // ============ Enemy Trait Tuning ============
 export const TRAIT_FORGE_PER_TURN = 1; // Rusting-Carapace: forge gained each enemy turn.
 export const IRON_HIDE_ARMOR_PER_TURN = 1; // Iron-Hide: armor gained each enemy turn.
@@ -208,6 +228,14 @@ export const FALLBACK_ENEMY_ATTACK = 8; // Default attack for malformed bestiary
 // ============ Enemy Trait Damage Modifiers ============
 export const TRAIT_DAMAGE_WEAKNESS = 2; // Enemy trait weakness multiplier (double damage).
 export const TRAIT_DAMAGE_RESISTANCE = 0.5; // Enemy trait resistance multiplier (half damage).
+
+// ============ Battle Core Rules ============
+export const BATTLE_CONFIG = {
+  CC_IMMUNITY_DURATION: 2, // turns of status immunity after being Stunned or Frozen
+  BASE_CC_DURATION: 1, // base duration in turns for Stun/Freeze
+  ARMOR_DECAY_AMOUNT: 1, // armor lost when taking health damage
+  FORGE_DECAY_AMOUNT: 1, // forge consumed when playing physical attacks
+} as const;
 
 // ============ Status Tick Tuning ============
 export const POISON_DECAY_AMOUNT = 1; // Poison stack decreases by this each tick.

@@ -30,7 +30,7 @@ describe("SaveDataSchema", () => {
     const result = SaveDataSchema.safeParse(undefined);
     expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
     if (result.success) {
-      expect(result.data.musicVolume).toBe(35);
+      expect(result.data.musicVolume).toBe(50);
       expect(result.data.materialInventory.wood).toBe(0);
     }
   });
@@ -44,7 +44,7 @@ describe("SaveDataSchema", () => {
     });
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.musicVolume).toBe(35);
+      expect(result.data.musicVolume).toBe(50);
       expect(result.data.brightness).toBe(150);
       expect(result.data.uiScale).toBe("100");
       expect(result.data.displayMode).toBe("borderless-fullscreen");

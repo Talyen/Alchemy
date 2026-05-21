@@ -112,16 +112,18 @@ describe("normalizeStringList", () => {
     expect(result.discoveredCardIds).toEqual(["a", "b"]);
   });
 
-  it("falls back to defaultSaveData for non-array input", () => {
+  it("falls back to empty array for non-array input", () => {
     const result = normalizeSaveData({ discoveredCardIds: "bad" as unknown as string[] });
+    // Zod uses .catch([]) for invalid arrays — empty array is the safe fallback, not a seeded default.
     expect(Array.isArray(result.discoveredCardIds)).toBe(true);
-    expect(result.discoveredCardIds.length).toBeGreaterThan(0);
+    expect(result.discoveredCardIds).toEqual([]);
   });
 
-  it("uses default discoveredCardIds when field is missing", () => {
+  it("returns empty array when field is missing", () => {
     const result = normalizeSaveData({});
+    // discoveredCardIds is optional in raw save; Zod defaults to [] when absent.
     expect(Array.isArray(result.discoveredCardIds)).toBe(true);
-    expect(result.discoveredCardIds.length).toBeGreaterThan(0);
+    expect(result.discoveredCardIds).toEqual([]);
   });
 });
 

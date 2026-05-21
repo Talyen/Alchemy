@@ -1,5 +1,6 @@
 // Browser localStorage IO for alchemy save data.
-// Depends on the save key constant, save defaults, and Zod validation schemas.
+// Depends on: SAVE_KEY (game-constants), Zod validation schemas (lib/validation), save defaults.
+// Used by: use-app-save-state.ts (loadAlchemySaveState), App.tsx (loadAlchemySaveState).
 import { SAVE_KEY } from "@/lib/game-constants";
 
 import {
@@ -12,7 +13,6 @@ import {
 import type { SaveData } from "./types";
 import { defaultSaveData } from "./defaults";
 
-const storageKey = SAVE_KEY;
 let writesDisabledForSession = false;
 
 function readStorageItem(key: string): string | null {
@@ -67,11 +67,6 @@ export type SaveLoadState = {
   status: SaveLoadStatus;
 };
 
-// Loads and normalizes save data, falling back safely when localStorage is unavailable or corrupt.
-export function loadAlchemySaveData(): SaveData {
-  return loadAlchemySaveState().data;
-}
-
 // Loads save data plus status so the app can block unsupported newer saves before gameplay.
 export function loadAlchemySaveState(): SaveLoadState {
   if (typeof window === "undefined") {
@@ -79,7 +74,7 @@ export function loadAlchemySaveState(): SaveLoadState {
   }
 
   try {
-    const raw = readStorageItem(storageKey);
+    const raw = readStorageItem(SAVE_KEY);
     if (!raw) {
       return { data: defaultSaveData, status: { kind: "ok" } };
     }
@@ -132,7 +127,7 @@ export function saveAlchemySaveData(data: SaveData) {
   if (writesDisabledForSession) return;
 
   try {
-    const result = writeStorageItem(storageKey, JSON.stringify(data));
+    const result = writeStorageItem(SAVE_KEY, JSON.stringify(data));
     if (result.ok) return;
     logStorageFailure("Save data could not be written", result.error);
     return;
@@ -147,7 +142,7 @@ export function clearAlchemySaveData() {
     return;
   }
 
-  const result = removeStorageItem(storageKey);
+  const result = removeStorageItem(SAVE_KEY);
   if (result.ok) {
     writesDisabledForSession = false;
     return;

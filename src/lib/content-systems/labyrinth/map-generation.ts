@@ -1,10 +1,30 @@
-// Procedural map generation for the Labyrinth.
-// Produces a visible route-planning grid whose placed nodes form one connected route graph.
+/**
+ * Procedural map generator for Labyrinth mode using a seeded PRNG.
+ * Handles grid coordinate generation, node connectivity, traversal checks, and state transitions.
+ * Depends on: data.ts, modifiers.ts, src/lib/content-systems/types.ts
+ * Depended on by: use-labyrinth-controller.ts, screen-store.ts, tests
+ */
+
 import type { LabyrinthMap, LabyrinthNode, LabyrinthNodeType } from "../types";
 import { LABYRINTH_COLS, LABYRINTH_ROWS } from "./data";
 import { getEnemyModifiersForNodeType, getRewardModifiersForNodeType } from "./modifiers";
 
 type Point = { row: number; col: number };
+
+// Shared game design constants and grid geometry tokens
+const CONSTANTS = {
+  startCol: Math.floor(LABYRINTH_COLS / 2),
+  startRow: 0,
+  bossRow: LABYRINTH_ROWS - 1,
+  // Mulberry32 seeded PRNG parameters for deterministic generation
+  PRNG_ADDEND: 0x6d2b79f5,
+  PRNG_MULTIPLIER_1: 1,
+  PRNG_SHIFT_1: 15,
+  PRNG_SHIFT_2: 7,
+  PRNG_MULTIPLIER_2: 61,
+  PRNG_SHIFT_3: 14,
+  PRNG_DIVISOR: 4294967296,
+} as const;
 
 const LABYRINTH_MAP_CONFIG = {
   minBossPathNodes: 11,
@@ -75,46 +95,79 @@ function isInRowBand(point: Point, band: Readonly<{ min: number; max: number }>)
   return point.row >= band.min && point.row <= band.max;
 }
 
+/**
+ * Parameterized Fisher-Yates shuffle using the provided seeded/custom RNG.
+ * Used for deterministic shuffles in map generation and modifier selections.
+ */
+export function shuffleWithRng<T>(items: readonly T[], rng: () => number): T[] {
+  const result = [...items];
+  for (let index = result.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(rng() * (index + 1));
+    [result[index], result[swapIndex]] = [result[swapIndex], result[index]];
+  }
+  return result;
+}
+
 // Mulberry32 seeded PRNG — returns a function that produces deterministic
 // values in [0, 1) for a given integer seed. Used by tests for reproducible maps.
 export function createSeededRng(seed: number): () => number {
   let s = seed | 0;
   return () => {
-    s = (s + 0x6d2b79f5) | 0;
-    let t = Math.imul(s ^ (s >>> 15), 1 | s);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    s = (s + CONSTANTS.PRNG_ADDEND) | 0;
+    let t = Math.imul(s ^ (s >>> CONSTANTS.PRNG_SHIFT_1), CONSTANTS.PRNG_MULTIPLIER_1 | s);
+    t = (t + Math.imul(t ^ (t >>> CONSTANTS.PRNG_SHIFT_2), CONSTANTS.PRNG_MULTIPLIER_2 | t)) ^ t;
+    return ((t ^ (t >>> CONSTANTS.PRNG_SHIFT_3)) >>> 0) / CONSTANTS.PRNG_DIVISOR;
   };
 }
 
+function initializeEmptyGrid(): (LabyrinthNode | null)[][] {
+  return Array.from({ length: LABYRINTH_ROWS }, () => Array.from({ length: LABYRINTH_COLS }, () => null));
+}
+
+function filterPointsForBand(
+  points: Point[],
+  band: Readonly<{ min: number; max: number }>,
+  firstCombat: Point,
+): Point[] {
+  return points.filter((p) => !isStart(p) && !isBoss(p) && !samePoint(p, firstCombat) && isInRowBand(p, band));
+}
+
+function determineNodeType(
+  point: Point,
+  firstCombat: Point,
+  upperTypes: LabyrinthNodeType[],
+  lowerTypes: LabyrinthNodeType[],
+): LabyrinthNodeType {
+  if (isStart(point)) return "entrance";
+  if (isBoss(point)) return "boss";
+  if (samePoint(point, firstCombat)) return "combat";
+
+  const { upperRowBand } = LABYRINTH_MAP_CONFIG;
+  if (isInRowBand(point, upperRowBand)) {
+    return upperTypes.shift()!;
+  }
+  return lowerTypes.shift()!;
+}
+
+/**
+ * Procedural generation entrypoint. Creates a fully connected graph representing the Labyrinth.
+ * Coordinates are mapped to an 8x9 grid: row index [0..7] represents depth (0 is start, 7 is boss),
+ * and col index [0..8] represents horizontal paths (4 is the center column).
+ */
 export function generateLabyrinthMap(rng: () => number = Math.random): LabyrinthMap {
-  const grid: (LabyrinthNode | null)[][] = Array.from({ length: LABYRINTH_ROWS }, () =>
-    Array.from({ length: LABYRINTH_COLS }, () => null),
-  );
+  const grid = initializeEmptyGrid();
   const graph = generateRouteGraph(rng);
-  const firstCombat = { row: 1, col: Math.floor(LABYRINTH_COLS / 2) };
+  const firstCombat = { row: 1, col: CONSTANTS.startCol };
   const { upperRowBand, lowerRowBand } = LABYRINTH_MAP_CONFIG;
 
-  const upperPoints = graph.points.filter(
-    (p) => !isStart(p) && !isBoss(p) && !samePoint(p, firstCombat) && isInRowBand(p, upperRowBand),
-  );
-  const lowerPoints = graph.points.filter(
-    (p) => !isStart(p) && !isBoss(p) && !samePoint(p, firstCombat) && isInRowBand(p, lowerRowBand),
-  );
+  const upperPoints = filterPointsForBand(graph.points, upperRowBand, firstCombat);
+  const lowerPoints = filterPointsForBand(graph.points, lowerRowBand, firstCombat);
 
   const upperTypes = distributeNodeTypes(upperPoints.length, rng, upperRowBand.combatPct, upperRowBand.elitePct);
   const lowerTypes = distributeNodeTypes(lowerPoints.length, rng, lowerRowBand.combatPct, lowerRowBand.elitePct);
 
   graph.points.forEach((point) => {
-    const type = isStart(point)
-      ? "entrance"
-      : isBoss(point)
-        ? "boss"
-        : samePoint(point, firstCombat)
-          ? "combat"
-          : isInRowBand(point, upperRowBand)
-            ? upperTypes.shift()!
-            : lowerTypes.shift()!;
+    const type = determineNodeType(point, firstCombat, upperTypes, lowerTypes);
     grid[point.row][point.col] = makeNode(type, rng, isStart(point) ? "current" : "visible");
   });
 
@@ -131,17 +184,17 @@ export function generateLabyrinthMap(rng: () => number = Math.random): Labyrinth
 }
 
 function generateRouteGraph(rng: () => number): { points: Point[]; edges: { from: Point; to: Point }[] } {
-  const start: Point = { row: 0, col: Math.floor(LABYRINTH_COLS / 2) };
+  const start: Point = { row: CONSTANTS.startRow, col: CONSTANTS.startCol };
   const points: Point[] = [];
   const edges: { from: Point; to: Point }[] = [];
   const used = new Set<string>();
   const degree = new Map<string, number>();
-  const boss: Point = { row: LABYRINTH_ROWS - 1, col: start.col };
+  const boss: Point = { row: CONSTANTS.bossRow, col: start.col };
   const mainRoute = buildMainRoute(start, boss);
 
   addPath(points, edges, used, degree, mainRoute);
 
-  for (const detour of shuffleArray(LABYRINTH_MAP_CONFIG.detourPaths, rng)) {
+  for (const detour of shuffleWithRng(LABYRINTH_MAP_CONFIG.detourPaths, rng)) {
     if (detour.some((point) => !used.has(keyOf(point)) && !isInBounds(point))) continue;
     if (!canAddPath(detour, used, degree)) continue;
     addPath(points, edges, used, degree, detour);
@@ -199,7 +252,12 @@ function canAddPath(path: readonly Point[], used: Set<string>, degree: Map<strin
   return true;
 }
 
-function distributeNodeTypes(count: number, rng: () => number, combatPct = 0.45, elitePct = 0.25): LabyrinthNodeType[] {
+function calculateNodeTypeCounts(
+  count: number,
+  rng: () => number,
+  combatPct: number,
+  elitePct: number,
+): Record<Exclude<LabyrinthNodeType, "entrance" | "boss">, number> {
   const counts: Record<Exclude<LabyrinthNodeType, "entrance" | "boss">, number> = {
     combat: Math.max(1, Math.round(count * combatPct)),
     elite: Math.max(1, Math.round(count * elitePct)),
@@ -216,26 +274,31 @@ function distributeNodeTypes(count: number, rng: () => number, combatPct = 0.45,
   ];
   let assigned = counts.combat + counts.elite;
   let supportIndex = Math.floor(rng() * supportTypes.length);
+
   while (assigned < count) {
     counts[supportTypes[supportIndex % supportTypes.length]] += 1;
     supportIndex += 1;
     assigned += 1;
   }
   while (assigned > count) {
-    if (counts.combat > counts.elite && counts.combat > 1) counts.combat -= 1;
-    else if (counts.elite > 1) counts.elite -= 1;
-    else break;
+    if (counts.combat > counts.elite && counts.combat > 1) {
+      counts.combat -= 1;
+    } else if (counts.elite > 1) {
+      counts.elite -= 1;
+    } else {
+      break;
+    }
     assigned -= 1;
   }
+  return counts;
+}
 
+function distributeNodeTypes(count: number, rng: () => number, combatPct = 0.45, elitePct = 0.25): LabyrinthNodeType[] {
+  const counts = calculateNodeTypeCounts(count, rng, combatPct, elitePct);
   const pool = Object.entries(counts).flatMap(([type, amount]) =>
     Array.from({ length: amount }, () => type as LabyrinthNodeType),
   );
-  for (let index = pool.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.floor(rng() * (index + 1));
-    [pool[index], pool[swapIndex]] = [pool[swapIndex], pool[index]];
-  }
-  return pool;
+  return shuffleWithRng(pool, rng);
 }
 
 function makeNode(type: LabyrinthNodeType, rng: () => number, state: LabyrinthNode["state"]): LabyrinthNode {
@@ -277,21 +340,12 @@ function addEdge(edges: { from: Point; to: Point }[], degree: Map<string, number
   degree.set(toKey, (degree.get(toKey) ?? 0) + 1);
 }
 
-function shuffleArray<T>(items: readonly T[], rng: () => number) {
-  const result = [...items];
-  for (let index = result.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.floor(rng() * (index + 1));
-    [result[index], result[swapIndex]] = [result[swapIndex], result[index]];
-  }
-  return result;
-}
-
 function isStart(point: Point) {
-  return point.row === 0 && point.col === Math.floor(LABYRINTH_COLS / 2);
+  return point.row === CONSTANTS.startRow && point.col === CONSTANTS.startCol;
 }
 
 function isBoss(point: Point) {
-  return point.row === LABYRINTH_ROWS - 1 && point.col === Math.floor(LABYRINTH_COLS / 2);
+  return point.row === CONSTANTS.bossRow && point.col === CONSTANTS.startCol;
 }
 
 function samePoint(a: Point, b: Point) {
@@ -331,8 +385,18 @@ function keyOf(point: Point) {
   return `${point.row},${point.col}`;
 }
 
-export function revealConnected(_map: LabyrinthMap): void {
-  // Labyrinth maps are fully visible from the start for route planning.
+/**
+ * Determines whether a node can be entered from the current node.
+ * Connection must exist, and the target node must be in a 'visible' state.
+ */
+export function canEnterLabyrinthNode(map: LabyrinthMap, row: number, col: number): boolean {
+  const node = map.grid[row]?.[col];
+  if (!node) return false;
+  const current = map.grid[map.currentNode.row]?.[map.currentNode.col];
+  const connectedToCurrent = Boolean(
+    current?.connections.some((connection) => connection.row === row && connection.col === col),
+  );
+  return node.state === "visible" && connectedToCurrent;
 }
 
 export function setCurrentNode(map: LabyrinthMap, row: number, col: number): void {
@@ -357,14 +421,44 @@ export function withCurrentNode(map: LabyrinthMap, row: number, col: number): La
   return next;
 }
 
+/**
+ * Returns a new map state with the pending node marked as failed,
+ * resetting the current position back to the entrance node.
+ */
+export function withFailedNode(map: LabyrinthMap, pending: { row: number; col: number }): LabyrinthMap {
+  const next: LabyrinthMap = {
+    ...map,
+    grid: map.grid.map((r) => r.map((n) => (n ? { ...n, connections: [...n.connections] } : n))),
+  };
+  for (const row of next.grid) {
+    for (const node of row) {
+      if (node?.state === "current") {
+        node.state = "cleared";
+      }
+    }
+  }
+  const failed = next.grid[pending.row]?.[pending.col];
+  if (failed) {
+    failed.state = "failed";
+  }
+  const startCol = CONSTANTS.startCol;
+  const start = next.grid[CONSTANTS.startRow]?.[startCol];
+  if (start && start.state !== "failed") {
+    start.state = "current";
+    next.currentNode = { row: CONSTANTS.startRow, col: startCol };
+  }
+  return next;
+}
+
 export function failNode(map: LabyrinthMap, row: number, col: number): void {
   const node = map.grid[row]?.[col];
   if (node && node.state === "current") {
     node.state = "failed";
   }
-  const start = map.grid[0]?.[Math.floor(LABYRINTH_COLS / 2)];
+  const startCol = CONSTANTS.startCol;
+  const start = map.grid[CONSTANTS.startRow]?.[startCol];
   if (start && start.state !== "failed") {
     start.state = "current";
-    map.currentNode = { row: 0, col: Math.floor(LABYRINTH_COLS / 2) };
+    map.currentNode = { row: CONSTANTS.startRow, col: startCol };
   }
 }

@@ -1,5 +1,6 @@
-// Shared rendering for mystery event effects — used in both the choice tooltip
-// and the post-choice reward screen so they can never differ.
+// Renders consistent badge indicators and text descriptions for mystery effects.
+// Depends on utility libraries, Lucide icons, homestead material maps, and keyword definitions.
+// Consumed by tooltip builders and outcome summary screens.
 import { Coins } from "lucide-react";
 import { keywordDefinitions } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
@@ -8,7 +9,11 @@ import { matIconMap, matPillStyle, matTextColor } from "./material-icons";
 import type { MysteryEffect } from "../mystery-events";
 
 const goldDef = keywordDefinitions.gold;
-const manaDef = keywordDefinitions.mana;
+
+// Constants grouped under a named configuration object.
+const CONSTANTS = {
+  PERCENTAGE_MULTIPLIER: 100,
+};
 
 /** Compact rendering of a single mystery effect — used in both tooltip and reward screen. */
 export function MysteryEffectBadge({
@@ -29,6 +34,7 @@ export function MysteryEffectBadge({
         <span
           className={cn(
             "inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold",
+            // Appends "/15" as a Tailwind opacity selector modifier to create a translucent background pill.
             goldDef.colorClass.replace("text-", "bg-") + "/15",
             goldDef.colorClass,
           )}
@@ -61,7 +67,9 @@ export function MysteryEffectBadge({
           ) : (
             <>
               Restore {effect.amount} <span className={healthDef?.colorClass}>Health</span>
-              {effect.chance !== undefined ? ` (${Math.round(effect.chance * 100)}% chance)` : ""}
+              {effect.chance !== undefined
+                ? ` (${Math.round(effect.chance * CONSTANTS.PERCENTAGE_MULTIPLIER)}% chance)`
+                : ""}
             </>
           )}
         </span>
@@ -70,12 +78,6 @@ export function MysteryEffectBadge({
     case "damageHealth":
       return (
         <span className="font-semibold text-red-400">{tooltip ? "Take damage" : `Take ${effect.amount} damage`}</span>
-      );
-    case "gainMaxMana":
-      return (
-        <span className={cn("font-semibold", manaDef.colorClass)}>
-          {tooltip ? "Mana Crystal" : `Gain +${effect.amount} Mana Crystal${effect.amount > 1 ? "s" : ""}`}
-        </span>
       );
     case "gainXP": {
       const def = keywordDefinitions[effect.keyword];

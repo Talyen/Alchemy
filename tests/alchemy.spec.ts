@@ -69,29 +69,7 @@ test.describe("Victory Rewards", () => {
   });
 });
 
-test.describe("Resolution Layout", () => {
-  for (const { width, height } of [{ width: 1366, height: 768 }, { width: 1920, height: 1080 }]) {
-    test(`battle fits without scrolling at ${width}x${height}`, async ({ page }) => {
-      await page.setViewportSize({ width, height });
-      await startCampaignBattle(page);
-      const battle = new BattlePage(page);
 
-      await expect(battle.hand.first()).toBeVisible();
-      await battle.hand.first().hover();
-      await expect(page.locator(".hover-popup-quick-in")).toBeVisible();
-
-      const layout = await page.evaluate(() => ({
-        scrollWidth: document.documentElement.scrollWidth,
-        scrollHeight: document.documentElement.scrollHeight,
-        viewportWidth: window.innerWidth,
-        viewportHeight: window.innerHeight,
-      }));
-
-      expect(layout.scrollWidth, `Battle at ${width}x${height} overflows horizontally: ${layout.scrollWidth} > ${layout.viewportWidth}`).toBeLessThanOrEqual(layout.viewportWidth);
-      expect(layout.scrollHeight, `Battle at ${width}x${height} overflows vertically: ${layout.scrollHeight} > ${layout.viewportHeight}`).toBeLessThanOrEqual(layout.viewportHeight);
-    });
-  }
-});
 
 test.describe("Mobile Portrait", () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });

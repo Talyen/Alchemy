@@ -16,6 +16,7 @@ import {
   POISON_DECAY_AMOUNT,
   POISON_GAIN_AMOUNT,
   STUN_THRESHOLD_FRACTION,
+  BATTLE_CONFIG,
 } from "../game-constants";
 
 // ----- Enemy DoT ticks -----
@@ -27,7 +28,7 @@ export function decayHalvedStatus(value: number) {
 
 function decayEnemyArmorAfterDamage(state: BattleState, damage: number) {
   if (damage <= 0 || state.enemyArmor <= 0) return state;
-  return { ...state, enemyArmor: state.enemyArmor - 1 };
+  return { ...state, enemyArmor: state.enemyArmor - BATTLE_CONFIG.ARMOR_DECAY_AMOUNT };
 }
 
 function tickBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
@@ -53,6 +54,18 @@ function tickBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
   return decayEnemyArmorAfterDamage(nextState, finalDamage);
 }
 
+function applyParasiticBloomLeech(state: BattleState, damage: number, combatTexts: CombatTextEvent[]): BattleState {
+  if (
+    state.trinketEffects.parasiticBloomLeechChance > 0 &&
+    Math.random() * PERCENT_DENOMINATOR < state.trinketEffects.parasiticBloomLeechChance
+  ) {
+    const nextState = applyPlayerHealing(state, damage);
+    mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: damage });
+    return nextState;
+  }
+  return state;
+}
+
 function tickPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
   const damage = state.enemyStatuses.poison;
   if (damage <= 0) return state;
@@ -74,13 +87,7 @@ function tickPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
     enemyStatuses: { ...state.enemyStatuses, poison: nextPoison },
   };
 
-  if (
-    state.trinketEffects.parasiticBloomLeechChance > 0 &&
-    Math.random() * PERCENT_DENOMINATOR < state.trinketEffects.parasiticBloomLeechChance
-  ) {
-    nextState = applyPlayerHealing(nextState, finalDamage);
-    mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: finalDamage });
-  }
+  nextState = applyParasiticBloomLeech(nextState, finalDamage, combatTexts);
 
   return decayEnemyArmorAfterDamage(nextState, finalDamage);
 }
@@ -118,7 +125,7 @@ function decayArmorAfterHarmfulStatusDamage(state: BattleState, damage: number) 
     ...state,
     playerStatuses: {
       ...state.playerStatuses,
-      armor: state.playerStatuses.armor - 1,
+      armor: state.playerStatuses.armor - BATTLE_CONFIG.ARMOR_DECAY_AMOUNT,
     },
   };
 }
@@ -182,8 +189,8 @@ function processPlayerStunTrigger(state: BattleState, combatTexts: CombatTextEve
   return {
     ...state,
     playerStatuses: { ...state.playerStatuses, stun: 0 },
-    playerStunSkipTurns: state.playerStunSkipTurns + 1,
-    playerCCCooldown: 2,
+    playerStunSkipTurns: state.playerStunSkipTurns + BATTLE_CONFIG.BASE_CC_DURATION,
+    playerCCCooldown: BATTLE_CONFIG.CC_IMMUNITY_DURATION,
   };
 }
 
@@ -203,8 +210,8 @@ function processPlayerFreezeTrigger(state: BattleState, combatTexts: CombatTextE
   return {
     ...state,
     playerStatuses: { ...state.playerStatuses, freeze: 0 },
-    playerFreezeSkipTurns: state.playerFreezeSkipTurns + 1,
-    playerCCCooldown: 2,
+    playerFreezeSkipTurns: state.playerFreezeSkipTurns + BATTLE_CONFIG.BASE_CC_DURATION,
+    playerCCCooldown: BATTLE_CONFIG.CC_IMMUNITY_DURATION,
   };
 }
 

@@ -2,9 +2,14 @@
 // Depends on generated maps and the pure node-entry predicate exported by the hook module.
 import { describe, expect, it } from "vitest";
 
-import { canEnterLabyrinthNode, failPendingLabyrinthNode } from "@/features/alchemy/use-labyrinth-controller";
 import { LABYRINTH_COLS } from "@/lib/content-systems/labyrinth/data";
-import { createSeededRng, generateLabyrinthMap, setCurrentNode } from "@/lib/content-systems/labyrinth/map-generation";
+import {
+  createSeededRng,
+  generateLabyrinthMap,
+  setCurrentNode,
+  canEnterLabyrinthNode,
+  withFailedNode as failPendingLabyrinthNode,
+} from "@/lib/content-systems/labyrinth/map-generation";
 
 const START_COL = Math.floor(LABYRINTH_COLS / 2);
 

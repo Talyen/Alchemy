@@ -1,9 +1,16 @@
-// Talent XP math and card-to-keyword extraction helpers.
-// Depends on game-data card/keyword types and XP tuning constants.
-// Used by talent state and UI to award, total, and display progression.
+/**
+ * Mathematical formulas and mapping functions for keyword Talent XP progression.
+ * Depends on: src/lib/game-constants.ts, src/lib/game-data/types.ts, and src/lib/game-data.
+ * Depended on by: Talents UI screen, homestead systems, and the player save loaders.
+ */
 import { getCardKeywords } from "@/lib/game-data";
 import type { BattleCard, KeywordId } from "@/lib/game-data/types";
 import { XP_BASE_PER_POINT, XP_MIN_THRESHOLD, XP_ROOT_DIVISOR, XP_TRIANGULAR_MULTIPLIER } from "./game-constants";
+
+export const TALENT_PROGRESS_CONFIG = {
+  MAX_PERCENT: 100,
+  PERCENT_MULTIPLIER: 100,
+} as const;
 
 // XP is tracked per keyword (damage type). Each keyword has its own progress bar
 // toward the next talent point. XP is awarded when a card matching that keyword is played.
@@ -18,16 +25,22 @@ export function xpForNextPoint(currentPoints: number): number {
 }
 
 // Cumulative XP needed to reach a given number of points.
-// Triangular sum formula: n(n+1)/2 * 5 -> points * (points + 1) * 5
-// This is the inverse of computeTalentPoints.
+// Triangular sum formula: n(n+1)/2 * 10 -> points * (points + 1) * 5
+// (Assuming XP_TRIANGULAR_MULTIPLIER is 5, representing half of XP_BASE_PER_POINT).
+// This is the mathematical inverse of computeTalentPoints.
 export function xpThresholdForPoints(points: number): number {
   return points * (points + 1) * XP_TRIANGULAR_MULTIPLIER;
 }
 
 // Inverse of xpThresholdForPoints: given total XP, compute how many points earned.
-// Uses the quadratic formula: floor((-1 + sqrt(1 + 0.8 * XP)) / 2)
-// The sqrt/division approach avoids iteration, which matters because this is
-// called on every render of the talents screen.
+// Derived algebraically from: XP >= points * (points + 1) * XP_TRIANGULAR_MULTIPLIER
+// Let T = XP_TRIANGULAR_MULTIPLIER. Solving points^2 + points - XP/T = 0
+// Using the quadratic formula: points = (-b + sqrt(b^2 - 4ac)) / (2a)
+// where a = 1, b = 1, c = -XP/T.
+// points = (-1 + sqrt(1 + 4 * XP / T)) / 2
+// Letting XP_ROOT_DIVISOR = 4 / T = 4 / 5 = 0.8, this simplifies to:
+// points = (-1 + sqrt(1 + XP_ROOT_DIVISOR * XP)) / 2
+// Taking the floor gives the largest integer points tier reached.
 export function computeTalentPoints(xp: number): number {
   if (xp < XP_MIN_THRESHOLD) return 0;
   return Math.floor((-1 + Math.sqrt(1 + XP_ROOT_DIVISOR * xp)) / 2);
@@ -76,7 +89,10 @@ export function getTalentKeywordProgress(
   const points = computeTalentPoints(totalXP);
   const xpForNext = xpForNextPoint(points);
   const xpRemaining = xpToNextPoint(totalXP);
-  const progressPercent = Math.min(100, Math.round(((xpForNext - xpRemaining) / xpForNext) * 100));
+  const progressPercent = Math.min(
+    TALENT_PROGRESS_CONFIG.MAX_PERCENT,
+    Math.round(((xpForNext - xpRemaining) / xpForNext) * TALENT_PROGRESS_CONFIG.PERCENT_MULTIPLIER),
+  );
   const spentPoints = unlockedCount;
   const unspentPoints = Math.max(0, points - spentPoints);
   const cappedUnspent =

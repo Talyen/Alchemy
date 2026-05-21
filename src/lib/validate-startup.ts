@@ -24,6 +24,8 @@ check("MAX_HAND_SIZE > 0", MAX_HAND_SIZE > 0);
 check("MAX_PLAYER_HEALTH > 0", MAX_PLAYER_HEALTH > 0);
 check("BASE_ENEMY_HEALTH > 0", BASE_ENEMY_HEALTH > 0);
 check("BASE_PLAYER_MANA >= 0", BASE_PLAYER_MANA >= 0);
+// STARTING_TURN is the turn-counter value for the first player turn (expected: 1).
+// It must be positive so turn-number display ("Turn 1") is human-readable, not zero-indexed.
 check("STARTING_TURN > 0", STARTING_TURN > 0);
 check("MIN_MAX_MANA_FLOOR > 0", MIN_MAX_MANA_FLOOR > 0);
 check("enemyBestiary is non-empty", enemyBestiary.length > 0);

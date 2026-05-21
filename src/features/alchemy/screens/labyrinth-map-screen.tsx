@@ -1,5 +1,9 @@
-// Labyrinth map screen — a simple route map with visible nodes, dotted paths,
-// and hoverable special modifier details. Depends on Labyrinth content metadata.
+/**
+ * Screen rendering the Labyrinth node connection grid and active modifiers tooltip.
+ * Depends on: data.ts, modifiers.ts, screen-store.ts, Lucide icons, UI components
+ * Depended on by: render-alchemy-screen.tsx
+ */
+
 import { type CSSProperties, type ReactNode, useLayoutEffect, useRef, useState } from "react";
 import { Crown, DoorOpen, FlaskConical, Heart, Menu, ShoppingCart, Skull, Sparkles, Star, Swords } from "lucide-react";
 
@@ -9,6 +13,7 @@ import { cn } from "@/lib/utils";
 import type { LabyrinthMap, LabyrinthModifierKind, LabyrinthNodeType } from "@/lib/content-systems/types";
 import { NODE_TYPE_LABELS } from "@/lib/content-systems/labyrinth/data";
 import { ALL_LABYRINTH_MODIFIERS, REWARD_MODIFIER_KINDS } from "@/lib/content-systems/labyrinth/modifiers";
+import { canEnterLabyrinthNode } from "@/lib/content-systems/labyrinth/map-generation";
 import { keywordDefinitions, type KeywordId } from "@/lib/game-data";
 import { ScreenHeader } from "../ui/shared-ui";
 import { useScreenStore } from "../stores/screen-store";
@@ -32,6 +37,14 @@ type HoveredLabyrinthNode = {
   modifiers: LabyrinthModifierKind[];
   rewardModifiers: LabyrinthModifierKind[];
 };
+
+const CONFIG = {
+  lineTrimOffset: 3.35,
+  tooltipPadding: 8,
+  mapGutter: 4.5,
+  shineDuration: 10,
+  shineBorderWidth: 2,
+} as const;
 
 const NODE_META: Record<LabyrinthNodeType, NodeMeta> = {
   entrance: {
@@ -180,29 +193,28 @@ function LabyrinthNodeButton({
   const isCleared = node.state === "cleared";
   const isFailed = node.state === "failed";
   const isCurrent = node.state === "current";
-  const connectedToCurrent = Boolean(
-    labyrinthMap.grid[labyrinthMap.currentNode.row]?.[labyrinthMap.currentNode.col]?.connections.some(
-      (connection) => connection.row === row && connection.col === col,
-    ),
-  );
-  const isEnterable = node.state === "visible" && connectedToCurrent;
+  const isEnterable = canEnterLabyrinthNode(labyrinthMap, row, col);
   const meta = NODE_META[node.type];
+
+  const handleHover = () => {
+    onHover({ row, col, type: node.type, modifiers: node.modifiers, rewardModifiers: node.rewardModifiers });
+  };
+
+  const handleBlur = (event: React.FocusEvent<HTMLDivElement>) => {
+    const nextTarget = event.relatedTarget;
+    if (!(nextTarget instanceof Node) || !event.currentTarget.contains(nextTarget)) {
+      onLeave();
+    }
+  };
 
   return (
     <div
       className="group/node absolute z-10 group-hover/node:z-50 flex h-[var(--labyrinth-node-size)] w-[var(--labyrinth-node-size)] -translate-x-1/2 -translate-y-1/2 items-center justify-center"
       style={{ ...positionStyle(row, col, labyrinthMap.rows, labyrinthMap.cols), willChange: "transform" }}
-      onPointerEnter={() =>
-        onHover({ row, col, type: node.type, modifiers: node.modifiers, rewardModifiers: node.rewardModifiers })
-      }
+      onPointerEnter={handleHover}
       onPointerLeave={onLeave}
-      onFocusCapture={() =>
-        onHover({ row, col, type: node.type, modifiers: node.modifiers, rewardModifiers: node.rewardModifiers })
-      }
-      onBlurCapture={(event) => {
-        const nextTarget = event.relatedTarget;
-        if (!(nextTarget instanceof Node) || !event.currentTarget.contains(nextTarget)) onLeave();
-      }}
+      onFocusCapture={handleHover}
+      onBlurCapture={handleBlur}
     >
       <button
         type="button"
@@ -219,7 +231,13 @@ function LabyrinthNodeButton({
           !isEnterable && "cursor-default border-2 border-white/20",
         )}
       >
-        {isEnterable ? <ShineBorder borderWidth={2} duration={10} shineColor={meta.shineColors} /> : null}
+        {isEnterable ? (
+          <ShineBorder
+            borderWidth={CONFIG.shineBorderWidth}
+            duration={CONFIG.shineDuration}
+            shineColor={meta.shineColors}
+          />
+        ) : null}
         <span className="relative z-10">{isCurrent ? <Star className="h-6 w-6 text-amber-400" /> : meta.icon}</span>
       </button>
     </div>
@@ -238,7 +256,7 @@ function ConnectionLayer({ labyrinthMap }: { labyrinthMap: LabyrinthMap }) {
       {connections.map((connection) => {
         const from = pointFor(connection.from.row, connection.from.col, labyrinthMap.rows, labyrinthMap.cols);
         const to = pointFor(connection.to.row, connection.to.col, labyrinthMap.rows, labyrinthMap.cols);
-        const trimmed = trimLine(from, to, 3.35);
+        const trimmed = trimLine(from, to, CONFIG.lineTrimOffset);
         return (
           <line
             key={`${connection.from.row}-${connection.from.col}-${connection.to.row}-${connection.to.col}`}
@@ -253,6 +271,34 @@ function ConnectionLayer({ labyrinthMap }: { labyrinthMap: LabyrinthMap }) {
         );
       })}
     </svg>
+  );
+}
+
+function ModifierSection({
+  title,
+  titleClassName,
+  modifiers,
+}: {
+  title: string;
+  titleClassName: string;
+  modifiers: LabyrinthModifierKind[];
+}) {
+  if (modifiers.length === 0) return null;
+  return (
+    <>
+      <p className={cn("mb-2 mt-3 text-xs font-semibold uppercase tracking-widest", titleClassName)}>{title}</p>
+      <div className="grid gap-2">
+        {modifiers.map((modifier) => {
+          const definition = ALL_LABYRINTH_MODIFIERS[modifier];
+          return (
+            <div key={modifier} className="rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-2">
+              <p className="text-xs font-bold text-amber-100">{definition.label}</p>
+              <p className="mt-0.5 text-xs leading-snug text-stone-300">{highlightKeywords(definition.description)}</p>
+            </div>
+          );
+        })}
+      </div>
+    </>
   );
 }
 
@@ -276,7 +322,7 @@ function NodeTooltip({
 
     if (rect.top < 0) setFlip(true);
 
-    const padding = 8;
+    const padding = CONFIG.tooltipPadding;
     let horizontalShift = 0;
     if (rect.left < 0) {
       horizontalShift = -rect.left + padding;
@@ -298,42 +344,8 @@ function NodeTooltip({
     >
       <p className="text-sm font-black uppercase tracking-widest text-amber-100/80">{NODE_TYPE_LABELS[type]}</p>
       <p className="mt-1 text-xs leading-snug text-stone-300">{highlightKeywords(NODE_DESCRIPTIONS[type])}</p>
-      {enemyModifiers.length > 0 ? (
-        <>
-          <p className="mb-2 mt-3 text-xs font-semibold uppercase tracking-widest text-red-400">Enemy Modifiers</p>
-          <div className="grid gap-2">
-            {enemyModifiers.map((modifier) => {
-              const definition = ALL_LABYRINTH_MODIFIERS[modifier];
-              return (
-                <div key={modifier} className="rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-2">
-                  <p className="text-xs font-bold text-amber-100">{definition.label}</p>
-                  <p className="mt-0.5 text-xs leading-snug text-stone-300">
-                    {highlightKeywords(definition.description)}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        </>
-      ) : null}
-      {rewardModifiers.length > 0 ? (
-        <>
-          <p className="mb-2 mt-3 text-xs font-semibold uppercase tracking-widest text-emerald-400">Reward Modifiers</p>
-          <div className="grid gap-2">
-            {rewardModifiers.map((modifier) => {
-              const definition = ALL_LABYRINTH_MODIFIERS[modifier];
-              return (
-                <div key={modifier} className="rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-2">
-                  <p className="text-xs font-bold text-amber-100">{definition.label}</p>
-                  <p className="mt-0.5 text-xs leading-snug text-stone-300">
-                    {highlightKeywords(definition.description)}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        </>
-      ) : null}
+      <ModifierSection title="Enemy Modifiers" titleClassName="text-red-400" modifiers={enemyModifiers} />
+      <ModifierSection title="Reward Modifiers" titleClassName="text-emerald-400" modifiers={rewardModifiers} />
     </div>
   );
 }
@@ -399,7 +411,7 @@ function positionStyle(row: number, col: number, rows: number, cols: number): CS
 }
 
 function positionFor(row: number, col: number, rows: number, cols: number) {
-  const gutter = 4.5;
+  const gutter = CONFIG.mapGutter;
   return {
     left: gutter + (col * (100 - gutter * 2)) / Math.max(1, cols - 1),
     top: gutter + (row * (100 - gutter * 2)) / Math.max(1, rows - 1),

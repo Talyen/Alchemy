@@ -1,5 +1,6 @@
-// Mystery event state and handlers for run navigation.
-// Uses useScreenStore for state, keeps logic in the hook.
+// Manages React state integration and event handlers for the run's mystery events flow.
+// Depends on: cardLibrary, useScreenStore, mysteryPool, and mystery-flow helpers.
+// Depended on by: useRunNavigation for managing the React state of mystery events during a run.
 import { cardLibrary, type BattleCard } from "@/lib/game-data";
 import { pickRandom } from "@/lib/utils";
 import type { Dispatch, SetStateAction } from "react";
@@ -32,12 +33,15 @@ export function useMysteryFlow(context: MysteryFlowContext) {
     return useScreenStore.getState();
   }
 
+  // Prepares the mystery destination state by sampling a random event and navigating to the screen.
   function beginMysteryEvent(navigateToMystery: () => void) {
     getStore().setMysteryEvent(pickRandom(mysteryPool) ?? mysteryPool[0]);
     getStore().setMysteryCardChoices(null);
     navigateToMystery();
   }
 
+  // Processes each consequence effect linked to the player's choice sequentially.
+  // If an effect requires follow-up UI interaction (like choosing a card), execution halts.
   function handleMysteryChoice(choice: MysteryChoice) {
     for (const effect of choice.effects) {
       const result = applyMysteryEffect(effect, {
@@ -57,6 +61,7 @@ export function useMysteryFlow(context: MysteryFlowContext) {
     }
   }
 
+  // Adds the selected card from the choice picker to the run's deck and closes the picker.
   function handleMysteryChooseCard(cardId: string) {
     const card = cardLibrary.find((c) => c.id === cardId);
     if (card) {
@@ -65,18 +70,22 @@ export function useMysteryFlow(context: MysteryFlowContext) {
     getStore().setMysteryCardChoices(null);
   }
 
+  // Removes a card at the given deck index as part of a choose-removal consequence.
   function handleMysteryRemoveCard(index: number) {
     context.setRunDeck((p) => p.filter((_, i) => i !== index));
   }
 
+  // Completes the event flow and advances the run map to the next set of destinations.
   function handleMysteryContinue() {
     context.advanceToNextDestination();
   }
 
+  // Clears the buffered card selection options.
   function clearCardChoices() {
     getStore().setMysteryCardChoices(null);
   }
 
+  // Resets the screen store's mystery-related states back to clean defaults.
   function reset() {
     getStore().setMysteryEvent(null);
     getStore().setMysteryCardChoices(null);

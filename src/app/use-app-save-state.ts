@@ -21,7 +21,10 @@ const initialCollectionPages: CollectionPages = {
 };
 
 // Owns persisted shell state so App can focus on controller composition and screen rendering.
+// loadAlchemySaveState() is called synchronously during hook initialization (not lazily) so
+// React state is seeded with real save data on the very first render, avoiding a flash of defaults.
 export function useAppSaveState() {
+  // loadAlchemySaveState is already guarded internally; any error returns defaultSaveData.
   const initialLoad = loadAlchemySaveState();
   const initialSave = initialLoad.data;
   const saveLoadStatus = initialLoad.status;
@@ -58,7 +61,9 @@ export function useAppSaveState() {
 
   function handleCollectionTabChange(nextTab: CollectionTab) {
     setCollectionTab(nextTab);
-    setCollectionPages((current) => ({ ...current, [nextTab]: current[nextTab] ?? 0 }));
+    // initialCollectionPages seeds every CollectionTab with 0, so current[nextTab] is always
+    // defined for valid tab values. No fallback needed — keeping the access explicit aids readability.
+    setCollectionPages((current) => ({ ...current, [nextTab]: current[nextTab] }));
   }
 
   function setCollectionPage(tab: CollectionTab, page: number) {

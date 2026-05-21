@@ -3,8 +3,16 @@ import { failOnRuntimeErrors, startCampaignBattle } from "./helpers";
 import { BattlePage } from "./pages/battle-page";
 
 test.describe("Draw/discard animation invariants (1920×1080)", () => {
-  test("no runtime errors or console errors during a full turn cycle", async ({ page }) => {
+  test("turn cycle animations and interaction boundaries function correctly", async ({ page }) => {
     const errors = failOnRuntimeErrors(page);
+    const flyingLogs: string[] = [];
+    const snapLogs: string[] = [];
+    page.on("console", (msg) => {
+      const text = msg.text();
+      if (text.includes("[flying]")) flyingLogs.push(text);
+      if (text.includes("[snap]")) snapLogs.push(text);
+    });
+
     await startCampaignBattle(page);
     const battle = new BattlePage(page);
 
@@ -12,52 +20,21 @@ test.describe("Draw/discard animation invariants (1920×1080)", () => {
       await battle.playFirstCard();
     }
     await battle.endTurn();
+
     expect(errors).toEqual([]);
-  });
 
-  test("cards are playable after draw animation completes", async ({ page }) => {
-    await startCampaignBattle(page);
-    const battle = new BattlePage(page);
-
-    await battle.endTurn();
     const count = await battle.handCount();
     expect(count).toBeGreaterThan(0);
     for (let i = 0; i < count; i++) {
       await expect(battle.hand.nth(i)).toBeEnabled({ timeout: 1000 });
     }
-  });
 
-  test("end turn button is re-enabled after enemy turn and draw", async ({ page }) => {
-    await startCampaignBattle(page);
-    const battle = new BattlePage(page);
-    await battle.endTurn();
-  });
-
-  test("flying overlay appears during discard and draw, then disappears", async ({ page }) => {
-    const flyingLogs: string[] = [];
-    page.on("console", (msg) => {
-      if (msg.text().includes("[flying]")) flyingLogs.push(msg.text());
-    });
-
-    await startCampaignBattle(page);
-    const battle = new BattlePage(page);
-    await battle.endTurn();
     expect(flyingLogs.length).toBeGreaterThanOrEqual(4);
     const creates = flyingLogs.filter((l) => l.includes("create")).length;
     const removes = flyingLogs.filter((l) => l.includes("remove")).length;
     expect(creates).toBeGreaterThan(0);
     expect(creates).toBe(removes);
-  });
 
-  test("overlay lands within 0.5px of card position and size", async ({ page }) => {
-    const snapLogs: string[] = [];
-    page.on("console", (msg) => {
-      if (msg.text().includes("[snap]")) snapLogs.push(msg.text());
-    });
-
-    await startCampaignBattle(page);
-    const battle = new BattlePage(page);
-    await battle.endTurn();
     expect(snapLogs, "Card position/size deviation exceeded 0.5px threshold").toEqual([]);
   });
 });

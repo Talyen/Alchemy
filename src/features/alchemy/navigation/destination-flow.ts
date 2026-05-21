@@ -1,5 +1,6 @@
 // Destination availability and sampling helpers for run navigation.
-// Depends on route filtering config, run progression constants, and alchemy destination types.
+// Depends on: route filtering config, run progression constants, and alchemy types.
+// Depended on by: useRunNavigation for sampling and getting available destinations.
 import {
   CORRUPTION_DESTINATION_WEIGHT,
   DEFAULT_DESTINATION_WEIGHT,

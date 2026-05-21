@@ -1,7 +1,8 @@
-// Type contracts for the immutable battle engine — BattleState shape, manifests, flags.
-// Depends only on game-data shape types and is imported by draw, effects, turns, and UI.
-// Keep these state shapes explicit so save/load, animation, and combat stay in sync.
-// Runtime health helpers live in ./health; this file is pure types + re-exports.
+/**
+ * Defines core types, immutable BattleState structures, and state-updating helpers.
+ * Depends on: @/lib/game-data.
+ * Depended on by: all modules in the battle subsystem, features/alchemy controllers/UI.
+ */
 import type {
   BattleCard,
   BestiaryEntry,

@@ -1,5 +1,11 @@
 import { expect, type Page } from "@playwright/test";
 
+declare global {
+  interface Window {
+    disableForceDestination?: boolean;
+  }
+}
+
 export const SAVE_KEY = "alchemy-save-v1";
 
 // Seeded PRNG (Linear Congruential Generator) for deterministic random behavior in tests.
@@ -122,10 +128,26 @@ const STARTING_DECK = [
 export async function forceNextDestinationChoice(page: Page, destination: DestinationName) {
   const randomValue = DESTINATION_RANDOM_VALUES[destination];
   await page.addInitScript((value) => {
-    Math.random = () => value;
+    let seed = 42;
+    window.disableForceDestination = false;
+    Math.random = () => {
+      if (window.disableForceDestination) {
+        seed = (seed * 1664525 + 1013904223) & 0x7fffffff;
+        return seed / 0x7fffffff;
+      }
+      return value;
+    };
   }, randomValue);
   await page.evaluate((value) => {
-    Math.random = () => value;
+    let seed = 42;
+    window.disableForceDestination = false;
+    Math.random = () => {
+      if (window.disableForceDestination) {
+        seed = (seed * 1664525 + 1013904223) & 0x7fffffff;
+        return seed / 0x7fffffff;
+      }
+      return value;
+    };
   }, randomValue).catch(() => {});
 }
 
@@ -147,6 +169,9 @@ export async function startAtDestination(
   await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 10000 });
   if (options.forceDestination) {
     await expect(page.getByRole("button", { name: options.forceDestination })).toBeVisible({ timeout: 5000 });
+    await page.evaluate(() => {
+      window.disableForceDestination = true;
+    }).catch(() => {});
   }
 }
 

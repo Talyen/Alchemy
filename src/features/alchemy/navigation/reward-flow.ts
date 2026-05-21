@@ -1,5 +1,6 @@
 // Reward-state construction helpers for battle victory and routing.
-// Depends on game data, reward selectors, trinket manifest rules, and material inventory types.
+// Depends on: game data, game constants, trinket manifests, reward utilities, and content types.
+// Depended on by: useRunNavigation for generating and processing combat/boss victory rewards.
 import { cardLibrary, trinketLibrary, type BattleCard, type TrinketEntry } from "@/lib/game-data";
 import {
   BOSS_TRINKET_REWARD_CHOICES,
@@ -13,7 +14,7 @@ import type { MaterialInventory } from "@/lib/homestead/types";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import type { BattleState } from "@/lib/battle";
 import { selectRewardCards, selectRewardTrinkets, REWARD_TRINKET_CHANCE } from "../reward-utils";
-import type { Destination } from "../types";
+import { CONSTANTS, type Destination } from "../types";
 import type { ContentSystemId, LabyrinthModifierKind } from "@/lib/content-systems/types";
 
 export type RewardState = {
@@ -106,7 +107,7 @@ export function getActiveRewardModifiersForContentSystem(
   contentSystemType: ContentSystemId,
   modifiers: LabyrinthModifierKind[],
 ): LabyrinthModifierKind[] {
-  return contentSystemType === "labyrinth" ? modifiers : [];
+  return contentSystemType === CONSTANTS.CONTENT_SYSTEMS.LABYRINTH ? modifiers : [];
 }
 
 // Computes the extra gold granted by the Labyrinth generous reward modifier.
@@ -206,20 +207,20 @@ export function finalizeRewardState({
         ...("selectedBossId" in rewardState ? { selectedBossId: rewardState.selectedBossId ?? null } : {}),
       },
       clearCompanionRewardCards: true,
-      route: "companion-reward",
+      route: CONSTANTS.REWARD_ROUTES.COMPANION_REWARD,
     };
   }
 
   const route: FinalizeRewardRoute =
-    contentSystemType === "labyrinth"
-      ? currentEnemyType === "boss"
-        ? "labyrinth-victory"
-        : "labyrinth-map"
-      : contentSystemType === "wildwood"
-        ? "wildwood-victory"
-        : currentEnemyType === "boss"
-          ? "act-complete"
-          : "destination";
+    contentSystemType === CONSTANTS.CONTENT_SYSTEMS.LABYRINTH
+      ? currentEnemyType === CONSTANTS.ENEMY_TYPES.BOSS
+        ? CONSTANTS.REWARD_ROUTES.LABYRINTH_VICTORY
+        : CONSTANTS.REWARD_ROUTES.LABYRINTH_MAP
+      : contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD
+        ? CONSTANTS.REWARD_ROUTES.WILDWOOD_VICTORY
+        : currentEnemyType === CONSTANTS.ENEMY_TYPES.BOSS
+          ? CONSTANTS.REWARD_ROUTES.ACT_COMPLETE
+          : CONSTANTS.REWARD_ROUTES.DESTINATION;
 
   return {
     selectedChoice,
@@ -253,6 +254,19 @@ export function createBossRewardState({
   };
 }
 
+// Calculates whether a combat reward should offer a trinket based on traits and modifiers.
+export function calculateCombatTrinketRewardOffer(battleState: BattleState, forceTrinket: boolean): boolean {
+  if (forceTrinket) return true;
+  const baseTrinketChance =
+    battleState.currentEnemy.enemyType === CONSTANTS.ENEMY_TYPES.ELITE
+      ? ELITE_TRINKET_REWARD_CHANCE
+      : REWARD_TRINKET_CHANCE;
+  const trinketHoarderBonus = battleState.currentEnemy.traits?.some((t) => t.id === "trinket-hoarder")
+    ? LABYRINTH_REWARD_CONFIG.trinketHoarderRewardChanceBonus
+    : 0;
+  return Math.random() < baseTrinketChance + trinketHoarderBonus;
+}
+
 // Combat rewards can be cards or trinkets. Destination choices are supplied by the hook
 // because they depend on post-victory run Health/gold and act progression.
 export function createCombatRewardState({
@@ -268,12 +282,7 @@ export function createCombatRewardState({
   goldMultiplier = 1,
   forceTrinket = false,
 }: CombatRewardInput): RewardState {
-  const baseTrinketChance =
-    battleState.currentEnemy.enemyType === "elite" ? ELITE_TRINKET_REWARD_CHANCE : REWARD_TRINKET_CHANCE;
-  const trinketHoarderBonus = battleState.currentEnemy.traits?.some((t) => t.id === "trinket-hoarder")
-    ? LABYRINTH_REWARD_CONFIG.trinketHoarderRewardChanceBonus
-    : 0;
-  const offerTrinket = forceTrinket || Math.random() < baseTrinketChance + trinketHoarderBonus;
+  const offerTrinket = calculateCombatTrinketRewardOffer(battleState, forceTrinket);
   const trinketGoldBonus = computeTrinketManifest(trinketIds).smugglersMapGoldBonus;
   return {
     rewardType: offerTrinket ? "trinket" : "card",

@@ -95,7 +95,6 @@ function baseState(overrides: Partial<BattleState> = {}): BattleState {
       goldPerCombat: 0,
       potionDiscount: 0,
       potionPotency: 0,
-      potionManaBonus: 0,
       removeCardDiscount: 0,
       enemyGoldDropBonus: 0,
       eliteGoldDropBonus: 0,

@@ -17,10 +17,10 @@ import { mergeCombatText } from "./combat-text";
 import { applyIronwoodBuckler } from "./trinket-effects";
 import { decayHalvedStatus, tickEnemyStatuses, tickPlayerStatuses } from "./status-ticks";
 import { harmfulPlayerStatusIds } from "@/lib/game-data";
-import type { BattleCard, EnemyAttackEffect } from "@/lib/game-data/types";
+import type { BattleCard, EnemyAttackEffect, TalentEffectManifest } from "@/lib/game-data/types";
 import type { DifficultyModifier } from "@/lib/game-data/difficulties";
 import { applyPlayerCombatDamage, clampHealth, type BattleState, type CombatTextEvent, type TurnPhase } from "./types";
-import { CARDS_PER_TURN, MAX_HAND_SIZE } from "../game-constants";
+import { CARDS_PER_TURN, MAX_HAND_SIZE, BATTLE_CONFIG } from "../game-constants";
 import {
   DIFFICULTY_FORGE_PER_TURN,
   HALF_DIVISOR,
@@ -47,30 +47,46 @@ export function chooseWishCard(state: BattleState, cardId: string) {
   return { ...state, discard: [...state.discard, chosenCard], wishOptions: nextWishOptions, wishQueue };
 }
 
-export function processCompanionTurnStart(state: BattleState, combatTexts: CombatTextEvent[]) {
-  if (!state.activeCompanion || state.enemyHealth <= 0) return state;
-  const companionBondLevel = state.talentEffects.companionBondLevels[state.activeCompanion.id] ?? 0;
-
-  const companionCard: BattleCard = {
-    id: `companion-${state.activeCompanion.id}`,
-    title: state.activeCompanion.title,
+function buildCompanionCard(
+  activeCompanion: NonNullable<BattleState["activeCompanion"]>,
+  talentEffects: TalentEffectManifest,
+  trinketEffects: BattleState["trinketEffects"],
+  companionDamageBuff: number,
+  companionBondLevel: number,
+): BattleCard {
+  return {
+    id: `companion-${activeCompanion.id}`,
+    title: activeCompanion.title,
     descriptionLines: [],
-    art: state.activeCompanion.art,
+    art: activeCompanion.art,
     cost: 0,
-    effects: state.activeCompanion.turnStartEffects.map((e) =>
+    effects: activeCompanion.turnStartEffects.map((e) =>
       e.kind === "damage"
         ? {
             ...e,
             amount:
               e.amount +
               companionBondLevel +
-              state.talentEffects.companionDamage +
-              state.trinketEffects.companionDamageBonus +
-              state.companionDamageBuff,
+              talentEffects.companionDamage +
+              trinketEffects.companionDamageBonus +
+              companionDamageBuff,
           }
         : e,
     ),
   };
+}
+
+export function processCompanionTurnStart(state: BattleState, combatTexts: CombatTextEvent[]) {
+  if (!state.activeCompanion || state.enemyHealth <= 0) return state;
+  const companionBondLevel = state.talentEffects.companionBondLevels[state.activeCompanion.id] ?? 0;
+
+  const companionCard = buildCompanionCard(
+    state.activeCompanion,
+    state.talentEffects,
+    state.trinketEffects,
+    state.companionDamageBuff,
+    companionBondLevel,
+  );
 
   const savedFlags = {
     firstBurnCardDoubledUsed: state.flags.firstBurnCardDoubledUsed,
@@ -84,25 +100,22 @@ export function processCompanionTurnStart(state: BattleState, combatTexts: Comba
   return { ...result, flags: { ...result.flags, ...savedFlags } };
 }
 
-function advanceToPlayerTurn(state: BattleState) {
-  // If the player is stunned or frozen, skip their turn — don't draw, don't refill mana,
-  // and immediately go back to enemy phase.
-  const deathsDoorNeedsRecoveryTurn = state.deathsDoorActive && state.playerHealth <= 0;
-  if (!deathsDoorNeedsRecoveryTurn && state.playerStunSkipTurns + state.playerFreezeSkipTurns > 0) {
-    return {
-      ...state,
-      turn: state.turn + 1,
-      turnPhase: "enemy" as TurnPhase,
-      playerStunSkipTurns: Math.max(0, state.playerStunSkipTurns - 1),
-      playerFreezeSkipTurns: Math.max(0, state.playerFreezeSkipTurns - 1),
-      playerCCCooldown: Math.max(0, state.playerCCCooldown - 1),
-      enemyCCCooldown: Math.max(0, state.enemyCCCooldown - 1),
-      playerStatuses: { ...state.playerStatuses, block: decayHalvedStatus(state.playerStatuses.block ?? 0) },
-      cardsPlayedThisTurn: 0,
-      flags: { ...state.flags, resonantChimeUsedThisTurn: false, nextCardCostReduction: 0 },
-    };
-  }
+function handleCCSkipTurn(state: BattleState): BattleState {
+  return {
+    ...state,
+    turn: state.turn + 1,
+    turnPhase: "enemy" as TurnPhase,
+    playerStunSkipTurns: Math.max(0, state.playerStunSkipTurns - 1),
+    playerFreezeSkipTurns: Math.max(0, state.playerFreezeSkipTurns - 1),
+    playerCCCooldown: Math.max(0, state.playerCCCooldown - 1),
+    enemyCCCooldown: Math.max(0, state.enemyCCCooldown - 1),
+    playerStatuses: { ...state.playerStatuses, block: decayHalvedStatus(state.playerStatuses.block ?? 0) },
+    cardsPlayedThisTurn: 0,
+    flags: { ...state.flags, resonantChimeUsedThisTurn: false, nextCardCostReduction: 0 },
+  };
+}
 
+function performDrawAndResetPhase(state: BattleState, deathsDoorNeedsRecoveryTurn: boolean): BattleState {
   const nextDraw = drawCards(state.deck, state.discard, [], CARDS_PER_TURN, state.nextCardUid);
   return {
     ...state,
@@ -121,6 +134,17 @@ function advanceToPlayerTurn(state: BattleState) {
     cardsPlayedThisTurn: 0,
     flags: { ...state.flags, resonantChimeUsedThisTurn: false, nextCardCostReduction: 0 },
   };
+}
+
+function advanceToPlayerTurn(state: BattleState) {
+  // If the player is stunned or frozen, skip their turn — don't draw, don't refill mana,
+  // and immediately go back to enemy phase.
+  const deathsDoorNeedsRecoveryTurn = state.deathsDoorActive && state.playerHealth <= 0;
+  if (!deathsDoorNeedsRecoveryTurn && state.playerStunSkipTurns + state.playerFreezeSkipTurns > 0) {
+    return handleCCSkipTurn(state);
+  }
+
+  return performDrawAndResetPhase(state, deathsDoorNeedsRecoveryTurn);
 }
 
 function checkHealthThresholds(
@@ -151,7 +175,7 @@ function checkHealthThresholds(
   return nextState;
 }
 
-function processEnemyDamageEffect(
+function calculateBlockAndArmorMitigation(
   state: BattleState,
   effect: EnemyAttackEffect & { kind: "damage" },
   combatTexts: CombatTextEvent[],
@@ -189,15 +213,19 @@ function processEnemyDamageEffect(
     mergeCombatText(combatTexts, { target: "player", kind: "damage", stat, amount: actualDamage });
   }
 
-  const prevHealth = state.playerHealth;
-  let nextState: BattleState = {
-    ...state,
-    ...applyPlayerCombatDamage(state, actualDamage),
-    playerStatuses: {
-      ...state.playerStatuses,
-      block: state.playerStatuses.block - Math.min(blockAbsorb, state.playerStatuses.block),
-    },
-  };
+  return { remainingDamage, blockAbsorb, actualDamage };
+}
+
+function resolvePostDamageThresholds(
+  state: BattleState,
+  prevHealth: number,
+  blockAbsorb: number,
+  remainingDamage: number,
+  actualDamage: number,
+  damageType: string,
+  combatTexts: CombatTextEvent[],
+): BattleState {
+  let nextState = state;
 
   if (nextState.trinketEffects.vanguardCrestForgeOnBlockAbsorb > 0 && blockAbsorb > 0 && remainingDamage === 0) {
     nextState = {
@@ -222,24 +250,108 @@ function processEnemyDamageEffect(
       ...nextState,
       playerStatuses: {
         ...nextState.playerStatuses,
-        armor: nextState.playerStatuses.armor - 1,
+        armor: nextState.playerStatuses.armor - BATTLE_CONFIG.ARMOR_DECAY_AMOUNT,
       },
     };
   }
 
   // Enemy forge decays by 1 per physical attack that deals damage (mirrors player forge consumption).
-  if (actualDamage > 0 && effect.damageType === "physical" && nextState.enemyForge > 0) {
-    nextState = { ...nextState, enemyForge: nextState.enemyForge - 1 };
+  if (actualDamage > 0 && damageType === "physical" && nextState.enemyForge > 0) {
+    nextState = { ...nextState, enemyForge: nextState.enemyForge - BATTLE_CONFIG.FORGE_DECAY_AMOUNT };
   }
+
+  return nextState;
+}
+
+function applyEnemyAttackLifesteal(
+  state: BattleState,
+  actualDamage: number,
+  combatTexts: CombatTextEvent[],
+): BattleState {
+  mergeCombatText(combatTexts, { target: "enemy", kind: "heal", stat: "health", amount: actualDamage });
+  return {
+    ...state,
+    enemyHealth: clampHealth(state.enemyHealth, actualDamage, state.enemyMaxHealth),
+  };
+}
+
+function processEnemyDamageEffect(
+  state: BattleState,
+  effect: EnemyAttackEffect & { kind: "damage" },
+  combatTexts: CombatTextEvent[],
+) {
+  const { remainingDamage, blockAbsorb, actualDamage } = calculateBlockAndArmorMitigation(state, effect, combatTexts);
+
+  const prevHealth = state.playerHealth;
+  let nextState: BattleState = {
+    ...state,
+    ...applyPlayerCombatDamage(state, actualDamage),
+    playerStatuses: {
+      ...state.playerStatuses,
+      block: state.playerStatuses.block - Math.min(blockAbsorb, state.playerStatuses.block),
+    },
+  };
+
+  nextState = resolvePostDamageThresholds(
+    nextState,
+    prevHealth,
+    blockAbsorb,
+    remainingDamage,
+    actualDamage,
+    effect.damageType,
+    combatTexts,
+  );
 
   if (effect.lifesteal && actualDamage > 0) {
-    nextState = {
-      ...nextState,
-      enemyHealth: clampHealth(nextState.enemyHealth, actualDamage, nextState.enemyMaxHealth),
-    };
-    mergeCombatText(combatTexts, { target: "enemy", kind: "heal", stat: "health", amount: actualDamage });
+    nextState = applyEnemyAttackLifesteal(nextState, actualDamage, combatTexts);
   }
 
+  return nextState;
+}
+
+function applyPlayerStatusFromAttack(
+  state: BattleState,
+  effect: EnemyAttackEffect & { kind: "player-status" },
+  combatTexts: CombatTextEvent[],
+): BattleState {
+  let nextState = state;
+  const status = effect.status;
+  const baseAmount = effect.amount;
+  const extraFreeze = status === "freeze" ? state.enemyFreezeBonus : 0;
+  const amount = baseAmount + extraFreeze;
+
+  const blockPreventsStatus =
+    nextState.playerStatuses.block > 0 &&
+    ((status === "bleed" && state.talentEffects.blockPreventsBleed) ||
+      (status === "poison" && state.talentEffects.blockPreventsPoison) ||
+      (status === "stun" && state.talentEffects.blockPreventsStun));
+
+  if (harmfulPlayerStatusIds.includes(status)) {
+    if (
+      !blockPreventsStatus &&
+      nextState.trinketEffects.plagueDoctorImmunity &&
+      !nextState.flags.firstHarmfulStatusPrevented
+    ) {
+      return { ...nextState, flags: { ...nextState.flags, firstHarmfulStatusPrevented: true } };
+    }
+    nextState = {
+      ...nextState,
+      playerStatuses: {
+        ...nextState.playerStatuses,
+        ...(blockPreventsStatus ? {} : { [status]: nextState.playerStatuses[status] + amount }),
+      },
+    };
+    mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: status, amount });
+  } else {
+    nextState = {
+      ...nextState,
+      playerStatuses: {
+        ...nextState.playerStatuses,
+        [status]: nextState.playerStatuses[status] + amount,
+      },
+    };
+    mergeCombatText(combatTexts, { target: "player", kind: "status", stat: status, amount });
+  }
   return nextState;
 }
 
@@ -250,44 +362,7 @@ function processEnemyAttack(state: BattleState, combatTexts: CombatTextEvent[]) 
     if (effect.kind === "damage") {
       nextState = processEnemyDamageEffect(nextState, effect, combatTexts);
     } else if (effect.kind === "player-status") {
-      const status = effect.status;
-      const baseAmount = effect.amount;
-      const extraFreeze = status === "freeze" ? state.enemyFreezeBonus : 0;
-      const amount = baseAmount + extraFreeze;
-
-      const blockPreventsStatus =
-        nextState.playerStatuses.block > 0 &&
-        ((status === "bleed" && state.talentEffects.blockPreventsBleed) ||
-          (status === "poison" && state.talentEffects.blockPreventsPoison) ||
-          (status === "stun" && state.talentEffects.blockPreventsStun));
-
-      if (harmfulPlayerStatusIds.includes(status)) {
-        if (
-          !blockPreventsStatus &&
-          nextState.trinketEffects.plagueDoctorImmunity &&
-          !nextState.flags.firstHarmfulStatusPrevented
-        ) {
-          nextState = { ...nextState, flags: { ...nextState.flags, firstHarmfulStatusPrevented: true } };
-          continue;
-        }
-        nextState = {
-          ...nextState,
-          playerStatuses: {
-            ...nextState.playerStatuses,
-            ...(blockPreventsStatus ? {} : { [status]: nextState.playerStatuses[status] + amount }),
-          },
-        };
-        mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: status, amount });
-      } else {
-        nextState = {
-          ...nextState,
-          playerStatuses: {
-            ...nextState.playerStatuses,
-            [status]: nextState.playerStatuses[status] + amount,
-          },
-        };
-        mergeCombatText(combatTexts, { target: "player", kind: "status", stat: status, amount });
-      }
+      nextState = applyPlayerStatusFromAttack(nextState, effect, combatTexts);
     }
   }
 

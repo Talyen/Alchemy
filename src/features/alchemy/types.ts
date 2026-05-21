@@ -34,6 +34,41 @@ export type DisplayMode = "windowed" | "borderless-fullscreen" | "fullscreen";
 
 export type UiScale = "90" | "100" | "110" | "120";
 
+export const ROUTE_SCREENS = {
+  MENU: "menu",
+  GAME_MODE_SELECT: "game-mode-select",
+  CHARACTER_SELECT: "character-select",
+  DIFFICULTY_SELECT: "difficulty-select",
+  BATTLE: "battle",
+  REWARDS: "rewards",
+  DESTINATION: "destination",
+  OPTIONS: "options",
+  COLLECTION: "collection",
+  TALENTS: "talents",
+  HOMESTEAD: "homestead",
+  GAME_OVER: "game-over",
+  CAMPFIRE: "campfire",
+  SHOP: "shop",
+  ALCHEMIST: "alchemist",
+  MYSTERY: "mystery",
+  CORRUPTION: "corruption",
+  RUN_VICTORY: "run-victory",
+  LABYRINTH_MAP: "labyrinth-map",
+  WILDWOOD_SELECT: "wildwood-select",
+} as const;
+
+export const CONTENT_SYSTEMS = {
+  CAMPAIGN: "campaign",
+  LABYRINTH: "labyrinth",
+  WILDWOOD: "wildwood",
+} as const;
+
+export const ENEMY_TYPES = {
+  NORMAL: "normal",
+  ELITE: "elite",
+  BOSS: "boss",
+} as const;
+
 export const DESTINATIONS = {
   NORMAL_COMBAT: "Normal Combat",
   ELITE_COMBAT: "Elite Combat",
@@ -43,6 +78,23 @@ export const DESTINATIONS = {
   CORRUPTION: "Corruption",
   CAMPFIRE: "Campfire",
   BOSS_COMBAT: "Boss Combat",
+} as const;
+
+export const REWARD_ROUTES = {
+  COMPANION_REWARD: "companion-reward",
+  LABYRINTH_VICTORY: "labyrinth-victory",
+  LABYRINTH_MAP: "labyrinth-map",
+  WILDWOOD_VICTORY: "wildwood-victory",
+  ACT_COMPLETE: "act-complete",
+  DESTINATION: "destination",
+} as const;
+
+export const CONSTANTS = {
+  SCREENS: ROUTE_SCREENS,
+  DESTINATIONS,
+  CONTENT_SYSTEMS,
+  ENEMY_TYPES,
+  REWARD_ROUTES,
 } as const;
 
 export type Destination = (typeof DESTINATIONS)[keyof typeof DESTINATIONS];

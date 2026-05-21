@@ -1,6 +1,14 @@
 // Active-run save migration helpers for legacy or partial localStorage payloads.
-// Depends on current character/card data and the persisted active-run contract.
-import { cardLibrary, getStartingDeck, type BattleCard, type CharacterId, type DifficultyId } from "@/lib/game-data";
+// Depends on: game-data (character/card lookup), labyrinth types, game-constants (ACTS_PER_RUN, LEGACY_STARTER_DECK_IDS).
+// Used by: storage/io.ts indirectly via SaveDataSchema — and directly by the legacy normalizeSaveData test wrapper.
+import {
+  cardLibrary,
+  characters,
+  getStartingDeck,
+  type BattleCard,
+  type CharacterId,
+  type DifficultyId,
+} from "@/lib/game-data";
 import type {
   LabyrinthMap,
   LabyrinthNode,
@@ -9,7 +17,7 @@ import type {
   LabyrinthModifierKind,
 } from "@/lib/content-systems/types";
 import { ALL_LABYRINTH_MODIFIERS } from "@/lib/content-systems/labyrinth/modifiers";
-import { ACTS_PER_RUN } from "@/lib/game-constants";
+import { ACTS_PER_RUN, LEGACY_STARTER_DECK_IDS } from "@/lib/game-constants";
 
 import type { ActiveRunData } from "../run/types";
 
@@ -44,11 +52,12 @@ function isValidDifficultyId(id: unknown): id is DifficultyId {
   return typeof id === "string" && VALID_DIFFICULTY_IDS.includes(id);
 }
 
-const legacyStarterDeckIds = ["slash", "bash", "block", "anvil", "plate-mail", "apple", "meteor", "blessed-aegis"];
+// Derived from the live characters map — adding a new character automatically makes its saves valid.
+const VALID_CHARACTER_IDS = new Set(Object.keys(characters) as CharacterId[]);
 
 // Character IDs are persisted, so renamed or invalid IDs need explicit guarding before hydration.
 function isValidCharacterId(id: string): id is CharacterId {
-  return id === "knight" || id === "ranger" || id === "rogue" || id === "wizard";
+  return VALID_CHARACTER_IDS.has(id as CharacterId);
 }
 
 // Active-run snapshots must include real run fields; a lone characterId is only a
@@ -286,7 +295,7 @@ export function normalizeActiveRun(activeRun: unknown): ActiveRunData | null {
 
   const shouldUseClassDeck =
     candidate.runDeck.length === 0 ||
-    (isUnstartedRun(candidate) && deckIdsMatch(candidate.runDeck, legacyStarterDeckIds));
+    (isUnstartedRun(candidate) && deckIdsMatch(candidate.runDeck, [...LEGACY_STARTER_DECK_IDS]));
   const runDeck = shouldUseClassDeck
     ? getStartingDeck(characterId)
     : (candidate.runDeck as BattleCard[]).map(hydrateSavedCard);

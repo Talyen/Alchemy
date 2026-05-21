@@ -81,7 +81,6 @@ export type HomesteadEffectManifest = {
   companionDamage: number;
   companionBondLevels: Record<import("@/lib/game-data").CompanionId, number>;
   potionHealMultiplier: number;
-  potionManaBonus: number;
   potionDiscount: number;
   potionPotency: number;
   herbFindBonus: number;

@@ -1,3 +1,7 @@
+// Zod schemas for all persisted save data fields. This file is the validation layer only;
+// migration (version-to-version transforms) lives in migration.ts.
+// Depends on: game-data, homestead data, labyrinth modifiers, validation metadata, migration.
+// Used by: storage/io.ts (SaveDataSchema.safeParse), storage/migrations.ts (normalizeSaveData wrapper).
 import { z } from "zod";
 import {
   cardLibrary,
@@ -9,7 +13,14 @@ import {
   type CompanionId,
   type DifficultyId,
 } from "@/lib/game-data";
-import { ACTS_PER_RUN } from "@/lib/game-constants";
+import {
+  ACTS_PER_RUN,
+  DEFAULT_BRIGHTNESS_PCT,
+  DEFAULT_MASTER_VOLUME_PCT,
+  DEFAULT_MUSIC_VOLUME_PCT,
+  DEFAULT_SFX_VOLUME_PCT,
+  LEGACY_STARTER_DECK_IDS,
+} from "@/lib/game-constants";
 import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
 import { companionTierItems } from "@/lib/homestead/companions";
 import { MATERIAL_IDS, type MaterialId } from "@/lib/homestead/types";
@@ -31,7 +42,8 @@ const LABYRINTH_MODIFIER_KINDS = toNonEmptyTuple(
   Object.keys(ALL_LABYRINTH_MODIFIERS) as LabyrinthModifierKind[],
   "Labyrinth modifier kinds",
 );
-const MATERIAL_ZERO_INVENTORY: Record<MaterialId, number> = { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 };
+// Derived from the live MATERIAL_IDS list so new materials automatically get a zero default.
+const MATERIAL_ZERO_INVENTORY = Object.fromEntries(MATERIAL_IDS.map((id) => [id, 0])) as Record<MaterialId, number>;
 
 // Builds a material schema from homestead material IDs so inventory validation follows content changes.
 function createMaterialInventoryShape() {
@@ -116,7 +128,8 @@ export const UnlockedTalentsSchema = z.preprocess(
 
 export const CompletedDifficultiesSchema = z.preprocess(
   (val) => {
-    const result: Record<string, string[]> = { knight: [], rogue: [], wizard: [], ranger: [] };
+    // Seed from CHARACTER_IDS so adding a new character automatically gains an empty slot.
+    const result: Record<string, string[]> = Object.fromEntries(CHARACTER_IDS.map((id) => [id, []]));
     if (!val || typeof val !== "object") return result;
     for (const [key, ids] of Object.entries(val as Record<string, unknown>)) {
       if (Array.isArray(ids)) {
@@ -307,7 +320,8 @@ export const BattleCardSchema = z
 // ===== Labyrinth Node + Map =====
 const VALID_LABYRINTH_MODIFIER_KINDS: ReadonlySet<string> = new Set(LABYRINTH_MODIFIER_KINDS);
 
-export function filterLabyrinthModifiers(val: unknown): string[] {
+// Not exported — used only as a Zod preprocess argument within this file.
+function filterLabyrinthModifiers(val: unknown): string[] {
   if (!Array.isArray(val)) return [];
   return val.filter((v): v is string => typeof v === "string" && VALID_LABYRINTH_MODIFIER_KINDS.has(v));
 }
@@ -383,7 +397,7 @@ export const LabyrinthMapSchema = z
   .catch(null);
 
 // ===== ActiveRunData =====
-const LEGACY_STARTER_DECK_IDS = ["slash", "bash", "block", "anvil", "plate-mail", "apple", "meteor", "blessed-aegis"];
+// Imported from game-constants — single source of truth shared with active-run.ts.
 
 export const ActiveRunDataSchema = z
   .object({
@@ -426,7 +440,7 @@ export const ActiveRunDataSchema = z
       data.completedDestinations.length === 0;
     const hasLegacyDeck =
       data.runDeck.length === LEGACY_STARTER_DECK_IDS.length &&
-      data.runDeck.every((card, i) => card.id === LEGACY_STARTER_DECK_IDS[i]);
+      data.runDeck.every((card, i) => card.id === (LEGACY_STARTER_DECK_IDS as readonly string[])[i]);
     const runDeck =
       data.runDeck.length === 0 || (isUnstarted && hasLegacyDeck) ? getStartingDeck(data.characterId) : data.runDeck;
     return {
@@ -449,7 +463,7 @@ export const SaveDataSchema = z.preprocess(
     brightness: z
       .number()
       .finite()
-      .catch(100)
+      .catch(DEFAULT_BRIGHTNESS_PCT)
       .transform((v) => Math.max(50, Math.min(150, v))),
     discoveredCardIds: z
       .preprocess(
@@ -471,20 +485,21 @@ export const SaveDataSchema = z.preprocess(
       .catch([]),
     talentXP: TalentXPSchema,
     unlockedTalents: UnlockedTalentsSchema,
+    // .catch() fallbacks must match defaults.ts — both come from game-constants.ts.
     musicVolume: z
       .number()
       .finite()
-      .catch(35)
+      .catch(DEFAULT_MUSIC_VOLUME_PCT)
       .transform((v) => Math.max(0, Math.min(100, v))),
     sfxVolume: z
       .number()
       .finite()
-      .catch(70)
+      .catch(DEFAULT_SFX_VOLUME_PCT)
       .transform((v) => Math.max(0, Math.min(100, v))),
     masterVolume: z
       .number()
       .finite()
-      .catch(100)
+      .catch(DEFAULT_MASTER_VOLUME_PCT)
       .transform((v) => Math.max(0, Math.min(100, v))),
     muteInBackground: z.boolean().catch(true),
     autoEndTurn: z.boolean().catch(true),

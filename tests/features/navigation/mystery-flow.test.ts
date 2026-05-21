@@ -78,12 +78,6 @@ describe("applyMysteryEffect", () => {
     expect(mockSetRunGold).toHaveBeenCalledOnce();
   });
 
-  it("gainMaxMana returns false without side effects", () => {
-    const result = applyMysteryEffect({ kind: "gainMaxMana" }, context);
-    expect(result.followUp).toBeNull();
-    expect(mockSetRunDeck).not.toHaveBeenCalled();
-  });
-
   it("dispatches gainXP", () => {
     const result = applyMysteryEffect({ kind: "gainXP", keyword: "physical", amount: 5 }, context);
     expect(result.followUp).toBeNull();

@@ -1,5 +1,8 @@
-// Combat text aggregation helpers shared by battle effect modules.
-// Keeps presentation event merging independent from any specific effect reducer.
+/**
+ * Aggregates and merges floating combat text events for UI rendering.
+ * Depends on: types.ts.
+ * Depended on by: apply-effects, card-play, damage, status-effects, enemy-turn, trinket-effects, wish.
+ */
 import type { CombatTextEvent, NumericCombatTextEvent } from "./types";
 
 const hiddenStatusApplicationStats = new Set(["burn", "poison", "bleed", "freeze", "stun"]);

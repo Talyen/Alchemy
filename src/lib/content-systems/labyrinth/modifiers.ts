@@ -1,34 +1,50 @@
-// Labyrinth modifier definitions — enemy modifiers applied to combat and elite nodes,
-// plus reward modifiers that affect gold/materials/cards/trinkets from victory.
-// Encounter type determines count so players can read risk at a glance.
+/**
+ * Labyrinth modifiers applied to combat/elite nodes and victory rewards.
+ * Depends on: src/lib/game-data/difficulties.ts, src/lib/content-systems/types.ts, map-generation.ts
+ * Depended on by: map-generation.ts, labyrinth-map-screen.tsx
+ */
+
 import type { DifficultyModifier } from "@/lib/game-data/difficulties";
 import type { LabyrinthModifier, LabyrinthModifierKind } from "../types";
+import { shuffleWithRng } from "./map-generation";
+
+export const MODIFIER_CONFIG = {
+  ARMORED_AMOUNT: 2,
+  OVERWHELMING_AMOUNT: 2,
+  STURDY_HEALTH_PCT: 30,
+  BURNING_GROUND_DAMAGE: 2,
+  LEECHING_HEAL: 3,
+  GENEROUS_GOLD_MULTIPLIER: 0.5, // 50% increase
+  COMBAT_REWARD_MODIFIER_CHANCE: 0.5,
+  COMBAT_ENEMY_MODIFIER_COUNT: 1,
+  ELITE_ENEMY_MODIFIER_COUNT: 2,
+} as const;
 
 export const ALL_LABYRINTH_MODIFIERS: Record<LabyrinthModifierKind, LabyrinthModifier> = {
   armored: {
     kind: "armored",
     label: "Armored",
-    description: "Enemies start with 2 Armor",
+    description: `Enemies start with ${MODIFIER_CONFIG.ARMORED_AMOUNT} Armor`,
   },
   sturdy: {
     kind: "sturdy",
     label: "Sturdy",
-    description: "Enemies have 30% more Health",
+    description: `Enemies have ${MODIFIER_CONFIG.STURDY_HEALTH_PCT}% more Health`,
   },
   "burning-ground": {
     kind: "burning-ground",
     label: "Scorching",
-    description: "Take 2 Burn damage at the end of each turn",
+    description: `Take ${MODIFIER_CONFIG.BURNING_GROUND_DAMAGE} Burn damage at the end of each turn`,
   },
   overwhelming: {
     kind: "overwhelming",
     label: "Overwhelming",
-    description: "Enemies deal 2 more damage",
+    description: `Enemies deal ${MODIFIER_CONFIG.OVERWHELMING_AMOUNT} more damage`,
   },
   leeching: {
     kind: "leeching",
     label: "Vampiric",
-    description: "Enemies heal 3 Health on their turn",
+    description: `Enemies heal ${MODIFIER_CONFIG.LEECHING_HEAL} Health on their turn`,
   },
   "null-field": {
     kind: "null-field",
@@ -43,7 +59,7 @@ export const ALL_LABYRINTH_MODIFIERS: Record<LabyrinthModifierKind, LabyrinthMod
   generous: {
     kind: "generous",
     label: "Generous",
-    description: "Victory gold is increased by 50%",
+    description: `Victory gold is increased by ${MODIFIER_CONFIG.GENEROUS_GOLD_MULTIPLIER * 100}%`,
   },
   alchemist: {
     kind: "alchemist",
@@ -79,10 +95,10 @@ export function labyrinthModifiersToDifficulty(modifiers: string[]): DifficultyM
   for (const m of modifiers) {
     switch (m) {
       case "armored":
-        result.push({ kind: "enemy-starting-armor", amount: 2 });
+        result.push({ kind: "enemy-starting-armor", amount: MODIFIER_CONFIG.ARMORED_AMOUNT });
         break;
       case "overwhelming":
-        result.push({ kind: "increase-enemy-damage", amount: 2 });
+        result.push({ kind: "increase-enemy-damage", amount: MODIFIER_CONFIG.OVERWHELMING_AMOUNT });
         break;
       case "sturdy":
         result.push({ kind: "labyrinth-sturdy" });
@@ -110,8 +126,9 @@ export function getEnemyModifiersForNodeType(
   const pool = Object.keys(ALL_LABYRINTH_MODIFIERS).filter(
     (k) => !REWARD_MODIFIER_KINDS.has(k as LabyrinthModifierKind),
   ) as LabyrinthModifierKind[];
-  const count = type === "combat" ? 1 : 2;
-  return fisherYatesShuffle(pool, rng).slice(0, Math.min(count, pool.length));
+  const count =
+    type === "combat" ? MODIFIER_CONFIG.COMBAT_ENEMY_MODIFIER_COUNT : MODIFIER_CONFIG.ELITE_ENEMY_MODIFIER_COUNT;
+  return shuffleWithRng(pool, rng).slice(0, Math.min(count, pool.length));
 }
 
 // Selects reward modifiers for a given node type.
@@ -121,17 +138,7 @@ export function getRewardModifiersForNodeType(
   rng: () => number = Math.random,
 ): LabyrinthModifierKind[] {
   if (type === "boss") return [];
-  if (type === "combat" && rng() < 0.5) return [];
+  if (type === "combat" && rng() < MODIFIER_CONFIG.COMBAT_REWARD_MODIFIER_CHANCE) return [];
   const pool = Array.from(REWARD_MODIFIER_KINDS);
-  return [fisherYatesShuffle(pool, rng)[0]];
-}
-
-// Fisher-Yates shuffle using the provided RNG for unbiased results.
-function fisherYatesShuffle<T>(pool: T[], rng: () => number): T[] {
-  const result = [...pool];
-  for (let i = result.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    [result[i], result[j]] = [result[j], result[i]];
-  }
-  return result;
+  return [shuffleWithRng(pool, rng)[0]];
 }

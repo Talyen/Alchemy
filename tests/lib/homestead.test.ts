@@ -256,7 +256,6 @@ describe("mergeIntoManifest", () => {
     companionBondLevels: { ...defaultHomesteadEffects.companionBondLevels, wolf: 2 },
     forgeToBurn: true,
     potionHealMultiplier: 0.2,
-    potionManaBonus: 1,
     potionDiscount: 0.1,
     startGold: 5,
     startBlock: 3,
@@ -273,7 +272,6 @@ describe("mergeIntoManifest", () => {
     expect(merged.campfireHealBonus).toBeCloseTo(0.15);
     expect(merged.physicalCritChance).toBe(7);
     expect(merged.potionDiscount).toBeCloseTo(0.1);
-    expect(merged.potionManaBonus).toBe(1);
     expect(merged.companionBondLevels.wolf).toBe(2);
     expect(merged.forgeToBurn).toBe(true);
     expect(merged.healMultiplier).toBe(1);

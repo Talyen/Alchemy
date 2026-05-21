@@ -160,10 +160,6 @@ export function useAlchemyRunController({
     const store = useScreenStore.getState();
     store.setHoveredCardId(typeof id === "function" ? id(store.hoveredCardId) : id);
   }
-  function setHasActiveRun(active: boolean | ((prev: boolean) => boolean)) {
-    const store = useScreenStore.getState();
-    store.setHasActiveRun(typeof active === "function" ? active(store.hasActiveRun) : active);
-  }
   function setActiveLabyrinthModifiers(modifiers: LabyrinthModifierKind[]) {
     useScreenStore.getState().setActiveLabyrinthModifiers(modifiers);
   }
@@ -202,7 +198,6 @@ export function useAlchemyRunController({
     hasActiveBattle: battle.hasActiveBattle,
     setHasActiveBattle: battle.setHasActiveBattle,
     hasActiveRun,
-    setHasActiveRun,
     currentEnemyType: battle.battleState.currentEnemy.enemyType,
     clearCardGhosts: battle.clearCardGhosts,
     setBattleState: battle.setBattleState,

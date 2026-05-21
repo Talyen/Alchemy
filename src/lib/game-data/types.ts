@@ -179,7 +179,6 @@ export type TalentEffectManifest = {
   startGold: number;
   goldPerCombat: number;
   potionDiscount: number;
-  potionManaBonus: number;
   potionPotency: number;
   removeCardDiscount: number;
   enemyGoldDropBonus: number;

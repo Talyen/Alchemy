@@ -7,7 +7,6 @@ export const defaultHomesteadEffects: HomesteadEffectManifest = {
   companionDamage: 0,
   companionBondLevels: { wolf: 0, "lizard-scout": 0, imp: 0, "frost-whelp": 0, bear: 0, panther: 0, phoenix: 0 },
   potionHealMultiplier: 0,
-  potionManaBonus: 0,
   potionDiscount: 0,
   potionPotency: 0,
   herbFindBonus: 0,

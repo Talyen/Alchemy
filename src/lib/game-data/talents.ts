@@ -1,7 +1,13 @@
-// Unlockable talent data and conversion into flat combat effect manifests.
-// Depends on keyword IDs and battle talent effect shapes.
-// Used by talent UI/state and battle setup to avoid scanning raw talent IDs during combat.
+/**
+ * Talent definitions, pools, UI filter/sampling helpers, and default manifests.
+ * Depends on: src/lib/game-data/types.ts
+ * Depended on by: src/lib/talents.ts, homestead, and the battle state machine
+ */
 import type { KeywordId, TalentEffectManifest } from "./types";
+
+export const TALENTS_CONFIG = {
+  PLACEHOLDER_DESCRIPTION: "Placeholder talent (NYI)",
+} as const;
 
 // A talent definition — just an ID + description. Talent names were removed
 // per player feedback; the description is self-explanatory. New talents can be
@@ -42,7 +48,7 @@ function placeholderTalents(keywordId: KeywordId, idPrefix: string, start: numbe
   return Array.from({ length: end - start + 1 }, (_, index) => ({
     id: `${idPrefix}-${start + index}`,
     keywordId,
-    description: "Placeholder talent (NYI)",
+    description: TALENTS_CONFIG.PLACEHOLDER_DESCRIPTION,
   }));
 }
 
@@ -448,7 +454,7 @@ export const talentPool: TalentDefinition[] = [
     description: "Holy damage is increased by 20% against enemies with Burn",
     effects: [setEffect("holyVsBurnMultiplier", 20)],
   },
-  { id: "holy-dmg-1", keywordId: "holy", description: "Placeholder talent (NYI)" },
+  { id: "holy-dmg-1", keywordId: "holy", description: TALENTS_CONFIG.PLACEHOLDER_DESCRIPTION },
 
   // --- Wish ---
   {
@@ -646,7 +652,7 @@ export type UnlockedTalents = Partial<Record<KeywordId, string[]>>;
 
 // Returns a manifest with all zero/false/null values — the safe default when no talents are
 // unlocked. New TalentEffectManifest fields must be added here AND in computeTalentEffects.
-export function createEmptyTalentManifest(): TalentEffectManifest {
+function createPhysicalAndStunDefaults() {
   return {
     flatPhysicalDamage: 0,
     armorToPhysicalDamage: false,
@@ -665,7 +671,11 @@ export function createEmptyTalentManifest(): TalentEffectManifest {
     forgeOnStun: 0,
     stunStripArmor: false,
     manaOnStun: 0,
+  };
+}
 
+function createBlockForgeAndArmorDefaults() {
+  return {
     startBlock: 0,
     blockToPhysicalDamage: false,
     blockPreventsBleed: false,
@@ -684,7 +694,11 @@ export function createEmptyTalentManifest(): TalentEffectManifest {
     armorBlockAmount: 0,
     armorDoubledBelowHalfHealth: false,
     firstArmorCardDoubled: false,
+  };
+}
 
+function createHealthAndBurnDefaults() {
+  return {
     campfireHealBonus: 0,
     healthThresholdBlock: null,
     maxHealthPerCombat: 0,
@@ -696,13 +710,16 @@ export function createEmptyTalentManifest(): TalentEffectManifest {
     burnRemovesEnemyArmor: false,
     burnDoubleChance: 0,
     receiveHalfBurnDamage: false,
+  };
+}
 
+function createGoldAndHolyDefaults() {
+  return {
     shopCardDiscount: 0,
     shopFreeRefresh: false,
     startGold: 0,
     goldPerCombat: 0,
     potionDiscount: 0,
-    potionManaBonus: 0,
     potionPotency: 1,
     removeCardDiscount: 0,
     enemyGoldDropBonus: 0,
@@ -720,7 +737,11 @@ export function createEmptyTalentManifest(): TalentEffectManifest {
     holyWishChance: 0,
     holyBlockPercentFromDamage: 0,
     holyVsBurnMultiplier: 0,
+  };
+}
 
+function createWishAndPoisonDefaults() {
+  return {
     goldOnWishAmount: 0,
     wishUndiscoveredCards: false,
     healthOnWish: 0,
@@ -734,7 +755,11 @@ export function createEmptyTalentManifest(): TalentEffectManifest {
     receiveHalfPoisonDamage: false,
     goldOnFirstPoison: 0,
     poisonHalvesHealing: false,
+  };
+}
 
+function createCompanionFreezeTrapAndBleedDefaults() {
+  return {
     companionDamage: 0,
     companionGoldFindActive: false,
 
@@ -751,6 +776,19 @@ export function createEmptyTalentManifest(): TalentEffectManifest {
     bleedExecuteThreshold: 0,
     bleedDesperateMultiplier: 1,
     bleedPoisonChance: 0,
+  };
+}
+
+// Returns a manifest with all zero/false/null values — the safe default when no talents are
+// unlocked. New TalentEffectManifest fields must be added to the appropriate helper above.
+export function createEmptyTalentManifest(): TalentEffectManifest {
+  return {
+    ...createPhysicalAndStunDefaults(),
+    ...createBlockForgeAndArmorDefaults(),
+    ...createHealthAndBurnDefaults(),
+    ...createGoldAndHolyDefaults(),
+    ...createWishAndPoisonDefaults(),
+    ...createCompanionFreezeTrapAndBleedDefaults(),
   };
 }
 

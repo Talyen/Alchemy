@@ -1,6 +1,6 @@
-// Declarative mystery event data and effect schema for non-combat route nodes.
-// Depends on game-data art/card IDs and homestead material IDs.
-// Consumed by run navigation and mystery screens; this file should not mutate run state.
+// Defines declarative mystery event data and effect schemas for non-combat route nodes.
+// Depends on game-data art/card libraries and homestead material types.
+// Consumed by run navigation controllers, mystery flows, and UI screen views.
 import { placeholderMystery } from "@/lib/game-data";
 import type { KeywordId } from "@/lib/game-data";
 import type { MaterialId } from "@/lib/homestead/types";
@@ -12,7 +12,6 @@ export type MysteryEffect =
   | { kind: "damageHealth"; amount: number }
   | { kind: "gainGold"; amount: number }
   | { kind: "loseGold"; amount: number }
-  | { kind: "gainMaxMana"; amount: number }
   | { kind: "gainXP"; keyword: KeywordId; amount: number }
   | { kind: "removeCard"; mode: "random" | "choose" }
   | { kind: "gainTrinket"; trinketId: string }

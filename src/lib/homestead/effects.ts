@@ -72,7 +72,6 @@ export function mergeIntoManifest(
     physicalCritChance: talentEffects.physicalCritChance + homesteadEffects.physicalCritChance,
     companionBondLevels: { ...talentEffects.companionBondLevels, ...homesteadEffects.companionBondLevels },
     potionDiscount: talentEffects.potionDiscount + Math.round(homesteadEffects.potionDiscount * 100) / 100,
-    potionManaBonus: talentEffects.potionManaBonus + homesteadEffects.potionManaBonus,
     potionPotency: talentEffects.potionPotency + homesteadEffects.potionPotency,
     forgeToBurn: talentEffects.forgeToBurn || homesteadEffects.forgeToBurn,
   };

@@ -1,4 +1,8 @@
-// Player card damage to the current enemy: base damage, crit, armor reduction, trait multipliers, and riders.
+/**
+ * Handles player damage calculations, critical strikes, armor mitigation, and status riders.
+ * Depends on: ./status-effects, ./combat-text, ./trinket-effects, ./wish, ./types, ../game-constants.
+ * Depended on by: ./apply-effects.
+ */
 import { applyDamageStatuses, getEnemyDamageMultiplier, resolveStunTrigger } from "./status-effects";
 import { mergeCombatText } from "./combat-text";
 import { applyBoneCharmHeal, applyLuckyCloverGold } from "./trinket-effects";
@@ -16,6 +20,7 @@ import {
   type CombatTextEvent,
 } from "./types";
 import {
+  BATTLE_CONFIG,
   BLEED_EXECUTE_MULTIPLIER,
   CRIT_MULTIPLIER,
   FIRST_EFFECT_MULTIPLIER,
@@ -25,7 +30,16 @@ import {
   PERCENT_DENOMINATOR,
 } from "../game-constants";
 
-function computeBaseDamage(state: BattleState, effect: Extract<BattleCardEffect, { kind: "damage" }>) {
+const DAMAGE_CONFIG = {
+  MIN_BURN_AMOUNT: 1,
+  WISH_COUNT_SINGLE: 1,
+};
+
+/**
+ * Calculates raw base damage amount before any keyword specific modifiers are applied.
+ * Evaluates forge bonus and whether the damage scales on current block or armor.
+ */
+function computeBaseRawAmount(state: BattleState, effect: Extract<BattleCardEffect, { kind: "damage" }>): number {
   const isPhysicalOrStun = effect.damageType === "physical" || effect.damageType === "stun";
   const isBurn = effect.damageType === "burn";
   const isHoly = effect.damageType === "holy";
@@ -35,68 +49,94 @@ function computeBaseDamage(state: BattleState, effect: Extract<BattleCardEffect,
   if (isBurn && state.talentEffects.forgeToBurn) forgeBonus = state.playerStatuses.forge;
   if (isHoly && state.talentEffects.forgeToHoly) forgeBonus = state.playerStatuses.forge;
 
-  let rawAmount: number;
   if (effect.equalToBlock) {
-    rawAmount = state.playerStatuses.block + forgeBonus;
-  } else if (effect.equalToArmor) {
-    rawAmount = state.playerStatuses.armor + forgeBonus;
-  } else {
-    rawAmount = effect.amount + forgeBonus;
+    return state.playerStatuses.block + forgeBonus;
   }
+  if (effect.equalToArmor) {
+    return state.playerStatuses.armor + forgeBonus;
+  }
+  return effect.amount + forgeBonus;
+}
+
+/**
+ * Applies physical damage modifiers from character talent effects.
+ * Takes into account flat bonus, armor/block scaling, stunned/frozen multipliers, and bleed/poison status bonuses.
+ */
+function applyPhysicalDamageModifiers(state: BattleState, rawAmount: number): number {
+  let nextAmount = rawAmount + state.talentEffects.flatPhysicalDamage;
+  if (state.talentEffects.armorToPhysicalDamage) {
+    nextAmount += state.playerStatuses.armor;
+  }
+  if (state.talentEffects.blockToPhysicalDamage) {
+    nextAmount += Math.round(state.playerStatuses.block / HALF_DIVISOR);
+  }
+  if (state.enemyStunSkipTurns > 0) {
+    nextAmount = Math.round(nextAmount * (1 + state.talentEffects.physicalVsStunnedMultiplier / PERCENT_DENOMINATOR));
+  }
+  if (state.enemyFreezeSkipTurns > 0) {
+    nextAmount = Math.round(nextAmount * (1 + state.talentEffects.physicalVsFrozenMultiplier / PERCENT_DENOMINATOR));
+  }
+  if (state.enemyStatuses.poison > 0) {
+    nextAmount += state.talentEffects.poisonPhysicalBonus;
+  }
+  if (state.enemyStatuses.bleed > 0) {
+    nextAmount += state.talentEffects.bleedPhysicalBonus + state.talentEffects.bleedPhysicalTakenBonus;
+  }
+  return nextAmount;
+}
+
+/**
+ * Applies holy damage modifiers based on player gold and current block.
+ * Amplifies output if the target is currently afflicted with burn.
+ */
+function applyHolyDamageModifiers(state: BattleState, rawAmount: number): number {
+  let nextAmount = rawAmount;
+  nextAmount += Math.round((state.gold * state.talentEffects.holyGoldPercent) / PERCENT_DENOMINATOR);
+  nextAmount += Math.round((state.playerStatuses.block * state.talentEffects.holyBlockPercent) / PERCENT_DENOMINATOR);
+  if (state.enemyStatuses.burn > 0) {
+    nextAmount = Math.round(nextAmount * (1 + state.talentEffects.holyVsBurnMultiplier / PERCENT_DENOMINATOR));
+  }
+  return nextAmount;
+}
+
+/**
+ * Applies bleed damage modifiers, including desperation below half health and execute bonuses.
+ */
+function applyBleedDamageModifiers(state: BattleState, rawAmount: number): number {
+  let nextAmount = rawAmount;
+  if (state.playerHealth <= state.playerMaxHealth / HALF_DIVISOR && state.talentEffects.bleedDesperateMultiplier > 1) {
+    nextAmount = Math.round(nextAmount * state.talentEffects.bleedDesperateMultiplier);
+  }
+  if (state.enemyHealth <= (state.enemyMaxHealth * state.talentEffects.bleedExecuteThreshold) / PERCENT_DENOMINATOR) {
+    nextAmount = Math.round(nextAmount * BLEED_EXECUTE_MULTIPLIER);
+  }
+  return nextAmount;
+}
+
+/**
+ * Computes core damage before crit, armor, and traits.
+ */
+function computeBaseDamage(state: BattleState, effect: Extract<BattleCardEffect, { kind: "damage" }>) {
+  let rawAmount = computeBaseRawAmount(state, effect);
 
   if (effect.damageType === "physical") {
-    rawAmount += state.talentEffects.flatPhysicalDamage;
-    if (state.talentEffects.armorToPhysicalDamage) {
-      rawAmount += state.playerStatuses.armor;
-    }
-    if (state.talentEffects.blockToPhysicalDamage) {
-      rawAmount += Math.round(state.playerStatuses.block / HALF_DIVISOR);
-    }
-    if (state.enemyStunSkipTurns > 0) {
-      rawAmount = Math.round(rawAmount * (1 + state.talentEffects.physicalVsStunnedMultiplier / PERCENT_DENOMINATOR));
-    }
-    if (state.enemyFreezeSkipTurns > 0) {
-      rawAmount = Math.round(rawAmount * (1 + state.talentEffects.physicalVsFrozenMultiplier / PERCENT_DENOMINATOR));
-    }
-    if (state.enemyStatuses.poison > 0) {
-      rawAmount += state.talentEffects.poisonPhysicalBonus;
-    }
-    if (state.enemyStatuses.bleed > 0) {
-      rawAmount += state.talentEffects.bleedPhysicalBonus + state.talentEffects.bleedPhysicalTakenBonus;
-    }
-  }
-
-  if (effect.damageType === "holy") {
-    rawAmount += Math.round((state.gold * state.talentEffects.holyGoldPercent) / PERCENT_DENOMINATOR);
-    rawAmount += Math.round((state.playerStatuses.block * state.talentEffects.holyBlockPercent) / PERCENT_DENOMINATOR);
-    if (state.enemyStatuses.burn > 0) {
-      rawAmount = Math.round(rawAmount * (1 + state.talentEffects.holyVsBurnMultiplier / PERCENT_DENOMINATOR));
-    }
-  }
-
-  if (effect.damageType === "bleed") {
-    if (
-      state.playerHealth <= state.playerMaxHealth / HALF_DIVISOR &&
-      state.talentEffects.bleedDesperateMultiplier > 1
-    ) {
-      rawAmount = Math.round(rawAmount * state.talentEffects.bleedDesperateMultiplier);
-    }
-    if (state.enemyHealth <= (state.enemyMaxHealth * state.talentEffects.bleedExecuteThreshold) / PERCENT_DENOMINATOR) {
-      rawAmount = Math.round(rawAmount * BLEED_EXECUTE_MULTIPLIER);
-    }
-  }
-
-  if (effect.damageType === "stun") {
+    rawAmount = applyPhysicalDamageModifiers(state, rawAmount);
+  } else if (effect.damageType === "holy") {
+    rawAmount = applyHolyDamageModifiers(state, rawAmount);
+  } else if (effect.damageType === "bleed") {
+    rawAmount = applyBleedDamageModifiers(state, rawAmount);
+  } else if (effect.damageType === "stun") {
     rawAmount += state.talentEffects.flatStunDamage;
-  }
-
-  if (effect.damageType === "trap") {
+  } else if (effect.damageType === "trap") {
     rawAmount += state.talentEffects.flatTrapDamage;
   }
 
   return Math.max(0, rawAmount);
 }
 
+/**
+ * Evaluates whether damage turns into a critical strike and returns modified damage.
+ */
 function applyCrit(damage: number, damageType: string, state: BattleState) {
   const physCritChance = damageType === "physical" ? state.talentEffects.physicalCritChance : 0;
   const totalChance = GLOBAL_CRIT_CHANCE + physCritChance;
@@ -104,6 +144,9 @@ function applyCrit(damage: number, damageType: string, state: BattleState) {
   return isCrit ? damage * CRIT_MULTIPLIER : damage;
 }
 
+/**
+ * Applies standard lifesteal to restore player health based on damage dealt.
+ */
 function applyLifesteal(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
   if (damage <= 0) return state;
   const healAmount = Math.round(damage * state.talentEffects.healMultiplier);
@@ -111,6 +154,9 @@ function applyLifesteal(state: BattleState, damage: number, combatTexts: CombatT
   return applyPlayerHealing(state, healAmount);
 }
 
+/**
+ * Restores player health proportionally for holy damage types.
+ */
 function applyHolyLifesteal(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
   if (damage <= 0 || state.talentEffects.holyLifestealPercent <= 0) return state;
   const healAmount = Math.round(
@@ -121,6 +167,9 @@ function applyHolyLifesteal(state: BattleState, damage: number, combatTexts: Com
   return applyPlayerHealing(state, healAmount);
 }
 
+/**
+ * Grants player block proportionally when holy damage is dealt.
+ */
 function applyDamageBlock(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
   if (damage <= 0 || state.talentEffects.holyBlockPercentFromDamage <= 0) return state;
   const blockAmount = Math.round((damage * state.talentEffects.holyBlockPercentFromDamage) / PERCENT_DENOMINATOR);
@@ -129,42 +178,62 @@ function applyDamageBlock(state: BattleState, damage: number, combatTexts: Comba
   return addPlayerStatus(state, "block", blockAmount);
 }
 
+/**
+ * Processes first-time burn multipliers from talents and trinkets.
+ */
+function applyFirstBurnModifiers(state: BattleState, rawDamage: number): { state: BattleState; damage: number } {
+  let nextState = state;
+  let nextDamage = rawDamage;
+
+  if (nextState.talentEffects.firstBurnCardDoubled && !nextState.flags.firstBurnCardDoubledUsed) {
+    nextDamage *= FIRST_EFFECT_MULTIPLIER;
+    nextState = setFlag(nextState, "firstBurnCardDoubledUsed", true);
+  }
+  if (nextState.trinketEffects.firstBurnDoubled && !nextState.flags.firstBurnTrinketDoubledUsed) {
+    nextDamage *= FIRST_EFFECT_MULTIPLIER;
+    nextState = setFlag(nextState, "firstBurnTrinketDoubledUsed", true);
+  }
+
+  return { state: nextState, damage: nextDamage };
+}
+
+/**
+ * Processes first-time holy modifiers from trinkets.
+ */
+function applyFirstHolyModifiers(state: BattleState, rawDamage: number): { state: BattleState; damage: number } {
+  let nextState = state;
+  let nextDamage = rawDamage;
+
+  if (nextState.trinketEffects.firstHolyDamageDoubled && !nextState.flags.firstHolyDamageBonusUsed) {
+    nextDamage *= FIRST_EFFECT_MULTIPLIER;
+    nextState = setFlag(nextState, "firstHolyDamageBonusUsed", true);
+  }
+
+  return { state: nextState, damage: nextDamage };
+}
+
+/**
+ * Wraps first-card doubling modifications for damage types.
+ */
 function applyFirstDamageModifiers(
   state: BattleState,
   effect: Extract<BattleCardEffect, { kind: "damage" }>,
   rawDamage: number,
 ) {
-  let nextState = state;
-  let nextDamage = rawDamage;
-
-  if (
-    effect.damageType === "burn" &&
-    nextState.talentEffects.firstBurnCardDoubled &&
-    !nextState.flags.firstBurnCardDoubledUsed
-  ) {
-    nextDamage *= FIRST_EFFECT_MULTIPLIER;
-    nextState = setFlag(nextState, "firstBurnCardDoubledUsed", true);
+  if (effect.damageType === "burn") {
+    const res = applyFirstBurnModifiers(state, rawDamage);
+    return { state: res.state, rawDamage: res.damage };
   }
-  if (
-    effect.damageType === "burn" &&
-    nextState.trinketEffects.firstBurnDoubled &&
-    !nextState.flags.firstBurnTrinketDoubledUsed
-  ) {
-    nextDamage *= FIRST_EFFECT_MULTIPLIER;
-    nextState = setFlag(nextState, "firstBurnTrinketDoubledUsed", true);
+  if (effect.damageType === "holy") {
+    const res = applyFirstHolyModifiers(state, rawDamage);
+    return { state: res.state, rawDamage: res.damage };
   }
-  if (
-    effect.damageType === "holy" &&
-    nextState.trinketEffects.firstHolyDamageDoubled &&
-    !nextState.flags.firstHolyDamageBonusUsed
-  ) {
-    nextDamage *= FIRST_EFFECT_MULTIPLIER;
-    nextState = setFlag(nextState, "firstHolyDamageBonusUsed", true);
-  }
-
-  return { state: nextState, rawDamage: nextDamage };
+  return { state, rawDamage };
 }
 
+/**
+ * Resolves trinket-based stun triggers from playing high physical/stun damage with active forge stacks.
+ */
 function applyForgeStunRider(
   state: BattleState,
   effect: Extract<BattleCardEffect, { kind: "damage" }>,
@@ -187,6 +256,9 @@ function applyForgeStunRider(
   return resolveStunTrigger(addEnemyStatus(state, "stun", state.trinketEffects.forgeStunAmount), combatTexts);
 }
 
+/**
+ * Applies riders specific to holy damage: lifesteal, block gain, burn chance, and wish chance.
+ */
 function applyHolyDamageRiders(state: BattleState, card: BattleCard, damage: number, combatTexts: CombatTextEvent[]) {
   let nextState = applyHolyLifesteal(state, damage, combatTexts);
   nextState = applyDamageBlock(nextState, damage, combatTexts);
@@ -195,7 +267,9 @@ function applyHolyDamageRiders(state: BattleState, card: BattleCard, damage: num
     nextState.talentEffects.holyBurnChance > 0 &&
     Math.random() * PERCENT_DENOMINATOR < nextState.talentEffects.holyBurnChance
   ) {
-    const burnAmount = isNullFieldActive(nextState) ? Math.max(1, Math.round(damage / 2)) : damage;
+    const burnAmount = isNullFieldActive(nextState)
+      ? Math.max(DAMAGE_CONFIG.MIN_BURN_AMOUNT, Math.round(damage / HALF_DIVISOR))
+      : damage;
     nextState = {
       ...nextState,
       enemyStatuses: { ...nextState.enemyStatuses, burn: nextState.enemyStatuses.burn + burnAmount },
@@ -206,18 +280,24 @@ function applyHolyDamageRiders(state: BattleState, card: BattleCard, damage: num
     nextState.talentEffects.holyWishChance > 0 &&
     Math.random() * PERCENT_DENOMINATOR < nextState.talentEffects.holyWishChance
   ) {
-    nextState = applyWishEffect(nextState, card, 1, combatTexts);
+    nextState = applyWishEffect(nextState, card, DAMAGE_CONFIG.WISH_COUNT_SINGLE, combatTexts);
   }
 
   return nextState;
 }
 
+/**
+ * Awards player gold if the enemy has the "gold-trove" trait (e.g. Mimic).
+ */
 function applyGoldTroveReward(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
   if (!state.currentEnemy.traits.some((t) => t.id === "gold-trove") || damage <= 0) return state;
   mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "gold", amount: GOLD_TROVE_DAMAGE_REWARD });
   return addGold(state, GOLD_TROVE_DAMAGE_REWARD);
 }
 
+/**
+ * Consumes player forge charge after executing a physical/stun hit.
+ */
 function consumeForgeAfterPhysicalDamage(
   state: BattleState,
   effect: Extract<BattleCardEffect, { kind: "damage" }>,
@@ -233,11 +313,14 @@ function consumeForgeAfterPhysicalDamage(
     ...state,
     playerStatuses: {
       ...state.playerStatuses,
-      forge: state.playerStatuses.forge - 1,
+      forge: state.playerStatuses.forge - BATTLE_CONFIG.FORGE_DECAY_AMOUNT,
     },
   };
 }
 
+/**
+ * Computes final adjusted damage to the enemy, considering critical strikes, traits, and armor reduction.
+ */
 function computeCardDamageToEnemy(state: BattleState, effect: Extract<BattleCardEffect, { kind: "damage" }>) {
   const modifiedBase = applyFirstDamageModifiers(state, effect, computeBaseDamage(state, effect));
   const rawDamage = modifiedBase.rawDamage;
@@ -249,6 +332,19 @@ function computeCardDamageToEnemy(state: BattleState, effect: Extract<BattleCard
   return { nextState: modifiedBase.state, modifiedDamage: Math.round(damageAfterArmor * multiplier) };
 }
 
+/**
+ * Decreases enemy armor stacks by decay configuration on health-hitting damage.
+ */
+function decayEnemyArmorOnHit(state: BattleState, modifiedDamage: number): BattleState {
+  if (modifiedDamage > 0 && state.enemyArmor > 0) {
+    return { ...state, enemyArmor: state.enemyArmor - BATTLE_CONFIG.ARMOR_DECAY_AMOUNT };
+  }
+  return state;
+}
+
+/**
+ * Processes secondary damage riders (bone charm heal, damage statuses, lifesteal, clover gold).
+ */
 function applyDamageRiders(
   state: BattleState,
   card: BattleCard,
@@ -261,11 +357,7 @@ function applyDamageRiders(
     enemyHealth: clampHealth(state.enemyHealth, -modifiedDamage, state.enemyMaxHealth),
   };
 
-  // Enemy armor reduces by 1 per hit that deals health damage (matches player armor behavior).
-  if (modifiedDamage > 0 && nextState.enemyArmor > 0) {
-    nextState = { ...nextState, enemyArmor: nextState.enemyArmor - 1 };
-  }
-
+  nextState = decayEnemyArmorOnHit(nextState, modifiedDamage);
   nextState = applyBoneCharmHeal(nextState, state.enemyHealth > 0, combatTexts);
   nextState = applyDamageStatuses(nextState, effect, modifiedDamage, combatTexts);
   nextState = applyForgeStunRider(nextState, effect, combatTexts);
@@ -283,6 +375,9 @@ function applyDamageRiders(
   return consumeForgeAfterPhysicalDamage(nextState, effect, modifiedDamage);
 }
 
+/**
+ * Evaluates core damage calculation and triggers all associated status/health riders.
+ */
 export function dealDamageToEnemy(
   state: BattleState,
   card: BattleCard,

@@ -1,5 +1,8 @@
-// Battle-time trinket riders that are shared by card damage, status, and turn reducers.
-// Depends only on state helpers and combat text merging to avoid effect-module import cycles.
+/**
+ * Resolves passive, combat-time trinket triggers.
+ * Depends on: types.ts, combat-text.ts, game-constants.ts.
+ * Depended on by: damage.ts, enemy-turn.ts, status-effects.ts.
+ */
 import { PERCENT_DENOMINATOR } from "../game-constants";
 import { addGold, applyPlayerHealing, type BattleState, type CombatTextEvent } from "./types";
 import { mergeCombatText } from "./combat-text";

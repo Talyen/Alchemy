@@ -1,4 +1,8 @@
-// Labyrinth configuration constants.
+/**
+ * Labyrinth configuration constants and labels.
+ * Depends on: src/lib/content-systems/types.ts
+ * Depended on by: map-generation.ts, use-labyrinth-controller.ts, labyrinth-map-screen.tsx
+ */
 import type { LabyrinthNodeType } from "../types";
 
 export const NODE_TYPE_LABELS: Record<LabyrinthNodeType, string> = {

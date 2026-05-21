@@ -1,5 +1,6 @@
-// Mystery event effect dispatcher used by run navigation.
-// Depends on game data pools, reward utilities, audio feedback, and mystery event types.
+// Dispatches and applies mystery event consequences to the run state.
+// Depends on game libraries, audio triggers, utility helpers, and mystery types.
+// Consumed by the run navigation flow and the useMysteryFlow React hook.
 import { cardLibrary, trinketLibrary, type BattleCard, type KeywordId } from "@/lib/game-data";
 import { playGoldGain, playGoldSpend } from "@/lib/audio";
 import { MIXED_POTION_CARD_ID, MYSTERY_CARD_CHOICES } from "@/lib/game-constants";
@@ -12,7 +13,10 @@ import type { MysteryEffect } from "../mystery-events";
 import { sampleItems } from "../utils";
 
 export type MysteryEffectResult = {
-  /** When non-null, the effect opened a sub-picker that pauses further effect processing. */
+  /**
+   * When non-null, indicates that a sub-picker dialog (e.g., choosing a card)
+   * was opened, which pauses the evaluation of subsequent effects in the list.
+   */
   followUp: "choose-card" | null;
 };
 
@@ -30,23 +34,25 @@ type MysteryEffectContext = {
   onAwardGold: (amount: number) => void;
 };
 
-// Applies a single mystery effect and returns a result indicating whether follow-up UI should pause.
+// Applies a single mystery consequence effect to the run state.
+// Returns a result indicating if the navigation flow must pause for follow-up choice UI.
 export function applyMysteryEffect(effect: MysteryEffect, context: MysteryEffectContext): MysteryEffectResult {
   switch (effect.kind) {
     case "addCard":
       return addSpecificMysteryCard(effect.cardId, context);
     case "chooseCard":
+      // Pauses effect processing to let the player manually choose a card from choices.
       return offerMysteryCardChoices(context);
     case "healHealth":
       return healFromMystery(effect.amount, effect.chance, context);
     case "damageHealth":
       return damageFromMystery(effect.amount, context);
     case "gainGold":
+      // State mutation goes through onAwardGold; plays a gain jingle side effect.
       return gainMysteryGold(effect.amount, context);
     case "loseGold":
+      // State mutation directly modifies gold; plays a spend jingle side effect.
       return loseMysteryGold(effect.amount, context);
-    case "gainMaxMana":
-      return { followUp: null };
     case "gainXP":
       context.awardMysteryXP(effect.keyword, effect.amount);
       return { followUp: null };

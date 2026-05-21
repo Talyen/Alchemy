@@ -5,7 +5,6 @@ import {
   createSeededRng,
   generateLabyrinthMap,
   failNode,
-  revealConnected,
   setCurrentNode,
   withCurrentNode,
 } from "@/lib/content-systems/labyrinth/map-generation";
@@ -179,29 +178,6 @@ describe("generateLabyrinthMap", () => {
       if (!same) break;
     }
     expect(same).toBe(false);
-  });
-});
-
-describe("revealConnected", () => {
-  it("marks hidden neighbors as visible", () => {
-    const map = generateLabyrinthMap(createSeededRng(42));
-    // After generation, the full route is visible.
-    const start = map.grid[0][START_COL]!;
-    expect(start.state).toBe("current");
-    for (const conn of start.connections) {
-      const neighbor = map.grid[conn.row][conn.col];
-      expect(neighbor).not.toBeNull();
-      expect(neighbor!.state).toBe("visible");
-    }
-  });
-
-  it("does nothing if current node has no connections", () => {
-    const map = generateLabyrinthMap(createSeededRng(42));
-    // Force a node at (0, 0) with no connections.
-    map.grid[0][0] = { type: "combat", modifiers: [], rewardModifiers: [], connections: [], state: "hidden" };
-    map.currentNode = { row: 0, col: 0 };
-    revealConnected(map);
-    expect(map.grid[0][0]!.state).toBe("hidden"); // unchanged, no connections
   });
 });
 

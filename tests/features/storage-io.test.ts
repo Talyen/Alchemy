@@ -39,26 +39,26 @@ describe("storage io", () => {
     teardownWindow();
   });
 
-  it("loadAlchemySaveData returns defaults when localStorage empty", async () => {
-    const { loadAlchemySaveData } = await import("@/features/alchemy/storage/io");
-    const data = loadAlchemySaveData();
+  it("loadAlchemySaveState returns defaults when localStorage empty", async () => {
+    const { loadAlchemySaveState } = await import("@/features/alchemy/storage/io");
+    const data = loadAlchemySaveState().data;
     expect(data.selectedAspectRatio).toBe("auto");
     expect(data.activeRun).toBeNull();
   });
 
-  it("loadAlchemySaveData returns defaults on corrupt JSON", async () => {
+  it("loadAlchemySaveState returns defaults on corrupt JSON", async () => {
     mockStorage[SAVE_KEY] = "not-json";
-    const { loadAlchemySaveData, loadAlchemySaveState } = await import("@/features/alchemy/storage/io");
-    const data = loadAlchemySaveData();
+    const { loadAlchemySaveState } = await import("@/features/alchemy/storage/io");
+    const data = loadAlchemySaveState().data;
     expect(data.selectedAspectRatio).toBe("auto");
     expect(loadAlchemySaveState().status.kind).toBe("corrupt");
   });
 
-  it("loadAlchemySaveData loads valid save data", async () => {
+  it("loadAlchemySaveState loads valid save data", async () => {
     vi.spyOn(console, "info").mockImplementation(() => {});
     mockStorage[SAVE_KEY] = JSON.stringify({ musicVolume: 50, sfxVolume: 50 });
-    const { loadAlchemySaveData } = await import("@/features/alchemy/storage/io");
-    const data = loadAlchemySaveData();
+    const { loadAlchemySaveState } = await import("@/features/alchemy/storage/io");
+    const data = loadAlchemySaveState().data;
     expect(data.musicVolume).toBe(50);
   });
 
@@ -134,11 +134,11 @@ describe("storage io", () => {
       } as unknown as Storage,
     };
 
-    const { loadAlchemySaveData, saveAlchemySaveData, clearAlchemySaveData } = await import(
+    const { loadAlchemySaveState, saveAlchemySaveData, clearAlchemySaveData } = await import(
       "@/features/alchemy/storage/io"
     );
 
-    expect(loadAlchemySaveData()).toEqual(defaultSaveData);
+    expect(loadAlchemySaveState().data).toEqual(defaultSaveData);
     expect(() => saveAlchemySaveData(defaultSaveData)).not.toThrow();
     expect(() => clearAlchemySaveData()).not.toThrow();
   });
