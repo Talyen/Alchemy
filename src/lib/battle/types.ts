@@ -135,7 +135,7 @@ export type BattleState = {
 // animation system. They're merged by (target, kind, stat) so rapid-fire damage
 // from multi-hit cards shows "-5" instead of "-2 -3".
 export type CombatTextTarget = "player" | "enemy";
-export type CombatTextKind = "damage" | "heal" | "status" | "notice";
+export type CombatTextKind = "damage" | "heal" | "status" | "multiply" | "notice";
 export type CombatTextStat = DamageType | PlayerStatusId | EnemyStatusId | "health" | "mana" | "gold";
 
 export type NumericCombatTextEvent = {

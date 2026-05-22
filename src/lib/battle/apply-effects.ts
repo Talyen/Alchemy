@@ -23,6 +23,7 @@ import {
 } from "./types";
 import { MIN_MAX_MANA_FLOOR, POTION_CARD_ID_FRAGMENT } from "../game-constants";
 import { mergeCombatText } from "./combat-text";
+import { drawCards } from "./draw";
 
 /**
  * Handles damage card effects.
@@ -49,7 +50,14 @@ function handlePlayerStatusEffect(
   potionMult: number,
   combatTexts: CombatTextEvent[],
 ): BattleState {
-  const adjustedEffect = potionMult !== 1 ? { ...effect, amount: Math.round(effect.amount * potionMult) } : effect;
+  let adjustedAmount = effect.amount;
+  if (effect.perManaCrystal) {
+    adjustedAmount = effect.perManaCrystal * state.maxMana;
+  }
+  if (potionMult !== 1) {
+    adjustedAmount = Math.round(adjustedAmount * potionMult);
+  }
+  const adjustedEffect = { ...effect, amount: adjustedAmount };
   return applyPlayerStatusEffect(state, adjustedEffect, combatTexts);
 }
 
@@ -178,6 +186,81 @@ function handleSelfDamage(
   return addPlayerStatus(postDamage, damageType, amount);
 }
 
+function handleLoseHealth(state: BattleState, amount: number, combatTexts: CombatTextEvent[]): BattleState {
+  const postDamage = applyPlayerCombatDamage(state, amount);
+  mergeCombatText(combatTexts, {
+    target: "player",
+    kind: "damage",
+    stat: "health",
+    amount: amount,
+  });
+  return postDamage;
+}
+
+function handleDrawCards(state: BattleState, amount: number): BattleState {
+  const draw = drawCards(state.deck, state.discard, state.hand, amount, state.nextCardUid);
+  return {
+    ...state,
+    deck: draw.deck,
+    discard: draw.discard,
+    hand: draw.hand,
+    nextCardUid: draw.nextCardUid,
+  };
+}
+
+function handleRemoveEnemyArmor(state: BattleState, amount: number): BattleState {
+  return {
+    ...state,
+    enemyMitigation: {
+      ...state.enemyMitigation,
+      armor: Math.max(0, state.enemyMitigation.armor - amount),
+    },
+  };
+}
+
+function handleMultiplyEnemyStatus(
+  state: BattleState,
+  status: EnemyStatusId,
+  factor: number,
+  combatTexts: CombatTextEvent[],
+): BattleState {
+  const current = state.enemyStatuses[status];
+  if (current <= 0) return state;
+  const added = current * (factor - 1);
+  mergeCombatText(combatTexts, {
+    target: "enemy",
+    kind: "multiply",
+    stat: status,
+    amount: added,
+  });
+  return {
+    ...state,
+    enemyStatuses: { ...state.enemyStatuses, [status]: current * factor },
+  };
+}
+
+function handleRemovePlayerStatus(
+  state: BattleState,
+  status: EnemyStatusId,
+  combatTexts: CombatTextEvent[],
+): BattleState {
+  if (state.playerStatuses[status] <= 0) return state;
+  let nextState = {
+    ...state,
+    playerStatuses: { ...state.playerStatuses, [status]: 0 },
+  };
+  if (nextState.trinketEffects.sinEaterHealOnHarmfulStatusRemove > 0) {
+    nextState = applyPlayerHealing(nextState, nextState.trinketEffects.sinEaterHealOnHarmfulStatusRemove);
+    mergeCombatText(combatTexts, {
+      target: "player",
+      kind: "heal",
+      stat: "health",
+      amount: nextState.trinketEffects.sinEaterHealOnHarmfulStatusRemove,
+    });
+  }
+  return nextState;
+}
+
 /**
  * Handles non-mana utility card effects (gold, wish, companions, status removal, self-damage).
  * Coordinates gold gains, companion summons, status cleanses, and self-inflicted damage.
@@ -205,6 +288,16 @@ function handleUtilityEffect(
       return handleRemoveHarmfulStatus(state, effect.amount, potionMult, combatTexts);
     case "self-damage":
       return handleSelfDamage(state, effect.amount, effect.damageType, combatTexts);
+    case "lose-health":
+      return handleLoseHealth(state, effect.amount, combatTexts);
+    case "draw-cards":
+      return handleDrawCards(state, effect.amount);
+    case "remove-enemy-armor":
+      return handleRemoveEnemyArmor(state, effect.amount);
+    case "multiply-enemy-status":
+      return handleMultiplyEnemyStatus(state, effect.status, effect.factor, combatTexts);
+    case "remove-player-status":
+      return handleRemovePlayerStatus(state, effect.status, combatTexts);
   }
   return state;
 }

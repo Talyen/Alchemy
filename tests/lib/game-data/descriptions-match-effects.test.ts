@@ -65,14 +65,33 @@ describe("card descriptions vs effects", () => {
       const removeLines = countLinesStartingWith(descriptionLines, "Remove ");
       const removeEffects = countByKind(effects, "remove-harmful-status");
 
-      const loseManaLines = countLinesStartingWith(descriptionLines, "Lose ");
+      const loseManaLines = descriptionLines.filter(
+        (l) => l.startsWith("Lose ") && l.includes("Mana Crystal"),
+      ).length;
       const loseManaEffects = countByKind(effects, "lose-max-mana");
+
+      const loseHealthLines = descriptionLines.filter(
+        (l) => l.startsWith("Lose ") && l.includes("Health"),
+      ).length;
+      const loseHealthEffects = countByKind(effects, "lose-health");
 
       const gainMaxManaLines = descriptionLines.filter((l) => l.includes("Maximum Mana")).length;
       const gainMaxManaEffects = countByKind(effects, "gain-max-mana");
 
       const buffCompanionLines = countLinesStartingWith(descriptionLines, "Increase ");
       const buffCompanionEffects = countByKind(effects, "buff-companion");
+
+      const drawCardsLines = countLinesStartingWith(descriptionLines, "Draw ");
+      const drawCardsEffects = countByKind(effects, "draw-cards");
+
+      const stripArmorLines = countLinesStartingWith(descriptionLines, "Strip ");
+      const stripArmorEffects = countByKind(effects, "remove-enemy-armor");
+
+      const doubleLines = countLinesStartingWith(descriptionLines, "Double ");
+      const doubleEffects = countByKind(effects, "multiply-enemy-status");
+
+      const cleanseLines = countLinesStartingWith(descriptionLines, "Cleanse ");
+      const cleanseEffects = countByKind(effects, "remove-player-status");
 
       if (!hasKind(effects, "equal-to-block") && !hasKind(effects, "equal-to-armor") && !hasKind(effects, "self-damage")) {
         expect(dealLines).toBe(damageEffects);
@@ -85,6 +104,11 @@ describe("card descriptions vs effects", () => {
       expect(removeLines).toBe(removeEffects);
       expect(loseManaLines).toBe(loseManaEffects);
       expect(gainMaxManaLines).toBe(gainMaxManaEffects);
+      expect(loseHealthLines).toBe(loseHealthEffects);
+      expect(drawCardsLines).toBe(drawCardsEffects);
+      expect(stripArmorLines).toBe(stripArmorEffects);
+      expect(doubleLines).toBe(doubleEffects);
+      expect(cleanseLines).toBe(cleanseEffects);
 
       if (!hasKind(effects, "self-damage")) {
         expect(buffCompanionLines).toBe(buffCompanionEffects);
@@ -125,7 +149,33 @@ describe("card descriptions vs effects", () => {
       }
 
       if (hasKind(effects, "lose-max-mana")) {
-        expect(descriptionLines.some((l) => l.includes("Mana Crystal"))).toBe(true);
+        expect(descriptionLines.some((l) => l.includes("Mana Crystal")),
+          `${card.id} has lose-max-mana but no 'Mana Crystal' line`).toBe(true);
+      }
+
+      if (hasKind(effects, "lose-health")) {
+        expect(descriptionLines.some((l) => l.startsWith("Lose ") && l.includes("Health")),
+          `${card.id} has lose-health but no 'Lose ... Health' line`).toBe(true);
+      }
+
+      if (hasKind(effects, "draw-cards")) {
+        expect(descriptionLines.some((l) => l.startsWith("Draw ")),
+          `${card.id} has draw-cards but no 'Draw' line`).toBe(true);
+      }
+
+      if (hasKind(effects, "remove-enemy-armor")) {
+        expect(descriptionLines.some((l) => l.startsWith("Strip ")),
+          `${card.id} has remove-enemy-armor but no 'Strip' line`).toBe(true);
+      }
+
+      if (hasKind(effects, "multiply-enemy-status")) {
+        expect(descriptionLines.some((l) => l.startsWith("Double ")),
+          `${card.id} has multiply-enemy-status but no 'Double' line`).toBe(true);
+      }
+
+      if (hasKind(effects, "remove-player-status")) {
+        expect(descriptionLines.some((l) => l.startsWith("Cleanse ")),
+          `${card.id} has remove-player-status but no 'Cleanse' line`).toBe(true);
       }
 
       if (hasKind(effects, "buff-companion")) {

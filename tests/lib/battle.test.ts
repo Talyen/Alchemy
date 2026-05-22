@@ -2287,9 +2287,9 @@ describe("enemy damage absorption via endPlayerTurn", () => {
       maxMana: 4,
     });
     const result = endPlayerTurn(state);
-    // block absorbs 5, 0 damage to health, block=5, no depletion heal
+    // block absorbs 5, block decays from 5 to 3 at end of turn, 0 damage to health, no depletion heal
     expect(result.state.playerHealth).toBe(20);
-    expect(result.state.playerStatuses.block).toBe(5);
+    expect(result.state.playerStatuses.block).toBe(3);
   });
 });
 

@@ -50,6 +50,7 @@ import {
   bearCompanion,
   pantherCompanion,
   phoenixCompanion,
+  placeholderCard,
 } from "./assets";
 import type { BattleCard } from "./types";
 
@@ -503,5 +504,118 @@ export const cardLibrary: BattleCard[] = [
       { kind: "buff-companion", amount: 1 },
       { kind: "damage", damageType: "nature", amount: 3 },
     ],
+  },
+  {
+    id: "serrated-edge",
+    title: "Serrated Edge",
+    descriptionLines: ["Deal 1 Bleed damage", "Deal 3 Physical damage"],
+    art: placeholderCard,
+    cost: 1,
+    effects: [
+      { kind: "damage", damageType: "bleed", amount: 1 },
+      { kind: "damage", damageType: "physical", amount: 3 },
+    ],
+  },
+  {
+    id: "smite",
+    title: "Smite",
+    descriptionLines: ["Deal 2 Holy damage", "Deal 2 Burn damage"],
+    art: placeholderCard,
+    cost: 1,
+    effects: [
+      { kind: "damage", damageType: "holy", amount: 2 },
+      { kind: "damage", damageType: "burn", amount: 2 },
+    ],
+  },
+  {
+    id: "antivenom-potion",
+    title: "Antivenom Potion",
+    descriptionLines: ["Cleanse all Poison", "Consume"],
+    art: placeholderCard,
+    cost: 1,
+    consume: true,
+    effects: [{ kind: "remove-player-status", status: "poison" }],
+  },
+  {
+    id: "cold-snap",
+    title: "Cold Snap",
+    descriptionLines: ["Deal 1 Freeze damage", "Double enemy's Freeze build-up"],
+    art: placeholderCard,
+    cost: 1,
+    effects: [
+      { kind: "damage", damageType: "freeze", amount: 1 },
+      { kind: "multiply-enemy-status", status: "freeze", factor: 2 },
+    ],
+  },
+  {
+    id: "blood-offering",
+    title: "Blood Offering",
+    descriptionLines: ["Lose 3 Health", "Draw 2 Cards"],
+    art: placeholderCard,
+    cost: 1,
+    effects: [
+      { kind: "lose-health", amount: 3 },
+      { kind: "draw-cards", amount: 2 },
+    ],
+  },
+  {
+    id: "sunder-armor",
+    title: "Sunder Armor",
+    descriptionLines: ["Deal 4 Physical damage", "Strip 2 enemy Armor"],
+    art: placeholderCard,
+    cost: 1,
+    effects: [
+      { kind: "damage", damageType: "physical", amount: 4 },
+      { kind: "remove-enemy-armor", amount: 2 },
+    ],
+  },
+  {
+    id: "mana-shield",
+    title: "Mana Shield",
+    descriptionLines: ["Gain 3 Block per Mana Crystal"],
+    art: placeholderCard,
+    cost: 1,
+    effects: [{ kind: "player-status", status: "block", amount: 0, perManaCrystal: 3 }],
+  },
+  {
+    id: "prayer",
+    title: "Prayer",
+    descriptionLines: ["Wish 1", "Restore 3 Health"],
+    art: placeholderCard,
+    cost: 1,
+    effects: [
+      { kind: "wish", amount: 1 },
+      { kind: "heal", amount: 3 },
+    ],
+  },
+  {
+    id: "faustian-bargain",
+    title: "Faustian Bargain",
+    descriptionLines: ["Lose 4 Health", "Wish 2"],
+    art: placeholderCard,
+    cost: 1,
+    effects: [
+      { kind: "lose-health", amount: 4 },
+      { kind: "wish", amount: 2 },
+    ],
+  },
+  {
+    id: "judgment",
+    title: "Judgment",
+    descriptionLines: ["Deal 3 Holy damage", "Deal 1 Stun damage"],
+    art: placeholderCard,
+    cost: 1,
+    effects: [
+      { kind: "damage", damageType: "holy", amount: 3 },
+      { kind: "damage", damageType: "stun", amount: 1 },
+    ],
+  },
+  {
+    id: "smelling-salts",
+    title: "Smelling Salts",
+    descriptionLines: ["Cleanse Stun build-up"],
+    art: placeholderCard,
+    cost: 1,
+    effects: [{ kind: "remove-player-status", status: "stun" }],
   },
 ];

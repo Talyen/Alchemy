@@ -2,10 +2,14 @@ pre-commit:
   commands:
     format:
       glob: "src/**/*.{ts,tsx,css}"
-      run: npx prettier --write {staged_files}
+      run: npx -y prettier --write {staged_files}
       stage_fixed: true
 
 pre-push:
   commands:
     format-check:
       run: npm run format:check
+    lint:
+      run: npm run lint
+    test:
+      run: npm test

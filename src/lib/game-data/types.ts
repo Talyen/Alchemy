@@ -49,7 +49,12 @@ export type BattleCardEffect =
       equalToBlock?: boolean;
       equalToArmor?: boolean;
     }
-  | { kind: "player-status"; status: Extract<PlayerStatusId, "block" | "armor" | "forge" | "haste">; amount: number }
+  | {
+      kind: "player-status";
+      status: Extract<PlayerStatusId, "block" | "armor" | "forge" | "haste">;
+      amount: number;
+      perManaCrystal?: number;
+    }
   | { kind: "heal"; amount: number }
   | { kind: "restore-mana"; amount: number }
   | { kind: "lose-mana"; amount: number }
@@ -59,8 +64,13 @@ export type BattleCardEffect =
   | { kind: "wish"; amount: number }
   | { kind: "summon-companion"; companionId: CompanionId }
   | { kind: "remove-harmful-status"; amount: number }
+  | { kind: "remove-player-status"; status: EnemyStatusId }
   | { kind: "self-damage"; damageType: EnemyStatusId; amount: number }
-  | { kind: "buff-companion"; amount: number };
+  | { kind: "buff-companion"; amount: number }
+  | { kind: "lose-health"; amount: number }
+  | { kind: "draw-cards"; amount: number }
+  | { kind: "remove-enemy-armor"; amount: number }
+  | { kind: "multiply-enemy-status"; status: EnemyStatusId; factor: number };
 
 export type CompanionDefinition = {
   id: CompanionId;

@@ -35,6 +35,20 @@ export function getCardKeywords(card: BattleCard): KeywordId[] {
         break;
       case "remove-harmful-status":
         break;
+      case "lose-health":
+        keywords.add("health");
+        break;
+      case "draw-cards":
+        break;
+      case "remove-enemy-armor":
+        keywords.add("armor");
+        break;
+      case "multiply-enemy-status":
+        keywords.add(effect.status as KeywordId);
+        break;
+      case "remove-player-status":
+        keywords.add(effect.status as KeywordId);
+        break;
     }
   }
 
