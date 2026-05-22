@@ -159,7 +159,8 @@ These are central and may be large. Avoid repeated reads within a session unless
 |------|-----------|
 | **Run** | A full playthrough from character select to victory or defeat. |
 | **Destination** | A map node chosen between battles (e.g. Combat, Elite, Boss, Campfire, Merchant). |
-
+| **Gold** | Currency earned in battle, spent at Merchants and the Alchemist. |
+ 
 ### Battle Concepts
 
 | Term | Definition |
@@ -170,15 +171,25 @@ These are central and may be large. Avoid repeated reads within a session unless
 | **Companion** | A persistent ally that acts at the start of each player turn. |
 | **Haste** | Grants an extra player turn by skipping the enemy phase. |
 | **Combat Text** | Floating battle numbers merged per (target, kind, stat) for deduplication. |
-
+| **Mana** | Resource spent to play cards; hand refills and Mana regenerates each turn. |
+| **Health** | Player health — reaching 0 ends the run. Also a keyword on healing effects. |
+| **Leech** | Heals the player for damage dealt by the card. |
+| **Trap** | Cards that prepare delayed effects for when an enemy acts. |
+ 
 ### Status Effects (by category)
 
 | Term | Definition |
 |------|-----------|
 | **Protective Statuses** | Absorb or reduce incoming damage (Block, Armor). |
 | **Empowering Statuses** | Amplify outgoing damage or grant extra actions (Forge, Haste). |
-| **Damage-over-Time Statuses** | Tick damage each turn on the bearer, then decay or burst reset (Burn, Poison, Bleed). |
+| **Damage-over-Time Statuses** | Deal damage each turn on the bearer — Burn halves each turn, Poison decreases by 1, Bleed bursts (deals full stack then resets to 0). |
 | **Crowd Control Statuses** | Prevent the enemy from acting when accumulated above a threshold (Freeze, Stun). |
+
+### Damage Types
+
+| Term | Definition |
+|------|-----------|
+| **Damage Types** | Cards deal one of nine damage types (Physical, Stun, Holy, Burn, Poison, Bleed, Freeze, Nature, Trap). Damage that matches a status name (Burn, Poison, Bleed, Freeze, Stun) applies that status on hit. Enemies can have unique resistances or vulnerabilities to specific types. |
 
 ### Card & Economy
 
@@ -197,3 +208,84 @@ These are central and may be large. Avoid repeated reads within a session unless
 | **Homestead** | The persistent hub between runs for spending materials on permanent upgrades. |
 | **Material** | A resource type earned between runs and spent in the Homestead. |
 | **Farm** | A Homestead building that produces materials.
+
+## Token Efficiency Rules
+
+### Core Principle
+Prioritize targeted accuracy over exhaustive exploration. Minimize tool calls, file reads, and output length.
+
+### File Reading
+* Never recursively scan the repo — inspect structure first, then open only likely targets
+* Prefer symbol-level lookup over full-file reads
+* Stop reading once you have sufficient context
+* Never reread files already summarized
+
+### Tool Usage
+* Never call multiple tools for the same purpose
+* Never retry identical failed commands without modification
+* Batch related operations whenever possible
+
+### Planning & Execution
+* For simple tasks: act immediately, explain briefly after
+* For complex tasks: plan in ≤5 bullets, no speculative analysis
+* Do not re-plan after every action
+
+### Output
+* No prose, commentary, or task restatement
+* No line-by-line explanation of code changes unless asked
+* Prefer diffs over full rewrites
+* Status updates: <100 words — Implementation summaries: <200 words
+
+### Coding
+* Minimal diffs only — no refactors, style rewrites, or unrelated file changes
+
+### Reasoning Effort
+* Simple bugfixes/CRUD: low deliberation, fast execution
+* Reserve deeper reasoning for architecture, concurrency, security, and ambiguous requirements
+
+## Preventing Reasoning Loops
+
+Agents can get stuck cycling through the same hypotheses or re-reading the same files without making progress. Follow these rules to avoid it.
+
+### Recognize When You Are Stuck
+
+You are stuck if any of the following are true:
+
+- The last 2 tool calls or reasoning steps produced no new information
+- You are re-reading the same files for the same reason
+- You are rephrasing the same hypothesis without new evidence to support or refute it
+
+### Hard Iteration Cap
+
+If you have attempted the same approach — or a close variant — more than 2 times without progress, stop immediately. Do not try again. Escalate instead (see below).
+
+### Require Forward Progress
+
+Before each step, state in one sentence what **new information** you expect to learn. If you cannot name something new, stop and escalate.
+
+### No Speculative Spirals
+
+Do not follow a hypothesis chain longer than **3 steps** without grounding it in a concrete tool call or observation. If you are reasoning about what *might* be true, verify it immediately — or drop it.
+
+### Timebox Sub-Problems
+
+If a single sub-problem (e.g., "find where X is initialized") takes more than **3 steps** to resolve, declare it unresolved and move on. Note it clearly in your output so a human can assist.
+
+### Distinguish Exploration from Looping
+
+| Exploration ✅ | Loop ❌ |
+|---|---|
+| Reading a new file or module | Re-reading a file you already analyzed for the same reason |
+| Testing a new hypothesis | Rephrasing a hypothesis you already ruled out |
+| Trying a different fix strategy | Retrying the same fix with minor wording changes |
+
+Keep a running list of files and hypotheses already ruled out so you do not revisit them.
+
+### Escalate Explicitly
+
+When stuck, emit the following and halt. Do not attempt "one more thing."
+
+```
+STUCK: [one sentence on what you tried]
+NEED:  [one sentence on what information or action would unblock you]
+```

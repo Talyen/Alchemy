@@ -9,8 +9,10 @@
 //      run attack effects, tick player DoTs again (if enemy hit), check Death's Door
 //      (0-Health grace for one full turn).
 //   4. Advance to player turn: draw cards, reset cardsPlayedThisTurn.
-// Branching: stun/freeze skip enemy attack phase entirely; Wish intercepts player
-// card play; haste skips enemy phase and returns to player immediately.
+// Branching: stun/freeze still tick enemy DoTs, traits, player DoTs, and regen
+// but skip the attack phase entirely (enemyPerformedAttack=false).  Haste skips
+// enemy phase entirely and returns to player immediately.  Wish intercepts player
+// card play during the player turn.
 import { drawCards } from "./draw";
 import { applyCardEffects } from "./apply-effects";
 import { mergeCombatText } from "./combat-text";
@@ -351,6 +353,26 @@ function processEnemyDamageEffect(
     combatTexts,
   );
 
+  // Status rider: status-linked damage types (burn, poison, bleed, freeze, stun)
+  // apply their status to the player equal to the actual damage dealt,
+  // mirroring how player-side damage riders work (damage.ts applyDamageStatuses).
+  if (
+    actualDamage > 0 &&
+    (effect.damageType === "burn" ||
+      effect.damageType === "poison" ||
+      effect.damageType === "bleed" ||
+      effect.damageType === "freeze" ||
+      effect.damageType === "stun")
+  ) {
+    nextState = {
+      ...nextState,
+      playerStatuses: {
+        ...nextState.playerStatuses,
+        [effect.damageType]: nextState.playerStatuses[effect.damageType] + actualDamage,
+      },
+    };
+  }
+
   if (effect.lifesteal && actualDamage > 0) {
     nextState = applyEnemyAttackLifesteal(nextState, actualDamage, combatTexts);
   }
@@ -496,11 +518,6 @@ function processHasteEarlyTurn(state: BattleState, _combatTexts: CombatTextEvent
   };
 }
 
-function processStunSkipTurn(state: BattleState, combatTexts: CombatTextEvent[]) {
-  const nextState = reduceSkipTurns(state);
-  return tickPlayerStatuses(nextState, combatTexts);
-}
-
 function beginEnemyPhase(state: BattleState): BattleState {
   return {
     ...state,
@@ -517,6 +534,7 @@ export type EndPlayerTurnResolution = {
   enemyTurnStartState?: BattleState;
   enemyTurnStartCombatTexts: CombatTextEvent[];
   enemyResolutionCombatTexts: CombatTextEvent[];
+  enemyPerformedAttack: boolean;
 };
 
 function finalizePlayerTurn(state: BattleState, combatTexts: CombatTextEvent[]) {
@@ -533,7 +551,12 @@ function resolveHasteTurn(
   enemyResolutionCombatTexts: CombatTextEvent[],
 ) {
   const nextState = processHasteEarlyTurn(state, combatTexts);
-  return { ...finalizePlayerTurn(nextState, combatTexts), enemyTurnStartCombatTexts, enemyResolutionCombatTexts };
+  return {
+    ...finalizePlayerTurn(nextState, combatTexts),
+    enemyTurnStartCombatTexts,
+    enemyResolutionCombatTexts,
+    enemyPerformedAttack: false,
+  };
 }
 
 function resolveSkippedEnemyTurn(
@@ -542,8 +565,26 @@ function resolveSkippedEnemyTurn(
   enemyTurnStartCombatTexts: CombatTextEvent[],
   enemyResolutionCombatTexts: CombatTextEvent[],
 ) {
-  const nextState = processStunSkipTurn(state, combatTexts);
-  return { ...finalizePlayerTurn(nextState, combatTexts), enemyTurnStartCombatTexts, enemyResolutionCombatTexts };
+  let nextState = reduceSkipTurns(state);
+
+  // Turn start: tick enemy DoTs (burn/poison/bleed)
+  nextState = tickEnemyStatuses(nextState, enemyTurnStartCombatTexts);
+  combatTexts.push(...enemyTurnStartCombatTexts);
+  const enemyTurnStartState = nextState;
+
+  // Resolution: traits, player DoTs, regen — but skip the attack
+  nextState = processEnemyTraits(nextState, enemyResolutionCombatTexts);
+  nextState = tickPlayerStatuses(nextState, enemyResolutionCombatTexts);
+  nextState = processEnemyRegeneration(nextState, enemyResolutionCombatTexts);
+  combatTexts.push(...enemyResolutionCombatTexts);
+
+  return {
+    ...finalizePlayerTurn(nextState, combatTexts),
+    enemyTurnStartState,
+    enemyTurnStartCombatTexts,
+    enemyResolutionCombatTexts,
+    enemyPerformedAttack: false,
+  };
 }
 
 function resolveEnemyTurnStart(state: BattleState, combatTexts: CombatTextEvent[], phaseTexts: CombatTextEvent[]) {
@@ -584,6 +625,7 @@ export function endPlayerTurn(state: BattleState): EndPlayerTurnResolution {
       enemyTurnStartState,
       enemyTurnStartCombatTexts,
       enemyResolutionCombatTexts,
+      enemyPerformedAttack: false,
     };
   }
 
@@ -594,5 +636,6 @@ export function endPlayerTurn(state: BattleState): EndPlayerTurnResolution {
     enemyTurnStartState,
     enemyTurnStartCombatTexts,
     enemyResolutionCombatTexts,
+    enemyPerformedAttack: true,
   };
 }

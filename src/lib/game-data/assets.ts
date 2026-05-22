@@ -41,6 +41,7 @@ import frostWhelpCompanion from "@/assets/optimized/frost-whelp-companion.webp";
 import bearCompanion from "@/assets/optimized/bear-companion.webp";
 import pantherCompanion from "@/assets/optimized/panther-companion.webp";
 import phoenixCompanion from "@/assets/optimized/phoenix-companion.webp";
+import prayer from "@/assets/optimized/prayer.webp";
 import frozenPocketwatch from "@/assets/optimized/frozen-pocketwatch.webp";
 import fireball from "@/assets/optimized/fireball.webp";
 import shieldBash from "@/assets/optimized/shield-bash.webp";
@@ -108,7 +109,16 @@ import sunderingCharm from "@/assets/optimized/sundering-charm.webp";
 import resonantChimes from "@/assets/optimized/resonant-chimes.webp";
 import smugglersMap from "@/assets/optimized/smugglers-map.webp";
 import grovesFavor from "@/assets/optimized/groves-favor.webp";
+import antivenomPotion from "@/assets/optimized/antivenom-potion.webp";
+import bloodOffering from "@/assets/optimized/blood-offering.webp";
+import faustianBargain from "@/assets/optimized/faustian-bargain.webp";
+import judgment from "@/assets/optimized/judgment.webp";
+import manaShield from "@/assets/optimized/mana-shield.webp";
 import placeholderCard from "@/assets/optimized/placeholder-card.webp";
+import serratedEdge from "@/assets/optimized/serrated-edge.webp";
+import smellingSalts from "@/assets/optimized/smelling-salts.webp";
+import smite from "@/assets/optimized/smite.webp";
+import sunderArmor from "@/assets/optimized/sunder-armor.webp";
 import placeholderEnemy from "@/assets/optimized/placeholder-enemy.webp";
 import placeholderTrinket from "@/assets/optimized/placeholder-trinket.webp";
 import placeholderDestination from "@/assets/optimized/placeholder-destination.webp";
@@ -235,8 +245,18 @@ export {
   resonantChimes,
   smugglersMap,
   grovesFavor,
+  antivenomPotion,
+  bloodOffering,
+  faustianBargain,
+  judgment,
+  manaShield,
   placeholderCard,
   placeholderEnemy,
+  prayer,
+  serratedEdge,
+  smellingSalts,
+  smite,
+  sunderArmor,
   theFrostwarden,
   theForgeGolem,
   theBlightTreant,

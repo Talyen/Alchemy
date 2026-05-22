@@ -3,6 +3,7 @@ import { useEffect, useMemo } from "react";
 
 import { keywordDefinitions } from "@/lib/game-data";
 
+import { playBattleEvent } from "@/lib/audio";
 import { getBossById, getBossEnemy, keywordAliases } from "../config";
 import { DestinationChoices, ScreenHeader } from "../ui/shared-ui";
 import { DESTINATIONS, type Destination } from "../types";
@@ -20,6 +21,10 @@ export function DestinationScreen({ onChoose }: { onChoose: (destination: Destin
     const selectedBossId = getBossEnemy().id;
     setRewardState((prev) => ({ ...prev, selectedBossId }));
   }, [bossOnly, rewardState.selectedBossId, setRewardState]);
+
+  useEffect(() => {
+    if (bossOnly) playBattleEvent("deathsDoor");
+  }, [bossOnly]);
 
   const boss = useMemo(
     () => (bossOnly && rewardState.selectedBossId ? (getBossById(rewardState.selectedBossId) ?? null) : null),
@@ -73,7 +78,7 @@ export function DestinationScreen({ onChoose }: { onChoose: (destination: Destin
       ) : (
         <ScreenHeader title="Choose Destination" />
       )}
-      <DestinationChoices destinationOptions={destinationOptions} onChoose={onChoose} />
+      <DestinationChoices destinationOptions={destinationOptions} onChoose={onChoose} selectedBoss={boss} />
     </div>
   );
 }

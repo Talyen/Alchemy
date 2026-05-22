@@ -144,6 +144,8 @@ export const COMBAT_TEXT_LANE_DELAY_MS = 80; // Stagger between multi-line comba
 export const ANIMATION_STAGGER_UNIT = 0.08; // Base delay step (80ms) between consecutive animated elements.
 export const CARD_ACTIVATION_ROTATION_DEGREES = 4.2; // Fan angle applied while animating played cards from hand.
 
+export const CARD_PLAY_TIMEOUT_MS = 10000; // Safety timeout to force-clear cardPlayInProgressRef if it hangs (e.g. stun/haste skip edge case).
+
 export const CARD_TRANSFER_CONFIG = {
   drawDurationSeconds: 0.5,
   discardDurationSeconds: 0.5,

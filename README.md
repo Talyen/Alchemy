@@ -4,9 +4,10 @@
 
 ## Features
 
-- **Turn-based card combat** — spend Mana to deal damage, gain Block, apply statuses, and summon allies
+- **Turn-based card combat** — spend Mana to play cards that deal damage, gain Block, apply statuses, and summon allies
 - **Roguelite progression** — each Run is unique; Talent XP and Homestead upgrades persist across runs
-- **Rich status system** — Burn, Poison, Bleed, Freeze, Stun, Forge, Haste, and more
+- **Rich status system** — Protective (Block, Armor), Empowering (Forge, Haste), Damage-over-Time (Burn, Poison, Bleed), and Crowd Control (Freeze, Stun) effects
+- **9 damage types** — Physical, Stun, Holy, Burn, Poison, Bleed, Freeze, Nature, and Trap; enemies have unique resistances and vulnerabilities
 
 ## Prerequisites
 

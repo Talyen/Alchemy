@@ -28,6 +28,7 @@ import { mergeIntoManifest } from "@/lib/homestead/effects";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import {
   CARD_ACTIVATION_ROTATION_DEGREES,
+  CARD_PLAY_TIMEOUT_MS,
   CARD_TRANSFER_CONFIG,
   ENEMY_ATTACK_RECOVERY_DELAY,
   COMPANION_ATTACK_DELAY,
@@ -611,15 +612,28 @@ export function useBattleController({
   }
 
   async function animateEndTurnThenResolve(currentState: BattleState, session: number) {
+    const safetyTimer = setTimeout(() => {
+      if (isCurrentBattleSession(session) && cardPlayInProgressRef.current) {
+        console.warn(
+          "[battle] cardPlayInProgressRef stuck for %dms — force-resetting. This indicates a turn-flow edge case (stun/haste skip).",
+          CARD_PLAY_TIMEOUT_MS,
+        );
+        cardPlayInProgressRef.current = false;
+        setCardTransferInProgress(false);
+        setHiddenHandCardKeys(new Set());
+      }
+    }, CARD_PLAY_TIMEOUT_MS);
     try {
       await animateDiscardedHand(currentState.hand);
       if (!isCurrentBattleSession(session)) return;
       resolveEndTurn(currentState, session);
     } finally {
-      // haste/stun path manages its own transfer lifecycle; only clear if we didn't go there
-      if (isCurrentBattleSession(session) && !resolvedAsHasteOrStunRef.current) {
-        setHiddenHandCardKeys(new Set());
-        setCardTransferInProgress(false);
+      clearTimeout(safetyTimer);
+      if (isCurrentBattleSession(session)) {
+        if (!resolvedAsHasteOrStunRef.current) {
+          setHiddenHandCardKeys(new Set());
+          setCardTransferInProgress(false);
+        }
         cardPlayInProgressRef.current = false;
       }
     }
@@ -640,8 +654,8 @@ export function useBattleController({
 
     const result = endPlayerTurn(companionResult.state);
 
-    // Haste or stun skip: immediately show the next turn and animate any draw
-    // (enemyTurnStartState is undefined in these paths)
+    // Haste skip: immediately show the next turn and animate any draw
+    // (enemyTurnStartState is undefined only in the haste path)
     if (!result.enemyTurnStartState) {
       resolvedAsHasteOrStunRef.current = true;
       if (result.combatTexts.length > 0) getStore().showCombatTexts(result.combatTexts);
@@ -659,6 +673,9 @@ export function useBattleController({
           resolveEndTurn(result.state, session);
           return;
         }
+        setHiddenHandCardKeys(new Set());
+        setCardTransferInProgress(false);
+        cardPlayInProgressRef.current = false;
         scheduleCompanionFollowUp(result.state, session);
       });
       return;
@@ -687,6 +704,7 @@ export function useBattleController({
       enemyResolutionTexts,
       session,
       result.playerTurnSkipped,
+      result.enemyPerformedAttack,
     );
   }
 
@@ -728,13 +746,14 @@ export function useBattleController({
     combatTexts: CombatTextEvent[],
     session: number,
     playerTurnSkipped: boolean,
+    enemyPerformedAttack: boolean,
   ) {
     const playerTexts = combatTexts.filter((ct) => ct.target === "player");
     clearEnemyTimeout();
     enemyTimeoutRef.current = setTimeout(() => {
       enemyTimeoutRef.current = null;
       if (!isCurrentBattleSession(session)) return;
-      playEnemyAttack(currentState.currentEnemy.id);
+      if (enemyPerformedAttack) playEnemyAttack(currentState.currentEnemy.id);
       if (!currentState.deathsDoorActive && resultState.deathsDoorActive) playBattleEvent("deathsDoor");
       if (combatTexts.length > 0) getStore().showCombatTexts(combatTexts);
       if (shouldShakePlayerFromCombatTexts(playerTexts)) getStore().shakePlayer();

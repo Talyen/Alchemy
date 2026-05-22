@@ -4,7 +4,12 @@
 import { BATTLE_ACTOR_TOP_DESKTOP, BATTLE_ACTOR_TOP_MOBILE } from "@/lib/game-constants";
 
 import { ArtPanel, CompanionPanel, CombatTextRail } from "../../components";
-import { mobileStageBattleCardWidthClass, battleActorHalfGapClass, battleActorSectionClass } from "../../config";
+import {
+  mobileStageBattleCardWidthClass,
+  battleActorSectionClass,
+  bossCardWidthClass,
+  bossMobileStageBattleCardWidthClass,
+} from "../../config";
 import type { BattleFeedbackProps, BattleHoverProps, BattleRefsProps, RequiredBattleViewProps } from "./types";
 import { useBattleStore } from "../../stores/battle-store";
 
@@ -35,16 +40,13 @@ export function BattleActors({
   const { playerPanelRef, enemyPanelRef } = refs;
   const isPlayerTurn = battleState.turnPhase === "player";
   const hasCompanion = Boolean(battleState.activeCompanion);
-  const battleActorHalfGap =
-    aspectMode === "ultrawide"
-      ? battleActorHalfGapClass.ultrawide
-      : isMobileLandscape
-        ? battleActorHalfGapClass.mobile
-        : battleActorHalfGapClass.desktop;
+  const isBoss = battleState.currentEnemy.enemyType === "boss";
   const actorCardWidthClass = isMobileLandscape ? mobileStageBattleCardWidthClass : undefined;
-  const playerTurnBadgeTransform = hasCompanion
-    ? `translateX(calc(-50% - clamp(10.28cqh,11cqh,15.56cqh) - ${battleActorHalfGap} - clamp(0.625cqw,1.2cqw,1.146cqw)))`
-    : `translateX(calc(-50% - clamp(10.28cqh,11cqh,15.56cqh) - ${battleActorHalfGap}))`;
+  const bossStatsCardWidthClass = isBoss
+    ? isMobileLandscape
+      ? bossMobileStageBattleCardWidthClass
+      : bossCardWidthClass
+    : undefined;
 
   return (
     <section
@@ -57,18 +59,6 @@ export function BattleActors({
       }
       style={{ top: isMobileLandscape ? BATTLE_ACTOR_TOP_MOBILE : BATTLE_ACTOR_TOP_DESKTOP }}
     >
-      <div
-        className={`pointer-events-none absolute -top-10 left-1/2 z-20 whitespace-nowrap rounded-md px-3 py-1 text-sm transition-all duration-500 ${
-          isPlayerTurn ? "bg-emerald-900/80 text-emerald-300" : "bg-rose-900/80 text-rose-300"
-        }`}
-        style={{
-          transform: isPlayerTurn
-            ? playerTurnBadgeTransform
-            : `translateX(calc(-50% + clamp(10.28cqh,11cqh,15.56cqh) + ${battleActorHalfGap}))`,
-        }}
-      >
-        {isPlayerTurn ? "Your Turn" : "Enemy Turn"}
-      </div>
       <div className="relative flex items-start justify-center transition-transform duration-500 ease-out">
         <div className="absolute left-[calc(100%+clamp(1.46cqw,3cqw,2.29cqw))] top-[30%] z-30 w-40">
           <CombatTextRail entries={playerCombatTexts} side="player" />
@@ -113,6 +103,19 @@ export function BattleActors({
               />
             </div>
           ) : null}
+          <div
+            className={`absolute left-1/2 z-20 whitespace-nowrap rounded-md px-3 py-1 text-sm transition-all duration-500 ${
+              isPlayerTurn
+                ? "opacity-100 bg-emerald-900/70 text-emerald-300"
+                : "opacity-0 pointer-events-none bg-emerald-900/70 text-emerald-300"
+            }`}
+            style={{
+              top: "calc(100% + clamp(0.75cqh, 1.5cqh, 2.5cqh))",
+              transform: isPlayerTurn ? "translateX(-50%) scale(1)" : "translateX(-50%) scale(0.6)",
+            }}
+          >
+            Your Turn
+          </div>
         </div>
       </div>
 
@@ -141,7 +144,22 @@ export function BattleActors({
           currentEnemyAttackEffects={battleState.enemyAttackEffects}
           activeLabyrinthModifiers={activeLabyrinthModifiers}
           cardWidthClass={actorCardWidthClass}
+          isBoss={isBoss}
+          statsCardWidthClass={bossStatsCardWidthClass}
         />
+        <div
+          className={`absolute left-1/2 z-20 whitespace-nowrap rounded-md px-3 py-1 text-sm transition-all duration-500 ${
+            !isPlayerTurn
+              ? "opacity-100 bg-rose-900/70 text-rose-300"
+              : "opacity-0 pointer-events-none bg-rose-900/70 text-rose-300"
+          }`}
+          style={{
+            top: "calc(100% + clamp(0.75cqh, 1.5cqh, 2.5cqh))",
+            transform: !isPlayerTurn ? "translateX(-50%) scale(1)" : "translateX(-50%) scale(0.6)",
+          }}
+        >
+          Enemy Turn
+        </div>
       </div>
     </section>
   );

@@ -53,6 +53,8 @@ type ArtPanelProps = {
   currentEnemyAttackEffects?: EnemyAttackEffect[];
   activeLabyrinthModifiers?: LabyrinthModifierKind[];
   deathsDoorActive?: boolean;
+  isBoss?: boolean;
+  statsCardWidthClass?: string | undefined;
 };
 
 // Renders one battle actor card with health/status chrome and optional enemy tooltip.
@@ -77,6 +79,8 @@ export function ArtPanel({
   currentEnemyAttackEffects,
   activeLabyrinthModifiers = [],
   deathsDoorActive = false,
+  isBoss = false,
+  statsCardWidthClass,
 }: ArtPanelProps) {
   const healthToken = useChangeToken(health);
   const healthPercent = maxHealth > 0 ? (health / maxHealth) * ACTOR_PANEL_CONFIG.fullHealthPercent : 0;
@@ -90,19 +94,37 @@ export function ArtPanel({
         currentEnemyAttackEffects={currentEnemyAttackEffects}
         activeLabyrinthModifiers={activeLabyrinthModifiers}
       />
-      <ActorArtFrame
-        side={side}
-        title={title}
-        art={art}
-        shimmerId={shimmerId}
-        shimmerActive={shimmerActive}
-        shimmerToken={shimmerToken}
-        onHoverShimmer={onHoverShimmer}
-        surfaceRef={surfaceRef}
-        isDead={isDead}
-        cardWidthClass={cardWidthClass}
-        deathsDoorActive={deathsDoorActive}
-      />
+      {isBoss ? (
+        <div className="scale-[1.3] origin-bottom">
+          <ActorArtFrame
+            side={side}
+            title={title}
+            art={art}
+            shimmerId={shimmerId}
+            shimmerActive={shimmerActive}
+            shimmerToken={shimmerToken}
+            onHoverShimmer={onHoverShimmer}
+            surfaceRef={surfaceRef}
+            isDead={isDead}
+            cardWidthClass={cardWidthClass}
+            deathsDoorActive={deathsDoorActive}
+          />
+        </div>
+      ) : (
+        <ActorArtFrame
+          side={side}
+          title={title}
+          art={art}
+          shimmerId={shimmerId}
+          shimmerActive={shimmerActive}
+          shimmerToken={shimmerToken}
+          onHoverShimmer={onHoverShimmer}
+          surfaceRef={surfaceRef}
+          isDead={isDead}
+          cardWidthClass={cardWidthClass}
+          deathsDoorActive={deathsDoorActive}
+        />
+      )}
       <ActorStatsPanel
         title={title}
         health={health}
@@ -111,7 +133,7 @@ export function ArtPanel({
         healthToken={healthToken}
         statuses={statuses}
         isDead={isDead}
-        cardWidthClass={cardWidthClass}
+        cardWidthClass={isBoss ? (statsCardWidthClass ?? cardWidthClass) : cardWidthClass}
         deathsDoorActive={deathsDoorActive}
       />
     </div>

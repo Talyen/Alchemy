@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import { cn } from "@/lib/utils";
+import type { BestiaryEntry } from "@/lib/game-data";
 import { destinationMeta, staticCardTransform } from "../config";
 import { type Destination } from "../types";
 import { clearTiltFromEvent, setTiltFromEvent } from "../utils";
@@ -8,14 +9,17 @@ import { PressableMotion } from "./pressable-motion";
 export function DestinationChoices({
   destinationOptions,
   onChoose,
+  selectedBoss,
 }: {
   destinationOptions: Destination[];
   onChoose: (destination: Destination) => void;
+  selectedBoss?: BestiaryEntry | null;
 }) {
   return (
     <div className="flex flex-wrap justify-center gap-8">
       {destinationOptions.map((destination, index) => {
-        const { icon: Icon, className, art } = destinationMeta[destination];
+        const { icon: Icon, className, art: defaultArt } = destinationMeta[destination];
+        const art = destination === "Boss Combat" && selectedBoss?.art ? selectedBoss.art : defaultArt;
         return (
           <div
             key={destination}

@@ -16,6 +16,13 @@ export const pileCardWidthClass = "w-[clamp(12cqh,12.96cqh,18.25cqh)]";
 export const mobileStageBattleCardWidthClass = "w-[clamp(30cqh,33cqh,36.67cqh)]";
 export const mobileStageHandCardWidthClass = "w-[clamp(22.22cqh,24cqh,27.78cqh)]";
 
+// Boss variants — 1.3× the standard battle card width for wider status panes.
+export const bossCardWidthClass = "w-[calc(clamp(20.56cqh,22cqh,31.11cqh)*1.3)]";
+export const bossMobileStageBattleCardWidthClass = "w-[calc(clamp(30cqh,33cqh,36.67cqh)*1.3)]";
+
+// Half-width used by the turn indicator to center above a panel.
+export const battleCardHalfWidthValue = "clamp(10.28cqh,11cqh,15.56cqh)";
+
 // Card and popup surfaces stay centralized so repeated game widgets share the
 // same tactile fantasy material treatment.
 export const cardSurfaceClass = "relative overflow-hidden rounded-[30px] bg-black";
