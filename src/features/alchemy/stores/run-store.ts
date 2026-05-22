@@ -21,13 +21,15 @@ export function hydrateCard(savedCard: BattleCard): BattleCard {
   if (!libraryCard) return savedCard;
 
   const descriptionLines =
-    Array.isArray(savedCard.descriptionLines) && (savedCard as any).descriptionLinesFullyValid !== false
+    Array.isArray(savedCard.descriptionLines) &&
+    (savedCard as unknown as { descriptionLinesFullyValid?: boolean }).descriptionLinesFullyValid !== false
       ? [...savedCard.descriptionLines]
       : [...libraryCard.descriptionLines];
 
   const effects =
-    Array.isArray(savedCard.effects) && (savedCard as any).effectsFullyValid !== false
-      ? (savedCard.effects.map((e) => (e && typeof e === "object" ? { ...e } : e)) as any[])
+    Array.isArray(savedCard.effects) &&
+    (savedCard as unknown as { effectsFullyValid?: boolean }).effectsFullyValid !== false
+      ? (savedCard.effects.map((e) => (e && typeof e === "object" ? { ...e } : e)) as BattleCard["effects"])
       : libraryCard.effects.map((e) => ({ ...e }));
 
   const corruptedValuePositions = Array.isArray(savedCard.corruptedValuePositions)
