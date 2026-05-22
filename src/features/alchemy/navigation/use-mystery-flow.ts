@@ -1,31 +1,18 @@
 // Manages React state integration and event handlers for the run's mystery events flow.
 // Depends on: cardLibrary, useScreenStore, mysteryPool, and mystery-flow helpers.
 // Depended on by: useRunNavigation for managing the React state of mystery events during a run.
-import { cardLibrary, type BattleCard } from "@/lib/game-data";
+import { cardLibrary } from "@/lib/game-data";
 import { pickRandom } from "@/lib/utils";
-import type { Dispatch, SetStateAction } from "react";
 
 import { mysteryPool, type MysteryChoice } from "../mystery-events";
 import { addCardToRun, applyMysteryEffect } from "./mystery-flow";
-import type { MaterialInventory } from "@/lib/homestead/types";
-import type { KeywordId } from "@/lib/game-data";
 import { useScreenStore } from "../stores/screen-store";
+import { useRunStore } from "../stores/run-store";
+import { useAppStore } from "../stores/app-store";
+import { useHomesteadStore } from "../stores/homestead-store";
+import { applyMaterialFindBonus } from "@/lib/homestead/loot";
 
-export type MysteryFlowContext = {
-  runMaxHealth: number;
-  setRunDeck: Dispatch<SetStateAction<BattleCard[]>>;
-  setRunGold: Dispatch<SetStateAction<number>>;
-  setRunPlayerHealth: Dispatch<SetStateAction<number>>;
-  setRunTrinkets: Dispatch<SetStateAction<string[]>>;
-  setDiscoveredCardIds: Dispatch<SetStateAction<string[]>>;
-  setDiscoveredTrinketIds: Dispatch<SetStateAction<string[]>>;
-  awardMysteryXP: (keyword: KeywordId, amount: number) => void;
-  onAddMaterials: (materials: MaterialInventory) => void;
-  advanceToNextDestination: () => void;
-  onAwardGold: (amount: number) => void;
-};
-
-export function useMysteryFlow(context: MysteryFlowContext) {
+export function useMysteryFlow({ advanceToNextDestination }: { advanceToNextDestination: () => void }) {
   const mysteryEvent = useScreenStore((s) => s.mysteryEvent);
   const mysteryCardChoices = useScreenStore((s) => s.mysteryCardChoices);
 
@@ -43,19 +30,24 @@ export function useMysteryFlow(context: MysteryFlowContext) {
   // Processes each consequence effect linked to the player's choice sequentially.
   // If an effect requires follow-up UI interaction (like choosing a card), execution halts.
   function handleMysteryChoice(choice: MysteryChoice) {
+    const runStore = useRunStore.getState();
+    const appStore = useAppStore.getState();
+    const homesteadStore = useHomesteadStore.getState();
+
     for (const effect of choice.effects) {
       const result = applyMysteryEffect(effect, {
-        runMaxHealth: context.runMaxHealth,
-        setRunDeck: context.setRunDeck,
-        setRunGold: context.setRunGold,
-        setRunPlayerHealth: context.setRunPlayerHealth,
-        setRunTrinkets: context.setRunTrinkets,
-        setDiscoveredCardIds: context.setDiscoveredCardIds,
-        setDiscoveredTrinketIds: context.setDiscoveredTrinketIds,
+        runMaxHealth: runStore.runMaxHealth,
+        setRunDeck: runStore.setRunDeck,
+        setRunGold: runStore.setRunGold,
+        setRunPlayerHealth: runStore.setRunPlayerHealth,
+        setRunTrinkets: runStore.setRunTrinkets,
+        setDiscoveredCardIds: appStore.setDiscoveredCardIds,
+        setDiscoveredTrinketIds: appStore.setDiscoveredTrinketIds,
         setMysteryCardChoices: getStore().setMysteryCardChoices,
-        awardMysteryXP: context.awardMysteryXP,
-        onAddMaterials: context.onAddMaterials,
-        onAwardGold: context.onAwardGold,
+        awardMysteryXP: runStore.awardMysteryXP,
+        onAddMaterials: (materials) =>
+          homesteadStore.addMaterials(applyMaterialFindBonus(materials, homesteadStore.effects)),
+        onAwardGold: runStore.addRunGold,
       });
       if (result.followUp) return;
     }
@@ -65,19 +57,24 @@ export function useMysteryFlow(context: MysteryFlowContext) {
   function handleMysteryChooseCard(cardId: string) {
     const card = cardLibrary.find((c) => c.id === cardId);
     if (card) {
-      addCardToRun(card, { setRunDeck: context.setRunDeck, setDiscoveredCardIds: context.setDiscoveredCardIds });
+      const runStore = useRunStore.getState();
+      const appStore = useAppStore.getState();
+      addCardToRun(card, {
+        setRunDeck: runStore.setRunDeck,
+        setDiscoveredCardIds: appStore.setDiscoveredCardIds,
+      });
     }
     getStore().setMysteryCardChoices(null);
   }
 
   // Removes a card at the given deck index as part of a choose-removal consequence.
   function handleMysteryRemoveCard(index: number) {
-    context.setRunDeck((p) => p.filter((_, i) => i !== index));
+    useRunStore.getState().setRunDeck((p) => p.filter((_, i) => i !== index));
   }
 
   // Completes the event flow and advances the run map to the next set of destinations.
   function handleMysteryContinue() {
-    context.advanceToNextDestination();
+    advanceToNextDestination();
   }
 
   // Clears the buffered card selection options.

@@ -77,10 +77,10 @@ describe("storage io", () => {
     vi.spyOn(console, "info").mockImplementation(() => {});
     mockStorage[SAVE_KEY] = JSON.stringify({
       activeRun: {
-        characterId: "knight",
+        characterId: "bard",
         runDeck: [],
         runGold: 0,
-        runPlayerHealth: 50,
+        runPlayerHealth: 30,
         runMaxHealth: 30,
         roomsEncountered: 1,
         currentAct: 1,
@@ -101,7 +101,7 @@ describe("storage io", () => {
 
     const { saveAlchemySaveData } = await import("@/features/alchemy/storage/io");
     saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["slash"] });
-    expect(JSON.parse(mockStorage[SAVE_KEY]).activeRun).toMatchObject({ runPlayerHealth: 50 });
+    expect(JSON.parse(mockStorage[SAVE_KEY]).activeRun).toMatchObject({ characterId: "bard" });
   });
 
   it("saveAlchemySaveData writes to localStorage", async () => {

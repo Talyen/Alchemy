@@ -28,7 +28,6 @@ import { mergeIntoManifest } from "@/lib/homestead/effects";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import {
   CARD_ACTIVATION_ROTATION_DEGREES,
-  CARD_PLAY_TIMEOUT_MS,
   CARD_TRANSFER_CONFIG,
   ENEMY_ATTACK_RECOVERY_DELAY,
   COMPANION_ATTACK_DELAY,
@@ -67,6 +66,33 @@ function getCardTransferBatchSpeed(cardCount: number) {
   return batchSpeedMultipliers.large;
 }
 
+function defaultMeasureElementRect(element: HTMLElement | null, sceneElement: HTMLDivElement | null): CardRect | null {
+  const sceneRect = getBattleSceneLocalRect(sceneElement);
+  if (!element || !sceneRect) return null;
+  const rect = element.getBoundingClientRect();
+  return viewportRectToBattleSceneRect(
+    { x: rect.left, y: rect.top, width: rect.width, height: rect.height },
+    sceneRect,
+  );
+}
+
+function defaultMeasureVisualCardRect(
+  element: HTMLElement | null,
+  sceneElement: HTMLDivElement | null,
+): CardRect | null {
+  const sceneRect = getBattleSceneLocalRect(sceneElement);
+  if (!element || !sceneRect) return null;
+  const rect = element.getBoundingClientRect();
+  const width = element.offsetWidth;
+  const height = element.offsetHeight;
+  return {
+    x: (rect.left + rect.width / 2 - sceneRect.left) / sceneRect.scaleX - width / 2,
+    y: (rect.top + rect.height / 2 - sceneRect.top) / sceneRect.scaleY - height / 2,
+    width,
+    height,
+  };
+}
+
 export function useBattleController({
   run,
   talents,
@@ -77,6 +103,8 @@ export function useBattleController({
   homesteadEffectsRef,
   screen,
   setHoveredCardId,
+  measureElementRect = defaultMeasureElementRect,
+  measureVisualCardRect = defaultMeasureVisualCardRect,
 }: {
   run: RunStateController;
   talents: TalentStateController;
@@ -87,6 +115,8 @@ export function useBattleController({
   homesteadEffectsRef: React.MutableRefObject<HomesteadEffectManifest>;
   screen: Screen;
   setHoveredCardId: React.Dispatch<React.SetStateAction<string | null>>;
+  measureElementRect?: (element: HTMLElement | null, sceneElement: HTMLDivElement | null) => CardRect | null;
+  measureVisualCardRect?: (element: HTMLElement | null, sceneElement: HTMLDivElement | null) => CardRect | null;
 }) {
   // React owns timing, refs, animation, and audio here; pure combat resolution stays in
   // @/lib/battle so UI delays cannot silently change battle outcomes.
@@ -125,6 +155,13 @@ export function useBattleController({
 
   function isCurrentBattleSession(session: number) {
     return session === battleSessionRef.current && getStore().hasActiveBattle;
+  }
+
+  function runIfSessionActive<T>(session: number, fn: () => T, fallback?: T): T {
+    if (session === battleSessionRef.current && getStore().hasActiveBattle) {
+      return fn();
+    }
+    return fallback as T;
   }
 
   function registerTransferCancelCallback(callback: () => void) {
@@ -210,27 +247,11 @@ export function useBattleController({
   }
 
   function localRectFromElement(element: HTMLElement | null): CardRect | null {
-    const sceneRect = getBattleSceneLocalRect(battleSceneRef.current);
-    if (!element || !sceneRect) return null;
-    const rect = element.getBoundingClientRect();
-    return viewportRectToBattleSceneRect(
-      { x: rect.left, y: rect.top, width: rect.width, height: rect.height },
-      sceneRect,
-    );
+    return measureElementRect(element, battleSceneRef.current);
   }
 
   function localVisualCardRect(element: HTMLElement | null): CardRect | null {
-    const sceneRect = getBattleSceneLocalRect(battleSceneRef.current);
-    if (!element || !sceneRect) return null;
-    const rect = element.getBoundingClientRect();
-    const width = element.offsetWidth;
-    const height = element.offsetHeight;
-    return {
-      x: (rect.left + rect.width / 2 - sceneRect.left) / sceneRect.scaleX - width / 2,
-      y: (rect.top + rect.height / 2 - sceneRect.top) / sceneRect.scaleY - height / 2,
-      width,
-      height,
-    };
+    return measureVisualCardRect(element, battleSceneRef.current);
   }
 
   function centeredRectForSize(centerSource: CardRect, width: number, height: number): CardRect {
@@ -489,25 +510,27 @@ export function useBattleController({
     if (!isCurrentBattleSession(session)) return false;
     const drawnCards = detectNewHandCards(oldHand, newState.hand);
     if (drawnCards.length === 0) {
-      if (!isCurrentBattleSession(session)) return false;
       flushSync(() => {
-        if (!isCurrentBattleSession(session)) return;
-        applyState();
-        setCardTransferInProgress(false);
+        runIfSessionActive(session, () => {
+          applyState();
+          setCardTransferInProgress(false);
+        });
       });
       return false;
     }
     const hiddenDrawKeys = new Set(drawnCards.map(getCardKey));
     setCardTransferInProgress(true);
     flushSync(() => {
-      if (!isCurrentBattleSession(session)) return;
-      setHiddenHandCardKeys(hiddenDrawKeys);
-      applyState();
+      runIfSessionActive(session, () => {
+        setHiddenHandCardKeys(hiddenDrawKeys);
+        applyState();
+      });
     });
     await animateDrawnHand(drawnCards, newState.hand);
-    if (!isCurrentBattleSession(session)) return false;
-    setCardTransferInProgress(false);
-    return true;
+    runIfSessionActive(session, () => {
+      setCardTransferInProgress(false);
+    });
+    return isCurrentBattleSession(session);
   }
 
   function handlePlayCard(
@@ -535,9 +558,13 @@ export function useBattleController({
       },
       session,
     ).finally(() => {
-      if (isCurrentBattleSession(session)) cardPlayInProgressRef.current = false;
+      runIfSessionActive(session, () => {
+        cardPlayInProgressRef.current = false;
+      });
     });
-    if (isCurrentBattleSession(session)) scheduleAutoEndTurn(resolution.state);
+    runIfSessionActive(session, () => {
+      scheduleAutoEndTurn(resolution.state);
+    });
   }
 
   function canPlayCard(card: BattleCard, index: number, state: BattleState) {
@@ -612,100 +639,88 @@ export function useBattleController({
   }
 
   async function animateEndTurnThenResolve(currentState: BattleState, session: number) {
-    const safetyTimer = setTimeout(() => {
-      if (isCurrentBattleSession(session) && cardPlayInProgressRef.current) {
-        console.warn(
-          "[battle] cardPlayInProgressRef stuck for %dms — force-resetting. This indicates a turn-flow edge case (stun/haste skip).",
-          CARD_PLAY_TIMEOUT_MS,
-        );
-        cardPlayInProgressRef.current = false;
-        setCardTransferInProgress(false);
-        setHiddenHandCardKeys(new Set());
-      }
-    }, CARD_PLAY_TIMEOUT_MS);
     try {
       await animateDiscardedHand(currentState.hand);
-      if (!isCurrentBattleSession(session)) return;
-      resolveEndTurn(currentState, session);
+      runIfSessionActive(session, () => {
+        resolveEndTurn(currentState, session);
+      });
     } finally {
-      clearTimeout(safetyTimer);
-      if (isCurrentBattleSession(session)) {
+      runIfSessionActive(session, () => {
         if (!resolvedAsHasteOrStunRef.current) {
           setHiddenHandCardKeys(new Set());
           setCardTransferInProgress(false);
         }
         cardPlayInProgressRef.current = false;
-      }
+      });
     }
   }
 
   const resolvedAsHasteOrStunRef = useRef(false);
 
   function resolveEndTurn(currentState: BattleState, session: number) {
-    if (!isCurrentBattleSession(session)) return;
-    const companionResult = resolveQueuedCompanionTurn(currentState);
+    runIfSessionActive(session, () => {
+      const companionResult = resolveQueuedCompanionTurn(currentState);
 
-    if (companionResult.state.enemyHealth <= 0) {
-      if (!isCurrentBattleSession(session)) return;
-      getStore().setBattleState(companionResult.state);
-      if (companionResult.combatTexts.length > 0) getStore().showCombatTexts(companionResult.combatTexts);
-      return;
-    }
+      if (companionResult.state.enemyHealth <= 0) {
+        getStore().setBattleState(companionResult.state);
+        if (companionResult.combatTexts.length > 0) getStore().showCombatTexts(companionResult.combatTexts);
+        return;
+      }
 
-    const result = endPlayerTurn(companionResult.state);
+      const result = endPlayerTurn(companionResult.state);
 
-    // Haste skip: immediately show the next turn and animate any draw
-    // (enemyTurnStartState is undefined only in the haste path)
-    if (!result.enemyTurnStartState) {
-      resolvedAsHasteOrStunRef.current = true;
-      if (result.combatTexts.length > 0) getStore().showCombatTexts(result.combatTexts);
-      void handleDrawSequence(
-        companionResult.state.hand,
+      // Haste skip: immediately show the next turn and animate any draw
+      // (enemyTurnStartState is undefined only in the haste path)
+      if (!result.enemyTurnStartState) {
+        resolvedAsHasteOrStunRef.current = true;
+        if (result.combatTexts.length > 0) getStore().showCombatTexts(result.combatTexts);
+        void handleDrawSequence(
+          companionResult.state.hand,
+          result.state,
+          () => {
+            getStore().setBattleState(result.state);
+          },
+          session,
+        ).finally(() => {
+          runIfSessionActive(session, () => {
+            resolvedAsHasteOrStunRef.current = false;
+            setHiddenHandCardKeys(new Set());
+            setCardTransferInProgress(false);
+            cardPlayInProgressRef.current = false;
+            if (result.playerTurnSkipped) {
+              resolveEndTurn(result.state, session);
+              return;
+            }
+            scheduleCompanionFollowUp(result.state, session);
+          });
+        });
+        return;
+      }
+
+      const enemyTurnStartTexts = result.enemyTurnStartState
+        ? [...companionResult.combatTexts, ...result.enemyTurnStartCombatTexts]
+        : [...companionResult.combatTexts, ...result.combatTexts];
+      const enemyResolutionTexts = result.enemyTurnStartState ? result.enemyResolutionCombatTexts : result.combatTexts;
+
+      showEnemyTurnStart(
+        result.enemyTurnStartState ?? result.state,
+        companionResult.state,
+        enemyTurnStartTexts,
+        Boolean(result.enemyTurnStartState),
+      );
+      if (result.state.enemyHealth <= 0) {
+        getStore().setBattleState({ ...result.state, turnPhase: "enemy", hand: [] });
+        return;
+      }
+      scheduleEnemyTurnResolution(
         result.state,
-        () => {
-          getStore().setBattleState(result.state);
-        },
+        companionResult.state,
+        enemyResolutionTexts,
         session,
-      ).finally(() => {
-        if (!isCurrentBattleSession(session)) return;
-        resolvedAsHasteOrStunRef.current = false;
-        if (result.playerTurnSkipped) {
-          resolveEndTurn(result.state, session);
-          return;
-        }
-        setHiddenHandCardKeys(new Set());
-        setCardTransferInProgress(false);
-        cardPlayInProgressRef.current = false;
-        scheduleCompanionFollowUp(result.state, session);
-      });
-      return;
-    }
-
-    const enemyTurnStartTexts = result.enemyTurnStartState
-      ? [...companionResult.combatTexts, ...result.enemyTurnStartCombatTexts]
-      : [...companionResult.combatTexts, ...result.combatTexts];
-    const enemyResolutionTexts = result.enemyTurnStartState ? result.enemyResolutionCombatTexts : result.combatTexts;
-
-    if (!isCurrentBattleSession(session)) return;
-    showEnemyTurnStart(
-      result.enemyTurnStartState ?? result.state,
-      companionResult.state,
-      enemyTurnStartTexts,
-      Boolean(result.enemyTurnStartState),
-    );
-    if (result.state.enemyHealth <= 0) {
-      if (!isCurrentBattleSession(session)) return;
-      getStore().setBattleState({ ...result.state, turnPhase: "enemy", hand: [] });
-      return;
-    }
-    scheduleEnemyTurnResolution(
-      result.state,
-      companionResult.state,
-      enemyResolutionTexts,
-      session,
-      result.playerTurnSkipped,
-      result.enemyPerformedAttack,
-    );
+        result.playerTurnSkipped,
+        result.enemyPerformedAttack,
+      );
+    });
   }
 
   function resolveQueuedCompanionTurn(state: BattleState) {
@@ -752,30 +767,33 @@ export function useBattleController({
     clearEnemyTimeout();
     enemyTimeoutRef.current = setTimeout(() => {
       enemyTimeoutRef.current = null;
-      if (!isCurrentBattleSession(session)) return;
-      if (enemyPerformedAttack) playEnemyAttack(currentState.currentEnemy.id);
-      if (!currentState.deathsDoorActive && resultState.deathsDoorActive) playBattleEvent("deathsDoor");
-      if (combatTexts.length > 0) getStore().showCombatTexts(combatTexts);
-      if (shouldShakePlayerFromCombatTexts(playerTexts)) getStore().shakePlayer();
-      enemyTimeoutRef.current = setTimeout(() => {
-        enemyTimeoutRef.current = null;
-        if (!isCurrentBattleSession(session)) return;
-        void handleDrawSequence(
-          currentState.hand,
-          resultState,
-          () => {
-            getStore().setBattleState(resultState);
-          },
-          session,
-        ).finally(() => {
-          if (!isCurrentBattleSession(session)) return;
-          if (playerTurnSkipped) {
-            resolveEndTurn(resultState, session);
-            return;
-          }
-          scheduleCompanionFollowUp(resultState, session);
-        });
-      }, ENEMY_ATTACK_RECOVERY_DELAY);
+      runIfSessionActive(session, () => {
+        if (enemyPerformedAttack) playEnemyAttack(currentState.currentEnemy.id);
+        if (!currentState.deathsDoorActive && resultState.deathsDoorActive) playBattleEvent("deathsDoor");
+        if (combatTexts.length > 0) getStore().showCombatTexts(combatTexts);
+        if (shouldShakePlayerFromCombatTexts(playerTexts)) getStore().shakePlayer();
+        enemyTimeoutRef.current = setTimeout(() => {
+          enemyTimeoutRef.current = null;
+          runIfSessionActive(session, () => {
+            void handleDrawSequence(
+              currentState.hand,
+              resultState,
+              () => {
+                getStore().setBattleState(resultState);
+              },
+              session,
+            ).finally(() => {
+              runIfSessionActive(session, () => {
+                if (playerTurnSkipped) {
+                  resolveEndTurn(resultState, session);
+                  return;
+                }
+                scheduleCompanionFollowUp(resultState, session);
+              });
+            });
+          });
+        }, ENEMY_ATTACK_RECOVERY_DELAY);
+      });
     }, ENEMY_PHASE_DELAY);
   }
 
@@ -784,25 +802,26 @@ export function useBattleController({
     companionTimeoutRef.current = setTimeout(() => {
       companionTimeoutRef.current = null;
       companionScheduledRef.current = false;
-      if (!isCurrentBattleSession(session)) return;
-      const texts = resolveCompanionFollowUpTexts(session);
-      if (texts.length > 0) getStore().showCombatTexts(texts);
+      runIfSessionActive(session, () => {
+        const texts = resolveCompanionFollowUpTexts(session);
+        if (texts.length > 0) getStore().showCombatTexts(texts);
+      });
     }, COMPANION_ATTACK_DELAY);
     companionScheduledRef.current = true;
   }
 
   function resolveCompanionFollowUpTexts(session: number) {
-    if (!isCurrentBattleSession(session)) return [];
-    const store = getStore();
-    const texts: CombatTextEvent[] = [];
-    if (store.battleState.activeCompanion) {
-      playCompanionSound(store.battleState.activeCompanion.id);
-    }
-    const newState = processCompanionTurnStart(store.battleState, texts);
-    if (!isCurrentBattleSession(session)) return [];
-    store.setBattleState(newState);
-    store.shakeCompanion();
-    return texts;
+    return runIfSessionActive(session, () => {
+      const store = getStore();
+      const texts: CombatTextEvent[] = [];
+      if (store.battleState.activeCompanion) {
+        playCompanionSound(store.battleState.activeCompanion.id);
+      }
+      const newState = processCompanionTurnStart(store.battleState, texts);
+      store.setBattleState(newState);
+      store.shakeCompanion();
+      return texts;
+    }, []);
   }
 
   function handleEndRun() {

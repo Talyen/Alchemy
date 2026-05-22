@@ -6,7 +6,6 @@ import { z } from "zod";
 import { defaultBattleState, type BattleState } from "@/lib/battle";
 import { isPersistedBattleState } from "@/features/alchemy/storage/active-run";
 import {
-  cardLibrary,
   characters,
   companionLibrary,
   DIFFICULTY_ORDER,
@@ -14,6 +13,7 @@ import {
   type CharacterId,
   type CompanionId,
   type DifficultyId,
+  type BattleCardEffect,
 } from "@/lib/game-data";
 import {
   ACTS_PER_RUN,
@@ -281,15 +281,8 @@ export const BattleCardSchema = z
     effects: z.array(z.unknown()).catch([]),
   })
   .transform((saved) => {
-    const libraryCard = cardLibrary.find((c) => c.id === saved.id);
     const savedDescriptionLines = cloneSavedDescriptionLines(saved.descriptionLines);
     const savedEffects = parseSavedEffectList(saved.effects);
-    if (!libraryCard) return { ...saved, descriptionLines: savedDescriptionLines ?? [], effects: savedEffects.effects };
-    const descriptionLines: string[] = savedDescriptionLines ?? [...libraryCard.descriptionLines];
-    const effects =
-      savedEffects.fullyValid && savedEffects.effects.length > 0
-        ? savedEffects.effects
-        : libraryCard.effects.map((e) => ({ ...e }));
     const corruptedValuePositions = Array.isArray(saved.corruptedValuePositions)
       ? saved.corruptedValuePositions.filter(
           (p) =>
@@ -302,20 +295,22 @@ export const BattleCardSchema = z
         )
       : undefined;
     const cost =
-      Number.isFinite(saved.cost) && Number.isInteger(saved.cost) && saved.cost >= 0
-        ? Math.floor(saved.cost)
-        : libraryCard.cost;
+      Number.isFinite(saved.cost) && Number.isInteger(saved.cost) && saved.cost >= 0 ? Math.floor(saved.cost) : -1;
     return {
-      ...libraryCard,
-      descriptionLines,
-      effects,
+      id: saved.id,
       uid: saved.uid,
+      title: saved.title,
+      descriptionLines: savedDescriptionLines ?? [],
+      art: saved.art,
       cost,
       consume: saved.consume,
       corrupted: saved.corrupted,
       baseTitle: saved.baseTitle,
       corruptedValuePositions:
         corruptedValuePositions && corruptedValuePositions.length > 0 ? corruptedValuePositions : undefined,
+      effects: savedEffects.effects as BattleCardEffect[],
+      effectsFullyValid: savedEffects.fullyValid,
+      descriptionLinesFullyValid: savedDescriptionLines !== null,
     };
   });
 
@@ -453,17 +448,12 @@ export const ActiveRunDataSchema = z
     labyrinthPendingNode: LabyrinthNodePositionSchema,
     activeCombat: ActiveCombatDataSchema.default(null),
   })
-  .refine(
-    (data) => {
-      if (data.runPlayerHealth > data.runMaxHealth) return false;
-      return true;
-    },
-    { message: "Player health exceeds max health" },
-  )
-  .refine((data) => data.contentSystemType !== "labyrinth" || data.labyrinthMap !== null, {
-    message: "Labyrinth runs require a valid labyrinth map",
-  })
   .transform((data) => {
+    let contentSystemType = data.contentSystemType;
+    if (contentSystemType === "labyrinth" && data.labyrinthMap === null) {
+      contentSystemType = "campaign";
+    }
+    const runPlayerHealth = Math.min(data.runPlayerHealth, data.runMaxHealth);
     const isUnstarted =
       data.roomsEncountered === 0 &&
       data.currentAct === 1 &&
@@ -477,18 +467,23 @@ export const ActiveRunDataSchema = z
     return {
       ...data,
       runDeck,
-      labyrinthMap: data.contentSystemType === "labyrinth" ? data.labyrinthMap : null,
-      labyrinthPendingNode: data.contentSystemType === "labyrinth" ? data.labyrinthPendingNode : null,
+      contentSystemType,
+      runPlayerHealth,
+      labyrinthMap: contentSystemType === "labyrinth" ? data.labyrinthMap : null,
+      labyrinthPendingNode: contentSystemType === "labyrinth" ? data.labyrinthPendingNode : null,
       activeCombat: data.activeCombat
         ? {
             ...data.activeCombat,
             activeLabyrinthModifiers:
-              data.contentSystemType === "labyrinth" ? data.activeCombat.activeLabyrinthModifiers : [],
+              contentSystemType === "labyrinth" ? data.activeCombat.activeLabyrinthModifiers : [],
             activeLabyrinthRewardModifiers:
-              data.contentSystemType === "labyrinth" ? data.activeCombat.activeLabyrinthRewardModifiers : [],
+              contentSystemType === "labyrinth" ? data.activeCombat.activeLabyrinthRewardModifiers : [],
           }
         : null,
     };
+  })
+  .refine((data) => data.contentSystemType !== "labyrinth" || data.labyrinthMap !== null, {
+    message: "Labyrinth runs require a valid labyrinth map",
   });
 
 // ===== SaveData =====

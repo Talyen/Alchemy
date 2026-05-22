@@ -26,15 +26,15 @@ export function useAlchemyRunController({
   discoveredCardIds,
   setDiscoveredCardIds,
   setEncounteredEnemyIds,
-  setDiscoveredTrinketIds,
+  setDiscoveredTrinketIds: _setDiscoveredTrinketIds,
   initialTalentXP,
   initialUnlockedTalents,
   initialActiveRun,
   autoEndTurn,
-  onAddMaterials,
+  onAddMaterials: _onAddMaterials,
   homesteadEffects,
   onMarkDifficultyCompleted,
-  completedDifficulties,
+  completedDifficulties: _completedDifficulties,
 }: {
   discoveredCardIds: string[];
   setDiscoveredCardIds: React.Dispatch<React.SetStateAction<string[]>>;
@@ -132,8 +132,6 @@ export function useAlchemyRunController({
   // ============ Shared State ============
   const [screen, setScreen] = useState<Screen>("menu");
   const hasActiveRun = useScreenStore((s) => s.hasActiveRun);
-  const activeLabyrinthModifiers = useScreenStore((s) => s.activeLabyrinthModifiers);
-  const activeLabyrinthRewardModifiers = useScreenStore((s) => s.activeLabyrinthRewardModifiers);
 
   // ============ Screen Navigation ============
   const navTimerRef = useRef<number>(0);
@@ -160,11 +158,7 @@ export function useAlchemyRunController({
   }
 
   // ============ Ref Wrappers ============
-  const onAddMaterialsRef = useRef(onAddMaterials);
   const homesteadEffectsRef = useRef(homesteadEffects);
-  useEffect(() => {
-    onAddMaterialsRef.current = onAddMaterials;
-  }, [onAddMaterials]);
   useEffect(() => {
     homesteadEffectsRef.current = homesteadEffects;
   }, [homesteadEffects]);
@@ -203,24 +197,9 @@ export function useAlchemyRunController({
   const labyrinth = useLabyrinthController();
 
   const nav = useRunNavigation({
-    run,
-    talents,
     screen,
     setScreen,
     navigateTo,
-    battleState: battle.battleState,
-    hasActiveBattle: battle.hasActiveBattle,
-    setHasActiveBattle: battle.setHasActiveBattle,
-    hasActiveRun,
-    currentEnemyType: battle.battleState.currentEnemy.enemyType,
-    clearCardGhosts: battle.clearCardGhosts,
-    setBattleState: battle.setBattleState,
-    setDiscoveredCardIds,
-    setEncounteredEnemyIds,
-    setDiscoveredTrinketIds,
-    onAddMaterialsRef,
-    homesteadEffectsRef,
-    setHoveredCardId,
     onStartBattle: battle.startBattle,
     onStartBossBattle: battle.startBossBattle,
     onStartBossById: battle.startBossById,
@@ -229,11 +208,6 @@ export function useAlchemyRunController({
     onInitShop: shop.initShop,
     onInitAlchemist: shop.initAlchemist,
     onMarkDifficultyCompleted,
-    completedDifficulties,
-    labyrinthMap: labyrinth.labyrinthMap,
-    labyrinthPendingNode: labyrinth.pendingNode,
-    activeLabyrinthModifiers,
-    activeLabyrinthRewardModifiers,
   });
 
   function clearPermanentData() {

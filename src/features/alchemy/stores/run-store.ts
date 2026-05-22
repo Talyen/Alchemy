@@ -5,14 +5,71 @@ import {
   type BattleCard,
   type CharacterId,
   type DifficultyId,
+  talentPool,
+  type UnlockedTalents,
+  cardLibrary,
 } from "@/lib/game-data";
 import { MAX_PLAYER_HEALTH } from "@/lib/game-constants";
 import { DESTINATIONS, type Destination } from "@/features/alchemy/types";
 import type { ActiveRunData } from "@/features/alchemy/run/types";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import { addTalentXP, extractCardKeywords, type TalentXP } from "@/lib/talents";
-import { talentPool, type UnlockedTalents } from "@/lib/game-data";
 import type { KeywordId } from "@/lib/game-data";
+
+export function hydrateCard(savedCard: BattleCard): BattleCard {
+  const libraryCard = cardLibrary.find((c) => c.id === savedCard.id);
+  if (!libraryCard) return savedCard;
+
+  const descriptionLines =
+    Array.isArray(savedCard.descriptionLines) && (savedCard as any).descriptionLinesFullyValid !== false
+      ? [...savedCard.descriptionLines]
+      : [...libraryCard.descriptionLines];
+
+  const effects =
+    Array.isArray(savedCard.effects) && (savedCard as any).effectsFullyValid !== false
+      ? (savedCard.effects.map((e) => (e && typeof e === "object" ? { ...e } : e)) as any[])
+      : libraryCard.effects.map((e) => ({ ...e }));
+
+  const corruptedValuePositions = Array.isArray(savedCard.corruptedValuePositions)
+    ? savedCard.corruptedValuePositions.filter(
+        (p) =>
+          p &&
+          typeof p === "object" &&
+          Number.isInteger(p.lineIndex) &&
+          Number.isInteger(p.matchIndex) &&
+          p.lineIndex >= 0 &&
+          p.matchIndex >= 0,
+      )
+    : undefined;
+
+  const cost =
+    typeof savedCard.cost === "number" && Number.isFinite(savedCard.cost) && savedCard.cost >= 0
+      ? Math.floor(savedCard.cost)
+      : libraryCard.cost;
+
+  const result: BattleCard = {
+    ...libraryCard,
+    descriptionLines,
+    effects,
+    cost,
+  };
+  if (savedCard.consume !== undefined) {
+    result.consume = savedCard.consume;
+  }
+  if (savedCard.corrupted !== undefined) {
+    result.corrupted = savedCard.corrupted;
+  }
+  if (savedCard.baseTitle !== undefined) {
+    result.baseTitle = savedCard.baseTitle;
+  }
+  if (savedCard.uid !== undefined) {
+    result.uid = savedCard.uid;
+  }
+  if (corruptedValuePositions && corruptedValuePositions.length > 0) {
+    result.corruptedValuePositions = corruptedValuePositions;
+  }
+  return result;
+}
 
 type RunStateFields = {
   characterId: CharacterId;
@@ -77,7 +134,9 @@ function createInitialRunState(
   const characterId = initialActiveRun?.characterId ?? fallbackCharacterId;
   return {
     characterId,
-    runDeck: initialActiveRun ? [...initialActiveRun.runDeck] : getStartingDeck(characterId),
+    runDeck: initialActiveRun
+      ? initialActiveRun.runDeck.map(hydrateCard)
+      : getStartingDeck(characterId).map((c) => ({ ...c })),
     runGold: initialActiveRun?.runGold ?? 0,
     runPlayerHealth: initialActiveRun?.runPlayerHealth ?? MAX_PLAYER_HEALTH,
     runMaxHealth: initialActiveRun?.runMaxHealth ?? MAX_PLAYER_HEALTH,

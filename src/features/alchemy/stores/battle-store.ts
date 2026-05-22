@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { defaultBattleState, type BattleState, type CombatTextEvent } from "@/lib/battle";
+import { hydrateCard } from "./run-store";
 import { COMBAT_TEXT_LANE_DELAY_MS, COMBAT_TEXT_LIFETIME_MS, SHAKE_DURATION } from "@/lib/game-constants";
 import type { CardGhost, FloatingCombatText } from "@/features/alchemy/types";
 
@@ -66,12 +67,30 @@ export const useBattleStore = create<BattleStore>()((set, get) => ({
   setHasActiveBattle: (active) =>
     set((s) => ({ hasActiveBattle: typeof active === "function" ? active(s.hasActiveBattle) : active })),
 
-  initializeActiveBattle: (battleState) =>
-    set({
-      battleState: battleState ?? defaultBattleState(),
-      battleStartState: battleState,
-      hasActiveBattle: battleState !== null,
-    }),
+  initializeActiveBattle: (battleState) => {
+    if (battleState) {
+      const hydratedState: BattleState = {
+        ...battleState,
+        deck: battleState.deck.map(hydrateCard),
+        hand: battleState.hand.map(hydrateCard),
+        discard: battleState.discard.map(hydrateCard),
+        exhausted: battleState.exhausted.map(hydrateCard),
+        wishOptions: battleState.wishOptions ? battleState.wishOptions.map(hydrateCard) : null,
+        wishQueue: battleState.wishQueue ? battleState.wishQueue.map((list) => list.map(hydrateCard)) : [],
+      };
+      set({
+        battleState: hydratedState,
+        battleStartState: hydratedState,
+        hasActiveBattle: true,
+      });
+    } else {
+      set({
+        battleState: defaultBattleState(),
+        battleStartState: null,
+        hasActiveBattle: false,
+      });
+    }
+  },
 
   spawnCardGhost: (ghost) => {
     const id = `${performance.now()}-${Math.random()}`;

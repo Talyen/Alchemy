@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
   CURRENT_SAVE_SCHEMA_VERSION,
   CURRENT_CONTENT_VERSION,
@@ -12,6 +12,7 @@ import {
 import { getRawSaveSchemaVersion, isUnsupportedFutureSaveData, migrateSaveDataToCurrent } from "@/lib/validation";
 import { cardLibrary } from "@/lib/game-data";
 import { createSeededRng, generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
+import { hydrateCard } from "@/features/alchemy/stores/run-store";
 import { legacyCampaignRunSave, legacyCorruptedCardRunSave, legacyLabyrinthRunSave } from "../fixtures/legacy-saves";
 import type { SaveData } from "@/features/alchemy/storage/types";
 
@@ -32,7 +33,13 @@ function activeRun(overrides: Record<string, unknown> = {}) {
   };
 }
 
-const parseActiveRun = (val: unknown) => ActiveRunDataSchema.nullable().catch(null).parse(val);
+const parseActiveRun = (val: unknown) => {
+  const result = ActiveRunDataSchema.nullable().catch(null).parse(val);
+  if (result) {
+    result.runDeck = result.runDeck.map(hydrateCard);
+  }
+  return result;
+};
 
 describe("ActiveRunDataSchema", () => {
   it("returns null for null input", () => {
@@ -240,9 +247,9 @@ describe("ActiveRunDataSchema", () => {
 
   it("recovers from corrupt numeric run fields with defaults", () => {
     // Zod recovers individual corrupt fields with catch()/defaults instead of discarding the whole run.
-    // runPlayerHealth > maxHealth and currentAct out of range still return null via refine.
+    // runPlayerHealth > maxHealth is clamped.
     expect(parseActiveRun(activeRun({ runGold: Number.NaN }))?.runGold).toBe(0);
-    expect(parseActiveRun(activeRun({ runPlayerHealth: 31 }))).toBeNull();
+    expect(parseActiveRun(activeRun({ runPlayerHealth: 31 }))?.runPlayerHealth).toBe(30);
     expect(parseActiveRun(activeRun({ runMaxHealth: 0 }))?.runMaxHealth).toBe(30);
     expect(parseActiveRun(activeRun({ roomsEncountered: -1 }))?.roomsEncountered).toBe(0);
     expect(parseActiveRun(activeRun({ currentAct: 999 }))?.currentAct).toBe(1);
@@ -260,8 +267,10 @@ describe("ActiveRunDataSchema", () => {
     expect(result?.contentSystemType).toBe("labyrinth");
   });
 
-  it("rejects labyrinth runs without a valid map", () => {
-    expect(parseActiveRun(activeRun({ contentSystemType: "labyrinth" }))).toBeNull();
+  it("recovers labyrinth runs without a valid map to campaign", () => {
+    const result = parseActiveRun(activeRun({ contentSystemType: "labyrinth" }));
+    expect(result).not.toBeNull();
+    expect(result?.contentSystemType).toBe("campaign");
   });
 
   it("preserves valid labyrinth map state", () => {
@@ -284,7 +293,7 @@ describe("ActiveRunDataSchema", () => {
     expect(normalizedCombat?.rewardModifiers).toEqual(["generous"]);
   });
 
-  it("rejects malformed labyrinth maps", () => {
+  it("recovers from malformed labyrinth maps to campaign", () => {
     const mismatchedRows = generateLabyrinthMap(createSeededRng(42));
     mismatchedRows.rows += 1;
 
@@ -294,11 +303,11 @@ describe("ActiveRunDataSchema", () => {
 
     // Fractional currentNode is recovered by Zod catch() — row 0.5 becomes 0, col 4 stays 4,
     // pointing to a valid entrance node, so the map passes validation.
-    expect(parseActiveRun(activeRun({ contentSystemType: "labyrinth", labyrinthMap: mismatchedRows }))).toBeNull();
-    expect(parseActiveRun(activeRun({ contentSystemType: "labyrinth", labyrinthMap: invalidConnection }))).toBeNull();
+    expect(parseActiveRun(activeRun({ contentSystemType: "labyrinth", labyrinthMap: mismatchedRows }))?.contentSystemType).toBe("campaign");
+    expect(parseActiveRun(activeRun({ contentSystemType: "labyrinth", labyrinthMap: invalidConnection }))?.contentSystemType).toBe("campaign");
   });
 
-  it("rejects labyrinth maps with impossible current or endpoint state", () => {
+  it("recovers from labyrinth maps with impossible current or endpoint state to campaign", () => {
     const multipleCurrent = generateLabyrinthMap(createSeededRng(42));
     const firstVisible = multipleCurrent.grid.flat().find((node) => node?.state === "visible");
     firstVisible!.state = "current";
@@ -313,10 +322,10 @@ describe("ActiveRunDataSchema", () => {
     const boss = missingBoss.grid.flat().find((node) => node?.type === "boss");
     boss!.type = "combat";
 
-    expect(parseActiveRun(activeRun({ contentSystemType: "labyrinth", labyrinthMap: multipleCurrent }))).toBeNull();
-    expect(parseActiveRun(activeRun({ contentSystemType: "labyrinth", labyrinthMap: mismatchedCurrent }))).toBeNull();
-    expect(parseActiveRun(activeRun({ contentSystemType: "labyrinth", labyrinthMap: missingEntrance }))).toBeNull();
-    expect(parseActiveRun(activeRun({ contentSystemType: "labyrinth", labyrinthMap: missingBoss }))).toBeNull();
+    expect(parseActiveRun(activeRun({ contentSystemType: "labyrinth", labyrinthMap: multipleCurrent }))?.contentSystemType).toBe("campaign");
+    expect(parseActiveRun(activeRun({ contentSystemType: "labyrinth", labyrinthMap: mismatchedCurrent }))?.contentSystemType).toBe("campaign");
+    expect(parseActiveRun(activeRun({ contentSystemType: "labyrinth", labyrinthMap: missingEntrance }))?.contentSystemType).toBe("campaign");
+    expect(parseActiveRun(activeRun({ contentSystemType: "labyrinth", labyrinthMap: missingBoss }))?.contentSystemType).toBe("campaign");
   });
 
   it("drops labyrinth map state for campaign runs", () => {
@@ -427,7 +436,13 @@ describe("MaterialInventorySchema", () => {
 });
 
 describe("SaveDataSchema", () => {
-  const parseSave = (val: unknown) => SaveDataSchema.parse(val) as SaveData;
+  const parseSave = (val: unknown) => {
+    const result = SaveDataSchema.parse(val) as SaveData;
+    if (result.activeRun) {
+      result.activeRun.runDeck = result.activeRun.runDeck.map(hydrateCard);
+    }
+    return result;
+  };
 
   it("treats saves without metadata as legacy v0", () => {
     expect(getRawSaveSchemaVersion({ discoveredCardIds: ["slash"] })).toBe(0);

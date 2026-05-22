@@ -1,11 +1,17 @@
 // Run-flow controller for routing, rewards, mysteries, campfires, act transitions, and reset.
 // Depends on: useScreenStore, battle system, game constants, audio registry, and navigation flow helpers.
 // Depended on by: useAlchemyRunController for managing the overall flow of a run.
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useCallback } from "react";
+import { useShallow } from "zustand/react/shallow";
+import { useRunStore } from "./stores/run-store";
+import { useAppStore } from "./stores/app-store";
+import { useHomesteadStore } from "./stores/homestead-store";
+import { useBattleStore } from "./stores/battle-store";
 import { defaultBattleState, isPlayerDefeated } from "@/lib/battle";
 import {
   getDifficultyModifiers,
   getGoldMultiplier,
+  computeTalentEffects,
   type BattleCard,
   type CharacterId,
   type DifficultyId,
@@ -16,7 +22,7 @@ import { appendUnique, appendUniqueMany } from "@/lib/utils";
 import { CONSTANTS, type Destination, type Screen } from "./types";
 import { applyMaterialFindBonus, getEnemyMaterialLoot } from "@/lib/homestead/loot";
 import { addInventory } from "@/lib/homestead/inventory";
-import { type HomesteadEffectManifest, type MaterialInventory } from "@/lib/homestead/types";
+import { type MaterialInventory } from "@/lib/homestead/types";
 import {
   ACTS_PER_RUN,
   CAMPFIRE_HEAL_FRACTION,
@@ -31,9 +37,6 @@ import {
   VICTORY_TRANSITION_DELAY,
 } from "@/lib/game-constants";
 import { randomBetween } from "./utils";
-import type { BattleState } from "@/lib/battle";
-import type { RunStateController } from "./use-run-state";
-import type { TalentStateController } from "./use-talent-state";
 import { getRunAvailableDestinations, sampleDestinationChoices } from "./navigation/destination-flow";
 import {
   createBossRewardState as createBossRewardStateFromFlow,
@@ -56,10 +59,9 @@ import { routeDestinationChoice } from "./navigation/routing-flow";
 import { createActiveRunData } from "./run/active-run-data";
 import { createRunStartSnapshot, type RunStartSnapshot } from "./run/run-start";
 import { corruptDeckCard } from "./corruption";
-import type { ContentSystemId, LabyrinthMap, LabyrinthModifierKind } from "@/lib/content-systems/types";
+import type { ContentSystemId, LabyrinthModifierKind } from "@/lib/content-systems/types";
 import { useScreenStore } from "./stores/screen-store";
 import { getBossEnemy } from "./config";
-import type { LabyrinthNodePosition } from "./run/types";
 
 type DestinationOptionsInput = {
   currentHealth?: number;
@@ -86,24 +88,9 @@ function createDestinationRewardState(destinations: Destination[]): RewardState 
 }
 
 export function useRunNavigation({
-  run,
-  talents,
   screen,
   setScreen,
   navigateTo,
-  battleState,
-  hasActiveBattle,
-  setHasActiveBattle,
-  hasActiveRun,
-  currentEnemyType,
-  clearCardGhosts,
-  setBattleState,
-  setDiscoveredCardIds,
-  setEncounteredEnemyIds,
-  setDiscoveredTrinketIds,
-  onAddMaterialsRef,
-  homesteadEffectsRef,
-  setHoveredCardId,
   onStartBattle,
   onStartBossBattle,
   onStartBossById,
@@ -112,30 +99,10 @@ export function useRunNavigation({
   onInitShop,
   onInitAlchemist,
   onMarkDifficultyCompleted,
-  completedDifficulties,
-  labyrinthMap,
-  labyrinthPendingNode,
-  activeLabyrinthModifiers,
-  activeLabyrinthRewardModifiers,
 }: {
-  run: RunStateController;
-  talents: TalentStateController;
   screen: Screen;
   setScreen: React.Dispatch<React.SetStateAction<Screen>>;
   navigateTo: (nextScreen: Screen, onRenderedScreenCommit?: () => void) => void;
-  battleState: BattleState;
-  hasActiveBattle: boolean;
-  setHasActiveBattle: React.Dispatch<React.SetStateAction<boolean>>;
-  hasActiveRun: boolean;
-  currentEnemyType: string;
-  clearCardGhosts: () => void;
-  setBattleState: React.Dispatch<React.SetStateAction<BattleState>>;
-  setDiscoveredCardIds: React.Dispatch<React.SetStateAction<string[]>>;
-  setEncounteredEnemyIds: React.Dispatch<React.SetStateAction<string[]>>;
-  setDiscoveredTrinketIds: React.Dispatch<React.SetStateAction<string[]>>;
-  onAddMaterialsRef: React.MutableRefObject<(materials: MaterialInventory) => void>;
-  homesteadEffectsRef: React.MutableRefObject<HomesteadEffectManifest>;
-  setHoveredCardId: React.Dispatch<React.SetStateAction<string | null>>;
   onStartBattle: (
     deck?: BattleCard[],
     gold?: number,
@@ -149,12 +116,84 @@ export function useRunNavigation({
   onInitShop: () => void;
   onInitAlchemist: () => void;
   onMarkDifficultyCompleted: (characterId: CharacterId, difficultyId: DifficultyId) => void;
-  completedDifficulties: Record<CharacterId, DifficultyId[]>;
-  labyrinthMap: LabyrinthMap;
-  labyrinthPendingNode: LabyrinthNodePosition | null;
-  activeLabyrinthModifiers: LabyrinthModifierKind[];
-  activeLabyrinthRewardModifiers: LabyrinthModifierKind[];
 }) {
+  const runStoreFields = useRunStore(
+    useShallow((s) => ({
+      characterId: s.characterId,
+      runDeck: s.runDeck,
+      runGold: s.runGold,
+      runPlayerHealth: s.runPlayerHealth,
+      runMaxHealth: s.runMaxHealth,
+      roomsEncountered: s.roomsEncountered,
+      currentAct: s.currentAct,
+      destinationIndexInAct: s.destinationIndexInAct,
+      completedDestinations: s.completedDestinations,
+      runTrinkets: s.runTrinkets,
+      encounteredRunEnemyIds: s.encounteredRunEnemyIds,
+      selectedDifficulty: s.selectedDifficulty,
+      contentSystemType: s.contentSystemType,
+      unlockedTalents: s.unlockedTalents,
+    })),
+  );
+
+  const runStoreActions = useRunStore(
+    useShallow((s) => ({
+      setRunDeck: s.setRunDeck,
+      setRunGold: s.setRunGold,
+      setRunPlayerHealth: s.setRunPlayerHealth,
+      setRunMaxHealth: s.setRunMaxHealth,
+      setRoomsEncountered: s.setRoomsEncountered,
+      setCurrentAct: s.setCurrentAct,
+      setDestinationIndexInAct: s.setDestinationIndexInAct,
+      setCompletedDestinations: s.setCompletedDestinations,
+      setRunTrinkets: s.setRunTrinkets,
+      setEncounteredRunEnemyIds: s.setEncounteredRunEnemyIds,
+      setSelectedDifficulty: s.setSelectedDifficulty,
+      setContentSystemType: s.setContentSystemType,
+      setCharacter: s.setCharacter,
+      reset: s.reset,
+      addRunGold: s.addRunGold,
+      awardMysteryXP: s.awardMysteryXP,
+      resetRunXP: s.resetRunXP,
+    })),
+  );
+
+  const run = useMemo(() => ({ ...runStoreFields, ...runStoreActions }), [runStoreFields, runStoreActions]);
+  const talentEffects = useMemo(
+    () => computeTalentEffects(runStoreFields.unlockedTalents),
+    [runStoreFields.unlockedTalents],
+  );
+  const talents = useMemo(
+    () => ({
+      talentEffects,
+      awardMysteryXP: runStoreActions.awardMysteryXP,
+      resetRunXP: runStoreActions.resetRunXP,
+    }),
+    [talentEffects, runStoreActions.awardMysteryXP, runStoreActions.resetRunXP],
+  );
+
+  const battleState = useBattleStore((s) => s.battleState);
+  const hasActiveBattle = useBattleStore((s) => s.hasActiveBattle);
+  const setHasActiveBattle = useBattleStore((s) => s.setHasActiveBattle);
+  const setBattleState = useBattleStore((s) => s.setBattleState);
+  const clearCardGhosts = useBattleStore((s) => s.clearCardGhosts);
+
+  const { completedDifficulties, setDiscoveredCardIds, setEncounteredEnemyIds, setDiscoveredTrinketIds } = useAppStore(
+    useShallow((s) => ({
+      completedDifficulties: s.completedDifficulties,
+      setDiscoveredCardIds: s.setDiscoveredCardIds,
+      setEncounteredEnemyIds: s.setEncounteredEnemyIds,
+      setDiscoveredTrinketIds: s.setDiscoveredTrinketIds,
+    })),
+  );
+
+  const setHoveredCardId = useScreenStore((s) => s.setHoveredCardId);
+  const hasActiveRun = useScreenStore((s) => s.hasActiveRun);
+  const labyrinthMap = useScreenStore((s) => s.labyrinthMap);
+  const labyrinthPendingNode = useScreenStore((s) => s.activeLabyrinthPendingNode);
+  const activeLabyrinthModifiers = useScreenStore((s) => s.activeLabyrinthModifiers);
+  const activeLabyrinthRewardModifiers = useScreenStore((s) => s.activeLabyrinthRewardModifiers);
+
   const rewardState = useScreenStore((s) => s.rewardState);
   const companionRewardCards = useScreenStore((s) => s.companionRewardCards);
   const runEndMaterials = useScreenStore((s) => s.runEndMaterials);
@@ -169,18 +208,7 @@ export function useRunNavigation({
   }
 
   const mystery = useMysteryFlow({
-    runMaxHealth: run.runMaxHealth,
-    setRunDeck: run.setRunDeck,
-    setRunGold: run.setRunGold,
-    setRunPlayerHealth: run.setRunPlayerHealth,
-    setRunTrinkets: run.setRunTrinkets,
-    setDiscoveredCardIds,
-    setDiscoveredTrinketIds,
-    awardMysteryXP: talents.awardMysteryXP,
-    onAddMaterials: (materials) =>
-      onAddMaterialsRef.current(applyMaterialFindBonus(materials, homesteadEffectsRef.current)),
     advanceToNextDestination,
-    onAwardGold: run.addRunGold,
   });
   const battleVictoryHandledRef = useRef(false);
   const rewardTransitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -254,23 +282,58 @@ export function useRunNavigation({
 
   // ============ Victory / Defeat Effects ============
 
-  // To prevent closures from executing with stale state or triggering the useEffect hook on
-  // every state change (which would cause duplicate battles, rewards, or transitions), we capture
-  // the callback functions in mutable refs. This separates the synchronization triggers (e.g., enemy health <= 0)
-  // from the state variables referenced inside the handlers.
-  const handleBattleDefeatRef = useRef(handleBattleDefeat);
-  const handleBattleVictoryRef = useRef(handleBattleVictory);
-  useEffect(() => {
-    handleBattleDefeatRef.current = handleBattleDefeat;
-  });
-  useEffect(() => {
-    handleBattleVictoryRef.current = handleBattleVictory;
-  });
+  const handleBattleDefeat = useCallback(() => {
+    clearRewardTransitionTimer();
+    const runState = useRunStore.getState();
+    if (runState.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.LABYRINTH) {
+      stopAllSfx();
+      onLabyrinthFailNode();
+      useBattleStore.getState().setHasActiveBattle(false);
+      useScreenStore.getState().setHoveredCardId(null);
+      navigateTo(CONSTANTS.SCREENS.LABYRINTH_MAP);
+      return;
+    }
+    awardRunEndMaterials();
+    stopAllSfx();
+    playDefeat();
+    useBattleStore.getState().setHasActiveBattle(false);
+    useScreenStore.getState().setHoveredCardId(null);
+    setScreen(CONSTANTS.SCREENS.GAME_OVER);
+  }, [navigateTo, setScreen, onLabyrinthFailNode]);
+
+  const handleBattleVictory = useCallback(() => {
+    clearRewardTransitionTimer();
+    const runState = useRunStore.getState();
+    const activeLabyrinthRewardModifiers = useScreenStore.getState().activeLabyrinthRewardModifiers;
+    const battleState = useBattleStore.getState().battleState;
+
+    const labyrinthRewardModifiers = getActiveRewardModifiersForContentSystem(
+      runState.contentSystemType,
+      activeLabyrinthRewardModifiers,
+    );
+    const { gold, eliteBonus, bossBonus, generousBonus } = calculateVictoryGold(labyrinthRewardModifiers);
+    const newGold = awardVictoryGold(gold, eliteBonus, generousBonus, bossBonus);
+
+    applyPlayerVictoryStats();
+    if (newGold > battleState.gold) playGoldGain();
+
+    setupVictoryRewards(gold, eliteBonus, generousBonus, bossBonus, newGold, labyrinthRewardModifiers);
+
+    useBattleStore.getState().setHasActiveBattle(false);
+    useScreenStore.getState().setHoveredCardId(null);
+    stopAllSfx();
+    playVictory();
+
+    rewardTransitionTimerRef.current = setTimeout(() => {
+      rewardTransitionTimerRef.current = null;
+      setScreen(CONSTANTS.SCREENS.REWARDS);
+    }, VICTORY_TRANSITION_DELAY);
+  }, [setScreen]);
 
   useEffect(() => {
     if (screen !== CONSTANTS.SCREENS.BATTLE || !isPlayerDefeated(battleState)) return;
-    handleBattleDefeatRef.current();
-  }, [battleState, screen]);
+    handleBattleDefeat();
+  }, [battleState, screen, handleBattleDefeat]);
 
   useEffect(() => {
     if (screen === CONSTANTS.SCREENS.BATTLE && hasActiveBattle && battleState.enemyHealth > 0)
@@ -282,33 +345,19 @@ export function useRunNavigation({
     if (isPlayerDefeated(battleState)) return;
     if (battleVictoryHandledRef.current) return;
     battleVictoryHandledRef.current = true;
-    handleBattleVictoryRef.current();
-  }, [battleState, hasActiveBattle, screen]);
-
-  function handleBattleDefeat() {
-    clearRewardTransitionTimer();
-    if (run.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.LABYRINTH) {
-      stopAllSfx();
-      onLabyrinthFailNode();
-      setHasActiveBattle(false);
-      setHoveredCardId(null);
-      navigateTo(CONSTANTS.SCREENS.LABYRINTH_MAP);
-      return;
-    }
-    awardRunEndMaterials();
-    stopAllSfx();
-    playDefeat();
-    setHasActiveBattle(false);
-    setHoveredCardId(null);
-    setScreen(CONSTANTS.SCREENS.GAME_OVER);
-  }
+    handleBattleVictory();
+  }, [battleState, hasActiveBattle, screen, handleBattleVictory]);
 
   function calculateVictoryGold(labyrinthRewardModifiers: LabyrinthModifierKind[]) {
     const baseGold = randomBetween(GOLD_REWARD_MIN, GOLD_REWARD_MAX);
-    let gold = Math.floor(baseGold * (1 + talents.talentEffects.enemyGoldDropBonus));
+    const runState = useRunStore.getState();
+    const battleState = useBattleStore.getState().battleState;
+    const talentEffects = computeTalentEffects(runState.unlockedTalents);
+
+    let gold = Math.floor(baseGold * (1 + talentEffects.enemyGoldDropBonus));
 
     if (
-      talents.talentEffects.companionGoldFindActive &&
+      talentEffects.companionGoldFindActive &&
       battleState.activeCompanion &&
       Math.random() < COMPANION_GOLD_FIND_CHANCE
     ) {
@@ -317,9 +366,7 @@ export function useRunNavigation({
 
     const eliteFraction =
       ELITE_GOLD_BONUS_FRACTION +
-      (battleState.currentEnemy.enemyType === CONSTANTS.ENEMY_TYPES.ELITE
-        ? talents.talentEffects.eliteGoldDropBonus
-        : 0);
+      (battleState.currentEnemy.enemyType === CONSTANTS.ENEMY_TYPES.ELITE ? talentEffects.eliteGoldDropBonus : 0);
     const eliteBonus =
       battleState.currentEnemy.enemyType === CONSTANTS.ENEMY_TYPES.ELITE ? Math.floor(gold * eliteFraction) : 0;
     const bossBonus =
@@ -332,9 +379,13 @@ export function useRunNavigation({
   }
 
   function applyPlayerVictoryStats() {
-    run.setRunPlayerHealth(battleState.playerHealth);
-    if (talents.talentEffects.maxHealthPerCombat > 0) {
-      run.setRunMaxHealth((p) => p + talents.talentEffects.maxHealthPerCombat);
+    const runState = useRunStore.getState();
+    const battleState = useBattleStore.getState().battleState;
+    const talentEffects = computeTalentEffects(runState.unlockedTalents);
+
+    runState.setRunPlayerHealth(battleState.playerHealth);
+    if (talentEffects.maxHealthPerCombat > 0) {
+      runState.setRunMaxHealth((p) => p + talentEffects.maxHealthPerCombat);
     }
   }
 
@@ -347,59 +398,42 @@ export function useRunNavigation({
     labyrinthRewardModifiers: LabyrinthModifierKind[],
   ) {
     const materials = applyLabyrinthRewardMaterialModifiers(getVictoryMaterials(), labyrinthRewardModifiers);
-    getStore().setRewardState(createVictoryRewardState(gold, eliteBonus, generousBonus, bossBonus, newGold, materials));
+    useScreenStore
+      .getState()
+      .setRewardState(createVictoryRewardState(gold, eliteBonus, generousBonus, bossBonus, newGold, materials));
     if (shouldGrantCompanionReward(labyrinthRewardModifiers)) {
-      getStore().setCompanionRewardCards(getCompanionCardChoices());
+      useScreenStore.getState().setCompanionRewardCards(getCompanionCardChoices());
     } else {
-      getStore().setCompanionRewardCards(null);
+      useScreenStore.getState().setCompanionRewardCards(null);
     }
   }
 
-  function handleBattleVictory() {
-    clearRewardTransitionTimer();
-    const labyrinthRewardModifiers = getActiveRewardModifiersForContentSystem(
-      run.contentSystemType,
-      activeLabyrinthRewardModifiers,
-    );
-    const { gold, eliteBonus, bossBonus, generousBonus } = calculateVictoryGold(labyrinthRewardModifiers);
-    const newGold = awardVictoryGold(gold, eliteBonus, generousBonus, bossBonus);
-
-    applyPlayerVictoryStats();
-    if (newGold > battleState.gold) playGoldGain();
-
-    setupVictoryRewards(gold, eliteBonus, generousBonus, bossBonus, newGold, labyrinthRewardModifiers);
-
-    setHasActiveBattle(false);
-    setHoveredCardId(null);
-    stopAllSfx();
-    playVictory();
-
-    rewardTransitionTimerRef.current = setTimeout(() => {
-      rewardTransitionTimerRef.current = null;
-      setScreen(CONSTANTS.SCREENS.REWARDS);
-    }, VICTORY_TRANSITION_DELAY);
-  }
-
   function awardVictoryGold(gold: number, eliteBonus: number, generousBonus: number, bossBonus: number) {
+    const runState = useRunStore.getState();
+    const battleState = useBattleStore.getState().battleState;
+    const talentEffects = computeTalentEffects(runState.unlockedTalents);
+
     const goldResult = computeVictoryGoldResult({
       battleState,
-      runGold: run.runGold,
-      runTrinkets: run.runTrinkets,
+      runGold: runState.runGold,
+      runTrinkets: runState.runTrinkets,
       gold,
       eliteBonus,
       generousBonus,
       bossBonus,
-      talentGoldPerCombat: talents.talentEffects.goldPerCombat,
-      goldMultiplier: getGoldMultiplier(run.characterId, run.selectedDifficulty),
+      talentGoldPerCombat: talentEffects.goldPerCombat,
+      goldMultiplier: getGoldMultiplier(runState.characterId, runState.selectedDifficulty),
     });
-    run.addRunGold(goldResult.earnedBeforeMultiplier);
+    runState.addRunGold(goldResult.earnedBeforeMultiplier);
     return goldResult.persistedRunGold;
   }
 
   function getVictoryMaterials() {
+    const battleState = useBattleStore.getState().battleState;
+    const homesteadEffects = useHomesteadStore.getState().effects;
     return applyMaterialFindBonus(
       getEnemyMaterialLoot(battleState.currentEnemy.id, battleState.currentEnemy.enemyType),
-      homesteadEffectsRef.current,
+      homesteadEffects,
     );
   }
 
@@ -411,6 +445,7 @@ export function useRunNavigation({
     newGold: number,
     materials: MaterialInventory,
   ) {
+    const battleState = useBattleStore.getState().battleState;
     if (battleState.currentEnemy.enemyType === CONSTANTS.ENEMY_TYPES.BOSS) {
       return createBossRewardState(gold, bossBonus, generousBonus, materials);
     }
@@ -418,14 +453,16 @@ export function useRunNavigation({
   }
 
   function createBossRewardState(gold: number, bossBonus: number, generousBonus: number, materials: MaterialInventory) {
-    const goldMultiplier = getGoldMultiplier(run.characterId, run.selectedDifficulty);
+    const runState = useRunStore.getState();
+    const talentEffects = computeTalentEffects(runState.unlockedTalents);
+    const goldMultiplier = getGoldMultiplier(runState.characterId, runState.selectedDifficulty);
     return createBossRewardStateFromFlow({
       gold,
       bossBonus,
       generousBonus,
-      talentGoldPerCombat: talents.talentEffects.goldPerCombat,
+      talentGoldPerCombat: talentEffects.goldPerCombat,
       materials,
-      trinketIds: run.runTrinkets,
+      trinketIds: runState.runTrinkets,
       goldMultiplier,
     });
   }
@@ -437,7 +474,11 @@ export function useRunNavigation({
     newGold: number,
     materials: MaterialInventory,
   ) {
-    const goldMultiplier = getGoldMultiplier(run.characterId, run.selectedDifficulty);
+    const runState = useRunStore.getState();
+    const battleState = useBattleStore.getState().battleState;
+    const activeLabyrinthRewardModifiers = useScreenStore.getState().activeLabyrinthRewardModifiers;
+    const talentEffects = computeTalentEffects(runState.unlockedTalents);
+    const goldMultiplier = getGoldMultiplier(runState.characterId, runState.selectedDifficulty);
     const destinations = sampleDestinationChoices(
       getAvailableDestinations({ currentHealth: battleState.playerHealth, currentGold: newGold }),
     );
@@ -445,17 +486,17 @@ export function useRunNavigation({
       destinations,
       createCombatRewardStateFromFlow({
         battleState,
-        runDeck: run.runDeck,
+        runDeck: runState.runDeck,
         gold,
         eliteBonus,
         generousBonus,
-        talentGoldPerCombat: talents.talentEffects.goldPerCombat,
+        talentGoldPerCombat: talentEffects.goldPerCombat,
         materials,
         destinations,
-        trinketIds: run.runTrinkets,
+        trinketIds: runState.runTrinkets,
         goldMultiplier,
         forceTrinket: shouldForceTrinketReward(
-          getActiveRewardModifiersForContentSystem(run.contentSystemType, activeLabyrinthRewardModifiers),
+          getActiveRewardModifiersForContentSystem(runState.contentSystemType, activeLabyrinthRewardModifiers),
         ),
       }),
     );
@@ -582,13 +623,14 @@ export function useRunNavigation({
     contentSystemType: ContentSystemId,
     difficultyId?: DifficultyId | null,
   ) {
+    const homesteadEffects = useHomesteadStore.getState().effects;
     return createRunStartSnapshot({
       characterId,
       contentSystemType,
       difficultyId,
       talentStartGold: talents.talentEffects.startGold,
-      homesteadStartGold: homesteadEffectsRef.current.startGold,
-      homesteadStartMaxHealthBonus: homesteadEffectsRef.current.startMaxHealthBonus,
+      homesteadStartGold: homesteadEffects.startGold,
+      homesteadStartMaxHealthBonus: homesteadEffects.startMaxHealthBonus,
     });
   }
 
@@ -697,6 +739,8 @@ export function useRunNavigation({
   }
 
   function finishRewards() {
+    const battleStateVal = useBattleStore.getState().battleState;
+    const currentEnemyType = battleStateVal.currentEnemy.enemyType;
     const result = finalizeRewardState({
       rewardState,
       companionRewardCards,
@@ -707,7 +751,7 @@ export function useRunNavigation({
       ),
     });
 
-    onAddMaterialsRef.current(result.materials);
+    useHomesteadStore.getState().addMaterials(result.materials);
     applySelectedChoiceReward(result.selectedChoice, result.selectedRewardType);
     applyAlchemistPotionReward(result.grantAlchemistReward);
 
@@ -773,13 +817,11 @@ export function useRunNavigation({
   }
 
   function awardRunEndMaterials(displayMaterials: MaterialInventory | null = null) {
-    const baseHerbs = homesteadEffectsRef.current.herbFindBonus > 0 ? run.roomsEncountered : 0;
-    const food = homesteadEffectsRef.current.companionDamage > 0 ? run.roomsEncountered : 0;
-    const mats = applyMaterialFindBonus(
-      { wood: 0, iron: 0, herbs: baseHerbs, food, crystal: 0 },
-      homesteadEffectsRef.current,
-    );
-    if (mats.herbs > 0 || food > 0) onAddMaterialsRef.current(mats);
+    const homesteadEffects = useHomesteadStore.getState().effects;
+    const baseHerbs = homesteadEffects.herbFindBonus > 0 ? run.roomsEncountered : 0;
+    const food = homesteadEffects.companionDamage > 0 ? run.roomsEncountered : 0;
+    const mats = applyMaterialFindBonus({ wood: 0, iron: 0, herbs: baseHerbs, food, crystal: 0 }, homesteadEffects);
+    if (mats.herbs > 0 || food > 0) useHomesteadStore.getState().addMaterials(mats);
     getStore().setRunEndMaterials(displayMaterials ? addInventory(displayMaterials, mats) : mats);
     return mats;
   }

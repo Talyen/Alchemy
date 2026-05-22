@@ -37,10 +37,14 @@ type AppStore = {
   setMuteInBackground: (v: boolean) => void;
   setAutoEndTurn: (v: boolean) => void;
   setShowClearSaveConfirm: (v: boolean) => void;
-  setDiscoveredCardIds: (v: string[]) => void;
-  setEncounteredEnemyIds: (v: string[]) => void;
-  setDiscoveredTrinketIds: (v: string[]) => void;
-  setCompletedDifficulties: (v: Record<CharacterId, DifficultyId[]>) => void;
+  setDiscoveredCardIds: (v: string[] | ((prev: string[]) => string[])) => void;
+  setEncounteredEnemyIds: (v: string[] | ((prev: string[]) => string[])) => void;
+  setDiscoveredTrinketIds: (v: string[] | ((prev: string[]) => string[])) => void;
+  setCompletedDifficulties: (
+    v:
+      | Record<CharacterId, DifficultyId[]>
+      | ((prev: Record<CharacterId, DifficultyId[]>) => Record<CharacterId, DifficultyId[]>),
+  ) => void;
   setCollectionPage: (tab: CollectionTab, page: number) => void;
 
   resetOptionsToDefault: () => void;
@@ -77,10 +81,14 @@ export const useAppStore = create<AppStore>()((set) => ({
   setMuteInBackground: (v) => set({ muteInBackground: v }),
   setAutoEndTurn: (v) => set({ autoEndTurn: v }),
   setShowClearSaveConfirm: (v) => set({ showClearSaveConfirm: v }),
-  setDiscoveredCardIds: (v) => set({ discoveredCardIds: v }),
-  setEncounteredEnemyIds: (v) => set({ encounteredEnemyIds: v }),
-  setDiscoveredTrinketIds: (v) => set({ discoveredTrinketIds: v }),
-  setCompletedDifficulties: (v) => set({ completedDifficulties: v }),
+  setDiscoveredCardIds: (v) =>
+    set((s) => ({ discoveredCardIds: typeof v === "function" ? v(s.discoveredCardIds) : v })),
+  setEncounteredEnemyIds: (v) =>
+    set((s) => ({ encounteredEnemyIds: typeof v === "function" ? v(s.encounteredEnemyIds) : v })),
+  setDiscoveredTrinketIds: (v) =>
+    set((s) => ({ discoveredTrinketIds: typeof v === "function" ? v(s.discoveredTrinketIds) : v })),
+  setCompletedDifficulties: (v) =>
+    set((s) => ({ completedDifficulties: typeof v === "function" ? v(s.completedDifficulties) : v })),
 
   setCollectionPage: (tab, page) =>
     set((s) => ({ collectionPages: { ...s.collectionPages, [tab]: Math.max(0, page) } })),

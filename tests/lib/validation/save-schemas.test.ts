@@ -154,7 +154,7 @@ describe("ActiveRunDataSchema", () => {
     }
   });
 
-  it("rejects health > maxHealth", () => {
+  it("clamps health to maxHealth when health > maxHealth", () => {
     const result = ActiveRunDataSchema.safeParse({
       characterId: "knight",
       runDeck: [],
@@ -170,8 +170,34 @@ describe("ActiveRunDataSchema", () => {
       contentSystemType: "campaign",
       labyrinthMap: null,
     });
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.runPlayerHealth).toBe(30);
+    }
   });
+
+  it("falls back contentSystemType to campaign if contentSystemType is labyrinth but labyrinthMap is null", () => {
+    const result = ActiveRunDataSchema.safeParse({
+      characterId: "knight",
+      runDeck: [],
+      runGold: 0,
+      runPlayerHealth: 30,
+      runMaxHealth: 30,
+      roomsEncountered: 0,
+      currentAct: 1,
+      destinationIndexInAct: 0,
+      completedDestinations: [],
+      runTrinkets: [],
+      selectedDifficulty: null,
+      contentSystemType: "labyrinth",
+      labyrinthMap: null,
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.contentSystemType).toBe("campaign");
+    }
+  });
+
 
   it("replaces legacy starter deck for unstarted run", () => {
     const legacyDeck = [
