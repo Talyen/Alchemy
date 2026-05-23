@@ -143,9 +143,6 @@ export function useBattleController({
   const cardPlayInProgressRef = useRef(false);
   const companionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const enemyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const transferTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const transferMeasureFrameRef = useRef<number | null>(null);
-  const transferSafetyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const companionScheduledRef = useRef(false);
   const battleSessionRef = useRef(0);
   const victoryDefeatHandledRef = useRef(false);
@@ -194,12 +191,6 @@ export function useBattleController({
   }
 
   function clearTransferHandles() {
-    if (transferTimeoutRef.current) clearTimeout(transferTimeoutRef.current);
-    if (transferMeasureFrameRef.current !== null) cancelAnimationFrame(transferMeasureFrameRef.current);
-    if (transferSafetyTimerRef.current !== null) clearTimeout(transferSafetyTimerRef.current);
-    transferTimeoutRef.current = null;
-    transferMeasureFrameRef.current = null;
-    transferSafetyTimerRef.current = null;
     transferCancelRegistryRef.current.cancelAll();
   }
 
@@ -215,12 +206,8 @@ export function useBattleController({
 
   useEffect(
     () => () => {
-      if (companionTimeoutRef.current) clearTimeout(companionTimeoutRef.current);
-      if (enemyTimeoutRef.current) clearTimeout(enemyTimeoutRef.current);
+      clearPendingBattleTimeouts();
       clearTransferHandles();
-      companionTimeoutRef.current = null;
-      enemyTimeoutRef.current = null;
-      companionScheduledRef.current = false;
     },
     [],
   );
@@ -287,9 +274,6 @@ export function useBattleController({
         completed = true;
         unregisterCancel();
         if (timeout) clearTimeout(timeout);
-        if (transferTimeoutRef.current === timeout) {
-          transferTimeoutRef.current = null;
-        }
         if (isDev) console.log("[flying] remove", id.slice(-8));
         setCardTransfers((current) => current.filter((item) => item.id !== id));
         if (completeTransfer) onComplete?.();
@@ -304,7 +288,6 @@ export function useBattleController({
           ? ANIMATION_DISABLED_DURATION
           : Math.round(transfer.duration * 1000) + CARD_TRANSFER_CONFIG.completionBufferMs,
       );
-      transferTimeoutRef.current = timeout;
     });
   }
 
@@ -323,13 +306,7 @@ export function useBattleController({
         completed = true;
         unregisterCancel();
         if (safetyTimer !== null) clearTimeout(safetyTimer);
-        if (transferSafetyTimerRef.current === safetyTimer) {
-          transferSafetyTimerRef.current = null;
-        }
         if (measureFrame !== null) cancelAnimationFrame(measureFrame);
-        if (transferMeasureFrameRef.current === measureFrame) {
-          transferMeasureFrameRef.current = null;
-        }
         resolve(rect);
       };
 
@@ -340,10 +317,8 @@ export function useBattleController({
       safetyTimer = setTimeout(() => {
         finish(localVisualCardRect(handCardRefs.current[cardKey]) ?? fallback);
       }, CARD_TRANSFER_CONFIG.stableRectTimeoutMs);
-      transferSafetyTimerRef.current = safetyTimer;
 
       function tick() {
-        if (transferMeasureFrameRef.current === measureFrame) transferMeasureFrameRef.current = null;
         measureFrame = null;
         frameCount += 1;
         const rect = localVisualCardRect(handCardRefs.current[cardKey]) ?? fallback;
@@ -367,11 +342,9 @@ export function useBattleController({
         }
 
         measureFrame = requestAnimationFrame(tick);
-        transferMeasureFrameRef.current = measureFrame;
       }
 
       measureFrame = requestAnimationFrame(tick);
-      transferMeasureFrameRef.current = measureFrame;
     });
   }
 

@@ -19,6 +19,8 @@ jobs:
           node-version: 20
           cache: npm
 
+      - run: npm install -g npm@10
+
       - run: npm ci
 
       - if: github.event_name == 'pull_request'
@@ -28,5 +30,13 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run build
+
+      - name: Smoke test production build
+        run: |
+          npx vite preview --host 127.0.0.1 --port 4174 --strictPort &
+          sleep 3
+          curl -sf http://127.0.0.1:4174 > /dev/null
+          kill %1
+
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e:critical

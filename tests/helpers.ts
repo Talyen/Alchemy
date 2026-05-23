@@ -48,9 +48,15 @@ const GAME_MODE_TITLES: Record<GameMode, string> = {
 
 export function failOnRuntimeErrors(page: Page) {
   const errors: string[] = [];
-  page.on("pageerror", (error) => errors.push(error.message));
+  page.on("pageerror", (error) => {
+    console.log("[Runtime Error]", error.message);
+    errors.push(error.stack ?? error.message);
+  });
   page.on("console", (message) => {
-    if (message.type() === "error") errors.push(message.text());
+    if (message.type() === "error") {
+      console.log("[Console Error]", message.text());
+      errors.push(message.text());
+    }
   });
   return errors;
 }

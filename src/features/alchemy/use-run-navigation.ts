@@ -588,6 +588,8 @@ export function useRunNavigation({
           return withSelectedBossForDestinations(destinations, { ...prev, destinations });
         });
         navigateTo(CONSTANTS.SCREENS.DESTINATION);
+      } else if (systemId === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
+        navigateTo(CONSTANTS.SCREENS.WILDWOOD_SELECT);
       }
       return;
     }
@@ -967,9 +969,16 @@ export function useRunNavigation({
         mystery.clearCardChoices();
         getStore().setHasActiveRun(false);
       } catch (err) {
-        console.error("Critical error resetting run state:", err);
-        if (typeof window !== "undefined" && window.location) {
-          window.location.reload();
+        console.error("Critical error resetting run state, attempting fallback clean reset:", err);
+        try {
+          useBattleStore.getState().setBattleState(defaultBattleState());
+          useRunStore.getState().reset();
+          useScreenStore.getState().setHasActiveRun(false);
+        } catch (fallbackErr) {
+          console.error("Fallback reset also failed, reloading page:", fallbackErr);
+          if (typeof window !== "undefined" && window.location) {
+            window.location.reload();
+          }
         }
       }
     });

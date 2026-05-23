@@ -2145,6 +2145,32 @@ describe("enemy traits via endPlayerTurn", () => {
     expect(result.state.enemyMitigation.freezeBonus).toBe(1);
   });
 
+  it("glacial-shell does NOT add freeze bonus when frozen and player has freezePreventsEnemyScaling talent", () => {
+    const state = makeState({
+      enemyAttackEffects: [],
+      enemyFreezeSkipTurns: 1,
+      talentEffects: {
+        ...defaultTalentEffects,
+        freezePreventsEnemyScaling: true,
+      },
+      currentEnemy: {
+        id: "ice-golem",
+        title: "Ice Golem",
+        subtitle: "",
+        descriptionLines: [""],
+        art: "",
+        enemyType: "normal",
+        traits: [{ id: "glacial-shell", title: "Glacial Shell", description: "Gains freeze bonus each turn" }],
+        attackEffects: [{ kind: "player-status", status: "freeze", amount: 2 }],
+      },
+      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
+      mana: 4,
+      maxMana: 4,
+    });
+    const result = endPlayerTurn(state);
+    expect(result.state.enemyMitigation.freezeBonus).toBe(0);
+  });
+
   it("regeneration heals enemy at end of turn", () => {
     const state = makeState({
       enemyHealth: 20,

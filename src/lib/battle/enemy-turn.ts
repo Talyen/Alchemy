@@ -416,13 +416,16 @@ const enemyTraitTurnStartHandlers: Record<string, EnemyTurnStartHandler> = {
       },
     };
   },
-  "glacial-shell": (state) => ({
-    ...state,
-    enemyMitigation: {
-      ...state.enemyMitigation,
-      freezeBonus: state.enemyMitigation.freezeBonus + TRAIT_FREEZE_BONUS_PER_TURN,
-    },
-  }),
+  "glacial-shell": (state) => {
+    if (isScalingBlocked(state)) return state;
+    return {
+      ...state,
+      enemyMitigation: {
+        ...state.enemyMitigation,
+        freezeBonus: state.enemyMitigation.freezeBonus + TRAIT_FREEZE_BONUS_PER_TURN,
+      },
+    };
+  },
 };
 
 const difficultyTurnStartHandlers: Partial<Record<DifficultyModifier["kind"], EnemyTurnStartHandler>> = {
@@ -550,7 +553,7 @@ function resolveSkippedEnemyTurn(
   enemyResolutionCombatTexts: CombatTextEvent[],
   options?: { traitRoll?: number },
 ) {
-  let nextState = reduceSkipTurns(state);
+  let nextState = state;
 
   // Turn start: tick enemy DoTs (burn/poison/bleed)
   nextState = tickEnemyStatuses(nextState, enemyTurnStartCombatTexts);
@@ -558,7 +561,10 @@ function resolveSkippedEnemyTurn(
   const enemyTurnStartState = nextState;
 
   // Resolution: traits, player DoTs, regen — but skip the attack
+  // Reduce skip turns AFTER processing traits so isScalingBlocked
+  // still sees the pre-reduction freeze skip count.
   nextState = processEnemyTraits(nextState, enemyResolutionCombatTexts, options);
+  nextState = reduceSkipTurns(nextState);
   nextState = tickPlayerStatuses(nextState, enemyResolutionCombatTexts);
   nextState = processEnemyRegeneration(nextState, enemyResolutionCombatTexts);
   combatTexts.push(...enemyResolutionCombatTexts);
