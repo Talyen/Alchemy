@@ -2,7 +2,6 @@
 // Depends on: game-data (character/card lookup), labyrinth types, game-constants (ACTS_PER_RUN, LEGACY_STARTER_DECK_IDS).
 // Used by: storage/io.ts indirectly via SaveDataSchema — and directly by the legacy normalizeSaveData test wrapper.
 import {
-  cardLibrary,
   characters,
   getStartingDeck,
   hydrateCard,
