@@ -34,8 +34,13 @@ export function preloadImage(src: string) {
         .decode()
         .then(resolveOnce)
         .catch(() => {
-          console.warn("Image decode failed:", src);
-          resolveOnce();
+          image
+            .decode()
+            .then(resolveOnce)
+            .catch(() => {
+              console.warn("Image decode failed:", src);
+              resolveOnce();
+            });
         });
     }
 

@@ -451,7 +451,13 @@ export default function App() {
             <GameMenu
               isOpen={saveBlockedByNewerVersion ? false : gameMenuOpen}
               anchorRect={menuAnchorRect}
-              anchorPlacement={renderedScreen === "labyrinth-map" ? "down-right" : "up-left"}
+              anchorPlacement={
+                renderedScreen === "talents"
+                  ? "down-right-of-anchor"
+                  : renderedScreen === "labyrinth-map"
+                    ? "down-right"
+                    : "up-left"
+              }
               onClose={() => {
                 setGameMenuOpen(false);
                 setMenuAnchorRect(null);
@@ -463,6 +469,7 @@ export default function App() {
               onOptions={() => run.goToScreen("options")}
               {...(renderedScreen === "battle" ? { onEndRun: run.handleEndRun } : {})}
               {...(renderedScreen === "labyrinth-map" ? { onEndRun: run.handleLabyrinthEndRun } : {})}
+              hideTalents={renderedScreen === "talents"}
             />
           </div>
         </div>

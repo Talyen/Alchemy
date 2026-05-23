@@ -150,9 +150,6 @@ async function main() {
   }
 
   console.log(`Processed ${results.length} sounds.`);
-  for (const result of results) {
-    console.log(`- ${result}`);
-  }
   if (failed) {
     process.exitCode = 1;
   }

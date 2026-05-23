@@ -170,6 +170,18 @@ const assets = [
   { source: "Difficulties/Difficulty 1.jpeg", target: "difficulty-1.webp", width: 720, quality: 82 },
   { source: "Difficulties/Difficulty 2.jpeg", target: "difficulty-2.webp", width: 720, quality: 82 },
   { source: "Difficulties/Difficulty 3.jpeg", target: "difficulty-3.webp", width: 720, quality: 82 },
+  // Talent Backgrounds
+  { source: "Talent Backgrounds/Physical.jpeg", target: "talent-bg-physical.webp", width: 1200, quality: 84 },
+  { source: "Talent Backgrounds/Stun.jpeg", target: "talent-bg-stun.webp", width: 1200, quality: 84 },
+  { source: "Talent Backgrounds/Forge.jpeg", target: "talent-bg-forge.webp", width: 1200, quality: 84 },
+  { source: "Talent Backgrounds/Armor.jpeg", target: "talent-bg-armor.webp", width: 1200, quality: 84 },
+  { source: "Talent Backgrounds/Burn.jpeg", target: "talent-bg-burn.webp", width: 1200, quality: 84 },
+  { source: "Talent Backgrounds/Bleed.jpeg", target: "talent-bg-bleed.webp", width: 1200, quality: 84 },
+  { source: "Talent Backgrounds/Freeze.jpeg", target: "talent-bg-freeze.webp", width: 1200, quality: 84 },
+  { source: "Talent Backgrounds/Mana.jpeg", target: "talent-bg-mana.webp", width: 1200, quality: 84 },
+  { source: "Talent Backgrounds/Leech.jpeg", target: "talent-bg-leech.webp", width: 1200, quality: 84 },
+  { source: "Talent Backgrounds/Nature.jpeg", target: "talent-bg-nature.webp", width: 1200, quality: 84 },
+  { source: "Talent Backgrounds/Companion.jpeg", target: "talent-bg-companion.webp", width: 1200, quality: 84 },
 ];
 
 async function fileIsFresh(sourcePath, outputPath) {
@@ -207,9 +219,6 @@ async function main() {
   }
 
   console.log(`Optimized ${results.length} art assets.`);
-  for (const result of results) {
-    console.log(`- ${result}`);
-  }
 }
 
 main().catch((error) => {

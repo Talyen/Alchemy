@@ -97,27 +97,18 @@ Add a new raw art asset:
 | Particle/animation system | `src/lib/animation/` |
 | Game data imports | always through `@/lib/game-data` barrel |
 
-## UI Design Rules
+## UI/UX Design Guidelines
 
-This is a fantasy roguelite deckbuilder. The interface must feel like a polished game, not a SaaS app, landing page, or dashboard. Gameplay clarity always beats decoration.
+This is a fantasy roguelite deckbuilder. The interface must feel like a polished game with a well-designed UI/UX.
 
-**Aesthetic direction**: Tactile, hand-crafted fantasy adventure. Commit to this with intentionality — every element either serves gameplay clarity or reinforces the fantasy atmosphere. What someone should remember: a game that feels physically real, like holding a deck of cards in a dim tavern.
+**Layout**: Game-native composition. No fragile magic-pixel positioning. Responsive layouts across common desktop/laptop sizes.
 
-**Color**: Grounded, atmospheric palette — warm neutrals, muted golds, deep reds, forest greens, smoky blues, bone/off-white. Dominant colors with sharp accents. Avoid timid evenly-distributed palettes, corporate gradients, glassmorphism, and neon-heavy UI.
+**Interactive states**: Interactive elements need clear states — default, hover, active/pressed, selected, disabled. Important actions must give immediate feedback.
 
-**Layout**: Unexpected, game-native composition. Asymmetry and overlap where they serve the fantasy feel. Generous negative space or controlled density — no fragile magic-pixel positioning or landing-page whitespace. Stable, responsive layouts across common desktop/laptop sizes.
+**Motion**: Fast, responsive transitions using `transform` and `opacity`. Focus on high-impact moments: one well-orchestrated page load with staggered reveals creates more delight than scattered micro-interactions. Avoid expensive layout/filter animations, unnecessary re-renders, heavy shadows, drop shadows, gradients, or large animated blurs.
 
-**Interactive states**: Every interactive element needs clear states — default, hover, active/pressed, selected, focus, disabled, loading. Never rely on color alone; use shape, contrast, motion, icons, borders, or brightness as supporting cues. Important actions must give immediate feedback.
-
-**Motion**: Fast, responsive transitions using `transform` and `opacity`. Focus on high-impact moments: one well-orchestrated page load with staggered reveals creates more delight than scattered micro-interactions. Avoid expensive layout/filter animations, unnecessary re-renders, heavy shadows, or large animated blurs.
-
-**Backgrounds**: Create atmosphere and depth — textures, subtle patterns, layered transparencies. Never default to flat solid colors.
-
-**Hard rules**:
+**Misc**:
 - No emoji in game UI (use proper icons or symbols).
-- No default-looking component-library UI — restyle primitives to feel native to the game world.
-- Match implementation complexity to the aesthetic vision (maximalist needs elaborate code; refined needs precision and restraint).
-- Vary between light and dark themes where appropriate.
 
 ## Project Gotchas
 
@@ -212,23 +203,18 @@ These are central and may be large. Avoid repeated reads within a session unless
 ## Token Efficiency Rules
 
 ### Core Principle
-Prioritize targeted accuracy over exhaustive exploration. Minimize tool calls, file reads, and output length.
+Prioritize targeted accuracy over exhaustive exploration.
 
 ### File Reading
-* Never recursively scan the repo — inspect structure first, then open only likely targets
+* Avoid recursively scanning the repo — inspect structure first, then open only likely targets
 * Prefer symbol-level lookup over full-file reads
 * Stop reading once you have sufficient context
-* Never reread files already summarized
+* Avoid rereading files already summarized
 
 ### Tool Usage
-* Never call multiple tools for the same purpose
-* Never retry identical failed commands without modification
+* Avoid calls to multiple tools for the same purpose
+* Avoid retrying identical failed commands without modification
 * Batch related operations whenever possible
-
-### Planning & Execution
-* For simple tasks: act immediately, explain briefly after
-* For complex tasks: plan in ≤5 bullets, no speculative analysis
-* Do not re-plan after every action
 
 ### Output
 * No prose, commentary, or task restatement
@@ -236,32 +222,28 @@ Prioritize targeted accuracy over exhaustive exploration. Minimize tool calls, f
 * Prefer diffs over full rewrites
 * Status updates: <100 words — Implementation summaries: <200 words
 
-### Coding
-* Minimal diffs only — no refactors, style rewrites, or unrelated file changes
-
 ### Reasoning Effort
 * Simple bugfixes/CRUD: low deliberation, fast execution
 * Reserve deeper reasoning for architecture, concurrency, security, and ambiguous requirements
 
 ## Preventing Reasoning Loops
 
-Agents can get stuck cycling through the same hypotheses or re-reading the same files without making progress. Follow these rules to avoid it.
+Recognize when you are getting stuck cycling through the same hypotheses or re-reading the same files without making progress and take a step back to try something different.
 
 ### Recognize When You Are Stuck
 
 You are stuck if any of the following are true:
 
-- The last 2 tool calls or reasoning steps produced no new information
+- The last few tool calls or reasoning steps produced no new information
 - You are re-reading the same files for the same reason
 - You are rephrasing the same hypothesis without new evidence to support or refute it
+- Repeatedly thinking "Wait, but..." and "I will..." many times in a row without making progress
+- Doing lots of pixel-accurate math troubleshooting tricky CSS layout issues
+- Second-guessing user intent "What if the user..." when it's better to just stop and ask me
 
 ### Hard Iteration Cap
 
-If you have attempted the same approach — or a close variant — more than 2 times without progress, stop immediately. Do not try again. Escalate instead (see below).
-
-### Require Forward Progress
-
-Before each step, state in one sentence what **new information** you expect to learn. If you cannot name something new, stop and escalate.
+If you have attempted the same approach — or a close variant — more than a few times without progress, stop immediately. Do not try again. Escalate/ask the user instead.
 
 ### No Speculative Spirals
 
@@ -271,21 +253,6 @@ Do not follow a hypothesis chain longer than **3 steps** without grounding it in
 
 If a single sub-problem (e.g., "find where X is initialized") takes more than **3 steps** to resolve, declare it unresolved and move on. Note it clearly in your output so a human can assist.
 
-### Distinguish Exploration from Looping
-
-| Exploration ✅ | Loop ❌ |
-|---|---|
-| Reading a new file or module | Re-reading a file you already analyzed for the same reason |
-| Testing a new hypothesis | Rephrasing a hypothesis you already ruled out |
-| Trying a different fix strategy | Retrying the same fix with minor wording changes |
-
-Keep a running list of files and hypotheses already ruled out so you do not revisit them.
-
 ### Escalate Explicitly
 
-When stuck, emit the following and halt. Do not attempt "one more thing."
-
-```
-STUCK: [one sentence on what you tried]
-NEED:  [one sentence on what information or action would unblock you]
-```
+When stuck, ask the user for clarification/advice. Do not attempt "one more thing" repeatedly.

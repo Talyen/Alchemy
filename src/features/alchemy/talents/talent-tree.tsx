@@ -1,232 +1,195 @@
 // Interactive talent tree — keyword-level XP progress, unlock buttons, and reveal animations.
 // Depends on game-data keywords, shared UI primitives, and talent XP math.
-import { useState, useEffect, Fragment } from "react";
-import { motion } from "motion/react";
-import { type KeywordId, keywordDefinitions } from "@/lib/game-data";
+import { Fragment, useMemo } from "react";
+
+import { Lock } from "lucide-react";
+import { keywordDefinitions } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
-import { tokenizeDescription } from "../utils";
 import type { TalentDefinition } from "@/lib/game-data";
+import { keywordIcons, popupClassName } from "../config";
+import { tokenizeDescription } from "../utils";
 import { ShineBorder } from "@/components/ui/shine-border";
-import { KeywordToken } from "../ui/card-ui";
+import type { KeywordId } from "@/lib/game-data";
+
+interface TalentLayoutConfig {
+  radiusX: number;
+  radiusY: number;
+  rotate?: number;
+  startOffset?: number;
+}
+
+const talentLayouts: Partial<Record<KeywordId, TalentLayoutConfig>> = {
+  physical: { radiusX: 23, radiusY: 23 },
+  stun: { radiusX: 40, radiusY: 20, rotate: -23 },
+  forge: { radiusX: 42, radiusY: 28, rotate: -15 },
+  armor: { radiusX: 34, radiusY: 34 },
+  burn: { radiusX: 19, radiusY: 19 },
+  bleed: { radiusX: 27, radiusY: 33, rotate: 60, startOffset: 8 },
+  freeze: { radiusX: 30, radiusY: 30 },
+  mana: { radiusX: 46, radiusY: 22, rotate: -24 },
+  nature: { radiusX: 34, radiusY: 34 },
+  companion: { radiusX: 34, radiusY: 34 },
+};
+
+const defaultLayout: TalentLayoutConfig = { radiusX: 30, radiusY: 30 };
 
 export interface TalentLayoutProps {
+  keywordId: KeywordId;
   unlockedTalents: TalentDefinition[];
   allTalents: TalentDefinition[];
   choices: TalentDefinition[] | null;
   onUnlock?: (talentId: string) => void;
 }
 
-function renderDescription(description: string) {
-  const parts = tokenizeDescription(description);
-  return parts.map((part, i) => {
-    if (part.keywordId) {
-      return <KeywordToken key={i} keywordId={part.keywordId} matchedText={part.text} />;
-    }
-    return <Fragment key={i}>{part.text}</Fragment>;
-  });
-}
-
-function useRevealState() {
-  const [revealingId, setRevealingId] = useState<string | null>(null);
-  useEffect(() => {
-    if (revealingId) {
-      const timer = setTimeout(() => setRevealingId(null), 1500);
-      return () => clearTimeout(timer);
-    }
-  }, [revealingId]);
-  return { revealingId, setRevealingId };
-}
-
-function gridRows(talents: TalentDefinition[]) {
-  const rows: TalentDefinition[][] = [];
-  let idx = 0;
-  for (const size of [1, 2, 3, 4]) {
-    if (idx >= talents.length) break;
-    rows.push(talents.slice(idx, idx + size));
-    idx += size;
-  }
-  return rows;
-}
-
-function AnimatedChars({ description }: { description: string }) {
-  const parts = tokenizeDescription(description);
-  const chars: Array<{ char: string; className: string | undefined }> = [];
-  for (const part of parts) {
-    const kwDef = part.keywordId ? keywordDefinitions[part.keywordId as KeywordId] : undefined;
-    for (const char of part.text) {
-      chars.push({ char, className: kwDef?.colorClass });
-    }
-  }
-
-  return (
-    <motion.span
-      initial="hidden"
-      animate="show"
-      style={{ whiteSpace: "pre-wrap" }}
-      variants={{
-        hidden: { opacity: 1 },
-        show: { opacity: 1, transition: { staggerChildren: 0.02 } },
-      }}
-    >
-      {chars.map((c, i) => (
-        <motion.span
-          key={i}
-          className={cn(c.className)}
-          variants={{
-            hidden: { opacity: 0, filter: "blur(8px)", scale: 1.15 },
-            show: { opacity: 1, filter: "blur(0px)", scale: 1, transition: { duration: 0.2 } },
-          }}
-        >
-          {c.char}
-        </motion.span>
-      ))}
-    </motion.span>
-  );
-}
-
 function TalentNode({
   talent,
   isUnlocked,
   isChoice,
-  revealingId,
   onUnlock,
 }: {
   talent: TalentDefinition;
   isUnlocked: boolean;
   isChoice: boolean;
-  revealingId: string | null;
   onUnlock: ((talentId: string) => void) | undefined;
 }) {
   const def = keywordDefinitions[talent.keywordId];
-  const bColor = def?.borderClass ?? "border-border/60";
   const shineColors = def?.shineColors ?? ["#fcd34d", "#d97706", "#fcd34d"];
   const baseColor = shineColors[0];
+  const Icon = keywordIcons[talent.keywordId];
+  const descParts = tokenizeDescription(talent.description);
 
   return (
-    <div className="relative">
-      {isChoice && (
-        <ShineBorder shineColor={shineColors} borderWidth={3} duration={8} className="rounded-[14px] z-10" />
-      )}
-      {isUnlocked ? (
-        <div
-          className={cn(
-            "flex w-[15.56cqh] items-center justify-center rounded-[14px] border-2 px-3 py-3 text-xs font-bold leading-snug text-center min-h-[6rem] bg-popover text-muted-foreground",
+    <>
+      {/* Tooltip Popup */}
+      <div
+        className={cn(popupClassName, "hover-popup-panel pointer-events-none opacity-0 group-hover:opacity-100 z-50")}
+      >
+        <div className="font-display text-base font-bold text-amber-100/75">Talent</div>
+        <div className="mt-2 text-sm leading-6 text-muted-foreground max-w-[240px]">
+          {descParts.map((part, i) =>
+            part.keywordId ? (
+              <span key={i} className={cn(keywordDefinitions[part.keywordId]?.colorClass, "font-semibold")}>
+                {part.text}
+              </span>
+            ) : (
+              <Fragment key={i}>{part.text}</Fragment>
+            ),
           )}
-          style={{ borderColor: `${baseColor}33` }}
-        >
-          {revealingId === talent.id ? (
-            <AnimatedChars description={talent.description} />
+        </div>
+      </div>
+
+      <div
+        role={isChoice ? "button" : undefined}
+        tabIndex={isChoice ? 0 : undefined}
+        onClick={isChoice ? () => onUnlock?.(talent.id) : undefined}
+        onKeyDown={
+          isChoice
+            ? (e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  onUnlock?.(talent.id);
+                }
+              }
+            : undefined
+        }
+        className={cn(
+          "relative select-none w-full h-full transition-all duration-200 outline-none rounded-full cursor-pointer hover:scale-105 active:scale-95",
+          !isUnlocked && !isChoice && "brightness-[0.55]",
+        )}
+        style={{
+          borderColor: baseColor,
+          borderWidth: isChoice ? 0 : "2px",
+          borderStyle: "solid",
+          backdropFilter: "blur(4px)",
+          WebkitBackdropFilter: "blur(4px)",
+          backgroundColor: "hsl(var(--background) / 0.2)",
+          backgroundImage: "linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05))",
+          boxShadow: isChoice
+            ? `
+              inset 0 1.5px 1px rgba(255, 255, 255, 0.25),
+              inset 0 -1px 1px rgba(0, 0, 0, 0.3),
+              0 4px 16px rgba(0, 0, 0, 0.6)
+            `.trim()
+            : `
+              inset 0 1.5px 1px rgba(255, 255, 255, 0.12),
+              inset 0 -1px 1px rgba(0, 0, 0, 0.3),
+              0 4px 12px rgba(0, 0, 0, 0.4)
+            `.trim(),
+        }}
+        aria-label={isChoice ? `Unlock talent: ${talent.description}` : undefined}
+      >
+        {isChoice && <ShineBorder shineColor={shineColors} borderWidth={3} duration={8} className="rounded-full" />}
+        {/* Icon */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+          {isUnlocked || isChoice ? (
+            <Icon className={cn("h-7 w-7", def?.colorClass)} />
           ) : (
-            <span>{renderDescription(talent.description)}</span>
+            <Lock className="h-7 w-7 text-muted-foreground" />
           )}
         </div>
-      ) : isChoice ? (
-        <button
-          type="button"
-          onClick={() => {
-            onUnlock?.(talent.id);
-          }}
-          className={cn(
-            "relative flex w-[15.56cqh] cursor-pointer items-center justify-center rounded-[14px] border-2 bg-popover px-3 py-3 text-xs font-bold leading-snug text-center min-h-[6rem]",
-            bColor,
-          )}
-          style={{ boxShadow: `0 0 18px 4px ${baseColor}40` }}
-        >
-          <span className="animate-unlock-text-pulse text-muted-foreground">Unlock Talent</span>
-        </button>
-      ) : (
-        <div
-          className={cn(
-            "relative flex w-[15.56cqh] items-center justify-center rounded-[14px] border border-dashed px-3 py-3 text-xs font-bold leading-snug text-center min-h-[6rem] text-muted-foreground bg-popover",
-          )}
-          style={{ borderColor: `${baseColor}33` }}
-        >
-          <span>Undiscovered</span>
-        </div>
-      )}
-    </div>
+      </div>
+    </>
   );
 }
 
-const TIER_LABELS = ["Beginner", "Adept", "Expert", "Master"];
+export function TalentTree({ keywordId, unlockedTalents, allTalents, choices, onUnlock }: TalentLayoutProps) {
+  const unlockedIds = useMemo(() => new Set(unlockedTalents.map((t) => t.id)), [unlockedTalents]);
+  const choiceIds = useMemo(() => new Set(choices?.map((c) => c.id) ?? []), [choices]);
+  const nodes = allTalents;
+  const N = nodes.length;
 
-function TalentTierRow({
-  talents,
-  tierIndex,
-  unlockedIds,
-  choiceIds,
-  revealingId,
-  onUnlock,
-}: {
-  talents: TalentDefinition[];
-  tierIndex: number;
-  unlockedIds: Set<string>;
-  choiceIds: Set<string>;
-  revealingId: string | null;
-  onUnlock: ((talentId: string) => void) | undefined;
-}) {
-  const kwColor =
-    talents.length > 0 ? (keywordDefinitions[talents[0].keywordId]?.shineColors?.[0] ?? "#fcd34d") : "#fcd34d";
+  const { radiusX, radiusY, rotate, startOffset } = talentLayouts[keywordId] ?? defaultLayout;
+  const rotateRad = ((rotate ?? 0) * Math.PI) / 180;
+  const cosR = Math.cos(rotateRad);
+  const sinR = Math.sin(rotateRad);
 
-  return (
-    <div className="flex w-full flex-col items-center gap-2">
-      <div className="flex w-full items-center gap-3" style={{ maxWidth: 320 }}>
-        <div
-          className="h-px flex-1"
-          style={{ background: `linear-gradient(to right, transparent, ${kwColor}33, transparent)` }}
-        />
-        <span className="text-2xs font-bold uppercase tracking-widest" style={{ color: `${kwColor}99` }}>
-          {TIER_LABELS[tierIndex]}
-        </span>
-        <div
-          className="h-px flex-1"
-          style={{ background: `linear-gradient(to right, transparent, ${kwColor}33, transparent)` }}
-        />
-      </div>
-      <div className="flex justify-center gap-3">
-        {talents.map((talent) => (
-          <TalentNode
-            key={talent.id}
-            talent={talent}
-            isUnlocked={unlockedIds.has(talent.id)}
-            isChoice={choiceIds.has(talent.id)}
-            revealingId={revealingId}
-            onUnlock={onUnlock}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
+  const positions = useMemo(() => {
+    if (N === 0) return [];
+    if (N === 1) return [{ left: 50, top: 50 }];
 
-export function TalentTree({ unlockedTalents, allTalents, choices, onUnlock }: TalentLayoutProps) {
-  const { revealingId, setRevealingId } = useRevealState();
-  const unlockedIds = new Set(unlockedTalents.map((t) => t.id));
-  const choiceIds = new Set(choices?.map((c) => c.id) ?? []);
-  const rows = gridRows(allTalents);
+    const offset = startOffset ?? 0;
+    return Array.from({ length: N }, (_, i) => {
+      const angle = -Math.PI / 2 + (2 * Math.PI * ((i + offset) % N)) / N;
+      const dx = radiusX * Math.cos(angle);
+      const dy = radiusY * Math.sin(angle);
+      return {
+        left: 50 + dx * cosR - dy * sinR,
+        top: 50 + dx * sinR + dy * cosR,
+      };
+    });
+  }, [N, radiusX, radiusY, cosR, sinR, startOffset]);
 
-  if (allTalents.length === 0) {
+  if (N === 0) {
     return <p className="py-6 text-center text-sm text-muted-foreground">No talents available.</p>;
   }
 
-  function handleNodeUnlock(talentId: string) {
-    setRevealingId(talentId);
-    onUnlock?.(talentId);
-  }
-
   return (
-    <div className="flex flex-col items-center gap-5">
-      {rows.map((row, ri) => (
-        <TalentTierRow
-          key={ri}
-          talents={row}
-          tierIndex={ri}
-          unlockedIds={unlockedIds}
-          choiceIds={choiceIds}
-          revealingId={revealingId}
-          onUnlock={handleNodeUnlock}
-        />
-      ))}
+    <div className="relative flex h-full w-full items-center justify-center">
+      <div className="relative aspect-square h-full max-w-full">
+        {nodes.map((talent, i) => {
+          const pos = positions[i];
+          if (!pos) return null;
+          return (
+            <div key={talent.id} className="group">
+              <div
+                className="absolute group-hover:z-[60] w-[8.64%] h-[8.64%]"
+                style={{
+                  left: `${pos.left}%`,
+                  top: `${pos.top}%`,
+                  transform: "translate(-50%,-50%)",
+                }}
+              >
+                <TalentNode
+                  talent={talent}
+                  isUnlocked={unlockedIds.has(talent.id)}
+                  isChoice={choiceIds.has(talent.id)}
+                  onUnlock={onUnlock ? () => onUnlock(talent.id) : undefined}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

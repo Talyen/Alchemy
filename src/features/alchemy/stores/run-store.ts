@@ -13,7 +13,7 @@ import { MAX_PLAYER_HEALTH } from "@/lib/game-constants";
 import { DESTINATIONS, type Destination } from "@/features/alchemy/types";
 import type { ActiveRunData } from "@/features/alchemy/run/types";
 import type { ContentSystemId } from "@/lib/content-systems/types";
-import { addTalentXP, extractCardKeywords, type TalentXP } from "@/lib/talents";
+import { addTalentXP, extractCardKeywords, xpThresholdForPoints, type TalentXP } from "@/lib/talents";
 import type { KeywordId } from "@/lib/game-data";
 
 export function hydrateCard(savedCard: BattleCard): BattleCard {
@@ -216,13 +216,19 @@ export const useRunStore = create<RunStore>()((set) => ({
       unlockedTalents: { ...s.unlockedTalents, [keywordId]: [...(s.unlockedTalents[keywordId] ?? []), talentId] },
     })),
 
-  unlockAllTalents: () => {
-    const next: UnlockedTalents = {};
-    for (const talent of talentPool) {
-      next[talent.keywordId] = [...(next[talent.keywordId] ?? []), talent.id];
-    }
-    set({ unlockedTalents: next });
-  },
+  unlockAllTalents: import.meta.env.DEV
+    ? () => {
+        const next: UnlockedTalents = {};
+        const xp: TalentXP = {};
+        for (const talent of talentPool) {
+          next[talent.keywordId] = [...(next[talent.keywordId] ?? []), talent.id];
+        }
+        for (const [kw, ids] of Object.entries(next)) {
+          xp[kw as KeywordId] = xpThresholdForPoints(ids.length);
+        }
+        set({ unlockedTalents: next, talentXP: xp, runTalentXP: xp });
+      }
+    : () => {},
 
   resetUnlockedTalents: () => set({ unlockedTalents: {} as UnlockedTalents }),
   resetRunXP: () => set({ runTalentXP: {} as TalentXP }),

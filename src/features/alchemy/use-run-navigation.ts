@@ -16,6 +16,7 @@ import {
   type CharacterId,
   type DifficultyId,
   type DifficultyModifier,
+  type UnlockedTalents,
 } from "@/lib/game-data";
 import { playVictory, playDefeat, playGoldGain, stopAllSfx } from "@/lib/audio";
 import { appendUnique, appendUniqueMany } from "@/lib/utils";
@@ -89,7 +90,7 @@ function calculateVictoryGold({
   currentEnemy,
   labyrinthRewardModifiers,
 }: {
-  unlockedTalents: Record<string, number>;
+  unlockedTalents: UnlockedTalents;
   activeCompanion: { id: string } | null;
   currentEnemy: { enemyType: string };
   labyrinthRewardModifiers: LabyrinthModifierKind[];
@@ -129,7 +130,7 @@ function awardVictoryGold({
 }: {
   characterId: CharacterId;
   selectedDifficulty: DifficultyId | null;
-  unlockedTalents: Record<string, number>;
+  unlockedTalents: UnlockedTalents;
   battleState: BattleState;
   runGold: number;
   runTrinkets: string[];
@@ -162,7 +163,7 @@ function applyPlayerVictoryStats({
   setRunPlayerHealth,
   setRunMaxHealth,
 }: {
-  unlockedTalents: Record<string, number>;
+  unlockedTalents: UnlockedTalents;
   battleState: BattleState;
   setRunPlayerHealth: (health: number) => void;
   setRunMaxHealth: (fn: (max: number) => number) => void;
@@ -191,7 +192,7 @@ function createBossRewardState({
 }: {
   characterId: CharacterId;
   selectedDifficulty: DifficultyId | null;
-  unlockedTalents: Record<string, number>;
+  unlockedTalents: UnlockedTalents;
   runTrinkets: string[];
   gold: number;
   bossBonus: number;
@@ -228,7 +229,7 @@ function createCombatRewardState({
 }: {
   characterId: CharacterId;
   selectedDifficulty: DifficultyId | null;
-  unlockedTalents: Record<string, number>;
+  unlockedTalents: UnlockedTalents;
   runDeck: BattleCard[];
   runTrinkets: string[];
   contentSystemType: ContentSystemId;
@@ -280,7 +281,7 @@ function createVictoryRewardState({
 }: {
   characterId: CharacterId;
   selectedDifficulty: DifficultyId | null;
-  unlockedTalents: Record<string, number>;
+  unlockedTalents: UnlockedTalents;
   runDeck: BattleCard[];
   runTrinkets: string[];
   contentSystemType: ContentSystemId;

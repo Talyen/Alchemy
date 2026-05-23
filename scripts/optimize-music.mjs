@@ -42,9 +42,6 @@ async function main() {
   }
 
   console.log(`Processed ${results.length} music files.`);
-  for (const result of results) {
-    console.log(`- ${result}`);
-  }
   if (failed) {
     process.exitCode = 1;
   }

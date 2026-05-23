@@ -82,6 +82,7 @@ export function GameMenu({
   onEndRun,
   anchorRect,
   anchorPlacement = "up-left",
+  hideTalents = false,
 }: {
   isOpen: boolean;
   onClose: () => void;
@@ -92,7 +93,8 @@ export function GameMenu({
   onOptions: () => void;
   onEndRun?: () => void;
   anchorRect?: DOMRect | null;
-  anchorPlacement?: "up-left" | "down-right";
+  anchorPlacement?: "up-left" | "down-right" | "down-right-of-anchor";
+  hideTalents?: boolean;
 }) {
   if (!isOpen) return null;
 
@@ -123,16 +125,18 @@ export function GameMenu({
         >
           <BookOpen className="h-4 w-4" /> Collection
         </Button>
-        <Button
-          variant="outline"
-          className="justify-start border-0 bg-transparent"
-          onClick={() => {
-            onTalents();
-            onClose();
-          }}
-        >
-          <WandSparkles className="h-4 w-4" /> Talents
-        </Button>
+        {!hideTalents ? (
+          <Button
+            variant="outline"
+            className="justify-start border-0 bg-transparent"
+            onClick={() => {
+              onTalents();
+              onClose();
+            }}
+          >
+            <WandSparkles className="h-4 w-4" /> Talents
+          </Button>
+        ) : null}
         <Button
           variant="outline"
           className="justify-start border-0 bg-transparent"
@@ -175,19 +179,28 @@ export function GameMenu({
   if (anchorRect) {
     const offset = NAVIGATION_CONFIG.anchoredMenuOffsetPx;
     const anchorStyle =
-      anchorPlacement === "down-right"
+      anchorPlacement === "down-right-of-anchor"
         ? {
-            // Right-align below the anchor, but clamp so fixed positioning cannot push the menu off-screen.
-            right: Math.min(
-              window.innerWidth - anchorRect.right + offset,
-              window.innerWidth - NAVIGATION_CONFIG.anchoredMenuWidthPx,
+            // Menu opens to the right of the anchor, clamped to viewport right edge.
+            left: Math.min(
+              anchorRect.right + offset,
+              window.innerWidth - NAVIGATION_CONFIG.anchoredMenuWidthPx - offset,
             ),
             top: anchorRect.bottom + offset,
           }
-        : {
-            right: window.innerWidth - anchorRect.right + offset,
-            bottom: window.innerHeight - anchorRect.top + offset,
-          };
+        : anchorPlacement === "down-right"
+          ? {
+              // Right-align below the anchor, but clamp so fixed positioning cannot push the menu off-screen.
+              right: Math.min(
+                window.innerWidth - anchorRect.right + offset,
+                window.innerWidth - NAVIGATION_CONFIG.anchoredMenuWidthPx,
+              ),
+              top: anchorRect.bottom + offset,
+            }
+          : {
+              right: window.innerWidth - anchorRect.right + offset,
+              bottom: window.innerHeight - anchorRect.top + offset,
+            };
     return (
       <div className="absolute inset-0 z-[120]" onClick={onClose}>
         <div className="fixed z-[121]" style={anchorStyle}>

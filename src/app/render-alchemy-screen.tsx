@@ -320,7 +320,7 @@ export function renderAlchemyScreen({
     case "talents":
       return (
         <TalentsScreen
-          onMainMenu={() => a.goToScreen("menu")}
+          onOpenMenu={onOpenBattleMenu}
           onReturnToBattle={a.returnToBattle}
           onUnlockTalent={a.unlockTalent}
           onResetTalents={a.resetUnlockedTalents}

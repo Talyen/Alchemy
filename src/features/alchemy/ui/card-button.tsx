@@ -55,7 +55,7 @@ export function BattleCardButton(props: BattleCardButtonProps) {
 
   return (
     <div
-      className={cn("relative", wrapperClassName)}
+      className={cn("relative", wrapperClassName, dragging && "pointer-events-none")}
       data-hand-card={wrapperDataCardKey ? "true" : undefined}
       data-hand-card-id={wrapperDataCardKey}
       style={wrapperStyle}

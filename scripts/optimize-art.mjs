@@ -72,10 +72,6 @@ async function main() {
 
   for (const summary of summaries) {
     console.log(`Optimized ${summary.results.length} assets in ${path.relative(process.cwd(), summary.directory)}`);
-
-    for (const result of summary.results) {
-      console.log(`  ${result.file} -> ${result.output} (${result.width}x${result.height})`);
-    }
   }
 }
 

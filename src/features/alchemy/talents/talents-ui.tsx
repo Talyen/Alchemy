@@ -6,6 +6,12 @@ import { ShineBorder } from "@/components/ui/shine-border";
 import { KeywordTag } from "../ui/keyword-tag";
 import { PressableMotion } from "../ui/pressable-motion";
 
+function ringClass(isSelected: boolean, hasUnspent: boolean): string {
+  if (isSelected && hasUnspent) return "ring-0";
+  if (isSelected) return "";
+  return "ring-border/30 hover:ring-border/50";
+}
+
 export function TalentKeywordButton({
   keywordId,
   hasUnspent,
@@ -26,13 +32,18 @@ export function TalentKeywordButton({
         type="button"
         className={cn(
           "relative inline-flex items-center gap-1.5 rounded-full bg-card px-3 py-1.5 text-sm font-semibold text-foreground ring-1 ring-offset-1 ring-offset-card transition-all duration-200",
-          isSelected ? "" : "ring-border/30 hover:ring-border/50",
+          ringClass(isSelected, hasUnspent),
         )}
-        style={isSelected ? ({ "--tw-ring-color": shineColors[0] } as React.CSSProperties) : undefined}
+        style={isSelected && !hasUnspent ? ({ "--tw-ring-color": shineColors[0] } as React.CSSProperties) : undefined}
         onClick={onClick}
       >
         {hasUnspent && (
-          <ShineBorder shineColor={shineColors} borderWidth={1} duration={8} className="rounded-full z-10" />
+          <ShineBorder
+            shineColor={shineColors}
+            borderWidth={isSelected ? 3 : 1}
+            duration={8}
+            className="rounded-full z-10"
+          />
         )}
         <KeywordTag keywordId={keywordId} />
       </button>

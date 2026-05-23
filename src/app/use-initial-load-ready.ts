@@ -1,7 +1,11 @@
 // Startup readiness gate for the first menu paint.
 // Depends on browser image/font readiness APIs and React state/effects.
 import { useEffect, useState } from "react";
-import { INITIAL_LOAD_MIN_DURATION_MS, INITIAL_LOAD_MAX_DURATION_MS } from "@/lib/game-constants";
+import {
+  INITIAL_LOAD_MIN_DURATION_MS,
+  INITIAL_LOAD_MAX_DURATION_MS,
+  INITIAL_LOAD_BATCH_SIZE,
+} from "@/lib/game-constants";
 import { preloadImage } from "@/lib/image-preload";
 
 type InitialLoadReadyOptions = {
@@ -28,10 +32,10 @@ export function useInitialLoadReady({
     async function waitForStartupAssets() {
       const startedAt = performance.now();
 
-      await Promise.race([
-        Promise.all([waitForFonts(), ...imageUrls.map((url) => preloadImage(url))]),
-        delay(maxDurationMs),
-      ]);
+      const fontsPromise = waitForFonts();
+      const imagesPromise = preloadBatched(imageUrls, INITIAL_LOAD_BATCH_SIZE);
+
+      await Promise.race([Promise.all([fontsPromise, imagesPromise]), delay(maxDurationMs)]);
 
       const elapsed = performance.now() - startedAt;
       if (elapsed < minDurationMs) {
@@ -62,4 +66,13 @@ function waitForFonts() {
 
 function delay(ms: number) {
   return new Promise<void>((resolve) => window.setTimeout(resolve, ms));
+}
+
+async function preloadBatched(urls: string[], batchSize: number) {
+  for (let i = 0; i < urls.length; i += batchSize) {
+    await Promise.all(urls.slice(i, i + batchSize).map((url) => preloadImage(url)));
+    if (i + batchSize < urls.length) {
+      await delay(0);
+    }
+  }
 }

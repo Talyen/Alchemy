@@ -1,15 +1,14 @@
 // Talent tree screen — spend XP to unlock keyword-specific talents.
 import { useState, useMemo } from "react";
-import { House, Swords } from "lucide-react";
+import { Menu, RotateCcw, Swords } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { keywordDefinitions, type KeywordId } from "@/lib/game-data";
+import { keywordDefinitions, talentBackgroundArt, type KeywordId } from "@/lib/game-data";
 import { getTalentKeywordProgress } from "@/lib/talents";
 
 import { TalentKeywordButton } from "../talents/talents-ui";
-import { ConfirmationDialog, PageLayout, ProgressBar, ScreenHeader } from "../ui/shared-ui";
-import { PressableMotion } from "../ui/pressable-motion";
-import { KeywordTag } from "../ui/keyword-tag";
+import { ConfirmationDialog, PageLayout } from "../ui/shared-ui";
+
 import { getTalentsForKeyword } from "@/lib/game-data";
 import { useTalentChoices } from "../talents/use-talent-choices";
 import { playUISound } from "@/lib/audio";
@@ -18,12 +17,12 @@ import { useRunStore } from "../stores/run-store";
 import { useBattleStore } from "../stores/battle-store";
 
 export function TalentsScreen({
-  onMainMenu,
+  onOpenMenu,
   onReturnToBattle,
   onUnlockTalent,
   onResetTalents,
 }: {
-  onMainMenu: () => void;
+  onOpenMenu: (rect?: DOMRect) => void;
   onReturnToBattle: () => void;
   onUnlockTalent: (keywordId: KeywordId, talentId: string) => void;
   onResetTalents: () => void;
@@ -46,6 +45,8 @@ export function TalentsScreen({
   const unlockedTalentsForKeyword = allTalentsForKeyword.filter((t) => unlockedIds.includes(t.id));
 
   const { currentChoices } = useTalentChoices(selectedKeyword, unlockedIds, progress.unspentPoints > 0, allUnlocked);
+  const MASK_ID = "talent-bg-mask";
+  const BLUR_ID = "talent-bg-blur";
 
   function handleUnlockTalent(talentId: string) {
     onUnlockTalent(selectedKeyword, talentId);
@@ -58,80 +59,103 @@ export function TalentsScreen({
 
   return (
     <PageLayout>
-      <div className="alchemy-shell flex min-h-[48.15cqh] w-full max-w-4xl flex-col rounded-[28px] px-6 py-7 sm:px-8">
-        <ScreenHeader title="Talents" />
-
-        <div className="mx-auto mt-6 flex w-full max-w-[70.37cqh] flex-col gap-6 text-left">
-          <div className="flex flex-wrap justify-center gap-2">
-            {keywordIds.map((kw) => {
-              const kwProgress = getTalentKeywordProgress(
-                talentXP[kw] ?? 0,
-                (unlockedTalents[kw] ?? []).length,
-                getTalentsForKeyword(kw).length,
-              );
-              return (
-                <TalentKeywordButton
-                  key={kw}
-                  keywordId={kw}
-                  hasUnspent={kwProgress.hasUnspent}
-                  isSelected={selectedKeyword === kw}
-                  onClick={() => setSelectedKeyword(kw)}
-                />
-              );
-            })}
-            <PressableMotion>
-              <button
-                type="button"
-                onClick={() => setShowResetConfirm(true)}
-                className="rounded-full border border-border/40 px-3 py-1.5 text-xs font-medium text-muted-foreground/60"
-              >
-                Reset Talents
-              </button>
-            </PressableMotion>
-          </div>
-
-          <div>
-            <div className="surface-muted rounded-[22px] border border-border/70 p-3">
-              <div className="flex items-end justify-between">
-                <span className="font-display text-base font-bold text-amber-100/75">
-                  <KeywordTag keywordId={selectedKeyword} className="text-base" />
-                </span>
-                <span className="text-xs font-semibold text-muted-foreground">
-                  {progress.xpForNext - progress.xpRemaining} / {progress.xpForNext} XP
-                </span>
-              </div>
-              <ProgressBar
-                value={progress.progressPercent}
-                className="mt-1.5"
-                color="bg-primary"
-                style={{
-                  transition: "width 0.3s ease",
-                  backgroundColor: keywordDefinitions[selectedKeyword]?.shineColors?.[0] ?? undefined,
-                }}
-              />
-            </div>
-
-            <div className="mt-4 min-h-[48.52cqh] min-w-[65.56cqh] px-0">
-              <TalentTree
-                unlockedTalents={unlockedTalentsForKeyword}
-                allTalents={allTalentsForKeyword}
-                choices={currentChoices}
-                onUnlock={handleUnlockTalent}
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-auto flex flex-wrap justify-center gap-3 pt-6">
-          <Button variant="outline" onClick={onMainMenu}>
-            <House className="h-4 w-4" /> Main Menu
-          </Button>
-          {hasActiveBattle ? (
-            <Button onClick={onReturnToBattle}>
-              <Swords className="h-4 w-4" /> Return to Battle
+      <div className="mx-auto flex w-full max-w-4xl flex-col items-center">
+        <div className="relative flex w-full items-center justify-center">
+          <h1 className="font-display text-lg font-black uppercase tracking-[0.15em] text-amber-100/75 sm:text-xl">
+            Talents
+          </h1>
+          <div className="absolute right-0 flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-7 w-7 text-muted-foreground"
+              onClick={() => setShowResetConfirm(true)}
+              aria-label="Reset talents"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
             </Button>
-          ) : null}
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-7 w-7 text-muted-foreground"
+              onClick={(e) => onOpenMenu(e.currentTarget.getBoundingClientRect())}
+              aria-label="Open talents menu"
+            >
+              <Menu className="h-3.5 w-3.5" />
+            </Button>
+          </div>
         </div>
+        <div className="mt-2 h-px w-44 bg-gradient-to-r from-transparent via-amber-100/75 to-transparent" />
+      </div>
+
+      <div className="mx-auto mt-6 w-full max-w-4xl flex flex-wrap justify-center gap-2">
+        {keywordIds.map((kw) => {
+          const kwProgress = getTalentKeywordProgress(
+            talentXP[kw] ?? 0,
+            (unlockedTalents[kw] ?? []).length,
+            getTalentsForKeyword(kw).length,
+          );
+          return (
+            <TalentKeywordButton
+              key={kw}
+              keywordId={kw}
+              hasUnspent={kwProgress.hasUnspent}
+              isSelected={selectedKeyword === kw}
+              onClick={() => setSelectedKeyword(kw)}
+            />
+          );
+        })}
+      </div>
+
+      <div className="relative mx-auto mt-6 w-full max-w-4xl aspect-[4/3] origin-top scale-[1.1]">
+        <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-0">
+          <defs>
+            <filter id={BLUR_ID}>
+              <feGaussianBlur stdDeviation="24" />
+            </filter>
+            <mask id={MASK_ID} maskUnits="userSpaceOnUse">
+              <rect x="7%" y="7%" width="86%" height="86%" rx="24" fill="white" filter={`url(#${BLUR_ID})`} />
+            </mask>
+          </defs>
+        </svg>
+        {Object.entries(talentBackgroundArt).map(([kw, art]) => {
+          if (!art) return null;
+          const isSelected = selectedKeyword === kw;
+          return (
+            <div
+              key={kw}
+              className={`absolute inset-0 overflow-hidden transition-opacity duration-300 ease-in-out ${
+                isSelected ? "opacity-100" : "opacity-0 pointer-events-none"
+              }`}
+              style={{
+                backgroundImage: `url(${art})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                filter: "brightness(0.9)",
+                maskImage: `url(#${MASK_ID})`,
+                WebkitMaskImage: `url(#${MASK_ID})`,
+              }}
+            />
+          );
+        })}
+
+        <div className="h-full w-full">
+          <TalentTree
+            keywordId={selectedKeyword}
+            unlockedTalents={unlockedTalentsForKeyword}
+            allTalents={allTalentsForKeyword}
+            choices={currentChoices}
+            onUnlock={handleUnlockTalent}
+          />
+        </div>
+      </div>
+
+      <div className="mt-6 flex flex-wrap justify-center gap-3">
+        {hasActiveBattle ? (
+          <Button onClick={onReturnToBattle}>
+            <Swords className="h-4 w-4" /> Return to Battle
+          </Button>
+        ) : null}
       </div>
 
       {showResetConfirm ? (
@@ -140,6 +164,7 @@ export function TalentsScreen({
           description="This will refund all your talent points so you can choose again. Any unspent talent points will also be available."
           confirmLabel="Reset Talents"
           tone="default"
+          dimBackground={false}
           onConfirm={handleReset}
           onCancel={() => setShowResetConfirm(false)}
         />

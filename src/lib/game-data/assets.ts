@@ -1,5 +1,6 @@
 // Imported asset references (all .webp) consumed by game-data barrel readers and UI.
 // The prebuild step optimizes PNG source files into webp; this file only sees the output.
+import type { KeywordId } from "./types";
 import acidPotion from "@/assets/optimized/acid-potion.webp";
 import alchemyLogo from "@/assets/optimized/alchemy-logo.webp";
 import alchemyLogoArcaneMana from "@/assets/optimized/alchemy-logo-arcane-mana.webp";
@@ -142,6 +143,17 @@ import combustion from "@/assets/optimized/combustion.webp";
 import goldArt from "@/assets/optimized/gold.webp";
 import rayOfFrost from "@/assets/optimized/ray-of-frost.webp";
 import pointerCursor from "@/assets/optimized/pointer-c-shaded.webp";
+import talentBgArmor from "@/assets/optimized/talent-bg-armor.webp";
+import talentBgBleed from "@/assets/optimized/talent-bg-bleed.webp";
+import talentBgBurn from "@/assets/optimized/talent-bg-burn.webp";
+import talentBgCompanion from "@/assets/optimized/talent-bg-companion.webp";
+import talentBgForge from "@/assets/optimized/talent-bg-forge.webp";
+import talentBgFreeze from "@/assets/optimized/talent-bg-freeze.webp";
+import talentBgLeech from "@/assets/optimized/talent-bg-leech.webp";
+import talentBgMana from "@/assets/optimized/talent-bg-mana.webp";
+import talentBgNature from "@/assets/optimized/talent-bg-nature.webp";
+import talentBgPhysical from "@/assets/optimized/talent-bg-physical.webp";
+import talentBgStun from "@/assets/optimized/talent-bg-stun.webp";
 
 export { theCampaign, theLabyrinth, theWildwoods, placeholderGameMode };
 
@@ -317,3 +329,17 @@ const assetModules = import.meta.glob("@/assets/optimized/*.webp", {
   import: "default",
 });
 export const allGameArt = Object.values(assetModules) as string[];
+
+export const talentBackgroundArt: Partial<Record<KeywordId, string>> = {
+  physical: talentBgPhysical,
+  stun: talentBgStun,
+  forge: talentBgForge,
+  armor: talentBgArmor,
+  burn: talentBgBurn,
+  bleed: talentBgBleed,
+  freeze: talentBgFreeze,
+  mana: talentBgMana,
+  leech: talentBgLeech,
+  nature: talentBgNature,
+  companion: talentBgCompanion,
+};

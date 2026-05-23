@@ -136,6 +136,7 @@ export const PAGE_EXIT_MS = 130; // ms — exit animation duration before next s
 // ============ Startup Loading ============
 export const INITIAL_LOAD_MIN_DURATION_MS = 650; // Minimum loading screen display time.
 export const INITIAL_LOAD_MAX_DURATION_MS = 12000; // Hard cap — show the game even if assets are slow.
+export const INITIAL_LOAD_BATCH_SIZE = 4; // How many images to preload concurrently during startup.
 
 // ============ Animation / Timing ============
 export const SHIMMER_COOLDOWN_MS = 2600; // Minimum time between shimmer triggers. Prevents rapid-fire re-triggers from spamming hover.

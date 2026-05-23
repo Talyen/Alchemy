@@ -15,6 +15,7 @@ export default defineConfig(({ mode }) => ({
   server: { open: true, port: devPort, strictPort: true },
   plugins: [react()],
   build: {
+    assetsInlineLimit: 4096,
     rollupOptions: {
       output: {
         manualChunks(id) {
