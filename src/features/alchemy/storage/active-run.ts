@@ -5,6 +5,7 @@ import {
   cardLibrary,
   characters,
   getStartingDeck,
+  hydrateCard,
   type BattleCard,
   type CharacterId,
   type DifficultyId,
@@ -127,47 +128,6 @@ function isUnstartedRun(candidate: PersistedRunCandidate): boolean {
     candidate.destinationIndexInAct === 0 &&
     candidate.completedDestinations.length === 0
   );
-}
-
-// Save data owns only run-specific card mutations, while library data owns identity, title, and art.
-function hydrateSavedCard(savedCard: BattleCard): BattleCard {
-  const libraryCard = cardLibrary.find((card) => card.id === savedCard.id);
-  if (!libraryCard) return savedCard;
-  const nextCard: BattleCard = {
-    ...libraryCard,
-    descriptionLines: [...libraryCard.descriptionLines],
-    effects: libraryCard.effects.map((effect) => ({ ...effect })),
-  };
-
-  if (typeof savedCard.uid === "number" && Number.isInteger(savedCard.uid)) nextCard.uid = savedCard.uid;
-  if (typeof savedCard.cost === "number" && Number.isFinite(savedCard.cost) && savedCard.cost >= 0)
-    nextCard.cost = Math.floor(savedCard.cost);
-  if (typeof savedCard.consume === "boolean") nextCard.consume = savedCard.consume;
-  if (typeof savedCard.corrupted === "boolean") nextCard.corrupted = savedCard.corrupted;
-  if (typeof savedCard.baseTitle === "string") nextCard.baseTitle = savedCard.baseTitle;
-  if (
-    Array.isArray(savedCard.descriptionLines) &&
-    savedCard.descriptionLines.every((line) => typeof line === "string")
-  ) {
-    nextCard.descriptionLines = [...savedCard.descriptionLines];
-  }
-  if (Array.isArray(savedCard.effects) && savedCard.effects.every((effect) => effect && typeof effect === "object")) {
-    nextCard.effects = savedCard.effects.map((effect) => ({ ...effect }));
-  }
-  if (Array.isArray(savedCard.corruptedValuePositions)) {
-    const positions = savedCard.corruptedValuePositions.filter(
-      (position) =>
-        position &&
-        typeof position === "object" &&
-        Number.isInteger(position.lineIndex) &&
-        Number.isInteger(position.matchIndex) &&
-        position.lineIndex >= 0 &&
-        position.matchIndex >= 0,
-    );
-    if (positions.length > 0) nextCard.corruptedValuePositions = positions;
-  }
-
-  return nextCard;
 }
 
 // Modifier definitions can change between builds, so persisted maps drop unknown
@@ -354,7 +314,7 @@ export function normalizeActiveRun(activeRun: unknown): ActiveRunData | null {
     (isUnstartedRun(candidate) && deckIdsMatch(candidate.runDeck, [...LEGACY_STARTER_DECK_IDS]));
   const runDeck = shouldUseClassDeck
     ? getStartingDeck(characterId)
-    : (candidate.runDeck as BattleCard[]).map(hydrateSavedCard);
+    : (candidate.runDeck as BattleCard[]).map(hydrateCard);
 
   const persistedDifficulty = candidate.selectedDifficulty;
   const selectedDifficulty = isValidDifficultyId(persistedDifficulty) ? persistedDifficulty : null;

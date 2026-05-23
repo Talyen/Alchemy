@@ -2,12 +2,12 @@ import { create } from "zustand";
 import {
   getGoldMultiplier,
   getStartingDeck,
+  hydrateCard,
   type BattleCard,
   type CharacterId,
   type DifficultyId,
   talentPool,
   type UnlockedTalents,
-  cardLibrary,
   getCardKeywords,
 } from "@/lib/game-data";
 import { MAX_PLAYER_HEALTH } from "@/lib/game-constants";
@@ -16,63 +16,6 @@ import type { ActiveRunData } from "@/features/alchemy/run/types";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import { addTalentXP, xpThresholdForPoints, type TalentXP } from "@/lib/talents";
 import type { KeywordId } from "@/lib/game-data";
-
-export function hydrateCard(savedCard: BattleCard): BattleCard {
-  const libraryCard = cardLibrary.find((c) => c.id === savedCard.id);
-  if (!libraryCard) return savedCard;
-
-  const descriptionLines =
-    Array.isArray(savedCard.descriptionLines) &&
-    (savedCard as unknown as { descriptionLinesFullyValid?: boolean }).descriptionLinesFullyValid !== false
-      ? [...savedCard.descriptionLines]
-      : [...libraryCard.descriptionLines];
-
-  const effects =
-    Array.isArray(savedCard.effects) &&
-    (savedCard as unknown as { effectsFullyValid?: boolean }).effectsFullyValid !== false
-      ? (savedCard.effects.map((e) => (e && typeof e === "object" ? { ...e } : e)) as BattleCard["effects"])
-      : libraryCard.effects.map((e) => ({ ...e }));
-
-  const corruptedValuePositions = Array.isArray(savedCard.corruptedValuePositions)
-    ? savedCard.corruptedValuePositions.filter(
-        (p) =>
-          p &&
-          typeof p === "object" &&
-          Number.isInteger(p.lineIndex) &&
-          Number.isInteger(p.matchIndex) &&
-          p.lineIndex >= 0 &&
-          p.matchIndex >= 0,
-      )
-    : undefined;
-
-  const cost =
-    typeof savedCard.cost === "number" && Number.isFinite(savedCard.cost) && savedCard.cost >= 0
-      ? Math.floor(savedCard.cost)
-      : libraryCard.cost;
-
-  const result: BattleCard = {
-    ...libraryCard,
-    descriptionLines,
-    effects,
-    cost,
-  };
-  if (savedCard.consume !== undefined) {
-    result.consume = savedCard.consume;
-  }
-  if (savedCard.corrupted !== undefined) {
-    result.corrupted = savedCard.corrupted;
-  }
-  if (savedCard.baseTitle !== undefined) {
-    result.baseTitle = savedCard.baseTitle;
-  }
-  if (savedCard.uid !== undefined) {
-    result.uid = savedCard.uid;
-  }
-  if (corruptedValuePositions && corruptedValuePositions.length > 0) {
-    result.corruptedValuePositions = corruptedValuePositions;
-  }
-  return result;
-}
 
 type RunStateFields = {
   characterId: CharacterId;
@@ -155,9 +98,9 @@ function createInitialRunState(
       : [],
     selectedDifficulty: initialActiveRun?.selectedDifficulty ?? null,
     contentSystemType: initialActiveRun?.contentSystemType ?? "campaign",
-    talentXP: {} as TalentXP,
-    runTalentXP: {} as TalentXP,
-    unlockedTalents: {} as UnlockedTalents,
+    talentXP: {},
+    runTalentXP: {},
+    unlockedTalents: {},
   };
 }
 
@@ -170,7 +113,7 @@ function createInitialTalentState(
 
 export const useRunStore = create<RunStore>()((set) => ({
   ...createInitialRunState(null),
-  ...createInitialTalentState({} as TalentXP, {} as UnlockedTalents),
+  ...createInitialTalentState({}, {}),
 
   setRunDeck: (action) => set((s) => ({ runDeck: typeof action === "function" ? action(s.runDeck) : action })),
   setRunGold: (action) => set((s) => ({ runGold: typeof action === "function" ? action(s.runGold) : action })),
@@ -231,14 +174,14 @@ export const useRunStore = create<RunStore>()((set) => ({
       }
     : () => {},
 
-  resetUnlockedTalents: () => set({ unlockedTalents: {} as UnlockedTalents }),
-  resetRunXP: () => set({ runTalentXP: {} as TalentXP }),
+  resetUnlockedTalents: () => set({ unlockedTalents: {} }),
+  resetRunXP: () => set({ runTalentXP: {} }),
 
   clearPermanentData: () =>
     set({
-      talentXP: {} as TalentXP,
-      runTalentXP: {} as TalentXP,
-      unlockedTalents: {} as UnlockedTalents,
+      talentXP: {},
+      runTalentXP: {},
+      unlockedTalents: {},
     }),
 
   awardCardXP: (card) => {

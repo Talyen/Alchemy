@@ -14,7 +14,7 @@ import {
   setEnemyStatus,
   setFlag,
   type BattleState,
-  type CombatTextEvent,
+  type CombatTextEvent, // used by internal helpers and re-exported callers
 } from "./types";
 import { mergeCombatText } from "./combat-text";
 import { applyLuckyCloverGold } from "./trinket-effects";
@@ -620,4 +620,29 @@ export function applyPlayerStatusEffect(
     amount,
   });
   return addPlayerStatus(state, effect.status, amount);
+}
+
+export function applyPlayerDamageStatuses(
+  state: BattleState,
+  effect: { damageType: string },
+  actualDamage: number,
+): BattleState {
+  if (actualDamage <= 0) return state;
+  const statusType = effect.damageType;
+  if (
+    statusType === "burn" ||
+    statusType === "poison" ||
+    statusType === "bleed" ||
+    statusType === "freeze" ||
+    statusType === "stun"
+  ) {
+    return {
+      ...state,
+      playerStatuses: {
+        ...state.playerStatuses,
+        [statusType]: state.playerStatuses[statusType] + actualDamage,
+      },
+    };
+  }
+  return state;
 }

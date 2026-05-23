@@ -12,7 +12,7 @@ import {
 import { getRawSaveSchemaVersion, isUnsupportedFutureSaveData, migrateSaveDataToCurrent } from "@/lib/validation";
 import { cardLibrary } from "@/lib/game-data";
 import { createSeededRng, generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
-import { hydrateCard } from "@/features/alchemy/stores/run-store";
+import { hydrateCard } from "@/lib/game-data";
 import { legacyCampaignRunSave, legacyCorruptedCardRunSave, legacyLabyrinthRunSave } from "../fixtures/legacy-saves";
 import type { SaveData } from "@/features/alchemy/storage/types";
 

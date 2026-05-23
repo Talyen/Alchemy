@@ -1,7 +1,7 @@
 // Top-level alchemy controller composition hook.
 // Depends on run, battle, shop, navigation, talent, persistence-facing, and homestead state.
 // Used by App as the single UI-facing API while domain rules stay in smaller controllers.
-import { useCallback, useEffect, useRef, useState, useMemo } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { cardLibrary, trinketLibrary, computeTalentEffects } from "@/lib/game-data";
 import type { TalentXP } from "@/lib/talents";
@@ -170,6 +170,9 @@ export function useAlchemyRunController({
   }
 
   // ============ Domain Controllers ============
+  const onBattleVictoryRef = useRef<() => void>(() => {});
+  const onBattleDefeatRef = useRef<() => void>(() => {});
+
   const battle = useBattleController({
     run,
     talents,
@@ -180,6 +183,8 @@ export function useAlchemyRunController({
     homesteadEffectsRef,
     screen,
     setHoveredCardId,
+    onBattleVictory: () => onBattleVictoryRef.current(),
+    onBattleDefeat: () => onBattleDefeatRef.current(),
   });
 
   const shop = useShopController({
@@ -202,6 +207,14 @@ export function useAlchemyRunController({
     onInitShop: shop.initShop,
     onInitAlchemist: shop.initAlchemist,
     onMarkDifficultyCompleted,
+  });
+
+  // Keep victory/defeat refs in sync with the latest nav callbacks after every render.
+  // useLayoutEffect (not render-time assignment) satisfies react-hooks/refs and ensures
+  // the refs are updated synchronously before the browser paints.
+  useLayoutEffect(() => {
+    onBattleVictoryRef.current = nav.handleBattleVictory;
+    onBattleDefeatRef.current = nav.handleBattleDefeat;
   });
 
   function clearPermanentData() {

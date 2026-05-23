@@ -74,6 +74,7 @@ export type BattleActionsProps = {
   onEndTurn: () => void;
   hiddenHandCardKeys: Set<string>;
   cardTransferInProgress: boolean;
+  isDevMode: boolean;
 };
 
 export type RequiredBattleViewProps = Required<BattleScreenViewProps>;

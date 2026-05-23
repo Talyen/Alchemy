@@ -8,7 +8,13 @@ import { applyCardEffects } from "./apply-effects";
 import { mergeCombatText } from "./combat-text";
 import { POTION_CARD_ID_FRAGMENT } from "../game-constants";
 import { type BattleCard } from "@/lib/game-data";
-import { type BattleResolution, type BattleState, type CombatFlags, type CombatTextEvent } from "./types";
+import {
+  type BattleResolution,
+  type BattleState,
+  type CombatFlags,
+  type CombatTextEvent,
+  isPlayerDefeated,
+} from "./types";
 
 /**
  * Checks if a card contains a specific damage type effect.
@@ -193,6 +199,10 @@ function handlePostPlayCardDestination(state: BattleState, card: BattleCard): Ba
  */
 export function playBattleCardResolved(state: BattleState, cardId: string, index: number): BattleResolution {
   const combatTexts: CombatTextEvent[] = [];
+
+  if (state.enemyHealth <= 0 || isPlayerDefeated(state)) {
+    return { state, combatTexts };
+  }
 
   const card = getPlayableCard(state, cardId, index);
   if (!card) return { state, combatTexts };

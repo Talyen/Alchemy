@@ -69,7 +69,7 @@ function BattleControls({
   actions: BattleActionsProps;
   discardPileRef: MutableRefObject<HTMLDivElement | null>;
 }) {
-  const { onOpenMenu, onEndTurn, onSkipCombatDevMode, cardTransferInProgress } = actions;
+  const { onOpenMenu, onEndTurn, onSkipCombatDevMode, cardTransferInProgress, isDevMode } = actions;
 
   return (
     <div className={isMobileLandscape ? battleBottomColumnClass.mobile : battleBottomColumnClass.desktop}>
@@ -98,7 +98,7 @@ function BattleControls({
           End Turn
         </Button>
 
-        {import.meta.env.DEV ? (
+        {isDevMode ? (
           <Button
             variant="outline"
             size="sm"

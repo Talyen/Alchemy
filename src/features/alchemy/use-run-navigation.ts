@@ -7,7 +7,7 @@ import { useRunStore } from "./stores/run-store";
 import { useAppStore } from "./stores/app-store";
 import { useHomesteadStore } from "./stores/homestead-store";
 import { useBattleStore } from "./stores/battle-store";
-import { defaultBattleState, isPlayerDefeated, type BattleState } from "@/lib/battle";
+import { defaultBattleState, type BattleState } from "@/lib/battle";
 import {
   getDifficultyModifiers,
   getGoldMultiplier,
@@ -239,7 +239,7 @@ function processBattleVictory({
     goldMultiplier: getGoldMultiplier(runState.characterId, runState.selectedDifficulty),
   });
   runState.addRunGold(goldResult.earnedBeforeMultiplier);
-  const newGold = goldResult.persistedRunGold;
+  const newGold = useRunStore.getState().runGold;
 
   runState.setRunPlayerHealth(battleState.playerHealth);
   if (talentEffects.maxHealthPerCombat > RUN_NAV_CONSTANTS.ZERO) {
@@ -428,7 +428,6 @@ export function useRunNavigation({
   const mystery = useMysteryFlow({
     advanceToNextDestination,
   });
-  const battleVictoryHandledRef = useRef(false);
   const rewardTransitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function clearRewardTransitionTimer() {
@@ -572,60 +571,40 @@ export function useRunNavigation({
     }, VICTORY_TRANSITION_DELAY);
   }, [setScreen, getAvailableDestinations]);
 
-  useEffect(() => {
-    if (screen !== CONSTANTS.SCREENS.BATTLE || !isPlayerDefeated(battleState)) return;
-    handleBattleDefeat();
-  }, [battleState, screen, handleBattleDefeat]);
-
-  useEffect(() => {
-    if (screen === CONSTANTS.SCREENS.BATTLE && hasActiveBattle && battleState.enemyHealth > 0)
-      battleVictoryHandledRef.current = false;
-  }, [battleState.enemyHealth, hasActiveBattle, screen]);
-
-  useEffect(() => {
-    if (screen !== CONSTANTS.SCREENS.BATTLE || !hasActiveBattle || battleState.enemyHealth > 0) return;
-    if (isPlayerDefeated(battleState)) return;
-    if (battleVictoryHandledRef.current) return;
-    battleVictoryHandledRef.current = true;
-    handleBattleVictory();
-  }, [battleState, hasActiveBattle, screen, handleBattleVictory]);
-
   // ============ Content System Flow ============
 
-  function beginCampaign() {
-    if (hasActiveBattle && run.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN) {
+  function beginContentSystem(systemId: ContentSystemId) {
+    if (hasActiveBattle && run.contentSystemType === systemId) {
       returnToBattle();
       return;
     }
-    if (hasActiveRun && run.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN) {
-      getStore().setRewardState((prev) => {
-        const destinations =
-          prev.destinations.length > 0 ? prev.destinations : sampleDestinationChoices(getAvailableDestinations());
-        return withSelectedBossForDestinations(destinations, { ...prev, destinations });
-      });
-      navigateTo(CONSTANTS.SCREENS.DESTINATION);
+    if (hasActiveRun && run.contentSystemType === systemId) {
+      if (systemId === CONSTANTS.CONTENT_SYSTEMS.LABYRINTH) {
+        navigateTo(CONSTANTS.SCREENS.LABYRINTH_MAP);
+      } else if (systemId === CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN) {
+        getStore().setRewardState((prev) => {
+          const destinations =
+            prev.destinations.length > 0 ? prev.destinations : sampleDestinationChoices(getAvailableDestinations());
+          return withSelectedBossForDestinations(destinations, { ...prev, destinations });
+        });
+        navigateTo(CONSTANTS.SCREENS.DESTINATION);
+      }
       return;
     }
-    getStore().setPendingContentSystemType(CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN);
+    getStore().setPendingContentSystemType(systemId);
     navigateTo(CONSTANTS.SCREENS.CHARACTER_SELECT);
+  }
+
+  function beginCampaign() {
+    beginContentSystem(CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN);
   }
 
   function beginLabyrinth() {
-    if (hasActiveBattle && run.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.LABYRINTH) {
-      returnToBattle();
-      return;
-    }
-    if (hasActiveRun && run.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.LABYRINTH) {
-      navigateTo(CONSTANTS.SCREENS.LABYRINTH_MAP);
-      return;
-    }
-    getStore().setPendingContentSystemType(CONSTANTS.CONTENT_SYSTEMS.LABYRINTH);
-    navigateTo(CONSTANTS.SCREENS.CHARACTER_SELECT);
+    beginContentSystem(CONSTANTS.CONTENT_SYSTEMS.LABYRINTH);
   }
 
   function beginWildwood() {
-    getStore().setPendingContentSystemType(CONSTANTS.CONTENT_SYSTEMS.WILDWOOD);
-    navigateTo(CONSTANTS.SCREENS.CHARACTER_SELECT);
+    beginContentSystem(CONSTANTS.CONTENT_SYSTEMS.WILDWOOD);
   }
 
   function handleCharacterSelect(selectedId: CharacterId) {
@@ -979,13 +958,20 @@ export function useRunNavigation({
     setHoveredCardId(null);
     setHasActiveBattle(false);
     navigateTo(CONSTANTS.SCREENS.MENU, () => {
-      setBattleState(defaultBattleState());
-      run.reset();
-      talents.resetRunXP();
-      getStore().setPendingContentSystemType(CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN);
-      getStore().setRewardState(createEmptyRewardState());
-      mystery.clearCardChoices();
-      getStore().setHasActiveRun(false);
+      try {
+        setBattleState(defaultBattleState());
+        run.reset();
+        talents.resetRunXP();
+        getStore().setPendingContentSystemType(CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN);
+        getStore().setRewardState(createEmptyRewardState());
+        mystery.clearCardChoices();
+        getStore().setHasActiveRun(false);
+      } catch (err) {
+        console.error("Critical error resetting run state:", err);
+        if (typeof window !== "undefined" && window.location) {
+          window.location.reload();
+        }
+      }
     });
   }
 
@@ -1056,5 +1042,7 @@ export function useRunNavigation({
     handleMysteryRemoveCard,
     handleMysteryContinue,
     resetRunState,
+    handleBattleVictory,
+    handleBattleDefeat,
   };
 }

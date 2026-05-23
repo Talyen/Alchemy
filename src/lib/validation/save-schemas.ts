@@ -30,6 +30,19 @@ import { ALL_LABYRINTH_MODIFIERS } from "@/lib/content-systems/labyrinth/modifie
 import type { LabyrinthModifierKind } from "@/lib/content-systems/types";
 import { CURRENT_SAVE_SCHEMA_VERSION, CURRENT_GAME_BUILD_VERSION, CURRENT_CONTENT_VERSION } from "./metadata";
 import { migrateSaveDataToCurrent } from "./migration";
+import { createEmptyTierRecord } from "@/lib/homestead/tiers";
+
+function catchWithWarning<T>(schema: z.ZodType<T>, fallback: T, fieldName: string): z.ZodType<T> {
+  return z.preprocess((val) => {
+    if (val === undefined) return fallback;
+    const res = schema.safeParse(val);
+    if (!res.success) {
+      console.warn(`[Save Validation] Field "${fieldName}" fallback to default due to error:`, res.error.message);
+      return fallback;
+    }
+    return res.data;
+  }, z.any()) as z.ZodType<T>;
+}
 
 // Zod enums need a non-empty tuple; this preserves runtime single sources of truth for save IDs.
 function toNonEmptyTuple<T extends string>(values: readonly T[], label: string): [T, ...T[]] {
@@ -539,12 +552,32 @@ export const SaveDataSchema = z.preprocess(
       .transform((v) => Math.max(0, Math.min(100, v))),
     muteInBackground: z.boolean().catch(true),
     autoEndTurn: z.boolean().catch(true),
-    activeRun: ActiveRunDataSchema.nullable().catch(null),
-    materialInventory: MaterialInventorySchema,
-    constructedBuildings: createTierRecordSchema(buildings, { smithy: "blacksmiths-forge" }),
-    plantedFarms: createTierRecordSchema(farmPlots, { "sheep-pasture": "pasture" }),
-    completedResearch: createTierRecordSchema(researchUpgrades),
-    bondedCompanions: createTierRecordSchema(companionTierItems),
-    completedDifficulties: CompletedDifficultiesSchema,
+    activeRun: catchWithWarning(ActiveRunDataSchema.nullable(), null, "activeRun"),
+    materialInventory: catchWithWarning(MaterialInventorySchema, MATERIAL_ZERO_INVENTORY, "materialInventory"),
+    constructedBuildings: catchWithWarning(
+      createTierRecordSchema(buildings, { smithy: "blacksmiths-forge" }),
+      createEmptyTierRecord(buildings),
+      "constructedBuildings",
+    ),
+    plantedFarms: catchWithWarning(
+      createTierRecordSchema(farmPlots, { "sheep-pasture": "pasture" }),
+      createEmptyTierRecord(farmPlots),
+      "plantedFarms",
+    ),
+    completedResearch: catchWithWarning(
+      createTierRecordSchema(researchUpgrades),
+      createEmptyTierRecord(researchUpgrades),
+      "completedResearch",
+    ),
+    bondedCompanions: catchWithWarning(
+      createTierRecordSchema(companionTierItems),
+      createEmptyTierRecord(companionTierItems),
+      "bondedCompanions",
+    ),
+    completedDifficulties: catchWithWarning(
+      CompletedDifficultiesSchema,
+      Object.fromEntries(CHARACTER_IDS.map((id) => [id, []])),
+      "completedDifficulties",
+    ),
   }),
 );

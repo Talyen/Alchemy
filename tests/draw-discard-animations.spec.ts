@@ -2,6 +2,10 @@ import { test, expect } from "@playwright/test";
 import { failOnRuntimeErrors, startCampaignBattle } from "./helpers";
 import { BattlePage } from "./pages/battle-page";
 
+test.afterEach(async ({ page }) => {
+  await page.evaluate(() => localStorage.clear()).catch(() => {});
+});
+
 test.describe("Draw/discard animation invariants (1920×1080)", () => {
   test("turn cycle animations and interaction boundaries function correctly", async ({ page }) => {
     const errors = failOnRuntimeErrors(page);
@@ -69,7 +73,7 @@ test.describe("Draw/discard edge cases", () => {
 
     await battle.endTurnBtn.click();
     await battle.skipCombatBtn.click();
-    await expect(battle.victoryHeading).toBeVisible({ timeout: 5000 }).catch(() => {});
+    await expect(battle.victoryHeading).toBeVisible({ timeout: 5000 });
     expect(errors).toEqual([]);
   });
 });

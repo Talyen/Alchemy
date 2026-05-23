@@ -2,6 +2,10 @@ import { expect, test } from "@playwright/test";
 import { startAtDestination } from "./helpers";
 
 test.describe("Merchant Shop", () => {
+  test.afterEach(async ({ page }) => {
+    await page.evaluate(() => localStorage.clear()).catch(() => {});
+  });
+
   test.describe("with sufficient gold", () => {
     test.beforeEach(async ({ page }) => {
       await startAtDestination(page, { runGold: 9999 }, { forceDestination: "Merchant's Shop" });
@@ -95,11 +99,21 @@ test.describe("Merchant Shop", () => {
     test("buy button is disabled when player has insufficient gold for card", async ({ page }) => {
       const buyButton = page.getByRole("button", { name: /^Buy/ }).first();
       await expect(buyButton).toBeVisible();
+      await expect(buyButton).toBeEnabled();
+      await buyButton.click();
+
+      const disabledBuyButton = page.getByRole("button", { name: /^Buy/ }).first();
+      await expect(disabledBuyButton).toBeVisible();
+      await expect(disabledBuyButton).toBeDisabled();
     });
   });
 });
 
 test.describe("Alchemist Shop", () => {
+  test.afterEach(async ({ page }) => {
+    await page.evaluate(() => localStorage.clear()).catch(() => {});
+  });
+
   test.describe("with sufficient gold", () => {
     test.beforeEach(async ({ page }) => {
       await startAtDestination(page, { runGold: 9999 }, { forceDestination: "Alchemist's Shop" });
@@ -143,9 +157,20 @@ test.describe("Alchemist Shop", () => {
       await expect(page.getByRole("heading", { name: "Alchemist's Shop" })).toBeVisible();
     });
 
-    test("alchemist buy button is visible at shop", async ({ page }) => {
-      const buyButton = page.getByRole("button", { name: /^Buy/ }).first();
-      await expect(buyButton).toBeVisible();
+    test("buy button is disabled when player has insufficient gold for potion", async ({ page }) => {
+      const buyButton1 = page.getByRole("button", { name: /^Buy/ }).first();
+      await expect(buyButton1).toBeVisible();
+      await expect(buyButton1).toBeEnabled();
+      await buyButton1.click();
+
+      const buyButton2 = page.getByRole("button", { name: /^Buy/ }).first();
+      await expect(buyButton2).toBeVisible();
+      await expect(buyButton2).toBeEnabled();
+      await buyButton2.click();
+
+      const disabledBuyButton = page.getByRole("button", { name: /^Buy/ }).first();
+      await expect(disabledBuyButton).toBeVisible();
+      await expect(disabledBuyButton).toBeDisabled();
     });
   });
 });

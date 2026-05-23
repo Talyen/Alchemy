@@ -6,7 +6,7 @@ export * from "./draw";
 export { applyCardEffects } from "./apply-effects";
 export { mergeCombatText } from "./combat-text";
 export { applyIronwoodBuckler, applyBoneCharmHeal } from "./trinket-effects";
-export { getEnemyDamageMultiplier } from "./status-effects";
+export { getEnemyDamageMultiplier, applyPlayerDamageStatuses } from "./status-effects";
 export { cardHasDamageType, playBattleCardResolved } from "./card-play";
 export { tickEnemyStatuses, tickPlayerStatuses } from "./status-ticks";
 export { chooseWishCard, endPlayerTurn, processCompanionTurnStart } from "./enemy-turn";

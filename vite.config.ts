@@ -11,6 +11,9 @@ if (!Number.isInteger(devPort) || devPort <= 0) {
 }
 
 export default defineConfig(({ mode }) => ({
+  define: {
+    "import.meta.env.DEV": mode === "development" ? "true" : "false",
+  },
   base: process.env.VERCEL ? "/" : mode === "desktop" ? "./" : "/",
   server: { open: true, port: devPort, strictPort: true },
   plugins: [react()],

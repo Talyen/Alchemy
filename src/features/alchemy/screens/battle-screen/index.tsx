@@ -132,6 +132,9 @@ export function BattleScreen(props: BattleScreenProps) {
     onEndTurn,
     hiddenHandCardKeys,
     cardTransferInProgress,
+    isDevMode:
+      import.meta.env.DEV ||
+      (typeof localStorage !== "undefined" && localStorage.getItem("alchemy-dev-mode") === "true"),
   };
 
   const { battleSceneRef: sceneRef } = refs;

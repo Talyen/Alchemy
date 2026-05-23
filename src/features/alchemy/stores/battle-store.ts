@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { defaultBattleState, type BattleState, type CombatTextEvent } from "@/lib/battle";
-import { hydrateCard } from "./run-store";
+import { hydrateCard } from "@/lib/game-data";
 import { COMBAT_TEXT_LANE_DELAY_MS, COMBAT_TEXT_LIFETIME_MS, SHAKE_DURATION } from "@/lib/game-constants";
 import type { CardGhost, FloatingCombatText } from "@/features/alchemy/types";
 

@@ -151,11 +151,22 @@ export async function forceNextDestinationChoice(page: Page, destination: Destin
   }, randomValue).catch(() => {});
 }
 
+export async function enableDevMode(page: Page) {
+  await page.addInitScript(() => {
+    try {
+      localStorage.setItem("alchemy-dev-mode", "true");
+    } catch (e) {
+      console.warn("Failed to set alchemy-dev-mode", e);
+    }
+  });
+}
+
 export async function startAtDestination(
   page: Page,
   overrides: Record<string, unknown> = {},
   options: { forceDestination?: DestinationName } = {},
 ) {
+  await enableDevMode(page);
   if (options.forceDestination) await forceNextDestinationChoice(page, options.forceDestination);
   await injectSaveState(page, {
     runGold: 50,
@@ -208,6 +219,7 @@ export async function injectSaveState(page: Page, overrides: Record<string, unkn
 // Fresh run lands directly in the first forced Normal Combat battle.
 // Novice difficulty is the default and skips the difficulty select screen for first-time players.
 export async function startCampaignBattle(page: Page, character: "Knight" | "Ranger" | "Rogue" | "Wizard" = "Knight") {
+  await enableDevMode(page);
   await page.goto("/");
   await selectGameMode(page, "campaign");
   await page.getByRole("button", { name: character }).click();
@@ -378,6 +390,7 @@ export async function navigateToCombat(page: Page) {
 // and navigating to the first combat. Skips the startRun UI dance entirely.
 // Returns when the battle hand is visible.
 export async function startBattleWithDeck(page: Page, deck: Record<string, unknown>[], overrides: Record<string, unknown> = {}) {
+  await enableDevMode(page);
   await forceNextDestinationChoice(page, "Normal Combat");
   await injectSaveState(page, {
     runDeck: deck,

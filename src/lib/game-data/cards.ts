@@ -629,3 +629,60 @@ export const cardLibrary: BattleCard[] = [
     effects: [{ kind: "remove-player-status", status: "stun" }],
   },
 ];
+
+export function hydrateCard(savedCard: BattleCard): BattleCard {
+  const libraryCard = cardLibrary.find((c) => c.id === savedCard.id);
+  if (!libraryCard) return savedCard;
+
+  const descriptionLines =
+    Array.isArray(savedCard.descriptionLines) &&
+    (savedCard as unknown as { descriptionLinesFullyValid?: boolean }).descriptionLinesFullyValid !== false
+      ? [...savedCard.descriptionLines]
+      : [...libraryCard.descriptionLines];
+
+  const effects =
+    Array.isArray(savedCard.effects) &&
+    (savedCard as unknown as { effectsFullyValid?: boolean }).effectsFullyValid !== false
+      ? (savedCard.effects.map((e) => (e && typeof e === "object" ? { ...e } : e)) as BattleCard["effects"])
+      : libraryCard.effects.map((e) => ({ ...e }));
+
+  const corruptedValuePositions = Array.isArray(savedCard.corruptedValuePositions)
+    ? savedCard.corruptedValuePositions.filter(
+        (p) =>
+          p &&
+          typeof p === "object" &&
+          Number.isInteger(p.lineIndex) &&
+          Number.isInteger(p.matchIndex) &&
+          p.lineIndex >= 0 &&
+          p.matchIndex >= 0,
+      )
+    : undefined;
+
+  const cost =
+    typeof savedCard.cost === "number" && Number.isFinite(savedCard.cost) && savedCard.cost >= 0
+      ? Math.floor(savedCard.cost)
+      : libraryCard.cost;
+
+  const result: BattleCard = {
+    ...libraryCard,
+    descriptionLines,
+    effects,
+    cost,
+  };
+  if (savedCard.consume !== undefined) {
+    result.consume = savedCard.consume;
+  }
+  if (savedCard.corrupted !== undefined) {
+    result.corrupted = savedCard.corrupted;
+  }
+  if (savedCard.baseTitle !== undefined) {
+    result.baseTitle = savedCard.baseTitle;
+  }
+  if (savedCard.uid !== undefined) {
+    result.uid = savedCard.uid;
+  }
+  if (corruptedValuePositions && corruptedValuePositions.length > 0) {
+    result.corruptedValuePositions = corruptedValuePositions;
+  }
+  return result;
+}

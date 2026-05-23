@@ -20,6 +20,7 @@ import { applyIronwoodBuckler } from "./trinket-effects";
 import { applyPlayerStatusFromAttack } from "./status-application";
 import { decayHalvedStatus } from "./status-helpers";
 import { tickEnemyStatuses, tickPlayerStatuses } from "./status-ticks";
+import { applyPlayerDamageStatuses } from "./status-effects";
 import type { BattleCard, EnemyAttackEffect, TalentEffectManifest } from "@/lib/game-data/types";
 import type { DifficultyModifier } from "@/lib/game-data/difficulties";
 import {
@@ -110,13 +111,10 @@ export function processCompanionTurnStart(state: BattleState, combatTexts: Comba
   return { ...result, flags: { ...result.flags, ...savedFlags } };
 }
 
-function handleCCSkipTurn(state: BattleState): BattleState {
+function resetPlayerTurnState(state: BattleState): BattleState {
   return {
     ...state,
     turn: state.turn + 1,
-    turnPhase: "enemy" as TurnPhase,
-    playerStunSkipTurns: Math.max(0, state.playerStunSkipTurns - 1),
-    playerFreezeSkipTurns: Math.max(0, state.playerFreezeSkipTurns - 1),
     playerCCCooldown: Math.max(0, state.playerCCCooldown - 1),
     enemyCCCooldown: Math.max(0, state.enemyCCCooldown - 1),
     playerStatuses: { ...state.playerStatuses, block: decayHalvedStatus(state.playerStatuses.block ?? 0) },
@@ -125,11 +123,21 @@ function handleCCSkipTurn(state: BattleState): BattleState {
   };
 }
 
+function handleCCSkipTurn(state: BattleState): BattleState {
+  const nextState = resetPlayerTurnState(state);
+  return {
+    ...nextState,
+    turnPhase: "enemy" as TurnPhase,
+    playerStunSkipTurns: Math.max(0, state.playerStunSkipTurns - 1),
+    playerFreezeSkipTurns: Math.max(0, state.playerFreezeSkipTurns - 1),
+  };
+}
+
 function performDrawAndResetPhase(state: BattleState, deathsDoorNeedsRecoveryTurn: boolean): BattleState {
   const nextDraw = drawCards(state.deck, state.discard, [], CARDS_PER_TURN, state.nextCardUid);
+  const nextState = resetPlayerTurnState(state);
   return {
-    ...state,
-    turn: state.turn + 1,
+    ...nextState,
     turnPhase: "player" as TurnPhase,
     deck: nextDraw.deck,
     hand: nextDraw.hand,
@@ -138,11 +146,6 @@ function performDrawAndResetPhase(state: BattleState, deathsDoorNeedsRecoveryTur
     mana: state.maxMana,
     playerStunSkipTurns: deathsDoorNeedsRecoveryTurn ? 0 : state.playerStunSkipTurns,
     playerFreezeSkipTurns: deathsDoorNeedsRecoveryTurn ? 0 : state.playerFreezeSkipTurns,
-    playerCCCooldown: Math.max(0, state.playerCCCooldown - 1),
-    enemyCCCooldown: Math.max(0, state.enemyCCCooldown - 1),
-    playerStatuses: { ...state.playerStatuses, block: decayHalvedStatus(state.playerStatuses.block ?? 0) },
-    cardsPlayedThisTurn: 0,
-    flags: { ...state.flags, resonantChimeUsedThisTurn: false, nextCardCostReduction: 0 },
   };
 }
 
@@ -356,22 +359,7 @@ function processEnemyDamageEffect(
   // Status rider: status-linked damage types (burn, poison, bleed, freeze, stun)
   // apply their status to the player equal to the actual damage dealt,
   // mirroring how player-side damage riders work (damage.ts applyDamageStatuses).
-  if (
-    actualDamage > 0 &&
-    (effect.damageType === "burn" ||
-      effect.damageType === "poison" ||
-      effect.damageType === "bleed" ||
-      effect.damageType === "freeze" ||
-      effect.damageType === "stun")
-  ) {
-    nextState = {
-      ...nextState,
-      playerStatuses: {
-        ...nextState.playerStatuses,
-        [effect.damageType]: nextState.playerStatuses[effect.damageType] + actualDamage,
-      },
-    };
-  }
+  nextState = applyPlayerDamageStatuses(nextState, effect, actualDamage);
 
   if (effect.lifesteal && actualDamage > 0) {
     nextState = applyEnemyAttackLifesteal(nextState, actualDamage, combatTexts);

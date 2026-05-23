@@ -13,6 +13,7 @@ import {
   processCompanionTurnStart,
   type BattleState,
   type CombatTextEvent,
+  isPlayerDefeated,
 } from "@/lib/battle";
 import { getDifficultyModifiers, type BattleCard, type BestiaryEntry, type DifficultyModifier } from "@/lib/game-data";
 import { playBattleEvent, playCardSound, playEnemyAttack, playGoldGain, stopAllSfx } from "@/lib/audio";
@@ -33,6 +34,7 @@ import {
   COMPANION_ATTACK_DELAY,
   ENEMY_PHASE_DELAY,
   HAND_FAN_ROTATION_DEGREES,
+  COMPANION_SOUND_CARD_IDS,
 } from "@/lib/game-constants";
 import { getCardRect, getHoverId } from "./utils";
 import type { RunStateController } from "./use-run-state";
@@ -48,14 +50,8 @@ import { useRunStore } from "./stores/run-store";
 import { getBattleStartPlayerHealth } from "./battle/battle-start";
 import { createTransferCancelRegistry } from "./battle/transfer-lifecycle";
 
-const companionSoundCardIds: Partial<Record<string, string>> = {
-  wolf: "wolf-companion",
-  imp: "imp-companion",
-  "lizard-scout": "lizard-scout-companion",
-};
-
 function playCompanionSound(companionId: string) {
-  const soundCardId = companionSoundCardIds[companionId];
+  const soundCardId = COMPANION_SOUND_CARD_IDS[companionId];
   if (soundCardId) playCardSound(soundCardId);
 }
 
@@ -103,6 +99,8 @@ export function useBattleController({
   homesteadEffectsRef,
   screen,
   setHoveredCardId,
+  onBattleVictory,
+  onBattleDefeat,
   measureElementRect = defaultMeasureElementRect,
   measureVisualCardRect = defaultMeasureVisualCardRect,
 }: {
@@ -115,6 +113,8 @@ export function useBattleController({
   homesteadEffectsRef: React.MutableRefObject<HomesteadEffectManifest>;
   screen: Screen;
   setHoveredCardId: React.Dispatch<React.SetStateAction<string | null>>;
+  onBattleVictory?: () => void;
+  onBattleDefeat?: () => void;
   measureElementRect?: (element: HTMLElement | null, sceneElement: HTMLDivElement | null) => CardRect | null;
   measureVisualCardRect?: (element: HTMLElement | null, sceneElement: HTMLDivElement | null) => CardRect | null;
 }) {
@@ -122,6 +122,8 @@ export function useBattleController({
   // @/lib/battle so UI delays cannot silently change battle outcomes.
   const battleState = useBattleStore((s) => s.battleState);
   const battleStartState = useBattleStore((s) => s.battleStartState);
+  const isDev =
+    import.meta.env.DEV || (typeof localStorage !== "undefined" && localStorage.getItem("alchemy-dev-mode") === "true");
   const hasActiveBattle = useBattleStore((s) => s.hasActiveBattle);
   const enemyShaking = useBattleStore((s) => s.enemyShaking);
   const playerShaking = useBattleStore((s) => s.playerShaking);
@@ -277,11 +279,13 @@ export function useBattleController({
         if (transferTimeoutRef.current === timeout) {
           transferTimeoutRef.current = null;
         }
+        if (isDev) console.log("[flying] remove", id.slice(-8));
         setCardTransfers((current) => current.filter((item) => item.id !== id));
         if (completeTransfer) onComplete?.();
         resolve();
       };
       unregisterCancel = registerTransferCancelCallback(() => finish(false));
+      if (isDev) console.log("[flying] create", id.slice(-8));
       setCardTransfers([{ ...transfer, id }]);
       timeout = setTimeout(
         () => finish(true),
@@ -526,10 +530,20 @@ export function useBattleController({
         applyState();
       });
     });
-    await animateDrawnHand(drawnCards, newState.hand);
-    runIfSessionActive(session, () => {
-      setCardTransferInProgress(false);
-    });
+    try {
+      await animateDrawnHand(drawnCards, newState.hand);
+    } finally {
+      runIfSessionActive(session, () => {
+        setCardTransferInProgress(false);
+        setHiddenHandCardKeys((current) => {
+          const next = new Set(current);
+          for (const key of hiddenDrawKeys) {
+            next.delete(key);
+          }
+          return next;
+        });
+      });
+    }
     return isCurrentBattleSession(session);
   }
 
@@ -557,11 +571,22 @@ export function useBattleController({
         getStore().setBattleState(resolution.state);
       },
       session,
-    ).finally(() => {
-      runIfSessionActive(session, () => {
-        cardPlayInProgressRef.current = false;
+    )
+      .catch((err) => {
+        console.error("Failed to handle play card draw sequence:", err);
+      })
+      .finally(() => {
+        runIfSessionActive(session, () => {
+          cardPlayInProgressRef.current = false;
+          if (isPlayerDefeated(resolution.state)) {
+            onBattleDefeat?.();
+            return;
+          }
+          if (resolution.state.enemyHealth <= 0) {
+            onBattleVictory?.();
+          }
+        });
       });
-    });
     runIfSessionActive(session, () => {
       scheduleAutoEndTurn(resolution.state);
     });
@@ -571,6 +596,8 @@ export function useBattleController({
     const currentCard = state.hand[index];
     return (
       screen === "battle" &&
+      state.enemyHealth > 0 &&
+      !isPlayerDefeated(state) &&
       currentCard?.id === card.id &&
       currentCard?.uid === card.uid &&
       state.mana >= getEffectiveCost(state, currentCard) &&
@@ -619,7 +646,17 @@ export function useBattleController({
         getStore().setBattleState(newState);
       },
       session,
-    );
+    )
+      .catch((err) => {
+        console.error("Failed to handle wish choice draw sequence:", err);
+      })
+      .finally(() => {
+        runIfSessionActive(session, () => {
+          if (newState.enemyHealth <= 0) {
+            onBattleVictory?.();
+          }
+        });
+      });
   }
 
   function handleEndTurn() {
@@ -635,7 +672,9 @@ export function useBattleController({
     clearCompanionTimeout();
     const session = battleSessionRef.current;
 
-    void animateEndTurnThenResolve(currentState, session);
+    animateEndTurnThenResolve(currentState, session).catch((err) => {
+      console.error("Failed to resolve end turn animation sequence:", err);
+    });
   }
 
   async function animateEndTurnThenResolve(currentState: BattleState, session: number) {
@@ -664,6 +703,7 @@ export function useBattleController({
       if (companionResult.state.enemyHealth <= 0) {
         getStore().setBattleState(companionResult.state);
         if (companionResult.combatTexts.length > 0) getStore().showCombatTexts(companionResult.combatTexts);
+        onBattleVictory?.();
         return;
       }
 
@@ -681,19 +721,31 @@ export function useBattleController({
             getStore().setBattleState(result.state);
           },
           session,
-        ).finally(() => {
-          runIfSessionActive(session, () => {
-            resolvedAsHasteOrStunRef.current = false;
-            setHiddenHandCardKeys(new Set());
-            setCardTransferInProgress(false);
-            cardPlayInProgressRef.current = false;
-            if (result.playerTurnSkipped) {
-              resolveEndTurn(result.state, session);
-              return;
-            }
-            scheduleCompanionFollowUp(result.state, session);
+        )
+          .catch((err) => {
+            console.error("Failed to handle end turn draw sequence:", err);
+          })
+          .finally(() => {
+            runIfSessionActive(session, () => {
+              resolvedAsHasteOrStunRef.current = false;
+              setHiddenHandCardKeys(new Set());
+              setCardTransferInProgress(false);
+              cardPlayInProgressRef.current = false;
+              if (isPlayerDefeated(result.state)) {
+                onBattleDefeat?.();
+                return;
+              }
+              if (result.state.enemyHealth <= 0) {
+                onBattleVictory?.();
+                return;
+              }
+              if (result.playerTurnSkipped) {
+                resolveEndTurn(result.state, session);
+                return;
+              }
+              scheduleCompanionFollowUp(result.state, session);
+            });
           });
-        });
         return;
       }
 
@@ -710,6 +762,11 @@ export function useBattleController({
       );
       if (result.state.enemyHealth <= 0) {
         getStore().setBattleState({ ...result.state, turnPhase: "enemy", hand: [] });
+        onBattleVictory?.();
+        return;
+      }
+      if (isPlayerDefeated(result.state)) {
+        onBattleDefeat?.();
         return;
       }
       scheduleEnemyTurnResolution(
@@ -782,15 +839,27 @@ export function useBattleController({
                 getStore().setBattleState(resultState);
               },
               session,
-            ).finally(() => {
-              runIfSessionActive(session, () => {
-                if (playerTurnSkipped) {
-                  resolveEndTurn(resultState, session);
-                  return;
-                }
-                scheduleCompanionFollowUp(resultState, session);
+            )
+              .catch((err) => {
+                console.error("Failed to handle enemy resolution draw sequence:", err);
+              })
+              .finally(() => {
+                runIfSessionActive(session, () => {
+                  if (isPlayerDefeated(resultState)) {
+                    onBattleDefeat?.();
+                    return;
+                  }
+                  if (resultState.enemyHealth <= 0) {
+                    onBattleVictory?.();
+                    return;
+                  }
+                  if (playerTurnSkipped) {
+                    resolveEndTurn(resultState, session);
+                    return;
+                  }
+                  scheduleCompanionFollowUp(resultState, session);
+                });
               });
-            });
           });
         }, ENEMY_ATTACK_RECOVERY_DELAY);
       });
