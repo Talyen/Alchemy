@@ -2779,3 +2779,379 @@ describe("applyCardEffects — unknown effect kind", () => {
     expect(texts).toEqual([]);
   });
 });
+
+describe("applyCardEffects — lose-health", () => {
+  it("damages player without applying a status rider", () => {
+    const state = makeState({
+      playerHealth: 20,
+      playerStatuses: { ...defaultBattleState().playerStatuses },
+    });
+    const card = makeCard({ effects: [{ kind: "lose-health", amount: 5 }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    expect(result.playerHealth).toBe(15);
+    expect(result.playerStatuses).toEqual(state.playerStatuses);
+    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "health", amount: 5 });
+  });
+
+  it("clamps health to 0", () => {
+    const state = makeState({
+      playerHealth: 3,
+      playerStatuses: { ...defaultBattleState().playerStatuses },
+    });
+    const card = makeCard({ effects: [{ kind: "lose-health", amount: 10 }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    expect(result.playerHealth).toBe(0);
+  });
+});
+
+describe("applyCardEffects — draw-cards", () => {
+  it("draws from deck into hand", () => {
+    const deck = [makeCard({ id: "d1" }), makeCard({ id: "d2" })];
+    const state = makeState({ deck, hand: [] });
+    const card = makeCard({ effects: [{ kind: "draw-cards", amount: 2 }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    expect(result.hand).toHaveLength(2);
+    expect(result.deck).toHaveLength(0);
+  });
+
+  it("reshuffles discard when deck is empty", () => {
+    const discard = [makeCard({ id: "d1" }), makeCard({ id: "d2" })];
+    const state = makeState({ deck: [], discard, hand: [] });
+    const card = makeCard({ effects: [{ kind: "draw-cards", amount: 2 }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    expect(result.hand).toHaveLength(2);
+    expect(result.discard).toHaveLength(0);
+  });
+
+  it("respects MAX_HAND_SIZE", () => {
+    const deck = Array.from({ length: 10 }, (_, i) => makeCard({ id: `d${i}` }));
+    const state = makeState({ deck, hand: [] });
+    const card = makeCard({ effects: [{ kind: "draw-cards", amount: 20 }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    expect(result.hand.length).toBe(7);
+  });
+});
+
+describe("applyCardEffects — remove-enemy-armor", () => {
+  it("reduces enemy armor", () => {
+    const state = makeState({
+      enemyMitigation: { armor: 5, forge: 0, freezeBonus: 0 },
+    });
+    const card = makeCard({ effects: [{ kind: "remove-enemy-armor", amount: 3 }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    expect(result.enemyMitigation.armor).toBe(2);
+  });
+
+  it("clamps armor to 0", () => {
+    const state = makeState({
+      enemyMitigation: { armor: 2, forge: 0, freezeBonus: 0 },
+    });
+    const card = makeCard({ effects: [{ kind: "remove-enemy-armor", amount: 5 }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    expect(result.enemyMitigation.armor).toBe(0);
+  });
+});
+
+describe("applyCardEffects — multiply-enemy-status", () => {
+  it("doubles the stack with factor 2", () => {
+    const state = makeState({
+      enemyStatuses: { burn: 0, poison: 4, bleed: 0, freeze: 0, stun: 0 },
+    });
+    const card = makeCard({ effects: [{ kind: "multiply-enemy-status", status: "poison", factor: 2 }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    expect(result.enemyStatuses.poison).toBe(8);
+    expect(texts).toContainEqual({ target: "enemy", kind: "multiply", stat: "poison", amount: 4 });
+  });
+
+  it("triples the stack with factor 3", () => {
+    const state = makeState({
+      enemyStatuses: { burn: 0, poison: 0, bleed: 3, freeze: 0, stun: 0 },
+    });
+    const card = makeCard({ effects: [{ kind: "multiply-enemy-status", status: "bleed", factor: 3 }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    expect(result.enemyStatuses.bleed).toBe(9);
+    expect(texts).toContainEqual({ target: "enemy", kind: "multiply", stat: "bleed", amount: 6 });
+  });
+
+  it("no-ops when status is 0", () => {
+    const state = makeState({
+      enemyStatuses: { burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+    });
+    const card = makeCard({ effects: [{ kind: "multiply-enemy-status", status: "burn", factor: 2 }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    expect(result.enemyStatuses.burn).toBe(0);
+    expect(texts).toEqual([]);
+  });
+});
+
+describe("applyCardEffects — remove-player-status", () => {
+  it("clears a specific harmful player status", () => {
+    const state = makeState({
+      playerStatuses: {
+        block: 0, armor: 0, forge: 0, haste: 0, burn: 3, poison: 0, bleed: 0, freeze: 0, stun: 0,
+      },
+    });
+    const card = makeCard({ effects: [{ kind: "remove-player-status", status: "burn" }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    expect(result.playerStatuses.burn).toBe(0);
+  });
+
+  it("no-ops when the status is already 0", () => {
+    const state = makeState({
+      playerStatuses: {
+        block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0,
+      },
+    });
+    const card = makeCard({ effects: [{ kind: "remove-player-status", status: "poison" }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    expect(result.playerStatuses.poison).toBe(0);
+    expect(texts).toEqual([]);
+  });
+
+  it("triggers Sin-Eater's Lantern heal on removal", () => {
+    const manifest = computeTrinketManifest(["sin-eaters-lantern"]);
+    const state = makeState({
+      playerStatuses: {
+        block: 0, armor: 0, forge: 0, haste: 0, burn: 4, poison: 0, bleed: 0, freeze: 0, stun: 0,
+      },
+      playerHealth: 15,
+      trinketEffects: manifest,
+    });
+    const card = makeCard({ effects: [{ kind: "remove-player-status", status: "burn" }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    expect(result.playerStatuses.burn).toBe(0);
+    expect(result.playerHealth).toBe(21);
+    expect(texts).toContainEqual({ target: "player", kind: "heal", stat: "health", amount: 6 });
+  });
+});
+
+describe("applyCardEffects — buff-companion", () => {
+  it("increases companion damage buff", () => {
+    const state = makeState({ companionDamageBuff: 2 });
+    const card = makeCard({ effects: [{ kind: "buff-companion", amount: 3 }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    expect(result.companionDamageBuff).toBe(5);
+  });
+
+  it("works without an active companion", () => {
+    const state = makeState({ companionDamageBuff: 0, activeCompanion: null });
+    const card = makeCard({ effects: [{ kind: "buff-companion", amount: 4 }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    expect(result.companionDamageBuff).toBe(4);
+  });
+});
+
+describe("applyCardEffects — lose-mana", () => {
+  it("reduces current mana", () => {
+    const state = makeState({ mana: 10 });
+    const card = makeCard({ effects: [{ kind: "lose-mana", amount: 4 }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    expect(result.mana).toBe(6);
+    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "mana", amount: 4 });
+  });
+
+  it("clamps mana to 0", () => {
+    const state = makeState({ mana: 3 });
+    const card = makeCard({ effects: [{ kind: "lose-mana", amount: 10 }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    expect(result.mana).toBe(0);
+  });
+});
+
+// ─── chooseWishCard edge cases ───
+
+describe("chooseWishCard — edge cases", () => {
+  it("returns state unchanged when card id is not in wishOptions", () => {
+    const state = makeState({ wishOptions: [makeCard({ id: "real-card" })] });
+    const result = chooseWishCard(state, "nonexistent-card");
+    expect(result).toBe(state);
+  });
+});
+
+// ─── playBattleCardResolved edge cases ───
+
+describe("playBattleCardResolved — edge cases", () => {
+  it("returns state unchanged when enemy health is already 0", () => {
+    const state = makeState({ enemyHealth: 0, hand: [makeCard({ cost: 1 })] });
+    const result = playBattleCardResolved(state, "test-card", 0);
+    expect(result.state).toBe(state);
+    expect(result.combatTexts).toEqual([]);
+  });
+
+  it("returns state unchanged when player is defeated", () => {
+    const state = makeState({
+      playerHealth: 0,
+      deathsDoorUsed: true,
+      deathsDoorActive: false,
+      hand: [makeCard({ cost: 1 })],
+    });
+    const result = playBattleCardResolved(state, "test-card", 0);
+    expect(result.state).toBe(state);
+    expect(result.combatTexts).toEqual([]);
+  });
+});
+
+// ─── Resonant Chime trinket ───
+
+describe("Resonant Chime trinket", () => {
+  it("grants bonus mana after playing enough cards", () => {
+    const manifest = computeTrinketManifest(["resonant-chimes"]);
+    const card = makeCard({ cost: 0, effects: [{ kind: "damage", damageType: "physical", amount: 1 }] });
+    const state = makeState({
+      mana: 5,
+      maxMana: 5,
+      hand: [card],
+      cardsPlayedThisTurn: 2,
+      trinketEffects: manifest,
+      flags: {
+        firstPhysicalCardFreeUsed: false, firstHolyCardFreeUsed: false,
+        firstBurnCardDoubledUsed: false, firstArmorCardDoubledUsed: false,
+        firstPoisonCardFreeUsed: false, firstBleedCardFreeUsed: false,
+        nextCardCostReduction: 0, goldOnFirstPoisonThisCombat: false,
+        firstHolyDamageBonusUsed: false, firstBurnTrinketDoubledUsed: false,
+        firstHarmfulStatusPrevented: false, firstPotionFreeUsed: false,
+        resonantChimeUsedThisTurn: false,
+      },
+    });
+    const result = playBattleCardResolved(state, card.id, 0);
+    expect(result.state.mana).toBe(6);
+    expect(result.state.flags.resonantChimeUsedThisTurn).toBe(true);
+    expect(result.combatTexts).toContainEqual({ target: "player", kind: "status", stat: "mana", amount: 1 });
+  });
+
+  it("only triggers once per turn", () => {
+    const manifest = computeTrinketManifest(["resonant-chimes"]);
+    const card1 = makeCard({ id: "c1", cost: 0, effects: [] });
+    const card2 = makeCard({ id: "c2", cost: 0, effects: [] });
+    const state = makeState({
+      mana: 5,
+      maxMana: 5,
+      hand: [card1, card2],
+      cardsPlayedThisTurn: 2,
+      trinketEffects: manifest,
+      flags: {
+        firstPhysicalCardFreeUsed: false, firstHolyCardFreeUsed: false,
+        firstBurnCardDoubledUsed: false, firstArmorCardDoubledUsed: false,
+        firstPoisonCardFreeUsed: false, firstBleedCardFreeUsed: false,
+        nextCardCostReduction: 0, goldOnFirstPoisonThisCombat: false,
+        firstHolyDamageBonusUsed: false, firstBurnTrinketDoubledUsed: false,
+        firstHarmfulStatusPrevented: false, firstPotionFreeUsed: false,
+        resonantChimeUsedThisTurn: false,
+      },
+    });
+    const first = playBattleCardResolved(state, card1.id, 0);
+    expect(first.state.flags.resonantChimeUsedThisTurn).toBe(true);
+
+    const second = playBattleCardResolved(first.state, card2.id, 0);
+    expect(second.state.flags.resonantChimeUsedThisTurn).toBe(true);
+    expect(second.state.mana).toBe(first.state.mana);
+  });
+});
+
+// ─── armorBreakBlock talent in enemy turn ───
+
+describe("endPlayerTurn — armorBreakBlock talent", () => {
+  it("grants block when armor fully consumed by physical attack", () => {
+    const state = makeState({
+      playerHealth: 25,
+      playerMaxHealth: 30,
+      playerStatuses: {
+        block: 0, armor: 1, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0,
+      },
+      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 10 }],
+      talentEffects: { ...defaultTalentEffects, armorBreakBlock: 3 },
+      deck: Array.from({ length: 4 }, (_, i) => makeCard({ id: `d${i}` })),
+      mana: 4,
+      maxMana: 4,
+    });
+    const result = endPlayerTurn(state);
+    // Physical attack decays armor by ARMOR_DECAY_AMOUNT=1, from 1 to 0,
+    // triggering armorBreakBlock = 3 block
+    expect(result.state.playerStatuses.armor).toBe(0);
+    expect(result.enemyResolutionCombatTexts).toContainEqual({
+      target: "player", kind: "status", stat: "block", amount: 3,
+    });
+  });
+});
+
+// ─── poisonHalvesHealing in enemy turn ───
+
+describe("endPlayerTurn — poison halves enemy regeneration", () => {
+  it("halves enemy regeneration when poison is active and talent is present", () => {
+    const state = makeState({
+      enemyHealth: 20,
+      enemyMaxHealth: 30,
+      enemyRegeneration: 4,
+      enemyStatuses: { burn: 0, poison: 2, bleed: 0, freeze: 0, stun: 0 },
+      enemyAttackEffects: [],
+      talentEffects: { ...defaultTalentEffects, poisonHalvesHealing: true },
+      deck: Array.from({ length: 4 }, (_, i) => makeCard({ id: `d${i}` })),
+      mana: 4,
+      maxMana: 4,
+    });
+    const result = endPlayerTurn(state);
+    // Poison ticks first (2 damage, 20→18, decays to 1), then regen halved (4→2, 18→20)
+    expect(result.state.enemyHealth).toBe(20);
+    expect(result.enemyResolutionCombatTexts).toContainEqual({
+      target: "enemy", kind: "heal", stat: "health", amount: 2,
+    });
+  });
+
+  it("does not halve when poison is 0", () => {
+    const state = makeState({
+      enemyHealth: 20,
+      enemyMaxHealth: 30,
+      enemyRegeneration: 4,
+      enemyStatuses: { burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      enemyAttackEffects: [],
+      talentEffects: { ...defaultTalentEffects, poisonHalvesHealing: true },
+      deck: Array.from({ length: 4 }, (_, i) => makeCard({ id: `d${i}` })),
+      mana: 4,
+      maxMana: 4,
+    });
+    const result = endPlayerTurn(state);
+    expect(result.state.enemyHealth).toBe(24);
+    expect(result.enemyResolutionCombatTexts).toContainEqual({
+      target: "enemy", kind: "heal", stat: "health", amount: 4,
+    });
+  });
+});
+
+// ─── forgeBurn with null field ───
+
+describe("forge burn in null field", () => {
+  it("forge burn is halved when null field is active", () => {
+    const card = makeCard({ effects: [{ kind: "player-status", status: "forge", amount: 1 }] });
+    const texts: CombatTextEvent[] = [];
+    const state = makeState({
+      playerStatuses: {
+        block: 0, armor: 0, forge: 2, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0,
+      },
+      talentEffects: { ...defaultTalentEffects, forgeBurnThreshold: 3, forgeBurnDamage: 6 },
+      difficultyModifiers: [{ kind: "labyrinth-null-field" }],
+    });
+    const result = applyCardEffects(state, card, texts);
+    // forge: 2 → 3, crosses threshold, triggers forge burn
+    // computeForgeBurnAmount halves: Math.round(6 / 2) = 3
+    // addEnemyStatus via adjustEnemyStatusDelta halves again: Math.round(3 / 2) = 2
+    expect(result.enemyStatuses.burn).toBe(2);
+    expect(result.playerStatuses.forge).toBe(3);
+  });
+});
