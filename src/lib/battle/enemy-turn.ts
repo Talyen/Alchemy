@@ -35,6 +35,7 @@ import {
   DIFFICULTY_FORGE_PER_TURN,
   HALF_DIVISOR,
   IRON_HIDE_ARMOR_PER_TURN,
+  IRON_HIDE_BURN_BONUS_PER_TURN,
   LABYRINTH_BURNING_GROUND_DAMAGE,
   LABYRINTH_LEECH_HEAL,
   PERCENT_DENOMINATOR,
@@ -366,16 +367,20 @@ function isScalingBlocked(state: BattleState): boolean {
 const enemyTraitTurnStartHandlers: Record<string, EnemyTurnStartHandler> = {
   "rusting-carapace": (state) => {
     if (isScalingBlocked(state)) return state;
+    const scaledForge = Math.round(TRAIT_FORGE_PER_TURN * state.roomScalingMultiplier);
     return {
       ...state,
       enemyMitigation: {
         ...state.enemyMitigation,
-        forge: state.enemyMitigation.forge + TRAIT_FORGE_PER_TURN,
+        forge: state.enemyMitigation.forge + scaledForge,
       },
     };
   },
   "iron-hide": (state, combatTexts, options) => {
     if (isScalingBlocked(state)) return state;
+    const scaledArmor = Math.round(IRON_HIDE_ARMOR_PER_TURN * state.roomScalingMultiplier);
+    const scaledForge = Math.round(TRAIT_FORGE_PER_TURN * state.roomScalingMultiplier);
+    const scaledBurn = Math.round(IRON_HIDE_BURN_BONUS_PER_TURN * state.roomScalingMultiplier);
     const roll = options?.traitRoll ?? Math.random();
     const choice = Math.trunc(roll * 3);
     if (choice === 0) {
@@ -383,22 +388,22 @@ const enemyTraitTurnStartHandlers: Record<string, EnemyTurnStartHandler> = {
         target: "enemy",
         kind: "status",
         stat: "armor",
-        amount: IRON_HIDE_ARMOR_PER_TURN,
+        amount: scaledArmor,
       });
       return {
         ...state,
         enemyMitigation: {
           ...state.enemyMitigation,
-          armor: state.enemyMitigation.armor + IRON_HIDE_ARMOR_PER_TURN,
+          armor: state.enemyMitigation.armor + scaledArmor,
         },
       };
     } else if (choice === 1) {
-      mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "forge", amount: TRAIT_FORGE_PER_TURN });
+      mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "forge", amount: scaledForge });
       return {
         ...state,
         enemyMitigation: {
           ...state.enemyMitigation,
-          forge: state.enemyMitigation.forge + TRAIT_FORGE_PER_TURN,
+          forge: state.enemyMitigation.forge + scaledForge,
         },
       };
     }
@@ -406,23 +411,24 @@ const enemyTraitTurnStartHandlers: Record<string, EnemyTurnStartHandler> = {
       target: "enemy",
       kind: "notice",
       stat: "burn",
-      text: "+1 Burn Dmg",
+      text: `+${scaledBurn} Burn Dmg`,
     });
     return {
       ...state,
       enemyMitigation: {
         ...state.enemyMitigation,
-        burnBonus: state.enemyMitigation.burnBonus + 1,
+        burnBonus: state.enemyMitigation.burnBonus + scaledBurn,
       },
     };
   },
   "glacial-shell": (state) => {
     if (isScalingBlocked(state)) return state;
+    const scaledFreeze = Math.round(TRAIT_FREEZE_BONUS_PER_TURN * state.roomScalingMultiplier);
     return {
       ...state,
       enemyMitigation: {
         ...state.enemyMitigation,
-        freezeBonus: state.enemyMitigation.freezeBonus + TRAIT_FREEZE_BONUS_PER_TURN,
+        freezeBonus: state.enemyMitigation.freezeBonus + scaledFreeze,
       },
     };
   },

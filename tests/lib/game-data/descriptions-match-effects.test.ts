@@ -334,7 +334,7 @@ describe("trinket descriptions vs manifest effects", () => {
       check: (desc) => expect(desc).toMatch(/potion|free/),
     },
     "sundering-charm": {
-      description: "ignore armor on physical",
+      description: "remove armor on physical and stun",
       check: (desc) => expect(desc).toMatch(/armor/),
     },
     "resonant-chimes": {

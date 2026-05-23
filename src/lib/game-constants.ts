@@ -12,10 +12,10 @@ export const MIN_MAX_MANA_FLOOR = 1; // Minimum maxMana after reductions. Preven
 
 // ============ Battle / Rooms ============
 export const ROOM_SCALING_INCREMENT = 0.05; // +5% enemy Health/attack per room (multiplicative)
-export const ELITE_HP_MULTIPLIER = 1.4; // Elite enemies get 40% more Health (no attack scaling)
+export const ELITE_HP_MULTIPLIER = 1.2; // Elite enemies get 20% more Health (no attack scaling)
 export const STARTING_TURN = 1; // Turn counter starts at 1 for readability.
-export const ENEMY_BASE_REGENERATION = 2; // Base enemy regeneration per turn (flat, not scaled by room).
-export const ENEMY_BOSS_REGENERATION = 2; // Base regen for regeneration-trait bosses (flat, not scaled by room).
+export const ENEMY_BASE_REGENERATION = 1; // Base enemy regeneration per turn (scaled by room multiplier).
+export const ENEMY_BOSS_REGENERATION = 1; // Base regen for regeneration-trait bosses (scaled by room multiplier).
 export const BLEED_EXECUTE_MULTIPLIER = 2; // Bleed damage multiplier when enemy is below execute threshold.
 export const FREE_CARD_SENTINEL = 99; // nextCardCostReduction value that guarantees a card costs 0.
 export const PERCENT_DENOMINATOR = 100; // Percent-based talent and trait values use 0-100 authoring.
@@ -99,7 +99,7 @@ export const SHOP_CARDS_OFFERED = 3; // Cards displayed in the merchant shop.
 export const SHOP_REFRESHES = 1; // Free refreshes per shop visit.
 export const ALCHEMIST_POTIONS_OFFERED = 3; // Potions displayed in the alchemist shop.
 export const ALCHEMIST_REFRESHES = 1; // Free refreshes per alchemist visit.
-export const BOSS_HEALTH_MULTIPLIER = 1.7; // Boss enemies get 70% more Health (no attack scaling).
+export const BOSS_HEALTH_MULTIPLIER = 1.3; // Boss enemies get 30% more Health (no attack scaling).
 export const BOSS_TRINKET_REWARD_CHOICES = 3; // Trinket choices offered after a boss kill.
 export const ELITE_TRINKET_REWARD_CHANCE = 0.75; // Elite rewards strongly favor trinkets but still allow card rewards.
 export const MYSTERY_CARD_CHOICES = 3; // Card-choice mystery events offer the same count as normal reward choices.
@@ -241,6 +241,7 @@ export const TRAIT_FORGE_PER_TURN = 1; // Rusting-Carapace: forge gained each en
 export const IRON_HIDE_ARMOR_PER_TURN = 1; // Iron-Hide: armor gained each enemy turn.
 export const FORGE_REGENERATION_PER_TURN = 1; // Forge-Regeneration: forge gained each enemy turn.
 export const TRAIT_FREEZE_BONUS_PER_TURN = 1; // Glacial-Shell: freeze status bonus gained each turn.
+export const IRON_HIDE_BURN_BONUS_PER_TURN = 1; // Iron-Hide: burn damage bonus gained each turn.
 export const DIFFICULTY_FORGE_PER_TURN = 1; // Difficulty modifier: forge gained each enemy turn.
 export const LIVING_ARMOR_STARTING_ARMOR = 5; // Living-Armor trait initial armor value.
 

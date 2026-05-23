@@ -27,15 +27,15 @@ describe("Iron Bear", () => {
     expect(trait!.description).toContain("Armor");
   });
 
-  it("has attack dealing 4 physical and 2 burn damage", () => {
+  it("has attack dealing 3 physical and 1 burn damage", () => {
     expect(ironBear!.attackEffects).toHaveLength(2);
     const phys = ironBear!.attackEffects[0];
     expect(phys.kind).toBe("damage");
     expect(phys.damageType).toBe("physical");
-    expect(phys.amount).toBe(4);
+    expect(phys.amount).toBe(3);
     const burn = ironBear!.attackEffects[1];
     expect(burn.kind).toBe("damage");
     expect(burn.damageType).toBe("burn");
-    expect(burn.amount).toBe(2);
+    expect(burn.amount).toBe(1);
   });
 });

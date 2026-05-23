@@ -9,7 +9,7 @@ function makeState(): BattleState {
   return {
     deck: [], hand: [], discard: [], exhausted: [], mana: 0, maxMana: 0, gold: 0,
     turn: 1, turnPhase: "player", playerHealth: 30, playerMaxHealth: 30, deathsDoorUsed: false, deathsDoorActive: false, deathsDoorTriggeredTurn: null, enemyHealth: 30,
-    enemyMaxHealth: 30, enemyAttackEffects: [], enemyMitigation: { armor: 0, forge: 0, freezeBonus: 0 }, enemyRegeneration: 0,
+    enemyMaxHealth: 30, enemyAttackEffects: [], enemyMitigation: { armor: 0, forge: 0, freezeBonus: 0 }, enemyRegeneration: 0, roomScalingMultiplier: 1,
     playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
     enemyStatuses: { burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
     pendingBleedLeechHealing: 0,

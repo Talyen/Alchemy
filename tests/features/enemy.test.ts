@@ -90,7 +90,7 @@ describe("enemyBestiary attack lines integration", () => {
   });
 
   it("Lizard Scout — Physical + Poison", () => {
-    expect(getAttackLines("lizard-scout")).toEqual(["Deals 1 Physical and 1 Poison"]);
+    expect(getAttackLines("lizard-scout")).toEqual(["Deals 2 Physical and 1 Poison"]);
   });
 
   it("Mimic — pure physical", () => {
@@ -126,6 +126,6 @@ describe("enemyBestiary attack lines integration", () => {
   });
 
   it("The Iron Bear — physical and burn", () => {
-    expect(getAttackLines("iron-bear")).toEqual(["Deals 4 Physical and 2 Burn"]);
+    expect(getAttackLines("iron-bear")).toEqual(["Deals 3 Physical and 1 Burn"]);
   });
 });

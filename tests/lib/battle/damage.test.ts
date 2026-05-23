@@ -25,6 +25,7 @@ function baseState(overrides: Partial<BattleState> = {}): BattleState {
     enemyAttackEffects: [],
     enemyMitigation: { armor: 0, forge: 0, freezeBonus: 0 },
     enemyRegeneration: 0,
+    roomScalingMultiplier: 1,
     playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
     enemyStatuses: { burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
     pendingBleedLeechHealing: 0,
@@ -926,7 +927,7 @@ describe("dealDamageToEnemy — enemy armor", () => {
     expect(result.enemyHealth).toBe(30 - 10 + 3);
   });
 
-  it("sunderingArmorPiercing reduces effective armor", () => {
+  it("sunderingArmorPiercing removes enemy armor", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
     const state = baseState({
       enemyMitigation: { armor: 5, forge: 0, freezeBonus: 0 },
@@ -940,8 +941,9 @@ describe("dealDamageToEnemy — enemy armor", () => {
       card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
       texts,
     );
-    // 10 damage, 5-2=3 effective armor
-    expect(result.enemyHealth).toBe(30 - 10 + 3);
+    // Sundering removes 2 → armor 3, damage 10-3=7. Decay removes 1 → final armor 2.
+    expect(result.enemyHealth).toBe(23);
+    expect(result.enemyMitigation.armor).toBe(2);
   });
 
   it("non-physical damage ignores enemy armor", () => {

@@ -109,6 +109,7 @@ export type BattleState = {
   enemyMaxHealth: number; // stored so UI can render % even after damage
   enemyAttackEffects: EnemyAttackEffect[]; // scaled per room, applied during enemy phase
   enemyRegeneration: number; // health restored at end of each enemy turn
+  roomScalingMultiplier: number; // room scaling factor applied to trait values and regen
   enemyMitigation: EnemyMitigation;
   playerStatuses: PlayerStatusValues;
   enemyStatuses: EnemyStatusValues;

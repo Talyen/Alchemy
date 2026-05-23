@@ -2550,7 +2550,7 @@ describe("damage riders via applyCardEffects", () => {
     expect(result.enemyStatuses.stun).toBe(9);
   });
 
-  it("sunderingArmorPiercing reduces enemy armor against physical", () => {
+  it("sunderingArmorPiercing removes enemy armor against physical", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
     const state = makeState({
       mana: 10,
@@ -2566,8 +2566,9 @@ describe("damage riders via applyCardEffects", () => {
     const card = makeCard({ effects: [{ kind: "damage", damageType: "physical", amount: 10 }] });
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);
-    // Armor piercing: effective armor = max(0, 5-3) = 2. 10 - 2 = 8 damage.
+    // Sundering removes 3 armor → armor 2, damage 10-2=8. Decay removes 1 more → final armor 1.
     expect(result.enemyHealth).toBe(42);
+    expect(result.enemyMitigation.armor).toBe(1);
   });
 
   it("poison physical bonus adds damage when enemy is poisoned", () => {

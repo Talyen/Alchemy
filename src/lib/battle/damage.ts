@@ -303,8 +303,10 @@ function applyHolyDamageRiders(state: BattleState, card: BattleCard, damage: num
  */
 function applyGoldTroveReward(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
   if (!state.currentEnemy.traits.some((t) => t.id === ENEMY_TRAIT_IDS.GOLD_TROVE) || damage <= 0) return state;
-  mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "gold", amount: GOLD_TROVE_DAMAGE_REWARD });
-  return addGold(state, GOLD_TROVE_DAMAGE_REWARD);
+  const scaledGold = Math.round(GOLD_TROVE_DAMAGE_REWARD * state.roomScalingMultiplier);
+  if (scaledGold <= 0) return state;
+  mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "gold", amount: scaledGold });
+  return addGold(state, scaledGold);
 }
 
 /**
@@ -342,13 +344,22 @@ function computeCardDamageToEnemy(state: BattleState, effect: Extract<BattleCard
   const modifiedBase = applyFirstDamageModifiers(state, effect, computeBaseDamage(state, effect));
   const rawDamage = modifiedBase.rawDamage;
   const finalDamage = applyCrit(rawDamage, effect.damageType, modifiedBase.state);
-  const effectiveArmor =
-    effect.damageType === "physical"
-      ? Math.max(0, state.enemyMitigation.armor - state.trinketEffects.sunderingArmorPiercing)
-      : 0;
+  let nextState = modifiedBase.state;
+  const isPhysicalOrStun = effect.damageType === "physical" || effect.damageType === "stun";
+  if (isPhysicalOrStun && nextState.trinketEffects.sunderingArmorPiercing > 0 && nextState.enemyMitigation.armor > 0) {
+    const removed = Math.min(nextState.enemyMitigation.armor, nextState.trinketEffects.sunderingArmorPiercing);
+    nextState = {
+      ...nextState,
+      enemyMitigation: {
+        ...nextState.enemyMitigation,
+        armor: nextState.enemyMitigation.armor - removed,
+      },
+    };
+  }
+  const effectiveArmor = isPhysicalOrStun ? nextState.enemyMitigation.armor : 0;
   const damageAfterArmor = Math.max(0, finalDamage - effectiveArmor);
   const multiplier = getEnemyDamageMultiplier(state, effect.damageType);
-  return { nextState: modifiedBase.state, modifiedDamage: Math.round(damageAfterArmor * multiplier) };
+  return { nextState, modifiedDamage: Math.round(damageAfterArmor * multiplier) };
 }
 
 /**

@@ -110,6 +110,7 @@ export function defaultBattleState(): BattleState {
     enemyAttackEffects: [],
     enemyMitigation: { armor: 0, forge: 0, freezeBonus: 0, burnBonus: 0 },
     enemyRegeneration: 0,
+    roomScalingMultiplier: 1,
     playerStatuses: createEmptyPlayerStatuses(),
     enemyStatuses: createEmptyEnemyStatuses(),
     pendingBleedLeechHealing: 0,
@@ -208,11 +209,12 @@ function scaleAttackEffects(effects: EnemyAttackEffect[], roomMul: number): Enem
 }
 
 /**
- * Resolves baseline enemy regeneration based on traits and enemy type.
+ * Resolves baseline enemy regeneration based on traits and enemy type, scaled by room multiplier.
  */
-function scaleEnemyRegeneration(enemy: BestiaryEntry): number {
+function scaleEnemyRegeneration(enemy: BestiaryEntry, roomMul: number): number {
   if (!enemy.traits.some((t) => t.id === "regeneration")) return 0;
-  return enemy.enemyType === "boss" ? ENEMY_BOSS_REGENERATION : ENEMY_BASE_REGENERATION;
+  const base = enemy.enemyType === "boss" ? ENEMY_BOSS_REGENERATION : ENEMY_BASE_REGENERATION;
+  return Math.round(base * roomMul);
 }
 
 /**
@@ -227,7 +229,7 @@ function buildScaledEnemy(enemy: BestiaryEntry, totalRoomsInRun = 0) {
     enemy,
     scaledEnemyHealth: scaleEnemyHealth(enemy, roomMul),
     scaledEnemyAttackEffects: scaleAttackEffects(enemy.attackEffects, roomMul),
-    enemyRegeneration: scaleEnemyRegeneration(enemy),
+    enemyRegeneration: scaleEnemyRegeneration(enemy, roomMul),
   };
 }
 
@@ -277,9 +279,11 @@ function applyDifficultyAttackModifiers(effects: EnemyAttackEffect[], modifiers:
 /**
  * Resolves starting player/enemy values modified by difficulty modes.
  */
-function computeStartingStatuses(modifiers: DifficultyModifier[], enemy: BestiaryEntry) {
+function computeStartingStatuses(modifiers: DifficultyModifier[], enemy: BestiaryEntry, roomMul: number) {
   const startingArmor = modifiers.find((m) => m.kind === "enemy-starting-armor")?.amount ?? 0;
-  const traitStartingArmor = enemy.traits.some((t) => t.id === "living-armor") ? LIVING_ARMOR_STARTING_ARMOR : 0;
+  const traitStartingArmor = enemy.traits.some((t) => t.id === "living-armor")
+    ? Math.round(LIVING_ARMOR_STARTING_ARMOR * roomMul)
+    : 0;
   const startBlock = modifiers.find((m) => m.kind === "start-block")?.amount ?? 0;
   const manaBonus = modifiers.find((m) => m.kind === "start-max-mana")?.amount ?? 0;
   const startCompanion = modifiers.some((m) => m.kind === "start-companion");
@@ -349,7 +353,13 @@ function initializePlayerHealthAndBlock(
 function initializeEnemyState(battleEnemy: BestiaryEntry, battleRooms: number, battleDiffs: DifficultyModifier[]) {
   const { scaledEnemyHealth, scaledEnemyAttackEffects, enemyRegeneration } = buildScaledEnemy(battleEnemy, battleRooms);
   const modifiedEffects = applyDifficultyAttackModifiers(scaledEnemyAttackEffects, battleDiffs);
-  const { startingArmor, startBlock, manaBonus, startCompanion } = computeStartingStatuses(battleDiffs, battleEnemy);
+  const scaler = Math.max(0, battleRooms - 1);
+  const roomMul = 1 + scaler * ROOM_SCALING_INCREMENT;
+  const { startingArmor, startBlock, manaBonus, startCompanion } = computeStartingStatuses(
+    battleDiffs,
+    battleEnemy,
+    roomMul,
+  );
 
   const hasSturdy = battleDiffs.some((m) => m.kind === "labyrinth-sturdy");
   const enemyMaxHealth = hasSturdy ? Math.round(scaledEnemyHealth * LABYRINTH_STURDY_MULTIPLIER) : scaledEnemyHealth;
@@ -358,6 +368,7 @@ function initializeEnemyState(battleEnemy: BestiaryEntry, battleRooms: number, b
     enemyMaxHealth,
     modifiedEffects,
     enemyRegeneration,
+    roomScalingMultiplier: roomMul,
     startingArmor,
     startBlock,
     manaBonus,
@@ -378,6 +389,7 @@ function buildInitialBattleState(
     enemyHealth: number;
     enemyAttackEffects: EnemyAttackEffect[];
     enemyRegeneration: number;
+    roomScalingMultiplier: number;
     enemyArmor: number; // folded into enemyMitigation at build time
     startingBlock: number;
     startingArmor: number;
@@ -405,6 +417,7 @@ function buildInitialBattleState(
     enemyMaxHealth: setup.enemyHealth,
     enemyAttackEffects: setup.enemyAttackEffects,
     enemyRegeneration: setup.enemyRegeneration,
+    roomScalingMultiplier: setup.roomScalingMultiplier,
     enemyMitigation: { armor: setup.enemyArmor, forge: 0, freezeBonus: 0, burnBonus: 0 },
     playerStatuses: {
       ...baseState.playerStatuses,
@@ -479,8 +492,16 @@ export function createBattleState(
   const trinketEffects = computeTrinketManifest(battleTrinkets);
   const { deck, hand, discard, nextCardUid } = setupOpeningHand(runDeck, trinketEffects);
 
-  const { enemyMaxHealth, modifiedEffects, enemyRegeneration, startingArmor, startBlock, manaBonus, startCompanion } =
-    initializeEnemyState(battleEnemy, battleRooms, battleDiffs);
+  const {
+    enemyMaxHealth,
+    modifiedEffects,
+    enemyRegeneration,
+    roomScalingMultiplier,
+    startingArmor,
+    startBlock,
+    manaBonus,
+    startCompanion,
+  } = initializeEnemyState(battleEnemy, battleRooms, battleDiffs);
 
   const {
     startingHealth,
@@ -500,6 +521,7 @@ export function createBattleState(
     enemyHealth: enemyMaxHealth,
     enemyAttackEffects: modifiedEffects,
     enemyRegeneration,
+    roomScalingMultiplier,
     enemyArmor: startingArmor,
     startingBlock,
     startingArmor: playerStartingArmor,

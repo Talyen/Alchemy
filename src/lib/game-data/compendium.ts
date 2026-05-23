@@ -53,7 +53,7 @@ export const enemyBestiary: BestiaryEntry[] = [
       {
         id: "rusting-carapace",
         title: "Rusting Carapace",
-        description: "Gains 1 Forge each turn",
+        description: "Gains Forge each turn",
       },
     ],
     attackEffects: [
@@ -72,7 +72,7 @@ export const enemyBestiary: BestiaryEntry[] = [
       {
         id: "glacial-shell",
         title: "Glacial Shell",
-        description: "Receives half Freeze damage\nReceives double Burn damage\nGains 1 Freeze damage each turn",
+        description: "Receives half Freeze damage\nReceives double Burn damage\nGains Freeze damage each turn",
       },
     ],
     attackEffects: [
@@ -88,7 +88,7 @@ export const enemyBestiary: BestiaryEntry[] = [
     art: theBlightTreant,
     enemyType: "boss",
     traits: [
-      { id: "regeneration", title: "Rotting Regrowth", description: "Restores 2 Health each turn" },
+      { id: "regeneration", title: "Rotting Regrowth", description: "Restores Health each turn" },
       { id: "burn-vulnerability", title: "Burn Vulnerability", description: "Receives double Burn damage" },
     ],
     attackEffects: [
@@ -147,7 +147,7 @@ export const enemyBestiary: BestiaryEntry[] = [
     enemyType: "normal",
     traits: [{ id: "poison-resistance", title: "Poison Resistance", description: "Receives half Poison damage" }],
     attackEffects: [
-      { kind: "damage", damageType: "physical", amount: 1 },
+      { kind: "damage", damageType: "physical", amount: 2 },
       { kind: "player-status", status: "poison", amount: 1 },
     ],
   },
@@ -168,7 +168,7 @@ export const enemyBestiary: BestiaryEntry[] = [
     descriptionLines: [],
     art: mudElemental,
     enemyType: "elite",
-    traits: [{ id: "regeneration", title: "Regeneration", description: "Restores 2 Health each turn" }],
+    traits: [{ id: "regeneration", title: "Regeneration", description: "Restores Health each turn" }],
     attackEffects: [
       { kind: "player-status", status: "stun", amount: 2 },
       { kind: "player-status", status: "poison", amount: 2 },
@@ -208,7 +208,7 @@ export const enemyBestiary: BestiaryEntry[] = [
       {
         id: "living-armor",
         title: "Living Armor",
-        description: "Starts combat with 8 Armor\nReceives half Bleed damage",
+        description: "Starts combat with Armor\nReceives half Bleed damage",
       },
     ],
     attackEffects: [
@@ -223,12 +223,10 @@ export const enemyBestiary: BestiaryEntry[] = [
     descriptionLines: [],
     art: ironBear,
     enemyType: "boss",
-    traits: [
-      { id: "iron-hide", title: "Iron Hide", description: "Gains 1 Armor, 1 Forge, or +1 Burn damage each turn" },
-    ],
+    traits: [{ id: "iron-hide", title: "Iron Hide", description: "Gains Armor, Forge, or Burn damage each turn" }],
     attackEffects: [
-      { kind: "damage", damageType: "physical", amount: 4 },
-      { kind: "damage", damageType: "burn", amount: 2 },
+      { kind: "damage", damageType: "physical", amount: 3 },
+      { kind: "damage", damageType: "burn", amount: 1 },
     ],
   },
 ];
@@ -333,7 +331,7 @@ export const trinketLibrary: TrinketEntry[] = [
   {
     id: "sundering-charm",
     title: "Sundering Charm",
-    descriptionLines: ["Your Physical attacks ignore 2 enemy Armor."],
+    descriptionLines: ["Your Physical and Stun attacks remove 2 enemy Armor."],
     art: sunderingCharm,
   },
   {
