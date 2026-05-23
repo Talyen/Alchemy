@@ -109,10 +109,20 @@ function baseState(overrides: Partial<BattleState> = {}): BattleState {
       startHealth: 0,
       healMultiplier: 1,
       healthThresholdArmor: null,
+      overhealToBlockRatio: 0,
+      healOnStatusCleanse: 0,
+      deathsDoorExtension: 0,
+      damageReduction: 0,
       firstBurnCardDoubled: false,
       burnRemovesEnemyArmor: false,
       burnDoubleChance: 0,
       receiveHalfBurnDamage: false,
+      flatBurnDamage: 0,
+      forgeOnPlayerBurnDamage: 0,
+      burnReducesEnemyDamage: 0,
+      burnOnConsumeAmount: 0,
+      forgeOnBurnTickWithBlock: 0,
+      burnOnWish: 0,
       shopCardDiscount: 0,
       shopFreeRefresh: false,
       startGold: 0,
@@ -159,6 +169,14 @@ function baseState(overrides: Partial<BattleState> = {}): BattleState {
       flatTrapDamage: 0,
       freezeThresholdReduction: 0,
       freezeDoubleDamage: false,
+      blockOnFreeze: 0,
+      freezeStripArmor: false,
+      startFreeze: 0,
+      companionVsFrozenBonus: 0,
+      freezePreventsPoisonDecay: false,
+      freezeBlocksRegen: false,
+      freezePreventsEnemyScaling: false,
+      receiveHalfFreezeBuildUp: false,
       maxHealthPerCombat: 0,
     },
     trinketEffects: {
@@ -721,6 +739,26 @@ describe("removeHarmfulPlayerStatuses", () => {
     });
     const result = removeHarmfulPlayerStatuses(state, 1);
     expect(result.playerHealth).toBe(20);
+  });
+
+  it("heals and emits overheal block text when status cleanse heals above max health", () => {
+    const state = baseState({
+      playerHealth: 28,
+      playerMaxHealth: 30,
+      playerStatuses: { ...baseState().playerStatuses, burn: 5, block: 2 },
+      talentEffects: {
+        ...baseState().talentEffects,
+        healOnStatusCleanse: 10,
+        overhealToBlockRatio: 0.5,
+      },
+    });
+    const texts = makeTexts();
+    // cleanses burn, triggers healOnStatusCleanse(10) -> overheal = 8 -> block gained = round(8 * 0.5) = 4.
+    const result = removeHarmfulPlayerStatuses(state, 1, texts);
+    expect(result.playerHealth).toBe(30);
+    expect(result.playerStatuses.block).toBe(6);
+    expect(texts).toContainEqual({ target: "player", kind: "heal", stat: "health", amount: 10 });
+    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "block", amount: 4 });
   });
 });
 

@@ -2,10 +2,6 @@ import { expect, test } from "@playwright/test";
 import { startAtDestination } from "./helpers";
 
 test.describe("Merchant Shop", () => {
-  test.afterEach(async ({ page }) => {
-    await page.evaluate(() => localStorage.clear()).catch(() => {});
-  });
-
   test.describe("with sufficient gold", () => {
     test.beforeEach(async ({ page }) => {
       await startAtDestination(page, { runGold: 9999 }, { forceDestination: "Merchant's Shop" });
@@ -83,9 +79,7 @@ test.describe("Merchant Shop", () => {
     test("remove card button is visible with sufficient gold", async ({ page }) => {
       const removeBtn = page.getByRole("button", { name: /Remove Card/ });
       await expect(removeBtn).toBeVisible();
-      if (await removeBtn.isVisible({ timeout: 1000 }).catch(() => false)) {
-        await expect(removeBtn).toBeEnabled();
-      }
+      await expect(removeBtn).toBeEnabled();
     });
   });
 
@@ -96,24 +90,25 @@ test.describe("Merchant Shop", () => {
       await expect(page.getByRole("heading", { name: "Merchant's Shop" })).toBeVisible();
     });
 
-    test("buy button is disabled when player has insufficient gold for card", async ({ page }) => {
+    test("buying a card deducts gold and reflects balance", async ({ page }) => {
+      const goldTextBefore = await page.getByText(/\d+ Gold/).first().textContent();
+      const goldBefore = goldTextBefore ? Number(goldTextBefore.match(/\d+/)?.[0]) : 0;
+
       const buyButton = page.getByRole("button", { name: /^Buy/ }).first();
       await expect(buyButton).toBeVisible();
       await expect(buyButton).toBeEnabled();
       await buyButton.click();
 
-      const disabledBuyButton = page.getByRole("button", { name: /^Buy/ }).first();
-      await expect(disabledBuyButton).toBeVisible();
-      await expect(disabledBuyButton).toBeDisabled();
+      await expect(page.getByText("Purchased").first()).toBeVisible({ timeout: 3000 });
+
+      const goldTextAfter = await page.getByText(/\d+ Gold/).first().textContent();
+      const goldAfter = goldTextAfter ? Number(goldTextAfter.match(/\d+/)?.[0]) : 0;
+      expect(goldAfter).toBeLessThan(goldBefore);
     });
   });
 });
 
 test.describe("Alchemist Shop", () => {
-  test.afterEach(async ({ page }) => {
-    await page.evaluate(() => localStorage.clear()).catch(() => {});
-  });
-
   test.describe("with sufficient gold", () => {
     test.beforeEach(async ({ page }) => {
       await startAtDestination(page, { runGold: 9999 }, { forceDestination: "Alchemist's Shop" });
@@ -157,20 +152,19 @@ test.describe("Alchemist Shop", () => {
       await expect(page.getByRole("heading", { name: "Alchemist's Shop" })).toBeVisible();
     });
 
-    test("buy button is disabled when player has insufficient gold for potion", async ({ page }) => {
-      const buyButton1 = page.getByRole("button", { name: /^Buy/ }).first();
-      await expect(buyButton1).toBeVisible();
-      await expect(buyButton1).toBeEnabled();
-      await buyButton1.click();
+    test("buying potions deducts gold and purchased state is shown", async ({ page }) => {
+      const goldTextBefore = await page.getByText(/\d+ Gold/).first().textContent();
+      const goldBefore = goldTextBefore ? Number(goldTextBefore.match(/\d+/)?.[0]) : 0;
 
-      const buyButton2 = page.getByRole("button", { name: /^Buy/ }).first();
-      await expect(buyButton2).toBeVisible();
-      await expect(buyButton2).toBeEnabled();
-      await buyButton2.click();
+      const buyButton = page.getByRole("button", { name: /^Buy/ }).first();
+      await expect(buyButton).toBeVisible();
+      await expect(buyButton).toBeEnabled();
+      await buyButton.click();
+      await expect(page.getByText("Purchased").first()).toBeVisible({ timeout: 3000 });
 
-      const disabledBuyButton = page.getByRole("button", { name: /^Buy/ }).first();
-      await expect(disabledBuyButton).toBeVisible();
-      await expect(disabledBuyButton).toBeDisabled();
+      const goldTextAfter = await page.getByText(/\d+ Gold/).first().textContent();
+      const goldAfter = goldTextAfter ? Number(goldTextAfter.match(/\d+/)?.[0]) : 0;
+      expect(goldAfter).toBeLessThan(goldBefore);
     });
   });
 });

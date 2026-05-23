@@ -1,6 +1,6 @@
 // Computes player-facing card text after persistent and battle bonuses are applied.
 // Depends on card effects and manifests; rendering components stay presentation-only.
-import { POTION_CARD_ID_FRAGMENT } from "@/lib/game-constants";
+import { POTION_CARD_ID_SUFFIX } from "@/lib/game-constants";
 import { companionLibrary, type BattleCard, type CompanionId } from "@/lib/game-data";
 
 export type CardDescriptionContext = {
@@ -17,7 +17,7 @@ function displayDamageType(type: string): string {
 }
 
 function getPotionMultiplier(card: Pick<BattleCard, "id">, context: CardDescriptionContext): number {
-  return card.id.includes(POTION_CARD_ID_FRAGMENT) ? (context.potionPotency ?? 1) : 1;
+  return card.id.endsWith(POTION_CARD_ID_SUFFIX) ? (context.potionPotency ?? 1) : 1;
 }
 
 function adjustedAmount(amount: number, multiplier: number): number {

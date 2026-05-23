@@ -31,6 +31,22 @@ export const BASE_ENEMY_HEALTH = 30; // Base enemy Health before room/act/type s
 export const BASE_PLAYER_MANA = 4; // Starting and max mana per turn.
 export const DEFAULT_BATTLE_ENEMY_TYPE = "normal"; // New runs begin with a normal combat encounter.
 
+// ============ Animation Flag ============
+// Set localStorage["alchemy-disable-animations"]="true" before page load to collapse
+// all CSS animation durations and JS setTimeout delays to near-zero. Intended for e2e
+// tests that verify battle logic, not visual polish. Safe because it only accelerates
+// cosmetic sequencing — no effect on combat math, card effects, or state transitions.
+// Avoid using it for tests that verify layout, visual state, or animation-specific
+// behaviour (draw/discard animation counts, stagger timing, screen transitions).
+export function isAnimationDisabled(): boolean {
+  if (typeof localStorage !== "undefined") {
+    const val = localStorage.getItem("alchemy-disable-animations");
+    return val === "true";
+  }
+  return false;
+}
+export const ANIMATION_DISABLED_DURATION = 1; // ms — replaces all delays when flag is set
+
 // ============ Timing (ms) ============
 export const AUTO_END_TURN_DELAY = 1220; // How long the system waits before auto-ending turn when conditions are met (no mana, no cards).
 export const VICTORY_TRANSITION_DELAY = 1200; // Brief pause after enemy dies so the death animation can play before the victory screen.
@@ -88,7 +104,7 @@ export const BOSS_TRINKET_REWARD_CHOICES = 3; // Trinket choices offered after a
 export const ELITE_TRINKET_REWARD_CHANCE = 0.75; // Elite rewards strongly favor trinkets but still allow card rewards.
 export const MYSTERY_CARD_CHOICES = 3; // Card-choice mystery events offer the same count as normal reward choices.
 export const MIXED_POTION_CARD_ID = "mixed-potion"; // Generated alchemy card excluded from random permanent card rewards.
-export const POTION_CARD_ID_FRAGMENT = "potion"; // Base potion cards share this ID fragment.
+export const POTION_CARD_ID_SUFFIX = "-potion"; // All potion card IDs end with this suffix.
 export const MIXED_POTION_TITLE = "Mixed Potion"; // Crafted alchemy card title shown in deck/reveal UI.
 export const MIXED_POTION_COST = 1; // Crafted potions keep normal potion play cost.
 export const CONSUME_DESCRIPTION_LINE = "Consume"; // Card text line used by consumable cards.
@@ -214,6 +230,12 @@ export const LEGACY_STARTER_DECK_IDS = [
   "blessed-aegis",
 ] as const;
 
+// Legacy character renames to support saves from before IDs were aligned with data files.
+export const LEGACY_CHARACTER_RENAMES = {
+  sorcerer: "wizard",
+  warden: "ranger",
+} as const;
+
 // ============ Enemy Trait Tuning ============
 export const TRAIT_FORGE_PER_TURN = 1; // Rusting-Carapace: forge gained each enemy turn.
 export const IRON_HIDE_ARMOR_PER_TURN = 1; // Iron-Hide: armor gained each enemy turn.
@@ -256,6 +278,7 @@ export const ENEMY_TRAIT_IDS = {
   TRINKET_HOARDER: "trinket-hoarder",
   HOLY_VULNERABILITY: "holy-vulnerability",
   BURN_RESISTANCE: "burn-resistance",
+  BURN_VULNERABILITY: "burn-vulnerability",
   LIVING_ARMOR: "living-armor",
   THICK_HIDE: "thick-hide",
   POISON_RESISTANCE: "poison-resistance",

@@ -10,7 +10,7 @@ import { SELECTION_GRID_PAGE_SIZE } from "@/lib/game-constants";
 import { type BattleCard, type TrinketEntry } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
-import { cardSurfaceClass, collectionCardWidthClass, staticCardTransform, viewCardWidthClass } from "../../config";
+import { cardSurfaceClass, staticCardTransform, trinketCardWidthClass, viewCardWidthClass } from "../../config";
 import type { MysteryChoice, MysteryEvent, MysteryEffect } from "../../mystery-events";
 import { clearTiltFromEvent, setTiltFromEvent } from "../../utils";
 import { CardSelectionGrid } from "../../ui/card-selection-grid";
@@ -114,7 +114,7 @@ export function MysteryRewardEffectItem({
               />
             ) : null}
             <div
-              className={cn("tilt-surface", cardSurfaceClass, collectionCardWidthClass)}
+              className={cn("tilt-surface", cardSurfaceClass, trinketCardWidthClass)}
               onMouseMove={setTiltFromEvent}
               onMouseLeave={clearTiltFromEvent}
               style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
@@ -354,7 +354,13 @@ export function MysteryEventChoiceButton({
 } & LookupProps) {
   return (
     <div className="group relative">
-      <Button size="lg" variant="outline" className="min-w-32" onClick={() => onPick(choice)}>
+      <Button
+        size="lg"
+        variant="outline"
+        className="min-w-32"
+        data-testid="mystery-choice"
+        onClick={() => onPick(choice)}
+      >
         {choice.label}
       </Button>
       {/* Tooltip displays consequence details on hover using container query height metrics */}

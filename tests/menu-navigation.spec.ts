@@ -1,12 +1,8 @@
 import { expect, test } from "@playwright/test";
-import { createMinimalLabyrinthMap, makeCard, openGameModeSelect, selectGameMode, startCampaignBattle } from "./helpers";
+import { createMinimalLabyrinthMap, enableFastMode, makeCard, openGameModeSelect, selectGameMode, startBattleWithDeck, startCampaignBattle } from "./helpers";
 import { BattlePage } from "./pages/battle-page";
 
 test.describe("Menu", () => {
-  test.afterEach(async ({ page }) => {
-    await page.evaluate(() => localStorage.clear()).catch(() => {});
-  });
-
   test("all menu buttons are visible on the main menu", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByRole("button", { name: "Play" })).toBeVisible();
@@ -58,10 +54,6 @@ test.describe("Menu", () => {
 });
 
 test.describe("Character Select", () => {
-  test.afterEach(async ({ page }) => {
-    await page.evaluate(() => localStorage.clear()).catch(() => {});
-  });
-
   test("all characters are selectable and starting run is mapped to localStorage", async ({ page }) => {
     await page.goto("/");
     await selectGameMode(page, "campaign");
@@ -82,7 +74,7 @@ test.describe("Character Select", () => {
     // Confirm UI-to-localStorage run startup mapping works for Knight
     await page.getByRole("button", { name: "Knight" }).click();
     await page.getByRole("button", { name: "Continue" }).click();
-    await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 5000 });
 
     const saveStateJson = await page.evaluate(() => localStorage.getItem("alchemy-save-v1"));
     expect(saveStateJson).not.toBeNull();
@@ -100,12 +92,9 @@ test.describe("Character Select", () => {
 });
 
 test.describe("Navigation", () => {
-  test.afterEach(async ({ page }) => {
-    await page.evaluate(() => localStorage.clear()).catch(() => {});
-  });
-
   test("in-battle menu allows navigation to collection, options, and talents", async ({ page }) => {
-    await startCampaignBattle(page);
+    await enableFastMode(page);
+    await startBattleWithDeck(page, Array.from({ length: 6 }, () => makeCard()));
     const battle = new BattlePage(page);
 
     await battle.menuBtn.click();

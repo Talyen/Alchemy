@@ -16,7 +16,7 @@ import {
   type BattleState,
   type CombatTextEvent, // used by internal helpers and re-exported callers
 } from "./types";
-import { mergeCombatText } from "./combat-text";
+import { emitOverhealBlockText, mergeCombatText } from "./combat-text";
 import { applyLuckyCloverGold } from "./trinket-effects";
 import { applyEnemyCcImmunityClear, assignEnemyCrowdControlSkip } from "./status-cc";
 import { rollPercent } from "./status-helpers";
@@ -97,6 +97,11 @@ const TRAIT_DAMAGE_RULES: { traitId: string; damageType: string; multiplier: num
     traitId: ENEMY_TRAIT_IDS.BURN_RESISTANCE,
     damageType: CONSTANTS.DAMAGE_TYPES.BURN,
     multiplier: TRAIT_DAMAGE_RESISTANCE,
+  },
+  {
+    traitId: ENEMY_TRAIT_IDS.BURN_VULNERABILITY,
+    damageType: CONSTANTS.DAMAGE_TYPES.BURN,
+    multiplier: TRAIT_DAMAGE_WEAKNESS,
   },
   {
     traitId: ENEMY_TRAIT_IDS.LIVING_ARMOR,
@@ -469,13 +474,35 @@ function tryTriggerEnemyFreeze(
   if (immuneClear) return immuneClear;
 
   const skipDuration = BATTLE_CONFIG.BASE_CC_DURATION + nextState.trinketEffects.freezeDurationExtension;
-  const result = assignEnemyCrowdControlSkip({
+  let result = assignEnemyCrowdControlSkip({
     nextState,
     stat: CONSTANTS.STATUS_NAMES.FREEZE,
     skipDuration,
     combatTexts,
   });
-  return applyFrozenHeartDamage(result, combatTexts);
+  result = applyFrozenHeartDamage(result, combatTexts);
+  result = applyFreezeBlockTalent(result, combatTexts);
+  result = applyFreezeStripArmorTalent(result);
+  return result;
+}
+
+function applyFreezeBlockTalent(state: BattleState, combatTexts?: CombatTextEvent[]): BattleState {
+  if (state.talentEffects.blockOnFreeze <= 0) return state;
+  const nextState = addPlayerStatus(state, CONSTANTS.STATUS_NAMES.BLOCK, state.talentEffects.blockOnFreeze);
+  if (combatTexts) {
+    mergeCombatText(combatTexts, {
+      target: CONSTANTS.TARGETS.PLAYER,
+      kind: CONSTANTS.COMBAT_TEXT_KINDS.STATUS,
+      stat: CONSTANTS.STATUS_NAMES.BLOCK,
+      amount: state.talentEffects.blockOnFreeze,
+    });
+  }
+  return nextState;
+}
+
+function applyFreezeStripArmorTalent(state: BattleState): BattleState {
+  if (!state.talentEffects.freezeStripArmor || state.enemyMitigation.armor <= 0) return state;
+  return { ...state, enemyMitigation: { ...state.enemyMitigation, armor: 0 } };
 }
 
 function applyFreezeStatusRider(state: BattleState, actualDamage: number, combatTexts: CombatTextEvent[]): BattleState {
@@ -524,6 +551,7 @@ export function removeHarmfulPlayerStatuses(state: BattleState, amount: number, 
   const { nextPlayerStatuses, removed } = clearHarmfulStatuses(state.playerStatuses, amount);
   let nextState = { ...state, playerStatuses: nextPlayerStatuses };
   if (removed && nextState.trinketEffects.sinEaterHealOnHarmfulStatusRemove > 0) {
+    const prevState = nextState;
     nextState = applyPlayerHealing(nextState, nextState.trinketEffects.sinEaterHealOnHarmfulStatusRemove);
     if (combatTexts) {
       mergeCombatText(combatTexts, {
@@ -532,6 +560,20 @@ export function removeHarmfulPlayerStatuses(state: BattleState, amount: number, 
         stat: CONSTANTS.STATUS_NAMES.HEALTH,
         amount: nextState.trinketEffects.sinEaterHealOnHarmfulStatusRemove,
       });
+      emitOverhealBlockText(prevState, nextState, combatTexts);
+    }
+  }
+  if (removed && nextState.talentEffects.healOnStatusCleanse > 0) {
+    const prevState = nextState;
+    nextState = applyPlayerHealing(nextState, nextState.talentEffects.healOnStatusCleanse);
+    if (combatTexts) {
+      mergeCombatText(combatTexts, {
+        target: CONSTANTS.TARGETS.PLAYER,
+        kind: CONSTANTS.COMBAT_TEXT_KINDS.HEAL,
+        stat: CONSTANTS.STATUS_NAMES.HEALTH,
+        amount: nextState.talentEffects.healOnStatusCleanse,
+      });
+      emitOverhealBlockText(prevState, nextState, combatTexts);
     }
   }
   return nextState;
@@ -636,11 +678,15 @@ export function applyPlayerDamageStatuses(
     statusType === "freeze" ||
     statusType === "stun"
   ) {
+    const adjustedDamage =
+      statusType === "freeze" && state.talentEffects.receiveHalfFreezeBuildUp
+        ? Math.round(actualDamage / 2)
+        : actualDamage;
     return {
       ...state,
       playerStatuses: {
         ...state.playerStatuses,
-        [statusType]: state.playerStatuses[statusType] + actualDamage,
+        [statusType]: state.playerStatuses[statusType] + adjustedDamage,
       },
     };
   }

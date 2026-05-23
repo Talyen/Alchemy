@@ -25,6 +25,12 @@ describe("talentPool data integrity", () => {
     }
   });
 
+  it("each talent has a name", () => {
+    for (const talent of talentPool) {
+      expect(talent.name, `Talent "${talent.id}" is missing a name`).toBeTruthy();
+    }
+  });
+
   it("each keyword has exactly 10 talents", () => {
     const counts: Record<string, number> = {};
     for (const talent of talentPool) {

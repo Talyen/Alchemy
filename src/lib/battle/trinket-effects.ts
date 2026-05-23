@@ -5,7 +5,7 @@
  */
 import { PERCENT_DENOMINATOR } from "../game-constants";
 import { addGold, applyPlayerHealing, type BattleState, type CombatTextEvent } from "./types";
-import { mergeCombatText } from "./combat-text";
+import { emitOverhealBlockText, mergeCombatText } from "./combat-text";
 
 export function applyIronwoodBuckler(state: BattleState, combatTexts: CombatTextEvent[]) {
   if (
@@ -32,8 +32,10 @@ export function applyIronwoodBuckler(state: BattleState, combatTexts: CombatText
 export function applyBoneCharmHeal(state: BattleState, enemyWasAlive: boolean, combatTexts: CombatTextEvent[]) {
   if (state.enemyHealth <= 0 && enemyWasAlive && state.trinketEffects.boneCharmHealOnKill > 0) {
     const healAmount = state.trinketEffects.boneCharmHealOnKill;
+    const prevState = state;
     state = applyPlayerHealing(state, healAmount);
     mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: healAmount });
+    emitOverhealBlockText(prevState, state, combatTexts);
   }
   return state;
 }

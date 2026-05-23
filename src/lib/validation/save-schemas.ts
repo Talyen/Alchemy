@@ -22,6 +22,7 @@ import {
   DEFAULT_MUSIC_VOLUME_PCT,
   DEFAULT_SFX_VOLUME_PCT,
   LEGACY_STARTER_DECK_IDS,
+  LEGACY_CHARACTER_RENAMES,
 } from "@/lib/game-constants";
 import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
 import { companionTierItems } from "@/lib/homestead/companions";
@@ -274,7 +275,7 @@ export const BattleCardSchema = z
     id: z.string(),
     uid: z.number().int().optional(),
     title: z.string(),
-    descriptionLines: z.array(z.unknown()).catch([]),
+    descriptionLines: z.array(z.unknown()).optional(),
     art: z.string(),
     cost: z.union([z.number(), z.nan()]).catch(-1),
     consume: z.boolean().optional(),
@@ -291,11 +292,11 @@ export const BattleCardSchema = z
       )
       .optional(),
     baseTitle: z.string().optional(),
-    effects: z.array(z.unknown()).catch([]),
+    effects: z.array(z.unknown()).optional(),
   })
   .transform((saved) => {
-    const savedDescriptionLines = cloneSavedDescriptionLines(saved.descriptionLines);
-    const savedEffects = parseSavedEffectList(saved.effects);
+    const savedDescriptionLines = saved.descriptionLines ? cloneSavedDescriptionLines(saved.descriptionLines) : null;
+    const savedEffects = saved.effects ? parseSavedEffectList(saved.effects) : { effects: [], fullyValid: false };
     const corruptedValuePositions = Array.isArray(saved.corruptedValuePositions)
       ? saved.corruptedValuePositions.filter(
           (p) =>
@@ -432,8 +433,9 @@ export const ActiveCombatDataSchema = z
 export const ActiveRunDataSchema = z
   .object({
     characterId: z.preprocess((val) => {
-      if (typeof val === "string" && val === "sorcerer") return "wizard";
-      if (typeof val === "string" && val === "warden") return "ranger";
+      if (typeof val === "string" && val in LEGACY_CHARACTER_RENAMES) {
+        return LEGACY_CHARACTER_RENAMES[val as keyof typeof LEGACY_CHARACTER_RENAMES];
+      }
       return val;
     }, CharacterIdSchema),
     runDeck: z.array(BattleCardSchema),

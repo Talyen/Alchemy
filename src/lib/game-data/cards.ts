@@ -221,10 +221,10 @@ export const cardLibrary: BattleCard[] = [
   {
     id: "bash",
     title: "Bash",
-    descriptionLines: ["Deal 4 Stun damage"],
+    descriptionLines: ["Deal 3 Stun damage"],
     art: bash,
     cost: 1,
-    effects: [{ kind: "damage", damageType: "stun", amount: 4 }],
+    effects: [{ kind: "damage", damageType: "stun", amount: 3 }],
   },
   {
     id: "block",
@@ -403,11 +403,11 @@ export const cardLibrary: BattleCard[] = [
   {
     id: "cauterize",
     title: "Cauterize",
-    descriptionLines: ["Remove 1 harmful status effect", "Receive 1 Burn damage"],
+    descriptionLines: ["Remove 2 harmful status effects", "Receive 1 Burn damage"],
     art: cauterize,
     cost: 1,
     effects: [
-      { kind: "remove-harmful-status", amount: 1 },
+      { kind: "remove-harmful-status", amount: 2 },
       { kind: "self-damage", damageType: "burn", amount: 1 },
     ],
   },
@@ -582,10 +582,10 @@ export const cardLibrary: BattleCard[] = [
   {
     id: "mana-shield",
     title: "Mana Shield",
-    descriptionLines: ["Gain 3 Block per Mana Crystal"],
+    descriptionLines: ["Gain 2 Block per Mana Crystal"],
     art: manaShield,
     cost: 1,
-    effects: [{ kind: "player-status", status: "block", amount: 0, perManaCrystal: 3 }],
+    effects: [{ kind: "player-status", status: "block", amount: 0, perManaCrystal: 2 }],
   },
   {
     id: "prayer",

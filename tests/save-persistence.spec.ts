@@ -1,8 +1,9 @@
 import { expect, test } from "@playwright/test";
-import { injectSaveState, openGameModeSelect, resumeGameMode } from "./helpers";
+import { injectSaveState, openGameModeSelect, resumeGameMode, seedRandomScript } from "./helpers";
 
 test.describe("Save Persistence Edge Cases", () => {
   test("resume run restores exact state after reload", async ({ page }) => {
+    await page.addInitScript(seedRandomScript(42));
     await injectSaveState(page, {
       characterId: "knight",
       runGold: 42,
@@ -27,9 +28,9 @@ test.describe("Save Persistence Edge Cases", () => {
 
     await openGameModeSelect(page);
     await page.getByRole("button", { name: /The Campaign/ }).click();
-    await expect(page.getByRole("button", { name: "Resume" })).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole("button", { name: "Resume" })).toBeVisible({ timeout: 3000 });
     await page.getByRole("button", { name: "Resume" }).click();
-    await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 5000 });
 
     const savedAfter = await page.evaluate(() => {
       const s = JSON.parse(localStorage.getItem("alchemy-save-v1") || "{}");
@@ -40,6 +41,7 @@ test.describe("Save Persistence Edge Cases", () => {
   });
 
   test("mid-battle reload returns to destination not battle", async ({ page }) => {
+    await page.addInitScript(seedRandomScript(42));
     await injectSaveState(page, {
       runPlayerHealth: 22,
       runMaxHealth: 30,
@@ -51,7 +53,7 @@ test.describe("Save Persistence Edge Cases", () => {
 
     await resumeGameMode(page, "campaign");
 
-    await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 5000 });
     await expect(page.locator('[aria-label^="Play "]')).toHaveCount(0);
   });
 });

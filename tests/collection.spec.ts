@@ -11,11 +11,11 @@ test.describe("Collection", () => {
     await expect(page.getByRole("button", { name: "Trinkets" })).toBeVisible();
     await expect(page.getByRole("button", { name: /Inspect/ }).first()).toBeVisible();
 
-    const inspectBtn = page.getByRole("button", { name: /Inspect Slash/ });
-    if (await inspectBtn.isVisible({ timeout: 500 }).catch(() => false)) {
-      await inspectBtn.hover();
-      await expect(page.getByText("Deal 5")).toBeVisible();
-    }
+    // Anvil is alphabetically first (page 0 of paginated collection).
+    const inspectBtn = page.getByRole("button", { name: /Inspect Anvil/ });
+    await expect(inspectBtn).toBeVisible({ timeout: 5000 });
+    await inspectBtn.hover();
+    await expect(page.getByText(/^Gain \d+ Forge/)).toBeVisible();
   });
 
   test("collection tab navigation shows bestiary and trinket undiscovered entries", async ({ page }) => {

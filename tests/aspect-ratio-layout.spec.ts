@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { selectGameMode, startCampaignBattle } from "./helpers";
+import { makeCard, selectGameMode, startBattleWithDeck } from "./helpers";
 
 async function setAspectRatio(page: import("@playwright/test").Page, aspectRatio: string) {
   await page.addInitScript((ar) => {
@@ -23,12 +23,16 @@ async function assertNoOverflow(page: import("@playwright/test").Page, screenNam
 
 async function waitForHandEntryAnimations(page: import("@playwright/test").Page) {
   await page.waitForFunction(
-    () =>
-      [...document.querySelectorAll('[data-hand-card="true"]')].every((card) =>
-        card.getAnimations().every((animation) => animation.playState === "finished" || animation.playState === "idle"),
-      ),
+    () => {
+      const cards = [...document.querySelectorAll('[data-hand-card="true"]')];
+      if (cards.length === 0) return false;
+      return cards.every((card) => {
+        const animations = card.getAnimations();
+        return animations.length === 0 || animations.every((a) => a.playState === "finished" || a.playState === "idle");
+      });
+    },
     undefined,
-    { timeout: 3000 },
+    { timeout: 5000 },
   );
 }
 
@@ -63,7 +67,7 @@ for (const { width, height, label } of RESOLUTIONS) {
     test("battle screen cards and controls fit viewport without overflow", async ({ page }) => {
       await setAspectRatio(page, "16:9");
       await page.setViewportSize({ width, height });
-      await startCampaignBattle(page);
+      await startBattleWithDeck(page, Array.from({ length: 6 }, () => makeCard()));
 
       await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible();
       expect(await page.locator('[aria-label^="Play "]').count()).toBeGreaterThanOrEqual(1);

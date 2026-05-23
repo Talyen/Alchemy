@@ -22,8 +22,9 @@ const TALENT_DEFAULTS = {
   armorBreakBlock: 0, armorMitigatesStun: false, armorCleanseThreshold: 0,
   flatArmorAmount: 0, campfireHealBonus: 0, healthThresholdBlock: null,
   maxHealthPerCombat: 0, startHealth: 0, healMultiplier: 1, healthThresholdArmor: null,
+  overhealToBlockRatio: 0, healOnStatusCleanse: 0, deathsDoorExtension: 0, damageReduction: 0,
   firstBurnCardDoubled: false, burnRemovesEnemyArmor: false, burnDoubleChance: 0,
-  receiveHalfBurnDamage: false, shopCardDiscount: 0, shopFreeRefresh: false,
+  receiveHalfBurnDamage: false, flatBurnDamage: 0, forgeOnPlayerBurnDamage: 0, burnReducesEnemyDamage: 0, burnOnConsumeAmount: 0, forgeOnBurnTickWithBlock: 0, burnOnWish: 0, shopCardDiscount: 0, shopFreeRefresh: false,
   startGold: 0, goldPerCombat: 0, potionDiscount: 0, potionPotency: 0,
   removeCardDiscount: 0, enemyGoldDropBonus: 0, eliteGoldDropBonus: 0,
   goldOnWish: 0, mixPotionDiscount: 0, companionBondLevels: {},
@@ -38,7 +39,9 @@ const TALENT_DEFAULTS = {
   bleedPhysicalBonus: 0, bleedLeechChance: 0, bleedEnemyDamageReduction: 0,
   bleedPhysicalTakenBonus: 0, bleedExecuteThreshold: 0, bleedDesperateMultiplier: 1,
   bleedPoisonChance: 0, flatTrapDamage: 0, freezeThresholdReduction: 0,
-  freezeDoubleDamage: false,
+  freezeDoubleDamage: false, blockOnFreeze: 0, freezeStripArmor: false,
+  startFreeze: 0, companionVsFrozenBonus: 0, freezePreventsPoisonDecay: false,
+  freezeBlocksRegen: false, freezePreventsEnemyScaling: false, receiveHalfFreezeBuildUp: false,
 };
 
 const TRINKET_DEFAULTS = {

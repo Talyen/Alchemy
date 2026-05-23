@@ -321,7 +321,6 @@ export function renderAlchemyScreen({
       return (
         <TalentsScreen
           onOpenMenu={onOpenBattleMenu}
-          onReturnToBattle={a.returnToBattle}
           onUnlockTalent={a.unlockTalent}
           onResetTalents={a.resetUnlockedTalents}
         />

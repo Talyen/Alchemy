@@ -26,7 +26,7 @@ function makeState(overrides: Partial<BattleState> = {}): BattleState {
       firstArmorCardDoubled: false, startArmor: 0, armorMitigatesBleed: false, armorBreakBlock: 0, armorMitigatesStun: false, armorCleanseThreshold: 0, flatArmorAmount: 0,
       campfireHealBonus: 0, healthThresholdBlock: null, maxHealthPerCombat: 0, startHealth: 0, healMultiplier: 1,
       healthThresholdArmor: null,
-      firstBurnCardDoubled: false, burnRemovesEnemyArmor: false, burnDoubleChance: 0, receiveHalfBurnDamage: false,
+      firstBurnCardDoubled: false, burnRemovesEnemyArmor: false, burnDoubleChance: 0, receiveHalfBurnDamage: false, flatBurnDamage: 0, forgeOnPlayerBurnDamage: 0, burnReducesEnemyDamage: 0, burnOnConsumeAmount: 0, forgeOnBurnTickWithBlock: 0, burnOnWish: 0,
       shopCardDiscount: 0, shopFreeRefresh: false, startGold: 0, goldPerCombat: 0, potionDiscount: 0,
       removeCardDiscount: 0, enemyGoldDropBonus: 0, goldOnWish: 0, mixPotionDiscount: 0,
       holyLifestealPercent: 0, firstHolyCardFree: false, holyGoldPercent: 0, holyBurnChance: 0,

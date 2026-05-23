@@ -3,7 +3,7 @@
  * Depends on: @/lib/game-data.
  * Depended on by: all modules in the battle subsystem, features/alchemy controllers/UI.
  */
-import { STATUS_CONFIG } from "../game-constants";
+
 import type {
   BattleCard,
   BestiaryEntry,
@@ -29,9 +29,10 @@ export type EnemyMitigation = {
   armor: number;
   forge: number;
   freezeBonus: number;
+  burnBonus: number;
 };
 
-export const EMPTY_ENEMY_MITIGATION: EnemyMitigation = { armor: 0, forge: 0, freezeBonus: 0 };
+export const EMPTY_ENEMY_MITIGATION: EnemyMitigation = { armor: 0, forge: 0, freezeBonus: 0, burnBonus: 0 };
 
 // Pre-computed bonuses from trinkets acquired during the run. Follows the same
 // pattern as TalentEffectManifest — computed once at battle start, immutable for
@@ -84,6 +85,7 @@ export type CombatFlags = {
   firstHarmfulStatusPrevented: boolean;
   firstPotionFreeUsed: boolean;
   resonantChimeUsedThisTurn: boolean;
+  runicQuillUsedThisTurn: boolean;
 };
 
 // The full snapshot of a battle at one point in time. Every mutation returns a new
@@ -148,8 +150,8 @@ export type NumericCombatTextEvent = {
 export type NoticeCombatTextEvent = {
   target: CombatTextTarget;
   kind: "notice";
-  stat: Extract<CombatTextStat, "freeze" | "stun">;
-  text: typeof STATUS_CONFIG.CC_NOTICE_STUN | typeof STATUS_CONFIG.CC_NOTICE_FREEZE;
+  stat: CombatTextStat;
+  text: string;
 };
 
 export type CombatTextEvent = NumericCombatTextEvent | NoticeCombatTextEvent;
@@ -193,7 +195,8 @@ export function clampHealth(current: number, delta: number, max: number): number
 
 export function applyPlayerCombatDamage(state: BattleState, damage: number): BattleState {
   if (damage <= 0) return state;
-  const nextHealth = clampHealth(state.playerHealth, -damage, state.playerMaxHealth);
+  const reducedDamage = Math.max(0, damage - (state.talentEffects.damageReduction ?? 0));
+  const nextHealth = clampHealth(state.playerHealth, -reducedDamage, state.playerMaxHealth);
   if (nextHealth > 0) return { ...state, playerHealth: nextHealth };
   if (!state.deathsDoorUsed) {
     return {
@@ -209,7 +212,13 @@ export function applyPlayerCombatDamage(state: BattleState, damage: number): Bat
 
 export function applyPlayerHealing(state: BattleState, amount: number): BattleState {
   const playerHealth = clampHealth(state.playerHealth, amount, state.playerMaxHealth);
-  return { ...state, playerHealth, deathsDoorActive: playerHealth <= 0 && state.deathsDoorActive };
+  const overheal = state.playerHealth + amount - playerHealth;
+  let nextState = { ...state, playerHealth, deathsDoorActive: playerHealth <= 0 && state.deathsDoorActive };
+  if (overheal > 0 && (nextState.talentEffects.overhealToBlockRatio ?? 0) > 0) {
+    const blockGain = Math.round(overheal * nextState.talentEffects.overhealToBlockRatio);
+    nextState = addPlayerStatus(nextState, "block", blockGain);
+  }
+  return nextState;
 }
 
 export function isPlayerDefeated(state: Pick<BattleState, "playerHealth" | "deathsDoorActive">): boolean {

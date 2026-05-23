@@ -464,6 +464,7 @@ export default function App() {
               onTalents={() => run.goToScreen("talents")}
               onHomestead={() => run.goToScreen("homestead")}
               onOptions={() => run.goToScreen("options")}
+              {...(run.hasActiveBattle ? { onReturnToBattle: run.returnToBattle } : {})}
               {...(renderedScreen === "battle" ? { onEndRun: run.handleEndRun } : {})}
               {...(renderedScreen === "labyrinth-map" ? { onEndRun: run.handleLabyrinthEndRun } : {})}
               hideTalents={renderedScreen === "talents"}

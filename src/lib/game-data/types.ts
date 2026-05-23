@@ -193,12 +193,22 @@ export type TalentEffectManifest = {
   startHealth: number;
   healMultiplier: number;
   healthThresholdArmor: { threshold: number; amount: number } | null;
+  overhealToBlockRatio: number;
+  healOnStatusCleanse: number;
+  deathsDoorExtension: number;
+  damageReduction: number;
 
   // --- Burn ---
   firstBurnCardDoubled: boolean;
   burnRemovesEnemyArmor: boolean;
   burnDoubleChance: number;
   receiveHalfBurnDamage: boolean;
+  flatBurnDamage: number;
+  forgeOnPlayerBurnDamage: number;
+  burnReducesEnemyDamage: number;
+  burnOnConsumeAmount: number;
+  forgeOnBurnTickWithBlock: number;
+  burnOnWish: number;
 
   // --- Gold ---
   shopCardDiscount: number;
@@ -249,6 +259,14 @@ export type TalentEffectManifest = {
   // --- Freeze ---
   freezeThresholdReduction: number;
   freezeDoubleDamage: boolean;
+  blockOnFreeze: number;
+  freezeStripArmor: boolean;
+  startFreeze: number;
+  companionVsFrozenBonus: number;
+  freezePreventsPoisonDecay: boolean;
+  freezeBlocksRegen: boolean;
+  freezePreventsEnemyScaling: boolean;
+  receiveHalfFreezeBuildUp: boolean;
 
   // --- Trap ---
   flatTrapDamage: number;

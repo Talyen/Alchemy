@@ -80,6 +80,7 @@ export function GameMenu({
   onHomestead,
   onOptions,
   onEndRun,
+  onReturnToBattle,
   anchorRect,
   anchorPlacement = "up-left",
   hideTalents = false,
@@ -92,6 +93,7 @@ export function GameMenu({
   onHomestead: () => void;
   onOptions: () => void;
   onEndRun?: () => void;
+  onReturnToBattle?: () => void;
   anchorRect?: DOMRect | null;
   anchorPlacement?: "up-left" | "down-right" | "down-right-of-anchor";
   hideTalents?: boolean;
@@ -105,6 +107,18 @@ export function GameMenu({
       onClick={(e) => e.stopPropagation()}
     >
       <div className="grid gap-2">
+        {onReturnToBattle ? (
+          <Button
+            variant="outline"
+            className="justify-start border-0 bg-transparent"
+            onClick={() => {
+              onReturnToBattle();
+              onClose();
+            }}
+          >
+            <Swords className="h-4 w-4" /> Return to Battle
+          </Button>
+        ) : null}
         <Button
           variant="outline"
           className="justify-start border-0 bg-transparent"

@@ -29,11 +29,9 @@ test.describe("Labyrinth Node Types", () => {
     await page.getByRole("button", { name: /The Labyrinth/ }).click();
     await page.getByRole("button", { name: "Resume" }).click();
 
-    await expect(page.getByRole("heading", { name: /Labyrinth|Map/ })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole("heading", { name: /Labyrinth|Map/ })).toBeVisible({ timeout: 5000 });
 
     const combatNodes = page.getByRole("button", { name: /Combat|Fight/ });
-    if (await combatNodes.first().isVisible({ timeout: 2000 }).catch(() => false)) {
-      await expect(combatNodes.first()).toBeVisible();
-    }
+    await expect(combatNodes.first()).toBeVisible({ timeout: 5000 });
   });
 });

@@ -4,7 +4,7 @@
  * Depended on by: ./apply-effects.
  */
 import { applyDamageStatuses, getEnemyDamageMultiplier, resolveStunTrigger } from "./status-effects";
-import { mergeCombatText } from "./combat-text";
+import { emitOverhealBlockText, mergeCombatText } from "./combat-text";
 import { applyBoneCharmHeal, applyLuckyCloverGold } from "./trinket-effects";
 import { applyWishEffect } from "./wish";
 import { type BattleCard, type BattleCardEffect } from "@/lib/game-data";
@@ -138,6 +138,8 @@ function computeBaseDamage(state: BattleState, effect: Extract<BattleCardEffect,
     }
   } else if (effect.damageType === "trap") {
     rawAmount += state.talentEffects.flatTrapDamage;
+  } else if (effect.damageType === "burn") {
+    rawAmount += state.talentEffects.flatBurnDamage;
   }
 
   return Math.max(0, rawAmount);
@@ -160,7 +162,9 @@ function applyLifesteal(state: BattleState, damage: number, combatTexts: CombatT
   if (damage <= 0) return state;
   const healAmount = Math.round(damage * state.talentEffects.healMultiplier);
   mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: healAmount });
-  return applyPlayerHealing(state, healAmount);
+  const nextState = applyPlayerHealing(state, healAmount);
+  emitOverhealBlockText(state, nextState, combatTexts);
+  return nextState;
 }
 
 /**
@@ -173,7 +177,9 @@ function applyHolyLifesteal(state: BattleState, damage: number, combatTexts: Com
   );
   if (healAmount <= 0) return state;
   mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: healAmount });
-  return applyPlayerHealing(state, healAmount);
+  const nextState = applyPlayerHealing(state, healAmount);
+  emitOverhealBlockText(state, nextState, combatTexts);
+  return nextState;
 }
 
 /**

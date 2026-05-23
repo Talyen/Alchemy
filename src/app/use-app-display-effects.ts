@@ -1,6 +1,6 @@
 // Root-level display preference side effects for platform windowing and stage CSS.
 // Depends on the platform adapter and alchemy display option types.
-import { useEffect, type RefObject } from "react";
+import { useEffect, useLayoutEffect, type RefObject } from "react";
 
 import { platform } from "@/lib/platform";
 import type { DisplayMode, UiScale } from "@/features/alchemy/types";
@@ -23,12 +23,12 @@ export function useAppDisplayEffects({ displayMode, uiScale, brightness, stageRe
     platform.setDisplayMode(displayMode);
   }, [displayMode]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const scaleFactor = String(Number(uiScale) / DISPLAY_CONFIG.PERCENTAGE_DIVISOR);
     document.documentElement.style.setProperty(DISPLAY_CONFIG.UI_SCALE_CSS_PROPERTY, scaleFactor);
   }, [uiScale]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (stageRef.current) {
       const brightnessFactor = brightness / DISPLAY_CONFIG.PERCENTAGE_DIVISOR;
       stageRef.current.style.filter = `brightness(${brightnessFactor})`;

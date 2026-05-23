@@ -1,10 +1,6 @@
 import { test, expect } from "@playwright/test";
-import { failOnRuntimeErrors, startCampaignBattle } from "./helpers";
+import { failOnRuntimeErrors, makeCard, startBattleWithDeck } from "./helpers";
 import { BattlePage } from "./pages/battle-page";
-
-test.afterEach(async ({ page }) => {
-  await page.evaluate(() => localStorage.clear()).catch(() => {});
-});
 
 test.describe("Draw/discard animation invariants (1920×1080)", () => {
   test("turn cycle animations and interaction boundaries function correctly", async ({ page }) => {
@@ -17,15 +13,14 @@ test.describe("Draw/discard animation invariants (1920×1080)", () => {
       if (text.includes("[snap]")) snapLogs.push(text);
     });
 
-    await startCampaignBattle(page);
+    await startBattleWithDeck(page, Array.from({ length: 6 }, () => makeCard()));
     const battle = new BattlePage(page);
 
-    if (await battle.hand.first().isVisible({ timeout: 2000 }).catch(() => false)) {
-      await battle.playFirstCard();
-    }
+    await expect(battle.hand.first()).toBeVisible({ timeout: 5000 });
+    await battle.playFirstCard();
     await battle.endTurn();
 
-    expect(errors).toEqual([]);
+    await expect.poll(() => errors, { timeout: 2000, message: "Runtime errors during draw/discard turn cycle" }).toEqual([]);
 
     const count = await battle.handCount();
     expect(count).toBeGreaterThan(0);
@@ -55,12 +50,10 @@ for (const { width, height, label } of ALT_RESOLUTIONS) {
 
     test("no errors and cards playable after draw", async ({ page }) => {
       const errors = failOnRuntimeErrors(page);
-      await startCampaignBattle(page);
-      const battle = new BattlePage(page);
-      await battle.endTurn();
-      const count = await battle.handCount();
+      await startBattleWithDeck(page, Array.from({ length: 6 }, () => makeCard()));
+      const count = await page.locator('[aria-label^="Play "]').count();
       expect(count).toBeGreaterThan(0);
-      expect(errors, `Runtime errors at ${width}x${height}`).toEqual([]);
+      await expect.poll(() => errors, { timeout: 2000, message: `Runtime errors at ${width}x${height}` }).toEqual([]);
     });
   });
 }
@@ -68,12 +61,13 @@ for (const { width, height, label } of ALT_RESOLUTIONS) {
 test.describe("Draw/discard edge cases", () => {
   test("skip combat during end turn: no errors", async ({ page }) => {
     const errors = failOnRuntimeErrors(page);
-    await startCampaignBattle(page);
+    await startBattleWithDeck(page, Array.from({ length: 6 }, () => makeCard()));
     const battle = new BattlePage(page);
 
     await battle.endTurnBtn.click();
+    await expect(battle.skipCombatBtn).toBeVisible({ timeout: 5000 });
     await battle.skipCombatBtn.click();
     await expect(battle.victoryHeading).toBeVisible({ timeout: 5000 });
-    expect(errors).toEqual([]);
+    await expect.poll(() => errors, { timeout: 2000, message: "Runtime errors during skip combat" }).toEqual([]);
   });
 });

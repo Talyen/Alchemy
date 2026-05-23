@@ -1,25 +1,26 @@
 import { expect, test } from "@playwright/test";
-import { startCampaignBattle } from "./helpers";
+import { enableFastMode, makeCard, startBattleWithDeck } from "./helpers";
 import { BattlePage } from "./pages/battle-page";
 
 test.describe("Keyboard Navigation", () => {
   test("keyboard controls and hotkeys work in combat", async ({ page }) => {
-    await startCampaignBattle(page);
+    await enableFastMode(page);
+    await startBattleWithDeck(page, Array.from({ length: 6 }, () => makeCard()));
     const battle = new BattlePage(page);
 
     // 1. Escape opens and closes the in-battle menu
     await page.keyboard.press("Escape");
     const mainMenuBtn = page.getByRole("button", { name: "Main Menu" });
-    await expect(mainMenuBtn).toBeVisible({ timeout: 2000 });
+    await expect(mainMenuBtn).toBeVisible({ timeout: 3000 });
 
     await page.keyboard.press("Escape");
-    await expect(mainMenuBtn).not.toBeVisible({ timeout: 2000 });
+    await expect(mainMenuBtn).toBeHidden({ timeout: 3000 });
 
     // 2. Battle hamburger anchors menu near the trigger
     const trigger = page.getByRole("button", { name: "Open battle menu" });
     await trigger.click();
     const menu = page.getByTestId("game-menu");
-    await expect(menu).toBeVisible({ timeout: 2000 });
+    await expect(menu).toBeVisible({ timeout: 3000 });
 
     const triggerBox = await trigger.boundingBox();
     const menuBox = await menu.boundingBox();
@@ -34,7 +35,7 @@ test.describe("Keyboard Navigation", () => {
 
     // Close menu to resume play
     await page.keyboard.press("Escape");
-    await expect(menu).not.toBeVisible({ timeout: 2000 });
+    await expect(menu).toBeHidden({ timeout: 3000 });
 
     // 3. Focused card is playable with enter key
     const manaBefore = await battle.mana();
@@ -51,6 +52,6 @@ test.describe("Keyboard Navigation", () => {
     await expect(battle.endTurnBtn).toBeFocused();
 
     await page.keyboard.press("Enter");
-    await expect(battle.endTurnBtn).toBeEnabled({ timeout: 8000 });
+    await expect(battle.endTurnBtn).toBeEnabled({ timeout: 5000 });
   });
 });

@@ -2,10 +2,6 @@ import { test, expect } from "@playwright/test";
 import { selectGameMode } from "./helpers";
 
 test.describe("Labyrinth Mode", () => {
-  test.afterEach(async ({ page }) => {
-    await page.evaluate(() => localStorage.clear()).catch(() => {});
-  });
-
   test("full Labyrinth initialization and map progression", async ({ page }) => {
     // 1. Labyrinth button navigates to Character Select
     await page.goto("/");
@@ -25,6 +21,6 @@ test.describe("Labyrinth Mode", () => {
 
     // 4. Click first connected node to enter battle
     await combatChamberNode.click();
-    await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 5000 });
   });
 });

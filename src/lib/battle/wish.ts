@@ -6,10 +6,10 @@
 import { cardLibrary } from "@/lib/game-data";
 import type { BattleCard } from "@/lib/game-data/types";
 import { drawCards, shuffleCards } from "./draw";
-import { addGold, applyPlayerHealing, type BattleState, type CombatTextEvent } from "./types";
-import { mergeCombatText } from "./combat-text";
+import { addGold, applyPlayerHealing, clampHealth, type BattleState, type CombatTextEvent } from "./types";
+import { emitOverhealBlockText, mergeCombatText } from "./combat-text";
 import { removeHarmfulPlayerStatuses } from "./status-effects";
-import { PERCENT_DENOMINATOR, WISH_CHOICE_COUNT } from "../game-constants";
+import { PERCENT_DENOMINATOR, WISH_CHOICE_COUNT, MAX_HAND_SIZE } from "../game-constants";
 
 export function buildWishOptions(state: BattleState, card: BattleCard): BattleCard[] {
   const baseCount =
@@ -62,6 +62,7 @@ function applyWishGoldTriggers(state: BattleState, combatTexts: CombatTextEvent[
 function applyWishHealthAndStatusTriggers(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   let nextState = state;
   if (nextState.talentEffects.healthOnWish > 0) {
+    const prevState = nextState;
     nextState = applyPlayerHealing(nextState, nextState.talentEffects.healthOnWish);
     mergeCombatText(combatTexts, {
       target: "player",
@@ -69,6 +70,7 @@ function applyWishHealthAndStatusTriggers(state: BattleState, combatTexts: Comba
       stat: "health",
       amount: nextState.talentEffects.healthOnWish,
     });
+    emitOverhealBlockText(prevState, nextState, combatTexts);
   }
   if (nextState.talentEffects.removeHarmfulStatusOnWish) {
     nextState = removeHarmfulPlayerStatuses(nextState, 1, combatTexts);
@@ -104,7 +106,38 @@ export function applyWishEffect(state: BattleState, card: BattleCard, amount: nu
     nextState = applyWishGoldTriggers(nextState, combatTexts);
     nextState = applyWishHealthAndStatusTriggers(nextState, combatTexts);
     nextState = applyWishDrawTriggers(nextState);
+    nextState = applyWishBurnTrigger(nextState, combatTexts);
   }
 
   return nextState;
+}
+
+function applyWishBurnTrigger(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
+  const burnAmount = state.talentEffects.burnOnWish;
+  if (burnAmount <= 0 || state.enemyHealth <= 0) return state;
+  mergeCombatText(combatTexts, {
+    target: "enemy",
+    kind: "damage",
+    stat: "burn",
+    amount: burnAmount,
+  });
+  return {
+    ...state,
+    enemyHealth: clampHealth(state.enemyHealth, -burnAmount, state.enemyMaxHealth),
+  };
+}
+
+export function chooseWishCard(state: BattleState, cardId: string) {
+  const chosenCard = state.wishOptions?.find((card) => card.id === cardId);
+  if (!chosenCard) {
+    return state;
+  }
+
+  const [nextWishOptions = null, ...wishQueue] = state.wishQueue;
+
+  if (state.hand.length < MAX_HAND_SIZE) {
+    return { ...state, hand: [...state.hand, chosenCard], wishOptions: nextWishOptions, wishQueue };
+  }
+
+  return { ...state, discard: [...state.discard, chosenCard], wishOptions: nextWishOptions, wishQueue };
 }

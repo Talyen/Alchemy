@@ -38,9 +38,8 @@ test.describe("Auto-End Turn", () => {
     await page.getByRole("button", { name: "Options" }).click();
 
     const gameplayTab = page.getByRole("button", { name: "Gameplay" });
-    if (await gameplayTab.isVisible({ timeout: 500 }).catch(() => false)) {
-      await gameplayTab.click();
-      await expect(page.getByText("Auto-End Turn")).toBeVisible({ timeout: 2000 });
-    }
+    await expect(gameplayTab).toBeVisible({ timeout: 5000 });
+    await gameplayTab.click();
+    await expect(page.getByText("Auto-End Turn")).toBeVisible({ timeout: 2000 });
   });
 });

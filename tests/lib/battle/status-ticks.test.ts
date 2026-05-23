@@ -102,10 +102,20 @@ function baseState(overrides: Partial<BattleState> = {}): BattleState {
       startHealth: 0,
       healMultiplier: 1,
       healthThresholdArmor: null,
+      overhealToBlockRatio: 0,
+      healOnStatusCleanse: 0,
+      deathsDoorExtension: 0,
+      damageReduction: 0,
       firstBurnCardDoubled: false,
       burnRemovesEnemyArmor: false,
       burnDoubleChance: 0,
       receiveHalfBurnDamage: false,
+      flatBurnDamage: 0,
+      forgeOnPlayerBurnDamage: 0,
+      burnReducesEnemyDamage: 0,
+      burnOnConsumeAmount: 0,
+      forgeOnBurnTickWithBlock: 0,
+      burnOnWish: 0,
       shopCardDiscount: 0,
       shopFreeRefresh: false,
       startGold: 0,
@@ -152,6 +162,14 @@ function baseState(overrides: Partial<BattleState> = {}): BattleState {
       flatTrapDamage: 0,
       freezeThresholdReduction: 0,
       freezeDoubleDamage: false,
+      blockOnFreeze: 0,
+      freezeStripArmor: false,
+      startFreeze: 0,
+      companionVsFrozenBonus: 0,
+      freezePreventsPoisonDecay: false,
+      freezeBlocksRegen: false,
+      freezePreventsEnemyScaling: false,
+      receiveHalfFreezeBuildUp: false,
       maxHealthPerCombat: 0,
     },
     trinketEffects: {
@@ -360,6 +378,28 @@ describe("tickEnemyStatuses", () => {
     const texts = makeTexts();
     const next = tickEnemyStatuses(state, texts);
     expect(next.enemyHealth).toBe(45);
+  });
+
+  it("applies vulnerability multiplier for burn", () => {
+    const state = baseState({
+      enemyHealth: 50,
+      enemyMaxHealth: 50,
+      enemyStatuses: { ...baseState().enemyStatuses, burn: 10 },
+      currentEnemy: {
+        id: "blight-treant",
+        title: "The Blight Treant",
+        subtitle: "",
+        descriptionLines: [""],
+        art: "",
+        enemyType: "boss",
+        traits: [{ id: "burn-vulnerability", title: "Burn Vulnerability", description: "Receives double Burn damage" }],
+        attackEffects: [],
+      },
+    });
+    const texts = makeTexts();
+    const next = tickEnemyStatuses(state, texts);
+    // 10 burn damage * 2 (weakness multiplier) = 20 damage. Health: 50 -> 30.
+    expect(next.enemyHealth).toBe(30);
   });
 });
 

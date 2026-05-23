@@ -64,7 +64,7 @@ function TalentNode({
       <div
         className={cn(popupClassName, "hover-popup-panel pointer-events-none opacity-0 group-hover:opacity-100 z-50")}
       >
-        <div className="font-display text-base font-bold text-amber-100/75">Talent</div>
+        <div className="font-display text-base font-bold text-amber-100/75">{talent.name ?? "Talent"}</div>
         <div className="mt-2 text-sm leading-6 text-muted-foreground max-w-[240px]">
           {descParts.map((part, i) =>
             part.keywordId ? (
@@ -116,7 +116,9 @@ function TalentNode({
               0 4px 12px rgba(0, 0, 0, 0.4)
             `.trim(),
         }}
-        aria-label={isChoice ? `Unlock talent: ${talent.description}` : undefined}
+        aria-label={
+          isChoice ? `Unlock talent: ${talent.name ? `${talent.name} — ` : ""}${talent.description}` : undefined
+        }
       >
         {isChoice && <ShineBorder shineColor={shineColors} borderWidth={3} duration={8} className="rounded-full" />}
         {/* Icon */}

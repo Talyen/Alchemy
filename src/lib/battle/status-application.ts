@@ -45,11 +45,13 @@ function applyHarmfulStatusFromAttack(
   if (!blockPreventsStatus && state.trinketEffects.plagueDoctorImmunity && !state.flags.firstHarmfulStatusPrevented) {
     return { ...state, flags: { ...state.flags, firstHarmfulStatusPrevented: true } };
   }
+  const adjustedAmount =
+    status === "freeze" && state.talentEffects.receiveHalfFreezeBuildUp ? Math.round(amount / 2) : amount;
   const nextState = {
     ...state,
     playerStatuses: {
       ...state.playerStatuses,
-      ...(blockPreventsStatus ? {} : { [status]: state.playerStatuses[status] + amount }),
+      ...(blockPreventsStatus ? {} : { [status]: state.playerStatuses[status] + adjustedAmount }),
     },
   };
   mergeCombatText(combatTexts, {

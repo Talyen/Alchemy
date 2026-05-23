@@ -17,7 +17,7 @@ export class BattlePage {
   }
 
   async block(): Promise<number> {
-    if (!(await this.blockChip.isVisible({ timeout: 300 }).catch(() => false))) return 0;
+    if (!(await this.blockChip.isVisible({ timeout: 2000 }).catch(() => false))) return 0;
     const label = await this.blockChip.getAttribute("aria-label");
     return Number(label?.match(/\d+/)?.[0] ?? 0);
   }
@@ -31,9 +31,12 @@ export class BattlePage {
   }
 
   async endTurn() {
-    await expect(this.endTurnBtn).toBeEnabled({ timeout: 8000 });
+    await expect(this.endTurnBtn).toBeEnabled({ timeout: 5000 });
     await this.endTurnBtn.click();
-    await expect(this.endTurnBtn).toBeEnabled({ timeout: 8000 });
+    await expect(this.endTurnBtn).toBeEnabled({ timeout: 7000 }).catch(async (e) => {
+      if (await this.isBattleOver()) return;
+      throw e;
+    });
   }
 
   async isVictoryVisible(): Promise<boolean> {
@@ -51,20 +54,20 @@ export class BattlePage {
   async playAllCards() {
     for (let i = 0; i < 8; i++) {
       const card = this.hand.filter({ visible: true }).first();
-      if (!(await card.isVisible({ timeout: 200 }).catch(() => false))) break;
-      if (!(await card.isEnabled({ timeout: 200 }).catch(() => false))) break;
-      await card.click({ force: true }).catch(() => {});
+      if (!(await card.isVisible({ timeout: 1000 }).catch(() => false))) break;
+      if (!(await card.isEnabled({ timeout: 1000 }).catch(() => false))) break;
+      await card.click();
       if (await this.isBattleOver()) return;
     }
   }
 
-  async fightTurns(maxTurns = 12) {
+  async fightTurns(maxTurns = 10) {
     for (let turn = 0; turn < maxTurns; turn++) {
       if (await this.isBattleOver()) return;
       await this.playAllCards();
       if (await this.isBattleOver()) return;
-      await this.endTurnBtn.click({ force: true }).catch(() => {});
-      await expect(this.endTurnBtn).toBeEnabled({ timeout: 8000 }).catch(async (e) => {
+      await this.endTurnBtn.click();
+      await expect(this.endTurnBtn).toBeEnabled({ timeout: 7000 }).catch(async (e) => {
         if (await this.isBattleOver()) return;
         throw e;
       });

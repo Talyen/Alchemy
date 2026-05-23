@@ -8,10 +8,6 @@ test.describe("Wildwood Mode", () => {
     await selectGameMode(page, "wildwood");
   });
 
-  test.afterEach(async ({ page }) => {
-    await page.evaluate(() => localStorage.clear()).catch(() => {});
-  });
-
   test("Wildwood button navigates to Character Select", async ({ page }) => {
     await expect(page.getByRole("heading", { name: "Choose Your Hero" })).toBeVisible({ timeout: 5000 });
   });
@@ -35,7 +31,7 @@ test.describe("Wildwood Mode", () => {
     const tooltip = page.getByTestId("wildwood-boss-tooltip-iron-bear");
     await expect(tooltip).toHaveCSS("opacity", "0");
     await ironBear.hover();
-    await expect(tooltip).toHaveCSS("opacity", "1");
+    await expect(tooltip).toHaveCSS("opacity", "1", { timeout: 3000 });
     await expect(tooltip).toContainText(/Physical.*damage/);
     await expect(tooltip).toContainText(/Armor/);
 
@@ -49,6 +45,6 @@ test.describe("Wildwood Mode", () => {
     await expect(page.getByRole("heading", { name: "Choose Your Prey" })).toBeVisible({ timeout: 5000 });
     await page.getByRole("button", { name: "The Iron Bear" }).click();
     await page.getByRole("button", { name: "Hunt" }).click();
-    await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 5000 });
   });
 });

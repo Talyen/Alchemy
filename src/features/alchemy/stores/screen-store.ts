@@ -8,7 +8,7 @@ import {
   SHOP_REFRESHES,
   ALCHEMIST_POTIONS_OFFERED,
   ALCHEMIST_REFRESHES,
-  POTION_CARD_ID_FRAGMENT,
+  POTION_CARD_ID_SUFFIX,
   MIXED_POTION_CARD_ID,
 } from "@/lib/game-constants";
 import { sampleItems } from "@/features/alchemy/utils";
@@ -137,7 +137,7 @@ export const useScreenStore = create<ScreenStore>()((set) => ({
 
   initAlchemist: () => {
     const potions = sampleItems(
-      cardLibrary.filter((c) => c.id.includes(POTION_CARD_ID_FRAGMENT) && c.id !== MIXED_POTION_CARD_ID),
+      cardLibrary.filter((c) => c.id.endsWith(POTION_CARD_ID_SUFFIX) && c.id !== MIXED_POTION_CARD_ID),
       ALCHEMIST_POTIONS_OFFERED,
     );
     set({ alchemistState: { potions, refreshesLeft: ALCHEMIST_REFRESHES, mixUsed: false, firstPurchaseUsed: false } });

@@ -9,5 +9,7 @@ export { applyIronwoodBuckler, applyBoneCharmHeal } from "./trinket-effects";
 export { getEnemyDamageMultiplier, applyPlayerDamageStatuses } from "./status-effects";
 export { cardHasDamageType, playBattleCardResolved } from "./card-play";
 export { tickEnemyStatuses, tickPlayerStatuses } from "./status-ticks";
-export { chooseWishCard, endPlayerTurn, processCompanionTurnStart } from "./enemy-turn";
+export { chooseWishCard } from "./wish";
+export { processCompanionTurnStart } from "./companion";
+export { endPlayerTurn } from "./enemy-turn";
 export * from "./cost";

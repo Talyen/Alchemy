@@ -12,22 +12,26 @@ test.describe("Mystery Event Flow", () => {
     await startAtDestination(page, {}, { forceDestination: "Mystery" });
     await page.getByRole("button", { name: "Mystery" }).click();
 
-    const choiceBtn = page.locator("button").filter({ hasText: /Fish|Dance|Harvest|Explore|Collect|Read|Pray|Bathe|Study|Mine|Scout|Search|Take|Dredge|Gather|Bask|Follow|Copy|Organize|Leave|Decipher/i }).first();
+    const choiceBtn = page.getByTestId("mystery-choice").first();
     await expect(choiceBtn).toBeVisible({ timeout: 3000 });
     await choiceBtn.click();
 
-    const hasRemoveCard = await page.getByText("Select a card to remove").isVisible({ timeout: 500 }).catch(() => false);
-    if (hasRemoveCard) {
-      const cardTile = page.locator("button").filter({ has: page.locator("button") }).first();
-      await cardTile.waitFor({ timeout: 2000 });
-      await cardTile.click();
-      await page.getByRole("button", { name: "Remove Card" }).click();
-    }
+    const removeCardText = page.getByText("Select a card to remove");
+    const cardChoiceText = page.getByText("Choose a Card");
+    await expect(async () => {
+      const hasRemove = await removeCardText.isVisible().catch(() => false);
+      const hasChoice = await cardChoiceText.isVisible().catch(() => false);
+      expect(hasRemove || hasChoice).toBe(true);
+    }).toPass({ timeout: 5000 });
 
-    const hasCardChoice = await page.getByText("Choose a Card").isVisible({ timeout: 500 }).catch(() => false);
-    if (hasCardChoice) {
+    if (await removeCardText.isVisible().catch(() => false)) {
+      const cardTile = page.locator('[data-testid="card-selection-grid"] [aria-label^="Select "]').first();
+      await expect(cardTile).toBeVisible({ timeout: 3000 });
+      await cardTile.click();
+      await page.getByRole("button", { name: /^Remove Card$/ }).click();
+    } else if (await cardChoiceText.isVisible().catch(() => false)) {
       const cardChoice = page.locator("button[aria-label^='Select']").first();
-      await cardChoice.waitFor({ timeout: 2000 });
+      await cardChoice.waitFor({ timeout: 3000 });
       await cardChoice.click();
       await page.getByRole("button", { name: "Add Card" }).click();
     }

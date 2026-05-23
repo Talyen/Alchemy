@@ -6,15 +6,20 @@
 import { drawCards } from "./draw";
 import { applyCardEffects } from "./apply-effects";
 import { mergeCombatText } from "./combat-text";
-import { POTION_CARD_ID_FRAGMENT } from "../game-constants";
+import { POTION_CARD_ID_SUFFIX } from "../game-constants";
 import { type BattleCard } from "@/lib/game-data";
 import {
+  clampHealth,
   type BattleResolution,
   type BattleState,
   type CombatFlags,
   type CombatTextEvent,
   isPlayerDefeated,
 } from "./types";
+
+type BooleanCombatFlag = {
+  [K in keyof CombatFlags]: CombatFlags[K] extends boolean ? K : never;
+}[keyof CombatFlags];
 
 /**
  * Checks if a card contains a specific damage type effect.
@@ -27,7 +32,7 @@ export function cardHasDamageType(card: BattleCard, damageType: string): boolean
 type CardCostState = Pick<BattleState, "flags" | "talentEffects" | "trinketEffects">;
 
 const FIRST_CARD_FREE_RULES: {
-  flag: keyof CombatFlags;
+  flag: BooleanCombatFlag;
   condition: (state: CardCostState, card: BattleCard) => boolean;
 }[] = [
   {
@@ -49,9 +54,11 @@ const FIRST_CARD_FREE_RULES: {
 ];
 
 /**
- * Applies temporary mana discounts to compute effective card cost.
+ * Applies a discount to card cost. Only handles reductions (positive values).
+ * Negative values (cost increases) are dropped since no card currently
+ * uses that mechanic — if added later, use a separate applyCostPenalty.
  */
-function applyCostReduction(cost: number, reduction: number): number {
+function applyCostDiscount(cost: number, reduction: number): number {
   return reduction > 0 ? Math.max(0, cost - reduction) : cost;
 }
 
@@ -62,27 +69,29 @@ function checkTrinketFreePotion(state: CardCostState, card: BattleCard): boolean
   return (
     !state.flags.firstPotionFreeUsed &&
     !!state.trinketEffects.mortarPestleFreeFirstPotion &&
-    card.id.includes(POTION_CARD_ID_FRAGMENT)
+    card.id.endsWith(POTION_CARD_ID_SUFFIX)
   );
 }
 
 /**
  * Pure cost computation shared by UI (getEffectiveCost) and card play (resolveCardPlayCost).
  * Returns the effective cost and which one-shot free-card flags were consumed.
+ * When cost is already 0 (e.g. from nextCardCostReduction), free-card flags
+ * are intentionally NOT consumed so they remain available for the next meaningful card.
  */
 export function computeEffectiveCost(
   state: CardCostState,
   card: BattleCard,
-): { effectiveCost: number; consumedFlags: Partial<CombatFlags> } {
-  let effectiveCost = applyCostReduction(card.cost, state.flags.nextCardCostReduction);
-  const consumedFlags: Partial<CombatFlags> = {};
+): { effectiveCost: number; consumedFlags: Set<BooleanCombatFlag> } {
+  let effectiveCost = applyCostDiscount(card.cost, state.flags.nextCardCostReduction);
+  const consumedFlags = new Set<BooleanCombatFlag>();
 
   if (effectiveCost === 0) return { effectiveCost, consumedFlags };
 
   for (const rule of FIRST_CARD_FREE_RULES) {
-    if (!(state.flags[rule.flag] as boolean) && rule.condition(state, card)) {
+    if (!state.flags[rule.flag] && rule.condition(state, card)) {
       effectiveCost = 0;
-      consumedFlags[rule.flag] = true as never;
+      consumedFlags.add(rule.flag);
       break;
     }
   }
@@ -90,7 +99,7 @@ export function computeEffectiveCost(
 
   if (checkTrinketFreePotion(state, card)) {
     effectiveCost = 0;
-    consumedFlags.firstPotionFreeUsed = true;
+    consumedFlags.add("firstPotionFreeUsed");
   }
 
   return { effectiveCost, consumedFlags };
@@ -101,11 +110,14 @@ export function computeEffectiveCost(
  */
 function resolveCardPlayCost(state: BattleState, card: BattleCard) {
   const { effectiveCost, consumedFlags } = computeEffectiveCost(state, card);
-  const hasChanges = Object.keys(consumedFlags).length > 0;
-  return {
-    state: hasChanges ? { ...state, flags: { ...state.flags, ...consumedFlags } as CombatFlags } : state,
-    effectiveCost,
-  };
+  if (consumedFlags.size === 0) {
+    return { state, effectiveCost };
+  }
+  let nextFlags: CombatFlags = { ...state.flags };
+  for (const flag of consumedFlags) {
+    nextFlags = { ...nextFlags, [flag]: true };
+  }
+  return { state: { ...state, flags: nextFlags }, effectiveCost };
 }
 
 /**
@@ -170,26 +182,44 @@ function applyResonantChimeTrinket(state: BattleState, combatTexts: CombatTextEv
 /**
  * Resolves post-play destination (exhausted/discard pile) and triggers consume riders.
  */
-function handlePostPlayCardDestination(state: BattleState, card: BattleCard): BattleState {
+function handlePostPlayCardDestination(
+  state: BattleState,
+  card: BattleCard,
+  combatTexts: CombatTextEvent[],
+): BattleState {
   if (card.consume) {
-    let nextState = state;
-    if (state.trinketEffects.runicQuillDrawOnConsume > 0) {
+    let nextState = { ...state, exhausted: [...state.exhausted, card] };
+    if (nextState.talentEffects.burnOnConsumeAmount > 0 && nextState.enemyHealth > 0) {
+      const burnDmg = nextState.talentEffects.burnOnConsumeAmount;
+      mergeCombatText(combatTexts, {
+        target: "enemy",
+        kind: "damage",
+        stat: "burn",
+        amount: burnDmg,
+      });
+      nextState = {
+        ...nextState,
+        enemyHealth: clampHealth(nextState.enemyHealth, -burnDmg, nextState.enemyMaxHealth),
+      };
+    }
+    if (state.trinketEffects.runicQuillDrawOnConsume > 0 && !state.flags.runicQuillUsedThisTurn) {
       const draw = drawCards(
-        state.deck,
-        state.discard,
-        state.hand,
+        nextState.deck,
+        nextState.discard,
+        nextState.hand,
         state.trinketEffects.runicQuillDrawOnConsume,
-        state.nextCardUid,
+        nextState.nextCardUid,
       );
       nextState = {
-        ...state,
+        ...nextState,
         deck: draw.deck,
         discard: draw.discard,
         hand: draw.hand,
         nextCardUid: draw.nextCardUid,
+        flags: { ...nextState.flags, runicQuillUsedThisTurn: true },
       };
     }
-    return { ...nextState, exhausted: [...nextState.exhausted, card] };
+    return nextState;
   }
   return { ...state, discard: [...state.discard, card] };
 }
@@ -213,8 +243,10 @@ export function playBattleCardResolved(state: BattleState, cardId: string, index
   }
 
   let nextState = executeCardPlayState(costState, card, index, effectiveCost, combatTexts);
-  nextState = applyResonantChimeTrinket(nextState, combatTexts);
-  nextState = handlePostPlayCardDestination(nextState, card);
+  if (nextState.enemyHealth > 0 && !isPlayerDefeated(nextState)) {
+    nextState = applyResonantChimeTrinket(nextState, combatTexts);
+    nextState = handlePostPlayCardDestination(nextState, card, combatTexts);
+  }
 
   return { state: nextState, combatTexts };
 }

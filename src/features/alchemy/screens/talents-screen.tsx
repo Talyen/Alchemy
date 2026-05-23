@@ -1,6 +1,6 @@
 // Talent tree screen — spend XP to unlock keyword-specific talents.
 import { useState, useMemo } from "react";
-import { Menu, RotateCcw, Swords } from "lucide-react";
+import { Menu, RotateCcw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { keywordDefinitions, talentBackgroundArt, type KeywordId, getTalentsForKeyword } from "@/lib/game-data";
@@ -12,20 +12,16 @@ import { useTalentChoices } from "../talents/use-talent-choices";
 import { playUISound } from "@/lib/audio";
 import { TalentTree } from "../talents/talent-tree";
 import { useRunStore } from "../stores/run-store";
-import { useBattleStore } from "../stores/battle-store";
 
 export function TalentsScreen({
   onOpenMenu,
-  onReturnToBattle,
   onUnlockTalent,
   onResetTalents,
 }: {
   onOpenMenu: (rect?: DOMRect) => void;
-  onReturnToBattle: () => void;
   onUnlockTalent: (keywordId: KeywordId, talentId: string) => void;
   onResetTalents: () => void;
 }) {
-  const hasActiveBattle = useBattleStore((s) => s.hasActiveBattle);
   const talentXP = useRunStore((s) => s.talentXP);
   const unlockedTalents = useRunStore((s) => s.unlockedTalents);
   const [selectedKeyword, setSelectedKeyword] = useState<KeywordId>("physical");
@@ -146,14 +142,6 @@ export function TalentsScreen({
             onUnlock={handleUnlockTalent}
           />
         </div>
-      </div>
-
-      <div className="mt-6 flex flex-wrap justify-center gap-3">
-        {hasActiveBattle ? (
-          <Button onClick={onReturnToBattle}>
-            <Swords className="h-4 w-4" /> Return to Battle
-          </Button>
-        ) : null}
       </div>
 
       {showResetConfirm ? (

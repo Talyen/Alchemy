@@ -10,7 +10,7 @@ import { matIconMap, matPillStyle, matTextColor } from "../ui/material-icons";
 
 import { BattleCardButton, DetailPopup, getCardDisplayTitle } from "../ui/card-ui";
 import { ScreenHeader, ShimmerOverlay } from "../ui/shared-ui";
-import { cardSurfaceClass, staticCardTransform, viewCardWidthClass } from "../config";
+import { cardSurfaceClass, staticCardTransform, trinketCardWidthClass, viewCardWidthClass } from "../config";
 import { clearTiltFromEvent, getHoverId, setTiltFromEvent } from "../utils";
 import { useBattleStore } from "../stores/battle-store";
 import { useScreenStore } from "../stores/screen-store";
@@ -55,7 +55,7 @@ function TrinketRewardButton({
         className={cn(
           "tilt-surface group w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
           cardSurfaceClass,
-          viewCardWidthClass,
+          trinketCardWidthClass,
           selected ? "ring-2 ring-primary ring-offset-4 ring-offset-background" : null,
         )}
         style={{ "--card-base-transform": staticCardTransform } as CSSProperties}

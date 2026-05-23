@@ -15,6 +15,7 @@ import {
   LABYRINTH_BURNING_GROUND_DAMAGE,
   LABYRINTH_LEECH_HEAL,
   IRON_HIDE_ARMOR_PER_TURN,
+  TRAIT_FORGE_PER_TURN,
 } from "@/lib/game-constants";
 import { clamp } from "@/lib/utils";
 import { defaultTrinketEffects, computeTrinketManifest } from "@/lib/trinkets";
@@ -2081,8 +2082,8 @@ describe("enemy traits via endPlayerTurn", () => {
     expect(result.state.enemyMitigation.forge).toBe(1);
   });
 
-  it("iron-hide adds 2 armor each turn", () => {
-    const state = makeState({
+  it("iron-hide randomly adds armor, forge, or burn each turn", () => {
+    const base = makeState({
       enemyAttackEffects: [],
       currentEnemy: {
         id: "iron-bear",
@@ -2091,21 +2092,35 @@ describe("enemy traits via endPlayerTurn", () => {
         descriptionLines: [""],
         art: "",
         enemyType: "boss",
-        traits: [{ id: "iron-hide", title: "Iron Hide", description: "Gains 2 Armor each turn" }],
+        traits: [{ id: "iron-hide", title: "Iron Hide", description: "Gains 1 Armor, 1 Forge, or applies 1 Burn each turn" }],
         attackEffects: [],
       },
       deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
       mana: 4,
       maxMana: 4,
     });
-    const result = endPlayerTurn(state);
-    expect(result.state.enemyMitigation.armor).toBe(IRON_HIDE_ARMOR_PER_TURN);
-    expect(result.state.enemyMitigation.forge).toBe(0);
-    expect(result.combatTexts).toContainEqual({
-      target: "enemy",
-      kind: "status",
-      stat: "armor",
-      amount: IRON_HIDE_ARMOR_PER_TURN,
+
+    // Run 3 turns with deterministic random values
+    const result1 = endPlayerTurn(base, { traitRoll: 0.1 });
+    expect(result1.state.enemyMitigation.armor).toBe(IRON_HIDE_ARMOR_PER_TURN);
+    expect(result1.state.enemyMitigation.forge).toBe(0);
+    expect(result1.state.playerHealth).toBe(30);
+    expect(result1.combatTexts).toContainEqual({
+      target: "enemy", kind: "status", stat: "armor", amount: IRON_HIDE_ARMOR_PER_TURN,
+    });
+
+    const state2 = endPlayerTurn(result1.state, { traitRoll: 0.5 });
+    expect(state2.state.enemyMitigation.forge).toBe(TRAIT_FORGE_PER_TURN);
+    expect(state2.state.playerHealth).toBe(30);
+    expect(state2.combatTexts).toContainEqual({
+      target: "enemy", kind: "status", stat: "forge", amount: TRAIT_FORGE_PER_TURN,
+    });
+
+    // Burn adds +1 to the bear's Burn damage (stacks each time chosen)
+    const state3 = endPlayerTurn(state2.state, { traitRoll: 0.9 });
+    expect(state3.state.enemyMitigation.burnBonus).toBe(1);
+    expect(state3.combatTexts).toContainEqual({
+      target: "enemy", kind: "notice", stat: "burn", text: "+1 Burn Dmg",
     });
   });
 

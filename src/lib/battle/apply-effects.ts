@@ -21,8 +21,8 @@ import {
   type BattleState,
   type CombatTextEvent,
 } from "./types";
-import { MIN_MAX_MANA_FLOOR, POTION_CARD_ID_FRAGMENT } from "../game-constants";
-import { mergeCombatText } from "./combat-text";
+import { MIN_MAX_MANA_FLOOR, POTION_CARD_ID_SUFFIX } from "../game-constants";
+import { emitOverhealBlockText, mergeCombatText } from "./combat-text";
 import { drawCards } from "./draw";
 
 /**
@@ -74,7 +74,9 @@ function handleHealEffect(
   const adjustedHeal = Math.round(effect.amount * potionMult);
   const healAmount = Math.round(adjustedHeal * state.talentEffects.healMultiplier);
   mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: healAmount });
-  return applyPlayerHealing(state, healAmount);
+  const nextState = applyPlayerHealing(state, healAmount);
+  emitOverhealBlockText(state, nextState, combatTexts);
+  return nextState;
 }
 
 function handleRestoreMana(
@@ -177,23 +179,29 @@ function handleSelfDamage(
   combatTexts: CombatTextEvent[],
 ): BattleState {
   const postDamage = applyPlayerCombatDamage(state, amount);
-  mergeCombatText(combatTexts, {
-    target: "player",
-    kind: "damage",
-    stat: damageType,
-    amount: amount,
-  });
+  const healthLost = state.playerHealth - postDamage.playerHealth;
+  if (healthLost > 0) {
+    mergeCombatText(combatTexts, {
+      target: "player",
+      kind: "damage",
+      stat: damageType,
+      amount: healthLost,
+    });
+  }
   return addPlayerStatus(postDamage, damageType, amount);
 }
 
 function handleLoseHealth(state: BattleState, amount: number, combatTexts: CombatTextEvent[]): BattleState {
   const postDamage = applyPlayerCombatDamage(state, amount);
-  mergeCombatText(combatTexts, {
-    target: "player",
-    kind: "damage",
-    stat: "health",
-    amount: amount,
-  });
+  const healthLost = state.playerHealth - postDamage.playerHealth;
+  if (healthLost > 0) {
+    mergeCombatText(combatTexts, {
+      target: "player",
+      kind: "damage",
+      stat: "health",
+      amount: healthLost,
+    });
+  }
   return postDamage;
 }
 
@@ -250,6 +258,7 @@ function handleRemovePlayerStatus(
     playerStatuses: { ...state.playerStatuses, [status]: 0 },
   };
   if (nextState.trinketEffects.sinEaterHealOnHarmfulStatusRemove > 0) {
+    const prevState = nextState;
     nextState = applyPlayerHealing(nextState, nextState.trinketEffects.sinEaterHealOnHarmfulStatusRemove);
     mergeCombatText(combatTexts, {
       target: "player",
@@ -257,6 +266,18 @@ function handleRemovePlayerStatus(
       stat: "health",
       amount: nextState.trinketEffects.sinEaterHealOnHarmfulStatusRemove,
     });
+    emitOverhealBlockText(prevState, nextState, combatTexts);
+  }
+  if (nextState.talentEffects.healOnStatusCleanse > 0) {
+    const prevState = nextState;
+    nextState = applyPlayerHealing(nextState, nextState.talentEffects.healOnStatusCleanse);
+    mergeCombatText(combatTexts, {
+      target: "player",
+      kind: "heal",
+      stat: "health",
+      amount: nextState.talentEffects.healOnStatusCleanse,
+    });
+    emitOverhealBlockText(prevState, nextState, combatTexts);
   }
   return nextState;
 }
@@ -307,7 +328,7 @@ function handleUtilityEffect(
  * Evaluates potion potency and iterates over card effects sequentially.
  */
 export function applyCardEffects(state: BattleState, card: BattleCard, combatTexts: CombatTextEvent[]): BattleState {
-  const potionMult = card.id.includes(POTION_CARD_ID_FRAGMENT) ? state.talentEffects.potionPotency : 1;
+  const potionMult = card.id.endsWith(POTION_CARD_ID_SUFFIX) ? state.talentEffects.potionPotency : 1;
 
   return card.effects.reduce((currentState, effect) => {
     if (effect.kind === "damage") {

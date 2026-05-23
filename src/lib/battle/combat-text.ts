@@ -3,7 +3,7 @@
  * Depends on: types.ts.
  * Depended on by: apply-effects, card-play, damage, status-effects, enemy-turn, trinket-effects, wish.
  */
-import type { CombatTextEvent, NumericCombatTextEvent } from "./types";
+import type { BattleState, CombatTextEvent, NumericCombatTextEvent } from "./types";
 
 const hiddenStatusApplicationStats = new Set(["burn", "poison", "bleed", "freeze", "stun"]);
 
@@ -52,4 +52,20 @@ export function mergeCombatText(combatTexts: CombatTextEvent[], nextEvent: Comba
     return;
   }
   combatTexts.push(nextEvent);
+}
+
+// Helper for overheal-to-block talent. Emits block combat text when applyPlayerHealing
+// triggers overheal conversion (talentEffect.overhealToBlockRatio).
+export function emitOverhealBlockText(
+  stateBefore: Pick<BattleState, "playerStatuses">,
+  stateAfter: Pick<BattleState, "playerStatuses">,
+  combatTexts: CombatTextEvent[],
+) {
+  if (stateAfter.playerStatuses.block <= stateBefore.playerStatuses.block) return;
+  mergeCombatText(combatTexts, {
+    target: "player",
+    kind: "status",
+    stat: "block",
+    amount: stateAfter.playerStatuses.block - stateBefore.playerStatuses.block,
+  });
 }

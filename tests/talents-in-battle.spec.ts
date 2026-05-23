@@ -1,12 +1,9 @@
 import { expect, test } from "@playwright/test";
-import { forceNextDestinationChoice, injectSaveState, makeCard, resumeGameMode } from "./helpers";
+import { enableFastMode, forceNextDestinationChoice, injectSaveState, makeCard, resumeGameMode } from "./helpers";
 
 test.describe("Talents in Battle", () => {
-  test.afterEach(async ({ page }) => {
-    await page.evaluate(() => localStorage.clear()).catch(() => {});
-  });
-
   test("block-start talent gives starting block in combat", async ({ page }) => {
+    await enableFastMode(page);
     await page.addInitScript(() => {
       const KEY = "alchemy-save-v1";
       const save = JSON.parse(localStorage.getItem(KEY) || "{}");
@@ -24,14 +21,15 @@ test.describe("Talents in Battle", () => {
     await forceNextDestinationChoice(page, "Normal Combat");
     await page.goto("/");
     await resumeGameMode(page, "campaign");
-    await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 5000 });
     await page.getByRole("button", { name: "Normal Combat" }).click();
-    await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 5000 });
 
     await expect(page.getByRole("button", { name: "Block 10" })).toBeVisible({ timeout: 3000 });
   });
 
   test("physical-dmg-1 talent increases physical damage dealt", async ({ page }) => {
+    await enableFastMode(page);
     await page.addInitScript(() => {
       const KEY = "alchemy-save-v1";
       const save = JSON.parse(localStorage.getItem(KEY) || "{}");
@@ -49,12 +47,10 @@ test.describe("Talents in Battle", () => {
     await forceNextDestinationChoice(page, "Normal Combat");
     await page.goto("/");
     await resumeGameMode(page, "campaign");
-    await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 10000 });
-    await page.evaluate(() => {
-      window.disableForceDestination = true;
-    }).catch(() => {});
+    await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 5000 });
+    await page.evaluate(() => { window.disableForceDestination = true; });
     await page.getByRole("button", { name: "Normal Combat" }).click();
-    await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 5000 });
 
     const slash = page.locator('[aria-label="Play Slash"]').first();
     await expect(slash).toBeVisible({ timeout: 2000 });

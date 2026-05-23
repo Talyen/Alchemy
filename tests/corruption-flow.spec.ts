@@ -48,7 +48,7 @@ test.describe("Corruption Full Flow", () => {
 
     await expect(page.getByRole("button", { name: "Normal Combat" })).toBeVisible({ timeout: 5000 });
     await page.getByRole("button", { name: "Normal Combat" }).click();
-    await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 5000 });
 
     const playableCards = page.locator('[aria-label^="Play "]');
     const count = await playableCards.count();

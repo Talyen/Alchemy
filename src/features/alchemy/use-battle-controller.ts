@@ -35,6 +35,8 @@ import {
   ENEMY_PHASE_DELAY,
   HAND_FAN_ROTATION_DEGREES,
   COMPANION_SOUND_CARD_IDS,
+  isAnimationDisabled,
+  ANIMATION_DISABLED_DURATION,
 } from "@/lib/game-constants";
 import { getCardRect, getHoverId } from "./utils";
 import type { RunStateController } from "./use-run-state";
@@ -146,6 +148,7 @@ export function useBattleController({
   const transferSafetyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const companionScheduledRef = useRef(false);
   const battleSessionRef = useRef(0);
+  const victoryDefeatHandledRef = useRef(false);
   const transferCancelRegistryRef = useRef(createTransferCancelRegistry());
   const [cardTransfers, setCardTransfers] = useState<CardTransfer[]>([]);
   const [hiddenHandCardKeys, setHiddenHandCardKeys] = useState<Set<string>>(new Set());
@@ -164,6 +167,14 @@ export function useBattleController({
       return fn();
     }
     return fallback as T;
+  }
+
+  function handleVictoryDefeat(kind: "victory" | "defeat") {
+    if (!victoryDefeatHandledRef.current) {
+      victoryDefeatHandledRef.current = true;
+      if (kind === "victory") onBattleVictory?.();
+      else onBattleDefeat?.();
+    }
   }
 
   function registerTransferCancelCallback(callback: () => void) {
@@ -289,7 +300,9 @@ export function useBattleController({
       setCardTransfers([{ ...transfer, id }]);
       timeout = setTimeout(
         () => finish(true),
-        Math.round(transfer.duration * 1000) + CARD_TRANSFER_CONFIG.completionBufferMs,
+        isAnimationDisabled()
+          ? ANIMATION_DISABLED_DURATION
+          : Math.round(transfer.duration * 1000) + CARD_TRANSFER_CONFIG.completionBufferMs,
       );
       transferTimeoutRef.current = timeout;
     });
@@ -459,6 +472,7 @@ export function useBattleController({
     setHiddenHandCardKeys(new Set());
     setCardTransferInProgress(false);
     cardPlayInProgressRef.current = false;
+    victoryDefeatHandledRef.current = false;
     getStore().clearRevealedCardKeys();
     const startingHealth = getBattleStartPlayerHealth(run.runPlayerHealth, run.runMaxHealth, run.runTrinkets);
     run.setRunPlayerHealth(startingHealth);
@@ -531,7 +545,9 @@ export function useBattleController({
       });
     });
     try {
-      await animateDrawnHand(drawnCards, newState.hand);
+      if (!isAnimationDisabled()) {
+        await animateDrawnHand(drawnCards, newState.hand);
+      }
     } finally {
       runIfSessionActive(session, () => {
         setCardTransferInProgress(false);
@@ -579,11 +595,11 @@ export function useBattleController({
         runIfSessionActive(session, () => {
           cardPlayInProgressRef.current = false;
           if (isPlayerDefeated(resolution.state)) {
-            onBattleDefeat?.();
+            handleVictoryDefeat("defeat");
             return;
           }
           if (resolution.state.enemyHealth <= 0) {
-            onBattleVictory?.();
+            handleVictoryDefeat("victory");
           }
         });
       });
@@ -653,7 +669,7 @@ export function useBattleController({
       .finally(() => {
         runIfSessionActive(session, () => {
           if (newState.enemyHealth <= 0) {
-            onBattleVictory?.();
+            handleVictoryDefeat("victory");
           }
         });
       });
@@ -679,7 +695,13 @@ export function useBattleController({
 
   async function animateEndTurnThenResolve(currentState: BattleState, session: number) {
     try {
-      await animateDiscardedHand(currentState.hand);
+      if (!isAnimationDisabled()) {
+        try {
+          await animateDiscardedHand(currentState.hand);
+        } catch (err) {
+          console.error("Discard hand animation failed:", err);
+        }
+      }
       runIfSessionActive(session, () => {
         resolveEndTurn(currentState, session);
       });
@@ -703,7 +725,7 @@ export function useBattleController({
       if (companionResult.state.enemyHealth <= 0) {
         getStore().setBattleState(companionResult.state);
         if (companionResult.combatTexts.length > 0) getStore().showCombatTexts(companionResult.combatTexts);
-        onBattleVictory?.();
+        handleVictoryDefeat("victory");
         return;
       }
 
@@ -732,11 +754,11 @@ export function useBattleController({
               setCardTransferInProgress(false);
               cardPlayInProgressRef.current = false;
               if (isPlayerDefeated(result.state)) {
-                onBattleDefeat?.();
+                handleVictoryDefeat("defeat");
                 return;
               }
               if (result.state.enemyHealth <= 0) {
-                onBattleVictory?.();
+                handleVictoryDefeat("victory");
                 return;
               }
               if (result.playerTurnSkipped) {
@@ -762,11 +784,11 @@ export function useBattleController({
       );
       if (result.state.enemyHealth <= 0) {
         getStore().setBattleState({ ...result.state, turnPhase: "enemy", hand: [] });
-        onBattleVictory?.();
+        handleVictoryDefeat("victory");
         return;
       }
       if (isPlayerDefeated(result.state)) {
-        onBattleDefeat?.();
+        handleVictoryDefeat("defeat");
         return;
       }
       scheduleEnemyTurnResolution(
@@ -822,6 +844,8 @@ export function useBattleController({
   ) {
     const playerTexts = combatTexts.filter((ct) => ct.target === "player");
     clearEnemyTimeout();
+    const phaseDelay = isAnimationDisabled() ? ANIMATION_DISABLED_DURATION : ENEMY_PHASE_DELAY;
+    const recoveryDelay = isAnimationDisabled() ? ANIMATION_DISABLED_DURATION : ENEMY_ATTACK_RECOVERY_DELAY;
     enemyTimeoutRef.current = setTimeout(() => {
       enemyTimeoutRef.current = null;
       runIfSessionActive(session, () => {
@@ -846,11 +870,11 @@ export function useBattleController({
               .finally(() => {
                 runIfSessionActive(session, () => {
                   if (isPlayerDefeated(resultState)) {
-                    onBattleDefeat?.();
+                    handleVictoryDefeat("defeat");
                     return;
                   }
                   if (resultState.enemyHealth <= 0) {
-                    onBattleVictory?.();
+                    handleVictoryDefeat("victory");
                     return;
                   }
                   if (playerTurnSkipped) {
@@ -861,13 +885,14 @@ export function useBattleController({
                 });
               });
           });
-        }, ENEMY_ATTACK_RECOVERY_DELAY);
+        }, recoveryDelay);
       });
-    }, ENEMY_PHASE_DELAY);
+    }, phaseDelay);
   }
 
   function scheduleCompanionFollowUp(resultState: BattleState, session: number) {
     if (!resultState.activeCompanion || resultState.enemyHealth <= 0) return;
+    const companionDelay = isAnimationDisabled() ? ANIMATION_DISABLED_DURATION : COMPANION_ATTACK_DELAY;
     companionTimeoutRef.current = setTimeout(() => {
       companionTimeoutRef.current = null;
       companionScheduledRef.current = false;
@@ -875,7 +900,7 @@ export function useBattleController({
         const texts = resolveCompanionFollowUpTexts(session);
         if (texts.length > 0) getStore().showCombatTexts(texts);
       });
-    }, COMPANION_ATTACK_DELAY);
+    }, companionDelay);
     companionScheduledRef.current = true;
   }
 
@@ -906,6 +931,7 @@ export function useBattleController({
       deathsDoorActive: false,
       deathsDoorTriggeredTurn: null,
     }));
+    handleVictoryDefeat("defeat");
   }
 
   function skipCombatDevMode() {
@@ -915,6 +941,7 @@ export function useBattleController({
       clearTransferHandles();
       stopBattleFeedback();
       getStore().setBattleState((c) => ({ ...c, enemyHealth: 0, wishOptions: null, wishQueue: [] }));
+      handleVictoryDefeat("victory");
     }
   }
 

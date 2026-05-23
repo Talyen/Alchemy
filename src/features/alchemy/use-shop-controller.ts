@@ -17,7 +17,7 @@ import {
   SHOP_CARDS_OFFERED,
   ALCHEMIST_POTIONS_OFFERED,
   MIXED_POTION_CARD_ID,
-  POTION_CARD_ID_FRAGMENT,
+  POTION_CARD_ID_SUFFIX,
 } from "@/lib/game-constants";
 import { resampleItems } from "./utils";
 import { useScreenStore } from "./stores/screen-store";
@@ -94,9 +94,7 @@ export function useShopController({
   }
 
   function handleAlchemistRefresh() {
-    const potionPool = cardLibrary.filter(
-      (c) => c.id.includes(POTION_CARD_ID_FRAGMENT) && c.id !== MIXED_POTION_CARD_ID,
-    );
+    const potionPool = cardLibrary.filter((c) => c.id.endsWith(POTION_CARD_ID_SUFFIX) && c.id !== MIXED_POTION_CARD_ID);
     if (alchemistState.refreshesLeft <= 0 || run.runGold < ALCHEMIST_REFRESH_PRICE) return;
     playGoldSpend();
     run.setRunGold((g) => Math.max(0, g - ALCHEMIST_REFRESH_PRICE));

@@ -124,6 +124,7 @@ export function ArtPanel({
         />
       )}
       <ActorStatsPanel
+        side={side}
         title={title}
         health={health}
         maxHealth={maxHealth}
@@ -230,6 +231,7 @@ function ActorArtFrame({
 }
 
 function ActorStatsPanel({
+  side,
   title,
   health,
   maxHealth,
@@ -239,7 +241,7 @@ function ActorStatsPanel({
   isDead,
   cardWidthClass,
   deathsDoorActive,
-}: Pick<ArtPanelProps, "title" | "health" | "maxHealth" | "statuses" | "isDead" | "cardWidthClass"> & {
+}: Pick<ArtPanelProps, "side" | "title" | "health" | "maxHealth" | "statuses" | "isDead" | "cardWidthClass"> & {
   deathsDoorActive: boolean | undefined;
   healthPercent: number;
   healthToken: number;
@@ -255,7 +257,7 @@ function ActorStatsPanel({
     >
       {deathsDoorActive ? <StatsDeathDoorBorder /> : null}
       <div className={isDead ? "opacity-0 transition-opacity duration-700" : ""}>
-        <ActorHealthHeader title={title} health={health} maxHealth={maxHealth} healthToken={healthToken} />
+        <ActorHealthHeader side={side} title={title} health={health} maxHealth={maxHealth} healthToken={healthToken} />
         <Progress
           value={healthPercent}
           className={cn("mt-1 h-2 bg-background/80 [&>div]:bg-destructive", isDead && "[&>div]:bg-destructive/30")}
@@ -267,15 +269,20 @@ function ActorStatsPanel({
 }
 
 function ActorHealthHeader({
+  side,
   title,
   health,
   maxHealth,
   healthToken,
-}: Pick<ArtPanelProps, "title" | "health" | "maxHealth"> & { healthToken: number }) {
+}: Pick<ArtPanelProps, "side" | "title" | "health" | "maxHealth"> & { healthToken: number }) {
   return (
     <div className="flex items-baseline justify-between gap-3">
       <p className="font-display text-base font-bold text-amber-100/75">{title}</p>
-      <p key={healthToken} className={cn("text-sm font-semibold text-foreground", healthToken > 0 && "hp-number-pop")}>
+      <p
+        key={healthToken}
+        data-testid={`${side}-health`}
+        className={cn("text-sm font-semibold text-foreground", healthToken > 0 && "hp-number-pop")}
+      >
         {health}/{maxHealth}
       </p>
     </div>

@@ -87,7 +87,10 @@ export const enemyBestiary: BestiaryEntry[] = [
     descriptionLines: [],
     art: theBlightTreant,
     enemyType: "boss",
-    traits: [{ id: "regeneration", title: "Rotting Regrowth", description: "Gains 2 Health each turn" }],
+    traits: [
+      { id: "regeneration", title: "Rotting Regrowth", description: "Restores 2 Health each turn" },
+      { id: "burn-vulnerability", title: "Burn Vulnerability", description: "Receives double Burn damage" },
+    ],
     attackEffects: [
       { kind: "damage", damageType: "nature", amount: 3 },
       { kind: "player-status", status: "poison", amount: 1 },
@@ -165,7 +168,7 @@ export const enemyBestiary: BestiaryEntry[] = [
     descriptionLines: [],
     art: mudElemental,
     enemyType: "elite",
-    traits: [{ id: "regeneration", title: "Regeneration", description: "Gains 2 Health each turn" }],
+    traits: [{ id: "regeneration", title: "Regeneration", description: "Restores 2 Health each turn" }],
     attackEffects: [
       { kind: "player-status", status: "stun", amount: 2 },
       { kind: "player-status", status: "poison", amount: 2 },
@@ -220,7 +223,9 @@ export const enemyBestiary: BestiaryEntry[] = [
     descriptionLines: [],
     art: ironBear,
     enemyType: "boss",
-    traits: [{ id: "iron-hide", title: "Iron Hide", description: "Gains 1 Armor each turn" }],
+    traits: [
+      { id: "iron-hide", title: "Iron Hide", description: "Gains 1 Armor, 1 Forge, or +1 Burn damage each turn" },
+    ],
     attackEffects: [
       { kind: "damage", damageType: "physical", amount: 4 },
       { kind: "damage", damageType: "burn", amount: 2 },

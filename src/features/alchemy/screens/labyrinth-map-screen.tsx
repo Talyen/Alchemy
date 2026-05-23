@@ -24,7 +24,7 @@ type Props = {
 };
 
 type NodeMeta = {
-  icon: ReactNode;
+  icon: React.ComponentType<{ className?: string }>;
   className: string;
   hoverBorder: string;
   shineColors: string[];
@@ -48,49 +48,49 @@ const CONFIG = {
 
 const NODE_META: Record<LabyrinthNodeType, NodeMeta> = {
   entrance: {
-    icon: <DoorOpen className="h-6 w-6" />,
+    icon: DoorOpen,
     className: "bg-black text-stone-600",
     hoverBorder: "hover:border-stone-500",
     shineColors: ["#292524", "#57534e", "#a8a29e", "#44403c"],
   },
   combat: {
-    icon: <Swords className="h-6 w-6" />,
+    icon: Swords,
     className: "bg-black text-red-500",
     hoverBorder: "hover:border-red-500",
     shineColors: ["#450a0a", "#dc2626", "#f87171", "#7f1d1d"],
   },
   elite: {
-    icon: <Skull className="h-6 w-6" />,
+    icon: Skull,
     className: "bg-black text-violet-500",
     hoverBorder: "hover:border-violet-500",
     shineColors: ["#3b0764", "#9333ea", "#c084fc", "#581c87"],
   },
   rest: {
-    icon: <Heart className="h-6 w-6" />,
+    icon: Heart,
     className: "bg-black text-orange-500",
     hoverBorder: "hover:border-orange-500",
     shineColors: ["#431407", "#d97706", "#fb923c", "#78350f"],
   },
   mystery: {
-    icon: <Sparkles className="h-6 w-6" />,
+    icon: Sparkles,
     className: "bg-black text-zinc-400",
     hoverBorder: "hover:border-zinc-400",
     shineColors: ["#27272a", "#a1a1aa", "#e4e4e7", "#525252"],
   },
   shop: {
-    icon: <ShoppingCart className="h-6 w-6" />,
+    icon: ShoppingCart,
     className: "bg-black text-yellow-500",
     hoverBorder: "hover:border-yellow-500",
     shineColors: ["#422006", "#eab308", "#fde047", "#78350f"],
   },
   alchemist: {
-    icon: <FlaskConical className="h-6 w-6" />,
+    icon: FlaskConical,
     className: "bg-black text-emerald-500",
     hoverBorder: "hover:border-emerald-500",
     shineColors: ["#022c22", "#10b981", "#6ee7b7", "#064e3b"],
   },
   boss: {
-    icon: <Crown className="h-7 w-7" />,
+    icon: Crown,
     className: "bg-black text-red-400",
     hoverBorder: "hover:border-red-400",
     shineColors: ["#450a0a", "#b91c1c", "#fca5a5", "#7f1d1d"],
@@ -224,7 +224,8 @@ function LabyrinthNodeButton({
         className={cn(
           "relative flex aspect-square h-full w-full items-center justify-center rounded-full border-2 text-xs transition-[transform,border-color] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-950",
           meta.className,
-          isCurrent && "border-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.5)]",
+          isCurrent && "border-amber-400",
+          isCurrent && node.type !== "entrance" && "shadow-[0_0_10px_rgba(251,191,36,0.5)]",
           isEnterable && "hover:-translate-y-0.5 active:scale-95",
           isCleared && "border-emerald-200 opacity-30",
           isFailed && "border-red-400 opacity-30",
@@ -238,7 +239,19 @@ function LabyrinthNodeButton({
             shineColor={meta.shineColors}
           />
         ) : null}
-        <span className="relative z-10">{isCurrent ? <Star className="h-6 w-6 text-amber-400" /> : meta.icon}</span>
+        <span className="relative z-10">
+          {(() => {
+            const Icon = isCurrent ? Star : meta.icon;
+            return (
+              <Icon
+                className={cn(
+                  node.type === "boss" && !isCurrent ? "h-7 w-7" : "h-6 w-6",
+                  isCurrent && "text-amber-400",
+                )}
+              />
+            );
+          })()}
+        </span>
       </button>
     </div>
   );
@@ -274,34 +287,6 @@ function ConnectionLayer({ labyrinthMap }: { labyrinthMap: LabyrinthMap }) {
   );
 }
 
-function ModifierSection({
-  title,
-  titleClassName,
-  modifiers,
-}: {
-  title: string;
-  titleClassName: string;
-  modifiers: LabyrinthModifierKind[];
-}) {
-  if (modifiers.length === 0) return null;
-  return (
-    <>
-      <p className={cn("mb-2 mt-3 text-xs font-semibold uppercase tracking-widest", titleClassName)}>{title}</p>
-      <div className="grid gap-2">
-        {modifiers.map((modifier) => {
-          const definition = ALL_LABYRINTH_MODIFIERS[modifier];
-          return (
-            <div key={modifier} className="rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-2">
-              <p className="text-xs font-bold text-amber-100">{definition.label}</p>
-              <p className="mt-0.5 text-xs leading-snug text-stone-300">{highlightKeywords(definition.description)}</p>
-            </div>
-          );
-        })}
-      </div>
-    </>
-  );
-}
-
 function NodeTooltip({
   type,
   modifiers,
@@ -333,6 +318,8 @@ function NodeTooltip({
   }, []);
 
   const enemyModifiers = modifiers.filter((m) => !REWARD_MODIFIER_KINDS.has(m));
+  const hasModifiers = enemyModifiers.length > 0 || rewardModifiers.length > 0;
+
   return (
     <div
       ref={ref}
@@ -344,8 +331,35 @@ function NodeTooltip({
     >
       <p className="text-sm font-black uppercase tracking-widest text-amber-100/80">{NODE_TYPE_LABELS[type]}</p>
       <p className="mt-1 text-xs leading-snug text-stone-300">{highlightKeywords(NODE_DESCRIPTIONS[type])}</p>
-      <ModifierSection title="Enemy Modifiers" titleClassName="text-red-400" modifiers={enemyModifiers} />
-      <ModifierSection title="Reward Modifiers" titleClassName="text-emerald-400" modifiers={rewardModifiers} />
+      {hasModifiers && (
+        <>
+          <p className="mb-2 mt-3 text-xs font-semibold uppercase tracking-widest text-amber-100/60">Modifiers</p>
+          <div className="grid gap-2">
+            {enemyModifiers.map((modifier) => {
+              const definition = ALL_LABYRINTH_MODIFIERS[modifier];
+              return (
+                <div key={modifier} className="rounded-lg border border-red-500/40 bg-white/[0.03] px-3.5 py-2.5">
+                  <p className="text-xs font-bold text-amber-100">{definition.label}</p>
+                  <p className="mt-0.5 text-xs leading-snug text-stone-300">
+                    {highlightKeywords(definition.description)}
+                  </p>
+                </div>
+              );
+            })}
+            {rewardModifiers.map((modifier) => {
+              const definition = ALL_LABYRINTH_MODIFIERS[modifier];
+              return (
+                <div key={modifier} className="rounded-lg border border-emerald-500/40 bg-white/[0.03] px-3.5 py-2.5">
+                  <p className="text-xs font-bold text-amber-100">{definition.label}</p>
+                  <p className="mt-0.5 text-xs leading-snug text-stone-300">
+                    {highlightKeywords(definition.description)}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
     </div>
   );
 }

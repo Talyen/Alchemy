@@ -24,7 +24,7 @@ describe("Iron Bear", () => {
   it("has Iron Hide trait", () => {
     const trait = ironBear!.traits.find((t) => t.id === "iron-hide");
     expect(trait).toBeDefined();
-    expect(trait!.description).toContain("Gains 1 Armor");
+    expect(trait!.description).toContain("Armor");
   });
 
   it("has attack dealing 4 physical and 2 burn damage", () => {

@@ -1,12 +1,22 @@
-import { expect, test } from "@playwright/test";
-import { failOnRuntimeErrors, makeHighDamageCard, playUntilVictory, selectGameMode, startBattleWithDeck, startCampaignBattle } from "./helpers";
+import { expect, type Page, test } from "@playwright/test";
+import { enableFastMode, failOnRuntimeErrors, makeCard, makeHighDamageCard, playUntilVictory, selectGameMode, startBattleWithDeck } from "./helpers";
 import { BattlePage } from "./pages/battle-page";
+
+async function parsePlayerHealth(page: Page): Promise<number> {
+  const text = await page.getByTestId("player-health").textContent();
+  return Number(text?.split("/")[0] ?? 30);
+}
+
+async function parseEnemyHealth(page: Page): Promise<number> {
+  const text = await page.getByTestId("enemy-health").textContent();
+  return Number(text?.split("/")[0] ?? 30);
+}
 
 test.describe("App Boot", () => {
   test("main menu renders without crashing on desktop", async ({ page }) => {
     const errors = failOnRuntimeErrors(page);
     await page.goto("/");
-    await expect(page.getByRole("button", { name: "Play" })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole("button", { name: "Play" })).toBeVisible({ timeout: 5000 });
     expect(errors).toEqual([]);
   });
 });
@@ -16,18 +26,17 @@ test.describe("Block Mechanics", () => {
   const AEGIS_CARD = { id: "blessed-aegis", title: "Blessed Aegis", descriptionLines: ["Deal Holy damage equal to your Block"], art: "placeholder", cost: 1, effects: [{ kind: "damage", damageType: "holy", amount: 0, equalToBlock: true }] };
 
   test("block card absorbs attack damage and halves at end of turn", async ({ page }) => {
+    await enableFastMode(page);
     await startBattleWithDeck(page, [BLOCK_CARD, BLOCK_CARD, BLOCK_CARD, BLOCK_CARD, BLOCK_CARD, BLOCK_CARD]);
     const battle = new BattlePage(page);
 
-    const hpText = await page.locator("text=/\\d+\\/30/").first().textContent();
-    const hpBefore = Number(hpText?.split("/")[0]);
+    const hpBefore = await parsePlayerHealth(page);
 
     await page.getByRole("button", { name: "Play Block" }).first().click();
 
     await battle.endTurn();
 
-    const hpAfterText = await page.locator("text=/\\d+\\/30/").first().textContent();
-    const hpAfter = Number(hpAfterText?.split("/")[0]);
+    const hpAfter = await parsePlayerHealth(page);
     const hpLost = hpBefore - hpAfter;
 
     expect(hpLost).toBeLessThanOrEqual(5);
@@ -35,6 +44,7 @@ test.describe("Block Mechanics", () => {
   });
 
   test("blessed aegis deals holy damage equal to current block", async ({ page }) => {
+    await enableFastMode(page);
     await startBattleWithDeck(page, [BLOCK_CARD, AEGIS_CARD, BLOCK_CARD, AEGIS_CARD, BLOCK_CARD, AEGIS_CARD]);
     const battle = new BattlePage(page);
 
@@ -43,8 +53,7 @@ test.describe("Block Mechanics", () => {
 
     await page.getByRole("button", { name: "Play Blessed Aegis" }).first().click();
 
-    const enemyHealthText = await page.locator("text=/\\d+\\/\\d+/").last().textContent();
-    const enemyHp = enemyHealthText ? Number(enemyHealthText.split("/")[0]) : 30;
+    const enemyHp = await parseEnemyHealth(page);
     expect(enemyHp).toBeLessThan(30);
     const blockAfter = await battle.block();
     expect(blockAfter).toBe(blockAfterBlock);
@@ -53,10 +62,11 @@ test.describe("Block Mechanics", () => {
 
 test.describe("Victory Rewards", () => {
   test("victory reward requires confirmation before advancing to destinations", async ({ page }) => {
+    await enableFastMode(page);
     await startBattleWithDeck(page, Array.from({ length: 6 }, () => makeHighDamageCard()));
 
     await playUntilVictory(page);
-    await expect(page.getByRole("heading", { name: /^Victory/ })).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole("heading", { name: /^Victory/ })).toBeVisible({ timeout: 3000 });
 
     const addCardButton = page.getByRole("button", { name: /^(Add Card|Take Trinket)$/ });
     await expect(addCardButton).toBeDisabled();
@@ -68,8 +78,6 @@ test.describe("Victory Rewards", () => {
     await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible();
   });
 });
-
-
 
 test.describe("Mobile Portrait", () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
@@ -91,10 +99,10 @@ test.describe("Mobile Landscape", () => {
   });
 
   test("battle hand is playable in landscape", async ({ page }) => {
-    await startCampaignBattle(page);
+    await startBattleWithDeck(page, Array.from({ length: 6 }, () => makeCard()));
     const battle = new BattlePage(page);
 
-    await expect(battle.hand.first()).toBeVisible({ timeout: 10000 });
+    await expect(battle.hand.first()).toBeVisible({ timeout: 5000 });
     expect(await battle.handCount()).toBeGreaterThanOrEqual(1);
 
     const layout = await page.evaluate(() => {

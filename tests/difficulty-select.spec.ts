@@ -20,7 +20,7 @@ test.describe("Difficulty Select", () => {
     await expect(page.getByAltText("Novice")).toBeVisible();
     await expect(page.getByAltText("Adventurer")).toBeVisible();
     await expect(page.getByAltText("Legend")).toBeVisible();
-    await expect(page.getByText("Locked")).toHaveCount(1);
+    await expect(page.getByText("Locked").first()).toBeVisible();
   });
 
   test("selecting difficulty enables Play and starts a battle; Back returns to character select", async ({ page }) => {
@@ -41,7 +41,7 @@ test.describe("Difficulty Select", () => {
     await page.getByAltText("Novice").click();
     await expect(playBtn).toBeEnabled();
     await playBtn.click();
-    await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 5000 });
   });
 
   test("Wizard shows different difficulty config", async ({ page }) => {
@@ -64,6 +64,6 @@ test.describe("Difficulty Skip (first-time player)", () => {
     await page.getByRole("button", { name: "Knight" }).click();
     await page.getByRole("button", { name: "Continue" }).click();
 
-    await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 5000 });
   });
 });

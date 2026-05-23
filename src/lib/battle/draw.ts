@@ -82,6 +82,7 @@ function createInitialFlags(): CombatFlags {
     firstHarmfulStatusPrevented: false,
     firstPotionFreeUsed: false,
     resonantChimeUsedThisTurn: false,
+    runicQuillUsedThisTurn: false,
   };
 }
 
@@ -107,7 +108,7 @@ export function defaultBattleState(): BattleState {
     enemyHealth: BASE_ENEMY_HEALTH,
     enemyMaxHealth: BASE_ENEMY_HEALTH,
     enemyAttackEffects: [],
-    enemyMitigation: { armor: 0, forge: 0, freezeBonus: 0 },
+    enemyMitigation: { armor: 0, forge: 0, freezeBonus: 0, burnBonus: 0 },
     enemyRegeneration: 0,
     playerStatuses: createEmptyPlayerStatuses(),
     enemyStatuses: createEmptyEnemyStatuses(),
@@ -404,13 +405,13 @@ function buildInitialBattleState(
     enemyMaxHealth: setup.enemyHealth,
     enemyAttackEffects: setup.enemyAttackEffects,
     enemyRegeneration: setup.enemyRegeneration,
-    enemyMitigation: { armor: setup.enemyArmor, forge: 0, freezeBonus: 0 },
+    enemyMitigation: { armor: setup.enemyArmor, forge: 0, freezeBonus: 0, burnBonus: 0 },
     playerStatuses: {
       ...baseState.playerStatuses,
       block: setup.startingBlock,
       forge: setup.talentEffects.startForge,
     },
-    enemyStatuses: baseState.enemyStatuses,
+    enemyStatuses: { ...baseState.enemyStatuses, freeze: setup.talentEffects.startFreeze },
     activeCompanion: setup.activeCompanion,
     currentEnemy: setup.currentEnemy,
     talentEffects: setup.talentEffects,
