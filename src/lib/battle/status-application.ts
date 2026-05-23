@@ -4,16 +4,34 @@ import type { EnemyAttackEffect, PlayerStatusId } from "@/lib/game-data/types";
 import { mergeCombatText } from "./combat-text";
 import type { BattleState, CombatTextEvent } from "./types";
 
+const CONSTANTS = {
+  STATUS_NAMES: {
+    FREEZE: "freeze",
+    BLEED: "bleed",
+    POISON: "poison",
+    STUN: "stun",
+    ARMOR: "armor",
+    BLOCK: "block",
+  },
+  TARGETS: {
+    PLAYER: "player",
+  },
+  COMBAT_TEXT_KINDS: {
+    DAMAGE: "damage",
+    STATUS: "status",
+  },
+} as const;
+
 function computeAttackStatusAmount(state: BattleState, status: PlayerStatusId, baseAmount: number) {
-  const extraFreeze = status === "freeze" ? state.enemyMitigation.freezeBonus : 0;
+  const extraFreeze = status === CONSTANTS.STATUS_NAMES.FREEZE ? state.enemyMitigation.freezeBonus : 0;
   return baseAmount + extraFreeze;
 }
 
 function shouldBlockPreventStatus(state: BattleState, status: PlayerStatusId) {
   if (state.playerStatuses.block <= 0) return false;
-  if (status === "bleed" && state.talentEffects.blockPreventsBleed) return true;
-  if (status === "poison" && state.talentEffects.blockPreventsPoison) return true;
-  if (status === "stun" && state.talentEffects.blockPreventsStun) return true;
+  if (status === CONSTANTS.STATUS_NAMES.BLEED && state.talentEffects.blockPreventsBleed) return true;
+  if (status === CONSTANTS.STATUS_NAMES.POISON && state.talentEffects.blockPreventsPoison) return true;
+  if (status === CONSTANTS.STATUS_NAMES.STUN && state.talentEffects.blockPreventsStun) return true;
   return false;
 }
 
@@ -34,7 +52,12 @@ function applyHarmfulStatusFromAttack(
       ...(blockPreventsStatus ? {} : { [status]: state.playerStatuses[status] + amount }),
     },
   };
-  mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: status, amount });
+  mergeCombatText(combatTexts, {
+    target: CONSTANTS.TARGETS.PLAYER,
+    kind: CONSTANTS.COMBAT_TEXT_KINDS.DAMAGE,
+    stat: status,
+    amount,
+  });
   return nextState;
 }
 
@@ -44,7 +67,12 @@ function applyBeneficialStatusFromAttack(
   amount: number,
   combatTexts: CombatTextEvent[],
 ): BattleState {
-  mergeCombatText(combatTexts, { target: "player", kind: "status", stat: status, amount });
+  mergeCombatText(combatTexts, {
+    target: CONSTANTS.TARGETS.PLAYER,
+    kind: CONSTANTS.COMBAT_TEXT_KINDS.STATUS,
+    stat: status,
+    amount,
+  });
   return {
     ...state,
     playerStatuses: {
@@ -61,7 +89,7 @@ export function applyPlayerStatusFromAttack(
 ): BattleState {
   const status = effect.status;
   let amount = computeAttackStatusAmount(state, status, effect.amount);
-  if (status === "stun" && state.talentEffects.armorMitigatesStun) {
+  if (status === CONSTANTS.STATUS_NAMES.STUN && state.talentEffects.armorMitigatesStun) {
     amount = Math.max(0, amount - state.playerStatuses.armor);
   }
   const blockPreventsStatus = shouldBlockPreventStatus(state, status);

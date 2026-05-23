@@ -727,178 +727,149 @@ export function getTalentsForKeyword(keywordId: KeywordId): TalentDefinition[] {
   return talentPool.filter((t) => t.keywordId === keywordId);
 }
 
-function getAvailableTalents(keywordId: KeywordId, unlockedIds: string[]): TalentDefinition[] {
-  return getTalentsForKeyword(keywordId).filter((t) => !unlockedIds.includes(t.id));
-}
-
 // Returns the next N unlockable talents in pool order (top-to-bottom, left-to-right).
 export function sampleTalentChoices(
   keywordId: KeywordId,
   unlockedIds: string[],
   count: number = 1,
 ): TalentDefinition[] {
-  const available = getAvailableTalents(keywordId, unlockedIds);
-  return available.slice(0, count);
+  return getTalentsForKeyword(keywordId)
+    .filter((t) => !unlockedIds.includes(t.id))
+    .slice(0, count);
 }
 
 export type UnlockedTalents = Partial<Record<KeywordId, string[]>>;
 
-// Returns a manifest with all zero/false/null values — the safe default when no talents are
-// unlocked. New TalentEffectManifest fields must be added here AND in computeTalentEffects.
-function createPhysicalAndStunDefaults() {
-  return {
-    flatPhysicalDamage: 0,
-    armorToPhysicalDamage: false,
-    physicalCritChance: 0,
-    firstPhysicalCardFree: false,
-    physicalVsStunnedMultiplier: 0,
-    physicalVsFrozenMultiplier: 0,
+// Safe default manifest with all zero/false/null values.
+// New TalentEffectManifest fields must be added here.
+const DEFAULT_TALENT_EFFECTS: TalentEffectManifest = {
+  flatPhysicalDamage: 0,
+  armorToPhysicalDamage: false,
+  physicalCritChance: 0,
+  firstPhysicalCardFree: false,
+  physicalVsStunnedMultiplier: 0,
+  physicalVsFrozenMultiplier: 0,
 
-    stunThresholdReduction: 0,
-    drawOnStun: 0,
-    nextCardFreeOnStun: false,
-    stunDurationExtension: 0,
-    stunDoubleDamage: false,
-    flatStunDamage: 0,
-    blockOnStun: 0,
-    forgeOnStun: 0,
-    stunStripArmor: false,
-    manaOnStun: 0,
-  };
-}
+  stunThresholdReduction: 0,
+  drawOnStun: 0,
+  nextCardFreeOnStun: false,
+  stunDurationExtension: 0,
+  stunDoubleDamage: false,
+  flatStunDamage: 0,
+  blockOnStun: 0,
+  forgeOnStun: 0,
+  stunStripArmor: false,
+  manaOnStun: 0,
 
-function createBlockForgeAndArmorDefaults() {
-  return {
-    startBlock: 0,
-    blockToPhysicalDamage: false,
-    blockPreventsBleed: false,
-    blockPreventsPoison: false,
-    blockPreventsStun: false,
-    blockAbsorbPhysicalBonus: 0,
-    blockReduceBurnDamage: 0,
-    blockDepletedHeal: 0,
-    blockToHolyDamage: false,
-    blockToStunDamage: false,
+  startBlock: 0,
+  blockToPhysicalDamage: false,
+  blockPreventsBleed: false,
+  blockPreventsPoison: false,
+  blockPreventsStun: false,
+  blockAbsorbPhysicalBonus: 0,
+  blockReduceBurnDamage: 0,
+  blockDepletedHeal: 0,
+  blockToHolyDamage: false,
+  blockToStunDamage: false,
 
-    startForge: 0,
-    forgeToBurn: false,
-    forgeToHoly: false,
-    forgeToBlock: false,
-    forgeToBleed: false,
-    forgeBurnThreshold: 0,
-    forgeBurnDamage: 0,
-    forgeStripArmorThreshold: 0,
-    flatForgeGained: 0,
-    forgeDoubledBelowHalfHealth: false,
-    forgeBlockThreshold: 0,
-    forgeBlockAmount: 0,
+  startForge: 0,
+  forgeToBurn: false,
+  forgeToHoly: false,
+  forgeToBlock: false,
+  forgeToBleed: false,
+  forgeBurnThreshold: 0,
+  forgeBurnDamage: 0,
+  forgeStripArmorThreshold: 0,
+  flatForgeGained: 0,
+  forgeDoubledBelowHalfHealth: false,
+  forgeBlockThreshold: 0,
+  forgeBlockAmount: 0,
 
-    armorMitigatesBurn: false,
-    armorBlockThreshold: 0,
-    armorBlockAmount: 0,
-    armorDoubledBelowHalfHealth: false,
-    firstArmorCardDoubled: false,
-    startArmor: 0,
-    armorMitigatesBleed: false,
-    armorBreakBlock: 0,
-    armorMitigatesStun: false,
-    armorCleanseThreshold: 0,
-    flatArmorAmount: 0,
-  };
-}
+  armorMitigatesBurn: false,
+  armorBlockThreshold: 0,
+  armorBlockAmount: 0,
+  armorDoubledBelowHalfHealth: false,
+  firstArmorCardDoubled: false,
+  startArmor: 0,
+  armorMitigatesBleed: false,
+  armorBreakBlock: 0,
+  armorMitigatesStun: false,
+  armorCleanseThreshold: 0,
+  flatArmorAmount: 0,
 
-function createHealthAndBurnDefaults() {
-  return {
-    campfireHealBonus: 0,
-    healthThresholdBlock: null,
-    maxHealthPerCombat: 0,
-    startHealth: 0,
-    healMultiplier: 1,
-    healthThresholdArmor: null,
+  campfireHealBonus: 0,
+  healthThresholdBlock: null,
+  maxHealthPerCombat: 0,
+  startHealth: 0,
+  healMultiplier: 1,
+  healthThresholdArmor: null,
 
-    firstBurnCardDoubled: false,
-    burnRemovesEnemyArmor: false,
-    burnDoubleChance: 0,
-    receiveHalfBurnDamage: false,
-  };
-}
+  firstBurnCardDoubled: false,
+  burnRemovesEnemyArmor: false,
+  burnDoubleChance: 0,
+  receiveHalfBurnDamage: false,
 
-function createGoldAndHolyDefaults() {
-  return {
-    shopCardDiscount: 0,
-    shopFreeRefresh: false,
-    startGold: 0,
-    goldPerCombat: 0,
-    potionDiscount: 0,
-    potionPotency: 1,
-    removeCardDiscount: 0,
-    enemyGoldDropBonus: 0,
-    eliteGoldDropBonus: 0,
-    goldOnWish: 0,
-    mixPotionDiscount: 0,
-    companionBondLevels: { wolf: 0, "lizard-scout": 0, imp: 0, "frost-whelp": 0, bear: 0, panther: 0, phoenix: 0 },
+  shopCardDiscount: 0,
+  shopFreeRefresh: false,
+  startGold: 0,
+  goldPerCombat: 0,
+  potionDiscount: 0,
+  potionPotency: 1,
+  removeCardDiscount: 0,
+  enemyGoldDropBonus: 0,
+  eliteGoldDropBonus: 0,
+  goldOnWish: 0,
+  mixPotionDiscount: 0,
+  companionBondLevels: { wolf: 0, "lizard-scout": 0, imp: 0, "frost-whelp": 0, bear: 0, panther: 0, phoenix: 0 },
 
-    holyLifestealPercent: 0,
-    firstHolyCardFree: false,
-    holyGoldPercent: 0,
-    holyBurnChance: 0,
-    receiveHalfHolyDamage: false,
-    holyBlockPercent: 0,
-    holyWishChance: 0,
-    holyBlockPercentFromDamage: 0,
-    holyVsBurnMultiplier: 0,
-  };
-}
+  holyLifestealPercent: 0,
+  firstHolyCardFree: false,
+  holyGoldPercent: 0,
+  holyBurnChance: 0,
+  receiveHalfHolyDamage: false,
+  holyBlockPercent: 0,
+  holyWishChance: 0,
+  holyBlockPercentFromDamage: 0,
+  holyVsBurnMultiplier: 0,
 
-function createWishAndPoisonDefaults() {
-  return {
-    goldOnWishAmount: 0,
-    wishUndiscoveredCards: false,
-    healthOnWish: 0,
-    removeHarmfulStatusOnWish: false,
-    wishExtraChoiceChance: 0,
-    wishDrawsCard: false,
+  goldOnWishAmount: 0,
+  wishUndiscoveredCards: false,
+  healthOnWish: 0,
+  removeHarmfulStatusOnWish: false,
+  wishExtraChoiceChance: 0,
+  wishDrawsCard: false,
 
-    firstPoisonCardFree: false,
-    poisonPhysicalBonus: 0,
-    poisonGainChance: 0,
-    receiveHalfPoisonDamage: false,
-    goldOnFirstPoison: 0,
-    poisonHalvesHealing: false,
-  };
-}
+  firstPoisonCardFree: false,
+  poisonPhysicalBonus: 0,
+  poisonGainChance: 0,
+  receiveHalfPoisonDamage: false,
+  goldOnFirstPoison: 0,
+  poisonHalvesHealing: false,
 
-function createCompanionFreezeTrapAndBleedDefaults() {
-  return {
-    companionDamage: 0,
-    companionGoldFindActive: false,
+  companionDamage: 0,
+  companionGoldFindActive: false,
 
-    freezeThresholdReduction: 0,
-    freezeDoubleDamage: false,
+  freezeThresholdReduction: 0,
+  freezeDoubleDamage: false,
 
-    flatTrapDamage: 0,
+  flatTrapDamage: 0,
 
-    firstBleedCardFree: false,
-    bleedPhysicalBonus: 0,
-    bleedLeechChance: 0,
-    bleedEnemyDamageReduction: 0,
-    bleedPhysicalTakenBonus: 0,
-    bleedExecuteThreshold: 0,
-    bleedDesperateMultiplier: 1,
-    bleedPoisonChance: 0,
-  };
-}
+  firstBleedCardFree: false,
+  bleedPhysicalBonus: 0,
+  bleedLeechChance: 0,
+  bleedEnemyDamageReduction: 0,
+  bleedPhysicalTakenBonus: 0,
+  bleedExecuteThreshold: 0,
+  bleedDesperateMultiplier: 1,
+  bleedPoisonChance: 0,
+};
 
 // Returns a manifest with all zero/false/null values — the safe default when no talents are
-// unlocked. New TalentEffectManifest fields must be added to the appropriate helper above.
+// unlocked. Deep-copies the nested companionBondLevels to prevent shared mutation.
 export function createEmptyTalentManifest(): TalentEffectManifest {
   return {
-    ...createPhysicalAndStunDefaults(),
-    ...createBlockForgeAndArmorDefaults(),
-    ...createHealthAndBurnDefaults(),
-    ...createGoldAndHolyDefaults(),
-    ...createWishAndPoisonDefaults(),
-    ...createCompanionFreezeTrapAndBleedDefaults(),
+    ...DEFAULT_TALENT_EFFECTS,
+    companionBondLevels: { ...DEFAULT_TALENT_EFFECTS.companionBondLevels },
   };
 }
 

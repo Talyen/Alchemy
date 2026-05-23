@@ -8,10 +8,6 @@ beforeEach(() => {
 });
 
 describe("initial state", () => {
-  it("starts at menu screen", () => {
-    expect(useScreenStore.getState().screen).toBe("menu");
-  });
-
   it("has empty shop state", () => {
     const shop = useScreenStore.getState().shopState;
     expect(shop.cards).toEqual([]);
@@ -123,14 +119,6 @@ describe("beginMystery", () => {
   it("clears mystery card choices", () => {
     useScreenStore.setState({ mysteryCardChoices: [{ id: "test", title: "T", descriptionLines: [""], art: "", cost: 0, effects: [] }] });
     useScreenStore.getState().beginMystery();
-    expect(useScreenStore.getState().mysteryCardChoices).toBeNull();
-  });
-});
-
-describe("clearMysteryChoices", () => {
-  it("sets mysteryCardChoices to null", () => {
-    useScreenStore.setState({ mysteryCardChoices: [] });
-    useScreenStore.getState().clearMysteryChoices();
     expect(useScreenStore.getState().mysteryCardChoices).toBeNull();
   });
 });

@@ -1,10 +1,9 @@
 /**
  * Mathematical formulas and mapping functions for keyword Talent XP progression.
- * Depends on: src/lib/game-constants.ts, src/lib/game-data/types.ts, and src/lib/game-data.
+ * Depends on: src/lib/game-constants.ts and src/lib/game-data/types.ts.
  * Depended on by: Talents UI screen, homestead systems, and the player save loaders.
  */
-import { getCardKeywords } from "@/lib/game-data";
-import type { BattleCard, KeywordId } from "@/lib/game-data/types";
+import type { KeywordId } from "@/lib/game-data/types";
 import { XP_BASE_PER_POINT, XP_MIN_THRESHOLD, XP_ROOT_DIVISOR, XP_TRIANGULAR_MULTIPLIER } from "./game-constants";
 
 export const TALENT_PROGRESS_CONFIG = {
@@ -18,8 +17,7 @@ export type TalentXP = Partial<Record<KeywordId, number>>;
 
 // XP-to-next-point uses a triangular number sequence: point 0→1 needs 10 XP,
 // 1→2 needs 20 XP, 2→3 needs 30 XP, etc. This makes early points cheap and
-// later points progressively more expensive, giving fast early progression.
-// Formula: (currentPoints + 1) * 10
+// later points progressively more expensive.
 export function xpForNextPoint(currentPoints: number): number {
   return (currentPoints + 1) * XP_BASE_PER_POINT;
 }
@@ -28,6 +26,7 @@ export function xpForNextPoint(currentPoints: number): number {
 // Triangular sum formula: n(n+1)/2 * 10 -> points * (points + 1) * 5
 // (Assuming XP_TRIANGULAR_MULTIPLIER is 5, representing half of XP_BASE_PER_POINT).
 // This is the mathematical inverse of computeTalentPoints.
+// Game-state assumption: points is a non-negative integer.
 export function xpThresholdForPoints(points: number): number {
   return points * (points + 1) * XP_TRIANGULAR_MULTIPLIER;
 }
@@ -39,7 +38,7 @@ export function xpThresholdForPoints(points: number): number {
 // where a = 1, b = 1, c = -XP/T.
 // points = (-1 + sqrt(1 + 4 * XP / T)) / 2
 // Letting XP_ROOT_DIVISOR = 4 / T = 4 / 5 = 0.8, this simplifies to:
-// points = (-1 + sqrt(1 + XP_ROOT_DIVISOR * XP)) / 2
+// points = (-1 + sqrt(1 + XP_ROOT_DIVISOR * xp)) / 2
 // Taking the floor gives the largest integer points tier reached.
 export function computeTalentPoints(xp: number): number {
   if (xp < XP_MIN_THRESHOLD) return 0;
@@ -51,13 +50,6 @@ export function xpToNextPoint(xp: number): number {
   const currentPoints = computeTalentPoints(xp);
   const nextThreshold = xpThresholdForPoints(currentPoints + 1);
   return Math.max(0, nextThreshold - xp);
-}
-
-// Maps a card's effects to the keyword IDs that should receive XP.
-// A single card can grant XP to multiple keywords (e.g. a physical burn card).
-// The keyword → XP mapping is how the talent system incentivizes certain play styles.
-export function extractCardKeywords(card: BattleCard): KeywordId[] {
-  return getCardKeywords(card);
 }
 
 // Adds XP to one or more keywords. Used both for permanent (cross-run) XP and

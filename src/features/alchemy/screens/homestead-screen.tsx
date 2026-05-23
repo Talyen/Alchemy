@@ -51,7 +51,19 @@ type GoalItem =
   | { kind: "farm"; data: HomesteadFarm }
   | { kind: "research"; data: HomesteadResearch };
 
+// Configuration and layout tokens grouped to avoid magic values
+const HOMESTEAD_CONFIG = {
+  companionPageSize: 6,
+  artAspectRatio: "aspect-[4/3]",
+  companionAspectRatio: "aspect-[3/4]",
+  companionPageWidth: "w-[65%]",
+  compilationFillerCount: 3, // For structural grid layout alignment
+} as const;
+
 const companionCards = cardLibrary.filter((c) => c.effects.some((e) => e.kind === "summon-companion"));
+
+const MATERIAL_LABELS_LIST = MATERIAL_IDS.map((m) => materialLabels[m]);
+const MATERIAL_REGEX = new RegExp(`(${MATERIAL_LABELS_LIST.join("|")})`, "g");
 
 function getItems(tab: Tab): GoalItem[] {
   const pool = tab === "buildings" ? buildings : tab === "farm" ? farmPlots : researchUpgrades;
@@ -100,7 +112,7 @@ function renderTextWithMaterials(text: string): ReactNode {
         </span>,
       );
     } else {
-      const materialParts = part.text.split(/(Herbs|Food|Wood|Iron|Crystal)/g);
+      const materialParts = part.text.split(MATERIAL_REGEX);
       for (const sub of materialParts) {
         const mat = MATERIAL_IDS.find((m) => materialLabels[m] === sub);
         if (mat) {
@@ -133,6 +145,307 @@ const tabs: { id: Tab; label: string }[] = [
   { id: "companions", label: "Companions" },
 ];
 
+/** Renders the player's material inventory top-bar */
+function MaterialsBar({ materialInventory }: { materialInventory: MaterialInventory }) {
+  return (
+    <div className="mx-auto mt-5 flex w-full max-w-2xl flex-nowrap items-center justify-center gap-x-3">
+      {MATERIAL_IDS.map((mat) => (
+        <span
+          key={mat}
+          className={cn(
+            "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold",
+            matPillStyle[mat],
+            matTextColor[mat],
+          )}
+        >
+          {matIconMap[mat]}
+          {materialInventory[mat] ?? 0} {materialLabels[mat]}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/** Renders the tab switching header */
+function HomesteadTabs({ activeTab, onSelectTab }: { activeTab: Tab; onSelectTab: (tab: Tab) => void }) {
+  return (
+    <div className="mx-auto mt-5 flex flex-wrap justify-center gap-3">
+      {tabs.map((t) => (
+        <PressableMotion key={t.id}>
+          <button
+            type="button"
+            onClick={() => onSelectTab(t.id)}
+            className={cn(
+              "inline-flex items-center gap-2 rounded-full bg-card px-4 py-2 text-sm font-semibold text-foreground ring-1 ring-offset-1 ring-offset-card transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+              activeTab === t.id ? "ring-primary/70" : "ring-border/30 hover:ring-border/50",
+            )}
+          >
+            {t.id === "buildings" ? (
+              <Hammer className="h-4 w-4" />
+            ) : t.id === "farm" ? (
+              <Wheat className="h-4 w-4" />
+            ) : t.id === "research" ? (
+              <FlaskConical className="h-4 w-4" />
+            ) : (
+              <PawPrint className="h-4 w-4" />
+            )}
+            {t.label}
+          </button>
+        </PressableMotion>
+      ))}
+    </div>
+  );
+}
+
+/** Individual companion node button layout */
+function CompanionCardNode({
+  card,
+  index,
+  discovered,
+  bondedCompanions,
+  materialInventory,
+  hoveredItemId,
+  setHoveredItemId,
+  onBond,
+}: {
+  card: (typeof cardLibrary)[number];
+  index: number;
+  discovered: boolean;
+  bondedCompanions: Record<CompanionId, number>;
+  materialInventory: MaterialInventory;
+  hoveredItemId: string | null;
+  setHoveredItemId: (id: string | null) => void;
+  onBond: (card: (typeof cardLibrary)[number]) => void;
+}) {
+  const companionEffect = card.effects.find(
+    (e): e is { kind: "summon-companion"; companionId: CompanionId } => e.kind === "summon-companion",
+  );
+  const companionId = companionEffect?.companionId ?? null;
+  const currentLevel = companionId ? (bondedCompanions[companionId] ?? 0) : 0;
+  const isComplete = currentLevel >= COMPANION_MAX_TIER;
+  const bondCost = COMPANION_BOND_TIERS[Math.min(currentLevel, COMPANION_MAX_TIER - 1)];
+  const bondAffordable = discovered && !isComplete && canAfford(materialInventory, bondCost);
+  const showButton = discovered && !isComplete;
+
+  return (
+    <div className={cn("flex flex-col items-center", index < HOMESTEAD_CONFIG.compilationFillerCount && "mb-2")}>
+      <div className="relative">
+        {hoveredItemId === card.id && (
+          <DetailPopup
+            idPrefix={card.id}
+            title={discovered ? card.title : "Undiscovered"}
+            subtitle={undefined}
+            descriptionLines={
+              discovered
+                ? getEffectiveCardDescriptionLines(card, {
+                    companionBondLevels: bondedCompanions,
+                  })
+                : ["Discover this card during a run to reveal it here."]
+            }
+          />
+        )}
+        <div className="group tilt-surface w-full overflow-hidden rounded-[18px] p-3">
+          <div
+            className={cn(
+              "relative mx-auto flex items-center justify-center overflow-hidden rounded-[18px] bg-stone-900",
+              HOMESTEAD_CONFIG.companionPageWidth,
+              HOMESTEAD_CONFIG.companionAspectRatio,
+              isComplete && "bg-stone-800/70",
+            )}
+            onMouseEnter={() => setHoveredItemId(card.id)}
+            onMouseLeave={() => setHoveredItemId(null)}
+            onMouseMove={setTiltFromEvent}
+          >
+            <img
+              src={card.art}
+              alt={card.title}
+              className={cn("h-full w-full object-cover", !discovered && "grayscale opacity-45")}
+            />
+          </div>
+        </div>
+      </div>
+      {showButton ? (
+        <div className="mt-1.5 flex items-center gap-2">
+          <DisabledTooltip show={!bondAffordable} message="Not Enough Resources">
+            <Button variant="outline" disabled={!bondAffordable} onClick={() => onBond(card)}>
+              {card.title}
+              <MaterialCost material="food" amount={bondCost.food} />
+            </Button>
+          </DisabledTooltip>
+          <span className="flex items-center gap-0.5">
+            {Array.from({ length: COMPANION_MAX_TIER }, (_, i) => (
+              <Star
+                key={i}
+                className={cn("h-3 w-3", i < currentLevel ? "text-amber-400" : "text-muted-foreground")}
+                fill={i < currentLevel ? "currentColor" : "none"}
+              />
+            ))}
+          </span>
+        </div>
+      ) : (
+        <div className="mt-1.5 flex h-9 items-center justify-center gap-1.5 text-sm font-semibold text-amber-100/75">
+          <span>{discovered ? card.title : "Undiscovered"}</span>
+          {discovered && (
+            <span className="flex items-center gap-0.5 text-amber-400">
+              {Array.from({ length: COMPANION_MAX_TIER }, (_, i) => (
+                <Star key={i} className="h-3 w-3" fill="currentColor" />
+              ))}
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Individual building/farm/research upgrade node layout */
+function HomesteadUpgradeNode({
+  item,
+  index,
+  currentLevel,
+  materialInventory,
+  hoveredItemId,
+  setHoveredItemId,
+  onAction,
+}: {
+  item: GoalItem;
+  index: number;
+  currentLevel: number;
+  materialInventory: MaterialInventory;
+  hoveredItemId: string | null;
+  setHoveredItemId: (id: string | null) => void;
+  onAction: (item: GoalItem) => void;
+}) {
+  const maxTiers = item.data.tiers.length;
+  const isTier0 = currentLevel === 0;
+  const isCompleted = currentLevel >= maxTiers;
+  const displayTierIndex = isCompleted ? maxTiers - 1 : Math.max(0, currentLevel - 1);
+  const itemCost = item.data.tiers[isCompleted ? maxTiers - 1 : Math.min(currentLevel, maxTiers - 1)].cost;
+  const itemAffordable = !isCompleted && canAfford(materialInventory, itemCost);
+  const costItems = MATERIAL_IDS.filter((m) => (itemCost[m] ?? 0) > 0);
+
+  const detailTooltip = useMemo(() => {
+    if (hoveredItemId !== item.data.id) return null;
+    const nodes: ReactNode[] = [];
+    const farm = item.kind === "farm" ? (item.data as HomesteadFarm) : null;
+    const currentTier = item.data.tiers[displayTierIndex];
+
+    // Yield pills for farms
+    if (farm) {
+      for (const m of MATERIAL_IDS) {
+        if ((farm.yield[m] ?? 0) > 0) {
+          nodes.push(
+            <span
+              key={`yield-${m}`}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold",
+                matPillStyle[m],
+                matTextColor[m],
+              )}
+            >
+              {matIconMap[m]} +{farm.yield[m]} {materialLabels[m]}
+            </span>,
+          );
+        }
+      }
+    }
+
+    // Benefit descriptions from current/next tier
+    if (currentTier) {
+      if (currentTier.benefitDescription) {
+        for (const line of currentTier.benefitDescription.split("\n")) {
+          nodes.push(
+            <div key={`b-${nodes.length}`} className="text-sm leading-6 text-muted-foreground">
+              {renderTextWithMaterials(line)}
+            </div>,
+          );
+        }
+      }
+      if (currentTier.nonCombatBenefitDescription) {
+        nodes.push(
+          <div key={`b-${nodes.length}`} className="text-sm leading-6 text-muted-foreground">
+            {renderTextWithMaterials(currentTier.nonCombatBenefitDescription)}
+          </div>,
+        );
+      }
+    }
+
+    return (
+      <DetailPopup
+        idPrefix={item.data.id}
+        title={item.data.title}
+        subtitle={undefined}
+        descriptionLines={item.data.description ? [item.data.description] : []}
+        descriptionNodes={nodes}
+      />
+    );
+  }, [hoveredItemId, item, displayTierIndex]);
+
+  const hasCost = MATERIAL_IDS.some((m) => (itemCost[m] ?? 0) > 0);
+
+  return (
+    <div className={cn("flex flex-col items-center", index < HOMESTEAD_CONFIG.compilationFillerCount && "mb-2")}>
+      {/* Tilt surface — art only */}
+      <div
+        className="relative"
+        onMouseEnter={() => setHoveredItemId(item.data.id)}
+        onMouseLeave={() => setHoveredItemId(null)}
+      >
+        {detailTooltip}
+        <div className="group tilt-surface w-full overflow-hidden rounded-[18px] p-3">
+          <div
+            className={cn(
+              "relative mx-auto flex w-full items-center justify-center overflow-hidden rounded-[18px] bg-stone-900",
+              HOMESTEAD_CONFIG.artAspectRatio,
+              isCompleted && "bg-stone-800/70",
+            )}
+            onMouseMove={setTiltFromEvent}
+            onMouseLeave={clearTiltFromEvent}
+          >
+            <img
+              src={getArt(item.data.id)}
+              alt={item.data.title}
+              className={cn("h-full w-full object-cover", isTier0 && "grayscale opacity-60")}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom label / action button */}
+      {isCompleted ? (
+        <div className="mt-1.5 flex h-9 items-center justify-center gap-1.5 text-sm font-semibold text-amber-100/75">
+          <span>{item.data.title}</span>
+          <span className="flex items-center gap-0.5 text-amber-400">
+            {Array.from({ length: maxTiers }, (_, i) => (
+              <Star key={i} className="h-3 w-3" fill="currentColor" />
+            ))}
+          </span>
+        </div>
+      ) : hasCost ? (
+        <div className="mt-1.5 flex items-center gap-2">
+          <DisabledTooltip show={!itemAffordable} message="Not Enough Resources">
+            <Button variant="outline" disabled={!itemAffordable} onClick={() => onAction(item)}>
+              {item.data.title}
+              {costItems.map((m) => (
+                <MaterialCost key={m} material={m} amount={itemCost[m]} />
+              ))}
+            </Button>
+          </DisabledTooltip>
+          <span className="flex items-center gap-0.5">
+            {Array.from({ length: maxTiers }, (_, i) => (
+              <Star
+                key={i}
+                className={cn("h-3 w-3", i < currentLevel ? "text-amber-400" : "text-muted-foreground")}
+                fill={i < currentLevel ? "currentColor" : "none"}
+              />
+            ))}
+          </span>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export function HomesteadScreen({
   materialInventory,
   constructedBuildings,
@@ -164,9 +477,11 @@ export function HomesteadScreen({
   const [tab, setTab] = useState<Tab>("buildings");
   const [companionPage, setCompanionPage] = useState(0);
   const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
+
   const buildingsItems = useMemo(() => getItems("buildings"), []);
   const farmItems = useMemo(() => getItems("farm"), []);
   const researchItems = useMemo(() => getItems("research"), []);
+
   function handleAction(item: GoalItem) {
     const success =
       item.kind === "building"
@@ -177,8 +492,7 @@ export function HomesteadScreen({
     if (success) playUISound("talentUnlock");
   }
 
-  const COMPANION_PAGE_SIZE = 6;
-  const companionPages = Math.max(1, Math.ceil(companionCards.length / COMPANION_PAGE_SIZE));
+  const companionPages = Math.max(1, Math.ceil(companionCards.length / HOMESTEAD_CONFIG.companionPageSize));
 
   function handleBondCompanion(card: (typeof cardLibrary)[number]) {
     const effect = card.effects.find(
@@ -194,49 +508,8 @@ export function HomesteadScreen({
       <div className="alchemy-shell relative flex min-h-[48.15cqh] w-full max-w-6xl flex-col rounded-[28px] px-6 py-7 sm:px-8">
         <ScreenHeader title="Homestead" />
 
-        {/* Materials bar */}
-        <div className="mx-auto mt-5 flex w-full max-w-2xl flex-nowrap items-center justify-center gap-x-3">
-          {MATERIAL_IDS.map((mat) => (
-            <span
-              key={mat}
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold",
-                matPillStyle[mat],
-                matTextColor[mat],
-              )}
-            >
-              {matIconMap[mat]}
-              {materialInventory[mat] ?? 0} {materialLabels[mat]}
-            </span>
-          ))}
-        </div>
-
-        {/* Tabs */}
-        <div className="mx-auto mt-5 flex flex-wrap justify-center gap-3">
-          {tabs.map((t) => (
-            <PressableMotion key={t.id}>
-              <button
-                type="button"
-                onClick={() => setTab(t.id)}
-                className={cn(
-                  "inline-flex items-center gap-2 rounded-full bg-card px-4 py-2 text-sm font-semibold text-foreground ring-1 ring-offset-1 ring-offset-card transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                  tab === t.id ? "ring-primary/70" : "ring-border/30 hover:ring-border/50",
-                )}
-              >
-                {t.id === "buildings" ? (
-                  <Hammer className="h-4 w-4" />
-                ) : t.id === "farm" ? (
-                  <Wheat className="h-4 w-4" />
-                ) : t.id === "research" ? (
-                  <FlaskConical className="h-4 w-4" />
-                ) : (
-                  <PawPrint className="h-4 w-4" />
-                )}
-                {t.label}
-              </button>
-            </PressableMotion>
-          ))}
-        </div>
+        <MaterialsBar materialInventory={materialInventory} />
+        <HomesteadTabs activeTab={tab} onSelectTab={setTab} />
 
         {/* Grid — all tabs pre-rendered, only active one visible in flow */}
         <div className="mx-auto mt-6 grid w-full">
@@ -254,110 +527,32 @@ export function HomesteadScreen({
                   <div className="grid">
                     {Array.from({ length: companionPages }, (_, pageIndex) => {
                       const pageItems = companionCards.slice(
-                        pageIndex * COMPANION_PAGE_SIZE,
-                        (pageIndex + 1) * COMPANION_PAGE_SIZE,
+                        pageIndex * HOMESTEAD_CONFIG.companionPageSize,
+                        (pageIndex + 1) * HOMESTEAD_CONFIG.companionPageSize,
                       );
+                      const isPageActive = companionPage === pageIndex;
+
                       return (
                         <div
                           key={pageIndex}
                           className={cn(
                             "motion-crossfade col-start-1 row-start-1 grid grid-cols-3 gap-x-1 gap-y-4",
-                            companionPage === pageIndex
-                              ? "opacity-100"
-                              : "motion-crossfade-hidden pointer-events-none opacity-0",
+                            isPageActive ? "opacity-100" : "motion-crossfade-hidden pointer-events-none opacity-0",
                           )}
                         >
-                          {pageItems.map((card, index) => {
-                            const companionEffect = card.effects.find(
-                              (e): e is { kind: "summon-companion"; companionId: CompanionId } =>
-                                e.kind === "summon-companion",
-                            );
-                            const companionId = companionEffect?.companionId ?? null;
-                            const discovered = discoveredCardIds.includes(card.id);
-                            const currentLevel = companionId ? (bondedCompanions[companionId] ?? 0) : 0;
-                            const isComplete = currentLevel >= COMPANION_MAX_TIER;
-                            const bondCost = COMPANION_BOND_TIERS[Math.min(currentLevel, COMPANION_MAX_TIER - 1)];
-                            const bondAffordable = discovered && !isComplete && canAfford(materialInventory, bondCost);
-                            const showButton = discovered && !isComplete;
-
-                            return (
-                              <div key={card.id} className={cn("flex flex-col items-center", index < 3 && "mb-2")}>
-                                <div className="relative">
-                                  {hoveredItemId === card.id && (
-                                    <DetailPopup
-                                      idPrefix={card.id}
-                                      title={discovered ? card.title : "Undiscovered"}
-                                      subtitle={undefined}
-                                      descriptionLines={
-                                        discovered
-                                          ? getEffectiveCardDescriptionLines(card, {
-                                              companionBondLevels: bondedCompanions,
-                                            })
-                                          : ["Discover this card during a run to reveal it here."]
-                                      }
-                                    />
-                                  )}
-                                  <div className={cn("group tilt-surface w-full overflow-hidden rounded-[18px] p-3")}>
-                                    <div
-                                      className={cn(
-                                        "relative mx-auto flex aspect-[3/4] w-[65%] items-center justify-center overflow-hidden rounded-[18px] bg-stone-900",
-                                        isComplete && "bg-stone-800/70",
-                                      )}
-                                      onMouseEnter={() => setHoveredItemId(card.id)}
-                                      onMouseLeave={() => setHoveredItemId(null)}
-                                      onMouseMove={setTiltFromEvent}
-                                    >
-                                      <img
-                                        src={card.art}
-                                        alt={card.title}
-                                        className={cn(
-                                          "h-full w-full object-cover",
-                                          !discovered && "grayscale opacity-45",
-                                        )}
-                                      />
-                                    </div>
-                                  </div>
-                                </div>
-                                {showButton ? (
-                                  <div className="mt-1.5 flex items-center gap-2">
-                                    <DisabledTooltip show={!bondAffordable} message="Not Enough Resources">
-                                      <Button
-                                        variant="outline"
-                                        disabled={!bondAffordable}
-                                        onClick={() => handleBondCompanion(card)}
-                                      >
-                                        {card.title}
-                                        <MaterialCost material="food" amount={bondCost.food} />
-                                      </Button>
-                                    </DisabledTooltip>
-                                    <span className="flex items-center gap-0.5">
-                                      {Array.from({ length: COMPANION_MAX_TIER }, (_, i) => (
-                                        <Star
-                                          key={i}
-                                          className={cn(
-                                            "h-3 w-3",
-                                            i < currentLevel ? "text-amber-400" : "text-muted-foreground",
-                                          )}
-                                          fill={i < currentLevel ? "currentColor" : "none"}
-                                        />
-                                      ))}
-                                    </span>
-                                  </div>
-                                ) : (
-                                  <div className="mt-1.5 flex h-9 items-center justify-center gap-1.5 text-sm font-semibold text-amber-100/75">
-                                    <span>{discovered ? card.title : "Undiscovered"}</span>
-                                    {discovered && (
-                                      <span className="flex items-center gap-0.5 text-amber-400">
-                                        {Array.from({ length: COMPANION_MAX_TIER }, (_, i) => (
-                                          <Star key={i} className="h-3 w-3" fill="currentColor" />
-                                        ))}
-                                      </span>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
+                          {pageItems.map((card, index) => (
+                            <CompanionCardNode
+                              key={card.id}
+                              card={card}
+                              index={index}
+                              discovered={discoveredCardIds.includes(card.id)}
+                              bondedCompanions={bondedCompanions}
+                              materialInventory={materialInventory}
+                              hoveredItemId={hoveredItemId}
+                              setHoveredItemId={setHoveredItemId}
+                              onBond={handleBondCompanion}
+                            />
+                          ))}
                         </div>
                       );
                     })}
@@ -365,9 +560,11 @@ export function HomesteadScreen({
                 </div>
               );
             }
+
             const items = t === "buildings" ? buildingsItems : t === "farm" ? farmItems : researchItems;
             const completedRecord =
               t === "buildings" ? constructedBuildings : t === "farm" ? plantedFarms : completedResearch;
+
             return (
               <div
                 key={t}
@@ -377,141 +574,18 @@ export function HomesteadScreen({
                   "grid grid-cols-3 gap-x-2 gap-y-6",
                 )}
               >
-                {items.map((item, index) => {
-                  const currentLevel = (completedRecord as Record<string, number>)[item.data.id] ?? 0;
-                  const maxTiers = item.data.tiers.length;
-                  const isTier0 = currentLevel === 0;
-                  const isCompleted = currentLevel >= maxTiers;
-                  const displayTierIndex = isCompleted ? maxTiers - 1 : Math.max(0, currentLevel - 1);
-                  const itemCost =
-                    item.data.tiers[isCompleted ? maxTiers - 1 : Math.min(currentLevel, maxTiers - 1)].cost;
-                  const itemAffordable = !isCompleted && canAfford(materialInventory, itemCost);
-                  const costItems = MATERIAL_IDS.filter((m) => (itemCost[m] ?? 0) > 0);
-
-                  return (
-                    <div key={item.data.id} className={cn("flex flex-col items-center", index < 3 && "mb-2")}>
-                      {/* Tilt surface — art only */}
-                      <div
-                        className="relative"
-                        onMouseEnter={() => setHoveredItemId(item.data.id)}
-                        onMouseLeave={() => setHoveredItemId(null)}
-                      >
-                        {hoveredItemId === item.data.id &&
-                          (() => {
-                            const nodes: ReactNode[] = [];
-                            const farm = item.kind === "farm" ? (item.data as HomesteadFarm) : null;
-                            const currentTier = item.data.tiers[displayTierIndex];
-
-                            // Yield pills for farms
-                            if (farm) {
-                              for (const m of MATERIAL_IDS) {
-                                if ((farm.yield[m] ?? 0) > 0) {
-                                  nodes.push(
-                                    <span
-                                      key={`yield-${m}`}
-                                      className={cn(
-                                        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold",
-                                        matPillStyle[m],
-                                        matTextColor[m],
-                                      )}
-                                    >
-                                      {matIconMap[m]} +{farm.yield[m]} {materialLabels[m]}
-                                    </span>,
-                                  );
-                                }
-                              }
-                            }
-
-                            // Benefit descriptions from current/next tier
-                            if (currentTier) {
-                              if (currentTier.benefitDescription) {
-                                for (const line of currentTier.benefitDescription.split("\n")) {
-                                  nodes.push(
-                                    <div key={`b-${nodes.length}`} className="text-sm leading-6 text-muted-foreground">
-                                      {renderTextWithMaterials(line)}
-                                    </div>,
-                                  );
-                                }
-                              }
-                              if (currentTier.nonCombatBenefitDescription) {
-                                nodes.push(
-                                  <div key={`b-${nodes.length}`} className="text-sm leading-6 text-muted-foreground">
-                                    {renderTextWithMaterials(currentTier.nonCombatBenefitDescription)}
-                                  </div>,
-                                );
-                              }
-                            }
-
-                            return (
-                              <DetailPopup
-                                idPrefix={item.data.id}
-                                title={item.data.title}
-                                subtitle={undefined}
-                                descriptionLines={item.data.description ? [item.data.description] : []}
-                                descriptionNodes={nodes}
-                              />
-                            );
-                          })()}
-                        <div className={cn("group tilt-surface w-full overflow-hidden rounded-[18px] p-3")}>
-                          <div
-                            className={cn(
-                              "relative mx-auto flex aspect-[4/3] w-full items-center justify-center overflow-hidden rounded-[18px] bg-stone-900",
-                              isCompleted && "bg-stone-800/70",
-                            )}
-                            onMouseMove={setTiltFromEvent}
-                            onMouseLeave={clearTiltFromEvent}
-                          >
-                            <img
-                              src={getArt(item.data.id)}
-                              alt={item.data.title}
-                              className={cn("h-full w-full object-cover", isTier0 && "grayscale opacity-60")}
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Bottom label / action button */}
-                      {isCompleted ? (
-                        <div className="mt-1.5 flex h-9 items-center justify-center gap-1.5 text-sm font-semibold text-amber-100/75">
-                          <span>{item.data.title}</span>
-                          <span className="flex items-center gap-0.5 text-amber-400">
-                            {Array.from({ length: maxTiers }, (_, i) => (
-                              <Star key={i} className="h-3 w-3" fill="currentColor" />
-                            ))}
-                          </span>
-                        </div>
-                      ) : (
-                        (() => {
-                          const hasCost = MATERIAL_IDS.some((m) => (itemCost[m] ?? 0) > 0);
-                          return hasCost ? (
-                            <div className="mt-1.5 flex items-center gap-2">
-                              <DisabledTooltip show={!itemAffordable} message="Not Enough Resources">
-                                <Button variant="outline" disabled={!itemAffordable} onClick={() => handleAction(item)}>
-                                  {item.data.title}
-                                  {costItems.map((m) => (
-                                    <MaterialCost key={m} material={m} amount={itemCost[m]} />
-                                  ))}
-                                </Button>
-                              </DisabledTooltip>
-                              <span className="flex items-center gap-0.5">
-                                {Array.from({ length: maxTiers }, (_, i) => (
-                                  <Star
-                                    key={i}
-                                    className={cn(
-                                      "h-3 w-3",
-                                      i < currentLevel ? "text-amber-400" : "text-muted-foreground",
-                                    )}
-                                    fill={i < currentLevel ? "currentColor" : "none"}
-                                  />
-                                ))}
-                              </span>
-                            </div>
-                          ) : null;
-                        })()
-                      )}
-                    </div>
-                  );
-                })}
+                {items.map((item, index) => (
+                  <HomesteadUpgradeNode
+                    key={item.data.id}
+                    item={item}
+                    index={index}
+                    currentLevel={(completedRecord as Record<string, number>)[item.data.id] ?? 0}
+                    materialInventory={materialInventory}
+                    hoveredItemId={hoveredItemId}
+                    setHoveredItemId={setHoveredItemId}
+                    onAction={handleAction}
+                  />
+                ))}
               </div>
             );
           })}

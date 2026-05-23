@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { cardLibrary, trinketLibrary, computeTalentEffects } from "@/lib/game-data";
 import type { TalentXP } from "@/lib/talents";
-import type { HomesteadEffectManifest, MaterialInventory } from "@/lib/homestead/types";
+import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import type { CharacterId, DifficultyId, UnlockedTalents } from "@/lib/game-data";
 import { labyrinthModifiersToDifficulty } from "@/lib/content-systems/labyrinth/modifiers";
 import type { LabyrinthModifierKind } from "@/lib/content-systems/types";
@@ -26,28 +26,22 @@ export function useAlchemyRunController({
   discoveredCardIds,
   setDiscoveredCardIds,
   setEncounteredEnemyIds,
-  setDiscoveredTrinketIds: _setDiscoveredTrinketIds,
   initialTalentXP,
   initialUnlockedTalents,
   initialActiveRun,
   autoEndTurn,
-  onAddMaterials: _onAddMaterials,
   homesteadEffects,
   onMarkDifficultyCompleted,
-  completedDifficulties: _completedDifficulties,
 }: {
   discoveredCardIds: string[];
   setDiscoveredCardIds: React.Dispatch<React.SetStateAction<string[]>>;
   setEncounteredEnemyIds: React.Dispatch<React.SetStateAction<string[]>>;
-  setDiscoveredTrinketIds: React.Dispatch<React.SetStateAction<string[]>>;
   initialTalentXP: TalentXP;
   initialUnlockedTalents: UnlockedTalents;
   initialActiveRun: ActiveRunData | null;
   autoEndTurn: boolean;
-  onAddMaterials: (materials: MaterialInventory) => void;
   homesteadEffects: HomesteadEffectManifest;
   onMarkDifficultyCompleted: (characterId: CharacterId, difficultyId: DifficultyId) => void;
-  completedDifficulties: Record<CharacterId, DifficultyId[]>;
 }) {
   // This hook composes domain controllers and exposes a stable UI API; it intentionally
   // avoids owning combat/shop/navigation rules directly so those modules stay testable.

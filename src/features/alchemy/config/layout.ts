@@ -20,9 +20,6 @@ export const mobileStageHandCardWidthClass = "w-[clamp(22.22cqh,24cqh,27.78cqh)]
 export const bossCardWidthClass = "w-[calc(clamp(20.56cqh,22cqh,31.11cqh)*1.3)]";
 export const bossMobileStageBattleCardWidthClass = "w-[calc(clamp(30cqh,33cqh,36.67cqh)*1.3)]";
 
-// Half-width used by the turn indicator to center above a panel.
-export const battleCardHalfWidthValue = "clamp(10.28cqh,11cqh,15.56cqh)";
-
 // Card and popup surfaces stay centralized so repeated game widgets share the
 // same tactile fantasy material treatment.
 export const cardSurfaceClass = "relative overflow-hidden rounded-[30px] bg-black";
@@ -31,12 +28,6 @@ export const squareArtImageClass = "rounded-[30px] aspect-square object-cover";
 export const staticCardTransform = "translate3d(0px, 0px, 0px)";
 export const popupClassName =
   "absolute bottom-full left-1/2 z-40 mb-4 w-60 -translate-x-1/2 rounded-[20px] border border-border/80 bg-card px-3 py-3 text-left";
-
-export const battleActorHalfGapClass = {
-  desktop: "clamp(8.75cqw,10cqw,10.94cqw)",
-  mobile: "clamp(6.67cqw,8cqw,9.23cqw)",
-  ultrawide: "clamp(8.75cqw,10cqw,11.72cqw)",
-} as const;
 
 export const battleActorSectionClass = {
   desktop:

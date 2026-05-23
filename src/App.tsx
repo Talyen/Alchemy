@@ -91,7 +91,7 @@ export default function App() {
   const collectionPages = useAppStore((s) => s.collectionPages);
   const encounteredEnemyIds = useAppStore((s) => s.encounteredEnemyIds);
   const discoveredTrinketIds = useAppStore((s) => s.discoveredTrinketIds);
-  const completedDifficulties = useAppStore((s) => s.completedDifficulties);
+  useAppStore((s) => s.completedDifficulties);
   const showClearSaveConfirm = useAppStore((s) => s.showClearSaveConfirm);
   const pendingCharacterId = useScreenStore((s) => s.pendingCharacterId);
 
@@ -167,15 +167,12 @@ export default function App() {
     discoveredCardIds,
     setDiscoveredCardIds,
     setEncounteredEnemyIds,
-    setDiscoveredTrinketIds,
     initialTalentXP: initialSave.talentXP,
     initialUnlockedTalents: initialSave.unlockedTalents,
     initialActiveRun: initialSave.activeRun,
     autoEndTurn,
-    onAddMaterials: (materials) => useHomesteadStore.getState().addMaterials(materials),
     homesteadEffects,
     onMarkDifficultyCompleted: handleMarkDifficultyCompleted,
-    completedDifficulties,
   });
   const { screen: controllerScreen, commitPendingTransition } = run;
   useAppAudioEffects({ masterVol, musicVol, sfxVol, muteInBackground, screen: run.screen });

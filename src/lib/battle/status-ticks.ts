@@ -19,12 +19,42 @@ import {
   STUN_THRESHOLD_FRACTION,
 } from "../game-constants";
 
+const CONSTANTS = {
+  STATUS_NAMES: {
+    BURN: "burn" as const,
+    POISON: "poison" as const,
+    BLEED: "bleed" as const,
+    STUN: "stun" as const,
+    FREEZE: "freeze" as const,
+    BLOCK: "block" as const,
+    ARMOR: "armor" as const,
+    HEALTH: "health" as const,
+  },
+  DAMAGE_TYPES: {
+    PHYSICAL: "physical" as const,
+  },
+  TARGETS: {
+    PLAYER: "player" as const,
+    ENEMY: "enemy" as const,
+  },
+  COMBAT_TEXT_KINDS: {
+    DAMAGE: "damage" as const,
+    HEAL: "heal" as const,
+  },
+  CLEAR_STATUS_STACK: 0,
+} as const;
+
 function tickBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
   const damage = state.enemyStatuses.burn;
   if (damage <= 0) return state;
-  const multiplier = getEnemyDamageMultiplier(state, "burn");
+  const multiplier = getEnemyDamageMultiplier(state, CONSTANTS.STATUS_NAMES.BURN);
   const finalDamage = Math.round(damage * multiplier);
-  mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "burn", amount: finalDamage });
+  mergeCombatText(combatTexts, {
+    target: CONSTANTS.TARGETS.ENEMY,
+    kind: CONSTANTS.COMBAT_TEXT_KINDS.DAMAGE,
+    stat: CONSTANTS.STATUS_NAMES.BURN,
+    amount: finalDamage,
+  });
   let nextBurn = state.enemyStatuses.burn;
   if (rollPercent(state.talentEffects.burnDoubleChance)) {
     nextBurn *= HALF_DIVISOR;
@@ -34,23 +64,33 @@ function tickBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
   const nextState = {
     ...state,
     enemyHealth: clampHealth(state.enemyHealth, -finalDamage, state.enemyMaxHealth),
-    enemyStatuses: { ...state.enemyStatuses, burn: nextBurn },
+    enemyStatuses: { ...state.enemyStatuses, [CONSTANTS.STATUS_NAMES.BURN]: nextBurn },
   };
-  return decayArmorAfterDamage(nextState, finalDamage, "enemy", combatTexts);
+  return decayArmorAfterDamage(nextState, finalDamage, CONSTANTS.TARGETS.ENEMY, combatTexts);
 }
 
 function applyParasiticBloomLeech(state: BattleState, damage: number, combatTexts: CombatTextEvent[]): BattleState {
   if (!rollPercent(state.trinketEffects.parasiticBloomLeechChance)) return state;
-  mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: damage });
+  mergeCombatText(combatTexts, {
+    target: CONSTANTS.TARGETS.PLAYER,
+    kind: CONSTANTS.COMBAT_TEXT_KINDS.HEAL,
+    stat: CONSTANTS.STATUS_NAMES.HEALTH,
+    amount: damage,
+  });
   return applyPlayerHealing(state, damage);
 }
 
 function tickPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
   const damage = state.enemyStatuses.poison;
   if (damage <= 0) return state;
-  const multiplier = getEnemyDamageMultiplier(state, "poison");
+  const multiplier = getEnemyDamageMultiplier(state, CONSTANTS.STATUS_NAMES.POISON);
   const finalDamage = Math.round(damage * multiplier);
-  mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "poison", amount: finalDamage });
+  mergeCombatText(combatTexts, {
+    target: CONSTANTS.TARGETS.ENEMY,
+    kind: CONSTANTS.COMBAT_TEXT_KINDS.DAMAGE,
+    stat: CONSTANTS.STATUS_NAMES.POISON,
+    amount: finalDamage,
+  });
   let nextPoison = state.enemyStatuses.poison;
   if (rollPercent(state.talentEffects.poisonGainChance)) {
     nextPoison += POISON_GAIN_AMOUNT;
@@ -60,28 +100,38 @@ function tickPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
   let nextState = {
     ...state,
     enemyHealth: clampHealth(state.enemyHealth, -finalDamage, state.enemyMaxHealth),
-    enemyStatuses: { ...state.enemyStatuses, poison: nextPoison },
+    enemyStatuses: { ...state.enemyStatuses, [CONSTANTS.STATUS_NAMES.POISON]: nextPoison },
   };
   nextState = applyParasiticBloomLeech(nextState, finalDamage, combatTexts);
-  return decayArmorAfterDamage(nextState, finalDamage, "enemy", combatTexts);
+  return decayArmorAfterDamage(nextState, finalDamage, CONSTANTS.TARGETS.ENEMY, combatTexts);
 }
 
 function tickBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
   const damage = state.enemyStatuses.bleed;
   if (damage <= 0) return state;
   const leechAmount = state.pendingBleedLeechHealing;
-  let nextState = {
+  let nextState: BattleState = {
     ...state,
     enemyHealth: clampHealth(state.enemyHealth, -damage, state.enemyMaxHealth),
-    enemyStatuses: { ...state.enemyStatuses, bleed: 0 },
-    pendingBleedLeechHealing: 0,
+    enemyStatuses: { ...state.enemyStatuses, [CONSTANTS.STATUS_NAMES.BLEED]: CONSTANTS.CLEAR_STATUS_STACK },
+    pendingBleedLeechHealing: CONSTANTS.CLEAR_STATUS_STACK,
   };
   if (leechAmount > 0) {
     nextState = applyPlayerHealing(nextState, leechAmount);
-    mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: leechAmount });
+    mergeCombatText(combatTexts, {
+      target: CONSTANTS.TARGETS.PLAYER,
+      kind: CONSTANTS.COMBAT_TEXT_KINDS.HEAL,
+      stat: CONSTANTS.STATUS_NAMES.HEALTH,
+      amount: leechAmount,
+    });
   }
-  mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "bleed", amount: damage });
-  return decayArmorAfterDamage(nextState, damage, "enemy", combatTexts);
+  mergeCombatText(combatTexts, {
+    target: CONSTANTS.TARGETS.ENEMY,
+    kind: CONSTANTS.COMBAT_TEXT_KINDS.DAMAGE,
+    stat: CONSTANTS.STATUS_NAMES.BLEED,
+    amount: damage,
+  });
+  return decayArmorAfterDamage(nextState, damage, CONSTANTS.TARGETS.ENEMY, combatTexts);
 }
 
 export function tickEnemyStatuses(state: BattleState, combatTexts: CombatTextEvent[]) {
@@ -103,13 +153,21 @@ function tickPlayerBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
     ? Math.max(0, afterBlockReduction - state.playerStatuses.armor)
     : afterBlockReduction;
   if (reducedDamage > 0) {
-    mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "burn", amount: reducedDamage });
+    mergeCombatText(combatTexts, {
+      target: CONSTANTS.TARGETS.PLAYER,
+      kind: CONSTANTS.COMBAT_TEXT_KINDS.DAMAGE,
+      stat: CONSTANTS.STATUS_NAMES.BURN,
+      amount: reducedDamage,
+    });
   }
   const nextState = {
     ...applyPlayerCombatDamage(state, reducedDamage),
-    playerStatuses: { ...state.playerStatuses, burn: decayHalvedStatus(state.playerStatuses.burn) },
+    playerStatuses: {
+      ...state.playerStatuses,
+      [CONSTANTS.STATUS_NAMES.BURN]: decayHalvedStatus(state.playerStatuses.burn),
+    },
   };
-  return decayArmorAfterDamage(nextState, reducedDamage, "player", combatTexts);
+  return decayArmorAfterDamage(nextState, reducedDamage, CONSTANTS.TARGETS.PLAYER, combatTexts);
 }
 
 function tickPlayerPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
@@ -117,14 +175,19 @@ function tickPlayerPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
   if (damage <= 0) return state;
   const reducedDamage = state.talentEffects.receiveHalfPoisonDamage ? Math.round(damage / HALF_DIVISOR) : damage;
   if (reducedDamage > 0) {
-    mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "poison", amount: reducedDamage });
+    mergeCombatText(combatTexts, {
+      target: CONSTANTS.TARGETS.PLAYER,
+      kind: CONSTANTS.COMBAT_TEXT_KINDS.DAMAGE,
+      stat: CONSTANTS.STATUS_NAMES.POISON,
+      amount: reducedDamage,
+    });
   }
   const nextPoison = Math.max(0, state.playerStatuses.poison - POISON_DECAY_AMOUNT);
   const nextState = {
     ...applyPlayerCombatDamage(state, reducedDamage),
-    playerStatuses: { ...state.playerStatuses, poison: nextPoison },
+    playerStatuses: { ...state.playerStatuses, [CONSTANTS.STATUS_NAMES.POISON]: nextPoison },
   };
-  return decayArmorAfterDamage(nextState, reducedDamage, "player", combatTexts);
+  return decayArmorAfterDamage(nextState, reducedDamage, CONSTANTS.TARGETS.PLAYER, combatTexts);
 }
 
 function tickPlayerBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
@@ -134,13 +197,18 @@ function tickPlayerBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
     ? Math.max(0, damage - state.playerStatuses.armor)
     : damage;
   if (reducedDamage > 0) {
-    mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "bleed", amount: reducedDamage });
+    mergeCombatText(combatTexts, {
+      target: CONSTANTS.TARGETS.PLAYER,
+      kind: CONSTANTS.COMBAT_TEXT_KINDS.DAMAGE,
+      stat: CONSTANTS.STATUS_NAMES.BLEED,
+      amount: reducedDamage,
+    });
   }
   const nextState = {
     ...applyPlayerCombatDamage(state, reducedDamage),
-    playerStatuses: { ...state.playerStatuses, bleed: 0 },
+    playerStatuses: { ...state.playerStatuses, [CONSTANTS.STATUS_NAMES.BLEED]: CONSTANTS.CLEAR_STATUS_STACK },
   };
-  return decayArmorAfterDamage(nextState, reducedDamage, "player", combatTexts);
+  return decayArmorAfterDamage(nextState, reducedDamage, CONSTANTS.TARGETS.PLAYER, combatTexts);
 }
 
 export function tickPlayerStatuses(state: BattleState, combatTexts: CombatTextEvent[]) {
@@ -149,14 +217,14 @@ export function tickPlayerStatuses(state: BattleState, combatTexts: CombatTextEv
   nextState = tickPlayerBleed(nextState, combatTexts);
   nextState = resolvePlayerCrowdControlTrigger({
     state: nextState,
-    stat: "stun",
+    stat: CONSTANTS.STATUS_NAMES.STUN,
     stackValue: nextState.playerStatuses.stun,
     thresholdFraction: STUN_THRESHOLD_FRACTION,
     combatTexts,
   });
   nextState = resolvePlayerCrowdControlTrigger({
     state: nextState,
-    stat: "freeze",
+    stat: CONSTANTS.STATUS_NAMES.FREEZE,
     stackValue: nextState.playerStatuses.freeze,
     thresholdFraction: FREEZE_THRESHOLD_FRACTION,
     combatTexts,

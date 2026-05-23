@@ -81,7 +81,6 @@ export function BattleActors({
             shimmerActive={shimmerState?.cardId === "player-card"}
             shimmerToken={shimmerState?.token}
             onHoverShimmer={onHoverShimmer}
-            combatTexts={playerCombatTexts}
             deathsDoorActive={battleState.deathsDoorActive}
             surfaceRef={(node) => {
               playerPanelRef.current = node;
@@ -134,7 +133,6 @@ export function BattleActors({
           shimmerActive={shimmerState?.cardId === "enemy-card"}
           shimmerToken={shimmerState?.token}
           onHoverShimmer={onHoverShimmer}
-          combatTexts={enemyCombatTexts}
           surfaceRef={(node) => {
             enemyPanelRef.current = node;
           }}

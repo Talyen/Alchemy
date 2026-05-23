@@ -16,7 +16,7 @@ import {
   popupClassName,
   staticCardTransform,
 } from "../../config";
-import type { FloatingCombatText, StatusChip } from "../../types";
+import type { StatusChip } from "../../types";
 import { clearTiltFromEvent, setTiltFromEvent } from "../../utils";
 import { DescriptionLines } from "../card-description-ui";
 import { EnemyTooltip } from "../enemy-tooltip";
@@ -43,7 +43,6 @@ type ArtPanelProps = {
   shimmerActive: boolean;
   shimmerToken: number | undefined;
   onHoverShimmer: (cardId: string) => void;
-  combatTexts: FloatingCombatText[];
   surfaceRef?: (node: HTMLDivElement | null) => void;
   isDead?: boolean;
   shaking?: boolean;
@@ -69,7 +68,6 @@ export function ArtPanel({
   shimmerActive,
   shimmerToken,
   onHoverShimmer,
-  combatTexts: _combatTexts,
   surfaceRef,
   isDead = false,
   shaking = false,

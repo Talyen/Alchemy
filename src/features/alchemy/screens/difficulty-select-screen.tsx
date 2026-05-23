@@ -20,6 +20,13 @@ import { battleCardWidthClass, cardSurfaceClass, popupClassName, staticCardTrans
 import { useScreenStore } from "../stores/screen-store";
 import { useRunStore } from "../stores/run-store";
 
+const DIFFICULTY_CONFIG = {
+  XP_BONUSES: {
+    "difficulty-2": "10% Bonus XP",
+    "difficulty-3": "20% Bonus XP",
+  } as Record<string, string>,
+} as const;
+
 function renderDescription(text: string) {
   const lines = text.split("\n");
   return lines.map((line, i) => {
@@ -62,8 +69,7 @@ function DifficultyCard({
   onHoverShimmer: (id: DifficultyId) => void;
   onSelect: (id: DifficultyId) => void;
 }) {
-  const bonusLine =
-    difficultyId === "difficulty-2" ? "10% Bonus XP" : difficultyId === "difficulty-3" ? "20% Bonus XP" : "";
+  const bonusLine = DIFFICULTY_CONFIG.XP_BONUSES[difficultyId] ?? "";
   const fullDescription = description + (bonusLine ? "\n" + bonusLine : "");
   const showTilt = !locked;
   const diffArt =

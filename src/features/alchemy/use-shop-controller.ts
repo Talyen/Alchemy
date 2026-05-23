@@ -143,43 +143,8 @@ export function useShopController({
     get shopCards() {
       return useScreenStore.getState().shopState.cards;
     },
-    get shopCardPrice() {
-      const s = useScreenStore.getState();
-      const favorDiscount = !s.shopState.firstPurchaseUsed
-        ? computeTrinketManifest(run.runTrinkets).merchantsFavorDiscount
-        : 0;
-      return Math.max(0, SHOP_CARD_PRICE - talents.talentEffects.shopCardDiscount - favorDiscount);
-    },
-    get shopRemovePrice() {
-      return Math.max(0, SHOP_REMOVE_PRICE - talents.talentEffects.removeCardDiscount);
-    },
-    get shopRefreshPrice() {
-      return talents.talentEffects.shopFreeRefresh && shopState.refreshesLeft > 0 ? 0 : SHOP_REFRESH_PRICE;
-    },
-    get shopRefreshesLeft() {
-      return shopState.refreshesLeft;
-    },
-    get shopRemoveUsed() {
-      return shopState.removeUsed;
-    },
     get alchemistPotions() {
       return alchemistState.potions;
-    },
-    get alchemistRefreshesLeft() {
-      return alchemistState.refreshesLeft;
-    },
-    get alchemistPotionPrice() {
-      const s = useScreenStore.getState();
-      const favorDiscount = !s.alchemistState.firstPurchaseUsed
-        ? computeTrinketManifest(run.runTrinkets).merchantsFavorDiscount
-        : 0;
-      return Math.max(0, ALCHEMIST_POTION_PRICE - talents.talentEffects.potionDiscount - favorDiscount);
-    },
-    get alchemistMixPrice() {
-      return Math.max(0, ALCHEMIST_MIX_PRICE - talents.talentEffects.mixPotionDiscount);
-    },
-    get alchemistMixUsed() {
-      return alchemistState.mixUsed;
     },
   };
 }

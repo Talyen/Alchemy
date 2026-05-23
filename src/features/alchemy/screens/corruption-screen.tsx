@@ -120,11 +120,11 @@ function CorruptionResultView({ result, onContinue }: { result: CorruptionResult
   const [hoveredOriginal, setHoveredOriginal] = useState(false);
   const [hoveredResult, setHoveredResult] = useState(false);
 
-  if (result.transformed) {
-    return (
-      <div className="flex flex-col items-center gap-5">
-        <ScreenHeader title="Altar of Corruption" />
-        <ScreenDescription className="text-red-100/75">The altar returns your card changed.</ScreenDescription>
+  return (
+    <div className="flex flex-col items-center gap-5">
+      <ScreenHeader title="Altar of Corruption" />
+      <ScreenDescription className="text-red-100/75">The altar returns your card changed.</ScreenDescription>
+      {result.transformed ? (
         <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-x-8 gap-y-3">
           <div className="col-start-1 flex flex-col items-center">
             <BattleCardButton
@@ -158,32 +158,23 @@ function CorruptionResultView({ result, onContinue }: { result: CorruptionResult
             <CardTitle card={result.corruptedCard} />
           </p>
         </div>
-        <Button size="lg" onClick={onContinue}>
-          Continue
-        </Button>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex flex-col items-center gap-5">
-      <ScreenHeader title="Altar of Corruption" />
-      <ScreenDescription className="text-red-100/75">The altar returns your card changed.</ScreenDescription>
-      <div className="flex flex-col items-center gap-3">
-        <BattleCardButton
-          card={result.corruptedCard}
-          hovered={hoveredResult}
-          onHoverStart={() => setHoveredResult(true)}
-          onHoverEnd={() => setHoveredResult(false)}
-          ariaLabel={`Inspect ${getCardDisplayTitle(result.corruptedCard)}`}
-          shimmerActive={false}
-          shimmerToken={undefined}
-          className={viewCardWidthClass}
-        />
-        <p className="text-base font-semibold text-foreground">
-          <CardTitle card={result.corruptedCard} />
-        </p>
-      </div>
+      ) : (
+        <div className="flex flex-col items-center gap-3">
+          <BattleCardButton
+            card={result.corruptedCard}
+            hovered={hoveredResult}
+            onHoverStart={() => setHoveredResult(true)}
+            onHoverEnd={() => setHoveredResult(false)}
+            ariaLabel={`Inspect ${getCardDisplayTitle(result.corruptedCard)}`}
+            shimmerActive={false}
+            shimmerToken={undefined}
+            className={viewCardWidthClass}
+          />
+          <p className="text-base font-semibold text-foreground">
+            <CardTitle card={result.corruptedCard} />
+          </p>
+        </div>
+      )}
       <Button size="lg" onClick={onContinue}>
         Continue
       </Button>

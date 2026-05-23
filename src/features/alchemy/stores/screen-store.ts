@@ -10,10 +10,8 @@ import {
   ALCHEMIST_REFRESHES,
   POTION_CARD_ID_FRAGMENT,
   MIXED_POTION_CARD_ID,
-  NAVIGATION_DELAY_MS,
 } from "@/lib/game-constants";
 import { sampleItems } from "@/features/alchemy/utils";
-import type { Screen } from "@/features/alchemy/types";
 import type { RewardState } from "@/features/alchemy/navigation/reward-flow";
 import { createEmptyRewardState } from "@/features/alchemy/navigation/reward-flow";
 import type { MysteryEvent } from "@/features/alchemy/mystery-events";
@@ -48,7 +46,6 @@ const emptyAlchemist: AlchemistState = {
 type Setter<T> = (action: T | ((prev: T) => T)) => void;
 
 type ScreenStore = {
-  screen: Screen;
   hoveredCardId: string | null;
   hasActiveRun: boolean;
   activeLabyrinthModifiers: LabyrinthModifierKind[];
@@ -66,7 +63,6 @@ type ScreenStore = {
   mysteryEvent: MysteryEvent | null;
   mysteryCardChoices: BattleCard[] | null;
 
-  setScreen: (screen: Screen) => void;
   setHoveredCardId: (id: string | null | ((prev: string | null) => string | null)) => void;
   setHasActiveRun: (active: boolean) => void;
   setActiveLabyrinthModifiers: (modifiers: LabyrinthModifierKind[]) => void;
@@ -88,13 +84,9 @@ type ScreenStore = {
   initAlchemist: () => void;
   resetLabyrinthMap: () => void;
   beginMystery: () => void;
-  clearMysteryChoices: () => void;
-  navigateTo: (nextScreen: Screen) => void;
-  goToScreen: (nextScreen: Screen) => void;
 };
 
 export const useScreenStore = create<ScreenStore>()((set) => ({
-  screen: "menu",
   hoveredCardId: null,
   hasActiveRun: false,
   activeLabyrinthModifiers: [],
@@ -112,7 +104,6 @@ export const useScreenStore = create<ScreenStore>()((set) => ({
   mysteryEvent: null,
   mysteryCardChoices: null,
 
-  setScreen: (screen) => set({ screen }),
   setHoveredCardId: (id) => set((s) => ({ hoveredCardId: typeof id === "function" ? id(s.hoveredCardId) : id })),
   setHasActiveRun: (active) => set({ hasActiveRun: active }),
   setActiveLabyrinthModifiers: (modifiers) => set({ activeLabyrinthModifiers: modifiers }),
@@ -154,16 +145,4 @@ export const useScreenStore = create<ScreenStore>()((set) => ({
 
   resetLabyrinthMap: () => set({ labyrinthMap: generateLabyrinthMap() }),
   beginMystery: () => set({ mysteryEvent: pickRandom(mysteryPool) ?? mysteryPool[0], mysteryCardChoices: null }),
-  clearMysteryChoices: () => set({ mysteryCardChoices: null }),
-  navigateTo: (nextScreen) => {
-    if (_navTimerRef.current) window.clearTimeout(_navTimerRef.current);
-    _navTimerRef.current = window.setTimeout(() => set({ screen: nextScreen }), NAVIGATION_DELAY_MS);
-  },
-  goToScreen: (nextScreen) => {
-    set({ hoveredCardId: null });
-    if (_navTimerRef.current) window.clearTimeout(_navTimerRef.current);
-    _navTimerRef.current = window.setTimeout(() => set({ screen: nextScreen }), NAVIGATION_DELAY_MS);
-  },
 }));
-
-const _navTimerRef: { current: number | null } = { current: null };

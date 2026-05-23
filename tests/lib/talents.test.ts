@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { xpForNextPoint, xpThresholdForPoints, computeTalentPoints, xpToNextPoint, extractCardKeywords, addTalentXP, getTalentKeywordProgress } from "@/lib/talents";
-import type { BattleCard } from "@/lib/game-data";
+import { xpForNextPoint, xpThresholdForPoints, computeTalentPoints, xpToNextPoint, addTalentXP, getTalentKeywordProgress } from "@/lib/talents";
 
 describe("xpForNextPoint", () => {
   it("returns 10 XP for point 0→1", () => expect(xpForNextPoint(0)).toBe(10));
@@ -30,69 +29,6 @@ describe("xpToNextPoint", () => {
   it("returns 5 remaining from 5 XP", () => expect(xpToNextPoint(5)).toBe(5));
   it("returns 20 remaining from exactly 10 XP (next threshold is 30)", () => expect(xpToNextPoint(10)).toBe(20));
   it("returns 19 remaining from 11 XP (toward threshold of 30)", () => expect(xpToNextPoint(11)).toBe(19));
-});
-
-describe("extractCardKeywords", () => {
-  function card(overrides: Partial<BattleCard> = {}): BattleCard {
-    return { id: "t", title: "T", descriptionLines: [""], art: "", cost: 1, effects: [], ...overrides };
-  }
-
-  it("extracts damage type keyword", () => {
-    const c = card({ effects: [{ kind: "damage", damageType: "physical", amount: 5 }] });
-    expect(extractCardKeywords(c)).toEqual(["physical"]);
-  });
-
-  it("adds leech when damage has lifesteal", () => {
-    const c = card({ effects: [{ kind: "damage", damageType: "bleed", amount: 5, lifesteal: true }] });
-    const kw = extractCardKeywords(c);
-    expect(kw).toContain("bleed");
-    expect(kw).toContain("leech");
-  });
-
-  it("extracts player-status keyword", () => {
-    const c = card({ effects: [{ kind: "player-status", status: "block", amount: 5 }] });
-    expect(extractCardKeywords(c)).toEqual(["block"]);
-  });
-
-  it("extracts health for heal effects", () => {
-    const c = card({ effects: [{ kind: "heal", amount: 5 }] });
-    expect(extractCardKeywords(c)).toEqual(["health"]);
-  });
-
-  it("extracts mana for mana-related effects", () => {
-    const c = card({ effects: [{ kind: "restore-mana", amount: 2 }] });
-    expect(extractCardKeywords(c)).toEqual(["mana"]);
-  });
-
-  it("extracts gold for gain-gold effects", () => {
-    const c = card({ effects: [{ kind: "gain-gold", amount: 5 }] });
-    expect(extractCardKeywords(c)).toEqual(["gold"]);
-  });
-
-  it("extracts wish for wish effects", () => {
-    const c = card({ effects: [{ kind: "wish", amount: 1 }] });
-    expect(extractCardKeywords(c)).toEqual(["wish"]);
-  });
-
-  it("does not extract a keyword for remove-harmful-status effects", () => {
-    const c = card({ effects: [{ kind: "remove-harmful-status", amount: 1 }] });
-    expect(extractCardKeywords(c)).toEqual([]);
-  });
-
-  it("extracts consume keyword from consume cards", () => {
-    const c = card({ consume: true, effects: [] });
-    expect(extractCardKeywords(c)).toEqual(["consume"]);
-  });
-
-  it("deduplicates keywords from multiple effects", () => {
-    const c = card({ effects: [
-      { kind: "damage", damageType: "physical", amount: 5 },
-      { kind: "player-status", status: "block", amount: 3 },
-    ]});
-    const kw = extractCardKeywords(c);
-    expect(kw).toContain("physical");
-    expect(kw).toContain("block");
-  });
 });
 
 describe("addTalentXP", () => {

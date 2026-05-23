@@ -3,13 +3,11 @@ import { useState, useMemo } from "react";
 import { Menu, RotateCcw, Swords } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { keywordDefinitions, talentBackgroundArt, type KeywordId } from "@/lib/game-data";
+import { keywordDefinitions, talentBackgroundArt, type KeywordId, getTalentsForKeyword } from "@/lib/game-data";
 import { getTalentKeywordProgress } from "@/lib/talents";
 
 import { TalentKeywordButton } from "../talents/talents-ui";
 import { ConfirmationDialog, PageLayout } from "../ui/shared-ui";
-
-import { getTalentsForKeyword } from "@/lib/game-data";
 import { useTalentChoices } from "../talents/use-talent-choices";
 import { playUISound } from "@/lib/audio";
 import { TalentTree } from "../talents/talent-tree";

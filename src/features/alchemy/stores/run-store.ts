@@ -8,12 +8,13 @@ import {
   talentPool,
   type UnlockedTalents,
   cardLibrary,
+  getCardKeywords,
 } from "@/lib/game-data";
 import { MAX_PLAYER_HEALTH } from "@/lib/game-constants";
 import { DESTINATIONS, type Destination } from "@/features/alchemy/types";
 import type { ActiveRunData } from "@/features/alchemy/run/types";
 import type { ContentSystemId } from "@/lib/content-systems/types";
-import { addTalentXP, extractCardKeywords, xpThresholdForPoints, type TalentXP } from "@/lib/talents";
+import { addTalentXP, xpThresholdForPoints, type TalentXP } from "@/lib/talents";
 import type { KeywordId } from "@/lib/game-data";
 
 export function hydrateCard(savedCard: BattleCard): BattleCard {
@@ -241,7 +242,7 @@ export const useRunStore = create<RunStore>()((set) => ({
     }),
 
   awardCardXP: (card) => {
-    const keywords = extractCardKeywords(card);
+    const keywords = getCardKeywords(card);
     if (keywords.length === 0) return;
     set((s) => ({
       talentXP: addTalentXP(s.talentXP, keywords),

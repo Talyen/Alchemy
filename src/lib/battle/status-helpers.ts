@@ -4,9 +4,23 @@ import { BATTLE_CONFIG, HALF_DIVISOR, PERCENT_DENOMINATOR } from "../game-consta
 import { mergeCombatText } from "./combat-text";
 import type { BattleState, CombatTextEvent } from "./types";
 
+const CONSTANTS = {
+  DECAY_THRESHOLD: 1,
+  MIN_ARMOR: 0,
+  TARGETS: {
+    PLAYER: "player",
+    ENEMY: "enemy",
+  },
+  COMBAT_TEXT: {
+    TARGET_PLAYER: "player",
+    KIND_STATUS: "status",
+    STAT_BLOCK: "block",
+  },
+} as const;
+
 /** Halves a stack each tick; stacks of 1 or less clear entirely. */
 export function decayHalvedStatus(value: number) {
-  if (value <= 1) return 0;
+  if (value <= CONSTANTS.DECAY_THRESHOLD) return 0;
   return Math.round(value / HALF_DIVISOR);
 }
 
@@ -17,25 +31,33 @@ export function rollPercent(chance: number) {
 
 export type ArmorDecayTarget = "player" | "enemy";
 
-/** Reduces armor by BATTLE_CONFIG.ARMOR_DECAY_AMOUNT when health damage was taken. */
-export function decayArmorAfterDamage(
-  state: BattleState,
-  damage: number,
-  target: ArmorDecayTarget,
-  combatTexts?: CombatTextEvent[],
-): BattleState {
-  if (damage <= 0) return state;
-  if (target === "enemy") {
-    if (state.enemyMitigation.armor <= 0) return state;
-    return {
-      ...state,
-      enemyMitigation: {
-        ...state.enemyMitigation,
-        armor: state.enemyMitigation.armor - BATTLE_CONFIG.ARMOR_DECAY_AMOUNT,
-      },
-    };
+/**
+ * Decays the enemy's armor when health damage is taken.
+ * Enemy armor is stored in enemyMitigation.
+ */
+function decayEnemyArmor(state: BattleState): BattleState {
+  if (state.enemyMitigation.armor <= CONSTANTS.MIN_ARMOR) {
+    return state;
   }
-  if (state.playerStatuses.armor <= 0) return state;
+  return {
+    ...state,
+    enemyMitigation: {
+      ...state.enemyMitigation,
+      armor: state.enemyMitigation.armor - BATTLE_CONFIG.ARMOR_DECAY_AMOUNT,
+    },
+  };
+}
+
+/**
+ * Decays the player's armor when health damage is taken.
+ * Player armor is stored in playerStatuses. If armor breaks,
+ * checks and applies the player's armorBreakBlock talent.
+ */
+function decayPlayerArmor(state: BattleState, combatTexts?: CombatTextEvent[]): BattleState {
+  if (state.playerStatuses.armor <= CONSTANTS.MIN_ARMOR) {
+    return state;
+  }
+
   const armorBefore = state.playerStatuses.armor;
   let nextState: BattleState = {
     ...state,
@@ -44,7 +66,12 @@ export function decayArmorAfterDamage(
       armor: state.playerStatuses.armor - BATTLE_CONFIG.ARMOR_DECAY_AMOUNT,
     },
   };
-  if (armorBefore > 0 && nextState.playerStatuses.armor === 0 && nextState.talentEffects.armorBreakBlock > 0) {
+
+  // If player armor breaks and the armorBreakBlock talent is active, grant block.
+  const armorBroke = armorBefore > CONSTANTS.MIN_ARMOR && nextState.playerStatuses.armor === CONSTANTS.MIN_ARMOR;
+  const hasArmorBreakTalent = nextState.talentEffects.armorBreakBlock > 0;
+
+  if (armorBroke && hasArmorBreakTalent) {
     nextState = {
       ...nextState,
       playerStatuses: {
@@ -54,12 +81,28 @@ export function decayArmorAfterDamage(
     };
     if (combatTexts) {
       mergeCombatText(combatTexts, {
-        target: "player",
-        kind: "status",
-        stat: "block",
+        target: CONSTANTS.COMBAT_TEXT.TARGET_PLAYER,
+        kind: CONSTANTS.COMBAT_TEXT.KIND_STATUS,
+        stat: CONSTANTS.COMBAT_TEXT.STAT_BLOCK,
         amount: nextState.talentEffects.armorBreakBlock,
       });
     }
   }
+
   return nextState;
+}
+
+/** Reduces armor by BATTLE_CONFIG.ARMOR_DECAY_AMOUNT when health damage was taken. */
+export function decayArmorAfterDamage(
+  state: BattleState,
+  damage: number,
+  target: ArmorDecayTarget,
+  combatTexts?: CombatTextEvent[],
+): BattleState {
+  if (damage <= 0) return state;
+
+  if (target === CONSTANTS.TARGETS.ENEMY) {
+    return decayEnemyArmor(state);
+  }
+  return decayPlayerArmor(state, combatTexts);
 }

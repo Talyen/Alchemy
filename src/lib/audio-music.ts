@@ -7,19 +7,27 @@ import {
   FADE_OUT_DURATION,
   MUSIC_BASE_PATH,
   MUSIC_MASTER_GAIN,
+  MUSIC_KEYS,
 } from "./game-constants";
 import { audioState } from "./audio-state";
 import { pickRandom } from "./utils";
 
 const musicBase = import.meta.env.BASE_URL + MUSIC_BASE_PATH;
 
-const musicTracks: Record<string, string[]> = {
-  menu: ["Menu 1.mp3", "Menu 2.mp3", "Menu 3.mp3", "Menu 4.mp3"],
-  battle: ["Battle 1.mp3", "Battle 2.mp3", "Battle 3.mp3", "Battle 4.mp3", "Battle 5.mp3"],
-};
+// Music player configuration grouping local variables and bounds.
+const MUSIC_CONFIG = {
+  TRACKS: {
+    [MUSIC_KEYS.MENU]: ["Menu 1.mp3", "Menu 2.mp3", "Menu 3.mp3", "Menu 4.mp3"],
+    [MUSIC_KEYS.BATTLE]: ["Battle 1.mp3", "Battle 2.mp3", "Battle 3.mp3", "Battle 4.mp3", "Battle 5.mp3"],
+  },
+  VOLUME_MIN: 0,
+} as const;
 
+// Global counter tracking active scene music transitions to prevent concurrent crossfades
+// from racing or playing overlapping tracks.
 let musicTransitionToken = 0;
 
+// Play wrapper handling browser autoplay blocking policies.
 function playElement(el: HTMLAudioElement) {
   el.play().catch(() => {
     console.debug("Music playback blocked until user interaction");
@@ -27,6 +35,7 @@ function playElement(el: HTMLAudioElement) {
 }
 
 // Applies all active volume layers to a streaming music element.
+// Volume cascaded: state-music-volume * state-master-volume * constant-music-master-gain.
 export function applyMusicVolume(el: HTMLAudioElement) {
   el.volume = audioState.musicVolume * audioState.masterVolume * MUSIC_MASTER_GAIN;
 }
@@ -48,35 +57,67 @@ function replaceCurrentTrack(track: string, volume: number) {
 }
 
 // Starts a track with the standard delayed fade-in used for scene transitions.
+// Leverages requestAnimationFrame for smooth volume interpolation.
 function startTrack(track: string) {
-  const el = replaceCurrentTrack(track, 0);
+  const el = replaceCurrentTrack(track, MUSIC_CONFIG.VOLUME_MIN);
   const startTime = performance.now();
 
   function fadeIn() {
     const elapsed = performance.now() - startTime;
-    if (elapsed < FADE_IN_DELAY) return void requestAnimationFrame(fadeIn);
+    if (elapsed < FADE_IN_DELAY) {
+      requestAnimationFrame(fadeIn);
+      return;
+    }
     const t = Math.min(1, (elapsed - FADE_IN_DELAY) / FADE_IN_DURATION);
     if (audioState.currentMusic === el) {
       el.volume = audioState.musicVolume * audioState.masterVolume * MUSIC_MASTER_GAIN * t;
     }
-    if (t < 1) requestAnimationFrame(fadeIn);
+    if (t < 1) {
+      requestAnimationFrame(fadeIn);
+    }
   }
 
   requestAnimationFrame(fadeIn);
-}
-
-// Starts a track at full configured volume for resume/startup cases without transition lag.
-function startTrackImmediate(track: string) {
-  replaceCurrentTrack(track, audioState.musicVolume * audioState.masterVolume * MUSIC_MASTER_GAIN);
 }
 
 // Starts a keyed music group immediately, choosing one registered track at random.
 export function playMusicImmediate(key: string) {
   musicTransitionToken += 1;
   audioState.currentMusicKey = key;
-  const track = pickRandom(musicTracks[key] ?? []);
+  const track = pickRandom(MUSIC_CONFIG.TRACKS[key as keyof typeof MUSIC_CONFIG.TRACKS] ?? []);
   if (!track) return;
-  startTrackImmediate(track);
+
+  // Inlined startTrackImmediate logic to reduce indirection.
+  replaceCurrentTrack(track, audioState.musicVolume * audioState.masterVolume * MUSIC_MASTER_GAIN);
+}
+
+// Handles smooth fade-out interpolation of a track before starting the next one.
+// Checks the musicTransitionToken to abort if a new transition has been scheduled.
+function fadeOutAndStartTrack(oldTrack: HTMLAudioElement, newTrack: string, transitionToken: number) {
+  const oldVol = oldTrack.volume;
+  const startTime = performance.now();
+
+  function fadeOut() {
+    // If a newer music transition has taken precedence, abort the current animation loop.
+    if (transitionToken !== musicTransitionToken) return;
+
+    const elapsed = performance.now() - startTime;
+    const t = Math.min(1, elapsed / FADE_OUT_DURATION);
+    oldTrack.volume = Math.max(MUSIC_CONFIG.VOLUME_MIN, oldVol * (1 - t));
+
+    if (t < 1) {
+      requestAnimationFrame(fadeOut);
+      return;
+    }
+
+    oldTrack.pause();
+    if (audioState.currentMusic === oldTrack) {
+      audioState.currentMusic = null;
+    }
+    startTrack(newTrack);
+  }
+
+  requestAnimationFrame(fadeOut);
 }
 
 // Crossfades to a keyed music group unless that group is already active.
@@ -87,31 +128,17 @@ export function playMusic(key: string) {
     }
     return;
   }
+
   const transitionToken = musicTransitionToken + 1;
   musicTransitionToken = transitionToken;
   audioState.currentMusicKey = key;
-  const track = pickRandom(musicTracks[key] ?? []);
+
+  const track = pickRandom(MUSIC_CONFIG.TRACKS[key as keyof typeof MUSIC_CONFIG.TRACKS] ?? []);
   if (!track) return;
-  const selectedTrack = track;
 
   if (audioState.currentMusic) {
-    const old = audioState.currentMusic;
-    const oldVol = old.volume;
-    const startTime = performance.now();
-
-    function fadeOut() {
-      if (transitionToken !== musicTransitionToken) return;
-      const elapsed = performance.now() - startTime;
-      const t = Math.min(1, elapsed / FADE_OUT_DURATION);
-      old.volume = Math.max(0, oldVol * (1 - t));
-      if (t < 1) return void requestAnimationFrame(fadeOut);
-      old.pause();
-      if (audioState.currentMusic === old) audioState.currentMusic = null;
-      startTrack(selectedTrack);
-    }
-
-    return void requestAnimationFrame(fadeOut);
+    fadeOutAndStartTrack(audioState.currentMusic, track, transitionToken);
+  } else {
+    startTrack(track);
   }
-
-  startTrack(selectedTrack);
 }

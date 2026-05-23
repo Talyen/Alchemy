@@ -62,7 +62,9 @@ export function CampfireScreen({ onContinue }: { onContinue: () => void }) {
     <div className="flex h-full w-full flex-col items-center justify-center gap-8 px-4 py-6 text-center">
       <div>
         <ScreenHeader title="Campfire" />
-        <ScreenDescription className="mt-5 text-muted-foreground">Rest to Restore 30% Health</ScreenDescription>
+        <ScreenDescription className="mt-5 text-muted-foreground">
+          {`Rest to Restore ${Math.round(CAMPFIRE_HEAL_FRACTION * 100)}% Health`}
+        </ScreenDescription>
       </div>
 
       <img src={campfire} alt="Campfire" className="w-full max-w-[37.04cqh] rounded-[22px] object-contain" />

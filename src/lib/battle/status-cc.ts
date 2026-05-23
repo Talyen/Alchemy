@@ -5,7 +5,31 @@ import { mergeCombatText } from "./combat-text";
 import { BATTLE_CONFIG, STATUS_CONFIG } from "../game-constants";
 import type { BattleState, CombatTextEvent } from "./types";
 
-type CcStat = "stun" | "freeze";
+const CONSTANTS = {
+  STATUS_NAMES: {
+    STUN: "stun" as const,
+    FREEZE: "freeze" as const,
+  },
+  TARGETS: {
+    PLAYER: "player" as const,
+    ENEMY: "enemy" as const,
+  },
+  COMBAT_TEXT_KINDS: {
+    NOTICE: "notice" as const,
+  },
+  SKIP_FIELDS: {
+    stun: {
+      player: "playerStunSkipTurns" as const,
+      enemy: "enemyStunSkipTurns" as const,
+    },
+    freeze: {
+      player: "playerFreezeSkipTurns" as const,
+      enemy: "enemyFreezeSkipTurns" as const,
+    },
+  },
+} as const;
+
+type CcStat = typeof CONSTANTS.STATUS_NAMES.STUN | typeof CONSTANTS.STATUS_NAMES.FREEZE;
 
 function clearPlayerCcStack(state: BattleState, stat: CcStat): BattleState {
   return { ...state, playerStatuses: { ...state.playerStatuses, [stat]: 0 } };
@@ -34,12 +58,12 @@ export function resolvePlayerCrowdControlTrigger(input: PlayerCcTriggerInput): B
     return clearPlayerCcStack(state, stat);
   }
   mergeCombatText(combatTexts, {
-    target: "player",
-    kind: "notice",
+    target: CONSTANTS.TARGETS.PLAYER,
+    kind: CONSTANTS.COMBAT_TEXT_KINDS.NOTICE,
     stat,
-    text: stat === "stun" ? STATUS_CONFIG.CC_NOTICE_STUN : STATUS_CONFIG.CC_NOTICE_FREEZE,
+    text: stat === CONSTANTS.STATUS_NAMES.STUN ? STATUS_CONFIG.CC_NOTICE_STUN : STATUS_CONFIG.CC_NOTICE_FREEZE,
   });
-  const skipField = stat === "stun" ? "playerStunSkipTurns" : "playerFreezeSkipTurns";
+  const skipField = CONSTANTS.SKIP_FIELDS[stat].player;
   return {
     ...clearPlayerCcStack(state, stat),
     [skipField]: state[skipField] + BATTLE_CONFIG.BASE_CC_DURATION,
@@ -71,17 +95,17 @@ export type EnemyCcTriggerInput = {
 /** Assigns enemy skip turns, cooldown, and notice after threshold was met. */
 export function assignEnemyCrowdControlSkip(input: EnemyCcTriggerInput): BattleState {
   const { nextState, stat, skipDuration, combatTexts, postTrigger } = input;
-  const skipField = stat === "stun" ? "enemyStunSkipTurns" : "enemyFreezeSkipTurns";
+  const skipField = CONSTANTS.SKIP_FIELDS[stat].enemy;
   let result: BattleState = {
     ...clearEnemyCcStack(nextState, stat),
     [skipField]: nextState[skipField] + skipDuration,
     enemyCCCooldown: BATTLE_CONFIG.CC_IMMUNITY_DURATION,
   };
   mergeCombatText(combatTexts, {
-    target: "enemy",
-    kind: "notice",
+    target: CONSTANTS.TARGETS.ENEMY,
+    kind: CONSTANTS.COMBAT_TEXT_KINDS.NOTICE,
     stat,
-    text: stat === "stun" ? STATUS_CONFIG.CC_NOTICE_STUN : STATUS_CONFIG.CC_NOTICE_FREEZE,
+    text: stat === CONSTANTS.STATUS_NAMES.STUN ? STATUS_CONFIG.CC_NOTICE_STUN : STATUS_CONFIG.CC_NOTICE_FREEZE,
   });
   if (postTrigger) result = postTrigger(result);
   return result;

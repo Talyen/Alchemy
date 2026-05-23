@@ -105,8 +105,4 @@ export type UISound = keyof typeof uiSounds;
 export const stingerSounds = {
   victory: "harpsichord-level-complete.ogg",
   defeat: "harpsichord-defeated.ogg",
-  gameOver: "grand-piano-defeated.ogg",
-  runStart: "harpsichord-level-start.ogg",
-  menuOpen: "click-double-on.ogg",
-  menuClose: "click-double-off.ogg",
 } as const;
