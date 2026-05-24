@@ -4,11 +4,15 @@
 /* eslint-disable react-refresh/only-export-components */
 import { useState } from "react";
 import type { CSSProperties } from "react";
+import { Coins } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TextAnimate } from "@/components/ui/text-animate";
 import { SELECTION_GRID_PAGE_SIZE } from "@/lib/game-constants";
 import { type BattleCard, type TrinketEntry } from "@/lib/game-data";
+import { MATERIAL_IDS, materialLabels } from "@/lib/homestead/types";
 import { cn } from "@/lib/utils";
+
+import { matIconMap, matPillStyle, matTextColor } from "../../ui/material-icons";
 
 import { cardSurfaceClass, staticCardTransform, trinketCardWidthClass, viewCardWidthClass } from "../../config";
 import type { MysteryChoice, MysteryEvent, MysteryEffect } from "../../mystery-events";
@@ -175,11 +179,25 @@ export function MysteryRewardSummary({
   onContinue: () => void;
   eventTitle: string;
 } & LookupProps) {
+  const resourceEffects = choice.effects.filter((e) => e.kind === "gainGold" || e.kind === "gainMaterial");
+  const otherEffects = choice.effects.filter((e) => e.kind !== "gainGold" && e.kind !== "gainMaterial");
+
+  const totalGold = resourceEffects
+    .filter((e): e is typeof e & { kind: "gainGold" } => e.kind === "gainGold")
+    .reduce((sum, e) => sum + e.amount, 0);
+
+  const mats: Record<string, number> = {};
+  for (const e of resourceEffects) {
+    if (e.kind === "gainMaterial") {
+      mats[e.material] = (mats[e.material] ?? 0) + e.amount;
+    }
+  }
+
   return (
     <div className="state-swap space-y-6 text-center">
       <ScreenHeader title={eventTitle} />
 
-      {choice.effects.map((effect, i) => (
+      {otherEffects.map((effect, i) => (
         <MysteryRewardEffectItem
           key={i}
           effect={effect}
@@ -188,6 +206,31 @@ export function MysteryRewardSummary({
           findTrinket={findTrinket}
         />
       ))}
+
+      {resourceEffects.length > 0 && (
+        <div className="flex flex-wrap items-center justify-center gap-2 text-sm font-medium text-muted-foreground">
+          Found
+          {totalGold > 0 ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold bg-yellow-300/15 text-yellow-300">
+              <Coins className="h-4 w-4" />
+              {totalGold} Gold
+            </span>
+          ) : null}
+          {MATERIAL_IDS.filter((mat) => mats[mat] > 0).map((mat) => (
+            <span
+              key={mat}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold",
+                matPillStyle[mat],
+                matTextColor[mat],
+              )}
+            >
+              {matIconMap[mat]}
+              {mats[mat]} {materialLabels[mat]}
+            </span>
+          ))}
+        </div>
+      )}
 
       <Button size="lg" onClick={onContinue}>
         Continue

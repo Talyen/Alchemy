@@ -16,6 +16,7 @@ import {
   CorruptionScreen,
   DestinationScreen,
   DifficultySelectScreen,
+  DraftDeckScreen,
   GameModeSelectScreen,
   GameOverScreen,
   LabyrinthMapScreen,
@@ -37,6 +38,7 @@ export type ControllerActions = {
   beginLabyrinth: () => void;
   beginWildwood: () => void;
   handleCharacterSelect: (id: CharacterId) => void;
+  handleDraftComplete: (draftedCards: BattleCard[]) => void;
   handleDifficultySelect: (id: DifficultyId) => void;
   handleBackFromDifficultySelect: () => void;
   handleWildwoodBossSelect: (id: string) => void;
@@ -162,6 +164,8 @@ export function renderAlchemyScreen({
       return (
         <CharacterSelectScreen onConfirm={a.handleCharacterSelect} onBack={() => a.goToScreen("game-mode-select")} />
       );
+    case "draft-deck":
+      return <DraftDeckScreen onComplete={a.handleDraftComplete} />;
     case "difficulty-select":
       return (
         <DifficultySelectScreen
@@ -249,10 +253,7 @@ export function renderAlchemyScreen({
     case "options":
       return (
         <OptionsScreen
-          navigation={{
-            onMainMenu: () => a.goToScreen("menu"),
-            onReturnToBattle: a.returnToBattle,
-          }}
+          onOpenMenu={onOpenBattleMenu}
           display={{
             selectedAspectRatio: appState.selectedAspectRatio,
             onAspectRatioChange: appState.setSelectedAspectRatio,
@@ -288,8 +289,7 @@ export function renderAlchemyScreen({
     case "collection":
       return (
         <CollectionScreen
-          onMainMenu={() => a.goToScreen("menu")}
-          onReturnToBattle={a.returnToBattle}
+          onOpenMenu={onOpenBattleMenu}
           collectionTab={collectionTab}
           onSelectTab={appState.handleCollectionTabChange}
           onPageChange={appState.setCollectionPage}
@@ -303,8 +303,7 @@ export function renderAlchemyScreen({
     case "homestead":
       return (
         <HomesteadScreen
-          onMainMenu={() => a.goToScreen("menu")}
-          onReturnToBattle={a.returnToBattle}
+          onOpenMenu={onOpenBattleMenu}
           materialInventory={useHomesteadStore.getState().materialInventory}
           constructedBuildings={useHomesteadStore.getState().constructedBuildings}
           plantedFarms={useHomesteadStore.getState().plantedFarms}

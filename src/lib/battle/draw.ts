@@ -41,12 +41,12 @@ export const defaultTalentEffects: TalentEffectManifest = createEmptyTalentManif
 const skeletonEnemy = {
   id: "skeleton",
   title: "Skeleton",
-  subtitle: "",
-  descriptionLines: [""],
+  subtitle: "Placeholder — no battle should render this",
+  descriptionLines: ["This enemy should never appear in an active battle."],
   art: "",
   enemyType: "normal" as const,
   traits: [],
-  attackEffects: [],
+  attackEffects: [{ kind: "damage" as const, damageType: "physical" as const, amount: FALLBACK_ENEMY_ATTACK }],
 };
 
 function createEmptyPlayerStatuses(): PlayerStatusValues {
@@ -132,13 +132,14 @@ export function defaultBattleState(): BattleState {
     cardsPlayedThisTurn: 0,
     nextCardUid: 0,
     difficultyModifiers: [],
+    rng: Math.random,
   };
 }
 
 /**
  * Returns a fresh (deck, discard) pair after possibly reshuffling discard into deck.
  */
-function refillDeck(deck: BattleCard[], discard: BattleCard[]) {
+function refillDeck(deck: BattleCard[], discard: BattleCard[]): { deck: BattleCard[]; discard: BattleCard[] } | null {
   if (deck.length > 0) return { deck, discard };
   if (discard.length === 0) return null;
   return { deck: shuffleCards(discard), discard: [] };
@@ -167,10 +168,9 @@ export function drawCards(
     nextDiscard = refilled.discard;
 
     const card = nextDeck.shift();
-    if (card) {
-      nextHand.push({ ...card, uid });
-      uid += 1;
-    }
+    if (!card) break;
+    nextHand.push({ ...card, uid });
+    uid += 1;
   }
 
   return { deck: nextDeck, discard: nextDiscard, hand: nextHand, nextCardUid: uid };
@@ -186,15 +186,10 @@ function scaleEnemyHealth(enemy: BestiaryEntry, roomMul: number): number {
 }
 
 /**
- * Computes room-scaled attack effects for the enemy, applying fallback damage if empty.
+ * Computes room-scaled attack effects for the enemy.
  */
 function scaleAttackEffects(effects: EnemyAttackEffect[], roomMul: number): EnemyAttackEffect[] {
-  const baseEffects =
-    effects.length > 0
-      ? effects
-      : [{ kind: "damage" as const, damageType: "physical" as const, amount: FALLBACK_ENEMY_ATTACK }];
-
-  return baseEffects.map((effect) => {
+  return effects.map((effect) => {
     const scaledAmount = Math.round(effect.amount * roomMul);
     if (effect.kind === "damage") {
       return {
@@ -234,16 +229,16 @@ function buildScaledEnemy(enemy: BestiaryEntry, totalRoomsInRun = 0) {
 }
 
 /**
- * Sets up opening card hands, considering extra draw trinkets.
+ * Sets up opening card hands, considering extra draw from trinkets.
  */
-function setupOpeningHand(deck: BattleCard[], trinketEffects: ReturnType<typeof computeTrinketManifest>) {
+function setupOpeningHand(deck: BattleCard[], extraDrawPerBattle: number) {
   const openingHand = drawCards(shuffleCards(deck), [], [], CARDS_PER_TURN, 0);
-  if (trinketEffects.extraDrawPerBattle <= 0) return { ...openingHand, extraHand: null };
+  if (extraDrawPerBattle <= 0) return { ...openingHand, extraHand: null };
   const extraHand = drawCards(
     openingHand.deck,
     openingHand.discard,
     openingHand.hand,
-    trinketEffects.extraDrawPerBattle,
+    extraDrawPerBattle,
     openingHand.nextCardUid,
   );
   return {
@@ -260,6 +255,10 @@ function setupOpeningHand(deck: BattleCard[], trinketEffects: ReturnType<typeof 
  */
 function applyDifficultyAttackModifiers(effects: EnemyAttackEffect[], modifiers: DifficultyModifier[]) {
   let modified = [...effects];
+  const dmgMul = modifiers.find((m) => m.kind === "enemy-damage-multiplier")?.amount ?? 1;
+  if (dmgMul !== 1) {
+    modified = modified.map((e) => (e.kind === "damage" ? { ...e, amount: Math.round(e.amount * dmgMul) } : e));
+  }
   for (const mod of modifiers) {
     if (mod.kind === "increase-enemy-physical-damage" || mod.kind === "increase-enemy-damage") {
       modified = modified.map((e) => (e.kind === "damage" ? { ...e, amount: e.amount + mod.amount } : e));
@@ -301,38 +300,8 @@ export type CreateBattleStateOptions = {
   maxHealth?: number;
   trinketIds?: string[];
   difficultyModifiers?: DifficultyModifier[];
+  rng?: () => number;
 };
-
-/**
- * Normalizes options parameter signature variations.
- */
-function parseCreateBattleStateOptions(
-  optionsOrRunDeck: CreateBattleStateOptions | BattleCard[],
-  gold = 0,
-  totalRooms = 0,
-  currentEnemy?: BestiaryEntry,
-  playerHealth = MAX_PLAYER_HEALTH,
-  talentEffects: TalentEffectManifest = defaultTalentEffects,
-  discoveredCardIds: string[] = [],
-  maxHealth = MAX_PLAYER_HEALTH,
-  trinketIds: string[] = [],
-  difficultyModifiers: DifficultyModifier[] = [],
-): CreateBattleStateOptions {
-  return Array.isArray(optionsOrRunDeck)
-    ? {
-        runDeck: optionsOrRunDeck,
-        gold,
-        totalRooms,
-        currentEnemy: currentEnemy!,
-        playerHealth,
-        talentEffects,
-        discoveredCardIds,
-        maxHealth,
-        trinketIds,
-        difficultyModifiers,
-      }
-    : optionsOrRunDeck;
-}
 
 /**
  * Calculates initial player health and block taking talents and difficulty modifiers into account.
@@ -362,7 +331,9 @@ function initializeEnemyState(battleEnemy: BestiaryEntry, battleRooms: number, b
   );
 
   const hasSturdy = battleDiffs.some((m) => m.kind === "labyrinth-sturdy");
-  const enemyMaxHealth = hasSturdy ? Math.round(scaledEnemyHealth * LABYRINTH_STURDY_MULTIPLIER) : scaledEnemyHealth;
+  const hpMul = battleDiffs.find((m) => m.kind === "enemy-health-multiplier")?.amount ?? 1;
+  const totalMul = (hasSturdy ? LABYRINTH_STURDY_MULTIPLIER : 1) + (hpMul - 1);
+  const enemyMaxHealth = Math.round(scaledEnemyHealth * totalMul);
 
   return {
     enemyMaxHealth,
@@ -400,6 +371,7 @@ function buildInitialBattleState(
     discoveredCardIds: string[];
     nextCardUid: number;
     difficultyModifiers: DifficultyModifier[];
+    rng: () => number;
   },
 ): BattleState {
   return {
@@ -433,47 +405,11 @@ function buildInitialBattleState(
     discoveredCardIds: setup.discoveredCardIds,
     nextCardUid: setup.nextCardUid,
     difficultyModifiers: setup.difficultyModifiers,
+    rng: setup.rng,
   };
 }
 
-export function createBattleState(options: CreateBattleStateOptions): BattleState;
-export function createBattleState(
-  runDeck: BattleCard[],
-  gold?: number,
-  totalRooms?: number,
-  currentEnemy?: BestiaryEntry,
-  playerHealth?: number,
-  talentEffects?: TalentEffectManifest,
-  discoveredCardIds?: string[],
-  maxHealth?: number,
-  trinketIds?: string[],
-  difficultyModifiers?: DifficultyModifier[],
-): BattleState;
-export function createBattleState(
-  optionsOrRunDeck: CreateBattleStateOptions | BattleCard[],
-  gold = 0,
-  totalRooms = 0,
-  currentEnemy?: BestiaryEntry,
-  playerHealth = MAX_PLAYER_HEALTH,
-  talentEffects: TalentEffectManifest = defaultTalentEffects,
-  discoveredCardIds: string[] = [],
-  maxHealth = MAX_PLAYER_HEALTH,
-  trinketIds: string[] = [],
-  difficultyModifiers: DifficultyModifier[] = [],
-): BattleState {
-  const options = parseCreateBattleStateOptions(
-    optionsOrRunDeck,
-    gold,
-    totalRooms,
-    currentEnemy,
-    playerHealth,
-    talentEffects,
-    discoveredCardIds,
-    maxHealth,
-    trinketIds,
-    difficultyModifiers,
-  );
-
+export function createBattleState(options: CreateBattleStateOptions): BattleState {
   const {
     runDeck,
     gold: battleGold = 0,
@@ -483,6 +419,7 @@ export function createBattleState(
     discoveredCardIds: battleDiscovered = [],
     trinketIds: battleTrinkets = [],
     difficultyModifiers: battleDiffs = [],
+    rng: optionsRng,
   } = options;
 
   if (!battleEnemy) {
@@ -490,7 +427,7 @@ export function createBattleState(
   }
 
   const trinketEffects = computeTrinketManifest(battleTrinkets);
-  const { deck, hand, discard, nextCardUid } = setupOpeningHand(runDeck, trinketEffects);
+  const { deck, hand, discard, nextCardUid } = setupOpeningHand(runDeck, trinketEffects.extraDrawPerBattle);
 
   const {
     enemyMaxHealth,
@@ -532,6 +469,7 @@ export function createBattleState(
     discoveredCardIds: battleDiscovered,
     nextCardUid,
     difficultyModifiers: battleDiffs,
+    rng: optionsRng ?? Math.random,
   });
 }
 

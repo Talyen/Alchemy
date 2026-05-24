@@ -34,10 +34,11 @@ const TALENT_DEFAULTS = {
   removeHarmfulStatusOnWish: false, wishExtraChoiceChance: 0, wishDrawsCard: false,
   firstPoisonCardFree: false, poisonPhysicalBonus: 0, poisonGainChance: 0,
   receiveHalfPoisonDamage: false, goldOnFirstPoison: 0, poisonHalvesHealing: false,
+  poisonStunChance: 0, poisonStripArmor: false, poisonReducesEnemyDamage: 0, poisonLeechChance: 0,
   companionDamage: 0, companionGoldFindActive: false, firstBleedCardFree: false,
-  bleedPhysicalBonus: 0, bleedLeechChance: 0, bleedEnemyDamageReduction: 0,
-  bleedPhysicalTakenBonus: 0, bleedExecuteThreshold: 0, bleedDesperateMultiplier: 1,
-  bleedPoisonChance: 0, flatTrapDamage: 0, freezeThresholdReduction: 0,
+  bleedPhysicalBonus: 0, bleedLeechChance: 0,
+  bleedExecuteThreshold: 0, bleedDesperateMultiplier: 1,
+  bleedPoisonChance: 0, bleedPoisonDamageTakenBonus: 0, companionBleedDamageBonus: 0, receiveHalfBleedDamage: false, bleedHalvesEnemyHealing: false, flatTrapDamage: 0, freezeThresholdReduction: 0,
   freezeDoubleDamage: false, blockOnFreeze: 0, freezeStripArmor: false,
   startFreeze: 0, companionVsFrozenBonus: 0, freezePreventsPoisonDecay: false,
   freezeBlocksRegen: false, freezePreventsEnemyScaling: false, receiveHalfFreezeBuildUp: false,
@@ -92,6 +93,7 @@ function baseState(overrides: Partial<BattleState> = {}): BattleState {
     cardsPlayedThisTurn: 0,
     nextCardUid: 0,
     difficultyModifiers: [],
+    rng: Math.random,
     ...overrides,
   };
 }
@@ -126,23 +128,23 @@ describe("decayHalvedStatus", () => {
 describe("rollPercent", () => {
   it("returns true when random value is below chance threshold", () => {
     vi.spyOn(Math, "random").mockReturnValueOnce(0.49 / PERCENT_DENOMINATOR);
-    expect(rollPercent(50)).toBe(true);
+    expect(rollPercent(50, Math.random)).toBe(true);
   });
 
   it("returns false when random value is above chance threshold", () => {
     vi.spyOn(Math, "random").mockReturnValueOnce(0.99);
-    expect(rollPercent(50)).toBe(false);
+    expect(rollPercent(50, Math.random)).toBe(false);
   });
 
   it("returns false for 0 chance", () => {
-    expect(rollPercent(0)).toBe(false);
+    expect(rollPercent(0, Math.random)).toBe(false);
   });
 
   it("triggers at exact boundary values", () => {
     vi.spyOn(Math, "random").mockReturnValueOnce(49 / PERCENT_DENOMINATOR);
-    expect(rollPercent(50)).toBe(true);
+    expect(rollPercent(50, Math.random)).toBe(true);
     vi.spyOn(Math, "random").mockReturnValueOnce(50 / PERCENT_DENOMINATOR);
-    expect(rollPercent(50)).toBe(false);
+    expect(rollPercent(50, Math.random)).toBe(false);
   });
 });
 

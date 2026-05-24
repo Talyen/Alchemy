@@ -20,7 +20,16 @@ vi.mock("@/features/alchemy/storage/defaults", () => ({
     discoveredCardIds: [],
     encounteredEnemyIds: [],
     discoveredTrinketIds: [],
-    completedDifficulties: { knight: [], rogue: [], wizard: [], ranger: [] },
+    completedDifficulties: {
+      knight: [],
+      rogue: [],
+      wizard: [],
+      ranger: [],
+      alchemist: [],
+      warlock: [],
+      druid: [],
+      wildcard: [],
+    },
   },
 }));
 
@@ -48,7 +57,16 @@ const makeSave = (overrides: Partial<SaveData> = {}): SaveData => ({
   plantedFarms: {} as Record<string, number>,
   completedResearch: {} as Record<string, number>,
   bondedCompanions: {} as Record<string, number>,
-  completedDifficulties: { knight: [], rogue: [], wizard: [], ranger: [] },
+  completedDifficulties: {
+    knight: [],
+    rogue: [],
+    wizard: [],
+    ranger: [],
+    alchemist: [],
+    warlock: [],
+    druid: [],
+    wildcard: [],
+  },
   ...overrides,
 });
 
@@ -78,13 +96,17 @@ describe("initial state", () => {
     expect(useAppStore.getState().discoveredTrinketIds).toEqual([]);
   });
 
-  it("starts with all four characters in completedDifficulties", () => {
+  it("starts with all eight characters in completedDifficulties", () => {
     useAppStore.setState(useAppStore.getInitialState());
     const cd = useAppStore.getState().completedDifficulties;
     expect(cd.knight).toEqual([]);
     expect(cd.rogue).toEqual([]);
     expect(cd.wizard).toEqual([]);
     expect(cd.ranger).toEqual([]);
+    expect(cd.alchemist).toEqual([]);
+    expect(cd.warlock).toEqual([]);
+    expect(cd.druid).toEqual([]);
+    expect(cd.wildcard).toEqual([]);
   });
 
   it("starts with collection tab set to cards", () => {
@@ -110,7 +132,20 @@ describe("initialize", () => {
   });
 
   it("sets completedDifficulties from save data", () => {
-    useAppStore.getState().initialize(makeSave({ completedDifficulties: { knight: ["difficulty-1"], rogue: [], wizard: [], ranger: [] } }));
+    useAppStore.getState().initialize(
+      makeSave({
+        completedDifficulties: {
+          knight: ["difficulty-1"],
+          rogue: [],
+          wizard: [],
+          ranger: [],
+          alchemist: [],
+          warlock: [],
+          druid: [],
+          wildcard: [],
+        },
+      })
+    );
     expect(useAppStore.getState().completedDifficulties.knight).toEqual(["difficulty-1"]);
   });
 

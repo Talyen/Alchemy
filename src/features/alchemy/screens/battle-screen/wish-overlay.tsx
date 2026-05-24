@@ -34,7 +34,7 @@ export function WishOverlay({
 
   return (
     <div
-      className="motion-overlay absolute inset-0 flex items-center justify-center bg-black/70 px-6"
+      className="motion-overlay absolute inset-0 flex items-center justify-center px-6"
       style={{ zIndex: WISH_OVERLAY_Z_INDEX }}
     >
       <div className="motion-panel alchemy-shell w-full max-w-5xl rounded-[28px] border border-border/80 px-6 py-6">

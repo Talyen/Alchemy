@@ -1,6 +1,5 @@
 // Options screen with display, sound, gameplay, and save-data tabs.
 import { useState } from "react";
-import { House, Swords } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -10,6 +9,7 @@ import { aspectRatioOptions, displayModeOptions, uiScaleOptions } from "../confi
 import {
   ConfirmationDialog,
   DisplayModeSelect,
+  HamburgerTrigger,
   PageLayout,
   AspectRatioSelect,
   ScreenHeader,
@@ -17,14 +17,8 @@ import {
 } from "../ui/shared-ui";
 import { PressableMotion } from "../ui/pressable-motion";
 import type { AspectRatioOption, DisplayMode, UiScale } from "../types";
-import { useBattleStore } from "../stores/battle-store";
 
 type OptionsTab = "display" | "sound" | "gameplay" | "other";
-
-type OptionsNavigationProps = {
-  onMainMenu: () => void;
-  onReturnToBattle: () => void;
-};
 
 type DisplayOptionsProps = {
   selectedAspectRatio: AspectRatioOption;
@@ -233,14 +227,14 @@ function OtherOptionsPanel({ saveData, dev }: { saveData: SaveDataOptionsProps; 
 }
 
 export function OptionsScreen({
-  navigation,
+  onOpenMenu,
   display,
   audio,
   gameplay,
   saveData,
   dev,
 }: {
-  navigation: OptionsNavigationProps;
+  onOpenMenu: (rect?: DOMRect) => void;
   display: DisplayOptionsProps;
   audio: AudioOptionsProps;
   gameplay: GameplayOptionsProps;
@@ -249,12 +243,16 @@ export function OptionsScreen({
 }) {
   const [tab, setTab] = useState<OptionsTab>("display");
   const tabPanelClass = "col-start-1 row-start-1 pt-6 text-left";
-  const hasActiveBattle = useBattleStore((s) => s.hasActiveBattle);
 
   return (
     <PageLayout>
-      <div className="alchemy-shell flex min-h-[48.15cqh] w-full max-w-3xl flex-col rounded-[28px] px-6 py-7 sm:px-8">
-        <ScreenHeader title="Options" />
+      <div className="alchemy-shell flex min-h-[48.15cqh] w-full max-w-3xl flex-col rounded-[28px] p-7">
+        <div className="relative flex w-full items-center justify-center">
+          <ScreenHeader title="Options" />
+          <div className="absolute right-0 top-1/2 -translate-y-1/2">
+            <HamburgerTrigger onClick={onOpenMenu} label="Open options menu" />
+          </div>
+        </div>
 
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           {(["display", "sound", "gameplay", "other"] as const).map((t) => (
@@ -301,17 +299,6 @@ export function OptionsScreen({
           >
             <OtherOptionsPanel saveData={saveData} dev={dev} />
           </div>
-        </div>
-
-        <div className="mt-auto flex flex-wrap justify-center gap-3 pt-6">
-          <Button variant="outline" onClick={navigation.onMainMenu}>
-            <House className="h-4 w-4" /> Main Menu
-          </Button>
-          {hasActiveBattle ? (
-            <Button onClick={navigation.onReturnToBattle}>
-              <Swords className="h-4 w-4" /> Return to Battle
-            </Button>
-          ) : null}
         </div>
       </div>
 

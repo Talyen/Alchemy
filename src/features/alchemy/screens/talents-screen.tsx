@@ -1,13 +1,13 @@
 // Talent tree screen — spend XP to unlock keyword-specific talents.
 import { useState, useMemo } from "react";
-import { Menu, RotateCcw } from "lucide-react";
+import { RotateCcw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { keywordDefinitions, talentBackgroundArt, type KeywordId, getTalentsForKeyword } from "@/lib/game-data";
 import { getTalentKeywordProgress } from "@/lib/talents";
 
 import { TalentKeywordButton } from "../talents/talents-ui";
-import { ConfirmationDialog, PageLayout } from "../ui/shared-ui";
+import { ConfirmationDialog, HamburgerTrigger, PageLayout } from "../ui/shared-ui";
 import { useTalentChoices } from "../talents/use-talent-choices";
 import { playUISound } from "@/lib/audio";
 import { TalentTree } from "../talents/talent-tree";
@@ -53,94 +53,86 @@ export function TalentsScreen({
 
   return (
     <PageLayout>
-      <div className="mx-auto flex w-full max-w-4xl flex-col items-center">
+      <div className="alchemy-shell flex min-h-[48.15cqh] w-full max-w-5xl flex-col rounded-[28px] p-7">
         <div className="relative flex w-full items-center justify-center">
           <h1 className="font-display text-lg font-black uppercase tracking-[0.15em] text-amber-100/75 sm:text-xl">
             Talents
           </h1>
-          <div className="absolute right-0 flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-7 w-7 text-muted-foreground"
-              onClick={() => setShowResetConfirm(true)}
-              aria-label="Reset talents"
-            >
-              <RotateCcw className="h-3.5 w-3.5" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-7 w-7 text-muted-foreground"
-              onClick={(e) => onOpenMenu(e.currentTarget.getBoundingClientRect())}
-              aria-label="Open talents menu"
-            >
-              <Menu className="h-3.5 w-3.5" />
-            </Button>
+          <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-2">
+            <HamburgerTrigger onClick={onOpenMenu} label="Open talents menu" />
           </div>
         </div>
-        <div className="mt-2 h-px w-44 bg-gradient-to-r from-transparent via-amber-100/75 to-transparent" />
-      </div>
+        <div className="mx-auto mt-2 h-px w-44 bg-gradient-to-r from-transparent via-amber-100/75 to-transparent" />
 
-      <div className="mx-auto mt-6 w-full max-w-4xl flex flex-wrap justify-center gap-2">
-        {keywordIds.map((kw) => {
-          const kwProgress = getTalentKeywordProgress(
-            talentXP[kw] ?? 0,
-            (unlockedTalents[kw] ?? []).length,
-            getTalentsForKeyword(kw).length,
-          );
-          return (
-            <TalentKeywordButton
-              key={kw}
-              keywordId={kw}
-              hasUnspent={kwProgress.hasUnspent}
-              isSelected={selectedKeyword === kw}
-              onClick={() => setSelectedKeyword(kw)}
+        <div className="mt-6 flex flex-wrap justify-center gap-2">
+          {keywordIds.map((kw) => {
+            const kwProgress = getTalentKeywordProgress(
+              talentXP[kw] ?? 0,
+              (unlockedTalents[kw] ?? []).length,
+              getTalentsForKeyword(kw).length,
+            );
+            return (
+              <TalentKeywordButton
+                key={kw}
+                keywordId={kw}
+                hasUnspent={kwProgress.hasUnspent}
+                isSelected={selectedKeyword === kw}
+                onClick={() => setSelectedKeyword(kw)}
+              />
+            );
+          })}
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-7 w-7 text-muted-foreground"
+            onClick={() => setShowResetConfirm(true)}
+            aria-label="Reset talents"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+
+        <div className="relative mt-6 aspect-[4/3]">
+          <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-0">
+            <defs>
+              <filter id={BLUR_ID}>
+                <feGaussianBlur stdDeviation="24" />
+              </filter>
+              <mask id={MASK_ID} maskUnits="userSpaceOnUse">
+                <rect x="7%" y="7%" width="86%" height="86%" rx="24" fill="white" filter={`url(#${BLUR_ID})`} />
+              </mask>
+            </defs>
+          </svg>
+          {Object.entries(talentBackgroundArt).map(([kw, art]) => {
+            if (!art) return null;
+            const isSelected = selectedKeyword === kw;
+            return (
+              <div
+                key={kw}
+                className={`absolute inset-0 overflow-hidden transition-opacity duration-300 ease-in-out ${
+                  isSelected ? "opacity-100" : "opacity-0 pointer-events-none"
+                }`}
+                style={{
+                  backgroundImage: `url(${art})`,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                  filter: "brightness(0.9)",
+                  maskImage: `url(#${MASK_ID})`,
+                  WebkitMaskImage: `url(#${MASK_ID})`,
+                }}
+              />
+            );
+          })}
+
+          <div className="h-full w-full">
+            <TalentTree
+              keywordId={selectedKeyword}
+              unlockedTalents={unlockedTalentsForKeyword}
+              allTalents={allTalentsForKeyword}
+              choices={currentChoices}
+              onUnlock={handleUnlockTalent}
             />
-          );
-        })}
-      </div>
-
-      <div className="relative mx-auto mt-6 w-full max-w-4xl aspect-[4/3] origin-top scale-[1.1]">
-        <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-0">
-          <defs>
-            <filter id={BLUR_ID}>
-              <feGaussianBlur stdDeviation="24" />
-            </filter>
-            <mask id={MASK_ID} maskUnits="userSpaceOnUse">
-              <rect x="7%" y="7%" width="86%" height="86%" rx="24" fill="white" filter={`url(#${BLUR_ID})`} />
-            </mask>
-          </defs>
-        </svg>
-        {Object.entries(talentBackgroundArt).map(([kw, art]) => {
-          if (!art) return null;
-          const isSelected = selectedKeyword === kw;
-          return (
-            <div
-              key={kw}
-              className={`absolute inset-0 overflow-hidden transition-opacity duration-300 ease-in-out ${
-                isSelected ? "opacity-100" : "opacity-0 pointer-events-none"
-              }`}
-              style={{
-                backgroundImage: `url(${art})`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-                filter: "brightness(0.9)",
-                maskImage: `url(#${MASK_ID})`,
-                WebkitMaskImage: `url(#${MASK_ID})`,
-              }}
-            />
-          );
-        })}
-
-        <div className="h-full w-full">
-          <TalentTree
-            keywordId={selectedKeyword}
-            unlockedTalents={unlockedTalentsForKeyword}
-            allTalents={allTalentsForKeyword}
-            choices={currentChoices}
-            onUnlock={handleUnlockTalent}
-          />
+          </div>
         </div>
       </div>
 

@@ -1,9 +1,10 @@
 // Navigation controls for pagination and the in-game menu overlay.
 // Depends on shared Button styling, Lucide icons, and direct viewport anchoring.
 // Used by collection-style grids and battle/menu screens.
-import { BookOpen, ChevronLeft, ChevronRight, Cog, House, Swords, TreePine, WandSparkles } from "lucide-react";
+import { BookOpen, ChevronLeft, ChevronRight, Cog, House, Menu, Swords, TreePine, WandSparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import type { Screen } from "../types";
 
 const NAVIGATION_CONFIG = {
   paginationMinHeightClass: "min-h-[4.07cqh]",
@@ -71,6 +72,27 @@ export function PaginationControls({
   );
 }
 
+/** Standardized hamburger trigger button for the GameMenu overlay. */
+export function HamburgerTrigger({
+  onClick,
+  label = "Open menu",
+}: {
+  onClick: (rect: DOMRect) => void;
+  label?: string;
+}) {
+  return (
+    <Button
+      variant="outline"
+      size="icon"
+      className="h-8 w-8 text-muted-foreground"
+      onClick={(e) => onClick(e.currentTarget.getBoundingClientRect())}
+      aria-label={label}
+    >
+      <Menu className="h-4 w-4" />
+    </Button>
+  );
+}
+
 export function GameMenu({
   isOpen,
   onClose,
@@ -83,7 +105,7 @@ export function GameMenu({
   onReturnToBattle,
   anchorRect,
   anchorPlacement = "up-left",
-  hideTalents = false,
+  currentScreen,
 }: {
   isOpen: boolean;
   onClose: () => void;
@@ -96,7 +118,7 @@ export function GameMenu({
   onReturnToBattle?: () => void;
   anchorRect?: DOMRect | null;
   anchorPlacement?: "up-left" | "down-right" | "down-right-of-anchor";
-  hideTalents?: boolean;
+  currentScreen?: Screen;
 }) {
   if (!isOpen) return null;
 
@@ -129,17 +151,19 @@ export function GameMenu({
         >
           <House className="h-4 w-4" /> Main Menu
         </Button>
-        <Button
-          variant="outline"
-          className="justify-start border-0 bg-transparent"
-          onClick={() => {
-            onCollection();
-            onClose();
-          }}
-        >
-          <BookOpen className="h-4 w-4" /> Collection
-        </Button>
-        {!hideTalents ? (
+        {currentScreen !== "collection" ? (
+          <Button
+            variant="outline"
+            className="justify-start border-0 bg-transparent"
+            onClick={() => {
+              onCollection();
+              onClose();
+            }}
+          >
+            <BookOpen className="h-4 w-4" /> Collection
+          </Button>
+        ) : null}
+        {currentScreen !== "talents" ? (
           <Button
             variant="outline"
             className="justify-start border-0 bg-transparent"
@@ -151,26 +175,30 @@ export function GameMenu({
             <WandSparkles className="h-4 w-4" /> Talents
           </Button>
         ) : null}
-        <Button
-          variant="outline"
-          className="justify-start border-0 bg-transparent"
-          onClick={() => {
-            onHomestead();
-            onClose();
-          }}
-        >
-          <TreePine className="h-4 w-4" /> Homestead
-        </Button>
-        <Button
-          variant="outline"
-          className="justify-start border-0 bg-transparent"
-          onClick={() => {
-            onOptions();
-            onClose();
-          }}
-        >
-          <Cog className="h-4 w-4" /> Options
-        </Button>
+        {currentScreen !== "homestead" ? (
+          <Button
+            variant="outline"
+            className="justify-start border-0 bg-transparent"
+            onClick={() => {
+              onHomestead();
+              onClose();
+            }}
+          >
+            <TreePine className="h-4 w-4" /> Homestead
+          </Button>
+        ) : null}
+        {currentScreen !== "options" ? (
+          <Button
+            variant="outline"
+            className="justify-start border-0 bg-transparent"
+            onClick={() => {
+              onOptions();
+              onClose();
+            }}
+          >
+            <Cog className="h-4 w-4" /> Options
+          </Button>
+        ) : null}
         {onEndRun ? (
           <>
             <div className="my-1 border-t border-border/60" />

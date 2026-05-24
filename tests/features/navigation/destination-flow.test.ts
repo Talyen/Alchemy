@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { getDestinationWeight, getRunAvailableDestinations, sampleDestinationChoices } from "@/features/alchemy/navigation/destination-flow";
-import { CORRUPTION_DESTINATION_WEIGHT, DEFAULT_DESTINATION_WEIGHT } from "@/lib/game-constants";
+import { CORRUPTION_DESTINATION_WEIGHT, DEFAULT_DESTINATION_WEIGHT, PREVIOUS_DESTINATION_WEIGHT } from "@/lib/game-constants";
 
 vi.mock("@/features/alchemy/config", () => ({
   getAvailableDestinations: vi.fn(() => ["Normal Combat", "Elite Combat", "Merchant's Shop", "Alchemist's Shop", "Mystery", "Corruption", "Campfire"]),
@@ -53,5 +53,17 @@ describe("sampleDestinationChoices", () => {
     expect(getDestinationWeight("Corruption")).toBe(CORRUPTION_DESTINATION_WEIGHT);
     expect(getDestinationWeight("Normal Combat")).toBe(DEFAULT_DESTINATION_WEIGHT);
     expect(getDestinationWeight("Corruption")).toBe(DEFAULT_DESTINATION_WEIGHT);
+  });
+
+  it("de-prioritizes the previous destination with reduced weight", () => {
+    expect(getDestinationWeight("Campfire", "Campfire")).toBe(PREVIOUS_DESTINATION_WEIGHT);
+    expect(getDestinationWeight("Campfire", "Corruption")).toBe(DEFAULT_DESTINATION_WEIGHT);
+    expect(getDestinationWeight("Campfire")).toBe(DEFAULT_DESTINATION_WEIGHT);
+  });
+
+  it("de-prioritizes regardless of destination type when it was the previous", () => {
+    expect(getDestinationWeight("Normal Combat", "Normal Combat")).toBe(PREVIOUS_DESTINATION_WEIGHT);
+    expect(getDestinationWeight("Corruption", "Corruption")).toBe(PREVIOUS_DESTINATION_WEIGHT);
+    expect(getDestinationWeight("Mystery", "Mystery")).toBe(PREVIOUS_DESTINATION_WEIGHT);
   });
 });

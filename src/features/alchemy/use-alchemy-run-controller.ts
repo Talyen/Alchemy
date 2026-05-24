@@ -18,7 +18,7 @@ import { useBattleStore } from "./stores/battle-store";
 import { useShopController } from "./use-shop-controller";
 import { useRunNavigation } from "./use-run-navigation";
 import { useLabyrinthController } from "./use-labyrinth-controller";
-import type { Screen } from "./types";
+import type { Destination, Screen } from "./types";
 import type { ActiveRunData } from "./run/types";
 import { NAVIGATION_DELAY_MS } from "@/lib/game-constants";
 
@@ -62,6 +62,12 @@ export function useAlchemyRunController({
       }
       if (initialActiveRun.labyrinthPendingNode) {
         useScreenStore.getState().setActiveLabyrinthPendingNode(initialActiveRun.labyrinthPendingNode);
+      }
+      if (initialActiveRun.currentScreen === "destination" && initialActiveRun.destinationChoices?.length > 0) {
+        useScreenStore.getState().setRewardState((prev) => ({
+          ...prev,
+          destinations: initialActiveRun.destinationChoices as Destination[],
+        }));
       }
     }
     return true;
@@ -309,6 +315,7 @@ export function useAlchemyRunController({
     handleLabyrinthNodeEnter,
     handleLabyrinthEndRun: nav.endLabyrinthRun,
     handleCharacterSelect: nav.handleCharacterSelect,
+    handleDraftComplete: nav.handleDraftComplete,
     handleDifficultySelect: nav.handleDifficultySelect,
     handleBackFromDifficultySelect: nav.handleBackFromDifficultySelect,
     handleWildwoodBossSelect: nav.handleWildwoodBossSelect,

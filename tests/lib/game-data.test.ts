@@ -52,9 +52,13 @@ describe("characters data integrity", () => {
     }
   });
 
-  it("each character has at least one keyword", () => {
+  it("each character has at least one keyword (except wildcard)", () => {
     for (const char of Object.values(characters)) {
-      expect(char.keywords.length).toBeGreaterThanOrEqual(1);
+      if (char.id === "wildcard") {
+        expect(char.keywords.length).toBe(0);
+      } else {
+        expect(char.keywords.length).toBeGreaterThanOrEqual(1);
+      }
     }
   });
 

@@ -2,7 +2,7 @@
 // Depends on battle resource widgets, hand rendering, and the shared Button primitive.
 // Used only by BattleScreen to keep control layout separate from actor layout.
 import type { MutableRefObject } from "react";
-import { Coins, Menu } from "lucide-react";
+import { Coins } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
@@ -69,21 +69,11 @@ function BattleControls({
   actions: BattleActionsProps;
   discardPileRef: MutableRefObject<HTMLDivElement | null>;
 }) {
-  const { onOpenMenu, onEndTurn, onSkipCombatDevMode, cardTransferInProgress, isDevMode } = actions;
+  const { onEndTurn, onSkipCombatDevMode, cardTransferInProgress, isDevMode } = actions;
 
   return (
     <div className={isMobileLandscape ? battleBottomColumnClass.mobile : battleBottomColumnClass.desktop}>
       <div className="relative flex flex-col items-center gap-2">
-        <Button
-          variant="outline"
-          size="icon"
-          className={isMobileLandscape ? "h-20 w-20 text-muted-foreground" : "h-8 w-8 text-muted-foreground"}
-          onClick={(e) => onOpenMenu(e.currentTarget.getBoundingClientRect())}
-          aria-label="Open battle menu"
-        >
-          <Menu className={isMobileLandscape ? "h-11 w-11" : "h-4 w-4"} />
-        </Button>
-
         <Button
           variant="default"
           size="sm"

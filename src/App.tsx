@@ -338,6 +338,7 @@ export default function App() {
             beginLabyrinth: run.beginLabyrinth,
             beginWildwood: run.beginWildwood,
             handleCharacterSelect: run.handleCharacterSelect,
+            handleDraftComplete: run.handleDraftComplete,
             handleDifficultySelect: run.handleDifficultySelect,
             handleBackFromDifficultySelect: run.handleBackFromDifficultySelect,
             handleWildwoodBossSelect: run.handleWildwoodBossSelect,
@@ -448,13 +449,8 @@ export default function App() {
             <GameMenu
               isOpen={saveBlockedByNewerVersion ? false : gameMenuOpen}
               anchorRect={menuAnchorRect}
-              anchorPlacement={
-                renderedScreen === "talents"
-                  ? "down-right-of-anchor"
-                  : renderedScreen === "labyrinth-map"
-                    ? "down-right"
-                    : "up-left"
-              }
+              anchorPlacement="down-right"
+              currentScreen={renderedScreen}
               onClose={() => {
                 setGameMenuOpen(false);
                 setMenuAnchorRect(null);
@@ -467,8 +463,8 @@ export default function App() {
               {...(run.hasActiveBattle ? { onReturnToBattle: run.returnToBattle } : {})}
               {...(renderedScreen === "battle" ? { onEndRun: run.handleEndRun } : {})}
               {...(renderedScreen === "labyrinth-map" ? { onEndRun: run.handleLabyrinthEndRun } : {})}
-              hideTalents={renderedScreen === "talents"}
             />
+            <div id="tooltip-root" className="absolute inset-0 pointer-events-none z-30" />
           </div>
         </div>
       )}

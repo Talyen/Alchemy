@@ -40,5 +40,14 @@ export const defaultSaveData: SaveData = {
   plantedFarms: createEmptyTierRecord(farmPlots),
   completedResearch: createEmptyTierRecord(researchUpgrades),
   bondedCompanions: createEmptyTierRecord(companionTierItems) as Record<CompanionId, number>,
-  completedDifficulties: { knight: [], rogue: [], wizard: [], ranger: [] },
+  completedDifficulties: {
+    knight: [],
+    rogue: [],
+    wizard: [],
+    ranger: [],
+    alchemist: [],
+    warlock: [],
+    druid: [],
+    wildcard: [],
+  },
 };

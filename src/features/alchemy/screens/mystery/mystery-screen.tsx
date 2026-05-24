@@ -3,7 +3,7 @@
 // Depends on global run and screen Zustand stores, audio jingles, and sub-views in parts.tsx.
 // Consumed by the screen routing system to display the Mystery event node.
 import { useState } from "react";
-import { playVictory } from "@/lib/audio";
+import { playUISound } from "@/lib/audio";
 import { type BattleCard, type TrinketEntry } from "@/lib/game-data";
 
 import type { MysteryChoice } from "../../mystery-events";
@@ -63,7 +63,7 @@ export function MysteryScreen({
     } else {
       setChosen(choice);
       // Play a positive reward sound effect if the outcome is net positive.
-      if (hasPositiveMysteryEffect(choice.effects)) playVictory();
+      if (hasPositiveMysteryEffect(choice.effects)) playUISound("talentUnlock");
     }
   }
 
@@ -76,14 +76,14 @@ export function MysteryScreen({
     if (!chosen) {
       const choice = pendingRemoval!;
       setChosen(choice);
-      if (hasPositiveMysteryEffect(choice.effects)) playVictory();
+      if (hasPositiveMysteryEffect(choice.effects)) playUISound("talentUnlock");
     }
   }
 
   // Invoked after the user selects a card from the choice card picker.
   function handleCardChoiceConfirm(cardId: string) {
     onChooseCard(cardId);
-    playVictory();
+    playUISound("talentUnlock");
   }
 
   return (

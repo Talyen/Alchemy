@@ -69,7 +69,16 @@ export const useAppStore = create<AppStore>()((set) => ({
   discoveredCardIds: [],
   encounteredEnemyIds: [],
   discoveredTrinketIds: [],
-  completedDifficulties: { knight: [], rogue: [], wizard: [], ranger: [] },
+  completedDifficulties: {
+    knight: [],
+    rogue: [],
+    wizard: [],
+    ranger: [],
+    alchemist: [],
+    warlock: [],
+    druid: [],
+    wildcard: [],
+  },
 
   setSelectedAspectRatio: (v) => set({ selectedAspectRatio: v }),
   setDisplayMode: (v) => set({ displayMode: v }),

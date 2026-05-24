@@ -28,6 +28,7 @@ function makeState(): BattleState {
     cardsPlayedThisTurn: 0,
     nextCardUid: 0,
     difficultyModifiers: [],
+    rng: Math.random,
   };
 }
 

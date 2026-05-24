@@ -83,7 +83,7 @@ function applyPhysicalDamageModifiers(state: BattleState, rawAmount: number): nu
     nextAmount += state.talentEffects.poisonPhysicalBonus;
   }
   if (state.enemyStatuses.bleed > 0) {
-    nextAmount += state.talentEffects.bleedPhysicalBonus + state.talentEffects.bleedPhysicalTakenBonus;
+    nextAmount += state.talentEffects.bleedPhysicalBonus;
   }
   return nextAmount;
 }
@@ -140,6 +140,10 @@ function computeBaseDamage(state: BattleState, effect: Extract<BattleCardEffect,
     rawAmount += state.talentEffects.flatTrapDamage;
   } else if (effect.damageType === "burn") {
     rawAmount += state.talentEffects.flatBurnDamage;
+  } else if (effect.damageType === "poison") {
+    if (state.enemyStatuses.bleed > 0) {
+      rawAmount += state.talentEffects.bleedPoisonDamageTakenBonus;
+    }
   }
 
   return Math.max(0, rawAmount);
@@ -151,7 +155,7 @@ function computeBaseDamage(state: BattleState, effect: Extract<BattleCardEffect,
 function applyCrit(damage: number, damageType: string, state: BattleState) {
   const physCritChance = damageType === "physical" ? state.talentEffects.physicalCritChance : 0;
   const totalChance = GLOBAL_CRIT_CHANCE + physCritChance;
-  const isCrit = totalChance > 0 && Math.random() * PERCENT_DENOMINATOR < totalChance;
+  const isCrit = totalChance > 0 && state.rng() * PERCENT_DENOMINATOR < totalChance;
   return isCrit ? damage * CRIT_MULTIPLIER : damage;
 }
 
@@ -191,6 +195,18 @@ function applyDamageBlock(state: BattleState, damage: number, combatTexts: Comba
   if (blockAmount <= 0) return state;
   mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "block", amount: blockAmount });
   return addPlayerStatus(state, "block", blockAmount);
+}
+
+/**
+ * Grants gold proportional to holy damage with a percentage chance when Tithe is active.
+ */
+function applyHolyTithe(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
+  if (damage <= 0 || state.talentEffects.holyGoldChance <= 0) return state;
+  if (state.rng() * PERCENT_DENOMINATOR < state.talentEffects.holyGoldChance) {
+    mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "gold", amount: damage });
+    return addGold(state, damage);
+  }
+  return state;
 }
 
 /**
@@ -277,10 +293,11 @@ function applyForgeStunRider(
 function applyHolyDamageRiders(state: BattleState, card: BattleCard, damage: number, combatTexts: CombatTextEvent[]) {
   let nextState = applyHolyLifesteal(state, damage, combatTexts);
   nextState = applyDamageBlock(nextState, damage, combatTexts);
+  nextState = applyHolyTithe(nextState, damage, combatTexts);
 
   if (
     nextState.talentEffects.holyBurnChance > 0 &&
-    Math.random() * PERCENT_DENOMINATOR < nextState.talentEffects.holyBurnChance
+    nextState.rng() * PERCENT_DENOMINATOR < nextState.talentEffects.holyBurnChance
   ) {
     const burnAmount = isNullFieldActive(nextState)
       ? Math.max(STATUS_CONFIG.MIN_STACK_AMOUNT, Math.round(damage / HALF_DIVISOR))
@@ -290,7 +307,7 @@ function applyHolyDamageRiders(state: BattleState, card: BattleCard, damage: num
 
   if (
     nextState.talentEffects.holyWishChance > 0 &&
-    Math.random() * PERCENT_DENOMINATOR < nextState.talentEffects.holyWishChance
+    nextState.rng() * PERCENT_DENOMINATOR < nextState.talentEffects.holyWishChance
   ) {
     nextState = applyWishEffect(nextState, card, DAMAGE_CONFIG.WISH_COUNT_SINGLE, combatTexts);
   }

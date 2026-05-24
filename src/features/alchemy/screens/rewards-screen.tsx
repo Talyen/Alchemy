@@ -91,7 +91,7 @@ export function RewardsScreen({ onAddReward, onSkip }: { onAddReward: () => void
 
   return (
     <div className="flex h-full w-full items-center justify-center px-4 py-6">
-      <div className="alchemy-shell w-full max-w-6xl rounded-[30px] border border-border/80 px-6 py-7 text-center sm:px-8">
+      <div className="alchemy-shell w-full max-w-6xl rounded-[30px] border border-border/80 p-7 text-center">
         <ScreenHeader title="Victory" />
         <p className="mt-3 text-base text-muted-foreground">
           {isTrinket ? "Choose a Trinket to add to your Collection" : "Choose a Card to add to your Deck"}
@@ -146,38 +146,36 @@ export function RewardsScreen({ onAddReward, onSkip }: { onAddReward: () => void
         </div>
 
         {rewardGold > 0 || MATERIAL_IDS.some((mat) => rewardMaterials[mat] > 0) ? (
-          <div className="state-swap mt-8 flex flex-col items-center gap-2 text-sm font-medium">
+          <div className="state-swap mt-8 flex flex-wrap items-center justify-center gap-2 text-sm font-medium text-muted-foreground">
+            Found
             {rewardGold > 0 ? (
-              <span className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                Found
-                <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold bg-yellow-300/15 text-yellow-300">
-                  <Coins className="h-4 w-4" />
-                  {rewardGold} Gold
-                </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold bg-yellow-300/15 text-yellow-300">
+                <Coins className="h-4 w-4" />
+                {rewardGold} Gold
               </span>
             ) : null}
             {MATERIAL_IDS.filter((mat) => rewardMaterials[mat] > 0).map((mat) => (
-              <span key={mat} className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                Found
-                <span
-                  className={cn(
-                    "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold",
-                    matPillStyle[mat],
-                    matTextColor[mat],
-                  )}
-                >
-                  {matIconMap[mat]}
-                  {rewardMaterials[mat]} {materialLabels[mat]}
-                </span>
+              <span
+                key={mat}
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold",
+                  matPillStyle[mat],
+                  matTextColor[mat],
+                )}
+              >
+                {matIconMap[mat]}
+                {rewardMaterials[mat]} {materialLabels[mat]}
               </span>
             ))}
           </div>
         ) : null}
 
         <div className="mt-5 flex flex-wrap justify-center gap-3">
-          <Button size="lg" variant="outline" className="min-w-40" onClick={onSkip}>
-            Skip
-          </Button>
+          {!isTrinket ? (
+            <Button size="lg" variant="outline" className="min-w-40" onClick={onSkip}>
+              Skip
+            </Button>
+          ) : null}
           <Button size="lg" className="min-w-40" disabled={!selectedRewardItem} onClick={onAddReward}>
             {isTrinket ? "Take Trinket" : "Add Card"}
           </Button>

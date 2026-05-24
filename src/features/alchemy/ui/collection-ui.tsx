@@ -51,7 +51,7 @@ export function CollectionGrid({
   return (
     <div
       key={`${collectionTab}-${page}`}
-      className="state-swap grid min-h-[50cqh] grid-cols-4 grid-rows-2 justify-items-center gap-x-6 gap-y-7 overflow-visible"
+      className="state-swap grid min-h-[50cqh] grid-cols-4 grid-rows-2 justify-items-center gap-x-3 gap-y-7 overflow-visible"
     >
       {pageItems.map((item, index) => {
         const hoverId = getHoverId(item.hoverScope, item.id);

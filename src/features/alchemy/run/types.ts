@@ -2,6 +2,8 @@
 // Depends only on game-data, battle, and content-system type shapes, not React hooks.
 import type { BattleState } from "@/lib/battle";
 import type { BattleCard, CharacterId, DifficultyId } from "@/lib/game-data";
+import type { TalentXP } from "@/lib/talents";
+import type { Screen } from "@/features/alchemy/types";
 
 import type { ContentSystemId, LabyrinthMap, LabyrinthModifierKind } from "@/lib/content-systems/types";
 
@@ -30,4 +32,7 @@ export type ActiveRunData = {
   labyrinthMap: LabyrinthMap | null;
   labyrinthPendingNode: LabyrinthNodePosition | null;
   activeCombat: ActiveCombatData | null;
+  runTalentXP: TalentXP;
+  currentScreen: Screen | null;
+  destinationChoices: string[];
 };

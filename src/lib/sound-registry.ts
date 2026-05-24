@@ -92,11 +92,10 @@ export const uiSounds = {
   shopRemove: "card-fan.ogg",
   campfireRest: "fire-lighting.ogg",
   alchemistMix: "gurgling.ogg",
-  mysteryGood: "grand-piano-chime-positive.ogg",
-  mysteryBad: "harpsichord-negative.ogg",
   rewardSelect: "sci-fi-confirm.ogg",
   talentUnlock: "music-box-chime-positive.ogg",
   collectionPage: "page-turn.ogg",
+  musicBoxMystery: "music-box-mystery.ogg",
 } as const;
 
 export type UISound = keyof typeof uiSounds;

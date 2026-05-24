@@ -5,13 +5,23 @@ import {
   isDifficultyUnlocked,
   getDifficultyModifiers,
   getGoldMultiplier,
+  getDifficultyXPMultiplier,
   type CharacterId,
 } from "@/lib/game-data/difficulties";
 
-const ALL_CHARACTERS: CharacterId[] = ["knight", "rogue", "wizard", "ranger"];
+const ALL_CHARACTERS: CharacterId[] = [
+  "knight",
+  "rogue",
+  "wizard",
+  "ranger",
+  "alchemist",
+  "warlock",
+  "druid",
+  "wildcard",
+];
 
 describe("difficultyConfigs data integrity", () => {
-  it("has configs for all 4 characters", () => {
+  it("has configs for all 8 characters", () => {
     for (const char of ALL_CHARACTERS) {
       expect(difficultyConfigs[char]).toBeDefined();
       expect(difficultyConfigs[char].headerTitle).toBeTruthy();
@@ -58,6 +68,7 @@ describe("difficultyConfigs data integrity", () => {
       "increase-enemy-physical-damage", "increase-enemy-damage",
       "increase-enemy-status", "enemy-attacks-gain-leech",
       "start-block", "start-max-mana", "gold-multiplier", "start-companion",
+      "enemy-health-multiplier", "enemy-damage-multiplier",
     ]);
     for (const char of ALL_CHARACTERS) {
       for (const diff of difficultyConfigs[char].difficulties) {
@@ -106,72 +117,31 @@ describe("isDifficultyUnlocked", () => {
 });
 
 describe("getDifficultyModifiers", () => {
-  describe("Knight", () => {
-    it("Novice (d1) has no modifiers", () => {
-      const mods = getDifficultyModifiers("knight", "difficulty-1");
+  it("Novice (d1) has no modifiers on all characters", () => {
+    for (const char of ALL_CHARACTERS) {
+      const mods = getDifficultyModifiers(char, "difficulty-1");
       expect(mods).toEqual([]);
-    });
-
-    it("Adventurer (d2) grants 2 enemy starting armor", () => {
-      const mods = getDifficultyModifiers("knight", "difficulty-2");
-      expect(mods).toEqual([{ kind: "enemy-starting-armor", amount: 2 }]);
-    });
-
-    it("Legend (d3) grants enemy forge each turn", () => {
-      const mods = getDifficultyModifiers("knight", "difficulty-3");
-      expect(mods).toEqual([{ kind: "enemy-gains-forge-each-turn" }]);
-    });
+    }
   });
 
-  describe("Rogue", () => {
-    it("Novice (d1) has no modifiers", () => {
-      const mods = getDifficultyModifiers("rogue", "difficulty-1");
-      expect(mods).toEqual([]);
-    });
-
-    it("Adventurer (d2) increases enemy poison by 2", () => {
-      const mods = getDifficultyModifiers("rogue", "difficulty-2");
-      expect(mods).toEqual([{ kind: "increase-enemy-status", status: "poison", amount: 1 }]);
-    });
-
-    it("Legend (d3) increases enemy bleed by 3", () => {
-      const mods = getDifficultyModifiers("rogue", "difficulty-3");
-      expect(mods).toEqual([{ kind: "increase-enemy-status", status: "bleed", amount: 3 }]);
-    });
+  it("Adventurer (d2) has +20% HP and damage modifiers on all characters", () => {
+    for (const char of ALL_CHARACTERS) {
+      const mods = getDifficultyModifiers(char, "difficulty-2");
+      expect(mods).toEqual([
+        { kind: "enemy-health-multiplier", amount: 1.2 },
+        { kind: "enemy-damage-multiplier", amount: 1.2 },
+      ]);
+    }
   });
 
-  describe("Wizard", () => {
-    it("Novice (d1) has no modifiers", () => {
-      const mods = getDifficultyModifiers("wizard", "difficulty-1");
-      expect(mods).toEqual([]);
-    });
-
-    it("Adventurer (d2) increases enemy burn by 2", () => {
-      const mods = getDifficultyModifiers("wizard", "difficulty-2");
-      expect(mods).toEqual([{ kind: "increase-enemy-status", status: "burn", amount: 2 }]);
-    });
-
-    it("Legend (d3) increases enemy freeze by 3", () => {
-      const mods = getDifficultyModifiers("wizard", "difficulty-3");
-      expect(mods).toEqual([{ kind: "increase-enemy-status", status: "freeze", amount: 3 }]);
-    });
-  });
-
-  describe("Ranger", () => {
-    it("Novice (d1) has no modifiers", () => {
-      const mods = getDifficultyModifiers("ranger", "difficulty-1");
-      expect(mods).toEqual([]);
-    });
-
-    it("Adventurer (d2) increases enemy damage by 2", () => {
-      const mods = getDifficultyModifiers("ranger", "difficulty-2");
-      expect(mods).toEqual([{ kind: "increase-enemy-damage", amount: 2 }]);
-    });
-
-    it("Legend (d3) increases enemy bleed by 3", () => {
-      const mods = getDifficultyModifiers("ranger", "difficulty-3");
-      expect(mods).toEqual([{ kind: "increase-enemy-status", status: "bleed", amount: 3 }]);
-    });
+  it("Legend (d3) has +40% HP and damage modifiers on all characters", () => {
+    for (const char of ALL_CHARACTERS) {
+      const mods = getDifficultyModifiers(char, "difficulty-3");
+      expect(mods).toEqual([
+        { kind: "enemy-health-multiplier", amount: 1.4 },
+        { kind: "enemy-damage-multiplier", amount: 1.4 },
+      ]);
+    }
   });
 
   it("returns empty array for unknown difficulty ID", () => {
@@ -189,22 +159,28 @@ describe("getGoldMultiplier", () => {
     expect(getGoldMultiplier("rogue", "difficulty-1")).toBe(1);
   });
 
-  it("returns 1 for Knight Novice (no gold modifier)", () => {
-    expect(getGoldMultiplier("knight", "difficulty-1")).toBe(1);
-  });
-
-  it("returns 1 for Wizard Novice (no gold modifier)", () => {
-    expect(getGoldMultiplier("wizard", "difficulty-1")).toBe(1);
-  });
-
-  it("returns 1 for Ranger Novice (no gold modifier)", () => {
-    expect(getGoldMultiplier("ranger", "difficulty-1")).toBe(1);
-  });
-
   it("returns 1 for difficulties without gold multiplier", () => {
     for (const char of ALL_CHARACTERS) {
       const mult = getGoldMultiplier(char, "difficulty-3");
       expect(mult).toBe(1);
     }
+  });
+});
+
+describe("getDifficultyXPMultiplier", () => {
+  it("returns 1.0 when difficulty is null", () => {
+    expect(getDifficultyXPMultiplier(null)).toBe(1.0);
+  });
+
+  it("returns 1.0 for Novice (d1)", () => {
+    expect(getDifficultyXPMultiplier("difficulty-1")).toBe(1.0);
+  });
+
+  it("returns 1.2 for Adventurer (d2)", () => {
+    expect(getDifficultyXPMultiplier("difficulty-2")).toBe(1.2);
+  });
+
+  it("returns 1.4 for Legend (d3)", () => {
+    expect(getDifficultyXPMultiplier("difficulty-3")).toBe(1.4);
   });
 });

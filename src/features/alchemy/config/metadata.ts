@@ -32,13 +32,13 @@ import {
 
 import {
   alchemistShopBg,
+  bossCombat,
   campfire,
   corruptionAltar,
   eliteEnemyBg,
   merchantShopBg,
   mysteryBg,
   normalEnemyBg,
-  placeholderDestination,
   theCampaign,
   theLabyrinth,
   theWildwoods,
@@ -59,7 +59,7 @@ export const destinationMeta: Record<Destination, { icon: LucideIcon; className:
   "Normal Combat": { icon: Swords, className: "bg-red-900/85 text-white", art: normalEnemyBg },
   "Elite Combat": { icon: ShieldAlert, className: "bg-violet-900/85 text-white", art: eliteEnemyBg },
   "Merchant's Shop": { icon: Coins, className: "bg-yellow-600/85 text-white", art: merchantShopBg },
-  "Alchemist's Shop": { icon: WandSparkles, className: "bg-emerald-800/85 text-white", art: alchemistShopBg },
+  "Alchemist's Shop": { icon: WandSparkles, className: "bg-green-700/85 text-white", art: alchemistShopBg },
   Mystery: { icon: Sparkles, className: "bg-zinc-800/90 text-zinc-100", art: mysteryBg },
   Corruption: {
     icon: Dices,
@@ -67,8 +67,8 @@ export const destinationMeta: Record<Destination, { icon: LucideIcon; className:
       "bg-gradient-to-br from-red-950 via-black to-red-950 bg-[length:200%_200%] animate-shine text-red-400 border-0",
     art: corruptionAltar,
   },
-  Campfire: { icon: Flame, className: "bg-orange-800/85 text-white", art: campfire },
-  "Boss Combat": { icon: Skull, className: "bg-red-950/90 text-red-300", art: placeholderDestination },
+  Campfire: { icon: Flame, className: "bg-emerald-600/85 text-white", art: campfire },
+  "Boss Combat": { icon: Skull, className: "bg-red-950/90 text-red-300", art: bossCombat },
 };
 
 // Game mode visual theming for the game mode selection screen.

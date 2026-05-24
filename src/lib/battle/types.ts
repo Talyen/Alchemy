@@ -132,6 +132,7 @@ export type BattleState = {
   cardsPlayedThisTurn: number;
   nextCardUid: number; // battle-owned source for unique rendered card keys
   difficultyModifiers: DifficultyModifier[];
+  rng: () => number;
 };
 
 // Combat texts are emitted by battle functions and consumed by the floating-text

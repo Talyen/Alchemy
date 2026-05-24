@@ -87,6 +87,7 @@ export const REWARD_CARD_CHOICES = 3; // Card rewards offered after each victory
 export const DESTINATION_CHOICES = 3; // Path choices offered after each victory.
 export const DEFAULT_DESTINATION_WEIGHT = 10; // Normal route choices use even weighting before rare-route modifiers.
 export const CORRUPTION_DESTINATION_WEIGHT = DEFAULT_DESTINATION_WEIGHT; // Corruption appears like ordinary routes, but route flow prevents repeats.
+export const PREVIOUS_DESTINATION_WEIGHT = 1; // Reduced weight for the room type the player just visited.
 export const CORRUPTION_MUTATION_DELTA = 1; // Corruption nudges one authored number up or down by exactly 1.
 export const CORRUPTION_MIN_VALUE = 0; // Corruption can reduce values to 0, but never negative.
 export const DESTINATIONS_PER_ACT = 8; // Number of destination slots per act (slot 8 = boss).
@@ -196,8 +197,8 @@ export const MAX_STAGE_SCALE = 2.0; // Upper bound that still keeps card dimensi
 // ============ Collection ============
 export const COLLECTION_PAGE_SIZE = 8; // Items per page in the collection compendium (4 cols × 2 rows).
 export const SELECTION_GRID_PAGE_SIZE = 8; // Items per page in deck selection grids (4 cols × 2 rows).
-export const BATTLE_ACTOR_TOP_DESKTOP = "42%"; // Desktop vertical anchor for player/enemy cards.
-export const BATTLE_ACTOR_TOP_MOBILE = "36%"; // Mobile landscape vertical anchor for player/enemy cards.
+export const BATTLE_ACTOR_TOP_DESKTOP = "34%"; // Desktop vertical anchor for player/enemy cards.
+export const BATTLE_ACTOR_TOP_MOBILE = "28%"; // Mobile landscape vertical anchor for player/enemy cards.
 export const HAND_FAN_VERTICAL_STEP_PX = 10; // Per-card vertical offset for resting hand fan.
 export const HAND_FAN_ROTATION_DEGREES = 4.2; // Per-card resting rotation for hand fan.
 export const HAND_HOVER_LIFT_PX = 34; // Hovered cards lift out of the fan by this amount.
@@ -286,6 +287,21 @@ export const ENEMY_TRAIT_IDS = {
   GLACIAL_SHELL: "glacial-shell",
   GOLD_TROVE: "gold-trove",
 } as const;
+
+// Trait damage rules: first matching (traitId, damageType) wins.
+export const TRAIT_DAMAGE_RULES: { traitId: string; damageType: string; multiplier: number }[] = [
+  { traitId: ENEMY_TRAIT_IDS.BRITTLE_BONES, damageType: "holy", multiplier: TRAIT_DAMAGE_WEAKNESS },
+  { traitId: ENEMY_TRAIT_IDS.BRITTLE_BONES, damageType: "stun", multiplier: TRAIT_DAMAGE_WEAKNESS },
+  { traitId: ENEMY_TRAIT_IDS.TRINKET_HOARDER, damageType: "burn", multiplier: TRAIT_DAMAGE_WEAKNESS },
+  { traitId: ENEMY_TRAIT_IDS.HOLY_VULNERABILITY, damageType: "holy", multiplier: TRAIT_DAMAGE_WEAKNESS },
+  { traitId: ENEMY_TRAIT_IDS.BURN_RESISTANCE, damageType: "burn", multiplier: TRAIT_DAMAGE_RESISTANCE },
+  { traitId: ENEMY_TRAIT_IDS.BURN_VULNERABILITY, damageType: "burn", multiplier: TRAIT_DAMAGE_WEAKNESS },
+  { traitId: ENEMY_TRAIT_IDS.LIVING_ARMOR, damageType: "bleed", multiplier: TRAIT_DAMAGE_RESISTANCE },
+  { traitId: ENEMY_TRAIT_IDS.THICK_HIDE, damageType: "physical", multiplier: TRAIT_DAMAGE_RESISTANCE },
+  { traitId: ENEMY_TRAIT_IDS.POISON_RESISTANCE, damageType: "poison", multiplier: TRAIT_DAMAGE_RESISTANCE },
+  { traitId: ENEMY_TRAIT_IDS.GLACIAL_SHELL, damageType: "freeze", multiplier: TRAIT_DAMAGE_RESISTANCE },
+  { traitId: ENEMY_TRAIT_IDS.GLACIAL_SHELL, damageType: "burn", multiplier: TRAIT_DAMAGE_WEAKNESS },
+];
 
 // ============ Companion ============
 export const COMPANION_GOLD_FIND_CHANCE = 0.5; // 50% chance for companion gold find on victory.

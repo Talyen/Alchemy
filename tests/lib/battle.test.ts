@@ -1132,7 +1132,7 @@ describe("createBattleState", () => {
   const battleDeck = [makeCard({ id: "slash" }), makeCard({ id: "block" })];
 
   it("creates a valid battle state with starting hand", () => {
-    const result = createBattleState(battleDeck, 0, 0, skeleton);
+    const result = createBattleState({ runDeck: battleDeck, currentEnemy: skeleton });
     expect(result.turn).toBe(1);
     expect(result.playerHealth).toBe(MAX_PLAYER_HEALTH);
     expect(result.enemyHealth).toBe(30);
@@ -1142,104 +1142,49 @@ describe("createBattleState", () => {
   });
 
   it("throws when no enemy is provided", () => {
-    expect(() => createBattleState(battleDeck, 0)).toThrow("createBattleState requires currentEnemy");
+    expect(() => createBattleState({ runDeck: battleDeck } as Parameters<typeof createBattleState>[0])).toThrow("createBattleState requires currentEnemy");
   });
 
   it("scales enemy stats by cumulative rooms in run", () => {
     // totalRooms=5 → scaler=4, roomMul=1+4*0.05=1.20
     // Normal skeleton: hpTypeMul=1
-    const result = createBattleState(battleDeck, 0, 5, skeleton);
+    const result = createBattleState({ runDeck: battleDeck, totalRooms: 5, currentEnemy: skeleton });
     expect(result.enemyHealth).toBe(36); // round(30 * 1.20) = 36
     expect(result.enemyAttackEffects[0].amount).toBe(11); // round(9 * 1.20) = 11
   });
 
   describe("difficulty modifiers", () => {
     it("Knight Novice (d1): start-block 5 adds to player block", () => {
-      const result = createBattleState(
-        battleDeck,
-        0,
-        0,
-        skeleton,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        [{ kind: "start-block", amount: 5 }],
-      );
+      const result = createBattleState({ runDeck: battleDeck, currentEnemy: skeleton, difficultyModifiers: [{ kind: "start-block", amount: 5 }] });
       expect(result.playerStatuses.block).toBe(5);
       expect(result.enemyMitigation.armor).toBe(0);
     });
 
     it("Knight Adventurer (d2): enemy-starting-armor 2", () => {
-      const result = createBattleState(
-        battleDeck,
-        0,
-        0,
-        skeleton,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        [{ kind: "enemy-starting-armor", amount: 2 }],
-      );
+      const result = createBattleState({ runDeck: battleDeck, currentEnemy: skeleton, difficultyModifiers: [{ kind: "enemy-starting-armor", amount: 2 }] });
       expect(result.enemyMitigation.armor).toBe(2);
     });
 
     it("Iron Bear starts combat with 0 starting armor", () => {
       const ironBear = enemyBestiary.find((e) => e.id === "iron-bear")!;
-      const result = createBattleState(battleDeck, 0, 0, ironBear);
+      const result = createBattleState({ runDeck: battleDeck, currentEnemy: ironBear });
       expect(result.enemyMitigation.armor).toBe(0);
     });
 
     it("Knight Legend (d3): enemy-gains-forge-each-turn is stored in difficultyModifiers", () => {
       const mods: DifficultyModifier[] = [{ kind: "enemy-gains-forge-each-turn" }];
-      const result = createBattleState(
-        battleDeck,
-        0,
-        0,
-        skeleton,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        mods,
-      );
+      const result = createBattleState({ runDeck: battleDeck, currentEnemy: skeleton, difficultyModifiers: mods });
       expect(result.difficultyModifiers).toEqual(mods);
     });
 
     it("Wizard Novice (d1): start-max-mana 1 adds extra mana", () => {
-      const result = createBattleState(
-        battleDeck,
-        0,
-        0,
-        skeleton,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        [{ kind: "start-max-mana", amount: 1 }],
-      );
+      const result = createBattleState({ runDeck: battleDeck, currentEnemy: skeleton, difficultyModifiers: [{ kind: "start-max-mana", amount: 1 }] });
       expect(result.mana).toBe(BASE_PLAYER_MANA + 1);
       expect(result.maxMana).toBe(BASE_PLAYER_MANA + 1);
     });
 
     it("Ranger Novice (d1): start-companion spawns wolf", () => {
-      const result = createBattleState(
-        battleDeck,
-        0,
-        0,
-        skeleton,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        [{ kind: "start-companion" }],
-      );
+      const result = createBattleState({ runDeck: battleDeck, currentEnemy: skeleton, difficultyModifiers: [{ kind: "start-companion" }] });
       expect(result.activeCompanion).not.toBeNull();
       expect(result.activeCompanion?.id).toBe("wolf");
     });
@@ -1249,18 +1194,7 @@ describe("createBattleState", () => {
         ...skeleton,
         attackEffects: [{ kind: "damage", damageType: "physical", amount: 8 }],
       };
-      const result = createBattleState(
-        battleDeck,
-        0,
-        0,
-        withBoss,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        [{ kind: "increase-enemy-physical-damage", amount: 3 }],
-      );
+      const result = createBattleState({ runDeck: battleDeck, currentEnemy: withBoss, difficultyModifiers: [{ kind: "increase-enemy-physical-damage", amount: 3 }] });
       const dmgEffect = result.enemyAttackEffects.find((e) => e.kind === "damage")!;
       expect(dmgEffect.amount).toBe(11);
     });
@@ -1270,18 +1204,7 @@ describe("createBattleState", () => {
         ...skeleton,
         attackEffects: [{ kind: "damage", damageType: "physical", amount: 8 }],
       };
-      const result = createBattleState(
-        battleDeck,
-        0,
-        0,
-        withBoss,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        [{ kind: "increase-enemy-damage", amount: 4 }],
-      );
+      const result = createBattleState({ runDeck: battleDeck, currentEnemy: withBoss, difficultyModifiers: [{ kind: "increase-enemy-damage", amount: 4 }] });
       const dmgEffect = result.enemyAttackEffects.find((e) => e.kind === "damage")!;
       expect(dmgEffect.amount).toBe(12);
     });
@@ -1294,18 +1217,7 @@ describe("createBattleState", () => {
           { kind: "player-status" as const, status: "poison" as const, amount: 2 },
         ],
       };
-      const result = createBattleState(
-        battleDeck,
-        0,
-        0,
-        withBoss,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        [{ kind: "increase-enemy-status", status: "poison", amount: 2 }],
-      );
+      const result = createBattleState({ runDeck: battleDeck, currentEnemy: withBoss, difficultyModifiers: [{ kind: "increase-enemy-status", status: "poison", amount: 2 }] });
       const poisonEffect = result.enemyAttackEffects.find((e) => e.kind === "player-status" && e.status === "poison")!;
       expect(poisonEffect.amount).toBe(4);
       const dmgEffect = result.enemyAttackEffects.find((e) => e.kind === "damage")!;
@@ -1317,18 +1229,7 @@ describe("createBattleState", () => {
         ...skeleton,
         attackEffects: [{ kind: "damage", damageType: "physical", amount: 8 }],
       };
-      const result = createBattleState(
-        battleDeck,
-        0,
-        0,
-        withBoss,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        [{ kind: "enemy-attacks-gain-leech" }],
-      );
+      const result = createBattleState({ runDeck: battleDeck, currentEnemy: withBoss, difficultyModifiers: [{ kind: "enemy-attacks-gain-leech" }] });
       const dmgEffect = result.enemyAttackEffects.find((e) => e.kind === "damage")!;
       expect((dmgEffect as typeof dmgEffect & { lifesteal: boolean }).lifesteal).toBe(true);
     });
@@ -1339,18 +1240,7 @@ describe("createBattleState", () => {
         { kind: "enemy-starting-armor", amount: 2 },
         { kind: "start-max-mana", amount: 1 },
       ];
-      const result = createBattleState(
-        battleDeck,
-        0,
-        0,
-        skeleton,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        mods,
-      );
+      const result = createBattleState({ runDeck: battleDeck, currentEnemy: skeleton, difficultyModifiers: mods });
       expect(result.playerStatuses.block).toBe(5);
       expect(result.enemyMitigation.armor).toBe(2);
       expect(result.mana).toBe(BASE_PLAYER_MANA + 1);
@@ -1365,18 +1255,7 @@ describe("createBattleState", () => {
           { kind: "player-status" as const, status: "burn" as const, amount: 2 },
         ],
       };
-      const result = createBattleState(
-        battleDeck,
-        0,
-        0,
-        withBoss,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        [{ kind: "increase-enemy-status", status: "poison", amount: 2 }],
-      );
+      const result = createBattleState({ runDeck: battleDeck, currentEnemy: withBoss, difficultyModifiers: [{ kind: "increase-enemy-status", status: "poison", amount: 2 }] });
       const burnEffect = result.enemyAttackEffects.find((e) => e.kind === "player-status" && e.status === "burn")!;
       expect(burnEffect.amount).toBe(2); // unchanged, wrong status
     });
@@ -1391,56 +1270,23 @@ describe("labyrinth modifiers on createBattleState", () => {
   const BASE_ENEMY_HEALTH = 30;
 
   it("labyrinth-sturdy scales enemyMaxHealth by 1.3x", () => {
-    const result = createBattleState(
-      battleDeck,
-      0,
-      0,
-      skeleton,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      [{ kind: "labyrinth-sturdy" }],
-    );
+    const result = createBattleState({ runDeck: battleDeck, currentEnemy: skeleton, difficultyModifiers: [{ kind: "labyrinth-sturdy" }] });
     expect(result.enemyMaxHealth).toBe(Math.floor(BASE_ENEMY_HEALTH * LABYRINTH_STURDY_MULTIPLIER));
     expect(result.enemyHealth).toBe(result.enemyMaxHealth);
   });
 
   it("labyrinth-null-field modifier is detected by isNullFieldActive", () => {
-    const result = createBattleState(
-      battleDeck,
-      0,
-      0,
-      skeleton,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      [{ kind: "labyrinth-null-field" }],
-    );
+    const result = createBattleState({ runDeck: battleDeck, currentEnemy: skeleton, difficultyModifiers: [{ kind: "labyrinth-null-field" }] });
     expect(isNullFieldActive(result)).toBe(true);
   });
 
   it("labyrinth-null-field is false without the modifier", () => {
-    const result = createBattleState(battleDeck, 0, 0, skeleton);
+    const result = createBattleState({ runDeck: battleDeck, currentEnemy: skeleton });
     expect(isNullFieldActive(result)).toBe(false);
   });
 
   it("sturdy and null-field stack correctly", () => {
-    const result = createBattleState(
-      battleDeck,
-      0,
-      0,
-      skeleton,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      [{ kind: "labyrinth-sturdy" }, { kind: "labyrinth-null-field" }],
-    );
+    const result = createBattleState({ runDeck: battleDeck, currentEnemy: skeleton, difficultyModifiers: [{ kind: "labyrinth-sturdy" }, { kind: "labyrinth-null-field" }] });
     expect(result.enemyMaxHealth).toBe(Math.floor(BASE_ENEMY_HEALTH * LABYRINTH_STURDY_MULTIPLIER));
     expect(isNullFieldActive(result)).toBe(true);
   });
@@ -1613,7 +1459,7 @@ describe("Trinket — Tattered Pages (extra draw at battle start)", () => {
   it("deals 5 cards in opening hand instead of 4", () => {
     const deck = [makeCard(), makeCard(), makeCard(), makeCard(), makeCard(), makeCard(), makeCard()];
     const skeleton = enemyBestiary.find((e) => e.id === "skeleton")!;
-    const state = createBattleState(deck, 0, 0, skeleton, 30, defaultTalentEffects, [], 30, ["tattered-pages"]);
+    const state = createBattleState({ runDeck: deck, currentEnemy: skeleton, playerHealth: 30, talentEffects: defaultTalentEffects, maxHealth: 30, trinketIds: ["tattered-pages"] });
     expect(state.hand).toHaveLength(5);
   });
 });
@@ -2708,21 +2554,6 @@ describe("damage riders via applyCardEffects", () => {
     const result = endPlayerTurn(state);
     // 8 / 2 = 4 damage
     expect(result.state.playerHealth).toBe(26);
-  });
-
-  it("bleedEnemyDamageReduction reduces physical enemy damage", () => {
-    const state = makeState({
-      playerHealth: 30,
-      playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
-      talentEffects: { ...defaultTalentEffects, bleedEnemyDamageReduction: 3 },
-      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 10 }],
-      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
-      mana: 4,
-      maxMana: 4,
-    });
-    const result = endPlayerTurn(state);
-    // 10 - 3 = 7 damage
-    expect(result.state.playerHealth).toBe(23);
   });
 
   it("enemy forge bonus adds to physical attack damage", () => {

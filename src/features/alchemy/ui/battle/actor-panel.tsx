@@ -289,6 +289,7 @@ function ActorHealthHeader({
   );
 }
 
+// Separate component for the status rows to keep code clean and prevent re-rendering.
 function ActorStatusRow({
   title,
   statuses,

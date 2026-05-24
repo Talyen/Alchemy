@@ -28,6 +28,7 @@ export type RunStartInput = {
   talentStartGold: number;
   homesteadStartGold: number;
   homesteadStartMaxHealthBonus: number;
+  draftedDeck?: BattleCard[] | undefined;
 };
 
 // Builds a coherent new-run state so every mode starts from a fresh, testable snapshot.
@@ -38,6 +39,7 @@ export function createRunStartSnapshot({
   talentStartGold,
   homesteadStartGold,
   homesteadStartMaxHealthBonus,
+  draftedDeck,
 }: RunStartInput): RunStartSnapshot {
   const runMaxHealth = MAX_PLAYER_HEALTH + homesteadStartMaxHealthBonus;
   const runGold = contentSystemType === "wildwood" ? 0 : talentStartGold + homesteadStartGold;
@@ -45,7 +47,7 @@ export function createRunStartSnapshot({
   return {
     characterId,
     contentSystemType,
-    freshDeck: getStartingDeck(characterId),
+    freshDeck: draftedDeck ?? getStartingDeck(characterId),
     selectedDifficulty: contentSystemType === "campaign" ? difficultyId : null,
     runGold,
     runPlayerHealth: runMaxHealth,

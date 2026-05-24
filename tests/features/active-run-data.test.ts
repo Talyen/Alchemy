@@ -25,6 +25,9 @@ function makeSource(overrides: Partial<Parameters<typeof createActiveRunData>[0]
     labyrinthPendingNode: null,
     activeLabyrinthModifiers: [],
     activeLabyrinthRewardModifiers: [],
+    runTalentXP: {},
+    currentScreen: null,
+    destinationChoices: [],
     ...overrides,
   };
 }
@@ -48,11 +51,14 @@ describe("createActiveRunData", () => {
       completedDestinations: ["Normal Combat", "Campfire"],
       runTrinkets: ["bone-charm"],
       encounteredRunEnemyIds: ["goblin"],
+      runTalentXP: {},
       selectedDifficulty: null,
       contentSystemType: "campaign",
       labyrinthMap: null,
       labyrinthPendingNode: null,
       activeCombat: null,
+      currentScreen: null,
+      destinationChoices: [],
     });
   });
 
@@ -141,5 +147,12 @@ describe("createActiveRunData", () => {
     const result = createActiveRunData(makeSource({ hasActiveBattle: true, battleState }));
 
     expect(result.activeCombat).toBeNull();
+  });
+
+  it("persists runTalentXP", () => {
+    const runTalentXP = { burn: 10, poison: 5 };
+    const result = createActiveRunData(makeSource({ runTalentXP }));
+
+    expect(result.runTalentXP).toEqual(runTalentXP);
   });
 });

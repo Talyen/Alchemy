@@ -48,6 +48,11 @@ const assets = [
   { source: "Player Characters/Ranger.png", target: "ranger.webp", width: characterWidth, quality: 82 },
   { source: "Player Characters/Rogue.png", target: "rogue.webp", width: characterWidth, quality: 82 },
   { source: "Player Characters/Wizard.png", target: "wizard.webp", width: characterWidth, quality: 82 },
+  { source: "Player Characters/Alchemist.jpeg", target: "alchemist.webp", width: characterWidth, quality: 82 },
+  { source: "Player Characters/Warlock.jpeg", target: "warlock.webp", width: characterWidth, quality: 82 },
+  { source: "Player Characters/Druid.jpeg", target: "druid.webp", width: characterWidth, quality: 82 },
+  { source: "Player Characters/Wildcard.jpeg", target: "wildcard.webp", width: characterWidth, quality: 82 },
+  { source: "Player Characters/Placeholder Class.png", target: "placeholder-class.webp", width: characterWidth, quality: 82 },
   // Cards
   { source: "Cards/Anvil.png", target: "anvil.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Apple.png", target: "apple.webp", width: cardWidth, quality: cardQuality },
@@ -147,6 +152,7 @@ const assets = [
   { source: "Destinations/Normal Enemy.png", target: "normal-enemy.webp", width: 900, quality: 84 },
   { source: "Destinations/Mystery.jpeg", target: "mystery.webp", width: 900, quality: 84 },
   { source: "Destinations/Corruption Altar.jpeg", target: "corruption-altar.webp", width: 900, quality: 84 },
+  { source: "Destinations/Boss Enemy.jpeg", target: "boss-combat.webp", width: 900, quality: 84 },
   { source: "Destinations/Placeholder Destination.png", target: "placeholder-destination.webp", width: 900, quality: 60 },
   // Game Modes
   { source: "Game Modes/The Campaign.jpeg", target: "the-campaign.webp", width: 900, quality: 82 },

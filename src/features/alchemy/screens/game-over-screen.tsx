@@ -97,20 +97,19 @@ export function GameOverScreen({ onMainMenu }: { onMainMenu: () => void }) {
       )}
 
       {MATERIAL_IDS.filter((mat) => runEndMaterials[mat] > 0).length > 0 && (
-        <div className="flex flex-col items-center gap-2">
+        <div className="flex flex-wrap items-center justify-center gap-2 text-sm font-medium text-muted-foreground">
+          Found
           {MATERIAL_IDS.filter((mat) => runEndMaterials[mat] > 0).map((mat) => (
-            <span key={mat} className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              Found
-              <span
-                className={cn(
-                  "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold",
-                  matPillStyle[mat],
-                  matTextColor[mat],
-                )}
-              >
-                {matIconMap[mat]}
-                {runEndMaterials[mat]} {materialLabels[mat]}
-              </span>
+            <span
+              key={mat}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold",
+                matPillStyle[mat],
+                matTextColor[mat],
+              )}
+            >
+              {matIconMap[mat]}
+              {runEndMaterials[mat]} {materialLabels[mat]}
             </span>
           ))}
         </div>

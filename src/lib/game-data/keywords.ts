@@ -192,9 +192,9 @@ export const keywordDefinitions: Record<KeywordId, KeywordDefinition> = {
     id: "nature",
     label: "Nature",
     description: "Nature damage type",
-    colorClass: "text-emerald-400",
-    borderClass: "border-emerald-400",
-    shineColors: ["#34d399", "#047857", "#34d399"],
+    colorClass: "text-emerald-600",
+    borderClass: "border-emerald-600",
+    shineColors: ["#059669", "#064e3b", "#059669"],
   },
   companion: {
     id: "companion",

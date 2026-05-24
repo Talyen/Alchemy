@@ -52,9 +52,15 @@ describe("initialize", () => {
       destinationIndexInAct: 2,
       completedDestinations: ["combat"],
       runTrinkets: [],
+      encounteredRunEnemyIds: [],
       selectedDifficulty: null,
       contentSystemType: "campaign",
       labyrinthMap: null,
+      labyrinthPendingNode: null,
+      activeCombat: null,
+      runTalentXP: {},
+      currentScreen: null,
+      destinationChoices: [],
     };
     useRunStore.getState().initialize(activeRun, { physical: 100 }, { physical: ["talent-1"] });
     expect(useRunStore.getState().characterId).toBe("rogue");
@@ -76,9 +82,15 @@ describe("initialize", () => {
       destinationIndexInAct: 2,
       completedDestinations: ["Normal Combat", "Corruption"],
       runTrinkets: [],
+      encounteredRunEnemyIds: [],
       selectedDifficulty: null,
       contentSystemType: "campaign",
       labyrinthMap: null,
+      labyrinthPendingNode: null,
+      activeCombat: null,
+      runTalentXP: {},
+      currentScreen: null,
+      destinationChoices: [],
     };
 
     useRunStore.getState().initialize(activeRun, {}, {});
@@ -98,14 +110,14 @@ describe("initialize", () => {
 });
 
 describe("awardCardXP", () => {
-  it("awards XP for card keywords to both talentXP and runTalentXP", () => {
+  it("awards XP for card keywords to runTalentXP", () => {
     const card: BattleCard = {
       id: "fireball", title: "Fireball", descriptionLines: [""], art: "", cost: 3,
       effects: [{ kind: "damage", damageType: "burn", amount: 8 }],
     };
     useRunStore.getState().awardCardXP(card);
-    expect(useRunStore.getState().talentXP.burn).toBeGreaterThan(0);
-    expect(useRunStore.getState().runTalentXP.burn).toBe(useRunStore.getState().talentXP.burn);
+    expect(useRunStore.getState().runTalentXP.burn).toBeGreaterThan(0);
+    expect(useRunStore.getState().talentXP.burn).toBeUndefined();
   });
 
   it("does nothing for card with no keywords", () => {
@@ -113,6 +125,7 @@ describe("awardCardXP", () => {
       id: "blank", title: "Blank", descriptionLines: [""], art: "", cost: 0, effects: [],
     };
     useRunStore.getState().awardCardXP(card);
+    expect(useRunStore.getState().runTalentXP).toEqual({});
     expect(useRunStore.getState().talentXP).toEqual({});
   });
 
@@ -127,22 +140,24 @@ describe("awardCardXP", () => {
     };
     useRunStore.getState().awardCardXP(burnCard);
     useRunStore.getState().awardCardXP(physCard);
-    expect(useRunStore.getState().talentXP.burn).toBeGreaterThan(0);
-    expect(useRunStore.getState().talentXP.physical).toBeGreaterThan(0);
+    expect(useRunStore.getState().runTalentXP.burn).toBeGreaterThan(0);
+    expect(useRunStore.getState().runTalentXP.physical).toBeGreaterThan(0);
+    expect(useRunStore.getState().talentXP.burn).toBeUndefined();
+    expect(useRunStore.getState().talentXP.physical).toBeUndefined();
   });
 });
 
 describe("awardMysteryXP", () => {
-  it("awards XP directly to a keyword", () => {
+  it("awards XP directly to a keyword runTalentXP", () => {
     useRunStore.getState().awardMysteryXP("burn", 50);
-    expect(useRunStore.getState().talentXP.burn).toBe(50);
     expect(useRunStore.getState().runTalentXP.burn).toBe(50);
+    expect(useRunStore.getState().talentXP.burn).toBeUndefined();
   });
 
-  it("accumulates with existing XP", () => {
+  it("accumulates with existing runTalentXP", () => {
     useRunStore.getState().awardMysteryXP("burn", 30);
     useRunStore.getState().awardMysteryXP("burn", 20);
-    expect(useRunStore.getState().talentXP.burn).toBe(50);
+    expect(useRunStore.getState().runTalentXP.burn).toBe(50);
   });
 });
 
@@ -190,8 +205,9 @@ describe("resetUnlockedTalents", () => {
 });
 
 describe("resetRunXP", () => {
-  it("clears runTalentXP but preserves talentXP", () => {
+  it("clears runTalentXP but preserves talentXP after finalize", () => {
     useRunStore.getState().awardMysteryXP("burn", 50);
+    useRunStore.getState().finalizeRunXP();
     useRunStore.getState().resetRunXP();
     expect(useRunStore.getState().talentXP.burn).toBe(50);
     expect(useRunStore.getState().runTalentXP).toEqual({});
@@ -201,6 +217,7 @@ describe("resetRunXP", () => {
 describe("clearPermanentData", () => {
   it("clears talentXP, runTalentXP, and unlockedTalents", () => {
     useRunStore.getState().awardMysteryXP("burn", 50);
+    useRunStore.getState().finalizeRunXP();
     useRunStore.getState().unlockTalent("burn", "talent-1");
     useRunStore.getState().clearPermanentData();
     expect(useRunStore.getState().talentXP).toEqual({});
@@ -212,6 +229,7 @@ describe("clearPermanentData", () => {
 describe("reset", () => {
   it("preserves talentXP and unlockedTalents while clearing run state", () => {
     useRunStore.getState().awardMysteryXP("burn", 50);
+    useRunStore.getState().finalizeRunXP();
     useRunStore.getState().unlockTalent("burn", "talent-1");
     useRunStore.setState({ runGold: 100, runPlayerHealth: 15 });
     useRunStore.getState().reset();
@@ -220,5 +238,40 @@ describe("reset", () => {
     expect(useRunStore.getState().runTalentXP).toEqual({});
     expect(useRunStore.getState().runGold).toBe(0);
     expect(useRunStore.getState().runPlayerHealth).toBeGreaterThan(0);
+  });
+});
+
+describe("finalizeRunXP", () => {
+  it("applies no multiplier for difficulty-1", () => {
+    useRunStore.setState({ selectedDifficulty: "difficulty-1" });
+    useRunStore.getState().awardMysteryXP("burn", 10);
+    useRunStore.getState().finalizeRunXP();
+    expect(useRunStore.getState().talentXP.burn).toBe(10);
+    expect(useRunStore.getState().runTalentXP).toEqual({});
+  });
+
+  it("applies 1.2x multiplier for difficulty-2", () => {
+    useRunStore.setState({ selectedDifficulty: "difficulty-2" });
+    useRunStore.getState().awardMysteryXP("burn", 10);
+    useRunStore.getState().finalizeRunXP();
+    expect(useRunStore.getState().talentXP.burn).toBe(12);
+    expect(useRunStore.getState().runTalentXP).toEqual({});
+  });
+
+  it("applies 1.4x multiplier for difficulty-3", () => {
+    useRunStore.setState({ selectedDifficulty: "difficulty-3" });
+    useRunStore.getState().awardMysteryXP("burn", 10);
+    useRunStore.getState().finalizeRunXP();
+    expect(useRunStore.getState().talentXP.burn).toBe(14);
+    expect(useRunStore.getState().runTalentXP).toEqual({});
+  });
+
+  it("is idempotent — second call does not double-count XP", () => {
+    useRunStore.setState({ selectedDifficulty: "difficulty-2" });
+    useRunStore.getState().awardMysteryXP("burn", 10);
+    useRunStore.getState().finalizeRunXP();
+    useRunStore.getState().finalizeRunXP();
+    expect(useRunStore.getState().talentXP.burn).toBe(12);
+    expect(useRunStore.getState().runTalentXP).toEqual({});
   });
 });

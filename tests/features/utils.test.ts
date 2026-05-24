@@ -36,8 +36,10 @@ function makeState(overrides: Partial<BattleState> = {}): BattleState {
       wishExtraChoiceChance: 0, wishDrawsCard: false,
       firstPoisonCardFree: false, poisonPhysicalBonus: 0, poisonGainChance: 0, receiveHalfPoisonDamage: false,
       goldOnFirstPoison: 0, poisonHalvesHealing: false,
-      firstBleedCardFree: false, bleedPhysicalBonus: 0, bleedLeechChance: 0, bleedEnemyDamageReduction: 0,
-      bleedPhysicalTakenBonus: 0, bleedExecuteThreshold: 0, bleedDesperateMultiplier: 1, bleedPoisonChance: 0,
+      poisonStunChance: 0, poisonStripArmor: false, poisonReducesEnemyDamage: 0, poisonLeechChance: 0,
+      firstBleedCardFree: false, bleedPhysicalBonus: 0, bleedLeechChance: 0,
+      bleedExecuteThreshold: 0, bleedDesperateMultiplier: 1, bleedPoisonChance: 0,
+      bleedPoisonDamageTakenBonus: 0, companionBleedDamageBonus: 0, receiveHalfBleedDamage: false, bleedHalvesEnemyHealing: false,
     },
     trinketEffects: {
       extraDrawPerBattle: 0, firstHolyDamageDoubled: false, firstBurnDoubled: false, boneCharmHealOnKill: 0,
@@ -58,6 +60,8 @@ function makeState(overrides: Partial<BattleState> = {}): BattleState {
     discoveredCardIds: [],
     cardsPlayedThisTurn: 0,
     nextCardUid: 0,
+    difficultyModifiers: [],
+    rng: Math.random,
     ...overrides,
   };
 }

@@ -42,7 +42,7 @@ export function applyBoneCharmHeal(state: BattleState, enemyWasAlive: boolean, c
 
 export function applyLuckyCloverGold(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
   if (state.trinketEffects.luckyCloverGoldChance <= 0 || damage <= 0) return state;
-  if (Math.random() * PERCENT_DENOMINATOR < state.trinketEffects.luckyCloverGoldChance) {
+  if (state.rng() * PERCENT_DENOMINATOR < state.trinketEffects.luckyCloverGoldChance) {
     const nextState = addGold(state, damage);
     mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "gold", amount: damage });
     return nextState;

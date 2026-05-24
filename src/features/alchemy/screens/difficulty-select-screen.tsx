@@ -10,7 +10,6 @@ import difficulty1Art from "@/assets/optimized/difficulty-1.webp";
 import difficulty2Art from "@/assets/optimized/difficulty-2.webp";
 import difficulty3Art from "@/assets/optimized/difficulty-3.webp";
 
-import { ShineBorder } from "@/components/ui/shine-border";
 import { KeywordToken } from "../ui/card-ui";
 import { KeywordTag } from "../ui/keyword-tag";
 import { ScreenHeader, ShimmerOverlay } from "../ui/shared-ui";
@@ -22,8 +21,8 @@ import { useRunStore } from "../stores/run-store";
 
 const DIFFICULTY_CONFIG = {
   XP_BONUSES: {
-    "difficulty-2": "10% Bonus XP",
-    "difficulty-3": "20% Bonus XP",
+    "difficulty-2": "20% Bonus XP",
+    "difficulty-3": "40% Bonus XP",
   } as Record<string, string>,
 } as const;
 
@@ -86,17 +85,10 @@ function DifficultyCard({
           "relative flex flex-col items-center gap-3 rounded-[26px] border border-border/60 bg-card/60 px-4 pb-6 pt-5 text-center transition-all",
           locked && "grayscale border-muted/40",
           !locked && "cursor-pointer",
+          isSelected && "ring-2 ring-primary",
         )}
         onClick={!locked ? () => onSelect(difficultyId) : undefined}
       >
-        {isSelected && (
-          <ShineBorder
-            shineColor={["#450a0a", "#ef4444", "#991b1b", "#7f1d1d"]}
-            borderWidth={2}
-            duration={8}
-            className="z-10"
-          />
-        )}
         {showTilt ? (
           <div
             className={cn("tilt-surface relative overflow-hidden rounded-[22px] aspect-[5/6]", battleCardWidthClass)}
@@ -191,7 +183,11 @@ export function DifficultySelectScreen({
               token={shimmerState?.token}
               rounded="rounded-[22px]"
             />
-            <img src={art} alt={char.name} className={cn(cardSurfaceClass, "w-full rounded-[22px] object-cover")} />
+            <img
+              src={art}
+              alt={char.name}
+              className={cn(cardSurfaceClass, "w-full h-full rounded-[22px] object-cover")}
+            />
           </div>
           <p className="font-display text-base font-bold text-amber-100/75">{char.name}</p>
           <div className="flex flex-wrap justify-center gap-1">

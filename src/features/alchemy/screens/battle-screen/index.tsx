@@ -7,6 +7,7 @@ import { CardGhostOverlay } from "../../components";
 import { CardTransferOverlay } from "./card-transfer-overlay";
 import { BattleActors } from "./actors";
 import { BattleBottomBar } from "./controls";
+import { HamburgerTrigger, PageLayout, ScreenHeader } from "../../ui/shared-ui";
 import { WishOverlay } from "./wish-overlay";
 import type {
   BattleActionsProps,
@@ -18,6 +19,7 @@ import type {
 import { useBattleStore } from "../../stores/battle-store";
 import { useScreenStore } from "../../stores/screen-store";
 import { getEnemyStatusChips, getPlayerStatusChips } from "../../utils";
+import { BackgroundParticles } from "../../ui/background-particles";
 
 type BattleScreenProps = {
   heroArt: string;
@@ -67,6 +69,9 @@ export function BattleScreen(props: BattleScreenProps) {
   } = props;
 
   const battleState = useBattleStore((s) => s.battleState);
+  const isBossBattle = battleState.currentEnemy.enemyType === "boss";
+  const particleAlpha = isBossBattle ? 2.5 : 1.7;
+  const particleColors = ["rgba(255, 150, 70, X)", "rgba(255, 100, 40, X)"] as const;
   const cardGhosts = useBattleStore((s) => s.cardGhosts);
   const floatingCombatTexts = useBattleStore((s) => s.floatingCombatTexts);
   const enemyShaking = useBattleStore((s) => s.enemyShaking);
@@ -142,26 +147,44 @@ export function BattleScreen(props: BattleScreenProps) {
   const requiredView = { ...view, isMobileLandscape, aspectMode };
 
   return (
-    <div
-      ref={sceneRef}
-      data-testid="battle-scene"
-      className="relative h-full w-full overflow-hidden [container-type:size]"
-    >
-      <BattleActors view={requiredView} hover={hover} feedback={feedback} refs={refs} />
+    <PageLayout>
+      <div className="alchemy-shell relative flex w-full max-w-[100rem] flex-1 flex-col rounded-[28px] border border-border/80 p-7 pb-4">
+        <div className="absolute inset-0 overflow-hidden rounded-[28px] pointer-events-none">
+          <BackgroundParticles variant="embers" colors={particleColors} alphaMultiplier={particleAlpha} />
+        </div>
 
-      <BattleBottomBar view={requiredView} hover={hover} refs={refs} actions={actions} />
+        <div className="relative z-10 flex flex-1 flex-col">
+          <div className="relative flex w-full shrink-0 items-center justify-center">
+            <ScreenHeader title="Battle" />
+            <div className="absolute right-0 top-1/2 -translate-y-1/2 z-30">
+              <HamburgerTrigger onClick={actions.onOpenMenu} label="Open battle menu" />
+            </div>
+          </div>
 
-      {battleState.wishOptions ? (
-        <WishOverlay battleState={battleState} hover={hover} actions={actions} isMobileLandscape={isMobileLandscape} />
-      ) : null}
+          <div ref={sceneRef} data-testid="battle-scene" className="relative mt-2 flex-1 [container-type:size]">
+            <BattleActors view={requiredView} hover={hover} feedback={feedback} refs={refs} />
 
-      {cardGhosts.map((ghost) => (
-        <CardGhostOverlay key={ghost.id} ghost={ghost} onDone={() => removeGhost(ghost.id)} />
-      ))}
+            <BattleBottomBar view={requiredView} hover={hover} refs={refs} actions={actions} />
 
-      {cardTransfers.map((transfer) => (
-        <CardTransferOverlay key={transfer.id} transfer={transfer} />
-      ))}
-    </div>
+            {battleState.wishOptions ? (
+              <WishOverlay
+                battleState={battleState}
+                hover={hover}
+                actions={actions}
+                isMobileLandscape={isMobileLandscape}
+              />
+            ) : null}
+
+            {cardGhosts.map((ghost) => (
+              <CardGhostOverlay key={ghost.id} ghost={ghost} onDone={() => removeGhost(ghost.id)} />
+            ))}
+
+            {cardTransfers.map((transfer) => (
+              <CardTransferOverlay key={transfer.id} transfer={transfer} />
+            ))}
+          </div>
+        </div>
+      </div>
+    </PageLayout>
   );
 }

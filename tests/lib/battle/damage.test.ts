@@ -152,16 +152,22 @@ function baseState(overrides: Partial<BattleState> = {}): BattleState {
       receiveHalfPoisonDamage: false,
       goldOnFirstPoison: 0,
       poisonHalvesHealing: false,
+      poisonStunChance: 0,
+      poisonStripArmor: false,
+      poisonReducesEnemyDamage: 0,
+      poisonLeechChance: 0,
       companionDamage: 0,
       companionGoldFindActive: false,
       firstBleedCardFree: false,
       bleedPhysicalBonus: 0,
       bleedLeechChance: 0,
-      bleedEnemyDamageReduction: 0,
-      bleedPhysicalTakenBonus: 0,
       bleedExecuteThreshold: 0,
       bleedDesperateMultiplier: 1,
       bleedPoisonChance: 0,
+      bleedPoisonDamageTakenBonus: 0,
+      companionBleedDamageBonus: 0,
+      receiveHalfBleedDamage: false,
+      bleedHalvesEnemyHealing: false,
       flatTrapDamage: 0,
       freezeThresholdReduction: 0,
       freezeDoubleDamage: false,
@@ -223,6 +229,7 @@ function baseState(overrides: Partial<BattleState> = {}): BattleState {
     cardsPlayedThisTurn: 0,
     nextCardUid: 0,
     difficultyModifiers: [],
+    rng: Math.random,
     ...overrides,
   };
 }
@@ -517,7 +524,7 @@ describe("computeBaseDamage — physical vs statuses", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
     const state = baseState({
       enemyStatuses: { ...baseState().enemyStatuses, bleed: 5 },
-      talentEffects: { ...baseState().talentEffects, bleedPhysicalBonus: 2, bleedPhysicalTakenBonus: 1 },
+      talentEffects: { ...baseState().talentEffects, bleedPhysicalBonus: 2 },
     });
     const card = makeCard({ effects: [makeEffect("physical", 5)] });
     const texts = makeTexts();
@@ -527,8 +534,8 @@ describe("computeBaseDamage — physical vs statuses", () => {
       card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
       texts,
     );
-    // 5 base + 2 bleed + 1 bleedTaken = 8 damage, no armor
-    expect(result.enemyHealth).toBe(22);
+    // 5 base + 2 bleedPhysicalBonus = 7 damage, no armor
+    expect(result.enemyHealth).toBe(23);
   });
 
   it("amplifies physical damage against stunned enemies", () => {

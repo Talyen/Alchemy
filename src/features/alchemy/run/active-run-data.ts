@@ -3,6 +3,8 @@
 import type { BattleCard, CharacterId, DifficultyId } from "@/lib/game-data";
 import type { ContentSystemId, LabyrinthMap, LabyrinthModifierKind } from "@/lib/content-systems/types";
 import { isPlayerDefeated, type BattleState } from "@/lib/battle";
+import type { TalentXP } from "@/lib/talents";
+import type { Screen } from "@/features/alchemy/types";
 
 import type { ActiveRunData } from "./types";
 import type { LabyrinthNodePosition } from "./types";
@@ -27,6 +29,9 @@ type ActiveRunSource = {
   labyrinthPendingNode: LabyrinthNodePosition | null;
   activeLabyrinthModifiers: LabyrinthModifierKind[];
   activeLabyrinthRewardModifiers: LabyrinthModifierKind[];
+  runTalentXP: TalentXP;
+  currentScreen: Screen | null;
+  destinationChoices: string[];
 };
 
 // Save snapshots intentionally copy persisted run and active-combat fields while leaving UI-only animation state out.
@@ -58,5 +63,8 @@ export function createActiveRunData(source: ActiveRunSource): ActiveRunData {
     labyrinthMap: source.contentSystemType === "labyrinth" ? source.labyrinthMap : null,
     labyrinthPendingNode: source.contentSystemType === "labyrinth" ? source.labyrinthPendingNode : null,
     activeCombat,
+    runTalentXP: source.runTalentXP,
+    currentScreen: source.currentScreen,
+    destinationChoices: source.destinationChoices,
   };
 }

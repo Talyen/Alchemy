@@ -236,6 +236,7 @@ export type TalentEffectManifest = {
   holyWishChance: number;
   holyBlockPercentFromDamage: number;
   holyVsBurnMultiplier: number;
+  holyGoldChance: number;
 
   // --- Wish ---
   goldOnWishAmount: number;
@@ -244,6 +245,10 @@ export type TalentEffectManifest = {
   removeHarmfulStatusOnWish: boolean;
   wishExtraChoiceChance: number;
   wishDrawsCard: boolean;
+  manaOnWish: number;
+  wishBoonChoice: boolean;
+  wishBlockBelowHealthPct: number;
+  wishCardsUpgraded: boolean;
 
   // --- Poison ---
   firstPoisonCardFree: boolean;
@@ -252,6 +257,10 @@ export type TalentEffectManifest = {
   receiveHalfPoisonDamage: boolean;
   goldOnFirstPoison: number;
   poisonHalvesHealing: boolean;
+  poisonStunChance: number;
+  poisonStripArmor: boolean;
+  poisonReducesEnemyDamage: number;
+  poisonLeechChance: number;
 
   companionDamage: number;
   companionGoldFindActive: boolean;
@@ -275,11 +284,13 @@ export type TalentEffectManifest = {
   firstBleedCardFree: boolean;
   bleedPhysicalBonus: number;
   bleedLeechChance: number;
-  bleedEnemyDamageReduction: number;
-  bleedPhysicalTakenBonus: number;
   bleedExecuteThreshold: number;
   bleedDesperateMultiplier: number;
   bleedPoisonChance: number;
+  bleedPoisonDamageTakenBonus: number;
+  companionBleedDamageBonus: number;
+  receiveHalfBleedDamage: boolean;
+  bleedHalvesEnemyHealing: boolean;
 };
 
 export const harmfulPlayerStatusIds: PlayerStatusId[] = ["burn", "poison", "bleed", "freeze", "stun"];

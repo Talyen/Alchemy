@@ -15,6 +15,8 @@ import {
   type DifficultyId,
   type BattleCardEffect,
 } from "@/lib/game-data";
+import type { Screen } from "@/features/alchemy/types";
+import { ROUTE_SCREENS } from "@/features/alchemy/types";
 import {
   ACTS_PER_RUN,
   DEFAULT_BRIGHTNESS_PCT,
@@ -462,6 +464,13 @@ export const ActiveRunDataSchema = z
     labyrinthMap: LabyrinthMapSchema.nullable().catch(null),
     labyrinthPendingNode: LabyrinthNodePositionSchema,
     activeCombat: ActiveCombatDataSchema.default(null),
+    runTalentXP: TalentXPSchema.optional(),
+    currentScreen: z
+      .enum(Object.values(ROUTE_SCREENS) as [Screen, ...Screen[]])
+      .nullable()
+      .catch(null)
+      .default(null),
+    destinationChoices: z.array(z.string()).catch([]).default([]),
   })
   .transform((data) => {
     let contentSystemType = data.contentSystemType;
@@ -484,6 +493,7 @@ export const ActiveRunDataSchema = z
       runDeck,
       contentSystemType,
       runPlayerHealth,
+      runTalentXP: data.runTalentXP ?? {},
       labyrinthMap: contentSystemType === "labyrinth" ? data.labyrinthMap : null,
       labyrinthPendingNode: contentSystemType === "labyrinth" ? data.labyrinthPendingNode : null,
       activeCombat: data.activeCombat

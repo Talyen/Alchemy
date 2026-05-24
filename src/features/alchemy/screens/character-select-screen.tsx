@@ -12,7 +12,9 @@ import { KeywordTag } from "../ui/keyword-tag";
 import { ScreenHeader, ShimmerOverlay } from "../ui/shared-ui";
 import { useShimmerController } from "../hooks";
 import { clearTiltFromEvent, setTiltFromEvent } from "../utils";
-import { battleCardWidthClass, cardSurfaceClass, staticCardTransform } from "../config";
+import { cardSurfaceClass, staticCardTransform } from "../config";
+
+const charCardWidthClass = "w-[clamp(18vh,20.5vh,28vh)]";
 
 function CharacterCard({
   id,
@@ -31,35 +33,70 @@ function CharacterCard({
   onSelect: (id: CharacterId) => void;
   onHoverShimmer: (id: CharacterId) => void;
 }) {
+  const [showTooltip, setShowTooltip] = useState(false);
   const char = characters[id];
   const art = characterArt[char.id];
 
   return (
     <div
-      className={cn(
-        "stagger-item flex flex-col items-center gap-3 rounded-[26px] border border-border/60 bg-card/60 px-6 pb-6 pt-5",
-        isSelected && "ring-2 ring-primary",
-      )}
+      className="stagger-item relative flex flex-col items-center gap-3"
       style={{ "--stagger-index": index } as CSSProperties}
     >
       <button
         type="button"
-        className={cn("tilt-surface relative rounded-[22px]", battleCardWidthClass)}
+        className={cn("tilt-surface relative rounded-[20px]", charCardWidthClass, isSelected && "ring-2 ring-primary")}
         style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
         onMouseMove={setTiltFromEvent}
-        onMouseEnter={() => onHoverShimmer(id)}
-        onMouseLeave={clearTiltFromEvent}
+        onMouseEnter={() => {
+          onHoverShimmer(id);
+          setShowTooltip(true);
+        }}
+        onMouseLeave={(e) => {
+          clearTiltFromEvent(e);
+          setShowTooltip(false);
+        }}
         onClick={() => onSelect(id)}
       >
-        <ShimmerOverlay active={isShimmer} token={shimmerToken} rounded="rounded-[22px]" />
-        <img src={art} alt={char.name} className={cn(cardSurfaceClass, "w-full rounded-[22px]")} />
+        <ShimmerOverlay active={isShimmer} token={shimmerToken} rounded="rounded-[20px]" />
+        <img src={art} alt={char.name} className={cn(cardSurfaceClass, "w-full rounded-[20px] aspect-[3/4]")} />
       </button>
-      <p className="font-display text-base font-bold text-amber-100/75">{char.name}</p>
-      <div className="flex flex-wrap justify-center gap-1">
-        {char.keywords.map((kw) => (
-          <KeywordTag key={kw} keywordId={kw} pill showTooltip />
-        ))}
-      </div>
+      <p className="font-display text-lg font-bold text-amber-100/90 mt-1">{char.name}</p>
+      {showTooltip ? (
+        <div className="absolute bottom-full left-1/2 z-50 mb-2 w-80 -translate-x-1/2 rounded-xl border border-border/80 bg-card px-4 py-3 text-left shadow-lg">
+          <p className="mb-2 font-display text-lg font-bold text-amber-100/90">{char.name}</p>
+
+          {char.startingDeck.length > 0 ? (
+            <>
+              <p className="mb-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Starting Deck</p>
+              <p className="mb-3 text-xs text-muted-foreground leading-relaxed">
+                {char.startingDeck.map((c) => c.title).join(", ")}
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="mb-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Draft a Deck</p>
+              <p className="mb-3 text-xs text-muted-foreground leading-relaxed">Choose your own fate</p>
+            </>
+          )}
+
+          {char.keywords.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5">
+              {char.keywords.map((kw) => (
+                <KeywordTag key={kw} keywordId={kw} pill />
+              ))}
+            </div>
+          ) : (
+            <div className="flex">
+              <span
+                className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-sm font-semibold leading-none text-amber-100/90"
+                style={{ backgroundColor: "color-mix(in srgb, currentColor 15%, transparent)" }}
+              >
+                All Keywords
+              </span>
+            </div>
+          )}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -78,10 +115,10 @@ export function CharacterSelectScreen({
   const selectedChar = selectedId ? characters[selectedId] : null;
 
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center gap-6 px-4 py-6 text-center">
+    <div className="flex h-full w-full flex-col items-center justify-center gap-6 px-4 py-4 text-center">
       <ScreenHeader title="Choose Your Hero" />
 
-      <div className="flex flex-wrap items-start justify-center gap-12">
+      <div className="grid grid-cols-2 justify-items-center gap-x-8 gap-y-6 sm:grid-cols-4">
         {charIds.map((id, index) => (
           <CharacterCard
             key={id}
@@ -96,7 +133,7 @@ export function CharacterSelectScreen({
         ))}
       </div>
 
-      <div className="mt-6 flex flex-col items-center gap-4">
+      <div className="flex flex-col items-center gap-4">
         <div className="flex gap-4">
           <Button size="lg" variant="outline" className="w-40" onClick={onBack}>
             Back

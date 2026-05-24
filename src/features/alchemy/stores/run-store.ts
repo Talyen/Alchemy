@@ -9,6 +9,7 @@ import {
   talentPool,
   type UnlockedTalents,
   getCardKeywords,
+  getDifficultyXPMultiplier,
 } from "@/lib/game-data";
 import { MAX_PLAYER_HEALTH } from "@/lib/game-constants";
 import { DESTINATIONS, type Destination } from "@/features/alchemy/types";
@@ -61,6 +62,7 @@ type RunStoreActions = {
   clearPermanentData: () => void;
   awardCardXP: (card: BattleCard) => void;
   awardMysteryXP: (keywordId: KeywordId, amount: number) => void;
+  finalizeRunXP: () => void;
   initialize: (
     activeRun: ActiveRunData | null,
     talentXP: TalentXP,
@@ -99,7 +101,7 @@ function createInitialRunState(
     selectedDifficulty: initialActiveRun?.selectedDifficulty ?? null,
     contentSystemType: initialActiveRun?.contentSystemType ?? "campaign",
     talentXP: {},
-    runTalentXP: {},
+    runTalentXP: initialActiveRun?.runTalentXP ?? {},
     unlockedTalents: {},
   };
 }
@@ -107,8 +109,8 @@ function createInitialRunState(
 function createInitialTalentState(
   initialTalentXP: TalentXP,
   initialUnlockedTalents: UnlockedTalents,
-): Pick<RunStateFields, "talentXP" | "runTalentXP" | "unlockedTalents"> {
-  return { talentXP: initialTalentXP, runTalentXP: {} as TalentXP, unlockedTalents: initialUnlockedTalents };
+): Pick<RunStateFields, "talentXP" | "unlockedTalents"> {
+  return { talentXP: initialTalentXP, unlockedTalents: initialUnlockedTalents };
 }
 
 export const useRunStore = create<RunStore>()((set) => ({
@@ -188,16 +190,35 @@ export const useRunStore = create<RunStore>()((set) => ({
     const keywords = getCardKeywords(card);
     if (keywords.length === 0) return;
     set((s) => ({
-      talentXP: addTalentXP(s.talentXP, keywords),
       runTalentXP: addTalentXP(s.runTalentXP, keywords),
     }));
   },
 
   awardMysteryXP: (keywordId, amount) =>
     set((s) => ({
-      talentXP: addTalentXP(s.talentXP, [keywordId], amount),
       runTalentXP: addTalentXP(s.runTalentXP, [keywordId], amount),
     })),
+
+  finalizeRunXP: () => {
+    const current = useRunStore.getState();
+    if (Object.keys(current.runTalentXP).length === 0) return;
+
+    set((s) => {
+      const multiplier = getDifficultyXPMultiplier(s.selectedDifficulty);
+
+      const nextTalentXP = { ...s.talentXP };
+      for (const [kw, amount] of Object.entries(s.runTalentXP)) {
+        if (typeof amount === "number") {
+          const bonusAmount = Math.round(amount * multiplier);
+          nextTalentXP[kw as KeywordId] = (nextTalentXP[kw as KeywordId] ?? 0) + bonusAmount;
+        }
+      }
+      return {
+        talentXP: nextTalentXP,
+        runTalentXP: {},
+      };
+    });
+  },
 
   initialize: (activeRun, talentXP, unlockedTalents, fallbackCharacterId = "knight") => {
     const runState = createInitialRunState(activeRun, fallbackCharacterId);

@@ -13,7 +13,7 @@ import { PERCENT_DENOMINATOR, WISH_CHOICE_COUNT, MAX_HAND_SIZE } from "../game-c
 
 export function buildWishOptions(state: BattleState, card: BattleCard): BattleCard[] {
   const baseCount =
-    WISH_CHOICE_COUNT + (Math.random() * PERCENT_DENOMINATOR < state.talentEffects.wishExtraChoiceChance ? 1 : 0);
+    WISH_CHOICE_COUNT + (state.rng() * PERCENT_DENOMINATOR < state.talentEffects.wishExtraChoiceChance ? 1 : 0);
 
   let candidates = cardLibrary.filter((candidate) => candidate.id !== card.id);
 

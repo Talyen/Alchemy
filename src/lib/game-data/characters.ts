@@ -4,7 +4,7 @@ import type { BattleCard } from "./types";
 import { cardLibrary } from "./cards";
 import type { KeywordId } from "./types";
 
-export type CharacterId = "knight" | "ranger" | "rogue" | "wizard";
+export type CharacterId = "knight" | "ranger" | "rogue" | "wizard" | "alchemist" | "warlock" | "druid" | "wildcard";
 
 export type CharacterDefinition = {
   id: CharacterId;
@@ -30,12 +30,12 @@ export const characters: Record<CharacterId, CharacterDefinition> = {
     startingDeck: resolveDeck([
       "anvil",
       "bash",
-      "bread",
       "slash",
       "block",
       "plate-mail",
       "stoneskin-potion",
       "shield-bash",
+      "sunder-armor",
     ]),
     keywords: ["block", "armor", "stun"],
   },
@@ -44,17 +44,7 @@ export const characters: Record<CharacterId, CharacterDefinition> = {
     name: "Rogue",
     role: "Skirmisher",
     description: "A swift opportunist who steals gold, applies bleeds, and strikes with precision.",
-    startingDeck: resolveDeck([
-      "steal",
-      "poison-dagger",
-      "stab",
-      "slash",
-      "fangs",
-      "apple",
-      "luck-potion",
-      "acid-potion",
-      "blackjack",
-    ]),
+    startingDeck: resolveDeck(["steal", "poison-dagger", "stab", "slash", "serrated-edge", "blackjack"]),
     keywords: ["poison", "bleed", "gold"],
   },
   wizard: {
@@ -65,13 +55,12 @@ export const characters: Record<CharacterId, CharacterDefinition> = {
     startingDeck: resolveDeck([
       "fireball",
       "frostbolt",
-      "mana-berries",
       "mana-crystals",
-      "mana-potion",
       "meteor",
-      "health-potion",
-      "wishing-potion",
       "wish",
+      "mana-shield",
+      "cold-snap",
+      "phoenix-companion",
     ]),
     keywords: ["burn", "freeze", "mana"],
   },
@@ -80,18 +69,63 @@ export const characters: Record<CharacterId, CharacterDefinition> = {
     name: "Ranger",
     role: "Wildkeeper",
     description: "A wilderness guardian whose nature, companion, and trap synergies will arrive in a future update.",
-    startingDeck: resolveDeck([
-      "slash",
-      "stab",
-      "fangs",
-      "heal",
-      "wolf-companion",
-      "apple",
-      "mana-berries",
-      "pack-tactics",
-      "bloodthorn",
-    ]),
+    startingDeck: resolveDeck(["slash", "stab", "fangs", "wolf-companion", "apple", "mana-berries", "pack-tactics"]),
     keywords: ["nature", "companion", "trap"],
+  },
+  alchemist: {
+    id: "alchemist",
+    name: "Alchemist",
+    role: "Apothecary",
+    description: "A master of toxins who poisons enemies, consumes potions for powerful effects, and hoards gold.",
+    startingDeck: resolveDeck([
+      "poison-dagger",
+      "acid-potion",
+      "health-potion",
+      "stoneskin-potion",
+      "mana-potion",
+      "wishing-potion",
+    ]),
+    keywords: ["poison", "consume", "gold"],
+  },
+  warlock: {
+    id: "warlock",
+    name: "Warlock",
+    role: "Cursemaster",
+    description: "A dark pact mage who bleeds foes, leeches life, and scorches with hellfire.",
+    startingDeck: resolveDeck([
+      "fireball",
+      "fangs",
+      "cauterize",
+      "imp-companion",
+      "faustian-bargain",
+      "blood-offering",
+      "health-potion",
+    ]),
+    keywords: ["bleed", "leech", "burn"],
+  },
+  druid: {
+    id: "druid",
+    name: "Druid",
+    role: "Wildwarden",
+    description: "A guardian of the wild who commands nature, shapes mana, and fights alongside animal companions.",
+    startingDeck: resolveDeck([
+      "bloodthorn",
+      "grasping-vines",
+      "pack-tactics",
+      "mana-berries",
+      "bear-companion",
+      "cinderbloom",
+      "heal",
+    ]),
+    keywords: ["nature", "mana", "companion"],
+  },
+  wildcard: {
+    id: "wildcard",
+    name: "Wildcard",
+    role: "Freebooter",
+    description: "A master of none who drafts a custom deck at the start of each run.",
+    startingDeck: [],
+    keywords: [],
   },
 };
 

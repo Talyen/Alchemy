@@ -133,7 +133,7 @@ describe("normalizeActiveRun", () => {
       completedDestinations: [],
     }));
     expect(result).not.toBeNull();
-    expect(result!.runDeck.length).toBe(9); // ranger default
+    expect(result!.runDeck.length).toBe(7); // ranger default
   });
 
   it("hydrates saved cards with library data", () => {

@@ -11,6 +11,7 @@ export type Screen =
   | "game-mode-select"
   | "character-select"
   | "difficulty-select"
+  | "draft-deck"
   | "battle"
   | "rewards"
   | "destination"
@@ -39,6 +40,7 @@ export const ROUTE_SCREENS = {
   GAME_MODE_SELECT: "game-mode-select",
   CHARACTER_SELECT: "character-select",
   DIFFICULTY_SELECT: "difficulty-select",
+  DRAFT_DECK: "draft-deck",
   BATTLE: "battle",
   REWARDS: "rewards",
   DESTINATION: "destination",

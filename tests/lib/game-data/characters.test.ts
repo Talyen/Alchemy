@@ -4,7 +4,16 @@ import type { CharacterId } from "@/lib/game-data/characters";
 
 describe("characters data integrity", () => {
   it("has all expected characters", () => {
-    const expectedIds: CharacterId[] = ["knight", "ranger", "rogue", "wizard"];
+    const expectedIds: CharacterId[] = [
+      "knight",
+      "ranger",
+      "rogue",
+      "wizard",
+      "alchemist",
+      "warlock",
+      "druid",
+      "wildcard",
+    ];
     for (const id of expectedIds) {
       expect(characters[id]).toBeDefined();
     }
@@ -18,15 +27,23 @@ describe("characters data integrity", () => {
     }
   });
 
-  it("each character has at least 5 cards in starting deck", () => {
+  it("each character has at least 5 cards in starting deck (except wildcard)", () => {
     for (const char of Object.values(characters)) {
-      expect(char.startingDeck.length).toBeGreaterThanOrEqual(5);
+      if (char.id === "wildcard") {
+        expect(char.startingDeck.length).toBe(0);
+      } else {
+        expect(char.startingDeck.length).toBeGreaterThanOrEqual(5);
+      }
     }
   });
 
-  it("each character has at least 1 keyword", () => {
+  it("each character has at least 1 keyword (except wildcard)", () => {
     for (const char of Object.values(characters)) {
-      expect(char.keywords.length).toBeGreaterThanOrEqual(1);
+      if (char.id === "wildcard") {
+        expect(char.keywords.length).toBe(0);
+      } else {
+        expect(char.keywords.length).toBeGreaterThanOrEqual(1);
+      }
     }
   });
 

@@ -560,11 +560,11 @@ export const cardLibrary: BattleCard[] = [
   {
     id: "blood-offering",
     title: "Blood Offering",
-    descriptionLines: ["Lose 3 Health", "Draw 2 Cards"],
+    descriptionLines: ["Lose 1 Health", "Draw 2 Cards"],
     art: bloodOffering,
     cost: 1,
     effects: [
-      { kind: "lose-health", amount: 3 },
+      { kind: "lose-health", amount: 1 },
       { kind: "draw-cards", amount: 2 },
     ],
   },

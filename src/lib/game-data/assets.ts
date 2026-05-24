@@ -89,6 +89,10 @@ import steal from "@/assets/optimized/steal.webp";
 import wish from "@/assets/optimized/wish.webp";
 import wizard from "@/assets/optimized/wizard.webp";
 import wolfCompanion from "@/assets/optimized/wolf-companion.webp";
+import alchemist from "@/assets/optimized/alchemist.webp";
+import warlock from "@/assets/optimized/warlock.webp";
+import druid from "@/assets/optimized/druid.webp";
+import wildcard from "@/assets/optimized/wildcard.webp";
 import boneCharm from "@/assets/optimized/bone-charm.webp";
 import brassCenser from "@/assets/optimized/brass-censer.webp";
 import cardBack from "@/assets/optimized/card-back.webp";
@@ -116,12 +120,13 @@ import faustianBargain from "@/assets/optimized/faustian-bargain.webp";
 import judgment from "@/assets/optimized/judgment.webp";
 import manaShield from "@/assets/optimized/mana-shield.webp";
 import placeholderCard from "@/assets/optimized/placeholder-card.webp";
-import serratedEdge from "@/assets/optimized/serrated-edge.webp";
+import textSerratedEdge from "@/assets/optimized/serrated-edge.webp";
 import smellingSalts from "@/assets/optimized/smelling-salts.webp";
 import smite from "@/assets/optimized/smite.webp";
 import sunderArmor from "@/assets/optimized/sunder-armor.webp";
 import placeholderEnemy from "@/assets/optimized/placeholder-enemy.webp";
 import placeholderTrinket from "@/assets/optimized/placeholder-trinket.webp";
+import bossCombat from "@/assets/optimized/boss-combat.webp";
 import placeholderDestination from "@/assets/optimized/placeholder-destination.webp";
 import huntersLodge from "@/assets/optimized/hunters-lodge.webp";
 import alchemyLab from "@/assets/optimized/alchemy-lab.webp";
@@ -265,7 +270,7 @@ export {
   placeholderCard,
   placeholderEnemy,
   prayer,
-  serratedEdge,
+  textSerratedEdge as serratedEdge,
   smellingSalts,
   smite,
   sunderArmor,
@@ -274,6 +279,7 @@ export {
   theBlightTreant,
   ironBear,
   placeholderTrinket,
+  bossCombat,
   placeholderDestination,
   huntersLodge,
   alchemyLab,
@@ -315,6 +321,10 @@ export const characterArt = {
   ranger,
   rogue,
   wizard,
+  alchemist,
+  warlock,
+  druid,
+  wildcard,
 } as const;
 
 export const cursorArt = {

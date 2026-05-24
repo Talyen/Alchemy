@@ -338,6 +338,21 @@ describe("ActiveRunDataSchema", () => {
     const result = parseActiveRun(activeRun({ contentSystemType: "wildwood" }));
     expect(result?.contentSystemType).toBe("campaign");
   });
+
+  it("defaults missing runTalentXP to empty object", () => {
+    const result = parseActiveRun(activeRun({}));
+    expect(result?.runTalentXP).toEqual({});
+  });
+
+  it("preserves runTalentXP when present", () => {
+    const result = parseActiveRun(activeRun({ runTalentXP: { burn: 10, poison: 5 } }));
+    expect(result?.runTalentXP).toEqual({ burn: 10, poison: 5 });
+  });
+
+  it("rejects invalid runTalentXP values and falls back to empty object", () => {
+    const result = parseActiveRun(activeRun({ runTalentXP: "invalid" }));
+    expect(result?.runTalentXP).toEqual({});
+  });
 });
 
 describe("DisplayModeSchema", () => {
@@ -469,7 +484,16 @@ describe("SaveDataSchema", () => {
     expect(result.activeRun).toBeNull();
     expect(result.materialInventory).toEqual({ wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 });
     expect(result.constructedBuildings["blacksmiths-forge"]).toBe(0);
-    expect(result.completedDifficulties).toEqual({ knight: [], rogue: [], wizard: [], ranger: [] });
+    expect(result.completedDifficulties).toEqual({
+      knight: [],
+      rogue: [],
+      wizard: [],
+      ranger: [],
+      alchemist: [],
+      warlock: [],
+      druid: [],
+      wildcard: [],
+    });
   });
 
   it("preserves current-format homestead tier records", () => {
@@ -618,19 +642,63 @@ describe("SaveDataSchema", () => {
   });
 
   it("preserves completedDifficulties from saved data", () => {
-    const result = parseSave({ completedDifficulties: { knight: ["difficulty-1", "difficulty-2"], rogue: [], wizard: ["difficulty-1"], ranger: [] } });
-    expect(result.completedDifficulties).toEqual({ knight: ["difficulty-1", "difficulty-2"], rogue: [], wizard: ["difficulty-1"], ranger: [] });
+    const result = parseSave({
+      completedDifficulties: {
+        knight: ["difficulty-1", "difficulty-2"],
+        rogue: [],
+        wizard: ["difficulty-1"],
+        ranger: [],
+        alchemist: [],
+        warlock: [],
+        druid: [],
+        wildcard: [],
+      },
+    });
+    expect(result.completedDifficulties).toEqual({
+      knight: ["difficulty-1", "difficulty-2"],
+      rogue: [],
+      wizard: ["difficulty-1"],
+      ranger: [],
+      alchemist: [],
+      warlock: [],
+      druid: [],
+      wildcard: [],
+    });
   });
 
   it("normalizes completedDifficulties while preserving future string ids", () => {
-    const result = parseSave({ completedDifficulties: { knight: ["difficulty-1", 3, "difficulty-future", "difficulty-1"], futureHero: ["difficulty-9"] } as never });
+    const result = parseSave({
+      completedDifficulties: {
+        knight: ["difficulty-1", 3, "difficulty-future", "difficulty-1"],
+        futureHero: ["difficulty-9"],
+      } as never,
+    });
 
-    expect(result.completedDifficulties).toEqual({ knight: ["difficulty-1", "difficulty-future"], rogue: [], wizard: [], ranger: [], futureHero: ["difficulty-9"] });
+    expect(result.completedDifficulties).toEqual({
+      knight: ["difficulty-1", "difficulty-future"],
+      rogue: [],
+      wizard: [],
+      ranger: [],
+      alchemist: [],
+      warlock: [],
+      druid: [],
+      wildcard: [],
+      futureHero: ["difficulty-9"],
+    });
   });
 
   it("falls back to default completedDifficulties for non-object", () => {
     const result = parseSave({ completedDifficulties: "invalid" as never });
-    expect(result.completedDifficulties).toEqual({ knight: [], rogue: [], wizard: [], ranger: [] });
+    expect(result.completedDifficulties).toEqual({
+      knight: [],
+      rogue: [],
+      wizard: [],
+      ranger: [],
+      alchemist: [],
+      warlock: [],
+      druid: [],
+      wildcard: [],
+    });
   });
 
   it("detects saves from a newer schema", () => {

@@ -4,6 +4,21 @@ import type { CSSProperties, HTMLAttributes } from "react";
 
 import { cn } from "@/lib/utils";
 
+function colorWithAlpha(color: string, alpha: number): string {
+  if (color.startsWith("#")) {
+    const clean = color.replace("#", "");
+    const r = parseInt(clean.slice(0, 2), 16);
+    const g = parseInt(clean.slice(2, 4), 16);
+    const b = parseInt(clean.slice(4, 6), 16);
+    return `rgba(${r},${g},${b},${alpha})`;
+  }
+  if (color.startsWith("hsl(")) {
+    const inner = color.slice(4, -1);
+    return `hsla(${inner} / ${alpha})`;
+  }
+  return `rgba(0,0,0,0)`;
+}
+
 interface ShineBorderProps extends HTMLAttributes<HTMLDivElement> {
   borderWidth?: number;
   duration?: number;
@@ -18,15 +33,16 @@ export function ShineBorder({
   style,
   ...props
 }: ShineBorderProps) {
+  const colors = Array.isArray(shineColor) ? shineColor : [shineColor];
+  const fade = colorWithAlpha(colors[0], 0.5);
+
   return (
     <div
       style={
         {
           "--border-width": `${borderWidth}px`,
           "--duration": `${duration}s`,
-          backgroundImage: `radial-gradient(transparent,transparent, ${
-            Array.isArray(shineColor) ? shineColor.join(",") : shineColor
-          },transparent,transparent)`,
+          backgroundImage: `radial-gradient(${fade},${fade}, ${colors.join(",")},${fade},${fade})`,
           backgroundSize: "300% 300%",
           mask: `linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)`,
           WebkitMask: `linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)`,

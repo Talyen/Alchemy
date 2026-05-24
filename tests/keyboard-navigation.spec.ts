@@ -30,7 +30,7 @@ test.describe("Keyboard Navigation", () => {
       const triggerRight = triggerBox.x + triggerBox.width;
       const menuRight = menuBox.x + menuBox.width;
       expect(Math.abs(menuRight - triggerRight)).toBeLessThan(80);
-      expect(menuBox.y + menuBox.height).toBeLessThanOrEqual(triggerBox.y + 8);
+      expect(menuBox.y).toBeGreaterThanOrEqual(triggerBox.y + triggerBox.height - 8);
     }
 
     // Close menu to resume play

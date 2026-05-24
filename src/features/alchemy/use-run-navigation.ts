@@ -18,7 +18,7 @@ import {
   type DifficultyModifier,
   type UnlockedTalents,
 } from "@/lib/game-data";
-import { playVictory, playDefeat, playGoldGain, stopAllSfx } from "@/lib/audio";
+import { playVictory, playDefeat, playGoldGain, stopAllSfx, playUISound } from "@/lib/audio";
 import { appendUnique, appendUniqueMany } from "@/lib/utils";
 import { CONSTANTS, type Destination, type Screen } from "./types";
 import { applyMaterialFindBonus, getEnemyMaterialLoot } from "@/lib/homestead/loot";
@@ -112,6 +112,8 @@ type ProcessVictoryInput = {
     addRunGold: (amount: number) => void;
     setRunPlayerHealth: (health: number) => void;
     setRunMaxHealth: (fn: (max: number) => number) => void;
+    destinationIndexInAct: number;
+    completedDestinations: Destination[];
   };
   activeLabyrinthRewardModifiers: LabyrinthModifierKind[];
   battleState: BattleState;
@@ -253,8 +255,13 @@ function processBattleVictory({
     labyrinthRewardModifiers,
   );
 
+  const previousDestination =
+    runState.destinationIndexInAct === 0
+      ? undefined
+      : runState.completedDestinations[runState.completedDestinations.length - 1];
   const destinations = sampleDestinationChoices(
     getAvailableDestinations({ currentHealth: battleState.playerHealth, currentGold: newGold }),
+    previousDestination,
   );
 
   const rewardStateObj = createVictoryRewardState({
@@ -353,6 +360,7 @@ export function useRunNavigation({
       selectedDifficulty: s.selectedDifficulty,
       contentSystemType: s.contentSystemType,
       unlockedTalents: s.unlockedTalents,
+      runTalentXP: s.runTalentXP,
     })),
   );
 
@@ -375,6 +383,7 @@ export function useRunNavigation({
       addRunGold: s.addRunGold,
       awardMysteryXP: s.awardMysteryXP,
       resetRunXP: s.resetRunXP,
+      finalizeRunXP: s.finalizeRunXP,
     })),
   );
 
@@ -407,6 +416,7 @@ export function useRunNavigation({
     })),
   );
 
+  const draftedDeckRef = useRef<BattleCard[] | null>(null);
   const setHoveredCardId = useScreenStore((s) => s.setHoveredCardId);
   const hasActiveRun = useScreenStore((s) => s.hasActiveRun);
   const labyrinthMap = useScreenStore((s) => s.labyrinthMap);
@@ -460,6 +470,9 @@ export function useRunNavigation({
         labyrinthPendingNode,
         activeLabyrinthModifiers,
         activeLabyrinthRewardModifiers,
+        runTalentXP: run.runTalentXP,
+        currentScreen: screen,
+        destinationChoices: rewardState.destinations,
       }),
     [
       run.characterId,
@@ -481,6 +494,9 @@ export function useRunNavigation({
       labyrinthPendingNode,
       activeLabyrinthModifiers,
       activeLabyrinthRewardModifiers,
+      run.runTalentXP,
+      screen,
+      rewardState.destinations,
     ],
   );
 
@@ -527,12 +543,13 @@ export function useRunNavigation({
       return;
     }
     awardRunEndMaterials();
+    run.finalizeRunXP();
     stopAllSfx();
     playDefeat();
     useBattleStore.getState().setHasActiveBattle(false);
     useScreenStore.getState().setHoveredCardId(null);
     setScreen(CONSTANTS.SCREENS.GAME_OVER);
-  }, [navigateTo, setScreen, onLabyrinthFailNode, awardRunEndMaterials]);
+  }, [navigateTo, setScreen, onLabyrinthFailNode, awardRunEndMaterials, run]);
 
   const handleBattleVictory = useCallback(() => {
     clearRewardTransitionTimer();
@@ -582,12 +599,17 @@ export function useRunNavigation({
       if (systemId === CONSTANTS.CONTENT_SYSTEMS.LABYRINTH) {
         navigateTo(CONSTANTS.SCREENS.LABYRINTH_MAP);
       } else if (systemId === CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN) {
-        getStore().setRewardState((prev) => {
-          const destinations =
-            prev.destinations.length > 0 ? prev.destinations : sampleDestinationChoices(getAvailableDestinations());
-          return withSelectedBossForDestinations(destinations, { ...prev, destinations });
+        const prevDest =
+          run.destinationIndexInAct === 0 ? undefined : run.completedDestinations[run.completedDestinations.length - 1];
+        navigateTo(CONSTANTS.SCREENS.DESTINATION, () => {
+          getStore().setRewardState((prev) => {
+            const destinations =
+              prev.destinations.length > 0
+                ? prev.destinations
+                : sampleDestinationChoices(getAvailableDestinations(), prevDest);
+            return withSelectedBossForDestinations(destinations, { ...prev, destinations });
+          });
         });
-        navigateTo(CONSTANTS.SCREENS.DESTINATION);
       } else if (systemId === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
         navigateTo(CONSTANTS.SCREENS.WILDWOOD_SELECT);
       }
@@ -611,6 +633,14 @@ export function useRunNavigation({
 
   function handleCharacterSelect(selectedId: CharacterId) {
     const systemType = pendingContentSystemType;
+
+    if (selectedId === "wildcard") {
+      getStore().setPendingCharacterId(selectedId);
+      draftedDeckRef.current = null;
+      navigateTo(CONSTANTS.SCREENS.DRAFT_DECK);
+      return;
+    }
+
     if (systemType === CONSTANTS.CONTENT_SYSTEMS.LABYRINTH) {
       initializeLabyrinthRun(selectedId);
       return;
@@ -634,6 +664,32 @@ export function useRunNavigation({
     }
 
     getStore().setPendingCharacterId(selectedId);
+    navigateTo(CONSTANTS.SCREENS.DIFFICULTY_SELECT);
+  }
+
+  function handleDraftComplete(draftedCards: BattleCard[]) {
+    draftedDeckRef.current = draftedCards;
+    const systemType = pendingContentSystemType;
+
+    if (systemType === CONSTANTS.CONTENT_SYSTEMS.LABYRINTH) {
+      initializeLabyrinthRun("wildcard");
+      return;
+    }
+    if (systemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
+      initializeWildwoodRun("wildcard");
+      return;
+    }
+
+    const completed = completedDifficulties["wildcard"] ?? [];
+    const hasCompletedNovice = completed.includes(DEFAULT_CAMPAIGN_DIFFICULTY_ID);
+    if (!hasCompletedNovice) {
+      const { freshDeck, totalStartGold } = initializeRunForDifficulty("wildcard", DEFAULT_CAMPAIGN_DIFFICULTY_ID);
+      const modifiers = getDifficultyModifiers("wildcard", DEFAULT_CAMPAIGN_DIFFICULTY_ID);
+      onStartBattle(freshDeck, totalStartGold, DEFAULT_BATTLE_ENEMY_TYPE, modifiers);
+      navigateTo(CONSTANTS.SCREENS.BATTLE);
+      return;
+    }
+
     navigateTo(CONSTANTS.SCREENS.DIFFICULTY_SELECT);
   }
 
@@ -684,7 +740,7 @@ export function useRunNavigation({
     if (options.playStartGoldSound && snapshot.runGold > RUN_NAV_CONSTANTS.ZERO) {
       playGoldGain();
     }
-    if (options.discoverStarterDeck) {
+    if (options.discoverStarterDeck || characterId === "wildcard") {
       setDiscoveredCardIds((current) =>
         appendUniqueMany(
           current,
@@ -705,14 +761,19 @@ export function useRunNavigation({
     difficultyId?: DifficultyId | null,
   ) {
     const homesteadEffects = useHomesteadStore.getState().effects;
-    return createRunStartSnapshot({
+    const baseInput = {
       characterId,
       contentSystemType,
       difficultyId,
       talentStartGold: talents.talentEffects.startGold,
       homesteadStartGold: homesteadEffects.startGold,
       homesteadStartMaxHealthBonus: homesteadEffects.startMaxHealthBonus,
-    });
+    };
+    return createRunStartSnapshot(
+      characterId === "wildcard" && draftedDeckRef.current
+        ? { ...baseInput, draftedDeck: draftedDeckRef.current }
+        : baseInput,
+    );
   }
 
   function applyRunStartSnapshot(snapshot: RunStartSnapshot) {
@@ -775,11 +836,10 @@ export function useRunNavigation({
     const setReward = () => store.setRewardState(nextRewardState);
 
     if (route === CONSTANTS.REWARD_ROUTES.COMPANION_REWARD) {
-      store.setRewardState(nextRewardState);
       if (clearCompanion) {
         store.setCompanionRewardCards(null);
       }
-      navigateTo(CONSTANTS.SCREENS.REWARDS);
+      navigateTo(CONSTANTS.SCREENS.REWARDS, setReward);
       return;
     }
 
@@ -825,6 +885,7 @@ export function useRunNavigation({
         setDiscoveredCardIds,
         setDiscoveredTrinketIds,
       });
+      playUISound("talentUnlock");
     }
 
     if (result.grantAlchemistReward) {
@@ -864,11 +925,13 @@ export function useRunNavigation({
 
   function beginMysteryEvent() {
     mystery.beginMysteryEvent(() => navigateTo(CONSTANTS.SCREENS.MYSTERY));
+    playUISound("musicBoxMystery");
   }
 
   function endLabyrinthRun() {
     if (run.contentSystemType !== CONSTANTS.CONTENT_SYSTEMS.LABYRINTH) return;
     awardRunEndMaterials();
+    run.finalizeRunXP();
     stopAllSfx();
     playDefeat();
     setHasActiveBattle(false);
@@ -892,18 +955,20 @@ export function useRunNavigation({
     run.setCurrentAct((p) => p + RUN_NAV_CONSTANTS.INCREMENT);
     run.setDestinationIndexInAct(RUN_NAV_CONSTANTS.STARTING_DESTINATION_INDEX);
     run.setCompletedDestinations([]);
-    getStore().setRewardState(
-      createDestinationRewardState(
-        sampleDestinationChoices(
-          getAvailableDestinations({ destinationIndexInAct: RUN_NAV_CONSTANTS.STARTING_DESTINATION_INDEX }),
+    navigateTo(CONSTANTS.SCREENS.DESTINATION, () => {
+      getStore().setRewardState(
+        createDestinationRewardState(
+          sampleDestinationChoices(
+            getAvailableDestinations({ destinationIndexInAct: RUN_NAV_CONSTANTS.STARTING_DESTINATION_INDEX }),
+          ),
         ),
-      ),
-    );
-    navigateTo(CONSTANTS.SCREENS.DESTINATION);
+      );
+    });
   }
 
   function completeRunVictory(displayMaterials: MaterialInventory | null = null, onRenderedScreenCommit?: () => void) {
     awardRunEndMaterials(displayMaterials);
+    run.finalizeRunXP();
     setHasActiveBattle(false);
     getStore().setHasActiveRun(false);
     navigateTo(CONSTANTS.SCREENS.RUN_VICTORY, onRenderedScreenCommit);
@@ -917,10 +982,15 @@ export function useRunNavigation({
       navigateTo(CONSTANTS.SCREENS.LABYRINTH_MAP);
       return;
     }
-    getStore().setRewardState(createDestinationRewardState(sampleDestinationChoices(getAvailableDestinations())));
+    const prevDest =
+      run.destinationIndexInAct === 0 ? undefined : run.completedDestinations[run.completedDestinations.length - 1];
     setHoveredCardId(null);
     mystery.clearCardChoices();
-    navigateTo(CONSTANTS.SCREENS.DESTINATION);
+    navigateTo(CONSTANTS.SCREENS.DESTINATION, () => {
+      getStore().setRewardState(
+        createDestinationRewardState(sampleDestinationChoices(getAvailableDestinations(), prevDest)),
+      );
+    });
   }
 
   function handleCampfireContinue() {
@@ -936,6 +1006,7 @@ export function useRunNavigation({
     run.setRunDeck(deck);
     getStore().setCorruptionResult(result);
     setDiscoveredCardIds((current) => appendUnique(current, result.corruptedCard.id));
+    playUISound("musicBoxMystery");
   }
 
   function handleCorruptionContinue() {
@@ -1034,6 +1105,7 @@ export function useRunNavigation({
     beginMysteryEvent,
     endLabyrinthRun,
     handleCharacterSelect,
+    handleDraftComplete,
     handleDifficultySelect,
     handleBackFromDifficultySelect,
     handleWildwoodBossSelect,

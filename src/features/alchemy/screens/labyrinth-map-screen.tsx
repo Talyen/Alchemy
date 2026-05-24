@@ -5,9 +5,8 @@
  */
 
 import { type CSSProperties, type ReactNode, useLayoutEffect, useRef, useState } from "react";
-import { Crown, DoorOpen, FlaskConical, Heart, Menu, ShoppingCart, Skull, Sparkles, Star, Swords } from "lucide-react";
+import { Crown, DoorOpen, FlaskConical, Heart, ShoppingCart, Skull, Sparkles, Star, Swords } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
 import { ShineBorder } from "@/components/ui/shine-border";
 import { cn } from "@/lib/utils";
 import type { LabyrinthMap, LabyrinthModifierKind, LabyrinthNodeType } from "@/lib/content-systems/types";
@@ -15,7 +14,7 @@ import { NODE_TYPE_LABELS } from "@/lib/content-systems/labyrinth/data";
 import { ALL_LABYRINTH_MODIFIERS, REWARD_MODIFIER_KINDS } from "@/lib/content-systems/labyrinth/modifiers";
 import { canEnterLabyrinthNode } from "@/lib/content-systems/labyrinth/map-generation";
 import { keywordDefinitions, type KeywordId } from "@/lib/game-data";
-import { ScreenHeader } from "../ui/shared-ui";
+import { HamburgerTrigger, ScreenHeader } from "../ui/shared-ui";
 import { useScreenStore } from "../stores/screen-store";
 
 type Props = {
@@ -122,15 +121,9 @@ export function LabyrinthMapScreen({ onNodeClick, onOpenMenu }: Props) {
         className="relative w-full max-w-[920px] rounded-[22px] border border-stone-500 bg-stone-950 p-4 sm:p-5"
         style={{ "--labyrinth-node-size": "clamp(2.35rem, 4.8vw, 3.45rem)" } as CSSProperties}
       >
-        <Button
-          variant="outline"
-          size="icon"
-          className="absolute right-4 top-4 z-30 h-9 w-9 text-amber-100 hover:text-amber-100"
-          onClick={(event) => onOpenMenu(event.currentTarget.getBoundingClientRect())}
-          aria-label="Open labyrinth menu"
-        >
-          <Menu className="h-4 w-4" />
-        </Button>
+        <div className="absolute right-4 top-4 z-30">
+          <HamburgerTrigger onClick={onOpenMenu} label="Open labyrinth menu" />
+        </div>
 
         <div className="relative mx-auto aspect-[9/8] w-full max-w-[85.19cqh] p-[clamp(0.6rem,1.4vw,1rem)]">
           <div className="relative h-full w-full">

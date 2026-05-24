@@ -8,4 +8,7 @@ coverage/
 reports/
 .env
 .DS_Store
+scratch/
+.vite/
 screenshot-*
+NUL

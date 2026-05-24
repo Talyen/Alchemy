@@ -8,7 +8,7 @@ import {
   type BattleState,
   type CombatTextEvent,
 } from "./types";
-import { getEnemyDamageMultiplier } from "./status-effects";
+import { getEnemyDamageMultiplier, applyPoisonTalentRiders } from "./status-effects";
 import { emitOverhealBlockText, mergeCombatText } from "./combat-text";
 import { resolvePlayerCrowdControlTrigger } from "./status-cc";
 import { decayArmorAfterDamage, decayHalvedStatus, rollPercent } from "./status-helpers";
@@ -58,7 +58,7 @@ function tickBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
     amount: finalDamage,
   });
   let nextBurn = state.enemyStatuses.burn;
-  if (rollPercent(state.talentEffects.burnDoubleChance)) {
+  if (rollPercent(state.talentEffects.burnDoubleChance, state.rng)) {
     nextBurn *= HALF_DIVISOR;
   } else {
     nextBurn = decayHalvedStatus(nextBurn);
@@ -72,7 +72,7 @@ function tickBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
 }
 
 function applyParasiticBloomLeech(state: BattleState, damage: number, combatTexts: CombatTextEvent[]): BattleState {
-  if (!rollPercent(state.trinketEffects.parasiticBloomLeechChance)) return state;
+  if (!rollPercent(state.trinketEffects.parasiticBloomLeechChance, state.rng)) return state;
   mergeCombatText(combatTexts, {
     target: CONSTANTS.TARGETS.PLAYER,
     kind: CONSTANTS.COMBAT_TEXT_KINDS.HEAL,
@@ -99,7 +99,7 @@ function tickPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
   const isFrozenPreserved = state.enemyFreezeSkipTurns > 0 && state.talentEffects.freezePreventsPoisonDecay;
   let nextPoison = state.enemyStatuses.poison;
   if (!isFrozenPreserved) {
-    if (rollPercent(state.talentEffects.poisonGainChance)) {
+    if (rollPercent(state.talentEffects.poisonGainChance, state.rng)) {
       nextPoison += POISON_GAIN_AMOUNT;
     } else {
       nextPoison = Math.max(0, nextPoison - POISON_DECAY_AMOUNT);
@@ -111,6 +111,7 @@ function tickPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
     enemyStatuses: { ...state.enemyStatuses, [CONSTANTS.STATUS_NAMES.POISON]: nextPoison },
   };
   nextState = applyParasiticBloomLeech(nextState, finalDamage, combatTexts);
+  nextState = applyPoisonTalentRiders(nextState, finalDamage, combatTexts);
   return decayArmorAfterDamage(nextState, finalDamage, CONSTANTS.TARGETS.ENEMY, combatTexts);
 }
 
@@ -214,8 +215,11 @@ function tickPlayerBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
   const reducedDamage = state.talentEffects.armorMitigatesBleed
     ? Math.max(0, damage - state.playerStatuses.armor)
     : damage;
+  const finalDamage = state.talentEffects.receiveHalfBleedDamage
+    ? Math.round(reducedDamage / HALF_DIVISOR)
+    : reducedDamage;
   const nextState = {
-    ...applyPlayerCombatDamage(state, reducedDamage),
+    ...applyPlayerCombatDamage(state, finalDamage),
     playerStatuses: { ...state.playerStatuses, [CONSTANTS.STATUS_NAMES.BLEED]: CONSTANTS.CLEAR_STATUS_STACK },
   };
   const healthLost = state.playerHealth - nextState.playerHealth;
@@ -227,7 +231,7 @@ function tickPlayerBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
       amount: healthLost,
     });
   }
-  return decayArmorAfterDamage(nextState, reducedDamage, CONSTANTS.TARGETS.PLAYER, combatTexts);
+  return decayArmorAfterDamage(nextState, finalDamage, CONSTANTS.TARGETS.PLAYER, combatTexts);
 }
 
 export function tickPlayerStatuses(state: BattleState, combatTexts: CombatTextEvent[]) {

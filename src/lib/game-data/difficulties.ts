@@ -16,6 +16,8 @@ export type DifficultyModifier =
   | { kind: "start-max-mana"; amount: number }
   | { kind: "gold-multiplier"; amount: number }
   | { kind: "start-companion" }
+  | { kind: "enemy-health-multiplier"; amount: number }
+  | { kind: "enemy-damage-multiplier"; amount: number }
   // Labyrinth-only modifiers
   | { kind: "labyrinth-sturdy" }
   | { kind: "labyrinth-burning-ground" }
@@ -28,6 +30,7 @@ export type DifficultyDefinition = {
   description: string;
   order: number;
   modifiers: DifficultyModifier[];
+  xpMultiplier?: number;
 };
 
 export type ClassDifficultyConfig = {
@@ -35,86 +38,70 @@ export type ClassDifficultyConfig = {
   difficulties: DifficultyDefinition[];
 };
 
+export const GLOBAL_DIFFICULTIES: DifficultyDefinition[] = [
+  {
+    id: "difficulty-1",
+    name: "Novice",
+    description: "No Modifiers",
+    order: 1,
+    modifiers: [],
+  },
+  {
+    id: "difficulty-2",
+    name: "Adventurer",
+    description: "+20% Enemy Health and Damage",
+    order: 2,
+    xpMultiplier: 1.2,
+    modifiers: [
+      { kind: "enemy-health-multiplier", amount: 1.2 },
+      { kind: "enemy-damage-multiplier", amount: 1.2 },
+    ],
+  },
+  {
+    id: "difficulty-3",
+    name: "Legend",
+    description: "+40% Enemy Health and Damage",
+    order: 3,
+    xpMultiplier: 1.4,
+    modifiers: [
+      { kind: "enemy-health-multiplier", amount: 1.4 },
+      { kind: "enemy-damage-multiplier", amount: 1.4 },
+    ],
+  },
+];
+
 export const difficultyConfigs: Record<CharacterId, ClassDifficultyConfig> = {
   knight: {
     headerTitle: "A Knight's Journey",
-    difficulties: [
-      { id: "difficulty-1", name: "Novice", description: "No modifiers", order: 1, modifiers: [] },
-      {
-        id: "difficulty-2",
-        name: "Adventurer",
-        description: "Enemies start combat with 2 Armor",
-        order: 2,
-        modifiers: [{ kind: "enemy-starting-armor", amount: 2 }],
-      },
-      {
-        id: "difficulty-3",
-        name: "Legend",
-        description: "Enemies gain 1 Forge each turn",
-        order: 3,
-        modifiers: [{ kind: "enemy-gains-forge-each-turn" }],
-      },
-    ],
+    difficulties: GLOBAL_DIFFICULTIES,
   },
   rogue: {
     headerTitle: "A Rogue's Tale",
-    difficulties: [
-      { id: "difficulty-1", name: "Novice", description: "No modifiers", order: 1, modifiers: [] },
-      {
-        id: "difficulty-2",
-        name: "Adventurer",
-        description: "Enemy Poison damage is increased",
-        order: 2,
-        modifiers: [{ kind: "increase-enemy-status", status: "poison", amount: 1 }],
-      },
-      {
-        id: "difficulty-3",
-        name: "Legend",
-        description: "Enemy Bleed damage is increased",
-        order: 3,
-        modifiers: [{ kind: "increase-enemy-status", status: "bleed", amount: 3 }],
-      },
-    ],
+    difficulties: GLOBAL_DIFFICULTIES,
   },
   wizard: {
     headerTitle: "A Wizard's Saga",
-    difficulties: [
-      { id: "difficulty-1", name: "Novice", description: "No modifiers", order: 1, modifiers: [] },
-      {
-        id: "difficulty-2",
-        name: "Adventurer",
-        description: "Enemy Burn damage is increased",
-        order: 2,
-        modifiers: [{ kind: "increase-enemy-status", status: "burn", amount: 2 }],
-      },
-      {
-        id: "difficulty-3",
-        name: "Legend",
-        description: "Enemy Freeze damage is increased",
-        order: 3,
-        modifiers: [{ kind: "increase-enemy-status", status: "freeze", amount: 3 }],
-      },
-    ],
+    difficulties: GLOBAL_DIFFICULTIES,
   },
   ranger: {
     headerTitle: "A Ranger's Fable",
-    difficulties: [
-      { id: "difficulty-1", name: "Novice", description: "No modifiers", order: 1, modifiers: [] },
-      {
-        id: "difficulty-2",
-        name: "Adventurer",
-        description: "Enemy Nature damage is increased by 2",
-        order: 2,
-        modifiers: [{ kind: "increase-enemy-damage", amount: 2 }],
-      },
-      {
-        id: "difficulty-3",
-        name: "Legend",
-        description: "Enemy Bleed damage is increased",
-        order: 3,
-        modifiers: [{ kind: "increase-enemy-status", status: "bleed", amount: 3 }],
-      },
-    ],
+    difficulties: GLOBAL_DIFFICULTIES,
+  },
+  alchemist: {
+    headerTitle: "An Alchemist's Journey",
+    difficulties: GLOBAL_DIFFICULTIES,
+  },
+  warlock: {
+    headerTitle: "A Warlock's Journey",
+    difficulties: GLOBAL_DIFFICULTIES,
+  },
+  druid: {
+    headerTitle: "A Druid's Journey",
+    difficulties: GLOBAL_DIFFICULTIES,
+  },
+  wildcard: {
+    headerTitle: "A Wildcard's Journey",
+    difficulties: GLOBAL_DIFFICULTIES,
   },
 };
 
@@ -138,4 +125,11 @@ export function getGoldMultiplier(characterId: CharacterId, difficultyId: Diffic
   const modifiers = getDifficultyModifiers(characterId, difficultyId);
   const goldMod = modifiers.find((m) => m.kind === "gold-multiplier");
   return goldMod?.amount ?? 1;
+}
+
+const XP_MULTIPLIERS = new Map(GLOBAL_DIFFICULTIES.map((d) => [d.id, d.xpMultiplier ?? 1] as const));
+
+export function getDifficultyXPMultiplier(difficultyId: DifficultyId | null): number {
+  if (!difficultyId) return 1.0;
+  return XP_MULTIPLIERS.get(difficultyId) ?? 1.0;
 }

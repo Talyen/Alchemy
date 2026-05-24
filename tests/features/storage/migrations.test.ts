@@ -220,7 +220,18 @@ describe("normalizeUnlockedTalents", () => {
 
 describe("normalizeCompletedDifficulties", () => {
   it("preserves existing completions", () => {
-    const result = normalizeSaveData({ completedDifficulties: { knight: ["difficulty-1"], rogue: [], wizard: [], ranger: [] } });
+    const result = normalizeSaveData({
+      completedDifficulties: {
+        knight: ["difficulty-1"],
+        rogue: [],
+        wizard: [],
+        ranger: [],
+      alchemist: [],
+      warlock: [],
+      druid: [],
+      wildcard: [],
+      },
+    });
     expect(result.completedDifficulties.knight).toEqual(["difficulty-1"]);
   });
 
@@ -229,6 +240,10 @@ describe("normalizeCompletedDifficulties", () => {
     expect(result.completedDifficulties.rogue).toEqual([]);
     expect(result.completedDifficulties.wizard).toEqual([]);
     expect(result.completedDifficulties.ranger).toEqual([]);
+    expect(result.completedDifficulties.alchemist).toEqual([]);
+    expect(result.completedDifficulties.warlock).toEqual([]);
+    expect(result.completedDifficulties.druid).toEqual([]);
+    expect(result.completedDifficulties.wildcard).toEqual([]);
   });
 });
 
@@ -285,7 +300,16 @@ describe("normalizeSaveData", () => {
       plantedFarms: {} as Record<string, number>,
       completedResearch: {} as Record<string, number>,
       bondedCompanions: {} as Record<string, number>,
-      completedDifficulties: { knight: ["difficulty-1"], rogue: [], wizard: [], ranger: [] },
+      completedDifficulties: {
+        knight: ["difficulty-1"],
+        rogue: [],
+        wizard: [],
+        ranger: [],
+      alchemist: [],
+      warlock: [],
+      druid: [],
+      wildcard: [],
+      },
     };
     const result = normalizeSaveData(save);
     expect(result.selectedAspectRatio).toBe("16:9");

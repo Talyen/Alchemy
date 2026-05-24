@@ -4,8 +4,8 @@
 // browser viewport so preview emulation and desktop scaling stay consistent.
 // Pixel bounds converted to cqh/cqw so the layout is resolution-independent
 // (the stage container may be 1080, 2160, or any other height in the future).
-export const battleCardWidthClass = "w-[clamp(20.56cqh,22cqh,31.11cqh)]";
-export const handCardWidthClass = "w-[clamp(17.5cqh,18.7cqh,26.48cqh)]";
+export const battleCardWidthClass = "w-[clamp(24.76cqh,25.16cqh,37.48cqh)]";
+export const handCardWidthClass = "w-[clamp(22.28cqh,22.64cqh,33.73cqh)]";
 export const collectionCardWidthClass = "w-[clamp(14.44cqh,18.7cqh,19.44cqh)]";
 export const viewCardWidthClass = "w-[clamp(17.5cqh,17.78cqh,26.48cqh)]";
 export const collectionTileWidthClass = "w-[clamp(21cqh,21.34cqh,31.78cqh)]"; // 1.2× viewCardWidthClass for collection cards/bestiary tiles.
@@ -17,8 +17,8 @@ export const mobileStageBattleCardWidthClass = "w-[clamp(30cqh,33cqh,36.67cqh)]"
 export const mobileStageHandCardWidthClass = "w-[clamp(22.22cqh,24cqh,27.78cqh)]";
 
 // Boss variants — 1.3× the standard battle card width for wider status panes.
-export const bossCardWidthClass = "w-[calc(clamp(20.56cqh,22cqh,31.11cqh)*1.3)]";
-export const bossMobileStageBattleCardWidthClass = "w-[calc(clamp(30cqh,33cqh,36.67cqh)*1.3)]";
+export const bossCardWidthClass = "w-[calc(clamp(24.76cqh,25.16cqh,37.48cqh)*1.3)]";
+export const bossMobileStageBattleCardWidthClass = "w-[calc(clamp(24.76cqh,25.16cqh,37.48cqh)*1.3)]";
 
 // Card and popup surfaces stay centralized so repeated game widgets share the
 // same tactile fantasy material treatment.

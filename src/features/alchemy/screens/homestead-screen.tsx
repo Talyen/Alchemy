@@ -3,7 +3,7 @@
 // materials are sufficient. Completed nodes are dimmed with a checkmark.
 
 import { useState, useMemo, type ReactNode } from "react";
-import { ChevronLeft, ChevronRight, FlaskConical, Hammer, House, PawPrint, Star, Swords, Wheat } from "lucide-react";
+import { ChevronLeft, ChevronRight, FlaskConical, Hammer, PawPrint, Star, Wheat } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -33,13 +33,12 @@ import orchard from "@/assets/optimized/orchard.webp";
 import placeholderHomestead from "@/assets/optimized/placeholder-homestead.webp";
 
 import { DetailPopup } from "../ui/card-ui";
-import { DisabledTooltip, PageLayout, ScreenHeader } from "../ui/shared-ui";
+import { DisabledTooltip, HamburgerTrigger, PageLayout, ScreenHeader } from "../ui/shared-ui";
 import { PressableMotion } from "../ui/pressable-motion";
 import { MaterialIcon, matIconMap, matPillStyle, matTextColor } from "../ui/material-icons";
 import { playUISound } from "@/lib/audio";
 import { cardLibrary, keywordDefinitions, type CompanionId } from "@/lib/game-data";
 import { COMPANION_BOND_TIERS, COMPANION_MAX_TIER } from "../use-homestead-state";
-import { useBattleStore } from "../stores/battle-store";
 
 import { clearTiltFromEvent, setTiltFromEvent, tokenizeDescription } from "../utils";
 import { getEffectiveCardDescriptionLines } from "../utils/card-description";
@@ -244,17 +243,20 @@ function CompanionCardNode({
             }
           />
         )}
-        <div className="group tilt-surface w-full overflow-hidden rounded-[18px] p-3">
+        <div className="group w-full overflow-hidden rounded-[18px] p-3">
           <div
             className={cn(
-              "relative mx-auto flex items-center justify-center overflow-hidden rounded-[18px] bg-stone-900",
+              "tilt-surface relative mx-auto flex items-center justify-center overflow-hidden rounded-[18px] bg-stone-900",
               HOMESTEAD_CONFIG.companionPageWidth,
               HOMESTEAD_CONFIG.companionAspectRatio,
               isComplete && "bg-stone-800/70",
             )}
             onMouseEnter={() => setHoveredItemId(card.id)}
-            onMouseLeave={() => setHoveredItemId(null)}
             onMouseMove={setTiltFromEvent}
+            onMouseLeave={(e) => {
+              setHoveredItemId(null);
+              clearTiltFromEvent(e);
+            }}
           >
             <img
               src={card.art}
@@ -392,10 +394,10 @@ function HomesteadUpgradeNode({
         onMouseLeave={() => setHoveredItemId(null)}
       >
         {detailTooltip}
-        <div className="group tilt-surface w-full overflow-hidden rounded-[18px] p-3">
+        <div className="group w-full overflow-hidden rounded-[18px] p-3">
           <div
             className={cn(
-              "relative mx-auto flex w-full items-center justify-center overflow-hidden rounded-[18px] bg-stone-900",
+              "tilt-surface relative mx-auto flex w-full items-center justify-center overflow-hidden rounded-[18px] bg-stone-900",
               HOMESTEAD_CONFIG.artAspectRatio,
               isCompleted && "bg-stone-800/70",
             )}
@@ -453,8 +455,7 @@ export function HomesteadScreen({
   completedResearch,
   bondedCompanions,
   discoveredCardIds,
-  onMainMenu,
-  onReturnToBattle,
+  onOpenMenu,
   onConstructBuilding,
   onPlantFarm,
   onCompleteResearch,
@@ -466,14 +467,12 @@ export function HomesteadScreen({
   completedResearch: Record<ResearchId, number>;
   bondedCompanions: Record<CompanionId, number>;
   discoveredCardIds: string[];
-  onMainMenu: () => void;
-  onReturnToBattle: () => void;
+  onOpenMenu: (rect?: DOMRect) => void;
   onConstructBuilding: (id: BuildingId) => boolean;
   onPlantFarm: (id: FarmId) => boolean;
   onCompleteResearch: (id: ResearchId) => boolean;
   onBondCompanion: (id: CompanionId) => boolean;
 }) {
-  const hasActiveBattle = useBattleStore((s) => s.hasActiveBattle);
   const [tab, setTab] = useState<Tab>("buildings");
   const [companionPage, setCompanionPage] = useState(0);
   const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
@@ -505,8 +504,13 @@ export function HomesteadScreen({
 
   return (
     <PageLayout>
-      <div className="alchemy-shell relative flex min-h-[48.15cqh] w-full max-w-6xl flex-col rounded-[28px] px-6 py-7 sm:px-8">
-        <ScreenHeader title="Homestead" />
+      <div className="alchemy-shell relative flex min-h-[48.15cqh] w-full max-w-6xl flex-col rounded-[28px] p-7">
+        <div className="relative flex w-full items-center justify-center">
+          <ScreenHeader title="Homestead" />
+          <div className="absolute right-0 top-1/2 -translate-y-1/2">
+            <HamburgerTrigger onClick={onOpenMenu} label="Open homestead menu" />
+          </div>
+        </div>
 
         <MaterialsBar materialInventory={materialInventory} />
         <HomesteadTabs activeTab={tab} onSelectTab={setTab} />
@@ -605,14 +609,6 @@ export function HomesteadScreen({
               <ChevronLeft className="h-5 w-5" />
             </Button>
           )}
-          <Button variant="outline" onClick={onMainMenu}>
-            <House className="h-4 w-4" /> Main Menu
-          </Button>
-          {hasActiveBattle ? (
-            <Button onClick={onReturnToBattle}>
-              <Swords className="h-4 w-4" /> Return to Battle
-            </Button>
-          ) : null}
           {tab === "companions" && companionPages > 1 && (
             <Button
               aria-label="Next page"

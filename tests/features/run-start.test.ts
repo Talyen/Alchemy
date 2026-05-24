@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getStartingDeck } from "@/lib/game-data";
+import { getStartingDeck, type BattleCard } from "@/lib/game-data";
 import { MAX_PLAYER_HEALTH } from "@/lib/game-constants";
 import { createRunStartSnapshot } from "@/features/alchemy/run/run-start";
 
@@ -67,5 +67,42 @@ describe("createRunStartSnapshot", () => {
     expect(result.hasActiveRun).toBe(false);
     expect(result.runMaxHealth).toBe(MAX_PLAYER_HEALTH + 4);
     expect(result.freshDeck.map((card) => card.id)).toEqual(getStartingDeck("wizard").map((card) => card.id));
+  });
+
+  it("uses draftedDeck for wildcard campaign snapshot", () => {
+    const draftedCards: BattleCard[] = [
+      { id: "slash", title: "Slash", descriptionLines: [""], art: "", cost: 1, effects: [{ kind: "damage", damageType: "physical", amount: 4 }] },
+      { id: "block", title: "Block", descriptionLines: [""], art: "", cost: 1, effects: [{ kind: "player-status", status: "block", amount: 6 }] },
+    ];
+    const result = createRunStartSnapshot({
+      characterId: "wildcard",
+      contentSystemType: "campaign",
+      difficultyId: "difficulty-1",
+      talentStartGold: 0,
+      homesteadStartGold: 0,
+      homesteadStartMaxHealthBonus: 0,
+      draftedDeck: draftedCards,
+    });
+
+    expect(result.characterId).toBe("wildcard");
+    expect(result.freshDeck).toEqual(draftedCards);
+    expect(result.freshDeck).not.toEqual(getStartingDeck("wildcard"));
+    expect(result.contentSystemType).toBe("campaign");
+    expect(result.selectedDifficulty).toBe("difficulty-1");
+    expect(result.hasActiveRun).toBe(true);
+  });
+
+  it("falls back to character starting deck when no draftedDeck provided for wildcard", () => {
+    const result = createRunStartSnapshot({
+      characterId: "wildcard",
+      contentSystemType: "campaign",
+      difficultyId: "difficulty-1",
+      talentStartGold: 0,
+      homesteadStartGold: 0,
+      homesteadStartMaxHealthBonus: 0,
+    });
+
+    expect(result.freshDeck).toEqual(getStartingDeck("wildcard"));
+    expect(result.freshDeck).toEqual([]);
   });
 });

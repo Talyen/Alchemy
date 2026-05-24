@@ -26,6 +26,7 @@ function buildCompanionCard(
               e.amount +
               companionBondLevel +
               talentEffects.companionDamage +
+              (e.damageType === "bleed" ? talentEffects.companionBleedDamageBonus : 0) +
               trinketEffects.companionDamageBonus +
               companionDamageBuff +
               (enemyFreezeSkipTurns > 0 ? talentEffects.companionVsFrozenBonus : 0),

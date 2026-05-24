@@ -6,6 +6,7 @@ import {
   DEFAULT_DESTINATION_WEIGHT,
   DESTINATION_CHOICES,
   DESTINATIONS_PER_ACT,
+  PREVIOUS_DESTINATION_WEIGHT,
 } from "@/lib/game-constants";
 
 import { getAvailableDestinations as getFilteredDestinations } from "../config";
@@ -38,15 +39,19 @@ export function getRunAvailableDestinations({
 }
 
 // Creates the visible destination choices with the shared route count constant.
-export function sampleDestinationChoices(destinations: Destination[]): Destination[] {
+// The previousDestination (room type just visited) gets a reduced weight.
+export function sampleDestinationChoices(
+  destinations: Destination[],
+  previousDestination?: Destination,
+): Destination[] {
   const choices: Destination[] = [];
   const remaining = [...destinations];
 
   while (choices.length < DESTINATION_CHOICES && remaining.length > 0) {
-    const totalWeight = remaining.reduce((sum, destination) => sum + getDestinationWeight(destination), 0);
+    const totalWeight = remaining.reduce((sum, dest) => sum + getDestinationWeight(dest, previousDestination), 0);
     let roll = Math.random() * totalWeight;
-    const selectedIndex = remaining.findIndex((destination) => {
-      roll -= getDestinationWeight(destination);
+    const selectedIndex = remaining.findIndex((dest) => {
+      roll -= getDestinationWeight(dest, previousDestination);
       return roll < 0;
     });
     const [selected] = remaining.splice(selectedIndex >= 0 ? selectedIndex : remaining.length - 1, 1);
@@ -57,6 +62,9 @@ export function sampleDestinationChoices(destinations: Destination[]): Destinati
 }
 
 // Rare route weighting lives with sampling so availability rules stay purely boolean.
-export function getDestinationWeight(destination: Destination) {
-  return destination === DESTINATIONS.CORRUPTION ? CORRUPTION_DESTINATION_WEIGHT : DEFAULT_DESTINATION_WEIGHT;
+// The previous destination gets a reduced weight to de-prioritize it.
+export function getDestinationWeight(destination: Destination, previousDestination?: Destination) {
+  if (destination === previousDestination) return PREVIOUS_DESTINATION_WEIGHT;
+  if (destination === DESTINATIONS.CORRUPTION) return CORRUPTION_DESTINATION_WEIGHT;
+  return DEFAULT_DESTINATION_WEIGHT;
 }

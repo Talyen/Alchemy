@@ -129,10 +129,8 @@ function checkHealthThresholds(
 }
 
 function applyPhysicalForgeBonus(state: BattleState, effect: EnemyAttackEffect & { kind: "damage" }) {
-  let remainingDamage = effect.amount;
-  if (effect.damageType !== "physical") return remainingDamage;
-  remainingDamage = Math.max(0, remainingDamage - state.talentEffects.bleedEnemyDamageReduction);
-  return remainingDamage + state.enemyMitigation.forge;
+  if (effect.damageType !== "physical") return effect.amount;
+  return effect.amount + state.enemyMitigation.forge;
 }
 
 function computeEffectiveBlock(state: BattleState, effect: EnemyAttackEffect & { kind: "damage" }) {
@@ -167,6 +165,9 @@ function calculateBlockAndArmorMitigation(
   let remainingDamage = applyPhysicalForgeBonus(state, effect);
   if (state.enemyStatuses.burn > 0) {
     remainingDamage = Math.max(0, remainingDamage - state.talentEffects.burnReducesEnemyDamage);
+  }
+  if (state.enemyStatuses.poison > 0) {
+    remainingDamage = Math.max(0, remainingDamage - state.talentEffects.poisonReducesEnemyDamage);
   }
   if (effect.damageType === "burn") {
     remainingDamage += state.enemyMitigation.burnBonus;
@@ -349,6 +350,9 @@ function processEnemyRegeneration(state: BattleState, combatTexts: CombatTextEve
   if (state.enemyStatuses.poison > 0 && state.talentEffects.poisonHalvesHealing) {
     healAmount = Math.round(healAmount / HALF_DIVISOR);
   }
+  if (state.enemyStatuses.bleed > 0 && state.talentEffects.bleedHalvesEnemyHealing) {
+    healAmount = Math.round(healAmount / HALF_DIVISOR);
+  }
   if (healAmount <= 0) return state;
   mergeCombatText(combatTexts, { target: "enemy", kind: "heal", stat: "health", amount: healAmount });
   return { ...state, enemyHealth: clampHealth(state.enemyHealth, healAmount, state.enemyMaxHealth) };
@@ -381,7 +385,7 @@ const enemyTraitTurnStartHandlers: Record<string, EnemyTurnStartHandler> = {
     const scaledArmor = Math.round(IRON_HIDE_ARMOR_PER_TURN * state.roomScalingMultiplier);
     const scaledForge = Math.round(TRAIT_FORGE_PER_TURN * state.roomScalingMultiplier);
     const scaledBurn = Math.round(IRON_HIDE_BURN_BONUS_PER_TURN * state.roomScalingMultiplier);
-    const roll = options?.traitRoll ?? Math.random();
+    const roll = options?.traitRoll ?? state.rng();
     const choice = Math.trunc(roll * 3);
     if (choice === 0) {
       mergeCombatText(combatTexts, {

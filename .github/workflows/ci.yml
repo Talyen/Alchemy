@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 jobs:
-  check:
+  install:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -20,15 +20,72 @@ jobs:
           cache: npm
 
       - run: npm install -g npm@10
-
       - run: npm ci
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: node_modules
+          path: node_modules/
+          retention-days: 1
+
+  lint:
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: node_modules
+          path: node_modules/
 
       - if: github.event_name == 'pull_request'
         run: npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.sha }} --verbose
 
       - run: npm run format:check
       - run: npm run lint
+
+  test:
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: node_modules
+          path: node_modules/
+
       - run: npm test
+
+  build:
+    needs: install
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: node_modules
+          path: node_modules/
+
       - run: npm run build
 
       - name: Smoke test production build
@@ -37,6 +94,33 @@ jobs:
           sleep 3
           curl -sf http://127.0.0.1:4174 > /dev/null
           kill %1
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          retention-days: 1
+
+  e2e:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: node_modules
+          path: node_modules/
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
 
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e:critical

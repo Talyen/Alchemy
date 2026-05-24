@@ -23,15 +23,10 @@ const sounds = [
   { source: "Attacks and Combat/Sword Attacks Hits and Blocks/Sword Attack 1.ogg", target: "sword-attack-1.ogg" },
   { source: "Attacks and Combat/Sword Attacks Hits and Blocks/Sword Attack 3.ogg", target: "sword-attack-3.ogg" },
   { source: "Attacks and Combat/Sword Attacks Hits and Blocks/Sword Blocked 1.ogg", target: "sword-blocked-1.ogg" },
-  { source: "Materials/metal_clang.wav", target: "metal-clang.ogg" },
-  { source: "Weapons/weapon_equip.wav", target: "weapon-equip.ogg" },
   { source: "Spells/Rock Meteor Swarm 1.ogg", target: "rock-meteor-swarm-1.ogg" },
-  { source: "Musical Effects/grand_piano_chime_positive.wav", target: "grand-piano-chime-positive.ogg" },
   { source: "Musical Effects/harpsichord_mystery.wav", target: "harpsichord-mystery.ogg" },
   { source: "Spells/Fireball 1.ogg", target: "fireball-1.ogg" },
   { source: "Spells/Ice Throw 1.ogg", target: "ice-throw-1.ogg" },
-  { source: "Items/gem_collect.wav", target: "gem-collect.ogg" },
-  { source: "Musical Effects/grand_piano_positive_long.wav", target: "grand-piano-positive-long.ogg" },
 
   // ── Enemy attacks ──
   { source: "Torch/Torch Attack Strike 1.ogg", target: "torch-attack-strike-1.ogg" },
@@ -50,31 +45,21 @@ const sounds = [
   { source: "UI/toggle_off.wav", target: "toggle-off.ogg" },
 
   // ── UI ──
-  { source: "UI/pop_1.wav", target: "pop-1.ogg" },
-  { source: "UI/pop_2.wav", target: "pop-2.ogg" },
   { source: "UI/Minimalist3.ogg", target: "button-hover-3.ogg" },
   { source: "Card and Board/card_draw_3.wav", target: "card-draw-3.ogg" },
   { source: "UI/toggle_on.wav", target: "toggle-on.ogg" },
   { source: "Environment/fire_lighting.wav", target: "fire-lighting.ogg" },
-  { source: "Musical Effects/harpsichord_negative.wav", target: "harpsichord-negative.ogg" },
   { source: "Musical Effects/harpsichord_level_complete.wav", target: "harpsichord-level-complete.ogg" },
   { source: "Items/page_turn.wav", target: "page-turn.ogg" },
 
   // ── Game flow stingers ──
   { source: "Musical Effects/harpsichord_defeated.wav", target: "harpsichord-defeated.ogg" },
-  { source: "Musical Effects/grand_piano_defeated.wav", target: "grand-piano-defeated.ogg" },
-  { source: "Musical Effects/harpsichord_level_start.wav", target: "harpsichord-level-start.ogg" },
   { source: "Musical Effects/horror_sting.wav", target: "horror-sting.ogg" },
 
   // ── Replacement / new sounds ──
-  { source: "Weapons/weapon_upgrade.wav", target: "weapon-upgrade.ogg" },
-  { source: "Items/heart_collect.wav", target: "heart-collect.ogg" },
   { source: "Musical Effects/music_box_mystery.wav", target: "music-box-mystery.ogg" },
-  { source: "Musical Effects/music_box_chime_quick.wav", target: "music-box-chime-quick.ogg" },
-  { source: "Musical Effects/harpsichord_chime_positive.wav", target: "harpsichord-chime-positive.ogg" },
   { source: "Environment/ice_in_water.wav", target: "ice-in-water.ogg" },
   { source: "Musical Effects/music_box_chime_positive.wav", target: "music-box-chime-positive.ogg" },
-  { source: "Monsters/future ai speaking 3.wav", target: "future-ai-speaking-3.ogg" },
 
   // ── New requested sounds ──
   { source: "Spells/MAGAngl_BUFF-Buff Pickup_HY_PC-002.wav", target: "buff-pickup.ogg" },

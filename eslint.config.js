@@ -5,7 +5,7 @@ import reactRefresh from "eslint-plugin-react-refresh";
 import prettierConfig from "eslint-config-prettier";
 
 export default tseslint.config(
-  { ignores: ["dist", "node_modules", ".vite", "Raw Assets"] },
+  { ignores: ["dist", "node_modules", ".vite", "Raw Assets", "scratch"] },
 
   // Base recommended configs
   eslint.configs.recommended,
