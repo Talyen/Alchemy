@@ -93,6 +93,7 @@ test.describe("Mobile Landscape", () => {
   test.use({ hasTouch: true, viewport: { width: 932, height: 430 } });
 
   test("menu and character select work in landscape", async ({ page }) => {
+    await enableDevMode(page);
     await page.goto("/");
     await expect(page.getByRole("button", { name: "Play" })).toBeVisible();
     await selectGameMode(page, "campaign");
