@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { enableFastMode, failOnRuntimeErrors, makeCard, makeHighDamageCard, playUntilVictory, selectGameMode, startBattleWithDeck } from "./helpers";
+import { enableDevMode, enableFastMode, failOnRuntimeErrors, makeCard, makeHighDamageCard, playUntilVictory, selectGameMode, startBattleWithDeck } from "./helpers";
 import { BattlePage } from "./pages/battle-page";
 
 async function parsePlayerHealth(page: Page): Promise<number> {
@@ -15,6 +15,7 @@ async function parseEnemyHealth(page: Page): Promise<number> {
 test.describe("App Boot", () => {
   test("main menu renders without crashing on desktop", async ({ page }) => {
     const errors = failOnRuntimeErrors(page);
+    await enableDevMode(page);
     await page.goto("/");
     await expect(page.getByRole("button", { name: "Play" })).toBeVisible({ timeout: 5000 });
     expect(errors).toEqual([]);

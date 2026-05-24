@@ -1,5 +1,7 @@
 // Startup readiness gate for the first menu paint.
 // Depends on browser image/font readiness APIs and React state/effects.
+// When localStorage["alchemy-dev-mode"]="true" (set by e2e tests), the loading
+// screen is skipped so the menu appears immediately.
 import { useEffect, useState } from "react";
 import {
   INITIAL_LOAD_MIN_DURATION_MS,
@@ -24,9 +26,13 @@ export function useInitialLoadReady({
   minDurationMs = INITIAL_LOAD_MIN_DURATION_MS,
   maxDurationMs = INITIAL_LOAD_MAX_DURATION_MS,
 }: InitialLoadReadyOptions) {
-  const [ready, setReady] = useState(false);
+  const [ready, setReady] = useState(() => {
+    if (typeof localStorage !== "undefined" && localStorage.getItem("alchemy-dev-mode") === "true") return true;
+    return false;
+  });
 
   useEffect(() => {
+    if (ready) return;
     let cancelled = false;
 
     async function waitForStartupAssets() {
@@ -49,7 +55,7 @@ export function useInitialLoadReady({
     return () => {
       cancelled = true;
     };
-  }, [imageUrls, minDurationMs, maxDurationMs]);
+  }, [ready, imageUrls, minDurationMs, maxDurationMs]);
 
   return ready;
 }
