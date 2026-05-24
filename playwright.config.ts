@@ -9,6 +9,7 @@ export default defineConfig({
   testDir: "./tests",
   testMatch: "**/*.spec.ts",
   fullyParallel: !process.env.CI,
+  maxFailures: process.env.CI ? 1 : 0,
   workers: process.env.CI ? 1 : 4,
   globalTimeout: 600_000,
   timeout: process.env.CI ? 30_000 : 15_000,
@@ -19,6 +20,15 @@ export default defineConfig({
     baseURL: "http://127.0.0.1:4173",
     trace: "on-first-retry",
     actionTimeout: process.env.CI ? 15_000 : 10_000,
+    storageState: {
+      cookies: [],
+      origins: [
+        {
+          origin: "http://127.0.0.1:4173",
+          localStorage: [{ name: "alchemy-skip-loading-screen", value: "true" }],
+        },
+      ],
+    },
   },
   webServer: {
     command: webServerCommand,

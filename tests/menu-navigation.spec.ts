@@ -1,10 +1,9 @@
 import { expect, test } from "@playwright/test";
-import { createMinimalLabyrinthMap, enableDevMode, enableFastMode, makeCard, openGameModeSelect, selectGameMode, startBattleWithDeck, startCampaignBattle } from "./helpers";
+import { createMinimalLabyrinthMap, enableFastMode, makeCard, openGameModeSelect, selectGameMode, startBattleWithDeck, startCampaignBattle } from "./helpers";
 import { BattlePage } from "./pages/battle-page";
 
 test.describe("Menu", () => {
   test("all menu buttons are visible on the main menu", async ({ page }) => {
-    await enableDevMode(page);
     await page.goto("/");
     await expect(page.getByRole("button", { name: "Play" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Collection" })).toBeVisible();
@@ -30,7 +29,6 @@ test.describe("Menu", () => {
     const map = createMinimalLabyrinthMap();
     const card = makeCard();
 
-    await enableDevMode(page);
     await page.addInitScript((data) => {
       const KEY = "alchemy-save-v1";
       const save = JSON.parse(localStorage.getItem(KEY) || "{}");
@@ -57,7 +55,6 @@ test.describe("Menu", () => {
 
 test.describe("Character Select", () => {
   test("all characters are selectable and starting run is mapped to localStorage", async ({ page }) => {
-    await enableDevMode(page);
     await page.goto("/");
     await selectGameMode(page, "campaign");
 
@@ -87,7 +84,6 @@ test.describe("Character Select", () => {
   });
 
   test("back button returns to main menu", async ({ page }) => {
-    await enableDevMode(page);
     await page.goto("/");
     await selectGameMode(page, "campaign");
     await page.getByRole("button", { name: "Back" }).click();

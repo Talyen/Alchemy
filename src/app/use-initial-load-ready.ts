@@ -1,7 +1,8 @@
 // Startup readiness gate for the first menu paint.
 // Depends on browser image/font readiness APIs and React state/effects.
-// When localStorage["alchemy-dev-mode"]="true" (set by e2e tests), the loading
-// screen is skipped so the menu appears immediately.
+// When localStorage["alchemy-skip-loading-screen"]="true" (set by Playwright
+// storageState for all e2e tests) or localStorage["alchemy-dev-mode"]="true",
+// the loading screen is skipped so the menu appears immediately.
 import { useEffect, useState } from "react";
 import {
   INITIAL_LOAD_MIN_DURATION_MS,
@@ -27,7 +28,10 @@ export function useInitialLoadReady({
   maxDurationMs = INITIAL_LOAD_MAX_DURATION_MS,
 }: InitialLoadReadyOptions) {
   const [ready, setReady] = useState(() => {
-    if (typeof localStorage !== "undefined" && localStorage.getItem("alchemy-dev-mode") === "true") return true;
+    if (typeof localStorage !== "undefined") {
+      if (localStorage.getItem("alchemy-skip-loading-screen") === "true") return true;
+      if (localStorage.getItem("alchemy-dev-mode") === "true") return true;
+    }
     return false;
   });
 
