@@ -67,7 +67,6 @@ type ScreenStore = {
   mysteryEvent: MysteryEvent | null;
   mysteryCardChoices: BattleCard[] | null;
 
-  shimmerState: ShimmerState;
   setHoveredCardId: (id: string | null | ((prev: string | null) => string | null)) => void;
   maybeTriggerShimmer: (cardId: string) => void;
   setHasActiveRun: (active: boolean) => void;

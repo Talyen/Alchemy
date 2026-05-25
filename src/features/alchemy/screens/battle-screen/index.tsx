@@ -77,7 +77,7 @@ export function BattleScreen(props: BattleScreenProps) {
   const enemyShaking = useBattleStore((s) => s.enemyShaking);
   const playerShaking = useBattleStore((s) => s.playerShaking);
   const companionShaking = useBattleStore((s) => s.companionShaking);
-  const shimmerState = useBattleStore((s) => s.shimmerState);
+  const shimmerState = useScreenStore((s) => s.shimmerState);
   const hoveredCardId = useScreenStore((s) => s.hoveredCardId);
   const activeLabyrinthModifiers = useScreenStore((s) => s.activeLabyrinthModifiers);
 

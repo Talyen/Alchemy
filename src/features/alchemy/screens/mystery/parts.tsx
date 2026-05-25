@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 
 import { GoldPill, MaterialPill } from "../../ui/material-icons";
 
-import { cardSurfaceClass, trinketCardWidthClass, viewCardWidthClass } from "../../config";
+import { cardSurfaceClass, collectionTileWidthClass, viewCardWidthClass } from "../../config";
 import type { MysteryChoice, MysteryEvent, MysteryEffect } from "../../mystery-events";
 import { TiltSurface } from "../../ui/tilt-surface";
 import { CardSelectionGrid } from "../../ui/card-selection-grid";
@@ -116,7 +116,7 @@ export function MysteryRewardEffectItem({
                 descriptionLines={trinket.descriptionLines}
               />
             ) : null}
-            <TiltSurface className={cn(cardSurfaceClass, trinketCardWidthClass)}>
+            <TiltSurface className={cn(cardSurfaceClass, collectionTileWidthClass)}>
               <img
                 src={trinket.art}
                 alt={trinket.title}

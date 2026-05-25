@@ -62,7 +62,12 @@ function CharacterCard({
       </TiltSurface>
       <p className="font-display text-lg font-bold text-amber-100/90 mt-1">{char.name}</p>
       {showTooltip ? (
-        <TooltipPanel width="w-80" ref={tooltipRef} className={cn("z-50", flip ? "top-full mt-2" : "mb-2")} flip={flip}>
+        <TooltipPanel
+          width="w-80"
+          ref={tooltipRef}
+          className={cn("z-50", flip ? "top-full mt-2 bottom-auto" : "mb-2")}
+          flip={flip}
+        >
           <TooltipHeader>{char.name}</TooltipHeader>
 
           <TooltipBody>

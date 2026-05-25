@@ -200,6 +200,10 @@
     will-change: opacity, transform;
   }
 
+  .hover-popup-panel[data-flip="below"] {
+    transform-origin: top center;
+  }
+
   .group:hover > .hover-popup-panel,
   .group:focus-within > .hover-popup-panel,
   .group\/keyword:hover > .hover-popup-panel,
@@ -304,7 +308,7 @@
 
   .alchemy-startup-bar {
     background: hsl(var(--primary));
-    animation: startupBarCycle 900ms ease-in-out infinite;
+    animation: startupBarCycle 1200ms ease-in-out forwards;
     transform-origin: left;
   }
 

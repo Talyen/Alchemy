@@ -1,5 +1,5 @@
 // Actor rail for the battle screen: hero/enemy panels, companion, turn badge, and combat text.
-// Depends on battle store shimmer actions, actor UI widgets, and battle layout constants.
+// Depends on screen store shimmer actions, actor UI widgets, and battle layout constants.
 // Used only by BattleScreen to keep the main screen composition smaller.
 import { BATTLE_ACTOR_TOP_DESKTOP, BATTLE_ACTOR_TOP_MOBILE } from "@/lib/game-constants";
 
@@ -12,7 +12,7 @@ import {
   bossMobileStageBattleCardWidthClass,
 } from "../../config";
 import type { BattleFeedbackProps, BattleHoverProps, BattleRefsProps, RequiredBattleViewProps } from "./types";
-import { useBattleStore } from "../../stores/battle-store";
+import { useScreenStore } from "../../stores/screen-store";
 
 export function BattleActors({
   view,
@@ -27,7 +27,7 @@ export function BattleActors({
 }) {
   const { battleState, heroArt, playerName, isMobileLandscape, aspectMode = "standard" } = view;
   const { shimmerState } = hover;
-  const onHoverShimmer = useBattleStore((s) => s.maybeTriggerShimmer);
+  const onHoverShimmer = useScreenStore((s) => s.maybeTriggerShimmer);
   const {
     playerStatusChips,
     enemyStatusChips,
@@ -90,7 +90,7 @@ export function BattleActors({
             cardWidthClass={actorCardWidthClass}
           />
           {battleState.activeCompanion ? (
-            <div className="absolute bottom-[clamp(8.15cqh,8.5cqh,10.93cqh)] left-[calc(100%-clamp(3.89cqh,4.6cqh,6.3cqh))] z-20">
+            <div className="absolute bottom-[clamp(8.56cqh,8.93cqh,11.48cqh)] left-[calc(100%-clamp(4.71cqh,5.58cqh,7.65cqh))] z-20">
               <CompanionPanel
                 companion={battleState.activeCompanion}
                 shaking={companionShaking}

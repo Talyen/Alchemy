@@ -10,7 +10,7 @@ import { GoldPill, MaterialPill } from "../ui/material-icons";
 import { BattleCardButton, DetailPopup, getCardDisplayTitle } from "../ui/card-ui";
 import { ScreenHeader } from "../ui/shared-ui";
 import { TiltSurface } from "../ui/tilt-surface";
-import { cardSurfaceClass, collectionTileWidthClass, trinketCardWidthClass } from "../config";
+import { cardSurfaceClass, collectionTileWidthClass } from "../config";
 import { useScreenStore } from "../stores/screen-store";
 import { useInteractiveCard } from "../ui/use-interactive-card";
 
@@ -37,7 +37,7 @@ function TrinketRewardButton({
       ) : null}
       <TiltSurface
         as="button"
-        className={cn(cardSurfaceClass, trinketCardWidthClass, "group w-full")}
+        className={cn(cardSurfaceClass, collectionTileWidthClass, "group")}
         shimmerActive={shimmerActive}
         shimmerToken={shimmerToken}
         selected={selected}

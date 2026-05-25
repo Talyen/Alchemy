@@ -43,6 +43,7 @@ import {
 import { useBattleAutoEndTurn } from "./battle/use-battle-auto-end-turn";
 import { useBattleStore } from "./stores/battle-store";
 import { useRunStore } from "./stores/run-store";
+import { useScreenStore } from "./stores/screen-store";
 import { getBattleStartPlayerHealth } from "./battle/battle-start";
 import { createTransferCancelRegistry } from "./battle/transfer-lifecycle";
 import {
@@ -92,7 +93,7 @@ export function useBattleController({
   const companionShaking = useBattleStore((s) => s.companionShaking);
   const cardGhosts = useBattleStore((s) => s.cardGhosts);
   const floatingCombatTexts = useBattleStore((s) => s.floatingCombatTexts);
-  const shimmerState = useBattleStore((s) => s.shimmerState);
+  const shimmerState = useScreenStore((s) => s.shimmerState);
 
   const handCardRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const drawPileRef = useRef<HTMLDivElement | null>(null);
@@ -923,7 +924,7 @@ export function useBattleController({
     handleEndRun,
     skipCombatDevMode,
     removeCardGhost: getStore().removeCardGhost,
-    maybeTriggerShimmer: getStore().maybeTriggerShimmer,
+    maybeTriggerShimmer: useScreenStore.getState().maybeTriggerShimmer,
     clearCardGhosts: getStore().clearCardGhosts,
   };
 }

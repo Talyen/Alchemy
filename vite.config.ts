@@ -3,6 +3,7 @@ import { fileURLToPath, URL } from "node:url";
 
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
+import checker from "vite-plugin-checker";
 
 const devPort = Number.parseInt(process.env.ALCHEMY_DEV_PORT ?? "5173", 10);
 
@@ -16,7 +17,13 @@ export default defineConfig(({ mode }) => ({
   },
   base: process.env.VERCEL ? "/" : mode === "desktop" ? "./" : "/",
   server: { open: true, port: devPort, strictPort: true },
-  plugins: [react()],
+  plugins: [
+    react(),
+    mode === "development" &&
+      checker({
+        typescript: { tsconfigPath: "./tsconfig.json" },
+      }),
+  ].filter(Boolean),
   build: {
     assetsInlineLimit: 4096,
     rollupOptions: {

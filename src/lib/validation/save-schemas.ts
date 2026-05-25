@@ -493,7 +493,7 @@ export const ActiveRunDataSchema = z
     const legacyStarterDeckSet = new Set(LEGACY_STARTER_DECK_IDS);
     const hasLegacyDeck =
       data.runDeck.length === LEGACY_STARTER_DECK_IDS.length &&
-      data.runDeck.every((card) => legacyStarterDeckSet.has(card.id));
+      data.runDeck.every((card) => legacyStarterDeckSet.has(card.id as (typeof LEGACY_STARTER_DECK_IDS)[number]));
     const runDeck =
       data.runDeck.length === 0 || (isUnstarted && hasLegacyDeck) ? getStartingDeck(data.characterId) : data.runDeck;
     return {

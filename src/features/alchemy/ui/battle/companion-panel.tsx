@@ -43,7 +43,7 @@ export function CompanionPanel({
         className={cn(
           "tilt-surface",
           cardSurfaceClass,
-          compact ? "w-[clamp(8.67cqh,17cqh,13.33cqh)]" : "w-[clamp(8.89cqh,11cqh,13.89cqh)]",
+          compact ? "w-[clamp(10.71cqh,21cqh,16.46cqh)]" : "w-[clamp(10.98cqh,13.59cqh,17.16cqh)]",
           shaking && "animate-shake",
         )}
         onMouseMove={setTiltFromEvent}

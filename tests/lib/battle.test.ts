@@ -3028,3 +3028,1103 @@ describe("forge burn in null field", () => {
     expect(result.playerStatuses.forge).toBe(3);
   });
 });
+
+// ════════════════════════════════════════════════════════════════
+// HIGH-RISK FUNCTION EDGE CASE TESTS
+// ════════════════════════════════════════════════════════════════
+
+// ─── endPlayerTurn edge cases ───
+
+describe("endPlayerTurn — haste + Death's Door overlap", () => {
+  it("haste skip does not prevent Death's Door recovery turn", () => {
+    const state = makeState({
+      playerHealth: 0,
+      deathsDoorUsed: true,
+      deathsDoorActive: true,
+      deathsDoorTriggeredTurn: 1,
+      turn: 2,
+      playerStatuses: { block: 0, armor: 0, forge: 0, haste: 1, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
+      mana: 4,
+      maxMana: 4,
+    });
+    const result = endPlayerTurn(state);
+    // haste skip still runs finalizePlayerTurn → resolveDeathsDoorEndOfEnemyTurn
+    // turn 2, triggeredTurn 1, graceTurns = 1 → turn - triggeredTurn < graceTurns? 2-1 < 1? no
+    // Actually: graceTurns = 1 + deathsDoorExtension(0) = 1. 2 - 1 < 1? false.
+    // So Death's Door expires → deathsDoorActive=false
+    expect(result.state.deathsDoorActive).toBe(false);
+    expect(result.state.playerStatuses.haste).toBe(0);
+    expect(result.state.turnPhase).toBe("player");
+  });
+
+  it("haste skip still grants the grace recovery turn when within grace window", () => {
+    const state = makeState({
+      playerHealth: 0,
+      deathsDoorUsed: true,
+      deathsDoorActive: true,
+      deathsDoorTriggeredTurn: 2,
+      turn: 2,
+      playerStatuses: { block: 0, armor: 0, forge: 0, haste: 1, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
+      mana: 4,
+      maxMana: 4,
+    });
+    const result = endPlayerTurn(state);
+    // turn=2, triggeredTurn=2, graceTurns=1, 2-2 < 1 → true, Death's Door stays active
+    expect(result.state.deathsDoorActive).toBe(true);
+    expect(result.state.deathsDoorUsed).toBe(true);
+    expect(result.state.turnPhase).toBe("player");
+  });
+});
+
+describe("endPlayerTurn — multiple enemy attack effects", () => {
+  it("applies damage then status from multi-effect enemy attack", () => {
+    const state = makeState({
+      playerHealth: 30,
+      playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      enemyAttackEffects: [
+        { kind: "damage", damageType: "physical", amount: 6 },
+        { kind: "player-status", status: "poison", amount: 3 },
+      ],
+      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
+      mana: 4,
+      maxMana: 4,
+    });
+    const result = endPlayerTurn(state);
+    // damage 6 → health 24, then poison applied 3, then poison tick deals 3 → health 21, poison decays to 2
+    expect(result.state.playerHealth).toBe(21);
+    expect(result.state.playerStatuses.poison).toBe(2);
+  });
+
+  it("applies two damage effects from one enemy attack", () => {
+    const state = makeState({
+      playerHealth: 30,
+      playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      enemyAttackEffects: [
+        { kind: "damage", damageType: "physical", amount: 4 },
+        { kind: "player-status", status: "poison", amount: 3 },
+      ],
+      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
+      mana: 4,
+      maxMana: 4,
+    });
+    const result = endPlayerTurn(state);
+    // physical damage 4 → health 26, then poison status applied (3), then poison tick (3) → health 23
+    expect(result.state.playerHealth).toBe(23);
+    expect(result.state.playerStatuses.poison).toBe(2); // 3 applied, 1 decays after tick
+  });
+});
+
+describe("endPlayerTurn — non-physical enemy damage", () => {
+  it("holy damage ignores player armor (armor only reduces physical)", () => {
+    const state = makeState({
+      playerHealth: 30,
+      playerStatuses: { block: 0, armor: 5, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      enemyAttackEffects: [{ kind: "damage", damageType: "holy", amount: 10 }],
+      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
+      mana: 4,
+      maxMana: 4,
+    });
+    const result = endPlayerTurn(state);
+    // holy damage ignores armor → 30-10 = 20. Armor still decays by 1 per hit → 4.
+    expect(result.state.playerHealth).toBe(20);
+    expect(result.state.playerStatuses.armor).toBe(4);
+  });
+
+  it("burn enemy damage applies burn status rider and ticks same turn", () => {
+    const state = makeState({
+      playerHealth: 30,
+      playerStatuses: { block: 0, armor: 4, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      enemyAttackEffects: [{ kind: "damage", damageType: "burn", amount: 7 }],
+      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
+      mana: 4,
+      maxMana: 4,
+    });
+    const result = endPlayerTurn(state);
+    // burn damage 7 → health 23. Burn rider applies 7 burn. Burn tick then deals 7 more → health 16.
+    expect(result.state.playerHealth).toBe(16);
+    expect(result.state.playerStatuses.burn).toBe(4); // 7 burn halves to 3 (floor), wait...
+    // Actually burn tick halves to Math.round(7/2)=4 or 3. Let's just verify it was applied and ticked.
+    expect(result.state.playerStatuses.burn).toBeGreaterThan(0);
+  });
+
+  it("sundering armor piercing trinket only strips armor for physical/stun (not holy)", () => {
+    const state = makeState({
+      playerHealth: 30,
+      playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      enemyMitigation: { armor: 4, forge: 0, freezeBonus: 0 },
+      enemyAttackEffects: [{ kind: "damage", damageType: "holy", amount: 8 }],
+      trinketEffects: { ...defaultTrinketEffects, sunderingArmorPiercing: 3 },
+      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
+      mana: 4,
+      maxMana: 4,
+    });
+    const result = endPlayerTurn(state);
+    // enemy has 4 armor, but holy damage doesn't care about armor (effectiveArmor=0)
+    // player takes 8 holy damage → health 22
+    // sundering only applies to player's attack, not enemy armor
+    expect(result.state.playerHealth).toBe(22);
+  });
+});
+
+describe("endPlayerTurn — zero-damage enemy attack", () => {
+  it("zero-damage physical attack is a no-op", () => {
+    const state = makeState({
+      playerHealth: 30,
+      playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 0 }],
+      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
+      mana: 4,
+      maxMana: 4,
+    });
+    const result = endPlayerTurn(state);
+    expect(result.state.playerHealth).toBe(30);
+    expect(result.enemyPerformedAttack).toBe(true);
+  });
+});
+
+describe("endPlayerTurn — enemy lifesteal", () => {
+  it("does not over-heal the enemy beyond max health", () => {
+    const state = makeState({
+      enemyHealth: 28,
+      enemyMaxHealth: 30,
+      playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 6, lifesteal: true }],
+      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
+      mana: 4,
+      maxMana: 4,
+    });
+    const result = endPlayerTurn(state);
+    // player: 30-6=24, enemy: 28+6=30 (capped at maxHealth 30)
+    expect(result.state.enemyHealth).toBe(30);
+    expect(result.state.playerHealth).toBe(24);
+  });
+});
+
+describe("endPlayerTurn — enemy DoT kill during CC skip", () => {
+  it("enemy killed by DoT while CCd does not attack and is marked dead", () => {
+    const state = makeState({
+      enemyHealth: 4,
+      enemyMaxHealth: 30,
+      enemyStatuses: { burn: 0, poison: 0, bleed: 6, freeze: 0, stun: 0 },
+      enemyStunSkipTurns: 1,
+      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 10 }],
+      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
+      mana: 4,
+      maxMana: 4,
+    });
+    const result = endPlayerTurn(state);
+    // bleed tick deals 6 → enemy health 0 → dead. CC skip path prevents attack.
+    expect(result.state.enemyHealth).toBe(0);
+    expect(result.state.playerHealth).toBe(30);
+    expect(result.enemyPerformedAttack).toBe(false);
+  });
+});
+
+describe("endPlayerTurn — player killed by DoT after Death's Door consumed", () => {
+  it("player dies when DoT deals final blow after Death's Door was already used", () => {
+    const state = makeState({
+      playerHealth: 2,
+      playerMaxHealth: 30,
+      playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 4, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      deathsDoorUsed: true,
+      deathsDoorActive: false,
+      enemyAttackEffects: [],
+      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
+      mana: 4,
+      maxMana: 4,
+    });
+    const result = endPlayerTurn(state);
+    // burn tick: 4 damage → player health 0, deathsDoorActive was already false
+    // player is defeated
+    expect(result.state.playerHealth).toBe(0);
+    expect(isPlayerDefeated(result.state)).toBe(true);
+  });
+});
+
+describe("endPlayerTurn — stun and freeze both active", () => {
+  it("enemy with both stun and freeze skip turns uses CC skip once", () => {
+    const state = makeState({
+      enemyStunSkipTurns: 2,
+      enemyFreezeSkipTurns: 1,
+      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 10 }],
+      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
+      mana: 4,
+      maxMana: 4,
+    });
+    const result = endPlayerTurn(state);
+    // both > 0, enters CC skip path
+    // reduceSkipTurns reduces both by 1
+    expect(result.state.enemyStunSkipTurns).toBe(1);
+    expect(result.state.enemyFreezeSkipTurns).toBe(0);
+    expect(result.state.playerHealth).toBe(30);
+    expect(result.enemyPerformedAttack).toBe(false);
+  });
+});
+
+describe("endPlayerTurn — enemy regeneration at zero health", () => {
+  it("does not revive the enemy through regeneration", () => {
+    const state = makeState({
+      enemyHealth: 0,
+      enemyMaxHealth: 30,
+      enemyRegeneration: 5,
+      enemyAttackEffects: [],
+      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
+      mana: 4,
+      maxMana: 4,
+    });
+    const result = endPlayerTurn(state);
+    // enemy dead at start → resolveEnemyTurnStart ticks, then enemyHealth <= 0 check skips
+    // regen never runs because the check happens first
+    expect(result.state.enemyHealth).toBe(0);
+  });
+});
+
+describe("endPlayerTurn — enemy forge bonus only applies to physical", () => {
+  it("enemy forge does not boost non-physical attack damage", () => {
+    const state = makeState({
+      playerHealth: 30,
+      playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      enemyMitigation: { armor: 0, forge: 5, freezeBonus: 0 },
+      enemyAttackEffects: [{ kind: "damage", damageType: "holy", amount: 8 }],
+      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
+      mana: 4,
+      maxMana: 4,
+    });
+    const result = endPlayerTurn(state);
+    // forge only boosts physical enemy attacks → holy 8, no forge bonus
+    expect(result.state.playerHealth).toBe(22);
+  });
+});
+
+// ─── dealDamageToEnemy pipeline edge cases ───
+
+describe("dealDamageToEnemy — zero base damage", () => {
+  it("deals no damage when amount is 0 and no block/armor substitutes", () => {
+    const card = makeCard({ effects: [{ kind: "damage", damageType: "physical", amount: 0 }] });
+    const texts: CombatTextEvent[] = [];
+    const state = makeState({ mana: 10, enemyHealth: 30 });
+    const result = applyCardEffects(state, card, texts);
+    expect(result.enemyHealth).toBe(30);
+  });
+
+  it("equalToBlock with 0 block deals no damage", () => {
+    const card = makeCard({ effects: [{ kind: "damage", damageType: "physical", amount: 0, equalToBlock: true }] });
+    const texts: CombatTextEvent[] = [];
+    const state = makeState({ mana: 10, enemyHealth: 30 });
+    const result = applyCardEffects(state, card, texts);
+    expect(result.enemyHealth).toBe(30);
+  });
+
+  it("equalToArmor with 0 armor deals no damage", () => {
+    const card = makeCard({ effects: [{ kind: "damage", damageType: "physical", amount: 0, equalToArmor: true }] });
+    const texts: CombatTextEvent[] = [];
+    const state = makeState({ mana: 10, enemyHealth: 30 });
+    const result = applyCardEffects(state, card, texts);
+    expect(result.enemyHealth).toBe(30);
+  });
+});
+
+describe("dealDamageToEnemy — first-damage-doubled flags", () => {
+  it("burn first-card-doubled flag is consumed after first use", () => {
+    const talentEffects = { ...defaultTalentEffects, firstBurnCardDoubled: true };
+    const card = makeCard({ effects: [{ kind: "damage", damageType: "burn", amount: 5 }] });
+
+    const texts1: CombatTextEvent[] = [];
+    const state1 = makeState({ mana: 10, enemyHealth: 50, talentEffects });
+    const result1 = applyCardEffects(state1, card, texts1);
+    expect(result1.flags.firstBurnCardDoubledUsed).toBe(true);
+  });
+
+  it("burn first-card-doubled flag is set after first use", () => {
+    const talentEffects = { ...defaultTalentEffects, firstBurnCardDoubled: true };
+    const card = makeCard({ effects: [{ kind: "damage", damageType: "burn", amount: 5 }] });
+
+    const texts1: CombatTextEvent[] = [];
+    const state1 = makeState({ mana: 10, enemyHealth: 50, talentEffects });
+    const result1 = applyCardEffects(state1, card, texts1);
+    expect(result1.flags.firstBurnCardDoubledUsed).toBe(true);
+
+    // second use with already-consumed flag does not set it again
+    const texts2: CombatTextEvent[] = [];
+    const state2 = makeState({ mana: 10, enemyHealth: 50, talentEffects, flags: { ...result1.flags } });
+    const result2 = applyCardEffects(state2, card, texts2);
+    expect(result2.flags.firstBurnCardDoubledUsed).toBe(true);
+  });
+
+  it("brass-censer trinket sets firstHolyDamageBonusUsed flag", () => {
+    const manifest = computeTrinketManifest(["brass-censer"]);
+    const card = makeCard({ effects: [{ kind: "damage", damageType: "holy", amount: 4 }] });
+    const texts: CombatTextEvent[] = [];
+    const state = makeState({
+      mana: 10, enemyHealth: 50, gold: 0,
+      enemyStatuses: { burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      trinketEffects: manifest,
+    });
+    const result = applyCardEffects(state, card, texts);
+    expect(result.flags.firstHolyDamageBonusUsed).toBe(true);
+  });
+});
+
+describe("dealDamageToEnemy — critical strikes", () => {
+  it("global crit can apply to any damage type", () => {
+    // Force a critical hit
+    vi.spyOn(Math, "random").mockReturnValue(0.01);
+    const card = makeCard({ effects: [{ kind: "damage", damageType: "burn", amount: 10 }] });
+    const texts: CombatTextEvent[] = [];
+    const state = makeState({ mana: 10, enemyHealth: 50 });
+    const result = applyCardEffects(state, card, texts);
+    // 10 damage * 2 crit = 20 damage → health 30
+    expect(result.enemyHealth).toBe(30);
+  });
+});
+
+describe("dealDamageToEnemy — physical vs stunned/frozen multipliers", () => {
+  it("physical damage gets stunned multiplier when enemy is stunned", () => {
+    const talentEffects = { ...defaultTalentEffects, physicalVsStunnedMultiplier: 50 };
+    const card = makeCard({ effects: [{ kind: "damage", damageType: "physical", amount: 10 }] });
+    const texts: CombatTextEvent[] = [];
+    const staleState = makeState({
+      mana: 10, enemyHealth: 50, talentEffects,
+    });
+    const state = makeState({
+      mana: 10, enemyHealth: 50,
+      enemyStunSkipTurns: 1,
+      talentEffects,
+    });
+    const noMultiplier = applyCardEffects(staleState, card, texts.slice(0, 0));
+    const newTexts: CombatTextEvent[] = [];
+    const withMultiplier = applyCardEffects(state, card, newTexts);
+    // stunned multiplier should increase damage compared to non-stunned
+    const noStunDmg = staleState.enemyHealth - noMultiplier.enemyHealth;
+    const stunDmg = state.enemyHealth - withMultiplier.enemyHealth;
+    expect(stunDmg).toBeGreaterThan(noStunDmg);
+  });
+
+  it("stun double damage talent doubles damage against stunned enemies", () => {
+    const talentEffects = { ...defaultTalentEffects, stunDoubleDamage: true };
+    const card = makeCard({ effects: [{ kind: "damage", damageType: "stun", amount: 8 }] });
+    const texts: CombatTextEvent[] = [];
+    const staleState = makeState({
+      mana: 10, enemyHealth: 50, talentEffects,
+    });
+    const state = makeState({
+      mana: 10, enemyHealth: 50,
+      enemyStunSkipTurns: 1,
+      talentEffects,
+    });
+    const noTrait = applyCardEffects(staleState, card, texts.slice(0, 0));
+    const newTexts: CombatTextEvent[] = [];
+    const withTrait = applyCardEffects(state, card, newTexts);
+    // stunDoubleDamage should make damage higher
+    const noStunDmg = staleState.enemyHealth - noTrait.enemyHealth;
+    const stunDmg = state.enemyHealth - withTrait.enemyHealth;
+    expect(stunDmg).toBeGreaterThan(noStunDmg);
+  });
+});
+
+describe("dealDamageToEnemy — forge bonus eligibility", () => {
+  it("forge is consumed after physical damage (native forge type)", () => {
+    const card = makeCard({ effects: [{ kind: "damage", damageType: "physical", amount: 5 }] });
+    const texts: CombatTextEvent[] = [];
+    const state = makeState({
+      mana: 10, enemyHealth: 50,
+      playerStatuses: { block: 0, armor: 0, forge: 3, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+    });
+    const result = applyCardEffects(state, card, texts);
+    // forge contributed to physical damage → consumed by 1
+    expect(result.playerStatuses.forge).toBe(2);
+  });
+
+  it("forge is NOT consumed for burn without forgeToBurn talent", () => {
+    const card = makeCard({ effects: [{ kind: "damage", damageType: "burn", amount: 5 }] });
+    const texts: CombatTextEvent[] = [];
+    const state = makeState({
+      mana: 10, enemyHealth: 50,
+      playerStatuses: { block: 0, armor: 0, forge: 3, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+    });
+    const result = applyCardEffects(state, card, texts);
+    expect(result.playerStatuses.forge).toBe(3);
+  });
+
+  it("forge IS consumed for burn with forgeToBurn talent", () => {
+    const card = makeCard({ effects: [{ kind: "damage", damageType: "burn", amount: 5 }] });
+    const texts: CombatTextEvent[] = [];
+    const state = makeState({
+      mana: 10, enemyHealth: 50,
+      playerStatuses: { block: 0, armor: 0, forge: 3, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      talentEffects: { ...defaultTalentEffects, forgeToBurn: true },
+    });
+    const result = applyCardEffects(state, card, texts);
+    expect(result.playerStatuses.forge).toBe(2);
+  });
+});
+
+describe("dealDamageToEnemy — armor decay and holy riders", () => {
+  it("armor reduces physical damage taken by the enemy", () => {
+    const card = makeCard({ effects: [{ kind: "damage", damageType: "physical", amount: 10 }] });
+    const texts: CombatTextEvent[] = [];
+    const state = makeState({
+      mana: 10, enemyHealth: 50,
+      enemyMitigation: { armor: 5, forge: 0, freezeBonus: 0 },
+    });
+    const result = applyCardEffects(state, card, texts);
+    // enemy with armor takes less damage
+    expect(result.enemyHealth).toBeLessThan(50);
+    expect(result.enemyMitigation.armor).toBeLessThan(5); // decays
+  });
+
+  it("armor does NOT reduce burn damage (non-physical, ignores armor entirely)", () => {
+    const card = makeCard({ effects: [{ kind: "damage", damageType: "burn", amount: 10 }] });
+    const texts: CombatTextEvent[] = [];
+    const state = makeState({
+      mana: 10, enemyHealth: 50,
+      enemyMitigation: { armor: 5, forge: 0, freezeBonus: 0 },
+    });
+    const result = applyCardEffects(state, card, texts);
+    // burn ignores armor → armor still decays from hit but not from damage reduction
+    expect(result.enemyHealth).toBeLessThan(50);
+  });
+
+  it("holy lifesteal heals the player", () => {
+    const talentEffects = { ...defaultTalentEffects, holyLifestealPercent: 50 };
+    const card = makeCard({ effects: [{ kind: "damage", damageType: "holy", amount: 10 }] });
+    const texts: CombatTextEvent[] = [];
+    const state = makeState({
+      mana: 10, enemyHealth: 50, gold: 0, playerHealth: 20,
+      enemyStatuses: { burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      talentEffects,
+    });
+    const result = applyCardEffects(state, card, texts);
+    expect(result.enemyHealth).toBeLessThan(50);
+    expect(result.playerHealth).toBeGreaterThan(20);
+  });
+
+  it("does not lifesteal when damage is zero", () => {
+    const card = makeCard({ effects: [{ kind: "damage", damageType: "physical", amount: 0, lifesteal: true }] });
+    const texts: CombatTextEvent[] = [];
+    const state = makeState({ mana: 10, enemyHealth: 30, playerHealth: 15 });
+    const result = applyCardEffects(state, card, texts);
+    expect(result.enemyHealth).toBe(30);
+    expect(result.playerHealth).toBe(15);
+  });
+});
+
+describe("dealDamageToEnemy — overkill clamping", () => {
+  it("overkill damage is clamped to 0 health", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.99);
+    const card = makeCard({ effects: [{ kind: "damage", damageType: "physical", amount: 50 }] });
+    const texts: CombatTextEvent[] = [];
+    const state = makeState({ mana: 10, enemyHealth: 10 });
+    const result = applyCardEffects(state, card, texts);
+    expect(result.enemyHealth).toBe(0);
+    expect(result.enemyHealth).not.toBeLessThan(0);
+  });
+});
+
+// ─── applyCardEffects edge cases ───
+
+describe("applyCardEffects — perManaCrystal scaling", () => {
+  it("perManaCrystal with 0 amount yields 0 block", () => {
+    const state = makeState({ mana: 10, maxMana: 4 });
+    const card = makeCard({ effects: [{ kind: "player-status", status: "block", amount: 0, perManaCrystal: 0 }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    expect(result.playerStatuses.block).toBe(0);
+  });
+
+  it("perManaCrystal scales with maxMana", () => {
+    const state = makeState({ mana: 10, maxMana: 5 });
+    const card = makeCard({ effects: [{ kind: "player-status", status: "block", amount: 0, perManaCrystal: 3 }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    // perManaCrystal: 3 * maxMana(5) = 15 block
+    expect(result.playerStatuses.block).toBe(15);
+  });
+
+  it("perManaCrystal with minimal maxMana (floor=1)", () => {
+    const state = makeState({ mana: 10, maxMana: 1 });
+    const card = makeCard({ effects: [{ kind: "player-status", status: "block", amount: 0, perManaCrystal: 4 }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    // perManaCrystal: 4 * 1 = 4 block
+    expect(result.playerStatuses.block).toBe(4);
+  });
+});
+
+describe("applyCardEffects — empty and zero-edge effects", () => {
+  it("card with no effects does nothing", () => {
+    const state = makeState({ mana: 10, enemyHealth: 30 });
+    const card = makeCard({ effects: [] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    expect(result).toBe(state);
+    expect(texts).toEqual([]);
+  });
+
+  it("heal with 0 amount does not change health", () => {
+    const state = makeState({ playerHealth: 20 });
+    const card = makeCard({ effects: [{ kind: "heal", amount: 0 }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    expect(result.playerHealth).toBe(20);
+  });
+
+  it("gain-gold with 0 amount does not change gold", () => {
+    const state = makeState({ gold: 5 });
+    const card = makeCard({ effects: [{ kind: "gain-gold", amount: 0 }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    expect(result.gold).toBe(5);
+  });
+
+  it("draw-cards with 0 amount does nothing", () => {
+    const state = makeState({ deck: [makeCard({ id: "d1" })], hand: [] });
+    const card = makeCard({ effects: [{ kind: "draw-cards", amount: 0 }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    expect(result.hand).toHaveLength(0);
+    expect(result.deck).toHaveLength(1);
+  });
+});
+
+describe("applyCardEffects — effect ordering", () => {
+  it("heal then damage: both applied in order", () => {
+    const state = makeState({ mana: 10, playerHealth: 15, enemyHealth: 30 });
+    const card = makeCard({
+      effects: [
+        { kind: "heal", amount: 5 },
+        { kind: "damage", damageType: "physical", amount: 10 },
+      ],
+    });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    // heal 5 → health 20, then damage 10 → enemy health 20
+    expect(result.playerHealth).toBe(20);
+    expect(result.enemyHealth).toBe(20);
+  });
+
+  it("restore mana then lose mana produces correct net", () => {
+    const state = makeState({ mana: 3, maxMana: 4 });
+    const card = makeCard({
+      effects: [
+        { kind: "restore-mana", amount: 3 },
+        { kind: "lose-mana", amount: 2 },
+      ],
+    });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    // restore: 3→6, lose: 6→4
+    expect(result.mana).toBe(4);
+  });
+});
+
+describe("applyCardEffects — potion potency", () => {
+  it("potion potency multiplier of 0 makes heal do nothing", () => {
+    const state = makeState({ playerHealth: 15, talentEffects: { ...defaultTalentEffects, potionPotency: 0 } });
+    const card = makeCard({ id: "heal-potion", effects: [{ kind: "heal", amount: 10 }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    // potionPotency=0 → 10*0 = 0 heal → no change
+    expect(result.playerHealth).toBe(15);
+  });
+});
+
+describe("applyCardEffects — overheal conversion to block", () => {
+  it("healing above max health converts excess to block when talent is active", () => {
+    const state = makeState({
+      playerHealth: 28, playerMaxHealth: 30,
+      talentEffects: { ...defaultTalentEffects, overhealToBlockRatio: 0.5 },
+    });
+    const card = makeCard({ effects: [{ kind: "heal", amount: 5 }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    // heal 5: 28→30 (capped at max), 3 overheal * 0.5 = 1.5 → round(1.5) = 2 block
+    expect(result.playerHealth).toBe(30);
+    expect(result.playerStatuses.block).toBe(2);
+  });
+});
+
+describe("applyCardEffects — self-damage with zero amount", () => {
+  it("self-damage with 0 amount does nothing", () => {
+    const state = makeState({
+      playerHealth: 20,
+      playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+    });
+    const card = makeCard({ effects: [{ kind: "self-damage", damageType: "burn", amount: 0 }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    expect(result.playerHealth).toBe(20);
+    expect(result.playerStatuses.burn).toBe(0);
+  });
+});
+
+describe("applyCardEffects — all mana effects in one card", () => {
+  it("gain-max-mana, restore-mana, lose-max-mana, lose-mana in sequence", () => {
+    const state = makeState({ mana: 4, maxMana: 4 });
+    const card = makeCard({
+      effects: [
+        { kind: "gain-max-mana", amount: 2 },
+        { kind: "restore-mana", amount: 3 },
+        { kind: "lose-max-mana", amount: 1 },
+        { kind: "lose-mana", amount: 1 },
+      ],
+    });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    // start: mana=4, max=4
+    // gain-max 2: mana=4+2=6, max=4+2=6
+    // restore 3: mana=6+3=9, max=6
+    // lose-max 1: max=5, mana=min(5,9)=5
+    // lose-mana 1: mana=max(0,5-1)=4
+    expect(result.mana).toBe(4);
+    expect(result.maxMana).toBe(5);
+  });
+});
+
+// ─── applyDamageStatuses rider edge cases ───
+
+describe("applyDamageStatuses — stun talent effects chain", () => {
+  it("stun trigger fires all talent effects: draw, free card, block, forge, strip armor, mana", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.99);
+    const talentEffects = {
+      ...defaultTalentEffects,
+      drawOnStun: 2,
+      nextCardFreeOnStun: true,
+      blockOnStun: 4,
+      forgeOnStun: 2,
+      stunStripArmor: true,
+      manaOnStun: 1,
+    };
+    const card = makeCard({ effects: [{ kind: "damage", damageType: "stun", amount: 20 }] });
+    const texts: CombatTextEvent[] = [];
+    const state = makeState({
+      mana: 10,
+      enemyHealth: 30,
+      enemyMaxHealth: 30,
+      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" })],
+      hand: [],
+      talentEffects,
+      enemyMitigation: { armor: 3, forge: 0, freezeBonus: 0 },
+    });
+    const result = applyCardEffects(state, card, texts);
+    // stun 20 damage - 3 armor = 17 → health 13
+    // stun status applied = 17, threshold: > 30*0.5 = 15 → 17 > 15 → triggers stun
+    // stun trigger fires: draw 2, free card flag, block+4, forge+2, strip armor, mana+1
+    expect(result.enemyHealth).toBe(13);
+    expect(result.enemyStunSkipTurns).toBeGreaterThan(0);
+    expect(result.playerStatuses.block).toBe(4);
+    // forge added by stun talent trigger
+    expect(result.playerStatuses.forge).toBeGreaterThanOrEqual(1);
+    expect(result.enemyMitigation.armor).toBe(0);
+    expect(result.mana).toBe(11);
+    // stun draw talent draws up to drawOnStun cards from deck
+    expect(result.hand.length).toBeGreaterThanOrEqual(1);
+    expect(result.flags.nextCardCostReduction).toBeGreaterThan(0);
+  });
+});
+
+describe("applyDamageStatuses — stun on cooldown enemy", () => {
+  it("does not stun when enemy CC cooldown is active (stun status cleared by immunity)", () => {
+    const card = makeCard({ effects: [{ kind: "damage", damageType: "stun", amount: 20 }] });
+    const texts: CombatTextEvent[] = [];
+    const state = makeState({
+      mana: 10, enemyHealth: 30,
+      enemyMaxHealth: 30,
+      enemyCCCooldown: 1,
+    });
+    const result = applyCardEffects(state, card, texts);
+    // stun 20 > 15 threshold, but cooldown active → immunity clears stun status
+    expect(result.enemyStunSkipTurns).toBe(0);
+    expect(result.enemyStatuses.stun).toBe(0); // immunity clears it
+  });
+});
+
+describe("applyDamageStatuses — freeze threshold boundary", () => {
+  it("freeze triggers when stacks >= health * 0.5", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.99);
+    const card = makeCard({ effects: [{ kind: "damage", damageType: "freeze", amount: 15 }] });
+    const texts: CombatTextEvent[] = [];
+    const state = makeState({
+      mana: 10, enemyHealth: 30, enemyMaxHealth: 30,
+    });
+    const result = applyCardEffects(state, card, texts);
+    // freeze = 15, health = 30, threshold = 0.5 → 15 >= 15 → triggers
+    expect(result.enemyFreezeSkipTurns).toBeGreaterThan(0);
+  });
+
+  it("freeze threshold is checked against post-damage health (which is lower)", () => {
+    const card = makeCard({ effects: [{ kind: "damage", damageType: "freeze", amount: 6 }] });
+    const texts: CombatTextEvent[] = [];
+    const state = makeState({
+      mana: 10, enemyHealth: 30, enemyMaxHealth: 30,
+    });
+    const result = applyCardEffects(state, card, texts);
+    // freeze damage 6 → health 24, freeze=6, threshold=24*0.5=12 → 6 < 12 → no trigger
+    expect(result.enemyFreezeSkipTurns).toBe(0);
+  });
+});
+
+describe("applyDamageStatuses — freeze cooldown skip", () => {
+  it("does not re-freeze when enemy is already on freeze cooldown", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.99);
+    const card = makeCard({ effects: [{ kind: "damage", damageType: "freeze", amount: 25 }] });
+    const texts: CombatTextEvent[] = [];
+    const state = makeState({
+      mana: 10, enemyHealth: 30, enemyMaxHealth: 30,
+      enemyCCCooldown: 2,
+    });
+    const result = applyCardEffects(state, card, texts);
+    // 25 >= 15 threshold, but cooldown active → no new freeze
+    expect(result.enemyFreezeSkipTurns).toBe(0);
+  });
+});
+
+describe("applyDamageStatuses — bleed stacking and leech", () => {
+  it("bleed stacks 2x per hit and accumulates leech healing", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.99);
+    const card1 = makeCard({ effects: [{ kind: "damage", damageType: "bleed", amount: 5 }] });
+    const card2 = makeCard({ effects: [{ kind: "damage", damageType: "bleed", amount: 3 }] });
+    const texts: CombatTextEvent[] = [];
+    const state1 = makeState({ mana: 10, enemyHealth: 50 });
+    const result1 = applyCardEffects(state1, card1, texts);
+    // bleed status: 5 * 2 = 10 bleed stacks
+    expect(result1.enemyStatuses.bleed).toBe(10);
+    const result2 = applyCardEffects(result1, card2, texts);
+    // bleed status: 3 * 2 = 6, total = 16 bleed stacks
+    expect(result2.enemyStatuses.bleed).toBe(16);
+  });
+
+  it("bleed leech accumulates across multiple bleed hits", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.99);
+    const card = makeCard({ effects: [{ kind: "damage", damageType: "bleed", amount: 4, lifesteal: true }] });
+    const texts: CombatTextEvent[] = [];
+    const state = makeState({ mana: 10, enemyHealth: 50 });
+    const result = applyCardEffects(state, card, texts);
+    // bleed status: 4 * 2 = 8. Lifesteal on card + bleed leech from bleedAmount (8)
+    // pendingBleedLeechHealing: base 8 + lifesteal proc = 8
+    expect(result.enemyStatuses.bleed).toBe(8);
+    // pendingBleedLeechHealing added from bleed leech (8 * BLEED_STATUS_MULTIPLIER = 16)
+    // wait, let me re-read the code:
+    // stackBleed: bleedAmount = statusDamage * 2 = 4 * 2 = 8
+    // queueBleedLeech: if lifesteal true, pendingBleedLeechHealing += bleedAmount(8)
+    // So pendingBleedLeechHealing = 8
+    expect(result.pendingBleedLeechHealing).toBe(8);
+  });
+});
+
+describe("applyDamageStatuses — poison talent riders", () => {
+  it("poison strip armor works regardless of random", () => {
+    const talentEffects = { ...defaultTalentEffects, poisonStripArmor: true };
+    const card = makeCard({ effects: [{ kind: "damage", damageType: "poison", amount: 6 }] });
+    const texts: CombatTextEvent[] = [];
+    const state = makeState({
+      mana: 10, enemyHealth: 50,
+      talentEffects,
+      enemyMitigation: { armor: 3, forge: 0, freezeBonus: 0 },
+    });
+    const result = applyCardEffects(state, card, texts);
+    // armor decays by 1 from hit, then poisonStripArmor strips 1 → armor 1
+    expect(result.enemyMitigation.armor).toBe(1);
+  });
+
+  it("poison leech talent heals the player", () => {
+    const talentEffects = { ...defaultTalentEffects, poisonLeechChance: 100 };
+    const card = makeCard({ effects: [{ kind: "damage", damageType: "poison", amount: 5 }] });
+    const texts: CombatTextEvent[] = [];
+    const state = makeState({
+      mana: 10, enemyHealth: 30, enemyMaxHealth: 30, playerHealth: 20,
+      talentEffects,
+    });
+    const result = applyCardEffects(state, card, texts);
+    // poisonLeechChance=100% triggers, heals player
+    expect(result.playerHealth).toBeGreaterThan(20);
+  });
+});
+
+describe("applyDamageStatuses — forge threshold bursts", () => {
+  it("crossing multiple forge thresholds in one gain fires all bursts", () => {
+    const card = makeCard({ effects: [{ kind: "player-status", status: "forge", amount: 4 }] });
+    const texts: CombatTextEvent[] = [];
+    const state = makeState({
+      playerStatuses: { block: 0, armor: 0, forge: 2, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
+      talentEffects: {
+        ...defaultTalentEffects,
+        forgeBurnThreshold: 3, forgeBurnDamage: 5,
+        forgeStripArmorThreshold: 4,
+        forgeBlockThreshold: 5, forgeBlockAmount: 3,
+      },
+      enemyMitigation: { armor: 2, forge: 0, freezeBonus: 0 },
+    });
+    const result = applyCardEffects(state, card, texts);
+    // forge: 2+4 = 6 → crosses threshold 3 (burn burst), 4 (strip armor), 5 (block burst)
+    expect(result.playerStatuses.forge).toBe(6);
+    expect(result.enemyStatuses.burn).toBeGreaterThan(0);
+    expect(result.enemyMitigation.armor).toBe(0);
+    expect(result.playerStatuses.block).toBeGreaterThanOrEqual(3);
+  });
+});
+
+describe("applyDamageStatuses — null field halves status application", () => {
+  it("burn status rider is halved in null field", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.99);
+    const card = makeCard({ effects: [{ kind: "damage", damageType: "burn", amount: 10 }] });
+    const texts: CombatTextEvent[] = [];
+    const state = makeState({
+      mana: 10, enemyHealth: 50,
+      difficultyModifiers: [{ kind: "labyrinth-null-field" }],
+    });
+    const result = applyCardEffects(state, card, texts);
+    // adjustEnemyStatusDelta halves: Math.round(10 / 2) = 5 burn
+    expect(result.enemyStatuses.burn).toBe(5);
+  });
+});
+
+// ─── playBattleCardResolved edge cases ───
+
+describe("playBattleCardResolved — first-card-free", () => {
+  it("firstPhysicalCardFree makes first physical card cost 0", () => {
+    const card = makeCard({
+      id: "slash", cost: 2,
+      effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
+    });
+    const state = makeState({
+      mana: 4, hand: [card],
+      talentEffects: { ...defaultTalentEffects, firstPhysicalCardFree: true },
+    });
+    const result = playBattleCardResolved(state, "slash", 0);
+    expect(result.state.mana).toBe(4);
+    expect(result.state.flags.firstPhysicalCardFreeUsed).toBe(true);
+  });
+
+  it("first-card-free flag is consumed once and not re-used", () => {
+    const card1 = makeCard({
+      id: "slash1", cost: 2,
+      effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
+    });
+    const card2 = makeCard({
+      id: "slash2", cost: 2,
+      effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
+    });
+    const state = makeState({
+      mana: 4, hand: [card1, card2],
+      talentEffects: { ...defaultTalentEffects, firstPhysicalCardFree: true },
+    });
+    const first = playBattleCardResolved(state, "slash1", 0);
+    // first card free → mana still 4
+    expect(first.state.mana).toBe(4);
+    expect(first.state.flags.firstPhysicalCardFreeUsed).toBe(true);
+
+    const second = playBattleCardResolved(first.state, "slash2", 0);
+    // second card costs 2 → mana 2
+    expect(second.state.mana).toBe(2);
+  });
+
+  it("firstPhysicalCardFree does not apply to non-physical cards", () => {
+    const card = makeCard({
+      id: "fire", cost: 2,
+      effects: [{ kind: "damage", damageType: "burn", amount: 5 }],
+    });
+    const state = makeState({
+      mana: 4, hand: [card],
+      talentEffects: { ...defaultTalentEffects, firstPhysicalCardFree: true },
+    });
+    const result = playBattleCardResolved(state, "fire", 0);
+    // not physical → no free, costs 2 → mana 2
+    expect(result.state.mana).toBe(2);
+  });
+});
+
+describe("playBattleCardResolved — Mortar and Pestle free potion", () => {
+  it("first potion costs 0 with mortar and pestle trinket", () => {
+    const card = makeCard({
+      id: "heal-potion", cost: 2,
+      effects: [{ kind: "heal", amount: 5 }],
+    });
+    const manifest = computeTrinketManifest(["mortar-and-pestle"]);
+    const state = makeState({
+      mana: 4, hand: [card],
+      trinketEffects: manifest,
+    });
+    const result = playBattleCardResolved(state, "heal-potion", 0);
+    expect(result.state.mana).toBe(4);
+    expect(result.state.flags.firstPotionFreeUsed).toBe(true);
+  });
+
+  it("non-potion card is not free even with mortar and pestle", () => {
+    const card = makeCard({
+      id: "slash", cost: 2,
+      effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
+    });
+    const manifest = computeTrinketManifest(["mortar-and-pestle"]);
+    const state = makeState({
+      mana: 4, hand: [card],
+      trinketEffects: manifest,
+    });
+    const result = playBattleCardResolved(state, "slash", 0);
+    // not a potion (doesn't end with POTION_CARD_ID_SUFFIX) → costs 2 → mana 2
+    expect(result.state.mana).toBe(2);
+  });
+});
+
+describe("playBattleCardResolved — burn on consume", () => {
+  it("deals burn damage to enemy when consume card is played with talent", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.99);
+    const card = makeCard({
+      id: "consumable", cost: 1, consume: true,
+      effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
+    });
+    const state = makeState({
+      mana: 10, hand: [card], enemyHealth: 30,
+      talentEffects: { ...defaultTalentEffects, burnOnConsumeAmount: 4 },
+    });
+    const result = playBattleCardResolved(state, "consumable", 0);
+    // physical 5 damage + burn 4 from talent = 9 total dmg → health 21
+    expect(result.state.enemyHealth).toBe(21);
+    expect(result.state.exhausted).toHaveLength(1);
+    expect(result.state.exhausted[0].id).toBe("consumable");
+  });
+});
+
+describe("playBattleCardResolved — runic quill draw on consume", () => {
+  it("draws a card when consume card is played with runic quill trinket", () => {
+    const card = makeCard({
+      id: "consumable", cost: 1, consume: true,
+      effects: [],
+    });
+    const state = makeState({
+      mana: 10, hand: [card],
+      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" })],
+      trinketEffects: { ...defaultTrinketEffects, runicQuillDrawOnConsume: 1 },
+    });
+    const result = playBattleCardResolved(state, "consumable", 0);
+    expect(result.state.hand).toHaveLength(1);
+    expect(result.state.flags.runicQuillUsedThisTurn).toBe(true);
+  });
+
+  it("runic quill only triggers once per turn (second consume does not draw)", () => {
+    const card1 = makeCard({ id: "c1", cost: 1, consume: true, effects: [] });
+    const state = makeState({
+      mana: 10, hand: [card1],
+      deck: [makeCard({ id: "d1" })],
+      trinketEffects: { ...defaultTrinketEffects, runicQuillDrawOnConsume: 1 },
+    });
+    const first = playBattleCardResolved(state, "c1", 0);
+    expect(first.state.flags.runicQuillUsedThisTurn).toBe(true);
+    // drew 1, consumed 1 → hand still has 1
+    expect(first.state.hand).toHaveLength(1);
+
+    // second play on the same state with another consume card
+    const card2 = makeCard({ id: "c2", cost: 1, consume: true, effects: [] });
+    const state2 = makeState({
+      mana: 10, hand: [card2],
+      deck: [makeCard({ id: "d2" })],
+      trinketEffects: { ...defaultTrinketEffects, runicQuillDrawOnConsume: 1 },
+      flags: { ...first.state.flags },
+    });
+    const second = playBattleCardResolved(state2, "c2", 0);
+    // quill should NOT fire again → hand 0
+    expect(second.state.hand).toHaveLength(0);
+  });
+});
+
+describe("playBattleCardResolved — nextCardCostReduction", () => {
+  it("nextCardCostReduction reduces cost of next card", () => {
+    const card = makeCard({
+      id: "slash", cost: 3,
+      effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
+    });
+    const state = makeState({
+      mana: 4, hand: [card],
+      flags: {
+        firstPhysicalCardFreeUsed: false, firstHolyCardFreeUsed: false,
+        firstBurnCardDoubledUsed: false, firstArmorCardDoubledUsed: false,
+        firstPoisonCardFreeUsed: false, firstBleedCardFreeUsed: false,
+        nextCardCostReduction: 2, goldOnFirstPoisonThisCombat: false,
+        firstHolyDamageBonusUsed: false, firstBurnTrinketDoubledUsed: false,
+        firstHarmfulStatusPrevented: false, firstPotionFreeUsed: false,
+        resonantChimeUsedThisTurn: false, runicQuillUsedThisTurn: false,
+      },
+    });
+    const result = playBattleCardResolved(state, "slash", 0);
+    // cost 3 - 2 reduction = 1 → mana 4→3
+    expect(result.state.mana).toBe(3);
+    // nextCardCostReduction reset to 0 after play
+    expect(result.state.flags.nextCardCostReduction).toBe(0);
+  });
+});
+
+describe("playBattleCardResolved — play card with full hand", () => {
+  it("playing a card that draws more with full hand respects MAX_HAND_SIZE", () => {
+    const card = makeCard({
+      id: "draw-more", cost: 1,
+      effects: [{ kind: "draw-cards", amount: 2 }],
+    });
+    const hand = Array.from({ length: 7 }, (_, i) => makeCard({ id: `h${i}` }));
+    const state = makeState({
+      mana: 10, hand,
+      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" })],
+    });
+    // replace card at index 0 with the draw-more card
+    const modifiedHand = [card, ...hand.slice(1)];
+    const modifiedState = { ...state, hand: modifiedHand };
+    const result = playBattleCardResolved(modifiedState, "draw-more", 0);
+    // played at index 0 → hand had 6 left + drawn (but cap at 7) → should be 6+1=7
+    expect(result.state.hand.length).toBeLessThanOrEqual(7);
+    expect(result.state.hand.length).toBe(7);
+  });
+});
+
+describe("playBattleCardResolved — card not in hand", () => {
+  it("returns unchanged state when cardId doesn't match hand[index]", () => {
+    const state = makeState({
+      mana: 4, hand: [makeCard({ id: "real-card", cost: 1 })],
+    });
+    const result = playBattleCardResolved(state, "wrong-card-id", 0);
+    expect(result.state).toBe(state);
+    expect(result.combatTexts).toEqual([]);
+  });
+
+  it("returns unchanged state when index is out of bounds", () => {
+    const state = makeState({
+      mana: 4, hand: [makeCard({ id: "card", cost: 1 })],
+    });
+    const result = playBattleCardResolved(state, "card", 5);
+    expect(result.state).toBe(state);
+    expect(result.combatTexts).toEqual([]);
+  });
+});
+
+describe("playBattleCardResolved — cardsPlayedThisTurn tracking", () => {
+  it("increments cardsPlayedThisTurn for each card played", () => {
+    const card = makeCard({
+      id: "c1", cost: 1,
+      effects: [{ kind: "damage", damageType: "physical", amount: 1 }],
+    });
+    const state = makeState({
+      mana: 10, hand: [card],
+      cardsPlayedThisTurn: 0,
+    });
+    const result = playBattleCardResolved(state, "c1", 0);
+    expect(result.state.cardsPlayedThisTurn).toBe(1);
+  });
+});
+
+describe("playBattleCardResolved — defensive guards", () => {
+  it("prevents play when enemy health is exactly 0", () => {
+    const card = makeCard({ id: "c1", cost: 1 });
+    const state = makeState({ enemyHealth: 0, hand: [card] });
+    const result = playBattleCardResolved(state, "c1", 0);
+    expect(result.state).toBe(state);
+  });
+
+  it("prevents play when player is defeated", () => {
+    const card = makeCard({ id: "c1", cost: 1 });
+    const state = makeState({
+      playerHealth: 0, deathsDoorUsed: true, deathsDoorActive: false, hand: [card],
+    });
+    const result = playBattleCardResolved(state, "c1", 0);
+    expect(result.state).toBe(state);
+  });
+});

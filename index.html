@@ -5,11 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Alchemy is a fantasy roguelite deckbuilder game." />
     <style>
-      /* Prevent initial white flash by setting the theme background and layout resets immediately */
+      /* Expose the same CSS variables as index.css so the pre-React inline
+         loading bar automatically stays in sync with the app theme. */
+      :root {
+        --alchemy-bg: 30 10% 3%;
+        --alchemy-fg: 40 25% 88%;
+        --alchemy-border: 30 8% 16%;
+        --alchemy-primary: 36 55% 56%;
+      }
       html,
       body {
-        background-color: #0c0a07; /* Matches HSL 30 10% 3% from index.css */
-        color: #ebdcb5; /* Matches HSL 40 25% 88% from index.css */
+        background-color: hsl(var(--alchemy-bg));
+        color: hsl(var(--alchemy-fg));
         margin: 0;
         padding: 0;
         height: 100%;
@@ -52,14 +59,14 @@
         height: 100vh;
         width: 100vw;
         gap: 12px;
-        background-color: #0c0a07;
-        color: #ebdcb5;
+        background-color: hsl(var(--alchemy-bg));
+        color: hsl(var(--alchemy-fg));
         font-family: 'Inter', sans-serif;
       ">
         <div style="
           height: 4px;
           width: 192px;
-          background-color: #29241f; /* Matches --border */
+          background-color: hsl(var(--alchemy-border));
           border-radius: 9999px;
           overflow: hidden;
           position: relative;
@@ -67,13 +74,13 @@
           <div style="
             height: 100%;
             width: 100%;
-            background-color: #cca464; /* Matches --primary */
+            background-color: hsl(var(--alchemy-primary));
             border-radius: 9999px;
             position: absolute;
             left: 0;
             top: 0;
             transform-origin: left;
-            animation: alchemy-startup-pulse 900ms infinite ease-in-out;
+            animation: alchemy-startup-pulse 1200ms ease-in-out forwards;
           "></div>
         </div>
         <p style="
@@ -81,9 +88,9 @@
           font-weight: 500;
           text-transform: uppercase;
           letter-spacing: 0.18em;
-          color: rgba(235, 220, 181, 0.4);
+          text-align: center;
+          color: hsl(var(--alchemy-fg) / 0.4);
           margin: 0;
-          animation: alchemy-loading-pulse 900ms infinite ease-in-out;
         ">Loading...</p>
       </div>
       <style>
@@ -91,10 +98,6 @@
           0% { transform: scaleX(0); }
           70% { transform: scaleX(1); }
           100% { transform: scaleX(1); }
-        }
-        @keyframes alchemy-loading-pulse {
-          0%, 100% { opacity: 0.4; }
-          50% { opacity: 0.8; }
         }
       </style>
     </div>
