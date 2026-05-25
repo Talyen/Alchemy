@@ -1,5 +1,7 @@
 pre-commit:
   commands:
+    lockfile-check:
+      run: npm ci --dry-run
     format:
       glob: "src/**/*.{ts,tsx,css}"
       run: npx -y prettier --write {staged_files}
@@ -12,6 +14,8 @@ commit-msg:
 
 pre-push:
   commands:
+    lockfile-check:
+      run: npm ci --dry-run
     format-check:
       run: npm run format:check
     lint:

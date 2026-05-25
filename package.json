@@ -30,7 +30,7 @@
     "test:e2e:critical": "playwright test --project chromium --grep \"App Boot|Block Mechanics|Victory Rewards|Battle Flow|Character Select|Collection|Options Screen|Game Over|Mobile Portrait\"",
     "test:e2e:ui": "playwright test --project chromium --ui",
     "balance:sim": "cross-env ALCHEMY_BALANCE_SIM=1 vitest run tests/balance/balance-report.test.ts --reporter=verbose && start \"\" reports\\balance-report.html",
-    "check": "npm run format:check && npm run lint && npm test && npm run build",
+    "check": "npm ci --dry-run && npm run format:check && npm run lint && npm test && npm run build",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",
