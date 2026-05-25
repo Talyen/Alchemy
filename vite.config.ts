@@ -4,6 +4,7 @@ import { fileURLToPath, URL } from "node:url";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import checker from "vite-plugin-checker";
+import { visualizer } from "rollup-plugin-visualizer";
 
 const devPort = Number.parseInt(process.env.ALCHEMY_DEV_PORT ?? "5173", 10);
 
@@ -22,6 +23,13 @@ export default defineConfig(({ mode }) => ({
     mode === "development" &&
       checker({
         typescript: { tsconfigPath: "./tsconfig.json" },
+      }),
+    process.env.ANALYZE &&
+      visualizer({
+        open: true,
+        gzipSize: true,
+        brotliSize: true,
+        filename: "reports/bundle-analysis.html",
       }),
   ].filter(Boolean),
   build: {
@@ -47,11 +55,11 @@ export default defineConfig(({ mode }) => ({
     },
   },
   test: {
-    include: ["tests/**/*.test.ts"],
+    include: ["tests/**/*.test.ts", "tests/**/*.test.tsx"],
     coverage: {
       provider: "v8",
       include: ["src/lib/**", "src/features/alchemy/**"],
-      exclude: ["src/**/*.tsx", "src/**/types.ts", "src/**/assets.ts"],
+      exclude: ["src/**/*.tsx", "src/**/types.ts", "src/**/assets.ts", "tests/**"],
     },
   },
 }));

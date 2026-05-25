@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import { getAudioContext, getCachedBuffer } from "@/lib/audio-buffer-cache";
+import { getAudioContext } from "@/lib/audio-buffer-cache";
 import { audioState } from "@/lib/audio-state";
 import {
   stopAllSfx,
@@ -50,8 +50,6 @@ describe("stopAllSfx", () => {
   });
 
   it("stops active sources and clears the set", () => {
-    const source1 = { stop: vi.fn() };
-    const source2 = { stop: vi.fn() };
     getAudioContext();
     stopAllSfx();
     expect(() => stopAllSfx()).not.toThrow();

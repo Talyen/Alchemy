@@ -1,109 +1,79 @@
 import { expect, test } from "@playwright/test";
 import { startAtDestination } from "./helpers";
+import { ShopPage } from "./pages/shop-page";
+
+async function setupShop(page: import("@playwright/test").Page, gold: number, destination: string) {
+  await startAtDestination(page, { runGold: gold }, { forceDestination: destination });
+  await page.getByRole("button", { name: destination }).click();
+  await expect(page.getByRole("heading", { name: destination })).toBeVisible();
+}
 
 test.describe("Merchant Shop", () => {
   test.describe("with sufficient gold", () => {
     test.beforeEach(async ({ page }) => {
-      await startAtDestination(page, { runGold: 9999 }, { forceDestination: "Merchant's Shop" });
-      await page.getByRole("button", { name: "Merchant's Shop" }).click();
-      await expect(page.getByRole("heading", { name: "Merchant's Shop" })).toBeVisible();
+      await setupShop(page, 9999, "Merchant's Shop");
     });
 
     test("buying a card deducts gold and marks as purchased", async ({ page }) => {
-      const goldText = await page.getByText(/\d+ Gold/).first().textContent();
-      const goldBefore = goldText ? Number(goldText.match(/\d+/)?.[0]) : 0;
+      const shop = new ShopPage(page);
+      const goldBefore = await shop.gold();
 
-      const buyButton = page.getByRole("button", { name: /^Buy/ }).first();
-      await expect(buyButton).toBeVisible();
-      await expect(buyButton).toBeEnabled();
-      await buyButton.click();
-      await expect(page.getByText("Purchased").first()).toBeVisible({ timeout: 3000 });
+      await shop.buyCard();
+      await shop.waitForPurchase();
 
-      const goldAfterText = await page.getByText(/\d+ Gold/).first().textContent();
-      const goldAfter = goldAfterText ? Number(goldAfterText.match(/\d+/)?.[0]) : 0;
-      expect(goldAfter).toBeLessThan(goldBefore);
+      expect(await shop.gold()).toBeLessThan(goldBefore);
     });
 
     test("card removal deducts gold and removes card from deck", async ({ page }) => {
-      const removeBtn = page.getByRole("button", { name: /Remove Card/ });
-      await expect(removeBtn).toBeVisible();
-      await expect(removeBtn).toBeEnabled();
+      const shop = new ShopPage(page);
+      const goldBefore = await shop.gold();
 
-      const goldTextBefore = await page.getByText(/\d+ Gold/).first().textContent();
-      const goldBefore = goldTextBefore ? Number(goldTextBefore.match(/\d+/)?.[0]) : 0;
+      await shop.startCardRemoval();
+      await shop.selectCardInGrid();
+      await shop.confirmRemoval();
 
-      await removeBtn.click();
-
-      await page.locator('[data-testid="card-selection-grid"] [aria-label^="Select "]').first().click();
-
-      const confirmBtn = page.getByRole("button", { name: /Remove Card/ });
-      await expect(confirmBtn).toBeEnabled({ timeout: 3000 });
-      await confirmBtn.click();
-
-      const goldTextAfter = await page.getByText(/\d+ Gold/).first().textContent();
-      const goldAfter = goldTextAfter ? Number(goldTextAfter.match(/\d+/)?.[0]) : 0;
-      expect(goldAfter).toBeLessThan(goldBefore);
+      expect(await shop.gold()).toBeLessThan(goldBefore);
     });
 
     test("shop refresh changes displayed cards and deducts gold", async ({ page }) => {
-      const cardButtons = page.locator('button[aria-label^="Inspect "]');
-      await expect(cardButtons.first()).toBeVisible();
-      const cardNamesBefore = await Promise.all(
-        (await cardButtons.all()).map((btn) => btn.getAttribute("aria-label"))
-      );
+      const shop = new ShopPage(page);
+      await expect(shop.inspectButtons.first()).toBeVisible();
+      const cardNamesBefore = await shop.getInspectLabels();
       expect(cardNamesBefore.length).toBeGreaterThan(0);
 
-      const goldTextBefore = await page.getByText(/\d+ Gold/).first().textContent();
-      const goldBefore = goldTextBefore ? Number(goldTextBefore.match(/\d+/)?.[0]) : 0;
+      const goldBefore = await shop.gold();
+      await shop.refresh();
 
-      const refreshBtn = page.getByRole("button", { name: /Refresh/ });
-      await expect(refreshBtn).toBeVisible();
-      await expect(refreshBtn).toBeEnabled();
-      await refreshBtn.click();
-
-      // Wait until the gold text changes to a smaller value (confirming the refresh happened)
       await expect(async () => {
-        const goldTextAfter = await page.getByText(/\d+ Gold/).first().textContent();
-        const goldAfter = goldTextAfter ? Number(goldTextAfter.match(/\d+/)?.[0]) : 0;
-        expect(goldAfter).toBeLessThan(goldBefore);
+        expect(await shop.gold()).toBeLessThan(goldBefore);
       }).toPass({ timeout: 3000 });
 
-      const cardNamesAfter = await Promise.all(
-        (await cardButtons.all()).map((btn) => btn.getAttribute("aria-label"))
-      );
+      const cardNamesAfter = await shop.getInspectLabels();
       const sameCards = cardNamesBefore.length === cardNamesAfter.length
         && cardNamesBefore.every((name, i) => name === cardNamesAfter[i]);
       expect(sameCards).toBe(false);
     });
 
     test("remove card button is visible with sufficient gold", async ({ page }) => {
-      const removeBtn = page.getByRole("button", { name: /Remove Card/ });
-      await expect(removeBtn).toBeVisible();
-      await expect(removeBtn).toBeEnabled();
+      const shop = new ShopPage(page);
+      await expect(shop.removeCardBtn).toBeVisible();
+      await expect(shop.removeCardBtn).toBeEnabled();
     });
   });
 
   test.describe("with insufficient gold", () => {
     test.beforeEach(async ({ page }) => {
-      await startAtDestination(page, { runGold: 40 }, { forceDestination: "Merchant's Shop" });
-      await page.getByRole("button", { name: "Merchant's Shop" }).click();
-      await expect(page.getByRole("heading", { name: "Merchant's Shop" })).toBeVisible();
+      await setupShop(page, 40, "Merchant's Shop");
     });
 
     test("buying a card deducts gold and reflects balance", async ({ page }) => {
-      const goldTextBefore = await page.getByText(/\d+ Gold/).first().textContent();
-      const goldBefore = goldTextBefore ? Number(goldTextBefore.match(/\d+/)?.[0]) : 0;
+      const shop = new ShopPage(page);
+      const goldBefore = await shop.gold();
 
-      const buyButton = page.getByRole("button", { name: /^Buy/ }).first();
-      await expect(buyButton).toBeVisible();
-      await expect(buyButton).toBeEnabled();
-      await buyButton.click();
+      await shop.buyCard();
+      await shop.waitForPurchase();
 
-      await expect(page.getByText("Purchased").first()).toBeVisible({ timeout: 3000 });
-
-      const goldTextAfter = await page.getByText(/\d+ Gold/).first().textContent();
-      const goldAfter = goldTextAfter ? Number(goldTextAfter.match(/\d+/)?.[0]) : 0;
-      expect(goldAfter).toBeLessThan(goldBefore);
+      expect(await shop.gold()).toBeLessThan(goldBefore);
     });
   });
 });
@@ -111,60 +81,36 @@ test.describe("Merchant Shop", () => {
 test.describe("Alchemist Shop", () => {
   test.describe("with sufficient gold", () => {
     test.beforeEach(async ({ page }) => {
-      await startAtDestination(page, { runGold: 9999 }, { forceDestination: "Alchemist's Shop" });
-      await page.getByRole("button", { name: "Alchemist's Shop" }).click();
-      await expect(page.getByRole("heading", { name: "Alchemist's Shop" })).toBeVisible();
+      await setupShop(page, 9999, "Alchemist's Shop");
     });
 
     test("buy potions and mix them", async ({ page }) => {
+      const shop = new ShopPage(page);
+
       for (let i = 0; i < 2; i++) {
-        const buyButton = page.getByRole("button", { name: /^Buy/ }).nth(i);
-        await expect(buyButton).toBeEnabled({ timeout: 3000 });
-        await buyButton.click();
+        await shop.buyCard(i);
       }
-      await expect(page.getByText("Purchased").nth(0)).toBeVisible();
+      await expect(page.getByText("Purchased").first()).toBeVisible();
 
-      const mixButton = page.getByRole("button", { name: /Mix Potions/ });
-      await expect(mixButton).toBeEnabled();
-      await mixButton.click();
-      await expect(page.getByText("Select two Potions to Combine")).toBeVisible();
-
-      const selectButtons = page.getByRole("button", { name: /^Select / });
-      const potionCount = await selectButtons.count();
-      expect(potionCount).toBeGreaterThanOrEqual(2);
-
-      await selectButtons.nth(0).click();
-      await selectButtons.nth(1).click();
-
-      await expect(page.getByRole("button", { name: "Combine" })).toBeEnabled({ timeout: 3000 });
-      await page.getByRole("button", { name: "Combine" }).click();
-
-      await expect(page.getByText("Added to Deck: Mixed Potion")).toBeVisible({ timeout: 3000 });
+      await shop.mixPotions();
       await expect(page.getByLabel("Mixed Potion")).toBeVisible();
-      await page.getByRole("button", { name: "Continue" }).click();
+      await shop.continueBtn.click();
     });
   });
 
   test.describe("with insufficient gold", () => {
     test.beforeEach(async ({ page }) => {
-      await startAtDestination(page, { runGold: 40 }, { forceDestination: "Alchemist's Shop" });
-      await page.getByRole("button", { name: "Alchemist's Shop" }).click();
-      await expect(page.getByRole("heading", { name: "Alchemist's Shop" })).toBeVisible();
+      await setupShop(page, 40, "Alchemist's Shop");
     });
 
     test("buying potions deducts gold and purchased state is shown", async ({ page }) => {
-      const goldTextBefore = await page.getByText(/\d+ Gold/).first().textContent();
-      const goldBefore = goldTextBefore ? Number(goldTextBefore.match(/\d+/)?.[0]) : 0;
+      const shop = new ShopPage(page);
+      const goldBefore = await shop.gold();
 
-      const buyButton = page.getByRole("button", { name: /^Buy/ }).first();
-      await expect(buyButton).toBeVisible();
-      await expect(buyButton).toBeEnabled();
-      await buyButton.click();
-      await expect(page.getByText("Purchased").first()).toBeVisible({ timeout: 3000 });
+      await shop.buyCard();
+      await shop.waitForPurchase();
 
-      const goldTextAfter = await page.getByText(/\d+ Gold/).first().textContent();
-      const goldAfter = goldTextAfter ? Number(goldTextAfter.match(/\d+/)?.[0]) : 0;
-      expect(goldAfter).toBeLessThan(goldBefore);
+      expect(await shop.gold()).toBeLessThan(goldBefore);
     });
   });
 });

@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { defaultBattleState, type BattleState, type CombatTextEvent } from "@/lib/battle";
 import { hydrateCard } from "@/lib/game-data";
 import { COMBAT_TEXT_LANE_DELAY_MS, COMBAT_TEXT_LIFETIME_MS, SHAKE_DURATION } from "@/lib/game-constants";
+import { delay } from "@/lib/animation/game-timer";
 import type { CardGhost, FloatingCombatText } from "@/features/alchemy/types";
 
 function getCombatTextDisplayText(event: CombatTextEvent): string {
@@ -125,18 +126,17 @@ export const useBattleStore = create<BattleStore>()((set) => ({
       } satisfies FloatingCombatText;
     });
 
-    nextEntries.forEach((entry) => {
-      const delay = entry.lane * combatTextLaneDelayMs;
-      setTimeout(() => {
-        set((s) => ({ floatingCombatTexts: [...s.floatingCombatTexts, entry] }));
-        setTimeout(
-          () => {
-            set((s) => ({ floatingCombatTexts: s.floatingCombatTexts.filter((c) => c.id !== entry.id) }));
-          },
-          combatTextLifetimeMs + entry.lane * combatTextLaneDelayMs,
-        );
-      }, delay);
-    });
+    for (const entry of nextEntries) {
+      const entryDelay = entry.lane * combatTextLaneDelayMs;
+      delay(entryDelay)
+        .then(() => {
+          set((s) => ({ floatingCombatTexts: [...s.floatingCombatTexts, entry] }));
+          return delay(combatTextLifetimeMs);
+        })
+        .then(() => {
+          set((s) => ({ floatingCombatTexts: s.floatingCombatTexts.filter((c) => c.id !== entry.id) }));
+        });
+    }
   },
 
   clearFloatingCombatTexts: () => set({ floatingCombatTexts: [] }),

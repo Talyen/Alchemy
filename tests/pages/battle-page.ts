@@ -5,6 +5,8 @@ export class BattlePage {
 
   readonly hand = this.page.locator('[aria-label^="Play "]');
   readonly manaPanel = this.page.getByTestId("mana-panel");
+  readonly playerHealthPanel = this.page.getByTestId("player-health");
+  readonly enemyHealthPanel = this.page.getByTestId("enemy-health");
   readonly endTurnBtn = this.page.getByRole("button", { name: "End Turn" });
   readonly victoryHeading = this.page.getByRole("heading", { name: /^Victory/ });
   readonly defeatHeading = this.page.getByRole("heading", { name: "Defeat" });
@@ -14,6 +16,16 @@ export class BattlePage {
 
   async mana(): Promise<number> {
     return Number(await this.manaPanel.getAttribute("data-mana"));
+  }
+
+  async playerHealth(): Promise<number> {
+    const text = await this.playerHealthPanel.textContent();
+    return Number(text?.split("/")[0] ?? 30);
+  }
+
+  async enemyHealth(): Promise<number> {
+    const text = await this.enemyHealthPanel.textContent();
+    return Number(text?.split("/")[0] ?? 30);
   }
 
   async block(): Promise<number> {
@@ -61,17 +73,4 @@ export class BattlePage {
     }
   }
 
-  async fightTurns(maxTurns = 10) {
-    for (let turn = 0; turn < maxTurns; turn++) {
-      if (await this.isBattleOver()) return;
-      await this.playAllCards();
-      if (await this.isBattleOver()) return;
-      await this.endTurnBtn.click();
-      await expect(this.endTurnBtn).toBeEnabled({ timeout: 7000 }).catch(async (e) => {
-        if (await this.isBattleOver()) return;
-        throw e;
-      });
-    }
-    throw new Error("Battle did not reach the Victory screen in time.");
-  }
 }

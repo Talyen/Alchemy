@@ -1,6 +1,6 @@
 # Alchemy
 
-**Alchemy** is a fantasy roguelite deckbuilder prototype for the browser and desktop. Build a deck, survive encounters, unlock talents between runs, and push through to the final boss.
+**Alchemy** is a fantasy roguelite deckbuilder for the browser and desktop. Build a deck, survive encounters, unlock talents between runs, and push through to the final boss.
 
 ## Features
 
@@ -17,7 +17,7 @@
 ## Quick Start
 
 ```sh
-git clone <repo-url>
+git clone <repository-url>
 cd alchemy
 npm install
 npm run dev
@@ -30,7 +30,7 @@ npm run dev
 | Command                 | Action                                                 |
 | ----------------------- | ------------------------------------------------------ |
 | `npm run dev`           | Start Vite dev server                                  |
-| `npm run build`         | TypeScript check, production build, then format source |
+| `npm run build`         | TypeScript check, then production build |
 | `npm run preview`       | Preview the production build locally                   |
 | `npm test`              | Run Vitest unit tests                                  |
 | `npm run test:coverage` | Run Vitest with coverage                               |
@@ -40,6 +40,8 @@ npm run dev
 | `npm run release`       | Bump version + generate changelog + create git tag     |
 | `npm run balance:sim`   | Run headless balance simulation report                 |
 
+> See [`AGENTS.md`](./AGENTS.md) for the complete list of commands.
+
 ## Desktop Build
 
 The game also has an Electron shell for local desktop builds.
@@ -47,7 +49,7 @@ The game also has an Electron shell for local desktop builds.
 | Command                 | Action                            |
 | ----------------------- | --------------------------------- |
 | `npm run dev:desktop`   | Run Vite and Electron together    |
-| `npm run build:desktop` | Build the desktop renderer bundle |
+| `npm run build:desktop` | TypeScript check and desktop production build |
 | `npm run package:win`   | Create an unpacked Windows build  |
 | `npm run dist:win`      | Create a Windows installer        |
 
@@ -119,16 +121,35 @@ All simulations use deterministic seeding for reproducible results.
 ## Project Structure
 
 ```
+desktop/               # Electron main/preload entry points
+scripts/               # Build/optimization scripts
 src/
+├── app/                  # App bootstrapping, startup screen, save-state, preload
 ├── lib/                  # Pure game logic (no React)
+│   ├── animation/        # Particle systems
+│   ├── balance/          # Balance simulation engine
 │   ├── battle/           # State machine, effects, draw
 │   ├── content-systems/  # Map and encounter generation
-│   └── game-data/        # Cards, keywords, enemies
+│   ├── game-data/        # Cards, keywords, compendium (barrel: @/lib/game-data)
+│   ├── homestead/        # Between-run hub logic
+│   ├── ui/               # Utility UI logic
+│   ├── validation/       # Zod schemas and migrations
+│   ├── audio.ts          # Web Audio buffer playback
+│   ├── audio-*.ts        # SFX, music, volume, state, cache
+│   ├── game-constants.ts # All tuning knobs
+│   ├── talents.ts        # Talent XP math
+│   └── trinkets.ts       # Trinket definitions
 ├── features/alchemy/     # React UI
+│   ├── navigation/       # Map and routing
 │   ├── screens/          # Pages
+│   ├── storage/          # Save/load and persistence
+│   ├── stores/           # Zustand state stores
+│   ├── talents/          # Talent UI
 │   └── ui/               # Reusable widgets
 ├── components/           # Shared UI primitives
-└── assets/optimized/     # Pre-optimized images and sounds
+├── assets/optimized/     # Pre-optimized images
+└── public/               # Static assets (sounds, music, card art)
+tests/                   # Vitest unit tests and Playwright e2e specs
 ```
 
 ## Assets
@@ -141,7 +162,7 @@ Asset optimization runs automatically before development and production builds.
 | `npm run sounds:optimize` | Optimize sound effects  |
 | `npm run music:optimize`  | Optimize music assets   |
 
-Generated optimized assets are committed under `src/assets/optimized/`.
+Optimized images are committed under `src/assets/optimized/`. Optimized sounds are output to `public/sounds/`.
 
 ## Deployment
 
@@ -149,8 +170,8 @@ The web build targets Vercel. `vercel.json` uses `npm run build`, outputs `dist`
 
 ## Tech Stack
 
-React • TypeScript • Vite • Tailwind CSS • Zustand • Electron • Vitest • Playwright • Motion • Radix UI • ESLint • Prettier
+React • TypeScript • Vite • Tailwind CSS • Zustand • Electron • Vitest • Playwright • Motion • Radix UI • Zod • ESLint • Prettier • commitlint • lefthook
 
-## Contributing
+## Development Guide
 
-See [`AGENTS.md`](./AGENTS.md) for the full development guide — architecture, conventions, tuning knobs, and domain glossary.
+See [`AGENTS.md`](./AGENTS.md) for AI-assisted development conventions, architecture notes, and a domain glossary.

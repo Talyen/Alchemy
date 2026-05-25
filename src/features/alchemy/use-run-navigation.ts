@@ -2,6 +2,7 @@
 // Depends on: useScreenStore, battle system, game constants, audio registry, and navigation flow helpers.
 // Depended on by: useAlchemyRunController for managing the overall flow of a run.
 import { useEffect, useMemo, useRef, useCallback } from "react";
+import { TimerGroup } from "@/lib/animation/game-timer";
 import { useShallow } from "zustand/react/shallow";
 import { useRunStore } from "./stores/run-store";
 import { useAppStore } from "./stores/app-store";
@@ -224,15 +225,9 @@ export function useRunNavigation({
   const mystery = useMysteryFlow({
     advanceToNextDestination,
   });
-  const rewardTransitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const rewardTransitionTimer = useRef(new TimerGroup());
 
-  function clearRewardTransitionTimer() {
-    if (!rewardTransitionTimerRef.current) return;
-    clearTimeout(rewardTransitionTimerRef.current);
-    rewardTransitionTimerRef.current = null;
-  }
-
-  useEffect(() => clearRewardTransitionTimer, []);
+  useEffect(() => () => rewardTransitionTimer.current.clearAll(), []);
 
   const currentActiveRunData = useMemo(
     () =>
@@ -318,13 +313,13 @@ export function useRunNavigation({
   // ============ Victory / Defeat Effects ============
 
   const handleBattleDefeat = useCallback(() => {
-    clearRewardTransitionTimer();
+    rewardTransitionTimer.current.clearAll();
     const runState = useRunStore.getState();
     if (runState.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.LABYRINTH) {
       stopAllSfx();
       onLabyrinthFailNode();
       useBattleStore.getState().setHasActiveBattle(false);
-      useScreenStore.getState().setHoveredCardId(null);
+      getStore().setHoveredCardId(null);
       navigateTo(CONSTANTS.SCREENS.LABYRINTH_MAP);
       return;
     }
@@ -333,14 +328,14 @@ export function useRunNavigation({
     stopAllSfx();
     playDefeat();
     useBattleStore.getState().setHasActiveBattle(false);
-    useScreenStore.getState().setHoveredCardId(null);
+    getStore().setHoveredCardId(null);
     setScreen(CONSTANTS.SCREENS.GAME_OVER);
   }, [navigateTo, setScreen, onLabyrinthFailNode, awardRunEndMaterials, run]);
 
   const handleBattleVictory = useCallback(() => {
-    clearRewardTransitionTimer();
+    rewardTransitionTimer.current.clearAll();
     const runState = useRunStore.getState();
-    const activeLabyrinthRewardModifiers = useScreenStore.getState().activeLabyrinthRewardModifiers;
+    const activeLabyrinthRewardModifiers = getStore().activeLabyrinthRewardModifiers;
     const battleState = useBattleStore.getState().battleState;
 
     const result = computeVictoryRewards({
@@ -371,7 +366,7 @@ export function useRunNavigation({
       playGoldGain();
     }
 
-    const screenStore = useScreenStore.getState();
+    const screenStore = getStore();
     screenStore.setRewardState(result.rewardState);
 
     if (shouldGrantCompanionReward(result.labyrinthRewardModifiers)) {
@@ -385,8 +380,7 @@ export function useRunNavigation({
     stopAllSfx();
     playVictory();
 
-    rewardTransitionTimerRef.current = setTimeout(() => {
-      rewardTransitionTimerRef.current = null;
+    rewardTransitionTimer.current.setTimeout(() => {
       setScreen(CONSTANTS.SCREENS.REWARDS);
     }, VICTORY_TRANSITION_DELAY);
   }, [setScreen, getAvailableDestinations]);
@@ -453,6 +447,7 @@ export function useRunNavigation({
       return;
     }
     if (systemType !== CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN) {
+      console.warn("[useRunNavigation] handleCharacterSelect: unhandled content system", systemType);
       return;
     }
 
@@ -597,7 +592,10 @@ export function useRunNavigation({
   }
 
   function handleDifficultySelect(difficultyId: DifficultyId) {
-    if (!pendingCharacterId) return;
+    if (!pendingCharacterId) {
+      console.warn("[useRunNavigation] handleDifficultySelect: no pending character");
+      return;
+    }
     const selectedId = pendingCharacterId;
     const { freshDeck, totalStartGold } = initializeRunForDifficulty(selectedId, difficultyId);
     const modifiers = getDifficultyModifiers(selectedId, difficultyId);
@@ -825,7 +823,7 @@ export function useRunNavigation({
   // ============ State Reset ============
 
   function resetRunState() {
-    clearRewardTransitionTimer();
+    rewardTransitionTimer.current.clearAll();
     clearCardGhosts();
     setHoveredCardId(null);
     setHasActiveBattle(false);

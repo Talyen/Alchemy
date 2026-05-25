@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  getEnemyDamageMultiplier,
   resolveStunTrigger,
   applyDamageStatuses,
   applyPlayerStatusEffect,
@@ -509,6 +510,58 @@ describe("resolveStunTrigger", () => {
     const result = resolveStunTrigger(state, texts);
     expect(result.mana).toBe(3);
     expect(texts).toContainEqual({ target: "player", kind: "status", stat: "mana", amount: 1 });
+  });
+});
+
+// ─── getEnemyDamageMultiplier ───
+
+describe("getEnemyDamageMultiplier", () => {
+  it("returns 1 when no multipliers apply", () => {
+    const state = baseState();
+    const result = getEnemyDamageMultiplier(state, "physical");
+    expect(result).toBe(1);
+  });
+
+  it("returns TRAIT_DAMAGE_WEAKNESS when stunDoubleDamage is active and enemy is stunned", () => {
+    const state = baseState({ enemyStunSkipTurns: 1, talentEffects: { ...baseState().talentEffects, stunDoubleDamage: true } });
+    const result = getEnemyDamageMultiplier(state, "physical");
+    expect(result).toBe(2);
+  });
+
+  it("returns TRAIT_DAMAGE_WEAKNESS when freezeDoubleDamage is active and enemy is frozen", () => {
+    const state = baseState({ enemyFreezeSkipTurns: 1, talentEffects: { ...baseState().talentEffects, freezeDoubleDamage: true } });
+    const result = getEnemyDamageMultiplier(state, "physical");
+    expect(result).toBe(2);
+  });
+
+  it("returns 4x when both stun and freeze double damage are active", () => {
+    const state = baseState({
+      enemyStunSkipTurns: 1,
+      enemyFreezeSkipTurns: 1,
+      talentEffects: { ...baseState().talentEffects, stunDoubleDamage: true, freezeDoubleDamage: true },
+    });
+    const result = getEnemyDamageMultiplier(state, "physical");
+    expect(result).toBe(4);
+  });
+
+  it("trait weakness takes priority over stun/freeze multipliers", () => {
+    const state = baseState({
+      enemyStunSkipTurns: 1,
+      enemyFreezeSkipTurns: 1,
+      talentEffects: { ...baseState().talentEffects, stunDoubleDamage: true, freezeDoubleDamage: true },
+      currentEnemy: {
+        id: "brittle-skeleton",
+        title: "Brittle Skeleton",
+        subtitle: "",
+        descriptionLines: [""],
+        art: "",
+        enemyType: "normal",
+        traits: [{ id: "brittle-bones", title: "Brittle Bones", description: "Weak to Holy" }],
+        attackEffects: [],
+      },
+    });
+    const result = getEnemyDamageMultiplier(state, "holy");
+    expect(result).toBe(2); // trait weakness, not stun×freeze
   });
 });
 

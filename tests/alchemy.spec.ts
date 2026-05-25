@@ -1,16 +1,6 @@
-import { expect, type Page, test } from "@playwright/test";
-import { enableFastMode, failOnRuntimeErrors, makeCard, makeHighDamageCard, playUntilVictory, selectGameMode, startBattleWithDeck } from "./helpers";
+import { expect, test } from "@playwright/test";
+import { AEGIS_CARD, BLOCK_CARD, enableFastMode, failOnRuntimeErrors, makeCard, makeHighDamageCard, playUntilVictory, selectGameMode, startBattleWithDeck } from "./helpers";
 import { BattlePage } from "./pages/battle-page";
-
-async function parsePlayerHealth(page: Page): Promise<number> {
-  const text = await page.getByTestId("player-health").textContent();
-  return Number(text?.split("/")[0] ?? 30);
-}
-
-async function parseEnemyHealth(page: Page): Promise<number> {
-  const text = await page.getByTestId("enemy-health").textContent();
-  return Number(text?.split("/")[0] ?? 30);
-}
 
 test.describe("App Boot", () => {
   test("main menu renders without crashing on desktop", async ({ page }) => {
@@ -22,21 +12,18 @@ test.describe("App Boot", () => {
 });
 
 test.describe("Block Mechanics", () => {
-  const BLOCK_CARD = { id: "block", title: "Block", descriptionLines: ["Gain 5 Block"], art: "placeholder", cost: 1, effects: [{ kind: "player-status", status: "block", amount: 5 }] };
-  const AEGIS_CARD = { id: "blessed-aegis", title: "Blessed Aegis", descriptionLines: ["Deal Holy damage equal to your Block"], art: "placeholder", cost: 1, effects: [{ kind: "damage", damageType: "holy", amount: 0, equalToBlock: true }] };
-
   test("block card absorbs attack damage and halves at end of turn", async ({ page }) => {
     await enableFastMode(page);
     await startBattleWithDeck(page, [BLOCK_CARD, BLOCK_CARD, BLOCK_CARD, BLOCK_CARD, BLOCK_CARD, BLOCK_CARD]);
     const battle = new BattlePage(page);
 
-    const hpBefore = await parsePlayerHealth(page);
+    const hpBefore = await battle.playerHealth();
 
     await page.getByRole("button", { name: "Play Block" }).first().click();
 
     await battle.endTurn();
 
-    const hpAfter = await parsePlayerHealth(page);
+    const hpAfter = await battle.playerHealth();
     const hpLost = hpBefore - hpAfter;
 
     expect(hpLost).toBeLessThanOrEqual(5);
@@ -53,7 +40,7 @@ test.describe("Block Mechanics", () => {
 
     await page.getByRole("button", { name: "Play Blessed Aegis" }).first().click();
 
-    const enemyHp = await parseEnemyHealth(page);
+    const enemyHp = await battle.enemyHealth();
     expect(enemyHp).toBeLessThan(30);
     const blockAfter = await battle.block();
     expect(blockAfter).toBe(blockAfterBlock);

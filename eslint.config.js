@@ -46,6 +46,18 @@ export default tseslint.config(
     },
   },
 
+  // Test files — relax rules for test-specific patterns
+  {
+    files: ["tests/**/*.ts", "tests/**/*.tsx"],
+    rules: {
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^(describe|it|expect|vi|beforeEach|afterEach)$" },
+      ],
+      "@typescript-eslint/no-explicit-any": "off",
+    },
+  },
+
   // Node.js scripts (CommonJS + ESM) — after base rules so overrides take effect
   {
     files: ["desktop/**/*.cjs", "postcss.config.mjs", "scripts/**/*.mjs"],

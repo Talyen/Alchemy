@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { enableFastMode, forceNextDestinationChoice, makeCard, makeHighDamageCard, startAtDestination, startBattleWithDeck, playUntilVictory, skipBattleAndClaimReward } from "./helpers";
+import { ANVIL_CARD, enableFastMode, forceNextDestinationChoice, MANA_BERRIES_CARD, makeCard, makeHighDamageCard, startAtDestination, startBattleWithDeck, playUntilVictory, skipBattleAndClaimReward } from "./helpers";
 import { BattlePage } from "./pages/battle-page";
 
 test.describe("Battle Flow", () => {
@@ -30,8 +30,7 @@ test.describe("Battle Flow", () => {
 
   test("anvil card grants forge status that persists across turns", async ({ page }) => {
     await enableFastMode(page);
-    const ANVIL = { id: "anvil", title: "Anvil", descriptionLines: ["Gain 1 Forge"], art: "placeholder", cost: 1, effects: [{ kind: "player-status", status: "forge", amount: 1 }] };
-    await startBattleWithDeck(page, [ANVIL, ANVIL, ANVIL, ANVIL, ANVIL, ANVIL]);
+    await startBattleWithDeck(page, [ANVIL_CARD, ANVIL_CARD, ANVIL_CARD, ANVIL_CARD, ANVIL_CARD, ANVIL_CARD]);
     const battle = new BattlePage(page);
 
     await page.getByRole("button", { name: "Play Anvil" }).first().click();
@@ -45,8 +44,7 @@ test.describe("Battle Flow", () => {
 test.describe("Mana Mechanics", () => {
   test("restore-mana overflows beyond maxMana", async ({ page }) => {
     await enableFastMode(page);
-    const MANA_BERRIES = { id: "mana-berries", title: "Mana Berries", descriptionLines: ["Restore 2 Mana", "Consume"], art: "placeholder", cost: 1, consume: true, effects: [{ kind: "restore-mana", amount: 2 }] };
-    await startBattleWithDeck(page, [MANA_BERRIES, MANA_BERRIES, MANA_BERRIES, MANA_BERRIES, MANA_BERRIES, MANA_BERRIES]);
+    await startBattleWithDeck(page, [MANA_BERRIES_CARD, MANA_BERRIES_CARD, MANA_BERRIES_CARD, MANA_BERRIES_CARD, MANA_BERRIES_CARD, MANA_BERRIES_CARD]);
     const battle = new BattlePage(page);
 
     const maxMana = await battle.mana();

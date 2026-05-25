@@ -181,6 +181,12 @@ describe("unlockTalent", () => {
     useRunStore.getState().unlockTalent("burn", "talent-2");
     expect(useRunStore.getState().unlockedTalents.burn).toEqual(["talent-1", "talent-2"]);
   });
+
+  it("ignores duplicate unlock of the same talentId", () => {
+    useRunStore.getState().unlockTalent("burn", "talent-1");
+    useRunStore.getState().unlockTalent("burn", "talent-1");
+    expect(useRunStore.getState().unlockedTalents.burn).toEqual(["talent-1"]);
+  });
 });
 
 describe("unlockAllTalents", () => {

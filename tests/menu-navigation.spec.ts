@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { createMinimalLabyrinthMap, enableFastMode, makeCard, openGameModeSelect, selectGameMode, startBattleWithDeck, startCampaignBattle } from "./helpers";
+import { enableFastMode, injectLabyrinthRun, makeCard, openGameModeSelect, selectGameMode, startBattleWithDeck, startCampaignBattle } from "./helpers";
 import { BattlePage } from "./pages/battle-page";
 
 test.describe("Menu", () => {
@@ -26,29 +26,11 @@ test.describe("Menu", () => {
   });
 
   test("Labyrinth button shows Resume when a labyrinth run is active", async ({ page }) => {
-    const map = createMinimalLabyrinthMap();
-    const card = makeCard();
-
-    await page.addInitScript((data) => {
-      const KEY = "alchemy-save-v1";
-      const save = JSON.parse(localStorage.getItem(KEY) || "{}");
-      save.activeRun = {
-        characterId: "knight",
-        runDeck: [data.card],
-        runGold: 0, runPlayerHealth: 30, runMaxHealth: 30, roomsEncountered: 1,
-        currentAct: 1, destinationIndexInAct: 1, completedDestinations: [],
-        runTrinkets: [], selectedDifficulty: null,
-        contentSystemType: "labyrinth", labyrinthMap: data.map,
-      };
-      if (!Array.isArray(save.discoveredCardIds) || save.discoveredCardIds.length === 0) {
-        save.discoveredCardIds = ["slash", "bash", "block"];
-      }
-      localStorage.setItem(KEY, JSON.stringify(save));
-    }, { map, card });
-
-    await page.goto("/");
-    await openGameModeSelect(page);
-    await page.getByRole("button", { name: /The Labyrinth/ }).click();
+    await injectLabyrinthRun(page, {
+      deck: [makeCard()],
+      discoveredCardIds: ["slash", "bash", "block"],
+      runOverrides: { roomsEncountered: 1, destinationIndexInAct: 1 },
+    });
     await expect(page.getByRole("button", { name: "Resume" })).toBeVisible();
   });
 });

@@ -38,3 +38,5 @@ export function appendUnique<T>(items: readonly T[], item: T): T[] {
 export function appendUniqueMany<T>(items: readonly T[], additions: readonly T[]): T[] {
   return Array.from(new Set([...items, ...additions]));
 }
+
+export type Setter<T> = (action: T | ((prev: T) => T)) => void;

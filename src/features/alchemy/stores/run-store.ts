@@ -17,6 +17,7 @@ import type { ActiveRunData } from "@/features/alchemy/run/types";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import { addTalentXP, xpThresholdForPoints, type TalentXP } from "@/lib/talents";
 import type { KeywordId } from "@/lib/game-data";
+import type { Setter } from "@/lib/utils";
 
 type RunStateFields = {
   characterId: CharacterId;
@@ -36,8 +37,6 @@ type RunStateFields = {
   runTalentXP: TalentXP;
   unlockedTalents: UnlockedTalents;
 };
-
-type Setter<T> = (action: T | ((prev: T) => T)) => void;
 
 type RunStoreActions = {
   setRunDeck: Setter<BattleCard[]>;
@@ -148,7 +147,7 @@ export const useRunStore = create<RunStore>()((set) => ({
       ...createInitialRunState(null, s.characterId),
       talentXP: s.talentXP,
       unlockedTalents: s.unlockedTalents,
-      runTalentXP: {} as TalentXP,
+      runTalentXP: {},
     })),
 
   addRunGold: (amount) =>
@@ -158,9 +157,12 @@ export const useRunStore = create<RunStore>()((set) => ({
     }),
 
   unlockTalent: (keywordId, talentId) =>
-    set((s) => ({
-      unlockedTalents: { ...s.unlockedTalents, [keywordId]: [...(s.unlockedTalents[keywordId] ?? []), talentId] },
-    })),
+    set((s) => {
+      if (s.unlockedTalents[keywordId]?.includes(talentId)) return s;
+      return {
+        unlockedTalents: { ...s.unlockedTalents, [keywordId]: [...(s.unlockedTalents[keywordId] ?? []), talentId] },
+      };
+    }),
 
   unlockAllTalents: import.meta.env.DEV
     ? () => {
@@ -199,12 +201,11 @@ export const useRunStore = create<RunStore>()((set) => ({
       runTalentXP: addTalentXP(s.runTalentXP, [keywordId], amount),
     })),
 
-  finalizeRunXP: () => {
-    const current = useRunStore.getState();
-    if (Object.keys(current.runTalentXP).length === 0) return;
-
+  finalizeRunXP: () =>
     set((s) => {
-      const multiplier = getDifficultyXPMultiplier(s.selectedDifficulty);
+      if (Object.keys(s.runTalentXP).length === 0) return s;
+
+      const multiplier = getDifficultyXPMultiplier(s.selectedDifficulty) ?? 1;
 
       const nextTalentXP = { ...s.talentXP };
       for (const [kw, amount] of Object.entries(s.runTalentXP)) {
@@ -217,8 +218,7 @@ export const useRunStore = create<RunStore>()((set) => ({
         talentXP: nextTalentXP,
         runTalentXP: {},
       };
-    });
-  },
+    }),
 
   initialize: (activeRun, talentXP, unlockedTalents, fallbackCharacterId = "knight") => {
     const runState = createInitialRunState(activeRun, fallbackCharacterId);

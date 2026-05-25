@@ -4,7 +4,7 @@
  * Depended on by: use-alchemy-run-controller.ts, tests
  */
 
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { canEnterLabyrinthNode, withCurrentNode, withFailedNode } from "@/lib/content-systems/labyrinth/map-generation";
 import type { LabyrinthMap, LabyrinthNode, LabyrinthModifierKind } from "@/lib/content-systems/types";
 import { useScreenStore } from "./stores/screen-store";
@@ -12,7 +12,7 @@ import type { LabyrinthNodePosition } from "./run/types";
 
 export type LabyrinthController = {
   labyrinthMap: LabyrinthMap;
-  enterNode: (row: number, col: number, handlers: LabyrinthNodeHandlers) => void;
+  enterNode: (row: number, col: number, handlers: LabyrinthNodeHandlers) => boolean;
   onNodeCleared: () => void;
   onNodeFailed: () => void;
   resetMap: () => void;
@@ -70,45 +70,52 @@ function routeNodeInteraction(node: LabyrinthNode, handlers: LabyrinthNodeHandle
 export function useLabyrinthController(): LabyrinthController {
   const labyrinthMap = useScreenStore((s) => s.labyrinthMap);
   const pendingNode = useScreenStore((s) => s.activeLabyrinthPendingNode);
-  const pendingNodeRef = useRef<LabyrinthNodePosition | null>(pendingNode);
+  const pendingNodeRef = useRef(pendingNode);
 
-  const setPendingNode = useCallback((node: LabyrinthNodePosition | null) => {
-    pendingNodeRef.current = node;
-    useScreenStore.getState().setActiveLabyrinthPendingNode(node);
-  }, []);
+  useEffect(() => {
+    pendingNodeRef.current = pendingNode;
+  }, [pendingNode]);
 
   const resetMap = useCallback(() => {
-    setPendingNode(null);
+    pendingNodeRef.current = null;
+    useScreenStore.getState().setActiveLabyrinthPendingNode(null);
     useScreenStore.getState().resetLabyrinthMap();
-  }, [setPendingNode]);
+  }, []);
 
-  const enterNode = useCallback(
-    (row: number, col: number, handlers: LabyrinthNodeHandlers) => {
-      const store = useScreenStore.getState();
-      const map = store.labyrinthMap;
-      const node = map.grid[row]?.[col];
-      if (!node || !canEnterLabyrinthNode(map, row, col)) return;
+  const enterNode = useCallback((row: number, col: number, handlers: LabyrinthNodeHandlers): boolean => {
+    const store = useScreenStore.getState();
+    const map = store.labyrinthMap;
+    const node = map.grid[row]?.[col];
+    if (!node || !canEnterLabyrinthNode(map, row, col)) return false;
 
-      setPendingNode({ row, col });
-      routeNodeInteraction(node, handlers);
-    },
-    [setPendingNode],
-  );
+    const pos = { row, col };
+    pendingNodeRef.current = pos;
+    store.setActiveLabyrinthPendingNode(pos);
+    routeNodeInteraction(node, handlers);
+    return true;
+  }, []);
 
   const onNodeCleared = useCallback(() => {
     const pending = pendingNodeRef.current;
-    setPendingNode(null);
-    if (!pending) return;
+    pendingNodeRef.current = null;
+    useScreenStore.getState().setActiveLabyrinthPendingNode(null);
+    if (!pending) {
+      console.warn("[useLabyrinthController] onNodeCleared called without a pending node");
+      return;
+    }
     useScreenStore.getState().setLabyrinthMap((prev) => withCurrentNode(prev, pending.row, pending.col));
-  }, [setPendingNode]);
+  }, []);
 
   const onNodeFailed = useCallback(() => {
     const pending = pendingNodeRef.current;
-    setPendingNode(null);
-    if (!pending) return;
-    const store = useScreenStore.getState();
-    store.setLabyrinthMap(withFailedNode(store.labyrinthMap, pending));
-  }, [setPendingNode]);
+    pendingNodeRef.current = null;
+    useScreenStore.getState().setActiveLabyrinthPendingNode(null);
+    if (!pending) {
+      console.warn("[useLabyrinthController] onNodeFailed called without a pending node");
+      return;
+    }
+    useScreenStore.getState().setLabyrinthMap(withFailedNode(useScreenStore.getState().labyrinthMap, pending));
+  }, []);
 
   return { labyrinthMap, enterNode, onNodeCleared, onNodeFailed, resetMap, pendingNode };
 }

@@ -138,7 +138,10 @@ export function computeVictoryRewardState(input: {
   );
 }
 
-export function computeVictoryRewards(input: VictoryRewardsInput): VictoryRewardsResult {
+export function computeVictoryRewards(
+  input: VictoryRewardsInput,
+  rng: () => number = Math.random,
+): VictoryRewardsResult {
   const labyrinthRewardModifiers = getActiveRewardModifiersForContentSystem(
     input.contentSystemType,
     input.activeLabyrinthRewardModifiers,
@@ -153,7 +156,7 @@ export function computeVictoryRewards(input: VictoryRewardsInput): VictoryReward
   if (
     talentEffects.companionGoldFindActive &&
     input.battleState.activeCompanion &&
-    Math.random() < COMPANION_GOLD_FIND_CHANCE
+    rng() < COMPANION_GOLD_FIND_CHANCE
   ) {
     gold = Math.floor(gold * COMPANION_GOLD_MULTIPLIER);
   }

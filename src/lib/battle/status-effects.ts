@@ -54,9 +54,10 @@ export function getEnemyDamageMultiplier(
   for (const rule of TRAIT_DAMAGE_RULES) {
     if (traitIds.includes(rule.traitId) && damageType === rule.damageType) return rule.multiplier;
   }
-  if (state.enemyStunSkipTurns > 0 && state.talentEffects.stunDoubleDamage) return TRAIT_DAMAGE_WEAKNESS;
-  if (state.enemyFreezeSkipTurns > 0 && state.talentEffects.freezeDoubleDamage) return TRAIT_DAMAGE_WEAKNESS;
-  return 1;
+  let multiplier = 1;
+  if (state.enemyStunSkipTurns > 0 && state.talentEffects.stunDoubleDamage) multiplier *= TRAIT_DAMAGE_WEAKNESS;
+  if (state.enemyFreezeSkipTurns > 0 && state.talentEffects.freezeDoubleDamage) multiplier *= TRAIT_DAMAGE_WEAKNESS;
+  return multiplier;
 }
 
 function computeForgeBurnAmount(state: BattleState): number {
@@ -187,7 +188,7 @@ function applyStunTrinketEffects(state: BattleState, combatTexts?: CombatTextEve
 
 /** Enemy stun threshold — runs immediately when stun stacks are added from damage. */
 export function resolveStunTrigger(state: BattleState, combatTexts?: CombatTextEvent[]) {
-  const threshold = STUN_THRESHOLD_FRACTION - (state.talentEffects.stunThresholdReduction ?? 0);
+  const threshold = STUN_THRESHOLD_FRACTION - state.talentEffects.stunThresholdReduction;
   if (state.enemyHealth <= 0 || state.enemyStatuses.stun < state.enemyHealth * threshold) return state;
 
   const immuneClear = applyEnemyCcImmunityClear({
@@ -293,7 +294,12 @@ function queueBleedLeech(
 }
 
 function procBleedPoison(state: BattleState, actualDamage: number, bleedAmount: number): BattleState {
-  if (bleedAmount <= 0 || actualDamage <= 0 || !rollPercent(state.talentEffects.bleedPoisonChance, state.rng))
+  if (
+    bleedAmount <= 0 ||
+    actualDamage <= 0 ||
+    state.talentEffects.bleedPoisonChance <= 0 ||
+    !rollPercent(state.talentEffects.bleedPoisonChance, state.rng)
+  )
     return state;
   return addEnemyStatus(state, "poison", actualDamage);
 }
@@ -348,7 +354,7 @@ function tryTriggerEnemyFreeze(
   combatTexts: CombatTextEvent[],
 ): BattleState {
   const isFreezeImmune = preHitState.currentEnemy.traits.some((t) => t.id === ENEMY_TRAIT_IDS.GLACIAL_SHELL);
-  const freezeThreshold = FREEZE_THRESHOLD_FRACTION - (preHitState.talentEffects.freezeThresholdReduction ?? 0);
+  const freezeThreshold = FREEZE_THRESHOLD_FRACTION - preHitState.talentEffects.freezeThresholdReduction;
   if (
     isFreezeImmune ||
     preHitState.enemyHealth <= 0 ||

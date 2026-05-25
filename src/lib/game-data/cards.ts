@@ -271,11 +271,11 @@ export const cardLibrary: BattleCard[] = [
   {
     id: "wishing-potion",
     title: "Wishing Potion",
-    descriptionLines: ["Wish 2", "Consume"],
+    descriptionLines: ["Wish 1", "Consume"],
     art: wishingPotion,
     cost: 1,
     consume: true,
-    effects: [{ kind: "wish", amount: 2 }],
+    effects: [{ kind: "wish", amount: 1 }],
   },
   {
     id: "meteor",

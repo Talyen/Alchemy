@@ -91,6 +91,21 @@ const LABYRINTH_MAP_CONFIG = {
   ],
 } as const;
 
+// Validates every detour path coordinate is within grid bounds.
+// Fails early at module load so misconfigured dimensions are caught immediately.
+function validateDetourPaths(): void {
+  for (const [pathIndex, path] of LABYRINTH_MAP_CONFIG.detourPaths.entries()) {
+    for (const point of path) {
+      if (!isInBounds(point)) {
+        throw new RangeError(
+          `Detour path ${pathIndex}: point (${point.row}, ${point.col}) out of bounds for grid ${LABYRINTH_ROWS}x${LABYRINTH_COLS}`,
+        );
+      }
+    }
+  }
+}
+validateDetourPaths();
+
 function isInRowBand(point: Point, band: Readonly<{ min: number; max: number }>) {
   return point.row >= band.min && point.row <= band.max;
 }
@@ -159,8 +174,14 @@ export function generateLabyrinthMap(rng: () => number = Math.random): Labyrinth
   let graph;
   try {
     graph = generateRouteGraph(rng);
-  } catch {
-    graph = generateRouteGraph(() => Math.random());
+  } catch (cause) {
+    console.warn("[Labyrinth] Seeded map generation failed, retrying with Math.random:", cause);
+    try {
+      graph = generateRouteGraph(() => Math.random());
+    } catch (fallbackCause) {
+      console.error("[Labyrinth] Map generation failed even with Math.random fallback:", fallbackCause);
+      throw Object.assign(new Error("Labyrinth map generation failed after retry"), { rootCause: fallbackCause });
+    }
   }
   const firstCombat = { row: 1, col: CONSTANTS.startCol };
   const { upperRowBand, lowerRowBand } = LABYRINTH_MAP_CONFIG;
@@ -428,37 +449,20 @@ export function withCurrentNode(map: LabyrinthMap, row: number, col: number): La
 }
 
 /**
- * Returns a new map state with the pending node marked as failed,
- * resetting the current position back to the entrance node.
+ * Mutates `map` in-place — marks the node at (row, col) as "failed"
+ * and resets current position to the start node.
+ * @internal Prefer the immutable wrapper `withFailedNode()` in application code.
  */
-export function withFailedNode(map: LabyrinthMap, pending: { row: number; col: number }): LabyrinthMap {
-  const next: LabyrinthMap = {
-    ...map,
-    grid: map.grid.map((r) => r.map((n) => (n ? { ...n, connections: [...n.connections] } : n))),
-  };
-  for (const row of next.grid) {
-    for (const node of row) {
+export function failNode(map: LabyrinthMap, row: number, col: number): void {
+  for (const r of map.grid) {
+    for (const node of r) {
       if (node?.state === "current") {
         node.state = "cleared";
       }
     }
   }
-  const failed = next.grid[pending.row]?.[pending.col];
-  if (failed) {
-    failed.state = "failed";
-  }
-  const startCol = CONSTANTS.startCol;
-  const start = next.grid[CONSTANTS.startRow]?.[startCol];
-  if (start && start.state !== "failed") {
-    start.state = "current";
-    next.currentNode = { row: CONSTANTS.startRow, col: startCol };
-  }
-  return next;
-}
-
-export function failNode(map: LabyrinthMap, row: number, col: number): void {
   const node = map.grid[row]?.[col];
-  if (node && node.state === "current") {
+  if (node) {
     node.state = "failed";
   }
   const startCol = CONSTANTS.startCol;
@@ -469,5 +473,10 @@ export function failNode(map: LabyrinthMap, row: number, col: number): void {
   }
 }
 
-// Immutable variant of failNode — returns a new map instead of mutating.
-// Prefer this over failNode in application code.
+// Immutable variant of failNode — calls failNode on a deep-cloned copy.
+export function withFailedNode(map: LabyrinthMap, pending: { row: number; col: number }): LabyrinthMap {
+  const grid = map.grid.map((r) => r.map((n) => (n ? { ...n, connections: [...n.connections] } : n)));
+  const next: LabyrinthMap = { ...map, grid };
+  failNode(next, pending.row, pending.col);
+  return next;
+}

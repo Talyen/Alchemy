@@ -90,6 +90,14 @@ export function makeCard(overrides: Record<string, unknown> = {}) {
   };
 }
 
+export const BLOCK_CARD = { id: "block", title: "Block", descriptionLines: ["Gain 5 Block"], art: "placeholder", cost: 1, effects: [{ kind: "player-status", status: "block", amount: 5 }] };
+
+export const AEGIS_CARD = { id: "blessed-aegis", title: "Blessed Aegis", descriptionLines: ["Deal Holy damage equal to your Block"], art: "placeholder", cost: 1, effects: [{ kind: "damage", damageType: "holy", amount: 0, equalToBlock: true }] };
+
+export const ANVIL_CARD = { id: "anvil", title: "Anvil", descriptionLines: ["Gain 1 Forge"], art: "placeholder", cost: 1, effects: [{ kind: "player-status", status: "forge", amount: 1 }] };
+
+export const MANA_BERRIES_CARD = { id: "mana-berries", title: "Mana Berries", descriptionLines: ["Restore 2 Mana", "Consume"], art: "placeholder", cost: 1, consume: true, effects: [{ kind: "restore-mana", amount: 2 }] };
+
 export function makeHighDamageCard(amount = 500) {
   return {
     id: "boss-killer", title: "Boss Killer", descriptionLines: ["Deal massive damage"],
@@ -179,12 +187,6 @@ export async function enableFastMode(page: Page) {
   });
 }
 
-export async function disableFastMode(page: Page) {
-  await page.addInitScript(() => {
-    localStorage.removeItem("alchemy-disable-animations");
-  });
-}
-
 export async function startAtDestination(
   page: Page,
   overrides: Record<string, unknown> = {},
@@ -207,6 +209,72 @@ export async function startAtDestination(
     await page.evaluate(() => {
       window.disableForceDestination = true;
     });
+  }
+}
+
+type HomesteadSave = {
+  materialInventory?: Record<string, number>;
+  constructedBuildings?: Record<string, number>;
+  plantedFarms?: Record<string, number>;
+  completedResearch?: Record<string, number>;
+  bondedCompanions?: Record<string, number>;
+  discoveredCardIds?: string[];
+  encounteredEnemyIds?: string[];
+  discoveredTrinketIds?: string[];
+  talentXP?: Record<string, number>;
+  unlockedTalents?: Record<string, unknown>;
+};
+
+const BASE_HOMESTEAD_SAVE: HomesteadSave = {
+  materialInventory: { wood: 999, iron: 999, herbs: 999, food: 999, crystal: 999 },
+  constructedBuildings: { "blacksmiths-forge": 0, "hunters-lodge": 0, "alchemy-lab": 0, "placeholder-1": 0, "placeholder-2": 0, "placeholder-3": 0 },
+  plantedFarms: { "wheat-field": 0, "herb-garden": 0, "chicken-coop": 0, "pasture": 0, "orchard": 0, "crystal-garden": 0 },
+  completedResearch: { "carpentry": 0, "masonry": 0, "crop-rotation": 0, "animal-husbandry": 0, "fortified-walls": 0, "metallurgy": 0 },
+  bondedCompanions: { "wolf": 0, "lizard-scout": 0, "imp": 0, "frost-whelp": 0, "bear": 0, "panther": 0, "phoenix": 0 },
+  discoveredCardIds: ["slash"],
+  encounteredEnemyIds: [],
+  discoveredTrinketIds: [],
+  talentXP: {},
+  unlockedTalents: {},
+};
+
+export async function injectHomestead(page: Page, overrides: Partial<HomesteadSave> = {}) {
+  await page.addInitScript((data) => {
+    localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+  }, { ...BASE_HOMESTEAD_SAVE, ...overrides });
+}
+
+export async function injectLabyrinthRun(
+  page: Page,
+  options: { runOverrides?: Record<string, unknown>; deck?: Record<string, unknown>[]; discoveredCardIds?: string[]; resume?: boolean } = {},
+) {
+  const map = createMinimalLabyrinthMap();
+  await page.addInitScript((data) => {
+    const KEY = "alchemy-save-v1";
+    const save = JSON.parse(localStorage.getItem(KEY) || "{}");
+    save.activeRun = {
+      characterId: "knight",
+      runDeck: [],
+      runGold: 0, runPlayerHealth: 30, runMaxHealth: 30, roomsEncountered: 0,
+      currentAct: 1, destinationIndexInAct: 0, completedDestinations: [],
+      runTrinkets: [], selectedDifficulty: null,
+      contentSystemType: "labyrinth", labyrinthMap: data.map,
+    };
+    if (data.deck) save.activeRun.runDeck = data.deck;
+    if (data.runOverrides) {
+      Object.assign(save.activeRun, data.runOverrides);
+    }
+    save.discoveredCardIds = data.discoveredCardIds || ["slash"];
+    localStorage.setItem(KEY, JSON.stringify(save));
+  }, { map, deck: options.deck ?? null, discoveredCardIds: options.discoveredCardIds ?? null, runOverrides: options.runOverrides ?? null });
+  await page.goto("/");
+  await expect(page.getByRole("button", { name: "Play", exact: true })).toBeEnabled({ timeout: 5000 });
+  await page.getByRole("button", { name: "Play", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Choose Your Adventure" })).toBeVisible({ timeout: 5000 });
+  await page.getByRole("button", { name: /The Labyrinth/ }).click();
+  if (options.resume) {
+    await expect(page.getByRole("button", { name: "Resume" })).toBeVisible({ timeout: 5000 });
+    await page.getByRole("button", { name: "Resume" }).click();
   }
 }
 
@@ -262,71 +330,7 @@ export async function skipBattleAndClaimReward(page: Page) {
   await addBtn.click();
 }
 
-// Cycles through destinations up to 10 attempts until the named destination is found.
-// Intermediate combats are skipped via skipAndReward; non-combat destinations are
-// advanced through automatically.
-export async function navigateToDestination(page: Page, name: string) {
-  for (let attempt = 0; attempt < 8; attempt++) {
-    const leaveButton = page.getByRole("button", { name: "Leave" });
-    if (await leaveButton.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await leaveButton.click();
-    }
-    await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 5000 });
-    const target = page.getByRole("button", { name });
-    if (await target.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await target.click();
-      return;
-    }
-    const combatBtn = page.getByRole("button", { name: /Combat/ }).first();
-    if (await combatBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await combatBtn.click();
-      await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 5000 });
-      await skipBattleAndClaimReward(page);
-    } else {
-      await page.getByRole("button").last().click();
-      await expect(page.getByRole("heading", { name: /^(Choose Destination|Victory)/ }).or(page.getByRole("button", { name: "Leave" }))).toBeVisible({ timeout: 5000 });
-      const leaveAfterEntry = page.getByRole("button", { name: "Leave" });
-      if (await leaveAfterEntry.isVisible({ timeout: 3000 }).catch(() => false)) {
-        await leaveAfterEntry.click();
-        continue;
-      }
-      const cont = page.getByRole("button", { name: "Continue" });
-      if (await cont.isVisible({ timeout: 3000 }).catch(() => false)) {
-        await cont.click();
-        continue;
-      }
-      const skip = page.getByRole("button", { name: "Skip" });
-      if (await skip.isVisible({ timeout: 3000 }).catch(() => false)) {
-        await skip.click();
-        continue;
-      }
-      const selectReward = page.locator('[aria-label^="Select "]').first();
-      if (await selectReward.isVisible({ timeout: 3000 }).catch(() => false)) {
-        await selectReward.click();
-        const rewardConfirm = page.getByRole("button", { name: /^(Add Card|Take Trinket)$/ }).first();
-        await expect(rewardConfirm).toBeEnabled({ timeout: 3000 });
-        await rewardConfirm.click();
-        continue;
-      }
-      const choiceBtn = page.locator("button:not([disabled])").filter({ hasNotText: /Cancel|Menu|Remove Card|Previous|Next/ }).first();
-      if (await choiceBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
-        await choiceBtn.click();
-        const confirmBtn = page.getByRole("button", { name: /Continue|Add Card|Remove Card/ }).first();
-        if (await confirmBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
-          await expect(confirmBtn).toBeEnabled({ timeout: 3000 });
-          await confirmBtn.click();
-        }
-      }
-    }
-  }
-  throw new Error(`Could not find "${name}" in destination choices`);
-}
 
-export async function waitForEnemyTurn(page: Page) {
-  const endTurnButton = page.getByRole("button", { name: "End Turn" });
-  await endTurnButton.click();
-  await expect(endTurnButton).toBeEnabled({ timeout: 7000 });
-}
 
 export async function playUntilVictory(page: Page) {
   const victoryHeading = page.getByRole("heading", { name: /^Victory/ });
@@ -360,60 +364,7 @@ export async function playUntilVictory(page: Page) {
   throw new Error("Battle did not reach the Victory screen in time.");
 }
 
-export async function completeVictoryFlow(page: Page) {
-  await page.locator('[aria-label^="Select "]').first().click();
-  await page.getByRole("button", { name: /^(Add Card|Take Trinket)$/ }).click();
-  await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 5000 });
-}
 
-// Faster combat resolution — plays all cards aggressively with minimal delays.
-// Skips victory checks between card plays for speed.
-export async function quickWin(page: Page) {
-  const endTurn = page.getByRole("button", { name: "End Turn" });
-  const victoryHeading = page.getByRole("heading", { name: /^Victory/ });
-  const hand = page.locator('[aria-label^="Play "]:visible');
-
-  for (let turn = 0; turn < 10; turn++) {
-    for (let i = 0; i < 8; i++) {
-      const card = hand.first();
-      if (!(await card.isVisible({ timeout: 2000 }).catch(() => false))) break;
-      if (!(await card.isEnabled({ timeout: 2000 }).catch(() => false))) break;
-      await card.click({ force: true });
-    }
-
-    if (await victoryHeading.isVisible().catch(() => false)) return;
-
-    await endTurn.click();
-    try {
-      await expect(endTurn).toBeEnabled({ timeout: 7000 });
-    } catch {
-      if (!(await victoryHeading.isVisible().catch(() => false))) throw new Error("End Turn button not enabled and battle not over");
-    }
-  }
-}
-
-// Navigates to the first available Normal Combat destination (most common case).
-// Faster than navigateToDestination for the simple "just get me into battle" case.
-export async function navigateToCombat(page: Page) {
-  for (let attempt = 0; attempt < 4; attempt++) {
-    await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 5000 });
-    const combatBtn = page.getByRole("button", { name: /Combat/ }).first();
-    if (await combatBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await combatBtn.click();
-      return;
-    }
-    const leaveBtn = page.getByRole("button", { name: "Leave" });
-    if (await leaveBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await leaveBtn.click();
-      continue;
-    }
-    const nonCombatBtn = page.getByRole("button").last();
-    if (await nonCombatBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await nonCombatBtn.click();
-    }
-  }
-  throw new Error("Could not find a Combat destination");
-}
 
 // Creates a deterministic battle by injecting a save with the given deck
 // and navigating to the first combat. Skips the startRun UI dance entirely.

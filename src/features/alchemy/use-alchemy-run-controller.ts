@@ -2,6 +2,7 @@
 // Depends on run, battle, shop, navigation, talent, persistence-facing, and homestead state.
 // Used by App as the single UI-facing API while domain rules stay in smaller controllers.
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, useMemo } from "react";
+import { TimerGroup } from "@/lib/animation/game-timer";
 import { useShallow } from "zustand/react/shallow";
 import { cardLibrary, trinketLibrary, computeTalentEffects } from "@/lib/game-data";
 import type { BattleCard, TrinketEntry } from "@/lib/game-data";
@@ -134,15 +135,21 @@ export function useAlchemyRunController({
   const talentEffects = useMemo(() => computeTalentEffects(talentStore.unlockedTalents), [talentStore.unlockedTalents]);
 
   // Adapter objects matching previous useRunState/useTalentState interfaces
-  const run: RunStateController = { ...runStoreFields, ...runStoreActions };
-  const talents: TalentStateController = { ...talentStore, talentEffects };
+  const run: RunStateController = useMemo(
+    () => ({ ...runStoreFields, ...runStoreActions }),
+    [runStoreFields, runStoreActions],
+  );
+  const talents: TalentStateController = useMemo(
+    () => ({ ...talentStore, talentEffects }),
+    [talentStore, talentEffects],
+  );
 
   // ============ Shared State ============
   const [screen, setScreen] = useState<Screen>("menu");
   const hasActiveRun = useScreenStore((s) => s.hasActiveRun);
 
   // ============ Screen Navigation ============
-  const navTimerRef = useRef<number>(0);
+  const navTimer = useRef(new TimerGroup());
   const pendingTransitionCommitRef = useRef<(() => void) | null>(null);
 
   const commitPendingTransition = useCallback(() => {
@@ -154,9 +161,9 @@ export function useAlchemyRunController({
   function navigateTo(nextScreen: Screen, onRenderedScreenCommit?: () => void) {
     // Screen changes are delayed for transition pacing, and transition commits wait until
     // the old rendered screen is about to unmount so it cannot flash with next-screen data.
-    window.clearTimeout(navTimerRef.current);
+    navTimer.current.clearAll();
     pendingTransitionCommitRef.current = onRenderedScreenCommit ?? null;
-    navTimerRef.current = window.setTimeout(() => {
+    navTimer.current.setTimeout(() => {
       if (nextScreen === screen) {
         commitPendingTransition();
         return;
@@ -247,8 +254,8 @@ export function useAlchemyRunController({
     nav.beginLabyrinth();
   }
 
-  function handleLabyrinthNodeEnter(row: number, col: number) {
-    labyrinth.enterNode(row, col, {
+  function handleLabyrinthNodeEnter(row: number, col: number): boolean {
+    return labyrinth.enterNode(row, col, {
       onStartBattleWithModifiers: (enemyType, modifiers, rewardModifiers) => {
         setActiveLabyrinthModifiers(modifiers);
         setActiveLabyrinthRewardModifiers(rewardModifiers);

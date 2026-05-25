@@ -25,13 +25,13 @@ import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import {
   CARD_ACTIVATION_ROTATION_DEGREES,
   CARD_TRANSFER_CONFIG,
-  ENEMY_ATTACK_RECOVERY_DELAY,
   COMPANION_ATTACK_DELAY,
+  ENEMY_ATTACK_RECOVERY_DELAY,
   ENEMY_PHASE_DELAY,
   HAND_FAN_ROTATION_DEGREES,
   isAnimationDisabled,
-  ANIMATION_DISABLED_DURATION,
 } from "@/lib/game-constants";
+import { delay, TimerGroup } from "@/lib/animation/game-timer";
 import { getCardRect, getHoverId } from "./utils";
 import type { RunStateController } from "./use-run-state";
 import type { TalentStateController } from "./use-talent-state";
@@ -102,9 +102,8 @@ export function useBattleController({
   const playerPanelRef = useRef<HTMLDivElement | null>(null);
   const enemyPanelRef = useRef<HTMLDivElement | null>(null);
   const cardPlayInProgressRef = useRef(false);
-  const companionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const enemyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const companionScheduledRef = useRef(false);
+  const battleTimerGroupRef = useRef(new TimerGroup());
   const battleSessionRef = useRef(0);
   const victoryDefeatHandledRef = useRef(false);
   const transferCancelRegistryRef = useRef(createTransferCancelRegistry());
@@ -153,25 +152,12 @@ export function useBattleController({
     return transferCancelRegistryRef.current.register(callback);
   }
 
-  function clearCompanionTimeout() {
-    if (!companionTimeoutRef.current) return;
-    clearTimeout(companionTimeoutRef.current);
-    companionTimeoutRef.current = null;
-  }
-
-  function clearEnemyTimeout() {
-    if (!enemyTimeoutRef.current) return;
-    clearTimeout(enemyTimeoutRef.current);
-    enemyTimeoutRef.current = null;
-  }
-
   function clearTransferHandles() {
     transferCancelRegistryRef.current.cancelAll();
   }
 
   function clearPendingBattleTimeouts() {
-    clearCompanionTimeout();
-    clearEnemyTimeout();
+    battleTimerGroupRef.current.clearAll();
     companionScheduledRef.current = false;
   }
 
@@ -196,7 +182,6 @@ export function useBattleController({
     cardPlayInProgressRef.current = false;
     getStore().setBattleStartState(null);
     // hasActiveBattle is the only lifecycle edge this cleanup should react to.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasActiveBattle]);
 
   const playerCombatTexts = useMemo(
@@ -245,26 +230,17 @@ export function useBattleController({
       const id = `${performance.now()}-${Math.random()}`;
       let completed = false;
       let unregisterCancel = () => {};
-      let timeout: ReturnType<typeof setTimeout> | null = null;
       const finish = (completeTransfer: boolean) => {
         if (completed) return;
         completed = true;
         unregisterCancel();
-        if (timeout) clearTimeout(timeout);
         setCardTransfers((current) => current.filter((item) => item.id !== id));
         if (completeTransfer) onComplete?.();
-        console.log("[flying] remove", id);
         resolve();
       };
       unregisterCancel = registerTransferCancelCallback(() => finish(false));
       setCardTransfers([{ ...transfer, id }]);
-      console.log("[flying] create", id);
-      timeout = setTimeout(
-        () => finish(true),
-        isAnimationDisabled()
-          ? ANIMATION_DISABLED_DURATION
-          : Math.round(transfer.duration * 1000) + CARD_TRANSFER_CONFIG.completionBufferMs,
-      );
+      delay(Math.round(transfer.duration * 1000) + CARD_TRANSFER_CONFIG.completionBufferMs).then(() => finish(true));
     });
   }
 
@@ -275,14 +251,12 @@ export function useBattleController({
       let lastRect: CardRect | null = null;
       let completed = false;
       let unregisterCancel = () => {};
-      let safetyTimer: ReturnType<typeof setTimeout> | null = null;
       let measureFrame: number | null = null;
 
       const finish = (rect: CardRect) => {
         if (completed) return;
         completed = true;
         unregisterCancel();
-        if (safetyTimer !== null) clearTimeout(safetyTimer);
         if (measureFrame !== null) cancelAnimationFrame(measureFrame);
         resolve(rect);
       };
@@ -291,9 +265,9 @@ export function useBattleController({
         finish(localVisualCardRect(handCardRefs.current[cardKey]) ?? fallback);
       });
 
-      safetyTimer = setTimeout(() => {
+      delay(CARD_TRANSFER_CONFIG.stableRectTimeoutMs).then(() => {
         finish(localVisualCardRect(handCardRefs.current[cardKey]) ?? fallback);
-      }, CARD_TRANSFER_CONFIG.stableRectTimeoutMs);
+      });
 
       function tick() {
         measureFrame = null;
@@ -635,7 +609,7 @@ export function useBattleController({
       cardTransferInProgress
     )
       return;
-    clearCompanionTimeout();
+    clearPendingBattleTimeouts();
     const session = battleSessionRef.current;
 
     animateEndTurnThenResolve(currentState, session).catch((err) => {
@@ -738,7 +712,7 @@ export function useBattleController({
           return;
         }
         if (checkBattleEnd(result.state, session)) return;
-        scheduleEnemyTurnResolution(
+        void executeEnemyPhase(
           result.state,
           companionResult.state,
           enemyResolutionTexts,
@@ -787,7 +761,7 @@ export function useBattleController({
     if (dotTexts.length > 0) getStore().showCombatTexts(dotTexts);
   }
 
-  function scheduleEnemyTurnResolution(
+  async function executeEnemyPhase(
     resultState: BattleState,
     currentState: BattleState,
     combatTexts: CombatTextEvent[],
@@ -796,57 +770,44 @@ export function useBattleController({
     enemyPerformedAttack: boolean,
   ) {
     const playerTexts = combatTexts.filter((ct) => ct.target === "player");
-    clearEnemyTimeout();
-    const phaseDelay = isAnimationDisabled() ? ANIMATION_DISABLED_DURATION : ENEMY_PHASE_DELAY;
-    const recoveryDelay = isAnimationDisabled() ? ANIMATION_DISABLED_DURATION : ENEMY_ATTACK_RECOVERY_DELAY;
-    enemyTimeoutRef.current = setTimeout(() => {
-      enemyTimeoutRef.current = null;
-      runIfSessionActive(session, () => {
-        if (enemyPerformedAttack) playEnemyAttack(currentState.currentEnemy.id);
-        if (!currentState.deathsDoorActive && resultState.deathsDoorActive) playBattleEvent("deathsDoor");
-        if (combatTexts.length > 0) getStore().showCombatTexts(combatTexts);
-        if (shouldShakePlayerFromCombatTexts(playerTexts)) getStore().shakePlayer();
-        enemyTimeoutRef.current = setTimeout(() => {
-          enemyTimeoutRef.current = null;
-          runIfSessionActive(session, () => {
-            void handleDrawSequence(
-              currentState.hand,
-              resultState,
-              () => {
-                getStore().setBattleState(resultState);
-              },
-              session,
-            )
-              .catch((err) => {
-                console.error("Failed to handle enemy resolution draw sequence:", err);
-              })
-              .finally(() => {
-                runIfSessionActive(session, () => {
-                  if (checkBattleEnd(resultState, session)) return;
-                  if (playerTurnSkipped) {
-                    resolveEndTurn(resultState, session);
-                    return;
-                  }
-                  scheduleCompanionFollowUp(resultState, session);
-                });
-              });
-          });
-        }, recoveryDelay);
-      });
-    }, phaseDelay);
+    await delay(ENEMY_PHASE_DELAY);
+    if (!isCurrentBattleSession(session)) return;
+    if (enemyPerformedAttack) playEnemyAttack(currentState.currentEnemy.id);
+    if (!currentState.deathsDoorActive && resultState.deathsDoorActive) playBattleEvent("deathsDoor");
+    if (combatTexts.length > 0) getStore().showCombatTexts(combatTexts);
+    if (shouldShakePlayerFromCombatTexts(playerTexts)) getStore().shakePlayer();
+    await delay(ENEMY_ATTACK_RECOVERY_DELAY);
+    if (!isCurrentBattleSession(session)) return;
+    try {
+      await handleDrawSequence(
+        currentState.hand,
+        resultState,
+        () => {
+          getStore().setBattleState(resultState);
+        },
+        session,
+      );
+    } catch (err) {
+      console.error("Failed to handle enemy resolution draw sequence:", err);
+    }
+    if (!isCurrentBattleSession(session)) return;
+    if (checkBattleEnd(resultState, session)) return;
+    if (playerTurnSkipped) {
+      resolveEndTurn(resultState, session);
+      return;
+    }
+    scheduleCompanionFollowUp(resultState, session);
   }
 
   function scheduleCompanionFollowUp(resultState: BattleState, session: number) {
     if (!resultState.activeCompanion || resultState.enemyHealth <= 0) return;
-    const companionDelay = isAnimationDisabled() ? ANIMATION_DISABLED_DURATION : COMPANION_ATTACK_DELAY;
-    companionTimeoutRef.current = setTimeout(() => {
-      companionTimeoutRef.current = null;
-      companionScheduledRef.current = false;
+    battleTimerGroupRef.current.setTimeout(() => {
       runIfSessionActive(session, () => {
+        companionScheduledRef.current = false;
         const texts = resolveCompanionFollowUpTexts(session);
         if (texts.length > 0) getStore().showCombatTexts(texts);
       });
-    }, companionDelay);
+    }, COMPANION_ATTACK_DELAY);
     companionScheduledRef.current = true;
   }
 

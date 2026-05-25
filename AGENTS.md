@@ -9,10 +9,14 @@ Between runs, the **Homestead** lets the player spend **Materials** on permanent
 ```sh
 npm run dev              # Vite dev server
 npm run dev:desktop      # Vite dev server + Electron shell
-npm run build            # tsc + vite build + format
+npm run build            # tsc + vite build
+npm run build:web        # tsc + vite build (alias for build)
+npm run compile:desktop  # tsc + vite build --mode desktop
 npm run build:desktop    # tsc + vite build in desktop mode
 npm run package:win      # Build unpacked Windows desktop app
+npm run package:win:full # Build unpacked Windows app (full path)
 npm run dist:win         # Build Windows desktop installer
+npm run check            # format:check + lint + test + build
 npm run preview          # Preview production web build
 npm test                 # vitest (unit tests)
 npm run test:watch       # vitest in watch mode
@@ -44,19 +48,33 @@ Add a new raw art asset:
 2. Add entry to `scripts/optimize-art.mjs`
 3. `node scripts/optimize-art.mjs`
 
+Add a new status effect:
+1. Define the status type in `src/lib/game-data/types.ts`
+2. Add tick logic in `src/lib/battle/status-ticks.ts`
+3. Add application logic in `src/lib/battle/status-application.ts`
+4. Add CC threshold logic in `src/lib/battle/status-cc.ts`
+5. Register in `src/lib/battle/status-effects.ts`
+6. Add matching keyword in `src/lib/game-data/keywords.ts`
+7. Cover through `tests/lib/battle/` tests
+
 ## Architecture
 
 - `src/lib/` — Pure game logic (no React): `battle/` (state machine, effects, draw), `content-systems/` (map & encounter generation), `homestead/` (between-run hub), `animation/` (particle systems), `talents.ts` (XP math), `audio.ts` + `audio-*.ts` (Web Audio buffer playback), `trinkets.ts`, `game-constants.ts` (all tuning knobs).
 - `src/features/alchemy/` — React UI. `use-alchemy-run-controller.ts` is the central orchestrator; `screens/` are pages, `ui/` are reusable widgets.
 - `src/features/alchemy/stores/` — Zustand stores for app, screen, run, battle, and homestead state.
 - `src/features/alchemy/storage/` — Save/load, persistence defaults, active-run storage, options, and migrations.
-- `src/lib/game-data/` — Cards, keywords, enemies. Barrel export at `src/lib/game-data.ts`.
+- `src/features/alchemy/navigation/` — Map screen and routing between destinations.
+- `src/features/alchemy/talents/` — Talent tree UI.
+- `src/lib/balance/` — Headless balance simulation engine.
+- `src/lib/ui/` — Shared utility UI logic (e.g. `progress.ts`).
+- `src/lib/game-data/` — Cards, keywords, characters, companions, difficulties, talents, compendium (enemies & trinkets). Barrel export at `src/lib/game-data/index.ts`.
 - `src/lib/validation/` — Zod schemas and migration validation for persisted saves.
 - `src/app/` — App-level bootstrapping: startup screen, save version checks, initial-load hook.
-- `src/components/` — Shared UI primitives (`button.tsx`, `select.tsx`, `progress.tsx`, etc.).
+- `src/components/` — Shared UI primitives (`ui/` subdirectory: `button.tsx`, `select.tsx`, `progress.tsx`, etc.).
 - `desktop/` — Electron main/preload entry points for desktop builds.
 - `tests/` — Vitest unit/integration tests and Playwright e2e specs.
-- `@/` path alias → `src/`. Import game data through the barrel, not submodule paths.
+- `scripts/` — Build/optimization scripts (asset, sound, music optimization, etc.).
+- `@/` path alias → `src/`.
 
 ## Key Conventions
 
@@ -64,38 +82,52 @@ Add a new raw art asset:
 - **Store initialization**: Never initialize Zustand store fields with `null as Type` or `null as unknown as Type` — use a factory function or a valid default value. The type assertion bypasses `strictNullChecks` and can cause runtime crashes in subscribers.
 - **Combat texts**: Merged by `(target, kind, stat)` — multi-hit cards produce a single floating number.
 - **Talent effects**: Pre-computed once per battle into `TalentEffectManifest` on state.
-- **No audio files**: Web Audio API buffer playback (`lib/audio.ts`); music MP3s from `Music/`.
+- **Upfront asset preloading (intentional)**: All game art (webp files in `src/assets/optimized/`) is collected at build time via `import.meta.glob` with `eager: true` and preloaded during the startup loading screen (`useInitialLoadReady` in `src/app/use-initial-load-ready.ts`). Sound effects are preloaded at idle after startup (`preloadAllSounds`). This is deliberate — this is a game, not a web app. The loading screen sets expectations, and after it clears, every card art, enemy sprite, and UI icon must be instantly available with zero decode-pop-in during gameplay. **Do not switch to lazy-on-render asset loading.**
 - **All tuning values** in `src/lib/game-constants.ts` — no magic numbers.
 - **Rounding**: Battle math uses `Math.round()` — never `Math.floor()`. Enforced by ESLint `no-restricted-syntax` rule in battle files.
-- **State mutated only through defined state functions**, never directly.
-- **Comments**: Files should have a top-of-file summary. Public or non-obvious functions should have a brief "why" comment; avoid comments that only restate the code.
+- **File summaries**: Every file should begin with a one-line description of its purpose.
+- **Why comments, not what**: Annotate non-obvious decisions; never restate the code.
 - **Persistence**: Treat save data as external API. When changing stored shape, update defaults, schemas, migrations, and legacy save fixtures/tests together.
 - **Randomness**: Prefer existing seeded/test helpers for generated content and random draws. Avoid tests that depend on lucky random outcomes.
 - **Card/data consistency**: When changing card effects, update descriptions and tests together. Keep game data imports through the barrel.
+- **Test-Driven Development**: Write tests before implementing features or fixing bugs. The test defines the expected behavior first; implement only enough to pass it. Ensures all new logic is covered and tests capture intent, not implementation.
 - **Commit messages**: Follow [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `refactor:`, etc.) — enforced by commitlint + lefthook locally, validated in CI. `commit-and-tag-version` reads these to generate the changelog and bump the version automatically.
 
 ## Navigation Hints
 
 | Need | Look in |
 |------|---------|
-| Tuning values | `src/lib/game-constants.ts` |
-| Card effects | `src/lib/game-data/cards.ts` |
+| Audio buffer cache | `src/lib/audio-buffer-cache.ts` |
+| Audio music | `src/lib/audio-music.ts` |
+| Audio SFX | `src/lib/audio-sfx.ts` |
+| Balance simulation | `src/lib/balance/` |
 | Battle state shape | `src/lib/battle/` |
-| Run-level state | `src/features/alchemy/use-alchemy-run-controller.ts` |
-| Zustand stores | `src/features/alchemy/stores/` |
-| Save/load and migrations | `src/features/alchemy/storage/`, `src/lib/validation/` |
-| Sound behaviour | `src/lib/audio.ts` |
-| Talent maths | `src/lib/talents.ts` |
+| Card effects | `src/lib/game-data/cards.ts` |
+| Characters data | `src/lib/game-data/characters.ts` |
+| Companions data | `src/lib/game-data/companions.ts` |
 | Desktop shell | `desktop/` |
-| UI screen | `src/features/alchemy/screens/` |
-| Reusable widget | `src/features/alchemy/ui/` |
-| Unit/integration tests | `tests/**/*.test.ts` |
-| Playwright flows | `tests/**/*.spec.ts`, `tests/pages/` |
+| Difficulties | `src/lib/game-data/difficulties.ts` |
+| Game data imports | always through `@/lib/game-data` barrel |
+| Game-data types | `src/lib/game-data/types.ts` |
 | Homestead logic | `src/lib/homestead/` |
 | Map/encounter generation | `src/lib/content-systems/` |
-| Shared UI components | `src/components/` |
+| Map screen / navigation | `src/features/alchemy/navigation/` |
 | Particle/animation system | `src/lib/animation/` |
-| Game data imports | always through `@/lib/game-data` barrel |
+| Playwright flows | `tests/**/*.spec.ts`, `tests/pages/` |
+| Reusable widget | `src/features/alchemy/ui/` |
+| Run-level state | `src/features/alchemy/use-alchemy-run-controller.ts` |
+| Save/load and migrations | `src/features/alchemy/storage/`, `src/lib/validation/` |
+| Shared UI components | `src/components/` |
+| Shared UI logic | `src/lib/ui/` |
+| Sound behavior | `src/lib/audio.ts` |
+| Talent maths | `src/lib/talents.ts` |
+| Talent tree UI | `src/features/alchemy/talents/` |
+| Test fixtures | `tests/fixtures/` |
+| Trinket logic | `src/lib/trinkets.ts` |
+| Tuning values | `src/lib/game-constants.ts` |
+| UI screen | `src/features/alchemy/screens/` |
+| Unit/integration tests | `tests/**/*.test.ts` |
+| Zustand stores | `src/features/alchemy/stores/` |
 
 ## UI/UX Design Guidelines
 
@@ -112,11 +144,18 @@ This is a fantasy roguelite deckbuilder. The interface must feel like a polished
 
 ## Project Gotchas
 
-- **Shell is PowerShell**: chain with `;` not `&&`; double quotes for interpolation, single for verbatim.
+- **Shell is PowerShell**: chain dependent commands with `; if ($?) { next-command }` — `;` alone always runs regardless of prior exit code. Double quotes for interpolation, single for verbatim.
 - **Vite base path**: `/` (Vercel default); `npm run dev` opens browser automatically.
-- **Build side effect**: `npm run build` runs `npm run format`, so it can modify `src/**/*.{ts,tsx,css}`.
 - **Assets**: `prebuild`/`predev` auto-run asset, sound, and music optimize scripts.
 - **Desktop**: Web builds use Vite directly; desktop builds use Electron entry points in `desktop/` and Vite desktop mode.
+- **SFX are buffers, not files**: SFX use Web Audio API buffer playback (`src/lib/audio.ts`); music MP3s are copied from `Raw Assets/Music/` to `public/Music/` during build and streamed via `<audio>` elements.
+
+## Debugging
+
+- `npm run dev` enables Vite HMR with full source maps.
+- Use React DevTools (Chrome extension) for component tree and state inspection.
+- Zustand stores have devtools middleware — check store config for enabled logging.
+- `window.__ALCHEMY_DEBUG = true` enables verbose combat logging (if implemented).
 
 ## Verification Strategy
 
@@ -126,6 +165,7 @@ This is a fantasy roguelite deckbuilder. The interface must feel like a polished
 - UI flow changes: run the relevant Playwright spec; use `npm run test:e2e:critical` for broad flow confidence.
 - Store/controller changes: run matching `tests/features/stores/`, navigation flow tests, and affected Playwright specs.
 - Desktop changes: run `npm run build:desktop` or a narrower desktop package command when packaging behaviour is affected.
+- Balance simulation: after battle logic or card data changes, consider `npm run balance:sim` to detect regressions in win rates.
 
 ## Test Gotchas
 
@@ -134,9 +174,15 @@ This is a fantasy roguelite deckbuilder. The interface must feel like a polished
 - `playUntilVictory(page)`: loops up to 12 turns playing all playable cards.
 - Prefer deterministic setup helpers over relying on random opening hands or generated maps.
 
+## Testing Patterns
+
+- Use `createBattleState()` from `@/lib/battle/draw` for deterministic test setup.
+- Prebuilt decks, enemies, and save data live in `tests/fixtures/`.
+- Organize tests per mechanic: `describe("MechanicName", ...)` with focused `it` blocks.
+
 ## Generated And Heavy Files
 
-Avoid editing or re-reading unless directly relevant: `package-lock.json`, `Raw Assets/**`, `src/assets/optimized/**`, `Music/**`, `dist/**`, `.vite/**`, `release-desktop/**`, `coverage/**`, `reports/**`.
+Avoid editing or re-reading unless directly relevant: `node_modules/`, `package-lock.json`, `Raw Assets/**`, `src/assets/optimized/**`, `Music/**`, `dist/**`, `.vite/**`, `release-desktop/**`, `coverage/**`, `reports/**`.
 
 ## Large Stable Files
 
@@ -151,7 +197,7 @@ These are central and may be large. Avoid repeated reads within a session unless
 | **Run** | A full playthrough from character select to victory or defeat. |
 | **Destination** | A map node chosen between battles (e.g. Combat, Elite, Boss, Campfire, Merchant). |
 | **Gold** | Currency earned in battle, spent at Merchants and the Alchemist. |
- 
+
 ### Battle Concepts
 
 | Term | Definition |
@@ -165,8 +211,7 @@ These are central and may be large. Avoid repeated reads within a session unless
 | **Mana** | Resource spent to play cards; hand refills and Mana regenerates each turn. |
 | **Health** | Player health — reaching 0 ends the run. Also a keyword on healing effects. |
 | **Leech** | Heals the player for damage dealt by the card. |
-| **Arrow** | Arrow deals a variety of damage types. |
- 
+
 ### Status Effects (by category)
 
 | Term | Definition |
@@ -198,7 +243,7 @@ These are central and may be large. Avoid repeated reads within a session unless
 |------|-----------|
 | **Homestead** | The persistent hub between runs for spending materials on permanent upgrades. |
 | **Material** | A resource type earned between runs and spent in the Homestead. |
-| **Farm** | A Homestead building that produces materials.
+| **Farm** | A Homestead building that produces materials. |
 
 ## Token Efficiency Rules
 
@@ -206,25 +251,25 @@ These are central and may be large. Avoid repeated reads within a session unless
 Prioritize targeted accuracy over exhaustive exploration.
 
 ### File Reading
-* Avoid recursively scanning the repo — inspect structure first, then open only likely targets
-* Prefer symbol-level lookup over full-file reads
-* Stop reading once you have sufficient context
-* Avoid rereading files already summarized
+- Avoid recursively scanning the repo — inspect structure first, then open only likely targets
+- Prefer symbol-level lookup over full-file reads
+- Stop reading once you have sufficient context
+- Avoid rereading files already summarized
 
 ### Tool Usage
-* Avoid calls to multiple tools for the same purpose
-* Avoid retrying identical failed commands without modification
-* Batch related operations whenever possible
+- Avoid calls to multiple tools for the same purpose
+- Avoid retrying identical failed commands without modification
+- Batch related operations whenever possible
 
 ### Output
-* No prose, commentary, or task restatement
-* No line-by-line explanation of code changes unless asked
-* Prefer diffs over full rewrites
-* Status updates: <100 words — Implementation summaries: <200 words
+- No prose, commentary, or task restatement
+- No line-by-line explanation of code changes unless asked
+- Prefer diffs over full rewrites
+- Status updates: <100 words — Implementation summaries: <200 words
 
 ### Reasoning Effort
-* Simple bugfixes/CRUD: low deliberation, fast execution
-* Reserve deeper reasoning for architecture, concurrency, security, and ambiguous requirements
+- Simple bugfixes/CRUD: low deliberation, fast execution
+- Reserve deeper reasoning for architecture, concurrency, security, and ambiguous requirements
 
 ## Preventing Reasoning Loops
 

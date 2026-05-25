@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { companionLibrary } from "@/lib/game-data/companions";
-import type { CompanionDefinition } from "@/lib/game-data/types";
 
 describe("companionLibrary data integrity", () => {
   it("has all expected companions", () => {

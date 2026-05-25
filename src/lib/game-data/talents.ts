@@ -1024,6 +1024,9 @@ export const talentPool: TalentDefinition[] = [
     effects: [addEffect("flatArrowDamage", 1)],
   },
   ...placeholderTalents("arrow", "arrow-placeholder", 2, 10),
+
+  // --- Consume (placeholders for grid completeness) ---
+  ...placeholderTalents("consume", "consume", 1, 10),
 ];
 
 // Filter helpers for the talent selection UI.

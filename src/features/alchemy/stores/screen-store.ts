@@ -21,6 +21,7 @@ import type { CorruptionResult } from "@/features/alchemy/corruption";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { CharacterId } from "@/lib/game-data";
 import type { LabyrinthNodePosition } from "@/features/alchemy/run/types";
+import type { Setter } from "@/lib/utils";
 
 type ShopState = {
   cards: BattleCard[];
@@ -43,8 +44,6 @@ const emptyAlchemist: AlchemistState = {
   mixUsed: false,
   firstPurchaseUsed: false,
 };
-
-type Setter<T> = (action: T | ((prev: T) => T)) => void;
 
 type ShimmerState = { cardId: string; token: number } | null;
 
