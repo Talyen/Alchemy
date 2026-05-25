@@ -4,7 +4,7 @@
 
 import { computeTalentEffects, getGoldMultiplier } from "@/lib/game-data";
 import type { BattleState } from "@/lib/battle";
-import type { BattleCard, CharacterId, DifficultyId, UnlockedTalents } from "@/lib/game-data";
+import type { BattleCard, CharacterId, DifficultyId, UnlockedTalents, TalentEffectManifest } from "@/lib/game-data";
 import { randomBetween } from "@/features/alchemy/utils/random";
 import { getEnemyMaterialLoot, applyMaterialFindBonus } from "@/lib/homestead/loot";
 import type { MaterialInventory } from "@/lib/homestead/types";
@@ -31,7 +31,6 @@ import {
   type RewardState,
 } from "./reward-flow";
 import { sampleDestinationChoices } from "./destination-flow";
-import { getBossEnemy } from "@/features/alchemy/config";
 
 export type VictoryRewardsInput = {
   characterId: CharacterId;
@@ -54,6 +53,7 @@ export type VictoryRewardsInput = {
     destinationIndexInAct?: number;
     maxHealth?: number;
   }) => Destination[];
+  bossEnemyId?: string | null | undefined;
 };
 
 export type VictoryRewardsResult = {
@@ -71,20 +71,19 @@ export type VictoryRewardsResult = {
   generousBonus: number;
 };
 
-const VICTORY_CONSTANTS = {
-  BASE_MULTIPLIER_OFFSET: 1,
-  ZERO: 0,
-} as const;
-
-export function withSelectedBossForDestinations(destinations: Destination[], rewardState: RewardState): RewardState {
+export function withSelectedBossForDestinations(
+  destinations: Destination[],
+  rewardState: RewardState,
+  bossEnemyId?: string | null,
+): RewardState {
   if (destinations.length === 1 && destinations[0] === CONSTANTS.DESTINATIONS.BOSS_COMBAT) {
-    return { ...rewardState, selectedBossId: rewardState.selectedBossId ?? getBossEnemy().id };
+    return { ...rewardState, selectedBossId: rewardState.selectedBossId ?? bossEnemyId ?? null };
   }
   return { ...rewardState, selectedBossId: null };
 }
 
-export function createDestinationRewardState(destinations: Destination[]): RewardState {
-  return withSelectedBossForDestinations(destinations, createEmptyRewardState(destinations));
+export function createDestinationRewardState(destinations: Destination[], bossEnemyId?: string | null): RewardState {
+  return withSelectedBossForDestinations(destinations, createEmptyRewardState(destinations), bossEnemyId);
 }
 
 export function computeVictoryRewardState(input: {
@@ -102,8 +101,10 @@ export function computeVictoryRewardState(input: {
   bossBonus: number;
   materials: MaterialInventory;
   destinations: Destination[];
+  talentEffects?: TalentEffectManifest;
+  bossEnemyId?: string | null | undefined;
 }): RewardState {
-  const talentEffects = computeTalentEffects(input.unlockedTalents);
+  const talentEffects = input.talentEffects ?? computeTalentEffects(input.unlockedTalents);
   const goldMultiplier = getGoldMultiplier(input.characterId, input.selectedDifficulty);
 
   if (input.battleState.currentEnemy.enemyType === CONSTANTS.ENEMY_TYPES.BOSS) {
@@ -135,6 +136,7 @@ export function computeVictoryRewardState(input: {
         getActiveRewardModifiersForContentSystem(input.contentSystemType, input.activeLabyrinthRewardModifiers),
       ),
     }),
+    input.bossEnemyId,
   );
 }
 
@@ -151,7 +153,7 @@ export function computeVictoryRewards(
 
   const baseGold = randomBetween(GOLD_REWARD_MIN, GOLD_REWARD_MAX);
 
-  let gold = Math.floor(baseGold * (VICTORY_CONSTANTS.BASE_MULTIPLIER_OFFSET + talentEffects.enemyGoldDropBonus));
+  let gold = Math.floor(baseGold * (1 + talentEffects.enemyGoldDropBonus));
 
   if (
     talentEffects.companionGoldFindActive &&
@@ -163,17 +165,13 @@ export function computeVictoryRewards(
 
   const eliteFraction =
     ELITE_GOLD_BONUS_FRACTION +
-    (input.battleState.currentEnemy.enemyType === CONSTANTS.ENEMY_TYPES.ELITE
-      ? talentEffects.eliteGoldDropBonus
-      : VICTORY_CONSTANTS.ZERO);
+    (input.battleState.currentEnemy.enemyType === CONSTANTS.ENEMY_TYPES.ELITE ? talentEffects.eliteGoldDropBonus : 0);
   const eliteBonus =
-    input.battleState.currentEnemy.enemyType === CONSTANTS.ENEMY_TYPES.ELITE
-      ? Math.floor(gold * eliteFraction)
-      : VICTORY_CONSTANTS.ZERO;
+    input.battleState.currentEnemy.enemyType === CONSTANTS.ENEMY_TYPES.ELITE ? Math.floor(gold * eliteFraction) : 0;
   const bossBonus =
     input.battleState.currentEnemy.enemyType === CONSTANTS.ENEMY_TYPES.BOSS
       ? Math.floor(gold * BOSS_GOLD_BONUS_FRACTION)
-      : VICTORY_CONSTANTS.ZERO;
+      : 0;
   const generousBonus = getGenerousGoldBonus(labyrinthRewardModifiers, gold);
 
   const goldResult = computeVictoryGoldResult({
@@ -188,11 +186,10 @@ export function computeVictoryRewards(
     goldMultiplier: getGoldMultiplier(input.characterId, input.selectedDifficulty),
   });
 
-  const newGold = input.runGold + goldResult.earnedBeforeMultiplier;
+  const newGold = goldResult.persistedRunGold;
 
   const playerHealth = input.battleState.playerHealth;
-  const maxHealthDelta =
-    talentEffects.maxHealthPerCombat > VICTORY_CONSTANTS.ZERO ? talentEffects.maxHealthPerCombat : 0;
+  const maxHealthDelta = talentEffects.maxHealthPerCombat > 0 ? talentEffects.maxHealthPerCombat : 0;
 
   const baseMaterials = getEnemyMaterialLoot(
     input.battleState.currentEnemy.id,
@@ -230,6 +227,8 @@ export function computeVictoryRewards(
     bossBonus,
     materials,
     destinations,
+    talentEffects,
+    bossEnemyId: input.bossEnemyId,
   });
 
   return {

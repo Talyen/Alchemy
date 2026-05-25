@@ -1,4 +1,9 @@
+// Zustand global store and React hooks/adapters for run and talent progression state.
+// Depends on: game data library, game constants, talents library.
+// Depended on by: useRunNavigation, useAlchemyRunController, useBattleController, and various UI screens.
 import { create } from "zustand";
+import { useMemo } from "react";
+import { useShallow } from "zustand/react/shallow";
 import {
   getGoldMultiplier,
   getStartingDeck,
@@ -10,7 +15,10 @@ import {
   type UnlockedTalents,
   getCardKeywords,
   getDifficultyXPMultiplier,
+  computeTalentEffects,
 } from "@/lib/game-data";
+import type { RunStateController } from "../use-run-state";
+import type { TalentStateController } from "../use-talent-state";
 import { MAX_PLAYER_HEALTH } from "@/lib/game-constants";
 import { DESTINATIONS, type Destination } from "@/features/alchemy/types";
 import type { ActiveRunData } from "@/features/alchemy/run/types";
@@ -36,6 +44,7 @@ type RunStateFields = {
   talentXP: TalentXP;
   runTalentXP: TalentXP;
   unlockedTalents: UnlockedTalents;
+  initialized: boolean;
 };
 
 type RunStoreActions = {
@@ -102,6 +111,7 @@ function createInitialRunState(
     talentXP: {},
     runTalentXP: initialActiveRun?.runTalentXP ?? {},
     unlockedTalents: {},
+    initialized: false,
   };
 }
 
@@ -148,6 +158,7 @@ export const useRunStore = create<RunStore>()((set) => ({
       talentXP: s.talentXP,
       unlockedTalents: s.unlockedTalents,
       runTalentXP: {},
+      initialized: true,
     })),
 
   addRunGold: (amount) =>
@@ -223,6 +234,70 @@ export const useRunStore = create<RunStore>()((set) => ({
   initialize: (activeRun, talentXP, unlockedTalents, fallbackCharacterId = "knight") => {
     const runState = createInitialRunState(activeRun, fallbackCharacterId);
     const talentState = createInitialTalentState(talentXP, unlockedTalents);
-    set({ ...runState, ...talentState });
+    set({ ...runState, ...talentState, initialized: true });
   },
 }));
+
+export function useRunAdapter(): RunStateController {
+  const fields = useRunStore(
+    useShallow((s) => ({
+      characterId: s.characterId,
+      runDeck: s.runDeck,
+      runGold: s.runGold,
+      runPlayerHealth: s.runPlayerHealth,
+      runMaxHealth: s.runMaxHealth,
+      roomsEncountered: s.roomsEncountered,
+      currentAct: s.currentAct,
+      destinationIndexInAct: s.destinationIndexInAct,
+      completedDestinations: s.completedDestinations,
+      runTrinkets: s.runTrinkets,
+      encounteredRunEnemyIds: s.encounteredRunEnemyIds,
+      selectedDifficulty: s.selectedDifficulty,
+      contentSystemType: s.contentSystemType,
+    })),
+  );
+
+  const actions = useRunStore(
+    useShallow((s) => ({
+      setRunDeck: s.setRunDeck,
+      setRunGold: s.setRunGold,
+      setRunPlayerHealth: s.setRunPlayerHealth,
+      setRunMaxHealth: s.setRunMaxHealth,
+      setRoomsEncountered: s.setRoomsEncountered,
+      setCurrentAct: s.setCurrentAct,
+      setDestinationIndexInAct: s.setDestinationIndexInAct,
+      setCompletedDestinations: s.setCompletedDestinations,
+      setRunTrinkets: s.setRunTrinkets,
+      setEncounteredRunEnemyIds: s.setEncounteredRunEnemyIds,
+      setSelectedDifficulty: s.setSelectedDifficulty,
+      setContentSystemType: s.setContentSystemType,
+      setCharacter: s.setCharacter,
+      reset: s.reset,
+      addRunGold: s.addRunGold,
+    })),
+  );
+
+  return useMemo(() => ({ ...fields, ...actions }), [fields, actions]);
+}
+
+export function useTalentAdapter(): TalentStateController {
+  const store = useRunStore(
+    useShallow((s) => ({
+      talentXP: s.talentXP,
+      runTalentXP: s.runTalentXP,
+      unlockedTalents: s.unlockedTalents,
+      awardCardXP: s.awardCardXP,
+      unlockTalent: s.unlockTalent,
+      unlockAllTalents: s.unlockAllTalents,
+      resetUnlockedTalents: s.resetUnlockedTalents,
+      resetRunXP: s.resetRunXP,
+      clearPermanentData: s.clearPermanentData,
+      awardMysteryXP: s.awardMysteryXP,
+      finalizeRunXP: s.finalizeRunXP,
+    })),
+  );
+
+  const talentEffects = useMemo(() => computeTalentEffects(store.unlockedTalents), [store.unlockedTalents]);
+
+  return useMemo(() => ({ ...store, talentEffects }), [store, talentEffects]);
+}

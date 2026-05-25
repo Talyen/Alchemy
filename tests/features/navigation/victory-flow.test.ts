@@ -65,6 +65,7 @@ function baseInput(overrides: Record<string, unknown> = {}): VictoryRewardsInput
       forgeToBurn: false,
     },
     getAvailableDestinations: vi.fn(() => ["Normal Combat", "Campfire", "Mystery"] as Destination[]),
+    bossEnemyId: "mimic",
     ...overrides,
   };
 }
@@ -76,7 +77,7 @@ afterEach(() => {
 describe("withSelectedBossForDestinations", () => {
   it("sets selectedBossId when only Boss Combat is available", () => {
     const reward = createEmptyRewardState(["Boss Combat"]);
-    const result = withSelectedBossForDestinations(["Boss Combat"], reward);
+    const result = withSelectedBossForDestinations(["Boss Combat"], reward, "mimic");
     expect(result.selectedBossId).toBeTruthy();
   });
 
@@ -88,7 +89,7 @@ describe("withSelectedBossForDestinations", () => {
 
   it("preserves existing selectedBossId for single boss destination", () => {
     const reward = { ...createEmptyRewardState(["Boss Combat"]), selectedBossId: "dragon" };
-    const result = withSelectedBossForDestinations(["Boss Combat"], reward);
+    const result = withSelectedBossForDestinations(["Boss Combat"], reward, "mimic");
     expect(result.selectedBossId).toBe("dragon");
   });
 });
@@ -102,7 +103,7 @@ describe("createDestinationRewardState", () => {
   });
 
   it("sets selectedBossId for single boss destination", () => {
-    const result = createDestinationRewardState(["Boss Combat"]);
+    const result = createDestinationRewardState(["Boss Combat"], "mimic");
     expect(result.selectedBossId).toBeTruthy();
     expect(result.destinations).toEqual(["Boss Combat"]);
   });

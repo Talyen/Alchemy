@@ -213,7 +213,6 @@ describe("failNode", () => {
     if (start.connections.length > 0) {
       const target = start.connections[0];
       setCurrentNode(map, target.row, target.col);
-      const snapshot = { ...map, grid: map.grid.map((r) => r.map((n) => (n ? { ...n } : null))) };
       failNode(map, target.row, target.col);
       failNode(map, target.row, target.col);
       expect(map.grid[target.row][target.col]!.state).toBe("failed");

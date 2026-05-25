@@ -1,31 +1,43 @@
 // Top-level alchemy controller composition hook.
 // Depends on run, battle, shop, navigation, talent, persistence-facing, and homestead state.
 // Used by App as the single UI-facing API while domain rules stay in smaller controllers.
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, useMemo } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { TimerGroup } from "@/lib/animation/game-timer";
-import { useShallow } from "zustand/react/shallow";
-import { cardLibrary, trinketLibrary, computeTalentEffects } from "@/lib/game-data";
+import { platform } from "@/lib/platform";
+import { cardLibrary, trinketLibrary } from "@/lib/game-data";
 import type { BattleCard, TrinketEntry } from "@/lib/game-data";
 import type { TalentXP } from "@/lib/talents";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import type { CharacterId, DifficultyId, UnlockedTalents } from "@/lib/game-data";
 import { labyrinthModifiersToDifficulty } from "@/lib/content-systems/labyrinth/modifiers";
 import type { LabyrinthModifierKind } from "@/lib/content-systems/types";
-import { useRunStore } from "./stores/run-store";
+import { useRunStore, useRunAdapter, useTalentAdapter } from "./stores/run-store";
 import { useScreenStore } from "./stores/screen-store";
-import type { RunStateController } from "./use-run-state";
-import type { TalentStateController } from "./use-talent-state";
 import { useBattleController } from "./use-battle-controller";
 import { useBattleStore } from "./stores/battle-store";
 import { useShopController } from "./use-shop-controller";
 import { useRunNavigation } from "./use-run-navigation";
 import { useLabyrinthController } from "./use-labyrinth-controller";
-import type { Destination, Screen } from "./types";
+import { CONSTANTS, type Destination, type Screen } from "./types";
 import type { ActiveRunData } from "./run/types";
 import { NAVIGATION_DELAY_MS } from "@/lib/game-constants";
 
-const cardLookup = new Map<string, BattleCard>(cardLibrary.map((c) => [c.id, c]));
-const trinketLookup = new Map<string, TrinketEntry>(trinketLibrary.map((t) => [t.id, t]));
+let cardLookupCache: Map<string, BattleCard> | null = null;
+let trinketLookupCache: Map<string, TrinketEntry> | null = null;
+
+function getCardLookup() {
+  if (!cardLookupCache) {
+    cardLookupCache = new Map<string, BattleCard>(cardLibrary.map((c) => [c.id, c]));
+  }
+  return cardLookupCache;
+}
+
+function getTrinketLookup() {
+  if (!trinketLookupCache) {
+    trinketLookupCache = new Map<string, TrinketEntry>(trinketLibrary.map((t) => [t.id, t]));
+  }
+  return trinketLookupCache;
+}
 
 export function useAlchemyRunController({
   discoveredCardIds,
@@ -54,10 +66,8 @@ export function useAlchemyRunController({
   // Stores are initialized once on mount.  The deps include initial* props for correctness
   // but the effect body uses a guard ref so it only runs once even if React re-renders with
   // different initial values (which shouldn't happen — these are the bootstrap values).
-  const initializedRef = useRef(false);
   useEffect(() => {
-    if (initializedRef.current) return;
-    initializedRef.current = true;
+    if (useRunStore.getState().initialized) return;
     useRunStore.getState().initialize(initialActiveRun, initialTalentXP, initialUnlockedTalents);
     useBattleStore.getState().initializeActiveBattle(initialActiveRun?.activeCombat?.battleState ?? null);
     if (initialActiveRun) {
@@ -82,67 +92,8 @@ export function useAlchemyRunController({
       }
     }
   }, [initialActiveRun, initialTalentXP, initialUnlockedTalents]);
-  const runStoreFields = useRunStore(
-    useShallow((s) => ({
-      characterId: s.characterId,
-      runDeck: s.runDeck,
-      runGold: s.runGold,
-      runPlayerHealth: s.runPlayerHealth,
-      runMaxHealth: s.runMaxHealth,
-      roomsEncountered: s.roomsEncountered,
-      currentAct: s.currentAct,
-      destinationIndexInAct: s.destinationIndexInAct,
-      completedDestinations: s.completedDestinations,
-      runTrinkets: s.runTrinkets,
-      encounteredRunEnemyIds: s.encounteredRunEnemyIds,
-      selectedDifficulty: s.selectedDifficulty,
-      contentSystemType: s.contentSystemType,
-    })),
-  );
-  const runStoreActions = useRunStore(
-    useShallow((s) => ({
-      setRunDeck: s.setRunDeck,
-      setRunGold: s.setRunGold,
-      setRunPlayerHealth: s.setRunPlayerHealth,
-      setRunMaxHealth: s.setRunMaxHealth,
-      setRoomsEncountered: s.setRoomsEncountered,
-      setCurrentAct: s.setCurrentAct,
-      setDestinationIndexInAct: s.setDestinationIndexInAct,
-      setCompletedDestinations: s.setCompletedDestinations,
-      setRunTrinkets: s.setRunTrinkets,
-      setEncounteredRunEnemyIds: s.setEncounteredRunEnemyIds,
-      setSelectedDifficulty: s.setSelectedDifficulty,
-      setContentSystemType: s.setContentSystemType,
-      setCharacter: s.setCharacter,
-      reset: s.reset,
-      addRunGold: s.addRunGold,
-    })),
-  );
-  const talentStore = useRunStore(
-    useShallow((s) => ({
-      talentXP: s.talentXP,
-      runTalentXP: s.runTalentXP,
-      unlockedTalents: s.unlockedTalents,
-      awardCardXP: s.awardCardXP,
-      unlockTalent: s.unlockTalent,
-      unlockAllTalents: s.unlockAllTalents,
-      resetUnlockedTalents: s.resetUnlockedTalents,
-      resetRunXP: s.resetRunXP,
-      clearPermanentData: s.clearPermanentData,
-      awardMysteryXP: s.awardMysteryXP,
-    })),
-  );
-  const talentEffects = useMemo(() => computeTalentEffects(talentStore.unlockedTalents), [talentStore.unlockedTalents]);
-
-  // Adapter objects matching previous useRunState/useTalentState interfaces
-  const run: RunStateController = useMemo(
-    () => ({ ...runStoreFields, ...runStoreActions }),
-    [runStoreFields, runStoreActions],
-  );
-  const talents: TalentStateController = useMemo(
-    () => ({ ...talentStore, talentEffects }),
-    [talentStore, talentEffects],
-  );
+  const run = useRunAdapter();
+  const talents = useTalentAdapter();
 
   // ============ Shared State ============
   const [screen, setScreen] = useState<Screen>("menu");
@@ -177,6 +128,30 @@ export function useAlchemyRunController({
   useEffect(() => {
     homesteadEffectsRef.current = homesteadEffects;
   }, [homesteadEffects]);
+
+  // Update Steam rich presence on screen change
+  useEffect(() => {
+    let statusString = "In Menu";
+    if (screen === "battle") {
+      statusString = `Fighting as ${run.characterId}`;
+    } else if (screen === "homestead") {
+      statusString = "Upgrading Homestead";
+    } else if (screen === "talents") {
+      statusString = "Selecting Talents";
+    } else if (screen === "campfire") {
+      statusString = "Resting at Campfire";
+    } else if (screen === "shop" || screen === "alchemist") {
+      statusString = "Trading in Shop";
+    } else if (screen === "mystery") {
+      statusString = "Exploring a Mystery";
+    } else if (screen === "destination" || screen === "labyrinth-map") {
+      statusString = "Navigating the Map";
+    } else if (screen === "draft-deck") {
+      statusString = "Drafting starter deck";
+    }
+
+    platform.steam.setRichPresence("steam_display", statusString);
+  }, [screen, run.characterId]);
 
   // ============ Store-backed Setters ============
   function setHoveredCardId(id: string | null | ((prev: string | null) => string | null)) {
@@ -260,18 +235,18 @@ export function useAlchemyRunController({
         setActiveLabyrinthModifiers(modifiers);
         setActiveLabyrinthRewardModifiers(rewardModifiers);
         battle.startBattle(undefined, undefined, enemyType, labyrinthModifiersToDifficulty(modifiers));
-        navigateTo("battle");
+        navigateTo(CONSTANTS.SCREENS.BATTLE);
       },
       onStartBossBattleWithModifiers: (modifiers, rewardModifiers) => {
         setActiveLabyrinthModifiers(modifiers);
         setActiveLabyrinthRewardModifiers(rewardModifiers);
         battle.startBossBattle(labyrinthModifiersToDifficulty(modifiers));
-        navigateTo("battle");
+        navigateTo(CONSTANTS.SCREENS.BATTLE);
       },
       onStartRest: () => {
         setActiveLabyrinthModifiers([]);
         setActiveLabyrinthRewardModifiers([]);
-        navigateTo("campfire");
+        navigateTo(CONSTANTS.SCREENS.CAMPFIRE);
       },
       onStartMystery: () => {
         setActiveLabyrinthModifiers([]);
@@ -282,13 +257,13 @@ export function useAlchemyRunController({
         setActiveLabyrinthModifiers([]);
         setActiveLabyrinthRewardModifiers([]);
         shop.initShop();
-        navigateTo("shop");
+        navigateTo(CONSTANTS.SCREENS.SHOP);
       },
       onStartAlchemist: () => {
         setActiveLabyrinthModifiers([]);
         setActiveLabyrinthRewardModifiers([]);
         shop.initAlchemist();
-        navigateTo("alchemist");
+        navigateTo(CONSTANTS.SCREENS.ALCHEMIST);
       },
     });
   }
@@ -367,7 +342,7 @@ export function useAlchemyRunController({
     skipCombatDevMode: battle.skipCombatDevMode,
     removeCardGhost: battle.removeCardGhost,
     resetRunState: nav.resetRunState,
-    findCard: (id: string) => cardLookup.get(id),
-    findTrinket: (id: string) => trinketLookup.get(id),
+    findCard: (id: string) => getCardLookup().get(id),
+    findTrinket: (id: string) => getTrinketLookup().get(id),
   };
 }

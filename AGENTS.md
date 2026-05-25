@@ -135,6 +135,8 @@ This is a fantasy roguelite deckbuilder. The interface must feel like a polished
 
 **Layout**: Game-native composition. No fragile magic-pixel positioning. Responsive layouts across common desktop/laptop sizes.
 
+**Styling**: Favor utility-first styling with Tailwind CSS v4.0 for standard components, layout, and theme customization. Limit Vanilla CSS to complex custom game-feel animations, shaders, or rendering effects that cannot be easily written with utility classes.
+
 **Interactive states**: Interactive elements need clear states — default, hover, active/pressed, selected, disabled. Important actions must give immediate feedback.
 
 **Motion**: Fast, responsive transitions using `transform` and `opacity`. Focus on high-impact moments: one well-orchestrated page load with staggered reveals creates more delight than scattered micro-interactions. Avoid expensive layout/filter animations, unnecessary re-renders, heavy shadows, drop shadows, gradients, or large animated blurs.

@@ -2,6 +2,7 @@
 // Depends on: SAVE_KEY (game-constants), Zod validation schemas (lib/validation), save defaults.
 // Used by: use-app-save-state.ts (loadAlchemySaveState), App.tsx (loadAlchemySaveState).
 import { SAVE_KEY } from "@/lib/game-constants";
+import { platform } from "@/lib/platform";
 
 import {
   SaveDataSchema,
@@ -16,14 +17,26 @@ import { defaultSaveData } from "./defaults";
 
 let writesDisabledForSession = false;
 
-function readStorageItem(key: string): string | null {
-  return window.localStorage.getItem(key);
+async function readStorageItem(key: string): Promise<string | null> {
+  if (platform.isDesktop && window.alchemyDesktop) {
+    return await window.alchemyDesktop.loadSave();
+  }
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
 }
 
 type StorageOperationResult = { ok: true } | { ok: false; error: unknown };
 
-function writeStorageItem(key: string, value: string): StorageOperationResult {
+async function writeStorageItem(key: string, value: string): Promise<StorageOperationResult> {
   try {
+    if (platform.isDesktop && window.alchemyDesktop) {
+      const ok = await window.alchemyDesktop.writeSave(value);
+      if (ok) return { ok: true };
+      throw new Error("Failed to write desktop save file");
+    }
     window.localStorage.setItem(key, value);
     return { ok: true };
   } catch (error) {
@@ -31,8 +44,13 @@ function writeStorageItem(key: string, value: string): StorageOperationResult {
   }
 }
 
-function removeStorageItem(key: string): StorageOperationResult {
+async function removeStorageItem(key: string): Promise<StorageOperationResult> {
   try {
+    if (platform.isDesktop && window.alchemyDesktop) {
+      const ok = await window.alchemyDesktop.clearSave();
+      if (ok) return { ok: true };
+      throw new Error("Failed to clear desktop save file");
+    }
     window.localStorage.removeItem(key);
     return { ok: true };
   } catch (error) {
@@ -69,13 +87,13 @@ export type SaveLoadState = {
 };
 
 // Loads save data plus status so the app can block unsupported newer saves before gameplay.
-export function loadAlchemySaveState(): SaveLoadState {
+export async function loadAlchemySaveState(): Promise<SaveLoadState> {
   if (typeof window === "undefined") {
     return { data: defaultSaveData, status: { kind: "ok" } };
   }
 
   try {
-    const raw = readStorageItem(SAVE_KEY);
+    const raw = await readStorageItem(SAVE_KEY);
     if (!raw) {
       return { data: defaultSaveData, status: { kind: "ok" } };
     }
@@ -124,14 +142,14 @@ export function loadAlchemySaveState(): SaveLoadState {
 }
 
 // Writes the current save snapshot exactly as provided by App/controller state.
-export function saveAlchemySaveData(data: SaveData) {
+export async function saveAlchemySaveData(data: SaveData) {
   if (typeof window === "undefined") {
     return;
   }
   if (writesDisabledForSession) return;
 
   try {
-    const result = writeStorageItem(SAVE_KEY, JSON.stringify(data));
+    const result = await writeStorageItem(SAVE_KEY, JSON.stringify(data));
     if (result.ok) return;
     logStorageFailure("Save data could not be written", result.error);
     return;
@@ -141,12 +159,12 @@ export function saveAlchemySaveData(data: SaveData) {
 }
 
 // Removes the persisted save while leaving in-memory React state reset to callers.
-export function clearAlchemySaveData() {
+export async function clearAlchemySaveData() {
   if (typeof window === "undefined") {
     return;
   }
 
-  const result = removeStorageItem(SAVE_KEY);
+  const result = await removeStorageItem(SAVE_KEY);
   if (result.ok) {
     writesDisabledForSession = false;
     return;

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, afterEach } from "vitest";
 import { dealDamageToEnemy } from "@/lib/battle/damage";
-import type { BattleState, CombatTextEvent } from "@/lib/battle/types";
+import type { CombatTextEvent } from "@/lib/battle/types";
 import type { BattleCardEffect, BattleCard } from "@/lib/game-data";
 import { CRIT_MULTIPLIER, GOLD_TROVE_DAMAGE_REWARD } from "@/lib/game-constants";
 import { createTestBattleState } from "./test-state";

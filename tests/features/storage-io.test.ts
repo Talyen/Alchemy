@@ -41,7 +41,7 @@ describe("storage io", () => {
 
   it("loadAlchemySaveState returns defaults when localStorage empty", async () => {
     const { loadAlchemySaveState } = await import("@/features/alchemy/storage/io");
-    const data = loadAlchemySaveState().data;
+    const data = (await loadAlchemySaveState()).data;
     expect(data.selectedAspectRatio).toBe("auto");
     expect(data.activeRun).toBeNull();
   });
@@ -49,16 +49,16 @@ describe("storage io", () => {
   it("loadAlchemySaveState returns defaults on corrupt JSON", async () => {
     mockStorage[SAVE_KEY] = "not-json";
     const { loadAlchemySaveState } = await import("@/features/alchemy/storage/io");
-    const data = loadAlchemySaveState().data;
+    const data = (await loadAlchemySaveState()).data;
     expect(data.selectedAspectRatio).toBe("auto");
-    expect(loadAlchemySaveState().status.kind).toBe("corrupt");
+    expect((await loadAlchemySaveState()).status.kind).toBe("corrupt");
   });
 
   it("loadAlchemySaveState loads valid save data", async () => {
     vi.spyOn(console, "info").mockImplementation(() => {});
     mockStorage[SAVE_KEY] = JSON.stringify({ musicVolume: 50, sfxVolume: 50 });
     const { loadAlchemySaveState } = await import("@/features/alchemy/storage/io");
-    const data = loadAlchemySaveState().data;
+    const data = (await loadAlchemySaveState()).data;
     expect(data.musicVolume).toBe(50);
   });
 
@@ -67,7 +67,7 @@ describe("storage io", () => {
     mockStorage[SAVE_KEY] = JSON.stringify({ musicVolume: 50 });
     const { loadAlchemySaveState } = await import("@/features/alchemy/storage/io");
 
-    const loaded = loadAlchemySaveState();
+    const loaded = await loadAlchemySaveState();
 
     expect(loaded.status.kind).toBe("ok");
     expect(loaded.status.kind === "ok" ? loaded.status.warnings : []).toBeUndefined();
@@ -92,29 +92,28 @@ describe("storage io", () => {
         labyrinthMap: null,
       },
     });
-    const { loadAlchemySaveState } = await import("@/features/alchemy/storage/io");
+    const { loadAlchemySaveState, saveAlchemySaveData } = await import("@/features/alchemy/storage/io");
 
-    const loaded = loadAlchemySaveState();
+    const loaded = await loadAlchemySaveState();
 
     expect(loaded.status.kind).toBe("ok");
     expect(loaded.status.kind === "ok" ? loaded.status.warnings : []).toContain("active run could not be restored");
 
-    const { saveAlchemySaveData } = await import("@/features/alchemy/storage/io");
-    saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["slash"] });
+    await saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["slash"] });
     expect(JSON.parse(mockStorage[SAVE_KEY]).activeRun).toMatchObject({ characterId: "bard" });
   });
 
   it("saveAlchemySaveData writes to localStorage", async () => {
     const { saveAlchemySaveData } = await import("@/features/alchemy/storage/io");
     const data: SaveData = { ...defaultSaveData, selectedAspectRatio: "16:9" };
-    saveAlchemySaveData(data);
+    await saveAlchemySaveData(data);
     expect(mockStorage[SAVE_KEY]).toBe(JSON.stringify(data));
   });
 
   it("clearAlchemySaveData removes key from localStorage", async () => {
     mockStorage[SAVE_KEY] = "some-data";
     const { clearAlchemySaveData } = await import("@/features/alchemy/storage/io");
-    clearAlchemySaveData();
+    await clearAlchemySaveData();
     expect(mockStorage[SAVE_KEY]).toBeUndefined();
   });
 
@@ -138,9 +137,9 @@ describe("storage io", () => {
       "@/features/alchemy/storage/io"
     );
 
-    expect(loadAlchemySaveState().data).toEqual(defaultSaveData);
-    expect(() => saveAlchemySaveData(defaultSaveData)).not.toThrow();
-    expect(() => clearAlchemySaveData()).not.toThrow();
+    expect((await loadAlchemySaveState()).data).toEqual(defaultSaveData);
+    await expect(saveAlchemySaveData(defaultSaveData)).resolves.not.toThrow();
+    await expect(clearAlchemySaveData()).resolves.not.toThrow();
   });
 
   it("does not overwrite saves from a newer schema", async () => {
@@ -151,14 +150,14 @@ describe("storage io", () => {
     });
 
     const { loadAlchemySaveState, saveAlchemySaveData } = await import("@/features/alchemy/storage/io");
-    const loaded = loadAlchemySaveState();
+    const loaded = await loadAlchemySaveState();
 
     expect(loaded.data).toEqual(defaultSaveData);
     expect(loaded.status).toEqual({
       kind: "unsupported-newer-schema",
       detectedSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 1,
     });
-    saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["slash"] });
+    await saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["slash"] });
     expect(JSON.parse(mockStorage[SAVE_KEY])).toEqual({
       saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION + 1,
       discoveredCardIds: ["future-card"],
@@ -174,14 +173,14 @@ describe("storage io", () => {
     });
 
     const { loadAlchemySaveState, saveAlchemySaveData } = await import("@/features/alchemy/storage/io");
-    const loaded = loadAlchemySaveState();
+    const loaded = await loadAlchemySaveState();
 
     expect(loaded.data).toEqual(defaultSaveData);
     expect(loaded.status).toEqual({
       kind: "unsupported-newer-content",
       detectedContentVersion: CURRENT_CONTENT_VERSION + 1,
     });
-    saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["slash"] });
+    await saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["slash"] });
     expect(JSON.parse(mockStorage[SAVE_KEY])).toEqual({
       saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
       contentVersion: CURRENT_CONTENT_VERSION + 1,

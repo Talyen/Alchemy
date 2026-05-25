@@ -15,4 +15,36 @@ export const platform = {
   quit() {
     window.alchemyDesktop?.quit();
   },
+
+  // Steamworks API integration with safe fallbacks for web/DRM-free
+  steam: {
+    isInitialized: false,
+    playerName: null as string | null,
+    async init() {
+      if (window.alchemyDesktop?.steamGetName) {
+        try {
+          const name = await window.alchemyDesktop.steamGetName();
+          if (name) {
+            this.playerName = name;
+            this.isInitialized = true;
+            console.log(`Steam initialized. Player: ${name}`);
+          }
+        } catch (err) {
+          console.warn("Failed to retrieve Steam player name:", err);
+        }
+      }
+    },
+    async unlockAchievement(id: string): Promise<boolean> {
+      if (window.alchemyDesktop?.steamUnlockAchievement) {
+        return window.alchemyDesktop.steamUnlockAchievement(id);
+      }
+      return false;
+    },
+    async setRichPresence(key: string, value: string): Promise<boolean> {
+      if (window.alchemyDesktop?.steamSetRichPresence) {
+        return window.alchemyDesktop.steamSetRichPresence(key, value);
+      }
+      return false;
+    },
+  },
 };

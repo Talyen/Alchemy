@@ -1,6 +1,7 @@
 /// <reference types="vitest/config" />
 import { fileURLToPath, URL } from "node:url";
 
+import tailwind from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import checker from "vite-plugin-checker";
@@ -19,6 +20,7 @@ export default defineConfig(({ mode }) => ({
   base: process.env.VERCEL ? "/" : mode === "desktop" ? "./" : "/",
   server: { open: true, port: devPort, strictPort: true },
   plugins: [
+    tailwind(),
     react(),
     mode === "development" &&
       checker({

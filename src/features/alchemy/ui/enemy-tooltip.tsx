@@ -71,7 +71,7 @@ export function EnemyTooltip({
       <div
         ref={ref}
         className={cn(
-          "pointer-events-auto",
+          "pointer-events-none",
           "absolute left-[calc(100%+1.11cqh)] top-0 z-40 w-60 rounded-[20px] border border-border/80 bg-card px-3 py-3 text-left",
           className,
         )}
@@ -88,7 +88,7 @@ export function EnemyTooltip({
   }
 
   return (
-    <div ref={ref} className={cn(popupClassName, "w-60", "pointer-events-auto", className)}>
+    <div ref={ref} className={cn(popupClassName, "w-60", "pointer-events-none", className)}>
       {inner}
     </div>
   );

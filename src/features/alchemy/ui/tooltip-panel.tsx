@@ -24,7 +24,7 @@ export const TooltipPanel = forwardRef<HTMLDivElement, TooltipPanelProps>(functi
   return (
     <div
       ref={ref}
-      className={cn(popupClassName, width, "hover-popup-panel pointer-events-auto", className)}
+      className={cn(popupClassName, width, "hover-popup-panel pointer-events-none", className)}
       style={style}
       data-flip={flip ? "below" : "above"}
     >

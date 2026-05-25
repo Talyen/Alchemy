@@ -5,6 +5,11 @@ pre-commit:
       run: npx -y prettier --write {staged_files}
       stage_fixed: true
 
+commit-msg:
+  commands:
+    commitlint:
+      run: npx commitlint --edit {1}
+
 pre-push:
   commands:
     format-check:
@@ -13,3 +18,7 @@ pre-push:
       run: npm run lint
     test:
       run: npm test
+    build:
+      run: npm run build
+    e2e-smoke:
+      run: npm run test:e2e:smoke

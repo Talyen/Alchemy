@@ -15,4 +15,5 @@ export type TalentStateController = {
   resetRunXP: () => void;
   clearPermanentData: () => void;
   awardMysteryXP: (keywordId: KeywordId, amount: number) => void;
+  finalizeRunXP: () => void;
 };

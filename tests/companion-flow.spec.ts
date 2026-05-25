@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { enableFastMode, failOnRuntimeErrors, makeCard, startBattleWithDeck, WOLF_COMPANION_CARD } from "./helpers";
+import { enableFastMode, failOnRuntimeErrors, startBattleWithDeck, WOLF_COMPANION_CARD } from "./helpers";
 import { BattlePage } from "./pages/battle-page";
 
 test.describe("Companion Battle Behavior", () => {

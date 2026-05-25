@@ -4,9 +4,9 @@ import { useEffect, useState } from "react";
 
 import {
   clearAlchemySaveData,
-  loadAlchemySaveState,
   saveAlchemySaveData,
   type SaveData,
+  type SaveLoadState,
 } from "@/features/alchemy/storage";
 import { defaultSaveData } from "@/features/alchemy/storage/defaults";
 import type { CharacterId, DifficultyId } from "@/lib/game-data";
@@ -21,11 +21,7 @@ const initialCollectionPages: CollectionPages = {
 };
 
 // Owns persisted shell state so App can focus on controller composition and screen rendering.
-// loadAlchemySaveState() is called synchronously during hook initialization (not lazily) so
-// React state is seeded with real save data on the very first render, avoiding a flash of defaults.
-export function useAppSaveState() {
-  // loadAlchemySaveState is already guarded internally; any error returns defaultSaveData.
-  const initialLoad = loadAlchemySaveState();
+export function useAppSaveState(initialLoad: SaveLoadState) {
   const initialSave = initialLoad.data;
   const saveLoadStatus = initialLoad.status;
   const [selectedAspectRatio, setSelectedAspectRatio] = useState<AspectRatioOption>(initialSave.selectedAspectRatio);

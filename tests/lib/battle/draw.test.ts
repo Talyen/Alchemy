@@ -20,7 +20,7 @@ describe("defaultTalentEffects", () => {
   });
 
   it("has all boolean fields set to false", () => {
-    for (const [key, value] of Object.entries(defaultTalentEffects)) {
+    for (const value of Object.values(defaultTalentEffects)) {
       if (typeof value === "boolean") expect(value).toBe(false);
     }
   });
@@ -101,7 +101,7 @@ describe("defaultBattleState", () => {
 
   it("initializes flags as all false/0", () => {
     const s = defaultBattleState();
-    for (const [key, value] of Object.entries(s.flags)) {
+    for (const value of Object.values(s.flags)) {
       if (typeof value === "boolean") expect(value).toBe(false);
       if (typeof value === "number") expect(value).toBe(0);
     }

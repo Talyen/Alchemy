@@ -43,9 +43,10 @@ import {
   CURRENT_SAVE_SCHEMA_VERSION,
 } from "@/features/alchemy/storage/metadata";
 import { platform } from "@/lib/platform";
-import { loadAlchemySaveState } from "@/features/alchemy/storage";
+import { loadAlchemySaveState, type SaveLoadState } from "@/features/alchemy/storage";
 import { useAppStore } from "@/features/alchemy/stores/app-store";
 import { useScreenStore } from "@/features/alchemy/stores/screen-store";
+import { clearAllPersistentGameData } from "@/features/alchemy/stores/reset";
 
 const SCREEN_PARTICLE_COLORS: Partial<Record<Screen, readonly string[]>> = {
   battle: ["rgba(255, 150, 70, X)", "rgba(255, 100, 40, X)"],
@@ -60,20 +61,7 @@ const SCREEN_PARTICLE_ALPHA: Partial<Record<Screen, number>> = {
 
 const BOSS_ALPHA_MULTIPLIER = 2.5;
 
-export default function App() {
-  // ============ Bootstrap: load save data once, initialize stores ============
-  const [bootstrapResult] = useState(() => {
-    const result = loadAlchemySaveState();
-    useAppStore.getState().initialize(result.data);
-    useHomesteadStore.getState().initialize({
-      materialInventory: result.data.materialInventory,
-      constructedBuildings: result.data.constructedBuildings,
-      plantedFarms: result.data.plantedFarms,
-      completedResearch: result.data.completedResearch,
-      bondedCompanions: result.data.bondedCompanions,
-    });
-    return result;
-  });
+function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
   const { data: initialSave, status: saveLoadStatus } = bootstrapResult;
 
   // ============ Store subscriptions ============
@@ -97,21 +85,26 @@ export default function App() {
 
   // Store-backed setters (wrapped for Dispatch<SetStateAction> compatibility)
   function setDiscoveredCardIds(v: string[] | ((prev: string[]) => string[])) {
-    useAppStore
-      .getState()
-      .setDiscoveredCardIds(typeof v === "function" ? v(useAppStore.getState().discoveredCardIds) : v);
+    const nextVal = typeof v === "function" ? v(useAppStore.getState().discoveredCardIds) : v;
+    useAppStore.getState().setDiscoveredCardIds(nextVal);
+    if (nextVal.length === cardLibrary.length) {
+      platform.steam.unlockAchievement("discover_all_cards");
+    }
   }
   function setEncounteredEnemyIds(v: string[] | ((prev: string[]) => string[])) {
-    useAppStore
-      .getState()
-      .setEncounteredEnemyIds(typeof v === "function" ? v(useAppStore.getState().encounteredEnemyIds) : v);
+    const nextVal = typeof v === "function" ? v(useAppStore.getState().encounteredEnemyIds) : v;
+    useAppStore.getState().setEncounteredEnemyIds(nextVal);
+    if (nextVal.length === enemyBestiary.length) {
+      platform.steam.unlockAchievement("encounter_all_enemies");
+    }
   }
   function setDiscoveredTrinketIds(v: string[] | ((prev: string[]) => string[])) {
-    useAppStore
-      .getState()
-      .setDiscoveredTrinketIds(typeof v === "function" ? v(useAppStore.getState().discoveredTrinketIds) : v);
+    const nextVal = typeof v === "function" ? v(useAppStore.getState().discoveredTrinketIds) : v;
+    useAppStore.getState().setDiscoveredTrinketIds(nextVal);
+    if (nextVal.length === trinketLibrary.length) {
+      platform.steam.unlockAchievement("discover_all_trinkets");
+    }
   }
-  const clearSavedAppState = useAppStore((s) => s.clearSavedAppState);
   const [gameMenuOpen, setGameMenuOpen] = useState(false);
   const [menuAnchorRect, setMenuAnchorRect] = useState<DOMRect | null>(null);
   const [renderedScreen, setRenderedScreen] = useState<Screen>("menu");
@@ -144,6 +137,10 @@ export default function App() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
+  useEffect(() => {
+    platform.steam.init();
+  }, []);
+
   const { isMobileLandscape, isPortraitMobile } = useMobileDetection();
   const { frameStyle, stageStyle, aspectMode, stagePixelRatio } = useVirtualResolution(
     selectedAspectRatio,
@@ -161,6 +158,8 @@ export default function App() {
     const current = prev[characterId] ?? [];
     if (current.includes(difficultyId)) return;
     useAppStore.getState().setCompletedDifficulties({ ...prev, [characterId]: [...current, difficultyId] });
+    platform.steam.unlockAchievement(`clear_difficulty_${difficultyId}`);
+    platform.steam.unlockAchievement(`clear_with_${characterId}`);
   }
 
   const run = useAlchemyRunController({
@@ -247,10 +246,8 @@ export default function App() {
   );
 
   function clearSaveData() {
-    clearSavedAppState();
+    clearAllPersistentGameData();
     run.resetRunState();
-    run.clearPermanentData();
-    useHomesteadStore.getState().reset();
   }
 
   function unlockAllDevMode() {
@@ -470,4 +467,34 @@ export default function App() {
       )}
     </ErrorBoundary>
   );
+}
+
+export default function App() {
+  const [bootstrapResult, setBootstrapResult] = useState<SaveLoadState | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadAlchemySaveState().then((result) => {
+      if (!cancelled) {
+        useAppStore.getState().initialize(result.data);
+        useHomesteadStore.getState().initialize({
+          materialInventory: result.data.materialInventory,
+          constructedBuildings: result.data.constructedBuildings,
+          plantedFarms: result.data.plantedFarms,
+          completedResearch: result.data.completedResearch,
+          bondedCompanions: result.data.bondedCompanions,
+        });
+        setBootstrapResult(result);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (!bootstrapResult) {
+    return <StartupLoadingScreen />;
+  }
+
+  return <AppInner bootstrapResult={bootstrapResult} />;
 }

@@ -1,5 +1,6 @@
 // React battle orchestrator for combat state, card play, turn timing, ghosts, and feedback.
 // Depends on pure battle logic, run/talent state, homestead modifiers, audio, and UI hooks.
+// Depended on by: useAlchemyRunController for managing active combat.
 // Uses useBattleStore (Zustand) instead of local useState for battle data.
 import type { MouseEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -247,6 +248,16 @@ export function useBattleController({
     });
   }
 
+  // Helper to determine if a card's measured layout rect has stabilized.
+  // Prevents measuring mid-animation before cards settle in the hand fan layout.
+  function isRectStable(rect: CardRect, lastRect: CardRect | null): boolean {
+    if (!lastRect) return false;
+    return (
+      Math.abs(rect.x - lastRect.x) < CARD_TRANSFER_CONFIG.rectEpsilonPx &&
+      Math.abs(rect.y - lastRect.y) < CARD_TRANSFER_CONFIG.rectEpsilonPx
+    );
+  }
+
   function waitForStableHandCardRect(cardKey: string, fallback: CardRect): Promise<CardRect> {
     return new Promise((resolve) => {
       let frameCount = 0;
@@ -275,18 +286,23 @@ export function useBattleController({
       function tick() {
         measureFrame = null;
         frameCount += 1;
+
+        // Measure the visual DOM rect of the card in flight/hand.
         const rect = localVisualCardRect(handCardRefs.current[cardKey]) ?? fallback;
-        if (
-          lastRect &&
-          Math.abs(rect.x - lastRect.x) < CARD_TRANSFER_CONFIG.rectEpsilonPx &&
-          Math.abs(rect.y - lastRect.y) < CARD_TRANSFER_CONFIG.rectEpsilonPx
-        ) {
+
+        // Check if layout rect matches the last frame within an epsilon.
+        // We do this to ensure we don't start the card transfer animation from an incorrect
+        // intermediate position while the React component is repositioning/stretching.
+        if (isRectStable(rect, lastRect)) {
           stableFrames += 1;
         } else {
           stableFrames = 0;
         }
         lastRect = rect;
 
+        // Once the card coordinates remain stable for enough frames (indicating they have
+        // settled into their slot in the hand fan layout), or if we hit the max frame limit,
+        // we finalize the coordinates to draw smooth card deals.
         if (
           stableFrames >= CARD_TRANSFER_CONFIG.requiredStableSlotFrames ||
           frameCount >= CARD_TRANSFER_CONFIG.maxSlotStabilizeFrames
@@ -632,6 +648,98 @@ export function useBattleController({
 
   const resolvedAsHasteOrStunRef = useRef(false);
 
+  // Helper to handle the "Haste" skip-turn resolution.
+  // Immediately advances the turn sequence to the player's next turn without running enemy attack phases.
+  function resolveHasteSkipTurn(
+    result: ReturnType<typeof endPlayerTurn>,
+    companionState: BattleState,
+    session: number,
+  ) {
+    // Set a flag to bypass cleaning up card play references and hand card visual hidden keys.
+    // This allows the draw sequence animation to animate smoothly directly into the next turn.
+    resolvedAsHasteOrStunRef.current = true;
+    if (result.combatTexts.length > 0) getStore().showCombatTexts(result.combatTexts);
+
+    // Draw cards for the player's next turn immediately since the enemy phase is skipped.
+    void handleDrawSequence(
+      companionState.hand,
+      result.state,
+      () => {
+        getStore().setBattleState(result.state);
+      },
+      session,
+    )
+      .catch((err) => {
+        console.error("Failed to handle end turn draw sequence:", err);
+      })
+      .finally(() => {
+        runIfSessionActive(session, () => {
+          resolvedAsHasteOrStunRef.current = false;
+          setHiddenHandCardKeys(new Set());
+          setCardTransferInProgress(false);
+          cardPlayInProgressRef.current = false;
+
+          // Check if any DoT status ticks or companion triggers ended the battle.
+          if (checkBattleEnd(result.state, session)) return;
+
+          // If player's turn is immediately skipped (e.g., they are Stunned/Frozen),
+          // loop back to resolveEndTurn to transition directly to the enemy turn.
+          if (result.playerTurnSkipped) {
+            resolveEndTurn(result.state, session);
+            return;
+          }
+
+          // If player can act, trigger companion actions for their turn start.
+          scheduleCompanionFollowUp(result.state, session);
+        });
+      });
+  }
+
+  // Helper to resolve the standard enemy turn phase transition.
+  // Displays enemy-turn startup texts, updates state, and kicks off enemy attack execution.
+  function resolveNormalEnemyTurn(
+    result: ReturnType<typeof endPlayerTurn>,
+    companionResult: { state: BattleState; combatTexts: CombatTextEvent[] },
+    session: number,
+  ) {
+    // Merge combat texts: start-of-enemy-turn dot ticks + companion triggers.
+    const enemyTurnStartTexts = result.enemyTurnStartState
+      ? [...companionResult.combatTexts, ...result.enemyTurnStartCombatTexts]
+      : [...companionResult.combatTexts, ...result.combatTexts];
+
+    // Determine which combat texts correspond to enemy resolution actions.
+    const enemyResolutionTexts = result.enemyTurnStartState ? result.enemyResolutionCombatTexts : result.combatTexts;
+
+    // Transition the visual UI state to the enemy turn.
+    // In this display state, we clear the player's hand cards in the UI since it is the enemy's phase.
+    showEnemyTurnStart(
+      result.enemyTurnStartState ?? result.state,
+      companionResult.state,
+      enemyTurnStartTexts,
+      Boolean(result.enemyTurnStartState),
+    );
+
+    // Check if the enemy died from start-of-turn dot statuses (e.g., Poison/Burn).
+    if (result.state.enemyHealth <= 0) {
+      getStore().setBattleState({ ...result.state, turnPhase: "enemy", hand: [] });
+      handleVictoryDefeat("victory");
+      return;
+    }
+
+    // Verify that player is still alive before executing the enemy phase.
+    if (checkBattleEnd(result.state, session)) return;
+
+    // Execute enemy attack animations, DoT resolution, and player damage indicators.
+    void executeEnemyPhase(
+      result.state,
+      companionResult.state,
+      enemyResolutionTexts,
+      session,
+      result.playerTurnSkipped,
+      result.enemyPerformedAttack,
+    );
+  }
+
   function resolveEndTurn(currentState: BattleState, session: number) {
     try {
       runIfSessionActive(session, () => {
@@ -653,63 +761,11 @@ export function useBattleController({
         // Haste skip: immediately show the next turn and animate any draw
         // (enemyTurnStartState is undefined only in the haste path)
         if (!result.enemyTurnStartState) {
-          resolvedAsHasteOrStunRef.current = true;
-          if (result.combatTexts.length > 0) getStore().showCombatTexts(result.combatTexts);
-          void handleDrawSequence(
-            companionResult.state.hand,
-            result.state,
-            () => {
-              getStore().setBattleState(result.state);
-            },
-            session,
-          )
-            .catch((err) => {
-              console.error("Failed to handle end turn draw sequence:", err);
-            })
-            .finally(() => {
-              runIfSessionActive(session, () => {
-                resolvedAsHasteOrStunRef.current = false;
-                setHiddenHandCardKeys(new Set());
-                setCardTransferInProgress(false);
-                cardPlayInProgressRef.current = false;
-                if (checkBattleEnd(result.state, session)) return;
-                if (result.playerTurnSkipped) {
-                  resolveEndTurn(result.state, session);
-                  return;
-                }
-                scheduleCompanionFollowUp(result.state, session);
-              });
-            });
+          resolveHasteSkipTurn(result, companionResult.state, session);
           return;
         }
 
-        const enemyTurnStartTexts = result.enemyTurnStartState
-          ? [...companionResult.combatTexts, ...result.enemyTurnStartCombatTexts]
-          : [...companionResult.combatTexts, ...result.combatTexts];
-        const enemyResolutionTexts = result.enemyTurnStartState
-          ? result.enemyResolutionCombatTexts
-          : result.combatTexts;
-
-        showEnemyTurnStart(
-          result.enemyTurnStartState ?? result.state,
-          companionResult.state,
-          enemyTurnStartTexts,
-          Boolean(result.enemyTurnStartState),
-        );
-        if (result.state.enemyHealth <= 0) {
-          getStore().setBattleState({ ...result.state, turnPhase: "enemy", hand: [] });
-          handleVictoryDefeat("victory");
-          return;
-        }
-        if (checkBattleEnd(result.state, session)) return;
-        void executeEnemyPhase(
-          result.state,
-          companionResult.state,
-          enemyResolutionTexts,
-          session,
-          result.playerTurnSkipped,
-          result.enemyPerformedAttack,
-        );
+        resolveNormalEnemyTurn(result, companionResult, session);
       });
     } catch (err) {
       console.error("Unhandled error in resolveEndTurn, triggering defeat:", err);
@@ -751,6 +807,16 @@ export function useBattleController({
     if (dotTexts.length > 0) getStore().showCombatTexts(dotTexts);
   }
 
+  // Helper to finish the enemy phase once the attack execution and draw sequence animations conclude.
+  function finishEnemyPhase(resultState: BattleState, session: number, playerTurnSkipped: boolean) {
+    if (checkBattleEnd(resultState, session)) return;
+    if (playerTurnSkipped) {
+      resolveEndTurn(resultState, session);
+      return;
+    }
+    scheduleCompanionFollowUp(resultState, session);
+  }
+
   async function executeEnemyPhase(
     resultState: BattleState,
     currentState: BattleState,
@@ -781,12 +847,7 @@ export function useBattleController({
       console.error("Failed to handle enemy resolution draw sequence:", err);
     }
     if (!isCurrentBattleSession(session)) return;
-    if (checkBattleEnd(resultState, session)) return;
-    if (playerTurnSkipped) {
-      resolveEndTurn(resultState, session);
-      return;
-    }
-    scheduleCompanionFollowUp(resultState, session);
+    finishEnemyPhase(resultState, session, playerTurnSkipped);
   }
 
   function scheduleCompanionFollowUp(resultState: BattleState, session: number) {

@@ -2,9 +2,22 @@
 // and loads either the Vite dev server or the packaged renderer files.
 const { app, BrowserWindow, ipcMain, Menu } = require("electron");
 const path = require("node:path");
+const fs = require("node:fs");
+
+// Enable Steam overlay in Electron if steamworks.js is available
+let steamClient = null;
+try {
+  const steamworks = require("steamworks.js");
+  steamworks.electronEnableSteamOverlay();
+  steamClient = steamworks.init(480);
+  console.log("Steamworks initialized successfully. Player name:", steamClient.localplayer.getName());
+} catch (error) {
+  console.warn("Failed to initialize Steamworks (Steam might not be running):", error.message);
+}
 
 const DEV_SERVER_URL = process.env.ELECTRON_RENDERER_URL ?? "http://127.0.0.1:5173";
 const WINDOWED_SIZE = { width: 1280, height: 720 };
+const SAVE_FILE_PATH = path.join(app.getPath("userData"), "save.json");
 
 function isDisplayMode(value) {
   return value === "windowed" || value === "borderless-fullscreen" || value === "fullscreen";
@@ -77,6 +90,94 @@ app.whenReady().then(() => {
       applyDisplayMode(mainWindow, mode);
     }
   });
+
+  // Asynchronous Save/Load handlers
+  ipcMain.handle("alchemy:load-save", async () => {
+    try {
+      return await fs.promises.readFile(SAVE_FILE_PATH, "utf8");
+    } catch (error) {
+      if (error.code === "ENOENT") {
+        return null;
+      }
+      console.error("Error reading save file:", error);
+      return null;
+    }
+  });
+
+  ipcMain.handle("alchemy:write-save", async (_event, data) => {
+    try {
+      const dir = path.dirname(SAVE_FILE_PATH);
+      if (!fs.existsSync(dir)) {
+        await fs.promises.mkdir(dir, { recursive: true });
+      }
+      await fs.promises.writeFile(SAVE_FILE_PATH, data, "utf8");
+      return true;
+    } catch (error) {
+      console.error("Error writing save file:", error);
+      return false;
+    }
+  });
+
+  ipcMain.handle("alchemy:clear-save", async () => {
+    try {
+      await fs.promises.unlink(SAVE_FILE_PATH);
+      return true;
+    } catch (error) {
+      if (error.code === "ENOENT") {
+        return true;
+      }
+      console.error("Error clearing save file:", error);
+      return false;
+    }
+  });
+
+  // Steam API Handlers
+  ipcMain.handle("alchemy:steam-get-name", () => {
+    if (steamClient) {
+      try {
+        return steamClient.localplayer.getName();
+      } catch (err) {
+        console.error("Error getting Steam name:", err);
+      }
+    }
+    return null;
+  });
+
+  ipcMain.handle("alchemy:steam-unlock-achievement", (_event, achievementId) => {
+    if (steamClient) {
+      try {
+        console.log(`Unlocking achievement on Steam: ${achievementId}`);
+        return steamClient.achievement.activate(achievementId);
+      } catch (err) {
+        console.error(`Error activating achievement ${achievementId}:`, err);
+      }
+    }
+    return false;
+  });
+
+  ipcMain.handle("alchemy:steam-set-rich-presence", (_event, key, value) => {
+    if (steamClient) {
+      try {
+        console.log(`Setting Steam rich presence: ${key} = ${value}`);
+        return steamClient.localplayer.setRichPresence(key, value);
+      } catch (err) {
+        console.error(`Error setting rich presence ${key}:`, err);
+      }
+    }
+    return false;
+  });
+
+  // Keep Steam callbacks firing if steamworks client exists
+  if (steamClient && steamClient.callback) {
+    setInterval(() => {
+      try {
+        steamClient.callback.runCallbacks();
+      } catch (err) {
+        console.error("Error running Steam callbacks:", err);
+      }
+    }, 50);
+  }
+
   createMainWindow();
 
   app.on("activate", () => {

@@ -60,15 +60,9 @@ export default tseslint.config(
 
   // Node.js scripts (CommonJS + ESM) — after base rules so overrides take effect
   {
-    files: ["desktop/**/*.cjs", "postcss.config.mjs", "scripts/**/*.mjs"],
+    files: ["desktop/**/*.cjs", "scripts/**/*.mjs"],
     languageOptions: { globals: { console: "readable", process: "readable", require: "readable", module: "readable", __dirname: "readable", __filename: "readable", Buffer: "readable", setTimeout: "readable", clearTimeout: "readable", setInterval: "readable", clearInterval: "readable" } },
     rules: { "@typescript-eslint/no-require-imports": "off", "no-undef": "off" },
-  },
-
-  // tailwind.config.ts uses `require()` for the plugin despite being a TS/ESM project
-  {
-    files: ["tailwind.config.ts"],
-    rules: { "@typescript-eslint/no-require-imports": "off" },
   },
 
   // Screenshot scripts (browser env)

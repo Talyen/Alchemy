@@ -9,7 +9,6 @@ import {
   applyPlayerCombatDamage,
   applyPlayerHealing,
   isPlayerDefeated,
-  type BattleState,
 } from "@/lib/battle/types";
 import type { PlayerStatusId, EnemyStatusId } from "@/lib/game-data";
 import { createTestBattleState } from "./test-state";

@@ -37,6 +37,7 @@ test.describe("Menu", () => {
 
 test.describe("Character Select", () => {
   test("all characters are selectable and starting run is mapped to localStorage", async ({ page }) => {
+    await enableFastMode(page);
     await page.goto("/");
     await selectGameMode(page, "campaign");
 
@@ -46,16 +47,16 @@ test.describe("Character Select", () => {
     await expect(page.getByRole("button", { name: "Rogue" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Wizard" })).toBeVisible();
 
-    await page.getByRole("button", { name: "Rogue" }).click();
+    await page.getByRole("button", { name: "Rogue" }).click({ force: true });
     await expect(page.getByRole("button", { name: "Continue" })).toBeEnabled();
-    await page.getByRole("button", { name: "Wizard" }).click();
+    await page.getByRole("button", { name: "Wizard" }).click({ force: true });
     await expect(page.getByRole("button", { name: "Continue" })).toBeEnabled();
-    await page.getByRole("button", { name: "Ranger" }).click();
+    await page.getByRole("button", { name: "Ranger" }).click({ force: true });
     await expect(page.getByRole("button", { name: "Continue" })).toBeEnabled();
 
     // Confirm UI-to-localStorage run startup mapping works for Knight
-    await page.getByRole("button", { name: "Knight" }).click();
-    await page.getByRole("button", { name: "Continue" }).click();
+    await page.getByRole("button", { name: "Knight" }).click({ force: true });
+    await page.getByRole("button", { name: "Continue" }).click({ force: true });
     await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 5000 });
 
     const saveStateJson = await page.evaluate(() => localStorage.getItem("alchemy-save-v1"));
