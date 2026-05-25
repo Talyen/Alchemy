@@ -5,7 +5,8 @@ import type { KeywordId } from "@/lib/game-data";
 import { keywordDefinitions } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
-import { keywordIcons, popupClassName } from "../config";
+import { keywordIcons } from "../config";
+import { TooltipPanel } from "./tooltip-panel";
 
 export function KeywordTag({
   keywordId,
@@ -50,17 +51,12 @@ export function KeywordTag({
   return (
     <span className="group/keyword relative inline-flex items-center">
       <span className="cursor-help">{tag}</span>
-      <span
-        className={cn(
-          popupClassName,
-          "hover-popup-panel pointer-events-none opacity-0 group-hover/keyword:opacity-100",
-        )}
-      >
+      <TooltipPanel className="pointer-events-none opacity-0 group-hover/keyword:opacity-100">
         <span className="flex items-center gap-2 text-base">
           <KeywordTag keywordId={keywordId} showIcon />
         </span>
         <span className="mt-2 block text-sm leading-6 text-muted-foreground">{def.description}</span>
-      </span>
+      </TooltipPanel>
     </span>
   );
 }

@@ -15,7 +15,8 @@ import { KeywordTag } from "../ui/keyword-tag";
 import { ScreenHeader, ShimmerOverlay } from "../ui/shared-ui";
 import { useShimmerController } from "../hooks";
 import { clearTiltFromEvent, setTiltFromEvent, tokenizeDescription } from "../utils";
-import { battleCardWidthClass, cardSurfaceClass, popupClassName, staticCardTransform } from "../config";
+import { battleCardWidthClass, cardSurfaceClass, staticCardTransform } from "../config";
+import { TooltipPanel } from "../ui/tooltip-panel";
 import { useScreenStore } from "../stores/screen-store";
 import { useRunStore } from "../stores/run-store";
 
@@ -128,9 +129,9 @@ function DifficultyCard({
       </div>
 
       {locked && (
-        <div className={cn(popupClassName, "hover-popup-panel pointer-events-none opacity-0 group-hover:opacity-100")}>
-          <p className="text-xs leading-normal text-muted-foreground">Clear Previous Difficulty to Unlock</p>
-        </div>
+        <TooltipPanel className="pointer-events-none opacity-0 group-hover:opacity-100">
+          <p className="text-sm leading-6 text-muted-foreground">Clear Previous Difficulty to Unlock</p>
+        </TooltipPanel>
       )}
     </div>
   );

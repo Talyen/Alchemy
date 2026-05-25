@@ -6,8 +6,9 @@ import { Lock } from "lucide-react";
 import { keywordDefinitions } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 import type { TalentDefinition } from "@/lib/game-data";
-import { keywordIcons, popupClassName } from "../config";
+import { keywordIcons } from "../config";
 import { tokenizeDescription } from "../utils";
+import { TooltipPanel, TooltipBody } from "../ui/tooltip-panel";
 import { ShineBorder } from "@/components/ui/shine-border";
 import type { KeywordId } from "@/lib/game-data";
 
@@ -61,11 +62,9 @@ function TalentNode({
   return (
     <>
       {/* Tooltip Popup */}
-      <div
-        className={cn(popupClassName, "hover-popup-panel pointer-events-none opacity-0 group-hover:opacity-100 z-50")}
-      >
+      <TooltipPanel className="pointer-events-none opacity-0 group-hover:opacity-100 z-50" width="w-60">
         <div className="font-display text-base font-bold text-amber-100/75">{talent.name ?? "Talent"}</div>
-        <div className="mt-2 text-sm leading-6 text-muted-foreground max-w-[240px]">
+        <TooltipBody className="max-w-[240px]">
           {descParts.map((part, i) =>
             part.keywordId ? (
               <span key={i} className={cn(keywordDefinitions[part.keywordId]?.colorClass, "font-semibold")}>
@@ -75,8 +74,8 @@ function TalentNode({
               <Fragment key={i}>{part.text}</Fragment>
             ),
           )}
-        </div>
-      </div>
+        </TooltipBody>
+      </TooltipPanel>
 
       <div
         role={isChoice ? "button" : undefined}

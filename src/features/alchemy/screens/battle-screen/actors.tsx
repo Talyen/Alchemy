@@ -4,6 +4,7 @@
 import { BATTLE_ACTOR_TOP_DESKTOP, BATTLE_ACTOR_TOP_MOBILE } from "@/lib/game-constants";
 
 import { ArtPanel, CompanionPanel, CombatTextRail } from "../../components";
+import { TurnBadge } from "../../ui/turn-badge";
 import {
   mobileStageBattleCardWidthClass,
   battleActorSectionClass,
@@ -102,19 +103,7 @@ export function BattleActors({
               />
             </div>
           ) : null}
-          <div
-            className={`absolute left-1/2 z-20 whitespace-nowrap rounded-md px-3 py-1 text-sm transition-all duration-500 ${
-              isPlayerTurn
-                ? "opacity-100 bg-emerald-900/70 text-emerald-300"
-                : "opacity-0 pointer-events-none bg-emerald-900/70 text-emerald-300"
-            }`}
-            style={{
-              top: "calc(100% + clamp(0.75cqh, 1.5cqh, 2.5cqh))",
-              transform: isPlayerTurn ? "translateX(-50%) scale(1)" : "translateX(-50%) scale(0.6)",
-            }}
-          >
-            Your Turn
-          </div>
+          <TurnBadge show={isPlayerTurn} variant="player" />
         </div>
       </div>
 
@@ -145,19 +134,7 @@ export function BattleActors({
           isBoss={isBoss}
           statsCardWidthClass={bossStatsCardWidthClass}
         />
-        <div
-          className={`absolute left-1/2 z-20 whitespace-nowrap rounded-md px-3 py-1 text-sm transition-all duration-500 ${
-            !isPlayerTurn
-              ? "opacity-100 bg-rose-900/70 text-rose-300"
-              : "opacity-0 pointer-events-none bg-rose-900/70 text-rose-300"
-          }`}
-          style={{
-            top: "calc(100% + clamp(0.75cqh, 1.5cqh, 2.5cqh))",
-            transform: !isPlayerTurn ? "translateX(-50%) scale(1)" : "translateX(-50%) scale(0.6)",
-          }}
-        >
-          Enemy Turn
-        </div>
+        <TurnBadge show={!isPlayerTurn} variant="enemy" />
       </div>
     </section>
   );

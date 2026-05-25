@@ -84,7 +84,7 @@ export const DamageTypeSchema = z.enum([
   "bleed",
   "freeze",
   "nature",
-  "trap",
+  "arrow",
 ]);
 export const PlayerStatusIdSchema = z.enum([
   "block",

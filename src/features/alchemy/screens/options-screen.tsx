@@ -256,7 +256,7 @@ export function OptionsScreen({
 
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           {(["display", "sound", "gameplay", "other"] as const).map((t) => (
-            <PressableMotion key={t}>
+            <PressableMotion key={t} disableHoverScale>
               <button
                 type="button"
                 className={cn(

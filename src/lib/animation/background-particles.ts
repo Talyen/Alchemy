@@ -2,7 +2,7 @@
 // Depends on React refs for canvas mount. Used by BackgroundParticles React wrapper.
 import type { MutableRefObject } from "react";
 
-export type ParticleVariant = "embers" | "dust";
+export type ParticleVariant = "embers" | "dust" | "hand_glow";
 
 interface BackgroundParticle {
   x: number;
@@ -26,6 +26,7 @@ interface BackgroundParticleConfig {
   minSpeed: number;
   maxSpeed: number;
   colors: readonly string[];
+  spawnBottomWeight?: number;
 }
 
 const CONFIGS: Record<ParticleVariant, BackgroundParticleConfig> = {
@@ -49,6 +50,17 @@ const CONFIGS: Record<ParticleVariant, BackgroundParticleConfig> = {
     maxSpeed: 4,
     colors: ["rgba(200, 190, 175, X)"],
   },
+  hand_glow: {
+    particleCount: 25,
+    minSize: 1.5,
+    maxSize: 3,
+    minAlpha: 0.2,
+    maxAlpha: 0.5,
+    minSpeed: 2,
+    maxSpeed: 5,
+    colors: ["rgba(255, 200, 80, X)", "rgba(255, 160, 40, X)"],
+    spawnBottomWeight: 0.7,
+  },
 };
 
 function lerp(a: number, b: number, t: number): number {
@@ -58,9 +70,12 @@ function lerp(a: number, b: number, t: number): number {
 function spawnParticle(width: number, height: number, config: BackgroundParticleConfig): BackgroundParticle {
   const alpha = lerp(config.minAlpha, config.maxAlpha, Math.random());
   const rawColor = config.colors[Math.floor(Math.random() * config.colors.length)];
+  const y = config.spawnBottomWeight
+    ? height - Math.random() * height * (1 - config.spawnBottomWeight)
+    : Math.random() * height;
   return {
     x: Math.random() * width,
-    y: Math.random() * height,
+    y,
     size: lerp(config.minSize, config.maxSize, Math.random()),
     alpha: 0,
     baseAlpha: alpha,

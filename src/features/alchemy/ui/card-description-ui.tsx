@@ -7,9 +7,9 @@ import { Fragment } from "react";
 import { keywordDefinitions, type BattleCard, type KeywordId } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
-import { popupClassName } from "../config";
 import { tokenizeDescription } from "../utils";
 import { KeywordTag } from "./keyword-tag";
+import { TooltipPanel } from "./tooltip-panel";
 import { getCorruptedValueOffsets, splitCorruptedNumericParts } from "./card-text";
 
 export function renderColoredKeywords(description: string) {
@@ -32,19 +32,14 @@ export function KeywordToken({ keywordId, matchedText }: { keywordId: KeywordId;
   return (
     <span className="group/keyword relative inline-flex items-center">
       <span className={cn("cursor-help font-semibold", definition.colorClass)}>{matchedText}</span>
-      <span
-        className={cn(
-          popupClassName,
-          "hover-popup-panel pointer-events-none opacity-0 group-hover/keyword:opacity-100",
-        )}
-      >
+      <TooltipPanel className="pointer-events-none opacity-0 group-hover/keyword:opacity-100">
         <span className="flex items-center gap-2 text-base">
           <KeywordTag keywordId={keywordId} />
         </span>
         <span className="mt-2 block text-sm leading-6 text-muted-foreground">
           {renderColoredKeywords(definition.description)}
         </span>
-      </span>
+      </TooltipPanel>
     </span>
   );
 }

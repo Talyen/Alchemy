@@ -172,7 +172,7 @@ function baseState(overrides: Partial<BattleState> = {}): BattleState {
       companionBleedDamageBonus: 0,
       receiveHalfBleedDamage: false,
       bleedHalvesEnemyHealing: false,
-      flatTrapDamage: 0,
+      flatArrowDamage: 0,
       freezeThresholdReduction: 0,
       freezeDoubleDamage: false,
       blockOnFreeze: 0,

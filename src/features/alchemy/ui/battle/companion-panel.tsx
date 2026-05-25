@@ -6,9 +6,10 @@ import { type CSSProperties } from "react";
 import type { CompanionDefinition } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
-import { cardSurfaceClass, popupClassName, staticCardTransform } from "../../config";
+import { cardSurfaceClass, staticCardTransform } from "../../config";
 import { clearTiltFromEvent, setTiltFromEvent } from "../../utils";
 import { DescriptionLines } from "../card-ui";
+import { TooltipPanel } from "../tooltip-panel";
 
 function getCompanionDescriptionLines(companion: CompanionDefinition, damageBonus: number): string[] {
   const attack = companion.turnStartEffects.find((effect) => effect.kind === "damage");
@@ -56,18 +57,13 @@ export function CompanionPanel({
           loading="eager"
         />
       </div>
-      <div
-        className={cn(
-          popupClassName,
-          "hover-popup-panel pointer-events-auto opacity-0 group-hover/companion:opacity-100",
-        )}
-      >
+      <TooltipPanel className="opacity-0 group-hover/companion:opacity-100">
         <p className="font-display text-base font-bold text-amber-100/75">{companion.title}</p>
         <DescriptionLines
           lines={getCompanionDescriptionLines(companion, damageBonus)}
           idPrefix={`companion-${companion.id}`}
         />
-      </div>
+      </TooltipPanel>
     </div>
   );
 }

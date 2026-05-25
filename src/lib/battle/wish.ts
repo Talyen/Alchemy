@@ -9,13 +9,13 @@ import { drawCards, shuffleCards } from "./draw";
 import { addGold, applyPlayerHealing, clampHealth, type BattleState, type CombatTextEvent } from "./types";
 import { emitOverhealBlockText, mergeCombatText } from "./combat-text";
 import { removeHarmfulPlayerStatuses } from "./status-effects";
-import { PERCENT_DENOMINATOR, WISH_CHOICE_COUNT, MAX_HAND_SIZE } from "../game-constants";
+import { PERCENT_DENOMINATOR, WISH_CHOICE_COUNT, MAX_HAND_SIZE, MIXED_POTION_CARD_ID } from "../game-constants";
 
 export function buildWishOptions(state: BattleState, card: BattleCard): BattleCard[] {
   const baseCount =
     WISH_CHOICE_COUNT + (state.rng() * PERCENT_DENOMINATOR < state.talentEffects.wishExtraChoiceChance ? 1 : 0);
 
-  let candidates = cardLibrary.filter((candidate) => candidate.id !== card.id);
+  let candidates = cardLibrary.filter((candidate) => candidate.id !== card.id && candidate.id !== MIXED_POTION_CARD_ID);
 
   if (state.talentEffects.wishUndiscoveredCards && state.discoveredCardIds.length > 0) {
     const undiscovered = candidates.filter((c) => !state.discoveredCardIds.includes(c.id));

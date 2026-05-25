@@ -13,7 +13,6 @@ export {
   GoldCost,
   PageLayout,
   PaginationControls,
-  ProgressBar,
   AspectRatioSelect,
   ShimmerOverlay,
 } from "./ui/shared-ui";

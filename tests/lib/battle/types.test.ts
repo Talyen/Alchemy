@@ -57,7 +57,7 @@ function baseState(overrides: Partial<BattleState> = {}): BattleState {
       firstBleedCardFree: false, bleedPhysicalBonus: 0, bleedLeechChance: 0,
       bleedExecuteThreshold: 0, bleedDesperateMultiplier: 1, bleedPoisonChance: 0,
       bleedPoisonDamageTakenBonus: 0, companionBleedDamageBonus: 0, receiveHalfBleedDamage: false, bleedHalvesEnemyHealing: false,
-      flatTrapDamage: 0,       freezeThresholdReduction: 0, freezeDoubleDamage: false, blockOnFreeze: 0, freezeStripArmor: false, startFreeze: 0, companionVsFrozenBonus: 0, freezePreventsPoisonDecay: false, freezeBlocksRegen: false, freezePreventsEnemyScaling: false, receiveHalfFreezeBuildUp: false, maxHealthPerCombat: 0,
+      flatArrowDamage: 0,       freezeThresholdReduction: 0, freezeDoubleDamage: false, blockOnFreeze: 0, freezeStripArmor: false, startFreeze: 0, companionVsFrozenBonus: 0, freezePreventsPoisonDecay: false, freezeBlocksRegen: false, freezePreventsEnemyScaling: false, receiveHalfFreezeBuildUp: false, maxHealthPerCombat: 0,
       flatStunDamage: 0, blockOnStun: 0, forgeOnStun: 0, stunStripArmor: false, manaOnStun: 0,
     },
     trinketEffects: {

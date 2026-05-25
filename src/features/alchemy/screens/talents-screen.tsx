@@ -7,7 +7,7 @@ import { keywordDefinitions, talentBackgroundArt, type KeywordId, getTalentsForK
 import { getTalentKeywordProgress } from "@/lib/talents";
 
 import { TalentKeywordButton } from "../talents/talents-ui";
-import { ConfirmationDialog, HamburgerTrigger, PageLayout } from "../ui/shared-ui";
+import { ConfirmationDialog, HamburgerTrigger, PageLayout, ScreenHeader } from "../ui/shared-ui";
 import { useTalentChoices } from "../talents/use-talent-choices";
 import { playUISound } from "@/lib/audio";
 import { TalentTree } from "../talents/talent-tree";
@@ -55,14 +55,11 @@ export function TalentsScreen({
     <PageLayout>
       <div className="alchemy-shell flex min-h-[48.15cqh] w-full max-w-5xl flex-col rounded-[28px] p-7">
         <div className="relative flex w-full items-center justify-center">
-          <h1 className="font-display text-lg font-black uppercase tracking-[0.15em] text-amber-100/75 sm:text-xl">
-            Talents
-          </h1>
+          <ScreenHeader title="Talents" />
           <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-2">
             <HamburgerTrigger onClick={onOpenMenu} label="Open talents menu" />
           </div>
         </div>
-        <div className="mx-auto mt-2 h-px w-44 bg-gradient-to-r from-transparent via-amber-100/75 to-transparent" />
 
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           {keywordIds.map((kw) => {

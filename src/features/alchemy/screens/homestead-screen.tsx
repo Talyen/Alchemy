@@ -3,7 +3,7 @@
 // materials are sufficient. Completed nodes are dimmed with a checkmark.
 
 import { useState, useMemo, type ReactNode } from "react";
-import { ChevronLeft, ChevronRight, FlaskConical, Hammer, PawPrint, Star, Wheat } from "lucide-react";
+import { ChevronLeft, ChevronRight, FlaskConical, Hammer, PawPrint, Wheat } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -34,13 +34,15 @@ import placeholderHomestead from "@/assets/optimized/placeholder-homestead.webp"
 
 import { DetailPopup } from "../ui/card-ui";
 import { DisabledTooltip, HamburgerTrigger, PageLayout, ScreenHeader } from "../ui/shared-ui";
-import { PressableMotion } from "../ui/pressable-motion";
-import { MaterialIcon, matIconMap, matPillStyle, matTextColor } from "../ui/material-icons";
+import { MaterialIcon, MaterialPill, matIconMap, matPillStyle, matTextColor } from "../ui/material-icons";
+import { StarRating } from "../ui/star-rating";
+import { TabBar } from "../ui/tab-bar";
+import { TiltSurface } from "../ui/tilt-surface";
 import { playUISound } from "@/lib/audio";
 import { cardLibrary, keywordDefinitions, type CompanionId } from "@/lib/game-data";
 import { COMPANION_BOND_TIERS, COMPANION_MAX_TIER } from "../use-homestead-state";
 
-import { clearTiltFromEvent, setTiltFromEvent, tokenizeDescription } from "../utils";
+import { tokenizeDescription } from "../utils";
 import { getEffectiveCardDescriptionLines } from "../utils/card-description";
 
 type Tab = "buildings" | "companions" | "farm" | "research";
@@ -137,11 +139,11 @@ function renderTextWithMaterials(text: string): ReactNode {
   return result;
 }
 
-const tabs: { id: Tab; label: string }[] = [
-  { id: "buildings", label: "Buildings" },
-  { id: "farm", label: "Farm" },
-  { id: "research", label: "Research" },
-  { id: "companions", label: "Companions" },
+const tabs: { id: Tab; label: string; icon: typeof Hammer }[] = [
+  { id: "buildings", label: "Buildings", icon: Hammer },
+  { id: "farm", label: "Farm", icon: Wheat },
+  { id: "research", label: "Research", icon: FlaskConical },
+  { id: "companions", label: "Companions", icon: PawPrint },
 ];
 
 /** Renders the player's material inventory top-bar */
@@ -149,17 +151,7 @@ function MaterialsBar({ materialInventory }: { materialInventory: MaterialInvent
   return (
     <div className="mx-auto mt-5 flex w-full max-w-2xl flex-nowrap items-center justify-center gap-x-3">
       {MATERIAL_IDS.map((mat) => (
-        <span
-          key={mat}
-          className={cn(
-            "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold",
-            matPillStyle[mat],
-            matTextColor[mat],
-          )}
-        >
-          {matIconMap[mat]}
-          {materialInventory[mat] ?? 0} {materialLabels[mat]}
-        </span>
+        <MaterialPill key={mat} material={mat} amount={materialInventory[mat] ?? 0} />
       ))}
     </div>
   );
@@ -167,33 +159,7 @@ function MaterialsBar({ materialInventory }: { materialInventory: MaterialInvent
 
 /** Renders the tab switching header */
 function HomesteadTabs({ activeTab, onSelectTab }: { activeTab: Tab; onSelectTab: (tab: Tab) => void }) {
-  return (
-    <div className="mx-auto mt-5 flex flex-wrap justify-center gap-3">
-      {tabs.map((t) => (
-        <PressableMotion key={t.id}>
-          <button
-            type="button"
-            onClick={() => onSelectTab(t.id)}
-            className={cn(
-              "inline-flex items-center gap-2 rounded-full bg-card px-4 py-2 text-sm font-semibold text-foreground ring-1 ring-offset-1 ring-offset-card transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-              activeTab === t.id ? "ring-primary/70" : "ring-border/30 hover:ring-border/50",
-            )}
-          >
-            {t.id === "buildings" ? (
-              <Hammer className="h-4 w-4" />
-            ) : t.id === "farm" ? (
-              <Wheat className="h-4 w-4" />
-            ) : t.id === "research" ? (
-              <FlaskConical className="h-4 w-4" />
-            ) : (
-              <PawPrint className="h-4 w-4" />
-            )}
-            {t.label}
-          </button>
-        </PressableMotion>
-      ))}
-    </div>
-  );
+  return <TabBar tabs={tabs} activeTab={activeTab} onSelectTab={onSelectTab} />;
 }
 
 /** Individual companion node button layout */
@@ -244,26 +210,22 @@ function CompanionCardNode({
           />
         )}
         <div className="group w-full overflow-hidden rounded-[18px] p-3">
-          <div
+          <TiltSurface
             className={cn(
-              "tilt-surface relative mx-auto flex items-center justify-center overflow-hidden rounded-[18px] bg-stone-900",
+              "relative mx-auto flex items-center justify-center overflow-hidden rounded-[18px] bg-stone-900",
               HOMESTEAD_CONFIG.companionPageWidth,
               HOMESTEAD_CONFIG.companionAspectRatio,
               isComplete && "bg-stone-800/70",
             )}
             onMouseEnter={() => setHoveredItemId(card.id)}
-            onMouseMove={setTiltFromEvent}
-            onMouseLeave={(e) => {
-              setHoveredItemId(null);
-              clearTiltFromEvent(e);
-            }}
+            onMouseLeave={() => setHoveredItemId(null)}
           >
             <img
               src={card.art}
               alt={card.title}
               className={cn("h-full w-full object-cover", !discovered && "grayscale opacity-45")}
             />
-          </div>
+          </TiltSurface>
         </div>
       </div>
       {showButton ? (
@@ -274,26 +236,12 @@ function CompanionCardNode({
               <MaterialCost material="food" amount={bondCost.food} />
             </Button>
           </DisabledTooltip>
-          <span className="flex items-center gap-0.5">
-            {Array.from({ length: COMPANION_MAX_TIER }, (_, i) => (
-              <Star
-                key={i}
-                className={cn("h-3 w-3", i < currentLevel ? "text-amber-400" : "text-muted-foreground")}
-                fill={i < currentLevel ? "currentColor" : "none"}
-              />
-            ))}
-          </span>
+          <StarRating current={currentLevel} max={COMPANION_MAX_TIER} />
         </div>
       ) : (
         <div className="mt-1.5 flex h-9 items-center justify-center gap-1.5 text-sm font-semibold text-amber-100/75">
           <span>{discovered ? card.title : "Undiscovered"}</span>
-          {discovered && (
-            <span className="flex items-center gap-0.5 text-amber-400">
-              {Array.from({ length: COMPANION_MAX_TIER }, (_, i) => (
-                <Star key={i} className="h-3 w-3" fill="currentColor" />
-              ))}
-            </span>
-          )}
+          {discovered && <StarRating current={COMPANION_MAX_TIER} max={COMPANION_MAX_TIER} />}
         </div>
       )}
     </div>
@@ -395,21 +343,19 @@ function HomesteadUpgradeNode({
       >
         {detailTooltip}
         <div className="group w-full overflow-hidden rounded-[18px] p-3">
-          <div
+          <TiltSurface
             className={cn(
-              "tilt-surface relative mx-auto flex w-full items-center justify-center overflow-hidden rounded-[18px] bg-stone-900",
+              "relative mx-auto flex w-full items-center justify-center overflow-hidden rounded-[18px] bg-stone-900",
               HOMESTEAD_CONFIG.artAspectRatio,
               isCompleted && "bg-stone-800/70",
             )}
-            onMouseMove={setTiltFromEvent}
-            onMouseLeave={clearTiltFromEvent}
           >
             <img
               src={getArt(item.data.id)}
               alt={item.data.title}
               className={cn("h-full w-full object-cover", isTier0 && "grayscale opacity-60")}
             />
-          </div>
+          </TiltSurface>
         </div>
       </div>
 
@@ -417,11 +363,7 @@ function HomesteadUpgradeNode({
       {isCompleted ? (
         <div className="mt-1.5 flex h-9 items-center justify-center gap-1.5 text-sm font-semibold text-amber-100/75">
           <span>{item.data.title}</span>
-          <span className="flex items-center gap-0.5 text-amber-400">
-            {Array.from({ length: maxTiers }, (_, i) => (
-              <Star key={i} className="h-3 w-3" fill="currentColor" />
-            ))}
-          </span>
+          <StarRating current={maxTiers} max={maxTiers} />
         </div>
       ) : hasCost ? (
         <div className="mt-1.5 flex items-center gap-2">
@@ -433,15 +375,7 @@ function HomesteadUpgradeNode({
               ))}
             </Button>
           </DisabledTooltip>
-          <span className="flex items-center gap-0.5">
-            {Array.from({ length: maxTiers }, (_, i) => (
-              <Star
-                key={i}
-                className={cn("h-3 w-3", i < currentLevel ? "text-amber-400" : "text-muted-foreground")}
-                fill={i < currentLevel ? "currentColor" : "none"}
-              />
-            ))}
-          </span>
+          <StarRating current={currentLevel} max={maxTiers} />
         </div>
       ) : null}
     </div>

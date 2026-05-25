@@ -1017,13 +1017,13 @@ export const talentPool: TalentDefinition[] = [
   ...placeholderTalents("companion", "companion-placeholder", 3, 10),
 
   {
-    id: "trap-damage",
-    keywordId: "trap",
+    id: "arrow-damage",
+    keywordId: "arrow",
     name: "Tripwire",
-    description: "Increase Trap damage by 1",
-    effects: [addEffect("flatTrapDamage", 1)],
+    description: "Increase Arrow damage by 1",
+    effects: [addEffect("flatArrowDamage", 1)],
   },
-  ...placeholderTalents("trap", "trap-placeholder", 2, 10),
+  ...placeholderTalents("arrow", "arrow-placeholder", 2, 10),
 ];
 
 // Filter helpers for the talent selection UI.
@@ -1183,7 +1183,7 @@ const DEFAULT_TALENT_EFFECTS: TalentEffectManifest = {
   freezePreventsEnemyScaling: false,
   receiveHalfFreezeBuildUp: false,
 
-  flatTrapDamage: 0,
+  flatArrowDamage: 0,
 
   firstBleedCardFree: false,
   bleedPhysicalBonus: 0,

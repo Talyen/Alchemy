@@ -6,6 +6,7 @@ import { keywordDefinitions } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 import { materialLabels } from "@/lib/homestead/types";
 import { matIconMap, matPillStyle, matTextColor } from "./material-icons";
+import { TooltipHeader } from "./tooltip-panel";
 import type { MysteryEffect } from "../mystery-events";
 
 const goldDef = keywordDefinitions.gold;
@@ -146,7 +147,7 @@ export function MysteryEffectList({
 }) {
   return (
     <div className="flex flex-col items-start gap-1.5">
-      <p className="text-base text-foreground">{choiceLabel ?? "Outcome"}</p>
+      <TooltipHeader>{choiceLabel ?? "Outcome"}</TooltipHeader>
       {effects.map((effect, i) => {
         if (effect.kind === "none") return null;
 

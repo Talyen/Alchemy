@@ -6,9 +6,63 @@ import { Button } from "@/components/ui/button";
 import { BattleCardButton, getCardDisplayTitle } from "../ui/card-ui";
 import { ScreenHeader } from "../ui/shared-ui";
 import { collectionTileWidthClass } from "../config";
-import { getHoverId } from "../utils";
-import { useBattleStore } from "../stores/battle-store";
-import { useScreenStore } from "../stores/screen-store";
+import { useInteractiveCard } from "../ui/use-interactive-card";
+
+function DraftedCardItem({ card, index }: { card: BattleCard; index: number }) {
+  const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard(
+    "drafted-" + index,
+    card.id,
+  );
+
+  return (
+    <BattleCardButton
+      card={card}
+      hovered={isHovered}
+      onHoverStart={onHoverStart}
+      onHoverEnd={onHoverEnd}
+      ariaLabel={getCardDisplayTitle(card)}
+      shimmerActive={shimmerActive}
+      shimmerToken={shimmerToken}
+      className={collectionTileWidthClass}
+      wrapperClassName="stagger-item relative flex justify-center"
+      wrapperStyle={{ "--stagger-index": index } as CSSProperties}
+    />
+  );
+}
+
+function ChoiceCardItem({
+  card,
+  index,
+  selected,
+  onClick,
+}: {
+  card: BattleCard;
+  index: number;
+  selected: boolean;
+  onClick: () => void;
+}) {
+  const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard(
+    "draft-choice-" + index,
+    card.id,
+  );
+
+  return (
+    <BattleCardButton
+      card={card}
+      hovered={isHovered}
+      onHoverStart={onHoverStart}
+      onHoverEnd={onHoverEnd}
+      onClick={onClick}
+      ariaLabel={"Select " + getCardDisplayTitle(card)}
+      shimmerActive={shimmerActive}
+      shimmerToken={shimmerToken}
+      selected={selected}
+      className={collectionTileWidthClass}
+      wrapperClassName="stagger-item relative flex justify-center"
+      wrapperStyle={{ "--stagger-index": index } as CSSProperties}
+    />
+  );
+}
 
 function shufflePool(): BattleCard[] {
   const pool = [...cardLibrary];
@@ -27,10 +81,6 @@ export function DraftDeckScreen({ onComplete }: { onComplete: (draftedCards: Bat
   const [round, setRound] = useState(0);
   const [drafted, setDrafted] = useState<BattleCard[]>([]);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const hoveredCardId = useScreenStore((s) => s.hoveredCardId);
-  const setHoveredCardId = useScreenStore((s) => s.setHoveredCardId);
-  const shimmerState = useBattleStore((s) => s.shimmerState);
-  const maybeTriggerShimmer = useBattleStore((s) => s.maybeTriggerShimmer);
 
   const choices = useMemo(() => {
     if (pool.length === 0) return [];
@@ -63,53 +113,21 @@ export function DraftDeckScreen({ onComplete }: { onComplete: (draftedCards: Bat
 
         {isComplete ? (
           <div className="mx-auto mt-8 grid max-w-fit grid-cols-3 justify-items-center gap-6">
-            {drafted.map((card, index) => {
-              const hoverId = getHoverId("drafted-" + index, card.id);
-              return (
-                <BattleCardButton
-                  key={"drafted-" + index + "-" + card.id}
-                  card={card}
-                  hovered={hoveredCardId === hoverId}
-                  onHoverStart={() => {
-                    setHoveredCardId(hoverId);
-                    maybeTriggerShimmer(hoverId);
-                  }}
-                  onHoverEnd={() => setHoveredCardId((current) => (current === hoverId ? null : current))}
-                  ariaLabel={getCardDisplayTitle(card)}
-                  shimmerActive={shimmerState?.cardId === hoverId}
-                  shimmerToken={shimmerState?.token}
-                  className={collectionTileWidthClass}
-                  wrapperClassName="stagger-item relative flex justify-center"
-                  wrapperStyle={{ "--stagger-index": index } as CSSProperties}
-                />
-              );
-            })}
+            {drafted.map((card, index) => (
+              <DraftedCardItem key={"drafted-" + index + "-" + card.id} card={card} index={index} />
+            ))}
           </div>
         ) : (
           <div className="mt-8 flex flex-wrap items-start justify-center gap-6">
-            {choices.map((card, index) => {
-              const hoverId = getHoverId("draft-choice-" + index, card.id);
-              return (
-                <BattleCardButton
-                  key={"draft-choice-" + index + "-" + card.id}
-                  card={card}
-                  hovered={hoveredCardId === hoverId}
-                  onHoverStart={() => {
-                    setHoveredCardId(hoverId);
-                    maybeTriggerShimmer(hoverId);
-                  }}
-                  onHoverEnd={() => setHoveredCardId((current) => (current === hoverId ? null : current))}
-                  onClick={() => setSelectedIndex(index)}
-                  ariaLabel={"Select " + getCardDisplayTitle(card)}
-                  shimmerActive={shimmerState?.cardId === hoverId}
-                  shimmerToken={shimmerState?.token}
-                  selected={selectedIndex === index}
-                  className={collectionTileWidthClass}
-                  wrapperClassName="stagger-item relative flex justify-center"
-                  wrapperStyle={{ "--stagger-index": index } as CSSProperties}
-                />
-              );
-            })}
+            {choices.map((card, index) => (
+              <ChoiceCardItem
+                key={"draft-choice-" + index + "-" + card.id}
+                card={card}
+                index={index}
+                selected={selectedIndex === index}
+                onClick={() => setSelectedIndex(index)}
+              />
+            ))}
           </div>
         )}
 

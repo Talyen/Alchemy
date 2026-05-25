@@ -9,22 +9,14 @@ import { Button } from "@/components/ui/button";
 import { ManaPanel, PilePanel } from "../../components";
 import { battleBottomBarClass, battleBottomColumnClass } from "../../config";
 import { BattleHand } from "./hand";
-import type {
-  BattleActionsProps,
-  BattleHoverProps,
-  BattleRefsProps,
-  BattleScreenState,
-  RequiredBattleViewProps,
-} from "./types";
+import type { BattleActionsProps, BattleRefsProps, BattleScreenState, RequiredBattleViewProps } from "./types";
 
 export function BattleBottomBar({
   view,
-  hover,
   refs,
   actions,
 }: {
   view: RequiredBattleViewProps;
-  hover: BattleHoverProps;
   refs: BattleRefsProps;
   actions: BattleActionsProps;
 }) {
@@ -46,7 +38,7 @@ export function BattleBottomBar({
         </div>
       </div>
 
-      <BattleHand view={view} hover={hover} refs={refs} actions={actions} />
+      <BattleHand view={view} refs={refs} actions={actions} />
 
       <BattleControls
         battleState={battleState}

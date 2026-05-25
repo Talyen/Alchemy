@@ -200,14 +200,6 @@
     will-change: opacity, transform;
   }
 
-  .hover-popup-quick-in.hover-popup-above {
-    animation: hoverPopupQuickInAbove 120ms ease-out both;
-  }
-
-  .hover-popup-quick-in.hover-popup-below {
-    animation: hoverPopupQuickInBelow 120ms ease-out both;
-  }
-
   .group:hover > .hover-popup-panel,
   .group:focus-within > .hover-popup-panel,
   .group\/keyword:hover > .hover-popup-panel,
@@ -215,12 +207,15 @@
   .group\/companion:hover > .hover-popup-panel,
   .group\/companion:focus-within > .hover-popup-panel,
   .group\/status:hover > .hover-popup-panel,
-  .group\/status:focus-within > .hover-popup-panel {
+  .group\/status:focus-within > .hover-popup-panel,
+  .group\/art-wrapper:hover > .hover-popup-panel,
+  .group\/art-wrapper:focus-within > .hover-popup-panel,
+  .group\/wildwood-boss:hover > .hover-popup-panel,
+  .group\/wildwood-boss:focus-within > .hover-popup-panel {
     transform: translateX(-50%) translateY(0) scale(1);
   }
 
-  .tooltips-disabled .hover-popup-panel,
-  .tooltips-disabled .hover-popup-quick-in {
+  .tooltips-disabled .hover-popup-panel {
     opacity: 0 !important;
     pointer-events: none;
   }
@@ -524,30 +519,6 @@
     opacity: 1;
     filter: blur(0);
     transform: translateY(0);
-  }
-}
-
-@keyframes hoverPopupQuickInAbove {
-  0% {
-    opacity: 0;
-    transform: translate(-50%, calc(-100% - 18px)) scale(0.985);
-  }
-
-  100% {
-    opacity: 1;
-    transform: translate(-50%, calc(-100% - 26px)) scale(1);
-  }
-}
-
-@keyframes hoverPopupQuickInBelow {
-  0% {
-    opacity: 0;
-    transform: translate(-50%, 4px) scale(0.985);
-  }
-
-  100% {
-    opacity: 1;
-    transform: translate(-50%, 12px) scale(1);
   }
 }
 

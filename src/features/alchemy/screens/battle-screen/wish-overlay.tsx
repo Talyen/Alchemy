@@ -9,28 +9,64 @@ import type { BattleCard } from "@/lib/game-data";
 import { BattleCardButton, getCardDisplayTitle } from "../../components";
 import { ScreenHeader } from "../../ui/shared-ui";
 import { handCardWidthClass, mobileStageHandCardWidthClass } from "../../config";
-import { getHoverId } from "../../utils";
-import type { BattleActionsProps, BattleHoverProps, BattleScreenState } from "./types";
-import { useScreenStore } from "../../stores/screen-store";
-import { useBattleStore } from "../../stores/battle-store";
+import type { BattleActionsProps, BattleScreenState } from "./types";
+import { useInteractiveCard } from "../../ui/use-interactive-card";
+import type { CardDescriptionContext } from "../../utils/card-description";
+
+function WishCardItem({
+  card,
+  index,
+  handWidthClass,
+  selected,
+  onSelect,
+  descriptionContext,
+}: {
+  card: BattleCard;
+  index: number;
+  handWidthClass: string;
+  selected: boolean;
+  onSelect: (card: BattleCard) => void;
+  descriptionContext: CardDescriptionContext;
+}) {
+  const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard("wish", card.id);
+
+  return (
+    <BattleCardButton
+      card={card}
+      hovered={isHovered}
+      onHoverStart={onHoverStart}
+      onHoverEnd={onHoverEnd}
+      onClick={() => onSelect(card)}
+      ariaLabel={`Choose ${getCardDisplayTitle(card)}`}
+      descriptionContext={descriptionContext}
+      shimmerActive={shimmerActive}
+      shimmerToken={shimmerToken}
+      className={handWidthClass}
+      wrapperClassName="stagger-item relative flex justify-center"
+      wrapperStyle={{ "--stagger-index": index } as CSSProperties}
+      selected={selected}
+    />
+  );
+}
 
 export function WishOverlay({
   battleState,
-  hover,
   actions,
   isMobileLandscape,
 }: {
   battleState: BattleScreenState;
-  hover: BattleHoverProps;
   actions: BattleActionsProps;
   isMobileLandscape: boolean;
 }) {
-  const { hoveredCardId, shimmerState } = hover;
   const { onWishChoice } = actions;
-  const setHoveredCardId = useScreenStore((s) => s.setHoveredCardId);
-  const maybeTriggerShimmer = useBattleStore((s) => s.maybeTriggerShimmer);
   const [wishSelectedCard, setWishSelectedCard] = useState<BattleCard | null>(null);
   const handWidthClass = isMobileLandscape ? mobileStageHandCardWidthClass : handCardWidthClass;
+
+  const descriptionContext = {
+    ...battleState.talentEffects,
+    companionDamageBonus: battleState.trinketEffects.companionDamageBonus,
+    companionDamageBuff: battleState.companionDamageBuff,
+  };
 
   return (
     <div
@@ -42,36 +78,17 @@ export function WishOverlay({
         <p className="mt-2 text-center text-sm text-muted-foreground">Choose one card to add to your hand.</p>
 
         <div className="mt-6 flex flex-wrap items-start justify-center gap-5">
-          {battleState.wishOptions?.map((card, index) => {
-            const hoverId = getHoverId("wish", card.id);
-            const isSelected = wishSelectedCard?.id === card.id;
-
-            return (
-              <BattleCardButton
-                key={card.id}
-                card={card}
-                hovered={hoveredCardId === hoverId}
-                onHoverStart={() => {
-                  setHoveredCardId(hoverId);
-                  maybeTriggerShimmer(hoverId);
-                }}
-                onHoverEnd={() => setHoveredCardId((current) => (current === hoverId ? null : current))}
-                onClick={() => setWishSelectedCard(card)}
-                ariaLabel={`Choose ${getCardDisplayTitle(card)}`}
-                descriptionContext={{
-                  ...battleState.talentEffects,
-                  companionDamageBonus: battleState.trinketEffects.companionDamageBonus,
-                  companionDamageBuff: battleState.companionDamageBuff,
-                }}
-                shimmerActive={shimmerState?.cardId === hoverId}
-                shimmerToken={shimmerState?.token}
-                className={handWidthClass}
-                wrapperClassName="stagger-item relative flex justify-center"
-                wrapperStyle={{ "--stagger-index": index } as CSSProperties}
-                selected={isSelected}
-              />
-            );
-          })}
+          {battleState.wishOptions?.map((card, index) => (
+            <WishCardItem
+              key={card.id}
+              card={card}
+              index={index}
+              handWidthClass={handWidthClass}
+              selected={wishSelectedCard?.id === card.id}
+              onSelect={setWishSelectedCard}
+              descriptionContext={descriptionContext}
+            />
+          ))}
         </div>
 
         <div className="mt-6 flex justify-center gap-3">

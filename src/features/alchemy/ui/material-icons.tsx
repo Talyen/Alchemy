@@ -1,10 +1,10 @@
 // Shared material icon and color utilities for reward/UI screens.
 /* eslint-disable react-refresh/only-export-components */
 import type { ReactNode } from "react";
-import { Apple, Gem, Leaf, Pickaxe, TreePine } from "lucide-react";
+import { Apple, Coins, Gem, Leaf, Pickaxe, TreePine } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import type { MaterialId } from "@/lib/homestead/types";
+import { materialLabels, type MaterialId } from "@/lib/homestead/types";
 
 export const matIconMap: Record<MaterialId, ReactNode> = {
   wood: <TreePine absoluteStrokeWidth aria-hidden="true" className="block h-4 w-4 shrink-0" />,
@@ -40,4 +40,28 @@ export function MaterialIcon({ material, className }: { material: MaterialId; cl
     crystal: <Gem absoluteStrokeWidth aria-hidden="true" className={cn("text-sky-400", iconClassName)} />,
   };
   return icons[material];
+}
+
+export function MaterialPill({ material, amount }: { material: MaterialId; amount: number }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold",
+        matPillStyle[material],
+        matTextColor[material],
+      )}
+    >
+      {matIconMap[material]}
+      {amount} {materialLabels[material]}
+    </span>
+  );
+}
+
+export function GoldPill({ amount }: { amount: number }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold bg-yellow-300/15 text-yellow-300">
+      <Coins className="h-4 w-4" />
+      {amount} Gold
+    </span>
+  );
 }

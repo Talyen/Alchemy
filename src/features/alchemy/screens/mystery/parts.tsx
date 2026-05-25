@@ -3,24 +3,23 @@
 // Consumed exclusively by MysteryScreen to keep layout details separate from event flow.
 /* eslint-disable react-refresh/only-export-components */
 import { useState } from "react";
-import type { CSSProperties } from "react";
-import { Coins } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TextAnimate } from "@/components/ui/text-animate";
 import { SELECTION_GRID_PAGE_SIZE } from "@/lib/game-constants";
 import { type BattleCard, type TrinketEntry } from "@/lib/game-data";
-import { MATERIAL_IDS, materialLabels } from "@/lib/homestead/types";
+import { MATERIAL_IDS } from "@/lib/homestead/types";
 import { cn } from "@/lib/utils";
 
-import { matIconMap, matPillStyle, matTextColor } from "../../ui/material-icons";
+import { GoldPill, MaterialPill } from "../../ui/material-icons";
 
-import { cardSurfaceClass, staticCardTransform, trinketCardWidthClass, viewCardWidthClass } from "../../config";
+import { cardSurfaceClass, trinketCardWidthClass, viewCardWidthClass } from "../../config";
 import type { MysteryChoice, MysteryEvent, MysteryEffect } from "../../mystery-events";
-import { clearTiltFromEvent, setTiltFromEvent } from "../../utils";
+import { TiltSurface } from "../../ui/tilt-surface";
 import { CardSelectionGrid } from "../../ui/card-selection-grid";
 import { BattleCardButton, CardTitle, DetailPopup, getCardDisplayTitle } from "../../ui/card-ui";
 import { MysteryEffectBadge, MysteryEffectList } from "../../ui/mystery-effect-badge";
 import { ScreenDescription, ScreenHeader } from "../../ui/shared-ui";
+import { TooltipPanel } from "../../ui/tooltip-panel";
 
 type LookupProps = {
   findCard: (id: string) => BattleCard | undefined;
@@ -117,19 +116,14 @@ export function MysteryRewardEffectItem({
                 descriptionLines={trinket.descriptionLines}
               />
             ) : null}
-            <div
-              className={cn("tilt-surface", cardSurfaceClass, trinketCardWidthClass)}
-              onMouseMove={setTiltFromEvent}
-              onMouseLeave={clearTiltFromEvent}
-              style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
-            >
+            <TiltSurface className={cn(cardSurfaceClass, trinketCardWidthClass)}>
               <img
                 src={trinket.art}
                 alt={trinket.title}
                 className="block w-full rounded-[30px] aspect-square"
                 loading="eager"
               />
-            </div>
+            </TiltSurface>
           </div>
           <p className="text-sm font-semibold text-foreground">{trinket.title}</p>
           <p className="text-sm text-muted-foreground">Added {trinket.title} to your Inventory</p>
@@ -210,24 +204,9 @@ export function MysteryRewardSummary({
       {resourceEffects.length > 0 && (
         <div className="flex flex-wrap items-center justify-center gap-2 text-sm font-medium text-muted-foreground">
           Found
-          {totalGold > 0 ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold bg-yellow-300/15 text-yellow-300">
-              <Coins className="h-4 w-4" />
-              {totalGold} Gold
-            </span>
-          ) : null}
+          {totalGold > 0 ? <GoldPill amount={totalGold} /> : null}
           {MATERIAL_IDS.filter((mat) => mats[mat] > 0).map((mat) => (
-            <span
-              key={mat}
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold",
-                matPillStyle[mat],
-                matTextColor[mat],
-              )}
-            >
-              {matIconMap[mat]}
-              {mats[mat]} {materialLabels[mat]}
-            </span>
+            <MaterialPill key={mat} material={mat} amount={mats[mat]} />
           ))}
         </div>
       )}
@@ -406,15 +385,18 @@ export function MysteryEventChoiceButton({
       >
         {choice.label}
       </Button>
-      {/* Tooltip displays consequence details on hover using container query height metrics */}
-      <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-3 w-[23.7cqh] -translate-x-1/2 translate-y-1 rounded-[16px] border border-border/80 bg-card px-3 py-2 text-left text-sm leading-6 text-muted-foreground opacity-0 transition-[opacity,transform] duration-150 ease-alchemy-out will-change-[opacity,transform] group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100">
+      {/* Tooltip displays consequence details on hover */}
+      <TooltipPanel
+        width="w-[23.7cqh]"
+        className="pointer-events-none opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
+      >
         <MysteryEffectList
           effects={choice.effects}
           findCard={findCard}
           findTrinket={findTrinket}
           choiceLabel={choice.label}
         />
-      </div>
+      </TooltipPanel>
     </div>
   );
 }
@@ -441,12 +423,7 @@ export function MysteryEventIntro({
       <ScreenHeader title={event.title} />
       {event.art ? (
         /* Image container applies interactive CSS tilt properties */
-        <div
-          className="tilt-surface aspect-[4/3] w-full max-w-[32.59cqh] overflow-hidden rounded-[18px] transition-none"
-          style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
-          onMouseMove={setTiltFromEvent}
-          onMouseLeave={clearTiltFromEvent}
-        >
+        <TiltSurface className="aspect-[4/3] w-full max-w-[32.59cqh] overflow-hidden rounded-[18px] transition-none">
           <img
             src={event.art}
             alt={event.title}
@@ -455,7 +432,7 @@ export function MysteryEventIntro({
             className="h-full w-full rounded-[18px] object-contain"
             loading="eager"
           />
-        </div>
+        </TiltSurface>
       ) : featuredCard ? (
         <BattleCardButton
           card={featuredCard}

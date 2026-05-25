@@ -168,7 +168,7 @@ function baseState(overrides: Partial<BattleState> = {}): BattleState {
       companionBleedDamageBonus: 0,
       receiveHalfBleedDamage: false,
       bleedHalvesEnemyHealing: false,
-      flatTrapDamage: 0,
+      flatArrowDamage: 0,
       freezeThresholdReduction: 0,
       freezeDoubleDamage: false,
       blockOnFreeze: 0,
@@ -465,12 +465,12 @@ describe("computeBaseDamage — bleed damage", () => {
   });
 });
 
-describe("computeBaseDamage — trap damage", () => {
-  it("adds flatTrapDamage to trap damage type", () => {
+describe("computeBaseDamage — arrow damage", () => {
+  it("adds flatArrowDamage to arrow damage type", () => {
     const state = baseState({
-      talentEffects: { ...baseState().talentEffects, flatTrapDamage: 3 },
+      talentEffects: { ...baseState().talentEffects, flatArrowDamage: 3 },
     });
-    const card = makeCard({ effects: [makeEffect("trap", 5)] });
+    const card = makeCard({ effects: [makeEffect("arrow", 5)] });
     const texts = makeTexts();
     const result = dealDamageToEnemy(
       state,

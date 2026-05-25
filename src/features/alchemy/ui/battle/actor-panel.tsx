@@ -9,17 +9,12 @@ import type { LabyrinthModifierKind } from "@/lib/content-systems/types";
 import type { BestiaryEntry, EnemyAttackEffect } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
-import {
-  battleCardWidthClass,
-  cardArtImageClass,
-  cardSurfaceClass,
-  popupClassName,
-  staticCardTransform,
-} from "../../config";
+import { battleCardWidthClass, cardArtImageClass, cardSurfaceClass, staticCardTransform } from "../../config";
 import type { StatusChip } from "../../types";
 import { clearTiltFromEvent, setTiltFromEvent } from "../../utils";
 import { DescriptionLines } from "../card-description-ui";
 import { EnemyTooltip } from "../enemy-tooltip";
+import { TooltipPanel, TooltipHeader } from "../tooltip-panel";
 import { ShimmerOverlay } from "../shared-ui";
 import { ParticleBurst } from "./particle-burst";
 import { DeathsDoorStatusIcon, StatusIcon } from "./status-icons";
@@ -167,15 +162,10 @@ function ActorTooltip({
 
   if (!descriptionLines) return null;
   return (
-    <div
-      className={cn(
-        popupClassName,
-        "hover-popup-panel pointer-events-auto opacity-0 transition-opacity duration-150 group-hover/art-wrapper:opacity-100",
-      )}
-    >
-      <p className="text-sm text-foreground">{title}</p>
+    <TooltipPanel className="opacity-0 transition-opacity duration-150 group-hover/art-wrapper:opacity-100">
+      <TooltipHeader>{title}</TooltipHeader>
       <DescriptionLines lines={descriptionLines} idPrefix={`enemy-${title}`} />
-    </div>
+    </TooltipPanel>
   );
 }
 

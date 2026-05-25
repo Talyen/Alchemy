@@ -601,11 +601,12 @@ export const cardLibrary: BattleCard[] = [
   {
     id: "faustian-bargain",
     title: "Faustian Bargain",
-    descriptionLines: ["Lose 4 Health", "Wish 2"],
+    descriptionLines: ["Lose 2 Health", "Wish 2", "Consume"],
     art: faustianBargain,
     cost: 1,
+    consume: true,
     effects: [
-      { kind: "lose-health", amount: 4 },
+      { kind: "lose-health", amount: 2 },
       { kind: "wish", amount: 2 },
     ],
   },

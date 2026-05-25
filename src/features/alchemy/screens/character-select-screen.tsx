@@ -9,10 +9,11 @@ import { cn } from "@/lib/utils";
 import { characters, characterArt, type CharacterId } from "@/lib/game-data";
 
 import { KeywordTag } from "../ui/keyword-tag";
-import { ScreenHeader, ShimmerOverlay } from "../ui/shared-ui";
-import { useShimmerController } from "../hooks";
-import { clearTiltFromEvent, setTiltFromEvent } from "../utils";
-import { cardSurfaceClass, staticCardTransform } from "../config";
+import { ScreenHeader } from "../ui/shared-ui";
+import { TiltSurface } from "../ui/tilt-surface";
+import { TooltipBody, TooltipHeader, TooltipPanel, TooltipSubheader, useTooltipFlip } from "../ui/tooltip-panel";
+import { cardSurfaceClass } from "../config";
+import { useBattleStore } from "../stores/battle-store";
 
 const charCardWidthClass = "w-[clamp(18vh,20.5vh,28vh)]";
 
@@ -34,59 +35,64 @@ function CharacterCard({
   onHoverShimmer: (id: CharacterId) => void;
 }) {
   const [showTooltip, setShowTooltip] = useState(false);
+  const { ref: tooltipRef, flip } = useTooltipFlip([showTooltip]);
   const char = characters[id];
   const art = characterArt[char.id];
 
   return (
     <div
-      className="stagger-item relative flex flex-col items-center gap-3"
+      className={cn("stagger-item relative flex flex-col items-center gap-3", showTooltip && "z-50")}
       style={{ "--stagger-index": index } as CSSProperties}
     >
-      <button
-        type="button"
-        className={cn("tilt-surface relative rounded-[20px]", charCardWidthClass, isSelected && "ring-2 ring-primary")}
-        style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
-        onMouseMove={setTiltFromEvent}
+      <TiltSurface
+        as="button"
+        className={cn(charCardWidthClass, "relative rounded-[20px]")}
+        shimmerActive={isShimmer}
+        shimmerToken={shimmerToken}
+        shimmerRounded="rounded-[20px]"
+        selected={isSelected}
+        onClick={() => onSelect(id)}
         onMouseEnter={() => {
           onHoverShimmer(id);
           setShowTooltip(true);
         }}
-        onMouseLeave={(e) => {
-          clearTiltFromEvent(e);
-          setShowTooltip(false);
-        }}
-        onClick={() => onSelect(id)}
+        onMouseLeave={() => setShowTooltip(false)}
       >
-        <ShimmerOverlay active={isShimmer} token={shimmerToken} rounded="rounded-[20px]" />
         <img src={art} alt={char.name} className={cn(cardSurfaceClass, "w-full rounded-[20px] aspect-[3/4]")} />
-      </button>
+      </TiltSurface>
       <p className="font-display text-lg font-bold text-amber-100/90 mt-1">{char.name}</p>
       {showTooltip ? (
-        <div className="absolute bottom-full left-1/2 z-50 mb-2 w-80 -translate-x-1/2 rounded-xl border border-border/80 bg-card px-4 py-3 text-left shadow-lg">
-          <p className="mb-2 font-display text-lg font-bold text-amber-100/90">{char.name}</p>
+        <TooltipPanel width="w-80" ref={tooltipRef} className={cn("z-50", flip ? "top-full mt-2" : "mb-2")} flip={flip}>
+          <TooltipHeader>{char.name}</TooltipHeader>
+
+          <TooltipBody>
+            <p>{char.description}</p>
+          </TooltipBody>
 
           {char.startingDeck.length > 0 ? (
             <>
-              <p className="mb-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Starting Deck</p>
-              <p className="mb-3 text-xs text-muted-foreground leading-relaxed">
-                {char.startingDeck.map((c) => c.title).join(", ")}
-              </p>
+              <TooltipSubheader>Starting Deck</TooltipSubheader>
+              <TooltipBody>
+                <p>{char.startingDeck.map((c) => c.title).join(", ")}</p>
+              </TooltipBody>
             </>
           ) : (
             <>
-              <p className="mb-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Draft a Deck</p>
-              <p className="mb-3 text-xs text-muted-foreground leading-relaxed">Choose your own fate</p>
+              <TooltipSubheader>Draft a Deck</TooltipSubheader>
+              <TooltipBody>
+                <p>Choose your own fate</p>
+              </TooltipBody>
             </>
           )}
 
           {char.keywords.length > 0 ? (
-            <div className="flex flex-wrap gap-1.5">
+            <div className="mt-2 flex flex-wrap gap-1.5">
               {char.keywords.map((kw) => (
                 <KeywordTag key={kw} keywordId={kw} pill />
               ))}
             </div>
           ) : (
-            <div className="flex">
+            <div className="mt-2 flex">
               <span
                 className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-sm font-semibold leading-none text-amber-100/90"
                 style={{ backgroundColor: "color-mix(in srgb, currentColor 15%, transparent)" }}
@@ -95,7 +101,7 @@ function CharacterCard({
               </span>
             </div>
           )}
-        </div>
+        </TooltipPanel>
       ) : null}
     </div>
   );
@@ -109,7 +115,8 @@ export function CharacterSelectScreen({
   onBack: () => void;
 }) {
   const [selectedId, setSelectedId] = useState<CharacterId | null>(null);
-  const { shimmerState, maybeTriggerShimmer } = useShimmerController();
+  const shimmerState = useBattleStore((s) => s.shimmerState);
+  const maybeTriggerShimmer = useBattleStore((s) => s.maybeTriggerShimmer);
 
   const charIds = Object.keys(characters) as CharacterId[];
   const selectedChar = selectedId ? characters[selectedId] : null;

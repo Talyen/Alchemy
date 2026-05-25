@@ -148,7 +148,7 @@ export function BattleScreen(props: BattleScreenProps) {
 
   return (
     <PageLayout>
-      <div className="alchemy-shell relative flex w-full max-w-[100rem] flex-1 flex-col rounded-[28px] border border-border/80 p-7 pb-4">
+      <div className="alchemy-shell relative flex w-full max-w-[100rem] flex-1 flex-col rounded-[28px] border border-border/80 p-7 pb-1">
         <div className="absolute inset-0 overflow-hidden rounded-[28px] pointer-events-none">
           <BackgroundParticles variant="embers" colors={particleColors} alphaMultiplier={particleAlpha} />
         </div>
@@ -164,15 +164,10 @@ export function BattleScreen(props: BattleScreenProps) {
           <div ref={sceneRef} data-testid="battle-scene" className="relative mt-2 flex-1 [container-type:size]">
             <BattleActors view={requiredView} hover={hover} feedback={feedback} refs={refs} />
 
-            <BattleBottomBar view={requiredView} hover={hover} refs={refs} actions={actions} />
+            <BattleBottomBar view={requiredView} refs={refs} actions={actions} />
 
             {battleState.wishOptions ? (
-              <WishOverlay
-                battleState={battleState}
-                hover={hover}
-                actions={actions}
-                isMobileLandscape={isMobileLandscape}
-              />
+              <WishOverlay battleState={battleState} actions={actions} isMobileLandscape={isMobileLandscape} />
             ) : null}
 
             {cardGhosts.map((ghost) => (

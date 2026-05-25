@@ -20,9 +20,9 @@ export type KeywordId =
   | "mana"
   | "nature"
   | "companion"
-  | "trap";
+  | "arrow";
 
-export type DamageType = "physical" | "stun" | "holy" | "burn" | "poison" | "bleed" | "freeze" | "nature" | "trap";
+export type DamageType = "physical" | "stun" | "holy" | "burn" | "poison" | "bleed" | "freeze" | "nature" | "arrow";
 
 export type PlayerStatusId = "block" | "armor" | "forge" | "haste" | "burn" | "poison" | "bleed" | "freeze" | "stun";
 
@@ -277,8 +277,8 @@ export type TalentEffectManifest = {
   freezePreventsEnemyScaling: boolean;
   receiveHalfFreezeBuildUp: boolean;
 
-  // --- Trap ---
-  flatTrapDamage: number;
+  // --- Arrow ---
+  flatArrowDamage: number;
 
   // --- Bleed ---
   firstBleedCardFree: boolean;

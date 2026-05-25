@@ -3,14 +3,15 @@ import { useState, useEffect } from "react";
 import { useShallow } from "zustand/react/shallow";
 
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { keywordDefinitions, type KeywordId } from "@/lib/game-data";
 import { computeTalentPoints, xpForNextPoint, xpToNextPoint } from "@/lib/talents";
-import { MATERIAL_IDS, materialLabels } from "@/lib/homestead/types";
+import { MATERIAL_IDS } from "@/lib/homestead/types";
 
 import { keywordIcons } from "../config";
-import { ProgressBar, ScreenHeader } from "../ui/shared-ui";
-import { matIconMap, matPillStyle, matTextColor } from "../ui/material-icons";
+import { ScreenHeader } from "../ui/shared-ui";
+import { MaterialPill } from "../ui/material-icons";
 import { useRunStore } from "../stores/run-store";
 import { useScreenStore } from "../stores/screen-store";
 
@@ -41,11 +42,11 @@ export function KeywordProgressCard({
         </div>
         <span className="text-xs font-semibold text-muted-foreground">+{runXP}</span>
       </div>
-      <ProgressBar
+      <Progress
+        size="sm"
         value={animate ? percent : 0}
         className="mt-2"
-        color="bg-primary"
-        style={{
+        fillStyle={{
           transition: animate ? "width 1000ms ease-out" : "none",
           backgroundColor: def?.shineColors?.[0] ?? undefined,
         }}
@@ -100,17 +101,7 @@ export function GameOverScreen({ onMainMenu }: { onMainMenu: () => void }) {
         <div className="flex flex-wrap items-center justify-center gap-2 text-sm font-medium text-muted-foreground">
           Found
           {MATERIAL_IDS.filter((mat) => runEndMaterials[mat] > 0).map((mat) => (
-            <span
-              key={mat}
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold",
-                matPillStyle[mat],
-                matTextColor[mat],
-              )}
-            >
-              {matIconMap[mat]}
-              {runEndMaterials[mat]} {materialLabels[mat]}
-            </span>
+            <MaterialPill key={mat} material={mat} amount={runEndMaterials[mat]} />
           ))}
         </div>
       )}

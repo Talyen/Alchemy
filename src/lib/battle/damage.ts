@@ -136,8 +136,8 @@ function computeBaseDamage(state: BattleState, effect: Extract<BattleCardEffect,
     if (state.talentEffects.blockToStunDamage) {
       rawAmount += Math.round(state.playerStatuses.block / HALF_DIVISOR);
     }
-  } else if (effect.damageType === "trap") {
-    rawAmount += state.talentEffects.flatTrapDamage;
+  } else if (effect.damageType === "arrow") {
+    rawAmount += state.talentEffects.flatArrowDamage;
   } else if (effect.damageType === "burn") {
     rawAmount += state.talentEffects.flatBurnDamage;
   } else if (effect.damageType === "poison") {

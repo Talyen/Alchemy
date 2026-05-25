@@ -6,13 +6,12 @@ import { type CSSProperties, type MouseEvent, type PointerEvent as ReactPointerE
 import type { BattleCard } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
-import { cardArtImageClass, cardSurfaceClass, staticCardTransform } from "../config";
+import { cardArtImageClass, cardSurfaceClass } from "../config";
 import { useCardDescriptionContext } from "../homestead-context";
-import { clearTiltFromEvent, DEFAULT_TILT_STRENGTH, setTiltFromEvent } from "../utils";
 import { getEffectiveCardDescriptionLines, type CardDescriptionContext } from "../utils/card-description";
 import { CardTitle, getCardDisplayTitle } from "./card-description-ui";
 import { DetailPopup } from "./card-popup";
-import { ShimmerOverlay } from "./shared-ui";
+import { TiltSurface } from "./tilt-surface";
 
 type BattleCardButtonProps = {
   card: BattleCard;
@@ -97,42 +96,35 @@ function CardButtonSurface({
   ariaLabel,
   shimmerActive,
   shimmerToken,
-  baseTransform = staticCardTransform,
+  baseTransform,
   className,
   selected = false,
   disabled = false,
   dragging = false,
 }: BattleCardButtonProps) {
   return (
-    <button
-      ref={buttonRef}
-      type="button"
-      aria-label={ariaLabel}
+    <TiltSurface
+      as="button"
+      className={cn(cardSurfaceClass, "group", className)}
+      shimmerActive={shimmerActive}
+      shimmerToken={shimmerToken}
+      selected={selected}
       disabled={disabled}
+      dragging={dragging}
+      baseTransform={baseTransform}
       onClick={onClick}
       onPointerDown={onPointerDown}
       onFocus={onHoverStart}
       onBlur={onHoverEnd}
-      onMouseMove={setTiltFromEvent}
-      onMouseLeave={clearTiltFromEvent}
-      data-tilt-strength={String(DEFAULT_TILT_STRENGTH)}
-      className={cn(
-        "tilt-surface group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-        cardSurfaceClass,
-        className,
-        selected ? "ring-2 ring-primary ring-offset-4 ring-offset-background" : null,
-        dragging ? "opacity-0" : null,
-        disabled ? "cursor-default grayscale" : null,
-      )}
-      style={{ "--card-base-transform": baseTransform } as CSSProperties}
+      buttonRef={buttonRef}
+      ariaLabel={ariaLabel}
     >
-      <ShimmerOverlay active={shimmerActive} token={shimmerToken} />
       <img
         src={card.art}
         alt={getCardDisplayTitle(card)}
         className={`block h-auto w-full ${cardArtImageClass}`}
         loading="eager"
       />
-    </button>
+    </TiltSurface>
   );
 }

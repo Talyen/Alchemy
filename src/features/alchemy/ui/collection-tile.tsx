@@ -12,40 +12,43 @@ import {
   cardSurfaceClass,
   collectionTileWidthClass,
   squareArtImageClass,
-  staticCardTransform,
   trinketCardWidthClass,
 } from "../config";
-import { clearTiltFromEvent, setTiltFromEvent } from "../utils";
 import { CardFlip } from "./card-flip";
 import { DetailPopup } from "./card-popup";
 import type { CollectionTileItem } from "./collection-items";
 import { EnemyTooltip } from "./enemy-tooltip";
-import { ShimmerOverlay } from "./shared-ui";
+import { TiltSurface } from "./tilt-surface";
+import { useInteractiveCard } from "./use-interactive-card";
 
 type CompendiumTileProps = {
   item: CollectionTileItem;
-  hovered: boolean;
-  onHoverStart: () => void;
-  onHoverEnd: () => void;
-  shimmerActive: boolean;
-  shimmerToken: number | undefined;
   wrapperStyle?: CSSProperties;
 };
 
-export function CompendiumTile(props: CompendiumTileProps) {
-  const { item, hovered, onHoverStart, onHoverEnd, wrapperStyle } = props;
+export function CompendiumTile({ item, wrapperStyle }: CompendiumTileProps) {
+  const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard(
+    item.hoverScope,
+    item.id,
+  );
   const [flipped, setFlipped] = useState(false);
 
   return (
     <div className="stagger-item relative" style={wrapperStyle} onMouseEnter={onHoverStart} onMouseLeave={onHoverEnd}>
-      <CollectionTilePopup item={item} hovered={hovered} />
-      <button
-        type="button"
-        aria-label={item.discovered ? `Inspect ${item.title}` : "Inspect Undiscovered Entry"}
+      <CollectionTilePopup item={item} hovered={isHovered} />
+      <TiltSurface
+        as="button"
+        ariaLabel={item.discovered ? `Inspect ${item.title}` : "Inspect Undiscovered Entry"}
         onFocus={onHoverStart}
         onBlur={onHoverEnd}
-        onMouseMove={setTiltFromEvent}
-        onMouseLeave={clearTiltFromEvent}
+        shimmerActive={shimmerActive}
+        shimmerToken={shimmerToken}
+        className={cn(
+          "group w-full",
+          cardSurfaceClass,
+          item.frameType === "trinket" ? trinketCardWidthClass : collectionTileWidthClass,
+          item.frameType === "card" && "bg-transparent",
+        )}
         onClick={() => {
           if (item.hoverScope === "collection-card") {
             playCardSound(item.id);
@@ -54,17 +57,14 @@ export function CompendiumTile(props: CompendiumTileProps) {
             playEnemyAttack(item.id);
           }
         }}
-        className={getTileButtonClassName(item)}
-        style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
       >
-        <ShimmerOverlay active={props.shimmerActive} token={props.shimmerToken} />
         <CollectionTileMedia item={item} flipped={flipped} />
-      </button>
+      </TiltSurface>
     </div>
   );
 }
 
-function CollectionTilePopup({ item, hovered }: Pick<CompendiumTileProps, "item" | "hovered">) {
+function CollectionTilePopup({ item, hovered }: { item: CollectionTileItem; hovered: boolean }) {
   if (!hovered) return null;
   if (item.frameType === "bestiary" && item.enemyEntry) {
     return <EnemyTooltip entry={item.enemyEntry} discovered={item.discovered} />;
@@ -106,14 +106,5 @@ function TileImage({ item, className }: { item: CollectionTileItem; className: s
       )}
       loading="eager"
     />
-  );
-}
-
-function getTileButtonClassName(item: CollectionTileItem) {
-  return cn(
-    "tilt-surface group w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-    cardSurfaceClass,
-    item.frameType === "trinket" ? trinketCardWidthClass : collectionTileWidthClass,
-    item.frameType === "card" && "bg-transparent",
   );
 }

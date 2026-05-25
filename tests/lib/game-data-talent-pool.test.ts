@@ -4,7 +4,7 @@ import { talentPool } from "@/lib/game-data";
 const validKeywords: string[] = [
   "physical", "stun", "block", "forge", "armor", "health", "burn", "gold",
   "holy", "wish", "poison", "bleed", "leech", "freeze",
-  "mana", "nature", "companion", "trap",
+  "mana", "nature", "companion", "arrow",
 ];
 
 describe("talentPool data integrity", () => {

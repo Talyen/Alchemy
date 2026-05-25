@@ -164,7 +164,7 @@ describe("normalizeActiveRun", () => {
       completedDestinations: [],
     }));
     expect(result).not.toBeNull();
-    expect(result!.runDeck.length).toBe(8); // knight default
+    expect(result!.runDeck.length).toBe(7); // knight default
   });
 
   it("sets contentSystemType to 'campaign' for unknown types", () => {

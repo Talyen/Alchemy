@@ -113,5 +113,5 @@ export const keywordIcons: Record<KeywordId, LucideIcon> = {
   mana: Gem,
   nature: Leaf,
   companion: PawPrint,
-  trap: Crosshair,
+  arrow: Crosshair,
 };

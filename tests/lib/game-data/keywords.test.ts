@@ -36,7 +36,7 @@ describe("keywordDefinitions", () => {
     const expected = [
       "physical", "stun", "block", "forge", "armor", "health", "burn",
       "gold", "holy", "wish", "consume", "poison", "bleed",
-      "leech", "freeze", "mana", "nature", "companion", "trap",
+      "leech", "freeze", "mana", "nature", "companion", "arrow",
     ];
     for (const id of expected) {
       expect(keywordDefinitions).toHaveProperty(id);

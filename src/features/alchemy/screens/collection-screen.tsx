@@ -6,9 +6,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HamburgerTrigger, PageLayout, ScreenHeader } from "../ui/shared-ui";
 import { CollectionGrid, CollectionTabs, getCollectionTotalPages } from "../ui/collection-ui";
-import { useShimmerController } from "../hooks";
 import type { CollectionTab } from "../types";
-import { useScreenStore } from "../stores/screen-store";
 
 const COLLECTION_TABS: CollectionTab[] = ["cards", "bestiary", "trinkets"];
 
@@ -33,9 +31,6 @@ export function CollectionScreen({
   onPageChange: (tab: CollectionTab, page: number) => void;
   bondedCompanions: Record<string, number>;
 }) {
-  const { shimmerState, maybeTriggerShimmer } = useShimmerController();
-  const hoveredCardId = useScreenStore((s) => s.hoveredCardId);
-  const setHoveredCardId = useScreenStore((s) => s.setHoveredCardId);
   const totalPages = getCollectionTotalPages(collectionTab);
   const activePage = collectionPages[collectionTab];
 
@@ -66,14 +61,10 @@ export function CollectionScreen({
               >
                 <CollectionGrid
                   collectionTab={tab}
-                  hoveredCardId={hoveredCardId}
                   discoveredCardIds={discoveredCardIds}
                   encounteredEnemyIds={encounteredEnemyIds}
                   discoveredTrinketIds={discoveredTrinketIds}
-                  onHoverChange={setHoveredCardId}
                   page={collectionPages[tab]}
-                  shimmerState={shimmerState}
-                  onHoverShimmer={maybeTriggerShimmer}
                   bondedCompanions={bondedCompanions}
                 />
               </div>

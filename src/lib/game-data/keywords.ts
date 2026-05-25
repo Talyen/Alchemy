@@ -207,10 +207,10 @@ export const keywordDefinitions: Record<KeywordId, KeywordDefinition> = {
     borderClass: "border-amber-900",
     shineColors: ["#78350f", "#451a03", "#78350f"],
   },
-  trap: {
-    id: "trap",
-    label: "Trap",
-    description: "Trap cards will prepare delayed effects for unsuspecting enemies",
+  arrow: {
+    id: "arrow",
+    label: "Arrow",
+    description: "Arrow deals a variety of damage types",
     colorClass: "text-lime-700",
     borderClass: "border-lime-700",
     shineColors: ["#4d7c0f", "#1a2e05", "#4d7c0f"],

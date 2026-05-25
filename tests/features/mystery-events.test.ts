@@ -7,7 +7,7 @@ import { MATERIAL_IDS } from "@/lib/homestead/types";
 const validKeywords: KeywordId[] = [
   "physical", "stun", "block", "forge", "armor", "health", "burn", "gold",
   "holy", "wish", "consume", "poison", "bleed", "leech", "freeze", "mana",
-  "nature", "companion", "trap",
+  "nature", "companion", "arrow",
 ];
 
 describe("mysteryPool", () => {

@@ -165,7 +165,7 @@ These are central and may be large. Avoid repeated reads within a session unless
 | **Mana** | Resource spent to play cards; hand refills and Mana regenerates each turn. |
 | **Health** | Player health — reaching 0 ends the run. Also a keyword on healing effects. |
 | **Leech** | Heals the player for damage dealt by the card. |
-| **Trap** | Cards that prepare delayed effects for when an enemy acts. |
+| **Arrow** | Arrow deals a variety of damage types. |
  
 ### Status Effects (by category)
 
@@ -180,7 +180,7 @@ These are central and may be large. Avoid repeated reads within a session unless
 
 | Term | Definition |
 |------|-----------|
-| **Damage Types** | Cards deal one of nine damage types (Physical, Stun, Holy, Burn, Poison, Bleed, Freeze, Nature, Trap). Damage that matches a status name (Burn, Poison, Bleed, Freeze, Stun) applies that status on hit. Enemies can have unique resistances or vulnerabilities to specific types. |
+| **Damage Types** | Cards deal one of nine damage types (Physical, Stun, Holy, Burn, Poison, Bleed, Freeze, Nature, Arrow). Damage that matches a status name (Burn, Poison, Bleed, Freeze, Stun) applies that status on hit. Enemies can have unique resistances or vulnerabilities to specific types. |
 
 ### Card & Economy
 

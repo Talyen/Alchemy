@@ -15,6 +15,7 @@ import { ALL_LABYRINTH_MODIFIERS, REWARD_MODIFIER_KINDS } from "@/lib/content-sy
 import { canEnterLabyrinthNode } from "@/lib/content-systems/labyrinth/map-generation";
 import { keywordDefinitions, type KeywordId } from "@/lib/game-data";
 import { HamburgerTrigger, ScreenHeader } from "../ui/shared-ui";
+import { TooltipBody, TooltipHeader, TooltipSection } from "../ui/tooltip-panel";
 import { useScreenStore } from "../stores/screen-store";
 
 type Props = {
@@ -317,40 +318,43 @@ function NodeTooltip({
     <div
       ref={ref}
       className={cn(
-        "pointer-events-none absolute left-1/2 z-50 w-[23.7cqh] -translate-x-1/2 rounded-xl border border-amber-100/20 bg-stone-950 p-3 text-left",
+        "pointer-events-none absolute left-1/2 z-50 w-[23.7cqh] -translate-x-1/2 rounded-[20px] border border-border/80 bg-card p-3 text-left",
         flip ? "top-[calc(100%+0.75rem)]" : "bottom-[calc(100%+0.75rem)]",
       )}
       style={dx !== 0 ? ({ marginLeft: dx } as CSSProperties) : undefined}
     >
-      <p className="text-sm font-black uppercase tracking-widest text-amber-100/80">{NODE_TYPE_LABELS[type]}</p>
-      <p className="mt-1 text-xs leading-snug text-stone-300">{highlightKeywords(NODE_DESCRIPTIONS[type])}</p>
+      <TooltipHeader>{NODE_TYPE_LABELS[type]}</TooltipHeader>
+      <TooltipBody>
+        <p>{highlightKeywords(NODE_DESCRIPTIONS[type])}</p>
+      </TooltipBody>
       {hasModifiers && (
         <>
-          <p className="mb-2 mt-3 text-xs font-semibold uppercase tracking-widest text-amber-100/60">Modifiers</p>
-          <div className="grid gap-2">
-            {enemyModifiers.map((modifier) => {
-              const definition = ALL_LABYRINTH_MODIFIERS[modifier];
-              return (
-                <div key={modifier} className="rounded-lg border border-red-500/40 bg-white/[0.03] px-3.5 py-2.5">
-                  <p className="text-xs font-bold text-amber-100">{definition.label}</p>
-                  <p className="mt-0.5 text-xs leading-snug text-stone-300">
-                    {highlightKeywords(definition.description)}
-                  </p>
-                </div>
-              );
-            })}
-            {rewardModifiers.map((modifier) => {
-              const definition = ALL_LABYRINTH_MODIFIERS[modifier];
-              return (
-                <div key={modifier} className="rounded-lg border border-emerald-500/40 bg-white/[0.03] px-3.5 py-2.5">
-                  <p className="text-xs font-bold text-amber-100">{definition.label}</p>
-                  <p className="mt-0.5 text-xs leading-snug text-stone-300">
-                    {highlightKeywords(definition.description)}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
+          <TooltipSection label="Modifiers">
+            <div className="grid gap-2 mt-1">
+              {enemyModifiers.map((modifier) => {
+                const definition = ALL_LABYRINTH_MODIFIERS[modifier];
+                return (
+                  <div key={modifier} className="rounded-lg border border-red-500/40 bg-white/[0.03] px-3.5 py-2.5">
+                    <p className="text-xs font-bold text-amber-100">{definition.label}</p>
+                    <p className="mt-0.5 text-sm leading-6 text-muted-foreground">
+                      {highlightKeywords(definition.description)}
+                    </p>
+                  </div>
+                );
+              })}
+              {rewardModifiers.map((modifier) => {
+                const definition = ALL_LABYRINTH_MODIFIERS[modifier];
+                return (
+                  <div key={modifier} className="rounded-lg border border-emerald-500/40 bg-white/[0.03] px-3.5 py-2.5">
+                    <p className="text-xs font-bold text-amber-100">{definition.label}</p>
+                    <p className="mt-0.5 text-sm leading-6 text-muted-foreground">
+                      {highlightKeywords(definition.description)}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          </TooltipSection>
         </>
       )}
     </div>
