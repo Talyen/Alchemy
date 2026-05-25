@@ -1,6 +1,9 @@
-// Crowd-control threshold checks, immunity, and skip-turn assignment.
-// Enemy stun/freeze resolve on damage; player stun/freeze resolve in tickPlayerStatuses.
-// Depends on combat-text, types, game-constants.
+/**
+ * Crowd-control threshold checks, immunity, and skip-turn assignment.
+ * Enemy stun/freeze resolve on damage; player stun/freeze resolve in tickPlayerStatuses.
+ * Depends on: ./combat-text, ./types, ../game-constants.
+ * Depended on by: ./status-effects, ./status-ticks.
+ */
 import { mergeCombatText } from "./combat-text";
 import { BATTLE_CONFIG, STATUS_CONFIG } from "../game-constants";
 import type { BattleState, CombatTextEvent } from "./types";
@@ -47,7 +50,8 @@ export type PlayerCcTriggerInput = {
   combatTexts: CombatTextEvent[];
 };
 
-/** Player CC: checked after enemy attacks during tickPlayerStatuses. */
+/** Player CC: checked after enemy attacks during tickPlayerStatuses.
+ *  Threshold is fraction of playerMaxHealth. CC cooldown prevents immediate re-CC. */
 export function resolvePlayerCrowdControlTrigger(input: PlayerCcTriggerInput): BattleState {
   const { state, stat, stackValue, thresholdFraction, combatTexts } = input;
   if (stackValue <= 0) return state;

@@ -1,5 +1,9 @@
-// Player and enemy DoT ticks. Enemy DoTs run at enemy phase start; player DoTs during enemy resolution.
-// Player stun/freeze threshold-check runs here (not on damage). Depends on status-cc, status-helpers.
+/**
+ * Player and enemy DoT ticks. Enemy DoTs run at enemy phase start; player DoTs during enemy resolution.
+ * Player stun/freeze threshold-check runs here (not on damage).
+ * Depends on: ./status-cc, ./status-helpers, ./status-effects, ./combat-text, ./types, ../game-constants.
+ * Depended on by: ./enemy-turn.
+ */
 import {
   addPlayerStatus,
   applyPlayerCombatDamage,
@@ -49,6 +53,8 @@ const CONSTANTS = {
 function tickBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
   const damage = state.enemyStatuses.burn;
   if (damage <= 0) return state;
+  // Burn has a talent chance to DOUBLE instead of halving — intentional for
+  // burn-focused builds. Armor decay after burn only triggers if damage > 0.
   const multiplier = getEnemyDamageMultiplier(state, CONSTANTS.STATUS_NAMES.BURN);
   const finalDamage = Math.round(damage * multiplier);
   mergeCombatText(combatTexts, {
@@ -118,6 +124,9 @@ function tickPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
 function tickBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
   const damage = state.enemyStatuses.bleed;
   if (damage <= 0) return state;
+  // Bleed "bursts" — deals full stack as damage then resets to 0.
+  // Pending leech healing is paid out here, matching the mechanic that
+  // leech heals when bleed actually deals damage.
   const leechAmount = state.pendingBleedLeechHealing;
   let nextState: BattleState = {
     ...state,
@@ -238,6 +247,9 @@ export function tickPlayerStatuses(state: BattleState, combatTexts: CombatTextEv
   let nextState = tickPlayerBurn(state, combatTexts);
   nextState = tickPlayerPoison(nextState, combatTexts);
   nextState = tickPlayerBleed(nextState, combatTexts);
+  // Stun/freeze thresholds checked AFTER DoT damage. A player poisoned to 0 HP
+  // may die before CC is evaluated (Death's Door triggers here; if already used,
+  // the player dies).
   nextState = resolvePlayerCrowdControlTrigger({
     state: nextState,
     stat: CONSTANTS.STATUS_NAMES.STUN,

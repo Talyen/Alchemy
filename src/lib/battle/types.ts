@@ -104,7 +104,7 @@ export type BattleState = {
   playerMaxHealth: number; // current max health (can increase from talents)
   deathsDoorUsed: boolean; // one-shot combat survival trigger for this battle
   deathsDoorActive: boolean; // true while the player has one turn to heal from 0 Health
-  deathsDoorTriggeredTurn: number | null; // enemy-turn marker so the grace window lasts one full player turn
+  deathsDoorTriggeredTurn: number | null; // stores player turn when Death's Door first triggered; grace turns count from this (increments at player phase start)
   enemyHealth: number;
   enemyMaxHealth: number; // stored so UI can render % even after damage
   enemyAttackEffects: EnemyAttackEffect[]; // scaled per room, applied during enemy phase
@@ -113,7 +113,7 @@ export type BattleState = {
   enemyMitigation: EnemyMitigation;
   playerStatuses: PlayerStatusValues;
   enemyStatuses: EnemyStatusValues;
-  pendingBleedLeechHealing: number; // internal bleed-lifesteal healing due when bleed ticks
+  pendingBleedLeechHealing: number; // bleed leech queued here on damage, paid out in tickBleed — prevents double-dipping if enemy dies before bleed ticks
   enemyStunSkipTurns: number; // turns skipped from stun triggers
   enemyFreezeSkipTurns: number; // turns skipped from freeze triggers
   playerStunSkipTurns: number; // player turns skipped from stun
@@ -192,10 +192,13 @@ export function setFlag<K extends keyof CombatFlags>(state: BattleState, flag: K
   return { ...state, flags: { ...state.flags, [flag]: value } };
 }
 
+// Adds delta (positive or negative) to current, clamped to [0, max]. NOT an absolute setter.
 export function clampHealth(current: number, delta: number, max: number): number {
   return Math.max(0, Math.min(max, current + delta));
 }
 
+// Death's Door triggers once per battle. Subsequent zero-health hits maintain state without extra grace.
+// damageReduction subtracts flat damage (e.g., from talents) before applying to health.
 export function applyPlayerCombatDamage(state: BattleState, damage: number): BattleState {
   if (damage <= 0) return state;
   const reducedDamage = Math.max(0, damage - (state.talentEffects.damageReduction ?? 0));
@@ -213,6 +216,8 @@ export function applyPlayerCombatDamage(state: BattleState, damage: number): Bat
   return { ...state, playerHealth: 0, deathsDoorActive: state.deathsDoorActive };
 }
 
+// Healing at 0 HP with Death's Door active removes protection (deathsDoorActive flips to false
+// via the `health > 0` path of the expression) — healing saves you but costs the grace window.
 export function applyPlayerHealing(state: BattleState, amount: number): BattleState {
   const playerHealth = clampHealth(state.playerHealth, amount, state.playerMaxHealth);
   const overheal = state.playerHealth + amount - playerHealth;
@@ -228,8 +233,8 @@ export function isPlayerDefeated(state: Pick<BattleState, "playerHealth" | "deat
   return state.playerHealth <= 0 && !state.deathsDoorActive;
 }
 
-// Derives null-field status from difficulty modifiers rather than storing it
-// as a separate field, preventing desync between the flag and modifier array.
+// Derives null-field status from difficultyModifiers on every call, rather than storing a
+// separate boolean that could desync from the modifier list.
 export function isNullFieldActive(state: Pick<BattleState, "difficultyModifiers">): boolean {
   return state.difficultyModifiers.some((m) => m.kind === "labyrinth-null-field");
 }

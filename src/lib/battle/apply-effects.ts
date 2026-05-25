@@ -178,6 +178,8 @@ function handleSelfDamage(
   damageType: EnemyStatusId,
   combatTexts: CombatTextEvent[],
 ): BattleState {
+  // Status applied even if damage is 0 — status-on-self-damage cards apply the rider
+  // regardless of actual health reduction.
   const postDamage = applyPlayerCombatDamage(state, amount);
   const healthLost = state.playerHealth - postDamage.playerHealth;
   if (healthLost > 0) {
@@ -257,6 +259,9 @@ function handleRemovePlayerStatus(
     ...state,
     playerStatuses: { ...state.playerStatuses, [status]: 0 },
   };
+  // Two independent healing triggers: sin-eater trinket and talent healOnStatusCleanse.
+  // Both fire on the same remove. Order matters for overheal-to-block conversion since
+  // emitOverhealBlockText diffs consecutive states.
   if (nextState.trinketEffects.sinEaterHealOnHarmfulStatusRemove > 0) {
     const prevState = nextState;
     nextState = applyPlayerHealing(nextState, nextState.trinketEffects.sinEaterHealOnHarmfulStatusRemove);

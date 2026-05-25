@@ -1,4 +1,8 @@
-// Enemy attack status application to the player (harmful stacks and rare beneficial buffs).
+/**
+ * Enemy attack status application to the player (harmful stacks and rare beneficial buffs).
+ * Depends on: @/lib/game-data, ./combat-text, ./types.
+ * Depended on by: ./enemy-turn.
+ */
 import { harmfulPlayerStatusIds } from "@/lib/game-data";
 import type { EnemyAttackEffect, PlayerStatusId } from "@/lib/game-data/types";
 import { mergeCombatText } from "./combat-text";
@@ -42,6 +46,8 @@ function applyHarmfulStatusFromAttack(
   blockPreventsStatus: boolean,
   combatTexts: CombatTextEvent[],
 ): BattleState {
+  // Plague Doctor trinket: prevents the FIRST harmful status application each battle.
+  // Once used (firstHarmfulStatusPrevented flag), subsequent statuses apply normally.
   if (!blockPreventsStatus && state.trinketEffects.plagueDoctorImmunity && !state.flags.firstHarmfulStatusPrevented) {
     return { ...state, flags: { ...state.flags, firstHarmfulStatusPrevented: true } };
   }

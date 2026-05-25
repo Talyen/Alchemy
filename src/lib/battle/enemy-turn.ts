@@ -74,6 +74,7 @@ function handleCCSkipTurn(state: BattleState): BattleState {
 }
 
 function performDrawAndResetPhase(state: BattleState, deathsDoorNeedsRecoveryTurn: boolean): BattleState {
+  // Hand is cleared by moving all cards to discard before drawing a fresh hand.
   const nextDraw = drawCards(state.deck, state.discard, [], CARDS_PER_TURN, state.nextCardUid);
   const nextState = resetPlayerTurnState(state);
   return {
@@ -90,8 +91,8 @@ function performDrawAndResetPhase(state: BattleState, deathsDoorNeedsRecoveryTur
 }
 
 function advanceToPlayerTurn(state: BattleState) {
-  // If the player is stunned or frozen, skip their turn — don't draw, don't refill mana,
-  // and immediately go back to enemy phase.
+  // If Death's Door is active and player at 0 HP, override CC — they get one full turn.
+  // CC skip turns are zeroed to prevent dying to DoT ticks while CC'd.
   const deathsDoorNeedsRecoveryTurn = state.deathsDoorActive && state.playerHealth <= 0;
   if (!deathsDoorNeedsRecoveryTurn && state.playerStunSkipTurns + state.playerFreezeSkipTurns > 0) {
     return handleCCSkipTurn(state);
@@ -370,7 +371,6 @@ function isScalingBlocked(state: BattleState): boolean {
 
 const enemyTraitTurnStartHandlers: Record<string, EnemyTurnStartHandler> = {
   "rusting-carapace": (state) => {
-    if (isScalingBlocked(state)) return state;
     const scaledForge = Math.round(TRAIT_FORGE_PER_TURN * state.roomScalingMultiplier);
     return {
       ...state,
@@ -381,7 +381,6 @@ const enemyTraitTurnStartHandlers: Record<string, EnemyTurnStartHandler> = {
     };
   },
   "iron-hide": (state, combatTexts, options) => {
-    if (isScalingBlocked(state)) return state;
     const scaledArmor = Math.round(IRON_HIDE_ARMOR_PER_TURN * state.roomScalingMultiplier);
     const scaledForge = Math.round(TRAIT_FORGE_PER_TURN * state.roomScalingMultiplier);
     const scaledBurn = Math.round(IRON_HIDE_BURN_BONUS_PER_TURN * state.roomScalingMultiplier);
@@ -426,7 +425,6 @@ const enemyTraitTurnStartHandlers: Record<string, EnemyTurnStartHandler> = {
     };
   },
   "glacial-shell": (state) => {
-    if (isScalingBlocked(state)) return state;
     const scaledFreeze = Math.round(TRAIT_FREEZE_BONUS_PER_TURN * state.roomScalingMultiplier);
     return {
       ...state,
@@ -440,7 +438,6 @@ const enemyTraitTurnStartHandlers: Record<string, EnemyTurnStartHandler> = {
 
 const difficultyTurnStartHandlers: Partial<Record<DifficultyModifier["kind"], EnemyTurnStartHandler>> = {
   "enemy-gains-forge-each-turn": (state, combatTexts) => {
-    if (isScalingBlocked(state)) return state;
     mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "forge", amount: DIFFICULTY_FORGE_PER_TURN });
     return {
       ...state,
@@ -476,6 +473,9 @@ const difficultyTurnStartHandlers: Partial<Record<DifficultyModifier["kind"], En
 };
 
 function reduceSkipTurns(state: BattleState): BattleState {
+  // Reduced AFTER traits so isScalingBlocked still sees the pre-reduction freeze
+  // count for one more turn — the enemy doesn't benefit from freeze reduction in the
+  // same turn freeze was applied.
   return {
     ...state,
     enemyStunSkipTurns: Math.max(0, state.enemyStunSkipTurns - 1),
@@ -483,6 +483,11 @@ function reduceSkipTurns(state: BattleState): BattleState {
   };
 }
 
+// Death's Door grants a grace period of (1 + extension) full turns after player health hits 0.
+// The turn counter increments in resetPlayerTurnState before the enemy phase, so
+// `state.turn` at this point is the *next* turn number.  Comparing `state.turn` to
+// `deathsDoorTriggeredTurn` means grace begins on the turn death occurred, giving
+// (1 + extension) turns including the death turn itself.
 function resolveDeathsDoorEndOfEnemyTurn(state: BattleState): BattleState {
   if (!state.deathsDoorActive) return state;
   if (state.playerHealth > 0) return { ...state, deathsDoorActive: false, deathsDoorTriggeredTurn: null };
@@ -494,15 +499,21 @@ function resolveDeathsDoorEndOfEnemyTurn(state: BattleState): BattleState {
 
 function processEnemyTraits(state: BattleState, combatTexts: CombatTextEvent[], options?: { traitRoll?: number }) {
   let nextState = state;
+  const scalingBlocked = isScalingBlocked(nextState);
+  const traitRoll = options?.traitRoll ?? nextState.rng();
 
-  for (const trait of nextState.currentEnemy.traits) {
-    const handler = enemyTraitTurnStartHandlers[trait.id];
-    if (handler) nextState = handler(nextState, combatTexts, options);
+  if (!scalingBlocked) {
+    for (const trait of nextState.currentEnemy.traits) {
+      const handler = enemyTraitTurnStartHandlers[trait.id];
+      if (handler) nextState = handler(nextState, combatTexts, { traitRoll });
+    }
   }
 
   for (const modifier of nextState.difficultyModifiers) {
     const handler = difficultyTurnStartHandlers[modifier.kind];
-    if (handler) nextState = handler(nextState, combatTexts, options);
+    if (!handler) continue;
+    if (modifier.kind === "enemy-gains-forge-each-turn" && scalingBlocked) continue;
+    nextState = handler(nextState, combatTexts);
   }
 
   return nextState;
@@ -570,9 +581,10 @@ function resolveSkippedEnemyTurn(
   combatTexts.push(...enemyTurnStartCombatTexts);
   const enemyTurnStartState = nextState;
 
-  // Resolution: traits, player DoTs, regen — but skip the attack
-  // Reduce skip turns AFTER processing traits so isScalingBlocked
-  // still sees the pre-reduction freeze skip count.
+  // Resolution: traits, player DoTs, regen — but skip the attack.
+  // Traits are processed before reduceSkipTurns so isScalingBlocked
+  // still sees the pre-reduction freeze skip count (traitRoll generated
+  // inside processEnemyTraits, or provided via options for testing).
   nextState = processEnemyTraits(nextState, enemyResolutionCombatTexts, options);
   nextState = reduceSkipTurns(nextState);
   nextState = tickPlayerStatuses(nextState, enemyResolutionCombatTexts);

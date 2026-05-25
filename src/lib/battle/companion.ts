@@ -1,5 +1,8 @@
-// Companion turn start processing.
-// Depends on: applyCardEffects from apply-effects, types, and constants.
+/**
+ * Companion turn-start resolution: builds a synthetic 0-cost card from the companion's
+ * turnStartEffects and applies it as if played. Depends on: apply-effects, types, game-data.
+ * Depended on by: enemy-turn (endPlayerTurn flow).
+ */
 import { applyCardEffects } from "./apply-effects";
 import type { BattleCard, TalentEffectManifest } from "@/lib/game-data/types";
 import { type BattleState, type CombatTextEvent } from "./types";
@@ -49,9 +52,9 @@ export function processCompanionTurnStart(state: BattleState, combatTexts: Comba
     state.enemyFreezeSkipTurns,
   );
 
-  // Restore all flags after companion resolution — companion is not a player card play
-  // and should not consume per-combat or per-turn bonuses (first-burn-double, etc.).
-  // Using a full save/restore avoids the maintenance burden of an allowlist.
+  // Snapshot flags before companion effects and restore them after — companion actions
+  // are not player card plays and should not consume per-turn/per-combat one-shot bonuses
+  // (first-burn-double, first-free-card, etc.). Full save/restore avoids allowlist maintenance.
   const savedFlags = { ...state.flags };
   const result = applyCardEffects(state, companionCard, combatTexts);
   return { ...result, flags: savedFlags };

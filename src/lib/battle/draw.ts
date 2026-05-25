@@ -215,6 +215,7 @@ function scaleEnemyRegeneration(enemy: BestiaryEntry, roomMul: number): number {
 /**
  * Enemy scaling using cumulative rooms across the entire run (no per-act reset).
  * Health and regeneration scale by type, attacks by room scaling factor.
+ * floors scaler at 0 so room 0 (first encounter) has no scaling bonus.
  */
 function buildScaledEnemy(enemy: BestiaryEntry, totalRoomsInRun = 0) {
   const scaler = Math.max(0, totalRoomsInRun - 1);
@@ -279,6 +280,7 @@ function applyDifficultyAttackModifiers(effects: EnemyAttackEffect[], modifiers:
  * Resolves starting player/enemy values modified by difficulty modes.
  */
 function computeStartingStatuses(modifiers: DifficultyModifier[], enemy: BestiaryEntry, roomMul: number) {
+  // living-armor trait grants starting armor separate from difficulty modifier bonuses
   const startingArmor = modifiers.find((m) => m.kind === "enemy-starting-armor")?.amount ?? 0;
   const traitStartingArmor = enemy.traits.some((t) => t.id === "living-armor")
     ? Math.round(LIVING_ARMOR_STARTING_ARMOR * roomMul)
@@ -386,7 +388,7 @@ function buildInitialBattleState(
     playerHealth: setup.playerHealth,
     playerMaxHealth: setup.playerMaxHealth,
     enemyHealth: setup.enemyHealth,
-    enemyMaxHealth: setup.enemyHealth,
+    enemyMaxHealth: setup.enemyHealth, // both set from same scaled value so health bar shows 100% at battle start
     enemyAttackEffects: setup.enemyAttackEffects,
     enemyRegeneration: setup.enemyRegeneration,
     roomScalingMultiplier: setup.roomScalingMultiplier,

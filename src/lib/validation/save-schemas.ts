@@ -35,7 +35,9 @@ import { CURRENT_SAVE_SCHEMA_VERSION, CURRENT_GAME_BUILD_VERSION, CURRENT_CONTEN
 import { migrateSaveDataToCurrent } from "./migration";
 import { createEmptyTierRecord } from "@/lib/homestead/tiers";
 
-function catchWithWarning<T>(schema: z.ZodType<T>, fallback: T, fieldName: string): z.ZodType<T> {
+// Wraps field validation so undefined/missing parses fall back to a safe default
+// and log a warning.  Other type mismatches are handled by each field's own .catch().
+function withFallbackOnUndefined<T>(schema: z.ZodType<T>, fallback: T, fieldName: string): z.ZodType<T> {
   return z.preprocess((val) => {
     if (val === undefined) return fallback;
     const res = schema.safeParse(val);
@@ -260,8 +262,11 @@ export const BattleCardEffectSchema = z.discriminatedUnion("kind", [
 ]);
 
 function parseSavedEffectList(values: unknown[]) {
-  const effects = values.flatMap((value) => {
+  const effects = values.flatMap((value, i) => {
     const result = BattleCardEffectSchema.safeParse(value);
+    if (!result.success) {
+      console.warn(`[Save Validation] Card effect at index ${i} dropped:`, result.error.message);
+    }
     return result.success ? [{ ...result.data }] : [];
   });
   return { effects, fullyValid: effects.length === values.length };
@@ -339,11 +344,15 @@ function filterLabyrinthModifiers(val: unknown): string[] {
   return val.filter((v): v is string => typeof v === "string" && VALID_LABYRINTH_MODIFIER_KINDS.has(v));
 }
 
+const LabyrinthModifierArraySchema = z
+  .preprocess(filterLabyrinthModifiers, z.array(LabyrinthModifierKindSchema))
+  .catch([]);
+
 export const LabyrinthNodeSchema = z
   .object({
     type: LabyrinthNodeTypeSchema,
-    modifiers: z.preprocess(filterLabyrinthModifiers, z.array(LabyrinthModifierKindSchema)).catch([]),
-    rewardModifiers: z.preprocess(filterLabyrinthModifiers, z.array(LabyrinthModifierKindSchema)).catch([]),
+    modifiers: LabyrinthModifierArraySchema,
+    rewardModifiers: LabyrinthModifierArraySchema,
     connections: z
       .array(
         z.object({
@@ -417,10 +426,8 @@ const LabyrinthNodePositionSchema = z
 export const ActiveCombatDataSchema = z
   .object({
     battleState: z.custom<BattleState>(isPersistedBattleState),
-    activeLabyrinthModifiers: z.preprocess(filterLabyrinthModifiers, z.array(LabyrinthModifierKindSchema)).catch([]),
-    activeLabyrinthRewardModifiers: z
-      .preprocess(filterLabyrinthModifiers, z.array(LabyrinthModifierKindSchema))
-      .catch([]),
+    activeLabyrinthModifiers: LabyrinthModifierArraySchema,
+    activeLabyrinthRewardModifiers: LabyrinthModifierArraySchema,
   })
   .transform((data) => ({
     ...data,
@@ -483,9 +490,10 @@ export const ActiveRunDataSchema = z
       data.currentAct === 1 &&
       data.destinationIndexInAct === 0 &&
       data.completedDestinations.length === 0;
+    const legacyStarterDeckSet = new Set(LEGACY_STARTER_DECK_IDS);
     const hasLegacyDeck =
       data.runDeck.length === LEGACY_STARTER_DECK_IDS.length &&
-      data.runDeck.every((card, i) => card.id === (LEGACY_STARTER_DECK_IDS as readonly string[])[i]);
+      data.runDeck.every((card) => legacyStarterDeckSet.has(card.id));
     const runDeck =
       data.runDeck.length === 0 || (isUnstarted && hasLegacyDeck) ? getStartingDeck(data.characterId) : data.runDeck;
     return {
@@ -564,29 +572,29 @@ export const SaveDataSchema = z.preprocess(
       .transform((v) => Math.max(0, Math.min(100, v))),
     muteInBackground: z.boolean().catch(true),
     autoEndTurn: z.boolean().catch(true),
-    activeRun: catchWithWarning(ActiveRunDataSchema.nullable(), null, "activeRun"),
-    materialInventory: catchWithWarning(MaterialInventorySchema, MATERIAL_ZERO_INVENTORY, "materialInventory"),
-    constructedBuildings: catchWithWarning(
+    activeRun: withFallbackOnUndefined(ActiveRunDataSchema.nullable(), null, "activeRun"),
+    materialInventory: withFallbackOnUndefined(MaterialInventorySchema, MATERIAL_ZERO_INVENTORY, "materialInventory"),
+    constructedBuildings: withFallbackOnUndefined(
       createTierRecordSchema(buildings, { smithy: "blacksmiths-forge" }),
       createEmptyTierRecord(buildings),
       "constructedBuildings",
     ),
-    plantedFarms: catchWithWarning(
+    plantedFarms: withFallbackOnUndefined(
       createTierRecordSchema(farmPlots, { "sheep-pasture": "pasture" }),
       createEmptyTierRecord(farmPlots),
       "plantedFarms",
     ),
-    completedResearch: catchWithWarning(
+    completedResearch: withFallbackOnUndefined(
       createTierRecordSchema(researchUpgrades),
       createEmptyTierRecord(researchUpgrades),
       "completedResearch",
     ),
-    bondedCompanions: catchWithWarning(
+    bondedCompanions: withFallbackOnUndefined(
       createTierRecordSchema(companionTierItems),
       createEmptyTierRecord(companionTierItems),
       "bondedCompanions",
     ),
-    completedDifficulties: catchWithWarning(
+    completedDifficulties: withFallbackOnUndefined(
       CompletedDifficultiesSchema,
       Object.fromEntries(CHARACTER_IDS.map((id) => [id, []])),
       "completedDifficulties",

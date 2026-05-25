@@ -1,5 +1,9 @@
-// Status effect application: damage-type riders, player status effects, stun resolution, harmful removal.
-// Bleed stacks 2x on apply; leech heals when bleed ticks. Enemy CC procs on damage; player CC on tick.
+/**
+ * Status effect application: damage-type riders, player status effects, stun resolution, harmful removal.
+ * Bleed stacks 2x on apply; leech heals when bleed ticks. Enemy CC procs on damage; player CC on tick.
+ * Depends on: ./draw, ./combat-text, ./trinket-effects, ./status-cc, ./status-helpers, ../game-constants, @/lib/game-data.
+ * Depended on by: ./apply-effects, ./damage, ./status-ticks.
+ */
 import { drawCards } from "./draw";
 import { harmfulPlayerStatusIds } from "@/lib/game-data";
 import type { BattleCardEffect } from "@/lib/game-data/types";
@@ -55,7 +59,8 @@ function computeForgeBurnAmount(state: BattleState): number {
   return state.talentEffects.forgeBurnDamage;
 }
 
-/** Forge burst when crossing forgeBurnThreshold — any forge source can trigger this. */
+/** Forge burst when crossing forgeBurnThreshold — any forge source can trigger this.
+ *  Fires once per crossing; repeated forge above threshold won't re-trigger. */
 function applyForgeBurnBurst(state: BattleState, oldForge: number, newForge: number, combatTexts?: CombatTextEvent[]) {
   if (
     state.talentEffects.forgeBurnThreshold <= 0 ||
@@ -397,6 +402,9 @@ function tryTriggerEnemyFreeze(
   nextState: BattleState,
   combatTexts: CombatTextEvent[],
 ): BattleState {
+  // Threshold uses preHitState (stacks BEFORE this hit) to prevent self-escalation.
+  // Immunity cooldown also uses preHitState, but skip duration applies to nextState.
+  // This prevents freeze-loops where hitting a nearly-frozen enemy instantly re-freezes.
   const isFreezeImmune = preHitState.currentEnemy.traits.some((t) => t.id === ENEMY_TRAIT_IDS.GLACIAL_SHELL);
   const freezeThreshold = FREEZE_THRESHOLD_FRACTION - (preHitState.talentEffects.freezeThresholdReduction ?? 0);
   if (
@@ -467,7 +475,9 @@ function clearHarmfulStatuses(playerStatuses: BattleState["playerStatuses"], amo
   let removed = 0;
   for (const statusId of harmfulPlayerStatusIds) {
     if (removed >= amount) break;
-    // Flattened loop using guard clause
+    // Clears one harmful status TYPE per "amount", not one stack.
+    // amount=1 removes one random status category entirely (e.g. all poison stacks),
+    // not 1 stack of poison.
     if (nextPlayerStatuses[statusId] <= 0) continue;
     nextPlayerStatuses[statusId] = 0;
     removed++;

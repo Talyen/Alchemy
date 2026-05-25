@@ -73,6 +73,8 @@ function applyPhysicalDamageModifiers(state: BattleState, rawAmount: number): nu
   if (state.talentEffects.blockToPhysicalDamage) {
     nextAmount += Math.round(state.playerStatuses.block / HALF_DIVISOR);
   }
+  // Checks enemyStunSkipTurns / enemyFreezeSkipTurns (the enemy's CC state,
+  // not the player's) — physical damage gets bonuses against stunned/frozen enemies.
   if (state.enemyStunSkipTurns > 0) {
     nextAmount = Math.round(nextAmount * (1 + state.talentEffects.physicalVsStunnedMultiplier / PERCENT_DENOMINATOR));
   }
@@ -336,6 +338,8 @@ function consumeForgeAfterDamage(
   effect: Extract<BattleCardEffect, { kind: "damage" }>,
   damage: number,
 ) {
+  // Forge decays only when it actually contributed. Condition mirrors computeBaseRawAmount's
+  // forge logic. No forge consumed if damage was 0 (miss or fully blocked).
   const forgeWasApplied =
     effect.damageType === "physical" ||
     effect.damageType === "stun" ||
@@ -383,6 +387,7 @@ function computeCardDamageToEnemy(state: BattleState, effect: Extract<BattleCard
  * Decreases enemy armor stacks by decay configuration on health-hitting damage.
  */
 function decayEnemyArmorOnHit(state: BattleState, modifiedDamage: number): BattleState {
+  // Decays armor by a fixed amount (not percentage) so repeated hits wear it down.
   if (modifiedDamage > 0 && state.enemyMitigation.armor > 0) {
     return {
       ...state,
@@ -411,6 +416,8 @@ function applyDamageRiders(
   };
 
   nextState = decayEnemyArmorOnHit(nextState, modifiedDamage);
+  // boneCharmHeal uses state.enemyHealth > 0 (pre-hit state), not nextState,
+  // so heal-on-kill only triggers if the enemy WAS alive before this hit.
   nextState = applyBoneCharmHeal(nextState, state.enemyHealth > 0, combatTexts);
   nextState = applyDamageStatuses(nextState, effect, modifiedDamage, combatTexts);
   nextState = applyForgeStunRider(nextState, effect, combatTexts);

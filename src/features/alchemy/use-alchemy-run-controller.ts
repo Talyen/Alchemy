@@ -4,6 +4,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { cardLibrary, trinketLibrary, computeTalentEffects } from "@/lib/game-data";
+import type { BattleCard, TrinketEntry } from "@/lib/game-data";
 import type { TalentXP } from "@/lib/talents";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import type { CharacterId, DifficultyId, UnlockedTalents } from "@/lib/game-data";
@@ -21,6 +22,9 @@ import { useLabyrinthController } from "./use-labyrinth-controller";
 import type { Destination, Screen } from "./types";
 import type { ActiveRunData } from "./run/types";
 import { NAVIGATION_DELAY_MS } from "@/lib/game-constants";
+
+const cardLookup = new Map<string, BattleCard>(cardLibrary.map((c) => [c.id, c]));
+const trinketLookup = new Map<string, TrinketEntry>(trinketLibrary.map((t) => [t.id, t]));
 
 export function useAlchemyRunController({
   discoveredCardIds,
@@ -46,7 +50,13 @@ export function useAlchemyRunController({
   // This hook composes domain controllers and exposes a stable UI API; it intentionally
   // avoids owning combat/shop/navigation rules directly so those modules stay testable.
   // ============ Zustand Stores ============
-  const [storesInitialized] = useState(() => {
+  // Stores are initialized once on mount.  The deps include initial* props for correctness
+  // but the effect body uses a guard ref so it only runs once even if React re-renders with
+  // different initial values (which shouldn't happen — these are the bootstrap values).
+  const initializedRef = useRef(false);
+  useEffect(() => {
+    if (initializedRef.current) return;
+    initializedRef.current = true;
     useRunStore.getState().initialize(initialActiveRun, initialTalentXP, initialUnlockedTalents);
     useBattleStore.getState().initializeActiveBattle(initialActiveRun?.activeCombat?.battleState ?? null);
     if (initialActiveRun) {
@@ -70,9 +80,7 @@ export function useAlchemyRunController({
         }));
       }
     }
-    return true;
-  });
-  void storesInitialized;
+  }, [initialActiveRun, initialTalentXP, initialUnlockedTalents]);
   const runStoreFields = useRunStore(
     useShallow((s) => ({
       characterId: s.characterId,
@@ -179,6 +187,9 @@ export function useAlchemyRunController({
   const onBattleVictoryRef = useRef<() => void>(() => {});
   const onBattleDefeatRef = useRef<() => void>(() => {});
 
+  // Refs updated synchronously during render so the latest callbacks are always available
+  // for the next user interaction.  Defined before battle because battle depends on these refs.
+
   const battle = useBattleController({
     run,
     talents,
@@ -215,9 +226,8 @@ export function useAlchemyRunController({
     onMarkDifficultyCompleted,
   });
 
-  // Keep victory/defeat refs in sync with the latest nav callbacks after every render.
-  // useLayoutEffect (not render-time assignment) satisfies react-hooks/refs and ensures
-  // the refs are updated synchronously before the browser paints.
+  // useLayoutEffect ensures refs are current before the browser paints, so any
+  // battle callbacks triggered by user interaction always see the latest nav state.
   useLayoutEffect(() => {
     onBattleVictoryRef.current = nav.handleBattleVictory;
     onBattleDefeatRef.current = nav.handleBattleDefeat;
@@ -350,7 +360,7 @@ export function useAlchemyRunController({
     skipCombatDevMode: battle.skipCombatDevMode,
     removeCardGhost: battle.removeCardGhost,
     resetRunState: nav.resetRunState,
-    findCard: (id: string) => cardLibrary.find((c) => c.id === id),
-    findTrinket: (id: string) => trinketLibrary.find((t) => t.id === id),
+    findCard: (id: string) => cardLookup.get(id),
+    findTrinket: (id: string) => trinketLookup.get(id),
   };
 }
