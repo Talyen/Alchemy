@@ -6,7 +6,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { BattleCard } from "@/lib/game-data";
 
-import { viewCardWidthClass } from "../config";
+import { collectionTileWidthClass } from "../config";
 import { BattleCardButton } from "./card-button";
 import { CardTitle, getCardDisplayTitle } from "./card-description-ui";
 import { DisabledTooltip, GoldCost } from "./shared-ui";
@@ -21,7 +21,7 @@ type PurchasableCardItemProps = {
 };
 
 export function PurchasableCardItem(props: PurchasableCardItemProps) {
-  const { card, price, gold, purchased, onBuy, widthClass = viewCardWidthClass } = props;
+  const { card, price, gold, purchased, onBuy, widthClass = collectionTileWidthClass } = props;
   const [hovered, setHovered] = useState(false);
 
   if (purchased) {
@@ -95,7 +95,7 @@ export function SelectableShopCard({
       ariaLabel={`Select ${getCardDisplayTitle(card)}`}
       shimmerActive={false}
       shimmerToken={undefined}
-      className={viewCardWidthClass}
+      className={collectionTileWidthClass}
       selected={isSelected}
     />
   );

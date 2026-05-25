@@ -252,10 +252,12 @@ export function useBattleController({
         if (timeout) clearTimeout(timeout);
         setCardTransfers((current) => current.filter((item) => item.id !== id));
         if (completeTransfer) onComplete?.();
+        console.log("[flying] remove", id);
         resolve();
       };
       unregisterCancel = registerTransferCancelCallback(() => finish(false));
       setCardTransfers([{ ...transfer, id }]);
+      console.log("[flying] create", id);
       timeout = setTimeout(
         () => finish(true),
         isAnimationDisabled()

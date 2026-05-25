@@ -12,7 +12,7 @@ export function getCardKeywords(card: BattleCard): KeywordId[] {
         if (effect.lifesteal) keywords.add("leech");
         break;
       case "player-status":
-        keywords.add(effect.status as KeywordId);
+        if (effect.status !== "haste") keywords.add(effect.status as KeywordId);
         break;
       case "heal":
         keywords.add("health");
@@ -48,6 +48,9 @@ export function getCardKeywords(card: BattleCard): KeywordId[] {
         break;
       case "remove-player-status":
         keywords.add(effect.status as KeywordId);
+        break;
+      case "self-damage":
+        keywords.add(effect.damageType as KeywordId);
         break;
     }
   }

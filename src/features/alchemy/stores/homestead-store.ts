@@ -58,13 +58,14 @@ export const useHomesteadStore = create<HomesteadStore>()((set) => ({
     }),
 
   constructBuilding: (id) => {
-    const building = buildings.find((b) => b.id === id);
-    const current = useHomesteadStore.getState();
-    const currentLevel = current.constructedBuildings[id] ?? 0;
-    if (!building || currentLevel >= building.tiers.length) return false;
-    const tier = building.tiers[currentLevel];
-    if (!canAfford(current.materialInventory, tier.cost)) return false;
+    let succeeded = false;
     set((s) => {
+      const building = buildings.find((b) => b.id === id);
+      const currentLevel = s.constructedBuildings[id] ?? 0;
+      if (!building || currentLevel >= building.tiers.length) return s;
+      const tier = building.tiers[currentLevel];
+      if (!canAfford(s.materialInventory, tier.cost)) return s;
+      succeeded = true;
       const next = {
         ...s,
         materialInventory: subtractInventory(s.materialInventory, tier.cost),
@@ -72,17 +73,18 @@ export const useHomesteadStore = create<HomesteadStore>()((set) => ({
       };
       return { ...next, effects: computeEffects(next) };
     });
-    return true;
+    return succeeded;
   },
 
   plantFarm: (id) => {
-    const farm = farmPlots.find((f) => f.id === id);
-    const current = useHomesteadStore.getState();
-    const currentLevel = current.plantedFarms[id] ?? 0;
-    if (!farm || currentLevel >= farm.tiers.length) return false;
-    const tier = farm.tiers[currentLevel];
-    if (!canAfford(current.materialInventory, tier.cost)) return false;
+    let succeeded = false;
     set((s) => {
+      const farm = farmPlots.find((f) => f.id === id);
+      const currentLevel = s.plantedFarms[id] ?? 0;
+      if (!farm || currentLevel >= farm.tiers.length) return s;
+      const tier = farm.tiers[currentLevel];
+      if (!canAfford(s.materialInventory, tier.cost)) return s;
+      succeeded = true;
       const next = {
         ...s,
         materialInventory: subtractInventory(s.materialInventory, tier.cost),
@@ -90,17 +92,18 @@ export const useHomesteadStore = create<HomesteadStore>()((set) => ({
       };
       return { ...next, effects: computeEffects(next) };
     });
-    return true;
+    return succeeded;
   },
 
   completeResearch: (id) => {
-    const research = researchUpgrades.find((r) => r.id === id);
-    const current = useHomesteadStore.getState();
-    const currentLevel = current.completedResearch[id] ?? 0;
-    if (!research || currentLevel >= research.tiers.length) return false;
-    const tier = research.tiers[currentLevel];
-    if (!canAfford(current.materialInventory, tier.cost)) return false;
+    let succeeded = false;
     set((s) => {
+      const research = researchUpgrades.find((r) => r.id === id);
+      const currentLevel = s.completedResearch[id] ?? 0;
+      if (!research || currentLevel >= research.tiers.length) return s;
+      const tier = research.tiers[currentLevel];
+      if (!canAfford(s.materialInventory, tier.cost)) return s;
+      succeeded = true;
       const next = {
         ...s,
         materialInventory: subtractInventory(s.materialInventory, tier.cost),
@@ -108,16 +111,17 @@ export const useHomesteadStore = create<HomesteadStore>()((set) => ({
       };
       return { ...next, effects: computeEffects(next) };
     });
-    return true;
+    return succeeded;
   },
 
   bondCompanion: (id) => {
-    const current = useHomesteadStore.getState();
-    const currentLevel = current.bondedCompanions[id] ?? 0;
-    if (currentLevel >= COMPANION_MAX_TIER) return false;
-    const cost = COMPANION_BOND_TIERS[currentLevel];
-    if (!canAfford(current.materialInventory, cost)) return false;
+    let succeeded = false;
     set((s) => {
+      const currentLevel = s.bondedCompanions[id] ?? 0;
+      if (currentLevel >= COMPANION_MAX_TIER) return s;
+      const cost = COMPANION_BOND_TIERS[currentLevel];
+      if (!canAfford(s.materialInventory, cost)) return s;
+      succeeded = true;
       const next = {
         ...s,
         materialInventory: subtractInventory(s.materialInventory, cost),
@@ -125,7 +129,7 @@ export const useHomesteadStore = create<HomesteadStore>()((set) => ({
       };
       return { ...next, effects: computeEffects(next) };
     });
-    return true;
+    return succeeded;
   },
 
   reset: () =>

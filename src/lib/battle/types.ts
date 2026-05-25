@@ -171,6 +171,7 @@ export function addPlayerStatus(state: BattleState, status: PlayerStatusId, delt
 }
 
 export function adjustEnemyStatusDelta(state: Pick<BattleState, "difficultyModifiers">, delta: number): number {
+  if (delta === 0) return 0;
   return isNullFieldActive(state) ? Math.max(1, Math.round(delta / 2)) : delta;
 }
 

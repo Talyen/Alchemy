@@ -5,7 +5,7 @@ import { cardLibrary } from "@/lib/game-data";
 import { Button } from "@/components/ui/button";
 import { BattleCardButton, getCardDisplayTitle } from "../ui/card-ui";
 import { ScreenHeader } from "../ui/shared-ui";
-import { viewCardWidthClass } from "../config";
+import { collectionTileWidthClass } from "../config";
 import { getHoverId } from "../utils";
 import { useBattleStore } from "../stores/battle-store";
 import { useScreenStore } from "../stores/screen-store";
@@ -26,6 +26,7 @@ export function DraftDeckScreen({ onComplete }: { onComplete: (draftedCards: Bat
   const [pool] = useState(() => shufflePool());
   const [round, setRound] = useState(0);
   const [drafted, setDrafted] = useState<BattleCard[]>([]);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const hoveredCardId = useScreenStore((s) => s.hoveredCardId);
   const setHoveredCardId = useScreenStore((s) => s.setHoveredCardId);
   const shimmerState = useBattleStore((s) => s.shimmerState);
@@ -77,7 +78,7 @@ export function DraftDeckScreen({ onComplete }: { onComplete: (draftedCards: Bat
                   ariaLabel={getCardDisplayTitle(card)}
                   shimmerActive={shimmerState?.cardId === hoverId}
                   shimmerToken={shimmerState?.token}
-                  className={viewCardWidthClass}
+                  className={collectionTileWidthClass}
                   wrapperClassName="stagger-item relative flex justify-center"
                   wrapperStyle={{ "--stagger-index": index } as CSSProperties}
                 />
@@ -98,11 +99,12 @@ export function DraftDeckScreen({ onComplete }: { onComplete: (draftedCards: Bat
                     maybeTriggerShimmer(hoverId);
                   }}
                   onHoverEnd={() => setHoveredCardId((current) => (current === hoverId ? null : current))}
-                  onClick={() => handlePick(card)}
+                  onClick={() => setSelectedIndex(index)}
                   ariaLabel={"Select " + getCardDisplayTitle(card)}
                   shimmerActive={shimmerState?.cardId === hoverId}
                   shimmerToken={shimmerState?.token}
-                  className={viewCardWidthClass}
+                  selected={selectedIndex === index}
+                  className={collectionTileWidthClass}
                   wrapperClassName="stagger-item relative flex justify-center"
                   wrapperStyle={{ "--stagger-index": index } as CSSProperties}
                 />
@@ -117,7 +119,22 @@ export function DraftDeckScreen({ onComplete }: { onComplete: (draftedCards: Bat
               Continue
             </Button>
           </div>
-        ) : null}
+        ) : (
+          <div className="mt-6">
+            <Button
+              size="lg"
+              className="min-w-44"
+              disabled={selectedIndex === null}
+              onClick={() => {
+                if (selectedIndex === null) return;
+                handlePick(choices[selectedIndex]);
+                setSelectedIndex(null);
+              }}
+            >
+              Select Card
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

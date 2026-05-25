@@ -43,7 +43,7 @@ function decayEnemyArmor(state: BattleState): BattleState {
     ...state,
     enemyMitigation: {
       ...state.enemyMitigation,
-      armor: state.enemyMitigation.armor - BATTLE_CONFIG.ARMOR_DECAY_AMOUNT,
+      armor: Math.max(0, state.enemyMitigation.armor - BATTLE_CONFIG.ARMOR_DECAY_AMOUNT),
     },
   };
 }
@@ -63,7 +63,7 @@ function decayPlayerArmor(state: BattleState, combatTexts?: CombatTextEvent[]): 
     ...state,
     playerStatuses: {
       ...state.playerStatuses,
-      armor: state.playerStatuses.armor - BATTLE_CONFIG.ARMOR_DECAY_AMOUNT,
+      armor: Math.max(0, state.playerStatuses.armor - BATTLE_CONFIG.ARMOR_DECAY_AMOUNT),
     },
   };
 

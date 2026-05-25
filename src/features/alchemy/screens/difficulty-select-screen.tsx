@@ -227,7 +227,7 @@ export function DifficultySelectScreen({
           Back
         </Button>
         <Button size="lg" className="w-40" disabled={!canPlay} onClick={handlePlay}>
-          <Swords className="mr-2 h-4 w-4" aria-hidden="true" />
+          <Swords className="h-4 w-4" aria-hidden="true" />
           Play
         </Button>
       </div>

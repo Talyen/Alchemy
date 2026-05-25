@@ -349,7 +349,7 @@ function consumeForgeAfterDamage(
     ...state,
     playerStatuses: {
       ...state.playerStatuses,
-      forge: state.playerStatuses.forge - BATTLE_CONFIG.FORGE_DECAY_AMOUNT,
+      forge: Math.max(0, state.playerStatuses.forge - BATTLE_CONFIG.FORGE_DECAY_AMOUNT),
     },
   };
 }
@@ -388,7 +388,7 @@ function decayEnemyArmorOnHit(state: BattleState, modifiedDamage: number): Battl
       ...state,
       enemyMitigation: {
         ...state.enemyMitigation,
-        armor: state.enemyMitigation.armor - BATTLE_CONFIG.ARMOR_DECAY_AMOUNT,
+        armor: Math.max(0, state.enemyMitigation.armor - BATTLE_CONFIG.ARMOR_DECAY_AMOUNT),
       },
     };
   }

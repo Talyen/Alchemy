@@ -17,7 +17,7 @@ import {
 import { BattleCardButton, PurchasableCardItem, SelectableShopCard } from "../ui/card-ui";
 import { CardSelectionGrid } from "../ui/card-selection-grid";
 import { GoldDisplay, ScreenDescription, ScreenHeader, ServiceButton } from "../ui/shared-ui";
-import { viewCardWidthClass } from "../config";
+import { collectionTileWidthClass } from "../config";
 import { useRunStore } from "../stores/run-store";
 import { useScreenStore } from "../stores/screen-store";
 
@@ -119,7 +119,7 @@ export function AlchemistShopScreen({
                 ariaLabel={MIXED_POTION_TITLE}
                 shimmerActive={false}
                 shimmerToken={undefined}
-                className={viewCardWidthClass}
+                className={collectionTileWidthClass}
               />
             </div>
           </div>

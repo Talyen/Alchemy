@@ -84,16 +84,32 @@ export function ArtPanel({
   const healthPercent = maxHealth > 0 ? (health / maxHealth) * ACTOR_PANEL_CONFIG.fullHealthPercent : 0;
 
   return (
-    <div className={cn("group/enemy-panel relative flex flex-col items-center gap-3", shaking && "animate-shake")}>
-      <ActorTooltip
-        title={title}
-        descriptionLines={descriptionLines}
-        currentEnemy={currentEnemy}
-        currentEnemyAttackEffects={currentEnemyAttackEffects}
-        activeLabyrinthModifiers={activeLabyrinthModifiers}
-      />
-      {isBoss ? (
-        <div className="scale-[1.3] origin-bottom">
+    <div className={cn("relative flex flex-col items-center gap-3", shaking && "animate-shake")}>
+      <div className="group/art-wrapper relative">
+        <ActorTooltip
+          title={title}
+          descriptionLines={descriptionLines}
+          currentEnemy={currentEnemy}
+          currentEnemyAttackEffects={currentEnemyAttackEffects}
+          activeLabyrinthModifiers={activeLabyrinthModifiers}
+        />
+        {isBoss ? (
+          <div className="scale-[1.3] origin-bottom">
+            <ActorArtFrame
+              side={side}
+              title={title}
+              art={art}
+              shimmerId={shimmerId}
+              shimmerActive={shimmerActive}
+              shimmerToken={shimmerToken}
+              onHoverShimmer={onHoverShimmer}
+              surfaceRef={surfaceRef}
+              isDead={isDead}
+              cardWidthClass={cardWidthClass}
+              deathsDoorActive={deathsDoorActive}
+            />
+          </div>
+        ) : (
           <ActorArtFrame
             side={side}
             title={title}
@@ -107,22 +123,8 @@ export function ArtPanel({
             cardWidthClass={cardWidthClass}
             deathsDoorActive={deathsDoorActive}
           />
-        </div>
-      ) : (
-        <ActorArtFrame
-          side={side}
-          title={title}
-          art={art}
-          shimmerId={shimmerId}
-          shimmerActive={shimmerActive}
-          shimmerToken={shimmerToken}
-          onHoverShimmer={onHoverShimmer}
-          surfaceRef={surfaceRef}
-          isDead={isDead}
-          cardWidthClass={cardWidthClass}
-          deathsDoorActive={deathsDoorActive}
-        />
-      )}
+        )}
+      </div>
       <ActorStatsPanel
         side={side}
         title={title}
@@ -150,7 +152,7 @@ function ActorTooltip({
   descriptionLines: string[] | undefined;
   currentEnemy: BestiaryEntry | undefined;
   currentEnemyAttackEffects: EnemyAttackEffect[] | undefined;
-  activeLabyrinthModifiers: LabyrinthModifierKind[];
+  activeLabyrinthModifiers?: LabyrinthModifierKind[] | undefined;
 }) {
   if (currentEnemy) {
     return (
@@ -158,7 +160,7 @@ function ActorTooltip({
         entry={currentEnemy}
         attackEffects={currentEnemyAttackEffects}
         labyrinthModifiers={activeLabyrinthModifiers ?? []}
-        className="opacity-0 transition-opacity duration-150 group-hover/enemy-panel:opacity-100"
+        className="opacity-0 transition-opacity duration-150 group-hover/art-wrapper:opacity-100"
       />
     );
   }
@@ -168,7 +170,7 @@ function ActorTooltip({
     <div
       className={cn(
         popupClassName,
-        "hover-popup-panel pointer-events-auto opacity-0 transition-opacity duration-150 group-hover/enemy-panel:opacity-100",
+        "hover-popup-panel pointer-events-auto opacity-0 transition-opacity duration-150 group-hover/art-wrapper:opacity-100",
       )}
     >
       <p className="text-sm text-foreground">{title}</p>
@@ -207,7 +209,7 @@ function ActorArtFrame({
       ref={surfaceRef}
       data-testid={`battle-${side}-art-panel`}
       className={cn(
-        "tilt-surface",
+        "tilt-surface relative",
         cardSurfaceClass,
         cardWidthClass ?? battleCardWidthClass,
         isDead && "overflow-visible animate-frame-fade surface-transparent",

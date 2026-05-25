@@ -10,7 +10,7 @@ import { matIconMap, matPillStyle, matTextColor } from "../ui/material-icons";
 
 import { BattleCardButton, DetailPopup, getCardDisplayTitle } from "../ui/card-ui";
 import { ScreenHeader, ShimmerOverlay } from "../ui/shared-ui";
-import { cardSurfaceClass, staticCardTransform, trinketCardWidthClass, viewCardWidthClass } from "../config";
+import { cardSurfaceClass, collectionTileWidthClass, staticCardTransform, trinketCardWidthClass } from "../config";
 import { clearTiltFromEvent, getHoverId, setTiltFromEvent } from "../utils";
 import { useBattleStore } from "../stores/battle-store";
 import { useScreenStore } from "../stores/screen-store";
@@ -136,7 +136,7 @@ export function RewardsScreen({ onAddReward, onSkip }: { onAddReward: () => void
                 ariaLabel={`Select ${getCardDisplayTitle(card)}`}
                 shimmerActive={shimmerState?.cardId === hoverId}
                 shimmerToken={shimmerState?.token}
-                className={viewCardWidthClass}
+                className={collectionTileWidthClass}
                 wrapperClassName="stagger-item relative flex justify-center"
                 wrapperStyle={{ "--stagger-index": index } as CSSProperties}
                 selected={selectedRewardId === card.id}

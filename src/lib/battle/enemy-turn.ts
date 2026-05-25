@@ -213,7 +213,7 @@ function applyArmorDecayOnHit(state: BattleState, actualDamage: number, combatTe
     ...state,
     playerStatuses: {
       ...state.playerStatuses,
-      armor: state.playerStatuses.armor - BATTLE_CONFIG.ARMOR_DECAY_AMOUNT,
+      armor: Math.max(0, state.playerStatuses.armor - BATTLE_CONFIG.ARMOR_DECAY_AMOUNT),
     },
   };
   if (armorBefore > 0 && nextState.playerStatuses.armor === 0 && nextState.talentEffects.armorBreakBlock > 0) {
@@ -240,7 +240,7 @@ function applyEnemyForgeDecayOnHit(state: BattleState, actualDamage: number, dam
     ...state,
     enemyMitigation: {
       ...state.enemyMitigation,
-      forge: state.enemyMitigation.forge - BATTLE_CONFIG.FORGE_DECAY_AMOUNT,
+      forge: Math.max(0, state.enemyMitigation.forge - BATTLE_CONFIG.FORGE_DECAY_AMOUNT),
     },
   };
 }
@@ -511,7 +511,7 @@ function processEnemyTraits(state: BattleState, combatTexts: CombatTextEvent[], 
 function processHasteEarlyTurn(state: BattleState): BattleState {
   return {
     ...state,
-    playerStatuses: { ...state.playerStatuses, haste: state.playerStatuses.haste - 1 },
+    playerStatuses: { ...state.playerStatuses, haste: Math.max(0, state.playerStatuses.haste - 1) },
   };
 }
 

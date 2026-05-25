@@ -44,7 +44,7 @@ function catchWithWarning<T>(schema: z.ZodType<T>, fallback: T, fieldName: strin
       return fallback;
     }
     return res.data;
-  }, z.any()) as z.ZodType<T>;
+  }, schema);
 }
 
 // Zod enums need a non-empty tuple; this preserves runtime single sources of truth for save IDs.

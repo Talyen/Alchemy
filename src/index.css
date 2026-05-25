@@ -339,7 +339,7 @@
 
 @layer utilities {
   .surface-muted {
-    background: rgb(14, 12, 9);
+    background: rgb(16, 13, 10);
   }
 
   .page-enter {

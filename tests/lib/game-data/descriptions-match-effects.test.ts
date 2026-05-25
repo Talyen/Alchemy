@@ -23,6 +23,10 @@ function hasLifesteal(effects: BattleCardEffect[]): boolean {
   return effects.some((e) => e.kind === "damage" && "lifesteal" in e && e.lifesteal === true);
 }
 
+function hasEqualToBlockOrArmor(effects: BattleCardEffect[]): boolean {
+  return effects.some((e) => e.kind === "damage" && ("equalToBlock" in e && e.equalToBlock || "equalToArmor" in e && e.equalToArmor));
+}
+
 function countLinesStartingWith(lines: string[], prefix: string): number {
   return lines.filter((l) => l.startsWith(prefix)).length;
 }
@@ -93,7 +97,7 @@ describe("card descriptions vs effects", () => {
       const cleanseLines = countLinesStartingWith(descriptionLines, "Cleanse ");
       const cleanseEffects = countByKind(effects, "remove-player-status");
 
-      if (!hasKind(effects, "equal-to-block") && !hasKind(effects, "equal-to-armor") && !hasKind(effects, "self-damage")) {
+      if (!hasEqualToBlockOrArmor(effects) && !hasKind(effects, "self-damage")) {
         expect(dealLines).toBe(damageEffects);
       }
 
