@@ -24,7 +24,7 @@ export type RewardState = {
   selectedId: string | null;
   destinations: Destination[];
   rewardType: "card" | "trinket";
-  selectedBossId?: string | null;
+  selectedBossId: string | null;
 };
 
 type BossRewardInput = {
@@ -169,14 +169,19 @@ export function getCompanionCardChoices(rng: () => number = Math.random): Battle
 
 // Empty reward state is reused by initialization, reward cleanup, and full run reset.
 export function createEmptyRewardState(destinations: Destination[] = []): RewardState {
-  return { choices: [], gold: 0, materials: emptyInventory(), selectedId: null, destinations, rewardType: "card" };
+  return {
+    choices: [],
+    gold: 0,
+    materials: emptyInventory(),
+    selectedId: null,
+    destinations,
+    rewardType: "card",
+    selectedBossId: null,
+  };
 }
 
-// Keeps transient destination metadata when moving from rewards to destination choice.
 function createNextRewardState(rewardState: RewardState): RewardState {
-  const nextRewardState = createEmptyRewardState(rewardState.destinations);
-  if ("selectedBossId" in rewardState) nextRewardState.selectedBossId = rewardState.selectedBossId ?? null;
-  return nextRewardState;
+  return { ...createEmptyRewardState(rewardState.destinations), selectedBossId: rewardState.selectedBossId };
 }
 
 // Resolves reward-finalization decisions without mutating React state or performing navigation.
@@ -204,7 +209,7 @@ export function finalizeRewardState({
         selectedId: null,
         destinations: rewardState.destinations,
         rewardType: "card",
-        ...("selectedBossId" in rewardState ? { selectedBossId: rewardState.selectedBossId ?? null } : {}),
+        selectedBossId: rewardState.selectedBossId,
       },
       clearCompanionRewardCards: true,
       route: CONSTANTS.REWARD_ROUTES.COMPANION_REWARD,
@@ -243,7 +248,7 @@ export function createBossRewardState({
   trinketIds,
   goldMultiplier = 1,
 }: BossRewardInput): RewardState {
-  const trinketGoldBonus = computeTrinketManifest(trinketIds).smugglersMapGoldBonus;
+  const trinketGoldBonus = getSmugglersMapGoldBonus(trinketIds);
   return {
     rewardType: "trinket",
     choices: selectRewardTrinkets(trinketLibrary, BOSS_TRINKET_REWARD_CHOICES),
@@ -251,11 +256,20 @@ export function createBossRewardState({
     materials,
     selectedId: null,
     destinations: [],
+    selectedBossId: null,
   };
 }
 
+function getSmugglersMapGoldBonus(trinketIds: string[]): number {
+  return computeTrinketManifest(trinketIds).smugglersMapGoldBonus;
+}
+
 // Calculates whether a combat reward should offer a trinket based on traits and modifiers.
-export function calculateCombatTrinketRewardOffer(battleState: BattleState, forceTrinket: boolean): boolean {
+export function calculateCombatTrinketRewardOffer(
+  battleState: BattleState,
+  forceTrinket: boolean,
+  rng: () => number = Math.random,
+): boolean {
   if (forceTrinket) return true;
   const baseTrinketChance =
     battleState.currentEnemy.enemyType === CONSTANTS.ENEMY_TYPES.ELITE
@@ -264,7 +278,7 @@ export function calculateCombatTrinketRewardOffer(battleState: BattleState, forc
   const trinketHoarderBonus = battleState.currentEnemy.traits?.some((t) => t.id === "trinket-hoarder")
     ? LABYRINTH_REWARD_CONFIG.trinketHoarderRewardChanceBonus
     : 0;
-  return Math.random() < baseTrinketChance + trinketHoarderBonus;
+  return rng() < baseTrinketChance + trinketHoarderBonus;
 }
 
 // Combat rewards can be cards or trinkets. Destination choices are supplied by the hook
@@ -283,7 +297,7 @@ export function createCombatRewardState({
   forceTrinket = false,
 }: CombatRewardInput): RewardState {
   const offerTrinket = calculateCombatTrinketRewardOffer(battleState, forceTrinket);
-  const trinketGoldBonus = computeTrinketManifest(trinketIds).smugglersMapGoldBonus;
+  const trinketGoldBonus = getSmugglersMapGoldBonus(trinketIds);
   return {
     rewardType: offerTrinket ? "trinket" : "card",
     choices: offerTrinket
@@ -293,6 +307,7 @@ export function createCombatRewardState({
     materials,
     selectedId: null,
     destinations,
+    selectedBossId: null,
   };
 }
 
@@ -306,7 +321,7 @@ export function getVictoryGoldTotal({
   bossBonus,
   talentGoldPerCombat,
 }: VictoryGoldTotalInput): number {
-  const trinketGoldBonus = computeTrinketManifest(runTrinkets).smugglersMapGoldBonus;
+  const trinketGoldBonus = getSmugglersMapGoldBonus(runTrinkets);
   return battleState.gold + gold + eliteBonus + generousBonus + bossBonus + talentGoldPerCombat + trinketGoldBonus;
 }
 

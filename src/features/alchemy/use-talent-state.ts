@@ -1,7 +1,7 @@
 // Type-only file — the hook implementation moved to stores/run-store.ts.
 import type { BattleCard, KeywordId, UnlockedTalents } from "@/lib/game-data";
 import type { TalentXP } from "@/lib/talents";
-import type { TalentEffectManifest } from "@/lib/battle";
+import type { TalentEffectManifest } from "@/lib/game-data";
 
 export type TalentStateController = {
   talentXP: TalentXP;

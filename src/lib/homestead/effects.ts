@@ -2,7 +2,7 @@
 // completed research, and bonded companions. Also provides a merge helper that
 // folds homestead effects into a TalentEffectManifest for battle use.
 
-import type { TalentEffectManifest } from "@/lib/battle";
+import type { TalentEffectManifest } from "@/lib/game-data";
 import type { HomesteadEffectManifest } from "./types";
 import { defaultHomesteadEffects } from "./defaults";
 import { buildings, farmPlots, researchUpgrades } from "./data";

@@ -3,7 +3,12 @@
  * Depends on: @/lib/game-data, ../utils, ../game-constants, ./types, ../trinkets.
  * Depended on by: ./card-play, ./enemy-turn, ./status-effects, ./wish, ./types.
  */
-import { companionLibrary, createEmptyTalentManifest, type CompanionDefinition } from "@/lib/game-data";
+import {
+  companionLibrary,
+  createEmptyTalentManifest,
+  type CompanionDefinition,
+  type TalentEffectManifest,
+} from "@/lib/game-data";
 import type { BattleCard, BestiaryEntry, EnemyAttackEffect } from "@/lib/game-data/types";
 import type { DifficultyModifier } from "@/lib/game-data/difficulties";
 
@@ -27,7 +32,6 @@ import {
   type BattleState,
   type EnemyStatusValues,
   type PlayerStatusValues,
-  type TalentEffectManifest,
   type CombatFlags,
   type TurnPhase,
 } from "./types";

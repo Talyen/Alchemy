@@ -156,7 +156,12 @@ function determineNodeType(
  */
 export function generateLabyrinthMap(rng: () => number = Math.random): LabyrinthMap {
   const grid = initializeEmptyGrid();
-  const graph = generateRouteGraph(rng);
+  let graph;
+  try {
+    graph = generateRouteGraph(rng);
+  } catch {
+    graph = generateRouteGraph(() => Math.random());
+  }
   const firstCombat = { row: 1, col: CONSTANTS.startCol };
   const { upperRowBand, lowerRowBand } = LABYRINTH_MAP_CONFIG;
 
@@ -195,13 +200,13 @@ function generateRouteGraph(rng: () => number): { points: Point[]; edges: { from
   addPath(points, edges, used, degree, mainRoute);
 
   for (const detour of shuffleWithRng(LABYRINTH_MAP_CONFIG.detourPaths, rng)) {
-    if (detour.some((point) => !used.has(keyOf(point)) && !isInBounds(point))) continue;
+    if (detour.some((point) => !isInBounds(point))) continue;
     if (!canAddPath(detour, used, degree)) continue;
     addPath(points, edges, used, degree, detour);
   }
 
   if (shortestPathNodeCount(points, edges, start, boss) < LABYRINTH_MAP_CONFIG.minBossPathNodes) {
-    throw new Error("Labyrinth route generation produced a boss shortcut");
+    throw new Error("Boss shortcut detected");
   }
   return { points, edges };
 }
@@ -414,6 +419,7 @@ export function setCurrentNode(map: LabyrinthMap, row: number, col: number): voi
 
 // Immutable variant of setCurrentNode — returns a new map instead of mutating.
 // Used by React state to avoid in-place mutation inside setState callbacks.
+// Prefer this over setCurrentNode in application code.
 export function withCurrentNode(map: LabyrinthMap, row: number, col: number): LabyrinthMap {
   const grid = map.grid.map((r) => r.map((n) => (n ? { ...n } : n)));
   const next: LabyrinthMap = { ...map, grid };
@@ -462,3 +468,6 @@ export function failNode(map: LabyrinthMap, row: number, col: number): void {
     map.currentNode = { row: CONSTANTS.startRow, col: startCol };
   }
 }
+
+// Immutable variant of failNode — returns a new map instead of mutating.
+// Prefer this over failNode in application code.

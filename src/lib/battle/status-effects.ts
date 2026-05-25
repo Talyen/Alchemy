@@ -4,7 +4,6 @@
  * Depends on: ./draw, ./combat-text, ./trinket-effects, ./status-cc, ./status-helpers, ../game-constants, @/lib/game-data.
  * Depended on by: ./apply-effects, ./damage, ./status-ticks.
  */
-import { drawCards } from "./draw";
 import { harmfulPlayerStatusIds } from "@/lib/game-data";
 import type { BattleCardEffect } from "@/lib/game-data/types";
 import {
@@ -18,17 +17,25 @@ import {
   setEnemyStatus,
   setFlag,
   type BattleState,
-  type CombatTextEvent, // used by internal helpers and re-exported callers
+  type CombatTextEvent,
 } from "./types";
 import { emitOverhealBlockText, mergeCombatText } from "./combat-text";
 import { applyLuckyCloverGold } from "./trinket-effects";
+import {
+  applyFreezeBlockTalent,
+  applyFreezeStripArmorTalent,
+  applyStunBlockTalent,
+  applyStunDrawTalent,
+  applyStunFreeCardTalent,
+  applyStunManaTalent,
+  applyStunStripArmorTalent,
+} from "./talent-effects";
 import { applyEnemyCcImmunityClear, assignEnemyCrowdControlSkip } from "./status-cc";
 import { rollPercent } from "./status-helpers";
 import {
   BLEED_STATUS_MULTIPLIER,
   ENEMY_TRAIT_IDS,
   FIRST_EFFECT_MULTIPLIER,
-  FREE_CARD_SENTINEL,
   FREEZE_THRESHOLD_FRACTION,
   HALF_DIVISOR,
   STUN_THRESHOLD_FRACTION,
@@ -59,39 +66,40 @@ function computeForgeBurnAmount(state: BattleState): number {
   return state.talentEffects.forgeBurnDamage;
 }
 
+function onForgeCrossThreshold(
+  state: BattleState,
+  oldForge: number,
+  newForge: number,
+  threshold: number,
+  onCross: (s: BattleState) => BattleState,
+): BattleState {
+  if (threshold <= 0 || oldForge >= threshold || newForge < threshold) return state;
+  return onCross(state);
+}
+
 /** Forge burst when crossing forgeBurnThreshold — any forge source can trigger this.
  *  Fires once per crossing; repeated forge above threshold won't re-trigger. */
 function applyForgeBurnBurst(state: BattleState, oldForge: number, newForge: number, combatTexts?: CombatTextEvent[]) {
-  if (
-    state.talentEffects.forgeBurnThreshold <= 0 ||
-    oldForge >= state.talentEffects.forgeBurnThreshold ||
-    newForge < state.talentEffects.forgeBurnThreshold
-  ) {
-    return state;
-  }
-  const burnAmount = computeForgeBurnAmount(state);
-  const nextState = addEnemyStatus(state, "burn", burnAmount);
-  if (combatTexts) {
-    mergeCombatText(combatTexts, {
-      target: "enemy",
-      kind: "damage",
-      stat: "burn",
-      amount: burnAmount,
-    });
-  }
-  return nextState;
+  return onForgeCrossThreshold(state, oldForge, newForge, state.talentEffects.forgeBurnThreshold, (s) => {
+    const burnAmount = computeForgeBurnAmount(s);
+    const nextState = addEnemyStatus(s, "burn", burnAmount);
+    if (combatTexts) {
+      mergeCombatText(combatTexts, {
+        target: "enemy",
+        kind: "damage",
+        stat: "burn",
+        amount: burnAmount,
+      });
+    }
+    return nextState;
+  });
 }
 
 function applyForgeStripArmorBurst(state: BattleState, oldForge: number, newForge: number): BattleState {
-  if (
-    state.talentEffects.forgeStripArmorThreshold <= 0 ||
-    oldForge >= state.talentEffects.forgeStripArmorThreshold ||
-    newForge < state.talentEffects.forgeStripArmorThreshold ||
-    state.enemyMitigation.armor <= 0
-  ) {
-    return state;
-  }
-  return { ...state, enemyMitigation: { ...state.enemyMitigation, armor: 0 } };
+  return onForgeCrossThreshold(state, oldForge, newForge, state.talentEffects.forgeStripArmorThreshold, (s) => {
+    if (s.enemyMitigation.armor <= 0) return s;
+    return { ...s, enemyMitigation: { ...s.enemyMitigation, armor: 0 } };
+  });
 }
 
 function applyForgeBlockBurst(
@@ -100,26 +108,21 @@ function applyForgeBlockBurst(
   newForge: number,
   combatTexts?: CombatTextEvent[],
 ): BattleState {
-  if (
-    state.talentEffects.forgeBlockThreshold <= 0 ||
-    oldForge >= state.talentEffects.forgeBlockThreshold ||
-    newForge < state.talentEffects.forgeBlockThreshold
-  ) {
-    return state;
-  }
-  let amount = state.talentEffects.forgeBlockAmount;
-  if (state.talentEffects.forgeToBlock) {
-    amount += newForge;
-  }
-  if (combatTexts) {
-    mergeCombatText(combatTexts, {
-      target: "player",
-      kind: "status",
-      stat: "block",
-      amount,
-    });
-  }
-  return addPlayerStatus(state, "block", amount);
+  return onForgeCrossThreshold(state, oldForge, newForge, state.talentEffects.forgeBlockThreshold, (s) => {
+    let amount = s.talentEffects.forgeBlockAmount;
+    if (s.talentEffects.forgeToBlock) {
+      amount += newForge;
+    }
+    if (combatTexts) {
+      mergeCombatText(combatTexts, {
+        target: "player",
+        kind: "status",
+        stat: "block",
+        amount,
+      });
+    }
+    return addPlayerStatus(s, "block", amount);
+  });
 }
 
 function addForgeToPlayer(state: BattleState, baseAmount: number, combatTexts?: CombatTextEvent[]): BattleState {
@@ -145,67 +148,9 @@ function addForgeToPlayer(state: BattleState, baseAmount: number, combatTexts?: 
   return nextState;
 }
 
-// Named helpers split from applyStunTalentEffects to follow SRP
-
-function applyStunDrawTalent(state: BattleState): BattleState {
-  if (state.talentEffects.drawOnStun <= 0) return state;
-  const draw = drawCards(state.deck, state.discard, state.hand, state.talentEffects.drawOnStun, state.nextCardUid);
-  return {
-    ...state,
-    deck: draw.deck,
-    discard: draw.discard,
-    hand: draw.hand,
-    nextCardUid: draw.nextCardUid,
-  };
-}
-
-function applyStunFreeCardTalent(state: BattleState): BattleState {
-  if (!state.talentEffects.nextCardFreeOnStun) return state;
-  return setFlag(state, "nextCardCostReduction", FREE_CARD_SENTINEL);
-}
-
-function applyBlockOnCCTalent(state: BattleState, amount: number, combatTexts?: CombatTextEvent[]): BattleState {
-  if (amount <= 0) return state;
-  const nextState = addPlayerStatus(state, "block", amount);
-  if (combatTexts) {
-    mergeCombatText(combatTexts, {
-      target: "player",
-      kind: "status",
-      stat: "block",
-      amount,
-    });
-  }
-  return nextState;
-}
-
-const applyStunBlockTalent = (state: BattleState, combatTexts?: CombatTextEvent[]) =>
-  applyBlockOnCCTalent(state, state.talentEffects.blockOnStun, combatTexts);
-
 function applyStunForgeTalent(state: BattleState, combatTexts?: CombatTextEvent[]): BattleState {
   if (state.talentEffects.forgeOnStun <= 0) return state;
   return addForgeToPlayer(state, state.talentEffects.forgeOnStun, combatTexts);
-}
-
-function applyStripArmorOnCCTalent(state: BattleState, active: boolean): BattleState {
-  if (!active || state.enemyMitigation.armor <= 0) return state;
-  return { ...state, enemyMitigation: { ...state.enemyMitigation, armor: 0 } };
-}
-
-const applyStunStripArmorTalent = (state: BattleState) =>
-  applyStripArmorOnCCTalent(state, state.talentEffects.stunStripArmor);
-
-function applyStunManaTalent(state: BattleState, combatTexts?: CombatTextEvent[]): BattleState {
-  if (state.talentEffects.manaOnStun <= 0) return state;
-  const nextState = { ...state, mana: state.mana + state.talentEffects.manaOnStun };
-  if (combatTexts) {
-    mergeCombatText(combatTexts, {
-      target: "player",
-      kind: "status",
-      stat: "mana",
-      amount: state.talentEffects.manaOnStun,
-    });
-  }
-  return nextState;
 }
 
 function applyStunTalentEffects(state: BattleState, combatTexts?: CombatTextEvent[]): BattleState {
@@ -402,9 +347,6 @@ function tryTriggerEnemyFreeze(
   nextState: BattleState,
   combatTexts: CombatTextEvent[],
 ): BattleState {
-  // Threshold uses preHitState (stacks BEFORE this hit) to prevent self-escalation.
-  // Immunity cooldown also uses preHitState, but skip duration applies to nextState.
-  // This prevents freeze-loops where hitting a nearly-frozen enemy instantly re-freezes.
   const isFreezeImmune = preHitState.currentEnemy.traits.some((t) => t.id === ENEMY_TRAIT_IDS.GLACIAL_SHELL);
   const freezeThreshold = FREEZE_THRESHOLD_FRACTION - (preHitState.talentEffects.freezeThresholdReduction ?? 0);
   if (
@@ -435,12 +377,6 @@ function tryTriggerEnemyFreeze(
   return result;
 }
 
-const applyFreezeBlockTalent = (state: BattleState, combatTexts?: CombatTextEvent[]) =>
-  applyBlockOnCCTalent(state, state.talentEffects.blockOnFreeze, combatTexts);
-
-const applyFreezeStripArmorTalent = (state: BattleState) =>
-  applyStripArmorOnCCTalent(state, state.talentEffects.freezeStripArmor);
-
 function applyFreezeStatusRider(state: BattleState, actualDamage: number, combatTexts: CombatTextEvent[]): BattleState {
   const nextState = addEnemyStatus(state, "freeze", actualDamage);
   return tryTriggerEnemyFreeze(state, nextState, combatTexts);
@@ -465,18 +401,21 @@ export function applyDamageStatuses(
       return applyStunStatusRider(state, actualDamage, combatTexts);
     case "freeze":
       return applyFreezeStatusRider(state, actualDamage, combatTexts);
-    default:
+    case "physical":
+    case "holy":
+    case "nature":
+    case "arrow":
       return state;
   }
 }
 
-function clearHarmfulStatuses(playerStatuses: BattleState["playerStatuses"], amount: number) {
+function clearHarmfulStatuses(playerStatuses: BattleState["playerStatuses"], statusTypesToClear: number) {
   const nextPlayerStatuses = { ...playerStatuses };
   let removed = 0;
   for (const statusId of harmfulPlayerStatusIds) {
-    if (removed >= amount) break;
-    // Clears one harmful status TYPE per "amount", not one stack.
-    // amount=1 removes one random status category entirely (e.g. all poison stacks),
+    if (removed >= statusTypesToClear) break;
+    // Clears one harmful status TYPE per "statusTypesToClear", not one stack.
+    // statusTypesToClear=1 removes one random status category entirely (e.g. all poison stacks),
     // not 1 stack of poison.
     if (nextPlayerStatuses[statusId] <= 0) continue;
     nextPlayerStatuses[statusId] = 0;

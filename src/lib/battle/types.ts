@@ -67,9 +67,6 @@ export type TrinketManifest = {
   luckyCloverGoldChance: number;
 };
 
-// Re-exported from game-data/types.ts so @/lib/battle barrel consumers still find it.
-export type { TalentEffectManifest } from "@/lib/game-data";
-
 // Threshold-driven combat flags that reset each battle.
 export type CombatFlags = {
   firstPhysicalCardFreeUsed: boolean;

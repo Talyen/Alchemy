@@ -20,7 +20,7 @@ import { applyPlayerStatusFromAttack } from "./status-application";
 import { decayHalvedStatus } from "./status-helpers";
 import { tickEnemyStatuses, tickPlayerStatuses } from "./status-ticks";
 import { applyPlayerDamageStatuses } from "./status-effects";
-import type { BattleCard, EnemyAttackEffect } from "@/lib/game-data/types";
+import type { EnemyAttackEffect } from "@/lib/game-data/types";
 import type { DifficultyModifier } from "@/lib/game-data/difficulties";
 import {
   applyPlayerCombatDamage,
@@ -28,7 +28,6 @@ import {
   clampHealth,
   type BattleState,
   type CombatTextEvent,
-  type TurnPhase,
 } from "./types";
 import { CARDS_PER_TURN, BATTLE_CONFIG } from "../game-constants";
 import {
@@ -45,6 +44,10 @@ import {
 
 export { chooseWishCard } from "./wish";
 export { processCompanionTurnStart } from "./companion";
+
+function isFreezeBlockingRegen(state: BattleState): boolean {
+  return state.enemyFreezeSkipTurns > 0 && state.talentEffects.freezeBlocksRegen;
+}
 
 function resetPlayerTurnState(state: BattleState): BattleState {
   return {
@@ -67,7 +70,7 @@ function handleCCSkipTurn(state: BattleState): BattleState {
   const nextState = resetPlayerTurnState(state);
   return {
     ...nextState,
-    turnPhase: "enemy" as TurnPhase,
+    turnPhase: "enemy",
     playerStunSkipTurns: Math.max(0, state.playerStunSkipTurns - 1),
     playerFreezeSkipTurns: Math.max(0, state.playerFreezeSkipTurns - 1),
   };
@@ -79,7 +82,7 @@ function performDrawAndResetPhase(state: BattleState, deathsDoorNeedsRecoveryTur
   const nextState = resetPlayerTurnState(state);
   return {
     ...nextState,
-    turnPhase: "player" as TurnPhase,
+    turnPhase: "player",
     deck: nextDraw.deck,
     hand: nextDraw.hand,
     discard: nextDraw.discard,
@@ -267,7 +270,7 @@ function applyEnemyAttackLifesteal(
   actualDamage: number,
   combatTexts: CombatTextEvent[],
 ): BattleState {
-  if (state.enemyFreezeSkipTurns > 0 && state.talentEffects.freezeBlocksRegen) return state;
+  if (isFreezeBlockingRegen(state)) return state;
   mergeCombatText(combatTexts, { target: "enemy", kind: "heal", stat: "health", amount: actualDamage });
   return {
     ...state,
@@ -346,7 +349,7 @@ function processEnemyAttack(state: BattleState, combatTexts: CombatTextEvent[]) 
 
 function processEnemyRegeneration(state: BattleState, combatTexts: CombatTextEvent[]) {
   if (state.enemyRegeneration <= 0) return state;
-  if (state.enemyFreezeSkipTurns > 0 && state.talentEffects.freezeBlocksRegen) return state;
+  if (isFreezeBlockingRegen(state)) return state;
   let healAmount = state.enemyRegeneration;
   if (state.enemyStatuses.poison > 0 && state.talentEffects.poisonHalvesHealing) {
     healAmount = Math.round(healAmount / HALF_DIVISOR);
@@ -448,7 +451,7 @@ const difficultyTurnStartHandlers: Partial<Record<DifficultyModifier["kind"], En
     };
   },
   "labyrinth-leeching": (state, combatTexts) => {
-    if (state.enemyFreezeSkipTurns > 0 && state.talentEffects.freezeBlocksRegen) return state;
+    if (isFreezeBlockingRegen(state)) return state;
     mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "health", amount: LABYRINTH_LEECH_HEAL });
     return {
       ...state,
@@ -483,11 +486,11 @@ function reduceSkipTurns(state: BattleState): BattleState {
   };
 }
 
-// Death's Door grants a grace period of (1 + extension) full turns after player health hits 0.
-// The turn counter increments in resetPlayerTurnState before the enemy phase, so
-// `state.turn` at this point is the *next* turn number.  Comparing `state.turn` to
-// `deathsDoorTriggeredTurn` means grace begins on the turn death occurred, giving
-// (1 + extension) turns including the death turn itself.
+// Death's Door grants a grace period of (1 + extension) full player turns after hitting 0 HP.
+// resolveDeathsDoorEndOfEnemyTurn runs before advanceToPlayerTurn increments the turn counter,
+// so state.turn still holds the player-turn number that just completed its enemy phase.
+// Comparing state.turn to deathsDoorTriggeredTurn gives 0 on the death turn itself, providing
+// (1 + extension) additional turns before the grace window expires.
 function resolveDeathsDoorEndOfEnemyTurn(state: BattleState): BattleState {
   if (!state.deathsDoorActive) return state;
   if (state.playerHealth > 0) return { ...state, deathsDoorActive: false, deathsDoorTriggeredTurn: null };
@@ -529,8 +532,8 @@ function processHasteEarlyTurn(state: BattleState): BattleState {
 function beginEnemyPhase(state: BattleState): BattleState {
   return {
     ...state,
-    turnPhase: "enemy" as TurnPhase,
-    hand: [] as BattleCard[],
+    turnPhase: "enemy",
+    hand: [],
     discard: [...state.discard, ...state.hand],
   };
 }

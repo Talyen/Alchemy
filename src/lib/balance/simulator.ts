@@ -9,9 +9,9 @@ import {
   isPlayerDefeated,
   playBattleCardResolved,
   type BattleState,
-  type TalentEffectManifest,
 } from "@/lib/battle";
 import {
+  type TalentEffectManifest,
   characters,
   enemyBestiary,
   getStartingDeck,
