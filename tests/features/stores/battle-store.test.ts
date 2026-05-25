@@ -24,10 +24,6 @@ describe("battle-store initialization", () => {
     expect(useBattleStore.getState().floatingCombatTexts).toEqual([]);
   });
 
-  it("initializes with no shimmer state", () => {
-    expect(useBattleStore.getState().shimmerState).toBeNull();
-  });
-
   it("initializes shaking state as false", () => {
     const s = useBattleStore.getState();
     expect(s.enemyShaking).toBe(false);

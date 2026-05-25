@@ -4,8 +4,6 @@ import { hydrateCard } from "@/lib/game-data";
 import { COMBAT_TEXT_LANE_DELAY_MS, COMBAT_TEXT_LIFETIME_MS, SHAKE_DURATION } from "@/lib/game-constants";
 import type { CardGhost, FloatingCombatText } from "@/features/alchemy/types";
 
-type ShimmerState = { cardId: string; token: number } | null;
-
 function getCombatTextDisplayText(event: CombatTextEvent): string {
   if (event.kind === "notice") return event.text;
   if (event.kind === "damage") return `-${event.amount}`;
@@ -22,7 +20,6 @@ type BattleStore = {
   enemyShaking: boolean;
   playerShaking: boolean;
   companionShaking: boolean;
-  shimmerState: ShimmerState;
   revealedCardKeys: Set<string>;
 
   setBattleState: (state: BattleState | ((prev: BattleState) => BattleState)) => void;
@@ -36,18 +33,16 @@ type BattleStore = {
   shakePlayer: () => void;
   shakeCompanion: () => void;
   showCombatTexts: (events: CombatTextEvent[]) => void;
-  maybeTriggerShimmer: (cardId: string) => void;
   clearFloatingCombatTexts: () => void;
   addRevealedCardKey: (key: string) => void;
   clearRevealedCardKeys: () => void;
 };
 
-const shimmerCooldownMs = 500;
 const shakeDuration = SHAKE_DURATION;
 const combatTextLifetimeMs = COMBAT_TEXT_LIFETIME_MS;
 const combatTextLaneDelayMs = COMBAT_TEXT_LANE_DELAY_MS;
 
-export const useBattleStore = create<BattleStore>()((set, get) => ({
+export const useBattleStore = create<BattleStore>()((set) => ({
   battleState: defaultBattleState(),
   battleStartState: null,
   hasActiveBattle: false,
@@ -56,7 +51,6 @@ export const useBattleStore = create<BattleStore>()((set, get) => ({
   enemyShaking: false,
   playerShaking: false,
   companionShaking: false,
-  shimmerState: null,
   revealedCardKeys: new Set(),
 
   setBattleState: (action) =>
@@ -150,10 +144,4 @@ export const useBattleStore = create<BattleStore>()((set, get) => ({
   addRevealedCardKey: (key) => set((s) => ({ revealedCardKeys: new Set(s.revealedCardKeys).add(key) })),
 
   clearRevealedCardKeys: () => set({ revealedCardKeys: new Set() }),
-
-  maybeTriggerShimmer: (cardId) => {
-    const state = get();
-    if (state.shimmerState && performance.now() - state.shimmerState.token < shimmerCooldownMs) return;
-    set({ shimmerState: { cardId, token: performance.now() } });
-  },
 }));

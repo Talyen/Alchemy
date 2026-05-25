@@ -156,7 +156,7 @@ export const INITIAL_LOAD_MAX_DURATION_MS = 12000; // Hard cap — show the game
 export const INITIAL_LOAD_BATCH_SIZE = 4; // How many images to preload concurrently during startup.
 
 // ============ Animation / Timing ============
-export const SHIMMER_COOLDOWN_MS = 2600; // Minimum time between shimmer triggers. Prevents rapid-fire re-triggers from spamming hover.
+export const SHIMMER_COOLDOWN_MS = 500; // Minimum time between shimmer triggers. Prevents rapid-fire re-triggers from spamming hover.
 export const COMBAT_TEXT_LIFETIME_MS = 3300; // How long floating combat text stays mounted; visual fade is slightly shorter so cleanup never clips it.
 export const COMBAT_TEXT_LANE_DELAY_MS = 80; // Stagger between multi-line combat text entries (creates a stacking effect).
 export const ANIMATION_STAGGER_UNIT = 0.08; // Base delay step (80ms) between consecutive animated elements.

@@ -10,6 +10,7 @@ import {
   ALCHEMIST_REFRESHES,
   POTION_CARD_ID_SUFFIX,
   MIXED_POTION_CARD_ID,
+  SHIMMER_COOLDOWN_MS,
 } from "@/lib/game-constants";
 import { sampleItems } from "@/features/alchemy/utils";
 import type { RewardState } from "@/features/alchemy/navigation/reward-flow";
@@ -45,8 +46,11 @@ const emptyAlchemist: AlchemistState = {
 
 type Setter<T> = (action: T | ((prev: T) => T)) => void;
 
+type ShimmerState = { cardId: string; token: number } | null;
+
 type ScreenStore = {
   hoveredCardId: string | null;
+  shimmerState: ShimmerState;
   hasActiveRun: boolean;
   activeLabyrinthModifiers: LabyrinthModifierKind[];
   activeLabyrinthRewardModifiers: LabyrinthModifierKind[];
@@ -63,7 +67,9 @@ type ScreenStore = {
   mysteryEvent: MysteryEvent | null;
   mysteryCardChoices: BattleCard[] | null;
 
+  shimmerState: ShimmerState;
   setHoveredCardId: (id: string | null | ((prev: string | null) => string | null)) => void;
+  maybeTriggerShimmer: (cardId: string) => void;
   setHasActiveRun: (active: boolean) => void;
   setActiveLabyrinthModifiers: (modifiers: LabyrinthModifierKind[]) => void;
   setActiveLabyrinthRewardModifiers: (modifiers: LabyrinthModifierKind[]) => void;
@@ -86,8 +92,9 @@ type ScreenStore = {
   beginMystery: () => void;
 };
 
-export const useScreenStore = create<ScreenStore>()((set) => ({
+export const useScreenStore = create<ScreenStore>()((set, get) => ({
   hoveredCardId: null,
+  shimmerState: null,
   hasActiveRun: false,
   activeLabyrinthModifiers: [],
   activeLabyrinthRewardModifiers: [],
@@ -105,6 +112,11 @@ export const useScreenStore = create<ScreenStore>()((set) => ({
   mysteryCardChoices: null,
 
   setHoveredCardId: (id) => set((s) => ({ hoveredCardId: typeof id === "function" ? id(s.hoveredCardId) : id })),
+  maybeTriggerShimmer: (cardId) => {
+    const state = get();
+    if (state.shimmerState && performance.now() - state.shimmerState.token < SHIMMER_COOLDOWN_MS) return;
+    set({ shimmerState: { cardId, token: performance.now() } });
+  },
   setHasActiveRun: (active) => set({ hasActiveRun: active }),
   setActiveLabyrinthModifiers: (modifiers) => set({ activeLabyrinthModifiers: modifiers }),
   setActiveLabyrinthRewardModifiers: (modifiers) => set({ activeLabyrinthRewardModifiers: modifiers }),

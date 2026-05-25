@@ -90,6 +90,11 @@ describe("migrateSaveDataToCurrent", () => {
     const result = migrateSaveDataToCurrent({ contentVersion: "old" });
     expect(result.contentVersion).toBe(CURRENT_CONTENT_VERSION);
   });
+
+  it("migration chain length matches CURRENT_SAVE_SCHEMA_VERSION", () => {
+    const result = migrateSaveDataToCurrent({});
+    expect(result.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
+  });
 });
 
 describe("legacy resolution→aspect ratio migration", () => {

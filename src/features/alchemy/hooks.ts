@@ -1,7 +1,7 @@
 // Viewport, Aspect Ratio, Resolution, and Mobile Input hooks/helpers.
 // Controls coordinate scaling mapping between virtual design stage and the physical screen.
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   DESIGN_STAGE_HEIGHT,
   MAX_STAGE_SCALE,
@@ -10,7 +10,6 @@ import {
   MOBILE_STAGE_HEIGHT,
   ORIENTATION_CHANGE_DEBOUNCE_MS,
   PORTRAIT_MOBILE_MAX_WIDTH,
-  SHIMMER_COOLDOWN_MS,
 } from "@/lib/game-constants";
 import type { AspectRatioOption } from "./types";
 
@@ -51,23 +50,6 @@ export function resolveAutoAspectRatio(
       ? key
       : best,
   );
-}
-
-/**
- * Tracks card shimmer cooldown and triggers to prevent spamming hover effects too quickly.
- */
-export function useShimmerController() {
-  const [shimmerState, setShimmerState] = useState<{ cardId: string; token: number } | null>(null);
-  const lastTriggerTimeRef = useRef(0);
-
-  function maybeTriggerShimmer(cardId: string) {
-    const now = performance.now();
-    if (now - lastTriggerTimeRef.current < SHIMMER_COOLDOWN_MS) return;
-    lastTriggerTimeRef.current = now;
-    setShimmerState({ cardId, token: performance.now() });
-  }
-
-  return { shimmerState, maybeTriggerShimmer };
 }
 
 /**

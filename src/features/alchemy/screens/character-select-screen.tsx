@@ -13,7 +13,7 @@ import { ScreenHeader } from "../ui/shared-ui";
 import { TiltSurface } from "../ui/tilt-surface";
 import { TooltipBody, TooltipHeader, TooltipPanel, TooltipSubheader, useTooltipFlip } from "../ui/tooltip-panel";
 import { cardSurfaceClass } from "../config";
-import { useBattleStore } from "../stores/battle-store";
+import { useScreenStore } from "../stores/screen-store";
 
 const charCardWidthClass = "w-[clamp(18vh,20.5vh,28vh)]";
 
@@ -115,8 +115,8 @@ export function CharacterSelectScreen({
   onBack: () => void;
 }) {
   const [selectedId, setSelectedId] = useState<CharacterId | null>(null);
-  const shimmerState = useBattleStore((s) => s.shimmerState);
-  const maybeTriggerShimmer = useBattleStore((s) => s.maybeTriggerShimmer);
+  const shimmerState = useScreenStore((s) => s.shimmerState);
+  const maybeTriggerShimmer = useScreenStore((s) => s.maybeTriggerShimmer);
 
   const charIds = Object.keys(characters) as CharacterId[];
   const selectedChar = selectedId ? characters[selectedId] : null;

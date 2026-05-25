@@ -13,7 +13,6 @@ import difficulty3Art from "@/assets/optimized/difficulty-3.webp";
 import { KeywordToken } from "../ui/card-ui";
 import { KeywordTag } from "../ui/keyword-tag";
 import { ScreenHeader, ShimmerOverlay } from "../ui/shared-ui";
-import { useShimmerController } from "../hooks";
 import { clearTiltFromEvent, setTiltFromEvent, tokenizeDescription } from "../utils";
 import { battleCardWidthClass, cardSurfaceClass, staticCardTransform } from "../config";
 import { TooltipPanel } from "../ui/tooltip-panel";
@@ -152,7 +151,8 @@ export function DifficultySelectScreen({
   const config = difficultyConfigs[characterId];
   const char = characters[characterId];
   const art = characterArt[char.id];
-  const { shimmerState, maybeTriggerShimmer } = useShimmerController();
+  const shimmerState = useScreenStore((s) => s.shimmerState);
+  const maybeTriggerShimmer = useScreenStore((s) => s.maybeTriggerShimmer);
 
   const canPlay = selectedDifficultyId !== null && isDifficultyUnlocked(selectedDifficultyId, completedDifficulties);
 

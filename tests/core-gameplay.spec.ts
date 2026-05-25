@@ -105,10 +105,10 @@ test.describe("Card Interactions", () => {
     expect(handBefore).toBeGreaterThanOrEqual(2);
 
     await battle.hand.nth(0).hover();
-    await expect(page.locator(".hover-popup-quick-in")).toBeVisible();
+    await expect(page.locator(".hover-popup-panel")).toBeVisible();
 
     await battle.hand.nth(1).hover();
-    await expect(page.locator(".hover-popup-quick-in")).toBeVisible();
+    await expect(page.locator(".hover-popup-panel")).toBeVisible();
 
     await battle.hand.nth(0).click();
     await expect(async () => expect(await battle.handCount()).toBe(handBefore - 1)).toPass({ timeout: 3000 });
