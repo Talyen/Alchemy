@@ -672,6 +672,7 @@ describe("consumeForgeAfterDamage", () => {
 
 describe("dealDamageToEnemy — lifesteal", () => {
   it("heals player when effect has lifesteal", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.99);
     const state = createTestBattleState({
       playerHealth: 20,
       gold: 50,
