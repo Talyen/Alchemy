@@ -182,6 +182,12 @@ describe("generateLabyrinthMap", () => {
 });
 
 describe("setCurrentNode", () => {
+  it("does not crash when targeting an out-of-bounds cell", () => {
+    const map = generateLabyrinthMap(createSeededRng(42));
+    setCurrentNode(map, -1, -1);
+    expect(map.currentNode).toEqual({ row: 0, col: START_COL });
+  });
+
   it("marks previous current as cleared and sets new current", () => {
     const map = generateLabyrinthMap(createSeededRng(42));
     // Start node is "current" after generation.
@@ -201,6 +207,20 @@ describe("setCurrentNode", () => {
 });
 
 describe("failNode", () => {
+  it("returns state unchanged when failing an already-failed node", () => {
+    const map = generateLabyrinthMap(createSeededRng(42));
+    const start = map.grid[0][START_COL]!;
+    if (start.connections.length > 0) {
+      const target = start.connections[0];
+      setCurrentNode(map, target.row, target.col);
+      const snapshot = { ...map, grid: map.grid.map((r) => r.map((n) => (n ? { ...n } : null))) };
+      failNode(map, target.row, target.col);
+      failNode(map, target.row, target.col);
+      expect(map.grid[target.row][target.col]!.state).toBe("failed");
+      expect(map.currentNode).toEqual({ row: 0, col: START_COL });
+    }
+  });
+
   it("marks node as failed and resets position to start", () => {
     const map = generateLabyrinthMap(createSeededRng(42));
     const start = map.grid[0][START_COL]!;

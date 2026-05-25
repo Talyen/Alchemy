@@ -342,6 +342,8 @@ function processEnemyAttack(state: BattleState, combatTexts: CombatTextEvent[]) 
       nextState = processEnemyDamageEffect(nextState, effect, combatTexts);
     } else if (effect.kind === "player-status") {
       nextState = applyPlayerStatusFromAttack(nextState, effect, combatTexts);
+    } else {
+      console.warn(`[Enemy Turn] Unknown enemy attack effect kind: ${(effect as { kind: string }).kind}`);
     }
   }
 
@@ -496,7 +498,7 @@ function resolveDeathsDoorEndOfEnemyTurn(state: BattleState): BattleState {
   if (!state.deathsDoorActive) return state;
   if (state.playerHealth > 0) return { ...state, deathsDoorActive: false, deathsDoorTriggeredTurn: null };
   if (state.deathsDoorTriggeredTurn === null) return state;
-  const graceTurns = 1 + (state.talentEffects.deathsDoorExtension ?? 0);
+  const graceTurns = 1 + Math.max(0, state.talentEffects.deathsDoorExtension ?? 0);
   if (state.turn - state.deathsDoorTriggeredTurn < graceTurns) return state;
   return { ...state, deathsDoorActive: false, deathsDoorTriggeredTurn: null };
 }
@@ -509,7 +511,11 @@ function processEnemyTraits(state: BattleState, combatTexts: CombatTextEvent[], 
   if (!scalingBlocked) {
     for (const trait of nextState.currentEnemy.traits) {
       const handler = enemyTraitTurnStartHandlers[trait.id];
-      if (handler) nextState = handler(nextState, combatTexts, { traitRoll });
+      if (handler) {
+        nextState = handler(nextState, combatTexts, { traitRoll });
+      } else {
+        console.warn(`[Enemy Turn] No turn-start handler for trait: ${trait.id}`);
+      }
     }
   }
 

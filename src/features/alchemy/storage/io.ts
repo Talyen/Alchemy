@@ -5,7 +5,7 @@ import { SAVE_KEY } from "@/lib/game-constants";
 
 import {
   SaveDataSchema,
-  getAndClearValidationErrors,
+  safeParseWithErrors,
   getRawContentVersion,
   getRawSaveSchemaVersion,
   isUnsupportedFutureContentData,
@@ -100,16 +100,15 @@ export function loadAlchemySaveState(): SaveLoadState {
     }
 
     writesDisabledForSession = false;
-    const result = SaveDataSchema.safeParse(parsed);
-    const validationErrors = getAndClearValidationErrors();
-    if (!result.success) {
+    const parsedResult = safeParseWithErrors(SaveDataSchema, parsed);
+    if (!parsedResult.success) {
       writesDisabledForSession = true;
-      logStorageFailure("Save data failed validation, falling back to defaults", result.error);
+      logStorageFailure("Save data failed validation, falling back to defaults", parsedResult.error);
       return { data: defaultSaveData, status: { kind: "corrupt" } };
     }
-    const data = result.data as SaveData;
+    const data = parsedResult.data as SaveData;
     const warnings = collectSaveRepairWarnings(parsed, data);
-    for (const ve of validationErrors) {
+    for (const ve of parsedResult.errors) {
       warnings.push(`Field "${ve.path}" was corrupt: ${ve.message}`);
     }
     if (warnings.length > 0) {

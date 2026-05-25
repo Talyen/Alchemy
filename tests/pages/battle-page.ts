@@ -13,6 +13,9 @@ export class BattlePage {
   readonly blockChip = this.page.getByRole("button", { name: /^Block \d+$/ }).first();
   readonly skipCombatBtn = this.page.getByRole("button", { name: "Skip Combat" });
   readonly menuBtn = this.page.getByRole("button", { name: "Menu" });
+  readonly companionPanel = this.page.getByTestId("active-companion");
+  readonly deathsDoorIcon = this.page.getByLabel("Death's Door");
+  readonly statusChip = (name: string) => this.page.getByRole("button", { name: new RegExp(`^${name} \\d+$`) });
 
   async mana(): Promise<number> {
     return Number(await this.manaPanel.getAttribute("data-mana"));

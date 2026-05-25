@@ -3,236 +3,7 @@ import { dealDamageToEnemy } from "@/lib/battle/damage";
 import type { BattleState, CombatTextEvent } from "@/lib/battle/types";
 import type { BattleCardEffect, BattleCard } from "@/lib/game-data";
 import { CRIT_MULTIPLIER, GOLD_TROVE_DAMAGE_REWARD } from "@/lib/game-constants";
-
-function baseState(overrides: Partial<BattleState> = {}): BattleState {
-  return {
-    deck: [],
-    hand: [],
-    discard: [],
-    exhausted: [],
-    mana: 4,
-    maxMana: 4,
-    gold: 0,
-    turn: 1,
-    turnPhase: "player",
-    playerHealth: 30,
-    playerMaxHealth: 30,
-    deathsDoorUsed: false,
-    deathsDoorActive: false,
-    deathsDoorTriggeredTurn: null,
-    enemyHealth: 30,
-    enemyMaxHealth: 30,
-    enemyAttackEffects: [],
-    enemyMitigation: { armor: 0, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 },
-    enemyRegeneration: 0,
-    roomScalingMultiplier: 1,
-    playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
-    enemyStatuses: { burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
-    pendingBleedLeechHealing: 0,
-    enemyStunSkipTurns: 0,
-    enemyFreezeSkipTurns: 0,
-    playerStunSkipTurns: 0,
-    playerFreezeSkipTurns: 0,
-    playerCCCooldown: 0,
-    enemyCCCooldown: 0,
-    wishOptions: null,
-    wishQueue: [],
-    activeCompanion: null,
-    companionDamageBuff: 0,
-    currentEnemy: {
-      id: "skeleton",
-      title: "Skeleton",
-      subtitle: "",
-      descriptionLines: [""],
-      art: "",
-      enemyType: "normal",
-      traits: [],
-      attackEffects: [],
-    },
-    talentEffects: {
-      flatPhysicalDamage: 0,
-      armorToPhysicalDamage: false,
-      physicalCritChance: 0,
-      firstPhysicalCardFree: false,
-      physicalVsStunnedMultiplier: 0,
-      physicalVsFrozenMultiplier: 0,
-      stunThresholdReduction: 0,
-      drawOnStun: 0,
-      nextCardFreeOnStun: false,
-      stunDurationExtension: 0,
-      stunDoubleDamage: false,
-      flatStunDamage: 0,
-      blockOnStun: 0,
-      forgeOnStun: 0,
-      stunStripArmor: false,
-      manaOnStun: 0,
-      startBlock: 0,
-      blockToPhysicalDamage: false,
-      blockPreventsBleed: false,
-      blockPreventsPoison: false,
-      blockPreventsStun: false,
-      blockAbsorbPhysicalBonus: 0,
-      blockReduceBurnDamage: 0,
-      blockDepletedHeal: 0,
-      blockToHolyDamage: false,
-      blockToStunDamage: false,
-      forgeToBurn: false,
-      forgeToHoly: false,
-      forgeToBlock: false,
-      forgeToBleed: false,
-      forgeBurnThreshold: 0,
-      forgeBurnDamage: 0,
-      startForge: 0,
-      forgeStripArmorThreshold: 0,
-      flatForgeGained: 0,
-      forgeDoubledBelowHalfHealth: false,
-      forgeBlockThreshold: 0,
-      forgeBlockAmount: 0,
-      armorMitigatesBurn: false,
-      armorBlockThreshold: 0,
-      armorBlockAmount: 0,
-      armorDoubledBelowHalfHealth: false,
-      firstArmorCardDoubled: false,
-      startArmor: 0,
-      armorMitigatesBleed: false,
-      armorBreakBlock: 0,
-      armorMitigatesStun: false,
-      armorCleanseThreshold: 0,
-      flatArmorAmount: 0,
-      campfireHealBonus: 0,
-      healthThresholdBlock: null,
-      maxHealthPerCombat: 0,
-      startHealth: 0,
-      healMultiplier: 1,
-      healthThresholdArmor: null,
-      overhealToBlockRatio: 0,
-      healOnStatusCleanse: 0,
-      deathsDoorExtension: 0,
-      damageReduction: 0,
-      firstBurnCardDoubled: false,
-      burnRemovesEnemyArmor: false,
-      burnDoubleChance: 0,
-      receiveHalfBurnDamage: false,
-      flatBurnDamage: 0,
-      forgeOnPlayerBurnDamage: 0,
-      burnReducesEnemyDamage: 0,
-      burnOnConsumeAmount: 0,
-      forgeOnBurnTickWithBlock: 0,
-      burnOnWish: 0,
-      shopCardDiscount: 0,
-      shopFreeRefresh: false,
-      startGold: 0,
-      goldPerCombat: 0,
-      potionDiscount: 0,
-      potionPotency: 0,
-      removeCardDiscount: 0,
-      enemyGoldDropBonus: 0,
-      eliteGoldDropBonus: 0,
-      goldOnWish: 0,
-      mixPotionDiscount: 0,
-      companionBondLevels: {},
-      holyLifestealPercent: 0,
-      firstHolyCardFree: false,
-      holyGoldPercent: 0,
-      holyBurnChance: 0,
-      receiveHalfHolyDamage: false,
-      holyBlockPercent: 0,
-      holyWishChance: 0,
-      holyBlockPercentFromDamage: 0,
-      holyVsBurnMultiplier: 0,
-      goldOnWishAmount: 0,
-      wishUndiscoveredCards: false,
-      healthOnWish: 0,
-      removeHarmfulStatusOnWish: false,
-      wishExtraChoiceChance: 0,
-      wishDrawsCard: false,
-      firstPoisonCardFree: false,
-      poisonPhysicalBonus: 0,
-      poisonGainChance: 0,
-      receiveHalfPoisonDamage: false,
-      goldOnFirstPoison: 0,
-      poisonHalvesHealing: false,
-      poisonStunChance: 0,
-      poisonStripArmor: false,
-      poisonReducesEnemyDamage: 0,
-      poisonLeechChance: 0,
-      companionDamage: 0,
-      companionGoldFindActive: false,
-      firstBleedCardFree: false,
-      bleedPhysicalBonus: 0,
-      bleedLeechChance: 0,
-      bleedExecuteThreshold: 0,
-      bleedDesperateMultiplier: 1,
-      bleedPoisonChance: 0,
-      bleedPoisonDamageTakenBonus: 0,
-      companionBleedDamageBonus: 0,
-      receiveHalfBleedDamage: false,
-      bleedHalvesEnemyHealing: false,
-      flatArrowDamage: 0,
-      freezeThresholdReduction: 0,
-      freezeDoubleDamage: false,
-      blockOnFreeze: 0,
-      freezeStripArmor: false,
-      startFreeze: 0,
-      companionVsFrozenBonus: 0,
-      freezePreventsPoisonDecay: false,
-      freezeBlocksRegen: false,
-      freezePreventsEnemyScaling: false,
-      receiveHalfFreezeBuildUp: false,
-      maxHealthPerCombat: 0,
-    },
-    trinketEffects: {
-      extraDrawPerBattle: 0,
-      firstHolyDamageDoubled: false,
-      firstBurnDoubled: false,
-      boneCharmHealOnKill: 0,
-      forgeStunThreshold: 0,
-      forgeStunAmount: 0,
-      frozenHeartDamage: 0,
-      blockToArmorThreshold: 0,
-      blockToArmorAmount: 0,
-      runicQuillDrawOnConsume: 0,
-      sinEaterHealOnHarmfulStatusRemove: 0,
-      vanguardCrestForgeOnBlockAbsorb: 0,
-      parasiticBloomLeechChance: 0,
-      cutpurseGoldOnBleed: 0,
-      wishingWellGoldOnWish: 0,
-      plagueDoctorImmunity: false,
-      mortarPestleFreeFirstPotion: false,
-      sunderingArmorPiercing: 0,
-      resonantChimeCardsRequired: 0,
-      resonantChimeMana: 0,
-      smugglersMapGoldBonus: 0,
-      grovesFavorStartHeal: 0,
-      merchantsFavorDiscount: 0,
-      companionDamageBonus: 0,
-      freezeDurationExtension: 0,
-      thunderstoneDamageOnStun: 0,
-      luckyCloverGoldChance: 0,
-    },
-    flags: {
-      firstPhysicalCardFreeUsed: false,
-      firstHolyCardFreeUsed: false,
-      firstBurnCardDoubledUsed: false,
-      firstArmorCardDoubledUsed: false,
-      firstPoisonCardFreeUsed: false,
-      firstBleedCardFreeUsed: false,
-      nextCardCostReduction: 0,
-      goldOnFirstPoisonThisCombat: false,
-      firstHolyDamageBonusUsed: false,
-      firstBurnTrinketDoubledUsed: false,
-      firstHarmfulStatusPrevented: false,
-      firstPotionFreeUsed: false,
-      resonantChimeUsedThisTurn: false,
-    },
-    discoveredCardIds: [],
-    cardsPlayedThisTurn: 0,
-    nextCardUid: 0,
-    difficultyModifiers: [],
-    rng: Math.random,
-    ...overrides,
-  };
-}
+import { createTestBattleState } from "./test-state";
 
 function makeCard(overrides: Partial<BattleCard> = {}): BattleCard {
   return {
@@ -265,7 +36,7 @@ afterEach(() => {
 
 describe("dealDamageToEnemy — basic physical damage", () => {
   it("deals base damage to enemy health", () => {
-    const state = baseState({ enemyHealth: 30 });
+    const state = createTestBattleState({ enemyHealth: 30 });
     const card = makeCard({ effects: [makeEffect("physical", 5)] });
     const result = dealDamageToEnemy(
       state,
@@ -277,7 +48,7 @@ describe("dealDamageToEnemy — basic physical damage", () => {
   });
 
   it("produces combat text for damage", () => {
-    const state = baseState({ enemyHealth: 30 });
+    const state = createTestBattleState({ enemyHealth: 30 });
     const card = makeCard({ effects: [makeEffect("physical", 5)] });
     const texts = makeTexts();
     dealDamageToEnemy(state, card, card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>, texts);
@@ -288,7 +59,7 @@ describe("dealDamageToEnemy — basic physical damage", () => {
 
 describe("computeBaseDamage — forge bonus", () => {
   it("adds forge bonus to physical damage", () => {
-    const state = baseState({ playerStatuses: { ...baseState().playerStatuses, forge: 3 } });
+    const state = createTestBattleState({ playerStatuses: { ...createTestBattleState().playerStatuses, forge: 3 } });
     const card = makeCard({ effects: [makeEffect("physical", 5)] });
     const texts = makeTexts();
     const result = dealDamageToEnemy(
@@ -301,9 +72,9 @@ describe("computeBaseDamage — forge bonus", () => {
   });
 
   it("adds forge to burn when forgeToBurn talent is active", () => {
-    const state = baseState({
-      playerStatuses: { ...baseState().playerStatuses, forge: 2 },
-      talentEffects: { ...baseState().talentEffects, forgeToBurn: true },
+    const state = createTestBattleState({
+      playerStatuses: { ...createTestBattleState().playerStatuses, forge: 2 },
+      talentEffects: { ...createTestBattleState().talentEffects, forgeToBurn: true },
     });
     const card = makeCard({ effects: [makeEffect("burn", 5)] });
     const texts = makeTexts();
@@ -318,9 +89,9 @@ describe("computeBaseDamage — forge bonus", () => {
   });
 
   it("adds forge to holy when forgeToHoly talent is active", () => {
-    const state = baseState({
-      playerStatuses: { ...baseState().playerStatuses, forge: 2 },
-      talentEffects: { ...baseState().talentEffects, forgeToHoly: true },
+    const state = createTestBattleState({
+      playerStatuses: { ...createTestBattleState().playerStatuses, forge: 2 },
+      talentEffects: { ...createTestBattleState().talentEffects, forgeToHoly: true },
     });
     const card = makeCard({ effects: [makeEffect("holy", 5)] });
     const texts = makeTexts();
@@ -335,9 +106,9 @@ describe("computeBaseDamage — forge bonus", () => {
   });
 
   it("adds forge to bleed when forgeToBleed talent is active", () => {
-    const state = baseState({
-      playerStatuses: { ...baseState().playerStatuses, forge: 2 },
-      talentEffects: { ...baseState().talentEffects, forgeToBleed: true },
+    const state = createTestBattleState({
+      playerStatuses: { ...createTestBattleState().playerStatuses, forge: 2 },
+      talentEffects: { ...createTestBattleState().talentEffects, forgeToBleed: true },
     });
     const card = makeCard({ effects: [makeEffect("bleed", 5)] });
     const texts = makeTexts();
@@ -353,7 +124,7 @@ describe("computeBaseDamage — forge bonus", () => {
 
 describe("computeBaseDamage — equalToBlock / equalToArmor", () => {
   it("damage equals block plus forge when equalToBlock", () => {
-    const state = baseState({ playerStatuses: { ...baseState().playerStatuses, block: 7 } });
+    const state = createTestBattleState({ playerStatuses: { ...createTestBattleState().playerStatuses, block: 7 } });
     const card = makeCard({ effects: [makeEffect("physical", 0, { equalToBlock: true })] });
     const texts = makeTexts();
     const result = dealDamageToEnemy(
@@ -366,7 +137,7 @@ describe("computeBaseDamage — equalToBlock / equalToArmor", () => {
   });
 
   it("damage equals armor plus forge when equalToArmor", () => {
-    const state = baseState({ playerStatuses: { ...baseState().playerStatuses, armor: 4 } });
+    const state = createTestBattleState({ playerStatuses: { ...createTestBattleState().playerStatuses, armor: 4 } });
     const card = makeCard({ effects: [makeEffect("physical", 0, { equalToArmor: true })] });
     const texts = makeTexts();
     const result = dealDamageToEnemy(
@@ -381,9 +152,9 @@ describe("computeBaseDamage — equalToBlock / equalToArmor", () => {
 
 describe("computeBaseDamage — holy damage", () => {
   it("scales holy damage with gold when holyGoldPercent is active", () => {
-    const state = baseState({
+    const state = createTestBattleState({
       gold: 50,
-      talentEffects: { ...baseState().talentEffects, holyGoldPercent: 10 },
+      talentEffects: { ...createTestBattleState().talentEffects, holyGoldPercent: 10 },
     });
     const card = makeCard({ effects: [makeEffect("holy", 5)] });
     const texts = makeTexts();
@@ -397,9 +168,9 @@ describe("computeBaseDamage — holy damage", () => {
   });
 
   it("scales holy damage with block when holyBlockPercent is active", () => {
-    const state = baseState({
-      playerStatuses: { ...baseState().playerStatuses, block: 10 },
-      talentEffects: { ...baseState().talentEffects, holyBlockPercent: 20 },
+    const state = createTestBattleState({
+      playerStatuses: { ...createTestBattleState().playerStatuses, block: 10 },
+      talentEffects: { ...createTestBattleState().talentEffects, holyBlockPercent: 20 },
     });
     const card = makeCard({ effects: [makeEffect("holy", 5)] });
     const texts = makeTexts();
@@ -413,9 +184,9 @@ describe("computeBaseDamage — holy damage", () => {
   });
 
   it("amplifies holy damage against burning enemies with holyVsBurnMultiplier", () => {
-    const state = baseState({
-      enemyStatuses: { ...baseState().enemyStatuses, burn: 5 },
-      talentEffects: { ...baseState().talentEffects, holyVsBurnMultiplier: 0.5 },
+    const state = createTestBattleState({
+      enemyStatuses: { ...createTestBattleState().enemyStatuses, burn: 5 },
+      talentEffects: { ...createTestBattleState().talentEffects, holyVsBurnMultiplier: 0.5 },
     });
     const card = makeCard({ effects: [makeEffect("holy", 5)] });
     const texts = makeTexts();
@@ -431,10 +202,10 @@ describe("computeBaseDamage — holy damage", () => {
 
 describe("computeBaseDamage — bleed damage", () => {
   it("applies bleed desperate multiplier when player below half health", () => {
-    const state = baseState({
+    const state = createTestBattleState({
       playerHealth: 10,
       playerMaxHealth: 30,
-      talentEffects: { ...baseState().talentEffects, bleedDesperateMultiplier: 1.5 },
+      talentEffects: { ...createTestBattleState().talentEffects, bleedDesperateMultiplier: 1.5 },
     });
     const card = makeCard({ effects: [makeEffect("bleed", 5)] });
     const texts = makeTexts();
@@ -448,10 +219,10 @@ describe("computeBaseDamage — bleed damage", () => {
   });
 
   it("applies bleed execute threshold multiplier", () => {
-    const state = baseState({
+    const state = createTestBattleState({
       enemyHealth: 5,
       enemyMaxHealth: 30,
-      talentEffects: { ...baseState().talentEffects, bleedExecuteThreshold: 25 },
+      talentEffects: { ...createTestBattleState().talentEffects, bleedExecuteThreshold: 25 },
     });
     const card = makeCard({ effects: [makeEffect("bleed", 5)] });
     const texts = makeTexts();
@@ -467,8 +238,8 @@ describe("computeBaseDamage — bleed damage", () => {
 
 describe("computeBaseDamage — arrow damage", () => {
   it("adds flatArrowDamage to arrow damage type", () => {
-    const state = baseState({
-      talentEffects: { ...baseState().talentEffects, flatArrowDamage: 3 },
+    const state = createTestBattleState({
+      talentEffects: { ...createTestBattleState().talentEffects, flatArrowDamage: 3 },
     });
     const card = makeCard({ effects: [makeEffect("arrow", 5)] });
     const texts = makeTexts();
@@ -485,8 +256,8 @@ describe("computeBaseDamage — arrow damage", () => {
 describe("computeBaseDamage — stun damage", () => {
   it("adds flatStunDamage to stun damage type", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
-    const state = baseState({
-      talentEffects: { ...baseState().talentEffects, flatStunDamage: 2 },
+    const state = createTestBattleState({
+      talentEffects: { ...createTestBattleState().talentEffects, flatStunDamage: 2 },
     });
     const card = makeCard({ effects: [makeEffect("stun", 5)] });
     const texts = makeTexts();
@@ -504,9 +275,9 @@ describe("computeBaseDamage — stun damage", () => {
 describe("computeBaseDamage — physical vs statuses", () => {
   it("adds poisonPhysicalBonus against poisoned enemies", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
-    const state = baseState({
-      enemyStatuses: { ...baseState().enemyStatuses, poison: 5 },
-      talentEffects: { ...baseState().talentEffects, poisonPhysicalBonus: 3 },
+    const state = createTestBattleState({
+      enemyStatuses: { ...createTestBattleState().enemyStatuses, poison: 5 },
+      talentEffects: { ...createTestBattleState().talentEffects, poisonPhysicalBonus: 3 },
     });
     const card = makeCard({ effects: [makeEffect("physical", 5)] });
     const texts = makeTexts();
@@ -522,9 +293,9 @@ describe("computeBaseDamage — physical vs statuses", () => {
 
   it("adds bleedPhysicalBonus against bleeding enemies", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
-    const state = baseState({
-      enemyStatuses: { ...baseState().enemyStatuses, bleed: 5 },
-      talentEffects: { ...baseState().talentEffects, bleedPhysicalBonus: 2 },
+    const state = createTestBattleState({
+      enemyStatuses: { ...createTestBattleState().enemyStatuses, bleed: 5 },
+      talentEffects: { ...createTestBattleState().talentEffects, bleedPhysicalBonus: 2 },
     });
     const card = makeCard({ effects: [makeEffect("physical", 5)] });
     const texts = makeTexts();
@@ -540,9 +311,9 @@ describe("computeBaseDamage — physical vs statuses", () => {
 
   it("amplifies physical damage against stunned enemies", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
-    const state = baseState({
+    const state = createTestBattleState({
       enemyStunSkipTurns: 1,
-      talentEffects: { ...baseState().talentEffects, physicalVsStunnedMultiplier: 25 },
+      talentEffects: { ...createTestBattleState().talentEffects, physicalVsStunnedMultiplier: 25 },
     });
     const card = makeCard({ effects: [makeEffect("physical", 10)] });
     const texts = makeTexts();
@@ -558,9 +329,9 @@ describe("computeBaseDamage — physical vs statuses", () => {
 
   it("amplifies physical damage against frozen enemies", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
-    const state = baseState({
+    const state = createTestBattleState({
       enemyFreezeSkipTurns: 1,
-      talentEffects: { ...baseState().talentEffects, physicalVsFrozenMultiplier: 50 },
+      talentEffects: { ...createTestBattleState().talentEffects, physicalVsFrozenMultiplier: 50 },
     });
     const card = makeCard({ effects: [makeEffect("physical", 10)] });
     const texts = makeTexts();
@@ -578,7 +349,7 @@ describe("computeBaseDamage — physical vs statuses", () => {
 describe("applyFirstDamageModifiers", () => {
   it("doubles first burn card damage when talent active", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99); // no crit
-    const state = baseState({ talentEffects: { ...baseState().talentEffects, firstBurnCardDoubled: true } });
+    const state = createTestBattleState({ talentEffects: { ...createTestBattleState().talentEffects, firstBurnCardDoubled: true } });
     const card = makeCard({ effects: [makeEffect("burn", 5)] });
     const texts = makeTexts();
     const result = dealDamageToEnemy(
@@ -588,14 +359,14 @@ describe("applyFirstDamageModifiers", () => {
       texts,
     );
     expect(result.flags.firstBurnCardDoubledUsed).toBe(true);
-    expect(result.enemyHealth).toBeLessThan(25);
+    expect(result.enemyHealth).toBe(20);
   });
 
   it("does not double second burn card when flag is used", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
-    const state = baseState({
-      talentEffects: { ...baseState().talentEffects, firstBurnCardDoubled: true },
-      flags: { ...baseState().flags, firstBurnCardDoubledUsed: true },
+    const state = createTestBattleState({
+      talentEffects: { ...createTestBattleState().talentEffects, firstBurnCardDoubled: true },
+      flags: { ...createTestBattleState().flags, firstBurnCardDoubledUsed: true },
     });
     const card = makeCard({ effects: [makeEffect("burn", 5)] });
     const texts = makeTexts();
@@ -606,12 +377,12 @@ describe("applyFirstDamageModifiers", () => {
       texts,
     );
     expect(result.flags.firstBurnCardDoubledUsed).toBe(true);
-    expect(result.enemyHealth).toBeGreaterThan(10);
+    expect(result.enemyHealth).toBe(25);
   });
 
   it("doubles first burn damage via trinket effect", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
-    const state = baseState({ trinketEffects: { ...baseState().trinketEffects, firstBurnDoubled: true } });
+    const state = createTestBattleState({ trinketEffects: { ...createTestBattleState().trinketEffects, firstBurnDoubled: true } });
     const card = makeCard({ effects: [makeEffect("burn", 5)] });
     const texts = makeTexts();
     const result = dealDamageToEnemy(
@@ -625,7 +396,7 @@ describe("applyFirstDamageModifiers", () => {
 
   it("doubles first holy damage when trinket effect active", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
-    const state = baseState({ trinketEffects: { ...baseState().trinketEffects, firstHolyDamageDoubled: true } });
+    const state = createTestBattleState({ trinketEffects: { ...createTestBattleState().trinketEffects, firstHolyDamageDoubled: true } });
     const card = makeCard({ effects: [makeEffect("holy", 5)] });
     const texts = makeTexts();
     const result = dealDamageToEnemy(
@@ -641,7 +412,7 @@ describe("applyFirstDamageModifiers", () => {
 describe("applyCrit", () => {
   it("applies crit multiplier when random rolls below threshold", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.01);
-    const state = baseState({ talentEffects: { ...baseState().talentEffects, physicalCritChance: 0 } });
+    const state = createTestBattleState({ talentEffects: { ...createTestBattleState().talentEffects, physicalCritChance: 0 } });
     const card = makeCard({ effects: [makeEffect("physical", 10)] });
     const texts = makeTexts();
     const result = dealDamageToEnemy(
@@ -650,13 +421,13 @@ describe("applyCrit", () => {
       card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
       texts,
     );
-    expect(result.enemyHealth).toBeLessThan(30 - 10);
+    expect(result.enemyHealth).toBe(30 - Math.floor(10 * CRIT_MULTIPLIER));
   });
 
   it("stacks physical crit chance with global crit chance", () => {
     // Total = 5 + 10 = 15. random() * 100 < 15 means random() < 0.15
     vi.spyOn(Math, "random").mockReturnValue(0.1);
-    const state = baseState({ talentEffects: { ...baseState().talentEffects, physicalCritChance: 10 } });
+    const state = createTestBattleState({ talentEffects: { ...createTestBattleState().talentEffects, physicalCritChance: 10 } });
     const card = makeCard({ effects: [makeEffect("physical", 10)] });
     const texts = makeTexts();
     const result = dealDamageToEnemy(
@@ -670,7 +441,7 @@ describe("applyCrit", () => {
 
   it("does not crit when random is above threshold", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
-    const state = baseState();
+    const state = createTestBattleState();
     const card = makeCard({ effects: [makeEffect("physical", 5)] });
     const texts = makeTexts();
     const result = dealDamageToEnemy(
@@ -679,16 +450,16 @@ describe("applyCrit", () => {
       card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
       texts,
     );
-    expect(result.enemyHealth).toBeGreaterThan(20);
+    expect(result.enemyHealth).toBe(25);
   });
 });
 
 describe("applyForgeStunRider", () => {
   it("stuns enemy when forge meets trinket threshold", () => {
-    const state = baseState({
-      playerStatuses: { ...baseState().playerStatuses, forge: 5 },
-      trinketEffects: { ...baseState().trinketEffects, forgeStunThreshold: 4, forgeStunAmount: 2 },
-      enemyStatuses: { ...baseState().enemyStatuses, stun: 15 },
+    const state = createTestBattleState({
+      playerStatuses: { ...createTestBattleState().playerStatuses, forge: 5 },
+      trinketEffects: { ...createTestBattleState().trinketEffects, forgeStunThreshold: 4, forgeStunAmount: 2 },
+      enemyStatuses: { ...createTestBattleState().enemyStatuses, stun: 15 },
     });
     const card = makeCard({ effects: [makeEffect("physical", 5)] });
     const texts = makeTexts();
@@ -702,9 +473,9 @@ describe("applyForgeStunRider", () => {
   });
 
   it("does not stun when forge is below threshold", () => {
-    const state = baseState({
-      playerStatuses: { ...baseState().playerStatuses, forge: 2 },
-      trinketEffects: { ...baseState().trinketEffects, forgeStunThreshold: 4, forgeStunAmount: 2 },
+    const state = createTestBattleState({
+      playerStatuses: { ...createTestBattleState().playerStatuses, forge: 2 },
+      trinketEffects: { ...createTestBattleState().trinketEffects, forgeStunThreshold: 4, forgeStunAmount: 2 },
     });
     const card = makeCard({ effects: [makeEffect("physical", 5)] });
     const texts = makeTexts();
@@ -720,9 +491,9 @@ describe("applyForgeStunRider", () => {
 
 describe("applyHolyDamageRiders", () => {
   it("heals player with holy lifesteal", () => {
-    const state = baseState({
+    const state = createTestBattleState({
       playerHealth: 20,
-      talentEffects: { ...baseState().talentEffects, holyLifestealPercent: 50 },
+      talentEffects: { ...createTestBattleState().talentEffects, holyLifestealPercent: 50 },
     });
     const card = makeCard({ effects: [makeEffect("holy", 10)] });
     const texts = makeTexts();
@@ -736,10 +507,10 @@ describe("applyHolyDamageRiders", () => {
   });
 
   it("grants block from holy damage with holyBlockPercentFromDamage", () => {
-    const state = baseState({
+    const state = createTestBattleState({
       gold: 50,
       talentEffects: {
-        ...baseState().talentEffects,
+        ...createTestBattleState().talentEffects,
         holyBlockPercentFromDamage: 25,
         holyGoldPercent: 10,
         holyLifestealPercent: 0,
@@ -758,8 +529,8 @@ describe("applyHolyDamageRiders", () => {
 
   it("applies burn on holy damage with holyBurnChance", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.01);
-    const state = baseState({
-      talentEffects: { ...baseState().talentEffects, holyBurnChance: 50, holyLifestealPercent: 0, holyGoldPercent: 0 },
+    const state = createTestBattleState({
+      talentEffects: { ...createTestBattleState().talentEffects, holyBurnChance: 50, holyLifestealPercent: 0, holyGoldPercent: 0 },
     });
     const card = makeCard({ effects: [makeEffect("holy", 10)] });
     const texts = makeTexts();
@@ -775,7 +546,7 @@ describe("applyHolyDamageRiders", () => {
 
 describe("applyGoldTroveReward", () => {
   it("grants gold when enemy has gold-trove trait", () => {
-    const state = baseState({
+    const state = createTestBattleState({
       gold: 0,
       currentEnemy: {
         id: "mimic",
@@ -800,7 +571,7 @@ describe("applyGoldTroveReward", () => {
   });
 
   it("does not grant gold without gold-trove trait", () => {
-    const state = baseState({ gold: 0 });
+    const state = createTestBattleState({ gold: 0 });
     const card = makeCard({ effects: [makeEffect("physical", 5)] });
     const texts = makeTexts();
     const result = dealDamageToEnemy(
@@ -815,7 +586,7 @@ describe("applyGoldTroveReward", () => {
 
 describe("consumeForgeAfterDamage", () => {
   it("consumes 1 forge after physical damage", () => {
-    const state = baseState({ playerStatuses: { ...baseState().playerStatuses, forge: 3 } });
+    const state = createTestBattleState({ playerStatuses: { ...createTestBattleState().playerStatuses, forge: 3 } });
     const card = makeCard({ effects: [makeEffect("physical", 5)] });
     const texts = makeTexts();
     const result = dealDamageToEnemy(
@@ -828,7 +599,7 @@ describe("consumeForgeAfterDamage", () => {
   });
 
   it("consumes 1 forge after stun damage", () => {
-    const state = baseState({ playerStatuses: { ...baseState().playerStatuses, forge: 3 } });
+    const state = createTestBattleState({ playerStatuses: { ...createTestBattleState().playerStatuses, forge: 3 } });
     const card = makeCard({ effects: [makeEffect("stun", 5)] });
     const texts = makeTexts();
     const result = dealDamageToEnemy(
@@ -841,9 +612,9 @@ describe("consumeForgeAfterDamage", () => {
   });
 
   it("consumes 1 forge after burn damage when forgeToBurn talent is active", () => {
-    const state = baseState({
-      playerStatuses: { ...baseState().playerStatuses, forge: 3 },
-      talentEffects: { ...baseState().talentEffects, forgeToBurn: true },
+    const state = createTestBattleState({
+      playerStatuses: { ...createTestBattleState().playerStatuses, forge: 3 },
+      talentEffects: { ...createTestBattleState().talentEffects, forgeToBurn: true },
     });
     const card = makeCard({ effects: [makeEffect("burn", 5)] });
     const texts = makeTexts();
@@ -857,9 +628,9 @@ describe("consumeForgeAfterDamage", () => {
   });
 
   it("consumes 1 forge after holy damage when forgeToHoly talent is active", () => {
-    const state = baseState({
-      playerStatuses: { ...baseState().playerStatuses, forge: 3 },
-      talentEffects: { ...baseState().talentEffects, forgeToHoly: true },
+    const state = createTestBattleState({
+      playerStatuses: { ...createTestBattleState().playerStatuses, forge: 3 },
+      talentEffects: { ...createTestBattleState().talentEffects, forgeToHoly: true },
     });
     const card = makeCard({ effects: [makeEffect("holy", 5)] });
     const texts = makeTexts();
@@ -873,7 +644,7 @@ describe("consumeForgeAfterDamage", () => {
   });
 
   it("does not consume forge for burn damage without talent", () => {
-    const state = baseState({ playerStatuses: { ...baseState().playerStatuses, forge: 3 } });
+    const state = createTestBattleState({ playerStatuses: { ...createTestBattleState().playerStatuses, forge: 3 } });
     const card = makeCard({ effects: [makeEffect("burn", 5)] });
     const texts = makeTexts();
     const result = dealDamageToEnemy(
@@ -886,7 +657,7 @@ describe("consumeForgeAfterDamage", () => {
   });
 
   it("does not consume forge for holy damage without talent", () => {
-    const state = baseState({ playerStatuses: { ...baseState().playerStatuses, forge: 3 } });
+    const state = createTestBattleState({ playerStatuses: { ...createTestBattleState().playerStatuses, forge: 3 } });
     const card = makeCard({ effects: [makeEffect("holy", 5)] });
     const texts = makeTexts();
     const result = dealDamageToEnemy(
@@ -901,10 +672,10 @@ describe("consumeForgeAfterDamage", () => {
 
 describe("dealDamageToEnemy — lifesteal", () => {
   it("heals player when effect has lifesteal", () => {
-    const state = baseState({
+    const state = createTestBattleState({
       playerHealth: 20,
       gold: 50,
-      talentEffects: { ...baseState().talentEffects, healMultiplier: 0.5 },
+      talentEffects: { ...createTestBattleState().talentEffects, healMultiplier: 0.5 },
     });
     const card = makeCard({ effects: [makeEffect("physical", 10, { lifesteal: true })] });
     const texts = makeTexts();
@@ -914,14 +685,14 @@ describe("dealDamageToEnemy — lifesteal", () => {
       card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
       texts,
     );
-    expect(result.playerHealth).toBeGreaterThan(20);
+    expect(result.playerHealth).toBe(25);
   });
 });
 
 describe("dealDamageToEnemy — enemy armor", () => {
   it("physical damage is reduced by enemy armor", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
-    const state = baseState({ enemyMitigation: { armor: 3, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 } });
+    const state = createTestBattleState({ enemyMitigation: { armor: 3, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 } });
     const card = makeCard({ effects: [makeEffect("physical", 10)] });
     const texts = makeTexts();
     const result = dealDamageToEnemy(
@@ -936,9 +707,9 @@ describe("dealDamageToEnemy — enemy armor", () => {
 
   it("sunderingArmorPiercing removes enemy armor", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
-    const state = baseState({
+    const state = createTestBattleState({
       enemyMitigation: { armor: 5, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 },
-      trinketEffects: { ...baseState().trinketEffects, sunderingArmorPiercing: 2 },
+      trinketEffects: { ...createTestBattleState().trinketEffects, sunderingArmorPiercing: 2 },
     });
     const card = makeCard({ effects: [makeEffect("physical", 10)] });
     const texts = makeTexts();
@@ -955,7 +726,7 @@ describe("dealDamageToEnemy — enemy armor", () => {
 
   it("non-physical damage ignores enemy armor", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
-    const state = baseState({ enemyMitigation: { armor: 5, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 } });
+    const state = createTestBattleState({ enemyMitigation: { armor: 5, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 } });
     const card = makeCard({ effects: [makeEffect("burn", 10)] });
     const texts = makeTexts();
     const result = dealDamageToEnemy(
@@ -971,7 +742,7 @@ describe("dealDamageToEnemy — enemy armor", () => {
 
 describe("dealDamageToEnemy — edge cases", () => {
   it("does not decrease health below 0", () => {
-    const state = baseState({ enemyHealth: 3 });
+    const state = createTestBattleState({ enemyHealth: 3 });
     const card = makeCard({ effects: [makeEffect("physical", 100)] });
     const texts = makeTexts();
     const result = dealDamageToEnemy(
@@ -984,7 +755,7 @@ describe("dealDamageToEnemy — edge cases", () => {
   });
 
   it("handles zero damage gracefully", () => {
-    const state = baseState({ enemyHealth: 30, enemyMitigation: { armor: 0, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 } });
+    const state = createTestBattleState({ enemyHealth: 30, enemyMitigation: { armor: 0, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 } });
     const card = makeCard({ effects: [makeEffect("physical", 0)] });
     const texts = makeTexts();
     const result = dealDamageToEnemy(

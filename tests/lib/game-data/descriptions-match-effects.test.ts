@@ -101,8 +101,12 @@ describe("card descriptions vs effects", () => {
       ).length;
       const cleanseEffects = countByKind(effects, "remove-player-status");
 
-      if (!hasEqualToBlockOrArmor(effects) && !hasKind(effects, "self-damage")) {
-        expect(dealLines).toBe(damageEffects);
+      if (!hasEqualToBlockOrArmor(effects)) {
+        if (hasKind(effects, "self-damage")) {
+          expect(descriptionLines.some((l) => /self|Receive/.test(l))).toBe(true);
+        } else {
+          expect(dealLines).toBe(damageEffects);
+        }
       }
 
       expect(healLines).toBe(healEffects);

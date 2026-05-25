@@ -56,6 +56,7 @@ export default defineConfig(({ mode }) => ({
   },
   test: {
     include: ["tests/**/*.test.ts", "tests/**/*.test.tsx"],
+    setupFiles: ["tests/setup.ts"],
     coverage: {
       provider: "v8",
       include: ["src/lib/**", "src/features/alchemy/**"],

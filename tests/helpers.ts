@@ -98,6 +98,23 @@ export const ANVIL_CARD = { id: "anvil", title: "Anvil", descriptionLines: ["Gai
 
 export const MANA_BERRIES_CARD = { id: "mana-berries", title: "Mana Berries", descriptionLines: ["Restore 2 Mana", "Consume"], art: "placeholder", cost: 1, consume: true, effects: [{ kind: "restore-mana", amount: 2 }] };
 
+export function makeStatusCard(damageType: string, amount: number, overrides: Record<string, unknown> = {}) {
+  return {
+    id: `test-${damageType}`, title: damageType.charAt(0).toUpperCase() + damageType.slice(1),
+    descriptionLines: [`Deal ${amount} ${damageType} damage`],
+    art: "placeholder", cost: 0,
+    effects: [{ kind: "damage", damageType, amount }],
+    ...overrides,
+  };
+}
+
+export const WOLF_COMPANION_CARD = {
+  id: "wolf-companion", title: "Wolf",
+  descriptionLines: ["Summon a wolf ally"],
+  art: "placeholder", cost: 1,
+  effects: [{ kind: "summon-companion", companionId: "wolf" as const }],
+};
+
 export function makeHighDamageCard(amount = 500) {
   return {
     id: "boss-killer", title: "Boss Killer", descriptionLines: ["Deal massive damage"],
@@ -142,17 +159,6 @@ export const STARTING_DECK: Record<string, unknown>[] = [
 export async function forceNextDestinationChoice(page: Page, destination: DestinationName) {
   const randomValue = DESTINATION_RANDOM_VALUES[destination];
   await page.addInitScript((value) => {
-    let seed = 42;
-    window.disableForceDestination = false;
-    Math.random = () => {
-      if (window.disableForceDestination) {
-        seed = (seed * 1664525 + 1013904223) & 0x7fffffff;
-        return seed / 0x7fffffff;
-      }
-      return value;
-    };
-  }, randomValue);
-  await page.evaluate((value) => {
     let seed = 42;
     window.disableForceDestination = false;
     Math.random = () => {

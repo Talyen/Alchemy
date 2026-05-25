@@ -4,7 +4,7 @@
 // Used by: storage/io.ts (SaveDataSchema.safeParse), storage/migrations.ts (normalizeSaveData wrapper).
 import { z } from "zod";
 import { defaultBattleState, type BattleState } from "@/lib/battle";
-import { isPersistedBattleState } from "@/features/alchemy/storage/active-run";
+import { isPersistedBattleState } from "./battle-state-guard";
 import {
   characters,
   companionLibrary,
@@ -35,27 +35,42 @@ import { CURRENT_SAVE_SCHEMA_VERSION, CURRENT_GAME_BUILD_VERSION, CURRENT_CONTEN
 import { migrateSaveDataToCurrent } from "./migration";
 import { createEmptyTierRecord } from "@/lib/homestead/tiers";
 
-// Validation error accumulator — cleared before each parse, readable after.
-// Callers (e.g., storage/io.ts) check this after safeParse to detect silent fallbacks.
 export type ValidationError = { path: string; message: string };
-const _validationErrors: ValidationError[] = [];
-export function getAndClearValidationErrors(): ValidationError[] {
-  const errors = [..._validationErrors];
-  _validationErrors.length = 0;
-  return errors;
+
+// Scoped error collector used during safeParseWithErrors.  Set before parse, cleared after.
+// Accessed by caught() preprocess closures to accumulate field-level validation failures.
+let _currentErrorCollector: ValidationError[] | null = null;
+
+// Wraps schema.safeParse() to collect field-level validation errors from caught() preprocessors.
+// This is the only correct way to parse schemas that use the caught() helper.
+export function safeParseWithErrors<T>(
+  schema: z.ZodType<T>,
+  data: unknown,
+):
+  | { success: true; data: T; errors: ValidationError[] }
+  | { success: false; error: z.ZodError; errors: ValidationError[] } {
+  const errors: ValidationError[] = [];
+  _currentErrorCollector = errors;
+  try {
+    const result = schema.safeParse(data);
+    return result.success
+      ? { success: true, data: result.data, errors }
+      : { success: false, error: result.error, errors };
+  } finally {
+    _currentErrorCollector = null;
+  }
 }
 
 // Wraps schema.catch() to collect and log validation failures instead of swallowing them.
 // Returns a preprocess pipeline: tries the inner schema, and on failure logs the error,
 // collects it in the global error list, and returns the fallback.
-// Returns val (not result.data) on success so the schema downstream does not double-parse.
+// Returns result.data on success so the downstream schema.parse() is a no-op on already-valid data.
 function caught<T>(schema: z.ZodType<T>, fallback: T, path: string): z.ZodType<T> {
   return z.preprocess((val) => {
-    if (val === undefined) return fallback;
+    if (val == null) return fallback;
     const result = schema.safeParse(val);
     if (!result.success) {
-      const error: ValidationError = { path, message: result.error.message };
-      _validationErrors.push(error);
+      _currentErrorCollector?.push({ path, message: result.error.message });
       console.error(`[Save Validation] Field "${path}" invalid, fell back to default:`, result.error.message);
       return fallback;
     }
@@ -65,18 +80,9 @@ function caught<T>(schema: z.ZodType<T>, fallback: T, path: string): z.ZodType<T
 
 // Wraps field validation so undefined/missing parses fall back to a safe default
 // and log an error.  Other type mismatches are handled by each field's own .catch().
+// Delegates to caught() — identical logic.
 function withFallbackOnUndefined<T>(schema: z.ZodType<T>, fallback: T, fieldName: string): z.ZodType<T> {
-  return z.preprocess((val) => {
-    if (val === undefined) return fallback;
-    const res = schema.safeParse(val);
-    if (!res.success) {
-      const error: ValidationError = { path: fieldName, message: res.error.message };
-      _validationErrors.push(error);
-      console.error(`[Save Validation] Field "${fieldName}" invalid, fell back to default:`, res.error.message);
-      return fallback;
-    }
-    return res.data;
-  }, schema);
+  return caught(schema, fallback, fieldName);
 }
 
 // Deduplicates a string array from save data: drops non-strings, deduplicates, defaults to [].
@@ -169,40 +175,39 @@ export const TalentXPSchema = z.preprocess((val) => {
   for (const [key, xp] of Object.entries(val as Record<string, unknown>)) {
     if (typeof xp === "number" && Number.isFinite(xp) && xp >= 0) {
       result[key] = Math.floor(xp);
+    } else {
+      console.warn(
+        `[Save Validation] Talent XP for key "${key}" dropped: expected a non-negative finite number, got ${typeof xp === "number" ? String(xp) : typeof xp}`,
+      );
     }
   }
   return result;
 }, z.record(z.string(), z.number().int().nonnegative()).catch({}));
 
-export const UnlockedTalentsSchema = z.preprocess(
-  (val) => {
-    if (!val || typeof val !== "object") return {};
-    const result: Record<string, string[]> = {};
-    for (const [key, ids] of Object.entries(val as Record<string, unknown>)) {
-      if (Array.isArray(ids)) {
-        result[key] = [...new Set(ids.filter((v): v is string => typeof v === "string"))];
+// Shared preprocess for Record<string, string[]> schemas (talent unlocks, completed difficulties).
+// defaultFactory optionally provides initial keys, e.g. one entry per character.
+function recordOfStringArraysSchema(defaultFactory?: () => Record<string, string[]>) {
+  return z.preprocess(
+    (val) => {
+      if (!val || typeof val !== "object") return defaultFactory?.() ?? {};
+      const result: Record<string, string[]> = { ...(defaultFactory?.() ?? {}) };
+      for (const [key, ids] of Object.entries(val as Record<string, unknown>)) {
+        if (Array.isArray(ids)) {
+          result[key] = [...new Set(ids.filter((v): v is string => typeof v === "string"))];
+        } else if (defaultFactory) {
+          result[key] = result[key] ?? [];
+        }
       }
-    }
-    return result;
-  },
-  z.record(z.string(), z.array(z.string())).catch({}),
-);
+      return result;
+    },
+    z.record(z.string(), z.array(z.string())).catch({}),
+  );
+}
 
-export const CompletedDifficultiesSchema = z.preprocess(
-  (val) => {
-    // Seed from CHARACTER_IDS so adding a new character automatically gains an empty slot.
-    const result: Record<string, string[]> = Object.fromEntries(CHARACTER_IDS.map((id) => [id, []]));
-    if (!val || typeof val !== "object") return result;
-    for (const [key, ids] of Object.entries(val as Record<string, unknown>)) {
-      if (Array.isArray(ids)) {
-        result[key] = [...new Set(ids.filter((v): v is string => typeof v === "string"))];
-      } else {
-        result[key] = result[key] ?? [];
-      }
-    }
-    return result;
-  },
-  z.record(z.string(), z.array(z.string())).catch({}),
+export const UnlockedTalentsSchema = recordOfStringArraysSchema();
+
+export const CompletedDifficultiesSchema = recordOfStringArraysSchema(() =>
+  Object.fromEntries(CHARACTER_IDS.map((id) => [id, []])),
 );
 
 // ===== Tier Record (buildings, farms, research, companions) =====
@@ -483,7 +488,18 @@ export const ActiveCombatDataSchema = z
 
 // Pure normalization step extracted from the schema for reuse by normalizeActiveRun and io.ts.
 // Returns the full data object with normalized fields spread over the input.
-export function normalizeActiveRunData(data: Record<string, unknown>) {
+export function normalizeActiveRunData<T extends Record<string, unknown>>(
+  data: T,
+): T & {
+  contentSystemType: string;
+  runPlayerHealth: number;
+  completedDestinations: string[];
+  runDeck: unknown;
+  runTalentXP: Record<string, number>;
+  labyrinthMap: unknown;
+  labyrinthPendingNode: unknown;
+  activeCombat: unknown;
+} {
   const labyrinthMap = data.labyrinthMap;
   let contentSystemType = data.contentSystemType as string;
   if (contentSystemType === "labyrinth" && !labyrinthMap) {
@@ -570,7 +586,7 @@ export const ActiveRunDataSchema = z
     ).default(null),
     destinationChoices: caught(z.array(z.string()), [], "activeRun.destinationChoices").default([]),
   })
-  .transform((data) => normalizeActiveRunData(data as Record<string, unknown>) as typeof data)
+  .transform((data) => normalizeActiveRunData(data))
   .refine((data) => data.contentSystemType !== "labyrinth" || data.labyrinthMap !== null, {
     message: "Labyrinth runs require a valid labyrinth map",
   });

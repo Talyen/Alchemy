@@ -47,8 +47,10 @@ import { useScreenStore } from "./stores/screen-store";
 import { getBattleStartPlayerHealth } from "./battle/battle-start";
 import { createTransferCancelRegistry } from "./battle/transfer-lifecycle";
 import {
+  centeredRectForSize,
   defaultMeasureElementRect,
   defaultMeasureVisualCardRect,
+  getCardKey,
   getCardTransferBatchSpeed,
   playCompanionSound,
 } from "./battle/controller-utils";
@@ -110,6 +112,7 @@ export function useBattleController({
   const [cardTransfers, setCardTransfers] = useState<CardTransfer[]>([]);
   const [hiddenHandCardKeys, setHiddenHandCardKeys] = useState<Set<string>>(new Set());
   const [cardTransferInProgress, setCardTransferInProgress] = useState(false);
+  const transferIdCounterRef = useRef(0);
 
   // ─── Session lifecycle ───
   function invalidateBattleSession() {
@@ -120,11 +123,13 @@ export function useBattleController({
     return session === battleSessionRef.current && getStore().hasActiveBattle;
   }
 
-  function runIfSessionActive<T>(session: number, fn: () => T, fallback?: T): T {
+  function runIfSessionActive<T>(session: number, fn: () => T, fallback: T): T;
+  function runIfSessionActive<T>(session: number, fn: () => T): T | undefined;
+  function runIfSessionActive<T>(session: number, fn: () => T, fallback?: T): T | undefined {
     if (session === battleSessionRef.current && getStore().hasActiveBattle) {
       return fn();
     }
-    return fallback as T;
+    return fallback;
   }
 
   function handleVictoryDefeat(kind: "victory" | "defeat") {
@@ -209,10 +214,6 @@ export function useBattleController({
     return useBattleStore.getState();
   }
 
-  function getCardKey(card: BattleCard) {
-    return `${card.id}-${card.uid}`;
-  }
-
   function playTransferSound(delay = 0) {
     if (!getStore().hasActiveBattle) return;
     playBattleEvent("drawTransfer", { volume: CARD_TRANSFER_CONFIG.soundVolume, delay });
@@ -226,18 +227,10 @@ export function useBattleController({
     return measureVisualCardRect(element, battleSceneRef.current);
   }
 
-  function centeredRectForSize(centerSource: CardRect, width: number, height: number): CardRect {
-    return {
-      x: centerSource.x + centerSource.width / 2 - width / 2,
-      y: centerSource.y + centerSource.height / 2 - height / 2,
-      width,
-      height,
-    };
-  }
-
   function runCardTransfer(transfer: Omit<CardTransfer, "id">, onComplete?: () => void): Promise<void> {
     return new Promise((resolve) => {
-      const id = `${performance.now()}-${Math.random()}`;
+      transferIdCounterRef.current += 1;
+      const id = `transfer-${transferIdCounterRef.current}`;
       let completed = false;
       let unregisterCancel = () => {};
       const finish = (completeTransfer: boolean) => {

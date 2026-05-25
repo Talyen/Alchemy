@@ -1,6 +1,7 @@
 // Extracted utility functions for battle controller card measurement, transfer timing, and companion audio.
 import { playCardSound } from "@/lib/audio";
 import { CARD_TRANSFER_CONFIG, COMPANION_SOUND_CARD_IDS } from "@/lib/game-constants";
+import type { BattleCard } from "@/lib/game-data";
 import type { CardRect } from "../types";
 import { getBattleSceneLocalRect, viewportRectToBattleSceneRect } from "./card-ghost-animation";
 
@@ -27,6 +28,19 @@ export function defaultMeasureElementRect(
     { x: rect.left, y: rect.top, width: rect.width, height: rect.height },
     sceneRect,
   );
+}
+
+export function getCardKey(card: BattleCard) {
+  return `${card.id}-${card.uid}`;
+}
+
+export function centeredRectForSize(centerSource: CardRect, width: number, height: number): CardRect {
+  return {
+    x: centerSource.x + centerSource.width / 2 - width / 2,
+    y: centerSource.y + centerSource.height / 2 - height / 2,
+    width,
+    height,
+  };
 }
 
 export function defaultMeasureVisualCardRect(
