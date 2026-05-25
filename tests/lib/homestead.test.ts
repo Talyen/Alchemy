@@ -221,11 +221,34 @@ describe("computeHomesteadEffects", () => {
   });
 
   it("combines multiple tiered upgrades", () => {
-    const effects = computeHomesteadEffects({ "blacksmiths-forge": 2, "hunters-lodge": 1, "alchemy-lab": 3 }, {}, {});
+    const effects = computeHomesteadEffects({ "blacksmiths-forge": 2, "companion-sanctuary": 1, "alchemy-lab": 3 }, {}, {});
     expect(effects.flatPhysicalDamage).toBe(2);
     expect(effects.forgeToBurn).toBe(true);
     expect(effects.companionDamage).toBe(1);
     expect(effects.potionPotency).toBeCloseTo(0.5);
+  });
+
+  it("runesmiths-workshop adds flatBurnDamage, flatFreezeDamage, flatNatureDamage across tiers", () => {
+    const effects = computeHomesteadEffects({ "runesmiths-workshop": 3 }, {}, {});
+    expect(effects.flatBurnDamage).toBe(1);
+    expect(effects.flatFreezeDamage).toBe(1);
+    expect(effects.flatNatureDamage).toBe(1);
+  });
+
+  it("hunters-lodge adds flatArrowDamage and flatNatureDamage", () => {
+    const effects = computeHomesteadEffects({ "hunters-lodge": 3 }, {}, {});
+    expect(effects.flatArrowDamage).toBe(3);
+    expect(effects.flatNatureDamage).toBe(3);
+  });
+
+  it("companion-sanctuary adds companionDamage", () => {
+    const effects = computeHomesteadEffects({ "companion-sanctuary": 3 }, {}, {});
+    expect(effects.companionDamage).toBe(3);
+  });
+
+  it("wishing-well adds wishCrystalGold", () => {
+    const effects = computeHomesteadEffects({ "wishing-well": 2 }, {}, {});
+    expect(effects.wishCrystalGold).toBe(2);
   });
 
   it("ignores unknown building IDs", () => {
@@ -275,6 +298,9 @@ describe("mergeIntoManifest", () => {
     expect(merged.companionBondLevels.wolf).toBe(2);
     expect(merged.forgeToBurn).toBe(true);
     expect(merged.healMultiplier).toBe(1);
+    expect(merged.flatFreezeDamage).toBe(0);
+    expect(merged.flatNatureDamage).toBe(0);
+    expect(merged.wishCrystalGold).toBe(0);
   });
 
   it("preserves non-merged talent fields", () => {

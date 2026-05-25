@@ -74,5 +74,17 @@ export function mergeIntoManifest(
     potionDiscount: talentEffects.potionDiscount + Math.round(homesteadEffects.potionDiscount * 100) / 100,
     potionPotency: talentEffects.potionPotency + homesteadEffects.potionPotency,
     forgeToBurn: talentEffects.forgeToBurn || homesteadEffects.forgeToBurn,
+    flatBurnDamage: talentEffects.flatBurnDamage + homesteadEffects.flatBurnDamage,
+    flatArrowDamage: talentEffects.flatArrowDamage + homesteadEffects.flatArrowDamage,
+    flatFreezeDamage: talentEffects.flatFreezeDamage + homesteadEffects.flatFreezeDamage,
+    flatNatureDamage: talentEffects.flatNatureDamage + homesteadEffects.flatNatureDamage,
+    wishCrystalGold: talentEffects.wishCrystalGold + homesteadEffects.wishCrystalGold,
+    startMana: talentEffects.startMana + homesteadEffects.startMana,
+    consumeHealMultiplier: talentEffects.consumeHealMultiplier + homesteadEffects.consumeHealMultiplier,
+    potionMixPotency: talentEffects.potionMixPotency + homesteadEffects.potionMixPotency,
+    trinketChanceBonus: talentEffects.trinketChanceBonus + homesteadEffects.trinketChanceBonus,
+    burnDamageReduction: talentEffects.burnDamageReduction + homesteadEffects.burnDamageReduction,
+    freezeDamageReduction: talentEffects.freezeDamageReduction + homesteadEffects.freezeDamageReduction,
+    natureDamageReduction: talentEffects.natureDamageReduction + homesteadEffects.natureDamageReduction,
   };
 }

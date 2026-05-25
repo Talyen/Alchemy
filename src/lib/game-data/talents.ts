@@ -63,21 +63,21 @@ export const talentPool: TalentDefinition[] = [
     id: "physical-dmg-1",
     keywordId: "physical",
     name: "Heavy Blows",
-    description: "Increase Physical Damage by 1",
+    description: "Increase Physical damage by 1",
     effects: [addEffect("flatPhysicalDamage", 1)],
   },
   {
     id: "physical-dmg-2",
     keywordId: "physical",
     name: "Brute Force",
-    description: "Increase Physical Damage by 1",
+    description: "Increase Physical damage by 1",
     effects: [addEffect("flatPhysicalDamage", 1)],
   },
   {
     id: "physical-dmg-3",
     keywordId: "physical",
     name: "Crushing Strikes",
-    description: "Increase Physical Damage by 1",
+    description: "Increase Physical damage by 1",
     effects: [addEffect("flatPhysicalDamage", 1)],
   },
   {
@@ -105,28 +105,28 @@ export const talentPool: TalentDefinition[] = [
     id: "physical-armor",
     keywordId: "physical",
     name: "Armored Fists",
-    description: "Physical Damage is increased by your Armor",
+    description: "Physical damage is increased by your Armor",
     effects: [setEffect("armorToPhysicalDamage", true)],
   },
   {
     id: "physical-crit",
     keywordId: "physical",
     name: "Keen Edge",
-    description: "Physical Damage has +5% Critical Chance",
+    description: "Physical damage has +5% Critical Chance",
     effects: [setEffect("physicalCritChance", 5)],
   },
   {
     id: "physical-dmg-4",
     keywordId: "physical",
     name: "Raw Power",
-    description: "Increase Physical Damage by 1",
+    description: "Increase Physical damage by 1",
     effects: [addEffect("flatPhysicalDamage", 1)],
   },
   {
     id: "physical-dmg-5",
     keywordId: "physical",
     name: "Unrelenting",
-    description: "Increase Physical Damage by 1",
+    description: "Increase Physical damage by 1",
     effects: [addEffect("flatPhysicalDamage", 1)],
   },
 
@@ -170,7 +170,7 @@ export const talentPool: TalentDefinition[] = [
     id: "stun-damage-1",
     keywordId: "stun",
     name: "Jarring Blow",
-    description: "Stun damage +1",
+    description: "Increase Stun damage by 1",
     effects: [addEffect("flatStunDamage", 1)],
   },
   {
@@ -207,7 +207,7 @@ export const talentPool: TalentDefinition[] = [
     id: "block-start",
     keywordId: "block",
     name: "Fortify",
-    description: "Start combat with 10 Block",
+    description: "Start each combat with 10 Block",
     effects: [setEffect("startBlock", 10)],
   },
   {
@@ -300,14 +300,14 @@ export const talentPool: TalentDefinition[] = [
     id: "forge-burn-burst",
     keywordId: "forge",
     name: "Overheat",
-    description: "Upon reaching 4 Forge, deal 8 Burn",
+    description: "When you reach 4 Forge, deal 8 Burn",
     effects: [setEffect("forgeBurnThreshold", 4), setEffect("forgeBurnDamage", 8)],
   },
   {
     id: "forge-strength-1",
     keywordId: "forge",
     name: "Forge Mastery",
-    description: "Start combat with 2 Forge",
+    description: "Start each combat with 2 Forge",
     effects: [setEffect("startForge", 2)],
   },
   {
@@ -342,7 +342,7 @@ export const talentPool: TalentDefinition[] = [
     id: "forge-strength-6",
     keywordId: "forge",
     name: "Forged Bulwark",
-    description: "Upon reaching 6 Forge, gain 10 Block",
+    description: "When you reach 6 Forge, gain 10 Block",
     effects: [setEffect("forgeBlockThreshold", 6), setEffect("forgeBlockAmount", 10)],
   },
 
@@ -358,7 +358,7 @@ export const talentPool: TalentDefinition[] = [
     id: "armor-block-burst",
     keywordId: "armor",
     name: "Armored Surge",
-    description: "Upon reaching 4 Armor, gain 8 Block",
+    description: "When you reach 4 Armor, gain 8 Block",
     effects: [setEffect("armorBlockThreshold", 4), setEffect("armorBlockAmount", 8)],
   },
   {
@@ -393,7 +393,7 @@ export const talentPool: TalentDefinition[] = [
     id: "armor-break-block",
     keywordId: "armor",
     name: "Reactive Guard",
-    description: "When your Armor breaks, gain 5 Block",
+    description: "When Armor breaks, gain 5 Block",
     effects: [setEffect("armorBreakBlock", 5)],
   },
   {
@@ -407,7 +407,7 @@ export const talentPool: TalentDefinition[] = [
     id: "armor-cleanse-threshold",
     keywordId: "armor",
     name: "Purification",
-    description: "Upon reaching 6 Armor, cleanse all harmful status effects",
+    description: "When you reach 6 Armor, cleanse all harmful status effects",
     effects: [setEffect("armorCleanseThreshold", 6)],
   },
   {
@@ -444,7 +444,7 @@ export const talentPool: TalentDefinition[] = [
     id: "health-start",
     keywordId: "health",
     name: "Combat Surge",
-    description: "Gain 4 Health at the start of combat",
+    description: "Start each combat with 4 Health",
     effects: [setEffect("startHealth", 4)],
   },
   {
@@ -523,7 +523,7 @@ export const talentPool: TalentDefinition[] = [
     id: "burn-dmg-1",
     keywordId: "burn",
     name: "Flashpoint",
-    description: "Burn damage +1",
+    description: "Increase Burn damage by 1",
     effects: [addEffect("flatBurnDamage", 1)],
   },
   {
@@ -732,7 +732,7 @@ export const talentPool: TalentDefinition[] = [
     id: "wish-cleanse",
     keywordId: "wish",
     name: "Purifying Wish",
-    description: "Remove a harmful status effect when you Wish",
+    description: "Cleanse a harmful status effect when you Wish",
     effects: [setEffect("removeHarmfulStatusOnWish", true)],
   },
   {
@@ -862,7 +862,7 @@ export const talentPool: TalentDefinition[] = [
     id: "bleed-physical-bonus",
     keywordId: "bleed",
     name: "Open Wound",
-    description: "Bleed increases Physical damage taken by 1",
+    description: "Enemies with Bleed take +1 Physical damage",
     effects: [setEffect("bleedPhysicalBonus", 1)],
   },
   {
@@ -883,7 +883,7 @@ export const talentPool: TalentDefinition[] = [
     id: "bleed-wound-care",
     keywordId: "bleed",
     name: "Wound Care",
-    description: "Bleed damage taken is reduced by half",
+    description: "Receive half Bleed damage",
     effects: [setEffect("receiveHalfBleedDamage", true)],
   },
   {
@@ -922,8 +922,77 @@ export const talentPool: TalentDefinition[] = [
     effects: [addEffect("companionBleedDamageBonus", 1)],
   },
 
-  // --- Other keywords (placeholders retained for grid completeness) ---
-  ...placeholderTalents("leech", "leech-heal", 1, 10),
+  // --- Leech ---
+  {
+    id: "leech-first-double",
+    keywordId: "leech",
+    name: "First Blood",
+    description: "Your first Leech card each combat heals for double",
+    effects: [setEffect("firstLeechCardDoubled", true)],
+  },
+  {
+    id: "leech-desperate",
+    keywordId: "leech",
+    name: "Desperate Siphon",
+    description: "Leech is 20% more effective while below 50% Health",
+    effects: [setEffect("leechDesperateMultiplier", 20)],
+  },
+  {
+    id: "leech-blood-debt",
+    keywordId: "leech",
+    name: "Blood Debt",
+    description: "Leech heals for 1 more per 8 missing Health",
+    effects: [setEffect("leechMissingHealthStep", 8)],
+  },
+  {
+    id: "leech-bleed-chance",
+    keywordId: "leech",
+    name: "Hemorrhage",
+    description: "Leech has a 10% chance to Bleed",
+    effects: [setEffect("leechBleedChance", 10)],
+  },
+  {
+    id: "leech-cull-weak",
+    keywordId: "leech",
+    name: "Cull the Weak",
+    description: "Leech is 20% more effective against enemies below 50% Health",
+    effects: [setEffect("leechExecuteMultiplier", 20)],
+  },
+  {
+    id: "leech-mana-siphon",
+    keywordId: "leech",
+    name: "Mana Siphon",
+    description: "Leech has a 10% chance to gain 1 Mana",
+    effects: [setEffect("manaOnLeechChance", 10)],
+  },
+  {
+    id: "leech-boon-siphon",
+    keywordId: "leech",
+    name: "Boon Siphon",
+    description: "Leech has a 20% chance to steal 1 Forge, Armor, or Block",
+    effects: [setEffect("boonSiphonChance", 20)],
+  },
+  {
+    id: "leech-poison",
+    keywordId: "leech",
+    name: "Virulent Leech",
+    description: "Leech has a 10% chance to Poison",
+    effects: [setEffect("leechPoisonChance", 10)],
+  },
+  {
+    id: "leech-block-enemy",
+    keywordId: "leech",
+    name: "Blood Type",
+    description: "Enemies cannot restore Health when they Leech",
+    effects: [setEffect("blockEnemyLeech", true)],
+  },
+  {
+    id: "leech-nature-chance",
+    keywordId: "leech",
+    name: "Carnivorous Nature",
+    description: "Nature damage has a 10% chance to Leech",
+    effects: [setEffect("natureLeechChance", 10)],
+  },
 
   {
     id: "freeze-threshold",
@@ -943,7 +1012,7 @@ export const talentPool: TalentDefinition[] = [
     id: "freeze-start-amount",
     keywordId: "freeze",
     name: "Winter's Grasp",
-    description: "At the start of combat, apply 4 Freeze to the enemy",
+    description: "Start each combat by applying 4 Freeze to the enemy",
     effects: [setEffect("startFreeze", 4)],
   },
   {
@@ -971,14 +1040,14 @@ export const talentPool: TalentDefinition[] = [
     id: "freeze-half-damage",
     keywordId: "freeze",
     name: "Cold Resistance",
-    description: "Freeze damage received is reduced by half",
+    description: "Receive half Freeze damage",
     effects: [setEffect("receiveHalfFreezeBuildUp", true)],
   },
   {
     id: "freeze-poison-preserve",
     keywordId: "freeze",
     name: "Cryo-preservation",
-    description: "Poison stacks on Frozen enemies don't decay",
+    description: "Poison stacks on Frozen enemies cannot decay",
     effects: [setEffect("freezePreventsPoisonDecay", true)],
   },
   {
@@ -1109,11 +1178,15 @@ const DEFAULT_TALENT_EFFECTS: TalentEffectManifest = {
   maxHealthPerCombat: 0,
   startHealth: 0,
   healMultiplier: 1,
+  consumeHealMultiplier: 0,
   healthThresholdArmor: null,
   overhealToBlockRatio: 0,
   healOnStatusCleanse: 0,
   deathsDoorExtension: 0,
   damageReduction: 0,
+  burnDamageReduction: 0,
+  freezeDamageReduction: 0,
+  natureDamageReduction: 0,
 
   firstBurnCardDoubled: false,
   burnRemovesEnemyArmor: false,
@@ -1132,6 +1205,7 @@ const DEFAULT_TALENT_EFFECTS: TalentEffectManifest = {
   goldPerCombat: 0,
   potionDiscount: 0,
   potionPotency: 1,
+  potionMixPotency: 0,
   removeCardDiscount: 0,
   enemyGoldDropBonus: 0,
   eliteGoldDropBonus: 0,
@@ -1160,6 +1234,9 @@ const DEFAULT_TALENT_EFFECTS: TalentEffectManifest = {
   wishBoonChoice: false,
   wishBlockBelowHealthPct: 0,
   wishCardsUpgraded: false,
+  wishCrystalGold: 0,
+  startMana: 0,
+  trinketChanceBonus: 0,
 
   firstPoisonCardFree: false,
   poisonPhysicalBonus: 0,
@@ -1185,8 +1262,11 @@ const DEFAULT_TALENT_EFFECTS: TalentEffectManifest = {
   freezeBlocksRegen: false,
   freezePreventsEnemyScaling: false,
   receiveHalfFreezeBuildUp: false,
+  flatFreezeDamage: 0,
 
   flatArrowDamage: 0,
+
+  flatNatureDamage: 0,
 
   firstBleedCardFree: false,
   bleedPhysicalBonus: 0,
@@ -1198,6 +1278,17 @@ const DEFAULT_TALENT_EFFECTS: TalentEffectManifest = {
   companionBleedDamageBonus: 0,
   receiveHalfBleedDamage: false,
   bleedHalvesEnemyHealing: false,
+
+  firstLeechCardDoubled: false,
+  leechDesperateMultiplier: 0,
+  leechMissingHealthStep: 0,
+  leechBleedChance: 0,
+  leechExecuteMultiplier: 0,
+  manaOnLeechChance: 0,
+  boonSiphonChance: 0,
+  leechPoisonChance: 0,
+  blockEnemyLeech: false,
+  natureLeechChance: 0,
 };
 
 // Returns a manifest with all zero/false/null values — the safe default when no talents are

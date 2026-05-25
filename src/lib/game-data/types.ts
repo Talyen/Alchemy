@@ -192,11 +192,15 @@ export type TalentEffectManifest = {
   maxHealthPerCombat: number;
   startHealth: number;
   healMultiplier: number;
+  consumeHealMultiplier: number;
   healthThresholdArmor: { threshold: number; amount: number } | null;
   overhealToBlockRatio: number;
   healOnStatusCleanse: number;
   deathsDoorExtension: number;
   damageReduction: number;
+  burnDamageReduction: number;
+  freezeDamageReduction: number;
+  natureDamageReduction: number;
 
   // --- Burn ---
   firstBurnCardDoubled: boolean;
@@ -217,6 +221,7 @@ export type TalentEffectManifest = {
   goldPerCombat: number;
   potionDiscount: number;
   potionPotency: number;
+  potionMixPotency: number;
   removeCardDiscount: number;
   enemyGoldDropBonus: number;
   eliteGoldDropBonus: number;
@@ -265,6 +270,15 @@ export type TalentEffectManifest = {
   companionDamage: number;
   companionGoldFindActive: boolean;
 
+  // --- Wishing Well ---
+  wishCrystalGold: number;
+
+  // --- Mana ---
+  startMana: number;
+
+  // --- Trinket ---
+  trinketChanceBonus: number;
+
   // --- Freeze ---
   freezeThresholdReduction: number;
   freezeDoubleDamage: boolean;
@@ -276,9 +290,13 @@ export type TalentEffectManifest = {
   freezeBlocksRegen: boolean;
   freezePreventsEnemyScaling: boolean;
   receiveHalfFreezeBuildUp: boolean;
+  flatFreezeDamage: number;
 
   // --- Arrow ---
   flatArrowDamage: number;
+
+  // --- Nature ---
+  flatNatureDamage: number;
 
   // --- Bleed ---
   firstBleedCardFree: boolean;
@@ -291,6 +309,18 @@ export type TalentEffectManifest = {
   companionBleedDamageBonus: number;
   receiveHalfBleedDamage: boolean;
   bleedHalvesEnemyHealing: boolean;
+
+  // --- Leech ---
+  firstLeechCardDoubled: boolean;
+  leechDesperateMultiplier: number;
+  leechMissingHealthStep: number;
+  leechBleedChance: number;
+  leechExecuteMultiplier: number;
+  manaOnLeechChance: number;
+  boonSiphonChance: number;
+  leechPoisonChance: number;
+  blockEnemyLeech: boolean;
+  natureLeechChance: number;
 };
 
 export const harmfulPlayerStatusIds: PlayerStatusId[] = ["burn", "poison", "bleed", "freeze", "stun"];

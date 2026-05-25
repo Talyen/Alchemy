@@ -271,6 +271,7 @@ function applyEnemyAttackLifesteal(
   combatTexts: CombatTextEvent[],
 ): BattleState {
   if (isFreezeBlockingRegen(state)) return state;
+  if (state.talentEffects.blockEnemyLeech) return state;
   mergeCombatText(combatTexts, { target: "enemy", kind: "heal", stat: "health", amount: actualDamage });
   return {
     ...state,
@@ -288,7 +289,7 @@ function processEnemyDamageEffect(
   const prevHealth = state.playerHealth;
   let nextState: BattleState = {
     ...state,
-    ...applyPlayerCombatDamage(state, actualDamage),
+    ...applyPlayerCombatDamage(state, actualDamage, effect.damageType),
     playerStatuses: {
       ...state.playerStatuses,
       block: state.playerStatuses.block - Math.min(blockAbsorb, state.playerStatuses.block),
@@ -555,44 +556,35 @@ function finalizePlayerTurn(state: BattleState, combatTexts: CombatTextEvent[]) 
   return { state: finalState, combatTexts, playerTurnSkipped: finalState.turnPhase === "enemy" };
 }
 
-function resolveHasteTurn(
-  state: BattleState,
-  combatTexts: CombatTextEvent[],
-  enemyTurnStartCombatTexts: CombatTextEvent[],
-  enemyResolutionCombatTexts: CombatTextEvent[],
-) {
+type CombatTextResult = { state: BattleState; texts: CombatTextEvent[] };
+
+function resolveHasteTurn(state: BattleState) {
+  const combatTexts: CombatTextEvent[] = [];
   const nextState = processHasteEarlyTurn(state);
   return {
     ...finalizePlayerTurn(nextState, combatTexts),
-    enemyTurnStartCombatTexts,
-    enemyResolutionCombatTexts,
+    enemyTurnStartCombatTexts: [] as CombatTextEvent[],
+    enemyResolutionCombatTexts: [] as CombatTextEvent[],
     enemyPerformedAttack: false,
   };
 }
 
-function resolveSkippedEnemyTurn(
-  state: BattleState,
-  combatTexts: CombatTextEvent[],
-  enemyTurnStartCombatTexts: CombatTextEvent[],
-  enemyResolutionCombatTexts: CombatTextEvent[],
-  options?: { traitRoll?: number },
-) {
+function resolveSkippedEnemyTurn(state: BattleState, options?: { traitRoll?: number }) {
+  const enemyTurnStartCombatTexts: CombatTextEvent[] = [];
+  const enemyResolutionCombatTexts: CombatTextEvent[] = [];
   let nextState = state;
 
   // Turn start: tick enemy DoTs (burn/poison/bleed)
   nextState = tickEnemyStatuses(nextState, enemyTurnStartCombatTexts);
-  combatTexts.push(...enemyTurnStartCombatTexts);
   const enemyTurnStartState = nextState;
 
   // Resolution: traits, player DoTs, regen — but skip the attack.
-  // Traits are processed before reduceSkipTurns so isScalingBlocked
-  // still sees the pre-reduction freeze skip count (traitRoll generated
-  // inside processEnemyTraits, or provided via options for testing).
   nextState = processEnemyTraits(nextState, enemyResolutionCombatTexts, options);
   nextState = reduceSkipTurns(nextState);
   nextState = tickPlayerStatuses(nextState, enemyResolutionCombatTexts);
   nextState = processEnemyRegeneration(nextState, enemyResolutionCombatTexts);
-  combatTexts.push(...enemyResolutionCombatTexts);
+
+  const combatTexts = [...enemyTurnStartCombatTexts, ...enemyResolutionCombatTexts];
 
   return {
     ...finalizePlayerTurn(nextState, combatTexts),
@@ -603,66 +595,54 @@ function resolveSkippedEnemyTurn(
   };
 }
 
-function resolveEnemyTurnStart(state: BattleState, combatTexts: CombatTextEvent[], phaseTexts: CombatTextEvent[]) {
-  const nextState = tickEnemyStatuses(state, phaseTexts);
-  combatTexts.push(...phaseTexts);
-  return nextState;
+function resolveEnemyTurnStart(state: BattleState): CombatTextResult {
+  const texts: CombatTextEvent[] = [];
+  const nextState = tickEnemyStatuses(state, texts);
+  return { state: nextState, texts };
 }
 
-function resolveEnemyAction(
-  state: BattleState,
-  combatTexts: CombatTextEvent[],
-  phaseTexts: CombatTextEvent[],
-  options?: { traitRoll?: number },
-) {
-  let nextState = processEnemyTraits(state, phaseTexts, options);
-  nextState = processEnemyAttack(nextState, phaseTexts);
-  nextState = tickPlayerStatuses(nextState, phaseTexts);
-  nextState = processEnemyRegeneration(nextState, phaseTexts);
-  combatTexts.push(...phaseTexts);
-  return nextState;
+function resolveEnemyAction(state: BattleState, options?: { traitRoll?: number }): CombatTextResult {
+  const texts: CombatTextEvent[] = [];
+  let nextState = processEnemyTraits(state, texts, options);
+  nextState = processEnemyAttack(nextState, texts);
+  nextState = tickPlayerStatuses(nextState, texts);
+  nextState = processEnemyRegeneration(nextState, texts);
+  return { state: nextState, texts };
 }
 
 export function endPlayerTurn(state: BattleState, options?: { traitRoll?: number }): EndPlayerTurnResolution {
-  const combatTexts: CombatTextEvent[] = [];
-  const enemyTurnStartCombatTexts: CombatTextEvent[] = [];
-  const enemyResolutionCombatTexts: CombatTextEvent[] = [];
-  let nextState = beginEnemyPhase(state);
+  const nextState = beginEnemyPhase(state);
 
   if (state.playerStatuses.haste > 0) {
-    return resolveHasteTurn(nextState, combatTexts, enemyTurnStartCombatTexts, enemyResolutionCombatTexts);
+    return resolveHasteTurn(nextState);
   }
 
   if (state.enemyStunSkipTurns + state.enemyFreezeSkipTurns > 0) {
-    return resolveSkippedEnemyTurn(
-      nextState,
-      combatTexts,
-      enemyTurnStartCombatTexts,
-      enemyResolutionCombatTexts,
-      options,
-    );
+    return resolveSkippedEnemyTurn(nextState, options);
   }
 
-  nextState = resolveEnemyTurnStart(nextState, combatTexts, enemyTurnStartCombatTexts);
-  const enemyTurnStartState = nextState;
+  const startResult = resolveEnemyTurnStart(nextState);
+  const enemyTurnStartState = startResult.state;
+  const enemyTurnStartCombatTexts = startResult.texts;
 
-  if (nextState.enemyHealth <= 0) {
+  if (enemyTurnStartState.enemyHealth <= 0) {
     return {
-      ...finalizePlayerTurn(nextState, combatTexts),
+      ...finalizePlayerTurn(enemyTurnStartState, []),
       enemyTurnStartState,
       enemyTurnStartCombatTexts,
-      enemyResolutionCombatTexts,
+      enemyResolutionCombatTexts: [],
       enemyPerformedAttack: false,
     };
   }
 
-  nextState = resolveEnemyAction(nextState, combatTexts, enemyResolutionCombatTexts, options);
+  const actionResult = resolveEnemyAction(enemyTurnStartState, options);
+  const combatTexts = [...enemyTurnStartCombatTexts, ...actionResult.texts];
 
   return {
-    ...finalizePlayerTurn(nextState, combatTexts),
+    ...finalizePlayerTurn(actionResult.state, combatTexts),
     enemyTurnStartState,
     enemyTurnStartCombatTexts,
-    enemyResolutionCombatTexts,
+    enemyResolutionCombatTexts: actionResult.texts,
     enemyPerformedAttack: true,
   };
 }

@@ -29,5 +29,7 @@ export {
   LabyrinthNodeSchema,
   LabyrinthMapSchema,
   ActiveRunDataSchema,
+  normalizeActiveRunData,
   SaveDataSchema,
+  getAndClearValidationErrors,
 } from "./save-schemas";

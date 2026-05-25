@@ -11,6 +11,8 @@ import { emitOverhealBlockText, mergeCombatText } from "./combat-text";
 import { removeHarmfulPlayerStatuses } from "./status-effects";
 import { PERCENT_DENOMINATOR, WISH_CHOICE_COUNT, MAX_HAND_SIZE, MIXED_POTION_CARD_ID } from "../game-constants";
 
+const WISH_CRYSTAL_GOLD_CHANCE = 0.5;
+
 export function buildWishOptions(state: BattleState, card: BattleCard): BattleCard[] {
   const baseCount =
     WISH_CHOICE_COUNT + (state.rng() * PERCENT_DENOMINATOR < state.talentEffects.wishExtraChoiceChance ? 1 : 0);
@@ -59,6 +61,20 @@ function applyWishGoldTriggers(state: BattleState, combatTexts: CombatTextEvent[
   return nextState;
 }
 
+function applyWishCrystalGoldTrigger(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
+  const amount = state.talentEffects.wishCrystalGold;
+  if (amount <= 0) return state;
+  if (state.rng() < WISH_CRYSTAL_GOLD_CHANCE) {
+    mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "gold", amount });
+    return addGold(state, amount);
+  }
+  mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "crystal", amount });
+  return {
+    ...state,
+    pendingMaterials: { ...state.pendingMaterials, crystal: state.pendingMaterials.crystal + amount },
+  };
+}
+
 function applyWishHealthAndStatusTriggers(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   let nextState = state;
   if (nextState.talentEffects.healthOnWish > 0) {
@@ -104,6 +120,7 @@ export function applyWishEffect(state: BattleState, card: BattleCard, amount: nu
 
   for (let i = 0; i < wishCount; i += 1) {
     nextState = applyWishGoldTriggers(nextState, combatTexts);
+    nextState = applyWishCrystalGoldTrigger(nextState, combatTexts);
     nextState = applyWishHealthAndStatusTriggers(nextState, combatTexts);
     nextState = applyWishDrawTriggers(nextState);
     nextState = applyWishBurnTrigger(nextState, combatTexts);

@@ -55,6 +55,11 @@ export const enemyBestiary: BestiaryEntry[] = [
         title: "Rusting Carapace",
         description: "Gains Forge each turn",
       },
+      {
+        id: "starting-block",
+        title: "Sturdy Plating",
+        description: "Starts with 6 Block",
+      },
     ],
     attackEffects: [
       { kind: "damage", damageType: "physical", amount: 5 },
@@ -241,7 +246,7 @@ export const trinketLibrary: TrinketEntry[] = [
   {
     id: "tattered-pages",
     title: "Tattered Pages",
-    descriptionLines: ["Draw 1 additional card at the start of combat."],
+    descriptionLines: ["Draw 1 at the start of combat."],
     art: tatteredPages,
   },
   {
@@ -259,7 +264,7 @@ export const trinketLibrary: TrinketEntry[] = [
   {
     id: "obsidian-hammer",
     title: "Obsidian Hammer",
-    descriptionLines: ["When you have 4 or more Forge, your Physical attacks also Stun for 1."],
+    descriptionLines: ["When you have 4 or more Forge, your Physical damage also applies 1 Stun."],
     art: obsidianHammer,
   },
   {
@@ -277,13 +282,13 @@ export const trinketLibrary: TrinketEntry[] = [
   {
     id: "runic-quill",
     title: "Runic Quill",
-    descriptionLines: ["Draw a card when you Consume a card."],
+    descriptionLines: ["Draw 1 when you Consume."],
     art: runicQuill,
   },
   {
     id: "sin-eaters-lantern",
     title: "Sin-Eater's Lantern",
-    descriptionLines: ["Gain 6 Health when you remove a harmful status effect from yourself."],
+    descriptionLines: ["Gain 6 Health when you remove a harmful status effect."],
     art: sinEatersLantern,
   },
   {
@@ -319,19 +324,19 @@ export const trinketLibrary: TrinketEntry[] = [
   {
     id: "plague-doctors-mask",
     title: "Plague Doctor's Mask",
-    descriptionLines: ["You are immune to the first harmful status effect you would receive each battle."],
+    descriptionLines: ["You are immune to the first harmful status effect you would receive each combat."],
     art: plagueDoctorsMask,
   },
   {
     id: "mortar-and-pestle",
     title: "Mortar and Pestle",
-    descriptionLines: ["The first Potion card you play each combat is free."],
+    descriptionLines: ["The first Potion you play each combat is free."],
     art: mortarAndPestle,
   },
   {
     id: "sundering-charm",
     title: "Sundering Charm",
-    descriptionLines: ["Your Physical and Stun attacks remove 2 enemy Armor."],
+    descriptionLines: ["Your Physical and Stun damage removes 2 enemy Armor."],
     art: sunderingCharm,
   },
   {
@@ -349,7 +354,7 @@ export const trinketLibrary: TrinketEntry[] = [
   {
     id: "groves-favor",
     title: "Grove's Favor",
-    descriptionLines: ["Restore 2 Health at the start of each battle."],
+    descriptionLines: ["Restore 2 Health at the start of each combat."],
     art: grovesFavor,
   },
   {

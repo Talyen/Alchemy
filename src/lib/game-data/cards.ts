@@ -84,7 +84,7 @@ export const cardLibrary: BattleCard[] = [
   {
     id: "cleanse",
     title: "Cleanse",
-    descriptionLines: ["Remove a harmful status effect"],
+    descriptionLines: ["Cleanse 1 harmful status effect"],
     art: cleanse,
     cost: 1,
     effects: [{ kind: "remove-harmful-status", amount: 1 }],
@@ -195,7 +195,7 @@ export const cardLibrary: BattleCard[] = [
   {
     id: "acid-potion",
     title: "Acid Potion",
-    descriptionLines: ["Deal 3 Poison", "Consume"],
+    descriptionLines: ["Deal 3 Poison damage", "Consume"],
     art: acidPotion,
     cost: 1,
     consume: true,
@@ -212,7 +212,7 @@ export const cardLibrary: BattleCard[] = [
   {
     id: "apple",
     title: "Apple",
-    descriptionLines: ["Gain 5 Health", "Consume"],
+    descriptionLines: ["Restore 5 Health", "Consume"],
     art: apple,
     cost: 1,
     consume: true,
@@ -237,7 +237,7 @@ export const cardLibrary: BattleCard[] = [
   {
     id: "bread",
     title: "Bread",
-    descriptionLines: ["Gain 5 Health", "Consume"],
+    descriptionLines: ["Restore 5 Health", "Consume"],
     art: bread,
     cost: 1,
     consume: true,
@@ -319,7 +319,7 @@ export const cardLibrary: BattleCard[] = [
   {
     id: "imp-companion",
     title: "Imp",
-    descriptionLines: ["Deals 2 Burn damage each turn", "Companion"],
+    descriptionLines: ["Deals 1 Burn damage each turn", "Companion"],
     art: impCompanion,
     cost: 1,
     consume: true,
@@ -328,7 +328,7 @@ export const cardLibrary: BattleCard[] = [
   {
     id: "frost-whelp-companion",
     title: "Frost Whelp",
-    descriptionLines: ["Deals 2 Freeze damage each turn", "Companion"],
+    descriptionLines: ["Deals 1 Freeze damage each turn", "Companion"],
     art: frostWhelpCompanion,
     cost: 1,
     consume: true,
@@ -337,7 +337,7 @@ export const cardLibrary: BattleCard[] = [
   {
     id: "bear-companion",
     title: "Bear",
-    descriptionLines: ["Deals 2 Stun damage each turn", "Companion"],
+    descriptionLines: ["Deals 1 Stun damage each turn", "Companion"],
     art: bearCompanion,
     cost: 1,
     consume: true,
@@ -355,7 +355,7 @@ export const cardLibrary: BattleCard[] = [
   {
     id: "phoenix-companion",
     title: "Phoenix",
-    descriptionLines: ["Deals 2 Burn damage each turn", "Companion"],
+    descriptionLines: ["Deals 1 Burn damage each turn", "Companion"],
     art: phoenixCompanion,
     cost: 1,
     consume: true,

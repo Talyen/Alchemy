@@ -5,6 +5,7 @@ import { SAVE_KEY } from "@/lib/game-constants";
 
 import {
   SaveDataSchema,
+  getAndClearValidationErrors,
   getRawContentVersion,
   getRawSaveSchemaVersion,
   isUnsupportedFutureContentData,
@@ -100,6 +101,7 @@ export function loadAlchemySaveState(): SaveLoadState {
 
     writesDisabledForSession = false;
     const result = SaveDataSchema.safeParse(parsed);
+    const validationErrors = getAndClearValidationErrors();
     if (!result.success) {
       writesDisabledForSession = true;
       logStorageFailure("Save data failed validation, falling back to defaults", result.error);
@@ -107,6 +109,9 @@ export function loadAlchemySaveState(): SaveLoadState {
     }
     const data = result.data as SaveData;
     const warnings = collectSaveRepairWarnings(parsed, data);
+    for (const ve of validationErrors) {
+      warnings.push(`Field "${ve.path}" was corrupt: ${ve.message}`);
+    }
     if (warnings.length > 0) {
       writesDisabledForSession = true;
       console.info("Save data was normalized during load", warnings);

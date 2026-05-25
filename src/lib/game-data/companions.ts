@@ -29,19 +29,19 @@ export const companionLibrary: Record<CompanionDefinition["id"], CompanionDefini
     id: "imp",
     title: "Imp Companion",
     art: impCompanion,
-    turnStartEffects: [{ kind: "damage", damageType: "burn", amount: 2 }],
+    turnStartEffects: [{ kind: "damage", damageType: "burn", amount: 1 }],
   },
   "frost-whelp": {
     id: "frost-whelp",
     title: "Frost Whelp Companion",
     art: frostWhelpCompanion,
-    turnStartEffects: [{ kind: "damage", damageType: "freeze", amount: 2 }],
+    turnStartEffects: [{ kind: "damage", damageType: "freeze", amount: 1 }],
   },
   bear: {
     id: "bear",
     title: "Bear Companion",
     art: bearCompanion,
-    turnStartEffects: [{ kind: "damage", damageType: "stun", amount: 2 }],
+    turnStartEffects: [{ kind: "damage", damageType: "stun", amount: 1 }],
   },
   panther: {
     id: "panther",
@@ -53,6 +53,6 @@ export const companionLibrary: Record<CompanionDefinition["id"], CompanionDefini
     id: "phoenix",
     title: "Phoenix Companion",
     art: phoenixCompanion,
-    turnStartEffects: [{ kind: "damage", damageType: "burn", amount: 2 }],
+    turnStartEffects: [{ kind: "damage", damageType: "burn", amount: 1 }],
   },
 };

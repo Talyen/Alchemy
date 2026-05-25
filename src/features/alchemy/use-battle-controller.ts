@@ -156,6 +156,15 @@ export function useBattleController({
     transferCancelRegistryRef.current.cancelAll();
   }
 
+  function finishDrawSequence(session: number, state: BattleState) {
+    runIfSessionActive(session, () => {
+      cardPlayInProgressRef.current = false;
+      setCardTransferInProgress(false);
+      setHiddenHandCardKeys(new Set());
+      checkBattleEnd(state, session);
+    });
+  }
+
   function clearPendingBattleTimeouts() {
     battleTimerGroupRef.current.clearAll();
     companionScheduledRef.current = false;
@@ -170,6 +179,7 @@ export function useBattleController({
     () => () => {
       clearPendingBattleTimeouts();
       clearTransferHandles();
+      resolvedAsHasteOrStunRef.current = false;
     },
     [],
   );
@@ -503,7 +513,6 @@ export function useBattleController({
     playCardSound(card.id);
     const resolution = playBattleCardResolved(currentState, card.id, index);
     playCardResolutionFeedback(card, resolution.state, resolution.combatTexts);
-    getStore().showCombatTexts(resolution.combatTexts);
     setHoveredCardId((current) => (current === getHoverId("hand", `${card.id}-${card.uid}`) ? null : current));
     talents.awardCardXP(card);
 
@@ -512,20 +521,14 @@ export function useBattleController({
       resolution.state,
       () => {
         getStore().setBattleState(resolution.state);
+        if (resolution.combatTexts.length > 0) getStore().showCombatTexts(resolution.combatTexts);
       },
       session,
     )
       .catch((err) => {
         console.error("Failed to handle play card draw sequence:", err);
       })
-      .finally(() => {
-        runIfSessionActive(session, () => {
-          cardPlayInProgressRef.current = false;
-          setCardTransferInProgress(false);
-          setHiddenHandCardKeys(new Set());
-          checkBattleEnd(resolution.state, session);
-        });
-      });
+      .finally(() => finishDrawSequence(session, resolution.state));
     runIfSessionActive(session, () => {
       scheduleAutoEndTurn(resolution.state);
     });
@@ -589,13 +592,7 @@ export function useBattleController({
       .catch((err) => {
         console.error("Failed to handle wish choice draw sequence:", err);
       })
-      .finally(() => {
-        runIfSessionActive(session, () => {
-          setCardTransferInProgress(false);
-          setHiddenHandCardKeys(new Set());
-          checkBattleEnd(newState, session);
-        });
-      });
+      .finally(() => finishDrawSequence(session, newState));
   }
 
   // ─── End turn & enemy phase ───

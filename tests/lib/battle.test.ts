@@ -902,7 +902,7 @@ describe("endPlayerTurn", () => {
     const state = makeState({
       enemyAttackEffects: [],
       difficultyModifiers: [{ kind: "enemy-gains-forge-each-turn" }] as DifficultyModifier[],
-      enemyMitigation: { armor: 0, forge: 0, freezeBonus: 0 },
+      enemyMitigation: { armor: 0, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 },
       deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
       mana: 4,
       maxMana: 4,
@@ -968,9 +968,9 @@ describe("processCompanionTurnStart", () => {
     const texts: CombatTextEvent[] = [];
     const result = processCompanionTurnStart(state, texts);
 
-    expect(result.enemyHealth).toBe(28);
-    expect(result.enemyStatuses.burn).toBe(2);
-    expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "burn", amount: 2 });
+    expect(result.enemyHealth).toBe(29);
+    expect(result.enemyStatuses.burn).toBe(1);
+    expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "burn", amount: 1 });
   });
 
   it("applies only the active companion's bond level", () => {
@@ -995,7 +995,7 @@ describe("processCompanionTurnStart", () => {
     const impResult = processCompanionTurnStart(impState, []);
 
     expect(wolfResult.enemyHealth).toBe(27);
-    expect(impResult.enemyHealth).toBe(28);
+    expect(impResult.enemyHealth).toBe(29);
   });
 
   it("returns state unchanged when no active companion", () => {
@@ -1471,7 +1471,7 @@ describe("Trinket — Sundering Charm (ignore 2 enemy armor)", () => {
     const state = makeState({
       mana: 10,
       enemyHealth: 30,
-      enemyMitigation: { armor: 5, forge: 0, freezeBonus: 0 },
+      enemyMitigation: { armor: 5, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 },
       trinketEffects: manifest,
       hand: [card],
     });
@@ -1753,7 +1753,7 @@ describe("Trinket — Companion's Collar (+1 companion damage)", () => {
     });
     const texts: CombatTextEvent[] = [];
     const result = processCompanionTurnStart(state, texts);
-    expect(result.enemyStatuses.burn).toBe(3); // 2 base + 1 collar
+    expect(result.enemyStatuses.burn).toBe(2); // 1 base + 1 collar
   });
 
   it("does nothing when no companion is active", () => {
@@ -1828,7 +1828,7 @@ describe("Trinket — Thunderstone (6 nature damage on stun)", () => {
       mana: 10,
       enemyHealth: 3,
       enemyMaxHealth: 3,
-      enemyMitigation: { armor: 3, forge: 0, freezeBonus: 0 },
+      enemyMitigation: { armor: 3, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 },
       playerStatuses: { block: 0, armor: 0, forge: 4, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
       trinketEffects: manifest,
     });
@@ -2402,7 +2402,7 @@ describe("damage riders via applyCardEffects", () => {
       mana: 10,
       enemyHealth: 50,
       enemyMaxHealth: 50,
-      enemyMitigation: { armor: 5, forge: 0, freezeBonus: 0 },
+      enemyMitigation: { armor: 5, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 },
       trinketEffects: { ...defaultTrinketEffects, sunderingArmorPiercing: 3 },
       deck: [],
       hand: [],
@@ -2443,7 +2443,7 @@ describe("damage riders via applyCardEffects", () => {
       mana: 10,
       enemyHealth: 50,
       enemyMaxHealth: 50,
-      enemyMitigation: { armor: 8, forge: 0, freezeBonus: 0 },
+      enemyMitigation: { armor: 8, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 },
       talentEffects: { ...defaultTalentEffects, burnRemovesEnemyArmor: true },
       deck: [],
       hand: [],
@@ -2560,7 +2560,7 @@ describe("damage riders via applyCardEffects", () => {
     const state = makeState({
       playerHealth: 30,
       playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
-      enemyMitigation: { armor: 0, forge: 4, freezeBonus: 0 },
+      enemyMitigation: { armor: 0, forge: 4, freezeBonus: 0, burnBonus: 0, block: 0 },
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 8 }],
       deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
       mana: 4,
@@ -2713,7 +2713,7 @@ describe("applyCardEffects — draw-cards", () => {
 describe("applyCardEffects — remove-enemy-armor", () => {
   it("reduces enemy armor", () => {
     const state = makeState({
-      enemyMitigation: { armor: 5, forge: 0, freezeBonus: 0 },
+      enemyMitigation: { armor: 5, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 },
     });
     const card = makeCard({ effects: [{ kind: "remove-enemy-armor", amount: 3 }] });
     const texts: CombatTextEvent[] = [];
@@ -2723,7 +2723,7 @@ describe("applyCardEffects — remove-enemy-armor", () => {
 
   it("clamps armor to 0", () => {
     const state = makeState({
-      enemyMitigation: { armor: 2, forge: 0, freezeBonus: 0 },
+      enemyMitigation: { armor: 2, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 },
     });
     const card = makeCard({ effects: [{ kind: "remove-enemy-armor", amount: 5 }] });
     const texts: CombatTextEvent[] = [];
@@ -3153,7 +3153,7 @@ describe("endPlayerTurn — non-physical enemy damage", () => {
     const state = makeState({
       playerHealth: 30,
       playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
-      enemyMitigation: { armor: 4, forge: 0, freezeBonus: 0 },
+      enemyMitigation: { armor: 4, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 },
       enemyAttackEffects: [{ kind: "damage", damageType: "holy", amount: 8 }],
       trinketEffects: { ...defaultTrinketEffects, sunderingArmorPiercing: 3 },
       deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
@@ -3286,7 +3286,7 @@ describe("endPlayerTurn — enemy forge bonus only applies to physical", () => {
     const state = makeState({
       playerHealth: 30,
       playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
-      enemyMitigation: { armor: 0, forge: 5, freezeBonus: 0 },
+      enemyMitigation: { armor: 0, forge: 5, freezeBonus: 0, burnBonus: 0, block: 0 },
       enemyAttackEffects: [{ kind: "damage", damageType: "holy", amount: 8 }],
       deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
       mana: 4,
@@ -3467,7 +3467,7 @@ describe("dealDamageToEnemy — armor decay and holy riders", () => {
     const texts: CombatTextEvent[] = [];
     const state = makeState({
       mana: 10, enemyHealth: 50,
-      enemyMitigation: { armor: 5, forge: 0, freezeBonus: 0 },
+      enemyMitigation: { armor: 5, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 },
     });
     const result = applyCardEffects(state, card, texts);
     // enemy with armor takes less damage
@@ -3480,7 +3480,7 @@ describe("dealDamageToEnemy — armor decay and holy riders", () => {
     const texts: CombatTextEvent[] = [];
     const state = makeState({
       mana: 10, enemyHealth: 50,
-      enemyMitigation: { armor: 5, forge: 0, freezeBonus: 0 },
+      enemyMitigation: { armor: 5, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 },
     });
     const result = applyCardEffects(state, card, texts);
     // burn ignores armor → armor still decays from hit but not from damage reduction
@@ -3706,7 +3706,7 @@ describe("applyDamageStatuses — stun talent effects chain", () => {
       deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" })],
       hand: [],
       talentEffects,
-      enemyMitigation: { armor: 3, forge: 0, freezeBonus: 0 },
+      enemyMitigation: { armor: 3, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 },
     });
     const result = applyCardEffects(state, card, texts);
     // stun 20 damage - 3 armor = 17 → health 13
@@ -3822,7 +3822,7 @@ describe("applyDamageStatuses — poison talent riders", () => {
     const state = makeState({
       mana: 10, enemyHealth: 50,
       talentEffects,
-      enemyMitigation: { armor: 3, forge: 0, freezeBonus: 0 },
+      enemyMitigation: { armor: 3, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 },
     });
     const result = applyCardEffects(state, card, texts);
     // armor decays by 1 from hit, then poisonStripArmor strips 1 → armor 1
@@ -3855,7 +3855,7 @@ describe("applyDamageStatuses — forge threshold bursts", () => {
         forgeStripArmorThreshold: 4,
         forgeBlockThreshold: 5, forgeBlockAmount: 3,
       },
-      enemyMitigation: { armor: 2, forge: 0, freezeBonus: 0 },
+      enemyMitigation: { armor: 2, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 },
     });
     const result = applyCardEffects(state, card, texts);
     // forge: 2+4 = 6 → crosses threshold 3 (burn burst), 4 (strip armor), 5 (block burst)

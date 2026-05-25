@@ -112,7 +112,7 @@ export function useShopController({
     const cardA = deck[indexA];
     const cardB = deck[indexB];
 
-    const mixed = tryCreateMixedPotion(cardA, cardB);
+    const mixed = tryCreateMixedPotion(cardA, cardB, talents.talentEffects.potionMixPotency ?? 0);
     if (!mixed) return null;
 
     if (price > 0) playGoldSpend();

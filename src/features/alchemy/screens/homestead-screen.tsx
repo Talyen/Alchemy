@@ -149,7 +149,7 @@ const tabs: { id: Tab; label: string; icon: typeof Hammer }[] = [
 /** Renders the player's material inventory top-bar */
 function MaterialsBar({ materialInventory }: { materialInventory: MaterialInventory }) {
   return (
-    <div className="mx-auto mt-5 flex w-full max-w-2xl flex-nowrap items-center justify-center gap-x-3">
+    <div className="mx-auto mt-5 mb-4 flex w-full max-w-2xl flex-nowrap items-center justify-center gap-x-3">
       {MATERIAL_IDS.map((mat) => (
         <MaterialPill key={mat} material={mat} amount={materialInventory[mat] ?? 0} />
       ))}

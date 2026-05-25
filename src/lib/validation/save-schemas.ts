@@ -35,18 +35,60 @@ import { CURRENT_SAVE_SCHEMA_VERSION, CURRENT_GAME_BUILD_VERSION, CURRENT_CONTEN
 import { migrateSaveDataToCurrent } from "./migration";
 import { createEmptyTierRecord } from "@/lib/homestead/tiers";
 
+// Validation error accumulator — cleared before each parse, readable after.
+// Callers (e.g., storage/io.ts) check this after safeParse to detect silent fallbacks.
+export type ValidationError = { path: string; message: string };
+const _validationErrors: ValidationError[] = [];
+export function getAndClearValidationErrors(): ValidationError[] {
+  const errors = [..._validationErrors];
+  _validationErrors.length = 0;
+  return errors;
+}
+
+// Wraps schema.catch() to collect and log validation failures instead of swallowing them.
+// Returns a preprocess pipeline: tries the inner schema, and on failure logs the error,
+// collects it in the global error list, and returns the fallback.
+// Returns val (not result.data) on success so the schema downstream does not double-parse.
+function caught<T>(schema: z.ZodType<T>, fallback: T, path: string): z.ZodType<T> {
+  return z.preprocess((val) => {
+    if (val === undefined) return fallback;
+    const result = schema.safeParse(val);
+    if (!result.success) {
+      const error: ValidationError = { path, message: result.error.message };
+      _validationErrors.push(error);
+      console.error(`[Save Validation] Field "${path}" invalid, fell back to default:`, result.error.message);
+      return fallback;
+    }
+    return result.data;
+  }, schema);
+}
+
 // Wraps field validation so undefined/missing parses fall back to a safe default
-// and log a warning.  Other type mismatches are handled by each field's own .catch().
+// and log an error.  Other type mismatches are handled by each field's own .catch().
 function withFallbackOnUndefined<T>(schema: z.ZodType<T>, fallback: T, fieldName: string): z.ZodType<T> {
   return z.preprocess((val) => {
     if (val === undefined) return fallback;
     const res = schema.safeParse(val);
     if (!res.success) {
-      console.warn(`[Save Validation] Field "${fieldName}" fallback to default due to error:`, res.error.message);
+      const error: ValidationError = { path: fieldName, message: res.error.message };
+      _validationErrors.push(error);
+      console.error(`[Save Validation] Field "${fieldName}" invalid, fell back to default:`, res.error.message);
       return fallback;
     }
     return res.data;
   }, schema);
+}
+
+// Deduplicates a string array from save data: drops non-strings, deduplicates, defaults to [].
+function deduplicatedStringArraySchema(path: string) {
+  return caught(
+    z.preprocess(
+      (val) => (Array.isArray(val) ? [...new Set(val.filter((v) => typeof v === "string"))] : []),
+      z.array(z.string()),
+    ),
+    [],
+    path,
+  );
 }
 
 // Zod enums need a non-empty tuple; this preserves runtime single sources of truth for save IDs.
@@ -439,6 +481,60 @@ export const ActiveCombatDataSchema = z
 // ===== ActiveRunData =====
 // Imported from game-constants — single source of truth shared with active-run.ts.
 
+// Pure normalization step extracted from the schema for reuse by normalizeActiveRun and io.ts.
+// Returns the full data object with normalized fields spread over the input.
+export function normalizeActiveRunData(data: Record<string, unknown>) {
+  const labyrinthMap = data.labyrinthMap;
+  let contentSystemType = data.contentSystemType as string;
+  if (contentSystemType === "labyrinth" && !labyrinthMap) {
+    contentSystemType = "campaign";
+  }
+  const runPlayerHealth = Math.min(data.runPlayerHealth as number, data.runMaxHealth as number);
+  const roomsEncountered = typeof data.roomsEncountered === "number" ? data.roomsEncountered : 0;
+  const currentAct = typeof data.currentAct === "number" ? data.currentAct : 1;
+  const destinationIndexInAct = typeof data.destinationIndexInAct === "number" ? data.destinationIndexInAct : 0;
+  const completedDestinations = Array.isArray(data.completedDestinations)
+    ? (data.completedDestinations as string[])
+    : [];
+  const isUnstarted =
+    roomsEncountered === 0 && currentAct === 1 && destinationIndexInAct === 0 && completedDestinations.length === 0;
+  const runDeckArr = Array.isArray(data.runDeck) ? (data.runDeck as { id: string }[]) : [];
+  const legacySet = new Set(LEGACY_STARTER_DECK_IDS);
+  const hasLegacyDeck =
+    runDeckArr.length === LEGACY_STARTER_DECK_IDS.length &&
+    runDeckArr.every((card) => legacySet.has(card.id as (typeof LEGACY_STARTER_DECK_IDS)[number]));
+  const characterId = typeof data.characterId === "string" ? (data.characterId as string) : "";
+  const runDeck =
+    runDeckArr.length === 0 || (isUnstarted && hasLegacyDeck)
+      ? characterId
+        ? getStartingDeck(characterId as import("@/lib/game-data").CharacterId)
+        : []
+      : runDeckArr;
+  return {
+    ...data,
+    contentSystemType,
+    runPlayerHealth,
+    completedDestinations,
+    runDeck,
+    runTalentXP: (data.runTalentXP as Record<string, number> | undefined) ?? {},
+    labyrinthMap: contentSystemType === "labyrinth" ? data.labyrinthMap : null,
+    labyrinthPendingNode: contentSystemType === "labyrinth" ? data.labyrinthPendingNode : null,
+    activeCombat: data.activeCombat
+      ? {
+          ...(data.activeCombat as Record<string, unknown>),
+          activeLabyrinthModifiers:
+            contentSystemType === "labyrinth"
+              ? ((data.activeCombat as Record<string, unknown>).activeLabyrinthModifiers ?? [])
+              : [],
+          activeLabyrinthRewardModifiers:
+            contentSystemType === "labyrinth"
+              ? ((data.activeCombat as Record<string, unknown>).activeLabyrinthRewardModifiers ?? [])
+              : [],
+        }
+      : null,
+  };
+}
+
 export const ActiveRunDataSchema = z
   .object({
     characterId: z.preprocess((val) => {
@@ -448,73 +544,33 @@ export const ActiveRunDataSchema = z
       return val;
     }, CharacterIdSchema),
     runDeck: z.array(BattleCardSchema),
-    runGold: z.number().int().nonnegative().catch(0),
-    runPlayerHealth: z.number().int().nonnegative().catch(0),
-    runMaxHealth: z.number().int().positive().catch(30),
-    roomsEncountered: z.number().int().nonnegative().catch(0),
-    currentAct: z.number().int().min(1).max(ACTS_PER_RUN).catch(1),
-    destinationIndexInAct: z.number().int().nonnegative().catch(0),
-    completedDestinations: z.array(z.string()).catch([]),
-    runTrinkets: z.array(z.string()).catch([]),
-    encounteredRunEnemyIds: z
-      .preprocess(
-        (val) => (Array.isArray(val) ? [...new Set(val.filter((v) => typeof v === "string"))] : []),
-        z.array(z.string()),
-      )
-      .catch([])
-      .default([]),
-    selectedDifficulty: DifficultyIdSchema.nullable().catch(null).default(null),
-    contentSystemType: z
-      .preprocess((val) => (val === "wildwood" ? "campaign" : val), ContentSystemIdSchema)
-      .default("campaign")
-      .catch("campaign"),
-    labyrinthMap: LabyrinthMapSchema.nullable().catch(null),
+    runGold: caught(z.number().int().nonnegative(), 0, "activeRun.runGold"),
+    runPlayerHealth: caught(z.number().int().nonnegative(), 0, "activeRun.runPlayerHealth"),
+    runMaxHealth: caught(z.number().int().positive(), 30, "activeRun.runMaxHealth"),
+    roomsEncountered: caught(z.number().int().nonnegative(), 0, "activeRun.roomsEncountered"),
+    currentAct: caught(z.number().int().min(1).max(ACTS_PER_RUN), 1, "activeRun.currentAct"),
+    destinationIndexInAct: caught(z.number().int().nonnegative(), 0, "activeRun.destinationIndexInAct"),
+    completedDestinations: caught(z.array(z.string()), [], "activeRun.completedDestinations"),
+    runTrinkets: caught(z.array(z.string()), [], "activeRun.runTrinkets"),
+    encounteredRunEnemyIds: deduplicatedStringArraySchema("activeRun.encounteredRunEnemyIds").default([]),
+    selectedDifficulty: caught(DifficultyIdSchema.nullable(), null, "activeRun.selectedDifficulty").default(null),
+    contentSystemType: caught(
+      z.preprocess((val) => (val === "wildwood" ? "campaign" : val), ContentSystemIdSchema),
+      "campaign",
+      "activeRun.contentSystemType",
+    ),
+    labyrinthMap: caught(LabyrinthMapSchema.nullable(), null, "activeRun.labyrinthMap"),
     labyrinthPendingNode: LabyrinthNodePositionSchema,
-    activeCombat: ActiveCombatDataSchema.default(null),
+    activeCombat: caught(ActiveCombatDataSchema, null, "activeRun.activeCombat").default(null),
     runTalentXP: TalentXPSchema.optional(),
-    currentScreen: z
-      .enum(Object.values(ROUTE_SCREENS) as [Screen, ...Screen[]])
-      .nullable()
-      .catch(null)
-      .default(null),
-    destinationChoices: z.array(z.string()).catch([]).default([]),
+    currentScreen: caught(
+      z.enum(Object.values(ROUTE_SCREENS) as [Screen, ...Screen[]]).nullable(),
+      null,
+      "activeRun.currentScreen",
+    ).default(null),
+    destinationChoices: caught(z.array(z.string()), [], "activeRun.destinationChoices").default([]),
   })
-  .transform((data) => {
-    let contentSystemType = data.contentSystemType;
-    if (contentSystemType === "labyrinth" && data.labyrinthMap === null) {
-      contentSystemType = "campaign";
-    }
-    const runPlayerHealth = Math.min(data.runPlayerHealth, data.runMaxHealth);
-    const isUnstarted =
-      data.roomsEncountered === 0 &&
-      data.currentAct === 1 &&
-      data.destinationIndexInAct === 0 &&
-      data.completedDestinations.length === 0;
-    const legacyStarterDeckSet = new Set(LEGACY_STARTER_DECK_IDS);
-    const hasLegacyDeck =
-      data.runDeck.length === LEGACY_STARTER_DECK_IDS.length &&
-      data.runDeck.every((card) => legacyStarterDeckSet.has(card.id as (typeof LEGACY_STARTER_DECK_IDS)[number]));
-    const runDeck =
-      data.runDeck.length === 0 || (isUnstarted && hasLegacyDeck) ? getStartingDeck(data.characterId) : data.runDeck;
-    return {
-      ...data,
-      runDeck,
-      contentSystemType,
-      runPlayerHealth,
-      runTalentXP: data.runTalentXP ?? {},
-      labyrinthMap: contentSystemType === "labyrinth" ? data.labyrinthMap : null,
-      labyrinthPendingNode: contentSystemType === "labyrinth" ? data.labyrinthPendingNode : null,
-      activeCombat: data.activeCombat
-        ? {
-            ...data.activeCombat,
-            activeLabyrinthModifiers:
-              contentSystemType === "labyrinth" ? data.activeCombat.activeLabyrinthModifiers : [],
-            activeLabyrinthRewardModifiers:
-              contentSystemType === "labyrinth" ? data.activeCombat.activeLabyrinthRewardModifiers : [],
-          }
-        : null,
-    };
-  })
+  .transform((data) => normalizeActiveRunData(data as Record<string, unknown>) as typeof data)
   .refine((data) => data.contentSystemType !== "labyrinth" || data.labyrinthMap !== null, {
     message: "Labyrinth runs require a valid labyrinth map",
   });
@@ -523,55 +579,32 @@ export const ActiveRunDataSchema = z
 export const SaveDataSchema = z.preprocess(
   (raw) => migrateSaveDataToCurrent(raw),
   z.object({
-    saveSchemaVersion: z.literal(CURRENT_SAVE_SCHEMA_VERSION).catch(CURRENT_SAVE_SCHEMA_VERSION),
-    gameBuildVersion: z.string().catch(CURRENT_GAME_BUILD_VERSION),
-    contentVersion: z.number().int().nonnegative().catch(CURRENT_CONTENT_VERSION),
-    selectedAspectRatio: AspectRatioOptionSchema.catch("auto"),
-    displayMode: DisplayModeSchema.catch("borderless-fullscreen"),
-    uiScale: UiScaleSchema.catch("100"),
-    brightness: z
-      .number()
-      .finite()
-      .catch(DEFAULT_BRIGHTNESS_PCT)
-      .transform((v) => Math.max(50, Math.min(150, v))),
-    discoveredCardIds: z
-      .preprocess(
-        (val) => (Array.isArray(val) ? [...new Set(val.filter((v) => typeof v === "string"))] : []),
-        z.array(z.string()),
-      )
-      .catch([]),
-    encounteredEnemyIds: z
-      .preprocess(
-        (val) => (Array.isArray(val) ? [...new Set(val.filter((v) => typeof v === "string"))] : []),
-        z.array(z.string()),
-      )
-      .catch([]),
-    discoveredTrinketIds: z
-      .preprocess(
-        (val) => (Array.isArray(val) ? [...new Set(val.filter((v) => typeof v === "string"))] : []),
-        z.array(z.string()),
-      )
-      .catch([]),
+    saveSchemaVersion: caught(z.literal(CURRENT_SAVE_SCHEMA_VERSION), CURRENT_SAVE_SCHEMA_VERSION, "saveSchemaVersion"),
+    gameBuildVersion: caught(z.string(), CURRENT_GAME_BUILD_VERSION, "gameBuildVersion"),
+    contentVersion: caught(z.number().int().nonnegative(), CURRENT_CONTENT_VERSION, "contentVersion"),
+    selectedAspectRatio: caught(AspectRatioOptionSchema, "auto", "selectedAspectRatio"),
+    displayMode: caught(DisplayModeSchema, "borderless-fullscreen", "displayMode"),
+    uiScale: caught(UiScaleSchema, "100", "uiScale"),
+    brightness: caught(z.number().finite(), DEFAULT_BRIGHTNESS_PCT, "brightness").transform((v) =>
+      Math.max(50, Math.min(150, v)),
+    ),
+    discoveredCardIds: deduplicatedStringArraySchema("discoveredCardIds"),
+    encounteredEnemyIds: deduplicatedStringArraySchema("encounteredEnemyIds"),
+    discoveredTrinketIds: deduplicatedStringArraySchema("discoveredTrinketIds"),
     talentXP: TalentXPSchema,
     unlockedTalents: UnlockedTalentsSchema,
     // .catch() fallbacks must match defaults.ts — both come from game-constants.ts.
-    musicVolume: z
-      .number()
-      .finite()
-      .catch(DEFAULT_MUSIC_VOLUME_PCT)
-      .transform((v) => Math.max(0, Math.min(100, v))),
-    sfxVolume: z
-      .number()
-      .finite()
-      .catch(DEFAULT_SFX_VOLUME_PCT)
-      .transform((v) => Math.max(0, Math.min(100, v))),
-    masterVolume: z
-      .number()
-      .finite()
-      .catch(DEFAULT_MASTER_VOLUME_PCT)
-      .transform((v) => Math.max(0, Math.min(100, v))),
-    muteInBackground: z.boolean().catch(true),
-    autoEndTurn: z.boolean().catch(true),
+    musicVolume: caught(z.number().finite(), DEFAULT_MUSIC_VOLUME_PCT, "musicVolume").transform((v) =>
+      Math.max(0, Math.min(100, v)),
+    ),
+    sfxVolume: caught(z.number().finite(), DEFAULT_SFX_VOLUME_PCT, "sfxVolume").transform((v) =>
+      Math.max(0, Math.min(100, v)),
+    ),
+    masterVolume: caught(z.number().finite(), DEFAULT_MASTER_VOLUME_PCT, "masterVolume").transform((v) =>
+      Math.max(0, Math.min(100, v)),
+    ),
+    muteInBackground: caught(z.boolean(), true, "muteInBackground"),
+    autoEndTurn: caught(z.boolean(), true, "autoEndTurn"),
     activeRun: withFallbackOnUndefined(ActiveRunDataSchema.nullable(), null, "activeRun"),
     materialInventory: withFallbackOnUndefined(MaterialInventorySchema, MATERIAL_ZERO_INVENTORY, "materialInventory"),
     constructedBuildings: withFallbackOnUndefined(

@@ -172,9 +172,9 @@ describe("normalizeActiveRun", () => {
     expect(result!.contentSystemType).toBe("campaign");
   });
 
-  it("sets labyrinth type for labyrinth runs", () => {
+  it("falls back to campaign when labyrinth map is missing", () => {
     const result = normalizeActiveRun(makeRunCandidate({ contentSystemType: "labyrinth" }));
-    expect(result!.contentSystemType).toBe("labyrinth");
+    expect(result!.contentSystemType).toBe("campaign");
   });
 
   it("normalizes valid active combat data", () => {

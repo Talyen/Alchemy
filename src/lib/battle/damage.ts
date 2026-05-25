@@ -7,7 +7,8 @@ import { applyDamageStatuses, getEnemyDamageMultiplier, resolveStunTrigger } fro
 import { emitOverhealBlockText, mergeCombatText } from "./combat-text";
 import { applyBoneCharmHeal, applyLuckyCloverGold } from "./trinket-effects";
 import { applyWishEffect } from "./wish";
-import { type BattleCard, type BattleCardEffect } from "@/lib/game-data";
+import { rollPercent } from "./status-helpers";
+import { type BattleCard, type BattleCardEffect, type PlayerStatusId } from "@/lib/game-data";
 import {
   addEnemyStatus,
   addGold,
@@ -18,6 +19,7 @@ import {
   setFlag,
   type BattleState,
   type CombatTextEvent,
+  type EnemyMitigation,
 } from "./types";
 import {
   BATTLE_CONFIG,
@@ -142,6 +144,10 @@ function computeBaseDamage(state: BattleState, effect: Extract<BattleCardEffect,
     rawAmount += state.talentEffects.flatArrowDamage;
   } else if (effect.damageType === "burn") {
     rawAmount += state.talentEffects.flatBurnDamage;
+  } else if (effect.damageType === "freeze") {
+    rawAmount += state.talentEffects.flatFreezeDamage;
+  } else if (effect.damageType === "nature") {
+    rawAmount += state.talentEffects.flatNatureDamage;
   } else if (effect.damageType === "poison") {
     if (state.enemyStatuses.bleed > 0) {
       rawAmount += state.talentEffects.bleedPoisonDamageTakenBonus;
@@ -166,16 +172,88 @@ function applyCrit(damage: number, damageType: string, state: BattleState) {
  */
 function applyLifesteal(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
   if (damage <= 0) return state;
-  const healAmount = Math.round(damage * state.talentEffects.healMultiplier);
+
+  let healAmount = damage;
+
+  if (state.talentEffects.firstLeechCardDoubled && !state.flags.firstLeechCardDoubledUsed) {
+    healAmount *= FIRST_EFFECT_MULTIPLIER;
+    state = setFlag(state, "firstLeechCardDoubledUsed", true);
+  }
+
+  if (state.talentEffects.leechDesperateMultiplier > 0 && state.playerHealth <= state.playerMaxHealth / HALF_DIVISOR) {
+    healAmount = Math.round(healAmount * (1 + state.talentEffects.leechDesperateMultiplier / 100));
+  }
+
+  if (state.talentEffects.leechExecuteMultiplier > 0 && state.enemyHealth <= state.enemyMaxHealth / HALF_DIVISOR) {
+    healAmount = Math.round(healAmount * (1 + state.talentEffects.leechExecuteMultiplier / 100));
+  }
+
+  if (state.talentEffects.leechMissingHealthStep > 0) {
+    const missing = state.playerMaxHealth - state.playerHealth;
+    healAmount += Math.round(missing / state.talentEffects.leechMissingHealthStep);
+  }
+
+  healAmount = Math.round(healAmount * state.talentEffects.healMultiplier);
   mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: healAmount });
-  const nextState = applyPlayerHealing(state, healAmount);
+  let nextState = applyPlayerHealing(state, healAmount);
   emitOverhealBlockText(state, nextState, combatTexts);
+
+  if (
+    damage > 0 &&
+    state.talentEffects.leechBleedChance > 0 &&
+    rollPercent(state.talentEffects.leechBleedChance, state.rng)
+  ) {
+    nextState = addEnemyStatus(nextState, "bleed", damage);
+  }
+
+  if (
+    damage > 0 &&
+    state.talentEffects.manaOnLeechChance > 0 &&
+    rollPercent(state.talentEffects.manaOnLeechChance, state.rng)
+  ) {
+    nextState = { ...nextState, mana: nextState.mana + 1 };
+    mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "mana", amount: 1 });
+  }
+
+  if (
+    damage > 0 &&
+    state.talentEffects.boonSiphonChance > 0 &&
+    rollPercent(state.talentEffects.boonSiphonChance, state.rng)
+  ) {
+    const mit = nextState.enemyMitigation;
+    const pool: { key: keyof EnemyMitigation; status: PlayerStatusId }[] = [];
+    if (mit.forge > 0) pool.push({ key: "forge", status: "forge" });
+    if (mit.armor > 0) pool.push({ key: "armor", status: "armor" });
+    if (mit.block > 0) pool.push({ key: "block", status: "block" });
+    if (pool.length > 0) {
+      const steal = pool[Math.round(state.rng() * (pool.length - 1))];
+      nextState = {
+        ...nextState,
+        enemyMitigation: { ...mit, [steal.key]: mit[steal.key] - 1 },
+      };
+      nextState = addPlayerStatus(nextState, steal.status, 1);
+    }
+  }
+
+  if (
+    damage > 0 &&
+    state.talentEffects.leechPoisonChance > 0 &&
+    rollPercent(state.talentEffects.leechPoisonChance, state.rng)
+  ) {
+    nextState = addEnemyStatus(nextState, "poison", damage);
+  }
+
   return nextState;
 }
 
 /**
  * Restores player health proportionally for holy damage types.
  */
+function applyNatureLeech(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
+  if (damage <= 0 || !rollPercent(state.talentEffects.natureLeechChance, state.rng)) return state;
+  return applyLifesteal(state, damage, combatTexts);
+}
+
 function applyHolyLifesteal(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
   if (damage <= 0 || state.talentEffects.holyLifestealPercent <= 0) return state;
   const healAmount = Math.round(
@@ -366,6 +444,21 @@ function computeCardDamageToEnemy(state: BattleState, effect: Extract<BattleCard
   const rawDamage = modifiedBase.rawDamage;
   const finalDamage = applyCrit(rawDamage, effect.damageType, modifiedBase.state);
   let nextState = modifiedBase.state;
+
+  // Block absorbs damage of all types, fully consumed on hit.
+  const effectiveBlock = nextState.enemyMitigation.block;
+  const blockAbsorbed = Math.min(finalDamage, effectiveBlock);
+  const damageAfterBlock = Math.max(0, finalDamage - blockAbsorbed);
+  if (blockAbsorbed > 0) {
+    nextState = {
+      ...nextState,
+      enemyMitigation: {
+        ...nextState.enemyMitigation,
+        block: nextState.enemyMitigation.block - blockAbsorbed,
+      },
+    };
+  }
+
   const isPhysicalOrStun = effect.damageType === "physical" || effect.damageType === "stun";
   if (isPhysicalOrStun && nextState.trinketEffects.sunderingArmorPiercing > 0 && nextState.enemyMitigation.armor > 0) {
     const removed = Math.min(nextState.enemyMitigation.armor, nextState.trinketEffects.sunderingArmorPiercing);
@@ -378,26 +471,26 @@ function computeCardDamageToEnemy(state: BattleState, effect: Extract<BattleCard
     };
   }
   const effectiveArmor = isPhysicalOrStun ? nextState.enemyMitigation.armor : 0;
-  const damageAfterArmor = Math.max(0, finalDamage - effectiveArmor);
+  const damageAfterArmor = Math.max(0, damageAfterBlock - effectiveArmor);
   const multiplier = getEnemyDamageMultiplier(state, effect.damageType);
   return { nextState, modifiedDamage: Math.round(damageAfterArmor * multiplier) };
 }
 
 /**
- * Decreases enemy armor stacks by decay configuration on health-hitting damage.
+ * Decreases enemy defensive stacks by decay configuration on health-hitting damage.
  */
-function decayEnemyArmorOnHit(state: BattleState, modifiedDamage: number): BattleState {
-  // Decays armor by a fixed amount (not percentage) so repeated hits wear it down.
-  if (modifiedDamage > 0 && state.enemyMitigation.armor > 0) {
-    return {
-      ...state,
-      enemyMitigation: {
-        ...state.enemyMitigation,
-        armor: Math.max(0, state.enemyMitigation.armor - BATTLE_CONFIG.ARMOR_DECAY_AMOUNT),
-      },
-    };
-  }
-  return state;
+function decayEnemyDefensesOnHit(state: BattleState, modifiedDamage: number): BattleState {
+  if (modifiedDamage <= 0) return state;
+  const { armor, block } = state.enemyMitigation;
+  if (armor <= 0 && block <= 0) return state;
+  return {
+    ...state,
+    enemyMitigation: {
+      ...state.enemyMitigation,
+      armor: Math.max(0, armor - BATTLE_CONFIG.ARMOR_DECAY_AMOUNT),
+      block: Math.max(0, block - BATTLE_CONFIG.ARMOR_DECAY_AMOUNT),
+    },
+  };
 }
 
 /**
@@ -415,7 +508,7 @@ function applyDamageRiders(
     enemyHealth: clampHealth(state.enemyHealth, -modifiedDamage, state.enemyMaxHealth),
   };
 
-  nextState = decayEnemyArmorOnHit(nextState, modifiedDamage);
+  nextState = decayEnemyDefensesOnHit(nextState, modifiedDamage);
   // boneCharmHeal uses state.enemyHealth > 0 (pre-hit state), not nextState,
   // so heal-on-kill only triggers if the enemy WAS alive before this hit.
   nextState = applyBoneCharmHeal(nextState, state.enemyHealth > 0, combatTexts);
@@ -426,7 +519,12 @@ function applyDamageRiders(
   if (effect.damageType === "holy") nextState = applyHolyDamageRiders(nextState, card, modifiedDamage, combatTexts);
 
   nextState = applyGoldTroveReward(nextState, modifiedDamage, combatTexts);
-  if (effect.damageType === "nature") nextState = applyLuckyCloverGold(nextState, modifiedDamage, combatTexts);
+  if (effect.damageType === "nature") {
+    nextState = applyLuckyCloverGold(nextState, modifiedDamage, combatTexts);
+    if (state.talentEffects.natureLeechChance > 0) {
+      nextState = applyNatureLeech(nextState, modifiedDamage, combatTexts);
+    }
+  }
 
   if (modifiedDamage > 0) {
     mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: effect.damageType, amount: modifiedDamage });

@@ -278,7 +278,9 @@ export function calculateCombatTrinketRewardOffer(
   const trinketHoarderBonus = battleState.currentEnemy.traits?.some((t) => t.id === "trinket-hoarder")
     ? LABYRINTH_REWARD_CONFIG.trinketHoarderRewardChanceBonus
     : 0;
-  return rng() < baseTrinketChance + trinketHoarderBonus;
+  const talentEffects = (battleState as never)["talentEffects"] as Record<string, number> | undefined;
+  const trinketChanceBonus = talentEffects?.trinketChanceBonus ?? 0;
+  return rng() < baseTrinketChance + trinketHoarderBonus + trinketChanceBonus;
 }
 
 // Combat rewards can be cards or trinkets. Destination choices are supplied by the hook

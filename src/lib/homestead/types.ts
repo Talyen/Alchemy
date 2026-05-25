@@ -27,9 +27,9 @@ export type BuildingId =
   | "blacksmiths-forge"
   | "hunters-lodge"
   | "alchemy-lab"
-  | "placeholder-1"
-  | "placeholder-2"
-  | "placeholder-3";
+  | "runesmiths-workshop"
+  | "companion-sanctuary"
+  | "wishing-well";
 
 export type FarmId = "wheat-field" | "herb-garden" | "chicken-coop" | "pasture" | "orchard" | "crystal-garden";
 
@@ -90,4 +90,16 @@ export type HomesteadEffectManifest = {
   physicalCritChance: number;
   startMaxHealthBonus: number;
   forgeToBurn: boolean;
+  flatBurnDamage: number;
+  flatArrowDamage: number;
+  flatFreezeDamage: number;
+  flatNatureDamage: number;
+  wishCrystalGold: number;
+  startMana: number;
+  consumeHealMultiplier: number;
+  potionMixPotency: number;
+  trinketChanceBonus: number;
+  burnDamageReduction: number;
+  freezeDamageReduction: number;
+  natureDamageReduction: number;
 };

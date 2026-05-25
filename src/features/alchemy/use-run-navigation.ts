@@ -301,7 +301,7 @@ export function useRunNavigation({
     (displayMaterials: MaterialInventory | null = null) => {
       const homesteadEffects = useHomesteadStore.getState().effects;
       const baseHerbs = homesteadEffects.herbFindBonus > 0 ? run.roomsEncountered : 0;
-      const food = homesteadEffects.companionDamage > 0 ? run.roomsEncountered : 0;
+      const food = homesteadEffects.flatArrowDamage > 0 ? run.roomsEncountered : 0;
       const mats = applyMaterialFindBonus({ wood: 0, iron: 0, herbs: baseHerbs, food, crystal: 0 }, homesteadEffects);
       if (mats.herbs > 0 || food > 0) useHomesteadStore.getState().addMaterials(mats);
       getStore().setRunEndMaterials(displayMaterials ? addInventory(displayMaterials, mats) : mats);
@@ -337,6 +337,10 @@ export function useRunNavigation({
     const runState = useRunStore.getState();
     const activeLabyrinthRewardModifiers = getStore().activeLabyrinthRewardModifiers;
     const battleState = useBattleStore.getState().battleState;
+
+    if (battleState.pendingMaterials.crystal > 0) {
+      useHomesteadStore.getState().addMaterials(battleState.pendingMaterials);
+    }
 
     const result = computeVictoryRewards({
       characterId: runState.characterId,

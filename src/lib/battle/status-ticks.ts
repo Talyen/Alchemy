@@ -173,7 +173,7 @@ function tickPlayerBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
     ? Math.max(0, afterBlockReduction - state.playerStatuses.armor)
     : afterBlockReduction;
   let nextState = {
-    ...applyPlayerCombatDamage(state, reducedDamage),
+    ...applyPlayerCombatDamage(state, reducedDamage, "burn"),
     playerStatuses: {
       ...state.playerStatuses,
       [CONSTANTS.STATUS_NAMES.BURN]: decayHalvedStatus(state.playerStatuses.burn),

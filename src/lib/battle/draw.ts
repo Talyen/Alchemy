@@ -13,12 +13,14 @@ import type { BattleCard, BestiaryEntry, EnemyAttackEffect } from "@/lib/game-da
 import type { DifficultyModifier } from "@/lib/game-data/difficulties";
 
 import { shuffle } from "../utils";
+import { emptyInventory } from "@/lib/homestead/inventory";
 import {
   BASE_ENEMY_HEALTH,
   BASE_PLAYER_MANA,
   CARDS_PER_TURN,
   FALLBACK_ENEMY_ATTACK,
   LIVING_ARMOR_STARTING_ARMOR,
+  ENEMY_STARTING_BLOCK,
   MAX_HAND_SIZE,
   MAX_PLAYER_HEALTH,
   ROOM_SCALING_INCREMENT,
@@ -85,6 +87,7 @@ function createInitialFlags(): CombatFlags {
     firstBurnTrinketDoubledUsed: false,
     firstHarmfulStatusPrevented: false,
     firstPotionFreeUsed: false,
+    firstLeechCardDoubledUsed: false,
     resonantChimeUsedThisTurn: false,
     runicQuillUsedThisTurn: false,
   };
@@ -112,7 +115,7 @@ export function defaultBattleState(): BattleState {
     enemyHealth: BASE_ENEMY_HEALTH,
     enemyMaxHealth: BASE_ENEMY_HEALTH,
     enemyAttackEffects: [],
-    enemyMitigation: { armor: 0, forge: 0, freezeBonus: 0, burnBonus: 0 },
+    enemyMitigation: { armor: 0, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 },
     enemyRegeneration: 0,
     roomScalingMultiplier: 1,
     playerStatuses: createEmptyPlayerStatuses(),
@@ -137,6 +140,7 @@ export function defaultBattleState(): BattleState {
     nextCardUid: 0,
     difficultyModifiers: [],
     rng: Math.random,
+    pendingMaterials: emptyInventory(),
   };
 }
 
@@ -292,7 +296,16 @@ function computeStartingStatuses(modifiers: DifficultyModifier[], enemy: Bestiar
   const startBlock = modifiers.find((m) => m.kind === "start-block")?.amount ?? 0;
   const manaBonus = modifiers.find((m) => m.kind === "start-max-mana")?.amount ?? 0;
   const startCompanion = modifiers.some((m) => m.kind === "start-companion");
-  return { startingArmor: startingArmor + traitStartingArmor, startBlock, manaBonus, startCompanion };
+  const startingEnemyBlock = enemy.traits.some((t) => t.id === "starting-block")
+    ? Math.round(ENEMY_STARTING_BLOCK * roomMul)
+    : 0;
+  return {
+    startingArmor: startingArmor + traitStartingArmor,
+    startBlock,
+    manaBonus,
+    startCompanion,
+    startingEnemyBlock,
+  };
 }
 
 export type CreateBattleStateOptions = {
@@ -330,7 +343,7 @@ function initializeEnemyState(battleEnemy: BestiaryEntry, battleRooms: number, b
   const modifiedEffects = applyDifficultyAttackModifiers(scaledEnemyAttackEffects, battleDiffs);
   const scaler = Math.max(0, battleRooms - 1);
   const roomMul = 1 + scaler * ROOM_SCALING_INCREMENT;
-  const { startingArmor, startBlock, manaBonus, startCompanion } = computeStartingStatuses(
+  const { startingArmor, startBlock, manaBonus, startCompanion, startingEnemyBlock } = computeStartingStatuses(
     battleDiffs,
     battleEnemy,
     roomMul,
@@ -350,6 +363,7 @@ function initializeEnemyState(battleEnemy: BestiaryEntry, battleRooms: number, b
     startBlock,
     manaBonus,
     startCompanion,
+    startingEnemyBlock,
   };
 }
 
@@ -370,6 +384,7 @@ function buildInitialBattleState(
     enemyArmor: number; // folded into enemyMitigation at build time
     startingBlock: number;
     startingArmor: number;
+    startingEnemyBlock: number;
     activeCompanion: CompanionDefinition | null;
     currentEnemy: BestiaryEntry;
     talentEffects: TalentEffectManifest;
@@ -396,7 +411,13 @@ function buildInitialBattleState(
     enemyAttackEffects: setup.enemyAttackEffects,
     enemyRegeneration: setup.enemyRegeneration,
     roomScalingMultiplier: setup.roomScalingMultiplier,
-    enemyMitigation: { armor: setup.enemyArmor, forge: 0, freezeBonus: 0, burnBonus: 0 },
+    enemyMitigation: {
+      armor: setup.enemyArmor,
+      forge: 0,
+      freezeBonus: 0,
+      burnBonus: 0,
+      block: setup.startingEnemyBlock,
+    },
     playerStatuses: {
       ...baseState.playerStatuses,
       block: setup.startingBlock,
@@ -444,6 +465,7 @@ export function createBattleState(options: CreateBattleStateOptions): BattleStat
     startBlock,
     manaBonus,
     startCompanion,
+    startingEnemyBlock,
   } = initializeEnemyState(battleEnemy, battleRooms, battleDiffs);
 
   const {
@@ -457,7 +479,7 @@ export function createBattleState(options: CreateBattleStateOptions): BattleStat
     deck,
     hand,
     discard,
-    mana: BASE_PLAYER_MANA + manaBonus,
+    mana: BASE_PLAYER_MANA + manaBonus + (battleTalents.startMana ?? 0),
     gold: battleGold,
     playerHealth: startingHealth,
     playerMaxHealth: finalMaxHealth,
@@ -468,6 +490,7 @@ export function createBattleState(options: CreateBattleStateOptions): BattleStat
     enemyArmor: startingArmor,
     startingBlock,
     startingArmor: playerStartingArmor,
+    startingEnemyBlock,
     activeCompanion: startCompanion ? companionLibrary["wolf"] : null,
     currentEnemy: battleEnemy,
     talentEffects: battleTalents,

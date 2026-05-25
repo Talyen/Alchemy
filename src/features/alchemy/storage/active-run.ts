@@ -90,17 +90,11 @@ export function normalizeActiveRun(activeRun: unknown): ActiveRunData | null {
   }
 
   const data = result.data;
-  // Labyrinth map special case: if contentSystemType is labyrinth but the map was absent or invalid,
-  // Zod falls back to campaign type. The test suite expects the type to stay labyrinth but map to be null.
-  let contentSystemType = data.contentSystemType;
-  if (candidate.contentSystemType === "labyrinth" && data.contentSystemType === "campaign") {
-    contentSystemType = "labyrinth";
-  }
 
   return {
     ...data,
-    contentSystemType,
+    contentSystemType: data.contentSystemType as ActiveRunData["contentSystemType"],
     runDeck: (data.runDeck as unknown as BattleCard[]).map(hydrateCard),
-    labyrinthMap: contentSystemType === "labyrinth" ? (data.labyrinthMap as LabyrinthMap | null) : null,
-  };
+    labyrinthMap: data.labyrinthMap as LabyrinthMap | null,
+  } as ActiveRunData;
 }

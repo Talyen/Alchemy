@@ -69,10 +69,12 @@ function handleHealEffect(
   state: BattleState,
   effect: Extract<BattleCardEffect, { kind: "heal" }>,
   potionMult: number,
+  isConsume: boolean,
   combatTexts: CombatTextEvent[],
 ): BattleState {
   const adjustedHeal = Math.round(effect.amount * potionMult);
-  const healAmount = Math.round(adjustedHeal * state.talentEffects.healMultiplier);
+  const consumeBonus = isConsume ? (state.talentEffects.consumeHealMultiplier ?? 0) : 0;
+  const healAmount = Math.round(adjustedHeal * (state.talentEffects.healMultiplier + consumeBonus));
   mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: healAmount });
   const nextState = applyPlayerHealing(state, healAmount);
   emitOverhealBlockText(state, nextState, combatTexts);
@@ -343,7 +345,7 @@ export function applyCardEffects(state: BattleState, card: BattleCard, combatTex
       return handlePlayerStatusEffect(currentState, effect, potionMult, combatTexts);
     }
     if (effect.kind === "heal") {
-      return handleHealEffect(currentState, effect, potionMult, combatTexts);
+      return handleHealEffect(currentState, effect, potionMult, card.consume ?? false, combatTexts);
     }
     if (
       effect.kind === "restore-mana" ||

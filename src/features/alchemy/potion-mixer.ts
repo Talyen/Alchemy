@@ -14,7 +14,7 @@ export const MIXED_POTION_ERROR = "Cannot mix with an existing Mixed Potion";
 
 /** Pure logic for combining two potion cards into a Mixed Potion.
  * Used by the Alchemist's Shop controller so the mixing logic is independently testable. */
-export function createMixedPotion(cardA: BattleCard, cardB: BattleCard): BattleCard {
+export function createMixedPotion(cardA: BattleCard, cardB: BattleCard, potencyBonus: number = 0): BattleCard {
   // Existing Mixed Potions are rejected to avoid recursively combining generated effects.
   // Same potion doubles numeric effects; different potions concatenate effects, and Consume
   // is normalized to one final line so descriptions do not accumulate duplicates.
@@ -27,10 +27,13 @@ export function createMixedPotion(cardA: BattleCard, cardB: BattleCard): BattleC
   // Build effects: duplicate & double amounts for same card, concatenate for different cards.
   const effects = sameCard
     ? cardA.effects.map((e) => {
-        if ("amount" in e) return { ...e, amount: e.amount * 2 };
+        if ("amount" in e) return { ...e, amount: e.amount * 2 + potencyBonus };
         return { ...e };
       })
-    : [...cardA.effects, ...cardB.effects];
+    : [...cardA.effects, ...cardB.effects].map((e) => {
+        if ("amount" in e) return { ...e, amount: e.amount + potencyBonus };
+        return { ...e };
+      });
 
   // Build description lines, deduplicating via Set.
   // Strip "Consume" during aggregation, then add it once at the end.
@@ -38,11 +41,9 @@ export function createMixedPotion(cardA: BattleCard, cardB: BattleCard): BattleC
   for (const line of [...cardA.descriptionLines, ...cardB.descriptionLines]) {
     if (line === CONSUME_DESCRIPTION_LINE) continue;
     if (sameCard) {
-      const numMatch = line.match(/(\d+)/);
-      if (numMatch) descs.add(line.replace(numMatch[0], String(Number(numMatch[0]) * 2)));
-      else descs.add(line);
+      descs.add(line.replace(/\d+/g, (match) => String(Number(match) * 2 + potencyBonus)));
     } else {
-      descs.add(line);
+      descs.add(line.replace(/\d+/g, (match) => String(Number(match) + potencyBonus)));
     }
   }
   const descriptionLines = [...descs, CONSUME_DESCRIPTION_LINE];
@@ -58,10 +59,14 @@ export function createMixedPotion(cardA: BattleCard, cardB: BattleCard): BattleC
   };
 }
 
-export function tryCreateMixedPotion(cardA: BattleCard | undefined, cardB: BattleCard | undefined): BattleCard | null {
+export function tryCreateMixedPotion(
+  cardA: BattleCard | undefined,
+  cardB: BattleCard | undefined,
+  potencyBonus: number = 0,
+): BattleCard | null {
   if (!cardA || !cardB) return null;
   try {
-    return createMixedPotion(cardA, cardB);
+    return createMixedPotion(cardA, cardB, potencyBonus);
   } catch {
     console.error(`Mix failed: ${MIXED_POTION_ERROR}`);
     return null;

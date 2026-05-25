@@ -245,6 +245,7 @@ export const TRAIT_FREEZE_BONUS_PER_TURN = 1; // Glacial-Shell: freeze status bo
 export const IRON_HIDE_BURN_BONUS_PER_TURN = 1; // Iron-Hide: burn damage bonus gained each turn.
 export const DIFFICULTY_FORGE_PER_TURN = 1; // Difficulty modifier: forge gained each enemy turn.
 export const LIVING_ARMOR_STARTING_ARMOR = 5; // Living-Armor trait initial armor value.
+export const ENEMY_STARTING_BLOCK = 6; // Starting-Block trait initial block value.
 
 // ============ Labyrinth ============
 export const LABYRINTH_STURDY_MULTIPLIER = 1.3; // Sturdy modifier: +30% enemy max Health.
@@ -286,6 +287,7 @@ export const ENEMY_TRAIT_IDS = {
   POISON_RESISTANCE: "poison-resistance",
   GLACIAL_SHELL: "glacial-shell",
   GOLD_TROVE: "gold-trove",
+  STARTING_BLOCK: "starting-block",
 } as const;
 
 // Trait damage rules: first matching (traitId, damageType) wins.

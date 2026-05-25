@@ -15,6 +15,7 @@ import type {
   PlayerStatusId,
   TalentEffectManifest,
 } from "@/lib/game-data";
+import type { MaterialInventory } from "@/lib/homestead/types";
 
 // Both player and enemy use status ID unions, but enemies never gain
 // block/armor/forge/haste — those are filtered out at the BattleCardEffect level.
@@ -30,9 +31,10 @@ export type EnemyMitigation = {
   forge: number;
   freezeBonus: number;
   burnBonus: number;
+  block: number;
 };
 
-export const EMPTY_ENEMY_MITIGATION: EnemyMitigation = { armor: 0, forge: 0, freezeBonus: 0, burnBonus: 0 };
+export const EMPTY_ENEMY_MITIGATION: EnemyMitigation = { armor: 0, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 };
 
 // Pre-computed bonuses from trinkets acquired during the run. Follows the same
 // pattern as TalentEffectManifest — computed once at battle start, immutable for
@@ -81,6 +83,7 @@ export type CombatFlags = {
   firstBurnTrinketDoubledUsed: boolean;
   firstHarmfulStatusPrevented: boolean;
   firstPotionFreeUsed: boolean;
+  firstLeechCardDoubledUsed: boolean;
   resonantChimeUsedThisTurn: boolean;
   runicQuillUsedThisTurn: boolean;
 };
@@ -130,6 +133,7 @@ export type BattleState = {
   nextCardUid: number; // battle-owned source for unique rendered card keys
   difficultyModifiers: DifficultyModifier[];
   rng: () => number;
+  pendingMaterials: MaterialInventory;
 };
 
 // Combat texts are emitted by battle functions and consumed by the floating-text
@@ -137,7 +141,7 @@ export type BattleState = {
 // from multi-hit cards shows "-5" instead of "-2 -3".
 export type CombatTextTarget = "player" | "enemy";
 export type CombatTextKind = "damage" | "heal" | "status" | "multiply" | "notice";
-export type CombatTextStat = DamageType | PlayerStatusId | EnemyStatusId | "health" | "mana" | "gold";
+export type CombatTextStat = DamageType | PlayerStatusId | EnemyStatusId | "health" | "mana" | "gold" | "crystal";
 
 export type NumericCombatTextEvent = {
   target: CombatTextTarget;
@@ -196,9 +200,17 @@ export function clampHealth(current: number, delta: number, max: number): number
 
 // Death's Door triggers once per battle. Subsequent zero-health hits maintain state without extra grace.
 // damageReduction subtracts flat damage (e.g., from talents) before applying to health.
-export function applyPlayerCombatDamage(state: BattleState, damage: number): BattleState {
+export function applyPlayerCombatDamage(state: BattleState, damage: number, damageType?: string): BattleState {
   if (damage <= 0) return state;
-  const reducedDamage = Math.max(0, damage - (state.talentEffects.damageReduction ?? 0));
+  let reducedDamage = damage - (state.talentEffects.damageReduction ?? 0);
+  if (damageType === "burn") {
+    reducedDamage -= state.talentEffects.burnDamageReduction ?? 0;
+  } else if (damageType === "freeze") {
+    reducedDamage -= state.talentEffects.freezeDamageReduction ?? 0;
+  } else if (damageType === "nature") {
+    reducedDamage -= state.talentEffects.natureDamageReduction ?? 0;
+  }
+  reducedDamage = Math.max(0, reducedDamage);
   const nextHealth = clampHealth(state.playerHealth, -reducedDamage, state.playerMaxHealth);
   if (nextHealth > 0) return { ...state, playerHealth: nextHealth };
   if (!state.deathsDoorUsed) {

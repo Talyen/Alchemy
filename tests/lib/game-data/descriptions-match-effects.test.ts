@@ -66,7 +66,9 @@ describe("card descriptions vs effects", () => {
       const wishLines = countLinesStartingWith(descriptionLines, "Wish ");
       const wishEffects = countByKind(effects, "wish");
 
-      const removeLines = countLinesStartingWith(descriptionLines, "Remove ");
+      const removeLines = descriptionLines.filter(
+        (l) => l.startsWith("Remove ") || (l.startsWith("Cleanse ") && l.includes("harmful status")),
+      ).length;
       const removeEffects = countByKind(effects, "remove-harmful-status");
 
       const loseManaLines = descriptionLines.filter(
@@ -94,7 +96,9 @@ describe("card descriptions vs effects", () => {
       const doubleLines = countLinesStartingWith(descriptionLines, "Double ");
       const doubleEffects = countByKind(effects, "multiply-enemy-status");
 
-      const cleanseLines = countLinesStartingWith(descriptionLines, "Cleanse ");
+      const cleanseLines = descriptionLines.filter(
+        (l) => l.startsWith("Cleanse ") && !l.includes("harmful status"),
+      ).length;
       const cleanseEffects = countByKind(effects, "remove-player-status");
 
       if (!hasEqualToBlockOrArmor(effects) && !hasKind(effects, "self-damage")) {

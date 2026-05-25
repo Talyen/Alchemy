@@ -49,8 +49,10 @@ function baseState(overrides: Partial<BattleState> = {}): BattleState {
       firstBleedCardFree: false, bleedPhysicalBonus: 0, bleedLeechChance: 0,
       bleedExecuteThreshold: 0, bleedDesperateMultiplier: 1, bleedPoisonChance: 0,
       bleedPoisonDamageTakenBonus: 0, companionBleedDamageBonus: 0, receiveHalfBleedDamage: false, bleedHalvesEnemyHealing: false,
-      flatArrowDamage: 0,       freezeThresholdReduction: 0, freezeDoubleDamage: false, blockOnFreeze: 0, freezeStripArmor: false, startFreeze: 0, companionVsFrozenBonus: 0, freezePreventsPoisonDecay: false, freezeBlocksRegen: false, freezePreventsEnemyScaling: false, receiveHalfFreezeBuildUp: false, maxHealthPerCombat: 0,
+      flatArrowDamage: 0, flatNatureDamage: 0,
+      freezeThresholdReduction: 0, freezeDoubleDamage: false, blockOnFreeze: 0, freezeStripArmor: false, startFreeze: 0, companionVsFrozenBonus: 0, freezePreventsPoisonDecay: false, freezeBlocksRegen: false, freezePreventsEnemyScaling: false, receiveHalfFreezeBuildUp: false, flatFreezeDamage: 0, maxHealthPerCombat: 0,
       flatStunDamage: 0, blockOnStun: 0, forgeOnStun: 0, stunStripArmor: false, manaOnStun: 0,
+      wishCrystalGold: 0,
     },
     trinketEffects: {
       extraDrawPerBattle: 0, firstHolyDamageDoubled: false, firstBurnDoubled: false, boneCharmHealOnKill: 0,
@@ -74,6 +76,7 @@ function baseState(overrides: Partial<BattleState> = {}): BattleState {
     cardsPlayedThisTurn: 0,
     nextCardUid: 0,
     difficultyModifiers: [],
+    pendingMaterials: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 },
     rng: Math.random,
     ...overrides,
   };
