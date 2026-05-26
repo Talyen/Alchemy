@@ -219,6 +219,20 @@ export async function startAtDestination(
 }
 
 type HomesteadSave = {
+  saveSchemaVersion?: number;
+  gameBuildVersion?: string;
+  contentVersion?: number;
+  selectedAspectRatio?: string;
+  displayMode?: string;
+  uiScale?: string;
+  brightness?: number;
+  musicVolume?: number;
+  sfxVolume?: number;
+  masterVolume?: number;
+  muteInBackground?: boolean;
+  autoEndTurn?: boolean;
+  completedDifficulties?: Record<string, string[]>;
+  activeRun?: null | Record<string, unknown>;
   materialInventory?: Record<string, number>;
   constructedBuildings?: Record<string, number>;
   plantedFarms?: Record<string, number>;
@@ -232,6 +246,20 @@ type HomesteadSave = {
 };
 
 const BASE_HOMESTEAD_SAVE: HomesteadSave = {
+  saveSchemaVersion: 1,
+  gameBuildVersion: "1.0.0",
+  contentVersion: 1,
+  selectedAspectRatio: "auto",
+  displayMode: "borderless-fullscreen",
+  uiScale: "100",
+  brightness: 100,
+  musicVolume: 50,
+  sfxVolume: 50,
+  masterVolume: 50,
+  muteInBackground: true,
+  autoEndTurn: true,
+  completedDifficulties: { knight: [], rogue: [], wizard: [], ranger: [], alchemist: [], warlock: [], druid: [], wildcard: [] },
+  activeRun: null,
   materialInventory: { wood: 999, iron: 999, herbs: 999, food: 999, crystal: 999 },
   constructedBuildings: { "blacksmiths-forge": 0, "hunters-lodge": 0, "alchemy-lab": 0, "runesmiths-workshop": 0, "companion-sanctuary": 0, "wishing-well": 0 },
   plantedFarms: { "wheat-field": 0, "herb-garden": 0, "chicken-coop": 0, "pasture": 0, "orchard": 0, "crystal-garden": 0 },

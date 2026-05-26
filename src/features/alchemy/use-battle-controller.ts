@@ -172,9 +172,11 @@ export function useBattleController({
     });
   }
 
-  function clearPendingBattleTimeouts() {
+  function clearPendingBattleTimeouts(keepCompanionScheduled = false) {
     battleTimerGroupRef.current.clearAll();
-    companionScheduledRef.current = false;
+    if (!keepCompanionScheduled) {
+      companionScheduledRef.current = false;
+    }
   }
 
   function stopBattleFeedback() {
@@ -187,6 +189,9 @@ export function useBattleController({
       clearPendingBattleTimeouts();
       clearTransferHandles();
       resolvedAsHasteOrStunRef.current = false;
+      cardPlayInProgressRef.current = false;
+      companionScheduledRef.current = false;
+      victoryDefeatHandledRef.current = false;
     },
     [],
   );
@@ -197,6 +202,14 @@ export function useBattleController({
     clearPendingBattleTimeouts();
     clearTransferHandles();
     cardPlayInProgressRef.current = false;
+    companionScheduledRef.current = false;
+    victoryDefeatHandledRef.current = false;
+    resolvedAsHasteOrStunRef.current = false;
+    queueMicrotask(() => {
+      setCardTransfers([]);
+      setHiddenHandCardKeys(new Set());
+      setCardTransferInProgress(false);
+    });
     getStore().setBattleStartState(null);
     // hasActiveBattle is the only lifecycle edge this cleanup should react to.
   }, [hasActiveBattle]);
@@ -272,6 +285,7 @@ export function useBattleController({
         if (completed) return;
         completed = true;
         unregisterCancel();
+        clearDelay();
         if (measureFrame !== null) cancelAnimationFrame(measureFrame);
         resolve(rect);
       };
@@ -280,11 +294,12 @@ export function useBattleController({
         finish(localVisualCardRect(handCardRefs.current[cardKey]) ?? fallback);
       });
 
-      delay(CARD_TRANSFER_CONFIG.stableRectTimeoutMs).then(() => {
+      const clearDelay = battleTimerGroupRef.current.setTimeout(() => {
         finish(localVisualCardRect(handCardRefs.current[cardKey]) ?? fallback);
-      });
+      }, CARD_TRANSFER_CONFIG.stableRectTimeoutMs);
 
       function tick() {
+        if (completed) return;
         measureFrame = null;
         frameCount += 1;
 
@@ -519,6 +534,25 @@ export function useBattleController({
     return isCurrentBattleSession(session);
   }
 
+  function runDrawSequenceAndFinalize(
+    oldHand: BattleCard[],
+    newState: BattleState,
+    onCommitState: () => void,
+    session: number,
+    errorContext: string,
+  ) {
+    void handleDrawSequence(oldHand, newState, onCommitState, session)
+      .catch((err) => {
+        logError(
+          `Failed to handle ${errorContext} draw sequence`,
+          "battle",
+          { error: String(err) },
+          err instanceof Error ? err.stack : undefined,
+        );
+      })
+      .finally(() => finishDrawSequence(session, newState));
+  }
+
   function handlePlayCard(
     card: BattleCard,
     index: number,
@@ -535,7 +569,7 @@ export function useBattleController({
     setHoveredCardId((current) => (current === getHoverId("hand", `${card.id}-${card.uid}`) ? null : current));
     talents.awardCardXP(card);
 
-    void handleDrawSequence(
+    runDrawSequenceAndFinalize(
       currentState.hand,
       resolution.state,
       () => {
@@ -543,16 +577,8 @@ export function useBattleController({
         if (resolution.combatTexts.length > 0) getStore().showCombatTexts(resolution.combatTexts);
       },
       session,
-    )
-      .catch((err) => {
-        logError(
-          "Failed to handle play card draw sequence",
-          "battle",
-          { error: String(err) },
-          err instanceof Error ? err.stack : undefined,
-        );
-      })
-      .finally(() => finishDrawSequence(session, resolution.state));
+      "play card",
+    );
     runIfSessionActive(session, () => {
       scheduleAutoEndTurn(resolution.state);
     });
@@ -605,23 +631,15 @@ export function useBattleController({
     const newState = chooseWishCard(currentState, card.id);
     const session = battleSessionRef.current;
     setDiscoveredCardIds((current) => appendUnique(current, card.id));
-    void handleDrawSequence(
+    runDrawSequenceAndFinalize(
       currentState.hand,
       newState,
       () => {
         getStore().setBattleState(newState);
       },
       session,
-    )
-      .catch((err) => {
-        logError(
-          "Failed to handle wish choice draw sequence",
-          "battle",
-          { error: String(err) },
-          err instanceof Error ? err.stack : undefined,
-        );
-      })
-      .finally(() => finishDrawSequence(session, newState));
+      "wish choice",
+    );
   }
 
   // ─── End turn & enemy phase ───
@@ -635,7 +653,7 @@ export function useBattleController({
       cardTransferInProgress
     )
       return;
-    clearPendingBattleTimeouts();
+    clearPendingBattleTimeouts(true);
     const session = battleSessionRef.current;
 
     animateEndTurnThenResolve(currentState, session).catch((err) => {
@@ -688,7 +706,12 @@ export function useBattleController({
     // Set a flag to bypass cleaning up card play references and hand card visual hidden keys.
     // This allows the draw sequence animation to animate smoothly directly into the next turn.
     resolvedAsHasteOrStunRef.current = true;
-    if (result.combatTexts.length > 0) getStore().showCombatTexts(result.combatTexts);
+    try {
+      if (result.combatTexts.length > 0) getStore().showCombatTexts(result.combatTexts);
+    } catch (err) {
+      resolvedAsHasteOrStunRef.current = false;
+      throw err;
+    }
 
     // Draw cards for the player's next turn immediately since the enemy phase is skipped.
     void handleDrawSequence(
@@ -804,14 +827,11 @@ export function useBattleController({
       });
     } catch (err) {
       logError(
-        "Unhandled error in resolveEndTurn, triggering defeat",
+        "Unhandled error in resolveEndTurn",
         "battle",
         { error: String(err) },
         err instanceof Error ? err.stack : undefined,
       );
-      if (isCurrentBattleSession(session)) {
-        handleVictoryDefeat("defeat");
-      }
     }
   }
 
@@ -936,7 +956,7 @@ export function useBattleController({
       playerHealth: 0,
       deathsDoorUsed: true,
       deathsDoorActive: false,
-      deathsDoorTriggeredTurn: null,
+      deathsDoorGraceTurnsRemaining: null,
     }));
     handleVictoryDefeat("defeat");
   }

@@ -25,6 +25,8 @@ import {
   DEFAULT_SFX_VOLUME_PCT,
   LEGACY_STARTER_DECK_IDS,
   LEGACY_CHARACTER_RENAMES,
+  LABYRINTH_MIN_CONNECTIONS,
+  LABYRINTH_MAX_CONNECTIONS,
 } from "@/lib/game-constants";
 import { logError } from "@/lib/error-logger";
 import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
@@ -38,9 +40,9 @@ import { createEmptyTierRecord } from "@/lib/homestead/tiers";
 
 export type ValidationError = { path: string; message: string };
 
-// Scoped error collector used during safeParseWithErrors.  Set before parse, cleared after.
-// Accessed by caught() preprocess closures to accumulate field-level validation failures.
-let _currentErrorCollector: ValidationError[] | null = null;
+// Stack of scoped error collectors used during safeParseWithErrors.
+// Accessed by caught() preprocess closures to accumulate field-level validation failures in a thread-safe manner.
+const _currentErrorCollectorStack: ValidationError[][] = [];
 
 // Wraps schema.safeParse() to collect field-level validation errors from caught() preprocessors.
 // This is the only correct way to parse schemas that use the caught() helper.
@@ -51,27 +53,28 @@ export function safeParseWithErrors<T>(
   | { success: true; data: T; errors: ValidationError[] }
   | { success: false; error: z.ZodError; errors: ValidationError[] } {
   const errors: ValidationError[] = [];
-  _currentErrorCollector = errors;
+  _currentErrorCollectorStack.push(errors);
   try {
     const result = schema.safeParse(data);
     return result.success
       ? { success: true, data: result.data, errors }
       : { success: false, error: result.error, errors };
   } finally {
-    _currentErrorCollector = null;
+    _currentErrorCollectorStack.pop();
   }
 }
 
 // Wraps schema.catch() to collect and log validation failures instead of swallowing them.
 // Returns a preprocess pipeline: tries the inner schema, and on failure logs the error,
-// collects it in the global error list, and returns the fallback.
+// collects it in the current error list stack, and returns the fallback.
 // Returns result.data on success so the downstream schema.parse() is a no-op on already-valid data.
 function caught<T>(schema: z.ZodType<T>, fallback: T, path: string): z.ZodType<T> {
   return z.preprocess((val) => {
     if (val == null) return fallback;
     const result = schema.safeParse(val);
     if (!result.success) {
-      _currentErrorCollector?.push({ path, message: result.error.message });
+      const topCollector = _currentErrorCollectorStack[_currentErrorCollectorStack.length - 1];
+      topCollector?.push({ path, message: result.error.message });
       logError(`[Save Validation] Field "${path}" invalid, fell back to default`, "validation", {
         field: path,
         error: result.error.message,
@@ -296,6 +299,32 @@ const SelfDamageEffectSchema = z.object({
 
 const BuffCompanionEffectSchema = z.object({ kind: z.literal("buff-companion"), amount: z.number().finite() });
 
+const RemovePlayerStatusEffectSchema = z.object({
+  kind: z.literal("remove-player-status"),
+  status: EnemyStatusIdSchema,
+});
+
+const LoseHealthEffectSchema = z.object({
+  kind: z.literal("lose-health"),
+  amount: z.number().finite(),
+});
+
+const DrawCardsEffectSchema = z.object({
+  kind: z.literal("draw-cards"),
+  amount: z.number().finite(),
+});
+
+const RemoveEnemyArmorEffectSchema = z.object({
+  kind: z.literal("remove-enemy-armor"),
+  amount: z.number().finite(),
+});
+
+const MultiplyEnemyStatusEffectSchema = z.object({
+  kind: z.literal("multiply-enemy-status"),
+  status: EnemyStatusIdSchema,
+  factor: z.number().finite(),
+});
+
 export const BattleCardEffectSchema = z.discriminatedUnion("kind", [
   DamageEffectSchema,
   PlayerStatusEffectSchema,
@@ -310,6 +339,11 @@ export const BattleCardEffectSchema = z.discriminatedUnion("kind", [
   RemoveHarmfulStatusEffectSchema,
   SelfDamageEffectSchema,
   BuffCompanionEffectSchema,
+  RemovePlayerStatusEffectSchema,
+  LoseHealthEffectSchema,
+  DrawCardsEffectSchema,
+  RemoveEnemyArmorEffectSchema,
+  MultiplyEnemyStatusEffectSchema,
 ]);
 
 function parseSavedEffectList(values: unknown[]) {
@@ -452,7 +486,11 @@ export const LabyrinthMapSchema = z
             currentCount++;
             if (map.currentNode.row !== r || map.currentNode.col !== c) return false;
           }
-          if (node.connections.length < 1 || node.connections.length > 3) return false;
+          if (
+            node.connections.length < LABYRINTH_MIN_CONNECTIONS ||
+            node.connections.length > LABYRINTH_MAX_CONNECTIONS
+          )
+            return false;
           for (const conn of node.connections) {
             const target = map.grid[conn.row]?.[conn.col];
             if (!target) return false;

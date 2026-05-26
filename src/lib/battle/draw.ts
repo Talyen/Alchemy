@@ -112,6 +112,7 @@ export function defaultBattleState(): BattleState {
     deathsDoorUsed: false,
     deathsDoorActive: false,
     deathsDoorTriggeredTurn: null,
+    deathsDoorGraceTurnsRemaining: null,
     enemyHealth: BASE_ENEMY_HEALTH,
     enemyMaxHealth: BASE_ENEMY_HEALTH,
     enemyAttackEffects: [],

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { ANVIL_CARD, enableFastMode, forceNextDestinationChoice, MANA_BERRIES_CARD, makeCard, makeHighDamageCard, startAtDestination, startBattleWithDeck, playUntilVictory, skipBattleAndClaimReward } from "./helpers";
+import { ANVIL_CARD, enableFastMode, MANA_BERRIES_CARD, makeCard, makeHighDamageCard, startAtDestination, startBattleWithDeck, playUntilVictory, skipBattleAndClaimReward } from "./helpers";
 import { BattlePage } from "./pages/battle-page";
 
 test.describe("Battle Flow", () => {
@@ -103,10 +103,10 @@ test.describe("Card Interactions", () => {
     expect(handBefore).toBeGreaterThanOrEqual(2);
 
     await battle.hand.nth(0).hover();
-    await expect(page.locator(".hover-popup-panel")).toBeVisible();
+    await expect(page.locator(".hover-popup-panel.pointer-events-auto")).toBeVisible();
 
     await battle.hand.nth(1).hover();
-    await expect(page.locator(".hover-popup-panel")).toBeVisible();
+    await expect(page.locator(".hover-popup-panel.pointer-events-auto")).toBeVisible();
 
     await battle.hand.nth(0).click();
     await expect(async () => expect(await battle.handCount()).toBe(handBefore - 1)).toPass({ timeout: 3000 });
@@ -123,7 +123,7 @@ test.describe("Card Interactions", () => {
     await campfireBtn.click();
 
     await expect(page.getByRole("button", { name: "Rest" })).toBeVisible({ timeout: 3000 });
-    await forceNextDestinationChoice(page, "Normal Combat");
+    await page.evaluate(() => { Math.random = () => 0; });
     await page.getByRole("button", { name: "Rest" }).click();
     await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 5000 });
     await page.getByRole("button", { name: "Normal Combat" }).click();

@@ -73,7 +73,7 @@ describe("storage io", () => {
     expect(loaded.status.kind === "ok" ? loaded.status.warnings : []).toBeUndefined();
   });
 
-  it("reports warnings when an active run cannot be restored", async () => {
+  it("reports warnings when an active run cannot be restored and allows writes", async () => {
     vi.spyOn(console, "info").mockImplementation(() => {});
     mockStorage[SAVE_KEY] = JSON.stringify({
       activeRun: {
@@ -100,7 +100,8 @@ describe("storage io", () => {
     expect(loaded.status.kind === "ok" ? loaded.status.warnings : []).toContain("active run could not be restored");
 
     await saveAlchemySaveData({ ...defaultSaveData, discoveredCardIds: ["slash"] });
-    expect(JSON.parse(mockStorage[SAVE_KEY]).activeRun).toMatchObject({ characterId: "bard" });
+    expect(JSON.parse(mockStorage[SAVE_KEY]).discoveredCardIds).toEqual(["slash"]);
+    expect(JSON.parse(mockStorage[SAVE_KEY]).activeRun).toBeNull();
   });
 
   it("saveAlchemySaveData writes to localStorage", async () => {

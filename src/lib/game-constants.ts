@@ -247,6 +247,8 @@ export const ENEMY_STARTING_BLOCK = 6; // Starting-Block trait initial block val
 export const LABYRINTH_STURDY_MULTIPLIER = 1.3; // Sturdy modifier: +30% enemy max Health.
 export const LABYRINTH_BURNING_GROUND_DAMAGE = 2; // Burning Ground: 2 Burn to player each turn.
 export const LABYRINTH_LEECH_HEAL = 3; // Leeching: enemy heals 3 Health on their turn.
+export const LABYRINTH_MIN_CONNECTIONS = 1; // Minimum map node paths allowed during integrity checks.
+export const LABYRINTH_MAX_CONNECTIONS = 3; // Maximum map node paths allowed during integrity checks.
 export const FALLBACK_ENEMY_ATTACK = 8; // Default attack for malformed bestiary entries.
 
 // ============ Enemy Trait Damage Modifiers ============

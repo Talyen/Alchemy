@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { forceNextDestinationChoice, startAtDestination } from "./helpers";
+import { startAtDestination } from "./helpers";
 import { CorruptionPage } from "./pages/corruption-page";
 
 async function openCorruption(page: import("@playwright/test").Page) {
@@ -35,7 +35,7 @@ test.describe("Corruption Full Flow", () => {
     const corruption = new CorruptionPage(page);
 
     await corruption.selectAndCorrupt();
-    await forceNextDestinationChoice(page, "Normal Combat");
+    await page.evaluate(() => { Math.random = () => 0; });
     await corruption.continueBtn.click();
 
     await expect(page.getByRole("button", { name: "Normal Combat" })).toBeVisible({ timeout: 5000 });

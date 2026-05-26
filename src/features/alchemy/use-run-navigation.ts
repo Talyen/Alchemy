@@ -9,6 +9,7 @@ import { resetActiveRunStores } from "./stores/reset";
 import { useAppStore } from "./stores/app-store";
 import { useHomesteadStore } from "./stores/homestead-store";
 import { useBattleStore } from "./stores/battle-store";
+import { logError } from "@/lib/error-logger";
 
 import {
   getDifficultyModifiers,
@@ -419,7 +420,9 @@ export function useRunNavigation({
       return;
     }
     if (systemType !== CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN) {
-      throw new Error(`[useRunNavigation] handleCharacterSelect: unhandled content system ${systemType}`);
+      logError(`[useRunNavigation] handleCharacterSelect: unhandled content system ${systemType}`, "other");
+      navigateTo(CONSTANTS.SCREENS.MENU);
+      return;
     }
 
     const completed = completedDifficulties[selectedId] ?? [];
@@ -565,7 +568,9 @@ export function useRunNavigation({
 
   function handleDifficultySelect(difficultyId: DifficultyId) {
     if (!pendingCharacterId) {
-      throw new Error("[useRunNavigation] handleDifficultySelect: no pending character");
+      logError("[useRunNavigation] handleDifficultySelect: no pending character", "other");
+      navigateTo(CONSTANTS.SCREENS.MENU);
+      return;
     }
     const selectedId = pendingCharacterId;
     const { freshDeck, totalStartGold } = initializeRunForDifficulty(selectedId, difficultyId);

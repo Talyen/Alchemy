@@ -104,7 +104,8 @@ export type BattleState = {
   playerMaxHealth: number; // current max health (can increase from talents)
   deathsDoorUsed: boolean; // one-shot combat survival trigger for this battle
   deathsDoorActive: boolean; // true while the player has one turn to heal from 0 Health
-  deathsDoorTriggeredTurn: number | null; // stores player turn when Death's Door first triggered; grace turns count from this (increments at player phase start)
+  deathsDoorTriggeredTurn: number | null; // stores player turn when Death's Door first triggered
+  deathsDoorGraceTurnsRemaining: number | null; // stores grace turns remaining when Death's Door triggers
   enemyHealth: number;
   enemyMaxHealth: number; // stored so UI can render % even after damage
   enemyAttackEffects: EnemyAttackEffect[]; // scaled per room, applied during enemy phase
@@ -220,6 +221,7 @@ export function applyPlayerCombatDamage(state: BattleState, damage: number, dama
       deathsDoorUsed: true,
       deathsDoorActive: true,
       deathsDoorTriggeredTurn: state.turn,
+      deathsDoorGraceTurnsRemaining: 1 + Math.max(0, state.talentEffects.deathsDoorExtension ?? 0),
     };
   }
   return { ...state, playerHealth: 0, deathsDoorActive: state.deathsDoorActive };
@@ -230,7 +232,13 @@ export function applyPlayerCombatDamage(state: BattleState, damage: number, dama
 export function applyPlayerHealing(state: BattleState, amount: number): BattleState {
   const playerHealth = clampHealth(state.playerHealth, amount, state.playerMaxHealth);
   const overheal = state.playerHealth + amount - playerHealth;
-  let nextState = { ...state, playerHealth, deathsDoorActive: playerHealth <= 0 && state.deathsDoorActive };
+  let nextState = {
+    ...state,
+    playerHealth,
+    deathsDoorActive: playerHealth <= 0 && state.deathsDoorActive,
+    deathsDoorTriggeredTurn: playerHealth <= 0 ? state.deathsDoorTriggeredTurn : null,
+    deathsDoorGraceTurnsRemaining: playerHealth <= 0 ? state.deathsDoorGraceTurnsRemaining : null,
+  };
   if (overheal > 0 && (nextState.talentEffects.overhealToBlockRatio ?? 0) > 0) {
     const blockGain = Math.round(overheal * nextState.talentEffects.overhealToBlockRatio);
     nextState = addPlayerStatus(nextState, "block", blockGain);

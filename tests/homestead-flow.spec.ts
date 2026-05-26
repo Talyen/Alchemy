@@ -54,9 +54,9 @@ test.describe("Homestead Flow", () => {
     test("research tab shows all research options", async ({ page }) => {
       const homestead = new HomesteadPage(page);
       await homestead.switchTab("Research");
-      await expect(page.getByText("Carpentry").first()).toBeVisible({ timeout: 3000 });
-      await expect(page.getByText("Masonry").first()).toBeVisible();
-      await expect(page.getByText("Metallurgy").first()).toBeVisible();
+      await expect(page.getByText("Leyline Energy").first()).toBeVisible({ timeout: 3000 });
+      await expect(page.getByText("Detect Magic").first()).toBeVisible();
+      await expect(page.getByText("Agility Training").first()).toBeVisible();
     });
   });
 

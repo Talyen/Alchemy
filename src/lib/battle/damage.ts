@@ -142,10 +142,10 @@ function computeBaseDamage(state: BattleState, effect: Extract<BattleCardEffect,
     rawAmount += state.talentEffects.flatArrowDamage;
   } else if (effect.damageType === "burn") {
     rawAmount += state.talentEffects.flatBurnDamage;
-    rawAmount += Math.round((state.maxMana * state.talentEffects.burnDamagePerManaCrystal) / 2);
+    rawAmount += Math.round((state.maxMana * state.talentEffects.burnDamagePerManaCrystal) / HALF_DIVISOR);
   } else if (effect.damageType === "freeze") {
     rawAmount += state.talentEffects.flatFreezeDamage;
-    rawAmount += Math.round((state.maxMana * state.talentEffects.freezeDamagePerManaCrystal) / 2);
+    rawAmount += Math.round((state.maxMana * state.talentEffects.freezeDamagePerManaCrystal) / HALF_DIVISOR);
   } else if (effect.damageType === "nature") {
     rawAmount += state.talentEffects.flatNatureDamage;
   } else if (effect.damageType === "poison") {
@@ -165,6 +165,18 @@ function applyCrit(damage: number, damageType: string, state: BattleState) {
   const totalChance = GLOBAL_CRIT_CHANCE + physCritChance;
   const isCrit = totalChance > 0 && state.rng() * PERCENT_DENOMINATOR < totalChance;
   return isCrit ? damage * CRIT_MULTIPLIER : damage;
+}
+
+/**
+ * Deduplicates player healing, combat text merging, and overheal-to-block triggers.
+ */
+function executePlayerHealing(state: BattleState, amount: number, combatTexts: CombatTextEvent[]): BattleState {
+  if (amount <= 0) return state;
+  const healAmount = Math.round(amount * state.talentEffects.healMultiplier);
+  mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: healAmount });
+  const nextState = applyPlayerHealing(state, healAmount);
+  emitOverhealBlockText(state, nextState, combatTexts);
+  return nextState;
 }
 
 /**
@@ -193,10 +205,7 @@ function applyLifesteal(state: BattleState, damage: number, combatTexts: CombatT
     healAmount += Math.round(missing / state.talentEffects.leechMissingHealthStep);
   }
 
-  healAmount = Math.round(healAmount * state.talentEffects.healMultiplier);
-  mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: healAmount });
-  let nextState = applyPlayerHealing(state, healAmount);
-  emitOverhealBlockText(state, nextState, combatTexts);
+  let nextState = executePlayerHealing(state, healAmount, combatTexts);
 
   if (
     damage > 0 &&
@@ -229,7 +238,7 @@ function applyLifesteal(state: BattleState, damage: number, combatTexts: CombatT
       const steal = pool[Math.trunc(state.rng() * pool.length)];
       nextState = {
         ...nextState,
-        enemyMitigation: { ...mit, [steal.key]: mit[steal.key] - 1 },
+        enemyMitigation: { ...mit, [steal.key]: Math.max(0, mit[steal.key] - 1) },
       };
       nextState = addPlayerStatus(nextState, steal.status, 1);
     }
@@ -256,14 +265,9 @@ function applyNatureLeech(state: BattleState, damage: number, combatTexts: Comba
 
 function applyHolyLifesteal(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
   if (damage <= 0 || state.talentEffects.holyLifestealPercent <= 0) return state;
-  const healAmount = Math.round(
-    ((damage * state.talentEffects.holyLifestealPercent) / PERCENT_DENOMINATOR) * state.talentEffects.healMultiplier,
-  );
+  const healAmount = Math.round((damage * state.talentEffects.holyLifestealPercent) / PERCENT_DENOMINATOR);
   if (healAmount <= 0) return state;
-  mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: healAmount });
-  const nextState = applyPlayerHealing(state, healAmount);
-  emitOverhealBlockText(state, nextState, combatTexts);
-  return nextState;
+  return executePlayerHealing(state, healAmount, combatTexts);
 }
 
 /**
@@ -292,35 +296,41 @@ function applyHolyTithe(state: BattleState, damage: number, combatTexts: CombatT
 /**
  * Processes first-time burn multipliers from talents and trinkets.
  */
-function applyFirstBurnModifiers(state: BattleState, rawDamage: number): { state: BattleState; damage: number } {
-  let nextState = state;
+function applyFirstBurnModifiers(
+  state: BattleState,
+  rawDamage: number,
+): { damage: number; flagsToSet: Partial<BattleState["flags"]> } {
   let nextDamage = rawDamage;
+  const flagsToSet: Partial<BattleState["flags"]> = {};
 
-  if (nextState.talentEffects.firstBurnCardDoubled && !nextState.flags.firstBurnCardDoubledUsed) {
+  if (state.talentEffects.firstBurnCardDoubled && !state.flags.firstBurnCardDoubledUsed) {
     nextDamage *= FIRST_EFFECT_MULTIPLIER;
-    nextState = setFlag(nextState, "firstBurnCardDoubledUsed", true);
+    flagsToSet.firstBurnCardDoubledUsed = true;
   }
-  if (nextState.trinketEffects.firstBurnDoubled && !nextState.flags.firstBurnTrinketDoubledUsed) {
+  if (state.trinketEffects.firstBurnDoubled && !state.flags.firstBurnTrinketDoubledUsed) {
     nextDamage *= FIRST_EFFECT_MULTIPLIER;
-    nextState = setFlag(nextState, "firstBurnTrinketDoubledUsed", true);
+    flagsToSet.firstBurnTrinketDoubledUsed = true;
   }
 
-  return { state: nextState, damage: nextDamage };
+  return { damage: nextDamage, flagsToSet };
 }
 
 /**
  * Processes first-time holy modifiers from trinkets.
  */
-function applyFirstHolyModifiers(state: BattleState, rawDamage: number): { state: BattleState; damage: number } {
-  let nextState = state;
+function applyFirstHolyModifiers(
+  state: BattleState,
+  rawDamage: number,
+): { damage: number; flagsToSet: Partial<BattleState["flags"]> } {
   let nextDamage = rawDamage;
+  const flagsToSet: Partial<BattleState["flags"]> = {};
 
-  if (nextState.trinketEffects.firstHolyDamageDoubled && !nextState.flags.firstHolyDamageBonusUsed) {
+  if (state.trinketEffects.firstHolyDamageDoubled && !state.flags.firstHolyDamageBonusUsed) {
     nextDamage *= FIRST_EFFECT_MULTIPLIER;
-    nextState = setFlag(nextState, "firstHolyDamageBonusUsed", true);
+    flagsToSet.firstHolyDamageBonusUsed = true;
   }
 
-  return { state: nextState, damage: nextDamage };
+  return { damage: nextDamage, flagsToSet };
 }
 
 /**
@@ -330,16 +340,16 @@ function applyFirstDamageModifiers(
   state: BattleState,
   effect: Extract<BattleCardEffect, { kind: "damage" }>,
   rawDamage: number,
-) {
+): { rawDamage: number; flagsToSet: Partial<BattleState["flags"]> } {
   if (effect.damageType === "burn") {
     const res = applyFirstBurnModifiers(state, rawDamage);
-    return { state: res.state, rawDamage: res.damage };
+    return { rawDamage: res.damage, flagsToSet: res.flagsToSet };
   }
   if (effect.damageType === "holy") {
     const res = applyFirstHolyModifiers(state, rawDamage);
-    return { state: res.state, rawDamage: res.damage };
+    return { rawDamage: res.damage, flagsToSet: res.flagsToSet };
   }
-  return { state, rawDamage };
+  return { rawDamage, flagsToSet: {} };
 }
 
 /**
@@ -429,10 +439,9 @@ function consumeForgeAfterDamage(
  * Computes final adjusted damage to the enemy, considering critical strikes, traits, and armor reduction.
  */
 function computeCardDamageToEnemy(state: BattleState, effect: Extract<BattleCardEffect, { kind: "damage" }>) {
-  const modifiedBase = applyFirstDamageModifiers(state, effect, computeBaseDamage(state, effect));
-  const rawDamage = modifiedBase.rawDamage;
-  const finalDamage = applyCrit(rawDamage, effect.damageType, modifiedBase.state);
-  let nextState = modifiedBase.state;
+  const { rawDamage, flagsToSet } = applyFirstDamageModifiers(state, effect, computeBaseDamage(state, effect));
+  const finalDamage = applyCrit(rawDamage, effect.damageType, state);
+  let nextState = state;
 
   // Block absorbs damage of all types, fully consumed on hit.
   const effectiveBlock = nextState.enemyMitigation.block;
@@ -462,7 +471,7 @@ function computeCardDamageToEnemy(state: BattleState, effect: Extract<BattleCard
   const effectiveArmor = isPhysicalOrStun ? nextState.enemyMitigation.armor : 0;
   const damageAfterArmor = Math.max(0, damageAfterBlock - effectiveArmor);
   const multiplier = getEnemyDamageMultiplier(state, effect.damageType);
-  return { nextState, modifiedDamage: Math.round(damageAfterArmor * multiplier) };
+  return { nextState, modifiedDamage: Math.round(damageAfterArmor * multiplier), flagsToSet };
 }
 
 /**
@@ -529,6 +538,18 @@ export function dealDamageToEnemy(
   effect: Extract<BattleCardEffect, { kind: "damage" }>,
   combatTexts: CombatTextEvent[],
 ) {
-  const { nextState, modifiedDamage } = computeCardDamageToEnemy(state, effect);
-  return applyDamageRiders(nextState, card, effect, modifiedDamage, combatTexts);
+  const { nextState, modifiedDamage, flagsToSet } = computeCardDamageToEnemy(state, effect);
+
+  let stateWithFlags = nextState;
+  if (Object.keys(flagsToSet).length > 0) {
+    stateWithFlags = {
+      ...nextState,
+      flags: {
+        ...nextState.flags,
+        ...flagsToSet,
+      },
+    };
+  }
+
+  return applyDamageRiders(stateWithFlags, card, effect, modifiedDamage, combatTexts);
 }

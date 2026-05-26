@@ -18,7 +18,19 @@ import { defaultSaveData } from "./defaults";
 
 const DESKTOP_SAVE_FILENAME = "save.json";
 
-let writesDisabledForSession = false;
+class SaveSessionState {
+  private writesDisabledForSession = false;
+
+  public setWritesDisabled(disabled: boolean) {
+    this.writesDisabledForSession = disabled;
+  }
+
+  public isWritesDisabled() {
+    return this.writesDisabledForSession;
+  }
+}
+
+const saveSessionState = new SaveSessionState();
 
 async function readStorageItem(key: string): Promise<string | null> {
   if (platform.isDesktop && window.alchemyDesktop) {
@@ -28,15 +40,16 @@ async function readStorageItem(key: string): Promise<string | null> {
       try {
         const cloudData = await platform.cloud.read(DESKTOP_SAVE_FILENAME);
         if (cloudData !== null) return cloudData;
-      } catch {
-        // fallback to defaults
+      } catch (error) {
+        logStorageFailure("Steam Cloud read failed", error);
       }
     }
     return null;
   }
   try {
     return window.localStorage.getItem(key);
-  } catch {
+  } catch (error) {
+    logStorageFailure("LocalStorage read failed", error);
     return null;
   }
 }
@@ -121,7 +134,7 @@ export async function loadAlchemySaveState(): Promise<SaveLoadState> {
 
     const parsed = JSON.parse(raw) as Partial<SaveData>;
     if (isUnsupportedFutureSaveData(parsed)) {
-      writesDisabledForSession = true;
+      saveSessionState.setWritesDisabled(true);
       logError("Save data was created by a newer version; update the game to continue this save.", "storage");
       return {
         data: defaultSaveData,
@@ -130,7 +143,7 @@ export async function loadAlchemySaveState(): Promise<SaveLoadState> {
     }
 
     if (isUnsupportedFutureContentData(parsed)) {
-      writesDisabledForSession = true;
+      saveSessionState.setWritesDisabled(true);
       logError("Save data contains newer game content; update the game to continue this save.", "storage");
       return {
         data: defaultSaveData,
@@ -138,10 +151,9 @@ export async function loadAlchemySaveState(): Promise<SaveLoadState> {
       };
     }
 
-    writesDisabledForSession = false;
+    saveSessionState.setWritesDisabled(false);
     const parsedResult = safeParseWithErrors(SaveDataSchema, parsed);
     if (!parsedResult.success) {
-      writesDisabledForSession = true;
       logStorageFailure("Save data failed validation, falling back to defaults", parsedResult.error);
       return { data: defaultSaveData, status: { kind: "corrupt" } };
     }
@@ -151,12 +163,10 @@ export async function loadAlchemySaveState(): Promise<SaveLoadState> {
       warnings.push(`Field "${ve.path}" was corrupt: ${ve.message}`);
     }
     if (warnings.length > 0) {
-      writesDisabledForSession = true;
       console.info("Save data was normalized during load", warnings);
     }
     return { data, status: warnings.length > 0 ? { kind: "ok", warnings } : { kind: "ok" } };
   } catch (error) {
-    writesDisabledForSession = true;
     logStorageFailure("Save data unavailable or corrupt, falling back to defaults", error);
     return { data: defaultSaveData, status: { kind: "corrupt" } };
   }
@@ -167,7 +177,7 @@ export async function saveAlchemySaveData(data: SaveData) {
   if (typeof window === "undefined") {
     return;
   }
-  if (writesDisabledForSession) return;
+  if (saveSessionState.isWritesDisabled()) return;
 
   try {
     const result = await writeStorageItem(SAVE_KEY, JSON.stringify(data));
@@ -187,7 +197,7 @@ export async function clearAlchemySaveData() {
 
   const result = await removeStorageItem(SAVE_KEY);
   if (result.ok) {
-    writesDisabledForSession = false;
+    saveSessionState.setWritesDisabled(false);
     return;
   }
   logStorageFailure("Save data could not be cleared", result.error);

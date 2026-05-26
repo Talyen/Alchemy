@@ -22,6 +22,7 @@ import { tickEnemyStatuses, tickPlayerStatuses } from "./status-ticks";
 import { applyPlayerDamageStatuses } from "./status-effects";
 import type { EnemyAttackEffect } from "@/lib/game-data/types";
 import type { DifficultyModifier } from "@/lib/game-data/difficulties";
+import { logError } from "../error-logger";
 import {
   applyPlayerCombatDamage,
   applyPlayerHealing,
@@ -100,11 +101,29 @@ function advanceToPlayerTurn(state: BattleState) {
   // If Death's Door is active and player at 0 HP, override CC — they get one full turn.
   // CC skip turns are zeroed to prevent dying to DoT ticks while CC'd.
   const deathsDoorNeedsRecoveryTurn = state.deathsDoorActive && state.playerHealth <= 0;
-  if (!deathsDoorNeedsRecoveryTurn && state.playerStunSkipTurns + state.playerFreezeSkipTurns > 0) {
-    return handleCCSkipTurn(state);
+
+  let nextState = state;
+  if (deathsDoorNeedsRecoveryTurn) {
+    let remaining = state.deathsDoorGraceTurnsRemaining;
+    if (remaining === null || remaining === undefined) {
+      if (state.deathsDoorTriggeredTurn !== null) {
+        const graceTurns = 1 + Math.max(0, state.talentEffects.deathsDoorExtension ?? 0);
+        remaining = graceTurns - (state.turn - state.deathsDoorTriggeredTurn);
+      } else {
+        remaining = 1 + Math.max(0, state.talentEffects.deathsDoorExtension ?? 0);
+      }
+    }
+    nextState = {
+      ...state,
+      deathsDoorGraceTurnsRemaining: remaining - 1,
+    };
   }
 
-  return performDrawAndResetPhase(state, deathsDoorNeedsRecoveryTurn);
+  if (!deathsDoorNeedsRecoveryTurn && state.playerStunSkipTurns + state.playerFreezeSkipTurns > 0) {
+    return handleCCSkipTurn(nextState);
+  }
+
+  return performDrawAndResetPhase(nextState, deathsDoorNeedsRecoveryTurn);
 }
 
 function checkHealthThresholds(
@@ -346,7 +365,9 @@ function processEnemyAttack(state: BattleState, combatTexts: CombatTextEvent[]) 
     } else if (effect.kind === "player-status") {
       nextState = applyPlayerStatusFromAttack(nextState, effect, combatTexts);
     } else {
-      console.warn(`[Enemy Turn] Unknown enemy attack effect kind: ${(effect as { kind: string }).kind}`);
+      logError(`Unknown enemy attack effect kind: ${(effect as { kind: string }).kind}`, "battle", {
+        state: nextState,
+      });
     }
   }
 
@@ -493,17 +514,39 @@ function reduceSkipTurns(state: BattleState): BattleState {
 }
 
 // Death's Door grants a grace period of (1 + extension) full player turns after hitting 0 HP.
-// resolveDeathsDoorEndOfEnemyTurn runs before advanceToPlayerTurn increments the turn counter,
-// so state.turn still holds the player-turn number that just completed its enemy phase.
-// Comparing state.turn to deathsDoorTriggeredTurn gives 0 on the death turn itself, providing
-// (1 + extension) additional turns before the grace window expires.
+// The grace turns counter is initialized on trigger and decremented when a player recovery turn begins.
+// resolveDeathsDoorEndOfEnemyTurn runs at the end of the enemy phase and deactivates the grace window
+// once the remaining turns counter reaches 0 or less.
 function resolveDeathsDoorEndOfEnemyTurn(state: BattleState): BattleState {
   if (!state.deathsDoorActive) return state;
-  if (state.playerHealth > 0) return { ...state, deathsDoorActive: false, deathsDoorTriggeredTurn: null };
-  if (state.deathsDoorTriggeredTurn === null) return state;
-  const graceTurns = 1 + Math.max(0, state.talentEffects.deathsDoorExtension ?? 0);
-  if (state.turn - state.deathsDoorTriggeredTurn < graceTurns) return state;
-  return { ...state, deathsDoorActive: false, deathsDoorTriggeredTurn: null };
+  if (state.playerHealth > 0) {
+    return {
+      ...state,
+      deathsDoorActive: false,
+      deathsDoorTriggeredTurn: null,
+      deathsDoorGraceTurnsRemaining: null,
+    };
+  }
+
+  let remaining = state.deathsDoorGraceTurnsRemaining;
+  if (remaining === null || remaining === undefined) {
+    if (state.deathsDoorTriggeredTurn !== null) {
+      const graceTurns = 1 + Math.max(0, state.talentEffects.deathsDoorExtension ?? 0);
+      remaining = graceTurns - (state.turn - state.deathsDoorTriggeredTurn);
+    } else {
+      return state;
+    }
+  }
+
+  if (remaining <= 0) {
+    return {
+      ...state,
+      deathsDoorActive: false,
+      deathsDoorTriggeredTurn: null,
+      deathsDoorGraceTurnsRemaining: null,
+    };
+  }
+  return state;
 }
 
 // Traits whose behavior is purely passive (damage multipliers, one-time setup, etc.)
@@ -533,7 +576,7 @@ function processEnemyTraits(state: BattleState, combatTexts: CombatTextEvent[], 
       if (handler) {
         nextState = handler(nextState, combatTexts, { traitRoll });
       } else if (!PASSIVE_ONLY_TRAITS.has(trait.id)) {
-        console.warn(`[Enemy Turn] No turn-start handler for trait: ${trait.id}`);
+        logError(`No turn-start handler for trait: ${trait.id}`, "battle", { state: nextState });
       }
     }
   }

@@ -262,6 +262,31 @@ describe("BattleCardEffectSchema", () => {
     const result = BattleCardEffectSchema.safeParse({ kind: "self-damage", damageType: "burn", amount: 3 });
     expect(result.success).toBe(true);
   });
+
+  it("parses remove-player-status", () => {
+    const result = BattleCardEffectSchema.safeParse({ kind: "remove-player-status", status: "poison" });
+    expect(result.success).toBe(true);
+  });
+
+  it("parses lose-health", () => {
+    const result = BattleCardEffectSchema.safeParse({ kind: "lose-health", amount: 1 });
+    expect(result.success).toBe(true);
+  });
+
+  it("parses draw-cards", () => {
+    const result = BattleCardEffectSchema.safeParse({ kind: "draw-cards", amount: 2 });
+    expect(result.success).toBe(true);
+  });
+
+  it("parses remove-enemy-armor", () => {
+    const result = BattleCardEffectSchema.safeParse({ kind: "remove-enemy-armor", amount: 2 });
+    expect(result.success).toBe(true);
+  });
+
+  it("parses multiply-enemy-status", () => {
+    const result = BattleCardEffectSchema.safeParse({ kind: "multiply-enemy-status", status: "freeze", factor: 2 });
+    expect(result.success).toBe(true);
+  });
 });
 
 describe("LabyrinthMapSchema", () => {
