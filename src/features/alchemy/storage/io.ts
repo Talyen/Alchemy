@@ -13,6 +13,7 @@ import {
   isUnsupportedFutureSaveData,
 } from "@/lib/validation";
 import type { SaveData } from "./types";
+import { logError } from "@/lib/error-logger";
 import { defaultSaveData } from "./defaults";
 
 const DESKTOP_SAVE_FILENAME = "save.json";
@@ -84,11 +85,7 @@ async function removeStorageItem(key: string): Promise<StorageOperationResult> {
 
 // Keeps storage failures readable without crashing gameplay when browsers block persistence.
 function logStorageFailure(message: string, error?: unknown) {
-  if (error === undefined) {
-    console.error(message);
-    return;
-  }
-  console.error(message, error);
+  logError(message, "storage", error ? { error: String(error) } : undefined);
 }
 
 function collectSaveRepairWarnings(raw: Partial<SaveData>, normalized: SaveData): string[] {
@@ -125,7 +122,7 @@ export async function loadAlchemySaveState(): Promise<SaveLoadState> {
     const parsed = JSON.parse(raw) as Partial<SaveData>;
     if (isUnsupportedFutureSaveData(parsed)) {
       writesDisabledForSession = true;
-      console.error("Save data was created by a newer version; update the game to continue this save.");
+      logError("Save data was created by a newer version; update the game to continue this save.", "storage");
       return {
         data: defaultSaveData,
         status: { kind: "unsupported-newer-schema", detectedSchemaVersion: getRawSaveSchemaVersion(parsed) },
@@ -134,7 +131,7 @@ export async function loadAlchemySaveState(): Promise<SaveLoadState> {
 
     if (isUnsupportedFutureContentData(parsed)) {
       writesDisabledForSession = true;
-      console.error("Save data contains newer game content; update the game to continue this save.");
+      logError("Save data contains newer game content; update the game to continue this save.", "storage");
       return {
         data: defaultSaveData,
         status: { kind: "unsupported-newer-content", detectedContentVersion: getRawContentVersion(parsed) },

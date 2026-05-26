@@ -88,7 +88,7 @@ export function EnemyTooltip({
   }
 
   return (
-    <div ref={ref} className={cn(popupClassName, "w-60", "pointer-events-none", className)}>
+    <div ref={ref} className={cn(popupClassName, "-translate-x-1/2", "w-60", "pointer-events-none", className)}>
       {inner}
     </div>
   );

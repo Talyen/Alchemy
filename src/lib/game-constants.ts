@@ -11,8 +11,8 @@ export const WISH_CHOICE_COUNT = 3; // Wish offers 3 cards from the full library
 export const MIN_MAX_MANA_FLOOR = 1; // Minimum maxMana after reductions. Prevents softlock — with 0 max mana no card can ever be played.
 
 // ============ Battle / Rooms ============
-export const ROOM_SCALING_INCREMENT = 0.05; // +5% enemy Health/attack per room (multiplicative)
-export const ELITE_HP_MULTIPLIER = 1.2; // Elite enemies get 20% more Health (no attack scaling)
+export const ROOM_SCALING_INCREMENT = 0.07; // +7% enemy Health/attack per room (multiplicative)
+export const ELITE_HP_MULTIPLIER = 1.3; // Elite enemies get 30% more Health (no attack scaling)
 export const STARTING_TURN = 1; // Turn counter starts at 1 for readability.
 export const ENEMY_BASE_REGENERATION = 1; // Base enemy regeneration per turn (scaled by room multiplier).
 export const ENEMY_BOSS_REGENERATION = 1; // Base regen for regeneration-trait bosses (scaled by room multiplier).
@@ -21,7 +21,7 @@ export const FREE_CARD_SENTINEL = 99; // nextCardCostReduction value that guaran
 export const PERCENT_DENOMINATOR = 100; // Percent-based talent and trait values use 0-100 authoring.
 export const HALF_DIVISOR = 2; // Shared halving divisor for decay and below-half thresholds.
 export const FIRST_EFFECT_MULTIPLIER = 2; // First-card double effects intentionally share a 2x multiplier.
-export const GOLD_TROVE_DAMAGE_REWARD = 1; // Mimic trait gold gained each time it takes damage.
+export const GOLD_TROVE_REWARD_MULTIPLIER = 2; // Mimic trait: doubles gold reward on defeat.
 
 // ============ Battle Tuning ============
 export const CARDS_PER_TURN = 4; // Cards drawn at turn start. Tuned to Knight starter deck (8 cards, ~8 turns avg).
@@ -100,7 +100,7 @@ export const SHOP_CARDS_OFFERED = 3; // Cards displayed in the merchant shop.
 export const SHOP_REFRESHES = 1; // Free refreshes per shop visit.
 export const ALCHEMIST_POTIONS_OFFERED = 3; // Potions displayed in the alchemist shop.
 export const ALCHEMIST_REFRESHES = 1; // Free refreshes per alchemist visit.
-export const BOSS_HEALTH_MULTIPLIER = 1.3; // Boss enemies get 30% more Health (no attack scaling).
+export const BOSS_HEALTH_MULTIPLIER = 1.4; // Boss enemies get 40% more Health (no attack scaling).
 export const BOSS_TRINKET_REWARD_CHOICES = 3; // Trinket choices offered after a boss kill.
 export const ELITE_TRINKET_REWARD_CHANCE = 0.75; // Elite rewards strongly favor trinkets but still allow card rewards.
 export const MYSTERY_CARD_CHOICES = 3; // Card-choice mystery events offer the same count as normal reward choices.
@@ -192,6 +192,7 @@ export const MAX_STAGE_SCALE = 2.0; // Upper bound that still keeps card dimensi
 
 // ============ Collection ============
 export const COLLECTION_PAGE_SIZE = 8; // Items per page in the collection compendium (4 cols × 2 rows).
+export const TRINKET_PAGE_SIZE = 6; // Items per page for trinkets tab (3 cols × 2 rows).
 export const SELECTION_GRID_PAGE_SIZE = 8; // Items per page in deck selection grids (4 cols × 2 rows).
 export const BATTLE_ACTOR_TOP = "34%"; // Vertical anchor for player/enemy cards.
 export const HAND_FAN_VERTICAL_STEP_PX = 10; // Per-card vertical offset for resting hand fan.

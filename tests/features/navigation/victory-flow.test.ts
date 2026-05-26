@@ -192,6 +192,29 @@ describe("computeVictoryRewards", () => {
     expect(result.eliteBonus).toBeGreaterThan(0);
   });
 
+  it("doubles gold reward when enemy has gold-trove trait", () => {
+    const normal = computeVictoryRewards(baseInput({
+      battleState: baseBattleState({ currentEnemy: { id: "goblin-chief", enemyType: "elite" } }),
+    }));
+    const mimic = computeVictoryRewards(baseInput({
+      battleState: baseBattleState({
+        currentEnemy: {
+          id: "mimic",
+          title: "Mimic",
+          subtitle: "Elite",
+          descriptionLines: [],
+          art: "",
+          enemyType: "elite",
+          traits: [{ id: "gold-trove", title: "Gold Trove", description: "Drops Double Gold on Defeat" }],
+          attackEffects: [{ kind: "damage", damageType: "physical", amount: 7 }],
+        },
+      }),
+    }));
+    expect(mimic.goldEarned).toBeGreaterThan(normal.goldEarned);
+    expect(mimic.eliteBonus).toBeGreaterThan(normal.eliteBonus);
+    expect(mimic.goldEarned).toBeCloseTo(normal.goldEarned * 2, -1);
+  });
+
   it("applies boss gold bonus and trinket reward for boss enemies", () => {
     const result = computeVictoryRewards(baseInput({
       battleState: baseBattleState({ currentEnemy: { id: "dragon", enemyType: "boss" } }),

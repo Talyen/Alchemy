@@ -2,6 +2,7 @@
 // Depends on shaped collection items, tile rendering, collection metadata, and pagination UI.
 // Used by CollectionScreen to render encyclopedia-style grids without owning screen routing.
 /* eslint-disable react-refresh/only-export-components */
+import { cn } from "@/lib/utils";
 import type { CSSProperties } from "react";
 
 import { PaginationControls } from "./shared-ui";
@@ -40,7 +41,10 @@ export function CollectionGrid({
   return (
     <div
       key={`${collectionTab}-${page}`}
-      className="state-swap grid min-h-[50cqh] grid-cols-4 grid-rows-2 justify-items-center gap-x-3 gap-y-7 overflow-visible"
+      className={cn(
+        "state-swap grid min-h-[50cqh] justify-items-center gap-x-3 gap-y-7 overflow-visible",
+        collectionTab === "trinkets" ? "grid-cols-3 grid-rows-2" : "grid-cols-4 grid-rows-2",
+      )}
     >
       {pageItems.map((item, index) => (
         <CompendiumTile
@@ -49,7 +53,7 @@ export function CollectionGrid({
           wrapperStyle={{ "--stagger-index": index } as CSSProperties}
         />
       ))}
-      {Array.from({ length: getCollectionFillerCount(pageItems.length) }).map((_, index) => (
+      {Array.from({ length: getCollectionFillerCount(pageItems.length, collectionTab) }).map((_, index) => (
         <div
           key={`collection-filler-${index}`}
           className={collectionTab === "trinkets" ? trinketCardWidthClass : collectionTileWidthClass}

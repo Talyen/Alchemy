@@ -34,7 +34,6 @@ import { applyEnemyCcImmunityClear, assignEnemyCrowdControlSkip } from "./status
 import { rollPercent } from "./status-helpers";
 import {
   BLEED_STATUS_MULTIPLIER,
-  ENEMY_TRAIT_IDS,
   FIRST_EFFECT_MULTIPLIER,
   FREEZE_THRESHOLD_FRACTION,
   HALF_DIVISOR,
@@ -353,13 +352,8 @@ function tryTriggerEnemyFreeze(
   nextState: BattleState,
   combatTexts: CombatTextEvent[],
 ): BattleState {
-  const isFreezeImmune = preHitState.currentEnemy.traits.some((t) => t.id === ENEMY_TRAIT_IDS.GLACIAL_SHELL);
   const freezeThreshold = FREEZE_THRESHOLD_FRACTION - preHitState.talentEffects.freezeThresholdReduction;
-  if (
-    isFreezeImmune ||
-    preHitState.enemyHealth <= 0 ||
-    nextState.enemyStatuses.freeze < preHitState.enemyHealth * freezeThreshold
-  ) {
+  if (preHitState.enemyHealth <= 0 || nextState.enemyStatuses.freeze < preHitState.enemyHealth * freezeThreshold) {
     return nextState;
   }
 

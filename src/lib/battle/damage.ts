@@ -27,8 +27,6 @@ import {
   CRIT_MULTIPLIER,
   FIRST_EFFECT_MULTIPLIER,
   GLOBAL_CRIT_CHANCE,
-  ENEMY_TRAIT_IDS,
-  GOLD_TROVE_DAMAGE_REWARD,
   HALF_DIVISOR,
   PERCENT_DENOMINATOR,
   STATUS_CONFIG,
@@ -398,17 +396,6 @@ function applyHolyDamageRiders(state: BattleState, card: BattleCard, damage: num
 }
 
 /**
- * Awards player gold if the enemy has the "gold-trove" trait (e.g. Mimic).
- */
-function applyGoldTroveReward(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
-  if (!state.currentEnemy.traits.some((t) => t.id === ENEMY_TRAIT_IDS.GOLD_TROVE) || damage <= 0) return state;
-  const scaledGold = Math.round(GOLD_TROVE_DAMAGE_REWARD * state.roomScalingMultiplier);
-  if (scaledGold <= 0) return state;
-  mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "gold", amount: scaledGold });
-  return addGold(state, scaledGold);
-}
-
-/**
  * Consumes player forge charge after executing a damage hit.
  * Forge is consumed whenever it contributed to the damage — whether
  * through physical/stun natively or burn/holy via talent effects.
@@ -479,18 +466,17 @@ function computeCardDamageToEnemy(state: BattleState, effect: Extract<BattleCard
 }
 
 /**
- * Decreases enemy defensive stacks by decay configuration on health-hitting damage.
+ * Decreases enemy armor by decay amount on health-hitting damage.
+ * Block is fully consumed by damage absorption and does not decay separately.
  */
 function decayEnemyDefensesOnHit(state: BattleState, modifiedDamage: number): BattleState {
   if (modifiedDamage <= 0) return state;
-  const { armor, block } = state.enemyMitigation;
-  if (armor <= 0 && block <= 0) return state;
+  if (state.enemyMitigation.armor <= 0) return state;
   return {
     ...state,
     enemyMitigation: {
       ...state.enemyMitigation,
-      armor: Math.max(0, armor - BATTLE_CONFIG.ARMOR_DECAY_AMOUNT),
-      block: Math.max(0, block - BATTLE_CONFIG.ARMOR_DECAY_AMOUNT),
+      armor: Math.max(0, state.enemyMitigation.armor - BATTLE_CONFIG.ARMOR_DECAY_AMOUNT),
     },
   };
 }
@@ -520,7 +506,6 @@ function applyDamageRiders(
   if (effect.lifesteal) nextState = applyLifesteal(nextState, modifiedDamage, combatTexts);
   if (effect.damageType === "holy") nextState = applyHolyDamageRiders(nextState, card, modifiedDamage, combatTexts);
 
-  nextState = applyGoldTroveReward(nextState, modifiedDamage, combatTexts);
   if (effect.damageType === "nature") {
     nextState = applyLuckyCloverGold(nextState, modifiedDamage, combatTexts);
     if (state.talentEffects.natureLeechChance > 0) {

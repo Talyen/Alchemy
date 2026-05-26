@@ -4,6 +4,20 @@
 
 Between runs, the **Homestead** lets the player spend **Materials** on permanent upgrades. **Talent XP** earned during runs — awarded per **Keyword** when matching cards are played — unlocks passive bonuses that persist across future runs.
 
+## Core Gameplay Mechanics
+
+Non-obvious rules that deviate from typical CCG/roguelike assumptions:
+
+- **Single enemy per battle** — always 1-on-1. No multi-enemy fights, no AoE targeting decisions.
+- **Mana resets fully each turn** — starts at `maxMana` (4 base), unspent mana is lost (unless Wellspring talent adds bonus mana).
+- **Companions are invulnerable** — no HP, no damage targeting, no block. They act for the player automatically at turn start, then persist indefinitely.
+- **Draw 4 per turn, max hand 7** — overflow draws are silently skipped, not discarded. Hand is cleared to discard pile before drawing.
+- **Deck auto-reshuffles** — when draw pile empties, discard is reshuffled immediately (mid-draw if needed). Only `consume` cards leave permanently.
+- **Block decays at end of enemy turn** — halved (not cleared) after the enemy attacks, during turn transition. Absorbs all enemy damage first.
+- **Turn order** — Player (companion attacks → play cards) → Enemy (DoT ticks on enemy → enemy attacks → DoT ticks on player → regen) → Turn reset (draw 4, restore mana, decay block).
+- **Status DoT ticks**: enemy DoTs tick at start of enemy phase; player DoTs tick during enemy resolution (after enemy attack). Stun/freeze CC checked after DoT damage.
+- **Death's Door** — when player hits 0 HP, they get 1+ grace turn at 0 HP. Must heal above 0 before grace expires or the run ends. CC skip turns are suppressed during grace.
+
 ## Commands
 
 ```sh
@@ -86,6 +100,20 @@ npm run release          # Auto-bump + changelog + tag (patch)
 | 1. Define entry in `trinketLibrary` array | `src/lib/game-data/compendium.ts` |
 | 2. Implement effect logic | `src/lib/trinkets.ts` — extend `TrinketEffectManifest` and apply in battle init |
 | 3. Add art reference | `src/lib/game-data/assets.ts` |
+
+**Add a new companion**:
+
+| Step | File(s) |
+|---|---|
+| 1. Add companion ID to `CompanionId` union | `src/lib/game-data/types.ts` |
+| 2. Add optimized art and barrel export | `src/lib/game-data/assets.ts` |
+| 3. Define companion in `companionLibrary` record | `src/lib/game-data/companions.ts` |
+| 4. Add summon card for companion (`kind: "summon-companion"`) | `src/lib/game-data/cards.ts` |
+| 5. Add summon card ID to `CardId` union | `src/lib/game-data/types.ts` |
+| 6. (Optional) Register card sound | `src/lib/sound-registry.ts` |
+| 7. Add bond level to talent defaults (`companionBondLevels`) | `src/lib/game-data/talents.ts` |
+| 8. Add bond level to homestead defaults | `src/lib/homestead/defaults.ts` |
+| 9. Update description lines + tests | `tests/lib/game-data/companions.test.ts` + `tests/lib/game-data/descriptions-match-effects.test.ts` |
 
 **Add a new keyword**:
 
@@ -196,7 +224,7 @@ Controllers in `src/features/alchemy/` bridge pure lib logic to React UI:
 - **Test-Driven Development**: Write tests before implementing features or fixing bugs.
 - **Commit messages**: Follow [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `refactor:`, etc.) — enforced by commitlint + lefthook.
 
-### React Conventions
+### React & UI Conventions
 
 - **No `React.FC`** — components are plain functions with explicit `interface Props` or local `type` above the component
 - **Tailwind via `cn()`** — use `cn()` from `@/lib/utils` for all conditional class merging. Order: layout/structure → visual → variant → external `className`. Primitives with variants use `class-variance-authority` (`cva()`)
@@ -204,17 +232,26 @@ Controllers in `src/features/alchemy/` bridge pure lib logic to React UI:
 - **Event handlers** — chain feedback first (sound via `playUISound("buttonHover")`), then call original handler via `onX?.(e)`. Avoid `useEffect` for UI side effects
 - **Motion** via `framer-motion` (`motion/react`). Use `PressableMotion` wrapper for spring-based press feedback (`stiffness: 400`, `damping: 15`)
 - **Modals** — render as `fixed` overlay with backdrop `bg-black/70`, close on backdrop click with `e.stopPropagation()` on inner panel
+- **Interactive elements** need all four states: default, hover, active/pressed, disabled
+- **No emoji in game UI** — use icons or symbols
 
 ### Domain Glossary
 
 | Term | Definition |
-|---|---|
-| **Death's Door** | One-shot survival mechanic granting one final turn after player health reaches zero. |
+|---|---|---|
+| **Block** | Temporary damage absorption that expires at end of player's turn. |
+| **Burn** | Damage-over-time status; ticks at start of enemy turn, then stack decreases by 1. |
 | **Combat Text** | Floating battle numbers merged per `(target, kind, stat)` for deduplication. |
+| **Companion Bond** | Per-companion talent level that boosts companion damage each turn. |
+| **Content System** | One of `campaign`, `labyrinth`, or `wildwood` — defines map generation, modifier pool, and encounter rules. |
+| **Corruption** | Altar event that mutates a card by adding a random harmful effect/tag. |
+| **Death's Door** | One-shot survival mechanic granting one final turn after player health reaches zero. |
+| **Potion** | Consumable item with a temporary effect, mixed at the Alchemist shop. |
+| **Status** | Temporary effect on a player or enemy with tick/expiry logic (e.g. Burn, Freeze, Poison, Stun). |
+| **Summon** | Effect that brings a companion ally into battle. |
 | **Talent Effect Manifest** | All active talent bonuses pre-computed into one object per battle (`BattleState.talentEffects`). |
 | **Trinket Manifest** | All equipped trinket bonuses pre-computed once at battle start (`BattleState.trinketEffects`). |
 | **Wish** | Effect presenting card choices from the full card library; queued via `wishQueue`. |
-| **Content System** | One of `campaign`, `labyrinth`, or `wildwood` — defines map generation, modifier pool, and encounter rules. |
 
 ## Barrel Imports
 
@@ -262,13 +299,6 @@ Individual top-level lib modules (`balance.ts`, `talents.ts`, `trinkets.ts`) are
 | Wildwood boss data | `src/lib/content-systems/wildwood/bosses.ts` |
 | Zustand stores | `src/features/alchemy/stores/` |
 
-## UI/UX Design
-
-- **Upfront asset preloading** (see Key Conventions)
-- **Tailwind CSS v4.0** for standard styling; Vanilla CSS only for complex animations utility classes cannot express
-- Interactive elements need all four states: default, hover, active/pressed, disabled
-- No emoji in game UI (use icons or symbols)
-
 ## Project Gotchas
 
 - **Shell is PowerShell**: chain dependent commands with `; if ($?) { next-command }` — `;` alone always runs regardless of prior exit code. Double quotes for interpolation, single for verbatim.
@@ -279,10 +309,10 @@ Individual top-level lib modules (`balance.ts`, `talents.ts`, `trinkets.ts`) are
 
 ## Debugging
 
-- `npm run dev` enables Vite HMR with full source maps.
-- Use React DevTools (Chrome extension) for component tree and state inspection.
-- Zustand stores have devtools middleware — check store config for enabled logging.
-- `window.__ALCHEMY_DEBUG = true` enables verbose combat logging (if implemented).
+- **Dev mode**: `localStorage["alchemy-dev-mode"] = "true"` enables "Skip Combat" (battle screen), "Unlock All" QA panel (Options), and bypasses the startup loading screen
+- **Startup validation**: `src/lib/validate-startup.ts` auto-runs assertions on boot — check console for errors if constants are invalid
+- **Console warnings**: `src/lib/battle/enemy-turn.ts` logs `[Enemy Turn]` warnings for unrecognized attack effects or missing trait handlers
+- **React DevTools**: Chrome extension for component tree and Zustand state inspection
 
 ## Verification Strategy
 
@@ -307,13 +337,12 @@ Tests mirror source: `tests/lib/battle/foo.test.ts` tests `src/lib/battle/foo.ts
 - `playUntilVictory(page)`: loops up to 12 turns playing all playable cards.
 - Prefer deterministic setup helpers over relying on random opening hands or generated maps.
 
-## Generated And Heavy Files
+## Large / Generated / Heavy Files
 
-Avoid editing or re-reading unless directly relevant: `node_modules/`, `package-lock.json`, `Raw Assets/**`, `src/assets/optimized/**`, `Music/**`, `dist/**`, `.vite/**`, `release-desktop/**`, `coverage/**`, `reports/**`.
+Avoid repeated reads unless directly relevant:
 
-## Large Stable Files
-
-These are central and may be large. Avoid repeated reads within a session unless they are relevant to the task: `src/lib/game-constants.ts`, `src/lib/game-data/cards.ts`, `src/lib/game-data/keywords.ts`, `src/lib/game-data/assets.ts`, `vite.config.ts`, `tsconfig.json`, `playwright.config.ts`.
+- **Generated/heavy** (never edit): `node_modules/`, `package-lock.json`, `Raw Assets/**`, `src/assets/optimized/**`, `Music/**`, `dist/**`, `.vite/**`, `release-desktop/**`, `coverage/**`, `reports/**`
+- **Large stable files** (edit rarely, read on demand): `src/lib/game-constants.ts`, `src/lib/game-data/cards.ts`, `src/lib/game-data/keywords.ts`, `src/lib/game-data/assets.ts`, `vite.config.ts`, `tsconfig.json`, `playwright.config.ts`
 
 ## AI Behavior
 

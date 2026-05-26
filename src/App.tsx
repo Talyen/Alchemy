@@ -22,6 +22,7 @@ import { useAppAudioEffects } from "@/app/use-app-audio-effects";
 import { useAppDisplayEffects } from "@/app/use-app-display-effects";
 import { useScreenAssetPreloadEffects } from "@/app/use-app-preload-effects";
 import { useAlchemyAutosave } from "@/app/use-app-save-state";
+import { useGlobalErrorHandlers } from "@/app/use-global-error-handlers";
 import { useInitialLoadReady } from "@/app/use-initial-load-ready";
 import { renderAlchemyScreen } from "@/app/render-alchemy-screen";
 import { StartupLoadingScreen } from "@/app/startup-loading-screen";
@@ -106,6 +107,7 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
   const vrStageRef = useRef<HTMLDivElement>(null);
   const initialLoadReady = useInitialLoadReady({ imageUrls: allGameArt });
   useAppDisplayEffects({ displayMode, uiScale, brightness, stageRef: vrStageRef });
+  useGlobalErrorHandlers();
   const gameMenuOpenRef = useRef(gameMenuOpen);
   const renderedScreenRef = useRef(renderedScreen);
   // Refs let the global Escape listener read current screen/menu state without re-registering
@@ -384,7 +386,7 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
   );
 
   return (
-    <ErrorBoundary>
+    <ErrorBoundary label={renderedScreen}>
       <div className="flex h-screen w-screen items-center justify-center overflow-hidden bg-background p-4">
         <div className="relative" style={frameStyle}>
           <div

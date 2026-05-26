@@ -1146,11 +1146,11 @@ describe("createBattleState", () => {
   });
 
   it("scales enemy stats by cumulative rooms in run", () => {
-    // totalRooms=5 → scaler=4, roomMul=1+4*0.05=1.20
+    // totalRooms=5 → scaler=4, roomMul=1+4*0.07=1.28
     // Normal skeleton: hpTypeMul=1
     const result = createBattleState({ runDeck: battleDeck, totalRooms: 5, currentEnemy: skeleton });
-    expect(result.enemyHealth).toBe(36); // round(30 * 1.20) = 36
-    expect(result.enemyAttackEffects[0].amount).toBe(11); // round(9 * 1.20) = 11
+    expect(result.enemyHealth).toBe(38); // round(30 * 1.28) = 38
+    expect(result.enemyAttackEffects[0].amount).toBe(12); // round(9 * 1.28) = 12
   });
 
   describe("difficulty modifiers", () => {
@@ -2221,35 +2221,6 @@ describe("damage riders via applyCardEffects", () => {
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);
     expect(result.enemyStatuses.burn).toBeGreaterThanOrEqual(5);
-  });
-
-  it("gold-trove trait grants 1 gold per hit", () => {
-    vi.spyOn(Math, "random").mockReturnValue(0.99);
-    const state = makeState({
-      mana: 10,
-      enemyHealth: 50,
-      enemyMaxHealth: 50,
-      gold: 0,
-      currentEnemy: {
-        id: "mimic",
-        title: "Mimic",
-        subtitle: "",
-        descriptionLines: [""],
-        art: "",
-        enemyType: "normal",
-        traits: [{ id: "gold-trove", title: "Gold Trove", description: "Grants gold when hit" }],
-        attackEffects: [],
-      },
-      deck: [],
-      hand: [],
-      discard: [],
-      exhausted: [],
-    });
-    const card = makeCard({ effects: [{ kind: "damage", damageType: "physical", amount: 5 }] });
-    const texts: CombatTextEvent[] = [];
-    const result = applyCardEffects(state, card, texts);
-    expect(result.gold).toBe(1);
-    expect(texts).toContainEqual({ target: "player", kind: "status", stat: "gold", amount: 1 });
   });
 
   it("bleed desperate multiplier applies when player is below half health", () => {

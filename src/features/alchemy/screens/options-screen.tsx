@@ -17,6 +17,7 @@ import {
 } from "../ui/shared-ui";
 import { PressableMotion } from "../ui/pressable-motion";
 import type { AspectRatioOption, DisplayMode, UiScale } from "../types";
+import { ErrorLogViewer } from "./error-log-viewer";
 
 type OptionsTab = "display" | "sound" | "gameplay" | "other";
 
@@ -59,6 +60,7 @@ type SaveDataOptionsProps = {
 type DevOptionsProps = {
   onClearSave?: () => void;
   onUnlockAll: () => void;
+  onOpenErrorLog?: () => void;
 };
 
 // Keeps slider rows consistent so volume settings read as one sound board.
@@ -194,6 +196,17 @@ function OtherOptionsPanel({ saveData, dev }: { saveData: SaveDataOptionsProps; 
               <Button onClick={dev.onUnlockAll}>Unlock All</Button>
             </div>
           </div>
+          <div className="surface-muted rounded-[22px] border border-amber-600/40 p-5">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold text-foreground">Error Log</p>
+                <p className="mt-1 text-sm text-muted-foreground">View persisted crash logs — useful after a reload.</p>
+              </div>
+              <Button variant="outline" onClick={dev.onOpenErrorLog}>
+                View Log
+              </Button>
+            </div>
+          </div>
         </>
       ) : null}
       <div className="surface-muted rounded-[22px] border border-border/70 p-5">
@@ -242,7 +255,14 @@ export function OptionsScreen({
   dev: DevOptionsProps;
 }) {
   const [tab, setTab] = useState<OptionsTab>("display");
+  const [showErrorLog, setShowErrorLog] = useState(false);
   const tabPanelClass = "col-start-1 row-start-1 pt-6 text-left";
+
+  const devWithLog = { ...dev, onOpenErrorLog: dev.onOpenErrorLog ?? (() => setShowErrorLog(true)) };
+
+  if (showErrorLog) {
+    return <ErrorLogViewer onClose={() => setShowErrorLog(false)} />;
+  }
 
   return (
     <PageLayout>
@@ -297,7 +317,7 @@ export function OptionsScreen({
             className={cn(tabPanelClass, tab === "other" ? "state-swap" : "invisible pointer-events-none")}
             aria-hidden={tab !== "other"}
           >
-            <OtherOptionsPanel saveData={saveData} dev={dev} />
+            <OtherOptionsPanel saveData={saveData} dev={devWithLog} />
           </div>
         </div>
       </div>

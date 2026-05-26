@@ -1,7 +1,7 @@
 // Pure collection item shaping for cards, enemies, and trinkets.
 // Depends on game-data libraries, card description formatting, and collection page size tuning.
 // Used by collection UI layout and tests without owning rendering concerns.
-import { COLLECTION_PAGE_SIZE } from "@/lib/game-constants";
+import { COLLECTION_PAGE_SIZE, TRINKET_PAGE_SIZE } from "@/lib/game-constants";
 import { cardLibrary, enemyBestiary, trinketLibrary, type BestiaryEntry, type TrinketEntry } from "@/lib/game-data";
 
 import type { CollectionTab } from "../types";
@@ -27,6 +27,10 @@ export type CollectionTileItem = {
   enemyEntry?: BestiaryEntry;
 };
 
+function getCollectionPageSize(tab: CollectionTab): number {
+  return tab === "trinkets" ? TRINKET_PAGE_SIZE : COLLECTION_PAGE_SIZE;
+}
+
 export function getCollectionTotalPages(collectionTab: CollectionTab) {
   const itemCount =
     collectionTab === "cards"
@@ -35,7 +39,7 @@ export function getCollectionTotalPages(collectionTab: CollectionTab) {
         ? enemyBestiary.length
         : trinketLibrary.length;
 
-  return Math.max(1, Math.ceil(itemCount / COLLECTION_ITEMS_CONFIG.pageSize));
+  return Math.max(1, Math.ceil(itemCount / getCollectionPageSize(collectionTab)));
 }
 
 export function getCollectionPageItems({
@@ -60,11 +64,12 @@ export function getCollectionPageItems({
     discoveredTrinketIds,
     bondedCompanions,
   });
-  return items.slice(page * COLLECTION_ITEMS_CONFIG.pageSize, (page + 1) * COLLECTION_ITEMS_CONFIG.pageSize);
+  const pageSize = getCollectionPageSize(collectionTab);
+  return items.slice(page * pageSize, (page + 1) * pageSize);
 }
 
-export function getCollectionFillerCount(itemCount: number) {
-  return Math.max(0, COLLECTION_ITEMS_CONFIG.pageSize - itemCount);
+export function getCollectionFillerCount(itemCount: number, collectionTab: CollectionTab) {
+  return Math.max(0, getCollectionPageSize(collectionTab) - itemCount);
 }
 
 function getCollectionItems({

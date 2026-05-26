@@ -124,22 +124,22 @@ describe("getDifficultyModifiers", () => {
     }
   });
 
-  it("Adventurer (d2) has +20% HP and damage modifiers on all characters", () => {
+  it("Adventurer (d2) has +30% HP and damage modifiers on all characters", () => {
     for (const char of ALL_CHARACTERS) {
       const mods = getDifficultyModifiers(char, "difficulty-2");
       expect(mods).toEqual([
-        { kind: "enemy-health-multiplier", amount: 1.2 },
-        { kind: "enemy-damage-multiplier", amount: 1.2 },
+        { kind: "enemy-health-multiplier", amount: 1.3 },
+        { kind: "enemy-damage-multiplier", amount: 1.3 },
       ]);
     }
   });
 
-  it("Legend (d3) has +40% HP and damage modifiers on all characters", () => {
+  it("Legend (d3) has +60% HP and damage modifiers on all characters", () => {
     for (const char of ALL_CHARACTERS) {
       const mods = getDifficultyModifiers(char, "difficulty-3");
       expect(mods).toEqual([
-        { kind: "enemy-health-multiplier", amount: 1.4 },
-        { kind: "enemy-damage-multiplier", amount: 1.4 },
+        { kind: "enemy-health-multiplier", amount: 1.6 },
+        { kind: "enemy-damage-multiplier", amount: 1.6 },
       ]);
     }
   });
@@ -176,11 +176,11 @@ describe("getDifficultyXPMultiplier", () => {
     expect(getDifficultyXPMultiplier("difficulty-1")).toBe(1.0);
   });
 
-  it("returns 1.2 for Adventurer (d2)", () => {
-    expect(getDifficultyXPMultiplier("difficulty-2")).toBe(1.2);
+  it("returns 1.3 for Adventurer (d2)", () => {
+    expect(getDifficultyXPMultiplier("difficulty-2")).toBe(1.3);
   });
 
-  it("returns 1.4 for Legend (d3)", () => {
-    expect(getDifficultyXPMultiplier("difficulty-3")).toBe(1.4);
+  it("returns 1.6 for Legend (d3)", () => {
+    expect(getDifficultyXPMultiplier("difficulty-3")).toBe(1.6);
   });
 });

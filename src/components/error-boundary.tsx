@@ -1,10 +1,15 @@
-// React error boundary that logs component stacks and shows a reload fallback.
-// Depends only on React class lifecycle APIs.
+// React error boundary that logs component stacks via the centralized error logger
+// and shows a reload fallback.
 // Used at the root so render failures do not leave the game on a blank page.
 import { Component, type ErrorInfo, type ReactNode } from "react";
+import { logError } from "@/lib/error-logger";
 
 interface Props {
   children: ReactNode;
+  /** Optional label for nested boundaries (e.g. screen name) */
+  label?: string;
+  /** Called when an error is caught, before the fallback UI shows */
+  onError?: (error: Error, info: ErrorInfo) => void;
 }
 interface State {
   hasError: boolean;
@@ -18,7 +23,15 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    console.error("ErrorBoundary caught:", error, info.componentStack);
+    const label = this.props.label ?? undefined;
+    logError(
+      label ? `ErrorBoundary (${label}): ${error.message}` : `ErrorBoundary: ${error.message}`,
+      "react",
+      label ? { screen: label } : undefined,
+      error.stack ?? undefined,
+      info.componentStack ?? undefined,
+    );
+    this.props.onError?.(error, info);
   }
 
   render() {

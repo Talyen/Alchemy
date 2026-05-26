@@ -256,19 +256,19 @@ describe("finalizeRunXP", () => {
     expect(useRunStore.getState().runTalentXP).toEqual({});
   });
 
-  it("applies 1.2x multiplier for difficulty-2", () => {
+  it("applies 1.3x multiplier for difficulty-2", () => {
     useRunStore.setState({ selectedDifficulty: "difficulty-2" });
     useRunStore.getState().awardMysteryXP("burn", 10);
     useRunStore.getState().finalizeRunXP();
-    expect(useRunStore.getState().talentXP.burn).toBe(12);
+    expect(useRunStore.getState().talentXP.burn).toBe(13);
     expect(useRunStore.getState().runTalentXP).toEqual({});
   });
 
-  it("applies 1.4x multiplier for difficulty-3", () => {
+  it("applies 1.6x multiplier for difficulty-3", () => {
     useRunStore.setState({ selectedDifficulty: "difficulty-3" });
     useRunStore.getState().awardMysteryXP("burn", 10);
     useRunStore.getState().finalizeRunXP();
-    expect(useRunStore.getState().talentXP.burn).toBe(14);
+    expect(useRunStore.getState().talentXP.burn).toBe(16);
     expect(useRunStore.getState().runTalentXP).toEqual({});
   });
 
@@ -277,7 +277,7 @@ describe("finalizeRunXP", () => {
     useRunStore.getState().awardMysteryXP("burn", 10);
     useRunStore.getState().finalizeRunXP();
     useRunStore.getState().finalizeRunXP();
-    expect(useRunStore.getState().talentXP.burn).toBe(12);
+    expect(useRunStore.getState().talentXP.burn).toBe(13);
     expect(useRunStore.getState().runTalentXP).toEqual({});
   });
 });

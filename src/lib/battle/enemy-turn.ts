@@ -506,6 +506,22 @@ function resolveDeathsDoorEndOfEnemyTurn(state: BattleState): BattleState {
   return { ...state, deathsDoorActive: false, deathsDoorTriggeredTurn: null };
 }
 
+// Traits whose behavior is purely passive (damage multipliers, one-time setup, etc.)
+// and intentionally have no turn-start handler. Excludes warnings to reduce noise.
+const PASSIVE_ONLY_TRAITS = new Set([
+  "brittle-bones",
+  "trinket-hoarder",
+  "holy-vulnerability",
+  "burn-resistance",
+  "burn-vulnerability",
+  "living-armor",
+  "thick-hide",
+  "poison-resistance",
+  "gold-trove",
+  "starting-block",
+  "regeneration",
+]);
+
 function processEnemyTraits(state: BattleState, combatTexts: CombatTextEvent[], options?: { traitRoll?: number }) {
   let nextState = state;
   const scalingBlocked = isScalingBlocked(nextState);
@@ -516,7 +532,7 @@ function processEnemyTraits(state: BattleState, combatTexts: CombatTextEvent[], 
       const handler = enemyTraitTurnStartHandlers[trait.id];
       if (handler) {
         nextState = handler(nextState, combatTexts, { traitRoll });
-      } else {
+      } else if (!PASSIVE_ONLY_TRAITS.has(trait.id)) {
         console.warn(`[Enemy Turn] No turn-start handler for trait: ${trait.id}`);
       }
     }
@@ -556,6 +572,10 @@ export type EndPlayerTurnResolution = {
   enemyTurnStartCombatTexts: CombatTextEvent[];
   enemyResolutionCombatTexts: CombatTextEvent[];
   enemyPerformedAttack: boolean;
+  /** Battle state immediately after the enemy attack but before player DoT ticks.
+   *  Used by the balance sim's anomaly detector to capture peak player status values
+   *  (e.g., bleed) that are consumed by tickPlayerStatuses in the same resolution step. */
+  afterAttackState?: BattleState;
 };
 
 function finalizePlayerTurn(state: BattleState, combatTexts: CombatTextEvent[]) {
@@ -610,13 +630,17 @@ function resolveEnemyTurnStart(state: BattleState): CombatTextResult {
   return { state: nextState, texts };
 }
 
-function resolveEnemyAction(state: BattleState, options?: { traitRoll?: number }): CombatTextResult {
+function resolveEnemyAction(
+  state: BattleState,
+  options?: { traitRoll?: number },
+): CombatTextResult & { afterAttackState: BattleState } {
   const texts: CombatTextEvent[] = [];
   let nextState = processEnemyTraits(state, texts, options);
   nextState = processEnemyAttack(nextState, texts);
+  const afterAttackState = nextState;
   nextState = tickPlayerStatuses(nextState, texts);
   nextState = processEnemyRegeneration(nextState, texts);
-  return { state: nextState, texts };
+  return { state: nextState, texts, afterAttackState };
 }
 
 export function endPlayerTurn(state: BattleState, options?: { traitRoll?: number }): EndPlayerTurnResolution {
@@ -653,5 +677,6 @@ export function endPlayerTurn(state: BattleState, options?: { traitRoll?: number
     enemyTurnStartCombatTexts,
     enemyResolutionCombatTexts: actionResult.texts,
     enemyPerformedAttack: true,
+    afterAttackState: actionResult.afterAttackState,
   };
 }

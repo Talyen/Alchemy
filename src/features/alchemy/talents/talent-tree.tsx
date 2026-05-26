@@ -20,11 +20,11 @@ interface TalentLayoutConfig {
 }
 
 const talentLayouts: Partial<Record<KeywordId, TalentLayoutConfig>> = {
-  physical: { radiusX: 23, radiusY: 23 },
+  physical: { radiusX: 36, radiusY: 36 },
   stun: { radiusX: 40, radiusY: 20, rotate: -23 },
   forge: { radiusX: 42, radiusY: 28, rotate: -15 },
   armor: { radiusX: 34, radiusY: 34 },
-  burn: { radiusX: 19, radiusY: 19 },
+  burn: { radiusX: 29, radiusY: 29 },
   bleed: { radiusX: 27, radiusY: 33, rotate: 60, startOffset: 8 },
   freeze: { radiusX: 30, radiusY: 30 },
   mana: { radiusX: 46, radiusY: 22, rotate: -24 },
@@ -97,16 +97,17 @@ function TalentNode({
         )}
         style={{
           borderColor: baseColor,
-          borderWidth: isChoice ? 0 : "2px",
+          borderWidth: isChoice ? 0 : "3px",
           borderStyle: "solid",
-          backdropFilter: "blur(4px)",
+          backdropFilter: "blur(8px)",
           WebkitBackdropFilter: "blur(4px)",
-          backgroundColor: "hsl(var(--background) / 0.2)",
+          backgroundColor: "hsl(var(--background) / 0.3)",
           backgroundImage: "linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05))",
           boxShadow: isChoice
             ? `
               inset 0 1.5px 1px rgba(255, 255, 255, 0.25),
               inset 0 -1px 1px rgba(0, 0, 0, 0.3),
+              0 0 16px ${baseColor},
               0 4px 16px rgba(0, 0, 0, 0.6)
             `.trim()
             : `

@@ -3,6 +3,7 @@
 // Used by shop controller and UI previews so mixing behavior stays testable outside React.
 import type { BattleCard } from "@/lib/game-data";
 import { mixedPotion } from "@/lib/game-data";
+import { logError } from "@/lib/error-logger";
 import {
   CONSUME_DESCRIPTION_LINE,
   MIXED_POTION_CARD_ID,
@@ -68,7 +69,7 @@ export function tryCreateMixedPotion(
   try {
     return createMixedPotion(cardA, cardB, potencyBonus);
   } catch {
-    console.error(`Mix failed: ${MIXED_POTION_ERROR}`);
+    logError(`Mix failed: ${MIXED_POTION_ERROR}`, "card");
     return null;
   }
 }

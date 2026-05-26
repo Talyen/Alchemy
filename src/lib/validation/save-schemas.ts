@@ -26,6 +26,7 @@ import {
   LEGACY_STARTER_DECK_IDS,
   LEGACY_CHARACTER_RENAMES,
 } from "@/lib/game-constants";
+import { logError } from "@/lib/error-logger";
 import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
 import { companionTierItems } from "@/lib/homestead/companions";
 import { MATERIAL_IDS, type MaterialId } from "@/lib/homestead/types";
@@ -71,7 +72,10 @@ function caught<T>(schema: z.ZodType<T>, fallback: T, path: string): z.ZodType<T
     const result = schema.safeParse(val);
     if (!result.success) {
       _currentErrorCollector?.push({ path, message: result.error.message });
-      console.error(`[Save Validation] Field "${path}" invalid, fell back to default:`, result.error.message);
+      logError(`[Save Validation] Field "${path}" invalid, fell back to default`, "validation", {
+        field: path,
+        error: result.error.message,
+      });
       return fallback;
     }
     return result.data;

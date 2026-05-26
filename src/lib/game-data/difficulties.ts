@@ -49,23 +49,23 @@ export const GLOBAL_DIFFICULTIES: DifficultyDefinition[] = [
   {
     id: "difficulty-2",
     name: "Adventurer",
-    description: "+20% Enemy Health and Damage",
+    description: "+30% Enemy Health and Damage",
     order: 2,
-    xpMultiplier: 1.2,
+    xpMultiplier: 1.3,
     modifiers: [
-      { kind: "enemy-health-multiplier", amount: 1.2 },
-      { kind: "enemy-damage-multiplier", amount: 1.2 },
+      { kind: "enemy-health-multiplier", amount: 1.3 },
+      { kind: "enemy-damage-multiplier", amount: 1.3 },
     ],
   },
   {
     id: "difficulty-3",
     name: "Legend",
-    description: "+40% Enemy Health and Damage",
+    description: "+60% Enemy Health and Damage",
     order: 3,
-    xpMultiplier: 1.4,
+    xpMultiplier: 1.6,
     modifiers: [
-      { kind: "enemy-health-multiplier", amount: 1.4 },
-      { kind: "enemy-damage-multiplier", amount: 1.4 },
+      { kind: "enemy-health-multiplier", amount: 1.6 },
+      { kind: "enemy-damage-multiplier", amount: 1.6 },
     ],
   },
 ];

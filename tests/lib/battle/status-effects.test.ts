@@ -506,7 +506,7 @@ describe("applyDamageStatuses", () => {
     expect(result2.enemyStatuses.freeze).toBe(0);
   });
 
-  it("freeze does not trigger on glacial-shell enemies", () => {
+  it("freeze triggers on glacial-shell enemies when threshold is met", () => {
     const state = createTestBattleState({
       enemyHealth: 30,
       enemyMaxHealth: 30,
@@ -518,14 +518,14 @@ describe("applyDamageStatuses", () => {
         descriptionLines: [""],
         art: "",
         enemyType: "normal",
-        traits: [{ id: "glacial-shell", title: "Glacial Shell", description: "Freeze immune" }],
+        traits: [{ id: "glacial-shell", title: "Glacial Shell", description: "Receives half Freeze damage" }],
         attackEffects: [],
       },
     });
     const effect = { kind: "damage" as const, damageType: "freeze" as const, amount: 10 };
     const result = applyDamageStatuses(state, effect, 10, []);
-    expect(result.enemyStatuses.freeze).toBe(25);
-    expect(result.enemyFreezeSkipTurns).toBe(0);
+    expect(result.enemyStatuses.freeze).toBe(0); // cleared on trigger
+    expect(result.enemyFreezeSkipTurns).toBeGreaterThanOrEqual(1); // freeze triggers
   });
 });
 

@@ -193,40 +193,40 @@ function CompanionCardNode({
   const showButton = discovered && !isComplete;
 
   return (
-    <div className={cn("flex flex-col items-center", index < HOMESTEAD_CONFIG.compilationFillerCount && "mb-2")}>
-      <div className="relative">
-        {hoveredItemId === card.id && (
-          <DetailPopup
-            idPrefix={card.id}
-            title={discovered ? card.title : "Undiscovered"}
-            subtitle={undefined}
-            descriptionLines={
-              discovered
-                ? getEffectiveCardDescriptionLines(card, {
-                    companionBondLevels: bondedCompanions,
-                  })
-                : ["Discover this card during a run to reveal it here."]
-            }
+    <div
+      className={cn("flex flex-col items-center relative", index < HOMESTEAD_CONFIG.compilationFillerCount && "mb-2")}
+      onMouseEnter={() => setHoveredItemId(card.id)}
+      onMouseLeave={() => setHoveredItemId(null)}
+    >
+      {hoveredItemId === card.id && (
+        <DetailPopup
+          idPrefix={card.id}
+          title={discovered ? card.title : "Undiscovered"}
+          subtitle={undefined}
+          descriptionLines={
+            discovered
+              ? getEffectiveCardDescriptionLines(card, {
+                  companionBondLevels: bondedCompanions,
+                })
+              : ["Discover this card during a run to reveal it here."]
+          }
+        />
+      )}
+      <div className="group w-full overflow-hidden rounded-[18px] p-3">
+        <TiltSurface
+          className={cn(
+            "relative mx-auto flex items-center justify-center overflow-hidden rounded-[18px] bg-stone-900",
+            HOMESTEAD_CONFIG.companionPageWidth,
+            HOMESTEAD_CONFIG.companionAspectRatio,
+            isComplete && "bg-stone-800/70",
+          )}
+        >
+          <img
+            src={card.art}
+            alt={card.title}
+            className={cn("h-full w-full object-cover", !discovered && "grayscale opacity-45")}
           />
-        )}
-        <div className="group w-full overflow-hidden rounded-[18px] p-3">
-          <TiltSurface
-            className={cn(
-              "relative mx-auto flex items-center justify-center overflow-hidden rounded-[18px] bg-stone-900",
-              HOMESTEAD_CONFIG.companionPageWidth,
-              HOMESTEAD_CONFIG.companionAspectRatio,
-              isComplete && "bg-stone-800/70",
-            )}
-            onMouseEnter={() => setHoveredItemId(card.id)}
-            onMouseLeave={() => setHoveredItemId(null)}
-          >
-            <img
-              src={card.art}
-              alt={card.title}
-              className={cn("h-full w-full object-cover", !discovered && "grayscale opacity-45")}
-            />
-          </TiltSurface>
-        </div>
+        </TiltSurface>
       </div>
       {showButton ? (
         <div className="mt-1.5 flex items-center gap-2">
@@ -334,29 +334,26 @@ function HomesteadUpgradeNode({
   const hasCost = MATERIAL_IDS.some((m) => (itemCost[m] ?? 0) > 0);
 
   return (
-    <div className={cn("flex flex-col items-center", index < HOMESTEAD_CONFIG.compilationFillerCount && "mb-2")}>
-      {/* Tilt surface — art only */}
-      <div
-        className="relative"
-        onMouseEnter={() => setHoveredItemId(item.data.id)}
-        onMouseLeave={() => setHoveredItemId(null)}
-      >
-        {detailTooltip}
-        <div className="group w-full overflow-hidden rounded-[18px] p-3">
-          <TiltSurface
-            className={cn(
-              "relative mx-auto flex w-full items-center justify-center overflow-hidden rounded-[18px] bg-stone-900",
-              HOMESTEAD_CONFIG.artAspectRatio,
-              isCompleted && "bg-stone-800/70",
-            )}
-          >
-            <img
-              src={getArt(item.data.id)}
-              alt={item.data.title}
-              className={cn("h-full w-full object-cover", isTier0 && "grayscale opacity-60")}
-            />
-          </TiltSurface>
-        </div>
+    <div
+      className={cn("flex flex-col items-center relative", index < HOMESTEAD_CONFIG.compilationFillerCount && "mb-2")}
+      onMouseEnter={() => setHoveredItemId(item.data.id)}
+      onMouseLeave={() => setHoveredItemId(null)}
+    >
+      {detailTooltip}
+      <div className="group w-full overflow-hidden rounded-[18px] p-3">
+        <TiltSurface
+          className={cn(
+            "relative mx-auto flex w-full items-center justify-center overflow-hidden rounded-[18px] bg-stone-900",
+            HOMESTEAD_CONFIG.artAspectRatio,
+            isCompleted && "bg-stone-800/70",
+          )}
+        >
+          <img
+            src={getArt(item.data.id)}
+            alt={item.data.title}
+            className={cn("h-full w-full object-cover", isTier0 && "grayscale opacity-60")}
+          />
+        </TiltSurface>
       </div>
 
       {/* Bottom label / action button */}

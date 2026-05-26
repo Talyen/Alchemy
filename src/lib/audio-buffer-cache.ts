@@ -4,6 +4,7 @@
 import { battleEventSounds, cardSounds, enemyAttackSounds, stingerSounds, uiSounds } from "./sound-registry";
 import { MASTER_GAIN } from "./game-constants";
 import { audioState } from "./audio-state";
+import { logError } from "./error-logger";
 
 // Configuration for local buffer caching and preloading.
 const BUFFER_CACHE_CONFIG = {
@@ -78,7 +79,7 @@ export async function loadSoundBuffer(name: string): Promise<AudioBuffer | null>
       soundCache.set(name, buffer);
       return buffer;
     } catch {
-      console.error("Failed to load or decode sound:", name);
+      logError("Failed to load or decode sound", "audio", { name });
       return null;
     } finally {
       loadingPromises.delete(name);

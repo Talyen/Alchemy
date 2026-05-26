@@ -84,11 +84,11 @@ export function HamburgerTrigger({
     <Button
       variant="outline"
       size="icon"
-      className="h-8 w-8 text-muted-foreground"
+      className="h-10 w-10 text-muted-foreground"
       onClick={(e) => onClick(e.currentTarget.getBoundingClientRect())}
       aria-label={label}
     >
-      <Menu className="h-4 w-4" />
+      <Menu className="h-5 w-5" />
     </Button>
   );
 }

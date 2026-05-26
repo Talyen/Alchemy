@@ -1,5 +1,6 @@
 // Screen route renderer for the root app shell.
 // Reads data from Zustand stores instead of the run controller object.
+import { ErrorBoundary } from "@/components/error-boundary";
 import { platform } from "@/lib/platform";
 import { menuLogo, menuLogoVariants, cardLibrary, trinketLibrary } from "@/lib/game-data";
 import type { CardTransfer, Screen, Destination, CollectionTab } from "@/features/alchemy/types";
@@ -135,195 +136,251 @@ export function renderAlchemyScreen({
   switch (screen) {
     case "menu":
       return (
-        <MenuScreen
-          onPlay={() => a.goToScreen("game-mode-select")}
-          onCollection={() => a.goToScreen("collection")}
-          onOptions={() => a.goToScreen("options")}
-          onHomestead={() => a.goToScreen("homestead")}
-          onTalents={() => a.goToScreen("talents")}
-          {...(platform.canQuit ? { onQuit: platform.quit } : {})}
-          logoSrc={menuLogo}
-          logoSrcVariants={menuLogoVariants}
-          hasUnspentTalents={hasUnspentTalents}
-          hasAffordableHomestead={hasAffordableHomestead}
-        />
+        <ErrorBoundary label="menu">
+          <MenuScreen
+            onPlay={() => a.goToScreen("game-mode-select")}
+            onCollection={() => a.goToScreen("collection")}
+            onOptions={() => a.goToScreen("options")}
+            onHomestead={() => a.goToScreen("homestead")}
+            onTalents={() => a.goToScreen("talents")}
+            {...(platform.canQuit ? { onQuit: platform.quit } : {})}
+            logoSrc={menuLogo}
+            logoSrcVariants={menuLogoVariants}
+            hasUnspentTalents={hasUnspentTalents}
+            hasAffordableHomestead={hasAffordableHomestead}
+          />
+        </ErrorBoundary>
       );
     case "game-mode-select":
       return (
-        <GameModeSelectScreen
-          onSelectCampaign={a.beginCampaign}
-          onSelectLabyrinth={a.beginLabyrinth}
-          onSelectWildwood={a.beginWildwood}
-          onBack={() => a.goToScreen("menu")}
-        />
+        <ErrorBoundary label="game-mode-select">
+          <GameModeSelectScreen
+            onSelectCampaign={a.beginCampaign}
+            onSelectLabyrinth={a.beginLabyrinth}
+            onSelectWildwood={a.beginWildwood}
+            onBack={() => a.goToScreen("menu")}
+          />
+        </ErrorBoundary>
       );
     case "character-select":
       return (
-        <CharacterSelectScreen onConfirm={a.handleCharacterSelect} onBack={() => a.goToScreen("game-mode-select")} />
+        <ErrorBoundary label="character-select">
+          <CharacterSelectScreen onConfirm={a.handleCharacterSelect} onBack={() => a.goToScreen("game-mode-select")} />
+        </ErrorBoundary>
       );
     case "draft-deck":
-      return <DraftDeckScreen onComplete={a.handleDraftComplete} />;
+      return (
+        <ErrorBoundary label="draft-deck">
+          <DraftDeckScreen onComplete={a.handleDraftComplete} />
+        </ErrorBoundary>
+      );
     case "difficulty-select":
       return (
-        <DifficultySelectScreen
-          completedDifficulties={
-            useAppStore.getState().completedDifficulties[(pendingCharacterId ?? "knight") as CharacterId] ?? []
-          }
-          onSelect={a.handleDifficultySelect}
-          onBack={a.handleBackFromDifficultySelect}
-        />
+        <ErrorBoundary label="difficulty-select">
+          <DifficultySelectScreen
+            completedDifficulties={
+              useAppStore.getState().completedDifficulties[(pendingCharacterId ?? "knight") as CharacterId] ?? []
+            }
+            onSelect={a.handleDifficultySelect}
+            onBack={a.handleBackFromDifficultySelect}
+          />
+        </ErrorBoundary>
       );
     case "battle":
       return (
-        <BattleScreen
-          heroArt={heroArt}
-          playerName={playerName}
-          aspectMode={aspectMode}
-          stagePixelRatio={stagePixelRatio}
-          handCardRefs={handCardRefs}
-          drawPileRef={drawPileRef}
-          discardPileRef={discardPileRef}
-          battleSceneRef={battleSceneRef}
-          playerPanelRef={playerPanelRef}
-          enemyPanelRef={enemyPanelRef}
-          onCardClick={a.handleCardClick}
-          onOpenMenu={onOpenBattleMenu}
-          onWishChoice={a.handleWishChoice}
-          onRemoveCardGhost={a.removeCardGhost}
-          onSkipCombatDevMode={a.skipCombatDevMode}
-          onEndTurn={a.handleEndTurn}
-          cardTransfers={cardTransfers}
-          hiddenHandCardKeys={hiddenHandCardKeys}
-          cardTransferInProgress={cardTransferInProgress}
-        />
+        <ErrorBoundary label="battle">
+          <BattleScreen
+            heroArt={heroArt}
+            playerName={playerName}
+            aspectMode={aspectMode}
+            stagePixelRatio={stagePixelRatio}
+            handCardRefs={handCardRefs}
+            drawPileRef={drawPileRef}
+            discardPileRef={discardPileRef}
+            battleSceneRef={battleSceneRef}
+            playerPanelRef={playerPanelRef}
+            enemyPanelRef={enemyPanelRef}
+            onCardClick={a.handleCardClick}
+            onOpenMenu={onOpenBattleMenu}
+            onWishChoice={a.handleWishChoice}
+            onRemoveCardGhost={a.removeCardGhost}
+            onSkipCombatDevMode={a.skipCombatDevMode}
+            onEndTurn={a.handleEndTurn}
+            cardTransfers={cardTransfers}
+            hiddenHandCardKeys={hiddenHandCardKeys}
+            cardTransferInProgress={cardTransferInProgress}
+          />
+        </ErrorBoundary>
       );
     case "labyrinth-map":
-      return <LabyrinthMapScreen onNodeClick={a.handleLabyrinthNodeEnter} onOpenMenu={onOpenBattleMenu} />;
+      return (
+        <ErrorBoundary label="labyrinth-map">
+          <LabyrinthMapScreen onNodeClick={a.handleLabyrinthNodeEnter} onOpenMenu={onOpenBattleMenu} />
+        </ErrorBoundary>
+      );
     case "wildwood-select":
       return (
-        <WildwoodSelectScreen onSelect={a.handleWildwoodBossSelect} onBack={() => a.goToScreen("character-select")} />
+        <ErrorBoundary label="wildwood-select">
+          <WildwoodSelectScreen onSelect={a.handleWildwoodBossSelect} onBack={() => a.goToScreen("character-select")} />
+        </ErrorBoundary>
       );
     case "rewards":
-      return <RewardsScreen onAddReward={a.finishRewards} onSkip={a.finishRewards} />;
+      return (
+        <ErrorBoundary label="rewards">
+          <RewardsScreen onAddReward={a.finishRewards} onSkip={a.finishRewards} />
+        </ErrorBoundary>
+      );
     case "destination":
-      return <DestinationScreen onChoose={a.handleDestinationChoice} />;
+      return (
+        <ErrorBoundary label="destination">
+          <DestinationScreen onChoose={a.handleDestinationChoice} />
+        </ErrorBoundary>
+      );
     case "campfire":
-      return <CampfireScreen onContinue={a.handleCampfireContinue} />;
+      return (
+        <ErrorBoundary label="campfire">
+          <CampfireScreen onContinue={a.handleCampfireContinue} />
+        </ErrorBoundary>
+      );
     case "shop":
       return (
-        <MerchantShopScreen
-          onBuyCard={a.handleShopBuyCard}
-          onRemoveCard={a.handleShopRemoveCard}
-          onRefresh={a.handleShopRefresh}
-          onContinue={a.handleShopContinue}
-        />
+        <ErrorBoundary label="shop">
+          <MerchantShopScreen
+            onBuyCard={a.handleShopBuyCard}
+            onRemoveCard={a.handleShopRemoveCard}
+            onRefresh={a.handleShopRefresh}
+            onContinue={a.handleShopContinue}
+          />
+        </ErrorBoundary>
       );
     case "alchemist":
       return (
-        <AlchemistShopScreen
-          onBuyCard={a.handleAlchemistBuyCard}
-          onRefresh={a.handleAlchemistRefresh}
-          onMixPotions={a.handleAlchemistMixPotions}
-          onContinue={a.handleAlchemistContinue}
-        />
+        <ErrorBoundary label="alchemist">
+          <AlchemistShopScreen
+            onBuyCard={a.handleAlchemistBuyCard}
+            onRefresh={a.handleAlchemistRefresh}
+            onMixPotions={a.handleAlchemistMixPotions}
+            onContinue={a.handleAlchemistContinue}
+          />
+        </ErrorBoundary>
       );
     case "mystery":
       return (
-        <MysteryScreen
-          onChoose={a.handleMysteryChoice}
-          onChooseCard={a.handleMysteryChooseCard}
-          onRemoveCard={a.handleMysteryRemoveCard}
-          onContinue={a.handleMysteryContinue}
-          findCard={(id) => cardLibrary.find((c) => c.id === id)}
-          findTrinket={(id) => trinketLibrary.find((t) => t.id === id)}
-        />
+        <ErrorBoundary label="mystery">
+          <MysteryScreen
+            onChoose={a.handleMysteryChoice}
+            onChooseCard={a.handleMysteryChooseCard}
+            onRemoveCard={a.handleMysteryRemoveCard}
+            onContinue={a.handleMysteryContinue}
+            findCard={(id) => cardLibrary.find((c) => c.id === id)}
+            findTrinket={(id) => trinketLibrary.find((t) => t.id === id)}
+          />
+        </ErrorBoundary>
       );
     case "corruption":
       return (
-        <CorruptionScreen
-          onCorrupt={a.handleCorruptCard}
-          onLeave={a.handleCorruptionLeave}
-          onContinue={a.handleCorruptionContinue}
-        />
+        <ErrorBoundary label="corruption">
+          <CorruptionScreen
+            onCorrupt={a.handleCorruptCard}
+            onLeave={a.handleCorruptionLeave}
+            onContinue={a.handleCorruptionContinue}
+          />
+        </ErrorBoundary>
       );
     case "options":
       return (
-        <OptionsScreen
-          onOpenMenu={onOpenBattleMenu}
-          display={{
-            selectedAspectRatio: appState.selectedAspectRatio,
-            onAspectRatioChange: appState.setSelectedAspectRatio,
-            displayMode: appState.displayMode,
-            onDisplayModeChange: appState.setDisplayMode,
-            showDisplayMode: platform.isDesktop,
-            uiScale: appState.uiScale,
-            onUiScaleChange: appState.setUiScale,
-            brightness: appState.brightness,
-            onBrightnessChange: appState.setBrightness,
-          }}
-          audio={{
-            masterVol: appState.masterVol,
-            musicVol: appState.musicVol,
-            sfxVol: appState.sfxVol,
-            onMasterVolChange: appState.setMasterVol,
-            onMusicVolChange: appState.setMusicVol,
-            onSfxVolChange: appState.setSfxVol,
-            muteInBackground: appState.muteInBackground,
-            onMuteInBackgroundChange: appState.setMuteInBackground,
-          }}
-          gameplay={{ autoEndTurn: appState.autoEndTurn, onAutoEndTurnChange: appState.setAutoEndTurn }}
-          saveData={{
-            showClearSaveConfirm,
-            onOpenClearSaveConfirm: () => appState.setShowClearSaveConfirm(true),
-            onCloseClearSaveConfirm: () => appState.setShowClearSaveConfirm(false),
-            onConfirmClearSave: onClearSaveData,
-            onResetOptions: appState.resetOptionsToDefault,
-          }}
-          dev={{ onUnlockAll: onUnlockAllDevMode }}
-        />
+        <ErrorBoundary label="options">
+          <OptionsScreen
+            onOpenMenu={onOpenBattleMenu}
+            display={{
+              selectedAspectRatio: appState.selectedAspectRatio,
+              onAspectRatioChange: appState.setSelectedAspectRatio,
+              displayMode: appState.displayMode,
+              onDisplayModeChange: appState.setDisplayMode,
+              showDisplayMode: platform.isDesktop,
+              uiScale: appState.uiScale,
+              onUiScaleChange: appState.setUiScale,
+              brightness: appState.brightness,
+              onBrightnessChange: appState.setBrightness,
+            }}
+            audio={{
+              masterVol: appState.masterVol,
+              musicVol: appState.musicVol,
+              sfxVol: appState.sfxVol,
+              onMasterVolChange: appState.setMasterVol,
+              onMusicVolChange: appState.setMusicVol,
+              onSfxVolChange: appState.setSfxVol,
+              muteInBackground: appState.muteInBackground,
+              onMuteInBackgroundChange: appState.setMuteInBackground,
+            }}
+            gameplay={{ autoEndTurn: appState.autoEndTurn, onAutoEndTurnChange: appState.setAutoEndTurn }}
+            saveData={{
+              showClearSaveConfirm,
+              onOpenClearSaveConfirm: () => appState.setShowClearSaveConfirm(true),
+              onCloseClearSaveConfirm: () => appState.setShowClearSaveConfirm(false),
+              onConfirmClearSave: onClearSaveData,
+              onResetOptions: appState.resetOptionsToDefault,
+            }}
+            dev={{ onUnlockAll: onUnlockAllDevMode }}
+          />
+        </ErrorBoundary>
       );
     case "collection":
       return (
-        <CollectionScreen
-          onOpenMenu={onOpenBattleMenu}
-          collectionTab={collectionTab}
-          onSelectTab={appState.handleCollectionTabChange}
-          onPageChange={appState.setCollectionPage}
-          bondedCompanions={useHomesteadStore.getState().bondedCompanions}
-          discoveredCardIds={appState.discoveredCardIds}
-          encounteredEnemyIds={encounteredEnemyIds}
-          discoveredTrinketIds={discoveredTrinketIds}
-          collectionPages={collectionPages}
-        />
+        <ErrorBoundary label="collection">
+          <CollectionScreen
+            onOpenMenu={onOpenBattleMenu}
+            collectionTab={collectionTab}
+            onSelectTab={appState.handleCollectionTabChange}
+            onPageChange={appState.setCollectionPage}
+            bondedCompanions={useHomesteadStore.getState().bondedCompanions}
+            discoveredCardIds={appState.discoveredCardIds}
+            encounteredEnemyIds={encounteredEnemyIds}
+            discoveredTrinketIds={discoveredTrinketIds}
+            collectionPages={collectionPages}
+          />
+        </ErrorBoundary>
       );
     case "homestead":
       return (
-        <HomesteadScreen
-          onOpenMenu={onOpenBattleMenu}
-          materialInventory={useHomesteadStore.getState().materialInventory}
-          constructedBuildings={useHomesteadStore.getState().constructedBuildings}
-          plantedFarms={useHomesteadStore.getState().plantedFarms}
-          completedResearch={useHomesteadStore.getState().completedResearch}
-          bondedCompanions={useHomesteadStore.getState().bondedCompanions}
-          discoveredCardIds={appState.discoveredCardIds}
-          onConstructBuilding={useHomesteadStore.getState().constructBuilding}
-          onPlantFarm={useHomesteadStore.getState().plantFarm}
-          onCompleteResearch={useHomesteadStore.getState().completeResearch}
-          onBondCompanion={useHomesteadStore.getState().bondCompanion}
-        />
+        <ErrorBoundary label="homestead">
+          <HomesteadScreen
+            onOpenMenu={onOpenBattleMenu}
+            materialInventory={useHomesteadStore.getState().materialInventory}
+            constructedBuildings={useHomesteadStore.getState().constructedBuildings}
+            plantedFarms={useHomesteadStore.getState().plantedFarms}
+            completedResearch={useHomesteadStore.getState().completedResearch}
+            bondedCompanions={useHomesteadStore.getState().bondedCompanions}
+            discoveredCardIds={appState.discoveredCardIds}
+            onConstructBuilding={useHomesteadStore.getState().constructBuilding}
+            onPlantFarm={useHomesteadStore.getState().plantFarm}
+            onCompleteResearch={useHomesteadStore.getState().completeResearch}
+            onBondCompanion={useHomesteadStore.getState().bondCompanion}
+          />
+        </ErrorBoundary>
       );
     case "talents":
       return (
-        <TalentsScreen
-          onOpenMenu={onOpenBattleMenu}
-          onUnlockTalent={a.unlockTalent}
-          onResetTalents={a.resetUnlockedTalents}
-        />
+        <ErrorBoundary label="talents">
+          <TalentsScreen
+            onOpenMenu={onOpenBattleMenu}
+            onUnlockTalent={a.unlockTalent}
+            onResetTalents={a.resetUnlockedTalents}
+          />
+        </ErrorBoundary>
       );
     case "game-over":
-      return <GameOverScreen onMainMenu={a.resetRunState} />;
+      return (
+        <ErrorBoundary label="game-over">
+          <GameOverScreen onMainMenu={a.resetRunState} />
+        </ErrorBoundary>
+      );
     case "run-victory":
-      return <RunVictoryScreen onMainMenu={a.resetRunState} />;
+      return (
+        <ErrorBoundary label="run-victory">
+          <RunVictoryScreen onMainMenu={a.resetRunState} />
+        </ErrorBoundary>
+      );
     default:
       return null;
   }

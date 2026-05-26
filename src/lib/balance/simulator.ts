@@ -8,7 +8,9 @@ import {
   getEffectiveCost,
   isPlayerDefeated,
   playBattleCardResolved,
+  processCompanionTurnStart,
   type BattleState,
+  type CombatTextEvent,
 } from "@/lib/battle";
 import {
   type TalentEffectManifest,
@@ -31,17 +33,23 @@ export type BattleSimulationOutcome = "win" | "loss" | "timeout";
 // Prebuilt talent progression profiles representing game stages.
 export type TalentPreset = "early" | "mid" | "late";
 
-// Builds a manifest for the given preset by taking the first N non-placeholder talents per keyword.
-// early = no talents, mid = first 3, late = all.
+// Builds a manifest for the given preset with affinity-weighted talent counts.
+// Affinity keywords get deeper access: mid=5/late=all. Non-affinity: mid=2/late=5.
+// early = no talents.
 export function buildPresetManifest(keywords: KeywordId[], preset: TalentPreset): TalentEffectManifest {
   if (preset === "early") return defaultTalentEffects;
 
+  const allKeywordIds = [...new Set(talentPool.map((t) => t.keywordId))];
+  const affinitySet = new Set(keywords);
   const unlockedTalents: UnlockedTalents = {};
-  for (const keywordId of keywords) {
+
+  for (const keywordId of allKeywordIds) {
     const keywordTalents = talentPool.filter((t) => t.keywordId === keywordId && (t.effects ?? []).length > 0);
-    const count = preset === "mid" ? 3 : keywordTalents.length;
+    const isAffinity = affinitySet.has(keywordId);
+    const count = preset === "mid" ? (isAffinity ? 5 : 2) : isAffinity ? keywordTalents.length : 5;
     unlockedTalents[keywordId] = keywordTalents.slice(0, count).map((t) => t.id);
   }
+
   return computeTalentEffects(unlockedTalents);
 }
 
@@ -62,6 +70,96 @@ export type BattleSimulationConfig = {
   gold?: number;
 };
 
+// Tracks the peak observed values during a simulated battle.
+// Used after simulation to flag anomalous (likely buggy) value spikes.
+export type BattleAnomalies = {
+  maxPlayerBlock: number;
+  maxPlayerArmor: number;
+  maxPlayerBurn: number;
+  maxPlayerPoison: number;
+  maxPlayerBleed: number;
+  maxPlayerFreeze: number;
+  maxPlayerStun: number;
+  maxEnemyBurn: number;
+  maxEnemyPoison: number;
+  maxEnemyBleed: number;
+  maxEnemyFreeze: number;
+  maxEnemyStun: number;
+  maxEnemyArmor: number;
+  maxEnemyForge: number;
+  maxEnemyFreezeBonus: number;
+  maxEnemyBurnBonus: number;
+  maxEnemyBlock: number;
+  maxSingleHitDamageToEnemy: number;
+  maxSingleHitDamageToPlayer: number;
+  maxSingleHeal: number;
+};
+
+export function createEmptyAnomalies(): BattleAnomalies {
+  return {
+    maxPlayerBlock: 0,
+    maxPlayerArmor: 0,
+    maxPlayerBurn: 0,
+    maxPlayerPoison: 0,
+    maxPlayerBleed: 0,
+    maxPlayerFreeze: 0,
+    maxPlayerStun: 0,
+    maxEnemyBurn: 0,
+    maxEnemyPoison: 0,
+    maxEnemyBleed: 0,
+    maxEnemyFreeze: 0,
+    maxEnemyStun: 0,
+    maxEnemyArmor: 0,
+    maxEnemyForge: 0,
+    maxEnemyFreezeBonus: 0,
+    maxEnemyBurnBonus: 0,
+    maxEnemyBlock: 0,
+    maxSingleHitDamageToEnemy: 0,
+    maxSingleHitDamageToPlayer: 0,
+    maxSingleHeal: 0,
+  };
+}
+
+export function sampleAnomalies(state: BattleState, combatTexts: CombatTextEvent[], anomalies: BattleAnomalies): void {
+  const ps = state.playerStatuses;
+  anomalies.maxPlayerBlock = Math.max(anomalies.maxPlayerBlock, ps.block ?? 0);
+  anomalies.maxPlayerArmor = Math.max(anomalies.maxPlayerArmor, ps.armor ?? 0);
+  anomalies.maxPlayerBurn = Math.max(anomalies.maxPlayerBurn, ps.burn ?? 0);
+  anomalies.maxPlayerPoison = Math.max(anomalies.maxPlayerPoison, ps.poison ?? 0);
+  anomalies.maxPlayerBleed = Math.max(anomalies.maxPlayerBleed, ps.bleed ?? 0);
+  anomalies.maxPlayerFreeze = Math.max(anomalies.maxPlayerFreeze, ps.freeze ?? 0);
+  anomalies.maxPlayerStun = Math.max(anomalies.maxPlayerStun, ps.stun ?? 0);
+
+  const es = state.enemyStatuses;
+  anomalies.maxEnemyBurn = Math.max(anomalies.maxEnemyBurn, es.burn ?? 0);
+  anomalies.maxEnemyPoison = Math.max(anomalies.maxEnemyPoison, es.poison ?? 0);
+  anomalies.maxEnemyBleed = Math.max(anomalies.maxEnemyBleed, es.bleed ?? 0);
+  anomalies.maxEnemyFreeze = Math.max(anomalies.maxEnemyFreeze, es.freeze ?? 0);
+  anomalies.maxEnemyStun = Math.max(anomalies.maxEnemyStun, es.stun ?? 0);
+
+  const m = state.enemyMitigation;
+  anomalies.maxEnemyArmor = Math.max(anomalies.maxEnemyArmor, m.armor);
+  anomalies.maxEnemyForge = Math.max(anomalies.maxEnemyForge, m.forge);
+  anomalies.maxEnemyFreezeBonus = Math.max(anomalies.maxEnemyFreezeBonus, m.freezeBonus);
+  anomalies.maxEnemyBurnBonus = Math.max(anomalies.maxEnemyBurnBonus, m.burnBonus);
+  anomalies.maxEnemyBlock = Math.max(anomalies.maxEnemyBlock, m.block);
+
+  for (const ct of combatTexts) {
+    if (ct.kind !== "damage" && ct.kind !== "heal") continue;
+    if (ct.kind === "damage") {
+      if (ct.target === "enemy") {
+        anomalies.maxSingleHitDamageToEnemy = Math.max(anomalies.maxSingleHitDamageToEnemy, ct.amount);
+      } else {
+        anomalies.maxSingleHitDamageToPlayer = Math.max(anomalies.maxSingleHitDamageToPlayer, ct.amount);
+      }
+    } else if (ct.kind === "heal") {
+      anomalies.maxSingleHeal = Math.max(anomalies.maxSingleHeal, ct.amount);
+    }
+  }
+}
+
+export const ANOMALY_THRESHOLD = 100;
+
 export type BattleSimulationResult = {
   characterId: CharacterId;
   enemyId: string;
@@ -77,6 +175,7 @@ export type BattleSimulationResult = {
   trinketIds: string[];
   policy: BalancePlayPolicy;
   seed: number;
+  anomalies: BattleAnomalies;
 };
 
 export type BalanceBatchConfig = Omit<BattleSimulationConfig, "seed"> & {
@@ -192,12 +291,14 @@ function choosePendingWishCards(state: BattleState): BattleState {
 }
 
 // Plays one player turn until the policy has no affordable card left or the enemy dies.
+// Returns the final state and all combat texts emitted during card plays this turn.
 function playAutomatedTurn(
   state: BattleState,
   policy: BalancePlayPolicy,
   cardsPlayed: Record<string, number>,
-): BattleState {
+): { state: BattleState; combatTexts: CombatTextEvent[] } {
   let nextState = choosePendingWishCards(state);
+  const allCombatTexts: CombatTextEvent[] = [];
 
   while (nextState.enemyHealth > 0) {
     const selection = chooseCardToPlay(nextState, policy);
@@ -206,11 +307,12 @@ function playAutomatedTurn(
     const result = playBattleCardResolved(nextState, selection.card.id, selection.index);
     if (result.state === nextState) break;
 
+    allCombatTexts.push(...result.combatTexts);
     cardsPlayed[selection.card.id] = (cardsPlayed[selection.card.id] ?? 0) + 1;
     nextState = choosePendingWishCards(result.state);
   }
 
-  return nextState;
+  return { state: nextState, combatTexts: allCombatTexts };
 }
 
 // Runs one fully headless battle using real battle state transitions and card effects.
@@ -241,11 +343,25 @@ export function simulateBattle(config: BattleSimulationConfig): BattleSimulation
 
     const cardsPlayed: Record<string, number> = {};
     const maxTurns = config.maxTurns ?? DEFAULT_MAX_TURNS;
+    const anomalies = createEmptyAnomalies();
 
     while (state.enemyHealth > 0 && !isPlayerDefeated(state) && state.turn <= maxTurns) {
-      state = playAutomatedTurn(state, policy, cardsPlayed);
+      const turnCombatTexts: CombatTextEvent[] = [];
+      state = processCompanionTurnStart(state, turnCombatTexts);
       if (state.enemyHealth <= 0 || isPlayerDefeated(state)) break;
-      state = choosePendingWishCards(endPlayerTurn(state).state);
+
+      const turnResult = playAutomatedTurn(state, policy, cardsPlayed);
+      state = turnResult.state;
+      turnCombatTexts.push(...turnResult.combatTexts);
+      sampleAnomalies(state, turnCombatTexts, anomalies);
+      if (state.enemyHealth <= 0 || isPlayerDefeated(state)) break;
+
+      const resolution = endPlayerTurn(state);
+      if (resolution.afterAttackState) {
+        sampleAnomalies(resolution.afterAttackState, [], anomalies);
+      }
+      state = choosePendingWishCards(resolution.state);
+      sampleAnomalies(state, resolution.combatTexts, anomalies);
     }
 
     const outcome: BattleSimulationOutcome =
@@ -266,6 +382,7 @@ export function simulateBattle(config: BattleSimulationConfig): BattleSimulation
       trinketIds,
       policy,
       seed,
+      anomalies,
     };
   });
 }

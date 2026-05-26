@@ -2,7 +2,7 @@ import { describe, expect, it, vi, afterEach } from "vitest";
 import { dealDamageToEnemy } from "@/lib/battle/damage";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import type { BattleCardEffect, BattleCard } from "@/lib/game-data";
-import { CRIT_MULTIPLIER, GOLD_TROVE_DAMAGE_REWARD } from "@/lib/game-constants";
+import { CRIT_MULTIPLIER } from "@/lib/game-constants";
 import { createTestBattleState } from "./test-state";
 
 function makeCard(overrides: Partial<BattleCard> = {}): BattleCard {
@@ -541,46 +541,6 @@ describe("applyHolyDamageRiders", () => {
       texts,
     );
     expect(result.enemyStatuses.burn).toBeGreaterThan(0);
-  });
-});
-
-describe("applyGoldTroveReward", () => {
-  it("grants gold when enemy has gold-trove trait", () => {
-    const state = createTestBattleState({
-      gold: 0,
-      currentEnemy: {
-        id: "mimic",
-        title: "Mimic",
-        subtitle: "",
-        descriptionLines: [""],
-        art: "",
-        enemyType: "normal",
-        traits: [{ id: "gold-trove", title: "Gold Trove", description: "" }],
-        attackEffects: [],
-      },
-    });
-    const card = makeCard({ effects: [makeEffect("physical", 5)] });
-    const texts = makeTexts();
-    const result = dealDamageToEnemy(
-      state,
-      card,
-      card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
-      texts,
-    );
-    expect(result.gold).toBe(GOLD_TROVE_DAMAGE_REWARD);
-  });
-
-  it("does not grant gold without gold-trove trait", () => {
-    const state = createTestBattleState({ gold: 0 });
-    const card = makeCard({ effects: [makeEffect("physical", 5)] });
-    const texts = makeTexts();
-    const result = dealDamageToEnemy(
-      state,
-      card,
-      card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
-      texts,
-    );
-    expect(result.gold).toBe(0);
   });
 });
 

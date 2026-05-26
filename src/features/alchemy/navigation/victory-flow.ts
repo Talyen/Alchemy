@@ -16,8 +16,10 @@ import {
   COMPANION_GOLD_MULTIPLIER,
   ELITE_GOLD_BONUS_FRACTION,
   BOSS_GOLD_BONUS_FRACTION,
+  ENEMY_TRAIT_IDS,
   GOLD_REWARD_MIN,
   GOLD_REWARD_MAX,
+  GOLD_TROVE_REWARD_MULTIPLIER,
 } from "@/lib/game-constants";
 import {
   getActiveRewardModifiersForContentSystem,
@@ -161,6 +163,10 @@ export function computeVictoryRewards(
     rng() < COMPANION_GOLD_FIND_CHANCE
   ) {
     gold = Math.floor(gold * COMPANION_GOLD_MULTIPLIER);
+  }
+
+  if (input.battleState.currentEnemy.traits?.some((t) => t.id === ENEMY_TRAIT_IDS.GOLD_TROVE)) {
+    gold = Math.floor(gold * GOLD_TROVE_REWARD_MULTIPLIER);
   }
 
   const eliteFraction =

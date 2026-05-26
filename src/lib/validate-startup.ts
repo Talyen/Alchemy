@@ -11,12 +11,13 @@ import {
   STARTING_TURN,
 } from "./game-constants";
 import { enemyBestiary, cardLibrary } from "./game-data";
+import { logError } from "./error-logger";
 
 const checks: { name: string; ok: boolean }[] = [];
 
 function check(name: string, condition: boolean) {
   checks.push({ name, ok: condition });
-  if (!condition) console.error(`Startup validation FAILED: ${name}`);
+  if (!condition) logError(`Startup validation FAILED: ${name}`, "validation");
 }
 
 check("CARDS_PER_TURN > 0", CARDS_PER_TURN > 0);
@@ -32,5 +33,7 @@ check("enemyBestiary is non-empty", enemyBestiary.length > 0);
 check("cardLibrary is non-empty", cardLibrary.length > 0);
 
 if (checks.some((c) => !c.ok)) {
-  console.error(`${checks.filter((c) => !c.ok).length} startup checks failed — game may behave unexpectedly`);
+  logError(`${checks.filter((c) => !c.ok).length} startup checks failed — game may behave unexpectedly`, "validation", {
+    failed: checks.filter((c) => !c.ok).map((c) => c.name),
+  });
 }

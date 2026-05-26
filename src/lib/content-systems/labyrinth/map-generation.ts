@@ -8,6 +8,7 @@
 import type { LabyrinthMap, LabyrinthNode, LabyrinthNodeType } from "../types";
 import { LABYRINTH_COLS, LABYRINTH_ROWS } from "./data";
 import { getEnemyModifiersForNodeType, getRewardModifiersForNodeType } from "./modifiers";
+import { logError } from "../../error-logger";
 
 type Point = { row: number; col: number };
 
@@ -179,7 +180,9 @@ export function generateLabyrinthMap(rng: () => number = Math.random): Labyrinth
     try {
       graph = generateRouteGraph(() => Math.random());
     } catch (fallbackCause) {
-      console.error("[Labyrinth] Map generation failed even with Math.random fallback:", fallbackCause);
+      logError("[Labyrinth] Map generation failed even with Math.random fallback", "validation", {
+        error: String(fallbackCause),
+      });
       throw Object.assign(new Error("Labyrinth map generation failed after retry"), { rootCause: fallbackCause });
     }
   }

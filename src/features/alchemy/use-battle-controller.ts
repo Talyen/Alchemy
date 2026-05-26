@@ -18,6 +18,7 @@ import {
 import { getDifficultyModifiers, type BattleCard, type BestiaryEntry, type DifficultyModifier } from "@/lib/game-data";
 import { playBattleEvent, playCardSound, playEnemyAttack, playGoldGain, stopAllSfx } from "@/lib/audio";
 import { appendUnique } from "@/lib/utils";
+import { logError } from "@/lib/error-logger";
 import { animateCardActivation } from "./battle/card-ghost-animation";
 import { getBossById, getCurrentEnemy, getBossEnemy } from "./config";
 import type { CardRect, CardTransfer, Screen } from "./types";
@@ -535,7 +536,12 @@ export function useBattleController({
       session,
     )
       .catch((err) => {
-        console.error("Failed to handle play card draw sequence:", err);
+        logError(
+          "Failed to handle play card draw sequence",
+          "battle",
+          { error: String(err) },
+          err instanceof Error ? err.stack : undefined,
+        );
       })
       .finally(() => finishDrawSequence(session, resolution.state));
     runIfSessionActive(session, () => {
@@ -599,7 +605,12 @@ export function useBattleController({
       session,
     )
       .catch((err) => {
-        console.error("Failed to handle wish choice draw sequence:", err);
+        logError(
+          "Failed to handle wish choice draw sequence",
+          "battle",
+          { error: String(err) },
+          err instanceof Error ? err.stack : undefined,
+        );
       })
       .finally(() => finishDrawSequence(session, newState));
   }
@@ -619,7 +630,12 @@ export function useBattleController({
     const session = battleSessionRef.current;
 
     animateEndTurnThenResolve(currentState, session).catch((err) => {
-      console.error("Failed to resolve end turn animation sequence:", err);
+      logError(
+        "Failed to resolve end turn animation sequence",
+        "battle",
+        { error: String(err) },
+        err instanceof Error ? err.stack : undefined,
+      );
     });
   }
 
@@ -629,7 +645,12 @@ export function useBattleController({
         try {
           await animateDiscardedHand(currentState.hand);
         } catch (err) {
-          console.error("Discard hand animation failed:", err);
+          logError(
+            "Discard hand animation failed",
+            "battle",
+            { error: String(err) },
+            err instanceof Error ? err.stack : undefined,
+          );
         }
       }
       runIfSessionActive(session, () => {
@@ -670,7 +691,12 @@ export function useBattleController({
       session,
     )
       .catch((err) => {
-        console.error("Failed to handle end turn draw sequence:", err);
+        logError(
+          "Failed to handle end turn draw sequence",
+          "battle",
+          { error: String(err) },
+          err instanceof Error ? err.stack : undefined,
+        );
       })
       .finally(() => {
         runIfSessionActive(session, () => {
@@ -768,7 +794,12 @@ export function useBattleController({
         resolveNormalEnemyTurn(result, companionResult, session);
       });
     } catch (err) {
-      console.error("Unhandled error in resolveEndTurn, triggering defeat:", err);
+      logError(
+        "Unhandled error in resolveEndTurn, triggering defeat",
+        "battle",
+        { error: String(err) },
+        err instanceof Error ? err.stack : undefined,
+      );
       if (isCurrentBattleSession(session)) {
         handleVictoryDefeat("defeat");
       }
@@ -844,7 +875,12 @@ export function useBattleController({
         session,
       );
     } catch (err) {
-      console.error("Failed to handle enemy resolution draw sequence:", err);
+      logError(
+        "Failed to handle enemy resolution draw sequence",
+        "battle",
+        { error: String(err) },
+        err instanceof Error ? err.stack : undefined,
+      );
     }
     if (!isCurrentBattleSession(session)) return;
     finishEnemyPhase(resultState, session, playerTurnSkipped);
