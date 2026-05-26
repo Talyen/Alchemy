@@ -452,7 +452,7 @@ export function useBattleController({
     run.setRoomsEncountered(nextRoomsEncountered);
     getStore().clearCardGhosts();
     const nextBattleState = createBattleForEnemy(enemy, deck, gold, startingHealth, nextRoomsEncountered, modifiers);
-    getStore().setBattleState(nextBattleState);
+    getStore().setSyncedBattleState(nextBattleState);
     getStore().setBattleStartState(nextBattleState);
     getStore().setHasActiveBattle(true);
     run.setEncounteredRunEnemyIds((current) => appendUnique(current, enemy.id));
@@ -573,7 +573,7 @@ export function useBattleController({
       currentState.hand,
       resolution.state,
       () => {
-        getStore().setBattleState(resolution.state);
+        getStore().setSyncedBattleState(resolution.state);
         if (resolution.combatTexts.length > 0) getStore().showCombatTexts(resolution.combatTexts);
       },
       session,
@@ -637,7 +637,7 @@ export function useBattleController({
       currentState.hand,
       newState,
       () => {
-        getStore().setBattleState(newState);
+        getStore().setSyncedBattleState(newState);
       },
       session,
       "wish choice",
@@ -720,7 +720,7 @@ export function useBattleController({
       companionState.hand,
       result.state,
       () => {
-        getStore().setBattleState(result.state);
+        getStore().setSyncedBattleState(result.state);
       },
       session,
     )
@@ -779,9 +779,9 @@ export function useBattleController({
       Boolean(result.enemyTurnStartState),
     );
 
-    // Check if the enemy died from start-of-turn dot statuses (e.g., Poison/Burn).
     if (result.state.enemyHealth <= 0) {
-      getStore().setBattleState({ ...result.state, turnPhase: "enemy", hand: [] });
+      const victoryState = { ...result.state, turnPhase: "enemy" as const, hand: [] };
+      getStore().setSyncedBattleState(victoryState);
       handleVictoryDefeat("victory");
       return;
     }
@@ -806,7 +806,7 @@ export function useBattleController({
         const companionResult = resolveQueuedCompanionTurn(currentState);
 
         if (companionResult.state.enemyHealth <= 0) {
-          getStore().setBattleState(companionResult.state);
+          getStore().setSyncedBattleState(companionResult.state);
           if (companionResult.combatTexts.length > 0) getStore().showCombatTexts(companionResult.combatTexts);
           handleVictoryDefeat("victory");
           return;
@@ -817,6 +817,7 @@ export function useBattleController({
         }
 
         const result = endPlayerTurn(companionResult.state);
+        getStore().setLogicalBattleState(result.state);
 
         // Haste skip: immediately show the next turn and animate any draw
         // (enemyTurnStartState is undefined only in the haste path)
@@ -829,11 +830,15 @@ export function useBattleController({
       });
     } catch (err) {
       logError(
-        "Unhandled error in resolveEndTurn",
+        "Unhandled error in resolveEndTurn — forcing defeat to prevent frozen battle state",
         "battle",
         { error: String(err) },
         err instanceof Error ? err.stack : undefined,
       );
+      // Prevent the battle from freezing in the enemy turn phase when an unknown
+      // trait or attack effect throws. Treat it as a run-ending defeat so the
+      // player can exit cleanly. The error has already been reported above.
+      handleVictoryDefeat("defeat");
     }
   }
 
@@ -871,6 +876,9 @@ export function useBattleController({
         ? {}
         : { playerHealth: currentState.playerHealth, playerStatuses: currentState.playerStatuses }),
     };
+    // Display-only write: sets a transient hand:[]/turnPhase:"enemy" snapshot for the
+    // enemy-turn-start animation. logicalBattleState was already set at the endPlayerTurn
+    // call site above (line ~826) and must NOT be overwritten with this intermediate state.
     getStore().setBattleState(displayState);
     const dotTexts = combatTexts.filter((ct) => ct.target === "enemy" || ct.kind === "heal");
     if (dotTexts.length > 0) getStore().showCombatTexts(dotTexts);
@@ -908,7 +916,7 @@ export function useBattleController({
         currentState.hand,
         resultState,
         () => {
-          getStore().setBattleState(resultState);
+          getStore().setSyncedBattleState(resultState);
         },
         session,
       );
@@ -941,7 +949,7 @@ export function useBattleController({
       const store = getStore();
       const texts: CombatTextEvent[] = [];
       const newState = triggerCompanionEffects(store.battleState, texts);
-      store.setBattleState(newState);
+      store.setSyncedBattleState(newState);
       return texts;
     }, []);
   }
@@ -953,13 +961,14 @@ export function useBattleController({
     clearPendingBattleTimeouts();
     clearTransferHandles();
     stopBattleFeedback();
-    getStore().setBattleState((c) => ({
+    const defeatStateSetter = (c: BattleState) => ({
       ...c,
       playerHealth: 0,
       deathsDoorUsed: true,
       deathsDoorActive: false,
       deathsDoorGraceTurnsRemaining: null,
-    }));
+    });
+    getStore().setSyncedBattleState(defeatStateSetter);
     handleVictoryDefeat("defeat");
   }
 
@@ -969,15 +978,19 @@ export function useBattleController({
       clearPendingBattleTimeouts();
       clearTransferHandles();
       stopBattleFeedback();
-      getStore().setBattleState((c) => ({ ...c, enemyHealth: 0, wishOptions: null, wishQueue: [] }));
+      const skipStateSetter = (c: BattleState) => ({ ...c, enemyHealth: 0, wishOptions: null, wishQueue: [] });
+      getStore().setSyncedBattleState(skipStateSetter);
       handleVictoryDefeat("victory");
     }
   }
 
   return {
     battleState,
+    logicalBattleState: useBattleStore((s) => s.logicalBattleState),
     battleStartState,
     setBattleState: getStore().setBattleState,
+    setLogicalBattleState: getStore().setLogicalBattleState,
+    setSyncedBattleState: getStore().setSyncedBattleState,
     hasActiveBattle,
     setHasActiveBattle: getStore().setHasActiveBattle,
     enemyShaking,

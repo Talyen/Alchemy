@@ -69,13 +69,13 @@ describe("createMixedPotion", () => {
     expect(() => createMixedPotion(healPotion, mixedPotion)).toThrow("Cannot mix with an existing Mixed Potion");
   });
 
-  it("produces a unique id based on timestamp", () => {
-    const now = Date.now();
-    vi.spyOn(Date, "now").mockReturnValueOnce(now).mockReturnValueOnce(now + 1);
-    const a = createMixedPotion(healPotion, firePotion);
-    const b = createMixedPotion(healPotion, firePotion);
+  it("produces a unique id based on card uids", () => {
+    const p1 = makePotion({ id: "heal-potion", uid: 1 });
+    const p2 = makePotion({ id: "fire-potion", uid: 2 });
+    const p3 = makePotion({ id: "fire-potion", uid: 3 });
+    const a = createMixedPotion(p1, p2);
+    const b = createMixedPotion(p1, p3);
     expect(a.id).not.toBe(b.id);
-    vi.restoreAllMocks();
   });
 });
 

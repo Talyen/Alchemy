@@ -2,7 +2,7 @@
 // Provides consistent styling across all tooltips — enemy, card, keyword, status, map, etc.
 // Width is configurable via the `width` prop (defaults to w-60).
 /* eslint-disable react-refresh/only-export-components */
-import { forwardRef, type CSSProperties, type ReactNode, useLayoutEffect, useRef, useState } from "react";
+import { type CSSProperties, type ReactNode, useLayoutEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -15,12 +15,10 @@ type TooltipPanelProps = {
   className?: string;
   flip?: boolean;
   style?: CSSProperties;
+  ref?: React.Ref<HTMLDivElement>;
 };
 
-export const TooltipPanel = forwardRef<HTMLDivElement, TooltipPanelProps>(function TooltipPanel(
-  { children, width = "w-60", className, flip, style },
-  ref,
-) {
+export function TooltipPanel({ children, width = "w-60", className, flip, style, ref }: TooltipPanelProps) {
   return (
     <div
       ref={ref}
@@ -31,10 +29,10 @@ export const TooltipPanel = forwardRef<HTMLDivElement, TooltipPanelProps>(functi
       {children}
     </div>
   );
-});
+}
 
 // Standard layout measurement hook for tooltips that flip below if clipping.
-export function useTooltipFlip(deps: unknown[] = []) {
+export function useTooltipFlip(trigger?: unknown) {
   const ref = useRef<HTMLDivElement>(null);
   const [flip, setFlip] = useState(false);
 
@@ -43,8 +41,7 @@ export function useTooltipFlip(deps: unknown[] = []) {
     if (!el) return;
     const rect = el.getBoundingClientRect();
     if (rect.top < 0) setFlip(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, deps);
+  }, [trigger]);
 
   return { ref, flip };
 }

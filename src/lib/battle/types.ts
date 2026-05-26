@@ -186,6 +186,16 @@ export function setEnemyStatus(state: BattleState, status: EnemyStatusId, value:
   return { ...state, enemyStatuses: { ...state.enemyStatuses, [status]: value } };
 }
 
+export function addEnemyMitigation(state: BattleState, field: keyof EnemyMitigation, delta: number): BattleState {
+  return {
+    ...state,
+    enemyMitigation: {
+      ...state.enemyMitigation,
+      [field]: state.enemyMitigation[field] + delta,
+    },
+  };
+}
+
 export function addGold(state: BattleState, delta: number): BattleState {
   return { ...state, gold: state.gold + delta };
 }

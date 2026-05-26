@@ -7,3 +7,4 @@ export { ShimmerOverlay, staggerDelay } from "./shimmer";
 export { GoldCost, GoldDisplay } from "./display-elements";
 export { GameMenu, HamburgerTrigger, PaginationControls } from "./navigation";
 export { DisabledTooltip, ServiceButton } from "./service-button";
+export { TabBar } from "./tab-bar";

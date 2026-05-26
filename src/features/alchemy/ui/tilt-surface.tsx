@@ -1,7 +1,7 @@
 // Tilt-surface wrapper with shimmer overlay, selection ring, and focus ring support.
 // Handles tilt mechanics (mouseMove/mouseLeave → setTiltFromEvent/clearTiltFromEvent)
 // and the common card-surface decoration shared across card, trinket, character, and homestead tiles.
-import { type CSSProperties, type MouseEvent, type PointerEvent, type ReactNode } from "react";
+import { type CSSProperties, type MouseEvent, type PointerEvent, type ReactNode, type Ref } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -26,7 +26,7 @@ type TiltSurfaceProps = {
   onFocus?: () => void;
   onBlur?: () => void;
   ariaLabel?: string;
-  buttonRef?: ((node: HTMLButtonElement | null) => void) | undefined;
+  buttonRef?: Ref<HTMLButtonElement> | undefined;
   onMouseEnter?: (e: MouseEvent<HTMLElement>) => void;
   onMouseLeave?: (e: MouseEvent<HTMLElement>) => void;
 };

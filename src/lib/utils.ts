@@ -15,18 +15,31 @@ export function clamp(value: number, min: number, max: number) {
 }
 
 // Fisher-Yates shuffle — O(n), unbiased, in-place on a clone.
-export function shuffle<T>(items: readonly T[]): T[] {
+export function shuffle<T>(items: readonly T[], rng: () => number = Math.random): T[] {
   const shuffled = [...items];
   for (let index = shuffled.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.floor(Math.random() * (index + 1));
+    const swapIndex = Math.floor(rng() * (index + 1));
     [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
   }
   return shuffled;
 }
 
 // Picks one item from a non-empty collection without each caller repeating random index math.
-export function pickRandom<T>(items: readonly T[]): T | undefined {
-  return items[Math.floor(Math.random() * items.length)];
+export function pickRandom<T>(items: readonly T[], rng: () => number = Math.random): T | undefined {
+  if (items.length === 0) return undefined;
+  return items[Math.floor(rng() * items.length)];
+}
+
+// Mulberry32 seeded PRNG — returns a function that produces deterministic
+// values in [0, 1) for a given integer seed.
+export function createSeededRng(seed: number): () => number {
+  let s = seed | 0;
+  return () => {
+    s = (s + 0x6d2b79f5) | 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
 }
 
 // Appends a value immutably only when it is not already present.

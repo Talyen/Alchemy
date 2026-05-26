@@ -2,10 +2,8 @@
 // All three tab grids are rendered simultaneously (preloaded) — only the active
 // one is visible, so switching tabs is instant with no image re-loading.
 import { cn } from "@/lib/utils";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { HamburgerTrigger, PageLayout, ScreenHeader } from "../ui/shared-ui";
-import { CollectionGrid, CollectionTabs, getCollectionTotalPages } from "../ui/collection-ui";
+import { CollectionGrid, CollectionTabs, getCollectionTotalPages, CollectionPagination } from "../ui/collection-ui";
 import type { CollectionTab } from "../types";
 
 const COLLECTION_TABS: CollectionTab[] = ["cards", "bestiary", "trinkets"];
@@ -73,30 +71,7 @@ export function CollectionScreen({
         </div>
 
         <div className="mt-6 flex flex-wrap items-center justify-center gap-x-2 gap-y-2">
-          {totalPages > 1 && (
-            <Button
-              aria-label="Previous page"
-              variant="outline"
-              size="icon"
-              className="h-9 w-9"
-              disabled={activePage === 0}
-              onClick={() => handlePageChange(activePage - 1)}
-            >
-              <ChevronLeft className="h-5 w-5" />
-            </Button>
-          )}
-          {totalPages > 1 && (
-            <Button
-              aria-label="Next page"
-              variant="outline"
-              size="icon"
-              className="h-9 w-9"
-              disabled={activePage >= totalPages - 1}
-              onClick={() => handlePageChange(activePage + 1)}
-            >
-              <ChevronRight className="h-5 w-5" />
-            </Button>
-          )}
+          <CollectionPagination page={activePage} totalPages={totalPages} onPageChange={handlePageChange} />
         </div>
       </div>
     </PageLayout>

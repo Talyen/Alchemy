@@ -29,6 +29,8 @@ import {
   clampHealth,
   type BattleState,
   type CombatTextEvent,
+  type CombatTextStat,
+  addEnemyMitigation,
 } from "./types";
 import { CARDS_PER_TURN, BATTLE_CONFIG } from "../game-constants";
 import {
@@ -43,11 +45,19 @@ import {
   TRAIT_FREEZE_BONUS_PER_TURN,
 } from "../game-constants";
 
+const ENEMY_TURN_CONSTANTS = {
+  IRON_HIDE_OPTIONS_COUNT: 3,
+};
+
 export { chooseWishCard } from "./wish";
 export { processCompanionTurnStart } from "./companion";
 
 function isFreezeBlockingRegen(state: BattleState): boolean {
   return state.enemyFreezeSkipTurns > 0 && state.talentEffects.freezeBlocksRegen;
+}
+
+function scaleByRoomMultiplier(state: BattleState, value: number): number {
+  return Math.round(value * state.roomScalingMultiplier);
 }
 
 function resetPlayerTurnState(state: BattleState): BattleState {
@@ -298,6 +308,36 @@ function applyEnemyAttackLifesteal(
   };
 }
 
+function recordPlayerHealthLost(
+  prevHealth: number,
+  nextState: BattleState,
+  damageType: CombatTextStat,
+  combatTexts: CombatTextEvent[],
+) {
+  const healthLost = prevHealth - nextState.playerHealth;
+  if (healthLost > 0) {
+    const stat = damageType === "physical" ? "health" : damageType;
+    mergeCombatText(combatTexts, { target: "player", kind: "damage", stat, amount: healthLost });
+  }
+}
+
+function applyBlockDepletedHeal(
+  prevState: BattleState,
+  nextState: BattleState,
+  combatTexts: CombatTextEvent[],
+): BattleState {
+  if (
+    prevState.talentEffects.blockDepletedHeal > 0 &&
+    prevState.playerStatuses.block > 0 &&
+    nextState.playerStatuses.block <= 0
+  ) {
+    const healedState = applyPlayerHealing(nextState, prevState.talentEffects.blockDepletedHeal);
+    emitOverhealBlockText(nextState, healedState, combatTexts);
+    return healedState;
+  }
+  return nextState;
+}
+
 function processEnemyDamageEffect(
   state: BattleState,
   effect: EnemyAttackEffect & { kind: "damage" },
@@ -315,21 +355,8 @@ function processEnemyDamageEffect(
     },
   };
 
-  const healthLost = prevHealth - nextState.playerHealth;
-  if (healthLost > 0) {
-    const stat = effect.damageType === "physical" ? "health" : effect.damageType;
-    mergeCombatText(combatTexts, { target: "player", kind: "damage", stat, amount: healthLost });
-  }
-
-  if (
-    state.talentEffects.blockDepletedHeal > 0 &&
-    state.playerStatuses.block > 0 &&
-    nextState.playerStatuses.block <= 0
-  ) {
-    const prevState = nextState;
-    nextState = applyPlayerHealing(nextState, state.talentEffects.blockDepletedHeal);
-    emitOverhealBlockText(prevState, nextState, combatTexts);
-  }
+  recordPlayerHealthLost(prevHealth, nextState, effect.damageType, combatTexts);
+  nextState = applyBlockDepletedHeal(state, nextState, combatTexts);
 
   nextState = resolvePostDamageThresholds(
     nextState,
@@ -362,9 +389,9 @@ function processEnemyAttack(state: BattleState, combatTexts: CombatTextEvent[]) 
     } else if (effect.kind === "player-status") {
       nextState = applyPlayerStatusFromAttack(nextState, effect, combatTexts);
     } else {
-      logError(`Unknown enemy attack effect kind: ${(effect as { kind: string }).kind}`, "battle", {
-        state: nextState,
-      });
+      const errMsg = `Unknown enemy attack effect kind: ${(effect as { kind: string }).kind}`;
+      logError(errMsg, "battle", { state: nextState });
+      throw new Error(errMsg);
     }
   }
 
@@ -398,21 +425,15 @@ function isScalingBlocked(state: BattleState): boolean {
 
 const enemyTraitTurnStartHandlers: Record<string, EnemyTurnStartHandler> = {
   "rusting-carapace": (state) => {
-    const scaledForge = Math.round(TRAIT_FORGE_PER_TURN * state.roomScalingMultiplier);
-    return {
-      ...state,
-      enemyMitigation: {
-        ...state.enemyMitigation,
-        forge: state.enemyMitigation.forge + scaledForge,
-      },
-    };
+    const scaledForge = scaleByRoomMultiplier(state, TRAIT_FORGE_PER_TURN);
+    return addEnemyMitigation(state, "forge", scaledForge);
   },
   "iron-hide": (state, combatTexts, options) => {
-    const scaledArmor = Math.round(IRON_HIDE_ARMOR_PER_TURN * state.roomScalingMultiplier);
-    const scaledForge = Math.round(TRAIT_FORGE_PER_TURN * state.roomScalingMultiplier);
-    const scaledBurn = Math.round(IRON_HIDE_BURN_BONUS_PER_TURN * state.roomScalingMultiplier);
+    const scaledArmor = scaleByRoomMultiplier(state, IRON_HIDE_ARMOR_PER_TURN);
+    const scaledForge = scaleByRoomMultiplier(state, TRAIT_FORGE_PER_TURN);
+    const scaledBurn = scaleByRoomMultiplier(state, IRON_HIDE_BURN_BONUS_PER_TURN);
     const roll = options?.traitRoll ?? state.rng();
-    const choice = Math.trunc(roll * 3);
+    const choice = Math.trunc(roll * ENEMY_TURN_CONSTANTS.IRON_HIDE_OPTIONS_COUNT);
     if (choice === 0) {
       mergeCombatText(combatTexts, {
         target: "enemy",
@@ -420,22 +441,10 @@ const enemyTraitTurnStartHandlers: Record<string, EnemyTurnStartHandler> = {
         stat: "armor",
         amount: scaledArmor,
       });
-      return {
-        ...state,
-        enemyMitigation: {
-          ...state.enemyMitigation,
-          armor: state.enemyMitigation.armor + scaledArmor,
-        },
-      };
+      return addEnemyMitigation(state, "armor", scaledArmor);
     } else if (choice === 1) {
       mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "forge", amount: scaledForge });
-      return {
-        ...state,
-        enemyMitigation: {
-          ...state.enemyMitigation,
-          forge: state.enemyMitigation.forge + scaledForge,
-        },
-      };
+      return addEnemyMitigation(state, "forge", scaledForge);
     }
     mergeCombatText(combatTexts, {
       target: "enemy",
@@ -443,36 +452,18 @@ const enemyTraitTurnStartHandlers: Record<string, EnemyTurnStartHandler> = {
       stat: "burn",
       text: `+${scaledBurn} Burn Dmg`,
     });
-    return {
-      ...state,
-      enemyMitigation: {
-        ...state.enemyMitigation,
-        burnBonus: state.enemyMitigation.burnBonus + scaledBurn,
-      },
-    };
+    return addEnemyMitigation(state, "burnBonus", scaledBurn);
   },
   "glacial-shell": (state) => {
-    const scaledFreeze = Math.round(TRAIT_FREEZE_BONUS_PER_TURN * state.roomScalingMultiplier);
-    return {
-      ...state,
-      enemyMitigation: {
-        ...state.enemyMitigation,
-        freezeBonus: state.enemyMitigation.freezeBonus + scaledFreeze,
-      },
-    };
+    const scaledFreeze = scaleByRoomMultiplier(state, TRAIT_FREEZE_BONUS_PER_TURN);
+    return addEnemyMitigation(state, "freezeBonus", scaledFreeze);
   },
 };
 
 const difficultyTurnStartHandlers: Partial<Record<DifficultyModifier["kind"], EnemyTurnStartHandler>> = {
   "enemy-gains-forge-each-turn": (state, combatTexts) => {
     mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "forge", amount: DIFFICULTY_FORGE_PER_TURN });
-    return {
-      ...state,
-      enemyMitigation: {
-        ...state.enemyMitigation,
-        forge: state.enemyMitigation.forge + DIFFICULTY_FORGE_PER_TURN,
-      },
-    };
+    return addEnemyMitigation(state, "forge", DIFFICULTY_FORGE_PER_TURN);
   },
   "labyrinth-leeching": (state, combatTexts) => {
     if (isFreezeBlockingRegen(state)) return state;
@@ -573,7 +564,9 @@ function processEnemyTraits(state: BattleState, combatTexts: CombatTextEvent[], 
       if (handler) {
         nextState = handler(nextState, combatTexts, { traitRoll });
       } else if (!PASSIVE_ONLY_TRAITS.has(trait.id)) {
-        logError(`No turn-start handler for trait: ${trait.id}`, "battle", { state: nextState });
+        const errMsg = `No turn-start handler for trait: ${trait.id}`;
+        logError(errMsg, "battle", { state: nextState });
+        throw new Error(errMsg);
       }
     }
   }
@@ -683,17 +676,7 @@ function resolveEnemyAction(
   return { state: nextState, texts, afterAttackState };
 }
 
-export function endPlayerTurn(state: BattleState, options?: { traitRoll?: number }): EndPlayerTurnResolution {
-  const nextState = beginEnemyPhase(state);
-
-  if (state.playerStatuses.haste > 0) {
-    return resolveHasteTurn(nextState);
-  }
-
-  if (state.enemyStunSkipTurns + state.enemyFreezeSkipTurns > 0) {
-    return resolveSkippedEnemyTurn(nextState, options);
-  }
-
+function resolveStandardEnemyTurn(nextState: BattleState, options?: { traitRoll?: number }) {
   const startResult = resolveEnemyTurnStart(nextState);
   const enemyTurnStartState = startResult.state;
   const enemyTurnStartCombatTexts = startResult.texts;
@@ -719,4 +702,18 @@ export function endPlayerTurn(state: BattleState, options?: { traitRoll?: number
     enemyPerformedAttack: true,
     afterAttackState: actionResult.afterAttackState,
   };
+}
+
+export function endPlayerTurn(state: BattleState, options?: { traitRoll?: number }): EndPlayerTurnResolution {
+  const nextState = beginEnemyPhase(state);
+
+  if (state.playerStatuses.haste > 0) {
+    return resolveHasteTurn(nextState);
+  }
+
+  if (state.enemyStunSkipTurns + state.enemyFreezeSkipTurns > 0) {
+    return resolveSkippedEnemyTurn(nextState, options);
+  }
+
+  return resolveStandardEnemyTurn(nextState, options);
 }

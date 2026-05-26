@@ -13,6 +13,16 @@ import {
 
 export const MIXED_POTION_ERROR = "Cannot mix with an existing Mixed Potion";
 
+function hashCode(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const chr = str.charCodeAt(i);
+    hash = (hash << 5) - hash + chr;
+    hash |= 0; // Convert to 32bit integer
+  }
+  return Math.abs(hash);
+}
+
 /** Pure logic for combining two potion cards into a Mixed Potion.
  * Used by the Alchemist's Shop controller so the mixing logic is independently testable. */
 export function createMixedPotion(cardA: BattleCard, cardB: BattleCard, potencyBonus: number = 0): BattleCard {
@@ -49,8 +59,10 @@ export function createMixedPotion(cardA: BattleCard, cardB: BattleCard, potencyB
   }
   const descriptionLines = [...descs, CONSUME_DESCRIPTION_LINE];
 
+  const idSeed = `${cardA.id}-${cardA.uid ?? 0}-${cardB.id}-${cardB.uid ?? 0}`;
+
   return {
-    id: `${MIXED_POTION_CARD_ID}-${Date.now()}`,
+    id: `${MIXED_POTION_CARD_ID}-${hashCode(idSeed)}`,
     title: MIXED_POTION_TITLE,
     descriptionLines,
     art: mixedPotion,

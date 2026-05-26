@@ -11,9 +11,11 @@ const SelectValue = SelectPrimitive.Value;
 const SelectTrigger = ({
   className,
   children,
+  ref,
   ...props
-}: React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger> & { ref?: React.Ref<HTMLButtonElement> }) => (
+}: React.ComponentProps<typeof SelectPrimitive.Trigger>) => (
   <SelectPrimitive.Trigger
+    ref={ref}
     className={cn(
       "flex w-full items-center justify-between rounded-[16px] border border-border/80 bg-background px-4 py-3 text-base text-foreground outline-none transition-colors focus:border-primary data-[placeholder]:text-muted-foreground [&>span]:line-clamp-1",
       className,
@@ -31,10 +33,12 @@ const SelectContent = ({
   className,
   children,
   position = "popper",
+  ref,
   ...props
-}: React.ComponentPropsWithoutRef<typeof SelectPrimitive.Content> & { ref?: React.Ref<HTMLDivElement> }) => (
+}: React.ComponentProps<typeof SelectPrimitive.Content>) => (
   <SelectPrimitive.Portal>
     <SelectPrimitive.Content
+      ref={ref}
       className={cn(
         "relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-[16px] border border-border/80 bg-popover text-popover-foreground shadow-md",
         position === "popper" && "data-[side=bottom]:translate-y-1 data-[side=top]:-translate-y-1",
@@ -56,12 +60,9 @@ const SelectContent = ({
   </SelectPrimitive.Portal>
 );
 
-const SelectItem = ({
-  className,
-  children,
-  ...props
-}: React.ComponentPropsWithoutRef<typeof SelectPrimitive.Item> & { ref?: React.Ref<HTMLDivElement> }) => (
+const SelectItem = ({ className, children, ref, ...props }: React.ComponentProps<typeof SelectPrimitive.Item>) => (
   <SelectPrimitive.Item
+    ref={ref}
     className={cn(
       "relative flex w-full cursor-default select-none items-center rounded-[12px] py-2.5 pl-10 pr-4 text-sm text-foreground outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
       className,

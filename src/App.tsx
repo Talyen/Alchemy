@@ -49,6 +49,9 @@ import { useAppStore } from "@/features/alchemy/stores/app-store";
 import { useScreenStore } from "@/features/alchemy/stores/screen-store";
 import { clearAllPersistentGameData } from "@/features/alchemy/stores/reset";
 
+const appStore = useAppStore;
+const homesteadStore = useHomesteadStore;
+
 const SCREEN_PARTICLE_COLORS: Partial<Record<Screen, readonly string[]>> = {
   battle: ["rgba(255, 150, 70, X)", "rgba(255, 100, 40, X)"],
   campfire: ["rgba(255, 180, 60, X)", "rgba(240, 120, 40, X)"],
@@ -80,22 +83,22 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
   const collectionPages = useAppStore((s) => s.collectionPages);
   const encounteredEnemyIds = useAppStore((s) => s.encounteredEnemyIds);
   const discoveredTrinketIds = useAppStore((s) => s.discoveredTrinketIds);
-  useAppStore((s) => s.completedDifficulties);
+  const completedDifficulties = useAppStore((s) => s.completedDifficulties);
   const showClearSaveConfirm = useAppStore((s) => s.showClearSaveConfirm);
   const pendingCharacterId = useScreenStore((s) => s.pendingCharacterId);
 
   // Store-backed setters (wrapped for Dispatch<SetStateAction> compatibility)
   function setDiscoveredCardIds(v: string[] | ((prev: string[]) => string[])) {
-    const nextVal = typeof v === "function" ? v(useAppStore.getState().discoveredCardIds) : v;
-    useAppStore.getState().setDiscoveredCardIds(nextVal);
+    const nextVal = typeof v === "function" ? v(appStore.getState().discoveredCardIds) : v;
+    appStore.getState().setDiscoveredCardIds(nextVal);
   }
   function setEncounteredEnemyIds(v: string[] | ((prev: string[]) => string[])) {
-    const nextVal = typeof v === "function" ? v(useAppStore.getState().encounteredEnemyIds) : v;
-    useAppStore.getState().setEncounteredEnemyIds(nextVal);
+    const nextVal = typeof v === "function" ? v(appStore.getState().encounteredEnemyIds) : v;
+    appStore.getState().setEncounteredEnemyIds(nextVal);
   }
   function setDiscoveredTrinketIds(v: string[] | ((prev: string[]) => string[])) {
-    const nextVal = typeof v === "function" ? v(useAppStore.getState().discoveredTrinketIds) : v;
-    useAppStore.getState().setDiscoveredTrinketIds(nextVal);
+    const nextVal = typeof v === "function" ? v(appStore.getState().discoveredTrinketIds) : v;
+    appStore.getState().setDiscoveredTrinketIds(nextVal);
   }
   const [gameMenuOpen, setGameMenuOpen] = useState(false);
   const [menuAnchorRect, setMenuAnchorRect] = useState<DOMRect | null>(null);
@@ -142,10 +145,10 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
   const homesteadBondedCompanions = useHomesteadStore((s) => s.bondedCompanions);
   const homesteadEffects = useHomesteadStore((s) => s.effects);
   function handleMarkDifficultyCompleted(characterId: CharacterId, difficultyId: DifficultyId) {
-    const prev = useAppStore.getState().completedDifficulties;
+    const prev = appStore.getState().completedDifficulties;
     const current = prev[characterId] ?? [];
     if (current.includes(difficultyId)) return;
-    useAppStore.getState().setCompletedDifficulties({ ...prev, [characterId]: [...current, difficultyId] });
+    appStore.getState().setCompletedDifficulties({ ...prev, [characterId]: [...current, difficultyId] });
   }
 
   const run = useAlchemyRunController({
@@ -206,27 +209,27 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
       saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
       gameBuildVersion: CURRENT_GAME_BUILD_VERSION,
       contentVersion: CURRENT_CONTENT_VERSION,
-      selectedAspectRatio: useAppStore.getState().selectedAspectRatio,
-      displayMode: useAppStore.getState().displayMode,
-      uiScale: useAppStore.getState().uiScale,
-      discoveredCardIds: useAppStore.getState().discoveredCardIds,
-      encounteredEnemyIds: useAppStore.getState().encounteredEnemyIds,
-      discoveredTrinketIds: useAppStore.getState().discoveredTrinketIds,
+      selectedAspectRatio,
+      displayMode,
+      uiScale,
+      discoveredCardIds,
+      encounteredEnemyIds,
+      discoveredTrinketIds,
       talentXP: run.talentXP,
       unlockedTalents: run.unlockedTalents,
-      musicVolume: useAppStore.getState().musicVol,
-      sfxVolume: useAppStore.getState().sfxVol,
-      masterVolume: useAppStore.getState().masterVol,
-      muteInBackground: useAppStore.getState().muteInBackground,
-      autoEndTurn: useAppStore.getState().autoEndTurn,
-      brightness: useAppStore.getState().brightness,
+      musicVolume: musicVol,
+      sfxVolume: sfxVol,
+      masterVolume: masterVol,
+      muteInBackground,
+      autoEndTurn,
+      brightness,
       activeRun: run.activeRunData,
-      materialInventory: useHomesteadStore.getState().materialInventory,
-      constructedBuildings: useHomesteadStore.getState().constructedBuildings,
-      plantedFarms: useHomesteadStore.getState().plantedFarms,
-      completedResearch: useHomesteadStore.getState().completedResearch,
-      bondedCompanions: useHomesteadStore.getState().bondedCompanions,
-      completedDifficulties: useAppStore.getState().completedDifficulties,
+      materialInventory: homesteadMaterialInventory,
+      constructedBuildings: homesteadConstructedBuildings,
+      plantedFarms: homesteadPlantedFarms,
+      completedResearch: homesteadCompletedResearch,
+      bondedCompanions: homesteadBondedCompanions,
+      completedDifficulties,
     },
     autosaveEnabled,
   );
@@ -241,7 +244,7 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
     setEncounteredEnemyIds(enemyBestiary.map((enemy) => enemy.id));
     setDiscoveredTrinketIds(trinketLibrary.map((trinket) => trinket.id));
     run.unlockAllTalents();
-    useHomesteadStore.getState().setMaterials({ wood: 99, iron: 99, herbs: 99, food: 99, crystal: 99 });
+    homesteadStore.getState().setMaterials({ wood: 99, iron: 99, herbs: 99, food: 99, crystal: 99 });
   }
 
   const hasUnspentTalents = Object.keys(keywordDefinitions).some((kw) => {

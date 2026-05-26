@@ -5,6 +5,13 @@
  * Depended on by: use-labyrinth-controller.ts, screen-store.ts, tests
  */
 
+import { createSeededRng, shuffle as shuffleWithRng } from "@/lib/utils";
+/**
+ * @deprecated Import createSeededRng and shuffleWithRng directly from "@/lib/utils" instead.
+ * These re-exports exist only for backward compatibility with existing test/module imports.
+ */
+export { createSeededRng, shuffleWithRng };
+
 import type { LabyrinthMap, LabyrinthNode, LabyrinthNodeType } from "../types";
 import { LABYRINTH_COLS, LABYRINTH_ROWS } from "./data";
 import { getEnemyModifiersForNodeType, getRewardModifiersForNodeType } from "./modifiers";
@@ -17,14 +24,6 @@ const CONSTANTS = {
   startCol: Math.floor(LABYRINTH_COLS / 2),
   startRow: 0,
   bossRow: LABYRINTH_ROWS - 1,
-  // Mulberry32 seeded PRNG parameters for deterministic generation
-  PRNG_ADDEND: 0x6d2b79f5,
-  PRNG_MULTIPLIER_1: 1,
-  PRNG_SHIFT_1: 15,
-  PRNG_SHIFT_2: 7,
-  PRNG_MULTIPLIER_2: 61,
-  PRNG_SHIFT_3: 14,
-  PRNG_DIVISOR: 4294967296,
 } as const;
 
 const LABYRINTH_MAP_CONFIG = {
@@ -109,31 +108,6 @@ validateDetourPaths();
 
 function isInRowBand(point: Point, band: Readonly<{ min: number; max: number }>) {
   return point.row >= band.min && point.row <= band.max;
-}
-
-/**
- * Parameterized Fisher-Yates shuffle using the provided seeded/custom RNG.
- * Used for deterministic shuffles in map generation and modifier selections.
- */
-export function shuffleWithRng<T>(items: readonly T[], rng: () => number): T[] {
-  const result = [...items];
-  for (let index = result.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.floor(rng() * (index + 1));
-    [result[index], result[swapIndex]] = [result[swapIndex], result[index]];
-  }
-  return result;
-}
-
-// Mulberry32 seeded PRNG — returns a function that produces deterministic
-// values in [0, 1) for a given integer seed. Used by tests for reproducible maps.
-export function createSeededRng(seed: number): () => number {
-  let s = seed | 0;
-  return () => {
-    s = (s + CONSTANTS.PRNG_ADDEND) | 0;
-    let t = Math.imul(s ^ (s >>> CONSTANTS.PRNG_SHIFT_1), CONSTANTS.PRNG_MULTIPLIER_1 | s);
-    t = (t + Math.imul(t ^ (t >>> CONSTANTS.PRNG_SHIFT_2), CONSTANTS.PRNG_MULTIPLIER_2 | t)) ^ t;
-    return ((t ^ (t >>> CONSTANTS.PRNG_SHIFT_3)) >>> 0) / CONSTANTS.PRNG_DIVISOR;
-  };
 }
 
 function initializeEmptyGrid(): (LabyrinthNode | null)[][] {

@@ -19,6 +19,7 @@ const DISPLAY_CONFIG = {
 } as const;
 
 export function useAppDisplayEffects({ displayMode, uiScale, brightness, stageRef }: AppDisplayEffectsOptions) {
+  "use no memo";
   useEffect(() => {
     platform.setDisplayMode(displayMode);
   }, [displayMode]);
@@ -29,9 +30,11 @@ export function useAppDisplayEffects({ displayMode, uiScale, brightness, stageRe
   }, [uiScale]);
 
   useLayoutEffect(() => {
-    if (stageRef.current) {
+    const el = stageRef.current;
+    if (el) {
       const brightnessFactor = brightness / DISPLAY_CONFIG.PERCENTAGE_DIVISOR;
-      stageRef.current.style.filter = `brightness(${brightnessFactor})`;
+      // eslint-disable-next-line react-compiler/react-compiler -- intentional DOM mutation inside useLayoutEffect
+      el.style.filter = `brightness(${brightnessFactor})`;
     }
   }, [brightness, stageRef]);
 }

@@ -26,7 +26,7 @@ export function buildWishOptions(state: BattleState, card: BattleCard): BattleCa
     }
   }
 
-  return shuffleCards(candidates).slice(0, baseCount);
+  return shuffleCards(candidates, state.rng).slice(0, baseCount);
 }
 
 function applyWishGoldTriggers(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
@@ -97,7 +97,7 @@ function applyWishHealthAndStatusTriggers(state: BattleState, combatTexts: Comba
 function applyWishDrawTriggers(state: BattleState): BattleState {
   let nextState = state;
   if (nextState.talentEffects.wishDrawsCard) {
-    const draw = drawCards(nextState.deck, nextState.discard, nextState.hand, 1, nextState.nextCardUid);
+    const draw = drawCards(nextState.deck, nextState.discard, nextState.hand, 1, nextState.nextCardUid, nextState.rng);
     nextState = {
       ...nextState,
       deck: draw.deck,

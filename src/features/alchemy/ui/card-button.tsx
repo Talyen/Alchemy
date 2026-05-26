@@ -1,7 +1,7 @@
 // Interactive battle-card button with tilt, shimmer, selection, and detail popup behavior.
 // Depends on card description context, shared card styling, and tilt utilities.
 // Used by hand cards, shop cards, rewards, and collection-adjacent selection flows.
-import { type CSSProperties, type MouseEvent, type PointerEvent as ReactPointerEvent } from "react";
+import { type CSSProperties, type MouseEvent, type PointerEvent as ReactPointerEvent, type Ref } from "react";
 
 import type { BattleCard } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
@@ -20,7 +20,7 @@ type BattleCardButtonProps = {
   onHoverEnd: () => void;
   onClick?: (event: MouseEvent<HTMLButtonElement>) => void;
   onPointerDown?: (event: ReactPointerEvent<HTMLButtonElement>) => void;
-  buttonRef?: (node: HTMLButtonElement | null) => void;
+  buttonRef?: Ref<HTMLButtonElement>;
   ariaLabel: string;
   shimmerActive: boolean;
   shimmerToken: number | undefined;

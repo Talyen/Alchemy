@@ -148,10 +148,14 @@ export function defaultBattleState(): BattleState {
 /**
  * Returns a fresh (deck, discard) pair after possibly reshuffling discard into deck.
  */
-function refillDeck(deck: BattleCard[], discard: BattleCard[]): { deck: BattleCard[]; discard: BattleCard[] } | null {
+function refillDeck(
+  deck: BattleCard[],
+  discard: BattleCard[],
+  rng: () => number = Math.random,
+): { deck: BattleCard[]; discard: BattleCard[] } | null {
   if (deck.length > 0) return { deck, discard };
   if (discard.length === 0) return null;
-  return { deck: shuffleCards(discard), discard: [] };
+  return { deck: shuffleCards(discard, rng), discard: [] };
 }
 
 /**
@@ -164,6 +168,7 @@ export function drawCards(
   hand: BattleCard[],
   amount: number,
   nextCardUid = 0,
+  rng: () => number = Math.random,
 ) {
   let nextDeck = [...deck];
   let nextDiscard = [...discard];
@@ -171,7 +176,7 @@ export function drawCards(
   let uid = nextCardUid;
 
   for (let i = 0; i < amount && nextHand.length < MAX_HAND_SIZE; i++) {
-    const refilled = refillDeck(nextDeck, nextDiscard);
+    const refilled = refillDeck(nextDeck, nextDiscard, rng);
     if (!refilled) break;
     nextDeck = refilled.deck;
     nextDiscard = refilled.discard;
@@ -241,8 +246,8 @@ function buildScaledEnemy(enemy: BestiaryEntry, totalRoomsInRun = 0) {
 /**
  * Sets up opening card hands, considering extra draw from trinkets.
  */
-function setupOpeningHand(deck: BattleCard[], extraDrawPerBattle: number) {
-  const openingHand = drawCards(shuffleCards(deck), [], [], CARDS_PER_TURN, 0);
+function setupOpeningHand(deck: BattleCard[], extraDrawPerBattle: number, rng: () => number = Math.random) {
+  const openingHand = drawCards(shuffleCards(deck, rng), [], [], CARDS_PER_TURN, 0, rng);
   if (extraDrawPerBattle <= 0) return { ...openingHand, extraHand: null };
   const extraHand = drawCards(
     openingHand.deck,
@@ -250,6 +255,7 @@ function setupOpeningHand(deck: BattleCard[], extraDrawPerBattle: number) {
     openingHand.hand,
     extraDrawPerBattle,
     openingHand.nextCardUid,
+    rng,
   );
   return {
     deck: extraHand.deck,
@@ -456,7 +462,8 @@ export function createBattleState(options: CreateBattleStateOptions): BattleStat
   }
 
   const trinketEffects = computeTrinketManifest(battleTrinkets);
-  const { deck, hand, discard, nextCardUid } = setupOpeningHand(runDeck, trinketEffects.extraDrawPerBattle);
+  const activeRng = optionsRng ?? Math.random;
+  const { deck, hand, discard, nextCardUid } = setupOpeningHand(runDeck, trinketEffects.extraDrawPerBattle, activeRng);
 
   const {
     enemyMaxHealth,
@@ -500,10 +507,10 @@ export function createBattleState(options: CreateBattleStateOptions): BattleStat
     discoveredCardIds: battleDiscovered,
     nextCardUid,
     difficultyModifiers: battleDiffs,
-    rng: optionsRng ?? Math.random,
+    rng: activeRng,
   });
 }
 
-export function shuffleCards(cards: BattleCard[]) {
-  return shuffle(cards);
+export function shuffleCards(cards: BattleCard[], rng: () => number = Math.random) {
+  return shuffle(cards, rng);
 }

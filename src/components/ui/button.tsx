@@ -1,7 +1,7 @@
 // Styled button primitive with variant/size class composition and optional Radix Slot rendering.
 // Depends on class-variance-authority, Radix Slot, React, and cn utilities.
 // Used across game screens as the base clickable control.
-import { forwardRef, type ComponentPropsWithoutRef } from "react";
+import { type ComponentProps } from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
 import { motion } from "motion/react";
@@ -93,51 +93,57 @@ function getVisualClassName(className: string | undefined) {
     .join(" ");
 }
 
-export interface ButtonProps extends ComponentPropsWithoutRef<"button">, VariantProps<typeof buttonVariants> {
+export interface ButtonProps extends ComponentProps<"button">, VariantProps<typeof buttonVariants> {
   asChild?: boolean;
   hoverSound?: UISound | false;
 }
 
-const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, hoverSound, onMouseEnter, ...props }, ref) => {
-    const wrapperClassName = getWrapperLayoutClassName(className);
-    const visualClassName = getVisualClassName(className);
-    const handleMouseEnter = (e: React.MouseEvent<HTMLButtonElement>) => {
-      if (hoverSound !== false) playUISound(hoverSound ?? "buttonHover");
-      onMouseEnter?.(e);
-    };
-    const button = (
-      <button
-        className={cn(buttonVariants({ variant, size, className: visualClassName }), size !== "icon" && "w-full")}
+const Button = ({
+  className,
+  variant,
+  size,
+  asChild = false,
+  hoverSound,
+  onMouseEnter,
+  ref,
+  ...props
+}: ButtonProps) => {
+  const wrapperClassName = getWrapperLayoutClassName(className);
+  const visualClassName = getVisualClassName(className);
+  const handleMouseEnter = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (hoverSound !== false) playUISound(hoverSound ?? "buttonHover");
+    onMouseEnter?.(e);
+  };
+  const button = (
+    <button
+      className={cn(buttonVariants({ variant, size, className: visualClassName }), size !== "icon" && "w-full")}
+      ref={ref}
+      onMouseEnter={handleMouseEnter}
+      {...props}
+    />
+  );
+
+  if (asChild) {
+    return (
+      <Slot
+        className={cn(buttonVariants({ variant, size, className: visualClassName }))}
         ref={ref}
         onMouseEnter={handleMouseEnter}
         {...props}
       />
     );
+  }
 
-    if (asChild) {
-      return (
-        <Slot
-          className={cn(buttonVariants({ variant, size, className: visualClassName }))}
-          ref={ref}
-          onMouseEnter={handleMouseEnter}
-          {...props}
-        />
-      );
-    }
-
-    return (
-      <motion.span
-        className={cn("inline-flex", wrapperClassName)}
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.97 }}
-        transition={{ type: "spring", stiffness: 400, damping: 15 }}
-      >
-        {button}
-      </motion.span>
-    );
-  },
-);
-Button.displayName = "Button";
+  return (
+    <motion.span
+      className={cn("inline-flex", wrapperClassName)}
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.97 }}
+      transition={{ type: "spring", stiffness: 400, damping: 15 }}
+    >
+      {button}
+    </motion.span>
+  );
+};
 
 export { Button };

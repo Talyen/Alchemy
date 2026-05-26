@@ -13,7 +13,19 @@ function getCombatTextDisplayText(event: CombatTextEvent): string {
 }
 
 type BattleStore = {
+  /**
+   * The "visual" battle state that drives the UI. During animation sequences this may
+   * temporarily hold an intermediate display state (e.g. showEnemyTurnStart sets a transient
+   * hand:[] / turnPhase:"enemy" snapshot). Never read this for run-level decisions.
+   */
   battleState: BattleState;
+  /**
+   * The authoritative resolved state used for run-level decisions (rewards, materials,
+   * navigation). Always reflects the true post-resolution state. logicalBattleState must be
+   * kept in sync with battleState at every terminal write; use setSyncedBattleState for that.
+   * Only skip setLogicalBattleState when intentionally writing a transient display-only state.
+   */
+  logicalBattleState: BattleState;
   battleStartState: BattleState | null;
   hasActiveBattle: boolean;
   cardGhosts: CardGhost[];
@@ -24,6 +36,10 @@ type BattleStore = {
   revealedCardKeys: Set<string>;
 
   setBattleState: (state: BattleState | ((prev: BattleState) => BattleState)) => void;
+  setLogicalBattleState: (state: BattleState | ((prev: BattleState) => BattleState)) => void;
+  /** Atomically writes both battleState and logicalBattleState in a single Zustand update.
+   *  Use this at every terminal state write to keep the two fields in sync. */
+  setSyncedBattleState: (state: BattleState | ((prev: BattleState) => BattleState)) => void;
   setBattleStartState: (state: BattleState | null) => void;
   setHasActiveBattle: (active: boolean | ((prev: boolean) => boolean)) => void;
   initializeActiveBattle: (battleState: BattleState | null) => void;
@@ -45,6 +61,7 @@ const combatTextLaneDelayMs = COMBAT_TEXT_LANE_DELAY_MS;
 
 export const useBattleStore = create<BattleStore>()((set) => ({
   battleState: defaultBattleState(),
+  logicalBattleState: defaultBattleState(),
   battleStartState: null,
   hasActiveBattle: false,
   cardGhosts: [],
@@ -56,6 +73,15 @@ export const useBattleStore = create<BattleStore>()((set) => ({
 
   setBattleState: (action) =>
     set((s) => ({ battleState: typeof action === "function" ? action(s.battleState) : action })),
+
+  setLogicalBattleState: (action) =>
+    set((s) => ({ logicalBattleState: typeof action === "function" ? action(s.logicalBattleState) : action })),
+
+  setSyncedBattleState: (action) =>
+    set((s) => {
+      const next = typeof action === "function" ? action(s.battleState) : action;
+      return { battleState: next, logicalBattleState: next };
+    }),
 
   setBattleStartState: (state) => set({ battleStartState: state }),
 
@@ -75,12 +101,14 @@ export const useBattleStore = create<BattleStore>()((set) => ({
       };
       set({
         battleState: hydratedState,
+        logicalBattleState: hydratedState,
         battleStartState: hydratedState,
         hasActiveBattle: true,
       });
     } else {
       set({
         battleState: defaultBattleState(),
+        logicalBattleState: defaultBattleState(),
         battleStartState: null,
         hasActiveBattle: false,
       });

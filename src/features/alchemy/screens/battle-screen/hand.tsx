@@ -1,7 +1,7 @@
 // Player hand fan for battle cards.
 // Depends on battle/screen stores, card cost logic, and hand layout constants.
 // Used by BattleBottomBar to render playable cards and animation refs.
-import type { CSSProperties, MouseEvent, MutableRefObject } from "react";
+import { type CSSProperties, type MouseEvent, type MutableRefObject, useLayoutEffect, useRef } from "react";
 
 import {
   HAND_CARD_BASE_Z_INDEX,
@@ -63,7 +63,22 @@ function HandCardItem({
   const isRevealedFromTransfer = revealedCardKeys.has(cardKey);
   const shouldStagger = !hiddenHandCardKeys.has(cardKey) && !isRevealedFromTransfer;
   const canPlay = turnPhase === "player" && mana >= getEffectiveCost(costState, card) && !wishOptions;
-  const refs = handCardRefs;
+
+  const elementRef = useRef<HTMLButtonElement | null>(null);
+
+  /* eslint-disable react-compiler/react-compiler, react-hooks/immutability --
+     Writing to handCardRefs.current (a MutableRefObject) in useLayoutEffect and its cleanup
+     is the correct imperative pattern for maintaining a live ref registry. Both rules flag
+     this as a prop mutation but MutableRefObject.current writes are explicitly safe in effects. */
+  useLayoutEffect(() => {
+    const el = elementRef.current;
+    const currentRefs = handCardRefs.current;
+    currentRefs[cardKey] = el;
+    return () => {
+      delete currentRefs[cardKey];
+    };
+  }, [handCardRefs, cardKey]);
+  /* eslint-enable react-compiler/react-compiler, react-hooks/immutability */
 
   return (
     <BattleCardButton
@@ -72,10 +87,7 @@ function HandCardItem({
       onHoverStart={onHoverStart}
       onHoverEnd={onHoverEnd}
       onClick={(event) => onCardClick(card, index, event)}
-      buttonRef={(node) => {
-        // eslint-disable-next-line react-hooks/immutability
-        refs.current[cardKey] = node;
-      }}
+      buttonRef={elementRef}
       ariaLabel={`Play ${getCardDisplayTitle(card)}`}
       descriptionContext={descriptionContext}
       shimmerActive={shimmerActive}

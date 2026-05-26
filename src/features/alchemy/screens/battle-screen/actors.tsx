@@ -67,9 +67,7 @@ export function BattleActors({
             shimmerToken={shimmerState?.token}
             onHoverShimmer={onHoverShimmer}
             deathsDoorActive={battleState.deathsDoorActive}
-            surfaceRef={(node) => {
-              playerPanelRef.current = node;
-            }}
+            surfaceRef={playerPanelRef}
             shaking={playerShaking}
           />
           {battleState.activeCompanion ? (
@@ -105,9 +103,7 @@ export function BattleActors({
           shimmerActive={shimmerState?.cardId === "enemy-card"}
           shimmerToken={shimmerState?.token}
           onHoverShimmer={onHoverShimmer}
-          surfaceRef={(node) => {
-            enemyPanelRef.current = node;
-          }}
+          surfaceRef={enemyPanelRef}
           isDead={battleState.enemyHealth <= 0}
           shaking={enemyShaking}
           currentEnemy={battleState.currentEnemy}

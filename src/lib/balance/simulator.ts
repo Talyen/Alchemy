@@ -202,15 +202,11 @@ export type BalanceBatchResult = {
 const DEFAULT_MAX_TURNS = 30;
 const DEFAULT_POLICY: BalancePlayPolicy = "random-playable";
 const DEFAULT_SEED = 1;
-const RANDOM_UINT_MAX = 0x100000000;
+import { createSeededRng } from "@/lib/utils";
 
 // Provides a tiny deterministic PRNG so balance reports are reproducible across runs.
 export function createSeededRandom(seed: number): () => number {
-  let state = seed >>> 0;
-  return () => {
-    state = (state * 1664525 + 1013904223) >>> 0;
-    return state / RANDOM_UINT_MAX;
-  };
+  return createSeededRng(seed);
 }
 
 // Temporarily routes Math.random through a seeded generator because battle internals currently call Math.random directly.

@@ -2,7 +2,8 @@
 import { fileURLToPath, URL } from "node:url";
 
 import tailwind from "@tailwindcss/vite";
-import react from "@vitejs/plugin-react";
+import react, { reactCompilerPreset } from "@vitejs/plugin-react";
+import babel from "@rolldown/plugin-babel";
 import { defineConfig } from "vite";
 import checker from "vite-plugin-checker";
 import { visualizer } from "rollup-plugin-visualizer";
@@ -22,6 +23,9 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     tailwind(),
     react(),
+    babel({
+      presets: [reactCompilerPreset()],
+    }),
     mode === "development" &&
       checker({
         typescript: { tsconfigPath: "./tsconfig.json" },

@@ -13,7 +13,7 @@ export function HomesteadProvider({
   cardDescriptionContext: CardDescriptionContext;
   children: React.ReactNode;
 }) {
-  return <HomesteadContext.Provider value={cardDescriptionContext}>{children}</HomesteadContext.Provider>;
+  return <HomesteadContext value={cardDescriptionContext}>{children}</HomesteadContext>;
 }
 
 export function useCardDescriptionContext(): CardDescriptionContext {

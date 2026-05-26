@@ -14,12 +14,21 @@ import {
   AspectRatioSelect,
   ScreenHeader,
   UiScaleSelect,
+  TabBar,
 } from "../ui/shared-ui";
-import { PressableMotion } from "../ui/pressable-motion";
 import type { AspectRatioOption, DisplayMode, UiScale } from "../types";
 import { ErrorLogViewer } from "./error-log-viewer";
 
+import { Gamepad2, Monitor, Sliders, Volume2 } from "lucide-react";
+
 type OptionsTab = "display" | "sound" | "gameplay" | "other";
+
+const optionsTabs = [
+  { id: "display" as const, label: "Display", icon: Monitor },
+  { id: "sound" as const, label: "Sound", icon: Volume2 },
+  { id: "gameplay" as const, label: "Gameplay", icon: Gamepad2 },
+  { id: "other" as const, label: "Other", icon: Sliders },
+];
 
 type DisplayOptionsProps = {
   selectedAspectRatio: AspectRatioOption;
@@ -275,20 +284,7 @@ export function OptionsScreen({
         </div>
 
         <div className="mt-6 flex flex-wrap justify-center gap-2">
-          {(["display", "sound", "gameplay", "other"] as const).map((t) => (
-            <PressableMotion key={t} disableHoverScale>
-              <button
-                type="button"
-                className={cn(
-                  "rounded-full bg-card px-4 py-2 text-sm font-semibold capitalize text-foreground ring-1 ring-offset-1 ring-offset-card transition-all duration-200",
-                  tab === t ? "ring-primary/70" : "ring-border/30 hover:ring-border/50",
-                )}
-                onClick={() => setTab(t)}
-              >
-                {t.charAt(0).toUpperCase() + t.slice(1)}
-              </button>
-            </PressableMotion>
-          ))}
+          <TabBar tabs={optionsTabs} activeTab={tab} onSelectTab={setTab} />
         </div>
 
         <div className="grid">

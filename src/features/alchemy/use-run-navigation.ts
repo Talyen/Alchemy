@@ -135,7 +135,7 @@ export function useRunNavigation({
   const run = useRunAdapter();
   const talents = useTalentAdapter();
 
-  const battleState = useBattleStore((s) => s.battleState);
+  const logicalBattleState = useBattleStore((s) => s.logicalBattleState);
   const hasActiveBattle = useBattleStore((s) => s.hasActiveBattle);
   const setHasActiveBattle = useBattleStore((s) => s.setHasActiveBattle);
   const clearCardGhosts = useBattleStore((s) => s.clearCardGhosts);
@@ -193,7 +193,7 @@ export function useRunNavigation({
         contentSystemType: run.contentSystemType,
         labyrinthMap,
         hasActiveBattle,
-        battleState,
+        battleState: logicalBattleState,
         labyrinthPendingNode,
         activeLabyrinthModifiers,
         activeLabyrinthRewardModifiers,
@@ -217,7 +217,7 @@ export function useRunNavigation({
       run.contentSystemType,
       labyrinthMap,
       hasActiveBattle,
-      battleState,
+      logicalBattleState,
       labyrinthPendingNode,
       activeLabyrinthModifiers,
       activeLabyrinthRewardModifiers,
@@ -316,7 +316,7 @@ export function useRunNavigation({
     rewardTransitionTimer.current.clearAll();
     const runState = useRunStore.getState();
     const activeLabyrinthRewardModifiers = getStore().activeLabyrinthRewardModifiers;
-    const battleState = useBattleStore.getState().battleState;
+    const battleState = useBattleStore.getState().logicalBattleState;
 
     if (battleState.pendingMaterials.crystal > 0) {
       useHomesteadStore.getState().addMaterials(battleState.pendingMaterials);
@@ -662,7 +662,7 @@ export function useRunNavigation({
   }
 
   function finishRewards() {
-    const battleStateVal = useBattleStore.getState().battleState;
+    const battleStateVal = useBattleStore.getState().logicalBattleState;
     const result = finalizeRewardState({
       rewardState,
       companionRewardCards,

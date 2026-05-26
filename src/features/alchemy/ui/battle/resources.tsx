@@ -1,7 +1,7 @@
 // Battle resource widgets for draw/discard piles, mana, and gold.
 // Depends on game-data pile art, card styling, and value-change animation tokens.
 // Used by BattleScreen controls.
-import { forwardRef, type CSSProperties } from "react";
+import { type CSSProperties } from "react";
 import { Coins, Gem } from "lucide-react";
 
 import { pileDiscardArt, pileDrawArt } from "@/lib/game-data";
@@ -12,15 +12,19 @@ import { clearTiltFromEvent, setTiltFromEvent } from "../../utils";
 import { useChangeToken } from "./use-change-token";
 
 // Shows a tactile pile card on desktop and a compact counter on mobile battle layout.
-export const PilePanel = forwardRef<
-  HTMLDivElement,
-  {
-    label: string;
-    count: number;
-    type: "draw" | "discard";
-    compact?: boolean;
-  }
->(function PilePanel({ label, count, type, compact = false }, ref) {
+export function PilePanel({
+  label,
+  count,
+  type,
+  compact = false,
+  ref,
+}: {
+  label: string;
+  count: number;
+  type: "draw" | "discard";
+  compact?: boolean;
+  ref?: React.Ref<HTMLDivElement>;
+}) {
   const art = type === "draw" ? pileDrawArt : pileDiscardArt;
   if (compact) {
     return (
@@ -48,7 +52,7 @@ export const PilePanel = forwardRef<
       <img src={art} alt={`${label} pile`} className={`block w-full ${cardArtImageClass}`} loading="lazy" />
     </div>
   );
-});
+}
 
 // Renders gold plus mana gems, including temporary mana overflow above the max.
 export function ManaPanel({ mana, maxMana, gold }: { mana: number; maxMana: number; gold: number }) {

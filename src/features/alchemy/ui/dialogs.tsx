@@ -29,9 +29,13 @@ export function ConfirmationDialog({
 }) {
   return (
     <div
-      className={`motion-overlay absolute inset-0 z-[120] flex items-center justify-center px-6 ${dimBackground ? "bg-black/70" : ""}`}
+      className={`motion-overlay fixed inset-0 z-[120] flex items-center justify-center px-6 ${dimBackground ? "bg-black/70" : ""}`}
+      onClick={onCancel}
     >
-      <div className="motion-panel alchemy-shell w-full max-w-[41.48cqh] rounded-[26px] border border-border/80 px-6 py-6 text-center">
+      <div
+        className="motion-panel alchemy-shell w-full max-w-[41.48cqh] rounded-[26px] border border-border/80 px-6 py-6 text-center"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/15 text-amber-200">
           <AlertTriangle className="h-6 w-6" />
         </div>

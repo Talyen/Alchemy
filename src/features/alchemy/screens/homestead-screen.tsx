@@ -3,7 +3,7 @@
 // materials are sufficient. Completed nodes are dimmed with a checkmark.
 
 import { useState, useMemo, type ReactNode } from "react";
-import { ChevronLeft, ChevronRight, FlaskConical, Hammer, PawPrint, Wheat } from "lucide-react";
+import { FlaskConical, Hammer, PawPrint, Wheat } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -33,7 +33,7 @@ import orchard from "@/assets/optimized/orchard.webp";
 import placeholderHomestead from "@/assets/optimized/placeholder-homestead.webp";
 
 import { DetailPopup } from "../ui/card-ui";
-import { DisabledTooltip, HamburgerTrigger, PageLayout, ScreenHeader } from "../ui/shared-ui";
+import { DisabledTooltip, HamburgerTrigger, PageLayout, PaginationControls, ScreenHeader } from "../ui/shared-ui";
 import { MaterialIcon, MaterialPill, matIconMap, matPillStyle, matTextColor } from "../ui/material-icons";
 import { StarRating } from "../ui/star-rating";
 import { TabBar } from "../ui/tab-bar";
@@ -528,29 +528,13 @@ export function HomesteadScreen({
 
         {/* Navigation + pagination */}
         <div className="mx-auto mt-4 flex flex-wrap items-center justify-center gap-x-2 gap-y-2">
-          {tab === "companions" && companionPages > 1 && (
-            <Button
-              aria-label="Previous page"
-              variant="outline"
-              size="icon"
-              className="h-9 w-9"
-              disabled={companionPage === 0}
-              onClick={() => setCompanionPage(companionPage - 1)}
-            >
-              <ChevronLeft className="h-5 w-5" />
-            </Button>
-          )}
-          {tab === "companions" && companionPages > 1 && (
-            <Button
-              aria-label="Next page"
-              variant="outline"
-              size="icon"
-              className="h-9 w-9"
-              disabled={companionPage >= companionPages - 1}
-              onClick={() => setCompanionPage(companionPage + 1)}
-            >
-              <ChevronRight className="h-5 w-5" />
-            </Button>
+          {tab === "companions" && (
+            <PaginationControls
+              page={companionPage}
+              totalPages={companionPages}
+              onPageChange={setCompanionPage}
+              size="sm"
+            />
           )}
         </div>
       </div>

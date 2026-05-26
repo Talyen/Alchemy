@@ -1,6 +1,8 @@
+/* eslint-disable react-refresh/only-export-components */
 // Screen route renderer for the root app shell.
 // Reads data from Zustand stores instead of the run controller object.
 import { ErrorBoundary } from "@/components/error-boundary";
+import { lazy, Suspense } from "react";
 import { platform } from "@/lib/platform";
 import { menuLogo, menuLogoVariants, cardLibrary, trinketLibrary } from "@/lib/game-data";
 import type { CardTransfer, Screen, Destination, CollectionTab } from "@/features/alchemy/types";
@@ -13,7 +15,6 @@ import {
   AlchemistShopScreen,
   CampfireScreen,
   CharacterSelectScreen,
-  CollectionScreen,
   CorruptionScreen,
   DestinationScreen,
   DifficultySelectScreen,
@@ -24,13 +25,21 @@ import {
   MenuScreen,
   MerchantShopScreen,
   MysteryScreen,
-  OptionsScreen,
   RewardsScreen,
   RunVictoryScreen,
   TalentsScreen,
   WildwoodSelectScreen,
 } from "@/features/alchemy/screens";
-import { HomesteadScreen } from "@/features/alchemy/screens/homestead-screen";
+
+const CollectionScreen = lazy(() =>
+  import("@/features/alchemy/screens/collection-screen").then((m) => ({ default: m.CollectionScreen })),
+);
+const OptionsScreen = lazy(() =>
+  import("@/features/alchemy/screens/options-screen").then((m) => ({ default: m.OptionsScreen })),
+);
+const HomesteadScreen = lazy(() =>
+  import("@/features/alchemy/screens/homestead-screen").then((m) => ({ default: m.HomesteadScreen })),
+);
 
 export type ControllerActions = {
   navigateTo: (screen: Screen) => void;
@@ -290,73 +299,79 @@ export function renderAlchemyScreen({
     case "options":
       return (
         <ErrorBoundary label="options">
-          <OptionsScreen
-            onOpenMenu={onOpenBattleMenu}
-            display={{
-              selectedAspectRatio: appState.selectedAspectRatio,
-              onAspectRatioChange: appState.setSelectedAspectRatio,
-              displayMode: appState.displayMode,
-              onDisplayModeChange: appState.setDisplayMode,
-              showDisplayMode: platform.isDesktop,
-              uiScale: appState.uiScale,
-              onUiScaleChange: appState.setUiScale,
-              brightness: appState.brightness,
-              onBrightnessChange: appState.setBrightness,
-            }}
-            audio={{
-              masterVol: appState.masterVol,
-              musicVol: appState.musicVol,
-              sfxVol: appState.sfxVol,
-              onMasterVolChange: appState.setMasterVol,
-              onMusicVolChange: appState.setMusicVol,
-              onSfxVolChange: appState.setSfxVol,
-              muteInBackground: appState.muteInBackground,
-              onMuteInBackgroundChange: appState.setMuteInBackground,
-            }}
-            gameplay={{ autoEndTurn: appState.autoEndTurn, onAutoEndTurnChange: appState.setAutoEndTurn }}
-            saveData={{
-              showClearSaveConfirm,
-              onOpenClearSaveConfirm: () => appState.setShowClearSaveConfirm(true),
-              onCloseClearSaveConfirm: () => appState.setShowClearSaveConfirm(false),
-              onConfirmClearSave: onClearSaveData,
-              onResetOptions: appState.resetOptionsToDefault,
-            }}
-            dev={{ onUnlockAll: onUnlockAllDevMode }}
-          />
+          <Suspense fallback={null}>
+            <OptionsScreen
+              onOpenMenu={onOpenBattleMenu}
+              display={{
+                selectedAspectRatio: appState.selectedAspectRatio,
+                onAspectRatioChange: appState.setSelectedAspectRatio,
+                displayMode: appState.displayMode,
+                onDisplayModeChange: appState.setDisplayMode,
+                showDisplayMode: platform.isDesktop,
+                uiScale: appState.uiScale,
+                onUiScaleChange: appState.setUiScale,
+                brightness: appState.brightness,
+                onBrightnessChange: appState.setBrightness,
+              }}
+              audio={{
+                masterVol: appState.masterVol,
+                musicVol: appState.musicVol,
+                sfxVol: appState.sfxVol,
+                onMasterVolChange: appState.setMasterVol,
+                onMusicVolChange: appState.setMusicVol,
+                onSfxVolChange: appState.setSfxVol,
+                muteInBackground: appState.muteInBackground,
+                onMuteInBackgroundChange: appState.setMuteInBackground,
+              }}
+              gameplay={{ autoEndTurn: appState.autoEndTurn, onAutoEndTurnChange: appState.setAutoEndTurn }}
+              saveData={{
+                showClearSaveConfirm,
+                onOpenClearSaveConfirm: () => appState.setShowClearSaveConfirm(true),
+                onCloseClearSaveConfirm: () => appState.setShowClearSaveConfirm(false),
+                onConfirmClearSave: onClearSaveData,
+                onResetOptions: appState.resetOptionsToDefault,
+              }}
+              dev={{ onUnlockAll: onUnlockAllDevMode }}
+            />
+          </Suspense>
         </ErrorBoundary>
       );
     case "collection":
       return (
         <ErrorBoundary label="collection">
-          <CollectionScreen
-            onOpenMenu={onOpenBattleMenu}
-            collectionTab={collectionTab}
-            onSelectTab={appState.handleCollectionTabChange}
-            onPageChange={appState.setCollectionPage}
-            bondedCompanions={useHomesteadStore.getState().bondedCompanions}
-            discoveredCardIds={appState.discoveredCardIds}
-            encounteredEnemyIds={encounteredEnemyIds}
-            discoveredTrinketIds={discoveredTrinketIds}
-            collectionPages={collectionPages}
-          />
+          <Suspense fallback={null}>
+            <CollectionScreen
+              onOpenMenu={onOpenBattleMenu}
+              collectionTab={collectionTab}
+              onSelectTab={appState.handleCollectionTabChange}
+              onPageChange={appState.setCollectionPage}
+              bondedCompanions={useHomesteadStore.getState().bondedCompanions}
+              discoveredCardIds={appState.discoveredCardIds}
+              encounteredEnemyIds={encounteredEnemyIds}
+              discoveredTrinketIds={discoveredTrinketIds}
+              collectionPages={collectionPages}
+            />
+          </Suspense>
         </ErrorBoundary>
       );
     case "homestead":
       return (
         <ErrorBoundary label="homestead">
-          <HomesteadScreen
-            onOpenMenu={onOpenBattleMenu}
-            materialInventory={useHomesteadStore.getState().materialInventory}
-            constructedBuildings={useHomesteadStore.getState().constructedBuildings}
-            plantedFarms={useHomesteadStore.getState().plantedFarms}
-            completedResearch={useHomesteadStore.getState().completedResearch}
-            bondedCompanions={useHomesteadStore.getState().bondedCompanions}
-            discoveredCardIds={appState.discoveredCardIds}
-            onConstructBuilding={useHomesteadStore.getState().constructBuilding}
-            onPlantFarm={useHomesteadStore.getState().plantFarm}
-            onCompleteResearch={useHomesteadStore.getState().completeResearch}
-            onBondCompanion={useHomesteadStore.getState().bondCompanion}
-          />
+          <Suspense fallback={null}>
+            <HomesteadScreen
+              onOpenMenu={onOpenBattleMenu}
+              materialInventory={useHomesteadStore.getState().materialInventory}
+              constructedBuildings={useHomesteadStore.getState().constructedBuildings}
+              plantedFarms={useHomesteadStore.getState().plantedFarms}
+              completedResearch={useHomesteadStore.getState().completedResearch}
+              bondedCompanions={useHomesteadStore.getState().bondedCompanions}
+              discoveredCardIds={appState.discoveredCardIds}
+              onConstructBuilding={useHomesteadStore.getState().constructBuilding}
+              onPlantFarm={useHomesteadStore.getState().plantFarm}
+              onCompleteResearch={useHomesteadStore.getState().completeResearch}
+              onBondCompanion={useHomesteadStore.getState().bondCompanion}
+            />
+          </Suspense>
         </ErrorBoundary>
       );
     case "talents":

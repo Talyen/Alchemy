@@ -35,7 +35,7 @@ function CharacterCard({
   onHoverShimmer: (id: CharacterId) => void;
 }) {
   const [showTooltip, setShowTooltip] = useState(false);
-  const { ref: tooltipRef, flip } = useTooltipFlip([showTooltip]);
+  const { ref: tooltipRef, flip } = useTooltipFlip(showTooltip);
   const char = characters[id];
   const art = characterArt[char.id];
 
