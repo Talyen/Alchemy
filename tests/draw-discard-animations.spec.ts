@@ -39,7 +39,6 @@ test.describe("Draw/discard animation invariants (1920×1080)", () => {
 });
 
 const ALT_RESOLUTIONS = [
-  { width: 932, height: 430, label: "mobile landscape" },
   { width: 2560, height: 1080, label: "ultrawide" },
   { width: 1440, height: 900, label: "16:10" },
 ] as const;

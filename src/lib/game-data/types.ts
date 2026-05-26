@@ -275,6 +275,14 @@ export type TalentEffectManifest = {
 
   // --- Mana ---
   startMana: number;
+  wellspringKeepMana: number;
+  manaBulwarkActive: boolean;
+  manaShellActive: boolean;
+  burnDamagePerManaCrystal: number;
+  freezeDamagePerManaCrystal: number;
+  burnDamageOnManaCrystalLoss: number;
+  companionDamagePerManaCrystal: number;
+  healOnManaGain: number;
 
   // --- Trinket ---
   trinketChanceBonus: number;

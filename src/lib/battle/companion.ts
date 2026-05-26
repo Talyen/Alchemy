@@ -14,6 +14,7 @@ function buildCompanionCard(
   companionDamageBuff: number,
   companionBondLevel: number,
   enemyFreezeSkipTurns: number,
+  maxMana: number,
 ): BattleCard {
   return {
     id: `companion-${activeCompanion.id}`,
@@ -32,7 +33,8 @@ function buildCompanionCard(
               (e.damageType === "bleed" ? talentEffects.companionBleedDamageBonus : 0) +
               trinketEffects.companionDamageBonus +
               companionDamageBuff +
-              (enemyFreezeSkipTurns > 0 ? talentEffects.companionVsFrozenBonus : 0),
+              (enemyFreezeSkipTurns > 0 ? talentEffects.companionVsFrozenBonus : 0) +
+              Math.round((maxMana * talentEffects.companionDamagePerManaCrystal) / 2),
           }
         : e,
     ),
@@ -50,6 +52,7 @@ export function processCompanionTurnStart(state: BattleState, combatTexts: Comba
     state.companionDamageBuff,
     companionBondLevel,
     state.enemyFreezeSkipTurns,
+    state.maxMana,
   );
 
   // Snapshot flags before companion effects and restore them after — companion actions

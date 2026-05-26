@@ -18,6 +18,7 @@ import {
   addPlayerStatus,
   applyPlayerCombatDamage,
   applyPlayerHealing,
+  clampHealth,
   type BattleState,
   type CombatTextEvent,
 } from "./types";
@@ -89,7 +90,13 @@ function handleRestoreMana(
 ): BattleState {
   const adjustedMana = Math.round(amount * potionMult);
   mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "mana", amount: adjustedMana });
-  return { ...state, mana: state.mana + adjustedMana };
+  let nextState: BattleState = { ...state, mana: state.mana + adjustedMana };
+  if (nextState.talentEffects.healOnManaGain > 0 && adjustedMana > 0) {
+    const prevState = nextState;
+    nextState = applyPlayerHealing(nextState, nextState.talentEffects.healOnManaGain);
+    emitOverhealBlockText(prevState, nextState, combatTexts);
+  }
+  return nextState;
 }
 
 function handleLoseMana(state: BattleState, amount: number, combatTexts: CombatTextEvent[]): BattleState {
@@ -99,17 +106,29 @@ function handleLoseMana(state: BattleState, amount: number, combatTexts: CombatT
 
 function handleGainMaxMana(state: BattleState, amount: number, combatTexts: CombatTextEvent[]): BattleState {
   mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "mana", amount });
-  return {
+  let nextState: BattleState = {
     ...state,
     maxMana: state.maxMana + amount,
     mana: state.mana + amount,
   };
+  if (nextState.talentEffects.healOnManaGain > 0 && amount > 0) {
+    const prevState = nextState;
+    nextState = applyPlayerHealing(nextState, nextState.talentEffects.healOnManaGain);
+    emitOverhealBlockText(prevState, nextState, combatTexts);
+  }
+  return nextState;
 }
 
 function handleLoseMaxMana(state: BattleState, amount: number, combatTexts: CombatTextEvent[]): BattleState {
   mergeCombatText(combatTexts, { target: "player", kind: "damage", stat: "mana", amount });
   const newMaxMana = Math.max(MIN_MAX_MANA_FLOOR, state.maxMana - amount);
-  return { ...state, maxMana: newMaxMana, mana: Math.min(newMaxMana, state.mana) };
+  let nextState: BattleState = { ...state, maxMana: newMaxMana, mana: Math.min(newMaxMana, state.mana) };
+  if (nextState.talentEffects.burnDamageOnManaCrystalLoss > 0 && nextState.enemyHealth > 0) {
+    const burnDmg = nextState.talentEffects.burnDamageOnManaCrystalLoss;
+    mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "burn", amount: burnDmg });
+    nextState = { ...nextState, enemyHealth: clampHealth(nextState.enemyHealth, -burnDmg, nextState.enemyMaxHealth) };
+  }
+  return nextState;
 }
 
 /**

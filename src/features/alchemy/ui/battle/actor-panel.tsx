@@ -41,7 +41,7 @@ type ArtPanelProps = {
   surfaceRef?: (node: HTMLDivElement | null) => void;
   isDead?: boolean;
   shaking?: boolean;
-  cardWidthClass: string | undefined;
+  cardWidthClass?: string;
   descriptionLines?: string[];
   currentEnemy?: BestiaryEntry;
   currentEnemyAttackEffects?: EnemyAttackEffect[];
@@ -66,7 +66,7 @@ export function ArtPanel({
   surfaceRef,
   isDead = false,
   shaking = false,
-  cardWidthClass,
+  cardWidthClass = battleCardWidthClass,
   descriptionLines,
   currentEnemy,
   currentEnemyAttackEffects,
@@ -179,7 +179,7 @@ function ActorArtFrame({
   onHoverShimmer,
   surfaceRef,
   isDead,
-  cardWidthClass,
+  cardWidthClass = battleCardWidthClass,
   deathsDoorActive,
 }: {
   side: "player" | "enemy";
@@ -191,7 +191,7 @@ function ActorArtFrame({
   onHoverShimmer: (cardId: string) => void;
   surfaceRef: ((node: HTMLDivElement | null) => void) | undefined;
   isDead: boolean;
-  cardWidthClass: string | undefined;
+  cardWidthClass?: string;
   deathsDoorActive: boolean;
 }) {
   return (
@@ -231,7 +231,7 @@ function ActorStatsPanel({
   healthToken,
   statuses,
   isDead,
-  cardWidthClass,
+  cardWidthClass = battleCardWidthClass,
   deathsDoorActive,
 }: Pick<ArtPanelProps, "side" | "title" | "health" | "maxHealth" | "statuses" | "isDead" | "cardWidthClass"> & {
   deathsDoorActive: boolean | undefined;
@@ -242,7 +242,7 @@ function ActorStatsPanel({
     <div
       className={cn(
         "surface-muted rounded-[24px] px-4 py-3 relative",
-        cardWidthClass ?? battleCardWidthClass,
+        cardWidthClass,
         deathsDoorActive && "shadow-[0_0_30px_rgba(127,29,29,0.45)]",
         isDead && "animate-frame-fade surface-transparent",
       )}

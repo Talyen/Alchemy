@@ -131,6 +131,42 @@ app.whenReady().then(() => {
     }
   });
 
+  // Steam Cloud Save Handlers
+  ipcMain.handle("alchemy:steam-cloud-read", async () => {
+    if (!steamClient) return null;
+    try {
+      if (steamClient.cloud.fileExists("save.json")) {
+        return steamClient.cloud.readFile("save.json");
+      }
+    } catch (err) {
+      console.error("Error reading Steam Cloud save:", err);
+    }
+    return null;
+  });
+
+  ipcMain.handle("alchemy:steam-cloud-write", async (_event, data) => {
+    if (!steamClient) return false;
+    try {
+      return steamClient.cloud.writeFile("save.json", data);
+    } catch (err) {
+      console.error("Error writing Steam Cloud save:", err);
+      return false;
+    }
+  });
+
+  ipcMain.handle("alchemy:steam-cloud-delete", async () => {
+    if (!steamClient) return false;
+    try {
+      if (steamClient.cloud.fileExists("save.json")) {
+        return steamClient.cloud.deleteFile("save.json");
+      }
+      return true;
+    } catch (err) {
+      console.error("Error deleting Steam Cloud save:", err);
+      return false;
+    }
+  });
+
   // Steam API Handlers
   ipcMain.handle("alchemy:steam-get-name", () => {
     if (steamClient) {
@@ -141,18 +177,6 @@ app.whenReady().then(() => {
       }
     }
     return null;
-  });
-
-  ipcMain.handle("alchemy:steam-unlock-achievement", (_event, achievementId) => {
-    if (steamClient) {
-      try {
-        console.log(`Unlocking achievement on Steam: ${achievementId}`);
-        return steamClient.achievement.activate(achievementId);
-      } catch (err) {
-        console.error(`Error activating achievement ${achievementId}:`, err);
-      }
-    }
-    return false;
   });
 
   ipcMain.handle("alchemy:steam-set-rich-presence", (_event, key, value) => {

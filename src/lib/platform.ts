@@ -27,6 +27,7 @@ export const platform = {
           if (name) {
             this.playerName = name;
             this.isInitialized = true;
+            platform.cloud.isAvailable = true;
             console.log(`Steam initialized. Player: ${name}`);
           }
         } catch (err) {
@@ -34,15 +35,48 @@ export const platform = {
         }
       }
     },
-    async unlockAchievement(id: string): Promise<boolean> {
-      if (window.alchemyDesktop?.steamUnlockAchievement) {
-        return window.alchemyDesktop.steamUnlockAchievement(id);
-      }
-      return false;
-    },
     async setRichPresence(key: string, value: string): Promise<boolean> {
       if (window.alchemyDesktop?.steamSetRichPresence) {
         return window.alchemyDesktop.steamSetRichPresence(key, value);
+      }
+      return false;
+    },
+  },
+
+  // Steam Cloud save/load via the Steamworks API. Falls back to the local
+  // filesystem when Steam is unavailable (DRM-free builds).
+  cloud: {
+    isAvailable: false,
+
+    async read(_filename: string): Promise<string | null> {
+      if (window.alchemyDesktop?.steamCloudRead) {
+        try {
+          return await window.alchemyDesktop.steamCloudRead();
+        } catch {
+          return null;
+        }
+      }
+      return null;
+    },
+
+    async write(_filename: string, data: string): Promise<boolean> {
+      if (window.alchemyDesktop?.steamCloudWrite) {
+        try {
+          return await window.alchemyDesktop.steamCloudWrite(data);
+        } catch {
+          return false;
+        }
+      }
+      return false;
+    },
+
+    async delete(_filename: string): Promise<boolean> {
+      if (window.alchemyDesktop?.steamCloudDelete) {
+        try {
+          return await window.alchemyDesktop.steamCloudDelete();
+        } catch {
+          return false;
+        }
       }
       return false;
     },

@@ -24,7 +24,6 @@ import { BackgroundParticles } from "../../ui/background-particles";
 type BattleScreenProps = {
   heroArt: string;
   playerName: string;
-  isMobileLandscape: boolean;
   aspectMode: "standard" | "narrow" | "ultrawide";
   stagePixelRatio: number;
   handCardRefs: MutableRefObject<Record<string, HTMLButtonElement | null>>;
@@ -48,7 +47,6 @@ export function BattleScreen(props: BattleScreenProps) {
   const {
     heroArt,
     playerName,
-    isMobileLandscape,
     aspectMode,
     stagePixelRatio,
     handCardRefs,
@@ -97,7 +95,6 @@ export function BattleScreen(props: BattleScreenProps) {
     battleState: battleState as BattleScreenState,
     heroArt,
     playerName,
-    isMobileLandscape,
     aspectMode,
     stagePixelRatio,
   };
@@ -144,7 +141,7 @@ export function BattleScreen(props: BattleScreenProps) {
 
   const { battleSceneRef: sceneRef } = refs;
   const { onRemoveCardGhost: removeGhost } = actions;
-  const requiredView = { ...view, isMobileLandscape, aspectMode };
+  const requiredView = { ...view, aspectMode };
 
   return (
     <PageLayout>
@@ -166,9 +163,7 @@ export function BattleScreen(props: BattleScreenProps) {
 
             <BattleBottomBar view={requiredView} refs={refs} actions={actions} />
 
-            {battleState.wishOptions ? (
-              <WishOverlay battleState={battleState} actions={actions} isMobileLandscape={isMobileLandscape} />
-            ) : null}
+            {battleState.wishOptions ? <WishOverlay battleState={battleState} actions={actions} /> : null}
 
             {cardGhosts.map((ghost) => (
               <CardGhostOverlay key={ghost.id} ghost={ghost} onDone={() => removeGhost(ghost.id)} />

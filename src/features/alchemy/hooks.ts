@@ -1,16 +1,8 @@
-// Viewport, Aspect Ratio, Resolution, and Mobile Input hooks/helpers.
+// Viewport, Aspect Ratio, and Resolution hooks/helpers.
 // Controls coordinate scaling mapping between virtual design stage and the physical screen.
 
-import { useCallback, useEffect, useState } from "react";
-import {
-  DESIGN_STAGE_HEIGHT,
-  MAX_STAGE_SCALE,
-  MIN_STAGE_SCALE,
-  MOBILE_LANDSCAPE_MAX_WIDTH,
-  MOBILE_STAGE_HEIGHT,
-  ORIENTATION_CHANGE_DEBOUNCE_MS,
-  PORTRAIT_MOBILE_MAX_WIDTH,
-} from "@/lib/game-constants";
+import { useEffect, useState } from "react";
+import { MAX_STAGE_SCALE, MIN_STAGE_SCALE, STAGE_HEIGHT } from "@/lib/game-constants";
 import type { AspectRatioOption } from "./types";
 
 /**
@@ -53,73 +45,6 @@ export function resolveAutoAspectRatio(
 }
 
 /**
- * Detects if the user's primary input device has a coarse pointer (like a touchscreen).
- * Checks matchMedia, touch start events support, and navigator touch points.
- */
-function isCoarsePointerInput(): boolean {
-  if (typeof window === "undefined") return false;
-
-  const hasCoarsePointer = window.matchMedia("(pointer: coarse)").matches;
-  const supportsTouchStart = "ontouchstart" in window;
-  const hasTouchPoints = typeof navigator !== "undefined" && navigator.maxTouchPoints > 0;
-
-  return hasCoarsePointer || supportsTouchStart || hasTouchPoints;
-}
-
-/**
- * Determines whether the device is in mobile landscape or portrait landscape modes based on
- * screen dimensions and pointer type.
- */
-function getMobileDeviceState(
-  width: number,
-  height: number,
-): { isMobileLandscape: boolean; isPortraitMobile: boolean } {
-  if (!isCoarsePointerInput()) {
-    return { isMobileLandscape: false, isPortraitMobile: false };
-  }
-
-  const isLandscape = width > height && width <= MOBILE_LANDSCAPE_MAX_WIDTH;
-  const isPortrait = height > width && width <= PORTRAIT_MOBILE_MAX_WIDTH;
-
-  return {
-    isMobileLandscape: isLandscape,
-    isPortraitMobile: isPortrait,
-  };
-}
-
-/**
- * Hook to track mobile status (landscape/portrait orientation under specific width thresholds)
- * using resize and orientation change event listeners.
- */
-export function useMobileDetection() {
-  const [mobileState, setMobileState] = useState(() => {
-    const width = typeof window !== "undefined" ? window.innerWidth : LAYOUT_CONFIG.DEFAULT_WIDTH;
-    const height = typeof window !== "undefined" ? window.innerHeight : LAYOUT_CONFIG.DEFAULT_HEIGHT;
-    return getMobileDeviceState(width, height);
-  });
-
-  const checkMobileStatus = useCallback(() => {
-    setMobileState(getMobileDeviceState(window.innerWidth, window.innerHeight));
-  }, []);
-
-  useEffect(() => {
-    function handleOrientationChange() {
-      // Debounce slightly to allow the viewport dimensions to stabilize
-      setTimeout(checkMobileStatus, ORIENTATION_CHANGE_DEBOUNCE_MS);
-    }
-
-    window.addEventListener("resize", checkMobileStatus);
-    window.addEventListener("orientationchange", handleOrientationChange);
-    return () => {
-      window.removeEventListener("resize", checkMobileStatus);
-      window.removeEventListener("orientationchange", handleOrientationChange);
-    };
-  }, [checkMobileStatus]);
-
-  return mobileState;
-}
-
-/**
  * Custom hook to track the browser viewport dimensions reactively.
  */
 function useViewportSize() {
@@ -140,26 +65,16 @@ function useViewportSize() {
 }
 
 /**
- * Determines target virtual stage dimensions based on whether mobile landscape is active
- * and the resolved aspect ratio option.
+ * Determines target virtual stage dimensions based on the resolved aspect ratio option.
  */
-function getVirtualStageDimensions(
-  resolvedAspect: Exclude<AspectRatioOption, "auto">,
-  viewportWidth: number,
-  viewportHeight: number,
-  mobileLandscape: boolean,
-): { stageWidth: number; stageHeight: number } {
-  const stageHeight = mobileLandscape ? MOBILE_STAGE_HEIGHT : DESIGN_STAGE_HEIGHT;
-  if (mobileLandscape) {
-    return {
-      stageWidth: Math.round(stageHeight * (viewportWidth / viewportHeight)),
-      stageHeight,
-    };
-  }
+function getVirtualStageDimensions(resolvedAspect: Exclude<AspectRatioOption, "auto">): {
+  stageWidth: number;
+  stageHeight: number;
+} {
   const targetSize = LAYOUT_CONFIG.ASPECT_RATIO_STAGE_SIZES[resolvedAspect];
   return {
-    stageWidth: Math.round(stageHeight * (targetSize.width / targetSize.height)),
-    stageHeight,
+    stageWidth: Math.round(STAGE_HEIGHT * (targetSize.width / targetSize.height)),
+    stageHeight: STAGE_HEIGHT,
   };
 }
 
@@ -190,11 +105,9 @@ function optimizeForNativeResolution(
   stageHeight: number,
   viewportWidth: number,
   viewportHeight: number,
-  mobileLandscape: boolean,
 ): NativeResolutionResult {
   const nativeMultiplier = Math.round(scale);
   const useNativeResolution =
-    !mobileLandscape &&
     scale >= LAYOUT_CONFIG.NATIVE_RESOLUTION_SCALE_THRESHOLD &&
     stageWidth * nativeMultiplier <= viewportWidth &&
     stageHeight * nativeMultiplier <= viewportHeight;
@@ -240,19 +153,15 @@ const BYPASS_RESOLUTION_RESULT = {
  * Hook to compute responsive CSS transform scaling style mappings, bounding boxes, and ratios
  * to fit a target game canvas size into the browser viewport size.
  */
-export function useVirtualResolution(
-  selectedAspectRatio: AspectRatioOption,
-  bypassVr = false,
-  mobileLandscape = false,
-) {
+export function useVirtualResolution(selectedAspectRatio: AspectRatioOption, bypassVr = false) {
   const { width, height } = useViewportSize();
   if (bypassVr) return BYPASS_RESOLUTION_RESULT;
 
   const resolvedAspect = selectedAspectRatio === "auto" ? resolveAutoAspectRatio(width, height) : selectedAspectRatio;
 
-  const dims = getVirtualStageDimensions(resolvedAspect, width, height, mobileLandscape);
+  const dims = getVirtualStageDimensions(resolvedAspect);
   const scale = getStageScale(width, height, dims.stageWidth, dims.stageHeight);
-  const native = optimizeForNativeResolution(scale, dims.stageWidth, dims.stageHeight, width, height, mobileLandscape);
+  const native = optimizeForNativeResolution(scale, dims.stageWidth, dims.stageHeight, width, height);
 
   const frameWidth = native.finalStageWidth * native.finalScale;
   const frameHeight = native.finalStageHeight * native.finalScale;

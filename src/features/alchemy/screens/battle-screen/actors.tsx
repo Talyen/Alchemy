@@ -1,16 +1,11 @@
 // Actor rail for the battle screen: hero/enemy panels, companion, turn badge, and combat text.
 // Depends on screen store shimmer actions, actor UI widgets, and battle layout constants.
 // Used only by BattleScreen to keep the main screen composition smaller.
-import { BATTLE_ACTOR_TOP_DESKTOP, BATTLE_ACTOR_TOP_MOBILE } from "@/lib/game-constants";
+import { BATTLE_ACTOR_TOP } from "@/lib/game-constants";
 
 import { ArtPanel, CompanionPanel, CombatTextRail } from "../../components";
 import { TurnBadge } from "../../ui/turn-badge";
-import {
-  mobileStageBattleCardWidthClass,
-  battleActorSectionClass,
-  bossCardWidthClass,
-  bossMobileStageBattleCardWidthClass,
-} from "../../config";
+import { battleActorSectionClass, bossCardWidthClass } from "../../config";
 import type { BattleFeedbackProps, BattleHoverProps, BattleRefsProps, RequiredBattleViewProps } from "./types";
 import { useScreenStore } from "../../stores/screen-store";
 
@@ -25,7 +20,7 @@ export function BattleActors({
   feedback: BattleFeedbackProps;
   refs: BattleRefsProps;
 }) {
-  const { battleState, heroArt, playerName, isMobileLandscape, aspectMode = "standard" } = view;
+  const { battleState, heroArt, playerName, aspectMode = "standard" } = view;
   const { shimmerState } = hover;
   const onHoverShimmer = useScreenStore((s) => s.maybeTriggerShimmer);
   const {
@@ -42,23 +37,12 @@ export function BattleActors({
   const isPlayerTurn = battleState.turnPhase === "player";
   const hasCompanion = Boolean(battleState.activeCompanion);
   const isBoss = battleState.currentEnemy.enemyType === "boss";
-  const actorCardWidthClass = isMobileLandscape ? mobileStageBattleCardWidthClass : undefined;
-  const bossStatsCardWidthClass = isBoss
-    ? isMobileLandscape
-      ? bossMobileStageBattleCardWidthClass
-      : bossCardWidthClass
-    : undefined;
+  const bossStatsCardWidthClass = isBoss ? bossCardWidthClass : undefined;
 
   return (
     <section
-      className={
-        aspectMode === "ultrawide"
-          ? battleActorSectionClass.ultrawide
-          : isMobileLandscape
-            ? battleActorSectionClass.mobile
-            : battleActorSectionClass.desktop
-      }
-      style={{ top: isMobileLandscape ? BATTLE_ACTOR_TOP_MOBILE : BATTLE_ACTOR_TOP_DESKTOP }}
+      className={aspectMode === "ultrawide" ? battleActorSectionClass.ultrawide : battleActorSectionClass.desktop}
+      style={{ top: BATTLE_ACTOR_TOP }}
     >
       <div className="relative flex items-start justify-center transition-transform duration-500 ease-out">
         <div className="absolute left-[calc(100%+clamp(1.46cqw,3cqw,2.29cqw))] top-[30%] z-30 w-40">
@@ -87,7 +71,6 @@ export function BattleActors({
               playerPanelRef.current = node;
             }}
             shaking={playerShaking}
-            cardWidthClass={actorCardWidthClass}
           />
           {battleState.activeCompanion ? (
             <div className="absolute bottom-[clamp(8.56cqh,8.93cqh,11.48cqh)] left-[calc(100%-clamp(4.71cqh,5.58cqh,7.65cqh))] z-20">
@@ -130,7 +113,6 @@ export function BattleActors({
           currentEnemy={battleState.currentEnemy}
           currentEnemyAttackEffects={battleState.enemyAttackEffects}
           activeLabyrinthModifiers={activeLabyrinthModifiers}
-          cardWidthClass={actorCardWidthClass}
           isBoss={isBoss}
           statsCardWidthClass={bossStatsCardWidthClass}
         />

@@ -9,7 +9,9 @@ interface Window {
     writeSave: (data: string) => Promise<boolean>;
     clearSave: () => Promise<boolean>;
     steamGetName: () => Promise<string | null>;
-    steamUnlockAchievement: (id: string) => Promise<boolean>;
     steamSetRichPresence: (key: string, val: string) => Promise<boolean>;
+    steamCloudRead: () => Promise<string | null>;
+    steamCloudWrite: (data: string) => Promise<boolean>;
+    steamCloudDelete: () => Promise<boolean>;
   };
 }

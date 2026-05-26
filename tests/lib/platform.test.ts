@@ -92,7 +92,6 @@ describe("platform.steam", () => {
     const { platform } = await import("@/lib/platform");
     expect(platform.steam.isInitialized).toBe(false);
     expect(platform.steam.playerName).toBeNull();
-    await expect(platform.steam.unlockAchievement("ach1")).resolves.toBe(false);
     await expect(platform.steam.setRichPresence("key", "val")).resolves.toBe(false);
   });
 
@@ -105,16 +104,6 @@ describe("platform.steam", () => {
     expect(platform.steam.isInitialized).toBe(true);
     expect(platform.steam.playerName).toBe("PlayerOne");
   });
-
-  it("delegates unlockAchievement to desktop bridge when available", async () => {
-    const steamUnlockAchievement = vi.fn(() => Promise.resolve(true));
-    (window as any).alchemyDesktop = { isDesktop: true, steamUnlockAchievement };
-    const { platform } = await import("@/lib/platform");
-    const result = await platform.steam.unlockAchievement("achievement_1");
-    expect(steamUnlockAchievement).toHaveBeenCalledWith("achievement_1");
-    expect(result).toBe(true);
-  });
-
   it("delegates setRichPresence to desktop bridge when available", async () => {
     const steamSetRichPresence = vi.fn(() => Promise.resolve(true));
     (window as any).alchemyDesktop = { isDesktop: true, steamSetRichPresence };
@@ -122,5 +111,86 @@ describe("platform.steam", () => {
     const result = await platform.steam.setRichPresence("status", "Playing");
     expect(steamSetRichPresence).toHaveBeenCalledWith("status", "Playing");
     expect(result).toBe(true);
+  });
+});
+
+describe("platform.cloud", () => {
+  it("isAvailable defaults to false in browser", async () => {
+    const { platform } = await import("@/lib/platform");
+    expect(platform.cloud.isAvailable).toBe(false);
+  });
+
+  it("returns null on read in browser", async () => {
+    const { platform } = await import("@/lib/platform");
+    await expect(platform.cloud.read("save.json")).resolves.toBeNull();
+  });
+
+  it("returns false on write in browser", async () => {
+    const { platform } = await import("@/lib/platform");
+    await expect(platform.cloud.write("save.json", "{}")).resolves.toBe(false);
+  });
+
+  it("returns false on delete in browser", async () => {
+    const { platform } = await import("@/lib/platform");
+    await expect(platform.cloud.delete("save.json")).resolves.toBe(false);
+  });
+
+  it("init sets isAvailable when steamGetName succeeds", async () => {
+    const steamGetName = vi.fn(() => Promise.resolve("PlayerOne"));
+    (window as any).alchemyDesktop = { isDesktop: true, steamGetName };
+    const { platform } = await import("@/lib/platform");
+    await platform.steam.init();
+    expect(platform.cloud.isAvailable).toBe(true);
+  });
+
+  it("read delegates to steamCloudRead when available", async () => {
+    const steamCloudRead = vi.fn(() => Promise.resolve('{"key":"val"}'));
+    (window as any).alchemyDesktop = { isDesktop: true, steamCloudRead };
+    const { platform } = await import("@/lib/platform");
+    const result = await platform.cloud.read("save.json");
+    expect(steamCloudRead).toHaveBeenCalled();
+    expect(result).toBe('{"key":"val"}');
+  });
+
+  it("read returns null when steamCloudRead returns null", async () => {
+    const steamCloudRead = vi.fn(() => Promise.resolve(null));
+    (window as any).alchemyDesktop = { isDesktop: true, steamCloudRead };
+    const { platform } = await import("@/lib/platform");
+    const result = await platform.cloud.read("save.json");
+    expect(result).toBeNull();
+  });
+
+  it("write delegates to steamCloudWrite when available", async () => {
+    const steamCloudWrite = vi.fn(() => Promise.resolve(true));
+    (window as any).alchemyDesktop = { isDesktop: true, steamCloudWrite };
+    const { platform } = await import("@/lib/platform");
+    const result = await platform.cloud.write("save.json", "{}");
+    expect(steamCloudWrite).toHaveBeenCalledWith("{}");
+    expect(result).toBe(true);
+  });
+
+  it("write returns false when steamCloudWrite returns false", async () => {
+    const steamCloudWrite = vi.fn(() => Promise.resolve(false));
+    (window as any).alchemyDesktop = { isDesktop: true, steamCloudWrite };
+    const { platform } = await import("@/lib/platform");
+    const result = await platform.cloud.write("save.json", "{}");
+    expect(result).toBe(false);
+  });
+
+  it("delete delegates to steamCloudDelete when available", async () => {
+    const steamCloudDelete = vi.fn(() => Promise.resolve(true));
+    (window as any).alchemyDesktop = { isDesktop: true, steamCloudDelete };
+    const { platform } = await import("@/lib/platform");
+    const result = await platform.cloud.delete("save.json");
+    expect(steamCloudDelete).toHaveBeenCalled();
+    expect(result).toBe(true);
+  });
+
+  it("delete returns false when steamCloudDelete returns false", async () => {
+    const steamCloudDelete = vi.fn(() => Promise.resolve(false));
+    (window as any).alchemyDesktop = { isDesktop: true, steamCloudDelete };
+    const { platform } = await import("@/lib/platform");
+    const result = await platform.cloud.delete("save.json");
+    expect(result).toBe(false);
   });
 });

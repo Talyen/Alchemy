@@ -11,10 +11,8 @@ npm run dev              # Vite dev server
 npm run dev:desktop      # Vite dev server + Electron shell
 npm run build            # tsc + vite build
 npm run build:web        # tsc + vite build (alias for build)
-npm run compile:desktop  # tsc + vite build --mode desktop
 npm run build:desktop    # tsc + vite build in desktop mode
 npm run package:win      # Build unpacked Windows desktop app
-npm run package:win:full # Build unpacked Windows app (full path)
 npm run dist:win         # Build Windows desktop installer
 npm run check            # format:check + lint + test + build
 npm run preview          # Preview production web build
@@ -34,22 +32,16 @@ npm run assets:optimize  # PNGs → webp
 npm run sounds:optimize  # sounds → OGG
 npm run music:optimize   # music optimization
 npm run release          # Auto-bump + changelog + tag (patch)
-npm run release:minor    # Force minor bump
-npm run release:major    # Force major bump
 ```
 
-Add a new raw asset:
-1. Add entry to `scripts/optimize-assets.mjs`
-2. `npm run assets:optimize`
-3. Import from `@/assets/optimized/` in `src/lib/game-data/assets.ts`
+## Workflows
 
-Add a new raw art asset:
-1. Place art in `public/assets/card-art/` or `public/assets/templates/frames/`
-2. Add entry to `scripts/optimize-art.mjs`
-3. `node scripts/optimize-art.mjs`
+**Add a new raw asset**: edit `scripts/optimize-assets.mjs` → `npm run assets:optimize` → import from `@/assets/optimized/` in `src/lib/game-data/assets.ts`.
 
-Add a new status effect:
-1. Define the status type in `src/lib/game-data/types.ts`
+**Add new art**: place in `public/assets/card-art/` or `public/assets/templates/frames/` → add entry in `scripts/optimize-art.mjs` → `node scripts/optimize-art.mjs`.
+
+**Add a new status effect**:
+1. Define the status type in `src/lib/game-data/types.ts` — extend `PlayerStatusId` or `EnemyStatusId` string unions (discriminated union pattern).
 2. Add tick logic in `src/lib/battle/status-ticks.ts`
 3. Add application logic in `src/lib/battle/status-application.ts`
 4. Add CC threshold logic in `src/lib/battle/status-cc.ts`
@@ -57,92 +49,225 @@ Add a new status effect:
 6. Add matching keyword in `src/lib/game-data/keywords.ts`
 7. Cover through `tests/lib/battle/` tests
 
+**Add a new card**:
+
+| Step | File(s) |
+|---|---|
+| 1. Add card ID to `CardId` union | `src/lib/game-data/types.ts` |
+| 2. Define card object in `cardLibrary` array | `src/lib/game-data/cards.ts` |
+| 3. Add effects (discriminated union on `kind`) | same file, `effects: [...]` |
+| 4. Add art reference | `src/lib/game-data/assets.ts` |
+| 5. (Optional) Register card sound | `src/lib/sound-registry.ts` (`cardSounds` record) |
+| 6. Update `descriptionLines` to match effects | same `cards.ts` entry |
+| 7. Cover through `tests/lib/game-data/descriptions-match-effects.test.ts` | |
+
+**Add a new character**:
+
+| Step | File(s) |
+|---|---|
+| 1. Add character ID to `CharacterId` union | `src/lib/game-data/types.ts` |
+| 2. Define character in `characters` record | `src/lib/game-data/characters.ts` |
+| 3. List card IDs in `startingDeck` (resolved via `resolveDeck`) | same file |
+
+**Add a new enemy**:
+
+| Step | File(s) |
+|---|---|
+| 1. Add enemy ID to `EnemyId` union | `src/lib/game-data/types.ts` |
+| 2. Define entry in `enemyBestiary` array | `src/lib/game-data/compendium.ts` |
+| 3. Set `enemyType` (`normal`/`elite`/`boss`) | same file |
+| 4. Add traits as `{ id, title, description }` objects | same file (logic lives in battle system) |
+| 5. (Optional) Register attack sound | `src/lib/sound-registry.ts` (`enemyAttackSounds`) |
+
+**Add a new trinket**:
+
+| Step | File(s) |
+|---|---|
+| 1. Define entry in `trinketLibrary` array | `src/lib/game-data/compendium.ts` |
+| 2. Implement effect logic | `src/lib/trinkets.ts` — extend `TrinketEffectManifest` and apply in battle init |
+| 3. Add art reference | `src/lib/game-data/assets.ts` |
+
+**Add a new keyword**:
+
+| Step | File(s) |
+|---|---|
+| 1. Define keyword config (label, description, colors) | `src/lib/game-data/keywords.ts` |
+| 2. Add display config if needed | `src/features/alchemy/config/keywords.ts` |
+| 3. Add talent XP trigger | `src/lib/talents.ts` (keyword-based XP logic) |
+
 ## Architecture
 
-- `src/lib/` — Pure game logic (no React): `battle/` (state machine, effects, draw), `content-systems/` (map & encounter generation), `homestead/` (between-run hub), `animation/` (particle systems), `talents.ts` (XP math), `audio.ts` + `audio-*.ts` (Web Audio buffer playback), `trinkets.ts`, `game-constants.ts` (all tuning knobs).
-- `src/features/alchemy/` — React UI. `use-alchemy-run-controller.ts` is the central orchestrator; `screens/` are pages, `ui/` are reusable widgets.
-- `src/features/alchemy/stores/` — Zustand stores for app, screen, run, battle, and homestead state.
-- `src/features/alchemy/storage/` — Save/load, persistence defaults, active-run storage, options, and migrations.
-- `src/features/alchemy/navigation/` — Map screen and routing between destinations.
-- `src/features/alchemy/talents/` — Talent tree UI.
+### Directory Layout
+
+- `src/lib/` — Pure game logic (no React): `battle/` (state machine, effects, draw), `content-systems/` (map & encounter generation — three variants: `campaign`, `labyrinth` with modifiers, `wildwood` with per-boss data), `homestead/` (between-run hub), `animation/` (particle systems), `talents.ts` (XP math), `audio.ts` + `audio-*.ts` (Web Audio buffer playback), `trinkets.ts`, `game-constants.ts` (all tuning knobs).
+- `src/features/alchemy/` — React UI. Controllers (see below) bridge pure lib logic to React. Subdirs: `screens/` (pages), `ui/` (reusable widgets), `config/` (display config for enemies, keywords, routes, options, layout, combat-text icons), `battle/` (UI-side helpers: feedback, card ghost animations, auto-end-turn), `run/` (run init), `utils/` (feature-level utilities), `navigation/` (map screen, destination/mystery/reward/victory flows), `stores/` (Zustand), `storage/` (persistence), `talents/` (talent tree UI).
+- `src/app/` — App bootstrapping: startup screen, audio/display/preload side-effect hooks, save-state hook, screen renderer.
+- `src/components/` — Shared UI primitives (`ui/` subdirectory: `button.tsx`, `select.tsx`, `progress.tsx`, etc.).
 - `src/lib/balance/` — Headless balance simulation engine.
-- `src/lib/ui/` — Shared utility UI logic (e.g. `progress.ts`).
 - `src/lib/game-data/` — Cards, keywords, characters, companions, difficulties, talents, compendium (enemies & trinkets). Barrel export at `src/lib/game-data/index.ts`.
 - `src/lib/validation/` — Zod schemas and migration validation for persisted saves.
-- `src/app/` — App-level bootstrapping: startup screen, save version checks, initial-load hook.
-- `src/components/` — Shared UI primitives (`ui/` subdirectory: `button.tsx`, `select.tsx`, `progress.tsx`, etc.).
+- `src/lib/ui/` — Shared utility UI logic (e.g. `progress.ts`).
 - `desktop/` — Electron main/preload entry points for desktop builds.
 - `tests/` — Vitest unit/integration tests and Playwright e2e specs.
-- `scripts/` — Build/optimization scripts (asset, sound, music optimization, etc.).
+- `scripts/` — Build/optimization scripts.
 - `@/` path alias → `src/`.
+
+### Controllers (Feature Layer)
+
+Controllers in `src/features/alchemy/` bridge pure lib logic to React UI:
+
+| Controller | File | Owns |
+|---|---|---|
+| Run lifecycle | `use-alchemy-run-controller.ts` | Screen transitions, central orchestrator |
+| Battle | `use-battle-controller.ts` | Battle state ↔ UI, ghost animations, turn flow |
+| Labyrinth | `use-labyrinth-controller.ts` | Labyrinth map generation + modifier state |
+| Navigation | `use-run-navigation.ts` | Destination selection, route availability |
+| Run persistence | `use-run-state.ts` | Run persistence via storage layer |
+| Homestead | `use-homestead-state.ts` | Homestead upgrades and material inventory |
+| Shop | `use-shop-controller.ts` | Merchant and alchemist purchase flow |
+| Talents | `use-talent-state.ts` | Talent tree state and XP spending |
+| Mystery | `use-mystery-flow.ts` (in `navigation/`) | Mystery event resolution |
+
+### Data Flow
+
+- **Card play**: UI click → `useBattleController.playCard()` → `playBattleCardResolved()` (`src/lib/battle/card-play.ts`) → `applyCardEffects()` (`src/lib/battle/apply-effects.ts`) → new `BattleState` → Zustand store update → React re-render.
+- **Enemy turn**: `endPlayerTurn()` (`src/lib/battle/enemy-turn.ts`) → enemy action resolution → status ticks → new `BattleState` → store update.
+- **Screen transition**: Controller calls `goToScreen(Screen)` → Zustand `screen` field → `renderAlchemyScreen()` switch in `src/app/render-alchemy-screen.tsx` → matching React component mounts.
+
+### Screen Routing
+
+- Screen type union: `src/features/alchemy/types.ts` (20 values: `"menu"`, `"battle"`, `"rewards"`, `"destination"`, `"campfire"`, `"shop"`, `"alchemist"`, `"mystery"`, `"corruption"`, etc.)
+- Dispatch: `renderAlchemyScreen()` in `src/app/render-alchemy-screen.tsx` — a `switch (screen)` returning the correct React component
+- Navigation: `useAlchemyRunController.goToScreen(screen)` sets the screen store value
+
+**Adding a new screen**:
+
+| Step | File(s) |
+|---|---|
+| 1. Add string to `Screen` union and `ROUTE_SCREENS` | `src/features/alchemy/types.ts` |
+| 2. Create component + barrel export | `src/features/alchemy/screens/<name>.tsx` + `screens/index.ts` |
+| 3. Add case in `renderAlchemyScreen()` switch | `src/app/render-alchemy-screen.tsx` |
+| 4. Add callbacks to `ControllerActions` type | `src/app/render-alchemy-screen.tsx` |
+| 5. Wire navigation trigger | caller of `goToScreen("<name>")` |
+
+**Adding a new destination (map node)**:
+
+| Step | File(s) |
+|---|---|
+| 1. Add to `DESTINATIONS` const | `src/features/alchemy/types.ts` |
+| 2. Add to `destinationPool` | `src/features/alchemy/config/routes.ts` |
+| 3. Add availability logic in `getAvailableDestinations()` | same file |
+
+**Adding a new mystery effect kind**:
+
+| Step | File(s) |
+|---|---|
+| 1. Add `kind` string to `MysteryEffect` union | `src/features/alchemy/navigation/mystery-events.ts` |
+| 2. Add `case` in `applyMysteryEffect()` switch | `src/features/alchemy/navigation/mystery-flow.ts` |
+| 3. Add fields to `MysteryEffectContext` if needed | same file |
+| 4. Wire follow-up UI in mystery screen | `src/features/alchemy/screens/mystery-screen.tsx` |
+
+### Core Types
+
+| Type | File |
+|---|---|
+| `BattleState` | `src/lib/battle/types.ts:93` |
+| `BattleCard` | `src/lib/game-data/types.ts:82` |
+| `RunStateFields` | `src/features/alchemy/stores/run-store.ts:30` |
+| `Screen` | `src/features/alchemy/types.ts:9` |
+| `TurnPhase` | `src/lib/battle/types.ts` |
+| `EnemyState` / `EnemyTemplate` | `src/lib/game-data/types.ts` |
+| `PlayerStatusId` / `EnemyStatusId` | `src/lib/game-data/types.ts` |
 
 ## Key Conventions
 
 - **Immutability**: Battle state never mutated — `createBattleState`, `playBattleCardResolved`, `endPlayerTurn` all return new `BattleState`. Reducer pattern through `applyCardEffects`.
-- **Store initialization**: Never initialize Zustand store fields with `null as Type` or `null as unknown as Type` — use a factory function or a valid default value. The type assertion bypasses `strictNullChecks` and can cause runtime crashes in subscribers.
+- **Zustand stores**: Separate `type StoreFields`, `type StoreActions`, then `type Store = StoreFields & StoreActions`. Use factory functions for initial state (never `null as Type`). Granular selectors only (`useStore(s => s.field)`), never the full store object. Persistence handled externally (`src/features/alchemy/storage/io.ts`), not through Zustand's built-in `persist` middleware.
 - **Combat texts**: Merged by `(target, kind, stat)` — multi-hit cards produce a single floating number.
 - **Talent effects**: Pre-computed once per battle into `TalentEffectManifest` on state.
-- **Upfront asset preloading (intentional)**: All game art (webp files in `src/assets/optimized/`) is collected at build time via `import.meta.glob` with `eager: true` and preloaded during the startup loading screen (`useInitialLoadReady` in `src/app/use-initial-load-ready.ts`). Sound effects are preloaded at idle after startup (`preloadAllSounds`). This is deliberate — this is a game, not a web app. The loading screen sets expectations, and after it clears, every card art, enemy sprite, and UI icon must be instantly available with zero decode-pop-in during gameplay. **Do not switch to lazy-on-render asset loading.**
+- **Upfront asset preloading (intentional)**: All game art collected at build time via `import.meta.glob` with `eager: true` and preloaded during startup. **Do not switch to lazy-on-render asset loading.**
 - **All tuning values** in `src/lib/game-constants.ts` — no magic numbers.
-- **Rounding**: Battle math uses `Math.round()` — never `Math.floor()`. Enforced by ESLint `no-restricted-syntax` rule in battle files.
-- **File summaries**: Every file should begin with a one-line description of its purpose.
+- **Rounding**: Battle math uses `Math.round()` — never `Math.floor()` (enforced by ESLint in battle files).
+- **File summaries**: Every file begins with a one-line description of its purpose.
 - **Why comments, not what**: Annotate non-obvious decisions; never restate the code.
 - **Persistence**: Treat save data as external API. When changing stored shape, update defaults, schemas, migrations, and legacy save fixtures/tests together.
-- **Randomness**: Prefer existing seeded/test helpers for generated content and random draws. Avoid tests that depend on lucky random outcomes.
+- **Randomness**: Prefer existing seeded/test helpers. Avoid tests that depend on lucky random outcomes.
 - **Card/data consistency**: When changing card effects, update descriptions and tests together. Keep game data imports through the barrel.
-- **Test-Driven Development**: Write tests before implementing features or fixing bugs. The test defines the expected behavior first; implement only enough to pass it. Ensures all new logic is covered and tests capture intent, not implementation.
-- **Commit messages**: Follow [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `refactor:`, etc.) — enforced by commitlint + lefthook locally, validated in CI. `commit-and-tag-version` reads these to generate the changelog and bump the version automatically.
+- **Test-Driven Development**: Write tests before implementing features or fixing bugs.
+- **Commit messages**: Follow [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `refactor:`, etc.) — enforced by commitlint + lefthook.
+
+### React Conventions
+
+- **No `React.FC`** — components are plain functions with explicit `interface Props` or local `type` above the component
+- **Tailwind via `cn()`** — use `cn()` from `@/lib/utils` for all conditional class merging. Order: layout/structure → visual → variant → external `className`. Primitives with variants use `class-variance-authority` (`cva()`)
+- **Zustand selectors** — always granular: `useStore((s) => s.field)`, never the full store object
+- **Event handlers** — chain feedback first (sound via `playUISound("buttonHover")`), then call original handler via `onX?.(e)`. Avoid `useEffect` for UI side effects
+- **Motion** via `framer-motion` (`motion/react`). Use `PressableMotion` wrapper for spring-based press feedback (`stiffness: 400`, `damping: 15`)
+- **Modals** — render as `fixed` overlay with backdrop `bg-black/70`, close on backdrop click with `e.stopPropagation()` on inner panel
+
+### Domain Glossary
+
+| Term | Definition |
+|---|---|
+| **Death's Door** | One-shot survival mechanic granting one final turn after player health reaches zero. |
+| **Combat Text** | Floating battle numbers merged per `(target, kind, stat)` for deduplication. |
+| **Talent Effect Manifest** | All active talent bonuses pre-computed into one object per battle (`BattleState.talentEffects`). |
+| **Trinket Manifest** | All equipped trinket bonuses pre-computed once at battle start (`BattleState.trinketEffects`). |
+| **Wish** | Effect presenting card choices from the full card library; queued via `wishQueue`. |
+| **Content System** | One of `campaign`, `labyrinth`, or `wildwood` — defines map generation, modifier pool, and encounter rules. |
+
+## Barrel Imports
+
+Always import through canonical barrels, not deep paths:
+
+| Barrel | Contents |
+|--------|----------|
+| `@/lib/game-data` | Types, cards, keywords, characters, companions, compendium, talents, difficulties, assets |
+| `@/lib/battle` | Battle state machine helpers (`createBattleState`, `playBattleCardResolved`, `endPlayerTurn`, etc.) |
+| `@/lib/validation` | Save schemas, migration, metadata, battle-state guard |
+| `@/features/alchemy/screens` | All screen components |
+| `@/features/alchemy/utils` | Battle helpers, card descriptions, DOM, enemy utils, random, string |
+
+Individual top-level lib modules (`balance.ts`, `talents.ts`, `trinkets.ts`) are imported directly — e.g. `@/lib/talents.ts` (no barrel at `@/lib`).
 
 ## Navigation Hints
 
 | Need | Look in |
-|------|---------|
-| Audio buffer cache | `src/lib/audio-buffer-cache.ts` |
-| Audio music | `src/lib/audio-music.ts` |
-| Audio SFX | `src/lib/audio-sfx.ts` |
+|---|---|
+| Audio (buffer cache / music / SFX / state / volume) | `src/lib/audio-*.ts` |
 | Balance simulation | `src/lib/balance/` |
-| Battle state shape | `src/lib/battle/` |
-| Card effects | `src/lib/game-data/cards.ts` |
+| Card corruption | `src/features/alchemy/corruption.ts` |
+| Card effects data | `src/lib/game-data/cards.ts` |
 | Characters data | `src/lib/game-data/characters.ts` |
 | Companions data | `src/lib/game-data/companions.ts` |
-| Desktop shell | `desktop/` |
-| Difficulties | `src/lib/game-data/difficulties.ts` |
-| Game data imports | always through `@/lib/game-data` barrel |
+| Content system types | `src/lib/content-systems/types.ts` |
+| Feature config (enemies, keywords, routes, etc.) | `src/features/alchemy/config/` |
 | Game-data types | `src/lib/game-data/types.ts` |
-| Homestead logic | `src/lib/homestead/` |
-| Map/encounter generation | `src/lib/content-systems/` |
-| Map screen / navigation | `src/features/alchemy/navigation/` |
+| Homestead (data, tiers, inventory, loot, logic) | `src/lib/homestead/` |
+| Image preloading | `src/lib/image-preload.ts` |
+| Labyrinth map generation | `src/lib/content-systems/labyrinth/map-generation.ts` |
+| Labyrinth modifiers | `src/lib/content-systems/labyrinth/modifiers.ts` |
 | Particle/animation system | `src/lib/animation/` |
-| Playwright flows | `tests/**/*.spec.ts`, `tests/pages/` |
-| Reusable widget | `src/features/alchemy/ui/` |
-| Run-level state | `src/features/alchemy/use-alchemy-run-controller.ts` |
+| Platform bridge (desktop vs browser) | `src/lib/platform.ts` |
+| Potion mixing | `src/features/alchemy/potion-mixer.ts` |
+| Save migrations doc | `src/features/alchemy/storage/MIGRATIONS.md` |
 | Save/load and migrations | `src/features/alchemy/storage/`, `src/lib/validation/` |
-| Shared UI components | `src/components/` |
 | Shared UI logic | `src/lib/ui/` |
 | Sound behavior | `src/lib/audio.ts` |
+| Sound-to-card registry | `src/lib/sound-registry.ts` |
+| Startup validation | `src/lib/validate-startup.ts` |
 | Talent maths | `src/lib/talents.ts` |
-| Talent tree UI | `src/features/alchemy/talents/` |
-| Test fixtures | `tests/fixtures/` |
 | Trinket logic | `src/lib/trinkets.ts` |
 | Tuning values | `src/lib/game-constants.ts` |
-| UI screen | `src/features/alchemy/screens/` |
-| Unit/integration tests | `tests/**/*.test.ts` |
+| Wildwood boss data | `src/lib/content-systems/wildwood/bosses.ts` |
 | Zustand stores | `src/features/alchemy/stores/` |
 
-## UI/UX Design Guidelines
+## UI/UX Design
 
-This is a fantasy roguelite deckbuilder. The interface must feel like a polished game with a well-designed UI/UX.
-
-**Layout**: Game-native composition. No fragile magic-pixel positioning. Responsive layouts across common desktop/laptop sizes.
-
-**Styling**: Favor utility-first styling with Tailwind CSS v4.0 for standard components, layout, and theme customization. Limit Vanilla CSS to complex custom game-feel animations, shaders, or rendering effects that cannot be easily written with utility classes.
-
-**Interactive states**: Interactive elements need clear states — default, hover, active/pressed, selected, disabled. Important actions must give immediate feedback.
-
-**Motion**: Fast, responsive transitions using `transform` and `opacity`. Focus on high-impact moments: one well-orchestrated page load with staggered reveals creates more delight than scattered micro-interactions. Avoid expensive layout/filter animations, unnecessary re-renders, heavy shadows, drop shadows, gradients, or large animated blurs.
-
-**Misc**:
-- No emoji in game UI (use proper icons or symbols).
+- **Upfront asset preloading** (see Key Conventions)
+- **Tailwind CSS v4.0** for standard styling; Vanilla CSS only for complex animations utility classes cannot express
+- Interactive elements need all four states: default, hover, active/pressed, disabled
+- No emoji in game UI (use icons or symbols)
 
 ## Project Gotchas
 
@@ -150,7 +275,7 @@ This is a fantasy roguelite deckbuilder. The interface must feel like a polished
 - **Vite base path**: `/` (Vercel default); `npm run dev` opens browser automatically.
 - **Assets**: `prebuild`/`predev` auto-run asset, sound, and music optimize scripts.
 - **Desktop**: Web builds use Vite directly; desktop builds use Electron entry points in `desktop/` and Vite desktop mode.
-- **SFX are buffers, not files**: SFX use Web Audio API buffer playback (`src/lib/audio.ts`); music MP3s are copied from `Raw Assets/Music/` to `public/Music/` during build and streamed via `<audio>` elements.
+- **SFX are buffers, not files**: SFX use Web Audio API buffer playback (`src/lib/audio.ts`); music MP3s are streamed via `<audio>` elements.
 
 ## Debugging
 
@@ -161,26 +286,26 @@ This is a fantasy roguelite deckbuilder. The interface must feel like a polished
 
 ## Verification Strategy
 
-- Battle logic: run focused Vitest files under `tests/lib/battle/`, then broader `npm test` when changes are cross-cutting.
-- Card data/effects: run game-data tests plus `tests/lib/game-data/descriptions-match-effects.test.ts` and relevant battle tests.
-- Save, storage, or schema changes: run storage, migration, validation, active-run, and legacy save fixture tests.
-- UI flow changes: run the relevant Playwright spec; use `npm run test:e2e:critical` for broad flow confidence.
-- Store/controller changes: run matching `tests/features/stores/`, navigation flow tests, and affected Playwright specs.
-- Desktop changes: run `npm run build:desktop` or a narrower desktop package command when packaging behaviour is affected.
-- Balance simulation: after battle logic or card data changes, consider `npm run balance:sim` to detect regressions in win rates.
+- **Battle logic**: Run focused Vitest files under `tests/lib/battle/`, then broader `npm test` when cross-cutting.
+- **Card data/effects**: Run game-data tests + `tests/lib/game-data/descriptions-match-effects.test.ts` + relevant battle tests.
+- **Save, storage, or schema changes**: Run storage, migration, validation, active-run, and legacy save fixture tests.
+- **UI flow changes**: Run the relevant Playwright spec; use `npm run test:e2e:critical` for broad confidence.
+- **Store/controller changes**: Run matching `tests/features/stores/`, navigation flow tests, and affected Playwright specs.
+- **Desktop changes**: Run `npm run build:desktop` or a narrower package command.
+- **Balance simulation**: After battle logic or card data changes, consider `npm run balance:sim` to detect win-rate regressions.
+- **Content system changes** (labyrinth/wildwood): Run `tests/labyrinth.spec.ts`, `tests/labyrinth-node-types.spec.ts`, `tests/wildwood.spec.ts`.
 
-## Test Gotchas
-
-- `test.skip(true, "reason")` when a required card isn't in the random opening hand.
-- `startRun(page)`: navigates to `/`, clicks Play → Knight → Continue, waits for cards.
-- `playUntilVictory(page)`: loops up to 12 turns playing all playable cards.
-- Prefer deterministic setup helpers over relying on random opening hands or generated maps.
+Tests mirror source: `tests/lib/battle/foo.test.ts` tests `src/lib/battle/foo.ts`.
 
 ## Testing Patterns
 
 - Use `createBattleState()` from `@/lib/battle/draw` for deterministic test setup.
 - Prebuilt decks, enemies, and save data live in `tests/fixtures/`.
 - Organize tests per mechanic: `describe("MechanicName", ...)` with focused `it` blocks.
+- `test.skip(true, "reason")` when a required card isn't in the random opening hand.
+- `startRun(page)`: navigates to `/`, clicks Play → Knight → Continue, waits for cards.
+- `playUntilVictory(page)`: loops up to 12 turns playing all playable cards.
+- Prefer deterministic setup helpers over relying on random opening hands or generated maps.
 
 ## Generated And Heavy Files
 
@@ -190,116 +315,7 @@ Avoid editing or re-reading unless directly relevant: `node_modules/`, `package-
 
 These are central and may be large. Avoid repeated reads within a session unless they are relevant to the task: `src/lib/game-constants.ts`, `src/lib/game-data/cards.ts`, `src/lib/game-data/keywords.ts`, `src/lib/game-data/assets.ts`, `vite.config.ts`, `tsconfig.json`, `playwright.config.ts`.
 
-## Domain Glossary
+## AI Behavior
 
-### Run & Progression
-
-| Term | Definition |
-|------|-----------|
-| **Run** | A full playthrough from character select to victory or defeat. |
-| **Destination** | A map node chosen between battles (e.g. Combat, Elite, Boss, Campfire, Merchant). |
-| **Gold** | Currency earned in battle, spent at Merchants and the Alchemist. |
-
-### Battle Concepts
-
-| Term | Definition |
-|------|-----------|
-| **Consume** | A card property removing it from the current battle after play. |
-| **Death's Door** | A one-shot survival mechanic granting one final turn after player health reaches zero. |
-| **Wish** | An effect presenting card choices from the full card library. |
-| **Companion** | A persistent ally that acts at the start of each player turn. |
-| **Haste** | Grants an extra player turn by skipping the enemy phase. |
-| **Combat Text** | Floating battle numbers merged per (target, kind, stat) for deduplication. |
-| **Mana** | Resource spent to play cards; hand refills and Mana regenerates each turn. |
-| **Health** | Player health — reaching 0 ends the run. Also a keyword on healing effects. |
-| **Leech** | Heals the player for damage dealt by the card. |
-
-### Status Effects (by category)
-
-| Term | Definition |
-|------|-----------|
-| **Protective Statuses** | Absorb or reduce incoming damage (Block, Armor). |
-| **Empowering Statuses** | Amplify outgoing damage or grant extra actions (Forge, Haste). |
-| **Damage-over-Time Statuses** | Deal damage each turn on the bearer — Burn halves each turn, Poison decreases by 1, Bleed bursts (deals full stack then resets to 0). |
-| **Crowd Control Statuses** | Prevent the enemy from acting when accumulated above a threshold (Freeze, Stun). |
-
-### Damage Types
-
-| Term | Definition |
-|------|-----------|
-| **Damage Types** | Cards deal one of nine damage types (Physical, Stun, Holy, Burn, Poison, Bleed, Freeze, Nature, Arrow). Damage that matches a status name (Burn, Poison, Bleed, Freeze, Stun) applies that status on hit. Enemies can have unique resistances or vulnerabilities to specific types. |
-
-### Card & Economy
-
-| Term | Definition |
-|------|-----------|
-| **Corruption** | A destination event that mutates a card in the player's deck. |
-| **Mixed Potion** | A card created by combining two potions at the Alchemist. |
-| **Trinket** | A passive equippable item with a persistent effect. |
-| **Talent XP** | Per-keyword cross-run experience awarded when matching cards are played. |
-| **Talent Effect Manifest** | All active talent bonuses pre-computed into one object per battle. |
-
-### Between-Run Progression
-
-| Term | Definition |
-|------|-----------|
-| **Homestead** | The persistent hub between runs for spending materials on permanent upgrades. |
-| **Material** | A resource type earned between runs and spent in the Homestead. |
-| **Farm** | A Homestead building that produces materials. |
-
-## Token Efficiency Rules
-
-### Core Principle
-Prioritize targeted accuracy over exhaustive exploration.
-
-### File Reading
-- Avoid recursively scanning the repo — inspect structure first, then open only likely targets
-- Prefer symbol-level lookup over full-file reads
-- Stop reading once you have sufficient context
-- Avoid rereading files already summarized
-
-### Tool Usage
-- Avoid calls to multiple tools for the same purpose
-- Avoid retrying identical failed commands without modification
-- Batch related operations whenever possible
-
-### Output
-- No prose, commentary, or task restatement
-- No line-by-line explanation of code changes unless asked
-- Prefer diffs over full rewrites
-- Status updates: <100 words — Implementation summaries: <200 words
-
-### Reasoning Effort
-- Simple bugfixes/CRUD: low deliberation, fast execution
-- Reserve deeper reasoning for architecture, concurrency, security, and ambiguous requirements
-
-## Preventing Reasoning Loops
-
-Recognize when you are getting stuck cycling through the same hypotheses or re-reading the same files without making progress and take a step back to try something different.
-
-### Recognize When You Are Stuck
-
-You are stuck if any of the following are true:
-
-- The last few tool calls or reasoning steps produced no new information
-- You are re-reading the same files for the same reason
-- You are rephrasing the same hypothesis without new evidence to support or refute it
-- Repeatedly thinking "Wait, but..." and "I will..." many times in a row without making progress
-- Doing lots of pixel-accurate math troubleshooting tricky CSS layout issues
-- Second-guessing user intent "What if the user..." when it's better to just stop and ask me
-
-### Hard Iteration Cap
-
-If you have attempted the same approach — or a close variant — more than a few times without progress, stop immediately. Do not try again. Escalate/ask the user instead.
-
-### No Speculative Spirals
-
-Do not follow a hypothesis chain longer than **3 steps** without grounding it in a concrete tool call or observation. If you are reasoning about what *might* be true, verify it immediately — or drop it.
-
-### Timebox Sub-Problems
-
-If a single sub-problem (e.g., "find where X is initialized") takes more than **3 steps** to resolve, declare it unresolved and move on. Note it clearly in your output so a human can assist.
-
-### Escalate Explicitly
-
-When stuck, ask the user for clarification/advice. Do not attempt "one more thing" repeatedly.
+- **Token efficiency**: Prefer targeted reads over full-file scans. Batch parallel tool calls. Prefer diffs over full rewrites. Status updates <100 words, implementation summaries <200 words.
+- **When stuck**: If >3 attempts at the same approach fail, stop and ask the user. Do not speculative-spiral beyond 3 ungrounded hypothesis steps. Timebox sub-problems to 3 steps.

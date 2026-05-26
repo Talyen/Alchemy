@@ -17,7 +17,7 @@ import type { BattleState } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
 
 import { BattleCardButton, getCardDisplayTitle } from "../../components";
-import { battleHandContainerClass, handCardWidthClass, mobileStageHandCardWidthClass } from "../../config";
+import { battleHandContainerClass, handCardWidthClass } from "../../config";
 import type { BattleActionsProps, BattleRefsProps, RequiredBattleViewProps } from "./types";
 import { useBattleStore } from "../../stores/battle-store";
 import { useInteractiveCard } from "../../ui/use-interactive-card";
@@ -29,7 +29,6 @@ function HandCardItem({
   handLength,
   handWidthClass,
   stagePixelRatio,
-  isMobileLandscape,
   handCardRefs,
   hiddenHandCardKeys,
   revealedCardKeys,
@@ -45,7 +44,6 @@ function HandCardItem({
   handLength: number;
   handWidthClass: string;
   stagePixelRatio: number;
-  isMobileLandscape: boolean;
   handCardRefs: MutableRefObject<Record<string, HTMLButtonElement | null>>;
   hiddenHandCardKeys: Set<string>;
   revealedCardKeys: Set<string>;
@@ -88,7 +86,7 @@ function HandCardItem({
       className={handWidthClass}
       disabled={!canPlay}
       dragging={hiddenHandCardKeys.has(cardKey)}
-      wrapperClassName={`${shouldStagger ? "stagger-item" : ""} relative flex justify-center ${isMobileLandscape ? "-mx-7" : "-mx-5 sm:-mx-6"}`}
+      wrapperClassName={`${shouldStagger ? "stagger-item" : ""} relative flex justify-center -mx-5 sm:-mx-6`}
       wrapperDataCardKey={cardKey}
       wrapperStyle={
         {
@@ -109,12 +107,12 @@ export function BattleHand({
   refs: BattleRefsProps;
   actions: BattleActionsProps;
 }) {
-  const { battleState, isMobileLandscape, stagePixelRatio } = view;
+  const { battleState, stagePixelRatio } = view;
   const { handCardRefs } = refs;
   const { hiddenHandCardKeys } = actions;
   const revealedCardKeys = useBattleStore((s) => s.revealedCardKeys);
   const { onCardClick } = actions;
-  const handWidthClass = isMobileLandscape ? mobileStageHandCardWidthClass : handCardWidthClass;
+  const handWidthClass = handCardWidthClass;
 
   const descriptionContext = {
     ...battleState.talentEffects,
@@ -129,10 +127,7 @@ export function BattleHand({
   };
 
   return (
-    <div
-      className={isMobileLandscape ? battleHandContainerClass.mobile : battleHandContainerClass.desktop}
-      aria-label="Player hand"
-    >
+    <div className={battleHandContainerClass} aria-label="Player hand">
       {battleState.hand.map((card, index) => (
         <HandCardItem
           key={`${card.id}-${card.uid}`}
@@ -141,7 +136,6 @@ export function BattleHand({
           handLength={battleState.hand.length}
           handWidthClass={handWidthClass}
           stagePixelRatio={stagePixelRatio}
-          isMobileLandscape={isMobileLandscape}
           handCardRefs={handCardRefs}
           hiddenHandCardKeys={hiddenHandCardKeys}
           revealedCardKeys={revealedCardKeys}

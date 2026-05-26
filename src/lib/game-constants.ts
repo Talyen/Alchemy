@@ -186,19 +186,14 @@ export const CARD_TRANSFER_CONFIG = {
 
 // ============ Layout ============
 export const GHOST_TRAVEL_SCALE = 0.74; // Scale factor for card ghost when traveling between zones.
-export const MOBILE_LANDSCAPE_MAX_WIDTH = 1024; // Coarse-pointer viewport width that still uses mobile landscape UI.
-export const PORTRAIT_MOBILE_MAX_WIDTH = 768; // Coarse-pointer portrait width that shows rotate prompt.
-export const ORIENTATION_CHANGE_DEBOUNCE_MS = 100; // Lets mobile browsers settle viewport dimensions after rotation.
-export const DESIGN_STAGE_HEIGHT = 1080; // Desktop virtual canvas height used for consistent composition.
-export const MOBILE_STAGE_HEIGHT = 900; // Mobile landscape virtual canvas height.
+export const STAGE_HEIGHT = 1080; // Virtual canvas height used for consistent composition.
 export const MIN_STAGE_SCALE = 0.3; // Lowered so small landscape phones still fit without overflow.
 export const MAX_STAGE_SCALE = 2.0; // Upper bound that still keeps card dimensions reasonable on 5K+ screens (2.0×1080 = 2160px fills 4K).
 
 // ============ Collection ============
 export const COLLECTION_PAGE_SIZE = 8; // Items per page in the collection compendium (4 cols × 2 rows).
 export const SELECTION_GRID_PAGE_SIZE = 8; // Items per page in deck selection grids (4 cols × 2 rows).
-export const BATTLE_ACTOR_TOP_DESKTOP = "34%"; // Desktop vertical anchor for player/enemy cards.
-export const BATTLE_ACTOR_TOP_MOBILE = "28%"; // Mobile landscape vertical anchor for player/enemy cards.
+export const BATTLE_ACTOR_TOP = "34%"; // Vertical anchor for player/enemy cards.
 export const HAND_FAN_VERTICAL_STEP_PX = 10; // Per-card vertical offset for resting hand fan.
 export const HAND_FAN_ROTATION_DEGREES = 4.2; // Per-card resting rotation for hand fan.
 export const HAND_HOVER_LIFT_PX = 34; // Hovered cards lift out of the fan by this amount.

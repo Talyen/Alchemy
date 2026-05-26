@@ -22,7 +22,7 @@ describe("mysteryPool", () => {
       expect(event.narrative).toBeTruthy();
       expect(typeof event.art).toBe("string");
       expect(Array.isArray(event.choices)).toBe(true);
-      expect(event.choices.length).toBeGreaterThanOrEqual(1);
+      expect(event.choices.length).toBe(2);
     }
   });
 
@@ -199,9 +199,9 @@ describe("mysteryPool", () => {
     expect(ring!.choices.find((c) => c.label === "Make a Wish")).toBeDefined();
   });
 
-  it("Ancient Altar has a 'Decipher the Symbols' choice", () => {
+  it("Ancient Altar has a 'Pray' choice", () => {
     const altar = mysteryPool.find((e) => e.id === "ancient-altar");
     expect(altar).toBeDefined();
-    expect(altar!.choices.find((c) => c.label === "Decipher the Symbols")).toBeDefined();
+    expect(altar!.choices.find((c) => c.label === "Pray")).toBeDefined();
   });
 });

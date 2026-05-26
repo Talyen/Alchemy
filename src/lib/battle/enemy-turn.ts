@@ -80,6 +80,9 @@ function performDrawAndResetPhase(state: BattleState, deathsDoorNeedsRecoveryTur
   // Hand is cleared by moving all cards to discard before drawing a fresh hand.
   const nextDraw = drawCards(state.deck, state.discard, [], CARDS_PER_TURN, state.nextCardUid);
   const nextState = resetPlayerTurnState(state);
+  const hadUnspentMana = state.mana > 0;
+  const wellspringBonus =
+    hadUnspentMana && state.talentEffects.wellspringKeepMana > 0 ? state.talentEffects.wellspringKeepMana : 0;
   return {
     ...nextState,
     turnPhase: "player",
@@ -87,9 +90,9 @@ function performDrawAndResetPhase(state: BattleState, deathsDoorNeedsRecoveryTur
     hand: nextDraw.hand,
     discard: nextDraw.discard,
     nextCardUid: nextDraw.nextCardUid,
-    mana: state.maxMana,
-    playerStunSkipTurns: deathsDoorNeedsRecoveryTurn ? 0 : state.playerStunSkipTurns,
-    playerFreezeSkipTurns: deathsDoorNeedsRecoveryTurn ? 0 : state.playerFreezeSkipTurns,
+    mana: nextState.maxMana + wellspringBonus,
+    playerStunSkipTurns: deathsDoorNeedsRecoveryTurn ? 0 : nextState.playerStunSkipTurns,
+    playerFreezeSkipTurns: deathsDoorNeedsRecoveryTurn ? 0 : nextState.playerFreezeSkipTurns,
   };
 }
 

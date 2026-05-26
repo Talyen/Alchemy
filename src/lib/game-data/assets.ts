@@ -134,6 +134,22 @@ import crystalGarden from "@/assets/optimized/crystal-garden.webp";
 import wheatField from "@/assets/optimized/wheat-field.webp";
 import orchard from "@/assets/optimized/orchard.webp";
 import placeholderHomestead from "@/assets/optimized/placeholder-homestead.webp";
+import mysteryManaBerries from "@/assets/optimized/mystery-mana-berries.webp";
+import mysteryEnchantedSpring from "@/assets/optimized/mystery-enchanted-spring.webp";
+import mysteryFungalGrotto from "@/assets/optimized/mystery-fungal-grotto.webp";
+import mysteryWisdomTree from "@/assets/optimized/mystery-wisdom-tree.webp";
+import mysteryFairyRing from "@/assets/optimized/mystery-fairy-ring.webp";
+import mysteryAncientAltar from "@/assets/optimized/mystery-ancient-altar.webp";
+import mysteryHiddenCache from "@/assets/optimized/mystery-hidden-cache.webp";
+import mysteryOvergrownTemple from "@/assets/optimized/mystery-overgrown-temple.webp";
+import mysteryAbandonedStudy from "@/assets/optimized/mystery-abandoned-study.webp";
+import mysteryMysteriousTome from "@/assets/optimized/mystery-mysterious-tome.webp";
+import mysteryCrystalGeode from "@/assets/optimized/mystery-crystal-geode.webp";
+import mysteryMeteoriteCrash from "@/assets/optimized/mystery-meteorite-crash.webp";
+import mysteryForgottenHoard from "@/assets/optimized/mystery-forgotten-hoard.webp";
+import mysterySacredGrove from "@/assets/optimized/mystery-sacred-grove.webp";
+import mysteryMountainPass from "@/assets/optimized/mystery-mountain-pass.webp";
+import mysteryMurkyPond from "@/assets/optimized/mystery-murky-pond.webp";
 import placeholderMystery from "@/assets/optimized/placeholder-mystery.webp";
 import placeholderDifficulty from "@/assets/optimized/placeholder-difficulty.webp";
 import theCampaign from "@/assets/optimized/the-campaign.webp";
@@ -287,6 +303,22 @@ export {
   wheatField,
   orchard,
   placeholderHomestead,
+  mysteryManaBerries,
+  mysteryEnchantedSpring,
+  mysteryFungalGrotto,
+  mysteryWisdomTree,
+  mysteryFairyRing,
+  mysteryAncientAltar,
+  mysteryHiddenCache,
+  mysteryOvergrownTemple,
+  mysteryAbandonedStudy,
+  mysteryMysteriousTome,
+  mysteryCrystalGeode,
+  mysteryMeteoriteCrash,
+  mysteryForgottenHoard,
+  mysterySacredGrove,
+  mysteryMountainPass,
+  mysteryMurkyPond,
   placeholderMystery,
   placeholderDifficulty,
   difficulty1Art,

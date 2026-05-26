@@ -8,7 +8,7 @@ import type { BattleCard } from "@/lib/game-data";
 
 import { BattleCardButton, getCardDisplayTitle } from "../../components";
 import { ScreenHeader } from "../../ui/shared-ui";
-import { handCardWidthClass, mobileStageHandCardWidthClass } from "../../config";
+import { handCardWidthClass } from "../../config";
 import type { BattleActionsProps, BattleScreenState } from "./types";
 import { useInteractiveCard } from "../../ui/use-interactive-card";
 import type { CardDescriptionContext } from "../../utils/card-description";
@@ -49,18 +49,10 @@ function WishCardItem({
   );
 }
 
-export function WishOverlay({
-  battleState,
-  actions,
-  isMobileLandscape,
-}: {
-  battleState: BattleScreenState;
-  actions: BattleActionsProps;
-  isMobileLandscape: boolean;
-}) {
+export function WishOverlay({ battleState, actions }: { battleState: BattleScreenState; actions: BattleActionsProps }) {
   const { onWishChoice } = actions;
   const [wishSelectedCard, setWishSelectedCard] = useState<BattleCard | null>(null);
-  const handWidthClass = isMobileLandscape ? mobileStageHandCardWidthClass : handCardWidthClass;
+  const handWidthClass = handCardWidthClass;
 
   const descriptionContext = {
     ...battleState.talentEffects,

@@ -34,7 +34,6 @@ export type BattleScreenViewProps = {
   battleState: BattleScreenState;
   heroArt: string;
   playerName: string;
-  isMobileLandscape?: boolean;
   aspectMode?: "standard" | "narrow" | "ultrawide";
   stagePixelRatio: number;
 };

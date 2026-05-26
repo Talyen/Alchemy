@@ -420,8 +420,9 @@ function buildInitialBattleState(
     },
     playerStatuses: {
       ...baseState.playerStatuses,
-      block: setup.startingBlock,
+      block: setup.startingBlock + (setup.talentEffects.manaBulwarkActive ? setup.mana : 0),
       forge: setup.talentEffects.startForge,
+      armor: setup.startingArmor + (setup.talentEffects.manaShellActive ? setup.mana : 0),
     },
     enemyStatuses: { ...baseState.enemyStatuses, freeze: setup.talentEffects.startFreeze },
     activeCompanion: setup.activeCompanion,

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { AEGIS_CARD, BLOCK_CARD, enableFastMode, failOnRuntimeErrors, makeCard, makeHighDamageCard, playUntilVictory, selectGameMode, startBattleWithDeck } from "./helpers";
+import { AEGIS_CARD, BLOCK_CARD, enableFastMode, failOnRuntimeErrors, makeHighDamageCard, playUntilVictory, startBattleWithDeck } from "./helpers";
 import { BattlePage } from "./pages/battle-page";
 
 test.describe("App Boot", () => {
@@ -66,56 +66,3 @@ test.describe("Victory Rewards", () => {
   });
 });
 
-test.describe("Mobile Portrait", () => {
-  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
-
-  test("portrait view shows rotate device prompt", async ({ page }) => {
-    await page.goto("/");
-    await expect(page.getByRole("heading", { name: "Rotate Your Device" })).toBeVisible();
-  });
-});
-
-test.describe("Mobile Landscape", () => {
-  test.use({ hasTouch: true, viewport: { width: 932, height: 430 } });
-
-  test("menu and character select work in landscape", async ({ page }) => {
-    await page.goto("/");
-    await expect(page.getByRole("button", { name: "Play" })).toBeVisible();
-    await selectGameMode(page, "campaign");
-    await expect(page.getByRole("heading", { name: "Choose Your Hero" })).toBeVisible();
-  });
-
-  test("battle hand is playable in landscape", async ({ page }) => {
-    await startBattleWithDeck(page, Array.from({ length: 6 }, () => makeCard()));
-    const battle = new BattlePage(page);
-
-    await expect(battle.hand.first()).toBeVisible({ timeout: 5000 });
-    expect(await battle.handCount()).toBeGreaterThanOrEqual(1);
-
-    const layout = await page.evaluate(() => {
-      const cards = [...document.querySelectorAll('[aria-label^="Play "]')].map((card) => {
-        const rect = card.getBoundingClientRect();
-        return { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom };
-      });
-      const hasFanOverlap = cards.length >= 2 && cards.some((card, index) => index > 0 && card.left < cards[index - 1].right);
-      return {
-        scrollWidth: document.documentElement.scrollWidth,
-        scrollHeight: document.documentElement.scrollHeight,
-        viewportWidth: window.innerWidth,
-        viewportHeight: window.innerHeight,
-        cardsWithinViewport: cards.every((card) => card.left >= 0 && card.right <= window.innerWidth && card.top >= 0 && card.bottom <= window.innerHeight),
-        hasFanOverlap,
-      };
-    });
-
-    expect(layout.scrollWidth, `Landscape scroll overflow: ${layout.scrollWidth} > ${layout.viewportWidth}`).toBeLessThanOrEqual(layout.viewportWidth);
-    expect(layout.scrollHeight, `Landscape scroll overflow: ${layout.scrollHeight} > ${layout.viewportHeight}`).toBeLessThanOrEqual(layout.viewportHeight);
-    expect(layout.cardsWithinViewport, "Landscape: not all cards within viewport").toBe(true);
-    expect(layout.hasFanOverlap, "Landscape: hand fan overlap expected").toBe(true);
-
-    const manaBefore = await battle.mana();
-    await battle.playFirstCard();
-    const manaAfter = await battle.mana();
-    expect(manaAfter).toBeLessThan(manaBefore);
-  });
-});

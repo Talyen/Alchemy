@@ -15,11 +15,23 @@ import {
 import type { SaveData } from "./types";
 import { defaultSaveData } from "./defaults";
 
+const DESKTOP_SAVE_FILENAME = "save.json";
+
 let writesDisabledForSession = false;
 
 async function readStorageItem(key: string): Promise<string | null> {
   if (platform.isDesktop && window.alchemyDesktop) {
-    return await window.alchemyDesktop.loadSave();
+    const localData = await window.alchemyDesktop.loadSave();
+    if (localData !== null) return localData;
+    if (platform.cloud.isAvailable) {
+      try {
+        const cloudData = await platform.cloud.read(DESKTOP_SAVE_FILENAME);
+        if (cloudData !== null) return cloudData;
+      } catch {
+        // fallback to defaults
+      }
+    }
+    return null;
   }
   try {
     return window.localStorage.getItem(key);
@@ -33,6 +45,12 @@ type StorageOperationResult = { ok: true } | { ok: false; error: unknown };
 async function writeStorageItem(key: string, value: string): Promise<StorageOperationResult> {
   try {
     if (platform.isDesktop && window.alchemyDesktop) {
+      if (platform.cloud.isAvailable) {
+        const cloudOk = await platform.cloud.write(DESKTOP_SAVE_FILENAME, value);
+        if (!cloudOk) {
+          console.warn("Steam Cloud write failed, save may not sync");
+        }
+      }
       const ok = await window.alchemyDesktop.writeSave(value);
       if (ok) return { ok: true };
       throw new Error("Failed to write desktop save file");
@@ -47,6 +65,12 @@ async function writeStorageItem(key: string, value: string): Promise<StorageOper
 async function removeStorageItem(key: string): Promise<StorageOperationResult> {
   try {
     if (platform.isDesktop && window.alchemyDesktop) {
+      if (platform.cloud.isAvailable) {
+        const cloudOk = await platform.cloud.delete(DESKTOP_SAVE_FILENAME);
+        if (!cloudOk) {
+          console.warn("Steam Cloud delete failed, save may remain in cloud");
+        }
+      }
       const ok = await window.alchemyDesktop.clearSave();
       if (ok) return { ok: true };
       throw new Error("Failed to clear desktop save file");

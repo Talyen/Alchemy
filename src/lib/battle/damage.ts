@@ -144,8 +144,10 @@ function computeBaseDamage(state: BattleState, effect: Extract<BattleCardEffect,
     rawAmount += state.talentEffects.flatArrowDamage;
   } else if (effect.damageType === "burn") {
     rawAmount += state.talentEffects.flatBurnDamage;
+    rawAmount += Math.round((state.maxMana * state.talentEffects.burnDamagePerManaCrystal) / 2);
   } else if (effect.damageType === "freeze") {
     rawAmount += state.talentEffects.flatFreezeDamage;
+    rawAmount += Math.round((state.maxMana * state.talentEffects.freezeDamagePerManaCrystal) / 2);
   } else if (effect.damageType === "nature") {
     rawAmount += state.talentEffects.flatNatureDamage;
   } else if (effect.damageType === "poison") {

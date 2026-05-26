@@ -20,7 +20,6 @@ export function MenuScreen({
   logoSrcVariants,
   hasUnspentTalents = false,
   hasAffordableHomestead = false,
-  isMobileLandscape = false,
 }: {
   onPlay: () => void;
   onCollection: () => void;
@@ -32,7 +31,6 @@ export function MenuScreen({
   logoSrcVariants?: string[];
   hasUnspentTalents?: boolean;
   hasAffordableHomestead?: boolean;
-  isMobileLandscape?: boolean;
 }) {
   const variants = logoSrcVariants ?? [logoSrc];
   const [variantIdx, setVariantIdx] = useState(1);
@@ -50,11 +48,9 @@ export function MenuScreen({
   }, [flipped, variantIdx, variants.length]);
 
   return (
-    <div
-      className={`flex h-full w-full flex-col items-center justify-center text-center ${isMobileLandscape ? "gap-2" : "gap-8"}`}
-    >
+    <div className="flex h-full w-full flex-col items-center justify-center text-center gap-8">
       <div
-        className={`tilt-surface relative w-full ${isMobileLandscape ? "max-w-[24.44cqh]" : "max-w-[39.81cqh]"}`}
+        className="tilt-surface relative w-full max-w-[39.81cqh]"
         style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
         onMouseMove={setTiltFromEvent}
         onMouseLeave={clearTiltFromEvent}
@@ -71,33 +67,33 @@ export function MenuScreen({
 
       <div className="grid gap-2">
         <Button
-          size={isMobileLandscape ? "sm" : "lg"}
-          className={`stagger-item justify-center gap-2 ${isMobileLandscape ? "w-36 text-xs" : "w-56 text-base"}`}
+          size="lg"
+          className="stagger-item justify-center gap-2 w-56 text-base"
           style={{ "--stagger-index": 0 } as CSSProperties}
           onClick={onPlay}
         >
-          <Swords className={isMobileLandscape ? "h-3.5 w-3.5" : "h-4 w-4"} />
+          <Swords className="h-4 w-4" />
           Play
         </Button>
         <Button
-          size={isMobileLandscape ? "sm" : "lg"}
+          size="lg"
           variant="outline"
-          className={`stagger-item justify-center gap-2 ${isMobileLandscape ? "w-36 text-xs" : "w-56 text-base"}`}
+          className="stagger-item justify-center gap-2 w-56 text-base"
           style={{ "--stagger-index": 1 } as CSSProperties}
           onClick={onCollection}
         >
-          <BookOpen className={isMobileLandscape ? "h-3.5 w-3.5" : "h-4 w-4"} />
+          <BookOpen className="h-4 w-4" />
           Collection
         </Button>
         <div className="relative">
           <Button
-            size={isMobileLandscape ? "sm" : "lg"}
+            size="lg"
             variant="outline"
-            className={`stagger-item justify-center gap-2 ${isMobileLandscape ? "w-36 text-xs" : "w-56 text-base"}`}
+            className="stagger-item justify-center gap-2 w-56 text-base"
             style={{ "--stagger-index": 2 } as CSSProperties}
             onClick={onTalents}
           >
-            <WandSparkles className={isMobileLandscape ? "h-3.5 w-3.5" : "h-4 w-4"} />
+            <WandSparkles className="h-4 w-4" />
             Talents
           </Button>
           {hasUnspentTalents && (
@@ -106,13 +102,13 @@ export function MenuScreen({
         </div>
         <div className="relative">
           <Button
-            size={isMobileLandscape ? "sm" : "lg"}
+            size="lg"
             variant="outline"
-            className={`stagger-item justify-center gap-2 ${isMobileLandscape ? "w-36 text-xs" : "w-56 text-base"}`}
+            className="stagger-item justify-center gap-2 w-56 text-base"
             style={{ "--stagger-index": 3 } as CSSProperties}
             onClick={onHomestead}
           >
-            <TreePine className={isMobileLandscape ? "h-3.5 w-3.5" : "h-4 w-4"} />
+            <TreePine className="h-4 w-4" />
             Homestead
           </Button>
           {hasAffordableHomestead && (
@@ -120,20 +116,20 @@ export function MenuScreen({
           )}
         </div>
         <Button
-          size={isMobileLandscape ? "sm" : "lg"}
+          size="lg"
           variant="outline"
-          className={`stagger-item justify-center gap-2 ${isMobileLandscape ? "w-36 text-xs" : "w-56 text-base"}`}
+          className="stagger-item justify-center gap-2 w-56 text-base"
           style={{ "--stagger-index": 4 } as CSSProperties}
           onClick={onOptions}
         >
-          <Cog className={isMobileLandscape ? "h-3.5 w-3.5" : "h-4 w-4"} />
+          <Cog className="h-4 w-4" />
           Options
         </Button>
         {onQuit ? (
           <Button
-            size={isMobileLandscape ? "sm" : "lg"}
+            size="lg"
             variant="outline"
-            className={`stagger-item justify-center gap-2 ${isMobileLandscape ? "w-36 text-xs" : "w-56 text-base"}`}
+            className="stagger-item justify-center gap-2 w-56 text-base"
             style={{ "--stagger-index": 5 } as CSSProperties}
             onClick={onQuit}
           >

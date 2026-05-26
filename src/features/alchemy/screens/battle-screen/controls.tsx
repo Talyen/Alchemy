@@ -20,60 +20,43 @@ export function BattleBottomBar({
   refs: BattleRefsProps;
   actions: BattleActionsProps;
 }) {
-  const { battleState, isMobileLandscape } = view;
+  const { battleState } = view;
   const { drawPileRef, discardPileRef } = refs;
 
   return (
-    <section className={isMobileLandscape ? battleBottomBarClass.mobile : battleBottomBarClass.desktop}>
-      <div className={isMobileLandscape ? battleBottomColumnClass.mobile : battleBottomColumnClass.desktop}>
+    <section className={battleBottomBarClass}>
+      <div className={battleBottomColumnClass}>
         <ManaPanel mana={battleState.mana} maxMana={battleState.maxMana} gold={battleState.gold} />
-        <div className={!isMobileLandscape ? "mt-[1.5cqh]" : ""}>
-          <PilePanel
-            ref={drawPileRef}
-            label={isMobileLandscape ? "Deck" : "Draw Pile"}
-            count={battleState.deck.length}
-            type="draw"
-            compact={isMobileLandscape}
-          />
+        <div className="mt-[1.5cqh]">
+          <PilePanel ref={drawPileRef} label="Draw Pile" count={battleState.deck.length} type="draw" />
         </div>
       </div>
 
       <BattleHand view={view} refs={refs} actions={actions} />
 
-      <BattleControls
-        battleState={battleState}
-        isMobileLandscape={isMobileLandscape}
-        actions={actions}
-        discardPileRef={discardPileRef}
-      />
+      <BattleControls battleState={battleState} actions={actions} discardPileRef={discardPileRef} />
     </section>
   );
 }
 
 function BattleControls({
   battleState,
-  isMobileLandscape,
   actions,
   discardPileRef,
 }: {
   battleState: BattleScreenState;
-  isMobileLandscape: boolean;
   actions: BattleActionsProps;
   discardPileRef: MutableRefObject<HTMLDivElement | null>;
 }) {
   const { onEndTurn, onSkipCombatDevMode, cardTransferInProgress, isDevMode } = actions;
 
   return (
-    <div className={isMobileLandscape ? battleBottomColumnClass.mobile : battleBottomColumnClass.desktop}>
+    <div className={battleBottomColumnClass}>
       <div className="relative flex flex-col items-center gap-2">
         <Button
           variant="default"
           size="sm"
-          className={
-            isMobileLandscape
-              ? "h-20 bg-amber-600 px-10 text-2xl font-bold text-white"
-              : "bg-amber-600 text-white font-bold"
-          }
+          className="bg-amber-600 text-white font-bold"
           onClick={onEndTurn}
           disabled={battleState.turnPhase !== "player" || cardTransferInProgress}
         >
@@ -81,26 +64,14 @@ function BattleControls({
         </Button>
 
         {isDevMode ? (
-          <Button
-            variant="outline"
-            size="sm"
-            className={isMobileLandscape ? "h-20 w-20 text-amber-200 text-2xl" : "w-full text-amber-200 text-xs"}
-            onClick={onSkipCombatDevMode}
-          >
-            <Coins className={isMobileLandscape ? "h-11 w-11" : "h-3.5 w-3.5"} />{" "}
-            {isMobileLandscape ? "" : "Skip Combat"}
+          <Button variant="outline" size="sm" className="w-full text-amber-200 text-xs" onClick={onSkipCombatDevMode}>
+            <Coins className="h-3.5 w-3.5" /> Skip Combat
           </Button>
         ) : null}
       </div>
 
-      <div className={!isMobileLandscape ? "mt-[1.5cqh]" : ""}>
-        <PilePanel
-          ref={discardPileRef}
-          label={isMobileLandscape ? "Discard" : "Discard Pile"}
-          count={battleState.discard.length}
-          type="discard"
-          compact={isMobileLandscape}
-        />
+      <div className="mt-[1.5cqh]">
+        <PilePanel ref={discardPileRef} label="Discard Pile" count={battleState.discard.length} type="discard" />
       </div>
     </div>
   );

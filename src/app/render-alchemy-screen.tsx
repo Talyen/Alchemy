@@ -85,7 +85,6 @@ type RenderAlchemyScreenProps = {
   enemyPanelRef: React.MutableRefObject<HTMLDivElement | null>;
   heroArt: string;
   playerName: string;
-  isMobileLandscape: boolean;
   aspectMode: "standard" | "narrow" | "ultrawide";
   stagePixelRatio: number;
   cardTransfers: CardTransfer[];
@@ -115,7 +114,6 @@ export function renderAlchemyScreen({
   enemyPanelRef,
   heroArt,
   playerName,
-  isMobileLandscape,
   aspectMode,
   stagePixelRatio,
   cardTransfers,
@@ -146,7 +144,6 @@ export function renderAlchemyScreen({
           {...(platform.canQuit ? { onQuit: platform.quit } : {})}
           logoSrc={menuLogo}
           logoSrcVariants={menuLogoVariants}
-          isMobileLandscape={isMobileLandscape}
           hasUnspentTalents={hasUnspentTalents}
           hasAffordableHomestead={hasAffordableHomestead}
         />
@@ -181,7 +178,6 @@ export function renderAlchemyScreen({
         <BattleScreen
           heroArt={heroArt}
           playerName={playerName}
-          isMobileLandscape={isMobileLandscape}
           aspectMode={aspectMode}
           stagePixelRatio={stagePixelRatio}
           handCardRefs={handCardRefs}

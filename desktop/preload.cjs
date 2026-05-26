@@ -10,6 +10,8 @@ contextBridge.exposeInMainWorld("alchemyDesktop", {
   writeSave: (data) => ipcRenderer.invoke("alchemy:write-save", data),
   clearSave: () => ipcRenderer.invoke("alchemy:clear-save"),
   steamGetName: () => ipcRenderer.invoke("alchemy:steam-get-name"),
-  steamUnlockAchievement: (id) => ipcRenderer.invoke("alchemy:steam-unlock-achievement", id),
   steamSetRichPresence: (key, val) => ipcRenderer.invoke("alchemy:steam-set-rich-presence", key, val),
+  steamCloudRead: () => ipcRenderer.invoke("alchemy:steam-cloud-read"),
+  steamCloudWrite: (data) => ipcRenderer.invoke("alchemy:steam-cloud-write", data),
+  steamCloudDelete: () => ipcRenderer.invoke("alchemy:steam-cloud-delete"),
 });

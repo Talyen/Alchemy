@@ -124,6 +124,7 @@ export function applyWishEffect(state: BattleState, card: BattleCard, amount: nu
     nextState = applyWishHealthAndStatusTriggers(nextState, combatTexts);
     nextState = applyWishDrawTriggers(nextState);
     nextState = applyWishBurnTrigger(nextState, combatTexts);
+    nextState = applyWishManaTrigger(nextState, combatTexts);
   }
 
   return nextState;
@@ -142,6 +143,13 @@ function applyWishBurnTrigger(state: BattleState, combatTexts: CombatTextEvent[]
     ...state,
     enemyHealth: clampHealth(state.enemyHealth, -burnAmount, state.enemyMaxHealth),
   };
+}
+
+function applyWishManaTrigger(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
+  const manaGain = state.talentEffects.manaOnWish;
+  if (manaGain <= 0) return state;
+  mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "mana", amount: manaGain });
+  return { ...state, mana: state.mana + manaGain };
 }
 
 export function chooseWishCard(state: BattleState, cardId: string) {
