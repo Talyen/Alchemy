@@ -28,12 +28,12 @@ test.describe("Talents in Battle", () => {
     await expect(page.getByRole("button", { name: "Block 10" })).toBeVisible({ timeout: 3000 });
   });
 
-  test("physical-dmg-1 talent increases physical damage dealt", async ({ page }) => {
+  test("physical-brute-force talent increases physical damage dealt", async ({ page }) => {
     await enableFastMode(page);
     await page.addInitScript(() => {
       const KEY = "alchemy-save-v1";
       const save = JSON.parse(localStorage.getItem(KEY) || "{}");
-      save.unlockedTalents = { ...(save.unlockedTalents || {}), physical: ["physical-dmg-1"] };
+      save.unlockedTalents = { ...(save.unlockedTalents || {}), physical: ["physical-brute-force"] };
       save.discoveredCardIds = save.discoveredCardIds || ["slash"];
       localStorage.setItem(KEY, JSON.stringify(save));
     });

@@ -5,7 +5,6 @@
  * Depended on by: ./enemy-turn.
  */
 import {
-  addPlayerStatus,
   applyPlayerCombatDamage,
   applyPlayerHealing,
   clampHealth,
@@ -69,7 +68,7 @@ function tickBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
   } else {
     nextBurn = decayHalvedStatus(nextBurn);
   }
-  const nextState = {
+  const nextState: BattleState = {
     ...state,
     enemyHealth: clampHealth(state.enemyHealth, -finalDamage, state.enemyMaxHealth),
     enemyStatuses: { ...state.enemyStatuses, [CONSTANTS.STATUS_NAMES.BURN]: nextBurn },
@@ -172,7 +171,7 @@ function tickPlayerBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
   const reducedDamage = state.talentEffects.armorMitigatesBurn
     ? Math.max(0, afterBlockReduction - state.playerStatuses.armor)
     : afterBlockReduction;
-  let nextState = {
+  const nextState = {
     ...applyPlayerCombatDamage(state, reducedDamage, "burn"),
     playerStatuses: {
       ...state.playerStatuses,
@@ -187,12 +186,6 @@ function tickPlayerBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
       stat: CONSTANTS.STATUS_NAMES.BURN,
       amount: healthLost,
     });
-  }
-  if (state.talentEffects.forgeOnPlayerBurnDamage > 0 && damage > 0) {
-    nextState = addPlayerStatus(nextState, CONSTANTS.STATUS_NAMES.FORGE, state.talentEffects.forgeOnPlayerBurnDamage);
-  }
-  if (state.talentEffects.forgeOnBurnTickWithBlock > 0 && state.playerStatuses.block > 0 && damage > 0) {
-    nextState = addPlayerStatus(nextState, CONSTANTS.STATUS_NAMES.FORGE, state.talentEffects.forgeOnBurnTickWithBlock);
   }
   return decayArmorAfterDamage(nextState, reducedDamage, CONSTANTS.TARGETS.PLAYER, combatTexts);
 }

@@ -70,16 +70,25 @@ function applyPhysicalDamageModifiers(state: BattleState, rawAmount: number): nu
   if (state.talentEffects.armorToPhysicalDamage) {
     nextAmount += state.playerStatuses.armor;
   }
-  if (state.talentEffects.blockToPhysicalDamage) {
+  if (state.talentEffects.blockToPhysicalDamageMultiplier > 0) {
+    nextAmount += Math.round(state.playerStatuses.block * state.talentEffects.blockToPhysicalDamageMultiplier);
+  } else if (state.talentEffects.blockToPhysicalDamage) {
     nextAmount += Math.round(state.playerStatuses.block / HALF_DIVISOR);
   }
-  // Checks enemyStunSkipTurns / enemyFreezeSkipTurns (the enemy's CC state,
-  // not the player's) — physical damage gets bonuses against stunned/frozen enemies.
-  if (state.enemyStunSkipTurns > 0) {
-    nextAmount = Math.round(nextAmount * (1 + state.talentEffects.physicalVsStunnedMultiplier / PERCENT_DENOMINATOR));
+  if (state.talentEffects.forgeToPhysicalDamageMultiplier > 0) {
+    nextAmount += state.playerStatuses.forge;
   }
-  if (state.enemyFreezeSkipTurns > 0) {
-    nextAmount = Math.round(nextAmount * (1 + state.talentEffects.physicalVsFrozenMultiplier / PERCENT_DENOMINATOR));
+  if (state.enemyStunSkipTurns > 0 && state.talentEffects.physicalDoubledVsStunned) {
+    nextAmount *= 2;
+  }
+  if (state.enemyFreezeSkipTurns > 0 && state.talentEffects.physicalDoubledVsFrozen) {
+    nextAmount *= 2;
+  }
+  if (
+    state.playerHealth <= state.playerMaxHealth / HALF_DIVISOR &&
+    state.talentEffects.physicalDoubledBelowHalfHealth
+  ) {
+    nextAmount *= 2;
   }
   if (state.enemyStatuses.poison > 0) {
     nextAmount += state.talentEffects.poisonPhysicalBonus;
@@ -124,7 +133,11 @@ function applyBleedDamageModifiers(state: BattleState, rawAmount: number): numbe
 /**
  * Computes core damage before crit, armor, and traits.
  */
-function computeBaseDamage(state: BattleState, effect: Extract<BattleCardEffect, { kind: "damage" }>) {
+function computeBaseDamage(
+  state: BattleState,
+  effect: Extract<BattleCardEffect, { kind: "damage" }>,
+  card?: BattleCard,
+) {
   let rawAmount = computeBaseRawAmount(state, effect);
 
   if (effect.damageType === "physical") {
@@ -143,6 +156,12 @@ function computeBaseDamage(state: BattleState, effect: Extract<BattleCardEffect,
   } else if (effect.damageType === "burn") {
     rawAmount += state.talentEffects.flatBurnDamage;
     rawAmount += Math.round((state.maxMana * state.talentEffects.burnDamagePerManaCrystal) / HALF_DIVISOR);
+    if (state.talentEffects.blockToBurnDamage) {
+      rawAmount += Math.round(state.playerStatuses.block / HALF_DIVISOR);
+    }
+    if (card?.consume && state.talentEffects.consumeDoubleBurnDamage) {
+      rawAmount *= 2;
+    }
   } else if (effect.damageType === "freeze") {
     rawAmount += state.talentEffects.flatFreezeDamage;
     rawAmount += Math.round((state.maxMana * state.talentEffects.freezeDamagePerManaCrystal) / HALF_DIVISOR);
@@ -438,8 +457,12 @@ function consumeForgeAfterDamage(
 /**
  * Computes final adjusted damage to the enemy, considering critical strikes, traits, and armor reduction.
  */
-function computeCardDamageToEnemy(state: BattleState, effect: Extract<BattleCardEffect, { kind: "damage" }>) {
-  const { rawDamage, flagsToSet } = applyFirstDamageModifiers(state, effect, computeBaseDamage(state, effect));
+function computeCardDamageToEnemy(
+  state: BattleState,
+  effect: Extract<BattleCardEffect, { kind: "damage" }>,
+  card?: BattleCard,
+) {
+  const { rawDamage, flagsToSet } = applyFirstDamageModifiers(state, effect, computeBaseDamage(state, effect, card));
   const finalDamage = applyCrit(rawDamage, effect.damageType, state);
   let nextState = state;
 
@@ -512,6 +535,15 @@ function applyDamageRiders(
   nextState = applyDamageStatuses(nextState, effect, modifiedDamage, combatTexts);
   nextState = applyForgeStunRider(nextState, effect, combatTexts);
 
+  if (effect.damageType === "burn" && modifiedDamage > 0) {
+    if (state.talentEffects.forgeOnBurnDealt > 0) {
+      nextState = addPlayerStatus(nextState, "forge", state.talentEffects.forgeOnBurnDealt);
+    }
+    if (state.talentEffects.burnStunChance > 0 && rollPercent(state.talentEffects.burnStunChance, state.rng)) {
+      nextState = addEnemyStatus(nextState, "stun", modifiedDamage);
+    }
+  }
+
   if (effect.lifesteal) nextState = applyLifesteal(nextState, modifiedDamage, combatTexts);
   if (effect.damageType === "holy") nextState = applyHolyDamageRiders(nextState, card, modifiedDamage, combatTexts);
 
@@ -538,7 +570,7 @@ export function dealDamageToEnemy(
   effect: Extract<BattleCardEffect, { kind: "damage" }>,
   combatTexts: CombatTextEvent[],
 ) {
-  const { nextState, modifiedDamage, flagsToSet } = computeCardDamageToEnemy(state, effect);
+  const { nextState, modifiedDamage, flagsToSet } = computeCardDamageToEnemy(state, effect, card);
 
   let stateWithFlags = nextState;
   if (Object.keys(flagsToSet).length > 0) {

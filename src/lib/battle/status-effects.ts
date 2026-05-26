@@ -31,7 +31,7 @@ import {
   applyStunStripArmorTalent,
 } from "./talent-effects";
 import { applyEnemyCcImmunityClear, assignEnemyCrowdControlSkip } from "./status-cc";
-import { rollPercent } from "./status-helpers";
+import { decayArmorAfterDamage, rollPercent } from "./status-helpers";
 import {
   BLEED_STATUS_MULTIPLIER,
   FIRST_EFFECT_MULTIPLIER,
@@ -382,6 +382,42 @@ function applyFreezeStatusRider(state: BattleState, actualDamage: number, combat
   return tryTriggerEnemyFreeze(state, nextState, combatTexts);
 }
 
+// Intentional: bleed chance + detonation talents can self-combo on one hit.
+// Bleed is applied, then immediately detonated — both produce combat texts.
+function applyPhysicalStatusRider(
+  state: BattleState,
+  actualDamage: number,
+  combatTexts: CombatTextEvent[],
+): BattleState {
+  let nextState = state;
+
+  if (actualDamage > 0 && rollPercent(nextState.talentEffects.physicalStunChance, nextState.rng)) {
+    nextState = resolveStunTrigger(addEnemyStatus(nextState, "stun", actualDamage), combatTexts);
+  }
+
+  if (actualDamage > 0 && rollPercent(nextState.talentEffects.physicalBleedChance, nextState.rng)) {
+    nextState = addEnemyStatus(nextState, "bleed", actualDamage);
+  }
+
+  if (nextState.talentEffects.physicalDetonatesBleed && nextState.enemyStatuses.bleed > 0) {
+    const bleedDamage = nextState.enemyStatuses.bleed;
+    nextState = {
+      ...nextState,
+      enemyHealth: clampHealth(nextState.enemyHealth, -bleedDamage, nextState.enemyMaxHealth),
+      enemyStatuses: { ...nextState.enemyStatuses, bleed: 0 },
+    };
+    mergeCombatText(combatTexts, {
+      target: "enemy",
+      kind: "damage",
+      stat: "bleed",
+      amount: bleedDamage,
+    });
+    nextState = decayArmorAfterDamage(nextState, bleedDamage, "enemy", combatTexts);
+  }
+
+  return nextState;
+}
+
 export function applyDamageStatuses(
   state: BattleState,
   effect: Extract<BattleCardEffect, { kind: "damage" }>,
@@ -402,6 +438,7 @@ export function applyDamageStatuses(
     case "freeze":
       return applyFreezeStatusRider(state, actualDamage, combatTexts);
     case "physical":
+      return applyPhysicalStatusRider(state, actualDamage, combatTexts);
     case "holy":
     case "nature":
     case "arrow":

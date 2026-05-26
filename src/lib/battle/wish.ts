@@ -152,13 +152,17 @@ function applyWishManaTrigger(state: BattleState, combatTexts: CombatTextEvent[]
   return { ...state, mana: state.mana + manaGain };
 }
 
-export function chooseWishCard(state: BattleState, cardId: string) {
+export function chooseWishCard(state: BattleState, cardId: string | null) {
+  const [nextWishOptions = null, ...wishQueue] = state.wishQueue;
+
+  if (cardId === null) {
+    return { ...state, wishOptions: nextWishOptions, wishQueue };
+  }
+
   const chosenCard = state.wishOptions?.find((card) => card.id === cardId);
   if (!chosenCard) {
     return state;
   }
-
-  const [nextWishOptions = null, ...wishQueue] = state.wishQueue;
 
   if (state.hand.length < MAX_HAND_SIZE) {
     return { ...state, hand: [...state.hand, chosenCard], wishOptions: nextWishOptions, wishQueue };

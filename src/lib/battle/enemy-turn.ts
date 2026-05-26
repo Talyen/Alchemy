@@ -189,9 +189,6 @@ function calculateBlockAndArmorMitigation(
   combatTexts: CombatTextEvent[],
 ) {
   let remainingDamage = applyPhysicalForgeBonus(state, effect);
-  if (state.enemyStatuses.burn > 0) {
-    remainingDamage = Math.max(0, remainingDamage - state.talentEffects.burnReducesEnemyDamage);
-  }
   if (state.enemyStatuses.poison > 0) {
     remainingDamage = Math.max(0, remainingDamage - state.talentEffects.poisonReducesEnemyDamage);
   }

@@ -58,24 +58,24 @@ describe("computeTalentEffects", () => {
   });
 
   it("counts flat physical damage talents", () => {
-    const effects = computeTalentEffects({ physical: ["physical-dmg-1", "physical-dmg-3"] });
-    expect(effects.flatPhysicalDamage).toBe(2);
+    const effects = computeTalentEffects({ physical: ["physical-brute-force"] });
+    expect(effects.flatPhysicalDamage).toBe(1);
   });
 
   it("detects armor synergy talent", () => {
-    const withArmor = computeTalentEffects({ physical: ["physical-armor"] });
+    const withArmor = computeTalentEffects({ physical: ["physical-armored-fists"] });
     expect(withArmor.armorToPhysicalDamage).toBe(true);
 
-    const without = computeTalentEffects({ physical: ["physical-dmg-1"] });
+    const without = computeTalentEffects({ physical: ["physical-heavy-blows"] });
     expect(without.armorToPhysicalDamage).toBe(false);
   });
 
-  it("detects crit talent", () => {
-    const withCrit = computeTalentEffects({ physical: ["physical-crit"] });
-    expect(withCrit.physicalCritChance).toBe(5);
+  it("detects bleed detonation talent", () => {
+    const withDetonate = computeTalentEffects({ physical: ["physical-hemorrhage"] });
+    expect(withDetonate.physicalDetonatesBleed).toBe(true);
 
     const without = computeTalentEffects({ physical: [] });
-    expect(without.physicalCritChance).toBe(0);
+    expect(without.physicalDetonatesBleed).toBe(false);
   });
 
   it("applies object-valued threshold effects", () => {

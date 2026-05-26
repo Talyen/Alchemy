@@ -7,6 +7,7 @@ import type { KeywordId } from "@/lib/game-data";
 export const keywordAliases: Array<{ match: string; keywordId: KeywordId }> = [
   { match: "Physical", keywordId: "physical" },
   { match: "Stun", keywordId: "stun" },
+  { match: "Stunned", keywordId: "stun" },
   { match: "Block", keywordId: "block" },
   { match: "Forge", keywordId: "forge" },
   { match: "Armor", keywordId: "armor" },
@@ -20,6 +21,7 @@ export const keywordAliases: Array<{ match: string; keywordId: KeywordId }> = [
   { match: "Bleed", keywordId: "bleed" },
   { match: "Leech", keywordId: "leech" },
   { match: "Freeze", keywordId: "freeze" },
+  { match: "Frozen", keywordId: "freeze" },
   { match: "Mana Crystal", keywordId: "mana" },
   { match: "Mana", keywordId: "mana" },
   { match: "Nature", keywordId: "nature" },

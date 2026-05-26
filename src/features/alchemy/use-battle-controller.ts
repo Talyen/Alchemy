@@ -626,11 +626,13 @@ export function useBattleController({
     handlePlayCard(card, index, getCardRect(event.currentTarget.getBoundingClientRect()));
   }
 
-  function handleWishChoice(card: BattleCard) {
+  function handleWishChoice(cardOrNull: BattleCard | null) {
     const currentState = getStore().battleState;
-    const newState = chooseWishCard(currentState, card.id);
+    const newState = chooseWishCard(currentState, cardOrNull?.id ?? null);
     const session = battleSessionRef.current;
-    setDiscoveredCardIds((current) => appendUnique(current, card.id));
+    if (cardOrNull) {
+      setDiscoveredCardIds((current) => appendUnique(current, cardOrNull.id));
+    }
     runDrawSequenceAndFinalize(
       currentState.hand,
       newState,

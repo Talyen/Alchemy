@@ -34,7 +34,7 @@ type BattleScreenProps = {
   enemyPanelRef: MutableRefObject<HTMLDivElement | null>;
   onCardClick: (card: BattleCard, index: number, event: MouseEvent<HTMLButtonElement>) => void;
   onOpenMenu: (rect?: DOMRect) => void;
-  onWishChoice: (card: BattleCard) => void;
+  onWishChoice: (card: BattleCard | null) => void;
   onRemoveCardGhost: (id: string) => void;
   onSkipCombatDevMode: () => void;
   onEndTurn: () => void;

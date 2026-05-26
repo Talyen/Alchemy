@@ -2827,6 +2827,41 @@ describe("chooseWishCard — edge cases", () => {
     const result = chooseWishCard(state, "nonexistent-card");
     expect(result).toBe(state);
   });
+
+  it("skips wish and clears wishOptions when called with null and no queue", () => {
+    const state = makeState({ wishOptions: [makeCard({ id: "card" })], wishQueue: [] });
+    const result = chooseWishCard(state, null);
+    expect(result.wishOptions).toBeNull();
+    expect(result.wishQueue).toEqual([]);
+    expect(result.hand).toHaveLength(0);
+    expect(result.discard).toHaveLength(0);
+  });
+
+  it("skips wish and opens next queued wish when called with null", () => {
+    const nextCard = makeCard({ id: "next-card" });
+    const state = makeState({ wishOptions: [makeCard({ id: "current" })], wishQueue: [[nextCard]] });
+    const result = chooseWishCard(state, null);
+    expect(result.wishOptions).toEqual([nextCard]);
+    expect(result.wishQueue).toEqual([]);
+    expect(result.hand).toHaveLength(0);
+    expect(result.discard).toHaveLength(0);
+  });
+
+  it("skips through multiple wishes in queue sequentially with null", () => {
+    const firstCard = makeCard({ id: "first" });
+    const secondCard = makeCard({ id: "second" });
+    const state = makeState({ wishOptions: [makeCard({ id: "current" })], wishQueue: [[firstCard], [secondCard]] });
+    const firstSkip = chooseWishCard(state, null);
+    expect(firstSkip.wishOptions).toEqual([firstCard]);
+    expect(firstSkip.wishQueue).toHaveLength(1);
+    const secondSkip = chooseWishCard(firstSkip, null);
+    expect(secondSkip.wishOptions).toEqual([secondCard]);
+    expect(secondSkip.wishQueue).toHaveLength(0);
+    const thirdSkip = chooseWishCard(secondSkip, null);
+    expect(thirdSkip.wishOptions).toBeNull();
+    expect(thirdSkip.wishQueue).toHaveLength(0);
+    expect(thirdSkip.hand).toHaveLength(0);
+  });
 });
 
 // ─── playBattleCardResolved edge cases ───
@@ -3353,7 +3388,7 @@ describe("dealDamageToEnemy — critical strikes", () => {
 
 describe("dealDamageToEnemy — physical vs stunned/frozen multipliers", () => {
   it("physical damage gets stunned multiplier when enemy is stunned", () => {
-    const talentEffects = { ...defaultTalentEffects, physicalVsStunnedMultiplier: 50 };
+    const talentEffects = { ...defaultTalentEffects, physicalDoubledVsStunned: true };
     const card = makeCard({ effects: [{ kind: "damage", damageType: "physical", amount: 10 }] });
     const texts: CombatTextEvent[] = [];
     const staleState = makeState({
@@ -3939,22 +3974,22 @@ describe("playBattleCardResolved — Mortar and Pestle free potion", () => {
   });
 });
 
-describe("playBattleCardResolved — burn on consume", () => {
-  it("deals burn damage to enemy when consume card is played with talent", () => {
+describe("playBattleCardResolved — consume double burn damage", () => {
+  it("doubles burn damage when consume card is played with talent", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
     const card = makeCard({
-      id: "consumable", cost: 1, consume: true,
-      effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
+      id: "combust", cost: 1, consume: true,
+      effects: [{ kind: "damage", damageType: "burn", amount: 5 }],
     });
     const state = makeState({
       mana: 10, hand: [card], enemyHealth: 30,
-      talentEffects: { ...defaultTalentEffects, burnOnConsumeAmount: 4 },
+      talentEffects: { ...defaultTalentEffects, consumeDoubleBurnDamage: true, flatBurnDamage: 0 },
     });
-    const result = playBattleCardResolved(state, "consumable", 0);
-    // physical 5 damage + burn 4 from talent = 9 total dmg → health 21
-    expect(result.state.enemyHealth).toBe(21);
+    const result = playBattleCardResolved(state, "combust", 0);
+    // burn 5 * 2 = 10 total dmg → health 20
+    expect(result.state.enemyHealth).toBe(20);
     expect(result.state.exhausted).toHaveLength(1);
-    expect(result.state.exhausted[0].id).toBe("consumable");
+    expect(result.state.exhausted[0].id).toBe("combust");
   });
 });
 

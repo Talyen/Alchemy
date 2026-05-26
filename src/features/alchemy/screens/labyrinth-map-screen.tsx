@@ -13,7 +13,8 @@ import type { LabyrinthMap, LabyrinthModifierKind, LabyrinthNodeType } from "@/l
 import { NODE_TYPE_LABELS } from "@/lib/content-systems/labyrinth/data";
 import { ALL_LABYRINTH_MODIFIERS, REWARD_MODIFIER_KINDS } from "@/lib/content-systems/labyrinth/modifiers";
 import { canEnterLabyrinthNode } from "@/lib/content-systems/labyrinth/map-generation";
-import { keywordDefinitions, type KeywordId } from "@/lib/game-data";
+import { keywordDefinitions } from "@/lib/game-data";
+import { keywordAliases } from "../config";
 import { HamburgerTrigger, ScreenHeader } from "../ui/shared-ui";
 import { TooltipBody, TooltipHeader, TooltipSection } from "../ui/tooltip-panel";
 import { useScreenStore } from "../stores/screen-store";
@@ -367,7 +368,8 @@ function highlightKeywords(text: string): ReactNode {
   return words.map((word, index) => {
     const clean = word.replace(/[^a-zA-Z]/g, "");
     if (!clean) return word;
-    const def = keywordDefinitions[clean.toLowerCase() as KeywordId];
+    const alias = keywordAliases.find((a) => a.match.toLowerCase() === clean.toLowerCase());
+    const def = alias ? keywordDefinitions[alias.keywordId] : undefined;
     if (def) {
       return (
         <span key={index} className={`${def.colorClass} font-semibold`}>

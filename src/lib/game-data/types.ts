@@ -132,8 +132,14 @@ export type TalentEffectManifest = {
   armorToPhysicalDamage: boolean;
   physicalCritChance: number;
   firstPhysicalCardFree: boolean;
-  physicalVsStunnedMultiplier: number;
-  physicalVsFrozenMultiplier: number;
+  physicalStunChance: number;
+  physicalBleedChance: number;
+  physicalDetonatesBleed: boolean;
+  physicalDoubledBelowHalfHealth: boolean;
+  physicalDoubledVsStunned: boolean;
+  physicalDoubledVsFrozen: boolean;
+  blockToPhysicalDamageMultiplier: number;
+  forgeToPhysicalDamageMultiplier: number;
 
   // --- Stun ---
   stunThresholdReduction: number;
@@ -208,11 +214,11 @@ export type TalentEffectManifest = {
   burnDoubleChance: number;
   receiveHalfBurnDamage: boolean;
   flatBurnDamage: number;
-  forgeOnPlayerBurnDamage: number;
-  burnReducesEnemyDamage: number;
-  burnOnConsumeAmount: number;
-  forgeOnBurnTickWithBlock: number;
   burnOnWish: number;
+  forgeOnBurnDealt: number;
+  blockToBurnDamage: boolean;
+  consumeDoubleBurnDamage: boolean;
+  burnStunChance: number;
 
   // --- Gold ---
   shopCardDiscount: number;

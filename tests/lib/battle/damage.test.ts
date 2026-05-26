@@ -313,7 +313,7 @@ describe("computeBaseDamage — physical vs statuses", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
     const state = createTestBattleState({
       enemyStunSkipTurns: 1,
-      talentEffects: { ...createTestBattleState().talentEffects, physicalVsStunnedMultiplier: 25 },
+      talentEffects: { ...createTestBattleState().talentEffects, physicalDoubledVsStunned: true },
     });
     const card = makeCard({ effects: [makeEffect("physical", 10)] });
     const texts = makeTexts();
@@ -323,15 +323,15 @@ describe("computeBaseDamage — physical vs statuses", () => {
       card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
       texts,
     );
-    // 10 * (1 + 25/100) = 12.5 -> 13 round, no armor, health = 17
-    expect(result.enemyHealth).toBe(17);
+    // 10 * 2 = 20, no armor, health = 10
+    expect(result.enemyHealth).toBe(10);
   });
 
   it("amplifies physical damage against frozen enemies", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
     const state = createTestBattleState({
       enemyFreezeSkipTurns: 1,
-      talentEffects: { ...createTestBattleState().talentEffects, physicalVsFrozenMultiplier: 50 },
+      talentEffects: { ...createTestBattleState().talentEffects, physicalDoubledVsFrozen: true },
     });
     const card = makeCard({ effects: [makeEffect("physical", 10)] });
     const texts = makeTexts();
@@ -341,8 +341,8 @@ describe("computeBaseDamage — physical vs statuses", () => {
       card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
       texts,
     );
-    // 10 * (1 + 50/100) = 15, no armor, health = 15
-    expect(result.enemyHealth).toBe(15);
+    // 10 * 2 = 20, no armor, health = 10
+    expect(result.enemyHealth).toBe(10);
   });
 });
 

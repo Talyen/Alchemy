@@ -9,7 +9,6 @@ import { mergeCombatText } from "./combat-text";
 import { POTION_CARD_ID_SUFFIX } from "../game-constants";
 import { type BattleCard } from "@/lib/game-data";
 import {
-  clampHealth,
   type BattleResolution,
   type BattleState,
   type CombatFlags,
@@ -182,26 +181,9 @@ function applyResonantChimeTrinket(state: BattleState, combatTexts: CombatTextEv
 /**
  * Resolves post-play destination (exhausted/discard pile) and triggers consume riders.
  */
-function handlePostPlayCardDestination(
-  state: BattleState,
-  card: BattleCard,
-  combatTexts: CombatTextEvent[],
-): BattleState {
+function handlePostPlayCardDestination(state: BattleState, card: BattleCard): BattleState {
   if (card.consume) {
     let nextState = { ...state, exhausted: [...state.exhausted, card] };
-    if (nextState.talentEffects.burnOnConsumeAmount > 0 && nextState.enemyHealth > 0) {
-      const burnDmg = nextState.talentEffects.burnOnConsumeAmount;
-      mergeCombatText(combatTexts, {
-        target: "enemy",
-        kind: "damage",
-        stat: "burn",
-        amount: burnDmg,
-      });
-      nextState = {
-        ...nextState,
-        enemyHealth: clampHealth(nextState.enemyHealth, -burnDmg, nextState.enemyMaxHealth),
-      };
-    }
     if (state.trinketEffects.runicQuillDrawOnConsume > 0 && !state.flags.runicQuillUsedThisTurn) {
       const draw = drawCards(
         nextState.deck,
@@ -245,7 +227,7 @@ export function playBattleCardResolved(state: BattleState, cardId: string, index
   let nextState = executeCardPlayState(costState, card, index, effectiveCost, combatTexts);
   if (nextState.enemyHealth > 0 && !isPlayerDefeated(nextState)) {
     nextState = applyResonantChimeTrinket(nextState, combatTexts);
-    nextState = handlePostPlayCardDestination(nextState, card, combatTexts);
+    nextState = handlePostPlayCardDestination(nextState, card);
   }
 
   return { state: nextState, combatTexts };
