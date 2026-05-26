@@ -181,11 +181,11 @@ function applyLifesteal(state: BattleState, damage: number, combatTexts: CombatT
   }
 
   if (state.talentEffects.leechDesperateMultiplier > 0 && state.playerHealth <= state.playerMaxHealth / HALF_DIVISOR) {
-    healAmount = Math.round(healAmount * (1 + state.talentEffects.leechDesperateMultiplier / 100));
+    healAmount = Math.round(healAmount * (1 + state.talentEffects.leechDesperateMultiplier / PERCENT_DENOMINATOR));
   }
 
   if (state.talentEffects.leechExecuteMultiplier > 0 && state.enemyHealth <= state.enemyMaxHealth / HALF_DIVISOR) {
-    healAmount = Math.round(healAmount * (1 + state.talentEffects.leechExecuteMultiplier / 100));
+    healAmount = Math.round(healAmount * (1 + state.talentEffects.leechExecuteMultiplier / PERCENT_DENOMINATOR));
   }
 
   if (state.talentEffects.leechMissingHealthStep > 0) {
@@ -226,7 +226,7 @@ function applyLifesteal(state: BattleState, damage: number, combatTexts: CombatT
     if (mit.armor > 0) pool.push({ key: "armor", status: "armor" });
     if (mit.block > 0) pool.push({ key: "block", status: "block" });
     if (pool.length > 0) {
-      const steal = pool[Math.round(state.rng() * (pool.length - 1))];
+      const steal = pool[Math.trunc(state.rng() * pool.length)];
       nextState = {
         ...nextState,
         enemyMitigation: { ...mit, [steal.key]: mit[steal.key] - 1 },

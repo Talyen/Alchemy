@@ -319,17 +319,21 @@ export function useBattleController({
     });
   }
 
-  async function animateDiscardedHand(cards: BattleCard[]) {
+  async function animateDiscardedHand(cards: BattleCard[], session: number) {
     const discardPileRect = localRectFromElement(discardPileRef.current);
     if (!discardPileRect || cards.length === 0) return;
     const speedMul = getCardTransferBatchSpeed(cards.length);
     const cardInterval =
       ((CARD_TRANSFER_CONFIG.discardDurationSeconds / speedMul) * 1000 + CARD_TRANSFER_CONFIG.completionBufferMs) /
       1000;
-    for (let i = 0; i < cards.length; i++) playTransferSound(i * cardInterval);
+    for (let i = 0; i < cards.length; i++) {
+      if (!isCurrentBattleSession(session)) return;
+      playTransferSound(i * cardInterval);
+    }
     setCardTransferInProgress(true);
     cardPlayInProgressRef.current = true;
     for (let index = cards.length - 1; index >= 0; index -= 1) {
+      if (!isCurrentBattleSession(session)) return;
       const card = cards[index];
       const cardKey = getCardKey(card);
       const sourceRect = localVisualCardRect(handCardRefs.current[cardKey]);
@@ -350,18 +354,23 @@ export function useBattleController({
     }
   }
 
-  async function animateDrawnHand(cards: BattleCard[], allHandCards: BattleCard[]) {
+  async function animateDrawnHand(cards: BattleCard[], allHandCards: BattleCard[], session: number) {
     const drawPileRect = localRectFromElement(drawPileRef.current);
     if (!drawPileRect || cards.length === 0) return;
     const speedMul = getCardTransferBatchSpeed(cards.length);
     const cardInterval =
       ((CARD_TRANSFER_CONFIG.drawDurationSeconds / speedMul) * 1000 + CARD_TRANSFER_CONFIG.completionBufferMs) / 1000;
-    for (let i = 0; i < cards.length; i++) playTransferSound(i * cardInterval);
+    for (let i = 0; i < cards.length; i++) {
+      if (!isCurrentBattleSession(session)) return;
+      playTransferSound(i * cardInterval);
+    }
     for (const card of cards) {
+      if (!isCurrentBattleSession(session)) return;
       const index = allHandCards.findIndex((item) => item.uid === card.uid && item.id === card.id);
       const cardKey = getCardKey(card);
       const fallbackRect = centeredRectForSize(drawPileRect, drawPileRect.width, drawPileRect.height);
       const targetRect = await waitForStableHandCardRect(cardKey, fallbackRect);
+      if (!isCurrentBattleSession(session)) return;
       const sourceRect = centeredRectForSize(drawPileRect, targetRect.width, targetRect.height);
       await runCardTransfer(
         {
@@ -493,7 +502,7 @@ export function useBattleController({
     await new Promise((resolve) => requestAnimationFrame(resolve));
     try {
       if (!isAnimationDisabled()) {
-        await animateDrawnHand(drawnCards, newState.hand);
+        await animateDrawnHand(drawnCards, newState.hand, session);
       }
     } finally {
       runIfSessionActive(session, () => {
@@ -643,7 +652,7 @@ export function useBattleController({
     try {
       if (!isAnimationDisabled()) {
         try {
-          await animateDiscardedHand(currentState.hand);
+          await animateDiscardedHand(currentState.hand, session);
         } catch (err) {
           logError(
             "Discard hand animation failed",
@@ -806,12 +815,19 @@ export function useBattleController({
     }
   }
 
+  function triggerCompanionEffects(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
+    if (state.activeCompanion) {
+      playCompanionSound(state.activeCompanion.id);
+      getStore().shakeCompanion();
+      return processCompanionTurnStart(state, combatTexts);
+    }
+    return state;
+  }
+
   function resolveQueuedCompanionTurn(state: BattleState) {
     const combatTexts: CombatTextEvent[] = [];
     if (companionScheduledRef.current && state.activeCompanion) {
-      playCompanionSound(state.activeCompanion.id);
-      const nextState = processCompanionTurnStart(state, combatTexts);
-      getStore().shakeCompanion();
+      const nextState = triggerCompanionEffects(state, combatTexts);
       companionScheduledRef.current = false;
       return { state: nextState, combatTexts };
     }
@@ -902,12 +918,8 @@ export function useBattleController({
     return runIfSessionActive(session, () => {
       const store = getStore();
       const texts: CombatTextEvent[] = [];
-      if (store.battleState.activeCompanion) {
-        playCompanionSound(store.battleState.activeCompanion.id);
-      }
-      const newState = processCompanionTurnStart(store.battleState, texts);
+      const newState = triggerCompanionEffects(store.battleState, texts);
       store.setBattleState(newState);
-      store.shakeCompanion();
       return texts;
     }, []);
   }

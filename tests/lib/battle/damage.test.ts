@@ -701,6 +701,53 @@ describe("dealDamageToEnemy — enemy armor", () => {
   });
 });
 
+describe("dealDamageToEnemy — boonSiphon siphoning", () => {
+  it("steals armor and gains armor for the player when armor is siphoned", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.99); // bypass crit
+    const state = createTestBattleState({
+      enemyMitigation: { armor: 5, block: 0, forge: 0, freezeBonus: 0, burnBonus: 0 },
+      talentEffects: { ...createTestBattleState().talentEffects, boonSiphonChance: 100 },
+      rng: () => 0.1,
+    });
+    const card = makeCard({ effects: [makeEffect("physical", 10, { lifesteal: true })] });
+    const texts = makeTexts();
+    const result = dealDamageToEnemy(
+      state,
+      card,
+      card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
+      texts,
+    );
+    // Base damage = 10. Armor = 5.
+    // Lifesteal runs on 10 - 5 = 5 damage.
+    // Siphon runs: pool contains armor (5 > 0). Siphons armor.
+    // Armor becomes 4. Decays 1 on hit -> 3. Player armor becomes 1.
+    expect(result.enemyMitigation.armor).toBe(3);
+    expect(result.playerStatuses.armor).toBe(1);
+  });
+
+  it("steals forge and gains forge for the player when forge is siphoned", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.99);
+    const state = createTestBattleState({
+      enemyMitigation: { armor: 0, block: 0, forge: 3, freezeBonus: 0, burnBonus: 0 },
+      talentEffects: { ...createTestBattleState().talentEffects, boonSiphonChance: 100 },
+      rng: () => 0.0,
+    });
+    const card = makeCard({ effects: [makeEffect("nature", 10, { lifesteal: true })] });
+    const result = dealDamageToEnemy(
+      state,
+      card,
+      card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
+      makeTexts(),
+    );
+    // Base damage = 10. Forge = 3.
+    // Pool contains forge. Forge siphoned.
+    // Forge becomes 2. Player forge becomes 1 (nature doesn't consume forge).
+    expect(result.enemyMitigation.forge).toBe(2);
+    expect(result.playerStatuses.forge).toBe(1);
+  });
+});
+
+
 describe("dealDamageToEnemy — edge cases", () => {
   it("does not decrease health below 0", () => {
     const state = createTestBattleState({ enemyHealth: 3 });

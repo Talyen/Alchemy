@@ -21,7 +21,7 @@ import { playVictory, playDefeat, playGoldGain, stopAllSfx, playUISound } from "
 import { appendUnique, appendUniqueMany } from "@/lib/utils";
 import { CONSTANTS, type Destination, type Screen } from "./types";
 import { getBossEnemy } from "./config";
-import { applyMaterialFindBonus } from "@/lib/homestead/loot";
+import { applyMaterialFindBonus, getEndOfRunMaterials } from "@/lib/homestead/loot";
 import { addInventory } from "@/lib/homestead/inventory";
 import { type MaterialInventory } from "@/lib/homestead/types";
 import {
@@ -245,14 +245,22 @@ export function useRunNavigation({
   const awardRunEndMaterials = useCallback(
     (displayMaterials: MaterialInventory | null = null) => {
       const homesteadEffects = useHomesteadStore.getState().effects;
-      const baseHerbs = homesteadEffects.herbFindBonus > 0 ? run.roomsEncountered : 0;
-      const food = homesteadEffects.flatArrowDamage > 0 ? run.roomsEncountered : 0;
-      const mats = applyMaterialFindBonus({ wood: 0, iron: 0, herbs: baseHerbs, food, crystal: 0 }, homesteadEffects);
-      if (mats.herbs > 0 || food > 0) useHomesteadStore.getState().addMaterials(mats);
+      const baseMats = getEndOfRunMaterials(run.roomsEncountered, run.currentAct);
+      const baseHerbs = baseMats.herbs + (homesteadEffects.herbFindBonus > 0 ? run.roomsEncountered : 0);
+      const food = baseMats.food + (homesteadEffects.flatArrowDamage > 0 ? run.roomsEncountered : 0);
+      const combinedBase = {
+        wood: baseMats.wood,
+        iron: baseMats.iron,
+        herbs: baseHerbs,
+        food,
+        crystal: baseMats.crystal,
+      };
+      const mats = applyMaterialFindBonus(combinedBase, homesteadEffects);
+      useHomesteadStore.getState().addMaterials(mats);
       getStore().setRunEndMaterials(displayMaterials ? addInventory(displayMaterials, mats) : mats);
       return mats;
     },
-    [run.roomsEncountered],
+    [run.roomsEncountered, run.currentAct],
   );
 
   // ============ Victory / Defeat Effects ============
@@ -343,7 +351,9 @@ export function useRunNavigation({
     playVictory();
 
     rewardTransitionTimer.current.setTimeout(() => {
-      setScreen(CONSTANTS.SCREENS.REWARDS);
+      if (getStore().hasActiveRun) {
+        setScreen(CONSTANTS.SCREENS.REWARDS);
+      }
     }, VICTORY_TRANSITION_DELAY);
   }, [setScreen, getAvailableDestinations, updateVictoryRewardScreenState]);
 
