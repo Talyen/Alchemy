@@ -9,13 +9,21 @@ import type { LabyrinthModifierKind } from "@/lib/content-systems/types";
 import type { BestiaryEntry, EnemyAttackEffect } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
-import { battleCardWidthClass, cardArtImageClass, cardSurfaceClass, staticCardTransform } from "../../config";
+import {
+  battleCardWidthClass,
+  cardArtImageClass,
+  cardSurfaceClass,
+  SHINE_PALETTES,
+  staticCardTransform,
+} from "../../config";
 import type { StatusChip } from "../../types";
 import { clearTiltFromEvent, setTiltFromEvent } from "../../utils";
 import { DescriptionLines } from "../card-description-ui";
 import { EnemyTooltip } from "../enemy-tooltip";
 import { TooltipPanel, TooltipHeader } from "../tooltip-panel";
 import { ShimmerOverlay } from "../shared-ui";
+import { PortraitHurtVfx } from "./portrait-hurt-vfx";
+import { useHurtPulse } from "./use-hurt-pulse";
 import { ParticleBurst } from "./particle-burst";
 import { DeathsDoorStatusIcon, StatusIcon } from "./status-icons";
 import { useChangeToken } from "./use-change-token";
@@ -49,6 +57,7 @@ type ArtPanelProps = {
   deathsDoorActive?: boolean;
   isBoss?: boolean;
   statsCardWidthClass?: string | undefined;
+  hurtFlashToken?: number;
 };
 
 // Renders one battle actor card with health/status chrome and optional enemy tooltip.
@@ -74,6 +83,7 @@ export function ArtPanel({
   deathsDoorActive = false,
   isBoss = false,
   statsCardWidthClass,
+  hurtFlashToken = 0,
 }: ArtPanelProps) {
   const healthToken = useChangeToken(health);
   const healthPercent = maxHealth > 0 ? (health / maxHealth) * ACTOR_PANEL_CONFIG.fullHealthPercent : 0;
@@ -102,6 +112,7 @@ export function ArtPanel({
               isDead={isDead}
               cardWidthClass={cardWidthClass}
               deathsDoorActive={deathsDoorActive}
+              hurtFlashToken={hurtFlashToken}
             />
           </div>
         ) : (
@@ -117,6 +128,7 @@ export function ArtPanel({
             isDead={isDead}
             cardWidthClass={cardWidthClass}
             deathsDoorActive={deathsDoorActive}
+            hurtFlashToken={hurtFlashToken}
           />
         )}
       </div>
@@ -181,6 +193,7 @@ function ActorArtFrame({
   isDead,
   cardWidthClass = battleCardWidthClass,
   deathsDoorActive,
+  hurtFlashToken = 0,
 }: {
   side: "player" | "enemy";
   title: string;
@@ -193,7 +206,10 @@ function ActorArtFrame({
   isDead: boolean;
   cardWidthClass?: string;
   deathsDoorActive: boolean;
+  hurtFlashToken?: number;
 }) {
+  const { pulse, sparksOverflow } = useHurtPulse(hurtFlashToken);
+
   return (
     <div
       ref={surfaceRef}
@@ -202,6 +218,7 @@ function ActorArtFrame({
         "tilt-surface relative",
         cardSurfaceClass,
         cardWidthClass ?? battleCardWidthClass,
+        sparksOverflow && "overflow-visible",
         isDead && "overflow-visible animate-frame-fade surface-transparent",
       )}
       onMouseEnter={() => onHoverShimmer(shimmerId)}
@@ -217,6 +234,7 @@ function ActorArtFrame({
         className={cn("block w-full", cardArtImageClass, isDead && "opacity-0")}
         loading="eager"
       />
+      {!isDead ? <PortraitHurtVfx pulse={pulse} /> : null}
       {isDead && <ParticleBurst imageUrl={art} />}
     </div>
   );
@@ -241,14 +259,14 @@ function ActorStatsPanel({
   return (
     <div
       className={cn(
-        "surface-muted rounded-[24px] px-4 py-3 relative",
+        "surface-muted rounded-shell-inner px-4 py-3 relative",
         cardWidthClass,
         deathsDoorActive && "shadow-[0_0_30px_rgba(127,29,29,0.45)]",
         isDead && "animate-frame-fade surface-transparent",
       )}
     >
       {deathsDoorActive ? <StatsDeathDoorBorder /> : null}
-      <div className={isDead ? "opacity-0 transition-opacity duration-700" : ""}>
+      <div className={cn(isDead && "opacity-0 transition-opacity duration-700")}>
         <ActorHealthHeader side={side} title={title} health={health} maxHealth={maxHealth} healthToken={healthToken} />
         <Progress
           value={healthPercent}
@@ -302,8 +320,8 @@ function ArtDeathDoorBorder() {
     <ShineBorder
       borderWidth={ACTOR_PANEL_CONFIG.deathDoorArtBorderWidth}
       duration={ACTOR_PANEL_CONFIG.deathDoorShineDurationSeconds}
-      shineColor={["#450a0a", "#dc2626", "#7f1d1d", "#111827"]}
-      className="rounded-[30px]"
+      shineColor={[...SHINE_PALETTES.deathsDoorArt]}
+      className="rounded-shell-hero"
     />
   );
 }
@@ -313,8 +331,8 @@ function StatsDeathDoorBorder() {
     <ShineBorder
       borderWidth={ACTOR_PANEL_CONFIG.deathDoorStatsBorderWidth}
       duration={ACTOR_PANEL_CONFIG.deathDoorShineDurationSeconds}
-      shineColor={["#450a0a", "#ef4444", "#991b1b", "#1f0505"]}
-      className="rounded-[24px]"
+      shineColor={[...SHINE_PALETTES.deathsDoorStats]}
+      className="rounded-shell-inner"
     />
   );
 }

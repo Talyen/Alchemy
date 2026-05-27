@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { companionLibrary } from "@/lib/game-data/companions";
+import { companionLibrary } from "@/lib/game-data";
 
 describe("companionLibrary data integrity", () => {
   it("has all expected companions", () => {

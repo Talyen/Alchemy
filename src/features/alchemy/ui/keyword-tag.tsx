@@ -30,14 +30,9 @@ export function KeywordTag({
       className={cn(
         "inline-flex items-baseline gap-1 font-semibold text-sm leading-none",
         def.colorClass,
-        pill && "rounded-full px-2.5 py-1",
+        pill && "character-keyword-pill-tint rounded-full px-2.5 py-1",
         className,
       )}
-      style={
-        pill
-          ? ({ backgroundColor: "color-mix(in srgb, currentColor 15%, transparent)" } as React.CSSProperties)
-          : undefined
-      }
     >
       {showIcon ? (
         <Icon className={cn("relative top-[0.15em] h-[1em] w-[1em] shrink-0", pill && "top-0 h-3 w-3")} />

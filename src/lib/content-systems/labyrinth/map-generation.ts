@@ -5,12 +5,7 @@
  * Depended on by: use-labyrinth-controller.ts, screen-store.ts, tests
  */
 
-import { createSeededRng, shuffle as shuffleWithRng } from "@/lib/utils";
-/**
- * @deprecated Import createSeededRng and shuffleWithRng directly from "@/lib/utils" instead.
- * These re-exports exist only for backward compatibility with existing test/module imports.
- */
-export { createSeededRng, shuffleWithRng };
+import { shuffle as shuffleWithRng } from "@/lib/utils";
 
 import type { LabyrinthMap, LabyrinthNode, LabyrinthNodeType } from "../types";
 import { LABYRINTH_COLS, LABYRINTH_ROWS } from "./data";

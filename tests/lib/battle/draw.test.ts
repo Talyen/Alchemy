@@ -211,4 +211,14 @@ describe("drawCards — edge cases", () => {
     expect(new Set(uids).size).toBe(3);
     expect(uids).toEqual([100, 101, 102]);
   });
+
+  it("uses the provided rng when reshuffling discard into deck", () => {
+    const deck = [makeCard("d1")];
+    const discard = [makeCard("d2"), makeCard("d3"), makeCard("d4")];
+    const alwaysZero = () => 0;
+    const alwaysMax = () => 0.999;
+    const fromZero = drawCards(deck, discard, [], 4, 0, alwaysZero);
+    const fromMax = drawCards(deck, discard, [], 4, 0, alwaysMax);
+    expect(fromZero.hand.map((c: { id: string }) => c.id)).not.toEqual(fromMax.hand.map((c: { id: string }) => c.id));
+  });
 });

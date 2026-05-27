@@ -11,7 +11,7 @@ export function AspectRatioSelect({
   onChange: (aspectRatio: AspectRatioOption) => void;
 }) {
   return (
-    <div className="surface-muted rounded-[22px] border border-border/70 p-5 text-left">
+    <div className="surface-muted rounded-shell-panel border border-border/70 p-5 text-left">
       <label htmlFor="resolution" className="block text-sm font-semibold text-foreground">
         Aspect Ratio
       </label>
@@ -41,7 +41,7 @@ export function DisplayModeSelect({
   onChange: (mode: DisplayMode) => void;
 }) {
   return (
-    <div className="surface-muted rounded-[22px] border border-border/70 p-5 text-left">
+    <div className="surface-muted rounded-shell-panel border border-border/70 p-5 text-left">
       <label htmlFor="display-mode" className="block text-sm font-semibold text-foreground">
         Display Mode
       </label>
@@ -71,7 +71,7 @@ export function UiScaleSelect({
   onChange: (scale: UiScale) => void;
 }) {
   return (
-    <div className="surface-muted rounded-[22px] border border-border/70 p-5 text-left">
+    <div className="surface-muted rounded-shell-panel border border-border/70 p-5 text-left">
       <label htmlFor="ui-scale" className="block text-sm font-semibold text-foreground">
         UI Scale
       </label>

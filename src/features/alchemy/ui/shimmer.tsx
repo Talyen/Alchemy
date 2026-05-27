@@ -9,7 +9,7 @@ export function staggerDelay(position: number): number {
 export function ShimmerOverlay({
   active,
   token,
-  rounded = "rounded-[30px]",
+  rounded = "rounded-shell-hero",
 }: {
   active: boolean;
   token: number | undefined;

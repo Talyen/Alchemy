@@ -49,7 +49,7 @@ function TrinketRewardButton({
         <img
           src={trinket.art}
           alt={trinket.title}
-          className="block w-full rounded-[30px] aspect-square"
+          className="block w-full rounded-shell-hero aspect-square"
           loading="lazy"
         />
       </TiltSurface>
@@ -103,7 +103,7 @@ export function RewardsScreen({ onAddReward, onSkip }: { onAddReward: () => void
 
   return (
     <div className="flex h-full w-full items-center justify-center px-4 py-6">
-      <div className="alchemy-shell w-full max-w-6xl rounded-[30px] border border-border/80 p-7 text-center">
+      <div className="alchemy-shell w-full max-w-6xl rounded-shell-hero border border-border/80 p-7 text-center">
         <ScreenHeader title="Victory" />
         <p className="mt-3 text-base text-muted-foreground">
           {isTrinket ? "Choose a Trinket to add to your Collection" : "Choose a Card to add to your Deck"}

@@ -2736,6 +2736,18 @@ describe("applyCardEffects — multiply-enemy-status", () => {
     expect(result.enemyStatuses.burn).toBe(0);
     expect(texts).toEqual([]);
   });
+
+  it("halves multiplied stack gain in labyrinth null field", () => {
+    const state = makeState({
+      enemyStatuses: { burn: 0, poison: 4, bleed: 0, freeze: 0, stun: 0 },
+      difficultyModifiers: [{ kind: "labyrinth-null-field" }] as DifficultyModifier[],
+    });
+    const card = makeCard({ effects: [{ kind: "multiply-enemy-status", status: "poison", factor: 2 }] });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    expect(result.enemyStatuses.poison).toBe(6);
+    expect(texts).toContainEqual({ target: "enemy", kind: "multiply", stat: "poison", amount: 2 });
+  });
 });
 
 describe("applyCardEffects — remove-player-status", () => {

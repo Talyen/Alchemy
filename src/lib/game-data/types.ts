@@ -121,6 +121,8 @@ export type KeywordDefinition = {
   colorClass: string;
   borderClass: string;
   shineColors: string[];
+  /** Translucent pill background for badges; must be a full Tailwind class string for JIT. */
+  pillBgClass?: string;
   hidden?: boolean;
 };
 

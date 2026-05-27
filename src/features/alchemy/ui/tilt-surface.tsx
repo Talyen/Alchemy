@@ -82,7 +82,11 @@ export function TiltSurface({
         style={{ "--card-base-transform": baseTransform ?? staticCardTransform, ...style } as CSSProperties}
       >
         {shimmerActive !== undefined ? (
-          <ShimmerOverlay active={shimmerActive} token={shimmerToken} rounded={shimmerRounded ?? "rounded-[30px]"} />
+          <ShimmerOverlay
+            active={shimmerActive}
+            token={shimmerToken}
+            rounded={shimmerRounded ?? "rounded-shell-hero"}
+          />
         ) : null}
         {children}
       </button>
@@ -107,7 +111,7 @@ export function TiltSurface({
       style={{ "--card-base-transform": baseTransform ?? staticCardTransform, ...style } as CSSProperties}
     >
       {shimmerActive !== undefined ? (
-        <ShimmerOverlay active={shimmerActive} token={shimmerToken} rounded={shimmerRounded ?? "rounded-[30px]"} />
+        <ShimmerOverlay active={shimmerActive} token={shimmerToken} rounded={shimmerRounded ?? "rounded-shell-hero"} />
       ) : null}
       {children}
     </div>

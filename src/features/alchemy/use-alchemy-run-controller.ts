@@ -4,8 +4,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { TimerGroup } from "@/lib/animation/game-timer";
 import { platform } from "@/lib/platform";
-import { cardLibrary, trinketLibrary } from "@/lib/game-data";
-import type { BattleCard, TrinketEntry } from "@/lib/game-data";
+import type { BattleCard } from "@/lib/game-data";
 import type { TalentXP } from "@/lib/talents";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import type { CharacterId, DifficultyId, UnlockedTalents } from "@/lib/game-data";
@@ -21,23 +20,6 @@ import { useLabyrinthController } from "./use-labyrinth-controller";
 import { CONSTANTS, type Destination, type Screen } from "./types";
 import type { ActiveRunData } from "./run/types";
 import { NAVIGATION_DELAY_MS } from "@/lib/game-constants";
-
-let cardLookupCache: Map<string, BattleCard> | null = null;
-let trinketLookupCache: Map<string, TrinketEntry> | null = null;
-
-function getCardLookup() {
-  if (!cardLookupCache) {
-    cardLookupCache = new Map<string, BattleCard>(cardLibrary.map((c) => [c.id, c]));
-  }
-  return cardLookupCache;
-}
-
-function getTrinketLookup() {
-  if (!trinketLookupCache) {
-    trinketLookupCache = new Map<string, TrinketEntry>(trinketLibrary.map((t) => [t.id, t]));
-  }
-  return trinketLookupCache;
-}
 
 export function useAlchemyRunController({
   discoveredCardIds,
@@ -229,42 +211,44 @@ export function useAlchemyRunController({
     nav.beginLabyrinth();
   }
 
+  function enterLabyrinthNodeScreen(
+    screen: Screen,
+    init?: () => void,
+    battleModifiers?: LabyrinthModifierKind[],
+    rewardModifiers?: LabyrinthModifierKind[],
+  ) {
+    setActiveLabyrinthModifiers(battleModifiers ?? []);
+    setActiveLabyrinthRewardModifiers(rewardModifiers ?? []);
+    init?.();
+    navigateTo(screen);
+  }
+
   function handleLabyrinthNodeEnter(row: number, col: number): boolean {
     return labyrinth.enterNode(row, col, {
       onStartBattleWithModifiers: (enemyType, modifiers, rewardModifiers) => {
-        setActiveLabyrinthModifiers(modifiers);
-        setActiveLabyrinthRewardModifiers(rewardModifiers);
-        battle.startBattle(undefined, undefined, enemyType, labyrinthModifiersToDifficulty(modifiers));
-        navigateTo(CONSTANTS.SCREENS.BATTLE);
+        enterLabyrinthNodeScreen(
+          CONSTANTS.SCREENS.BATTLE,
+          () => {
+            battle.startBattle(undefined, undefined, enemyType, labyrinthModifiersToDifficulty(modifiers));
+          },
+          modifiers,
+          rewardModifiers,
+        );
       },
       onStartBossBattleWithModifiers: (modifiers, rewardModifiers) => {
-        setActiveLabyrinthModifiers(modifiers);
-        setActiveLabyrinthRewardModifiers(rewardModifiers);
-        battle.startBossBattle(labyrinthModifiersToDifficulty(modifiers));
-        navigateTo(CONSTANTS.SCREENS.BATTLE);
+        enterLabyrinthNodeScreen(
+          CONSTANTS.SCREENS.BATTLE,
+          () => {
+            battle.startBossBattle(labyrinthModifiersToDifficulty(modifiers));
+          },
+          modifiers,
+          rewardModifiers,
+        );
       },
-      onStartRest: () => {
-        setActiveLabyrinthModifiers([]);
-        setActiveLabyrinthRewardModifiers([]);
-        navigateTo(CONSTANTS.SCREENS.CAMPFIRE);
-      },
-      onStartMystery: () => {
-        setActiveLabyrinthModifiers([]);
-        setActiveLabyrinthRewardModifiers([]);
-        nav.beginMysteryEvent();
-      },
-      onStartShop: () => {
-        setActiveLabyrinthModifiers([]);
-        setActiveLabyrinthRewardModifiers([]);
-        shop.initShop();
-        navigateTo(CONSTANTS.SCREENS.SHOP);
-      },
-      onStartAlchemist: () => {
-        setActiveLabyrinthModifiers([]);
-        setActiveLabyrinthRewardModifiers([]);
-        shop.initAlchemist();
-        navigateTo(CONSTANTS.SCREENS.ALCHEMIST);
-      },
+      onStartRest: () => enterLabyrinthNodeScreen(CONSTANTS.SCREENS.CAMPFIRE),
+      onStartMystery: () => enterLabyrinthNodeScreen(CONSTANTS.SCREENS.MYSTERY, () => nav.beginMysteryEvent()),
+      onStartShop: () => enterLabyrinthNodeScreen(CONSTANTS.SCREENS.SHOP, () => shop.initShop()),
+      onStartAlchemist: () => enterLabyrinthNodeScreen(CONSTANTS.SCREENS.ALCHEMIST, () => shop.initAlchemist()),
     });
   }
 
@@ -280,9 +264,7 @@ export function useAlchemyRunController({
     unlockAllTalents: talents.unlockAllTalents,
     resetUnlockedTalents: talents.resetUnlockedTalents,
     clearPermanentData,
-    get rewardChoices() {
-      return nav.rewardChoices;
-    },
+    rewardState: nav.rewardState,
     get shopCards() {
       return shop.shopCards;
     },
@@ -331,8 +313,7 @@ export function useAlchemyRunController({
     handleMysteryRemoveCard: nav.handleMysteryRemoveCard,
     handleMysteryContinue: nav.handleMysteryContinue,
     handleCorruptCard: nav.handleCorruptCard,
-    handleCorruptionContinue: nav.handleCorruptionContinue,
-    handleCorruptionLeave: nav.handleCorruptionLeave,
+    handleCorruptionExit: nav.handleCorruptionExit,
     handleActComplete: nav.handleActComplete,
     handleEndTurn: battle.handleEndTurn,
     cardTransfers: battle.cardTransfers,
@@ -342,7 +323,5 @@ export function useAlchemyRunController({
     skipCombatDevMode: battle.skipCombatDevMode,
     removeCardGhost: battle.removeCardGhost,
     resetRunState: nav.resetRunState,
-    findCard: (id: string) => getCardLookup().get(id),
-    findTrinket: (id: string) => getTrinketLookup().get(id),
   };
 }

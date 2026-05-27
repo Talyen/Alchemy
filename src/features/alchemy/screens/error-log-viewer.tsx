@@ -23,7 +23,7 @@ export function ErrorLogViewer({ onClose }: { onClose: () => void }) {
 
   return (
     <PageLayout>
-      <div className="alchemy-shell flex min-h-[48.15cqh] w-full max-w-4xl flex-col rounded-[28px] p-7">
+      <div className="alchemy-shell flex min-h-[48.15cqh] w-full max-w-4xl flex-col rounded-shell-screen p-7">
         <div className="relative flex w-full items-center justify-center">
           <ScreenHeader title="Error Log" />
           <div className="absolute right-0 top-1/2 -translate-y-1/2">
@@ -45,14 +45,14 @@ export function ErrorLogViewer({ onClose }: { onClose: () => void }) {
           </span>
         </div>
 
-        <div className="mt-4 flex flex-col gap-2 overflow-y-auto" style={{ maxHeight: "60vh" }}>
+        <div className="mt-4 flex max-h-[60vh] flex-col gap-2 overflow-y-auto">
           {errors.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">No errors logged.</p>
           ) : (
             [...errors].reverse().map((e) => (
               <div
                 key={e.id}
-                className="surface-muted cursor-pointer rounded-[18px] border border-border/70 p-4 text-left"
+                className="surface-muted cursor-pointer rounded-shell-card border border-border/70 p-4 text-left"
                 onClick={() => setExpandedId(expandedId === e.id ? null : e.id)}
               >
                 <div className="flex items-start justify-between gap-2">

@@ -82,7 +82,7 @@ function DifficultyCard({
     <div className="relative group flex flex-col items-center">
       <div
         className={cn(
-          "relative flex flex-col items-center gap-3 rounded-[26px] border border-border/60 bg-card/60 px-4 pb-6 pt-5 text-center transition-all",
+          "relative flex flex-col items-center gap-3 rounded-shell-dialog border border-border/60 bg-card/60 px-4 pb-6 pt-5 text-center transition-all",
           locked && "grayscale border-muted/40",
           !locked && "cursor-pointer",
           isSelected && "ring-2 ring-primary",
@@ -91,14 +91,17 @@ function DifficultyCard({
       >
         {showTilt ? (
           <div
-            className={cn("tilt-surface relative overflow-hidden rounded-[22px] aspect-[5/6]", battleCardWidthClass)}
+            className={cn(
+              "tilt-surface relative overflow-hidden rounded-shell-panel aspect-[5/6]",
+              battleCardWidthClass,
+            )}
             style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
             onMouseMove={setTiltFromEvent}
             onMouseEnter={() => onHoverShimmer(difficultyId)}
             onMouseLeave={clearTiltFromEvent}
           >
-            <ShimmerOverlay active={isShimmer} token={shimmerToken} rounded="rounded-[22px]" />
-            <img src={diffArt} alt={name} className={cn(cardSurfaceClass, "w-full rounded-[22px] object-cover")} />
+            <ShimmerOverlay active={isShimmer} token={shimmerToken} rounded="rounded-shell-panel" />
+            <img src={diffArt} alt={name} className={cn(cardSurfaceClass, "w-full rounded-shell-panel object-cover")} />
             {completed && (
               <div className="absolute right-2 top-2 rounded-md bg-emerald-600/90 px-2 py-0.5 text-xs font-bold uppercase tracking-wide text-emerald-100">
                 Completed
@@ -106,13 +109,13 @@ function DifficultyCard({
             )}
           </div>
         ) : (
-          <div className={cn("relative overflow-hidden rounded-[22px] aspect-[5/6]", battleCardWidthClass)}>
+          <div className={cn("relative overflow-hidden rounded-shell-panel aspect-[5/6]", battleCardWidthClass)}>
             <img
               src={diffArt}
               alt={name}
-              className={cn(cardSurfaceClass, "w-full rounded-[22px] object-cover", "grayscale")}
+              className={cn(cardSurfaceClass, "w-full rounded-shell-panel object-cover", "grayscale")}
             />
-            <div className="absolute inset-0 flex items-center justify-center rounded-[22px] bg-black/60">
+            <div className="absolute inset-0 flex items-center justify-center rounded-shell-panel bg-black/60">
               <span className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Locked</span>
             </div>
           </div>
@@ -171,9 +174,12 @@ export function DifficultySelectScreen({
       <ScreenHeader title={config.headerTitle} />
 
       <div className="flex flex-wrap items-start justify-center gap-6">
-        <div className="flex flex-col items-center gap-3 rounded-[26px] border border-border/60 bg-card/60 px-4 pb-6 pt-5">
+        <div className="flex flex-col items-center gap-3 rounded-shell-dialog border border-border/60 bg-card/60 px-4 pb-6 pt-5">
           <div
-            className={cn("tilt-surface relative overflow-hidden rounded-[22px] aspect-[3/4]", battleCardWidthClass)}
+            className={cn(
+              "tilt-surface relative overflow-hidden rounded-shell-panel aspect-[3/4]",
+              battleCardWidthClass,
+            )}
             style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
             onMouseMove={setTiltFromEvent}
             onMouseEnter={() => maybeTriggerShimmer("character")}
@@ -182,12 +188,12 @@ export function DifficultySelectScreen({
             <ShimmerOverlay
               active={shimmerState?.cardId === "character"}
               token={shimmerState?.token}
-              rounded="rounded-[22px]"
+              rounded="rounded-shell-panel"
             />
             <img
               src={art}
               alt={char.name}
-              className={cn(cardSurfaceClass, "w-full h-full rounded-[22px] object-cover")}
+              className={cn(cardSurfaceClass, "w-full h-full rounded-shell-panel object-cover")}
             />
           </div>
           <p className="font-display text-base font-bold text-amber-100/75">{char.name}</p>

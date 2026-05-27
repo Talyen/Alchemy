@@ -16,6 +16,7 @@ import { applyWishEffect } from "./wish";
 import {
   addGold,
   addPlayerStatus,
+  adjustEnemyStatusDelta,
   applyPlayerCombatDamage,
   applyPlayerHealing,
   clampHealth,
@@ -229,7 +230,7 @@ function handleLoseHealth(state: BattleState, amount: number, combatTexts: Comba
 }
 
 function handleDrawCards(state: BattleState, amount: number): BattleState {
-  const draw = drawCards(state.deck, state.discard, state.hand, amount, state.nextCardUid);
+  const draw = drawCards(state.deck, state.discard, state.hand, amount, state.nextCardUid, state.rng);
   return {
     ...state,
     deck: draw.deck,
@@ -257,7 +258,7 @@ function handleMultiplyEnemyStatus(
 ): BattleState {
   const current = state.enemyStatuses[status];
   if (current <= 0) return state;
-  const added = current * (factor - 1);
+  const added = adjustEnemyStatusDelta(state, current * (factor - 1));
   mergeCombatText(combatTexts, {
     target: "enemy",
     kind: "multiply",
@@ -266,7 +267,7 @@ function handleMultiplyEnemyStatus(
   });
   return {
     ...state,
-    enemyStatuses: { ...state.enemyStatuses, [status]: current * factor },
+    enemyStatuses: { ...state.enemyStatuses, [status]: current + added },
   };
 }
 

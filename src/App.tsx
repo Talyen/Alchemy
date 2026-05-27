@@ -10,15 +10,13 @@ import {
   characterArt,
   characters,
   enemyBestiary,
-  getTalentsForKeyword,
-  keywordDefinitions,
   trinketLibrary,
   type CharacterId,
-  type CompanionId,
   type DifficultyId,
-  type KeywordId,
 } from "@/lib/game-data";
-import { getTalentKeywordProgress } from "@/lib/talents";
+import { hasUnspentTalents } from "@/app/talent-affordability";
+import { hasAffordableHomesteadUpgrade } from "@/app/homestead-affordability";
+import { BOSS_PARTICLE_ALPHA_MULTIPLIER, SCREEN_PARTICLE_ALPHA, SCREEN_PARTICLE_COLORS } from "@/app/screen-particles";
 import { useAppAudioEffects } from "@/app/use-app-audio-effects";
 import { useAppDisplayEffects } from "@/app/use-app-display-effects";
 import { useScreenAssetPreloadEffects } from "@/app/use-app-preload-effects";
@@ -32,10 +30,8 @@ import { useVirtualResolution } from "@/features/alchemy/hooks";
 import type { Screen } from "@/features/alchemy/types";
 import { GameMenu } from "@/features/alchemy/ui/shared-ui";
 import { useAlchemyRunController } from "@/features/alchemy/use-alchemy-run-controller";
-import { useHomesteadStore, COMPANION_BOND_TIERS, COMPANION_MAX_TIER } from "@/features/alchemy/stores/homestead-store";
+import { useHomesteadStore } from "@/features/alchemy/stores/homestead-store";
 import { HomesteadProvider } from "@/features/alchemy/homestead-context";
-import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
-import { canAfford } from "@/lib/homestead/inventory";
 import { PAGE_EXIT_MS } from "@/lib/game-constants";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { BackgroundParticles } from "@/features/alchemy/ui/background-particles";
@@ -52,19 +48,6 @@ import { clearAllPersistentGameData } from "@/features/alchemy/stores/reset";
 
 const appStore = useAppStore;
 const homesteadStore = useHomesteadStore;
-
-const SCREEN_PARTICLE_COLORS: Partial<Record<Screen, readonly string[]>> = {
-  battle: ["rgba(255, 150, 70, X)", "rgba(255, 100, 40, X)"],
-  campfire: ["rgba(255, 180, 60, X)", "rgba(240, 120, 40, X)"],
-  corruption: ["rgba(255, 90, 70, X)", "rgba(230, 60, 50, X)"],
-  "run-victory": ["rgba(245, 196, 93, X)", "rgba(255, 220, 120, X)"],
-};
-const SCREEN_PARTICLE_ALPHA: Partial<Record<Screen, number>> = {
-  battle: 1.7,
-  corruption: 2.0,
-};
-
-const BOSS_ALPHA_MULTIPLIER = 2.5;
 
 function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
   const { data: initialSave, status: saveLoadStatus } = bootstrapResult;
@@ -195,7 +178,7 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
     screen: run.screen,
     battleEnemyArt: run.battleState.currentEnemy.art,
     battleHand: run.battleState.hand,
-    rewardChoices: run.rewardChoices,
+    rewardChoices: run.rewardState.choices,
     shopCards: run.shopCards,
     alchemistPotions: run.alchemistPotions,
     mysteryEvent: run.mysteryEvent,
@@ -203,7 +186,7 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
 
   const autosaveEnabled =
     run.screen !== "rewards" &&
-    run.rewardChoices.length === 0 &&
+    run.rewardState.choices.length === 0 &&
     !(run.screen === "battle" && run.battleState.enemyHealth <= 0);
   useAlchemyAutosave(
     {
@@ -248,46 +231,15 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
     homesteadStore.getState().setMaterials({ wood: 99, iron: 99, herbs: 99, food: 99, crystal: 99 });
   }
 
-  const hasUnspentTalents = Object.keys(keywordDefinitions).some((kw) => {
-    const kwId = kw as KeywordId;
-    const xp = run.talentXP[kwId] ?? 0;
-    return getTalentKeywordProgress(xp, (run.unlockedTalents[kwId] ?? []).length, getTalentsForKeyword(kwId).length)
-      .hasUnspent;
+  const hasUnspentTalentsBadge = hasUnspentTalents(run.talentXP, run.unlockedTalents);
+  const hasAffordableHomestead = hasAffordableHomesteadUpgrade({
+    materialInventory: homesteadMaterialInventory,
+    constructedBuildings: homesteadConstructedBuildings,
+    plantedFarms: homesteadPlantedFarms,
+    completedResearch: homesteadCompletedResearch,
+    bondedCompanions: homesteadBondedCompanions,
+    discoveredCardIds,
   });
-
-  const hasAffordableHomestead = (() => {
-    const materialInventory = homesteadMaterialInventory;
-    const constructedBuildings = homesteadConstructedBuildings;
-    const plantedFarms = homesteadPlantedFarms;
-    const completedResearch = homesteadCompletedResearch;
-    const bondedCompanions = homesteadBondedCompanions;
-    const affordableBuilding = buildings.some((b) => {
-      const currentLevel = constructedBuildings[b.id] ?? 0;
-      if (currentLevel >= b.tiers.length) return false;
-      return canAfford(materialInventory, b.tiers[currentLevel].cost);
-    });
-    const affordableFarm = farmPlots.some((f) => {
-      const currentLevel = plantedFarms[f.id] ?? 0;
-      if (currentLevel >= f.tiers.length) return false;
-      return canAfford(materialInventory, f.tiers[currentLevel].cost);
-    });
-    const affordableResearch = researchUpgrades.some((r) => {
-      const currentLevel = completedResearch[r.id] ?? 0;
-      if (currentLevel >= r.tiers.length) return false;
-      return canAfford(materialInventory, r.tiers[currentLevel].cost);
-    });
-    const affordableBond = cardLibrary.some((c) => {
-      const effect = c.effects.find(
-        (e): e is { kind: "summon-companion"; companionId: CompanionId } => e.kind === "summon-companion",
-      );
-      if (!effect) return false;
-      if (!discoveredCardIds.includes(c.id)) return false;
-      const currentLevel = bondedCompanions[effect.companionId] ?? 0;
-      if (currentLevel >= COMPANION_MAX_TIER) return false;
-      return canAfford(materialInventory, COMPANION_BOND_TIERS[currentLevel]);
-    });
-    return affordableBuilding || affordableFarm || affordableResearch || affordableBond;
-  })();
 
   function openBattleMenu(rect?: DOMRect) {
     setMenuAnchorRect(rect ?? null);
@@ -296,7 +248,7 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
 
   const particleColors = SCREEN_PARTICLE_COLORS[renderedScreen];
   const isBossBattle = renderedScreen === "battle" && run.battleState.currentEnemy.enemyType === "boss";
-  const particleAlphaMultiplier = isBossBattle ? BOSS_ALPHA_MULTIPLIER : SCREEN_PARTICLE_ALPHA[renderedScreen];
+  const particleAlphaMultiplier = isBossBattle ? BOSS_PARTICLE_ALPHA_MULTIPLIER : SCREEN_PARTICLE_ALPHA[renderedScreen];
   const saveBlockedByNewerVersion =
     saveLoadStatus.kind === "unsupported-newer-schema" || saveLoadStatus.kind === "unsupported-newer-content";
   const content = saveBlockedByNewerVersion ? (
@@ -351,8 +303,7 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
             handleMysteryRemoveCard: run.handleMysteryRemoveCard,
             handleMysteryContinue: run.handleMysteryContinue,
             handleCorruptCard: run.handleCorruptCard,
-            handleCorruptionContinue: run.handleCorruptionContinue,
-            handleCorruptionLeave: run.handleCorruptionLeave,
+            handleCorruptionExit: run.handleCorruptionExit,
             handleLabyrinthNodeEnter: run.handleLabyrinthNodeEnter,
             handleLabyrinthEndRun: run.handleLabyrinthEndRun,
             resetRunState: run.resetRunState,
@@ -373,7 +324,7 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
           cardTransfers={run.cardTransfers}
           hiddenHandCardKeys={run.hiddenHandCardKeys}
           cardTransferInProgress={run.cardTransferInProgress}
-          hasUnspentTalents={hasUnspentTalents}
+          hasUnspentTalents={hasUnspentTalentsBadge}
           hasAffordableHomestead={hasAffordableHomestead}
           collectionTab={collectionTab}
           collectionPages={collectionPages}

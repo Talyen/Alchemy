@@ -17,6 +17,7 @@
   --color-accent: hsl(var(--accent));
   --color-accent-foreground: hsl(var(--accent-foreground));
   --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
@@ -24,6 +25,15 @@
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
+
+  --radius-shell-compact: 0.875rem;
+  --radius-shell-card: 1.125rem;
+  --radius-shell-tooltip: 1.25rem;
+  --radius-shell-panel: 1.375rem;
+  --radius-shell-inner: 1.5rem;
+  --radius-shell-dialog: 1.625rem;
+  --radius-shell-screen: 1.75rem;
+  --radius-shell-hero: 1.875rem;
 
   --font-size-2xs: 0.625rem;
   --font-size-2xs--line-height: 0.875rem;
@@ -83,6 +93,7 @@
     --accent: 195 30% 48%;
     --accent-foreground: 28 22% 12%;
     --destructive: 0 50% 45%;
+    --destructive-foreground: 40 25% 88%;
     --border: 30 8% 16%;
     --input: 30 8% 16%;
     --ring: 36 55% 56%;
@@ -180,6 +191,43 @@
     border-color: rgba(255, 253, 245, 0.08);
   }
 
+  .character-keyword-pill-tint {
+    background-color: color-mix(in srgb, currentColor 15%, transparent);
+  }
+
+  .card-face {
+    backface-visibility: hidden;
+  }
+
+  .card-face-back {
+    backface-visibility: hidden;
+    transform: rotateY(180deg);
+  }
+
+  .talent-node-glass {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(4px);
+    background-color: hsl(var(--background) / 0.3);
+    background-image: linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05));
+  }
+
+  .talent-node-glass--bordered {
+    border: 3px solid var(--talent-glass-accent);
+    box-shadow:
+      inset 0 1.5px 1px rgba(255, 255, 255, 0.12),
+      inset 0 -1px 1px rgba(0, 0, 0, 0.3),
+      0 4px 12px rgba(0, 0, 0, 0.4);
+  }
+
+  .talent-node-glass--choice {
+    border-width: 0;
+    box-shadow:
+      inset 0 1.5px 1px rgba(255, 255, 255, 0.25),
+      inset 0 -1px 1px rgba(0, 0, 0, 0.3),
+      0 0 16px var(--talent-glass-accent),
+      0 4px 16px rgba(0, 0, 0, 0.6);
+  }
+
   .boss-title-shine {
     animation: boss-title-shine 10s linear infinite;
     will-change: background-position;
@@ -225,6 +273,10 @@
 
   .animate-shake {
     animation: shake 380ms ease-out;
+  }
+
+  .animate-hurt-flash {
+    animation: hurtFlash 280ms ease-out forwards;
   }
 
   .animate-frame-fade {
@@ -515,6 +567,22 @@
     opacity: 0;
     transform: translate3d(var(--ghost-travel-x, 0px), var(--ghost-travel-y, 0px), 0px) scale(var(--ghost-scale, 0.74))
       rotate(0deg);
+  }
+}
+
+@keyframes hurtFlash {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  18% {
+    opacity: 0.65;
+  }
+  38% {
+    opacity: 0.35;
+  }
+  55% {
+    opacity: 0.5;
   }
 }
 

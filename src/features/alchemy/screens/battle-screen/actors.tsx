@@ -2,6 +2,7 @@
 // Depends on screen store shimmer actions, actor UI widgets, and battle layout constants.
 // Used only by BattleScreen to keep the main screen composition smaller.
 import { BATTLE_ACTOR_TOP } from "@/lib/game-constants";
+import { cn } from "@/lib/utils";
 
 import { ArtPanel, CompanionPanel, CombatTextRail } from "../../ui/battle-ui";
 import { TurnBadge } from "../../ui/turn-badge";
@@ -31,6 +32,8 @@ export function BattleActors({
     playerShaking,
     enemyShaking,
     companionShaking,
+    playerHurtFlashToken,
+    enemyHurtFlashToken,
     activeLabyrinthModifiers,
   } = feedback;
   const { playerPanelRef, enemyPanelRef } = refs;
@@ -41,7 +44,7 @@ export function BattleActors({
 
   return (
     <section
-      className={aspectMode === "ultrawide" ? battleActorSectionClass.ultrawide : battleActorSectionClass.desktop}
+      className={cn(aspectMode === "ultrawide" ? battleActorSectionClass.ultrawide : battleActorSectionClass.desktop)}
       style={{ top: BATTLE_ACTOR_TOP }}
     >
       <div className="relative flex items-start justify-center transition-transform duration-500 ease-out">
@@ -49,11 +52,10 @@ export function BattleActors({
           <CombatTextRail entries={playerCombatTexts} side="player" />
         </div>
         <div
-          className={
-            hasCompanion
-              ? "relative transition-transform duration-500 ease-out -translate-x-[clamp(0.625cqw,1.2cqw,1.146cqw)]"
-              : "relative transition-transform duration-500 ease-out"
-          }
+          className={cn(
+            "relative transition-transform duration-500 ease-out",
+            hasCompanion && "-translate-x-[clamp(0.625cqw,1.2cqw,1.146cqw)]",
+          )}
         >
           <ArtPanel
             side="player"
@@ -69,6 +71,7 @@ export function BattleActors({
             deathsDoorActive={battleState.deathsDoorActive}
             surfaceRef={playerPanelRef}
             shaking={playerShaking}
+            hurtFlashToken={playerHurtFlashToken}
           />
           {battleState.activeCompanion ? (
             <div className="absolute bottom-[clamp(8.56cqh,8.93cqh,11.48cqh)] left-[calc(100%-clamp(4.71cqh,5.58cqh,7.65cqh))] z-20">
@@ -106,6 +109,7 @@ export function BattleActors({
           surfaceRef={enemyPanelRef}
           isDead={battleState.enemyHealth <= 0}
           shaking={enemyShaking}
+          hurtFlashToken={enemyHurtFlashToken}
           currentEnemy={battleState.currentEnemy}
           currentEnemyAttackEffects={battleState.enemyAttackEffects}
           activeLabyrinthModifiers={activeLabyrinthModifiers}

@@ -138,4 +138,18 @@ describe("battle-store actions", () => {
     expect(useBattleStore.getState().playerShaking).toBe(false);
     vi.useRealTimers();
   });
+
+  it("hurtPlayer increments playerHurtFlashToken", () => {
+    expect(useBattleStore.getState().playerHurtFlashToken).toBe(0);
+    useBattleStore.getState().hurtPlayer();
+    expect(useBattleStore.getState().playerHurtFlashToken).toBe(1);
+    useBattleStore.getState().hurtPlayer();
+    expect(useBattleStore.getState().playerHurtFlashToken).toBe(2);
+  });
+
+  it("hurtEnemy increments enemyHurtFlashToken", () => {
+    expect(useBattleStore.getState().enemyHurtFlashToken).toBe(0);
+    useBattleStore.getState().hurtEnemy();
+    expect(useBattleStore.getState().enemyHurtFlashToken).toBe(1);
+  });
 });

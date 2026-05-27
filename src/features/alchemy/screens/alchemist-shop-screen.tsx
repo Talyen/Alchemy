@@ -3,14 +3,13 @@ import { useState } from "react";
 import { FlaskConical, RefreshCw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import type { BattleCard } from "@/lib/game-data";
+import { isStandardPotionCard, type BattleCard } from "@/lib/game-data";
 import {
   ALCHEMIST_POTION_PRICE,
   ALCHEMIST_MIX_PRICE,
   ALCHEMIST_REFRESH_PRICE,
   MIXED_POTION_CARD_ID,
   MIXED_POTION_TITLE,
-  POTION_CARD_ID_SUFFIX,
   SELECTION_GRID_PAGE_SIZE,
 } from "@/lib/game-constants";
 
@@ -94,9 +93,7 @@ export function AlchemistShopScreen({
     if (result) setMixedCard(result);
   }
 
-  const mixableCards = runDeck
-    .map((c, i) => ({ card: c, index: i }))
-    .filter(({ card }) => card.id.endsWith(POTION_CARD_ID_SUFFIX) && card.id !== MIXED_POTION_CARD_ID);
+  const mixableCards = runDeck.map((c, i) => ({ card: c, index: i })).filter(({ card }) => isStandardPotionCard(card));
   const hasEnoughPotionsToMix = mixableCards.length >= 2;
   const mixDisabled = gold < mixPrice || !hasEnoughPotionsToMix;
   const mixDisabledMessage = hasEnoughPotionsToMix ? "Not Enough Gold" : "Not Enough Potions to Mix";

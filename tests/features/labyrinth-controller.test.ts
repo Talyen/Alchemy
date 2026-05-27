@@ -3,8 +3,8 @@
 import { describe, expect, it } from "vitest";
 
 import { LABYRINTH_COLS } from "@/lib/content-systems/labyrinth/data";
+import { createSeededRng } from "@/lib/utils";
 import {
-  createSeededRng,
   generateLabyrinthMap,
   setCurrentNode,
   canEnterLabyrinthNode,

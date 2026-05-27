@@ -124,6 +124,7 @@ export const keywordDefinitions: Record<KeywordId, KeywordDefinition> = {
     description: "Gold is exchanged for goods and services",
     colorClass: "text-yellow-300",
     borderClass: "border-yellow-300",
+    pillBgClass: "bg-yellow-300/15",
     shineColors: ["#fde047", "#ca8a04", "#fde047"],
   },
   holy: {

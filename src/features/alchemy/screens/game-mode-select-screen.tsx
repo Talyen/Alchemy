@@ -52,13 +52,13 @@ export function GameModeSelectScreen({
               type="button"
               onClick={() => setSelectedModeId(modeId)}
               className={cn(
-                "stagger-item flex flex-col items-center gap-3 rounded-[26px] border border-border/60 bg-card/60 px-8 pb-7 pt-6",
+                "stagger-item flex flex-col items-center gap-3 rounded-shell-dialog border border-border/60 bg-card/60 px-8 pb-7 pt-6",
                 selectedModeId === modeId && "ring-2 ring-primary",
               )}
               style={{ "--stagger-index": index } as CSSProperties}
             >
               <div
-                className="tilt-surface rounded-[18px]"
+                className="tilt-surface rounded-shell-card"
                 style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
                 onMouseMove={setTiltFromEvent}
                 onMouseLeave={clearTiltFromEvent}
@@ -66,7 +66,7 @@ export function GameModeSelectScreen({
                 <img
                   src={meta.art}
                   alt={meta.title}
-                  className="w-full max-w-[32.59cqh] rounded-[18px] object-contain"
+                  className="w-full max-w-[32.59cqh] rounded-shell-card object-contain"
                 />
               </div>
               <h2 className="font-display text-base font-bold text-amber-100/75">{meta.title}</h2>

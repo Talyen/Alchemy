@@ -36,7 +36,7 @@ export function DetailPopup({
     <div
       ref={ref}
       className={cn(
-        "hover-popup-panel absolute left-1/2 z-40 w-full origin-bottom rounded-[20px] border border-border/80 bg-card px-3 py-3 text-left",
+        "hover-popup-panel absolute left-1/2 z-40 w-full origin-bottom rounded-shell-tooltip border border-border/80 bg-card px-3 py-3 text-left",
         "pointer-events-auto",
       )}
       style={

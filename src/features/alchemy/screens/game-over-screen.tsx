@@ -34,7 +34,7 @@ export function KeywordProgressCard({
   const def = keywordDefinitions[kw];
 
   return (
-    <div className="surface-muted rounded-[14px] border border-border/70 p-3 text-left">
+    <div className="surface-muted rounded-shell-compact border border-border/70 p-3 text-left">
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5">
           {Icon ? <Icon className={cn("h-3.5 w-3.5", def?.colorClass)} /> : null}

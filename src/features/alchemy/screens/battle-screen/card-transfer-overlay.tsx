@@ -36,7 +36,7 @@ export function CardTransferOverlay({ transfer }: { transfer: CardTransfer }) {
         rotateY: { duration: transfer.duration, ease: "linear" },
       }}
     >
-      <div className="absolute inset-0" style={{ backfaceVisibility: "hidden" }}>
+      <div className="card-face absolute inset-0">
         <img
           src={transfer.card.art}
           alt=""
@@ -44,7 +44,7 @@ export function CardTransferOverlay({ transfer }: { transfer: CardTransfer }) {
           className={cn("h-full w-full object-cover", cardSurfaceClass)}
         />
       </div>
-      <div className="absolute inset-0" style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}>
+      <div className="card-face-back absolute inset-0">
         <img src={cardBack} alt="" aria-hidden="true" className={cn("h-full w-full object-cover", cardSurfaceClass)} />
       </div>
     </motion.div>

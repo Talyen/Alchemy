@@ -68,7 +68,7 @@ export function CampfireScreen({ onContinue }: { onContinue: () => void }) {
         </ScreenDescription>
       </div>
 
-      <img src={campfire} alt="Campfire" className="w-full max-w-[37.04cqh] rounded-[22px] object-contain" />
+      <img src={campfire} alt="Campfire" className="w-full max-w-[37.04cqh] rounded-shell-panel object-contain" />
 
       <div className="min-h-[64px] min-w-[clamp(20.56cqh,22cqh,31.11cqh)]">
         {!resting ? (
@@ -76,7 +76,7 @@ export function CampfireScreen({ onContinue }: { onContinue: () => void }) {
             Rest
           </Button>
         ) : (
-          <div className="surface-muted rounded-[24px] px-4 py-3">
+          <div className="surface-muted rounded-shell-inner px-4 py-3">
             <div className="flex items-center justify-between gap-3">
               <p className={cn("text-sm font-semibold", keywordDefinitions.health.colorClass)}>Health</p>
               <p className="hp-number-pop text-xs font-medium text-muted-foreground">
@@ -85,6 +85,7 @@ export function CampfireScreen({ onContinue }: { onContinue: () => void }) {
             </div>
             <Progress
               value={(targetHealth / maxHealth) * 100}
+              fillStyle={{ transitionDuration: `${CAMPFIRE_ANIMATION_MS}ms` }}
               className="campfire-hp-progress mt-2.5 h-2 bg-background/80 [&>div]:bg-destructive"
             />
           </div>

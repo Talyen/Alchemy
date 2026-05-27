@@ -2,6 +2,7 @@
 // Depends on tailwind-merge for class composition. Used by destination choices and hero cards.
 import type { CSSProperties, HTMLAttributes } from "react";
 
+import { keywordDefinitions } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
 function colorWithAlpha(color: string, alpha: number): string {
@@ -22,13 +23,13 @@ function colorWithAlpha(color: string, alpha: number): string {
 interface ShineBorderProps extends HTMLAttributes<HTMLDivElement> {
   borderWidth?: number;
   duration?: number;
-  shineColor?: string | string[];
+  shineColor?: string | readonly string[];
 }
 
 export function ShineBorder({
   borderWidth = 1,
   duration = 14,
-  shineColor = "#000000",
+  shineColor = keywordDefinitions.physical.shineColors,
   className,
   style,
   ...props

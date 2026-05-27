@@ -35,12 +35,8 @@ export function CardFlip({
       }}
       onTransitionEnd={onFlipEnd}
     >
-      <div className="absolute inset-0" style={{ backfaceVisibility: "hidden" }}>
-        {front}
-      </div>
-      <div className="absolute inset-0" style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}>
-        {back}
-      </div>
+      <div className="card-face absolute inset-0">{front}</div>
+      <div className="card-face-back absolute inset-0">{back}</div>
     </div>
   );
 }

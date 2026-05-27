@@ -45,7 +45,7 @@ describe("Button", () => {
   it("applies destructive variant", () => {
     const { container } = render(<Button variant="destructive">Danger</Button>);
     const button = container.querySelector("button")!;
-    expect(button.className).toContain("bg-red-900/80");
+    expect(button.className).toContain("bg-destructive");
   });
 
   it("applies outline variant", () => {

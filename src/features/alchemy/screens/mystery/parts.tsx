@@ -129,7 +129,7 @@ function MysteryRewardEffectItem({
               <img
                 src={trinket.art}
                 alt={trinket.title}
-                className="block w-full rounded-[30px] aspect-square"
+                className="block w-full rounded-shell-hero aspect-square"
                 loading="eager"
               />
             </TiltSurface>
@@ -423,13 +423,13 @@ export function MysteryEventIntro({
       <ScreenHeader title={event.title} />
       {event.art ? (
         /* Image container applies interactive CSS tilt properties */
-        <TiltSurface className="aspect-[4/3] w-full max-w-[32.59cqh] overflow-hidden rounded-[18px] transition-none">
+        <TiltSurface className="aspect-[4/3] w-full max-w-[32.59cqh] overflow-hidden rounded-shell-card transition-none">
           <img
             src={event.art}
             alt={event.title}
             width={CONFIG.EVENT_IMAGE_WIDTH}
             height={CONFIG.EVENT_IMAGE_HEIGHT}
-            className="h-full w-full rounded-[18px] object-contain"
+            className="h-full w-full rounded-shell-card object-contain"
             loading="eager"
           />
         </TiltSurface>

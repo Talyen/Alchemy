@@ -102,7 +102,7 @@ function CorruptionIntro({ onBegin, onLeave }: { onBegin: () => void; onLeave: (
       <img
         src={corruptionAltar}
         alt="Altar of Corruption"
-        className="block w-full max-w-[38.89cqh] rounded-[22px] object-contain"
+        className="block w-full max-w-[38.89cqh] rounded-shell-panel object-contain"
         loading="eager"
         decoding="sync"
       />
@@ -184,12 +184,10 @@ function CorruptionResultView({ result, onContinue }: { result: CorruptionResult
 
 export function CorruptionScreen({
   onCorrupt,
-  onLeave,
-  onContinue,
+  onExit,
 }: {
   onCorrupt: (cardIndex: number) => void;
-  onLeave: () => void;
-  onContinue: () => void;
+  onExit: () => void;
 }) {
   const runDeck = useRunStore((s) => s.runDeck);
   const result = useScreenStore((s) => s.corruptionResult);
@@ -205,7 +203,7 @@ export function CorruptionScreen({
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-6 overflow-y-auto px-4 py-6 text-center">
       {result ? (
-        <CorruptionResultView result={result} onContinue={onContinue} />
+        <CorruptionResultView result={result} onContinue={onExit} />
       ) : selecting ? (
         <div className="state-swap">
           <ScreenHeader title="Altar of Corruption" />
@@ -241,7 +239,7 @@ export function CorruptionScreen({
             setSelecting(true);
             setPage(0);
           }}
-          onLeave={onLeave}
+          onLeave={onExit}
         />
       )}
     </div>

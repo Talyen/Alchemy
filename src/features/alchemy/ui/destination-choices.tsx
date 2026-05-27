@@ -27,12 +27,12 @@ export function DestinationChoices({
             style={{ "--stagger-index": index } as CSSProperties}
           >
             <div
-              className="tilt-surface rounded-[18px]"
+              className="tilt-surface rounded-shell-card"
               style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
               onMouseMove={setTiltFromEvent}
               onMouseLeave={clearTiltFromEvent}
             >
-              <img src={art} alt={destination} className="w-full max-w-[32.59cqh] rounded-[18px] object-contain" />
+              <img src={art} alt={destination} className="w-full max-w-[32.59cqh] rounded-shell-card object-contain" />
             </div>
             <div className="relative rounded-full">
               <PressableMotion style={{ display: "inline-block" }} disableHoverScale>

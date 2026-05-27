@@ -1,7 +1,13 @@
 // Visual helper utilities for card ghost animation and battle-stage coordinate conversion.
 // Depends on card targeting utilities, ghost types, battle cards, and animation constants.
 // Used by the battle controller so animation math stays outside pure combat logic.
-import { GHOST_TRAVEL_SCALE } from "@/lib/game-constants";
+import {
+  GHOST_FALLBACK_CENTER_Y_RATIO,
+  GHOST_FALLBACK_HEIGHT_PX,
+  GHOST_FALLBACK_WIDTH_PX,
+  GHOST_PLAYER_OFFSET_RATIO,
+  GHOST_TRAVEL_SCALE,
+} from "@/lib/game-constants";
 import type { BattleCard } from "@/lib/game-data";
 
 import type { CardGhost, CardRect } from "../types";
@@ -65,7 +71,7 @@ function getCardPlayGhostTargetRect(
     if (target === "player") {
       return {
         ...panelTarget,
-        x: panelTarget.x - panelTarget.width * 0.16,
+        x: panelTarget.x - panelTarget.width * GHOST_PLAYER_OFFSET_RATIO,
       };
     }
 
@@ -76,10 +82,10 @@ function getCardPlayGhostTargetRect(
   if (!battleRect) return null;
 
   const fallback = {
-    x: battleRect.left + battleRect.width / 2 - 80,
-    y: battleRect.top + battleRect.height * 0.3,
-    width: 160,
-    height: 220,
+    x: battleRect.left + battleRect.width / 2 - GHOST_FALLBACK_WIDTH_PX / 2,
+    y: battleRect.top + battleRect.height * GHOST_FALLBACK_CENTER_Y_RATIO,
+    width: GHOST_FALLBACK_WIDTH_PX,
+    height: GHOST_FALLBACK_HEIGHT_PX,
   };
   return sceneRect ? viewportRectToBattleSceneRect(fallback, sceneRect) : fallback;
 }

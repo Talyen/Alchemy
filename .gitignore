@@ -12,3 +12,4 @@ scratch/
 .vite/
 screenshot-*
 NUL
+.knip-output.json

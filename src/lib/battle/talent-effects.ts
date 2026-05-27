@@ -10,7 +10,14 @@ import { FREE_CARD_SENTINEL } from "../game-constants";
 
 export function applyStunDrawTalent(state: BattleState): BattleState {
   if (state.talentEffects.drawOnStun <= 0) return state;
-  const draw = drawCards(state.deck, state.discard, state.hand, state.talentEffects.drawOnStun, state.nextCardUid);
+  const draw = drawCards(
+    state.deck,
+    state.discard,
+    state.hand,
+    state.talentEffects.drawOnStun,
+    state.nextCardUid,
+    state.rng,
+  );
   return {
     ...state,
     deck: draw.deck,

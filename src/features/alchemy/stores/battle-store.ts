@@ -52,6 +52,8 @@ type BattleStore = {
   enemyShaking: boolean;
   playerShaking: boolean;
   companionShaking: boolean;
+  playerHurtFlashToken: number;
+  enemyHurtFlashToken: number;
   revealedCardKeys: Set<string>;
 
   setBattleState: (state: BattleState | ((prev: BattleState) => BattleState)) => void;
@@ -72,6 +74,8 @@ type BattleStore = {
   shakeEnemy: () => void;
   shakePlayer: () => void;
   shakeCompanion: () => void;
+  hurtPlayer: () => void;
+  hurtEnemy: () => void;
   showCombatTexts: (events: CombatTextEvent[]) => void;
   clearFloatingCombatTexts: () => void;
   addRevealedCardKey: (key: string) => void;
@@ -93,6 +97,8 @@ export const useBattleStore = create<BattleStore>()((set) => ({
   enemyShaking: false,
   playerShaking: false,
   companionShaking: false,
+  playerHurtFlashToken: 0,
+  enemyHurtFlashToken: 0,
   revealedCardKeys: new Set(),
 
   setBattleState: (action) =>
@@ -168,6 +174,9 @@ export const useBattleStore = create<BattleStore>()((set) => ({
     set({ companionShaking: true });
     setTimeout(() => set({ companionShaking: false }), shakeDuration);
   },
+
+  hurtPlayer: () => set((s) => ({ playerHurtFlashToken: s.playerHurtFlashToken + 1 })),
+  hurtEnemy: () => set((s) => ({ enemyHurtFlashToken: s.enemyHurtFlashToken + 1 })),
 
   showCombatTexts: (events) => {
     if (events.length === 0) return;

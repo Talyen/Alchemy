@@ -40,6 +40,28 @@ test.describe("Save Persistence Edge Cases", () => {
     expect(savedAfter.runPlayerHealth).toBe(18);
   });
 
+  test("resume restores saved destination choices", async ({ page }) => {
+    await page.addInitScript(seedRandomScript(42));
+    await injectSaveState(page, {
+      runPlayerHealth: 22,
+      runMaxHealth: 30,
+      roomsEncountered: 2,
+      destinationIndexInAct: 1,
+      completedDestinations: ["Normal Combat"],
+      currentScreen: "destination",
+      destinationChoices: ["Campfire", "Mystery", "Merchant's Shop"],
+    });
+    await page.goto("/");
+
+    await resumeGameMode(page, "campaign");
+
+    await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole("button", { name: "Campfire" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Mystery" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Merchant's Shop" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Normal Combat" })).toHaveCount(0);
+  });
+
   test("mid-battle reload returns to destination not battle", async ({ page }) => {
     await page.addInitScript(seedRandomScript(42));
     await injectSaveState(page, {

@@ -56,7 +56,7 @@ export function CollectionGrid({
       {Array.from({ length: getCollectionFillerCount(pageItems.length, collectionTab) }).map((_, index) => (
         <div
           key={`collection-filler-${index}`}
-          className={collectionTab === "trinkets" ? trinketCardWidthClass : collectionTileWidthClass}
+          className={cn(collectionTab === "trinkets" ? trinketCardWidthClass : collectionTileWidthClass)}
           aria-hidden="true"
         />
       ))}

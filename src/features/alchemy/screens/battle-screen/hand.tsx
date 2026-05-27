@@ -13,6 +13,7 @@ import {
   HAND_HOVER_SCALE,
 } from "@/lib/game-constants";
 import { getEffectiveCost } from "@/lib/battle";
+import { cn } from "@/lib/utils";
 import type { BattleState } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
 
@@ -98,7 +99,7 @@ function HandCardItem({
       className={handWidthClass}
       disabled={!canPlay}
       dragging={hiddenHandCardKeys.has(cardKey)}
-      wrapperClassName={`${shouldStagger ? "stagger-item" : ""} relative flex justify-center -mx-5 sm:-mx-6`}
+      wrapperClassName={cn(shouldStagger && "stagger-item", "relative flex justify-center -mx-5 sm:-mx-6")}
       wrapperDataCardKey={cardKey}
       wrapperStyle={
         {

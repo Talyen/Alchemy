@@ -53,10 +53,13 @@ export const VICTORY_TRANSITION_DELAY = 1200; // Brief pause after enemy dies so
 export const ENEMY_PHASE_DELAY = 900; // Gap before enemy action. Gives status/start-of-turn feedback time to land before the hit.
 export const ENEMY_ATTACK_RECOVERY_DELAY = 500; // Pause after enemy hit feedback before the next player draw begins.
 export const SHAKE_DURATION = 420; // Screen shake on hit. 420ms is long enough to feel impactful but short enough to not delay gameplay.
+export const HURT_FLASH_DURATION_MS = 280; // Red overlay pulse on player portrait when HP is lost.
+export const HURT_SPARK_DURATION_MS = 450; // Outward red spark burst on player portrait when HP is lost.
+export const HURT_SPARK_COUNT = 32; // Particle count for hurt spark burst.
 export const COMPANION_ATTACK_DELAY = 1000; // Delay before companion attacks at start of player turn.
 export const NAVIGATION_DELAY_MS = 100; // Short delay lets page exit transitions begin before the next screen mounts.
-export const CAMPFIRE_ANIMATION_MS = 1250; // Health bar animation duration. Long enough to feel satisfying, short enough to not bore.
-export const CAMPFIRE_CONTINUE_DELAY = 600; // Brief pause after animation completes before auto-advancing. Gives player time to register the new Health value.
+export const CAMPFIRE_ANIMATION_MS = 900; // Health bar animation duration. Snappy rest feedback without feeling rushed.
+export const CAMPFIRE_CONTINUE_DELAY = 400; // Brief pause after animation completes before auto-advancing. Enough to register the healed Health value.
 
 // ============ Campfire ============
 export const CAMPFIRE_HEAL_FRACTION = 0.3; // Restores 30% of max Health. High enough to be meaningful, low enough that you still need to play well.
@@ -92,7 +95,8 @@ export const REWARD_TRINKET_CHANCE = 0.25; // Base chance of a trinket being off
 export const REWARD_RANDOM_CHANCE = 0.3; // Chance that a card reward ignores deck keyword affinity.
 export const DESTINATION_CHOICES = 3; // Path choices offered after each victory.
 export const DEFAULT_DESTINATION_WEIGHT = 10; // Normal route choices use even weighting before rare-route modifiers.
-export const CORRUPTION_DESTINATION_WEIGHT = DEFAULT_DESTINATION_WEIGHT; // Corruption appears like ordinary routes, but route flow prevents repeats.
+// Semantic alias: corruption uses the same weight as normal routes; separate name documents intent at call sites.
+export const CORRUPTION_DESTINATION_WEIGHT = 10;
 export const PREVIOUS_DESTINATION_WEIGHT = 1; // Reduced weight for the room type the player just visited.
 export const CORRUPTION_MUTATION_DELTA = 1; // Corruption nudges one authored number up or down by exactly 1.
 export const CORRUPTION_MIN_VALUE = 0; // Corruption can reduce values to 0, but never negative.
@@ -190,6 +194,12 @@ export const CARD_TRANSFER_CONFIG = {
 
 // ============ Layout ============
 export const GHOST_TRAVEL_SCALE = 0.74; // Scale factor for card ghost when traveling between zones.
+export const GHOST_PLAYER_OFFSET_RATIO = 0.16; // Horizontal offset when ghost targets the player panel.
+export const GHOST_FALLBACK_WIDTH_PX = 160;
+export const GHOST_FALLBACK_HEIGHT_PX = 220;
+export const GHOST_FALLBACK_CENTER_Y_RATIO = 0.3; // Vertical center of fallback ghost within battle scene.
+export const BATTLE_PARTICLE_ALPHA_NORMAL = 1.7;
+export const BATTLE_PARTICLE_ALPHA_BOSS = 2.5;
 export const STAGE_HEIGHT = 1080; // Virtual canvas height used for consistent composition.
 export const MIN_STAGE_SCALE = 0.3; // Lowered so small landscape phones still fit without overflow.
 export const MAX_STAGE_SCALE = 2.0; // Upper bound that still keeps card dimensions reasonable on 5K+ screens (2.0×1080 = 2160px fills 4K).

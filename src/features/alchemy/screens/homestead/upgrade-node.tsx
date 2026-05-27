@@ -99,10 +99,10 @@ export function HomesteadUpgradeNode({
       onMouseLeave={() => setHoveredItemId(null)}
     >
       {detailTooltip}
-      <div className="group w-full overflow-hidden rounded-[18px] p-3">
+      <div className="group w-full overflow-hidden rounded-shell-card p-3">
         <TiltSurface
           className={cn(
-            "relative mx-auto flex w-full items-center justify-center overflow-hidden rounded-[18px] bg-stone-900",
+            "relative mx-auto flex w-full items-center justify-center overflow-hidden rounded-shell-card bg-stone-900",
             HOMESTEAD_CONFIG.artAspectRatio,
             isCompleted && "bg-stone-800/70",
           )}

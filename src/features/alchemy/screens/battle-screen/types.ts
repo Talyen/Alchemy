@@ -52,6 +52,8 @@ export type BattleFeedbackProps = {
   playerShaking: boolean;
   enemyShaking: boolean;
   companionShaking: boolean;
+  playerHurtFlashToken: number;
+  enemyHurtFlashToken: number;
   activeLabyrinthModifiers: LabyrinthModifierKind[];
 };
 

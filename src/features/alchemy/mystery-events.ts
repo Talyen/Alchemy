@@ -21,6 +21,7 @@ import {
 } from "@/lib/game-data";
 import type { KeywordId } from "@/lib/game-data";
 import type { MaterialId } from "@/lib/homestead/types";
+import { pickRandom } from "@/lib/utils";
 
 export type MysteryEffect =
   | { kind: "addCard"; cardId: string }
@@ -395,3 +396,7 @@ export const mysteryPool: MysteryEvent[] = [
     ],
   },
 ];
+
+export function pickMysteryEvent(): MysteryEvent {
+  return pickRandom(mysteryPool) ?? mysteryPool[0];
+}

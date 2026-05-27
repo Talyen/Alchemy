@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cardLibrary } from "@/lib/game-data/cards";
-import { companionLibrary } from "@/lib/game-data/companions";
-import { characters } from "@/lib/game-data/characters";
-import { enemyBestiary, trinketLibrary } from "@/lib/game-data/compendium";
+import { cardLibrary, characters, companionLibrary, enemyBestiary, trinketLibrary } from "@/lib/game-data";
 
 describe("cardLibrary data integrity", () => {
   it("all card IDs are unique", () => {

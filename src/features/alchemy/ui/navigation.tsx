@@ -125,7 +125,7 @@ export function GameMenu({
   const panel = (
     <div
       data-testid="game-menu"
-      className="motion-panel alchemy-shell bg-[#0c0a07] w-full max-w-[35.56cqh] rounded-[26px] border border-border/80 px-4 py-5"
+      className="motion-panel alchemy-shell w-full max-w-[35.56cqh] rounded-shell-dialog border border-border/80 px-4 py-5"
       onClick={(e) => e.stopPropagation()}
     >
       <div className="grid gap-2">

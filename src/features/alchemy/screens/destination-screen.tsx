@@ -4,7 +4,7 @@ import { useEffect, useMemo } from "react";
 import { keywordDefinitions } from "@/lib/game-data";
 
 import { playBattleEvent } from "@/lib/audio";
-import { getBossById, getBossEnemy, keywordAliases } from "../config";
+import { getBossById, getBossEnemy, keywordAliases, SHINE_PALETTES } from "../config";
 import { DestinationChoices, ScreenHeader } from "../ui/shared-ui";
 import { DESTINATIONS, type Destination } from "../types";
 import { useScreenStore } from "../stores/screen-store";
@@ -58,9 +58,9 @@ export function DestinationScreen({ onChoose }: { onChoose: (destination: Destin
         colors.push(...def.shineColors);
       }
     }
-    return colors.length > 0 ? colors : ["#cbd5e1", "#64748b", "#cbd5e1"];
+    return colors.length > 0 ? colors : [...SHINE_PALETTES.bossVictoryFallback];
   }, [boss]);
-  const bossTextGradient = `linear-gradient(60deg, ${(bossShineColors.length > 0 ? bossShineColors : ["#cbd5e1", "#64748b", "#cbd5e1"]).join(",")})`;
+  const bossTextGradient = `linear-gradient(60deg, ${bossShineColors.join(",")})`;
 
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-6 px-4 py-6 text-center">

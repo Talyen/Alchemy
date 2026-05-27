@@ -54,7 +54,7 @@ export function TalentsScreen({
 
   return (
     <PageLayout>
-      <div className="alchemy-shell flex min-h-[48.15cqh] w-full max-w-5xl flex-col rounded-[28px] p-7">
+      <div className="alchemy-shell flex min-h-[48.15cqh] w-full max-w-5xl flex-col rounded-shell-screen p-7">
         <div className="relative flex w-full items-center justify-center">
           <ScreenHeader title="Talents" />
           <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-2">

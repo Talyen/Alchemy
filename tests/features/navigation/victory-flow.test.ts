@@ -4,10 +4,12 @@ import {
   withSelectedBossForDestinations,
   createDestinationRewardState,
   computeVictoryRewards,
+  commitVictoryRewards,
   type VictoryRewardsInput,
 } from "@/features/alchemy/navigation/victory-flow";
 import { createEmptyRewardState } from "@/features/alchemy/navigation/reward-flow";
 import { emptyInventory } from "@/lib/homestead/inventory";
+import { playGoldGain } from "@/lib/audio";
 import type { Destination } from "@/features/alchemy/types";
 
 vi.mock("@/features/alchemy/utils/random", async () => {
@@ -23,6 +25,11 @@ vi.mock("@/lib/homestead/loot", () => ({
   getEnemyMaterialLoot: vi.fn(() => ({ wood: 1, iron: 0, herbs: 0, food: 0, crystal: 0 })),
   applyMaterialFindBonus: vi.fn((mats: unknown) => mats),
 }));
+
+vi.mock("@/lib/audio", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/audio")>("@/lib/audio");
+  return { ...actual, playGoldGain: vi.fn() };
+});
 
 function baseBattleState(overrides: Record<string, unknown> = {}) {
   return {
@@ -271,5 +278,61 @@ describe("computeVictoryRewards", () => {
     const result = computeVictoryRewards(baseInput({ getAvailableDestinations }));
     expect(getAvailableDestinations).toHaveBeenCalled();
     expect(result.destinations.length).toBeGreaterThan(0);
+  });
+});
+
+describe("commitVictoryRewards", () => {
+  function victoryResult(overrides: Record<string, unknown> = {}) {
+    return {
+      newGold: 25,
+      goldEarned: 20,
+      rewardState: createEmptyRewardState(),
+      labyrinthRewardModifiers: [],
+      destinations: ["Normal Combat"] as Destination[],
+      materials: emptyInventory(),
+      playerHealth: 30,
+      maxHealthDelta: 0,
+      baseGold: 10,
+      eliteBonus: 0,
+      bossBonus: 0,
+      generousBonus: 0,
+      ...overrides,
+    };
+  }
+
+  function commitDeps(overrides: Record<string, unknown> = {}) {
+    return {
+      battleState: baseBattleState({ gold: 5, pendingMaterials: emptyInventory() }),
+      addHomesteadMaterials: vi.fn(),
+      addRunGold: vi.fn(),
+      setRunPlayerHealth: vi.fn(),
+      setRunMaxHealth: vi.fn(),
+      setRewardState: vi.fn(),
+      setCompanionRewardCards: vi.fn(),
+      clearCombatState: vi.fn(),
+      ...overrides,
+    };
+  }
+
+  it("plays gold gain when post-reward gold exceeds battle gold", () => {
+    vi.mocked(playGoldGain).mockClear();
+    commitVictoryRewards(victoryResult(), commitDeps());
+    expect(playGoldGain).toHaveBeenCalled();
+  });
+
+  it("does not play gold gain when gold did not increase", () => {
+    vi.mocked(playGoldGain).mockClear();
+    commitVictoryRewards(victoryResult({ newGold: 5, goldEarned: 0 }), commitDeps());
+    expect(playGoldGain).not.toHaveBeenCalled();
+  });
+
+  it("adds pending crystal materials to homestead", () => {
+    const addHomesteadMaterials = vi.fn();
+    const materials = { ...emptyInventory(), crystal: 2 };
+    commitVictoryRewards(victoryResult(), commitDeps({
+      battleState: baseBattleState({ pendingMaterials: materials }),
+      addHomesteadMaterials,
+    }));
+    expect(addHomesteadMaterials).toHaveBeenCalledWith(materials);
   });
 });

@@ -1,6 +1,5 @@
 import { create } from "zustand";
-import { cardLibrary, type BattleCard } from "@/lib/game-data";
-import { pickRandom } from "@/lib/utils";
+import { cardLibrary, getStandardPotionPool, type BattleCard } from "@/lib/game-data";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
 import type { LabyrinthMap, LabyrinthModifierKind, ContentSystemId } from "@/lib/content-systems/types";
 import {
@@ -8,15 +7,12 @@ import {
   SHOP_REFRESHES,
   ALCHEMIST_POTIONS_OFFERED,
   ALCHEMIST_REFRESHES,
-  POTION_CARD_ID_SUFFIX,
-  MIXED_POTION_CARD_ID,
   SHIMMER_COOLDOWN_MS,
 } from "@/lib/game-constants";
 import { sampleItems } from "@/features/alchemy/utils";
 import type { RewardState } from "@/features/alchemy/navigation/reward-flow";
 import { createEmptyRewardState } from "@/features/alchemy/navigation/reward-flow";
 import type { MysteryEvent } from "@/features/alchemy/mystery-events";
-import { mysteryPool } from "@/features/alchemy/mystery-events";
 import type { CorruptionResult } from "@/features/alchemy/corruption";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { CharacterId } from "@/lib/game-data";
@@ -67,6 +63,7 @@ type ScreenStore = {
   mysteryCardChoices: BattleCard[] | null;
 
   setHoveredCardId: (id: string | null | ((prev: string | null) => string | null)) => void;
+  clearCardHover: () => void;
   maybeTriggerShimmer: (cardId: string) => void;
   setHasActiveRun: (active: boolean) => void;
   setActiveLabyrinthModifiers: (modifiers: LabyrinthModifierKind[]) => void;
@@ -87,7 +84,6 @@ type ScreenStore = {
   initShop: () => void;
   initAlchemist: () => void;
   resetLabyrinthMap: () => void;
-  beginMystery: () => void;
 };
 
 export const useScreenStore = create<ScreenStore>()((set, get) => ({
@@ -110,6 +106,7 @@ export const useScreenStore = create<ScreenStore>()((set, get) => ({
   mysteryCardChoices: null,
 
   setHoveredCardId: (id) => set((s) => ({ hoveredCardId: typeof id === "function" ? id(s.hoveredCardId) : id })),
+  clearCardHover: () => set({ hoveredCardId: null }),
   maybeTriggerShimmer: (cardId) => {
     const state = get();
     if (state.shimmerState && performance.now() - state.shimmerState.token < SHIMMER_COOLDOWN_MS) return;
@@ -146,13 +143,9 @@ export const useScreenStore = create<ScreenStore>()((set, get) => ({
     }),
 
   initAlchemist: () => {
-    const potions = sampleItems(
-      cardLibrary.filter((c) => c.id.endsWith(POTION_CARD_ID_SUFFIX) && c.id !== MIXED_POTION_CARD_ID),
-      ALCHEMIST_POTIONS_OFFERED,
-    );
+    const potions = sampleItems(getStandardPotionPool(), ALCHEMIST_POTIONS_OFFERED);
     set({ alchemistState: { potions, refreshesLeft: ALCHEMIST_REFRESHES, mixUsed: false, firstPurchaseUsed: false } });
   },
 
   resetLabyrinthMap: () => set({ labyrinthMap: generateLabyrinthMap() }),
-  beginMystery: () => set({ mysteryEvent: pickRandom(mysteryPool) ?? mysteryPool[0], mysteryCardChoices: null }),
 }));

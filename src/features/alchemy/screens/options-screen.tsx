@@ -87,7 +87,7 @@ function SliderOption({
   max?: number;
 }) {
   return (
-    <div className="surface-muted rounded-[22px] border border-border/70 p-5">
+    <div className="surface-muted rounded-shell-panel border border-border/70 p-5">
       <div className="flex items-center justify-between gap-4">
         <p className="text-sm font-semibold text-foreground">{label}</p>
         <p className="text-sm font-semibold text-primary">{value}%</p>
@@ -117,7 +117,7 @@ function ToggleOption({
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <div className="surface-muted rounded-[22px] border border-border/70 p-5">
+    <div className="surface-muted rounded-shell-panel border border-border/70 p-5">
       <div className="flex items-center justify-between gap-4">
         <div>
           <p className="text-sm font-semibold text-foreground">{label}</p>
@@ -194,7 +194,7 @@ function OtherOptionsPanel({ saveData, dev }: { saveData: SaveDataOptionsProps; 
     <div className="space-y-4">
       {import.meta.env.DEV ? (
         <>
-          <div className="surface-muted rounded-[22px] border border-primary/40 p-5">
+          <div className="surface-muted rounded-shell-panel border border-primary/40 p-5">
             <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="text-sm font-semibold text-foreground">Dev / QA Unlocks</p>
@@ -205,7 +205,7 @@ function OtherOptionsPanel({ saveData, dev }: { saveData: SaveDataOptionsProps; 
               <Button onClick={dev.onUnlockAll}>Unlock All</Button>
             </div>
           </div>
-          <div className="surface-muted rounded-[22px] border border-amber-600/40 p-5">
+          <div className="surface-muted rounded-shell-panel border border-amber-600/40 p-5">
             <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="text-sm font-semibold text-foreground">Error Log</p>
@@ -218,7 +218,7 @@ function OtherOptionsPanel({ saveData, dev }: { saveData: SaveDataOptionsProps; 
           </div>
         </>
       ) : null}
-      <div className="surface-muted rounded-[22px] border border-border/70 p-5">
+      <div className="surface-muted rounded-shell-panel border border-border/70 p-5">
         <div className="flex items-center justify-between gap-4">
           <div>
             <p className="text-sm font-semibold text-foreground">Options</p>
@@ -231,7 +231,7 @@ function OtherOptionsPanel({ saveData, dev }: { saveData: SaveDataOptionsProps; 
           </Button>
         </div>
       </div>
-      <div className="surface-muted rounded-[22px] border border-border/70 p-5">
+      <div className="surface-muted rounded-shell-panel border border-border/70 p-5">
         <div className="flex items-center justify-between gap-4">
           <div>
             <p className="text-sm font-semibold text-foreground">Save Data</p>
@@ -275,7 +275,7 @@ export function OptionsScreen({
 
   return (
     <PageLayout>
-      <div className="alchemy-shell flex min-h-[48.15cqh] w-full max-w-3xl flex-col rounded-[28px] p-7">
+      <div className="alchemy-shell flex min-h-[48.15cqh] w-full max-w-3xl flex-col rounded-shell-screen p-7">
         <div className="relative flex w-full items-center justify-center">
           <ScreenHeader title="Options" />
           <div className="absolute right-0 top-1/2 -translate-y-1/2">

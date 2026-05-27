@@ -20,7 +20,7 @@ export function resetActiveRunStores() {
   useScreenStore.getState().setMysteryEvent(null);
   useScreenStore.getState().setMysteryCardChoices(null);
   useScreenStore.getState().setHasActiveRun(false);
-  useScreenStore.getState().setHoveredCardId(null);
+  useScreenStore.getState().clearCardHover();
 }
 
 export function clearAllPersistentGameData() {

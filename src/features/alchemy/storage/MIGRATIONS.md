@@ -18,11 +18,11 @@ Do not increment for purely additive fields that can safely use defaults.
 
 For a schema bump from `N` to `N + 1`:
 
-1. Update `CURRENT_SAVE_SCHEMA_VERSION` in `metadata.ts`.
-2. Add `migrateVNToVNPlus1(raw)` in `migrations.ts`.
-3. Chain it from `migrateSaveDataToCurrent`.
-4. Keep `normalizeSaveData` as the final cleanup step after all migrations.
-5. Add or update fixture-style tests in `tests/fixtures/legacy-saves.ts` and `tests/features/storage.test.ts`.
+1. Update `CURRENT_SAVE_SCHEMA_VERSION` in `src/lib/validation/metadata.ts`.
+2. Add `migrateVNToVNPlus1(raw)` in `src/lib/validation/migration.ts`.
+3. Chain it from `migrateSaveDataToCurrent` in the same file (ordering matters; keep steps idempotent).
+4. Update Zod fields in `src/lib/validation/save-schemas.ts` and matching defaults in `src/features/alchemy/storage/defaults.ts`. `SaveDataSchema` already preprocesses with `migrateSaveDataToCurrent` on load.
+5. Add or update fixture-style tests in `tests/fixtures/legacy-saves.ts` and `tests/features/storage.test.ts`. Use `normalizeSaveData` from `src/features/alchemy/storage/migrations.ts` in tests to exercise the full production parse path (`SaveDataSchema.parse`).
 
 ## Test Expectations
 

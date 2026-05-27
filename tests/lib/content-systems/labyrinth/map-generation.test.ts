@@ -1,8 +1,8 @@
 // Unit tests for labyrinth map generation — grid invariants, cardinal connections,
 // node placement, visibility, and state transitions.
 import { describe, expect, it } from "vitest";
+import { createSeededRng } from "@/lib/utils";
 import {
-  createSeededRng,
   generateLabyrinthMap,
   failNode,
   setCurrentNode,

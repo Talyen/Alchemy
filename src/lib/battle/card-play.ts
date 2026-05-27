@@ -191,6 +191,7 @@ function handlePostPlayCardDestination(state: BattleState, card: BattleCard): Ba
         nextState.hand,
         state.trinketEffects.runicQuillDrawOnConsume,
         nextState.nextCardUid,
+        nextState.rng,
       );
       nextState = {
         ...nextState,

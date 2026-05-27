@@ -14,7 +14,7 @@ import { NODE_TYPE_LABELS } from "@/lib/content-systems/labyrinth/data";
 import { ALL_LABYRINTH_MODIFIERS, REWARD_MODIFIER_KINDS } from "@/lib/content-systems/labyrinth/modifiers";
 import { canEnterLabyrinthNode } from "@/lib/content-systems/labyrinth/map-generation";
 import { keywordDefinitions } from "@/lib/game-data";
-import { keywordAliases } from "../config";
+import { keywordAliases, SHINE_PALETTES } from "../config";
 import { HamburgerTrigger, ScreenHeader } from "../ui/shared-ui";
 import { TooltipBody, TooltipHeader, TooltipSection } from "../ui/tooltip-panel";
 import { useScreenStore } from "../stores/screen-store";
@@ -47,54 +47,56 @@ const CONFIG = {
   shineBorderWidth: 2,
 } as const;
 
+const LABYRINTH_SHINE = SHINE_PALETTES.labyrinth;
+
 const NODE_META: Record<LabyrinthNodeType, NodeMeta> = {
   entrance: {
     icon: DoorOpen,
     className: "bg-black text-stone-600",
     hoverBorder: "hover:border-stone-500",
-    shineColors: ["#292524", "#57534e", "#a8a29e", "#44403c"],
+    shineColors: [...LABYRINTH_SHINE.entrance],
   },
   combat: {
     icon: Swords,
     className: "bg-black text-red-500",
     hoverBorder: "hover:border-red-500",
-    shineColors: ["#450a0a", "#dc2626", "#f87171", "#7f1d1d"],
+    shineColors: [...LABYRINTH_SHINE.combat],
   },
   elite: {
     icon: Skull,
     className: "bg-black text-violet-500",
     hoverBorder: "hover:border-violet-500",
-    shineColors: ["#3b0764", "#9333ea", "#c084fc", "#581c87"],
+    shineColors: [...LABYRINTH_SHINE.elite],
   },
   rest: {
     icon: Heart,
     className: "bg-black text-orange-500",
     hoverBorder: "hover:border-orange-500",
-    shineColors: ["#431407", "#d97706", "#fb923c", "#78350f"],
+    shineColors: [...LABYRINTH_SHINE.rest],
   },
   mystery: {
     icon: Sparkles,
     className: "bg-black text-zinc-400",
     hoverBorder: "hover:border-zinc-400",
-    shineColors: ["#27272a", "#a1a1aa", "#e4e4e7", "#525252"],
+    shineColors: [...LABYRINTH_SHINE.mystery],
   },
   shop: {
     icon: ShoppingCart,
     className: "bg-black text-yellow-500",
     hoverBorder: "hover:border-yellow-500",
-    shineColors: ["#422006", "#eab308", "#fde047", "#78350f"],
+    shineColors: [...LABYRINTH_SHINE.shop],
   },
   alchemist: {
     icon: FlaskConical,
     className: "bg-black text-emerald-500",
     hoverBorder: "hover:border-emerald-500",
-    shineColors: ["#022c22", "#10b981", "#6ee7b7", "#064e3b"],
+    shineColors: [...LABYRINTH_SHINE.alchemist],
   },
   boss: {
     icon: Crown,
     className: "bg-black text-red-400",
     hoverBorder: "hover:border-red-400",
-    shineColors: ["#450a0a", "#b91c1c", "#fca5a5", "#7f1d1d"],
+    shineColors: [...LABYRINTH_SHINE.boss],
   },
 };
 
@@ -120,7 +122,7 @@ export function LabyrinthMapScreen({ onNodeClick, onOpenMenu }: Props) {
 
       <section
         aria-label="Labyrinth map"
-        className="relative w-full max-w-[920px] rounded-[22px] border border-stone-500 bg-stone-950 p-4 sm:p-5"
+        className="relative w-full max-w-[920px] rounded-shell-panel border border-stone-500 bg-stone-950 p-4 sm:p-5"
         style={{ "--labyrinth-node-size": "clamp(2.35rem, 4.8vw, 3.45rem)" } as CSSProperties}
       >
         <div className="absolute right-4 top-4 z-30">
@@ -272,7 +274,7 @@ function ConnectionLayer({ labyrinthMap }: { labyrinthMap: LabyrinthMap }) {
             y1={trimmed.from.y}
             x2={trimmed.to.x}
             y2={trimmed.to.y}
-            stroke="#333"
+            className="stroke-stone-700"
             strokeWidth="0.3"
             strokeLinecap="round"
           />
@@ -319,7 +321,7 @@ function NodeTooltip({
     <div
       ref={ref}
       className={cn(
-        "pointer-events-none absolute left-1/2 z-50 w-[23.7cqh] -translate-x-1/2 rounded-[20px] border border-border/80 bg-card p-3 text-left",
+        "pointer-events-none absolute left-1/2 z-50 w-[23.7cqh] -translate-x-1/2 rounded-shell-tooltip border border-border/80 bg-card p-3 text-left",
         flip ? "top-[calc(100%+0.75rem)]" : "bottom-[calc(100%+0.75rem)]",
       )}
       style={dx !== 0 ? ({ marginLeft: dx } as CSSProperties) : undefined}

@@ -1,9 +1,10 @@
 // Talent UI primitives — keyword progress card, talent counter display.
 // Depends on game-data keywords, shine-border, and keyword-tag components.
 import { useState } from "react";
-import { type KeywordId, keywordDefinitions } from "@/lib/game-data";
+import type { KeywordId } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 import { ShineBorder } from "@/components/ui/shine-border";
+import { getKeywordShineColors } from "../config";
 import { KeywordTag } from "../ui/keyword-tag";
 
 function ringClass(isSelected: boolean, hasUnspent: boolean): string {
@@ -23,8 +24,7 @@ export function TalentKeywordButton({
   isSelected: boolean;
   onClick: () => void;
 }) {
-  const def = keywordDefinitions[keywordId];
-  const shineColors = def?.shineColors ?? ["#fcd34d", "#d97706", "#fcd34d"];
+  const shineColors = getKeywordShineColors(keywordId);
   const [isHovered, setIsHovered] = useState(false);
 
   const ringStyle: React.CSSProperties | undefined =

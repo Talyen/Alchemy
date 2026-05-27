@@ -26,20 +26,24 @@ export function getCombatTextIcon(event: CombatTextEvent) {
   return combatTextIconClasses[event.stat];
 }
 
-export function getPlayerStatusChips(state: BattleState | null | undefined): StatusChip[] {
-  if (!state) return [];
-  return PLAYER_STATUS_DISPLAY_ORDER.reduce<StatusChip[]>((chips, id) => {
-    const value = state.playerStatuses[id];
+function buildStatusChips(
+  order: readonly StatusChip["id"][],
+  statuses: Record<string, number> | undefined,
+): StatusChip[] {
+  if (!statuses) return [];
+  return order.reduce<StatusChip[]>((chips, id) => {
+    const value = statuses[id];
     if (value > 0) chips.push({ id, value });
     return chips;
   }, []);
 }
 
+export function getPlayerStatusChips(state: BattleState | null | undefined): StatusChip[] {
+  if (!state) return [];
+  return buildStatusChips(PLAYER_STATUS_DISPLAY_ORDER, state.playerStatuses);
+}
+
 export function getEnemyStatusChips(state: BattleState | null | undefined): StatusChip[] {
   if (!state) return [];
-  return ENEMY_STATUS_DISPLAY_ORDER.reduce<StatusChip[]>((chips, id) => {
-    const value = state.enemyStatuses[id];
-    if (value > 0) chips.push({ id, value });
-    return chips;
-  }, []);
+  return buildStatusChips(ENEMY_STATUS_DISPLAY_ORDER, state.enemyStatuses);
 }

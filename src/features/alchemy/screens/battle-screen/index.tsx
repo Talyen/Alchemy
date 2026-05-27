@@ -18,6 +18,7 @@ import type {
 } from "./types";
 import { useBattleStore } from "../../stores/battle-store";
 import { useScreenStore } from "../../stores/screen-store";
+import { BATTLE_PARTICLE_ALPHA_BOSS, BATTLE_PARTICLE_ALPHA_NORMAL } from "@/lib/game-constants";
 import { getEnemyStatusChips, getPlayerStatusChips } from "../../utils";
 import { BackgroundParticles } from "../../ui/background-particles";
 
@@ -70,13 +71,15 @@ export function BattleScreen(props: BattleScreenProps) {
   const displayOverrides = useBattleStore((s) => s.displayOverrides);
   const displayState = { ...battleState, ...displayOverrides };
   const isBossBattle = battleState.currentEnemy.enemyType === "boss";
-  const particleAlpha = isBossBattle ? 2.5 : 1.7;
+  const particleAlpha = isBossBattle ? BATTLE_PARTICLE_ALPHA_BOSS : BATTLE_PARTICLE_ALPHA_NORMAL;
   const particleColors = ["rgba(255, 150, 70, X)", "rgba(255, 100, 40, X)"] as const;
   const cardGhosts = useBattleStore((s) => s.cardGhosts);
   const floatingCombatTexts = useBattleStore((s) => s.floatingCombatTexts);
   const enemyShaking = useBattleStore((s) => s.enemyShaking);
   const playerShaking = useBattleStore((s) => s.playerShaking);
   const companionShaking = useBattleStore((s) => s.companionShaking);
+  const playerHurtFlashToken = useBattleStore((s) => s.playerHurtFlashToken);
+  const enemyHurtFlashToken = useBattleStore((s) => s.enemyHurtFlashToken);
   const shimmerState = useScreenStore((s) => s.shimmerState);
   const hoveredCardId = useScreenStore((s) => s.hoveredCardId);
   const activeLabyrinthModifiers = useScreenStore((s) => s.activeLabyrinthModifiers);
@@ -115,6 +118,8 @@ export function BattleScreen(props: BattleScreenProps) {
     playerShaking,
     enemyShaking,
     companionShaking,
+    playerHurtFlashToken,
+    enemyHurtFlashToken,
     activeLabyrinthModifiers,
   };
 
@@ -147,8 +152,8 @@ export function BattleScreen(props: BattleScreenProps) {
 
   return (
     <PageLayout>
-      <div className="alchemy-shell relative flex w-full max-w-[100rem] flex-1 flex-col rounded-[28px] border border-border/80 p-7 pb-1">
-        <div className="absolute inset-0 overflow-hidden rounded-[28px] pointer-events-none">
+      <div className="alchemy-shell relative flex w-full max-w-[100rem] flex-1 flex-col rounded-shell-screen border border-border/80 p-7 pb-1">
+        <div className="absolute inset-0 overflow-hidden rounded-shell-screen pointer-events-none">
           <BackgroundParticles variant="embers" colors={particleColors} alphaMultiplier={particleAlpha} />
         </div>
 

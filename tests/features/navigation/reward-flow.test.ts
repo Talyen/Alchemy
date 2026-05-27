@@ -1,28 +1,38 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   applyLabyrinthRewardMaterialModifiers,
+  computeVictoryGoldResult,
   createEmptyRewardState,
   createBossRewardState,
   createCombatRewardState,
+  executeRewardRouteTransition,
   getActiveRewardModifiersForContentSystem,
   getCompanionCardChoices,
   getGenerousGoldBonus,
+  getRandomPotionCard,
   getVictoryGoldTotal,
   finalizeRewardState,
   shouldForceTrinketReward,
   shouldGrantAlchemistReward,
   shouldGrantCompanionReward,
 } from "@/features/alchemy/navigation/reward-flow";
+import { getStandardPotionPool } from "@/lib/game-data";
+import { LABYRINTH_REWARD_CONFIG } from "@/lib/game-constants";
+import { CONSTANTS } from "@/features/alchemy/types";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import type { LabyrinthModifierKind } from "@/lib/content-systems/types";
 import type { BattleCard, TrinketEntry } from "@/lib/game-data";
 
-vi.mock("@/features/alchemy/reward-utils", () => ({
-  selectRewardCards: vi.fn(() => [{ id: "mock-card", title: "Mock", descriptionLines: [""], art: "", cost: 1, effects: [] }]),
-  selectRewardTrinkets: vi.fn(() => [{ id: "mock-trinket", title: "Mock Trinket", description: "", art: "" }]),
-  REWARD_TRINKET_CHANCE: 0.1,
-  REWARD_RANDOM_CHANCE: 0,
-}));
+vi.mock("@/features/alchemy/reward-utils", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/alchemy/reward-utils")>();
+  return {
+    ...actual,
+    selectRewardCards: vi.fn(() => [{ id: "mock-card", title: "Mock", descriptionLines: [""], art: "", cost: 1, effects: [] }]),
+    selectRewardTrinkets: vi.fn(() => [{ id: "mock-trinket", title: "Mock Trinket", description: "", art: "" }]),
+    REWARD_TRINKET_CHANCE: 0.1,
+    REWARD_RANDOM_CHANCE: 0,
+  };
+});
 
 describe("createEmptyRewardState", () => {
   it("returns initial state with defaults", () => {
@@ -323,5 +333,112 @@ describe("finalizeRewardState", () => {
     });
 
     expect(result.route).toBe("act-complete");
+  });
+
+  it("routes wildwood rewards to wildwood victory", () => {
+    const result = finalizeRewardState({
+      rewardState: createEmptyRewardState(),
+      companionRewardCards: null,
+      contentSystemType: "wildwood",
+      currentEnemyType: "normal",
+      grantAlchemistReward: false,
+    });
+
+    expect(result.route).toBe("wildwood-victory");
+  });
+});
+
+describe("getRandomPotionCard", () => {
+  it("returns a standard potion from the shared pool", () => {
+    const pool = getStandardPotionPool();
+    const card = getRandomPotionCard(() => 0);
+    expect(card.id).toBe(pool[0]?.id);
+    expect(card.id).toMatch(/-potion$/);
+    expect(card.id).not.toBe("mixed-potion");
+  });
+
+  it("uses injectable rng for stable selection", () => {
+    const pool = getStandardPotionPool();
+    const card = getRandomPotionCard(() => 0.99);
+    expect(card.id).toBe(pool[pool.length - 1]?.id);
+  });
+});
+
+describe("getCompanionCardChoices", () => {
+  it("returns deterministic companion choices with fixed rng", () => {
+    const choices = getCompanionCardChoices(() => 0);
+    expect(choices).toHaveLength(LABYRINTH_REWARD_CONFIG.companionCardChoices);
+    for (const card of choices) {
+      expect(card.effects?.some((e) => e.kind === "summon-companion")).toBe(true);
+    }
+  });
+});
+
+describe("computeVictoryGoldResult", () => {
+  it("applies gold multiplier to earned gold only", () => {
+    const result = computeVictoryGoldResult({
+      battleState: { currentEnemy: { enemyType: "normal" }, gold: 20 } as never,
+      runGold: 10,
+      runTrinkets: [],
+      gold: 15,
+      eliteBonus: 0,
+      generousBonus: 0,
+      bossBonus: 0,
+      talentGoldPerCombat: 0,
+      goldMultiplier: 2,
+    });
+    expect(result.unmultipliedTotal).toBe(35);
+    expect(result.earnedBeforeMultiplier).toBe(25);
+    expect(result.persistedRunGold).toBe(10 + Math.floor(25 * 2));
+  });
+});
+
+describe("executeRewardRouteTransition", () => {
+  const materials = emptyInventory();
+  const nextRewardState = createEmptyRewardState(["Campfire"]);
+
+  function makeHandlers() {
+    return {
+      navigateTo: vi.fn(),
+      completeRunVictory: vi.fn(),
+      handleActComplete: vi.fn(),
+      onLabyrinthClearNode: vi.fn(),
+      setCompanionRewardCards: vi.fn(),
+      setRewardState: vi.fn(),
+    };
+  }
+
+  it("routes companion rewards back to the rewards screen", () => {
+    const handlers = makeHandlers();
+    executeRewardRouteTransition("companion-reward", materials, nextRewardState, true, handlers);
+    expect(handlers.setCompanionRewardCards).toHaveBeenCalledWith(null);
+    expect(handlers.navigateTo).toHaveBeenCalledWith(CONSTANTS.SCREENS.REWARDS, expect.any(Function));
+  });
+
+  it("routes labyrinth map rewards to the labyrinth screen", () => {
+    const handlers = makeHandlers();
+    executeRewardRouteTransition("labyrinth-map", materials, nextRewardState, false, handlers);
+    expect(handlers.onLabyrinthClearNode).toHaveBeenCalledOnce();
+    expect(handlers.navigateTo).toHaveBeenCalledWith(CONSTANTS.SCREENS.LABYRINTH_MAP, expect.any(Function));
+  });
+
+  it("routes wildwood victory to completeRunVictory", () => {
+    const handlers = makeHandlers();
+    executeRewardRouteTransition("wildwood-victory", materials, nextRewardState, false, handlers);
+    expect(handlers.completeRunVictory).toHaveBeenCalledWith(materials, expect.any(Function));
+    expect(handlers.navigateTo).not.toHaveBeenCalled();
+  });
+
+  it("routes act completion without navigation", () => {
+    const handlers = makeHandlers();
+    executeRewardRouteTransition("act-complete", materials, nextRewardState, false, handlers);
+    expect(handlers.handleActComplete).toHaveBeenCalledWith(materials);
+    expect(handlers.navigateTo).not.toHaveBeenCalled();
+  });
+
+  it("routes campaign rewards to destination", () => {
+    const handlers = makeHandlers();
+    executeRewardRouteTransition("destination", materials, nextRewardState, false, handlers);
+    expect(handlers.navigateTo).toHaveBeenCalledWith(CONSTANTS.SCREENS.DESTINATION, expect.any(Function));
   });
 });

@@ -13,11 +13,7 @@ const Switch = ({ className, ref, ...props }: React.ComponentProps<typeof Switch
     )}
     {...props}
   >
-    <SwitchPrimitive.Thumb
-      className={cn(
-        "pointer-events-none block h-5 w-5 rounded-full shadow transition-transform data-[state=checked]:translate-x-4 data-[state=unchecked]:translate-x-0 data-[state=checked]:bg-foreground data-[state=unchecked]:bg-muted-foreground",
-      )}
-    />
+    <SwitchPrimitive.Thumb className="pointer-events-none block h-5 w-5 rounded-full shadow transition-transform data-[state=checked]:translate-x-4 data-[state=unchecked]:translate-x-0 data-[state=checked]:bg-foreground data-[state=unchecked]:bg-muted-foreground" />
   </SwitchPrimitive.Root>
 );
 

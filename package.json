@@ -105,8 +105,24 @@
     "zod": "^4.4.3"
   },
   "knip": {
-    "entry": ["src/main.tsx", "src/lib/game-data/index.ts", "src/lib/battle/index.ts", "src/lib/validation/index.ts", "scripts/*.mjs", "desktop/*.cjs"],
-    "project": ["src/**/*.{ts,tsx}", "scripts/**/*.mjs", "desktop/**/*.cjs", "tests/**/*.{ts,tsx}"]
+    "entry": [
+      "src/main.tsx",
+      "src/App.tsx",
+      "src/lib/game-data/index.ts",
+      "src/lib/battle/index.ts",
+      "src/lib/validation/index.ts",
+      "scripts/*.mjs",
+      "desktop/*.cjs"
+    ],
+    "project": ["src/**/*.{ts,tsx}", "scripts/**/*.mjs", "desktop/**/*.cjs", "tests/**/*.{ts,tsx}"],
+    "ignoreBinaries": ["start"],
+    "ignoreDependencies": [
+      "electron",
+      "react",
+      "react-dom",
+      "zustand",
+      "@radix-ui/react-switch"
+    ]
   },
   "build": {
     "appId": "com.alchemy.game",

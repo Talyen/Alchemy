@@ -1,5 +1,11 @@
-import { describe, expect, it, vi } from "vitest";
-import { getDestinationWeight, getRunAvailableDestinations, sampleDestinationChoices } from "@/features/alchemy/navigation/destination-flow";
+import { describe, expect, it, vi, afterEach } from "vitest";
+import {
+  getDestinationWeight,
+  getRunAvailableDestinations,
+  restoreOrCreateDestinationRewardState,
+  sampleDestinationChoices,
+} from "@/features/alchemy/navigation/destination-flow";
+import { createEmptyRewardState } from "@/features/alchemy/navigation/reward-flow";
 import { CORRUPTION_DESTINATION_WEIGHT, DEFAULT_DESTINATION_WEIGHT, PREVIOUS_DESTINATION_WEIGHT } from "@/lib/game-constants";
 
 vi.mock("@/features/alchemy/config", () => ({
@@ -26,8 +32,52 @@ describe("getRunAvailableDestinations", () => {
   });
 
   it("prevents Corruption after a Corruption destination", () => {
-    const result = getRunAvailableDestinations({ destinationIndexInAct: 2, currentHp: 30, currentGold: 100, maxHealth: 30, previousDestination: "Corruption" });
+    const result = getRunAvailableDestinations({
+      destinationIndexInAct: 2,
+      currentHealth: 30,
+      currentGold: 100,
+      maxHealth: 30,
+      previousDestination: "Corruption",
+    });
     expect(result).not.toContain("Corruption");
+  });
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
+describe("restoreOrCreateDestinationRewardState", () => {
+  it("keeps existing destinations on resume", () => {
+    const prev = createEmptyRewardState(["Campfire", "Mystery"]);
+    const result = restoreOrCreateDestinationRewardState(prev, {
+      availableDestinations: ["Normal Combat"],
+      bossEnemyId: "frostwarden",
+    });
+    expect(result.destinations).toEqual(["Campfire", "Mystery"]);
+    expect(result.selectedBossId).toBeNull();
+  });
+
+  it("assigns boss id when resuming to a boss-only destination list", () => {
+    const prev = createEmptyRewardState(["Boss Combat"]);
+    const result = restoreOrCreateDestinationRewardState(prev, {
+      availableDestinations: ["Boss Combat"],
+      bossEnemyId: "frostwarden",
+    });
+    expect(result.destinations).toEqual(["Boss Combat"]);
+    expect(result.selectedBossId).toBe("frostwarden");
+  });
+
+  it("samples destinations when none are stored", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0);
+    const prev = createEmptyRewardState();
+    const available = ["Merchant's Shop", "Campfire", "Mystery"] as const;
+    const result = restoreOrCreateDestinationRewardState(prev, {
+      availableDestinations: [...available],
+      bossEnemyId: "skeleton",
+    });
+    expect(result.destinations.length).toBeGreaterThan(0);
+    expect(result.destinations.every((destination) => available.includes(destination))).toBe(true);
   });
 });
 

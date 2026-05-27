@@ -1,12 +1,12 @@
 // Interactive talent tree — keyword-level XP progress, unlock buttons, and reveal animations.
 // Depends on game-data keywords, shared UI primitives, and talent XP math.
-import { Fragment, useMemo } from "react";
+import { Fragment, useMemo, type CSSProperties } from "react";
 
 import { Lock } from "lucide-react";
 import { keywordDefinitions } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 import type { TalentDefinition } from "@/lib/game-data";
-import { keywordIcons } from "../config";
+import { getKeywordShineColors, keywordIcons } from "../config";
 import { tokenizeDescription } from "../utils";
 import { TooltipPanel, TooltipBody } from "../ui/tooltip-panel";
 import { ShineBorder } from "@/components/ui/shine-border";
@@ -54,7 +54,7 @@ function TalentNode({
   onUnlock: ((talentId: string) => void) | undefined;
 }) {
   const def = keywordDefinitions[talent.keywordId];
-  const shineColors = def?.shineColors ?? ["#fcd34d", "#d97706", "#fcd34d"];
+  const shineColors = getKeywordShineColors(talent.keywordId);
   const baseColor = shineColors[0];
   const Icon = keywordIcons[talent.keywordId];
   const descParts = tokenizeDescription(talent.description);
@@ -92,30 +92,11 @@ function TalentNode({
             : undefined
         }
         className={cn(
-          "relative select-none w-full h-full transition-all duration-200 outline-none rounded-full cursor-pointer hover:scale-105 active:scale-95",
+          "talent-node-glass relative select-none w-full h-full transition-all duration-200 outline-none rounded-full cursor-pointer hover:scale-105 active:scale-95",
+          isChoice ? "talent-node-glass--choice" : "talent-node-glass--bordered",
           !isUnlocked && !isChoice && "brightness-[0.55]",
         )}
-        style={{
-          borderColor: baseColor,
-          borderWidth: isChoice ? 0 : "3px",
-          borderStyle: "solid",
-          backdropFilter: "blur(8px)",
-          WebkitBackdropFilter: "blur(4px)",
-          backgroundColor: "hsl(var(--background) / 0.3)",
-          backgroundImage: "linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05))",
-          boxShadow: isChoice
-            ? `
-              inset 0 1.5px 1px rgba(255, 255, 255, 0.25),
-              inset 0 -1px 1px rgba(0, 0, 0, 0.3),
-              0 0 16px ${baseColor},
-              0 4px 16px rgba(0, 0, 0, 0.6)
-            `.trim()
-            : `
-              inset 0 1.5px 1px rgba(255, 255, 255, 0.12),
-              inset 0 -1px 1px rgba(0, 0, 0, 0.3),
-              0 4px 12px rgba(0, 0, 0, 0.4)
-            `.trim(),
-        }}
+        style={{ "--talent-glass-accent": baseColor } as CSSProperties}
         aria-label={
           isChoice ? `Unlock talent: ${talent.name ? `${talent.name} — ` : ""}${talent.description}` : undefined
         }

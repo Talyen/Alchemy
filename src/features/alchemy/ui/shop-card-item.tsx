@@ -29,7 +29,7 @@ export function PurchasableCardItem(props: PurchasableCardItemProps) {
   }
 
   return (
-    <div className="flex flex-col items-center gap-3 rounded-[18px] border border-border/70 bg-card/60 p-4 text-center">
+    <div className="flex flex-col items-center gap-3 rounded-shell-card border border-border/70 bg-card/60 p-4 text-center">
       <div onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
         <BattleCardButton
           card={card}
@@ -56,7 +56,7 @@ export function PurchasableCardItem(props: PurchasableCardItemProps) {
 
 function PurchasedCardItem({ card, widthClass }: Pick<PurchasableCardItemProps, "card"> & { widthClass: string }) {
   return (
-    <div className="flex flex-col items-center gap-3 rounded-[18px] border border-border/30 bg-card/30 p-4 text-center opacity-50">
+    <div className="flex flex-col items-center gap-3 rounded-shell-card border border-border/30 bg-card/30 p-4 text-center opacity-50">
       <BattleCardButton
         card={card}
         hovered={false}

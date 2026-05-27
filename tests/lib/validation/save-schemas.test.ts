@@ -8,11 +8,8 @@ import {
   CompletedDifficultiesSchema,
   CURRENT_SAVE_SCHEMA_VERSION,
 } from "@/lib/validation";
-import {
-  createSeededRng,
-  generateLabyrinthMap,
-  withCurrentNode,
-} from "@/lib/content-systems/labyrinth/map-generation";
+import { createSeededRng } from "@/lib/utils";
+import { generateLabyrinthMap, withCurrentNode } from "@/lib/content-systems/labyrinth/map-generation";
 
 describe("SaveDataSchema", () => {
   it("parses a valid minimal save", () => {
@@ -105,6 +102,55 @@ describe("ActiveRunDataSchema", () => {
     expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
     if (result.success) {
       expect(result.data.encounteredRunEnemyIds).toEqual([]);
+    }
+  });
+
+  it("parses destination resume fields", () => {
+    const result = ActiveRunDataSchema.safeParse({
+      characterId: "knight",
+      runDeck: [],
+      runGold: 0,
+      runPlayerHealth: 30,
+      runMaxHealth: 30,
+      roomsEncountered: 0,
+      currentAct: 1,
+      destinationIndexInAct: 0,
+      completedDestinations: [],
+      runTrinkets: [],
+      selectedDifficulty: null,
+      contentSystemType: "campaign",
+      labyrinthMap: null,
+      currentScreen: "rewards",
+      destinationChoices: ["Campfire"],
+    });
+    expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
+    if (result.success) {
+      expect(result.data.currentScreen).toBe("rewards");
+      expect(result.data.destinationChoices).toEqual(["Campfire"]);
+    }
+  });
+
+  it("rejects invalid resume screens", () => {
+    const result = ActiveRunDataSchema.safeParse({
+      characterId: "knight",
+      runDeck: [],
+      runGold: 0,
+      runPlayerHealth: 30,
+      runMaxHealth: 30,
+      roomsEncountered: 0,
+      currentAct: 1,
+      destinationIndexInAct: 0,
+      completedDestinations: [],
+      runTrinkets: [],
+      selectedDifficulty: null,
+      contentSystemType: "campaign",
+      labyrinthMap: null,
+      currentScreen: "not-a-screen",
+      destinationChoices: [],
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.currentScreen).toBeNull();
     }
   });
 

@@ -11,6 +11,8 @@ import {
 
 import { getAvailableDestinations as getFilteredDestinations } from "../config";
 import { DESTINATIONS, type Destination } from "../types";
+import type { RewardState } from "./reward-flow";
+import { withSelectedBossForDestinations } from "./victory-flow";
 
 type DestinationAvailabilityInput = {
   destinationIndexInAct: number;
@@ -67,4 +69,20 @@ export function getDestinationWeight(destination: Destination, previousDestinati
   if (destination === previousDestination) return PREVIOUS_DESTINATION_WEIGHT;
   if (destination === DESTINATIONS.CORRUPTION) return CORRUPTION_DESTINATION_WEIGHT;
   return DEFAULT_DESTINATION_WEIGHT;
+}
+
+/** Campaign resume keeps prior choices; advancing samples fresh destinations for the next room. */
+export function restoreOrCreateDestinationRewardState(
+  prev: RewardState,
+  options: {
+    availableDestinations: Destination[];
+    previousDestination?: Destination;
+    bossEnemyId: string;
+  },
+): RewardState {
+  const destinations =
+    prev.destinations.length > 0
+      ? prev.destinations
+      : sampleDestinationChoices(options.availableDestinations, options.previousDestination);
+  return withSelectedBossForDestinations(destinations, { ...prev, destinations }, options.bossEnemyId);
 }

@@ -6,10 +6,18 @@
 // instead of reading from the compendium will be flagged here and deleted.
 
 import { describe, expect, it } from "vitest";
-import { cardLibrary, enemyBestiary, trinketLibrary } from "@/lib/game-data";
-import type { BattleCardEffect } from "@/lib/game-data";
+import { cardLibrary, companionLibrary, enemyBestiary, trinketLibrary } from "@/lib/game-data";
+import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
 
 // ─────────────────────────── Helpers ───────────────────────────
+
+function displayDamageType(type: string): string {
+  return type.charAt(0).toUpperCase() + type.slice(1);
+}
+
+function expectedCompanionTurnLine(amount: number, damageType: string): string {
+  return `Deals ${amount} ${displayDamageType(damageType)} damage each turn`;
+}
 
 function countByKind(effects: BattleCardEffect[], kind: string): number {
   return effects.filter((e) => e.kind === kind).length;
@@ -36,6 +44,103 @@ function countHealLines(lines: string[]): number {
   return lines.filter(
     (l) => l.startsWith("Heal ") || (l.startsWith("Restore ") && l.includes("Health")) || (l.startsWith("Gain ") && l.includes("Health")),
   ).length;
+}
+
+function parseLeadingNumber(line: string, prefix: string): number | null {
+  if (!line.startsWith(prefix)) return null;
+  const match = line.slice(prefix.length).match(/^(\d+)/);
+  return match ? Number(match[1]) : null;
+}
+
+/** Assert fixed numeric amounts in description lines match authored effect amounts. */
+function expectNumericParity(card: BattleCard): void {
+  const { effects, descriptionLines } = card;
+  let damageIndex = 0;
+  let playerStatusIndex = 0;
+  let healIndex = 0;
+  let restoreManaIndex = 0;
+  let goldIndex = 0;
+  let wishIndex = 0;
+  let removeHarmfulIndex = 0;
+
+  const damageEffects = effects.filter((e): e is Extract<BattleCardEffect, { kind: "damage" }> => e.kind === "damage");
+  const playerStatusEffects = effects.filter(
+    (e): e is Extract<BattleCardEffect, { kind: "player-status" }> => e.kind === "player-status",
+  );
+  const healEffects = effects.filter((e): e is Extract<BattleCardEffect, { kind: "heal" }> => e.kind === "heal");
+  const restoreManaEffects = effects.filter(
+    (e): e is Extract<BattleCardEffect, { kind: "restore-mana" }> => e.kind === "restore-mana",
+  );
+  const goldEffects = effects.filter((e): e is Extract<BattleCardEffect, { kind: "gain-gold" }> => e.kind === "gain-gold");
+  const wishEffects = effects.filter((e): e is Extract<BattleCardEffect, { kind: "wish" }> => e.kind === "wish");
+  const removeHarmfulEffects = effects.filter(
+    (e): e is Extract<BattleCardEffect, { kind: "remove-harmful-status" }> => e.kind === "remove-harmful-status",
+  );
+
+  for (const line of descriptionLines) {
+    if (line.startsWith("Deals ")) continue;
+
+    if (line.startsWith("Deal ")) {
+      const effect = damageEffects[damageIndex++];
+      if (!effect || effect.equalToBlock || effect.equalToArmor) continue;
+      expect(parseLeadingNumber(line, "Deal ")).toBe(effect.amount);
+      continue;
+    }
+
+    if (line.startsWith("Gain ") && line.includes(" Gold")) {
+      const effect = goldEffects[goldIndex++];
+      if (effect) expect(parseLeadingNumber(line, "Gain ")).toBe(effect.amount);
+      continue;
+    }
+
+    if (line.startsWith("Gain ") && line.includes(" Block") && line.includes("per Mana Crystal")) {
+      const effect = playerStatusEffects[playerStatusIndex++];
+      if (effect?.status === "block" && "perManaCrystal" in effect && effect.perManaCrystal) {
+        expect(parseLeadingNumber(line, "Gain ")).toBe(effect.perManaCrystal);
+      }
+      continue;
+    }
+
+    if (line.startsWith("Gain ") && (line.includes(" Block") || line.includes(" Armor") || line.includes(" Forge"))) {
+      const effect = playerStatusEffects[playerStatusIndex++];
+      if (effect && effect.status !== "haste" && !("perManaCrystal" in effect && effect.perManaCrystal)) {
+        expect(parseLeadingNumber(line, "Gain ")).toBe(effect.amount);
+      }
+      continue;
+    }
+
+    if (line.startsWith("Heal ")) {
+      const effect = healEffects[healIndex++];
+      if (effect) expect(parseLeadingNumber(line, "Heal ")).toBe(effect.amount);
+      continue;
+    }
+
+    if (line.startsWith("Restore ") && line.includes("Mana")) {
+      const effect = restoreManaEffects[restoreManaIndex++];
+      if (effect) expect(parseLeadingNumber(line, "Restore ")).toBe(effect.amount);
+      continue;
+    }
+
+    if (line.startsWith("Restore ") && line.includes("Health")) {
+      const effect = healEffects[healIndex++];
+      if (effect) expect(parseLeadingNumber(line, "Restore ")).toBe(effect.amount);
+      continue;
+    }
+
+    if (line.startsWith("Wish ")) {
+      const effect = wishEffects[wishIndex++];
+      if (effect) expect(parseLeadingNumber(line, "Wish ")).toBe(effect.amount);
+      continue;
+    }
+
+    if ((line.startsWith("Remove ") || line.startsWith("Cleanse ")) && line.includes("harmful status")) {
+      const effect = removeHarmfulEffects[removeHarmfulIndex++];
+      if (effect) {
+        const parsed = parseLeadingNumber(line, line.startsWith("Remove ") ? "Remove " : "Cleanse ");
+        expect(parsed).toBe(effect.amount);
+      }
+    }
+  }
 }
 
 // ─────────────────────────── Cards ───────────────────────────
@@ -101,6 +206,41 @@ describe("card descriptions vs effects", () => {
       ).length;
       const cleanseEffects = countByKind(effects, "remove-player-status");
 
+      const gainBlockLines = descriptionLines.filter(
+        (l) => l.startsWith("Gain ") && l.includes(" Block") && !l.includes("per Mana Crystal"),
+      ).length;
+      const gainBlockEffects = effects.filter(
+        (e): e is Extract<BattleCardEffect, { kind: "player-status"; status: "block" }> =>
+          e.kind === "player-status" && e.status === "block" && !("perManaCrystal" in e && e.perManaCrystal),
+      ).length;
+
+      const perManaBlockLines = descriptionLines.filter((l) => l.includes("per Mana Crystal")).length;
+      const perManaBlockEffects = effects.filter(
+        (e): e is Extract<BattleCardEffect, { kind: "player-status"; status: "block" }> =>
+          e.kind === "player-status" && e.status === "block" && "perManaCrystal" in e && !!e.perManaCrystal,
+      ).length;
+
+      const gainArmorLines = descriptionLines.filter(
+        (l) => l.startsWith("Gain ") && l.includes(" Armor"),
+      ).length;
+      const gainArmorEffects = effects.filter(
+        (e): e is Extract<BattleCardEffect, { kind: "player-status"; status: "armor" }> =>
+          e.kind === "player-status" && e.status === "armor",
+      ).length;
+
+      const gainForgeLines = descriptionLines.filter(
+        (l) => l.startsWith("Gain ") && l.includes(" Forge"),
+      ).length;
+      const gainForgeEffects = effects.filter(
+        (e): e is Extract<BattleCardEffect, { kind: "player-status"; status: "forge" }> =>
+          e.kind === "player-status" && e.status === "forge",
+      ).length;
+
+      const hasteEffects = effects.filter(
+        (e): e is Extract<BattleCardEffect, { kind: "player-status"; status: "haste" }> =>
+          e.kind === "player-status" && e.status === "haste",
+      ).length;
+
       if (!hasEqualToBlockOrArmor(effects)) {
         if (hasKind(effects, "self-damage")) {
           expect(descriptionLines.some((l) => /self|Receive/.test(l))).toBe(true);
@@ -121,12 +261,42 @@ describe("card descriptions vs effects", () => {
       expect(stripArmorLines).toBe(stripArmorEffects);
       expect(doubleLines).toBe(doubleEffects);
       expect(cleanseLines).toBe(cleanseEffects);
+      expect(gainBlockLines).toBe(gainBlockEffects);
+      expect(perManaBlockLines).toBe(perManaBlockEffects);
+      expect(gainArmorLines).toBe(gainArmorEffects);
+      expect(gainForgeLines).toBe(gainForgeEffects);
+
+      if (hasteEffects > 0) {
+        expect(descriptionLines.some((l) => l.includes("extra turn"))).toBe(true);
+      }
 
       if (!hasKind(effects, "self-damage")) {
         expect(buffCompanionLines).toBe(buffCompanionEffects);
       }
+
+      expectNumericParity(card);
     },
   );
+
+  it("summon cards advertise companion turn damage from companionLibrary", () => {
+    for (const card of cardLibrary) {
+      const summon = card.effects.find(
+        (e): e is Extract<BattleCardEffect, { kind: "summon-companion" }> => e.kind === "summon-companion",
+      );
+      if (!summon) continue;
+
+      const companion = companionLibrary[summon.companionId];
+      const attack = companion.turnStartEffects.find(
+        (e): e is Extract<BattleCardEffect, { kind: "damage" }> => e.kind === "damage",
+      );
+      expect(attack, `${card.id} companion missing turn-start damage`).toBeDefined();
+
+      const companionLine = card.descriptionLines.find((l) => /^Deals \d+/.test(l));
+      expect(companionLine, `${card.id} missing companion damage line`).toBeDefined();
+      expect(companionLine).toBe(expectedCompanionTurnLine(attack!.amount, attack!.damageType));
+      expect(card.descriptionLines.some((l) => l === "Companion")).toBe(true);
+    }
+  });
 
   it("every 'Gain' line references a known effect type", () => {
     const knownGainTargets = ["Block", "Armor", "Forge", "Health", "Maximum Mana", "Gold"];

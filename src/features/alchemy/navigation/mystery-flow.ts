@@ -4,7 +4,7 @@
 import { cardLibrary, trinketLibrary, type BattleCard, type KeywordId } from "@/lib/game-data";
 import { playGoldGain, playGoldSpend } from "@/lib/audio";
 import { MIXED_POTION_CARD_ID, MYSTERY_CARD_CHOICES } from "@/lib/game-constants";
-import { appendUnique } from "@/lib/utils";
+import { appendCardToRunWithDiscovery, appendTrinketToRunWithDiscovery } from "../run/deck-mutations";
 import type { MaterialId, MaterialInventory } from "@/lib/homestead/types";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import type { Dispatch, SetStateAction } from "react";
@@ -36,41 +36,43 @@ type MysteryEffectContext = {
 
 // Applies a single mystery consequence effect to the run state.
 // Returns a result indicating if the navigation flow must pause for follow-up choice UI.
+const mysteryApplyHandlers: {
+  [K in MysteryEffect["kind"]]: (
+    effect: Extract<MysteryEffect, { kind: K }>,
+    context: MysteryEffectContext,
+  ) => MysteryEffectResult;
+} = {
+  addCard: (effect, context) => addSpecificMysteryCard(effect.cardId, context),
+  chooseCard: (_effect, context) => offerMysteryCardChoices(context),
+  healHealth: (effect, context) => healFromMystery(effect.amount, effect.chance, context),
+  damageHealth: (effect, context) => damageFromMystery(effect.amount, context),
+  gainGold: (effect, context) => gainMysteryGold(effect.amount, context),
+  loseGold: (effect, context) => loseMysteryGold(effect.amount, context),
+  gainXP: (effect, context) => {
+    context.awardMysteryXP(effect.keyword, effect.amount);
+    return { followUp: null };
+  },
+  removeCard: (effect, context) => removeMysteryCard(effect.mode, context),
+  gainTrinket: (effect, context) => gainMysteryTrinket(effect.trinketId, context),
+  gainRandomTrinket: (_effect, context) => gainRandomMysteryTrinket(context),
+  gainMaterial: (effect, context) => gainMysteryMaterial(effect.material, effect.amount, context),
+  none: () => ({ followUp: null }),
+};
+
+function assertNever(value: never): never {
+  throw new Error(`Unhandled mystery effect kind: ${String(value)}`);
+}
+
 export function applyMysteryEffect(effect: MysteryEffect, context: MysteryEffectContext): MysteryEffectResult {
-  switch (effect.kind) {
-    case "addCard":
-      return addSpecificMysteryCard(effect.cardId, context);
-    case "chooseCard":
-      // Pauses effect processing to let the player manually choose a card from choices.
-      return offerMysteryCardChoices(context);
-    case "healHealth":
-      return healFromMystery(effect.amount, effect.chance, context);
-    case "damageHealth":
-      return damageFromMystery(effect.amount, context);
-    case "gainGold":
-      // State mutation goes through onAwardGold; plays a gain jingle side effect.
-      return gainMysteryGold(effect.amount, context);
-    case "loseGold":
-      // State mutation directly modifies gold; plays a spend jingle side effect.
-      return loseMysteryGold(effect.amount, context);
-    case "gainXP":
-      context.awardMysteryXP(effect.keyword, effect.amount);
-      return { followUp: null };
-    case "removeCard":
-      return removeMysteryCard(effect.mode, context);
-    case "gainTrinket":
-      return gainMysteryTrinket(effect.trinketId, context);
-    case "gainRandomTrinket":
-      return gainRandomMysteryTrinket(context);
-    case "gainMaterial":
-      return gainMysteryMaterial(effect.material, effect.amount, context);
-    case "none":
-      return { followUp: null };
+  const handler = mysteryApplyHandlers[effect.kind];
+  if (!handler) {
+    return assertNever(effect.kind as never);
   }
+  return handler(effect as never, context);
 }
 
 // The mixed potion is a generated shop result, so mystery random card rewards exclude it.
-export function getMysteryCardPool() {
+function getMysteryCardPool() {
   return cardLibrary.filter((c) => c.id !== MIXED_POTION_CARD_ID);
 }
 
@@ -79,8 +81,7 @@ export function addCardToRun(
   card: BattleCard,
   context: Pick<MysteryEffectContext, "setRunDeck" | "setDiscoveredCardIds">,
 ): void {
-  context.setRunDeck((p) => [...p, card]);
-  context.setDiscoveredCardIds((cur) => appendUnique(cur, card.id));
+  appendCardToRunWithDiscovery(card, context);
 }
 
 function addSpecificMysteryCard(cardId: string, context: MysteryEffectContext) {
@@ -129,8 +130,7 @@ function removeMysteryCard(mode: "random" | "choose", context: MysteryEffectCont
 }
 
 function gainMysteryTrinket(trinketId: string, context: MysteryEffectContext) {
-  context.setRunTrinkets((p) => [...p, trinketId]);
-  context.setDiscoveredTrinketIds((cur) => appendUnique(cur, trinketId));
+  appendTrinketToRunWithDiscovery(trinketId, context);
   return { followUp: null };
 }
 

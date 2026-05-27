@@ -5,12 +5,8 @@
 import { computeTalentEffects, getGoldMultiplier } from "@/lib/game-data";
 import type { BattleState } from "@/lib/battle";
 import type { BattleCard, CharacterId, DifficultyId, UnlockedTalents, TalentEffectManifest } from "@/lib/game-data";
-import { randomBetween } from "@/features/alchemy/utils";
 import { getEnemyMaterialLoot, applyMaterialFindBonus } from "@/lib/homestead/loot";
-import type { MaterialInventory } from "@/lib/homestead/types";
-import type { HomesteadEffectManifest } from "@/lib/homestead/types";
-import { CONSTANTS, type Destination } from "@/features/alchemy/types";
-import type { ContentSystemId, LabyrinthModifierKind } from "@/lib/content-systems/types";
+import { randomBetween } from "@/features/alchemy/utils";
 import {
   COMPANION_GOLD_FIND_CHANCE,
   COMPANION_GOLD_MULTIPLIER,
@@ -21,18 +17,63 @@ import {
   GOLD_REWARD_MAX,
   GOLD_TROVE_REWARD_MULTIPLIER,
 } from "@/lib/game-constants";
+import { getGenerousGoldBonus } from "./reward-gold";
+import type { MaterialInventory } from "@/lib/homestead/types";
+import type { HomesteadEffectManifest } from "@/lib/homestead/types";
+import { CONSTANTS, type Destination } from "@/features/alchemy/types";
+import type { ContentSystemId, LabyrinthModifierKind } from "@/lib/content-systems/types";
 import {
   getActiveRewardModifiersForContentSystem,
-  getGenerousGoldBonus,
   applyLabyrinthRewardMaterialModifiers,
   shouldForceTrinketReward,
   computeVictoryGoldResult,
   createCombatRewardState as createCombatRewardStateFromFlow,
   createBossRewardState as createBossRewardStateFromFlow,
   createEmptyRewardState,
+  getCompanionCardChoices,
+  shouldGrantCompanionReward,
   type RewardState,
 } from "./reward-flow";
 import { sampleDestinationChoices } from "./destination-flow";
+import { getPreviousDestination } from "./run-navigation-helpers";
+import { playGoldGain } from "@/lib/audio";
+
+type VictoryGoldRoll = {
+  gold: number;
+  eliteBonus: number;
+  bossBonus: number;
+  generousBonus: number;
+  baseGold: number;
+};
+
+function rollVictoryGold(
+  battleState: BattleState,
+  talentEffects: TalentEffectManifest,
+  labyrinthRewardModifiers: LabyrinthModifierKind[],
+  rng: () => number,
+): VictoryGoldRoll {
+  const baseGold = randomBetween(GOLD_REWARD_MIN, GOLD_REWARD_MAX);
+  let gold = Math.floor(baseGold * (1 + talentEffects.enemyGoldDropBonus));
+
+  if (talentEffects.companionGoldFindActive && battleState.activeCompanion && rng() < COMPANION_GOLD_FIND_CHANCE) {
+    gold = Math.floor(gold * COMPANION_GOLD_MULTIPLIER);
+  }
+
+  if (battleState.currentEnemy.traits?.some((t) => t.id === ENEMY_TRAIT_IDS.GOLD_TROVE)) {
+    gold = Math.floor(gold * GOLD_TROVE_REWARD_MULTIPLIER);
+  }
+
+  const eliteFraction =
+    ELITE_GOLD_BONUS_FRACTION +
+    (battleState.currentEnemy.enemyType === CONSTANTS.ENEMY_TYPES.ELITE ? talentEffects.eliteGoldDropBonus : 0);
+  const eliteBonus =
+    battleState.currentEnemy.enemyType === CONSTANTS.ENEMY_TYPES.ELITE ? Math.floor(gold * eliteFraction) : 0;
+  const bossBonus =
+    battleState.currentEnemy.enemyType === CONSTANTS.ENEMY_TYPES.BOSS ? Math.floor(gold * BOSS_GOLD_BONUS_FRACTION) : 0;
+  const generousBonus = getGenerousGoldBonus(labyrinthRewardModifiers, gold);
+
+  return { gold, eliteBonus, bossBonus, generousBonus, baseGold };
+}
 
 export type VictoryRewardsInput = {
   characterId: CharacterId;
@@ -152,33 +193,12 @@ export function computeVictoryRewards(
   );
 
   const talentEffects = computeTalentEffects(input.unlockedTalents);
-
-  const baseGold = randomBetween(GOLD_REWARD_MIN, GOLD_REWARD_MAX);
-
-  let gold = Math.floor(baseGold * (1 + talentEffects.enemyGoldDropBonus));
-
-  if (
-    talentEffects.companionGoldFindActive &&
-    input.battleState.activeCompanion &&
-    rng() < COMPANION_GOLD_FIND_CHANCE
-  ) {
-    gold = Math.floor(gold * COMPANION_GOLD_MULTIPLIER);
-  }
-
-  if (input.battleState.currentEnemy.traits?.some((t) => t.id === ENEMY_TRAIT_IDS.GOLD_TROVE)) {
-    gold = Math.floor(gold * GOLD_TROVE_REWARD_MULTIPLIER);
-  }
-
-  const eliteFraction =
-    ELITE_GOLD_BONUS_FRACTION +
-    (input.battleState.currentEnemy.enemyType === CONSTANTS.ENEMY_TYPES.ELITE ? talentEffects.eliteGoldDropBonus : 0);
-  const eliteBonus =
-    input.battleState.currentEnemy.enemyType === CONSTANTS.ENEMY_TYPES.ELITE ? Math.floor(gold * eliteFraction) : 0;
-  const bossBonus =
-    input.battleState.currentEnemy.enemyType === CONSTANTS.ENEMY_TYPES.BOSS
-      ? Math.floor(gold * BOSS_GOLD_BONUS_FRACTION)
-      : 0;
-  const generousBonus = getGenerousGoldBonus(labyrinthRewardModifiers, gold);
+  const { gold, eliteBonus, bossBonus, generousBonus, baseGold } = rollVictoryGold(
+    input.battleState,
+    talentEffects,
+    labyrinthRewardModifiers,
+    rng,
+  );
 
   const goldResult = computeVictoryGoldResult({
     battleState: input.battleState,
@@ -206,8 +226,7 @@ export function computeVictoryRewards(
     labyrinthRewardModifiers,
   );
 
-  const previousDestination =
-    input.destinationIndexInAct === 0 ? undefined : input.completedDestinations[input.completedDestinations.length - 1];
+  const previousDestination = getPreviousDestination(input.destinationIndexInAct, input.completedDestinations);
   const destinations = sampleDestinationChoices(
     input.getAvailableDestinations({
       currentHealth: input.battleState.playerHealth,
@@ -251,4 +270,39 @@ export function computeVictoryRewards(
     bossBonus,
     generousBonus,
   };
+}
+
+export type CommitVictoryRewardsDeps = {
+  battleState: BattleState;
+  addHomesteadMaterials: (materials: MaterialInventory) => void;
+  addRunGold: (amount: number) => void;
+  setRunPlayerHealth: (health: number) => void;
+  setRunMaxHealth: (fn: (prev: number) => number) => void;
+  setRewardState: (state: RewardState) => void;
+  setCompanionRewardCards: (cards: BattleCard[] | null) => void;
+  clearCombatState: () => void;
+};
+
+export function commitVictoryRewards(result: VictoryRewardsResult, deps: CommitVictoryRewardsDeps) {
+  if (deps.battleState.pendingMaterials.crystal > 0) {
+    deps.addHomesteadMaterials(deps.battleState.pendingMaterials);
+  }
+
+  deps.addRunGold(result.goldEarned);
+  deps.setRunPlayerHealth(result.playerHealth);
+  if (result.maxHealthDelta > 0) {
+    deps.setRunMaxHealth((prev) => prev + result.maxHealthDelta);
+  }
+
+  if (result.newGold > deps.battleState.gold) {
+    playGoldGain();
+  }
+
+  deps.setRewardState(result.rewardState);
+  if (shouldGrantCompanionReward(result.labyrinthRewardModifiers)) {
+    deps.setCompanionRewardCards(getCompanionCardChoices());
+  } else {
+    deps.setCompanionRewardCards(null);
+  }
+  deps.clearCombatState();
 }

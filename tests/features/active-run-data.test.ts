@@ -155,4 +155,14 @@ describe("createActiveRunData", () => {
 
     expect(result.runTalentXP).toEqual(runTalentXP);
   });
+
+  it("persists destination resume fields", () => {
+    const result = createActiveRunData(makeSource({
+      currentScreen: "destination",
+      destinationChoices: ["Campfire", "Merchant's Shop"],
+    }));
+
+    expect(result.currentScreen).toBe("destination");
+    expect(result.destinationChoices).toEqual(["Campfire", "Merchant's Shop"]);
+  });
 });

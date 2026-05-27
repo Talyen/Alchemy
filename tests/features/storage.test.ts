@@ -11,7 +11,8 @@ import {
 } from "@/lib/validation";
 import { getRawSaveSchemaVersion, isUnsupportedFutureSaveData, migrateSaveDataToCurrent } from "@/lib/validation";
 import { cardLibrary } from "@/lib/game-data";
-import { createSeededRng, generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
+import { createSeededRng } from "@/lib/utils";
+import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
 import { hydrateCard } from "@/lib/game-data";
 import { legacyCampaignRunSave, legacyCorruptedCardRunSave, legacyLabyrinthRunSave } from "../fixtures/legacy-saves";
 import type { SaveData } from "@/features/alchemy/storage/types";
@@ -582,15 +583,6 @@ describe("SaveDataSchema", () => {
     expect(result.activeRun?.labyrinthMap?.grid[0]?.[4]?.type).toBe("entrance");
   });
 
-  it("loads the legacy labyrinth fixture with its map intact", () => {
-    const result = parseSave(legacyLabyrinthRunSave());
-
-    expect(result.activeRun?.contentSystemType).toBe("labyrinth");
-    expect(result.activeRun?.characterId).toBe("ranger");
-    expect(result.activeRun?.labyrinthMap?.currentNode).toEqual({ row: 0, col: 4 });
-    expect(result.activeRun?.labyrinthMap?.grid[0]?.[4]?.type).toBe("entrance");
-  });
-
   it("loads the legacy corrupted-card fixture without stale library-owned card fields", () => {
     const result = parseSave(legacyCorruptedCardRunSave());
     const card = result.activeRun?.runDeck[0];
@@ -748,6 +740,33 @@ describe("SaveDataSchema", () => {
     expect(reParsed.activeRun?.runGold).toBe(27);
     expect(reParsed.activeRun?.runPlayerHealth).toBe(18);
     expect(reParsed.activeRun?.runTalentXP).toEqual({ burn: 12, poison: 8 });
+  });
+
+  it("destination resume fields round-trip through JSON serialize/deserialize", () => {
+    const original = parseSave({
+      activeRun: {
+        characterId: "knight",
+        runDeck: [],
+        runGold: 12,
+        runPlayerHealth: 20,
+        runMaxHealth: 30,
+        roomsEncountered: 2,
+        currentAct: 1,
+        destinationIndexInAct: 1,
+        completedDestinations: ["Normal Combat"],
+        runTrinkets: [],
+        contentSystemType: "campaign",
+        labyrinthMap: null,
+        labyrinthPendingNode: null,
+        activeCombat: null,
+        currentScreen: "destination",
+        destinationChoices: ["Campfire", "Mystery", "Merchant's Shop"],
+        runTalentXP: {},
+      } as never,
+    });
+    const reParsed = parseSave(JSON.parse(JSON.stringify(original)));
+    expect(reParsed.activeRun?.currentScreen).toBe("destination");
+    expect(reParsed.activeRun?.destinationChoices).toEqual(["Campfire", "Mystery", "Merchant's Shop"]);
   });
 
   it("labyrinth map round-trips through JSON serialize/deserialize", () => {

@@ -1,0 +1,14 @@
+﻿# Cursor indexing only — does not affect git or builds.
+# Aligns with AGENTS.md "Large / Generated / Heavy Files".
+
+Raw Assets/**
+src/assets/optimized/**
+Music/**
+dist/**
+release-desktop/**
+coverage/**
+reports/**
+node_modules/**
+.vite/**
+playwright-report/**
+test-results/**

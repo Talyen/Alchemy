@@ -36,8 +36,7 @@ export function MysteryEffectBadge({
         <span
           className={cn(
             "inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold",
-            // Appends "/15" as a Tailwind opacity selector modifier to create a translucent background pill.
-            goldDef.colorClass.replace("text-", "bg-") + "/15",
+            goldDef.pillBgClass,
             goldDef.colorClass,
           )}
         >
@@ -64,11 +63,11 @@ export function MysteryEffectBadge({
         <span className="font-semibold">
           {tooltip ? (
             <>
-              Restore <span className={healthDef?.colorClass}>Health</span>
+              Restore <span className={cn(healthDef?.colorClass)}>Health</span>
             </>
           ) : (
             <>
-              Restore {effect.amount} <span className={healthDef?.colorClass}>Health</span>
+              Restore {effect.amount} <span className={cn(healthDef?.colorClass)}>Health</span>
               {effect.chance !== undefined
                 ? ` (${Math.round(effect.chance * CONSTANTS.PERCENTAGE_MULTIPLIER)}% chance)`
                 : ""}
@@ -87,11 +86,11 @@ export function MysteryEffectBadge({
         <span className="font-semibold">
           {tooltip ? (
             <>
-              Gain <span className={def?.colorClass}>{def?.label ?? effect.keyword}</span> XP
+              Gain <span className={cn(def?.colorClass)}>{def?.label ?? effect.keyword}</span> XP
             </>
           ) : (
             <>
-              Gain {effect.amount} <span className={def?.colorClass}>{def?.label ?? effect.keyword}</span> XP
+              Gain {effect.amount} <span className={cn(def?.colorClass)}>{def?.label ?? effect.keyword}</span> XP
             </>
           )}
         </span>

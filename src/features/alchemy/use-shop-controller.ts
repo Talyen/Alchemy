@@ -2,10 +2,11 @@
 // Depends on run/talent state, sampled shop state, trinket pricing, audio, and mixer helpers.
 // Uses useScreenStore for shop/alchemist state.
 import { useRef } from "react";
-import { cardLibrary, type BattleCard } from "@/lib/game-data";
-import { playGoldSpend } from "@/lib/audio";
+import { cardLibrary, getStandardPotionPool, type BattleCard } from "@/lib/game-data";
 import { computeTrinketManifest } from "@/lib/trinkets";
 import { appendUnique } from "@/lib/utils";
+import { appendCardToRunWithDiscovery } from "./run/deck-mutations";
+import { refreshOfferings, spendRunGold } from "./shop-transactions";
 import { applyMixToDeck, tryCreateMixedPotion } from "./potion-mixer";
 import {
   ALCHEMIST_MIX_PRICE,
@@ -17,9 +18,7 @@ import {
   SHOP_CARDS_OFFERED,
   ALCHEMIST_POTIONS_OFFERED,
   MIXED_POTION_CARD_ID,
-  POTION_CARD_ID_SUFFIX,
 } from "@/lib/game-constants";
-import { resampleItems } from "./utils";
 import { useScreenStore } from "./stores/screen-store";
 import type { RunStateController } from "./use-run-state";
 import type { TalentStateController } from "./use-talent-state";
@@ -43,66 +42,84 @@ export function useShopController({
     return useScreenStore.getState();
   }
 
-  function handleShopBuyCard(card: BattleCard) {
-    let price = Math.max(0, SHOP_CARD_PRICE - talents.talentEffects.shopCardDiscount);
-    if (!shopState.firstPurchaseUsed && !shopDiscountConsumed.current) {
+  function purchaseCard(
+    card: BattleCard,
+    basePrice: number,
+    discount: number,
+    firstPurchaseUsed: boolean,
+    discountConsumed: { current: boolean },
+    markFirstPurchase: () => void,
+  ) {
+    let price = Math.max(0, basePrice - discount);
+    if (!firstPurchaseUsed && !discountConsumed.current) {
       price = Math.max(0, price - computeTrinketManifest(run.runTrinkets).merchantsFavorDiscount);
-      shopDiscountConsumed.current = true;
+      discountConsumed.current = true;
     }
     if (run.runGold < price) return null;
-    if (price > 0) playGoldSpend();
-    run.setRunGold((p) => Math.max(0, p - price));
-    run.setRunDeck((p) => [...p, card]);
-    setDiscoveredCardIds((cur) => appendUnique(cur, card.id));
-    getStore().setShopState((p) => ({ ...p, firstPurchaseUsed: true }));
+    spendRunGold(price, run.setRunGold);
+    appendCardToRunWithDiscovery(card, { setRunDeck: run.setRunDeck, setDiscoveredCardIds });
+    markFirstPurchase();
+    return card;
+  }
+
+  function handleShopBuyCard(card: BattleCard) {
+    purchaseCard(
+      card,
+      SHOP_CARD_PRICE,
+      talents.talentEffects.shopCardDiscount,
+      shopState.firstPurchaseUsed,
+      shopDiscountConsumed,
+      () => getStore().setShopState((p) => ({ ...p, firstPurchaseUsed: true })),
+    );
   }
 
   function handleShopRemoveCard(index: number) {
     if (shopState.removeUsed) return;
     const price = Math.max(0, SHOP_REMOVE_PRICE - talents.talentEffects.removeCardDiscount);
     if (run.runGold < price) return null;
-    if (price > 0) playGoldSpend();
-    run.setRunGold((p) => Math.max(0, p - price));
+    spendRunGold(price, run.setRunGold);
     run.setRunDeck((p) => p.filter((_, i) => i !== index));
     getStore().setShopState((p) => ({ ...p, removeUsed: true }));
   }
 
   function handleShopRefresh() {
     const price = talents.talentEffects.shopFreeRefresh && shopState.refreshesLeft > 0 ? 0 : SHOP_REFRESH_PRICE;
-    if (shopState.refreshesLeft <= 0 || run.runGold < price) return;
-    if (price > 0) playGoldSpend();
-    run.setRunGold((g) => Math.max(0, g - price));
-    getStore().setShopState((p) => ({
-      ...p,
-      cards: resampleItems(cardLibrary, p.cards, SHOP_CARDS_OFFERED),
-      refreshesLeft: p.refreshesLeft - 1,
-    }));
+    refreshOfferings({
+      price,
+      refreshesLeft: shopState.refreshesLeft,
+      runGold: run.runGold,
+      pool: cardLibrary,
+      currentItems: shopState.cards,
+      count: SHOP_CARDS_OFFERED,
+      setRunGold: run.setRunGold,
+      setState: getStore().setShopState,
+      mapState: (p, cards) => ({ ...p, cards, refreshesLeft: p.refreshesLeft - 1 }),
+    });
   }
 
   function handleAlchemistBuyCard(card: BattleCard) {
-    let price = Math.max(0, ALCHEMIST_POTION_PRICE - talents.talentEffects.potionDiscount);
-    if (!alchemistState.firstPurchaseUsed && !alchemistDiscountConsumed.current) {
-      price = Math.max(0, price - computeTrinketManifest(run.runTrinkets).merchantsFavorDiscount);
-      alchemistDiscountConsumed.current = true;
-    }
-    if (run.runGold < price) return null;
-    if (price > 0) playGoldSpend();
-    run.setRunGold((p) => Math.max(0, p - price));
-    run.setRunDeck((p) => [...p, card]);
-    setDiscoveredCardIds((cur) => appendUnique(cur, card.id));
-    getStore().setAlchemistState((p) => ({ ...p, firstPurchaseUsed: true }));
+    purchaseCard(
+      card,
+      ALCHEMIST_POTION_PRICE,
+      talents.talentEffects.potionDiscount,
+      alchemistState.firstPurchaseUsed,
+      alchemistDiscountConsumed,
+      () => getStore().setAlchemistState((p) => ({ ...p, firstPurchaseUsed: true })),
+    );
   }
 
   function handleAlchemistRefresh() {
-    const potionPool = cardLibrary.filter((c) => c.id.endsWith(POTION_CARD_ID_SUFFIX) && c.id !== MIXED_POTION_CARD_ID);
-    if (alchemistState.refreshesLeft <= 0 || run.runGold < ALCHEMIST_REFRESH_PRICE) return;
-    playGoldSpend();
-    run.setRunGold((g) => Math.max(0, g - ALCHEMIST_REFRESH_PRICE));
-    getStore().setAlchemistState((p) => ({
-      ...p,
-      potions: resampleItems(potionPool, p.potions, ALCHEMIST_POTIONS_OFFERED),
-      refreshesLeft: p.refreshesLeft - 1,
-    }));
+    refreshOfferings({
+      price: ALCHEMIST_REFRESH_PRICE,
+      refreshesLeft: alchemistState.refreshesLeft,
+      runGold: run.runGold,
+      pool: getStandardPotionPool(),
+      currentItems: alchemistState.potions,
+      count: ALCHEMIST_POTIONS_OFFERED,
+      setRunGold: run.setRunGold,
+      setState: getStore().setAlchemistState,
+      mapState: (p, potions) => ({ ...p, potions, refreshesLeft: p.refreshesLeft - 1 }),
+    });
   }
 
   function handleAlchemistMixPotions(indexA: number, indexB: number): BattleCard | null {
@@ -115,8 +132,7 @@ export function useShopController({
     const mixed = tryCreateMixedPotion(cardA, cardB, talents.talentEffects.potionMixPotency ?? 0);
     if (!mixed) return null;
 
-    if (price > 0) playGoldSpend();
-    run.setRunGold((p) => Math.max(0, p - price));
+    spendRunGold(price, run.setRunGold);
     run.setRunDeck((p) => applyMixToDeck(p, indexA, indexB, mixed));
     getStore().setAlchemistState((p) => ({ ...p, mixUsed: true }));
     setDiscoveredCardIds((cur) => appendUnique(cur, MIXED_POTION_CARD_ID));

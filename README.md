@@ -11,7 +11,7 @@
 
 ## Prerequisites
 
-- Node.js 20+ (LTS recommended)
+- Node.js 24+ (see `engines` in `package.json`)
 - npm 10+
 
 ## Quick Start
@@ -174,4 +174,4 @@ React • TypeScript • Vite • Tailwind CSS • Zustand • Electron • Vite
 
 ## Development Guide
 
-See [`AGENTS.md`](./AGENTS.md) for AI-assisted development conventions, architecture notes, and a domain glossary.
+See [`AGENTS.md`](./AGENTS.md) for AI-assisted development conventions, architecture notes, and a domain glossary. For copy-paste LLM audit prompts (battle correctness, dead code, migrations, etc.), see [`PROMPTS.md`](./PROMPTS.md).

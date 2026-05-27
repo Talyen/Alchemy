@@ -6,7 +6,7 @@
 
 import type { DifficultyModifier } from "@/lib/game-data";
 import type { LabyrinthModifier, LabyrinthModifierKind } from "../types";
-import { shuffleWithRng } from "./map-generation";
+import { shuffle as shuffleWithRng } from "@/lib/utils";
 import {
   LABYRINTH_BURNING_GROUND_DAMAGE,
   LABYRINTH_LEECH_HEAL,

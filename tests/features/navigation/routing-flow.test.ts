@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import { routeDestinationChoice, type DestinationRouteHandlers } from "@/features/alchemy/navigation/routing-flow";
+import {
+  routeDestinationChoice,
+  type DestinationRouteHandlers,
+} from "@/features/alchemy/run/run-destination-handlers";
 import { DESTINATIONS, type Destination } from "@/features/alchemy/types";
 
 function makeHandlers(): DestinationRouteHandlers {

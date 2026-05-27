@@ -91,7 +91,9 @@ function CollectionTileMedia({ item, flipped }: { item: CollectionTileItem; flip
     );
   }
 
-  return <TileImage item={item} className={item.frameType === "trinket" ? squareArtImageClass : cardArtImageClass} />;
+  return (
+    <TileImage item={item} className={cn(item.frameType === "trinket" ? squareArtImageClass : cardArtImageClass)} />
+  );
 }
 
 function TileImage({ item, className }: { item: CollectionTileItem; className: string }) {

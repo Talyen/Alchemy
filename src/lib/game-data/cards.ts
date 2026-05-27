@@ -62,6 +62,7 @@ import {
   pantherCompanion,
   phoenixCompanion,
 } from "./assets";
+import { MIXED_POTION_CARD_ID, POTION_CARD_ID_SUFFIX } from "@/lib/game-constants";
 import type { BattleCard } from "./types";
 
 export const cardLibrary: BattleCard[] = [
@@ -630,6 +631,15 @@ export const cardLibrary: BattleCard[] = [
     effects: [{ kind: "remove-player-status", status: "stun" }],
   },
 ];
+
+export function isStandardPotionCard(card: Pick<BattleCard, "id">): boolean {
+  return card.id.endsWith(POTION_CARD_ID_SUFFIX) && card.id !== MIXED_POTION_CARD_ID;
+}
+
+/** Shop, alchemist, and reward flows share this pool (excludes generated mixed potion). */
+export function getStandardPotionPool(): BattleCard[] {
+  return cardLibrary.filter(isStandardPotionCard);
+}
 
 export function hydrateCard(savedCard: BattleCard): BattleCard {
   const libraryCard = cardLibrary.find((c) => c.id === savedCard.id);

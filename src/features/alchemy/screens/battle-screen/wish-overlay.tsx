@@ -65,7 +65,7 @@ export function WishOverlay({ battleState, actions }: { battleState: BattleScree
       className="motion-overlay absolute inset-0 flex items-center justify-center px-6"
       style={{ zIndex: WISH_OVERLAY_Z_INDEX }}
     >
-      <div className="motion-panel alchemy-shell w-full max-w-5xl rounded-[28px] border border-border/80 px-6 py-6">
+      <div className="motion-panel alchemy-shell w-full max-w-5xl rounded-shell-screen border border-border/80 px-6 py-6">
         <ScreenHeader title="Wish" />
         <p className="mt-2 text-center text-sm text-muted-foreground">Choose one card to add to your hand, or skip.</p>
 

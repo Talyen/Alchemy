@@ -1,6 +1,7 @@
 // Representative pre-schema save payloads used to keep old player progress loadable.
 // Depends on deterministic labyrinth map generation so fixture tests can cover mid-run map saves.
-import { createSeededRng, generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
+import { createSeededRng } from "@/lib/utils";
+import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
 
 // Campaign fixture mirrors saves created before save metadata existed, with a mid-run active campaign.
 export function legacyCampaignRunSave() {

@@ -73,6 +73,8 @@ describe("initAlchemist", () => {
     const potions = useScreenStore.getState().alchemistState.potions;
     for (const potion of potions) {
       expect(potion.id).toMatch(/-potion$/);
+      expect(potion.id).not.toBe("mixed-potion");
+      expect(potion.id.startsWith("mixed-potion-")).toBe(false);
     }
   });
 
@@ -110,15 +112,15 @@ describe("setShopState", () => {
   });
 });
 
-describe("beginMystery", () => {
+describe("setMysteryEvent", () => {
   it("sets a mystery event", () => {
-    useScreenStore.getState().beginMystery();
-    expect(useScreenStore.getState().mysteryEvent).not.toBeNull();
+    useScreenStore.getState().setMysteryEvent({ id: "test", title: "T", art: "", narrative: "", choices: [] });
+    expect(useScreenStore.getState().mysteryEvent?.id).toBe("test");
   });
 
-  it("clears mystery card choices", () => {
+  it("clears mystery card choices via null event reset pattern", () => {
     useScreenStore.setState({ mysteryCardChoices: [{ id: "test", title: "T", descriptionLines: [""], art: "", cost: 0, effects: [] }] });
-    useScreenStore.getState().beginMystery();
+    useScreenStore.getState().setMysteryCardChoices(null);
     expect(useScreenStore.getState().mysteryCardChoices).toBeNull();
   });
 });
@@ -133,6 +135,21 @@ describe("setHoveredCardId", () => {
     useScreenStore.setState({ hoveredCardId: "card-1" });
     useScreenStore.getState().setHoveredCardId((prev) => (prev === "card-1" ? null : prev));
     expect(useScreenStore.getState().hoveredCardId).toBeNull();
+  });
+});
+
+describe("companion and corruption setters", () => {
+  it("stores companion reward cards", () => {
+    const cards = [{ id: "wolf-companion", title: "Wolf", descriptionLines: [""], art: "", cost: 1, effects: [] }];
+    useScreenStore.getState().setCompanionRewardCards(cards);
+    expect(useScreenStore.getState().companionRewardCards).toEqual(cards);
+  });
+
+  it("tracks active run and corruption result", () => {
+    useScreenStore.getState().setHasActiveRun(true);
+    expect(useScreenStore.getState().hasActiveRun).toBe(true);
+    useScreenStore.getState().setCorruptionResult(null);
+    expect(useScreenStore.getState().corruptionResult).toBeNull();
   });
 });
 

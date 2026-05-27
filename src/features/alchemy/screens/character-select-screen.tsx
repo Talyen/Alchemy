@@ -46,10 +46,10 @@ function CharacterCard({
     >
       <TiltSurface
         as="button"
-        className={cn(charCardWidthClass, "relative rounded-[20px]")}
+        className={cn(charCardWidthClass, "relative rounded-shell-tooltip")}
         shimmerActive={isShimmer}
         shimmerToken={shimmerToken}
-        shimmerRounded="rounded-[20px]"
+        shimmerRounded="rounded-shell-tooltip"
         selected={isSelected}
         onClick={() => onSelect(id)}
         onMouseEnter={() => {
@@ -58,7 +58,7 @@ function CharacterCard({
         }}
         onMouseLeave={() => setShowTooltip(false)}
       >
-        <img src={art} alt={char.name} className={cn(cardSurfaceClass, "w-full rounded-[20px] aspect-[3/4]")} />
+        <img src={art} alt={char.name} className={cn(cardSurfaceClass, "w-full rounded-shell-tooltip aspect-[3/4]")} />
       </TiltSurface>
       <p className="font-display text-lg font-bold text-amber-100/90 mt-1">{char.name}</p>
       {showTooltip ? (
@@ -98,10 +98,7 @@ function CharacterCard({
             </div>
           ) : (
             <div className="mt-2 flex">
-              <span
-                className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-sm font-semibold leading-none text-amber-100/90"
-                style={{ backgroundColor: "color-mix(in srgb, currentColor 15%, transparent)" }}
-              >
+              <span className="character-keyword-pill-tint inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-sm font-semibold leading-none text-amber-100/90">
                 All Keywords
               </span>
             </div>

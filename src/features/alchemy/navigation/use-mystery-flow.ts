@@ -2,9 +2,7 @@
 // Depends on: cardLibrary, useScreenStore, mysteryPool, and mystery-flow helpers.
 // Depended on by: useRunNavigation for managing the React state of mystery events during a run.
 import { cardLibrary } from "@/lib/game-data";
-import { pickRandom } from "@/lib/utils";
-
-import { mysteryPool, type MysteryChoice } from "../mystery-events";
+import { pickMysteryEvent, type MysteryChoice } from "../mystery-events";
 import { addCardToRun, applyMysteryEffect } from "./mystery-flow";
 import { useScreenStore } from "../stores/screen-store";
 import { useRunStore } from "../stores/run-store";
@@ -22,7 +20,7 @@ export function useMysteryFlow({ advanceToNextDestination }: { advanceToNextDest
 
   // Prepares the mystery destination state by sampling a random event and navigating to the screen.
   function beginMysteryEvent(navigateToMystery: () => void) {
-    getStore().setMysteryEvent(pickRandom(mysteryPool) ?? mysteryPool[0]);
+    getStore().setMysteryEvent(pickMysteryEvent());
     getStore().setMysteryCardChoices(null);
     navigateToMystery();
   }
@@ -82,12 +80,6 @@ export function useMysteryFlow({ advanceToNextDestination }: { advanceToNextDest
     getStore().setMysteryCardChoices(null);
   }
 
-  // Resets the screen store's mystery-related states back to clean defaults.
-  function reset() {
-    getStore().setMysteryEvent(null);
-    getStore().setMysteryCardChoices(null);
-  }
-
   return {
     mysteryEvent,
     mysteryCardChoices,
@@ -97,6 +89,5 @@ export function useMysteryFlow({ advanceToNextDestination }: { advanceToNextDest
     handleMysteryRemoveCard,
     handleMysteryContinue,
     clearCardChoices,
-    reset,
   };
 }

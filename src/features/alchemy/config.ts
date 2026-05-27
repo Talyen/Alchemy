@@ -7,3 +7,4 @@ export * from "./config/metadata";
 export * from "./config/options";
 export * from "./config/routes";
 export * from "./config/combat-text-icons";
+export * from "./config/shine-palettes";

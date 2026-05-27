@@ -1,6 +1,7 @@
 import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
 import type { SaveData } from "@/features/alchemy/storage/types";
 import { defaultSaveData } from "@/features/alchemy/storage/defaults";
+import { legacyCampaignRunSave } from "../fixtures/legacy-saves";
 
 const { SAVE_KEY } = await import("@/lib/game-constants");
 const { CURRENT_CONTENT_VERSION, CURRENT_SAVE_SCHEMA_VERSION } = await import("@/features/alchemy/storage/metadata");
@@ -60,6 +61,32 @@ describe("storage io", () => {
     const { loadAlchemySaveState } = await import("@/features/alchemy/storage/io");
     const data = (await loadAlchemySaveState()).data;
     expect(data.musicVolume).toBe(50);
+  });
+
+  it("loadAlchemySaveState migrates legacy campaign fixture from localStorage", async () => {
+    vi.spyOn(console, "info").mockImplementation(() => {});
+    mockStorage[SAVE_KEY] = JSON.stringify(legacyCampaignRunSave());
+    const { loadAlchemySaveState, saveAlchemySaveData } = await import("@/features/alchemy/storage/io");
+
+    const loaded = await loadAlchemySaveState();
+
+    expect(loaded.status.kind).toBe("ok");
+    expect(loaded.data.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
+    expect(loaded.data.selectedAspectRatio).toBe("16:9");
+    expect(loaded.data.discoveredCardIds).toEqual(["slash", "block", "future-card"]);
+    expect(loaded.data.activeRun).toMatchObject({
+      characterId: "knight",
+      runGold: 42,
+      runPlayerHealth: 18,
+      contentSystemType: "campaign",
+    });
+    expect(loaded.data.materialInventory).toEqual({ wood: 4, iron: 2, herbs: 0, food: 0, crystal: 0 });
+
+    await saveAlchemySaveData(loaded.data);
+    const reloaded = JSON.parse(mockStorage[SAVE_KEY]);
+    expect(reloaded.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
+    expect(reloaded.discoveredCardIds).toEqual(["slash", "block", "future-card"]);
+    expect(reloaded.activeRun.runGold).toBe(42);
   });
 
   it("does not report warnings for harmless save defaults", async () => {
