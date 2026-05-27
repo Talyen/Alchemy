@@ -1,6 +1,12 @@
 import { create } from "zustand";
-import { defaultBattleState, type BattleState, type CombatTextEvent } from "@/lib/battle";
-import { hydrateCard } from "@/lib/game-data";
+import {
+  defaultBattleState,
+  type BattleState,
+  type CombatTextEvent,
+  type PlayerStatusValues,
+  type TurnPhase,
+} from "@/lib/battle";
+import { hydrateCard, type BattleCard } from "@/lib/game-data";
 import { COMBAT_TEXT_LANE_DELAY_MS, COMBAT_TEXT_LIFETIME_MS, SHAKE_DURATION } from "@/lib/game-constants";
 import { delay } from "@/lib/animation/game-timer";
 import type { CardGhost, FloatingCombatText } from "@/features/alchemy/types";
@@ -12,19 +18,32 @@ function getCombatTextDisplayText(event: CombatTextEvent): string {
   return `${showPlus ? "+" : ""}${event.amount}`;
 }
 
+type DisplayOverrides = {
+  /** ⚠️ Shallow-merged via `{ ...battleState, ...displayOverrides }`. Only use
+   *  top-level primitive fields. Nested objects (e.g. partial playerStatuses)
+   *  would silently replace the entire field. */
+  hand?: BattleCard[];
+  turnPhase?: TurnPhase;
+  playerHealth?: number;
+  playerStatuses?: PlayerStatusValues;
+};
+
 type BattleStore = {
   /**
-   * The "visual" battle state that drives the UI. During animation sequences this may
-   * temporarily hold an intermediate display state (e.g. showEnemyTurnStart sets a transient
-   * hand:[] / turnPhase:"enemy" snapshot). Never read this for run-level decisions.
+   * The authoritative battle state that drives the UI and run-level decisions.
+   * Display-only overrides (e.g. empty hand during enemy turn) are applied via
+   * displayOverrides rather than overwriting this field, eliminating the desync
+   * risk between battleState and logicalBattleState.
    */
   battleState: BattleState;
   /**
-   * The authoritative resolved state used for run-level decisions (rewards, materials,
-   * navigation). Always reflects the true post-resolution state. logicalBattleState must be
-   * kept in sync with battleState at every terminal write; use setSyncedBattleState for that.
-   * Only skip setLogicalBattleState when intentionally writing a transient display-only state.
+   * Display-only overrides layered on top of battleState for UI rendering.
+   * Never used for run-level decisions. Cleared automatically after each
+   * setSyncedBattleState call.
    */
+  displayOverrides: DisplayOverrides;
+  /** Deprecated — use battleState with displayOverrides instead. Kept for
+   *  backward compat; all writes go through setSyncedBattleState. */
   logicalBattleState: BattleState;
   battleStartState: BattleState | null;
   hasActiveBattle: boolean;
@@ -40,6 +59,10 @@ type BattleStore = {
   /** Atomically writes both battleState and logicalBattleState in a single Zustand update.
    *  Use this at every terminal state write to keep the two fields in sync. */
   setSyncedBattleState: (state: BattleState | ((prev: BattleState) => BattleState)) => void;
+  /** Sets display-only overrides for UI animation (e.g. empty hand during enemy turn).
+   *  These do NOT affect authoritative state and are cleared on next setSyncedBattleState. */
+  setDisplayOverrides: (overrides: DisplayOverrides) => void;
+  clearDisplayOverrides: () => void;
   setBattleStartState: (state: BattleState | null) => void;
   setHasActiveBattle: (active: boolean | ((prev: boolean) => boolean)) => void;
   initializeActiveBattle: (battleState: BattleState | null) => void;
@@ -61,6 +84,7 @@ const combatTextLaneDelayMs = COMBAT_TEXT_LANE_DELAY_MS;
 
 export const useBattleStore = create<BattleStore>()((set) => ({
   battleState: defaultBattleState(),
+  displayOverrides: {},
   logicalBattleState: defaultBattleState(),
   battleStartState: null,
   hasActiveBattle: false,
@@ -80,8 +104,12 @@ export const useBattleStore = create<BattleStore>()((set) => ({
   setSyncedBattleState: (action) =>
     set((s) => {
       const next = typeof action === "function" ? action(s.battleState) : action;
-      return { battleState: next, logicalBattleState: next };
+      return { battleState: next, logicalBattleState: next, displayOverrides: {} };
     }),
+
+  setDisplayOverrides: (overrides) => set({ displayOverrides: overrides }),
+
+  clearDisplayOverrides: () => set({ displayOverrides: {} }),
 
   setBattleStartState: (state) => set({ battleStartState: state }),
 
@@ -102,6 +130,7 @@ export const useBattleStore = create<BattleStore>()((set) => ({
       set({
         battleState: hydratedState,
         logicalBattleState: hydratedState,
+        displayOverrides: {},
         battleStartState: hydratedState,
         hasActiveBattle: true,
       });
@@ -109,6 +138,7 @@ export const useBattleStore = create<BattleStore>()((set) => ({
       set({
         battleState: defaultBattleState(),
         logicalBattleState: defaultBattleState(),
+        displayOverrides: {},
         battleStartState: null,
         hasActiveBattle: false,
       });

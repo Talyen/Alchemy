@@ -1,75 +1,110 @@
-You are a senior software engineer conducting a two-phase codebase analysis.
+# Alchemy — Code Review Prompts
 
-Phase 1 — Triage
-Given the code or file information I provide, identify the 2–3 files or modules most worth scrutinizing using these signals:
+High-leverage prompts for coding agents. Apply these in order before every PR.
 
-Churn indicators — Layered patches, inconsistent style, or comments suggesting repeated under-pressure edits
-Complexity indicators — Deeply nested logic, long functions, high conditional count, or tight coupling
-Bug-magnet patterns — Swallowed errors, implicit state, optimistic assumptions, or logic that's hard to follow at a glance
-Blast radius — How central is this file? The more things depend on it, the higher the priority
-Boundary risk — Entry points, external integrations, and auth/permissions layers carry the highest cost of failure
+## Quick Reference
 
-For each of your 2–3 picks, state:
+- [ ] What code did I **remove** or **compress**? (If none, find some.)
+- [ ] Any `any`, `as`, `!` I could avoid?
+- [ ] Run `npm run deadcode && npm run lint && npm test`.
 
-The file or module name
-The specific signals that flagged it
-The risk in one sentence
+---
 
+## 1. Code Reduction & Compression
 
-Phase 2 — Pragmatic Review
-For each file identified in Phase 1, conduct a structured review across these dimensions:
+Adding code is easy. Removing it is hard.
 
-DRY violations — Duplicated logic, data, or knowledge; missing single source of truth
-Broken windows — Commented-out code, rotting TODOs, inconsistent naming, unexplained hacks
-Orthogonality — Tight coupling, hidden dependencies, or violations of single responsibility
-Fragility & reversibility — Hardcoded values, rigid assumptions, or decisions that will be painful to change
-Error handling & early crashes — Swallowed exceptions, missing assertions, silent propagation of bad state
-Automation gaps — Manual steps that should be scripted, repeated patterns suggesting a missing abstraction
-Testability — Untested assumptions, low observability, or structure that makes unit testing difficult
-Plain text & transparency — Opaque or binary formats where human-readable alternatives would be more robust
+> **Where to start:** `npm run deadcode` → read the report, then `rg "\.\.\.|identical"` to spot duplication patterns. Sort source files by line count: `Get-ChildItem src -Recurse -Include *.ts,*.tsx | Select-Object Name, @{N="Lines";E={@(Get-Content $_.FullName).Count}} | Sort-Object Lines -Descending | Select -First 20`.
+> **Plan first:** output all findings as a grouped bullet list (delete / refactor / investigate) with file paths and line numbers. Only start editing after the plan is confirmed.
 
-For each issue found:
+- **Dead code.** `npm run deadcode` → delete every unused export. Annotate kept exports with a reason.
+- **Duplication.** 3+ identical lines in >1 place? Extract to shared function/component. Similar-but-not-identical functions differing by one param? Unify.
+- **Complexity.** File >400 lines? Split. Function >30 lines? Split unless it's a long switch. Nesting >3 levels? Early returns / guard clauses. Switch >8 cases? `Record<Key, Handler>` lookup table.
+- **Zombie code.** Commented-out code, dead branches, orphaned parameters. Delete them.
+- **Abstraction audit.** A wrapper that adds 5 boilerplate lines to save 2 isn't worth it. A 3-line function called once should be inlined unless it provides semantic clarity.
+- **Consolidation.** Files imported together 90% of the time? Merge them. Magic numbers outside `game-constants.ts`? Move them. Duplicate utility? Unify.
 
-Reference the specific code
-Name the principle it violates
-Explain the practical risk
-Suggest a concrete fix
+## 2. Type Safety & Error Handling
 
+> **Where to start:** `rg " as " src/ --include "*.ts" --include "*.tsx" | rg -v "import|export|from"` — each hit is potential type escape. Then `rg "\bcatch\b" src/ --include "*.ts" -A 3` for empty catch blocks.
+> **Plan first:** output all findings as a grouped bullet list (delete / refactor / investigate) with file paths and line numbers. Only start editing after the plan is confirmed.
 
+- **`any` creeping in.** Every `any` is a type safety hole. Use ESLint `@typescript-eslint/no-explicit-any` as a floor, not a ceiling.
+- **`as` casts.** Each `as` bypasses the type checker. Prefer type guards or narrowing.
+- **`!` non-null assertions.** Can the type system prove null-safety instead?
+- **Silent failures.** Every `catch {}` should log or recover visibly. No empty catch blocks.
+- **Unhandled rejections.** Every async path needs `.catch()` or `try/catch`.
+- **`dangerouslySetInnerHTML`.** Verify no user-controlled content is rendered unsanitized.
 
-General Cleanup & Refactoring
+## 3. Common Bug Patterns
 
-Review this codebase and identify dead code, unused variables, redundant imports, and unreachable logic. Remove them and explain what was cut and why.
-Refactor this code to follow the Single Responsibility Principle. Each function should do exactly one thing. Split any functions longer than 30 lines into smaller, named helpers.
-Identify any "magic numbers" or hardcoded strings in this game code and replace them with named constants. Group related constants into a CONFIG or CONSTANTS object.
+> **Where to start:** `rg "Math\.random" src/lib/battle/` (item 3), then `rg "catch\s*\{[^}]*\}" src/lib/battle/ -U"` (item 1 triggers). Then scan the diff for any state spreads via `rg "\{ \.\.\.state"`.
+> **Plan first:** output all findings as a grouped bullet list (delete / refactor / investigate) with file paths and line numbers. Only start editing after the plan is confirmed.
 
-Comments & Readability
+Check for these 7 known recurring bugs:
 
-Add comments to any complex function/class. For game logic specifically, explain the "why" not just the "what" — include notes on game mechanics, edge cases, and any non-obvious decisions.
-Add a top-of-file summary comment to each module explaining: what it does, what it depends on, and what depends on it. Keep each summary under 5 lines.
-Audit this file for any logic that would confuse an LLM or future developer reading it cold. Add inline comments to clarify game-state assumptions, coordinate systems, timing dependencies, or any stateful side effects.
+1. **Missing `adjustEnemyStatusDelta`.** Any new code path that adds enemy status stacks must call this so `null-field` modifier halves it correctly.
+2. **Combat text deduplication.** Effects must push through `mergeCombatText()` — multi-hit cards deduplicate by `(target, kind, stat)`.
+3. **`Math.random()` instead of `state.rng`.** Never use bare `Math.random()` inside battle logic.
+4. **Manifest field added but not populated.** A field in `TalentEffectManifest` or `TrinketManifest` that's never set in `compute*Effects()` is silently `undefined`.
+5. **Block decay direction.** Block decays at *end of enemy turn* (halved), not start of player turn.
+6. **State spread drops fields.** `{ ...state, nested: { newNested } }` drops sibling fields — must be `{ ...state, nested: { ...state.nested, newNested } }`.
+7. **Zustand equality misuse.** New object references trigger re-render with default `Object.is`. Use shallow or custom equality.
 
-Modularization
+## 4. Battle Engine Correctness
 
-Analyze this file and split it into focused modules. Separate concerns like: rendering, game state, input handling, physics/collision, audio, and UI. Export only what other modules need.
-Game logic should not be mixed with rendering code. Separate them: create a pure game state layer with no DOM/canvas references, and a renderer that reads from state and draws — no game logic in the renderer.
-Identify any repeated code patterns across this codebase and extract them into shared utility functions in a utils.js or helpers.js module.
+> **Where to start:** Read `src/lib/battle/card-play.ts` and `src/lib/battle/apply-effects.ts` — the two core reducer functions. Then `rg "\.playerStatuses\[|\.enemyStatuses\[" src/lib/battle/ | rg "\+="` for accidental mutation.
+> **Plan first:** output all findings as a grouped bullet list (delete / refactor / investigate) with file paths and line numbers. Only start editing after the plan is confirmed.
 
-Reducing Bloat
+- **Pure reducer.** No function may mutate `BattleState` in place — must always return a new object. Watch for accidental mutation via nested objects (`state.playerStatuses[status] += n`).
+- **Combat text emission.** Every damage tick, status application, heal, and mana change produces a `CombatTextEvent`. No silent state changes.
+- **Death's Door.** 0 HP → grace turn. Healing out of DD. Subsequent zero-health hits. Grace countdown.
+- **Status tick ordering.** Enemy DoTs tick → enemy attacks → player DoTs tick → regen. Cross-reference with AGENTS.md turn order.
+- **Block decay.** Halved *after* enemy attack. Not at player turn.
+- **Card resolution.** Cost validation before play. Multi-effect cards apply sequentially. `consume` cards go to `exhausted[]`, not `discard[]`. Hand clear moves cards to discard, not exhaust.
 
-This code is verbose. Simplify it: remove unnecessary abstractions, collapse one-liner wrappers, and prefer native browser APIs over custom re-implementations where appropriate. Don't over-engineer.
-Look for any overly nested code (3+ levels of indentation) and flatten it using early returns, guard clauses, or helper functions. Prioritize readability.
-Identify any dependencies or utility functions that are only used once and are simple enough to inline. Remove the abstraction and inline the logic.
-Look for 'conceptual duplication' where the same concept has been re-implemented multiple times independently in different parts of the codebase in slightly different ways, likely accidentally, and propose standardization/shared components.
+## 5. New Feature Checklist
 
-Test Coverage
+> **Where to start:** Identify the kind of feature being added (card/companion/enemy/trinket/screen), then open the matching step-1 file from the list below. Follow the checklist sequentially — each step's outputs feed the next.
+> **Plan first:** output all steps you'll take as a checklist, noting which files each step touches. Only start editing after the plan is confirmed.
 
-Write unit tests for all pure functions in this codebase that need them. Focus on game logic. Mock any DOM or canvas dependencies.
-Identify the 5 highest-risk functions in this game (most complex, most depended-on, or most likely to break). Write thorough tests for those first, including edge cases.
-Add integration tests that simulate a full game loop: initialization → player input → state update → render cycle. Assert on game state, not DOM output where possible.
+Adding anything new (card, companion, enemy, trinket, screen, system)?
 
-Browser Game–Specific
+- [ ] Types updated (`CardId`, `KeywordId`, `PlayerStatusId`, `EnemyStatusId`, `CompanionId`, effect kind, `Screen`, etc.)
+- [ ] Data defined (card, companion, enemy, trinket, talent)
+- [ ] Art in `assets.ts` + optimized
+- [ ] Sound in `sound-registry.ts` (if applicable)
+- [ ] Description ↔ effects match (verify with test)
+- [ ] Battle logic added (apply-effects, status-ticks, damage)
+- [ ] Barrel re-exports updated (index.ts files)
+- [ ] Talent manifest updated (if talent-gated)
+- [ ] Trinket manifest updated (if trinket-gated)
+- [ ] Save schema + migration updated (if persisted)
+- [ ] Screen added → `ErrorBoundary` wraps it (if new screen)
+- [ ] UI/a11y review (keyboard nav, focus, ARIA labels, PressableMotion states)
+- [ ] Tests written or updated
+- [ ] `npm run balance:sim` (if balance-impacting)
+- [ ] `npm run deadcode && npm run lint && npm test` pass
 
-Audit this game loop for performance issues: unnecessary allocations, missing cleanup, unthrottled listeners, or DOM reads inside the render loop. Fix what you find.
-Review all listeners in this codebase. Ensure they are added once, properly removed on game reset/destroy, and not causing memory leaks.
-Standardize how game state is stored and mutated. Identify any globals or scattered state and consolidate into a single state object or store pattern.
+## 6. Test Coverage
+
+> **Where to start:** Find the file being changed, then open the corresponding `tests/` file. If none exists, check `tests/fixtures/` for existing helpers. Run `npm test` first to see the current baseline.
+> **Plan first:** output which test file needs new cases, what edge cases you'll cover, and the expected assertions. Only start editing after the plan is confirmed.
+
+- **Deterministic setup.** Use `createBattleState()` with fixture decks, not random opening hands.
+- **Edge cases.** Status tick ordering, CC cooldown, Death's Door, draw pile exhaustion (including mid-draw with 1 card left), zero-duration status.
+- **Save round-trip.** Serialize run → deserialize → re-serialize → compare. No data loss.
+- **Migration.** Load legacy fixture from previous save version → verify clean migration.
+- **Barrel integrity.** Every barrel exports expected symbols, no side effects.
+- Run `npm test`.
+
+## 7. Performance & Observability
+
+> **Where to start:** `rg "useStore\(" src/features/ --include "*.tsx"` — find full store subscriptions (no `s =>` selector). Then `rg "\.map\(|\.filter\(" src/features/ --include "*.tsx"` for un-memoized chains in render.
+> **Plan first:** output all findings as a grouped bullet list (fix / investigate / skip) with file paths and line numbers. Only start editing after the plan is confirmed.
+
+- **Zustand selectors.** Always `useStore(s => s.field)`, never `useStore()`. No full store subscriptions in screens.
+- **Memoization.** Array `.filter().map()` chains in render → `useMemo`. No expensive computation in render.
+- **Dependency arrays.** `useEffect`/`useMemo`/`useCallback` with stale closures? Add deps.
+- **Console warnings.** `[Enemy Turn]` warnings for unrecognized attack effects. Handle them or suppress.
+- **Dev mode isolation.** `localStorage["alchemy-dev-mode"]` code paths must not affect production builds.

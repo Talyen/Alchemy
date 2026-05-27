@@ -11,7 +11,7 @@ import {
   MIXED_POTION_TITLE,
 } from "@/lib/game-constants";
 
-export const MIXED_POTION_ERROR = "Cannot mix with an existing Mixed Potion";
+const MIXED_POTION_ERROR = "Cannot mix with an existing Mixed Potion";
 
 function hashCode(str: string): number {
   let hash = 0;

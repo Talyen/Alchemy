@@ -9,7 +9,6 @@ import {
   characters,
   companionLibrary,
   DIFFICULTY_ORDER,
-  getStartingDeck,
   type CharacterId,
   type CompanionId,
   type DifficultyId,
@@ -23,7 +22,6 @@ import {
   DEFAULT_MASTER_VOLUME_PCT,
   DEFAULT_MUSIC_VOLUME_PCT,
   DEFAULT_SFX_VOLUME_PCT,
-  LEGACY_STARTER_DECK_IDS,
   LEGACY_CHARACTER_RENAMES,
   LABYRINTH_MIN_CONNECTIONS,
   LABYRINTH_MAX_CONNECTIONS,
@@ -36,13 +34,35 @@ import { ALL_LABYRINTH_MODIFIERS } from "@/lib/content-systems/labyrinth/modifie
 import type { LabyrinthModifierKind } from "@/lib/content-systems/types";
 import { CURRENT_SAVE_SCHEMA_VERSION, CURRENT_GAME_BUILD_VERSION, CURRENT_CONTENT_VERSION } from "./metadata";
 import { migrateSaveDataToCurrent } from "./migration";
+import { normalizeActiveRunData } from "./normalize-active-run-data";
 import { createEmptyTierRecord } from "@/lib/homestead/tiers";
 
 export type ValidationError = { path: string; message: string };
 
-// Stack of scoped error collectors used during safeParseWithErrors.
-// Accessed by caught() preprocess closures to accumulate field-level validation failures in a thread-safe manner.
-const _currentErrorCollectorStack: ValidationError[][] = [];
+// Scoped error collector used during safeParseWithErrors.
+// caught() closures push field-level validation failures into the active collector
+// so safeParseWithErrors can return them alongside parsed data.
+class ErrorCollectorStack {
+  private stack: ValidationError[][] = [];
+
+  push(collector: ValidationError[]): void {
+    this.stack.push(collector);
+  }
+
+  pop(): void {
+    this.stack.pop();
+  }
+
+  current(): ValidationError[] | undefined {
+    return this.stack[this.stack.length - 1];
+  }
+
+  isEmpty(): boolean {
+    return this.stack.length === 0;
+  }
+}
+
+const errorCollectorStack = new ErrorCollectorStack();
 
 // Wraps schema.safeParse() to collect field-level validation errors from caught() preprocessors.
 // This is the only correct way to parse schemas that use the caught() helper.
@@ -53,14 +73,14 @@ export function safeParseWithErrors<T>(
   | { success: true; data: T; errors: ValidationError[] }
   | { success: false; error: z.ZodError; errors: ValidationError[] } {
   const errors: ValidationError[] = [];
-  _currentErrorCollectorStack.push(errors);
+  errorCollectorStack.push(errors);
   try {
     const result = schema.safeParse(data);
     return result.success
       ? { success: true, data: result.data, errors }
       : { success: false, error: result.error, errors };
   } finally {
-    _currentErrorCollectorStack.pop();
+    errorCollectorStack.pop();
   }
 }
 
@@ -73,8 +93,8 @@ function caught<T>(schema: z.ZodType<T>, fallback: T, path: string): z.ZodType<T
     if (val == null) return fallback;
     const result = schema.safeParse(val);
     if (!result.success) {
-      const topCollector = _currentErrorCollectorStack[_currentErrorCollectorStack.length - 1];
-      topCollector?.push({ path, message: result.error.message });
+      const collector = errorCollectorStack.current();
+      collector?.push({ path, message: result.error.message });
       logError(`[Save Validation] Field "${path}" invalid, fell back to default`, "validation", {
         field: path,
         error: result.error.message,
@@ -85,23 +105,14 @@ function caught<T>(schema: z.ZodType<T>, fallback: T, path: string): z.ZodType<T
   }, schema);
 }
 
-// Wraps field validation so undefined/missing parses fall back to a safe default
-// and log an error.  Other type mismatches are handled by each field's own .catch().
-// Delegates to caught() — identical logic.
-function withFallbackOnUndefined<T>(schema: z.ZodType<T>, fallback: T, fieldName: string): z.ZodType<T> {
-  return caught(schema, fallback, fieldName);
+// Shared helper: deduplicates an unknown array into a string array, dropping non-strings.
+function deduplicateStrings(val: unknown): string[] {
+  return Array.isArray(val) ? [...new Set(val.filter((v): v is string => typeof v === "string"))] : [];
 }
 
 // Deduplicates a string array from save data: drops non-strings, deduplicates, defaults to [].
 function deduplicatedStringArraySchema(path: string) {
-  return caught(
-    z.preprocess(
-      (val) => (Array.isArray(val) ? [...new Set(val.filter((v) => typeof v === "string"))] : []),
-      z.array(z.string()),
-    ),
-    [],
-    path,
-  );
+  return caught(z.preprocess(deduplicateStrings, z.array(z.string())), [], path);
 }
 
 // Zod enums need a non-empty tuple; this preserves runtime single sources of truth for save IDs.
@@ -200,7 +211,7 @@ function recordOfStringArraysSchema(defaultFactory?: () => Record<string, string
       const result: Record<string, string[]> = { ...(defaultFactory?.() ?? {}) };
       for (const [key, ids] of Object.entries(val as Record<string, unknown>)) {
         if (Array.isArray(ids)) {
-          result[key] = [...new Set(ids.filter((v): v is string => typeof v === "string"))];
+          result[key] = deduplicateStrings(ids);
         } else if (defaultFactory) {
           result[key] = result[key] ?? [];
         }
@@ -350,6 +361,8 @@ function parseSavedEffectList(values: unknown[]) {
   const effects = values.flatMap((value, i) => {
     const result = BattleCardEffectSchema.safeParse(value);
     if (!result.success) {
+      const collector = errorCollectorStack.current();
+      collector?.push({ path: `effects[${i}]`, message: result.error.message });
       console.warn(`[Save Validation] Card effect at index ${i} dropped:`, result.error.message);
     }
     return result.success ? [{ ...result.data }] : [];
@@ -358,7 +371,13 @@ function parseSavedEffectList(values: unknown[]) {
 }
 
 function cloneSavedDescriptionLines(values: unknown[]): string[] | null {
-  return values.every((line) => typeof line === "string") ? [...values] : null;
+  const allStrings = values.every((line) => typeof line === "string");
+  if (!allStrings) {
+    const collector = errorCollectorStack.current();
+    collector?.push({ path: "descriptionLines", message: "contained non-string values" });
+    console.warn(`[Save Validation] Card description lines contained non-string values`);
+  }
+  return allStrings ? [...values] : null;
 }
 
 // ===== BattleCard =====
@@ -512,7 +531,7 @@ const LabyrinthNodePositionSchema = z
   .nullable()
   .catch(null);
 
-export const ActiveCombatDataSchema = z
+const ActiveCombatDataSchema = z
   .object({
     battleState: z.custom<BattleState>(isPersistedBattleState),
     activeLabyrinthModifiers: LabyrinthModifierArraySchema,
@@ -526,72 +545,7 @@ export const ActiveCombatDataSchema = z
   .catch(null);
 
 // ===== ActiveRunData =====
-// Imported from game-constants — single source of truth shared with active-run.ts.
-
-// Pure normalization step extracted from the schema for reuse by normalizeActiveRun and io.ts.
-// Returns the full data object with normalized fields spread over the input.
-export function normalizeActiveRunData<T extends Record<string, unknown>>(
-  data: T,
-): T & {
-  contentSystemType: string;
-  runPlayerHealth: number;
-  completedDestinations: string[];
-  runDeck: unknown;
-  runTalentXP: Record<string, number>;
-  labyrinthMap: unknown;
-  labyrinthPendingNode: unknown;
-  activeCombat: unknown;
-} {
-  const labyrinthMap = data.labyrinthMap;
-  let contentSystemType = data.contentSystemType as string;
-  if (contentSystemType === "labyrinth" && !labyrinthMap) {
-    contentSystemType = "campaign";
-  }
-  const runPlayerHealth = Math.min(data.runPlayerHealth as number, data.runMaxHealth as number);
-  const roomsEncountered = typeof data.roomsEncountered === "number" ? data.roomsEncountered : 0;
-  const currentAct = typeof data.currentAct === "number" ? data.currentAct : 1;
-  const destinationIndexInAct = typeof data.destinationIndexInAct === "number" ? data.destinationIndexInAct : 0;
-  const completedDestinations = Array.isArray(data.completedDestinations)
-    ? (data.completedDestinations as string[])
-    : [];
-  const isUnstarted =
-    roomsEncountered === 0 && currentAct === 1 && destinationIndexInAct === 0 && completedDestinations.length === 0;
-  const runDeckArr = Array.isArray(data.runDeck) ? (data.runDeck as { id: string }[]) : [];
-  const legacySet = new Set(LEGACY_STARTER_DECK_IDS);
-  const hasLegacyDeck =
-    runDeckArr.length === LEGACY_STARTER_DECK_IDS.length &&
-    runDeckArr.every((card) => legacySet.has(card.id as (typeof LEGACY_STARTER_DECK_IDS)[number]));
-  const characterId = typeof data.characterId === "string" ? (data.characterId as string) : "";
-  const runDeck =
-    runDeckArr.length === 0 || (isUnstarted && hasLegacyDeck)
-      ? characterId
-        ? getStartingDeck(characterId as import("@/lib/game-data").CharacterId)
-        : []
-      : runDeckArr;
-  return {
-    ...data,
-    contentSystemType,
-    runPlayerHealth,
-    completedDestinations,
-    runDeck,
-    runTalentXP: (data.runTalentXP as Record<string, number> | undefined) ?? {},
-    labyrinthMap: contentSystemType === "labyrinth" ? data.labyrinthMap : null,
-    labyrinthPendingNode: contentSystemType === "labyrinth" ? data.labyrinthPendingNode : null,
-    activeCombat: data.activeCombat
-      ? {
-          ...(data.activeCombat as Record<string, unknown>),
-          activeLabyrinthModifiers:
-            contentSystemType === "labyrinth"
-              ? ((data.activeCombat as Record<string, unknown>).activeLabyrinthModifiers ?? [])
-              : [],
-          activeLabyrinthRewardModifiers:
-            contentSystemType === "labyrinth"
-              ? ((data.activeCombat as Record<string, unknown>).activeLabyrinthRewardModifiers ?? [])
-              : [],
-        }
-      : null,
-  };
-}
+// normalizeActiveRunData lives in ./normalize-active-run-data.ts — imported above.
 
 export const ActiveRunDataSchema = z
   .object({
@@ -663,29 +617,29 @@ export const SaveDataSchema = z.preprocess(
     ),
     muteInBackground: caught(z.boolean(), true, "muteInBackground"),
     autoEndTurn: caught(z.boolean(), true, "autoEndTurn"),
-    activeRun: withFallbackOnUndefined(ActiveRunDataSchema.nullable(), null, "activeRun"),
-    materialInventory: withFallbackOnUndefined(MaterialInventorySchema, MATERIAL_ZERO_INVENTORY, "materialInventory"),
-    constructedBuildings: withFallbackOnUndefined(
+    activeRun: caught(ActiveRunDataSchema.nullable(), null, "activeRun"),
+    materialInventory: caught(MaterialInventorySchema, MATERIAL_ZERO_INVENTORY, "materialInventory"),
+    constructedBuildings: caught(
       createTierRecordSchema(buildings, { smithy: "blacksmiths-forge" }),
       createEmptyTierRecord(buildings),
       "constructedBuildings",
     ),
-    plantedFarms: withFallbackOnUndefined(
+    plantedFarms: caught(
       createTierRecordSchema(farmPlots, { "sheep-pasture": "pasture" }),
       createEmptyTierRecord(farmPlots),
       "plantedFarms",
     ),
-    completedResearch: withFallbackOnUndefined(
+    completedResearch: caught(
       createTierRecordSchema(researchUpgrades),
       createEmptyTierRecord(researchUpgrades),
       "completedResearch",
     ),
-    bondedCompanions: withFallbackOnUndefined(
+    bondedCompanions: caught(
       createTierRecordSchema(companionTierItems),
       createEmptyTierRecord(companionTierItems),
       "bondedCompanions",
     ),
-    completedDifficulties: withFallbackOnUndefined(
+    completedDifficulties: caught(
       CompletedDifficultiesSchema,
       Object.fromEntries(CHARACTER_IDS.map((id) => [id, []])),
       "completedDifficulties",

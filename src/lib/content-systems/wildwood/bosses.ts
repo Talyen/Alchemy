@@ -3,5 +3,3 @@
 // looked up from the compendium at render time.
 
 export const WILDWOOD_BOSS_IDS = ["forge-golem", "frostwarden", "blight-treant", "iron-bear"] as const;
-
-export type WildwoodBossId = (typeof WILDWOOD_BOSS_IDS)[number];

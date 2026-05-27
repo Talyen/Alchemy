@@ -3,7 +3,7 @@
 import { useMemo, type MouseEvent, type MutableRefObject } from "react";
 import type { BattleCard } from "@/lib/game-data";
 import type { CardTransfer } from "../../types";
-import { CardGhostOverlay } from "../../components";
+import { CardGhostOverlay } from "../../ui/card-ui";
 import { CardTransferOverlay } from "./card-transfer-overlay";
 import { BattleActors } from "./actors";
 import { BattleBottomBar } from "./controls";
@@ -67,6 +67,8 @@ export function BattleScreen(props: BattleScreenProps) {
   } = props;
 
   const battleState = useBattleStore((s) => s.battleState);
+  const displayOverrides = useBattleStore((s) => s.displayOverrides);
+  const displayState = { ...battleState, ...displayOverrides };
   const isBossBattle = battleState.currentEnemy.enemyType === "boss";
   const particleAlpha = isBossBattle ? 2.5 : 1.7;
   const particleColors = ["rgba(255, 150, 70, X)", "rgba(255, 100, 40, X)"] as const;
@@ -79,7 +81,7 @@ export function BattleScreen(props: BattleScreenProps) {
   const hoveredCardId = useScreenStore((s) => s.hoveredCardId);
   const activeLabyrinthModifiers = useScreenStore((s) => s.activeLabyrinthModifiers);
 
-  const playerStatusChips = useMemo(() => getPlayerStatusChips(battleState), [battleState]);
+  const playerStatusChips = useMemo(() => getPlayerStatusChips(displayState), [displayState]);
   const enemyStatusChips = useMemo(() => getEnemyStatusChips(battleState), [battleState]);
 
   const playerCombatTexts = useMemo(
@@ -92,7 +94,7 @@ export function BattleScreen(props: BattleScreenProps) {
   );
 
   const view = {
-    battleState: battleState as BattleScreenState,
+    battleState: displayState as BattleScreenState,
     heroArt,
     playerName,
     aspectMode,
@@ -163,7 +165,7 @@ export function BattleScreen(props: BattleScreenProps) {
 
             <BattleBottomBar view={requiredView} refs={refs} actions={actions} />
 
-            {battleState.wishOptions ? <WishOverlay battleState={battleState} actions={actions} /> : null}
+            {battleState.wishOptions ? <WishOverlay battleState={displayState} actions={actions} /> : null}
 
             {cardGhosts.map((ghost) => (
               <CardGhostOverlay key={ghost.id} ghost={ghost} onDone={() => removeGhost(ghost.id)} />

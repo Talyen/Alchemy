@@ -372,7 +372,7 @@ function highlightKeywords(text: string): ReactNode {
     const def = alias ? keywordDefinitions[alias.keywordId] : undefined;
     if (def) {
       return (
-        <span key={index} className={`${def.colorClass} font-semibold`}>
+        <span key={index} className={cn(def.colorClass, "font-semibold")}>
           {word}
         </span>
       );

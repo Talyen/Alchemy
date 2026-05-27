@@ -1,18 +1,27 @@
-/* eslint-disable react-refresh/only-export-components */
 // Screen route renderer for the root app shell.
 // Reads data from Zustand stores instead of the run controller object.
 import { ErrorBoundary } from "@/components/error-boundary";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, type ReactNode } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { platform } from "@/lib/platform";
+
+function LoadingFallback({ label }: { label: string }): ReactNode {
+  return (
+    <div className="flex h-full min-h-[200px] items-center justify-center">
+      <div className="text-sm text-muted-foreground">Loading {label}...</div>
+    </div>
+  );
+}
+
 import { menuLogo, menuLogoVariants, cardLibrary, trinketLibrary } from "@/lib/game-data";
 import type { CardTransfer, Screen, Destination, CollectionTab } from "@/features/alchemy/types";
 import type { BattleCard, CharacterId, DifficultyId, KeywordId } from "@/lib/game-data";
 import type { MysteryChoice } from "@/features/alchemy/mystery-events";
 import { useAppStore } from "@/features/alchemy/stores/app-store";
 import { useHomesteadStore } from "@/features/alchemy/stores/homestead-store";
-import { BattleScreen } from "@/features/alchemy/screens/battle-screen";
 import {
   AlchemistShopScreen,
+  BattleScreen,
   CampfireScreen,
   CharacterSelectScreen,
   CorruptionScreen,
@@ -41,7 +50,7 @@ const HomesteadScreen = lazy(() =>
   import("@/features/alchemy/screens/homestead-screen").then((m) => ({ default: m.HomesteadScreen })),
 );
 
-export type ControllerActions = {
+type ControllerActions = {
   navigateTo: (screen: Screen) => void;
   goToScreen: (screen: Screen) => void;
   beginCampaign: () => void;
@@ -113,7 +122,7 @@ type RenderAlchemyScreenProps = {
   onUnlockAllDevMode: () => void;
 };
 
-export function renderAlchemyScreen({
+export function RenderAlchemyScreen({
   screen,
   actions: a,
   handCardRefs,
@@ -141,7 +150,34 @@ export function renderAlchemyScreen({
   onClearSaveData,
   onUnlockAllDevMode,
 }: RenderAlchemyScreenProps) {
-  const appState = useAppStore.getState();
+  const appValues = useAppStore(
+    useShallow((s) => ({
+      selectedAspectRatio: s.selectedAspectRatio,
+      displayMode: s.displayMode,
+      uiScale: s.uiScale,
+      brightness: s.brightness,
+      masterVol: s.masterVol,
+      musicVol: s.musicVol,
+      sfxVol: s.sfxVol,
+      muteInBackground: s.muteInBackground,
+      autoEndTurn: s.autoEndTurn,
+      discoveredCardIds: s.discoveredCardIds,
+      completedDifficulties: s.completedDifficulties,
+    })),
+  );
+  // eslint-disable-next-line react-compiler/react-compiler
+  const appActions = useAppStore.getState();
+  const homesteadValues = useHomesteadStore(
+    useShallow((s) => ({
+      materialInventory: s.materialInventory,
+      constructedBuildings: s.constructedBuildings,
+      plantedFarms: s.plantedFarms,
+      completedResearch: s.completedResearch,
+      bondedCompanions: s.bondedCompanions,
+    })),
+  );
+  // eslint-disable-next-line react-compiler/react-compiler
+  const homesteadActions = useHomesteadStore.getState();
   switch (screen) {
     case "menu":
       return (
@@ -188,7 +224,7 @@ export function renderAlchemyScreen({
         <ErrorBoundary label="difficulty-select">
           <DifficultySelectScreen
             completedDifficulties={
-              useAppStore.getState().completedDifficulties[(pendingCharacterId ?? "knight") as CharacterId] ?? []
+              appValues.completedDifficulties[(pendingCharacterId ?? "knight") as CharacterId] ?? []
             }
             onSelect={a.handleDifficultySelect}
             onBack={a.handleBackFromDifficultySelect}
@@ -299,37 +335,37 @@ export function renderAlchemyScreen({
     case "options":
       return (
         <ErrorBoundary label="options">
-          <Suspense fallback={null}>
+          <Suspense fallback={<LoadingFallback label="options" />}>
             <OptionsScreen
               onOpenMenu={onOpenBattleMenu}
               display={{
-                selectedAspectRatio: appState.selectedAspectRatio,
-                onAspectRatioChange: appState.setSelectedAspectRatio,
-                displayMode: appState.displayMode,
-                onDisplayModeChange: appState.setDisplayMode,
+                selectedAspectRatio: appValues.selectedAspectRatio,
+                onAspectRatioChange: appActions.setSelectedAspectRatio,
+                displayMode: appValues.displayMode,
+                onDisplayModeChange: appActions.setDisplayMode,
                 showDisplayMode: platform.isDesktop,
-                uiScale: appState.uiScale,
-                onUiScaleChange: appState.setUiScale,
-                brightness: appState.brightness,
-                onBrightnessChange: appState.setBrightness,
+                uiScale: appValues.uiScale,
+                onUiScaleChange: appActions.setUiScale,
+                brightness: appValues.brightness,
+                onBrightnessChange: appActions.setBrightness,
               }}
               audio={{
-                masterVol: appState.masterVol,
-                musicVol: appState.musicVol,
-                sfxVol: appState.sfxVol,
-                onMasterVolChange: appState.setMasterVol,
-                onMusicVolChange: appState.setMusicVol,
-                onSfxVolChange: appState.setSfxVol,
-                muteInBackground: appState.muteInBackground,
-                onMuteInBackgroundChange: appState.setMuteInBackground,
+                masterVol: appValues.masterVol,
+                musicVol: appValues.musicVol,
+                sfxVol: appValues.sfxVol,
+                onMasterVolChange: appActions.setMasterVol,
+                onMusicVolChange: appActions.setMusicVol,
+                onSfxVolChange: appActions.setSfxVol,
+                muteInBackground: appValues.muteInBackground,
+                onMuteInBackgroundChange: appActions.setMuteInBackground,
               }}
-              gameplay={{ autoEndTurn: appState.autoEndTurn, onAutoEndTurnChange: appState.setAutoEndTurn }}
+              gameplay={{ autoEndTurn: appValues.autoEndTurn, onAutoEndTurnChange: appActions.setAutoEndTurn }}
               saveData={{
                 showClearSaveConfirm,
-                onOpenClearSaveConfirm: () => appState.setShowClearSaveConfirm(true),
-                onCloseClearSaveConfirm: () => appState.setShowClearSaveConfirm(false),
+                onOpenClearSaveConfirm: () => appActions.setShowClearSaveConfirm(true),
+                onCloseClearSaveConfirm: () => appActions.setShowClearSaveConfirm(false),
                 onConfirmClearSave: onClearSaveData,
-                onResetOptions: appState.resetOptionsToDefault,
+                onResetOptions: appActions.resetOptionsToDefault,
               }}
               dev={{ onUnlockAll: onUnlockAllDevMode }}
             />
@@ -339,14 +375,14 @@ export function renderAlchemyScreen({
     case "collection":
       return (
         <ErrorBoundary label="collection">
-          <Suspense fallback={null}>
+          <Suspense fallback={<LoadingFallback label="collection" />}>
             <CollectionScreen
               onOpenMenu={onOpenBattleMenu}
               collectionTab={collectionTab}
-              onSelectTab={appState.handleCollectionTabChange}
-              onPageChange={appState.setCollectionPage}
-              bondedCompanions={useHomesteadStore.getState().bondedCompanions}
-              discoveredCardIds={appState.discoveredCardIds}
+              onSelectTab={appActions.handleCollectionTabChange}
+              onPageChange={appActions.setCollectionPage}
+              bondedCompanions={homesteadValues.bondedCompanions}
+              discoveredCardIds={appValues.discoveredCardIds}
               encounteredEnemyIds={encounteredEnemyIds}
               discoveredTrinketIds={discoveredTrinketIds}
               collectionPages={collectionPages}
@@ -357,19 +393,19 @@ export function renderAlchemyScreen({
     case "homestead":
       return (
         <ErrorBoundary label="homestead">
-          <Suspense fallback={null}>
+          <Suspense fallback={<LoadingFallback label="homestead" />}>
             <HomesteadScreen
               onOpenMenu={onOpenBattleMenu}
-              materialInventory={useHomesteadStore.getState().materialInventory}
-              constructedBuildings={useHomesteadStore.getState().constructedBuildings}
-              plantedFarms={useHomesteadStore.getState().plantedFarms}
-              completedResearch={useHomesteadStore.getState().completedResearch}
-              bondedCompanions={useHomesteadStore.getState().bondedCompanions}
-              discoveredCardIds={appState.discoveredCardIds}
-              onConstructBuilding={useHomesteadStore.getState().constructBuilding}
-              onPlantFarm={useHomesteadStore.getState().plantFarm}
-              onCompleteResearch={useHomesteadStore.getState().completeResearch}
-              onBondCompanion={useHomesteadStore.getState().bondCompanion}
+              materialInventory={homesteadValues.materialInventory}
+              constructedBuildings={homesteadValues.constructedBuildings}
+              plantedFarms={homesteadValues.plantedFarms}
+              completedResearch={homesteadValues.completedResearch}
+              bondedCompanions={homesteadValues.bondedCompanions}
+              discoveredCardIds={appValues.discoveredCardIds}
+              onConstructBuilding={homesteadActions.constructBuilding}
+              onPlantFarm={homesteadActions.plantFarm}
+              onCompleteResearch={homesteadActions.completeResearch}
+              onBondCompanion={homesteadActions.bondCompanion}
             />
           </Suspense>
         </ErrorBoundary>
@@ -397,6 +433,13 @@ export function renderAlchemyScreen({
         </ErrorBoundary>
       );
     default:
-      return null;
+      console.error(`[RenderAlchemyScreen] Unknown screen: "${screen}"`);
+      return (
+        <ErrorBoundary label="unknown-screen">
+          <div className="flex h-full items-center justify-center">
+            <p className="text-muted-foreground">Unknown screen: {screen}</p>
+          </div>
+        </ErrorBoundary>
+      );
   }
 }

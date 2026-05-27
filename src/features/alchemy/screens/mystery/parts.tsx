@@ -2,7 +2,7 @@
 // Depends on UI primitives, game constants, utility functions, and mystery types.
 // Consumed exclusively by MysteryScreen to keep layout details separate from event flow.
 /* eslint-disable react-refresh/only-export-components */
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { TextAnimate } from "@/components/ui/text-animate";
 import { SELECTION_GRID_PAGE_SIZE } from "@/lib/game-constants";
@@ -58,8 +58,17 @@ export function choiceRequiresCardRemoval(choice: MysteryChoice) {
   return choice.effects.some((e) => e.kind === "removeCard" && e.mode === "choose");
 }
 
+function renderFoundOrLost(effect: MysteryEffect, prefix: string) {
+  return (
+    <div className="flex items-center justify-center gap-2 text-sm font-medium text-muted-foreground">
+      {prefix}
+      <MysteryEffectBadge effect={effect} findCard={undefined} findTrinket={undefined} />
+    </div>
+  );
+}
+
 // Renders a single consequence effect reward item. Encapsulates its own hover state.
-export function MysteryRewardEffectItem({
+function MysteryRewardEffectItem({
   effect,
   runDeck,
   findCard,
@@ -93,17 +102,17 @@ export function MysteryRewardEffectItem({
     );
   }
 
-  switch (effect.kind) {
-    case "addCard": {
-      const card = findCard(effect.cardId);
+  const rewardRenderers: Record<string, () => ReactNode> = {
+    addCard: () => {
+      const card = findCard((effect as { cardId: string }).cardId);
       return card ? renderCardReward(card) : null;
-    }
-    case "chooseCard": {
+    },
+    chooseCard: () => {
       const card = runDeck[runDeck.length - 1];
       return card ? renderCardReward(card) : null;
-    }
-    case "gainTrinket": {
-      const trinket = findTrinket(effect.trinketId);
+    },
+    gainTrinket: () => {
+      const trinket = findTrinket((effect as { trinketId: string }).trinketId);
       if (!trinket) return null;
       return (
         <div className="flex flex-col items-center gap-3">
@@ -129,34 +138,24 @@ export function MysteryRewardEffectItem({
           <p className="text-sm text-muted-foreground">Added {trinket.title} to your Inventory</p>
         </div>
       );
-    }
-    case "gainRandomTrinket":
-      return <p className="text-sm font-semibold text-foreground">Gained a random trinket</p>;
-    case "gainGold":
-    case "gainMaterial":
-      return (
-        <div className="flex items-center justify-center gap-2 text-sm font-medium text-muted-foreground">
-          Found
-          <MysteryEffectBadge effect={effect} findCard={undefined} findTrinket={undefined} />
-        </div>
-      );
-    case "loseGold":
-      return (
-        <div className="flex items-center justify-center gap-2 text-sm font-medium text-muted-foreground">
-          Lost
-          <MysteryEffectBadge effect={effect} findCard={undefined} findTrinket={undefined} />
-        </div>
-      );
-    case "removeCard":
-    case "none":
-      return null;
-    default:
-      return (
-        <p className="text-base text-muted-foreground">
-          <MysteryEffectBadge effect={effect} findCard={findCard} findTrinket={findTrinket} />
-        </p>
-      );
-  }
+    },
+    gainRandomTrinket: () => <p className="text-sm font-semibold text-foreground">Gained a random trinket</p>,
+    gainGold: () => renderFoundOrLost(effect, "Found"),
+    gainMaterial: () => renderFoundOrLost(effect, "Found"),
+    loseGold: () => renderFoundOrLost(effect, "Lost"),
+    removeCard: () => null,
+    none: () => null,
+  };
+
+  const render =
+    rewardRenderers[effect.kind] ??
+    (() => (
+      <p className="text-base text-muted-foreground">
+        <MysteryEffectBadge effect={effect} findCard={findCard} findTrinket={findTrinket} />
+      </p>
+    ));
+
+  return render();
 }
 
 // Renders the final consequence summary after the controller has already mutated run state.
@@ -219,7 +218,7 @@ export function MysteryRewardSummary({
 }
 
 // Renders a single selectable item inside the card removal grid.
-export function RemoveCardGridItem({
+function RemoveCardGridItem({
   card,
   index,
   isSelected,
@@ -294,7 +293,7 @@ export function RemoveCardPicker({ runDeck, onSelect }: { runDeck: BattleCard[];
 }
 
 // Renders a single selectable item inside the choice card options grid.
-export function CardChoiceGridItem({
+function CardChoiceGridItem({
   card,
   isSelected,
   isHovered,
@@ -365,7 +364,7 @@ export function CardChoicePicker({ choices, onSelect }: { choices: BattleCard[];
 }
 
 // Renders a single choice button along with its absolute-positioned outcome tooltip.
-export function MysteryEventChoiceButton({
+function MysteryEventChoiceButton({
   choice,
   findCard,
   findTrinket,

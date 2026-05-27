@@ -4,11 +4,11 @@
  * Depended on by: map-generation.ts, labyrinth-map-screen.tsx
  */
 
-import type { DifficultyModifier } from "@/lib/game-data/difficulties";
+import type { DifficultyModifier } from "@/lib/game-data";
 import type { LabyrinthModifier, LabyrinthModifierKind } from "../types";
 import { shuffleWithRng } from "./map-generation";
 
-export const MODIFIER_CONFIG = {
+const MODIFIER_CONFIG = {
   ARMORED_AMOUNT: 2,
   OVERWHELMING_AMOUNT: 2,
   STURDY_HEALTH_PCT: 30,

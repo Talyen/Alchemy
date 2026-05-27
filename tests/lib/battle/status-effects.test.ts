@@ -789,3 +789,75 @@ describe("applyPlayerStatusEffect", () => {
     expect(texts).toContainEqual({ target: "player", kind: "status", stat: "forge", amount: 6 });
   });
 });
+
+// ─── forge threshold boundary conditions ───
+
+describe("forge threshold boundaries", () => {
+  it("forge burn burst fires on crossing threshold from below (3 -> 6, threshold 4)", () => {
+    const state = createTestBattleState({
+      playerStatuses: { ...createTestBattleState().playerStatuses, forge: 3 },
+      talentEffects: { ...createTestBattleState().talentEffects, forgeBurnThreshold: 4, forgeBurnDamage: 7 },
+    });
+    const effect = { kind: "player-status" as const, status: "forge" as const, amount: 3 };
+    const result = applyPlayerStatusEffect(state, effect, []);
+    expect(result.playerStatuses.forge).toBe(6);
+    expect(result.enemyStatuses.burn).toBe(7);
+  });
+
+  it("forge burn burst does NOT fire when oldForge exactly equals threshold (4 -> 7, threshold 4)", () => {
+    const state = createTestBattleState({
+      playerStatuses: { ...createTestBattleState().playerStatuses, forge: 4 },
+      talentEffects: { ...createTestBattleState().talentEffects, forgeBurnThreshold: 4, forgeBurnDamage: 7 },
+    });
+    const effect = { kind: "player-status" as const, status: "forge" as const, amount: 3 };
+    const result = applyPlayerStatusEffect(state, effect, []);
+    expect(result.playerStatuses.forge).toBe(7);
+    expect(result.enemyStatuses.burn).toBe(0);
+  });
+
+  it("forge burn burst does NOT re-fire on subsequent forge above threshold (6 -> 9, threshold 4)", () => {
+    const state = createTestBattleState({
+      playerStatuses: { ...createTestBattleState().playerStatuses, forge: 6 },
+      talentEffects: { ...createTestBattleState().talentEffects, forgeBurnThreshold: 4, forgeBurnDamage: 7 },
+    });
+    const effect = { kind: "player-status" as const, status: "forge" as const, amount: 3 };
+    const result = applyPlayerStatusEffect(state, effect, []);
+    expect(result.playerStatuses.forge).toBe(9);
+    expect(result.enemyStatuses.burn).toBe(0);
+  });
+
+  it("forge strip armor fires on crossing threshold (5 -> 7, threshold 6)", () => {
+    const state = createTestBattleState({
+      playerStatuses: { ...createTestBattleState().playerStatuses, forge: 5 },
+      enemyMitigation: { armor: 4, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 },
+      talentEffects: { ...createTestBattleState().talentEffects, forgeStripArmorThreshold: 6 },
+    });
+    const effect = { kind: "player-status" as const, status: "forge" as const, amount: 2 };
+    const result = applyPlayerStatusEffect(state, effect, []);
+    expect(result.playerStatuses.forge).toBe(7);
+    expect(result.enemyMitigation.armor).toBe(0);
+  });
+
+  it("forge strip armor does NOT fire when oldForge exactly equals threshold (6 -> 8, threshold 6)", () => {
+    const state = createTestBattleState({
+      playerStatuses: { ...createTestBattleState().playerStatuses, forge: 6 },
+      enemyMitigation: { armor: 4, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 },
+      talentEffects: { ...createTestBattleState().talentEffects, forgeStripArmorThreshold: 6 },
+    });
+    const effect = { kind: "player-status" as const, status: "forge" as const, amount: 2 };
+    const result = applyPlayerStatusEffect(state, effect, []);
+    expect(result.playerStatuses.forge).toBe(8);
+    expect(result.enemyMitigation.armor).toBe(4);
+  });
+
+  it("forge block burst does NOT re-fire above threshold (7 -> 9, threshold 6)", () => {
+    const state = createTestBattleState({
+      playerStatuses: { ...createTestBattleState().playerStatuses, forge: 7 },
+      talentEffects: { ...createTestBattleState().talentEffects, forgeBlockThreshold: 6, forgeBlockAmount: 10 },
+    });
+    const effect = { kind: "player-status" as const, status: "forge" as const, amount: 2 };
+    const result = applyPlayerStatusEffect(state, effect, []);
+    expect(result.playerStatuses.forge).toBe(9);
+    expect(result.playerStatuses.block).toBe(0);
+  });
+});

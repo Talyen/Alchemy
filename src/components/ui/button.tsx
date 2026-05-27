@@ -93,7 +93,7 @@ function getVisualClassName(className: string | undefined) {
     .join(" ");
 }
 
-export interface ButtonProps extends ComponentProps<"button">, VariantProps<typeof buttonVariants> {
+interface ButtonProps extends ComponentProps<"button">, VariantProps<typeof buttonVariants> {
   asChild?: boolean;
   hoverSound?: UISound | false;
 }

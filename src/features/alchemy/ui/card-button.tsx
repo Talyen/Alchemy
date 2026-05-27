@@ -122,7 +122,7 @@ function CardButtonSurface({
       <img
         src={card.art}
         alt={getCardDisplayTitle(card)}
-        className={`block h-auto w-full ${cardArtImageClass}`}
+        className={cn("block h-auto w-full", cardArtImageClass)}
         loading="eager"
       />
     </TiltSurface>

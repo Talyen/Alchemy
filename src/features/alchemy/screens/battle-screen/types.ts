@@ -30,7 +30,7 @@ export type BattleScreenState = Pick<
   | "flags"
 >;
 
-export type BattleScreenViewProps = {
+type BattleScreenViewProps = {
   battleState: BattleScreenState;
   heroArt: string;
   playerName: string;

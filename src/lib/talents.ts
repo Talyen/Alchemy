@@ -3,10 +3,10 @@
  * Depends on: src/lib/game-constants.ts and src/lib/game-data/types.ts.
  * Depended on by: Talents UI screen, homestead systems, and the player save loaders.
  */
-import type { KeywordId } from "@/lib/game-data/types";
+import type { KeywordId } from "@/lib/game-data";
 import { XP_BASE_PER_POINT, XP_MIN_THRESHOLD, XP_ROOT_DIVISOR, XP_TRIANGULAR_MULTIPLIER } from "./game-constants";
 
-export const TALENT_PROGRESS_CONFIG = {
+const TALENT_PROGRESS_CONFIG = {
   MAX_PERCENT: 100,
   PERCENT_MULTIPLIER: 100,
 } as const;

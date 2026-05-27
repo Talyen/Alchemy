@@ -9,7 +9,7 @@ import type { AspectRatioOption } from "./types";
  * Centered Layout configurations and Aspect Ratio values.
  * Keeps preset coordinates and scaling multipliers grouped in one config block.
  */
-export const LAYOUT_CONFIG = {
+const LAYOUT_CONFIG = {
   DEFAULT_WIDTH: 1920,
   DEFAULT_HEIGHT: 1080,
   NATIVE_RESOLUTION_SCALE_THRESHOLD: 1.5,

@@ -6,7 +6,7 @@ import { DESTINATIONS, type Destination } from "../types";
 
 // The pool of destinations the player can choose from after each victory.
 // Boss Combat is excluded by getAvailableDestinations because final slots inject it.
-export const destinationPool: Destination[] = [
+const destinationPool: Destination[] = [
   DESTINATIONS.NORMAL_COMBAT,
   DESTINATIONS.ELITE_COMBAT,
   DESTINATIONS.MERCHANT_SHOP,

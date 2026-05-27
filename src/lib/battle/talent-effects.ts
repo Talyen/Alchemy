@@ -25,7 +25,7 @@ export function applyStunFreeCardTalent(state: BattleState): BattleState {
   return setFlag(state, "nextCardCostReduction", FREE_CARD_SENTINEL);
 }
 
-export function applyBlockOnCCTalent(state: BattleState, amount: number, combatTexts?: CombatTextEvent[]): BattleState {
+function applyBlockOnCCTalent(state: BattleState, amount: number, combatTexts?: CombatTextEvent[]): BattleState {
   if (amount <= 0) return state;
   const nextState = addPlayerStatus(state, "block", amount);
   if (combatTexts) {
@@ -42,7 +42,7 @@ export function applyBlockOnCCTalent(state: BattleState, amount: number, combatT
 export const applyStunBlockTalent = (state: BattleState, combatTexts?: CombatTextEvent[]) =>
   applyBlockOnCCTalent(state, state.talentEffects.blockOnStun, combatTexts);
 
-export function applyStripArmorOnCCTalent(state: BattleState, active: boolean): BattleState {
+function applyStripArmorOnCCTalent(state: BattleState, active: boolean): BattleState {
   if (!active || state.enemyMitigation.armor <= 0) return state;
   return { ...state, enemyMitigation: { ...state.enemyMitigation, armor: 0 } };
 }

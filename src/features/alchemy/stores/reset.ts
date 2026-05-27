@@ -10,7 +10,8 @@ import { useHomesteadStore } from "./homestead-store";
 import { useAppStore } from "./app-store";
 
 export function resetActiveRunStores() {
-  useBattleStore.getState().setBattleState(defaultBattleState());
+  useBattleStore.getState().setSyncedBattleState(defaultBattleState());
+  useBattleStore.getState().clearDisplayOverrides();
   useBattleStore.getState().setHasActiveBattle(false);
   useRunStore.getState().reset();
   useRunStore.getState().resetRunXP();

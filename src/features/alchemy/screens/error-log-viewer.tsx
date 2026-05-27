@@ -1,6 +1,7 @@
 // Dev-mode error log viewer — displays persisted errors with source, stack, and context.
 // Only rendered in DEV mode. Provides copy-to-clipboard for bug reports.
 import { useState } from "react";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useErrorLogStore } from "@/features/alchemy/stores/error-log-store";
 import { PageLayout, ScreenHeader } from "../ui/shared-ui";
@@ -58,13 +59,14 @@ export function ErrorLogViewer({ onClose }: { onClose: () => void }) {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <span
-                        className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${
+                        className={cn(
+                          "inline-block rounded-full px-2 py-0.5 text-xs font-semibold",
                           e.source === "react"
                             ? "bg-red-900/40 text-red-300"
                             : e.source === "global" || e.source === "promise"
                               ? "bg-orange-900/40 text-orange-300"
-                              : "bg-blue-900/40 text-blue-300"
-                        }`}
+                              : "bg-blue-900/40 text-blue-300",
+                        )}
                       >
                         {e.source}
                       </span>

@@ -19,7 +19,7 @@ export type LabyrinthController = {
   pendingNode: LabyrinthNodePosition | null;
 };
 
-export type LabyrinthNodeHandlers = {
+type LabyrinthNodeHandlers = {
   onStartBattleWithModifiers: (
     enemyType: "normal" | "elite",
     modifiers: LabyrinthModifierKind[],

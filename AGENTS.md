@@ -348,3 +348,10 @@ Avoid repeated reads unless directly relevant:
 
 - **Token efficiency**: Prefer targeted reads over full-file scans. Batch parallel tool calls. Prefer diffs over full rewrites. Status updates <100 words, implementation summaries <200 words.
 - **When stuck**: If >3 attempts at the same approach fail, stop and ask the user. Do not speculative-spiral beyond 3 ungrounded hypothesis steps. Timebox sub-problems to 3 steps.
+
+## Multi-Agent Rules
+
+- Never run `git reset`, `git checkout --`, `git restore`, `git clean`, `git rebase`, or `git merge` — these are blocked by permission rules in `opencode.json`.
+- Only edit files in your assigned area of the codebase. Do not modify files being worked on by another agent.
+- If you need changes from another agent's work, ask the user to merge them in.
+- Commit to your own branch, not `main`, unless explicitly told otherwise.

@@ -9,8 +9,7 @@ import {
   type CompanionDefinition,
   type TalentEffectManifest,
 } from "@/lib/game-data";
-import type { BattleCard, BestiaryEntry, EnemyAttackEffect } from "@/lib/game-data/types";
-import type { DifficultyModifier } from "@/lib/game-data/difficulties";
+import type { BattleCard, BestiaryEntry, DifficultyModifier, EnemyAttackEffect } from "@/lib/game-data";
 
 import { shuffle } from "../utils";
 import { emptyInventory } from "@/lib/homestead/inventory";
@@ -210,7 +209,7 @@ function scaleAttackEffects(effects: EnemyAttackEffect[], roomMul: number): Enem
         kind: "damage",
         damageType: effect.damageType,
         amount: scaledAmount,
-        ...("lifesteal" in effect ? { lifesteal: effect.lifesteal } : {}),
+        ...(effect.lifesteal !== undefined ? { lifesteal: effect.lifesteal } : {}),
       };
     }
     return { kind: "player-status", status: effect.status, amount: scaledAmount };

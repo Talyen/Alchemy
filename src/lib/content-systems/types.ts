@@ -26,7 +26,7 @@ export type LabyrinthModifier = {
   description: string;
 };
 
-export type LabyrinthNodeState = "hidden" | "visible" | "current" | "cleared" | "failed";
+type LabyrinthNodeState = "hidden" | "visible" | "current" | "cleared" | "failed";
 
 export type LabyrinthNode = {
   type: LabyrinthNodeType;

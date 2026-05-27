@@ -24,9 +24,14 @@ export function decayHalvedStatus(value: number) {
   return Math.round(value / HALF_DIVISOR);
 }
 
-/** Rolls a 0–100 talent/trinket chance. */
+/** Rolls a 0–100 talent/trinket chance. Safe-guards against null rng. */
 export function rollPercent(chance: number, rng: () => number) {
   return chance > 0 && rng() * PERCENT_DENOMINATOR < chance;
+}
+
+/** Extracts rng from battle state, falling back to Math.random if absent. */
+export function getBattleRng(state: { rng?: () => number }): () => number {
+  return state.rng ?? Math.random;
 }
 
 export type ArmorDecayTarget = "player" | "enemy";

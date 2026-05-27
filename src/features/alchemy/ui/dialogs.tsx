@@ -3,6 +3,7 @@
 // Used by menus and screens that need explicit player confirmation.
 import { AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 const DIALOG_CONFIG = {
   dangerTone: "danger",
@@ -29,7 +30,10 @@ export function ConfirmationDialog({
 }) {
   return (
     <div
-      className={`motion-overlay fixed inset-0 z-[120] flex items-center justify-center px-6 ${dimBackground ? "bg-black/70" : ""}`}
+      className={cn(
+        "motion-overlay fixed inset-0 z-[120] flex items-center justify-center px-6",
+        dimBackground && "bg-black/70",
+      )}
       onClick={onCancel}
     >
       <div

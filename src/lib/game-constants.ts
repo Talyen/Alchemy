@@ -162,8 +162,6 @@ export const COMBAT_TEXT_LANE_DELAY_MS = 80; // Stagger between multi-line comba
 export const ANIMATION_STAGGER_UNIT = 0.08; // Base delay step (80ms) between consecutive animated elements.
 export const CARD_ACTIVATION_ROTATION_DEGREES = 4.2; // Fan angle applied while animating played cards from hand.
 
-export const CARD_PLAY_TIMEOUT_MS = 10000; // Safety timeout to force-clear cardPlayInProgressRef if it hangs (e.g. stun/haste skip edge case).
-
 export const CARD_TRANSFER_CONFIG = {
   drawDurationSeconds: 0.5,
   discardDurationSeconds: 0.5,
@@ -236,7 +234,6 @@ export const LEGACY_CHARACTER_RENAMES = {
 // ============ Enemy Trait Tuning ============
 export const TRAIT_FORGE_PER_TURN = 1; // Rusting-Carapace: forge gained each enemy turn.
 export const IRON_HIDE_ARMOR_PER_TURN = 1; // Iron-Hide: armor gained each enemy turn.
-export const FORGE_REGENERATION_PER_TURN = 1; // Forge-Regeneration: forge gained each enemy turn.
 export const TRAIT_FREEZE_BONUS_PER_TURN = 1; // Glacial-Shell: freeze status bonus gained each turn.
 export const IRON_HIDE_BURN_BONUS_PER_TURN = 1; // Iron-Hide: burn damage bonus gained each turn.
 export const DIFFICULTY_FORGE_PER_TURN = 1; // Difficulty modifier: forge gained each enemy turn.
@@ -253,7 +250,7 @@ export const FALLBACK_ENEMY_ATTACK = 8; // Default attack for malformed bestiary
 
 // ============ Enemy Trait Damage Modifiers ============
 export const TRAIT_DAMAGE_WEAKNESS = 2; // Enemy trait weakness multiplier (double damage).
-export const TRAIT_DAMAGE_RESISTANCE = 0.5; // Enemy trait resistance multiplier (half damage).
+const TRAIT_DAMAGE_RESISTANCE = 0.5; // Enemy trait resistance multiplier (half damage).
 
 // ============ Battle Core Rules ============
 export const BATTLE_CONFIG = {

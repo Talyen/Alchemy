@@ -6,7 +6,6 @@
 // (the stage container may be 1080, 2160, or any other height in the future).
 export const battleCardWidthClass = "w-[clamp(24.76cqh,25.16cqh,37.48cqh)]";
 export const handCardWidthClass = "w-[clamp(22.28cqh,22.64cqh,33.73cqh)]";
-export const collectionCardWidthClass = "w-[clamp(14.44cqh,18.7cqh,19.44cqh)]";
 export const viewCardWidthClass = "w-[clamp(17.5cqh,17.78cqh,26.48cqh)]";
 export const collectionTileWidthClass = "w-[clamp(21cqh,21.34cqh,31.78cqh)]"; // 1.2× viewCardWidthClass for collection cards/bestiary tiles.
 export const trinketCardWidthClass = "w-[clamp(24.5cqh,24.89cqh,37.07cqh)]"; // 1.4× viewCardWidthClass for larger trinket tiles.

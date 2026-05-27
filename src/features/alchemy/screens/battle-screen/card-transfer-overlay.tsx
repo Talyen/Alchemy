@@ -1,6 +1,7 @@
 // Flying card transfer overlay for exact draw-pile and discard-pile handoffs in Battle.
 // Depends on motion, shared card surfaces, card-back art, and feature transfer geometry.
 import { motion } from "motion/react";
+import { cn } from "@/lib/utils";
 
 import { cardBack } from "@/lib/game-data";
 import { cardSurfaceClass } from "../../config";
@@ -40,11 +41,11 @@ export function CardTransferOverlay({ transfer }: { transfer: CardTransfer }) {
           src={transfer.card.art}
           alt=""
           aria-hidden="true"
-          className={`h-full w-full object-cover ${cardSurfaceClass}`}
+          className={cn("h-full w-full object-cover", cardSurfaceClass)}
         />
       </div>
       <div className="absolute inset-0" style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}>
-        <img src={cardBack} alt="" aria-hidden="true" className={`h-full w-full object-cover ${cardSurfaceClass}`} />
+        <img src={cardBack} alt="" aria-hidden="true" className={cn("h-full w-full object-cover", cardSurfaceClass)} />
       </div>
     </motion.div>
   );

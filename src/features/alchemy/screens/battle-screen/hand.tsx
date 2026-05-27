@@ -16,7 +16,7 @@ import { getEffectiveCost } from "@/lib/battle";
 import type { BattleState } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
 
-import { BattleCardButton, getCardDisplayTitle } from "../../components";
+import { BattleCardButton, getCardDisplayTitle } from "../../ui/card-ui";
 import { battleHandContainerClass, handCardWidthClass } from "../../config";
 import type { BattleActionsProps, BattleRefsProps, RequiredBattleViewProps } from "./types";
 import { useBattleStore } from "../../stores/battle-store";

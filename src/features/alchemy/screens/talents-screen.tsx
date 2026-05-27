@@ -1,5 +1,6 @@
 // Talent tree screen — spend XP to unlock keyword-specific talents.
 import { useState, useMemo } from "react";
+import { cn } from "@/lib/utils";
 import { RotateCcw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -106,9 +107,10 @@ export function TalentsScreen({
             return (
               <div
                 key={kw}
-                className={`absolute inset-0 overflow-hidden transition-opacity duration-300 ease-in-out ${
-                  isSelected ? "opacity-100" : "opacity-0 pointer-events-none"
-                }`}
+                className={cn(
+                  "absolute inset-0 overflow-hidden transition-opacity duration-300 ease-in-out",
+                  isSelected ? "opacity-100" : "opacity-0 pointer-events-none",
+                )}
                 style={{
                   backgroundImage: `url(${art})`,
                   backgroundSize: "cover",

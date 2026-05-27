@@ -36,6 +36,72 @@ export default tseslint.config(
 
   prettierConfig,
 
+  // ── Convention enforcement rules ──────────────────────────────────────────
+
+  // Ban React.FC / React.FunctionComponent — use plain function components with explicit Props.
+  {
+    rules: {
+      "@typescript-eslint/no-restricted-types": [
+        "error",
+        {
+          types: {
+            "React.FC": {
+              message: "Use plain function components with explicit Props instead of React.FC.",
+            },
+            "React.FunctionComponent": {
+              message: "Use plain function components with explicit Props instead of React.FunctionComponent.",
+            },
+          },
+        },
+      ],
+    },
+  },
+
+  // Source files: enforce barrel imports instead of deep module paths.
+  {
+    files: ["src/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            { group: ["@/lib/game-data/*"], message: "Import from @/lib/game-data (barrel) instead of deep paths." },
+            { group: ["@/lib/battle/*"], message: "Import from @/lib/battle (barrel) instead of deep paths." },
+            { group: ["@/lib/validation/*"], message: "Import from @/lib/validation (barrel) instead of deep paths." },
+            { group: ["@/features/alchemy/screens/*"], message: "Import from @/features/alchemy/screens (barrel) instead of deep paths." },
+            { group: ["@/features/alchemy/utils/*"], message: "Import from @/features/alchemy/utils (barrel) instead of deep paths." },
+          ],
+        },
+      ],
+    },
+  },
+
+  // Source files: warn on `any` type usage.
+  {
+    files: ["src/**/*.{ts,tsx}"],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "warn",
+    },
+  },
+
+  // JSX files: ban template-literal className (must use cn()).
+  {
+    files: ["src/**/*.tsx"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: 'JSXAttribute[name.name="className"][value.type="TemplateLiteral"]',
+          message: "Use cn() from @/lib/utils for class names instead of template literals.",
+        },
+        {
+          selector: 'JSXAttribute[name.name="className"][value.type="JSXExpressionContainer"] TemplateLiteral',
+          message: "Use cn() from @/lib/utils for class names instead of template literals.",
+        },
+      ],
+    },
+  },
+
   // Battle engine rounding: use Math.round() instead of Math.floor() for all math.
   {
     files: ["src/lib/battle/**/*.ts"],
@@ -63,7 +129,7 @@ export default tseslint.config(
     rules: {
       "@typescript-eslint/no-unused-vars": [
         "warn",
-        { argsIgnorePattern: "^_", varsIgnorePattern: "^(describe|it|expect|vi|beforeEach|afterEach)$" },
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^(_|describe|it|expect|vi|beforeEach|afterEach)$" },
       ],
       "@typescript-eslint/no-explicit-any": "off",
     },

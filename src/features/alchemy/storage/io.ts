@@ -32,13 +32,24 @@ class SaveSessionState {
 
 const saveSessionState = new SaveSessionState();
 
-async function readStorageItem(key: string): Promise<string | null> {
+type StorageOperationResult = { ok: true } | { ok: false; error: unknown };
+
+// Determines whether the desktop backend is available and provides its API handle.
+function getDesktopBackend(): { desktop: NonNullable<Window["alchemyDesktop"]>; cloud: typeof platform.cloud } | null {
   if (platform.isDesktop && window.alchemyDesktop) {
-    const localData = await window.alchemyDesktop.loadSave();
+    return { desktop: window.alchemyDesktop, cloud: platform.cloud };
+  }
+  return null;
+}
+
+async function readStorageItem(key: string): Promise<string | null> {
+  const backend = getDesktopBackend();
+  if (backend) {
+    const localData = await backend.desktop.loadSave();
     if (localData !== null) return localData;
-    if (platform.cloud.isAvailable) {
+    if (backend.cloud.isAvailable) {
       try {
-        const cloudData = await platform.cloud.read(DESKTOP_SAVE_FILENAME);
+        const cloudData = await backend.cloud.read(DESKTOP_SAVE_FILENAME);
         if (cloudData !== null) return cloudData;
       } catch (error) {
         logStorageFailure("Steam Cloud read failed", error);
@@ -54,18 +65,17 @@ async function readStorageItem(key: string): Promise<string | null> {
   }
 }
 
-type StorageOperationResult = { ok: true } | { ok: false; error: unknown };
-
 async function writeStorageItem(key: string, value: string): Promise<StorageOperationResult> {
   try {
-    if (platform.isDesktop && window.alchemyDesktop) {
-      if (platform.cloud.isAvailable) {
-        const cloudOk = await platform.cloud.write(DESKTOP_SAVE_FILENAME, value);
+    const backend = getDesktopBackend();
+    if (backend) {
+      if (backend.cloud.isAvailable) {
+        const cloudOk = await backend.cloud.write(DESKTOP_SAVE_FILENAME, value);
         if (!cloudOk) {
           console.warn("Steam Cloud write failed, save may not sync");
         }
       }
-      const ok = await window.alchemyDesktop.writeSave(value);
+      const ok = await backend.desktop.writeSave(value);
       if (ok) return { ok: true };
       throw new Error("Failed to write desktop save file");
     }
@@ -78,14 +88,15 @@ async function writeStorageItem(key: string, value: string): Promise<StorageOper
 
 async function removeStorageItem(key: string): Promise<StorageOperationResult> {
   try {
-    if (platform.isDesktop && window.alchemyDesktop) {
-      if (platform.cloud.isAvailable) {
-        const cloudOk = await platform.cloud.delete(DESKTOP_SAVE_FILENAME);
+    const backend = getDesktopBackend();
+    if (backend) {
+      if (backend.cloud.isAvailable) {
+        const cloudOk = await backend.cloud.delete(DESKTOP_SAVE_FILENAME);
         if (!cloudOk) {
           console.warn("Steam Cloud delete failed, save may remain in cloud");
         }
       }
-      const ok = await window.alchemyDesktop.clearSave();
+      const ok = await backend.desktop.clearSave();
       if (ok) return { ok: true };
       throw new Error("Failed to clear desktop save file");
     }
@@ -109,7 +120,7 @@ function collectSaveRepairWarnings(raw: Partial<SaveData>, normalized: SaveData)
   return warnings;
 }
 
-export type SaveLoadStatus =
+type SaveLoadStatus =
   | { kind: "ok"; warnings?: string[] }
   | { kind: "unsupported-newer-schema"; detectedSchemaVersion: number }
   | { kind: "unsupported-newer-content"; detectedContentVersion: number }

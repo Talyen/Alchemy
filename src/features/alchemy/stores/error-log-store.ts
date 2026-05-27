@@ -8,8 +8,6 @@ import { registerErrorSink } from "@/lib/error-logger";
 const MAX_ERRORS = 100;
 const STORAGE_KEY = "alchemy-error-log";
 
-export type { ErrorSource };
-
 export interface LoggedError {
   id: string;
   timestamp: number;

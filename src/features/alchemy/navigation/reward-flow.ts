@@ -71,7 +71,7 @@ export type VictoryGoldResult = {
   persistedRunGold: number;
 };
 
-export type FinalizeRewardRoute =
+type FinalizeRewardRoute =
   | "companion-reward"
   | "labyrinth-victory"
   | "labyrinth-map"
@@ -98,7 +98,7 @@ export type FinalizeRewardResult = {
 };
 
 // Checks if a reward modifier kind is active in the given array.
-export function hasRewardModifier(modifiers: LabyrinthModifierKind[], kind: LabyrinthModifierKind): boolean {
+function hasRewardModifier(modifiers: LabyrinthModifierKind[], kind: LabyrinthModifierKind): boolean {
   return modifiers.includes(kind);
 }
 
@@ -132,28 +132,22 @@ export function applyLabyrinthRewardMaterialModifiers(
   };
 }
 
-// Indicates whether reward modifiers should force a trinket reward roll.
-export function shouldForceTrinketReward(modifiers: LabyrinthModifierKind[]): boolean {
-  return hasRewardModifier(modifiers, "collector");
+function createModifierGuard(kind: LabyrinthModifierKind) {
+  return (modifiers: LabyrinthModifierKind[]): boolean => hasRewardModifier(modifiers, kind);
 }
 
-// Indicates whether reward modifiers should add a companion card reward step.
-export function shouldGrantCompanionReward(modifiers: LabyrinthModifierKind[]): boolean {
-  return hasRewardModifier(modifiers, "companion");
-}
-
-// Indicates whether reward modifiers should add a potion after the selected reward.
-export function shouldGrantAlchemistReward(modifiers: LabyrinthModifierKind[]): boolean {
-  return hasRewardModifier(modifiers, "alchemist");
-}
+export const shouldForceTrinketReward = createModifierGuard("collector");
+export const shouldGrantCompanionReward = createModifierGuard("companion");
+export const shouldGrantAlchemistReward = createModifierGuard("alchemist");
 
 // Returns a random potion card from the card library.
 export function getRandomPotionCard(rng: () => number = Math.random): BattleCard {
-  const potionCards = cardLibrary.filter(
-    (c) => (c.id.endsWith("potion") || c.id.includes("potion-")) && c.id !== MIXED_POTION_CARD_ID,
-  );
-  if (potionCards.length === 0) return cardLibrary[0];
-  return potionCards[Math.floor(rng() * potionCards.length)];
+  const potionCards = cardLibrary.filter((c) => c.id.endsWith("-potion") && c.id !== MIXED_POTION_CARD_ID);
+  const index = Math.floor(rng() * potionCards.length);
+  if (process.env.NODE_ENV !== "production" && potionCards.length === 0) {
+    console.error("[reward-flow] getRandomPotionCard: no potion cards found in cardLibrary");
+  }
+  return potionCards[index];
 }
 
 // Returns random companion cards for the companion reward step.
@@ -248,11 +242,17 @@ export function createBossRewardState({
   trinketIds,
   goldMultiplier = 1,
 }: BossRewardInput): RewardState {
-  const trinketGoldBonus = getSmugglersMapGoldBonus(trinketIds);
   return {
     rewardType: "trinket",
     choices: selectRewardTrinkets(trinketLibrary, BOSS_TRINKET_REWARD_CHOICES),
-    gold: Math.floor((gold + bossBonus + generousBonus + talentGoldPerCombat + trinketGoldBonus) * goldMultiplier),
+    gold: computeRewardGold({
+      baseGold: gold,
+      bonusGold: bossBonus,
+      generousBonus,
+      talentGoldPerCombat,
+      trinketIds,
+      goldMultiplier,
+    }),
     materials,
     selectedId: null,
     destinations: [],
@@ -264,8 +264,25 @@ function getSmugglersMapGoldBonus(trinketIds: string[]): number {
   return computeTrinketManifest(trinketIds).smugglersMapGoldBonus;
 }
 
+type RewardGoldInput = {
+  baseGold: number;
+  bonusGold: number;
+  generousBonus: number;
+  talentGoldPerCombat: number;
+  trinketIds: string[];
+  goldMultiplier: number;
+};
+
+function computeRewardGold(input: RewardGoldInput): number {
+  const trinketGoldBonus = getSmugglersMapGoldBonus(input.trinketIds);
+  return Math.floor(
+    (input.baseGold + input.bonusGold + input.generousBonus + input.talentGoldPerCombat + trinketGoldBonus) *
+      input.goldMultiplier,
+  );
+}
+
 // Calculates whether a combat reward should offer a trinket based on traits and modifiers.
-export function calculateCombatTrinketRewardOffer(
+function calculateCombatTrinketRewardOffer(
   battleState: BattleState,
   forceTrinket: boolean,
   rng: () => number = Math.random,
@@ -278,9 +295,8 @@ export function calculateCombatTrinketRewardOffer(
   const trinketHoarderBonus = battleState.currentEnemy.traits?.some((t) => t.id === "trinket-hoarder")
     ? LABYRINTH_REWARD_CONFIG.trinketHoarderRewardChanceBonus
     : 0;
-  const talentEffects = (battleState as never)["talentEffects"] as Record<string, number> | undefined;
-  const trinketChanceBonus = talentEffects?.trinketChanceBonus ?? 0;
-  return rng() < baseTrinketChance + trinketHoarderBonus + trinketChanceBonus;
+  const trinketChanceBonus = battleState.talentEffects?.trinketChanceBonus ?? 0;
+  return rng() < Math.min(baseTrinketChance + trinketHoarderBonus + trinketChanceBonus, 1);
 }
 
 // Combat rewards can be cards or trinkets. Destination choices are supplied by the hook
@@ -299,13 +315,19 @@ export function createCombatRewardState({
   forceTrinket = false,
 }: CombatRewardInput): RewardState {
   const offerTrinket = calculateCombatTrinketRewardOffer(battleState, forceTrinket);
-  const trinketGoldBonus = getSmugglersMapGoldBonus(trinketIds);
   return {
     rewardType: offerTrinket ? "trinket" : "card",
     choices: offerTrinket
       ? selectRewardTrinkets(trinketLibrary, REWARD_CARD_CHOICES)
       : selectRewardCards(runDeck, cardLibrary, REWARD_CARD_CHOICES),
-    gold: Math.floor((gold + eliteBonus + generousBonus + talentGoldPerCombat + trinketGoldBonus) * goldMultiplier),
+    gold: computeRewardGold({
+      baseGold: gold,
+      bonusGold: eliteBonus,
+      generousBonus,
+      talentGoldPerCombat,
+      trinketIds,
+      goldMultiplier,
+    }),
     materials,
     selectedId: null,
     destinations,

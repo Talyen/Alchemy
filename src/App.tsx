@@ -2,6 +2,7 @@
 // Depends on alchemy controllers, homestead state, screen modules, assets, and platform/audio helpers.
 // Everything visible flows through here, but domain rules stay in feature/lib controllers.
 import { useEffect, useRef, useState } from "react";
+import { cn } from "@/lib/utils";
 
 import {
   allGameArt,
@@ -24,7 +25,7 @@ import { useScreenAssetPreloadEffects } from "@/app/use-app-preload-effects";
 import { useAlchemyAutosave } from "@/app/use-app-save-state";
 import { useGlobalErrorHandlers } from "@/app/use-global-error-handlers";
 import { useInitialLoadReady } from "@/app/use-initial-load-ready";
-import { renderAlchemyScreen } from "@/app/render-alchemy-screen";
+import { RenderAlchemyScreen } from "@/app/render-alchemy-screen";
 import { StartupLoadingScreen } from "@/app/startup-loading-screen";
 import { UnsupportedSaveVersionScreen } from "@/app/unsupported-save-version-screen";
 import { useVirtualResolution } from "@/features/alchemy/hooks";
@@ -305,7 +306,7 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
   ) : (
     <div
       key={renderedScreen}
-      className={`${pagePhase === "exit" ? "page-exit" : "page-enter"} h-full w-full overflow-hidden`}
+      className={cn(pagePhase === "exit" ? "page-exit" : "page-enter", "h-full w-full overflow-hidden")}
     >
       <HomesteadProvider
         cardDescriptionContext={{
@@ -315,9 +316,9 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
           potionPotency: 1 + homesteadEffects.potionPotency,
         }}
       >
-        {renderAlchemyScreen({
-          screen: renderedScreen,
-          actions: {
+        <RenderAlchemyScreen
+          screen={renderedScreen}
+          actions={{
             goToScreen: run.goToScreen,
             navigateTo: run.goToScreen,
             beginCampaign: run.beginCampaign,
@@ -358,32 +359,32 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
             returnToBattle: run.returnToBattle,
             unlockTalent: run.unlockTalent,
             resetUnlockedTalents: run.resetUnlockedTalents,
-          },
-          handCardRefs: run.handCardRefs,
-          drawPileRef: run.drawPileRef,
-          discardPileRef: run.discardPileRef,
-          battleSceneRef: run.battleSceneRef,
-          playerPanelRef: run.playerPanelRef,
-          enemyPanelRef: run.enemyPanelRef,
-          heroArt,
-          playerName,
-          aspectMode,
-          stagePixelRatio,
-          cardTransfers: run.cardTransfers,
-          hiddenHandCardKeys: run.hiddenHandCardKeys,
-          cardTransferInProgress: run.cardTransferInProgress,
-          hasUnspentTalents,
-          hasAffordableHomestead,
-          collectionTab,
-          collectionPages,
-          encounteredEnemyIds,
-          discoveredTrinketIds,
-          showClearSaveConfirm,
-          pendingCharacterId,
-          onOpenBattleMenu: openBattleMenu,
-          onClearSaveData: clearSaveData,
-          onUnlockAllDevMode: unlockAllDevMode,
-        })}
+          }}
+          handCardRefs={run.handCardRefs}
+          drawPileRef={run.drawPileRef}
+          discardPileRef={run.discardPileRef}
+          battleSceneRef={run.battleSceneRef}
+          playerPanelRef={run.playerPanelRef}
+          enemyPanelRef={run.enemyPanelRef}
+          heroArt={heroArt}
+          playerName={playerName}
+          aspectMode={aspectMode}
+          stagePixelRatio={stagePixelRatio}
+          cardTransfers={run.cardTransfers}
+          hiddenHandCardKeys={run.hiddenHandCardKeys}
+          cardTransferInProgress={run.cardTransferInProgress}
+          hasUnspentTalents={hasUnspentTalents}
+          hasAffordableHomestead={hasAffordableHomestead}
+          collectionTab={collectionTab}
+          collectionPages={collectionPages}
+          encounteredEnemyIds={encounteredEnemyIds}
+          discoveredTrinketIds={discoveredTrinketIds}
+          showClearSaveConfirm={showClearSaveConfirm}
+          pendingCharacterId={pendingCharacterId}
+          onOpenBattleMenu={openBattleMenu}
+          onClearSaveData={clearSaveData}
+          onUnlockAllDevMode={unlockAllDevMode}
+        />
       </HomesteadProvider>
     </div>
   );
@@ -394,7 +395,10 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
         <div className="relative" style={frameStyle}>
           <div
             ref={vrStageRef}
-            className={`absolute left-0 top-0 overflow-hidden bg-background [container-type:size] ${tooltipBlocked ? "tooltips-disabled" : ""}`}
+            className={cn(
+              "absolute left-0 top-0 overflow-hidden bg-background [container-type:size]",
+              tooltipBlocked && "tooltips-disabled",
+            )}
             style={stageStyle}
           >
             <BackgroundParticles

@@ -59,13 +59,13 @@ export const ROUTE_SCREENS = {
   WILDWOOD_SELECT: "wildwood-select",
 } as const;
 
-export const CONTENT_SYSTEMS = {
+const CONTENT_SYSTEMS = {
   CAMPAIGN: "campaign",
   LABYRINTH: "labyrinth",
   WILDWOOD: "wildwood",
 } as const;
 
-export const ENEMY_TYPES = {
+const ENEMY_TYPES = {
   NORMAL: "normal",
   ELITE: "elite",
   BOSS: "boss",
@@ -82,7 +82,7 @@ export const DESTINATIONS = {
   BOSS_COMBAT: "Boss Combat",
 } as const;
 
-export const REWARD_ROUTES = {
+const REWARD_ROUTES = {
   COMPANION_REWARD: "companion-reward",
   LABYRINTH_VICTORY: "labyrinth-victory",
   LABYRINTH_MAP: "labyrinth-map",
@@ -103,7 +103,7 @@ export type Destination = (typeof DESTINATIONS)[keyof typeof DESTINATIONS];
 
 export type CollectionTab = "cards" | "bestiary" | "trinkets";
 
-export type CardGhostVariant = "draw-in" | "discard-out" | "activate" | "play-travel";
+type CardGhostVariant = "draw-in" | "discard-out" | "activate" | "play-travel";
 
 export type CardRect = { x: number; y: number; width: number; height: number };
 

@@ -28,7 +28,7 @@ import {
 import type { DifficultyModifier } from "@/lib/game-data";
 
 export type BalancePlayPolicy = "random-playable" | "greedy-damage" | "defensive-random";
-export type BattleSimulationOutcome = "win" | "loss" | "timeout";
+type BattleSimulationOutcome = "win" | "loss" | "timeout";
 
 // Prebuilt talent progression profiles representing game stages.
 export type TalentPreset = "early" | "mid" | "late";
@@ -36,7 +36,7 @@ export type TalentPreset = "early" | "mid" | "late";
 // Builds a manifest for the given preset with affinity-weighted talent counts.
 // Affinity keywords get deeper access: mid=5/late=all. Non-affinity: mid=2/late=5.
 // early = no talents.
-export function buildPresetManifest(keywords: KeywordId[], preset: TalentPreset): TalentEffectManifest {
+function buildPresetManifest(keywords: KeywordId[], preset: TalentPreset): TalentEffectManifest {
   if (preset === "early") return defaultTalentEffects;
 
   const allKeywordIds = [...new Set(talentPool.map((t) => t.keywordId))];
@@ -95,7 +95,7 @@ export type BattleAnomalies = {
   maxSingleHeal: number;
 };
 
-export function createEmptyAnomalies(): BattleAnomalies {
+function createEmptyAnomalies(): BattleAnomalies {
   return {
     maxPlayerBlock: 0,
     maxPlayerArmor: 0,
@@ -120,7 +120,7 @@ export function createEmptyAnomalies(): BattleAnomalies {
   };
 }
 
-export function sampleAnomalies(state: BattleState, combatTexts: CombatTextEvent[], anomalies: BattleAnomalies): void {
+function sampleAnomalies(state: BattleState, combatTexts: CombatTextEvent[], anomalies: BattleAnomalies): void {
   const ps = state.playerStatuses;
   anomalies.maxPlayerBlock = Math.max(anomalies.maxPlayerBlock, ps.block ?? 0);
   anomalies.maxPlayerArmor = Math.max(anomalies.maxPlayerArmor, ps.armor ?? 0);

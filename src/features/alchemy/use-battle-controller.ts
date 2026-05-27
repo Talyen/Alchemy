@@ -90,6 +90,7 @@ export function useBattleController({
   // React owns timing, refs, animation, and audio here; pure combat resolution stays in
   // @/lib/battle so UI delays cannot silently change battle outcomes.
   const battleState = useBattleStore((s) => s.battleState);
+  const logicalBattleState = useBattleStore((s) => s.logicalBattleState);
   const battleStartState = useBattleStore((s) => s.battleStartState);
   const hasActiveBattle = useBattleStore((s) => s.hasActiveBattle);
   const enemyShaking = useBattleStore((s) => s.enemyShaking);
@@ -117,10 +118,6 @@ export function useBattleController({
   const transferIdCounterRef = useRef(0);
 
   // ─── Session lifecycle ───
-  function invalidateBattleSession() {
-    battleSessionRef.current += 1;
-  }
-
   function isCurrentBattleSession(session: number) {
     return session === battleSessionRef.current && getStore().hasActiveBattle;
   }
@@ -183,6 +180,19 @@ export function useBattleController({
     stopAllSfx();
   }
 
+  function resetBattleSession() {
+    battleSessionRef.current += 1;
+    battleTimerGroupRef.current.clearAll();
+    clearTransferHandles();
+    stopBattleFeedback();
+    cardPlayInProgressRef.current = false;
+    victoryDefeatHandledRef.current = false;
+    resolvedAsHasteOrStunRef.current = false;
+    companionScheduledRef.current = false;
+    getStore().clearRevealedCardKeys();
+    getStore().setBattleStartState(null);
+  }
+
   // ─── Effects ───
   useEffect(
     () => () => {
@@ -198,20 +208,12 @@ export function useBattleController({
 
   useEffect(() => {
     if (hasActiveBattle) return;
-    invalidateBattleSession();
-    clearPendingBattleTimeouts();
-    clearTransferHandles();
-    cardPlayInProgressRef.current = false;
-    companionScheduledRef.current = false;
-    victoryDefeatHandledRef.current = false;
-    resolvedAsHasteOrStunRef.current = false;
+    resetBattleSession();
     queueMicrotask(() => {
       setCardTransfers([]);
       setHiddenHandCardKeys(new Set());
       setCardTransferInProgress(false);
     });
-    getStore().setBattleStartState(null);
-    // hasActiveBattle is the only lifecycle edge this cleanup should react to.
   }, [hasActiveBattle]);
 
   const playerCombatTexts = useMemo(
@@ -222,7 +224,12 @@ export function useBattleController({
     () => floatingCombatTexts.filter((e) => e.target === "enemy"),
     [floatingCombatTexts],
   );
-  const { scheduleAutoEndTurn } = useBattleAutoEndTurn({ autoEndTurn, screen, battleState, onEndTurn: handleEndTurn });
+  const { scheduleAutoEndTurn } = useBattleAutoEndTurn({
+    autoEndTurn,
+    screen,
+    battleState: logicalBattleState,
+    onEndTurn: handleEndTurn,
+  });
 
   // ─── Card transfer animation helpers ───
   function getStore() {
@@ -436,16 +443,10 @@ export function useBattleController({
   }
 
   function beginBattle(enemy: BestiaryEntry, deck: BattleCard[], gold: number, modifiers?: DifficultyModifier[]) {
-    invalidateBattleSession();
-    clearPendingBattleTimeouts();
-    clearTransferHandles();
-    stopBattleFeedback();
+    resetBattleSession();
     setCardTransfers([]);
     setHiddenHandCardKeys(new Set());
     setCardTransferInProgress(false);
-    cardPlayInProgressRef.current = false;
-    victoryDefeatHandledRef.current = false;
-    getStore().clearRevealedCardKeys();
     const startingHealth = getBattleStartPlayerHealth(run.runPlayerHealth, run.runMaxHealth, run.runTrinkets);
     run.setRunPlayerHealth(startingHealth);
     const nextRoomsEncountered = run.roomsEncountered + 1;
@@ -558,7 +559,7 @@ export function useBattleController({
     index: number,
     sourceRect: { x: number; y: number; width: number; height: number },
   ) {
-    const currentState = getStore().battleState;
+    const currentState = getStore().logicalBattleState;
     if (!canPlayCard(card, index, currentState)) return;
     const session = battleSessionRef.current;
     cardPlayInProgressRef.current = true;
@@ -627,7 +628,7 @@ export function useBattleController({
   }
 
   function handleWishChoice(cardOrNull: BattleCard | null) {
-    const currentState = getStore().battleState;
+    const currentState = getStore().logicalBattleState;
     const newState = chooseWishCard(currentState, cardOrNull?.id ?? null);
     const session = battleSessionRef.current;
     if (cardOrNull) {
@@ -646,7 +647,7 @@ export function useBattleController({
 
   // ─── End turn & enemy phase ───
   function handleEndTurn() {
-    const currentState = getStore().battleState;
+    const currentState = getStore().logicalBattleState;
     if (
       screen !== "battle" ||
       currentState.turnPhase !== "player" ||
@@ -801,9 +802,9 @@ export function useBattleController({
   }
 
   function resolveEndTurn(currentState: BattleState, session: number) {
-    try {
-      runIfSessionActive(session, () => {
-        const companionResult = resolveQueuedCompanionTurn(currentState);
+    runIfSessionActive(session, () => {
+      try {
+        const companionResult = resolveQueuedCompanionTurn(currentState, session);
 
         if (companionResult.state.enemyHealth <= 0) {
           getStore().setSyncedBattleState(companionResult.state);
@@ -819,27 +820,26 @@ export function useBattleController({
         const result = endPlayerTurn(companionResult.state);
         getStore().setLogicalBattleState(result.state);
 
-        // Haste skip: immediately show the next turn and animate any draw
-        // (enemyTurnStartState is undefined only in the haste path)
         if (!result.enemyTurnStartState) {
           resolveHasteSkipTurn(result, companionResult.state, session);
           return;
         }
 
         resolveNormalEnemyTurn(result, companionResult, session);
-      });
-    } catch (err) {
-      logError(
-        "Unhandled error in resolveEndTurn — forcing defeat to prevent frozen battle state",
-        "battle",
-        { error: String(err) },
-        err instanceof Error ? err.stack : undefined,
-      );
-      // Prevent the battle from freezing in the enemy turn phase when an unknown
-      // trait or attack effect throws. Treat it as a run-ending defeat so the
-      // player can exit cleanly. The error has already been reported above.
-      handleVictoryDefeat("defeat");
-    }
+      } catch (err) {
+        logError(
+          "Unhandled error in resolveEndTurn — forcing defeat to prevent frozen battle state",
+          "battle",
+          { error: String(err) },
+          err instanceof Error ? err.stack : undefined,
+        );
+        // Only force defeat if this session is still active; if the battle already
+        // ended (session invalidated) the defeat was already handled elsewhere.
+        if (isCurrentBattleSession(session)) {
+          handleVictoryDefeat("defeat");
+        }
+      }
+    });
   }
 
   function triggerCompanionEffects(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
@@ -851,8 +851,9 @@ export function useBattleController({
     return state;
   }
 
-  function resolveQueuedCompanionTurn(state: BattleState) {
+  function resolveQueuedCompanionTurn(state: BattleState, session: number) {
     const combatTexts: CombatTextEvent[] = [];
+    if (!isCurrentBattleSession(session)) return { state, combatTexts };
     if (companionScheduledRef.current && state.activeCompanion) {
       const nextState = triggerCompanionEffects(state, combatTexts);
       companionScheduledRef.current = false;
@@ -868,18 +869,16 @@ export function useBattleController({
     combatTexts: CombatTextEvent[],
     showPlayerUpdates: boolean,
   ) {
-    const displayState: BattleState = {
-      ...resultState,
-      turnPhase: "enemy",
+    // Sync authoritative state with turnPhase="enemy" so guards (handleEndTurn, etc.)
+    // correctly see it's the enemy phase. Hand is kept in resultState (draw already ran)
+    // for the upcoming handleDrawSequence. Display overrides hide the hand for animation.
+    getStore().setSyncedBattleState({ ...resultState, turnPhase: "enemy" });
+    getStore().setDisplayOverrides({
       hand: [],
       ...(showPlayerUpdates
         ? {}
         : { playerHealth: currentState.playerHealth, playerStatuses: currentState.playerStatuses }),
-    };
-    // Display-only write: sets a transient hand:[]/turnPhase:"enemy" snapshot for the
-    // enemy-turn-start animation. logicalBattleState was already set at the endPlayerTurn
-    // call site above (line ~826) and must NOT be overwritten with this intermediate state.
-    getStore().setBattleState(displayState);
+    });
     const dotTexts = combatTexts.filter((ct) => ct.target === "enemy" || ct.kind === "heal");
     if (dotTexts.length > 0) getStore().showCombatTexts(dotTexts);
   }
@@ -948,7 +947,7 @@ export function useBattleController({
     return runIfSessionActive(session, () => {
       const store = getStore();
       const texts: CombatTextEvent[] = [];
-      const newState = triggerCompanionEffects(store.battleState, texts);
+      const newState = triggerCompanionEffects(store.logicalBattleState, texts);
       store.setSyncedBattleState(newState);
       return texts;
     }, []);
@@ -957,10 +956,7 @@ export function useBattleController({
   // ─── Run end / dev mode ───
   function handleEndRun() {
     if (screen !== "battle") return;
-    invalidateBattleSession();
-    clearPendingBattleTimeouts();
-    clearTransferHandles();
-    stopBattleFeedback();
+    resetBattleSession();
     const defeatStateSetter = (c: BattleState) => ({
       ...c,
       playerHealth: 0,
@@ -974,10 +970,7 @@ export function useBattleController({
 
   function skipCombatDevMode() {
     if (screen === "battle") {
-      invalidateBattleSession();
-      clearPendingBattleTimeouts();
-      clearTransferHandles();
-      stopBattleFeedback();
+      resetBattleSession();
       const skipStateSetter = (c: BattleState) => ({ ...c, enemyHealth: 0, wishOptions: null, wishQueue: [] });
       getStore().setSyncedBattleState(skipStateSetter);
       handleVictoryDefeat("victory");

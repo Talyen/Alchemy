@@ -7,7 +7,6 @@ import { type CSSProperties, type ReactNode, useLayoutEffect, useRef, useState }
 import { cn } from "@/lib/utils";
 
 import { popupClassName } from "../config";
-import { DescriptionLines } from "./card-description-ui";
 
 type TooltipPanelProps = {
   children: ReactNode;
@@ -69,8 +68,4 @@ export function TooltipSection({ label, children }: { label: string; children: R
       {children}
     </div>
   );
-}
-
-export function TooltipBodyLine({ line, idPrefix }: { line: string; idPrefix: string }) {
-  return <DescriptionLines lines={[line]} idPrefix={idPrefix} />;
 }

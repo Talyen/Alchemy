@@ -22,6 +22,7 @@ import type { TalentStateController } from "../use-talent-state";
 import { MAX_PLAYER_HEALTH } from "@/lib/game-constants";
 import { DESTINATIONS, type Destination } from "@/features/alchemy/types";
 import type { ActiveRunData } from "@/features/alchemy/run/types";
+import type { RunStartSnapshot } from "@/features/alchemy/run/run-start";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import { addTalentXP, xpThresholdForPoints, type TalentXP } from "@/lib/talents";
 import type { KeywordId } from "@/lib/game-data";
@@ -77,6 +78,7 @@ type RunStoreActions = {
     unlockedTalents: UnlockedTalents,
     fallbackCharacterId?: CharacterId,
   ) => void;
+  hydrateFromSnapshot: (snapshot: RunStartSnapshot) => void;
 };
 
 type RunStore = RunStateFields & RunStoreActions;
@@ -216,7 +218,7 @@ export const useRunStore = create<RunStore>()((set) => ({
     set((s) => {
       if (Object.keys(s.runTalentXP).length === 0) return s;
 
-      const multiplier = getDifficultyXPMultiplier(s.selectedDifficulty) ?? 1;
+      const multiplier = getDifficultyXPMultiplier(s.selectedDifficulty);
 
       const nextTalentXP = { ...s.talentXP };
       for (const [kw, amount] of Object.entries(s.runTalentXP)) {
@@ -235,6 +237,24 @@ export const useRunStore = create<RunStore>()((set) => ({
     const runState = createInitialRunState(activeRun, fallbackCharacterId);
     const talentState = createInitialTalentState(talentXP, unlockedTalents);
     set({ ...runState, ...talentState, initialized: true });
+  },
+
+  hydrateFromSnapshot: (snapshot) => {
+    set({
+      characterId: snapshot.characterId,
+      contentSystemType: snapshot.contentSystemType,
+      runDeck: snapshot.freshDeck,
+      selectedDifficulty: snapshot.selectedDifficulty,
+      runGold: snapshot.runGold,
+      runPlayerHealth: snapshot.runPlayerHealth,
+      runMaxHealth: snapshot.runMaxHealth,
+      roomsEncountered: snapshot.roomsEncountered,
+      currentAct: snapshot.currentAct,
+      destinationIndexInAct: snapshot.destinationIndexInAct,
+      completedDestinations: snapshot.completedDestinations,
+      runTrinkets: snapshot.runTrinkets,
+      encounteredRunEnemyIds: [],
+    });
   },
 }));
 
@@ -274,6 +294,7 @@ export function useRunAdapter(): RunStateController {
       setCharacter: s.setCharacter,
       reset: s.reset,
       addRunGold: s.addRunGold,
+      hydrateFromSnapshot: s.hydrateFromSnapshot,
     })),
   );
 

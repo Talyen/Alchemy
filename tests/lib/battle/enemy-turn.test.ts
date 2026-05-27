@@ -1,0 +1,176 @@
+import { describe, expect, it, vi } from "vitest";
+import { endPlayerTurn } from "@/lib/battle/enemy-turn";
+import type { BattleState, EnemyStatusValues, PlayerStatusValues } from "@/lib/battle/types";
+import { defaultTalentEffects } from "@/lib/battle/draw";
+import { createTestBattleState } from "./test-state";
+import type { BestiaryEntry } from "@/lib/game-data";
+
+vi.spyOn(Math, "random").mockReturnValue(0.99);
+
+function baseEnemy(enemyId: string): BestiaryEntry {
+  return {
+    id: enemyId,
+    title: "Test Enemy",
+    subtitle: "",
+    descriptionLines: [],
+    art: "",
+    enemyType: "normal",
+    traits: [],
+    attackEffects: [{ kind: "damage", damageType: "physical", amount: 5 }],
+  };
+}
+
+const emptyStatuses: EnemyStatusValues = { burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 };
+const emptyPlayerStatuses: PlayerStatusValues = {
+  block: 0,
+  armor: 0,
+  forge: 0,
+  haste: 0,
+  burn: 0,
+  poison: 0,
+  bleed: 0,
+  freeze: 0,
+  stun: 0,
+};
+
+function battleState(overrides: Partial<BattleState> = {}): BattleState {
+  return createTestBattleState({
+    enemyHealth: 50,
+    enemyMaxHealth: 50,
+    enemyStatuses: { ...emptyStatuses },
+    playerStatuses: { ...emptyPlayerStatuses },
+    mana: 4,
+    maxMana: 4,
+    enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 10 }],
+    currentEnemy: baseEnemy("test-enemy"),
+    talentEffects: defaultTalentEffects,
+    ...overrides,
+  });
+}
+
+describe("endPlayerTurn — haste branch", () => {
+  it("skips enemy phase entirely when player has haste", () => {
+    const state = battleState({ playerStatuses: { ...emptyPlayerStatuses, haste: 1 } });
+    const result = endPlayerTurn(state);
+    expect(result.enemyPerformedAttack).toBe(false);
+    expect(result.playerTurnSkipped).toBe(false);
+    expect(result.state.turnPhase).toBe("player");
+  });
+
+  it("decrements haste stack", () => {
+    const state = battleState({ playerStatuses: { ...emptyPlayerStatuses, haste: 2 } });
+    const result = endPlayerTurn(state);
+    const { haste } = result.state.playerStatuses;
+    expect(haste).toBe(1);
+  });
+
+  it("player health unchanged on haste turn", () => {
+    const state = battleState({ playerStatuses: { ...emptyPlayerStatuses, haste: 1 }, playerHealth: 20 });
+    const result = endPlayerTurn(state);
+    expect(result.state.playerHealth).toBe(20);
+  });
+});
+
+describe("endPlayerTurn — CC skip branch", () => {
+  it("skips attack when enemy is stunned", () => {
+    const state = battleState({ enemyStunSkipTurns: 1 });
+    const result = endPlayerTurn(state);
+    expect(result.enemyPerformedAttack).toBe(false);
+  });
+
+  it("skips attack when enemy is frozen", () => {
+    const state = battleState({ enemyFreezeSkipTurns: 1 });
+    const result = endPlayerTurn(state);
+    expect(result.enemyPerformedAttack).toBe(false);
+  });
+
+  it("reduces skip turn counters", () => {
+    const state = battleState({ enemyStunSkipTurns: 2, enemyFreezeSkipTurns: 1 });
+    const result = endPlayerTurn(state);
+    expect(result.state.enemyStunSkipTurns).toBe(1);
+    expect(result.state.enemyFreezeSkipTurns).toBe(0);
+  });
+
+  it("still ticks enemy DoTs during CC skip", () => {
+    const state = battleState({
+      enemyStunSkipTurns: 1,
+      enemyStatuses: { ...emptyStatuses, burn: 10 },
+      enemyHealth: 50,
+    });
+    const result = endPlayerTurn(state);
+    expect(result.state.enemyHealth).toBe(40);
+  });
+
+  it("still applies enemy traits during CC skip", () => {
+    const state = battleState({
+      enemyStunSkipTurns: 1,
+      currentEnemy: baseEnemy("rusting-carapace"),
+    });
+    state.currentEnemy.traits = [{ id: "rusting-carapace", title: "Rusting Carapace", description: "" }];
+    const result = endPlayerTurn(state);
+    expect(result.state.enemyMitigation.forge).toBeGreaterThan(0);
+  });
+});
+
+describe("endPlayerTurn — standard branch", () => {
+  it("executes enemy attack and deals damage", () => {
+    const state = battleState({ playerHealth: 30 });
+    const result = endPlayerTurn(state);
+    expect(result.enemyPerformedAttack).toBe(true);
+    expect(result.state.playerHealth).toBeLessThan(30);
+  });
+
+  it("applies player DoT after enemy attack", () => {
+    const state = battleState({
+      playerHealth: 50,
+      playerStatuses: { ...emptyPlayerStatuses, burn: 10 },
+    });
+    const result = endPlayerTurn(state);
+    expect(result.state.playerHealth).toBeLessThan(50);
+  });
+
+  it("provides enemy regeneration at turn end", () => {
+    const state = battleState({
+      enemyRegeneration: 5,
+      enemyHealth: 30,
+      enemyMaxHealth: 50,
+    });
+    const result = endPlayerTurn(state);
+    expect(result.state.enemyHealth).toBeGreaterThan(30);
+  });
+
+  it("turns over to player phase", () => {
+    const state = battleState();
+    const result = endPlayerTurn(state);
+    expect(result.state.turnPhase).toBe("player");
+    expect(result.state.mana).toBeGreaterThan(0);
+  });
+});
+
+describe("endPlayerTurn — Death's Door", () => {
+  it("gives grace recovery turn when player hits 0", () => {
+    const state = battleState({
+      playerHealth: 0,
+      deathsDoorUsed: true,
+      deathsDoorActive: true,
+      deathsDoorTriggeredTurn: 1,
+      deathsDoorGraceTurnsRemaining: 1,
+      turn: 1,
+    });
+    const result = endPlayerTurn(state);
+    expect(result.state.deathsDoorActive).toBe(true);
+  });
+
+  it("deactivates Death's Door after grace expires", () => {
+    const state = battleState({
+      playerHealth: 0,
+      deathsDoorUsed: true,
+      deathsDoorActive: true,
+      deathsDoorTriggeredTurn: 1,
+      deathsDoorGraceTurnsRemaining: 0,
+      turn: 1,
+    });
+    const result = endPlayerTurn(state);
+    expect(result.state.deathsDoorActive).toBe(false);
+  });
+});

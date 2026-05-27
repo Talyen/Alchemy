@@ -345,8 +345,9 @@ function handleUtilityEffect(
       return handleMultiplyEnemyStatus(state, effect.status, effect.factor, combatTexts);
     case "remove-player-status":
       return handleRemovePlayerStatus(state, effect.status, combatTexts);
+    default:
+      return state;
   }
-  return state;
 }
 
 /**

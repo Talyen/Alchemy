@@ -3,7 +3,7 @@
 // Used only by BattleScreen to keep the main screen composition smaller.
 import { BATTLE_ACTOR_TOP } from "@/lib/game-constants";
 
-import { ArtPanel, CompanionPanel, CombatTextRail } from "../../components";
+import { ArtPanel, CompanionPanel, CombatTextRail } from "../../ui/battle-ui";
 import { TurnBadge } from "../../ui/turn-badge";
 import { battleActorSectionClass, bossCardWidthClass } from "../../config";
 import type { BattleFeedbackProps, BattleHoverProps, BattleRefsProps, RequiredBattleViewProps } from "./types";

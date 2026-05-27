@@ -5,7 +5,7 @@
  * Depended on by: ./apply-effects, ./damage, ./status-ticks.
  */
 import { harmfulPlayerStatusIds } from "@/lib/game-data";
-import type { BattleCardEffect } from "@/lib/game-data/types";
+import type { BattleCardEffect, DamageType } from "@/lib/game-data";
 import {
   addEnemyStatus,
   addGold,
@@ -66,21 +66,24 @@ function computeForgeBurnAmount(state: BattleState): number {
   return state.talentEffects.forgeBurnDamage;
 }
 
-function onForgeCrossThreshold(
+/** Fires `onCross` once when forge crosses `threshold` from below.
+ *  Does NOT re-fire on subsequent forge gains above threshold (oldForge >= threshold skips).
+ *  Each burst effect (burn, strip-armor, block) has its own threshold and fires independently. */
+function onForgeFirstCrossThreshold(
   state: BattleState,
-  oldForge: number,
-  newForge: number,
+  prevForge: number,
+  nextForge: number,
   threshold: number,
   onCross: (s: BattleState) => BattleState,
 ): BattleState {
-  if (threshold <= 0 || oldForge >= threshold || newForge < threshold) return state;
+  if (threshold <= 0 || prevForge >= threshold || nextForge < threshold) return state;
   return onCross(state);
 }
 
 /** Forge burst when crossing forgeBurnThreshold — any forge source can trigger this.
  *  Fires once per crossing; repeated forge above threshold won't re-trigger. */
 function applyForgeBurnBurst(state: BattleState, oldForge: number, newForge: number, combatTexts?: CombatTextEvent[]) {
-  return onForgeCrossThreshold(state, oldForge, newForge, state.talentEffects.forgeBurnThreshold, (s) => {
+  return onForgeFirstCrossThreshold(state, oldForge, newForge, state.talentEffects.forgeBurnThreshold, (s) => {
     const burnAmount = computeForgeBurnAmount(s);
     const nextState = addEnemyStatus(s, "burn", burnAmount);
     if (combatTexts) {
@@ -96,7 +99,7 @@ function applyForgeBurnBurst(state: BattleState, oldForge: number, newForge: num
 }
 
 function applyForgeStripArmorBurst(state: BattleState, oldForge: number, newForge: number): BattleState {
-  return onForgeCrossThreshold(state, oldForge, newForge, state.talentEffects.forgeStripArmorThreshold, (s) => {
+  return onForgeFirstCrossThreshold(state, oldForge, newForge, state.talentEffects.forgeStripArmorThreshold, (s) => {
     if (s.enemyMitigation.armor <= 0) return s;
     return { ...s, enemyMitigation: { ...s.enemyMitigation, armor: 0 } };
   });
@@ -108,7 +111,7 @@ function applyForgeBlockBurst(
   newForge: number,
   combatTexts?: CombatTextEvent[],
 ): BattleState {
-  return onForgeCrossThreshold(state, oldForge, newForge, state.talentEffects.forgeBlockThreshold, (s) => {
+  return onForgeFirstCrossThreshold(state, oldForge, newForge, state.talentEffects.forgeBlockThreshold, (s) => {
     let amount = s.talentEffects.forgeBlockAmount;
     if (s.talentEffects.forgeToBlock) {
       amount += newForge;
@@ -384,37 +387,42 @@ function applyFreezeStatusRider(state: BattleState, actualDamage: number, combat
 
 // Intentional: bleed chance + detonation talents can self-combo on one hit.
 // Bleed is applied, then immediately detonated — both produce combat texts.
+// Execution order: stun → bleed → bleed-detonate. Each step sees the result of the prior.
+function applyPhysicalStunChance(
+  state: BattleState,
+  actualDamage: number,
+  combatTexts: CombatTextEvent[],
+): BattleState {
+  if (actualDamage <= 0 || !rollPercent(state.talentEffects.physicalStunChance, state.rng)) return state;
+  return resolveStunTrigger(addEnemyStatus(state, "stun", actualDamage), combatTexts);
+}
+
+function applyPhysicalBleedChance(state: BattleState, actualDamage: number): BattleState {
+  if (actualDamage <= 0 || !rollPercent(state.talentEffects.physicalBleedChance, state.rng)) return state;
+  return addEnemyStatus(state, "bleed", actualDamage);
+}
+
+function applyPhysicalBleedDetonate(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
+  if (!state.talentEffects.physicalDetonatesBleed || state.enemyStatuses.bleed <= 0) return state;
+  const bleedDamage = state.enemyStatuses.bleed;
+  let nextState: BattleState = {
+    ...state,
+    enemyHealth: clampHealth(state.enemyHealth, -bleedDamage, state.enemyMaxHealth),
+    enemyStatuses: { ...state.enemyStatuses, bleed: 0 },
+  };
+  mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "bleed", amount: bleedDamage });
+  nextState = decayArmorAfterDamage(nextState, bleedDamage, "enemy", combatTexts);
+  return nextState;
+}
+
 function applyPhysicalStatusRider(
   state: BattleState,
   actualDamage: number,
   combatTexts: CombatTextEvent[],
 ): BattleState {
-  let nextState = state;
-
-  if (actualDamage > 0 && rollPercent(nextState.talentEffects.physicalStunChance, nextState.rng)) {
-    nextState = resolveStunTrigger(addEnemyStatus(nextState, "stun", actualDamage), combatTexts);
-  }
-
-  if (actualDamage > 0 && rollPercent(nextState.talentEffects.physicalBleedChance, nextState.rng)) {
-    nextState = addEnemyStatus(nextState, "bleed", actualDamage);
-  }
-
-  if (nextState.talentEffects.physicalDetonatesBleed && nextState.enemyStatuses.bleed > 0) {
-    const bleedDamage = nextState.enemyStatuses.bleed;
-    nextState = {
-      ...nextState,
-      enemyHealth: clampHealth(nextState.enemyHealth, -bleedDamage, nextState.enemyMaxHealth),
-      enemyStatuses: { ...nextState.enemyStatuses, bleed: 0 },
-    };
-    mergeCombatText(combatTexts, {
-      target: "enemy",
-      kind: "damage",
-      stat: "bleed",
-      amount: bleedDamage,
-    });
-    nextState = decayArmorAfterDamage(nextState, bleedDamage, "enemy", combatTexts);
-  }
-
+  let nextState = applyPhysicalStunChance(state, actualDamage, combatTexts);
+  nextState = applyPhysicalBleedChance(nextState, actualDamage);
+  nextState = applyPhysicalBleedDetonate(nextState, combatTexts);
   return nextState;
 }
 
@@ -443,6 +451,8 @@ export function applyDamageStatuses(
     case "nature":
     case "arrow":
       return state;
+    default:
+      return ((_: never) => state)(effect.damageType);
   }
 }
 
@@ -573,7 +583,7 @@ export function applyPlayerStatusEffect(
 
 export function applyPlayerDamageStatuses(
   state: BattleState,
-  effect: { damageType: string },
+  effect: { damageType: DamageType },
   actualDamage: number,
 ): BattleState {
   if (actualDamage <= 0) return state;

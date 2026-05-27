@@ -4,7 +4,7 @@
  * Depended on by: ./apply-effects.
  */
 import { cardLibrary } from "@/lib/game-data";
-import type { BattleCard } from "@/lib/game-data/types";
+import type { BattleCard } from "@/lib/game-data";
 import { drawCards, shuffleCards } from "./draw";
 import { addGold, applyPlayerHealing, clampHealth, type BattleState, type CombatTextEvent } from "./types";
 import { emitOverhealBlockText, mergeCombatText } from "./combat-text";

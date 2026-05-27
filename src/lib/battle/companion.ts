@@ -4,7 +4,7 @@
  * Depended on by: enemy-turn (endPlayerTurn flow).
  */
 import { applyCardEffects } from "./apply-effects";
-import type { BattleCard, TalentEffectManifest } from "@/lib/game-data/types";
+import type { BattleCard, TalentEffectManifest } from "@/lib/game-data";
 import { type BattleState, type CombatTextEvent } from "./types";
 
 function buildCompanionCard(

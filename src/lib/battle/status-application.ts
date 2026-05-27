@@ -4,7 +4,7 @@
  * Depended on by: ./enemy-turn.
  */
 import { harmfulPlayerStatusIds } from "@/lib/game-data";
-import type { EnemyAttackEffect, PlayerStatusId } from "@/lib/game-data/types";
+import type { EnemyAttackEffect, PlayerStatusId } from "@/lib/game-data";
 import { mergeCombatText } from "./combat-text";
 import type { BattleState, CombatTextEvent } from "./types";
 

@@ -6,7 +6,7 @@ import { Coins } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
-import { ManaPanel, PilePanel } from "../../components";
+import { ManaPanel, PilePanel } from "../../ui/battle-ui";
 import { battleBottomBarClass, battleBottomColumnClass } from "../../config";
 import { BattleHand } from "./hand";
 import type { BattleActionsProps, BattleRefsProps, BattleScreenState, RequiredBattleViewProps } from "./types";

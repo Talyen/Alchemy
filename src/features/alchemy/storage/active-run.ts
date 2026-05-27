@@ -3,7 +3,7 @@
 // Used by: tests/features/storage/active-run.test.ts.
 import { hydrateCard, type BattleCard } from "@/lib/game-data";
 import type { LabyrinthMap } from "@/lib/content-systems/types";
-import { ActiveRunDataSchema } from "@/lib/validation/save-schemas";
+import { ActiveRunDataSchema } from "@/lib/validation";
 import type { ActiveRunData } from "../run/types";
 
 // Active runs are sanitized before hydration by validating against ActiveRunDataSchema

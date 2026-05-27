@@ -1,5 +1,6 @@
 // Campfire rest screen — restores a percentage of max Health.
 import { useState, useEffect, useRef } from "react";
+import { cn } from "@/lib/utils";
 
 import { ScreenDescription, ScreenHeader } from "../ui/shared-ui";
 import { Button } from "@/components/ui/button";
@@ -77,7 +78,7 @@ export function CampfireScreen({ onContinue }: { onContinue: () => void }) {
         ) : (
           <div className="surface-muted rounded-[24px] px-4 py-3">
             <div className="flex items-center justify-between gap-3">
-              <p className={`text-sm font-semibold ${keywordDefinitions.health.colorClass}`}>Health</p>
+              <p className={cn("text-sm font-semibold", keywordDefinitions.health.colorClass)}>Health</p>
               <p className="hp-number-pop text-xs font-medium text-muted-foreground">
                 {displayHealth} / {maxHealth}
               </p>

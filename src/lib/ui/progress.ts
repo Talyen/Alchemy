@@ -2,7 +2,7 @@
 // Depends on no runtime libraries.
 // Used by UI primitives and game-specific display elements to keep widths safe.
 
-export const PROGRESS_CONFIG = {
+const PROGRESS_CONFIG = {
   minPercent: 0,
   maxPercent: 100,
 } as const;

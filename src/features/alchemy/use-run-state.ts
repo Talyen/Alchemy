@@ -1,9 +1,10 @@
 // Type-only file — the hook implementation moved to stores/run-store.ts.
 import type { BattleCard, CharacterId, DifficultyId } from "@/lib/game-data";
+import type { RunStartSnapshot } from "./run/run-start";
 import type { Destination } from "./types";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 
-export type RunState = {
+type RunState = {
   characterId: CharacterId;
   runDeck: BattleCard[];
   runGold: number;
@@ -37,4 +38,5 @@ export type RunStateController = RunState & {
   setCharacter: (selectedId: CharacterId) => void;
   reset: () => void;
   addRunGold: (amount: number) => void;
+  hydrateFromSnapshot: (snapshot: RunStartSnapshot) => void;
 };

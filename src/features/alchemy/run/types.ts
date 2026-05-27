@@ -9,7 +9,7 @@ import type { ContentSystemId, LabyrinthMap, LabyrinthModifierKind } from "@/lib
 
 export type LabyrinthNodePosition = { row: number; col: number };
 
-export type ActiveCombatData = {
+type ActiveCombatData = {
   battleState: BattleState;
   activeLabyrinthModifiers: LabyrinthModifierKind[];
   activeLabyrinthRewardModifiers: LabyrinthModifierKind[];

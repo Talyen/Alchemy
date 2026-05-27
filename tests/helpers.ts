@@ -6,7 +6,7 @@ declare global {
   }
 }
 
-export const SAVE_KEY = "alchemy-save-v1";
+const SAVE_KEY = "alchemy-save-v1";
 
 // Seeded PRNG (Linear Congruential Generator) for deterministic random behavior in tests.
 // Call via page.addInitScript(seedRandomScript(seed)) before page.goto.
@@ -61,7 +61,7 @@ export function failOnRuntimeErrors(page: Page) {
   return errors;
 }
 
-export function createMinimalLabyrinthMap(options?: { rows?: number; cols?: number }) {
+function createMinimalLabyrinthMap(options?: { rows?: number; cols?: number }) {
   const rows = options?.rows ?? 8;
   const cols = options?.cols ?? 9;
   const emptyRow = () => Array.from({ length: cols }, () => null);
@@ -147,7 +147,7 @@ export async function resumeGameMode(page: Page, mode: Exclude<GameMode, "wildwo
 // Injects a save state and navigates directly to the destination choice screen,
 // bypassing the startRun + skipAndReward dance. Saves ~10s per test.
 // The run lands with the given overrides applied to the default Knight run state.
-export const STARTING_DECK: Record<string, unknown>[] = [
+const STARTING_DECK: Record<string, unknown>[] = [
   { id: "slash", title: "Slash", descriptionLines: ["Deal 6 Physical damage"], art: "placeholder", cost: 1, effects: [{ kind: "damage", damageType: "physical", amount: 6 }] },
   { id: "bash", title: "Bash", descriptionLines: ["Deal 4 Stun damage"], art: "placeholder", cost: 1, effects: [{ kind: "damage", damageType: "stun", amount: 4 }] },
   { id: "block", title: "Block", descriptionLines: ["Gain 5 Block"], art: "placeholder", cost: 1, effects: [{ kind: "player-status", status: "block", amount: 5 }] },
@@ -171,7 +171,7 @@ export async function forceNextDestinationChoice(page: Page, destination: Destin
   }, randomValue);
 }
 
-export async function enableDevMode(page: Page) {
+async function enableDevMode(page: Page) {
   await page.addInitScript(() => {
     try {
       localStorage.setItem("alchemy-dev-mode", "true");

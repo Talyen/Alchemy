@@ -41,7 +41,7 @@ export type ResearchId =
   | "fortified-walls"
   | "metallurgy";
 
-export type HomesteadUpgradeTier = {
+type HomesteadUpgradeTier = {
   cost: MaterialInventory;
   effects?: Partial<HomesteadEffectManifest>;
   benefitDescription: string;

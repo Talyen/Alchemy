@@ -5,7 +5,7 @@
 import { computeTalentEffects, getGoldMultiplier } from "@/lib/game-data";
 import type { BattleState } from "@/lib/battle";
 import type { BattleCard, CharacterId, DifficultyId, UnlockedTalents, TalentEffectManifest } from "@/lib/game-data";
-import { randomBetween } from "@/features/alchemy/utils/random";
+import { randomBetween } from "@/features/alchemy/utils";
 import { getEnemyMaterialLoot, applyMaterialFindBonus } from "@/lib/homestead/loot";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";

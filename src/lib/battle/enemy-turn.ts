@@ -20,8 +20,7 @@ import { applyPlayerStatusFromAttack } from "./status-application";
 import { decayHalvedStatus } from "./status-helpers";
 import { tickEnemyStatuses, tickPlayerStatuses } from "./status-ticks";
 import { applyPlayerDamageStatuses } from "./status-effects";
-import type { EnemyAttackEffect } from "@/lib/game-data/types";
-import type { DifficultyModifier } from "@/lib/game-data/difficulties";
+import type { DifficultyModifier, EnemyAttackEffect } from "@/lib/game-data";
 import { logError } from "../error-logger";
 import {
   applyPlayerCombatDamage,
@@ -52,8 +51,21 @@ const ENEMY_TURN_CONSTANTS = {
 export { chooseWishCard } from "./wish";
 export { processCompanionTurnStart } from "./companion";
 
-function isFreezeBlockingRegen(state: BattleState): boolean {
-  return state.enemyFreezeSkipTurns > 0 && state.talentEffects.freezeBlocksRegen;
+function computeDeathsDoorGraceRemaining(state: BattleState): number {
+  if (state.deathsDoorGraceTurnsRemaining !== null) return state.deathsDoorGraceTurnsRemaining;
+  if (state.deathsDoorTriggeredTurn !== null) {
+    const graceTurns = 1 + Math.max(0, state.talentEffects.deathsDoorExtension ?? 0);
+    return graceTurns - (state.turn - state.deathsDoorTriggeredTurn);
+  }
+  return 1 + Math.max(0, state.talentEffects.deathsDoorExtension ?? 0);
+}
+
+type FreezeAspect = "regen" | "scaling";
+
+function isFreezeActiveForAspect(state: BattleState, aspect: FreezeAspect): boolean {
+  if (state.enemyFreezeSkipTurns <= 0) return false;
+  if (aspect === "regen") return state.talentEffects.freezeBlocksRegen;
+  return state.talentEffects.freezePreventsEnemyScaling;
 }
 
 function scaleByRoomMultiplier(state: BattleState, value: number): number {
@@ -114,18 +126,9 @@ function advanceToPlayerTurn(state: BattleState) {
 
   let nextState = state;
   if (deathsDoorNeedsRecoveryTurn) {
-    let remaining = state.deathsDoorGraceTurnsRemaining;
-    if (remaining === null || remaining === undefined) {
-      if (state.deathsDoorTriggeredTurn !== null) {
-        const graceTurns = 1 + Math.max(0, state.talentEffects.deathsDoorExtension ?? 0);
-        remaining = graceTurns - (state.turn - state.deathsDoorTriggeredTurn);
-      } else {
-        remaining = 1 + Math.max(0, state.talentEffects.deathsDoorExtension ?? 0);
-      }
-    }
     nextState = {
       ...state,
-      deathsDoorGraceTurnsRemaining: remaining - 1,
+      deathsDoorGraceTurnsRemaining: computeDeathsDoorGraceRemaining(state) - 1,
     };
   }
 
@@ -145,22 +148,24 @@ function checkHealthThresholds(
   let nextState = state;
 
   function applyHealthThresholdStatBonus(
+    currentState: BattleState,
     config: { threshold: number; amount: number } | null,
     stat: "block" | "armor",
-  ) {
-    if (!config) return;
+  ): BattleState {
+    if (!config) return currentState;
     const thresholdHp = (state.playerMaxHealth * config.threshold) / PERCENT_DENOMINATOR;
     if (prevHealth > thresholdHp && nextHealth <= thresholdHp) {
-      nextState = {
-        ...nextState,
-        playerStatuses: { ...nextState.playerStatuses, [stat]: nextState.playerStatuses[stat] + config.amount },
-      };
       mergeCombatText(combatTexts, { target: "player", kind: "status", stat, amount: config.amount });
+      return {
+        ...currentState,
+        playerStatuses: { ...currentState.playerStatuses, [stat]: currentState.playerStatuses[stat] + config.amount },
+      };
     }
+    return currentState;
   }
 
-  applyHealthThresholdStatBonus(state.talentEffects.healthThresholdBlock, "block");
-  applyHealthThresholdStatBonus(state.talentEffects.healthThresholdArmor, "armor");
+  nextState = applyHealthThresholdStatBonus(nextState, state.talentEffects.healthThresholdBlock, "block");
+  nextState = applyHealthThresholdStatBonus(nextState, state.talentEffects.healthThresholdArmor, "armor");
   return nextState;
 }
 
@@ -299,7 +304,7 @@ function applyEnemyAttackLifesteal(
   actualDamage: number,
   combatTexts: CombatTextEvent[],
 ): BattleState {
-  if (isFreezeBlockingRegen(state)) return state;
+  if (isFreezeActiveForAspect(state, "regen")) return state;
   if (state.talentEffects.blockEnemyLeech) return state;
   mergeCombatText(combatTexts, { target: "enemy", kind: "heal", stat: "health", amount: actualDamage });
   return {
@@ -384,14 +389,19 @@ function processEnemyAttack(state: BattleState, combatTexts: CombatTextEvent[]) 
   let nextState = state;
 
   for (const effect of state.enemyAttackEffects) {
-    if (effect.kind === "damage") {
-      nextState = processEnemyDamageEffect(nextState, effect, combatTexts);
-    } else if (effect.kind === "player-status") {
-      nextState = applyPlayerStatusFromAttack(nextState, effect, combatTexts);
-    } else {
-      const errMsg = `Unknown enemy attack effect kind: ${(effect as { kind: string }).kind}`;
-      logError(errMsg, "battle", { state: nextState });
-      throw new Error(errMsg);
+    try {
+      if (effect.kind === "damage") {
+        nextState = processEnemyDamageEffect(nextState, effect, combatTexts);
+      } else if (effect.kind === "player-status") {
+        nextState = applyPlayerStatusFromAttack(nextState, effect, combatTexts);
+      } else {
+        const errMsg = `Unknown enemy attack effect kind: ${(effect as { kind: string }).kind}`;
+        console.warn("[Enemy Turn]", errMsg);
+        logError(errMsg, "battle", { state: nextState });
+        if (import.meta.env.DEV) throw new Error(errMsg);
+      }
+    } catch (err) {
+      logError(`Enemy attack effect failed: ${(err as Error).message}`, "battle", { effect });
     }
   }
 
@@ -400,7 +410,7 @@ function processEnemyAttack(state: BattleState, combatTexts: CombatTextEvent[]) 
 
 function processEnemyRegeneration(state: BattleState, combatTexts: CombatTextEvent[]) {
   if (state.enemyRegeneration <= 0) return state;
-  if (isFreezeBlockingRegen(state)) return state;
+  if (isFreezeActiveForAspect(state, "regen")) return state;
   let healAmount = state.enemyRegeneration;
   if (state.enemyStatuses.poison > 0 && state.talentEffects.poisonHalvesHealing) {
     healAmount = Math.round(healAmount / HALF_DIVISOR);
@@ -419,8 +429,9 @@ type EnemyTurnStartHandler = (
   options?: { traitRoll?: number },
 ) => BattleState;
 
+/** @deprecated Use isFreezeActiveForAspect(state, "scaling") instead. */
 function isScalingBlocked(state: BattleState): boolean {
-  return state.enemyFreezeSkipTurns > 0 && state.talentEffects.freezePreventsEnemyScaling;
+  return isFreezeActiveForAspect(state, "scaling");
 }
 
 const enemyTraitTurnStartHandlers: Record<string, EnemyTurnStartHandler> = {
@@ -466,7 +477,7 @@ const difficultyTurnStartHandlers: Partial<Record<DifficultyModifier["kind"], En
     return addEnemyMitigation(state, "forge", DIFFICULTY_FORGE_PER_TURN);
   },
   "labyrinth-leeching": (state, combatTexts) => {
-    if (isFreezeBlockingRegen(state)) return state;
+    if (isFreezeActiveForAspect(state, "regen")) return state;
     mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "health", amount: LABYRINTH_LEECH_HEAL });
     return {
       ...state,
@@ -516,16 +527,7 @@ function resolveDeathsDoorEndOfEnemyTurn(state: BattleState): BattleState {
     };
   }
 
-  let remaining = state.deathsDoorGraceTurnsRemaining;
-  if (remaining === null || remaining === undefined) {
-    if (state.deathsDoorTriggeredTurn !== null) {
-      const graceTurns = 1 + Math.max(0, state.talentEffects.deathsDoorExtension ?? 0);
-      remaining = graceTurns - (state.turn - state.deathsDoorTriggeredTurn);
-    } else {
-      return state;
-    }
-  }
-
+  const remaining = computeDeathsDoorGraceRemaining(state);
   if (remaining <= 0) {
     return {
       ...state,
@@ -553,6 +555,24 @@ const PASSIVE_ONLY_TRAITS = new Set([
   "regeneration",
 ]);
 
+// Difficulty modifiers whose behavior is purely passive (applied at battle start or checked elsewhere)
+// and intentionally have no turn-start handler.
+const PASSIVE_ONLY_MODIFIERS = new Set([
+  "enemy-starting-armor",
+  "increase-enemy-physical-damage",
+  "increase-enemy-damage",
+  "increase-enemy-status",
+  "enemy-attacks-gain-leech",
+  "start-block",
+  "start-max-mana",
+  "gold-multiplier",
+  "start-companion",
+  "enemy-health-multiplier",
+  "enemy-damage-multiplier",
+  "labyrinth-sturdy",
+  "labyrinth-null-field",
+]);
+
 function processEnemyTraits(state: BattleState, combatTexts: CombatTextEvent[], options?: { traitRoll?: number }) {
   let nextState = state;
   const scalingBlocked = isScalingBlocked(nextState);
@@ -560,20 +580,31 @@ function processEnemyTraits(state: BattleState, combatTexts: CombatTextEvent[], 
 
   if (!scalingBlocked) {
     for (const trait of nextState.currentEnemy.traits) {
-      const handler = enemyTraitTurnStartHandlers[trait.id];
-      if (handler) {
-        nextState = handler(nextState, combatTexts, { traitRoll });
-      } else if (!PASSIVE_ONLY_TRAITS.has(trait.id)) {
-        const errMsg = `No turn-start handler for trait: ${trait.id}`;
-        logError(errMsg, "battle", { state: nextState });
-        throw new Error(errMsg);
+      try {
+        const handler = enemyTraitTurnStartHandlers[trait.id];
+        if (handler) {
+          nextState = handler(nextState, combatTexts, { traitRoll });
+        } else if (!PASSIVE_ONLY_TRAITS.has(trait.id)) {
+          console.warn(`[Enemy Turn] No turn-start handler for trait: ${trait.id}`);
+          logError(`No turn-start handler for trait: ${trait.id}`, "battle", { state: nextState });
+          if (import.meta.env.DEV) throw new Error(`No turn-start handler for trait: ${trait.id}`);
+        }
+      } catch (err) {
+        logError(`Enemy trait handler failed: ${(err as Error).message}`, "battle", { traitId: trait.id });
       }
     }
   }
 
   for (const modifier of nextState.difficultyModifiers) {
     const handler = difficultyTurnStartHandlers[modifier.kind];
-    if (!handler) continue;
+    if (!handler) {
+      if (!PASSIVE_ONLY_MODIFIERS.has(modifier.kind)) {
+        console.warn(`[Enemy Turn] No turn-start handler for difficulty modifier: ${modifier.kind}`);
+        logError(`No turn-start handler for difficulty modifier: ${modifier.kind}`, "battle", { state: nextState });
+        if (import.meta.env.DEV) throw new Error(`No turn-start handler for difficulty modifier: ${modifier.kind}`);
+      }
+      continue;
+    }
     if (modifier.kind === "enemy-gains-forge-each-turn" && scalingBlocked) continue;
     nextState = handler(nextState, combatTexts);
   }
