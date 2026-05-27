@@ -60,9 +60,7 @@ jobs:
       - if: github.event_name == 'pull_request'
         run: npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.sha }} --verbose
 
-      - run: npm run format:check
-      - run: npm run lint
-      - run: npm run deadcode
+      - run: npm run lint:ci
 
   test:
     needs: install

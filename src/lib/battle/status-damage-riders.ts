@@ -246,7 +246,6 @@ const DAMAGE_STATUS_HANDLERS: Partial<Record<DamageType, DamageStatusHandler>> =
   physical: ({ state, actualDamage, combatTexts }) => applyPhysicalStatusRider(state, actualDamage, combatTexts),
   holy: ({ state }) => state,
   nature: ({ state }) => state,
-  arrow: ({ state }) => state,
 };
 
 export function applyDamageStatuses(

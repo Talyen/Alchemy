@@ -15,8 +15,27 @@ function displayDamageType(type: string): string {
   return type.charAt(0).toUpperCase() + type.slice(1);
 }
 
-function expectedCompanionTurnLine(amount: number, damageType: string): string {
-  return `Deals ${amount} ${displayDamageType(damageType)} damage each turn`;
+function expectedCompanionTurnLine(effect: BattleCardEffect): string {
+  switch (effect.kind) {
+    case "damage":
+      return `Deals ${effect.amount} ${displayDamageType(effect.damageType)} damage each turn`;
+    case "heal":
+      return `Restores ${effect.amount} Health each turn`;
+    case "restore-mana":
+      return `Restores ${effect.amount} Mana each turn`;
+    case "remove-harmful-status":
+      return `Cleanses ${effect.amount} harmful status${effect.amount === 1 ? "" : "es"} each turn`;
+    case "gain-gold":
+      return `Steals ${effect.amount} Gold each turn`;
+    case "player-status":
+      if (effect.status === "block") return `Gain ${effect.amount} Block each turn`;
+      break;
+    case "draw-cards":
+      return `Draws ${effect.amount} Card${effect.amount === 1 ? "" : "s"} each turn`;
+    default:
+      break;
+  }
+  throw new Error(`Unhandled companion turn-start effect: ${(effect as { kind: string }).kind}`);
 }
 
 function countByKind(effects: BattleCardEffect[], kind: string): number {
@@ -32,7 +51,20 @@ function hasLifesteal(effects: BattleCardEffect[]): boolean {
 }
 
 function hasEqualToBlockOrArmor(effects: BattleCardEffect[]): boolean {
-  return effects.some((e) => e.kind === "damage" && ("equalToBlock" in e && e.equalToBlock || "equalToArmor" in e && e.equalToArmor));
+  return effects.some(
+    (e) =>
+      e.kind === "damage" &&
+      (("equalToBlock" in e && e.equalToBlock) ||
+        ("equalToArmor" in e && e.equalToArmor) ||
+        ("equalToGoldPercent" in e && e.equalToGoldPercent)),
+  );
+}
+
+function hasNonStandardDamageEffects(effects: BattleCardEffect[]): boolean {
+  return (
+    hasEqualToBlockOrArmor(effects) ||
+    effects.some((e) => e.kind === "cleanse-player-status-to-damage" || e.kind === "random-damage")
+  );
 }
 
 function countLinesStartingWith(lines: string[], prefix: string): number {
@@ -82,7 +114,16 @@ function expectNumericParity(card: BattleCard): void {
 
     if (line.startsWith("Deal ")) {
       const effect = damageEffects[damageIndex++];
-      if (!effect || effect.equalToBlock || effect.equalToArmor) continue;
+      if (
+        !effect ||
+        effect.equalToBlock ||
+        effect.equalToArmor ||
+        effect.equalToGoldPercent ||
+        line.includes("equal to") ||
+        line.toLowerCase().includes("random")
+      ) {
+        continue;
+      }
       expect(parseLeadingNumber(line, "Deal ")).toBe(effect.amount);
       continue;
     }
@@ -152,8 +193,13 @@ describe("card descriptions vs effects", () => {
       const card = cardLibrary.find((c) => c.title === title)!;
       const { effects, descriptionLines } = card;
 
-      const dealLines = countLinesStartingWith(descriptionLines, "Deal ");
-      const damageEffects = countByKind(effects, "damage");
+      const dealLines = descriptionLines.filter(
+        (l) =>
+          l.startsWith("Deal ") &&
+          !l.includes("equal to") &&
+          !l.toLowerCase().includes("random"),
+      ).length;
+      const damageEffects = countByKind(effects, "damage") + countByKind(effects, "random-damage");
 
       const healLines = countHealLines(descriptionLines);
       const healEffects = countByKind(effects, "heal");
@@ -204,10 +250,12 @@ describe("card descriptions vs effects", () => {
       const cleanseLines = descriptionLines.filter(
         (l) => l.startsWith("Cleanse ") && !l.includes("harmful status"),
       ).length;
-      const cleanseEffects = countByKind(effects, "remove-player-status");
+      const cleanseEffects =
+        countByKind(effects, "remove-player-status") + countByKind(effects, "cleanse-player-status-to-damage");
 
       const gainBlockLines = descriptionLines.filter(
-        (l) => l.startsWith("Gain ") && l.includes(" Block") && !l.includes("per Mana Crystal"),
+        (l) =>
+          l.startsWith("Gain ") && l.includes(" Block") && !l.includes("per Mana Crystal") && !l.endsWith("each turn"),
       ).length;
       const gainBlockEffects = effects.filter(
         (e): e is Extract<BattleCardEffect, { kind: "player-status"; status: "block" }> =>
@@ -241,7 +289,7 @@ describe("card descriptions vs effects", () => {
           e.kind === "player-status" && e.status === "haste",
       ).length;
 
-      if (!hasEqualToBlockOrArmor(effects)) {
+      if (!hasNonStandardDamageEffects(effects)) {
         if (hasKind(effects, "self-damage")) {
           expect(descriptionLines.some((l) => /self|Receive/.test(l))).toBe(true);
         } else {
@@ -286,14 +334,20 @@ describe("card descriptions vs effects", () => {
       if (!summon) continue;
 
       const companion = companionLibrary[summon.companionId];
-      const attack = companion.turnStartEffects.find(
-        (e): e is Extract<BattleCardEffect, { kind: "damage" }> => e.kind === "damage",
-      );
-      expect(attack, `${card.id} companion missing turn-start damage`).toBeDefined();
+      const turnEffect = companion.turnStartEffects[0];
+      expect(turnEffect, `${card.id} companion missing turn-start effect`).toBeDefined();
 
-      const companionLine = card.descriptionLines.find((l) => /^Deals \d+/.test(l));
-      expect(companionLine, `${card.id} missing companion damage line`).toBeDefined();
-      expect(companionLine).toBe(expectedCompanionTurnLine(attack!.amount, attack!.damageType));
+      const companionLine = card.descriptionLines.find(
+        (l) =>
+          /^Deals \d+/.test(l) ||
+          /^Restores \d+/.test(l) ||
+          /^Cleanses \d+/.test(l) ||
+          /^Steals \d+/.test(l) ||
+          /^Gain \d+ Block/.test(l) ||
+          /^Draws \d+/.test(l),
+      );
+      expect(companionLine, `${card.id} missing companion turn line`).toBeDefined();
+      expect(companionLine).toBe(expectedCompanionTurnLine(turnEffect));
       expect(card.descriptionLines.some((l) => l === "Companion")).toBe(true);
     }
   });
@@ -313,6 +367,16 @@ describe("card descriptions vs effects", () => {
   it("special keywords match their corresponding effects", () => {
     for (const card of cardLibrary) {
       const { descriptionLines, effects } = card;
+
+      if (card.tags?.includes("archery")) {
+        expect(descriptionLines.some((l) => l === "Archery"),
+          `${card.id} has archery tag but no 'Archery' line`).toBe(true);
+      }
+
+      if (descriptionLines.some((l) => l === "Archery")) {
+        expect(card.tags?.includes("archery"),
+          `${card.id} has 'Archery' line but no archery tag`).toBe(true);
+      }
 
       if (hasLifesteal(effects)) {
         expect(descriptionLines.some((l) => l === "Leech"),

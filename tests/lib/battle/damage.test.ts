@@ -236,12 +236,15 @@ describe("computeBaseDamage — bleed damage", () => {
   });
 });
 
-describe("computeBaseDamage — arrow damage", () => {
-  it("adds flatArrowDamage to arrow damage type", () => {
+describe("computeBaseDamage — archery tag", () => {
+  it("adds flatArrowDamage to cards with the archery tag", () => {
     const state = createTestBattleState({
       talentEffects: { ...createTestBattleState().talentEffects, flatArrowDamage: 3 },
     });
-    const card = makeCard({ effects: [makeEffect("arrow", 5)] });
+    const card = makeCard({
+      tags: ["archery"],
+      effects: [makeEffect("physical", 5)],
+    });
     const texts = makeTexts();
     const result = dealDamageToEnemy(
       state,

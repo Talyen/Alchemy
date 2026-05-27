@@ -66,7 +66,7 @@ npm run package:win      # compile:desktop + unpacked Windows desktop app
 npm run package:win:full # build:desktop + unpacked Windows desktop app
 npm run dist:win         # Build Windows desktop installer
 npm run prepare          # Install lefthook git hooks (runs on npm install)
-npm run check            # npm ci --dry-run + deadcode + format:check + lint + test + build
+npm run check            # npm ci --dry-run + lint:ci + test + build
 npm run preview          # Preview production web build
 npm test                 # vitest (unit tests)
 npm run test:watch       # vitest in watch mode
@@ -78,8 +78,9 @@ npm run test:e2e:critical # Playwright critical flow subset
 npm run test:e2e:ui      # Playwright UI mode
 npm run balance:sim      # Balance simulator report
 npm run lint             # ESLint
+npm run lint:ci          # format:check + lint + deadcode (matches CI lint job and pre-push hook)
 npm run lint:fix         # ESLint auto-fix
-npm run deadcode         # knip unused exports (also runs inside npm run check)
+npm run deadcode         # knip unused exports (also runs inside lint:ci and check)
 npm run deadcode:strict  # stricter knip pass
 npm run format           # Prettier write
 npm run format:check     # Prettier check
@@ -91,7 +92,9 @@ npm run release:minor    # minor version bump + changelog + tag
 npm run release:major    # major version bump + changelog + tag
 ```
 
-**Pre-PR (lighter than `check`):** `npm run deadcode && npm run lint && npm test`
+**Pre-PR (lighter than `check`):** `npm run lint:ci && npm test`
+
+**Git hooks (lefthook, via `npm run prepare`):** `pre-push` runs `lint:ci`, `test`, `build`, and e2e smoke — same static checks as the CI lint job before code reaches GitHub.
 
 **Balance sim env vars** (see [README.md](./README.md)): `ALCHEMY_BALANCE_ITERATIONS`, `ALCHEMY_BALANCE_POLICY` (`random-playable`, `greedy-damage`, `defensive-random`).
 
@@ -475,7 +478,7 @@ Use the [GitHub CLI](https://cli.github.com/) for GitHub-hosted steps after loca
 
 Detailed PR steps live in Cursor user rules; this repo’s CI workflow is named **CI** (`.github/workflows/ci.yml`).
 
-- **Pre-PR gate**: `npm run deadcode && npm run lint && npm test` (full CI parity: `npm run check`).
+- **Pre-PR gate**: `npm run lint:ci && npm test` (full local parity before push: rely on lefthook `pre-push`; manual full gate: `npm run check`).
 - **Battle logic**: Run focused Vitest files under `tests/lib/battle/`, then broader `npm test` when cross-cutting.
 - **Card data/effects**: Run game-data tests + `tests/lib/game-data/descriptions-match-effects.test.ts` + relevant battle tests.
 - **Save, storage, or schema changes**: Run `tests/features/storage.test.ts`, `tests/features/storage/migrations.test.ts`, `tests/features/storage/active-run.test.ts`, validation tests, and legacy save fixtures under `tests/fixtures/`.

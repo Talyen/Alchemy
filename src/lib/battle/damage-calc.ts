@@ -37,7 +37,11 @@ function getPlayerBlockHalf(state: BattleState): number {
  * Calculates raw base damage amount before any keyword specific modifiers are applied.
  * Evaluates forge bonus and whether the damage scales on current block or armor.
  */
-function computeBaseRawAmount(state: BattleState, effect: Extract<BattleCardEffect, { kind: "damage" }>): number {
+function computeBaseRawAmount(
+  state: BattleState,
+  effect: Extract<BattleCardEffect, { kind: "damage" }>,
+  card?: BattleCard,
+): number {
   const forgeBonus = forgeAppliesToDamageType(effect.damageType, state.talentEffects) ? state.playerStatuses.forge : 0;
 
   if (effect.equalToBlock) {
@@ -46,7 +50,15 @@ function computeBaseRawAmount(state: BattleState, effect: Extract<BattleCardEffe
   if (effect.equalToArmor) {
     return state.playerStatuses.armor + forgeBonus;
   }
-  return effect.amount + forgeBonus;
+  if (effect.equalToGoldPercent) {
+    const goldDamage = Math.round((state.gold * effect.equalToGoldPercent) / PERCENT_DENOMINATOR);
+    return goldDamage + forgeBonus;
+  }
+  let amount = effect.amount + forgeBonus;
+  if (card?.tags?.includes("archery")) {
+    amount += state.talentEffects.flatArrowDamage;
+  }
+  return amount;
 }
 
 /**
@@ -136,10 +148,6 @@ function applyStunDamageModifiers(state: BattleState, rawAmount: number): number
   return nextAmount;
 }
 
-function applyArrowDamageModifiers(state: BattleState, rawAmount: number): number {
-  return rawAmount + state.talentEffects.flatArrowDamage;
-}
-
 function applyBurnDamageModifiers(state: BattleState, rawAmount: number, card?: BattleCard): number {
   let nextAmount = rawAmount + state.talentEffects.flatBurnDamage;
   nextAmount += Math.round((state.maxMana * state.talentEffects.burnDamagePerManaCrystal) / HALF_DIVISOR);
@@ -177,7 +185,6 @@ const DAMAGE_TYPE_HANDLERS: Record<string, DamageTypeHandler> = {
   holy: (s, r) => applyHolyDamageModifiers(s, r),
   bleed: (s, r) => applyBleedDamageModifiers(s, r),
   stun: (s, r) => applyStunDamageModifiers(s, r),
-  arrow: (s, r) => applyArrowDamageModifiers(s, r),
   burn: (_s, r, c) => applyBurnDamageModifiers(_s, r, c),
   freeze: (s, r) => applyFreezeDamageModifiers(s, r),
   nature: (s, r) => applyNatureDamageModifiers(s, r),
@@ -189,7 +196,7 @@ function computeBaseDamage(
   effect: Extract<BattleCardEffect, { kind: "damage" }>,
   card?: BattleCard,
 ) {
-  const rawAmount = computeBaseRawAmount(state, effect);
+  const rawAmount = computeBaseRawAmount(state, effect, card);
   const modifier = DAMAGE_TYPE_HANDLERS[effect.damageType] ?? ((_s, r) => r);
   return Math.max(0, modifier(state, rawAmount, card));
 }

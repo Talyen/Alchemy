@@ -16,10 +16,8 @@ pre-push:
   commands:
     lockfile-check:
       run: npm ci --dry-run
-    format-check:
-      run: npm run format:check
-    lint:
-      run: npm run lint
+    lint-ci:
+      run: npm run lint:ci
     test:
       run: npm test
     build:

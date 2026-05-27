@@ -160,7 +160,7 @@ const STARTING_DECK: Record<string, unknown>[] = [
   { id: "bash", title: "Bash", descriptionLines: ["Deal 4 Stun damage"], art: "placeholder", cost: 1, effects: [{ kind: "damage", damageType: "stun", amount: 4 }] },
   { id: "block", title: "Block", descriptionLines: ["Gain 5 Block"], art: "placeholder", cost: 1, effects: [{ kind: "player-status", status: "block", amount: 5 }] },
   { id: "anvil", title: "Anvil", descriptionLines: ["Gain 1 Forge"], art: "placeholder", cost: 1, effects: [{ kind: "player-status", status: "forge", amount: 1 }] },
-  { id: "plate-mail", title: "Plate Mail", descriptionLines: ["Gain 1 Armor"], art: "placeholder", cost: 1, effects: [{ kind: "player-status", status: "armor", amount: 1 }] },
+  { id: "plate-mail", title: "Plate Mail", descriptionLines: ["Gain 2 Armor"], art: "placeholder", cost: 1, effects: [{ kind: "player-status", status: "armor", amount: 2 }] },
   { id: "bread", title: "Bread", descriptionLines: ["Gain 5 Health", "Consume"], art: "placeholder", cost: 1, consume: true, effects: [{ kind: "heal", amount: 5 }] },
 ];
 

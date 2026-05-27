@@ -11,6 +11,7 @@ const DamageEffectSchema = z.object({
   lifesteal: z.boolean().optional(),
   equalToBlock: z.boolean().optional(),
   equalToArmor: z.boolean().optional(),
+  equalToGoldPercent: z.number().finite().optional(),
 });
 
 const PlayerStatusEffectSchema = z.object({
@@ -71,6 +72,19 @@ const MultiplyEnemyStatusEffectSchema = z.object({
   factor: z.number().finite(),
 });
 
+const CleansePlayerStatusToDamageEffectSchema = z.object({
+  kind: z.literal("cleanse-player-status-to-damage"),
+  status: z.literal("burn"),
+  damageType: DamageTypeSchema,
+  removeAll: z.boolean().optional(),
+});
+
+const RandomDamageEffectSchema = z.object({
+  kind: z.literal("random-damage"),
+  minAmount: z.number().finite(),
+  maxAmount: z.number().finite(),
+});
+
 export const BattleCardEffectSchema = z.discriminatedUnion("kind", [
   DamageEffectSchema,
   PlayerStatusEffectSchema,
@@ -90,6 +104,8 @@ export const BattleCardEffectSchema = z.discriminatedUnion("kind", [
   DrawCardsEffectSchema,
   RemoveEnemyArmorEffectSchema,
   MultiplyEnemyStatusEffectSchema,
+  CleansePlayerStatusToDamageEffectSchema,
+  RandomDamageEffectSchema,
 ]);
 
 function parseSavedEffectList(values: unknown[]) {

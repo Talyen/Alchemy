@@ -5,6 +5,7 @@ import {
   getRawSaveSchemaVersion,
   isUnsupportedFutureSaveData,
 } from "@/features/alchemy/storage/migrations";
+import { CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
 
 describe("getRawSaveSchemaVersion", () => {
   it("returns 0 for non-object", () => {
@@ -57,14 +58,14 @@ describe("migrateSaveDataToCurrent", () => {
     expect(migrateSaveDataToCurrent("bad")).toEqual({});
   });
 
-  it("passes through data at current version", () => {
+  it("migrates v1 saves to current version", () => {
     const result = migrateSaveDataToCurrent({ saveSchemaVersion: 1 });
-    expect(result.saveSchemaVersion).toBe(1);
+    expect(result.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
   });
 
-  it("migrates version 0 to version 1", () => {
+  it("migrates version 0 to current version", () => {
     const result = migrateSaveDataToCurrent({ saveSchemaVersion: 0 });
-    expect(result.saveSchemaVersion).toBe(1);
+    expect(result.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
   });
 
   it("sets gameBuildVersion from fallback when missing", () => {

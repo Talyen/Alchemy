@@ -41,17 +41,7 @@ function createMaterialInventoryShape() {
 export const CharacterIdSchema = z.enum(CHARACTER_IDS);
 export const DifficultyIdSchema = z.enum(DIFFICULTY_IDS);
 export const ContentSystemIdSchema = z.enum(["campaign", "labyrinth", "wildwood"]);
-export const DamageTypeSchema = z.enum([
-  "physical",
-  "stun",
-  "holy",
-  "burn",
-  "poison",
-  "bleed",
-  "freeze",
-  "nature",
-  "arrow",
-]);
+export const DamageTypeSchema = z.enum(["physical", "stun", "holy", "burn", "poison", "bleed", "freeze", "nature"]);
 export const PlayerStatusIdSchema = z.enum([
   "block",
   "armor",

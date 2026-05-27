@@ -47,6 +47,69 @@ export function getRawContentVersion(parsed: unknown): number {
   return version;
 }
 
+function remapArrowKeywordProgress(record: Record<string, unknown> | undefined): Record<string, unknown> {
+  if (!record || typeof record !== "object") return {};
+  const next: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(record)) {
+    if (key === "arrow") continue;
+    next[key] = value;
+  }
+  if ("arrow" in record) {
+    const archeryValue = record.archery;
+    const arrowValue = record.arrow;
+    if (typeof archeryValue === "number" && typeof arrowValue === "number") {
+      next.archery = archeryValue + arrowValue;
+    } else if (archeryValue !== undefined) {
+      next.archery = archeryValue;
+    } else if (arrowValue !== undefined) {
+      next.archery = arrowValue;
+    }
+  }
+  return next;
+}
+
+function remapArrowTalentId(id: string): string {
+  if (id === "arrow-damage") return "archery-damage";
+  const placeholderMatch = /^arrow-placeholder-(\d+)$/.exec(id);
+  if (placeholderMatch) return `archery-placeholder-${placeholderMatch[1]}`;
+  if (id.startsWith("arrow-")) return `archery-${id.slice("arrow-".length)}`;
+  return id;
+}
+
+function remapArrowUnlockedTalents(record: Record<string, unknown> | undefined): Record<string, unknown> {
+  if (!record || typeof record !== "object") return {};
+  const next: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(record)) {
+    if (key === "arrow") continue;
+    next[key] = value;
+  }
+  const arrowIds = record.arrow;
+  const archeryIds = record.archery;
+  const mergedIds = [
+    ...(Array.isArray(archeryIds) ? archeryIds : []),
+    ...(Array.isArray(arrowIds)
+      ? arrowIds.filter((id): id is string => typeof id === "string").map(remapArrowTalentId)
+      : []),
+  ];
+  if (mergedIds.length > 0) {
+    next.archery = Array.from(new Set(mergedIds.filter((id): id is string => typeof id === "string")));
+  }
+  return next;
+}
+
+function migrateV1ToV2(parsed: RawSaveData): RawSaveData {
+  return {
+    ...parsed,
+    saveSchemaVersion: 2,
+    talentXP: remapArrowKeywordProgress(parsed.talentXP as Record<string, unknown> | undefined),
+    unlockedTalents: remapArrowUnlockedTalents(parsed.unlockedTalents as Record<string, unknown> | undefined),
+    runTalentXP:
+      parsed.runTalentXP !== undefined
+        ? remapArrowKeywordProgress(parsed.runTalentXP as Record<string, unknown> | undefined)
+        : parsed.runTalentXP,
+  };
+}
+
 // V0 saves predate schema-version tracking; they lack gameBuildVersion and contentVersion.
 function migrateV0ToV1(parsed: RawSaveData): RawSaveData {
   return {
@@ -69,7 +132,10 @@ export function migrateSaveDataToCurrent(parsed: unknown): RawSaveData {
     current = migrateV0ToV1(current);
     version = 1;
   }
-  // Add future migrateV1ToV2(current), etc. here, chained in version order.
+  if (version < 2) {
+    current = migrateV1ToV2(current);
+    version = 2;
+  }
   return normalizeLegacyAspectRatio({ ...current, saveSchemaVersion: version });
 }
 

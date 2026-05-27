@@ -26,7 +26,7 @@ export const keywordAliases: Array<{ match: string; keywordId: KeywordId }> = [
   { match: "Mana", keywordId: "mana" },
   { match: "Nature", keywordId: "nature" },
   { match: "Companion", keywordId: "companion" },
-  { match: "Arrow", keywordId: "arrow" },
+  { match: "Archery", keywordId: "archery" },
   { match: "HP", keywordId: "health" }, // kept as alias for backward compat with card text
 ];
 

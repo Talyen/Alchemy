@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { keywordDefinitions } from "@/lib/game-data/keywords";
+import { cardLibrary } from "@/lib/game-data";
+import { getCardKeywords, keywordDefinitions } from "@/lib/game-data/keywords";
 
 describe("keywordDefinitions", () => {
   it("has at least one keyword", () => {
@@ -32,11 +33,18 @@ describe("keywordDefinitions", () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
+  it("includes archery from card tags", () => {
+    const fireArrow = cardLibrary.find((card) => card.id === "fire-arrow");
+    expect(fireArrow).toBeDefined();
+    expect(getCardKeywords(fireArrow!)).toContain("archery");
+    expect(getCardKeywords(fireArrow!)).toContain("burn");
+  });
+
   it("covers expected keywords", () => {
     const expected = [
       "physical", "stun", "block", "forge", "armor", "health", "burn",
       "gold", "holy", "wish", "consume", "poison", "bleed",
-      "leech", "freeze", "mana", "nature", "companion", "arrow",
+      "leech", "freeze", "mana", "nature", "companion", "archery",
     ];
     for (const id of expected) {
       expect(keywordDefinitions).toHaveProperty(id);

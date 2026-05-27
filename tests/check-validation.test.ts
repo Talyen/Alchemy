@@ -3,7 +3,7 @@ import { SaveDataSchema } from "@/lib/validation/save-schemas";
 
 test("validation check", () => {
   const BASE_HOMESTEAD_SAVE = {
-    saveSchemaVersion: 1,
+    saveSchemaVersion: 2,
     gameBuildVersion: "1.0.0",
     contentVersion: 1,
     selectedAspectRatio: "auto",

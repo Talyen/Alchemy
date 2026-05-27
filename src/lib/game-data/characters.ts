@@ -61,7 +61,7 @@ export const characters: Record<CharacterId, CharacterDefinition> = {
     role: "Wildkeeper",
     description: "A wilderness guardian who calls upon nature, companions, and arrows.",
     startingDeck: resolveDeck(["slash", "stab", "fangs", "wolf-companion", "apple", "mana-berries", "pack-tactics"]),
-    keywords: ["nature", "companion", "arrow"],
+    keywords: ["nature", "companion", "archery"],
   },
   alchemist: {
     id: "alchemist",

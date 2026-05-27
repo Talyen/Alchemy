@@ -20,15 +20,41 @@ export type KeywordId =
   | "mana"
   | "nature"
   | "companion"
-  | "arrow";
+  | "archery";
 
-export type DamageType = "physical" | "stun" | "holy" | "burn" | "poison" | "bleed" | "freeze" | "nature" | "arrow";
+export type DamageType = "physical" | "stun" | "holy" | "burn" | "poison" | "bleed" | "freeze" | "nature";
+
+/** Damage types used for random-hit effects (e.g. Roulette). Archery is a card tag, not a damage type. */
+export const DAMAGE_TYPES: readonly DamageType[] = [
+  "physical",
+  "stun",
+  "holy",
+  "burn",
+  "poison",
+  "bleed",
+  "freeze",
+  "nature",
+];
 
 export type PlayerStatusId = "block" | "armor" | "forge" | "haste" | "burn" | "poison" | "bleed" | "freeze" | "stun";
 
 export type EnemyStatusId = "burn" | "poison" | "bleed" | "freeze" | "stun";
 
-export type CompanionId = "wolf" | "lizard-scout" | "imp" | "frost-whelp" | "bear" | "panther" | "phoenix";
+export type CompanionId =
+  | "wolf"
+  | "lizard-scout"
+  | "imp"
+  | "frost-whelp"
+  | "bear"
+  | "panther"
+  | "phoenix"
+  | "skeleton"
+  | "pixie"
+  | "mana-moth"
+  | "will-o-wisp"
+  | "golden-retriever"
+  | "shield-scarab"
+  | "library-owl";
 
 export type EnemyAttackEffect =
   | { kind: "damage"; damageType: DamageType; amount: number; lifesteal?: boolean }
@@ -48,6 +74,7 @@ export type BattleCardEffect =
       lifesteal?: boolean;
       equalToBlock?: boolean;
       equalToArmor?: boolean;
+      equalToGoldPercent?: number;
     }
   | {
       kind: "player-status";
@@ -70,7 +97,14 @@ export type BattleCardEffect =
   | { kind: "lose-health"; amount: number }
   | { kind: "draw-cards"; amount: number }
   | { kind: "remove-enemy-armor"; amount: number }
-  | { kind: "multiply-enemy-status"; status: EnemyStatusId; factor: number };
+  | { kind: "multiply-enemy-status"; status: EnemyStatusId; factor: number }
+  | {
+      kind: "cleanse-player-status-to-damage";
+      status: Extract<PlayerStatusId, "burn">;
+      damageType: DamageType;
+      removeAll?: boolean;
+    }
+  | { kind: "random-damage"; minAmount: number; maxAmount: number };
 
 export type CompanionDefinition = {
   id: CompanionId;
@@ -91,6 +125,8 @@ export type BattleCard = {
   /** Positions of numeric values in descriptionLines that were modified by corruption, used to highlight them in the UI. */
   corruptedValuePositions?: { lineIndex: number; matchIndex: number }[];
   baseTitle?: string;
+  /** Playstyle tags (e.g. archery) counted for talent XP; not damage types. */
+  tags?: KeywordId[];
   effects: BattleCardEffect[];
 };
 

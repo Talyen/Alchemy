@@ -158,7 +158,18 @@ function handleRemovePlayerStatus(
 
 type UtilityEffect = Exclude<
   BattleCardEffect,
-  { kind: "damage" | "player-status" | "heal" | "restore-mana" | "lose-mana" | "gain-max-mana" | "lose-max-mana" }
+  {
+    kind:
+      | "damage"
+      | "player-status"
+      | "heal"
+      | "restore-mana"
+      | "lose-mana"
+      | "gain-max-mana"
+      | "lose-max-mana"
+      | "cleanse-player-status-to-damage"
+      | "random-damage";
+  }
 >;
 
 export function handleUtilityEffect(

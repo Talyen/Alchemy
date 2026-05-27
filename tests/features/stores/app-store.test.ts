@@ -34,7 +34,7 @@ vi.mock("@/features/alchemy/storage/defaults", () => ({
 }));
 
 const makeSave = (overrides: Partial<SaveData> = {}): SaveData => ({
-  saveSchemaVersion: 1,
+  saveSchemaVersion: 2,
   gameBuildVersion: "test",
   contentVersion: 1,
   selectedAspectRatio: "auto",

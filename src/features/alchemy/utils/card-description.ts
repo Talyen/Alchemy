@@ -3,6 +3,7 @@
 import { capitalizeWord } from "@/lib/utils";
 import { POTION_CARD_ID_SUFFIX } from "@/lib/game-constants";
 import { companionLibrary, type BattleCard, type CompanionId } from "@/lib/game-data";
+import { formatCompanionTurnStartLine } from "./companion-turn-line";
 
 export type CardDescriptionContext = {
   flatPhysicalDamage?: number;
@@ -41,17 +42,29 @@ function getSummonedCompanionId(card: Pick<BattleCard, "effects">): CompanionId 
   return effect?.companionId ?? null;
 }
 
+function isCompanionTurnLine(line: string): boolean {
+  return (
+    /^Deals \d+/.test(line) ||
+    /^Restores \d+/.test(line) ||
+    /^Cleanses \d+/.test(line) ||
+    /^Steals \d+/.test(line) ||
+    /^Gain \d+ Block each turn/.test(line) ||
+    /^Draws \d+/.test(line)
+  );
+}
+
 function getCompanionLine(card: Pick<BattleCard, "effects">, context: CardDescriptionContext): string | null {
   const companionId = getSummonedCompanionId(card);
   if (!companionId) return null;
   const companion = companionLibrary[companionId];
-  const attack = companion?.turnStartEffects.find((effect) => effect.kind === "damage");
-  if (!attack) return null;
+  const turnEffect = companion?.turnStartEffects[0];
+  if (!turnEffect) return null;
 
-  const bondLevel = context.companionBondLevels?.[companionId] ?? 0;
-  const globalBonus =
-    (context.companionDamage ?? 0) + (context.companionDamageBonus ?? 0) + (context.companionDamageBuff ?? 0);
-  return `Deals ${attack.amount + bondLevel + globalBonus} ${displayDamageType(attack.damageType)} damage each turn`;
+  return formatCompanionTurnStartLine(turnEffect, {
+    bondLevel: context.companionBondLevels?.[companionId] ?? 0,
+    damageBonus:
+      (context.companionDamage ?? 0) + (context.companionDamageBonus ?? 0) + (context.companionDamageBuff ?? 0),
+  });
 }
 
 // Returns description lines whose numbers match known mechanical bonuses.
@@ -94,7 +107,7 @@ export function getEffectiveCardDescriptionLines(
   );
 
   return card.descriptionLines.map((line) => {
-    if (companionLine && line.startsWith("Deals ")) return companionLine;
+    if (companionLine && isCompanionTurnLine(line)) return companionLine;
     if (line.startsWith("Deal ")) {
       const effect = damageEffects[damageIndex++];
       if (effect?.equalToBlock || effect?.equalToArmor) return line;

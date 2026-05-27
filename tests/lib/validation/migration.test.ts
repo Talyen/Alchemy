@@ -96,6 +96,33 @@ describe("migrateSaveDataToCurrent", () => {
     const result = migrateSaveDataToCurrent({});
     expect(result.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
   });
+
+  it("migrates arrow keyword progress to archery on v1 saves", () => {
+    const result = migrateSaveDataToCurrent({
+      saveSchemaVersion: 1,
+      talentXP: { arrow: 12, physical: 3 },
+      unlockedTalents: { arrow: ["arrow-damage"], physical: ["physical-damage"] },
+    });
+    expect(result.saveSchemaVersion).toBe(2);
+    expect(result.talentXP).toEqual({ archery: 12, physical: 3 });
+    expect(result.unlockedTalents).toEqual({
+      archery: ["archery-damage"],
+      physical: ["physical-damage"],
+    });
+  });
+
+  it("remaps arrow placeholder talent ids when merging into archery", () => {
+    const result = migrateSaveDataToCurrent({
+      saveSchemaVersion: 1,
+      unlockedTalents: {
+        arrow: ["arrow-damage", "arrow-placeholder-3"],
+        archery: ["archery-placeholder-2"],
+      },
+    });
+    expect(result.unlockedTalents).toEqual({
+      archery: ["archery-placeholder-2", "archery-damage", "archery-placeholder-3"],
+    });
+  });
 });
 
 describe("legacy resolution→aspect ratio migration", () => {

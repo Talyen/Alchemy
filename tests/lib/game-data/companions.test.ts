@@ -3,7 +3,22 @@ import { companionLibrary } from "@/lib/game-data";
 
 describe("companionLibrary data integrity", () => {
   it("has all expected companions", () => {
-    const expectedIds = ["wolf", "lizard-scout", "imp", "frost-whelp", "bear", "panther", "phoenix"];
+    const expectedIds = [
+      "wolf",
+      "lizard-scout",
+      "imp",
+      "frost-whelp",
+      "bear",
+      "panther",
+      "phoenix",
+      "skeleton",
+      "pixie",
+      "mana-moth",
+      "will-o-wisp",
+      "golden-retriever",
+      "shield-scarab",
+      "library-owl",
+    ];
     for (const id of expectedIds) {
       expect(companionLibrary[id]).toBeDefined();
     }
@@ -22,13 +37,29 @@ describe("companionLibrary data integrity", () => {
     }
   });
 
-  it("each turnStartEffect is a damage kind with a valid damageType", () => {
-    const validTypes = ["physical", "stun", "holy", "burn", "poison", "bleed", "freeze", "nature"];
+  it("each turnStartEffect uses a supported companion effect kind", () => {
+    const validDamageTypes = ["physical", "stun", "holy", "burn", "poison", "bleed", "freeze", "nature"];
     for (const companion of Object.values(companionLibrary)) {
       for (const effect of companion.turnStartEffects) {
-        expect(effect.kind).toBe("damage");
-        expect(validTypes).toContain(effect.damageType);
-        expect(effect.amount).toBeGreaterThan(0);
+        switch (effect.kind) {
+          case "damage":
+            expect(validDamageTypes).toContain(effect.damageType);
+            expect(effect.amount).toBeGreaterThan(0);
+            break;
+          case "heal":
+          case "restore-mana":
+          case "remove-harmful-status":
+          case "gain-gold":
+          case "draw-cards":
+            expect(effect.amount).toBeGreaterThan(0);
+            break;
+          case "player-status":
+            expect(effect.status).toBe("block");
+            expect(effect.amount).toBeGreaterThan(0);
+            break;
+          default:
+            throw new Error(`Unsupported companion effect: ${(effect as { kind: string }).kind}`);
+        }
       }
     }
   });
@@ -38,12 +69,15 @@ describe("companionLibrary data integrity", () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it("Phoenix has the highest base damage", () => {
+  it("Phoenix ties for highest damage among damage-dealing companions", () => {
     const phoenix = companionLibrary.phoenix;
-    const allMaxDamages = Object.values(companionLibrary).map(
-      (c) => c.turnStartEffects.reduce((sum, e) => sum + e.amount, 0),
+    const damageTotals = Object.values(companionLibrary)
+      .filter((c) => c.turnStartEffects[0]?.kind === "damage")
+      .map((c) => c.turnStartEffects.reduce((sum, e) => sum + (e.kind === "damage" ? e.amount : 0), 0));
+    const phoenixDamage = phoenix.turnStartEffects.reduce(
+      (sum, e) => sum + (e.kind === "damage" ? e.amount : 0),
+      0,
     );
-    const phoenixDamage = phoenix.turnStartEffects.reduce((sum, e) => sum + e.amount, 0);
-    expect(phoenixDamage).toBe(Math.max(...allMaxDamages));
+    expect(phoenixDamage).toBe(Math.max(...damageTotals));
   });
 });

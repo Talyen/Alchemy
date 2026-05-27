@@ -7,6 +7,7 @@ import type { BattleCard, BattleCardEffect, EnemyStatusId } from "@/lib/game-dat
 import { dealDamageToEnemy } from "./damage";
 import { applyPlayerStatusEffect } from "./status-effects";
 import { handleManaEffect } from "./apply-effects-mana";
+import { handleCleansePlayerStatusToDamage, handleRandomDamage } from "./apply-effects-special";
 import { handleUtilityEffect } from "./apply-effects-utility";
 import { addEnemyStatus, adjustEnemyStatusDelta, type BattleState, type CombatTextEvent } from "./types";
 import { POTION_CARD_ID_SUFFIX } from "../game-constants";
@@ -82,6 +83,12 @@ export function applyCardEffects(state: BattleState, card: BattleCard, combatTex
     }
     if (effect.kind === "heal") {
       return handleHealEffect(currentState, effect, potionMult, card.consume ?? false, combatTexts);
+    }
+    if (effect.kind === "cleanse-player-status-to-damage") {
+      return handleCleansePlayerStatusToDamage(currentState, card, effect, combatTexts);
+    }
+    if (effect.kind === "random-damage") {
+      return handleRandomDamage(currentState, card, effect, combatTexts);
     }
     if (
       effect.kind === "restore-mana" ||

@@ -4,21 +4,20 @@
 import { type CSSProperties } from "react";
 
 import type { CompanionDefinition } from "@/lib/game-data";
-import { cn, capitalizeWord } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
 import { cardSurfaceClass, staticCardTransform } from "../../config";
 import { clearTiltFromEvent, setTiltFromEvent } from "../../utils";
+import { formatCompanionTurnStartLine } from "../../utils/companion-turn-line";
 import { DescriptionLines } from "../card-description-ui";
 import { TooltipPanel } from "../tooltip-panel";
 
 function getCompanionDescriptionLines(companion: CompanionDefinition, damageBonus: number): string[] {
-  const attack = companion.turnStartEffects.find((effect) => effect.kind === "damage");
-  if (!attack) return ["Acts at the start of each turn"];
+  const turnEffect = companion.turnStartEffects[0];
+  if (!turnEffect) return ["Acts at the start of each turn"];
 
-  const totalAmount = attack.amount + damageBonus;
-  const displayAmount = attack.damageType === "bleed" ? totalAmount * 2 : totalAmount;
-  const displayType = capitalizeWord(attack.damageType);
-  return [`Deals ${displayAmount} ${displayType} damage each turn`];
+  const line = formatCompanionTurnStartLine(turnEffect, { damageBonus });
+  return line ? [line] : ["Acts at the start of each turn"];
 }
 
 // Shows the active companion with enough tooltip detail to explain its automatic attack.

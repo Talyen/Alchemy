@@ -151,10 +151,19 @@ export function useBattleController({
     setCardTransferInProgress,
   });
 
+  // createBattleSession() returns new function identities each render; refs keep effects stable.
+  const clearAllBattleTimeoutsRef = useRef(clearAllBattleTimeouts);
+  clearAllBattleTimeoutsRef.current = clearAllBattleTimeouts;
+  const clearTransferHandlesRef = useRef(clearTransferHandles);
+  clearTransferHandlesRef.current = clearTransferHandles;
+  const resetBattleSessionRef = useRef(resetBattleSession);
+  resetBattleSessionRef.current = resetBattleSession;
+
+  // Mount-only teardown — do not re-run when session helper identities change.
   useEffect(
     () => () => {
-      clearAllBattleTimeouts();
-      clearTransferHandles();
+      clearAllBattleTimeoutsRef.current();
+      clearTransferHandlesRef.current();
       resolvedAsHasteOrStunRef.current = false;
       cardPlayInProgressRef.current = false;
       companionScheduledRef.current = false;
@@ -163,9 +172,10 @@ export function useBattleController({
     [],
   );
 
+  // Reset transfer UI when battle ends; only react to hasActiveBattle, not resetBattleSession identity.
   useEffect(() => {
     if (hasActiveBattle) return;
-    resetBattleSession();
+    resetBattleSessionRef.current();
     queueMicrotask(() => {
       setCardTransfers([]);
       resetHandTransferUi();

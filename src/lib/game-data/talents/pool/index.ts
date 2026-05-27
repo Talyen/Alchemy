@@ -17,7 +17,7 @@ import { freezeTalents } from "./freeze";
 import { manaTalents } from "./mana";
 import { natureTalents } from "./nature";
 import { companionTalents } from "./companion";
-import { arrowTalents } from "./arrow";
+import { archeryTalents } from "./archery";
 import { consumeTalents } from "./consume";
 
 export const talentPool: TalentDefinition[] = [
@@ -38,6 +38,6 @@ export const talentPool: TalentDefinition[] = [
   ...manaTalents,
   ...natureTalents,
   ...companionTalents,
-  ...arrowTalents,
+  ...archeryTalents,
   ...consumeTalents,
 ];

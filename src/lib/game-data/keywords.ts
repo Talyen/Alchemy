@@ -8,8 +8,14 @@ export function getCardKeywords(card: BattleCard): KeywordId[] {
   for (const effect of card.effects) {
     switch (effect.kind) {
       case "damage":
-        keywords.add(effect.damageType as KeywordId);
+        keywords.add(effect.damageType);
         if (effect.lifesteal) keywords.add("leech");
+        break;
+      case "cleanse-player-status-to-damage":
+        keywords.add("health");
+        keywords.add(effect.damageType);
+        break;
+      case "random-damage":
         break;
       case "player-status":
         if (effect.status !== "haste") keywords.add(effect.status as KeywordId);
@@ -56,6 +62,10 @@ export function getCardKeywords(card: BattleCard): KeywordId[] {
   }
 
   if (card.consume) keywords.add("consume");
+
+  for (const tag of card.tags ?? []) {
+    keywords.add(tag);
+  }
 
   return Array.from(keywords);
 }
@@ -208,10 +218,10 @@ export const keywordDefinitions: Record<KeywordId, KeywordDefinition> = {
     borderClass: "border-amber-900",
     shineColors: ["#78350f", "#451a03", "#78350f"],
   },
-  arrow: {
-    id: "arrow",
-    label: "Arrow",
-    description: "Arrow deals a variety of damage types",
+  archery: {
+    id: "archery",
+    label: "Archery",
+    description: "Archery cards use ranged attacks with varied damage types",
     colorClass: "text-lime-700",
     borderClass: "border-lime-700",
     shineColors: ["#4d7c0f", "#1a2e05", "#4d7c0f"],
