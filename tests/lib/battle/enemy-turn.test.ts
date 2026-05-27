@@ -1,9 +1,22 @@
 import { describe, expect, it, vi } from "vitest";
 import { endPlayerTurn } from "@/lib/battle/enemy-turn";
 import type { BattleState, EnemyStatusValues, PlayerStatusValues } from "@/lib/battle/types";
+import type { BattleCard } from "@/lib/game-data";
 import { defaultTalentEffects } from "@/lib/battle/draw";
 import { createTestBattleState } from "./test-state";
 import type { BestiaryEntry } from "@/lib/game-data";
+
+function makeCard(overrides: Partial<BattleCard> = {}): BattleCard {
+  return {
+    id: "test",
+    title: "Test",
+    descriptionLines: [""],
+    art: "",
+    cost: 1,
+    effects: [],
+    ...overrides,
+  };
+}
 
 vi.spyOn(Math, "random").mockReturnValue(0.99);
 
@@ -172,5 +185,86 @@ describe("endPlayerTurn — Death's Door", () => {
     });
     const result = endPlayerTurn(state);
     expect(result.state.deathsDoorActive).toBe(false);
+  });
+
+  it("burn DoT kills player on grace turn when Death's Door expires", () => {
+    const state = battleState({
+      playerHealth: 1,
+      playerStatuses: { ...emptyPlayerStatuses, burn: 4 },
+      deathsDoorUsed: true,
+      deathsDoorActive: true,
+      deathsDoorTriggeredTurn: 1,
+      deathsDoorGraceTurnsRemaining: 0,
+      turn: 1,
+    });
+    const result = endPlayerTurn(state);
+    // Burn ticks for 4 → health 0. Grace expired → deathsDoorActive false → player defeated
+    expect(result.state.playerHealth).toBe(0);
+    expect(result.state.deathsDoorActive).toBe(false);
+    expect(result.state.playerStatuses.burn).toBe(2);
+  });
+
+  it("poison DoT kills player on grace turn when Death's Door expires", () => {
+    const state = battleState({
+      playerHealth: 2,
+      playerStatuses: { ...emptyPlayerStatuses, poison: 3 },
+      deathsDoorUsed: true,
+      deathsDoorActive: true,
+      deathsDoorTriggeredTurn: 1,
+      deathsDoorGraceTurnsRemaining: 0,
+      turn: 1,
+    });
+    const result = endPlayerTurn(state);
+    // Poison ticks for 3 → health 0. Grace expired → deathsDoorActive false → player defeated
+    expect(result.state.playerHealth).toBe(0);
+    expect(result.state.deathsDoorActive).toBe(false);
+  });
+
+  it("bleed DoT kills player on grace turn when Death's Door expires", () => {
+    const state = battleState({
+      playerHealth: 2,
+      playerStatuses: { ...emptyPlayerStatuses, bleed: 5 },
+      deathsDoorUsed: true,
+      deathsDoorActive: true,
+      deathsDoorTriggeredTurn: 1,
+      deathsDoorGraceTurnsRemaining: 0,
+      turn: 1,
+    });
+    const result = endPlayerTurn(state);
+    // Bleed ticks for 5 → health 0. Grace expired → deathsDoorActive false → player defeated
+    expect(result.state.playerHealth).toBe(0);
+    expect(result.state.deathsDoorActive).toBe(false);
+  });
+
+  it("Death's Door does not re-trigger when already consumed", () => {
+    const state = battleState({
+      playerHealth: 3,
+      deathsDoorUsed: true,
+      deathsDoorActive: false,
+      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 10 }],
+      deck: [makeCard(), makeCard(), makeCard(), makeCard()],
+    });
+    const result = endPlayerTurn(state);
+    // deathsDoor already consumed, fatal damage → player defeated
+    expect(result.state.playerHealth).toBe(0);
+    expect(result.state.deathsDoorActive).toBe(false);
+    expect(result.state.deathsDoorUsed).toBe(true);
+  });
+
+  it("CC immunity cooldown does not prevent Death's Door grace recovery turn", () => {
+    const state = battleState({
+      playerHealth: 0,
+      playerStatuses: { ...emptyPlayerStatuses, stun: 20 },
+      deathsDoorUsed: true,
+      deathsDoorActive: true,
+      deathsDoorTriggeredTurn: 1,
+      deathsDoorGraceTurnsRemaining: 1,
+      turn: 1,
+      deck: [makeCard(), makeCard(), makeCard(), makeCard()],
+    });
+    const result = endPlayerTurn(state);
+    // Grace recovery: stun skip suppressed, player gets a turn
+    expect(result.state.turnPhase).toBe("player");
+    expect(result.state.playerStunSkipTurns).toBe(0);
   });
 });

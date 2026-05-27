@@ -12,8 +12,6 @@ export { DestinationScreen } from "./destination-screen";
 export { CampfireScreen } from "./campfire-screen";
 export { MerchantShopScreen } from "./merchant-shop-screen";
 export { AlchemistShopScreen } from "./alchemist-shop-screen";
-export { OptionsScreen } from "./options-screen";
-export { CollectionScreen } from "./collection-screen";
 export { TalentsScreen } from "./talents-screen";
 export { GameOverScreen } from "./game-over-screen";
 export { MysteryScreen } from "./mystery/mystery-screen";

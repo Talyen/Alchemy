@@ -26,6 +26,7 @@ import {
   type UnlockedTalents,
 } from "@/lib/game-data";
 import type { DifficultyModifier } from "@/lib/game-data";
+import { MAX_PLAYER_HEALTH } from "../game-constants";
 
 export type BalancePlayPolicy = "random-playable" | "greedy-damage" | "defensive-random";
 type BattleSimulationOutcome = "win" | "loss" | "timeout";
@@ -318,7 +319,7 @@ export function simulateBattle(config: BattleSimulationConfig): BattleSimulation
     const enemy = getEnemyById(config.enemyId);
     const trinketIds = config.trinketIds ?? [];
     const policy = config.policy ?? DEFAULT_POLICY;
-    const playerMaxHealth = config.playerMaxHealth ?? 30;
+    const playerMaxHealth = config.playerMaxHealth ?? MAX_PLAYER_HEALTH;
     const playerDeck = config.deck ?? getStartingDeck(config.characterId);
     const talentEffects =
       config.talentEffects ??

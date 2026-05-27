@@ -2,11 +2,8 @@
 // Depends on battle card/trinket shapes and shared sampling utilities.
 // Used by run navigation after combat victories and other reward-generating screens.
 import { getCardKeywords as getCardKeywordsShared, type BattleCard, type TrinketEntry } from "@/lib/game-data";
-import { MIXED_POTION_CARD_ID, REWARD_SELECTION_CONFIG } from "@/lib/game-constants";
+import { MIXED_POTION_CARD_ID, REWARD_SELECTION_CONFIG, REWARD_RANDOM_CHANCE } from "@/lib/game-constants";
 import { sampleItems } from "./utils";
-
-export const REWARD_TRINKET_CHANCE = 0.25;
-const REWARD_RANDOM_CHANCE = 0.3;
 
 export function getCardKeywords(card: BattleCard) {
   return getCardKeywordsShared(card);

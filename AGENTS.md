@@ -4,6 +4,26 @@
 
 Between runs, the **Homestead** lets the player spend **Materials** on permanent upgrades. **Talent XP** earned during runs — awarded per **Keyword** when matching cards are played — unlocks passive bonuses that persist across future runs.
 
+## Quick Reference
+
+- [Core Gameplay Mechanics](#core-gameplay-mechanics)
+- [Commands](#commands)
+- [Workflows](#workflows)
+- [Architecture](#architecture)
+- [Key Conventions](#key-conventions)
+    - [React & UI Conventions](#react--ui-conventions)
+    - [Domain Glossary](#domain-glossary)
+- [Barrel Imports](#barrel-imports)
+- [Navigation Hints](#navigation-hints)
+- [Project Gotchas](#project-gotchas)
+- [Common Mistakes](#common-mistakes)
+- [Debugging](#debugging)
+- [Verification Strategy](#verification-strategy)
+- [Testing Patterns](#testing-patterns)
+- [Large / Generated / Heavy Files](#large--generated--heavy-files)
+- [AI Behavior](#ai-behavior)
+- [Multi-Agent Rules](#multi-agent-rules)
+
 ## Core Gameplay Mechanics
 
 Non-obvious rules that deviate from typical CCG/roguelike assumptions:
@@ -33,6 +53,7 @@ npm run preview          # Preview production web build
 npm test                 # vitest (unit tests)
 npm run test:watch       # vitest in watch mode
 npm run test:coverage    # vitest with coverage
+npm test -- <path>       # Run a single test file (e.g. `npm test -- tests/lib/battle/foo.test.ts`)
 npm run test:e2e         # Playwright tests
 npm run test:e2e:smoke   # Playwright boot smoke test
 npm run test:e2e:critical # Playwright critical flow subset
@@ -61,7 +82,7 @@ npm run release          # Auto-bump + changelog + tag (patch)
 4. Add CC threshold logic in `src/lib/battle/status-cc.ts`
 5. Register in `src/lib/battle/status-effects.ts`
 6. Add matching keyword in `src/lib/game-data/keywords.ts`
-7. Cover through `tests/lib/battle/` tests
+7. Cover through `tests/lib/battle/status-*.test.ts` tests
 
 **Add a new card**:
 
@@ -199,10 +220,10 @@ Controllers in `src/features/alchemy/` bridge pure lib logic to React UI:
 
 | Type | File |
 |---|---|
-| `BattleState` | `src/lib/battle/types.ts:93` |
-| `BattleCard` | `src/lib/game-data/types.ts:82` |
-| `RunStateFields` | `src/features/alchemy/stores/run-store.ts:30` |
-| `Screen` | `src/features/alchemy/types.ts:9` |
+| `BattleState` | `src/lib/battle/types.ts` |
+| `BattleCard` | `src/lib/game-data/types.ts` |
+| `RunStateFields` | `src/features/alchemy/stores/run-store.ts` |
+| `Screen` | `src/features/alchemy/types.ts` |
 | `TurnPhase` | `src/lib/battle/types.ts` |
 | `EnemyState` / `EnemyTemplate` | `src/lib/game-data/types.ts` |
 | `PlayerStatusId` / `EnemyStatusId` | `src/lib/game-data/types.ts` |
@@ -228,7 +249,7 @@ Controllers in `src/features/alchemy/` bridge pure lib logic to React UI:
 
 - **No `React.FC`** — components are plain functions with explicit `interface Props` or local `type` above the component
 - **Tailwind via `cn()`** — use `cn()` from `@/lib/utils` for all conditional class merging. Order: layout/structure → visual → variant → external `className`. Primitives with variants use `class-variance-authority` (`cva()`)
-- **Zustand selectors** — always granular: `useStore((s) => s.field)`, never the full store object
+
 - **Event handlers** — chain feedback first (sound via `playUISound("buttonHover")`), then call original handler via `onX?.(e)`. Avoid `useEffect` for UI side effects
 - **Motion** via `framer-motion` (`motion/react`). Use `PressableMotion` wrapper for spring-based press feedback (`stiffness: 400`, `damping: 15`)
 - **Modals** — render as `fixed` overlay with backdrop `bg-black/70`, close on backdrop click with `e.stopPropagation()` on inner panel
@@ -239,7 +260,7 @@ Controllers in `src/features/alchemy/` bridge pure lib logic to React UI:
 
 | Term | Definition |
 |---|---|---|
-| **Block** | Temporary damage absorption that expires at end of player's turn. |
+| **Block** | Temporary damage absorption; halved (not cleared) at end of enemy turn. |
 | **Burn** | Damage-over-time status; ticks at start of enemy turn, then stack decreases by 1. |
 | **Combat Text** | Floating battle numbers merged per `(target, kind, stat)` for deduplication. |
 | **Companion Bond** | Per-companion talent level that boosts companion damage each turn. |
@@ -247,6 +268,7 @@ Controllers in `src/features/alchemy/` bridge pure lib logic to React UI:
 | **Corruption** | Altar event that mutates a card by adding a random harmful effect/tag. |
 | **Death's Door** | One-shot survival mechanic granting one final turn after player health reaches zero. |
 | **Potion** | Consumable item with a temporary effect, mixed at the Alchemist shop. |
+| **Regen / Regeneration** | Enemy trait that restores health each turn; resolved at the end of the enemy phase. |
 | **Status** | Temporary effect on a player or enemy with tick/expiry logic (e.g. Burn, Freeze, Poison, Stun). |
 | **Summon** | Effect that brings a companion ally into battle. |
 | **Talent Effect Manifest** | All active talent bonuses pre-computed into one object per battle (`BattleState.talentEffects`). |
@@ -255,17 +277,17 @@ Controllers in `src/features/alchemy/` bridge pure lib logic to React UI:
 
 ## Barrel Imports
 
-Always import through canonical barrels, not deep paths:
+Always import through canonical barrels, not deep paths. The authoritative list lives in each barrel's `index.ts`:
 
-| Barrel | Contents |
-|--------|----------|
-| `@/lib/game-data` | Types, cards, keywords, characters, companions, compendium, talents, difficulties, assets |
-| `@/lib/battle` | Battle state machine helpers (`createBattleState`, `playBattleCardResolved`, `endPlayerTurn`, etc.) |
-| `@/lib/validation` | Save schemas, migration, metadata, battle-state guard |
-| `@/features/alchemy/screens` | All screen components |
-| `@/features/alchemy/utils` | Battle helpers, card descriptions, DOM, enemy utils, random, string |
+| Barrel | Barrel file |
+|--------|-------------|
+| `@/lib/game-data` | `src/lib/game-data/index.ts` |
+| `@/lib/battle` | `src/lib/battle/index.ts` |
+| `@/lib/validation` | `src/lib/validation/index.ts` |
+| `@/features/alchemy/screens` | `src/features/alchemy/screens/index.ts` |
+| `@/features/alchemy/utils` | `src/features/alchemy/utils/index.ts` |
 
-Individual top-level lib modules (`balance.ts`, `talents.ts`, `trinkets.ts`) are imported directly — e.g. `@/lib/talents.ts` (no barrel at `@/lib`).
+Individual top-level lib modules are imported directly — e.g. `@/lib/talents.ts` (no barrel at `@/lib`). Read the barrel file when you need to confirm its exports.
 
 ## Navigation Hints
 
@@ -297,6 +319,7 @@ Individual top-level lib modules (`balance.ts`, `talents.ts`, `trinkets.ts`) are
 | Trinket logic | `src/lib/trinkets.ts` |
 | Tuning values | `src/lib/game-constants.ts` |
 | Wildwood boss data | `src/lib/content-systems/wildwood/bosses.ts` |
+| Feature-level utilities (battle helpers, card descriptions, DOM, enemy utils, random, string) | `src/features/alchemy/utils/` |
 | Zustand stores | `src/features/alchemy/stores/` |
 
 ## Project Gotchas
@@ -306,6 +329,14 @@ Individual top-level lib modules (`balance.ts`, `talents.ts`, `trinkets.ts`) are
 - **Assets**: `prebuild`/`predev` auto-run asset, sound, and music optimize scripts.
 - **Desktop**: Web builds use Vite directly; desktop builds use Electron entry points in `desktop/` and Vite desktop mode.
 - **SFX are buffers, not files**: SFX use Web Audio API buffer playback (`src/lib/audio.ts`); music MP3s are streamed via `<audio>` elements.
+
+## Common Mistakes
+
+- **Forgetting both `src/lib/game-data/talents.ts` (data) and `src/lib/talents.ts` (XP math)** exist — they serve different purposes. Add bond level defaults to the former, XP triggers to the latter.
+- **Editing a card effect without updating `descriptionLines`** — the descriptions-match-effects test will fail.
+- **Using deep imports** instead of barrel imports (`@/lib/game-data`, `@/lib/battle`, etc.) — always use the canonical barrel.
+- **Mutating battle state** instead of returning a new `BattleState` — state is immutable; reducer pattern only.
+- **Hardcoding magic numbers** — put all tuning values in `src/lib/game-constants.ts`.
 
 ## Debugging
 
@@ -332,9 +363,10 @@ Tests mirror source: `tests/lib/battle/foo.test.ts` tests `src/lib/battle/foo.ts
 - Use `createBattleState()` from `@/lib/battle/draw` for deterministic test setup.
 - Prebuilt decks, enemies, and save data live in `tests/fixtures/`.
 - Organize tests per mechanic: `describe("MechanicName", ...)` with focused `it` blocks.
-- `test.skip(true, "reason")` when a required card isn't in the random opening hand.
-- `startRun(page)`: navigates to `/`, clicks Play → Knight → Continue, waits for cards.
-- `playUntilVictory(page)`: loops up to 12 turns playing all playable cards.
+- `test.skipIf(condition)` when a required card isn't in the random opening hand.
+- `startCampaignBattle(page, character?)`: navigates to `/`, clicks a character → Continue, waits for cards.
+- `playUntilVictory(page)`: loops up to 10 turns playing all playable cards.
+- `tests/helpers.ts` contains shared helpers: `startCampaignBattle`, `playUntilVictory`, `startBattleWithDeck`, `injectSaveState`, etc.
 - Prefer deterministic setup helpers over relying on random opening hands or generated maps.
 
 ## Large / Generated / Heavy Files
@@ -342,7 +374,7 @@ Tests mirror source: `tests/lib/battle/foo.test.ts` tests `src/lib/battle/foo.ts
 Avoid repeated reads unless directly relevant:
 
 - **Generated/heavy** (never edit): `node_modules/`, `package-lock.json`, `Raw Assets/**`, `src/assets/optimized/**`, `Music/**`, `dist/**`, `.vite/**`, `release-desktop/**`, `coverage/**`, `reports/**`
-- **Large stable files** (edit rarely, read on demand): `src/lib/game-constants.ts`, `src/lib/game-data/cards.ts`, `src/lib/game-data/keywords.ts`, `src/lib/game-data/assets.ts`, `vite.config.ts`, `tsconfig.json`, `playwright.config.ts`
+- **Edit-rarely, read on demand**: `src/lib/game-constants.ts`, `src/lib/game-data/cards.ts`, `src/lib/game-data/keywords.ts`, `src/lib/game-data/assets.ts`, `vite.config.ts`
 
 ## AI Behavior
 

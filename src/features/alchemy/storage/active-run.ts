@@ -5,6 +5,7 @@ import { hydrateCard, type BattleCard } from "@/lib/game-data";
 import type { LabyrinthMap } from "@/lib/content-systems/types";
 import { ActiveRunDataSchema } from "@/lib/validation";
 import type { ActiveRunData } from "../run/types";
+import { ACTS_PER_RUN } from "@/lib/game-constants";
 
 // Active runs are sanitized before hydration by validating against ActiveRunDataSchema
 export function normalizeActiveRun(activeRun: unknown): ActiveRunData | null {
@@ -39,7 +40,7 @@ export function normalizeActiveRun(activeRun: unknown): ActiveRunData | null {
     (typeof candidate.currentAct !== "number" ||
       !Number.isInteger(candidate.currentAct) ||
       candidate.currentAct < 1 ||
-      candidate.currentAct > 3)
+      candidate.currentAct > ACTS_PER_RUN)
   ) {
     return null;
   }

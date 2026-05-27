@@ -169,11 +169,16 @@ export function useBattleController({
     });
   }
 
-  function clearPendingBattleTimeouts(keepCompanionScheduled = false) {
+  function logBattleError(context: string, err: unknown) {
+    logError(`Failed to ${context}`, "battle", { error: String(err) }, err instanceof Error ? err.stack : undefined);
+  }
+
+  function clearAllBattleTimeouts() {
     battleTimerGroupRef.current.clearAll();
-    if (!keepCompanionScheduled) {
-      companionScheduledRef.current = false;
-    }
+    companionScheduledRef.current = false;
+  }
+  function clearBattleTimeoutsKeepCompanion() {
+    battleTimerGroupRef.current.clearAll();
   }
 
   function stopBattleFeedback() {
@@ -196,7 +201,7 @@ export function useBattleController({
   // ─── Effects ───
   useEffect(
     () => () => {
-      clearPendingBattleTimeouts();
+      clearAllBattleTimeouts();
       clearTransferHandles();
       resolvedAsHasteOrStunRef.current = false;
       cardPlayInProgressRef.current = false;
@@ -543,14 +548,7 @@ export function useBattleController({
     errorContext: string,
   ) {
     void handleDrawSequence(oldHand, newState, onCommitState, session)
-      .catch((err) => {
-        logError(
-          `Failed to handle ${errorContext} draw sequence`,
-          "battle",
-          { error: String(err) },
-          err instanceof Error ? err.stack : undefined,
-        );
-      })
+      .catch((err) => logBattleError(`handle ${errorContext} draw sequence`, err))
       .finally(() => finishDrawSequence(session, newState));
   }
 
@@ -656,17 +654,12 @@ export function useBattleController({
       cardTransferInProgress
     )
       return;
-    clearPendingBattleTimeouts(true);
+    clearBattleTimeoutsKeepCompanion();
     const session = battleSessionRef.current;
 
-    animateEndTurnThenResolve(currentState, session).catch((err) => {
-      logError(
-        "Failed to resolve end turn animation sequence",
-        "battle",
-        { error: String(err) },
-        err instanceof Error ? err.stack : undefined,
-      );
-    });
+    animateEndTurnThenResolve(currentState, session).catch((err) =>
+      logBattleError("resolve end turn animation sequence", err),
+    );
   }
 
   async function animateEndTurnThenResolve(currentState: BattleState, session: number) {
@@ -675,12 +668,7 @@ export function useBattleController({
         try {
           await animateDiscardedHand(currentState.hand, session);
         } catch (err) {
-          logError(
-            "Discard hand animation failed",
-            "battle",
-            { error: String(err) },
-            err instanceof Error ? err.stack : undefined,
-          );
+          logBattleError("discard hand animation", err);
         }
       }
       runIfSessionActive(session, () => {
@@ -725,14 +713,7 @@ export function useBattleController({
       },
       session,
     )
-      .catch((err) => {
-        logError(
-          "Failed to handle end turn draw sequence",
-          "battle",
-          { error: String(err) },
-          err instanceof Error ? err.stack : undefined,
-        );
-      })
+      .catch((err) => logBattleError("handle end turn draw sequence", err))
       .finally(() => {
         runIfSessionActive(session, () => {
           resolvedAsHasteOrStunRef.current = false;
@@ -827,12 +808,7 @@ export function useBattleController({
 
         resolveNormalEnemyTurn(result, companionResult, session);
       } catch (err) {
-        logError(
-          "Unhandled error in resolveEndTurn — forcing defeat to prevent frozen battle state",
-          "battle",
-          { error: String(err) },
-          err instanceof Error ? err.stack : undefined,
-        );
+        logBattleError("resolve end turn — forcing defeat", err);
         // Only force defeat if this session is still active; if the battle already
         // ended (session invalidated) the defeat was already handled elsewhere.
         if (isCurrentBattleSession(session)) {
@@ -920,12 +896,7 @@ export function useBattleController({
         session,
       );
     } catch (err) {
-      logError(
-        "Failed to handle enemy resolution draw sequence",
-        "battle",
-        { error: String(err) },
-        err instanceof Error ? err.stack : undefined,
-      );
+      logBattleError("handle enemy resolution draw sequence", err);
     }
     if (!isCurrentBattleSession(session)) return;
     finishEnemyPhase(resultState, session, playerTurnSkipped);

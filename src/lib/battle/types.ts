@@ -15,6 +15,7 @@ import type {
   PlayerStatusId,
   TalentEffectManifest,
 } from "@/lib/game-data";
+import { HALF_DIVISOR, STATUS_CONFIG } from "../game-constants";
 import type { MaterialInventory } from "@/lib/homestead/types";
 
 // Both player and enemy use status ID unions, but enemies never gain
@@ -174,7 +175,7 @@ export function addPlayerStatus(state: BattleState, status: PlayerStatusId, delt
 
 export function adjustEnemyStatusDelta(state: Pick<BattleState, "difficultyModifiers">, delta: number): number {
   if (delta === 0) return 0;
-  return isNullFieldActive(state) ? Math.max(1, Math.round(delta / 2)) : delta;
+  return isNullFieldActive(state) ? Math.max(STATUS_CONFIG.MIN_STACK_AMOUNT, Math.round(delta / HALF_DIVISOR)) : delta;
 }
 
 export function addEnemyStatus(state: BattleState, status: EnemyStatusId, delta: number): BattleState {

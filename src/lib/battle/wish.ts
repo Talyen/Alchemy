@@ -9,9 +9,13 @@ import { drawCards, shuffleCards } from "./draw";
 import { addGold, applyPlayerHealing, clampHealth, type BattleState, type CombatTextEvent } from "./types";
 import { emitOverhealBlockText, mergeCombatText } from "./combat-text";
 import { removeHarmfulPlayerStatuses } from "./status-effects";
-import { PERCENT_DENOMINATOR, WISH_CHOICE_COUNT, MAX_HAND_SIZE, MIXED_POTION_CARD_ID } from "../game-constants";
-
-const WISH_CRYSTAL_GOLD_CHANCE = 0.5;
+import {
+  PERCENT_DENOMINATOR,
+  WISH_CHOICE_COUNT,
+  WISH_CRYSTAL_GOLD_CHANCE,
+  MAX_HAND_SIZE,
+  MIXED_POTION_CARD_ID,
+} from "../game-constants";
 
 export function buildWishOptions(state: BattleState, card: BattleCard): BattleCard[] {
   const baseCount =

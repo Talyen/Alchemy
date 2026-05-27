@@ -597,7 +597,7 @@ export function applyPlayerDamageStatuses(
   ) {
     const adjustedDamage =
       statusType === "freeze" && state.talentEffects.receiveHalfFreezeBuildUp
-        ? Math.round(actualDamage / 2)
+        ? Math.round(actualDamage / HALF_DIVISOR)
         : actualDamage;
     return {
       ...state,

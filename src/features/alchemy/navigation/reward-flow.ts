@@ -8,12 +8,13 @@ import {
   LABYRINTH_REWARD_CONFIG,
   MIXED_POTION_CARD_ID,
   REWARD_CARD_CHOICES,
+  REWARD_TRINKET_CHANCE,
 } from "@/lib/game-constants";
 import { computeTrinketManifest } from "@/lib/trinkets";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import type { BattleState } from "@/lib/battle";
-import { selectRewardCards, selectRewardTrinkets, REWARD_TRINKET_CHANCE } from "../reward-utils";
+import { selectRewardCards, selectRewardTrinkets } from "../reward-utils";
 import { CONSTANTS, type Destination } from "../types";
 import type { ContentSystemId, LabyrinthModifierKind } from "@/lib/content-systems/types";
 

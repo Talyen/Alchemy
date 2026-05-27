@@ -780,9 +780,7 @@ export function useRunNavigation({
   function handleCorruptionContinue() {
     advanceToNextDestination();
   }
-  function handleCorruptionLeave() {
-    advanceToNextDestination();
-  }
+  const handleCorruptionLeave = handleCorruptionContinue;
 
   // ============ Mystery ============
 

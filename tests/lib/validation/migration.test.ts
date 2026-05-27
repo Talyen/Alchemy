@@ -7,6 +7,7 @@ import {
   isUnsupportedFutureContentData,
 } from "@/lib/validation/migration";
 import { CURRENT_SAVE_SCHEMA_VERSION, CURRENT_CONTENT_VERSION } from "@/lib/validation/metadata";
+import { legacyCampaignRunSave, legacyLabyrinthRunSave, legacyCorruptedCardRunSave } from "../../fixtures/legacy-saves";
 
 describe("getRawSaveSchemaVersion", () => {
   it("returns 0 for null/undefined input", () => {
@@ -153,5 +154,42 @@ describe("isUnsupportedFutureContentData", () => {
 
   it("returns false for malformed input", () => {
     expect(isUnsupportedFutureContentData(null)).toBe(false);
+  });
+});
+
+describe("legacy fixture migration determinism", () => {
+  it("campaign fixture migrates idempotently", () => {
+    const first = migrateSaveDataToCurrent(legacyCampaignRunSave());
+    const second = migrateSaveDataToCurrent(first);
+    expect(second).toEqual(first);
+  });
+
+  it("labyrinth fixture migrates idempotently", () => {
+    const first = migrateSaveDataToCurrent(legacyLabyrinthRunSave());
+    const second = migrateSaveDataToCurrent(first);
+    expect(second).toEqual(first);
+  });
+
+  it("corrupted-card fixture migrates idempotently", () => {
+    const first = migrateSaveDataToCurrent(legacyCorruptedCardRunSave());
+    const second = migrateSaveDataToCurrent(first);
+    expect(second).toEqual(first);
+  });
+
+  it("campaign fixture round-trips through JSON serialize", () => {
+    const first = migrateSaveDataToCurrent(legacyCampaignRunSave());
+    const serialized = JSON.stringify(first);
+    const deserialized = JSON.parse(serialized);
+    const second = migrateSaveDataToCurrent(deserialized);
+    expect(second).toEqual(first);
+  });
+
+  it("all legacy fixtures produce stable saveSchemaVersion", () => {
+    const campaign = migrateSaveDataToCurrent(legacyCampaignRunSave());
+    const labyrinth = migrateSaveDataToCurrent(legacyLabyrinthRunSave());
+    const corrupted = migrateSaveDataToCurrent(legacyCorruptedCardRunSave());
+    expect(campaign.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
+    expect(labyrinth.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
+    expect(corrupted.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
   });
 });

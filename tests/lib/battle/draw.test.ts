@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   defaultBattleState,
   defaultTalentEffects,
+  drawCards,
   shuffleCards,
 } from "@/lib/battle/draw";
 import { createEmptyTalentManifest } from "@/lib/game-data";
@@ -144,5 +145,70 @@ describe("shuffleCards", () => {
   it("handles single-card array", () => {
     const card = { id: "a", title: "A", descriptionLines: [""], art: "", cost: 1, effects: [] };
     expect(shuffleCards([card])).toEqual([card]);
+  });
+});
+
+// ─── drawCards edge cases ───
+
+describe("drawCards — edge cases", () => {
+  function makeCard(id: string) {
+    return { id, title: id, descriptionLines: [""], art: "", cost: 1, effects: [] };
+  }
+
+  it("mid-draw reshuffles discard when deck runs out", () => {
+    const deck = [makeCard("d1")];
+    const discard = [makeCard("d2"), makeCard("d3"), makeCard("d4")];
+    const result = drawCards(deck, discard, [], 4);
+    expect(result.hand).toHaveLength(4);
+    expect(result.deck).toHaveLength(0);
+    expect(result.discard).toHaveLength(0);
+    const ids = result.hand.map((c: { id: string }) => c.id).sort();
+    expect(ids).toEqual(["d1", "d2", "d3", "d4"]);
+  });
+
+  it("both piles empty returns empty hand unchanged", () => {
+    const result = drawCards([], [], [], 4);
+    expect(result.hand).toHaveLength(0);
+    expect(result.deck).toHaveLength(0);
+    expect(result.discard).toHaveLength(0);
+  });
+
+  it("both piles empty with existing hand leaves hand unchanged", () => {
+    const hand = [makeCard("h1")];
+    const result = drawCards([], [], hand, 4);
+    expect(result.hand).toHaveLength(1);
+    expect(result.hand[0].id).toBe("h1");
+  });
+
+  it("draws single card from single-card deck with empty discard", () => {
+    const deck = [makeCard("d1")];
+    const result = drawCards(deck, [], [], 1);
+    expect(result.hand).toHaveLength(1);
+    expect(result.hand[0].id).toBe("d1");
+    expect(result.deck).toHaveLength(0);
+  });
+
+  it("drawing with near-full hand respects MAX_HAND_SIZE", () => {
+    const hand = Array.from({ length: 6 }, (_, i) => makeCard(`h${i}`));
+    const deck = [makeCard("d1"), makeCard("d2"), makeCard("d3")];
+    const result = drawCards(deck, [], hand, 4);
+    expect(result.hand).toHaveLength(7);
+    expect(result.deck).toHaveLength(2);
+  });
+
+  it("drawing 0 cards does nothing", () => {
+    const deck = [makeCard("d1")];
+    const hand = [makeCard("h1")];
+    const result = drawCards(deck, [], hand, 0);
+    expect(result.hand).toHaveLength(1);
+    expect(result.deck).toHaveLength(1);
+  });
+
+  it("all drawn cards get unique uids", () => {
+    const deck = [makeCard("d1"), makeCard("d2"), makeCard("d3")];
+    const result = drawCards(deck, [], [], 3, 100);
+    const uids = result.hand.map((c: { uid: number }) => c.uid);
+    expect(new Set(uids).size).toBe(3);
+    expect(uids).toEqual([100, 101, 102]);
   });
 });

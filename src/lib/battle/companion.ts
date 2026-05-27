@@ -6,6 +6,7 @@
 import { applyCardEffects } from "./apply-effects";
 import type { BattleCard, TalentEffectManifest } from "@/lib/game-data";
 import { type BattleState, type CombatTextEvent } from "./types";
+import { HALF_DIVISOR } from "../game-constants";
 
 function buildCompanionCard(
   activeCompanion: NonNullable<BattleState["activeCompanion"]>,
@@ -34,7 +35,7 @@ function buildCompanionCard(
               trinketEffects.companionDamageBonus +
               companionDamageBuff +
               (enemyFreezeSkipTurns > 0 ? talentEffects.companionVsFrozenBonus : 0) +
-              Math.round((maxMana * talentEffects.companionDamagePerManaCrystal) / 2),
+              Math.round((maxMana * talentEffects.companionDamagePerManaCrystal) / HALF_DIVISOR),
           }
         : e,
     ),

@@ -861,3 +861,50 @@ describe("forge threshold boundaries", () => {
     expect(result.playerStatuses.block).toBe(0);
   });
 });
+
+// ─── zero-duration status edge cases ───
+
+describe("zero-duration status edge cases", () => {
+  it("applying 0 burn to enemy leaves status unchanged", () => {
+    const state = createTestBattleState({
+      enemyHealth: 30,
+      enemyStatuses: { ...createTestBattleState().enemyStatuses, burn: 5 },
+    });
+    const effect = { kind: "damage" as const, damageType: "burn" as const, amount: 0 };
+    const result = applyDamageStatuses(state, effect, 0, []);
+    expect(result.enemyStatuses.burn).toBe(5);
+  });
+
+  it("applying 0 stun to enemy leaves stun unchanged", () => {
+    const state = createTestBattleState({
+      enemyHealth: 30,
+      enemyMaxHealth: 30,
+      enemyStatuses: { ...createTestBattleState().enemyStatuses, stun: 5 },
+    });
+    const effect = { kind: "damage" as const, damageType: "stun" as const, amount: 0 };
+    const result = applyDamageStatuses(state, effect, 0, []);
+    expect(result.enemyStatuses.stun).toBe(5);
+    expect(result.enemyStunSkipTurns).toBe(0);
+  });
+
+  it("applying 0 freeze to enemy leaves freeze unchanged", () => {
+    const state = createTestBattleState({
+      enemyHealth: 30,
+      enemyMaxHealth: 30,
+      enemyStatuses: { ...createTestBattleState().enemyStatuses, freeze: 5 },
+    });
+    const effect = { kind: "damage" as const, damageType: "freeze" as const, amount: 0 };
+    const result = applyDamageStatuses(state, effect, 0, []);
+    expect(result.enemyStatuses.freeze).toBe(5);
+    expect(result.enemyFreezeSkipTurns).toBe(0);
+  });
+
+  it("applying 0 player status via effect leaves player status unchanged", () => {
+    const state = createTestBattleState({
+      playerStatuses: { ...createTestBattleState().playerStatuses, block: 3 },
+    });
+    const effect = { kind: "player-status" as const, status: "block" as const, amount: 0 };
+    const result = applyPlayerStatusEffect(state, effect, []);
+    expect(result.playerStatuses.block).toBe(3);
+  });
+});

@@ -55,3 +55,21 @@ describe("@/features/alchemy/utils barrel", () => {
     expect(mod.tokenizeDescription).toBeTypeOf("function");
   });
 });
+
+describe("@/features/alchemy/storage barrel", () => {
+  it("exports known symbols", async () => {
+    // Storage module has module-level dependency on window for platform detection.
+    const origWindow = (globalThis as Record<string, unknown>).window;
+    (globalThis as Record<string, unknown>).window = {} as Window & typeof globalThis;
+    try {
+      const mod = await import("@/features/alchemy/storage");
+      expect(mod.loadAlchemySaveState).toBeTypeOf("function");
+      expect(mod.saveAlchemySaveData).toBeTypeOf("function");
+      expect(mod.clearAlchemySaveData).toBeTypeOf("function");
+      expect(mod.CURRENT_SAVE_SCHEMA_VERSION).toBeTypeOf("number");
+      expect(mod.CURRENT_CONTENT_VERSION).toBeTypeOf("number");
+    } finally {
+      (globalThis as Record<string, unknown>).window = origWindow;
+    }
+  });
+});

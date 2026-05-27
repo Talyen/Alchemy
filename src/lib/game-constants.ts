@@ -78,12 +78,18 @@ export const ALCHEMIST_POTION_PRICE = 20; // each potion costs 20g
 export const ALCHEMIST_REFRESH_PRICE = 20; // refresh rerolls the 3 potion options
 export const ALCHEMIST_MIX_PRICE = 40; // combine 2 potions from deck
 
+// ============ Draft ============
+export const DRAFT_ROUNDS = 6; // Number of draft rounds in draft-deck-screen.
+export const DRAFT_CHOICES = 3; // Cards offered per draft round.
+
 // ============ Rewards ============
 export const GOLD_REWARD_MIN = 10;
 export const GOLD_REWARD_MAX = 30; // Gold range per victory. ~20 average means you can afford a mid-tier shop item every ~3 fights.
 export const ELITE_GOLD_BONUS_FRACTION = 0.3; // Elite fights pay a modest bonus without eclipsing boss rewards.
 export const BOSS_GOLD_BONUS_FRACTION = 0.5; // Boss fights pay a larger bonus to mark act completion.
 export const REWARD_CARD_CHOICES = 3; // Card rewards offered after each victory.
+export const REWARD_TRINKET_CHANCE = 0.25; // Base chance of a trinket being offered as a reward.
+export const REWARD_RANDOM_CHANCE = 0.3; // Chance that a card reward ignores deck keyword affinity.
 export const DESTINATION_CHOICES = 3; // Path choices offered after each victory.
 export const DEFAULT_DESTINATION_WEIGHT = 10; // Normal route choices use even weighting before rare-route modifiers.
 export const CORRUPTION_DESTINATION_WEIGHT = DEFAULT_DESTINATION_WEIGHT; // Corruption appears like ordinary routes, but route flow prevents repeats.
@@ -242,6 +248,7 @@ export const ENEMY_STARTING_BLOCK = 6; // Starting-Block trait initial block val
 
 // ============ Labyrinth ============
 export const LABYRINTH_STURDY_MULTIPLIER = 1.3; // Sturdy modifier: +30% enemy max Health.
+export const LABYRINTH_STURDY_HEALTH_PCT = 30; // Sturdy modifier health % increase (matches LABYRINTH_STURDY_MULTIPLIER).
 export const LABYRINTH_BURNING_GROUND_DAMAGE = 2; // Burning Ground: 2 Burn to player each turn.
 export const LABYRINTH_LEECH_HEAL = 3; // Leeching: enemy heals 3 Health on their turn.
 export const LABYRINTH_MIN_CONNECTIONS = 1; // Minimum map node paths allowed during integrity checks.
@@ -251,6 +258,9 @@ export const FALLBACK_ENEMY_ATTACK = 8; // Default attack for malformed bestiary
 // ============ Enemy Trait Damage Modifiers ============
 export const TRAIT_DAMAGE_WEAKNESS = 2; // Enemy trait weakness multiplier (double damage).
 const TRAIT_DAMAGE_RESISTANCE = 0.5; // Enemy trait resistance multiplier (half damage).
+
+// ============ Wish ============
+export const WISH_CRYSTAL_GOLD_CHANCE = 0.5; // 50% chance that Wish Crystals grant gold instead of a card.
 
 // ============ Battle Core Rules ============
 export const BATTLE_CONFIG = {

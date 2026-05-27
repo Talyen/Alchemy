@@ -3,9 +3,8 @@
  * Depends on: types.ts.
  * Depended on by: apply-effects, card-play, damage, status-effects, enemy-turn, trinket-effects, wish.
  */
+import { harmfulPlayerStatusIds } from "@/lib/game-data";
 import type { BattleState, CombatTextEvent, NumericCombatTextEvent } from "./types";
-
-const hiddenStatusApplicationStats = new Set(["burn", "poison", "bleed", "freeze", "stun"]);
 
 // Narrows label-style combat text so numeric merging never assumes an amount exists.
 function isNoticeCombatText(event: CombatTextEvent) {
@@ -20,7 +19,7 @@ function isNumericCombatText(event: CombatTextEvent): event is NumericCombatText
 // Keeps harmful status applications out of floating numeric text while preserving
 // actual DoT damage events, which use kind="damage" and should still show as -N.
 export function shouldShowCombatText(event: CombatTextEvent) {
-  return event.kind !== "status" || !hiddenStatusApplicationStats.has(event.stat);
+  return event.kind !== "status" || !harmfulPlayerStatusIds.includes(event.stat as never);
 }
 
 // Centralizes combat text filtering and merging so effect reducers can report resolved

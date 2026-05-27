@@ -73,8 +73,7 @@ function shufflePool(): BattleCard[] {
   return pool;
 }
 
-const DRAFT_ROUNDS = 6;
-const CHOICES_PER_ROUND = 3;
+import { DRAFT_ROUNDS, DRAFT_CHOICES } from "@/lib/game-constants";
 
 export function DraftDeckScreen({ onComplete }: { onComplete: (draftedCards: BattleCard[]) => void }) {
   const [pool] = useState(() => shufflePool());
@@ -84,8 +83,8 @@ export function DraftDeckScreen({ onComplete }: { onComplete: (draftedCards: Bat
 
   const choices = useMemo(() => {
     if (pool.length === 0) return [];
-    const start = round * CHOICES_PER_ROUND;
-    return pool.slice(start, start + CHOICES_PER_ROUND);
+    const start = round * DRAFT_CHOICES;
+    return pool.slice(start, start + DRAFT_CHOICES);
   }, [pool, round]);
 
   const handlePick = useCallback(
