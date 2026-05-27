@@ -8,7 +8,7 @@ import type { TalentXP } from "@/lib/talents";
 import type { Setter } from "@/lib/utils";
 import type { RunStateFields } from "@/features/alchemy/run/run-state-init";
 
-export type RunStoreActions = {
+type RunStoreActions = {
   setRunDeck: Setter<BattleCard[]>;
   setRunGold: Setter<number>;
   setRunPlayerHealth: Setter<number>;
