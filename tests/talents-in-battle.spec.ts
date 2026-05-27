@@ -1,67 +1,26 @@
 import { expect, test } from "@playwright/test";
-import { enableFastMode, forceNextDestinationChoice, injectSaveState, makeCard, resumeGameMode } from "./helpers";
+import { enableFastMode, injectTalentUnlocks, makeCard, startBattleWithDeck } from "./helpers";
+import { BattlePage } from "./pages/battle-page";
 
 test.describe("Talents in Battle", () => {
   test("block-start talent gives starting block in combat", async ({ page }) => {
     await enableFastMode(page);
-    await page.addInitScript(() => {
-      const KEY = "alchemy-save-v1";
-      const save = JSON.parse(localStorage.getItem(KEY) || "{}");
-      save.unlockedTalents = { ...(save.unlockedTalents || {}), block: ["block-start"] };
-      save.discoveredCardIds = save.discoveredCardIds || ["slash"];
-      localStorage.setItem(KEY, JSON.stringify(save));
-    });
-
+    await injectTalentUnlocks(page, { block: ["block-start"] });
     const SLASH = makeCard();
-    await injectSaveState(page, {
-      runDeck: [SLASH, SLASH, SLASH, SLASH, SLASH, SLASH, SLASH, SLASH],
-      runPlayerHealth: 30,
-      runMaxHealth: 30,
-    });
-    await forceNextDestinationChoice(page, "Normal Combat");
-    await page.goto("/");
-    await resumeGameMode(page, "campaign");
-    await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 5000 });
-    await page.getByRole("button", { name: "Normal Combat" }).click();
-    await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 5000 });
+    await startBattleWithDeck(page, Array.from({ length: 8 }, () => SLASH));
 
     await expect(page.getByRole("button", { name: "Block 10" })).toBeVisible({ timeout: 3000 });
   });
 
   test("physical-brute-force talent increases physical damage dealt", async ({ page }) => {
     await enableFastMode(page);
-    await page.addInitScript(() => {
-      const KEY = "alchemy-save-v1";
-      const save = JSON.parse(localStorage.getItem(KEY) || "{}");
-      save.unlockedTalents = { ...(save.unlockedTalents || {}), physical: ["physical-brute-force"] };
-      save.discoveredCardIds = save.discoveredCardIds || ["slash"];
-      localStorage.setItem(KEY, JSON.stringify(save));
-    });
-
+    await injectTalentUnlocks(page, { physical: ["physical-brute-force"] });
     const SLASH = makeCard();
-    await injectSaveState(page, {
-      runDeck: [SLASH, SLASH, SLASH, SLASH, SLASH, SLASH, SLASH, SLASH],
-      runPlayerHealth: 30,
-      runMaxHealth: 30,
-    });
-    await forceNextDestinationChoice(page, "Normal Combat");
-    await page.goto("/");
-    await resumeGameMode(page, "campaign");
-    await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 5000 });
-    await page.evaluate(() => { window.disableForceDestination = true; });
-    await page.getByRole("button", { name: "Normal Combat" }).click();
-    await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 5000 });
+    await startBattleWithDeck(page, Array.from({ length: 8 }, () => SLASH));
+    const battle = new BattlePage(page);
 
-    const slash = page.locator('[aria-label="Play Slash"]').first();
-    await expect(slash).toBeVisible({ timeout: 2000 });
-
-    await slash.click();
-    const enemyHealthText = await page.locator("text=/\\d+\\//").last().textContent();
-    const enemyHpAfter = Number(enemyHealthText?.split("/")[0] ?? 30);
-    // Enemy took more damage than the baseline Slash (6) — talent bonus is active.
-    // Avoiding a hardcoded final value so HP or damage tuning won't break this test.
-    expect(enemyHpAfter).toBeGreaterThanOrEqual(0);
-    expect(enemyHpAfter).toBeLessThan(30 - 6); // less than 30 HP minus base Slash damage
+    await battle.playCardNamed("Slash");
+    const enemyHpAfter = await battle.enemyHealth();
+    expect(enemyHpAfter).toBeLessThan(30 - 6);
   });
-
 });

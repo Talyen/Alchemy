@@ -1,8 +1,9 @@
 import { expect, test } from "@playwright/test";
-import { enableFastMode, injectLabyrinthRun, makeCard, openGameModeSelect, selectGameMode, startBattleWithDeck, startCampaignBattle } from "./helpers";
+import { enableFastMode, injectLabyrinthRun, makeCard, openGameModeSelect, SAVE_KEY, selectGameMode, startBattleWithDeck, startCampaignBattle } from "./helpers";
 import { BattlePage } from "./pages/battle-page";
+import { critical } from "./playwright-tags";
 
-test.describe("Menu", () => {
+test.describe("Menu", critical, () => {
   test("all menu buttons are visible on the main menu", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByRole("button", { name: "Play" })).toBeVisible();
@@ -35,7 +36,7 @@ test.describe("Menu", () => {
   });
 });
 
-test.describe("Character Select", () => {
+test.describe("Character Select", critical, () => {
   test("all characters are selectable and starting run is mapped to localStorage", async ({ page }) => {
     await enableFastMode(page);
     await page.goto("/");
@@ -59,7 +60,7 @@ test.describe("Character Select", () => {
     await page.getByRole("button", { name: "Continue" }).click({ force: true });
     await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 5000 });
 
-    const saveStateJson = await page.evaluate(() => localStorage.getItem("alchemy-save-v1"));
+    const saveStateJson = await page.evaluate((saveKey) => localStorage.getItem(saveKey), SAVE_KEY);
     expect(saveStateJson).not.toBeNull();
     const save = JSON.parse(saveStateJson!);
     expect(save.activeRun?.characterId).toBe("knight");

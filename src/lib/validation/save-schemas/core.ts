@@ -1,0 +1,511 @@
+// Zod schemas for all persisted save data fields. This file is the validation layer only;
+// migration (version-to-version transforms) lives in migration.ts.
+// Depends on: game-data, homestead data, labyrinth modifiers, validation metadata, migration.
+// Used by: storage/io.ts (SaveDataSchema.safeParse), storage/migrations.ts (normalizeSaveData wrapper).
+import { z } from "zod";
+import {
+  characters,
+  companionLibrary,
+  DIFFICULTY_ORDER,
+  type CharacterId,
+  type CompanionId,
+  type DifficultyId,
+  type BattleCardEffect,
+} from "@/lib/game-data";
+import { LABYRINTH_MIN_CONNECTIONS, LABYRINTH_MAX_CONNECTIONS } from "@/lib/game-constants";
+import { logError } from "@/lib/error-logger";
+import { MATERIAL_IDS, type MaterialId } from "@/lib/homestead/types";
+import { ALL_LABYRINTH_MODIFIERS } from "@/lib/content-systems/labyrinth/modifiers";
+import type { LabyrinthModifierKind } from "@/lib/content-systems/types";
+
+export type ValidationError = { path: string; message: string };
+
+// Scoped error collector used during safeParseWithErrors.
+// caught() closures push field-level validation failures into the active collector
+// so safeParseWithErrors can return them alongside parsed data.
+class ErrorCollectorStack {
+  private stack: ValidationError[][] = [];
+
+  push(collector: ValidationError[]): void {
+    this.stack.push(collector);
+  }
+
+  pop(): void {
+    this.stack.pop();
+  }
+
+  current(): ValidationError[] | undefined {
+    return this.stack[this.stack.length - 1];
+  }
+
+  isEmpty(): boolean {
+    return this.stack.length === 0;
+  }
+}
+
+const errorCollectorStack = new ErrorCollectorStack();
+
+// Wraps schema.safeParse() to collect field-level validation errors from caught() preprocessors.
+// This is the only correct way to parse schemas that use the caught() helper.
+export function safeParseWithErrors<T>(
+  schema: z.ZodType<T>,
+  data: unknown,
+):
+  | { success: true; data: T; errors: ValidationError[] }
+  | { success: false; error: z.ZodError; errors: ValidationError[] } {
+  const errors: ValidationError[] = [];
+  errorCollectorStack.push(errors);
+  try {
+    const result = schema.safeParse(data);
+    return result.success
+      ? { success: true, data: result.data, errors }
+      : { success: false, error: result.error, errors };
+  } finally {
+    errorCollectorStack.pop();
+  }
+}
+
+// Wraps schema.catch() to collect and log validation failures instead of swallowing them.
+// Returns a preprocess pipeline: tries the inner schema, and on failure logs the error,
+// collects it in the current error list stack, and returns the fallback.
+// Returns result.data on success so the downstream schema.parse() is a no-op on already-valid data.
+export function caught<T>(schema: z.ZodType<T>, fallback: T, path: string): z.ZodType<T> {
+  return z.preprocess((val) => {
+    if (val == null) return fallback;
+    const result = schema.safeParse(val);
+    if (!result.success) {
+      const collector = errorCollectorStack.current();
+      collector?.push({ path, message: result.error.message });
+      logError(`[Save Validation] Field "${path}" invalid, fell back to default`, "validation", {
+        field: path,
+        error: result.error.message,
+      });
+      return fallback;
+    }
+    return result.data;
+  }, schema);
+}
+
+// Shared helper: deduplicates an unknown array into a string array, dropping non-strings.
+function deduplicateStrings(val: unknown): string[] {
+  return Array.isArray(val) ? [...new Set(val.filter((v): v is string => typeof v === "string"))] : [];
+}
+
+// Deduplicates a string array from save data: drops non-strings, deduplicates, defaults to [].
+export function deduplicatedStringArraySchema(path: string) {
+  return caught(z.preprocess(deduplicateStrings, z.array(z.string())), [], path);
+}
+
+// Zod enums need a non-empty tuple; this preserves runtime single sources of truth for save IDs.
+function toNonEmptyTuple<T extends string>(values: readonly T[], label: string): [T, ...T[]] {
+  if (values.length === 0) throw new Error(`${label} must define at least one value`);
+  return values as [T, ...T[]];
+}
+
+export const CHARACTER_IDS = toNonEmptyTuple(Object.keys(characters) as CharacterId[], "Character IDs");
+const DIFFICULTY_IDS = toNonEmptyTuple(DIFFICULTY_ORDER as readonly DifficultyId[], "Difficulty IDs");
+const COMPANION_IDS = toNonEmptyTuple(Object.keys(companionLibrary) as CompanionId[], "Companion IDs");
+const LABYRINTH_MODIFIER_KINDS = toNonEmptyTuple(
+  Object.keys(ALL_LABYRINTH_MODIFIERS) as LabyrinthModifierKind[],
+  "Labyrinth modifier kinds",
+);
+// Derived from the live MATERIAL_IDS list so new materials automatically get a zero default.
+export const MATERIAL_ZERO_INVENTORY = Object.fromEntries(MATERIAL_IDS.map((id) => [id, 0])) as Record<
+  MaterialId,
+  number
+>;
+
+// Builds a material schema from homestead material IDs so inventory validation follows content changes.
+function createMaterialInventoryShape() {
+  return MATERIAL_IDS.reduce(
+    (shape, id) => ({ ...shape, [id]: z.number().int().nonnegative().catch(0) }),
+    {} as Record<MaterialId, z.ZodCatch<z.ZodNumber>>,
+  );
+}
+
+// ===== String Enums =====
+export const CharacterIdSchema = z.enum(CHARACTER_IDS);
+export const DifficultyIdSchema = z.enum(DIFFICULTY_IDS);
+export const ContentSystemIdSchema = z.enum(["campaign", "labyrinth", "wildwood"]);
+export const DamageTypeSchema = z.enum([
+  "physical",
+  "stun",
+  "holy",
+  "burn",
+  "poison",
+  "bleed",
+  "freeze",
+  "nature",
+  "arrow",
+]);
+export const PlayerStatusIdSchema = z.enum([
+  "block",
+  "armor",
+  "forge",
+  "haste",
+  "burn",
+  "poison",
+  "bleed",
+  "freeze",
+  "stun",
+]);
+export const EnemyStatusIdSchema = z.enum(["burn", "poison", "bleed", "freeze", "stun"]);
+export const CompanionIdSchema = z.enum(COMPANION_IDS);
+export const LabyrinthNodeTypeSchema = z.enum([
+  "entrance",
+  "combat",
+  "elite",
+  "rest",
+  "mystery",
+  "shop",
+  "alchemist",
+  "boss",
+]);
+export const LabyrinthModifierKindSchema = z.enum(LABYRINTH_MODIFIER_KINDS);
+export const LabyrinthNodeStateSchema = z.enum(["hidden", "visible", "current", "cleared", "failed"]);
+export const AspectRatioOptionSchema = z.enum(["auto", "16:9", "16:10", "21:9"]);
+export const DisplayModeSchema = z.enum(["windowed", "borderless-fullscreen", "fullscreen"]);
+export const UiScaleSchema = z.enum(["90", "100", "110", "120"]);
+
+// ===== Material Inventory =====
+export const MaterialInventorySchema = z.object(createMaterialInventoryShape()).catch(MATERIAL_ZERO_INVENTORY);
+
+// ===== Talent / Progression =====
+export const TalentXPSchema = z.preprocess((val) => {
+  if (!val || typeof val !== "object") return {};
+  const result: Record<string, number> = {};
+  for (const [key, xp] of Object.entries(val as Record<string, unknown>)) {
+    if (typeof xp === "number" && Number.isFinite(xp) && xp >= 0) {
+      result[key] = Math.floor(xp);
+    } else {
+      console.warn(
+        `[Save Validation] Talent XP for key "${key}" dropped: expected a non-negative finite number, got ${typeof xp === "number" ? String(xp) : typeof xp}`,
+      );
+    }
+  }
+  return result;
+}, z.record(z.string(), z.number().int().nonnegative()).catch({}));
+
+// Shared preprocess for Record<string, string[]> schemas (talent unlocks, completed difficulties).
+// defaultFactory optionally provides initial keys, e.g. one entry per character.
+function recordOfStringArraysSchema(defaultFactory?: () => Record<string, string[]>) {
+  return z.preprocess(
+    (val) => {
+      if (!val || typeof val !== "object") return defaultFactory?.() ?? {};
+      const result: Record<string, string[]> = { ...(defaultFactory?.() ?? {}) };
+      for (const [key, ids] of Object.entries(val as Record<string, unknown>)) {
+        if (Array.isArray(ids)) {
+          result[key] = deduplicateStrings(ids);
+        } else if (defaultFactory) {
+          result[key] = result[key] ?? [];
+        }
+      }
+      return result;
+    },
+    z.record(z.string(), z.array(z.string())).catch({}),
+  );
+}
+
+export const UnlockedTalentsSchema = recordOfStringArraysSchema();
+
+export const CompletedDifficultiesSchema = recordOfStringArraysSchema(() =>
+  Object.fromEntries(CHARACTER_IDS.map((id) => [id, []])),
+);
+
+// ===== Tier Record (buildings, farms, research, companions) =====
+// Handles legacy string[] and current Record<id, level> formats with ID renames.
+export function createTierRecordSchema<T extends string>(
+  items: readonly { id: T; tiers: readonly unknown[] }[],
+  renameMap: Record<string, string> = {},
+): z.ZodType<Record<T, number>> {
+  const validIds = items.map((item) => item.id);
+  return z
+    .preprocess(
+      (val) => {
+        if (Array.isArray(val)) {
+          const result: Record<string, number> = {};
+          for (const rawId of val) {
+            const id = typeof rawId === "string" ? (renameMap[rawId] ?? rawId) : String(rawId);
+            result[id] = (result[id] ?? 0) + 1;
+          }
+          return result;
+        }
+        if (val && typeof val === "object") {
+          const result: Record<string, number> = {};
+          for (const [rawId, level] of Object.entries(val as Record<string, unknown>)) {
+            const id = renameMap[rawId] ?? rawId;
+            result[id] = typeof level === "number" && Number.isFinite(level) ? Math.max(0, Math.floor(level)) : 0;
+          }
+          return result;
+        }
+        return {};
+      },
+      z.record(z.string(), z.number().int().nonnegative().catch(0)),
+    )
+    .transform((data) => {
+      const result: Record<string, number> = {};
+      for (const id of validIds) {
+        const maxTier = items.find((item) => item.id === id)?.tiers.length ?? 0;
+        result[id] = Math.min(maxTier, Math.max(0, data[id] ?? 0));
+      }
+      return result as Record<T, number>;
+    });
+}
+
+// ===== BattleCardEffect (13-variant discriminated union) =====
+const DamageEffectSchema = z.object({
+  kind: z.literal("damage"),
+  damageType: DamageTypeSchema,
+  amount: z.number().finite(),
+  lifesteal: z.boolean().optional(),
+  equalToBlock: z.boolean().optional(),
+  equalToArmor: z.boolean().optional(),
+});
+
+const PlayerStatusEffectSchema = z.object({
+  kind: z.literal("player-status"),
+  status: z.enum(["block", "armor", "forge", "haste"]),
+  amount: z.number().finite(),
+});
+
+const HealEffectSchema = z.object({ kind: z.literal("heal"), amount: z.number().finite() });
+const RestoreManaEffectSchema = z.object({ kind: z.literal("restore-mana"), amount: z.number().finite() });
+const LoseManaEffectSchema = z.object({ kind: z.literal("lose-mana"), amount: z.number().finite() });
+const LoseMaxManaEffectSchema = z.object({ kind: z.literal("lose-max-mana"), amount: z.number().finite() });
+const GainMaxManaEffectSchema = z.object({ kind: z.literal("gain-max-mana"), amount: z.number().finite() });
+const GainGoldEffectSchema = z.object({ kind: z.literal("gain-gold"), amount: z.number().finite() });
+const WishEffectSchema = z.object({ kind: z.literal("wish"), amount: z.number().finite() });
+
+const SummonCompanionEffectSchema = z.object({
+  kind: z.literal("summon-companion"),
+  companionId: CompanionIdSchema,
+});
+
+const RemoveHarmfulStatusEffectSchema = z.object({
+  kind: z.literal("remove-harmful-status"),
+  amount: z.number().finite(),
+});
+
+const SelfDamageEffectSchema = z.object({
+  kind: z.literal("self-damage"),
+  damageType: EnemyStatusIdSchema,
+  amount: z.number().finite(),
+});
+
+const BuffCompanionEffectSchema = z.object({ kind: z.literal("buff-companion"), amount: z.number().finite() });
+
+const RemovePlayerStatusEffectSchema = z.object({
+  kind: z.literal("remove-player-status"),
+  status: EnemyStatusIdSchema,
+});
+
+const LoseHealthEffectSchema = z.object({
+  kind: z.literal("lose-health"),
+  amount: z.number().finite(),
+});
+
+const DrawCardsEffectSchema = z.object({
+  kind: z.literal("draw-cards"),
+  amount: z.number().finite(),
+});
+
+const RemoveEnemyArmorEffectSchema = z.object({
+  kind: z.literal("remove-enemy-armor"),
+  amount: z.number().finite(),
+});
+
+const MultiplyEnemyStatusEffectSchema = z.object({
+  kind: z.literal("multiply-enemy-status"),
+  status: EnemyStatusIdSchema,
+  factor: z.number().finite(),
+});
+
+export const BattleCardEffectSchema = z.discriminatedUnion("kind", [
+  DamageEffectSchema,
+  PlayerStatusEffectSchema,
+  HealEffectSchema,
+  RestoreManaEffectSchema,
+  LoseManaEffectSchema,
+  LoseMaxManaEffectSchema,
+  GainMaxManaEffectSchema,
+  GainGoldEffectSchema,
+  WishEffectSchema,
+  SummonCompanionEffectSchema,
+  RemoveHarmfulStatusEffectSchema,
+  SelfDamageEffectSchema,
+  BuffCompanionEffectSchema,
+  RemovePlayerStatusEffectSchema,
+  LoseHealthEffectSchema,
+  DrawCardsEffectSchema,
+  RemoveEnemyArmorEffectSchema,
+  MultiplyEnemyStatusEffectSchema,
+]);
+
+function parseSavedEffectList(values: unknown[]) {
+  const effects = values.flatMap((value, i) => {
+    const result = BattleCardEffectSchema.safeParse(value);
+    if (!result.success) {
+      const collector = errorCollectorStack.current();
+      collector?.push({ path: `effects[${i}]`, message: result.error.message });
+      console.warn(`[Save Validation] Card effect at index ${i} dropped:`, result.error.message);
+    }
+    return result.success ? [{ ...result.data }] : [];
+  });
+  return { effects, fullyValid: effects.length === values.length };
+}
+
+function cloneSavedDescriptionLines(values: unknown[]): string[] | null {
+  const allStrings = values.every((line) => typeof line === "string");
+  if (!allStrings) {
+    const collector = errorCollectorStack.current();
+    collector?.push({ path: "descriptionLines", message: "contained non-string values" });
+    console.warn(`[Save Validation] Card description lines contained non-string values`);
+  }
+  return allStrings ? [...values] : null;
+}
+
+// ===== BattleCard =====
+export const BattleCardSchema = z
+  .object({
+    id: z.string(),
+    uid: z.number().int().optional(),
+    title: z.string(),
+    descriptionLines: z.array(z.unknown()).optional(),
+    art: z.string(),
+    cost: z.union([z.number(), z.nan()]).catch(-1),
+    consume: z.boolean().optional(),
+    corrupted: z.boolean().optional(),
+    corruptedValuePositions: z
+      .array(
+        z
+          .object({
+            lineIndex: z.number().int().nonnegative().catch(0),
+            matchIndex: z.number().int().nonnegative().catch(0),
+          })
+          .nullable()
+          .catch(null),
+      )
+      .optional(),
+    baseTitle: z.string().optional(),
+    effects: z.array(z.unknown()).optional(),
+  })
+  .transform((saved) => {
+    const savedDescriptionLines = saved.descriptionLines ? cloneSavedDescriptionLines(saved.descriptionLines) : null;
+    const savedEffects = saved.effects ? parseSavedEffectList(saved.effects) : { effects: [], fullyValid: false };
+    const corruptedValuePositions = Array.isArray(saved.corruptedValuePositions)
+      ? saved.corruptedValuePositions.filter(
+          (p) =>
+            p &&
+            typeof p === "object" &&
+            Number.isInteger(p.lineIndex) &&
+            Number.isInteger(p.matchIndex) &&
+            p.lineIndex >= 0 &&
+            p.matchIndex >= 0,
+        )
+      : undefined;
+    const cost =
+      Number.isFinite(saved.cost) && Number.isInteger(saved.cost) && saved.cost >= 0 ? Math.floor(saved.cost) : -1;
+    return {
+      id: saved.id,
+      uid: saved.uid,
+      title: saved.title,
+      descriptionLines: savedDescriptionLines ?? [],
+      art: saved.art,
+      cost,
+      consume: saved.consume,
+      corrupted: saved.corrupted,
+      baseTitle: saved.baseTitle,
+      corruptedValuePositions:
+        corruptedValuePositions && corruptedValuePositions.length > 0 ? corruptedValuePositions : undefined,
+      effects: savedEffects.effects as BattleCardEffect[],
+      effectsFullyValid: savedEffects.fullyValid,
+      descriptionLinesFullyValid: savedDescriptionLines !== null,
+    };
+  });
+
+// ===== Labyrinth Node + Map =====
+const VALID_LABYRINTH_MODIFIER_KINDS: ReadonlySet<string> = new Set(LABYRINTH_MODIFIER_KINDS);
+
+// Not exported — used only as a Zod preprocess argument within this file.
+function filterLabyrinthModifiers(val: unknown): string[] {
+  if (!Array.isArray(val)) return [];
+  return val.filter((v): v is string => typeof v === "string" && VALID_LABYRINTH_MODIFIER_KINDS.has(v));
+}
+
+export const LabyrinthModifierArraySchema = z
+  .preprocess(filterLabyrinthModifiers, z.array(LabyrinthModifierKindSchema))
+  .catch([]);
+
+export const LabyrinthNodeSchema = z
+  .object({
+    type: LabyrinthNodeTypeSchema,
+    modifiers: LabyrinthModifierArraySchema,
+    rewardModifiers: LabyrinthModifierArraySchema,
+    connections: z
+      .array(
+        z.object({
+          row: z.number().int().nonnegative().catch(0),
+          col: z.number().int().nonnegative().catch(0),
+        }),
+      )
+      .catch([]),
+    state: LabyrinthNodeStateSchema,
+    enemyId: z.string().optional(),
+  })
+  .nullable()
+  .catch(null);
+
+export const LabyrinthMapSchema = z
+  .object({
+    grid: z.array(z.array(LabyrinthNodeSchema)),
+    rows: z.number().int().nonnegative().catch(0),
+    cols: z.number().int().nonnegative().catch(0),
+    currentNode: z
+      .object({
+        row: z.number().int().nonnegative().catch(0),
+        col: z.number().int().nonnegative().catch(0),
+      })
+      .catch({ row: 0, col: 0 }),
+  })
+  .refine(
+    (map) => {
+      if (map.rows <= 0 || map.cols <= 0) return false;
+      if (map.grid.length !== map.rows) return false;
+      if (map.grid.some((row) => row.length !== map.cols)) return false;
+      const current = map.grid[map.currentNode.row]?.[map.currentNode.col];
+      if (!current) return false;
+      let entranceCount = 0;
+      let bossCount = 0;
+      let currentCount = 0;
+      for (let r = 0; r < map.rows; r++) {
+        const row = map.grid[r];
+        if (!row) return false;
+        for (let c = 0; c < map.cols; c++) {
+          const node = row[c];
+          if (!node) continue;
+          if (node.type === "entrance") entranceCount++;
+          if (node.type === "boss") bossCount++;
+          if (node.state === "current") {
+            currentCount++;
+            if (map.currentNode.row !== r || map.currentNode.col !== c) return false;
+          }
+          if (
+            node.connections.length < LABYRINTH_MIN_CONNECTIONS ||
+            node.connections.length > LABYRINTH_MAX_CONNECTIONS
+          )
+            return false;
+          for (const conn of node.connections) {
+            const target = map.grid[conn.row]?.[conn.col];
+            if (!target) return false;
+            const dr = Math.abs(conn.row - r);
+            const dc = Math.abs(conn.col - c);
+            if (!((dr === 1 && dc === 0) || (dr === 0 && dc === 1))) return false;
+          }
+        }
+      }
+      return entranceCount === 1 && bossCount === 1 && currentCount === 1;
+    },
+    { message: "Invalid labyrinth map structure" },
+  )
+  .nullable()
+  .catch(null);

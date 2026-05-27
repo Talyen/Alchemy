@@ -29,8 +29,8 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test --project chromium",
-    "test:e2e:smoke": "playwright test tests/alchemy.spec.ts --project chromium -g \"App Boot\"",
-    "test:e2e:critical": "playwright test --project chromium --grep \"App Boot|Block Mechanics|Victory Rewards|Battle Flow|Character Select|Collection|Options Screen|Game Over|Mobile Portrait\"",
+    "test:e2e:smoke": "playwright test --project chromium --grep @smoke",
+    "test:e2e:critical": "playwright test --project chromium --grep @critical",
     "test:e2e:ui": "playwright test --project chromium --ui",
     "balance:sim": "cross-env ALCHEMY_BALANCE_SIM=1 vitest run tests/balance/balance-report.test.ts --reporter=verbose && start \"\" reports\\balance-report.html",
     "check": "npm ci --dry-run && npm run deadcode && npm run format:check && npm run lint && npm test && npm run build",
@@ -106,7 +106,6 @@
   },
   "knip": {
     "entry": [
-      "src/main.tsx",
       "src/App.tsx",
       "src/lib/game-data/index.ts",
       "src/lib/battle/index.ts",
@@ -123,6 +122,9 @@
     "ignoreBinaries": [
       "start"
     ],
+    "ignoreIssues": {
+      "tests/playwright-tags.ts": ["exports"]
+    },
     "ignoreDependencies": [
       "electron",
       "react",

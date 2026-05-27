@@ -1,5 +1,5 @@
 // Game over screen — shows defeat message and talent XP earned this run.
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
 
 import { Button } from "@/components/ui/button";
@@ -64,9 +64,14 @@ export function GameOverScreen({ onMainMenu }: { onMainMenu: () => void }) {
   );
   const runEndMaterials = useScreenStore((s) => s.runEndMaterials);
   const [animate, setAnimate] = useState(false);
-  const keywordIds = (Object.keys(runTalentXP) as KeywordId[]).filter(
-    (kw) => !keywordDefinitions[kw]?.hidden && (runTalentXP[kw] ?? 0) > 0,
+  const keywordIds = useMemo(
+    () =>
+      (Object.keys(runTalentXP) as KeywordId[]).filter(
+        (kw) => !keywordDefinitions[kw]?.hidden && (runTalentXP[kw] ?? 0) > 0,
+      ),
+    [runTalentXP],
   );
+  const earnedMaterials = useMemo(() => MATERIAL_IDS.filter((mat) => runEndMaterials[mat] > 0), [runEndMaterials]);
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => setAnimate(true));
@@ -97,10 +102,10 @@ export function GameOverScreen({ onMainMenu }: { onMainMenu: () => void }) {
         </div>
       )}
 
-      {MATERIAL_IDS.filter((mat) => runEndMaterials[mat] > 0).length > 0 && (
+      {earnedMaterials.length > 0 && (
         <div className="flex flex-wrap items-center justify-center gap-2 text-sm font-medium text-muted-foreground">
           Found
-          {MATERIAL_IDS.filter((mat) => runEndMaterials[mat] > 0).map((mat) => (
+          {earnedMaterials.map((mat) => (
             <MaterialPill key={mat} material={mat} amount={runEndMaterials[mat]} />
           ))}
         </div>

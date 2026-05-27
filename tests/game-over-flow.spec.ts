@@ -1,8 +1,9 @@
 import { expect, test } from "@playwright/test";
 import { enableFastMode, makeCard, startAtDestination, startBattleWithDeck } from "./helpers";
 import { BattlePage } from "./pages/battle-page";
+import { critical } from "./playwright-tags";
 
-test.describe("Game Over via End Run", () => {
+test.describe("Game Over via End Run", critical, () => {
   test("ending a run shows defeat screen and return to menu works", async ({ page }) => {
     await enableFastMode(page);
     await startBattleWithDeck(page, Array.from({ length: 6 }, () => makeCard()));

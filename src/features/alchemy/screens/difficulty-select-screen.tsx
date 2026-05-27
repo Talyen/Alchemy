@@ -10,7 +10,7 @@ import difficulty1Art from "@/assets/optimized/difficulty-1.webp";
 import difficulty2Art from "@/assets/optimized/difficulty-2.webp";
 import difficulty3Art from "@/assets/optimized/difficulty-3.webp";
 
-import { KeywordToken } from "../ui/card-ui";
+import { KeywordToken } from "../ui/card-description-ui";
 import { KeywordTag } from "../ui/keyword-tag";
 import { ScreenHeader, ShimmerOverlay } from "../ui/shared-ui";
 import { clearTiltFromEvent, setTiltFromEvent, tokenizeDescription } from "../utils";

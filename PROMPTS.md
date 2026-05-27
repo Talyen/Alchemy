@@ -93,10 +93,10 @@ rg "useStore\(\)" src -g "*.tsx"
 
 **Checklist:**
 
-1. **Manifest field not populated.** New `TalentEffectManifest` fields must be set in `computeTalentEffects()` (`src/lib/game-data/talents.ts`). New `TrinketManifest` fields must be wired in the `trinketEffects` record in `src/lib/trinkets.ts`, returned by `computeTrinketManifest()`, and applied at battle init (`createBattleState` / `draw.ts`) — or they stay silently `undefined`.
+1. **Manifest field not populated.** New `TalentEffectManifest` fields need defaults in `src/lib/game-data/talents/manifest-defaults.ts` (`DEFAULT_TALENT_EFFECTS`) and are folded by `computeTalentEffects()` in `src/lib/game-data/talents/compute.ts`. New `TrinketManifest` fields must be wired in the `trinketEffects` record in `src/lib/trinkets.ts`, returned by `computeTrinketManifest()`, and applied at battle init (`createBattleState` in `src/lib/battle/draw.ts`, start-heal via `src/features/alchemy/battle/battle-start.ts`) — or they stay silently `undefined`.
 2. **State spread drops fields.** `{ ...state, nested: { x } }` drops siblings — use `{ ...state, nested: { ...state.nested, x } }`.
 3. **Zustand equality.** New object/array references re-render with default `Object.is`. Use granular selectors or `useShallow` for multi-field picks.
-4. **Dual talents files.** Data defaults: `src/lib/game-data/talents.ts`. XP math: `src/lib/talents.ts` — do not confuse them.
+4. **Dual talents files.** Data defaults + manifest: `src/lib/game-data/talents/` (`manifest-defaults.ts`, `compute.ts`, pool). XP math: `src/lib/talents.ts` — do not confuse them.
 5. **Deep imports.** Prefer barrels (`@/lib/game-data`, `@/lib/battle`) over `@/lib/game-data/foo.ts` unless intentional.
 
 **When done:**
@@ -343,7 +343,7 @@ rg "React\.lazy|lazy\(\)|Suspense" src/app/screen-routes.tsx src/features/alchem
 - **Memoization.** `.filter().map()` chains in render → `useMemo`. No heavy work in render.
 - **Hooks.** `useEffect` / `useMemo` / `useCallback` deps complete — no stale closures.
 - **`[Enemy Turn]` warnings** in `enemy-turn.ts` — implement handler or justify.
-- **Dev mode.** `localStorage["alchemy-dev-mode"]` must not change production behavior.
+- **Dev mode.** Skip Combat and Unlock All require `import.meta.env.DEV`. Playwright uses `alchemy-skip-loading-screen` for the startup gate only.
 - **Upfront loading (required policy).** One startup gate, then instant navigation — see [AGENTS.md § Startup & upfront loading](./AGENTS.md#startup--upfront-loading):
   - **Images/fonts:** `allGameArt` + `useInitialLoadReady` — do not lazy-load game art or add per-screen asset spinners.
   - **Route screens:** static imports in `screen-routes.tsx` only — **no** `React.lazy()`, **no** route-level `Suspense` / "Loading …" fallbacks.

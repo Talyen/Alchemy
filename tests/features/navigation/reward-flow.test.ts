@@ -28,9 +28,16 @@ vi.mock("@/features/alchemy/reward-utils", async (importOriginal) => {
   return {
     ...actual,
     selectRewardCards: vi.fn(() => [{ id: "mock-card", title: "Mock", descriptionLines: [""], art: "", cost: 1, effects: [] }]),
-    selectRewardTrinkets: vi.fn(() => [{ id: "mock-trinket", title: "Mock Trinket", description: "", art: "" }]),
     REWARD_TRINKET_CHANCE: 0.1,
     REWARD_RANDOM_CHANCE: 0,
+  };
+});
+
+vi.mock("@/features/alchemy/utils", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/alchemy/utils")>();
+  return {
+    ...actual,
+    sampleItems: vi.fn(() => [{ id: "mock-trinket", title: "Mock Trinket", description: "", art: "" }]),
   };
 });
 

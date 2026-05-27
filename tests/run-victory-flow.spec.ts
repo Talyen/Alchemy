@@ -1,25 +1,15 @@
 import { expect, test } from "@playwright/test";
-import { enableFastMode, injectSaveState, makeHighDamageCard, playUntilVictory, resumeGameMode, seedRandomScript } from "./helpers";
+import { enableFastMode, injectBossState, resumeGameMode, seedRandom } from "./helpers";
+import { BattlePage } from "./pages/battle-page";
+import { DestinationPage } from "./pages/destination-page";
+import { RewardPage } from "./pages/reward-page";
+import { critical } from "./playwright-tags";
 
-function injectBossState(page: Parameters<typeof test>[0]["page"], act = 1) {
-  const highDamageCard = makeHighDamageCard();
-  return injectSaveState(page, {
-    characterId: "knight",
-    runDeck: Array.from({ length: 6 }, () => ({ ...highDamageCard })),
-    roomsEncountered: 7,
-    destinationIndexInAct: 7,
-    currentAct: act,
-    completedDestinations: Array.from({ length: 7 }, () => "Normal Combat"),
-    runPlayerHealth: 30,
-    runMaxHealth: 30,
-  });
-}
-
-test.describe("Boss Fight Flow", () => {
+test.describe("Boss Fight Flow", critical, () => {
   test("beating Act I boss completes victory flow and displays Act II destination choices", async ({ page }) => {
     await enableFastMode(page);
     await injectBossState(page);
-    await page.addInitScript(seedRandomScript(42));
+    await seedRandom(page, 42);
     await page.goto("/");
     await resumeGameMode(page, "campaign");
 
@@ -30,34 +20,32 @@ test.describe("Boss Fight Flow", () => {
     await bossBtn.click();
     await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 5000 });
 
-    await playUntilVictory(page);
-    await expect(page.getByRole("heading", { name: /^Victory/ })).toBeVisible({ timeout: 5000 });
+    await new BattlePage(page).winViaCombat();
 
-    await page.locator('[aria-label^="Select "]').first().click();
-    await page.getByRole("button", { name: /^(Add Card|Take Trinket)$/ }).click();
+    await new RewardPage(page).claimFirstReward();
 
-    await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 5000 });
-
+    const destination = new DestinationPage(page);
+    await destination.expectVisible();
     const destinationBtns = page.locator("button").filter({ hasText: /Combat|Campfire|Merchant|Alchemist|Mystery|Corruption/ });
     await expect(destinationBtns.first()).toBeVisible({ timeout: 3000 });
-    const count = await destinationBtns.count();
-    expect(count).toBeGreaterThanOrEqual(1);
+    expect(await destinationBtns.count()).toBeGreaterThanOrEqual(1);
   });
 
   test("defeating Act III boss shows run victory screen", async ({ page }) => {
     await enableFastMode(page);
     await injectBossState(page, 3);
-    await page.addInitScript(seedRandomScript(42));
+    await seedRandom(page, 42);
     await page.goto("/");
     await resumeGameMode(page, "campaign");
 
     await expect(page.getByRole("button", { name: "Boss Combat" })).toBeVisible({ timeout: 5000 });
     await page.getByRole("button", { name: "Boss Combat" }).click();
     await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 5000 });
-    await playUntilVictory(page);
+    await new BattlePage(page).winViaCombat();
 
-    await page.locator('[aria-label^="Select "]').first().click();
-    await page.getByRole("button", { name: /Take Trinket/ }).click();
+    const reward = new RewardPage(page);
+    await reward.selectFirstReward();
+    await reward.addRewardBtn.click();
 
     await expect(page.getByRole("heading", { name: /Victory|Triumph|Run Complete/i })).toBeVisible({ timeout: 5000 });
     await expect(page.getByRole("button", { name: /Main Menu/ })).toBeVisible({ timeout: 3000 });

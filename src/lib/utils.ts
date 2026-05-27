@@ -14,6 +14,16 @@ export function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
 }
 
+// Inclusive integer in [min, max].
+export function randomInt(min: number, max: number, rng: () => number = Math.random) {
+  return Math.floor(rng() * (max - min + 1) + min);
+}
+
+// First character uppercased for display labels (damage types, statuses, etc.).
+export function capitalizeWord(value: string) {
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
 // Fisher-Yates shuffle — O(n), unbiased, in-place on a clone.
 export function shuffle<T>(items: readonly T[], rng: () => number = Math.random): T[] {
   const shuffled = [...items];
@@ -53,3 +63,11 @@ export function appendUniqueMany<T>(items: readonly T[], additions: readonly T[]
 }
 
 export type Setter<T> = (action: T | ((prev: T) => T)) => void;
+
+// Adapts Zustand setters to React Dispatch<SetStateAction> call sites.
+export function wrapStoreSetter<T>(getCurrent: () => T, setter: (value: T) => void): Setter<T> {
+  return (action) => {
+    const nextVal = typeof action === "function" ? (action as (prev: T) => T)(getCurrent()) : action;
+    setter(nextVal);
+  };
+}

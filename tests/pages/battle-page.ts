@@ -42,12 +42,13 @@ export class BattlePage {
   }
 
   async playCardNamed(name: string) {
-    await this.page.getByRole("button", { name: `Play ${name}` }).click();
+    await this.page.getByRole("button", { name: `Play ${name}` }).first().click();
   }
 
   async endTurn() {
+    if (await this.isBattleOver()) return;
     await expect(this.endTurnBtn).toBeEnabled({ timeout: 5000 });
-    await this.endTurnBtn.click();
+    await this.endTurnBtn.click({ force: true });
     await expect(this.endTurnBtn).toBeEnabled({ timeout: 7000 }).catch(async (e) => {
       if (await this.isBattleOver()) return;
       throw e;
@@ -71,9 +72,31 @@ export class BattlePage {
       const card = this.hand.filter({ visible: true }).first();
       if (!(await card.isVisible({ timeout: 1000 }).catch(() => false))) break;
       if (!(await card.isEnabled({ timeout: 1000 }).catch(() => false))) break;
-      await card.click();
+      await card.click({ force: true, timeout: 2000 }).catch(async (e) => {
+        if (await this.isBattleOver()) return;
+        throw e;
+      });
       if (await this.isBattleOver()) return;
     }
+  }
+
+  async skipCombatToVictory() {
+    await expect(this.skipCombatBtn).toBeVisible({ timeout: 3000 });
+    await this.skipCombatBtn.click();
+    await expect(this.victoryHeading).toBeVisible({ timeout: 3000 });
+  }
+
+  /** Win by playing cards and ending turns — works in preview/production builds without dev skip. */
+  async winViaCombat(maxTurns = 12) {
+    for (let turn = 0; turn < maxTurns; turn++) {
+      if (await this.isBattleOver()) break;
+      await this.playAllCards();
+      if (await this.isVictoryVisible()) break;
+      if (await this.isBattleOver()) break;
+      await this.endTurn();
+      if (await this.isVictoryVisible()) break;
+    }
+    await expect(this.victoryHeading).toBeVisible({ timeout: 8000 });
   }
 
 }

@@ -77,7 +77,7 @@ function getMysteryCardPool() {
 }
 
 // Shared card reward mutation keeps discovery tracking aligned with deck changes.
-export function addCardToRun(
+function addCardToRun(
   card: BattleCard,
   context: Pick<MysteryEffectContext, "setRunDeck" | "setDiscoveredCardIds">,
 ): void {

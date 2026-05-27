@@ -2,7 +2,7 @@
 // Depends on the battle combat-text helper and type contracts.
 import { describe, expect, it } from "vitest";
 
-import { mergeCombatText, shouldShowCombatText } from "@/lib/battle/combat-text";
+import { emitOverhealBlockText, mergeCombatText, shouldShowCombatText } from "@/lib/battle/combat-text";
 import type { CombatTextEvent } from "@/lib/battle/types";
 
 function makeTexts(): CombatTextEvent[] {
@@ -52,5 +52,23 @@ describe("mergeCombatText", () => {
     mergeCombatText(texts, { target: "enemy", kind: "notice", stat: "stun", text: "Stunned" });
     mergeCombatText(texts, { target: "enemy", kind: "notice", stat: "stun", text: "Stunned" });
     expect(texts).toEqual([{ target: "enemy", kind: "notice", stat: "stun", text: "Stunned" }]);
+  });
+});
+
+describe("emitOverhealBlockText", () => {
+  it("emits block combat text when overheal increases block", () => {
+    const base = { block: 2, armor: 0, forge: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0, haste: 0 };
+    const before = { playerStatuses: base };
+    const after = { playerStatuses: { ...base, block: 7 } };
+    const texts = makeTexts();
+    emitOverhealBlockText(before, after, texts);
+    expect(texts).toEqual([{ target: "player", kind: "status", stat: "block", amount: 5 }]);
+  });
+
+  it("no-ops when block did not increase", () => {
+    const statuses = { block: 4, armor: 0, forge: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0, haste: 0 };
+    const texts = makeTexts();
+    emitOverhealBlockText({ playerStatuses: statuses }, { playerStatuses: statuses }, texts);
+    expect(texts).toEqual([]);
   });
 });

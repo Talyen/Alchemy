@@ -8,8 +8,7 @@ import { useBattleStore } from "../stores/battle-store";
 import { useRunStore } from "../stores/run-store";
 import { appendUnique } from "@/lib/utils";
 import { getBattleStartPlayerHealth } from "./battle-start";
-import type { RunStateController } from "../use-run-state";
-import type { TalentStateController } from "../use-talent-state";
+import type { RunStateController, TalentStateController } from "../stores/run-store";
 
 export type BattleInitDeps = {
   run: RunStateController;

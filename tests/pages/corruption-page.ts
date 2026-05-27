@@ -1,4 +1,5 @@
 import { expect, type Page } from "@playwright/test";
+import { startAtDestination } from "../helpers";
 
 export class CorruptionPage {
   constructor(private page: Page) {}
@@ -9,6 +10,11 @@ export class CorruptionPage {
   readonly leaveBtn = this.page.getByRole("button", { name: "Leave" });
   readonly continueBtn = this.page.getByRole("button", { name: "Continue" });
   readonly cardGrid = this.page.locator('[data-testid="card-selection-grid"]');
+
+  async open() {
+    await startAtDestination(this.page, {}, { forceDestination: "Corruption" });
+    await this.page.getByRole("button", { name: "Corruption" }).click();
+  }
 
   async selectAndCorrupt(index = 0) {
     await this.corruptBtn.click();

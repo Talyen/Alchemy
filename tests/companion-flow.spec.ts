@@ -12,7 +12,7 @@ test.describe("Companion Battle Behavior", () => {
     await startBattleWithDeck(page, COMPANION_DECK);
     const battle = new BattlePage(page);
 
-    await page.getByRole("button", { name: "Play Wolf" }).first().click();
+    await battle.playCardNamed("Wolf");
     await expect(battle.companionPanel).toBeVisible({ timeout: 3000 });
     await expect(battle.companionPanel).toHaveAttribute("aria-label", "Active companion: Wolf Companion");
     expect(errors).toEqual([]);
@@ -24,7 +24,7 @@ test.describe("Companion Battle Behavior", () => {
     await startBattleWithDeck(page, COMPANION_DECK);
     const battle = new BattlePage(page);
 
-    await page.getByRole("button", { name: "Play Wolf" }).first().click();
+    await battle.playCardNamed("Wolf");
     await expect(battle.companionPanel).toBeVisible({ timeout: 3000 });
 
     const enemyHpBefore = await battle.enemyHealth();
@@ -42,7 +42,7 @@ test.describe("Companion Battle Behavior", () => {
     await startBattleWithDeck(page, COMPANION_DECK);
     const battle = new BattlePage(page);
 
-    await page.getByRole("button", { name: "Play Wolf" }).first().click();
+    await battle.playCardNamed("Wolf");
     await expect(battle.companionPanel).toBeVisible({ timeout: 3000 });
 
     await battle.endTurn();

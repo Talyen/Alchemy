@@ -1,13 +1,13 @@
 import { expect, test } from "@playwright/test";
-import { selectGameMode } from "./helpers";
+import { selectGameMode, SAVE_KEY } from "./helpers";
 
 test.describe("Difficulty Select", () => {
   test.beforeEach(async ({ page }) => {
-    await page.addInitScript(() => {
-      const save = JSON.parse(localStorage.getItem("alchemy-save-v1") || "{}");
+    await page.addInitScript((saveKey) => {
+      const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
       save.completedDifficulties = { knight: ["difficulty-1"], wizard: ["difficulty-1"] };
-      localStorage.setItem("alchemy-save-v1", JSON.stringify(save));
-    });
+      localStorage.setItem(saveKey, JSON.stringify(save));
+    }, SAVE_KEY);
   });
 
   test("difficulty screen shows all three cards with correct unlock states", async ({ page }) => {

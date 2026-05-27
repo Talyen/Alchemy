@@ -1,8 +1,19 @@
 import { expect, test } from "@playwright/test";
-import { ANVIL_CARD, enableFastMode, MANA_BERRIES_CARD, makeCard, makeHighDamageCard, startAtDestination, startBattleWithDeck, playUntilVictory, skipBattleAndClaimReward } from "./helpers";
+import { ANVIL_CARD, enableFastMode, MANA_BERRIES_CARD, makeCard, makeHighDamageCard, startAtDestination, startBattleWithDeck, skipBattleAndClaimReward } from "./helpers";
 import { BattlePage } from "./pages/battle-page";
+import { DestinationPage } from "./pages/destination-page";
+import { RewardPage } from "./pages/reward-page";
+import { critical } from "./playwright-tags";
 
-test.describe("Battle Flow", () => {
+test.describe("Battle Flow", critical, () => {
+  test("normal combat can be won by playing cards and ending turns", async ({ page }) => {
+    await enableFastMode(page);
+    await startBattleWithDeck(page, Array.from({ length: 6 }, () => makeHighDamageCard()));
+    const battle = new BattlePage(page);
+    await battle.winViaCombat();
+    await expect(battle.victoryHeading).toBeVisible();
+  });
+
   test("playing a card consumes mana and applies effects", async ({ page }) => {
     await enableFastMode(page);
     await startBattleWithDeck(page, Array.from({ length: 6 }, () => makeCard()));
@@ -33,7 +44,7 @@ test.describe("Battle Flow", () => {
     await startBattleWithDeck(page, [ANVIL_CARD, ANVIL_CARD, ANVIL_CARD, ANVIL_CARD, ANVIL_CARD, ANVIL_CARD]);
     const battle = new BattlePage(page);
 
-    await page.getByRole("button", { name: "Play Anvil" }).first().click();
+    await battle.playCardNamed("Anvil");
     await expect(page.getByRole("button", { name: "Forge 1" })).toBeVisible();
 
     await battle.endTurn();
@@ -49,7 +60,7 @@ test.describe("Mana Mechanics", () => {
 
     const maxMana = await battle.mana();
     expect(maxMana).toBeGreaterThan(0);
-    await page.getByRole("button", { name: "Play Mana Berries" }).first().click();
+    await battle.playCardNamed("Mana Berries");
     const manaAfter = await battle.mana();
     expect(manaAfter).toBeGreaterThan(maxMana);
   });
@@ -118,20 +129,18 @@ test.describe("Card Interactions", () => {
   test("campfire screen restores Health and continues to next battle", async ({ page }) => {
     await startAtDestination(page, { runPlayerHealth: 10, runMaxHealth: 30 }, { forceDestination: "Campfire" });
 
-    const campfireBtn = page.getByRole("button", { name: "Campfire" });
-    await expect(campfireBtn).toBeVisible({ timeout: 5000 });
-    await campfireBtn.click();
+    const destination = new DestinationPage(page);
+    await destination.pick("Campfire");
 
     await expect(page.getByRole("button", { name: "Rest" })).toBeVisible({ timeout: 3000 });
     await page.evaluate(() => { Math.random = () => 0; });
     await page.getByRole("button", { name: "Rest" }).click();
-    await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 5000 });
-    await page.getByRole("button", { name: "Normal Combat" }).click();
-    await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 5000 });
+    await destination.expectVisible();
+    await destination.enterCombat("Normal Combat");
   });
 });
 
-test.describe("Elite Combat", () => {
+test.describe("Elite Combat", critical, () => {
   test("elite combat destination starts a battle that can be won", async ({ page }) => {
     await startAtDestination(
       page,
@@ -139,15 +148,9 @@ test.describe("Elite Combat", () => {
       { forceDestination: "Elite Combat" },
     );
 
-    const eliteBtn = page.getByRole("button", { name: "Elite Combat" });
-    await expect(eliteBtn).toBeVisible({ timeout: 3000 });
-    await eliteBtn.click();
-    await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 5000 });
-
-    await playUntilVictory(page);
-    await expect(page.getByRole("heading", { name: /^Victory/ })).toBeVisible();
-    await page.locator('[aria-label^="Select "]').first().click();
-    await page.getByRole("button", { name: /^(Add Card|Take Trinket)$/ }).click();
-    await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 3000 });
+    await new DestinationPage(page).enterCombat("Elite Combat");
+    await new BattlePage(page).winViaCombat();
+    await new RewardPage(page).claimFirstReward();
+    await new DestinationPage(page).expectVisible();
   });
 });

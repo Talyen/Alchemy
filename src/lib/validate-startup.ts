@@ -11,6 +11,7 @@ import {
   STARTING_TURN,
 } from "./game-constants";
 import { enemyBestiary, cardLibrary } from "./game-data";
+import { collectUncoveredDifficultyModifierKinds, collectUncoveredEnemyTraitIds } from "./battle/enemy-turn-traits";
 import { logError } from "./error-logger";
 
 const checks: { name: string; ok: boolean }[] = [];
@@ -31,6 +32,13 @@ check("STARTING_TURN > 0", STARTING_TURN > 0);
 check("MIN_MAX_MANA_FLOOR > 0", MIN_MAX_MANA_FLOOR > 0);
 check("enemyBestiary is non-empty", enemyBestiary.length > 0);
 check("cardLibrary is non-empty", cardLibrary.length > 0);
+
+const bestiaryTraitIds = enemyBestiary.flatMap((enemy) => enemy.traits.map((trait) => trait.id));
+const uncoveredTraits = collectUncoveredEnemyTraitIds(bestiaryTraitIds);
+check("enemy traits have turn-start handler or passive-only entry", uncoveredTraits.length === 0);
+
+const uncoveredModifiers = collectUncoveredDifficultyModifierKinds();
+check("difficulty modifiers have turn-start handler or passive-only entry", uncoveredModifiers.length === 0);
 
 if (checks.some((c) => !c.ok)) {
   logError(`${checks.filter((c) => !c.ok).length} startup checks failed — game may behave unexpectedly`, "validation", {

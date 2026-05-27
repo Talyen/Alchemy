@@ -99,6 +99,39 @@ export type RewardRouteTransitionHandlers = {
   setRewardState: (state: RewardState) => void;
 };
 
+type RewardRouteTransitionContext = {
+  materials: MaterialInventory;
+  nextRewardState: RewardState;
+  clearCompanion: boolean;
+  setReward: () => void;
+};
+
+const REWARD_ROUTE_HANDLERS: Record<
+  FinalizeRewardResult["route"],
+  (handlers: RewardRouteTransitionHandlers, ctx: RewardRouteTransitionContext) => void
+> = {
+  [CONSTANTS.REWARD_ROUTES.COMPANION_REWARD]: (handlers, { clearCompanion, setReward }) => {
+    if (clearCompanion) handlers.setCompanionRewardCards(null);
+    handlers.navigateTo(CONSTANTS.SCREENS.REWARDS, setReward);
+  },
+  [CONSTANTS.REWARD_ROUTES.LABYRINTH_VICTORY]: (handlers, { materials, setReward }) => {
+    handlers.completeRunVictory(materials, setReward);
+  },
+  [CONSTANTS.REWARD_ROUTES.WILDWOOD_VICTORY]: (handlers, { materials, setReward }) => {
+    handlers.completeRunVictory(materials, setReward);
+  },
+  [CONSTANTS.REWARD_ROUTES.LABYRINTH_MAP]: (handlers, { setReward }) => {
+    handlers.onLabyrinthClearNode();
+    handlers.navigateTo(CONSTANTS.SCREENS.LABYRINTH_MAP, setReward);
+  },
+  [CONSTANTS.REWARD_ROUTES.ACT_COMPLETE]: (handlers, { materials }) => {
+    handlers.handleActComplete(materials);
+  },
+  [CONSTANTS.REWARD_ROUTES.DESTINATION]: (handlers, { setReward }) => {
+    handlers.navigateTo(CONSTANTS.SCREENS.DESTINATION, setReward);
+  },
+};
+
 export function executeRewardRouteTransition(
   route: FinalizeRewardResult["route"],
   materials: MaterialInventory,
@@ -107,28 +140,5 @@ export function executeRewardRouteTransition(
   handlers: RewardRouteTransitionHandlers,
 ) {
   const setReward = () => handlers.setRewardState(nextRewardState);
-
-  if (route === CONSTANTS.REWARD_ROUTES.COMPANION_REWARD) {
-    if (clearCompanion) handlers.setCompanionRewardCards(null);
-    handlers.navigateTo(CONSTANTS.SCREENS.REWARDS, setReward);
-    return;
-  }
-
-  if (route === CONSTANTS.REWARD_ROUTES.LABYRINTH_VICTORY || route === CONSTANTS.REWARD_ROUTES.WILDWOOD_VICTORY) {
-    handlers.completeRunVictory(materials, setReward);
-    return;
-  }
-
-  if (route === CONSTANTS.REWARD_ROUTES.LABYRINTH_MAP) {
-    handlers.onLabyrinthClearNode();
-    handlers.navigateTo(CONSTANTS.SCREENS.LABYRINTH_MAP, setReward);
-    return;
-  }
-
-  if (route === CONSTANTS.REWARD_ROUTES.ACT_COMPLETE) {
-    handlers.handleActComplete(materials);
-    return;
-  }
-
-  handlers.navigateTo(CONSTANTS.SCREENS.DESTINATION, setReward);
+  REWARD_ROUTE_HANDLERS[route](handlers, { materials, nextRewardState, clearCompanion, setReward });
 }

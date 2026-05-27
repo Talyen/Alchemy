@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { computeEffectiveCost } from "@/lib/battle/card-play";
 import { getEffectiveCost } from "@/lib/battle/cost";
+import { FREE_CARD_SENTINEL } from "@/lib/game-constants";
 import { defaultBattleState, defaultTalentEffects } from "@/lib/battle/draw";
 import type { BattleState, CombatFlags } from "@/lib/battle/types";
 import type { BattleCard } from "@/lib/game-data";
@@ -79,5 +81,21 @@ describe("getEffectiveCost", () => {
   it("stacks nextCardCostReduction with first-card-free (free wins)", () => {
     const state = makeState({ firstPhysicalCardFreeUsed: false, nextCardCostReduction: 1 }, { firstPhysicalCardFree: true });
     expect(getEffectiveCost(state, physicalCard())).toBe(0);
+  });
+});
+
+describe("computeEffectiveCost", () => {
+  it("returns 0 and no consumed flags when FREE_CARD_SENTINEL is set", () => {
+    const state = makeState({ nextCardCostReduction: FREE_CARD_SENTINEL });
+    const { effectiveCost, consumedFlags } = computeEffectiveCost(state, physicalCard());
+    expect(effectiveCost).toBe(0);
+    expect(consumedFlags.size).toBe(0);
+  });
+
+  it("consumes firstPhysicalCardFreeUsed when first physical card is free", () => {
+    const state = makeState({ firstPhysicalCardFreeUsed: false }, { firstPhysicalCardFree: true });
+    const { effectiveCost, consumedFlags } = computeEffectiveCost(state, physicalCard());
+    expect(effectiveCost).toBe(0);
+    expect(consumedFlags.has("firstPhysicalCardFreeUsed")).toBe(true);
   });
 });

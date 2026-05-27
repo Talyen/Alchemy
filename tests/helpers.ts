@@ -1,4 +1,15 @@
 import { expect, type Page } from "@playwright/test";
+import { SAVE_KEY } from "@/lib/game-constants";
+import {
+  CURRENT_CONTENT_VERSION,
+  CURRENT_GAME_BUILD_VERSION,
+  CURRENT_SAVE_SCHEMA_VERSION,
+} from "@/lib/validation/metadata";
+import { BattlePage } from "./pages/battle-page";
+import { DestinationPage } from "./pages/destination-page";
+import { RewardPage } from "./pages/reward-page";
+
+export { SAVE_KEY };
 
 declare global {
   interface Window {
@@ -6,18 +17,15 @@ declare global {
   }
 }
 
-const SAVE_KEY = "alchemy-save-v1";
-
 // Seeded PRNG (Linear Congruential Generator) for deterministic random behavior in tests.
-// Call via page.addInitScript(seedRandomScript(seed)) before page.goto.
-export function seedRandomScript(seed = 42) {
-  return `(() => {
-    let _seed = ${seed};
+export async function seedRandom(page: Page, seed = 42) {
+  await page.addInitScript((s) => {
+    let _seed = s;
     Math.random = () => {
       _seed = (_seed * 1664525 + 1013904223) & 0x7fffffff;
       return _seed / 0x7fffffff;
     };
-  })()`;
+  }, seed);
 }
 
 type GameMode = "campaign" | "labyrinth" | "wildwood";
@@ -156,7 +164,7 @@ const STARTING_DECK: Record<string, unknown>[] = [
   { id: "bread", title: "Bread", descriptionLines: ["Gain 5 Health", "Consume"], art: "placeholder", cost: 1, consume: true, effects: [{ kind: "heal", amount: 5 }] },
 ];
 
-export async function forceNextDestinationChoice(page: Page, destination: DestinationName) {
+async function forceNextDestinationChoice(page: Page, destination: DestinationName) {
   const randomValue = DESTINATION_RANDOM_VALUES[destination];
   await page.addInitScript((value) => {
     let seed = 42;
@@ -169,16 +177,6 @@ export async function forceNextDestinationChoice(page: Page, destination: Destin
       return value;
     };
   }, randomValue);
-}
-
-async function enableDevMode(page: Page) {
-  await page.addInitScript(() => {
-    try {
-      localStorage.setItem("alchemy-dev-mode", "true");
-    } catch (e) {
-      console.warn("Failed to set alchemy-dev-mode", e);
-    }
-  });
 }
 
 // Sets localStorage["alchemy-disable-animations"] before page load, collapsing all CSS
@@ -198,7 +196,6 @@ export async function startAtDestination(
   overrides: Record<string, unknown> = {},
   options: { forceDestination?: DestinationName } = {},
 ) {
-  await enableDevMode(page);
   if (options.forceDestination) await forceNextDestinationChoice(page, options.forceDestination);
   await injectSaveState(page, {
     runGold: 50,
@@ -246,9 +243,9 @@ type HomesteadSave = {
 };
 
 const BASE_HOMESTEAD_SAVE: HomesteadSave = {
-  saveSchemaVersion: 1,
-  gameBuildVersion: "1.0.0",
-  contentVersion: 1,
+  saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
+  gameBuildVersion: CURRENT_GAME_BUILD_VERSION,
+  contentVersion: CURRENT_CONTENT_VERSION,
   selectedAspectRatio: "auto",
   displayMode: "borderless-fullscreen",
   uiScale: "100",
@@ -272,10 +269,39 @@ const BASE_HOMESTEAD_SAVE: HomesteadSave = {
   unlockedTalents: {},
 };
 
+export async function enableLoadingScreen(page: Page) {
+  await page.addInitScript(() => {
+    localStorage.removeItem("alchemy-skip-loading-screen");
+  });
+}
+
+export async function injectTalentUnlocks(page: Page, unlockedTalents: Record<string, string[]>) {
+  await page.addInitScript(({ saveKey, talents }) => {
+    const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
+    save.unlockedTalents = { ...(save.unlockedTalents || {}), ...talents };
+    save.discoveredCardIds = save.discoveredCardIds || ["slash"];
+    localStorage.setItem(saveKey, JSON.stringify(save));
+  }, { saveKey: SAVE_KEY, talents: unlockedTalents });
+}
+
+export async function injectBossState(page: Page, act = 1) {
+  const highDamageCard = makeHighDamageCard();
+  await injectSaveState(page, {
+    characterId: "knight",
+    runDeck: Array.from({ length: 6 }, () => ({ ...highDamageCard })),
+    roomsEncountered: 7,
+    destinationIndexInAct: 7,
+    currentAct: act,
+    completedDestinations: Array.from({ length: 7 }, () => "Normal Combat"),
+    runPlayerHealth: 30,
+    runMaxHealth: 30,
+  });
+}
+
 export async function injectHomestead(page: Page, overrides: Partial<HomesteadSave> = {}) {
   await page.addInitScript((data) => {
-    localStorage.setItem(SAVE_KEY, JSON.stringify(data));
-  }, { ...BASE_HOMESTEAD_SAVE, ...overrides });
+    localStorage.setItem(data.saveKey, JSON.stringify(data.save));
+  }, { saveKey: SAVE_KEY, save: { ...BASE_HOMESTEAD_SAVE, ...overrides } });
 }
 
 export async function injectLabyrinthRun(
@@ -284,8 +310,7 @@ export async function injectLabyrinthRun(
 ) {
   const map = createMinimalLabyrinthMap();
   await page.addInitScript((data) => {
-    const KEY = "alchemy-save-v1";
-    const save = JSON.parse(localStorage.getItem(KEY) || "{}");
+    const save = JSON.parse(localStorage.getItem(data.saveKey) || "{}");
     save.activeRun = {
       characterId: "knight",
       runDeck: [],
@@ -299,8 +324,8 @@ export async function injectLabyrinthRun(
       Object.assign(save.activeRun, data.runOverrides);
     }
     save.discoveredCardIds = data.discoveredCardIds || ["slash"];
-    localStorage.setItem(KEY, JSON.stringify(save));
-  }, { map, deck: options.deck ?? null, discoveredCardIds: options.discoveredCardIds ?? null, runOverrides: options.runOverrides ?? null });
+    localStorage.setItem(data.saveKey, JSON.stringify(save));
+  }, { saveKey: SAVE_KEY, map, deck: options.deck ?? null, discoveredCardIds: options.discoveredCardIds ?? null, runOverrides: options.runOverrides ?? null });
   await page.goto("/");
   await expect(page.getByRole("button", { name: "Play", exact: true })).toBeEnabled({ timeout: 5000 });
   await page.getByRole("button", { name: "Play", exact: true }).click();
@@ -314,9 +339,8 @@ export async function injectLabyrinthRun(
 
 export async function injectSaveState(page: Page, overrides: Record<string, unknown> = {}) {
   await page.addInitScript((data) => {
-    const KEY = "alchemy-save-v1";
-    const save = JSON.parse(localStorage.getItem(KEY) || "{}");
-    const { discoveredCardIds, encounteredEnemyIds, discoveredTrinketIds, ...activeRunData } = data;
+    const save = JSON.parse(localStorage.getItem(data.saveKey) || "{}");
+    const { discoveredCardIds, encounteredEnemyIds, discoveredTrinketIds, ...activeRunData } = data.payload;
     save.activeRun = {
       characterId: "knight",
       runDeck: [],
@@ -338,15 +362,14 @@ export async function injectSaveState(page: Page, overrides: Record<string, unkn
         "slash", "bash", "block", "anvil", "plate-mail", "apple", "meteor", "blessed-aegis",
       ];
     }
-    localStorage.setItem(KEY, JSON.stringify(save));
-  }, overrides);
+    localStorage.setItem(data.saveKey, JSON.stringify(save));
+  }, { saveKey: SAVE_KEY, payload: overrides });
 }
 
 // Fresh run lands directly in the first forced Normal Combat battle.
 // Novice difficulty is the default and skips the difficulty select screen for first-time players.
 export async function startCampaignBattle(page: Page, character: "Knight" | "Ranger" | "Rogue" | "Wizard" = "Knight") {
-  await enableDevMode(page);
-  await page.addInitScript(seedRandomScript(42));
+  await seedRandom(page, 42);
   await page.goto("/");
   await selectGameMode(page, "campaign");
   await page.getByRole("button", { name: character }).click();
@@ -355,47 +378,8 @@ export async function startCampaignBattle(page: Page, character: "Knight" | "Ran
 }
 
 export async function skipBattleAndClaimReward(page: Page) {
-  await expect(page.getByRole("button", { name: "Skip Combat" })).toBeVisible({ timeout: 3000 });
-  await page.getByRole("button", { name: "Skip Combat" }).click();
-  await expect(page.getByRole("heading", { name: /^Victory/ })).toBeVisible({ timeout: 3000 });
-  await page.locator('[aria-label^="Select "]').first().click();
-  const addBtn = page.getByRole("button", { name: /^(Add Card|Take Trinket)$/ });
-  await expect(addBtn).toBeEnabled({ timeout: 2000 });
-  await addBtn.click();
-}
-
-
-
-export async function playUntilVictory(page: Page) {
-  const victoryHeading = page.getByRole("heading", { name: /^Victory/ });
-  const endTurnButton = page.getByRole("button", { name: "End Turn" });
-
-  for (let turn = 0; turn < 10; turn++) {
-    if (await victoryHeading.isVisible().catch(() => false)) return;
-
-    while ((await page.locator('[aria-label^="Play "]:visible').count()) > 0) {
-      const card = page.locator('[aria-label^="Play "]:visible').first();
-      if (!(await card.isEnabled({ timeout: 2000 }).catch(() => false))) break;
-      await card.click({ force: true, timeout: 2000 }).catch(async (e) => {
-        if (await victoryHeading.isVisible().catch(() => false)) return;
-        throw e;
-      });
-      if (await victoryHeading.isVisible().catch(() => false)) return;
-    }
-
-    if (await victoryHeading.isVisible().catch(() => false)) return;
-
-    await endTurnButton.click({ force: true }).catch(async (e) => {
-      if (await victoryHeading.isVisible().catch(() => false)) return;
-      throw e;
-    });
-    await expect(endTurnButton).toBeEnabled({ timeout: 7000 }).catch(async (e) => {
-      if (await victoryHeading.isVisible().catch(() => false)) return;
-      throw e;
-    });
-  }
-
-  throw new Error("Battle did not reach the Victory screen in time.");
+  await new BattlePage(page).winViaCombat();
+  await new RewardPage(page).claimFirstReward();
 }
 
 
@@ -404,7 +388,6 @@ export async function playUntilVictory(page: Page) {
 // and navigating to the first combat. Skips the startRun UI dance entirely.
 // Returns when the battle hand is visible.
 export async function startBattleWithDeck(page: Page, deck: Record<string, unknown>[], overrides: Record<string, unknown> = {}) {
-  await enableDevMode(page);
   await forceNextDestinationChoice(page, "Normal Combat");
   await injectSaveState(page, {
     runDeck: deck,
@@ -414,8 +397,7 @@ export async function startBattleWithDeck(page: Page, deck: Record<string, unkno
   });
   await page.goto("/");
   await resumeGameMode(page, "campaign");
-  await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 5000 });
-  await page.getByRole("button", { name: "Normal Combat" }).click();
-  await page.evaluate(() => { window.disableForceDestination = true; });
-  await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 5000 });
+  const destination = new DestinationPage(page);
+  await destination.expectVisible();
+  await destination.enterCombat("Normal Combat");
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getHoverId, getPlayerStatusChips, getEnemyStatusChips, getBattleCardPlayTarget, randomBetween, sampleItems, tokenizeDescription, getCombatTextColorClass, getCombatTextIcon } from "@/features/alchemy/utils";
+import { getHoverId, getPlayerStatusChips, getEnemyStatusChips, getBattleCardPlayTarget, sampleItems, tokenizeDescription, getCombatTextColorClass, getCombatTextIcon } from "@/features/alchemy/utils";
 import type { BattleState } from "@/lib/battle/types";
 
 function makeState(overrides: Partial<BattleState> = {}): BattleState {
@@ -105,16 +105,6 @@ describe("getBattleCardPlayTarget", () => {
 
   it("returns 'player' for status cards", () => {
     expect(getBattleCardPlayTarget(card({ effects: [{ kind: "player-status", status: "block", amount: 5 }] }))).toBe("player");
-  });
-});
-
-describe("randomBetween", () => {
-  it("returns a number within the range", () => {
-    for (let i = 0; i < 100; i++) {
-      const n = randomBetween(5, 10);
-      expect(n).toBeGreaterThanOrEqual(5);
-      expect(n).toBeLessThanOrEqual(10);
-    }
   });
 });
 

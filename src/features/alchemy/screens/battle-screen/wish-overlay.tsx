@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { WISH_OVERLAY_Z_INDEX } from "@/lib/game-constants";
 import type { BattleCard } from "@/lib/game-data";
 
-import { BattleCardButton, getCardDisplayTitle } from "../../ui/card-ui";
+import { BattleCardButton } from "../../ui/card-button";
+import { getCardDisplayTitle } from "../../ui/card-description-ui";
 import { ScreenHeader } from "../../ui/shared-ui";
 import { handCardWidthClass } from "../../config";
 import type { BattleActionsProps, BattleScreenState } from "./types";

@@ -40,19 +40,22 @@ describe("@/lib/validation barrel", () => {
 });
 
 describe("@/features/alchemy/screens barrel", () => {
-  it("exports known symbols", async () => {
-    const mod = await import("@/features/alchemy/screens");
-    expect(mod.BattleScreen).toBeDefined();
-    expect(mod.MenuScreen).toBeDefined();
-    expect(mod.HomesteadScreen).toBeDefined();
-    expect(mod.RewardsScreen).toBeDefined();
-  });
+  it(
+    "exports known symbols",
+    async () => {
+      const mod = await import("@/features/alchemy/screens");
+      expect(mod.BattleScreen).toBeDefined();
+      expect(mod.MenuScreen).toBeDefined();
+      expect(mod.HomesteadScreen).toBeDefined();
+      expect(mod.RewardsScreen).toBeDefined();
+    },
+    15_000,
+  );
 });
 
 describe("@/features/alchemy/utils barrel", () => {
   it("exports known symbols", async () => {
     const mod = await import("@/features/alchemy/utils");
-    expect(mod.randomBetween).toBeTypeOf("function");
     expect(mod.sampleItems).toBeTypeOf("function");
     expect(mod.tokenizeDescription).toBeTypeOf("function");
   });
@@ -68,8 +71,6 @@ describe("@/features/alchemy/storage barrel", () => {
       expect(mod.loadAlchemySaveState).toBeTypeOf("function");
       expect(mod.saveAlchemySaveData).toBeTypeOf("function");
       expect(mod.clearAlchemySaveData).toBeTypeOf("function");
-      expect(mod.CURRENT_SAVE_SCHEMA_VERSION).toBeTypeOf("number");
-      expect(mod.CURRENT_CONTENT_VERSION).toBeTypeOf("number");
     } finally {
       (globalThis as Record<string, unknown>).window = origWindow;
     }

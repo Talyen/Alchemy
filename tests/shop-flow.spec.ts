@@ -1,17 +1,11 @@
 import { expect, test } from "@playwright/test";
-import { startAtDestination } from "./helpers";
 import { ShopPage } from "./pages/shop-page";
+import { critical } from "./playwright-tags";
 
-async function setupShop(page: import("@playwright/test").Page, gold: number, destination: string) {
-  await startAtDestination(page, { runGold: gold }, { forceDestination: destination });
-  await page.getByRole("button", { name: destination }).click();
-  await expect(page.getByRole("heading", { name: destination })).toBeVisible();
-}
-
-test.describe("Merchant Shop", () => {
+test.describe("Merchant Shop", critical, () => {
   test.describe("with sufficient gold", () => {
     test.beforeEach(async ({ page }) => {
-      await setupShop(page, 9999, "Merchant's Shop");
+      await new ShopPage(page).enterFromDestination(9999, "Merchant's Shop");
     });
 
     test("buying a card deducts gold and marks as purchased", async ({ page }) => {
@@ -63,7 +57,7 @@ test.describe("Merchant Shop", () => {
 
   test.describe("with insufficient gold", () => {
     test.beforeEach(async ({ page }) => {
-      await setupShop(page, 40, "Merchant's Shop");
+      await new ShopPage(page).enterFromDestination(40, "Merchant's Shop");
     });
 
     test("buying a card deducts gold and reflects balance", async ({ page }) => {
@@ -81,7 +75,7 @@ test.describe("Merchant Shop", () => {
 test.describe("Alchemist Shop", () => {
   test.describe("with sufficient gold", () => {
     test.beforeEach(async ({ page }) => {
-      await setupShop(page, 9999, "Alchemist's Shop");
+      await new ShopPage(page).enterFromDestination(9999, "Alchemist's Shop");
     });
 
     test("buy potions and mix them", async ({ page }) => {
@@ -100,7 +94,7 @@ test.describe("Alchemist Shop", () => {
 
   test.describe("with insufficient gold", () => {
     test.beforeEach(async ({ page }) => {
-      await setupShop(page, 40, "Alchemist's Shop");
+      await new ShopPage(page).enterFromDestination(40, "Alchemist's Shop");
     });
 
     test("buying potions deducts gold and purchased state is shown", async ({ page }) => {

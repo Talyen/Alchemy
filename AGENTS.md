@@ -185,7 +185,7 @@ npm run release:major    # major version bump + changelog + tag
 | 4. Add summon card for companion (`kind: "summon-companion"`) | `src/lib/game-data/cards.ts` |
 | 5. Add summon card ID to `CardId` union | `src/lib/game-data/types.ts` |
 | 6. (Optional) Register card sound | `src/lib/sound-registry.ts` |
-| 7. Add bond level to talent defaults (`companionBondLevels`) | `src/lib/game-data/talents.ts` |
+| 7. Add bond level to talent defaults (`companionBondLevels`) | `src/lib/game-data/talents/manifest-defaults.ts` |
 | 8. Add bond level to homestead defaults | `src/lib/homestead/defaults.ts` |
 | 9. Update description lines + tests | `tests/lib/game-data/companions.test.ts` + `tests/lib/game-data/descriptions-match-effects.test.ts` |
 
@@ -218,7 +218,7 @@ npm run release:major    # major version bump + changelog + tag
 
 ### Feature Hooks & Controllers
 
-Orchestration in `src/features/alchemy/` bridges pure lib logic to React UI. `*-controller.ts` files are the main lifecycle owners; `use-run-navigation.ts` coordinates run flow without the `controller` suffix. [`use-run-state.ts`](src/features/alchemy/use-run-state.ts) and [`use-talent-state.ts`](src/features/alchemy/use-talent-state.ts) are **type-only** — use `useRunAdapter()` / `useTalentAdapter()` from `run-store.ts`.
+Orchestration in `src/features/alchemy/` bridges pure lib logic to React UI. `*-controller.ts` files are the main lifecycle owners; `use-run-navigation.ts` coordinates run flow without the `controller` suffix. Use `useRunAdapter()` / `useTalentAdapter()` from [`run-store.ts`](src/features/alchemy/stores/run-store.ts) for run and talent state.
 
 | Hook / controller | File | Owns |
 |---|---|---|
@@ -227,7 +227,7 @@ Orchestration in `src/features/alchemy/` bridges pure lib logic to React UI. `*-
 | Labyrinth | `use-labyrinth-controller.ts` | Labyrinth map generation + modifier state |
 | Navigation | `use-run-navigation.ts` | Rewards, destinations, mysteries, campfires, act transitions, run defeat/victory teardown |
 | Run + talents | `stores/run-store.ts` | Deck, gold, HP, acts/destinations, talent XP/unlocks (`useRunAdapter`, `useTalentAdapter`) |
-| Homestead | `use-homestead-state.ts` | Homestead upgrades and material inventory |
+| Homestead | `homestead-store.ts` | Homestead upgrades and material inventory |
 | Shop | `use-shop-controller.ts` | Merchant and alchemist purchase flow |
 | Mystery (pure) | `navigation/mystery-flow.ts` | `applyMysteryEffect` and related helpers |
 | Mystery (hook) | `navigation/use-mystery-flow.ts` | React wiring for mystery event resolution |
@@ -275,7 +275,7 @@ Alchemy uses **one** loading experience at cold start, then instant screen navig
 - Lazy-on-render card/enemy art (`loading="lazy"` on game art, or deferring `import.meta.glob` for assets).
 - Per-screen loading spinners for assets already covered by `allGameArt`.
 
-**E2E / dev bypass:** `localStorage["alchemy-skip-loading-screen"]` (Playwright) and `localStorage["alchemy-dev-mode"]` skip the startup gate only — they do not change production loading policy.
+**E2E / dev bypass:** `localStorage["alchemy-skip-loading-screen"]` (Playwright) skips the startup gate only — it does not change production loading policy.
 
 **Campaign run start funnel:** `menu` → `game-mode-select` → `character-select` → `difficulty-select` → `draft-deck` (see `DRAFT_ROUNDS` in `game-constants.ts`) → `battle`.
 
@@ -439,19 +439,20 @@ Individual top-level lib modules are imported directly — e.g. `@/lib/talents.t
 
 ## Common Mistakes
 
-- **Forgetting both `src/lib/game-data/talents.ts` (data) and `src/lib/talents.ts` (XP math)** exist — they serve different purposes. Add bond level defaults to the former, XP triggers to the latter.
+- **Forgetting both `src/lib/game-data/talents/` (data, manifest defaults, pool) and `src/lib/talents.ts` (XP math)** exist — they serve different purposes. Add bond level defaults to `manifest-defaults.ts`, XP triggers to `src/lib/talents.ts`.
 - **Editing a card effect without updating `descriptionLines`** — the descriptions-match-effects test will fail.
 - **Using deep imports** instead of barrel imports (`@/lib/game-data`, `@/lib/battle`, etc.) — always use the canonical barrel.
 - **Mutating battle state** instead of returning a new `BattleState` — state is immutable; reducer pattern only.
 - **Hardcoding magic numbers** — put all tuning values in `src/lib/game-constants.ts`.
 - **Using `Math.random()` in battle logic** — use `state.rng` so runs and tests stay deterministic.
 - **Treating `screen-store` as route state** — it does not store `screen`; use run controller `screen` / `navigateTo`.
-- **Importing `use-run-state` or `use-talent-state` expecting hooks** — use `useRunAdapter` / `useTalentAdapter` from `run-store.ts`.
+- **Importing deleted run/talent hooks** — use `useRunAdapter` / `useTalentAdapter` from `run-store.ts`.
 - **Code-splitting route screens with `React.lazy()`** — all screens must static-import via `screen-routes.tsx`; use the startup gate for load time, not per-navigation Suspense fallbacks.
 
 ## Debugging
 
-- **Dev mode**: `localStorage["alchemy-dev-mode"] = "true"` enables "Skip Combat" (battle screen), "Unlock All" QA panel (Options), and bypasses the startup loading screen
+- **Dev build** (`import.meta.env.DEV`): "Skip Combat" (battle screen) and "Unlock All" / Error Log QA panel (Options). Not available in production builds.
+- **Startup bypass**: `localStorage["alchemy-skip-loading-screen"]` (Playwright) skips the startup loading gate only — see `shouldSkipStartupLoadingGate()` in `src/features/alchemy/utils/dev-mode.ts`
 - **Startup validation**: `src/lib/validate-startup.ts` auto-runs assertions on boot — check console for errors if constants are invalid
 - **Console warnings**: `src/lib/battle/enemy-turn.ts` logs `[Enemy Turn]` warnings for unrecognized attack effects or missing trait handlers
 - **React DevTools**: Chrome extension for component tree and Zustand state inspection
@@ -479,8 +480,7 @@ Tests mirror source: `tests/lib/battle/foo.test.ts` tests `src/lib/battle/foo.ts
 - Organize tests per mechanic: `describe("MechanicName", ...)` with focused `it` blocks.
 - `test.skipIf(condition)` when a required card isn't in the random opening hand.
 - `startCampaignBattle(page, character?)`: navigates to `/`, clicks a character → Continue, waits for cards.
-- `playUntilVictory(page)`: loops up to 10 turns playing all playable cards.
-- `tests/helpers.ts` contains shared helpers: `startCampaignBattle`, `playUntilVictory`, `startBattleWithDeck`, `injectSaveState`, etc.
+- `tests/helpers.ts` contains shared helpers: `startCampaignBattle`, `startBattleWithDeck`, `injectSaveState`, etc.
 - Prefer deterministic setup helpers over relying on random opening hands or generated maps.
 - First-time e2e: `npx playwright install chromium` before `npm run test:e2e`.
 

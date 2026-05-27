@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { trinketLibrary } from "@/lib/game-data";
 import { computeTrinketManifest, defaultTrinketEffects } from "@/lib/trinkets";
 
 describe("computeTrinketManifest", () => {
@@ -135,5 +136,21 @@ describe("computeTrinketManifest", () => {
   it("Lucky Clover → luckyCloverGoldChance: 10", () => {
     const manifest = computeTrinketManifest(["lucky-clover"]);
     expect(manifest.luckyCloverGoldChance).toBe(10);
+  });
+
+  it("Smuggler's Map → smugglersMapGoldBonus: 2", () => {
+    const manifest = computeTrinketManifest(["smugglers-map"]);
+    expect(manifest.smugglersMapGoldBonus).toBe(2);
+  });
+
+  it("Grove's Favor → grovesFavorStartHeal: 2", () => {
+    const manifest = computeTrinketManifest(["groves-favor"]);
+    expect(manifest.grovesFavorStartHeal).toBe(2);
+  });
+
+  it("every trinketLibrary id changes the manifest from defaults", () => {
+    for (const { id } of trinketLibrary) {
+      expect(computeTrinketManifest([id])).not.toEqual(defaultTrinketEffects);
+    }
   });
 });

@@ -32,31 +32,15 @@ export function shouldHurtEnemyFromCombatTexts(combatTexts: CombatTextEvent[]) {
   return combatTexts.some((ct) => ct.target === "enemy" && isPortraitHurtCombatText(ct));
 }
 
-export type PortraitCombatFeedback = {
+export type PortraitFeedback = {
   shakeEnemy: () => void;
   shakePlayer: () => void;
   hurtEnemy: () => void;
   hurtPlayer: () => void;
 };
-
-export type PortraitFeedbackStore = {
-  shakeEnemy: () => void;
-  shakePlayer: () => void;
-  hurtEnemy: () => void;
-  hurtPlayer: () => void;
-};
-
-export function portraitFeedbackFromStore(store: PortraitFeedbackStore): PortraitCombatFeedback {
-  return {
-    shakeEnemy: store.shakeEnemy.bind(store),
-    shakePlayer: store.shakePlayer.bind(store),
-    hurtEnemy: store.hurtEnemy.bind(store),
-    hurtPlayer: store.hurtPlayer.bind(store),
-  };
-}
 
 // Applies shake + hurt portrait feedback from resolved combat text batches.
-export function applyCombatTextPortraitFeedback(combatTexts: CombatTextEvent[], feedback: PortraitCombatFeedback) {
+export function applyCombatTextPortraitFeedback(combatTexts: CombatTextEvent[], feedback: PortraitFeedback) {
   if (shouldShakeEnemyFromCombatTexts(combatTexts)) feedback.shakeEnemy();
   if (shouldShakePlayerFromCombatTexts(combatTexts)) feedback.shakePlayer();
   if (shouldHurtEnemyFromCombatTexts(combatTexts)) feedback.hurtEnemy();

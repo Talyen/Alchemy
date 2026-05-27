@@ -31,5 +31,6 @@ export {
   ActiveRunDataSchema,
   SaveDataSchema,
   safeParseWithErrors,
+  type ValidationError,
 } from "./save-schemas";
 export { normalizeActiveRunData } from "./normalize-active-run-data";

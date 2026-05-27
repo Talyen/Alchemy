@@ -1,31 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { randomBetween, sampleItems, resampleItems } from "@/features/alchemy/utils/random";
-
-describe("randomBetween", () => {
-  it("returns a number within the given range", () => {
-    vi.spyOn(Math, "random").mockReturnValue(0.5);
-    expect(randomBetween(1, 10)).toBe(6);
-    vi.restoreAllMocks();
-  });
-
-  it("returns min when Math.random is 0", () => {
-    vi.spyOn(Math, "random").mockReturnValue(0);
-    expect(randomBetween(3, 7)).toBe(3);
-    vi.restoreAllMocks();
-  });
-
-  it("returns max when Math.random approaches 1", () => {
-    vi.spyOn(Math, "random").mockReturnValue(0.999);
-    expect(randomBetween(3, 7)).toBe(7);
-    vi.restoreAllMocks();
-  });
-
-  it("returns min==max when range is zero", () => {
-    vi.spyOn(Math, "random").mockReturnValue(0.5);
-    expect(randomBetween(5, 5)).toBe(5);
-    vi.restoreAllMocks();
-  });
-});
+import { sampleItems, resampleItems } from "@/features/alchemy/utils/random";
 
 describe("sampleItems", () => {
   it("returns the requested number of items", () => {

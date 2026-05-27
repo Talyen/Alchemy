@@ -1,4 +1,6 @@
 import { expect, type Page } from "@playwright/test";
+import { injectHomestead } from "../helpers";
+import { MenuPage } from "./menu-page";
 
 export class HomesteadPage {
   constructor(private page: Page) {}
@@ -8,6 +10,13 @@ export class HomesteadPage {
   readonly farmTab = this.page.getByRole("button", { name: "Farm" });
   readonly researchTab = this.page.getByRole("button", { name: "Research" });
   readonly companionsTab = this.page.getByRole("button", { name: "Companions" });
+
+  async goto(overrides: Parameters<typeof injectHomestead>[1] = {}) {
+    await injectHomestead(this.page, overrides);
+    const menu = new MenuPage(this.page);
+    await menu.goto();
+    await menu.openHomestead();
+  }
 
   async switchTab(name: "Buildings" | "Farm" | "Research" | "Companions") {
     await this.page.getByRole("button", { name }).click();
@@ -19,5 +28,9 @@ export class HomesteadPage {
 
   async getBuildingText(name: string) {
     return this.page.getByText(name).first();
+  }
+
+  materialPill(material: "Wood" | "Iron" | "Herbs" | "Food" | "Crystal", amount: number) {
+    return this.page.getByText(`${amount} ${material}`);
   }
 }

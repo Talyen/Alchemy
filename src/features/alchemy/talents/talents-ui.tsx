@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { ShineBorder } from "@/components/ui/shine-border";
 import { getKeywordShineColors } from "../config";
 import { KeywordTag } from "../ui/keyword-tag";
+import { PressableMotion } from "../ui/pressable-motion";
 
 function ringClass(isSelected: boolean, hasUnspent: boolean): string {
   if (isSelected && hasUnspent) return "ring-0";
@@ -35,26 +36,28 @@ export function TalentKeywordButton({
         : undefined;
 
   return (
-    <button
-      type="button"
-      className={cn(
-        "relative inline-flex items-center gap-1.5 rounded-full bg-card px-3 py-1.5 text-sm font-semibold text-foreground ring-1 ring-offset-1 ring-offset-card transition-all duration-200",
-        ringClass(isSelected, hasUnspent),
-      )}
-      style={ringStyle}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      onClick={onClick}
-    >
-      {hasUnspent && (
-        <ShineBorder
-          shineColor={shineColors}
-          borderWidth={isSelected ? 2 : 1}
-          duration={8}
-          className="rounded-full z-10"
-        />
-      )}
-      <KeywordTag keywordId={keywordId} />
-    </button>
+    <PressableMotion disableHoverScale>
+      <button
+        type="button"
+        className={cn(
+          "relative inline-flex items-center gap-1.5 rounded-full bg-card px-3 py-1.5 text-sm font-semibold text-foreground ring-1 ring-offset-1 ring-offset-card transition-all duration-200",
+          ringClass(isSelected, hasUnspent),
+        )}
+        style={ringStyle}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        onClick={onClick}
+      >
+        {hasUnspent && (
+          <ShineBorder
+            shineColor={shineColors}
+            borderWidth={isSelected ? 2 : 1}
+            duration={8}
+            className="rounded-full z-10"
+          />
+        )}
+        <KeywordTag keywordId={keywordId} />
+      </button>
+    </PressableMotion>
   );
 }

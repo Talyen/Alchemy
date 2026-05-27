@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { getCardKeywords } from "@/lib/game-data";
-import { selectRewardCards, selectRewardTrinkets } from "@/features/alchemy/reward-utils";
+import { selectRewardCards } from "@/features/alchemy/reward-utils";
+import { sampleItems } from "@/features/alchemy/utils";
 import type { BattleCard } from "@/lib/game-data";
 
 function card(overrides: Partial<BattleCard> = {}): BattleCard {
@@ -128,7 +129,7 @@ describe("selectRewardCards", () => {
   });
 });
 
-describe("selectRewardTrinkets", () => {
+describe("sampleItems for trinket rewards", () => {
   it("returns requested number of trinkets", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
     const trinkets = [
@@ -137,7 +138,7 @@ describe("selectRewardTrinkets", () => {
       { id: "tattered-pages", title: "Tattered Pages", description: "", art: "" },
       { id: "meteorite", title: "Meteorite", description: "", art: "" },
     ];
-    const result = selectRewardTrinkets(trinkets, 2);
+    const result = sampleItems(trinkets, 2);
     expect(result).toHaveLength(2);
     vi.restoreAllMocks();
   });
@@ -145,13 +146,13 @@ describe("selectRewardTrinkets", () => {
   it("handles requesting more trinkets than available", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
     const trinkets = [{ id: "bone-charm", title: "Bone Charm", description: "", art: "" }];
-    const result = selectRewardTrinkets(trinkets, 5);
+    const result = sampleItems(trinkets, 5);
     expect(result).toHaveLength(1);
     vi.restoreAllMocks();
   });
 
   it("returns empty array for empty library", () => {
-    const result = selectRewardTrinkets([], 3);
+    const result = sampleItems([], 3);
     expect(result).toEqual([]);
   });
 });

@@ -14,7 +14,7 @@ import { getBossEnemy } from "../config";
 import { computeVictoryRewards, commitVictoryRewards } from "../navigation/victory-flow";
 import { applyRunDefeatTeardown } from "../navigation/run-navigation-helpers";
 import { CONSTANTS, type Destination, type Screen } from "../types";
-import type { TalentStateController } from "../use-talent-state";
+import type { TalentStateController } from "../stores/run-store";
 
 type GetAvailableDestinations = (options?: {
   currentHealth?: number;
@@ -70,7 +70,7 @@ export function createRunVictoryHandlers(deps: RunVictoryHandlerDeps) {
       runTrinkets: runState.runTrinkets,
       contentSystemType: runState.contentSystemType,
       activeLabyrinthRewardModifiers: getStore().activeLabyrinthRewardModifiers,
-      battleState: useBattleStore.getState().logicalBattleState,
+      battleState: useBattleStore.getState().battleState,
       runGold: runState.runGold,
       runPlayerHealth: runState.runPlayerHealth,
       runMaxHealth: runState.runMaxHealth,
@@ -83,7 +83,7 @@ export function createRunVictoryHandlers(deps: RunVictoryHandlerDeps) {
   }
 
   function commitVictoryResult(result: ReturnType<typeof computeVictoryRewards>) {
-    const battleState = useBattleStore.getState().logicalBattleState;
+    const battleState = useBattleStore.getState().battleState;
     const runState = useRunStore.getState();
     const screenStore = getStore();
 

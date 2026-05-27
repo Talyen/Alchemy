@@ -25,7 +25,7 @@ test.describe("Trinket Effects in Battle", () => {
     );
     const battle = new BattlePage(page);
 
-    await page.getByRole("button", { name: "Play Wolf" }).first().click();
+    await battle.playCardNamed("Wolf");
     await expect(battle.companionPanel).toBeVisible({ timeout: 3000 });
 
     const enemyHpBefore = await battle.enemyHealth();
@@ -50,7 +50,7 @@ test.describe("Trinket Effects in Battle", () => {
     const battle = new BattlePage(page);
 
     const enemyHpBefore = await battle.enemyHealth();
-    await page.getByRole("button", { name: "Play Holy Strike" }).first().click();
+    await battle.playCardNamed("Holy Strike");
 
     await expect(async () => {
       expect(await battle.enemyHealth()).toBeLessThan(enemyHpBefore);

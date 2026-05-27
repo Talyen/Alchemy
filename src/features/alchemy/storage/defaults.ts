@@ -14,7 +14,7 @@ import {
   DEFAULT_SFX_VOLUME_PCT,
 } from "@/lib/game-constants";
 import type { SaveData } from "./types";
-import { CURRENT_CONTENT_VERSION, CURRENT_GAME_BUILD_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "./metadata";
+import { CURRENT_CONTENT_VERSION, CURRENT_GAME_BUILD_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
 
 export const defaultSaveData: SaveData = {
   saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,

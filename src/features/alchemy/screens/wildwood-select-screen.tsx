@@ -9,6 +9,7 @@ import { ShineBorder } from "@/components/ui/shine-border";
 import { cn } from "@/lib/utils";
 import { battleCardWidthClass, cardSurfaceClass, SHINE_PALETTES } from "../config";
 import { EnemyTooltip } from "../ui/enemy-tooltip";
+import { PressableMotion } from "../ui/pressable-motion";
 import { ScreenHeader } from "../ui/shared-ui";
 
 export function WildwoodSelectScreen({ onSelect, onBack }: { onSelect: (bossId: string) => void; onBack: () => void }) {
@@ -24,48 +25,48 @@ export function WildwoodSelectScreen({ onSelect, onBack }: { onSelect: (bossId: 
           const isSelected = selectedBossId === bossId;
 
           return (
-            <button
-              key={bossId}
-              type="button"
-              className={cn(
-                "group/wildwood-boss relative flex h-[clamp(388px,calc(29.4cqh+92px),540px)] w-[clamp(270px,24cqh,368px)] flex-col items-center rounded-shell-hero border border-border/60 bg-card/60 p-4 text-center",
-              )}
-              aria-label={enemy?.title ?? bossId}
-              data-testid={`wildwood-boss-${bossId}`}
-              onClick={() => setSelectedBossId(bossId)}
-            >
-              {enemy ? (
-                <div
-                  data-testid={`wildwood-boss-tooltip-${bossId}`}
-                  className="pointer-events-none opacity-0 transition-opacity duration-150 group-hover/wildwood-boss:pointer-events-auto group-hover/wildwood-boss:opacity-100 group-focus-visible/wildwood-boss:pointer-events-auto group-focus-visible/wildwood-boss:opacity-100"
-                >
-                  <EnemyTooltip entry={enemy} />
-                </div>
-              ) : null}
-              {isSelected && (
-                <ShineBorder
-                  shineColor={[...SHINE_PALETTES.wildwoodBossSelection]}
-                  borderWidth={2}
-                  duration={8}
-                  className="z-10 rounded-shell-hero"
-                />
-              )}
-              {enemy ? (
-                <div className={cn(cardSurfaceClass, battleCardWidthClass)}>
-                  <img
-                    src={enemy.art}
-                    alt={enemy.title}
-                    className="block w-full rounded-shell-hero aspect-[3/4] object-cover"
-                    loading="eager"
+            <PressableMotion key={bossId} disableHoverScale>
+              <button
+                type="button"
+                className={cn(
+                  "group/wildwood-boss relative flex h-[clamp(388px,calc(29.4cqh+92px),540px)] w-[clamp(270px,24cqh,368px)] flex-col items-center rounded-shell-hero border border-border/60 bg-card/60 p-4 text-center",
+                )}
+                aria-label={enemy?.title ?? bossId}
+                data-testid={`wildwood-boss-${bossId}`}
+                onClick={() => setSelectedBossId(bossId)}
+              >
+                {enemy ? (
+                  <div
+                    data-testid={`wildwood-boss-tooltip-${bossId}`}
+                    className="pointer-events-none opacity-0 transition-opacity duration-150 group-hover/wildwood-boss:pointer-events-auto group-hover/wildwood-boss:opacity-100 group-focus-visible/wildwood-boss:pointer-events-auto group-focus-visible/wildwood-boss:opacity-100"
+                  >
+                    <EnemyTooltip entry={enemy} />
+                  </div>
+                ) : null}
+                {isSelected && (
+                  <ShineBorder
+                    shineColor={[...SHINE_PALETTES.wildwoodBossSelection]}
+                    borderWidth={2}
+                    duration={8}
+                    className="z-10 rounded-shell-hero"
                   />
+                )}
+                {enemy ? (
+                  <div className={cn(cardSurfaceClass, battleCardWidthClass)}>
+                    <img
+                      src={enemy.art}
+                      alt={enemy.title}
+                      className="block w-full rounded-shell-hero aspect-[3/4] object-cover"
+                    />
+                  </div>
+                ) : null}
+                <div className={cn("mt-3 flex h-12 flex-col items-center justify-start", battleCardWidthClass)}>
+                  <p className="font-display text-base font-bold leading-tight text-amber-100/75">
+                    {enemy?.title ?? bossId}
+                  </p>
                 </div>
-              ) : null}
-              <div className={cn("mt-3 flex h-12 flex-col items-center justify-start", battleCardWidthClass)}>
-                <p className="font-display text-base font-bold leading-tight text-amber-100/75">
-                  {enemy?.title ?? bossId}
-                </p>
-              </div>
-            </button>
+              </button>
+            </PressableMotion>
           );
         })}
       </div>

@@ -121,7 +121,7 @@ const PASSIVE_ONLY_TRAITS = new Set([
 
 // Difficulty modifiers whose behavior is purely passive (applied at battle start or checked elsewhere)
 // and intentionally have no turn-start handler.
-const PASSIVE_ONLY_MODIFIERS = new Set([
+const PASSIVE_ONLY_MODIFIERS = new Set<DifficultyModifier["kind"]>([
   "enemy-starting-armor",
   "increase-enemy-physical-damage",
   "increase-enemy-damage",
@@ -136,6 +136,57 @@ const PASSIVE_ONLY_MODIFIERS = new Set([
   "labyrinth-sturdy",
   "labyrinth-null-field",
 ]);
+
+/** Turn-start handler ids — used by tests and startup validation. */
+export const ENEMY_TRAIT_TURN_START_HANDLER_IDS = Object.keys(enemyTraitTurnStartHandlers);
+
+/** Passive enemy traits with no turn-start handler — used by tests and startup validation. */
+export const PASSIVE_ONLY_ENEMY_TRAIT_IDS = [...PASSIVE_ONLY_TRAITS];
+
+/** Difficulty modifiers with turn-start handlers — used by tests and startup validation. */
+export const DIFFICULTY_TURN_START_MODIFIER_KINDS = Object.keys(
+  difficultyTurnStartHandlers,
+) as DifficultyModifier["kind"][];
+
+/** Passive difficulty modifiers with no turn-start handler — used by tests and startup validation. */
+export const PASSIVE_ONLY_DIFFICULTY_MODIFIER_KINDS = [...PASSIVE_ONLY_MODIFIERS];
+
+const ALL_DIFFICULTY_MODIFIER_KINDS: DifficultyModifier["kind"][] = [
+  "enemy-starting-armor",
+  "enemy-gains-forge-each-turn",
+  "increase-enemy-physical-damage",
+  "increase-enemy-damage",
+  "increase-enemy-status",
+  "enemy-attacks-gain-leech",
+  "start-block",
+  "start-max-mana",
+  "gold-multiplier",
+  "start-companion",
+  "enemy-health-multiplier",
+  "enemy-damage-multiplier",
+  "labyrinth-sturdy",
+  "labyrinth-burning-ground",
+  "labyrinth-leeching",
+  "labyrinth-null-field",
+];
+
+function isEnemyTraitTurnStartCovered(traitId: string): boolean {
+  return traitId in enemyTraitTurnStartHandlers || PASSIVE_ONLY_TRAITS.has(traitId);
+}
+
+function isDifficultyModifierTurnStartCovered(kind: DifficultyModifier["kind"]): boolean {
+  return kind in difficultyTurnStartHandlers || PASSIVE_ONLY_MODIFIERS.has(kind);
+}
+
+export function collectUncoveredEnemyTraitIds(traitIds: Iterable<string>): string[] {
+  return [...new Set(traitIds)].filter((id) => !isEnemyTraitTurnStartCovered(id));
+}
+
+export function collectUncoveredDifficultyModifierKinds(
+  kinds: Iterable<DifficultyModifier["kind"]> = ALL_DIFFICULTY_MODIFIER_KINDS,
+): DifficultyModifier["kind"][] {
+  return [...new Set(kinds)].filter((kind) => !isDifficultyModifierTurnStartCovered(kind));
+}
 
 export function processEnemyTraits(
   state: BattleState,

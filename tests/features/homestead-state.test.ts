@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { COMPANION_BOND_TIERS, COMPANION_MAX_TIER } from "@/features/alchemy/use-homestead-state";
+import { COMPANION_BOND_TIERS, COMPANION_MAX_TIER } from "@/lib/homestead/companions";
 import { emptyInventory, addInventory, subtractInventory, canAfford } from "@/lib/homestead/inventory";
 import { computeHomesteadEffects } from "@/lib/homestead/effects";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";

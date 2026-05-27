@@ -1,9 +1,10 @@
 import { expect, test } from "@playwright/test";
-import { injectSaveState, openGameModeSelect, resumeGameMode, seedRandomScript } from "./helpers";
+import { injectSaveState, openGameModeSelect, resumeGameMode, SAVE_KEY, seedRandom } from "./helpers";
+import { critical } from "./playwright-tags";
 
-test.describe("Save Persistence Edge Cases", () => {
+test.describe("Save Persistence Edge Cases", critical, () => {
   test("resume run restores exact state after reload", async ({ page }) => {
-    await page.addInitScript(seedRandomScript(42));
+    await seedRandom(page, 42);
     await injectSaveState(page, {
       characterId: "knight",
       runGold: 42,
@@ -16,10 +17,10 @@ test.describe("Save Persistence Edge Cases", () => {
     });
     await page.goto("/");
 
-    const savedBefore = await page.evaluate(() => {
-      const s = JSON.parse(localStorage.getItem("alchemy-save-v1") || "{}");
+    const savedBefore = await page.evaluate((saveKey) => {
+      const s = JSON.parse(localStorage.getItem(saveKey) || "{}");
       return s.activeRun;
-    });
+    }, SAVE_KEY);
     expect(savedBefore.runGold).toBe(42);
     expect(savedBefore.runPlayerHealth).toBe(18);
     expect(savedBefore.runMaxHealth).toBe(30);
@@ -32,16 +33,16 @@ test.describe("Save Persistence Edge Cases", () => {
     await page.getByRole("button", { name: "Resume" }).click();
     await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 5000 });
 
-    const savedAfter = await page.evaluate(() => {
-      const s = JSON.parse(localStorage.getItem("alchemy-save-v1") || "{}");
+    const savedAfter = await page.evaluate((saveKey) => {
+      const s = JSON.parse(localStorage.getItem(saveKey) || "{}");
       return s.activeRun;
-    });
+    }, SAVE_KEY);
     expect(savedAfter.runGold).toBe(42);
     expect(savedAfter.runPlayerHealth).toBe(18);
   });
 
   test("resume restores saved destination choices", async ({ page }) => {
-    await page.addInitScript(seedRandomScript(42));
+    await seedRandom(page, 42);
     await injectSaveState(page, {
       runPlayerHealth: 22,
       runMaxHealth: 30,
@@ -63,7 +64,7 @@ test.describe("Save Persistence Edge Cases", () => {
   });
 
   test("mid-battle reload returns to destination not battle", async ({ page }) => {
-    await page.addInitScript(seedRandomScript(42));
+    await seedRandom(page, 42);
     await injectSaveState(page, {
       runPlayerHealth: 22,
       runMaxHealth: 30,

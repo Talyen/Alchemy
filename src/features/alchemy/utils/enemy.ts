@@ -1,11 +1,8 @@
 // Enemy formatting helpers for tooltip display and bestiary entries.
 // Depends on game-data enemy types only.
 // Used by EnemyTooltip and collection UI to render structured enemy data as text.
+import { capitalizeWord } from "@/lib/utils";
 import type { EnemyAttackEffect } from "@/lib/game-data";
-
-function capitalize(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1);
-}
 
 function joinAttackTypes(types: string[]): string {
   // Enemy tooltips use natural-language joins so combined attacks read as one move.
@@ -17,9 +14,9 @@ function joinAttackTypes(types: string[]): string {
 function formatStatusAttackTypes(attackEffects: Extract<EnemyAttackEffect, { kind: "player-status" }>[]) {
   if (attackEffects.length === 1) {
     const e = attackEffects[0];
-    return `Deals ${e.amount} ${capitalize(e.status)} damage`;
+    return `Deals ${e.amount} ${capitalizeWord(e.status)} damage`;
   }
-  const statusWithAmounts = attackEffects.map((e) => `${e.amount} ${capitalize(e.status)}`);
+  const statusWithAmounts = attackEffects.map((e) => `${e.amount} ${capitalizeWord(e.status)}`);
   return `Deals ${joinAttackTypes(statusWithAmounts)}`;
 }
 
@@ -36,12 +33,12 @@ export function formatEnemyAttackLines(attackEffects: EnemyAttackEffect[]): stri
   const statusEffects = attackEffects.filter((e) => e.kind === "player-status");
   if (damageEffects.length === 1 && statusEffects.length === 1 && !damageEffects[0].lifesteal) {
     return [
-      `Deals ${joinAttackTypes([`${damageEffects[0].amount} ${capitalize(damageEffects[0].damageType)}`, `${statusEffects[0].amount} ${capitalize(statusEffects[0].status)}`])}`,
+      `Deals ${joinAttackTypes([`${damageEffects[0].amount} ${capitalizeWord(damageEffects[0].damageType)}`, `${statusEffects[0].amount} ${capitalizeWord(statusEffects[0].status)}`])}`,
     ];
   }
 
   if (statusEffects.length === 0 && damageEffects.length > 1) {
-    const parts = damageEffects.map((e) => `${e.amount} ${capitalize(e.damageType)}`);
+    const parts = damageEffects.map((e) => `${e.amount} ${capitalizeWord(e.damageType)}`);
     return [`Deals ${joinAttackTypes(parts)}`];
   }
 
@@ -49,10 +46,10 @@ export function formatEnemyAttackLines(attackEffects: EnemyAttackEffect[]): stri
   const lines: string[] = [];
   for (const effect of attackEffects) {
     if (effect.kind === "damage") {
-      lines.push(`Deals ${effect.amount} ${capitalize(effect.damageType)} damage`);
+      lines.push(`Deals ${effect.amount} ${capitalizeWord(effect.damageType)} damage`);
       if (effect.lifesteal) lines.push("Leech");
     } else {
-      lines.push(`Deals ${effect.amount} ${capitalize(effect.status)} damage`);
+      lines.push(`Deals ${effect.amount} ${capitalizeWord(effect.status)} damage`);
     }
   }
   return lines;

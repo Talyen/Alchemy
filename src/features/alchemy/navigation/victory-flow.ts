@@ -6,7 +6,7 @@ import { computeTalentEffects, getGoldMultiplier } from "@/lib/game-data";
 import type { BattleState } from "@/lib/battle";
 import type { BattleCard, CharacterId, DifficultyId, UnlockedTalents, TalentEffectManifest } from "@/lib/game-data";
 import { getEnemyMaterialLoot, applyMaterialFindBonus } from "@/lib/homestead/loot";
-import { randomBetween } from "@/features/alchemy/utils";
+import { randomInt } from "@/lib/utils";
 import {
   COMPANION_GOLD_FIND_CHANCE,
   COMPANION_GOLD_MULTIPLIER,
@@ -52,7 +52,7 @@ function rollVictoryGold(
   labyrinthRewardModifiers: LabyrinthModifierKind[],
   rng: () => number,
 ): VictoryGoldRoll {
-  const baseGold = randomBetween(GOLD_REWARD_MIN, GOLD_REWARD_MAX);
+  const baseGold = randomInt(GOLD_REWARD_MIN, GOLD_REWARD_MAX);
   let gold = Math.floor(baseGold * (1 + talentEffects.enemyGoldDropBonus));
 
   if (talentEffects.companionGoldFindActive && battleState.activeCompanion && rng() < COMPANION_GOLD_FIND_CHANCE) {

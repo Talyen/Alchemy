@@ -4,6 +4,7 @@ import type { CSSProperties } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { gameModeMeta, staticCardTransform } from "../config";
+import { PressableMotion } from "../ui/pressable-motion";
 import { ScreenHeader } from "../ui/shared-ui";
 import { clearTiltFromEvent, setTiltFromEvent } from "../utils";
 import { useScreenStore } from "../stores/screen-store";
@@ -47,31 +48,36 @@ export function GameModeSelectScreen({
         {GAME_MODE_IDS.map((modeId, index) => {
           const meta = gameModeMeta[modeId];
           return (
-            <button
+            <PressableMotion
               key={modeId}
-              type="button"
-              onClick={() => setSelectedModeId(modeId)}
-              className={cn(
-                "stagger-item flex flex-col items-center gap-3 rounded-shell-dialog border border-border/60 bg-card/60 px-8 pb-7 pt-6",
-                selectedModeId === modeId && "ring-2 ring-primary",
-              )}
+              className="stagger-item"
               style={{ "--stagger-index": index } as CSSProperties}
+              disableHoverScale
             >
-              <div
-                className="tilt-surface rounded-shell-card"
-                style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
-                onMouseMove={setTiltFromEvent}
-                onMouseLeave={clearTiltFromEvent}
+              <button
+                type="button"
+                onClick={() => setSelectedModeId(modeId)}
+                className={cn(
+                  "flex flex-col items-center gap-3 rounded-shell-dialog border border-border/60 bg-card/60 px-8 pb-7 pt-6",
+                  selectedModeId === modeId && "ring-2 ring-primary",
+                )}
               >
-                <img
-                  src={meta.art}
-                  alt={meta.title}
-                  className="w-full max-w-[32.59cqh] rounded-shell-card object-contain"
-                />
-              </div>
-              <h2 className="font-display text-base font-bold text-amber-100/75">{meta.title}</h2>
-              <p className="text-sm leading-relaxed text-muted-foreground">{meta.description}</p>
-            </button>
+                <div
+                  className="tilt-surface rounded-shell-card"
+                  style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
+                  onMouseMove={setTiltFromEvent}
+                  onMouseLeave={clearTiltFromEvent}
+                >
+                  <img
+                    src={meta.art}
+                    alt={meta.title}
+                    className="w-full max-w-[32.59cqh] rounded-shell-card object-contain"
+                  />
+                </div>
+                <h2 className="font-display text-base font-bold text-amber-100/75">{meta.title}</h2>
+                <p className="text-sm leading-relaxed text-muted-foreground">{meta.description}</p>
+              </button>
+            </PressableMotion>
           );
         })}
       </div>

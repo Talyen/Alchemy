@@ -1,9 +1,9 @@
 import { describe, expect, it, vi, afterEach } from "vitest";
+import { normalizeTierRecord } from "@/lib/homestead/tiers";
 import {
   migrateMaterialInventory,
   migrateBuildingIds,
   migrateFarmIds,
-  migrateToTierLevels,
 } from "@/features/alchemy/storage/homestead";
 
 afterEach(() => {
@@ -86,40 +86,40 @@ describe("migrateFarmIds", () => {
   });
 });
 
-describe("migrateToTierLevels", () => {
+describe("normalizeTierRecord", () => {
   const testItems = [
     { id: "alpha", tiers: [1, 2] },
     { id: "beta", tiers: [1] },
   ] as const;
 
   it("returns zero-filled record for null/undefined input", () => {
-    const result = migrateToTierLevels(null, testItems);
+    const result = normalizeTierRecord(null, testItems);
     expect(result).toEqual({ alpha: 0, beta: 0 });
   });
 
   it("handles legacy array format (each entry gets level 1)", () => {
-    const result = migrateToTierLevels(["alpha"], testItems);
+    const result = normalizeTierRecord(["alpha"], testItems);
     expect(result).toEqual({ alpha: 1, beta: 0 });
   });
 
   it("handles record format", () => {
-    const result = migrateToTierLevels({ alpha: 2, beta: 1 }, testItems);
+    const result = normalizeTierRecord({ alpha: 2, beta: 1 }, testItems);
     expect(result).toEqual({ alpha: 2, beta: 1 });
   });
 
   it("clamps levels to max tier count", () => {
-    const result = migrateToTierLevels({ alpha: 999 }, testItems);
+    const result = normalizeTierRecord({ alpha: 999 }, testItems);
     expect(result.alpha).toBe(2);
   });
 
   it("applies rename map", () => {
     const renameMap = { old_alpha: "alpha" as const };
-    const result = migrateToTierLevels({ old_alpha: 1 }, testItems, renameMap);
+    const result = normalizeTierRecord({ old_alpha: 1 }, testItems, renameMap);
     expect(result).toEqual({ alpha: 1, beta: 0 });
   });
 
   it("ignores unknown IDs", () => {
-    const result = migrateToTierLevels({ unknown: 5 }, testItems);
+    const result = normalizeTierRecord({ unknown: 5 }, testItems);
     expect(result).toEqual({ alpha: 0, beta: 0 });
   });
 });

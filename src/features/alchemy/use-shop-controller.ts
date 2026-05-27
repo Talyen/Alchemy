@@ -20,8 +20,7 @@ import {
   MIXED_POTION_CARD_ID,
 } from "@/lib/game-constants";
 import { useScreenStore } from "./stores/screen-store";
-import type { RunStateController } from "./use-run-state";
-import type { TalentStateController } from "./use-talent-state";
+import type { RunStateController, TalentStateController } from "./stores/run-store";
 
 export function useShopController({
   run,

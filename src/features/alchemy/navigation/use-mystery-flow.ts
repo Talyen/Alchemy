@@ -3,7 +3,8 @@
 // Depended on by: useRunNavigation for managing the React state of mystery events during a run.
 import { cardLibrary } from "@/lib/game-data";
 import { pickMysteryEvent, type MysteryChoice } from "../mystery-events";
-import { addCardToRun, applyMysteryEffect } from "./mystery-flow";
+import { appendCardToRunWithDiscovery } from "../run/deck-mutations";
+import { applyMysteryEffect } from "./mystery-flow";
 import { useScreenStore } from "../stores/screen-store";
 import { useRunStore } from "../stores/run-store";
 import { useAppStore } from "../stores/app-store";
@@ -57,7 +58,7 @@ export function useMysteryFlow({ advanceToNextDestination }: { advanceToNextDest
     if (card) {
       const runStore = useRunStore.getState();
       const appStore = useAppStore.getState();
-      addCardToRun(card, {
+      appendCardToRunWithDiscovery(card, {
         setRunDeck: runStore.setRunDeck,
         setDiscoveredCardIds: appStore.setDiscoveredCardIds,
       });

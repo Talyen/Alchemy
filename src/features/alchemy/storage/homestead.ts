@@ -1,8 +1,6 @@
 // Homestead save migration helpers for material inventory and renamed content IDs.
 // Depends on homestead persisted type contracts and save defaults.
 import type { BuildingId, FarmId, MaterialInventory } from "@/lib/homestead/types";
-import { normalizeTierRecord, type TieredItem } from "@/lib/homestead/tiers";
-
 import { defaultSaveData } from "./defaults";
 
 // Rebuild key-by-key so saves from before a material existed receive a zero default while
@@ -37,13 +35,4 @@ export function migrateFarmIds(ids: unknown): FarmId[] {
     if (id === "sheep-pasture") return "pasture" as FarmId;
     return id as FarmId;
   });
-}
-
-// Converts legacy string[] and current Record saves to safe tier-level records.
-export function migrateToTierLevels<T extends string>(
-  value: unknown,
-  items: readonly TieredItem<T>[],
-  renameMap: Record<string, T> = {},
-): Record<T, number> {
-  return normalizeTierRecord(value, items, renameMap);
 }

@@ -7,9 +7,6 @@ import { processEnemyAttack } from "./enemy-turn-attack";
 import { processEnemyRegeneration, processEnemyTraits } from "./enemy-turn-traits";
 import { advanceToPlayerTurn, reduceSkipTurns, resolveDeathsDoorEndOfEnemyTurn } from "./enemy-turn-utils";
 
-export { chooseWishCard } from "./wish";
-export { processCompanionTurnStart } from "./companion";
-
 export type EndPlayerTurnResolution = {
   state: BattleState;
   combatTexts: CombatTextEvent[];

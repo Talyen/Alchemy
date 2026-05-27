@@ -49,7 +49,7 @@ export function PilePanel({
       onMouseLeave={clearTiltFromEvent}
       style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
     >
-      <img src={art} alt={`${label} pile`} className={cn("block w-full", cardArtImageClass)} loading="lazy" />
+      <img src={art} alt={`${label} pile`} className={cn("block w-full", cardArtImageClass)} />
     </div>
   );
 }

@@ -4,7 +4,7 @@ import { defaultSaveData } from "@/features/alchemy/storage/defaults";
 import { legacyCampaignRunSave } from "../fixtures/legacy-saves";
 
 const { SAVE_KEY } = await import("@/lib/game-constants");
-const { CURRENT_CONTENT_VERSION, CURRENT_SAVE_SCHEMA_VERSION } = await import("@/features/alchemy/storage/metadata");
+const { CURRENT_CONTENT_VERSION, CURRENT_SAVE_SCHEMA_VERSION } = await import("@/lib/validation");
 
 const mockStorage: Record<string, string> = {};
 const globalWithWindow = globalThis as typeof globalThis & { window?: Pick<Window, "localStorage"> };

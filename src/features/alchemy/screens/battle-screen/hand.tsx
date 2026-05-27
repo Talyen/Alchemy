@@ -17,7 +17,8 @@ import { cn } from "@/lib/utils";
 import type { BattleState } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
 
-import { BattleCardButton, getCardDisplayTitle } from "../../ui/card-ui";
+import { BattleCardButton } from "../../ui/card-button";
+import { getCardDisplayTitle } from "../../ui/card-description-ui";
 import { battleHandContainerClass, handCardWidthClass } from "../../config";
 import type { BattleActionsProps, BattleRefsProps, RequiredBattleViewProps } from "./types";
 import { useBattleStore } from "../../stores/battle-store";

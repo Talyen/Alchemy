@@ -1,4 +1,5 @@
 import { expect, type Page } from "@playwright/test";
+import { startAtDestination } from "../helpers";
 
 export class ShopPage {
   constructor(private page: Page) {}
@@ -69,6 +70,12 @@ export class ShopPage {
     await expect(this.combineBtn).toBeEnabled({ timeout: 3000 });
     await this.combineBtn.click();
     await expect(this.page.getByText("Added to Deck: Mixed Potion")).toBeVisible({ timeout: 3000 });
+  }
+
+  async enterFromDestination(gold: number, destination: "Merchant's Shop" | "Alchemist's Shop") {
+    await startAtDestination(this.page, { runGold: gold }, { forceDestination: destination });
+    await this.page.getByRole("button", { name: destination }).click();
+    await expect(this.page.getByRole("heading", { name: destination })).toBeVisible();
   }
 
   async navigateToDestination(name: string) {

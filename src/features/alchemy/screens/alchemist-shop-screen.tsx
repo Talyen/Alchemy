@@ -1,5 +1,5 @@
 // Alchemist's Shop screen — buy potions, refresh, or mix two potions from your deck.
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { FlaskConical, RefreshCw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,8 @@ import {
   SELECTION_GRID_PAGE_SIZE,
 } from "@/lib/game-constants";
 
-import { BattleCardButton, PurchasableCardItem, SelectableShopCard } from "../ui/card-ui";
+import { BattleCardButton } from "../ui/card-button";
+import { PurchasableCardItem, SelectableShopCard } from "../ui/shop-card-item";
 import { CardSelectionGrid } from "../ui/card-selection-grid";
 import { GoldDisplay, ScreenDescription, ScreenHeader, ServiceButton } from "../ui/shared-ui";
 import { collectionTileWidthClass } from "../config";
@@ -93,7 +94,10 @@ export function AlchemistShopScreen({
     if (result) setMixedCard(result);
   }
 
-  const mixableCards = runDeck.map((c, i) => ({ card: c, index: i })).filter(({ card }) => isStandardPotionCard(card));
+  const mixableCards = useMemo(
+    () => runDeck.map((c, i) => ({ card: c, index: i })).filter(({ card }) => isStandardPotionCard(card)),
+    [runDeck],
+  );
   const hasEnoughPotionsToMix = mixableCards.length >= 2;
   const mixDisabled = gold < mixPrice || !hasEnoughPotionsToMix;
   const mixDisabledMessage = hasEnoughPotionsToMix ? "Not Enough Gold" : "Not Enough Potions to Mix";

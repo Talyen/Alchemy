@@ -5,7 +5,7 @@ import type { LucideIcon } from "lucide-react";
 import { Sparkles } from "lucide-react";
 
 // Maps non-keyword stats to their display icons for floating combat text.
-// Keyword icons come from keywordIcons (metadata.ts).
+// Keyword icons come from keywordDefinitions (keywords.ts).
 export const combatTextIconClasses: Record<string, LucideIcon> = {
   haste: Sparkles,
 };

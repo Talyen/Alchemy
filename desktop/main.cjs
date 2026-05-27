@@ -23,6 +23,22 @@ function isDisplayMode(value) {
   return value === "windowed" || value === "borderless-fullscreen" || value === "fullscreen";
 }
 
+const MAX_SAVE_PAYLOAD_BYTES = 4 * 1024 * 1024;
+const MAX_RICH_PRESENCE_KEY_LEN = 64;
+const MAX_RICH_PRESENCE_VALUE_LEN = 256;
+
+function assertSavePayload(data) {
+  return typeof data === "string" && Buffer.byteLength(data, "utf8") <= MAX_SAVE_PAYLOAD_BYTES;
+}
+
+function assertRichPresenceKey(key) {
+  return typeof key === "string" && key.length > 0 && key.length <= MAX_RICH_PRESENCE_KEY_LEN;
+}
+
+function assertRichPresenceValue(value) {
+  return typeof value === "string" && value.length <= MAX_RICH_PRESENCE_VALUE_LEN;
+}
+
 function getMainWindow() {
   return BrowserWindow.getAllWindows()[0];
 }
@@ -105,6 +121,9 @@ app.whenReady().then(() => {
   });
 
   ipcMain.handle("alchemy:write-save", async (_event, data) => {
+    if (!assertSavePayload(data)) {
+      return false;
+    }
     try {
       const dir = path.dirname(SAVE_FILE_PATH);
       if (!fs.existsSync(dir)) {
@@ -146,6 +165,9 @@ app.whenReady().then(() => {
 
   ipcMain.handle("alchemy:steam-cloud-write", async (_event, data) => {
     if (!steamClient) return false;
+    if (!assertSavePayload(data)) {
+      return false;
+    }
     try {
       return steamClient.cloud.writeFile("save.json", data);
     } catch (err) {
@@ -180,6 +202,9 @@ app.whenReady().then(() => {
   });
 
   ipcMain.handle("alchemy:steam-set-rich-presence", (_event, key, value) => {
+    if (!assertRichPresenceKey(key) || !assertRichPresenceValue(value)) {
+      return false;
+    }
     if (steamClient) {
       try {
         console.log(`Setting Steam rich presence: ${key} = ${value}`);

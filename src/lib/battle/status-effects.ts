@@ -426,34 +426,39 @@ function applyPhysicalStatusRider(
   return nextState;
 }
 
+type DamageStatusContext = {
+  state: BattleState;
+  effect: Extract<BattleCardEffect, { kind: "damage" }>;
+  actualDamage: number;
+  combatTexts: CombatTextEvent[];
+};
+
+type DamageStatusHandler = (ctx: DamageStatusContext) => BattleState;
+
+const DAMAGE_STATUS_HANDLERS: Partial<Record<DamageType, DamageStatusHandler>> = {
+  burn: ({ state, actualDamage }) => applyBurnStatusRider(state, actualDamage),
+  poison: ({ state, actualDamage, combatTexts }) => applyPoisonStatusRider(state, actualDamage, combatTexts),
+  bleed: ({ state, effect, actualDamage, combatTexts }) => {
+    const statusDamage = adjustEnemyStatusDelta(state, actualDamage);
+    return applyBleedStatusRider(state, effect, actualDamage, statusDamage, combatTexts);
+  },
+  stun: ({ state, actualDamage, combatTexts }) => applyStunStatusRider(state, actualDamage, combatTexts),
+  freeze: ({ state, actualDamage, combatTexts }) => applyFreezeStatusRider(state, actualDamage, combatTexts),
+  physical: ({ state, actualDamage, combatTexts }) => applyPhysicalStatusRider(state, actualDamage, combatTexts),
+  holy: ({ state }) => state,
+  nature: ({ state }) => state,
+  arrow: ({ state }) => state,
+};
+
 export function applyDamageStatuses(
   state: BattleState,
   effect: Extract<BattleCardEffect, { kind: "damage" }>,
   actualDamage: number,
   combatTexts: CombatTextEvent[],
 ) {
-  switch (effect.damageType) {
-    case "burn":
-      return applyBurnStatusRider(state, actualDamage);
-    case "poison":
-      return applyPoisonStatusRider(state, actualDamage, combatTexts);
-    case "bleed": {
-      const statusDamage = adjustEnemyStatusDelta(state, actualDamage);
-      return applyBleedStatusRider(state, effect, actualDamage, statusDamage, combatTexts);
-    }
-    case "stun":
-      return applyStunStatusRider(state, actualDamage, combatTexts);
-    case "freeze":
-      return applyFreezeStatusRider(state, actualDamage, combatTexts);
-    case "physical":
-      return applyPhysicalStatusRider(state, actualDamage, combatTexts);
-    case "holy":
-    case "nature":
-    case "arrow":
-      return state;
-    default:
-      return ((_: never) => state)(effect.damageType);
-  }
+  const handler = DAMAGE_STATUS_HANDLERS[effect.damageType];
+  if (!handler) return state;
+  return handler({ state, effect, actualDamage, combatTexts });
 }
 
 function clearHarmfulStatuses(playerStatuses: BattleState["playerStatuses"], statusTypesToClear: number) {

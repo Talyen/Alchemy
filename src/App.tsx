@@ -2,7 +2,7 @@
 // Depends on alchemy controllers, homestead state, screen modules, assets, and platform/audio helpers.
 // Everything visible flows through here, but domain rules stay in feature/lib controllers.
 import { useEffect, useRef, useState } from "react";
-import { cn } from "@/lib/utils";
+import { cn, wrapStoreSetter } from "@/lib/utils";
 
 import {
   allGameArt,
@@ -35,16 +35,13 @@ import { HomesteadProvider } from "@/features/alchemy/homestead-context";
 import { PAGE_EXIT_MS } from "@/lib/game-constants";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { BackgroundParticles } from "@/features/alchemy/ui/background-particles";
-import {
-  CURRENT_CONTENT_VERSION,
-  CURRENT_GAME_BUILD_VERSION,
-  CURRENT_SAVE_SCHEMA_VERSION,
-} from "@/features/alchemy/storage/metadata";
+import { CURRENT_CONTENT_VERSION, CURRENT_GAME_BUILD_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
 import { platform } from "@/lib/platform";
 import { loadAlchemySaveState, type SaveLoadState } from "@/features/alchemy/storage";
 import { useAppStore } from "@/features/alchemy/stores/app-store";
 import { useScreenStore } from "@/features/alchemy/stores/screen-store";
 import { clearAllPersistentGameData } from "@/features/alchemy/stores/reset";
+import { isAlchemyDevBuild } from "@/features/alchemy/utils";
 
 const appStore = useAppStore;
 const homesteadStore = useHomesteadStore;
@@ -71,19 +68,18 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
   const showClearSaveConfirm = useAppStore((s) => s.showClearSaveConfirm);
   const pendingCharacterId = useScreenStore((s) => s.pendingCharacterId);
 
-  // Store-backed setters (wrapped for Dispatch<SetStateAction> compatibility)
-  function setDiscoveredCardIds(v: string[] | ((prev: string[]) => string[])) {
-    const nextVal = typeof v === "function" ? v(appStore.getState().discoveredCardIds) : v;
-    appStore.getState().setDiscoveredCardIds(nextVal);
-  }
-  function setEncounteredEnemyIds(v: string[] | ((prev: string[]) => string[])) {
-    const nextVal = typeof v === "function" ? v(appStore.getState().encounteredEnemyIds) : v;
-    appStore.getState().setEncounteredEnemyIds(nextVal);
-  }
-  function setDiscoveredTrinketIds(v: string[] | ((prev: string[]) => string[])) {
-    const nextVal = typeof v === "function" ? v(appStore.getState().discoveredTrinketIds) : v;
-    appStore.getState().setDiscoveredTrinketIds(nextVal);
-  }
+  const setDiscoveredCardIds = wrapStoreSetter(
+    () => appStore.getState().discoveredCardIds,
+    appStore.getState().setDiscoveredCardIds,
+  );
+  const setEncounteredEnemyIds = wrapStoreSetter(
+    () => appStore.getState().encounteredEnemyIds,
+    appStore.getState().setEncounteredEnemyIds,
+  );
+  const setDiscoveredTrinketIds = wrapStoreSetter(
+    () => appStore.getState().discoveredTrinketIds,
+    appStore.getState().setDiscoveredTrinketIds,
+  );
   const [gameMenuOpen, setGameMenuOpen] = useState(false);
   const [menuAnchorRect, setMenuAnchorRect] = useState<DOMRect | null>(null);
   const [renderedScreen, setRenderedScreen] = useState<Screen>("menu");
@@ -224,6 +220,7 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
   }
 
   function unlockAllDevMode() {
+    if (!isAlchemyDevBuild()) return;
     setDiscoveredCardIds(cardLibrary.map((card) => card.id));
     setEncounteredEnemyIds(enemyBestiary.map((enemy) => enemy.id));
     setDiscoveredTrinketIds(trinketLibrary.map((trinket) => trinket.id));

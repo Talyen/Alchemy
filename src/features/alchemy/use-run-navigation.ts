@@ -57,10 +57,14 @@ export function useRunNavigation({
   const run = useRunAdapter();
   const talents = useTalentAdapter();
 
-  const logicalBattleState = useBattleStore((s) => s.logicalBattleState);
-  const hasActiveBattle = useBattleStore((s) => s.hasActiveBattle);
-  const setHasActiveBattle = useBattleStore((s) => s.setHasActiveBattle);
-  const clearCardGhosts = useBattleStore((s) => s.clearCardGhosts);
+  const { battleState, hasActiveBattle, setHasActiveBattle, clearCardGhosts } = useBattleStore(
+    useShallow((s) => ({
+      battleState: s.battleState,
+      hasActiveBattle: s.hasActiveBattle,
+      setHasActiveBattle: s.setHasActiveBattle,
+      clearCardGhosts: s.clearCardGhosts,
+    })),
+  );
 
   const { completedDifficulties, setDiscoveredCardIds, setEncounteredEnemyIds, setDiscoveredTrinketIds } = useAppStore(
     useShallow((s) => ({
@@ -72,18 +76,33 @@ export function useRunNavigation({
   );
 
   const draftedDeckRef = useRef<BattleCard[] | null>(null);
-  const clearCardHover = useScreenStore((s) => s.clearCardHover);
-  const hasActiveRun = useScreenStore((s) => s.hasActiveRun);
-  const labyrinthMap = useScreenStore((s) => s.labyrinthMap);
-  const labyrinthPendingNode = useScreenStore((s) => s.activeLabyrinthPendingNode);
-  const activeLabyrinthModifiers = useScreenStore((s) => s.activeLabyrinthModifiers);
-  const activeLabyrinthRewardModifiers = useScreenStore((s) => s.activeLabyrinthRewardModifiers);
-
-  const rewardState = useScreenStore((s) => s.rewardState);
-  const runEndMaterials = useScreenStore((s) => s.runEndMaterials);
-  const corruptionResult = useScreenStore((s) => s.corruptionResult);
-  const pendingCharacterId = useScreenStore((s) => s.pendingCharacterId);
-  const pendingContentSystemType = useScreenStore((s) => s.pendingContentSystemType);
+  const {
+    clearCardHover,
+    hasActiveRun,
+    labyrinthMap,
+    labyrinthPendingNode,
+    activeLabyrinthModifiers,
+    activeLabyrinthRewardModifiers,
+    rewardState,
+    runEndMaterials,
+    corruptionResult,
+    pendingCharacterId,
+    pendingContentSystemType,
+  } = useScreenStore(
+    useShallow((s) => ({
+      clearCardHover: s.clearCardHover,
+      hasActiveRun: s.hasActiveRun,
+      labyrinthMap: s.labyrinthMap,
+      labyrinthPendingNode: s.activeLabyrinthPendingNode,
+      activeLabyrinthModifiers: s.activeLabyrinthModifiers,
+      activeLabyrinthRewardModifiers: s.activeLabyrinthRewardModifiers,
+      rewardState: s.rewardState,
+      runEndMaterials: s.runEndMaterials,
+      corruptionResult: s.corruptionResult,
+      pendingCharacterId: s.pendingCharacterId,
+      pendingContentSystemType: s.pendingContentSystemType,
+    })),
+  );
 
   function getStore() {
     return useScreenStore.getState();
@@ -236,7 +255,7 @@ export function useRunNavigation({
     contentSystemType: run.contentSystemType,
     labyrinthMap,
     hasActiveBattle,
-    battleState: logicalBattleState,
+    battleState,
     labyrinthPendingNode,
     activeLabyrinthModifiers,
     activeLabyrinthRewardModifiers,

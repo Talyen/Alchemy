@@ -7,7 +7,9 @@ import { cn } from "@/lib/utils";
 import { MATERIAL_IDS } from "@/lib/homestead/types";
 import { GoldPill, MaterialPill } from "../ui/material-icons";
 
-import { BattleCardButton, DetailPopup, getCardDisplayTitle } from "../ui/card-ui";
+import { BattleCardButton } from "../ui/card-button";
+import { getCardDisplayTitle } from "../ui/card-description-ui";
+import { DetailPopup } from "../ui/card-popup";
 import { ScreenHeader } from "../ui/shared-ui";
 import { TiltSurface } from "../ui/tilt-surface";
 import { cardSurfaceClass, collectionTileWidthClass } from "../config";
@@ -46,12 +48,7 @@ function TrinketRewardButton({
         onFocus={onHoverStart}
         onBlur={onHoverEnd}
       >
-        <img
-          src={trinket.art}
-          alt={trinket.title}
-          className="block w-full rounded-shell-hero aspect-square"
-          loading="lazy"
-        />
+        <img src={trinket.art} alt={trinket.title} className="block w-full rounded-shell-hero aspect-square" />
       </TiltSurface>
     </div>
   );

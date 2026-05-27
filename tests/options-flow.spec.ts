@@ -1,10 +1,12 @@
 import { expect, test } from "@playwright/test";
+import { MenuPage } from "./pages/menu-page";
+import { critical } from "./playwright-tags";
 
-test.describe("Options Screen", () => {
+test.describe("Options Screen", critical, () => {
   test("all option tabs are accessible and show correct content", async ({ page }) => {
-    await page.goto("/");
-    await page.getByRole("button", { name: "Options" }).click();
-    await expect(page.getByRole("heading", { name: "Options" })).toBeVisible();
+    const menu = new MenuPage(page);
+    await menu.goto();
+    await menu.openOptions();
 
     await expect(page.getByLabel("Aspect Ratio")).toBeVisible();
     await page.getByRole("button", { name: "Sound" }).click();
@@ -20,8 +22,9 @@ test.describe("Options Screen", () => {
   });
 
   test("clear save data confirmation dialog can be cancelled", async ({ page }) => {
-    await page.goto("/");
-    await page.getByRole("button", { name: "Options" }).click();
+    const menu = new MenuPage(page);
+    await menu.goto();
+    await menu.openOptions();
     await page.getByRole("button", { name: "Other" }).click();
 
     await page.getByRole("button", { name: "Clear Save Data" }).click();
@@ -34,8 +37,9 @@ test.describe("Options Screen", () => {
 
 test.describe("Auto-End Turn", () => {
   test("auto-end turn toggle is accessible in gameplay tab", async ({ page }) => {
-    await page.goto("/");
-    await page.getByRole("button", { name: "Options" }).click();
+    const menu = new MenuPage(page);
+    await menu.goto();
+    await menu.openOptions();
 
     const gameplayTab = page.getByRole("button", { name: "Gameplay" });
     await expect(gameplayTab).toBeVisible({ timeout: 5000 });

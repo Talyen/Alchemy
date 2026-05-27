@@ -3,4 +3,3 @@
 // Validation schemas and migration utilities live in @/lib/validation - import from there directly.
 export * from "./io";
 export * from "./types";
-export * from "./metadata";

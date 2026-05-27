@@ -13,7 +13,6 @@ export type EndPlayerTurnResult = ReturnType<typeof endPlayerTurn>;
 export type TurnResolutionStore = {
   showCombatTexts: (texts: CombatTextEvent[]) => void;
   setSyncedBattleState: (state: BattleState) => void;
-  setLogicalBattleState: (state: BattleState) => void;
   setDisplayOverrides: (overrides: {
     hand: [];
     playerHealth?: number;

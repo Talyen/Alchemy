@@ -1,9 +1,10 @@
 // Battle presentation screen for actors, hand fan, piles, ghosts, wish choices, and menu entry.
 // Driven by useBattleController; focused child modules own the layout slices.
 import { useMemo, type MouseEvent, type MutableRefObject } from "react";
+import { useShallow } from "zustand/react/shallow";
 import type { BattleCard } from "@/lib/game-data";
 import type { CardTransfer } from "../../types";
-import { CardGhostOverlay } from "../../ui/card-ui";
+import { CardGhostOverlay } from "../../ui/card-ghost-overlay";
 import { CardTransferOverlay } from "./card-transfer-overlay";
 import { BattleActors } from "./actors";
 import { BattleBottomBar } from "./controls";
@@ -19,7 +20,7 @@ import type {
 import { useBattleStore } from "../../stores/battle-store";
 import { useScreenStore } from "../../stores/screen-store";
 import { BATTLE_PARTICLE_ALPHA_BOSS, BATTLE_PARTICLE_ALPHA_NORMAL } from "@/lib/game-constants";
-import { getEnemyStatusChips, getPlayerStatusChips } from "../../utils";
+import { getEnemyStatusChips, getPlayerStatusChips, isAlchemyDevBuild } from "../../utils";
 import { BackgroundParticles } from "../../ui/background-particles";
 
 type BattleScreenProps = {
@@ -67,22 +68,43 @@ export function BattleScreen(props: BattleScreenProps) {
     cardTransferInProgress,
   } = props;
 
-  const battleState = useBattleStore((s) => s.battleState);
-  const displayOverrides = useBattleStore((s) => s.displayOverrides);
-  const displayState = { ...battleState, ...displayOverrides };
+  const {
+    battleState,
+    displayOverrides,
+    cardGhosts,
+    floatingCombatTexts,
+    enemyShaking,
+    playerShaking,
+    companionShaking,
+    playerHurtFlashToken,
+    enemyHurtFlashToken,
+  } = useBattleStore(
+    useShallow((s) => ({
+      battleState: s.battleState,
+      displayOverrides: s.displayOverrides,
+      cardGhosts: s.cardGhosts,
+      floatingCombatTexts: s.floatingCombatTexts,
+      enemyShaking: s.enemyShaking,
+      playerShaking: s.playerShaking,
+      companionShaking: s.companionShaking,
+      playerHurtFlashToken: s.playerHurtFlashToken,
+      enemyHurtFlashToken: s.enemyHurtFlashToken,
+    })),
+  );
+
+  const { shimmerState, hoveredCardId, activeLabyrinthModifiers } = useScreenStore(
+    useShallow((s) => ({
+      shimmerState: s.shimmerState,
+      hoveredCardId: s.hoveredCardId,
+      activeLabyrinthModifiers: s.activeLabyrinthModifiers,
+    })),
+  );
+
+  const displayState = useMemo(() => ({ ...battleState, ...displayOverrides }), [battleState, displayOverrides]);
+
   const isBossBattle = battleState.currentEnemy.enemyType === "boss";
   const particleAlpha = isBossBattle ? BATTLE_PARTICLE_ALPHA_BOSS : BATTLE_PARTICLE_ALPHA_NORMAL;
   const particleColors = ["rgba(255, 150, 70, X)", "rgba(255, 100, 40, X)"] as const;
-  const cardGhosts = useBattleStore((s) => s.cardGhosts);
-  const floatingCombatTexts = useBattleStore((s) => s.floatingCombatTexts);
-  const enemyShaking = useBattleStore((s) => s.enemyShaking);
-  const playerShaking = useBattleStore((s) => s.playerShaking);
-  const companionShaking = useBattleStore((s) => s.companionShaking);
-  const playerHurtFlashToken = useBattleStore((s) => s.playerHurtFlashToken);
-  const enemyHurtFlashToken = useBattleStore((s) => s.enemyHurtFlashToken);
-  const shimmerState = useScreenStore((s) => s.shimmerState);
-  const hoveredCardId = useScreenStore((s) => s.hoveredCardId);
-  const activeLabyrinthModifiers = useScreenStore((s) => s.activeLabyrinthModifiers);
 
   const playerStatusChips = useMemo(() => getPlayerStatusChips(displayState), [displayState]);
   const enemyStatusChips = useMemo(() => getEnemyStatusChips(battleState), [battleState]);
@@ -141,9 +163,7 @@ export function BattleScreen(props: BattleScreenProps) {
     onEndTurn,
     hiddenHandCardKeys,
     cardTransferInProgress,
-    isDevMode:
-      import.meta.env.DEV ||
-      (typeof localStorage !== "undefined" && localStorage.getItem("alchemy-dev-mode") === "true"),
+    isDevMode: isAlchemyDevBuild(),
   };
 
   const { battleSceneRef: sceneRef } = refs;

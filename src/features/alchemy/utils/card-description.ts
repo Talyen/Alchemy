@@ -1,5 +1,6 @@
 // Computes player-facing card text after persistent and battle bonuses are applied.
 // Depends on card effects and manifests; rendering components stay presentation-only.
+import { capitalizeWord } from "@/lib/utils";
 import { POTION_CARD_ID_SUFFIX } from "@/lib/game-constants";
 import { companionLibrary, type BattleCard, type CompanionId } from "@/lib/game-data";
 
@@ -13,7 +14,7 @@ export type CardDescriptionContext = {
 };
 
 function displayDamageType(type: string): string {
-  return type.charAt(0).toUpperCase() + type.slice(1);
+  return capitalizeWord(type);
 }
 
 function getPotionMultiplier(card: Pick<BattleCard, "id">, context: CardDescriptionContext): number {

@@ -12,9 +12,8 @@ import { resolveHasteSkipTurn, resolveNormalEnemyTurn } from "@/features/alchemy
 
 function makeDeps() {
   const getStore = vi.fn(() => ({
-    logicalBattleState: defaultBattleState(),
+    battleState: defaultBattleState(),
     setSyncedBattleState: vi.fn(),
-    setLogicalBattleState: vi.fn(),
     showCombatTexts: vi.fn(),
     shakeEnemy: vi.fn(),
     shakePlayer: vi.fn(),
@@ -54,6 +53,16 @@ describe("resolveEndTurnOrchestration", () => {
 
     expect(resolveHasteSkipTurn).toHaveBeenCalled();
     expect(resolveNormalEnemyTurn).not.toHaveBeenCalled();
+  });
+
+  it("does not sync battle state before the haste draw sequence", () => {
+    const deps = makeDeps();
+    const state = defaultBattleState();
+    state.playerStatuses.haste = 1;
+
+    resolveEndTurnOrchestration(deps, state, 1);
+
+    expect(deps.getStore().setSyncedBattleState).not.toHaveBeenCalled();
   });
 
   it("routes normal turns to resolveNormalEnemyTurn", () => {

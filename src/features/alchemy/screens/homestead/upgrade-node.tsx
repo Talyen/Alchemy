@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { MATERIAL_IDS, materialLabels, type HomesteadFarm, type MaterialInventory } from "@/lib/homestead/types";
 import { canAfford } from "@/lib/homestead/inventory";
 import { Button } from "@/components/ui/button";
-import { DetailPopup } from "../../ui/card-ui";
+import { DetailPopup } from "../../ui/card-popup";
 import { DisabledTooltip } from "../../ui/shared-ui";
 import { StarRating } from "../../ui/star-rating";
 import { TiltSurface } from "../../ui/tilt-surface";

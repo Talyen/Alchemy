@@ -20,8 +20,7 @@ import { applyRunDefeatTeardown, getPreviousDestination } from "../navigation/ru
 import { appendCardToRunWithDiscovery, appendTrinketToRunWithDiscovery } from "./deck-mutations";
 import type { ContentSystemNavigationApi } from "./content-system-navigation";
 import { CONSTANTS, type Destination, type Screen } from "../types";
-import type { RunStateController } from "../use-run-state";
-import type { TalentStateController } from "../use-talent-state";
+import type { RunStateController, TalentStateController } from "../stores/run-store";
 
 type FinalizeRewardResultType = ReturnType<typeof finalizeRewardState>;
 
@@ -35,29 +34,38 @@ export type DestinationRouteHandlers = {
   startBossBattle: () => void;
 };
 
-export function routeDestinationChoice(destination: Destination, handlers: DestinationRouteHandlers) {
-  if (destination === CONSTANTS.DESTINATIONS.CAMPFIRE) handlers.navigateTo(CONSTANTS.SCREENS.CAMPFIRE);
-  else if (destination === CONSTANTS.DESTINATIONS.MERCHANT_SHOP) {
+const DESTINATION_HANDLERS: Record<Destination, (handlers: DestinationRouteHandlers) => void> = {
+  [CONSTANTS.DESTINATIONS.CAMPFIRE]: (handlers) => handlers.navigateTo(CONSTANTS.SCREENS.CAMPFIRE),
+  [CONSTANTS.DESTINATIONS.MERCHANT_SHOP]: (handlers) => {
     handlers.startShop();
     handlers.navigateTo(CONSTANTS.SCREENS.SHOP);
-  } else if (destination === CONSTANTS.DESTINATIONS.ALCHEMIST_SHOP) {
+  },
+  [CONSTANTS.DESTINATIONS.ALCHEMIST_SHOP]: (handlers) => {
     handlers.startAlchemist();
     handlers.navigateTo(CONSTANTS.SCREENS.ALCHEMIST);
-  } else if (destination === CONSTANTS.DESTINATIONS.MYSTERY) {
-    handlers.beginMysteryEvent();
-  } else if (destination === CONSTANTS.DESTINATIONS.CORRUPTION) {
+  },
+  [CONSTANTS.DESTINATIONS.MYSTERY]: (handlers) => handlers.beginMysteryEvent(),
+  [CONSTANTS.DESTINATIONS.CORRUPTION]: (handlers) => {
     handlers.resetCorruption();
     handlers.navigateTo(CONSTANTS.SCREENS.CORRUPTION);
-  } else if (destination === CONSTANTS.DESTINATIONS.ELITE_COMBAT) {
+  },
+  [CONSTANTS.DESTINATIONS.ELITE_COMBAT]: (handlers) => {
     handlers.startBattle(CONSTANTS.ENEMY_TYPES.ELITE);
     handlers.navigateTo(CONSTANTS.SCREENS.BATTLE);
-  } else if (destination === CONSTANTS.DESTINATIONS.BOSS_COMBAT) {
+  },
+  [CONSTANTS.DESTINATIONS.BOSS_COMBAT]: (handlers) => {
     handlers.startBossBattle();
     handlers.navigateTo(CONSTANTS.SCREENS.BATTLE);
-  } else {
+  },
+  [CONSTANTS.DESTINATIONS.NORMAL_COMBAT]: (handlers) => {
     handlers.startBattle(CONSTANTS.ENEMY_TYPES.NORMAL);
     handlers.navigateTo(CONSTANTS.SCREENS.BATTLE);
-  }
+  },
+};
+
+export function routeDestinationChoice(destination: Destination, handlers: DestinationRouteHandlers) {
+  const handler = DESTINATION_HANDLERS[destination] ?? DESTINATION_HANDLERS[CONSTANTS.DESTINATIONS.NORMAL_COMBAT];
+  handler(handlers);
 }
 
 type RewardSelectionInput = {
@@ -162,7 +170,7 @@ export function createRunDestinationHandlers(deps: RunDestinationHandlerDeps) {
 
   function finishRewards() {
     const screenStore = getStore();
-    const battleStateVal = useBattleStore.getState().logicalBattleState;
+    const battleStateVal = useBattleStore.getState().battleState;
     const result = finalizeRewardState({
       rewardState: screenStore.rewardState,
       companionRewardCards: screenStore.companionRewardCards,

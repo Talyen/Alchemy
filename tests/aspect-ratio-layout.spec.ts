@@ -1,13 +1,12 @@
 import { expect, test } from "@playwright/test";
-import { makeCard, selectGameMode, startBattleWithDeck } from "./helpers";
+import { makeCard, SAVE_KEY, selectGameMode, startBattleWithDeck } from "./helpers";
 
 async function setAspectRatio(page: import("@playwright/test").Page, aspectRatio: string) {
-  await page.addInitScript((ar) => {
-    const KEY = "alchemy-save-v1";
-    const save = JSON.parse(localStorage.getItem(KEY) || "{}");
+  await page.addInitScript(({ saveKey, ar }) => {
+    const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
     save.selectedAspectRatio = ar;
-    localStorage.setItem(KEY, JSON.stringify(save));
-  }, aspectRatio);
+    localStorage.setItem(saveKey, JSON.stringify(save));
+  }, { saveKey: SAVE_KEY, ar: aspectRatio });
 }
 
 async function assertNoOverflow(page: import("@playwright/test").Page, screenName: string) {

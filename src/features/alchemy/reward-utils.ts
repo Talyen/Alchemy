@@ -1,13 +1,9 @@
 // Reward selection helpers for deck keyword affinity and trinket/card sampling.
 // Depends on battle card/trinket shapes and shared sampling utilities.
 // Used by run navigation after combat victories and other reward-generating screens.
-import { getCardKeywords, type BattleCard, type TrinketEntry } from "@/lib/game-data";
+import { getCardKeywords, type BattleCard } from "@/lib/game-data";
 import { MIXED_POTION_CARD_ID, REWARD_SELECTION_CONFIG, REWARD_RANDOM_CHANCE } from "@/lib/game-constants";
 import { sampleItems } from "./utils";
-
-export function selectRewardTrinkets(allTrinkets: TrinketEntry[], count: number): TrinketEntry[] {
-  return sampleItems(allTrinkets, count);
-}
 
 export function selectRewardCards(deck: BattleCard[], allCards: BattleCard[], count: number): BattleCard[] {
   // Rewards are usually biased toward keywords already present in the deck, but occasional

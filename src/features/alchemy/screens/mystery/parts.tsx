@@ -16,7 +16,9 @@ import { cardSurfaceClass, collectionTileWidthClass, viewCardWidthClass } from "
 import type { MysteryChoice, MysteryEvent, MysteryEffect } from "../../mystery-events";
 import { TiltSurface } from "../../ui/tilt-surface";
 import { CardSelectionGrid } from "../../ui/card-selection-grid";
-import { BattleCardButton, CardTitle, DetailPopup, getCardDisplayTitle } from "../../ui/card-ui";
+import { BattleCardButton } from "../../ui/card-button";
+import { CardTitle, getCardDisplayTitle } from "../../ui/card-description-ui";
+import { DetailPopup } from "../../ui/card-popup";
 import { MysteryEffectBadge, MysteryEffectList } from "../../ui/mystery-effect-badge";
 import { ScreenDescription, ScreenHeader } from "../../ui/shared-ui";
 import { TooltipPanel } from "../../ui/tooltip-panel";
@@ -217,17 +219,54 @@ export function MysteryRewardSummary({
   );
 }
 
-// Renders a single selectable item inside the card removal grid.
-function RemoveCardGridItem({
+function DeckCardSelectionFlow<T>({
+  intro,
+  items,
+  page,
+  onPageChange,
+  pageSize,
+  renderItem,
+  confirmLabel,
+  confirmDisabled,
+  onConfirm,
+}: {
+  intro: ReactNode;
+  items: T[];
+  page: number;
+  onPageChange: (page: number) => void;
+  pageSize: number;
+  renderItem: (item: T) => ReactNode;
+  confirmLabel: string;
+  confirmDisabled: boolean;
+  onConfirm: () => void;
+}) {
+  return (
+    <div className="state-swap space-y-6 text-center">
+      {intro}
+      <CardSelectionGrid
+        items={items}
+        page={page}
+        onPageChange={onPageChange}
+        pageSize={pageSize}
+        renderItem={renderItem}
+      />
+      <div className="flex justify-center gap-4">
+        <Button size="lg" disabled={confirmDisabled} onClick={onConfirm}>
+          {confirmLabel}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function SelectableDeckCardTile({
   card,
-  index,
   isSelected,
   onSelect,
 }: {
   card: BattleCard;
-  index: number;
   isSelected: boolean;
-  onSelect: (index: number) => void;
+  onSelect: () => void;
 }) {
   return (
     <div
@@ -241,7 +280,7 @@ function RemoveCardGridItem({
         hovered={isSelected}
         onHoverStart={() => {}}
         onHoverEnd={() => {}}
-        onClick={() => onSelect(index)}
+        onClick={onSelect}
         ariaLabel={`Select ${getCardDisplayTitle(card)}`}
         shimmerActive={false}
         shimmerToken={undefined}
@@ -261,34 +300,25 @@ export function RemoveCardPicker({ runDeck, onSelect }: { runDeck: BattleCard[];
   const items = runDeck.map((card, index) => ({ card, index }));
 
   return (
-    <div className="state-swap space-y-6 text-center">
-      <ScreenDescription>Select a card to remove from your deck</ScreenDescription>
-      <CardSelectionGrid
-        items={items}
-        page={page}
-        onPageChange={setPage}
-        pageSize={SELECTION_GRID_PAGE_SIZE}
-        renderItem={({ card, index }) => (
-          <RemoveCardGridItem
-            card={card}
-            index={index}
-            isSelected={selectedIndex === index}
-            onSelect={setSelectedIndex}
-          />
-        )}
-      />
-      <div className="flex justify-center gap-4">
-        <Button
-          size="lg"
-          disabled={selectedIndex === null}
-          onClick={() => {
-            if (selectedIndex !== null) onSelect(selectedIndex);
-          }}
-        >
-          Remove Card
-        </Button>
-      </div>
-    </div>
+    <DeckCardSelectionFlow
+      intro={<ScreenDescription>Select a card to remove from your deck</ScreenDescription>}
+      items={items}
+      page={page}
+      onPageChange={setPage}
+      pageSize={SELECTION_GRID_PAGE_SIZE}
+      renderItem={({ card, index }) => (
+        <SelectableDeckCardTile
+          card={card}
+          isSelected={selectedIndex === index}
+          onSelect={() => setSelectedIndex(index)}
+        />
+      )}
+      confirmLabel="Remove Card"
+      confirmDisabled={selectedIndex === null}
+      onConfirm={() => {
+        if (selectedIndex !== null) onSelect(selectedIndex);
+      }}
+    />
   );
 }
 
@@ -331,35 +361,33 @@ export function CardChoicePicker({ choices, onSelect }: { choices: BattleCard[];
   const items = choices.map((card, index) => ({ card, index }));
 
   return (
-    <div className="state-swap space-y-6 text-center">
-      <ScreenHeader title="Choose a Card" />
-      <p className="text-base text-muted-foreground">Select one of the scrolls to add to your deck</p>
-      <CardSelectionGrid
-        items={items}
-        page={0}
-        onPageChange={() => {}}
-        pageSize={choices.length}
-        renderItem={({ card }) => (
-          <CardChoiceGridItem
-            card={card}
-            isSelected={selectedId === card.id}
-            isHovered={hoveredId === card.id}
-            onHoverStart={() => setHoveredId(card.id)}
-            onHoverEnd={() => setHoveredId(null)}
-            onClick={() => setSelectedId(card.id)}
-          />
-        )}
-      />
-      <Button
-        size="lg"
-        disabled={selectedId === null}
-        onClick={() => {
-          if (selectedId !== null) onSelect(selectedId);
-        }}
-      >
-        Add Card
-      </Button>
-    </div>
+    <DeckCardSelectionFlow
+      intro={
+        <>
+          <ScreenHeader title="Choose a Card" />
+          <p className="text-base text-muted-foreground">Select one of the scrolls to add to your deck</p>
+        </>
+      }
+      items={items}
+      page={0}
+      onPageChange={() => {}}
+      pageSize={choices.length}
+      renderItem={({ card }) => (
+        <CardChoiceGridItem
+          card={card}
+          isSelected={selectedId === card.id}
+          isHovered={hoveredId === card.id}
+          onHoverStart={() => setHoveredId(card.id)}
+          onHoverEnd={() => setHoveredId(null)}
+          onClick={() => setSelectedId(card.id)}
+        />
+      )}
+      confirmLabel="Add Card"
+      confirmDisabled={selectedId === null}
+      onConfirm={() => {
+        if (selectedId !== null) onSelect(selectedId);
+      }}
+    />
   );
 }
 

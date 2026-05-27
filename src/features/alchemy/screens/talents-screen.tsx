@@ -27,7 +27,10 @@ export function TalentsScreen({
   const unlockedTalents = useRunStore((s) => s.unlockedTalents);
   const [selectedKeyword, setSelectedKeyword] = useState<KeywordId>("physical");
   const [showResetConfirm, setShowResetConfirm] = useState(false);
-  const keywordIds = (Object.keys(keywordDefinitions) as KeywordId[]).filter((kw) => !keywordDefinitions[kw].hidden);
+  const keywordIds = useMemo(
+    () => (Object.keys(keywordDefinitions) as KeywordId[]).filter((kw) => !keywordDefinitions[kw].hidden),
+    [],
+  );
 
   const unlockedIds = useMemo(() => unlockedTalents[selectedKeyword] ?? [], [selectedKeyword, unlockedTalents]);
   const allTalentsForKeyword = getTalentsForKeyword(selectedKeyword);
@@ -37,7 +40,10 @@ export function TalentsScreen({
     allTalentsForKeyword.length,
   );
   const allUnlocked = progress.spentPoints >= allTalentsForKeyword.length;
-  const unlockedTalentsForKeyword = allTalentsForKeyword.filter((t) => unlockedIds.includes(t.id));
+  const unlockedTalentsForKeyword = useMemo(
+    () => allTalentsForKeyword.filter((t) => unlockedIds.includes(t.id)),
+    [allTalentsForKeyword, unlockedIds],
+  );
 
   const { currentChoices } = useTalentChoices(selectedKeyword, unlockedIds, progress.unspentPoints > 0, allUnlocked);
   const MASK_ID = "talent-bg-mask";

@@ -16,8 +16,7 @@ import { getPreviousDestination } from "../navigation/run-navigation-helpers";
 import { createRunStartSnapshot, type RunStartSnapshot } from "./run-start";
 import { getBossEnemy } from "../config";
 import { CONSTANTS, type Destination, type Screen } from "../types";
-import type { RunStateController } from "../use-run-state";
-import type { TalentStateController } from "../use-talent-state";
+import type { RunStateController, TalentStateController } from "../stores/run-store";
 import type { DestinationOptionsInput } from "./types";
 
 export type ContentSystemNavigationDeps = {

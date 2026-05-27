@@ -1,0 +1,78 @@
+// Talent definitions for keyword: forge.
+import type { TalentDefinition } from "../types";
+import { addEffect, setEffect } from "../types";
+
+export const forgeTalents: TalentDefinition[] = [
+  {
+    id: "forge-to-burn",
+    keywordId: "forge",
+    name: "Ignite",
+    description: "Forge also increases Burn damage",
+    effects: [setEffect("forgeToBurn", true)],
+  },
+  {
+    id: "forge-to-holy",
+    keywordId: "forge",
+    name: "Sanctify",
+    description: "Forge also increases Holy damage",
+    effects: [setEffect("forgeToHoly", true)],
+  },
+  {
+    id: "forge-to-block",
+    keywordId: "forge",
+    name: "Tempered Guard",
+    description: "Forge also increases Block amount",
+    effects: [setEffect("forgeToBlock", true)],
+  },
+  {
+    id: "forge-burn-burst",
+    keywordId: "forge",
+    name: "Overheat",
+    description: "When you reach 4 Forge, deal 8 Burn",
+    effects: [setEffect("forgeBurnThreshold", 4), setEffect("forgeBurnDamage", 8)],
+  },
+  {
+    id: "forge-strength-1",
+    keywordId: "forge",
+    name: "Forge Mastery",
+    description: "Start each combat with 2 Forge",
+    effects: [setEffect("startForge", 2)],
+  },
+  {
+    id: "forge-strength-2",
+    keywordId: "forge",
+    name: "Rust",
+    description: "Forge also increases Bleed damage",
+    effects: [setEffect("forgeToBleed", true)],
+  },
+  {
+    id: "forge-strength-3",
+    keywordId: "forge",
+    name: "Sunder",
+    description: "When you reach 6 Forge, remove all enemy Armor",
+    effects: [setEffect("forgeStripArmorThreshold", 6)],
+  },
+  {
+    id: "forge-strength-4",
+    keywordId: "forge",
+    name: "Intensify",
+    description: "Increase Forge gained by 1",
+    effects: [addEffect("flatForgeGained", 1)],
+  },
+  {
+    id: "forge-strength-5",
+    keywordId: "forge",
+    name: "Desperate Forge",
+    description: "Forge gained is doubled when Health is below 50%",
+    effects: [setEffect("forgeDoubledBelowHalfHealth", true)],
+  },
+  {
+    id: "forge-strength-6",
+    keywordId: "forge",
+    name: "Forged Bulwark",
+    description: "When you reach 6 Forge, gain 10 Block",
+    effects: [setEffect("forgeBlockThreshold", 6), setEffect("forgeBlockAmount", 10)],
+  },
+
+  // --- Armor ---
+];

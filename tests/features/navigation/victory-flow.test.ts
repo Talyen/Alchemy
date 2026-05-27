@@ -12,9 +12,9 @@ import { emptyInventory } from "@/lib/homestead/inventory";
 import { playGoldGain } from "@/lib/audio";
 import type { Destination } from "@/features/alchemy/types";
 
-vi.mock("@/features/alchemy/utils/random", async () => {
-  const actual = await vi.importActual<typeof import("@/features/alchemy/utils/random")>("@/features/alchemy/utils/random");
-  return { ...actual, randomBetween: vi.fn(() => 15) };
+vi.mock("@/lib/utils", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/utils")>("@/lib/utils");
+  return { ...actual, randomInt: vi.fn(() => 15) };
 });
 
 vi.mock("@/features/alchemy/navigation/destination-flow", () => ({

@@ -58,14 +58,14 @@ describe("battle-store initialization", () => {
 describe("battle-store actions", () => {
   beforeEach(freshStore);
 
-  it("setBattleState replaces the battle state", () => {
+  it("setSyncedBattleState replaces the battle state", () => {
     const modified = { ...useBattleStore.getState().battleState, turn: 7 };
-    useBattleStore.getState().setBattleState(modified);
+    useBattleStore.getState().setSyncedBattleState(modified);
     expect(useBattleStore.getState().battleState.turn).toBe(7);
   });
 
-  it("setBattleState accepts an updater function", () => {
-    useBattleStore.getState().setBattleState((prev) => ({ ...prev, turn: prev.turn + 5 }));
+  it("setSyncedBattleState accepts an updater function", () => {
+    useBattleStore.getState().setSyncedBattleState((prev) => ({ ...prev, turn: prev.turn + 5 }));
     expect(useBattleStore.getState().battleState.turn).toBe(6);
   });
 

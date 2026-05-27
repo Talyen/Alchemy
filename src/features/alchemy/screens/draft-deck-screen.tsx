@@ -5,7 +5,8 @@ import { shuffle } from "@/lib/utils";
 import { DRAFT_ROUNDS, DRAFT_CHOICES } from "@/lib/game-constants";
 
 import { Button } from "@/components/ui/button";
-import { BattleCardButton, getCardDisplayTitle } from "../ui/card-ui";
+import { BattleCardButton } from "../ui/card-button";
+import { getCardDisplayTitle } from "../ui/card-description-ui";
 import { ScreenHeader } from "../ui/shared-ui";
 import { collectionTileWidthClass } from "../config";
 import { useInteractiveCard } from "../ui/use-interactive-card";

@@ -22,14 +22,9 @@ import type { CardRect, CardTransfer, Screen } from "./types";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import { CARD_ACTIVATION_ROTATION_DEGREES, COMPANION_ATTACK_DELAY, isAnimationDisabled } from "@/lib/game-constants";
 import { TimerGroup } from "@/lib/animation/game-timer";
-import { getCardRect, getHoverId } from "./utils";
-import type { RunStateController } from "./use-run-state";
-import type { TalentStateController } from "./use-talent-state";
-import {
-  applyCombatTextPortraitFeedback,
-  portraitFeedbackFromStore,
-  shouldPlayCardGoldGain,
-} from "./battle/battle-feedback";
+import { getCardRect, getHoverId, isAlchemyDevBuild } from "./utils";
+import type { RunStateController, TalentStateController } from "./stores/run-store";
+import { applyCombatTextPortraitFeedback, shouldPlayCardGoldGain } from "./battle/battle-feedback";
 import { useBattleAutoEndTurn } from "./battle/use-battle-auto-end-turn";
 import { useBattleStore } from "./stores/battle-store";
 import { createTransferCancelRegistry } from "./battle/transfer-lifecycle";
@@ -77,7 +72,6 @@ export function useBattleController({
   // React owns timing, refs, animation, and audio here; pure combat resolution stays in
   // @/lib/battle so UI delays cannot silently change battle outcomes.
   const battleState = useBattleStore((s) => s.battleState);
-  const logicalBattleState = useBattleStore((s) => s.logicalBattleState);
   const hasActiveBattle = useBattleStore((s) => s.hasActiveBattle);
 
   const handCardRefs = useRef<Record<string, HTMLButtonElement | null>>({});
@@ -188,6 +182,7 @@ export function useBattleController({
     [],
   );
 
+  // resetBattleSession / resetHandTransferUi are stable for the controller lifetime.
   useEffect(() => {
     if (hasActiveBattle) return;
     resetBattleSession();
@@ -200,7 +195,7 @@ export function useBattleController({
   const { scheduleAutoEndTurn } = useBattleAutoEndTurn({
     autoEndTurn,
     screen,
-    battleState: logicalBattleState,
+    battleState,
     onEndTurn: handleEndTurn,
   });
 
@@ -251,14 +246,14 @@ export function useBattleController({
     index: number,
     sourceRect: { x: number; y: number; width: number; height: number },
   ) {
-    const currentState = getStore().logicalBattleState;
+    const currentState = getStore().battleState;
     if (!canPlayCard(card, index, currentState)) return;
     const session = battleSessionRef.current;
     cardPlayInProgressRef.current = true;
     animatePlayedCard(card, index, sourceRect);
     playCardSound(card.id);
     const resolution = playBattleCardResolved(currentState, card.id, index);
-    playCardResolutionFeedback(card, resolution.state, resolution.combatTexts);
+    playCardResolutionFeedback(card, currentState, resolution.state, resolution.combatTexts);
     setHoveredCardId((current) => (current === getHoverId("hand", `${card.id}-${card.uid}`) ? null : current));
     talents.awardCardXP(card);
 
@@ -310,10 +305,15 @@ export function useBattleController({
     );
   }
 
-  function playCardResolutionFeedback(card: BattleCard, state: BattleState, combatTexts: CombatTextEvent[]) {
-    if (shouldPlayCardGoldGain(battleState, state, card)) playGoldGain();
+  function playCardResolutionFeedback(
+    card: BattleCard,
+    prePlayState: BattleState,
+    postPlayState: BattleState,
+    combatTexts: CombatTextEvent[],
+  ) {
+    if (shouldPlayCardGoldGain(prePlayState, postPlayState, card)) playGoldGain();
     const store = getStore();
-    applyCombatTextPortraitFeedback(combatTexts, portraitFeedbackFromStore(store));
+    applyCombatTextPortraitFeedback(combatTexts, store);
   }
 
   function handleCardClick(card: BattleCard, index: number, event: MouseEvent<HTMLButtonElement>) {
@@ -321,7 +321,7 @@ export function useBattleController({
   }
 
   function handleWishChoice(cardOrNull: BattleCard | null) {
-    const currentState = getStore().logicalBattleState;
+    const currentState = getStore().battleState;
     const newState = chooseWishCard(currentState, cardOrNull?.id ?? null);
     const session = battleSessionRef.current;
     if (cardOrNull) {
@@ -340,7 +340,7 @@ export function useBattleController({
 
   // ─── End turn & enemy phase ───
   function handleEndTurn() {
-    const currentState = getStore().logicalBattleState;
+    const currentState = getStore().battleState;
     if (
       screen !== "battle" ||
       currentState.turnPhase !== "player" ||
@@ -392,7 +392,7 @@ export function useBattleController({
         if (texts.length > 0) {
           const store = getStore();
           store.showCombatTexts(texts);
-          applyCombatTextPortraitFeedback(texts, portraitFeedbackFromStore(store));
+          applyCombatTextPortraitFeedback(texts, store);
         }
       });
     }, COMPANION_ATTACK_DELAY);
@@ -400,27 +400,26 @@ export function useBattleController({
   }
 
   // ─── Run end / dev mode ───
+  function forceBattleOutcome(outcome: "victory" | "defeat", patch: (state: BattleState) => BattleState) {
+    resetBattleSession();
+    getStore().setSyncedBattleState(patch);
+    handleVictoryDefeat(outcome);
+  }
+
   function handleEndRun() {
     if (screen !== "battle") return;
-    resetBattleSession();
-    const defeatStateSetter = (c: BattleState) => ({
+    forceBattleOutcome("defeat", (c) => ({
       ...c,
       playerHealth: 0,
       deathsDoorUsed: true,
       deathsDoorActive: false,
       deathsDoorGraceTurnsRemaining: null,
-    });
-    getStore().setSyncedBattleState(defeatStateSetter);
-    handleVictoryDefeat("defeat");
+    }));
   }
 
   function skipCombatDevMode() {
-    if (screen === "battle") {
-      resetBattleSession();
-      const skipStateSetter = (c: BattleState) => ({ ...c, enemyHealth: 0, wishOptions: null, wishQueue: [] });
-      getStore().setSyncedBattleState(skipStateSetter);
-      handleVictoryDefeat("victory");
-    }
+    if (!isAlchemyDevBuild() || screen !== "battle") return;
+    forceBattleOutcome("victory", (c) => ({ ...c, enemyHealth: 0, wishOptions: null, wishQueue: [] }));
   }
 
   return {

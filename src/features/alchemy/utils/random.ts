@@ -3,10 +3,6 @@
 // Used by controllers/config where deterministic ordering is not required.
 import { shuffle } from "@/lib/utils";
 
-export function randomBetween(min: number, max: number) {
-  return Math.floor(Math.random() * (max - min + 1) + min);
-}
-
 export function sampleItems<T>(items: T[], count: number, rng?: () => number): T[] {
   return shuffle(items, rng ?? Math.random).slice(0, Math.min(count, items.length));
 }

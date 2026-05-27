@@ -105,7 +105,6 @@ export function createBattleSession(deps: BattleSessionDeps) {
     return {
       showCombatTexts: store.showCombatTexts.bind(store),
       setSyncedBattleState: store.setSyncedBattleState.bind(store),
-      setLogicalBattleState: store.setLogicalBattleState.bind(store),
       setDisplayOverrides: store.setDisplayOverrides.bind(store),
       shakeEnemy: store.shakeEnemy.bind(store),
       shakePlayer: store.shakePlayer.bind(store),

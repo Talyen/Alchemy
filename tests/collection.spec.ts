@@ -1,17 +1,18 @@
 import { expect, test } from "@playwright/test";
+import { MenuPage } from "./pages/menu-page";
+import { critical } from "./playwright-tags";
 
-test.describe("Collection", () => {
+test.describe("Collection", critical, () => {
   test("collection shows all three tabs with content and card inspection works", async ({ page }) => {
-    await page.goto("/");
-    await page.getByRole("button", { name: "Collection" }).click();
+    const menu = new MenuPage(page);
+    await menu.goto();
+    await menu.openCollection();
 
-    await expect(page.getByRole("heading", { name: "Collection" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Cards" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Bestiary" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Trinkets" })).toBeVisible();
     await expect(page.getByRole("button", { name: /Inspect/ }).first()).toBeVisible();
 
-    // Anvil is alphabetically first (page 0 of paginated collection).
     const inspectBtn = page.getByRole("button", { name: /Inspect Anvil/ });
     await expect(inspectBtn).toBeVisible({ timeout: 5000 });
     await inspectBtn.hover();
@@ -19,8 +20,9 @@ test.describe("Collection", () => {
   });
 
   test("collection tab navigation shows bestiary and trinket undiscovered entries", async ({ page }) => {
-    await page.goto("/");
-    await page.getByRole("button", { name: "Collection" }).click();
+    const menu = new MenuPage(page);
+    await menu.goto();
+    await menu.openCollection();
 
     await page.getByRole("button", { name: "Bestiary" }).click();
     await expect(page.getByRole("button", { name: "Inspect Undiscovered Entry" }).first()).toBeVisible();

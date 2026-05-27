@@ -29,22 +29,10 @@ type DisplayOverrides = {
 };
 
 type BattleStore = {
-  /**
-   * The authoritative battle state that drives the UI and run-level decisions.
-   * Display-only overrides (e.g. empty hand during enemy turn) are applied via
-   * displayOverrides rather than overwriting this field, eliminating the desync
-   * risk between battleState and logicalBattleState.
-   */
+  /** Authoritative battle state for UI and run-level decisions. */
   battleState: BattleState;
-  /**
-   * Display-only overrides layered on top of battleState for UI rendering.
-   * Never used for run-level decisions. Cleared automatically after each
-   * setSyncedBattleState call.
-   */
+  /** Display-only overrides layered on battleState for UI animation. Cleared on setSyncedBattleState. */
   displayOverrides: DisplayOverrides;
-  /** Deprecated — use battleState with displayOverrides instead. Kept for
-   *  backward compat; all writes go through setSyncedBattleState. */
-  logicalBattleState: BattleState;
   battleStartState: BattleState | null;
   hasActiveBattle: boolean;
   cardGhosts: CardGhost[];
@@ -56,13 +44,7 @@ type BattleStore = {
   enemyHurtFlashToken: number;
   revealedCardKeys: Set<string>;
 
-  setBattleState: (state: BattleState | ((prev: BattleState) => BattleState)) => void;
-  setLogicalBattleState: (state: BattleState | ((prev: BattleState) => BattleState)) => void;
-  /** Atomically writes both battleState and logicalBattleState in a single Zustand update.
-   *  Use this at every terminal state write to keep the two fields in sync. */
   setSyncedBattleState: (state: BattleState | ((prev: BattleState) => BattleState)) => void;
-  /** Sets display-only overrides for UI animation (e.g. empty hand during enemy turn).
-   *  These do NOT affect authoritative state and are cleared on next setSyncedBattleState. */
   setDisplayOverrides: (overrides: DisplayOverrides) => void;
   clearDisplayOverrides: () => void;
   setBattleStartState: (state: BattleState | null) => void;
@@ -89,7 +71,6 @@ const combatTextLaneDelayMs = COMBAT_TEXT_LANE_DELAY_MS;
 export const useBattleStore = create<BattleStore>()((set) => ({
   battleState: defaultBattleState(),
   displayOverrides: {},
-  logicalBattleState: defaultBattleState(),
   battleStartState: null,
   hasActiveBattle: false,
   cardGhosts: [],
@@ -101,16 +82,10 @@ export const useBattleStore = create<BattleStore>()((set) => ({
   enemyHurtFlashToken: 0,
   revealedCardKeys: new Set(),
 
-  setBattleState: (action) =>
-    set((s) => ({ battleState: typeof action === "function" ? action(s.battleState) : action })),
-
-  setLogicalBattleState: (action) =>
-    set((s) => ({ logicalBattleState: typeof action === "function" ? action(s.logicalBattleState) : action })),
-
   setSyncedBattleState: (action) =>
     set((s) => {
       const next = typeof action === "function" ? action(s.battleState) : action;
-      return { battleState: next, logicalBattleState: next, displayOverrides: {} };
+      return { battleState: next, displayOverrides: {} };
     }),
 
   setDisplayOverrides: (overrides) => set({ displayOverrides: overrides }),
@@ -135,7 +110,6 @@ export const useBattleStore = create<BattleStore>()((set) => ({
       };
       set({
         battleState: hydratedState,
-        logicalBattleState: hydratedState,
         displayOverrides: {},
         battleStartState: hydratedState,
         hasActiveBattle: true,
@@ -143,7 +117,6 @@ export const useBattleStore = create<BattleStore>()((set) => ({
     } else {
       set({
         battleState: defaultBattleState(),
-        logicalBattleState: defaultBattleState(),
         displayOverrides: {},
         battleStartState: null,
         hasActiveBattle: false,

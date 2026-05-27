@@ -2,12 +2,12 @@ import { cn } from "@/lib/utils";
 import { type MaterialInventory } from "@/lib/homestead/types";
 import { canAfford } from "@/lib/homestead/inventory";
 import { Button } from "@/components/ui/button";
-import { DetailPopup } from "../../ui/card-ui";
+import { DetailPopup } from "../../ui/card-popup";
 import { DisabledTooltip } from "../../ui/shared-ui";
 import { StarRating } from "../../ui/star-rating";
 import { TiltSurface } from "../../ui/tilt-surface";
 import { type BattleCard, type CompanionId } from "@/lib/game-data";
-import { COMPANION_BOND_TIERS, COMPANION_MAX_TIER } from "../../use-homestead-state";
+import { COMPANION_BOND_TIERS, COMPANION_MAX_TIER } from "@/lib/homestead/companions";
 import { getEffectiveCardDescriptionLines } from "../../utils/card-description";
 import { HOMESTEAD_CONFIG, MaterialCost } from "./helpers";
 

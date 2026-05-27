@@ -26,7 +26,6 @@ function makeStore() {
   return {
     showCombatTexts: vi.fn(),
     setSyncedBattleState: vi.fn(),
-    setLogicalBattleState: vi.fn(),
     setDisplayOverrides: vi.fn(),
     shakePlayer: vi.fn(),
     hurtPlayer: vi.fn(),

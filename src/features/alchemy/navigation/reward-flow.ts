@@ -9,7 +9,8 @@ import {
 } from "@/lib/game-constants";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { BattleState } from "@/lib/battle";
-import { selectRewardCards, selectRewardTrinkets } from "../reward-utils";
+import { sampleItems } from "../utils";
+import { selectRewardCards } from "../reward-utils";
 import { CONSTANTS, type Destination } from "../types";
 import { computeRewardGold } from "./reward-gold";
 import type { RewardState } from "./reward-state";
@@ -67,7 +68,7 @@ export function createBossRewardState({
 }: BossRewardInput): RewardState {
   return {
     rewardType: "trinket",
-    choices: selectRewardTrinkets(trinketLibrary, BOSS_TRINKET_REWARD_CHOICES),
+    choices: sampleItems(trinketLibrary, BOSS_TRINKET_REWARD_CHOICES),
     gold: computeRewardGold({
       baseGold: gold,
       bonusGold: bossBonus,
@@ -117,7 +118,7 @@ export function createCombatRewardState({
   return {
     rewardType: offerTrinket ? "trinket" : "card",
     choices: offerTrinket
-      ? selectRewardTrinkets(trinketLibrary, REWARD_CARD_CHOICES)
+      ? sampleItems(trinketLibrary, REWARD_CARD_CHOICES)
       : selectRewardCards(runDeck, cardLibrary, REWARD_CARD_CHOICES),
     gold: computeRewardGold({
       baseGold: gold,

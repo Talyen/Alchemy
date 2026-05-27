@@ -7,7 +7,7 @@ import {
   type BattleState,
   type CombatTextEvent,
 } from "@/lib/battle";
-import { applyCombatTextPortraitFeedback, portraitFeedbackFromStore } from "./battle-feedback";
+import { applyCombatTextPortraitFeedback } from "./battle-feedback";
 import { playCompanionSound } from "./controller-utils";
 import {
   executeEnemyPhase as runExecuteEnemyPhase,
@@ -144,7 +144,7 @@ export function resolveEndTurnOrchestration(deps: TurnOrchestrationDeps, current
         if (companionResult.combatTexts.length > 0) {
           const store = deps.getStore();
           store.showCombatTexts(companionResult.combatTexts);
-          applyCombatTextPortraitFeedback(companionResult.combatTexts, portraitFeedbackFromStore(store));
+          applyCombatTextPortraitFeedback(companionResult.combatTexts, store);
         }
         deps.handleVictoryDefeat("victory");
         return;
@@ -155,7 +155,6 @@ export function resolveEndTurnOrchestration(deps: TurnOrchestrationDeps, current
       }
 
       const result = endPlayerTurn(companionResult.state);
-      deps.getStore().setLogicalBattleState(result.state);
 
       if (!result.enemyTurnStartState) {
         resolveHasteSkipTurnOrchestration(deps, result, companionResult.state, session);
@@ -190,7 +189,7 @@ export function resolveCompanionFollowUpTexts(deps: TurnOrchestrationDeps, sessi
   return deps.runIfSessionActive(session, () => {
     const store = deps.getStore();
     const texts: CombatTextEvent[] = [];
-    const newState = triggerCompanionEffects(deps, store.logicalBattleState, texts);
+    const newState = triggerCompanionEffects(deps, store.battleState, texts);
     store.setSyncedBattleState(newState);
     return texts;
   }, []);

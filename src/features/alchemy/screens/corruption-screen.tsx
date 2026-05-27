@@ -1,7 +1,7 @@
 // Altar of Corruption screen — choose a deck card, corrupt it, and reveal the altered card.
 // Depends on card UI primitives, placeholder destination art, and corruption result shape.
 // Used by run navigation as a free rare route event with possible upside or downside.
-import { useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { Dices, MoveRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,8 @@ import { cn } from "@/lib/utils";
 import type { CorruptionResult } from "../corruption";
 import { viewCardWidthClass } from "../config";
 import { CardSelectionGrid } from "../ui/card-selection-grid";
-import { BattleCardButton, CardTitle, getCardDisplayTitle } from "../ui/card-ui";
+import { BattleCardButton } from "../ui/card-button";
+import { CardTitle, getCardDisplayTitle } from "../ui/card-description-ui";
 import { ScreenDescription, ScreenHeader } from "../ui/shared-ui";
 import { useRunStore } from "../stores/run-store";
 import { useScreenStore } from "../stores/screen-store";
@@ -55,7 +56,10 @@ function CorruptionDeckPicker({
   page: number;
   onPageChange: (page: number) => void;
 }) {
-  const corruptionOptions = runDeck.map((card, index) => ({ card, index })).filter(({ card }) => !card.corrupted);
+  const corruptionOptions = useMemo(
+    () => runDeck.map((card, index) => ({ card, index })).filter(({ card }) => !card.corrupted),
+    [runDeck],
+  );
 
   return (
     <CardSelectionGrid

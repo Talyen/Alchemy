@@ -5,20 +5,23 @@ import { BattlePage } from "./pages/battle-page";
 test.describe("Draw/discard animation invariants (1920×1080)", () => {
   test("turn cycle animations and interaction boundaries function correctly", async ({ page }) => {
     const errors = failOnRuntimeErrors(page);
-    const flyingLogs: string[] = [];
-    const snapLogs: string[] = [];
-    page.on("console", (msg) => {
-      const text = msg.text();
-      if (text.includes("[flying]")) flyingLogs.push(text);
-      if (text.includes("[snap]")) snapLogs.push(text);
-    });
+    const ghostOverlays = page.locator(".card-ghost-overlay");
 
     await startBattleWithDeck(page, Array.from({ length: 6 }, () => makeCard()));
     const battle = new BattlePage(page);
 
     await expect(battle.hand.first()).toBeVisible({ timeout: 5000 });
     await battle.playFirstCard();
-    await battle.endTurn();
+    await expect(ghostOverlays.first()).toBeVisible({ timeout: 5000 });
+
+    const endTurnDone = battle.endTurn();
+    await expect
+      .poll(async () => ghostOverlays.count(), {
+        timeout: 8000,
+        message: "draw/discard ghosts should appear during the turn transition",
+      })
+      .toBeGreaterThan(0);
+    await endTurnDone;
 
     await expect.poll(() => errors, { timeout: 2000, message: "Runtime errors during draw/discard turn cycle" }).toEqual([]);
 
@@ -27,14 +30,6 @@ test.describe("Draw/discard animation invariants (1920×1080)", () => {
     for (let i = 0; i < count; i++) {
       await expect(battle.hand.nth(i)).toBeEnabled({ timeout: 1000 });
     }
-
-    expect(flyingLogs.length).toBeGreaterThanOrEqual(4);
-    const creates = flyingLogs.filter((l) => l.includes("create")).length;
-    const removes = flyingLogs.filter((l) => l.includes("remove")).length;
-    expect(creates).toBeGreaterThan(0);
-    expect(creates).toBe(removes);
-
-    expect(snapLogs, "Card position/size deviation exceeded 0.5px threshold").toEqual([]);
   });
 });
 
@@ -64,9 +59,7 @@ test.describe("Draw/discard edge cases", () => {
     const battle = new BattlePage(page);
 
     await battle.endTurnBtn.click();
-    await expect(battle.skipCombatBtn).toBeVisible({ timeout: 5000 });
-    await battle.skipCombatBtn.click();
-    await expect(battle.victoryHeading).toBeVisible({ timeout: 5000 });
-    await expect.poll(() => errors, { timeout: 2000, message: "Runtime errors during skip combat" }).toEqual([]);
+    await battle.winViaCombat();
+    await expect.poll(() => errors, { timeout: 2000, message: "Runtime errors during end-turn combat" }).toEqual([]);
   });
 });

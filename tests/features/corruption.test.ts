@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { corruptCard, corruptDeckCard, getEditableCorruptionTargets, isSpecialCorruptionCard } from "@/features/alchemy/corruption";
-import { getCardDisplayTitle } from "@/features/alchemy/ui/card-ui";
+import { getCardDisplayTitle } from "@/features/alchemy/ui/card-description-ui";
 import type { BattleCard } from "@/lib/game-data";
 
 function makeCard(overrides: Partial<BattleCard> = {}): BattleCard {

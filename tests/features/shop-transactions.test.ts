@@ -1,0 +1,89 @@
+import { describe, expect, it, vi, beforeEach } from "vitest";
+import { refreshOfferings, spendRunGold } from "@/features/alchemy/shop-transactions";
+import type { BattleCard } from "@/lib/game-data";
+
+vi.mock("@/lib/audio", () => ({
+  playGoldSpend: vi.fn(),
+}));
+
+vi.mock("@/features/alchemy/utils", () => ({
+  resampleItems: vi.fn(),
+}));
+
+import { playGoldSpend } from "@/lib/audio";
+import { resampleItems } from "@/features/alchemy/utils";
+
+function makeCard(id: string): BattleCard {
+  return { id, title: id, descriptionLines: [""], art: "", cost: 1, effects: [{ kind: "damage", damageType: "physical", amount: 1 }] };
+}
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
+
+describe("spendRunGold", () => {
+  it("calls playGoldSpend only when price > 0", () => {
+    const setRunGold = vi.fn();
+    spendRunGold(0, setRunGold);
+    expect(playGoldSpend).not.toHaveBeenCalled();
+
+    spendRunGold(5, setRunGold);
+    expect(playGoldSpend).toHaveBeenCalledOnce();
+  });
+
+  it("clamps gold at 0", () => {
+    let gold = 3;
+    spendRunGold(10, (fn) => {
+      gold = fn(gold);
+    });
+    expect(gold).toBe(0);
+  });
+});
+
+describe("refreshOfferings", () => {
+  const currentItems = [makeCard("a")];
+  const newItems = [makeCard("b"), makeCard("c")];
+
+  function makeInput(overrides: Partial<Parameters<typeof refreshOfferings>[0]> = {}) {
+    return {
+      price: 5,
+      refreshesLeft: 1,
+      runGold: 10,
+      pool: [makeCard("x")],
+      currentItems,
+      count: 2,
+      setRunGold: vi.fn((fn: (g: number) => number) => fn(10)),
+      setState: vi.fn(),
+      mapState: (prev: { cards: BattleCard[] }, items: BattleCard[]) => ({ ...prev, cards: items }),
+      ...overrides,
+    };
+  }
+
+  it("returns false when refreshesLeft <= 0", () => {
+    const input = makeInput({ refreshesLeft: 0 });
+    expect(refreshOfferings(input)).toBe(false);
+    expect(input.setState).not.toHaveBeenCalled();
+  });
+
+  it("returns false when runGold < price", () => {
+    const input = makeInput({ runGold: 2 });
+    expect(refreshOfferings(input)).toBe(false);
+    expect(playGoldSpend).not.toHaveBeenCalled();
+  });
+
+  it("on success spends gold and resamples", () => {
+    vi.mocked(resampleItems).mockReturnValue(newItems);
+    const setRunGold = vi.fn((fn: (g: number) => number) => fn(10));
+    const setState = vi.fn();
+    const prev = { cards: currentItems };
+    const input = makeInput({ setRunGold, setState });
+
+    expect(refreshOfferings(input)).toBe(true);
+    expect(playGoldSpend).toHaveBeenCalled();
+    expect(setRunGold).toHaveBeenCalled();
+    expect(resampleItems).toHaveBeenCalledWith(input.pool, currentItems, 2);
+    expect(setState).toHaveBeenCalled();
+    const next = vi.mocked(setState).mock.calls[0][0](prev);
+    expect(next.cards).toEqual(newItems);
+  });
+});

@@ -1,12 +1,12 @@
 // Merchant shop screen — buy cards, remove deck cards, or refresh the shop.
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { RefreshCw, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import type { BattleCard } from "@/lib/game-data";
 import { SELECTION_GRID_PAGE_SIZE, SHOP_CARD_PRICE, SHOP_REMOVE_PRICE, SHOP_REFRESH_PRICE } from "@/lib/game-constants";
 
-import { PurchasableCardItem, SelectableShopCard } from "../ui/card-ui";
+import { PurchasableCardItem, SelectableShopCard } from "../ui/shop-card-item";
 import { CardSelectionGrid } from "../ui/card-selection-grid";
 import { GoldCost, GoldDisplay, ScreenDescription, ScreenHeader, ServiceButton } from "../ui/shared-ui";
 import { useRunStore } from "../stores/run-store";
@@ -31,7 +31,7 @@ function DeckGridPaginated({
   paginationSize?: "sm" | "default";
   paginationReserveSpace?: boolean;
 }) {
-  const items = cards.map((card, index) => ({ card, index }));
+  const items = useMemo(() => cards.map((card, index) => ({ card, index })), [cards]);
 
   return (
     <CardSelectionGrid

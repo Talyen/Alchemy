@@ -88,4 +88,18 @@ describe("enemy CC helpers", () => {
     expect(result.enemyStunSkipTurns).toBe(BATTLE_CONFIG.BASE_CC_DURATION);
     expect(result.enemyStatuses.stun).toBe(0);
   });
+
+  it("assignEnemyCrowdControlSkip increments enemy freeze skip", () => {
+    const state = createTestBattleState({
+      enemyStatuses: { ...createTestBattleState().enemyStatuses, freeze: 20 },
+    });
+    const result = assignEnemyCrowdControlSkip({
+      nextState: state,
+      stat: "freeze",
+      skipDuration: BATTLE_CONFIG.BASE_CC_DURATION,
+      combatTexts: [],
+    });
+    expect(result.enemyFreezeSkipTurns).toBe(BATTLE_CONFIG.BASE_CC_DURATION);
+    expect(result.enemyStatuses.freeze).toBe(0);
+  });
 });

@@ -4,11 +4,11 @@
 import { type CSSProperties } from "react";
 
 import type { CompanionDefinition } from "@/lib/game-data";
-import { cn } from "@/lib/utils";
+import { cn, capitalizeWord } from "@/lib/utils";
 
 import { cardSurfaceClass, staticCardTransform } from "../../config";
 import { clearTiltFromEvent, setTiltFromEvent } from "../../utils";
-import { DescriptionLines } from "../card-ui";
+import { DescriptionLines } from "../card-description-ui";
 import { TooltipPanel } from "../tooltip-panel";
 
 function getCompanionDescriptionLines(companion: CompanionDefinition, damageBonus: number): string[] {
@@ -17,7 +17,7 @@ function getCompanionDescriptionLines(companion: CompanionDefinition, damageBonu
 
   const totalAmount = attack.amount + damageBonus;
   const displayAmount = attack.damageType === "bleed" ? totalAmount * 2 : totalAmount;
-  const displayType = attack.damageType.charAt(0).toUpperCase() + attack.damageType.slice(1);
+  const displayType = capitalizeWord(attack.damageType);
   return [`Deals ${displayAmount} ${displayType} damage each turn`];
 }
 
