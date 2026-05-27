@@ -5,9 +5,13 @@ on:
     - cron: "0 6 * * *"
   workflow_dispatch:
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   e2e:
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v5
 
@@ -21,9 +25,40 @@ jobs:
 
       - run: npm run build
 
-      - run: npx playwright install --with-deps chromium
+      - name: Cache Playwright browsers
+        uses: actions/cache@v5
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Playwright Chromium (with system deps)
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        timeout-minutes: 15
+        run: npx playwright install --with-deps chromium
+
+      - name: Install Playwright Chromium
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        timeout-minutes: 15
+        run: npx playwright install chromium
+
+      - name: Playwright install diagnostics
+        if: failure()
+        run: |
+          npx playwright install --dry-run || true
+          ls -la ~/.cache/ms-playwright || true
 
       - name: Run full e2e against production build
         run: npx playwright test --project chromium
         env:
           PLAYWRIGHT_VITE_MODE: preview
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: playwright-report-nightly
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7

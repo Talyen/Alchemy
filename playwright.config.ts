@@ -15,7 +15,7 @@ export default defineConfig({
   timeout: process.env.CI ? 30_000 : 15_000,
   retries: process.env.CI ? 1 : 0,
   forbidOnly: !!process.env.CI,
-  reporter: "html",
+  reporter: process.env.CI ? [["github"], ["html"]] : "html",
   use: {
     baseURL: "http://127.0.0.1:4173",
     trace: "on-first-retry",

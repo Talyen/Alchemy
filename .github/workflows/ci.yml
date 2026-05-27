@@ -5,10 +5,19 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   install:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
         with:
@@ -31,6 +40,7 @@ jobs:
   lint:
     needs: install
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
         with:
@@ -42,19 +52,25 @@ jobs:
           cache: npm
 
       - uses: actions/cache/restore@v5
+        id: npm-cache
         with:
           path: node_modules/
           key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - if: steps.npm-cache.outputs.cache-hit != 'true'
+        run: npm install -g npm@11 && npm ci
 
       - if: github.event_name == 'pull_request'
         run: npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.sha }} --verbose
 
       - run: npm run format:check
       - run: npm run lint
+      - run: npm run deadcode
 
   test:
     needs: install
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
 
@@ -64,15 +80,20 @@ jobs:
           cache: npm
 
       - uses: actions/cache/restore@v5
+        id: npm-cache
         with:
           path: node_modules/
           key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - if: steps.npm-cache.outputs.cache-hit != 'true'
+        run: npm install -g npm@11 && npm ci
 
       - run: npm test
 
   build:
     needs: install
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v5
 
@@ -82,9 +103,13 @@ jobs:
           cache: npm
 
       - uses: actions/cache/restore@v5
+        id: npm-cache
         with:
           path: node_modules/
           key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - if: steps.npm-cache.outputs.cache-hit != 'true'
+        run: npm install -g npm@11 && npm ci
 
       - run: npm run build
 
@@ -104,6 +129,7 @@ jobs:
   e2e:
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v5
 
@@ -113,14 +139,53 @@ jobs:
           cache: npm
 
       - uses: actions/cache/restore@v5
+        id: npm-cache
         with:
           path: node_modules/
           key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - if: steps.npm-cache.outputs.cache-hit != 'true'
+        run: npm install -g npm@11 && npm ci
 
       - uses: actions/download-artifact@v5
         with:
           name: dist
           path: dist/
 
-      - run: npx playwright install --with-deps chromium
-      - run: npm run test:e2e:critical
+      - name: Cache Playwright browsers
+        uses: actions/cache@v5
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Playwright Chromium (with system deps)
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        timeout-minutes: 15
+        run: npx playwright install --with-deps chromium
+
+      - name: Install Playwright Chromium
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        timeout-minutes: 15
+        run: npx playwright install chromium
+
+      - name: Playwright install diagnostics
+        if: failure()
+        run: |
+          npx playwright install --dry-run || true
+          ls -la ~/.cache/ms-playwright || true
+
+      - name: Run critical e2e tests
+        run: npm run test:e2e:critical
+        env:
+          PLAYWRIGHT_VITE_MODE: preview
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: playwright-report-critical
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
