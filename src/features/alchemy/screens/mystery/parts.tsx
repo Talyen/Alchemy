@@ -15,7 +15,7 @@ import { GoldPill, MaterialPill } from "../../ui/material-icons";
 import { cardSurfaceClass, collectionTileWidthClass, viewCardWidthClass } from "../../config";
 import type { MysteryChoice, MysteryEvent, MysteryEffect } from "../../mystery-events";
 import { TiltSurface } from "../../ui/tilt-surface";
-import { CardSelectionGrid } from "../../ui/card-selection-grid";
+import { CardSelectionGrid, type CardSelectionGridItem } from "../../ui/card-selection-grid";
 import { BattleCardButton } from "../../ui/card-button";
 import { CardTitle, getCardDisplayTitle } from "../../ui/card-description-ui";
 import { DetailPopup } from "../../ui/card-popup";
@@ -219,7 +219,7 @@ export function MysteryRewardSummary({
   );
 }
 
-function DeckCardSelectionFlow<T>({
+function DeckCardSelectionFlow({
   intro,
   items,
   page,
@@ -231,11 +231,11 @@ function DeckCardSelectionFlow<T>({
   onConfirm,
 }: {
   intro: ReactNode;
-  items: T[];
+  items: CardSelectionGridItem[];
   page: number;
   onPageChange: (page: number) => void;
   pageSize: number;
-  renderItem: (item: T) => ReactNode;
+  renderItem: (item: CardSelectionGridItem, visualIndex: number) => ReactNode;
   confirmLabel: string;
   confirmDisabled: boolean;
   onConfirm: () => void;
@@ -306,7 +306,7 @@ export function RemoveCardPicker({ runDeck, onSelect }: { runDeck: BattleCard[];
       page={page}
       onPageChange={setPage}
       pageSize={SELECTION_GRID_PAGE_SIZE}
-      renderItem={({ card, index }) => (
+      renderItem={({ card, index }, _visualIndex) => (
         <SelectableDeckCardTile
           card={card}
           isSelected={selectedIndex === index}
@@ -372,7 +372,7 @@ export function CardChoicePicker({ choices, onSelect }: { choices: BattleCard[];
       page={0}
       onPageChange={() => {}}
       pageSize={choices.length}
-      renderItem={({ card }) => (
+      renderItem={({ card }, _visualIndex) => (
         <CardChoiceGridItem
           card={card}
           isSelected={selectedId === card.id}

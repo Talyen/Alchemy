@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { CSSProperties } from "react";
+import type { MotionStyle } from "motion/react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -51,7 +52,7 @@ export function GameModeSelectScreen({
             <PressableMotion
               key={modeId}
               className="stagger-item"
-              style={{ "--stagger-index": index } as CSSProperties}
+              style={{ "--stagger-index": index } as MotionStyle}
               disableHoverScale
             >
               <button

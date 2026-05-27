@@ -330,35 +330,6 @@ type UtilityEffect = Exclude<
   { kind: "damage" | "player-status" | "heal" | "restore-mana" | "lose-mana" | "gain-max-mana" | "lose-max-mana" }
 >;
 
-type UtilityEffectHandler = (
-  state: BattleState,
-  card: BattleCard,
-  effect: UtilityEffect,
-  potionMult: number,
-  combatTexts: CombatTextEvent[],
-) => BattleState;
-
-const UTILITY_EFFECT_HANDLERS: Record<UtilityEffect["kind"], UtilityEffectHandler> = {
-  "gain-gold": (state, _card, effect, potionMult, combatTexts) =>
-    handleGainGold(state, effect.amount, potionMult, combatTexts),
-  wish: (state, card, effect, potionMult, combatTexts) =>
-    handleWish(state, card, effect.amount, potionMult, combatTexts),
-  "summon-companion": (state, _card, effect) => handleSummonCompanion(state, effect.companionId),
-  "buff-companion": (state, _card, effect) => handleBuffCompanion(state, effect.amount),
-  "remove-harmful-status": (state, _card, effect, potionMult, combatTexts) =>
-    handleRemoveHarmfulStatus(state, effect.amount, potionMult, combatTexts),
-  "self-damage": (state, _card, effect, _potionMult, combatTexts) =>
-    handleSelfDamage(state, effect.amount, effect.damageType, combatTexts),
-  "lose-health": (state, _card, effect, _potionMult, combatTexts) =>
-    handleLoseHealth(state, effect.amount, combatTexts),
-  "draw-cards": (state, _card, effect) => handleDrawCards(state, effect.amount),
-  "remove-enemy-armor": (state, _card, effect) => handleRemoveEnemyArmor(state, effect.amount),
-  "multiply-enemy-status": (state, _card, effect, _potionMult, combatTexts) =>
-    handleMultiplyEnemyStatus(state, effect.status, effect.factor, combatTexts),
-  "remove-player-status": (state, _card, effect, _potionMult, combatTexts) =>
-    handleRemovePlayerStatus(state, effect.status, combatTexts),
-};
-
 function handleUtilityEffect(
   state: BattleState,
   card: BattleCard,
@@ -366,8 +337,32 @@ function handleUtilityEffect(
   potionMult: number,
   combatTexts: CombatTextEvent[],
 ): BattleState {
-  const handler = UTILITY_EFFECT_HANDLERS[effect.kind];
-  return handler ? handler(state, card, effect, potionMult, combatTexts) : state;
+  switch (effect.kind) {
+    case "gain-gold":
+      return handleGainGold(state, effect.amount, potionMult, combatTexts);
+    case "wish":
+      return handleWish(state, card, effect.amount, potionMult, combatTexts);
+    case "summon-companion":
+      return handleSummonCompanion(state, effect.companionId);
+    case "buff-companion":
+      return handleBuffCompanion(state, effect.amount);
+    case "remove-harmful-status":
+      return handleRemoveHarmfulStatus(state, effect.amount, potionMult, combatTexts);
+    case "self-damage":
+      return handleSelfDamage(state, effect.amount, effect.damageType, combatTexts);
+    case "lose-health":
+      return handleLoseHealth(state, effect.amount, combatTexts);
+    case "draw-cards":
+      return handleDrawCards(state, effect.amount);
+    case "remove-enemy-armor":
+      return handleRemoveEnemyArmor(state, effect.amount);
+    case "multiply-enemy-status":
+      return handleMultiplyEnemyStatus(state, effect.status, effect.factor, combatTexts);
+    case "remove-player-status":
+      return handleRemovePlayerStatus(state, effect.status, combatTexts);
+    default:
+      return ((_: never) => state)(effect);
+  }
 }
 
 /**
@@ -385,7 +380,11 @@ export function applyCardEffects(state: BattleState, card: BattleCard, combatTex
       return handlePlayerStatusEffect(currentState, effect, potionMult, combatTexts);
     }
     if ((effect as { kind: string }).kind === "enemy-status") {
-      return handleEnemyStatusEffect(currentState, effect as { status: EnemyStatusId; amount: number }, combatTexts);
+      return handleEnemyStatusEffect(
+        currentState,
+        effect as unknown as { status: EnemyStatusId; amount: number },
+        combatTexts,
+      );
     }
     if (effect.kind === "heal") {
       return handleHealEffect(currentState, effect, potionMult, card.consume ?? false, combatTexts);

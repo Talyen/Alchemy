@@ -173,8 +173,8 @@ function createInitialTalentState(
 
 export const useRunStore = create<RunStore>()((set) => {
   const setField =
-    <K extends keyof RunStateFields>(key: K) =>
-    (action: Setter<RunStateFields[K]>) =>
+    <K extends keyof RunStateFields>(key: K): Setter<RunStateFields[K]> =>
+    (action) =>
       set((s) => ({ [key]: typeof action === "function" ? action(s[key]) : action }));
 
   return {
