@@ -7,13 +7,7 @@ import { emitOverhealBlockText, mergeCombatText } from "./combat-text";
 import { applyBoneCharmHeal, applyLuckyCloverGold } from "./trinket-effects";
 import { applyWishEffect } from "./wish";
 import { rollPercent, getBattleRng } from "./status-helpers";
-import {
-  type BattleCard,
-  type BattleCardEffect,
-  type DamageType,
-  type PlayerStatusId,
-  type TalentEffectManifest,
-} from "@/lib/game-data";
+import { type BattleCard, type BattleCardEffect, type PlayerStatusId } from "@/lib/game-data";
 import {
   addEnemyStatus,
   addGold,
@@ -33,10 +27,6 @@ import {
   PERCENT_DENOMINATOR,
   STATUS_CONFIG,
 } from "../game-constants";
-
-const DAMAGE_CONSTANTS = {
-  DOUBLE_MULTIPLIER: 2,
-};
 
 function rollTalentChance(chance: number, state: { rng?: () => number }): boolean {
   return chance > 0 && rollPercent(chance, getBattleRng(state));

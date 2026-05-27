@@ -4,7 +4,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { TimerGroup } from "@/lib/animation/game-timer";
 import { platform } from "@/lib/platform";
-import type { BattleCard } from "@/lib/game-data";
 import type { TalentXP } from "@/lib/talents";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import type { CharacterId, DifficultyId, UnlockedTalents } from "@/lib/game-data";

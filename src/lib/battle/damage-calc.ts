@@ -3,46 +3,21 @@
  * Depends on: ./status-effects, ./combat-text, ./trinket-effects, ./wish, ./types, ../game-constants.
  * Depended on by: ./apply-effects.
  */
-import { applyDamageStatuses, getEnemyDamageMultiplier, resolveStunTrigger } from "./status-effects";
-import { emitOverhealBlockText, mergeCombatText } from "./combat-text";
-import { applyBoneCharmHeal, applyLuckyCloverGold } from "./trinket-effects";
-import { applyWishEffect } from "./wish";
-import { rollPercent, getBattleRng } from "./status-helpers";
+import { getEnemyDamageMultiplier } from "./status-effects";
+import { getBattleRng } from "./status-helpers";
+import { type BattleCard, type BattleCardEffect, type DamageType, type TalentEffectManifest } from "@/lib/game-data";
+import { setFlag, type BattleState } from "./types";
 import {
-  type BattleCard,
-  type BattleCardEffect,
-  type DamageType,
-  type PlayerStatusId,
-  type TalentEffectManifest,
-} from "@/lib/game-data";
-import {
-  addEnemyStatus,
-  addGold,
-  addPlayerStatus,
-  applyPlayerHealing,
-  clampHealth,
-  isNullFieldActive,
-  setFlag,
-  type BattleState,
-  type CombatTextEvent,
-  type EnemyMitigation,
-} from "./types";
-import {
-  BATTLE_CONFIG,
   BLEED_EXECUTE_MULTIPLIER,
   CRIT_MULTIPLIER,
   FIRST_EFFECT_MULTIPLIER,
   GLOBAL_CRIT_CHANCE,
   HALF_DIVISOR,
   PERCENT_DENOMINATOR,
-  STATUS_CONFIG,
 } from "../game-constants";
 const DAMAGE_CONSTANTS = {
   DOUBLE_MULTIPLIER: 2,
 };
-function rollTalentChance(chance: number, state: { rng?: () => number }): boolean {
-  return chance > 0 && rollPercent(chance, getBattleRng(state));
-}
 
 export function forgeAppliesToDamageType(damageType: DamageType, talentEffects: TalentEffectManifest): boolean {
   return (

@@ -5,11 +5,7 @@ import { endPlayerTurn, type BattleState, type CombatTextEvent } from "@/lib/bat
 import { playBattleEvent, playEnemyAttack } from "@/lib/audio";
 import { ENEMY_ATTACK_RECOVERY_DELAY, ENEMY_PHASE_DELAY } from "@/lib/game-constants";
 import { delay } from "@/lib/animation/game-timer";
-import {
-  applyCombatTextPortraitFeedback,
-  shouldHurtEnemyFromCombatTexts,
-  shouldShakePlayerFromCombatTexts,
-} from "./battle-feedback";
+import { applyCombatTextPortraitFeedback, shouldHurtEnemyFromCombatTexts } from "./battle-feedback";
 import { runHandDrawSequence, type HandDrawSequenceDeps } from "./draw-sequence";
 
 export type EndPlayerTurnResult = ReturnType<typeof endPlayerTurn>;

@@ -4,7 +4,7 @@ import type { MaterialInventory } from "@/lib/homestead/types";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { CONSTANTS, type Screen } from "../types";
 import type { ContentSystemId } from "@/lib/content-systems/types";
-import { createEmptyRewardState, createNextRewardState, type RewardState } from "./reward-state";
+import { createNextRewardState, type RewardState } from "./reward-state";
 
 type FinalizeRewardRoute =
   | "companion-reward"

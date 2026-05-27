@@ -103,44 +103,6 @@ const difficultyTurnStartHandlers: Partial<Record<DifficultyModifier["kind"], En
   },
 };
 
-function reduceSkipTurns(state: BattleState): BattleState {
-  // Reduced AFTER traits so isScalingBlocked still sees the pre-reduction freeze
-  // count for one more turn — the enemy doesn't benefit from freeze reduction in the
-  // same turn freeze was applied.
-  return {
-    ...state,
-    enemyStunSkipTurns: Math.max(0, state.enemyStunSkipTurns - 1),
-    enemyFreezeSkipTurns: Math.max(0, state.enemyFreezeSkipTurns - 1),
-  };
-}
-
-// Death's Door grants a grace period of (1 + extension) full player turns after hitting 0 HP.
-// The grace turns counter is initialized on trigger and decremented when a player recovery turn begins.
-// resolveDeathsDoorEndOfEnemyTurn runs at the end of the enemy phase and deactivates the grace window
-// once the remaining turns counter reaches 0 or less.
-function resolveDeathsDoorEndOfEnemyTurn(state: BattleState): BattleState {
-  if (!state.deathsDoorActive) return state;
-  if (state.playerHealth > 0) {
-    return {
-      ...state,
-      deathsDoorActive: false,
-      deathsDoorTriggeredTurn: null,
-      deathsDoorGraceTurnsRemaining: null,
-    };
-  }
-
-  const remaining = computeDeathsDoorGraceRemaining(state);
-  if (remaining <= 0) {
-    return {
-      ...state,
-      deathsDoorActive: false,
-      deathsDoorTriggeredTurn: null,
-      deathsDoorGraceTurnsRemaining: null,
-    };
-  }
-  return state;
-}
-
 // Traits whose behavior is purely passive (damage multipliers, one-time setup, etc.)
 // and intentionally have no turn-start handler. Excludes warnings to reduce noise.
 const PASSIVE_ONLY_TRAITS = new Set([
