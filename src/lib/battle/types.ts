@@ -197,6 +197,22 @@ export function addEnemyMitigation(state: BattleState, field: keyof EnemyMitigat
   };
 }
 
+export function stripEnemyArmor(state: BattleState): BattleState {
+  if (state.enemyMitigation.armor <= 0) return state;
+  return { ...state, enemyMitigation: { ...state.enemyMitigation, armor: 0 } };
+}
+
+export function reduceEnemyArmor(state: BattleState, delta: number): BattleState {
+  if (delta <= 0 || state.enemyMitigation.armor <= 0) return state;
+  return {
+    ...state,
+    enemyMitigation: {
+      ...state.enemyMitigation,
+      armor: Math.max(0, state.enemyMitigation.armor - delta),
+    },
+  };
+}
+
 export function addGold(state: BattleState, delta: number): BattleState {
   return { ...state, gold: state.gold + delta };
 }

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { computeEffectiveCost } from "@/lib/battle/card-play";
 import { getEffectiveCost } from "@/lib/battle/cost";
 import { FREE_CARD_SENTINEL } from "@/lib/game-constants";
-import { defaultBattleState, defaultTalentEffects } from "@/lib/battle/draw";
+import { defaultBattleState, defaultTalentEffects } from "@/lib/battle";
 import type { BattleState, CombatFlags } from "@/lib/battle/types";
 import type { BattleCard } from "@/lib/game-data";
 

@@ -3,7 +3,7 @@ import { ErrorBoundary } from "@/components/error-boundary";
 import type { ReactNode } from "react";
 import { platform } from "@/lib/platform";
 import { menuLogo, menuLogoVariants, cardLibrary, trinketLibrary } from "@/lib/game-data";
-import type { AspectRatioOption, DisplayMode, UiScale, Screen } from "@/features/alchemy/types";
+import type { AspectRatioOption, CollectionTab, DisplayMode, UiScale, Screen } from "@/features/alchemy/types";
 import type { CharacterId, DifficultyId } from "@/lib/game-data";
 import type { RenderAlchemyScreenProps } from "@/app/render-screen-props";
 import { useAppStore } from "@/features/alchemy/stores/app-store";
@@ -49,6 +49,11 @@ export type ScreenRouteContext = RenderAlchemyScreenProps & {
     autoEndTurn: boolean;
     discoveredCardIds: string[];
     completedDifficulties: Record<string, DifficultyId[]>;
+    collectionTab: CollectionTab;
+    collectionPages: Record<CollectionTab, number>;
+    encounteredEnemyIds: string[];
+    discoveredTrinketIds: string[];
+    showClearSaveConfirm: boolean;
   };
   appActions: ReturnType<typeof useAppStore.getState>;
   homesteadValues: {
@@ -62,7 +67,7 @@ export type ScreenRouteContext = RenderAlchemyScreenProps & {
 };
 
 function buildOptionsScreen(ctx: ScreenRouteContext) {
-  const { appValues, appActions, onOpenBattleMenu, showClearSaveConfirm, onClearSaveData, onUnlockAllDevMode } = ctx;
+  const { appValues, appActions, onOpenBattleMenu, onClearSaveData, onUnlockAllDevMode } = ctx;
   return (
     <OptionsScreen
       onOpenMenu={onOpenBattleMenu}
@@ -89,7 +94,7 @@ function buildOptionsScreen(ctx: ScreenRouteContext) {
       }}
       gameplay={{ autoEndTurn: appValues.autoEndTurn, onAutoEndTurnChange: appActions.setAutoEndTurn }}
       saveData={{
-        showClearSaveConfirm,
+        showClearSaveConfirm: appValues.showClearSaveConfirm,
         onOpenClearSaveConfirm: () => appActions.setShowClearSaveConfirm(true),
         onCloseClearSaveConfirm: () => appActions.setShowClearSaveConfirm(false),
         onConfirmClearSave: onClearSaveData,
@@ -210,26 +215,17 @@ const SCREEN_ROUTES: Record<Screen, (ctx: ScreenRouteContext) => ReactNode> = {
   ),
   corruption: ({ actions: a }) => <CorruptionScreen onCorrupt={a.handleCorruptCard} onExit={a.handleCorruptionExit} />,
   options: buildOptionsScreen,
-  collection: ({
-    appValues,
-    appActions,
-    homesteadValues,
-    onOpenBattleMenu,
-    collectionTab,
-    collectionPages,
-    encounteredEnemyIds,
-    discoveredTrinketIds,
-  }) => (
+  collection: ({ appValues, appActions, homesteadValues, onOpenBattleMenu }) => (
     <CollectionScreen
       onOpenMenu={onOpenBattleMenu}
-      collectionTab={collectionTab}
+      collectionTab={appValues.collectionTab}
       onSelectTab={appActions.handleCollectionTabChange}
       onPageChange={appActions.setCollectionPage}
       bondedCompanions={homesteadValues.bondedCompanions}
       discoveredCardIds={appValues.discoveredCardIds}
-      encounteredEnemyIds={encounteredEnemyIds}
-      discoveredTrinketIds={discoveredTrinketIds}
-      collectionPages={collectionPages}
+      encounteredEnemyIds={appValues.encounteredEnemyIds}
+      discoveredTrinketIds={appValues.discoveredTrinketIds}
+      collectionPages={appValues.collectionPages}
     />
   ),
   homestead: ({ appValues, homesteadValues, homesteadActions, onOpenBattleMenu }) => (

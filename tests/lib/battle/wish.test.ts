@@ -1,9 +1,7 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { buildWishOptions, applyWishEffect } from "@/lib/battle/wish";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { createTestBattleState } from "./test-state";
-
-vi.spyOn(Math, "random").mockReturnValue(0.99);
 
 describe("buildWishOptions", () => {
   it("returns shuffled options excluding the triggering card", () => {
@@ -16,11 +14,11 @@ describe("buildWishOptions", () => {
   });
 
   it("returns only undiscovered cards when wishUndiscoveredCards is active", () => {
-    vi.spyOn(Math, "random").mockReturnValue(0.99);
     const card = { id: "strike", title: "Strike", descriptionLines: [""], art: "", cost: 1, effects: [] };
     const state = createTestBattleState({
       talentEffects: { ...createTestBattleState().talentEffects, wishUndiscoveredCards: true },
       discoveredCardIds: ["strike", "bash", "block"],
+      rng: () => 0.99,
     });
     const options = buildWishOptions(state, card);
     expect(options).toHaveLength(3);

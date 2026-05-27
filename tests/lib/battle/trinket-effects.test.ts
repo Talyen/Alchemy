@@ -1,9 +1,7 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { applyIronwoodBuckler, applyBoneCharmHeal, applyLuckyCloverGold } from "@/lib/battle/trinket-effects";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { createTestBattleState } from "./test-state";
-
-vi.spyOn(Math, "random").mockReturnValue(0.99);
 
 describe("applyIronwoodBuckler", () => {
   it("converts block to armor when block >= threshold", () => {
@@ -88,9 +86,9 @@ describe("applyBoneCharmHeal", () => {
 
 describe("applyLuckyCloverGold", () => {
   it("grants gold on damage when luckyCloverGoldChance triggers", () => {
-    vi.spyOn(Math, "random").mockReturnValueOnce(0.01);
     const state = createTestBattleState({
       trinketEffects: { ...createTestBattleState().trinketEffects, luckyCloverGoldChance: 50 },
+      rng: () => 0.01,
     });
     const texts: CombatTextEvent[] = [];
     const next = applyLuckyCloverGold(state, 7, texts);
@@ -99,9 +97,9 @@ describe("applyLuckyCloverGold", () => {
   });
 
   it("does nothing when random does not trigger", () => {
-    vi.spyOn(Math, "random").mockReturnValueOnce(0.99);
     const state = createTestBattleState({
       trinketEffects: { ...createTestBattleState().trinketEffects, luckyCloverGoldChance: 50 },
+      rng: () => 0.99,
     });
     const texts: CombatTextEvent[] = [];
     const next = applyLuckyCloverGold(state, 7, texts);

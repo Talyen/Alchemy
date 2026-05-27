@@ -20,5 +20,5 @@ export { MysteryScreen } from "./mystery/mystery-screen";
 export { CorruptionScreen } from "./corruption-screen";
 export { RunVictoryScreen } from "./run-victory-screen";
 export { DraftDeckScreen } from "./draft-deck-screen";
-export { LabyrinthMapScreen } from "./labyrinth-map-screen";
+export { LabyrinthMapScreen } from "./labyrinth/labyrinth-map-screen";
 export { WildwoodSelectScreen } from "./wildwood-select-screen";

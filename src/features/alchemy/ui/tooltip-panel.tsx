@@ -45,6 +45,31 @@ export function useTooltipFlip(trigger?: unknown) {
   return { ref, flip };
 }
 
+// Flips below when clipped above the viewport and shifts horizontally to stay on-screen.
+export function useTooltipViewportClamp(padding = 8, trigger?: unknown) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [flip, setFlip] = useState(false);
+  const [dx, setDx] = useState(0);
+
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+
+    setFlip(rect.top < 0);
+
+    let horizontalShift = 0;
+    if (rect.left < 0) {
+      horizontalShift = -rect.left + padding;
+    } else if (rect.right > window.innerWidth) {
+      horizontalShift = window.innerWidth - rect.right - padding;
+    }
+    setDx(horizontalShift !== 0 ? horizontalShift : 0);
+  }, [padding, trigger]);
+
+  return { ref, flip, dx };
+}
+
 export function TooltipHeader({ children }: { children: ReactNode }) {
   return <p className="font-display text-lg font-bold text-foreground mb-1">{children}</p>;
 }

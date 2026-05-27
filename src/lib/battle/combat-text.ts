@@ -4,7 +4,7 @@
  * Depended on by: apply-effects, card-play, damage, status-effects, enemy-turn, trinket-effects, wish.
  */
 import { harmfulPlayerStatusIds } from "@/lib/game-data";
-import type { BattleState, CombatTextEvent, NumericCombatTextEvent } from "./types";
+import { applyPlayerHealing, type BattleState, type CombatTextEvent, type NumericCombatTextEvent } from "./types";
 
 // Narrows label-style combat text so numeric merging never assumes an amount exists.
 function isNoticeCombatText(event: CombatTextEvent) {
@@ -67,4 +67,28 @@ export function emitOverhealBlockText(
     stat: "block",
     amount: stateAfter.playerStatuses.block - stateBefore.playerStatuses.block,
   });
+}
+
+export function applyHealingWithCombatText(
+  state: BattleState,
+  amount: number,
+  combatTexts?: CombatTextEvent[],
+): BattleState {
+  if (amount <= 0) return state;
+  const prevState = state;
+  const nextState = applyPlayerHealing(state, amount);
+  if (combatTexts) {
+    mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount });
+    emitOverhealBlockText(prevState, nextState, combatTexts);
+  }
+  return nextState;
+}
+
+export function applyHealOnManaGain(
+  state: BattleState,
+  gainAmount: number,
+  combatTexts: CombatTextEvent[],
+): BattleState {
+  if (state.talentEffects.healOnManaGain <= 0 || gainAmount <= 0) return state;
+  return applyHealingWithCombatText(state, state.talentEffects.healOnManaGain, combatTexts);
 }

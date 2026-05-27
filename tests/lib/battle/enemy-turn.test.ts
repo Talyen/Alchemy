@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { endPlayerTurn } from "@/lib/battle/enemy-turn";
 import type { BattleState, EnemyStatusValues, PlayerStatusValues } from "@/lib/battle/types";
 import type { BattleCard } from "@/lib/game-data";
-import { defaultTalentEffects } from "@/lib/battle/draw";
+import { defaultTalentEffects } from "@/lib/battle";
 import { createTestBattleState } from "./test-state";
 import type { BestiaryEntry } from "@/lib/game-data";
 
@@ -17,8 +17,6 @@ function makeCard(overrides: Partial<BattleCard> = {}): BattleCard {
     ...overrides,
   };
 }
-
-vi.spyOn(Math, "random").mockReturnValue(0.99);
 
 function baseEnemy(enemyId: string): BestiaryEntry {
   return {
@@ -152,11 +150,86 @@ describe("endPlayerTurn — standard branch", () => {
     expect(result.state.enemyHealth).toBeGreaterThan(30);
   });
 
+  it("applies enemy regeneration after player DoT during enemy resolution", () => {
+    const state = battleState({
+      playerHealth: 50,
+      playerStatuses: { ...emptyPlayerStatuses, burn: 3 },
+      enemyHealth: 40,
+      enemyMaxHealth: 50,
+      enemyRegeneration: 5,
+    });
+    const result = endPlayerTurn(state);
+    expect(result.afterAttackState?.playerHealth).toBeLessThan(50);
+    expect(result.state.enemyHealth).toBe(45);
+  });
+
+  it("moves the hand into discard when the enemy phase begins", () => {
+    const held = makeCard({ id: "held" });
+    const state = battleState({ hand: [held], discard: [] });
+    const result = endPlayerTurn(state);
+    expect(result.enemyTurnStartState?.hand).toEqual([]);
+    expect(result.enemyTurnStartState?.discard.some((card) => card.id === "held")).toBe(true);
+  });
+
   it("turns over to player phase", () => {
     const state = battleState();
     const result = endPlayerTurn(state);
     expect(result.state.turnPhase).toBe("player");
     expect(result.state.mana).toBeGreaterThan(0);
+  });
+});
+
+describe("endPlayerTurn — tick order", () => {
+  it("ticks enemy DoT before attack when enemy survives", () => {
+    const state = battleState({
+      enemyHealth: 50,
+      enemyStatuses: { ...emptyStatuses, burn: 10 },
+      playerHealth: 30,
+      deck: [
+        makeCard({ id: "d1" }),
+        makeCard({ id: "d2" }),
+        makeCard({ id: "d3" }),
+        makeCard({ id: "d4" }),
+      ],
+    });
+    const result = endPlayerTurn(state);
+    expect(result.enemyTurnStartState?.enemyHealth).toBe(40);
+    expect(result.enemyPerformedAttack).toBe(true);
+    expect(result.state.playerHealth).toBeLessThan(30);
+  });
+
+  it("skips attack when enemy dies to DoT before attacking", () => {
+    const state = battleState({
+      enemyHealth: 8,
+      enemyStatuses: { ...emptyStatuses, burn: 10 },
+      playerHealth: 30,
+      deck: [
+        makeCard({ id: "d1" }),
+        makeCard({ id: "d2" }),
+        makeCard({ id: "d3" }),
+        makeCard({ id: "d4" }),
+      ],
+    });
+    const result = endPlayerTurn(state);
+    expect(result.enemyPerformedAttack).toBe(false);
+    expect(result.state.enemyHealth).toBeLessThanOrEqual(0);
+  });
+
+  it("applies player DoT only after enemy attack", () => {
+    const state = battleState({
+      playerHealth: 30,
+      playerStatuses: { ...emptyPlayerStatuses, burn: 5 },
+      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 10 }],
+      deck: [
+        makeCard({ id: "d1" }),
+        makeCard({ id: "d2" }),
+        makeCard({ id: "d3" }),
+        makeCard({ id: "d4" }),
+      ],
+    });
+    const result = endPlayerTurn(state);
+    expect(result.afterAttackState?.playerHealth).toBe(20);
+    expect(result.state.playerHealth).toBeLessThan(20);
   });
 });
 

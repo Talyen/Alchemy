@@ -46,6 +46,7 @@ function CharacterCard({
     >
       <TiltSurface
         as="button"
+        ariaLabel={`Select ${char.name}`}
         className={cn(charCardWidthClass, "relative rounded-shell-tooltip")}
         shimmerActive={isShimmer}
         shimmerToken={shimmerToken}

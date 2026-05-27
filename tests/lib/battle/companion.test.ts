@@ -1,10 +1,8 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { processCompanionTurnStart } from "@/lib/battle/companion";
 import { companionLibrary } from "@/lib/game-data";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { createTestBattleState } from "./test-state";
-
-vi.spyOn(Math, "random").mockReturnValue(0.99);
 
 function makeTexts(): CombatTextEvent[] {
   return [];

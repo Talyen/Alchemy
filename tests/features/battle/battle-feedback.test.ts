@@ -9,7 +9,7 @@ import {
 } from "@/features/alchemy/battle/battle-feedback";
 import type { BattleState } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
-import { defaultTalentEffects } from "@/lib/battle/draw";
+import { defaultTalentEffects } from "@/lib/battle";
 import { defaultTrinketEffects } from "@/lib/trinkets";
 
 function makeState(): BattleState {

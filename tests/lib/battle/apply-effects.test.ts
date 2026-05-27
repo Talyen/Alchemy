@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { applyCardEffects } from "@/lib/battle/apply-effects";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
-import { defaultBattleState } from "@/lib/battle/draw";
+import { defaultBattleState } from "@/lib/battle";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { isPlayerDefeated } from "@/lib/battle/types";
 import { computeTrinketManifest } from "@/lib/trinkets";

@@ -4,10 +4,10 @@ import {
   type BalanceBatchResult,
   type BalancePlayPolicy,
   type TalentPreset,
-  type BattleAnomalies,
   ANOMALY_THRESHOLD,
-  createSeededRandom,
+  ANOMALY_METRICS,
 } from "@/lib/balance";
+import { createSeededRng } from "@/lib/utils";
 import {
   characters,
   enemyBestiary,
@@ -78,7 +78,7 @@ type TieredResults = { tier: string; label: string; results: BalanceBatchResult[
 const ALL_CARD_IDS = cardLibrary.map((c) => c.id);
 
 function buildRandomDeck(seed: number): BattleCard[] {
-  const rng = createSeededRandom(seed);
+  const rng = createSeededRng(seed);
   const shuffled = [...ALL_CARD_IDS];
   for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1));
@@ -186,28 +186,7 @@ type AnomalySummary = {
 };
 
 // A flat list of (field, label) pairs to check for anomalies in a BattleAnomalies record.
-const ANOMALY_FIELDS: { key: keyof BattleAnomalies; label: string }[] = [
-  { key: "maxPlayerBlock", label: "Block on Player" },
-  { key: "maxPlayerArmor", label: "Armor on Player" },
-  { key: "maxPlayerBurn", label: "Burn on Player" },
-  { key: "maxPlayerPoison", label: "Poison on Player" },
-  { key: "maxPlayerBleed", label: "Bleed on Player" },
-  { key: "maxPlayerFreeze", label: "Freeze on Player" },
-  { key: "maxPlayerStun", label: "Stun on Player" },
-  { key: "maxEnemyBurn", label: "Burn on Enemy" },
-  { key: "maxEnemyPoison", label: "Poison on Enemy" },
-  { key: "maxEnemyBleed", label: "Bleed on Enemy" },
-  { key: "maxEnemyFreeze", label: "Freeze on Enemy" },
-  { key: "maxEnemyStun", label: "Stun on Enemy" },
-  { key: "maxEnemyArmor", label: "Armor on Enemy" },
-  { key: "maxEnemyForge", label: "Forge on Enemy" },
-  { key: "maxEnemyFreezeBonus", label: "FreezeBonus on Enemy" },
-  { key: "maxEnemyBurnBonus", label: "BurnBonus on Enemy" },
-  { key: "maxEnemyBlock", label: "Block on Enemy" },
-  { key: "maxSingleHitDamageToEnemy", label: "Player→Enemy Dmg" },
-  { key: "maxSingleHitDamageToPlayer", label: "Enemy→Player Dmg" },
-  { key: "maxSingleHeal", label: "Player Heal" },
-];
+const ANOMALY_FIELDS = ANOMALY_METRICS;
 
 function collectAnomalies(results: BalanceBatchResult[], tierLabel: string): AnomalySummary[] {
   const byField: Record<string, AnomalySummary> = {};
@@ -329,7 +308,7 @@ function runCardSweep(): TieredCards {
   const randomDeckSeeds = Array.from({ length: cardIterations }, (_, i) => 200_000 + i);
 
   function buildRandomDeck(allCards: string[], size: number, seed: number): BattleCard[] {
-    const rng = createSeededRandom(seed);
+    const rng = createSeededRng(seed);
     const shuffled = [...allCards];
     for (let i = shuffled.length - 1; i > 0; i--) {
       const j = Math.floor(rng() * (i + 1));
@@ -340,7 +319,7 @@ function runCardSweep(): TieredCards {
   }
 
   function buildFixedCardDeck(targetId: string, pool: string[], size: number, seed: number): BattleCard[] {
-    const rng = createSeededRandom(seed);
+    const rng = createSeededRng(seed);
     const shuffled = [...pool];
     for (let i = shuffled.length - 1; i > 0; i--) {
       const j = Math.floor(rng() * (i + 1));

@@ -57,9 +57,11 @@ export function GameModeSelectScreen({
             >
               <button
                 type="button"
+                aria-label={meta.title}
+                aria-pressed={selectedModeId === modeId}
                 onClick={() => setSelectedModeId(modeId)}
                 className={cn(
-                  "flex flex-col items-center gap-3 rounded-shell-dialog border border-border/60 bg-card/60 px-8 pb-7 pt-6",
+                  "flex flex-col items-center gap-3 rounded-shell-dialog border border-border/60 bg-card/60 px-8 pb-7 pt-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                   selectedModeId === modeId && "ring-2 ring-primary",
                 )}
               >

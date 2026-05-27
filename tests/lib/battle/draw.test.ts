@@ -1,10 +1,7 @@
 import { describe, expect, it } from "vitest";
-import {
-  defaultBattleState,
-  defaultTalentEffects,
-  drawCards,
-  shuffleCards,
-} from "@/lib/battle/draw";
+import { defaultBattleState, defaultTalentEffects } from "@/lib/battle";
+import { drawCards, shuffleCards } from "@/lib/battle/draw";
+import { MAX_HAND_SIZE } from "@/lib/game-constants";
 import { createEmptyTalentManifest } from "@/lib/game-data";
 
 describe("defaultTalentEffects", () => {
@@ -194,6 +191,14 @@ describe("drawCards — edge cases", () => {
     const result = drawCards(deck, [], hand, 4);
     expect(result.hand).toHaveLength(7);
     expect(result.deck).toHaveLength(2);
+  });
+
+  it("silently skips draws when hand is already at MAX_HAND_SIZE", () => {
+    const hand = Array.from({ length: MAX_HAND_SIZE }, (_, i) => makeCard(`h${i}`));
+    const deck = [makeCard("d1"), makeCard("d2"), makeCard("d3")];
+    const result = drawCards(deck, [], hand, 4);
+    expect(result.hand).toHaveLength(MAX_HAND_SIZE);
+    expect(result.deck.map((card) => card.id)).toEqual(["d1", "d2", "d3"]);
   });
 
   it("drawing 0 cards does nothing", () => {

@@ -12,6 +12,7 @@ import difficulty3Art from "@/assets/optimized/difficulty-3.webp";
 
 import { KeywordToken } from "../ui/card-description-ui";
 import { KeywordTag } from "../ui/keyword-tag";
+import { PressableMotion } from "../ui/pressable-motion";
 import { ScreenHeader, ShimmerOverlay } from "../ui/shared-ui";
 import { clearTiltFromEvent, setTiltFromEvent, tokenizeDescription } from "../utils";
 import { battleCardWidthClass, cardSurfaceClass, staticCardTransform } from "../config";
@@ -80,55 +81,60 @@ function DifficultyCard({
 
   return (
     <div className="relative group flex flex-col items-center">
-      <div
-        className={cn(
-          "relative flex flex-col items-center gap-3 rounded-shell-dialog border border-border/60 bg-card/60 px-4 pb-6 pt-5 text-center transition-all",
-          locked && "grayscale border-muted/40",
-          !locked && "cursor-pointer",
-          isSelected && "ring-2 ring-primary",
-        )}
-        onClick={!locked ? () => onSelect(difficultyId) : undefined}
-      >
-        {showTilt ? (
-          <div
-            className={cn(
-              "tilt-surface relative overflow-hidden rounded-shell-panel aspect-[5/6]",
-              battleCardWidthClass,
-            )}
-            style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
-            onMouseMove={setTiltFromEvent}
-            onMouseEnter={() => onHoverShimmer(difficultyId)}
-            onMouseLeave={clearTiltFromEvent}
-          >
-            <ShimmerOverlay active={isShimmer} token={shimmerToken} rounded="rounded-shell-panel" />
-            <img src={diffArt} alt={name} className={cn(cardSurfaceClass, "w-full rounded-shell-panel object-cover")} />
-            {completed && (
-              <div className="absolute right-2 top-2 rounded-md bg-emerald-600/90 px-2 py-0.5 text-xs font-bold uppercase tracking-wide text-emerald-100">
-                Completed
+      <PressableMotion disableHoverScale {...(locked ? { hoverSound: false as const } : {})}>
+        <button
+          type="button"
+          disabled={locked}
+          aria-label={name}
+          aria-pressed={isSelected}
+          onClick={() => onSelect(difficultyId)}
+          className={cn(
+            "relative flex flex-col items-center gap-3 rounded-shell-dialog border border-border/60 bg-card/60 px-4 pb-6 pt-5 text-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-default",
+            locked && "grayscale border-muted/40",
+            isSelected && "ring-2 ring-primary",
+          )}
+        >
+          {showTilt ? (
+            <div
+              className={cn(
+                "tilt-surface relative overflow-hidden rounded-shell-panel aspect-[5/6]",
+                battleCardWidthClass,
+              )}
+              style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
+              onMouseMove={setTiltFromEvent}
+              onMouseEnter={() => onHoverShimmer(difficultyId)}
+              onMouseLeave={clearTiltFromEvent}
+            >
+              <ShimmerOverlay active={isShimmer} token={shimmerToken} rounded="rounded-shell-panel" />
+              <img src={diffArt} alt="" className={cn(cardSurfaceClass, "w-full rounded-shell-panel object-cover")} />
+              {completed && (
+                <div className="absolute right-2 top-2 rounded-md bg-emerald-600/90 px-2 py-0.5 text-xs font-bold uppercase tracking-wide text-emerald-100">
+                  Completed
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className={cn("relative overflow-hidden rounded-shell-panel aspect-[5/6]", battleCardWidthClass)}>
+              <img
+                src={diffArt}
+                alt=""
+                className={cn(cardSurfaceClass, "w-full rounded-shell-panel object-cover", "grayscale")}
+              />
+              <div className="absolute inset-0 flex items-center justify-center rounded-shell-panel bg-black/60">
+                <span className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Locked</span>
               </div>
-            )}
-          </div>
-        ) : (
-          <div className={cn("relative overflow-hidden rounded-shell-panel aspect-[5/6]", battleCardWidthClass)}>
-            <img
-              src={diffArt}
-              alt={name}
-              className={cn(cardSurfaceClass, "w-full rounded-shell-panel object-cover", "grayscale")}
-            />
-            <div className="absolute inset-0 flex items-center justify-center rounded-shell-panel bg-black/60">
-              <span className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Locked</span>
+            </div>
+          )}
+          <p className={cn("font-display text-base font-bold text-amber-100/75", locked && "text-muted-foreground")}>
+            {name}
+          </p>
+          <div className="flex flex-col justify-center min-h-[5.56cqh]">
+            <div className="text-center text-sm leading-relaxed text-muted-foreground max-w-[20.37cqh]">
+              {renderDescription(fullDescription)}
             </div>
           </div>
-        )}
-        <p className={cn("font-display text-base font-bold text-amber-100/75", locked && "text-muted-foreground")}>
-          {name}
-        </p>
-        <div className="flex flex-col justify-center min-h-[5.56cqh]">
-          <div className="text-center text-sm leading-relaxed text-muted-foreground max-w-[20.37cqh]">
-            {renderDescription(fullDescription)}
-          </div>
-        </div>
-      </div>
+        </button>
+      </PressableMotion>
 
       {locked && (
         <TooltipPanel className="pointer-events-none opacity-0 group-hover:opacity-100">

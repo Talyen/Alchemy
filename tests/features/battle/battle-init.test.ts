@@ -6,65 +6,12 @@ import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { computeTalentEffects } from "@/lib/game-data";
 import { mergeIntoManifest } from "@/lib/homestead/effects";
 import { enemyBestiary } from "@/lib/game-data";
-import type { RunStateController, TalentStateController } from "@/features/alchemy/stores/run-store";
+import { makeRunController, makeTalentController } from "../../helpers/run-controller";
 
 beforeEach(() => {
   useBattleStore.setState(useBattleStore.getInitialState());
   useRunStore.setState(useRunStore.getInitialState());
 });
-
-function makeRunController(): RunStateController {
-  const s = useRunStore.getState();
-  return {
-    characterId: s.characterId,
-    runDeck: s.runDeck,
-    runGold: s.runGold,
-    runPlayerHealth: s.runPlayerHealth,
-    runMaxHealth: s.runMaxHealth,
-    roomsEncountered: s.roomsEncountered,
-    currentAct: s.currentAct,
-    destinationIndexInAct: s.destinationIndexInAct,
-    completedDestinations: s.completedDestinations,
-    runTrinkets: s.runTrinkets,
-    encounteredRunEnemyIds: s.encounteredRunEnemyIds,
-    selectedDifficulty: s.selectedDifficulty,
-    contentSystemType: s.contentSystemType,
-    setRunDeck: s.setRunDeck,
-    setRunGold: s.setRunGold,
-    setRunPlayerHealth: s.setRunPlayerHealth,
-    setRunMaxHealth: s.setRunMaxHealth,
-    setRoomsEncountered: s.setRoomsEncountered,
-    setCurrentAct: s.setCurrentAct,
-    setDestinationIndexInAct: s.setDestinationIndexInAct,
-    setCompletedDestinations: s.setCompletedDestinations,
-    setRunTrinkets: s.setRunTrinkets,
-    setEncounteredRunEnemyIds: s.setEncounteredRunEnemyIds,
-    setSelectedDifficulty: s.setSelectedDifficulty,
-    setContentSystemType: s.setContentSystemType,
-    setCharacter: s.setCharacter,
-    reset: s.reset,
-    addRunGold: s.addRunGold,
-    hydrateFromSnapshot: s.hydrateFromSnapshot,
-  };
-}
-
-function makeTalentController(): TalentStateController {
-  const s = useRunStore.getState();
-  return {
-    talentXP: s.talentXP,
-    runTalentXP: s.runTalentXP,
-    unlockedTalents: s.unlockedTalents,
-    talentEffects: computeTalentEffects(s.unlockedTalents),
-    awardCardXP: s.awardCardXP,
-    unlockTalent: s.unlockTalent,
-    unlockAllTalents: s.unlockAllTalents,
-    resetUnlockedTalents: s.resetUnlockedTalents,
-    resetRunXP: s.resetRunXP,
-    clearPermanentData: s.clearPermanentData,
-    awardMysteryXP: s.awardMysteryXP,
-    finalizeRunXP: s.finalizeRunXP,
-  };
-}
 
 describe("createBattleInit", () => {
   const homesteadEffectsRef = { current: defaultHomesteadEffects };

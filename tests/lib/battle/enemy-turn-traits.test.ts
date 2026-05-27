@@ -8,7 +8,15 @@ import {
   PASSIVE_ONLY_DIFFICULTY_MODIFIER_KINDS,
   PASSIVE_ONLY_ENEMY_TRAIT_IDS,
   processEnemyRegeneration,
+  processEnemyTraits,
 } from "@/lib/battle/enemy-turn-traits";
+import {
+  DIFFICULTY_FORGE_PER_TURN,
+  IRON_HIDE_ARMOR_PER_TURN,
+  IRON_HIDE_BURN_BONUS_PER_TURN,
+  TRAIT_FORGE_PER_TURN,
+  TRAIT_FREEZE_BONUS_PER_TURN,
+} from "@/lib/game-constants";
 import { createTestBattleState } from "./test-state";
 
 describe("enemy turn trait coverage", () => {
@@ -64,5 +72,113 @@ describe("processEnemyRegeneration", () => {
     });
     const result = processEnemyRegeneration(state, []);
     expect(result.enemyHealth).toBe(20);
+  });
+});
+
+describe("processEnemyTraits", () => {
+  const forgeGolem = enemyBestiary.find((e) => e.id === "forge-golem")!;
+  const ironBear = enemyBestiary.find((e) => e.id === "iron-bear")!;
+  const frostwarden = enemyBestiary.find((e) => e.id === "frostwarden")!;
+  const skeleton = enemyBestiary.find((e) => e.id === "skeleton")!;
+
+  it("applies rusting-carapace forge scaled by room multiplier", () => {
+    const state = createTestBattleState({
+      currentEnemy: forgeGolem,
+      roomScalingMultiplier: 2,
+      enemyMitigation: { ...createTestBattleState().enemyMitigation, forge: 0 },
+    });
+    const result = processEnemyTraits(state, [], { traitRoll: 0 });
+    expect(result.enemyMitigation.forge).toBe(TRAIT_FORGE_PER_TURN * 2);
+  });
+
+  it("iron-hide chooses armor when traitRoll is 0", () => {
+    const state = createTestBattleState({
+      currentEnemy: ironBear,
+      roomScalingMultiplier: 1,
+    });
+    const texts: Parameters<typeof processEnemyRegeneration>[1] = [];
+    const result = processEnemyTraits(state, texts, { traitRoll: 0 });
+    expect(result.enemyMitigation.armor).toBe(IRON_HIDE_ARMOR_PER_TURN);
+    expect(texts).toContainEqual({
+      target: "enemy",
+      kind: "status",
+      stat: "armor",
+      amount: IRON_HIDE_ARMOR_PER_TURN,
+    });
+  });
+
+  it("iron-hide chooses forge when traitRoll is in the middle third", () => {
+    const state = createTestBattleState({ currentEnemy: ironBear, roomScalingMultiplier: 1 });
+    const texts: Parameters<typeof processEnemyRegeneration>[1] = [];
+    const result = processEnemyTraits(state, texts, { traitRoll: 0.4 });
+    expect(result.enemyMitigation.forge).toBe(TRAIT_FORGE_PER_TURN);
+    expect(texts).toContainEqual({
+      target: "enemy",
+      kind: "status",
+      stat: "forge",
+      amount: TRAIT_FORGE_PER_TURN,
+    });
+  });
+
+  it("iron-hide chooses burn bonus when traitRoll is in the upper third", () => {
+    const state = createTestBattleState({ currentEnemy: ironBear, roomScalingMultiplier: 1 });
+    const texts: Parameters<typeof processEnemyRegeneration>[1] = [];
+    const result = processEnemyTraits(state, texts, { traitRoll: 0.9 });
+    expect(result.enemyMitigation.burnBonus).toBe(IRON_HIDE_BURN_BONUS_PER_TURN);
+    expect(texts.some((t) => t.kind === "notice" && t.stat === "burn")).toBe(true);
+  });
+
+  it("applies glacial-shell freeze bonus", () => {
+    const state = createTestBattleState({ currentEnemy: frostwarden, roomScalingMultiplier: 1 });
+    const result = processEnemyTraits(state, [], { traitRoll: 0 });
+    expect(result.enemyMitigation.freezeBonus).toBe(TRAIT_FREEZE_BONUS_PER_TURN);
+  });
+
+  it("applies enemy-gains-forge-each-turn difficulty modifier", () => {
+    const state = createTestBattleState({
+      currentEnemy: skeleton,
+      difficultyModifiers: [{ kind: "enemy-gains-forge-each-turn", amount: 1 }],
+    });
+    const texts: Parameters<typeof processEnemyRegeneration>[1] = [];
+    const result = processEnemyTraits(state, texts);
+    expect(result.enemyMitigation.forge).toBe(DIFFICULTY_FORGE_PER_TURN);
+    expect(texts).toContainEqual({
+      target: "enemy",
+      kind: "status",
+      stat: "forge",
+      amount: DIFFICULTY_FORGE_PER_TURN,
+    });
+  });
+
+  it("skips scaling traits when freeze prevents enemy scaling", () => {
+    const state = createTestBattleState({
+      currentEnemy: forgeGolem,
+      enemyFreezeSkipTurns: 1,
+      enemyMitigation: { ...createTestBattleState().enemyMitigation, forge: 0 },
+      talentEffects: { ...createTestBattleState().talentEffects, freezePreventsEnemyScaling: true },
+    });
+    const result = processEnemyTraits(state, [], { traitRoll: 0 });
+    expect(result.enemyMitigation.forge).toBe(0);
+  });
+
+  it("does not run handlers for passive-only regeneration trait", () => {
+    const blightTreant = enemyBestiary.find((e) => e.id === "blight-treant")!;
+    const state = createTestBattleState({
+      currentEnemy: blightTreant,
+      enemyMitigation: { ...createTestBattleState().enemyMitigation, forge: 0 },
+    });
+    const result = processEnemyTraits(state, [], { traitRoll: 0 });
+    expect(result.enemyMitigation.forge).toBe(0);
+  });
+
+  it("applies trait and difficulty handlers in one pass", () => {
+    const state = createTestBattleState({
+      currentEnemy: forgeGolem,
+      roomScalingMultiplier: 1,
+      difficultyModifiers: [{ kind: "enemy-gains-forge-each-turn", amount: 1 }],
+      enemyMitigation: { ...createTestBattleState().enemyMitigation, forge: 0 },
+    });
+    const result = processEnemyTraits(state, [], { traitRoll: 0 });
+    expect(result.enemyMitigation.forge).toBe(TRAIT_FORGE_PER_TURN + DIFFICULTY_FORGE_PER_TURN);
   });
 });

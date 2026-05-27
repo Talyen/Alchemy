@@ -1,7 +1,7 @@
 // Deterministic battle setup helpers for Vitest (mirrors tests/helpers.ts card shapes).
 import type { BattleCard } from "@/lib/game-data";
 import type { BattleState } from "@/lib/battle/types";
-import { defaultBattleState } from "@/lib/battle/draw";
+import { defaultBattleState } from "@/lib/battle";
 
 /** Seeded PRNG for `createBattleState({ rng })` and battle talent rolls. */
 export function seededRng(seed = 42): () => number {
@@ -29,7 +29,7 @@ export function makeTestBattleState(overrides: Partial<BattleState> = {}): Battl
     ...defaultBattleState(),
     mana: 4,
     maxMana: 4,
-    rng: seededRng(),
+    rng: seededRng(42),
     ...overrides,
   };
 }

@@ -3,6 +3,7 @@
 // Consumers should import from here instead of binding to battle submodule paths.
 export * from "./types";
 export * from "./draw";
+export * from "./battle-setup";
 export { applyCardEffects } from "./apply-effects";
 export { mergeCombatText } from "./combat-text";
 export { applyIronwoodBuckler, applyBoneCharmHeal } from "./trinket-effects";

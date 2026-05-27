@@ -3,43 +3,27 @@
 // Depends on pure battle logic, run/talent state, homestead modifiers, audio, and UI hooks.
 // Depended on by: useAlchemyRunController for managing active combat.
 // Uses useBattleStore (Zustand) instead of local useState for battle data.
-import type { MouseEvent } from "react";
 import { useEffect, useRef, useState } from "react";
-import {
-  chooseWishCard,
-  getEffectiveCost,
-  playBattleCardResolved,
-  type BattleState,
-  type CombatTextEvent,
-  isPlayerDefeated,
-} from "@/lib/battle";
-import type { BattleCard } from "@/lib/game-data";
-import { playCardSound, playGoldGain } from "@/lib/audio";
-import { appendUnique } from "@/lib/utils";
+import type { BattleState } from "@/lib/battle";
 import { logError } from "@/lib/error-logger";
-import { animateCardActivation } from "./battle/card-ghost-animation";
 import type { CardRect, CardTransfer, Screen } from "./types";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
-import { CARD_ACTIVATION_ROTATION_DEGREES, COMPANION_ATTACK_DELAY, isAnimationDisabled } from "@/lib/game-constants";
+import { COMPANION_ATTACK_DELAY } from "@/lib/game-constants";
 import { TimerGroup } from "@/lib/animation/game-timer";
-import { getCardRect, getHoverId, isAlchemyDevBuild } from "./utils";
 import type { RunStateController, TalentStateController } from "./stores/run-store";
-import { applyCombatTextPortraitFeedback, shouldPlayCardGoldGain } from "./battle/battle-feedback";
+import { applyCombatTextPortraitFeedback } from "./battle/battle-feedback";
 import { useBattleAutoEndTurn } from "./battle/use-battle-auto-end-turn";
 import { useBattleStore } from "./stores/battle-store";
 import { createTransferCancelRegistry } from "./battle/transfer-lifecycle";
-import { defaultMeasureElementRect, defaultMeasureVisualCardRect, getCardKey } from "./battle/controller-utils";
-import { runHandDrawSequence } from "./battle/draw-sequence";
-import {
-  resolveCompanionFollowUpTexts,
-  resolveEndTurnOrchestration,
-  type TurnOrchestrationDeps,
-} from "./battle/turn-orchestration";
+import { defaultMeasureElementRect, defaultMeasureVisualCardRect } from "./battle/controller-utils";
+import { resolveCompanionFollowUpTexts, type TurnOrchestrationDeps } from "./battle/turn-orchestration";
 import { createBattleSession } from "./battle/battle-session";
 import { createBattleTransferDeps } from "./battle/battle-transfer-deps";
 import { createBattleInit } from "./battle/battle-init";
+import { createBattleCardPlay } from "./battle/battle-card-play";
+import { createBattleEndTurnUi } from "./battle/battle-end-turn-ui";
+import { createBattleDevOutcomes } from "./battle/battle-dev-outcomes";
 
-// ─── Store subscriptions ───
 export function useBattleController({
   run,
   talents,
@@ -69,8 +53,6 @@ export function useBattleController({
   measureElementRect?: (element: HTMLElement | null, sceneElement: HTMLDivElement | null) => CardRect | null;
   measureVisualCardRect?: (element: HTMLElement | null, sceneElement: HTMLDivElement | null) => CardRect | null;
 }) {
-  // React owns timing, refs, animation, and audio here; pure combat resolution stays in
-  // @/lib/battle so UI delays cannot silently change battle outcomes.
   const battleState = useBattleStore((s) => s.battleState);
   const hasActiveBattle = useBattleStore((s) => s.hasActiveBattle);
 
@@ -169,7 +151,6 @@ export function useBattleController({
     setCardTransferInProgress,
   });
 
-  // ─── Effects ───
   useEffect(
     () => () => {
       clearAllBattleTimeouts();
@@ -182,7 +163,6 @@ export function useBattleController({
     [],
   );
 
-  // resetBattleSession / resetHandTransferUi are stable for the controller lifetime.
   useEffect(() => {
     if (hasActiveBattle) return;
     resetBattleSession();
@@ -192,12 +172,23 @@ export function useBattleController({
     });
   }, [hasActiveBattle]);
 
-  const { scheduleAutoEndTurn } = useBattleAutoEndTurn({
-    autoEndTurn,
-    screen,
-    battleState,
-    onEndTurn: handleEndTurn,
-  });
+  function scheduleCompanionFollowUp(resultState: BattleState, session: number) {
+    if (!resultState.activeCompanion || resultState.enemyHealth <= 0) return;
+    battleTimerGroupRef.current.setTimeout(() => {
+      runIfSessionActive(session, () => {
+        companionScheduledRef.current = false;
+        const texts = resolveCompanionFollowUpTexts(getTurnOrchestrationDeps(), session);
+        if (texts.length > 0) {
+          const store = getStore();
+          store.showCombatTexts(texts);
+          applyCombatTextPortraitFeedback(texts, store);
+        }
+      });
+    }, COMPANION_ATTACK_DELAY);
+    companionScheduledRef.current = true;
+  }
+
+  let resolveEndTurn = (_currentState: BattleState, _session: number) => {};
 
   function getTurnOrchestrationDeps(): TurnOrchestrationDeps {
     return {
@@ -219,208 +210,53 @@ export function useBattleController({
     };
   }
 
-  // ─── Card play & draw sequence ───
-  function handleDrawSequence(
-    oldHand: BattleCard[],
-    newState: BattleState,
-    applyState: () => void,
-    session = battleSessionRef.current,
-  ): Promise<boolean> {
-    return runHandDrawSequence(oldHand, newState, applyState, session, getDrawSequenceDeps());
-  }
+  const { handleEndTurn, resolveEndTurn: assignResolveEndTurn } = createBattleEndTurnUi({
+    screen,
+    battleSessionRef,
+    cardPlayInProgressRef,
+    cardTransferInProgress,
+    resolvedAsHasteOrStunRef,
+    clearBattleTimeoutsKeepCompanion,
+    runIfSessionActive,
+    resetHandTransferUi,
+    getTurnOrchestrationDeps,
+    animateDiscardedHand: transferDeps.animateDiscardedHand,
+    logBattleError,
+    getStore,
+  });
+  resolveEndTurn = assignResolveEndTurn;
 
-  function runDrawSequenceAndFinalize(
-    oldHand: BattleCard[],
-    newState: BattleState,
-    onCommitState: () => void,
-    session: number,
-    errorContext: string,
-  ) {
-    void handleDrawSequence(oldHand, newState, onCommitState, session)
-      .catch((err) => logBattleError(`handle ${errorContext} draw sequence`, err))
-      .finally(() => finishDrawSequence(session, newState));
-  }
+  const { scheduleAutoEndTurn } = useBattleAutoEndTurn({
+    autoEndTurn,
+    screen,
+    battleState,
+    onEndTurn: handleEndTurn,
+  });
 
-  function handlePlayCard(
-    card: BattleCard,
-    index: number,
-    sourceRect: { x: number; y: number; width: number; height: number },
-  ) {
-    const currentState = getStore().battleState;
-    if (!canPlayCard(card, index, currentState)) return;
-    const session = battleSessionRef.current;
-    cardPlayInProgressRef.current = true;
-    animatePlayedCard(card, index, sourceRect);
-    playCardSound(card.id);
-    const resolution = playBattleCardResolved(currentState, card.id, index);
-    playCardResolutionFeedback(card, currentState, resolution.state, resolution.combatTexts);
-    setHoveredCardId((current) => (current === getHoverId("hand", `${card.id}-${card.uid}`) ? null : current));
-    talents.awardCardXP(card);
+  const { handleCardClick, handleWishChoice } = createBattleCardPlay({
+    screen,
+    battleState,
+    battleSessionRef,
+    cardPlayInProgressRef,
+    hiddenHandCardKeys,
+    playerPanelRef,
+    enemyPanelRef,
+    battleSceneRef,
+    setHoveredCardId,
+    talents,
+    setDiscoveredCardIds,
+    getDrawSequenceDeps,
+    finishDrawSequence,
+    runIfSessionActive,
+    scheduleAutoEndTurn,
+    logBattleError,
+  });
 
-    runDrawSequenceAndFinalize(
-      currentState.hand,
-      resolution.state,
-      () => {
-        getStore().setSyncedBattleState(resolution.state);
-        if (resolution.combatTexts.length > 0) getStore().showCombatTexts(resolution.combatTexts);
-      },
-      session,
-      "play card",
-    );
-    runIfSessionActive(session, () => {
-      scheduleAutoEndTurn(resolution.state);
-    });
-  }
-
-  function canPlayCard(card: BattleCard, index: number, state: BattleState) {
-    const currentCard = state.hand[index];
-    return (
-      screen === "battle" &&
-      state.enemyHealth > 0 &&
-      !isPlayerDefeated(state) &&
-      currentCard?.id === card.id &&
-      currentCard?.uid === card.uid &&
-      state.mana >= getEffectiveCost(state, currentCard) &&
-      !state.wishOptions &&
-      state.turnPhase === "player" &&
-      !cardPlayInProgressRef.current &&
-      !hiddenHandCardKeys.has(getCardKey(card))
-    );
-  }
-
-  function animatePlayedCard(
-    card: BattleCard,
-    index: number,
-    sourceRect: { x: number; y: number; width: number; height: number },
-  ) {
-    const centerOffset = index - (battleState.hand.length - 1) / 2;
-    animateCardActivation(
-      card,
-      sourceRect,
-      centerOffset * CARD_ACTIVATION_ROTATION_DEGREES,
-      playerPanelRef,
-      enemyPanelRef,
-      battleSceneRef,
-      getStore().spawnCardGhost,
-    );
-  }
-
-  function playCardResolutionFeedback(
-    card: BattleCard,
-    prePlayState: BattleState,
-    postPlayState: BattleState,
-    combatTexts: CombatTextEvent[],
-  ) {
-    if (shouldPlayCardGoldGain(prePlayState, postPlayState, card)) playGoldGain();
-    const store = getStore();
-    applyCombatTextPortraitFeedback(combatTexts, store);
-  }
-
-  function handleCardClick(card: BattleCard, index: number, event: MouseEvent<HTMLButtonElement>) {
-    handlePlayCard(card, index, getCardRect(event.currentTarget.getBoundingClientRect()));
-  }
-
-  function handleWishChoice(cardOrNull: BattleCard | null) {
-    const currentState = getStore().battleState;
-    const newState = chooseWishCard(currentState, cardOrNull?.id ?? null);
-    const session = battleSessionRef.current;
-    if (cardOrNull) {
-      setDiscoveredCardIds((current) => appendUnique(current, cardOrNull.id));
-    }
-    runDrawSequenceAndFinalize(
-      currentState.hand,
-      newState,
-      () => {
-        getStore().setSyncedBattleState(newState);
-      },
-      session,
-      "wish choice",
-    );
-  }
-
-  // ─── End turn & enemy phase ───
-  function handleEndTurn() {
-    const currentState = getStore().battleState;
-    if (
-      screen !== "battle" ||
-      currentState.turnPhase !== "player" ||
-      currentState.wishOptions ||
-      cardPlayInProgressRef.current ||
-      cardTransferInProgress
-    )
-      return;
-    clearBattleTimeoutsKeepCompanion();
-    const session = battleSessionRef.current;
-
-    animateEndTurnThenResolve(currentState, session).catch((err) =>
-      logBattleError("resolve end turn animation sequence", err),
-    );
-  }
-
-  async function animateEndTurnThenResolve(currentState: BattleState, session: number) {
-    try {
-      if (!isAnimationDisabled()) {
-        try {
-          await transferDeps.animateDiscardedHand(currentState.hand, session);
-        } catch (err) {
-          logBattleError("discard hand animation", err);
-        }
-      }
-      runIfSessionActive(session, () => {
-        resolveEndTurn(currentState, session);
-      });
-    } finally {
-      runIfSessionActive(session, () => {
-        if (!resolvedAsHasteOrStunRef.current) {
-          resetHandTransferUi();
-        }
-        cardPlayInProgressRef.current = false;
-      });
-    }
-  }
-
-  function resolveEndTurn(currentState: BattleState, session: number) {
-    resolveEndTurnOrchestration(getTurnOrchestrationDeps(), currentState, session);
-  }
-
-  function scheduleCompanionFollowUp(resultState: BattleState, session: number) {
-    if (!resultState.activeCompanion || resultState.enemyHealth <= 0) return;
-    battleTimerGroupRef.current.setTimeout(() => {
-      runIfSessionActive(session, () => {
-        companionScheduledRef.current = false;
-        const texts = resolveCompanionFollowUpTexts(getTurnOrchestrationDeps(), session);
-        if (texts.length > 0) {
-          const store = getStore();
-          store.showCombatTexts(texts);
-          applyCombatTextPortraitFeedback(texts, store);
-        }
-      });
-    }, COMPANION_ATTACK_DELAY);
-    companionScheduledRef.current = true;
-  }
-
-  // ─── Run end / dev mode ───
-  function forceBattleOutcome(outcome: "victory" | "defeat", patch: (state: BattleState) => BattleState) {
-    resetBattleSession();
-    getStore().setSyncedBattleState(patch);
-    handleVictoryDefeat(outcome);
-  }
-
-  function handleEndRun() {
-    if (screen !== "battle") return;
-    forceBattleOutcome("defeat", (c) => ({
-      ...c,
-      playerHealth: 0,
-      deathsDoorUsed: true,
-      deathsDoorActive: false,
-      deathsDoorGraceTurnsRemaining: null,
-    }));
-  }
-
-  function skipCombatDevMode() {
-    if (!isAlchemyDevBuild() || screen !== "battle") return;
-    forceBattleOutcome("victory", (c) => ({ ...c, enemyHealth: 0, wishOptions: null, wishQueue: [] }));
-  }
+  const { handleEndRun, skipCombatDevMode } = createBattleDevOutcomes({
+    screen,
+    resetBattleSession,
+    handleVictoryDefeat,
+  });
 
   return {
     battleState,

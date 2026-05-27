@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { applyCardEffects } from "@/lib/battle/apply-effects";
 import { applyDamageRiders } from "@/lib/battle/damage-riders";
-import { defaultTalentEffects } from "@/lib/battle/draw";
+import { defaultTalentEffects } from "@/lib/battle";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { isNullFieldActive } from "@/lib/battle/types";
 import { defaultTrinketEffects } from "@/lib/trinkets";

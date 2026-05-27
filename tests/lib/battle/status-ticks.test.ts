@@ -1,9 +1,7 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { tickEnemyStatuses, tickPlayerStatuses } from "@/lib/battle/status-ticks";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { createTestBattleState } from "./test-state";
-
-vi.spyOn(Math, "random").mockReturnValue(0.99);
 
 function makeTexts(): CombatTextEvent[] {
   return [];
@@ -93,11 +91,24 @@ describe("tickEnemyStatuses", () => {
     expect(next.enemyStatuses.bleed).toBe(0);
   });
 
+  it("applies burn damage before any CC logic runs on player ticks", () => {
+    const state = createTestBattleState({
+      playerHealth: 20,
+      playerMaxHealth: 30,
+      playerStatuses: { ...createTestBattleState().playerStatuses, burn: 8, stun: 20 },
+    });
+    const texts = makeTexts();
+    const next = tickPlayerStatuses(state, texts);
+    expect(next.playerHealth).toBe(12);
+    expect(next.playerStunSkipTurns).toBe(1);
+    expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "burn", amount: 8 });
+  });
+
   it("burnDoubleChance doubles burn when triggered", () => {
-    vi.spyOn(Math, "random").mockReturnValueOnce(0.01);
     const state = createTestBattleState({
       enemyStatuses: { ...createTestBattleState().enemyStatuses, burn: 10 },
       talentEffects: { ...createTestBattleState().talentEffects, burnDoubleChance: 50 },
+      rng: () => 0.01,
     });
     const texts = makeTexts();
     const next = tickEnemyStatuses(state, texts);
@@ -105,10 +116,10 @@ describe("tickEnemyStatuses", () => {
   });
 
   it("poisonGainChance increases poison when triggered", () => {
-    vi.spyOn(Math, "random").mockReturnValueOnce(0.01);
     const state = createTestBattleState({
       enemyStatuses: { ...createTestBattleState().enemyStatuses, poison: 5 },
       talentEffects: { ...createTestBattleState().talentEffects, poisonGainChance: 50 },
+      rng: () => 0.01,
     });
     const texts = makeTexts();
     const next = tickEnemyStatuses(state, texts);
@@ -116,12 +127,12 @@ describe("tickEnemyStatuses", () => {
   });
 
   it("parasiticBloomLeechChance heals player on poison tick", () => {
-    vi.spyOn(Math, "random").mockReturnValueOnce(0.01);
     const state = createTestBattleState({
       enemyHealth: 30,
       playerHealth: 20,
       enemyStatuses: { ...createTestBattleState().enemyStatuses, poison: 8 },
       trinketEffects: { ...createTestBattleState().trinketEffects, parasiticBloomLeechChance: 50 },
+      rng: () => 0.01,
     });
     const texts = makeTexts();
     const next = tickEnemyStatuses(state, texts);

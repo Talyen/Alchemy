@@ -1,7 +1,8 @@
 // Imported asset references (all .webp) consumed by game-data barrel readers and UI.
 // The prebuild step optimizes PNG source files into webp; this file only sees the output.
 import type { KeywordId } from "./types";
-import acidPotion from "@/assets/optimized/acid-potion.webp";
+
+import alchemist from "@/assets/optimized/alchemist.webp";
 import alchemyLogo from "@/assets/optimized/alchemy-logo.webp";
 import alchemyLogoArcaneMana from "@/assets/optimized/alchemy-logo-arcane-mana.webp";
 import alchemyLogoFireIron from "@/assets/optimized/alchemy-logo-fire-iron.webp";
@@ -9,161 +10,13 @@ import alchemyLogoFrost from "@/assets/optimized/alchemy-logo-frost.webp";
 import alchemyLogoHolyBlock from "@/assets/optimized/alchemy-logo-holy-block.webp";
 import alchemyLogoNatureBleed from "@/assets/optimized/alchemy-logo-nature-bleed.webp";
 import alchemyLogoPoison from "@/assets/optimized/alchemy-logo-poison.webp";
-import anvil from "@/assets/optimized/anvil.webp";
-import blackjack from "@/assets/optimized/blackjack.webp";
-import bloodthorn from "@/assets/optimized/bloodthorn.webp";
-import briarShield from "@/assets/optimized/briar-shield.webp";
-import burningBlade from "@/assets/optimized/burning-blade.webp";
-import campfire from "@/assets/optimized/campfire.webp";
-import alchemistShopBg from "@/assets/optimized/alchemist-shop.webp";
-import merchantShopBg from "@/assets/optimized/merchant-shop.webp";
-import eliteEnemyBg from "@/assets/optimized/elite-enemy.webp";
-import normalEnemyBg from "@/assets/optimized/normal-enemy.webp";
-import mysteryBg from "@/assets/optimized/mystery.webp";
-import apple from "@/assets/optimized/apple.webp";
-import bash from "@/assets/optimized/bash.webp";
-import blessedAegis from "@/assets/optimized/blessed-aegis.webp";
-import block from "@/assets/optimized/block.webp";
-import bread from "@/assets/optimized/bread.webp";
-import cauterize from "@/assets/optimized/cauterize.webp";
-import cinderbloom from "@/assets/optimized/cinderbloom.webp";
-import cleanse from "@/assets/optimized/cleanse.webp";
-import companionsCollar from "@/assets/optimized/companions-collar.webp";
-import corruptionAltar from "@/assets/optimized/corruption-altar.webp";
-import graspingVines from "@/assets/optimized/grasping-vines.webp";
 import discardPile from "@/assets/optimized/discard-pile.webp";
-import holyRadiance from "@/assets/optimized/holy-radiance.webp";
 import drawPile from "@/assets/optimized/draw-pile.webp";
-import luckPotion from "@/assets/optimized/luck-potion.webp";
-import luckyClover from "@/assets/optimized/lucky-clover.webp";
-import fangs from "@/assets/optimized/fangs.webp";
-import packTactics from "@/assets/optimized/pack-tactics.webp";
-import frostWhelpCompanion from "@/assets/optimized/frost-whelp-companion.webp";
-import bearCompanion from "@/assets/optimized/bear-companion.webp";
-import pantherCompanion from "@/assets/optimized/panther-companion.webp";
-import phoenixCompanion from "@/assets/optimized/phoenix-companion.webp";
-import prayer from "@/assets/optimized/prayer.webp";
-import frozenPocketwatch from "@/assets/optimized/frozen-pocketwatch.webp";
-import fireball from "@/assets/optimized/fireball.webp";
-import shieldBash from "@/assets/optimized/shield-bash.webp";
-import stoneskinPotion from "@/assets/optimized/stoneskin-potion.webp";
-import sunburst from "@/assets/optimized/sunburst.webp";
-import frostbolt from "@/assets/optimized/frostbolt.webp";
-import thornMail from "@/assets/optimized/thorn-mail.webp";
-import thunderstone from "@/assets/optimized/thunderstone.webp";
-import goblin from "@/assets/optimized/goblin.webp";
-import venomFangs from "@/assets/optimized/venom-fangs.webp";
-import haste from "@/assets/optimized/haste.webp";
-import wishingPotion from "@/assets/optimized/wishing-potion.webp";
-import herbGarden from "@/assets/optimized/herb-garden.webp";
-import heal from "@/assets/optimized/heal.webp";
-import healthPotion from "@/assets/optimized/health-potion.webp";
-import imp from "@/assets/optimized/imp.webp";
-import impCompanion from "@/assets/optimized/imp-companion.webp";
+import druid from "@/assets/optimized/druid.webp";
 import knight from "@/assets/optimized/knight.webp";
-import lizardScout from "@/assets/optimized/lizard-scout.webp";
-import livingArmor from "@/assets/optimized/living-armor.webp";
-import lizardScoutCompanion from "@/assets/optimized/lizard-scout-companion.webp";
-import manaBerries from "@/assets/optimized/mana-berries.webp";
-import manaCrystal from "@/assets/optimized/mana-crystal.webp";
-import manaPotion from "@/assets/optimized/mana-potion.webp";
-import meteor from "@/assets/optimized/meteor.webp";
-import mimic from "@/assets/optimized/mimic.webp";
-import mudElemental from "@/assets/optimized/mud-elemental.webp";
-import necromancer from "@/assets/optimized/necromancer.webp";
-import panaceaPotion from "@/assets/optimized/panacea-potion.webp";
-import mixedPotion from "@/assets/optimized/mixed-potion.webp";
-import plagueDoctor from "@/assets/optimized/plague-doctor.webp";
-import theFrostwarden from "@/assets/optimized/the-frostwarden.webp";
-import theForgeGolem from "@/assets/optimized/the-forge-golem.webp";
-import theBlightTreant from "@/assets/optimized/the-blight-treant.webp";
-import ironBear from "@/assets/optimized/iron-bear.webp";
-import plateMail from "@/assets/optimized/plate-mail.webp";
-import poisonDagger from "@/assets/optimized/poison-dagger.webp";
+import pointerCursor from "@/assets/optimized/pointer-c-shaded.webp";
 import ranger from "@/assets/optimized/ranger.webp";
 import rogue from "@/assets/optimized/rogue.webp";
-import skeleton from "@/assets/optimized/skeleton.webp";
-import slash from "@/assets/optimized/slash.webp";
-import stab from "@/assets/optimized/stab.webp";
-import steal from "@/assets/optimized/steal.webp";
-import wish from "@/assets/optimized/wish.webp";
-import wizard from "@/assets/optimized/wizard.webp";
-import wolfCompanion from "@/assets/optimized/wolf-companion.webp";
-import alchemist from "@/assets/optimized/alchemist.webp";
-import warlock from "@/assets/optimized/warlock.webp";
-import druid from "@/assets/optimized/druid.webp";
-import wildcard from "@/assets/optimized/wildcard.webp";
-import boneCharm from "@/assets/optimized/bone-charm.webp";
-import brassCenser from "@/assets/optimized/brass-censer.webp";
-import cardBack from "@/assets/optimized/card-back.webp";
-import icyHeart from "@/assets/optimized/icy-heart.webp";
-import ironwoodBuckler from "@/assets/optimized/ironwood-buckler.webp";
-import meteorite from "@/assets/optimized/meteorite.webp";
-import obsidianHammer from "@/assets/optimized/obsidian-hammer.webp";
-import runicQuill from "@/assets/optimized/runic-quill.webp";
-import tatteredPages from "@/assets/optimized/tattered-pages.webp";
-import sinEatersLantern from "@/assets/optimized/sin-eaters-lantern.webp";
-import vanguardsCrest from "@/assets/optimized/vanguards-crest.webp";
-import parasiticBloom from "@/assets/optimized/parasitic-bloom.webp";
-import cutpurseKnife from "@/assets/optimized/cutpurse-knife.webp";
-import wishingWellCoin from "@/assets/optimized/wishing-well-coin.webp";
-import merchantsFavor from "@/assets/optimized/merchants-favor.webp";
-import plagueDoctorsMask from "@/assets/optimized/plague-doctors-mask.webp";
-import mortarAndPestle from "@/assets/optimized/mortar-and-pestle.webp";
-import sunderingCharm from "@/assets/optimized/sundering-charm.webp";
-import resonantChimes from "@/assets/optimized/resonant-chimes.webp";
-import smugglersMap from "@/assets/optimized/smugglers-map.webp";
-import grovesFavor from "@/assets/optimized/groves-favor.webp";
-import antivenomPotion from "@/assets/optimized/antivenom-potion.webp";
-import bloodOffering from "@/assets/optimized/blood-offering.webp";
-import faustianBargain from "@/assets/optimized/faustian-bargain.webp";
-import judgment from "@/assets/optimized/judgment.webp";
-import manaShield from "@/assets/optimized/mana-shield.webp";
-import placeholderCard from "@/assets/optimized/placeholder-card.webp";
-import textSerratedEdge from "@/assets/optimized/serrated-edge.webp";
-import smellingSalts from "@/assets/optimized/smelling-salts.webp";
-import smite from "@/assets/optimized/smite.webp";
-import sunderArmor from "@/assets/optimized/sunder-armor.webp";
-import placeholderEnemy from "@/assets/optimized/placeholder-enemy.webp";
-import placeholderTrinket from "@/assets/optimized/placeholder-trinket.webp";
-import bossCombat from "@/assets/optimized/boss-combat.webp";
-import placeholderDestination from "@/assets/optimized/placeholder-destination.webp";
-import huntersLodge from "@/assets/optimized/hunters-lodge.webp";
-import alchemyLab from "@/assets/optimized/alchemy-lab.webp";
-import crystalGarden from "@/assets/optimized/crystal-garden.webp";
-import wheatField from "@/assets/optimized/wheat-field.webp";
-import orchard from "@/assets/optimized/orchard.webp";
-import placeholderHomestead from "@/assets/optimized/placeholder-homestead.webp";
-import mysteryManaBerries from "@/assets/optimized/mystery-mana-berries.webp";
-import mysteryEnchantedSpring from "@/assets/optimized/mystery-enchanted-spring.webp";
-import mysteryFungalGrotto from "@/assets/optimized/mystery-fungal-grotto.webp";
-import mysteryWisdomTree from "@/assets/optimized/mystery-wisdom-tree.webp";
-import mysteryFairyRing from "@/assets/optimized/mystery-fairy-ring.webp";
-import mysteryAncientAltar from "@/assets/optimized/mystery-ancient-altar.webp";
-import mysteryHiddenCache from "@/assets/optimized/mystery-hidden-cache.webp";
-import mysteryOvergrownTemple from "@/assets/optimized/mystery-overgrown-temple.webp";
-import mysteryAbandonedStudy from "@/assets/optimized/mystery-abandoned-study.webp";
-import mysteryMysteriousTome from "@/assets/optimized/mystery-mysterious-tome.webp";
-import mysteryCrystalGeode from "@/assets/optimized/mystery-crystal-geode.webp";
-import mysteryMeteoriteCrash from "@/assets/optimized/mystery-meteorite-crash.webp";
-import mysteryForgottenHoard from "@/assets/optimized/mystery-forgotten-hoard.webp";
-import mysterySacredGrove from "@/assets/optimized/mystery-sacred-grove.webp";
-import mysteryMountainPass from "@/assets/optimized/mystery-mountain-pass.webp";
-import mysteryMurkyPond from "@/assets/optimized/mystery-murky-pond.webp";
-import placeholderMystery from "@/assets/optimized/placeholder-mystery.webp";
-import placeholderDifficulty from "@/assets/optimized/placeholder-difficulty.webp";
-import theCampaign from "@/assets/optimized/the-campaign.webp";
-import theLabyrinth from "@/assets/optimized/the-labyrinth.webp";
-import theWildwoods from "@/assets/optimized/the-wildwoods.webp";
-import placeholderGameMode from "@/assets/optimized/placeholder-game-mode.webp";
-import difficulty1Art from "@/assets/optimized/difficulty-1.webp";
-import difficulty2Art from "@/assets/optimized/difficulty-2.webp";
-import difficulty3Art from "@/assets/optimized/difficulty-3.webp";
-import coldSnap from "@/assets/optimized/cold-snap.webp";
-import combustion from "@/assets/optimized/combustion.webp";
-import goldArt from "@/assets/optimized/gold.webp";
-import rayOfFrost from "@/assets/optimized/ray-of-frost.webp";
-import pointerCursor from "@/assets/optimized/pointer-c-shaded.webp";
 import talentBgArmor from "@/assets/optimized/talent-bg-armor.webp";
 import talentBgBleed from "@/assets/optimized/talent-bg-bleed.webp";
 import talentBgBurn from "@/assets/optimized/talent-bg-burn.webp";
@@ -175,165 +28,171 @@ import talentBgMana from "@/assets/optimized/talent-bg-mana.webp";
 import talentBgNature from "@/assets/optimized/talent-bg-nature.webp";
 import talentBgPhysical from "@/assets/optimized/talent-bg-physical.webp";
 import talentBgStun from "@/assets/optimized/talent-bg-stun.webp";
+import warlock from "@/assets/optimized/warlock.webp";
+import wildcard from "@/assets/optimized/wildcard.webp";
+import wizard from "@/assets/optimized/wizard.webp";
+import theCampaign from "@/assets/optimized/the-campaign.webp";
+import theLabyrinth from "@/assets/optimized/the-labyrinth.webp";
+import theWildwoods from "@/assets/optimized/the-wildwoods.webp";
+import placeholderGameMode from "@/assets/optimized/placeholder-game-mode.webp";
+
+export { default as acidPotion } from "@/assets/optimized/acid-potion.webp";
+export { default as alchemistShopBg } from "@/assets/optimized/alchemist-shop.webp";
+export { default as alchemyLab } from "@/assets/optimized/alchemy-lab.webp";
+export { default as antivenomPotion } from "@/assets/optimized/antivenom-potion.webp";
+export { default as anvil } from "@/assets/optimized/anvil.webp";
+export { default as apple } from "@/assets/optimized/apple.webp";
+export { default as bash } from "@/assets/optimized/bash.webp";
+export { default as bearCompanion } from "@/assets/optimized/bear-companion.webp";
+export { default as blackjack } from "@/assets/optimized/blackjack.webp";
+export { default as blessedAegis } from "@/assets/optimized/blessed-aegis.webp";
+export { default as block } from "@/assets/optimized/block.webp";
+export { default as bloodOffering } from "@/assets/optimized/blood-offering.webp";
+export { default as bloodthorn } from "@/assets/optimized/bloodthorn.webp";
+export { default as boneCharm } from "@/assets/optimized/bone-charm.webp";
+export { default as bossCombat } from "@/assets/optimized/boss-combat.webp";
+export { default as brassCenser } from "@/assets/optimized/brass-censer.webp";
+export { default as bread } from "@/assets/optimized/bread.webp";
+export { default as briarShield } from "@/assets/optimized/briar-shield.webp";
+export { default as burningBlade } from "@/assets/optimized/burning-blade.webp";
+export { default as campfire } from "@/assets/optimized/campfire.webp";
+export { default as cardBack } from "@/assets/optimized/card-back.webp";
+export { default as cauterize } from "@/assets/optimized/cauterize.webp";
+export { default as cinderbloom } from "@/assets/optimized/cinderbloom.webp";
+export { default as cleanse } from "@/assets/optimized/cleanse.webp";
+export { default as coldSnap } from "@/assets/optimized/cold-snap.webp";
+export { default as combustion } from "@/assets/optimized/combustion.webp";
+export { default as companionsCollar } from "@/assets/optimized/companions-collar.webp";
+export { default as corruptionAltar } from "@/assets/optimized/corruption-altar.webp";
+export { default as crystalGarden } from "@/assets/optimized/crystal-garden.webp";
+export { default as cutpurseKnife } from "@/assets/optimized/cutpurse-knife.webp";
+export { default as difficulty1Art } from "@/assets/optimized/difficulty-1.webp";
+export { default as difficulty2Art } from "@/assets/optimized/difficulty-2.webp";
+export { default as difficulty3Art } from "@/assets/optimized/difficulty-3.webp";
+export { default as eliteEnemyBg } from "@/assets/optimized/elite-enemy.webp";
+export { default as fangs } from "@/assets/optimized/fangs.webp";
+export { default as faustianBargain } from "@/assets/optimized/faustian-bargain.webp";
+export { default as fireball } from "@/assets/optimized/fireball.webp";
+export { default as frostbolt } from "@/assets/optimized/frostbolt.webp";
+export { default as frostWhelpCompanion } from "@/assets/optimized/frost-whelp-companion.webp";
+export { default as frozenPocketwatch } from "@/assets/optimized/frozen-pocketwatch.webp";
+export { default as goblin } from "@/assets/optimized/goblin.webp";
+export { default as goldArt } from "@/assets/optimized/gold.webp";
+export { default as graspingVines } from "@/assets/optimized/grasping-vines.webp";
+export { default as grovesFavor } from "@/assets/optimized/groves-favor.webp";
+export { default as haste } from "@/assets/optimized/haste.webp";
+export { default as heal } from "@/assets/optimized/heal.webp";
+export { default as healthPotion } from "@/assets/optimized/health-potion.webp";
+export { default as herbGarden } from "@/assets/optimized/herb-garden.webp";
+export { default as holyRadiance } from "@/assets/optimized/holy-radiance.webp";
+export { default as huntersLodge } from "@/assets/optimized/hunters-lodge.webp";
+export { default as icyHeart } from "@/assets/optimized/icy-heart.webp";
+export { default as imp } from "@/assets/optimized/imp.webp";
+export { default as impCompanion } from "@/assets/optimized/imp-companion.webp";
+export { default as ironBear } from "@/assets/optimized/iron-bear.webp";
+export { default as ironwoodBuckler } from "@/assets/optimized/ironwood-buckler.webp";
+export { default as judgment } from "@/assets/optimized/judgment.webp";
+export { default as livingArmor } from "@/assets/optimized/living-armor.webp";
+export { default as lizardScout } from "@/assets/optimized/lizard-scout.webp";
+export { default as lizardScoutCompanion } from "@/assets/optimized/lizard-scout-companion.webp";
+export { default as luckPotion } from "@/assets/optimized/luck-potion.webp";
+export { default as luckyClover } from "@/assets/optimized/lucky-clover.webp";
+export { default as manaBerries } from "@/assets/optimized/mana-berries.webp";
+export { default as manaCrystal } from "@/assets/optimized/mana-crystal.webp";
+export { default as manaPotion } from "@/assets/optimized/mana-potion.webp";
+export { default as manaShield } from "@/assets/optimized/mana-shield.webp";
+export { default as merchantsFavor } from "@/assets/optimized/merchants-favor.webp";
+export { default as merchantShopBg } from "@/assets/optimized/merchant-shop.webp";
+export { default as meteor } from "@/assets/optimized/meteor.webp";
+export { default as meteorite } from "@/assets/optimized/meteorite.webp";
+export { default as mimic } from "@/assets/optimized/mimic.webp";
+export { default as mixedPotion } from "@/assets/optimized/mixed-potion.webp";
+export { default as mortarAndPestle } from "@/assets/optimized/mortar-and-pestle.webp";
+export { default as mudElemental } from "@/assets/optimized/mud-elemental.webp";
+export { default as mysteryBg } from "@/assets/optimized/mystery.webp";
+export { default as necromancer } from "@/assets/optimized/necromancer.webp";
+export { default as normalEnemyBg } from "@/assets/optimized/normal-enemy.webp";
+export { default as obsidianHammer } from "@/assets/optimized/obsidian-hammer.webp";
+export { default as orchard } from "@/assets/optimized/orchard.webp";
+export { default as packTactics } from "@/assets/optimized/pack-tactics.webp";
+export { default as panaceaPotion } from "@/assets/optimized/panacea-potion.webp";
+export { default as pantherCompanion } from "@/assets/optimized/panther-companion.webp";
+export { default as parasiticBloom } from "@/assets/optimized/parasitic-bloom.webp";
+export { default as phoenixCompanion } from "@/assets/optimized/phoenix-companion.webp";
+export { default as placeholderCard } from "@/assets/optimized/placeholder-card.webp";
+export { default as placeholderDestination } from "@/assets/optimized/placeholder-destination.webp";
+export { default as placeholderDifficulty } from "@/assets/optimized/placeholder-difficulty.webp";
+export { default as placeholderEnemy } from "@/assets/optimized/placeholder-enemy.webp";
+export { default as placeholderHomestead } from "@/assets/optimized/placeholder-homestead.webp";
+export { default as placeholderMystery } from "@/assets/optimized/placeholder-mystery.webp";
+export { default as placeholderTrinket } from "@/assets/optimized/placeholder-trinket.webp";
+export { default as plagueDoctor } from "@/assets/optimized/plague-doctor.webp";
+export { default as plagueDoctorsMask } from "@/assets/optimized/plague-doctors-mask.webp";
+export { default as plateMail } from "@/assets/optimized/plate-mail.webp";
+export { default as poisonDagger } from "@/assets/optimized/poison-dagger.webp";
+export { default as prayer } from "@/assets/optimized/prayer.webp";
+export { default as rayOfFrost } from "@/assets/optimized/ray-of-frost.webp";
+export { default as resonantChimes } from "@/assets/optimized/resonant-chimes.webp";
+export { default as runicQuill } from "@/assets/optimized/runic-quill.webp";
+export { default as serratedEdge } from "@/assets/optimized/serrated-edge.webp";
+export { default as shieldBash } from "@/assets/optimized/shield-bash.webp";
+export { default as sinEatersLantern } from "@/assets/optimized/sin-eaters-lantern.webp";
+export { default as skeleton } from "@/assets/optimized/skeleton.webp";
+export { default as slash } from "@/assets/optimized/slash.webp";
+export { default as smellingSalts } from "@/assets/optimized/smelling-salts.webp";
+export { default as smite } from "@/assets/optimized/smite.webp";
+export { default as smugglersMap } from "@/assets/optimized/smugglers-map.webp";
+export { default as stab } from "@/assets/optimized/stab.webp";
+export { default as steal } from "@/assets/optimized/steal.webp";
+export { default as stoneskinPotion } from "@/assets/optimized/stoneskin-potion.webp";
+export { default as sunburst } from "@/assets/optimized/sunburst.webp";
+export { default as sunderArmor } from "@/assets/optimized/sunder-armor.webp";
+export { default as sunderingCharm } from "@/assets/optimized/sundering-charm.webp";
+export { default as tatteredPages } from "@/assets/optimized/tattered-pages.webp";
+export { default as theBlightTreant } from "@/assets/optimized/the-blight-treant.webp";
+export { default as theForgeGolem } from "@/assets/optimized/the-forge-golem.webp";
+export { default as theFrostwarden } from "@/assets/optimized/the-frostwarden.webp";
+export { default as thornMail } from "@/assets/optimized/thorn-mail.webp";
+export { default as thunderstone } from "@/assets/optimized/thunderstone.webp";
+export { default as vanguardsCrest } from "@/assets/optimized/vanguards-crest.webp";
+export { default as venomFangs } from "@/assets/optimized/venom-fangs.webp";
+export { default as wheatField } from "@/assets/optimized/wheat-field.webp";
+export { default as wish } from "@/assets/optimized/wish.webp";
+export { default as wishingPotion } from "@/assets/optimized/wishing-potion.webp";
+export { default as wishingWellCoin } from "@/assets/optimized/wishing-well-coin.webp";
+export { default as wolfCompanion } from "@/assets/optimized/wolf-companion.webp";
+
+export { alchemist };
+export { alchemyLogo };
+export { alchemyLogoArcaneMana };
+export { alchemyLogoFireIron };
+export { alchemyLogoFrost };
+export { alchemyLogoHolyBlock };
+export { alchemyLogoNatureBleed };
+export { alchemyLogoPoison };
+export { discardPile };
+export { drawPile };
+export { druid };
+export { knight };
+export { pointerCursor };
+export { ranger };
+export { rogue };
+export { talentBgArmor };
+export { talentBgBleed };
+export { talentBgBurn };
+export { talentBgCompanion };
+export { talentBgForge };
+export { talentBgFreeze };
+export { talentBgLeech };
+export { talentBgMana };
+export { talentBgNature };
+export { talentBgPhysical };
+export { talentBgStun };
+export { warlock };
+export { wildcard };
+export { wizard };
 
 export { theCampaign, theLabyrinth, theWildwoods, placeholderGameMode };
-
-export {
-  acidPotion,
-  alchemyLogo,
-  alchemyLogoArcaneMana,
-  alchemyLogoFireIron,
-  alchemyLogoFrost,
-  alchemyLogoHolyBlock,
-  alchemyLogoNatureBleed,
-  alchemyLogoPoison,
-  anvil,
-  apple,
-  bash,
-  blackjack,
-  blessedAegis,
-  block,
-  bloodthorn,
-  bread,
-  briarShield,
-  burningBlade,
-  campfire,
-  cardBack,
-  cauterize,
-  cinderbloom,
-  cleanse,
-  companionsCollar,
-  corruptionAltar,
-  discardPile,
-  drawPile,
-  graspingVines,
-  fangs,
-  fireball,
-  frostbolt,
-  goblin,
-  haste,
-  heal,
-  herbGarden,
-  healthPotion,
-  holyRadiance,
-  imp,
-  impCompanion,
-  knight,
-  lizardScout,
-  livingArmor,
-  lizardScoutCompanion,
-  luckPotion,
-  luckyClover,
-  manaBerries,
-  manaCrystal,
-  manaPotion,
-  meteor,
-  mimic,
-  mudElemental,
-  necromancer,
-  packTactics,
-  frostWhelpCompanion,
-  bearCompanion,
-  pantherCompanion,
-  phoenixCompanion,
-  panaceaPotion,
-  mixedPotion,
-  frozenPocketwatch,
-  plagueDoctor,
-  plateMail,
-  poisonDagger,
-  shieldBash,
-  stoneskinPotion,
-  sunburst,
-  ranger,
-  rogue,
-  skeleton,
-  slash,
-  stab,
-  steal,
-  thornMail,
-  thunderstone,
-  wish,
-  wizard,
-  wolfCompanion,
-  wishingPotion,
-  boneCharm,
-  brassCenser,
-  icyHeart,
-  ironwoodBuckler,
-  meteorite,
-  obsidianHammer,
-  runicQuill,
-  tatteredPages,
-  sinEatersLantern,
-  vanguardsCrest,
-  parasiticBloom,
-  venomFangs,
-  cutpurseKnife,
-  wishingWellCoin,
-  merchantsFavor,
-  plagueDoctorsMask,
-  mortarAndPestle,
-  sunderingCharm,
-  resonantChimes,
-  smugglersMap,
-  grovesFavor,
-  antivenomPotion,
-  bloodOffering,
-  faustianBargain,
-  judgment,
-  manaShield,
-  placeholderCard,
-  placeholderEnemy,
-  prayer,
-  textSerratedEdge as serratedEdge,
-  smellingSalts,
-  smite,
-  sunderArmor,
-  theFrostwarden,
-  theForgeGolem,
-  theBlightTreant,
-  ironBear,
-  placeholderTrinket,
-  bossCombat,
-  placeholderDestination,
-  huntersLodge,
-  alchemyLab,
-  crystalGarden,
-  wheatField,
-  orchard,
-  placeholderHomestead,
-  mysteryManaBerries,
-  mysteryEnchantedSpring,
-  mysteryFungalGrotto,
-  mysteryWisdomTree,
-  mysteryFairyRing,
-  mysteryAncientAltar,
-  mysteryHiddenCache,
-  mysteryOvergrownTemple,
-  mysteryAbandonedStudy,
-  mysteryMysteriousTome,
-  mysteryCrystalGeode,
-  mysteryMeteoriteCrash,
-  mysteryForgottenHoard,
-  mysterySacredGrove,
-  mysteryMountainPass,
-  mysteryMurkyPond,
-  placeholderMystery,
-  placeholderDifficulty,
-  difficulty1Art,
-  difficulty2Art,
-  difficulty3Art,
-  coldSnap,
-  combustion,
-  goldArt,
-  rayOfFrost,
-  alchemistShopBg,
-  merchantShopBg,
-  eliteEnemyBg,
-  normalEnemyBg,
-  mysteryBg,
-};
 
 export const menuLogo = alchemyLogo;
 export const menuLogoVariants = [
@@ -363,14 +222,29 @@ export const cursorArt = {
   pointer: pointerCursor,
 } as const;
 
-// Auto-discovered art assets for upfront preloading during the startup loading screen.
-// import.meta.glob resolves at build time — any .webp added to src/assets/optimized/ is
-// automatically included without touching this file.
+const mysteryArtModules = import.meta.glob("@/assets/optimized/mystery-*.webp", {
+  eager: true,
+  import: "default",
+});
+
+function mysteryEventArtKey(path: string): string {
+  const filename = path.split("/").pop() ?? "";
+  return filename.replace(/^mystery-/, "").replace(/\.webp$/, "");
+}
+
+export const mysteryEventArt = Object.fromEntries(
+  Object.entries(mysteryArtModules)
+    .filter(([path]) => !path.includes("placeholder"))
+    .map(([path, url]) => [mysteryEventArtKey(path), url as string]),
+) as Record<string, string>;
+
 const assetModules = import.meta.glob("@/assets/optimized/*.webp", {
   eager: true,
   import: "default",
 });
-export const allGameArt = Object.values(assetModules) as string[];
+export const allGameArt = Object.entries(assetModules)
+  .filter(([path]) => !path.includes("/mystery-"))
+  .map(([, url]) => url as string);
 
 export const talentBackgroundArt: Partial<Record<KeywordId, string>> = {
   physical: talentBgPhysical,

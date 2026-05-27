@@ -1,12 +1,10 @@
 // Shared minimal BattleState factory for battle unit tests.
 import type { BattleState } from "@/lib/battle/types";
-import { defaultBattleState } from "@/lib/battle/draw";
+import { makeTestBattleState, makeTestCard, seededRng } from "../../fixtures/battle";
 
+export { makeTestCard, seededRng };
+
+/** Default battle test state; pass `rng: seededRng(42)` when rolls must be reproducible. */
 export function createTestBattleState(overrides: Partial<BattleState> = {}): BattleState {
-  return {
-    ...defaultBattleState(),
-    mana: 4,
-    maxMana: 4,
-    ...overrides,
-  };
+  return makeTestBattleState(overrides);
 }

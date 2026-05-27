@@ -263,6 +263,13 @@ export const LABYRINTH_BURNING_GROUND_DAMAGE = 2; // Burning Ground: 2 Burn to p
 export const LABYRINTH_LEECH_HEAL = 3; // Leeching: enemy heals 3 Health on their turn.
 export const LABYRINTH_MIN_CONNECTIONS = 1; // Minimum map node paths allowed during integrity checks.
 export const LABYRINTH_MAX_CONNECTIONS = 3; // Maximum map node paths allowed during integrity checks.
+export const LABYRINTH_MAP_UI = {
+  lineTrimOffset: 3.35,
+  tooltipPadding: 8,
+  mapGutter: 4.5,
+  shineDuration: 10,
+  shineBorderWidth: 2,
+} as const;
 export const FALLBACK_ENEMY_ATTACK = 8; // Default attack for malformed bestiary entries.
 
 // ============ Enemy Trait Damage Modifiers ============

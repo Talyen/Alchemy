@@ -7,7 +7,7 @@ import { harmfulPlayerStatusIds } from "@/lib/game-data";
 import type { EnemyAttackEffect, PlayerStatusId } from "@/lib/game-data";
 import { mergeCombatText } from "./combat-text";
 import type { BattleState, CombatTextEvent } from "./types";
-import { HALF_DIVISOR } from "../game-constants";
+import { scaleFreezeBuildUp } from "./status-helpers";
 
 const CONSTANTS = {
   STATUS_NAMES: {
@@ -52,8 +52,10 @@ function applyHarmfulStatusFromAttack(
   if (!blockPreventsStatus && state.trinketEffects.plagueDoctorImmunity && !state.flags.firstHarmfulStatusPrevented) {
     return { ...state, flags: { ...state.flags, firstHarmfulStatusPrevented: true } };
   }
-  const adjustedAmount =
-    status === "freeze" && state.talentEffects.receiveHalfFreezeBuildUp ? Math.round(amount / HALF_DIVISOR) : amount;
+  const adjustedAmount = scaleFreezeBuildUp(
+    amount,
+    status === "freeze" && state.talentEffects.receiveHalfFreezeBuildUp,
+  );
   const nextState = {
     ...state,
     playerStatuses: {

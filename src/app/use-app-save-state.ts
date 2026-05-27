@@ -1,12 +1,25 @@
 // App-level autosave wiring.
 // Depends on: saveAlchemySaveData (storage), isAnimationDisabled (game-constants).
 // Used by: App.tsx.
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { saveAlchemySaveData, type SaveData } from "@/features/alchemy/storage";
+import type { ActiveRunData } from "@/features/alchemy/run/types";
+import { useAppStore } from "@/features/alchemy/stores/app-store";
+import { useHomesteadStore } from "@/features/alchemy/stores/homestead-store";
+import type { TalentXP } from "@/lib/talents";
+import type { UnlockedTalents } from "@/lib/game-data";
+import { CURRENT_CONTENT_VERSION, CURRENT_GAME_BUILD_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
 import { isAnimationDisabled } from "@/lib/game-constants";
 
+export type RunAutosaveSlice = {
+  talentXP: TalentXP;
+  unlockedTalents: UnlockedTalents;
+  activeRun: ActiveRunData | null;
+};
+
 // Persists the normalized App/controller snapshot whenever any saved field changes.
-export function useAlchemyAutosave(saveData: SaveData, enabled = true) {
+function useAlchemyAutosave(saveData: SaveData, enabled = true) {
   const latestDataRef = useRef<SaveData>(saveData);
   const enabledRef = useRef(enabled);
 
@@ -96,4 +109,47 @@ export function useAlchemyAutosave(saveData: SaveData, enabled = true) {
       flush();
     };
   }, []);
+}
+
+export function useAlchemyAutosaveFromStores(runSlice: RunAutosaveSlice, enabled = true) {
+  const appPersisted = useAppStore(
+    useShallow((s) => ({
+      selectedAspectRatio: s.selectedAspectRatio,
+      displayMode: s.displayMode,
+      uiScale: s.uiScale,
+      brightness: s.brightness,
+      discoveredCardIds: s.discoveredCardIds,
+      encounteredEnemyIds: s.encounteredEnemyIds,
+      discoveredTrinketIds: s.discoveredTrinketIds,
+      musicVolume: s.musicVol,
+      sfxVolume: s.sfxVol,
+      masterVolume: s.masterVol,
+      muteInBackground: s.muteInBackground,
+      autoEndTurn: s.autoEndTurn,
+      completedDifficulties: s.completedDifficulties,
+    })),
+  );
+  const homesteadPersisted = useHomesteadStore(
+    useShallow((s) => ({
+      materialInventory: s.materialInventory,
+      constructedBuildings: s.constructedBuildings,
+      plantedFarms: s.plantedFarms,
+      completedResearch: s.completedResearch,
+      bondedCompanions: s.bondedCompanions,
+    })),
+  );
+  const saveData = useMemo<SaveData>(
+    () => ({
+      saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
+      gameBuildVersion: CURRENT_GAME_BUILD_VERSION,
+      contentVersion: CURRENT_CONTENT_VERSION,
+      ...appPersisted,
+      talentXP: runSlice.talentXP,
+      unlockedTalents: runSlice.unlockedTalents,
+      activeRun: runSlice.activeRun,
+      ...homesteadPersisted,
+    }),
+    [appPersisted, homesteadPersisted, runSlice.talentXP, runSlice.unlockedTalents, runSlice.activeRun],
+  );
+  useAlchemyAutosave(saveData, enabled);
 }

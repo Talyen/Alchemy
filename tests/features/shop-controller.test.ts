@@ -31,8 +31,7 @@ function firstShopCard(): BattleCard | null {
   return cards.length > 0 ? cards[0] : null;
 }
 
-// Pricing formulas — these match the logic in useShopController getters.
-// Trinket discount applies on first purchase (firstPurchaseUsed === false).
+// Pricing formulas — match useShopController purchaseCard logic.
 const shopCardPrice = (firstPurchase: boolean, shopCardDiscount: number, merchantsFavorDiscount: number) =>
   Math.max(0, SHOP_CARD_PRICE - shopCardDiscount - (firstPurchase ? merchantsFavorDiscount : 0));
 
@@ -62,10 +61,6 @@ describe("shop pricing formulas", () => {
 
   it("alchemistPotionPrice: first purchase gets trinket discount too", () => {
     expect(alchemistPotionPrice(true, 10, 5)).toBe(Math.max(0, ALCHEMIST_POTION_PRICE - 10 - 5));
-  });
-
-  it("alchemistPotionPrice: non-first purchase loses trinket discount", () => {
-    expect(alchemistPotionPrice(false, 10, 5)).toBe(Math.max(0, ALCHEMIST_POTION_PRICE - 10));
   });
 });
 

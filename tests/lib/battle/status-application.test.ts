@@ -1,9 +1,7 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { applyPlayerStatusFromAttack } from "@/lib/battle/status-application";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { createTestBattleState } from "./test-state";
-
-vi.spyOn(Math, "random").mockReturnValue(0.99);
 
 describe("applyPlayerStatusFromAttack", () => {
   describe("harmful statuses (burn, poison, bleed, freeze, stun)", () => {

@@ -35,8 +35,6 @@ export function ScreenDescription({
 }) {
   return (
     <TextAnimate
-      animation="blurInUp"
-      by="word"
       once
       className={cn(
         "mx-auto max-w-lg text-center text-sm leading-relaxed",

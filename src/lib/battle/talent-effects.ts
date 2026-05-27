@@ -1,11 +1,11 @@
 /**
  * Leaf talent-effect functions extracted from status-effects.ts for stun/freeze/CC triggers.
  * Depends on: ./draw, ./combat-text, ./types, ../game-constants.
- * Depended on by: ./status-effects.
+ * Depended on by: ./status-stun-resolve, ./status-damage-riders.
  */
 import { drawCards } from "./draw";
 import { mergeCombatText } from "./combat-text";
-import { addPlayerStatus, setFlag, type BattleState, type CombatTextEvent } from "./types";
+import { addPlayerStatus, setFlag, stripEnemyArmor, type BattleState, type CombatTextEvent } from "./types";
 import { FREE_CARD_SENTINEL } from "../game-constants";
 
 export function applyStunDrawTalent(state: BattleState): BattleState {
@@ -50,8 +50,8 @@ export const applyStunBlockTalent = (state: BattleState, combatTexts?: CombatTex
   applyBlockOnCCTalent(state, state.talentEffects.blockOnStun, combatTexts);
 
 function applyStripArmorOnCCTalent(state: BattleState, active: boolean): BattleState {
-  if (!active || state.enemyMitigation.armor <= 0) return state;
-  return { ...state, enemyMitigation: { ...state.enemyMitigation, armor: 0 } };
+  if (!active) return state;
+  return stripEnemyArmor(state);
 }
 
 export const applyStunStripArmorTalent = (state: BattleState) =>

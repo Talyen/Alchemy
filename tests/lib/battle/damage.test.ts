@@ -411,8 +411,10 @@ describe("applyFirstDamageModifiers", () => {
 
 describe("applyCrit", () => {
   it("applies crit multiplier when random rolls below threshold", () => {
-    vi.spyOn(Math, "random").mockReturnValue(0.01);
-    const state = createTestBattleState({ talentEffects: { ...createTestBattleState().talentEffects, physicalCritChance: 0 } });
+    const state = createTestBattleState({
+      talentEffects: { ...createTestBattleState().talentEffects, physicalCritChance: 0 },
+      rng: () => 0.01,
+    });
     const card = makeCard({ effects: [makeEffect("physical", 10)] });
     const texts = makeTexts();
     const result = dealDamageToEnemy(
@@ -425,9 +427,11 @@ describe("applyCrit", () => {
   });
 
   it("stacks physical crit chance with global crit chance", () => {
-    // Total = 5 + 10 = 15. random() * 100 < 15 means random() < 0.15
-    vi.spyOn(Math, "random").mockReturnValue(0.1);
-    const state = createTestBattleState({ talentEffects: { ...createTestBattleState().talentEffects, physicalCritChance: 10 } });
+    // Total = 5 + 10 = 15. rng() * 100 < 15 means rng() < 0.15
+    const state = createTestBattleState({
+      talentEffects: { ...createTestBattleState().talentEffects, physicalCritChance: 10 },
+      rng: () => 0.1,
+    });
     const card = makeCard({ effects: [makeEffect("physical", 10)] });
     const texts = makeTexts();
     const result = dealDamageToEnemy(

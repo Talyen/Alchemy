@@ -13,3 +13,5 @@ scratch/
 screenshot-*
 NUL
 .knip-output.json
+
+.vercel

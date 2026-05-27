@@ -1,19 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { createSeededRandom, simulateBatch, simulateBattle, withSeededRandom } from "@/lib/balance";
+import { createSeededRng } from "@/lib/utils";
+import { simulateBatch, simulateBattle } from "@/lib/balance";
 
 describe("balance simulator", () => {
   it("creates repeatable seeded random sequences", () => {
-    const first = createSeededRandom(42);
-    const second = createSeededRandom(42);
+    const first = createSeededRng(42);
+    const second = createSeededRng(42);
     expect([first(), first(), first()]).toEqual([second(), second(), second()]);
-  });
-
-  it("restores Math.random after seeded execution", () => {
-    const originalRandom = Math.random;
-    const value = withSeededRandom(7, () => Math.random());
-    expect(value).toBeGreaterThanOrEqual(0);
-    expect(value).toBeLessThan(1);
-    expect(Math.random).toBe(originalRandom);
   });
 
   it("runs a deterministic headless battle", () => {

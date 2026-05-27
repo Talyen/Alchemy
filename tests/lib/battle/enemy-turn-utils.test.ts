@@ -5,7 +5,7 @@ import {
   isFreezeActiveForAspect,
   resolveDeathsDoorEndOfEnemyTurn,
 } from "@/lib/battle/enemy-turn-utils";
-import { defaultTalentEffects } from "@/lib/battle/draw";
+import { defaultTalentEffects } from "@/lib/battle";
 import { CARDS_PER_TURN } from "@/lib/game-constants";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { createTestBattleState } from "./test-state";

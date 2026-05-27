@@ -1,6 +1,5 @@
 // Root app shell for save data, audio/display side effects, routing, and global layout.
 // Depends on alchemy controllers, homestead state, screen modules, assets, and platform/audio helpers.
-// Everything visible flows through here, but domain rules stay in feature/lib controllers.
 import { useEffect, useRef, useState } from "react";
 import { cn, wrapStoreSetter } from "@/lib/utils";
 
@@ -16,26 +15,25 @@ import {
 } from "@/lib/game-data";
 import { hasUnspentTalents } from "@/app/talent-affordability";
 import { hasAffordableHomesteadUpgrade } from "@/app/homestead-affordability";
+import { buildControllerActions } from "@/app/build-controller-actions";
 import { BOSS_PARTICLE_ALPHA_MULTIPLIER, SCREEN_PARTICLE_ALPHA, SCREEN_PARTICLE_COLORS } from "@/app/screen-particles";
 import { useAppAudioEffects } from "@/app/use-app-audio-effects";
 import { useAppDisplayEffects } from "@/app/use-app-display-effects";
 import { useScreenAssetPreloadEffects } from "@/app/use-app-preload-effects";
-import { useAlchemyAutosave } from "@/app/use-app-save-state";
+import { useAlchemyAutosaveFromStores } from "@/app/use-app-save-state";
 import { useGlobalErrorHandlers } from "@/app/use-global-error-handlers";
 import { useInitialLoadReady } from "@/app/use-initial-load-ready";
+import { useRenderedScreenTransition } from "@/app/use-rendered-screen-transition";
 import { RenderAlchemyScreen } from "@/app/render-alchemy-screen";
 import { StartupLoadingScreen } from "@/app/startup-loading-screen";
 import { UnsupportedSaveVersionScreen } from "@/app/unsupported-save-version-screen";
 import { useVirtualResolution } from "@/features/alchemy/hooks";
-import type { Screen } from "@/features/alchemy/types";
 import { GameMenu } from "@/features/alchemy/ui/shared-ui";
 import { useAlchemyRunController } from "@/features/alchemy/use-alchemy-run-controller";
 import { useHomesteadStore } from "@/features/alchemy/stores/homestead-store";
 import { HomesteadProvider } from "@/features/alchemy/homestead-context";
-import { PAGE_EXIT_MS } from "@/lib/game-constants";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { BackgroundParticles } from "@/features/alchemy/ui/background-particles";
-import { CURRENT_CONTENT_VERSION, CURRENT_GAME_BUILD_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
 import { platform } from "@/lib/platform";
 import { loadAlchemySaveState, type SaveLoadState } from "@/features/alchemy/storage";
 import { useAppStore } from "@/features/alchemy/stores/app-store";
@@ -49,7 +47,6 @@ const homesteadStore = useHomesteadStore;
 function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
   const { data: initialSave, status: saveLoadStatus } = bootstrapResult;
 
-  // ============ Store subscriptions ============
   const selectedAspectRatio = useAppStore((s) => s.selectedAspectRatio);
   const displayMode = useAppStore((s) => s.displayMode);
   const uiScale = useAppStore((s) => s.uiScale);
@@ -60,12 +57,6 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
   const muteInBackground = useAppStore((s) => s.muteInBackground);
   const autoEndTurn = useAppStore((s) => s.autoEndTurn);
   const discoveredCardIds = useAppStore((s) => s.discoveredCardIds);
-  const collectionTab = useAppStore((s) => s.collectionTab);
-  const collectionPages = useAppStore((s) => s.collectionPages);
-  const encounteredEnemyIds = useAppStore((s) => s.encounteredEnemyIds);
-  const discoveredTrinketIds = useAppStore((s) => s.discoveredTrinketIds);
-  const completedDifficulties = useAppStore((s) => s.completedDifficulties);
-  const showClearSaveConfirm = useAppStore((s) => s.showClearSaveConfirm);
   const pendingCharacterId = useScreenStore((s) => s.pendingCharacterId);
 
   const setDiscoveredCardIds = wrapStoreSetter(
@@ -82,19 +73,44 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
   );
   const [gameMenuOpen, setGameMenuOpen] = useState(false);
   const [menuAnchorRect, setMenuAnchorRect] = useState<DOMRect | null>(null);
-  const [renderedScreen, setRenderedScreen] = useState<Screen>("menu");
-  const [pagePhase, setPagePhase] = useState<"enter" | "exit">("enter");
-  const [tooltipBlocked, setTooltipBlocked] = useState(true);
-  // tooltipBlocked starts true, so the first effect only needs to clear it
-  const pendingScreenRef = useRef(renderedScreen);
   const vrStageRef = useRef<HTMLDivElement>(null);
   const initialLoadReady = useInitialLoadReady({ imageUrls: allGameArt });
   useAppDisplayEffects({ displayMode, uiScale, brightness, stageRef: vrStageRef });
   useGlobalErrorHandlers();
   const gameMenuOpenRef = useRef(gameMenuOpen);
-  const renderedScreenRef = useRef(renderedScreen);
-  // Refs let the global Escape listener read current screen/menu state without re-registering
-  // a document-level handler on every route or menu toggle.
+  const renderedScreenRef = useRef<ReturnType<typeof useRenderedScreenTransition>["renderedScreen"]>("menu");
+
+  const homesteadMaterialInventory = useHomesteadStore((s) => s.materialInventory);
+  const homesteadConstructedBuildings = useHomesteadStore((s) => s.constructedBuildings);
+  const homesteadPlantedFarms = useHomesteadStore((s) => s.plantedFarms);
+  const homesteadCompletedResearch = useHomesteadStore((s) => s.completedResearch);
+  const homesteadBondedCompanions = useHomesteadStore((s) => s.bondedCompanions);
+  const homesteadEffects = useHomesteadStore((s) => s.effects);
+
+  function handleMarkDifficultyCompleted(characterId: CharacterId, difficultyId: DifficultyId) {
+    const prev = appStore.getState().completedDifficulties;
+    const current = prev[characterId] ?? [];
+    if (current.includes(difficultyId)) return;
+    appStore.getState().setCompletedDifficulties({ ...prev, [characterId]: [...current, difficultyId] });
+  }
+
+  const run = useAlchemyRunController({
+    discoveredCardIds,
+    setDiscoveredCardIds,
+    setEncounteredEnemyIds,
+    initialTalentXP: initialSave.talentXP,
+    initialUnlockedTalents: initialSave.unlockedTalents,
+    initialActiveRun: initialSave.activeRun,
+    autoEndTurn,
+    homesteadEffects,
+    onMarkDifficultyCompleted: handleMarkDifficultyCompleted,
+  });
+  const { screen: controllerScreen, commitPendingTransition } = run;
+  const { renderedScreen, pagePhase, tooltipBlocked } = useRenderedScreenTransition(
+    controllerScreen,
+    commitPendingTransition,
+  );
+
   useEffect(() => {
     gameMenuOpenRef.current = gameMenuOpen;
   }, [gameMenuOpen]);
@@ -118,56 +134,9 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
   }, []);
 
   const { frameStyle, stageStyle, aspectMode, stagePixelRatio } = useVirtualResolution(selectedAspectRatio, false);
-  const homesteadMaterialInventory = useHomesteadStore((s) => s.materialInventory);
-  const homesteadConstructedBuildings = useHomesteadStore((s) => s.constructedBuildings);
-  const homesteadPlantedFarms = useHomesteadStore((s) => s.plantedFarms);
-  const homesteadCompletedResearch = useHomesteadStore((s) => s.completedResearch);
-  const homesteadBondedCompanions = useHomesteadStore((s) => s.bondedCompanions);
-  const homesteadEffects = useHomesteadStore((s) => s.effects);
-  function handleMarkDifficultyCompleted(characterId: CharacterId, difficultyId: DifficultyId) {
-    const prev = appStore.getState().completedDifficulties;
-    const current = prev[characterId] ?? [];
-    if (current.includes(difficultyId)) return;
-    appStore.getState().setCompletedDifficulties({ ...prev, [characterId]: [...current, difficultyId] });
-  }
-
-  const run = useAlchemyRunController({
-    discoveredCardIds,
-    setDiscoveredCardIds,
-    setEncounteredEnemyIds,
-    initialTalentXP: initialSave.talentXP,
-    initialUnlockedTalents: initialSave.unlockedTalents,
-    initialActiveRun: initialSave.activeRun,
-    autoEndTurn,
-    homesteadEffects,
-    onMarkDifficultyCompleted: handleMarkDifficultyCompleted,
-  });
-  const { screen: controllerScreen, commitPendingTransition } = run;
   useAppAudioEffects({ masterVol, musicVol, sfxVol, muteInBackground, screen: run.screen });
   const heroArt = characterArt[run.characterId] ?? characterArt.knight;
   const playerName = characters[run.characterId]?.name ?? "Knight";
-
-  useEffect(() => {
-    if (controllerScreen === renderedScreen) return;
-    // renderedScreen intentionally lags the controller screen so exit animation can finish
-    // before the next screen mounts and starts its enter animation.
-    pendingScreenRef.current = controllerScreen;
-    setPagePhase("exit"); // eslint-disable-line react-hooks/set-state-in-effect
-    const timeout = window.setTimeout(() => {
-      commitPendingTransition();
-      setRenderedScreen(pendingScreenRef.current);
-      setPagePhase("enter");
-    }, PAGE_EXIT_MS);
-    return () => window.clearTimeout(timeout);
-  }, [controllerScreen, renderedScreen, commitPendingTransition]);
-
-  // On every renderedScreen change (including initial mount), block hover tooltips for 800ms
-  // to prevent jarring popups during page-enter animation when the mouse is over a trigger.
-  useEffect(() => {
-    setTooltipBlocked(true); // eslint-disable-line react-hooks/set-state-in-effect
-    const timer = window.setTimeout(() => setTooltipBlocked(false), 400);
-    return () => window.clearTimeout(timer);
-  }, [renderedScreen]);
 
   useScreenAssetPreloadEffects({
     heroArt,
@@ -184,32 +153,11 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
     run.screen !== "rewards" &&
     run.rewardState.choices.length === 0 &&
     !(run.screen === "battle" && run.battleState.enemyHealth <= 0);
-  useAlchemyAutosave(
+  useAlchemyAutosaveFromStores(
     {
-      saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
-      gameBuildVersion: CURRENT_GAME_BUILD_VERSION,
-      contentVersion: CURRENT_CONTENT_VERSION,
-      selectedAspectRatio,
-      displayMode,
-      uiScale,
-      discoveredCardIds,
-      encounteredEnemyIds,
-      discoveredTrinketIds,
       talentXP: run.talentXP,
       unlockedTalents: run.unlockedTalents,
-      musicVolume: musicVol,
-      sfxVolume: sfxVol,
-      masterVolume: masterVol,
-      muteInBackground,
-      autoEndTurn,
-      brightness,
       activeRun: run.activeRunData,
-      materialInventory: homesteadMaterialInventory,
-      constructedBuildings: homesteadConstructedBuildings,
-      plantedFarms: homesteadPlantedFarms,
-      completedResearch: homesteadCompletedResearch,
-      bondedCompanions: homesteadBondedCompanions,
-      completedDifficulties,
     },
     autosaveEnabled,
   );
@@ -267,47 +215,7 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
       >
         <RenderAlchemyScreen
           screen={renderedScreen}
-          actions={{
-            goToScreen: run.goToScreen,
-            navigateTo: run.goToScreen,
-            beginCampaign: run.beginCampaign,
-            beginLabyrinth: run.beginLabyrinth,
-            beginWildwood: run.beginWildwood,
-            handleCharacterSelect: run.handleCharacterSelect,
-            handleDraftComplete: run.handleDraftComplete,
-            handleDifficultySelect: run.handleDifficultySelect,
-            handleBackFromDifficultySelect: run.handleBackFromDifficultySelect,
-            handleWildwoodBossSelect: run.handleWildwoodBossSelect,
-            handleCardClick: run.handleCardClick,
-            handleWishChoice: run.handleWishChoice,
-            handleEndTurn: run.handleEndTurn,
-            handleEndRun: run.handleEndRun,
-            skipCombatDevMode: run.skipCombatDevMode,
-            removeCardGhost: run.removeCardGhost,
-            finishRewards: run.finishRewards,
-            handleDestinationChoice: run.handleDestinationChoice,
-            handleCampfireContinue: run.handleCampfireContinue,
-            handleShopContinue: run.handleShopContinue,
-            handleShopBuyCard: run.handleShopBuyCard,
-            handleShopRemoveCard: run.handleShopRemoveCard,
-            handleShopRefresh: run.handleShopRefresh,
-            handleAlchemistContinue: run.handleAlchemistContinue,
-            handleAlchemistBuyCard: run.handleAlchemistBuyCard,
-            handleAlchemistRefresh: run.handleAlchemistRefresh,
-            handleAlchemistMixPotions: run.handleAlchemistMixPotions,
-            handleMysteryChoice: run.handleMysteryChoice,
-            handleMysteryChooseCard: run.handleMysteryChooseCard,
-            handleMysteryRemoveCard: run.handleMysteryRemoveCard,
-            handleMysteryContinue: run.handleMysteryContinue,
-            handleCorruptCard: run.handleCorruptCard,
-            handleCorruptionExit: run.handleCorruptionExit,
-            handleLabyrinthNodeEnter: run.handleLabyrinthNodeEnter,
-            handleLabyrinthEndRun: run.handleLabyrinthEndRun,
-            resetRunState: run.resetRunState,
-            returnToBattle: run.returnToBattle,
-            unlockTalent: run.unlockTalent,
-            resetUnlockedTalents: run.resetUnlockedTalents,
-          }}
+          actions={buildControllerActions(run)}
           handCardRefs={run.handCardRefs}
           drawPileRef={run.drawPileRef}
           discardPileRef={run.discardPileRef}
@@ -323,11 +231,6 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
           cardTransferInProgress={run.cardTransferInProgress}
           hasUnspentTalents={hasUnspentTalentsBadge}
           hasAffordableHomestead={hasAffordableHomestead}
-          collectionTab={collectionTab}
-          collectionPages={collectionPages}
-          encounteredEnemyIds={encounteredEnemyIds}
-          discoveredTrinketIds={discoveredTrinketIds}
-          showClearSaveConfirm={showClearSaveConfirm}
           pendingCharacterId={pendingCharacterId}
           onOpenBattleMenu={openBattleMenu}
           onClearSaveData={clearSaveData}

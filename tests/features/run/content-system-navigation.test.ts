@@ -3,9 +3,8 @@ import { createContentSystemNavigation } from "@/features/alchemy/run/content-sy
 import { useScreenStore } from "@/features/alchemy/stores/screen-store";
 import { useRunStore } from "@/features/alchemy/stores/run-store";
 import { useHomesteadStore } from "@/features/alchemy/stores/homestead-store";
-import { computeTalentEffects } from "@/lib/game-data";
 import { CONSTANTS } from "@/features/alchemy/types";
-import type { RunStateController, TalentStateController } from "@/features/alchemy/stores/run-store";
+import { makeRunController, makeTalentController } from "../../helpers/run-controller";
 import type { BattleCard } from "@/lib/game-data";
 
 vi.mock("@/lib/audio", () => ({
@@ -25,56 +24,6 @@ beforeEach(() => {
   useRunStore.setState(useRunStore.getInitialState());
   useHomesteadStore.setState(useHomesteadStore.getInitialState());
 });
-
-function makeRunController(): RunStateController {
-  const s = useRunStore.getState();
-  return {
-    characterId: s.characterId,
-    runDeck: s.runDeck,
-    runGold: s.runGold,
-    runPlayerHealth: s.runPlayerHealth,
-    runMaxHealth: s.runMaxHealth,
-    roomsEncountered: s.roomsEncountered,
-    currentAct: s.currentAct,
-    destinationIndexInAct: s.destinationIndexInAct,
-    completedDestinations: s.completedDestinations,
-    runTrinkets: s.runTrinkets,
-    encounteredRunEnemyIds: s.encounteredRunEnemyIds,
-    selectedDifficulty: s.selectedDifficulty,
-    contentSystemType: s.contentSystemType,
-    setRunDeck: s.setRunDeck,
-    setRunGold: s.setRunGold,
-    setRunPlayerHealth: s.setRunPlayerHealth,
-    setRunMaxHealth: s.setRunMaxHealth,
-    setRoomsEncountered: s.setRoomsEncountered,
-    setCurrentAct: s.setCurrentAct,
-    setDestinationIndexInAct: s.setDestinationIndexInAct,
-    setCompletedDestinations: s.setCompletedDestinations,
-    setRunTrinkets: s.setRunTrinkets,
-    setEncounteredRunEnemyIds: s.setEncounteredRunEnemyIds,
-    setSelectedDifficulty: s.setSelectedDifficulty,
-    setContentSystemType: s.setContentSystemType,
-    setCharacter: s.setCharacter,
-    reset: s.reset,
-    addRunGold: s.addRunGold,
-    hydrateFromSnapshot: s.hydrateFromSnapshot,
-  };
-}
-
-function makeTalentController(): TalentStateController {
-  const s = useRunStore.getState();
-  return {
-    talentXP: s.talentXP,
-    runTalentXP: s.runTalentXP,
-    unlockedTalents: s.unlockedTalents,
-    talentEffects: computeTalentEffects(s.unlockedTalents),
-    awardCardXP: s.awardCardXP,
-    unlockTalent: s.unlockTalent,
-    unlockAllTalents: s.unlockAllTalents,
-    finalizeRunXP: s.finalizeRunXP,
-    hydrateFromSnapshot: s.hydrateFromSnapshot,
-  };
-}
 
 function makeDeps(overrides: Partial<Parameters<typeof createContentSystemNavigation>[0]> = {}) {
   const navigateTo = vi.fn();

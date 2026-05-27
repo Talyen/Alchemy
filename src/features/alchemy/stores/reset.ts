@@ -14,7 +14,6 @@ export function resetActiveRunStores() {
   useBattleStore.getState().clearDisplayOverrides();
   useBattleStore.getState().setHasActiveBattle(false);
   useRunStore.getState().reset();
-  useRunStore.getState().resetRunXP();
   useScreenStore.getState().setPendingContentSystemType("campaign");
   useScreenStore.getState().setRewardState(createEmptyRewardState());
   useScreenStore.getState().setMysteryEvent(null);

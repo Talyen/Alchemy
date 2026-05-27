@@ -1,10 +1,8 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { endPlayerTurn } from "@/lib/battle/enemy-turn";
 import type { BattleState } from "@/lib/battle/types";
-import { defaultTalentEffects } from "@/lib/battle/draw";
+import { defaultTalentEffects } from "@/lib/battle";
 import { createTestBattleState } from "./test-state";
-
-vi.spyOn(Math, "random").mockReturnValue(0.99);
 
 function makeState(overrides: Partial<BattleState> = {}): BattleState {
   return createTestBattleState({

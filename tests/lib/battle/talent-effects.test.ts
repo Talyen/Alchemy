@@ -8,7 +8,7 @@ import {
   applyStunManaTalent,
   applyStunStripArmorTalent,
 } from "@/lib/battle/talent-effects";
-import { defaultTalentEffects } from "@/lib/battle/draw";
+import { defaultTalentEffects } from "@/lib/battle";
 import { FREE_CARD_SENTINEL } from "@/lib/game-constants";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { createTestBattleState } from "./test-state";

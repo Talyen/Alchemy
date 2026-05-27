@@ -26,6 +26,9 @@ describe("@/lib/battle barrel", () => {
     expect(mod.mergeCombatText).toBeTypeOf("function");
     expect(mod.tickEnemyStatuses).toBeTypeOf("function");
     expect(mod.tickPlayerStatuses).toBeTypeOf("function");
+    expect(mod.defaultBattleState).toBeTypeOf("function");
+    expect(mod.playBattleCardResolved).toBeTypeOf("function");
+    expect(mod.chooseWishCard).toBeTypeOf("function");
   });
 });
 

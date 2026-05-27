@@ -22,6 +22,7 @@ Between runs, the **Homestead** lets the player spend **Materials** on permanent
 - [Common Mistakes](#common-mistakes)
 - [Debugging](#debugging)
 - [Verification Strategy](#verification-strategy)
+    - [GitHub CLI (`gh`)](#github-cli-gh)
 - [Testing Patterns](#testing-patterns)
 - [Large / Generated / Heavy Files](#large--generated--heavy-files)
 - [AI Behavior](#ai-behavior)
@@ -49,6 +50,7 @@ Non-obvious rules that deviate from typical CCG/roguelike assumptions:
 
 - **Node.js `>=24`** — authoritative version in `package.json` `engines` (README may lag; trust `engines`).
 - **npm 10+**
+- **GitHub CLI (`gh`)** — optional for humans; expected for agentic PR/CI workflows ([install](https://cli.github.com/)). Authenticate once with `gh auth login` (interactive; not for agents to run).
 - **Playwright (e2e)**: run `npx playwright install chromium` once before the first local `npm run test:e2e`.
 
 ## Commands
@@ -460,6 +462,18 @@ Individual top-level lib modules are imported directly — e.g. `@/lib/talents.t
 ## Verification Strategy
 
 Each audit prompt in [PROMPTS.md](./PROMPTS.md) ends with explicit verification commands for that task; pick the prompt that matches your change and run its **When done** block.
+
+### GitHub CLI (`gh`)
+
+Use the [GitHub CLI](https://cli.github.com/) for GitHub-hosted steps after local checks pass — not for building or testing the app (use `npm` commands above).
+
+- **When to use `gh`**: open or update PRs when the user asks; inspect CI (`gh pr checks`, `gh run list`, `gh run view --log-failed`); re-run workflows when explicitly requested.
+- **When not to use `gh`**: substitute for `npm test`, `npm run lint`, or `npm run check`; run `gh auth login` (interactive; ask the user to authenticate instead).
+- **Auth**: If `gh auth status` reports not logged in, say so and continue with local verification; do not invent CI results.
+- **Git write**: `git push` and `gh pr create` only when the user explicitly requests them (same policy as commits in user rules and [Multi-Agent Rules](#multi-agent-rules)).
+- **Typical commands**: `gh pr create`, `gh pr checks`, `gh run list --workflow CI`, `gh run view <id> --log-failed`.
+
+Detailed PR steps live in Cursor user rules; this repo’s CI workflow is named **CI** (`.github/workflows/ci.yml`).
 
 - **Pre-PR gate**: `npm run deadcode && npm run lint && npm test` (full CI parity: `npm run check`).
 - **Battle logic**: Run focused Vitest files under `tests/lib/battle/`, then broader `npm test` when cross-cutting.
