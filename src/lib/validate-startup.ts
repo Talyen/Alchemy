@@ -9,6 +9,7 @@ import {
   MAX_PLAYER_HEALTH,
   MIN_MAX_MANA_FLOOR,
   STARTING_TURN,
+  WISH_OVERLAY_Z_INDEX,
 } from "./game-constants";
 import { companionLibrary, enemyBestiary, cardLibrary } from "./game-data";
 import { collectUncoveredDifficultyModifierKinds, collectUncoveredEnemyTraitIds } from "./battle/enemy-turn-traits";
@@ -30,6 +31,8 @@ check("BASE_PLAYER_MANA >= 0", BASE_PLAYER_MANA >= 0);
 // It must be positive so turn-number display ("Turn 1") is human-readable, not zero-indexed.
 check("STARTING_TURN > 0", STARTING_TURN > 0);
 check("MIN_MAX_MANA_FLOOR > 0", MIN_MAX_MANA_FLOOR > 0);
+// Must match --z-wish-overlay in src/index.css (.z-wish-overlay).
+check("WISH_OVERLAY_Z_INDEX is 90", WISH_OVERLAY_Z_INDEX === 90);
 check("enemyBestiary is non-empty", enemyBestiary.length > 0);
 check("cardLibrary is non-empty", cardLibrary.length > 0);
 
