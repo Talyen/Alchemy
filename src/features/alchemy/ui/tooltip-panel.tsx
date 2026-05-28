@@ -13,6 +13,7 @@ type TooltipPanelProps = {
   width?: string;
   className?: string;
   flip?: boolean;
+  /** Runtime placement offsets from `useTooltipFlip` / enemy tooltip anchoring — not for theme colors. */
   style?: CSSProperties;
   ref?: React.Ref<HTMLDivElement>;
 };

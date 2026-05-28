@@ -7,8 +7,7 @@ import type { CompanionDefinition } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
 import { cardSurfaceClass, staticCardTransform } from "../../config";
-import { clearTiltFromEvent, setTiltFromEvent } from "../../utils";
-import { formatCompanionTurnStartLine } from "../../utils/companion-turn-line";
+import { clearTiltFromEvent, formatCompanionTurnStartLine, setTiltFromEvent } from "@/features/alchemy/utils";
 import { DescriptionLines } from "../card-description-ui";
 import { TooltipPanel } from "../tooltip-panel";
 

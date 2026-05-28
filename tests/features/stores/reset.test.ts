@@ -1,8 +1,12 @@
 import { describe, expect, it, beforeEach, vi } from "vitest";
 
-vi.mock("@/features/alchemy/storage", () => ({
-  clearAlchemySaveData: vi.fn(),
-}));
+vi.mock("@/features/alchemy/storage", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/alchemy/storage")>();
+  return {
+    ...actual,
+    clearAlchemySaveData: vi.fn(),
+  };
+});
 
 vi.mock("@/lib/platform", () => ({
   platform: {
@@ -22,7 +26,7 @@ import { useHomesteadStore } from "@/features/alchemy/stores/homestead-store";
 import { useRunStore } from "@/features/alchemy/stores/run-store";
 import { useScreenStore } from "@/features/alchemy/stores/screen-store";
 import { createEmptyRewardState } from "@/features/alchemy/navigation/reward-flow";
-import { defaultSaveData } from "@/features/alchemy/storage/defaults";
+import { defaultSaveData } from "@/features/alchemy/storage";
 
 beforeEach(() => {
   useAppStore.setState(useAppStore.getInitialState());

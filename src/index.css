@@ -99,6 +99,11 @@
     --ring: 36 55% 56%;
     --radius: 1.5rem;
     --mana-gem: 217 58% 35%;
+    --shadow-deaths-door: 0 0 30px rgba(127, 29, 29, 0.45);
+    --shadow-labyrinth-current: 0 0 10px rgba(251, 191, 36, 0.5);
+    --drop-shadow-mana-overflow: 0 0 3px rgba(125, 211, 252, 0.6);
+    /* Keep in sync with WISH_OVERLAY_Z_INDEX in game-constants.ts */
+    --z-wish-overlay: 90;
     --motion-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
     --motion-page-enter-duration: 240ms;
     --motion-page-exit-duration: 120ms;
@@ -407,6 +412,22 @@
 
   .mana-gem-active {
     animation: manaGemSettle 260ms ease-out both;
+  }
+
+  .shadow-deaths-door-glow {
+    box-shadow: var(--shadow-deaths-door);
+  }
+
+  .shadow-labyrinth-current-glow {
+    box-shadow: var(--shadow-labyrinth-current);
+  }
+
+  .drop-shadow-mana-overflow-glow {
+    filter: drop-shadow(var(--drop-shadow-mana-overflow));
+  }
+
+  .z-wish-overlay {
+    z-index: var(--z-wish-overlay);
   }
 
   .status-chip-pop {

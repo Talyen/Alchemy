@@ -152,4 +152,20 @@ describe("battle-store actions", () => {
     useBattleStore.getState().hurtEnemy();
     expect(useBattleStore.getState().enemyHurtFlashToken).toBe(1);
   });
+
+  it("resetPortraitHurtTokens zeros both hurt flash counters", () => {
+    useBattleStore.getState().hurtPlayer();
+    useBattleStore.getState().hurtEnemy();
+    useBattleStore.getState().resetPortraitHurtTokens();
+    expect(useBattleStore.getState().playerHurtFlashToken).toBe(0);
+    expect(useBattleStore.getState().enemyHurtFlashToken).toBe(0);
+  });
+
+  it("initializeActiveBattle(null) clears hurt flash tokens", () => {
+    useBattleStore.getState().hurtPlayer();
+    useBattleStore.getState().hurtEnemy();
+    useBattleStore.getState().initializeActiveBattle(null);
+    expect(useBattleStore.getState().playerHurtFlashToken).toBe(0);
+    expect(useBattleStore.getState().enemyHurtFlashToken).toBe(0);
+  });
 });

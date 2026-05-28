@@ -10,7 +10,7 @@ import {
   MIN_MAX_MANA_FLOOR,
   STARTING_TURN,
 } from "./game-constants";
-import { enemyBestiary, cardLibrary } from "./game-data";
+import { companionLibrary, enemyBestiary, cardLibrary } from "./game-data";
 import { collectUncoveredDifficultyModifierKinds, collectUncoveredEnemyTraitIds } from "./battle/enemy-turn-traits";
 import { logError } from "./error-logger";
 
@@ -32,6 +32,10 @@ check("STARTING_TURN > 0", STARTING_TURN > 0);
 check("MIN_MAX_MANA_FLOOR > 0", MIN_MAX_MANA_FLOOR > 0);
 check("enemyBestiary is non-empty", enemyBestiary.length > 0);
 check("cardLibrary is non-empty", cardLibrary.length > 0);
+
+for (const [companionId, companion] of Object.entries(companionLibrary)) {
+  check(`companion ${companionId} has exactly one turn-start effect`, companion.turnStartEffects.length === 1);
+}
 
 const bestiaryTraitIds = enemyBestiary.flatMap((enemy) => enemy.traits.map((trait) => trait.id));
 const uncoveredTraits = collectUncoveredEnemyTraitIds(bestiaryTraitIds);

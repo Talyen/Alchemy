@@ -87,6 +87,7 @@ export function createBattleSession(deps: BattleSessionDeps) {
     deps.companionScheduledRef.current = false;
     getStore().clearRevealedCardKeys();
     getStore().setBattleStartState(null);
+    getStore().resetPortraitHurtTokens();
   }
 
   function finishDrawSequence(

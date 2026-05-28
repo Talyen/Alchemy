@@ -6,37 +6,8 @@
 // instead of reading from the compendium will be flagged here and deleted.
 
 import { describe, expect, it } from "vitest";
-import { cardLibrary, companionLibrary, enemyBestiary, trinketLibrary } from "@/lib/game-data";
+import { cardLibrary, companionLibrary, enemyBestiary, expectedCompanionTurnLine, trinketLibrary } from "@/lib/game-data";
 import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
-
-// ─────────────────────────── Helpers ───────────────────────────
-
-function displayDamageType(type: string): string {
-  return type.charAt(0).toUpperCase() + type.slice(1);
-}
-
-function expectedCompanionTurnLine(effect: BattleCardEffect): string {
-  switch (effect.kind) {
-    case "damage":
-      return `Deals ${effect.amount} ${displayDamageType(effect.damageType)} damage each turn`;
-    case "heal":
-      return `Restores ${effect.amount} Health each turn`;
-    case "restore-mana":
-      return `Restores ${effect.amount} Mana each turn`;
-    case "remove-harmful-status":
-      return `Cleanses ${effect.amount} harmful status${effect.amount === 1 ? "" : "es"} each turn`;
-    case "gain-gold":
-      return `Steals ${effect.amount} Gold each turn`;
-    case "player-status":
-      if (effect.status === "block") return `Gain ${effect.amount} Block each turn`;
-      break;
-    case "draw-cards":
-      return `Draws ${effect.amount} Card${effect.amount === 1 ? "" : "s"} each turn`;
-    default:
-      break;
-  }
-  throw new Error(`Unhandled companion turn-start effect: ${(effect as { kind: string }).kind}`);
-}
 
 function countByKind(effects: BattleCardEffect[], kind: string): number {
   return effects.filter((e) => e.kind === kind).length;

@@ -187,7 +187,7 @@ npm run release:major    # major version bump + changelog + tag
 | 1. Add companion ID to `CompanionId` union | `src/lib/game-data/types.ts` |
 | 2. Add optimized art and barrel export | `src/lib/game-data/assets.ts` |
 | 3. Define companion in `companionLibrary` record | `src/lib/game-data/companions.ts` |
-| 4. Add summon card for companion (`kind: "summon-companion"`) | `src/lib/game-data/cards.ts` |
+| 4. Add summon card via `summonCompanionCard()` in `combatCards.ts` / `supportCards.ts` | `src/lib/game-data/cards/card-builders.ts` — companion must have **exactly one** `turnStartEffects` entry |
 | 5. Add summon card ID to `CardId` union | `src/lib/game-data/types.ts` |
 | 6. (Optional) Register card sound | `src/lib/sound-registry.ts` |
 | 7. Add bond level to talent defaults (`companionBondLevels`) | `src/lib/game-data/talents/manifest-defaults.ts` |
@@ -349,6 +349,9 @@ Alchemy uses **one** loading experience at cold start, then instant screen navig
 
 - **No `React.FC`** — components are plain functions with explicit `interface Props` or local `type` above the component
 - **Tailwind via `cn()`** — use `cn()` from `@/lib/utils` for all conditional class merging. Order: layout/structure → visual → variant → external `className`. Primitives with variants use `class-variance-authority` (`cva()`)
+- **Inline `style={}`** — rare; prefer Tailwind utilities. Keep inline styles only for: (1) CSS custom properties consumed by `index.css` motion/tilt rules (`--card-base-transform`, `--stagger-index`, `--talent-glass-accent`, etc.); (2) runtime layout from DOM or data (tooltip/menu anchors, labyrinth/talent node `%` positions, combat-text lane offsets); (3) values that cannot be static utilities (progress bar width, dynamic `backgroundImage`, keyword ring `--tw-ring-color`). Document non-obvious props (`wrapperStyle`, `anchorStyle`) at their type definition.
+- **Dynamic Tailwind classes** — never interpolate utility segments (e.g. `` `text-${color}-500` ``). Pass complete class strings from maps/constants (`colorClass`, `layout.ts` width classes).
+- **Theme tokens** — colors and glows from `:root` / `@theme` in `src/index.css`; avoid arbitrary `rgba(...)` in components when a token or utility class exists.
 
 - **Event handlers** — chain feedback first (sound via `playUISound("buttonHover")`), then call original handler via `onX?.(e)`. Avoid `useEffect` for UI side effects
 - **Motion** via `framer-motion` (`motion/react`). Use `PressableMotion` wrapper for spring-based press feedback (`stiffness: 400`, `damping: 15`)

@@ -31,9 +31,9 @@ describe("companionLibrary data integrity", () => {
     }
   });
 
-  it("each companion has at least one turnStartEffect", () => {
+  it("each companion has exactly one turnStartEffect (summon cards assume a single line)", () => {
     for (const companion of Object.values(companionLibrary)) {
-      expect(companion.turnStartEffects.length).toBeGreaterThanOrEqual(1);
+      expect(companion.turnStartEffects).toHaveLength(1);
     }
   });
 

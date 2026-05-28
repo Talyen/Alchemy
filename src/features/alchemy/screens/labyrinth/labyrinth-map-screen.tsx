@@ -29,7 +29,7 @@ export function LabyrinthMapScreen({ onNodeClick, onOpenMenu }: Props) {
 
       <section
         aria-label="Labyrinth map"
-        className="relative w-full max-w-[920px] rounded-shell-panel border border-stone-500 bg-stone-950 p-4 sm:p-5"
+        className="relative w-full max-w-[920px] rounded-shell-panel border border-border bg-card p-4 sm:p-5"
         style={{ "--labyrinth-node-size": "clamp(2.35rem, 4.8vw, 3.45rem)" } as CSSProperties}
       >
         <div className="absolute right-4 top-4 z-30">

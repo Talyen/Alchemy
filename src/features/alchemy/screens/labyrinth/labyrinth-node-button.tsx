@@ -63,10 +63,10 @@ export function LabyrinthNodeButton({ row, col, node, labyrinthMap, onNodeClick,
         aria-label={getNodeAriaLabel(node.type, node.state, node.modifiers.length, isEnterable)}
         onClick={() => onNodeClick(row, col)}
         className={cn(
-          "relative flex aspect-square h-full w-full items-center justify-center rounded-full border-2 text-xs transition-[transform,border-color] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-950",
+          "relative flex aspect-square h-full w-full items-center justify-center rounded-full border-2 text-xs transition-[transform,border-color] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
           meta.className,
           isCurrent && "border-amber-400",
-          isCurrent && node.type !== "entrance" && "shadow-[0_0_10px_rgba(251,191,36,0.5)]",
+          isCurrent && node.type !== "entrance" && "shadow-labyrinth-current-glow",
           isEnterable && "hover:-translate-y-0.5 active:scale-95",
           isCleared && "border-emerald-200 opacity-30",
           isFailed && "border-red-400 opacity-30",

@@ -77,7 +77,7 @@ export function ManaPanel({ mana, maxMana, gold }: { mana: number; maxMana: numb
               className={cn(
                 "h-[2.04cqh] w-[2.04cqh] transition-opacity duration-200",
                 isFilled && "mana-gem-active",
-                isFilled && isOverflow && "text-sky-300 drop-shadow-[0_0_3px_rgba(125,211,252,0.6)]",
+                isFilled && isOverflow && "text-sky-300 drop-shadow-mana-overflow-glow",
                 isFilled && !isOverflow && "text-[hsl(var(--mana-gem))]",
                 !isFilled && "text-[hsl(var(--mana-gem)_/_0.2)]",
               )}

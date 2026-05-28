@@ -6,6 +6,8 @@ import { supportCards } from "./cards/supportCards";
 
 export const cardLibrary: BattleCard[] = [...combatCards, ...supportCards];
 
+export { expectedCompanionTurnLine, formatCompanionTurnLineBase } from "./cards/companion-turn-description";
+
 export function isStandardPotionCard(card: Pick<BattleCard, "id">): boolean {
   return card.id.endsWith(POTION_CARD_ID_SUFFIX) && card.id !== MIXED_POTION_CARD_ID;
 }

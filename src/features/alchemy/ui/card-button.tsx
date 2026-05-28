@@ -27,6 +27,7 @@ type BattleCardButtonProps = {
   baseTransform?: string;
   className?: string;
   wrapperClassName?: string;
+  /** Motion/position only — e.g. stagger index CSS vars or drag ghost coordinates; not for theme colors. */
   wrapperStyle?: CSSProperties;
   wrapperDataCardKey?: string;
   selected?: boolean;

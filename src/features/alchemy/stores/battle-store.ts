@@ -58,6 +58,7 @@ type BattleStore = {
   shakeCompanion: () => void;
   hurtPlayer: () => void;
   hurtEnemy: () => void;
+  resetPortraitHurtTokens: () => void;
   showCombatTexts: (events: CombatTextEvent[]) => void;
   clearFloatingCombatTexts: () => void;
   addRevealedCardKey: (key: string) => void;
@@ -99,6 +100,7 @@ export const useBattleStore = create<BattleStore>()((set) => ({
 
   initializeActiveBattle: (battleState) => {
     if (battleState) {
+      // Preserve portrait hurt tokens on resume so useHurtPulse does not replay VFX from a saved counter.
       const hydratedState: BattleState = {
         ...battleState,
         deck: battleState.deck.map(hydrateCard),
@@ -120,6 +122,8 @@ export const useBattleStore = create<BattleStore>()((set) => ({
         displayOverrides: {},
         battleStartState: null,
         hasActiveBattle: false,
+        playerHurtFlashToken: 0,
+        enemyHurtFlashToken: 0,
       });
     }
   },
@@ -150,6 +154,8 @@ export const useBattleStore = create<BattleStore>()((set) => ({
 
   hurtPlayer: () => set((s) => ({ playerHurtFlashToken: s.playerHurtFlashToken + 1 })),
   hurtEnemy: () => set((s) => ({ enemyHurtFlashToken: s.enemyHurtFlashToken + 1 })),
+
+  resetPortraitHurtTokens: () => set({ playerHurtFlashToken: 0, enemyHurtFlashToken: 0 }),
 
   showCombatTexts: (events) => {
     if (events.length === 0) return;

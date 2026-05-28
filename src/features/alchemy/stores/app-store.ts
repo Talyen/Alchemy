@@ -1,9 +1,7 @@
 import { create } from "zustand";
 import type { CharacterId, DifficultyId } from "@/lib/game-data";
 import type { AspectRatioOption, CollectionTab, DisplayMode, UiScale } from "@/features/alchemy/types";
-import type { SaveData } from "@/features/alchemy/storage/types";
-import { clearAlchemySaveData } from "@/features/alchemy/storage";
-import { defaultSaveData } from "@/features/alchemy/storage/defaults";
+import { clearAlchemySaveData, defaultSaveData, type SaveData } from "@/features/alchemy/storage";
 
 type CollectionPages = Record<CollectionTab, number>;
 

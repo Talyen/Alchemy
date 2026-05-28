@@ -13,3 +13,4 @@ export {
 } from "./dom";
 export { formatEnemyAttackLines } from "./enemy";
 export { isAlchemyDevBuild, shouldSkipStartupLoadingGate } from "./dev-mode";
+export { formatCompanionTurnStartLine, type CompanionTurnLineContext } from "./companion-turn-line";

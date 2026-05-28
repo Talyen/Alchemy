@@ -35,7 +35,7 @@ export function DestinationChoices({
               <img src={art} alt={destination} className="w-full max-w-[32.59cqh] rounded-shell-card object-contain" />
             </div>
             <div className="relative rounded-full">
-              <PressableMotion style={{ display: "inline-block" }} disableHoverScale>
+              <PressableMotion className="inline-block" disableHoverScale>
                 <button
                   type="button"
                   onClick={() => onChoose(destination)}

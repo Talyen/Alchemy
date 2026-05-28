@@ -42,63 +42,47 @@ import {
   venomFangs,
 } from "../assets";
 import type { BattleCard } from "../types";
+import {
+  cleansePlayerStatusCard,
+  damageCard,
+  damageThenMultiplyEnemyStatusCard,
+  dualDamageCard,
+  healThenDamageCard,
+  loseHealthBenefitCard,
+  playerStatThenScaledDamageCard,
+  playerStatusCard,
+  summonCompanionCard,
+} from "./card-builders";
 
 export const supportCards: BattleCard[] = [
-  {
+  summonCompanionCard({
     id: "frost-whelp-companion",
     title: "Frost Whelp",
-    descriptionLines: ["Deals 1 Freeze damage each turn", "Companion"],
     art: frostWhelpCompanion,
-    cost: 1,
-    consume: true,
-    effects: [{ kind: "summon-companion", companionId: "frost-whelp" }],
-  },
-  {
-    id: "bear-companion",
-    title: "Bear",
-    descriptionLines: ["Deals 1 Stun damage each turn", "Companion"],
-    art: bearCompanion,
-    cost: 1,
-    consume: true,
-    effects: [{ kind: "summon-companion", companionId: "bear" }],
-  },
-  {
+    companionId: "frost-whelp",
+  }),
+  summonCompanionCard({ id: "bear-companion", title: "Bear", art: bearCompanion, companionId: "bear" }),
+  summonCompanionCard({
     id: "panther-companion",
     title: "Panther",
-    descriptionLines: ["Deals 1 Bleed damage each turn", "Companion"],
     art: pantherCompanion,
-    cost: 1,
-    consume: true,
-    effects: [{ kind: "summon-companion", companionId: "panther" }],
-  },
-  {
+    companionId: "panther",
+  }),
+  summonCompanionCard({
     id: "phoenix-companion",
     title: "Phoenix",
-    descriptionLines: ["Deals 1 Burn damage each turn", "Companion"],
     art: phoenixCompanion,
-    cost: 1,
-    consume: true,
-    effects: [{ kind: "summon-companion", companionId: "phoenix" }],
-  },
-  {
-    id: "plate-mail",
-    title: "Plate Mail",
-    descriptionLines: ["Gain 2 Armor"],
-    art: plateMail,
-    cost: 1,
-    effects: [{ kind: "player-status", status: "armor", amount: 2 }],
-  },
-  {
+    companionId: "phoenix",
+  }),
+  playerStatusCard({ id: "plate-mail", title: "Plate Mail", art: plateMail, status: "armor", amount: 2 }),
+  playerStatThenScaledDamageCard({
     id: "sanctified-plate",
     title: "Sanctified Plate",
-    descriptionLines: ["Gain 1 Armor", "Deal Holy damage equal to your Armor"],
     art: sanctifiedPlate,
-    cost: 1,
-    effects: [
-      { kind: "player-status", status: "armor", amount: 1 },
-      { kind: "damage", damageType: "holy", amount: 0, equalToArmor: true },
-    ],
-  },
+    damageType: "holy",
+    scaleFrom: "armor",
+    playerStat: { status: "armor", amount: 1 },
+  }),
   {
     id: "shield-bash",
     title: "Shield Bash",
@@ -118,17 +102,15 @@ export const supportCards: BattleCard[] = [
     cost: 1,
     effects: [{ kind: "gain-gold", amount: 4 }],
   },
-  {
+  dualDamageCard({
     id: "burning-blade",
     title: "Burning Blade",
-    descriptionLines: ["Deal 2 Physical damage", "Deal 2 Burn damage"],
     art: burningBlade,
-    cost: 1,
-    effects: [
-      { kind: "damage", damageType: "physical", amount: 2 },
-      { kind: "damage", damageType: "burn", amount: 2 },
+    hits: [
+      { damageType: "physical", amount: 2 },
+      { damageType: "burn", amount: 2 },
     ],
-  },
+  }),
   // remove-harmful-status must come before self-damage so the burn cost is not instantly cleansed,
   {
     id: "cauterize",
@@ -152,88 +134,72 @@ export const supportCards: BattleCard[] = [
       { kind: "gain-gold", amount: 2 },
     ],
   },
-  {
+  healThenDamageCard({
     id: "sunburst",
     title: "Sunburst",
-    descriptionLines: ["Restore 2 Health", "Deal 2 Burn damage"],
     art: sunburst,
-    cost: 1,
-    effects: [
-      { kind: "heal", amount: 2 },
-      { kind: "damage", damageType: "burn", amount: 2 },
-    ],
-  },
-  {
+    heal: 2,
+    damageType: "burn",
+    damage: 2,
+  }),
+  healThenDamageCard({
     id: "holy-radiance",
     title: "Holy Radiance",
-    descriptionLines: ["Restore 2 Health", "Deal 2 Holy damage"],
     art: holyRadiance,
-    cost: 1,
-    effects: [
-      { kind: "heal", amount: 2 },
-      { kind: "damage", damageType: "holy", amount: 2 },
-    ],
-  },
-  {
+    heal: 2,
+    damageType: "holy",
+    damage: 2,
+  }),
+  damageCard({
     id: "venom-fangs",
     title: "Venom Fangs",
-    descriptionLines: ["Deal 2 Poison damage", "Leech"],
     art: venomFangs,
-    cost: 1,
-    effects: [{ kind: "damage", damageType: "poison", amount: 2, lifesteal: true }],
-  },
-  {
+    damageType: "poison",
+    amount: 2,
+    lifesteal: true,
+  }),
+  damageCard({
     id: "bloodthorn",
     title: "Bloodthorn",
-    descriptionLines: ["Deal 4 Nature damage", "Leech"],
     art: bloodthorn,
-    cost: 1,
-    effects: [{ kind: "damage", damageType: "nature", amount: 4, lifesteal: true }],
-  },
-  {
+    damageType: "nature",
+    amount: 4,
+    lifesteal: true,
+  }),
+  dualDamageCard({
     id: "cinderbloom",
     title: "Cinderbloom",
-    descriptionLines: ["Deal 2 Nature damage", "Deal 2 Burn damage"],
     art: cinderbloom,
-    cost: 1,
-    effects: [
-      { kind: "damage", damageType: "nature", amount: 2 },
-      { kind: "damage", damageType: "burn", amount: 2 },
+    hits: [
+      { damageType: "nature", amount: 2 },
+      { damageType: "burn", amount: 2 },
     ],
-  },
-  {
+  }),
+  dualDamageCard({
     id: "grasping-vines",
     title: "Grasping Vines",
-    descriptionLines: ["Deal 2 Nature damage", "Deal 2 Stun damage"],
     art: graspingVines,
-    cost: 1,
-    effects: [
-      { kind: "damage", damageType: "nature", amount: 2 },
-      { kind: "damage", damageType: "stun", amount: 2 },
+    hits: [
+      { damageType: "nature", amount: 2 },
+      { damageType: "stun", amount: 2 },
     ],
-  },
-  {
+  }),
+  playerStatThenScaledDamageCard({
     id: "briar-shield",
     title: "Briar Shield",
-    descriptionLines: ["Gain 3 Block", "Deal Nature damage equal to your Block"],
     art: briarShield,
-    cost: 1,
-    effects: [
-      { kind: "player-status", status: "block", amount: 3 },
-      { kind: "damage", damageType: "nature", amount: 0, equalToBlock: true },
-    ],
-  },
-  {
+    damageType: "nature",
+    scaleFrom: "block",
+    playerStat: { status: "block", amount: 3 },
+  }),
+  playerStatThenScaledDamageCard({
     id: "thorn-mail",
     title: "Thorn Mail",
-    descriptionLines: ["Gain 2 Armor", "Deal Nature damage equal to your Armor"],
     art: thornMail,
-    cost: 1,
-    effects: [
-      { kind: "player-status", status: "armor", amount: 2 },
-      { kind: "damage", damageType: "nature", amount: 0, equalToArmor: true },
-    ],
-  },
+    damageType: "nature",
+    scaleFrom: "armor",
+    playerStat: { status: "armor", amount: 2 },
+  }),
   {
     id: "pack-tactics",
     title: "Pack Tactics",
@@ -245,59 +211,43 @@ export const supportCards: BattleCard[] = [
       { kind: "damage", damageType: "nature", amount: 3 },
     ],
   },
-  {
+  dualDamageCard({
     id: "serrated-edge",
     title: "Serrated Edge",
-    descriptionLines: ["Deal 1 Bleed damage", "Deal 3 Physical damage"],
     art: serratedEdge,
-    cost: 1,
-    effects: [
-      { kind: "damage", damageType: "bleed", amount: 1 },
-      { kind: "damage", damageType: "physical", amount: 3 },
+    hits: [
+      { damageType: "bleed", amount: 1 },
+      { damageType: "physical", amount: 3 },
     ],
-  },
-  {
+  }),
+  dualDamageCard({
     id: "smite",
     title: "Smite",
-    descriptionLines: ["Deal 2 Holy damage", "Deal 2 Burn damage"],
     art: smite,
-    cost: 1,
-    effects: [
-      { kind: "damage", damageType: "holy", amount: 2 },
-      { kind: "damage", damageType: "burn", amount: 2 },
+    hits: [
+      { damageType: "holy", amount: 2 },
+      { damageType: "burn", amount: 2 },
     ],
-  },
-  {
+  }),
+  cleansePlayerStatusCard({
     id: "antivenom-potion",
     title: "Antivenom Potion",
-    descriptionLines: ["Cleanse all Poison", "Consume"],
     art: antivenomPotion,
-    cost: 1,
+    status: "poison",
+    cleanseLine: "Cleanse all Poison",
     consume: true,
-    effects: [{ kind: "remove-player-status", status: "poison" }],
-  },
-  {
+  }),
+  damageThenMultiplyEnemyStatusCard({
     id: "cold-snap",
     title: "Cold Snap",
-    descriptionLines: ["Deal 1 Freeze damage", "Double enemy's Freeze build-up"],
     art: coldSnap,
-    cost: 1,
-    effects: [
-      { kind: "damage", damageType: "freeze", amount: 1 },
-      { kind: "multiply-enemy-status", status: "freeze", factor: 2 },
-    ],
-  },
-  {
-    id: "blood-offering",
-    title: "Blood Offering",
-    descriptionLines: ["Lose 1 Health", "Draw 2 Cards"],
-    art: bloodOffering,
-    cost: 1,
-    effects: [
-      { kind: "lose-health", amount: 1 },
-      { kind: "draw-cards", amount: 2 },
-    ],
-  },
+    damageType: "freeze",
+    damageAmount: 1,
+    status: "freeze",
+    factor: 2,
+    multiplyLine: "Double enemy's Freeze build-up",
+  }),
+  loseHealthBenefitCard({ id: "blood-offering", title: "Blood Offering", art: bloodOffering, healthLoss: 1, draw: 2 }),
   {
     id: "sunder-armor",
     title: "Sunder Armor",
@@ -328,110 +278,73 @@ export const supportCards: BattleCard[] = [
       { kind: "heal", amount: 3 },
     ],
   },
-  {
+  loseHealthBenefitCard({
     id: "faustian-bargain",
     title: "Faustian Bargain",
-    descriptionLines: ["Lose 2 Health", "Wish 2", "Consume"],
     art: faustianBargain,
-    cost: 1,
+    healthLoss: 2,
+    wish: 2,
     consume: true,
-    effects: [
-      { kind: "lose-health", amount: 2 },
-      { kind: "wish", amount: 2 },
-    ],
-  },
-  {
+  }),
+  dualDamageCard({
     id: "judgment",
     title: "Judgment",
-    descriptionLines: ["Deal 3 Holy damage", "Deal 1 Stun damage"],
     art: judgment,
-    cost: 1,
-    effects: [
-      { kind: "damage", damageType: "holy", amount: 3 },
-      { kind: "damage", damageType: "stun", amount: 1 },
+    hits: [
+      { damageType: "holy", amount: 3 },
+      { damageType: "stun", amount: 1 },
     ],
-  },
-  {
+  }),
+  cleansePlayerStatusCard({
     id: "smelling-salts",
     title: "Smelling Salts",
-    descriptionLines: ["Cleanse Stun build-up"],
     art: smellingSalts,
-    cost: 1,
-    effects: [{ kind: "remove-player-status", status: "stun" }],
-  },
-  {
+    status: "stun",
+    cleanseLine: "Cleanse Stun build-up",
+  }),
+  loseHealthBenefitCard({
     id: "dark-pact",
     title: "Dark Pact",
-    descriptionLines: ["Lose 2 Health", "Wish 1", "Draw 1 Card"],
     art: darkPact,
-    cost: 1,
-    effects: [
-      { kind: "lose-health", amount: 2 },
-      { kind: "wish", amount: 1 },
-      { kind: "draw-cards", amount: 1 },
-    ],
-  },
-  {
+    healthLoss: 2,
+    wish: 1,
+    draw: 1,
+  }),
+  summonCompanionCard({
     id: "skeleton-companion",
     title: "Raise Skeleton",
-    descriptionLines: ["Deals 1 Physical damage each turn", "Companion"],
     art: raiseSkeletonCompanion,
-    cost: 1,
-    consume: true,
-    effects: [{ kind: "summon-companion", companionId: "skeleton" }],
-  },
-  {
-    id: "pixie-companion",
-    title: "Pixie",
-    descriptionLines: ["Restores 1 Health each turn", "Companion"],
-    art: pixieCompanion,
-    cost: 1,
-    consume: true,
-    effects: [{ kind: "summon-companion", companionId: "pixie" }],
-  },
-  {
+    companionId: "skeleton",
+  }),
+  summonCompanionCard({ id: "pixie-companion", title: "Pixie", art: pixieCompanion, companionId: "pixie" }),
+  summonCompanionCard({
     id: "mana-moth-companion",
     title: "Mana Moth",
-    descriptionLines: ["Restores 1 Mana each turn", "Companion"],
     art: manaMothCompanion,
-    cost: 1,
-    consume: true,
-    effects: [{ kind: "summon-companion", companionId: "mana-moth" }],
-  },
-  {
+    companionId: "mana-moth",
+  }),
+  summonCompanionCard({
     id: "will-o-wisp-companion",
     title: "Will-o'-Wisp",
-    descriptionLines: ["Cleanses 1 harmful status each turn", "Companion"],
     art: willOWispCompanion,
-    cost: 1,
-    consume: true,
-    effects: [{ kind: "summon-companion", companionId: "will-o-wisp" }],
-  },
-  {
+    companionId: "will-o-wisp",
+  }),
+  summonCompanionCard({
     id: "golden-retriever-companion",
     title: "Golden Retriever",
-    descriptionLines: ["Steals 1 Gold each turn", "Companion"],
     art: goldenRetrieverCompanion,
-    cost: 1,
-    consume: true,
-    effects: [{ kind: "summon-companion", companionId: "golden-retriever" }],
-  },
-  {
+    companionId: "golden-retriever",
+  }),
+  summonCompanionCard({
     id: "shield-scarab-companion",
     title: "Shield Scarab",
-    descriptionLines: ["Gain 2 Block each turn", "Companion"],
     art: shieldScarabCompanion,
-    cost: 1,
-    consume: true,
-    effects: [{ kind: "summon-companion", companionId: "shield-scarab" }],
-  },
-  {
+    companionId: "shield-scarab",
+  }),
+  summonCompanionCard({
     id: "library-owl-companion",
     title: "Library Owl",
-    descriptionLines: ["Draws 1 Card each turn", "Companion"],
     art: libraryOwlCompanion,
-    cost: 1,
-    consume: true,
-    effects: [{ kind: "summon-companion", companionId: "library-owl" }],
-  },
+    companionId: "library-owl",
+  }),
 ];

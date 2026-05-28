@@ -12,6 +12,7 @@ import { useAppStore } from "./app-store";
 export function resetActiveRunStores() {
   useBattleStore.getState().setSyncedBattleState(defaultBattleState());
   useBattleStore.getState().clearDisplayOverrides();
+  useBattleStore.getState().resetPortraitHurtTokens();
   useBattleStore.getState().setHasActiveBattle(false);
   useRunStore.getState().reset();
   useScreenStore.getState().setPendingContentSystemType("campaign");

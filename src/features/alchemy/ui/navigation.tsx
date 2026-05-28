@@ -245,6 +245,7 @@ export function GameMenu({
             };
     return (
       <div className="absolute inset-0 z-[120]" onClick={onClose}>
+        {/* anchorStyle: viewport-clamped fixed position from getBoundingClientRect — not expressible as static utilities */}
         <div className="fixed z-[121]" style={anchorStyle}>
           {panel}
         </div>

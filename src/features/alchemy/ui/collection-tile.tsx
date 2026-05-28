@@ -23,6 +23,7 @@ import { useInteractiveCard } from "./use-interactive-card";
 
 type CompendiumTileProps = {
   item: CollectionTileItem;
+  /** Grid stagger vars or parent layout offsets only — not for theme colors. */
   wrapperStyle?: CSSProperties;
 };
 

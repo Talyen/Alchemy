@@ -70,6 +70,7 @@ export default tseslint.config(
             { group: ["@/lib/validation/*"], message: "Import from @/lib/validation (barrel) instead of deep paths." },
             { group: ["@/features/alchemy/screens/*"], message: "Import from @/features/alchemy/screens (barrel) instead of deep paths." },
             { group: ["@/features/alchemy/utils/*"], message: "Import from @/features/alchemy/utils (barrel) instead of deep paths." },
+            { group: ["@/features/alchemy/storage/*"], message: "Import from @/features/alchemy/storage (barrel) instead of deep paths." },
           ],
         },
       ],

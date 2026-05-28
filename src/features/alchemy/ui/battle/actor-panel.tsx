@@ -261,7 +261,7 @@ function ActorStatsPanel({
       className={cn(
         "surface-muted rounded-shell-inner px-4 py-3 relative",
         cardWidthClass,
-        deathsDoorActive && "shadow-[0_0_30px_rgba(127,29,29,0.45)]",
+        deathsDoorActive && "shadow-deaths-door-glow",
         isDead && "animate-frame-fade surface-transparent",
       )}
     >

@@ -67,4 +67,13 @@ describe("createBattleSession", () => {
     expect(battleSessionRef.current).toBe(2);
     expect(cancel).toHaveBeenCalled();
   });
+
+  it("resetBattleSession clears portrait hurt tokens", () => {
+    useBattleStore.getState().hurtPlayer();
+    useBattleStore.getState().hurtEnemy();
+    const { session } = makeSession();
+    session.resetBattleSession();
+    expect(useBattleStore.getState().playerHurtFlashToken).toBe(0);
+    expect(useBattleStore.getState().enemyHurtFlashToken).toBe(0);
+  });
 });
