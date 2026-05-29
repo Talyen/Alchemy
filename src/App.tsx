@@ -246,6 +246,8 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
         <div className="relative" style={frameStyle}>
           <div
             ref={vrStageRef}
+            data-testid="vr-stage"
+            data-stage-pixel-ratio={stagePixelRatio}
             className={cn(
               "absolute left-0 top-0 overflow-hidden bg-background [container-type:size]",
               tooltipBlocked && "tooltips-disabled",

@@ -88,17 +88,29 @@ for (const { width, height, label } of RESOLUTIONS) {
   });
 }
 
+function isIdentityTransform(transform: string): boolean {
+  if (transform === "none") return true;
+  const scaleMatch = transform.match(/^scale\(([^)]+)\)/);
+  if (scaleMatch) return Math.abs(parseFloat(scaleMatch[1]) - 1) < 0.001;
+  const matrixMatch = transform.match(/^matrix\(([^,]+),/);
+  if (matrixMatch) return Math.abs(parseFloat(matrixMatch[1]) - 1) < 0.001;
+  return false;
+}
+
 test.describe("Ultra HD 3840x2160 (4K) additional checks", () => {
   test("stage uses native resolution (no CSS transform scaling)", async ({ page }) => {
     await setAspectRatio(page, "16:9");
     await page.setViewportSize({ width: 3840, height: 2160 });
     await page.goto("/");
+    await expect(page.getByRole("button", { name: "Play" })).toBeVisible();
 
-    const transform = await page.evaluate(() => {
-      const stage = document.querySelector('[class*="overflow-hidden"][class*="bg-background"]');
-      if (!stage) return "not-found";
-      return window.getComputedStyle(stage).transform;
-    });
-    expect(transform).toBe("none");
+    const stage = page.getByTestId("vr-stage");
+    await expect(stage).toBeVisible();
+
+    const transform = await stage.evaluate((el) => window.getComputedStyle(el).transform);
+    expect(isIdentityTransform(transform)).toBe(true);
+
+    const pixelRatio = Number(await stage.getAttribute("data-stage-pixel-ratio"));
+    expect(pixelRatio).toBeGreaterThan(1);
   });
 });

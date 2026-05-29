@@ -17,9 +17,9 @@ test.describe("Difficulty Select", () => {
     await page.getByRole("button", { name: "Continue" }).click();
 
     await expect(page.getByRole("heading", { name: "A Knight's Journey" })).toBeVisible();
-    await expect(page.getByAltText("Novice")).toBeVisible();
-    await expect(page.getByAltText("Adventurer")).toBeVisible();
-    await expect(page.getByAltText("Legend")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Novice" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Adventurer" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Legend" })).toBeVisible();
     await expect(page.getByText("Locked").first()).toBeVisible();
   });
 
@@ -38,7 +38,7 @@ test.describe("Difficulty Select", () => {
     await page.getByRole("button", { name: "Knight" }).click();
     await page.getByRole("button", { name: "Continue" }).click();
 
-    await page.getByAltText("Novice").click();
+    await page.getByRole("button", { name: "Novice" }).click();
     await expect(playBtn).toBeEnabled();
     await playBtn.click();
     await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 5000 });
@@ -51,9 +51,9 @@ test.describe("Difficulty Select", () => {
     await page.getByRole("button", { name: "Continue" }).click();
 
     await expect(page.getByRole("heading", { name: "A Wizard's Saga" })).toBeVisible();
-    await expect(page.getByAltText("Novice")).toBeVisible();
-    await expect(page.getByAltText("Adventurer")).toBeVisible();
-    await expect(page.getByAltText("Legend")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Novice" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Adventurer" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Legend" })).toBeVisible();
   });
 });
 
