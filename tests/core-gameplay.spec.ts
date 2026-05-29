@@ -142,6 +142,7 @@ test.describe("Card Interactions", () => {
 
 test.describe("Elite Combat", critical, () => {
   test("elite combat destination starts a battle that can be won", async ({ page }) => {
+    await enableFastMode(page);
     await startAtDestination(
       page,
       { runDeck: Array.from({ length: 6 }, () => makeHighDamageCard()) },
