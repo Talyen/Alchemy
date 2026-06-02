@@ -5,7 +5,7 @@ import type { Screen } from "./screens";
 import { ROUTE_SCREENS } from "./screens";
 
 /** Screens available from the main menu without an active run. */
-export const META_SCREENS = [
+const META_SCREENS = [
   ROUTE_SCREENS.MENU,
   ROUTE_SCREENS.GAME_MODE_SELECT,
   ROUTE_SCREENS.CHARACTER_SELECT,
@@ -19,7 +19,7 @@ export const META_SCREENS = [
 ] as const satisfies readonly Screen[];
 
 /** Screens that only make sense while a run is in progress (or mid-resume). */
-export const RUN_LOOP_SCREENS = [
+const RUN_LOOP_SCREENS = [
   ROUTE_SCREENS.BATTLE,
   ROUTE_SCREENS.REWARDS,
   ROUTE_SCREENS.DESTINATION,
@@ -32,10 +32,7 @@ export const RUN_LOOP_SCREENS = [
 ] as const satisfies readonly Screen[];
 
 /** Terminal run outcomes. */
-export const RUN_END_SCREENS = [
-  ROUTE_SCREENS.GAME_OVER,
-  ROUTE_SCREENS.RUN_VICTORY,
-] as const satisfies readonly Screen[];
+const RUN_END_SCREENS = [ROUTE_SCREENS.GAME_OVER, ROUTE_SCREENS.RUN_VICTORY] as const satisfies readonly Screen[];
 
 const META_SCREEN_SET = new Set<Screen>(META_SCREENS);
 const RUN_LOOP_SET = new Set<Screen>(RUN_LOOP_SCREENS);

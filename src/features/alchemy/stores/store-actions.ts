@@ -36,11 +36,11 @@ function pickActions<T extends Record<string, unknown>, K extends keyof T>(state
   return out;
 }
 
-export function selectAppActions(state: ReturnType<typeof useAppStore.getState>): AppStoreActions {
+function selectAppActions(state: ReturnType<typeof useAppStore.getState>): AppStoreActions {
   return pickActions(state, appActionKeys);
 }
 
-export function selectHomesteadActions(state: ReturnType<typeof useHomesteadStore.getState>): HomesteadStoreActions {
+function selectHomesteadActions(state: ReturnType<typeof useHomesteadStore.getState>): HomesteadStoreActions {
   return pickActions(state, homesteadActionKeys);
 }
 
