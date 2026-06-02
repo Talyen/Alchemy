@@ -21,7 +21,7 @@ import {
   type RewardState,
 } from "../navigation/reward-flow";
 import { getRandomPotionCard } from "../navigation/reward-gold";
-import { flushAlchemySaveNow } from "@/features/alchemy/storage/flush-save";
+import { flushAlchemySaveNow } from "@/features/alchemy/storage";
 import { applyRunDefeatTeardown, getPreviousDestination } from "../navigation/run-navigation-helpers";
 import { appendCardToRunWithDiscovery, appendTrinketToRunWithDiscovery } from "./deck-mutations";
 import type { ContentSystemNavigationApi } from "./content-system-navigation";

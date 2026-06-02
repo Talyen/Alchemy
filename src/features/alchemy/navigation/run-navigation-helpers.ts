@@ -4,7 +4,7 @@
 import { DEFAULT_BATTLE_ENEMY_TYPE, DEFAULT_CAMPAIGN_DIFFICULTY_ID } from "@/lib/game-constants";
 import type { BattleCard, CharacterId, DifficultyId, DifficultyModifier } from "@/lib/game-data";
 import { playDefeat, stopAllSfx } from "@/lib/audio";
-import { flushAlchemySaveNow } from "@/features/alchemy/storage/flush-save";
+import { flushAlchemySaveNow } from "@/features/alchemy/storage";
 import type { Destination } from "@/features/alchemy/types";
 
 export function getPreviousDestination(

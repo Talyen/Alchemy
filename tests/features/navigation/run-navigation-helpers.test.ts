@@ -13,12 +13,16 @@ vi.mock("@/lib/audio", () => ({
   playDefeat: vi.fn(),
 }));
 
-vi.mock("@/features/alchemy/storage/flush-save", () => ({
-  flushAlchemySaveNow: vi.fn().mockResolvedValue(undefined),
-}));
+vi.mock("@/features/alchemy/storage", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/alchemy/storage")>();
+  return {
+    ...actual,
+    flushAlchemySaveNow: vi.fn().mockResolvedValue(undefined),
+  };
+});
 
 import { playDefeat, stopAllSfx } from "@/lib/audio";
-import { flushAlchemySaveNow } from "@/features/alchemy/storage/flush-save";
+import { flushAlchemySaveNow } from "@/features/alchemy/storage";
 
 describe("getPreviousDestination", () => {
   it("returns undefined at the start of an act", () => {
