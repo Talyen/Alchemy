@@ -13,7 +13,12 @@ vi.mock("@/lib/audio", () => ({
   playDefeat: vi.fn(),
 }));
 
+vi.mock("@/features/alchemy/storage/flush-save", () => ({
+  flushAlchemySaveNow: vi.fn().mockResolvedValue(undefined),
+}));
+
 import { playDefeat, stopAllSfx } from "@/lib/audio";
+import { flushAlchemySaveNow } from "@/features/alchemy/storage/flush-save";
 
 describe("getPreviousDestination", () => {
   it("returns undefined at the start of an act", () => {
@@ -114,6 +119,7 @@ describe("applyRunDefeatTeardown", () => {
 
     expect(awardRunEndMaterials).toHaveBeenCalledOnce();
     expect(finalizeRunXP).toHaveBeenCalledOnce();
+    expect(flushAlchemySaveNow).toHaveBeenCalledWith(null);
     expect(clearCombatState).toHaveBeenCalledOnce();
     expect(stopAllSfx).toHaveBeenCalledOnce();
     expect(playDefeat).toHaveBeenCalledOnce();

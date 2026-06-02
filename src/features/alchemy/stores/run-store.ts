@@ -13,7 +13,14 @@ import {
   type KeywordId,
   type UnlockedTalents,
 } from "@/lib/game-data";
-import { addTalentXP, xpThresholdForPoints, type TalentXP } from "@/lib/talents";
+import {
+  addTalentXP,
+  computeRunEndTalentXPSnapshot,
+  mergeRunTalentXPIntoPermanent,
+  xpThresholdForPoints,
+  type TalentXP,
+} from "@/lib/talents";
+import { useRunSessionStore } from "./run-session-store";
 import type { RunStartSnapshot } from "@/features/alchemy/run/run-start";
 import {
   createInitialRunState,
@@ -118,19 +125,16 @@ export const useRunStore = create<RunStore>()((set) => {
 
     finalizeRunXP: () =>
       set((s) => {
-        if (Object.keys(s.runTalentXP).length === 0) return s;
+        if (Object.keys(s.runTalentXP).length === 0) {
+          useRunSessionStore.getState().setRunEndTalentXP({});
+          return s;
+        }
 
         const multiplier = getDifficultyXPMultiplier(s.selectedDifficulty);
+        useRunSessionStore.getState().setRunEndTalentXP(computeRunEndTalentXPSnapshot(s.runTalentXP, multiplier));
 
-        const nextTalentXP = { ...s.talentXP };
-        for (const [kw, amount] of Object.entries(s.runTalentXP)) {
-          if (typeof amount === "number") {
-            const bonusAmount = Math.round(amount * multiplier);
-            nextTalentXP[kw as KeywordId] = (nextTalentXP[kw as KeywordId] ?? 0) + bonusAmount;
-          }
-        }
         return {
-          talentXP: nextTalentXP,
+          talentXP: mergeRunTalentXPIntoPermanent(s.runTalentXP, s.talentXP, multiplier),
           runTalentXP: {},
         };
       }),
@@ -144,7 +148,8 @@ export const useRunStore = create<RunStore>()((set) => {
     },
 
     hydrateFromSnapshot: (snapshot: RunStartSnapshot) => {
-      set(runFieldsFromSnapshot(snapshot));
+      useRunSessionStore.getState().setRunEndTalentXP({});
+      set({ ...runFieldsFromSnapshot(snapshot), runTalentXP: {} });
     },
   };
 });

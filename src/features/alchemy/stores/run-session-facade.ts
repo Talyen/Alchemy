@@ -15,6 +15,7 @@ export type RunSessionSnapshot = {
   talentXP: ReturnType<typeof useRunStore.getState>["talentXP"];
   unlockedTalents: ReturnType<typeof useRunStore.getState>["unlockedTalents"];
   runTalentXP: ReturnType<typeof useRunStore.getState>["runTalentXP"];
+  runEndTalentXP: ReturnType<typeof useRunSessionStore.getState>["runEndTalentXP"];
   hasActiveRun: boolean;
   hasActiveBattle: boolean;
   battleState: BattleState;
@@ -42,6 +43,7 @@ export function getRunSessionSnapshot(): RunSessionSnapshot {
     talentXP: run.talentXP,
     unlockedTalents: run.unlockedTalents,
     runTalentXP: run.runTalentXP,
+    runEndTalentXP: session.runEndTalentXP,
     hasActiveRun: session.hasActiveRun,
     hasActiveBattle: battle.hasActiveBattle,
     battleState: battle.battleState,

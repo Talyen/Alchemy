@@ -139,7 +139,7 @@ export const runLoopScreenRoutes: Partial<
   ),
   "game-over": ({ actions: a, runScreenData: r }) => (
     <GameOverScreen
-      runTalentXP={r.runTalentXP}
+      runEndTalentXP={r.runEndTalentXP}
       talentXP={r.talentXP}
       runEndMaterials={r.runEndMaterials}
       onMainMenu={a.runFlow.resetRunState}
@@ -147,7 +147,7 @@ export const runLoopScreenRoutes: Partial<
   ),
   "run-victory": ({ actions: a, runScreenData: r }) => (
     <RunVictoryScreen
-      runTalentXP={r.runTalentXP}
+      runEndTalentXP={r.runEndTalentXP}
       talentXP={r.talentXP}
       runEndMaterials={r.runEndMaterials}
       onMainMenu={a.runFlow.resetRunState}

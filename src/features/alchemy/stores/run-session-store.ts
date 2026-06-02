@@ -13,6 +13,7 @@ import type { Setter } from "@/lib/utils";
 import type { BattleCard } from "@/lib/game-data";
 import type { ShopState, AlchemistState } from "@/features/alchemy/shop/shop-state-init";
 import { SHOP_REFRESHES, ALCHEMIST_REFRESHES } from "@/lib/game-constants";
+import type { TalentXP } from "@/lib/talents";
 
 const emptyShop: ShopState = { cards: [], refreshesLeft: SHOP_REFRESHES, removeUsed: false, firstPurchaseUsed: false };
 const emptyAlchemist: AlchemistState = {
@@ -30,6 +31,7 @@ type RunSessionStore = {
   rewardState: RewardState;
   companionRewardCards: BattleCard[] | null;
   runEndMaterials: MaterialInventory;
+  runEndTalentXP: TalentXP;
   corruptionResult: CorruptionResult | null;
   pendingCharacterId: CharacterId | null;
   pendingContentSystemType: ContentSystemId;
@@ -46,6 +48,7 @@ type RunSessionStore = {
   setRewardState: Setter<RewardState>;
   setCompanionRewardCards: (cards: BattleCard[] | null) => void;
   setRunEndMaterials: (materials: MaterialInventory) => void;
+  setRunEndTalentXP: (xp: TalentXP) => void;
   setCorruptionResult: (result: CorruptionResult | null) => void;
   setPendingCharacterId: (id: CharacterId | null) => void;
   setPendingContentSystemType: (type: ContentSystemId) => void;
@@ -64,6 +67,7 @@ export const useRunSessionStore = create<RunSessionStore>()((set) => ({
   rewardState: createEmptyRewardState(),
   companionRewardCards: null,
   runEndMaterials: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 },
+  runEndTalentXP: {},
   corruptionResult: null,
   pendingCharacterId: null,
   pendingContentSystemType: "campaign",
@@ -81,6 +85,7 @@ export const useRunSessionStore = create<RunSessionStore>()((set) => ({
     set((s) => ({ rewardState: typeof action === "function" ? action(s.rewardState) : action })),
   setCompanionRewardCards: (cards) => set({ companionRewardCards: cards }),
   setRunEndMaterials: (materials) => set({ runEndMaterials: materials }),
+  setRunEndTalentXP: (xp) => set({ runEndTalentXP: xp }),
   setCorruptionResult: (result) => set({ corruptionResult: result }),
   setPendingCharacterId: (id) => set({ pendingCharacterId: id }),
   setPendingContentSystemType: (type) => set({ pendingContentSystemType: type }),

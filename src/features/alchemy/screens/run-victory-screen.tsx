@@ -12,12 +12,12 @@ import type { MaterialInventory } from "@/lib/homestead/types";
 import type { TalentXP } from "@/lib/talents";
 
 export function RunVictoryScreen({
-  runTalentXP,
+  runEndTalentXP,
   talentXP,
   runEndMaterials,
   onMainMenu,
 }: {
-  runTalentXP: TalentXP;
+  runEndTalentXP: TalentXP;
   talentXP: TalentXP;
   runEndMaterials: MaterialInventory;
   onMainMenu: () => void;
@@ -25,10 +25,10 @@ export function RunVictoryScreen({
   const [animate, setAnimate] = useState(false);
   const keywordIds = useMemo(
     () =>
-      (Object.keys(runTalentXP) as KeywordId[]).filter(
-        (kw) => !keywordDefinitions[kw]?.hidden && (runTalentXP[kw] ?? 0) > 0,
+      (Object.keys(runEndTalentXP) as KeywordId[]).filter(
+        (kw) => !keywordDefinitions[kw]?.hidden && (runEndTalentXP[kw] ?? 0) > 0,
       ),
-    [runTalentXP],
+    [runEndTalentXP],
   );
   const earnedMaterials = useMemo(() => MATERIAL_IDS.filter((mat) => runEndMaterials[mat] > 0), [runEndMaterials]);
 
@@ -53,7 +53,7 @@ export function RunVictoryScreen({
               <div key={kw} className="flex-none w-[19.44cqh]">
                 <KeywordProgressCard
                   kw={kw}
-                  runXP={runTalentXP[kw] ?? 0}
+                  runXP={runEndTalentXP[kw] ?? 0}
                   totalXP={talentXP[kw] ?? 0}
                   animate={animate}
                 />

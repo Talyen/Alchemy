@@ -4,3 +4,4 @@
 export * from "./io";
 export * from "./types";
 export * from "./defaults";
+export * from "./flush-save";

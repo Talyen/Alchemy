@@ -21,6 +21,7 @@ import {
   type RewardState,
 } from "../navigation/reward-flow";
 import { getRandomPotionCard } from "../navigation/reward-gold";
+import { flushAlchemySaveNow } from "@/features/alchemy/storage/flush-save";
 import { applyRunDefeatTeardown, getPreviousDestination } from "../navigation/run-navigation-helpers";
 import { appendCardToRunWithDiscovery, appendTrinketToRunWithDiscovery } from "./deck-mutations";
 import type { ContentSystemNavigationApi } from "./content-system-navigation";
@@ -251,6 +252,7 @@ export function createRunDestinationHandlers(deps: RunDestinationHandlerDeps) {
   function completeRunVictory(displayMaterials: MaterialInventory | null = null, onRenderedScreenCommit?: () => void) {
     deps.awardRunEndMaterials(displayMaterials);
     deps.talents.finalizeRunXP();
+    void flushAlchemySaveNow(null);
     deps.setHasActiveBattle(false);
     getStore().setHasActiveRun(false);
     deps.navigateTo(CONSTANTS.SCREENS.RUN_VICTORY, onRenderedScreenCommit);

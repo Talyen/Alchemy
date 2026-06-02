@@ -22,6 +22,7 @@ export function resetActiveRunStores() {
   useRunSessionStore.getState().setRewardState(createEmptyRewardState());
   useRunSessionStore.getState().setMysteryEvent(null);
   useRunSessionStore.getState().setMysteryCardChoices(null);
+  useRunSessionStore.getState().setRunEndTalentXP({});
   useRunSessionStore.getState().setHasActiveRun(false);
   useUiStore.getState().clearCardHover();
 }

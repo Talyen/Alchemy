@@ -31,6 +31,7 @@ export function useRunScreenData(): RunScreenData {
       shopState: s.shopState,
       alchemistState: s.alchemistState,
       runEndMaterials: s.runEndMaterials,
+      runEndTalentXP: s.runEndTalentXP,
       pendingCharacterId: s.pendingCharacterId,
     })),
   );

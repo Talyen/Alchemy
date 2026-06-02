@@ -1,10 +1,13 @@
 import { describe, expect, it, beforeEach } from "vitest";
 import { useRunStore } from "@/features/alchemy/stores/run-store";
+import { useRunSessionStore } from "@/features/alchemy/stores/run-session-store";
+import { computeTalentPoints } from "@/lib/talents";
 import type { BattleCard } from "@/lib/game-data";
 import type { ActiveRunData } from "@/features/alchemy/run/types";
 
 beforeEach(() => {
   useRunStore.setState(useRunStore.getInitialState());
+  useRunSessionStore.setState(useRunSessionStore.getInitialState());
 });
 
 describe("initial state", () => {
@@ -247,6 +250,33 @@ describe("reset", () => {
   });
 });
 
+describe("talent XP accumulation through run end", () => {
+  it("awards card XP to runTalentXP then merges into permanent talentXP and points", () => {
+    const card: BattleCard = {
+      id: "slash",
+      title: "Slash",
+      descriptionLines: [""],
+      art: "",
+      cost: 1,
+      effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
+    };
+    useRunStore.setState({ selectedDifficulty: "difficulty-1" });
+
+    for (let i = 0; i < 10; i++) {
+      useRunStore.getState().awardCardXP(card);
+    }
+    expect(useRunStore.getState().runTalentXP.physical).toBe(10);
+    expect(computeTalentPoints(useRunStore.getState().talentXP.physical ?? 0)).toBe(0);
+
+    useRunStore.getState().finalizeRunXP();
+
+    expect(useRunStore.getState().runTalentXP).toEqual({});
+    expect(useRunStore.getState().talentXP.physical).toBe(10);
+    expect(computeTalentPoints(useRunStore.getState().talentXP.physical ?? 0)).toBe(1);
+    expect(useRunSessionStore.getState().runEndTalentXP.physical).toBe(10);
+  });
+});
+
 describe("finalizeRunXP", () => {
   it("applies no multiplier for difficulty-1", () => {
     useRunStore.setState({ selectedDifficulty: "difficulty-1" });
@@ -254,6 +284,7 @@ describe("finalizeRunXP", () => {
     useRunStore.getState().finalizeRunXP();
     expect(useRunStore.getState().talentXP.burn).toBe(10);
     expect(useRunStore.getState().runTalentXP).toEqual({});
+    expect(useRunSessionStore.getState().runEndTalentXP.burn).toBe(10);
   });
 
   it("applies 1.3x multiplier for difficulty-2", () => {
@@ -262,6 +293,7 @@ describe("finalizeRunXP", () => {
     useRunStore.getState().finalizeRunXP();
     expect(useRunStore.getState().talentXP.burn).toBe(13);
     expect(useRunStore.getState().runTalentXP).toEqual({});
+    expect(useRunSessionStore.getState().runEndTalentXP.burn).toBe(13);
   });
 
   it("applies 1.6x multiplier for difficulty-3", () => {
@@ -276,8 +308,40 @@ describe("finalizeRunXP", () => {
     useRunStore.setState({ selectedDifficulty: "difficulty-2" });
     useRunStore.getState().awardMysteryXP("burn", 10);
     useRunStore.getState().finalizeRunXP();
+    expect(useRunSessionStore.getState().runEndTalentXP.burn).toBe(13);
     useRunStore.getState().finalizeRunXP();
     expect(useRunStore.getState().talentXP.burn).toBe(13);
     expect(useRunStore.getState().runTalentXP).toEqual({});
+    expect(useRunSessionStore.getState().runEndTalentXP).toEqual({});
+  });
+
+  it("clears runEndTalentXP snapshot when there is no run XP to merge", () => {
+    useRunSessionStore.getState().setRunEndTalentXP({ burn: 99 });
+    useRunStore.getState().finalizeRunXP();
+    expect(useRunSessionStore.getState().runEndTalentXP).toEqual({});
+  });
+});
+
+describe("hydrateFromSnapshot", () => {
+  it("clears runTalentXP and runEndTalentXP when starting a fresh run", () => {
+    useRunStore.getState().awardMysteryXP("burn", 5);
+    useRunSessionStore.getState().setRunEndTalentXP({ burn: 5 });
+    useRunStore.getState().hydrateFromSnapshot({
+      characterId: "knight",
+      contentSystemType: "campaign",
+      freshDeck: [],
+      selectedDifficulty: "difficulty-1",
+      runGold: 0,
+      runPlayerHealth: 80,
+      runMaxHealth: 80,
+      roomsEncountered: 0,
+      currentAct: 1,
+      destinationIndexInAct: 0,
+      completedDestinations: [],
+      runTrinkets: [],
+      hasActiveRun: true,
+    });
+    expect(useRunStore.getState().runTalentXP).toEqual({});
+    expect(useRunSessionStore.getState().runEndTalentXP).toEqual({});
   });
 });

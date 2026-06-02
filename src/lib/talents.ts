@@ -62,6 +62,29 @@ export function addTalentXP(xp: TalentXP, keywordIds: KeywordId[], amount = 1): 
   return next;
 }
 
+/** XP earned this run per keyword after difficulty multiplier (for end-of-run UI). */
+export function computeRunEndTalentXPSnapshot(runTalentXP: TalentXP, multiplier: number): TalentXP {
+  const next: TalentXP = {};
+  for (const [kw, amount] of Object.entries(runTalentXP)) {
+    if (typeof amount === "number") {
+      next[kw as KeywordId] = Math.round(amount * multiplier);
+    }
+  }
+  return next;
+}
+
+/** Merges in-run keyword XP into permanent talent XP using the difficulty multiplier. */
+export function mergeRunTalentXPIntoPermanent(runTalentXP: TalentXP, talentXP: TalentXP, multiplier: number): TalentXP {
+  const nextTalentXP = { ...talentXP };
+  for (const [kw, amount] of Object.entries(runTalentXP)) {
+    if (typeof amount === "number") {
+      const bonusAmount = Math.round(amount * multiplier);
+      nextTalentXP[kw as KeywordId] = (nextTalentXP[kw as KeywordId] ?? 0) + bonusAmount;
+    }
+  }
+  return nextTalentXP;
+}
+
 export interface TalentKeywordProgress {
   totalXP: number;
   points: number;

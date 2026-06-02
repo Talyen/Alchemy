@@ -89,6 +89,7 @@ describe("createBattleCardPlay", () => {
     expect(useBattleStore.getState().battleState.hand.length).toBe(0);
     expect(useBattleStore.getState().battleState.enemyHealth).toBeLessThan(30);
     expect(deps.scheduleAutoEndTurn).toHaveBeenCalled();
+    expect(deps.talents.awardCardXP).toHaveBeenCalledWith(expect.objectContaining({ id: "slash" }));
   });
 
   it("rejects plays when mana is insufficient", () => {
@@ -105,6 +106,7 @@ describe("createBattleCardPlay", () => {
 
     expect(useBattleStore.getState().battleState).toEqual(state);
     expect(deps.scheduleAutoEndTurn).not.toHaveBeenCalled();
+    expect(deps.talents.awardCardXP).not.toHaveBeenCalled();
   });
 
   it("rejects plays when the player is defeated", () => {
