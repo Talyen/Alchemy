@@ -6,7 +6,7 @@ import { useEffect, useCallback, useRef, useMemo } from "react";
 import { TimerGroup } from "@/lib/animation/game-timer";
 import { useShallow } from "zustand/react/shallow";
 import { useRunAdapter, useTalentAdapter } from "./stores/run-store";
-import { resetActiveRunStores } from "./stores/reset";
+import { teardownRun } from "./stores/run-session-facade";
 import { useAppStore } from "./stores/app-store";
 import { useBattleStore } from "./stores/battle-store";
 import { useBattlePresentationStore } from "./stores/battle-presentation-store";
@@ -276,7 +276,7 @@ export function useRunNavigation({
     clearCardHover();
     setHasActiveBattle(false);
     navigateTo(CONSTANTS.SCREENS.MENU, () => {
-      resetActiveRunStores();
+      teardownRun();
     });
   }
 

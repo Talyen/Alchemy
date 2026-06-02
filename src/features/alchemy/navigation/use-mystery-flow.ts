@@ -2,7 +2,7 @@
 // Depends on: cardLibrary, useRunSessionStore, mysteryPool, and mystery-flow helpers.
 // Depended on by: useRunNavigation for managing the React state of mystery events during a run.
 import { cardLibrary } from "@/lib/game-data";
-import { pickMysteryEvent, type MysteryChoice } from "../mystery-events";
+import { pickMysteryEvent, type MysteryChoice } from "@/lib/mystery";
 import { appendCardToRunWithDiscovery } from "../run/deck-mutations";
 import { applyMysteryEffect } from "./mystery-flow";
 import { useRunSessionStore } from "../stores/run-session-store";

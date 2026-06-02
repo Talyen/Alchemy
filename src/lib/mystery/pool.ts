@@ -2,7 +2,7 @@
 import { mysteryEventArt, type KeywordId } from "@/lib/game-data";
 import type { MaterialId } from "@/lib/homestead/types";
 
-import type { MysteryEffect, MysteryEvent } from "./mystery-event-types";
+import type { MysteryEffect, MysteryEvent } from "./types";
 
 const art = (eventId: string): string => mysteryEventArt[eventId] ?? "";
 

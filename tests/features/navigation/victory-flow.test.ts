@@ -305,7 +305,6 @@ describe("commitVictoryRewards", () => {
       battleState: baseBattleState({ gold: 5, pendingMaterials: emptyInventory() }),
       addHomesteadMaterials: vi.fn(),
       addRunGold: vi.fn(),
-      setRunPlayerHealth: vi.fn(),
       setRunMaxHealth: vi.fn(),
       setRewardState: vi.fn(),
       setCompanionRewardCards: vi.fn(),

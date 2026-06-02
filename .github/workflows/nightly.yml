@@ -46,9 +46,9 @@ jobs:
           ls -la ~/.cache/ms-playwright || true
 
       - name: Run full e2e against production build
-        run: npx playwright test --project chromium
+        run: npm run test:e2e:preview
         env:
-          PLAYWRIGHT_VITE_MODE: preview
+          CI: true
 
       - name: Upload Playwright report
         if: failure()

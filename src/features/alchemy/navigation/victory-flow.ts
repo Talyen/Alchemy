@@ -21,6 +21,7 @@ import { getGenerousGoldBonus } from "./reward-gold";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import { CONSTANTS, type Destination } from "@/features/alchemy/types";
+import { syncBattleToRun } from "@/features/alchemy/stores/run-session-facade";
 import type { ContentSystemId, LabyrinthModifierKind } from "@/lib/content-systems/types";
 import {
   getActiveRewardModifiersForContentSystem,
@@ -276,7 +277,6 @@ export type CommitVictoryRewardsDeps = {
   battleState: BattleState;
   addHomesteadMaterials: (materials: MaterialInventory) => void;
   addRunGold: (amount: number) => void;
-  setRunPlayerHealth: (health: number) => void;
   setRunMaxHealth: (fn: (prev: number) => number) => void;
   setRewardState: (state: RewardState) => void;
   setCompanionRewardCards: (cards: BattleCard[] | null) => void;
@@ -289,7 +289,7 @@ export function commitVictoryRewards(result: VictoryRewardsResult, deps: CommitV
   }
 
   deps.addRunGold(result.goldEarned);
-  deps.setRunPlayerHealth(result.playerHealth);
+  syncBattleToRun({ playerHealth: result.playerHealth });
   if (result.maxHealthDelta > 0) {
     deps.setRunMaxHealth((prev) => prev + result.maxHealthDelta);
   }

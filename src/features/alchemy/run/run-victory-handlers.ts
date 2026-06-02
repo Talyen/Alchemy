@@ -99,7 +99,6 @@ export function createRunVictoryHandlers(deps: RunVictoryHandlerDeps) {
       battleState,
       addHomesteadMaterials: (materials) => useHomesteadStore.getState().addMaterials(materials),
       addRunGold: runState.addRunGold,
-      setRunPlayerHealth: runState.setRunPlayerHealth,
       setRunMaxHealth: runState.setRunMaxHealth,
       setRewardState: screenStore.setRewardState,
       setCompanionRewardCards: screenStore.setCompanionRewardCards,

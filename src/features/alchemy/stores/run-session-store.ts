@@ -4,8 +4,8 @@ import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-genera
 import type { LabyrinthMap, LabyrinthModifierKind, ContentSystemId } from "@/lib/content-systems/types";
 import type { RewardState } from "@/features/alchemy/navigation/reward-flow";
 import { createEmptyRewardState } from "@/features/alchemy/navigation/reward-flow";
-import type { MysteryEvent } from "@/features/alchemy/mystery-events";
-import type { CorruptionResult } from "@/features/alchemy/corruption";
+import type { CorruptionResult } from "@/lib/corruption";
+import type { MysteryEvent } from "@/lib/mystery";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { CharacterId } from "@/lib/game-data";
 import type { LabyrinthNodePosition } from "@/features/alchemy/run/types";

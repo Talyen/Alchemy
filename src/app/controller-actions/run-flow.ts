@@ -1,6 +1,6 @@
 // Mid-run flow actions for rewards, destinations, shops, mysteries, and labyrinth map.
 import type { BattleCard } from "@/lib/game-data";
-import type { MysteryChoice } from "@/features/alchemy/mystery-events";
+import type { MysteryChoice } from "@/lib/mystery";
 import type { Destination } from "@/lib/routing";
 
 export type RunFlowActions = {

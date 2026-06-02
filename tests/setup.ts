@@ -1,2 +1,8 @@
 // Shared vitest setup for all unit tests.
-// Mocks and utilities that should apply globally can be added here.
+if (typeof globalThis.window === "undefined") {
+  Object.defineProperty(globalThis, "window", {
+    value: { alchemyDesktop: undefined },
+    writable: true,
+    configurable: true,
+  });
+}

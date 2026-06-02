@@ -5,6 +5,7 @@ import { renderAlchemyScreenRoute } from "@/app/screen-routes";
 import type { RenderAlchemyScreenProps } from "@/app/render-screen-props";
 import { useAppStore } from "@/features/alchemy/stores/app-store";
 import { useHomesteadStore } from "@/features/alchemy/stores/homestead-store";
+import { useRunScreenData } from "@/features/alchemy/stores/use-run-screen-data";
 
 export type { RenderAlchemyScreenProps } from "@/app/render-screen-props";
 
@@ -55,6 +56,7 @@ export function RenderAlchemyScreen({
   );
   // eslint-disable-next-line react-compiler/react-compiler
   const appActions = useAppStore.getState();
+  const runScreenData = useRunScreenData();
   const homesteadValues = useHomesteadStore(
     useShallow((s) => ({
       materialInventory: s.materialInventory,
@@ -74,6 +76,7 @@ export function RenderAlchemyScreen({
     appActions,
     homesteadValues,
     homesteadActions,
+    runScreenData,
     handCardRefs,
     drawPileRef,
     discardPileRef,

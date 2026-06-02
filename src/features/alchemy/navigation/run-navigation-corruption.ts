@@ -2,7 +2,7 @@
 import { appendUnique } from "@/lib/utils";
 import { playUISound } from "@/lib/audio";
 import type { BattleCard } from "@/lib/game-data";
-import { corruptDeckCard } from "../corruption";
+import { corruptDeckCard } from "@/lib/corruption";
 import type { RunSessionStoreState } from "../stores/store-access";
 
 export function applyCorruptionToDeck(

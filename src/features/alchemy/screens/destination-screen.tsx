@@ -7,16 +7,17 @@ import { playBattleEvent } from "@/lib/audio";
 import { getBossById, getBossEnemy, keywordAliases, SHINE_PALETTES } from "../config";
 import { DestinationChoices, ScreenHeader } from "../ui/shared-ui";
 import { DESTINATIONS, type Destination } from "../types";
-import { useRunSessionStore } from "../stores/run-session-store";
+import type { RewardState } from "../navigation/reward-flow";
 
 export function DestinationScreen({
+  rewardState,
   onChoose,
   onPrepare,
 }: {
+  rewardState: RewardState;
   onChoose: (destination: Destination) => void;
   onPrepare: () => void;
 }) {
-  const rewardState = useRunSessionStore((s) => s.rewardState);
   const destinationOptions = rewardState.destinations;
   const bossOnly = destinationOptions.length === 1 && destinationOptions[0] === DESTINATIONS.BOSS_COMBAT;
 

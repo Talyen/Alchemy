@@ -30,7 +30,14 @@ describe("RewardsScreen", () => {
     const user = userEvent.setup();
     const onSelectReward = vi.fn();
 
-    render(<RewardsScreen onAddReward={vi.fn()} onSkip={vi.fn()} onSelectReward={onSelectReward} />);
+    render(
+      <RewardsScreen
+        rewardState={useRunSessionStore.getState().rewardState}
+        onAddReward={vi.fn()}
+        onSkip={vi.fn()}
+        onSelectReward={onSelectReward}
+      />,
+    );
 
     await user.click(screen.getByRole("button", { name: /select slash/i }));
 

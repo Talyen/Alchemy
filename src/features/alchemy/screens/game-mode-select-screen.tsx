@@ -8,23 +8,23 @@ import { gameModeMeta, staticCardTransform } from "../config";
 import { PressableMotion } from "../ui/pressable-motion";
 import { ScreenHeader } from "../ui/shared-ui";
 import { clearTiltFromEvent, setTiltFromEvent } from "../utils";
-import { useRunSessionStore } from "../stores/run-session-store";
 
 const GAME_MODE_IDS = ["campaign", "labyrinth", "wildwood"] as const;
 type GameModeId = (typeof GAME_MODE_IDS)[number];
 
 export function GameModeSelectScreen({
+  hasActiveRun,
   onSelectCampaign,
   onSelectLabyrinth,
   onSelectWildwood,
   onBack,
 }: {
+  hasActiveRun: boolean;
   onSelectCampaign: () => void;
   onSelectLabyrinth: () => void;
   onSelectWildwood: () => void;
   onBack: () => void;
 }) {
-  const hasActiveRun = useRunSessionStore((s) => s.hasActiveRun);
   const [selectedModeId, setSelectedModeId] = useState<GameModeId | null>(null);
 
   const handlers: Record<GameModeId, () => void> = {

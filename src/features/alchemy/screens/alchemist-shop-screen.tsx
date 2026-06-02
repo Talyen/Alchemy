@@ -18,25 +18,27 @@ import { PurchasableCardItem, SelectableShopCard } from "../ui/shop-card-item";
 import { CardSelectionGrid } from "../ui/card-selection-grid";
 import { GoldDisplay, ScreenDescription, ScreenHeader, ServiceButton } from "../ui/shared-ui";
 import { collectionTileWidthClass } from "../config";
-import { useRunStore } from "../stores/run-store";
-import { useRunSessionStore } from "../stores/run-session-store";
-
 export function AlchemistShopScreen({
+  gold,
+  runDeck,
+  potionCards,
+  refreshesLeft,
+  mixUsed,
   onBuyCard,
   onRefresh,
   onMixPotions,
   onContinue,
 }: {
+  gold: number;
+  runDeck: BattleCard[];
+  potionCards: BattleCard[];
+  refreshesLeft: number;
+  mixUsed: boolean;
   onBuyCard: (card: BattleCard) => void;
   onRefresh: () => void;
   onMixPotions: (indexA: number, indexB: number) => BattleCard | null;
   onContinue: () => void;
 }) {
-  const gold = useRunStore((s) => s.runGold);
-  const runDeck = useRunStore((s) => s.runDeck);
-  const potionCards = useRunSessionStore((s) => s.alchemistState.potions);
-  const refreshesLeft = useRunSessionStore((s) => s.alchemistState.refreshesLeft);
-  const mixUsed = useRunSessionStore((s) => s.alchemistState.mixUsed);
   const potionPrice = ALCHEMIST_POTION_PRICE;
   const mixPrice = ALCHEMIST_MIX_PRICE;
   const [mixMode, setMixMode] = useState(false);

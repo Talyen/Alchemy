@@ -9,7 +9,7 @@ import {
   PREVIOUS_DESTINATION_WEIGHT,
 } from "@/lib/game-constants";
 
-import { getAvailableDestinations as getFilteredDestinations } from "../config";
+import { getAvailableDestinations as getFilteredDestinations } from "@/lib/routing";
 import { DESTINATIONS, type Destination } from "../types";
 import type { RewardState } from "./reward-flow";
 import { withSelectedBossForDestinations } from "./victory-flow";

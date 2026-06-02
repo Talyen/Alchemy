@@ -11,6 +11,7 @@ import { useRunSessionStore } from "./run-session-store";
 import { useHomesteadStore } from "./homestead-store";
 import { useAppStore } from "./app-store";
 
+/** Prefer {@link teardownRun} from run-session-facade at call sites outside this module. */
 export function resetActiveRunStores() {
   useBattleStore.getState().setSyncedBattleState(defaultBattleState());
   useBattleStore.getState().clearDisplayOverrides();

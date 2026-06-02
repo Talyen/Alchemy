@@ -13,4 +13,5 @@ export { tickEnemyStatuses, tickPlayerStatuses } from "./status-ticks";
 export { chooseWishCard } from "./wish";
 export { processCompanionTurnStart } from "./companion";
 export { endPlayerTurn } from "./enemy-turn";
+export { getBattleStartPlayerHealth } from "./start-health";
 export * from "./cost";

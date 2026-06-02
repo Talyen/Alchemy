@@ -13,7 +13,7 @@ import { DetailPopup } from "../ui/card-popup";
 import { ScreenHeader } from "../ui/shared-ui";
 import { TiltSurface } from "../ui/tilt-surface";
 import { cardSurfaceClass, collectionTileWidthClass } from "../config";
-import { useRunSessionStore } from "../stores/run-session-store";
+import type { RewardState } from "../navigation/reward-flow";
 import { useInteractiveCard } from "../ui/use-interactive-card";
 
 function TrinketRewardButton({
@@ -86,15 +86,16 @@ function RewardCardItem({
 }
 
 export function RewardsScreen({
+  rewardState,
   onAddReward,
   onSkip,
   onSelectReward,
 }: {
+  rewardState: RewardState;
   onAddReward: () => void;
   onSkip: () => void;
   onSelectReward: (id: string) => void;
 }) {
-  const rewardState = useRunSessionStore((s) => s.rewardState);
   const rewardType = rewardState.rewardType;
   const rewardChoices = rewardState.choices;
   const rewardGold = rewardState.gold;

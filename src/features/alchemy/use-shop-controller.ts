@@ -7,7 +7,7 @@ import { computeTrinketManifest } from "@/lib/trinkets";
 import { appendUnique } from "@/lib/utils";
 import { appendCardToRunWithDiscovery } from "./run/deck-mutations";
 import { refreshOfferings, spendRunGold } from "./shop-transactions";
-import { applyMixToDeck, tryCreateMixedPotion } from "./potion-mixer";
+import { applyMixToDeck, tryCreateMixedPotion } from "@/lib/alchemist";
 import {
   ALCHEMIST_MIX_PRICE,
   ALCHEMIST_POTION_PRICE,

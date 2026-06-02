@@ -12,19 +12,22 @@ import { ConfirmationDialog, HamburgerTrigger, PageLayout, ScreenHeader } from "
 import { useTalentChoices } from "../talents/use-talent-choices";
 import { playUISound } from "@/lib/audio";
 import { TalentTree } from "../talents/talent-tree";
-import { useRunStore } from "../stores/run-store";
+import type { UnlockedTalents } from "@/lib/game-data";
+import type { TalentXP } from "@/lib/talents";
 
 export function TalentsScreen({
+  talentXP,
+  unlockedTalents,
   onOpenMenu,
   onUnlockTalent,
   onResetTalents,
 }: {
+  talentXP: TalentXP;
+  unlockedTalents: UnlockedTalents;
   onOpenMenu: (rect?: DOMRect) => void;
   onUnlockTalent: (keywordId: KeywordId, talentId: string) => void;
   onResetTalents: () => void;
 }) {
-  const talentXP = useRunStore((s) => s.talentXP);
-  const unlockedTalents = useRunStore((s) => s.unlockedTalents);
   const [selectedKeyword, setSelectedKeyword] = useState<KeywordId>("physical");
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const keywordIds = useMemo(

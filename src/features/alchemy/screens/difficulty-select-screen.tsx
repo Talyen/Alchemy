@@ -5,7 +5,14 @@ import { Swords } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { characters, characterArt, difficultyConfigs, isDifficultyUnlocked, type DifficultyId } from "@/lib/game-data";
+import {
+  characters,
+  characterArt,
+  difficultyConfigs,
+  isDifficultyUnlocked,
+  type CharacterId,
+  type DifficultyId,
+} from "@/lib/game-data";
 import difficulty1Art from "@/assets/optimized/difficulty-1.webp";
 import difficulty2Art from "@/assets/optimized/difficulty-2.webp";
 import difficulty3Art from "@/assets/optimized/difficulty-3.webp";
@@ -18,8 +25,6 @@ import { clearTiltFromEvent, setTiltFromEvent, tokenizeDescription } from "../ut
 import { battleCardWidthClass, cardSurfaceClass, staticCardTransform } from "../config";
 import { TooltipPanel } from "../ui/tooltip-panel";
 import { useUiStore } from "../stores/ui-store";
-import { useRunSessionStore } from "../stores/run-session-store";
-import { useRunStore } from "../stores/run-store";
 
 const DIFFICULTY_CONFIG = {
   XP_BONUSES: {
@@ -147,17 +152,19 @@ function DifficultyCard({
 }
 
 export function DifficultySelectScreen({
+  characterId,
+  selectedDifficulty,
   completedDifficulties,
   onSelect,
   onBack,
 }: {
+  characterId: CharacterId;
+  selectedDifficulty: DifficultyId | null;
   completedDifficulties: DifficultyId[];
   onSelect: (difficultyId: DifficultyId) => void;
   onBack: () => void;
 }) {
-  const characterId = useRunSessionStore((s) => s.pendingCharacterId)!;
-  const selectedDifficultyFromStore = useRunStore((s) => s.selectedDifficulty);
-  const [selectedDifficultyId, setSelectedDifficultyId] = useState<DifficultyId | null>(selectedDifficultyFromStore);
+  const [selectedDifficultyId, setSelectedDifficultyId] = useState<DifficultyId | null>(selectedDifficulty);
   const config = difficultyConfigs[characterId];
   const char = characters[characterId];
   const art = characterArt[char.id];

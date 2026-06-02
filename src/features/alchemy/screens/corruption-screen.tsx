@@ -14,8 +14,6 @@ import { CardSelectionGrid } from "../ui/card-selection-grid";
 import { BattleCardButton } from "../ui/card-button";
 import { CardTitle, getCardDisplayTitle } from "../ui/card-description-ui";
 import { ScreenDescription, ScreenHeader } from "../ui/shared-ui";
-import { useRunStore } from "../stores/run-store";
-import { useRunSessionStore } from "../stores/run-session-store";
 
 function CorruptionDeckCard({
   card,
@@ -187,14 +185,16 @@ function CorruptionResultView({ result, onContinue }: { result: CorruptionResult
 }
 
 export function CorruptionScreen({
+  runDeck,
+  result,
   onCorrupt,
   onExit,
 }: {
+  runDeck: BattleCard[];
+  result: CorruptionResult | null;
   onCorrupt: (cardIndex: number) => void;
   onExit: () => void;
 }) {
-  const runDeck = useRunStore((s) => s.runDeck);
-  const result = useRunSessionStore((s) => s.corruptionResult);
   const [selecting, setSelecting] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [page, setPage] = useState(0);

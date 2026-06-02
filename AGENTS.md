@@ -74,7 +74,8 @@ npm run test:coverage    # vitest with coverage
 npm test -- <path>       # Run a single test file (e.g. `npm test -- tests/lib/battle/foo.test.ts`)
 npm run test:e2e         # Playwright tests
 npm run test:e2e:smoke   # Playwright boot smoke test
-npm run test:e2e:critical # Playwright critical flow subset
+npm run test:e2e:critical # Playwright critical flow subset (preview build)
+npm run test:e2e:preview  # Full Playwright suite against preview build (same as main CI)
 npm run test:e2e:ui      # Playwright UI mode
 npm run balance:sim      # Balance simulator report
 npm run lint             # ESLint
@@ -242,7 +243,8 @@ Orchestration in `src/features/alchemy/` bridges pure lib logic to React UI. `*-
 | Store | File | Owns |
 |---|---|---|
 | App / options | `app-store.ts` | Display/audio options, collection discovery, completed difficulties |
-| Transient run UI | `screen-store.ts` | Reward state, shop/alchemist offers, labyrinth map + pending node, mystery event/choices, corruption result, pending character/content-system, hover/shimmer — **not** the active route string |
+| Transient run UI | `run-session-store.ts` | Reward state, shop/alchemist offers, labyrinth map + pending node, mystery event/choices, corruption result, pending character/content-system (`screen-store.ts` only resets session + ui stores) |
+| Run session facade | `stores/run-session-facade.ts` | `getRunSessionSnapshot`, `syncRunToBattleStart`, `syncBattleToRun`, `teardownRun`, `getCombinedRunGold` |
 | Run + talents | `run-store.ts` | Persistent run fields and talent XP/unlocks; exposes `useRunAdapter()` / `useTalentAdapter()` |
 | Battle | `battle-store.ts` | Synced battle state, display overrides, active-battle flag |
 | Homestead | `homestead-store.ts` | Material inventory and upgrade tiers |
@@ -303,14 +305,13 @@ Alchemy uses **one** loading experience at cold start, then instant screen navig
 | Step | File(s) |
 |---|---|
 | 1. Add to `DESTINATIONS` const | `src/features/alchemy/types.ts` |
-| 2. Add to `destinationPool` | `src/features/alchemy/config/routes.ts` |
-| 3. Add availability logic in `getAvailableDestinations()` | same file |
+| 2. Add to destination pool / availability | `src/lib/routing/destination-availability.ts` (re-exported from `features/alchemy/config/routes.ts`) |
 
 **Adding a new mystery effect kind**:
 
 | Step | File(s) |
 |---|---|
-| 1. Add `kind` string to `MysteryEffect` union | `src/features/alchemy/mystery-events.ts` |
+| 1. Add `kind` string to `MysteryEffect` union | `src/lib/mystery/types.ts` |
 | 2. Add `case` in `applyMysteryEffect()` switch | `src/features/alchemy/navigation/mystery-flow.ts` (pure logic) |
 | 3. Add fields to `MysteryEffectContext` if needed | `mystery-flow.ts` |
 | 4. Wire React hook if needed | `src/features/alchemy/navigation/use-mystery-flow.ts` |
@@ -459,7 +460,7 @@ Individual top-level lib modules are imported directly — e.g. `@/lib/talents.t
 
 ## Debugging
 
-- **Dev build** (`import.meta.env.DEV`): "Skip Combat" (battle screen) and "Unlock All" / Error Log QA panel (Options). Not available in production builds.
+- **Dev build** (`import.meta.env.DEV`): "Skip Combat" (battle screen) and "Unlock All" / Error Log QA panel (Options). Not available in production builds. E2E specs must not target these controls (enforced by ESLint on `tests/**/*.spec.ts`).
 - **Startup bypass**: `localStorage["alchemy-skip-loading-screen"]` (Playwright) skips the startup loading gate only — see `shouldSkipStartupLoadingGate()` in `src/features/alchemy/utils/dev-mode.ts`
 - **Startup validation**: `src/lib/validate-startup.ts` auto-runs assertions on boot — check console for errors if constants are invalid
 - **Console warnings**: `src/lib/battle/enemy-turn.ts` logs `[Enemy Turn]` warnings for unrecognized attack effects or missing trait handlers
@@ -486,7 +487,7 @@ Detailed PR steps live in Cursor user rules; this repo’s CI workflow is named 
 - **Card data/effects**: Run game-data tests + `tests/lib/game-data/descriptions-match-effects.test.ts` + relevant battle tests.
 - **Save, storage, or schema changes**: Run `tests/features/storage.test.ts`, `tests/features/storage/migrations.test.ts`, `tests/features/storage/active-run.test.ts`, validation tests, and legacy save fixtures under `tests/fixtures/`.
 - **UI flow changes**: Run the relevant Playwright spec in `tests/*.spec.ts`; use `npm run test:e2e:critical` for broad confidence.
-- **Store/controller changes**: Run matching `tests/features/stores/` (including `screen-store.test.ts`), navigation flow tests under `tests/features/navigation/`, and affected Playwright specs.
+- **Store/controller changes**: Run matching `tests/features/stores/` (including `run-session-facade.test.ts`), navigation flow tests under `tests/features/navigation/`, and affected Playwright specs.
 - **Desktop changes**: Run `npm run build:desktop` or a narrower package command.
 - **Balance simulation**: After battle logic or card data changes, consider `npm run balance:sim` to detect win-rate regressions.
 - **Content system changes** (labyrinth/wildwood): Run `tests/labyrinth.spec.ts`, `tests/labyrinth-node-types.spec.ts`, `tests/wildwood.spec.ts`.

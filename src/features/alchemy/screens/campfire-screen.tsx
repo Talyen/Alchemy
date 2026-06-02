@@ -7,11 +7,15 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { campfire, keywordDefinitions } from "@/lib/game-data";
 import { CAMPFIRE_ANIMATION_MS, CAMPFIRE_CONTINUE_DELAY, CAMPFIRE_HEAL_FRACTION } from "@/lib/game-constants";
-import { useRunStore } from "../stores/run-store";
-
-export function CampfireScreen({ onContinue }: { onContinue: () => void }) {
-  const playerHealth = useRunStore((s) => s.runPlayerHealth);
-  const maxHealth = useRunStore((s) => s.runMaxHealth);
+export function CampfireScreen({
+  playerHealth,
+  maxHealth,
+  onContinue,
+}: {
+  playerHealth: number;
+  maxHealth: number;
+  onContinue: () => void;
+}) {
   const [resting, setResting] = useState(false);
   const [displayHealth, setDisplayHealth] = useState(playerHealth);
   const [targetHealth, setTargetHealth] = useState(playerHealth);

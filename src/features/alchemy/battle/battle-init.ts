@@ -8,7 +8,7 @@ import { useBattleStore } from "../stores/battle-store";
 import { useBattlePresentationStore } from "../stores/battle-presentation-store";
 import { useRunStore } from "../stores/run-store";
 import { appendUnique } from "@/lib/utils";
-import { getBattleStartPlayerHealth } from "./battle-start";
+import { syncRunToBattleStart } from "../stores/run-session-facade";
 import type { RunStateController, TalentStateController } from "../stores/run-store";
 
 export type BattleInitDeps = {
@@ -58,12 +58,7 @@ export function createBattleInit(deps: BattleInitDeps) {
     deps.setCardTransfers([]);
     deps.setHiddenHandCardKeys(new Set());
     deps.setCardTransferInProgress(false);
-    const startingHealth = getBattleStartPlayerHealth(
-      deps.run.runPlayerHealth,
-      deps.run.runMaxHealth,
-      deps.run.runTrinkets,
-    );
-    deps.run.setRunPlayerHealth(startingHealth);
+    const startingHealth = syncRunToBattleStart();
     const nextRoomsEncountered = deps.run.roomsEncountered + 1;
     deps.run.setRoomsEncountered(nextRoomsEncountered);
     getPresentationStore().clearCardGhosts();

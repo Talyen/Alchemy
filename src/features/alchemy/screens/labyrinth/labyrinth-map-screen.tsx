@@ -6,7 +6,7 @@
 import { type CSSProperties, useState } from "react";
 
 import { HamburgerTrigger, ScreenHeader } from "../../ui/shared-ui";
-import { useRunSessionStore } from "../../stores/run-session-store";
+import type { LabyrinthMap } from "@/lib/content-systems/types";
 
 import { LabyrinthConnectionLayer } from "./labyrinth-connection-layer";
 import { LabyrinthNodeButton, type HoveredLabyrinthNode } from "./labyrinth-node-button";
@@ -14,13 +14,17 @@ import { LabyrinthNodeTooltip } from "./labyrinth-node-tooltip";
 import { positionStyle } from "./labyrinth-map-layout";
 
 type Props = {
+  labyrinthMap: LabyrinthMap | null;
   onNodeClick: (row: number, col: number) => void;
   onOpenMenu: (rect?: DOMRect) => void;
 };
 
-export function LabyrinthMapScreen({ onNodeClick, onOpenMenu }: Props) {
-  const labyrinthMap = useRunSessionStore((s) => s.labyrinthMap);
+export function LabyrinthMapScreen({ labyrinthMap, onNodeClick, onOpenMenu }: Props) {
   const [hoveredNode, setHoveredNode] = useState<HoveredLabyrinthNode | null>(null);
+
+  if (!labyrinthMap) {
+    return null;
+  }
 
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-4 overflow-hidden px-3 py-4 text-center sm:gap-5 sm:px-5 sm:py-6">

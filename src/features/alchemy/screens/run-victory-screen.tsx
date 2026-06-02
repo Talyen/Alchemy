@@ -1,6 +1,5 @@
 // Run victory screen — shown after defeating the Act III boss.
 import { useEffect, useMemo, useState } from "react";
-import { useShallow } from "zustand/react/shallow";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { keywordDefinitions, type KeywordId } from "@/lib/game-data";
@@ -9,14 +8,20 @@ import { MATERIAL_IDS, materialLabels } from "@/lib/homestead/types";
 import { ScreenHeader } from "../ui/shared-ui";
 import { matIconMap, matPillStyle, matTextColor } from "../ui/material-icons";
 import { KeywordProgressCard } from "./game-over-screen";
-import { useRunStore } from "../stores/run-store";
-import { useRunSessionStore } from "../stores/run-session-store";
+import type { MaterialInventory } from "@/lib/homestead/types";
+import type { TalentXP } from "@/lib/talents";
 
-export function RunVictoryScreen({ onMainMenu }: { onMainMenu: () => void }) {
-  const { runTalentXP, talentXP } = useRunStore(
-    useShallow((s) => ({ runTalentXP: s.runTalentXP, talentXP: s.talentXP })),
-  );
-  const runEndMaterials = useRunSessionStore((s) => s.runEndMaterials);
+export function RunVictoryScreen({
+  runTalentXP,
+  talentXP,
+  runEndMaterials,
+  onMainMenu,
+}: {
+  runTalentXP: TalentXP;
+  talentXP: TalentXP;
+  runEndMaterials: MaterialInventory;
+  onMainMenu: () => void;
+}) {
   const [animate, setAnimate] = useState(false);
   const keywordIds = useMemo(
     () =>

@@ -6,6 +6,7 @@ import { menuLogo, menuLogoVariants, cardLibrary, trinketLibrary } from "@/lib/g
 import type { AspectRatioOption, CollectionTab, DisplayMode, UiScale, Screen } from "@/features/alchemy/types";
 import type { CharacterId, DifficultyId } from "@/lib/game-data";
 import type { RenderAlchemyScreenProps } from "@/app/render-screen-props";
+import type { RunScreenData } from "@/features/alchemy/stores/use-run-screen-data";
 import { useAppStore } from "@/features/alchemy/stores/app-store";
 import { useHomesteadStore } from "@/features/alchemy/stores/homestead-store";
 import {
@@ -37,6 +38,7 @@ function withScreenBoundary(label: string, children: ReactNode) {
 }
 
 export type ScreenRouteContext = RenderAlchemyScreenProps & {
+  runScreenData: RunScreenData;
   appValues: {
     selectedAspectRatio: AspectRatioOption;
     displayMode: DisplayMode;
@@ -120,8 +122,9 @@ const SCREEN_ROUTES: Record<Screen, (ctx: ScreenRouteContext) => ReactNode> = {
       hasAffordableHomestead={hasAffordableHomestead}
     />
   ),
-  "game-mode-select": ({ actions: a }) => (
+  "game-mode-select": ({ actions: a, runScreenData: r }) => (
     <GameModeSelectScreen
+      hasActiveRun={r.hasActiveRun}
       onSelectCampaign={a.runStart.beginCampaign}
       onSelectLabyrinth={a.runStart.beginLabyrinth}
       onSelectWildwood={a.runStart.beginWildwood}
@@ -135,9 +138,13 @@ const SCREEN_ROUTES: Record<Screen, (ctx: ScreenRouteContext) => ReactNode> = {
     />
   ),
   "draft-deck": ({ actions: a }) => <DraftDeckScreen onComplete={a.runStart.handleDraftComplete} />,
-  "difficulty-select": ({ actions: a, appValues, pendingCharacterId }) => (
+  "difficulty-select": ({ actions: a, appValues, pendingCharacterId, runScreenData: r }) => (
     <DifficultySelectScreen
-      completedDifficulties={appValues.completedDifficulties[(pendingCharacterId ?? "knight") as CharacterId] ?? []}
+      characterId={(pendingCharacterId ?? r.pendingCharacterId ?? "knight") as CharacterId}
+      selectedDifficulty={r.selectedDifficulty}
+      completedDifficulties={
+        appValues.completedDifficulties[(pendingCharacterId ?? r.pendingCharacterId ?? "knight") as CharacterId] ?? []
+      }
       onSelect={a.runStart.handleDifficultySelect}
       onBack={a.runStart.handleBackFromDifficultySelect}
     />
@@ -185,8 +192,12 @@ const SCREEN_ROUTES: Record<Screen, (ctx: ScreenRouteContext) => ReactNode> = {
       playableHandCardKeys={playableHandCardKeys}
     />
   ),
-  "labyrinth-map": ({ actions: a, onOpenBattleMenu }) => (
-    <LabyrinthMapScreen onNodeClick={a.runFlow.handleLabyrinthNodeEnter} onOpenMenu={onOpenBattleMenu} />
+  "labyrinth-map": ({ actions: a, onOpenBattleMenu, runScreenData: r }) => (
+    <LabyrinthMapScreen
+      labyrinthMap={r.labyrinthMap}
+      onNodeClick={a.runFlow.handleLabyrinthNodeEnter}
+      onOpenMenu={onOpenBattleMenu}
+    />
   ),
   "wildwood-select": ({ actions: a }) => (
     <WildwoodSelectScreen
@@ -194,35 +205,59 @@ const SCREEN_ROUTES: Record<Screen, (ctx: ScreenRouteContext) => ReactNode> = {
       onBack={() => a.navigation.goToScreen("character-select")}
     />
   ),
-  rewards: ({ actions: a }) => (
+  rewards: ({ actions: a, runScreenData: r }) => (
     <RewardsScreen
+      rewardState={r.rewardState}
       onAddReward={a.runFlow.finishRewards}
       onSkip={a.runFlow.finishRewards}
       onSelectReward={a.runFlow.selectRewardChoice}
     />
   ),
-  destination: ({ actions: a }) => (
-    <DestinationScreen onChoose={a.runFlow.handleDestinationChoice} onPrepare={a.runFlow.prepareDestinationScreen} />
+  destination: ({ actions: a, runScreenData: r }) => (
+    <DestinationScreen
+      rewardState={r.rewardState}
+      onChoose={a.runFlow.handleDestinationChoice}
+      onPrepare={a.runFlow.prepareDestinationScreen}
+    />
   ),
-  campfire: ({ actions: a }) => <CampfireScreen onContinue={a.runFlow.handleCampfireContinue} />,
-  shop: ({ actions: a }) => (
+  campfire: ({ actions: a, runScreenData: r }) => (
+    <CampfireScreen
+      playerHealth={r.runPlayerHealth}
+      maxHealth={r.runMaxHealth}
+      onContinue={a.runFlow.handleCampfireContinue}
+    />
+  ),
+  shop: ({ actions: a, runScreenData: r }) => (
     <MerchantShopScreen
+      gold={r.runGold}
+      runDeck={r.runDeck}
+      shopCards={r.shopState.cards}
+      refreshesLeft={r.shopState.refreshesLeft}
+      removeUsed={r.shopState.removeUsed}
       onBuyCard={a.runFlow.handleShopBuyCard}
       onRemoveCard={a.runFlow.handleShopRemoveCard}
       onRefresh={a.runFlow.handleShopRefresh}
       onContinue={a.runFlow.handleShopContinue}
     />
   ),
-  alchemist: ({ actions: a }) => (
+  alchemist: ({ actions: a, runScreenData: r }) => (
     <AlchemistShopScreen
+      gold={r.runGold}
+      runDeck={r.runDeck}
+      potionCards={r.alchemistState.potions}
+      refreshesLeft={r.alchemistState.refreshesLeft}
+      mixUsed={r.alchemistState.mixUsed}
       onBuyCard={a.runFlow.handleAlchemistBuyCard}
       onRefresh={a.runFlow.handleAlchemistRefresh}
       onMixPotions={a.runFlow.handleAlchemistMixPotions}
       onContinue={a.runFlow.handleAlchemistContinue}
     />
   ),
-  mystery: ({ actions: a }) => (
+  mystery: ({ actions: a, runScreenData: r }) => (
     <MysteryScreen
+      event={r.mysteryEvent!}
+      runDeck={r.runDeck}
+      mysteryCardChoices={r.mysteryCardChoices}
       onChoose={a.runFlow.handleMysteryChoice}
       onChooseCard={a.runFlow.handleMysteryChooseCard}
       onRemoveCard={a.runFlow.handleMysteryRemoveCard}
@@ -231,8 +266,13 @@ const SCREEN_ROUTES: Record<Screen, (ctx: ScreenRouteContext) => ReactNode> = {
       findTrinket={(id) => trinketLibrary.find((t) => t.id === id)}
     />
   ),
-  corruption: ({ actions: a }) => (
-    <CorruptionScreen onCorrupt={a.runFlow.handleCorruptCard} onExit={a.runFlow.handleCorruptionExit} />
+  corruption: ({ actions: a, runScreenData: r }) => (
+    <CorruptionScreen
+      runDeck={r.runDeck}
+      result={r.corruptionResult}
+      onCorrupt={a.runFlow.handleCorruptCard}
+      onExit={a.runFlow.handleCorruptionExit}
+    />
   ),
   options: buildOptionsScreen,
   collection: ({ appValues, appActions, homesteadValues, onOpenBattleMenu }) => (
@@ -263,15 +303,31 @@ const SCREEN_ROUTES: Record<Screen, (ctx: ScreenRouteContext) => ReactNode> = {
       onBondCompanion={homesteadActions.bondCompanion}
     />
   ),
-  talents: ({ actions: a, onOpenBattleMenu }) => (
+  talents: ({ actions: a, onOpenBattleMenu, runScreenData: r }) => (
     <TalentsScreen
+      talentXP={r.talentXP}
+      unlockedTalents={r.unlockedTalents}
       onOpenMenu={onOpenBattleMenu}
       onUnlockTalent={a.meta.unlockTalent}
       onResetTalents={a.meta.resetUnlockedTalents}
     />
   ),
-  "game-over": ({ actions: a }) => <GameOverScreen onMainMenu={a.runFlow.resetRunState} />,
-  "run-victory": ({ actions: a }) => <RunVictoryScreen onMainMenu={a.runFlow.resetRunState} />,
+  "game-over": ({ actions: a, runScreenData: r }) => (
+    <GameOverScreen
+      runTalentXP={r.runTalentXP}
+      talentXP={r.talentXP}
+      runEndMaterials={r.runEndMaterials}
+      onMainMenu={a.runFlow.resetRunState}
+    />
+  ),
+  "run-victory": ({ actions: a, runScreenData: r }) => (
+    <RunVictoryScreen
+      runTalentXP={r.runTalentXP}
+      talentXP={r.talentXP}
+      runEndMaterials={r.runEndMaterials}
+      onMainMenu={a.runFlow.resetRunState}
+    />
+  ),
 };
 
 export function renderAlchemyScreenRoute(ctx: ScreenRouteContext): ReactNode {

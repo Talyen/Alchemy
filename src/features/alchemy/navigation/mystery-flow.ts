@@ -9,7 +9,7 @@ import type { MaterialId, MaterialInventory } from "@/lib/homestead/types";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import type { Dispatch, SetStateAction } from "react";
 
-import type { MysteryEffect } from "../mystery-events";
+import type { MysteryEffect } from "@/lib/mystery";
 import { sampleItems } from "../utils";
 
 export type MysteryEffectResult = {

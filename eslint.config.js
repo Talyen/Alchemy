@@ -136,6 +136,34 @@ export default tseslint.config(
     },
   },
 
+  // E2E specs run against preview/production builds — dev-only UI must not be targeted.
+  {
+    files: ["tests/**/*.spec.ts"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: 'MemberExpression[property.name="skipCombatBtn"]',
+          message:
+            "Skip Combat is dev-only. Use winViaCombat(), playCardNamed(), or damage cards; CI e2e runs preview builds.",
+        },
+        {
+          selector: 'CallExpression[callee.property.name="skipCombatToVictory"]',
+          message:
+            "skipCombatToVictory() is dev-only. Use winViaCombat() or playCardNamed() in preview-safe specs.",
+        },
+        {
+          selector: 'Literal[value="Skip Combat"]',
+          message: "Skip Combat is dev-only UI. Do not target it in e2e specs.",
+        },
+        {
+          selector: 'Literal[value="Unlock All"]',
+          message: "Unlock All is dev-only UI. Do not target it in e2e specs.",
+        },
+      ],
+    },
+  },
+
   // Node.js scripts (CommonJS + ESM) — after base rules so overrides take effect
   {
     files: ["desktop/**/*.cjs", "scripts/**/*.mjs"],

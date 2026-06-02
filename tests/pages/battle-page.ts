@@ -11,7 +11,6 @@ export class BattlePage {
   readonly victoryHeading = this.page.getByRole("heading", { name: /^Victory/ });
   readonly defeatHeading = this.page.getByRole("heading", { name: "Defeat" });
   readonly blockChip = this.page.getByRole("button", { name: /^Block \d+$/ }).first();
-  readonly skipCombatBtn = this.page.getByRole("button", { name: "Skip Combat" });
   readonly menuBtn = this.page.getByRole("button", { name: "Menu" });
   readonly companionPanel = this.page.getByTestId("active-companion");
   readonly deathsDoorIcon = this.page.getByLabel("Death's Door");
@@ -80,13 +79,7 @@ export class BattlePage {
     }
   }
 
-  async skipCombatToVictory() {
-    await expect(this.skipCombatBtn).toBeVisible({ timeout: 3000 });
-    await this.skipCombatBtn.click();
-    await expect(this.victoryHeading).toBeVisible({ timeout: 3000 });
-  }
-
-  /** Win by playing cards and ending turns — works in preview/production builds without dev skip. */
+  /** Win by playing cards and ending turns — works in preview/production builds. */
   async winViaCombat(maxTurns = 12) {
     for (let turn = 0; turn < maxTurns; turn++) {
       if (await this.isBattleOver()) break;

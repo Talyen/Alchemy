@@ -9,8 +9,6 @@ import { SELECTION_GRID_PAGE_SIZE, SHOP_CARD_PRICE, SHOP_REMOVE_PRICE, SHOP_REFR
 import { PurchasableCardItem, SelectableShopCard } from "../ui/shop-card-item";
 import { CardSelectionGrid } from "../ui/card-selection-grid";
 import { GoldCost, GoldDisplay, ScreenDescription, ScreenHeader, ServiceButton } from "../ui/shared-ui";
-import { useRunStore } from "../stores/run-store";
-import { useRunSessionStore } from "../stores/run-session-store";
 
 function DeckGridPaginated({
   cards,
@@ -49,21 +47,26 @@ function DeckGridPaginated({
 }
 
 export function MerchantShopScreen({
+  gold,
+  runDeck,
+  shopCards,
+  refreshesLeft,
+  removeUsed,
   onBuyCard,
   onRemoveCard,
   onRefresh,
   onContinue,
 }: {
+  gold: number;
+  runDeck: BattleCard[];
+  shopCards: BattleCard[];
+  refreshesLeft: number;
+  removeUsed: boolean;
   onBuyCard: (card: BattleCard) => void;
   onRemoveCard: (cardIndex: number) => void;
   onRefresh: () => void;
   onContinue: () => void;
 }) {
-  const gold = useRunStore((s) => s.runGold);
-  const runDeck = useRunStore((s) => s.runDeck);
-  const shopCards = useRunSessionStore((s) => s.shopState.cards);
-  const refreshesLeft = useRunSessionStore((s) => s.shopState.refreshesLeft);
-  const removeUsed = useRunSessionStore((s) => s.shopState.removeUsed);
   const cardPrice = SHOP_CARD_PRICE;
   const removePrice = SHOP_REMOVE_PRICE;
   const refreshPrice = SHOP_REFRESH_PRICE;
