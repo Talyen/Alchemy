@@ -1,7 +1,6 @@
 // Battle presentation screen for actors, hand fan, piles, ghosts, wish choices, and menu entry.
 // Driven by useBattleController; focused child modules own the layout slices.
 import { useMemo, type MouseEvent, type MutableRefObject } from "react";
-import { useShallow } from "zustand/react/shallow";
 import type { BattleCard } from "@/lib/game-data";
 import type { CardTransfer } from "../../types";
 import { CardGhostOverlay } from "../../ui/card-ghost-overlay";
@@ -15,15 +14,15 @@ import type {
   BattleFeedbackProps,
   BattleHoverProps,
   BattleRefsProps,
+  BattleScreenData,
   BattleScreenState,
 } from "./types";
-import { useBattleStore } from "../../stores/battle-store";
-import { useScreenStore } from "../../stores/screen-store";
 import { BATTLE_PARTICLE_ALPHA_BOSS, BATTLE_PARTICLE_ALPHA_NORMAL } from "@/lib/game-constants";
 import { getEnemyStatusChips, getPlayerStatusChips, isAlchemyDevBuild } from "../../utils";
 import { BackgroundParticles } from "../../ui/background-particles";
 
 type BattleScreenProps = {
+  battleScreenData: BattleScreenData;
   heroArt: string;
   playerName: string;
   aspectMode: "standard" | "narrow" | "ultrawide";
@@ -37,6 +36,7 @@ type BattleScreenProps = {
   onCardClick: (card: BattleCard, index: number, event: MouseEvent<HTMLButtonElement>) => void;
   onOpenMenu: (rect?: DOMRect) => void;
   onWishChoice: (card: BattleCard | null) => void;
+  playableHandCardKeys: Set<string>;
   onRemoveCardGhost: (id: string) => void;
   onSkipCombatDevMode: () => void;
   onEndTurn: () => void;
@@ -47,6 +47,7 @@ type BattleScreenProps = {
 
 export function BattleScreen(props: BattleScreenProps) {
   const {
+    battleScreenData,
     heroArt,
     playerName,
     aspectMode,
@@ -66,11 +67,13 @@ export function BattleScreen(props: BattleScreenProps) {
     cardTransfers,
     hiddenHandCardKeys,
     cardTransferInProgress,
+    playableHandCardKeys,
   } = props;
 
   const {
     battleState,
     displayOverrides,
+    revealedCardKeys,
     cardGhosts,
     floatingCombatTexts,
     enemyShaking,
@@ -78,27 +81,11 @@ export function BattleScreen(props: BattleScreenProps) {
     companionShaking,
     playerHurtFlashToken,
     enemyHurtFlashToken,
-  } = useBattleStore(
-    useShallow((s) => ({
-      battleState: s.battleState,
-      displayOverrides: s.displayOverrides,
-      cardGhosts: s.cardGhosts,
-      floatingCombatTexts: s.floatingCombatTexts,
-      enemyShaking: s.enemyShaking,
-      playerShaking: s.playerShaking,
-      companionShaking: s.companionShaking,
-      playerHurtFlashToken: s.playerHurtFlashToken,
-      enemyHurtFlashToken: s.enemyHurtFlashToken,
-    })),
-  );
-
-  const { shimmerState, hoveredCardId, activeLabyrinthModifiers } = useScreenStore(
-    useShallow((s) => ({
-      shimmerState: s.shimmerState,
-      hoveredCardId: s.hoveredCardId,
-      activeLabyrinthModifiers: s.activeLabyrinthModifiers,
-    })),
-  );
+    hoveredCardId,
+    shimmerState,
+    maybeTriggerShimmer,
+    activeLabyrinthModifiers,
+  } = battleScreenData;
 
   const displayState = useMemo(() => ({ ...battleState, ...displayOverrides }), [battleState, displayOverrides]);
 
@@ -129,6 +116,7 @@ export function BattleScreen(props: BattleScreenProps) {
   const hover: BattleHoverProps = {
     hoveredCardId,
     shimmerState,
+    maybeTriggerShimmer,
   };
 
   const feedback: BattleFeedbackProps = {
@@ -163,6 +151,8 @@ export function BattleScreen(props: BattleScreenProps) {
     onEndTurn,
     hiddenHandCardKeys,
     cardTransferInProgress,
+    playableHandCardKeys,
+    revealedCardKeys,
     isDevMode: isAlchemyDevBuild(),
   };
 

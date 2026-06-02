@@ -1,6 +1,6 @@
 // Run-flow controller for routing, rewards, mysteries, campfires, act transitions, and reset.
 /* eslint-disable react-hooks/refs -- mystery/destination wiring updates ref callbacks after hook init */
-// Depends on: useScreenStore, battle system, game constants, audio registry, and navigation flow helpers.
+// Depends on: run-session/ui stores, battle system, game constants, audio registry, and navigation flow helpers.
 // Depended on by: useAlchemyRunController for managing the overall flow of a run.
 import { useEffect, useCallback, useRef, useMemo } from "react";
 import { TimerGroup } from "@/lib/animation/game-timer";
@@ -9,15 +9,17 @@ import { useRunAdapter, useTalentAdapter } from "./stores/run-store";
 import { resetActiveRunStores } from "./stores/reset";
 import { useAppStore } from "./stores/app-store";
 import { useBattleStore } from "./stores/battle-store";
+import { useBattlePresentationStore } from "./stores/battle-presentation-store";
 import { type BattleCard, type CharacterId, type DifficultyId, type DifficultyModifier } from "@/lib/game-data";
 import { playUISound } from "@/lib/audio";
-import { appendUnique } from "@/lib/utils";
 import { CONSTANTS, type Destination, type Screen } from "./types";
 import { getRunAvailableDestinations } from "./navigation/destination-flow";
 import { getPreviousDestination } from "./navigation/run-navigation-helpers";
 import { useMysteryFlow } from "./navigation/use-mystery-flow";
-import { corruptDeckCard } from "./corruption";
-import { useScreenStore } from "./stores/screen-store";
+import { useUiStore } from "./stores/ui-store";
+import { useRunSessionStore } from "./stores/run-session-store";
+import { useRunNavigationSession } from "./navigation/run-navigation-session";
+import { applyCorruptionToDeck } from "./navigation/run-navigation-corruption";
 import { useActiveRunSnapshot } from "./run/use-active-run-snapshot";
 import { createRunVictoryHandlers } from "./run/run-victory-handlers";
 import { createContentSystemNavigation } from "./run/content-system-navigation";
@@ -57,14 +59,14 @@ export function useRunNavigation({
   const run = useRunAdapter();
   const talents = useTalentAdapter();
 
-  const { battleState, hasActiveBattle, setHasActiveBattle, clearCardGhosts } = useBattleStore(
+  const { battleState, hasActiveBattle, setHasActiveBattle } = useBattleStore(
     useShallow((s) => ({
       battleState: s.battleState,
       hasActiveBattle: s.hasActiveBattle,
       setHasActiveBattle: s.setHasActiveBattle,
-      clearCardGhosts: s.clearCardGhosts,
     })),
   );
+  const clearCardGhosts = useBattlePresentationStore((s) => s.clearCardGhosts);
 
   const { completedDifficulties, setDiscoveredCardIds, setEncounteredEnemyIds, setDiscoveredTrinketIds } = useAppStore(
     useShallow((s) => ({
@@ -88,25 +90,7 @@ export function useRunNavigation({
     corruptionResult,
     pendingCharacterId,
     pendingContentSystemType,
-  } = useScreenStore(
-    useShallow((s) => ({
-      clearCardHover: s.clearCardHover,
-      hasActiveRun: s.hasActiveRun,
-      labyrinthMap: s.labyrinthMap,
-      labyrinthPendingNode: s.activeLabyrinthPendingNode,
-      activeLabyrinthModifiers: s.activeLabyrinthModifiers,
-      activeLabyrinthRewardModifiers: s.activeLabyrinthRewardModifiers,
-      rewardState: s.rewardState,
-      runEndMaterials: s.runEndMaterials,
-      corruptionResult: s.corruptionResult,
-      pendingCharacterId: s.pendingCharacterId,
-      pendingContentSystemType: s.pendingContentSystemType,
-    })),
-  );
-
-  function getStore() {
-    return useScreenStore.getState();
-  }
+  } = useRunNavigationSession();
 
   const rewardTransitionTimer = useRef(new TimerGroup());
   useEffect(() => () => rewardTransitionTimer.current.clearAll(), []);
@@ -210,6 +194,8 @@ export function useRunNavigation({
         clearCombatState,
         beginMysteryEvent,
         clearMysteryCardChoices: mystery.clearCardChoices,
+        getRunSessionStore: () => useRunSessionStore.getState(),
+        getUiStore: () => useUiStore.getState(),
       }),
     [
       run,
@@ -277,11 +263,7 @@ export function useRunNavigation({
   }
 
   function handleCorruptCard(cardIndex: number) {
-    const { deck, result } = corruptDeckCard(run.runDeck, cardIndex);
-    run.setRunDeck(deck);
-    getStore().setCorruptionResult(result);
-    setDiscoveredCardIds((current) => appendUnique(current, result.corruptedCard.id));
-    playUISound("musicBoxMystery");
+    applyCorruptionToDeck(run.runDeck, cardIndex, run.setRunDeck, setDiscoveredCardIds, useRunSessionStore.getState());
   }
 
   function handleCorruptionExit() {
@@ -335,6 +317,8 @@ export function useRunNavigation({
     handleDestinationChoice: destinationHandlers.handleDestinationChoice,
     handleActComplete: destinationHandlers.handleActComplete,
     finishRewards: destinationHandlers.finishRewards,
+    selectRewardChoice: destinationHandlers.selectRewardChoice,
+    prepareDestinationScreen: destinationHandlers.prepareDestinationScreen,
     handleCampfireContinue: destinationHandlers.handleCampfireContinue,
     handleCorruptCard,
     handleCorruptionExit,

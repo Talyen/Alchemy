@@ -10,14 +10,15 @@ import type { CharacterId, DifficultyId, UnlockedTalents } from "@/lib/game-data
 import { labyrinthModifiersToDifficulty } from "@/lib/content-systems/labyrinth/modifiers";
 import type { LabyrinthModifierKind } from "@/lib/content-systems/types";
 import { useRunStore, useRunAdapter, useTalentAdapter } from "./stores/run-store";
-import { useScreenStore } from "./stores/screen-store";
+import { useUiStore } from "./stores/ui-store";
+import { useRunSessionStore } from "./stores/run-session-store";
 import { useBattleController } from "./use-battle-controller";
 import { useBattleStore } from "./stores/battle-store";
 import { useShopController } from "./use-shop-controller";
 import { useRunNavigation } from "./use-run-navigation";
 import { useLabyrinthController } from "./use-labyrinth-controller";
 import { CONSTANTS, type Destination, type Screen } from "./types";
-import type { ActiveRunData } from "./run/types";
+import { hydrateActiveRunSession, type ActiveRunData } from "@/lib/active-run-session";
 import { NAVIGATION_DELAY_MS } from "@/lib/game-constants";
 
 export function useAlchemyRunController({
@@ -49,36 +50,31 @@ export function useAlchemyRunController({
   // different initial values (which shouldn't happen — these are the bootstrap values).
   useEffect(() => {
     if (useRunStore.getState().initialized) return;
-    useRunStore.getState().initialize(initialActiveRun, initialTalentXP, initialUnlockedTalents);
-    useBattleStore.getState().initializeActiveBattle(initialActiveRun?.activeCombat?.battleState ?? null);
-    if (initialActiveRun) {
-      useScreenStore.getState().setHasActiveRun(true);
-      if (initialActiveRun.labyrinthMap) {
-        useScreenStore.getState().setLabyrinthMap(initialActiveRun.labyrinthMap);
-      }
-      if (initialActiveRun.activeCombat) {
-        useScreenStore.getState().setActiveLabyrinthModifiers(initialActiveRun.activeCombat.activeLabyrinthModifiers);
-        useScreenStore
-          .getState()
-          .setActiveLabyrinthRewardModifiers(initialActiveRun.activeCombat.activeLabyrinthRewardModifiers);
-      }
-      if (initialActiveRun.labyrinthPendingNode) {
-        useScreenStore.getState().setActiveLabyrinthPendingNode(initialActiveRun.labyrinthPendingNode);
-      }
-      if (initialActiveRun.currentScreen === "destination" && initialActiveRun.destinationChoices?.length > 0) {
-        useScreenStore.getState().setRewardState((prev) => ({
-          ...prev,
-          destinations: initialActiveRun.destinationChoices as Destination[],
-        }));
-      }
-    }
+    hydrateActiveRunSession(initialActiveRun, initialTalentXP, initialUnlockedTalents, {
+      runStore: useRunStore.getState(),
+      battleStore: useBattleStore.getState(),
+      screenStore: {
+        setHasActiveRun: (hasActiveRun) => useRunSessionStore.getState().setHasActiveRun(hasActiveRun),
+        setLabyrinthMap: (map) => useRunSessionStore.getState().setLabyrinthMap(map),
+        setActiveLabyrinthModifiers: (modifiers) =>
+          useRunSessionStore.getState().setActiveLabyrinthModifiers(modifiers),
+        setActiveLabyrinthRewardModifiers: (modifiers) =>
+          useRunSessionStore.getState().setActiveLabyrinthRewardModifiers(modifiers),
+        setActiveLabyrinthPendingNode: (node) => useRunSessionStore.getState().setActiveLabyrinthPendingNode(node),
+        applyDestinationChoices: (choices) =>
+          useRunSessionStore.getState().setRewardState((prev) => ({
+            ...prev,
+            destinations: choices as Destination[],
+          })),
+      },
+    });
   }, [initialActiveRun, initialTalentXP, initialUnlockedTalents]);
   const run = useRunAdapter();
   const talents = useTalentAdapter();
 
   // ============ Shared State ============
   const [screen, setScreen] = useState<Screen>("menu");
-  const hasActiveRun = useScreenStore((s) => s.hasActiveRun);
+  const hasActiveRun = useRunSessionStore((s) => s.hasActiveRun);
 
   // ============ Screen Navigation ============
   const navTimer = useRef(new TimerGroup());
@@ -136,14 +132,14 @@ export function useAlchemyRunController({
 
   // ============ Store-backed Setters ============
   function setHoveredCardId(id: string | null | ((prev: string | null) => string | null)) {
-    const store = useScreenStore.getState();
+    const store = useUiStore.getState();
     store.setHoveredCardId(typeof id === "function" ? id(store.hoveredCardId) : id);
   }
   function setActiveLabyrinthModifiers(modifiers: LabyrinthModifierKind[]) {
-    useScreenStore.getState().setActiveLabyrinthModifiers(modifiers);
+    useRunSessionStore.getState().setActiveLabyrinthModifiers(modifiers);
   }
   function setActiveLabyrinthRewardModifiers(modifiers: LabyrinthModifierKind[]) {
-    useScreenStore.getState().setActiveLabyrinthRewardModifiers(modifiers);
+    useRunSessionStore.getState().setActiveLabyrinthRewardModifiers(modifiers);
   }
 
   // ============ Domain Controllers ============
@@ -255,6 +251,7 @@ export function useAlchemyRunController({
     screen,
     commitPendingTransition,
     battleState: battle.battleState,
+    battleScreenData: battle.battleScreenData,
     hasActiveBattle: battle.hasActiveBattle,
     characterId: run.characterId,
     talentXP: talents.talentXP,
@@ -297,6 +294,8 @@ export function useAlchemyRunController({
     handleCardClick: battle.handleCardClick,
     handleWishChoice: battle.handleWishChoice,
     finishRewards: nav.finishRewards,
+    selectRewardChoice: nav.selectRewardChoice,
+    prepareDestinationScreen: nav.prepareDestinationScreen,
     handleDestinationChoice: nav.handleDestinationChoice,
     handleCampfireContinue: nav.handleCampfireContinue,
     handleShopBuyCard: shop.handleShopBuyCard,
@@ -318,6 +317,7 @@ export function useAlchemyRunController({
     cardTransfers: battle.cardTransfers,
     hiddenHandCardKeys: battle.hiddenHandCardKeys,
     cardTransferInProgress: battle.cardTransferInProgress,
+    playableHandCardKeys: battle.playableHandCardKeys,
     handleEndRun: battle.handleEndRun,
     skipCombatDevMode: battle.skipCombatDevMode,
     removeCardGhost: battle.removeCardGhost,

@@ -17,7 +17,7 @@ import {
 } from "./turn-resolution-ui";
 import type { HandDrawSequenceDeps } from "./draw-sequence";
 
-type TurnOrchestrationStore = ReturnType<typeof import("../stores/battle-store").useBattleStore.getState>;
+type TurnOrchestrationStore = ReturnType<typeof import("./battle-store-access").getBattleSessionStore>;
 
 export type TurnOrchestrationDeps = {
   getStore: () => TurnOrchestrationStore;

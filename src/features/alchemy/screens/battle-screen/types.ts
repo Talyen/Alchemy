@@ -2,6 +2,7 @@
 import type { MouseEvent, MutableRefObject } from "react";
 
 import type { BattleState } from "@/lib/battle";
+import type { DisplayOverrides } from "../../stores/battle-store";
 import type { LabyrinthModifierKind } from "@/lib/content-systems/types";
 import type { BattleCard } from "@/lib/game-data";
 import type { CardGhost, FloatingCombatText, StatusChip } from "../../types";
@@ -41,6 +42,7 @@ type BattleScreenViewProps = {
 export type BattleHoverProps = {
   hoveredCardId: string | null;
   shimmerState: { cardId: string; token: number } | null;
+  maybeTriggerShimmer: (cardId: string) => void;
 };
 
 export type BattleFeedbackProps = {
@@ -75,7 +77,27 @@ export type BattleActionsProps = {
   onEndTurn: () => void;
   hiddenHandCardKeys: Set<string>;
   cardTransferInProgress: boolean;
+  playableHandCardKeys: Set<string>;
+  revealedCardKeys: Set<string>;
   isDevMode: boolean;
 };
 
 export type RequiredBattleViewProps = Required<BattleScreenViewProps>;
+
+/** Read-only battle view state passed from useBattleController (single subscription path). */
+export type BattleScreenData = {
+  battleState: BattleState;
+  displayOverrides: DisplayOverrides;
+  revealedCardKeys: Set<string>;
+  cardGhosts: CardGhost[];
+  floatingCombatTexts: FloatingCombatText[];
+  enemyShaking: boolean;
+  playerShaking: boolean;
+  companionShaking: boolean;
+  playerHurtFlashToken: number;
+  enemyHurtFlashToken: number;
+  hoveredCardId: string | null;
+  shimmerState: BattleHoverProps["shimmerState"];
+  maybeTriggerShimmer: (cardId: string) => void;
+  activeLabyrinthModifiers: LabyrinthModifierKind[];
+};

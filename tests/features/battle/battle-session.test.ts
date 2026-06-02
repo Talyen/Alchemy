@@ -2,6 +2,7 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import { createBattleSession } from "@/features/alchemy/battle/battle-session";
 import { createTransferCancelRegistry } from "@/features/alchemy/battle/transfer-lifecycle";
 import { useBattleStore } from "@/features/alchemy/stores/battle-store";
+import { useBattlePresentationStore } from "@/features/alchemy/stores/battle-presentation-store";
 import { defaultBattleState } from "@/lib/battle";
 import { TimerGroup } from "@/lib/animation/game-timer";
 
@@ -33,6 +34,7 @@ function makeSession() {
 
 beforeEach(() => {
   useBattleStore.setState(useBattleStore.getInitialState());
+  useBattlePresentationStore.setState(useBattlePresentationStore.getInitialState());
   useBattleStore.getState().setHasActiveBattle(true);
 });
 
@@ -69,11 +71,11 @@ describe("createBattleSession", () => {
   });
 
   it("resetBattleSession clears portrait hurt tokens", () => {
-    useBattleStore.getState().hurtPlayer();
-    useBattleStore.getState().hurtEnemy();
+    useBattlePresentationStore.getState().hurtPlayer();
+    useBattlePresentationStore.getState().hurtEnemy();
     const { session } = makeSession();
     session.resetBattleSession();
-    expect(useBattleStore.getState().playerHurtFlashToken).toBe(0);
-    expect(useBattleStore.getState().enemyHurtFlashToken).toBe(0);
+    expect(useBattlePresentationStore.getState().playerHurtFlashToken).toBe(0);
+    expect(useBattlePresentationStore.getState().enemyHurtFlashToken).toBe(0);
   });
 });

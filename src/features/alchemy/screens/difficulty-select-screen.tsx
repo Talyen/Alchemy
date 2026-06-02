@@ -17,7 +17,8 @@ import { ScreenHeader, ShimmerOverlay } from "../ui/shared-ui";
 import { clearTiltFromEvent, setTiltFromEvent, tokenizeDescription } from "../utils";
 import { battleCardWidthClass, cardSurfaceClass, staticCardTransform } from "../config";
 import { TooltipPanel } from "../ui/tooltip-panel";
-import { useScreenStore } from "../stores/screen-store";
+import { useUiStore } from "../stores/ui-store";
+import { useRunSessionStore } from "../stores/run-session-store";
 import { useRunStore } from "../stores/run-store";
 
 const DIFFICULTY_CONFIG = {
@@ -154,14 +155,14 @@ export function DifficultySelectScreen({
   onSelect: (difficultyId: DifficultyId) => void;
   onBack: () => void;
 }) {
-  const characterId = useScreenStore((s) => s.pendingCharacterId)!;
+  const characterId = useRunSessionStore((s) => s.pendingCharacterId)!;
   const selectedDifficultyFromStore = useRunStore((s) => s.selectedDifficulty);
   const [selectedDifficultyId, setSelectedDifficultyId] = useState<DifficultyId | null>(selectedDifficultyFromStore);
   const config = difficultyConfigs[characterId];
   const char = characters[characterId];
   const art = characterArt[char.id];
-  const shimmerState = useScreenStore((s) => s.shimmerState);
-  const maybeTriggerShimmer = useScreenStore((s) => s.maybeTriggerShimmer);
+  const shimmerState = useUiStore((s) => s.shimmerState);
+  const maybeTriggerShimmer = useUiStore((s) => s.maybeTriggerShimmer);
 
   const canPlay = selectedDifficultyId !== null && isDifficultyUnlocked(selectedDifficultyId, completedDifficulties);
 

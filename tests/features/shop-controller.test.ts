@@ -1,6 +1,7 @@
 import { describe, expect, it, beforeEach } from "vitest";
 import { useRunStore } from "@/features/alchemy/stores/run-store";
-import { useScreenStore } from "@/features/alchemy/stores/screen-store";
+import { useRunSessionStore } from "@/features/alchemy/stores/run-session-store";
+import { resetScreenStores } from "@/features/alchemy/stores/screen-store";
 import {
   SHOP_CARD_PRICE,
   SHOP_REMOVE_PRICE,
@@ -11,11 +12,12 @@ import {
   ALCHEMIST_MIX_PRICE,
   ALCHEMIST_POTIONS_OFFERED,
 } from "@/lib/game-constants";
+import { createInitialShopState, createInitialAlchemistState } from "@/features/alchemy/shop/shop-state-init";
 import type { BattleCard } from "@/lib/game-data";
 
 beforeEach(() => {
   useRunStore.setState(useRunStore.getInitialState());
-  useScreenStore.setState(useScreenStore.getInitialState());
+  resetScreenStores();
 });
 
 function makeCard(overrides: Partial<BattleCard> = {}): BattleCard {
@@ -27,7 +29,7 @@ function seedGold(amount: number) {
 }
 
 function firstShopCard(): BattleCard | null {
-  const cards = useScreenStore.getState().shopState.cards;
+  const cards = useRunSessionStore.getState().shopState.cards;
   return cards.length > 0 ? cards[0] : null;
 }
 
@@ -65,25 +67,25 @@ describe("shop pricing formulas", () => {
 });
 
 describe("shop store integration", () => {
-  it("initShop creates correct number of cards", () => {
-    useScreenStore.getState().initShop();
-    expect(useScreenStore.getState().shopState.cards.length).toBe(SHOP_CARDS_OFFERED);
+  it("createInitialShopState creates correct number of cards", () => {
+    useRunSessionStore.getState().setShopState(createInitialShopState());
+    expect(useRunSessionStore.getState().shopState.cards.length).toBe(SHOP_CARDS_OFFERED);
   });
 
-  it("initShop resets refreshesLeft and purchase state", () => {
-    useScreenStore.setState((s) => ({
+  it("createInitialShopState resets refreshesLeft and purchase state", () => {
+    useRunSessionStore.setState((s) => ({
       shopState: { ...s.shopState, refreshesLeft: 0, removeUsed: true, firstPurchaseUsed: true },
     }));
-    useScreenStore.getState().initShop();
-    const shop = useScreenStore.getState().shopState;
+    useRunSessionStore.getState().setShopState(createInitialShopState());
+    const shop = useRunSessionStore.getState().shopState;
     expect(shop.refreshesLeft).toBeGreaterThan(0);
     expect(shop.removeUsed).toBe(false);
     expect(shop.firstPurchaseUsed).toBe(false);
   });
 
-  it("initAlchemist filters potion cards", () => {
-    useScreenStore.getState().initAlchemist();
-    const potions = useScreenStore.getState().alchemistState.potions;
+  it("createInitialAlchemistState filters potion cards", () => {
+    useRunSessionStore.getState().setAlchemistState(createInitialAlchemistState());
+    const potions = useRunSessionStore.getState().alchemistState.potions;
     expect(potions.length).toBe(ALCHEMIST_POTIONS_OFFERED);
     for (const p of potions) {
       expect(p.id).toMatch(/-potion$/);
@@ -93,7 +95,7 @@ describe("shop store integration", () => {
 
 describe("shop buy flow via run store mutations", () => {
   it("deducts gold and appends card when buying", () => {
-    useScreenStore.getState().initShop();
+    useRunSessionStore.getState().setShopState(createInitialShopState());
     seedGold(999);
     const card = firstShopCard();
     if (!card) return; // skip if no shop cards sampled
@@ -104,15 +106,15 @@ describe("shop buy flow via run store mutations", () => {
     // Simulating what handleShopBuyCard does
     const price = SHOP_CARD_PRICE;
     useRunStore.getState().setRunGold((p) => Math.max(0, p - price));
-    useScreenStore.getState().setShopState((p) => ({ ...p, firstPurchaseUsed: true }));
+    useRunSessionStore.getState().setShopState((p) => ({ ...p, firstPurchaseUsed: true }));
 
     expect(useRunStore.getState().runGold).toBe(999 - price);
     expect(useRunStore.getState().runDeck.length).toBe(deckBefore + 1);
-    expect(useScreenStore.getState().shopState.firstPurchaseUsed).toBe(true);
+    expect(useRunSessionStore.getState().shopState.firstPurchaseUsed).toBe(true);
   });
 
   it("does not buy when gold is insufficient", () => {
-    useScreenStore.getState().initShop();
+    useRunSessionStore.getState().setShopState(createInitialShopState());
     seedGold(0);
     const card = firstShopCard();
     if (!card) return;
@@ -130,61 +132,61 @@ describe("shop buy flow via run store mutations", () => {
     const price = Math.max(0, SHOP_REMOVE_PRICE);
     useRunStore.getState().setRunGold((p) => Math.max(0, p - price));
     useRunStore.getState().setRunDeck((p) => p.filter((_, i) => i !== 0));
-    useScreenStore.getState().setShopState((p) => ({ ...p, removeUsed: true }));
+    useRunSessionStore.getState().setShopState((p) => ({ ...p, removeUsed: true }));
 
     expect(useRunStore.getState().runGold).toBe(999 - price);
     expect(useRunStore.getState().runDeck.length).toBe(1);
     expect(useRunStore.getState().runDeck[0].id).toBe("card-b");
-    expect(useScreenStore.getState().shopState.removeUsed).toBe(true);
+    expect(useRunSessionStore.getState().shopState.removeUsed).toBe(true);
   });
 
   it("shop refresh decrements refreshesLeft", () => {
-    useScreenStore.getState().initShop();
+    useRunSessionStore.getState().setShopState(createInitialShopState());
     seedGold(999);
-    const beforeRefreshes = useScreenStore.getState().shopState.refreshesLeft;
+    const beforeRefreshes = useRunSessionStore.getState().shopState.refreshesLeft;
 
     const price = SHOP_REFRESH_PRICE;
     useRunStore.getState().setRunGold((g) => Math.max(0, g - price));
-    useScreenStore.getState().setShopState((p) => ({
+    useRunSessionStore.getState().setShopState((p) => ({
       ...p,
       refreshesLeft: p.refreshesLeft - 1,
     }));
 
-    expect(useScreenStore.getState().shopState.refreshesLeft).toBe(beforeRefreshes - 1);
+    expect(useRunSessionStore.getState().shopState.refreshesLeft).toBe(beforeRefreshes - 1);
     expect(useRunStore.getState().runGold).toBe(999 - price);
   });
 });
 
 describe("alchemist buy flow via mutations", () => {
   it("alchemist buy deducts gold and appends potion", () => {
-    useScreenStore.getState().initAlchemist();
+    useRunSessionStore.getState().setAlchemistState(createInitialAlchemistState());
     seedGold(999);
-    const potions = useScreenStore.getState().alchemistState.potions;
+    const potions = useRunSessionStore.getState().alchemistState.potions;
     if (potions.length === 0) return;
 
     const price = ALCHEMIST_POTION_PRICE;
     const deckBefore = useRunStore.getState().runDeck.length;
     useRunStore.getState().setRunGold((p) => Math.max(0, p - price));
     useRunStore.getState().setRunDeck((p) => [...p, potions[0]]);
-    useScreenStore.getState().setAlchemistState((p) => ({ ...p, firstPurchaseUsed: true }));
+    useRunSessionStore.getState().setAlchemistState((p) => ({ ...p, firstPurchaseUsed: true }));
 
     expect(useRunStore.getState().runGold).toBe(999 - price);
     expect(useRunStore.getState().runDeck.length).toBe(deckBefore + 1);
-    expect(useScreenStore.getState().alchemistState.firstPurchaseUsed).toBe(true);
+    expect(useRunSessionStore.getState().alchemistState.firstPurchaseUsed).toBe(true);
   });
 
   it("alchemist refresh decrements and resamples potions", () => {
-    useScreenStore.getState().initAlchemist();
+    useRunSessionStore.getState().setAlchemistState(createInitialAlchemistState());
     seedGold(999);
-    const beforeRefreshes = useScreenStore.getState().alchemistState.refreshesLeft;
+    const beforeRefreshes = useRunSessionStore.getState().alchemistState.refreshesLeft;
 
     useRunStore.getState().setRunGold((g) => Math.max(0, g - ALCHEMIST_REFRESH_PRICE));
-    useScreenStore.getState().setAlchemistState((p) => ({
+    useRunSessionStore.getState().setAlchemistState((p) => ({
       ...p,
       refreshesLeft: p.refreshesLeft - 1,
     }));
 
-    expect(useScreenStore.getState().alchemistState.refreshesLeft).toBe(beforeRefreshes - 1);
+    expect(useRunSessionStore.getState().alchemistState.refreshesLeft).toBe(beforeRefreshes - 1);
   });
 });
 

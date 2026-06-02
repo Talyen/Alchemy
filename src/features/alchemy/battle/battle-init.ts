@@ -5,6 +5,7 @@ import { mergeIntoManifest } from "@/lib/homestead/effects";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import { getBossById, getCurrentEnemy, getBossEnemy } from "../config";
 import { useBattleStore } from "../stores/battle-store";
+import { useBattlePresentationStore } from "../stores/battle-presentation-store";
 import { useRunStore } from "../stores/run-store";
 import { appendUnique } from "@/lib/utils";
 import { getBattleStartPlayerHealth } from "./battle-start";
@@ -24,6 +25,7 @@ export type BattleInitDeps = {
 
 export function createBattleInit(deps: BattleInitDeps) {
   const getStore = () => useBattleStore.getState();
+  const getPresentationStore = () => useBattlePresentationStore.getState();
 
   function createBattleForEnemy(
     enemy: BestiaryEntry,
@@ -64,7 +66,7 @@ export function createBattleInit(deps: BattleInitDeps) {
     deps.run.setRunPlayerHealth(startingHealth);
     const nextRoomsEncountered = deps.run.roomsEncountered + 1;
     deps.run.setRoomsEncountered(nextRoomsEncountered);
-    getStore().clearCardGhosts();
+    getPresentationStore().clearCardGhosts();
     const nextBattleState = createBattleForEnemy(enemy, deck, gold, startingHealth, nextRoomsEncountered, modifiers);
     getStore().setSyncedBattleState(nextBattleState);
     getStore().setBattleStartState(nextBattleState);

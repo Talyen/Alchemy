@@ -8,7 +8,6 @@ import { ArtPanel, CompanionPanel, CombatTextRail } from "../../ui/battle-ui";
 import { TurnBadge } from "../../ui/turn-badge";
 import { battleActorSectionClass, bossCardWidthClass } from "../../config";
 import type { BattleFeedbackProps, BattleHoverProps, BattleRefsProps, RequiredBattleViewProps } from "./types";
-import { useScreenStore } from "../../stores/screen-store";
 
 export function BattleActors({
   view,
@@ -22,8 +21,7 @@ export function BattleActors({
   refs: BattleRefsProps;
 }) {
   const { battleState, heroArt, playerName, aspectMode = "standard" } = view;
-  const { shimmerState } = hover;
-  const onHoverShimmer = useScreenStore((s) => s.maybeTriggerShimmer);
+  const { shimmerState, maybeTriggerShimmer: onHoverShimmer } = hover;
   const {
     playerStatusChips,
     enemyStatusChips,

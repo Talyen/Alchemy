@@ -1,26 +1,28 @@
 // Unified store reset orchestrator for cleaning active combat/run state and persistent data.
-// Depends on: useRunStore, useBattleStore, useScreenStore, useHomesteadStore, useAppStore.
+// Depends on: useRunStore, useBattleStore, useUiStore, useRunSessionStore, useHomesteadStore, useAppStore.
 // Depended on by: useRunNavigation (resetRunState), App (clearSaveData).
 import { defaultBattleState } from "@/lib/battle";
 import { createEmptyRewardState } from "../navigation/reward-flow";
 import { useRunStore } from "./run-store";
 import { useBattleStore } from "./battle-store";
-import { useScreenStore } from "./screen-store";
+import { useBattlePresentationStore } from "./battle-presentation-store";
+import { useUiStore } from "./ui-store";
+import { useRunSessionStore } from "./run-session-store";
 import { useHomesteadStore } from "./homestead-store";
 import { useAppStore } from "./app-store";
 
 export function resetActiveRunStores() {
   useBattleStore.getState().setSyncedBattleState(defaultBattleState());
   useBattleStore.getState().clearDisplayOverrides();
-  useBattleStore.getState().resetPortraitHurtTokens();
+  useBattlePresentationStore.getState().resetPresentation();
   useBattleStore.getState().setHasActiveBattle(false);
   useRunStore.getState().reset();
-  useScreenStore.getState().setPendingContentSystemType("campaign");
-  useScreenStore.getState().setRewardState(createEmptyRewardState());
-  useScreenStore.getState().setMysteryEvent(null);
-  useScreenStore.getState().setMysteryCardChoices(null);
-  useScreenStore.getState().setHasActiveRun(false);
-  useScreenStore.getState().clearCardHover();
+  useRunSessionStore.getState().setPendingContentSystemType("campaign");
+  useRunSessionStore.getState().setRewardState(createEmptyRewardState());
+  useRunSessionStore.getState().setMysteryEvent(null);
+  useRunSessionStore.getState().setMysteryCardChoices(null);
+  useRunSessionStore.getState().setHasActiveRun(false);
+  useUiStore.getState().clearCardHover();
 }
 
 export function clearAllPersistentGameData() {

@@ -8,7 +8,7 @@ import { gameModeMeta, staticCardTransform } from "../config";
 import { PressableMotion } from "../ui/pressable-motion";
 import { ScreenHeader } from "../ui/shared-ui";
 import { clearTiltFromEvent, setTiltFromEvent } from "../utils";
-import { useScreenStore } from "../stores/screen-store";
+import { useRunSessionStore } from "../stores/run-session-store";
 
 const GAME_MODE_IDS = ["campaign", "labyrinth", "wildwood"] as const;
 type GameModeId = (typeof GAME_MODE_IDS)[number];
@@ -24,7 +24,7 @@ export function GameModeSelectScreen({
   onSelectWildwood: () => void;
   onBack: () => void;
 }) {
-  const hasActiveRun = useScreenStore((s) => s.hasActiveRun);
+  const hasActiveRun = useRunSessionStore((s) => s.hasActiveRun);
   const [selectedModeId, setSelectedModeId] = useState<GameModeId | null>(null);
 
   const handlers: Record<GameModeId, () => void> = {

@@ -18,7 +18,7 @@ import {
   hasPositiveMysteryEffect,
 } from "./parts";
 import { useRunStore } from "../../stores/run-store";
-import { useScreenStore } from "../../stores/screen-store";
+import { useRunSessionStore } from "../../stores/run-session-store";
 
 export function MysteryScreen({
   onChoose,
@@ -35,9 +35,9 @@ export function MysteryScreen({
   findCard: (id: string) => BattleCard | undefined;
   findTrinket: (id: string) => TrinketEntry | undefined;
 }) {
-  const event = useScreenStore((s) => s.mysteryEvent)!;
+  const event = useRunSessionStore((s) => s.mysteryEvent)!;
   const runDeck = useRunStore((s) => s.runDeck);
-  const mysteryCardChoices = useScreenStore((s) => s.mysteryCardChoices);
+  const mysteryCardChoices = useRunSessionStore((s) => s.mysteryCardChoices);
 
   // chosen: Stores the choice object to display on the final reward summary screen.
   const [chosen, setChosen] = useState<MysteryChoice | null>(null);

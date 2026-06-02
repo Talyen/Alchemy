@@ -5,9 +5,14 @@
  */
 
 import { useCallback, useEffect, useRef } from "react";
-import { canEnterLabyrinthNode, withCurrentNode, withFailedNode } from "@/lib/content-systems/labyrinth/map-generation";
+import {
+  canEnterLabyrinthNode,
+  withCurrentNode,
+  withFailedNode,
+  generateLabyrinthMap,
+} from "@/lib/content-systems/labyrinth/map-generation";
 import type { LabyrinthMap, LabyrinthNode, LabyrinthModifierKind } from "@/lib/content-systems/types";
-import { useScreenStore } from "./stores/screen-store";
+import { useRunSessionStore } from "./stores/run-session-store";
 import type { LabyrinthNodePosition } from "./run/types";
 
 export type LabyrinthController = {
@@ -68,8 +73,8 @@ function routeNodeInteraction(node: LabyrinthNode, handlers: LabyrinthNodeHandle
 }
 
 export function useLabyrinthController(): LabyrinthController {
-  const labyrinthMap = useScreenStore((s) => s.labyrinthMap);
-  const pendingNode = useScreenStore((s) => s.activeLabyrinthPendingNode);
+  const labyrinthMap = useRunSessionStore((s) => s.labyrinthMap);
+  const pendingNode = useRunSessionStore((s) => s.activeLabyrinthPendingNode);
   const pendingNodeRef = useRef(pendingNode);
 
   useEffect(() => {
@@ -78,12 +83,12 @@ export function useLabyrinthController(): LabyrinthController {
 
   const resetMap = useCallback(() => {
     pendingNodeRef.current = null;
-    useScreenStore.getState().setActiveLabyrinthPendingNode(null);
-    useScreenStore.getState().resetLabyrinthMap();
+    useRunSessionStore.getState().setActiveLabyrinthPendingNode(null);
+    useRunSessionStore.getState().setLabyrinthMap(generateLabyrinthMap());
   }, []);
 
   const enterNode = useCallback((row: number, col: number, handlers: LabyrinthNodeHandlers): boolean => {
-    const store = useScreenStore.getState();
+    const store = useRunSessionStore.getState();
     const map = store.labyrinthMap;
     const node = map.grid[row]?.[col];
     if (!node || !canEnterLabyrinthNode(map, row, col)) return false;
@@ -98,23 +103,23 @@ export function useLabyrinthController(): LabyrinthController {
   const onNodeCleared = useCallback(() => {
     const pending = pendingNodeRef.current;
     pendingNodeRef.current = null;
-    useScreenStore.getState().setActiveLabyrinthPendingNode(null);
+    useRunSessionStore.getState().setActiveLabyrinthPendingNode(null);
     if (!pending) {
       console.warn("[useLabyrinthController] onNodeCleared called without a pending node");
       return;
     }
-    useScreenStore.getState().setLabyrinthMap((prev) => withCurrentNode(prev, pending.row, pending.col));
+    useRunSessionStore.getState().setLabyrinthMap((prev) => withCurrentNode(prev, pending.row, pending.col));
   }, []);
 
   const onNodeFailed = useCallback(() => {
     const pending = pendingNodeRef.current;
     pendingNodeRef.current = null;
-    useScreenStore.getState().setActiveLabyrinthPendingNode(null);
+    useRunSessionStore.getState().setActiveLabyrinthPendingNode(null);
     if (!pending) {
       console.warn("[useLabyrinthController] onNodeFailed called without a pending node");
       return;
     }
-    useScreenStore.getState().setLabyrinthMap(withFailedNode(useScreenStore.getState().labyrinthMap, pending));
+    useRunSessionStore.getState().setLabyrinthMap(withFailedNode(useRunSessionStore.getState().labyrinthMap, pending));
   }, []);
 
   return { labyrinthMap, enterNode, onNodeCleared, onNodeFailed, resetMap, pendingNode };

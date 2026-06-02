@@ -37,7 +37,7 @@ import { BackgroundParticles } from "@/features/alchemy/ui/background-particles"
 import { platform } from "@/lib/platform";
 import { loadAlchemySaveState, type SaveLoadState } from "@/features/alchemy/storage";
 import { useAppStore } from "@/features/alchemy/stores/app-store";
-import { useScreenStore } from "@/features/alchemy/stores/screen-store";
+import { useRunSessionStore } from "@/features/alchemy/stores/run-session-store";
 import { clearAllPersistentGameData } from "@/features/alchemy/stores/reset";
 import { isAlchemyDevBuild } from "@/features/alchemy/utils";
 
@@ -57,7 +57,7 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
   const muteInBackground = useAppStore((s) => s.muteInBackground);
   const autoEndTurn = useAppStore((s) => s.autoEndTurn);
   const discoveredCardIds = useAppStore((s) => s.discoveredCardIds);
-  const pendingCharacterId = useScreenStore((s) => s.pendingCharacterId);
+  const pendingCharacterId = useRunSessionStore((s) => s.pendingCharacterId);
 
   const setDiscoveredCardIds = wrapStoreSetter(
     () => appStore.getState().discoveredCardIds,
@@ -229,6 +229,8 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
           cardTransfers={run.cardTransfers}
           hiddenHandCardKeys={run.hiddenHandCardKeys}
           cardTransferInProgress={run.cardTransferInProgress}
+          playableHandCardKeys={run.playableHandCardKeys}
+          battleScreenData={run.battleScreenData}
           hasUnspentTalents={hasUnspentTalentsBadge}
           hasAffordableHomestead={hasAffordableHomestead}
           pendingCharacterId={pendingCharacterId}

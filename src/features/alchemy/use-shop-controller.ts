@@ -1,6 +1,6 @@
 // Shop and alchemist purchase controller for pricing, refreshes, removals, and potion mixing.
 // Depends on run/talent state, sampled shop state, trinket pricing, audio, and mixer helpers.
-// Uses useScreenStore for shop/alchemist state.
+// Uses useRunSessionStore for shop/alchemist state.
 import { useRef } from "react";
 import { cardLibrary, getStandardPotionPool, type BattleCard } from "@/lib/game-data";
 import { computeTrinketManifest } from "@/lib/trinkets";
@@ -19,7 +19,8 @@ import {
   ALCHEMIST_POTIONS_OFFERED,
   MIXED_POTION_CARD_ID,
 } from "@/lib/game-constants";
-import { useScreenStore } from "./stores/screen-store";
+import { createInitialShopState, createInitialAlchemistState } from "./shop/shop-state-init";
+import { useRunSessionStore } from "./stores/run-session-store";
 import type { RunStateController, TalentStateController } from "./stores/run-store";
 
 export function useShopController({
@@ -31,14 +32,14 @@ export function useShopController({
   talents: TalentStateController;
   setDiscoveredCardIds: React.Dispatch<React.SetStateAction<string[]>>;
 }) {
-  const shopState = useScreenStore((s) => s.shopState);
-  const alchemistState = useScreenStore((s) => s.alchemistState);
+  const shopState = useRunSessionStore((s) => s.shopState);
+  const alchemistState = useRunSessionStore((s) => s.alchemistState);
 
   const shopDiscountConsumed = useRef(false);
   const alchemistDiscountConsumed = useRef(false);
 
   function getStore() {
-    return useScreenStore.getState();
+    return useRunSessionStore.getState();
   }
 
   function purchaseCard(
@@ -141,11 +142,11 @@ export function useShopController({
   return {
     initShop: () => {
       shopDiscountConsumed.current = false;
-      getStore().initShop();
+      getStore().setShopState(createInitialShopState());
     },
     initAlchemist: () => {
       alchemistDiscountConsumed.current = false;
-      getStore().initAlchemist();
+      getStore().setAlchemistState(createInitialAlchemistState());
     },
     handleShopBuyCard,
     handleShopRemoveCard,
@@ -154,7 +155,7 @@ export function useShopController({
     handleAlchemistRefresh,
     handleAlchemistMixPotions,
     get shopCards() {
-      return useScreenStore.getState().shopState.cards;
+      return useRunSessionStore.getState().shopState.cards;
     },
     get alchemistPotions() {
       return alchemistState.potions;

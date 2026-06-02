@@ -4,7 +4,12 @@ import type { BattleCard, CharacterId, DifficultyId, DifficultyModifier } from "
 import type { LabyrinthModifierKind } from "@/lib/content-systems/types";
 import { useBattleStore } from "../stores/battle-store";
 import { useHomesteadStore } from "../stores/homestead-store";
-import { useScreenStore } from "../stores/screen-store";
+import {
+  defaultRunSessionStoreAccess,
+  defaultUiStoreAccess,
+  type RunSessionStoreAccess,
+  type UiStoreAccess,
+} from "../stores/store-access";
 import { playUISound } from "@/lib/audio";
 import { ACTS_PER_RUN, CAMPFIRE_HEAL_FRACTION } from "@/lib/game-constants";
 import type { MaterialInventory } from "@/lib/homestead/types";
@@ -19,6 +24,7 @@ import { getRandomPotionCard } from "../navigation/reward-gold";
 import { applyRunDefeatTeardown, getPreviousDestination } from "../navigation/run-navigation-helpers";
 import { appendCardToRunWithDiscovery, appendTrinketToRunWithDiscovery } from "./deck-mutations";
 import type { ContentSystemNavigationApi } from "./content-system-navigation";
+import { getBossById, getBossEnemy } from "../config";
 import { CONSTANTS, type Destination, type Screen } from "../types";
 import type { RunStateController, TalentStateController } from "../stores/run-store";
 
@@ -125,10 +131,13 @@ export type RunDestinationHandlerDeps = {
   clearCombatState: () => void;
   beginMysteryEvent: () => void;
   clearMysteryCardChoices: () => void;
+  getRunSessionStore?: RunSessionStoreAccess;
+  getUiStore?: UiStoreAccess;
 };
 
 export function createRunDestinationHandlers(deps: RunDestinationHandlerDeps) {
-  const getStore = () => useScreenStore.getState();
+  const getStore = deps.getRunSessionStore ?? defaultRunSessionStoreAccess;
+  const getUi = deps.getUiStore ?? defaultUiStoreAccess;
 
   function routeAfterReward(
     route: FinalizeRewardResultType["route"],
@@ -183,7 +192,7 @@ export function createRunDestinationHandlers(deps: RunDestinationHandlerDeps) {
 
     useHomesteadStore.getState().addMaterials(result.materials);
     applyFinalizedRewards(result);
-    getStore().clearCardHover();
+    getUi().clearCardHover();
     routeAfterReward(result.route, result.materials, result.nextRewardState, result.clearCompanionRewardCards);
   }
 
@@ -192,7 +201,7 @@ export function createRunDestinationHandlers(deps: RunDestinationHandlerDeps) {
       destination === CONSTANTS.DESTINATIONS.BOSS_COMBAT ? getStore().rewardState.selectedBossId : null;
     deps.run.setCompletedDestinations((prev) => [...prev, destination]);
     deps.run.setDestinationIndexInAct((p) => p + 1);
-    getStore().clearCardHover();
+    getUi().clearCardHover();
     routeDestinationChoice(destination, {
       navigateTo: deps.navigateTo,
       beginMysteryEvent: deps.beginMysteryEvent,
@@ -219,7 +228,7 @@ export function createRunDestinationHandlers(deps: RunDestinationHandlerDeps) {
   }
 
   function handleActComplete(displayMaterials?: MaterialInventory) {
-    getStore().clearCardHover();
+    getUi().clearCardHover();
     deps.setHasActiveBattle(false);
 
     if (deps.run.currentAct >= ACTS_PER_RUN) {
@@ -235,6 +244,7 @@ export function createRunDestinationHandlers(deps: RunDestinationHandlerDeps) {
     deps.run.setCompletedDestinations([]);
     deps.navigateTo(CONSTANTS.SCREENS.DESTINATION, () => {
       getStore().setRewardState(deps.contentNav.createInitialDestinations({ destinationIndexInAct: 0 }));
+      prepareDestinationScreen();
     });
   }
 
@@ -250,16 +260,29 @@ export function createRunDestinationHandlers(deps: RunDestinationHandlerDeps) {
     deps.run.setRoomsEncountered((p) => p + 1);
     if (deps.run.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.LABYRINTH) {
       deps.onLabyrinthClearNode();
-      getStore().clearCardHover();
+      getUi().clearCardHover();
       deps.navigateTo(CONSTANTS.SCREENS.LABYRINTH_MAP);
       return;
     }
     const prevDest = getPreviousDestination(deps.run.destinationIndexInAct, deps.run.completedDestinations);
-    getStore().clearCardHover();
+    getUi().clearCardHover();
     deps.clearMysteryCardChoices();
     deps.navigateTo(CONSTANTS.SCREENS.DESTINATION, () => {
       getStore().setRewardState(deps.contentNav.createInitialDestinations(undefined, prevDest));
+      prepareDestinationScreen();
     });
+  }
+
+  function prepareDestinationScreen() {
+    const state = getStore().rewardState;
+    const bossOnly = state.destinations.length === 1 && state.destinations[0] === CONSTANTS.DESTINATIONS.BOSS_COMBAT;
+    if (!bossOnly) return;
+    if (state.selectedBossId && getBossById(state.selectedBossId)) return;
+    getStore().setRewardState((prev) => ({ ...prev, selectedBossId: getBossEnemy().id }));
+  }
+
+  function selectRewardChoice(id: string) {
+    getStore().setRewardState((prev) => ({ ...prev, selectedId: id }));
   }
 
   function handleCampfireContinue() {
@@ -272,6 +295,8 @@ export function createRunDestinationHandlers(deps: RunDestinationHandlerDeps) {
 
   return {
     finishRewards,
+    selectRewardChoice,
+    prepareDestinationScreen,
     handleDestinationChoice,
     endLabyrinthRun,
     handleActComplete,

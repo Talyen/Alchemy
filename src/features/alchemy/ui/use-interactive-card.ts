@@ -1,14 +1,14 @@
 // Shared hover + shimmer state hook for interactive card/tile UI.
 // Reads hoveredCardId and shimmerState from screen-store,
 // providing ready-to-use bindings for card buttons and tilt surfaces.
-import { useScreenStore } from "../stores/screen-store";
+import { useUiStore } from "../stores/ui-store";
 import { getHoverId } from "../utils";
 
 export function useInteractiveCard(scope: string, itemId: string) {
-  const hoveredCardId = useScreenStore((s) => s.hoveredCardId);
-  const setHoveredCardId = useScreenStore((s) => s.setHoveredCardId);
-  const shimmerState = useScreenStore((s) => s.shimmerState);
-  const maybeTriggerShimmer = useScreenStore((s) => s.maybeTriggerShimmer);
+  const hoveredCardId = useUiStore((s) => s.hoveredCardId);
+  const setHoveredCardId = useUiStore((s) => s.setHoveredCardId);
+  const shimmerState = useUiStore((s) => s.shimmerState);
+  const maybeTriggerShimmer = useUiStore((s) => s.maybeTriggerShimmer);
 
   const hoverId = getHoverId(scope, itemId);
   const isHovered = hoveredCardId === hoverId;

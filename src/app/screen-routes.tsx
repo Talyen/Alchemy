@@ -108,11 +108,11 @@ function buildOptionsScreen(ctx: ScreenRouteContext) {
 const SCREEN_ROUTES: Record<Screen, (ctx: ScreenRouteContext) => ReactNode> = {
   menu: ({ actions: a, hasUnspentTalents, hasAffordableHomestead }) => (
     <MenuScreen
-      onPlay={() => a.goToScreen("game-mode-select")}
-      onCollection={() => a.goToScreen("collection")}
-      onOptions={() => a.goToScreen("options")}
-      onHomestead={() => a.goToScreen("homestead")}
-      onTalents={() => a.goToScreen("talents")}
+      onPlay={() => a.navigation.goToScreen("game-mode-select")}
+      onCollection={() => a.navigation.goToScreen("collection")}
+      onOptions={() => a.navigation.goToScreen("options")}
+      onHomestead={() => a.navigation.goToScreen("homestead")}
+      onTalents={() => a.navigation.goToScreen("talents")}
       {...(platform.canQuit ? { onQuit: platform.quit } : {})}
       logoSrc={menuLogo}
       logoSrcVariants={menuLogoVariants}
@@ -122,21 +122,24 @@ const SCREEN_ROUTES: Record<Screen, (ctx: ScreenRouteContext) => ReactNode> = {
   ),
   "game-mode-select": ({ actions: a }) => (
     <GameModeSelectScreen
-      onSelectCampaign={a.beginCampaign}
-      onSelectLabyrinth={a.beginLabyrinth}
-      onSelectWildwood={a.beginWildwood}
-      onBack={() => a.goToScreen("menu")}
+      onSelectCampaign={a.runStart.beginCampaign}
+      onSelectLabyrinth={a.runStart.beginLabyrinth}
+      onSelectWildwood={a.runStart.beginWildwood}
+      onBack={() => a.navigation.goToScreen("menu")}
     />
   ),
   "character-select": ({ actions: a }) => (
-    <CharacterSelectScreen onConfirm={a.handleCharacterSelect} onBack={() => a.goToScreen("game-mode-select")} />
+    <CharacterSelectScreen
+      onConfirm={a.runStart.handleCharacterSelect}
+      onBack={() => a.navigation.goToScreen("game-mode-select")}
+    />
   ),
-  "draft-deck": ({ actions: a }) => <DraftDeckScreen onComplete={a.handleDraftComplete} />,
+  "draft-deck": ({ actions: a }) => <DraftDeckScreen onComplete={a.runStart.handleDraftComplete} />,
   "difficulty-select": ({ actions: a, appValues, pendingCharacterId }) => (
     <DifficultySelectScreen
       completedDifficulties={appValues.completedDifficulties[(pendingCharacterId ?? "knight") as CharacterId] ?? []}
-      onSelect={a.handleDifficultySelect}
-      onBack={a.handleBackFromDifficultySelect}
+      onSelect={a.runStart.handleDifficultySelect}
+      onBack={a.runStart.handleBackFromDifficultySelect}
     />
   ),
   battle: ({
@@ -155,8 +158,11 @@ const SCREEN_ROUTES: Record<Screen, (ctx: ScreenRouteContext) => ReactNode> = {
     cardTransfers,
     hiddenHandCardKeys,
     cardTransferInProgress,
+    playableHandCardKeys,
+    battleScreenData,
   }) => (
     <BattleScreen
+      battleScreenData={battleScreenData}
       heroArt={heroArt}
       playerName={playerName}
       aspectMode={aspectMode}
@@ -167,53 +173,67 @@ const SCREEN_ROUTES: Record<Screen, (ctx: ScreenRouteContext) => ReactNode> = {
       battleSceneRef={battleSceneRef}
       playerPanelRef={playerPanelRef}
       enemyPanelRef={enemyPanelRef}
-      onCardClick={a.handleCardClick}
+      onCardClick={a.battle.handleCardClick}
       onOpenMenu={onOpenBattleMenu}
-      onWishChoice={a.handleWishChoice}
-      onRemoveCardGhost={a.removeCardGhost}
-      onSkipCombatDevMode={a.skipCombatDevMode}
-      onEndTurn={a.handleEndTurn}
+      onWishChoice={a.battle.handleWishChoice}
+      onRemoveCardGhost={a.battle.removeCardGhost}
+      onSkipCombatDevMode={a.battle.skipCombatDevMode}
+      onEndTurn={a.battle.handleEndTurn}
       cardTransfers={cardTransfers}
       hiddenHandCardKeys={hiddenHandCardKeys}
       cardTransferInProgress={cardTransferInProgress}
+      playableHandCardKeys={playableHandCardKeys}
     />
   ),
   "labyrinth-map": ({ actions: a, onOpenBattleMenu }) => (
-    <LabyrinthMapScreen onNodeClick={a.handleLabyrinthNodeEnter} onOpenMenu={onOpenBattleMenu} />
+    <LabyrinthMapScreen onNodeClick={a.runFlow.handleLabyrinthNodeEnter} onOpenMenu={onOpenBattleMenu} />
   ),
   "wildwood-select": ({ actions: a }) => (
-    <WildwoodSelectScreen onSelect={a.handleWildwoodBossSelect} onBack={() => a.goToScreen("character-select")} />
+    <WildwoodSelectScreen
+      onSelect={a.runStart.handleWildwoodBossSelect}
+      onBack={() => a.navigation.goToScreen("character-select")}
+    />
   ),
-  rewards: ({ actions: a }) => <RewardsScreen onAddReward={a.finishRewards} onSkip={a.finishRewards} />,
-  destination: ({ actions: a }) => <DestinationScreen onChoose={a.handleDestinationChoice} />,
-  campfire: ({ actions: a }) => <CampfireScreen onContinue={a.handleCampfireContinue} />,
+  rewards: ({ actions: a }) => (
+    <RewardsScreen
+      onAddReward={a.runFlow.finishRewards}
+      onSkip={a.runFlow.finishRewards}
+      onSelectReward={a.runFlow.selectRewardChoice}
+    />
+  ),
+  destination: ({ actions: a }) => (
+    <DestinationScreen onChoose={a.runFlow.handleDestinationChoice} onPrepare={a.runFlow.prepareDestinationScreen} />
+  ),
+  campfire: ({ actions: a }) => <CampfireScreen onContinue={a.runFlow.handleCampfireContinue} />,
   shop: ({ actions: a }) => (
     <MerchantShopScreen
-      onBuyCard={a.handleShopBuyCard}
-      onRemoveCard={a.handleShopRemoveCard}
-      onRefresh={a.handleShopRefresh}
-      onContinue={a.handleShopContinue}
+      onBuyCard={a.runFlow.handleShopBuyCard}
+      onRemoveCard={a.runFlow.handleShopRemoveCard}
+      onRefresh={a.runFlow.handleShopRefresh}
+      onContinue={a.runFlow.handleShopContinue}
     />
   ),
   alchemist: ({ actions: a }) => (
     <AlchemistShopScreen
-      onBuyCard={a.handleAlchemistBuyCard}
-      onRefresh={a.handleAlchemistRefresh}
-      onMixPotions={a.handleAlchemistMixPotions}
-      onContinue={a.handleAlchemistContinue}
+      onBuyCard={a.runFlow.handleAlchemistBuyCard}
+      onRefresh={a.runFlow.handleAlchemistRefresh}
+      onMixPotions={a.runFlow.handleAlchemistMixPotions}
+      onContinue={a.runFlow.handleAlchemistContinue}
     />
   ),
   mystery: ({ actions: a }) => (
     <MysteryScreen
-      onChoose={a.handleMysteryChoice}
-      onChooseCard={a.handleMysteryChooseCard}
-      onRemoveCard={a.handleMysteryRemoveCard}
-      onContinue={a.handleMysteryContinue}
+      onChoose={a.runFlow.handleMysteryChoice}
+      onChooseCard={a.runFlow.handleMysteryChooseCard}
+      onRemoveCard={a.runFlow.handleMysteryRemoveCard}
+      onContinue={a.runFlow.handleMysteryContinue}
       findCard={(id) => cardLibrary.find((c) => c.id === id)}
       findTrinket={(id) => trinketLibrary.find((t) => t.id === id)}
     />
   ),
-  corruption: ({ actions: a }) => <CorruptionScreen onCorrupt={a.handleCorruptCard} onExit={a.handleCorruptionExit} />,
+  corruption: ({ actions: a }) => (
+    <CorruptionScreen onCorrupt={a.runFlow.handleCorruptCard} onExit={a.runFlow.handleCorruptionExit} />
+  ),
   options: buildOptionsScreen,
   collection: ({ appValues, appActions, homesteadValues, onOpenBattleMenu }) => (
     <CollectionScreen
@@ -246,12 +266,12 @@ const SCREEN_ROUTES: Record<Screen, (ctx: ScreenRouteContext) => ReactNode> = {
   talents: ({ actions: a, onOpenBattleMenu }) => (
     <TalentsScreen
       onOpenMenu={onOpenBattleMenu}
-      onUnlockTalent={a.unlockTalent}
-      onResetTalents={a.resetUnlockedTalents}
+      onUnlockTalent={a.meta.unlockTalent}
+      onResetTalents={a.meta.resetUnlockedTalents}
     />
   ),
-  "game-over": ({ actions: a }) => <GameOverScreen onMainMenu={a.resetRunState} />,
-  "run-victory": ({ actions: a }) => <RunVictoryScreen onMainMenu={a.resetRunState} />,
+  "game-over": ({ actions: a }) => <GameOverScreen onMainMenu={a.runFlow.resetRunState} />,
+  "run-victory": ({ actions: a }) => <RunVictoryScreen onMainMenu={a.runFlow.resetRunState} />,
 };
 
 export function renderAlchemyScreenRoute(ctx: ScreenRouteContext): ReactNode {

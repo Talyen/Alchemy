@@ -19,7 +19,7 @@ import type { TalentStateController } from "../stores/run-store";
 import { applyCombatTextPortraitFeedback, shouldPlayCardGoldGain } from "./battle-feedback";
 import { getCardKey } from "./controller-utils";
 import { runHandDrawSequence, type HandDrawSequenceDeps } from "./draw-sequence";
-import { useBattleStore } from "../stores/battle-store";
+import { getBattleSessionStore } from "./battle-store-access";
 
 export type BattleCardPlayDeps = {
   screen: Screen;
@@ -41,7 +41,7 @@ export type BattleCardPlayDeps = {
 };
 
 export function createBattleCardPlay(deps: BattleCardPlayDeps) {
-  const getStore = () => useBattleStore.getState();
+  const getStore = () => getBattleSessionStore();
 
   function handleDrawSequence(
     oldHand: BattleCard[],

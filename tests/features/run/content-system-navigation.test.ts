@@ -1,6 +1,7 @@
 import { describe, expect, it, beforeEach, vi } from "vitest";
 import { createContentSystemNavigation } from "@/features/alchemy/run/content-system-navigation";
-import { useScreenStore } from "@/features/alchemy/stores/screen-store";
+import { useRunSessionStore } from "@/features/alchemy/stores/run-session-store";
+import { resetScreenStores } from "@/features/alchemy/stores/screen-store";
 import { useRunStore } from "@/features/alchemy/stores/run-store";
 import { useHomesteadStore } from "@/features/alchemy/stores/homestead-store";
 import { CONSTANTS } from "@/features/alchemy/types";
@@ -20,7 +21,7 @@ vi.mock("@/features/alchemy/navigation/run-navigation-helpers", async (importOri
 });
 
 beforeEach(() => {
-  useScreenStore.setState(useScreenStore.getInitialState());
+  resetScreenStores();
   useRunStore.setState(useRunStore.getInitialState());
   useHomesteadStore.setState(useHomesteadStore.getInitialState());
 });
@@ -53,12 +54,12 @@ describe("createContentSystemNavigation", () => {
     const deps = makeDeps();
     const nav = createContentSystemNavigation(deps);
     nav.beginCampaign();
-    expect(useScreenStore.getState().pendingContentSystemType).toBe(CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN);
+    expect(useRunSessionStore.getState().pendingContentSystemType).toBe(CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN);
     expect(deps.navigateTo).toHaveBeenCalledWith(CONSTANTS.SCREENS.CHARACTER_SELECT);
   });
 
   it("initializeLabyrinthRun navigates to labyrinth map", () => {
-    useScreenStore.setState({ pendingContentSystemType: CONSTANTS.CONTENT_SYSTEMS.LABYRINTH });
+    useRunSessionStore.setState({ pendingContentSystemType: CONSTANTS.CONTENT_SYSTEMS.LABYRINTH });
     const deps = makeDeps({ pendingContentSystemType: CONSTANTS.CONTENT_SYSTEMS.LABYRINTH });
     const nav = createContentSystemNavigation(deps);
     nav.handleCharacterSelect("knight");
@@ -67,7 +68,7 @@ describe("createContentSystemNavigation", () => {
   });
 
   it("initializeWildwoodRun navigates to wildwood select", () => {
-    useScreenStore.setState({ pendingContentSystemType: CONSTANTS.CONTENT_SYSTEMS.WILDWOOD });
+    useRunSessionStore.setState({ pendingContentSystemType: CONSTANTS.CONTENT_SYSTEMS.WILDWOOD });
     const deps = makeDeps({ pendingContentSystemType: CONSTANTS.CONTENT_SYSTEMS.WILDWOOD });
     const nav = createContentSystemNavigation(deps);
     nav.handleCharacterSelect("knight");
@@ -93,6 +94,6 @@ describe("createContentSystemNavigation", () => {
     const nav = createContentSystemNavigation(deps);
     nav.handleCharacterSelect("wildcard");
     expect(deps.navigateTo).toHaveBeenCalledWith(CONSTANTS.SCREENS.DRAFT_DECK);
-    expect(useScreenStore.getState().pendingCharacterId).toBe("wildcard");
+    expect(useRunSessionStore.getState().pendingCharacterId).toBe("wildcard");
   });
 });

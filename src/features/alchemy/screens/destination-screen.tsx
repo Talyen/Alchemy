@@ -7,20 +7,22 @@ import { playBattleEvent } from "@/lib/audio";
 import { getBossById, getBossEnemy, keywordAliases, SHINE_PALETTES } from "../config";
 import { DestinationChoices, ScreenHeader } from "../ui/shared-ui";
 import { DESTINATIONS, type Destination } from "../types";
-import { useScreenStore } from "../stores/screen-store";
+import { useRunSessionStore } from "../stores/run-session-store";
 
-export function DestinationScreen({ onChoose }: { onChoose: (destination: Destination) => void }) {
-  const rewardState = useScreenStore((s) => s.rewardState);
-  const setRewardState = useScreenStore((s) => s.setRewardState);
+export function DestinationScreen({
+  onChoose,
+  onPrepare,
+}: {
+  onChoose: (destination: Destination) => void;
+  onPrepare: () => void;
+}) {
+  const rewardState = useRunSessionStore((s) => s.rewardState);
   const destinationOptions = rewardState.destinations;
   const bossOnly = destinationOptions.length === 1 && destinationOptions[0] === DESTINATIONS.BOSS_COMBAT;
 
   useEffect(() => {
-    if (!bossOnly) return;
-    if (rewardState.selectedBossId && getBossById(rewardState.selectedBossId)) return;
-    const selectedBossId = getBossEnemy().id;
-    setRewardState((prev) => ({ ...prev, selectedBossId }));
-  }, [bossOnly, rewardState.selectedBossId, setRewardState]);
+    onPrepare();
+  }, [onPrepare]);
 
   useEffect(() => {
     if (bossOnly) playBattleEvent("deathsDoor");
@@ -71,7 +73,7 @@ export function DestinationScreen({ onChoose }: { onChoose: (destination: Destin
               className="boss-title-shine bg-clip-text text-transparent [background-size:300%_300%]"
               style={{ backgroundImage: bossTextGradient }}
             >
-              {boss?.title ?? "Unknown Boss"}
+              {boss?.title ?? getBossEnemy().title}
             </span>
           }
         />

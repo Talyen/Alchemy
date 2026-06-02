@@ -3,7 +3,7 @@ import { createRunVictoryHandlers } from "@/features/alchemy/run/run-victory-han
 import { useBattleStore } from "@/features/alchemy/stores/battle-store";
 import { useHomesteadStore } from "@/features/alchemy/stores/homestead-store";
 import { useRunStore } from "@/features/alchemy/stores/run-store";
-import { useScreenStore } from "@/features/alchemy/stores/screen-store";
+import { resetScreenStores } from "@/features/alchemy/stores/screen-store";
 import { computeTalentEffects, createEmptyTalentManifest } from "@/lib/game-data";
 import { CONSTANTS } from "@/features/alchemy/types";
 import type { TalentStateController } from "@/features/alchemy/stores/run-store";
@@ -24,7 +24,7 @@ beforeEach(() => {
   useBattleStore.setState(useBattleStore.getInitialState());
   useHomesteadStore.setState(useHomesteadStore.getInitialState());
   useRunStore.setState(useRunStore.getInitialState());
-  useScreenStore.setState(useScreenStore.getInitialState());
+  resetScreenStores();
 });
 
 function makeHandlers() {

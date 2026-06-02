@@ -7,7 +7,8 @@ import { getDifficultyModifiers, type BattleCard, type CharacterId, type Difficu
 import { DEFAULT_BATTLE_ENEMY_TYPE } from "@/lib/game-constants";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import { useHomesteadStore } from "../stores/homestead-store";
-import { useScreenStore } from "../stores/screen-store";
+import { useUiStore } from "../stores/ui-store";
+import { useRunSessionStore } from "../stores/run-session-store";
 import { afterCampaignCharacterResolved } from "../navigation/run-navigation-helpers";
 import { createDestinationRewardState } from "../navigation/victory-flow";
 import { sampleDestinationChoices } from "../navigation/destination-flow";
@@ -41,7 +42,7 @@ export type ContentSystemNavigationDeps = {
 };
 
 export function createContentSystemNavigation(deps: ContentSystemNavigationDeps) {
-  const getStore = () => useScreenStore.getState();
+  const getStore = () => useRunSessionStore.getState();
 
   function createInitialDestinations(options?: DestinationOptionsInput, prevDest?: Destination) {
     return createDestinationRewardState(
@@ -81,7 +82,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
     if (options.resetEncounteredEnemies) {
       deps.setEncounteredEnemyIds([]);
     }
-    getStore().clearCardHover();
+    useUiStore.getState().clearCardHover();
     return snapshot;
   }
 

@@ -3,8 +3,10 @@
 // Depends on pure battle logic, run/talent state, homestead modifiers, audio, and UI hooks.
 // Depended on by: useAlchemyRunController for managing active combat.
 // Uses useBattleStore (Zustand) instead of local useState for battle data.
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import type { BattleState } from "@/lib/battle";
+import { getPlayableHandCardKeys } from "./battle/playable-hand";
 import { logError } from "@/lib/error-logger";
 import type { CardRect, CardTransfer, Screen } from "./types";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
@@ -14,6 +16,11 @@ import type { RunStateController, TalentStateController } from "./stores/run-sto
 import { applyCombatTextPortraitFeedback } from "./battle/battle-feedback";
 import { useBattleAutoEndTurn } from "./battle/use-battle-auto-end-turn";
 import { useBattleStore } from "./stores/battle-store";
+import { useBattlePresentationStore } from "./stores/battle-presentation-store";
+import { useUiStore } from "./stores/ui-store";
+import { useRunSessionStore } from "./stores/run-session-store";
+import type { BattleScreenData } from "./screens/battle-screen/types";
+import { getBattleSessionStore } from "./battle/battle-store-access";
 import { createTransferCancelRegistry } from "./battle/transfer-lifecycle";
 import { defaultMeasureElementRect, defaultMeasureVisualCardRect } from "./battle/controller-utils";
 import { resolveCompanionFollowUpTexts, type TurnOrchestrationDeps } from "./battle/turn-orchestration";
@@ -53,8 +60,52 @@ export function useBattleController({
   measureElementRect?: (element: HTMLElement | null, sceneElement: HTMLDivElement | null) => CardRect | null;
   measureVisualCardRect?: (element: HTMLElement | null, sceneElement: HTMLDivElement | null) => CardRect | null;
 }) {
-  const battleState = useBattleStore((s) => s.battleState);
+  const { battleState, displayOverrides } = useBattleStore(
+    useShallow((s) => ({ battleState: s.battleState, displayOverrides: s.displayOverrides })),
+  );
   const hasActiveBattle = useBattleStore((s) => s.hasActiveBattle);
+  const battlePresentation = useBattlePresentationStore(
+    useShallow((s) => ({
+      revealedCardKeys: s.revealedCardKeys,
+      cardGhosts: s.cardGhosts,
+      floatingCombatTexts: s.floatingCombatTexts,
+      enemyShaking: s.enemyShaking,
+      playerShaking: s.playerShaking,
+      companionShaking: s.companionShaking,
+      playerHurtFlashToken: s.playerHurtFlashToken,
+      enemyHurtFlashToken: s.enemyHurtFlashToken,
+    })),
+  );
+  const { hoveredCardId, shimmerState, maybeTriggerShimmer } = useUiStore(
+    useShallow((s) => ({
+      hoveredCardId: s.hoveredCardId,
+      shimmerState: s.shimmerState,
+      maybeTriggerShimmer: s.maybeTriggerShimmer,
+    })),
+  );
+  const activeLabyrinthModifiers = useRunSessionStore((s) => s.activeLabyrinthModifiers);
+  const removeCardGhost = useBattlePresentationStore((s) => s.removeCardGhost);
+
+  const battleScreenData: BattleScreenData = useMemo(
+    () => ({
+      battleState,
+      displayOverrides,
+      ...battlePresentation,
+      hoveredCardId,
+      shimmerState,
+      maybeTriggerShimmer,
+      activeLabyrinthModifiers,
+    }),
+    [
+      battleState,
+      displayOverrides,
+      battlePresentation,
+      hoveredCardId,
+      shimmerState,
+      maybeTriggerShimmer,
+      activeLabyrinthModifiers,
+    ],
+  );
 
   const handCardRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const drawPileRef = useRef<HTMLDivElement | null>(null);
@@ -104,8 +155,10 @@ export function useBattleController({
   } = battleSession;
 
   function getStore() {
-    return useBattleStore.getState();
+    return getBattleSessionStore();
   }
+
+  const playableHandCardKeys = useMemo(() => getPlayableHandCardKeys(battleState), [battleState]);
 
   function resetHandTransferUi() {
     setHiddenHandCardKeys(new Set());
@@ -135,6 +188,8 @@ export function useBattleController({
     setCardTransfers,
     setHiddenHandCardKeys,
     setCardTransferInProgress,
+    hasActiveBattle: () => useBattleStore.getState().hasActiveBattle,
+    revealCardKey: (cardKey) => useBattlePresentationStore.getState().addRevealedCardKey(cardKey),
   });
 
   const { getDrawSequenceDeps } = transferDeps;
@@ -270,6 +325,7 @@ export function useBattleController({
 
   return {
     battleState,
+    battleScreenData,
     hasActiveBattle,
     handCardRefs,
     drawPileRef,
@@ -288,6 +344,7 @@ export function useBattleController({
     handleEndTurn,
     handleEndRun,
     skipCombatDevMode,
-    removeCardGhost: getStore().removeCardGhost,
+    removeCardGhost,
+    playableHandCardKeys,
   };
 }

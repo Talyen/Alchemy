@@ -4,6 +4,7 @@ import { TimerGroup } from "@/lib/animation/game-timer";
 import { isPlayerDefeated, type BattleState } from "@/lib/battle";
 import { stopAllSfx } from "@/lib/audio";
 import { useBattleStore } from "../stores/battle-store";
+import { useBattlePresentationStore } from "../stores/battle-presentation-store";
 import type { createTransferCancelRegistry } from "./transfer-lifecycle";
 
 export type BattleSessionDeps = {
@@ -20,6 +21,7 @@ export type BattleSessionDeps = {
 
 export function createBattleSession(deps: BattleSessionDeps) {
   const getStore = () => useBattleStore.getState();
+  const getPresentationStore = () => useBattlePresentationStore.getState();
 
   function isCurrentBattleSession(session: number) {
     return session === deps.battleSessionRef.current && getStore().hasActiveBattle;
@@ -85,9 +87,9 @@ export function createBattleSession(deps: BattleSessionDeps) {
     deps.victoryDefeatHandledRef.current = false;
     deps.resolvedAsHasteOrStunRef.current = false;
     deps.companionScheduledRef.current = false;
-    getStore().clearRevealedCardKeys();
+    getPresentationStore().clearRevealedCardKeys();
     getStore().setBattleStartState(null);
-    getStore().resetPortraitHurtTokens();
+    getPresentationStore().resetPortraitHurtTokens();
   }
 
   function finishDrawSequence(
@@ -102,15 +104,16 @@ export function createBattleSession(deps: BattleSessionDeps) {
   }
 
   function getTurnResolutionStore() {
-    const store = getStore();
+    const domain = getStore();
+    const presentation = getPresentationStore();
     return {
-      showCombatTexts: store.showCombatTexts.bind(store),
-      setSyncedBattleState: store.setSyncedBattleState.bind(store),
-      setDisplayOverrides: store.setDisplayOverrides.bind(store),
-      shakeEnemy: store.shakeEnemy.bind(store),
-      shakePlayer: store.shakePlayer.bind(store),
-      hurtPlayer: store.hurtPlayer.bind(store),
-      hurtEnemy: store.hurtEnemy.bind(store),
+      showCombatTexts: presentation.showCombatTexts.bind(presentation),
+      setSyncedBattleState: domain.setSyncedBattleState.bind(domain),
+      setDisplayOverrides: domain.setDisplayOverrides.bind(domain),
+      shakeEnemy: presentation.shakeEnemy.bind(presentation),
+      shakePlayer: presentation.shakePlayer.bind(presentation),
+      hurtPlayer: presentation.hurtPlayer.bind(presentation),
+      hurtEnemy: presentation.hurtEnemy.bind(presentation),
     };
   }
 

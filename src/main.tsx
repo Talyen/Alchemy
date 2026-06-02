@@ -11,21 +11,6 @@ import { cursorArt } from "./lib/game-data/assets";
 
 // Register the error log store sink before any handlers fire.
 import "./features/alchemy/stores/error-log-store";
-import { logError } from "./lib/error-logger";
-
-// Global error handlers for errors outside React's render cycle.
-window.addEventListener("error", (event) => {
-  logError(
-    event.message,
-    "global",
-    { filename: event.filename, lineno: event.lineno, colno: event.colno },
-    event.error?.stack,
-  );
-});
-window.addEventListener("unhandledrejection", (event) => {
-  const reason = event.reason;
-  logError(reason?.message ?? String(reason), "promise", undefined, reason?.stack);
-});
 
 // Use pointer_c_shaded for all cursor variants — no special effects.
 // Same image throughout; different CSS fallbacks if the image fails.

@@ -4,7 +4,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useShopController } from "@/features/alchemy/use-shop-controller";
 import { useRunStore, type TalentStateController } from "@/features/alchemy/stores/run-store";
 import { makeRunController, makeTalentController as makeTalentControllerFromStore } from "../helpers/run-controller";
-import { useScreenStore } from "@/features/alchemy/stores/screen-store";
+import { useRunSessionStore } from "@/features/alchemy/stores/run-session-store";
+import { resetScreenStores } from "@/features/alchemy/stores/screen-store";
 import { createEmptyTalentManifest } from "@/lib/game-data";
 import { SHOP_CARD_PRICE, SHOP_REFRESH_PRICE, SHOP_REMOVE_PRICE } from "@/lib/game-constants";
 
@@ -41,7 +42,7 @@ function renderShopController() {
 
 beforeEach(() => {
   useRunStore.setState(useRunStore.getInitialState());
-  useScreenStore.setState(useScreenStore.getInitialState());
+  resetScreenStores();
 });
 
 describe("useShopController", () => {
@@ -54,7 +55,7 @@ describe("useShopController", () => {
       rerender();
     });
 
-    const card = useScreenStore.getState().shopState.cards[0];
+    const card = useRunSessionStore.getState().shopState.cards[0];
     expect(card).toBeDefined();
 
     act(() => {
@@ -64,7 +65,7 @@ describe("useShopController", () => {
 
     expect(useRunStore.getState().runGold).toBe(999 - SHOP_CARD_PRICE);
     expect(useRunStore.getState().runDeck.some((entry) => entry.id === card!.id)).toBe(true);
-    expect(useScreenStore.getState().shopState.firstPurchaseUsed).toBe(true);
+    expect(useRunSessionStore.getState().shopState.firstPurchaseUsed).toBe(true);
   });
 
   it("handleShopBuyCard no-ops when gold is insufficient", () => {
@@ -76,7 +77,7 @@ describe("useShopController", () => {
       rerender();
     });
 
-    const card = useScreenStore.getState().shopState.cards[0];
+    const card = useRunSessionStore.getState().shopState.cards[0];
     const deckBefore = useRunStore.getState().runDeck.length;
 
     act(() => {
@@ -105,7 +106,7 @@ describe("useShopController", () => {
 
     expect(useRunStore.getState().runGold).toBe(999 - SHOP_REMOVE_PRICE);
     expect(useRunStore.getState().runDeck.map((card) => card.id)).toEqual(["b"]);
-    expect(useScreenStore.getState().shopState.removeUsed).toBe(true);
+    expect(useRunSessionStore.getState().shopState.removeUsed).toBe(true);
   });
 
   it("handleShopRefresh spends gold and decrements refreshesLeft", () => {
@@ -117,7 +118,7 @@ describe("useShopController", () => {
       rerender();
     });
 
-    const before = useScreenStore.getState().shopState.refreshesLeft;
+    const before = useRunSessionStore.getState().shopState.refreshesLeft;
 
     act(() => {
       result.current.handleShopRefresh();
@@ -125,6 +126,6 @@ describe("useShopController", () => {
     });
 
     expect(useRunStore.getState().runGold).toBe(999 - SHOP_REFRESH_PRICE);
-    expect(useScreenStore.getState().shopState.refreshesLeft).toBe(before - 1);
+    expect(useRunSessionStore.getState().shopState.refreshesLeft).toBe(before - 1);
   });
 });

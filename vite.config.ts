@@ -66,7 +66,13 @@ export default defineConfig(({ mode }) => ({
     coverage: {
       provider: "v8",
       include: ["src/lib/**", "src/features/alchemy/**"],
-      exclude: ["src/**/*.tsx", "src/**/types.ts", "src/**/assets.ts", "tests/**"],
+      exclude: [
+        "src/**/types.ts",
+        "src/**/assets.ts",
+        "src/features/alchemy/screens/**",
+        "src/components/**",
+        "tests/**",
+      ],
     },
   },
 }));

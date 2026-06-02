@@ -4,8 +4,8 @@ import type { BattleState } from "@/lib/battle";
 import type { BattleCard, CharacterId, DifficultyId } from "@/lib/game-data";
 import type { ContentSystemId, LabyrinthMap, LabyrinthModifierKind } from "@/lib/content-systems/types";
 import type { TalentXP } from "@/lib/talents";
+import { createActiveRunSnapshot } from "@/lib/active-run-session";
 import type { Destination, Screen } from "../types";
-import { createActiveRunData } from "./active-run-data";
 import type { LabyrinthNodePosition } from "./types";
 
 type ActiveRunSnapshotInput = {
@@ -34,7 +34,6 @@ type ActiveRunSnapshotInput = {
 };
 
 export function useActiveRunSnapshot(input: ActiveRunSnapshotInput) {
-  // Destructure so useMemo deps are field-level, not `input` — callers pass a new object each render.
   const {
     characterId,
     runDeck,
@@ -62,7 +61,7 @@ export function useActiveRunSnapshot(input: ActiveRunSnapshotInput) {
 
   return useMemo(
     () =>
-      createActiveRunData({
+      createActiveRunSnapshot({
         characterId,
         runDeck,
         runGold,

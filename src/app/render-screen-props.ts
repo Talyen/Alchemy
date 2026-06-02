@@ -1,5 +1,6 @@
 // Props for the screen route renderer (shared by render-alchemy-screen and screen-routes).
 import type { CardTransfer, Screen } from "@/features/alchemy/types";
+import type { BattleScreenData } from "@/features/alchemy/screens";
 import type { ControllerActions } from "@/app/controller-actions";
 
 export type RenderAlchemyScreenProps = {
@@ -18,6 +19,8 @@ export type RenderAlchemyScreenProps = {
   cardTransfers: CardTransfer[];
   hiddenHandCardKeys: Set<string>;
   cardTransferInProgress: boolean;
+  playableHandCardKeys: Set<string>;
+  battleScreenData: BattleScreenData;
   hasUnspentTalents: boolean;
   hasAffordableHomestead: boolean;
   pendingCharacterId: string | null;

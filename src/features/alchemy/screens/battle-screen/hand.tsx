@@ -1,5 +1,5 @@
 // Player hand fan for battle cards.
-// Depends on battle/screen stores, card cost logic, and hand layout constants.
+// Depends on battle controller playability props and hand layout constants.
 // Used by BattleBottomBar to render playable cards and animation refs.
 import { type CSSProperties, type MouseEvent, type MutableRefObject, useLayoutEffect, useRef } from "react";
 
@@ -12,16 +12,13 @@ import {
   HAND_HOVER_ROTATION_DEGREES,
   HAND_HOVER_SCALE,
 } from "@/lib/game-constants";
-import { getEffectiveCost } from "@/lib/battle";
 import { cn } from "@/lib/utils";
-import type { BattleState } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
 
 import { BattleCardButton } from "../../ui/card-button";
 import { getCardDisplayTitle } from "../../ui/card-description-ui";
 import { battleHandContainerClass, handCardWidthClass } from "../../config";
 import type { BattleActionsProps, BattleRefsProps, RequiredBattleViewProps } from "./types";
-import { useBattleStore } from "../../stores/battle-store";
 import { useInteractiveCard } from "../../ui/use-interactive-card";
 import type { CardDescriptionContext } from "../../utils/card-description";
 
@@ -34,12 +31,9 @@ function HandCardItem({
   handCardRefs,
   hiddenHandCardKeys,
   revealedCardKeys,
+  playableHandCardKeys,
   onCardClick,
   descriptionContext,
-  turnPhase,
-  mana,
-  wishOptions,
-  costState,
 }: {
   card: BattleCard;
   index: number;
@@ -49,12 +43,9 @@ function HandCardItem({
   handCardRefs: MutableRefObject<Record<string, HTMLButtonElement | null>>;
   hiddenHandCardKeys: Set<string>;
   revealedCardKeys: Set<string>;
+  playableHandCardKeys: Set<string>;
   onCardClick: (card: BattleCard, index: number, event: MouseEvent<HTMLButtonElement>) => void;
   descriptionContext: CardDescriptionContext;
-  turnPhase: string;
-  mana: number;
-  wishOptions: unknown;
-  costState: Pick<BattleState, "flags" | "talentEffects" | "trinketEffects">;
 }) {
   const cardKey = `${card.id}-${card.uid}`;
   const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard(
@@ -64,7 +55,7 @@ function HandCardItem({
   const offset = index - (handLength - 1) / 2;
   const isRevealedFromTransfer = revealedCardKeys.has(cardKey);
   const shouldStagger = !hiddenHandCardKeys.has(cardKey) && !isRevealedFromTransfer;
-  const canPlay = turnPhase === "player" && mana >= getEffectiveCost(costState, card) && !wishOptions;
+  const canPlay = playableHandCardKeys.has(cardKey);
 
   const elementRef = useRef<HTMLButtonElement | null>(null);
 
@@ -123,21 +114,13 @@ export function BattleHand({
 }) {
   const { battleState, stagePixelRatio } = view;
   const { handCardRefs } = refs;
-  const { hiddenHandCardKeys } = actions;
-  const revealedCardKeys = useBattleStore((s) => s.revealedCardKeys);
-  const { onCardClick } = actions;
+  const { hiddenHandCardKeys, playableHandCardKeys, revealedCardKeys, onCardClick } = actions;
   const handWidthClass = handCardWidthClass;
 
   const descriptionContext = {
     ...battleState.talentEffects,
     companionDamageBonus: battleState.trinketEffects.companionDamageBonus,
     companionDamageBuff: battleState.companionDamageBuff,
-  };
-
-  const costState: Pick<BattleState, "flags" | "talentEffects" | "trinketEffects"> = {
-    flags: battleState.flags,
-    talentEffects: battleState.talentEffects,
-    trinketEffects: battleState.trinketEffects,
   };
 
   return (
@@ -153,12 +136,9 @@ export function BattleHand({
           handCardRefs={handCardRefs}
           hiddenHandCardKeys={hiddenHandCardKeys}
           revealedCardKeys={revealedCardKeys}
+          playableHandCardKeys={playableHandCardKeys}
           onCardClick={onCardClick}
           descriptionContext={descriptionContext}
-          turnPhase={battleState.turnPhase}
-          mana={battleState.mana}
-          wishOptions={battleState.wishOptions}
-          costState={costState}
         />
       ))}
     </div>

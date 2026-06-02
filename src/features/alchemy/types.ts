@@ -3,61 +3,23 @@
 // Used across alchemy controllers, hooks, screens, and reusable UI widgets.
 import type { CSSProperties } from "react";
 
-import type { CombatTextEvent } from "@/lib/battle";
-import type { BattleCard, EnemyStatusId, KeywordId, PlayerStatusId } from "@/lib/game-data";
+import type { EnemyStatusId, KeywordId, PlayerStatusId } from "@/lib/game-data";
+import { DESTINATIONS, ROUTE_SCREENS } from "@/lib/routing";
 
-export type Screen =
-  | "menu"
-  | "game-mode-select"
-  | "character-select"
-  | "difficulty-select"
-  | "draft-deck"
-  | "battle"
-  | "rewards"
-  | "destination"
-  | "options"
-  | "collection"
-  | "talents"
-  | "homestead"
-  | "game-over"
-  | "campfire"
-  | "shop"
-  | "alchemist"
-  | "mystery"
-  | "corruption"
-  | "run-victory"
-  | "labyrinth-map"
-  | "wildwood-select";
+export type { Screen, Destination } from "@/lib/routing";
+export { DESTINATIONS } from "@/lib/routing";
+export type {
+  CardGhost,
+  CardRect,
+  CardTransfer,
+  FloatingCombatText,
+} from "@/features/alchemy/battle/presentation-types";
 
 export type AspectRatioOption = "auto" | "16:9" | "16:10" | "21:9";
 
 export type DisplayMode = "windowed" | "borderless-fullscreen" | "fullscreen";
 
 export type UiScale = "90" | "100" | "110" | "120";
-
-export const ROUTE_SCREENS = {
-  MENU: "menu",
-  GAME_MODE_SELECT: "game-mode-select",
-  CHARACTER_SELECT: "character-select",
-  DIFFICULTY_SELECT: "difficulty-select",
-  DRAFT_DECK: "draft-deck",
-  BATTLE: "battle",
-  REWARDS: "rewards",
-  DESTINATION: "destination",
-  OPTIONS: "options",
-  COLLECTION: "collection",
-  TALENTS: "talents",
-  HOMESTEAD: "homestead",
-  GAME_OVER: "game-over",
-  CAMPFIRE: "campfire",
-  SHOP: "shop",
-  ALCHEMIST: "alchemist",
-  MYSTERY: "mystery",
-  CORRUPTION: "corruption",
-  RUN_VICTORY: "run-victory",
-  LABYRINTH_MAP: "labyrinth-map",
-  WILDWOOD_SELECT: "wildwood-select",
-} as const;
 
 const CONTENT_SYSTEMS = {
   CAMPAIGN: "campaign",
@@ -69,17 +31,6 @@ const ENEMY_TYPES = {
   NORMAL: "normal",
   ELITE: "elite",
   BOSS: "boss",
-} as const;
-
-export const DESTINATIONS = {
-  NORMAL_COMBAT: "Normal Combat",
-  ELITE_COMBAT: "Elite Combat",
-  MERCHANT_SHOP: "Merchant's Shop",
-  ALCHEMIST_SHOP: "Alchemist's Shop",
-  MYSTERY: "Mystery",
-  CORRUPTION: "Corruption",
-  CAMPFIRE: "Campfire",
-  BOSS_COMBAT: "Boss Combat",
 } as const;
 
 const REWARD_ROUTES = {
@@ -99,46 +50,7 @@ export const CONSTANTS = {
   REWARD_ROUTES,
 } as const;
 
-export type Destination = (typeof DESTINATIONS)[keyof typeof DESTINATIONS];
-
 export type CollectionTab = "cards" | "bestiary" | "trinkets";
-
-type CardGhostVariant = "draw-in" | "discard-out" | "activate" | "play-travel";
-
-export type CardRect = { x: number; y: number; width: number; height: number };
-
-export type CardGhost = {
-  id: string;
-  art: string;
-  rect: CardRect;
-  rotation: number;
-  delay: number;
-  variant: CardGhostVariant;
-  travel?: {
-    x: number;
-    y: number;
-    scale: number;
-  };
-};
-
-export type CardTransfer = {
-  id: string;
-  card: BattleCard;
-  from: CardRect;
-  to: CardRect;
-  fromScale: number;
-  toScale: number;
-  fromRotation: number;
-  toRotation: number;
-  rotateY: number[];
-  duration: number;
-};
-
-export type FloatingCombatText = CombatTextEvent & {
-  id: string;
-  lane: number;
-  displayText: string;
-};
 
 export type StatusChip = {
   id: PlayerStatusId | EnemyStatusId;

@@ -10,13 +10,13 @@ import { ScreenHeader } from "../ui/shared-ui";
 import { matIconMap, matPillStyle, matTextColor } from "../ui/material-icons";
 import { KeywordProgressCard } from "./game-over-screen";
 import { useRunStore } from "../stores/run-store";
-import { useScreenStore } from "../stores/screen-store";
+import { useRunSessionStore } from "../stores/run-session-store";
 
 export function RunVictoryScreen({ onMainMenu }: { onMainMenu: () => void }) {
   const { runTalentXP, talentXP } = useRunStore(
     useShallow((s) => ({ runTalentXP: s.runTalentXP, talentXP: s.talentXP })),
   );
-  const runEndMaterials = useScreenStore((s) => s.runEndMaterials);
+  const runEndMaterials = useRunSessionStore((s) => s.runEndMaterials);
   const [animate, setAnimate] = useState(false);
   const keywordIds = useMemo(
     () =>

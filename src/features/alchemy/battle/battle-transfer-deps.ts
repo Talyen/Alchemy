@@ -4,8 +4,7 @@ import type { RefObject } from "react";
 import { delay } from "@/lib/animation/game-timer";
 import { CARD_TRANSFER_CONFIG } from "@/lib/game-constants";
 import { playBattleEvent } from "@/lib/audio";
-import type { CardRect, CardTransfer } from "../types";
-import { useBattleStore } from "../stores/battle-store";
+import type { CardRect, CardTransfer } from "./presentation-types";
 import { animateDiscardedHand, animateDrawnHand, type CardTransferAnimationDeps } from "./card-transfer-animations";
 import type { HandDrawSequenceDeps } from "./draw-sequence";
 import type { StableHandCardRectDeps } from "./hand-card-layout";
@@ -26,11 +25,11 @@ export type BattleTransferDepsInput = {
   setCardTransfers: React.Dispatch<React.SetStateAction<CardTransfer[]>>;
   setHiddenHandCardKeys: React.Dispatch<React.SetStateAction<Set<string>>>;
   setCardTransferInProgress: React.Dispatch<React.SetStateAction<boolean>>;
+  hasActiveBattle: () => boolean;
+  revealCardKey: (cardKey: string) => void;
 };
 
 export function createBattleTransferDeps(input: BattleTransferDepsInput) {
-  const getStore = () => useBattleStore.getState();
-
   function localRectFromElement(element: HTMLElement | null): CardRect | null {
     return input.measureElementRect(element, input.battleSceneRef.current);
   }
@@ -40,7 +39,7 @@ export function createBattleTransferDeps(input: BattleTransferDepsInput) {
   }
 
   function playTransferSound(delayMs = 0) {
-    if (!getStore().hasActiveBattle) return;
+    if (!input.hasActiveBattle()) return;
     playBattleEvent("drawTransfer", { volume: CARD_TRANSFER_CONFIG.soundVolume, delay: delayMs });
   }
 
@@ -81,7 +80,7 @@ export function createBattleTransferDeps(input: BattleTransferDepsInput) {
       runCardTransfer,
       playTransferSound,
       setHiddenHandCardKeys: (update) => input.setHiddenHandCardKeys(update),
-      revealCardKey: (cardKey) => getStore().addRevealedCardKey(cardKey),
+      revealCardKey: input.revealCardKey,
       setCardPlayInProgress: (active) => {
         input.cardPlayInProgressRef.current = active;
       },

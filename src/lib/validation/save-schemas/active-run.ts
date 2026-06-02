@@ -2,8 +2,7 @@
 import { z } from "zod";
 import { defaultBattleState, type BattleState } from "@/lib/battle";
 import { isPersistedBattleState } from "../battle-state-guard";
-import type { Screen } from "@/features/alchemy/types";
-import { ROUTE_SCREENS } from "@/features/alchemy/types";
+import { ROUTE_SCREEN_VALUES } from "@/lib/routing";
 import { ACTS_PER_RUN, LEGACY_CHARACTER_RENAMES } from "@/lib/game-constants";
 import { normalizeActiveRunData } from "../normalize-active-run-data";
 import {
@@ -67,11 +66,7 @@ export const ActiveRunDataSchema = z
     labyrinthPendingNode: LabyrinthNodePositionSchema,
     activeCombat: caught(ActiveCombatDataSchema, null, "activeRun.activeCombat").default(null),
     runTalentXP: TalentXPSchema.optional(),
-    currentScreen: caught(
-      z.enum(Object.values(ROUTE_SCREENS) as [Screen, ...Screen[]]).nullable(),
-      null,
-      "activeRun.currentScreen",
-    ).default(null),
+    currentScreen: caught(z.enum(ROUTE_SCREEN_VALUES).nullable(), null, "activeRun.currentScreen").default(null),
     destinationChoices: caught(z.array(z.string()), [], "activeRun.destinationChoices").default([]),
   })
   .transform((data) => normalizeActiveRunData(data))

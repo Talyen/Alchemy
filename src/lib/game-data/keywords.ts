@@ -1,63 +1,14 @@
 // Keyword definitions (visual config per keyword) and shared card-to-keyword extraction.
 // Depends on card/type shapes. Used by talent XP and reward affinity scoring.
 import type { BattleCard, KeywordDefinition, KeywordId } from "./types";
+import { collectKeywordsFromBattleEffect } from "./effect-metadata";
 
 export function getCardKeywords(card: BattleCard): KeywordId[] {
   const keywords = new Set<KeywordId>();
 
   for (const effect of card.effects) {
-    switch (effect.kind) {
-      case "damage":
-        keywords.add(effect.damageType);
-        if (effect.lifesteal) keywords.add("leech");
-        break;
-      case "cleanse-player-status-to-damage":
-        keywords.add("health");
-        keywords.add(effect.damageType);
-        break;
-      case "random-damage":
-        break;
-      case "player-status":
-        if (effect.status !== "haste") keywords.add(effect.status as KeywordId);
-        break;
-      case "heal":
-        keywords.add("health");
-        break;
-      case "restore-mana":
-      case "lose-mana":
-      case "lose-max-mana":
-      case "gain-max-mana":
-        keywords.add("mana");
-        break;
-      case "gain-gold":
-        keywords.add("gold");
-        break;
-      case "wish":
-        keywords.add("wish");
-        break;
-      case "summon-companion":
-      case "buff-companion":
-        keywords.add("companion");
-        break;
-      case "remove-harmful-status":
-        break;
-      case "lose-health":
-        keywords.add("health");
-        break;
-      case "draw-cards":
-        break;
-      case "remove-enemy-armor":
-        keywords.add("armor");
-        break;
-      case "multiply-enemy-status":
-        keywords.add(effect.status as KeywordId);
-        break;
-      case "remove-player-status":
-        keywords.add(effect.status as KeywordId);
-        break;
-      case "self-damage":
-        keywords.add(effect.damageType as KeywordId);
-        break;
+    for (const keyword of collectKeywordsFromBattleEffect(effect)) {
+      keywords.add(keyword);
     }
   }
 

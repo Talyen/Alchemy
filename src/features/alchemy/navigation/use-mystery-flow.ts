@@ -1,22 +1,22 @@
 // Manages React state integration and event handlers for the run's mystery events flow.
-// Depends on: cardLibrary, useScreenStore, mysteryPool, and mystery-flow helpers.
+// Depends on: cardLibrary, useRunSessionStore, mysteryPool, and mystery-flow helpers.
 // Depended on by: useRunNavigation for managing the React state of mystery events during a run.
 import { cardLibrary } from "@/lib/game-data";
 import { pickMysteryEvent, type MysteryChoice } from "../mystery-events";
 import { appendCardToRunWithDiscovery } from "../run/deck-mutations";
 import { applyMysteryEffect } from "./mystery-flow";
-import { useScreenStore } from "../stores/screen-store";
+import { useRunSessionStore } from "../stores/run-session-store";
 import { useRunStore } from "../stores/run-store";
 import { useAppStore } from "../stores/app-store";
 import { useHomesteadStore } from "../stores/homestead-store";
 import { applyMaterialFindBonus } from "@/lib/homestead/loot";
 
 export function useMysteryFlow({ advanceToNextDestination }: { advanceToNextDestination: () => void }) {
-  const mysteryEvent = useScreenStore((s) => s.mysteryEvent);
-  const mysteryCardChoices = useScreenStore((s) => s.mysteryCardChoices);
+  const mysteryEvent = useRunSessionStore((s) => s.mysteryEvent);
+  const mysteryCardChoices = useRunSessionStore((s) => s.mysteryCardChoices);
 
   function getStore() {
-    return useScreenStore.getState();
+    return useRunSessionStore.getState();
   }
 
   // Prepares the mystery destination state by sampling a random event and navigating to the screen.

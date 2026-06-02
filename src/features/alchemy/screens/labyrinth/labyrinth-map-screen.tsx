@@ -6,7 +6,7 @@
 import { type CSSProperties, useState } from "react";
 
 import { HamburgerTrigger, ScreenHeader } from "../../ui/shared-ui";
-import { useScreenStore } from "../../stores/screen-store";
+import { useRunSessionStore } from "../../stores/run-session-store";
 
 import { LabyrinthConnectionLayer } from "./labyrinth-connection-layer";
 import { LabyrinthNodeButton, type HoveredLabyrinthNode } from "./labyrinth-node-button";
@@ -19,7 +19,7 @@ type Props = {
 };
 
 export function LabyrinthMapScreen({ onNodeClick, onOpenMenu }: Props) {
-  const labyrinthMap = useScreenStore((s) => s.labyrinthMap);
+  const labyrinthMap = useRunSessionStore((s) => s.labyrinthMap);
   const [hoveredNode, setHoveredNode] = useState<HoveredLabyrinthNode | null>(null);
 
   return (

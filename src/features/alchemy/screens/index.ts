@@ -2,6 +2,7 @@
 // Depends on screen modules only.
 // App imports from here for most screens while battle/homestead can still be direct imports.
 export { BattleScreen } from "./battle-screen";
+export type { BattleScreenData } from "./battle-screen/types";
 export { CollectionScreen } from "./collection-screen";
 export { HomesteadScreen } from "./homestead-screen";
 export { OptionsScreen } from "./options-screen";

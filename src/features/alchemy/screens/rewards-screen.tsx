@@ -13,7 +13,7 @@ import { DetailPopup } from "../ui/card-popup";
 import { ScreenHeader } from "../ui/shared-ui";
 import { TiltSurface } from "../ui/tilt-surface";
 import { cardSurfaceClass, collectionTileWidthClass } from "../config";
-import { useScreenStore } from "../stores/screen-store";
+import { useRunSessionStore } from "../stores/run-session-store";
 import { useInteractiveCard } from "../ui/use-interactive-card";
 
 function TrinketRewardButton({
@@ -85,9 +85,16 @@ function RewardCardItem({
   );
 }
 
-export function RewardsScreen({ onAddReward, onSkip }: { onAddReward: () => void; onSkip: () => void }) {
-  const rewardState = useScreenStore((s) => s.rewardState);
-  const setRewardState = useScreenStore((s) => s.setRewardState);
+export function RewardsScreen({
+  onAddReward,
+  onSkip,
+  onSelectReward,
+}: {
+  onAddReward: () => void;
+  onSkip: () => void;
+  onSelectReward: (id: string) => void;
+}) {
+  const rewardState = useRunSessionStore((s) => s.rewardState);
   const rewardType = rewardState.rewardType;
   const rewardChoices = rewardState.choices;
   const rewardGold = rewardState.gold;
@@ -112,7 +119,7 @@ export function RewardsScreen({ onAddReward, onSkip }: { onAddReward: () => void
               <TrinketRewardButton
                 key={item.id}
                 trinket={item as TrinketEntry}
-                onClick={() => setRewardState((prev) => ({ ...prev, selectedId: item.id }))}
+                onClick={() => onSelectReward(item.id)}
                 selected={selectedRewardId === item.id}
               />
             ) : (
@@ -121,7 +128,7 @@ export function RewardsScreen({ onAddReward, onSkip }: { onAddReward: () => void
                 card={item as BattleCard}
                 index={index}
                 selected={selectedRewardId === item.id}
-                onSelect={(id) => setRewardState((prev) => ({ ...prev, selectedId: id }))}
+                onSelect={onSelectReward}
               />
             ),
           )}
