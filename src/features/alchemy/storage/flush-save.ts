@@ -7,7 +7,7 @@ import type { ActiveRunData } from "@/features/alchemy/run/types";
 import type { SaveData } from "./types";
 import { saveAlchemySaveData } from "./io";
 
-export function buildAlchemySaveDataFromStores(activeRun: ActiveRunData | null): SaveData {
+function buildAlchemySaveDataFromStores(activeRun: ActiveRunData | null): SaveData {
   const app = useAppStore.getState();
   const run = useRunStore.getState();
   const homestead = useHomesteadStore.getState();
