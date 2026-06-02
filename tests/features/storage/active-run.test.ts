@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeActiveRun } from "@/features/alchemy/storage/active-run";
+import { parseActiveRun } from "@/features/alchemy/storage/active-run";
 import { defaultBattleState } from "@/lib/battle";
 
 function makeRunCandidate(overrides: Record<string, unknown> = {}): Record<string, unknown> {
@@ -20,79 +20,79 @@ function makeRunCandidate(overrides: Record<string, unknown> = {}): Record<strin
   };
 }
 
-describe("normalizeActiveRun", () => {
+describe("parseActiveRun", () => {
   it("returns null for null input", () => {
-    expect(normalizeActiveRun(null)).toBeNull();
+    expect(parseActiveRun(null)).toBeNull();
   });
 
   it("returns null for undefined input", () => {
-    expect(normalizeActiveRun(undefined)).toBeNull();
+    expect(parseActiveRun(undefined)).toBeNull();
   });
 
   it("returns null for non-object input", () => {
-    expect(normalizeActiveRun("bad")).toBeNull();
+    expect(parseActiveRun("bad")).toBeNull();
   });
 
   it("returns null when characterId is missing", () => {
     const data = makeRunCandidate();
     delete data.characterId;
-    expect(normalizeActiveRun(data)).toBeNull();
+    expect(parseActiveRun(data)).toBeNull();
   });
 
   it("returns null when characterId is invalid", () => {
-    expect(normalizeActiveRun(makeRunCandidate({ characterId: "invalid-char" }))).toBeNull();
+    expect(parseActiveRun(makeRunCandidate({ characterId: "invalid-char" }))).toBeNull();
   });
 
   it("remaps legacy characterId 'sorcerer' to 'wizard'", () => {
-    const result = normalizeActiveRun(makeRunCandidate({ characterId: "sorcerer" }));
+    const result = parseActiveRun(makeRunCandidate({ characterId: "sorcerer" }));
     expect(result?.characterId).toBe("wizard");
   });
 
   it("remaps legacy characterId 'warden' to 'ranger'", () => {
-    const result = normalizeActiveRun(makeRunCandidate({ characterId: "warden" }));
+    const result = parseActiveRun(makeRunCandidate({ characterId: "warden" }));
     expect(result?.characterId).toBe("ranger");
   });
 
   it("returns null when run shape is missing required fields", () => {
     const data = makeRunCandidate();
     delete data.runDeck;
-    expect(normalizeActiveRun(data)).toBeNull();
+    expect(parseActiveRun(data)).toBeNull();
   });
 
   it("returns null when runGold is negative", () => {
-    expect(normalizeActiveRun(makeRunCandidate({ runGold: -5 }))).toBeNull();
+    expect(parseActiveRun(makeRunCandidate({ runGold: -5 }))).toBeNull();
   });
 
   it("returns null when runGold is NaN", () => {
-    expect(normalizeActiveRun(makeRunCandidate({ runGold: NaN }))).toBeNull();
+    expect(parseActiveRun(makeRunCandidate({ runGold: NaN }))).toBeNull();
   });
 
   it("returns null when runGold is a float", () => {
-    expect(normalizeActiveRun(makeRunCandidate({ runGold: 5.5 }))).toBeNull();
+    expect(parseActiveRun(makeRunCandidate({ runGold: 5.5 }))).toBeNull();
   });
 
   it("returns null when playerHealth exceeds maxHealth", () => {
-    expect(normalizeActiveRun(makeRunCandidate({ runPlayerHealth: 40, runMaxHealth: 30 }))).toBeNull();
+    expect(parseActiveRun(makeRunCandidate({ runPlayerHealth: 40, runMaxHealth: 30 }))).toBeNull();
   });
 
   it("returns null when playerHealth is negative", () => {
-    expect(normalizeActiveRun(makeRunCandidate({ runPlayerHealth: -1, runMaxHealth: 30 }))).toBeNull();
+    expect(parseActiveRun(makeRunCandidate({ runPlayerHealth: -1, runMaxHealth: 30 }))).toBeNull();
   });
 
   it("returns null when maxHealth is 0", () => {
-    expect(normalizeActiveRun(makeRunCandidate({ runPlayerHealth: 0, runMaxHealth: 0 }))).toBeNull();
+    expect(parseActiveRun(makeRunCandidate({ runPlayerHealth: 0, runMaxHealth: 0 }))).toBeNull();
   });
 
   it("returns null when currentAct is less than 1", () => {
-    expect(normalizeActiveRun(makeRunCandidate({ currentAct: 0 }))).toBeNull();
+    expect(parseActiveRun(makeRunCandidate({ currentAct: 0 }))).toBeNull();
   });
 
   it("returns null when currentAct exceeds max acts", () => {
-    expect(normalizeActiveRun(makeRunCandidate({ currentAct: 99 }))).toBeNull();
+    expect(parseActiveRun(makeRunCandidate({ currentAct: 99 }))).toBeNull();
   });
 
   it("parses a valid campaign run with all fields", () => {
-    const result = normalizeActiveRun(makeRunCandidate());
+    const result = parseActiveRun(makeRunCandidate());
     expect(result).not.toBeNull();
     expect(result!.characterId).toBe("knight");
     expect(result!.runGold).toBe(10);
@@ -108,14 +108,14 @@ describe("normalizeActiveRun", () => {
   });
 
   it("normalizes encountered run enemy IDs", () => {
-    const result = normalizeActiveRun(makeRunCandidate({ encounteredRunEnemyIds: ["goblin", "goblin", 7] }));
+    const result = parseActiveRun(makeRunCandidate({ encounteredRunEnemyIds: ["goblin", "goblin", 7] }));
 
     expect(result).not.toBeNull();
     expect(result!.encounteredRunEnemyIds).toEqual(["goblin"]);
   });
 
   it("uses class starting deck when runDeck matches legacy starter deck IDs", () => {
-    const result = normalizeActiveRun(makeRunCandidate({
+    const result = parseActiveRun(makeRunCandidate({
       characterId: "ranger",
       runDeck: [
         { id: "slash", title: "Slash", descriptionLines: [""], art: "", cost: 1, effects: [] },
@@ -137,7 +137,7 @@ describe("normalizeActiveRun", () => {
   });
 
   it("hydrates saved cards with library data", () => {
-    const result = normalizeActiveRun(makeRunCandidate({
+    const result = parseActiveRun(makeRunCandidate({
       runDeck: [{
         id: "slash",
         uid: 42,
@@ -156,7 +156,7 @@ describe("normalizeActiveRun", () => {
   });
 
   it("uses class deck when runDeck is empty and run is unstarted", () => {
-    const result = normalizeActiveRun(makeRunCandidate({
+    const result = parseActiveRun(makeRunCandidate({
       runDeck: [],
       roomsEncountered: 0,
       currentAct: 1,
@@ -168,18 +168,18 @@ describe("normalizeActiveRun", () => {
   });
 
   it("sets contentSystemType to 'campaign' for unknown types", () => {
-    const result = normalizeActiveRun(makeRunCandidate({ contentSystemType: "wildwood" }));
+    const result = parseActiveRun(makeRunCandidate({ contentSystemType: "wildwood" }));
     expect(result!.contentSystemType).toBe("campaign");
   });
 
   it("falls back to campaign when labyrinth map is missing", () => {
-    const result = normalizeActiveRun(makeRunCandidate({ contentSystemType: "labyrinth" }));
+    const result = parseActiveRun(makeRunCandidate({ contentSystemType: "labyrinth" }));
     expect(result!.contentSystemType).toBe("campaign");
   });
 
   it("normalizes valid active combat data", () => {
     const battleState = { ...defaultBattleState(), turn: 2, playerHealth: 11 };
-    const result = normalizeActiveRun(makeRunCandidate({ activeCombat: { battleState } }));
+    const result = parseActiveRun(makeRunCandidate({ activeCombat: { battleState } }));
 
     expect(result!.activeCombat?.battleState.turn).toBe(2);
     expect(result!.activeCombat?.battleState.playerHealth).toBe(11);
@@ -187,13 +187,13 @@ describe("normalizeActiveRun", () => {
   });
 
   it("drops invalid active combat data", () => {
-    const result = normalizeActiveRun(makeRunCandidate({ activeCombat: { battleState: { turn: 2 } } }));
+    const result = parseActiveRun(makeRunCandidate({ activeCombat: { battleState: { turn: 2 } } }));
 
     expect(result!.activeCombat).toBeNull();
   });
 });
 
-describe("normalizeActiveRun with labyrinth map", () => {
+describe("parseActiveRun with labyrinth map", () => {
   // A minimal valid 1x2 grid: entrance(0,0) → boss(0,1)
   const valid1x2Grid = [
     [
@@ -210,7 +210,7 @@ describe("normalizeActiveRun with labyrinth map", () => {
   }
 
   it("parses a valid labyrinth map", () => {
-    const result = normalizeActiveRun(makeLabyrinthRun({
+    const result = parseActiveRun(makeLabyrinthRun({
       rows: 1, cols: 2, currentNode: { row: 0, col: 0 }, grid: valid1x2Grid,
     }));
     expect(result).not.toBeNull();
@@ -220,7 +220,7 @@ describe("normalizeActiveRun with labyrinth map", () => {
   });
 
   it("sets labyrinthMap to null when grid dimension mismatches rows", () => {
-    const result = normalizeActiveRun(makeLabyrinthRun({
+    const result = parseActiveRun(makeLabyrinthRun({
       rows: 2, cols: 2, currentNode: { row: 0, col: 0 }, grid: valid1x2Grid,
     }));
     expect(result).not.toBeNull();
@@ -228,7 +228,7 @@ describe("normalizeActiveRun with labyrinth map", () => {
   });
 
   it("sets labyrinthMap to null when map has no entrance", () => {
-    const result = normalizeActiveRun(makeLabyrinthRun({
+    const result = parseActiveRun(makeLabyrinthRun({
       rows: 1, cols: 2, currentNode: { row: 0, col: 0 }, grid: [
         [
           { type: "combat", state: "current", connections: [{ row: 0, col: 1 }], modifiers: [], rewardModifiers: [] },
@@ -241,7 +241,7 @@ describe("normalizeActiveRun with labyrinth map", () => {
   });
 
   it("sets labyrinthMap to null when currentNode is out of bounds", () => {
-    const result = normalizeActiveRun(makeLabyrinthRun({
+    const result = parseActiveRun(makeLabyrinthRun({
       rows: 1, cols: 2, currentNode: { row: 99, col: 0 }, grid: valid1x2Grid,
     }));
     expect(result).not.toBeNull();
@@ -249,7 +249,7 @@ describe("normalizeActiveRun with labyrinth map", () => {
   });
 
   it("sets labyrinthMap to null when a node has 0 connections", () => {
-    const result = normalizeActiveRun(makeLabyrinthRun({
+    const result = parseActiveRun(makeLabyrinthRun({
       rows: 1, cols: 2, currentNode: { row: 0, col: 0 }, grid: [
         [
           { type: "entrance", state: "current", connections: [], modifiers: [], rewardModifiers: [] },
@@ -262,7 +262,7 @@ describe("normalizeActiveRun with labyrinth map", () => {
   });
 
   it("sets labyrinthMap to null when connections are non-adjacent (dr=2)", () => {
-    const result = normalizeActiveRun(makeLabyrinthRun({
+    const result = parseActiveRun(makeLabyrinthRun({
       rows: 3, cols: 1, currentNode: { row: 0, col: 0 }, grid: [
         [{ type: "entrance", state: "current", connections: [{ row: 2, col: 0 }], modifiers: [], rewardModifiers: [] }],
         [{ type: "combat", state: "hidden", connections: [{ row: 0, col: 0 }], modifiers: [], rewardModifiers: [] }],
@@ -275,7 +275,7 @@ describe("normalizeActiveRun with labyrinth map", () => {
   });
 
   it("filters unknown labyrinth modifier kinds", () => {
-    const result = normalizeActiveRun(makeLabyrinthRun({
+    const result = parseActiveRun(makeLabyrinthRun({
       rows: 1, cols: 2, currentNode: { row: 0, col: 0 }, grid: [
         [
           { type: "entrance", state: "current", connections: [{ row: 0, col: 1 }], modifiers: ["unknown-mod"], rewardModifiers: [] },
@@ -289,7 +289,7 @@ describe("normalizeActiveRun with labyrinth map", () => {
   });
 
   it("normalizes labyrinth combat pending node and modifiers", () => {
-    const result = normalizeActiveRun(makeRunCandidate({
+    const result = parseActiveRun(makeRunCandidate({
       contentSystemType: "labyrinth",
       labyrinthMap: { rows: 1, cols: 2, currentNode: { row: 0, col: 0 }, grid: valid1x2Grid },
       labyrinthPendingNode: { row: 0, col: 1 },
@@ -309,14 +309,14 @@ describe("normalizeActiveRun with labyrinth map", () => {
 describe("labyrinth map normalization (direct)", () => {
   it("sets labyrinthMap to null for non-object labyrinthMap", () => {
     const data = makeRunCandidate({ contentSystemType: "labyrinth", labyrinthMap: "bad" });
-    const result = normalizeActiveRun(data);
+    const result = parseActiveRun(data);
     expect(result).not.toBeNull();
     expect(result!.labyrinthMap).toBeNull();
   });
 
   it("sets labyrinthMap to null for labyrinthMap with non-array grid", () => {
     const data = makeRunCandidate({ contentSystemType: "labyrinth", labyrinthMap: { grid: "bad" } });
-    const result = normalizeActiveRun(data);
+    const result = parseActiveRun(data);
     expect(result).not.toBeNull();
     expect(result!.labyrinthMap).toBeNull();
   });

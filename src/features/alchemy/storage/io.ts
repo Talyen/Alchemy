@@ -16,8 +16,6 @@ import type { SaveData } from "./types";
 import { logError } from "@/lib/error-logger";
 import { defaultSaveData } from "./defaults";
 
-const DESKTOP_SAVE_FILENAME = "save.json";
-
 class SaveSessionState {
   private writesDisabledForSession = false;
 
@@ -31,81 +29,6 @@ class SaveSessionState {
 }
 
 const saveSessionState = new SaveSessionState();
-
-type StorageOperationResult = { ok: true } | { ok: false; error: unknown };
-
-// Determines whether the desktop backend is available and provides its API handle.
-function getDesktopBackend(): { desktop: NonNullable<Window["alchemyDesktop"]>; cloud: typeof platform.cloud } | null {
-  if (platform.isDesktop && window.alchemyDesktop) {
-    return { desktop: window.alchemyDesktop, cloud: platform.cloud };
-  }
-  return null;
-}
-
-async function readStorageItem(key: string): Promise<string | null> {
-  const backend = getDesktopBackend();
-  if (backend) {
-    const localData = await backend.desktop.loadSave();
-    if (localData !== null) return localData;
-    if (backend.cloud.isAvailable) {
-      try {
-        const cloudData = await backend.cloud.read(DESKTOP_SAVE_FILENAME);
-        if (cloudData !== null) return cloudData;
-      } catch (error) {
-        logStorageFailure("Steam Cloud read failed", error);
-      }
-    }
-    return null;
-  }
-  try {
-    return window.localStorage.getItem(key);
-  } catch (error) {
-    logStorageFailure("LocalStorage read failed", error);
-    return null;
-  }
-}
-
-async function writeStorageItem(key: string, value: string): Promise<StorageOperationResult> {
-  try {
-    const backend = getDesktopBackend();
-    if (backend) {
-      if (backend.cloud.isAvailable) {
-        const cloudOk = await backend.cloud.write(DESKTOP_SAVE_FILENAME, value);
-        if (!cloudOk) {
-          console.warn("Steam Cloud write failed, save may not sync");
-        }
-      }
-      const ok = await backend.desktop.writeSave(value);
-      if (ok) return { ok: true };
-      throw new Error("Failed to write desktop save file");
-    }
-    window.localStorage.setItem(key, value);
-    return { ok: true };
-  } catch (error) {
-    return { ok: false, error };
-  }
-}
-
-async function removeStorageItem(key: string): Promise<StorageOperationResult> {
-  try {
-    const backend = getDesktopBackend();
-    if (backend) {
-      if (backend.cloud.isAvailable) {
-        const cloudOk = await backend.cloud.delete(DESKTOP_SAVE_FILENAME);
-        if (!cloudOk) {
-          console.warn("Steam Cloud delete failed, save may remain in cloud");
-        }
-      }
-      const ok = await backend.desktop.clearSave();
-      if (ok) return { ok: true };
-      throw new Error("Failed to clear desktop save file");
-    }
-    window.localStorage.removeItem(key);
-    return { ok: true };
-  } catch (error) {
-    return { ok: false, error };
-  }
-}
 
 // Keeps storage failures readable without crashing gameplay when browsers block persistence.
 function logStorageFailure(message: string, error?: unknown) {
@@ -130,6 +53,33 @@ export type SaveLoadState = {
   data: SaveData;
   status: SaveLoadStatus;
 };
+
+async function readStorageItem(key: string): Promise<string | null> {
+  const local = await platform.storage.readLocal(key);
+  if (!local.ok) {
+    logStorageFailure("LocalStorage read failed", local.error);
+    return null;
+  }
+  if (local.data !== null) return local.data;
+
+  if (platform.isDesktop) {
+    const cloudData = await platform.storage.readCloudFallback();
+    if (cloudData !== null) return cloudData;
+  }
+  return null;
+}
+
+async function writeStorageItem(key: string, value: string): Promise<{ ok: true } | { ok: false; error: unknown }> {
+  const result = await platform.storage.writeLocal(key, value);
+  if (result.ok) return { ok: true };
+  return { ok: false, error: result.error };
+}
+
+async function removeStorageItem(key: string): Promise<{ ok: true } | { ok: false; error: unknown }> {
+  const result = await platform.storage.removeLocal(key);
+  if (result.ok) return { ok: true };
+  return { ok: false, error: result.error };
+}
 
 // Loads save data plus status so the app can block unsupported newer saves before gameplay.
 export async function loadAlchemySaveState(): Promise<SaveLoadState> {

@@ -165,7 +165,7 @@ npm run deadcode; if ($?) { npm run format:check }; if ($?) { npm run lint }; if
 - [ ] Talent manifest (if talent-gated) — `computeTalentEffects()`
 - [ ] Trinket manifest (if trinket-gated) — `computeTrinketManifest()` + `trinkets.ts` record
 - [ ] Save schema + migration + legacy fixtures (if persisted) — see [Save & migration audit](#prompt-save--migration-audit); full steps in [AGENTS.md](./AGENTS.md#workflows)
-- [ ] **New screen:** `Screen` + `ROUTE_SCREENS` in `types.ts`; component + barrel export in `screens/index.ts`; **static** import + `case` in `src/app/screen-routes.tsx` with `<ErrorBoundary label="...">` (no `React.lazy`); extend `render-screen-props.ts` / `controller-actions.ts` if new props or callbacks are needed — see [AGENTS.md startup & loading](./AGENTS.md#startup--upfront-loading)
+- [ ] **New screen:** `Screen` + `ROUTE_SCREENS` in `types.ts`; component + barrel export in `screens/index.ts`; **static** import + `case` in `src/app/screen-routes/` with `<ErrorBoundary label="...">` (no `React.lazy`); extend `render-screen-props.ts` / `controller-actions.ts` if new props or callbacks are needed — see [AGENTS.md startup & loading](./AGENTS.md#startup--upfront-loading)
 - [ ] **AGENTS.md** only if workflows, commands, or conventions changed — not for every new card
 - [ ] UI/a11y: keyboard nav, focus, ARIA, `PressableMotion` states, `cn()` for classes
 - [ ] Tests written or updated
@@ -334,7 +334,7 @@ npm run test:e2e:critical
 rg "useStore\(\)" src -g "*.tsx"
 rg "useStore\(" src/features -g "*.tsx" | rg -v "useShallow|=>"
 rg "\.map\(|\.filter\(" src/features -g "*.tsx"
-rg "React\.lazy|lazy\(\)|Suspense" src/app/screen-routes.tsx src/features/alchemy/screens
+rg "React\.lazy|lazy\(\)|Suspense" src/app/screen-routes/ src/features/alchemy/screens
 ```
 
 **Checklist:**

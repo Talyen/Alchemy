@@ -120,6 +120,13 @@ npm run release:major    # major version bump + changelog + tag
 3. Update hydration in `use-alchemy-run-controller.ts` (restore `screen`, `destinationChoices`, combat, etc.).
 4. Run `tests/features/storage/active-run.test.ts` plus storage/migration tests.
 
+**Active-run helpers (do not confuse):**
+
+| Function | Module | When |
+|----------|--------|------|
+| `normalizeActiveRunData` | `@/lib/validation` | Zod transform while loading save files (legacy deck / content-system fixes) |
+| `parseActiveRun` | `@/lib/active-run-session` or `@/features/alchemy/storage/active-run` | Runtime validation before hydration |
+
 **Add or change post-victory routing (`REWARD_ROUTES`)**:
 
 | Step | File(s) |
@@ -209,7 +216,7 @@ npm run release:major    # major version bump + changelog + tag
 
 - `src/lib/` — Pure game logic (no React): `battle/` (state machine, effects, draw), `content-systems/` (map & encounter generation — three variants: `campaign`, `labyrinth` with modifiers, `wildwood` with per-boss data), `homestead/` (between-run hub), `animation/` (particle systems), `talents.ts` (XP math), `audio.ts` + `audio-*.ts` (Web Audio buffer playback), `trinkets.ts`, `game-constants.ts` (all tuning knobs).
 - `src/features/alchemy/` — React UI. Hooks and controllers (see below) bridge pure lib logic to React. Subdirs: `screens/` (pages), `ui/` (reusable widgets), `config/` (display config for enemies, keywords, routes, options, layout, combat-text icons), `battle/` (UI-side helpers: feedback, card ghost animations, auto-end-turn), `run/` (run init), `utils/` (feature-level utilities), `navigation/` (map screen, destination/mystery/reward/victory flows), `stores/` (Zustand), `storage/` (persistence), `talents/` (talent tree UI).
-- `src/app/` — App bootstrapping: startup loading gate, audio/display/preload side-effect hooks, save-state hook, `screen-routes.tsx` (route switch), `render-alchemy-screen.tsx` (store subscriptions + render wrapper).
+- `src/app/` — App bootstrapping: startup loading gate, audio/display/preload side-effect hooks, save-state hook, `screen-routes/` (route registry), `render-alchemy-screen.tsx` (store subscriptions + render wrapper).
 - `src/components/` — Shared UI primitives (`ui/` subdirectory: `button.tsx`, `select.tsx`, `progress.tsx`, etc.).
 - `src/lib/balance/` — Headless balance simulation engine.
 - `src/lib/game-data/` — Cards, keywords, characters, companions, difficulties, talents, compendium (enemies & trinkets). Barrel export at `src/lib/game-data/index.ts`.
@@ -256,12 +263,12 @@ All paths under `src/features/alchemy/stores/`.
 
 - **Card play**: UI click → `useBattleController.playCard()` → `playBattleCardResolved()` (`src/lib/battle/card-play.ts`) → `applyCardEffects()` (`src/lib/battle/apply-effects.ts`) → new `BattleState` → Zustand store update → React re-render.
 - **Enemy turn**: `endPlayerTurn()` (`src/lib/battle/enemy-turn.ts`) → enemy action resolution → status ticks → new `BattleState` → store update.
-- **Screen transition**: `goToScreen` / `navigateTo` in run controller → React `screen` state (100ms delay via `NAVIGATION_DELAY_MS` in `game-constants.ts`) → `RenderAlchemyScreen` → `renderAlchemyScreenRoute()` in `src/app/screen-routes.tsx`. Transition commits can defer store updates until the old screen unmounts (see `navigateTo` in `use-alchemy-run-controller.ts`).
+- **Screen transition**: `goToScreen` / `navigateTo` in run controller → React `screen` state (100ms delay via `NAVIGATION_DELAY_MS` in `game-constants.ts`) → `RenderAlchemyScreen` → `renderAlchemyScreenRoute()` in `src/app/screen-routes/`. Transition commits can defer store updates until the old screen unmounts (see `navigateTo` in `use-alchemy-run-controller.ts`).
 
 ### Screen Routing
 
 - Screen type union: `Screen` in `src/features/alchemy/types.ts` — see `ROUTE_SCREENS` (also `CONSTANTS.SCREENS`) for the canonical list (`menu`, `game-mode-select`, `character-select`, `difficulty-select`, `draft-deck`, `battle`, `rewards`, `destination`, `options`, `collection`, `talents`, `homestead`, `game-over`, `campfire`, `shop`, `alchemist`, `mystery`, `corruption`, `run-victory`, `labyrinth-map`, `wildwood-select`).
-- Dispatch: `renderAlchemyScreenRoute()` in `src/app/screen-routes.tsx` — a `switch (screen)` returning the correct React component, each wrapped in `ErrorBoundary`. `RenderAlchemyScreen` in `src/app/render-alchemy-screen.tsx` subscribes to stores and passes props into the route registry. `screen` is React state in `use-alchemy-run-controller.ts`, not Zustand.
+- Dispatch: `renderAlchemyScreenRoute()` in `src/app/screen-routes/` (barrel `index.ts`) — a `Record<Screen, …>` registry, each route wrapped in `ErrorBoundary`. Screen taxonomy and documented transitions: `src/lib/routing/run-screen-router.ts`. `RenderAlchemyScreen` in `src/app/render-alchemy-screen.tsx` subscribes to stores and passes props into the route registry. `screen` is React state in `use-alchemy-run-controller.ts`, not Zustand.
 - Navigation: prefer `CONSTANTS.SCREENS` over raw string literals. `goToScreen` (in `use-run-navigation.ts`) clears hover state then calls `navigateTo`; run-flow screens call `navigateTo` directly from navigation.
 
 ### Startup & upfront loading
@@ -272,7 +279,7 @@ Alchemy uses **one** loading experience at cold start, then instant screen navig
 |-------|--------|--------|
 | **Images** | `allGameArt` in `src/lib/game-data/assets.ts` (`import.meta.glob` with `eager: true`) | Every optimized `.webp` is discovered at build time and decoded before the menu via `useInitialLoadReady` in `App.tsx` |
 | **Fonts** | `document.fonts.ready` in `use-initial-load-ready.ts` | Waited alongside images during startup |
-| **Screen JS** | `src/app/screen-routes.tsx` | All screens are **static** imports from `@/features/alchemy/screens` — **no** `React.lazy()`, **no** route-level `Suspense` |
+| **Screen JS** | `src/app/screen-routes/` | All screens are **static** imports from `@/features/alchemy/screens` — **no** `React.lazy()`, **no** route-level `Suspense` |
 | **Runtime extras** | `use-app-preload-effects.ts` | Screen-aware image warm-up for battle/rewards/shop only (safety net; main art is already decoded at startup) |
 | **SFX** | `preloadAllSounds()` in `use-app-audio-effects.ts` | Critical UI/battle sounds eager; remainder on idle |
 
@@ -295,7 +302,7 @@ Alchemy uses **one** loading experience at cold start, then instant screen navig
 | 1. Add string to `Screen` union and `ROUTE_SCREENS` | `src/features/alchemy/types.ts` |
 | 2. Create component + barrel export | `src/features/alchemy/screens/<name>.tsx` + `screens/index.ts` |
 | 3. Export from screens barrel | `src/features/alchemy/screens/index.ts` |
-| 4. Add static import + `case` in route switch, wrapped in `ErrorBoundary` | `src/app/screen-routes.tsx` |
+| 4. Add route handler in `meta-routes`, `run-setup-routes`, or `run-loop-routes` (wrapped in `ErrorBoundary` via registry) | `src/app/screen-routes/` |
 | 5. Extend `RenderAlchemyScreenProps` / route context if new props needed | `src/app/render-screen-props.ts`, `src/app/render-alchemy-screen.tsx` |
 | 6. Add callbacks to `ControllerActions` if new handlers needed | `src/app/controller-actions.ts` |
 | 7. Wire navigation trigger | caller of `goToScreen("<name>")` |
@@ -419,7 +426,8 @@ Individual top-level lib modules are imported directly — e.g. `@/lib/talents.t
 | Homestead (data, tiers, inventory, loot, logic) | `src/lib/homestead/` |
 | Image preloading | `src/lib/image-preload.ts` |
 | Startup loading gate | `src/app/use-initial-load-ready.ts`, `src/app/startup-loading-screen.tsx` |
-| Screen route registry | `src/app/screen-routes.tsx` |
+| Screen route registry | `src/app/screen-routes/` |
+| Run screen taxonomy | `src/lib/routing/run-screen-router.ts` |
 | Labyrinth map generation | `src/lib/content-systems/labyrinth/map-generation.ts` |
 | Labyrinth modifiers | `src/lib/content-systems/labyrinth/modifiers.ts` |
 | Particle/animation system | `src/lib/animation/` |
@@ -456,7 +464,7 @@ Individual top-level lib modules are imported directly — e.g. `@/lib/talents.t
 - **Using `Math.random()` in battle logic** — use `state.rng` so runs and tests stay deterministic.
 - **Treating `screen-store` as route state** — it does not store `screen`; use run controller `screen` / `navigateTo`.
 - **Importing deleted run/talent hooks** — use `useRunAdapter` / `useTalentAdapter` from `run-store.ts`.
-- **Code-splitting route screens with `React.lazy()`** — all screens must static-import via `screen-routes.tsx`; use the startup gate for load time, not per-navigation Suspense fallbacks.
+- **Code-splitting route screens with `React.lazy()`** — all screens must static-import via `screen-routes/`; use the startup gate for load time, not per-navigation Suspense fallbacks.
 
 ## Debugging
 

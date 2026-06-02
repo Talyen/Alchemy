@@ -1,4 +1,5 @@
-// Validates and normalizes persisted active-run payloads before hydration.
+// Runtime validation before hydration (returns ActiveRunData | null).
+// Save-file legacy fixes during load use normalizeActiveRunData in @/lib/validation.
 import { hydrateCard, type BattleCard } from "@/lib/game-data";
 import type { LabyrinthMap } from "@/lib/content-systems/types";
 import { ActiveRunDataSchema } from "@/lib/validation";

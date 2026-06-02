@@ -1,4 +1,5 @@
-// Pure normalization step for active run data, extracted from save-schemas.ts.
+// Save-load normalization during Zod ActiveRunDataSchema.transform only.
+// For runtime hydration of unknown payloads, use parseActiveRun from @/lib/active-run-session.
 // This is business logic (run initialization, legacy deck detection) that operates
 // on raw Record<string, unknown> input before Zod schema parsing completes.
 // Depends on: game-data, game-constants.

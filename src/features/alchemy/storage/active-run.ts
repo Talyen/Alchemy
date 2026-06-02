@@ -1,2 +1,3 @@
-// Re-exports active-run parsing from the shared active-run session module.
-export { parseActiveRun as normalizeActiveRun } from "@/lib/active-run-session";
+// Runtime active-run validation (before hydration). For save-file migration fixes
+// during Zod parse, use normalizeActiveRunData from @/lib/validation instead.
+export { parseActiveRun } from "@/lib/active-run-session";

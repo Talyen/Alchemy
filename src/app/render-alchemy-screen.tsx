@@ -5,6 +5,7 @@ import { renderAlchemyScreenRoute } from "@/app/screen-routes";
 import type { RenderAlchemyScreenProps } from "@/app/render-screen-props";
 import { useAppStore } from "@/features/alchemy/stores/app-store";
 import { useHomesteadStore } from "@/features/alchemy/stores/homestead-store";
+import { useAppActions, useHomesteadActions } from "@/features/alchemy/stores/store-actions";
 import { useRunScreenData } from "@/features/alchemy/stores/use-run-screen-data";
 
 export type { RenderAlchemyScreenProps } from "@/app/render-screen-props";
@@ -54,8 +55,7 @@ export function RenderAlchemyScreen({
       showClearSaveConfirm: s.showClearSaveConfirm,
     })),
   );
-  // eslint-disable-next-line react-compiler/react-compiler
-  const appActions = useAppStore.getState();
+  const appActions = useAppActions();
   const runScreenData = useRunScreenData();
   const homesteadValues = useHomesteadStore(
     useShallow((s) => ({
@@ -66,8 +66,7 @@ export function RenderAlchemyScreen({
       bondedCompanions: s.bondedCompanions,
     })),
   );
-  // eslint-disable-next-line react-compiler/react-compiler
-  const homesteadActions = useHomesteadStore.getState();
+  const homesteadActions = useHomesteadActions();
 
   return renderAlchemyScreenRoute({
     screen,
