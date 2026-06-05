@@ -11,7 +11,8 @@ import {
   STARTING_TURN,
   WISH_OVERLAY_Z_INDEX,
 } from "./game-constants";
-import { companionLibrary, enemyBestiary, cardLibrary } from "./game-data";
+import { companionLibrary, enemyBestiary, cardLibrary, getOfferableCardPool } from "./game-data";
+import { MIXED_POTION_CARD_ID } from "./game-constants";
 import { collectUncoveredDifficultyModifierKinds, collectUncoveredEnemyTraitIds } from "./battle/enemy-turn-traits";
 import { logError } from "./error-logger";
 
@@ -35,6 +36,14 @@ check("MIN_MAX_MANA_FLOOR > 0", MIN_MAX_MANA_FLOOR > 0);
 check("WISH_OVERLAY_Z_INDEX is 90", WISH_OVERLAY_Z_INDEX === 90);
 check("enemyBestiary is non-empty", enemyBestiary.length > 0);
 check("cardLibrary is non-empty", cardLibrary.length > 0);
+
+const offerableIds = new Set(getOfferableCardPool().map((card) => card.id));
+check(
+  "getOfferableCardPool includes every library card except mixed potion",
+  cardLibrary.every((card) =>
+    card.id === MIXED_POTION_CARD_ID ? !offerableIds.has(card.id) : offerableIds.has(card.id),
+  ),
+);
 
 for (const [companionId, companion] of Object.entries(companionLibrary)) {
   check(`companion ${companionId} has exactly one turn-start effect`, companion.turnStartEffects.length === 1);

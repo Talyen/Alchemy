@@ -15,7 +15,7 @@ import type {
   PlayerStatusId,
   TalentEffectManifest,
 } from "@/lib/game-data";
-import { HALF_DIVISOR, STATUS_CONFIG } from "../game-constants";
+import { CAMPFIRE_HEAL_FRACTION, HALF_DIVISOR, STATUS_CONFIG } from "../game-constants";
 import type { MaterialInventory } from "@/lib/homestead/types";
 
 // Both player and enemy use status ID unions, but enemies never gain
@@ -241,6 +241,17 @@ export function applyPlayerCombatDamage(state: BattleState, damage: number, dama
   reducedDamage = Math.max(0, reducedDamage);
   const nextHealth = clampHealth(state.playerHealth, -reducedDamage, state.playerMaxHealth);
   if (nextHealth > 0) return { ...state, playerHealth: nextHealth };
+  if (state.playerStatuses.phoenixFeather > 0) {
+    const healAmount = Math.ceil(state.playerMaxHealth * CAMPFIRE_HEAL_FRACTION);
+    return {
+      ...state,
+      playerHealth: healAmount,
+      playerStatuses: { ...state.playerStatuses, phoenixFeather: 0 },
+      deathsDoorActive: false,
+      deathsDoorTriggeredTurn: null,
+      deathsDoorGraceTurnsRemaining: null,
+    };
+  }
   if (!state.deathsDoorUsed) {
     return {
       ...state,

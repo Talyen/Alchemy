@@ -1,33 +1,26 @@
 // Manages React state integration and event handlers for the run's mystery events flow.
-// Depends on: cardLibrary, useRunSessionStore, mysteryPool, and mystery-flow helpers.
+// Depends on: cardLibrary, run session store, mysteryPool, and mystery-flow helpers.
 // Depended on by: useRunNavigation for managing the React state of mystery events during a run.
 import { cardLibrary } from "@/lib/game-data";
 import { pickMysteryEvent, type MysteryChoice } from "@/lib/mystery";
 import { appendCardToRunWithDiscovery } from "../run/deck-mutations";
 import { applyMysteryEffect } from "./mystery-flow";
-import { useRunSessionStore } from "../stores/run-session-store";
+import { useRunSessionMysterySlice } from "../stores/run-session-facade";
+import { setMysteryCardChoices, setMysteryEvent } from "../stores/run-session-actions";
 import { useRunStore } from "../stores/run-store";
 import { useAppStore } from "../stores/app-store";
 import { useHomesteadStore } from "../stores/homestead-store";
 import { applyMaterialFindBonus } from "@/lib/homestead/loot";
 
 export function useMysteryFlow({ advanceToNextDestination }: { advanceToNextDestination: () => void }) {
-  const mysteryEvent = useRunSessionStore((s) => s.mysteryEvent);
-  const mysteryCardChoices = useRunSessionStore((s) => s.mysteryCardChoices);
+  const { mysteryEvent, mysteryCardChoices } = useRunSessionMysterySlice();
 
-  function getStore() {
-    return useRunSessionStore.getState();
-  }
-
-  // Prepares the mystery destination state by sampling a random event and navigating to the screen.
   function beginMysteryEvent(navigateToMystery: () => void) {
-    getStore().setMysteryEvent(pickMysteryEvent());
-    getStore().setMysteryCardChoices(null);
+    setMysteryEvent(pickMysteryEvent());
+    setMysteryCardChoices(null);
     navigateToMystery();
   }
 
-  // Processes each consequence effect linked to the player's choice sequentially.
-  // If an effect requires follow-up UI interaction (like choosing a card), execution halts.
   function handleMysteryChoice(choice: MysteryChoice) {
     const runStore = useRunStore.getState();
     const appStore = useAppStore.getState();
@@ -42,7 +35,7 @@ export function useMysteryFlow({ advanceToNextDestination }: { advanceToNextDest
         setRunTrinkets: runStore.setRunTrinkets,
         setDiscoveredCardIds: appStore.setDiscoveredCardIds,
         setDiscoveredTrinketIds: appStore.setDiscoveredTrinketIds,
-        setMysteryCardChoices: getStore().setMysteryCardChoices,
+        setMysteryCardChoices,
         awardMysteryXP: runStore.awardMysteryXP,
         onAddMaterials: (materials) =>
           homesteadStore.addMaterials(applyMaterialFindBonus(materials, homesteadStore.effects)),
@@ -52,7 +45,6 @@ export function useMysteryFlow({ advanceToNextDestination }: { advanceToNextDest
     }
   }
 
-  // Adds the selected card from the choice picker to the run's deck and closes the picker.
   function handleMysteryChooseCard(cardId: string) {
     const card = cardLibrary.find((c) => c.id === cardId);
     if (card) {
@@ -63,22 +55,19 @@ export function useMysteryFlow({ advanceToNextDestination }: { advanceToNextDest
         setDiscoveredCardIds: appStore.setDiscoveredCardIds,
       });
     }
-    getStore().setMysteryCardChoices(null);
+    setMysteryCardChoices(null);
   }
 
-  // Removes a card at the given deck index as part of a choose-removal consequence.
   function handleMysteryRemoveCard(index: number) {
     useRunStore.getState().setRunDeck((p) => p.filter((_, i) => i !== index));
   }
 
-  // Completes the event flow and advances the run map to the next set of destinations.
   function handleMysteryContinue() {
     advanceToNextDestination();
   }
 
-  // Clears the buffered card selection options.
   function clearCardChoices() {
-    getStore().setMysteryCardChoices(null);
+    setMysteryCardChoices(null);
   }
 
   return {

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, afterAll } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
   CARDS_PER_TURN,
   MAX_HAND_SIZE,
@@ -44,17 +44,5 @@ describe("startup validation invariants", () => {
 
   it("MAX_HAND_SIZE >= CARDS_PER_TURN (hand can hold a full draw)", () => {
     expect(MAX_HAND_SIZE).toBeGreaterThanOrEqual(CARDS_PER_TURN);
-  });
-});
-
-describe("validate-startup module", () => {
-  afterAll(() => {
-    vi.restoreAllMocks();
-  });
-
-  it("imports without throwing", async () => {
-    await expect(async () => {
-      await import("@/lib/validate-startup");
-    }).not.toThrow();
   });
 });

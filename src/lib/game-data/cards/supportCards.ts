@@ -40,6 +40,7 @@ import {
   sunderArmor,
   thornMail,
   venomFangs,
+  placeholderCard,
 } from "../assets";
 import type { BattleCard } from "../types";
 import {
@@ -347,4 +348,56 @@ export const supportCards: BattleCard[] = [
     art: libraryOwlCompanion,
     companionId: "library-owl",
   }),
+  {
+    id: "molten-bulwark",
+    title: "Molten Bulwark",
+    descriptionLines: ["Gain 3 Block", "Deal 1 Burn damage"],
+    art: placeholderCard,
+    cost: 1,
+    effects: [
+      { kind: "player-status", status: "block", amount: 3 },
+      { kind: "damage", damageType: "burn", amount: 1 },
+    ],
+  },
+  {
+    id: "glacial-ward",
+    title: "Glacial Ward",
+    descriptionLines: ["Gain 3 Block", "Deal 1 Freeze damage"],
+    art: placeholderCard,
+    cost: 1,
+    effects: [
+      { kind: "player-status", status: "block", amount: 3 },
+      { kind: "damage", damageType: "freeze", amount: 1 },
+    ],
+  },
+  {
+    id: "spiked-shield",
+    title: "Spiked Shield",
+    descriptionLines: ["Gain 2 Armor", "Deal 1 Bleed damage"],
+    art: placeholderCard,
+    cost: 1,
+    effects: [
+      { kind: "player-status", status: "armor", amount: 2 },
+      { kind: "damage", damageType: "bleed", amount: 1 },
+    ],
+  },
+  {
+    id: "golden-plate",
+    title: "Golden Plate",
+    descriptionLines: ["Gain 1 Armor", "Gain 2 Gold"],
+    art: placeholderCard,
+    cost: 1,
+    effects: [
+      { kind: "player-status", status: "armor", amount: 1 },
+      { kind: "gain-gold", amount: 2 },
+    ],
+  },
+  {
+    id: "crystal-bulwark",
+    title: "Crystal Bulwark",
+    descriptionLines: ["Gain 1 Block per Mana Crystal"],
+    art: placeholderCard,
+    cost: 1,
+    effects: [{ kind: "player-status", status: "block", amount: 0, perManaCrystal: 1 }],
+  },
 ];

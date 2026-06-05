@@ -104,15 +104,15 @@ describe("getCardKeywords", () => {
 });
 
 describe("selectRewardCards", () => {
-  it("filters out mixed-potion from candidates", () => {
+  it("samples from the offerable pool passed by callers", () => {
     const deck: BattleCard[] = [card({ id: "stab", effects: [{ kind: "damage", damageType: "physical", amount: 5 }] })];
     const allCards: BattleCard[] = [
       card({ id: "slash", effects: [{ kind: "damage", damageType: "physical", amount: 5 }] }),
-      { id: "mixed-potion", title: "Mixed Potion", descriptionLines: [""], art: "", cost: 1, consume: true, effects: [] },
+      card({ id: "fireball", effects: [{ kind: "damage", damageType: "burn", amount: 3 }] }),
     ];
     const result = selectRewardCards(deck, allCards, 1);
     expect(result).toHaveLength(1);
-    expect(result[0].id).not.toBe("mixed-potion");
+    expect(["slash", "fireball"]).toContain(result[0].id);
   });
 
   it("returns requested count of cards", () => {

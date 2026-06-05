@@ -1,9 +1,9 @@
 // Special card effects: gold-scaled damage, cleanse-to-damage, and random damage rolls.
 import { DAMAGE_TYPES, type BattleCard, type BattleCardEffect } from "@/lib/game-data";
-import { dealDamageToEnemy } from "./damage";
-import { applyHealingWithCombatText } from "./combat-text";
-import { getBattleRng } from "./status-helpers";
-import type { BattleState, CombatTextEvent } from "./types";
+import { dealDamageToEnemy } from "../damage";
+import { applyHealingWithCombatText } from "../combat-text";
+import { getBattleRng } from "../status-helpers";
+import type { BattleState, CombatTextEvent } from "../types";
 
 export function handleCleansePlayerStatusToDamage(
   state: BattleState,

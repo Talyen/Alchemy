@@ -1,4 +1,4 @@
-import { cardLibrary, getStandardPotionPool, type BattleCard } from "@/lib/game-data";
+import { getOfferableCardPool, getStandardPotionPool, type BattleCard } from "@/lib/game-data";
 import {
   SHOP_CARDS_OFFERED,
   SHOP_REFRESHES,
@@ -23,7 +23,7 @@ export type AlchemistState = {
 
 export function createInitialShopState(): ShopState {
   return {
-    cards: sampleItems(cardLibrary, SHOP_CARDS_OFFERED),
+    cards: sampleItems(getOfferableCardPool(), SHOP_CARDS_OFFERED),
     refreshesLeft: SHOP_REFRESHES,
     removeUsed: false,
     firstPurchaseUsed: false,

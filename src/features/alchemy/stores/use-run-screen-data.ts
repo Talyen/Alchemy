@@ -1,45 +1,25 @@
 // Subscribed run/session fields for screens — use via ScreenRouteContext instead of per-screen stores.
-import { useShallow } from "zustand/react/shallow";
-import { useBattleStore } from "./battle-store";
-import { useRunSessionStore } from "./run-session-store";
-import { useRunStore } from "./run-store";
-import type { RunSessionSnapshot } from "./run-session-facade";
+import { useMemo } from "react";
+import type { Screen } from "@/lib/routing";
+import { getRunPhase } from "@/lib/routing";
+import { useRunSessionBattleSlice, useRunSessionRunSlice, useRunSessionTransientSlice } from "./run-session-facade";
+import { flattenRunSessionForScreens, type RunScreenData } from "./run-screen-data";
 
-export type RunScreenData = RunSessionSnapshot;
+export type { RunScreenData } from "./run-screen-data";
 
-export function useRunScreenData(): RunScreenData {
-  const run = useRunStore(
-    useShallow((s) => ({
-      runPlayerHealth: s.runPlayerHealth,
-      runMaxHealth: s.runMaxHealth,
-      runGold: s.runGold,
-      runDeck: s.runDeck,
-      selectedDifficulty: s.selectedDifficulty,
-      talentXP: s.talentXP,
-      unlockedTalents: s.unlockedTalents,
-      runTalentXP: s.runTalentXP,
-    })),
+export function useRunScreenData(screen: Screen): RunScreenData {
+  const run = useRunSessionRunSlice();
+  const session = useRunSessionTransientSlice();
+  const battle = useRunSessionBattleSlice();
+  return useMemo(
+    () =>
+      flattenRunSessionForScreens({
+        screen,
+        phase: getRunPhase(screen, battle.hasActiveBattle),
+        run,
+        session,
+        battle,
+      }),
+    [screen, run, session, battle],
   );
-  const session = useRunSessionStore(
-    useShallow((s) => ({
-      hasActiveRun: s.hasActiveRun,
-      rewardState: s.rewardState,
-      labyrinthMap: s.labyrinthMap,
-      mysteryEvent: s.mysteryEvent,
-      mysteryCardChoices: s.mysteryCardChoices,
-      corruptionResult: s.corruptionResult,
-      shopState: s.shopState,
-      alchemistState: s.alchemistState,
-      runEndMaterials: s.runEndMaterials,
-      runEndTalentXP: s.runEndTalentXP,
-      pendingCharacterId: s.pendingCharacterId,
-    })),
-  );
-  const battle = useBattleStore(
-    useShallow((s) => ({
-      hasActiveBattle: s.hasActiveBattle,
-      battleState: s.battleState,
-    })),
-  );
-  return { ...run, ...session, ...battle };
 }

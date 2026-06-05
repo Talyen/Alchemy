@@ -1,8 +1,13 @@
 import { expect, type Page } from "@playwright/test";
 import { startAtDestination } from "../helpers";
+import { GameStage } from "./game-stage";
 
 export class CorruptionPage {
-  constructor(private page: Page) {}
+  readonly stage: GameStage;
+
+  constructor(private page: Page) {
+    this.stage = new GameStage(page);
+  }
 
   readonly altarHeading = this.page.getByRole("heading", { name: "Altar of Corruption" });
   readonly corruptBtn = this.page.getByRole("button", { name: "Corrupt a Card" });

@@ -1,9 +1,9 @@
 // Dispatches and applies mystery event consequences to the run state.
 // Depends on game libraries, audio triggers, utility helpers, and mystery types.
 // Consumed by the run navigation flow and the useMysteryFlow React hook.
-import { cardLibrary, trinketLibrary, type BattleCard, type KeywordId } from "@/lib/game-data";
+import { cardLibrary, getOfferableCardPool, trinketLibrary, type BattleCard, type KeywordId } from "@/lib/game-data";
 import { playGoldGain, playGoldSpend } from "@/lib/audio";
-import { MIXED_POTION_CARD_ID, MYSTERY_CARD_CHOICES } from "@/lib/game-constants";
+import { MYSTERY_CARD_CHOICES } from "@/lib/game-constants";
 import { appendCardToRunWithDiscovery, appendTrinketToRunWithDiscovery } from "../run/deck-mutations";
 import type { MaterialId, MaterialInventory } from "@/lib/homestead/types";
 import { emptyInventory } from "@/lib/homestead/inventory";
@@ -71,11 +71,6 @@ export function applyMysteryEffect(effect: MysteryEffect, context: MysteryEffect
   return handler(effect as never, context);
 }
 
-// The mixed potion is a generated shop result, so mystery random card rewards exclude it.
-function getMysteryCardPool() {
-  return cardLibrary.filter((c) => c.id !== MIXED_POTION_CARD_ID);
-}
-
 // Shared card reward mutation keeps discovery tracking aligned with deck changes.
 function addCardToRun(
   card: BattleCard,
@@ -91,7 +86,7 @@ function addSpecificMysteryCard(cardId: string, context: MysteryEffectContext) {
 }
 
 function offerMysteryCardChoices(context: MysteryEffectContext): MysteryEffectResult {
-  context.setMysteryCardChoices(sampleItems(getMysteryCardPool(), MYSTERY_CARD_CHOICES));
+  context.setMysteryCardChoices(sampleItems(getOfferableCardPool(), MYSTERY_CARD_CHOICES));
   return { followUp: "choose-card" };
 }
 

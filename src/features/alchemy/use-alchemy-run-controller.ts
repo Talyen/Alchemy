@@ -11,14 +11,15 @@ import { labyrinthModifiersToDifficulty } from "@/lib/content-systems/labyrinth/
 import type { LabyrinthModifierKind } from "@/lib/content-systems/types";
 import { useRunStore, useRunAdapter, useTalentAdapter } from "./stores/run-store";
 import { useUiStore } from "./stores/ui-store";
-import { useRunSessionStore } from "./stores/run-session-store";
+import { getSteamRichPresenceLabel } from "@/lib/routing";
+import { setActiveLabyrinthModifiers, setActiveLabyrinthRewardModifiers } from "./stores/run-session-facade";
 import { useBattleController } from "./use-battle-controller";
-import { useBattleStore } from "./stores/battle-store";
 import { useShopController } from "./use-shop-controller";
 import { useRunNavigation } from "./use-run-navigation";
 import { useLabyrinthController } from "./use-labyrinth-controller";
-import { CONSTANTS, type Destination, type Screen } from "./types";
-import { hydrateActiveRunSession, type ActiveRunData } from "@/lib/active-run-session";
+import { CONSTANTS, type Screen } from "./types";
+import type { ActiveRunData } from "@/lib/active-run-session";
+import { restoreActiveRunToStores } from "./stores/run-session-facade";
 import { NAVIGATION_DELAY_MS } from "@/lib/game-constants";
 
 export function useAlchemyRunController({
@@ -50,31 +51,13 @@ export function useAlchemyRunController({
   // different initial values (which shouldn't happen — these are the bootstrap values).
   useEffect(() => {
     if (useRunStore.getState().initialized) return;
-    hydrateActiveRunSession(initialActiveRun, initialTalentXP, initialUnlockedTalents, {
-      runStore: useRunStore.getState(),
-      battleStore: useBattleStore.getState(),
-      screenStore: {
-        setHasActiveRun: (hasActiveRun) => useRunSessionStore.getState().setHasActiveRun(hasActiveRun),
-        setLabyrinthMap: (map) => useRunSessionStore.getState().setLabyrinthMap(map),
-        setActiveLabyrinthModifiers: (modifiers) =>
-          useRunSessionStore.getState().setActiveLabyrinthModifiers(modifiers),
-        setActiveLabyrinthRewardModifiers: (modifiers) =>
-          useRunSessionStore.getState().setActiveLabyrinthRewardModifiers(modifiers),
-        setActiveLabyrinthPendingNode: (node) => useRunSessionStore.getState().setActiveLabyrinthPendingNode(node),
-        applyDestinationChoices: (choices) =>
-          useRunSessionStore.getState().setRewardState((prev) => ({
-            ...prev,
-            destinations: choices as Destination[],
-          })),
-      },
-    });
+    restoreActiveRunToStores(initialActiveRun, initialTalentXP, initialUnlockedTalents);
   }, [initialActiveRun, initialTalentXP, initialUnlockedTalents]);
   const run = useRunAdapter();
   const talents = useTalentAdapter();
 
   // ============ Shared State ============
   const [screen, setScreen] = useState<Screen>("menu");
-  const hasActiveRun = useRunSessionStore((s) => s.hasActiveRun);
 
   // ============ Screen Navigation ============
   const navTimer = useRef(new TimerGroup());
@@ -106,40 +89,16 @@ export function useAlchemyRunController({
     homesteadEffectsRef.current = homesteadEffects;
   }, [homesteadEffects]);
 
-  // Update Steam rich presence on screen change
-  useEffect(() => {
-    let statusString = "In Menu";
-    if (screen === "battle") {
-      statusString = `Fighting as ${run.characterId}`;
-    } else if (screen === "homestead") {
-      statusString = "Upgrading Homestead";
-    } else if (screen === "talents") {
-      statusString = "Selecting Talents";
-    } else if (screen === "campfire") {
-      statusString = "Resting at Campfire";
-    } else if (screen === "shop" || screen === "alchemist") {
-      statusString = "Trading in Shop";
-    } else if (screen === "mystery") {
-      statusString = "Exploring a Mystery";
-    } else if (screen === "destination" || screen === "labyrinth-map") {
-      statusString = "Navigating the Map";
-    } else if (screen === "draft-deck") {
-      statusString = "Drafting starter deck";
-    }
-
-    platform.steam.setRichPresence("steam_display", statusString);
-  }, [screen, run.characterId]);
-
   // ============ Store-backed Setters ============
   function setHoveredCardId(id: string | null | ((prev: string | null) => string | null)) {
     const store = useUiStore.getState();
     store.setHoveredCardId(typeof id === "function" ? id(store.hoveredCardId) : id);
   }
-  function setActiveLabyrinthModifiers(modifiers: LabyrinthModifierKind[]) {
-    useRunSessionStore.getState().setActiveLabyrinthModifiers(modifiers);
+  function applyLabyrinthBattleModifiers(modifiers: LabyrinthModifierKind[]) {
+    setActiveLabyrinthModifiers(modifiers);
   }
-  function setActiveLabyrinthRewardModifiers(modifiers: LabyrinthModifierKind[]) {
-    useRunSessionStore.getState().setActiveLabyrinthRewardModifiers(modifiers);
+  function applyLabyrinthRewardModifiers(modifiers: LabyrinthModifierKind[]) {
+    setActiveLabyrinthRewardModifiers(modifiers);
   }
 
   // ============ Domain Controllers ============
@@ -169,7 +128,7 @@ export function useAlchemyRunController({
     setDiscoveredCardIds,
   });
 
-  const labyrinth = useLabyrinthController();
+  const labyrinth = useLabyrinthController(screen);
 
   const nav = useRunNavigation({
     screen,
@@ -192,13 +151,17 @@ export function useAlchemyRunController({
     onBattleDefeatRef.current = nav.handleBattleDefeat;
   });
 
+  useEffect(() => {
+    platform.steam.setRichPresence("steam_display", getSteamRichPresenceLabel(screen, nav.runPhase, run.characterId));
+  }, [screen, nav.runPhase, run.characterId]);
+
   function clearPermanentData() {
     talents.clearPermanentData();
   }
 
   function handleBeginLabyrinth() {
     if (
-      !(hasActiveRun && run.contentSystemType === "labyrinth") &&
+      !(nav.activeRunData && run.contentSystemType === "labyrinth") &&
       !(battle.hasActiveBattle && run.contentSystemType === "labyrinth")
     ) {
       labyrinth.resetMap();
@@ -212,8 +175,8 @@ export function useAlchemyRunController({
     battleModifiers?: LabyrinthModifierKind[],
     rewardModifiers?: LabyrinthModifierKind[],
   ) {
-    setActiveLabyrinthModifiers(battleModifiers ?? []);
-    setActiveLabyrinthRewardModifiers(rewardModifiers ?? []);
+    applyLabyrinthBattleModifiers(battleModifiers ?? []);
+    applyLabyrinthRewardModifiers(rewardModifiers ?? []);
     init?.();
     navigateTo(screen);
   }
@@ -249,6 +212,8 @@ export function useAlchemyRunController({
 
   return {
     screen,
+    runPhase: nav.runPhase,
+    pendingCharacterId: nav.pendingCharacterId,
     commitPendingTransition,
     battleState: battle.battleState,
     battleScreenData: battle.battleScreenData,

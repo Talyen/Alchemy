@@ -12,6 +12,14 @@ export function isStandardPotionCard(card: Pick<BattleCard, "id">): boolean {
   return card.id.endsWith(POTION_CARD_ID_SUFFIX) && card.id !== MIXED_POTION_CARD_ID;
 }
 
+/**
+ * Cards that can appear in merchant shop, combat rewards, mysteries, wish, and draft.
+ * Adding a card to combatCards/supportCards includes it here automatically (except mixed potion).
+ */
+export function getOfferableCardPool(): BattleCard[] {
+  return cardLibrary.filter((card) => card.id !== MIXED_POTION_CARD_ID);
+}
+
 /** Shop, alchemist, and reward flows share this pool (excludes generated mixed potion). */
 export function getStandardPotionPool(): BattleCard[] {
   return cardLibrary.filter(isStandardPotionCard);

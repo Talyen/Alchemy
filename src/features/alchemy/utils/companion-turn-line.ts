@@ -1,4 +1,4 @@
-// Player-facing text for companion turn-start effects (battle tooltip + card descriptions).
+// Re-exports companion turn-line formatting used by battle UI tooltips.
 import { formatCompanionTurnLineBase, type BattleCardEffect } from "@/lib/game-data";
 
 export type CompanionTurnLineContext = {

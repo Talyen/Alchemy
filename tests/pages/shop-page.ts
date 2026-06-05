@@ -1,8 +1,13 @@
 import { expect, type Page } from "@playwright/test";
 import { startAtDestination } from "../helpers";
+import { GameStage } from "./game-stage";
 
 export class ShopPage {
-  constructor(private page: Page) {}
+  readonly stage: GameStage;
+
+  constructor(private page: Page) {
+    this.stage = new GameStage(page);
+  }
 
   readonly heading = this.page.getByRole("heading", { name: /(Merchant|Alchemist)/ });
   readonly buyBtn = this.page.getByRole("button", { name: /^Buy/ });

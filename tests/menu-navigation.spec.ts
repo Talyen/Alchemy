@@ -1,9 +1,17 @@
 import { expect, test } from "@playwright/test";
 import { enableFastMode, injectLabyrinthRun, makeCard, openGameModeSelect, SAVE_KEY, selectGameMode, startBattleWithDeck, startCampaignBattle } from "./helpers";
 import { BattlePage } from "./pages/battle-page";
+import { MenuPage } from "./pages/menu-page";
 import { critical } from "./playwright-tags";
 
 test.describe("Menu", critical, () => {
+  test("main menu reports meta run phase", async ({ page }) => {
+    const menu = new MenuPage(page);
+    await menu.goto();
+    await menu.expectMainMenu();
+    await menu.stage.expectRunPhase("meta");
+  });
+
   test("all menu buttons are visible on the main menu", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByRole("button", { name: "Play" })).toBeVisible();
@@ -14,6 +22,12 @@ test.describe("Menu", critical, () => {
     await expect(page.getByRole("button", { name: /The Campaign/ })).toBeVisible();
     await expect(page.getByRole("button", { name: /The Labyrinth/ })).toBeVisible();
     await expect(page.getByRole("button", { name: /The Wildwoods/ })).toBeVisible();
+  });
+
+  test("active campaign battle reports battle run phase", async ({ page }) => {
+    await startCampaignBattle(page);
+    const menu = new MenuPage(page);
+    await menu.stage.expectRunPhase("battle");
   });
 
   test("menu shows Resume Run when a campaign battle is active", async ({ page }) => {

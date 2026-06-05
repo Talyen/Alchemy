@@ -2,7 +2,7 @@
 // components without threading props through every screen and shop.
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext } from "react";
-import type { CardDescriptionContext } from "./utils/card-description";
+import type { CardDescriptionContext } from "@/lib/game-data";
 
 const HomesteadContext = createContext<CardDescriptionContext>({});
 

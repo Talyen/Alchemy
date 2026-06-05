@@ -3,7 +3,7 @@ import { applyCardEffects } from "@/lib/battle/apply-effects";
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { defaultBattleState } from "@/lib/battle";
 import type { CombatTextEvent } from "@/lib/battle/types";
-import { isPlayerDefeated } from "@/lib/battle/types";
+import { applyPlayerCombatDamage, isPlayerDefeated } from "@/lib/battle/types";
 import { computeTrinketManifest } from "@/lib/trinkets";
 import { blockDeck, makeTestBattleState, makeTestCard, statusDeck } from "../../fixtures/battle";
 
@@ -95,6 +95,49 @@ describe("applyCardEffects", () => {
     expect(result.state.hand).toHaveLength(0);
     expect(result.state.exhausted).toHaveLength(1);
     expect(result.state.exhausted[0].id).toBe("consumable");
+  });
+});
+
+describe("applyPlayerCombatDamage — phoenixFeather", () => {
+  it("restores 30% max health and clears feather instead of dying", () => {
+    const state = makeState({
+      playerHealth: 5,
+      playerMaxHealth: 30,
+      playerStatuses: {
+        block: 0,
+        armor: 0,
+        forge: 0,
+        haste: 0,
+        phoenixFeather: 1,
+        burn: 0,
+        poison: 0,
+        bleed: 0,
+        freeze: 0,
+        stun: 0,
+      },
+    });
+    const result = applyPlayerCombatDamage(state, 20);
+    expect(result.playerHealth).toBe(9);
+    expect(result.playerStatuses.phoenixFeather).toBe(0);
+    expect(result.deathsDoorUsed).toBe(false);
+    expect(result.deathsDoorActive).toBe(false);
+  });
+});
+
+describe("applyCardEffects — phoenix-feather card", () => {
+  it("loses one mana crystal and grants phoenix feather status", () => {
+    const state = makeState({ maxMana: 4, mana: 4 });
+    const card = makeTestCard({
+      id: "phoenix-feather",
+      effects: [
+        { kind: "lose-max-mana", amount: 1 },
+        { kind: "player-status", status: "phoenixFeather", amount: 1 },
+      ],
+    });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+    expect(result.maxMana).toBe(3);
+    expect(result.playerStatuses.phoenixFeather).toBe(1);
   });
 });
 
@@ -239,7 +282,7 @@ describe("applyCardEffects — enemy-status (fixture)", () => {
       difficultyModifiers: [{ kind: "labyrinth-null-field" }],
     });
     const card = makeTestCard({
-      effects: [{ kind: "enemy-status" as never, status: "poison", amount: 4 }],
+      effects: [{ kind: "enemy-status", status: "poison", amount: 4 }],
     });
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);

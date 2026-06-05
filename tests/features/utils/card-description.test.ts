@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { getEffectiveCardDescriptionLines } from "@/features/alchemy/utils/card-description";
-import type { BattleCard } from "@/lib/game-data";
+import { getEffectiveCardDescriptionLines } from "@/lib/game-data";
+import { cardLibrary, type BattleCard } from "@/lib/game-data";
 
 function makeCard(overrides: Partial<BattleCard> = {}): BattleCard {
   return {
@@ -226,4 +226,45 @@ describe("getEffectiveCardDescriptionLines", () => {
     const lines = getEffectiveCardDescriptionLines(card, { flatPhysicalDamage: 5 });
     expect(lines).toEqual(["Deal Holy damage equal to your Block"]);
   });
+
+  it("preserves original description for equalToGoldPercent damage (Tithe)", () => {
+    const card = makeCard({
+      descriptionLines: ["Deal Holy damage equal to 10% of your Gold"],
+      effects: [{ kind: "damage", damageType: "holy", amount: 0, equalToGoldPercent: 10 }],
+    });
+    const lines = getEffectiveCardDescriptionLines(card);
+    expect(lines).toEqual(["Deal Holy damage equal to 10% of your Gold"]);
+  });
+
+  it("preserves equalToGoldPercent description even with flatPhysicalDamage context", () => {
+    const card = makeCard({
+      descriptionLines: ["Deal Holy damage equal to 10% of your Gold"],
+      effects: [{ kind: "damage", damageType: "holy", amount: 0, equalToGoldPercent: 10 }],
+    });
+    const lines = getEffectiveCardDescriptionLines(card, { flatPhysicalDamage: 5 });
+    expect(lines).toEqual(["Deal Holy damage equal to 10% of your Gold"]);
+  });
+
+  it("preserves perManaCrystal description (Mana Shield)", () => {
+    const card = makeCard({
+      descriptionLines: ["Gain 2 Block per Mana Crystal"],
+      effects: [{ kind: "player-status", status: "block", amount: 0, perManaCrystal: 2 }],
+    });
+    expect(getEffectiveCardDescriptionLines(card)).toEqual(["Gain 2 Block per Mana Crystal"]);
+    expect(getEffectiveCardDescriptionLines(card, { potionPotency: 2 })).toEqual([
+      "Gain 2 Block per Mana Crystal",
+    ]);
+  });
+
+  it.each(cardLibrary.map((c) => [c.id, c] as const))(
+    "%s — per Mana Crystal lines are preserved in effective descriptions",
+    (_id, card) => {
+      const effective = getEffectiveCardDescriptionLines(card);
+      card.descriptionLines.forEach((line, i) => {
+        if (line.includes("per Mana Crystal")) {
+          expect(effective[i]).toBe(line);
+        }
+      });
+    },
+  );
 });

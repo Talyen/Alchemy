@@ -177,4 +177,12 @@ export const keywordDefinitions: Record<KeywordId, KeywordDefinition> = {
     borderClass: "border-lime-700",
     shineColors: ["#4d7c0f", "#1a2e05", "#4d7c0f"],
   },
+  phoenixFeather: {
+    id: "phoenixFeather",
+    label: "Phoenix Feather",
+    description: "The next time you would die, instead restore 30% Health, then remove this effect",
+    colorClass: "text-orange-300",
+    borderClass: "border-orange-300",
+    shineColors: ["#fdba74", "#ea580c", "#fdba74"],
+  },
 };

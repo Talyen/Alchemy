@@ -17,7 +17,7 @@ beforeEach(() => {
 describe("useLabyrinthController hook", () => {
   it("enterNode records a pending node and routes combat nodes", () => {
     const onStartBattle = vi.fn();
-    const { result } = renderHook(() => useLabyrinthController());
+    const { result } = renderHook(() => useLabyrinthController("labyrinth-map"));
     const map = useRunSessionStore.getState().labyrinthMap;
     const target = map.grid[0][START_COL]!.connections[0];
 
@@ -39,7 +39,7 @@ describe("useLabyrinthController hook", () => {
   });
 
   it("onNodeCleared advances the map to the pending node", () => {
-    const { result } = renderHook(() => useLabyrinthController());
+    const { result } = renderHook(() => useLabyrinthController("labyrinth-map"));
     const map = useRunSessionStore.getState().labyrinthMap;
     const target = map.grid[0][START_COL]!.connections[0];
 
@@ -61,7 +61,7 @@ describe("useLabyrinthController hook", () => {
   });
 
   it("resetMap clears pending state and regenerates the labyrinth", () => {
-    const { result } = renderHook(() => useLabyrinthController());
+    const { result } = renderHook(() => useLabyrinthController("labyrinth-map"));
     const before = useRunSessionStore.getState().labyrinthMap;
 
     act(() => {

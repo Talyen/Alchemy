@@ -8,7 +8,13 @@ import { DEFAULT_BATTLE_ENEMY_TYPE } from "@/lib/game-constants";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import { useHomesteadStore } from "../stores/homestead-store";
 import { useUiStore } from "../stores/ui-store";
-import { useRunSessionStore } from "../stores/run-session-store";
+import {
+  setHasActiveRun,
+  setPendingCharacterId,
+  setPendingContentSystemType,
+  setRewardState,
+} from "../stores/run-session-actions";
+import { readRunSessionStore } from "../stores/run-session-read";
 import { afterCampaignCharacterResolved } from "../navigation/run-navigation-helpers";
 import { createDestinationRewardState } from "../navigation/victory-flow";
 import { sampleDestinationChoices } from "../navigation/destination-flow";
@@ -42,8 +48,6 @@ export type ContentSystemNavigationDeps = {
 };
 
 export function createContentSystemNavigation(deps: ContentSystemNavigationDeps) {
-  const getStore = () => useRunSessionStore.getState();
-
   function createInitialDestinations(options?: DestinationOptionsInput, prevDest?: Destination) {
     return createDestinationRewardState(
       sampleDestinationChoices(deps.getAvailableDestinations(options), prevDest),
@@ -53,7 +57,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
 
   function applyRunStartSnapshot(snapshot: RunStartSnapshot) {
     deps.run.hydrateFromSnapshot(snapshot);
-    getStore().setHasActiveRun(snapshot.hasActiveRun);
+    setHasActiveRun(snapshot.hasActiveRun);
   }
 
   function startRun(
@@ -114,7 +118,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
       playStartGoldSound: true,
       resetEncounteredEnemies: true,
     });
-    getStore().setRewardState(
+    setRewardState(
       createInitialDestinations({
         currentHealth: snapshot.runMaxHealth,
         currentGold: snapshot.runGold,
@@ -154,7 +158,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
       } else if (systemId === CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN) {
         const prevDest = getPreviousDestination(deps.run.destinationIndexInAct, deps.run.completedDestinations);
         deps.navigateTo(CONSTANTS.SCREENS.DESTINATION, () => {
-          getStore().setRewardState((prev) =>
+          setRewardState((prev) =>
             restoreOrCreateDestinationRewardState(prev, {
               availableDestinations: deps.getAvailableDestinations(),
               ...(prevDest !== undefined ? { previousDestination: prevDest } : {}),
@@ -167,7 +171,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
       }
       return;
     }
-    getStore().setPendingContentSystemType(systemId);
+    setPendingContentSystemType(systemId);
     deps.navigateTo(CONSTANTS.SCREENS.CHARACTER_SELECT);
   }
 
@@ -187,7 +191,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
     const systemType = deps.pendingContentSystemType;
 
     if (selectedId === "wildcard") {
-      getStore().setPendingCharacterId(selectedId);
+      setPendingCharacterId(selectedId);
       deps.draftedDeckRef.current = null;
       deps.navigateTo(CONSTANTS.SCREENS.DRAFT_DECK);
       return;
@@ -208,7 +212,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
     }
 
     afterCampaignCharacterResolved(selectedId, noviceCampaignDeps(), () => {
-      getStore().setPendingCharacterId(selectedId);
+      setPendingCharacterId(selectedId);
       deps.navigateTo(CONSTANTS.SCREENS.DIFFICULTY_SELECT);
     });
   }
@@ -232,7 +236,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
   }
 
   function handleDifficultySelect(difficultyId: DifficultyId) {
-    const pendingCharacterId = getStore().pendingCharacterId;
+    const pendingCharacterId = readRunSessionStore().pendingCharacterId;
     if (!pendingCharacterId) {
       logError("[useRunNavigation] handleDifficultySelect: no pending character", "other");
       deps.navigateTo(CONSTANTS.SCREENS.MENU);
@@ -242,7 +246,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
     const { freshDeck, totalStartGold } = initializeRunForDifficulty(selectedId, difficultyId);
     const modifiers = getDifficultyModifiers(selectedId, difficultyId);
     deps.onStartBattle(freshDeck, totalStartGold, DEFAULT_BATTLE_ENEMY_TYPE, modifiers);
-    deps.navigateTo(CONSTANTS.SCREENS.BATTLE, () => getStore().setPendingCharacterId(null));
+    deps.navigateTo(CONSTANTS.SCREENS.BATTLE, () => setPendingCharacterId(null));
   }
 
   function handleBackFromDifficultySelect() {

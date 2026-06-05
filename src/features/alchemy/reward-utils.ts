@@ -2,13 +2,14 @@
 // Depends on battle card/trinket shapes and shared sampling utilities.
 // Used by run navigation after combat victories and other reward-generating screens.
 import { getCardKeywords, type BattleCard } from "@/lib/game-data";
-import { MIXED_POTION_CARD_ID, REWARD_SELECTION_CONFIG, REWARD_RANDOM_CHANCE } from "@/lib/game-constants";
+import { REWARD_SELECTION_CONFIG, REWARD_RANDOM_CHANCE } from "@/lib/game-constants";
 import { sampleItems } from "./utils";
 
 export function selectRewardCards(deck: BattleCard[], allCards: BattleCard[], count: number): BattleCard[] {
   // Rewards are usually biased toward keywords already present in the deck, but occasional
   // random offers and a small new-card bonus keep drafts from becoming too deterministic.
-  const candidates = allCards.filter((c) => c.id !== MIXED_POTION_CARD_ID);
+  // Callers should pass getOfferableCardPool() (excludes mixed potion).
+  const candidates = allCards;
 
   if (Math.random() < REWARD_RANDOM_CHANCE) return sampleItems(candidates, count);
 

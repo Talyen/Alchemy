@@ -1,24 +1,25 @@
-// Run-navigation session state selectors (run-session + UI stores).
-import { useShallow } from "zustand/react/shallow";
+// Run-navigation session state via the unified run session read model.
+import type { Screen } from "../types";
 import { useUiStore } from "../stores/ui-store";
-import { useRunSessionStore } from "../stores/run-session-store";
+import { useRunSessionNavigationSlice } from "../stores/run-session-facade";
 
-export function useRunNavigationSession() {
-  const session = useRunSessionStore(
-    useShallow((s) => ({
-      hasActiveRun: s.hasActiveRun,
-      labyrinthMap: s.labyrinthMap,
-      labyrinthPendingNode: s.activeLabyrinthPendingNode,
-      activeLabyrinthModifiers: s.activeLabyrinthModifiers,
-      activeLabyrinthRewardModifiers: s.activeLabyrinthRewardModifiers,
-      rewardState: s.rewardState,
-      runEndMaterials: s.runEndMaterials,
-      corruptionResult: s.corruptionResult,
-      pendingCharacterId: s.pendingCharacterId,
-      pendingContentSystemType: s.pendingContentSystemType,
-    })),
-  );
+export function useRunNavigationSession(screen: Screen) {
+  const nav = useRunSessionNavigationSlice(screen);
   const clearCardHover = useUiStore((s) => s.clearCardHover);
 
-  return { ...session, clearCardHover };
+  return {
+    phase: nav.phase,
+    battle: { hasActiveBattle: nav.hasActiveBattle },
+    hasActiveRun: nav.hasActiveRun,
+    labyrinthMap: nav.labyrinthMap,
+    labyrinthPendingNode: nav.labyrinthPendingNode,
+    activeLabyrinthModifiers: nav.activeLabyrinthModifiers,
+    activeLabyrinthRewardModifiers: nav.activeLabyrinthRewardModifiers,
+    rewardState: nav.rewardState,
+    runEndMaterials: nav.runEndMaterials,
+    corruptionResult: nav.corruptionResult,
+    pendingCharacterId: nav.pendingCharacterId,
+    pendingContentSystemType: nav.pendingContentSystemType,
+    clearCardHover,
+  };
 }

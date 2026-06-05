@@ -37,7 +37,6 @@ import { BackgroundParticles } from "@/features/alchemy/ui/background-particles"
 import { platform } from "@/lib/platform";
 import { loadAlchemySaveState, type SaveLoadState } from "@/features/alchemy/storage";
 import { useAppStore } from "@/features/alchemy/stores/app-store";
-import { useRunSessionStore } from "@/features/alchemy/stores/run-session-store";
 import { clearAllPersistentGameData } from "@/features/alchemy/stores/reset";
 import { isAlchemyDevBuild } from "@/features/alchemy/utils";
 
@@ -57,8 +56,6 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
   const muteInBackground = useAppStore((s) => s.muteInBackground);
   const autoEndTurn = useAppStore((s) => s.autoEndTurn);
   const discoveredCardIds = useAppStore((s) => s.discoveredCardIds);
-  const pendingCharacterId = useRunSessionStore((s) => s.pendingCharacterId);
-
   const setDiscoveredCardIds = wrapStoreSetter(
     () => appStore.getState().discoveredCardIds,
     appStore.getState().setDiscoveredCardIds,
@@ -150,9 +147,10 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
   });
 
   const autosaveEnabled =
+    run.runPhase !== "runEnd" &&
     run.screen !== "rewards" &&
     run.rewardState.choices.length === 0 &&
-    !(run.screen === "battle" && run.battleState.enemyHealth <= 0);
+    !(run.runPhase === "battle" && run.battleState.enemyHealth <= 0);
   useAlchemyAutosaveFromStores(
     {
       talentXP: run.talentXP,
@@ -233,7 +231,7 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
           battleScreenData={run.battleScreenData}
           hasUnspentTalents={hasUnspentTalentsBadge}
           hasAffordableHomestead={hasAffordableHomestead}
-          pendingCharacterId={pendingCharacterId}
+          pendingCharacterId={run.pendingCharacterId}
           onOpenBattleMenu={openBattleMenu}
           onClearSaveData={clearSaveData}
           onUnlockAllDevMode={unlockAllDevMode}
@@ -249,6 +247,7 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
           <div
             ref={vrStageRef}
             data-testid="vr-stage"
+            data-run-phase={run.runPhase}
             data-stage-pixel-ratio={stagePixelRatio}
             className={cn(
               "absolute left-0 top-0 overflow-hidden bg-background [container-type:size]",

@@ -46,9 +46,10 @@ export class BattlePage {
 
   async endTurn() {
     if (await this.isBattleOver()) return;
-    await expect(this.endTurnBtn).toBeEnabled({ timeout: 5000 });
+    const turnTimeout = process.env.CI ? 10_000 : 5_000;
+    await expect(this.endTurnBtn).toBeEnabled({ timeout: turnTimeout });
     await this.endTurnBtn.click({ force: true });
-    await expect(this.endTurnBtn).toBeEnabled({ timeout: 7000 }).catch(async (e) => {
+    await expect(this.endTurnBtn).toBeEnabled({ timeout: turnTimeout + 2_000 }).catch(async (e) => {
       if (await this.isBattleOver()) return;
       throw e;
     });

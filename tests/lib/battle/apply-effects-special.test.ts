@@ -68,19 +68,74 @@ describe("applyCardEffects — equalToGoldPercent (Tithe)", () => {
   });
 });
 
-describe("applyCardEffects — random-damage (Roulette)", () => {
-  it("uses battle rng for deterministic damage type and amount", () => {
+describe("applyCardEffects — chance (Roulette)", () => {
+  it("damage branch deals 3 of a random type when roll succeeds", () => {
+    const rng = seededRng(7);
+    const branchRoll = rng();
+    expect(branchRoll).toBeLessThan(0.5);
+    const typeRoll = rng();
+    rng();
+    const expectedType = DAMAGE_TYPES[Math.trunc(typeRoll * DAMAGE_TYPES.length)]!;
+    const expectedAmount = 3;
+
+    const state = makeState({ rng: seededRng(7), gold: 10 });
+    const card = makeTestCard({
+      id: "roulette",
+      effects: [
+        {
+          kind: "chance",
+          probability: 0.5,
+          successEffects: [{ kind: "random-damage", minAmount: 3, maxAmount: 3 }],
+          failureEffects: [{ kind: "gain-gold", amount: 3 }],
+        },
+      ],
+    });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+
+    expect(result.enemyHealth).toBe(30 - expectedAmount);
+    expect(result.gold).toBe(10);
+    expect(texts.some((t) => t.kind === "damage" && t.stat === expectedType)).toBe(true);
+  });
+
+  it("gold branch gains 3 gold when roll fails", () => {
+    const rng = seededRng(99);
+    const branchRoll = rng();
+    expect(branchRoll).toBeGreaterThanOrEqual(0.5);
+
+    const state = makeState({ rng: seededRng(99), gold: 10 });
+    const card = makeTestCard({
+      id: "roulette",
+      effects: [
+        {
+          kind: "chance",
+          probability: 0.5,
+          successEffects: [{ kind: "random-damage", minAmount: 3, maxAmount: 3 }],
+          failureEffects: [{ kind: "gain-gold", amount: 3 }],
+        },
+      ],
+    });
+    const texts: CombatTextEvent[] = [];
+    const result = applyCardEffects(state, card, texts);
+
+    expect(result.gold).toBe(13);
+    expect(result.enemyHealth).toBe(30);
+  });
+});
+
+describe("applyCardEffects — random-damage (Gambler's Shot)", () => {
+  it("uses battle rng for deterministic damage type and amount in range", () => {
     const rng = seededRng(99);
     const firstRoll = rng();
     const secondRoll = rng();
     const expectedType = DAMAGE_TYPES[Math.trunc(firstRoll * DAMAGE_TYPES.length)]!;
-    const span = 7;
+    const span = 6;
     const expectedAmount = 1 + Math.trunc(secondRoll * span);
 
     const state = makeState({ rng: seededRng(99) });
     const card = makeTestCard({
-      id: "roulette",
-      effects: [{ kind: "random-damage", minAmount: 1, maxAmount: 7 }],
+      id: "gamblers-shot",
+      effects: [{ kind: "random-damage", minAmount: 1, maxAmount: 6 }],
     });
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);

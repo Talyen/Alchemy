@@ -1,11 +1,11 @@
 // Headless balance simulations for battle tuning reports.
 // Depends on the pure battle engine and static game data; no React or browser APIs.
 import {
+  canPlayCard,
   chooseWishCard,
   createBattleState,
   defaultTalentEffects,
   endPlayerTurn,
-  getEffectiveCost,
   isPlayerDefeated,
   playBattleCardResolved,
   processCompanionTurnStart,
@@ -121,7 +121,7 @@ function randomIndex(rng: () => number, length: number): number {
 function getPlayableCards(state: BattleState): { card: BattleCard; index: number }[] {
   return state.hand
     .map((card, index) => ({ card, index }))
-    .filter(({ card }) => state.mana >= getEffectiveCost(state, card));
+    .filter(({ card, index }) => canPlayCard(state, card, index));
 }
 
 function getImmediateDamage(card: BattleCard): number {

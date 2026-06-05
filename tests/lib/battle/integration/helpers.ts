@@ -1,21 +1,11 @@
-import type { BattleCard } from "@/lib/game-data";
+// Re-exports canonical battle test fixtures (see tests/fixtures/battle.ts).
 import { defaultBattleState } from "@/lib/battle";
-import type { BattleState } from "@/lib/battle/types";
-
-export function makeState(overrides: Partial<BattleState> = {}): BattleState {
-  return { ...defaultBattleState(), ...overrides };
-}
-
-export function makeCard(overrides: Partial<BattleCard> = {}): BattleCard {
-  return {
-    id: "test-card",
-    title: "Test",
-    descriptionLines: [""],
-    art: "",
-    cost: 1,
-    effects: [],
-    ...overrides,
-  };
-}
+import { makeTestBattleState, makeTestCard } from "../../../fixtures/battle";
 
 export { defaultBattleState };
+
+/** Integration tests often mock Math.random — default rng uses it unless overridden. */
+export const makeState = (overrides: Parameters<typeof makeTestBattleState>[0] = {}) =>
+  makeTestBattleState({ rng: Math.random, ...overrides });
+
+export const makeCard = makeTestCard;

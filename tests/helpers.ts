@@ -5,6 +5,7 @@ import {
   CURRENT_GAME_BUILD_VERSION,
   CURRENT_SAVE_SCHEMA_VERSION,
 } from "@/lib/validation/metadata";
+import { makeTestCard } from "./fixtures/cards";
 import { BattlePage } from "./pages/battle-page";
 import { DestinationPage } from "./pages/destination-page";
 import { RewardPage } from "./pages/reward-page";
@@ -92,8 +93,12 @@ function createMinimalLabyrinthMap(options?: { rows?: number; cols?: number }) {
 
 export function makeCard(overrides: Record<string, unknown> = {}) {
   return {
-    id: "slash", title: "Slash", descriptionLines: ["Deal 6 Physical damage"],
-    art: "placeholder", cost: 1, effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
+    ...makeTestCard({
+      id: "slash",
+      title: "Slash",
+      descriptionLines: ["Deal 6 Physical damage"],
+      effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
+    }),
     ...overrides,
   };
 }

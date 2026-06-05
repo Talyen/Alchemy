@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import { ANVIL_CARD, enableFastMode, MANA_BERRIES_CARD, makeCard, makeHighDamageCard, startAtDestination, startBattleWithDeck, skipBattleAndClaimReward } from "./helpers";
 import { BattlePage } from "./pages/battle-page";
 import { DestinationPage } from "./pages/destination-page";
+import { MenuPage } from "./pages/menu-page";
 import { RewardPage } from "./pages/reward-page";
 import { critical } from "./playwright-tags";
 
@@ -131,6 +132,7 @@ test.describe("Card Interactions", () => {
 
     const destination = new DestinationPage(page);
     await destination.pick("Campfire");
+    await new MenuPage(page).stage.expectRunPhase("runLoop");
 
     await expect(page.getByRole("button", { name: "Rest" })).toBeVisible({ timeout: 3000 });
     await page.evaluate(() => { Math.random = () => 0; });

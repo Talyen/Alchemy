@@ -7,6 +7,7 @@ test.describe("Corruption Full Flow", critical, () => {
   test("corruption destination shows altar screen with intro and leave works", async ({ page }) => {
     const corruption = new CorruptionPage(page);
     await corruption.open();
+    await corruption.stage.expectRunPhase("runLoop");
 
     await expect(corruption.altarHeading).toBeVisible({ timeout: 5000 });
     await expect(corruption.corruptBtn).toBeVisible();

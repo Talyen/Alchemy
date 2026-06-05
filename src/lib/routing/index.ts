@@ -4,9 +4,12 @@ export { getAvailableDestinations } from "./destination-availability";
 export {
   DOCUMENTED_META_TRANSITIONS,
   DOCUMENTED_RUN_LOOP_TRANSITIONS,
+  getRunPhase,
   isMetaScreen,
   isRunLoopScreen,
   isRunEndScreen,
   requiresActiveRun,
   isDocumentedTransition,
+  type RunPhase,
 } from "./run-screen-router";
+export { getSteamRichPresenceLabel } from "./run-phase-presence";

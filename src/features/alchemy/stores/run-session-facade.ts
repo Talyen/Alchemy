@@ -1,63 +1,40 @@
-// Facade over run, battle, and session stores — single entry for sync and teardown.
-import type { BattleState } from "@/lib/battle";
-import type { BattleCard } from "@/lib/game-data";
+// Facade over run, battle, and session stores — single entry for sync, snapshot, restore, and teardown.
+import type { UnlockedTalents } from "@/lib/game-data";
 import { getBattleStartPlayerHealth } from "@/lib/battle";
-import { useBattleStore } from "./battle-store";
-import { useRunSessionStore } from "./run-session-store";
+import {
+  buildActiveRunSnapshot,
+  restoreActiveRun,
+  type ActiveRunData,
+  type ActiveRunHydrationTargets,
+} from "@/lib/active-run-session";
+import type { Screen } from "@/lib/routing";
+import type { TalentXP } from "@/lib/talents";
+import { getRunSession } from "./run-session-model";
+import type { Destination } from "../types";
 import { useRunStore } from "./run-store";
+import { useBattleStore } from "./battle-store";
+import {
+  applyDestinationChoices as applyDestinationChoicesToSession,
+  setActiveLabyrinthModifiers,
+  setActiveLabyrinthPendingNode,
+  setActiveLabyrinthRewardModifiers,
+  setHasActiveRun,
+  setLabyrinthMap,
+} from "./run-session-actions";
 
-export type RunSessionSnapshot = {
-  runPlayerHealth: number;
-  runMaxHealth: number;
-  runGold: number;
-  runDeck: BattleCard[];
-  selectedDifficulty: ReturnType<typeof useRunStore.getState>["selectedDifficulty"];
-  talentXP: ReturnType<typeof useRunStore.getState>["talentXP"];
-  unlockedTalents: ReturnType<typeof useRunStore.getState>["unlockedTalents"];
-  runTalentXP: ReturnType<typeof useRunStore.getState>["runTalentXP"];
-  runEndTalentXP: ReturnType<typeof useRunSessionStore.getState>["runEndTalentXP"];
-  hasActiveRun: boolean;
-  hasActiveBattle: boolean;
-  battleState: BattleState;
-  rewardState: ReturnType<typeof useRunSessionStore.getState>["rewardState"];
-  labyrinthMap: ReturnType<typeof useRunSessionStore.getState>["labyrinthMap"];
-  mysteryEvent: ReturnType<typeof useRunSessionStore.getState>["mysteryEvent"];
-  mysteryCardChoices: ReturnType<typeof useRunSessionStore.getState>["mysteryCardChoices"];
-  corruptionResult: ReturnType<typeof useRunSessionStore.getState>["corruptionResult"];
-  shopState: ReturnType<typeof useRunSessionStore.getState>["shopState"];
-  alchemistState: ReturnType<typeof useRunSessionStore.getState>["alchemistState"];
-  runEndMaterials: ReturnType<typeof useRunSessionStore.getState>["runEndMaterials"];
-  pendingCharacterId: ReturnType<typeof useRunSessionStore.getState>["pendingCharacterId"];
-};
-
-export function getRunSessionSnapshot(): RunSessionSnapshot {
-  const run = useRunStore.getState();
-  const battle = useBattleStore.getState();
-  const session = useRunSessionStore.getState();
-  return {
-    runPlayerHealth: run.runPlayerHealth,
-    runMaxHealth: run.runMaxHealth,
-    runGold: run.runGold,
-    runDeck: run.runDeck,
-    selectedDifficulty: run.selectedDifficulty,
-    talentXP: run.talentXP,
-    unlockedTalents: run.unlockedTalents,
-    runTalentXP: run.runTalentXP,
-    runEndTalentXP: session.runEndTalentXP,
-    hasActiveRun: session.hasActiveRun,
-    hasActiveBattle: battle.hasActiveBattle,
-    battleState: battle.battleState,
-    rewardState: session.rewardState,
-    labyrinthMap: session.labyrinthMap,
-    mysteryEvent: session.mysteryEvent,
-    mysteryCardChoices: session.mysteryCardChoices,
-    corruptionResult: session.corruptionResult,
-    shopState: session.shopState,
-    alchemistState: session.alchemistState,
-    runEndMaterials: session.runEndMaterials,
-    pendingCharacterId: session.pendingCharacterId,
-  };
-}
+export {
+  getRunSession,
+  useRunSession,
+  useRunSessionBattleContext,
+  useRunSessionBattleSlice,
+  useRunSessionLabyrinthSlice,
+  useRunSessionMysterySlice,
+  useRunSessionNavigationSlice,
+  useRunSessionRunSlice,
+  useRunSessionShopSlice,
+  useRunSessionTransientSlice,
+} from "./run-session-model";
+export { setActiveLabyrinthModifiers, setActiveLabyrinthRewardModifiers } from "./run-session-actions";
 
 /** Map-layer gold plus in-combat gold (e.g. victory totals). */
 export function getCombinedRunGold(runGold?: number, battleGold?: number): number {
@@ -84,3 +61,62 @@ export function syncBattleToRun(options?: { playerHealth?: number }): void {
 
 /** Clear active combat and transient run UI stores. */
 export { resetActiveRunStores as teardownRun } from "./reset";
+
+/** Current lifecycle phase from live stores and the active screen. */
+export function getCurrentRunPhase(screen: Screen) {
+  return getRunSession(screen).phase;
+}
+
+/** Serialize all run-related stores into persisted ActiveRunData. */
+export function buildActiveRunSnapshotFromStores(screen: Screen): ActiveRunData {
+  const { run, session, battle } = getRunSession(screen);
+  return buildActiveRunSnapshot({
+    characterId: run.characterId,
+    runDeck: run.runDeck,
+    runGold: run.runGold,
+    runPlayerHealth: run.runPlayerHealth,
+    runMaxHealth: run.runMaxHealth,
+    roomsEncountered: run.roomsEncountered,
+    currentAct: run.currentAct,
+    destinationIndexInAct: run.destinationIndexInAct,
+    completedDestinations: run.completedDestinations,
+    runTrinkets: run.runTrinkets,
+    encounteredRunEnemyIds: run.encounteredRunEnemyIds,
+    selectedDifficulty: run.selectedDifficulty,
+    contentSystemType: run.contentSystemType,
+    labyrinthMap: session.labyrinthMap,
+    hasActiveBattle: battle.hasActiveBattle,
+    battleState: battle.battleState,
+    labyrinthPendingNode: session.activeLabyrinthPendingNode,
+    activeLabyrinthModifiers: session.activeLabyrinthModifiers,
+    activeLabyrinthRewardModifiers: session.activeLabyrinthRewardModifiers,
+    runTalentXP: run.runTalentXP,
+    currentScreen: screen,
+    destinationChoices: session.rewardState.destinations,
+  });
+}
+
+function createDefaultHydrationTargets(): ActiveRunHydrationTargets {
+  return {
+    runStore: useRunStore.getState(),
+    battleStore: useBattleStore.getState(),
+    screenStore: {
+      setHasActiveRun,
+      setLabyrinthMap,
+      setActiveLabyrinthModifiers,
+      setActiveLabyrinthRewardModifiers,
+      setActiveLabyrinthPendingNode,
+      applyDestinationChoices: (choices) => applyDestinationChoicesToSession(choices as Destination[]),
+    },
+  };
+}
+
+/** Apply persisted active-run data to Zustand stores (bootstrap / resume). */
+export function restoreActiveRunToStores(
+  activeRun: ActiveRunData | null,
+  talentXP: TalentXP,
+  unlockedTalents: UnlockedTalents,
+  targets: ActiveRunHydrationTargets = createDefaultHydrationTargets(),
+): void {
+  restoreActiveRun(activeRun, talentXP, unlockedTalents, targets);
+}

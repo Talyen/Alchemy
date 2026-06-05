@@ -21,7 +21,8 @@ export type KeywordId =
   | "mana"
   | "nature"
   | "companion"
-  | "archery";
+  | "archery"
+  | "phoenixFeather";
 
 export type DamageType = "physical" | "stun" | "holy" | "burn" | "poison" | "bleed" | "freeze" | "nature";
 
@@ -37,7 +38,17 @@ export const DAMAGE_TYPES: readonly DamageType[] = [
   "nature",
 ];
 
-export type PlayerStatusId = "block" | "armor" | "forge" | "haste" | "burn" | "poison" | "bleed" | "freeze" | "stun";
+export type PlayerStatusId =
+  | "block"
+  | "armor"
+  | "forge"
+  | "haste"
+  | "phoenixFeather"
+  | "burn"
+  | "poison"
+  | "bleed"
+  | "freeze"
+  | "stun";
 
 export type EnemyStatusId = "burn" | "poison" | "bleed" | "freeze" | "stun";
 
@@ -79,10 +90,11 @@ export type BattleCardEffect =
     }
   | {
       kind: "player-status";
-      status: Extract<PlayerStatusId, "block" | "armor" | "forge" | "haste">;
+      status: Extract<PlayerStatusId, "block" | "armor" | "forge" | "haste" | "phoenixFeather">;
       amount: number;
       perManaCrystal?: number;
     }
+  | { kind: "enemy-status"; status: EnemyStatusId; amount: number }
   | { kind: "heal"; amount: number }
   | { kind: "restore-mana"; amount: number }
   | { kind: "lose-mana"; amount: number }
@@ -105,7 +117,13 @@ export type BattleCardEffect =
       damageType: DamageType;
       removeAll?: boolean;
     }
-  | { kind: "random-damage"; minAmount: number; maxAmount: number };
+  | { kind: "random-damage"; minAmount: number; maxAmount: number }
+  | {
+      kind: "chance";
+      probability: number;
+      successEffects: BattleCardEffect[];
+      failureEffects: BattleCardEffect[];
+    };
 
 export type CompanionDefinition = {
   id: CompanionId;
@@ -171,6 +189,7 @@ export const PLAYER_STATUS_DISPLAY_ORDER: readonly PlayerStatusId[] = [
   "armor",
   "forge",
   "haste",
+  "phoenixFeather",
   "burn",
   "poison",
   "bleed",

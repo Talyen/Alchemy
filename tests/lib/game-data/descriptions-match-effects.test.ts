@@ -9,8 +9,16 @@ import { describe, expect, it } from "vitest";
 import { cardLibrary, companionLibrary, enemyBestiary, expectedCompanionTurnLine, trinketLibrary } from "@/lib/game-data";
 import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
 
+function flattenEffects(effects: BattleCardEffect[]): BattleCardEffect[] {
+  return effects.flatMap((e) =>
+    e.kind === "chance"
+      ? [...flattenEffects(e.successEffects), ...flattenEffects(e.failureEffects)]
+      : [e],
+  );
+}
+
 function countByKind(effects: BattleCardEffect[], kind: string): number {
-  return effects.filter((e) => e.kind === kind).length;
+  return flattenEffects(effects).filter((e) => e.kind === kind).length;
 }
 
 function hasKind(effects: BattleCardEffect[], kind: string): boolean {
@@ -32,9 +40,11 @@ function hasEqualToBlockOrArmor(effects: BattleCardEffect[]): boolean {
 }
 
 function hasNonStandardDamageEffects(effects: BattleCardEffect[]): boolean {
+  const flat = flattenEffects(effects);
   return (
-    hasEqualToBlockOrArmor(effects) ||
-    effects.some((e) => e.kind === "cleanse-player-status-to-damage" || e.kind === "random-damage")
+    hasEqualToBlockOrArmor(flat) ||
+    flat.some((e) => e.kind === "cleanse-player-status-to-damage" || e.kind === "random-damage") ||
+    effects.some((e) => e.kind === "chance")
   );
 }
 
@@ -180,9 +190,10 @@ describe("card descriptions vs effects", () => {
       const restoreManaLines = restoreLinesCount - restoreHealthLines;
       const restoreManaEffects = countByKind(effects, "restore-mana");
 
-      const goldEffectLines = descriptionLines.filter(
-        (l) => (l.startsWith("Gain ") || l.startsWith("Steal ")) && l.includes("Gold"),
-      ).length;
+      const goldEffectLines =
+        descriptionLines.filter((l) => (l.startsWith("Gain ") || l.startsWith("Steal ")) && l.includes("Gold"))
+          .length +
+        descriptionLines.filter((l) => l.includes(" or Gain ") && l.includes("Gold")).length;
       const goldEffects = countByKind(effects, "gain-gold");
 
       const wishLines = countLinesStartingWith(descriptionLines, "Wish ");
@@ -260,6 +271,11 @@ describe("card descriptions vs effects", () => {
           e.kind === "player-status" && e.status === "haste",
       ).length;
 
+      const phoenixFeatherEffects = flattenEffects(effects).filter(
+        (e): e is Extract<BattleCardEffect, { kind: "player-status"; status: "phoenixFeather" }> =>
+          e.kind === "player-status" && e.status === "phoenixFeather",
+      ).length;
+
       if (!hasNonStandardDamageEffects(effects)) {
         if (hasKind(effects, "self-damage")) {
           expect(descriptionLines.some((l) => /self|Receive/.test(l))).toBe(true);
@@ -287,6 +303,10 @@ describe("card descriptions vs effects", () => {
 
       if (hasteEffects > 0) {
         expect(descriptionLines.some((l) => l.includes("extra turn"))).toBe(true);
+      }
+
+      if (phoenixFeatherEffects > 0) {
+        expect(descriptionLines.some((l) => l.includes("die") || l.includes("30%"))).toBe(true);
       }
 
       if (!hasKind(effects, "self-damage")) {

@@ -3,25 +3,19 @@
  * Depends on: @/lib/game-data, ../game-constants, ./draw, ./types, ./combat-text, ./status-effects.
  * Depended on by: ./apply-effects.
  */
-import { cardLibrary } from "@/lib/game-data";
+import { getOfferableCardPool } from "@/lib/game-data";
 import type { BattleCard } from "@/lib/game-data";
 import { drawCards, shuffleCards } from "./draw";
 import { addGold, applyPlayerHealing, clampHealth, type BattleState, type CombatTextEvent } from "./types";
 import { emitOverhealBlockText, mergeCombatText } from "./combat-text";
 import { removeHarmfulPlayerStatuses } from "./status-effects";
-import {
-  PERCENT_DENOMINATOR,
-  WISH_CHOICE_COUNT,
-  WISH_CRYSTAL_GOLD_CHANCE,
-  MAX_HAND_SIZE,
-  MIXED_POTION_CARD_ID,
-} from "../game-constants";
+import { PERCENT_DENOMINATOR, WISH_CHOICE_COUNT, WISH_CRYSTAL_GOLD_CHANCE, MAX_HAND_SIZE } from "../game-constants";
 
 export function buildWishOptions(state: BattleState, card: BattleCard): BattleCard[] {
   const baseCount =
     WISH_CHOICE_COUNT + (state.rng() * PERCENT_DENOMINATOR < state.talentEffects.wishExtraChoiceChance ? 1 : 0);
 
-  let candidates = cardLibrary.filter((candidate) => candidate.id !== card.id && candidate.id !== MIXED_POTION_CARD_ID);
+  let candidates = getOfferableCardPool().filter((candidate) => candidate.id !== card.id);
 
   if (state.talentEffects.wishUndiscoveredCards && state.discoveredCardIds.length > 0) {
     const undiscovered = candidates.filter((c) => !state.discoveredCardIds.includes(c.id));

@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState, type CSSProperties } from "react";
 import type { BattleCard } from "@/lib/game-data";
-import { cardLibrary } from "@/lib/game-data";
+import { getOfferableCardPool } from "@/lib/game-data";
 import { shuffle } from "@/lib/utils";
 import { DRAFT_ROUNDS, DRAFT_CHOICES } from "@/lib/game-constants";
 
@@ -68,7 +68,7 @@ function ChoiceCardItem({
 }
 
 export function DraftDeckScreen({ onComplete }: { onComplete: (draftedCards: BattleCard[]) => void }) {
-  const [pool] = useState(() => shuffle(cardLibrary));
+  const [pool] = useState(() => shuffle(getOfferableCardPool()));
   const [round, setRound] = useState(0);
   const [drafted, setDrafted] = useState<BattleCard[]>([]);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);

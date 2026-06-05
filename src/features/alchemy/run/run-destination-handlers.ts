@@ -5,11 +5,13 @@ import type { LabyrinthModifierKind } from "@/lib/content-systems/types";
 import { useBattleStore } from "../stores/battle-store";
 import { useHomesteadStore } from "../stores/homestead-store";
 import {
-  defaultRunSessionStoreAccess,
-  defaultUiStoreAccess,
-  type RunSessionStoreAccess,
-  type UiStoreAccess,
-} from "../stores/store-access";
+  setCompanionRewardCards,
+  setCorruptionResult,
+  setHasActiveRun,
+  setRewardState,
+} from "../stores/run-session-actions";
+import { readRunSessionStore } from "../stores/run-session-read";
+import { defaultUiStoreAccess, type UiStoreAccess } from "../stores/store-access";
 import { playUISound } from "@/lib/audio";
 import { ACTS_PER_RUN, CAMPFIRE_HEAL_FRACTION } from "@/lib/game-constants";
 import type { MaterialInventory } from "@/lib/homestead/types";
@@ -132,12 +134,10 @@ export type RunDestinationHandlerDeps = {
   clearCombatState: () => void;
   beginMysteryEvent: () => void;
   clearMysteryCardChoices: () => void;
-  getRunSessionStore?: RunSessionStoreAccess;
   getUiStore?: UiStoreAccess;
 };
 
 export function createRunDestinationHandlers(deps: RunDestinationHandlerDeps) {
-  const getStore = deps.getRunSessionStore ?? defaultRunSessionStoreAccess;
   const getUi = deps.getUiStore ?? defaultUiStoreAccess;
 
   function routeAfterReward(
@@ -146,14 +146,13 @@ export function createRunDestinationHandlers(deps: RunDestinationHandlerDeps) {
     nextRewardState: RewardState,
     clearCompanion: boolean,
   ) {
-    const store = getStore();
     executeRewardRouteTransition(route, materials, nextRewardState, clearCompanion, {
       navigateTo: deps.navigateTo,
       completeRunVictory,
       handleActComplete,
       onLabyrinthClearNode: deps.onLabyrinthClearNode,
-      setCompanionRewardCards: store.setCompanionRewardCards,
-      setRewardState: store.setRewardState,
+      setCompanionRewardCards,
+      setRewardState,
     });
   }
 
@@ -179,11 +178,11 @@ export function createRunDestinationHandlers(deps: RunDestinationHandlerDeps) {
   }
 
   function finishRewards() {
-    const screenStore = getStore();
+    const session = readRunSessionStore();
     const battleStateVal = useBattleStore.getState().battleState;
     const result = finalizeRewardState({
-      rewardState: screenStore.rewardState,
-      companionRewardCards: screenStore.companionRewardCards,
+      rewardState: session.rewardState,
+      companionRewardCards: session.companionRewardCards,
       contentSystemType: deps.run.contentSystemType,
       currentEnemyType: battleStateVal.currentEnemy.enemyType,
       grantAlchemistReward: shouldGrantAlchemistReward(
@@ -199,14 +198,14 @@ export function createRunDestinationHandlers(deps: RunDestinationHandlerDeps) {
 
   function handleDestinationChoice(destination: Destination) {
     const selectedBossId =
-      destination === CONSTANTS.DESTINATIONS.BOSS_COMBAT ? getStore().rewardState.selectedBossId : null;
+      destination === CONSTANTS.DESTINATIONS.BOSS_COMBAT ? readRunSessionStore().rewardState.selectedBossId : null;
     deps.run.setCompletedDestinations((prev) => [...prev, destination]);
     deps.run.setDestinationIndexInAct((p) => p + 1);
     getUi().clearCardHover();
     routeDestinationChoice(destination, {
       navigateTo: deps.navigateTo,
       beginMysteryEvent: deps.beginMysteryEvent,
-      resetCorruption: () => getStore().setCorruptionResult(null),
+      resetCorruption: () => setCorruptionResult(null),
       startShop: deps.onInitShop,
       startAlchemist: deps.onInitAlchemist,
       startBattle: (enemyType) => deps.onStartBattle(undefined, undefined, enemyType),
@@ -224,7 +223,7 @@ export function createRunDestinationHandlers(deps: RunDestinationHandlerDeps) {
       finalizeRunXP: deps.talents.finalizeRunXP,
       clearCombatState: deps.clearCombatState,
     });
-    getStore().setHasActiveRun(false);
+    setHasActiveRun(false);
     deps.setScreen(CONSTANTS.SCREENS.GAME_OVER);
   }
 
@@ -244,7 +243,7 @@ export function createRunDestinationHandlers(deps: RunDestinationHandlerDeps) {
     deps.run.setDestinationIndexInAct(0);
     deps.run.setCompletedDestinations([]);
     deps.navigateTo(CONSTANTS.SCREENS.DESTINATION, () => {
-      getStore().setRewardState(deps.contentNav.createInitialDestinations({ destinationIndexInAct: 0 }));
+      setRewardState(deps.contentNav.createInitialDestinations({ destinationIndexInAct: 0 }));
       prepareDestinationScreen();
     });
   }
@@ -254,7 +253,7 @@ export function createRunDestinationHandlers(deps: RunDestinationHandlerDeps) {
     deps.talents.finalizeRunXP();
     void flushAlchemySaveNow(null);
     deps.setHasActiveBattle(false);
-    getStore().setHasActiveRun(false);
+    setHasActiveRun(false);
     deps.navigateTo(CONSTANTS.SCREENS.RUN_VICTORY, onRenderedScreenCommit);
   }
 
@@ -270,21 +269,21 @@ export function createRunDestinationHandlers(deps: RunDestinationHandlerDeps) {
     getUi().clearCardHover();
     deps.clearMysteryCardChoices();
     deps.navigateTo(CONSTANTS.SCREENS.DESTINATION, () => {
-      getStore().setRewardState(deps.contentNav.createInitialDestinations(undefined, prevDest));
+      setRewardState(deps.contentNav.createInitialDestinations(undefined, prevDest));
       prepareDestinationScreen();
     });
   }
 
   function prepareDestinationScreen() {
-    const state = getStore().rewardState;
+    const state = readRunSessionStore().rewardState;
     const bossOnly = state.destinations.length === 1 && state.destinations[0] === CONSTANTS.DESTINATIONS.BOSS_COMBAT;
     if (!bossOnly) return;
     if (state.selectedBossId && getBossById(state.selectedBossId)) return;
-    getStore().setRewardState((prev) => ({ ...prev, selectedBossId: getBossEnemy().id }));
+    setRewardState((prev) => ({ ...prev, selectedBossId: getBossEnemy().id }));
   }
 
   function selectRewardChoice(id: string) {
-    getStore().setRewardState((prev) => ({ ...prev, selectedId: id }));
+    setRewardState((prev) => ({ ...prev, selectedId: id }));
   }
 
   function handleCampfireContinue() {

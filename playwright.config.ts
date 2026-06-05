@@ -5,11 +5,16 @@ const webServerCommand = viteMode === "preview"
   ? "npx vite preview --host 127.0.0.1 --port 4173 --strictPort"
   : "npx vite --host 127.0.0.1 --port 4173 --strictPort";
 
+const isCi = !!process.env.CI;
+const isFullE2eSuite = process.env.PLAYWRIGHT_E2E_FULL === "1";
+// Critical CI job: fail fast. Full suite (~100 tests): report up to 5 failures per run.
+const maxFailures = isFullE2eSuite ? 5 : isCi ? 1 : 0;
+
 export default defineConfig({
   testDir: "./tests",
   testMatch: "**/*.spec.ts",
   fullyParallel: !process.env.CI,
-  maxFailures: process.env.CI ? 1 : 0,
+  maxFailures,
   workers: process.env.CI ? 1 : 4,
   globalTimeout: 600_000,
   timeout: process.env.CI ? 30_000 : 15_000,

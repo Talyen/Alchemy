@@ -96,3 +96,14 @@ export function isDocumentedTransition(from: Screen, to: Screen): boolean {
   if (run?.includes(to)) return true;
   return false;
 }
+
+/** High-level run lifecycle phase for persistence and orchestration. */
+export type RunPhase = "meta" | "runLoop" | "battle" | "runEnd";
+
+/** Derives run phase from the current screen and whether combat state is active. */
+export function getRunPhase(screen: Screen, hasActiveBattle: boolean): RunPhase {
+  if (isRunEndScreen(screen)) return "runEnd";
+  if (screen === ROUTE_SCREENS.BATTLE && hasActiveBattle) return "battle";
+  if (isRunLoopScreen(screen)) return "runLoop";
+  return "meta";
+}

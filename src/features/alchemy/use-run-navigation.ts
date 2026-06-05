@@ -17,7 +17,6 @@ import { getRunAvailableDestinations } from "./navigation/destination-flow";
 import { getPreviousDestination } from "./navigation/run-navigation-helpers";
 import { useMysteryFlow } from "./navigation/use-mystery-flow";
 import { useUiStore } from "./stores/ui-store";
-import { useRunSessionStore } from "./stores/run-session-store";
 import { useRunNavigationSession } from "./navigation/run-navigation-session";
 import { applyCorruptionToDeck } from "./navigation/run-navigation-corruption";
 import { useActiveRunSnapshot } from "./run/use-active-run-snapshot";
@@ -59,13 +58,7 @@ export function useRunNavigation({
   const run = useRunAdapter();
   const talents = useTalentAdapter();
 
-  const { battleState, hasActiveBattle, setHasActiveBattle } = useBattleStore(
-    useShallow((s) => ({
-      battleState: s.battleState,
-      hasActiveBattle: s.hasActiveBattle,
-      setHasActiveBattle: s.setHasActiveBattle,
-    })),
-  );
+  const setHasActiveBattle = useBattleStore((s) => s.setHasActiveBattle);
   const clearCardGhosts = useBattlePresentationStore((s) => s.clearCardGhosts);
 
   const { completedDifficulties, setDiscoveredCardIds, setEncounteredEnemyIds, setDiscoveredTrinketIds } = useAppStore(
@@ -79,18 +72,17 @@ export function useRunNavigation({
 
   const draftedDeckRef = useRef<BattleCard[] | null>(null);
   const {
+    phase: runPhase,
+    battle: { hasActiveBattle },
     clearCardHover,
     hasActiveRun,
-    labyrinthMap,
-    labyrinthPendingNode,
-    activeLabyrinthModifiers,
     activeLabyrinthRewardModifiers,
     rewardState,
     runEndMaterials,
     corruptionResult,
     pendingCharacterId,
     pendingContentSystemType,
-  } = useRunNavigationSession();
+  } = useRunNavigationSession(screen);
 
   const rewardTransitionTimer = useRef(new TimerGroup());
   useEffect(() => () => rewardTransitionTimer.current.clearAll(), []);
@@ -164,7 +156,9 @@ export function useRunNavigation({
 
   const advanceToNextRef = useRef<() => void>(() => {});
 
-  const mystery = useMysteryFlow({ advanceToNextDestination: () => advanceToNextRef.current() });
+  const mystery = useMysteryFlow({
+    advanceToNextDestination: () => advanceToNextRef.current(),
+  });
 
   const beginMysteryEvent = useCallback(() => {
     mystery.beginMysteryEvent(() => navigateTo(CONSTANTS.SCREENS.MYSTERY));
@@ -194,7 +188,6 @@ export function useRunNavigation({
         clearCombatState,
         beginMysteryEvent,
         clearMysteryCardChoices: mystery.clearCardChoices,
-        getRunSessionStore: () => useRunSessionStore.getState(),
         getUiStore: () => useUiStore.getState(),
       }),
     [
@@ -225,30 +218,7 @@ export function useRunNavigation({
     advanceToNextRef.current = destinationHandlers.advanceToNextDestination;
   }, [destinationHandlers.advanceToNextDestination]);
 
-  const currentActiveRunData = useActiveRunSnapshot({
-    characterId: run.characterId,
-    runDeck: run.runDeck,
-    runGold: run.runGold,
-    runPlayerHealth: run.runPlayerHealth,
-    runMaxHealth: run.runMaxHealth,
-    roomsEncountered: run.roomsEncountered,
-    currentAct: run.currentAct,
-    destinationIndexInAct: run.destinationIndexInAct,
-    completedDestinations: run.completedDestinations,
-    runTrinkets: run.runTrinkets,
-    encounteredRunEnemyIds: run.encounteredRunEnemyIds,
-    selectedDifficulty: run.selectedDifficulty,
-    contentSystemType: run.contentSystemType,
-    labyrinthMap,
-    hasActiveBattle,
-    battleState,
-    labyrinthPendingNode,
-    activeLabyrinthModifiers,
-    activeLabyrinthRewardModifiers,
-    runTalentXP: talents.runTalentXP,
-    currentScreen: screen,
-    destinationChoices: rewardState.destinations,
-  });
+  const currentActiveRunData = useActiveRunSnapshot(screen);
 
   function handleWildwoodBossSelect(bossId: string) {
     if (!onStartBossById(bossId)) return;
@@ -263,7 +233,7 @@ export function useRunNavigation({
   }
 
   function handleCorruptCard(cardIndex: number) {
-    applyCorruptionToDeck(run.runDeck, cardIndex, run.setRunDeck, setDiscoveredCardIds, useRunSessionStore.getState());
+    applyCorruptionToDeck(run.runDeck, cardIndex, run.setRunDeck, setDiscoveredCardIds);
   }
 
   function handleCorruptionExit() {
@@ -281,6 +251,7 @@ export function useRunNavigation({
   }
 
   return {
+    runPhase,
     rewardState,
     get runEndMaterials() {
       return runEndMaterials;

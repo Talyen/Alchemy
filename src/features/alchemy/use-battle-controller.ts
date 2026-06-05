@@ -18,7 +18,7 @@ import { useBattleAutoEndTurn } from "./battle/use-battle-auto-end-turn";
 import { useBattleStore } from "./stores/battle-store";
 import { useBattlePresentationStore } from "./stores/battle-presentation-store";
 import { useUiStore } from "./stores/ui-store";
-import { useRunSessionStore } from "./stores/run-session-store";
+import { useRunSessionBattleContext } from "./stores/run-session-facade";
 import type { BattleScreenData } from "./screens/battle-screen/types";
 import { getBattleSessionStore } from "./battle/battle-store-access";
 import { createTransferCancelRegistry } from "./battle/transfer-lifecycle";
@@ -60,10 +60,11 @@ export function useBattleController({
   measureElementRect?: (element: HTMLElement | null, sceneElement: HTMLDivElement | null) => CardRect | null;
   measureVisualCardRect?: (element: HTMLElement | null, sceneElement: HTMLDivElement | null) => CardRect | null;
 }) {
-  const { battleState, displayOverrides } = useBattleStore(
-    useShallow((s) => ({ battleState: s.battleState, displayOverrides: s.displayOverrides })),
-  );
-  const hasActiveBattle = useBattleStore((s) => s.hasActiveBattle);
+  const {
+    battle: { battleState, hasActiveBattle },
+    activeLabyrinthModifiers,
+  } = useRunSessionBattleContext(screen);
+  const displayOverrides = useBattleStore((s) => s.displayOverrides);
   const battlePresentation = useBattlePresentationStore(
     useShallow((s) => ({
       revealedCardKeys: s.revealedCardKeys,
@@ -83,7 +84,6 @@ export function useBattleController({
       maybeTriggerShimmer: s.maybeTriggerShimmer,
     })),
   );
-  const activeLabyrinthModifiers = useRunSessionStore((s) => s.activeLabyrinthModifiers);
   const removeCardGhost = useBattlePresentationStore((s) => s.removeCardGhost);
 
   const battleScreenData: BattleScreenData = useMemo(

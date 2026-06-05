@@ -33,6 +33,7 @@ function createEmptyPlayerStatuses(): PlayerStatusValues {
     armor: 0,
     forge: 0,
     haste: 0,
+    phoenixFeather: 0,
     burn: 0,
     poison: 0,
     bleed: 0,

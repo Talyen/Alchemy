@@ -56,7 +56,7 @@ export function RenderAlchemyScreen({
     })),
   );
   const appActions = useAppActions();
-  const runScreenData = useRunScreenData();
+  const runScreenData = useRunScreenData(screen);
   const homesteadValues = useHomesteadStore(
     useShallow((s) => ({
       materialInventory: s.materialInventory,

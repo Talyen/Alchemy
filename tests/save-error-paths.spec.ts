@@ -53,8 +53,8 @@ test.describe("Save Error Paths", () => {
       localStorage.clear();
       localStorage.removeItem("alchemy-skip-loading-screen");
     });
-    await page.goto("/", { waitUntil: "domcontentloaded" });
-    await new MenuPage(page).expectMainMenu();
+    await page.goto("/", { waitUntil: "load" });
+    await new MenuPage(page).expectMainMenuAfterColdStart();
 
     expect(errors).toEqual([]);
   });

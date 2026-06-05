@@ -129,6 +129,16 @@ function getPlayableCard(state: BattleState, cardId: string, index: number): Bat
   return card;
 }
 
+/** Battle-engine playability (mana, phase, defeat, wish). UI adds screen/animation guards on top. */
+export function canPlayCard(state: BattleState, card: BattleCard, index: number): boolean {
+  if (state.enemyHealth <= 0 || isPlayerDefeated(state)) return false;
+  if (state.wishOptions) return false;
+  if (state.turnPhase !== "player") return false;
+  const currentCard = state.hand[index];
+  if (!currentCard || currentCard.id !== card.id || currentCard.uid !== card.uid) return false;
+  return state.mana >= computeEffectiveCost(state, currentCard).effectiveCost;
+}
+
 /**
  * Executes state changes directly related to removing a card from hand and applying its effects.
  */

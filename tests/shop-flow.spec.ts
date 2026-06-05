@@ -10,6 +10,7 @@ test.describe("Merchant Shop", critical, () => {
 
     test("buying a card deducts gold and marks as purchased", async ({ page }) => {
       const shop = new ShopPage(page);
+      await shop.stage.expectRunPhase("runLoop");
       const goldBefore = await shop.gold();
 
       await shop.buyCard();

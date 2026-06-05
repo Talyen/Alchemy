@@ -4,12 +4,9 @@ import { TimerGroup } from "@/lib/animation/game-timer";
 import { useRunStore } from "../stores/run-store";
 import { useBattleStore } from "../stores/battle-store";
 import { useHomesteadStore } from "../stores/homestead-store";
-import {
-  defaultRunSessionStoreAccess,
-  defaultUiStoreAccess,
-  type RunSessionStoreAccess,
-  type UiStoreAccess,
-} from "../stores/store-access";
+import { setCompanionRewardCards, setRewardState, setRunEndMaterials } from "../stores/run-session-actions";
+import { readRunSessionStore } from "../stores/run-session-read";
+import { defaultUiStoreAccess, type UiStoreAccess } from "../stores/store-access";
 import { playVictory, stopAllSfx } from "@/lib/audio";
 import { getEndOfRunMaterials, applyMaterialFindBonus } from "@/lib/homestead/loot";
 import { addInventory } from "@/lib/homestead/inventory";
@@ -35,12 +32,10 @@ export type RunVictoryHandlerDeps = {
   onLabyrinthFailNode: () => void;
   getAvailableDestinations: GetAvailableDestinations;
   talents: TalentStateController;
-  getRunSessionStore?: RunSessionStoreAccess;
   getUiStore?: UiStoreAccess;
 };
 
 export function createRunVictoryHandlers(deps: RunVictoryHandlerDeps) {
-  const getRunSessionStore = deps.getRunSessionStore ?? defaultRunSessionStoreAccess;
   const getUiStore = deps.getUiStore ?? defaultUiStoreAccess;
 
   function clearCombatState() {
@@ -63,7 +58,7 @@ export function createRunVictoryHandlers(deps: RunVictoryHandlerDeps) {
     };
     const mats = applyMaterialFindBonus(combinedBase, homesteadEffects);
     useHomesteadStore.getState().addMaterials(mats);
-    getRunSessionStore().setRunEndMaterials(displayMaterials ? addInventory(displayMaterials, mats) : mats);
+    setRunEndMaterials(displayMaterials ? addInventory(displayMaterials, mats) : mats);
     return mats;
   }
 
@@ -77,7 +72,7 @@ export function createRunVictoryHandlers(deps: RunVictoryHandlerDeps) {
       runDeck: runState.runDeck,
       runTrinkets: runState.runTrinkets,
       contentSystemType: runState.contentSystemType,
-      activeLabyrinthRewardModifiers: getRunSessionStore().activeLabyrinthRewardModifiers,
+      activeLabyrinthRewardModifiers: readRunSessionStore().activeLabyrinthRewardModifiers,
       battleState: useBattleStore.getState().battleState,
       runGold: runState.runGold,
       runPlayerHealth: runState.runPlayerHealth,
@@ -93,15 +88,13 @@ export function createRunVictoryHandlers(deps: RunVictoryHandlerDeps) {
   function commitVictoryResult(result: ReturnType<typeof computeVictoryRewards>) {
     const battleState = useBattleStore.getState().battleState;
     const runState = useRunStore.getState();
-    const screenStore = getRunSessionStore();
-
     commitVictoryRewards(result, {
       battleState,
       addHomesteadMaterials: (materials) => useHomesteadStore.getState().addMaterials(materials),
       addRunGold: runState.addRunGold,
       setRunMaxHealth: runState.setRunMaxHealth,
-      setRewardState: screenStore.setRewardState,
-      setCompanionRewardCards: screenStore.setCompanionRewardCards,
+      setRewardState,
+      setCompanionRewardCards,
       clearCombatState,
     });
   }
@@ -112,7 +105,7 @@ export function createRunVictoryHandlers(deps: RunVictoryHandlerDeps) {
     stopAllSfx();
     playVictory();
     deps.rewardTransitionTimer.current.setTimeout(() => {
-      if (getRunSessionStore().hasActiveRun) {
+      if (readRunSessionStore().hasActiveRun) {
         deps.setScreen(CONSTANTS.SCREENS.REWARDS);
       }
     }, VICTORY_TRANSITION_DELAY);

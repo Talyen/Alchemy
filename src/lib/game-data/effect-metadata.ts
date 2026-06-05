@@ -15,8 +15,23 @@ export function collectKeywordsFromBattleEffect(effect: BattleCardEffect): Keywo
       break;
     case "random-damage":
       break;
+    case "chance": {
+      const seen = new Set<KeywordId>();
+      for (const nested of [...effect.successEffects, ...effect.failureEffects]) {
+        for (const kw of collectKeywordsFromBattleEffect(nested)) {
+          if (!seen.has(kw)) {
+            seen.add(kw);
+            keywords.push(kw);
+          }
+        }
+      }
+      break;
+    }
     case "player-status":
       if (effect.status !== "haste") keywords.push(effect.status as KeywordId);
+      break;
+    case "enemy-status":
+      keywords.push(effect.status as KeywordId);
       break;
     case "heal":
       keywords.push("health");

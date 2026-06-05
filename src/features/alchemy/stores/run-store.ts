@@ -20,7 +20,7 @@ import {
   xpThresholdForPoints,
   type TalentXP,
 } from "@/lib/talents";
-import { useRunSessionStore } from "./run-session-store";
+import { setRunEndTalentXP } from "./run-session-actions";
 import type { RunStartSnapshot } from "@/features/alchemy/run/run-start";
 import {
   createInitialRunState,
@@ -126,12 +126,12 @@ export const useRunStore = create<RunStore>()((set) => {
     finalizeRunXP: () =>
       set((s) => {
         if (Object.keys(s.runTalentXP).length === 0) {
-          useRunSessionStore.getState().setRunEndTalentXP({});
+          setRunEndTalentXP({});
           return s;
         }
 
         const multiplier = getDifficultyXPMultiplier(s.selectedDifficulty);
-        useRunSessionStore.getState().setRunEndTalentXP(computeRunEndTalentXPSnapshot(s.runTalentXP, multiplier));
+        setRunEndTalentXP(computeRunEndTalentXPSnapshot(s.runTalentXP, multiplier));
 
         return {
           talentXP: mergeRunTalentXPIntoPermanent(s.runTalentXP, s.talentXP, multiplier),
@@ -148,7 +148,7 @@ export const useRunStore = create<RunStore>()((set) => {
     },
 
     hydrateFromSnapshot: (snapshot: RunStartSnapshot) => {
-      useRunSessionStore.getState().setRunEndTalentXP({});
+      setRunEndTalentXP({});
       set({ ...runFieldsFromSnapshot(snapshot), runTalentXP: {} });
     },
   };

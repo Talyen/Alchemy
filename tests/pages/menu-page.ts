@@ -1,7 +1,12 @@
 import { expect, type Page } from "@playwright/test";
+import { GameStage } from "./game-stage";
 
 export class MenuPage {
-  constructor(private page: Page) {}
+  readonly stage: GameStage;
+
+  constructor(private page: Page) {
+    this.stage = new GameStage(page);
+  }
 
   readonly playBtn = this.page.getByRole("button", { name: "Play", exact: true });
   readonly collectionBtn = this.page.getByRole("button", { name: "Collection" });
@@ -15,6 +20,11 @@ export class MenuPage {
 
   async expectMainMenu(timeout = 5000) {
     await expect(this.playBtn).toBeVisible({ timeout });
+  }
+
+  /** Cold start without alchemy-skip-loading-screen; allow full asset preload (up to ~12s). */
+  async expectMainMenuAfterColdStart() {
+    await this.expectMainMenu(15_000);
   }
 
   async openCollection() {

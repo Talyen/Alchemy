@@ -1,12 +1,11 @@
 // Card play, wish resolution, and post-play draw sequences in battle UI.
 import type { MouseEvent, RefObject } from "react";
 import {
+  canPlayCard as canPlayCardInBattle,
   chooseWishCard,
-  getEffectiveCost,
   playBattleCardResolved,
   type BattleState,
   type CombatTextEvent,
-  isPlayerDefeated,
 } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
 import { playCardSound, playGoldGain } from "@/lib/audio";
@@ -65,16 +64,9 @@ export function createBattleCardPlay(deps: BattleCardPlayDeps) {
   }
 
   function canPlayCard(card: BattleCard, index: number, state: BattleState) {
-    const currentCard = state.hand[index];
     return (
       deps.screen === "battle" &&
-      state.enemyHealth > 0 &&
-      !isPlayerDefeated(state) &&
-      currentCard?.id === card.id &&
-      currentCard?.uid === card.uid &&
-      state.mana >= getEffectiveCost(state, currentCard) &&
-      !state.wishOptions &&
-      state.turnPhase === "player" &&
+      canPlayCardInBattle(state, card, index) &&
       !deps.cardPlayInProgressRef.current &&
       !deps.hiddenHandCardKeys.has(getCardKey(card))
     );

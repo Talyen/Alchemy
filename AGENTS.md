@@ -154,13 +154,26 @@ npm run release:major    # major version bump + changelog + tag
 
 | Step | File(s) |
 |---|---|
-| 1. Add card ID to `CardId` union | `src/lib/game-data/types.ts` |
-| 2. Define card object in `cardLibrary` array | `src/lib/game-data/cards.ts` |
-| 3. Add effects (discriminated union on `kind`) | same file, `effects: [...]` |
-| 4. Add art reference | `src/lib/game-data/assets.ts` |
-| 5. (Optional) Register card sound | `src/lib/sound-registry.ts` (`cardSounds` record) |
-| 6. Update `descriptionLines` to match effects | same `cards.ts` entry |
-| 7. Cover through `tests/lib/game-data/descriptions-match-effects.test.ts` | |
+| 1. Define card in `combatCards.ts` or `supportCards.ts` (merged into `cardLibrary`) | `src/lib/game-data/cards/` |
+| 2. Add effects (discriminated union on `kind`) | same entry, `effects: [...]` |
+| 3. Add art reference | `src/lib/game-data/assets.ts` (or `placeholderCard` while WIP) |
+| 4. (Optional) Register card sound | `src/lib/sound-registry.ts` (`cardSounds` record) |
+| 5. Update `descriptionLines` to match effects | same card entry |
+| 6. Cover through `tests/lib/game-data/descriptions-match-effects.test.ts` | |
+
+**Add a new card effect `kind`** (new `effects[].kind` string):
+
+| Step | File(s) |
+|---|---|
+| 1. Add to `BattleCardEffect` union | `src/lib/game-data/types.ts` |
+| 2. Create `effects/<kind>/definition.ts` (schema + `dispatchRoute`) | `src/lib/game-data/effects/` |
+| 3. Register in `TEMPLATE_EFFECT_DEFINITIONS` (+ `ALL_EFFECT_REGISTRY_ENTRIES` if needed) | `src/lib/game-data/effects/template-definitions.ts` |
+| 4. Add `kind` to `BATTLE_CARD_EFFECT_KINDS` | `src/lib/game-data/effects/kinds.ts` |
+| 5. Implement handler (existing route module or new) | `src/lib/battle/effect-handlers/` — see `src/lib/game-data/effects/BATTLE_HANDLERS.md` |
+| 6. Update `effect-metadata.ts` keywords | `src/lib/game-data/effect-metadata.ts` |
+| 7. Tests | `tests/lib/battle/apply-effects*.test.ts`, `tests/lib/game-data/effects-registry.test.ts` |
+
+Cards in `cardLibrary` are automatically included in merchant shop, combat rewards, mysteries, wish, and draft via `getOfferableCardPool()` — no separate pool registration (only `mixed-potion` is excluded).
 
 **Add a new character**:
 
@@ -251,7 +264,11 @@ Orchestration in `src/features/alchemy/` bridges pure lib logic to React UI. `*-
 |---|---|---|
 | App / options | `app-store.ts` | Display/audio options, collection discovery, completed difficulties |
 | Transient run UI | `run-session-store.ts` | Reward state, shop/alchemist offers, labyrinth map + pending node, mystery event/choices, corruption result, pending character/content-system (`screen-store.ts` only resets session + ui stores) |
-| Run session facade | `stores/run-session-facade.ts` | `getRunSessionSnapshot`, `syncRunToBattleStart`, `syncBattleToRun`, `teardownRun`, `getCombinedRunGold` |
+| Run session facade | `stores/run-session-facade.ts` | `getRunSession` / `useRunSession`, `buildActiveRunSnapshotFromStores`, `restoreActiveRunToStores`, `syncRunToBattleStart`, `syncBattleToRun`, `teardownRun` |
+| Run screen flattening | `stores/run-screen-data.ts` | `flattenRunSessionForScreens` — flat props for `screen-routes/`; hook: `useRunScreenData(screen)` |
+| Session store access | `store-access.ts`, `run-session-actions.ts`, `run-session-read.ts` | Writes: `run-session-actions`; reads: `readRunSessionStore()`; avoid direct `useRunSessionStore` outside store modules |
+| Narrow session hooks | `run-session-model.ts` | `useRunSessionBattleContext`, `useRunSessionNavigationSlice`, `useRunSessionShopSlice`, `useRunSessionMysterySlice`, `useRunSessionLabyrinthSlice` — prefer over full `useRunSession` |
+| Run phase | `@/lib/routing` (`getRunPhase`, `RunPhase`) | `meta` / `runLoop` / `battle` / `runEnd` from screen + `hasActiveBattle`; `data-run-phase` on `#vr-stage`; Steam via `getSteamRichPresenceLabel` |
 | Run + talents | `run-store.ts` | Persistent run fields and talent XP/unlocks; exposes `useRunAdapter()` / `useTalentAdapter()` |
 | Battle | `battle-store.ts` | Synced battle state, display overrides, active-battle flag |
 | Homestead | `homestead-store.ts` | Material inventory and upgrade tiers |
@@ -261,9 +278,10 @@ All paths under `src/features/alchemy/stores/`.
 
 ### Data Flow
 
-- **Card play**: UI click → `useBattleController.playCard()` → `playBattleCardResolved()` (`src/lib/battle/card-play.ts`) → `applyCardEffects()` (`src/lib/battle/apply-effects.ts`) → new `BattleState` → Zustand store update → React re-render.
+- **Card play**: UI click → `useBattleController.playCard()` → `playBattleCardResolved()` (`src/lib/battle/card-play.ts`) → `applyCardEffects()` (`src/lib/battle/effect-handlers/dispatch.ts`) → new `BattleState` → Zustand store update → React re-render.
 - **Enemy turn**: `endPlayerTurn()` (`src/lib/battle/enemy-turn.ts`) → enemy action resolution → status ticks → new `BattleState` → store update.
 - **Screen transition**: `goToScreen` / `navigateTo` in run controller → React `screen` state (100ms delay via `NAVIGATION_DELAY_MS` in `game-constants.ts`) → `RenderAlchemyScreen` → `renderAlchemyScreenRoute()` in `src/app/screen-routes/`. Transition commits can defer store updates until the old screen unmounts (see `navigateTo` in `use-alchemy-run-controller.ts`).
+- **Run phase reads**: Prefer `useRunSession(screen)` or `nav.runPhase` over re-deriving from stores. Screen routes use `useRunScreenData(screen)` (includes `phase`). E2E: `GameStage` in `tests/pages/game-stage.ts` reads `data-run-phase`.
 
 ### Screen Routing
 

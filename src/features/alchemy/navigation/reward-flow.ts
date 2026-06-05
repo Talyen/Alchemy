@@ -1,5 +1,5 @@
 // Combat and boss reward builders; re-exports reward state, gold, and routing modules.
-import { cardLibrary, trinketLibrary, type BattleCard } from "@/lib/game-data";
+import { getOfferableCardPool, trinketLibrary, type BattleCard } from "@/lib/game-data";
 import {
   BOSS_TRINKET_REWARD_CHOICES,
   ELITE_TRINKET_REWARD_CHANCE,
@@ -119,7 +119,7 @@ export function createCombatRewardState({
     rewardType: offerTrinket ? "trinket" : "card",
     choices: offerTrinket
       ? sampleItems(trinketLibrary, REWARD_CARD_CHOICES)
-      : selectRewardCards(runDeck, cardLibrary, REWARD_CARD_CHOICES),
+      : selectRewardCards(runDeck, getOfferableCardPool(), REWARD_CARD_CHOICES),
     gold: computeRewardGold({
       baseGold: gold,
       bonusGold: eliteBonus,

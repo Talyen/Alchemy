@@ -77,6 +77,56 @@ export default tseslint.config(
     },
   },
 
+  // features/alchemy subfolder boundaries — keep orchestration out of screens and vice versa.
+  {
+    files: ["src/features/alchemy/battle/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["@/features/alchemy/screens", "@/features/alchemy/screens/*", "**/features/alchemy/screens/**"],
+              message: "Battle orchestration must not import screen components. Pass data via controllers/stores.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ["src/features/alchemy/navigation/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["@/features/alchemy/screens", "@/features/alchemy/screens/*", "**/features/alchemy/screens/**"],
+              message: "Navigation flows must not import screen components. Wire screens from app/screen-routes.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ["src/features/alchemy/screens/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["@/features/alchemy/battle", "@/features/alchemy/battle/*", "**/features/alchemy/battle/**"],
+              message: "Screens must not import battle orchestration. Use controller props and @/lib/battle types.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+
   // Source files: warn on `any` type usage.
   {
     files: ["src/**/*.{ts,tsx}"],

@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { cardLibrary, characters, companionLibrary, enemyBestiary, trinketLibrary } from "@/lib/game-data";
+import {
+  cardLibrary,
+  characters,
+  companionLibrary,
+  enemyBestiary,
+  getOfferableCardPool,
+  trinketLibrary,
+} from "@/lib/game-data";
+import { MIXED_POTION_CARD_ID } from "@/lib/game-constants";
 
 describe("cardLibrary data integrity", () => {
   it("all card IDs are unique", () => {
@@ -35,6 +43,38 @@ describe("cardLibrary data integrity", () => {
           expect(companionIds.has(effect.companionId)).toBe(true);
         }
       }
+    }
+  });
+});
+
+describe("getOfferableCardPool", () => {
+  it("includes every library card except mixed potion", () => {
+    const poolIds = new Set(getOfferableCardPool().map((card) => card.id));
+    for (const card of cardLibrary) {
+      if (card.id === MIXED_POTION_CARD_ID) {
+        expect(poolIds.has(card.id)).toBe(false);
+      } else {
+        expect(poolIds.has(card.id)).toBe(true);
+      }
+    }
+  });
+
+  it("includes recently added cards without separate pool registration", () => {
+    const poolIds = new Set(getOfferableCardPool().map((card) => card.id));
+    for (const id of [
+      "wishing-well",
+      "molten-bulwark",
+      "glacial-ward",
+      "spiked-shield",
+      "golden-plate",
+      "crystal-bulwark",
+      "hemorrhage",
+      "bounty-shot",
+      "sap-arrow",
+      "gamblers-shot",
+      "phoenix-feather",
+    ]) {
+      expect(poolIds.has(id)).toBe(true);
     }
   });
 });

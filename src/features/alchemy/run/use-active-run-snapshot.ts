@@ -1,113 +1,45 @@
 // Memoized active-run snapshot for persistence and autosave.
 import { useMemo } from "react";
-import type { BattleState } from "@/lib/battle";
-import type { BattleCard, CharacterId, DifficultyId } from "@/lib/game-data";
-import type { ContentSystemId, LabyrinthMap, LabyrinthModifierKind } from "@/lib/content-systems/types";
-import type { TalentXP } from "@/lib/talents";
-import { createActiveRunSnapshot } from "@/lib/active-run-session";
-import type { Destination, Screen } from "../types";
-import type { LabyrinthNodePosition } from "./types";
+import type { Screen } from "../types";
+import {
+  useRunSessionBattleSlice,
+  useRunSessionRunSlice,
+  useRunSessionTransientSlice,
+} from "../stores/run-session-facade";
+import { buildActiveRunSnapshot } from "@/lib/active-run-session";
 
-type ActiveRunSnapshotInput = {
-  characterId: CharacterId;
-  runDeck: BattleCard[];
-  runGold: number;
-  runPlayerHealth: number;
-  runMaxHealth: number;
-  roomsEncountered: number;
-  currentAct: number;
-  destinationIndexInAct: number;
-  completedDestinations: Destination[];
-  runTrinkets: string[];
-  encounteredRunEnemyIds: string[];
-  selectedDifficulty: DifficultyId | null;
-  contentSystemType: ContentSystemId;
-  labyrinthMap: LabyrinthMap;
-  hasActiveBattle: boolean;
-  battleState: BattleState;
-  labyrinthPendingNode: LabyrinthNodePosition | null;
-  activeLabyrinthModifiers: LabyrinthModifierKind[];
-  activeLabyrinthRewardModifiers: LabyrinthModifierKind[];
-  runTalentXP: TalentXP;
-  currentScreen: Screen;
-  destinationChoices: Destination[];
-};
-
-export function useActiveRunSnapshot(input: ActiveRunSnapshotInput) {
-  const {
-    characterId,
-    runDeck,
-    runGold,
-    runPlayerHealth,
-    runMaxHealth,
-    roomsEncountered,
-    currentAct,
-    destinationIndexInAct,
-    completedDestinations,
-    runTrinkets,
-    encounteredRunEnemyIds,
-    selectedDifficulty,
-    contentSystemType,
-    labyrinthMap,
-    hasActiveBattle,
-    battleState,
-    labyrinthPendingNode,
-    activeLabyrinthModifiers,
-    activeLabyrinthRewardModifiers,
-    runTalentXP,
-    currentScreen,
-    destinationChoices,
-  } = input;
+/** Builds ActiveRunData from run session slices (no full useRunSession subscription). */
+export function useActiveRunSnapshot(screen: Screen) {
+  const run = useRunSessionRunSlice();
+  const session = useRunSessionTransientSlice();
+  const battle = useRunSessionBattleSlice();
 
   return useMemo(
     () =>
-      createActiveRunSnapshot({
-        characterId,
-        runDeck,
-        runGold,
-        runPlayerHealth,
-        runMaxHealth,
-        roomsEncountered,
-        currentAct,
-        destinationIndexInAct,
-        completedDestinations,
-        runTrinkets,
-        encounteredRunEnemyIds,
-        selectedDifficulty,
-        contentSystemType,
-        labyrinthMap,
-        hasActiveBattle,
-        battleState,
-        labyrinthPendingNode,
-        activeLabyrinthModifiers,
-        activeLabyrinthRewardModifiers,
-        runTalentXP,
-        currentScreen,
-        destinationChoices,
+      buildActiveRunSnapshot({
+        characterId: run.characterId,
+        runDeck: run.runDeck,
+        runGold: run.runGold,
+        runPlayerHealth: run.runPlayerHealth,
+        runMaxHealth: run.runMaxHealth,
+        roomsEncountered: run.roomsEncountered,
+        currentAct: run.currentAct,
+        destinationIndexInAct: run.destinationIndexInAct,
+        completedDestinations: run.completedDestinations,
+        runTrinkets: run.runTrinkets,
+        encounteredRunEnemyIds: run.encounteredRunEnemyIds,
+        selectedDifficulty: run.selectedDifficulty,
+        contentSystemType: run.contentSystemType,
+        labyrinthMap: session.labyrinthMap,
+        hasActiveBattle: battle.hasActiveBattle,
+        battleState: battle.battleState,
+        labyrinthPendingNode: session.activeLabyrinthPendingNode,
+        activeLabyrinthModifiers: session.activeLabyrinthModifiers,
+        activeLabyrinthRewardModifiers: session.activeLabyrinthRewardModifiers,
+        runTalentXP: run.runTalentXP,
+        currentScreen: screen,
+        destinationChoices: session.rewardState.destinations,
       }),
-    [
-      characterId,
-      runDeck,
-      runGold,
-      runPlayerHealth,
-      runMaxHealth,
-      roomsEncountered,
-      currentAct,
-      destinationIndexInAct,
-      completedDestinations,
-      runTrinkets,
-      encounteredRunEnemyIds,
-      selectedDifficulty,
-      contentSystemType,
-      labyrinthMap,
-      hasActiveBattle,
-      battleState,
-      labyrinthPendingNode,
-      activeLabyrinthModifiers,
-      activeLabyrinthRewardModifiers,
-      runTalentXP,
-      currentScreen,
-      destinationChoices,
-    ],
+    [screen, run, session, battle],
   );
 }

@@ -1,112 +1,8 @@
-// Zod schemas for persisted battle cards and card effects.
+// Zod schemas for persisted battle cards; effect shapes live in @/lib/game-data/effects.
 import { z } from "zod";
+import { BattleCardEffectSchema } from "@/lib/game-data";
 import type { BattleCardEffect } from "@/lib/game-data";
-import { CompanionIdSchema, DamageTypeSchema, EnemyStatusIdSchema } from "./schema-enums";
 import { pushValidationError } from "./validation-utils";
-
-const DamageEffectSchema = z.object({
-  kind: z.literal("damage"),
-  damageType: DamageTypeSchema,
-  amount: z.number().finite(),
-  lifesteal: z.boolean().optional(),
-  equalToBlock: z.boolean().optional(),
-  equalToArmor: z.boolean().optional(),
-  equalToGoldPercent: z.number().finite().optional(),
-});
-
-const PlayerStatusEffectSchema = z.object({
-  kind: z.literal("player-status"),
-  status: z.enum(["block", "armor", "forge", "haste"]),
-  amount: z.number().finite(),
-});
-
-const HealEffectSchema = z.object({ kind: z.literal("heal"), amount: z.number().finite() });
-const RestoreManaEffectSchema = z.object({ kind: z.literal("restore-mana"), amount: z.number().finite() });
-const LoseManaEffectSchema = z.object({ kind: z.literal("lose-mana"), amount: z.number().finite() });
-const LoseMaxManaEffectSchema = z.object({ kind: z.literal("lose-max-mana"), amount: z.number().finite() });
-const GainMaxManaEffectSchema = z.object({ kind: z.literal("gain-max-mana"), amount: z.number().finite() });
-const GainGoldEffectSchema = z.object({ kind: z.literal("gain-gold"), amount: z.number().finite() });
-const WishEffectSchema = z.object({ kind: z.literal("wish"), amount: z.number().finite() });
-
-const SummonCompanionEffectSchema = z.object({
-  kind: z.literal("summon-companion"),
-  companionId: CompanionIdSchema,
-});
-
-const RemoveHarmfulStatusEffectSchema = z.object({
-  kind: z.literal("remove-harmful-status"),
-  amount: z.number().finite(),
-});
-
-const SelfDamageEffectSchema = z.object({
-  kind: z.literal("self-damage"),
-  damageType: EnemyStatusIdSchema,
-  amount: z.number().finite(),
-});
-
-const BuffCompanionEffectSchema = z.object({ kind: z.literal("buff-companion"), amount: z.number().finite() });
-
-const RemovePlayerStatusEffectSchema = z.object({
-  kind: z.literal("remove-player-status"),
-  status: EnemyStatusIdSchema,
-});
-
-const LoseHealthEffectSchema = z.object({
-  kind: z.literal("lose-health"),
-  amount: z.number().finite(),
-});
-
-const DrawCardsEffectSchema = z.object({
-  kind: z.literal("draw-cards"),
-  amount: z.number().finite(),
-});
-
-const RemoveEnemyArmorEffectSchema = z.object({
-  kind: z.literal("remove-enemy-armor"),
-  amount: z.number().finite(),
-});
-
-const MultiplyEnemyStatusEffectSchema = z.object({
-  kind: z.literal("multiply-enemy-status"),
-  status: EnemyStatusIdSchema,
-  factor: z.number().finite(),
-});
-
-const CleansePlayerStatusToDamageEffectSchema = z.object({
-  kind: z.literal("cleanse-player-status-to-damage"),
-  status: z.literal("burn"),
-  damageType: DamageTypeSchema,
-  removeAll: z.boolean().optional(),
-});
-
-const RandomDamageEffectSchema = z.object({
-  kind: z.literal("random-damage"),
-  minAmount: z.number().finite(),
-  maxAmount: z.number().finite(),
-});
-
-export const BattleCardEffectSchema = z.discriminatedUnion("kind", [
-  DamageEffectSchema,
-  PlayerStatusEffectSchema,
-  HealEffectSchema,
-  RestoreManaEffectSchema,
-  LoseManaEffectSchema,
-  LoseMaxManaEffectSchema,
-  GainMaxManaEffectSchema,
-  GainGoldEffectSchema,
-  WishEffectSchema,
-  SummonCompanionEffectSchema,
-  RemoveHarmfulStatusEffectSchema,
-  SelfDamageEffectSchema,
-  BuffCompanionEffectSchema,
-  RemovePlayerStatusEffectSchema,
-  LoseHealthEffectSchema,
-  DrawCardsEffectSchema,
-  RemoveEnemyArmorEffectSchema,
-  MultiplyEnemyStatusEffectSchema,
-  CleansePlayerStatusToDamageEffectSchema,
-  RandomDamageEffectSchema,
-]);
 
 function parseSavedEffectList(values: unknown[]) {
   const effects = values.flatMap((value, i) => {
@@ -128,6 +24,8 @@ function cloneSavedDescriptionLines(values: unknown[]): string[] | null {
   }
   return allStrings ? [...values] : null;
 }
+
+export { BattleCardEffectSchema };
 
 export const BattleCardSchema = z
   .object({

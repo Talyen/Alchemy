@@ -1,8 +1,8 @@
 // Shop and alchemist purchase controller for pricing, refreshes, removals, and potion mixing.
 // Depends on run/talent state, sampled shop state, trinket pricing, audio, and mixer helpers.
-// Uses useRunSessionStore for shop/alchemist state.
+// Reads shop/alchemist via useRunSessionShopSlice; writes via run-session-actions.
 import { useRef } from "react";
-import { cardLibrary, getStandardPotionPool, type BattleCard } from "@/lib/game-data";
+import { getOfferableCardPool, getStandardPotionPool, type BattleCard } from "@/lib/game-data";
 import { computeTrinketManifest } from "@/lib/trinkets";
 import { appendUnique } from "@/lib/utils";
 import { appendCardToRunWithDiscovery } from "./run/deck-mutations";
@@ -20,7 +20,9 @@ import {
   MIXED_POTION_CARD_ID,
 } from "@/lib/game-constants";
 import { createInitialShopState, createInitialAlchemistState } from "./shop/shop-state-init";
-import { useRunSessionStore } from "./stores/run-session-store";
+import { useRunSessionShopSlice } from "./stores/run-session-facade";
+import { setAlchemistState, setShopState } from "./stores/run-session-actions";
+import { readRunSessionStore } from "./stores/run-session-read";
 import type { RunStateController, TalentStateController } from "./stores/run-store";
 
 export function useShopController({
@@ -32,15 +34,10 @@ export function useShopController({
   talents: TalentStateController;
   setDiscoveredCardIds: React.Dispatch<React.SetStateAction<string[]>>;
 }) {
-  const shopState = useRunSessionStore((s) => s.shopState);
-  const alchemistState = useRunSessionStore((s) => s.alchemistState);
+  const { shopState, alchemistState } = useRunSessionShopSlice();
 
   const shopDiscountConsumed = useRef(false);
   const alchemistDiscountConsumed = useRef(false);
-
-  function getStore() {
-    return useRunSessionStore.getState();
-  }
 
   function purchaseCard(
     card: BattleCard,
@@ -69,7 +66,7 @@ export function useShopController({
       talents.talentEffects.shopCardDiscount,
       shopState.firstPurchaseUsed,
       shopDiscountConsumed,
-      () => getStore().setShopState((p) => ({ ...p, firstPurchaseUsed: true })),
+      () => setShopState((p) => ({ ...p, firstPurchaseUsed: true })),
     );
   }
 
@@ -79,7 +76,7 @@ export function useShopController({
     if (run.runGold < price) return null;
     spendRunGold(price, run.setRunGold);
     run.setRunDeck((p) => p.filter((_, i) => i !== index));
-    getStore().setShopState((p) => ({ ...p, removeUsed: true }));
+    setShopState((p) => ({ ...p, removeUsed: true }));
   }
 
   function handleShopRefresh() {
@@ -88,11 +85,11 @@ export function useShopController({
       price,
       refreshesLeft: shopState.refreshesLeft,
       runGold: run.runGold,
-      pool: cardLibrary,
+      pool: getOfferableCardPool(),
       currentItems: shopState.cards,
       count: SHOP_CARDS_OFFERED,
       setRunGold: run.setRunGold,
-      setState: getStore().setShopState,
+      setState: setShopState,
       mapState: (p, cards) => ({ ...p, cards, refreshesLeft: p.refreshesLeft - 1 }),
     });
   }
@@ -104,7 +101,7 @@ export function useShopController({
       talents.talentEffects.potionDiscount,
       alchemistState.firstPurchaseUsed,
       alchemistDiscountConsumed,
-      () => getStore().setAlchemistState((p) => ({ ...p, firstPurchaseUsed: true })),
+      () => setAlchemistState((p) => ({ ...p, firstPurchaseUsed: true })),
     );
   }
 
@@ -117,7 +114,7 @@ export function useShopController({
       currentItems: alchemistState.potions,
       count: ALCHEMIST_POTIONS_OFFERED,
       setRunGold: run.setRunGold,
-      setState: getStore().setAlchemistState,
+      setState: setAlchemistState,
       mapState: (p, potions) => ({ ...p, potions, refreshesLeft: p.refreshesLeft - 1 }),
     });
   }
@@ -134,7 +131,7 @@ export function useShopController({
 
     spendRunGold(price, run.setRunGold);
     run.setRunDeck((p) => applyMixToDeck(p, indexA, indexB, mixed));
-    getStore().setAlchemistState((p) => ({ ...p, mixUsed: true }));
+    setAlchemistState((p) => ({ ...p, mixUsed: true }));
     setDiscoveredCardIds((cur) => appendUnique(cur, MIXED_POTION_CARD_ID));
     return mixed;
   }
@@ -142,11 +139,11 @@ export function useShopController({
   return {
     initShop: () => {
       shopDiscountConsumed.current = false;
-      getStore().setShopState(createInitialShopState());
+      setShopState(createInitialShopState());
     },
     initAlchemist: () => {
       alchemistDiscountConsumed.current = false;
-      getStore().setAlchemistState(createInitialAlchemistState());
+      setAlchemistState(createInitialAlchemistState());
     },
     handleShopBuyCard,
     handleShopRemoveCard,
@@ -155,7 +152,7 @@ export function useShopController({
     handleAlchemistRefresh,
     handleAlchemistMixPotions,
     get shopCards() {
-      return useRunSessionStore.getState().shopState.cards;
+      return readRunSessionStore().shopState.cards;
     },
     get alchemistPotions() {
       return alchemistState.potions;

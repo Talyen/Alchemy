@@ -31,7 +31,7 @@
     "test:e2e": "playwright test --project chromium",
     "test:e2e:smoke": "playwright test --project chromium --grep @smoke",
     "test:e2e:critical": "playwright test --project chromium --grep @critical",
-    "test:e2e:preview": "cross-env PLAYWRIGHT_VITE_MODE=preview CI=true playwright test --project chromium",
+    "test:e2e:preview": "cross-env PLAYWRIGHT_VITE_MODE=preview PLAYWRIGHT_E2E_FULL=1 CI=true playwright test --project chromium",
     "test:e2e:ui": "playwright test --project chromium --ui",
     "balance:sim": "cross-env ALCHEMY_BALANCE_SIM=1 vitest run tests/balance/balance-report.test.ts --reporter=verbose && start \"\" reports\\balance-report.html",
     "check": "npm ci --dry-run && npm run lint:ci && npm test && npm run build",
@@ -112,6 +112,7 @@
       "src/lib/game-data/index.ts",
       "src/lib/battle/index.ts",
       "src/lib/validation/index.ts",
+      "src/features/alchemy/stores/run-session-facade.ts",
       "scripts/*.mjs",
       "desktop/*.cjs"
     ],
