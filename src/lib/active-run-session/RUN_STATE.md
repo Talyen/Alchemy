@@ -6,14 +6,14 @@ A single **run** spans several stores plus React screen state. Use the APIs belo
 
 | Concern | Owner | Notes |
 |---------|--------|--------|
-| Deck, gold, HP, acts, trinkets | `run-store` | Persisted with meta save |
-| Rewards, shops, labyrinth map, mystery | `run-session-store` | Transient per run |
+| Deck, gold, HP, acts, trinkets | `active-run-store` (run slice) | Persisted with meta save |
+| Rewards, shops, labyrinth map, mystery | `active-run-store` (session slice) | Transient per run |
+| Current `Screen` | `active-run-store.screen` | Set via `useActiveRunScreen()` / `setScreen` action |
 | Combat snapshot | `battle-store` | Synced during battle |
 | Battle animations / display merge | `battle-presentation-store` | Not persisted |
-| Current `Screen` | `use-alchemy-run-controller` (`useState`) | Not in Zustand |
-| Cross-store sync | `run-session-facade` | Battle start/end, teardown |
+| Cross-store sync | `run-session-facade` | Battle start/end, teardown only |
 
-`screen-store.ts` only exports `resetScreenStores()` — it does **not** hold the active screen.
+`useRunStore` and `useRunSessionStore` are aliases of `useActiveRunStore`. `screen-store.ts` resets transient session fields via `clearTransientSession()`.
 
 ## Lifecycle (simplified)
 
@@ -55,15 +55,15 @@ Derived from the current **screen** and **`hasActiveBattle`** via `getRunPhase(s
 |-------|--------|----------|
 | Full read model | `getRunSession(screen)` / `useRunSession(screen)` | Need run + session + battle + phase together |
 | Narrow reads | `useRunSessionNavigationSlice`, `useRunSessionBattleContext`, `useRunSessionShopSlice`, `useRunSessionMysterySlice`, `useRunSessionLabyrinthSlice`, slice hooks + `useRunScreenData` | Subscribe only to fields a hook/screen needs |
-| Imperative reads | `readRunSessionStore()` | One-off `getState()` in handlers (prefer over importing the store hook) |
-| Writes | `run-session-actions.ts` | All `set*` on `run-session-store` from features code |
-| Low-level | `getRunSessionStore()` | Only inside `run-session-actions` / `store-access` |
+| Imperative reads | `readActiveRunStore()` / `readRunSessionStore()` | One-off `getState()` in handlers |
+| Writes | `run-session-actions.ts` | Session fields + `setScreen` on `active-run-store` |
+| Low-level | `getActiveRunStore()` | Only inside `run-session-actions` / `store-access` |
 
 **Feature usage:**
 
-- Read model: [`run-session-model.ts`](../../features/alchemy/stores/run-session-model.ts).
-- Screen routes: `useRunScreenData(screen)` → [`run-screen-data.ts`](../../features/alchemy/stores/run-screen-data.ts).
-- Autosave: `useActiveRunSnapshot(screen)` (three slice hooks, no full `useRunSession`).
+- Read model: [`run-session-model.ts`](../../features/alchemy/shared/stores/run-session-model.ts).
+- Screen routes: `useRunScreenData(screen)` → [`run-screen-data.ts`](../../features/alchemy/shared/stores/run-screen-data.ts).
+- Autosave: `useActiveRunSnapshot()` (screen from store; three slice hooks).
 - Restore: [`use-alchemy-run-controller.ts`](../../features/alchemy/use-alchemy-run-controller.ts) calls `restoreActiveRunToStores` on mount.
 - Legacy name: `createActiveRunData` in [`active-run-data.ts`](../../features/alchemy/run/active-run-data.ts) re-exports `buildActiveRunSnapshot`.
 
@@ -74,3 +74,61 @@ Derived from the current **screen** and **`hasActiveBattle`** via `getRunPhase(s
 3. Update `hydrateActiveRunSession` if new session fields need restoring.
 4. Update `useActiveRunSnapshot` inputs and controller hydration (`currentScreen`, etc.).
 5. Run storage/migration tests (see AGENTS.md).
+
+## Store access rules (Phase 0)
+
+Production code outside `features/alchemy/shared/stores/` must **not** import:
+
+- `useActiveRunStore` / `active-run-store.ts`
+- `useRunSessionStore` / `run-session-store.ts` (alias)
+- `getActiveRunStore` / `store-access.ts` (except `readActiveRunStore()` from `run-session-read.ts`)
+
+Use **`run-session-actions`** for writes, **`readActiveRunStore()`** for imperative reads, and **facade hooks** (`useActiveRunScreen`, slice hooks) for React subscriptions. Unit tests may import store hooks directly.
+
+## Feature folder layout (Phase 3)
+
+| Zone | Path | Contents |
+|------|------|----------|
+| Shared | `features/alchemy/shared/` | `ui/`, `config/`, `stores/`, `storage/`, `utils/`, `types.ts` |
+| Meta | `features/alchemy/meta/` | Menu, collection, homestead, talents screens + `homestead-context.tsx` |
+| Run setup | `features/alchemy/run-setup/` | Character/difficulty/draft/wildwood screens; `run/run-start`, `run-state-init` |
+| Run loop | `features/alchemy/run-loop/` | Battle, navigation, shop; in-run screens; destination/victory handlers |
+| Shell | `features/alchemy/shell/` | Run/battle/shop/labyrinth controllers |
+
+Legacy import paths (`@/features/alchemy/stores/*`, `@/features/alchemy/run/*`, etc.) resolve via root shims and Vite aliases.
+
+## Screen navigation owner
+
+| Owner | Notes |
+|-------|--------|
+| `active-run-store.screen` | Single source of truth; hydrate from `ActiveRunData.currentScreen` on bootstrap |
+| `useActiveRunScreen()` | Controller subscribes via `run-session-facade` |
+| `navigateTo` | Stays in `use-alchemy-run-controller` (timer + transition commit refs) |
+
+`getRunSession()` and `getRunPhase()` default to `active-run-store.screen` when no screen argument is passed.
+
+## Store layout (Phase 4 — implemented)
+
+```mermaid
+flowchart LR
+  subgraph meta [Meta layer]
+    appStore[app-store]
+    homesteadStore[homestead-store]
+  end
+  subgraph activeRun [active-run-store]
+    runFields[run fields]
+    sessionFields[session fields]
+    screenField[screen]
+  end
+  subgraph battle [Battle — separate]
+    battleStore[battle-store]
+    presentationStore[battle-presentation-store]
+  end
+  meta --> activeRun
+  activeRun -->|enter battle| battleStore
+  battleStore -->|victory / leave| activeRun
+```
+
+`syncRunToBattleStart` / `syncBattleToRun` remain the only run↔battle field sync in `run-session-facade`.
+
+See `eslint.config.js` for enforced import boundaries (lib ↔ features, screens ↔ orchestration, session store access).

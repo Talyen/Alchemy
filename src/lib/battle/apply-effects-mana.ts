@@ -1,1 +1,1 @@
-export { handleManaEffect } from "./effect-handlers/mana-route";
+export { handleManaEffect } from "./effect-handlers/mana/compat";

@@ -1,4 +1,4 @@
-// Battle handler: @/lib/battle/effect-handlers/mana-route.ts
+// Battle handler: @/lib/battle/effect-handlers/gain-max-mana/apply.ts
 import { z } from "zod";
 import type { EffectKindDefinition } from "../definition";
 

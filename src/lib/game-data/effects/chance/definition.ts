@@ -1,4 +1,4 @@
-// Battle handler: @/lib/battle/effect-handlers/dispatch.ts
+// Battle handler: @/lib/battle/effect-handlers/chance/apply.ts
 import { z } from "zod";
 import type { BattleCardEffect } from "../../types";
 import type { EffectDispatchRoute } from "../dispatch-routes";

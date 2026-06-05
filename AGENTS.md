@@ -228,7 +228,7 @@ Cards in `cardLibrary` are automatically included in merchant shop, combat rewar
 ### Directory Layout
 
 - `src/lib/` — Pure game logic (no React): `battle/` (state machine, effects, draw), `content-systems/` (map & encounter generation — three variants: `campaign`, `labyrinth` with modifiers, `wildwood` with per-boss data), `homestead/` (between-run hub), `animation/` (particle systems), `talents.ts` (XP math), `audio.ts` + `audio-*.ts` (Web Audio buffer playback), `trinkets.ts`, `game-constants.ts` (all tuning knobs).
-- `src/features/alchemy/` — React UI. Hooks and controllers (see below) bridge pure lib logic to React. Subdirs: `screens/` (pages), `ui/` (reusable widgets), `config/` (display config for enemies, keywords, routes, options, layout, combat-text icons), `battle/` (UI-side helpers: feedback, card ghost animations, auto-end-turn), `run/` (run init), `utils/` (feature-level utilities), `navigation/` (map screen, destination/mystery/reward/victory flows), `stores/` (Zustand), `storage/` (persistence), `talents/` (talent tree UI).
+- `src/features/alchemy/` — React UI (Phase 3 zones). **`shared/`** — `ui/`, `config/`, `stores/`, `storage/`, `utils/`, `types.ts`. **`meta/`** — menu, collection, homestead, talents. **`run-setup/`** — character/difficulty/draft/wildwood screens + run start init. **`run-loop/`** — battle, navigation, shop, in-run screens, destination/reward handlers. **`shell/`** — `use-alchemy-run-controller`, `use-run-navigation`, battle/shop/labyrinth controllers. Root shims (`types.ts`, `run/*.ts`, `screens/index.ts`) keep `@/features/alchemy/...` imports stable.
 - `src/app/` — App bootstrapping: startup loading gate, audio/display/preload side-effect hooks, save-state hook, `screen-routes/` (route registry), `render-alchemy-screen.tsx` (store subscriptions + render wrapper).
 - `src/components/` — Shared UI primitives (`ui/` subdirectory: `button.tsx`, `select.tsx`, `progress.tsx`, etc.).
 - `src/lib/balance/` — Headless balance simulation engine.
@@ -240,11 +240,27 @@ Cards in `cardLibrary` are automatically included in merchant shop, combat rewar
 - `scripts/` — Build/optimization scripts.
 - `@/` path alias → `src/`.
 
+### Import boundaries (ESLint)
+
+Enforced in `eslint.config.js` — violations fail `npm run lint`.
+
+| Layer | May import | Must not import |
+|-------|------------|-----------------|
+| `src/lib/**` | other `lib/`, npm | `@/features/**` |
+| `src/lib/game-data/**` | lib data modules | `@/lib/battle` |
+| `src/lib/battle/**` | lib, npm | `react`, `zustand`, `@/features/**` |
+| `features/alchemy/*/screens/**` | `shared/ui`, `config`, props types | `run-loop/battle`, `run-loop/navigation`, `run/`, session actions |
+| `features/alchemy/meta/**` | `shared/` | `run-loop/`, `run-setup/` |
+| `features/alchemy/shared/ui/**` | `ui-store` only (ephemeral hover) | run/battle/session stores |
+| Features (except `stores/`) | facade hooks, `run-session-actions`, `readRunSessionStore` | `run-session-store`, `store-access` |
+
+Run-state ownership and Phase 4 consolidation plan: [`RUN_STATE.md`](src/lib/active-run-session/RUN_STATE.md).
+
 **Tech stack:** React 19 with React Compiler enabled (`vite.config.ts`, ESLint `react-compiler` rule). Avoid patterns that fight the compiler; use documented `eslint-disable` only when intentional.
 
 ### Feature Hooks & Controllers
 
-Orchestration in `src/features/alchemy/` bridges pure lib logic to React UI. `*-controller.ts` files are the main lifecycle owners; `use-run-navigation.ts` coordinates run flow without the `controller` suffix. Use `useRunAdapter()` / `useTalentAdapter()` from [`run-store.ts`](src/features/alchemy/stores/run-store.ts) for run and talent state.
+Orchestration in `src/features/alchemy/` bridges pure lib logic to React UI. `*-controller.ts` files are the main lifecycle owners; `use-run-navigation.ts` coordinates run flow without the `controller` suffix. Run + session + screen live in **`active-run-store`** (`useRunStore` / `useRunSessionStore` are aliases). Use `useRunAdapter()` / `useTalentAdapter()` from [`run-store.ts`](src/features/alchemy/stores/run-store.ts); use `useActiveRunScreen()` from [`run-session-facade.ts`](src/features/alchemy/stores/run-session-facade.ts) for navigation screen state.
 
 | Hook / controller | File | Owns |
 |---|---|---|
@@ -274,7 +290,7 @@ Orchestration in `src/features/alchemy/` bridges pure lib logic to React UI. `*-
 | Homestead | `homestead-store.ts` | Material inventory and upgrade tiers |
 | Error log (dev) | `error-log-store.ts` | Dev error log buffer |
 
-All paths under `src/features/alchemy/stores/`.
+Implementation under `src/features/alchemy/shared/stores/` (`active-run-store.ts` is canonical; `run-store.ts` / `run-session-store.ts` re-export).
 
 ### Data Flow
 

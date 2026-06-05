@@ -21,6 +21,13 @@
     "allowUnreachableCode": false,
     "baseUrl": ".",
     "paths": {
+      "@/features/alchemy/stores/*": ["./src/features/alchemy/shared/stores/*"],
+      "@/features/alchemy/ui/*": ["./src/features/alchemy/shared/ui/*"],
+      "@/features/alchemy/storage": ["./src/features/alchemy/shared/storage/index"],
+      "@/features/alchemy/storage/*": ["./src/features/alchemy/shared/storage/*"],
+      "@/features/alchemy/battle/*": ["./src/features/alchemy/run-loop/battle/*"],
+      "@/features/alchemy/navigation/*": ["./src/features/alchemy/run-loop/navigation/*"],
+      "@/features/alchemy/shop/*": ["./src/features/alchemy/run-loop/shop/*"],
       "@/*": ["./src/*"]
     },
     "types": ["vite/client", "node"]

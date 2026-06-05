@@ -1,1 +1,1 @@
-export { handleUtilityEffect } from "./effect-handlers/utility-route";
+export { handleUtilityEffect } from "./effect-handlers/utility/compat";

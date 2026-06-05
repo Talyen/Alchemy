@@ -1,5 +1,5 @@
 // Damage effect — template module: kind, Zod schema, and dispatch route in one place.
-// Battle handler: @/lib/battle/effect-handlers/damage-effect.ts (see effects/BATTLE_HANDLERS.md)
+// Battle handler: @/lib/battle/effect-handlers/damage/apply.ts(see effects/BATTLE_HANDLERS.md)
 import { z } from "zod";
 import type { EffectKindDefinition } from "../definition";
 import { DamageTypeSchema } from "../shared-schemas";

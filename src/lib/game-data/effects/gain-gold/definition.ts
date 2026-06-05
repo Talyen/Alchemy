@@ -1,5 +1,5 @@
 // Gain-gold effect — utility dispatch route.
-// Battle handler: @/lib/battle/effect-handlers/utility-route.ts
+// Battle handler: @/lib/battle/effect-handlers/gain-gold/apply.ts
 import { z } from "zod";
 import type { EffectKindDefinition } from "../definition";
 

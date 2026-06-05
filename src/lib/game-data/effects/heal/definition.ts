@@ -1,4 +1,4 @@
-// Battle handler: @/lib/battle/effect-handlers/heal-effect.ts
+// Battle handler: @/lib/battle/effect-handlers/heal/apply.ts
 import { z } from "zod";
 import type { EffectKindDefinition } from "../definition";
 

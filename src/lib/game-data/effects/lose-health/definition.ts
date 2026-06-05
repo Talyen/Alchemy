@@ -1,4 +1,4 @@
-// Battle handler: @/lib/battle/effect-handlers/utility-route.ts
+// Battle handler: @/lib/battle/effect-handlers/lose-health/apply.ts
 import { z } from "zod";
 import type { EffectKindDefinition } from "../definition";
 

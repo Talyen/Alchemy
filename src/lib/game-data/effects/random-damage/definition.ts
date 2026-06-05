@@ -1,4 +1,4 @@
-// Battle handler: @/lib/battle/effect-handlers/special-route.ts
+// Battle handler: @/lib/battle/effect-handlers/random-damage/apply.ts
 import { z } from "zod";
 import type { EffectKindDefinition } from "../definition";
 

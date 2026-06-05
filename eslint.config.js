@@ -77,9 +77,99 @@ export default tseslint.config(
     },
   },
 
+  // lib/ — pure logic: no features imports; keep barrel rules.
+  {
+    files: ["src/lib/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            { group: ["@/lib/game-data/*"], message: "Import from @/lib/game-data (barrel) instead of deep paths." },
+            { group: ["@/lib/battle/*"], message: "Import from @/lib/battle (barrel) instead of deep paths." },
+            { group: ["@/lib/validation/*"], message: "Import from @/lib/validation (barrel) instead of deep paths." },
+            {
+              group: ["@/features/**", "**/features/**"],
+              message: "lib/ must not import from features/. Move shared types to lib/.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+
+  // game-data — schemas and card definitions only; no battle runtime.
+  {
+    files: ["src/lib/game-data/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            { group: ["@/lib/game-data/*"], message: "Import from @/lib/game-data (barrel) instead of deep paths." },
+            {
+              group: ["@/lib/battle", "@/lib/battle/**"],
+              message: "game-data must not import battle runtime. Handlers live in lib/battle/effect-handlers/.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+
+  // Battle engine — no React, Zustand, or features.
+  {
+    files: ["src/lib/battle/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            { name: "react", message: "lib/battle must stay framework-agnostic." },
+            { name: "zustand", message: "lib/battle must stay framework-agnostic." },
+          ],
+          patterns: [
+            { group: ["@/lib/battle/*"], message: "Import from @/lib/battle (barrel) instead of deep paths." },
+            {
+              group: ["@/features/**", "**/features/**"],
+              message: "lib/battle must not import from features/.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+
+  // Active-run store — only the stores layer may import the merged store hook or store-access.
+  {
+    files: ["src/**/*.{ts,tsx}"],
+    ignores: ["src/features/alchemy/shared/stores/**", "src/features/alchemy/stores/active-run-store.ts"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: [
+                "**/active-run-store",
+                "@/features/alchemy/stores/active-run-store",
+                "**/run-session-store",
+                "@/features/alchemy/stores/run-session-store",
+                "**/stores/store-access",
+                "@/features/alchemy/stores/store-access",
+              ],
+              message:
+                "Import run-session-actions, readRunSessionStore/readActiveRunStore, or run-session-facade hooks instead of the store hook.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+
   // features/alchemy subfolder boundaries — keep orchestration out of screens and vice versa.
   {
-    files: ["src/features/alchemy/battle/**/*.{ts,tsx}"],
+    files: ["src/features/alchemy/run-loop/battle/**/*.{ts,tsx}"],
     rules: {
       "no-restricted-imports": [
         "error",
@@ -95,7 +185,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ["src/features/alchemy/navigation/**/*.{ts,tsx}"],
+    files: ["src/features/alchemy/run-loop/navigation/**/*.{ts,tsx}"],
     rules: {
       "no-restricted-imports": [
         "error",
@@ -111,15 +201,101 @@ export default tseslint.config(
     },
   },
   {
-    files: ["src/features/alchemy/screens/**/*.{ts,tsx}"],
+    files: [
+      "src/features/alchemy/meta/screens/**/*.{ts,tsx}",
+      "src/features/alchemy/run-setup/screens/**/*.{ts,tsx}",
+      "src/features/alchemy/run-loop/screens/**/*.{ts,tsx}",
+    ],
     rules: {
       "no-restricted-imports": [
         "error",
         {
           patterns: [
             {
-              group: ["@/features/alchemy/battle", "@/features/alchemy/battle/*", "**/features/alchemy/battle/**"],
+              group: [
+                "@/features/alchemy/battle",
+                "@/features/alchemy/battle/*",
+                "**/features/alchemy/battle/**",
+                "**/features/alchemy/run-loop/battle/**",
+              ],
               message: "Screens must not import battle orchestration. Use controller props and @/lib/battle types.",
+            },
+            {
+              group: [
+                "@/features/alchemy/navigation",
+                "@/features/alchemy/navigation/*",
+                "**/features/alchemy/navigation/**",
+                "**/features/alchemy/run-loop/navigation/**",
+              ],
+              message: "Screens must not import navigation flows. Wire handlers from app/screen-routes.",
+            },
+            {
+              group: [
+                "@/features/alchemy/run",
+                "@/features/alchemy/run/*",
+                "**/features/alchemy/run/**",
+                "**/features/alchemy/run-loop/run/**",
+                "**/features/alchemy/run-setup/run/**",
+              ],
+              message: "Screens must not import run orchestration. Pass data via controller props.",
+            },
+            {
+              group: [
+                "**/run-session-actions",
+                "**/run-session-read",
+                "@/features/alchemy/stores/run-session-actions",
+                "@/features/alchemy/stores/run-session-read",
+              ],
+              message: "Screens must not mutate session state directly. Use controller callbacks.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+
+  // Meta — menu/collection/homestead; must not depend on run-loop orchestration.
+  {
+    files: ["src/features/alchemy/meta/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["**/run-loop/**", "@/features/alchemy/run-loop/**"],
+              message: "Meta layer must not import run-loop. Use shared/ only.",
+            },
+            {
+              group: ["**/run-setup/**"],
+              message: "Meta layer must not import run-setup.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+
+  // Reusable UI widgets — no run/battle/session store subscriptions (ui-store is OK).
+  {
+    files: ["src/features/alchemy/shared/ui/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: [
+                "**/stores/run-store",
+                "**/stores/battle-store",
+                "**/stores/run-session-facade",
+                "**/stores/run-session-actions",
+                "**/stores/run-session-read",
+                "@/features/alchemy/stores/run-store",
+                "@/features/alchemy/stores/battle-store",
+                "@/features/alchemy/stores/run-session-facade",
+              ],
+              message: "UI widgets receive data via props. Only ui-store is allowed for ephemeral hover/shimmer.",
             },
           ],
         },

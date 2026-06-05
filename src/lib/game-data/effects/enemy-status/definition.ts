@@ -1,5 +1,5 @@
 // Enemy-status effect — applies stacks on the enemy (labyrinth modifiers use adjustEnemyStatusDelta).
-// Battle handler: @/lib/battle/effect-handlers/enemy-status-effect.ts
+// Battle handler: @/lib/battle/effect-handlers/enemy-status/apply.ts
 import { z } from "zod";
 import type { EffectKindDefinition } from "../definition";
 import { EnemyStatusIdSchema } from "../shared-schemas";

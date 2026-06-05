@@ -1,4 +1,4 @@
-// Battle handler: @/lib/battle/effect-handlers/player-status-effect.ts
+// Battle handler: @/lib/battle/effect-handlers/player-status/apply.ts
 import { z } from "zod";
 import type { EffectKindDefinition } from "../definition";
 
