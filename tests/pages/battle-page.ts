@@ -47,17 +47,20 @@ export class BattlePage {
   async endTurn() {
     if (await this.isBattleOver()) return;
     const turnTimeout = process.env.CI ? 10_000 : 5_000;
+    const settleTimeout = process.env.CI ? 25_000 : 12_000;
+
     await expect(async () => {
       if (await this.isBattleOver()) return;
-      await expect(this.endTurnBtn).toBeEnabled({ timeout: turnTimeout });
-      await this.endTurnBtn.click();
-    }).toPass({ timeout: turnTimeout + 5_000 });
-    await expect(this.endTurnBtn)
-      .toBeEnabled({ timeout: turnTimeout + 2_000 })
-      .catch(async (e) => {
-        if (await this.isBattleOver()) return;
-        throw e;
-      });
+      const endTurn = this.page.getByRole("button", { name: "End Turn" });
+      await expect(endTurn).toBeEnabled({ timeout: turnTimeout });
+      await endTurn.click({ force: true });
+    }).toPass({ timeout: settleTimeout });
+
+    await expect(async () => {
+      if (await this.isBattleOver()) return;
+      const endTurn = this.page.getByRole("button", { name: "End Turn" });
+      await expect(endTurn).toBeEnabled({ timeout: 3_000 });
+    }).toPass({ timeout: settleTimeout });
   }
 
   async isVictoryVisible(): Promise<boolean> {

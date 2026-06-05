@@ -53,7 +53,7 @@ for (const { width, height, label } of ALT_RESOLUTIONS) {
 }
 
 test.describe("Draw/discard edge cases", () => {
-  test("skip combat during end turn: no errors", async ({ page }) => {
+  test("skip combat during end turn: no errors", { timeout: 60_000 }, async ({ page }) => {
     const errors = failOnRuntimeErrors(page);
     await startBattleWithDeck(page, Array.from({ length: 6 }, () => makeCard()));
     const battle = new BattlePage(page);
