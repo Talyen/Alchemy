@@ -1,6 +1,4 @@
 import { describe, expect, it, beforeEach } from "vitest";
-import { useRunStore } from "@/features/alchemy/stores/run-store";
-import { useRunSessionStore } from "@/features/alchemy/stores/run-session-store";
 import { resetScreenStores } from "@/features/alchemy/stores/screen-store";
 import {
   SHOP_CARD_PRICE,
@@ -14,9 +12,16 @@ import {
 } from "@/lib/game-constants";
 import { createInitialShopState, createInitialAlchemistState } from "@/features/alchemy/shop/shop-state-init";
 import type { BattleCard } from "@/lib/game-data";
+import {
+  getRunProgressStoreView,
+  getRunSessionStoreView,
+  resetRunProgressSlice,
+  setRunProgress,
+  setRunSession,
+} from "../helpers/run-domain-store-test";
 
 beforeEach(() => {
-  useRunStore.setState(useRunStore.getInitialState());
+  resetRunProgressSlice();
   resetScreenStores();
 });
 
@@ -25,11 +30,11 @@ function makeCard(overrides: Partial<BattleCard> = {}): BattleCard {
 }
 
 function seedGold(amount: number) {
-  useRunStore.setState({ runGold: amount });
+  setRunProgress({ runGold: amount });
 }
 
 function firstShopCard(): BattleCard | null {
-  const cards = useRunSessionStore.getState().shopState.cards;
+  const cards = getRunSessionStoreView().shopState.cards;
   return cards.length > 0 ? cards[0] : null;
 }
 
@@ -68,24 +73,29 @@ describe("shop pricing formulas", () => {
 
 describe("shop store integration", () => {
   it("createInitialShopState creates correct number of cards", () => {
-    useRunSessionStore.getState().setShopState(createInitialShopState());
-    expect(useRunSessionStore.getState().shopState.cards.length).toBe(SHOP_CARDS_OFFERED);
+    getRunSessionStoreView().setShopState(createInitialShopState());
+    expect(getRunSessionStoreView().shopState.cards.length).toBe(SHOP_CARDS_OFFERED);
   });
 
   it("createInitialShopState resets refreshesLeft and purchase state", () => {
-    useRunSessionStore.setState((s) => ({
-      shopState: { ...s.shopState, refreshesLeft: 0, removeUsed: true, firstPurchaseUsed: true },
-    }));
-    useRunSessionStore.getState().setShopState(createInitialShopState());
-    const shop = useRunSessionStore.getState().shopState;
+    setRunSession({
+      shopState: {
+        ...getRunSessionStoreView().shopState,
+        refreshesLeft: 0,
+        removeUsed: true,
+        firstPurchaseUsed: true,
+      },
+    });
+    getRunSessionStoreView().setShopState(createInitialShopState());
+    const shop = getRunSessionStoreView().shopState;
     expect(shop.refreshesLeft).toBeGreaterThan(0);
     expect(shop.removeUsed).toBe(false);
     expect(shop.firstPurchaseUsed).toBe(false);
   });
 
   it("createInitialAlchemistState filters potion cards", () => {
-    useRunSessionStore.getState().setAlchemistState(createInitialAlchemistState());
-    const potions = useRunSessionStore.getState().alchemistState.potions;
+    getRunSessionStoreView().setAlchemistState(createInitialAlchemistState());
+    const potions = getRunSessionStoreView().alchemistState.potions;
     expect(potions.length).toBe(ALCHEMIST_POTIONS_OFFERED);
     for (const p of potions) {
       expect(p.id).toMatch(/-potion$/);
@@ -95,98 +105,98 @@ describe("shop store integration", () => {
 
 describe("shop buy flow via run store mutations", () => {
   it("deducts gold and appends card when buying", () => {
-    useRunSessionStore.getState().setShopState(createInitialShopState());
+    getRunSessionStoreView().setShopState(createInitialShopState());
     seedGold(999);
     const card = firstShopCard();
     if (!card) return; // skip if no shop cards sampled
 
-    const deckBefore = useRunStore.getState().runDeck.length;
-    useRunStore.getState().setRunDeck((p) => [...p, card]);
+    const deckBefore = getRunProgressStoreView().runDeck.length;
+    getRunProgressStoreView().setRunDeck((p) => [...p, card]);
 
     // Simulating what handleShopBuyCard does
     const price = SHOP_CARD_PRICE;
-    useRunStore.getState().setRunGold((p) => Math.max(0, p - price));
-    useRunSessionStore.getState().setShopState((p) => ({ ...p, firstPurchaseUsed: true }));
+    getRunProgressStoreView().setRunGold((p) => Math.max(0, p - price));
+    getRunSessionStoreView().setShopState((p) => ({ ...p, firstPurchaseUsed: true }));
 
-    expect(useRunStore.getState().runGold).toBe(999 - price);
-    expect(useRunStore.getState().runDeck.length).toBe(deckBefore + 1);
-    expect(useRunSessionStore.getState().shopState.firstPurchaseUsed).toBe(true);
+    expect(getRunProgressStoreView().runGold).toBe(999 - price);
+    expect(getRunProgressStoreView().runDeck.length).toBe(deckBefore + 1);
+    expect(getRunSessionStoreView().shopState.firstPurchaseUsed).toBe(true);
   });
 
   it("does not buy when gold is insufficient", () => {
-    useRunSessionStore.getState().setShopState(createInitialShopState());
+    getRunSessionStoreView().setShopState(createInitialShopState());
     seedGold(0);
     const card = firstShopCard();
     if (!card) return;
 
     const price = SHOP_CARD_PRICE;
     if (0 < price) {
-      expect(useRunStore.getState().runGold).toBe(0);
+      expect(getRunProgressStoreView().runGold).toBe(0);
     }
   });
 
   it("shop remove deducts gold and filters deck", () => {
     seedGold(999);
-    useRunStore.getState().setRunDeck([makeCard({ id: "card-a" }), makeCard({ id: "card-b" })]);
+    getRunProgressStoreView().setRunDeck([makeCard({ id: "card-a" }), makeCard({ id: "card-b" })]);
 
     const price = Math.max(0, SHOP_REMOVE_PRICE);
-    useRunStore.getState().setRunGold((p) => Math.max(0, p - price));
-    useRunStore.getState().setRunDeck((p) => p.filter((_, i) => i !== 0));
-    useRunSessionStore.getState().setShopState((p) => ({ ...p, removeUsed: true }));
+    getRunProgressStoreView().setRunGold((p) => Math.max(0, p - price));
+    getRunProgressStoreView().setRunDeck((p) => p.filter((_, i) => i !== 0));
+    getRunSessionStoreView().setShopState((p) => ({ ...p, removeUsed: true }));
 
-    expect(useRunStore.getState().runGold).toBe(999 - price);
-    expect(useRunStore.getState().runDeck.length).toBe(1);
-    expect(useRunStore.getState().runDeck[0].id).toBe("card-b");
-    expect(useRunSessionStore.getState().shopState.removeUsed).toBe(true);
+    expect(getRunProgressStoreView().runGold).toBe(999 - price);
+    expect(getRunProgressStoreView().runDeck.length).toBe(1);
+    expect(getRunProgressStoreView().runDeck[0].id).toBe("card-b");
+    expect(getRunSessionStoreView().shopState.removeUsed).toBe(true);
   });
 
   it("shop refresh decrements refreshesLeft", () => {
-    useRunSessionStore.getState().setShopState(createInitialShopState());
+    getRunSessionStoreView().setShopState(createInitialShopState());
     seedGold(999);
-    const beforeRefreshes = useRunSessionStore.getState().shopState.refreshesLeft;
+    const beforeRefreshes = getRunSessionStoreView().shopState.refreshesLeft;
 
     const price = SHOP_REFRESH_PRICE;
-    useRunStore.getState().setRunGold((g) => Math.max(0, g - price));
-    useRunSessionStore.getState().setShopState((p) => ({
+    getRunProgressStoreView().setRunGold((g) => Math.max(0, g - price));
+    getRunSessionStoreView().setShopState((p) => ({
       ...p,
       refreshesLeft: p.refreshesLeft - 1,
     }));
 
-    expect(useRunSessionStore.getState().shopState.refreshesLeft).toBe(beforeRefreshes - 1);
-    expect(useRunStore.getState().runGold).toBe(999 - price);
+    expect(getRunSessionStoreView().shopState.refreshesLeft).toBe(beforeRefreshes - 1);
+    expect(getRunProgressStoreView().runGold).toBe(999 - price);
   });
 });
 
 describe("alchemist buy flow via mutations", () => {
   it("alchemist buy deducts gold and appends potion", () => {
-    useRunSessionStore.getState().setAlchemistState(createInitialAlchemistState());
+    getRunSessionStoreView().setAlchemistState(createInitialAlchemistState());
     seedGold(999);
-    const potions = useRunSessionStore.getState().alchemistState.potions;
+    const potions = getRunSessionStoreView().alchemistState.potions;
     if (potions.length === 0) return;
 
     const price = ALCHEMIST_POTION_PRICE;
-    const deckBefore = useRunStore.getState().runDeck.length;
-    useRunStore.getState().setRunGold((p) => Math.max(0, p - price));
-    useRunStore.getState().setRunDeck((p) => [...p, potions[0]]);
-    useRunSessionStore.getState().setAlchemistState((p) => ({ ...p, firstPurchaseUsed: true }));
+    const deckBefore = getRunProgressStoreView().runDeck.length;
+    getRunProgressStoreView().setRunGold((p) => Math.max(0, p - price));
+    getRunProgressStoreView().setRunDeck((p) => [...p, potions[0]]);
+    getRunSessionStoreView().setAlchemistState((p) => ({ ...p, firstPurchaseUsed: true }));
 
-    expect(useRunStore.getState().runGold).toBe(999 - price);
-    expect(useRunStore.getState().runDeck.length).toBe(deckBefore + 1);
-    expect(useRunSessionStore.getState().alchemistState.firstPurchaseUsed).toBe(true);
+    expect(getRunProgressStoreView().runGold).toBe(999 - price);
+    expect(getRunProgressStoreView().runDeck.length).toBe(deckBefore + 1);
+    expect(getRunSessionStoreView().alchemistState.firstPurchaseUsed).toBe(true);
   });
 
   it("alchemist refresh decrements and resamples potions", () => {
-    useRunSessionStore.getState().setAlchemistState(createInitialAlchemistState());
+    getRunSessionStoreView().setAlchemistState(createInitialAlchemistState());
     seedGold(999);
-    const beforeRefreshes = useRunSessionStore.getState().alchemistState.refreshesLeft;
+    const beforeRefreshes = getRunSessionStoreView().alchemistState.refreshesLeft;
 
-    useRunStore.getState().setRunGold((g) => Math.max(0, g - ALCHEMIST_REFRESH_PRICE));
-    useRunSessionStore.getState().setAlchemistState((p) => ({
+    getRunProgressStoreView().setRunGold((g) => Math.max(0, g - ALCHEMIST_REFRESH_PRICE));
+    getRunSessionStoreView().setAlchemistState((p) => ({
       ...p,
       refreshesLeft: p.refreshesLeft - 1,
     }));
 
-    expect(useRunSessionStore.getState().alchemistState.refreshesLeft).toBe(beforeRefreshes - 1);
+    expect(getRunSessionStoreView().alchemistState.refreshesLeft).toBe(beforeRefreshes - 1);
   });
 });
 

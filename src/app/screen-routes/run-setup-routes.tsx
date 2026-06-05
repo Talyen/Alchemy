@@ -18,13 +18,11 @@ export const runSetupScreenRoutes: Partial<
     />
   ),
   "draft-deck": ({ actions: a }) => <DraftDeckScreen onComplete={a.runStart.handleDraftComplete} />,
-  "difficulty-select": ({ actions: a, appValues, pendingCharacterId, runScreenData: r }) => (
+  "difficulty-select": ({ actions: a, appValues, runScreenData: r }) => (
     <DifficultySelectScreen
-      characterId={(pendingCharacterId ?? r.pendingCharacterId ?? "knight") as CharacterId}
+      characterId={(r.pendingCharacterId ?? "knight") as CharacterId}
       selectedDifficulty={r.selectedDifficulty}
-      completedDifficulties={
-        appValues.completedDifficulties[(pendingCharacterId ?? r.pendingCharacterId ?? "knight") as CharacterId] ?? []
-      }
+      completedDifficulties={appValues.completedDifficulties[(r.pendingCharacterId ?? "knight") as CharacterId] ?? []}
       onSelect={a.runStart.handleDifficultySelect}
       onBack={a.runStart.handleBackFromDifficultySelect}
     />

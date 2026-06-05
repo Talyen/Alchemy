@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { createRunDestinationHandlers } from "@/features/alchemy/run-loop/run/run-destination-handlers";
-import { useRunSessionStore } from "@/features/alchemy/stores/run-session-store";
 import { resetScreenStores } from "@/features/alchemy/stores/screen-store";
 import { createEmptyRewardState } from "@/features/alchemy/navigation/reward-flow";
 import { CONSTANTS } from "@/features/alchemy/types";
 import { makeRunController, makeTalentController } from "../../helpers/run-controller";
+import { getRunSessionStoreView } from "../../helpers/run-domain-store-test";
 
 beforeEach(() => {
   resetScreenStores();
@@ -12,7 +12,7 @@ beforeEach(() => {
 
 describe("run destination controller actions", () => {
   it("selectRewardChoice updates reward selection through the handler", () => {
-    useRunSessionStore.getState().setRewardState(createEmptyRewardState());
+    getRunSessionStoreView().setRewardState(createEmptyRewardState());
 
     const handlers = createRunDestinationHandlers({
       run: makeRunController(),
@@ -40,11 +40,11 @@ describe("run destination controller actions", () => {
     });
 
     handlers.selectRewardChoice("slash");
-    expect(useRunSessionStore.getState().rewardState.selectedId).toBe("slash");
+    expect(getRunSessionStoreView().rewardState.selectedId).toBe("slash");
   });
 
   it("prepareDestinationScreen sets boss id for boss-only destinations", () => {
-    useRunSessionStore.getState().setRewardState({
+    getRunSessionStoreView().setRewardState({
       ...createEmptyRewardState(),
       destinations: [CONSTANTS.DESTINATIONS.BOSS_COMBAT],
     });
@@ -75,6 +75,6 @@ describe("run destination controller actions", () => {
     });
 
     handlers.prepareDestinationScreen();
-    expect(useRunSessionStore.getState().rewardState.selectedBossId).toBeTruthy();
+    expect(getRunSessionStoreView().rewardState.selectedBossId).toBeTruthy();
   });
 });

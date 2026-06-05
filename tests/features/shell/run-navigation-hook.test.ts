@@ -3,27 +3,30 @@ import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { useRunNavigation } from "@/features/alchemy/shell/use-run-navigation";
-import { useBattleStore } from "@/features/alchemy/stores/battle-store";
-import { useRunStore } from "@/features/alchemy/stores/run-store";
-import { useRunSessionStore } from "@/features/alchemy/stores/run-session-store";
-import { useNavigationStore } from "@/features/alchemy/shared/stores/navigation-store";
 import { resetScreenStores } from "@/features/alchemy/stores/screen-store";
+import {
+  getBattleStoreView,
+  getNavigationStoreView,
+  getRunSessionStoreView,
+  resetRunBattleSlice,
+  resetRunProgressSlice,
+} from "../../helpers/run-domain-store-test";
 
 vi.mock("@/lib/audio", () => ({
   playUISound: vi.fn(),
 }));
 
 beforeEach(() => {
-  useRunStore.setState(useRunStore.getInitialState());
-  useBattleStore.setState(useBattleStore.getInitialState());
+  resetRunProgressSlice();
+  resetRunBattleSlice();
   resetScreenStores();
-  useNavigationStore.getState().setScreen(ROUTE_SCREENS.MENU);
+  getNavigationStoreView().setScreen(ROUTE_SCREENS.MENU);
 });
 
 describe("useRunNavigation", () => {
   it("resetRunState tears down run stores when navigating to menu", () => {
-    useRunSessionStore.getState().setHasActiveRun(true);
-    useBattleStore.getState().setHasActiveBattle(true);
+    getRunSessionStoreView().setHasActiveRun(true);
+    getBattleStoreView().setHasActiveBattle(true);
     const navigateTo = vi.fn((_screen: string, onCommit?: () => void) => onCommit?.());
     const setScreen = vi.fn();
 
@@ -48,7 +51,7 @@ describe("useRunNavigation", () => {
     });
 
     expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.MENU, expect.any(Function));
-    expect(useRunSessionStore.getState().hasActiveRun).toBe(false);
-    expect(useBattleStore.getState().hasActiveBattle).toBe(false);
+    expect(getRunSessionStoreView().hasActiveRun).toBe(false);
+    expect(getBattleStoreView().hasActiveBattle).toBe(false);
   });
 });

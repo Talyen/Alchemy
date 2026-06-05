@@ -3,7 +3,7 @@ import type { RefObject } from "react";
 import { TimerGroup } from "@/lib/animation/game-timer";
 import { isPlayerDefeated, type BattleState } from "@/lib/battle";
 import { stopAllSfx } from "@/lib/audio";
-import { useBattleStore } from "../../shared/stores/battle-store";
+import { readBattleStore } from "../../shared/stores/run-session-read";
 import { useBattlePresentationStore } from "../../shared/stores/battle-presentation-store";
 import type { createTransferCancelRegistry } from "./transfer-lifecycle";
 
@@ -20,7 +20,7 @@ export type BattleSessionDeps = {
 };
 
 export function createBattleSession(deps: BattleSessionDeps) {
-  const getStore = () => useBattleStore.getState();
+  const getStore = () => readBattleStore();
   const getPresentationStore = () => useBattlePresentationStore.getState();
 
   function isCurrentBattleSession(session: number) {

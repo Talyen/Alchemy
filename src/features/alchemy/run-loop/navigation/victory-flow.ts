@@ -21,7 +21,7 @@ import { getGenerousGoldBonus } from "./reward-gold";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import { CONSTANTS, type Destination } from "@/features/alchemy/types";
-import { syncBattleToRun } from "@/features/alchemy/stores/run-lifecycle-coordinator";
+import { syncBattleToRun } from "@/features/alchemy/stores/run-transitions";
 import type { ContentSystemId, LabyrinthModifierKind } from "@/lib/content-systems/types";
 import {
   getActiveRewardModifiersForContentSystem,

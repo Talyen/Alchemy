@@ -1,7 +1,8 @@
 // Top-level alchemy controller composition hook.
 // Depends on run, battle, shop, navigation, talent, persistence-facing, and homestead state.
 // Used by App as the single UI-facing API while domain rules stay in smaller controllers.
-import { useEffect, useLayoutEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import type { BattleControllerBindings } from "./battle-controller-context";
 import type { TalentXP } from "@/lib/talents";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import type { CharacterId, DifficultyId, UnlockedTalents } from "@/lib/game-data";
@@ -154,13 +155,41 @@ export function useAlchemyRunController({
     shop,
   });
 
+  const battleBindings = useMemo<BattleControllerBindings>(
+    () => ({
+      battleScreenData: battle.battleScreenData,
+      handCardRefs: battle.handCardRefs,
+      drawPileRef: battle.drawPileRef,
+      discardPileRef: battle.discardPileRef,
+      battleSceneRef: battle.battleSceneRef,
+      playerPanelRef: battle.playerPanelRef,
+      enemyPanelRef: battle.enemyPanelRef,
+      cardTransfers: battle.cardTransfers,
+      hiddenHandCardKeys: battle.hiddenHandCardKeys,
+      cardTransferInProgress: battle.cardTransferInProgress,
+      playableHandCardKeys: battle.playableHandCardKeys,
+    }),
+    [
+      battle.battleScreenData,
+      battle.cardTransfers,
+      battle.hiddenHandCardKeys,
+      battle.cardTransferInProgress,
+      battle.playableHandCardKeys,
+      battle.handCardRefs,
+      battle.drawPileRef,
+      battle.discardPileRef,
+      battle.battleSceneRef,
+      battle.playerPanelRef,
+      battle.enemyPanelRef,
+    ],
+  );
+
   return {
     screen,
     runPhase: nav.runPhase,
-    pendingCharacterId: nav.pendingCharacterId,
     commitPendingTransition,
+    battleBindings,
     battleState: battle.battleState,
-    battleScreenData: battle.battleScreenData,
     hasActiveBattle: battle.hasActiveBattle,
     characterId: run.characterId,
     talentXP: talents.talentXP,
@@ -182,12 +211,6 @@ export function useAlchemyRunController({
     get activeRunData() {
       return nav.activeRunData;
     },
-    handCardRefs: battle.handCardRefs,
-    drawPileRef: battle.drawPileRef,
-    discardPileRef: battle.discardPileRef,
-    battleSceneRef: battle.battleSceneRef,
-    playerPanelRef: battle.playerPanelRef,
-    enemyPanelRef: battle.enemyPanelRef,
     beginCampaign: nav.beginCampaign,
     beginLabyrinth: handleBeginLabyrinth,
     beginWildwood: nav.beginWildwood,
@@ -223,10 +246,6 @@ export function useAlchemyRunController({
     handleCorruptionExit: nav.handleCorruptionExit,
     handleActComplete: nav.handleActComplete,
     handleEndTurn: battle.handleEndTurn,
-    cardTransfers: battle.cardTransfers,
-    hiddenHandCardKeys: battle.hiddenHandCardKeys,
-    cardTransferInProgress: battle.cardTransferInProgress,
-    playableHandCardKeys: battle.playableHandCardKeys,
     handleEndRun: battle.handleEndRun,
     skipCombatDevMode: battle.skipCombatDevMode,
     removeCardGhost: battle.removeCardGhost,

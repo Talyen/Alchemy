@@ -25,6 +25,8 @@ import { useGlobalErrorHandlers } from "@/app/use-global-error-handlers";
 import { useInitialLoadReady } from "@/app/use-initial-load-ready";
 import { useRenderedScreenTransition } from "@/app/use-rendered-screen-transition";
 import { RenderAlchemyScreen } from "@/app/render-alchemy-screen";
+import { AppScreenChromeProvider } from "@/app/app-screen-chrome-context";
+import { BattleControllerProvider } from "@/features/alchemy/shell/battle-controller-context";
 import { StartupLoadingScreen } from "@/app/startup-loading-screen";
 import { UnsupportedSaveVersionScreen } from "@/app/unsupported-save-version-screen";
 import { useVirtualResolution } from "@/features/alchemy/shared/hooks";
@@ -211,31 +213,26 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
           potionPotency: 1 + homesteadEffects.potionPotency,
         }}
       >
-        <RenderAlchemyScreen
-          screen={renderedScreen}
-          actions={buildControllerActions(run)}
-          handCardRefs={run.handCardRefs}
-          drawPileRef={run.drawPileRef}
-          discardPileRef={run.discardPileRef}
-          battleSceneRef={run.battleSceneRef}
-          playerPanelRef={run.playerPanelRef}
-          enemyPanelRef={run.enemyPanelRef}
-          heroArt={heroArt}
-          playerName={playerName}
-          aspectMode={aspectMode}
-          stagePixelRatio={stagePixelRatio}
-          cardTransfers={run.cardTransfers}
-          hiddenHandCardKeys={run.hiddenHandCardKeys}
-          cardTransferInProgress={run.cardTransferInProgress}
-          playableHandCardKeys={run.playableHandCardKeys}
-          battleScreenData={run.battleScreenData}
-          hasUnspentTalents={hasUnspentTalentsBadge}
-          hasAffordableHomestead={hasAffordableHomestead}
-          pendingCharacterId={run.pendingCharacterId}
-          onOpenBattleMenu={openBattleMenu}
-          onClearSaveData={clearSaveData}
-          onUnlockAllDevMode={unlockAllDevMode}
-        />
+        <AppScreenChromeProvider
+          value={{
+            heroArt,
+            playerName,
+            aspectMode,
+            stagePixelRatio,
+            hasUnspentTalents: hasUnspentTalentsBadge,
+            hasAffordableHomestead,
+          }}
+        >
+          <BattleControllerProvider value={run.battleBindings}>
+            <RenderAlchemyScreen
+              screen={renderedScreen}
+              actions={buildControllerActions(run)}
+              onOpenBattleMenu={openBattleMenu}
+              onClearSaveData={clearSaveData}
+              onUnlockAllDevMode={unlockAllDevMode}
+            />
+          </BattleControllerProvider>
+        </AppScreenChromeProvider>
       </HomesteadProvider>
     </div>
   );

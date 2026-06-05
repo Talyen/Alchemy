@@ -1,4 +1,4 @@
-// Imperative session-store writes — prefer over direct getRunSessionStore() at call sites.
+// Imperative session writes — prefer over direct domain store access at call sites.
 import type { BattleCard, CharacterId } from "@/lib/game-data";
 import type { LabyrinthMap, LabyrinthModifierKind, ContentSystemId } from "@/lib/content-systems/types";
 import type { CorruptionResult } from "@/lib/corruption";
@@ -8,30 +8,30 @@ import type { LabyrinthNodePosition } from "@/lib/active-run-session";
 import type { RewardState } from "@/features/alchemy/navigation/reward-flow";
 import type { ShopState, AlchemistState } from "@/features/alchemy/shop/shop-state-init";
 import type { Destination } from "@/features/alchemy/types";
-import { getRunSessionStore } from "./store-access";
+import { getRunDomainStore } from "./run-domain-store";
 
 export function setHasActiveRun(hasActiveRun: boolean) {
-  getRunSessionStore().setHasActiveRun(hasActiveRun);
+  getRunDomainStore().setHasActiveRun(hasActiveRun);
 }
 
 export function setActiveLabyrinthModifiers(modifiers: LabyrinthModifierKind[]) {
-  getRunSessionStore().setActiveLabyrinthModifiers(modifiers);
+  getRunDomainStore().setActiveLabyrinthModifiers(modifiers);
 }
 
 export function setActiveLabyrinthRewardModifiers(modifiers: LabyrinthModifierKind[]) {
-  getRunSessionStore().setActiveLabyrinthRewardModifiers(modifiers);
+  getRunDomainStore().setActiveLabyrinthRewardModifiers(modifiers);
 }
 
 export function setActiveLabyrinthPendingNode(node: LabyrinthNodePosition | null) {
-  getRunSessionStore().setActiveLabyrinthPendingNode(node);
+  getRunDomainStore().setActiveLabyrinthPendingNode(node);
 }
 
 export function setLabyrinthMap(map: LabyrinthMap | ((prev: LabyrinthMap) => LabyrinthMap)) {
-  getRunSessionStore().setLabyrinthMap(map);
+  getRunDomainStore().setLabyrinthMap(map);
 }
 
 export function setRewardState(state: RewardState | ((prev: RewardState) => RewardState)) {
-  getRunSessionStore().setRewardState(state);
+  getRunDomainStore().setRewardState(state);
 }
 
 export function applyDestinationChoices(choices: Destination[]) {
@@ -39,44 +39,39 @@ export function applyDestinationChoices(choices: Destination[]) {
 }
 
 export function setMysteryEvent(event: MysteryEvent | null) {
-  getRunSessionStore().setMysteryEvent(event);
+  getRunDomainStore().setMysteryEvent(event);
 }
 
 export function setMysteryCardChoices(
   choices: BattleCard[] | null | ((prev: BattleCard[] | null) => BattleCard[] | null),
 ) {
-  getRunSessionStore().setMysteryCardChoices(choices);
+  getRunDomainStore().setMysteryCardChoices(choices);
 }
 
 export function setShopState(state: ShopState | ((prev: ShopState) => ShopState)) {
-  getRunSessionStore().setShopState(state);
+  getRunDomainStore().setShopState(state);
 }
 
 export function setAlchemistState(state: AlchemistState | ((prev: AlchemistState) => AlchemistState)) {
-  getRunSessionStore().setAlchemistState(state);
+  getRunDomainStore().setAlchemistState(state);
 }
 
 export function setRunEndMaterials(materials: MaterialInventory) {
-  getRunSessionStore().setRunEndMaterials(materials);
+  getRunDomainStore().setRunEndMaterials(materials);
 }
 
 export function setCorruptionResult(result: CorruptionResult | null) {
-  getRunSessionStore().setCorruptionResult(result);
+  getRunDomainStore().setCorruptionResult(result);
 }
 
 export function setPendingCharacterId(id: CharacterId | null) {
-  getRunSessionStore().setPendingCharacterId(id);
+  getRunDomainStore().setPendingCharacterId(id);
 }
 
 export function setPendingContentSystemType(type: ContentSystemId) {
-  getRunSessionStore().setPendingContentSystemType(type);
+  getRunDomainStore().setPendingContentSystemType(type);
 }
 
 export function setCompanionRewardCards(cards: BattleCard[] | null) {
-  getRunSessionStore().setCompanionRewardCards(cards);
-}
-
-/** Clears transient run-session fields during teardown (battle/run stores reset separately). */
-export function clearTransientRunSessionState() {
-  getRunSessionStore().clearTransientSession();
+  getRunDomainStore().setCompanionRewardCards(cards);
 }

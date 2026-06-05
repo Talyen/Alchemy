@@ -3,11 +3,11 @@ import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { useScreenNavigation } from "@/features/alchemy/shell/use-screen-navigation";
-import { useNavigationStore } from "@/features/alchemy/shared/stores/navigation-store";
+import { resetRunNavigationSlice } from "../../helpers/run-domain-store-test";
 
 beforeEach(() => {
   vi.useFakeTimers();
-  useNavigationStore.setState(useNavigationStore.getInitialState(), true);
+  resetRunNavigationSlice();
 });
 
 afterEach(() => {

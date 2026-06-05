@@ -3,9 +3,12 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { RewardsScreen } from "@/features/alchemy/screens/rewards-screen";
-import { useRunSessionStore } from "@/features/alchemy/stores/run-session-store";
 import { createEmptyRewardState } from "@/features/alchemy/navigation/reward-flow";
 import type { BattleCard } from "@/lib/game-data";
+import {
+  getRunSessionStoreView,
+  resetRunSessionSlice,
+} from "../../helpers/run-domain-store-test";
 
 const testCard: BattleCard = {
   id: "slash",
@@ -17,8 +20,8 @@ const testCard: BattleCard = {
 };
 
 beforeEach(() => {
-  useRunSessionStore.setState(useRunSessionStore.getInitialState());
-  useRunSessionStore.getState().setRewardState({
+  resetRunSessionSlice();
+  getRunSessionStoreView().setRewardState({
     ...createEmptyRewardState(),
     rewardType: "card",
     choices: [testCard],
@@ -32,7 +35,7 @@ describe("RewardsScreen", () => {
 
     render(
       <RewardsScreen
-        rewardState={useRunSessionStore.getState().rewardState}
+        rewardState={getRunSessionStoreView().rewardState}
         onAddReward={vi.fn()}
         onSkip={vi.fn()}
         onSelectReward={onSelectReward}
@@ -42,6 +45,6 @@ describe("RewardsScreen", () => {
     await user.click(screen.getByRole("button", { name: /select slash/i }));
 
     expect(onSelectReward).toHaveBeenCalledWith("slash");
-    expect(useRunSessionStore.getState().rewardState.selectedId).toBeNull();
+    expect(getRunSessionStoreView().rewardState.selectedId).toBeNull();
   });
 });

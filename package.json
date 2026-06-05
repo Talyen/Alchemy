@@ -136,8 +136,14 @@
     ],
     "ignoreIssues": {
       "tests/playwright-tags.ts": ["exports"],
-      "src/features/alchemy/shared/stores/run-progress-store.ts": ["exports", "duplicates"],
-      "src/features/alchemy/shared/stores/run-store-types.ts": ["exports"]
+      "src/features/alchemy/shared/stores/run-domain-store.ts": ["exports", "duplicates"],
+      "src/features/alchemy/shared/stores/run-store-types.ts": ["exports"],
+      "src/features/alchemy/shared/stores/run-store.ts": ["exports", "types"],
+      "src/features/alchemy/shared/stores/run-transitions.ts": ["exports"],
+      "src/features/alchemy/shared/stores/run-session-actions.ts": ["exports"],
+      "src/features/alchemy/shared/stores/run-session-read.ts": ["exports"],
+      "src/features/alchemy/shared/stores/navigation-store.ts": ["types"],
+      "src/lib/active-run-session/index.ts": ["exports", "types"]
     },
     "ignoreDependencies": [
       "electron",

@@ -12,28 +12,31 @@ import {
   syncRunToBattleStart,
   teardownRun,
 } from "@/features/alchemy/stores/run-session-facade";
-import { useBattleStore } from "@/features/alchemy/stores/battle-store";
-import { useRunSessionStore } from "@/features/alchemy/stores/run-session-store";
 import { flattenRunSessionForScreens } from "@/features/alchemy/stores/run-screen-data";
-import { useRunStore } from "@/features/alchemy/stores/run-store";
-import { useNavigationStore } from "@/features/alchemy/shared/stores/navigation-store";
+import {
+  getBattleStoreView,
+  getNavigationStoreView,
+  getRunProgressStoreView,
+  getRunSessionStoreView,
+  setRunProgress,
+} from "../../helpers/run-domain-store-test";
 
 describe("run-session-facade", () => {
   beforeEach(() => {
     teardownRun();
-    useRunStore.getState().reset();
-    useRunStore.setState({
+    getRunProgressStoreView().reset();
+    setRunProgress({
       runPlayerHealth: 18,
       runMaxHealth: 24,
       runGold: 40,
       initialized: true,
     });
-    useBattleStore.getState().setSyncedBattleState({
+    getBattleStoreView().setSyncedBattleState({
       ...defaultBattleState(),
       playerHealth: 10,
       gold: 7,
     });
-    useRunSessionStore.getState().setHasActiveRun(true);
+    getRunSessionStoreView().setHasActiveRun(true);
   });
 
   it("flattenRunSessionForScreens aggregates run, battle, and session fields", () => {
@@ -52,30 +55,30 @@ describe("run-session-facade", () => {
   it("syncRunToBattleStart clamps and persists run HP", () => {
     const health = syncRunToBattleStart();
     expect(health).toBeGreaterThan(0);
-    expect(useRunStore.getState().runPlayerHealth).toBe(health);
+    expect(getRunProgressStoreView().runPlayerHealth).toBe(health);
   });
 
   it("syncBattleToRun copies battle HP to the run store", () => {
     syncBattleToRun({ playerHealth: 14 });
-    expect(useRunStore.getState().runPlayerHealth).toBe(14);
+    expect(getRunProgressStoreView().runPlayerHealth).toBe(14);
   });
 
   it("teardownRun clears active run session flags", () => {
     teardownRun();
-    expect(useRunSessionStore.getState().hasActiveRun).toBe(false);
-    expect(useBattleStore.getState().hasActiveBattle).toBe(false);
+    expect(getRunSessionStoreView().hasActiveRun).toBe(false);
+    expect(getBattleStoreView().hasActiveBattle).toBe(false);
   });
 
   it("getCurrentRunPhase reflects battle screen and hasActiveBattle", () => {
-    useBattleStore.getState().setHasActiveBattle(true);
+    getBattleStoreView().setHasActiveBattle(true);
     expect(getCurrentRunPhase(ROUTE_SCREENS.BATTLE)).toBe("battle");
-    useBattleStore.getState().setHasActiveBattle(false);
+    getBattleStoreView().setHasActiveBattle(false);
     expect(getCurrentRunPhase(ROUTE_SCREENS.BATTLE)).toBe("runLoop");
     expect(getCurrentRunPhase(ROUTE_SCREENS.MENU)).toBe("meta");
   });
 
   it("getRunSession matches buildActiveRunSnapshotFromStores inputs", () => {
-    useRunStore.setState({ runGold: 33, characterId: "knight" });
+    setRunProgress({ runGold: 33, characterId: "knight" });
     const session = getRunSession(ROUTE_SCREENS.SHOP);
     const snapshot = buildActiveRunSnapshotFromStores(ROUTE_SCREENS.SHOP);
     expect(snapshot.runGold).toBe(session.run.runGold);
@@ -84,7 +87,7 @@ describe("run-session-facade", () => {
   });
 
   it("buildActiveRunSnapshotFromStores matches explicit snapshot fields", () => {
-    useRunStore.setState({
+    setRunProgress({
       characterId: "knight",
       runDeck: [],
       runGold: 12,
@@ -92,7 +95,7 @@ describe("run-session-facade", () => {
       runMaxHealth: 24,
       contentSystemType: "campaign",
     });
-    useRunSessionStore.getState().setRewardState((prev) => ({
+    getRunSessionStoreView().setRewardState((prev) => ({
       ...prev,
       destinations: ["campfire", "shop"],
     }));
@@ -103,21 +106,21 @@ describe("run-session-facade", () => {
       runGold: 12,
       runPlayerHealth: 18,
       runMaxHealth: 24,
-      roomsEncountered: useRunStore.getState().roomsEncountered,
-      currentAct: useRunStore.getState().currentAct,
-      destinationIndexInAct: useRunStore.getState().destinationIndexInAct,
-      completedDestinations: useRunStore.getState().completedDestinations,
-      runTrinkets: useRunStore.getState().runTrinkets,
-      encounteredRunEnemyIds: useRunStore.getState().encounteredRunEnemyIds,
-      selectedDifficulty: useRunStore.getState().selectedDifficulty,
+      roomsEncountered: getRunProgressStoreView().roomsEncountered,
+      currentAct: getRunProgressStoreView().currentAct,
+      destinationIndexInAct: getRunProgressStoreView().destinationIndexInAct,
+      completedDestinations: getRunProgressStoreView().completedDestinations,
+      runTrinkets: getRunProgressStoreView().runTrinkets,
+      encounteredRunEnemyIds: getRunProgressStoreView().encounteredRunEnemyIds,
+      selectedDifficulty: getRunProgressStoreView().selectedDifficulty,
       contentSystemType: "campaign",
-      labyrinthMap: useRunSessionStore.getState().labyrinthMap,
-      hasActiveBattle: useBattleStore.getState().hasActiveBattle,
-      battleState: useBattleStore.getState().battleState,
-      labyrinthPendingNode: useRunSessionStore.getState().activeLabyrinthPendingNode,
-      activeLabyrinthModifiers: useRunSessionStore.getState().activeLabyrinthModifiers,
-      activeLabyrinthRewardModifiers: useRunSessionStore.getState().activeLabyrinthRewardModifiers,
-      runTalentXP: useRunStore.getState().runTalentXP,
+      labyrinthMap: getRunSessionStoreView().labyrinthMap,
+      hasActiveBattle: getBattleStoreView().hasActiveBattle,
+      battleState: getBattleStoreView().battleState,
+      labyrinthPendingNode: getRunSessionStoreView().activeLabyrinthPendingNode,
+      activeLabyrinthModifiers: getRunSessionStoreView().activeLabyrinthModifiers,
+      activeLabyrinthRewardModifiers: getRunSessionStoreView().activeLabyrinthRewardModifiers,
+      runTalentXP: getRunProgressStoreView().runTalentXP,
       currentScreen: ROUTE_SCREENS.DESTINATION,
       destinationChoices: ["campfire", "shop"],
     });
@@ -126,7 +129,7 @@ describe("run-session-facade", () => {
 
   it("restoreActiveRunToStores hydrates run and session stores", () => {
     teardownRun();
-    useRunStore.getState().reset();
+    getRunProgressStoreView().reset();
     const activeRun = createActiveRunSnapshot({
       characterId: "wizard",
       runDeck: [],
@@ -152,10 +155,10 @@ describe("run-session-facade", () => {
       destinationChoices: ["campfire"],
     });
     restoreActiveRunToStores(activeRun, {}, {});
-    expect(useRunStore.getState().characterId).toBe("wizard");
-    expect(useRunStore.getState().runGold).toBe(3);
-    expect(useNavigationStore.getState().screen).toBe(ROUTE_SCREENS.DESTINATION);
-    expect(useRunSessionStore.getState().hasActiveRun).toBe(true);
-    expect(useRunSessionStore.getState().rewardState.destinations).toEqual(["campfire"]);
+    expect(getRunProgressStoreView().characterId).toBe("wizard");
+    expect(getRunProgressStoreView().runGold).toBe(3);
+    expect(getNavigationStoreView().screen).toBe(ROUTE_SCREENS.DESTINATION);
+    expect(getRunSessionStoreView().hasActiveRun).toBe(true);
+    expect(getRunSessionStoreView().rewardState.destinations).toEqual(["campfire"]);
   });
 });

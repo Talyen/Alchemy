@@ -5,10 +5,13 @@ import { defaultBattleState } from "@/lib/battle";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { createEmptyTalentManifest } from "@/lib/game-data";
 import { useBattleController } from "@/features/alchemy/shell/use-battle-controller";
-import { useBattleStore } from "@/features/alchemy/stores/battle-store";
-import { useRunStore } from "@/features/alchemy/stores/run-store";
 import { resetScreenStores } from "@/features/alchemy/stores/screen-store";
 import { makeRunController, makeTalentController } from "../../helpers/run-controller";
+import {
+  getBattleStoreView,
+  resetRunBattleSlice,
+  resetRunProgressSlice,
+} from "../../helpers/run-domain-store-test";
 
 vi.mock("@/lib/audio", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/audio")>();
@@ -21,8 +24,8 @@ vi.mock("@/lib/audio", async (importOriginal) => {
 });
 
 beforeEach(() => {
-  useRunStore.setState(useRunStore.getInitialState());
-  useBattleStore.setState(useBattleStore.getInitialState());
+  resetRunProgressSlice();
+  resetRunBattleSlice();
   resetScreenStores();
 });
 
@@ -51,7 +54,7 @@ describe("useBattleController", () => {
       rerender();
     });
 
-    expect(useBattleStore.getState().hasActiveBattle).toBe(true);
+    expect(getBattleStoreView().hasActiveBattle).toBe(true);
     expect(result.current.battleState.playerHealth).toBeGreaterThan(0);
     expect(result.current.battleState).not.toEqual(defaultBattleState());
   });

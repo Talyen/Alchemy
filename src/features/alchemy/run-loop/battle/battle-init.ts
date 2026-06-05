@@ -4,11 +4,10 @@ import { getDifficultyModifiers, type BattleCard, type BestiaryEntry, type Diffi
 import { mergeIntoManifest } from "@/lib/homestead/effects";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import { getBossById, getCurrentEnemy, getBossEnemy } from "@/features/alchemy/config";
-import { useBattleStore } from "../../shared/stores/battle-store";
+import { readBattleStore } from "../../shared/stores/run-session-read";
 import { useBattlePresentationStore } from "../../shared/stores/battle-presentation-store";
-import { useRunStore } from "../../shared/stores/run-store";
 import { appendUnique } from "@/lib/utils";
-import { syncRunToBattleStart } from "../../shared/stores/run-lifecycle-coordinator";
+import { syncRunToBattleStart } from "../../shared/stores/run-transitions";
 import type { RunStateController, TalentStateController } from "../../shared/stores/run-store";
 
 export type BattleInitDeps = {
@@ -24,7 +23,7 @@ export type BattleInitDeps = {
 };
 
 export function createBattleInit(deps: BattleInitDeps) {
-  const getStore = () => useBattleStore.getState();
+  const getStore = () => readBattleStore();
   const getPresentationStore = () => useBattlePresentationStore.getState();
 
   function createBattleForEnemy(
@@ -76,16 +75,11 @@ export function createBattleInit(deps: BattleInitDeps) {
     enemyType: "normal" | "elite" = "normal",
     modifiers?: DifficultyModifier[],
   ) {
-    beginBattle(getCurrentEnemy(enemyType, useRunStore.getState().encounteredRunEnemyIds), deck, gold, modifiers);
+    beginBattle(getCurrentEnemy(enemyType, deps.run.encounteredRunEnemyIds), deck, gold, modifiers);
   }
 
   function startBossBattle(modifiers?: DifficultyModifier[]) {
-    beginBattle(
-      getBossEnemy(useRunStore.getState().encounteredRunEnemyIds),
-      deps.run.runDeck,
-      deps.run.runGold,
-      modifiers,
-    );
+    beginBattle(getBossEnemy(deps.run.encounteredRunEnemyIds), deps.run.runDeck, deps.run.runGold, modifiers);
   }
 
   function startBossById(bossId: string, modifiers?: DifficultyModifier[]): boolean {

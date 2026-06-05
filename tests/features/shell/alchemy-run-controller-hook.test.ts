@@ -3,9 +3,12 @@ import { renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";
-import { useRunStore } from "@/features/alchemy/stores/run-store";
-import { useNavigationStore } from "@/features/alchemy/shared/stores/navigation-store";
 import { createEmptyTalentManifest } from "@/lib/game-data";
+import {
+  resetRunNavigationSlice,
+  resetRunProgressSlice,
+  setRunProgress,
+} from "../../helpers/run-domain-store-test";
 
 vi.mock("@/lib/audio", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/audio")>();
@@ -30,8 +33,9 @@ vi.mock("@/lib/platform", () => ({
 }));
 
 beforeEach(() => {
-  useRunStore.setState({ ...useRunStore.getInitialState(), initialized: true });
-  useNavigationStore.setState(useNavigationStore.getInitialState(), true);
+  resetRunProgressSlice();
+  setRunProgress({ initialized: true });
+  resetRunNavigationSlice();
 });
 
 describe("useAlchemyRunController", () => {

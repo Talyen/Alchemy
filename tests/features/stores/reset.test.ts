@@ -16,32 +16,37 @@ vi.mock("@/lib/platform", () => ({
     quit: vi.fn(),
     steam: { isInitialized: false, playerName: null, init: vi.fn(), setRichPresence: vi.fn() },
     cloud: { isAvailable: false, read: vi.fn(), write: vi.fn() },
+    storage: { removeLocal: vi.fn().mockResolvedValue({ ok: true }) },
   },
 }));
 
 import { clearAllPersistentGameData, resetActiveRunStores } from "@/features/alchemy/stores/reset";
 import { useAppStore } from "@/features/alchemy/stores/app-store";
-import { useBattleStore } from "@/features/alchemy/stores/battle-store";
 import { useHomesteadStore } from "@/features/alchemy/stores/homestead-store";
-import { useRunStore } from "@/features/alchemy/stores/run-store";
-import { useRunSessionStore } from "@/features/alchemy/stores/run-session-store";
 import { resetScreenStores } from "@/features/alchemy/stores/screen-store";
 import { createEmptyRewardState } from "@/features/alchemy/navigation/reward-flow";
 import { defaultSaveData } from "@/features/alchemy/storage";
+import {
+  getBattleStoreView,
+  getRunProgressStoreView,
+  getRunSessionStoreView,
+  resetRunDomainStore,
+  setRunProgress,
+  setRunSession,
+} from "../../helpers/run-domain-store-test";
 
 beforeEach(() => {
   useAppStore.setState(useAppStore.getInitialState());
-  useBattleStore.setState(useBattleStore.getInitialState());
+  resetRunDomainStore();
   useHomesteadStore.setState(useHomesteadStore.getInitialState());
-  useRunStore.setState(useRunStore.getInitialState());
   resetScreenStores();
 });
 
 describe("resetActiveRunStores", () => {
   it("clears battle + run + screen transient state", () => {
-    useBattleStore.getState().setHasActiveBattle(true);
-    useRunStore.setState({ runGold: 99, roomsEncountered: 5 });
-    useRunSessionStore.setState({
+    getBattleStoreView().setHasActiveBattle(true);
+    setRunProgress({ runGold: 99, roomsEncountered: 5 });
+    setRunSession({
       hasActiveRun: true,
       rewardState: { ...createEmptyRewardState(), goldReward: 10 },
       mysteryEvent: { id: "test", title: "T", art: "", narrative: "", choices: [] },
@@ -49,12 +54,12 @@ describe("resetActiveRunStores", () => {
 
     resetActiveRunStores();
 
-    expect(useBattleStore.getState().hasActiveBattle).toBe(false);
-    expect(useRunStore.getState().runGold).toBe(0);
-    expect(useRunStore.getState().roomsEncountered).toBe(0);
-    expect(useRunSessionStore.getState().hasActiveRun).toBe(false);
-    expect(useRunSessionStore.getState().rewardState).toEqual(createEmptyRewardState());
-    expect(useRunSessionStore.getState().mysteryEvent).toBeNull();
+    expect(getBattleStoreView().hasActiveBattle).toBe(false);
+    expect(getRunProgressStoreView().runGold).toBe(0);
+    expect(getRunProgressStoreView().roomsEncountered).toBe(0);
+    expect(getRunSessionStoreView().hasActiveRun).toBe(false);
+    expect(getRunSessionStoreView().rewardState).toEqual(createEmptyRewardState());
+    expect(getRunSessionStoreView().mysteryEvent).toBeNull();
   });
 
   it("does not reset homestead or app options", () => {
@@ -73,7 +78,7 @@ describe("resetActiveRunStores", () => {
 describe("clearAllPersistentGameData", () => {
   it("wipes app, run permanent data, and homestead", () => {
     useHomesteadStore.getState().addMaterials({ wood: 10, iron: 0, herbs: 0, food: 0, crystal: 0 });
-    useRunStore.setState({ unlockedTalents: { physical: ["test-talent"] } });
+    setRunProgress({ unlockedTalents: { physical: ["test-talent"] } });
     useAppStore.getState().setDiscoveredCardIds(["card-a"]);
 
     clearAllPersistentGameData();
@@ -81,7 +86,7 @@ describe("clearAllPersistentGameData", () => {
     expect(useHomesteadStore.getState().materialInventory).toEqual(
       useHomesteadStore.getInitialState().materialInventory,
     );
-    expect(useRunStore.getState().unlockedTalents).toEqual({});
+    expect(getRunProgressStoreView().unlockedTalents).toEqual({});
     expect(useAppStore.getState().discoveredCardIds).toEqual(defaultSaveData.discoveredCardIds);
     expect(useAppStore.getState().discoveredCardIds).not.toContain("card-a");
   });

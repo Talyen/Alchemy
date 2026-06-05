@@ -6,9 +6,9 @@ import { useEffect, useCallback, useRef, useMemo } from "react";
 import { TimerGroup } from "@/lib/animation/game-timer";
 import { useShallow } from "zustand/react/shallow";
 import { useRunAdapter, useTalentAdapter } from "@/features/alchemy/stores/run-store";
-import { teardownRun } from "@/features/alchemy/stores/run-lifecycle-coordinator";
+import { teardownRun } from "@/features/alchemy/stores/run-transitions";
 import { useAppStore } from "@/features/alchemy/stores/app-store";
-import { useBattleStore } from "@/features/alchemy/stores/battle-store";
+import { useRunDomainStore } from "@/features/alchemy/stores/run-store";
 import { useBattlePresentationStore } from "@/features/alchemy/stores/battle-presentation-store";
 import { type BattleCard, type CharacterId, type DifficultyId, type DifficultyModifier } from "@/lib/game-data";
 import { playUISound } from "@/lib/audio";
@@ -58,7 +58,7 @@ export function useRunNavigation({
   const run = useRunAdapter();
   const talents = useTalentAdapter();
 
-  const setHasActiveBattle = useBattleStore((s) => s.setHasActiveBattle);
+  const setHasActiveBattle = useRunDomainStore((s) => s.setHasActiveBattle);
   const clearCardGhosts = useBattlePresentationStore((s) => s.clearCardGhosts);
 
   const { completedDifficulties, setDiscoveredCardIds, setEncounteredEnemyIds, setDiscoveredTrinketIds } = useAppStore(

@@ -8,19 +8,21 @@ import {
   useRunSessionNavigationSlice,
   useRunSessionShopSlice,
 } from "@/features/alchemy/stores/run-session-model";
-import { useBattleStore } from "@/features/alchemy/stores/battle-store";
-import { useRunSessionStore } from "@/features/alchemy/stores/run-session-store";
 import { resetScreenStores } from "@/features/alchemy/stores/screen-store";
+import {
+  getBattleStoreView,
+  getRunSessionStoreView,
+} from "../../helpers/run-domain-store-test";
 
 beforeEach(() => {
   resetScreenStores();
-  useBattleStore.getState().setSyncedBattleState(defaultBattleState());
-  useBattleStore.getState().setHasActiveBattle(false);
+  getBattleStoreView().setSyncedBattleState(defaultBattleState());
+  getBattleStoreView().setHasActiveBattle(false);
 });
 
 describe("run-session-model narrow hooks", () => {
   it("useRunSessionBattleContext reports battle phase when combat is active", () => {
-    useBattleStore.getState().setHasActiveBattle(true);
+    getBattleStoreView().setHasActiveBattle(true);
     const { result } = renderHook(() => useRunSessionBattleContext(ROUTE_SCREENS.BATTLE));
     expect(result.current.phase).toBe("battle");
     expect(result.current.battle.hasActiveBattle).toBe(true);
@@ -33,7 +35,7 @@ describe("run-session-model narrow hooks", () => {
   });
 
   it("useRunSessionShopSlice exposes shop and alchemist state", () => {
-    useRunSessionStore.getState().setShopState((prev) => ({ ...prev, cards: [] }));
+    getRunSessionStoreView().setShopState((prev) => ({ ...prev, cards: [] }));
     const { result } = renderHook(() => useRunSessionShopSlice());
     expect(result.current.shopState).toBeDefined();
     expect(result.current.alchemistState).toBeDefined();

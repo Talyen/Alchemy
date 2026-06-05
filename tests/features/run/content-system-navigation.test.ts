@@ -1,12 +1,17 @@
 import { describe, expect, it, beforeEach, vi } from "vitest";
 import { createContentSystemNavigation } from "@/features/alchemy/run-setup/run/content-system-navigation";
-import { useRunSessionStore } from "@/features/alchemy/stores/run-session-store";
 import { resetScreenStores } from "@/features/alchemy/stores/screen-store";
-import { useRunStore } from "@/features/alchemy/stores/run-store";
 import { useHomesteadStore } from "@/features/alchemy/stores/homestead-store";
 import { CONSTANTS } from "@/features/alchemy/types";
 import { makeRunController, makeTalentController } from "../../helpers/run-controller";
 import type { BattleCard } from "@/lib/game-data";
+import {
+  getRunProgressStoreView,
+  getRunSessionStoreView,
+  resetRunProgressSlice,
+  setRunProgress,
+  setRunSession,
+} from "../../helpers/run-domain-store-test";
 
 vi.mock("@/lib/audio", () => ({
   playGoldGain: vi.fn(),
@@ -22,7 +27,7 @@ vi.mock("@/features/alchemy/navigation/run-navigation-helpers", async (importOri
 
 beforeEach(() => {
   resetScreenStores();
-  useRunStore.setState(useRunStore.getInitialState());
+  resetRunProgressSlice();
   useHomesteadStore.setState(useHomesteadStore.getInitialState());
 });
 
@@ -54,26 +59,26 @@ describe("createContentSystemNavigation", () => {
     const deps = makeDeps();
     const nav = createContentSystemNavigation(deps);
     nav.beginCampaign();
-    expect(useRunSessionStore.getState().pendingContentSystemType).toBe(CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN);
+    expect(getRunSessionStoreView().pendingContentSystemType).toBe(CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN);
     expect(deps.navigateTo).toHaveBeenCalledWith(CONSTANTS.SCREENS.CHARACTER_SELECT);
   });
 
   it("initializeLabyrinthRun navigates to labyrinth map", () => {
-    useRunSessionStore.setState({ pendingContentSystemType: CONSTANTS.CONTENT_SYSTEMS.LABYRINTH });
+    setRunSession({ pendingContentSystemType: CONSTANTS.CONTENT_SYSTEMS.LABYRINTH });
     const deps = makeDeps({ pendingContentSystemType: CONSTANTS.CONTENT_SYSTEMS.LABYRINTH });
     const nav = createContentSystemNavigation(deps);
     nav.handleCharacterSelect("knight");
     expect(deps.navigateTo).toHaveBeenCalledWith(CONSTANTS.SCREENS.LABYRINTH_MAP);
-    expect(useRunStore.getState().contentSystemType).toBe(CONSTANTS.CONTENT_SYSTEMS.LABYRINTH);
+    expect(getRunProgressStoreView().contentSystemType).toBe(CONSTANTS.CONTENT_SYSTEMS.LABYRINTH);
   });
 
   it("initializeWildwoodRun navigates to wildwood select", () => {
-    useRunSessionStore.setState({ pendingContentSystemType: CONSTANTS.CONTENT_SYSTEMS.WILDWOOD });
+    setRunSession({ pendingContentSystemType: CONSTANTS.CONTENT_SYSTEMS.WILDWOOD });
     const deps = makeDeps({ pendingContentSystemType: CONSTANTS.CONTENT_SYSTEMS.WILDWOOD });
     const nav = createContentSystemNavigation(deps);
     nav.handleCharacterSelect("knight");
     expect(deps.navigateTo).toHaveBeenCalledWith(CONSTANTS.SCREENS.WILDWOOD_SELECT);
-    expect(useRunStore.getState().contentSystemType).toBe(CONSTANTS.CONTENT_SYSTEMS.WILDWOOD);
+    expect(getRunProgressStoreView().contentSystemType).toBe(CONSTANTS.CONTENT_SYSTEMS.WILDWOOD);
   });
 
   it("returns to battle when resuming the same content system with an active battle", () => {
@@ -82,7 +87,7 @@ describe("createContentSystemNavigation", () => {
       hasActiveBattle: true,
       pendingContentSystemType: CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN,
     });
-    useRunStore.setState({ contentSystemType: CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN });
+    setRunProgress({ contentSystemType: CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN });
     const nav = createContentSystemNavigation(deps);
     nav.beginCampaign();
     expect(deps.returnToBattle).toHaveBeenCalledOnce();
@@ -94,6 +99,6 @@ describe("createContentSystemNavigation", () => {
     const nav = createContentSystemNavigation(deps);
     nav.handleCharacterSelect("wildcard");
     expect(deps.navigateTo).toHaveBeenCalledWith(CONSTANTS.SCREENS.DRAFT_DECK);
-    expect(useRunSessionStore.getState().pendingCharacterId).toBe("wildcard");
+    expect(getRunSessionStoreView().pendingCharacterId).toBe("wildcard");
   });
 });

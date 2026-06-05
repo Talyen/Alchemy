@@ -4,21 +4,21 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { LABYRINTH_COLS } from "@/lib/content-systems/labyrinth/data";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
 import { useLabyrinthController } from "@/features/alchemy/shell/use-labyrinth-controller";
-import { useRunSessionStore } from "@/features/alchemy/stores/run-session-store";
 import { resetScreenStores } from "@/features/alchemy/stores/screen-store";
+import { getRunSessionStoreView } from "../helpers/run-domain-store-test";
 
 const START_COL = Math.floor(LABYRINTH_COLS / 2);
 
 beforeEach(() => {
   resetScreenStores();
-  useRunSessionStore.getState().setLabyrinthMap(generateLabyrinthMap());
+  getRunSessionStoreView().setLabyrinthMap(generateLabyrinthMap());
 });
 
 describe("useLabyrinthController hook", () => {
   it("enterNode records a pending node and routes combat nodes", () => {
     const onStartBattle = vi.fn();
     const { result } = renderHook(() => useLabyrinthController("labyrinth-map"));
-    const map = useRunSessionStore.getState().labyrinthMap;
+    const map = getRunSessionStoreView().labyrinthMap;
     const target = map.grid[0][START_COL]!.connections[0];
 
     let entered = false;
@@ -34,13 +34,13 @@ describe("useLabyrinthController hook", () => {
     });
 
     expect(entered).toBe(true);
-    expect(useRunSessionStore.getState().activeLabyrinthPendingNode).toEqual(target);
+    expect(getRunSessionStoreView().activeLabyrinthPendingNode).toEqual(target);
     expect(onStartBattle).toHaveBeenCalledOnce();
   });
 
   it("onNodeCleared advances the map to the pending node", () => {
     const { result } = renderHook(() => useLabyrinthController("labyrinth-map"));
-    const map = useRunSessionStore.getState().labyrinthMap;
+    const map = getRunSessionStoreView().labyrinthMap;
     const target = map.grid[0][START_COL]!.connections[0];
 
     act(() => {
@@ -55,21 +55,21 @@ describe("useLabyrinthController hook", () => {
       result.current.onNodeCleared();
     });
 
-    expect(useRunSessionStore.getState().activeLabyrinthPendingNode).toBeNull();
-    expect(useRunSessionStore.getState().labyrinthMap.currentNode).toEqual(target);
-    expect(useRunSessionStore.getState().labyrinthMap.grid[target.row][target.col]?.state).toBe("current");
+    expect(getRunSessionStoreView().activeLabyrinthPendingNode).toBeNull();
+    expect(getRunSessionStoreView().labyrinthMap.currentNode).toEqual(target);
+    expect(getRunSessionStoreView().labyrinthMap.grid[target.row][target.col]?.state).toBe("current");
   });
 
   it("resetMap clears pending state and regenerates the labyrinth", () => {
     const { result } = renderHook(() => useLabyrinthController("labyrinth-map"));
-    const before = useRunSessionStore.getState().labyrinthMap;
+    const before = getRunSessionStoreView().labyrinthMap;
 
     act(() => {
       result.current.resetMap();
     });
 
-    expect(useRunSessionStore.getState().activeLabyrinthPendingNode).toBeNull();
-    expect(useRunSessionStore.getState().labyrinthMap).not.toBe(before);
-    expect(useRunSessionStore.getState().labyrinthMap.grid[0][START_COL]?.type).toBe("entrance");
+    expect(getRunSessionStoreView().activeLabyrinthPendingNode).toBeNull();
+    expect(getRunSessionStoreView().labyrinthMap).not.toBe(before);
+    expect(getRunSessionStoreView().labyrinthMap.grid[0][START_COL]?.type).toBe("entrance");
   });
 });

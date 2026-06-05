@@ -2,14 +2,14 @@
 import { CURRENT_CONTENT_VERSION, CURRENT_GAME_BUILD_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
 import { useAppStore } from "@/features/alchemy/stores/app-store";
 import { useHomesteadStore } from "@/features/alchemy/stores/homestead-store";
-import { useRunStore } from "@/features/alchemy/stores/run-store";
+import { readActiveRunStore } from "@/features/alchemy/stores/run-session-read";
 import type { ActiveRunData } from "@/lib/active-run-session";
 import type { SaveData } from "./types";
 import { saveAlchemySaveData } from "./io";
 
 function buildAlchemySaveDataFromStores(activeRun: ActiveRunData | null): SaveData {
   const app = useAppStore.getState();
-  const run = useRunStore.getState();
+  const run = readActiveRunStore();
   const homestead = useHomesteadStore.getState();
 
   return {

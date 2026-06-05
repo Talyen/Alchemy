@@ -2,7 +2,7 @@
 import type { Dispatch, SetStateAction } from "react";
 import type { BattleCard, CharacterId, DifficultyId, DifficultyModifier } from "@/lib/game-data";
 import type { LabyrinthModifierKind } from "@/lib/content-systems/types";
-import { useBattleStore } from "../../shared/stores/battle-store";
+import { readBattleStore, readRunSessionStore } from "../../shared/stores/run-session-read";
 import { useHomesteadStore } from "../../shared/stores/homestead-store";
 import {
   setCompanionRewardCards,
@@ -10,7 +10,6 @@ import {
   setHasActiveRun,
   setRewardState,
 } from "../../shared/stores/run-session-actions";
-import { readRunSessionStore } from "../../shared/stores/run-session-read";
 import { defaultUiStoreAccess, type UiStoreAccess } from "../../shared/stores/ui-store-access";
 import { playUISound } from "@/lib/audio";
 import { ACTS_PER_RUN, CAMPFIRE_HEAL_FRACTION } from "@/lib/game-constants";
@@ -23,7 +22,7 @@ import {
   type RewardState,
 } from "../navigation/reward-flow";
 import { getRandomPotionCard } from "../navigation/reward-gold";
-import { flushSaveAfterRunEnd } from "@/features/alchemy/stores/run-lifecycle-coordinator";
+import { flushSaveAfterRunEnd } from "@/features/alchemy/stores/run-transitions";
 import { applyRunDefeatTeardown, getPreviousDestination } from "../navigation/run-navigation-helpers";
 import { appendCardToRunWithDiscovery, appendTrinketToRunWithDiscovery } from "./deck-mutations";
 import type { ContentSystemNavigationApi } from "@/features/alchemy/run-setup/run/content-system-navigation";
@@ -179,7 +178,7 @@ export function createRunDestinationHandlers(deps: RunDestinationHandlerDeps) {
 
   function finishRewards() {
     const session = readRunSessionStore();
-    const battleStateVal = useBattleStore.getState().battleState;
+    const battleStateVal = readBattleStore().battleState;
     const result = finalizeRewardState({
       rewardState: session.rewardState,
       companionRewardCards: session.companionRewardCards,

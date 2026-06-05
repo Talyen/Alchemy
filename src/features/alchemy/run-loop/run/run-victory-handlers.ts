@@ -1,11 +1,9 @@
 // Battle victory/defeat teardown and end-of-run material awards.
 import type { RefObject } from "react";
 import { TimerGroup } from "@/lib/animation/game-timer";
-import { useRunStore } from "../../shared/stores/run-store";
-import { useBattleStore } from "../../shared/stores/battle-store";
+import { readActiveRunStore, readBattleStore, readRunSessionStore } from "../../shared/stores/run-session-read";
 import { useHomesteadStore } from "../../shared/stores/homestead-store";
 import { setCompanionRewardCards, setRewardState, setRunEndMaterials } from "../../shared/stores/run-session-actions";
-import { readRunSessionStore } from "../../shared/stores/run-session-read";
 import { defaultUiStoreAccess, type UiStoreAccess } from "../../shared/stores/ui-store-access";
 import { playVictory, stopAllSfx } from "@/lib/audio";
 import { getEndOfRunMaterials, applyMaterialFindBonus } from "@/lib/homestead/loot";
@@ -39,12 +37,12 @@ export function createRunVictoryHandlers(deps: RunVictoryHandlerDeps) {
   const getUiStore = deps.getUiStore ?? defaultUiStoreAccess;
 
   function clearCombatState() {
-    useBattleStore.getState().setHasActiveBattle(false);
+    readBattleStore().setHasActiveBattle(false);
     getUiStore().clearCardHover();
   }
 
   function awardRunEndMaterials(displayMaterials: MaterialInventory | null = null) {
-    const runState = useRunStore.getState();
+    const runState = readActiveRunStore();
     const homesteadEffects = useHomesteadStore.getState().effects;
     const baseMats = getEndOfRunMaterials(runState.roomsEncountered, runState.currentAct);
     const baseHerbs = baseMats.herbs + (homesteadEffects.herbFindBonus > 0 ? runState.roomsEncountered : 0);
@@ -63,7 +61,7 @@ export function createRunVictoryHandlers(deps: RunVictoryHandlerDeps) {
   }
 
   function computeVictoryResult() {
-    const runState = useRunStore.getState();
+    const runState = readActiveRunStore();
     const lobby = useHomesteadStore.getState();
     return computeVictoryRewards({
       characterId: runState.characterId,
@@ -73,7 +71,7 @@ export function createRunVictoryHandlers(deps: RunVictoryHandlerDeps) {
       runTrinkets: runState.runTrinkets,
       contentSystemType: runState.contentSystemType,
       activeLabyrinthRewardModifiers: readRunSessionStore().activeLabyrinthRewardModifiers,
-      battleState: useBattleStore.getState().battleState,
+      battleState: readBattleStore().battleState,
       runGold: runState.runGold,
       runPlayerHealth: runState.runPlayerHealth,
       runMaxHealth: runState.runMaxHealth,
@@ -86,8 +84,8 @@ export function createRunVictoryHandlers(deps: RunVictoryHandlerDeps) {
   }
 
   function commitVictoryResult(result: ReturnType<typeof computeVictoryRewards>) {
-    const battleState = useBattleStore.getState().battleState;
-    const runState = useRunStore.getState();
+    const battleState = readBattleStore().battleState;
+    const runState = readActiveRunStore();
     commitVictoryRewards(result, {
       battleState,
       addHomesteadMaterials: (materials) => useHomesteadStore.getState().addMaterials(materials),
@@ -113,7 +111,7 @@ export function createRunVictoryHandlers(deps: RunVictoryHandlerDeps) {
 
   function handleBattleDefeat() {
     deps.rewardTransitionTimer.current.clearAll();
-    const runState = useRunStore.getState();
+    const runState = readActiveRunStore();
     if (runState.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.LABYRINTH) {
       stopAllSfx();
       clearCombatState();

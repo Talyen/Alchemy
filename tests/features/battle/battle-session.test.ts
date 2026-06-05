@@ -1,10 +1,13 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { createBattleSession } from "@/features/alchemy/battle/battle-session";
 import { createTransferCancelRegistry } from "@/features/alchemy/battle/transfer-lifecycle";
-import { useBattleStore } from "@/features/alchemy/stores/battle-store";
 import { useBattlePresentationStore } from "@/features/alchemy/stores/battle-presentation-store";
 import { defaultBattleState } from "@/lib/battle";
 import { TimerGroup } from "@/lib/animation/game-timer";
+import {
+  getBattleStoreView,
+  resetRunBattleSlice,
+} from "../../helpers/run-domain-store-test";
 
 function makeSession() {
   const battleSessionRef = { current: 1 };
@@ -33,9 +36,9 @@ function makeSession() {
 }
 
 beforeEach(() => {
-  useBattleStore.setState(useBattleStore.getInitialState());
+  resetRunBattleSlice();
   useBattlePresentationStore.setState(useBattlePresentationStore.getInitialState());
-  useBattleStore.getState().setHasActiveBattle(true);
+  getBattleStoreView().setHasActiveBattle(true);
 });
 
 describe("createBattleSession", () => {

@@ -2,7 +2,7 @@
 import type { BattleState } from "@/lib/battle";
 import type { Screen } from "../../shared/types";
 import { isAlchemyDevBuild } from "../../shared/utils";
-import { useBattleStore } from "../../shared/stores/battle-store";
+import { readBattleStore } from "../../shared/stores/run-session-read";
 
 export type BattleDevOutcomesDeps = {
   screen: Screen;
@@ -11,7 +11,7 @@ export type BattleDevOutcomesDeps = {
 };
 
 export function createBattleDevOutcomes(deps: BattleDevOutcomesDeps) {
-  const getStore = () => useBattleStore.getState();
+  const getStore = () => readBattleStore();
 
   function forceBattleOutcome(outcome: "victory" | "defeat", patch: (state: BattleState) => BattleState) {
     deps.resetBattleSession();

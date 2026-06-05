@@ -1,14 +1,18 @@
 import { describe, expect, it, beforeEach } from "vitest";
-import { useRunSessionStore } from "@/features/alchemy/stores/run-session-store";
 import { createEmptyRewardState } from "@/features/alchemy/navigation/reward-flow";
+import {
+  getRunSessionStoreView,
+  resetRunSessionSlice,
+  setRunSession,
+} from "../../helpers/run-domain-store-test";
 
 beforeEach(() => {
-  useRunSessionStore.setState(useRunSessionStore.getInitialState(), true);
+  resetRunSessionSlice();
 });
 
 describe("initial state", () => {
   it("has empty shop state", () => {
-    const shop = useRunSessionStore.getState().shopState;
+    const shop = getRunSessionStoreView().shopState;
     expect(shop.cards).toEqual([]);
     expect(shop.refreshesLeft).toBeGreaterThan(0);
     expect(shop.removeUsed).toBe(false);
@@ -16,7 +20,7 @@ describe("initial state", () => {
   });
 
   it("has empty alchemist state", () => {
-    const alc = useRunSessionStore.getState().alchemistState;
+    const alc = getRunSessionStoreView().alchemistState;
     expect(alc.potions).toEqual([]);
     expect(alc.refreshesLeft).toBeGreaterThan(0);
     expect(alc.mixUsed).toBe(false);
@@ -24,82 +28,82 @@ describe("initial state", () => {
   });
 
   it("starts with empty reward state", () => {
-    expect(useRunSessionStore.getState().rewardState).toEqual(createEmptyRewardState());
+    expect(getRunSessionStoreView().rewardState).toEqual(createEmptyRewardState());
   });
 
   it("has no active run", () => {
-    expect(useRunSessionStore.getState().hasActiveRun).toBe(false);
+    expect(getRunSessionStoreView().hasActiveRun).toBe(false);
   });
 
   it("starts with no labyrinth modifiers", () => {
-    expect(useRunSessionStore.getState().activeLabyrinthModifiers).toEqual([]);
+    expect(getRunSessionStoreView().activeLabyrinthModifiers).toEqual([]);
   });
 });
 
 describe("setRewardState", () => {
   it("accepts a direct value", () => {
     const testState = { ...createEmptyRewardState(), gold: 50 };
-    useRunSessionStore.getState().setRewardState(testState);
-    expect(useRunSessionStore.getState().rewardState.gold).toBe(50);
+    getRunSessionStoreView().setRewardState(testState);
+    expect(getRunSessionStoreView().rewardState.gold).toBe(50);
   });
 
   it("accepts an updater function", () => {
-    useRunSessionStore.getState().setRewardState((prev) => ({ ...prev, gold: prev.gold + 25 }));
-    expect(useRunSessionStore.getState().rewardState.gold).toBe(25);
+    getRunSessionStoreView().setRewardState((prev) => ({ ...prev, gold: prev.gold + 25 }));
+    expect(getRunSessionStoreView().rewardState.gold).toBe(25);
   });
 });
 
 describe("setShopState", () => {
   it("accepts a direct value", () => {
-    useRunSessionStore.getState().setShopState({ cards: [], refreshesLeft: 1, removeUsed: true, firstPurchaseUsed: false });
-    expect(useRunSessionStore.getState().shopState.removeUsed).toBe(true);
+    getRunSessionStoreView().setShopState({ cards: [], refreshesLeft: 1, removeUsed: true, firstPurchaseUsed: false });
+    expect(getRunSessionStoreView().shopState.removeUsed).toBe(true);
   });
 
   it("accepts an updater function", () => {
-    useRunSessionStore.getState().setShopState((prev) => ({ ...prev, removeUsed: !prev.removeUsed }));
-    expect(useRunSessionStore.getState().shopState.removeUsed).toBe(true);
+    getRunSessionStoreView().setShopState((prev) => ({ ...prev, removeUsed: !prev.removeUsed }));
+    expect(getRunSessionStoreView().shopState.removeUsed).toBe(true);
   });
 });
 
 describe("setMysteryEvent", () => {
   it("sets a mystery event", () => {
-    useRunSessionStore.getState().setMysteryEvent({ id: "test", title: "T", art: "", narrative: "", choices: [] });
-    expect(useRunSessionStore.getState().mysteryEvent?.id).toBe("test");
+    getRunSessionStoreView().setMysteryEvent({ id: "test", title: "T", art: "", narrative: "", choices: [] });
+    expect(getRunSessionStoreView().mysteryEvent?.id).toBe("test");
   });
 
   it("clears mystery card choices via null event reset pattern", () => {
-    useRunSessionStore.setState({
+    setRunSession({
       mysteryCardChoices: [{ id: "test", title: "T", descriptionLines: [""], art: "", cost: 0, effects: [] }],
     });
-    useRunSessionStore.getState().setMysteryCardChoices(null);
-    expect(useRunSessionStore.getState().mysteryCardChoices).toBeNull();
+    getRunSessionStoreView().setMysteryCardChoices(null);
+    expect(getRunSessionStoreView().mysteryCardChoices).toBeNull();
   });
 });
 
 describe("companion and corruption setters", () => {
   it("stores companion reward cards", () => {
     const cards = [{ id: "wolf-companion", title: "Wolf", descriptionLines: [""], art: "", cost: 1, effects: [] }];
-    useRunSessionStore.getState().setCompanionRewardCards(cards);
-    expect(useRunSessionStore.getState().companionRewardCards).toEqual(cards);
+    getRunSessionStoreView().setCompanionRewardCards(cards);
+    expect(getRunSessionStoreView().companionRewardCards).toEqual(cards);
   });
 
   it("tracks active run and corruption result", () => {
-    useRunSessionStore.getState().setHasActiveRun(true);
-    expect(useRunSessionStore.getState().hasActiveRun).toBe(true);
-    useRunSessionStore.getState().setCorruptionResult(null);
-    expect(useRunSessionStore.getState().corruptionResult).toBeNull();
+    getRunSessionStoreView().setHasActiveRun(true);
+    expect(getRunSessionStoreView().hasActiveRun).toBe(true);
+    getRunSessionStoreView().setCorruptionResult(null);
+    expect(getRunSessionStoreView().corruptionResult).toBeNull();
   });
 });
 
 describe("setMysteryCardChoices", () => {
   it("sets a direct value", () => {
     const cards = [{ id: "a", title: "A", descriptionLines: [""], art: "", cost: 0, effects: [] }];
-    useRunSessionStore.getState().setMysteryCardChoices(cards);
-    expect(useRunSessionStore.getState().mysteryCardChoices).toHaveLength(1);
+    getRunSessionStoreView().setMysteryCardChoices(cards);
+    expect(getRunSessionStoreView().mysteryCardChoices).toHaveLength(1);
   });
 
   it("sets null", () => {
-    useRunSessionStore.getState().setMysteryCardChoices(null);
-    expect(useRunSessionStore.getState().mysteryCardChoices).toBeNull();
+    getRunSessionStoreView().setMysteryCardChoices(null);
+    expect(getRunSessionStoreView().mysteryCardChoices).toBeNull();
   });
 });

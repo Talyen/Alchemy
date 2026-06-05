@@ -1,17 +1,17 @@
 // Test helpers — build run/talent controller shapes from the live run store.
-import { useRunStore } from "@/features/alchemy/stores/run-store";
 import {
   selectRunController,
   selectTalentController,
   type TalentStateController,
 } from "@/features/alchemy/stores/run-store-selectors";
 import { computeTalentEffects } from "@/lib/game-data";
+import { getRunProgressStoreView } from "./run-domain-store-test";
 
 export function makeRunController() {
-  return selectRunController(useRunStore.getState());
+  return selectRunController(getRunProgressStoreView());
 }
 
 export function makeTalentController(): TalentStateController {
-  const base = selectTalentController(useRunStore.getState());
+  const base = selectTalentController(getRunProgressStoreView());
   return { ...base, talentEffects: computeTalentEffects(base.unlockedTalents) };
 }

@@ -2,7 +2,7 @@
 /* eslint-disable react-hooks/refs -- session factories receive ref objects used only in async handlers */
 // Depends on pure battle logic, run/talent state, homestead modifiers, audio, and UI hooks.
 // Depended on by: useAlchemyRunController for managing active combat.
-// Uses useBattleStore (Zustand) instead of local useState for battle data.
+// Uses run domain battle slice instead of local useState for battle data.
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import type { BattleState } from "@/lib/battle";
@@ -15,7 +15,7 @@ import { TimerGroup } from "@/lib/animation/game-timer";
 import type { RunStateController, TalentStateController } from "@/features/alchemy/stores/run-store";
 import { applyCombatTextPortraitFeedback } from "@/features/alchemy/battle/battle-feedback";
 import { useBattleAutoEndTurn } from "@/features/alchemy/battle/use-battle-auto-end-turn";
-import { useBattleStore } from "@/features/alchemy/stores/battle-store";
+import { useRunDomainStore } from "@/features/alchemy/stores/run-store";
 import { useBattlePresentationStore } from "@/features/alchemy/stores/battle-presentation-store";
 import { useUiStore } from "@/features/alchemy/stores/ui-store";
 import { useRunSessionBattleContext } from "@/features/alchemy/stores/run-session-facade";
@@ -67,7 +67,7 @@ export function useBattleController({
     battle: { battleState, hasActiveBattle },
     activeLabyrinthModifiers,
   } = useRunSessionBattleContext(screen);
-  const displayOverrides = useBattleStore((s) => s.displayOverrides);
+  const displayOverrides = useRunDomainStore((s) => s.battle.displayOverrides);
   const battlePresentation = useBattlePresentationStore(
     useShallow((s) => ({
       revealedCardKeys: s.revealedCardKeys,
@@ -191,7 +191,7 @@ export function useBattleController({
     setCardTransfers,
     setHiddenHandCardKeys,
     setCardTransferInProgress,
-    hasActiveBattle: () => useBattleStore.getState().hasActiveBattle,
+    hasActiveBattle: () => useRunDomainStore.getState().battle.hasActiveBattle,
     revealCardKey: (cardKey) => useBattlePresentationStore.getState().addRevealedCardKey(cardKey),
   });
 

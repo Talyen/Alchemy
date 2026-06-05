@@ -1,4 +1,4 @@
-// Typed read model over run, session, navigation, and battle Zustand stores.
+// Typed read model over the consolidated run domain store.
 import type { BattleState } from "@/lib/battle";
 import type { Screen } from "@/lib/routing";
 import { getRunPhase, type RunPhase } from "@/lib/routing";
@@ -11,12 +11,8 @@ import type { LabyrinthMap, LabyrinthModifierKind, ContentSystemId } from "@/lib
 import type { LabyrinthNodePosition } from "@/lib/active-run-session";
 import { useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
-import { useBattleStore } from "./battle-store";
-import { useRunStore } from "./run-progress-store";
-import { useRunSessionStore } from "./run-session-store";
-import { getNavigationStore } from "./store-access";
-import { useNavigationStore } from "./navigation-store";
 import type { RunSessionFields } from "./run-session-store-types";
+import { getRunDomainStore, useRunDomainStore } from "./run-domain-store";
 
 export type RunSessionRunSlice = Pick<
   RunStateFields,
@@ -46,7 +42,7 @@ export type RunSessionBattleSlice = {
   battleState: BattleState;
 };
 
-/** Unified view of an in-progress or resumable run (screen defaults to navigation-store). */
+/** Unified view of an in-progress or resumable run (screen defaults to navigation slice). */
 export type RunSession = {
   screen: Screen;
   phase: RunPhase;
@@ -83,89 +79,61 @@ export type RunSessionNavigationSlice = {
 };
 
 function resolveScreen(screen?: Screen): Screen {
-  return screen ?? getNavigationStore().screen;
+  return screen ?? getRunDomainStore().navigation.screen;
 }
 
-function pickRunSessionRunSlice(run: ReturnType<typeof useRunStore.getState>): RunSessionRunSlice {
+function pickRunSessionRunSlice(progress: RunStateFields): RunSessionRunSlice {
   return {
-    characterId: run.characterId,
-    runDeck: run.runDeck,
-    runGold: run.runGold,
-    runPlayerHealth: run.runPlayerHealth,
-    runMaxHealth: run.runMaxHealth,
-    roomsEncountered: run.roomsEncountered,
-    currentAct: run.currentAct,
-    destinationIndexInAct: run.destinationIndexInAct,
-    completedDestinations: run.completedDestinations,
-    runTrinkets: run.runTrinkets,
-    encounteredRunEnemyIds: run.encounteredRunEnemyIds,
-    selectedDifficulty: run.selectedDifficulty,
-    contentSystemType: run.contentSystemType,
-    talentXP: run.talentXP,
-    runTalentXP: run.runTalentXP,
-    unlockedTalents: run.unlockedTalents,
-    initialized: run.initialized,
+    characterId: progress.characterId,
+    runDeck: progress.runDeck,
+    runGold: progress.runGold,
+    runPlayerHealth: progress.runPlayerHealth,
+    runMaxHealth: progress.runMaxHealth,
+    roomsEncountered: progress.roomsEncountered,
+    currentAct: progress.currentAct,
+    destinationIndexInAct: progress.destinationIndexInAct,
+    completedDestinations: progress.completedDestinations,
+    runTrinkets: progress.runTrinkets,
+    encounteredRunEnemyIds: progress.encounteredRunEnemyIds,
+    selectedDifficulty: progress.selectedDifficulty,
+    contentSystemType: progress.contentSystemType,
+    talentXP: progress.talentXP,
+    runTalentXP: progress.runTalentXP,
+    unlockedTalents: progress.unlockedTalents,
+    initialized: progress.initialized,
   };
 }
 
-function pickRunSessionTransientSlice(
-  session: ReturnType<typeof useRunSessionStore.getState>,
-): RunSessionTransientSlice {
-  return {
-    hasActiveRun: session.hasActiveRun,
-    activeLabyrinthModifiers: session.activeLabyrinthModifiers,
-    activeLabyrinthRewardModifiers: session.activeLabyrinthRewardModifiers,
-    activeLabyrinthPendingNode: session.activeLabyrinthPendingNode,
-    rewardState: session.rewardState,
-    companionRewardCards: session.companionRewardCards,
-    runEndMaterials: session.runEndMaterials,
-    runEndTalentXP: session.runEndTalentXP,
-    corruptionResult: session.corruptionResult,
-    pendingCharacterId: session.pendingCharacterId,
-    pendingContentSystemType: session.pendingContentSystemType,
-    labyrinthMap: session.labyrinthMap,
-    shopState: session.shopState,
-    alchemistState: session.alchemistState,
-    mysteryEvent: session.mysteryEvent,
-    mysteryCardChoices: session.mysteryCardChoices,
-  };
+function pickRunSessionTransientSlice(session: RunSessionFields): RunSessionTransientSlice {
+  return { ...session };
 }
 
-function pickRunSessionBattleSlice(battle: ReturnType<typeof useBattleStore.getState>): RunSessionBattleSlice {
+function pickRunSessionBattleSlice(battle: {
+  hasActiveBattle: boolean;
+  battleState: BattleState;
+}): RunSessionBattleSlice {
   return {
     hasActiveBattle: battle.hasActiveBattle,
     battleState: battle.battleState,
   };
 }
 
-function readRunSlice(): RunSessionRunSlice {
-  return pickRunSessionRunSlice(useRunStore.getState());
-}
-
-function readSessionSlice(): RunSessionTransientSlice {
-  return pickRunSessionTransientSlice(useRunSessionStore.getState());
-}
-
-function readBattleSlice(): RunSessionBattleSlice {
-  return pickRunSessionBattleSlice(useBattleStore.getState());
-}
-
 export function useRunSessionRunSlice(): RunSessionRunSlice {
-  return useRunStore(useShallow(pickRunSessionRunSlice));
+  return useRunDomainStore(useShallow((s) => pickRunSessionRunSlice(s.progress)));
 }
 
 export function useRunSessionTransientSlice(): RunSessionTransientSlice {
-  return useRunSessionStore(useShallow(pickRunSessionTransientSlice));
+  return useRunDomainStore(useShallow((s) => pickRunSessionTransientSlice(s.session)));
 }
 
 export function useRunSessionBattleSlice(): RunSessionBattleSlice {
-  return useBattleStore(useShallow(pickRunSessionBattleSlice));
+  return useRunDomainStore(useShallow((s) => pickRunSessionBattleSlice(s.battle)));
 }
 
 /** Battle screen: combat state + labyrinth modifiers only (avoids run/shop subscriptions). */
 export function useRunSessionBattleContext(screen?: Screen): RunSessionBattleContext {
   const battle = useRunSessionBattleSlice();
-  const activeLabyrinthModifiers = useRunSessionStore((s) => s.activeLabyrinthModifiers);
+  const activeLabyrinthModifiers = useRunDomainStore((s) => s.session.activeLabyrinthModifiers);
   const resolvedScreen = resolveScreen(screen);
   return useMemo(
     () => ({
@@ -179,30 +147,30 @@ export function useRunSessionBattleContext(screen?: Screen): RunSessionBattleCon
 
 /** Shop / alchemist screens: offer state only. */
 export function useRunSessionShopSlice(): RunSessionShopSlice {
-  return useRunSessionStore(
+  return useRunDomainStore(
     useShallow((s) => ({
-      shopState: s.shopState,
-      alchemistState: s.alchemistState,
+      shopState: s.session.shopState,
+      alchemistState: s.session.alchemistState,
     })),
   );
 }
 
 /** Mystery screen: event + card picker state only. */
 export function useRunSessionMysterySlice(): RunSessionMysterySlice {
-  return useRunSessionStore(
+  return useRunDomainStore(
     useShallow((s) => ({
-      mysteryEvent: s.mysteryEvent,
-      mysteryCardChoices: s.mysteryCardChoices,
+      mysteryEvent: s.session.mysteryEvent,
+      mysteryCardChoices: s.session.mysteryCardChoices,
     })),
   );
 }
 
 /** Labyrinth map: grid + pending node only. */
 export function useRunSessionLabyrinthSlice(): RunSessionLabyrinthSlice {
-  return useRunSessionStore(
+  return useRunDomainStore(
     useShallow((s) => ({
-      labyrinthMap: s.labyrinthMap,
-      activeLabyrinthPendingNode: s.activeLabyrinthPendingNode,
+      labyrinthMap: s.session.labyrinthMap,
+      activeLabyrinthPendingNode: s.session.activeLabyrinthPendingNode,
     })),
   );
 }
@@ -210,21 +178,21 @@ export function useRunSessionLabyrinthSlice(): RunSessionLabyrinthSlice {
 /** Run navigation: session fields used by useRunNavigation (no full run/battle state). */
 export function useRunSessionNavigationSlice(screen?: Screen): RunSessionNavigationSlice {
   const resolvedScreen = resolveScreen(screen);
-  const session = useRunSessionStore(
+  const session = useRunDomainStore(
     useShallow((s) => ({
-      hasActiveRun: s.hasActiveRun,
-      labyrinthMap: s.labyrinthMap,
-      activeLabyrinthPendingNode: s.activeLabyrinthPendingNode,
-      activeLabyrinthModifiers: s.activeLabyrinthModifiers,
-      activeLabyrinthRewardModifiers: s.activeLabyrinthRewardModifiers,
-      rewardState: s.rewardState,
-      runEndMaterials: s.runEndMaterials,
-      corruptionResult: s.corruptionResult,
-      pendingCharacterId: s.pendingCharacterId,
-      pendingContentSystemType: s.pendingContentSystemType,
+      hasActiveRun: s.session.hasActiveRun,
+      labyrinthMap: s.session.labyrinthMap,
+      activeLabyrinthPendingNode: s.session.activeLabyrinthPendingNode,
+      activeLabyrinthModifiers: s.session.activeLabyrinthModifiers,
+      activeLabyrinthRewardModifiers: s.session.activeLabyrinthRewardModifiers,
+      rewardState: s.session.rewardState,
+      runEndMaterials: s.session.runEndMaterials,
+      corruptionResult: s.session.corruptionResult,
+      pendingCharacterId: s.session.pendingCharacterId,
+      pendingContentSystemType: s.session.pendingContentSystemType,
     })),
   );
-  const hasActiveBattle = useBattleStore((s) => s.hasActiveBattle);
+  const hasActiveBattle = useRunDomainStore((s) => s.battle.hasActiveBattle);
   return useMemo(
     () => ({
       phase: getRunPhase(resolvedScreen, hasActiveBattle),
@@ -246,21 +214,22 @@ export function useRunSessionNavigationSlice(screen?: Screen): RunSessionNavigat
 
 /** Imperative snapshot of run + session + battle for the current screen. */
 export function getRunSession(screen?: Screen): RunSession {
+  const state = getRunDomainStore();
   const resolvedScreen = resolveScreen(screen);
-  const battle = readBattleSlice();
+  const battle = pickRunSessionBattleSlice(state.battle);
   return {
     screen: resolvedScreen,
     phase: getRunPhase(resolvedScreen, battle.hasActiveBattle),
-    run: readRunSlice(),
-    session: readSessionSlice(),
+    run: pickRunSessionRunSlice(state.progress),
+    session: pickRunSessionTransientSlice(state.session),
     battle,
   };
 }
 
-/** React hook — subscribes to run, session, and battle slices (shallow per store). */
+/** React hook — subscribes to run, session, and battle slices (shallow per slice). */
 export function useRunSession(screen?: Screen): RunSession {
-  const resolvedScreen = useNavigationStore((s) => s.screen);
-  const screenValue = screen ?? resolvedScreen;
+  const navigationScreen = useRunDomainStore((s) => s.navigation.screen);
+  const screenValue = screen ?? navigationScreen;
   const run = useRunSessionRunSlice();
   const session = useRunSessionTransientSlice();
   const battle = useRunSessionBattleSlice();

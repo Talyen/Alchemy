@@ -142,7 +142,7 @@ npm run release:major    # major version bump + changelog + tag
 
 **Run teardown** — `src/features/alchemy/stores/reset.ts`:
 
-- `teardownRun()` / `flushSaveAfterRunEnd()` in [`run-lifecycle-coordinator.ts`](src/features/alchemy/shared/stores/run-lifecycle-coordinator.ts) — run teardown and immediate save flushes (navigation calls these on run end).
+- `teardownRun()` / `flushSaveAfterRunEnd()` in [`run-transitions.ts`](src/features/alchemy/shared/stores/run-transitions.ts) — run teardown and immediate save flushes (navigation calls these on run end).
 - `clearAllPersistentGameData()` — clears app options, permanent run/talent data, and homestead (Options “clear save”).
 
 **Add a new status effect**:
@@ -256,25 +256,25 @@ Enforced in `eslint.config.js` — violations fail `npm run lint`.
 | `features/alchemy/*/screens/**` | `shared/ui`, `config`, props types | `run-loop/battle`, `run-loop/navigation`, `run/`, session actions |
 | `features/alchemy/meta/**` | `shared/` | `run-loop/`, `run-setup/` |
 | `features/alchemy/shared/ui/**` | `ui-store` only (ephemeral hover) | run/battle/session stores |
-| Features (except `stores/`) | facade hooks, `run-session-actions`, `readRunSessionStore` | `run-session-store`, `store-access` |
+| Features (except `stores/`) | facade hooks, `run-session-actions`, `readRunSessionStore`, `readActiveRunStore`, `readBattleStore` | `run-domain-store`, `navigation-store` (types only) |
 
-Run-state ownership and Phase 4 consolidation plan: [`RUN_STATE.md`](src/lib/active-run-session/RUN_STATE.md).
+Run-state ownership: [`RUN_STATE.md`](src/lib/active-run-session/RUN_STATE.md). Run lifecycle lives in **`useRunDomainStore`** (`run-domain-store.ts`) with slices for progress, session, navigation, and battle. Use `run-transitions.ts` for restore/teardown/sync and `run-session-facade.ts` for React hooks.
 
 **Tech stack:** React 19 with React Compiler enabled (`vite.config.ts`, ESLint `react-compiler` rule). Avoid patterns that fight the compiler; use documented `eslint-disable` only when intentional.
 
 ### Feature Hooks & Controllers
 
-Orchestration in `src/features/alchemy/shell/` bridges pure lib logic to React UI. `*-controller.ts` hooks compose domain factories from `run-loop/` and `run-setup/`. Run progression, session UI, and screen routing live in separate stores: **`run-progress-store`** (`useRunStore`), **`run-session-store`** (`useRunSessionStore`), and **`navigation-store`** (`useNavigationStore`). Bootstrap hydrates run + screen via `initializeActiveRunStores()` in [`run-store-sync.ts`](src/features/alchemy/shared/stores/run-store-sync.ts). Lifecycle sync/teardown/save flushes: [`run-lifecycle-coordinator.ts`](src/features/alchemy/shared/stores/run-lifecycle-coordinator.ts). Use `useRunAdapter()` / `useTalentAdapter()` from [`run-store.ts`](src/features/alchemy/stores/run-store.ts); use `useActiveRunScreen()` from [`run-session-facade.ts`](src/features/alchemy/stores/run-session-facade.ts) for navigation screen state.
+Orchestration in `src/features/alchemy/shell/` bridges pure lib logic to React UI. `*-controller.ts` hooks compose domain factories from `run-loop/` and `run-setup/`. Run state lives in **`useRunDomainStore`** (`run-domain-store.ts`) with progress/session/navigation/battle slices. Bootstrap and lifecycle: [`run-transitions.ts`](src/features/alchemy/shared/stores/run-transitions.ts). Use `useRunAdapter()` / `useTalentAdapter()` from [`run-store.ts`](src/features/alchemy/stores/run-store.ts); use `useActiveRunScreen()` from [`run-session-facade.ts`](src/features/alchemy/stores/run-session-facade.ts) for navigation screen state.
 
 | Hook / controller | File | Owns |
 |---|---|---|
 | Run lifecycle | `shell/use-alchemy-run-controller.ts` | Composes battle/shop/labyrinth/nav; delayed `navigateTo` via `useScreenNavigation` |
-| Screen pacing | `shell/use-screen-navigation.ts` | `navigateTo`, `commitPendingTransition` (reads/writes `navigation-store` via caller) |
+| Screen pacing | `shell/use-screen-navigation.ts` | `navigateTo`, `commitPendingTransition` (reads/writes navigation slice via caller) |
 | Battle | `shell/use-battle-controller.ts` | Battle state ↔ UI, ghost animations, turn flow |
 | Labyrinth | `shell/use-labyrinth-controller.ts` | Labyrinth map generation + modifier state |
 | Navigation | `shell/use-run-navigation.ts` | Rewards, destinations, mysteries, campfires, act transitions, run defeat/victory teardown |
 | Run + talents | `stores/run-store.ts` | Deck, gold, HP, acts/destinations, talent XP/unlocks (`useRunAdapter`, `useTalentAdapter`) |
-| Navigation screen | `stores/navigation-store.ts` | Current `screen` + `setScreen` (source of truth for routing) |
+| Navigation screen | `run-session-facade.ts` (`useActiveRunScreen`) | Current `screen` + `setScreen` (navigation slice in domain store) |
 | Homestead | `homestead-store.ts` | Homestead upgrades and material inventory |
 | Shop | `shell/use-shop-controller.ts` | Merchant and alchemist purchase flow |
 | Mystery (pure) | `run-loop/navigation/mystery-flow.ts` | `applyMysteryEffect` and related helpers |
@@ -285,32 +285,31 @@ Orchestration in `src/features/alchemy/shell/` bridges pure lib logic to React U
 | Store | File | Owns |
 |---|---|---|
 | App / options | `app-store.ts` | Display/audio options, collection discovery, completed difficulties |
-| Transient run UI | `run-session-store.ts` | Reward state, shop/alchemist offers, labyrinth map + pending node, mystery event/choices, corruption result, pending character/content-system |
-| Navigation screen | `navigation-store.ts` | Current `screen` + `setScreen` (`screen-store.ts` resets transient session + ui stores only) |
-| Run lifecycle | `run-lifecycle-coordinator.ts` | `syncRunToBattleStart`, `syncBattleToRun`, `teardownRun`, `flushSaveAfterRunEnd` |
-| Run session facade | `stores/run-session-facade.ts` | `getRunSession` / `useRunSession`, `buildActiveRunSnapshotFromStores`, `restoreActiveRunToStores`, `useActiveRunScreen` (re-exports lifecycle APIs) |
+| Run domain | `run-domain-store.ts` | `progress`, `session`, `navigation`, `battle` slices (single source of truth) |
+| Run lifecycle | `run-transitions.ts` | `syncRunToBattleStart`, `syncBattleToRun`, `teardownRun`, `restoreRunFromSnapshot` |
+| Run session facade | `stores/run-session-facade.ts` | `getRunSession` / `useRunSession`, `buildActiveRunSnapshotFromStores`, `restoreActiveRunToStores`, `useActiveRunScreen` |
 | Run screen flattening | `stores/run-screen-data.ts` | `flattenRunSessionForScreens` — flat props for `screen-routes/`; hook: `useRunScreenData(screen)` |
-| Session store access | `store-access.ts`, `run-session-actions.ts`, `run-session-read.ts` | Writes: `run-session-actions`; reads: `readRunSessionStore()`; avoid direct `useRunSessionStore` outside store modules |
-| Narrow session hooks | `run-session-model.ts` | `useRunSessionBattleContext`, `useRunSessionNavigationSlice`, `useRunSessionShopSlice`, `useRunSessionMysterySlice`, `useRunSessionLabyrinthSlice` — prefer over full `useRunSession` |
-| Run phase | `@/lib/routing` (`getRunPhase`, `RunPhase`) | `meta` / `runLoop` / `battle` / `runEnd` from screen + `hasActiveBattle`; `data-run-phase` on `#vr-stage`; Steam via `getSteamRichPresenceLabel` |
-| Run + talents | `run-store.ts` | Persistent run fields and talent XP/unlocks; exposes `useRunAdapter()` / `useTalentAdapter()` |
-| Battle | `battle-store.ts` | Synced battle state, display overrides, active-battle flag |
+| Session store access | `run-session-actions.ts`, `run-session-read.ts` | Writes: `run-session-actions`; reads: `readActiveRunStore()` / `readRunSessionStore()` |
+| Narrow session hooks | `run-session-model.ts` | Slice hooks over domain store — prefer over full `useRunSession` |
+| Run phase | `@/lib/routing` (`getRunPhase`, `RunPhase`) | `meta` / `runLoop` / `battle` / `runEnd` from screen + `hasActiveBattle` |
+| Run + talents | `run-store.ts` | `useRunAdapter()` / `useTalentAdapter()` over domain progress slice |
+| Battle presentation | `battle-presentation-store.ts` | VFX, ghosts, shake (not persisted) |
 | Homestead | `homestead-store.ts` | Material inventory and upgrade tiers |
 | Error log (dev) | `error-log-store.ts` | Dev error log buffer |
 
-Implementation under `src/features/alchemy/shared/stores/` (`run-progress-store.ts`, `run-session-store.ts`, `navigation-store.ts`; `@/features/alchemy/stores/*` aliases resolve here).
+Implementation under `src/features/alchemy/shared/stores/` (`run-domain-store.ts`, `run-transitions.ts`; `@/features/alchemy/stores/*` aliases resolve here).
 
 ### Data Flow
 
 - **Card play**: UI click → `useBattleController.playCard()` → `playBattleCardResolved()` (`src/lib/battle/card-play.ts`) → `applyCardEffects()` (`src/lib/battle/effect-handlers/dispatch.ts`) → new `BattleState` → Zustand store update → React re-render.
 - **Enemy turn**: `endPlayerTurn()` (`src/lib/battle/enemy-turn.ts`) → enemy action resolution → status ticks → new `BattleState` → store update.
-- **Screen transition**: `goToScreen` / `navigateTo` in run controller → `navigation-store.screen` (100ms delay via `NAVIGATION_DELAY_MS` in `game-constants.ts`) → `RenderAlchemyScreen` → `renderAlchemyScreenRoute()` in `src/app/screen-routes/`. Transition commits can defer store updates until the old screen unmounts (see `useScreenNavigation` in `shell/use-screen-navigation.ts`).
+- **Screen transition**: `goToScreen` / `navigateTo` in run controller → `runDomain.navigation.screen` (100ms delay via `NAVIGATION_DELAY_MS`) → `RenderAlchemyScreen` → `renderAlchemyScreenRoute()` in `src/app/screen-routes/`.
 - **Run phase reads**: Prefer `useRunSession(screen)` or `nav.runPhase` over re-deriving from stores. Screen routes use `useRunScreenData(screen)` (includes `phase`). E2E: `GameStage` in `tests/pages/game-stage.ts` reads `data-run-phase`.
 
 ### Screen Routing
 
 - Screen type union: `Screen` in `src/features/alchemy/types.ts` — see `ROUTE_SCREENS` (also `CONSTANTS.SCREENS`) for the canonical list (`menu`, `game-mode-select`, `character-select`, `difficulty-select`, `draft-deck`, `battle`, `rewards`, `destination`, `options`, `collection`, `talents`, `homestead`, `game-over`, `campfire`, `shop`, `alchemist`, `mystery`, `corruption`, `run-victory`, `labyrinth-map`, `wildwood-select`).
-- Dispatch: `renderAlchemyScreenRoute()` in `src/app/screen-routes/` (barrel `index.ts`) — a `Record<Screen, …>` registry, each route wrapped in `ErrorBoundary`. Screen taxonomy and documented transitions: `src/lib/routing/run-screen-router.ts`. `RenderAlchemyScreen` in `src/app/render-alchemy-screen.tsx` subscribes to stores and passes props into the route registry. `screen` lives in **`navigation-store`** (`useActiveRunScreen()`), not local React state.
+- Dispatch: `renderAlchemyScreenRoute()` in `src/app/screen-routes/` (barrel `index.ts`) — a `Record<Screen, …>` registry, each route wrapped in `ErrorBoundary`. Screen taxonomy and documented transitions: `src/lib/routing/run-screen-router.ts`. `RenderAlchemyScreen` in `src/app/render-alchemy-screen.tsx` subscribes to stores and passes props into the route registry. `screen` lives in the **run domain navigation slice** (`useActiveRunScreen()`), not local React state.
 - Navigation: prefer `CONSTANTS.SCREENS` over raw string literals. `goToScreen` (in `shell/use-run-navigation.ts`) clears hover state then calls `navigateTo`; run-flow screens call `navigateTo` directly from navigation.
 
 ### Startup & upfront loading
@@ -461,7 +460,7 @@ Individual top-level lib modules are imported directly — e.g. `@/lib/talents.t
 | Reward card/trinket sampling | `reward-utils.ts` |
 | Shared nav helpers (novice start, defeat teardown) | `navigation/run-navigation-helpers.ts` |
 | Active-run snapshot | `run-loop/run/active-run-data.ts`, `run-loop/run/use-active-run-snapshot.ts`, `storage/active-run.ts` |
-| Run lifecycle (sync/teardown/flush) | `stores/run-lifecycle-coordinator.ts` |
+| Run lifecycle (sync/teardown/flush) | `stores/run-transitions.ts` |
 | Store reset on run end | `stores/reset.ts` (prefer `teardownRun()` from lifecycle coordinator) |
 | Run + talent Zustand API | `stores/run-store.ts` (`useRunAdapter`, `useTalentAdapter`) |
 | Feature config (enemies, keywords, routes, etc.) | `src/features/alchemy/shared/config/` (barrel: `config.ts` → `shared/config-barrel.ts`) |

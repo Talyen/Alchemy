@@ -140,7 +140,7 @@ export default tseslint.config(
     },
   },
 
-  // Active-run store — only the stores layer may import the merged store hook or store-access.
+  // Run domain store — only the stores layer may import useRunDomainStore directly.
   {
     files: ["src/**/*.{ts,tsx}"],
     ignores: ["src/features/alchemy/shared/stores/**"],
@@ -151,17 +151,25 @@ export default tseslint.config(
           patterns: [
             {
               group: [
+                "**/run-domain-store",
+                "@/features/alchemy/stores/run-domain-store",
                 "**/run-progress-store",
                 "@/features/alchemy/stores/run-progress-store",
                 "**/navigation-store",
                 "@/features/alchemy/stores/navigation-store",
                 "**/run-session-store",
                 "@/features/alchemy/stores/run-session-store",
+                "**/stores/battle-store",
+                "@/features/alchemy/stores/battle-store",
                 "**/stores/store-access",
                 "@/features/alchemy/stores/store-access",
+                "**/run-lifecycle-coordinator",
+                "@/features/alchemy/stores/run-lifecycle-coordinator",
+                "**/run-store-sync",
+                "@/features/alchemy/stores/run-store-sync",
               ],
               message:
-                "Import run-session-actions, readRunSessionStore/readActiveRunStore, or run-session-facade hooks instead of the store hook.",
+                "Import run-session-facade hooks, run-session-actions, readRunSessionStore/readActiveRunStore/readBattleStore, or run-transitions instead of low-level store modules.",
             },
           ],
         },

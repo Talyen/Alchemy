@@ -2,7 +2,7 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import type { MouseEvent } from "react";
 import { createBattleCardPlay } from "@/features/alchemy/battle/battle-card-play";
-import { useBattleStore } from "@/features/alchemy/stores/battle-store";
+import { getBattleStoreView, resetRunBattleSlice } from "../../helpers/run-domain-store-test";
 import { createTestBattleState } from "../../lib/battle/test-state";
 import { makeTestCard } from "../../fixtures/battle";
 
@@ -27,7 +27,7 @@ function makeDeps(overrides: Partial<Parameters<typeof createBattleCardPlay>[0]>
   const cardPlayInProgressRef = { current: false };
   return {
     screen: "battle" as const,
-    battleState: useBattleStore.getState().battleState,
+    battleState: getBattleStoreView().battleState,
     battleSessionRef,
     cardPlayInProgressRef,
     hiddenHandCardKeys: new Set<string>(),
@@ -69,7 +69,7 @@ function clickCard(
 }
 
 beforeEach(() => {
-  useBattleStore.setState(useBattleStore.getInitialState());
+  resetRunBattleSlice();
 });
 
 describe("createBattleCardPlay", () => {
@@ -80,14 +80,14 @@ describe("createBattleCardPlay", () => {
       mana: 3,
       enemyHealth: 30,
     });
-    useBattleStore.getState().setSyncedBattleState(state);
+    getBattleStoreView().setSyncedBattleState(state);
 
     const deps = makeDeps();
     const { handleCardClick } = createBattleCardPlay(deps);
     clickCard(handleCardClick, { ...slash, uid: 1 }, 0);
 
-    expect(useBattleStore.getState().battleState.hand.length).toBe(0);
-    expect(useBattleStore.getState().battleState.enemyHealth).toBeLessThan(30);
+    expect(getBattleStoreView().battleState.hand.length).toBe(0);
+    expect(getBattleStoreView().battleState.enemyHealth).toBeLessThan(30);
     expect(deps.scheduleAutoEndTurn).toHaveBeenCalled();
     expect(deps.talents.awardCardXP).toHaveBeenCalledWith(expect.objectContaining({ id: "slash" }));
   });
@@ -98,13 +98,13 @@ describe("createBattleCardPlay", () => {
       hand: [{ ...expensive, uid: 2 }],
       mana: 1,
     });
-    useBattleStore.getState().setSyncedBattleState(state);
+    getBattleStoreView().setSyncedBattleState(state);
 
     const deps = makeDeps();
     const { handleCardClick } = createBattleCardPlay(deps);
     clickCard(handleCardClick, { ...expensive, uid: 2 }, 0);
 
-    expect(useBattleStore.getState().battleState).toEqual(state);
+    expect(getBattleStoreView().battleState).toEqual(state);
     expect(deps.scheduleAutoEndTurn).not.toHaveBeenCalled();
     expect(deps.talents.awardCardXP).not.toHaveBeenCalled();
   });
@@ -117,12 +117,12 @@ describe("createBattleCardPlay", () => {
       playerHealth: 0,
       deathsDoorActive: false,
     });
-    useBattleStore.getState().setSyncedBattleState(state);
+    getBattleStoreView().setSyncedBattleState(state);
 
     const deps = makeDeps();
     const { handleCardClick } = createBattleCardPlay(deps);
     clickCard(handleCardClick, { ...slash, uid: 3 }, 0);
 
-    expect(useBattleStore.getState().battleState.enemyHealth).toBe(state.enemyHealth);
+    expect(getBattleStoreView().battleState.enemyHealth).toBe(state.enemyHealth);
   });
 });

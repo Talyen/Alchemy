@@ -22,7 +22,7 @@ First-time Playwright: `npx playwright install chromium`.
 
 | Area | Paths (examples) | Run locally |
 |------|------------------|-------------|
-| Active run / screen / bootstrap | `run-progress-store.ts`, `navigation-store.ts`, `shell/use-alchemy-run-controller.ts`, `hydrate.ts`, `run-lifecycle-coordinator.ts` | `npm test -- tests/features/stores/ tests/features/shell/ tests/lib/active-run-session/hydrate.test.ts tests/architecture/active-run-bootstrap.test.ts` then `npm run test:e2e:prepush` |
+| Active run / screen / bootstrap | `run-domain-store.ts`, `run-transitions.ts`, `shell/use-alchemy-run-controller.ts`, `hydrate.ts` | `npm test -- tests/features/stores/ tests/features/shell/ tests/lib/active-run-session/hydrate.test.ts tests/architecture/active-run-bootstrap.test.ts` then `npm run test:e2e:prepush` |
 | Save / persistence | `storage/`, `save-schemas/`, `active-run.ts` | `npm test -- tests/features/storage` + `tests/save-persistence.spec.ts` + `npm run test:e2e:prepush` |
 | Battle / cards | `src/lib/battle/`, `src/lib/game-data/` | `npm test -- tests/lib/battle` + `tests/lib/game-data/descriptions-match-effects.test.ts` |
 | Battle E2E helpers | `tests/pages/battle-page.ts`, `tests/helpers.ts` (`enableFastMode`) | `npm run test:e2e:prepush` (animation canary) + `npm run test:e2e:main-gate` before pushing to `main` |

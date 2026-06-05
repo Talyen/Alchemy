@@ -7,7 +7,7 @@ import { appendCardToRunWithDiscovery } from "../run/deck-mutations";
 import { applyMysteryEffect } from "./mystery-flow";
 import { useRunSessionMysterySlice } from "../../shared/stores/run-session-facade";
 import { setMysteryCardChoices, setMysteryEvent } from "../../shared/stores/run-session-actions";
-import { useRunStore } from "../../shared/stores/run-store";
+import { readActiveRunStore } from "../../shared/stores/run-session-read";
 import { useAppStore } from "../../shared/stores/app-store";
 import { useHomesteadStore } from "../../shared/stores/homestead-store";
 import { applyMaterialFindBonus } from "@/lib/homestead/loot";
@@ -22,7 +22,7 @@ export function useMysteryFlow({ advanceToNextDestination }: { advanceToNextDest
   }
 
   function handleMysteryChoice(choice: MysteryChoice) {
-    const runStore = useRunStore.getState();
+    const runStore = readActiveRunStore();
     const appStore = useAppStore.getState();
     const homesteadStore = useHomesteadStore.getState();
 
@@ -48,7 +48,7 @@ export function useMysteryFlow({ advanceToNextDestination }: { advanceToNextDest
   function handleMysteryChooseCard(cardId: string) {
     const card = cardLibrary.find((c) => c.id === cardId);
     if (card) {
-      const runStore = useRunStore.getState();
+      const runStore = readActiveRunStore();
       const appStore = useAppStore.getState();
       appendCardToRunWithDiscovery(card, {
         setRunDeck: runStore.setRunDeck,
@@ -59,7 +59,7 @@ export function useMysteryFlow({ advanceToNextDestination }: { advanceToNextDest
   }
 
   function handleMysteryRemoveCard(index: number) {
-    useRunStore.getState().setRunDeck((p) => p.filter((_, i) => i !== index));
+    readActiveRunStore().setRunDeck((p) => p.filter((_, i) => i !== index));
   }
 
   function handleMysteryContinue() {
