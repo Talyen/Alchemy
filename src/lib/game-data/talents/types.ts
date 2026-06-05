@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Talent definitions, pools, UI filter/sampling helpers, and default manifests.
  * Depends on: src/lib/game-data/types.ts
  * Depended on by: src/lib/talents.ts, homestead, and the battle state machine
@@ -9,7 +9,7 @@ export const TALENTS_CONFIG = {
   PLACEHOLDER_DESCRIPTION: "Placeholder talent (NYI)",
 } as const;
 
-// A talent definition � ID, keyword, optional short name for UI tooltips, and
+// A talent definition — ID, keyword, optional short name for UI tooltips, and
 // description (rules text). New talents can be added by simply appending to
 // the talentPool array below.
 export interface TalentDefinition {
