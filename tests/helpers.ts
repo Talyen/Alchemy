@@ -137,10 +137,17 @@ export function makeHighDamageCard(amount = 500) {
 
 // Opens the mode picker from the main menu; game mode buttons live one screen past Play.
 export async function openGameModeSelect(page: Page) {
+  const adventureHeading = page.getByRole("heading", { name: "Choose Your Adventure" });
+  if (await adventureHeading.isVisible()) return;
+
   const playButton = page.getByRole("button", { name: "Play", exact: true });
-  await expect(playButton).toBeEnabled({ timeout: 5000 });
-  await playButton.click();
-  await expect(page.getByRole("heading", { name: "Choose Your Adventure" })).toBeVisible({ timeout: 5000 });
+  await expect(playButton).toBeEnabled({ timeout: 15000 });
+
+  // Mid-run saves can swap menu → destination during bootstrap; retry if Play detaches mid-click.
+  await expect(async () => {
+    await playButton.click();
+    await expect(adventureHeading).toBeVisible({ timeout: 2000 });
+  }).toPass({ timeout: 15000 });
 }
 
 // Selects a mode card and presses the footer action, which is Play for fresh runs

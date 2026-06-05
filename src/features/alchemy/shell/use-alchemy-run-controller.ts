@@ -53,7 +53,7 @@ export function useAlchemyRunController({
   // Stores are initialized once on mount.  The deps include initial* props for correctness
   // but the effect body uses a guard ref so it only runs once even if React re-renders with
   // different initial values (which shouldn't happen — these are the bootstrap values).
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (readActiveRunStore().initialized) return;
     restoreActiveRunToStores(initialActiveRun, initialTalentXP, initialUnlockedTalents);
   }, [initialActiveRun, initialTalentXP, initialUnlockedTalents]);

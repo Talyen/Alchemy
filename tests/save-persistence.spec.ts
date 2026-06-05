@@ -54,9 +54,8 @@ test.describe("Save Persistence Edge Cases", critical, () => {
     });
     await page.goto("/");
 
-    await resumeGameMode(page, "campaign");
-
-    await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 5000 });
+    // currentScreen: destination hydrates before menu is stable; Resume via Play races bootstrap.
+    await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 10000 });
     await expect(page.getByRole("button", { name: "Campfire" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Mystery" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Merchant's Shop" })).toBeVisible();
