@@ -1,13 +1,16 @@
 import { describe, expect, it, beforeEach } from "vitest";
 import { useRunStore } from "@/features/alchemy/stores/run-store";
 import { useRunSessionStore } from "@/features/alchemy/stores/run-session-store";
+import { useNavigationStore } from "@/features/alchemy/shared/stores/navigation-store";
+import { initializeActiveRunStores } from "@/features/alchemy/shared/stores/run-store-sync";
 import { computeTalentPoints } from "@/lib/talents";
 import type { BattleCard } from "@/lib/game-data";
-import type { ActiveRunData } from "@/features/alchemy/run/types";
+import type { ActiveRunData } from "@/lib/active-run-session";
 
 beforeEach(() => {
   useRunStore.setState(useRunStore.getInitialState());
-  useRunSessionStore.setState(useRunSessionStore.getInitialState());
+  useRunSessionStore.setState(useRunSessionStore.getInitialState(), true);
+  useNavigationStore.setState(useNavigationStore.getInitialState(), true);
 });
 
 describe("initial state", () => {
@@ -109,6 +112,32 @@ describe("initialize", () => {
   it("uses knight as default fallback", () => {
     useRunStore.getState().initialize(null, {}, {});
     expect(useRunStore.getState().characterId).toBe("knight");
+  });
+
+  it("restores navigation screen via initializeActiveRunStores", () => {
+    const activeRun: ActiveRunData = {
+      characterId: "knight",
+      runDeck: [],
+      runGold: 0,
+      runPlayerHealth: 20,
+      runMaxHealth: 30,
+      roomsEncountered: 0,
+      currentAct: 1,
+      destinationIndexInAct: 0,
+      completedDestinations: [],
+      runTrinkets: [],
+      encounteredRunEnemyIds: [],
+      selectedDifficulty: null,
+      contentSystemType: "campaign",
+      labyrinthMap: null,
+      labyrinthPendingNode: null,
+      activeCombat: null,
+      runTalentXP: {},
+      currentScreen: "shop",
+      destinationChoices: [],
+    };
+    initializeActiveRunStores(activeRun, {}, {});
+    expect(useNavigationStore.getState().screen).toBe("shop");
   });
 });
 

@@ -4,7 +4,7 @@ import type { LabyrinthMap, LabyrinthModifierKind, ContentSystemId } from "@/lib
 import type { CorruptionResult } from "@/lib/corruption";
 import type { MysteryEvent } from "@/lib/mystery";
 import type { MaterialInventory } from "@/lib/homestead/types";
-import type { LabyrinthNodePosition } from "@/features/alchemy/run/types";
+import type { LabyrinthNodePosition } from "@/lib/active-run-session";
 import type { RewardState } from "@/features/alchemy/navigation/reward-flow";
 import type { ShopState, AlchemistState } from "@/features/alchemy/shop/shop-state-init";
 import type { Destination } from "@/features/alchemy/types";

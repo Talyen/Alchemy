@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { defaultBattleState } from "@/lib/battle";
 import { getStartingDeck } from "@/lib/game-data";
-import { createActiveRunData } from "@/features/alchemy/run/active-run-data";
+import { createActiveRunData } from "@/features/alchemy/run-loop/run/active-run-data";
 
 function makeSource(overrides: Partial<Parameters<typeof createActiveRunData>[0]> = {}): Parameters<typeof createActiveRunData>[0] {
   return {

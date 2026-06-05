@@ -4,7 +4,7 @@ import {
   choiceOffersCardSelection,
   choiceRequiresCardRemoval,
   hasPositiveMysteryEffect,
-} from "@/features/alchemy/screens/mystery/mystery-choice-utils";
+} from "@/features/alchemy/run-loop/screens/mystery/mystery-choice-utils";
 
 describe("hasPositiveMysteryEffect", () => {
   it("returns true for heal and reward effects", () => {

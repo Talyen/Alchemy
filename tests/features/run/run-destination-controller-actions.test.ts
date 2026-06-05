@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { createRunDestinationHandlers } from "@/features/alchemy/run/run-destination-handlers";
+import { createRunDestinationHandlers } from "@/features/alchemy/run-loop/run/run-destination-handlers";
 import { useRunSessionStore } from "@/features/alchemy/stores/run-session-store";
 import { resetScreenStores } from "@/features/alchemy/stores/screen-store";
 import { createEmptyRewardState } from "@/features/alchemy/navigation/reward-flow";

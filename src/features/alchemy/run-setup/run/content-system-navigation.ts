@@ -24,7 +24,7 @@ import { createRunStartSnapshot, type RunStartSnapshot } from "./run-start";
 import { getBossEnemy } from "@/features/alchemy/config";
 import { CONSTANTS, type Destination, type Screen } from "../../shared/types";
 import type { RunStateController, TalentStateController } from "../../shared/stores/run-store";
-import type { DestinationOptionsInput } from "@/features/alchemy/run/types";
+import type { DestinationOptionsInput } from "@/lib/active-run-session";
 
 export type ContentSystemNavigationDeps = {
   run: RunStateController;

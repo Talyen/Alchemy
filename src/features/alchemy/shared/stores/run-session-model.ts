@@ -1,22 +1,22 @@
-// Typed read model over run, session, and battle Zustand stores.
+// Typed read model over run, session, navigation, and battle Zustand stores.
 import type { BattleState } from "@/lib/battle";
 import type { Screen } from "@/lib/routing";
 import { getRunPhase, type RunPhase } from "@/lib/routing";
-import type { RunStateFields } from "@/features/alchemy/run/run-state-init";
+import type { RunStateFields } from "@/features/alchemy/run-setup/run/run-state-init";
 import type { RewardState } from "@/features/alchemy/navigation/reward-flow";
 import type { CorruptionResult } from "@/lib/corruption";
-import type { MysteryEvent } from "@/lib/mystery";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { CharacterId } from "@/lib/game-data";
-import type { BattleCard } from "@/lib/game-data";
 import type { LabyrinthMap, LabyrinthModifierKind, ContentSystemId } from "@/lib/content-systems/types";
-import type { LabyrinthNodePosition } from "@/features/alchemy/run/types";
-import type { ShopState, AlchemistState } from "@/features/alchemy/shop/shop-state-init";
-import type { TalentXP } from "@/lib/talents";
+import type { LabyrinthNodePosition } from "@/lib/active-run-session";
 import { useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useBattleStore } from "./battle-store";
-import { useActiveRunStore } from "./active-run-store";
+import { useRunStore } from "./run-progress-store";
+import { useRunSessionStore } from "./run-session-store";
+import { getNavigationStore } from "./store-access";
+import { useNavigationStore } from "./navigation-store";
+import type { RunSessionFields } from "./run-session-store-types";
 
 export type RunSessionRunSlice = Pick<
   RunStateFields,
@@ -39,31 +39,14 @@ export type RunSessionRunSlice = Pick<
   | "initialized"
 >;
 
-export type RunSessionTransientSlice = {
-  hasActiveRun: boolean;
-  activeLabyrinthModifiers: LabyrinthModifierKind[];
-  activeLabyrinthRewardModifiers: LabyrinthModifierKind[];
-  activeLabyrinthPendingNode: LabyrinthNodePosition | null;
-  rewardState: RewardState;
-  companionRewardCards: BattleCard[] | null;
-  runEndMaterials: MaterialInventory;
-  runEndTalentXP: TalentXP;
-  corruptionResult: CorruptionResult | null;
-  pendingCharacterId: CharacterId | null;
-  pendingContentSystemType: ContentSystemId;
-  labyrinthMap: LabyrinthMap;
-  shopState: ShopState;
-  alchemistState: AlchemistState;
-  mysteryEvent: MysteryEvent | null;
-  mysteryCardChoices: BattleCard[] | null;
-};
+export type RunSessionTransientSlice = RunSessionFields;
 
 export type RunSessionBattleSlice = {
   hasActiveBattle: boolean;
   battleState: BattleState;
 };
 
-/** Unified view of an in-progress or resumable run (screen defaults to active-run-store). */
+/** Unified view of an in-progress or resumable run (screen defaults to navigation-store). */
 export type RunSession = {
   screen: Screen;
   phase: RunPhase;
@@ -100,10 +83,10 @@ export type RunSessionNavigationSlice = {
 };
 
 function resolveScreen(screen?: Screen): Screen {
-  return screen ?? useActiveRunStore.getState().screen;
+  return screen ?? getNavigationStore().screen;
 }
 
-function pickRunSessionRunSlice(run: ReturnType<typeof useActiveRunStore.getState>): RunSessionRunSlice {
+function pickRunSessionRunSlice(run: ReturnType<typeof useRunStore.getState>): RunSessionRunSlice {
   return {
     characterId: run.characterId,
     runDeck: run.runDeck,
@@ -126,7 +109,7 @@ function pickRunSessionRunSlice(run: ReturnType<typeof useActiveRunStore.getStat
 }
 
 function pickRunSessionTransientSlice(
-  session: ReturnType<typeof useActiveRunStore.getState>,
+  session: ReturnType<typeof useRunSessionStore.getState>,
 ): RunSessionTransientSlice {
   return {
     hasActiveRun: session.hasActiveRun,
@@ -156,11 +139,11 @@ function pickRunSessionBattleSlice(battle: ReturnType<typeof useBattleStore.getS
 }
 
 function readRunSlice(): RunSessionRunSlice {
-  return pickRunSessionRunSlice(useActiveRunStore.getState());
+  return pickRunSessionRunSlice(useRunStore.getState());
 }
 
 function readSessionSlice(): RunSessionTransientSlice {
-  return pickRunSessionTransientSlice(useActiveRunStore.getState());
+  return pickRunSessionTransientSlice(useRunSessionStore.getState());
 }
 
 function readBattleSlice(): RunSessionBattleSlice {
@@ -168,11 +151,11 @@ function readBattleSlice(): RunSessionBattleSlice {
 }
 
 export function useRunSessionRunSlice(): RunSessionRunSlice {
-  return useActiveRunStore(useShallow(pickRunSessionRunSlice));
+  return useRunStore(useShallow(pickRunSessionRunSlice));
 }
 
 export function useRunSessionTransientSlice(): RunSessionTransientSlice {
-  return useActiveRunStore(useShallow(pickRunSessionTransientSlice));
+  return useRunSessionStore(useShallow(pickRunSessionTransientSlice));
 }
 
 export function useRunSessionBattleSlice(): RunSessionBattleSlice {
@@ -182,7 +165,7 @@ export function useRunSessionBattleSlice(): RunSessionBattleSlice {
 /** Battle screen: combat state + labyrinth modifiers only (avoids run/shop subscriptions). */
 export function useRunSessionBattleContext(screen?: Screen): RunSessionBattleContext {
   const battle = useRunSessionBattleSlice();
-  const activeLabyrinthModifiers = useActiveRunStore((s) => s.activeLabyrinthModifiers);
+  const activeLabyrinthModifiers = useRunSessionStore((s) => s.activeLabyrinthModifiers);
   const resolvedScreen = resolveScreen(screen);
   return useMemo(
     () => ({
@@ -196,7 +179,7 @@ export function useRunSessionBattleContext(screen?: Screen): RunSessionBattleCon
 
 /** Shop / alchemist screens: offer state only. */
 export function useRunSessionShopSlice(): RunSessionShopSlice {
-  return useActiveRunStore(
+  return useRunSessionStore(
     useShallow((s) => ({
       shopState: s.shopState,
       alchemistState: s.alchemistState,
@@ -206,7 +189,7 @@ export function useRunSessionShopSlice(): RunSessionShopSlice {
 
 /** Mystery screen: event + card picker state only. */
 export function useRunSessionMysterySlice(): RunSessionMysterySlice {
-  return useActiveRunStore(
+  return useRunSessionStore(
     useShallow((s) => ({
       mysteryEvent: s.mysteryEvent,
       mysteryCardChoices: s.mysteryCardChoices,
@@ -216,7 +199,7 @@ export function useRunSessionMysterySlice(): RunSessionMysterySlice {
 
 /** Labyrinth map: grid + pending node only. */
 export function useRunSessionLabyrinthSlice(): RunSessionLabyrinthSlice {
-  return useActiveRunStore(
+  return useRunSessionStore(
     useShallow((s) => ({
       labyrinthMap: s.labyrinthMap,
       activeLabyrinthPendingNode: s.activeLabyrinthPendingNode,
@@ -227,7 +210,7 @@ export function useRunSessionLabyrinthSlice(): RunSessionLabyrinthSlice {
 /** Run navigation: session fields used by useRunNavigation (no full run/battle state). */
 export function useRunSessionNavigationSlice(screen?: Screen): RunSessionNavigationSlice {
   const resolvedScreen = resolveScreen(screen);
-  const session = useActiveRunStore(
+  const session = useRunSessionStore(
     useShallow((s) => ({
       hasActiveRun: s.hasActiveRun,
       labyrinthMap: s.labyrinthMap,
@@ -276,7 +259,7 @@ export function getRunSession(screen?: Screen): RunSession {
 
 /** React hook — subscribes to run, session, and battle slices (shallow per store). */
 export function useRunSession(screen?: Screen): RunSession {
-  const resolvedScreen = useActiveRunStore((s) => s.screen);
+  const resolvedScreen = useNavigationStore((s) => s.screen);
   const screenValue = screen ?? resolvedScreen;
   const run = useRunSessionRunSlice();
   const session = useRunSessionTransientSlice();

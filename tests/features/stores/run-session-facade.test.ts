@@ -16,6 +16,7 @@ import { useBattleStore } from "@/features/alchemy/stores/battle-store";
 import { useRunSessionStore } from "@/features/alchemy/stores/run-session-store";
 import { flattenRunSessionForScreens } from "@/features/alchemy/stores/run-screen-data";
 import { useRunStore } from "@/features/alchemy/stores/run-store";
+import { useNavigationStore } from "@/features/alchemy/shared/stores/navigation-store";
 
 describe("run-session-facade", () => {
   beforeEach(() => {
@@ -153,7 +154,7 @@ describe("run-session-facade", () => {
     restoreActiveRunToStores(activeRun, {}, {});
     expect(useRunStore.getState().characterId).toBe("wizard");
     expect(useRunStore.getState().runGold).toBe(3);
-    expect(useRunSessionStore.getState().screen).toBe(ROUTE_SCREENS.DESTINATION);
+    expect(useNavigationStore.getState().screen).toBe(ROUTE_SCREENS.DESTINATION);
     expect(useRunSessionStore.getState().hasActiveRun).toBe(true);
     expect(useRunSessionStore.getState().rewardState.destinations).toEqual(["campfire"]);
   });

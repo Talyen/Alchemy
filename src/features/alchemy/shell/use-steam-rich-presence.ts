@@ -1,0 +1,12 @@
+// Steam rich presence updates when screen, run phase, or character changes.
+import { useEffect } from "react";
+import type { CharacterId } from "@/lib/game-data";
+import { getSteamRichPresenceLabel, type RunPhase } from "@/lib/routing";
+import { platform } from "@/lib/platform";
+import type { Screen } from "@/features/alchemy/types";
+
+export function useSteamRichPresence(screen: Screen, runPhase: RunPhase, characterId: CharacterId) {
+  useEffect(() => {
+    platform.steam.setRichPresence("steam_display", getSteamRichPresenceLabel(screen, runPhase, characterId));
+  }, [screen, runPhase, characterId]);
+}

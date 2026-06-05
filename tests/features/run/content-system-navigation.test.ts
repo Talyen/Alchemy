@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach, vi } from "vitest";
-import { createContentSystemNavigation } from "@/features/alchemy/run/content-system-navigation";
+import { createContentSystemNavigation } from "@/features/alchemy/run-setup/run/content-system-navigation";
 import { useRunSessionStore } from "@/features/alchemy/stores/run-session-store";
 import { resetScreenStores } from "@/features/alchemy/stores/screen-store";
 import { useRunStore } from "@/features/alchemy/stores/run-store";

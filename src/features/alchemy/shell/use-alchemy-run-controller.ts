@@ -1,17 +1,13 @@
 // Top-level alchemy controller composition hook.
 // Depends on run, battle, shop, navigation, talent, persistence-facing, and homestead state.
 // Used by App as the single UI-facing API while domain rules stay in smaller controllers.
-import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
-import { TimerGroup } from "@/lib/animation/game-timer";
-import { platform } from "@/lib/platform";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import type { TalentXP } from "@/lib/talents";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import type { CharacterId, DifficultyId, UnlockedTalents } from "@/lib/game-data";
-import { labyrinthModifiersToDifficulty } from "@/lib/content-systems/labyrinth/modifiers";
 import type { LabyrinthModifierKind } from "@/lib/content-systems/types";
 import { useRunAdapter, useTalentAdapter } from "@/features/alchemy/stores/run-store";
 import { useUiStore } from "@/features/alchemy/stores/ui-store";
-import { getSteamRichPresenceLabel } from "@/lib/routing";
 import {
   setActiveLabyrinthModifiers,
   setActiveLabyrinthRewardModifiers,
@@ -20,11 +16,12 @@ import { useBattleController } from "./use-battle-controller";
 import { useShopController } from "./use-shop-controller";
 import { useRunNavigation } from "./use-run-navigation";
 import { useLabyrinthController } from "./use-labyrinth-controller";
-import { CONSTANTS, type Screen } from "@/features/alchemy/types";
+import { createLabyrinthNodeRouting } from "./labyrinth-node-routing";
+import { useScreenNavigation } from "./use-screen-navigation";
+import { useSteamRichPresence } from "./use-steam-rich-presence";
 import type { ActiveRunData } from "@/lib/active-run-session";
 import { restoreActiveRunToStores, useActiveRunScreen } from "@/features/alchemy/stores/run-session-facade";
 import { readActiveRunStore } from "@/features/alchemy/stores/run-session-read";
-import { NAVIGATION_DELAY_MS } from "@/lib/game-constants";
 
 export function useAlchemyRunController({
   discoveredCardIds,
@@ -61,30 +58,7 @@ export function useAlchemyRunController({
   const talents = useTalentAdapter();
 
   const { screen, setScreen } = useActiveRunScreen();
-
-  // ============ Screen Navigation ============
-  const navTimer = useRef(new TimerGroup());
-  const pendingTransitionCommitRef = useRef<(() => void) | null>(null);
-
-  const commitPendingTransition = useCallback(() => {
-    const commit = pendingTransitionCommitRef.current;
-    pendingTransitionCommitRef.current = null;
-    commit?.();
-  }, []);
-
-  function navigateTo(nextScreen: Screen, onRenderedScreenCommit?: () => void) {
-    // Screen changes are delayed for transition pacing, and transition commits wait until
-    // the old rendered screen is about to unmount so it cannot flash with next-screen data.
-    navTimer.current.clearAll();
-    pendingTransitionCommitRef.current = onRenderedScreenCommit ?? null;
-    navTimer.current.setTimeout(() => {
-      if (nextScreen === screen) {
-        commitPendingTransition();
-        return;
-      }
-      setScreen(nextScreen);
-    }, NAVIGATION_DELAY_MS);
-  }
+  const { navigateTo, commitPendingTransition } = useScreenNavigation(screen, setScreen);
 
   // ============ Ref Wrappers ============
   const homesteadEffectsRef = useRef(homesteadEffects);
@@ -154,9 +128,7 @@ export function useAlchemyRunController({
     onBattleDefeatRef.current = nav.handleBattleDefeat;
   });
 
-  useEffect(() => {
-    platform.steam.setRichPresence("steam_display", getSteamRichPresenceLabel(screen, nav.runPhase, run.characterId));
-  }, [screen, nav.runPhase, run.characterId]);
+  useSteamRichPresence(screen, nav.runPhase, run.characterId);
 
   function clearPermanentData() {
     talents.clearPermanentData();
@@ -172,46 +144,15 @@ export function useAlchemyRunController({
     nav.beginLabyrinth();
   }
 
-  function enterLabyrinthNodeScreen(
-    screen: Screen,
-    init?: () => void,
-    battleModifiers?: LabyrinthModifierKind[],
-    rewardModifiers?: LabyrinthModifierKind[],
-  ) {
-    applyLabyrinthBattleModifiers(battleModifiers ?? []);
-    applyLabyrinthRewardModifiers(rewardModifiers ?? []);
-    init?.();
-    navigateTo(screen);
-  }
-
-  function handleLabyrinthNodeEnter(row: number, col: number): boolean {
-    return labyrinth.enterNode(row, col, {
-      onStartBattleWithModifiers: (enemyType, modifiers, rewardModifiers) => {
-        enterLabyrinthNodeScreen(
-          CONSTANTS.SCREENS.BATTLE,
-          () => {
-            battle.startBattle(undefined, undefined, enemyType, labyrinthModifiersToDifficulty(modifiers));
-          },
-          modifiers,
-          rewardModifiers,
-        );
-      },
-      onStartBossBattleWithModifiers: (modifiers, rewardModifiers) => {
-        enterLabyrinthNodeScreen(
-          CONSTANTS.SCREENS.BATTLE,
-          () => {
-            battle.startBossBattle(labyrinthModifiersToDifficulty(modifiers));
-          },
-          modifiers,
-          rewardModifiers,
-        );
-      },
-      onStartRest: () => enterLabyrinthNodeScreen(CONSTANTS.SCREENS.CAMPFIRE),
-      onStartMystery: () => enterLabyrinthNodeScreen(CONSTANTS.SCREENS.MYSTERY, () => nav.beginMysteryEvent()),
-      onStartShop: () => enterLabyrinthNodeScreen(CONSTANTS.SCREENS.SHOP, () => shop.initShop()),
-      onStartAlchemist: () => enterLabyrinthNodeScreen(CONSTANTS.SCREENS.ALCHEMIST, () => shop.initAlchemist()),
-    });
-  }
+  const { handleLabyrinthNodeEnter } = createLabyrinthNodeRouting({
+    applyLabyrinthBattleModifiers,
+    applyLabyrinthRewardModifiers,
+    navigateTo,
+    labyrinth,
+    battle,
+    nav,
+    shop,
+  });
 
   return {
     screen,

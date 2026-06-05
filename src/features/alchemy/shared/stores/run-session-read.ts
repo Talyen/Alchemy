@@ -1,13 +1,13 @@
-// Imperative active-run reads — pair with run-session-actions for writes.
-import { getActiveRunStore, getRunSessionStore, type RunSessionStoreState } from "./store-access";
+import { getRunProgressStore, getRunSessionStore } from "./store-access";
+import type { RunProgressStore } from "./run-progress-store-types";
+import type { RunSessionStore } from "./run-session-store-types";
 
-export type { RunSessionStoreState };
-
-export function readActiveRunStore(): RunSessionStoreState {
-  return getActiveRunStore();
+/** Imperative read of run progression fields (deck, gold, talents, initialized). */
+export function readActiveRunStore(): RunProgressStore {
+  return getRunProgressStore();
 }
 
-/** @deprecated Use {@link readActiveRunStore}. */
-export function readRunSessionStore(): RunSessionStoreState {
+/** Imperative read of transient session fields (shops, labyrinth, mystery). */
+export function readRunSessionStore(): RunSessionStore {
   return getRunSessionStore();
 }

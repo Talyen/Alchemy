@@ -1,8 +1,8 @@
-// Back-compat re-exports — implementation lives in active-run-store.ts.
+// Public exports for run progression store and controller adapters.
 export {
   useRunStore,
   useRunAdapter,
   useTalentAdapter,
   type RunStateController,
   type TalentStateController,
-} from "./active-run-store";
+} from "./run-progress-store";

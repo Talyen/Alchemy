@@ -63,12 +63,12 @@ describe("import boundaries", () => {
     expect(violations).toEqual([]);
   });
 
-  it("features code outside stores/ does not import run-session-store or active-run-store", () => {
+  it("features code outside stores/ does not import run-session-store or run-progress-store", () => {
     const violations: string[] = [];
     for (const file of walk(join(SRC, "features/alchemy")).map(rel)) {
       if (file.includes("features/alchemy/shared/stores/")) continue;
       const text = read(file);
-      if (/\bfrom\s+['"][^'"]*(?:run-session-store|active-run-store)/.test(text)) {
+      if (/\bfrom\s+['"][^'"]*(?:run-session-store|run-progress-store|navigation-store)/.test(text)) {
         violations.push(file);
       }
     }

@@ -23,10 +23,10 @@ import {
   type RewardState,
 } from "../navigation/reward-flow";
 import { getRandomPotionCard } from "../navigation/reward-gold";
-import { flushAlchemySaveNow } from "@/features/alchemy/storage";
+import { flushSaveAfterRunEnd } from "@/features/alchemy/stores/run-lifecycle-coordinator";
 import { applyRunDefeatTeardown, getPreviousDestination } from "../navigation/run-navigation-helpers";
 import { appendCardToRunWithDiscovery, appendTrinketToRunWithDiscovery } from "./deck-mutations";
-import type { ContentSystemNavigationApi } from "@/features/alchemy/run/content-system-navigation";
+import type { ContentSystemNavigationApi } from "@/features/alchemy/run-setup/run/content-system-navigation";
 import { getBossById, getBossEnemy } from "@/features/alchemy/config";
 import { CONSTANTS, type Destination, type Screen } from "../../shared/types";
 import type { RunStateController, TalentStateController } from "../../shared/stores/run-store";
@@ -251,7 +251,7 @@ export function createRunDestinationHandlers(deps: RunDestinationHandlerDeps) {
   function completeRunVictory(displayMaterials: MaterialInventory | null = null, onRenderedScreenCommit?: () => void) {
     deps.awardRunEndMaterials(displayMaterials);
     deps.talents.finalizeRunXP();
-    void flushAlchemySaveNow(null);
+    flushSaveAfterRunEnd();
     deps.setHasActiveBattle(false);
     setHasActiveRun(false);
     deps.navigateTo(CONSTANTS.SCREENS.RUN_VICTORY, onRenderedScreenCommit);

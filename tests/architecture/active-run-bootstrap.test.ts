@@ -9,10 +9,10 @@ function read(relPath: string): string {
 }
 
 describe("active run bootstrap", () => {
-  it("applies persisted currentScreen during store initialize", () => {
-    const source = read("src/features/alchemy/shared/stores/active-run-store.ts");
+  it("applies persisted currentScreen during cross-store initialize", () => {
+    const source = read("src/features/alchemy/shared/stores/run-store-sync.ts");
     expect(source).toContain("activeRun?.currentScreen");
-    expect(source).toContain("screen: activeRun.currentScreen");
+    expect(source).toContain("setScreen(activeRun.currentScreen");
   });
 
   it("restores active run before paint in the run controller", () => {

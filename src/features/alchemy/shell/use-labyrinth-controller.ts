@@ -16,7 +16,7 @@ import { useRunSessionLabyrinthSlice } from "@/features/alchemy/stores/run-sessi
 import { setActiveLabyrinthPendingNode, setLabyrinthMap } from "@/features/alchemy/stores/run-session-actions";
 import { readRunSessionStore } from "@/features/alchemy/stores/run-session-read";
 import type { Screen } from "@/features/alchemy/types";
-import type { LabyrinthNodePosition } from "@/features/alchemy/run/types";
+import type { LabyrinthNodePosition } from "@/lib/active-run-session";
 
 export type LabyrinthController = {
   labyrinthMap: LabyrinthMap;

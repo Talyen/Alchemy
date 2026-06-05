@@ -8,7 +8,7 @@ import { useBattleStore } from "../../shared/stores/battle-store";
 import { useBattlePresentationStore } from "../../shared/stores/battle-presentation-store";
 import { useRunStore } from "../../shared/stores/run-store";
 import { appendUnique } from "@/lib/utils";
-import { syncRunToBattleStart } from "../../shared/stores/run-session-facade";
+import { syncRunToBattleStart } from "../../shared/stores/run-lifecycle-coordinator";
 import type { RunStateController, TalentStateController } from "../../shared/stores/run-store";
 
 export type BattleInitDeps = {

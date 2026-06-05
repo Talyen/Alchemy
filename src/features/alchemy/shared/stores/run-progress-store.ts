@@ -1,4 +1,4 @@
-// Unified Zustand store: run progression, transient session UI, and current screen.
+// Zustand store for persisted run progression and talent state.
 import { useMemo } from "react";
 import { create } from "zustand";
 import { useShallow } from "zustand/react/shallow";
@@ -18,82 +18,41 @@ import {
   xpThresholdForPoints,
   type TalentXP,
 } from "@/lib/talents";
-import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
-import { createEmptyRewardState } from "@/features/alchemy/navigation/reward-flow";
-import { SHOP_REFRESHES, ALCHEMIST_REFRESHES } from "@/lib/game-constants";
-import type { RunStartSnapshot } from "@/features/alchemy/run/run-start";
+import type { RunStartSnapshot } from "@/features/alchemy/run-setup/run/run-start";
 import {
   createInitialRunState,
   createInitialTalentState,
   runFieldsFromSnapshot,
-} from "@/features/alchemy/run/run-state-init";
+  type RunStateFields,
+} from "@/features/alchemy/run-setup/run/run-state-init";
 import {
   selectRunController,
   selectTalentController,
   type RunStateController,
   type TalentStateController,
 } from "./run-store-selectors";
-import type { ActiveRunStore, RunSessionFields } from "./active-run-store-types";
-import type { RunStateFields } from "@/features/alchemy/run/run-state-init";
+import type { RunProgressStore } from "./run-progress-store-types";
+import { useRunSessionStore } from "./run-session-store";
 
-export type { ActiveRunStore, RunSessionFields } from "./active-run-store-types";
-
-type ActiveRunFieldKey = keyof RunStateFields | keyof RunSessionFields | "screen";
-import type { Screen } from "@/features/alchemy/types";
-import type { ShopState, AlchemistState } from "@/features/alchemy/shop/shop-state-init";
-
+export type { RunProgressStore } from "./run-progress-store-types";
 export type { RunStateController, TalentStateController };
 
-const emptyShop: ShopState = {
-  cards: [],
-  refreshesLeft: SHOP_REFRESHES,
-  removeUsed: false,
-  firstPurchaseUsed: false,
-};
-const emptyAlchemist: AlchemistState = {
-  potions: [],
-  refreshesLeft: ALCHEMIST_REFRESHES,
-  mixUsed: false,
-  firstPurchaseUsed: false,
-};
+type RunProgressFieldKey = keyof RunStateFields;
 
-function createInitialSessionState(): RunSessionFields {
-  return {
-    hasActiveRun: false,
-    activeLabyrinthModifiers: [],
-    activeLabyrinthRewardModifiers: [],
-    activeLabyrinthPendingNode: null,
-    rewardState: createEmptyRewardState(),
-    companionRewardCards: null,
-    runEndMaterials: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 },
-    runEndTalentXP: {},
-    corruptionResult: null,
-    pendingCharacterId: null,
-    pendingContentSystemType: "campaign",
-    labyrinthMap: generateLabyrinthMap(),
-    shopState: emptyShop,
-    alchemistState: emptyAlchemist,
-    mysteryEvent: null,
-    mysteryCardChoices: null,
-  };
-}
-
-export const useActiveRunStore = create<ActiveRunStore>()((set) => {
+export const useRunStore = create<RunProgressStore>()((set) => {
   const setField =
-    <K extends ActiveRunFieldKey>(key: K) =>
-    (action: ActiveRunStore[K] | ((prev: ActiveRunStore[K]) => ActiveRunStore[K])) =>
+    <K extends RunProgressFieldKey>(key: K) =>
+    (action: RunProgressStore[K] | ((prev: RunProgressStore[K]) => RunProgressStore[K])) =>
       set((s) => ({
         [key]:
-          typeof action === "function" ? (action as (prev: ActiveRunStore[K]) => ActiveRunStore[K])(s[key]) : action,
+          typeof action === "function"
+            ? (action as (prev: RunProgressStore[K]) => RunProgressStore[K])(s[key])
+            : action,
       }));
 
   return {
     ...createInitialRunState(null),
     ...createInitialTalentState({}, {}),
-    ...createInitialSessionState(),
-    screen: "menu" as Screen,
-
-    setScreen: setField("screen"),
 
     setRunDeck: setField("runDeck"),
     setRunGold: setField("runGold"),
@@ -107,32 +66,6 @@ export const useActiveRunStore = create<ActiveRunStore>()((set) => {
     setEncounteredRunEnemyIds: setField("encounteredRunEnemyIds"),
     setSelectedDifficulty: setField("selectedDifficulty"),
     setContentSystemType: setField("contentSystemType"),
-
-    setHasActiveRun: (active) => set({ hasActiveRun: active }),
-    setActiveLabyrinthModifiers: (modifiers) => set({ activeLabyrinthModifiers: modifiers }),
-    setActiveLabyrinthRewardModifiers: (modifiers) => set({ activeLabyrinthRewardModifiers: modifiers }),
-    setActiveLabyrinthPendingNode: (node) => set({ activeLabyrinthPendingNode: node }),
-    setRewardState: setField("rewardState"),
-    setCompanionRewardCards: (cards) => set({ companionRewardCards: cards }),
-    setRunEndMaterials: (materials) => set({ runEndMaterials: materials }),
-    setRunEndTalentXP: (xp) => set({ runEndTalentXP: xp }),
-    setCorruptionResult: (result) => set({ corruptionResult: result }),
-    setPendingCharacterId: (id) => set({ pendingCharacterId: id }),
-    setPendingContentSystemType: (type) => set({ pendingContentSystemType: type }),
-    setLabyrinthMap: setField("labyrinthMap"),
-    setShopState: setField("shopState"),
-    setAlchemistState: setField("alchemistState"),
-    setMysteryEvent: (event) => set({ mysteryEvent: event }),
-    setMysteryCardChoices: (choices) =>
-      set((s) => ({
-        mysteryCardChoices: typeof choices === "function" ? choices(s.mysteryCardChoices) : choices,
-      })),
-
-    clearTransientSession: () =>
-      set({
-        ...createInitialSessionState(),
-        pendingContentSystemType: "campaign",
-      }),
 
     setCharacter: (selectedId) => set({ characterId: selectedId }),
 
@@ -199,16 +132,17 @@ export const useActiveRunStore = create<ActiveRunStore>()((set) => {
     finalizeRunXP: () =>
       set((s) => {
         if (Object.keys(s.runTalentXP).length === 0) {
-          return { runEndTalentXP: {} };
+          useRunSessionStore.getState().setRunEndTalentXP({});
+          return {};
         }
 
         const multiplier = getDifficultyXPMultiplier(s.selectedDifficulty);
         const runEndTalentXP = computeRunEndTalentXPSnapshot(s.runTalentXP, multiplier);
+        useRunSessionStore.getState().setRunEndTalentXP(runEndTalentXP);
 
         return {
           talentXP: mergeRunTalentXPIntoPermanent(s.runTalentXP, s.talentXP, multiplier),
           runTalentXP: {},
-          runEndTalentXP,
         };
       }),
 
@@ -217,28 +151,22 @@ export const useActiveRunStore = create<ActiveRunStore>()((set) => {
         ...createInitialRunState(activeRun, fallbackCharacterId),
         ...createInitialTalentState(talentXP, unlockedTalents),
         initialized: true,
-        ...(activeRun?.currentScreen ? { screen: activeRun.currentScreen as Screen } : {}),
       });
     },
 
     hydrateFromSnapshot: (snapshot: RunStartSnapshot) => {
-      set({ ...runFieldsFromSnapshot(snapshot), runTalentXP: {}, runEndTalentXP: {} });
+      useRunSessionStore.getState().setRunEndTalentXP({});
+      set({ ...runFieldsFromSnapshot(snapshot), runTalentXP: {} });
     },
   };
 });
 
-/** @deprecated Alias for {@link useActiveRunStore}. */
-export const useRunStore = useActiveRunStore;
-
-/** @deprecated Alias for {@link useActiveRunStore}. */
-export const useRunSessionStore = useActiveRunStore;
-
 export function useRunAdapter(): RunStateController {
-  return useActiveRunStore(useShallow(selectRunController));
+  return useRunStore(useShallow(selectRunController));
 }
 
 export function useTalentAdapter(): TalentStateController {
-  const base = useActiveRunStore(useShallow(selectTalentController));
+  const base = useRunStore(useShallow(selectTalentController));
   const talentEffects = useMemo(() => computeTalentEffects(base.unlockedTalents), [base.unlockedTalents]);
   return useMemo(() => ({ ...base, talentEffects }), [base, talentEffects]);
 }

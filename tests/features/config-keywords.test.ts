@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { keywordAliases, keywordPattern } from "@/features/alchemy/config/keywords";
+import { keywordAliases, keywordPattern } from "@/features/alchemy/shared/config/keywords";
 
 describe("keywordAliases", () => {
   it("every alias has a match string and keywordId", () => {

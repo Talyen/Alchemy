@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { applyAlchemistPotion, applyRewardSelection } from "@/features/alchemy/run/run-destination-handlers";
+import { applyAlchemistPotion, applyRewardSelection } from "@/features/alchemy/run-loop/run/run-destination-handlers";
 import * as rewardGold from "@/features/alchemy/navigation/reward-gold";
 import type { BattleCard } from "@/lib/game-data";
 

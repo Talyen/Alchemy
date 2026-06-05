@@ -1,7 +1,6 @@
-// Facade over run, battle, and session stores — single entry for sync, snapshot, restore, and teardown.
+// Facade over run, session, navigation, and battle stores — sync, snapshot, restore, and teardown.
 import { useShallow } from "zustand/react/shallow";
 import type { UnlockedTalents } from "@/lib/game-data";
-import { getBattleStartPlayerHealth } from "@/lib/battle";
 import {
   buildActiveRunSnapshot,
   restoreActiveRun,
@@ -12,8 +11,10 @@ import type { Screen } from "@/lib/routing";
 import type { TalentXP } from "@/lib/talents";
 import { getRunSession } from "./run-session-model";
 import type { Destination } from "../types";
-import { useActiveRunStore } from "./active-run-store";
+import { useRunStore } from "./run-progress-store";
+import { useNavigationStore } from "./navigation-store";
 import { useBattleStore } from "./battle-store";
+import { initializeActiveRunStores } from "./run-store-sync";
 import {
   applyDestinationChoices as applyDestinationChoicesToSession,
   setActiveLabyrinthModifiers,
@@ -36,42 +37,30 @@ export {
   useRunSessionTransientSlice,
 } from "./run-session-model";
 export { setActiveLabyrinthModifiers, setActiveLabyrinthRewardModifiers } from "./run-session-actions";
+export {
+  flushPersistedSave,
+  flushSaveAfterRunEnd,
+  syncBattleToRun,
+  syncRunToBattleStart,
+  teardownRun,
+} from "./run-lifecycle-coordinator";
 
-/** Current screen and setter (Phase 4 — owned by active-run-store). */
+/** Current screen and setter (owned by navigation-store). */
 export function useActiveRunScreen() {
-  return useActiveRunStore(useShallow((s) => ({ screen: s.screen, setScreen: s.setScreen })));
+  return useNavigationStore(useShallow((s) => ({ screen: s.screen, setScreen: s.setScreen })));
 }
 
 /** Subscribe to navigation screen only (autosave, routing). */
 export function useActiveRunScreenValue(): Screen {
-  return useActiveRunStore((s) => s.screen);
+  return useNavigationStore((s) => s.screen);
 }
 
 /** Map-layer gold plus in-combat gold (e.g. victory totals). */
 export function getCombinedRunGold(runGold?: number, battleGold?: number): number {
-  const run = runGold ?? useActiveRunStore.getState().runGold;
+  const run = runGold ?? useRunStore.getState().runGold;
   const battle = battleGold ?? useBattleStore.getState().battleState.gold;
   return run + battle;
 }
-
-/** Clamp run HP for battle entry and persist to the run store before creating BattleState. */
-export function syncRunToBattleStart(playerHealth?: number): number {
-  const run = useActiveRunStore.getState();
-  const startingHealth =
-    playerHealth ?? getBattleStartPlayerHealth(run.runPlayerHealth, run.runMaxHealth, run.runTrinkets);
-  run.setRunPlayerHealth(startingHealth);
-  return startingHealth;
-}
-
-/** Persist combat HP to the run store after victory or when leaving battle. */
-export function syncBattleToRun(options?: { playerHealth?: number }): void {
-  const battle = useBattleStore.getState().battleState;
-  const health = options?.playerHealth ?? battle.playerHealth;
-  useActiveRunStore.getState().setRunPlayerHealth(health);
-}
-
-/** Clear active combat and transient run UI stores. */
-export { resetActiveRunStores as teardownRun } from "./reset";
 
 /** Current lifecycle phase from live stores and the active screen. */
 export function getCurrentRunPhase(screen?: Screen) {
@@ -102,14 +91,14 @@ export function buildActiveRunSnapshotFromStores(screen?: Screen): ActiveRunData
     activeLabyrinthModifiers: session.activeLabyrinthModifiers,
     activeLabyrinthRewardModifiers: session.activeLabyrinthRewardModifiers,
     runTalentXP: run.runTalentXP,
-    currentScreen: screen ?? useActiveRunStore.getState().screen,
+    currentScreen: screen ?? useNavigationStore.getState().screen,
     destinationChoices: session.rewardState.destinations,
   });
 }
 
 function createDefaultHydrationTargets(): ActiveRunHydrationTargets {
   return {
-    runStore: useActiveRunStore.getState(),
+    runStore: { initialize: initializeActiveRunStores },
     battleStore: useBattleStore.getState(),
     screenStore: {
       setHasActiveRun,

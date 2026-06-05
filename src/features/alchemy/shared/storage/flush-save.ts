@@ -3,7 +3,7 @@ import { CURRENT_CONTENT_VERSION, CURRENT_GAME_BUILD_VERSION, CURRENT_SAVE_SCHEM
 import { useAppStore } from "@/features/alchemy/stores/app-store";
 import { useHomesteadStore } from "@/features/alchemy/stores/homestead-store";
 import { useRunStore } from "@/features/alchemy/stores/run-store";
-import type { ActiveRunData } from "@/features/alchemy/run/types";
+import type { ActiveRunData } from "@/lib/active-run-session";
 import type { SaveData } from "./types";
 import { saveAlchemySaveData } from "./io";
 

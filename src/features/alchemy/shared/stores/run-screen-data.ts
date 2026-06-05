@@ -10,7 +10,7 @@ import type { RewardState } from "@/features/alchemy/navigation/reward-flow";
 import type { ShopState, AlchemistState } from "@/features/alchemy/shop/shop-state-init";
 import type { TalentXP } from "@/lib/talents";
 import type { RunSession } from "./run-session-model";
-import type { RunStateFields } from "@/features/alchemy/run/run-state-init";
+import type { RunStateFields } from "@/features/alchemy/run-setup/run/run-state-init";
 
 export type RunScreenData = {
   phase: RunPhase;

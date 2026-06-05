@@ -7,7 +7,7 @@ import type { BattleCard } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
 import { cardArtImageClass, cardSurfaceClass } from "../config";
-import { useCardDescriptionContext } from "@/features/alchemy/homestead-context";
+import { useCardDescriptionContext } from "@/features/alchemy/meta/homestead-context";
 import { getEffectiveCardDescriptionLines, type CardDescriptionContext } from "../utils/card-description";
 import { CardTitle, getCardDisplayTitle } from "./card-description-ui";
 import { DetailPopup } from "./card-popup";

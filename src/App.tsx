@@ -27,11 +27,11 @@ import { useRenderedScreenTransition } from "@/app/use-rendered-screen-transitio
 import { RenderAlchemyScreen } from "@/app/render-alchemy-screen";
 import { StartupLoadingScreen } from "@/app/startup-loading-screen";
 import { UnsupportedSaveVersionScreen } from "@/app/unsupported-save-version-screen";
-import { useVirtualResolution } from "@/features/alchemy/hooks";
+import { useVirtualResolution } from "@/features/alchemy/shared/hooks";
 import { GameMenu } from "@/features/alchemy/ui/shared-ui";
-import { useAlchemyRunController } from "@/features/alchemy/use-alchemy-run-controller";
+import { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";
 import { useHomesteadStore } from "@/features/alchemy/stores/homestead-store";
-import { HomesteadProvider } from "@/features/alchemy/homestead-context";
+import { HomesteadProvider } from "@/features/alchemy/meta/homestead-context";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { BackgroundParticles } from "@/features/alchemy/ui/background-particles";
 import { platform } from "@/lib/platform";

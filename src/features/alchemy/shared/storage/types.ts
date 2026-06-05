@@ -3,7 +3,7 @@
 import type { TalentXP } from "@/lib/talents";
 import type { BuildingId, FarmId, MaterialInventory, ResearchId } from "@/lib/homestead/types";
 import type { CompanionId, CharacterId, DifficultyId, UnlockedTalents } from "@/lib/game-data";
-import type { ActiveRunData } from "@/features/alchemy/run/types";
+import type { ActiveRunData } from "@/lib/active-run-session";
 import type { AspectRatioOption, DisplayMode, UiScale } from "../types";
 
 export type SaveData = {

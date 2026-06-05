@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { saveAlchemySaveData, type SaveData } from "@/features/alchemy/storage";
-import type { ActiveRunData } from "@/features/alchemy/run/types";
+import type { ActiveRunData } from "@/lib/active-run-session";
 import { useAppStore } from "@/features/alchemy/stores/app-store";
 import { useHomesteadStore } from "@/features/alchemy/stores/homestead-store";
 import type { TalentXP } from "@/lib/talents";

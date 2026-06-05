@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach, vi } from "vitest";
-import { createRunVictoryHandlers } from "@/features/alchemy/run/run-victory-handlers";
+import { createRunVictoryHandlers } from "@/features/alchemy/run-loop/run/run-victory-handlers";
 import { useBattleStore } from "@/features/alchemy/stores/battle-store";
 import { useHomesteadStore } from "@/features/alchemy/stores/homestead-store";
 import { useRunStore } from "@/features/alchemy/stores/run-store";

@@ -6,7 +6,7 @@ import { useEffect, useCallback, useRef, useMemo } from "react";
 import { TimerGroup } from "@/lib/animation/game-timer";
 import { useShallow } from "zustand/react/shallow";
 import { useRunAdapter, useTalentAdapter } from "@/features/alchemy/stores/run-store";
-import { teardownRun } from "@/features/alchemy/stores/run-session-facade";
+import { teardownRun } from "@/features/alchemy/stores/run-lifecycle-coordinator";
 import { useAppStore } from "@/features/alchemy/stores/app-store";
 import { useBattleStore } from "@/features/alchemy/stores/battle-store";
 import { useBattlePresentationStore } from "@/features/alchemy/stores/battle-presentation-store";
@@ -19,11 +19,11 @@ import { useMysteryFlow } from "@/features/alchemy/navigation/use-mystery-flow";
 import { useUiStore } from "@/features/alchemy/stores/ui-store";
 import { useRunNavigationSession } from "@/features/alchemy/navigation/run-navigation-session";
 import { applyCorruptionToDeck } from "@/features/alchemy/navigation/run-navigation-corruption";
-import { useActiveRunSnapshot } from "@/features/alchemy/run/use-active-run-snapshot";
-import { createRunVictoryHandlers } from "@/features/alchemy/run/run-victory-handlers";
-import { createContentSystemNavigation } from "@/features/alchemy/run/content-system-navigation";
-import { createRunDestinationHandlers } from "@/features/alchemy/run/run-destination-handlers";
-import type { DestinationOptionsInput } from "@/features/alchemy/run/types";
+import { useActiveRunSnapshot } from "@/features/alchemy/run-loop/run/use-active-run-snapshot";
+import { createRunVictoryHandlers } from "@/features/alchemy/run-loop/run/run-victory-handlers";
+import { createContentSystemNavigation } from "@/features/alchemy/run-setup/run/content-system-navigation";
+import { createRunDestinationHandlers } from "@/features/alchemy/run-loop/run/run-destination-handlers";
+import type { DestinationOptionsInput } from "@/lib/active-run-session";
 
 export function useRunNavigation({
   screen,

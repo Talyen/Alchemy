@@ -5,7 +5,7 @@ import { useRef } from "react";
 import { getOfferableCardPool, getStandardPotionPool, type BattleCard } from "@/lib/game-data";
 import { computeTrinketManifest } from "@/lib/trinkets";
 import { appendUnique } from "@/lib/utils";
-import { appendCardToRunWithDiscovery } from "@/features/alchemy/run/deck-mutations";
+import { appendCardToRunWithDiscovery } from "@/features/alchemy/run-loop/run/deck-mutations";
 import { refreshOfferings, spendRunGold } from "@/features/alchemy/shop-transactions";
 import { applyMixToDeck, tryCreateMixedPotion } from "@/lib/alchemist";
 import {

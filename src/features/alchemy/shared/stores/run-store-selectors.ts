@@ -1,6 +1,6 @@
 // Pure selectors for run-store controller adapters (React hooks and tests).
 import type { TalentEffectManifest } from "@/lib/game-data";
-import type { RunStore } from "@/features/alchemy/stores/run-store-types";
+import type { RunStore } from "./run-store-types";
 
 export function selectRunController(s: RunStore) {
   return {

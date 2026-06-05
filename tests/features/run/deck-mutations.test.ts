@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   appendCardToRunWithDiscovery,
   appendTrinketToRunWithDiscovery,
-} from "@/features/alchemy/run/deck-mutations";
+} from "@/features/alchemy/run-loop/run/deck-mutations";
 import type { BattleCard } from "@/lib/game-data";
 
 function makeCard(overrides: Partial<BattleCard> = {}): BattleCard {

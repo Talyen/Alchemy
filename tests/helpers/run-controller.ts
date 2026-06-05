@@ -4,7 +4,7 @@ import {
   selectRunController,
   selectTalentController,
   type TalentStateController,
-} from "@/features/alchemy/run/run-store-selectors";
+} from "@/features/alchemy/stores/run-store-selectors";
 import { computeTalentEffects } from "@/lib/game-data";
 
 export function makeRunController() {

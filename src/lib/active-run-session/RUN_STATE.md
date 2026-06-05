@@ -6,14 +6,14 @@ A single **run** spans several stores plus React screen state. Use the APIs belo
 
 | Concern | Owner | Notes |
 |---------|--------|--------|
-| Deck, gold, HP, acts, trinkets | `active-run-store` (run slice) | Persisted with meta save |
-| Rewards, shops, labyrinth map, mystery | `active-run-store` (session slice) | Transient per run |
-| Current `Screen` | `active-run-store.screen` | Set via `useActiveRunScreen()` / `setScreen` action |
+| Deck, gold, HP, acts, trinkets | `run-progress-store` (`useRunStore`) | Persisted with meta save |
+| Rewards, shops, labyrinth map, mystery | `run-session-store` (`useRunSessionStore`) | Transient per run |
+| Current `Screen` | `navigation-store` (`useNavigationStore`) | Set via `useActiveRunScreen()` / `setScreen` |
 | Combat snapshot | `battle-store` | Synced during battle |
 | Battle animations / display merge | `battle-presentation-store` | Not persisted |
 | Cross-store sync | `run-session-facade` | Battle start/end, teardown only |
 
-`useRunStore` and `useRunSessionStore` are aliases of `useActiveRunStore`. `screen-store.ts` resets transient session fields via `clearTransientSession()`.
+`useRunStore` and `useRunSessionStore` are separate Zustand stores. `screen-store.ts` resets transient session fields via `clearTransientSession()`. Bootstrap uses `initializeActiveRunStores()` in `run-store-sync.ts` to hydrate run progression and navigation screen together.
 
 ## Lifecycle (simplified)
 
@@ -56,8 +56,9 @@ Derived from the current **screen** and **`hasActiveBattle`** via `getRunPhase(s
 | Full read model | `getRunSession(screen)` / `useRunSession(screen)` | Need run + session + battle + phase together |
 | Narrow reads | `useRunSessionNavigationSlice`, `useRunSessionBattleContext`, `useRunSessionShopSlice`, `useRunSessionMysterySlice`, `useRunSessionLabyrinthSlice`, slice hooks + `useRunScreenData` | Subscribe only to fields a hook/screen needs |
 | Imperative reads | `readActiveRunStore()` / `readRunSessionStore()` | One-off `getState()` in handlers |
-| Writes | `run-session-actions.ts` | Session fields + `setScreen` on `active-run-store` |
-| Low-level | `getActiveRunStore()` | Only inside `run-session-actions` / `store-access` |
+| Writes | `run-session-actions.ts` | Session fields on `run-session-store` |
+| Navigation writes | `useActiveRunScreen()` / `navigation-store` | Screen routing only |
+| Low-level | `getRunProgressStore()` / `getRunSessionStore()` / `getNavigationStore()` | Only inside `run-session-actions` / `store-access` |
 
 **Feature usage:**
 
@@ -79,9 +80,10 @@ Derived from the current **screen** and **`hasActiveBattle`** via `getRunPhase(s
 
 Production code outside `features/alchemy/shared/stores/` must **not** import:
 
-- `useActiveRunStore` / `active-run-store.ts`
-- `useRunSessionStore` / `run-session-store.ts` (alias)
-- `getActiveRunStore` / `store-access.ts` (except `readActiveRunStore()` from `run-session-read.ts`)
+- `useRunStore` / `run-progress-store.ts`
+- `useRunSessionStore` / `run-session-store.ts`
+- `useNavigationStore` / `navigation-store.ts`
+- `getRunProgressStore` / `getRunSessionStore` / `getNavigationStore` / `store-access.ts` (except `readActiveRunStore()` / `readRunSessionStore()` from `run-session-read.ts`)
 
 Use **`run-session-actions`** for writes, **`readActiveRunStore()`** for imperative reads, and **facade hooks** (`useActiveRunScreen`, slice hooks) for React subscriptions. Unit tests may import store hooks directly.
 
@@ -97,19 +99,19 @@ Use **`run-session-actions`** for writes, **`readActiveRunStore()`** for imperat
 | Run loop | `features/alchemy/run-loop/` | Battle, navigation, shop; in-run screens; destination/victory handlers |
 | Shell | `features/alchemy/shell/` | Run/battle/shop/labyrinth controllers |
 
-Legacy import paths (`@/features/alchemy/stores/*`, `@/features/alchemy/run/*`, etc.) resolve via root shims and Vite aliases.
+Legacy import paths (`@/features/alchemy/stores/*`, `@/features/alchemy/navigation/*`, etc.) resolve via Vite/tsconfig aliases to `shared/stores/` and `run-loop/`.
 
 ## Screen navigation owner
 
 | Owner | Notes |
 |-------|--------|
-| `active-run-store.screen` | Single source of truth; hydrate from `ActiveRunData.currentScreen` on bootstrap |
+| `navigation-store.screen` | Single source of truth; hydrate from `ActiveRunData.currentScreen` via `initializeActiveRunStores` |
 | `useActiveRunScreen()` | Controller subscribes via `run-session-facade` |
 | `navigateTo` | Stays in `use-alchemy-run-controller` (timer + transition commit refs) |
 
-`getRunSession()` and `getRunPhase()` default to `active-run-store.screen` when no screen argument is passed.
+`getRunSession()` and `getRunPhase()` default to `navigation-store.screen` when no screen argument is passed.
 
-## Store layout (Phase 4 — implemented)
+## Store layout (split stores)
 
 ```mermaid
 flowchart LR
@@ -117,20 +119,22 @@ flowchart LR
     appStore[app-store]
     homesteadStore[homestead-store]
   end
-  subgraph activeRun [active-run-store]
-    runFields[run fields]
-    sessionFields[session fields]
-    screenField[screen]
+  subgraph runLayer [Run lifecycle]
+    runProgress[run-progress-store]
+    runSession[run-session-store]
+    navigation[navigation-store]
   end
   subgraph battle [Battle — separate]
     battleStore[battle-store]
     presentationStore[battle-presentation-store]
   end
-  meta --> activeRun
-  activeRun -->|enter battle| battleStore
-  battleStore -->|victory / leave| activeRun
+  meta --> runProgress
+  runProgress -->|enter battle| battleStore
+  battleStore -->|victory / leave| runProgress
+  runSession --> runProgress
+  navigation --> runSession
 ```
 
-`syncRunToBattleStart` / `syncBattleToRun` remain the only run↔battle field sync in `run-session-facade`.
+`syncRunToBattleStart` / `syncBattleToRun` / `teardownRun` / `flushSaveAfterRunEnd` live in `run-lifecycle-coordinator.ts` (re-exported from `run-session-facade` for compatibility).
 
 See `eslint.config.js` for enforced import boundaries (lib ↔ features, screens ↔ orchestration, session store access).

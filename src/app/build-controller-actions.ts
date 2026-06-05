@@ -1,6 +1,6 @@
 // Maps run controller API to grouped screen renderer action surfaces.
 import type { ControllerActions } from "@/app/controller-actions";
-import type { useAlchemyRunController } from "@/features/alchemy/use-alchemy-run-controller";
+import type { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";
 
 type RunController = ReturnType<typeof useAlchemyRunController>;
 

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { useShopController } from "@/features/alchemy/use-shop-controller";
+import { useShopController } from "@/features/alchemy/shell/use-shop-controller";
 import { useRunStore, type TalentStateController } from "@/features/alchemy/stores/run-store";
 import { makeRunController, makeTalentController as makeTalentControllerFromStore } from "../helpers/run-controller";
 import { useRunSessionStore } from "@/features/alchemy/stores/run-session-store";

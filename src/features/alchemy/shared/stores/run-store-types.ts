@@ -1,1 +1,1 @@
-export type { RunStore } from "./active-run-store-types";
+export type { RunStore } from "./run-progress-store-types";

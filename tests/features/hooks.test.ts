@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { resolveAutoAspectRatio } from "@/features/alchemy/hooks";
+import { resolveAutoAspectRatio } from "@/features/alchemy/shared/hooks";
 
 describe("resolveAutoAspectRatio", () => {
   it("returns 16:9 for 1920x1080", () => {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { getStartingDeck, type BattleCard } from "@/lib/game-data";
 import { MAX_PLAYER_HEALTH } from "@/lib/game-constants";
-import { createRunStartSnapshot } from "@/features/alchemy/run/run-start";
+import { createRunStartSnapshot } from "@/features/alchemy/run-setup/run/run-start";
 
 describe("createRunStartSnapshot", () => {
   it("creates a campaign snapshot with difficulty, start gold, and route reset", () => {

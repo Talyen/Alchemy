@@ -143,7 +143,7 @@ export default tseslint.config(
   // Active-run store — only the stores layer may import the merged store hook or store-access.
   {
     files: ["src/**/*.{ts,tsx}"],
-    ignores: ["src/features/alchemy/shared/stores/**", "src/features/alchemy/stores/active-run-store.ts"],
+    ignores: ["src/features/alchemy/shared/stores/**"],
     rules: {
       "no-restricted-imports": [
         "error",
@@ -151,8 +151,10 @@ export default tseslint.config(
           patterns: [
             {
               group: [
-                "**/active-run-store",
-                "@/features/alchemy/stores/active-run-store",
+                "**/run-progress-store",
+                "@/features/alchemy/stores/run-progress-store",
+                "**/navigation-store",
+                "@/features/alchemy/stores/navigation-store",
                 "**/run-session-store",
                 "@/features/alchemy/stores/run-session-store",
                 "**/stores/store-access",

@@ -3,7 +3,7 @@ import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { LABYRINTH_COLS } from "@/lib/content-systems/labyrinth/data";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
-import { useLabyrinthController } from "@/features/alchemy/use-labyrinth-controller";
+import { useLabyrinthController } from "@/features/alchemy/shell/use-labyrinth-controller";
 import { useRunSessionStore } from "@/features/alchemy/stores/run-session-store";
 import { resetScreenStores } from "@/features/alchemy/stores/screen-store";
 
