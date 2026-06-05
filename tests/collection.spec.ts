@@ -1,9 +1,9 @@
 import { expect, test } from "@playwright/test";
 import { MenuPage } from "./pages/menu-page";
-import { critical } from "./playwright-tags";
+import { critical, prepush } from "./playwright-tags";
 
 test.describe("Collection", critical, () => {
-  test("collection shows all three tabs with content and card inspection works", async ({ page }) => {
+  test("collection shows all three tabs with content and card inspection works", prepush, async ({ page }) => {
     const menu = new MenuPage(page);
     await menu.goto();
     await menu.openCollection();

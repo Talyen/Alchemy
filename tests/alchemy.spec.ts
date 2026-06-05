@@ -2,9 +2,9 @@ import { expect, test } from "@playwright/test";
 import { AEGIS_CARD, BLOCK_CARD, enableFastMode, failOnRuntimeErrors, makeHighDamageCard, startBattleWithDeck } from "./helpers";
 import { BattlePage } from "./pages/battle-page";
 import { RewardPage } from "./pages/reward-page";
-import { critical, smoke } from "./playwright-tags";
+import { critical, prepush, smoke } from "./playwright-tags";
 
-test.describe("App Boot", smoke, () => {
+test.describe("App Boot", { ...smoke, ...prepush }, () => {
   test("main menu renders without crashing on desktop", async ({ page }) => {
     const errors = failOnRuntimeErrors(page);
     await page.goto("/");

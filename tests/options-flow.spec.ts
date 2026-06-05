@@ -1,9 +1,9 @@
 import { expect, test } from "@playwright/test";
 import { MenuPage } from "./pages/menu-page";
-import { critical } from "./playwright-tags";
+import { critical, prepush } from "./playwright-tags";
 
 test.describe("Options Screen", critical, () => {
-  test("all option tabs are accessible and show correct content", async ({ page }) => {
+  test("all option tabs are accessible and show correct content", prepush, async ({ page }) => {
     const menu = new MenuPage(page);
     await menu.goto();
     await menu.openOptions();

@@ -76,7 +76,8 @@ npm test -- <path>       # Run a single test file (e.g. `npm test -- tests/lib/b
 npm run test:e2e         # Playwright tests
 npm run test:e2e:smoke   # Playwright boot smoke test
 npm run test:e2e:critical # Playwright critical flow subset
-npm run test:e2e:prepush  # Critical e2e on preview build (CI e2e job + pre-push hook)
+npm run test:e2e:prepush  # Fast @prepush e2e subset (parallel preview; pre-push hook)
+npm run test:e2e:prepush:full  # Full @critical on preview (matches CI e2e job)
 npm run test:e2e:preview  # Full Playwright suite against preview build (CI e2e-full)
 npm run test:e2e:ui      # Playwright UI mode
 npm run balance:sim      # Balance simulator report
@@ -97,7 +98,7 @@ npm run release:major    # major version bump + changelog + tag
 
 **Pre-PR (lighter than `check`):** `npm run lint:ci && npm test`
 
-**Git hooks (lefthook, via `npm run prepare`):** `pre-push` runs sequentially: `lint:ci`, `test`, `build`, then `test:e2e:prepush` (critical Playwright on preview — matches the CI `e2e` job). See [CONTRIBUTING.md](./CONTRIBUTING.md) for a change → test matrix.
+**Git hooks (lefthook, via `npm run prepare`):** `pre-push` runs sequentially: `lint:ci`, `test`, `build`, then `test:e2e:prepush` (~9 parallel `@prepush` tests). CI still runs full `@critical` via `test:e2e:prepush:full`. See [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 **Balance sim env vars** (see [README.md](./README.md)): `ALCHEMY_BALANCE_ITERATIONS`, `ALCHEMY_BALANCE_POLICY` (`random-playable`, `greedy-damage`, `defensive-random`).
 

@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { injectSaveState, openGameModeSelect, resumeCampaignRun, SAVE_KEY, seedRandom } from "./helpers";
-import { critical } from "./playwright-tags";
+import { critical, prepush } from "./playwright-tags";
 
 test.describe("Save Persistence Edge Cases", critical, () => {
   test("resume run restores exact state after reload", async ({ page }) => {
@@ -41,7 +41,7 @@ test.describe("Save Persistence Edge Cases", critical, () => {
     expect(savedAfter.runPlayerHealth).toBe(18);
   });
 
-  test("resume restores saved destination choices", async ({ page }) => {
+  test("resume restores saved destination choices", prepush, async ({ page }) => {
     await seedRandom(page, 42);
     await injectSaveState(page, {
       runPlayerHealth: 22,

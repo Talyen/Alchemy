@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { ShopPage } from "./pages/shop-page";
-import { critical } from "./playwright-tags";
+import { critical, prepush } from "./playwright-tags";
 
 test.describe("Merchant Shop", critical, () => {
   test.describe("with sufficient gold", () => {
@@ -8,7 +8,7 @@ test.describe("Merchant Shop", critical, () => {
       await new ShopPage(page).enterFromDestination(9999, "Merchant's Shop");
     });
 
-    test("buying a card deducts gold and marks as purchased", async ({ page }) => {
+    test("buying a card deducts gold and marks as purchased", prepush, async ({ page }) => {
       const shop = new ShopPage(page);
       await shop.stage.expectRunPhase("runLoop");
       const goldBefore = await shop.gold();

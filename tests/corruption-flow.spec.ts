@@ -1,10 +1,10 @@
 import { expect, test } from "@playwright/test";
 import { CorruptionPage } from "./pages/corruption-page";
 import { DestinationPage } from "./pages/destination-page";
-import { critical } from "./playwright-tags";
+import { critical, prepush } from "./playwright-tags";
 
 test.describe("Corruption Full Flow", critical, () => {
-  test("corruption destination shows altar screen with intro and leave works", async ({ page }) => {
+  test("corruption destination shows altar screen with intro and leave works", prepush, async ({ page }) => {
     const corruption = new CorruptionPage(page);
     await corruption.open();
     await corruption.stage.expectRunPhase("runLoop");

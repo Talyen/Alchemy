@@ -10,9 +10,9 @@ GitHub branch protection is not available on this repo, so **local hooks are the
 2. `npm run lint:ci` (format, ESLint, knip)
 3. `npm test` (Vitest)
 4. `npm run build`
-5. `npm run test:e2e:prepush` — same **@critical** Playwright suite as CI, against the **preview** build
+5. `npm run test:e2e:prepush` — fast **@prepush** subset (~9 tests, parallel preview build)
 
-Manual full gate (optional): `npm run check:push` (= `check` + critical e2e).
+Manual full gate (optional): `npm run check:push` (= `check` + prepush e2e). Full CI parity: `npm run test:e2e:prepush:full`.
 
 Install hooks once: `npm run prepare` (runs on `npm install`).
 
@@ -37,7 +37,8 @@ First-time Playwright: `npx playwright install chromium`.
 
 | Job | Local equivalent |
 |-----|------------------|
-| CI `e2e` | `npm run build && npm run test:e2e:prepush` |
+| CI `e2e` | `npm run build && npm run test:e2e:prepush:full` |
+| Pre-push hook | `npm run build && npm run test:e2e:prepush` |
 | CI `e2e-full` (nightly / full) | `npm run test:e2e:preview` |
 
 See [AGENTS.md](./AGENTS.md) for architecture and command reference.

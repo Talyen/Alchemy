@@ -2,17 +2,17 @@ import { expect, test } from "@playwright/test";
 import { enableFastMode, injectLabyrinthRun, makeCard, openGameModeSelect, SAVE_KEY, selectGameMode, startBattleWithDeck, startCampaignBattle } from "./helpers";
 import { BattlePage } from "./pages/battle-page";
 import { MenuPage } from "./pages/menu-page";
-import { critical } from "./playwright-tags";
+import { critical, prepush } from "./playwright-tags";
 
 test.describe("Menu", critical, () => {
-  test("main menu reports meta run phase", async ({ page }) => {
+  test("main menu reports meta run phase", prepush, async ({ page }) => {
     const menu = new MenuPage(page);
     await menu.goto();
     await menu.expectMainMenu();
     await menu.stage.expectRunPhase("meta");
   });
 
-  test("all menu buttons are visible on the main menu", async ({ page }) => {
+  test("all menu buttons are visible on the main menu", prepush, async ({ page }) => {
     await page.goto("/");
     await expect(page.getByRole("button", { name: "Play" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Collection" })).toBeVisible();
