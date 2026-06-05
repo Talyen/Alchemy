@@ -112,7 +112,12 @@
       "src/lib/game-data/index.ts",
       "src/lib/battle/index.ts",
       "src/lib/validation/index.ts",
-      "src/features/alchemy/stores/run-session-facade.ts",
+      "src/features/alchemy/shared/stores/run-session-facade.ts",
+      "src/features/alchemy/use-alchemy-run-controller.ts",
+      "src/features/alchemy/use-run-navigation.ts",
+      "src/features/alchemy/use-battle-controller.ts",
+      "src/features/alchemy/use-shop-controller.ts",
+      "src/features/alchemy/use-labyrinth-controller.ts",
       "scripts/*.mjs",
       "desktop/*.cjs"
     ],
@@ -126,7 +131,9 @@
       "start"
     ],
     "ignoreIssues": {
-      "tests/playwright-tags.ts": ["exports"]
+      "tests/playwright-tags.ts": ["exports"],
+      "src/features/alchemy/shared/stores/active-run-store.ts": ["exports", "duplicates"],
+      "src/features/alchemy/shared/stores/run-store-types.ts": ["exports"]
     },
     "ignoreDependencies": [
       "electron",

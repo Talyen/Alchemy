@@ -67,7 +67,6 @@ describe("import boundaries", () => {
     const violations: string[] = [];
     for (const file of walk(join(SRC, "features/alchemy")).map(rel)) {
       if (file.includes("features/alchemy/shared/stores/")) continue;
-      if (file.endsWith("features/alchemy/stores/active-run-store.ts")) continue;
       const text = read(file);
       if (/\bfrom\s+['"][^'"]*(?:run-session-store|active-run-store)/.test(text)) {
         violations.push(file);

@@ -4,11 +4,10 @@ import type { LabyrinthMap, LabyrinthModifierKind, ContentSystemId } from "@/lib
 import type { CorruptionResult } from "@/lib/corruption";
 import type { MysteryEvent } from "@/lib/mystery";
 import type { MaterialInventory } from "@/lib/homestead/types";
-import type { TalentXP } from "@/lib/talents";
 import type { LabyrinthNodePosition } from "@/features/alchemy/run/types";
 import type { RewardState } from "@/features/alchemy/navigation/reward-flow";
 import type { ShopState, AlchemistState } from "@/features/alchemy/shop/shop-state-init";
-import type { Destination, Screen } from "@/features/alchemy/types";
+import type { Destination } from "@/features/alchemy/types";
 import { getRunSessionStore } from "./store-access";
 
 export function setHasActiveRun(hasActiveRun: boolean) {
@@ -61,10 +60,6 @@ export function setRunEndMaterials(materials: MaterialInventory) {
   getRunSessionStore().setRunEndMaterials(materials);
 }
 
-export function setRunEndTalentXP(xp: TalentXP) {
-  getRunSessionStore().setRunEndTalentXP(xp);
-}
-
 export function setCorruptionResult(result: CorruptionResult | null) {
   getRunSessionStore().setCorruptionResult(result);
 }
@@ -79,10 +74,6 @@ export function setPendingContentSystemType(type: ContentSystemId) {
 
 export function setCompanionRewardCards(cards: BattleCard[] | null) {
   getRunSessionStore().setCompanionRewardCards(cards);
-}
-
-export function setScreen(screen: Screen | ((prev: Screen) => Screen)) {
-  getRunSessionStore().setScreen(screen);
 }
 
 /** Clears transient run-session fields during teardown (battle/run stores reset separately). */

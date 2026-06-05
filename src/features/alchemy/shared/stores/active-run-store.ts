@@ -36,7 +36,7 @@ import {
 import type { ActiveRunStore, RunSessionFields } from "./active-run-store-types";
 import type { RunStateFields } from "@/features/alchemy/run/run-state-init";
 
-export type { ActiveRunStore, RunSessionFields, RunStore } from "./active-run-store-types";
+export type { ActiveRunStore, RunSessionFields } from "./active-run-store-types";
 
 type ActiveRunFieldKey = keyof RunStateFields | keyof RunSessionFields | "screen";
 import type { Screen } from "@/features/alchemy/types";
@@ -241,8 +241,4 @@ export function useTalentAdapter(): TalentStateController {
   const base = useActiveRunStore(useShallow(selectTalentController));
   const talentEffects = useMemo(() => computeTalentEffects(base.unlockedTalents), [base.unlockedTalents]);
   return useMemo(() => ({ ...base, talentEffects }), [base, talentEffects]);
-}
-
-export function readActiveRunStore(): ActiveRunStore {
-  return useActiveRunStore.getState();
 }
