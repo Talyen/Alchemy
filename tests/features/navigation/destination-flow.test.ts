@@ -4,11 +4,11 @@ import {
   getRunAvailableDestinations,
   restoreOrCreateDestinationRewardState,
   sampleDestinationChoices,
-} from "@/features/alchemy/navigation/destination-flow";
-import { createEmptyRewardState } from "@/features/alchemy/navigation/reward-flow";
+} from "@/features/alchemy/run-loop/navigation/destination-flow";
+import { createEmptyRewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
 import { CORRUPTION_DESTINATION_WEIGHT, DEFAULT_DESTINATION_WEIGHT, PREVIOUS_DESTINATION_WEIGHT } from "@/lib/game-constants";
 
-vi.mock("@/features/alchemy/config", () => ({
+vi.mock("@/features/alchemy/shared/config", () => ({
   getAvailableDestinations: vi.fn(() => ["Normal Combat", "Elite Combat", "Merchant's Shop", "Alchemist's Shop", "Mystery", "Corruption", "Campfire"]),
 }));
 

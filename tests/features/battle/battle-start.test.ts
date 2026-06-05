@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getBattleStartPlayerHealth } from "@/features/alchemy/battle/battle-start";
+import { getBattleStartPlayerHealth } from "@/features/alchemy/run-loop/battle/battle-init";
 
 describe("getBattleStartPlayerHealth", () => {
   it("preserves current Health when no start-heal trinket is equipped", () => {

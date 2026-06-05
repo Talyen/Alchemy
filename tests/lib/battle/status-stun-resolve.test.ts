@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { resolveStunTrigger } from "@/lib/battle/status-stun-resolve";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { createTestBattleState } from "./test-state";

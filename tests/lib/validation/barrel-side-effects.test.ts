@@ -47,11 +47,11 @@ describe("@/lib/validation barrel", () => {
   });
 });
 
-describe("@/features/alchemy/screens barrel", () => {
+describe("@/features/alchemy/shared/screens barrel", () => {
   it(
     "exports known symbols",
     async () => {
-      const mod = await import("@/features/alchemy/screens");
+      const mod = await import("@/features/alchemy/shared/screens");
       expect(mod.BattleScreen).toBeDefined();
       expect(mod.MenuScreen).toBeDefined();
       expect(mod.HomesteadScreen).toBeDefined();
@@ -61,21 +61,21 @@ describe("@/features/alchemy/screens barrel", () => {
   );
 });
 
-describe("@/features/alchemy/utils barrel", () => {
+describe("@/features/alchemy/shared/utils barrel", () => {
   it("exports known symbols", async () => {
-    const mod = await import("@/features/alchemy/utils");
+    const mod = await import("@/features/alchemy/shared/utils");
     expect(mod.sampleItems).toBeTypeOf("function");
     expect(mod.tokenizeDescription).toBeTypeOf("function");
   });
 });
 
-describe("@/features/alchemy/storage barrel", () => {
+describe("@/features/alchemy/shared/storage barrel", () => {
   it("exports known symbols", async () => {
     // Storage module has module-level dependency on window for platform detection.
     const origWindow = (globalThis as Record<string, unknown>).window;
     (globalThis as Record<string, unknown>).window = {} as Window & typeof globalThis;
     try {
-      const mod = await import("@/features/alchemy/storage");
+      const mod = await import("@/features/alchemy/shared/storage");
       expect(mod.loadAlchemySaveState).toBeTypeOf("function");
       expect(mod.saveAlchemySaveData).toBeTypeOf("function");
       expect(mod.clearAlchemySaveData).toBeTypeOf("function");

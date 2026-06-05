@@ -1,7 +1,7 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import { animateDiscardedHand, animateDrawnHand } from "@/features/alchemy/battle/card-transfer-animations";
+import { animateDiscardedHand, animateDrawnHand } from "@/features/alchemy/run-loop/battle/card-transfer-animations";
 import type { BattleCard } from "@/lib/game-data";
-import type { CardTransferAnimationDeps } from "@/features/alchemy/battle/card-transfer-animations";
+import type { CardTransferAnimationDeps } from "@/features/alchemy/run-loop/battle/card-transfer-animations";
 
 function makeCard(uid: number, id = "slash"): BattleCard {
   return { id, title: id, descriptionLines: [""], art: "", cost: 1, effects: [], uid };

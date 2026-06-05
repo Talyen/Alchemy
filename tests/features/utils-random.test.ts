@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { sampleItems, resampleItems } from "@/features/alchemy/utils/random";
+import { sampleItems, resampleItems } from "@/features/alchemy/shared/utils/random";
 
 describe("sampleItems", () => {
   it("returns the requested number of items", () => {

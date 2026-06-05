@@ -2,17 +2,17 @@
 // Depends on run, battle, shop, navigation, talent, persistence-facing, and homestead state.
 // Used by App as the single UI-facing API while domain rules stay in smaller controllers.
 import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
-import type { BattleControllerBindings } from "./battle-controller-context";
+import type { BattleControllerBindings } from "./battle-bindings";
 import type { TalentXP } from "@/lib/talents";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import type { CharacterId, DifficultyId, UnlockedTalents } from "@/lib/game-data";
 import type { LabyrinthModifierKind } from "@/lib/content-systems/types";
-import { useRunAdapter, useTalentAdapter } from "@/features/alchemy/stores/run-store";
-import { useUiStore } from "@/features/alchemy/stores/ui-store";
+import { useRunAdapter, useTalentAdapter } from "@/features/alchemy/shared/stores/run-session-facade";
+import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import {
   setActiveLabyrinthModifiers,
   setActiveLabyrinthRewardModifiers,
-} from "@/features/alchemy/stores/run-session-facade";
+} from "@/features/alchemy/shared/stores/run-session-facade";
 import { useBattleController } from "./use-battle-controller";
 import { useShopController } from "./use-shop-controller";
 import { useRunNavigation } from "./use-run-navigation";
@@ -21,13 +21,10 @@ import { createLabyrinthNodeRouting } from "./labyrinth-node-routing";
 import { useScreenNavigation } from "./use-screen-navigation";
 import { useSteamRichPresence } from "./use-steam-rich-presence";
 import type { ActiveRunData } from "@/lib/active-run-session";
-import { restoreActiveRunToStores, useActiveRunScreen } from "@/features/alchemy/stores/run-session-facade";
-import { readActiveRunStore } from "@/features/alchemy/stores/run-session-read";
+import { restoreRun, useActiveRunScreen } from "@/features/alchemy/shared/stores/run-session-facade";
+import { readActiveRunStore } from "@/features/alchemy/shared/stores/run-session-facade";
 
 export function useAlchemyRunController({
-  discoveredCardIds,
-  setDiscoveredCardIds,
-  setEncounteredEnemyIds,
   initialTalentXP,
   initialUnlockedTalents,
   initialActiveRun,
@@ -35,9 +32,6 @@ export function useAlchemyRunController({
   homesteadEffects,
   onMarkDifficultyCompleted,
 }: {
-  discoveredCardIds: string[];
-  setDiscoveredCardIds: React.Dispatch<React.SetStateAction<string[]>>;
-  setEncounteredEnemyIds: React.Dispatch<React.SetStateAction<string[]>>;
   initialTalentXP: TalentXP;
   initialUnlockedTalents: UnlockedTalents;
   initialActiveRun: ActiveRunData | null;
@@ -53,7 +47,7 @@ export function useAlchemyRunController({
   // different initial values (which shouldn't happen — these are the bootstrap values).
   useLayoutEffect(() => {
     if (readActiveRunStore().initialized) return;
-    restoreActiveRunToStores(initialActiveRun, initialTalentXP, initialUnlockedTalents);
+    restoreRun(initialActiveRun, initialTalentXP, initialUnlockedTalents);
   }, [initialActiveRun, initialTalentXP, initialUnlockedTalents]);
   const run = useRunAdapter();
   const talents = useTalentAdapter();
@@ -89,9 +83,6 @@ export function useAlchemyRunController({
   const battle = useBattleController({
     run,
     talents,
-    discoveredCardIds,
-    setDiscoveredCardIds,
-    setEncounteredEnemyIds,
     autoEndTurn,
     homesteadEffectsRef,
     screen,
@@ -100,11 +91,7 @@ export function useAlchemyRunController({
     onBattleDefeat: () => onBattleDefeatRef.current(),
   });
 
-  const shop = useShopController({
-    run,
-    talents,
-    setDiscoveredCardIds,
-  });
+  const shop = useShopController({ run, talents });
 
   const labyrinth = useLabyrinthController(screen);
 

@@ -1,7 +1,7 @@
 import type { RenderAlchemyScreenProps } from "@/app/render-screen-props";
-import type { RunScreenData } from "@/features/alchemy/stores/use-run-screen-data";
-import type { AppStoreActions, HomesteadStoreActions } from "@/features/alchemy/stores/store-actions";
-import type { AspectRatioOption, CollectionTab, DisplayMode, UiScale } from "@/features/alchemy/types";
+import type { RunScreenData } from "@/features/alchemy/shared/stores/use-run-screen-data";
+import type { AppStoreActions, HomesteadStoreActions } from "@/features/alchemy/shared/stores/store-actions";
+import type { AspectRatioOption, CollectionTab, DisplayMode, UiScale } from "@/features/alchemy/shared/types";
 
 export type ScreenRouteContext = RenderAlchemyScreenProps & {
   runScreenData: RunScreenData;

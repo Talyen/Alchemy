@@ -2,7 +2,7 @@
 import { labyrinthModifiersToDifficulty } from "@/lib/content-systems/labyrinth/modifiers";
 import type { LabyrinthModifierKind } from "@/lib/content-systems/types";
 import type { BattleCard, DifficultyModifier } from "@/lib/game-data";
-import { CONSTANTS, type Screen } from "@/features/alchemy/types";
+import { CONSTANTS, type Screen } from "@/features/alchemy/shared/types";
 
 type LabyrinthNodeRoutingDeps = {
   applyLabyrinthBattleModifiers: (modifiers: LabyrinthModifierKind[]) => void;

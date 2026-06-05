@@ -5,7 +5,7 @@ import { defaultBattleState } from "@/lib/battle";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { createEmptyTalentManifest } from "@/lib/game-data";
 import { useBattleController } from "@/features/alchemy/shell/use-battle-controller";
-import { resetScreenStores } from "@/features/alchemy/stores/screen-store";
+import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import { makeRunController, makeTalentController } from "../../helpers/run-controller";
 import {
   getBattleStoreView,
@@ -26,7 +26,7 @@ vi.mock("@/lib/audio", async (importOriginal) => {
 beforeEach(() => {
   resetRunProgressSlice();
   resetRunBattleSlice();
-  resetScreenStores();
+  resetTransientRunUi();
 });
 
 function renderBattleController() {
@@ -34,9 +34,6 @@ function renderBattleController() {
     useBattleController({
       run: makeRunController(),
       talents: makeTalentController(),
-      discoveredCardIds: [],
-      setDiscoveredCardIds: vi.fn(),
-      setEncounteredEnemyIds: vi.fn(),
       autoEndTurn: false,
       homesteadEffectsRef: { current: createEmptyTalentManifest() },
       screen: ROUTE_SCREENS.BATTLE,

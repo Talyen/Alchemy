@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { addForgeToPlayer, applyStunForgeTalent } from "@/lib/battle/status-forge";
 import { applyPlayerStatusEffect } from "@/lib/battle/status-player";
 import type { CombatTextEvent } from "@/lib/battle/types";
@@ -8,7 +8,7 @@ function makeTexts(): CombatTextEvent[] {
   return [];
 }
 
-describe("applyPlayerStatusEffect — forge integration", () => {
+describe("applyPlayerStatusEffect � forge integration", () => {
   it("applies forge burn burst when forge crosses threshold", () => {
     const state = createTestBattleState({
       playerStatuses: { ...createTestBattleState().playerStatuses, forge: 3 },

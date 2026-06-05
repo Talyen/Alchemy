@@ -3,7 +3,7 @@ import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { useRunNavigation } from "@/features/alchemy/shell/use-run-navigation";
-import { resetScreenStores } from "@/features/alchemy/stores/screen-store";
+import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import {
   getBattleStoreView,
   getNavigationStoreView,
@@ -19,7 +19,7 @@ vi.mock("@/lib/audio", () => ({
 beforeEach(() => {
   resetRunProgressSlice();
   resetRunBattleSlice();
-  resetScreenStores();
+  resetTransientRunUi();
   getNavigationStoreView().setScreen(ROUTE_SCREENS.MENU);
 });
 

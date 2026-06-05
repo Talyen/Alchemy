@@ -3,7 +3,7 @@
 // When shouldSkipStartupLoadingGate() is true (Playwright storageState alchemy-skip-loading-screen),
 // the loading screen is skipped so the menu appears immediately.
 import { useEffect, useState } from "react";
-import { shouldSkipStartupLoadingGate } from "@/features/alchemy/utils";
+import { shouldSkipStartupLoadingGate } from "@/features/alchemy/shared/utils";
 import {
   INITIAL_LOAD_MIN_DURATION_MS,
   INITIAL_LOAD_MAX_DURATION_MS,

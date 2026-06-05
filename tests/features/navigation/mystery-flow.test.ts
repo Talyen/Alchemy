@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import type { MysteryEffect } from "@/features/alchemy/mystery-events";
-import { applyMysteryEffect } from "@/features/alchemy/navigation/mystery-flow";
+import type { MysteryEffect } from "@/features/alchemy/run-loop/mystery-events";
+import { applyMysteryEffect } from "@/features/alchemy/run-loop/navigation/mystery-flow";
 
 const MYSTERY_EFFECT_KINDS: MysteryEffect["kind"][] = [
   "addCard",
@@ -24,8 +24,6 @@ function minimalContext() {
     setRunGold: vi.fn(),
     setRunPlayerHealth: vi.fn(),
     setRunTrinkets: vi.fn(),
-    setDiscoveredCardIds: vi.fn(),
-    setDiscoveredTrinketIds: vi.fn(),
     setMysteryCardChoices: vi.fn(),
     awardMysteryXP: vi.fn(),
     onAddMaterials: vi.fn(),

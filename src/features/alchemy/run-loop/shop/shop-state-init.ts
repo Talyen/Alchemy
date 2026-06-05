@@ -5,7 +5,7 @@ import {
   ALCHEMIST_POTIONS_OFFERED,
   ALCHEMIST_REFRESHES,
 } from "@/lib/game-constants";
-import { sampleItems } from "@/features/alchemy/utils";
+import { sampleItems } from "@/features/alchemy/shared/utils";
 
 export type ShopState = {
   cards: BattleCard[];

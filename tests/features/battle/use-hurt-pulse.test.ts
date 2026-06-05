@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { useHurtPulse } from "@/features/alchemy/ui/battle/use-hurt-pulse";
+import { useHurtPulse } from "@/features/alchemy/shared/ui/battle/use-hurt-pulse";
 import { HURT_FLASH_DURATION_MS, HURT_SPARK_DURATION_MS } from "@/lib/game-constants";
 
 const HURT_VFX_DURATION_MS = Math.max(HURT_FLASH_DURATION_MS, HURT_SPARK_DURATION_MS);

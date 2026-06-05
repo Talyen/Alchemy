@@ -3,7 +3,7 @@ import {
   routeDestinationChoice,
   type DestinationRouteHandlers,
 } from "@/features/alchemy/run-loop/run/run-destination-handlers";
-import { DESTINATIONS, type Destination } from "@/features/alchemy/types";
+import { DESTINATIONS, type Destination } from "@/features/alchemy/shared/types";
 
 function makeHandlers(): DestinationRouteHandlers {
   return {

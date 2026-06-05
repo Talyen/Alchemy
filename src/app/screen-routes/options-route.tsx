@@ -1,5 +1,5 @@
 import { platform } from "@/lib/platform";
-import { OptionsScreen } from "@/features/alchemy/screens";
+import { OptionsScreen } from "@/features/alchemy/shared/screens";
 import type { ScreenRouteContext } from "./types";
 
 export function buildOptionsScreen(ctx: ScreenRouteContext) {

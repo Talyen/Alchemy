@@ -1,12 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
-import { useAppStore } from "@/features/alchemy/stores/app-store";
-import type { SaveData } from "@/features/alchemy/storage/types";
+import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
+import type { SaveData } from "@/features/alchemy/shared/storage/types";
 
-vi.mock("@/features/alchemy/storage", () => ({
+vi.mock("@/features/alchemy/shared/storage", () => ({
   clearAlchemySaveData: vi.fn(),
 }));
 
-vi.mock("@/features/alchemy/storage/defaults", () => ({
+vi.mock("@/features/alchemy/shared/storage/defaults", () => ({
   defaultSaveData: {
     selectedAspectRatio: "auto",
     displayMode: "borderless-fullscreen",

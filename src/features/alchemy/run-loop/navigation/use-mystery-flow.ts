@@ -6,9 +6,8 @@ import { pickMysteryEvent, type MysteryChoice } from "@/lib/mystery";
 import { appendCardToRunWithDiscovery } from "../run/deck-mutations";
 import { applyMysteryEffect } from "./mystery-flow";
 import { useRunSessionMysterySlice } from "../../shared/stores/run-session-facade";
-import { setMysteryCardChoices, setMysteryEvent } from "../../shared/stores/run-session-actions";
-import { readActiveRunStore } from "../../shared/stores/run-session-read";
-import { useAppStore } from "../../shared/stores/app-store";
+import { setMysteryCardChoices, setMysteryEvent } from "../../shared/stores/run-session-facade";
+import { readActiveRunStore } from "../../shared/stores/run-session-facade";
 import { useHomesteadStore } from "../../shared/stores/homestead-store";
 import { applyMaterialFindBonus } from "@/lib/homestead/loot";
 
@@ -23,7 +22,6 @@ export function useMysteryFlow({ advanceToNextDestination }: { advanceToNextDest
 
   function handleMysteryChoice(choice: MysteryChoice) {
     const runStore = readActiveRunStore();
-    const appStore = useAppStore.getState();
     const homesteadStore = useHomesteadStore.getState();
 
     for (const effect of choice.effects) {
@@ -33,8 +31,6 @@ export function useMysteryFlow({ advanceToNextDestination }: { advanceToNextDest
         setRunGold: runStore.setRunGold,
         setRunPlayerHealth: runStore.setRunPlayerHealth,
         setRunTrinkets: runStore.setRunTrinkets,
-        setDiscoveredCardIds: appStore.setDiscoveredCardIds,
-        setDiscoveredTrinketIds: appStore.setDiscoveredTrinketIds,
         setMysteryCardChoices,
         awardMysteryXP: runStore.awardMysteryXP,
         onAddMaterials: (materials) =>
@@ -48,12 +44,7 @@ export function useMysteryFlow({ advanceToNextDestination }: { advanceToNextDest
   function handleMysteryChooseCard(cardId: string) {
     const card = cardLibrary.find((c) => c.id === cardId);
     if (card) {
-      const runStore = readActiveRunStore();
-      const appStore = useAppStore.getState();
-      appendCardToRunWithDiscovery(card, {
-        setRunDeck: runStore.setRunDeck,
-        setDiscoveredCardIds: appStore.setDiscoveredCardIds,
-      });
+      appendCardToRunWithDiscovery(card, readActiveRunStore().setRunDeck);
     }
     setMysteryCardChoices(null);
   }

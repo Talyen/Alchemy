@@ -6,7 +6,7 @@ import { useEffect } from "react";
 
 import { pileDiscardArt, pileDrawArt } from "@/lib/game-data";
 import { preloadImages } from "@/lib/image-preload";
-import type { Screen } from "@/features/alchemy/types";
+import type { Screen } from "@/features/alchemy/shared/types";
 
 type ScreenAssetPreloadOptions = {
   heroArt: string;

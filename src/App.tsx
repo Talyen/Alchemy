@@ -26,21 +26,20 @@ import { useInitialLoadReady } from "@/app/use-initial-load-ready";
 import { useRenderedScreenTransition } from "@/app/use-rendered-screen-transition";
 import { RenderAlchemyScreen } from "@/app/render-alchemy-screen";
 import { AppScreenChromeProvider } from "@/app/app-screen-chrome-context";
-import { BattleControllerProvider } from "@/features/alchemy/shell/battle-controller-context";
 import { StartupLoadingScreen } from "@/app/startup-loading-screen";
 import { UnsupportedSaveVersionScreen } from "@/app/unsupported-save-version-screen";
 import { useVirtualResolution } from "@/features/alchemy/shared/hooks";
-import { GameMenu } from "@/features/alchemy/ui/shared-ui";
+import { GameMenu } from "@/features/alchemy/shared/ui/shared-ui";
 import { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";
-import { useHomesteadStore } from "@/features/alchemy/stores/homestead-store";
+import { useHomesteadStore } from "@/features/alchemy/shared/stores/homestead-store";
 import { HomesteadProvider } from "@/features/alchemy/meta/homestead-context";
 import { ErrorBoundary } from "@/components/error-boundary";
-import { BackgroundParticles } from "@/features/alchemy/ui/background-particles";
+import { BackgroundParticles } from "@/features/alchemy/shared/ui/background-particles";
 import { platform } from "@/lib/platform";
-import { loadAlchemySaveState, type SaveLoadState } from "@/features/alchemy/storage";
-import { useAppStore } from "@/features/alchemy/stores/app-store";
-import { clearAllPersistentGameData } from "@/features/alchemy/stores/reset";
-import { isAlchemyDevBuild } from "@/features/alchemy/utils";
+import { loadAlchemySaveState, type SaveLoadState } from "@/features/alchemy/shared/storage";
+import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
+import { clearAllPersistentGameData } from "@/features/alchemy/shared/stores/reset";
+import { isAlchemyDevBuild } from "@/features/alchemy/shared/utils";
 
 const appStore = useAppStore;
 const homesteadStore = useHomesteadStore;
@@ -58,14 +57,6 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
   const muteInBackground = useAppStore((s) => s.muteInBackground);
   const autoEndTurn = useAppStore((s) => s.autoEndTurn);
   const discoveredCardIds = useAppStore((s) => s.discoveredCardIds);
-  const setDiscoveredCardIds = wrapStoreSetter(
-    () => appStore.getState().discoveredCardIds,
-    appStore.getState().setDiscoveredCardIds,
-  );
-  const setEncounteredEnemyIds = wrapStoreSetter(
-    () => appStore.getState().encounteredEnemyIds,
-    appStore.getState().setEncounteredEnemyIds,
-  );
   const setDiscoveredTrinketIds = wrapStoreSetter(
     () => appStore.getState().discoveredTrinketIds,
     appStore.getState().setDiscoveredTrinketIds,
@@ -94,9 +85,6 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
   }
 
   const run = useAlchemyRunController({
-    discoveredCardIds,
-    setDiscoveredCardIds,
-    setEncounteredEnemyIds,
     initialTalentXP: initialSave.talentXP,
     initialUnlockedTalents: initialSave.unlockedTalents,
     initialActiveRun: initialSave.activeRun,
@@ -169,8 +157,8 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
 
   function unlockAllDevMode() {
     if (!isAlchemyDevBuild()) return;
-    setDiscoveredCardIds(cardLibrary.map((card) => card.id));
-    setEncounteredEnemyIds(enemyBestiary.map((enemy) => enemy.id));
+    appStore.getState().setDiscoveredCardIds(cardLibrary.map((card) => card.id));
+    appStore.getState().setEncounteredEnemyIds(enemyBestiary.map((enemy) => enemy.id));
     setDiscoveredTrinketIds(trinketLibrary.map((trinket) => trinket.id));
     run.unlockAllTalents();
     homesteadStore.getState().setMaterials({ wood: 99, iron: 99, herbs: 99, food: 99, crystal: 99 });
@@ -223,15 +211,14 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
             hasAffordableHomestead,
           }}
         >
-          <BattleControllerProvider value={run.battleBindings}>
-            <RenderAlchemyScreen
-              screen={renderedScreen}
-              actions={buildControllerActions(run)}
-              onOpenBattleMenu={openBattleMenu}
-              onClearSaveData={clearSaveData}
-              onUnlockAllDevMode={unlockAllDevMode}
-            />
-          </BattleControllerProvider>
+          <RenderAlchemyScreen
+            screen={renderedScreen}
+            actions={buildControllerActions(run)}
+            battleBindings={run.battleBindings}
+            onOpenBattleMenu={openBattleMenu}
+            onClearSaveData={clearSaveData}
+            onUnlockAllDevMode={unlockAllDevMode}
+          />
         </AppScreenChromeProvider>
       </HomesteadProvider>
     </div>

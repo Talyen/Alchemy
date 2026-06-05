@@ -4,7 +4,7 @@ import { useState } from "react";
 import type { KeywordId } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 import { ShineBorder } from "@/components/ui/shine-border";
-import { getKeywordShineColors } from "@/features/alchemy/config";
+import { getKeywordShineColors } from "@/features/alchemy/shared/config";
 import { KeywordTag } from "../../shared/ui/keyword-tag";
 import { PressableMotion } from "../../shared/ui/pressable-motion";
 

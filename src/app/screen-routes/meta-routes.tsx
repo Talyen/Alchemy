@@ -8,7 +8,7 @@ import {
   HomesteadScreen,
   MenuScreen,
   TalentsScreen,
-} from "@/features/alchemy/screens";
+} from "@/features/alchemy/shared/screens";
 import type { ScreenRouteContext } from "./types";
 
 function MenuScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions">) {

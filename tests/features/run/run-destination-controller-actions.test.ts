@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { createRunDestinationHandlers } from "@/features/alchemy/run-loop/run/run-destination-handlers";
-import { resetScreenStores } from "@/features/alchemy/stores/screen-store";
-import { createEmptyRewardState } from "@/features/alchemy/navigation/reward-flow";
-import { CONSTANTS } from "@/features/alchemy/types";
+import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
+import { createEmptyRewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
+import { CONSTANTS } from "@/features/alchemy/shared/types";
 import { makeRunController, makeTalentController } from "../../helpers/run-controller";
 import { getRunSessionStoreView } from "../../helpers/run-domain-store-test";
 
 beforeEach(() => {
-  resetScreenStores();
+  resetTransientRunUi();
 });
 
 describe("run destination controller actions", () => {
@@ -21,8 +21,6 @@ describe("run destination controller actions", () => {
       navigateTo: () => {},
       setScreen: () => {},
       setHasActiveBattle: () => {},
-      setDiscoveredCardIds: () => {},
-      setDiscoveredTrinketIds: () => {},
       onInitShop: () => {},
       onInitAlchemist: () => {},
       onStartBattle: () => {},
@@ -56,8 +54,6 @@ describe("run destination controller actions", () => {
       navigateTo: () => {},
       setScreen: () => {},
       setHasActiveBattle: () => {},
-      setDiscoveredCardIds: () => {},
-      setDiscoveredTrinketIds: () => {},
       onInitShop: () => {},
       onInitAlchemist: () => {},
       onStartBattle: () => {},

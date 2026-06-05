@@ -13,7 +13,7 @@ export type {
   CardRect,
   CardTransfer,
   FloatingCombatText,
-} from "@/features/alchemy/battle/presentation-types";
+} from "@/features/alchemy/run-loop/battle/presentation-types";
 
 export type AspectRatioOption = "auto" | "16:9" | "16:10" | "21:9";
 

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { useErrorLogStore } from "@/features/alchemy/stores/error-log-store";
+import { useErrorLogStore } from "@/features/alchemy/shared/stores/error-log-store";
 import { PageLayout, ScreenHeader } from "../../shared/ui/shared-ui";
 
 export function ErrorLogViewer({ onClose }: { onClose: () => void }) {

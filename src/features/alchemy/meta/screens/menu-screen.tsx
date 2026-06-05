@@ -6,7 +6,7 @@ import { BookOpen, Cog, Swords, TreePine, WandSparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ShineBorder } from "@/components/ui/shine-border";
 import { CardFlip } from "../../shared/ui/card-flip";
-import { staticCardTransform } from "@/features/alchemy/config";
+import { staticCardTransform } from "@/features/alchemy/shared/config";
 import { clearTiltFromEvent, setTiltFromEvent } from "../../shared/utils";
 
 export function MenuScreen({

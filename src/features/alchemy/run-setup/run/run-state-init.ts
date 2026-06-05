@@ -1,7 +1,7 @@
 // Run store initial state and hydration from active-run saves or fresh-run snapshots.
 import { getStartingDeck, hydrateCard, type BattleCard, type CharacterId, type UnlockedTalents } from "@/lib/game-data";
 import { MAX_PLAYER_HEALTH } from "@/lib/game-constants";
-import { DESTINATIONS, type Destination } from "@/features/alchemy/types";
+import { DESTINATIONS, type Destination } from "@/features/alchemy/shared/types";
 import type { ActiveRunData } from "@/lib/active-run-session";
 import type { RunStartSnapshot } from "./run-start";
 import type { ContentSystemId } from "@/lib/content-systems/types";

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatEnemyAttackLines } from "@/features/alchemy/utils";
+import { formatEnemyAttackLines } from "@/features/alchemy/shared/utils";
 import { enemyBestiary } from "@/lib/game-data";
 import type { EnemyAttackEffect } from "@/lib/game-data";
 

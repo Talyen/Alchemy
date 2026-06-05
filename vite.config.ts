@@ -56,20 +56,9 @@ export default defineConfig(({ mode }) => ({
     },
   },
   resolve: {
-    alias: (() => {
-      const src = fileURLToPath(new URL("./src", import.meta.url));
-      const alchemy = `${src}/features/alchemy`;
-      return [
-        { find: /^@\/features\/alchemy\/stores\/(.*)$/, replacement: `${alchemy}/shared/stores/$1` },
-        { find: /^@\/features\/alchemy\/ui\/(.*)$/, replacement: `${alchemy}/shared/ui/$1` },
-        { find: /^@\/features\/alchemy\/storage\/(.*)$/, replacement: `${alchemy}/shared/storage/$1` },
-        { find: "@/features/alchemy/storage", replacement: `${alchemy}/shared/storage/index.ts` },
-        { find: /^@\/features\/alchemy\/battle\/(.*)$/, replacement: `${alchemy}/run-loop/battle/$1` },
-        { find: /^@\/features\/alchemy\/navigation\/(.*)$/, replacement: `${alchemy}/run-loop/navigation/$1` },
-        { find: /^@\/features\/alchemy\/shop\/(.*)$/, replacement: `${alchemy}/run-loop/shop/$1` },
-        { find: /^@\/(.*)$/, replacement: `${src}/$1` },
-      ];
-    })(),
+    alias: {
+      "@": fileURLToPath(new URL("./src", import.meta.url)),
+    },
   },
   test: {
     include: ["tests/**/*.test.ts", "tests/**/*.test.tsx"],
@@ -80,7 +69,7 @@ export default defineConfig(({ mode }) => ({
       exclude: [
         "src/**/types.ts",
         "src/**/assets.ts",
-        "src/features/alchemy/screens/**",
+        "src/features/alchemy/shared/screens/**",
         "src/components/**",
         "tests/**",
       ],

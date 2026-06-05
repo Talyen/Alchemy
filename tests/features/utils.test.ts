@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getHoverId, getPlayerStatusChips, getEnemyStatusChips, getBattleCardPlayTarget, sampleItems, tokenizeDescription, getCombatTextColorClass, getCombatTextIcon } from "@/features/alchemy/utils";
+import { getHoverId, getPlayerStatusChips, getEnemyStatusChips, getBattleCardPlayTarget, sampleItems, tokenizeDescription, getCombatTextColorClass, getCombatTextIcon } from "@/features/alchemy/shared/utils";
 import type { BattleState } from "@/lib/battle/types";
 
 function makeState(overrides: Partial<BattleState> = {}): BattleState {

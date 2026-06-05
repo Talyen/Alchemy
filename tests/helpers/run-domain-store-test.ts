@@ -6,12 +6,12 @@ import {
   getNavigationStoreView,
   getBattleStoreView,
   resetRunDomainStore,
-} from "@/features/alchemy/stores/run-domain-store";
+} from "@/features/alchemy/shared/stores/run-domain-store";
 import {
   createInitialProgressFields,
   createInitialSessionFields,
   createInitialBattleFields,
-} from "@/features/alchemy/stores/run-domain-types";
+} from "@/features/alchemy/shared/stores/run-domain-types";
 
 export {
   getRunProgressStoreView,

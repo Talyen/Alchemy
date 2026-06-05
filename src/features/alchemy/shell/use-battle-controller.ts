@@ -6,40 +6,40 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import type { BattleState } from "@/lib/battle";
-import { getPlayableHandCardKeys } from "@/features/alchemy/battle/playable-hand";
+import { getPlayableHandCardKeys } from "@/features/alchemy/run-loop/battle/playable-hand";
 import { logError } from "@/lib/error-logger";
-import type { CardRect, CardTransfer, Screen } from "@/features/alchemy/types";
+import type { CardRect, CardTransfer, Screen } from "@/features/alchemy/shared/types";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import { COMPANION_ATTACK_DELAY } from "@/lib/game-constants";
 import { TimerGroup } from "@/lib/animation/game-timer";
-import type { RunStateController, TalentStateController } from "@/features/alchemy/stores/run-store";
-import { applyCombatTextPortraitFeedback } from "@/features/alchemy/battle/battle-feedback";
-import { useBattleAutoEndTurn } from "@/features/alchemy/battle/use-battle-auto-end-turn";
-import { useRunDomainStore } from "@/features/alchemy/stores/run-store";
-import { useBattlePresentationStore } from "@/features/alchemy/stores/battle-presentation-store";
-import { useUiStore } from "@/features/alchemy/stores/ui-store";
-import { useRunSessionBattleContext } from "@/features/alchemy/stores/run-session-facade";
-import type { BattleScreenData } from "@/features/alchemy/screens";
-import { getBattleSessionStore } from "@/features/alchemy/battle/battle-store-access";
-import { createTransferCancelRegistry } from "@/features/alchemy/battle/transfer-lifecycle";
-import { defaultMeasureElementRect, defaultMeasureVisualCardRect } from "@/features/alchemy/battle/controller-utils";
+import type { RunStateController, TalentStateController } from "@/features/alchemy/shared/stores/run-session-facade";
+import { applyCombatTextPortraitFeedback } from "@/features/alchemy/run-loop/battle/battle-feedback";
+import { useBattleAutoEndTurn } from "@/features/alchemy/run-loop/battle/use-battle-auto-end-turn";
+import { useRunDomainStore } from "@/features/alchemy/shared/stores/run-session-facade";
+import { useBattlePresentationStore } from "@/features/alchemy/shared/stores/battle-presentation-store";
+import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
+import { useRunSessionBattleContext } from "@/features/alchemy/shared/stores/run-session-facade";
+import type { BattleScreenData } from "@/features/alchemy/shared/screens";
+import { getBattleSessionStore } from "@/features/alchemy/run-loop/battle/battle-session";
+import { createTransferCancelRegistry } from "@/features/alchemy/run-loop/battle/card-transfer-animations";
+import {
+  defaultMeasureElementRect,
+  defaultMeasureVisualCardRect,
+} from "@/features/alchemy/run-loop/battle/controller-utils";
 import {
   resolveCompanionFollowUpTexts,
   type TurnOrchestrationDeps,
-} from "@/features/alchemy/battle/turn-orchestration";
-import { createBattleSession } from "@/features/alchemy/battle/battle-session";
-import { createBattleTransferDeps } from "@/features/alchemy/battle/battle-transfer-deps";
-import { createBattleInit } from "@/features/alchemy/battle/battle-init";
-import { createBattleCardPlay } from "@/features/alchemy/battle/battle-card-play";
-import { createBattleEndTurnUi } from "@/features/alchemy/battle/battle-end-turn-ui";
-import { createBattleDevOutcomes } from "@/features/alchemy/battle/battle-dev-outcomes";
+} from "@/features/alchemy/run-loop/battle/turn-orchestration";
+import { createBattleSession } from "@/features/alchemy/run-loop/battle/battle-session";
+import { createBattleTransferDeps } from "@/features/alchemy/run-loop/battle/battle-transfer-deps";
+import { createBattleInit } from "@/features/alchemy/run-loop/battle/battle-init";
+import { createBattleCardPlay } from "@/features/alchemy/run-loop/battle/battle-card-play";
+import { createBattleEndTurnUi } from "@/features/alchemy/run-loop/battle/turn-orchestration";
+import { createBattleDevOutcomes } from "@/features/alchemy/run-loop/battle/battle-dev-outcomes";
 
 export function useBattleController({
   run,
   talents,
-  discoveredCardIds,
-  setDiscoveredCardIds,
-  setEncounteredEnemyIds,
   autoEndTurn,
   homesteadEffectsRef,
   screen,
@@ -51,9 +51,6 @@ export function useBattleController({
 }: {
   run: RunStateController;
   talents: TalentStateController;
-  discoveredCardIds: string[];
-  setDiscoveredCardIds: React.Dispatch<React.SetStateAction<string[]>>;
-  setEncounteredEnemyIds: React.Dispatch<React.SetStateAction<string[]>>;
   autoEndTurn: boolean;
   homesteadEffectsRef: React.MutableRefObject<HomesteadEffectManifest>;
   screen: Screen;
@@ -200,9 +197,7 @@ export function useBattleController({
   const { startBattle, startBossBattle, startBossById } = createBattleInit({
     run,
     talents,
-    discoveredCardIds,
     homesteadEffectsRef,
-    setEncounteredEnemyIds,
     resetBattleSession,
     setCardTransfers,
     setHiddenHandCardKeys,
@@ -312,7 +307,6 @@ export function useBattleController({
     battleSceneRef,
     setHoveredCardId,
     talents,
-    setDiscoveredCardIds,
     getDrawSequenceDeps,
     finishDrawSequence,
     runIfSessionActive,

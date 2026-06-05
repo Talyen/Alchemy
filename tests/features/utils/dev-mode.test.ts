@@ -1,5 +1,5 @@
 import { describe, expect, it, afterEach, vi, beforeEach } from "vitest";
-import { isAlchemyDevBuild, shouldSkipStartupLoadingGate } from "@/features/alchemy/utils/dev-mode";
+import { isAlchemyDevBuild, shouldSkipStartupLoadingGate } from "@/features/alchemy/shared/utils/dev-mode";
 
 const SKIP_KEY = "alchemy-skip-loading-screen";
 

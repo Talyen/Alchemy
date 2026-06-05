@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { MysteryChoice } from "@/features/alchemy/mystery-events";
+import type { MysteryChoice } from "@/features/alchemy/run-loop/mystery-events";
 import {
   choiceOffersCardSelection,
   choiceRequiresCardRemoval,

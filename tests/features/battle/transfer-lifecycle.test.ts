@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { createTransferCancelRegistry } from "@/features/alchemy/battle/transfer-lifecycle";
+import { createTransferCancelRegistry } from "@/features/alchemy/run-loop/battle/card-transfer-animations";
 
 describe("createTransferCancelRegistry", () => {
   it("unregisters callbacks so cancelAll skips them", () => {

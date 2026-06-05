@@ -3,13 +3,13 @@ import {
   executeEnemyPhase,
   resolveHasteSkipTurn,
   resolveNormalEnemyTurn,
-} from "@/features/alchemy/battle/turn-resolution-ui";
+} from "@/features/alchemy/run-loop/battle/turn-orchestration";
 import { defaultBattleState, endPlayerTurn } from "@/lib/battle";
-import type { HandDrawSequenceDeps } from "@/features/alchemy/battle/draw-sequence";
-import { runHandDrawSequence } from "@/features/alchemy/battle/draw-sequence";
+import type { HandDrawSequenceDeps } from "@/features/alchemy/run-loop/battle/draw-sequence";
+import { runHandDrawSequence } from "@/features/alchemy/run-loop/battle/draw-sequence";
 
-vi.mock("@/features/alchemy/battle/draw-sequence", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/features/alchemy/battle/draw-sequence")>();
+vi.mock("@/features/alchemy/run-loop/battle/draw-sequence", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/alchemy/run-loop/battle/draw-sequence")>();
   return { ...actual, runHandDrawSequence: vi.fn(actual.runHandDrawSequence) };
 });
 

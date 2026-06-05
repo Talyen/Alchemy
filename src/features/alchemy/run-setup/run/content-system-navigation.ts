@@ -6,6 +6,7 @@ import { appendUniqueMany } from "@/lib/utils";
 import { getDifficultyModifiers, type BattleCard, type CharacterId, type DifficultyId } from "@/lib/game-data";
 import { DEFAULT_BATTLE_ENEMY_TYPE } from "@/lib/game-constants";
 import type { ContentSystemId } from "@/lib/content-systems/types";
+import { useAppStore } from "../../shared/stores/app-store";
 import { useHomesteadStore } from "../../shared/stores/homestead-store";
 import { useUiStore } from "../../shared/stores/ui-store";
 import {
@@ -13,17 +14,17 @@ import {
   setPendingCharacterId,
   setPendingContentSystemType,
   setRewardState,
-} from "../../shared/stores/run-session-actions";
-import { readRunSessionStore } from "../../shared/stores/run-session-read";
-import { afterCampaignCharacterResolved } from "@/features/alchemy/navigation/run-navigation-helpers";
-import { createDestinationRewardState } from "@/features/alchemy/navigation/victory-flow";
-import { sampleDestinationChoices } from "@/features/alchemy/navigation/destination-flow";
-import { restoreOrCreateDestinationRewardState } from "@/features/alchemy/navigation/destination-flow";
-import { getPreviousDestination } from "@/features/alchemy/navigation/run-navigation-helpers";
+} from "../../shared/stores/run-session-facade";
+import { readRunSessionStore } from "../../shared/stores/run-session-facade";
+import { afterCampaignCharacterResolved } from "@/features/alchemy/run-loop/navigation/run-navigation-helpers";
+import { createDestinationRewardState } from "@/features/alchemy/run-loop/navigation/victory-flow";
+import { sampleDestinationChoices } from "@/features/alchemy/run-loop/navigation/destination-flow";
+import { restoreOrCreateDestinationRewardState } from "@/features/alchemy/run-loop/navigation/destination-flow";
+import { getPreviousDestination } from "@/features/alchemy/run-loop/navigation/run-navigation-helpers";
 import { createRunStartSnapshot, type RunStartSnapshot } from "./run-start";
-import { getBossEnemy } from "@/features/alchemy/config";
+import { getBossEnemy } from "@/features/alchemy/shared/config";
 import { CONSTANTS, type Destination, type Screen } from "../../shared/types";
-import type { RunStateController, TalentStateController } from "../../shared/stores/run-store";
+import type { RunStateController, TalentStateController } from "../../shared/stores/run-session-facade";
 import type { DestinationOptionsInput } from "@/lib/active-run-session";
 
 export type ContentSystemNavigationDeps = {
@@ -43,8 +44,6 @@ export type ContentSystemNavigationDeps = {
     modifiers?: ReturnType<typeof getDifficultyModifiers>,
   ) => void;
   getAvailableDestinations: (options?: DestinationOptionsInput) => Destination[];
-  setDiscoveredCardIds: React.Dispatch<React.SetStateAction<string[]>>;
-  setEncounteredEnemyIds: React.Dispatch<React.SetStateAction<string[]>>;
 };
 
 export function createContentSystemNavigation(deps: ContentSystemNavigationDeps) {
@@ -76,7 +75,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
       playGoldGain();
     }
     if (options.discoverStarterDeck || characterId === "wildcard") {
-      deps.setDiscoveredCardIds((current) =>
+      useAppStore.getState().setDiscoveredCardIds((current) =>
         appendUniqueMany(
           current,
           snapshot.freshDeck.map((c) => c.id),
@@ -84,7 +83,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
       );
     }
     if (options.resetEncounteredEnemies) {
-      deps.setEncounteredEnemyIds([]);
+      useAppStore.getState().setEncounteredEnemyIds([]);
     }
     useUiStore.getState().clearCardHover();
     return snapshot;

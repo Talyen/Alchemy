@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { BattleCardButton } from "../../shared/ui/card-button";
 import { getCardDisplayTitle } from "../../shared/ui/card-description-ui";
 import { ScreenHeader } from "../../shared/ui/shared-ui";
-import { collectionTileWidthClass } from "@/features/alchemy/config";
+import { collectionTileWidthClass } from "@/features/alchemy/shared/config";
 import { useInteractiveCard } from "../../shared/ui/use-interactive-card";
 
 function DraftedCardItem({ card, index }: { card: BattleCard; index: number }) {

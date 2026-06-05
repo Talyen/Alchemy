@@ -1,23 +1,23 @@
 // Battle start helpers: enemy selection, state creation, and encounter tracking.
-import { createBattleState } from "@/lib/battle";
+import { createBattleState, getBattleStartPlayerHealth } from "@/lib/battle";
+export { getBattleStartPlayerHealth };
 import { getDifficultyModifiers, type BattleCard, type BestiaryEntry, type DifficultyModifier } from "@/lib/game-data";
 import { mergeIntoManifest } from "@/lib/homestead/effects";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
-import { getBossById, getCurrentEnemy, getBossEnemy } from "@/features/alchemy/config";
-import { readBattleStore } from "../../shared/stores/run-session-read";
+import { getBossById, getCurrentEnemy, getBossEnemy } from "@/features/alchemy/shared/config";
+import { readBattleStore } from "../../shared/stores/run-session-facade";
 import { useBattlePresentationStore } from "../../shared/stores/battle-presentation-store";
 import { appendUnique } from "@/lib/utils";
+import { useAppStore } from "../../shared/stores/app-store";
 import { syncRunToBattleStart } from "../../shared/stores/run-transitions";
-import type { RunStateController, TalentStateController } from "../../shared/stores/run-store";
+import type { RunStateController, TalentStateController } from "../../shared/stores/run-session-facade";
 
 export type BattleInitDeps = {
   run: RunStateController;
   talents: TalentStateController;
-  discoveredCardIds: string[];
   homesteadEffectsRef: React.MutableRefObject<HomesteadEffectManifest>;
-  setEncounteredEnemyIds: React.Dispatch<React.SetStateAction<string[]>>;
   resetBattleSession: () => void;
-  setCardTransfers: React.Dispatch<React.SetStateAction<import("@/features/alchemy/types").CardTransfer[]>>;
+  setCardTransfers: React.Dispatch<React.SetStateAction<import("@/features/alchemy/shared/types").CardTransfer[]>>;
   setHiddenHandCardKeys: React.Dispatch<React.SetStateAction<Set<string>>>;
   setCardTransferInProgress: React.Dispatch<React.SetStateAction<boolean>>;
 };
@@ -45,7 +45,7 @@ export function createBattleInit(deps: BattleInitDeps) {
       currentEnemy: enemy,
       playerHealth,
       talentEffects: mergedEffects,
-      discoveredCardIds: deps.discoveredCardIds,
+      discoveredCardIds: useAppStore.getState().discoveredCardIds,
       maxHealth: deps.run.runMaxHealth,
       trinketIds: deps.run.runTrinkets,
       difficultyModifiers: activeModifiers,
@@ -66,7 +66,7 @@ export function createBattleInit(deps: BattleInitDeps) {
     getStore().setBattleStartState(nextBattleState);
     getStore().setHasActiveBattle(true);
     deps.run.setEncounteredRunEnemyIds((current) => appendUnique(current, enemy.id));
-    deps.setEncounteredEnemyIds((current) => appendUnique(current, enemy.id));
+    useAppStore.getState().setEncounteredEnemyIds((current) => appendUnique(current, enemy.id));
   }
 
   function startBattle(

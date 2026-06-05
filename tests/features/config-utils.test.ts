@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getAvailableDestinations, getBossEnemy } from "@/features/alchemy/config";
+import { getAvailableDestinations, getBossEnemy } from "@/features/alchemy/shared/config";
 import { enemyBestiary } from "@/lib/game-data";
 
 describe("getAvailableDestinations", () => {

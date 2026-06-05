@@ -1,7 +1,7 @@
 /**
  * Procedural map generator for Labyrinth mode using a seeded PRNG.
  * Depends on: data.ts, map-graph.ts, modifiers.ts
- * Depended on by: use-labyrinth-controller.ts, screen-store.ts, tests
+ * Depended on by: use-labyrinth-controller.ts, run-session-facade, tests
  */
 
 import { shuffle as shuffleWithRng } from "@/lib/utils";

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { getCollectionFillerCount, getCollectionPageItems, getCollectionTotalPages } from "@/features/alchemy/ui/collection-items";
+import { getCollectionFillerCount, getCollectionPageItems, getCollectionTotalPages } from "@/features/alchemy/shared/ui/collection-items";
 import { COLLECTION_PAGE_SIZE } from "@/lib/game-constants";
 import { cardLibrary, enemyBestiary } from "@/lib/game-data";
 

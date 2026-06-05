@@ -12,7 +12,7 @@ import { getCardDisplayTitle } from "../../shared/ui/card-description-ui";
 import { DetailPopup } from "../../shared/ui/card-popup";
 import { ScreenHeader } from "../../shared/ui/shared-ui";
 import { TiltSurface } from "../../shared/ui/tilt-surface";
-import { cardSurfaceClass, collectionTileWidthClass } from "@/features/alchemy/config";
+import { cardSurfaceClass, collectionTileWidthClass } from "@/features/alchemy/shared/config";
 import type { RewardState } from "../navigation/reward-flow";
 import { useInteractiveCard } from "../../shared/ui/use-interactive-card";
 

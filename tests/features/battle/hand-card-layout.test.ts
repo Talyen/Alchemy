@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import { waitForStableHandCardRect } from "@/features/alchemy/battle/hand-card-layout";
+import { waitForStableHandCardRect } from "@/features/alchemy/run-loop/battle/hand-card-layout";
 
 const fallback = { x: 0, y: 0, width: 80, height: 120 };
 const stable = { x: 10, y: 20, width: 80, height: 120 };

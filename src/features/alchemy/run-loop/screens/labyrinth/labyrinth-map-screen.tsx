@@ -1,6 +1,6 @@
 /**
  * Screen rendering the Labyrinth node connection grid and active modifiers tooltip.
- * Depends on: labyrinth/data.ts, modifiers.ts, screen-store.ts, Lucide icons, UI components
+ * Depends on: labyrinth/data.ts, modifiers.ts, run-session-facade, Lucide icons, UI components
  * Depended on by: render-alchemy-screen.tsx
  */
 import { type CSSProperties, useState } from "react";

@@ -5,7 +5,7 @@ import {
   DifficultySelectScreen,
   DraftDeckScreen,
   WildwoodSelectScreen,
-} from "@/features/alchemy/screens";
+} from "@/features/alchemy/shared/screens";
 import type { ScreenRouteContext } from "./types";
 
 export const runSetupScreenRoutes: Partial<

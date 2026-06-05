@@ -6,7 +6,7 @@ import { Lock } from "lucide-react";
 import { keywordDefinitions } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 import type { TalentDefinition } from "@/lib/game-data";
-import { getKeywordShineColors, keywordIcons } from "@/features/alchemy/config";
+import { getKeywordShineColors, keywordIcons } from "@/features/alchemy/shared/config";
 import { tokenizeDescription } from "../../shared/utils";
 import { TooltipPanel, TooltipBody } from "../../shared/ui/tooltip-panel";
 import { ShineBorder } from "@/components/ui/shine-border";

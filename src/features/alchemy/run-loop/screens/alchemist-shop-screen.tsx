@@ -17,7 +17,7 @@ import { BattleCardButton } from "../../shared/ui/card-button";
 import { PurchasableCardItem, SelectableShopCard } from "../../shared/ui/shop-card-item";
 import { CardSelectionGrid } from "../../shared/ui/card-selection-grid";
 import { GoldDisplay, ScreenDescription, ScreenHeader, ServiceButton } from "../../shared/ui/shared-ui";
-import { collectionTileWidthClass } from "@/features/alchemy/config";
+import { collectionTileWidthClass } from "@/features/alchemy/shared/config";
 export function AlchemistShopScreen({
   gold,
   runDeck,

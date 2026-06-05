@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { tokenizeDescription, getHoverId } from "@/features/alchemy/utils/string";
+import { tokenizeDescription, getHoverId } from "@/features/alchemy/shared/utils/string";
 
 describe("tokenizeDescription", () => {
   it("returns a plain text part for a sentence with no keywords", () => {

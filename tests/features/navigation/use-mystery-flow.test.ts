@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { useMysteryFlow } from "@/features/alchemy/navigation/use-mystery-flow";
-import { resetScreenStores } from "@/features/alchemy/stores/screen-store";
-import { useAppStore } from "@/features/alchemy/stores/app-store";
-import { useHomesteadStore } from "@/features/alchemy/stores/homestead-store";
+import { useMysteryFlow } from "@/features/alchemy/run-loop/navigation/use-mystery-flow";
+import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
+import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
+import { useHomesteadStore } from "@/features/alchemy/shared/stores/homestead-store";
 import {
   getRunProgressStoreView,
   getRunSessionStoreView,
@@ -12,7 +12,7 @@ import {
 } from "../../helpers/run-domain-store-test";
 
 beforeEach(() => {
-  resetScreenStores();
+  resetTransientRunUi();
   resetRunProgressSlice();
   useAppStore.setState(useAppStore.getInitialState());
   useHomesteadStore.setState(useHomesteadStore.getInitialState());

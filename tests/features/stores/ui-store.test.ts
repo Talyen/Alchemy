@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach } from "vitest";
-import { useUiStore } from "@/features/alchemy/stores/ui-store";
+import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 
 beforeEach(() => {
   useUiStore.setState(useUiStore.getInitialState(), true);

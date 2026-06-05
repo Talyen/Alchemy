@@ -22,7 +22,7 @@ import { KeywordTag } from "../../shared/ui/keyword-tag";
 import { PressableMotion } from "../../shared/ui/pressable-motion";
 import { ScreenHeader, ShimmerOverlay } from "../../shared/ui/shared-ui";
 import { clearTiltFromEvent, setTiltFromEvent, tokenizeDescription } from "../../shared/utils";
-import { battleCardWidthClass, cardSurfaceClass, staticCardTransform } from "@/features/alchemy/config";
+import { battleCardWidthClass, cardSurfaceClass, staticCardTransform } from "@/features/alchemy/shared/config";
 import { TooltipPanel } from "../../shared/ui/tooltip-panel";
 import { useUiStore } from "../../shared/stores/ui-store";
 

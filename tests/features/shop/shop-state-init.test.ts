@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createInitialShopState, createInitialAlchemistState } from "@/features/alchemy/shop/shop-state-init";
+import { createInitialShopState, createInitialAlchemistState } from "@/features/alchemy/run-loop/shop/shop-state-init";
 import { SHOP_CARDS_OFFERED, ALCHEMIST_POTIONS_OFFERED } from "@/lib/game-constants";
 
 describe("shop-state-init", () => {

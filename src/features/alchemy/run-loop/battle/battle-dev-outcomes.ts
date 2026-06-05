@@ -2,7 +2,7 @@
 import type { BattleState } from "@/lib/battle";
 import type { Screen } from "../../shared/types";
 import { isAlchemyDevBuild } from "../../shared/utils";
-import { readBattleStore } from "../../shared/stores/run-session-read";
+import { readBattleStore } from "../../shared/stores/run-session-facade";
 
 export type BattleDevOutcomesDeps = {
   screen: Screen;

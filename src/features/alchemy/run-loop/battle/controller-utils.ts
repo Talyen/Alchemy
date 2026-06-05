@@ -3,7 +3,7 @@ import { playCardSound } from "@/lib/audio";
 import { CARD_TRANSFER_CONFIG, COMPANION_SOUND_CARD_IDS } from "@/lib/game-constants";
 import type { BattleCard } from "@/lib/game-data";
 import type { CardRect } from "../../shared/types";
-import { getBattleSceneLocalRect, viewportRectToBattleSceneRect } from "./card-ghost-animation";
+import { getBattleSceneLocalRect, viewportRectToBattleSceneRect } from "./card-transfer-animations";
 
 export function playCompanionSound(companionId: string) {
   const soundCardId = COMPANION_SOUND_CARD_IDS[companionId];

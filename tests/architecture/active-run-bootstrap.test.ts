@@ -18,6 +18,6 @@ describe("active run bootstrap", () => {
   it("restores active run before paint in the run controller", () => {
     const source = read("src/features/alchemy/shell/use-alchemy-run-controller.ts");
     expect(source).toContain("useLayoutEffect");
-    expect(source).toMatch(/useLayoutEffect\([\s\S]*restoreActiveRunToStores/);
+    expect(source).toMatch(/useLayoutEffect\([\s\S]*restoreRun/);
   });
 });

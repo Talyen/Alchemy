@@ -1,4 +1,4 @@
-﻿// Enemy turn orchestration: haste skip, CC skip, standard enemy phase, and endPlayerTurn.
+// Enemy turn orchestration: haste skip, CC skip, standard enemy phase, and endPlayerTurn.
 // Attack resolution lives in enemy-turn-attack.ts; trait handlers in enemy-turn-traits.ts.
 import { applyIronwoodBuckler } from "./trinket-effects";
 import { tickEnemyStatuses, tickPlayerStatuses } from "./status-ticks";

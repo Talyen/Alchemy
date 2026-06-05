@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseActiveRun } from "@/features/alchemy/storage/active-run";
+import { parseActiveRun } from "@/features/alchemy/shared/storage/active-run";
 import { defaultBattleState } from "@/lib/battle";
 
 function makeRunCandidate(overrides: Record<string, unknown> = {}): Record<string, unknown> {

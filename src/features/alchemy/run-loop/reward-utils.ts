@@ -3,7 +3,7 @@
 // Used by run navigation after combat victories and other reward-generating screens.
 import { getCardKeywords, type BattleCard } from "@/lib/game-data";
 import { REWARD_SELECTION_CONFIG, REWARD_RANDOM_CHANCE } from "@/lib/game-constants";
-import { sampleItems } from "@/features/alchemy/utils";
+import { sampleItems } from "@/features/alchemy/shared/utils";
 
 export function selectRewardCards(deck: BattleCard[], allCards: BattleCard[], count: number): BattleCard[] {
   // Rewards are usually biased toward keywords already present in the deck, but occasional

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { staggerDelay } from "@/features/alchemy/ui/shared-ui";
+import { staggerDelay } from "@/features/alchemy/shared/ui/shared-ui";
 import { ANIMATION_STAGGER_UNIT } from "@/lib/game-constants";
 
 describe("staggerDelay", () => {

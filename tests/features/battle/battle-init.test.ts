@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach, vi } from "vitest";
-import { createBattleInit } from "@/features/alchemy/battle/battle-init";
+import { createBattleInit } from "@/features/alchemy/run-loop/battle/battle-init";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { computeTalentEffects } from "@/lib/game-data";
 import { mergeIntoManifest } from "@/lib/homestead/effects";
@@ -20,7 +20,6 @@ beforeEach(() => {
 
 describe("createBattleInit", () => {
   const homesteadEffectsRef = { current: defaultHomesteadEffects };
-  const setEncounteredEnemyIds = vi.fn();
   const resetBattleSession = vi.fn();
   const setCardTransfers = vi.fn();
   const setHiddenHandCardKeys = vi.fn();
@@ -30,9 +29,7 @@ describe("createBattleInit", () => {
     return createBattleInit({
       run: makeRunController(),
       talents: makeTalentController(),
-      discoveredCardIds: [],
       homesteadEffectsRef,
-      setEncounteredEnemyIds,
       resetBattleSession,
       setCardTransfers,
       setHiddenHandCardKeys,

@@ -1,5 +1,5 @@
 // Shared hover + shimmer state hook for interactive card/tile UI.
-// Reads hoveredCardId and shimmerState from screen-store,
+// Reads hoveredCardId and shimmerState from ui-store,
 // providing ready-to-use bindings for card buttons and tilt surfaces.
 import { useUiStore } from "../stores/ui-store";
 import { getHoverId } from "../utils";

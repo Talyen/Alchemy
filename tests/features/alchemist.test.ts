@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createMixedPotion, applyMixToDeck } from "@/features/alchemy/potion-mixer";
+import { createMixedPotion, applyMixToDeck } from "@/features/alchemy/run-loop/potion-mixer";
 import { ALCHEMIST_MIX_PRICE } from "@/lib/game-constants";
 import type { BattleCard } from "@/lib/game-data/types";
 

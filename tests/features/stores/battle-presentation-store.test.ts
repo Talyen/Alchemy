@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import { useBattlePresentationStore } from "@/features/alchemy/stores/battle-presentation-store";
+import { useBattlePresentationStore } from "@/features/alchemy/shared/stores/battle-presentation-store";
 
 function freshStore() {
   useBattlePresentationStore.setState(useBattlePresentationStore.getInitialState());

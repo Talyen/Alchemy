@@ -50,7 +50,7 @@ export function isRunEndScreen(screen: Screen): boolean {
   return RUN_END_SET.has(screen);
 }
 
-/** True when gameplay expects hasActiveRun and run-store/session data to be populated. */
+/** True when gameplay expects hasActiveRun and run domain/session data to be populated. */
 export function requiresActiveRun(screen: Screen): boolean {
   return isRunLoopScreen(screen) || isRunEndScreen(screen);
 }

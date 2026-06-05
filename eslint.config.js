@@ -68,9 +68,9 @@ export default tseslint.config(
             { group: ["@/lib/game-data/*"], message: "Import from @/lib/game-data (barrel) instead of deep paths." },
             { group: ["@/lib/battle/*"], message: "Import from @/lib/battle (barrel) instead of deep paths." },
             { group: ["@/lib/validation/*"], message: "Import from @/lib/validation (barrel) instead of deep paths." },
-            { group: ["@/features/alchemy/screens/*"], message: "Import from @/features/alchemy/screens (barrel) instead of deep paths." },
-            { group: ["@/features/alchemy/utils/*"], message: "Import from @/features/alchemy/utils (barrel) instead of deep paths." },
-            { group: ["@/features/alchemy/storage/*"], message: "Import from @/features/alchemy/storage (barrel) instead of deep paths." },
+            { group: ["@/features/alchemy/shared/screens/*"], message: "Import from @/features/alchemy/shared/screens (barrel) instead of deep paths." },
+            { group: ["@/features/alchemy/shared/utils/*"], message: "Import from @/features/alchemy/shared/utils (barrel) instead of deep paths." },
+            { group: ["@/features/alchemy/shared/storage/*"], message: "Import from @/features/alchemy/shared/storage (barrel) instead of deep paths." },
           ],
         },
       ],
@@ -152,24 +152,23 @@ export default tseslint.config(
             {
               group: [
                 "**/run-domain-store",
-                "@/features/alchemy/stores/run-domain-store",
+                "@/features/alchemy/shared/stores/run-domain-store",
                 "**/run-progress-store",
-                "@/features/alchemy/stores/run-progress-store",
-                "**/navigation-store",
-                "@/features/alchemy/stores/navigation-store",
+                "@/features/alchemy/shared/stores/run-progress-store",
+                "**/run-domain-types",
                 "**/run-session-store",
-                "@/features/alchemy/stores/run-session-store",
+                "@/features/alchemy/shared/stores/run-session-store",
                 "**/stores/battle-store",
-                "@/features/alchemy/stores/battle-store",
+                "@/features/alchemy/shared/stores/battle-store",
                 "**/stores/store-access",
-                "@/features/alchemy/stores/store-access",
+                "@/features/alchemy/shared/stores/store-access",
                 "**/run-lifecycle-coordinator",
-                "@/features/alchemy/stores/run-lifecycle-coordinator",
+                "@/features/alchemy/shared/stores/run-lifecycle-coordinator",
                 "**/run-store-sync",
-                "@/features/alchemy/stores/run-store-sync",
+                "@/features/alchemy/shared/stores/run-store-sync",
               ],
               message:
-                "Import run-session-facade hooks, run-session-actions, readRunSessionStore/readActiveRunStore/readBattleStore, or run-transitions instead of low-level store modules.",
+                "Import run-session-facade hooks, readRunSessionStore/readActiveRunStore/readBattleStore, or run-transitions instead of low-level store modules.",
             },
           ],
         },
@@ -186,7 +185,7 @@ export default tseslint.config(
         {
           patterns: [
             {
-              group: ["@/features/alchemy/screens", "@/features/alchemy/screens/*", "**/features/alchemy/screens/**"],
+              group: ["@/features/alchemy/shared/screens", "@/features/alchemy/shared/screens/*", "**/features/alchemy/screens/**"],
               message: "Battle orchestration must not import screen components. Pass data via controllers/stores.",
             },
           ],
@@ -202,7 +201,7 @@ export default tseslint.config(
         {
           patterns: [
             {
-              group: ["@/features/alchemy/screens", "@/features/alchemy/screens/*", "**/features/alchemy/screens/**"],
+              group: ["@/features/alchemy/shared/screens", "@/features/alchemy/shared/screens/*", "**/features/alchemy/screens/**"],
               message: "Navigation flows must not import screen components. Wire screens from app/screen-routes.",
             },
           ],
@@ -223,18 +222,16 @@ export default tseslint.config(
           patterns: [
             {
               group: [
-                "@/features/alchemy/battle",
-                "@/features/alchemy/battle/*",
-                "**/features/alchemy/battle/**",
+                "@/features/alchemy/run-loop/battle",
+                "@/features/alchemy/run-loop/battle/*",
                 "**/features/alchemy/run-loop/battle/**",
               ],
               message: "Screens must not import battle orchestration. Use controller props and @/lib/battle types.",
             },
             {
               group: [
-                "@/features/alchemy/navigation",
-                "@/features/alchemy/navigation/*",
-                "**/features/alchemy/navigation/**",
+                "@/features/alchemy/run-loop/navigation",
+                "@/features/alchemy/run-loop/navigation/*",
                 "**/features/alchemy/run-loop/navigation/**",
               ],
               message: "Screens must not import navigation flows. Wire handlers from app/screen-routes.",
@@ -251,10 +248,7 @@ export default tseslint.config(
             },
             {
               group: [
-                "**/run-session-actions",
-                "**/run-session-read",
-                "@/features/alchemy/stores/run-session-actions",
-                "@/features/alchemy/stores/run-session-read",
+                "@/features/alchemy/shared/stores/run-domain-store",
               ],
               message: "Screens must not mutate session state directly. Use controller callbacks.",
             },
@@ -296,14 +290,14 @@ export default tseslint.config(
           patterns: [
             {
               group: [
-                "**/stores/run-store",
+                "**/stores/run-domain-store",
                 "**/stores/battle-store",
                 "**/stores/run-session-facade",
                 "**/stores/run-session-actions",
                 "**/stores/run-session-read",
-                "@/features/alchemy/stores/run-store",
-                "@/features/alchemy/stores/battle-store",
-                "@/features/alchemy/stores/run-session-facade",
+                "@/features/alchemy/shared/stores/run-domain-store",
+                "@/features/alchemy/shared/stores/battle-store",
+                "@/features/alchemy/shared/stores/run-session-facade",
               ],
               message: "UI widgets receive data via props. Only ui-store is allowed for ephemeral hover/shimmer.",
             },

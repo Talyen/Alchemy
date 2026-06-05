@@ -42,9 +42,6 @@ describe("useAlchemyRunController", () => {
   it("exposes screen, run phase, and controller actions after bootstrap", () => {
     const { result } = renderHook(() =>
       useAlchemyRunController({
-        discoveredCardIds: [],
-        setDiscoveredCardIds: vi.fn(),
-        setEncounteredEnemyIds: vi.fn(),
         initialTalentXP: {},
         initialUnlockedTalents: {},
         initialActiveRun: null,

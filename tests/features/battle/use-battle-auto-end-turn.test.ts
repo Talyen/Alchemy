@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { useBattleAutoEndTurn } from "@/features/alchemy/battle/use-battle-auto-end-turn";
+import { useBattleAutoEndTurn } from "@/features/alchemy/run-loop/battle/use-battle-auto-end-turn";
 import { createTestBattleState } from "../../lib/battle/test-state";
 import { makeTestCard } from "../../fixtures/battle";
 import { AUTO_END_TURN_DELAY } from "@/lib/game-constants";

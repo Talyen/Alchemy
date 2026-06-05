@@ -1,10 +1,10 @@
 import { describe, expect, it, beforeEach, vi } from "vitest";
 import { createRunVictoryHandlers } from "@/features/alchemy/run-loop/run/run-victory-handlers";
-import { useHomesteadStore } from "@/features/alchemy/stores/homestead-store";
-import { resetScreenStores } from "@/features/alchemy/stores/screen-store";
+import { useHomesteadStore } from "@/features/alchemy/shared/stores/homestead-store";
+import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import { computeTalentEffects, createEmptyTalentManifest } from "@/lib/game-data";
-import { CONSTANTS } from "@/features/alchemy/types";
-import type { TalentStateController } from "@/features/alchemy/stores/run-store";
+import { CONSTANTS } from "@/features/alchemy/shared/types";
+import type { TalentStateController } from "@/features/alchemy/shared/stores/run-session-facade";
 import {
   getBattleStoreView,
   getRunProgressStoreView,
@@ -18,18 +18,18 @@ vi.mock("@/lib/audio", () => ({
   stopAllSfx: vi.fn(),
 }));
 
-vi.mock("@/features/alchemy/navigation/run-navigation-helpers", () => ({
+vi.mock("@/features/alchemy/run-loop/navigation/run-navigation-helpers", () => ({
   applyRunDefeatTeardown: vi.fn(),
 }));
 
-import { applyRunDefeatTeardown } from "@/features/alchemy/navigation/run-navigation-helpers";
+import { applyRunDefeatTeardown } from "@/features/alchemy/run-loop/navigation/run-navigation-helpers";
 
 beforeEach(() => {
   vi.clearAllMocks();
   resetRunBattleSlice();
   useHomesteadStore.setState(useHomesteadStore.getInitialState());
   resetRunProgressSlice();
-  resetScreenStores();
+  resetTransientRunUi();
 });
 
 function makeHandlers() {

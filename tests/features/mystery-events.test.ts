@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mysteryPool } from "@/features/alchemy/mystery-events";
+import { mysteryPool } from "@/features/alchemy/run-loop/mystery-events";
 import { cardLibrary, trinketLibrary } from "@/lib/game-data";
 import type { KeywordId } from "@/lib/game-data";
 import { MATERIAL_IDS } from "@/lib/homestead/types";

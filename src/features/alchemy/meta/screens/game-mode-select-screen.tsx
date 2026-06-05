@@ -4,7 +4,7 @@ import type { MotionStyle } from "motion/react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { gameModeMeta, staticCardTransform } from "@/features/alchemy/config";
+import { gameModeMeta, staticCardTransform } from "@/features/alchemy/shared/config";
 import { PressableMotion } from "../../shared/ui/pressable-motion";
 import { ScreenHeader } from "../../shared/ui/shared-ui";
 import { clearTiltFromEvent, setTiltFromEvent } from "../../shared/utils";

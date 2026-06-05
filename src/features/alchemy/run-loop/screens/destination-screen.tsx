@@ -4,7 +4,7 @@ import { useEffect, useMemo } from "react";
 import { keywordDefinitions } from "@/lib/game-data";
 
 import { playBattleEvent } from "@/lib/audio";
-import { getBossById, getBossEnemy, keywordAliases, SHINE_PALETTES } from "@/features/alchemy/config";
+import { getBossById, getBossEnemy, keywordAliases, SHINE_PALETTES } from "@/features/alchemy/shared/config";
 import { DestinationChoices, ScreenHeader } from "../../shared/ui/shared-ui";
 import { DESTINATIONS, type Destination } from "../../shared/types";
 import type { RewardState } from "../navigation/reward-flow";

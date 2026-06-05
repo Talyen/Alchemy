@@ -3,7 +3,7 @@ import { cardLibrary, type CompanionId } from "@/lib/game-data";
 import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
 import { canAfford } from "@/lib/homestead/inventory";
 import type { MaterialInventory } from "@/lib/homestead/types";
-import { COMPANION_BOND_TIERS, COMPANION_MAX_TIER } from "@/features/alchemy/stores/homestead-store";
+import { COMPANION_BOND_TIERS, COMPANION_MAX_TIER } from "@/features/alchemy/shared/stores/homestead-store";
 
 type HomesteadAffordabilityInput = {
   materialInventory: MaterialInventory;

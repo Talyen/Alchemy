@@ -1,6 +1,6 @@
 // Unit tests for alchemist potion-combining logic.
 import { describe, expect, it, vi } from "vitest";
-import { createMixedPotion, tryCreateMixedPotion, applyMixToDeck } from "@/features/alchemy/potion-mixer";
+import { createMixedPotion, tryCreateMixedPotion, applyMixToDeck } from "@/features/alchemy/run-loop/potion-mixer";
 import type { BattleCard } from "@/lib/game-data";
 
 function makePotion(overrides: Partial<BattleCard> = {}): BattleCard {

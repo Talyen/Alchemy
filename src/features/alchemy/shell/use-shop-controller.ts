@@ -1,12 +1,12 @@
 // Shop and alchemist purchase controller for pricing, refreshes, removals, and potion mixing.
 // Depends on run/talent state, sampled shop state, trinket pricing, audio, and mixer helpers.
-// Reads shop/alchemist via useRunSessionShopSlice; writes via run-session-actions.
+// Reads shop/alchemist via useRunSessionShopSlice; writes via run-session-facade.
 import { useRef } from "react";
 import { getOfferableCardPool, getStandardPotionPool, type BattleCard } from "@/lib/game-data";
 import { computeTrinketManifest } from "@/lib/trinkets";
 import { appendUnique } from "@/lib/utils";
 import { appendCardToRunWithDiscovery } from "@/features/alchemy/run-loop/run/deck-mutations";
-import { refreshOfferings, spendRunGold } from "@/features/alchemy/shop-transactions";
+import { refreshOfferings, spendRunGold } from "@/features/alchemy/run-loop/shop-transactions";
 import { applyMixToDeck, tryCreateMixedPotion } from "@/lib/alchemist";
 import {
   ALCHEMIST_MIX_PRICE,
@@ -19,21 +19,15 @@ import {
   ALCHEMIST_POTIONS_OFFERED,
   MIXED_POTION_CARD_ID,
 } from "@/lib/game-constants";
-import { createInitialShopState, createInitialAlchemistState } from "@/features/alchemy/shop/shop-state-init";
-import { useRunSessionShopSlice } from "@/features/alchemy/stores/run-session-facade";
-import { setAlchemistState, setShopState } from "@/features/alchemy/stores/run-session-actions";
-import { readRunSessionStore } from "@/features/alchemy/stores/run-session-read";
-import type { RunStateController, TalentStateController } from "@/features/alchemy/stores/run-store";
+import { createInitialShopState, createInitialAlchemistState } from "@/features/alchemy/run-loop/shop/shop-state-init";
+import { useRunSessionShopSlice } from "@/features/alchemy/shared/stores/run-session-facade";
+import { setAlchemistState, setShopState } from "@/features/alchemy/shared/stores/run-session-facade";
+import { readRunSessionStore } from "@/features/alchemy/shared/stores/run-session-facade";
+import type { RunStateController, TalentStateController } from "@/features/alchemy/shared/stores/run-session-facade";
 
-export function useShopController({
-  run,
-  talents,
-  setDiscoveredCardIds,
-}: {
-  run: RunStateController;
-  talents: TalentStateController;
-  setDiscoveredCardIds: React.Dispatch<React.SetStateAction<string[]>>;
-}) {
+import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
+
+export function useShopController({ run, talents }: { run: RunStateController; talents: TalentStateController }) {
   const { shopState, alchemistState } = useRunSessionShopSlice();
 
   const shopDiscountConsumed = useRef(false);
@@ -54,7 +48,7 @@ export function useShopController({
     }
     if (run.runGold < price) return null;
     spendRunGold(price, run.setRunGold);
-    appendCardToRunWithDiscovery(card, { setRunDeck: run.setRunDeck, setDiscoveredCardIds });
+    appendCardToRunWithDiscovery(card, run.setRunDeck);
     markFirstPurchase();
     return card;
   }
@@ -132,7 +126,7 @@ export function useShopController({
     spendRunGold(price, run.setRunGold);
     run.setRunDeck((p) => applyMixToDeck(p, indexA, indexB, mixed));
     setAlchemistState((p) => ({ ...p, mixUsed: true }));
-    setDiscoveredCardIds((cur) => appendUnique(cur, MIXED_POTION_CARD_ID));
+    useAppStore.getState().setDiscoveredCardIds((cur) => appendUnique(cur, MIXED_POTION_CARD_ID));
     return mixed;
   }
 

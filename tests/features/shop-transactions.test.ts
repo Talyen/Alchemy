@@ -1,17 +1,17 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { refreshOfferings, spendRunGold } from "@/features/alchemy/shop-transactions";
+import { refreshOfferings, spendRunGold } from "@/features/alchemy/run-loop/shop-transactions";
 import type { BattleCard } from "@/lib/game-data";
 
 vi.mock("@/lib/audio", () => ({
   playGoldSpend: vi.fn(),
 }));
 
-vi.mock("@/features/alchemy/utils", () => ({
+vi.mock("@/features/alchemy/shared/utils", () => ({
   resampleItems: vi.fn(),
 }));
 
 import { playGoldSpend } from "@/lib/audio";
-import { resampleItems } from "@/features/alchemy/utils";
+import { resampleItems } from "@/features/alchemy/shared/utils";
 
 function makeCard(id: string): BattleCard {
   return { id, title: id, descriptionLines: [""], art: "", cost: 1, effects: [{ kind: "damage", damageType: "physical", amount: 1 }] };

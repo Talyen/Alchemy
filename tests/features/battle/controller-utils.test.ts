@@ -3,7 +3,7 @@ import {
   centeredRectForSize,
   getCardKey,
   getCardTransferBatchSpeed,
-} from "@/features/alchemy/battle/controller-utils";
+} from "@/features/alchemy/run-loop/battle/controller-utils";
 import { CARD_TRANSFER_CONFIG } from "@/lib/game-constants";
 import type { BattleCard } from "@/lib/game-data";
 

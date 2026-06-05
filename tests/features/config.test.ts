@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { enemyBestiary } from "@/lib/game-data";
-import { getCurrentEnemy } from "@/features/alchemy/config";
+import { getCurrentEnemy } from "@/features/alchemy/shared/config";
 
 describe("getCurrentEnemy", () => {
   it("returns a normal enemy for room 0", () => {

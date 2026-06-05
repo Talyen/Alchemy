@@ -7,7 +7,7 @@ import { enemyBestiary } from "@/lib/game-data";
 import { WILDWOOD_BOSS_IDS } from "@/lib/content-systems/wildwood/bosses";
 import { ShineBorder } from "@/components/ui/shine-border";
 import { cn } from "@/lib/utils";
-import { battleCardWidthClass, cardSurfaceClass, SHINE_PALETTES } from "@/features/alchemy/config";
+import { battleCardWidthClass, cardSurfaceClass, SHINE_PALETTES } from "@/features/alchemy/shared/config";
 import { EnemyTooltip } from "../../shared/ui/enemy-tooltip";
 import { PressableMotion } from "../../shared/ui/pressable-motion";
 import { ScreenHeader } from "../../shared/ui/shared-ui";

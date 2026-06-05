@@ -26,8 +26,6 @@ type MysteryEffectContext = {
   setRunGold: Dispatch<SetStateAction<number>>;
   setRunPlayerHealth: Dispatch<SetStateAction<number>>;
   setRunTrinkets: Dispatch<SetStateAction<string[]>>;
-  setDiscoveredCardIds: Dispatch<SetStateAction<string[]>>;
-  setDiscoveredTrinketIds: Dispatch<SetStateAction<string[]>>;
   setMysteryCardChoices: Dispatch<SetStateAction<BattleCard[] | null>>;
   awardMysteryXP: (keyword: KeywordId, amount: number) => void;
   onAddMaterials: (materials: MaterialInventory) => void;
@@ -72,11 +70,8 @@ export function applyMysteryEffect(effect: MysteryEffect, context: MysteryEffect
 }
 
 // Shared card reward mutation keeps discovery tracking aligned with deck changes.
-function addCardToRun(
-  card: BattleCard,
-  context: Pick<MysteryEffectContext, "setRunDeck" | "setDiscoveredCardIds">,
-): void {
-  appendCardToRunWithDiscovery(card, context);
+function addCardToRun(card: BattleCard, context: Pick<MysteryEffectContext, "setRunDeck">): void {
+  appendCardToRunWithDiscovery(card, context.setRunDeck);
 }
 
 function addSpecificMysteryCard(cardId: string, context: MysteryEffectContext) {
@@ -125,7 +120,7 @@ function removeMysteryCard(mode: "random" | "choose", context: MysteryEffectCont
 }
 
 function gainMysteryTrinket(trinketId: string, context: MysteryEffectContext) {
-  appendTrinketToRunWithDiscovery(trinketId, context);
+  appendTrinketToRunWithDiscovery(trinketId, context.setRunTrinkets);
   return { followUp: null };
 }
 

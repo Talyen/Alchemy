@@ -3,7 +3,7 @@ import {
   selectRunController,
   selectTalentController,
   type TalentStateController,
-} from "@/features/alchemy/stores/run-store-selectors";
+} from "@/features/alchemy/shared/stores/run-domain-store";
 import { computeTalentEffects } from "@/lib/game-data";
 import { getRunProgressStoreView } from "./run-domain-store-test";
 

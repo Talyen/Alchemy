@@ -8,7 +8,7 @@ import { NODE_TYPE_LABELS } from "@/lib/content-systems/labyrinth/data";
 import { LABYRINTH_MAP_UI } from "@/lib/game-constants";
 import { cn } from "@/lib/utils";
 
-import { LABYRINTH_NODE_META } from "@/features/alchemy/config";
+import { LABYRINTH_NODE_META } from "@/features/alchemy/shared/config";
 import { positionStyle } from "./labyrinth-map-layout";
 
 export type HoveredLabyrinthNode = {

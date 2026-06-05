@@ -15,16 +15,16 @@ import {
   shouldForceTrinketReward,
   shouldGrantAlchemistReward,
   shouldGrantCompanionReward,
-} from "@/features/alchemy/navigation/reward-flow";
+} from "@/features/alchemy/run-loop/navigation/reward-flow";
 import { getStandardPotionPool } from "@/lib/game-data";
 import { LABYRINTH_REWARD_CONFIG } from "@/lib/game-constants";
-import { CONSTANTS } from "@/features/alchemy/types";
+import { CONSTANTS } from "@/features/alchemy/shared/types";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import type { LabyrinthModifierKind } from "@/lib/content-systems/types";
 import type { BattleCard, TrinketEntry } from "@/lib/game-data";
 
-vi.mock("@/features/alchemy/reward-utils", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/features/alchemy/reward-utils")>();
+vi.mock("@/features/alchemy/run-loop/reward-utils", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/alchemy/run-loop/reward-utils")>();
   return {
     ...actual,
     selectRewardCards: vi.fn(() => [{ id: "mock-card", title: "Mock", descriptionLines: [""], art: "", cost: 1, effects: [] }]),
@@ -33,8 +33,8 @@ vi.mock("@/features/alchemy/reward-utils", async (importOriginal) => {
   };
 });
 
-vi.mock("@/features/alchemy/utils", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/features/alchemy/utils")>();
+vi.mock("@/features/alchemy/shared/utils", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/alchemy/shared/utils")>();
   return {
     ...actual,
     sampleItems: vi.fn(() => [{ id: "mock-trinket", title: "Mock Trinket", description: "", art: "" }]),

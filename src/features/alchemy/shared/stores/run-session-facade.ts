@@ -1,18 +1,33 @@
-// Facade over run domain store — sync, snapshot, restore, and teardown.
+// Facade over run domain store — reads, writes, sync, snapshot, restore, and teardown.
 import { useShallow } from "zustand/react/shallow";
-import type { UnlockedTalents } from "@/lib/game-data";
-import type { ActiveRunData } from "@/lib/active-run-session";
+import type { BattleCard, CharacterId } from "@/lib/game-data";
+import type { LabyrinthMap, LabyrinthModifierKind, ContentSystemId } from "@/lib/content-systems/types";
+import type { CorruptionResult } from "@/lib/corruption";
+import type { MysteryEvent } from "@/lib/mystery";
+import type { MaterialInventory } from "@/lib/homestead/types";
+import type { LabyrinthNodePosition } from "@/lib/active-run-session";
 import type { Screen } from "@/lib/routing";
-import type { TalentXP } from "@/lib/talents";
+import type { RewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
+import type { ShopState, AlchemistState } from "@/features/alchemy/run-loop/shop/shop-state-init";
+import type { Destination } from "@/features/alchemy/shared/types";
 import { getRunSession } from "./run-session-model";
-import { getRunDomainStore, useRunDomainStore } from "./run-domain-store";
-import { readActiveRunStore, readBattleStore } from "./run-session-read";
+import {
+  getBattleStoreView,
+  getRunDomainStore,
+  getRunProgressStoreView,
+  getRunSessionStoreView,
+  useRunAdapter,
+  useRunDomainStore,
+  useTalentAdapter,
+} from "./run-domain-store";
+import type { RunProgressStore, RunSessionStore } from "./run-domain-types";
+import type { RunStateController, TalentStateController } from "./run-domain-store";
 import {
   applyRunDefeatTeardown,
   flushPersistedSave,
   flushSaveAfterRunEnd,
-  restoreRunFromSnapshot,
-  snapshotRunFromDomain,
+  restoreRun,
+  snapshotRun,
   syncBattleToRun,
   syncRunToBattleStart,
   teardownRun,
@@ -30,17 +45,104 @@ export {
   useRunSessionShopSlice,
   useRunSessionTransientSlice,
 } from "./run-session-model";
-export { setActiveLabyrinthModifiers, setActiveLabyrinthRewardModifiers } from "./run-session-actions";
 export {
   applyRunDefeatTeardown,
   flushPersistedSave,
   flushSaveAfterRunEnd,
-  restoreRunFromSnapshot,
-  snapshotRunFromDomain,
+  restoreRun,
+  snapshotRun,
   syncBattleToRun,
   syncRunToBattleStart,
   teardownRun,
 };
+export { useRunAdapter, useTalentAdapter, useRunDomainStore };
+export type { RunStateController, TalentStateController };
+
+/** Imperative read of run progression fields (deck, gold, talents, initialized). */
+export function readActiveRunStore(): RunProgressStore {
+  return getRunProgressStoreView();
+}
+
+/** Imperative read of transient session fields (shops, labyrinth, mystery). */
+export function readRunSessionStore(): RunSessionStore {
+  return getRunSessionStoreView();
+}
+
+/** Imperative read of navigation screen. */
+export function readNavigationScreen() {
+  return getRunDomainStore().navigation.screen;
+}
+
+/** Imperative read of battle domain slice. */
+export function readBattleStore() {
+  return getBattleStoreView();
+}
+
+export function setHasActiveRun(hasActiveRun: boolean) {
+  getRunDomainStore().setHasActiveRun(hasActiveRun);
+}
+
+export function setActiveLabyrinthModifiers(modifiers: LabyrinthModifierKind[]) {
+  getRunDomainStore().setActiveLabyrinthModifiers(modifiers);
+}
+
+export function setActiveLabyrinthRewardModifiers(modifiers: LabyrinthModifierKind[]) {
+  getRunDomainStore().setActiveLabyrinthRewardModifiers(modifiers);
+}
+
+export function setActiveLabyrinthPendingNode(node: LabyrinthNodePosition | null) {
+  getRunDomainStore().setActiveLabyrinthPendingNode(node);
+}
+
+export function setLabyrinthMap(map: LabyrinthMap | ((prev: LabyrinthMap) => LabyrinthMap)) {
+  getRunDomainStore().setLabyrinthMap(map);
+}
+
+export function setRewardState(state: RewardState | ((prev: RewardState) => RewardState)) {
+  getRunDomainStore().setRewardState(state);
+}
+
+export function applyDestinationChoices(choices: Destination[]) {
+  setRewardState((prev) => ({ ...prev, destinations: choices }));
+}
+
+export function setMysteryEvent(event: MysteryEvent | null) {
+  getRunDomainStore().setMysteryEvent(event);
+}
+
+export function setMysteryCardChoices(
+  choices: BattleCard[] | null | ((prev: BattleCard[] | null) => BattleCard[] | null),
+) {
+  getRunDomainStore().setMysteryCardChoices(choices);
+}
+
+export function setShopState(state: ShopState | ((prev: ShopState) => ShopState)) {
+  getRunDomainStore().setShopState(state);
+}
+
+export function setAlchemistState(state: AlchemistState | ((prev: AlchemistState) => AlchemistState)) {
+  getRunDomainStore().setAlchemistState(state);
+}
+
+export function setRunEndMaterials(materials: MaterialInventory) {
+  getRunDomainStore().setRunEndMaterials(materials);
+}
+
+export function setCorruptionResult(result: CorruptionResult | null) {
+  getRunDomainStore().setCorruptionResult(result);
+}
+
+export function setPendingCharacterId(id: CharacterId | null) {
+  getRunDomainStore().setPendingCharacterId(id);
+}
+
+export function setPendingContentSystemType(type: ContentSystemId) {
+  getRunDomainStore().setPendingContentSystemType(type);
+}
+
+export function setCompanionRewardCards(cards: BattleCard[] | null) {
+  getRunDomainStore().setCompanionRewardCards(cards);
+}
 
 /** Current screen and setter (owned by run domain navigation slice). */
 export function useActiveRunScreen() {
@@ -62,20 +164,6 @@ export function getCombinedRunGold(runGold?: number, battleGold?: number): numbe
 /** Current lifecycle phase from live stores and the active screen. */
 export function getCurrentRunPhase(screen?: Screen) {
   return getRunSession(screen).phase;
-}
-
-/** Serialize all run-related stores into persisted ActiveRunData. */
-export function buildActiveRunSnapshotFromStores(screen?: Screen): ActiveRunData {
-  return snapshotRunFromDomain(screen);
-}
-
-/** Apply persisted active-run data to Zustand stores (bootstrap / resume). */
-export function restoreActiveRunToStores(
-  activeRun: ActiveRunData | null,
-  talentXP: TalentXP,
-  unlockedTalents: UnlockedTalents,
-): void {
-  restoreRunFromSnapshot(activeRun, talentXP, unlockedTalents);
 }
 
 /** Whether run domain bootstrap has completed. */

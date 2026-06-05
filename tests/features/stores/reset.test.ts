@@ -1,7 +1,7 @@
 import { describe, expect, it, beforeEach, vi } from "vitest";
 
-vi.mock("@/features/alchemy/storage", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/features/alchemy/storage")>();
+vi.mock("@/features/alchemy/shared/storage", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/alchemy/shared/storage")>();
   return {
     ...actual,
     clearAlchemySaveData: vi.fn(),
@@ -20,12 +20,12 @@ vi.mock("@/lib/platform", () => ({
   },
 }));
 
-import { clearAllPersistentGameData, resetActiveRunStores } from "@/features/alchemy/stores/reset";
-import { useAppStore } from "@/features/alchemy/stores/app-store";
-import { useHomesteadStore } from "@/features/alchemy/stores/homestead-store";
-import { resetScreenStores } from "@/features/alchemy/stores/screen-store";
-import { createEmptyRewardState } from "@/features/alchemy/navigation/reward-flow";
-import { defaultSaveData } from "@/features/alchemy/storage";
+import { clearAllPersistentGameData, resetActiveRunStores } from "@/features/alchemy/shared/stores/reset";
+import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
+import { useHomesteadStore } from "@/features/alchemy/shared/stores/homestead-store";
+import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
+import { createEmptyRewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
+import { defaultSaveData } from "@/features/alchemy/shared/storage";
 import {
   getBattleStoreView,
   getRunProgressStoreView,
@@ -39,7 +39,7 @@ beforeEach(() => {
   useAppStore.setState(useAppStore.getInitialState());
   resetRunDomainStore();
   useHomesteadStore.setState(useHomesteadStore.getInitialState());
-  resetScreenStores();
+  resetTransientRunUi();
 });
 
 describe("resetActiveRunStores", () => {

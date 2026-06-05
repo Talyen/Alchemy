@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach } from "vitest";
-import { useHomesteadStore } from "@/features/alchemy/stores/homestead-store";
+import { useHomesteadStore } from "@/features/alchemy/shared/stores/homestead-store";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import type { BuildingId, FarmId, ResearchId, MaterialInventory } from "@/lib/homestead/types";

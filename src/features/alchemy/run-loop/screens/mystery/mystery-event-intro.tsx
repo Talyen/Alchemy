@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { TextAnimate } from "@/components/ui/text-animate";
 import { type BattleCard, type TrinketEntry } from "@/lib/game-data";
 
-import { viewCardWidthClass } from "@/features/alchemy/config";
+import { viewCardWidthClass } from "@/features/alchemy/shared/config";
 import type { MysteryChoice, MysteryEvent } from "../../mystery-events";
 import { TiltSurface } from "../../../shared/ui/tilt-surface";
 import { BattleCardButton } from "../../../shared/ui/card-button";

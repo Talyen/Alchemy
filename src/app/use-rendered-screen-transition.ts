@@ -1,6 +1,6 @@
 // Lagged screen rendering for page exit/enter animations and tooltip blocking.
 import { useEffect, useRef, useState } from "react";
-import type { Screen } from "@/features/alchemy/types";
+import type { Screen } from "@/features/alchemy/shared/types";
 import { PAGE_EXIT_MS } from "@/lib/game-constants";
 
 export function useRenderedScreenTransition(controllerScreen: Screen, commitPendingTransition: () => void) {

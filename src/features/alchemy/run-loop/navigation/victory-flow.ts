@@ -17,11 +17,11 @@ import {
   GOLD_REWARD_MAX,
   GOLD_TROVE_REWARD_MULTIPLIER,
 } from "@/lib/game-constants";
-import { getGenerousGoldBonus } from "./reward-gold";
+import { getGenerousGoldBonus } from "./reward-flow";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
-import { CONSTANTS, type Destination } from "@/features/alchemy/types";
-import { syncBattleToRun } from "@/features/alchemy/stores/run-transitions";
+import { CONSTANTS, type Destination } from "@/features/alchemy/shared/types";
+import { syncBattleToRun } from "@/features/alchemy/shared/stores/run-transitions";
 import type { ContentSystemId, LabyrinthModifierKind } from "@/lib/content-systems/types";
 import {
   getActiveRewardModifiersForContentSystem,

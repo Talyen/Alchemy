@@ -3,10 +3,10 @@
 // Used by: App.tsx.
 import { useEffect, useMemo, useRef } from "react";
 import { useShallow } from "zustand/react/shallow";
-import { saveAlchemySaveData, type SaveData } from "@/features/alchemy/storage";
+import { saveAlchemySaveData, type SaveData } from "@/features/alchemy/shared/storage";
 import type { ActiveRunData } from "@/lib/active-run-session";
-import { useAppStore } from "@/features/alchemy/stores/app-store";
-import { useHomesteadStore } from "@/features/alchemy/stores/homestead-store";
+import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
+import { useHomesteadStore } from "@/features/alchemy/shared/stores/homestead-store";
 import type { TalentXP } from "@/lib/talents";
 import type { UnlockedTalents } from "@/lib/game-data";
 import { CURRENT_CONTENT_VERSION, CURRENT_GAME_BUILD_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";

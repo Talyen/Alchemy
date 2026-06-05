@@ -4,7 +4,7 @@ import {
   migrateSaveDataToCurrent,
   getRawSaveSchemaVersion,
   isUnsupportedFutureSaveData,
-} from "@/features/alchemy/storage/migrations";
+} from "@/features/alchemy/shared/storage/migrations";
 import { CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
 
 describe("getRawSaveSchemaVersion", () => {

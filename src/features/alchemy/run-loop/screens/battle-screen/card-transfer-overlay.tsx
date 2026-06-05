@@ -4,7 +4,7 @@ import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
 
 import { cardBack } from "@/lib/game-data";
-import { cardSurfaceClass } from "@/features/alchemy/config";
+import { cardSurfaceClass } from "@/features/alchemy/shared/config";
 import type { CardTransfer } from "../../../shared/types";
 
 export function CardTransferOverlay({ transfer }: { transfer: CardTransfer }) {

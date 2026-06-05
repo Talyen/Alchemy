@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeDisplayMode, normalizeUiScale } from "@/features/alchemy/storage/options";
+import { normalizeDisplayMode, normalizeUiScale } from "@/features/alchemy/shared/storage/options";
 
 describe("normalizeDisplayMode", () => {
   it('returns "windowed" when passed "windowed"', () => {

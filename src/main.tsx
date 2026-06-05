@@ -10,7 +10,7 @@ import "./index.css";
 import { cursorArt } from "./lib/game-data/assets";
 
 // Register the error log store sink before any handlers fire.
-import "@/features/alchemy/stores/error-log-store";
+import "@/features/alchemy/shared/stores/error-log-store";
 
 // Use pointer_c_shaded for all cursor variants — no special effects.
 // Same image throughout; different CSS fallbacks if the image fails.

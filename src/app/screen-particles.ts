@@ -1,5 +1,5 @@
 // Background particle tint presets per screen.
-import type { Screen } from "@/features/alchemy/types";
+import type { Screen } from "@/features/alchemy/shared/types";
 
 export const SCREEN_PARTICLE_COLORS: Partial<Record<Screen, readonly string[]>> = {
   battle: ["rgba(255, 150, 70, X)", "rgba(255, 100, 40, X)"],

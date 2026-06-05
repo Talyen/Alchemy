@@ -4,7 +4,7 @@ import {
   applyRunDefeatTeardown,
   getPreviousDestination,
   tryStartNoviceCampaignBattle,
-} from "@/features/alchemy/navigation/run-navigation-helpers";
+} from "@/features/alchemy/run-loop/navigation/run-navigation-helpers";
 import { DEFAULT_BATTLE_ENEMY_TYPE, DEFAULT_CAMPAIGN_DIFFICULTY_ID } from "@/lib/game-constants";
 import { getStartingDeck } from "@/lib/game-data";
 
@@ -13,8 +13,8 @@ vi.mock("@/lib/audio", () => ({
   playDefeat: vi.fn(),
 }));
 
-vi.mock("@/features/alchemy/storage", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/features/alchemy/storage")>();
+vi.mock("@/features/alchemy/shared/storage", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/alchemy/shared/storage")>();
   return {
     ...actual,
     flushAlchemySaveNow: vi.fn().mockResolvedValue(undefined),
@@ -22,7 +22,7 @@ vi.mock("@/features/alchemy/storage", async (importOriginal) => {
 });
 
 import { playDefeat, stopAllSfx } from "@/lib/audio";
-import { flushAlchemySaveNow } from "@/features/alchemy/storage";
+import { flushAlchemySaveNow } from "@/features/alchemy/shared/storage";
 
 describe("getPreviousDestination", () => {
   it("returns undefined at the start of an act", () => {

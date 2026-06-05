@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import type { MouseEvent } from "react";
-import { createBattleCardPlay } from "@/features/alchemy/battle/battle-card-play";
+import { createBattleCardPlay } from "@/features/alchemy/run-loop/battle/battle-card-play";
 import { getBattleStoreView, resetRunBattleSlice } from "../../helpers/run-domain-store-test";
 import { createTestBattleState } from "../../lib/battle/test-state";
 import { makeTestCard } from "../../fixtures/battle";
@@ -11,11 +11,11 @@ vi.mock("@/lib/audio", () => ({
   playGoldGain: vi.fn(),
 }));
 
-vi.mock("@/features/alchemy/battle/card-ghost-animation", () => ({
+vi.mock("@/features/alchemy/run-loop/battle/card-transfer-animations", () => ({
   animateCardActivation: vi.fn(),
 }));
 
-vi.mock("@/features/alchemy/battle/draw-sequence", () => ({
+vi.mock("@/features/alchemy/run-loop/battle/draw-sequence", () => ({
   runHandDrawSequence: vi.fn(async (_oldHand, _newState, applyState) => {
     applyState();
     return false;
@@ -36,7 +36,6 @@ function makeDeps(overrides: Partial<Parameters<typeof createBattleCardPlay>[0]>
     battleSceneRef: { current: null },
     setHoveredCardId: vi.fn(),
     talents: { awardCardXP: vi.fn() },
-    setDiscoveredCardIds: vi.fn(),
     getDrawSequenceDeps: vi.fn(() => ({})),
     finishDrawSequence: vi.fn(),
     runIfSessionActive: vi.fn((_session, action) => action()),

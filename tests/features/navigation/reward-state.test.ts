@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createEmptyRewardState, createNextRewardState } from "@/features/alchemy/navigation/reward-state";
+import { createEmptyRewardState, createNextRewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
 import { emptyInventory } from "@/lib/homestead/inventory";
 
 describe("createEmptyRewardState", () => {

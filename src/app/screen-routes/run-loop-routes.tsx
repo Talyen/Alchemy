@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import { cardLibrary, trinketLibrary } from "@/lib/game-data";
 import { useAppScreenChrome } from "@/app/app-screen-chrome-context";
-import { useBattleControllerBindings } from "@/features/alchemy/shell/battle-controller-context";
 import {
   AlchemistShopScreen,
   BattleScreen,
@@ -14,10 +13,14 @@ import {
   MysteryScreen,
   RewardsScreen,
   RunVictoryScreen,
-} from "@/features/alchemy/screens";
+} from "@/features/alchemy/shared/screens";
 import type { ScreenRouteContext } from "./types";
 
-function BattleScreenRoute({ actions: a, onOpenBattleMenu }: Pick<ScreenRouteContext, "actions" | "onOpenBattleMenu">) {
+function BattleScreenRoute({
+  actions: a,
+  battleBindings,
+  onOpenBattleMenu,
+}: Pick<ScreenRouteContext, "actions" | "battleBindings" | "onOpenBattleMenu">) {
   const { heroArt, playerName, aspectMode, stagePixelRatio } = useAppScreenChrome();
   const {
     battleScreenData,
@@ -31,7 +34,7 @@ function BattleScreenRoute({ actions: a, onOpenBattleMenu }: Pick<ScreenRouteCon
     hiddenHandCardKeys,
     cardTransferInProgress,
     playableHandCardKeys,
-  } = useBattleControllerBindings();
+  } = battleBindings;
 
   return (
     <BattleScreen
@@ -63,7 +66,9 @@ function BattleScreenRoute({ actions: a, onOpenBattleMenu }: Pick<ScreenRouteCon
 export const runLoopScreenRoutes: Partial<
   Record<import("@/lib/routing").Screen, (ctx: ScreenRouteContext) => ReactNode>
 > = {
-  battle: ({ actions: a, onOpenBattleMenu }) => <BattleScreenRoute actions={a} onOpenBattleMenu={onOpenBattleMenu} />,
+  battle: ({ actions: a, battleBindings, onOpenBattleMenu }) => (
+    <BattleScreenRoute actions={a} battleBindings={battleBindings} onOpenBattleMenu={onOpenBattleMenu} />
+  ),
   "labyrinth-map": ({ actions: a, onOpenBattleMenu, runScreenData: r }) => (
     <LabyrinthMapScreen
       labyrinthMap={r.labyrinthMap}

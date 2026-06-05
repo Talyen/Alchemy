@@ -1,8 +1,8 @@
 // Immediate save flush from live stores (bypasses autosave debounce / screen gates).
 import { CURRENT_CONTENT_VERSION, CURRENT_GAME_BUILD_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
-import { useAppStore } from "@/features/alchemy/stores/app-store";
-import { useHomesteadStore } from "@/features/alchemy/stores/homestead-store";
-import { readActiveRunStore } from "@/features/alchemy/stores/run-session-read";
+import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
+import { useHomesteadStore } from "@/features/alchemy/shared/stores/homestead-store";
+import { readActiveRunStore } from "@/features/alchemy/shared/stores/run-session-facade";
 import type { ActiveRunData } from "@/lib/active-run-session";
 import type { SaveData } from "./types";
 import { saveAlchemySaveData } from "./io";

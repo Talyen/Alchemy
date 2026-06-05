@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import { runHandDrawSequence, type HandDrawSequenceDeps } from "@/features/alchemy/battle/draw-sequence";
+import { runHandDrawSequence, type HandDrawSequenceDeps } from "@/features/alchemy/run-loop/battle/draw-sequence";
 import { defaultBattleState } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
 

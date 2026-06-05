@@ -17,7 +17,7 @@ import type { BattleCard } from "@/lib/game-data";
 
 import { BattleCardButton } from "../../../shared/ui/card-button";
 import { getCardDisplayTitle } from "../../../shared/ui/card-description-ui";
-import { battleHandContainerClass, handCardWidthClass } from "@/features/alchemy/config";
+import { battleHandContainerClass, handCardWidthClass } from "@/features/alchemy/shared/config";
 import type { BattleActionsProps, BattleRefsProps, RequiredBattleViewProps } from "./types";
 import { useInteractiveCard } from "../../../shared/ui/use-interactive-card";
 import type { CardDescriptionContext } from "../../../shared/utils/card-description";

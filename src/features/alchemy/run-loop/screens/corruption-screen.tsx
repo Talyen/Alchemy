@@ -9,7 +9,7 @@ import { SELECTION_GRID_PAGE_SIZE } from "@/lib/game-constants";
 import { corruptionAltar, type BattleCard } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 import type { CorruptionResult } from "../corruption";
-import { viewCardWidthClass } from "@/features/alchemy/config";
+import { viewCardWidthClass } from "@/features/alchemy/shared/config";
 import { CardSelectionGrid } from "../../shared/ui/card-selection-grid";
 import { BattleCardButton } from "../../shared/ui/card-button";
 import { CardTitle, getCardDisplayTitle } from "../../shared/ui/card-description-ui";

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { useErrorLogStore } from "@/features/alchemy/stores/error-log-store";
+import { useErrorLogStore } from "@/features/alchemy/shared/stores/error-log-store";
 
 const STORAGE_KEY = "alchemy-error-log";
 

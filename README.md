@@ -68,6 +68,12 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
+| Tier | Command | When to use |
+| ---- | ------- | ----------- |
+| Unit | `npm test` | Fast feedback on logic and stores |
+| E2E prepush | `npm run test:e2e:prepush` | Local pre-push gate (`@prepush` tagged scenarios) |
+| E2E main gate | `npm run test:e2e:main-gate` | Full Playwright suite (CI main-branch gate) |
+
 CI runs formatting, linting, unit tests, production build, and the critical Playwright suite.
 
 ## Balance Simulation
@@ -174,4 +180,4 @@ React • TypeScript • Vite • Tailwind CSS • Zustand • Electron • Vite
 
 ## Development Guide
 
-See [`AGENTS.md`](./AGENTS.md) for AI-assisted development conventions, architecture notes, and a domain glossary. For copy-paste LLM audit prompts (battle correctness, dead code, migrations, etc.), see [`PROMPTS.md`](./PROMPTS.md).
+See [`AGENTS.md`](./AGENTS.md) for AI-assisted development conventions, architecture, and glossary. Step-by-step implementation checklists (cards, screens, saves, etc.) are in [`docs/WORKFLOWS.md`](./docs/WORKFLOWS.md). For copy-paste LLM audit prompts, see [`PROMPTS.md`](./PROMPTS.md).

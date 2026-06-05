@@ -1,6 +1,6 @@
 /**
  * Hook for managing Labyrinth map navigation, state mutations, and node entry.
- * Depends on: map-generation.ts, screen-store.ts, src/lib/content-systems/types.ts
+ * Depends on: map-generation.ts, run-session-facade, src/lib/content-systems/types.ts
  * Depended on by: use-alchemy-run-controller.ts, tests
  */
 
@@ -12,10 +12,10 @@ import {
   generateLabyrinthMap,
 } from "@/lib/content-systems/labyrinth/map-generation";
 import type { LabyrinthMap, LabyrinthNode, LabyrinthModifierKind } from "@/lib/content-systems/types";
-import { useRunSessionLabyrinthSlice } from "@/features/alchemy/stores/run-session-facade";
-import { setActiveLabyrinthPendingNode, setLabyrinthMap } from "@/features/alchemy/stores/run-session-actions";
-import { readRunSessionStore } from "@/features/alchemy/stores/run-session-read";
-import type { Screen } from "@/features/alchemy/types";
+import { useRunSessionLabyrinthSlice } from "@/features/alchemy/shared/stores/run-session-facade";
+import { setActiveLabyrinthPendingNode, setLabyrinthMap } from "@/features/alchemy/shared/stores/run-session-facade";
+import { readRunSessionStore } from "@/features/alchemy/shared/stores/run-session-facade";
+import type { Screen } from "@/features/alchemy/shared/types";
 import type { LabyrinthNodePosition } from "@/lib/active-run-session";
 
 export type LabyrinthController = {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { defaultBattleState } from "@/lib/battle";
-import { getPlayableHandCardKeys } from "@/features/alchemy/battle/playable-hand";
+import { getPlayableHandCardKeys } from "@/features/alchemy/run-loop/battle/playable-hand";
 import type { BattleCard } from "@/lib/game-data";
 
 const affordableCard: BattleCard = {

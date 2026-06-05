@@ -5,9 +5,9 @@ import { buildActiveRunSnapshot, type ActiveRunData } from "@/lib/active-run-ses
 import type { UnlockedTalents } from "@/lib/game-data";
 import type { Screen } from "@/lib/routing";
 import type { TalentXP } from "@/lib/talents";
-import { flushAlchemySaveNow } from "@/features/alchemy/storage";
-import type { Destination } from "@/features/alchemy/types";
-import { createEmptyRewardState } from "@/features/alchemy/navigation/reward-flow";
+import { flushAlchemySaveNow } from "@/features/alchemy/shared/storage";
+import type { Destination } from "@/features/alchemy/shared/types";
+import { createEmptyRewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
 import { getRunDomainStore, useRunDomainStore } from "./run-domain-store";
 import { createInitialRunDomainData } from "./run-domain-types";
 import { useBattlePresentationStore } from "./battle-presentation-store";
@@ -15,7 +15,7 @@ import { useUiStore } from "./ui-store";
 import { getRunSession } from "./run-session-model";
 
 /** Apply persisted active-run data to the domain store atomically. */
-export function restoreRunFromSnapshot(
+export function restoreRun(
   activeRun: ActiveRunData | null,
   talentXP: TalentXP,
   unlockedTalents: UnlockedTalents,
@@ -56,7 +56,7 @@ export function restoreRunFromSnapshot(
 }
 
 /** Serialize domain store into persisted ActiveRunData. */
-export function snapshotRunFromDomain(screen?: Screen): ActiveRunData {
+export function snapshotRun(screen?: Screen): ActiveRunData {
   const { run, session, battle } = getRunSession(screen);
   return buildActiveRunSnapshot({
     characterId: run.characterId,
@@ -145,13 +145,4 @@ export function applyRunDefeatTeardown(options: {
   stopAllSfx();
   playDefeat();
   options.clearCombatState();
-}
-
-/** @deprecated Use restoreRunFromSnapshot. Kept for lib/active-run-session hydrate targets. */
-export function initializeActiveRunStores(
-  activeRun: ActiveRunData | null,
-  talentXP: TalentXP,
-  unlockedTalents: UnlockedTalents,
-): void {
-  restoreRunFromSnapshot(activeRun, talentXP, unlockedTalents);
 }

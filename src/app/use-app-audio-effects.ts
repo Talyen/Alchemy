@@ -14,7 +14,7 @@ import {
   setSfxVolume,
 } from "@/lib/audio";
 import { audioState } from "@/lib/audio-state";
-import type { Screen } from "@/features/alchemy/types";
+import type { Screen } from "@/features/alchemy/shared/types";
 
 type AppAudioEffectsOptions = {
   masterVol: number;

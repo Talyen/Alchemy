@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 
 import { ArtPanel, CompanionPanel, CombatTextRail } from "../../../shared/ui/battle-ui";
 import { TurnBadge } from "../../../shared/ui/turn-badge";
-import { battleActorSectionClass, bossCardWidthClass } from "@/features/alchemy/config";
+import { battleActorSectionClass, bossCardWidthClass } from "@/features/alchemy/shared/config";
 import type { BattleFeedbackProps, BattleHoverProps, BattleRefsProps, RequiredBattleViewProps } from "./types";
 
 export function BattleActors({

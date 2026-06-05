@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { applyDamageStatuses, applyPoisonTalentRiders } from "@/lib/battle/status-damage-riders";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { createTestBattleState, seededRng } from "./test-state";
@@ -279,7 +279,7 @@ describe("applyPoisonTalentRiders", () => {
   });
 });
 
-describe("applyDamageStatuses — physical riders", () => {
+describe("applyDamageStatuses � physical riders", () => {
   it("detonates bleed when physicalDetonatesBleed is active", () => {
     const state = createTestBattleState({
       enemyHealth: 30,
@@ -310,7 +310,7 @@ describe("applyDamageStatuses — physical riders", () => {
   });
 });
 
-describe("applyDamageStatuses — freeze threshold uses pre-hit health", () => {
+describe("applyDamageStatuses � freeze threshold uses pre-hit health", () => {
   it("does not freeze when stacks are below pre-hit threshold", () => {
     const state = createTestBattleState({
       enemyHealth: 30,

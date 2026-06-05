@@ -4,7 +4,7 @@ import {
   migrateMaterialInventory,
   migrateBuildingIds,
   migrateFarmIds,
-} from "@/features/alchemy/storage/homestead";
+} from "@/features/alchemy/shared/storage/homestead";
 
 afterEach(() => {
   vi.restoreAllMocks();

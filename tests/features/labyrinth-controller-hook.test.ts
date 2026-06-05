@@ -4,13 +4,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { LABYRINTH_COLS } from "@/lib/content-systems/labyrinth/data";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
 import { useLabyrinthController } from "@/features/alchemy/shell/use-labyrinth-controller";
-import { resetScreenStores } from "@/features/alchemy/stores/screen-store";
+import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import { getRunSessionStoreView } from "../helpers/run-domain-store-test";
 
 const START_COL = Math.floor(LABYRINTH_COLS / 2);
 
 beforeEach(() => {
-  resetScreenStores();
+  resetTransientRunUi();
   getRunSessionStoreView().setLabyrinthMap(generateLabyrinthMap());
 });
 

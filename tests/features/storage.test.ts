@@ -15,7 +15,7 @@ import { createSeededRng } from "@/lib/utils";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
 import { hydrateCard } from "@/lib/game-data";
 import { legacyCampaignRunSave, legacyCorruptedCardRunSave, legacyLabyrinthRunSave } from "../fixtures/legacy-saves";
-import type { SaveData } from "@/features/alchemy/storage/types";
+import type { SaveData } from "@/features/alchemy/shared/storage/types";
 
 function activeRun(overrides: Record<string, unknown> = {}) {
   return {

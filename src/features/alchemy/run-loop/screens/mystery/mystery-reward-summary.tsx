@@ -6,7 +6,7 @@ import { MATERIAL_IDS } from "@/lib/homestead/types";
 import { cn } from "@/lib/utils";
 
 import { GoldPill, MaterialPill } from "../../../shared/ui/material-icons";
-import { cardSurfaceClass, collectionTileWidthClass, viewCardWidthClass } from "@/features/alchemy/config";
+import { cardSurfaceClass, collectionTileWidthClass, viewCardWidthClass } from "@/features/alchemy/shared/config";
 import type { MysteryChoice, MysteryEffect } from "../../mystery-events";
 import { TiltSurface } from "../../../shared/ui/tilt-surface";
 import { BattleCardButton } from "../../../shared/ui/card-button";

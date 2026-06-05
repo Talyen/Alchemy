@@ -2,15 +2,15 @@
 import type { Dispatch, SetStateAction } from "react";
 import type { BattleCard, CharacterId, DifficultyId, DifficultyModifier } from "@/lib/game-data";
 import type { LabyrinthModifierKind } from "@/lib/content-systems/types";
-import { readBattleStore, readRunSessionStore } from "../../shared/stores/run-session-read";
+import { readBattleStore, readRunSessionStore } from "../../shared/stores/run-session-facade";
 import { useHomesteadStore } from "../../shared/stores/homestead-store";
 import {
   setCompanionRewardCards,
   setCorruptionResult,
   setHasActiveRun,
   setRewardState,
-} from "../../shared/stores/run-session-actions";
-import { defaultUiStoreAccess, type UiStoreAccess } from "../../shared/stores/ui-store-access";
+} from "../../shared/stores/run-session-facade";
+import { useUiStore } from "../../shared/stores/ui-store";
 import { playUISound } from "@/lib/audio";
 import { ACTS_PER_RUN, CAMPFIRE_HEAL_FRACTION } from "@/lib/game-constants";
 import type { MaterialInventory } from "@/lib/homestead/types";
@@ -21,14 +21,14 @@ import {
   executeRewardRouteTransition,
   type RewardState,
 } from "../navigation/reward-flow";
-import { getRandomPotionCard } from "../navigation/reward-gold";
-import { flushSaveAfterRunEnd } from "@/features/alchemy/stores/run-transitions";
+import { getRandomPotionCard } from "../navigation/reward-flow";
+import { flushSaveAfterRunEnd } from "@/features/alchemy/shared/stores/run-transitions";
 import { applyRunDefeatTeardown, getPreviousDestination } from "../navigation/run-navigation-helpers";
 import { appendCardToRunWithDiscovery, appendTrinketToRunWithDiscovery } from "./deck-mutations";
 import type { ContentSystemNavigationApi } from "@/features/alchemy/run-setup/run/content-system-navigation";
-import { getBossById, getBossEnemy } from "@/features/alchemy/config";
+import { getBossById, getBossEnemy } from "@/features/alchemy/shared/config";
 import { CONSTANTS, type Destination, type Screen } from "../../shared/types";
-import type { RunStateController, TalentStateController } from "../../shared/stores/run-store";
+import type { RunStateController, TalentStateController } from "../../shared/stores/run-session-facade";
 
 type FinalizeRewardResultType = ReturnType<typeof finalizeRewardState>;
 
@@ -81,35 +81,20 @@ type RewardSelectionInput = {
   type: RewardState["rewardType"];
   setRunDeck: Dispatch<SetStateAction<BattleCard[]>>;
   setRunTrinkets: Dispatch<SetStateAction<string[]>>;
-  setDiscoveredCardIds: Dispatch<SetStateAction<string[]>>;
-  setDiscoveredTrinketIds: Dispatch<SetStateAction<string[]>>;
 };
 
-export function applyRewardSelection({
-  choice,
-  type,
-  setRunDeck,
-  setRunTrinkets,
-  setDiscoveredCardIds,
-  setDiscoveredTrinketIds,
-}: RewardSelectionInput) {
+export function applyRewardSelection({ choice, type, setRunDeck, setRunTrinkets }: RewardSelectionInput) {
   const selectedId = choice.id;
   if (type === "card") {
-    appendCardToRunWithDiscovery(choice as BattleCard, { setRunDeck, setDiscoveredCardIds });
+    appendCardToRunWithDiscovery(choice as BattleCard, setRunDeck);
   } else {
-    appendTrinketToRunWithDiscovery(selectedId, { setRunTrinkets, setDiscoveredTrinketIds });
+    appendTrinketToRunWithDiscovery(selectedId, setRunTrinkets);
   }
 }
 
-export function applyAlchemistPotion({
-  setRunDeck,
-  setDiscoveredCardIds,
-}: {
-  setRunDeck: Dispatch<SetStateAction<BattleCard[]>>;
-  setDiscoveredCardIds: Dispatch<SetStateAction<string[]>>;
-}) {
+export function applyAlchemistPotion({ setRunDeck }: { setRunDeck: Dispatch<SetStateAction<BattleCard[]>> }) {
   const potion = getRandomPotionCard();
-  appendCardToRunWithDiscovery(potion, { setRunDeck, setDiscoveredCardIds });
+  appendCardToRunWithDiscovery(potion, setRunDeck);
 }
 
 export type RunDestinationHandlerDeps = {
@@ -119,8 +104,6 @@ export type RunDestinationHandlerDeps = {
   navigateTo: (nextScreen: Screen, onRenderedScreenCommit?: () => void) => void;
   setScreen: React.Dispatch<React.SetStateAction<Screen>>;
   setHasActiveBattle: (value: boolean) => void;
-  setDiscoveredCardIds: React.Dispatch<React.SetStateAction<string[]>>;
-  setDiscoveredTrinketIds: React.Dispatch<React.SetStateAction<string[]>>;
   onInitShop: () => void;
   onInitAlchemist: () => void;
   onStartBattle: (deck?: BattleCard[], gold?: number, enemyType?: "normal" | "elite") => void;
@@ -133,12 +116,9 @@ export type RunDestinationHandlerDeps = {
   clearCombatState: () => void;
   beginMysteryEvent: () => void;
   clearMysteryCardChoices: () => void;
-  getUiStore?: UiStoreAccess;
 };
 
 export function createRunDestinationHandlers(deps: RunDestinationHandlerDeps) {
-  const getUi = deps.getUiStore ?? defaultUiStoreAccess;
-
   function routeAfterReward(
     route: FinalizeRewardResultType["route"],
     materials: MaterialInventory,
@@ -162,17 +142,12 @@ export function createRunDestinationHandlers(deps: RunDestinationHandlerDeps) {
         type: result.selectedRewardType,
         setRunDeck: deps.run.setRunDeck,
         setRunTrinkets: deps.run.setRunTrinkets,
-        setDiscoveredCardIds: deps.setDiscoveredCardIds,
-        setDiscoveredTrinketIds: deps.setDiscoveredTrinketIds,
       });
       playUISound("talentUnlock");
     }
 
     if (result.grantAlchemistReward) {
-      applyAlchemistPotion({
-        setRunDeck: deps.run.setRunDeck,
-        setDiscoveredCardIds: deps.setDiscoveredCardIds,
-      });
+      applyAlchemistPotion({ setRunDeck: deps.run.setRunDeck });
     }
   }
 
@@ -191,7 +166,7 @@ export function createRunDestinationHandlers(deps: RunDestinationHandlerDeps) {
 
     useHomesteadStore.getState().addMaterials(result.materials);
     applyFinalizedRewards(result);
-    getUi().clearCardHover();
+    useUiStore.getState().clearCardHover();
     routeAfterReward(result.route, result.materials, result.nextRewardState, result.clearCompanionRewardCards);
   }
 
@@ -200,7 +175,7 @@ export function createRunDestinationHandlers(deps: RunDestinationHandlerDeps) {
       destination === CONSTANTS.DESTINATIONS.BOSS_COMBAT ? readRunSessionStore().rewardState.selectedBossId : null;
     deps.run.setCompletedDestinations((prev) => [...prev, destination]);
     deps.run.setDestinationIndexInAct((p) => p + 1);
-    getUi().clearCardHover();
+    useUiStore.getState().clearCardHover();
     routeDestinationChoice(destination, {
       navigateTo: deps.navigateTo,
       beginMysteryEvent: deps.beginMysteryEvent,
@@ -227,7 +202,7 @@ export function createRunDestinationHandlers(deps: RunDestinationHandlerDeps) {
   }
 
   function handleActComplete(displayMaterials?: MaterialInventory) {
-    getUi().clearCardHover();
+    useUiStore.getState().clearCardHover();
     deps.setHasActiveBattle(false);
 
     if (deps.run.currentAct >= ACTS_PER_RUN) {
@@ -260,12 +235,12 @@ export function createRunDestinationHandlers(deps: RunDestinationHandlerDeps) {
     deps.run.setRoomsEncountered((p) => p + 1);
     if (deps.run.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.LABYRINTH) {
       deps.onLabyrinthClearNode();
-      getUi().clearCardHover();
+      useUiStore.getState().clearCardHover();
       deps.navigateTo(CONSTANTS.SCREENS.LABYRINTH_MAP);
       return;
     }
     const prevDest = getPreviousDestination(deps.run.destinationIndexInAct, deps.run.completedDestinations);
-    getUi().clearCardHover();
+    useUiStore.getState().clearCardHover();
     deps.clearMysteryCardChoices();
     deps.navigateTo(CONSTANTS.SCREENS.DESTINATION, () => {
       setRewardState(deps.contentNav.createInitialDestinations(undefined, prevDest));

@@ -3,9 +3,14 @@ import type { RefObject } from "react";
 import { TimerGroup } from "@/lib/animation/game-timer";
 import { isPlayerDefeated, type BattleState } from "@/lib/battle";
 import { stopAllSfx } from "@/lib/audio";
-import { readBattleStore } from "../../shared/stores/run-session-read";
+import { readBattleStore } from "../../shared/stores/run-session-facade";
 import { useBattlePresentationStore } from "../../shared/stores/battle-presentation-store";
-import type { createTransferCancelRegistry } from "./transfer-lifecycle";
+import type { createTransferCancelRegistry } from "./card-transfer-animations";
+
+/** Domain battle state plus presentation VFX actions used by turn/card-play orchestration. */
+export function getBattleSessionStore() {
+  return { ...readBattleStore(), ...useBattlePresentationStore.getState() };
+}
 
 export type BattleSessionDeps = {
   battleSessionRef: RefObject<number>;

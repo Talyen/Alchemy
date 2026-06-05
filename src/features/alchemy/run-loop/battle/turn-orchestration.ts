@@ -1,5 +1,5 @@
-// End-turn orchestration: companion queue, enemy phase dispatch, and victory/defeat checks.
-import type { MutableRefObject } from "react";
+// End-turn orchestration, enemy turn UI sequencing, and player end-turn animation gate.
+import type { MutableRefObject, RefObject } from "react";
 import {
   endPlayerTurn,
   isPlayerDefeated,
@@ -7,17 +7,180 @@ import {
   type BattleState,
   type CombatTextEvent,
 } from "@/lib/battle";
-import { applyCombatTextPortraitFeedback } from "./battle-feedback";
+import type { BattleCard } from "@/lib/game-data";
+import { playBattleEvent, playEnemyAttack } from "@/lib/audio";
+import { ENEMY_ATTACK_RECOVERY_DELAY, ENEMY_PHASE_DELAY, isAnimationDisabled } from "@/lib/game-constants";
+import { delay } from "@/lib/animation/game-timer";
+import type { Screen } from "../../shared/types";
+import { applyCombatTextPortraitFeedback, shouldHurtEnemyFromCombatTexts } from "./battle-feedback";
 import { playCompanionSound } from "./controller-utils";
-import {
-  executeEnemyPhase as runExecuteEnemyPhase,
-  resolveHasteSkipTurn as runResolveHasteSkipTurn,
-  resolveNormalEnemyTurn as runResolveNormalEnemyTurn,
-  type EndPlayerTurnResult,
-} from "./turn-resolution-ui";
-import type { HandDrawSequenceDeps } from "./draw-sequence";
+import { runHandDrawSequence, type HandDrawSequenceDeps } from "./draw-sequence";
 
-type TurnOrchestrationStore = ReturnType<typeof import("./battle-store-access").getBattleSessionStore>;
+export type EndPlayerTurnResult = ReturnType<typeof endPlayerTurn>;
+
+export type TurnResolutionStore = {
+  showCombatTexts: (texts: CombatTextEvent[]) => void;
+  setSyncedBattleState: (state: BattleState) => void;
+  setDisplayOverrides: (overrides: {
+    hand: [];
+    playerHealth?: number;
+    playerStatuses?: BattleState["playerStatuses"];
+  }) => void;
+  shakePlayer: () => void;
+  hurtPlayer: () => void;
+  hurtEnemy: () => void;
+  shakeEnemy: () => void;
+};
+
+export function resolveHasteSkipTurn(
+  result: EndPlayerTurnResult,
+  companionState: BattleState,
+  session: number,
+  deps: {
+    store: TurnResolutionStore;
+    drawSequence: HandDrawSequenceDeps;
+    onDrawComplete: (resultState: BattleState, session: number) => void;
+    logDrawError: (err: unknown) => void;
+    setResolvedAsHasteOrStun: (value: boolean) => void;
+    clearHandTransferState: () => void;
+    setCardPlayInProgress: (active: boolean) => void;
+    runIfSessionActive: (session: number, action: () => void) => void;
+  },
+) {
+  deps.setResolvedAsHasteOrStun(true);
+  try {
+    if (result.combatTexts.length > 0) deps.store.showCombatTexts(result.combatTexts);
+  } catch (err) {
+    deps.setResolvedAsHasteOrStun(false);
+    throw err;
+  }
+  void runHandDrawSequence(
+    companionState.hand,
+    result.state,
+    () => deps.store.setSyncedBattleState(result.state),
+    session,
+    deps.drawSequence,
+  )
+    .catch(deps.logDrawError)
+    .finally(() => {
+      deps.runIfSessionActive(session, () => {
+        deps.setResolvedAsHasteOrStun(false);
+        deps.clearHandTransferState();
+        deps.setCardPlayInProgress(false);
+        deps.onDrawComplete(result.state, session);
+      });
+    });
+}
+
+function showEnemyTurnStart(
+  resultState: BattleState,
+  currentState: BattleState,
+  combatTexts: CombatTextEvent[],
+  showPlayerUpdates: boolean,
+  store: TurnResolutionStore,
+) {
+  store.setSyncedBattleState({ ...resultState, turnPhase: "enemy" });
+  store.setDisplayOverrides({
+    hand: [],
+    ...(showPlayerUpdates
+      ? {}
+      : { playerHealth: currentState.playerHealth, playerStatuses: currentState.playerStatuses }),
+  });
+  const dotTexts = combatTexts.filter((ct) => ct.target === "enemy" || ct.kind === "heal");
+  if (dotTexts.length > 0) store.showCombatTexts(dotTexts);
+  if (shouldHurtEnemyFromCombatTexts(dotTexts)) store.hurtEnemy();
+}
+
+export function resolveNormalEnemyTurn(
+  result: EndPlayerTurnResult,
+  companionResult: { state: BattleState; combatTexts: CombatTextEvent[] },
+  session: number,
+  deps: {
+    store: TurnResolutionStore;
+    executeEnemyPhase: (
+      resultState: BattleState,
+      currentState: BattleState,
+      combatTexts: CombatTextEvent[],
+      session: number,
+      playerTurnSkipped: boolean,
+      enemyPerformedAttack: boolean,
+    ) => void;
+    onVictory: () => void;
+    checkBattleEnd: (state: BattleState, session: number) => boolean;
+  },
+) {
+  const enemyTurnStartTexts = result.enemyTurnStartState
+    ? [...companionResult.combatTexts, ...result.enemyTurnStartCombatTexts]
+    : [...companionResult.combatTexts, ...result.combatTexts];
+  const enemyResolutionTexts = result.enemyTurnStartState ? result.enemyResolutionCombatTexts : result.combatTexts;
+  showEnemyTurnStart(
+    result.enemyTurnStartState ?? result.state,
+    companionResult.state,
+    enemyTurnStartTexts,
+    Boolean(result.enemyTurnStartState),
+    deps.store,
+  );
+  if (result.state.enemyHealth <= 0) {
+    deps.store.setSyncedBattleState({ ...result.state, turnPhase: "enemy", hand: [] });
+    deps.onVictory();
+    return;
+  }
+  if (deps.checkBattleEnd(result.state, session)) return;
+  deps.executeEnemyPhase(
+    result.state,
+    companionResult.state,
+    enemyResolutionTexts,
+    session,
+    result.playerTurnSkipped,
+    result.enemyPerformedAttack,
+  );
+}
+
+export async function executeEnemyPhase(
+  resultState: BattleState,
+  currentState: BattleState,
+  combatTexts: CombatTextEvent[],
+  session: number,
+  playerTurnSkipped: boolean,
+  enemyPerformedAttack: boolean,
+  deps: {
+    isSessionActive: (session: number) => boolean;
+    store: TurnResolutionStore;
+    drawSequence: HandDrawSequenceDeps;
+    logDrawError: (err: unknown) => void;
+    onPhaseComplete: (resultState: BattleState, session: number, playerTurnSkipped: boolean) => void;
+  },
+) {
+  const playerTexts = combatTexts.filter((ct) => ct.target === "player");
+  await delay(ENEMY_PHASE_DELAY);
+  if (!deps.isSessionActive(session)) return;
+  if (enemyPerformedAttack) playEnemyAttack(currentState.currentEnemy.id);
+  if (!currentState.deathsDoorActive && resultState.deathsDoorActive) playBattleEvent("deathsDoor");
+  if (combatTexts.length > 0) deps.store.showCombatTexts(combatTexts);
+  applyCombatTextPortraitFeedback(playerTexts, {
+    shakeEnemy: deps.store.shakeEnemy,
+    shakePlayer: deps.store.shakePlayer,
+    hurtEnemy: deps.store.hurtEnemy,
+    hurtPlayer: deps.store.hurtPlayer,
+  });
+  await delay(ENEMY_ATTACK_RECOVERY_DELAY);
+  if (!deps.isSessionActive(session)) return;
+  try {
+    await runHandDrawSequence(
+      currentState.hand,
+      resultState,
+      () => deps.store.setSyncedBattleState(resultState),
+      session,
+      deps.drawSequence,
+    );
+  } catch (err) {
+    deps.logDrawError(err);
+  }
+  if (!deps.isSessionActive(session)) return;
+  deps.onPhaseComplete(resultState, session, playerTurnSkipped);
+}
+
+type TurnOrchestrationStore = ReturnType<typeof import("./battle-session").getBattleSessionStore>;
 
 export type TurnOrchestrationDeps = {
   getStore: () => TurnOrchestrationStore;
@@ -25,7 +188,7 @@ export type TurnOrchestrationDeps = {
   runIfSessionActive: <T>(session: number, action: () => T, fallback?: T) => T;
   checkBattleEnd: (state: BattleState, session: number) => boolean;
   handleVictoryDefeat: (outcome: "victory" | "defeat") => void;
-  getTurnResolutionStore: () => import("./turn-resolution-ui").TurnResolutionStore;
+  getTurnResolutionStore: () => TurnResolutionStore;
   getDrawSequenceDeps: () => HandDrawSequenceDeps;
   logBattleError: (context: string, err: unknown) => void;
   companionScheduledRef: MutableRefObject<boolean>;
@@ -72,7 +235,7 @@ function resolveHasteSkipTurnOrchestration(
   companionState: BattleState,
   session: number,
 ) {
-  runResolveHasteSkipTurn(result, companionState, session, {
+  resolveHasteSkipTurn(result, companionState, session, {
     ...buildDrawTurnDeps(deps, "handle end turn draw sequence"),
     setResolvedAsHasteOrStun: (value) => {
       deps.resolvedAsHasteOrStunRef.current = value;
@@ -109,7 +272,7 @@ function resolveNormalEnemyTurnOrchestration(
     enemyPerformedAttack: boolean,
   ) => Promise<void>,
 ) {
-  runResolveNormalEnemyTurn(result, companionResult, session, {
+  resolveNormalEnemyTurn(result, companionResult, session, {
     store: deps.getTurnResolutionStore(),
     executeEnemyPhase,
     onVictory: () => deps.handleVictoryDefeat("victory"),
@@ -127,7 +290,7 @@ async function executeEnemyPhaseOrchestration(
   enemyPerformedAttack: boolean,
   onPhaseComplete: (resultState: BattleState, session: number, playerTurnSkipped: boolean) => void,
 ) {
-  await runExecuteEnemyPhase(resultState, currentState, combatTexts, session, playerTurnSkipped, enemyPerformedAttack, {
+  await executeEnemyPhase(resultState, currentState, combatTexts, session, playerTurnSkipped, enemyPerformedAttack, {
     isSessionActive: deps.isCurrentBattleSession,
     ...buildDrawTurnDeps(deps, "handle enemy resolution draw sequence"),
     onPhaseComplete,
@@ -193,4 +356,62 @@ export function resolveCompanionFollowUpTexts(deps: TurnOrchestrationDeps, sessi
     store.setSyncedBattleState(newState);
     return texts;
   }, []);
+}
+
+export type BattleEndTurnUiDeps = {
+  screen: Screen;
+  battleSessionRef: RefObject<number>;
+  cardPlayInProgressRef: RefObject<boolean>;
+  cardTransferInProgress: boolean;
+  resolvedAsHasteOrStunRef: RefObject<boolean>;
+  clearBattleTimeoutsKeepCompanion: () => void;
+  runIfSessionActive: (session: number, action: () => void) => void;
+  resetHandTransferUi: () => void;
+  getTurnOrchestrationDeps: () => TurnOrchestrationDeps;
+  animateDiscardedHand: (hand: BattleCard[], session: number) => Promise<void>;
+  logBattleError: (context: string, err: unknown) => void;
+  getStore: () => { battleState: BattleState };
+};
+
+export function createBattleEndTurnUi(deps: BattleEndTurnUiDeps) {
+  function resolveEndTurn(currentState: BattleState, session: number) {
+    resolveEndTurnOrchestration(deps.getTurnOrchestrationDeps(), currentState, session);
+  }
+
+  async function animateEndTurnThenResolve(currentState: BattleState, session: number) {
+    try {
+      if (!isAnimationDisabled()) {
+        try {
+          await deps.animateDiscardedHand(currentState.hand, session);
+        } catch (err) {
+          deps.logBattleError("discard hand animation", err);
+        }
+      }
+      deps.runIfSessionActive(session, () => resolveEndTurn(currentState, session));
+    } finally {
+      deps.runIfSessionActive(session, () => {
+        if (!deps.resolvedAsHasteOrStunRef.current) deps.resetHandTransferUi();
+        deps.cardPlayInProgressRef.current = false;
+      });
+    }
+  }
+
+  function handleEndTurn() {
+    const currentState = deps.getStore().battleState;
+    if (
+      deps.screen !== "battle" ||
+      currentState.turnPhase !== "player" ||
+      currentState.wishOptions ||
+      deps.cardPlayInProgressRef.current ||
+      deps.cardTransferInProgress
+    )
+      return;
+    deps.clearBattleTimeoutsKeepCompanion();
+    const session = deps.battleSessionRef.current;
+    void animateEndTurnThenResolve(currentState, session).catch((err) =>
+      deps.logBattleError("resolve end turn animation sequence", err),
+    );
+  }
+
+  return { handleEndTurn, resolveEndTurn };
 }

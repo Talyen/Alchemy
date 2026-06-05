@@ -8,7 +8,7 @@ import { materialLabels } from "@/lib/homestead/types";
 import { matIconMap, matPillStyle, matTextColor } from "./material-icons";
 import { TooltipHeader } from "./tooltip-panel";
 import { renderColoredKeywords } from "./card-description-ui";
-import type { MysteryEffect } from "@/features/alchemy/mystery-events";
+import type { MysteryEffect } from "@/features/alchemy/run-loop/mystery-events";
 
 const goldDef = keywordDefinitions.gold;
 

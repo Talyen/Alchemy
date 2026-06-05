@@ -1,20 +1,20 @@
 // Battle victory/defeat teardown and end-of-run material awards.
 import type { RefObject } from "react";
 import { TimerGroup } from "@/lib/animation/game-timer";
-import { readActiveRunStore, readBattleStore, readRunSessionStore } from "../../shared/stores/run-session-read";
+import { readActiveRunStore, readBattleStore, readRunSessionStore } from "../../shared/stores/run-session-facade";
 import { useHomesteadStore } from "../../shared/stores/homestead-store";
-import { setCompanionRewardCards, setRewardState, setRunEndMaterials } from "../../shared/stores/run-session-actions";
-import { defaultUiStoreAccess, type UiStoreAccess } from "../../shared/stores/ui-store-access";
+import { setCompanionRewardCards, setRewardState, setRunEndMaterials } from "../../shared/stores/run-session-facade";
+import { useUiStore } from "../../shared/stores/ui-store";
 import { playVictory, stopAllSfx } from "@/lib/audio";
 import { getEndOfRunMaterials, applyMaterialFindBonus } from "@/lib/homestead/loot";
 import { addInventory } from "@/lib/homestead/inventory";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import { VICTORY_TRANSITION_DELAY } from "@/lib/game-constants";
-import { getBossEnemy } from "@/features/alchemy/config";
+import { getBossEnemy } from "@/features/alchemy/shared/config";
 import { computeVictoryRewards, commitVictoryRewards } from "../navigation/victory-flow";
 import { applyRunDefeatTeardown } from "../navigation/run-navigation-helpers";
 import { CONSTANTS, type Destination, type Screen } from "../../shared/types";
-import type { TalentStateController } from "../../shared/stores/run-store";
+import type { TalentStateController } from "../../shared/stores/run-session-facade";
 
 type GetAvailableDestinations = (options?: {
   currentHealth?: number;
@@ -30,15 +30,12 @@ export type RunVictoryHandlerDeps = {
   onLabyrinthFailNode: () => void;
   getAvailableDestinations: GetAvailableDestinations;
   talents: TalentStateController;
-  getUiStore?: UiStoreAccess;
 };
 
 export function createRunVictoryHandlers(deps: RunVictoryHandlerDeps) {
-  const getUiStore = deps.getUiStore ?? defaultUiStoreAccess;
-
   function clearCombatState() {
     readBattleStore().setHasActiveBattle(false);
-    getUiStore().clearCardHover();
+    useUiStore.getState().clearCardHover();
   }
 
   function awardRunEndMaterials(displayMaterials: MaterialInventory | null = null) {

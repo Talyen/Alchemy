@@ -1,8 +1,8 @@
 import { describe, expect, it, beforeEach, vi } from "vitest";
 import { createContentSystemNavigation } from "@/features/alchemy/run-setup/run/content-system-navigation";
-import { resetScreenStores } from "@/features/alchemy/stores/screen-store";
-import { useHomesteadStore } from "@/features/alchemy/stores/homestead-store";
-import { CONSTANTS } from "@/features/alchemy/types";
+import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
+import { useHomesteadStore } from "@/features/alchemy/shared/stores/homestead-store";
+import { CONSTANTS } from "@/features/alchemy/shared/types";
 import { makeRunController, makeTalentController } from "../../helpers/run-controller";
 import type { BattleCard } from "@/lib/game-data";
 import {
@@ -17,8 +17,8 @@ vi.mock("@/lib/audio", () => ({
   playGoldGain: vi.fn(),
 }));
 
-vi.mock("@/features/alchemy/navigation/run-navigation-helpers", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/features/alchemy/navigation/run-navigation-helpers")>();
+vi.mock("@/features/alchemy/run-loop/navigation/run-navigation-helpers", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/alchemy/run-loop/navigation/run-navigation-helpers")>();
   return {
     ...actual,
     afterCampaignCharacterResolved: vi.fn((_id, _deps, onContinue) => onContinue()),
@@ -26,7 +26,7 @@ vi.mock("@/features/alchemy/navigation/run-navigation-helpers", async (importOri
 });
 
 beforeEach(() => {
-  resetScreenStores();
+  resetTransientRunUi();
   resetRunProgressSlice();
   useHomesteadStore.setState(useHomesteadStore.getInitialState());
 });
@@ -48,8 +48,6 @@ function makeDeps(overrides: Partial<Parameters<typeof createContentSystemNaviga
     returnToBattle,
     onStartBattle,
     getAvailableDestinations: () => [CONSTANTS.DESTINATIONS.NORMAL_COMBAT],
-    setDiscoveredCardIds: vi.fn(),
-    setEncounteredEnemyIds: vi.fn(),
     ...overrides,
   };
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getCorruptedValueOffsets, splitCorruptedNumericParts } from "@/features/alchemy/ui/card-text";
+import { getCorruptedValueOffsets, splitCorruptedNumericParts } from "@/features/alchemy/shared/ui/card-text";
 
 describe("card text helpers", () => {
   it("splits numeric fragments and marks corrupted offsets", () => {

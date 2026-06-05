@@ -7,15 +7,15 @@ import {
   useRunSessionBattleContext,
   useRunSessionNavigationSlice,
   useRunSessionShopSlice,
-} from "@/features/alchemy/stores/run-session-model";
-import { resetScreenStores } from "@/features/alchemy/stores/screen-store";
+} from "@/features/alchemy/shared/stores/run-session-model";
+import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import {
   getBattleStoreView,
   getRunSessionStoreView,
 } from "../../helpers/run-domain-store-test";
 
 beforeEach(() => {
-  resetScreenStores();
+  resetTransientRunUi();
   getBattleStoreView().setSyncedBattleState(defaultBattleState());
   getBattleStoreView().setHasActiveBattle(false);
 });

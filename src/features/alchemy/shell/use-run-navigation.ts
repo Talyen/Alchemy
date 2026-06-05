@@ -4,21 +4,19 @@
 // Depended on by: useAlchemyRunController for managing the overall flow of a run.
 import { useEffect, useCallback, useRef, useMemo } from "react";
 import { TimerGroup } from "@/lib/animation/game-timer";
-import { useShallow } from "zustand/react/shallow";
-import { useRunAdapter, useTalentAdapter } from "@/features/alchemy/stores/run-store";
-import { teardownRun } from "@/features/alchemy/stores/run-transitions";
-import { useAppStore } from "@/features/alchemy/stores/app-store";
-import { useRunDomainStore } from "@/features/alchemy/stores/run-store";
-import { useBattlePresentationStore } from "@/features/alchemy/stores/battle-presentation-store";
+import { useRunAdapter, useTalentAdapter } from "@/features/alchemy/shared/stores/run-session-facade";
+import { teardownRun } from "@/features/alchemy/shared/stores/run-transitions";
+import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
+import { useRunDomainStore } from "@/features/alchemy/shared/stores/run-session-facade";
+import { useBattlePresentationStore } from "@/features/alchemy/shared/stores/battle-presentation-store";
 import { type BattleCard, type CharacterId, type DifficultyId, type DifficultyModifier } from "@/lib/game-data";
 import { playUISound } from "@/lib/audio";
-import { CONSTANTS, type Destination, type Screen } from "@/features/alchemy/types";
-import { getRunAvailableDestinations } from "@/features/alchemy/navigation/destination-flow";
-import { getPreviousDestination } from "@/features/alchemy/navigation/run-navigation-helpers";
-import { useMysteryFlow } from "@/features/alchemy/navigation/use-mystery-flow";
-import { useUiStore } from "@/features/alchemy/stores/ui-store";
-import { useRunNavigationSession } from "@/features/alchemy/navigation/run-navigation-session";
-import { applyCorruptionToDeck } from "@/features/alchemy/navigation/run-navigation-corruption";
+import { CONSTANTS, type Destination, type Screen } from "@/features/alchemy/shared/types";
+import { getRunAvailableDestinations } from "@/features/alchemy/run-loop/navigation/destination-flow";
+import { getPreviousDestination } from "@/features/alchemy/run-loop/navigation/run-navigation-helpers";
+import { useMysteryFlow } from "@/features/alchemy/run-loop/navigation/use-mystery-flow";
+import { useRunNavigationSession } from "@/features/alchemy/run-loop/navigation/run-navigation-session";
+import { applyCorruptionToDeck } from "@/features/alchemy/run-loop/navigation/run-navigation-corruption";
 import { useActiveRunSnapshot } from "@/features/alchemy/run-loop/run/use-active-run-snapshot";
 import { createRunVictoryHandlers } from "@/features/alchemy/run-loop/run/run-victory-handlers";
 import { createContentSystemNavigation } from "@/features/alchemy/run-setup/run/content-system-navigation";
@@ -61,14 +59,7 @@ export function useRunNavigation({
   const setHasActiveBattle = useRunDomainStore((s) => s.setHasActiveBattle);
   const clearCardGhosts = useBattlePresentationStore((s) => s.clearCardGhosts);
 
-  const { completedDifficulties, setDiscoveredCardIds, setEncounteredEnemyIds, setDiscoveredTrinketIds } = useAppStore(
-    useShallow((s) => ({
-      completedDifficulties: s.completedDifficulties,
-      setDiscoveredCardIds: s.setDiscoveredCardIds,
-      setEncounteredEnemyIds: s.setEncounteredEnemyIds,
-      setDiscoveredTrinketIds: s.setDiscoveredTrinketIds,
-    })),
-  );
+  const completedDifficulties = useAppStore((s) => s.completedDifficulties);
 
   const draftedDeckRef = useRef<BattleCard[] | null>(null);
   const {
@@ -135,8 +126,6 @@ export function useRunNavigation({
         returnToBattle,
         onStartBattle,
         getAvailableDestinations,
-        setDiscoveredCardIds,
-        setEncounteredEnemyIds,
       }),
     [
       run,
@@ -149,8 +138,6 @@ export function useRunNavigation({
       returnToBattle,
       onStartBattle,
       getAvailableDestinations,
-      setDiscoveredCardIds,
-      setEncounteredEnemyIds,
     ],
   );
 
@@ -174,8 +161,6 @@ export function useRunNavigation({
         navigateTo,
         setScreen,
         setHasActiveBattle,
-        setDiscoveredCardIds,
-        setDiscoveredTrinketIds,
         onInitShop,
         onInitAlchemist,
         onStartBattle,
@@ -188,7 +173,6 @@ export function useRunNavigation({
         clearCombatState,
         beginMysteryEvent,
         clearMysteryCardChoices: mystery.clearCardChoices,
-        getUiStore: () => useUiStore.getState(),
       }),
     [
       run,
@@ -197,8 +181,6 @@ export function useRunNavigation({
       navigateTo,
       setScreen,
       setHasActiveBattle,
-      setDiscoveredCardIds,
-      setDiscoveredTrinketIds,
       onInitShop,
       onInitAlchemist,
       onStartBattle,
@@ -233,7 +215,7 @@ export function useRunNavigation({
   }
 
   function handleCorruptCard(cardIndex: number) {
-    applyCorruptionToDeck(run.runDeck, cardIndex, run.setRunDeck, setDiscoveredCardIds);
+    applyCorruptionToDeck(run.runDeck, cardIndex, run.setRunDeck);
   }
 
   function handleCorruptionExit() {

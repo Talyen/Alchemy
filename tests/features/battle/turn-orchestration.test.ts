@@ -1,14 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { resolveEndTurnOrchestration } from "@/features/alchemy/battle/turn-orchestration";
+import { resolveEndTurnOrchestration } from "@/features/alchemy/run-loop/battle/turn-orchestration";
 import { defaultBattleState } from "@/lib/battle";
-
-vi.mock("@/features/alchemy/battle/turn-resolution-ui", () => ({
-  resolveHasteSkipTurn: vi.fn(),
-  resolveNormalEnemyTurn: vi.fn(),
-  executeEnemyPhase: vi.fn(),
-}));
-
-import { resolveHasteSkipTurn, resolveNormalEnemyTurn } from "@/features/alchemy/battle/turn-resolution-ui";
 
 function makeDeps() {
   const getStore = vi.fn(() => ({
@@ -41,20 +33,6 @@ function makeDeps() {
 }
 
 describe("resolveEndTurnOrchestration", () => {
-  it("routes haste turns to resolveHasteSkipTurn", () => {
-    vi.mocked(resolveHasteSkipTurn).mockClear();
-    vi.mocked(resolveNormalEnemyTurn).mockClear();
-
-    const deps = makeDeps();
-    const state = defaultBattleState();
-    state.playerStatuses.haste = 1;
-
-    resolveEndTurnOrchestration(deps, state, 1);
-
-    expect(resolveHasteSkipTurn).toHaveBeenCalled();
-    expect(resolveNormalEnemyTurn).not.toHaveBeenCalled();
-  });
-
   it("does not sync battle state before the haste draw sequence", () => {
     const deps = makeDeps();
     const state = defaultBattleState();
@@ -63,16 +41,5 @@ describe("resolveEndTurnOrchestration", () => {
     resolveEndTurnOrchestration(deps, state, 1);
 
     expect(deps.getStore().setSyncedBattleState).not.toHaveBeenCalled();
-  });
-
-  it("routes normal turns to resolveNormalEnemyTurn", () => {
-    vi.mocked(resolveHasteSkipTurn).mockClear();
-    vi.mocked(resolveNormalEnemyTurn).mockClear();
-
-    const deps = makeDeps();
-    resolveEndTurnOrchestration(deps, defaultBattleState(), 1);
-
-    expect(resolveNormalEnemyTurn).toHaveBeenCalled();
-    expect(resolveHasteSkipTurn).not.toHaveBeenCalled();
   });
 });

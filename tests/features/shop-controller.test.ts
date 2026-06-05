@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach } from "vitest";
-import { resetScreenStores } from "@/features/alchemy/stores/screen-store";
+import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import {
   SHOP_CARD_PRICE,
   SHOP_REMOVE_PRICE,
@@ -10,7 +10,7 @@ import {
   ALCHEMIST_MIX_PRICE,
   ALCHEMIST_POTIONS_OFFERED,
 } from "@/lib/game-constants";
-import { createInitialShopState, createInitialAlchemistState } from "@/features/alchemy/shop/shop-state-init";
+import { createInitialShopState, createInitialAlchemistState } from "@/features/alchemy/run-loop/shop/shop-state-init";
 import type { BattleCard } from "@/lib/game-data";
 import {
   getRunProgressStoreView,
@@ -22,7 +22,7 @@ import {
 
 beforeEach(() => {
   resetRunProgressSlice();
-  resetScreenStores();
+  resetTransientRunUi();
 });
 
 function makeCard(overrides: Partial<BattleCard> = {}): BattleCard {

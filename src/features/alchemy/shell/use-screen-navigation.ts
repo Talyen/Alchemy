@@ -2,7 +2,7 @@
 import { useCallback, useRef } from "react";
 import { TimerGroup } from "@/lib/animation/game-timer";
 import { NAVIGATION_DELAY_MS } from "@/lib/game-constants";
-import type { Screen } from "@/features/alchemy/types";
+import type { Screen } from "@/features/alchemy/shared/types";
 
 export function useScreenNavigation(screen: Screen, setScreen: React.Dispatch<React.SetStateAction<Screen>>) {
   const navTimer = useRef(new TimerGroup());

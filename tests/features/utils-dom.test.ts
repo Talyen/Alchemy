@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getBattleCardPlayTarget, getCardRect } from "@/features/alchemy/utils/dom";
+import { getBattleCardPlayTarget, getCardRect } from "@/features/alchemy/shared/utils/dom";
 import type { BattleCard } from "@/lib/game-data";
 
 function makeCard(effects: BattleCard["effects"]): BattleCard {

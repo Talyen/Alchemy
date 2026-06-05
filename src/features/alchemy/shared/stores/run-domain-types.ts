@@ -1,17 +1,30 @@
 // Types and initial state for the consolidated run domain store.
-import type { BattleCard } from "@/lib/game-data";
+import type { BattleCard, CharacterId, DifficultyId, KeywordId, UnlockedTalents } from "@/lib/game-data";
 import { defaultBattleState, type BattleState, type PlayerStatusValues, type TurnPhase } from "@/lib/battle";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
-import { createEmptyRewardState } from "@/features/alchemy/navigation/reward-flow";
+import { createEmptyRewardState, type RewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
 import { SHOP_REFRESHES, ALCHEMIST_REFRESHES } from "@/lib/game-constants";
-import type { ShopState, AlchemistState } from "@/features/alchemy/shop/shop-state-init";
+import type { ShopState, AlchemistState } from "@/features/alchemy/run-loop/shop/shop-state-init";
 import {
   createInitialRunState,
   createInitialTalentState,
   type RunStateFields,
 } from "@/features/alchemy/run-setup/run/run-state-init";
-import type { RunSessionFields } from "./run-session-store-types";
-import type { Screen } from "@/features/alchemy/types";
+import type { ActiveRunData, LabyrinthNodePosition } from "@/lib/active-run-session";
+import type { RunStartSnapshot } from "@/features/alchemy/run-setup/run/run-start";
+import type { Destination, Screen } from "@/features/alchemy/shared/types";
+import type { ContentSystemId, LabyrinthMap, LabyrinthModifierKind } from "@/lib/content-systems/types";
+import type { CorruptionResult } from "@/lib/corruption";
+import type { MysteryEvent } from "@/lib/mystery";
+import type { MaterialInventory } from "@/lib/homestead/types";
+import type { TalentXP } from "@/lib/talents";
+import type { Setter } from "@/lib/utils";
+
+export type NavigationStore = {
+  screen: Screen;
+  setScreen: Setter<Screen>;
+  reset: () => void;
+};
 
 export type DisplayOverrides = {
   /** Shallow-merged via `{ ...battleState, ...displayOverrides }`. Only use top-level primitive fields. */
@@ -98,3 +111,79 @@ export function createInitialRunDomainData(): RunDomainDataState {
     battle: createInitialBattleFields(),
   };
 }
+
+export type RunSessionFields = {
+  hasActiveRun: boolean;
+  activeLabyrinthModifiers: LabyrinthModifierKind[];
+  activeLabyrinthRewardModifiers: LabyrinthModifierKind[];
+  activeLabyrinthPendingNode: LabyrinthNodePosition | null;
+  rewardState: RewardState;
+  companionRewardCards: BattleCard[] | null;
+  runEndMaterials: MaterialInventory;
+  runEndTalentXP: TalentXP;
+  corruptionResult: CorruptionResult | null;
+  pendingCharacterId: CharacterId | null;
+  pendingContentSystemType: ContentSystemId;
+  labyrinthMap: LabyrinthMap;
+  shopState: ShopState;
+  alchemistState: AlchemistState;
+  mysteryEvent: MysteryEvent | null;
+  mysteryCardChoices: BattleCard[] | null;
+};
+
+type RunSessionActions = {
+  setHasActiveRun: (active: boolean) => void;
+  setActiveLabyrinthModifiers: (modifiers: LabyrinthModifierKind[]) => void;
+  setActiveLabyrinthRewardModifiers: (modifiers: LabyrinthModifierKind[]) => void;
+  setActiveLabyrinthPendingNode: (node: LabyrinthNodePosition | null) => void;
+  setRewardState: Setter<RewardState>;
+  setCompanionRewardCards: (cards: BattleCard[] | null) => void;
+  setRunEndMaterials: (materials: MaterialInventory) => void;
+  setRunEndTalentXP: (xp: TalentXP) => void;
+  setCorruptionResult: (result: CorruptionResult | null) => void;
+  setPendingCharacterId: (id: CharacterId | null) => void;
+  setPendingContentSystemType: (type: ContentSystemId) => void;
+  setLabyrinthMap: Setter<LabyrinthMap>;
+  setShopState: Setter<ShopState>;
+  setAlchemistState: Setter<AlchemistState>;
+  setMysteryEvent: (event: MysteryEvent | null) => void;
+  setMysteryCardChoices: (choices: BattleCard[] | null | ((prev: BattleCard[] | null) => BattleCard[] | null)) => void;
+  clearTransientSession: () => void;
+};
+
+export type RunSessionStore = RunSessionFields & RunSessionActions;
+
+type RunProgressActions = {
+  setRunDeck: Setter<BattleCard[]>;
+  setRunGold: Setter<number>;
+  setRunPlayerHealth: Setter<number>;
+  setRunMaxHealth: Setter<number>;
+  setRoomsEncountered: Setter<number>;
+  setCurrentAct: Setter<number>;
+  setDestinationIndexInAct: Setter<number>;
+  setCompletedDestinations: Setter<Destination[]>;
+  setRunTrinkets: Setter<string[]>;
+  setEncounteredRunEnemyIds: Setter<string[]>;
+  setSelectedDifficulty: Setter<DifficultyId | null>;
+  setContentSystemType: Setter<ContentSystemId>;
+  setCharacter: (selectedId: CharacterId) => void;
+  reset: () => void;
+  addRunGold: (amount: number) => void;
+  unlockTalent: (keywordId: KeywordId, talentId: string) => void;
+  unlockAllTalents: () => void;
+  resetUnlockedTalents: () => void;
+  resetRunXP: () => void;
+  clearPermanentData: () => void;
+  awardCardXP: (card: BattleCard) => void;
+  awardMysteryXP: (keywordId: KeywordId, amount: number) => void;
+  finalizeRunXP: () => void;
+  initialize: (
+    activeRun: ActiveRunData | null,
+    talentXP: TalentXP,
+    unlockedTalents: UnlockedTalents,
+    fallbackCharacterId?: CharacterId,
+  ) => void;
+  hydrateFromSnapshot: (snapshot: RunStartSnapshot) => void;
+};
+
+export type RunProgressStore = RunStateFields & RunProgressActions;

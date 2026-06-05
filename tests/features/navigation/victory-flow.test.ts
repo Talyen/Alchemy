@@ -6,18 +6,18 @@ import {
   computeVictoryRewards,
   commitVictoryRewards,
   type VictoryRewardsInput,
-} from "@/features/alchemy/navigation/victory-flow";
-import { createEmptyRewardState } from "@/features/alchemy/navigation/reward-flow";
+} from "@/features/alchemy/run-loop/navigation/victory-flow";
+import { createEmptyRewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { playGoldGain } from "@/lib/audio";
-import type { Destination } from "@/features/alchemy/types";
+import type { Destination } from "@/features/alchemy/shared/types";
 
 vi.mock("@/lib/utils", async () => {
   const actual = await vi.importActual<typeof import("@/lib/utils")>("@/lib/utils");
   return { ...actual, randomInt: vi.fn(() => 15) };
 });
 
-vi.mock("@/features/alchemy/navigation/destination-flow", () => ({
+vi.mock("@/features/alchemy/run-loop/navigation/destination-flow", () => ({
   sampleDestinationChoices: vi.fn((dests: Destination[]) => dests.slice(0, 3)),
 }));
 

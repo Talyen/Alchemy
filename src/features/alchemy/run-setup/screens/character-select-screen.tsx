@@ -18,7 +18,7 @@ import {
   TooltipSubheader,
   useTooltipFlip,
 } from "../../shared/ui/tooltip-panel";
-import { cardSurfaceClass } from "@/features/alchemy/config";
+import { cardSurfaceClass } from "@/features/alchemy/shared/config";
 import { useUiStore } from "../../shared/stores/ui-store";
 
 const charCardWidthClass = "w-[clamp(18vh,20.5vh,28vh)]";

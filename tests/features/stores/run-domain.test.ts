@@ -1,13 +1,46 @@
-import { describe, expect, it, beforeEach } from "vitest";
-import { initializeActiveRunStores } from "@/features/alchemy/stores/run-transitions";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { defaultBattleState } from "@/lib/battle";
+import { ROUTE_SCREENS } from "@/lib/routing";
+import { createActiveRunSnapshot } from "@/lib/active-run-session";
+import { createEmptyRewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
+import {
+  applyRunDefeatTeardown,
+  flushSaveAfterRunEnd,
+  restoreRun,
+  syncBattleToRun,
+  syncRunToBattleStart,
+  teardownRun,
+} from "@/features/alchemy/shared/stores/run-transitions";
+import {
+  getCombinedRunGold,
+  getCurrentRunPhase,
+  getRunSession,
+  snapshotRun,
+} from "@/features/alchemy/shared/stores/run-session-facade";
+import { flattenRunSessionForScreens } from "@/features/alchemy/shared/stores/run-screen-data";
 import { computeTalentPoints } from "@/lib/talents";
 import type { BattleCard } from "@/lib/game-data";
 import type { ActiveRunData } from "@/lib/active-run-session";
+
+vi.mock("@/features/alchemy/shared/storage/flush-save", () => ({
+  flushAlchemySaveNow: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock("@/lib/audio", () => ({
+  playDefeat: vi.fn(),
+  stopAllSfx: vi.fn(),
+}));
+
+import { flushAlchemySaveNow } from "@/features/alchemy/shared/storage/flush-save";
+import { playDefeat, stopAllSfx } from "@/lib/audio";
 import {
+  getBattleStoreView,
   getNavigationStoreView,
   getRunProgressStoreView,
   getRunSessionStoreView,
+  resetRunBattleSlice,
   resetRunDomainStore,
+  resetRunSessionSlice,
   setRunProgress,
 } from "../../helpers/run-domain-store-test";
 
@@ -116,7 +149,7 @@ describe("initialize", () => {
     expect(getRunProgressStoreView().characterId).toBe("knight");
   });
 
-  it("restores navigation screen via initializeActiveRunStores", () => {
+  it("restores navigation screen via restoreRun", () => {
     const activeRun: ActiveRunData = {
       characterId: "knight",
       runDeck: [],
@@ -138,7 +171,7 @@ describe("initialize", () => {
       currentScreen: "shop",
       destinationChoices: [],
     };
-    initializeActiveRunStores(activeRun, {}, {});
+    restoreRun(activeRun, {}, {});
     expect(getNavigationStoreView().screen).toBe("shop");
   });
 });
@@ -374,5 +407,165 @@ describe("hydrateFromSnapshot", () => {
     });
     expect(getRunProgressStoreView().runTalentXP).toEqual({});
     expect(getRunSessionStoreView().runEndTalentXP).toEqual({});
+  });
+});
+
+describe("session slice", () => {
+  beforeEach(() => {
+    resetRunSessionSlice();
+  });
+
+  it("has empty shop and alchemist state", () => {
+    expect(getRunSessionStoreView().shopState.cards).toEqual([]);
+    expect(getRunSessionStoreView().alchemistState.potions).toEqual([]);
+  });
+
+  it("starts with empty reward state and no active run", () => {
+    expect(getRunSessionStoreView().rewardState).toEqual(createEmptyRewardState());
+    expect(getRunSessionStoreView().hasActiveRun).toBe(false);
+  });
+
+  it("setRewardState accepts direct values and updaters", () => {
+    getRunSessionStoreView().setRewardState({ ...createEmptyRewardState(), gold: 50 });
+    expect(getRunSessionStoreView().rewardState.gold).toBe(50);
+    getRunSessionStoreView().setRewardState((prev) => ({ ...prev, gold: prev.gold + 25 }));
+    expect(getRunSessionStoreView().rewardState.gold).toBe(75);
+  });
+});
+
+describe("battle slice", () => {
+  beforeEach(() => {
+    resetRunBattleSlice();
+  });
+
+  it("initializes battleState and hasActiveBattle defaults", () => {
+    expect(getBattleStoreView().battleState).not.toBeNull();
+    expect(getBattleStoreView().hasActiveBattle).toBe(false);
+  });
+
+  it("hydrates and resets active battle", () => {
+    getBattleStoreView().initializeActiveBattle({ ...defaultBattleState(), turn: 4, playerHealth: 9 });
+    expect(getBattleStoreView().hasActiveBattle).toBe(true);
+    getBattleStoreView().initializeActiveBattle(null);
+    expect(getBattleStoreView().hasActiveBattle).toBe(false);
+  });
+});
+
+describe("run transitions", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    resetRunDomainStore();
+    teardownRun();
+    setRunProgress({ runPlayerHealth: 18, runMaxHealth: 24, runGold: 40, initialized: true });
+    getBattleStoreView().setSyncedBattleState({ ...defaultBattleState(), playerHealth: 10, gold: 7 });
+    getRunSessionStoreView().setHasActiveRun(true);
+  });
+
+  it("syncRunToBattleStart clamps and persists run HP", () => {
+    const health = syncRunToBattleStart();
+    expect(health).toBeGreaterThan(0);
+    expect(getRunProgressStoreView().runPlayerHealth).toBe(health);
+  });
+
+  it("syncBattleToRun copies battle HP to the run store", () => {
+    syncBattleToRun({ playerHealth: 14 });
+    expect(getRunProgressStoreView().runPlayerHealth).toBe(14);
+  });
+
+  it("teardownRun clears session flags and returns to menu", () => {
+    teardownRun();
+    expect(getRunSessionStoreView().hasActiveRun).toBe(false);
+    expect(getBattleStoreView().hasActiveBattle).toBe(false);
+    expect(getNavigationStoreView().screen).toBe(ROUTE_SCREENS.MENU);
+  });
+
+  it("flushSaveAfterRunEnd persists with no active run", async () => {
+    flushSaveAfterRunEnd();
+    await vi.waitFor(() => {
+      expect(flushAlchemySaveNow).toHaveBeenCalledWith(null);
+    });
+  });
+
+  it("applyRunDefeatTeardown awards materials, finalizes XP, flushes, and clears combat", async () => {
+    const awardRunEndMaterials = vi.fn();
+    const finalizeRunXP = vi.fn();
+    const clearCombatState = vi.fn();
+    applyRunDefeatTeardown({ awardRunEndMaterials, finalizeRunXP, clearCombatState });
+    expect(awardRunEndMaterials).toHaveBeenCalledOnce();
+    expect(finalizeRunXP).toHaveBeenCalledOnce();
+    await vi.waitFor(() => {
+      expect(flushAlchemySaveNow).toHaveBeenCalledWith(null);
+    });
+    expect(clearCombatState).toHaveBeenCalledOnce();
+    expect(stopAllSfx).toHaveBeenCalledOnce();
+    expect(playDefeat).toHaveBeenCalledOnce();
+  });
+});
+
+describe("session facade API", () => {
+  beforeEach(() => {
+    teardownRun();
+    getRunProgressStoreView().reset();
+    setRunProgress({ runPlayerHealth: 18, runMaxHealth: 24, runGold: 40, initialized: true });
+    getBattleStoreView().setSyncedBattleState({ ...defaultBattleState(), playerHealth: 10, gold: 7 });
+    getRunSessionStoreView().setHasActiveRun(true);
+  });
+
+  it("flattenRunSessionForScreens aggregates run, battle, and session fields", () => {
+    const flat = flattenRunSessionForScreens(getRunSession(ROUTE_SCREENS.MENU));
+    expect(flat.runPlayerHealth).toBe(18);
+    expect(flat.runGold).toBe(40);
+    expect(flat.battleState.playerHealth).toBe(10);
+    expect(flat.hasActiveRun).toBe(true);
+    expect(flat.phase).toBe("meta");
+  });
+
+  it("getCombinedRunGold sums map and combat gold", () => {
+    expect(getCombinedRunGold()).toBe(47);
+  });
+
+  it("getCurrentRunPhase reflects battle screen and hasActiveBattle", () => {
+    getBattleStoreView().setHasActiveBattle(true);
+    expect(getCurrentRunPhase(ROUTE_SCREENS.BATTLE)).toBe("battle");
+    getBattleStoreView().setHasActiveBattle(false);
+    expect(getCurrentRunPhase(ROUTE_SCREENS.BATTLE)).toBe("runLoop");
+  });
+
+  it("snapshotRun matches explicit snapshot fields", () => {
+    setRunProgress({
+      characterId: "knight",
+      runDeck: [],
+      runGold: 12,
+      runPlayerHealth: 18,
+      runMaxHealth: 24,
+      contentSystemType: "campaign",
+    });
+    getRunSessionStoreView().setRewardState((prev) => ({ ...prev, destinations: ["campfire", "shop"] }));
+    const fromStores = snapshotRun(ROUTE_SCREENS.DESTINATION);
+    const explicit = createActiveRunSnapshot({
+      characterId: "knight",
+      runDeck: [],
+      runGold: 12,
+      runPlayerHealth: 18,
+      runMaxHealth: 24,
+      roomsEncountered: getRunProgressStoreView().roomsEncountered,
+      currentAct: getRunProgressStoreView().currentAct,
+      destinationIndexInAct: getRunProgressStoreView().destinationIndexInAct,
+      completedDestinations: getRunProgressStoreView().completedDestinations,
+      runTrinkets: getRunProgressStoreView().runTrinkets,
+      encounteredRunEnemyIds: getRunProgressStoreView().encounteredRunEnemyIds,
+      selectedDifficulty: getRunProgressStoreView().selectedDifficulty,
+      contentSystemType: "campaign",
+      labyrinthMap: getRunSessionStoreView().labyrinthMap,
+      hasActiveBattle: getBattleStoreView().hasActiveBattle,
+      battleState: getBattleStoreView().battleState,
+      labyrinthPendingNode: getRunSessionStoreView().activeLabyrinthPendingNode,
+      activeLabyrinthModifiers: getRunSessionStoreView().activeLabyrinthModifiers,
+      activeLabyrinthRewardModifiers: getRunSessionStoreView().activeLabyrinthRewardModifiers,
+      runTalentXP: getRunProgressStoreView().runTalentXP,
+      currentScreen: ROUTE_SCREENS.DESTINATION,
+      destinationChoices: ["campfire", "shop"],
+    });
+    expect(fromStores).toEqual(explicit);
   });
 });

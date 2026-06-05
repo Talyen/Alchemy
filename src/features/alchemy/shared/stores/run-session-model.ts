@@ -3,7 +3,7 @@ import type { BattleState } from "@/lib/battle";
 import type { Screen } from "@/lib/routing";
 import { getRunPhase, type RunPhase } from "@/lib/routing";
 import type { RunStateFields } from "@/features/alchemy/run-setup/run/run-state-init";
-import type { RewardState } from "@/features/alchemy/navigation/reward-flow";
+import type { RewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
 import type { CorruptionResult } from "@/lib/corruption";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { CharacterId } from "@/lib/game-data";
@@ -11,7 +11,7 @@ import type { LabyrinthMap, LabyrinthModifierKind, ContentSystemId } from "@/lib
 import type { LabyrinthNodePosition } from "@/lib/active-run-session";
 import { useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
-import type { RunSessionFields } from "./run-session-store-types";
+import type { RunSessionFields } from "./run-domain-types";
 import { getRunDomainStore, useRunDomainStore } from "./run-domain-store";
 
 export type RunSessionRunSlice = Pick<

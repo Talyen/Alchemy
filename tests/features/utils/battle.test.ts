@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createBattleState } from "@/lib/battle";
-import { getPlayerStatusChips, getEnemyStatusChips } from "@/features/alchemy/utils/battle";
+import { getPlayerStatusChips, getEnemyStatusChips } from "@/features/alchemy/shared/utils/battle";
 import { enemyBestiary, type BattleCard } from "@/lib/game-data";
 
 const skeleton = enemyBestiary.find((enemy) => enemy.id === "skeleton")!;

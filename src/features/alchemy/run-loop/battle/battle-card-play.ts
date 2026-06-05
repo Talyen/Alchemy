@@ -10,15 +10,16 @@ import {
 import type { BattleCard } from "@/lib/game-data";
 import { playCardSound, playGoldGain } from "@/lib/audio";
 import { appendUnique } from "@/lib/utils";
+import { useAppStore } from "../../shared/stores/app-store";
 import { CARD_ACTIVATION_ROTATION_DEGREES } from "@/lib/game-constants";
-import { animateCardActivation } from "./card-ghost-animation";
+import { animateCardActivation } from "./card-transfer-animations";
 import type { Screen } from "../../shared/types";
 import { getCardRect, getHoverId } from "../../shared/utils";
-import type { TalentStateController } from "../../shared/stores/run-store";
+import type { TalentStateController } from "../../shared/stores/run-session-facade";
 import { applyCombatTextPortraitFeedback, shouldPlayCardGoldGain } from "./battle-feedback";
 import { getCardKey } from "./controller-utils";
 import { runHandDrawSequence, type HandDrawSequenceDeps } from "./draw-sequence";
-import { getBattleSessionStore } from "./battle-store-access";
+import { getBattleSessionStore } from "./battle-session";
 
 export type BattleCardPlayDeps = {
   screen: Screen;
@@ -31,7 +32,6 @@ export type BattleCardPlayDeps = {
   battleSceneRef: RefObject<HTMLDivElement | null>;
   setHoveredCardId: React.Dispatch<React.SetStateAction<string | null>>;
   talents: TalentStateController;
-  setDiscoveredCardIds: React.Dispatch<React.SetStateAction<string[]>>;
   getDrawSequenceDeps: () => HandDrawSequenceDeps;
   finishDrawSequence: (session: number, state: BattleState) => void;
   runIfSessionActive: (session: number, action: () => void) => void;
@@ -140,7 +140,7 @@ export function createBattleCardPlay(deps: BattleCardPlayDeps) {
     const newState = chooseWishCard(currentState, cardOrNull?.id ?? null);
     const session = deps.battleSessionRef.current;
     if (cardOrNull) {
-      deps.setDiscoveredCardIds((current) => appendUnique(current, cardOrNull.id));
+      useAppStore.getState().setDiscoveredCardIds((current) => appendUnique(current, cardOrNull.id));
     }
     runDrawSequenceAndFinalize(
       currentState.hand,

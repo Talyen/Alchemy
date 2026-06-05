@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, type RefObject } from "react";
 
 import { platform } from "@/lib/platform";
-import type { DisplayMode, UiScale } from "@/features/alchemy/types";
+import type { DisplayMode, UiScale } from "@/features/alchemy/shared/types";
 
 type AppDisplayEffectsOptions = {
   displayMode: DisplayMode;

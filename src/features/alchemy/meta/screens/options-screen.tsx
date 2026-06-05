@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 
-import { aspectRatioOptions, displayModeOptions, uiScaleOptions } from "@/features/alchemy/config";
+import { aspectRatioOptions, displayModeOptions, uiScaleOptions } from "@/features/alchemy/shared/config";
 import {
   ConfirmationDialog,
   DisplayModeSelect,
