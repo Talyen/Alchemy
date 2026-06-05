@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { injectSaveState, openGameModeSelect, resumeGameMode, SAVE_KEY, seedRandom } from "./helpers";
+import { injectSaveState, openGameModeSelect, resumeCampaignRun, SAVE_KEY, seedRandom } from "./helpers";
 import { critical } from "./playwright-tags";
 
 test.describe("Save Persistence Edge Cases", critical, () => {
@@ -73,9 +73,8 @@ test.describe("Save Persistence Edge Cases", critical, () => {
     });
     await page.goto("/");
 
-    await resumeGameMode(page, "campaign");
+    await resumeCampaignRun(page);
 
-    await expect(page.getByRole("heading", { name: "Choose Destination" })).toBeVisible({ timeout: 5000 });
     await expect(page.locator('[aria-label^="Play "]')).toHaveCount(0);
   });
 });

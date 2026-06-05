@@ -6,7 +6,7 @@ import prettierConfig from "eslint-config-prettier";
 import reactCompiler from "eslint-plugin-react-compiler";
 
 export default tseslint.config(
-  { ignores: ["dist", "node_modules", ".vite", "Raw Assets", "scratch"] },
+  { ignores: ["dist", "node_modules", ".vite", "Raw Assets", "scratch", "playwright-report", "test-results"] },
 
   // Base recommended configs
   eslint.configs.recommended,

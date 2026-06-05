@@ -85,6 +85,8 @@ Production code outside `features/alchemy/shared/stores/` must **not** import:
 
 Use **`run-session-actions`** for writes, **`readActiveRunStore()`** for imperative reads, and **facade hooks** (`useActiveRunScreen`, slice hooks) for React subscriptions. Unit tests may import store hooks directly.
 
+**Tests:** `tests/lib/active-run-session/hydrate.test.ts`, `tests/features/stores/run-session-facade.test.ts`, `tests/architecture/active-run-bootstrap.test.ts`; save resume flows in `tests/save-persistence.spec.ts` (use `resumeCampaignRun` in Playwright).
+
 ## Feature folder layout (Phase 3)
 
 | Zone | Path | Contents |

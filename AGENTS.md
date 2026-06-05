@@ -67,6 +67,7 @@ npm run package:win:full # build:desktop + unpacked Windows desktop app
 npm run dist:win         # Build Windows desktop installer
 npm run prepare          # Install lefthook git hooks (runs on npm install)
 npm run check            # npm ci --dry-run + lint:ci + test + build
+npm run check:push       # check + test:e2e:prepush (full local gate before main)
 npm run preview          # Preview production web build
 npm test                 # vitest (unit tests)
 npm run test:watch       # vitest in watch mode
@@ -74,8 +75,9 @@ npm run test:coverage    # vitest with coverage
 npm test -- <path>       # Run a single test file (e.g. `npm test -- tests/lib/battle/foo.test.ts`)
 npm run test:e2e         # Playwright tests
 npm run test:e2e:smoke   # Playwright boot smoke test
-npm run test:e2e:critical # Playwright critical flow subset (preview build)
-npm run test:e2e:preview  # Full Playwright suite against preview build (same as main CI)
+npm run test:e2e:critical # Playwright critical flow subset
+npm run test:e2e:prepush  # Critical e2e on preview build (CI e2e job + pre-push hook)
+npm run test:e2e:preview  # Full Playwright suite against preview build (CI e2e-full)
 npm run test:e2e:ui      # Playwright UI mode
 npm run balance:sim      # Balance simulator report
 npm run lint             # ESLint
@@ -95,7 +97,7 @@ npm run release:major    # major version bump + changelog + tag
 
 **Pre-PR (lighter than `check`):** `npm run lint:ci && npm test`
 
-**Git hooks (lefthook, via `npm run prepare`):** `pre-push` runs `lint:ci`, `test`, `build`, and e2e smoke — same static checks as the CI lint job before code reaches GitHub.
+**Git hooks (lefthook, via `npm run prepare`):** `pre-push` runs sequentially: `lint:ci`, `test`, `build`, then `test:e2e:prepush` (critical Playwright on preview — matches the CI `e2e` job). See [CONTRIBUTING.md](./CONTRIBUTING.md) for a change → test matrix.
 
 **Balance sim env vars** (see [README.md](./README.md)): `ALCHEMY_BALANCE_ITERATIONS`, `ALCHEMY_BALANCE_POLICY` (`random-playable`, `greedy-damage`, `defensive-random`).
 
@@ -524,12 +526,12 @@ Use the [GitHub CLI](https://cli.github.com/) for GitHub-hosted steps after loca
 
 Detailed PR steps live in Cursor user rules; this repo’s CI workflow is named **CI** (`.github/workflows/ci.yml`).
 
-- **Pre-PR gate**: `npm run lint:ci && npm test` (full local parity before push: rely on lefthook `pre-push`; manual full gate: `npm run check`).
+- **Pre-push gate**: lefthook `pre-push` (or `npm run check:push` manually). Lighter static-only check: `npm run lint:ci && npm test`.
 - **Battle logic**: Run focused Vitest files under `tests/lib/battle/`, then broader `npm test` when cross-cutting.
 - **Card data/effects**: Run game-data tests + `tests/lib/game-data/descriptions-match-effects.test.ts` + relevant battle tests.
 - **Save, storage, or schema changes**: Run `tests/features/storage.test.ts`, `tests/features/storage/migrations.test.ts`, `tests/features/storage/active-run.test.ts`, validation tests, and legacy save fixtures under `tests/fixtures/`.
-- **UI flow changes**: Run the relevant Playwright spec in `tests/*.spec.ts`; use `npm run test:e2e:critical` for broad confidence.
-- **Store/controller changes**: Run matching `tests/features/stores/` (including `run-session-facade.test.ts`), navigation flow tests under `tests/features/navigation/`, and affected Playwright specs.
+- **UI flow changes**: Run the relevant Playwright spec in `tests/*.spec.ts`; use `npm run test:e2e:prepush` for CI parity.
+- **Store/controller changes**: Run matching `tests/features/stores/` (including `run-session-facade.test.ts`), `tests/lib/active-run-session/hydrate.test.ts`, `tests/architecture/active-run-bootstrap.test.ts`, navigation flow tests under `tests/features/navigation/`, and `npm run test:e2e:prepush`.
 - **Desktop changes**: Run `npm run build:desktop` or a narrower package command.
 - **Balance simulation**: After battle logic or card data changes, consider `npm run balance:sim` to detect win-rate regressions.
 - **Content system changes** (labyrinth/wildwood): Run `tests/labyrinth.spec.ts`, `tests/labyrinth-node-types.spec.ts`, `tests/wildwood.spec.ts`.
@@ -543,7 +545,7 @@ Tests mirror source: `tests/lib/battle/foo.test.ts` tests `src/lib/battle/foo.ts
 - Organize tests per mechanic: `describe("MechanicName", ...)` with focused `it` blocks.
 - `test.skipIf(condition)` when a required card isn't in the random opening hand.
 - `startCampaignBattle(page, character?)`: navigates to `/`, clicks a character → Continue, waits for cards.
-- `tests/helpers.ts` contains shared helpers: `startCampaignBattle`, `startBattleWithDeck`, `injectSaveState`, etc.
+- `tests/helpers.ts` contains shared helpers: `startCampaignBattle`, `startBattleWithDeck`, `injectSaveState`, `resumeCampaignRun`, etc.
 - Prefer deterministic setup helpers over relying on random opening hands or generated maps.
 - First-time e2e: `npx playwright install chromium` before `npm run test:e2e`.
 

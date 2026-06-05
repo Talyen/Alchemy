@@ -153,6 +153,7 @@ describe("run-session-facade", () => {
     restoreActiveRunToStores(activeRun, {}, {});
     expect(useRunStore.getState().characterId).toBe("wizard");
     expect(useRunStore.getState().runGold).toBe(3);
+    expect(useRunSessionStore.getState().screen).toBe(ROUTE_SCREENS.DESTINATION);
     expect(useRunSessionStore.getState().hasActiveRun).toBe(true);
     expect(useRunSessionStore.getState().rewardState.destinations).toEqual(["campfire"]);
   });

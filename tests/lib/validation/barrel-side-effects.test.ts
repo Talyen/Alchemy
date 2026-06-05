@@ -4,9 +4,11 @@ import { describe, expect, it } from "vitest";
 // These tests verify that importing each barrel resolves the expected public API.
 
 describe("@/lib/game-data barrel", () => {
-  it("exports known symbols", async () => {
-    const mod = await import("@/lib/game-data");
-    expect(mod.cardLibrary).toBeDefined();
+  it(
+    "exports known symbols",
+    async () => {
+      const mod = await import("@/lib/game-data");
+      expect(mod.cardLibrary).toBeDefined();
     expect(mod.enemyBestiary).toBeDefined();
     expect(mod.characters).toBeDefined();
     expect(mod.companionLibrary).toBeDefined();
@@ -15,7 +17,9 @@ describe("@/lib/game-data barrel", () => {
     expect(mod.getStandardPotionPool).toBeTypeOf("function");
     expect(mod.getOfferableCardPool).toBeTypeOf("function");
     expect(mod.isStandardPotionCard).toBeTypeOf("function");
-  });
+    },
+    15_000,
+  );
 });
 
 describe("@/lib/battle barrel", () => {

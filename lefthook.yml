@@ -13,6 +13,7 @@ commit-msg:
       run: npx commitlint --edit {1}
 
 pre-push:
+  piped: true
   commands:
     lockfile-check:
       run: npm ci --dry-run
@@ -22,5 +23,5 @@ pre-push:
       run: npm test
     build:
       run: npm run build
-    e2e-smoke:
-      run: npm run test:e2e:smoke
+    e2e-critical:
+      run: npm run test:e2e:prepush

@@ -164,6 +164,16 @@ export async function resumeGameMode(page: Page, mode: Exclude<GameMode, "wildwo
   await selectGameMode(page, mode, "Resume");
 }
 
+/** Resume campaign when the menu flow is required, or wait if save bootstrap already opened destination. */
+export async function resumeCampaignRun(page: Page) {
+  const destination = page.getByRole("heading", { name: "Choose Destination" });
+  if (await destination.isVisible({ timeout: 3000 }).catch(() => false)) {
+    return;
+  }
+  await resumeGameMode(page, "campaign");
+  await expect(destination).toBeVisible({ timeout: 10000 });
+}
+
 // Injects a save state and navigates directly to the destination choice screen,
 // bypassing the startRun + skipAndReward dance. Saves ~10s per test.
 // The run lands with the given overrides applied to the default Knight run state.
