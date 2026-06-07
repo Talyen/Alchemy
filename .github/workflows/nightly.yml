@@ -90,6 +90,8 @@ jobs:
           key: electron-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
 
       - name: Install dependencies
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: ""
         run: |
           for attempt in 1 2 3; do
             npm ci || { echo "npm ci failed (attempt $attempt)"; sleep 15; continue; }
@@ -99,6 +101,11 @@ jobs:
           exit 1
 
       - run: npm run compile:desktop
+
+      - name: Ensure Electron binary
+        run: node scripts/ensure-electron.mjs
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: ""
 
       - name: Run Electron smoke tests
         run: xvfb-run --auto-servernum -- npm run test:e2e:electron

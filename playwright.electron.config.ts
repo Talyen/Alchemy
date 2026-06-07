@@ -6,6 +6,7 @@ const isCi = !!process.env.CI;
 export default defineConfig({
   testDir: "./tests",
   testMatch: "**/electron-smoke.spec.ts",
+  globalSetup: "./tests/electron-global-setup.ts",
   fullyParallel: false,
   workers: 1,
   timeout: 90_000,
