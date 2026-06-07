@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { createRequire } from "node:module";
@@ -78,6 +79,29 @@ async function locateRelativeExecutable(distPath) {
   );
 }
 
+async function extractZip(zipPath, distPath) {
+  await fs.promises.mkdir(distPath, { recursive: true });
+  console.log(`Extracting Electron zip into ${distPath}...`);
+
+  if (process.platform === "win32") {
+    await extract(zipPath, { dir: distPath });
+    return;
+  }
+
+  const result = spawnSync("unzip", ["-oq", zipPath, "-d", distPath], {
+    stdio: "inherit",
+    timeout: 120_000,
+  });
+
+  if (result.error) {
+    throw result.error;
+  }
+
+  if (result.status !== 0) {
+    throw new Error(`unzip exited with code ${result.status ?? "unknown"}`);
+  }
+}
+
 async function downloadElectronOnce() {
   const distPath = path.join(electronRoot, "dist");
   console.log(`Fetching Electron ${version} for ${process.platform}-${process.arch}...`);
@@ -90,9 +114,7 @@ async function downloadElectronOnce() {
   });
   console.log(`Downloaded Electron zip to ${zipPath}`);
 
-  await fs.promises.mkdir(distPath, { recursive: true });
-  console.log(`Extracting Electron zip into ${distPath}...`);
-  await extract(zipPath, { dir: distPath });
+  await extractZip(zipPath, distPath);
 
   const relativePath = await locateRelativeExecutable(distPath);
   await fs.promises.writeFile(path.join(electronRoot, "path.txt"), relativePath);
