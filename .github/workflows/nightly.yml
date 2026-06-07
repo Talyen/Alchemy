@@ -91,21 +91,28 @@ jobs:
 
       - name: Install dependencies
         env:
-          ELECTRON_SKIP_BINARY_DOWNLOAD: ""
+          ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
         run: |
           for attempt in 1 2 3; do
-            npm ci || { echo "npm ci failed (attempt $attempt)"; sleep 15; continue; }
-            node scripts/ensure-electron.mjs || { echo "electron install failed (attempt $attempt)"; sleep 15; continue; }
-            exit 0
+            npm ci && exit 0
+            echo "npm ci failed (attempt $attempt), retrying in 15s..."
+            sleep 15
           done
           exit 1
 
-      - run: npm run compile:desktop
-
       - name: Ensure Electron binary
-        run: node scripts/ensure-electron.mjs
+        timeout-minutes: 10
+        run: |
+          for attempt in 1 2 3; do
+            node scripts/ensure-electron.mjs && exit 0
+            echo "electron install failed (attempt $attempt), retrying in 15s..."
+            sleep 15
+          done
+          exit 1
         env:
           ELECTRON_SKIP_BINARY_DOWNLOAD: ""
+
+      - run: npm run compile:desktop
 
       - name: Verify Electron binary
         run: |
