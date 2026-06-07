@@ -9,7 +9,7 @@ function OptionsScreenRoute({
   onOpenBattleMenu,
   onClearSaveData,
   onUnlockAllDevMode,
-}: Pick<ScreenRouteContext, "onOpenMenu" | "onClearSaveData" | "onUnlockAllDevMode">) {
+}: Pick<ScreenRouteContext, "onOpenBattleMenu" | "onClearSaveData" | "onUnlockAllDevMode">) {
   const appValues = useAppStore(
     useShallow((s) => ({
       selectedAspectRatio: s.selectedAspectRatio,

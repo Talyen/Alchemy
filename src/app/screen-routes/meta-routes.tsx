@@ -47,7 +47,7 @@ function GameModeSelectScreenRoute({ actions: a }: Pick<ScreenRouteContext, "act
   );
 }
 
-function CollectionScreenRoute({ onOpenMenu }: Pick<ScreenRouteContext, "onOpenMenu">) {
+function CollectionScreenRoute({ onOpenBattleMenu }: Pick<ScreenRouteContext, "onOpenBattleMenu">) {
   const appValues = useAppStore(
     useShallow((s) => ({
       collectionTab: s.collectionTab,
@@ -62,7 +62,7 @@ function CollectionScreenRoute({ onOpenMenu }: Pick<ScreenRouteContext, "onOpenM
 
   return (
     <CollectionScreen
-      onOpenMenu={onOpenMenu}
+      onOpenMenu={onOpenBattleMenu}
       collectionTab={appValues.collectionTab}
       onSelectTab={appActions.handleCollectionTabChange}
       onPageChange={appActions.setCollectionPage}
@@ -75,7 +75,7 @@ function CollectionScreenRoute({ onOpenMenu }: Pick<ScreenRouteContext, "onOpenM
   );
 }
 
-function HomesteadScreenRoute({ onOpenMenu }: Pick<ScreenRouteContext, "onOpenMenu">) {
+function HomesteadScreenRoute({ onOpenBattleMenu }: Pick<ScreenRouteContext, "onOpenBattleMenu">) {
   const homesteadValues = useHomesteadStore(
     useShallow((s) => ({
       materialInventory: s.materialInventory,
@@ -90,7 +90,7 @@ function HomesteadScreenRoute({ onOpenMenu }: Pick<ScreenRouteContext, "onOpenMe
 
   return (
     <HomesteadScreen
-      onOpenMenu={onOpenMenu}
+      onOpenMenu={onOpenBattleMenu}
       materialInventory={homesteadValues.materialInventory}
       constructedBuildings={homesteadValues.constructedBuildings}
       plantedFarms={homesteadValues.plantedFarms}
@@ -105,7 +105,10 @@ function HomesteadScreenRoute({ onOpenMenu }: Pick<ScreenRouteContext, "onOpenMe
   );
 }
 
-function TalentsScreenRoute({ actions: a, onOpenMenu }: Pick<ScreenRouteContext, "actions" | "onOpenMenu">) {
+function TalentsScreenRoute({
+  actions: a,
+  onOpenBattleMenu,
+}: Pick<ScreenRouteContext, "actions" | "onOpenBattleMenu">) {
   const { talentXP, unlockedTalents } = useRunDomainStore(
     useShallow((s) => ({
       talentXP: s.progress.talentXP,
@@ -117,7 +120,7 @@ function TalentsScreenRoute({ actions: a, onOpenMenu }: Pick<ScreenRouteContext,
     <TalentsScreen
       talentXP={talentXP}
       unlockedTalents={unlockedTalents}
-      onOpenMenu={onOpenMenu}
+      onOpenMenu={onOpenBattleMenu}
       onUnlockTalent={a.meta.unlockTalent}
       onResetTalents={a.meta.resetUnlockedTalents}
     />
@@ -128,7 +131,9 @@ export const metaScreenRoutes: Partial<Record<import("@/lib/routing").Screen, (c
   {
     menu: ({ actions: a }) => <MenuScreenRoute actions={a} />,
     "game-mode-select": ({ actions: a }) => <GameModeSelectScreenRoute actions={a} />,
-    collection: ({ onOpenMenu }) => <CollectionScreenRoute onOpenMenu={onOpenMenu} />,
-    homestead: ({ onOpenMenu }) => <HomesteadScreenRoute onOpenMenu={onOpenMenu} />,
-    talents: ({ actions: a, onOpenMenu }) => <TalentsScreenRoute actions={a} onOpenMenu={onOpenMenu} />,
+    collection: ({ onOpenBattleMenu }) => <CollectionScreenRoute onOpenBattleMenu={onOpenBattleMenu} />,
+    homestead: ({ onOpenBattleMenu }) => <HomesteadScreenRoute onOpenBattleMenu={onOpenBattleMenu} />,
+    talents: ({ actions: a, onOpenBattleMenu }) => (
+      <TalentsScreenRoute actions={a} onOpenBattleMenu={onOpenBattleMenu} />
+    ),
   };
