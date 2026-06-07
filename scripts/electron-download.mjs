@@ -85,7 +85,7 @@ async function downloadElectronOnce() {
 }
 
 async function downloadElectronWithRetry() {
-  const maxAttempts = 3;
+  const maxAttempts = 2;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     try {
@@ -98,8 +98,8 @@ async function downloadElectronWithRetry() {
       if (attempt === maxAttempts) {
         throw error;
       }
-      console.log("Retrying Electron download in 15s...");
-      await sleep(15_000);
+      console.log("Retrying Electron download in 5s...");
+      await sleep(5_000);
     }
   }
 }

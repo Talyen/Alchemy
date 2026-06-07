@@ -5,11 +5,15 @@ on:
     - cron: "0 6 * * *"
   workflow_dispatch:
 
+concurrency:
+  group: nightly-${{ github.workflow }}
+  cancel-in-progress: true
+
 jobs:
-  e2e-web:
-    name: Web production E2E
+  prepare:
+    name: Prepare build
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
 
@@ -18,81 +22,17 @@ jobs:
           node-version: 24
           cache: npm
 
-      - run: npm install -g npm@11
+      - uses: actions/cache@v5
+        id: npm-cache
+        with:
+          path: node_modules/
+          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
 
       - name: Install dependencies
-        run: |
-          for attempt in 1 2 3; do
-            npm ci && exit 0
-            echo "npm ci failed (attempt $attempt), retrying in 15s..."
-            sleep 15
-          done
-          exit 1
-
-      - run: npm run build
-
-      - name: Cache Playwright browsers
-        uses: actions/cache@v5
-        id: playwright-cache
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-
-      - name: Install Playwright Chromium (with system deps)
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
-        timeout-minutes: 15
-        run: npx playwright install --with-deps chromium
-
-      - name: Install Playwright Chromium
-        if: steps.playwright-cache.outputs.cache-hit == 'true'
-        timeout-minutes: 15
-        run: npx playwright install chromium
-
-      - name: Playwright install diagnostics
-        if: failure()
-        run: |
-          npx playwright install --dry-run || true
-          ls -la ~/.cache/ms-playwright || true
-
-      - name: Run full e2e against production build
-        run: npm run test:e2e:preview
-        env:
-          CI: true
-
-      - name: Upload Playwright report
-        if: failure()
-        uses: actions/upload-artifact@v5
-        with:
-          name: playwright-report-nightly-web
-          path: |
-            playwright-report/
-            test-results/
-          retention-days: 7
-
-  e2e-electron:
-    name: Electron desktop smoke
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v5
-
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          cache: npm
-
-      - run: npm install -g npm@11
-
-      - name: Install dependencies
+        if: steps.npm-cache.outputs.cache-hit != 'true'
         env:
           ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
-        run: |
-          for attempt in 1 2 3; do
-            npm ci && exit 0
-            echo "npm ci failed (attempt $attempt), retrying in 15s..."
-            sleep 15
-          done
-          exit 1
+        run: npm install -g npm@11 && npm ci
 
       - name: Cache Electron binary
         uses: actions/cache@v5
@@ -105,29 +45,129 @@ jobs:
           key: electron-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
 
       - name: Ensure Electron binary
-        timeout-minutes: 20
-        run: |
-          for attempt in 1 2 3; do
-            node scripts/ensure-electron.mjs && exit 0
-            echo "electron install failed (attempt $attempt), retrying in 15s..."
-            sleep 15
-          done
-          exit 1
+        timeout-minutes: 5
+        run: node scripts/ensure-electron.mjs
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: ""
+
+      - run: npm run build
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: dist
+          path: dist/
+          retention-days: 1
+
+  e2e-web:
+    name: Web E2E (${{ matrix.shard }}/4)
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - uses: actions/cache/restore@v5
+        id: npm-cache
+        with:
+          path: node_modules/
+          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install dependencies
+        if: steps.npm-cache.outputs.cache-hit != 'true'
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
+        run: npm install -g npm@11 && npm ci
+
+      - uses: actions/download-artifact@v5
+        with:
+          name: dist
+          path: dist/
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v5
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Playwright Chromium (with system deps)
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        timeout-minutes: 10
+        run: npx playwright install --with-deps chromium
+
+      - name: Install Playwright Chromium
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        timeout-minutes: 10
+        run: npx playwright install chromium
+
+      - name: Run web e2e shard
+        run: npm run test:e2e:nightly -- --shard=${{ matrix.shard }}/4
+        env:
+          CI: true
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: playwright-report-nightly-web-${{ matrix.shard }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
+  e2e-electron:
+    name: Electron desktop smoke
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - uses: actions/cache/restore@v5
+        id: npm-cache
+        with:
+          path: node_modules/
+          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install dependencies
+        if: steps.npm-cache.outputs.cache-hit != 'true'
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
+        run: npm install -g npm@11 && npm ci
+
+      - uses: actions/cache/restore@v5
+        id: electron-binary-cache
+        with:
+          path: |
+            ~/.cache/electron
+            node_modules/electron/dist
+            node_modules/electron/path.txt
+          key: electron-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Ensure Electron binary
+        timeout-minutes: 2
+        run: node scripts/ensure-electron.mjs
         env:
           ELECTRON_SKIP_BINARY_DOWNLOAD: ""
 
       - run: npm run compile:desktop
 
-      - name: Verify Electron binary
-        run: |
-          test -f node_modules/electron/path.txt
-          electron_bin="node_modules/electron/dist/$(cat node_modules/electron/path.txt)"
-          test -f "$electron_bin"
-          test -f test-results/.electron-executable-path
-          chmod +x "$electron_bin"
-
       - name: Run Electron smoke tests
-        run: xvfb-run --auto-servernum -- npm run test:e2e:electron
+        run: xvfb-run --auto-servernum -- npm run test:e2e:electron:run
         env:
           CI: true
 

@@ -8,6 +8,7 @@ const webServerCommand =
     : "npx vite --host 127.0.0.1 --port 4173 --strictPort";
 
 const isPrepush = process.env.PLAYWRIGHT_PREPUSH === "1";
+const isNightly = process.env.PLAYWRIGHT_NIGHTLY === "1";
 const isCi = !!process.env.CI && !isPrepush;
 const isFullE2eSuite = process.env.PLAYWRIGHT_E2E_FULL === "1";
 // Critical CI job: fail fast. Full suite (~100 tests): report up to 5 failures per run.
@@ -19,9 +20,9 @@ export default defineConfig({
   testDir: "./tests",
   testMatch: "**/*.spec.ts",
   testIgnore: "**/electron-smoke.spec.ts",
-  fullyParallel: isPrepush || !isCi,
+  fullyParallel: isPrepush || isNightly || !isCi,
   maxFailures,
-  workers: isPrepush ? prepushWorkers : isCi ? 2 : 4,
+  workers: isPrepush ? prepushWorkers : isNightly ? 4 : isCi ? 2 : 4,
   globalTimeout: 600_000,
   timeout: isCi ? 30_000 : 15_000,
   retries: isCi ? 1 : 0,

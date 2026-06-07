@@ -17,7 +17,7 @@ function runDownloadChild() {
     cwd: projectRoot,
     env,
     stdio: "inherit",
-    timeout: 1_200_000,
+    timeout: 180_000,
   });
 
   if (result.error) {
