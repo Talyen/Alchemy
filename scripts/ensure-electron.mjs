@@ -28,27 +28,21 @@ function platformPath() {
   }
 }
 
-function isInstalled() {
-  const relativePath = platformPath();
+function canRequireElectron() {
   try {
-    if (fs.readFileSync(path.join(electronRoot, "dist", "version"), "utf8").replace(/^v/, "") !== version) {
-      return false;
-    }
-    if (fs.readFileSync(path.join(electronRoot, "path.txt"), "utf8") !== relativePath) {
-      return false;
-    }
+    require("electron");
+    return true;
   } catch {
     return false;
   }
-
-  return fs.existsSync(path.join(electronRoot, "dist", relativePath));
 }
 
-async function main() {
-  if (isInstalled()) {
-    return;
-  }
+async function clearPartialInstall() {
+  await fs.promises.rm(path.join(electronRoot, "dist"), { recursive: true, force: true });
+  await fs.promises.rm(path.join(electronRoot, "path.txt"), { force: true });
+}
 
+async function downloadElectron() {
   const relativePath = platformPath();
   const zipPath = await downloadArtifact({
     version,
@@ -62,8 +56,17 @@ async function main() {
   await fs.promises.mkdir(distPath, { recursive: true });
   await extract(zipPath, { dir: distPath });
   await fs.promises.writeFile(path.join(electronRoot, "path.txt"), relativePath);
+}
 
-  if (!isInstalled()) {
+async function main() {
+  if (canRequireElectron()) {
+    return;
+  }
+
+  await clearPartialInstall();
+  await downloadElectron();
+
+  if (!canRequireElectron()) {
     throw new Error("Electron binary is still missing after download");
   }
 }
