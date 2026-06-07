@@ -107,6 +107,12 @@ jobs:
         env:
           ELECTRON_SKIP_BINARY_DOWNLOAD: ""
 
+      - name: Verify Electron binary
+        run: |
+          test -f node_modules/electron/path.txt
+          test -x node_modules/electron/dist/electron
+          test -f test-results/.electron-executable-path
+
       - name: Run Electron smoke tests
         run: xvfb-run --auto-servernum -- npm run test:e2e:electron
         env:

@@ -6,6 +6,7 @@ import { type ElectronApplication, type Page, _electron as electron } from "play
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const previewPort = Number.parseInt(process.env.PLAYWRIGHT_ELECTRON_PREVIEW_PORT ?? "4175", 10);
 const rendererUrl = `http://127.0.0.1:${previewPort}`;
+const pathMarkerFile = path.join(projectRoot, "test-results", ".electron-executable-path");
 
 function platformExecutableName(): string {
   switch (process.platform) {
@@ -20,6 +21,13 @@ function platformExecutableName(): string {
 }
 
 function getElectronExecutablePath(): string {
+  if (fs.existsSync(pathMarkerFile)) {
+    const fromMarker = fs.readFileSync(pathMarkerFile, "utf8").trim();
+    if (fromMarker && fs.existsSync(fromMarker)) {
+      return fromMarker;
+    }
+  }
+
   const electronRoot = path.join(projectRoot, "node_modules", "electron");
   const pathFile = path.join(electronRoot, "path.txt");
   const relativePath = fs.existsSync(pathFile)
