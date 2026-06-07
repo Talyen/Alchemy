@@ -6,7 +6,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  e2e:
+  e2e-web:
+    name: Web production E2E
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
@@ -18,7 +19,15 @@ jobs:
           cache: npm
 
       - run: npm install -g npm@11
-      - run: npm ci
+
+      - name: Install dependencies
+        run: |
+          for attempt in 1 2 3; do
+            npm ci && exit 0
+            echo "npm ci failed (attempt $attempt), retrying in 15s..."
+            sleep 15
+          done
+          exit 1
 
       - run: npm run build
 
@@ -54,7 +63,47 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v5
         with:
-          name: playwright-report-nightly
+          name: playwright-report-nightly-web
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
+  e2e-electron:
+    name: Electron desktop smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm install -g npm@11
+
+      - name: Install dependencies
+        run: |
+          for attempt in 1 2 3; do
+            npm ci && exit 0
+            echo "npm ci failed (attempt $attempt), retrying in 15s..."
+            sleep 15
+          done
+          exit 1
+
+      - run: npm run compile:desktop
+
+      - name: Run Electron smoke tests
+        run: xvfb-run --auto-servernum -- npm run test:e2e:electron
+        env:
+          CI: true
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: playwright-report-nightly-electron
           path: |
             playwright-report/
             test-results/

@@ -18,6 +18,7 @@ const prepushWorkers = Math.min(4, Math.max(2, os.cpus().length > 1 ? os.cpus().
 export default defineConfig({
   testDir: "./tests",
   testMatch: "**/*.spec.ts",
+  testIgnore: "**/electron-smoke.spec.ts",
   fullyParallel: isPrepush || !isCi,
   maxFailures,
   workers: isPrepush ? prepushWorkers : isCi ? 2 : 4,
