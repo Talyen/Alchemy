@@ -105,21 +105,26 @@ async function downloadElectronOnce() {
 
 async function downloadElectronWithRetry() {
   const maxAttempts = 2;
+  const keepAlive = setInterval(() => {}, 60_000);
 
-  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-    try {
-      await clearPartialInstall();
-      console.log(`Downloading Electron ${version} (attempt ${attempt}/${maxAttempts})...`);
-      await downloadElectronOnce();
-      return;
-    } catch (error) {
-      console.error(error);
-      if (attempt === maxAttempts) {
-        throw error;
+  try {
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+      try {
+        await clearPartialInstall();
+        console.log(`Downloading Electron ${version} (attempt ${attempt}/${maxAttempts})...`);
+        await downloadElectronOnce();
+        return;
+      } catch (error) {
+        console.error(error);
+        if (attempt === maxAttempts) {
+          throw error;
+        }
+        console.log("Retrying Electron download in 5s...");
+        await sleep(5_000);
       }
-      console.log("Retrying Electron download in 5s...");
-      await sleep(5_000);
     }
+  } finally {
+    clearInterval(keepAlive);
   }
 }
 

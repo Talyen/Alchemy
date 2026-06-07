@@ -5,20 +5,40 @@ import path from "node:path";
 import {
   electronRoot,
   isElectronInstalled,
+  projectRoot,
   resolveElectronExecutablePath,
   writeExecutablePathMarker,
 } from "./electron-path.mjs";
 
-function runOfficialInstall() {
+function envWithoutSkip() {
   const env = { ...process.env };
   delete env.ELECTRON_SKIP_BINARY_DOWNLOAD;
+  return env;
+}
 
-  const installScript = path.join(electronRoot, "install.js");
-  console.log("Falling back to official Electron install.js...");
+function runScriptSync(scriptName, { cwd = projectRoot, timeout = 300_000 } = {}) {
+  const scriptPath = path.join(projectRoot, "scripts", scriptName);
+  const result = spawnSync(process.execPath, [scriptPath], {
+    cwd,
+    env: envWithoutSkip(),
+    stdio: "inherit",
+    timeout,
+  });
 
-  const result = spawnSync(process.execPath, [installScript], {
+  if (result.error) {
+    throw result.error;
+  }
+
+  if (result.status !== 0) {
+    throw new Error(`${scriptName} exited with code ${result.status ?? "unknown"}`);
+  }
+}
+
+function runOfficialInstallSync() {
+  console.log("Running official Electron install.js...");
+  const result = spawnSync(process.execPath, [path.join(electronRoot, "install.js")], {
     cwd: electronRoot,
-    env,
+    env: envWithoutSkip(),
     stdio: "inherit",
     timeout: 300_000,
   });
@@ -32,36 +52,40 @@ function runOfficialInstall() {
   }
 }
 
-async function main() {
-  if (!isElectronInstalled()) {
-    console.log("Electron binary missing or incomplete; downloading...");
-    const { downloadElectronIfNeeded } = await import("./electron-download.mjs");
+function finalize() {
+  const executablePath = resolveElectronExecutablePath();
+  console.log(`Electron ready at ${executablePath}`);
+  writeExecutablePathMarker(executablePath);
+}
 
-    try {
-      await downloadElectronIfNeeded();
-    } catch (error) {
-      console.error(error);
-    }
+function main() {
+  if (isElectronInstalled()) {
+    finalize();
+    return;
+  }
+
+  console.log("Electron binary missing or incomplete; downloading...");
+
+  try {
+    runScriptSync("electron-download.mjs");
+  } catch (error) {
+    console.error(error);
   }
 
   if (!isElectronInstalled()) {
-    runOfficialInstall();
+    runOfficialInstallSync();
   }
 
   if (!isElectronInstalled()) {
     throw new Error(`Electron binary is still missing at ${resolveElectronExecutablePath()}`);
   }
 
-  const executablePath = resolveElectronExecutablePath();
-  console.log(`Electron ready at ${executablePath}`);
-  writeExecutablePathMarker(executablePath);
+  finalize();
 }
 
-main()
-  .then(() => {
-    process.exit(0);
-  })
-  .catch((error) => {
-    console.error(error);
-    process.exit(1);
-  });
+try {
+  main();
+} catch (error) {
+  console.error(error);
+  process.exit(1);
+}
