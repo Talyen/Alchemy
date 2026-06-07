@@ -42,7 +42,7 @@ async function downloadElectron() {
   }
 }
 
-try {
+async function main() {
   if (!isElectronInstalled()) {
     await clearPartialInstall();
     await downloadElectron();
@@ -51,7 +51,13 @@ try {
   if (!isElectronInstalled()) {
     throw new Error(`Electron binary is still missing at ${resolveElectronExecutablePath()}`);
   }
-} catch (error) {
-  console.error(error);
-  process.exit(1);
 }
+
+main()
+  .then(() => {
+    process.exit(0);
+  })
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
