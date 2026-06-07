@@ -51,6 +51,7 @@
     "lint:ci": "npm run format:check && npm run lint && npm run deadcode",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",
+    "ensure:electron": "node scripts/ensure-electron.mjs",
     "deadcode": "knip",
     "deadcode:strict": "knip --strict --include-entry-exports",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\"",

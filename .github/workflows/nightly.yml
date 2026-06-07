@@ -90,14 +90,10 @@ jobs:
           key: electron-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
 
       - name: Install dependencies
-        env:
-          ELECTRON_SKIP_BINARY_DOWNLOAD: ""
         run: |
           for attempt in 1 2 3; do
-            unset ELECTRON_SKIP_BINARY_DOWNLOAD
             npm ci || { echo "npm ci failed (attempt $attempt)"; sleep 15; continue; }
-            node node_modules/electron/install.js || { echo "electron install failed (attempt $attempt)"; sleep 15; continue; }
-            node -e "require('electron')" || { echo "electron verify failed (attempt $attempt)"; sleep 15; continue; }
+            node scripts/ensure-electron.mjs || { echo "electron install failed (attempt $attempt)"; sleep 15; continue; }
             exit 0
           done
           exit 1
@@ -108,7 +104,6 @@ jobs:
         run: xvfb-run --auto-servernum -- npm run test:e2e:electron
         env:
           CI: true
-          ELECTRON_SKIP_BINARY_DOWNLOAD: ""
 
       - name: Upload Playwright report
         if: failure()
