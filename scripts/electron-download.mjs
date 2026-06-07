@@ -16,24 +16,10 @@ const extract = require("extract-zip");
 const { version } = require(path.join(electronRoot, "package.json"));
 const checksums = require(path.join(electronRoot, "checksums.json"));
 
-async function listDistEntries(distPath) {
-  const entries = [];
-
-  async function walk(current, prefix = "") {
-    for (const entry of await fs.promises.readdir(current, { withFileTypes: true })) {
-      const relative = prefix ? `${prefix}/${entry.name}` : entry.name;
-      entries.push(relative);
-      if (entry.isDirectory()) {
-        await walk(path.join(current, entry.name), relative);
-      }
-    }
-  }
-
-  if (fs.existsSync(distPath)) {
-    await walk(distPath);
-  }
-
-  return entries;
+function sleep(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
 }
 
 async function clearPartialInstall() {
@@ -58,13 +44,25 @@ async function locateRelativeExecutable(distPath) {
     }
   }
 
-  const entries = await listDistEntries(distPath);
+  const entries = [];
+  const stack = [distPath];
+  while (stack.length > 0) {
+    const current = stack.pop();
+    for (const entry of await fs.promises.readdir(current, { withFileTypes: true })) {
+      const relative = path.relative(distPath, path.join(current, entry.name));
+      entries.push(relative);
+      if (entry.isDirectory()) {
+        stack.push(path.join(current, entry.name));
+      }
+    }
+  }
+
   throw new Error(
     `Executable ${expectedName} not found under ${distPath}. Extracted entries: ${entries.join(", ") || "(empty)"}`,
   );
 }
 
-async function downloadElectron() {
+async function downloadElectronOnce() {
   const distPath = path.join(electronRoot, "dist");
   const zipPath = await downloadArtifact({
     version,
@@ -86,18 +84,33 @@ async function downloadElectron() {
   }
 }
 
+async function downloadElectronWithRetry() {
+  const maxAttempts = 3;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      await clearPartialInstall();
+      console.log(`Downloading Electron ${version} (attempt ${attempt}/${maxAttempts})...`);
+      await downloadElectronOnce();
+      return;
+    } catch (error) {
+      console.error(error);
+      if (attempt === maxAttempts) {
+        throw error;
+      }
+      console.log("Retrying Electron download in 15s...");
+      await sleep(15_000);
+    }
+  }
+}
+
 async function main() {
   if (!isElectronInstalled()) {
-    await clearPartialInstall();
-    await downloadElectron();
+    await downloadElectronWithRetry();
   }
 
   if (!isElectronInstalled()) {
-    const distPath = path.join(electronRoot, "dist");
-    const entries = await listDistEntries(distPath);
-    throw new Error(
-      `Electron binary is still missing at ${resolveElectronExecutablePath()}. Extracted entries: ${entries.join(", ") || "(empty)"}`,
-    );
+    throw new Error(`Electron binary is still missing at ${resolveElectronExecutablePath()}`);
   }
 }
 

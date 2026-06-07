@@ -83,12 +83,6 @@ jobs:
 
       - run: npm install -g npm@11
 
-      - name: Cache Electron download
-        uses: actions/cache@v5
-        with:
-          path: ~/.cache/electron
-          key: electron-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-
       - name: Install dependencies
         env:
           ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
@@ -100,8 +94,18 @@ jobs:
           done
           exit 1
 
+      - name: Cache Electron binary
+        uses: actions/cache@v5
+        id: electron-binary-cache
+        with:
+          path: |
+            ~/.cache/electron
+            node_modules/electron/dist
+            node_modules/electron/path.txt
+          key: electron-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
       - name: Ensure Electron binary
-        timeout-minutes: 10
+        timeout-minutes: 20
         run: |
           for attempt in 1 2 3; do
             node scripts/ensure-electron.mjs && exit 0
@@ -117,9 +121,10 @@ jobs:
       - name: Verify Electron binary
         run: |
           test -f node_modules/electron/path.txt
-          test -f node_modules/electron/dist/electron
+          electron_bin="node_modules/electron/dist/$(cat node_modules/electron/path.txt)"
+          test -f "$electron_bin"
           test -f test-results/.electron-executable-path
-          chmod +x node_modules/electron/dist/electron
+          chmod +x "$electron_bin"
 
       - name: Run Electron smoke tests
         run: xvfb-run --auto-servernum -- npm run test:e2e:electron
