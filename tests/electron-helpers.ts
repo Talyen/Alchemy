@@ -1,4 +1,3 @@
-import { execFileSync } from "node:child_process";
 import { createRequire } from "node:module";
 import { type ElectronApplication, type Page, _electron as electron } from "playwright";
 
@@ -6,7 +5,6 @@ const previewPort = Number.parseInt(process.env.PLAYWRIGHT_ELECTRON_PREVIEW_PORT
 const rendererUrl = `http://127.0.0.1:${previewPort}`;
 
 function getElectronExecutablePath(): string {
-  execFileSync("node", ["scripts/ensure-electron.mjs"], { cwd: process.cwd(), stdio: "inherit" });
   const require = createRequire(import.meta.url);
   return require("electron") as string;
 }

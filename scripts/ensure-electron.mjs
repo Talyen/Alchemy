@@ -1,27 +1,71 @@
 #!/usr/bin/env node
 
-import { execFileSync } from "node:child_process";
+import fs from "node:fs";
+import path from "node:path";
 import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
+const { downloadArtifact } = require("@electron/get");
+const extract = require("extract-zip");
 
-function electronEnv() {
-  const env = { ...process.env };
-  delete env.ELECTRON_SKIP_BINARY_DOWNLOAD;
-  return env;
+const electronRoot = path.join(process.cwd(), "node_modules", "electron");
+const { version } = require(path.join(electronRoot, "package.json"));
+const checksums = require(path.join(electronRoot, "checksums.json"));
+
+function platformPath() {
+  switch (process.platform) {
+    case "win32":
+      return "electron.exe";
+    case "linux":
+    case "freebsd":
+    case "openbsd":
+      return "electron";
+    case "darwin":
+    case "mas":
+      return "Electron.app/Contents/MacOS/Electron";
+    default:
+      throw new Error(`Unsupported platform: ${process.platform}`);
+  }
 }
 
-function verifyElectronBinary() {
-  require("electron");
+function isInstalled() {
+  const relativePath = platformPath();
+  try {
+    if (fs.readFileSync(path.join(electronRoot, "dist", "version"), "utf8").replace(/^v/, "") !== version) {
+      return false;
+    }
+    if (fs.readFileSync(path.join(electronRoot, "path.txt"), "utf8") !== relativePath) {
+      return false;
+    }
+  } catch {
+    return false;
+  }
+
+  return fs.existsSync(path.join(electronRoot, "dist", relativePath));
 }
 
-try {
-  verifyElectronBinary();
-} catch {
-  execFileSync("node", ["node_modules/electron/install.js"], {
-    cwd: process.cwd(),
-    stdio: "inherit",
-    env: electronEnv(),
+async function main() {
+  if (isInstalled()) {
+    return;
+  }
+
+  const relativePath = platformPath();
+  const zipPath = await downloadArtifact({
+    version,
+    artifactName: "electron",
+    platform: process.platform,
+    arch: process.arch,
+    checksums,
   });
-  verifyElectronBinary();
+
+  const distPath = path.join(electronRoot, "dist");
+  await fs.promises.mkdir(distPath, { recursive: true });
+  await extract(zipPath, { dir: distPath });
+  await fs.promises.writeFile(path.join(electronRoot, "path.txt"), relativePath);
+
+  if (!isInstalled()) {
+    throw new Error("Electron binary is still missing after download");
+  }
 }
+
+await main();
