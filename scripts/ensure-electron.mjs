@@ -3,21 +3,24 @@
 import { spawnSync } from "node:child_process";
 import path from "node:path";
 import {
+  electronRoot,
   isElectronInstalled,
-  projectRoot,
   resolveElectronExecutablePath,
   writeExecutablePathMarker,
 } from "./electron-path.mjs";
 
-function runDownloadChild() {
+function runOfficialInstall() {
   const env = { ...process.env };
   delete env.ELECTRON_SKIP_BINARY_DOWNLOAD;
 
-  const result = spawnSync(process.execPath, [path.join(projectRoot, "scripts", "electron-download.mjs")], {
-    cwd: projectRoot,
+  const installScript = path.join(electronRoot, "install.js");
+  console.log("Falling back to official Electron install.js...");
+
+  const result = spawnSync(process.execPath, [installScript], {
+    cwd: electronRoot,
     env,
     stdio: "inherit",
-    timeout: 180_000,
+    timeout: 300_000,
   });
 
   if (result.error) {
@@ -25,14 +28,24 @@ function runDownloadChild() {
   }
 
   if (result.status !== 0) {
-    throw new Error(`electron-download.mjs exited with code ${result.status ?? "unknown"}`);
+    throw new Error(`electron install.js exited with code ${result.status ?? "unknown"}`);
   }
 }
 
-function main() {
+async function main() {
   if (!isElectronInstalled()) {
     console.log("Electron binary missing or incomplete; downloading...");
-    runDownloadChild();
+    const { downloadElectronIfNeeded } = await import("./electron-download.mjs");
+
+    try {
+      await downloadElectronIfNeeded();
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  if (!isElectronInstalled()) {
+    runOfficialInstall();
   }
 
   if (!isElectronInstalled()) {
@@ -44,9 +57,7 @@ function main() {
   writeExecutablePathMarker(executablePath);
 }
 
-try {
-  main();
-} catch (error) {
+main().catch((error) => {
   console.error(error);
   process.exit(1);
-}
+});

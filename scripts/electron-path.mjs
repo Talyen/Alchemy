@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const electronRoot = path.join(projectRoot, "node_modules", "electron");
 const pathMarkerFile = path.join(projectRoot, "test-results", ".electron-executable-path");
+const MIN_BINARY_BYTES = 10_000_000;
 
 export function platformPath() {
   switch (process.platform) {
@@ -45,7 +46,7 @@ export function isElectronInstalled() {
 
   try {
     const stat = fs.statSync(executablePath);
-    return stat.isFile() && stat.size > 10_000_000;
+    return stat.isFile() && stat.size > MIN_BINARY_BYTES;
   } catch {
     return false;
   }
@@ -69,4 +70,4 @@ export function readExecutablePathMarker() {
   return executablePath;
 }
 
-export { electronRoot, pathMarkerFile, projectRoot };
+export { electronRoot, MIN_BINARY_BYTES, pathMarkerFile, projectRoot };

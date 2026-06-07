@@ -1,10 +1,12 @@
 import fs from "node:fs";
 import path from "node:path";
 import { createRequire } from "node:module";
+import { fileURLToPath } from "node:url";
 import {
   electronRoot,
   getExecutablePath,
   isElectronInstalled,
+  MIN_BINARY_BYTES,
   platformPath,
   resolveElectronExecutablePath,
 } from "./electron-path.mjs";
@@ -27,25 +29,10 @@ async function clearPartialInstall() {
   await fs.promises.rm(path.join(electronRoot, "path.txt"), { force: true });
 }
 
-async function locateRelativeExecutable(distPath) {
-  const expectedName = path.basename(platformPath());
-  const queue = [distPath];
-
-  while (queue.length > 0) {
-    const current = queue.shift();
-    for (const entry of await fs.promises.readdir(current, { withFileTypes: true })) {
-      const fullPath = path.join(current, entry.name);
-      if (entry.isFile() && entry.name === expectedName) {
-        return path.relative(distPath, fullPath).split(path.sep).join(path.posix.sep);
-      }
-      if (entry.isDirectory()) {
-        queue.push(fullPath);
-      }
-    }
-  }
-
+async function listDistEntries(distPath) {
   const entries = [];
   const stack = [distPath];
+
   while (stack.length > 0) {
     const current = stack.pop();
     for (const entry of await fs.promises.readdir(current, { withFileTypes: true })) {
@@ -57,6 +44,35 @@ async function locateRelativeExecutable(distPath) {
     }
   }
 
+  return entries;
+}
+
+async function locateRelativeExecutable(distPath) {
+  const expectedName = path.basename(platformPath());
+  const candidates = [];
+  const queue = [distPath];
+
+  while (queue.length > 0) {
+    const current = queue.shift();
+    for (const entry of await fs.promises.readdir(current, { withFileTypes: true })) {
+      const fullPath = path.join(current, entry.name);
+      if (entry.isFile() && entry.name === expectedName) {
+        const stat = await fs.promises.stat(fullPath);
+        if (stat.size > MIN_BINARY_BYTES) {
+          candidates.push({ fullPath, size: stat.size });
+        }
+      } else if (entry.isDirectory()) {
+        queue.push(fullPath);
+      }
+    }
+  }
+
+  if (candidates.length > 0) {
+    candidates.sort((a, b) => b.size - a.size);
+    return path.relative(distPath, candidates[0].fullPath).split(path.sep).join(path.posix.sep);
+  }
+
+  const entries = await listDistEntries(distPath);
   throw new Error(
     `Executable ${expectedName} not found under ${distPath}. Extracted entries: ${entries.join(", ") || "(empty)"}`,
   );
@@ -82,6 +98,9 @@ async function downloadElectronOnce() {
   if (process.platform !== "win32") {
     await fs.promises.chmod(executablePath, 0o755);
   }
+
+  const stat = await fs.promises.stat(executablePath);
+  console.log(`Electron extracted to ${executablePath} (${stat.size} bytes)`);
 }
 
 async function downloadElectronWithRetry() {
@@ -104,7 +123,7 @@ async function downloadElectronWithRetry() {
   }
 }
 
-async function main() {
+export async function downloadElectronIfNeeded() {
   if (!isElectronInstalled()) {
     await downloadElectronWithRetry();
   }
@@ -114,11 +133,16 @@ async function main() {
   }
 }
 
-main()
-  .then(() => {
-    process.exit(0);
-  })
-  .catch((error) => {
-    console.error(error);
-    process.exit(1);
-  });
+const isMain =
+  process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url));
+
+if (isMain) {
+  downloadElectronIfNeeded()
+    .then(() => {
+      process.exit(0);
+    })
+    .catch((error) => {
+      console.error(error);
+      process.exit(1);
+    });
+}
