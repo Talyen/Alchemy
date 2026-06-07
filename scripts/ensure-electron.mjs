@@ -1,49 +1,37 @@
 #!/usr/bin/env node
 
-import fs from "node:fs";
+import { spawnSync } from "node:child_process";
 import path from "node:path";
-import { createRequire } from "node:module";
 import {
-  electronRoot,
   isElectronInstalled,
-  platformPath,
+  projectRoot,
   resolveElectronExecutablePath,
   writeExecutablePathMarker,
 } from "./electron-path.mjs";
 
-const require = createRequire(import.meta.url);
-const { downloadArtifact } = require("@electron/get");
-const extract = require("extract-zip");
+function runDownloadChild() {
+  const env = { ...process.env };
+  delete env.ELECTRON_SKIP_BINARY_DOWNLOAD;
 
-const { version } = require(path.join(electronRoot, "package.json"));
-const checksums = require(path.join(electronRoot, "checksums.json"));
-
-async function clearPartialInstall() {
-  await fs.promises.rm(path.join(electronRoot, "dist"), { recursive: true, force: true });
-  await fs.promises.rm(path.join(electronRoot, "path.txt"), { force: true });
-}
-
-async function downloadElectron() {
-  const relativePath = platformPath();
-  const zipPath = await downloadArtifact({
-    version,
-    artifactName: "electron",
-    platform: process.platform,
-    arch: process.arch,
-    checksums,
+  const result = spawnSync(process.execPath, [path.join(projectRoot, "scripts", "electron-download.mjs")], {
+    cwd: projectRoot,
+    env,
+    stdio: "inherit",
   });
 
-  const distPath = path.join(electronRoot, "dist");
-  await fs.promises.mkdir(distPath, { recursive: true });
-  await extract(zipPath, { dir: distPath });
-  await fs.promises.writeFile(path.join(electronRoot, "path.txt"), relativePath);
+  if (result.error) {
+    throw result.error;
+  }
+
+  if (result.status !== 0) {
+    throw new Error(`electron-download.mjs exited with code ${result.status ?? "unknown"}`);
+  }
 }
 
-async function main() {
+function main() {
   if (!isElectronInstalled()) {
     console.log("Electron binary missing or incomplete; downloading...");
-    await clearPartialInstall();
-    await downloadElectron();
+    runDownloadChild();
   }
 
   if (!isElectronInstalled()) {
@@ -55,7 +43,9 @@ async function main() {
   writeExecutablePathMarker(executablePath);
 }
 
-main().catch((error) => {
+try {
+  main();
+} catch (error) {
   console.error(error);
   process.exit(1);
-});
+}

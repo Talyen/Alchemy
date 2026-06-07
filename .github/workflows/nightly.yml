@@ -110,8 +110,9 @@ jobs:
       - name: Verify Electron binary
         run: |
           test -f node_modules/electron/path.txt
-          test -x node_modules/electron/dist/electron
+          test -f node_modules/electron/dist/electron
           test -f test-results/.electron-executable-path
+          chmod +x node_modules/electron/dist/electron
 
       - name: Run Electron smoke tests
         run: xvfb-run --auto-servernum -- npm run test:e2e:electron
