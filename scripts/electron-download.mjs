@@ -80,6 +80,7 @@ async function locateRelativeExecutable(distPath) {
 
 async function downloadElectronOnce() {
   const distPath = path.join(electronRoot, "dist");
+  console.log(`Fetching Electron ${version} for ${process.platform}-${process.arch}...`);
   const zipPath = await downloadArtifact({
     version,
     artifactName: "electron",
@@ -87,8 +88,10 @@ async function downloadElectronOnce() {
     arch: process.arch,
     checksums,
   });
+  console.log(`Downloaded Electron zip to ${zipPath}`);
 
   await fs.promises.mkdir(distPath, { recursive: true });
+  console.log(`Extracting Electron zip into ${distPath}...`);
   await extract(zipPath, { dir: distPath });
 
   const relativePath = await locateRelativeExecutable(distPath);

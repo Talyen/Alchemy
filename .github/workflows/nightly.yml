@@ -45,7 +45,7 @@ jobs:
           key: electron-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
 
       - name: Ensure Electron binary
-        timeout-minutes: 5
+        timeout-minutes: 15
         run: node scripts/ensure-electron.mjs
         env:
           ELECTRON_SKIP_BINARY_DOWNLOAD: ""
@@ -159,7 +159,7 @@ jobs:
           key: electron-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
 
       - name: Ensure Electron binary
-        timeout-minutes: 2
+        timeout-minutes: 10
         run: node scripts/ensure-electron.mjs
         env:
           ELECTRON_SKIP_BINARY_DOWNLOAD: ""

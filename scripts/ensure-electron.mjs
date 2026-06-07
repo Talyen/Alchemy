@@ -16,7 +16,26 @@ function envWithoutSkip() {
   return env;
 }
 
-function runScriptSync(scriptName, { cwd = projectRoot, timeout = 300_000 } = {}) {
+function runNpmRebuildElectronSync() {
+  console.log("Running npm rebuild electron...");
+  const result = spawnSync("npm", ["rebuild", "electron"], {
+    cwd: projectRoot,
+    env: envWithoutSkip(),
+    stdio: "inherit",
+    timeout: 600_000,
+    shell: true,
+  });
+
+  if (result.error) {
+    throw result.error;
+  }
+
+  if (result.status !== 0) {
+    throw new Error(`npm rebuild electron exited with code ${result.status ?? "unknown"}`);
+  }
+}
+
+function runScriptSync(scriptName, { cwd = projectRoot, timeout = 600_000 } = {}) {
   const scriptPath = path.join(projectRoot, "scripts", scriptName);
   const result = spawnSync(process.execPath, [scriptPath], {
     cwd,
@@ -40,7 +59,7 @@ function runOfficialInstallSync() {
     cwd: electronRoot,
     env: envWithoutSkip(),
     stdio: "inherit",
-    timeout: 300_000,
+    timeout: 600_000,
   });
 
   if (result.error) {
@@ -66,14 +85,20 @@ function main() {
 
   console.log("Electron binary missing or incomplete; downloading...");
 
-  try {
-    runScriptSync("electron-download.mjs");
-  } catch (error) {
-    console.error(error);
-  }
+  for (const step of [
+    () => runNpmRebuildElectronSync(),
+    () => runOfficialInstallSync(),
+    () => runScriptSync("electron-download.mjs"),
+  ]) {
+    if (isElectronInstalled()) {
+      break;
+    }
 
-  if (!isElectronInstalled()) {
-    runOfficialInstallSync();
+    try {
+      step();
+    } catch (error) {
+      console.error(error);
+    }
   }
 
   if (!isElectronInstalled()) {
