@@ -325,4 +325,4 @@ Avoid repeated reads unless relevant:
 
 - Never run `git reset`, `git checkout --`, `git restore`, `git clean`, `git rebase`, or `git merge`. **OpenCode:** [`opencode.json`](opencode.json). **Cursor:** same via user rules; ask before `git stash`.
 - Only edit your assigned area; do not touch another agent's in-progress files.
-- Commit to your own branch unless told otherwise.
+- Commit and push directly to the main branch.
