@@ -57,7 +57,9 @@ async function main() {
   writeExecutablePathMarker(executablePath);
 }
 
-main().catch((error) => {
+try {
+  await main();
+} catch (error) {
   console.error(error);
   process.exit(1);
-});
+}
