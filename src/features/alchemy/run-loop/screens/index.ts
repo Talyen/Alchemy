@@ -1,5 +1,4 @@
 export { BattleScreen } from "./battle-screen";
-export type { BattleScreenData } from "./battle-screen/types";
 export { RewardsScreen } from "./rewards-screen";
 export { DestinationScreen } from "./destination-screen";
 export { CampfireScreen } from "./campfire-screen";

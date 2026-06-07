@@ -1,9 +1,8 @@
 // Builds persisted active-run snapshots from live controller/store fields.
 import { isPlayerDefeated, type BattleState } from "@/lib/battle";
-import type { BattleCard, CharacterId, DifficultyId } from "@/lib/game-data";
+import type { BattleCard, CharacterId, DifficultyId, TalentXP } from "@/lib/game-data";
 import type { ContentSystemId, LabyrinthMap, LabyrinthModifierKind } from "@/lib/content-systems/types";
 import type { Screen } from "@/lib/routing";
-import type { TalentXP } from "@/lib/talents";
 
 import type { ActiveRunData, LabyrinthNodePosition } from "./types";
 

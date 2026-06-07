@@ -6,7 +6,7 @@
 import { getEnemyDamageMultiplier } from "./status-effects";
 import { getBattleRng } from "./status-helpers";
 import { type BattleCard, type BattleCardEffect, type DamageType, type TalentEffectManifest } from "@/lib/game-data";
-import { setFlag, type BattleState } from "./types";
+import { reduceEnemyArmor, setFlag, type BattleState } from "./types";
 import {
   BLEED_EXECUTE_MULTIPLIER,
   CRIT_MULTIPLIER,
@@ -266,15 +266,8 @@ function applyFirstDamageModifiers(
  * Resolves trinket-based stun triggers from playing high physical/stun damage with active forge stacks.
  */
 function applySunderingArmorPiercing(state: BattleState, isPhysicalOrStun: boolean): BattleState {
-  if (isPhysicalOrStun && state.trinketEffects.sunderingArmorPiercing > 0 && state.enemyMitigation.armor > 0) {
-    const removed = Math.min(state.enemyMitigation.armor, state.trinketEffects.sunderingArmorPiercing);
-    return {
-      ...state,
-      enemyMitigation: {
-        ...state.enemyMitigation,
-        armor: state.enemyMitigation.armor - removed,
-      },
-    };
+  if (isPhysicalOrStun) {
+    return reduceEnemyArmor(state, state.trinketEffects.sunderingArmorPiercing);
   }
   return state;
 }

@@ -63,42 +63,59 @@ function BattleScreenRoute({
   );
 }
 
-export const runLoopScreenRoutes: Partial<
-  Record<import("@/lib/routing").Screen, (ctx: ScreenRouteContext) => ReactNode>
-> = {
-  battle: ({ actions: a, battleBindings, onOpenBattleMenu }) => (
-    <BattleScreenRoute actions={a} battleBindings={battleBindings} onOpenBattleMenu={onOpenBattleMenu} />
-  ),
-  "labyrinth-map": ({ actions: a, onOpenBattleMenu, runScreenData: r }) => (
+import { useRunScreenData } from "@/features/alchemy/shared/stores/run-session-facade";
+
+function LabyrinthMapScreenRoute({
+  actions: a,
+  onOpenBattleMenu,
+}: Pick<ScreenRouteContext, "actions" | "onOpenBattleMenu">) {
+  const r = useRunScreenData("labyrinth-map");
+  return (
     <LabyrinthMapScreen
       labyrinthMap={r.labyrinthMap}
       onNodeClick={a.runFlow.handleLabyrinthNodeEnter}
       onOpenMenu={onOpenBattleMenu}
     />
-  ),
-  rewards: ({ actions: a, runScreenData: r }) => (
+  );
+}
+
+function RewardsScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions">) {
+  const r = useRunScreenData("rewards");
+  return (
     <RewardsScreen
       rewardState={r.rewardState}
       onAddReward={a.runFlow.finishRewards}
       onSkip={a.runFlow.finishRewards}
       onSelectReward={a.runFlow.selectRewardChoice}
     />
-  ),
-  destination: ({ actions: a, runScreenData: r }) => (
+  );
+}
+
+function DestinationScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions">) {
+  const r = useRunScreenData("destination");
+  return (
     <DestinationScreen
       rewardState={r.rewardState}
       onChoose={a.runFlow.handleDestinationChoice}
       onPrepare={a.runFlow.prepareDestinationScreen}
     />
-  ),
-  campfire: ({ actions: a, runScreenData: r }) => (
+  );
+}
+
+function CampfireScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions">) {
+  const r = useRunScreenData("campfire");
+  return (
     <CampfireScreen
       playerHealth={r.runPlayerHealth}
       maxHealth={r.runMaxHealth}
       onContinue={a.runFlow.handleCampfireContinue}
     />
-  ),
-  shop: ({ actions: a, runScreenData: r }) => (
+  );
+}
+
+function ShopScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions">) {
+  const r = useRunScreenData("shop");
+  return (
     <MerchantShopScreen
       gold={r.runGold}
       runDeck={r.runDeck}
@@ -110,8 +127,12 @@ export const runLoopScreenRoutes: Partial<
       onRefresh={a.runFlow.handleShopRefresh}
       onContinue={a.runFlow.handleShopContinue}
     />
-  ),
-  alchemist: ({ actions: a, runScreenData: r }) => (
+  );
+}
+
+function AlchemistScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions">) {
+  const r = useRunScreenData("alchemist");
+  return (
     <AlchemistShopScreen
       gold={r.runGold}
       runDeck={r.runDeck}
@@ -123,8 +144,12 @@ export const runLoopScreenRoutes: Partial<
       onMixPotions={a.runFlow.handleAlchemistMixPotions}
       onContinue={a.runFlow.handleAlchemistContinue}
     />
-  ),
-  mystery: ({ actions: a, runScreenData: r }) => (
+  );
+}
+
+function MysteryScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions">) {
+  const r = useRunScreenData("mystery");
+  return (
     <MysteryScreen
       event={r.mysteryEvent!}
       runDeck={r.runDeck}
@@ -136,29 +161,61 @@ export const runLoopScreenRoutes: Partial<
       findCard={(id) => cardLibrary.find((c) => c.id === id)}
       findTrinket={(id) => trinketLibrary.find((t) => t.id === id)}
     />
-  ),
-  corruption: ({ actions: a, runScreenData: r }) => (
+  );
+}
+
+function CorruptionScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions">) {
+  const r = useRunScreenData("corruption");
+  return (
     <CorruptionScreen
       runDeck={r.runDeck}
       result={r.corruptionResult}
       onCorrupt={a.runFlow.handleCorruptCard}
       onExit={a.runFlow.handleCorruptionExit}
     />
-  ),
-  "game-over": ({ actions: a, runScreenData: r }) => (
+  );
+}
+
+function GameOverScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions">) {
+  const r = useRunScreenData("game-over");
+  return (
     <GameOverScreen
       runEndTalentXP={r.runEndTalentXP}
       talentXP={r.talentXP}
       runEndMaterials={r.runEndMaterials}
       onMainMenu={a.runFlow.resetRunState}
     />
-  ),
-  "run-victory": ({ actions: a, runScreenData: r }) => (
+  );
+}
+
+function RunVictoryScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions">) {
+  const r = useRunScreenData("run-victory");
+  return (
     <RunVictoryScreen
       runEndTalentXP={r.runEndTalentXP}
       talentXP={r.talentXP}
       runEndMaterials={r.runEndMaterials}
       onMainMenu={a.runFlow.resetRunState}
     />
+  );
+}
+
+export const runLoopScreenRoutes: Partial<
+  Record<import("@/lib/routing").Screen, (ctx: ScreenRouteContext) => ReactNode>
+> = {
+  battle: ({ actions: a, battleBindings, onOpenBattleMenu }) => (
+    <BattleScreenRoute actions={a} battleBindings={battleBindings} onOpenBattleMenu={onOpenBattleMenu} />
   ),
+  "labyrinth-map": ({ actions: a, onOpenBattleMenu }) => (
+    <LabyrinthMapScreenRoute actions={a} onOpenBattleMenu={onOpenBattleMenu} />
+  ),
+  rewards: ({ actions: a }) => <RewardsScreenRoute actions={a} />,
+  destination: ({ actions: a }) => <DestinationScreenRoute actions={a} />,
+  campfire: ({ actions: a }) => <CampfireScreenRoute actions={a} />,
+  shop: ({ actions: a }) => <ShopScreenRoute actions={a} />,
+  alchemist: ({ actions: a }) => <AlchemistScreenRoute actions={a} />,
+  mystery: ({ actions: a }) => <MysteryScreenRoute actions={a} />,
+  corruption: ({ actions: a }) => <CorruptionScreenRoute actions={a} />,
+  "game-over": ({ actions: a }) => <GameOverScreenRoute actions={a} />,
+  "run-victory": ({ actions: a }) => <RunVictoryScreenRoute actions={a} />,
 };

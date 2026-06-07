@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
+import { cardLibrary, enemyBestiary } from "@/lib/game-data";
 import {
   cardSounds, enemyAttackSounds, battleEventSounds,
   uiSounds, stingerSounds,
@@ -113,16 +114,14 @@ describe("stingerSounds", () => {
 });
 
 describe("cross-registry key consistency", () => {
-  it("every card with cardSounds is defined in cardLibrary", async () => {
-    const { cardLibrary } = await import("@/lib/game-data/cards");
+  it("every card with cardSounds is defined in cardLibrary", () => {
     const cardIds = new Set(cardLibrary.map((c: { id: string }) => c.id));
     for (const cardId of Object.keys(cardSounds)) {
       expect(cardIds.has(cardId)).toBe(true);
     }
   });
 
-  it("every enemy with enemyAttackSounds is defined in enemyBestiary", async () => {
-    const { enemyBestiary } = await import("@/lib/game-data/compendium");
+  it("every enemy with enemyAttackSounds is defined in enemyBestiary", () => {
     const enemyIds = new Set(enemyBestiary.map((e: { id: string }) => e.id));
     for (const enemyId of Object.keys(enemyAttackSounds)) {
       expect(enemyIds.has(enemyId)).toBe(true);

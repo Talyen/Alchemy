@@ -1,5 +1,5 @@
 // Types and initial state for the consolidated run domain store.
-import type { BattleCard, CharacterId, DifficultyId, KeywordId, UnlockedTalents } from "@/lib/game-data";
+import type { BattleCard, CharacterId, DifficultyId, KeywordId, UnlockedTalents, TalentXP } from "@/lib/game-data";
 import { defaultBattleState, type BattleState, type PlayerStatusValues, type TurnPhase } from "@/lib/battle";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
 import { createEmptyRewardState, type RewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
@@ -17,7 +17,6 @@ import type { ContentSystemId, LabyrinthMap, LabyrinthModifierKind } from "@/lib
 import type { CorruptionResult } from "@/lib/corruption";
 import type { MysteryEvent } from "@/lib/mystery";
 import type { MaterialInventory } from "@/lib/homestead/types";
-import type { TalentXP } from "@/lib/talents";
 import type { Setter } from "@/lib/utils";
 
 export type NavigationStore = {

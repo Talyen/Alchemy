@@ -1,8 +1,7 @@
 // Save-data types for settings, collection, run, talents, and homestead state.
 // Depends on character game data plus talent, homestead, run, and option type contracts.
-import type { TalentXP } from "@/lib/talents";
 import type { BuildingId, FarmId, MaterialInventory, ResearchId } from "@/lib/homestead/types";
-import type { CompanionId, CharacterId, DifficultyId, UnlockedTalents } from "@/lib/game-data";
+import type { CompanionId, CharacterId, DifficultyId, UnlockedTalents, TalentXP } from "@/lib/game-data";
 import type { ActiveRunData } from "@/lib/active-run-session";
 import type { AspectRatioOption, DisplayMode, UiScale } from "../types";
 

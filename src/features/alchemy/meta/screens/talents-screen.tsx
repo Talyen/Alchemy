@@ -4,16 +4,21 @@ import { cn } from "@/lib/utils";
 import { RotateCcw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { keywordDefinitions, talentBackgroundArt, type KeywordId, getTalentsForKeyword } from "@/lib/game-data";
-import { getTalentKeywordProgress } from "@/lib/talents";
+import {
+  keywordDefinitions,
+  talentBackgroundArt,
+  type KeywordId,
+  getTalentsForKeyword,
+  getTalentKeywordProgress,
+  type UnlockedTalents,
+  type TalentXP,
+} from "@/lib/game-data";
 
 import { TalentKeywordButton } from "../talents/talents-ui";
 import { ConfirmationDialog, HamburgerTrigger, PageLayout, ScreenHeader } from "../../shared/ui/shared-ui";
 import { useTalentChoices } from "../talents/use-talent-choices";
 import { playUISound } from "@/lib/audio";
 import { TalentTree } from "../talents/talent-tree";
-import type { UnlockedTalents } from "@/lib/game-data";
-import type { TalentXP } from "@/lib/talents";
 
 export function TalentsScreen({
   talentXP,

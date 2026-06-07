@@ -1,8 +1,7 @@
 // Applies a validated active-run snapshot to runtime stores on bootstrap/resume.
 import type { BattleState } from "@/lib/battle";
 import type { LabyrinthMap, LabyrinthModifierKind } from "@/lib/content-systems/types";
-import type { UnlockedTalents } from "@/lib/game-data";
-import type { TalentXP } from "@/lib/talents";
+import type { UnlockedTalents, TalentXP } from "@/lib/game-data";
 
 import type { ActiveRunData, LabyrinthNodePosition } from "./types";
 

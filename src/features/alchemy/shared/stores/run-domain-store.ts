@@ -13,14 +13,12 @@ import {
   type KeywordId,
   type UnlockedTalents,
   type CharacterId,
-} from "@/lib/game-data";
-import {
   addTalentXP,
   computeRunEndTalentXPSnapshot,
   mergeRunTalentXPIntoPermanent,
   xpThresholdForPoints,
   type TalentXP,
-} from "@/lib/talents";
+} from "@/lib/game-data";
 import { type BattleState } from "@/lib/battle";
 import type { ActiveRunData } from "@/lib/active-run-session";
 import type { RunStartSnapshot } from "@/features/alchemy/run-setup/run/run-start";

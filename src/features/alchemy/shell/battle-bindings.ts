@@ -1,7 +1,7 @@
 // Battle presentation bindings passed from the run controller to the battle screen route.
 import type { MutableRefObject } from "react";
 import type { CardTransfer } from "@/features/alchemy/shared/types";
-import type { BattleScreenData } from "@/features/alchemy/shared/screens";
+import type { BattleScreenData } from "@/features/alchemy/run-loop/screens/battle-screen/types";
 
 export type BattleControllerBindings = {
   battleScreenData: BattleScreenData;

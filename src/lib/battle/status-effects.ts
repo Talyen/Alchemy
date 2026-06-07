@@ -5,7 +5,7 @@
 import type { BattleState } from "./types";
 import { TRAIT_DAMAGE_RULES, TRAIT_DAMAGE_WEAKNESS } from "../game-constants";
 
-export { applyDamageStatuses, applyPoisonTalentRiders } from "./status-damage-riders";
+export { applyDamageStatuses, applyPoisonTalentRiders, tryTriggerEnemyFreeze } from "./status-damage-riders";
 export { resolveStunTrigger } from "./status-stun-resolve";
 export { applyPlayerDamageStatuses, applyPlayerStatusEffect, removeHarmfulPlayerStatuses } from "./status-player";
 

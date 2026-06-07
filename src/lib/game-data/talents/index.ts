@@ -3,6 +3,7 @@ import type { TalentDefinition } from "./types";
 import { talentPool } from "./pool";
 
 export * from "./types";
+export * from "./progression";
 export { talentPool } from "./pool";
 export { DEFAULT_TALENT_EFFECTS } from "./manifest-defaults";
 export { createEmptyTalentManifest, computeTalentEffects } from "./compute";

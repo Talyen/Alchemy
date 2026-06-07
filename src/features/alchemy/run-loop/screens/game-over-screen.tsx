@@ -4,15 +4,20 @@ import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
-import { keywordDefinitions, type KeywordId } from "@/lib/game-data";
-import { computeTalentPoints, xpForNextPoint, xpToNextPoint } from "@/lib/talents";
+import {
+  keywordDefinitions,
+  type KeywordId,
+  computeTalentPoints,
+  xpForNextPoint,
+  xpToNextPoint,
+  type TalentXP,
+} from "@/lib/game-data";
 import { MATERIAL_IDS } from "@/lib/homestead/types";
 
 import { keywordIcons } from "@/features/alchemy/shared/config";
 import { ScreenHeader } from "../../shared/ui/shared-ui";
 import { MaterialPill } from "../../shared/ui/material-icons";
 import type { MaterialInventory } from "@/lib/homestead/types";
-import type { TalentXP } from "@/lib/talents";
 
 export function KeywordProgressCard({
   kw,

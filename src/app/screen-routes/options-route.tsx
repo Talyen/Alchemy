@@ -1,9 +1,31 @@
+import { useShallow } from "zustand/react/shallow";
 import { platform } from "@/lib/platform";
 import { OptionsScreen } from "@/features/alchemy/shared/screens";
+import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
+import { useAppActions } from "@/features/alchemy/shared/stores/store-actions";
 import type { ScreenRouteContext } from "./types";
 
-export function buildOptionsScreen(ctx: ScreenRouteContext) {
-  const { appValues, appActions, onOpenBattleMenu, onClearSaveData, onUnlockAllDevMode } = ctx;
+function OptionsScreenRoute({
+  onOpenBattleMenu,
+  onClearSaveData,
+  onUnlockAllDevMode,
+}: Pick<ScreenRouteContext, "onOpenMenu" | "onClearSaveData" | "onUnlockAllDevMode">) {
+  const appValues = useAppStore(
+    useShallow((s) => ({
+      selectedAspectRatio: s.selectedAspectRatio,
+      displayMode: s.displayMode,
+      uiScale: s.uiScale,
+      brightness: s.brightness,
+      masterVol: s.masterVol,
+      musicVol: s.musicVol,
+      sfxVol: s.sfxVol,
+      muteInBackground: s.muteInBackground,
+      autoEndTurn: s.autoEndTurn,
+      showClearSaveConfirm: s.showClearSaveConfirm,
+    })),
+  );
+  const appActions = useAppActions();
+
   return (
     <OptionsScreen
       onOpenMenu={onOpenBattleMenu}
@@ -37,6 +59,16 @@ export function buildOptionsScreen(ctx: ScreenRouteContext) {
         onResetOptions: appActions.resetOptionsToDefault,
       }}
       dev={{ onUnlockAll: onUnlockAllDevMode }}
+    />
+  );
+}
+
+export function buildOptionsScreen(ctx: ScreenRouteContext) {
+  return (
+    <OptionsScreenRoute
+      onOpenBattleMenu={ctx.onOpenBattleMenu}
+      onClearSaveData={ctx.onClearSaveData}
+      onUnlockAllDevMode={ctx.onUnlockAllDevMode}
     />
   );
 }

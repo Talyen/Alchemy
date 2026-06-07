@@ -2,9 +2,8 @@
 import { getBattleStartPlayerHealth } from "@/lib/battle";
 import { playDefeat, stopAllSfx } from "@/lib/audio";
 import { buildActiveRunSnapshot, type ActiveRunData } from "@/lib/active-run-session";
-import type { UnlockedTalents } from "@/lib/game-data";
 import type { Screen } from "@/lib/routing";
-import type { TalentXP } from "@/lib/talents";
+import type { UnlockedTalents, TalentXP } from "@/lib/game-data";
 import { flushAlchemySaveNow } from "@/features/alchemy/shared/storage";
 import type { Destination } from "@/features/alchemy/shared/types";
 import { createEmptyRewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";

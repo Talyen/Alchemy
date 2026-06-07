@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useShallow } from "zustand/react/shallow";
 import type { CharacterId } from "@/lib/game-data";
 import {
   CharacterSelectScreen,
@@ -6,7 +7,30 @@ import {
   DraftDeckScreen,
   WildwoodSelectScreen,
 } from "@/features/alchemy/shared/screens";
+import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
+import { useRunDomainStore } from "@/features/alchemy/shared/stores/run-session-facade";
 import type { ScreenRouteContext } from "./types";
+
+function DifficultySelectScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions">) {
+  const { pendingCharacterId, selectedDifficulty } = useRunDomainStore(
+    useShallow((s) => ({
+      pendingCharacterId: s.session.pendingCharacterId,
+      selectedDifficulty: s.progress.selectedDifficulty,
+    })),
+  );
+  const characterId = (pendingCharacterId ?? "knight") as CharacterId;
+  const completedDifficulties = useAppStore((s) => s.completedDifficulties[characterId] ?? []);
+
+  return (
+    <DifficultySelectScreen
+      characterId={characterId}
+      selectedDifficulty={selectedDifficulty}
+      completedDifficulties={completedDifficulties}
+      onSelect={a.runStart.handleDifficultySelect}
+      onBack={a.runStart.handleBackFromDifficultySelect}
+    />
+  );
+}
 
 export const runSetupScreenRoutes: Partial<
   Record<import("@/lib/routing").Screen, (ctx: ScreenRouteContext) => ReactNode>
@@ -18,15 +42,7 @@ export const runSetupScreenRoutes: Partial<
     />
   ),
   "draft-deck": ({ actions: a }) => <DraftDeckScreen onComplete={a.runStart.handleDraftComplete} />,
-  "difficulty-select": ({ actions: a, appValues, runScreenData: r }) => (
-    <DifficultySelectScreen
-      characterId={(r.pendingCharacterId ?? "knight") as CharacterId}
-      selectedDifficulty={r.selectedDifficulty}
-      completedDifficulties={appValues.completedDifficulties[(r.pendingCharacterId ?? "knight") as CharacterId] ?? []}
-      onSelect={a.runStart.handleDifficultySelect}
-      onBack={a.runStart.handleBackFromDifficultySelect}
-    />
-  ),
+  "difficulty-select": ({ actions: a }) => <DifficultySelectScreenRoute actions={a} />,
   "wildwood-select": ({ actions: a }) => (
     <WildwoodSelectScreen
       onSelect={a.runStart.handleWildwoodBossSelect}

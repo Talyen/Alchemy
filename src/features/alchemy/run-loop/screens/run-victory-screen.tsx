@@ -9,7 +9,7 @@ import { ScreenHeader } from "../../shared/ui/shared-ui";
 import { matIconMap, matPillStyle, matTextColor } from "../../shared/ui/material-icons";
 import { KeywordProgressCard } from "./game-over-screen";
 import type { MaterialInventory } from "@/lib/homestead/types";
-import type { TalentXP } from "@/lib/talents";
+import type { TalentXP } from "@/lib/game-data";
 
 export function RunVictoryScreen({
   runEndTalentXP,

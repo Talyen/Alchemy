@@ -1,6 +1,7 @@
-import { adjustEnemyStatusDelta } from "../../types";
+import { adjustEnemyStatusDelta, setEnemyStatus } from "../../types";
 import { mergeCombatText } from "../../combat-text";
 import type { EffectHandler } from "../handler-types";
+import { tryTriggerEnemyFreeze, resolveStunTrigger } from "../../status-effects";
 
 export const applyMultiplyEnemyStatusEffect: EffectHandler = (state, _card, effect, _potionMult, combatTexts) => {
   if (effect.kind !== "multiply-enemy-status") return state;
@@ -13,8 +14,14 @@ export const applyMultiplyEnemyStatusEffect: EffectHandler = (state, _card, effe
     stat: effect.status,
     amount: added,
   });
-  return {
-    ...state,
-    enemyStatuses: { ...state.enemyStatuses, [effect.status]: current + added },
-  };
+
+  let nextState = setEnemyStatus(state, effect.status, current + added);
+
+  if (effect.status === "freeze") {
+    nextState = tryTriggerEnemyFreeze(state, nextState, combatTexts);
+  } else if (effect.status === "stun") {
+    nextState = resolveStunTrigger(nextState, combatTexts);
+  }
+
+  return nextState;
 };

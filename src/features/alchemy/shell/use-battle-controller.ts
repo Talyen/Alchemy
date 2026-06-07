@@ -19,7 +19,7 @@ import { useRunDomainStore } from "@/features/alchemy/shared/stores/run-session-
 import { useBattlePresentationStore } from "@/features/alchemy/shared/stores/battle-presentation-store";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { useRunSessionBattleContext } from "@/features/alchemy/shared/stores/run-session-facade";
-import type { BattleScreenData } from "@/features/alchemy/shared/screens";
+import type { BattleScreenData } from "@/features/alchemy/run-loop/screens/battle-screen/types";
 import { getBattleSessionStore } from "@/features/alchemy/run-loop/battle/battle-session";
 import { createTransferCancelRegistry } from "@/features/alchemy/run-loop/battle/card-transfer-animations";
 import {

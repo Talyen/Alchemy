@@ -6,7 +6,7 @@
  */
 import { mergeCombatText } from "./combat-text";
 import { BATTLE_CONFIG, STATUS_CONFIG } from "../game-constants";
-import type { BattleState, CombatTextEvent } from "./types";
+import { setEnemyStatus, setPlayerStatus, type BattleState, type CombatTextEvent } from "./types";
 
 const CONSTANTS = {
   STATUS_NAMES: {
@@ -35,11 +35,11 @@ const CONSTANTS = {
 type CcStat = typeof CONSTANTS.STATUS_NAMES.STUN | typeof CONSTANTS.STATUS_NAMES.FREEZE;
 
 function clearPlayerCcStack(state: BattleState, stat: CcStat): BattleState {
-  return { ...state, playerStatuses: { ...state.playerStatuses, [stat]: 0 } };
+  return setPlayerStatus(state, stat, 0);
 }
 
 function clearEnemyCcStack(state: BattleState, stat: CcStat): BattleState {
-  return { ...state, enemyStatuses: { ...state.enemyStatuses, [stat]: 0 } };
+  return setEnemyStatus(state, stat, 0);
 }
 
 export type PlayerCcTriggerInput = {

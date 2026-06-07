@@ -7,8 +7,7 @@ import { saveAlchemySaveData, type SaveData } from "@/features/alchemy/shared/st
 import type { ActiveRunData } from "@/lib/active-run-session";
 import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
 import { useHomesteadStore } from "@/features/alchemy/shared/stores/homestead-store";
-import type { TalentXP } from "@/lib/talents";
-import type { UnlockedTalents } from "@/lib/game-data";
+import type { UnlockedTalents, TalentXP } from "@/lib/game-data";
 import { CURRENT_CONTENT_VERSION, CURRENT_GAME_BUILD_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
 import { isAnimationDisabled } from "@/lib/game-constants";
 

@@ -5,8 +5,7 @@ import { DESTINATIONS, type Destination } from "@/features/alchemy/shared/types"
 import type { ActiveRunData } from "@/lib/active-run-session";
 import type { RunStartSnapshot } from "./run-start";
 import type { ContentSystemId } from "@/lib/content-systems/types";
-import type { DifficultyId } from "@/lib/game-data";
-import type { TalentXP } from "@/lib/talents";
+import type { DifficultyId, TalentXP } from "@/lib/game-data";
 
 export type RunStateFields = {
   characterId: CharacterId;

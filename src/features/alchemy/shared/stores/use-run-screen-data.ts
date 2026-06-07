@@ -2,7 +2,7 @@
 import { useMemo } from "react";
 import type { Screen } from "@/lib/routing";
 import { getRunPhase } from "@/lib/routing";
-import { useRunSessionBattleSlice, useRunSessionRunSlice, useRunSessionTransientSlice } from "./run-session-facade";
+import { useRunSessionBattleSlice, useRunSessionRunSlice, useRunSessionTransientSlice } from "./run-session-model";
 import { flattenRunSessionForScreens, type RunScreenData } from "./run-screen-data";
 
 export type { RunScreenData } from "./run-screen-data";

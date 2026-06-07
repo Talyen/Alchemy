@@ -1,10 +1,9 @@
 /**
  * Mathematical formulas and mapping functions for keyword Talent XP progression.
  * Depends on: src/lib/game-constants.ts and src/lib/game-data/types.ts.
- * Depended on by: Talents UI screen, homestead systems, and the player save loaders.
  */
-import type { KeywordId } from "@/lib/game-data";
-import { XP_BASE_PER_POINT, XP_MIN_THRESHOLD, XP_ROOT_DIVISOR, XP_TRIANGULAR_MULTIPLIER } from "./game-constants";
+import { XP_BASE_PER_POINT, XP_MIN_THRESHOLD, XP_ROOT_DIVISOR, XP_TRIANGULAR_MULTIPLIER } from "@/lib/game-constants";
+import type { KeywordId } from "../types";
 
 const TALENT_PROGRESS_CONFIG = {
   MAX_PERCENT: 100,

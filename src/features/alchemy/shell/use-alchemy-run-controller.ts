@@ -3,9 +3,8 @@
 // Used by App as the single UI-facing API while domain rules stay in smaller controllers.
 import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import type { BattleControllerBindings } from "./battle-bindings";
-import type { TalentXP } from "@/lib/talents";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
-import type { CharacterId, DifficultyId, UnlockedTalents } from "@/lib/game-data";
+import type { CharacterId, DifficultyId, UnlockedTalents, TalentXP } from "@/lib/game-data";
 import type { LabyrinthModifierKind } from "@/lib/content-systems/types";
 import { useRunAdapter, useTalentAdapter } from "@/features/alchemy/shared/stores/run-session-facade";
 import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";

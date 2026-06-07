@@ -52,7 +52,7 @@ Operational rules that deviate from typical CCG/roguelike assumptions (term defi
 - **Death's Door** — when player hits 0 HP, they get 1+ grace turn at 0 HP. Must heal above 0 before grace expires or the run ends. CC skip turns are suppressed during grace.
 - **Battle RNG** — battle logic must use `state.rng`, not bare `Math.random()` (tests and `createBattleState` may pass explicit RNG).
 - **Enemy status modifiers** — enemy status stack changes should go through `adjustEnemyStatusDelta()` so labyrinth/difficulty modifiers apply correctly.
-- **Damage types** — nine types with per-enemy resist/vulnerable; see Glossary (**Damage type**).
+- **Damage types** — eight types with per-enemy resist/vulnerable; see Glossary (**Damage type**).
 
 ## Environment & commands
 
@@ -216,7 +216,7 @@ Short definitions. Turn timing and combat rules: [Core Gameplay Mechanics](#core
 | **Companion Bond** | Per-companion talent level; boosts companion damage each turn. |
 | **Content System** | `campaign`, `labyrinth`, or `wildwood` — map generation and encounter rules. |
 | **Corruption** | Altar event that mutates a card with a random harmful effect/tag. |
-| **Damage type** | `physical`, `stun`, `holy`, `burn`, `poison`, `bleed`, `freeze`, `nature`, `arrow` — enemies may resist or be vulnerable per type. |
+| **Damage type** | `physical`, `stun`, `holy`, `burn`, `poison`, `bleed`, `freeze`, `nature` — enemies may resist or be vulnerable per type. |
 | **Potion** | Consumable with temporary effect from the Alchemist shop. |
 | **Regen / Regeneration** | Enemy trait: heal each turn at end of enemy phase. |
 | **Reward route** | Internal post-rewards destination (`REWARD_ROUTES`), not a `Screen`. |

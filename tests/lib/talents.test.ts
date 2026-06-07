@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { xpForNextPoint, xpThresholdForPoints, computeTalentPoints, xpToNextPoint, addTalentXP, getTalentKeywordProgress } from "@/lib/talents";
+import { xpForNextPoint, xpThresholdForPoints, computeTalentPoints, xpToNextPoint, addTalentXP, getTalentKeywordProgress } from "@/lib/game-data";
 
 describe("xpForNextPoint", () => {
   it("returns 10 XP for point 0→1", () => expect(xpForNextPoint(0)).toBe(10));

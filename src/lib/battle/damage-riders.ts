@@ -176,13 +176,17 @@ function decayEnemyDefensesOnHit(state: BattleState, modifiedDamage: number): Ba
   };
 }
 
-function applyBurnDamageRiders(state: BattleState, modifiedDamage: number): BattleState {
+function applyBurnDamageRiders(
+  state: BattleState,
+  modifiedDamage: number,
+  combatTexts: CombatTextEvent[],
+): BattleState {
   let nextState = state;
   if (state.talentEffects.forgeOnBurnDealt > 0) {
     nextState = addPlayerStatus(nextState, "forge", state.talentEffects.forgeOnBurnDealt);
   }
   if (rollTalentChance(state.talentEffects.burnStunChance, state)) {
-    nextState = addEnemyStatus(nextState, "stun", modifiedDamage);
+    nextState = resolveStunTrigger(addEnemyStatus(nextState, "stun", modifiedDamage), combatTexts);
   }
   return nextState;
 }
@@ -292,7 +296,7 @@ export function applyDamageRiders(
   nextState = applyForgeStunRider(nextState, effect, combatTexts);
 
   if (effect.damageType === "burn" && modifiedDamage > 0) {
-    nextState = applyBurnDamageRiders(nextState, modifiedDamage);
+    nextState = applyBurnDamageRiders(nextState, modifiedDamage, combatTexts);
   }
 
   if (effect.lifesteal) {

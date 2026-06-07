@@ -151,7 +151,7 @@ function applyFrozenHeartDamage(state: BattleState, combatTexts: CombatTextEvent
   };
 }
 
-function tryTriggerEnemyFreeze(
+export function tryTriggerEnemyFreeze(
   preHitState: BattleState,
   nextState: BattleState,
   combatTexts: CombatTextEvent[],
@@ -207,8 +207,8 @@ function applyPhysicalBleedDetonate(state: BattleState, combatTexts: CombatTextE
   let nextState: BattleState = {
     ...state,
     enemyHealth: clampHealth(state.enemyHealth, -bleedDamage, state.enemyMaxHealth),
-    enemyStatuses: { ...state.enemyStatuses, bleed: 0 },
   };
+  nextState = setEnemyStatus(nextState, "bleed", 0);
   mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "bleed", amount: bleedDamage });
   nextState = decayArmorAfterDamage(nextState, bleedDamage, "enemy", combatTexts);
   return nextState;

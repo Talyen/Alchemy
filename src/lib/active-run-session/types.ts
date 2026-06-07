@@ -1,9 +1,8 @@
 // Persisted mid-run save contracts shared by validation, storage, and controllers.
 import type { BattleState } from "@/lib/battle";
-import type { BattleCard, CharacterId, DifficultyId } from "@/lib/game-data";
+import type { BattleCard, CharacterId, DifficultyId, TalentXP } from "@/lib/game-data";
 import type { ContentSystemId, LabyrinthMap, LabyrinthModifierKind } from "@/lib/content-systems/types";
 import type { Screen } from "@/lib/routing";
-import type { TalentXP } from "@/lib/talents";
 
 export type LabyrinthNodePosition = { row: number; col: number };
 

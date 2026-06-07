@@ -55,7 +55,8 @@ export {
   syncRunToBattleStart,
   teardownRun,
 };
-export { useRunAdapter, useTalentAdapter, useRunDomainStore };
+import { useRunScreenData } from "./use-run-screen-data";
+export { useRunAdapter, useTalentAdapter, useRunDomainStore, useRunScreenData };
 export type { RunStateController, TalentStateController };
 
 /** Imperative read of run progression fields (deck, gold, talents, initialized). */

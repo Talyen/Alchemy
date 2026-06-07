@@ -18,8 +18,7 @@ import {
   snapshotRun,
 } from "@/features/alchemy/shared/stores/run-session-facade";
 import { flattenRunSessionForScreens } from "@/features/alchemy/shared/stores/run-screen-data";
-import { computeTalentPoints } from "@/lib/talents";
-import type { BattleCard } from "@/lib/game-data";
+import { computeTalentPoints, type BattleCard } from "@/lib/game-data";
 import type { ActiveRunData } from "@/lib/active-run-session";
 
 vi.mock("@/features/alchemy/shared/storage/flush-save", () => ({

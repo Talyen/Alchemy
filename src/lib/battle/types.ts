@@ -173,6 +173,10 @@ export function addPlayerStatus(state: BattleState, status: PlayerStatusId, delt
   return { ...state, playerStatuses: { ...state.playerStatuses, [status]: state.playerStatuses[status] + delta } };
 }
 
+export function setPlayerStatus(state: BattleState, status: PlayerStatusId, value: number): BattleState {
+  return { ...state, playerStatuses: { ...state.playerStatuses, [status]: value } };
+}
+
 export function adjustEnemyStatusDelta(state: Pick<BattleState, "difficultyModifiers">, delta: number): number {
   if (delta === 0) return 0;
   return isNullFieldActive(state) ? Math.max(STATUS_CONFIG.MIN_STACK_AMOUNT, Math.round(delta / HALF_DIVISOR)) : delta;
