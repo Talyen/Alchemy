@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { failOnRuntimeErrors, makeCard, startBattleWithDeck } from "./helpers";
+import { failOnRuntimeErrors, makeCard, makeHighDamageCard, startBattleWithDeck } from "./helpers";
 import { BattlePage } from "./pages/battle-page";
 
 test.describe("Draw/discard animation invariants (1920×1080)", () => {
@@ -53,9 +53,10 @@ for (const { width, height, label } of ALT_RESOLUTIONS) {
 }
 
 test.describe("Draw/discard edge cases", () => {
-  test("skip combat during end turn: no errors", { timeout: 60_000 }, async ({ page }) => {
+  test("skip combat during end turn: no errors", async ({ page }) => {
+    test.setTimeout(60_000);
     const errors = failOnRuntimeErrors(page);
-    await startBattleWithDeck(page, Array.from({ length: 6 }, () => makeCard()));
+    await startBattleWithDeck(page, Array.from({ length: 6 }, () => makeHighDamageCard()));
     const battle = new BattlePage(page);
 
     await battle.endTurnBtn.click();

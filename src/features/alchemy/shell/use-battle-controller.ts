@@ -158,7 +158,10 @@ export function useBattleController({
     return getBattleSessionStore();
   }
 
-  const playableHandCardKeys = useMemo(() => getPlayableHandCardKeys(battleState), [battleState]);
+  const playableHandCardKeys = useMemo(() => {
+    if (cardTransferInProgress) return new Set<string>();
+    return getPlayableHandCardKeys(battleState);
+  }, [battleState, cardTransferInProgress]);
 
   function resetHandTransferUi() {
     setHiddenHandCardKeys(new Set());
@@ -301,6 +304,7 @@ export function useBattleController({
     battleState,
     battleSessionRef,
     cardPlayInProgressRef,
+    cardTransferInProgress,
     hiddenHandCardKeys,
     playerPanelRef,
     enemyPanelRef,

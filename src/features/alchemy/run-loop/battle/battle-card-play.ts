@@ -26,6 +26,7 @@ export type BattleCardPlayDeps = {
   battleState: BattleState;
   battleSessionRef: RefObject<number>;
   cardPlayInProgressRef: RefObject<boolean>;
+  cardTransferInProgress: boolean;
   hiddenHandCardKeys: Set<string>;
   playerPanelRef: RefObject<HTMLDivElement | null>;
   enemyPanelRef: RefObject<HTMLDivElement | null>;
@@ -68,6 +69,7 @@ export function createBattleCardPlay(deps: BattleCardPlayDeps) {
       deps.screen === "battle" &&
       canPlayCardInBattle(state, card, index) &&
       !deps.cardPlayInProgressRef.current &&
+      !deps.cardTransferInProgress &&
       !deps.hiddenHandCardKeys.has(getCardKey(card))
     );
   }
