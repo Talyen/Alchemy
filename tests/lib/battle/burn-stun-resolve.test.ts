@@ -24,6 +24,7 @@ describe("Burn Stun Chance / Direct status threshold resolution", () => {
       enemyMaxHealth: 20,
       talentEffects,
       hand: [card],
+      rng: () => 0.5,
     });
     
     const texts: CombatTextEvent[] = [];
