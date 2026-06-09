@@ -19,7 +19,7 @@ export default defineConfig(({ mode }) => ({
     "import.meta.env.DEV": mode === "development" ? "true" : "false",
   },
   base: process.env.VERCEL ? "/" : mode === "desktop" ? "./" : "/",
-  server: { open: true, port: devPort, strictPort: true },
+  server: { open: mode !== "desktop", port: devPort, strictPort: true },
   plugins: [
     tailwind(),
     react(),

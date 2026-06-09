@@ -1,26 +1,29 @@
-// All battle card effect kinds — register new modules here (see effects/<kind>/definition.ts).
-import { buffCompanionEffectDefinition } from "./buff-companion/definition";
+// All battle card effect kinds — registered by category.
+import {
+  damageEffectDefinition,
+  selfDamageEffectDefinition,
+  randomDamageEffectDefinition,
+  removeEnemyArmorEffectDefinition,
+} from "./damage-schemas";
+import {
+  playerStatusEffectDefinition,
+  enemyStatusEffectDefinition,
+  removeHarmfulStatusEffectDefinition,
+  removePlayerStatusEffectDefinition,
+  multiplyEnemyStatusEffectDefinition,
+  cleansePlayerStatusToDamageEffectDefinition,
+} from "./status-schemas";
+import {
+  restoreManaEffectDefinition,
+  loseManaEffectDefinition,
+  gainMaxManaEffectDefinition,
+  loseMaxManaEffectDefinition,
+  healEffectDefinition,
+  loseHealthEffectDefinition,
+} from "./mana-health-schemas";
+import { summonCompanionEffectDefinition, buffCompanionEffectDefinition } from "./companion-schemas";
+import { gainGoldEffectDefinition, wishEffectDefinition, drawCardsEffectDefinition } from "./utility-schemas";
 import { chanceEffectDefinition } from "./chance/definition";
-import { cleansePlayerStatusToDamageEffectDefinition } from "./cleanse-player-status-to-damage/definition";
-import { damageEffectDefinition } from "./damage/definition";
-import { drawCardsEffectDefinition } from "./draw-cards/definition";
-import { enemyStatusEffectDefinition } from "./enemy-status/definition";
-import { gainGoldEffectDefinition } from "./gain-gold/definition";
-import { gainMaxManaEffectDefinition } from "./gain-max-mana/definition";
-import { healEffectDefinition } from "./heal/definition";
-import { loseHealthEffectDefinition } from "./lose-health/definition";
-import { loseManaEffectDefinition } from "./lose-mana/definition";
-import { loseMaxManaEffectDefinition } from "./lose-max-mana/definition";
-import { multiplyEnemyStatusEffectDefinition } from "./multiply-enemy-status/definition";
-import { playerStatusEffectDefinition } from "./player-status/definition";
-import { randomDamageEffectDefinition } from "./random-damage/definition";
-import { removeEnemyArmorEffectDefinition } from "./remove-enemy-armor/definition";
-import { removeHarmfulStatusEffectDefinition } from "./remove-harmful-status/definition";
-import { removePlayerStatusEffectDefinition } from "./remove-player-status/definition";
-import { restoreManaEffectDefinition } from "./restore-mana/definition";
-import { selfDamageEffectDefinition } from "./self-damage/definition";
-import { summonCompanionEffectDefinition } from "./summon-companion/definition";
-import { wishEffectDefinition } from "./wish/definition";
 import type { EffectDispatchRoute } from "./dispatch-routes";
 import type { BattleCardEffectKind } from "./kinds";
 

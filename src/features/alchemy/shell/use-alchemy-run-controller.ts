@@ -1,7 +1,7 @@
 // Top-level alchemy controller composition hook.
 // Depends on run, battle, shop, navigation, talent, persistence-facing, and homestead state.
 // Used by App as the single UI-facing API while domain rules stay in smaller controllers.
-import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import type { BattleControllerBindings } from "./battle-bindings";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import type { CharacterId, DifficultyId, UnlockedTalents, TalentXP } from "@/lib/game-data";
@@ -55,16 +55,16 @@ export function useAlchemyRunController({
   }, [homesteadEffects]);
 
   // ============ Store-backed Setters ============
-  function setHoveredCardId(id: string | null | ((prev: string | null) => string | null)) {
+  const setHoveredCardId = useCallback((id: string | null | ((prev: string | null) => string | null)) => {
     const store = useUiStore.getState();
     store.setHoveredCardId(typeof id === "function" ? id(store.hoveredCardId) : id);
-  }
-  function applyLabyrinthBattleModifiers(modifiers: LabyrinthModifierKind[]) {
+  }, []);
+  const applyLabyrinthBattleModifiers = useCallback((modifiers: LabyrinthModifierKind[]) => {
     setActiveLabyrinthModifiers(modifiers);
-  }
-  function applyLabyrinthRewardModifiers(modifiers: LabyrinthModifierKind[]) {
+  }, []);
+  const applyLabyrinthRewardModifiers = useCallback((modifiers: LabyrinthModifierKind[]) => {
     setActiveLabyrinthRewardModifiers(modifiers);
-  }
+  }, []);
 
   // ============ Domain Controllers ============
   const onBattleVictoryRef = useRef<() => void>(() => {});
@@ -125,15 +125,20 @@ export function useAlchemyRunController({
     nav.beginLabyrinth();
   }
 
-  const { handleLabyrinthNodeEnter } = createLabyrinthNodeRouting({
-    applyLabyrinthBattleModifiers,
-    applyLabyrinthRewardModifiers,
-    navigateTo,
-    labyrinth,
-    battle,
-    nav,
-    shop,
-  });
+  const nodeRouting = useMemo(
+    () =>
+      createLabyrinthNodeRouting({
+        applyLabyrinthBattleModifiers,
+        applyLabyrinthRewardModifiers,
+        navigateTo,
+        labyrinth,
+        battle,
+        nav,
+        shop,
+      }),
+    [applyLabyrinthBattleModifiers, applyLabyrinthRewardModifiers, navigateTo, labyrinth, battle, nav, shop],
+  );
+  const { handleLabyrinthNodeEnter } = nodeRouting;
 
   const battleBindings = useMemo<BattleControllerBindings>(
     () => ({

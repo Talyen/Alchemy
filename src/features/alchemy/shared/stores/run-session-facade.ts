@@ -44,6 +44,7 @@ export {
   useRunSessionRunSlice,
   useRunSessionShopSlice,
   useRunSessionTransientSlice,
+  useRunSessionValue,
 } from "./run-session-model";
 export {
   applyRunDefeatTeardown,

@@ -43,7 +43,7 @@ See also [`src/features/alchemy/shared/storage/MIGRATIONS.md`](../src/features/a
 ## Change mid-run resume (`ActiveRunData`)
 
 1. Extend `ActiveRunData` and Zod schema in `src/lib/validation/save-schemas.ts` if new fields are required.
-2. Update `createActiveRunData()` in `src/features/alchemy/run-loop/run/active-run-data.ts` and the snapshot builder in `run-loop/run/use-active-run-snapshot.ts`.
+2. Update `buildActiveRunSnapshot()` in `src/lib/active-run-session/snapshot.ts` and `snapshotRun()` in `src/features/alchemy/shared/stores/run-transitions.ts`.
 3. Update hydration in `shell/use-alchemy-run-controller.ts` via `restoreRun` (restore `screen`, `destinationChoices`, combat, etc.).
 4. Run `tests/features/storage/active-run.test.ts` plus storage/migration tests.
 
@@ -171,7 +171,7 @@ Cards in `cardLibrary` are automatically included in merchant shop, combat rewar
 |---|---|
 | 1. Define keyword config (label, description, colors) | `src/lib/game-data/keywords.ts` |
 | 2. Add display config if needed | `src/features/alchemy/shared/config/keywords.ts` |
-| 3. Add talent XP trigger | `src/lib/talents.ts` (keyword-based XP logic) |
+| 3. Add talent XP trigger | `src/lib/game-data/talents/progression.ts` (keyword-based XP logic) |
 
 ---
 
@@ -179,9 +179,9 @@ Cards in `cardLibrary` are automatically included in merchant shop, combat rewar
 
 | Step | File(s) |
 |---|---|
-| 1. Add string to `Screen` union and `ROUTE_SCREENS` | `src/features/alchemy/shared/types.ts` |
-| 2. Create component in `run-loop/screens/` or `meta/screens/` + barrel export | `screens/index.ts` |
-| 3. Export from screens barrel | `src/features/alchemy/screens/index.ts` |
+| 1. Add string to `Screen` union and `ROUTE_SCREENS` | `src/lib/routing/screens.ts` |
+| 2. Create component in `run-loop/screens/` or `meta/screens/` + barrel export | `index.ts` (local screen index under that subdirectory) |
+| 3. Export from screens barrel | `src/features/alchemy/shared/screens/index.ts` |
 | 4. Add route handler in `meta-routes`, `run-setup-routes`, or `run-loop-routes` (wrapped in `ErrorBoundary` via registry) | `src/app/screen-routes/` |
 | 5. Extend `RenderAlchemyScreenProps` / route context if new props needed | `src/app/render-screen-props.ts`, `src/app/render-alchemy-screen.tsx` |
 | 6. Add callbacks to `ControllerActions` if new handlers needed | `src/app/controller-actions.ts` |
@@ -193,7 +193,7 @@ Cards in `cardLibrary` are automatically included in merchant shop, combat rewar
 
 | Step | File(s) |
 |---|---|
-| 1. Add to `DESTINATIONS` const | `src/features/alchemy/shared/types.ts` |
+| 1. Add to `DESTINATIONS` const | `src/lib/routing/destinations.ts` |
 | 2. Add to destination pool / availability | `src/lib/routing/destination-availability.ts` (re-exported from `features/alchemy/config/routes.ts`) |
 
 ---

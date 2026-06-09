@@ -21,14 +21,11 @@ Between runs, the **Homestead** lets the player spend **Materials** on permanent
 - [Environment & commands](#environment--commands)
 - [Workflows](#workflows)
 - [Architecture](#architecture)
-    - [Path aliases](#path-aliases-tsconfigjson)
+    - [Import paths](#import-paths)
     - [Runtime map](#runtime-map)
 - [Key Conventions](#key-conventions)
     - [React & UI Conventions](#react--ui-conventions)
-    - [Domain Glossary](#domain-glossary)
 - [Barrel Imports](#barrel-imports)
-- [Navigation Hints](#navigation-hints)
-- [Project Gotchas](#project-gotchas)
 - [Common Mistakes](#common-mistakes)
 - [Debugging](#debugging)
 - [Verification Strategy](#verification-strategy)
@@ -36,16 +33,17 @@ Between runs, the **Homestead** lets the player spend **Materials** on permanent
 - [Large / Generated / Heavy Files](#large--generated--heavy-files)
 - [AI Behavior](#ai-behavior)
 - [Multi-Agent Rules](#multi-agent-rules)
+- [Static Reference Guide](file:///c:/Users/Talye/Alchemy/docs/REFERENCE.md) (Glossary, command list, file locations)
 
 ## Core Gameplay Mechanics
 
 Operational rules that deviate from typical CCG/roguelike assumptions (term definitions: [Glossary](#domain-glossary)):
 
-- **Single enemy per battle** — always 1-on-1. No multi-enemy fights, no AoE targeting decisions.
+- **Single enemy per battle (1-on-1 Targeting)** — All battles are strictly 1-on-1. Because of this, card effects apply implicitly: attacks/debuffs go to the single enemy, and blocks/heals/buffs go to the player or companions. No target selectors or targeting fields are used.
 - **Mana resets fully each turn** — starts at `maxMana` (4 base), unspent mana is lost (unless Wellspring talent adds bonus mana).
-- **Companions are invulnerable** — no HP, no damage targeting, no block. They act for the player automatically at turn start, then persist indefinitely.
+- **Companions are invulnerable** — Summoned companions have no health, block, or stats, and cannot take damage or be targeted. They act automatically for the player at turn start, then persist indefinitely.
 - **Draw 4 per turn, max hand 7** — overflow draws are silently skipped, not discarded. Hand is cleared to discard pile before drawing.
-- **Deck auto-reshuffles** — when draw pile empties, discard is reshuffled immediately (mid-draw if needed). Only `consume` cards leave permanently.
+- **Deck auto-reshuffles** — when draw pile empties, discard is reshuffled immediately (mid-draw if needed). Only `consume` cards leave permanently. There are no mechanics to retrieve, view, or interact with cards in the discard or consumed states.
 - **Block decays at end of enemy turn** — halved (not cleared) after the enemy attacks, during turn transition. Absorbs all enemy damage first.
 - **Turn order** — Player (companion attacks → play cards) → Enemy (DoT ticks on enemy → enemy attacks → DoT ticks on player → regen) → Turn reset (draw 4, restore mana, decay block).
 - **Status DoT ticks**: enemy DoTs tick at start of enemy phase; player DoTs tick during enemy resolution (after enemy attack). Stun/freeze CC checked after DoT damage.
@@ -53,33 +51,14 @@ Operational rules that deviate from typical CCG/roguelike assumptions (term defi
 - **Battle RNG** — battle logic must use `state.rng`, not bare `Math.random()` (tests and `createBattleState` may pass explicit RNG).
 - **Enemy status modifiers** — enemy status stack changes should go through `adjustEnemyStatusDelta()` so labyrinth/difficulty modifiers apply correctly.
 - **Damage types** — eight types with per-enemy resist/vulnerable; see Glossary (**Damage type**).
+- **Static Enemy Actions** — Enemies resolve their exact, static list of `enemyAttackEffects` sequentially every turn. There are no randomized intent selectors or stateful intent cycles.
 
 ## Environment & commands
 
-- **Node.js `>=24`** — authoritative in `package.json` `engines` (README may lag).
-- **npm 10+**
-- **Playwright:** `npx playwright install chromium` once before first `npm run test:e2e`.
-- **GitHub CLI (`gh`):** optional; PR/CI only when the user asks — do not run `gh auth login`. See [Verification Strategy](#verification-strategy).
-- **Git hooks:** lefthook `pre-push` — see [CONTRIBUTING.md](./CONTRIBUTING.md) (9 `@prepush` e2e tests after `lint:ci`, `test`, `build`).
-- **Balance sim env vars** (see [README.md](./README.md)): `ALCHEMY_BALANCE_ITERATIONS`, `ALCHEMY_BALANCE_POLICY` (`random-playable`, `greedy-damage`, `defensive-random`).
-
-**Agent-relevant scripts:**
-
-```sh
-npm run dev                 # Vite dev server
-npm run build               # tsc + vite build
-npm test                    # Vitest
-npm test -- <path>          # Single test file
-npm run lint:ci             # format:check + lint + deadcode (CI / pre-push)
-npm run check               # npm ci --dry-run + lint:ci + test + build
-npm run check:push          # check + test:e2e:prepush
-npm run test:e2e:prepush    # Fast @prepush subset (pre-push hook)
-npm run test:e2e:prepush:full  # @critical on preview (CI e2e job)
-npm run test:e2e:main-gate  # Full suite on preview (push to main)
-npm run balance:sim         # Balance simulator report
-```
-
-Full script list: `package.json` / [README.md](./README.md).
+- **Pre-PR / local checks:** `npm run lint:ci && npm test`
+- **Full pre-push hook:** `npm run check:push`
+- **PowerShell command chaining:** If running multiple terminal commands on Windows, use `; if ($?) { next-command }` as `;` alone ignores exit codes.
+- For full command scripts, Node/npm requirements, Playwright, and balance sim settings, see **[docs/REFERENCE.md](./docs/REFERENCE.md#environment--commands)**.
 
 ## Workflows
 
@@ -96,7 +75,7 @@ All step-by-step tables live in **[docs/WORKFLOWS.md](./docs/WORKFLOWS.md)**. Up
 
 ### Directory Layout
 
-- `src/lib/` — Pure game logic (no React): `battle/`, `content-systems/` (`campaign`, `labyrinth`, `wildwood`), `homestead/`, `animation/`, `talents.ts`, `audio*.ts`, `trinkets.ts`, `game-constants.ts`.
+- `src/lib/` — Pure game logic (no React): `battle/`, `content-systems/` (`campaign`, `labyrinth`, `wildwood`), `homestead/`, `animation/`, `audio*.ts`, `trinkets.ts`, `game-constants.ts`.
 - `src/features/alchemy/` — React UI. **`shared/`** — `ui/`, `config/`, `stores/`, `storage/`, `utils/`, `types.ts`, `screens/index.ts` (barrel). **`meta/`** — menu, collection, homestead, talents. **`run-setup/`** — run start screens. **`run-loop/`** — battle, navigation, shop, in-run screens. **`shell/`** — controllers. **New screens:** `run-loop/screens/` or `meta/screens/` → `shared/screens/index.ts` → `src/app/screen-routes/`.
 - `src/app/` — Boot, `screen-routes/`, `render-alchemy-screen.tsx`.
 - `src/components/ui/` — Shared primitives.
@@ -106,7 +85,7 @@ All step-by-step tables live in **[docs/WORKFLOWS.md](./docs/WORKFLOWS.md)**. Up
 
 ### Import paths
 
-Use **on-disk** paths under `src/features/alchemy/` (e.g. `@/features/alchemy/shared/stores/run-session-facade`). Only `@/*` → `src/*` is configured in `tsconfig.json`. Edit `Screen`, `DESTINATIONS`, `REWARD_ROUTES` in [`shared/types.ts`](src/features/alchemy/shared/types.ts).
+Use **on-disk** paths under `src/features/alchemy/` (e.g. `@/features/alchemy/shared/stores/run-session-facade`). Only `@/*` → `src/*` is configured in `tsconfig.json`. Edit `Screen` in [`src/lib/routing/screens.ts`](src/lib/routing/screens.ts), `DESTINATIONS` in [`src/lib/routing/destinations.ts`](src/lib/routing/destinations.ts), and `REWARD_ROUTES` in [`src/features/alchemy/shared/types.ts`](src/features/alchemy/shared/types.ts).
 
 ### Import boundaries (ESLint)
 
@@ -196,6 +175,8 @@ One loading experience at cold start, then instant navigation — no per-route "
 
 - **No `React.FC`** — plain functions + explicit `Props` type.
 - **Tailwind via `cn()`** from `@/lib/utils`; variants via `cva()`.
+- **No template-literal classNames** — ESLint rules ban template literals inside `className` attributes (e.g. `className={`p-4 ${active ? "bg-primary" : ""}`}`). Use `cn(...)` from `@/lib/utils` for all dynamic or concatenated class names.
+- **UI Store Isolation** — Presentational/reusable widgets in `src/features/alchemy/shared/ui/` must NOT import from domain/session/battle stores (`run-domain-store`, `battle-store`, `run-session-facade`). Pass state data via props; only `ui-store` is allowed for transient UI state (e.g. hovers).
 - **Inline `style={}`** — rare: CSS vars for motion, runtime anchors, dynamic widths/images only.
 - **No dynamic Tailwind segments** — use complete class strings from maps.
 - **Theme tokens** from `src/index.css` — avoid arbitrary `rgba` when a token exists.
@@ -205,26 +186,7 @@ One loading experience at cold start, then instant navigation — no per-route "
 - **Interactive elements:** default, hover, active, disabled.
 - **No emoji in game UI.**
 
-### Domain Glossary
-
-Short definitions. Turn timing and combat rules: [Core Gameplay Mechanics](#core-gameplay-mechanics).
-
-| Term | Definition |
-|---|---|
-| **Burn** | DoT status; ticks at start of enemy turn, stack −1 after tick. |
-| **Combat Text** | Floating numbers merged per `(target, kind, stat)`. |
-| **Companion Bond** | Per-companion talent level; boosts companion damage each turn. |
-| **Content System** | `campaign`, `labyrinth`, or `wildwood` — map generation and encounter rules. |
-| **Corruption** | Altar event that mutates a card with a random harmful effect/tag. |
-| **Damage type** | `physical`, `stun`, `holy`, `burn`, `poison`, `bleed`, `freeze`, `nature` — enemies may resist or be vulnerable per type. |
-| **Potion** | Consumable with temporary effect from the Alchemist shop. |
-| **Regen / Regeneration** | Enemy trait: heal each turn at end of enemy phase. |
-| **Reward route** | Internal post-rewards destination (`REWARD_ROUTES`), not a `Screen`. |
-| **Status** | Temporary player/enemy effect with tick/expiry (Burn, Freeze, Poison, Stun, …). |
-| **Summon** | Brings a companion into battle. |
-| **Talent Effect Manifest** | Active talent bonuses on `BattleState.talentEffects`. |
-| **Trinket Manifest** | Equipped trinket bonuses on `BattleState.trinketEffects`. |
-| **Wish** | Card choices from full library; `wishQueue`. |
+*(Definitions moved to **[docs/REFERENCE.md](./docs/REFERENCE.md#domain-glossary)**)*
 
 ## Barrel Imports
 
@@ -237,46 +199,18 @@ Short definitions. Turn timing and combat rules: [Core Gameplay Mechanics](#core
 | `@/features/alchemy/shared/utils` | `src/features/alchemy/shared/utils/index.ts` |
 | `@/features/alchemy/shared/storage` | `src/features/alchemy/shared/storage/index.ts` |
 
-Top-level lib modules: `@/lib/talents.ts`, etc. Validation schemas stay on `@/lib/validation` (storage barrel is I/O + metadata).
+Top-level lib modules: `@/lib/audio.ts`, etc. Validation schemas stay on `@/lib/validation` (storage barrel is I/O + metadata).
 
 ## Navigation Hints
 
-Lookup for modules not covered in [Runtime map](#runtime-map). Paths are on-disk unless noted.
+For file locations of audio, balance simulation, card library definitions, content systems, homestead features, etc., see **[docs/REFERENCE.md](./docs/REFERENCE.md#navigation-hints)**.
 
-| Need | Look in |
-|---|---|
-| Audio (cache / music / SFX / volume) | `src/lib/audio-*.ts`, `src/lib/audio.ts` |
-| Balance simulation | `src/lib/balance/` |
-| Card corruption | `src/features/alchemy/run-loop/corruption.ts` |
-| Card library barrel | `src/lib/game-data/cards.ts` → `cards/combatCards.ts`, `supportCards.ts` |
-| Content systems (labyrinth / wildwood) | `src/lib/content-systems/` |
-| Effect handler registry doc | `src/lib/game-data/effects/BATTLE_HANDLERS.md` |
-| Feature config barrel | `src/features/alchemy/shared/config/` |
-| Game-data types | `src/lib/game-data/types.ts` |
-| Homestead data | `src/lib/homestead/` |
-| Image preload helper | `src/lib/image-preload.ts` |
-| Potion mixing | `src/features/alchemy/potion-mixer.ts` |
-| Platform / Steam | `src/lib/platform.ts`, `desktop/` |
-| Reward card sampling | `run-loop/reward-utils.ts` |
-| Run screen taxonomy | `src/lib/routing/run-screen-router.ts` |
-| Save migrations doc | `shared/storage/MIGRATIONS.md` |
-| Sound ↔ card registry | `src/lib/sound-registry.ts` |
-| Startup validation | `src/lib/validate-startup.ts` |
-| Talent XP math vs talent data | `src/lib/talents.ts` vs `src/lib/game-data/talents/` |
-| Tuning | `src/lib/game-constants.ts` |
 
-## Project Gotchas
-
-- **Shell is PowerShell**: `; if ($?) { next-command }` — `;` alone ignores exit codes.
-- **Vite base path:** `/`; `npm run dev` opens the browser.
-- **Assets:** `prebuild`/`predev` run optimize scripts.
-- **Desktop:** Electron in `desktop/`; Steam via `platform.ts` with fallbacks.
-- **SFX:** Web Audio buffers (`audio.ts`); music via `<audio>`.
 
 ## Common Mistakes
 
-- **Two talent modules:** `src/lib/game-data/talents/` (data) vs `src/lib/talents.ts` (XP math).
-- **Card effects without `descriptionLines`** — fails `descriptions-match-effects` test.
+- **Card effects without matching `descriptionLines`** — fails the strict `descriptions-match-effects` test. When changing/adding cards, enemies, or trinkets, make sure descriptions explicitly match their numeric effects, and run `npm test -- tests/lib/game-data/descriptions-match-effects.test.ts`.
+- **ClassName template literals:** ESLint restricts using template literals inside `className={}` attributes. Always use `cn(...)` for dynamic strings.
 - **Deep imports** — use barrels (see [Agent defaults](#agent-defaults)).
 - **Mutating `BattleState`** or using `Math.random()` in battle.
 - **`ui-store` / `resetTransientRunUi` for route `screen`** — use run domain `navigation.screen` + `useActiveRunScreen()` / `navigateTo`.
@@ -309,6 +243,7 @@ After local `npm` checks pass — not instead of them.
 
 - **Unit:** `createBattleState()` from `@/lib/battle/draw`; fixtures in `tests/fixtures/`; `describe` per mechanic.
 - **E2E helpers, canary, fast mode:** [CONTRIBUTING.md § E2E helpers](./CONTRIBUTING.md#e2e-helpers).
+- **Playwright E2E restrictions:** Do not use `skipCombatToVictory()`, `skipCombatBtn`, or target 'Skip Combat' / 'Unlock All' strings in e2e specs. These UI elements are hidden/disabled in preview/production builds, which will cause CI failures. Use preview-safe methods like `winViaCombat()` or `playCardNamed()`.
 
 ## Large / Generated / Heavy Files
 

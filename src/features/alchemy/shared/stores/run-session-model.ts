@@ -244,3 +244,18 @@ export function useRunSession(screen?: Screen): RunSession {
     [screenValue, run, session, battle],
   );
 }
+
+/** React hook — selects a granular value from the run session to avoid unnecessary re-renders. */
+export function useRunSessionValue<T>(selector: (state: RunSession) => T, screen?: Screen): T {
+  return useRunDomainStore((state) => {
+    const screenValue = screen ?? state.navigation.screen;
+    const runSession: RunSession = {
+      screen: screenValue,
+      phase: getRunPhase(screenValue, state.battle.hasActiveBattle),
+      run: pickRunSessionRunSlice(state.progress),
+      session: pickRunSessionTransientSlice(state.session),
+      battle: pickRunSessionBattleSlice(state.battle),
+    };
+    return selector(runSession);
+  });
+}

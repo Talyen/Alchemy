@@ -137,6 +137,13 @@ export default tseslint.config(
           ],
         },
       ],
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: 'CallExpression[callee.object.name="Math"][callee.property.name="random"]',
+          message: "Use state.rng or getBattleRng(state) instead of Math.random() in battle engine code.",
+        },
+      ],
     },
   },
 
@@ -389,6 +396,33 @@ export default tseslint.config(
         {
           selector: 'Literal[value="Unlock All"]',
           message: "Unlock All is dev-only UI. Do not target it in e2e specs.",
+        },
+      ],
+    },
+  },
+
+  // Ban React.lazy on route screens.
+  {
+    files: ["src/app/screen-routes/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "react",
+              importNames: ["lazy"],
+              message: "Do not use React.lazy on route screens. All screen routes must be loaded statically upfront.",
+            },
+          ],
+        },
+      ],
+      "no-restricted-properties": [
+        "error",
+        {
+          object: "React",
+          property: "lazy",
+          message: "Do not use React.lazy on route screens. All screen routes must be loaded statically upfront.",
         },
       ],
     },
