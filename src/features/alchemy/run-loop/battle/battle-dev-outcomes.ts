@@ -1,26 +1,21 @@
 // Dev and run-end battle outcome shortcuts (skip combat, abandon run).
 import type { BattleState } from "@/lib/battle";
-import type { Screen } from "../../shared/types";
 import { isAlchemyDevBuild } from "../../shared/utils";
 import { readBattleStore } from "../../shared/stores/run-session-facade";
+import type { BattleControllerContext } from "./controller-context";
 
-export type BattleDevOutcomesDeps = {
-  screen: Screen;
-  resetBattleSession: () => void;
-  handleVictoryDefeat: (outcome: "victory" | "defeat") => void;
-};
-
-export function createBattleDevOutcomes(deps: BattleDevOutcomesDeps) {
+export function createBattleDevOutcomes(contextOrGetter: BattleControllerContext | (() => BattleControllerContext)) {
+  const getContext = typeof contextOrGetter === "function" ? contextOrGetter : () => contextOrGetter;
   const getStore = () => readBattleStore();
 
   function forceBattleOutcome(outcome: "victory" | "defeat", patch: (state: BattleState) => BattleState) {
-    deps.resetBattleSession();
+    getContext().resetBattleSession();
     getStore().setSyncedBattleState(patch);
-    deps.handleVictoryDefeat(outcome);
+    getContext().handleVictoryDefeat(outcome);
   }
 
   function handleEndRun() {
-    if (deps.screen !== "battle") return;
+    if (getContext().screen !== "battle") return;
     forceBattleOutcome("defeat", (c) => ({
       ...c,
       playerHealth: 0,
@@ -31,7 +26,7 @@ export function createBattleDevOutcomes(deps: BattleDevOutcomesDeps) {
   }
 
   function skipCombatDevMode() {
-    if (!isAlchemyDevBuild() || deps.screen !== "battle") return;
+    if (!isAlchemyDevBuild() || getContext().screen !== "battle") return;
     forceBattleOutcome("victory", (c) => ({ ...c, enemyHealth: 0, wishOptions: null, wishQueue: [] }));
   }
 

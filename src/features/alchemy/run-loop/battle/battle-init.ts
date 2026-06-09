@@ -3,26 +3,16 @@ import { createBattleState, getBattleStartPlayerHealth } from "@/lib/battle";
 export { getBattleStartPlayerHealth };
 import { getDifficultyModifiers, type BattleCard, type BestiaryEntry, type DifficultyModifier } from "@/lib/game-data";
 import { mergeIntoManifest } from "@/lib/homestead/effects";
-import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import { getBossById, getCurrentEnemy, getBossEnemy } from "@/features/alchemy/shared/config";
 import { readBattleStore } from "../../shared/stores/run-session-facade";
 import { useBattlePresentationStore } from "../../shared/stores/battle-presentation-store";
 import { appendUnique } from "@/lib/utils";
 import { useAppStore } from "../../shared/stores/app-store";
 import { syncRunToBattleStart } from "../../shared/stores/run-transitions";
-import type { RunStateController, TalentStateController } from "../../shared/stores/run-session-facade";
+import type { BattleControllerContext } from "./controller-context";
 
-export type BattleInitDeps = {
-  run: RunStateController;
-  talents: TalentStateController;
-  homesteadEffectsRef: React.MutableRefObject<HomesteadEffectManifest>;
-  resetBattleSession: () => void;
-  setCardTransfers: React.Dispatch<React.SetStateAction<import("@/features/alchemy/shared/types").CardTransfer[]>>;
-  setHiddenHandCardKeys: React.Dispatch<React.SetStateAction<Set<string>>>;
-  setCardTransferInProgress: React.Dispatch<React.SetStateAction<boolean>>;
-};
-
-export function createBattleInit(deps: BattleInitDeps) {
+export function createBattleInit(contextOrGetter: BattleControllerContext | (() => BattleControllerContext)) {
+  const getContext = typeof contextOrGetter === "function" ? contextOrGetter : () => contextOrGetter;
   const getStore = () => readBattleStore();
   const getPresentationStore = () => useBattlePresentationStore.getState();
 
@@ -34,10 +24,13 @@ export function createBattleInit(deps: BattleInitDeps) {
     roomsEncountered: number,
     modifiers?: DifficultyModifier[],
   ) {
-    const mergedEffects = mergeIntoManifest(deps.talents.talentEffects, deps.homesteadEffectsRef.current);
+    const context = getContext();
+    const mergedEffects = mergeIntoManifest(context.talents.talentEffects, context.homesteadEffectsRef.current);
     const activeModifiers =
       modifiers ??
-      (deps.run.selectedDifficulty ? getDifficultyModifiers(deps.run.characterId, deps.run.selectedDifficulty) : []);
+      (context.run.selectedDifficulty
+        ? getDifficultyModifiers(context.run.characterId, context.run.selectedDifficulty)
+        : []);
     return createBattleState({
       runDeck: deck,
       gold,
@@ -46,40 +39,46 @@ export function createBattleInit(deps: BattleInitDeps) {
       playerHealth,
       talentEffects: mergedEffects,
       discoveredCardIds: useAppStore.getState().discoveredCardIds,
-      maxHealth: deps.run.runMaxHealth,
-      trinketIds: deps.run.runTrinkets,
+      maxHealth: context.run.runMaxHealth,
+      trinketIds: context.run.runTrinkets,
       difficultyModifiers: activeModifiers,
     });
   }
 
   function beginBattle(enemy: BestiaryEntry, deck: BattleCard[], gold: number, modifiers?: DifficultyModifier[]) {
-    deps.resetBattleSession();
-    deps.setCardTransfers([]);
-    deps.setHiddenHandCardKeys(new Set());
-    deps.setCardTransferInProgress(false);
+    const context = getContext();
+    context.resetBattleSession();
+    context.setCardTransfers([]);
+    context.setHiddenHandCardKeys(new Set());
+    context.setCardTransferInProgress(false);
     const startingHealth = syncRunToBattleStart();
-    const nextRoomsEncountered = deps.run.roomsEncountered + 1;
-    deps.run.setRoomsEncountered(nextRoomsEncountered);
+    const nextRoomsEncountered = context.run.roomsEncountered + 1;
+    context.run.setRoomsEncountered(nextRoomsEncountered);
     getPresentationStore().clearCardGhosts();
     const nextBattleState = createBattleForEnemy(enemy, deck, gold, startingHealth, nextRoomsEncountered, modifiers);
     getStore().setSyncedBattleState(nextBattleState);
     getStore().setBattleStartState(nextBattleState);
     getStore().setHasActiveBattle(true);
-    deps.run.setEncounteredRunEnemyIds((current) => appendUnique(current, enemy.id));
+    context.run.setEncounteredRunEnemyIds((current) => appendUnique(current, enemy.id));
     useAppStore.getState().setEncounteredEnemyIds((current) => appendUnique(current, enemy.id));
   }
 
   function startBattle(
-    deck: BattleCard[] = deps.run.runDeck,
-    gold: number = deps.run.runGold,
+    deck: BattleCard[] = getContext().run.runDeck,
+    gold: number = getContext().run.runGold,
     enemyType: "normal" | "elite" = "normal",
     modifiers?: DifficultyModifier[],
   ) {
-    beginBattle(getCurrentEnemy(enemyType, deps.run.encounteredRunEnemyIds), deck, gold, modifiers);
+    beginBattle(getCurrentEnemy(enemyType, getContext().run.encounteredRunEnemyIds), deck, gold, modifiers);
   }
 
   function startBossBattle(modifiers?: DifficultyModifier[]) {
-    beginBattle(getBossEnemy(deps.run.encounteredRunEnemyIds), deps.run.runDeck, deps.run.runGold, modifiers);
+    beginBattle(
+      getBossEnemy(getContext().run.encounteredRunEnemyIds),
+      getContext().run.runDeck,
+      getContext().run.runGold,
+      modifiers,
+    );
   }
 
   function startBossById(bossId: string, modifiers?: DifficultyModifier[]): boolean {
@@ -88,7 +87,7 @@ export function createBattleInit(deps: BattleInitDeps) {
       console.warn(`startBossById: boss "${bossId}" not found`);
       return false;
     }
-    beginBattle(boss, deps.run.runDeck, deps.run.runGold, modifiers);
+    beginBattle(boss, getContext().run.runDeck, getContext().run.runGold, modifiers);
     return true;
   }
 

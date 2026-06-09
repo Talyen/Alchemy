@@ -1,5 +1,4 @@
 // End-turn orchestration, enemy turn UI sequencing, and player end-turn animation gate.
-import type { MutableRefObject, RefObject } from "react";
 import {
   endPlayerTurn,
   isPlayerDefeated,
@@ -7,14 +6,14 @@ import {
   type BattleState,
   type CombatTextEvent,
 } from "@/lib/battle";
-import type { BattleCard } from "@/lib/game-data";
 import { playBattleEvent, playEnemyAttack } from "@/lib/audio";
 import { ENEMY_ATTACK_RECOVERY_DELAY, ENEMY_PHASE_DELAY, isAnimationDisabled } from "@/lib/game-constants";
 import { delay } from "@/lib/animation/game-timer";
-import type { Screen } from "../../shared/types";
 import { applyCombatTextPortraitFeedback, shouldHurtEnemyFromCombatTexts } from "./battle-feedback";
 import { playCompanionSound } from "./controller-utils";
 import { runHandDrawSequence, type HandDrawSequenceDeps } from "./draw-sequence";
+import { getBattleSessionStore } from "./battle-session";
+import type { BattleControllerContext } from "./controller-context";
 
 export type EndPlayerTurnResult = ReturnType<typeof endPlayerTurn>;
 
@@ -180,7 +179,7 @@ export async function executeEnemyPhase(
   deps.onPhaseComplete(resultState, session, playerTurnSkipped);
 }
 
-type TurnOrchestrationStore = ReturnType<typeof import("./battle-session").getBattleSessionStore>;
+type TurnOrchestrationStore = ReturnType<typeof getBattleSessionStore>;
 
 export type TurnOrchestrationDeps = {
   getStore: () => TurnOrchestrationStore;
@@ -191,10 +190,10 @@ export type TurnOrchestrationDeps = {
   getTurnResolutionStore: () => TurnResolutionStore;
   getDrawSequenceDeps: () => HandDrawSequenceDeps;
   logBattleError: (context: string, err: unknown) => void;
-  companionScheduledRef: MutableRefObject<boolean>;
-  battleTimerGroupRef: MutableRefObject<import("@/lib/animation/game-timer").TimerGroup>;
-  resolvedAsHasteOrStunRef: MutableRefObject<boolean>;
-  cardPlayInProgressRef: MutableRefObject<boolean>;
+  companionScheduledRef: React.MutableRefObject<boolean>;
+  battleTimerGroupRef: React.MutableRefObject<import("@/lib/animation/game-timer").TimerGroup>;
+  resolvedAsHasteOrStunRef: React.MutableRefObject<boolean>;
+  cardPlayInProgressRef: React.MutableRefObject<boolean>;
   resetHandTransferUi: () => void;
   scheduleCompanionFollowUp: (resultState: BattleState, session: number) => void;
   onResolveEndTurn: (currentState: BattleState, session: number) => void;
@@ -263,7 +262,7 @@ function resolveNormalEnemyTurnOrchestration(
   result: EndPlayerTurnResult,
   companionResult: { state: BattleState; combatTexts: CombatTextEvent[] },
   session: number,
-  executeEnemyPhase: (
+  executeEnemyPhaseFn: (
     resultState: BattleState,
     currentState: BattleState,
     combatTexts: CombatTextEvent[],
@@ -274,7 +273,7 @@ function resolveNormalEnemyTurnOrchestration(
 ) {
   resolveNormalEnemyTurn(result, companionResult, session, {
     store: deps.getTurnResolutionStore(),
-    executeEnemyPhase,
+    executeEnemyPhase: executeEnemyPhaseFn,
     onVictory: () => deps.handleVictoryDefeat("victory"),
     checkBattleEnd: deps.checkBattleEnd,
   });
@@ -358,58 +357,48 @@ export function resolveCompanionFollowUpTexts(deps: TurnOrchestrationDeps, sessi
   }, []);
 }
 
-export type BattleEndTurnUiDeps = {
-  screen: Screen;
-  battleSessionRef: RefObject<number>;
-  cardPlayInProgressRef: RefObject<boolean>;
-  cardTransferInProgress: boolean;
-  resolvedAsHasteOrStunRef: RefObject<boolean>;
-  clearBattleTimeoutsKeepCompanion: () => void;
-  runIfSessionActive: (session: number, action: () => void) => void;
-  resetHandTransferUi: () => void;
-  getTurnOrchestrationDeps: () => TurnOrchestrationDeps;
-  animateDiscardedHand: (hand: BattleCard[], session: number) => Promise<void>;
-  logBattleError: (context: string, err: unknown) => void;
-  getStore: () => { battleState: BattleState };
-};
+export function createBattleEndTurnUi(contextOrGetter: BattleControllerContext | (() => BattleControllerContext)) {
+  const getContext = typeof contextOrGetter === "function" ? contextOrGetter : () => contextOrGetter;
+  const getStore = () => getBattleSessionStore();
 
-export function createBattleEndTurnUi(deps: BattleEndTurnUiDeps) {
   function resolveEndTurn(currentState: BattleState, session: number) {
-    resolveEndTurnOrchestration(deps.getTurnOrchestrationDeps(), currentState, session);
+    resolveEndTurnOrchestration(getContext().getTurnOrchestrationDeps(), currentState, session);
   }
 
   async function animateEndTurnThenResolve(currentState: BattleState, session: number) {
+    const context = getContext();
     try {
       if (!isAnimationDisabled()) {
         try {
-          await deps.animateDiscardedHand(currentState.hand, session);
+          await context.animateDiscardedHand(currentState.hand, session);
         } catch (err) {
-          deps.logBattleError("discard hand animation", err);
+          context.logBattleError("discard hand animation", err);
         }
       }
-      deps.runIfSessionActive(session, () => resolveEndTurn(currentState, session));
+      context.runIfSessionActive(session, () => resolveEndTurn(currentState, session));
     } finally {
-      deps.runIfSessionActive(session, () => {
-        if (!deps.resolvedAsHasteOrStunRef.current) deps.resetHandTransferUi();
-        deps.cardPlayInProgressRef.current = false;
+      context.runIfSessionActive(session, () => {
+        if (!context.resolvedAsHasteOrStunRef.current) context.resetHandTransferUi();
+        context.cardPlayInProgressRef.current = false;
       });
     }
   }
 
   function handleEndTurn() {
-    const currentState = deps.getStore().battleState;
+    const context = getContext();
+    const currentState = getStore().battleState;
     if (
-      deps.screen !== "battle" ||
+      context.screen !== "battle" ||
       currentState.turnPhase !== "player" ||
       currentState.wishOptions ||
-      deps.cardPlayInProgressRef.current ||
-      deps.cardTransferInProgress
+      context.cardPlayInProgressRef.current ||
+      context.cardTransferInProgress
     )
       return;
-    deps.clearBattleTimeoutsKeepCompanion();
-    const session = deps.battleSessionRef.current;
+    context.clearBattleTimeoutsKeepCompanion();
+    const session = context.battleSessionRef.current;
     void animateEndTurnThenResolve(currentState, session).catch((err) =>
-      deps.logBattleError("resolve end turn animation sequence", err),
+      context.logBattleError("resolve end turn animation sequence", err),
     );
   }
 

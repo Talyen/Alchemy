@@ -1,6 +1,5 @@
 // Assembles card-transfer and draw-sequence dependency bags for battle animations.
 // Card transfers: runCardTransfer replaces the active list with one entry; callers await sequentially (no overlap).
-import type { RefObject } from "react";
 import { delay } from "@/lib/animation/game-timer";
 import { CARD_TRANSFER_CONFIG } from "@/lib/game-constants";
 import { playBattleEvent } from "@/lib/audio";
@@ -8,96 +7,86 @@ import type { CardRect, CardTransfer } from "./presentation-types";
 import { animateDiscardedHand, animateDrawnHand, type CardTransferAnimationDeps } from "./card-transfer-animations";
 import type { HandDrawSequenceDeps } from "./draw-sequence";
 import type { StableHandCardRectDeps } from "./hand-card-layout";
+import { useBattlePresentationStore } from "../../shared/stores/battle-presentation-store";
+import { useRunDomainStore } from "../../shared/stores/run-session-facade";
+import type { BattleControllerContext } from "./controller-context";
 
-export type BattleTransferDepsInput = {
-  battleSessionRef: RefObject<number>;
-  battleSceneRef: RefObject<HTMLDivElement | null>;
-  handCardRefs: RefObject<Record<string, HTMLButtonElement | null>>;
-  drawPileRef: RefObject<HTMLDivElement | null>;
-  discardPileRef: RefObject<HTMLDivElement | null>;
-  cardPlayInProgressRef: RefObject<boolean>;
-  transferIdCounterRef: RefObject<number>;
-  measureElementRect: (element: HTMLElement | null, scene: HTMLDivElement | null) => CardRect | null;
-  measureVisualCardRect: (element: HTMLElement | null, scene: HTMLDivElement | null) => CardRect | null;
-  isCurrentBattleSession: (session: number) => boolean;
-  registerTransferCancelCallback: (callback: () => void) => () => void;
-  battleTimerGroupRef: RefObject<import("@/lib/animation/game-timer").TimerGroup>;
-  setCardTransfers: React.Dispatch<React.SetStateAction<CardTransfer[]>>;
-  setHiddenHandCardKeys: React.Dispatch<React.SetStateAction<Set<string>>>;
-  setCardTransferInProgress: React.Dispatch<React.SetStateAction<boolean>>;
-  hasActiveBattle: () => boolean;
-  revealCardKey: (cardKey: string) => void;
-};
+export function createBattleTransferDeps(contextOrGetter: BattleControllerContext | (() => BattleControllerContext)) {
+  const getContext = typeof contextOrGetter === "function" ? contextOrGetter : () => contextOrGetter;
 
-export function createBattleTransferDeps(input: BattleTransferDepsInput) {
   function localRectFromElement(element: HTMLElement | null): CardRect | null {
-    return input.measureElementRect(element, input.battleSceneRef.current);
+    const context = getContext();
+    return context.measureElementRect(element, context.battleSceneRef.current);
   }
 
   function localVisualCardRect(element: HTMLElement | null): CardRect | null {
-    return input.measureVisualCardRect(element, input.battleSceneRef.current);
+    const context = getContext();
+    return context.measureVisualCardRect(element, context.battleSceneRef.current);
   }
 
   function playTransferSound(delayMs = 0) {
-    if (!input.hasActiveBattle()) return;
+    const hasActiveBattle = useRunDomainStore.getState().battle.hasActiveBattle;
+    if (!hasActiveBattle) return;
     playBattleEvent("drawTransfer", { volume: CARD_TRANSFER_CONFIG.soundVolume, delay: delayMs });
   }
 
   function runCardTransfer(transfer: Omit<CardTransfer, "id">, onComplete?: () => void): Promise<void> {
     return new Promise((resolve) => {
-      input.transferIdCounterRef.current += 1;
-      const id = `transfer-${input.transferIdCounterRef.current}`;
+      const context = getContext();
+      context.transferIdCounterRef.current += 1;
+      const id = `transfer-${context.transferIdCounterRef.current}`;
       let completed = false;
       let unregisterCancel = () => {};
       const finish = (completeTransfer: boolean) => {
         if (completed) return;
         completed = true;
         unregisterCancel();
-        input.setCardTransfers((current) => current.filter((item) => item.id !== id));
+        context.setCardTransfers((current) => current.filter((item) => item.id !== id));
         if (completeTransfer) onComplete?.();
         resolve();
       };
-      unregisterCancel = input.registerTransferCancelCallback(() => finish(false));
-      input.setCardTransfers([{ ...transfer, id }]);
+      unregisterCancel = context.transferCancelRegistryRef.current.register(() => finish(false));
+      context.setCardTransfers([{ ...transfer, id }]);
       delay(Math.round(transfer.duration * 1000) + CARD_TRANSFER_CONFIG.completionBufferMs).then(() => finish(true));
     });
   }
 
   function getStableHandCardDeps(): StableHandCardRectDeps {
     return {
-      measureHandCard: (cardKey) => localVisualCardRect(input.handCardRefs.current[cardKey] ?? null),
-      registerCancel: input.registerTransferCancelCallback,
-      scheduleTimeout: (fn, ms) => input.battleTimerGroupRef.current.setTimeout(fn, ms),
+      measureHandCard: (cardKey) => localVisualCardRect(getContext().handCardRefs.current[cardKey] ?? null),
+      registerCancel: (callback) => getContext().transferCancelRegistryRef.current.register(callback),
+      scheduleTimeout: (fn, ms) => getContext().battleTimerGroupRef.current.setTimeout(fn, ms),
     };
   }
 
   function getCardTransferDeps(): CardTransferAnimationDeps {
+    const context = getContext();
     return {
-      isSessionActive: input.isCurrentBattleSession,
-      measureDiscardPile: () => localRectFromElement(input.discardPileRef.current),
-      measureDrawPile: () => localRectFromElement(input.drawPileRef.current),
-      measureHandCard: (cardKey) => localVisualCardRect(input.handCardRefs.current[cardKey] ?? null),
+      isSessionActive: context.isCurrentBattleSession,
+      measureDiscardPile: () => localRectFromElement(context.discardPileRef.current),
+      measureDrawPile: () => localRectFromElement(context.drawPileRef.current),
+      measureHandCard: (cardKey) => localVisualCardRect(context.handCardRefs.current[cardKey] ?? null),
       runCardTransfer,
       playTransferSound,
-      setHiddenHandCardKeys: (update) => input.setHiddenHandCardKeys(update),
-      revealCardKey: input.revealCardKey,
+      setHiddenHandCardKeys: (update) => context.setHiddenHandCardKeys(update),
+      revealCardKey: (cardKey) => useBattlePresentationStore.getState().addRevealedCardKey(cardKey),
       setCardPlayInProgress: (active) => {
-        input.cardPlayInProgressRef.current = active;
+        context.cardPlayInProgressRef.current = active;
       },
-      setTransferInProgress: input.setCardTransferInProgress,
+      setTransferInProgress: context.setCardTransferInProgress,
       stableHandCardDeps: getStableHandCardDeps(),
     };
   }
 
   function getDrawSequenceDeps(): HandDrawSequenceDeps {
     return {
-      isSessionActive: input.isCurrentBattleSession,
+      isSessionActive: getContext().isCurrentBattleSession,
       animateDrawnHand: (cards, allHandCards, session) =>
         animateDrawnHand(cards, allHandCards, session, getCardTransferDeps()),
-      setTransferInProgress: input.setCardTransferInProgress,
-      setHiddenHandCardKeys: input.setHiddenHandCardKeys,
+      setTransferInProgress: getContext().setCardTransferInProgress,
+      setHiddenHandCardKeys: getContext().setHiddenHandCardKeys,
       runIfSessionActive: (session, action) => {
-        if (input.isCurrentBattleSession(session)) action();
+        if (getContext().isCurrentBattleSession(session)) action();
       },
     };
   }

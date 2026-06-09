@@ -1,51 +1,41 @@
 // Battle session identity, victory/defeat guards, and timeout/transfer cleanup.
-import type { RefObject } from "react";
-import { TimerGroup } from "@/lib/animation/game-timer";
 import { isPlayerDefeated, type BattleState } from "@/lib/battle";
 import { stopAllSfx } from "@/lib/audio";
 import { readBattleStore } from "../../shared/stores/run-session-facade";
 import { useBattlePresentationStore } from "../../shared/stores/battle-presentation-store";
-import type { createTransferCancelRegistry } from "./card-transfer-animations";
+import type { BattleControllerContext } from "./controller-context";
 
 /** Domain battle state plus presentation VFX actions used by turn/card-play orchestration. */
 export function getBattleSessionStore() {
   return { ...readBattleStore(), ...useBattlePresentationStore.getState() };
 }
 
-export type BattleSessionDeps = {
-  battleSessionRef: RefObject<number>;
-  battleTimerGroupRef: RefObject<TimerGroup>;
-  transferCancelRegistryRef: RefObject<ReturnType<typeof createTransferCancelRegistry>>;
-  cardPlayInProgressRef: RefObject<boolean>;
-  victoryDefeatHandledRef: RefObject<boolean>;
-  resolvedAsHasteOrStunRef: RefObject<boolean>;
-  companionScheduledRef: RefObject<boolean>;
-  onBattleVictory?: (() => void) | undefined;
-  onBattleDefeat?: (() => void) | undefined;
-};
-
-export function createBattleSession(deps: BattleSessionDeps) {
+export function createBattleSession(contextOrGetter: BattleControllerContext | (() => BattleControllerContext)) {
+  const getContext = typeof contextOrGetter === "function" ? contextOrGetter : () => contextOrGetter;
   const getStore = () => readBattleStore();
   const getPresentationStore = () => useBattlePresentationStore.getState();
 
   function isCurrentBattleSession(session: number) {
-    return session === deps.battleSessionRef.current && getStore().hasActiveBattle;
+    const context = getContext();
+    return session === context.battleSessionRef.current && getStore().hasActiveBattle;
   }
 
   function runIfSessionActive<T>(session: number, fn: () => T, fallback: T): T;
   function runIfSessionActive<T>(session: number, fn: () => T): T | undefined;
   function runIfSessionActive<T>(session: number, fn: () => T, fallback?: T): T | undefined {
-    if (session === deps.battleSessionRef.current && getStore().hasActiveBattle) {
+    const context = getContext();
+    if (session === context.battleSessionRef.current && getStore().hasActiveBattle) {
       return fn();
     }
     return fallback;
   }
 
   function handleVictoryDefeat(kind: "victory" | "defeat") {
-    if (!deps.victoryDefeatHandledRef.current) {
-      deps.victoryDefeatHandledRef.current = true;
-      if (kind === "victory") deps.onBattleVictory?.();
-      else deps.onBattleDefeat?.();
+    const context = getContext();
+    if (!context.victoryDefeatHandledRef.current) {
+      context.victoryDefeatHandledRef.current = true;
+      if (kind === "victory") context.onBattleVictory?.();
+      else context.onBattleDefeat?.();
     }
   }
 
@@ -63,20 +53,21 @@ export function createBattleSession(deps: BattleSessionDeps) {
   }
 
   function registerTransferCancelCallback(callback: () => void) {
-    return deps.transferCancelRegistryRef.current.register(callback);
+    return getContext().transferCancelRegistryRef.current.register(callback);
   }
 
   function clearTransferHandles() {
-    deps.transferCancelRegistryRef.current.cancelAll();
+    getContext().transferCancelRegistryRef.current.cancelAll();
   }
 
   function clearAllBattleTimeouts() {
-    deps.battleTimerGroupRef.current.clearAll();
-    deps.companionScheduledRef.current = false;
+    const context = getContext();
+    context.battleTimerGroupRef.current.clearAll();
+    context.companionScheduledRef.current = false;
   }
 
   function clearBattleTimeoutsKeepCompanion() {
-    deps.battleTimerGroupRef.current.clearAll();
+    getContext().battleTimerGroupRef.current.clearAll();
   }
 
   function stopBattleFeedback() {
@@ -84,14 +75,15 @@ export function createBattleSession(deps: BattleSessionDeps) {
   }
 
   function resetBattleSession() {
-    deps.battleSessionRef.current += 1;
-    deps.battleTimerGroupRef.current.clearAll();
+    const context = getContext();
+    context.battleSessionRef.current += 1;
+    context.battleTimerGroupRef.current.clearAll();
     clearTransferHandles();
     stopBattleFeedback();
-    deps.cardPlayInProgressRef.current = false;
-    deps.victoryDefeatHandledRef.current = false;
-    deps.resolvedAsHasteOrStunRef.current = false;
-    deps.companionScheduledRef.current = false;
+    context.cardPlayInProgressRef.current = false;
+    context.victoryDefeatHandledRef.current = false;
+    context.resolvedAsHasteOrStunRef.current = false;
+    context.companionScheduledRef.current = false;
     getPresentationStore().clearRevealedCardKeys();
     getStore().setBattleStartState(null);
     getPresentationStore().resetPortraitHurtTokens();
@@ -103,7 +95,7 @@ export function createBattleSession(deps: BattleSessionDeps) {
     onComplete: (session: number, state: BattleState) => void,
   ) {
     runIfSessionActive(session, () => {
-      deps.cardPlayInProgressRef.current = false;
+      getContext().cardPlayInProgressRef.current = false;
       onComplete(session, state);
     });
   }
