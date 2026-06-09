@@ -3,6 +3,7 @@ import type { CombatTextEvent } from "@/lib/battle";
 import { COMBAT_TEXT_LANE_DELAY_MS, COMBAT_TEXT_LIFETIME_MS, SHAKE_DURATION } from "@/lib/game-constants";
 import { delay } from "@/lib/animation/game-timer";
 import type { CardGhost, FloatingCombatText } from "@/features/alchemy/run-loop/battle/presentation-types";
+import type { CardTransfer } from "../types";
 
 function getCombatTextDisplayText(event: CombatTextEvent): string {
   if (event.kind === "notice") return event.text;
@@ -20,6 +21,9 @@ type BattlePresentationStore = {
   playerHurtFlashToken: number;
   enemyHurtFlashToken: number;
   revealedCardKeys: Set<string>;
+  cardTransfers: CardTransfer[];
+  hiddenHandCardKeys: Set<string>;
+  cardTransferInProgress: boolean;
 
   spawnCardGhost: (ghost: Omit<CardGhost, "id">) => void;
   removeCardGhost: (id: string) => void;
@@ -34,6 +38,9 @@ type BattlePresentationStore = {
   clearFloatingCombatTexts: () => void;
   addRevealedCardKey: (key: string) => void;
   clearRevealedCardKeys: () => void;
+  setCardTransfers: (transfers: CardTransfer[] | ((prev: CardTransfer[]) => CardTransfer[])) => void;
+  setHiddenHandCardKeys: (keys: Set<string> | ((prev: Set<string>) => Set<string>)) => void;
+  setCardTransferInProgress: (inProgress: boolean | ((prev: boolean) => boolean)) => void;
   resetPresentation: () => void;
 };
 
@@ -50,6 +57,9 @@ export const useBattlePresentationStore = create<BattlePresentationStore>()((set
   playerHurtFlashToken: 0,
   enemyHurtFlashToken: 0,
   revealedCardKeys: new Set(),
+  cardTransfers: [],
+  hiddenHandCardKeys: new Set(),
+  cardTransferInProgress: false,
 
   spawnCardGhost: (ghost) => {
     const id = `${performance.now()}-${Math.random()}`;
@@ -114,6 +124,21 @@ export const useBattlePresentationStore = create<BattlePresentationStore>()((set
 
   clearRevealedCardKeys: () => set({ revealedCardKeys: new Set() }),
 
+  setCardTransfers: (transfers) =>
+    set((s) => ({
+      cardTransfers: typeof transfers === "function" ? transfers(s.cardTransfers) : transfers,
+    })),
+
+  setHiddenHandCardKeys: (keys) =>
+    set((s) => ({
+      hiddenHandCardKeys: typeof keys === "function" ? keys(s.hiddenHandCardKeys) : keys,
+    })),
+
+  setCardTransferInProgress: (inProgress) =>
+    set((s) => ({
+      cardTransferInProgress: typeof inProgress === "function" ? inProgress(s.cardTransferInProgress) : inProgress,
+    })),
+
   resetPresentation: () =>
     set({
       cardGhosts: [],
@@ -124,5 +149,8 @@ export const useBattlePresentationStore = create<BattlePresentationStore>()((set
       playerHurtFlashToken: 0,
       enemyHurtFlashToken: 0,
       revealedCardKeys: new Set(),
+      cardTransfers: [],
+      hiddenHandCardKeys: new Set(),
+      cardTransferInProgress: false,
     }),
 }));

@@ -17,7 +17,6 @@ import { getPreviousDestination } from "@/features/alchemy/run-loop/navigation/r
 import { useMysteryFlow } from "@/features/alchemy/run-loop/navigation/use-mystery-flow";
 import { useRunNavigationSession } from "@/features/alchemy/run-loop/navigation/run-navigation-session";
 import { applyCorruptionToDeck } from "@/features/alchemy/run-loop/navigation/run-navigation-corruption";
-import { useActiveRunSnapshot } from "@/features/alchemy/run-loop/run/use-active-run-snapshot";
 import { createRunVictoryHandlers } from "@/features/alchemy/run-loop/run/run-victory-handlers";
 import { createContentSystemNavigation } from "@/features/alchemy/run-setup/run/content-system-navigation";
 import { createRunDestinationHandlers } from "@/features/alchemy/run-loop/run/run-destination-handlers";
@@ -200,8 +199,6 @@ export function useRunNavigation({
     advanceToNextRef.current = destinationHandlers.advanceToNextDestination;
   }, [destinationHandlers.advanceToNextDestination]);
 
-  const currentActiveRunData = useActiveRunSnapshot();
-
   function handleWildwoodBossSelect(bossId: string) {
     if (!onStartBossById(bossId)) return;
     clearCardHover();
@@ -247,8 +244,8 @@ export function useRunNavigation({
     get corruptionResult() {
       return corruptionResult;
     },
-    get activeRunData() {
-      return hasActiveRun ? currentActiveRunData : null;
+    get activeRunData(): boolean {
+      return hasActiveRun;
     },
     get pendingCharacterId() {
       return pendingCharacterId;

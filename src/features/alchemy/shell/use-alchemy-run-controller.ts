@@ -19,9 +19,9 @@ import { useLabyrinthController } from "./use-labyrinth-controller";
 import { createLabyrinthNodeRouting } from "./labyrinth-node-routing";
 import { useScreenNavigation } from "./use-screen-navigation";
 import { useSteamRichPresence } from "./use-steam-rich-presence";
-import type { ActiveRunData } from "@/lib/active-run-session";
 import { restoreRun, useActiveRunScreen } from "@/features/alchemy/shared/stores/run-session-facade";
 import { readActiveRunStore } from "@/features/alchemy/shared/stores/run-session-facade";
+import type { ActiveRunData } from "@/lib/active-run-session";
 
 export function useAlchemyRunController({
   initialTalentXP,
@@ -38,12 +38,6 @@ export function useAlchemyRunController({
   homesteadEffects: HomesteadEffectManifest;
   onMarkDifficultyCompleted: (characterId: CharacterId, difficultyId: DifficultyId) => void;
 }) {
-  // This hook composes domain controllers and exposes a stable UI API; it intentionally
-  // avoids owning combat/shop/navigation rules directly so those modules stay testable.
-  // ============ Zustand Stores ============
-  // Stores are initialized once on mount.  The deps include initial* props for correctness
-  // but the effect body uses a guard ref so it only runs once even if React re-renders with
-  // different initial values (which shouldn't happen — these are the bootstrap values).
   useLayoutEffect(() => {
     if (readActiveRunStore().initialized) return;
     restoreRun(initialActiveRun, initialTalentXP, initialUnlockedTalents);

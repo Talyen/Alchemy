@@ -14,7 +14,7 @@ import { useShallow } from "zustand/react/shallow";
 import type { RunSessionFields } from "./run-domain-types";
 import { getRunDomainStore, useRunDomainStore } from "./run-domain-store";
 
-export type RunSessionRunSlice = Pick<
+type RunSessionRunSlice = Pick<
   RunStateFields,
   | "characterId"
   | "runDeck"
@@ -35,9 +35,9 @@ export type RunSessionRunSlice = Pick<
   | "initialized"
 >;
 
-export type RunSessionTransientSlice = RunSessionFields;
+type RunSessionTransientSlice = RunSessionFields;
 
-export type RunSessionBattleSlice = {
+type RunSessionBattleSlice = {
   hasActiveBattle: boolean;
   battleState: BattleState;
 };

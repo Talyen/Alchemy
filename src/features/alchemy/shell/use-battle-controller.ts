@@ -3,12 +3,12 @@
 // Depends on pure battle logic, run/talent state, homestead modifiers, audio, and UI hooks.
 // Depended on by: useAlchemyRunController for managing active combat.
 // Uses run domain battle slice instead of local useState for battle data.
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useShallow } from "zustand/react/shallow";
 import type { BattleState } from "@/lib/battle";
 import { getPlayableHandCardKeys } from "@/features/alchemy/run-loop/battle/playable-hand";
 import { logError } from "@/lib/error-logger";
-import type { CardRect, CardTransfer, Screen } from "@/features/alchemy/shared/types";
+import type { CardRect, Screen } from "@/features/alchemy/shared/types";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import { COMPANION_ATTACK_DELAY } from "@/lib/game-constants";
 import { TimerGroup } from "@/lib/animation/game-timer";
@@ -119,9 +119,12 @@ export function useBattleController({
   const battleSessionRef = useRef(0);
   const victoryDefeatHandledRef = useRef(false);
   const transferCancelRegistryRef = useRef(createTransferCancelRegistry());
-  const [cardTransfers, setCardTransfers] = useState<CardTransfer[]>([]);
-  const [hiddenHandCardKeys, setHiddenHandCardKeys] = useState<Set<string>>(new Set());
-  const [cardTransferInProgress, setCardTransferInProgress] = useState(false);
+  const cardTransfers = useBattlePresentationStore((s) => s.cardTransfers);
+  const setCardTransfers = useBattlePresentationStore((s) => s.setCardTransfers);
+  const hiddenHandCardKeys = useBattlePresentationStore((s) => s.hiddenHandCardKeys);
+  const setHiddenHandCardKeys = useBattlePresentationStore((s) => s.setHiddenHandCardKeys);
+  const cardTransferInProgress = useBattlePresentationStore((s) => s.cardTransferInProgress);
+  const setCardTransferInProgress = useBattlePresentationStore((s) => s.setCardTransferInProgress);
   const transferIdCounterRef = useRef(0);
   const resolvedAsHasteOrStunRef = useRef(false);
 
@@ -163,10 +166,10 @@ export function useBattleController({
     return getPlayableHandCardKeys(battleState);
   }, [battleState, cardTransferInProgress]);
 
-  function resetHandTransferUi() {
+  const resetHandTransferUi = useCallback(() => {
     setHiddenHandCardKeys(new Set());
     setCardTransferInProgress(false);
-  }
+  }, [setHiddenHandCardKeys, setCardTransferInProgress]);
 
   function finishDrawSequence(session: number, state: BattleState) {
     battleSession.finishDrawSequence(session, state, () => {
@@ -236,7 +239,7 @@ export function useBattleController({
       setCardTransfers([]);
       resetHandTransferUi();
     });
-  }, [hasActiveBattle]);
+  }, [hasActiveBattle, setCardTransfers, resetHandTransferUi]);
 
   function scheduleCompanionFollowUp(resultState: BattleState, session: number) {
     if (!resultState.activeCompanion || resultState.enemyHealth <= 0) return;
