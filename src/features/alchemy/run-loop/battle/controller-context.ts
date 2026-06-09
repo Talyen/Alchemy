@@ -17,8 +17,8 @@ export interface BattleControllerContext {
   talents: TalentStateController;
   autoEndTurn: boolean;
   homesteadEffectsRef: MutableRefObject<HomesteadEffectManifest>;
-  onBattleVictory?: () => void;
-  onBattleDefeat?: () => void;
+  onBattleVictory?: (() => void) | undefined;
+  onBattleDefeat?: (() => void) | undefined;
   measureElementRect: (element: HTMLElement | null, sceneElement: HTMLDivElement | null) => CardRect | null;
   measureVisualCardRect: (element: HTMLElement | null, sceneElement: HTMLDivElement | null) => CardRect | null;
   setHoveredCardId: React.Dispatch<React.SetStateAction<string | null>>;
@@ -43,7 +43,7 @@ export interface BattleControllerContext {
   // Zustand State / Actions
   battleState: BattleState;
   cardTransfers: CardTransfer[];
-  setCardTransfers: (transfers: CardTransfer[]) => void;
+  setCardTransfers: (transfers: CardTransfer[] | ((prev: CardTransfer[]) => CardTransfer[])) => void;
   hiddenHandCardKeys: Set<string>;
   setHiddenHandCardKeys: (keys: Set<string> | ((prev: Set<string>) => Set<string>)) => void;
   cardTransferInProgress: boolean;
@@ -56,7 +56,7 @@ export interface BattleControllerContext {
   handleVictoryDefeat: (outcome: "victory" | "defeat") => void;
   clearAllBattleTimeouts: () => void;
   clearBattleTimeoutsKeepCompanion: () => void;
-  resetBattleSession: () => number;
+  resetBattleSession: () => void;
   logBattleError: (context: string, err: unknown) => void;
   resetHandTransferUi: () => void;
 
