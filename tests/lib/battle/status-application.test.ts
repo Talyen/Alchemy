@@ -5,17 +5,14 @@ import { createTestBattleState } from "./test-state";
 
 describe("applyPlayerStatusFromAttack", () => {
   describe("harmful statuses (burn, poison, bleed, freeze, stun)", () => {
-    it.each(["burn", "poison", "bleed", "freeze", "stun"] as const)(
-      "applies %s status from enemy attack",
-      (status) => {
-        const state = createTestBattleState();
-        const texts: CombatTextEvent[] = [];
-        const effect = { kind: "player-status" as const, status, amount: 5 };
-        const result = applyPlayerStatusFromAttack(state, effect, texts);
-        expect(result.playerStatuses[status]).toBe(5);
-        expect(texts).toEqual([{ target: "player", kind: "damage", stat: status, amount: 5 }]);
-      },
-    );
+    it.each(["burn", "poison", "bleed", "freeze", "stun"] as const)("applies %s status from enemy attack", (status) => {
+      const state = createTestBattleState();
+      const texts: CombatTextEvent[] = [];
+      const effect = { kind: "player-status" as const, status, amount: 5 };
+      const result = applyPlayerStatusFromAttack(state, effect, texts);
+      expect(result.playerStatuses[status]).toBe(5);
+      expect(texts).toEqual([{ target: "player", kind: "damage", stat: status, amount: 5 }]);
+    });
 
     it("does not mutate original state", () => {
       const state = createTestBattleState();
@@ -73,8 +70,13 @@ describe("applyPlayerStatusFromAttack", () => {
         talentEffects: { ...createTestBattleState().talentEffects, [talentKey]: true },
       });
       const texts: CombatTextEvent[] = [];
-      const result = applyPlayerStatusFromAttack(state, { kind: "player-status", status: status as "bleed" | "poison" | "stun", amount: 4 }, texts);
+      const result = applyPlayerStatusFromAttack(
+        state,
+        { kind: "player-status", status: status as "bleed" | "poison" | "stun", amount: 4 },
+        texts,
+      );
       expect(result.playerStatuses[status]).toBe(0);
+      expect(texts).toEqual([]);
     });
 
     it.each([
@@ -87,14 +89,23 @@ describe("applyPlayerStatusFromAttack", () => {
         talentEffects: { ...createTestBattleState().talentEffects, [talentKey]: false },
       });
       const texts: CombatTextEvent[] = [];
-      const result = applyPlayerStatusFromAttack(state, { kind: "player-status", status: status as "bleed" | "poison" | "stun", amount: 4 }, texts);
+      const result = applyPlayerStatusFromAttack(
+        state,
+        { kind: "player-status", status: status as "bleed" | "poison" | "stun", amount: 4 },
+        texts,
+      );
       expect(result.playerStatuses[status]).toBe(4);
     });
 
     it("does not block burn even with block and talents", () => {
       const state = createTestBattleState({
         playerStatuses: { ...createTestBattleState().playerStatuses, block: 5 },
-        talentEffects: { ...createTestBattleState().talentEffects, blockPreventsBleed: true, blockPreventsPoison: true, blockPreventsStun: true },
+        talentEffects: {
+          ...createTestBattleState().talentEffects,
+          blockPreventsBleed: true,
+          blockPreventsPoison: true,
+          blockPreventsStun: true,
+        },
       });
       const texts: CombatTextEvent[] = [];
       const result = applyPlayerStatusFromAttack(state, { kind: "player-status", status: "burn", amount: 3 }, texts);

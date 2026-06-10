@@ -11,11 +11,8 @@ vi.spyOn(Math, "random").mockReturnValue(0.99);
 describe("endPlayerTurn", () => {
   it("switches to enemy phase and draws a new hand", () => {
     const state = makeState({
-      mana: 4,
-      maxMana: 4,
       turnPhase: "player",
       hand: [makeCard({ id: "c1" }), makeCard({ id: "c2" })],
-      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
     });
     const result = endPlayerTurn(state);
     expect(result.state.turnPhase).toBe("player");
@@ -27,9 +24,6 @@ describe("endPlayerTurn", () => {
   it("skips enemy turn when enemyStunSkipTurns > 0", () => {
     const state = makeState({
       enemyStunSkipTurns: 1,
-      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
-      mana: 4,
-      maxMana: 4,
     });
     const result = endPlayerTurn(state);
     expect(result.state.enemyStunSkipTurns).toBe(0);
@@ -42,8 +36,6 @@ describe("endPlayerTurn", () => {
       enemyAttackEffects: [],
       playerStatuses: { ...defaultBattleState().playerStatuses, block: 1 },
       deck: [makeCard({ id: "d1" })],
-      mana: 4,
-      maxMana: 4,
     });
 
     const result = endPlayerTurn(state);
@@ -55,9 +47,6 @@ describe("endPlayerTurn", () => {
     const state = makeState({
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 8 }],
       playerHealth: 30,
-      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
-      mana: 4,
-      maxMana: 4,
     });
     const result = endPlayerTurn(state);
     // With no block or armor, all 8 damage goes through
@@ -69,10 +58,8 @@ describe("endPlayerTurn", () => {
       enemyAttackEffects: [{ kind: "player-status", status: "stun", amount: 20 }],
       playerHealth: 30,
       playerMaxHealth: 30,
-      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
       hand: [makeCard({ id: "h1" })],
       mana: 2,
-      maxMana: 4,
     });
 
     const result = endPlayerTurn(state);
@@ -90,8 +77,6 @@ describe("endPlayerTurn", () => {
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 8 }],
       playerHealth: 5,
       deck: [makeCard({ id: "d1" })],
-      mana: 4,
-      maxMana: 4,
     });
     const result = endPlayerTurn(state);
 
@@ -108,10 +93,8 @@ describe("endPlayerTurn", () => {
       playerStatuses: { ...defaultBattleState().playerStatuses, burn: 3 },
       playerStunSkipTurns: 1,
       enemyStunSkipTurns: 1,
-      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
       hand: [makeCard({ id: "h1" })],
       mana: 2,
-      maxMana: 4,
     });
 
     const result = endPlayerTurn(state);
@@ -131,8 +114,6 @@ describe("endPlayerTurn", () => {
       deathsDoorTriggeredTurn: 1,
       turn: 2,
       deck: [makeCard({ id: "d1" })],
-      mana: 4,
-      maxMana: 4,
     });
     const result = endPlayerTurn(state);
 
@@ -147,8 +128,6 @@ describe("endPlayerTurn", () => {
       playerHealth: 3,
       deathsDoorUsed: true,
       deck: [makeCard({ id: "d1" })],
-      mana: 4,
-      maxMana: 4,
     });
     const result = endPlayerTurn(state);
 
@@ -176,10 +155,7 @@ describe("endPlayerTurn", () => {
   it("gives the player an extra turn when haste is active", () => {
     const state = makeState({
       playerStatuses: { block: 0, armor: 0, forge: 0, haste: 1, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
-      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
       hand: [makeCard({ id: "h1" }), makeCard({ id: "h2" })],
-      mana: 4,
-      maxMana: 4,
     });
     const result = endPlayerTurn(state);
     expect(result.state.turnPhase).toBe("player");
@@ -194,9 +170,6 @@ describe("endPlayerTurn", () => {
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 8 }],
       enemyStatuses: { burn: 0, poison: 0, bleed: 10, freeze: 0, stun: 0 },
       pendingBleedLeechHealing: 4,
-      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
-      mana: 4,
-      maxMana: 4,
     });
     const result = endPlayerTurn(state);
     expect(result.enemyTurnStartState?.enemyHealth).toBe(20);
@@ -227,9 +200,6 @@ describe("endPlayerTurn", () => {
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 8 }],
       enemyStatuses: { burn: 0, poison: 0, bleed: 10, freeze: 0, stun: 0 },
       pendingBleedLeechHealing: 4,
-      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
-      mana: 4,
-      maxMana: 4,
     });
 
     const result = endPlayerTurn(state);
@@ -245,9 +215,6 @@ describe("endPlayerTurn", () => {
     const state = makeState({
       playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 5, poison: 0, bleed: 0, freeze: 0, stun: 0 },
       enemyAttackEffects: [],
-      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
-      mana: 4,
-      maxMana: 4,
     });
 
     const result = endPlayerTurn(state);
@@ -262,9 +229,6 @@ describe("endPlayerTurn", () => {
       playerStatuses: { block: 1, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
       talentEffects: { ...defaultTalentEffects, blockPreventsStun: true },
       enemyAttackEffects: [{ kind: "player-status", status: "stun", amount: 2 }],
-      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
-      mana: 4,
-      maxMana: 4,
     });
 
     const result = endPlayerTurn(state);
@@ -281,9 +245,6 @@ describe("endPlayerTurn", () => {
         { kind: "player-status", status: "poison", amount: 3 },
       ],
       trinketEffects: manifest,
-      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
-      mana: 4,
-      maxMana: 4,
     });
 
     const result = endPlayerTurn(state);
@@ -307,9 +268,6 @@ describe("endPlayerTurn", () => {
         playerHealth: 30,
         playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
         enemyAttackEffects: [{ kind: "player-status", status, amount } as const],
-        deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
-        mana: 4,
-        maxMana: 4,
       });
       const result = endPlayerTurn(state);
       expect(result.state.playerHealth).toBe(expectedHealth);
@@ -321,9 +279,6 @@ describe("endPlayerTurn", () => {
     const state = makeState({
       activeCompanion: companionLibrary.wolf,
       enemyAttackEffects: [],
-      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
-      mana: 4,
-      maxMana: 4,
     });
 
     const result = endPlayerTurn(state);
@@ -340,9 +295,6 @@ describe("endPlayerTurn", () => {
       enemyAttackEffects: [],
       difficultyModifiers: [{ kind: "enemy-gains-forge-each-turn" }] as DifficultyModifier[],
       enemyMitigation: { armor: 0, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 },
-      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
-      mana: 4,
-      maxMana: 4,
     });
 
     const result = endPlayerTurn(state);
@@ -358,7 +310,6 @@ describe("labyrinth modifiers on endPlayerTurn", () => {
       difficultyModifiers: [{ kind: "labyrinth-burning-ground" }] as DifficultyModifier[],
       playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
       playerHealth: 30,
-      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
       mana: 0,
       maxMana: 1,
     });
@@ -386,7 +337,6 @@ describe("labyrinth modifiers on endPlayerTurn", () => {
       enemyHealth: 20,
       enemyMaxHealth: 30,
       playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
-      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
       mana: 0,
       maxMana: 1,
     });
@@ -406,7 +356,6 @@ describe("labyrinth modifiers on endPlayerTurn", () => {
       enemyHealth: 30,
       enemyMaxHealth: 30,
       playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
-      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
       mana: 0,
       maxMana: 1,
     });
@@ -424,7 +373,6 @@ describe("labyrinth modifiers on endPlayerTurn", () => {
       enemyMaxHealth: 30,
       playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
       playerHealth: 30,
-      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
       mana: 0,
       maxMana: 1,
     });
@@ -450,9 +398,6 @@ describe("enemy traits via endPlayerTurn", () => {
         traits: [{ id: "rusting-carapace", title: "Rusting Carapace", description: "Gains forge each turn" }],
         attackEffects: [],
       },
-      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
-      mana: 4,
-      maxMana: 4,
     });
     const result = endPlayerTurn(state);
     expect(result.state.enemyMitigation.forge).toBe(1);
@@ -471,9 +416,6 @@ describe("enemy traits via endPlayerTurn", () => {
         traits: [{ id: "iron-hide", title: "Iron Hide", description: "Gains 1 Armor, 1 Forge, or applies 1 Burn each turn" }],
         attackEffects: [],
       },
-      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
-      mana: 4,
-      maxMana: 4,
     });
 
     // Run 3 turns with deterministic random values
@@ -513,9 +455,6 @@ describe("enemy traits via endPlayerTurn", () => {
         traits: [{ id: "glacial-shell", title: "Glacial Shell", description: "Gains freeze bonus each turn" }],
         attackEffects: [{ kind: "player-status", status: "freeze", amount: 2 }],
       },
-      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
-      mana: 4,
-      maxMana: 4,
     });
     const result = endPlayerTurn(state);
     expect(result.state.enemyMitigation.freezeBonus).toBe(1);
@@ -539,9 +478,6 @@ describe("enemy traits via endPlayerTurn", () => {
         traits: [{ id: "glacial-shell", title: "Glacial Shell", description: "Gains freeze bonus each turn" }],
         attackEffects: [{ kind: "player-status", status: "freeze", amount: 2 }],
       },
-      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
-      mana: 4,
-      maxMana: 4,
     });
     const result = endPlayerTurn(state);
     expect(result.state.enemyMitigation.freezeBonus).toBe(0);
@@ -553,9 +489,6 @@ describe("enemy traits via endPlayerTurn", () => {
       enemyMaxHealth: 30,
       enemyRegeneration: 4,
       enemyAttackEffects: [],
-      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
-      mana: 4,
-      maxMana: 4,
     });
     const result = endPlayerTurn(state);
     expect(result.state.enemyHealth).toBe(24);
@@ -570,9 +503,6 @@ describe("health threshold talents via endPlayerTurn", () => {
       playerMaxHealth: 30,
       talentEffects: { ...defaultTalentEffects, healthThresholdBlock: { threshold: 50, amount: 5 } },
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 12 }],
-      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
-      mana: 4,
-      maxMana: 4,
     });
     const result = endPlayerTurn(state);
     // 25 Health - 12 damage = 13 (43%), crossing 50% threshold → grants 5 block.
@@ -586,9 +516,6 @@ describe("health threshold talents via endPlayerTurn", () => {
       playerMaxHealth: 30,
       talentEffects: { ...defaultTalentEffects, healthThresholdArmor: { threshold: 50, amount: 3 } },
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 12 }],
-      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
-      mana: 4,
-      maxMana: 4,
     });
     const result = endPlayerTurn(state);
     // Armor = 3 granted, then -1 from armor decrement in processEnemyDamageEffect
@@ -601,9 +528,6 @@ describe("health threshold talents via endPlayerTurn", () => {
       playerMaxHealth: 30,
       talentEffects: { ...defaultTalentEffects, healthThresholdBlock: { threshold: 50, amount: 5 } },
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 2 }],
-      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
-      mana: 4,
-      maxMana: 4,
     });
     const result = endPlayerTurn(state);
     // 20 Health → 18 Health = 60% of 30, above 50% threshold
@@ -616,9 +540,6 @@ describe("enemy damage absorption via endPlayerTurn", () => {
     const state = makeState({
       playerStatuses: { block: 5, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 8 }],
-      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
-      mana: 4,
-      maxMana: 4,
     });
     const result = endPlayerTurn(state);
     // 8 - 5 block = 3, then 3 - 0 armor = 3 damage
@@ -630,9 +551,6 @@ describe("enemy damage absorption via endPlayerTurn", () => {
     const state = makeState({
       playerStatuses: { block: 3, armor: 4, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 10 }],
-      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
-      mana: 4,
-      maxMana: 4,
     });
     const result = endPlayerTurn(state);
     // 10 - 3 block = 7, then 7 - 4 armor = 3 damage → health = 27
@@ -646,9 +564,6 @@ describe("enemy damage absorption via endPlayerTurn", () => {
       playerStatuses: { block: 10, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 6 }],
       trinketEffects: manifest,
-      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
-      mana: 4,
-      maxMana: 4,
     });
     const result = endPlayerTurn(state);
     expect(result.state.playerHealth).toBe(30);
@@ -661,9 +576,6 @@ describe("enemy damage absorption via endPlayerTurn", () => {
       playerStatuses: { block: 10, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
       talentEffects: { ...defaultTalentEffects, blockAbsorbPhysicalBonus: 20 },
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 15 }],
-      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
-      mana: 4,
-      maxMana: 4,
     });
     const result = endPlayerTurn(state);
     // blockAbsorbPhysicalBonus 20%: effective block = floor(10 * 1.2) = 12
@@ -678,9 +590,6 @@ describe("enemy damage absorption via endPlayerTurn", () => {
       playerStatuses: { block: 5, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
       talentEffects: { ...defaultTalentEffects, blockDepletedHeal: 2 },
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 10 }],
-      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
-      mana: 4,
-      maxMana: 4,
     });
     const result = endPlayerTurn(state);
     // block absorbs 5, remaining 5 damage → health 20-5=15, then +2 heal = 17
@@ -695,9 +604,6 @@ describe("enemy damage absorption via endPlayerTurn", () => {
       playerStatuses: { block: 10, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
       talentEffects: { ...defaultTalentEffects, blockDepletedHeal: 2 },
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 5 }],
-      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
-      mana: 4,
-      maxMana: 4,
     });
     const result = endPlayerTurn(state);
     // block absorbs 5, block decays from 5 to 3 at end of turn, 0 damage to health, no depletion heal
@@ -716,9 +622,6 @@ describe("endPlayerTurn — armorBreakBlock talent", () => {
       },
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 10 }],
       talentEffects: { ...defaultTalentEffects, armorBreakBlock: 3 },
-      deck: Array.from({ length: 4 }, (_, i) => makeCard({ id: `d${i}` })),
-      mana: 4,
-      maxMana: 4,
     });
     const result = endPlayerTurn(state);
     // Physical attack decays armor by ARMOR_DECAY_AMOUNT=1, from 1 to 0,
@@ -739,9 +642,6 @@ describe("endPlayerTurn — poison halves enemy regeneration", () => {
       enemyStatuses: { burn: 0, poison: 2, bleed: 0, freeze: 0, stun: 0 },
       enemyAttackEffects: [],
       talentEffects: { ...defaultTalentEffects, poisonHalvesHealing: true },
-      deck: Array.from({ length: 4 }, (_, i) => makeCard({ id: `d${i}` })),
-      mana: 4,
-      maxMana: 4,
     });
     const result = endPlayerTurn(state);
     // Poison ticks first (2 damage, 20→18, decays to 1), then regen halved (4→2, 18→20)
@@ -759,9 +659,6 @@ describe("endPlayerTurn — poison halves enemy regeneration", () => {
       enemyStatuses: { burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
       enemyAttackEffects: [],
       talentEffects: { ...defaultTalentEffects, poisonHalvesHealing: true },
-      deck: Array.from({ length: 4 }, (_, i) => makeCard({ id: `d${i}` })),
-      mana: 4,
-      maxMana: 4,
     });
     const result = endPlayerTurn(state);
     expect(result.state.enemyHealth).toBe(24);
@@ -780,9 +677,6 @@ describe("endPlayerTurn — haste + Death's Door overlap", () => {
       deathsDoorTriggeredTurn: 1,
       turn: 2,
       playerStatuses: { block: 0, armor: 0, forge: 0, haste: 1, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
-      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
-      mana: 4,
-      maxMana: 4,
     });
     const result = endPlayerTurn(state);
     // haste skip still runs finalizePlayerTurn → resolveDeathsDoorEndOfEnemyTurn
@@ -802,9 +696,6 @@ describe("endPlayerTurn — haste + Death's Door overlap", () => {
       deathsDoorTriggeredTurn: 2,
       turn: 2,
       playerStatuses: { block: 0, armor: 0, forge: 0, haste: 1, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
-      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
-      mana: 4,
-      maxMana: 4,
     });
     const result = endPlayerTurn(state);
     // turn=2, triggeredTurn=2, graceTurns=1, 2-2 < 1 → true, Death's Door stays active
@@ -823,9 +714,6 @@ describe("endPlayerTurn — multiple enemy attack effects", () => {
         { kind: "damage", damageType: "physical", amount: 6 },
         { kind: "player-status", status: "poison", amount: 3 },
       ],
-      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
-      mana: 4,
-      maxMana: 4,
     });
     const result = endPlayerTurn(state);
     // damage 6 → health 24, then poison applied 3, then poison tick deals 3 → health 21, poison decays to 2
@@ -841,9 +729,6 @@ describe("endPlayerTurn — multiple enemy attack effects", () => {
         { kind: "damage", damageType: "physical", amount: 4 },
         { kind: "player-status", status: "poison", amount: 3 },
       ],
-      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
-      mana: 4,
-      maxMana: 4,
     });
     const result = endPlayerTurn(state);
     // physical damage 4 → health 26, then poison status applied (3), then poison tick (3) → health 23
@@ -858,9 +743,6 @@ describe("endPlayerTurn — non-physical enemy damage", () => {
       playerHealth: 30,
       playerStatuses: { block: 0, armor: 5, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
       enemyAttackEffects: [{ kind: "damage", damageType: "holy", amount: 10 }],
-      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
-      mana: 4,
-      maxMana: 4,
     });
     const result = endPlayerTurn(state);
     // holy damage ignores armor → 30-10 = 20. Armor still decays by 1 per hit → 4.
@@ -873,9 +755,6 @@ describe("endPlayerTurn — non-physical enemy damage", () => {
       playerHealth: 30,
       playerStatuses: { block: 0, armor: 4, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
       enemyAttackEffects: [{ kind: "damage", damageType: "burn", amount: 7 }],
-      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
-      mana: 4,
-      maxMana: 4,
     });
     const result = endPlayerTurn(state);
     // burn damage 7 → health 23. Burn rider applies 7 burn. Burn tick then deals 7 more → health 16.
@@ -892,9 +771,6 @@ describe("endPlayerTurn — non-physical enemy damage", () => {
       enemyMitigation: { armor: 4, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 },
       enemyAttackEffects: [{ kind: "damage", damageType: "holy", amount: 8 }],
       trinketEffects: { ...defaultTrinketEffects, sunderingArmorPiercing: 3 },
-      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
-      mana: 4,
-      maxMana: 4,
     });
     const result = endPlayerTurn(state);
     // enemy has 4 armor, but holy damage doesn't care about armor (effectiveArmor=0)
@@ -910,9 +786,6 @@ describe("endPlayerTurn — zero-damage enemy attack", () => {
       playerHealth: 30,
       playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 0 }],
-      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
-      mana: 4,
-      maxMana: 4,
     });
     const result = endPlayerTurn(state);
     expect(result.state.playerHealth).toBe(30);
@@ -927,9 +800,6 @@ describe("endPlayerTurn — enemy lifesteal", () => {
       enemyMaxHealth: 30,
       playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 6, lifesteal: true }],
-      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
-      mana: 4,
-      maxMana: 4,
     });
     const result = endPlayerTurn(state);
     // player: 30-6=24, enemy: 28+6=30 (capped at maxHealth 30)
@@ -946,9 +816,6 @@ describe("endPlayerTurn — enemy DoT kill during CC skip", () => {
       enemyStatuses: { burn: 0, poison: 0, bleed: 6, freeze: 0, stun: 0 },
       enemyStunSkipTurns: 1,
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 10 }],
-      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
-      mana: 4,
-      maxMana: 4,
     });
     const result = endPlayerTurn(state);
     // bleed tick deals 6 → enemy health 0 → dead. CC skip path prevents attack.
@@ -967,9 +834,6 @@ describe("endPlayerTurn — player killed by DoT after Death's Door consumed", (
       deathsDoorUsed: true,
       deathsDoorActive: false,
       enemyAttackEffects: [],
-      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
-      mana: 4,
-      maxMana: 4,
     });
     const result = endPlayerTurn(state);
     // burn tick: 4 damage → player health 0, deathsDoorActive was already false
@@ -985,9 +849,6 @@ describe("endPlayerTurn — stun and freeze both active", () => {
       enemyStunSkipTurns: 2,
       enemyFreezeSkipTurns: 1,
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 10 }],
-      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
-      mana: 4,
-      maxMana: 4,
     });
     const result = endPlayerTurn(state);
     // both > 0, enters CC skip path
@@ -1006,9 +867,6 @@ describe("endPlayerTurn — enemy regeneration at zero health", () => {
       enemyMaxHealth: 30,
       enemyRegeneration: 5,
       enemyAttackEffects: [],
-      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
-      mana: 4,
-      maxMana: 4,
     });
     const result = endPlayerTurn(state);
     // enemy dead at start → resolveEnemyTurnStart ticks, then enemyHealth <= 0 check skips
@@ -1024,9 +882,6 @@ describe("endPlayerTurn — enemy forge bonus only applies to physical", () => {
       playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
       enemyMitigation: { armor: 0, forge: 5, freezeBonus: 0, burnBonus: 0, block: 0 },
       enemyAttackEffects: [{ kind: "damage", damageType: "holy", amount: 8 }],
-      deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" }), makeCard({ id: "d3" }), makeCard({ id: "d4" })],
-      mana: 4,
-      maxMana: 4,
     });
     const result = endPlayerTurn(state);
     // forge only boosts physical enemy attacks → holy 8, no forge bonus

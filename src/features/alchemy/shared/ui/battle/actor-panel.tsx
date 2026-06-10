@@ -92,6 +92,7 @@ export function ArtPanel({
     <div className={cn("relative flex flex-col items-center gap-3", shaking && "animate-shake")}>
       <div className="group/art-wrapper relative">
         <ActorTooltip
+          side={side}
           title={title}
           descriptionLines={descriptionLines}
           currentEnemy={currentEnemy}
@@ -149,12 +150,14 @@ export function ArtPanel({
 }
 
 function ActorTooltip({
+  side,
   title,
   descriptionLines,
   currentEnemy,
   currentEnemyAttackEffects,
   activeLabyrinthModifiers,
 }: {
+  side: "player" | "enemy";
   title: string;
   descriptionLines: string[] | undefined;
   currentEnemy: BestiaryEntry | undefined;
@@ -167,6 +170,7 @@ function ActorTooltip({
         entry={currentEnemy}
         attackEffects={currentEnemyAttackEffects}
         labyrinthModifiers={activeLabyrinthModifiers ?? []}
+        align={side === "enemy" ? "left" : "right"}
         className="opacity-0 transition-opacity duration-150 group-hover/art-wrapper:opacity-100"
       />
     );

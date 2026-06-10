@@ -14,12 +14,14 @@ type GameModeId = (typeof GAME_MODE_IDS)[number];
 
 export function GameModeSelectScreen({
   hasActiveRun,
+  activeContentSystemType,
   onSelectCampaign,
   onSelectLabyrinth,
   onSelectWildwood,
   onBack,
 }: {
   hasActiveRun: boolean;
+  activeContentSystemType?: string | null;
   onSelectCampaign: () => void;
   onSelectLabyrinth: () => void;
   onSelectWildwood: () => void;
@@ -33,8 +35,8 @@ export function GameModeSelectScreen({
     wildwood: onSelectWildwood,
   };
   const hasResume: Record<GameModeId, boolean> = {
-    campaign: hasActiveRun,
-    labyrinth: hasActiveRun,
+    campaign: hasActiveRun && activeContentSystemType === "campaign",
+    labyrinth: hasActiveRun && activeContentSystemType === "labyrinth",
     wildwood: false,
   };
 

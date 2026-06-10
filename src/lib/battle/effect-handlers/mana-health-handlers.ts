@@ -2,6 +2,7 @@
 import { MIN_MAX_MANA_FLOOR } from "../../game-constants";
 import { applyHealOnManaGain, mergeCombatText, applyHealingWithCombatText } from "../combat-text";
 import { clampHealth, applyPlayerCombatDamage } from "../types";
+import { getEnemyDamageMultiplier } from "../status-effects";
 import type { BattleState, CombatTextEvent } from "../types";
 import type { EffectHandler } from "./handler-types";
 
@@ -40,8 +41,13 @@ function loseMaxMana(state: BattleState, amount: number, combatTexts: CombatText
   let nextState: BattleState = { ...state, maxMana: newMaxMana, mana: Math.min(newMaxMana, state.mana) };
   if (nextState.talentEffects.burnDamageOnManaCrystalLoss > 0 && nextState.enemyHealth > 0) {
     const burnDmg = nextState.talentEffects.burnDamageOnManaCrystalLoss;
-    mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "burn", amount: burnDmg });
-    nextState = { ...nextState, enemyHealth: clampHealth(nextState.enemyHealth, -burnDmg, nextState.enemyMaxHealth) };
+    const multiplier = getEnemyDamageMultiplier(nextState, "burn");
+    const finalDamage = Math.round(burnDmg * multiplier);
+    mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "burn", amount: finalDamage });
+    nextState = {
+      ...nextState,
+      enemyHealth: clampHealth(nextState.enemyHealth, -finalDamage, nextState.enemyMaxHealth),
+    };
   }
   return nextState;
 }

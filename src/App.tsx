@@ -317,11 +317,13 @@ function AppMainContent({
         )}
         style={stageStyle}
       >
-        <BackgroundParticles
-          variant="embers"
-          {...(particleColors ? { colors: particleColors } : {})}
-          {...(particleAlphaMultiplier ? { alphaMultiplier: particleAlphaMultiplier } : {})}
-        />
+        {renderedScreen !== "battle" && (
+          <BackgroundParticles
+            variant="embers"
+            {...(particleColors ? { colors: particleColors } : {})}
+            {...(particleAlphaMultiplier ? { alphaMultiplier: particleAlphaMultiplier } : {})}
+          />
+        )}
         {content}
       </div>
       <GameMenu

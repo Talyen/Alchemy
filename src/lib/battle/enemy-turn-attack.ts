@@ -197,12 +197,12 @@ function processEnemyDamageEffect(
   const { remainingDamage, blockAbsorb, actualDamage } = calculateBlockAndArmorMitigation(state, effect, combatTexts);
 
   const prevHealth = state.playerHealth;
+  const damagedState = applyPlayerCombatDamage(state, actualDamage, effect.damageType);
   let nextState: BattleState = {
-    ...state,
-    ...applyPlayerCombatDamage(state, actualDamage, effect.damageType),
+    ...damagedState,
     playerStatuses: {
-      ...state.playerStatuses,
-      block: state.playerStatuses.block - Math.min(blockAbsorb, state.playerStatuses.block),
+      ...damagedState.playerStatuses,
+      block: damagedState.playerStatuses.block - Math.min(blockAbsorb, damagedState.playerStatuses.block),
     },
   };
 

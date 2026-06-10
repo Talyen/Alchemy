@@ -36,9 +36,11 @@ function MenuScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions">) {
 
 function GameModeSelectScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions">) {
   const hasActiveRun = useRunDomainStore((s) => s.session.hasActiveRun);
+  const activeContentSystemType = useRunDomainStore((s) => s.progress.contentSystemType);
   return (
     <GameModeSelectScreen
       hasActiveRun={hasActiveRun}
+      activeContentSystemType={activeContentSystemType}
       onSelectCampaign={a.runStart.beginCampaign}
       onSelectLabyrinth={a.runStart.beginLabyrinth}
       onSelectWildwood={a.runStart.beginWildwood}

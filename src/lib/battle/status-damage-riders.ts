@@ -19,6 +19,7 @@ import { emitOverhealBlockText, mergeCombatText } from "./combat-text";
 import { applyFreezeBlockTalent, applyFreezeStripArmorTalent } from "./talent-effects";
 import { applyEnemyCcImmunityClear, assignEnemyCrowdControlSkip } from "./status-cc";
 import { resolveStunTrigger } from "./status-stun-resolve";
+import { getEnemyDamageMultiplier } from "./status-effects";
 import { decayArmorAfterDamage, rollPercent } from "./status-helpers";
 import { BLEED_STATUS_MULTIPLIER, BATTLE_CONFIG, FREEZE_THRESHOLD_FRACTION } from "../game-constants";
 
@@ -139,15 +140,17 @@ function applyStunStatusRider(state: BattleState, actualDamage: number, combatTe
 function applyFrozenHeartDamage(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   if (state.trinketEffects.frozenHeartDamage <= 0) return state;
   const dmg = state.trinketEffects.frozenHeartDamage;
+  const multiplier = getEnemyDamageMultiplier(state, "physical");
+  const finalDamage = Math.round(dmg * multiplier);
   mergeCombatText(combatTexts, {
     target: "enemy",
     kind: "damage",
     stat: "physical",
-    amount: dmg,
+    amount: finalDamage,
   });
   return {
     ...state,
-    enemyHealth: clampHealth(state.enemyHealth, -dmg, state.enemyMaxHealth),
+    enemyHealth: clampHealth(state.enemyHealth, -finalDamage, state.enemyMaxHealth),
   };
 }
 
@@ -204,13 +207,15 @@ function applyPhysicalBleedChance(state: BattleState, actualDamage: number): Bat
 function applyPhysicalBleedDetonate(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   if (!state.talentEffects.physicalDetonatesBleed || state.enemyStatuses.bleed <= 0) return state;
   const bleedDamage = state.enemyStatuses.bleed;
+  const multiplier = getEnemyDamageMultiplier(state, "bleed");
+  const finalDamage = Math.round(bleedDamage * multiplier);
   let nextState: BattleState = {
     ...state,
-    enemyHealth: clampHealth(state.enemyHealth, -bleedDamage, state.enemyMaxHealth),
+    enemyHealth: clampHealth(state.enemyHealth, -finalDamage, state.enemyMaxHealth),
   };
   nextState = setEnemyStatus(nextState, "bleed", 0);
-  mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "bleed", amount: bleedDamage });
-  nextState = decayArmorAfterDamage(nextState, bleedDamage, "enemy", combatTexts);
+  mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: "bleed", amount: finalDamage });
+  nextState = decayArmorAfterDamage(nextState, finalDamage, "enemy", combatTexts);
   return nextState;
 }
 

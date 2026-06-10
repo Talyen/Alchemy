@@ -48,7 +48,11 @@ function TrinketRewardButton({
         onFocus={onHoverStart}
         onBlur={onHoverEnd}
       >
-        <img src={trinket.art} alt={trinket.title} className="block w-full rounded-shell-hero aspect-square" />
+        <img
+          src={trinket.art || undefined}
+          alt={trinket.title}
+          className="block w-full rounded-shell-hero aspect-square"
+        />
       </TiltSurface>
     </div>
   );

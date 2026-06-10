@@ -8,8 +8,42 @@ import type { BattleCard } from "@/lib/game-data";
 import { drawCards, shuffleCards } from "./draw";
 import { addGold, applyPlayerHealing, clampHealth, type BattleState, type CombatTextEvent } from "./types";
 import { emitOverhealBlockText, mergeCombatText } from "./combat-text";
-import { removeHarmfulPlayerStatuses } from "./status-effects";
+import { removeHarmfulPlayerStatuses, applyPlayerStatusEffect, getEnemyDamageMultiplier } from "./status-effects";
+import { getEditableCorruptionTargets, replaceNumberAt } from "@/lib/corruption";
 import { PERCENT_DENOMINATOR, WISH_CHOICE_COUNT, WISH_CRYSTAL_GOLD_CHANCE, MAX_HAND_SIZE } from "../game-constants";
+
+function upgradeWishCard(card: BattleCard): BattleCard {
+  const targets = getEditableCorruptionTargets(card);
+  if (targets.length === 0) return card;
+
+  const nextCard: BattleCard = {
+    ...card,
+    descriptionLines: [...card.descriptionLines],
+    effects: card.effects.map((effect) => ({ ...effect })),
+  };
+
+  const sortedTargets = [...targets].sort((a, b) => {
+    if (a.lineIndex !== b.lineIndex) {
+      return b.lineIndex - a.lineIndex;
+    }
+    return b.matchIndex - a.matchIndex;
+  });
+
+  for (const target of sortedTargets) {
+    const nextValue = target.value + 1;
+    const effect = nextCard.effects[target.effectIndex];
+    if (effect && "amount" in effect) {
+      (effect as { amount: number }).amount = nextValue;
+    }
+    nextCard.descriptionLines[target.lineIndex] = replaceNumberAt(
+      nextCard.descriptionLines[target.lineIndex],
+      target.matchIndex,
+      nextValue,
+    );
+  }
+
+  return nextCard;
+}
 
 export function buildWishOptions(state: BattleState, card: BattleCard): BattleCard[] {
   const baseCount =
@@ -24,7 +58,11 @@ export function buildWishOptions(state: BattleState, card: BattleCard): BattleCa
     }
   }
 
-  return shuffleCards(candidates, state.rng).slice(0, baseCount);
+  const shuffled = shuffleCards(candidates, state.rng).slice(0, baseCount);
+  if (state.talentEffects.wishCardsUpgraded) {
+    return shuffled.map((c) => upgradeWishCard(c));
+  }
+  return shuffled;
 }
 
 function applyWishGoldTriggers(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
@@ -123,6 +161,8 @@ export function applyWishEffect(state: BattleState, card: BattleCard, amount: nu
     nextState = applyWishDrawTriggers(nextState);
     nextState = applyWishBurnTrigger(nextState, combatTexts);
     nextState = applyWishManaTrigger(nextState, combatTexts);
+    nextState = applyWishBoonTrigger(nextState, combatTexts);
+    nextState = applyWishDesperateTrigger(nextState, combatTexts);
   }
 
   return nextState;
@@ -131,16 +171,37 @@ export function applyWishEffect(state: BattleState, card: BattleCard, amount: nu
 function applyWishBurnTrigger(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   const burnAmount = state.talentEffects.burnOnWish;
   if (burnAmount <= 0 || state.enemyHealth <= 0) return state;
-  mergeCombatText(combatTexts, {
-    target: "enemy",
-    kind: "damage",
-    stat: "burn",
-    amount: burnAmount,
-  });
+  const multiplier = getEnemyDamageMultiplier(state, "burn");
+  const finalDamage = Math.round(burnAmount * multiplier);
+  if (finalDamage > 0) {
+    mergeCombatText(combatTexts, {
+      target: "enemy",
+      kind: "damage",
+      stat: "burn",
+      amount: finalDamage,
+    });
+  }
   return {
     ...state,
-    enemyHealth: clampHealth(state.enemyHealth, -burnAmount, state.enemyMaxHealth),
+    enemyHealth: clampHealth(state.enemyHealth, -finalDamage, state.enemyMaxHealth),
   };
+}
+
+function applyWishBoonTrigger(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
+  if (!state.talentEffects.wishBoonChoice) return state;
+  const isForge = state.rng() < 0.5;
+  const status = isForge ? ("forge" as const) : ("armor" as const);
+  return applyPlayerStatusEffect(state, { kind: "player-status", status, amount: 1 }, combatTexts);
+}
+
+function applyWishDesperateTrigger(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
+  const thresholdPct = state.talentEffects.wishBlockBelowHealthPct;
+  if (thresholdPct <= 0) return state;
+  const thresholdHp = (state.playerMaxHealth * thresholdPct) / PERCENT_DENOMINATOR;
+  if (state.playerHealth <= thresholdHp) {
+    return applyPlayerStatusEffect(state, { kind: "player-status", status: "block" as const, amount: 6 }, combatTexts);
+  }
+  return state;
 }
 
 function applyWishManaTrigger(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
@@ -162,9 +223,12 @@ export function chooseWishCard(state: BattleState, cardId: string | null) {
     return state;
   }
 
+  const cardWithUid = { ...chosenCard, uid: state.nextCardUid };
+  const nextCardUid = state.nextCardUid + 1;
+
   if (state.hand.length < MAX_HAND_SIZE) {
-    return { ...state, hand: [...state.hand, chosenCard], wishOptions: nextWishOptions, wishQueue };
+    return { ...state, hand: [...state.hand, cardWithUid], nextCardUid, wishOptions: nextWishOptions, wishQueue };
   }
 
-  return { ...state, discard: [...state.discard, chosenCard], wishOptions: nextWishOptions, wishQueue };
+  return { ...state, discard: [...state.discard, cardWithUid], nextCardUid, wishOptions: nextWishOptions, wishQueue };
 }

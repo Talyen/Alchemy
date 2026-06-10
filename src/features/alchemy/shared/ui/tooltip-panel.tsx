@@ -14,7 +14,7 @@ type TooltipPanelProps = {
   className?: string;
   flip?: boolean;
   /** Runtime placement offsets from `useTooltipFlip` / enemy tooltip anchoring — not for theme colors. */
-  style?: CSSProperties;
+  style?: CSSProperties | undefined;
   ref?: React.Ref<HTMLDivElement>;
 };
 
@@ -40,7 +40,7 @@ export function useTooltipFlip(trigger?: unknown) {
     const el = ref.current;
     if (!el) return;
     const rect = el.getBoundingClientRect();
-    if (rect.top < 0) setFlip(true);
+    setFlip(rect.top < 0);
   }, [trigger]);
 
   return { ref, flip };

@@ -100,7 +100,7 @@ function CollectionTileMedia({ item, flipped }: { item: CollectionTileItem; flip
 function TileImage({ item, className }: { item: CollectionTileItem; className: string }) {
   return (
     <img
-      src={item.art}
+      src={item.art || undefined}
       alt={item.title}
       className={cn(
         "block w-full transition duration-300",

@@ -5,6 +5,7 @@
 import { clampHealth, type BattleState, type CombatTextEvent } from "./types";
 import { mergeCombatText } from "./combat-text";
 import { applyLuckyCloverGold } from "./trinket-effects";
+import { getEnemyDamageMultiplier } from "./status-effects";
 import {
   applyStunBlockTalent,
   applyStunDrawTalent,
@@ -31,19 +32,21 @@ function applyStunTrinketEffects(state: BattleState, combatTexts?: CombatTextEve
   let nextState = state;
   if (nextState.trinketEffects.thunderstoneDamageOnStun > 0) {
     const dmg = nextState.trinketEffects.thunderstoneDamageOnStun;
+    const multiplier = getEnemyDamageMultiplier(nextState, "nature");
+    const finalDamage = Math.round(dmg * multiplier);
     nextState = {
       ...nextState,
-      enemyHealth: clampHealth(nextState.enemyHealth, -dmg, nextState.enemyMaxHealth),
+      enemyHealth: clampHealth(nextState.enemyHealth, -finalDamage, nextState.enemyMaxHealth),
     };
     if (combatTexts) {
       mergeCombatText(combatTexts, {
         target: "enemy",
         kind: "damage",
         stat: "nature",
-        amount: dmg,
+        amount: finalDamage,
       });
     }
-    nextState = applyLuckyCloverGold(nextState, dmg, combatTexts ?? []);
+    nextState = applyLuckyCloverGold(nextState, finalDamage, combatTexts ?? []);
   }
   return nextState;
 }

@@ -22,12 +22,14 @@ export function EnemyTooltip({
   discovered = true,
   attackEffects,
   labyrinthModifiers = [],
+  align = "right",
   className,
 }: {
   entry: BestiaryEntry;
   discovered?: boolean;
   attackEffects?: EnemyAttackEffect[] | undefined;
   labyrinthModifiers?: LabyrinthModifierKind[];
+  align?: "left" | "right";
   className?: string;
 }) {
   const { ref, flip } = useTooltipFlip();
@@ -72,13 +74,15 @@ export function EnemyTooltip({
         ref={ref}
         className={cn(
           "pointer-events-none",
-          "absolute left-[calc(100%+1.11cqh)] top-0 z-40 w-60 rounded-shell-tooltip border border-border/80 bg-card px-3 py-3 text-left",
+          align === "left"
+            ? "absolute right-[calc(100%+1.11cqh)] top-0 z-40 w-60 rounded-shell-tooltip border border-border/80 bg-card px-3 py-3 text-left"
+            : "absolute left-[calc(100%+1.11cqh)] top-0 z-40 w-60 rounded-shell-tooltip border border-border/80 bg-card px-3 py-3 text-left",
           className,
         )}
         style={
           {
             transform: ENEMY_TOOLTIP_CONFIG.flippedTransform,
-            transformOrigin: ENEMY_TOOLTIP_CONFIG.flippedTransformOrigin,
+            transformOrigin: align === "left" ? "right center" : ENEMY_TOOLTIP_CONFIG.flippedTransformOrigin,
           } as CSSProperties
         }
       >

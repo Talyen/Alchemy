@@ -128,10 +128,12 @@ function tickBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
   // Bleed "bursts" — deals full stack as damage then resets to 0.
   // Pending leech healing is paid out here, matching the mechanic that
   // leech heals when bleed actually deals damage.
+  const multiplier = getEnemyDamageMultiplier(state, CONSTANTS.STATUS_NAMES.BLEED);
+  const finalDamage = Math.round(damage * multiplier);
   const leechAmount = state.pendingBleedLeechHealing;
   let nextState: BattleState = {
     ...state,
-    enemyHealth: clampHealth(state.enemyHealth, -damage, state.enemyMaxHealth),
+    enemyHealth: clampHealth(state.enemyHealth, -finalDamage, state.enemyMaxHealth),
     pendingBleedLeechHealing: CONSTANTS.CLEAR_STATUS_STACK,
   };
   nextState = setEnemyStatus(nextState, CONSTANTS.STATUS_NAMES.BLEED, CONSTANTS.CLEAR_STATUS_STACK);
@@ -150,9 +152,9 @@ function tickBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
     target: CONSTANTS.TARGETS.ENEMY,
     kind: CONSTANTS.COMBAT_TEXT_KINDS.DAMAGE,
     stat: CONSTANTS.STATUS_NAMES.BLEED,
-    amount: damage,
+    amount: finalDamage,
   });
-  return decayArmorAfterDamage(nextState, damage, CONSTANTS.TARGETS.ENEMY, combatTexts);
+  return decayArmorAfterDamage(nextState, finalDamage, CONSTANTS.TARGETS.ENEMY, combatTexts);
 }
 
 export function tickEnemyStatuses(state: BattleState, combatTexts: CombatTextEvent[]) {

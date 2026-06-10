@@ -121,7 +121,7 @@ function CardButtonSurface({
       ariaLabel={ariaLabel}
     >
       <img
-        src={card.art}
+        src={card.art || undefined}
         alt={getCardDisplayTitle(card)}
         className={cn("block h-auto w-full", cardArtImageClass)}
         loading="eager"

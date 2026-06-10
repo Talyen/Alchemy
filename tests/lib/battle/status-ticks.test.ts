@@ -193,6 +193,29 @@ describe("tickEnemyStatuses", () => {
     // 10 burn damage * 2 (weakness multiplier) = 20 damage. Health: 50 -> 30.
     expect(next.enemyHealth).toBe(30);
   });
+
+  it("applies resistance multiplier for bleed against living-armor", () => {
+    const state = createTestBattleState({
+      enemyHealth: 50,
+      enemyMaxHealth: 50,
+      enemyStatuses: { ...createTestBattleState().enemyStatuses, bleed: 10 },
+      currentEnemy: {
+        id: "living-armor",
+        title: "Living Armor",
+        subtitle: "",
+        descriptionLines: [""],
+        art: "",
+        enemyType: "elite",
+        traits: [{ id: "living-armor", title: "Living Armor", description: "Receives half Bleed damage" }],
+        attackEffects: [],
+      },
+    });
+    const texts = makeTexts();
+    const next = tickEnemyStatuses(state, texts);
+    // 10 bleed damage * 0.5 (resistance multiplier) = 5 damage. Health: 50 -> 45.
+    expect(next.enemyHealth).toBe(45);
+    expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "bleed", amount: 5 });
+  });
 });
 
 describe("tickPlayerStatuses", () => {
@@ -362,7 +385,11 @@ describe("tickPlayerStatuses", () => {
       playerHealth: 30,
       playerMaxHealth: 30,
       playerStatuses: { ...createTestBattleState().playerStatuses, stun: 14 },
-      talentEffects: { ...createTestBattleState().talentEffects, stunThresholdReduction: 0.25, stunDurationExtension: 2 },
+      talentEffects: {
+        ...createTestBattleState().talentEffects,
+        stunThresholdReduction: 0.25,
+        stunDurationExtension: 2,
+      },
     });
     const next = tickPlayerStatuses(state, makeTexts());
     expect(next.playerStunSkipTurns).toBe(0);

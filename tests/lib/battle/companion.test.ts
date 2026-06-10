@@ -167,4 +167,48 @@ describe("processCompanionTurnStart", () => {
     expect(texts.length).toBeGreaterThan(0);
     expect(texts.some((t) => t.target === "enemy" && t.kind === "damage")).toBe(true);
   });
+
+  it("retains the goldOnFirstPoisonThisCombat flag when Lizard Scout companion applies poison", () => {
+    const state = createTestBattleState({
+      activeCompanion: companionLibrary["lizard-scout"],
+      talentEffects: {
+        ...createTestBattleState().talentEffects,
+        goldOnFirstPoison: 5,
+      },
+      flags: {
+        ...createTestBattleState().flags,
+        goldOnFirstPoisonThisCombat: false,
+      },
+    });
+    const result = processCompanionTurnStart(state, makeTexts());
+    expect(result.gold).toBe(state.gold + 5);
+    expect(result.flags.goldOnFirstPoisonThisCombat).toBe(true);
+  });
+
+  it("does not consume or benefit from firstBurnCardDoubled/firstBurnTrinketDoubled when Imp companion deals burn damage", () => {
+    const state = createTestBattleState({
+      activeCompanion: companionLibrary.imp,
+      talentEffects: {
+        ...createTestBattleState().talentEffects,
+        firstBurnCardDoubled: true,
+      },
+      trinketEffects: {
+        ...createTestBattleState().trinketEffects,
+        firstBurnDoubled: true,
+      },
+      flags: {
+        ...createTestBattleState().flags,
+        firstBurnCardDoubledUsed: false,
+        firstBurnTrinketDoubledUsed: false,
+      },
+      enemyHealth: 30,
+    });
+    const result = processCompanionTurnStart(state, makeTexts());
+    // Imp deals 1 burn damage. Since player card-play doubling flags are active
+    // but disabled for companion, damage should be exactly 1, not 2 or 4.
+    expect(result.enemyHealth).toBe(29);
+    // Doubling flags should remain unconsumed (false)
+    expect(result.flags.firstBurnCardDoubledUsed).toBe(false);
+    expect(result.flags.firstBurnTrinketDoubledUsed).toBe(false);
+  });
 });

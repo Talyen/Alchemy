@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { useRunDomainStore } from "./run-domain-store";
 import type { CombatTextEvent } from "@/lib/battle";
 import { COMBAT_TEXT_LANE_DELAY_MS, COMBAT_TEXT_LIFETIME_MS, SHAKE_DURATION } from "@/lib/game-constants";
 import { delay } from "@/lib/animation/game-timer";
@@ -109,10 +110,12 @@ export const useBattlePresentationStore = create<BattlePresentationStore>()((set
       const entryDelay = entry.lane * combatTextLaneDelayMs;
       delay(entryDelay)
         .then(() => {
+          if (!useRunDomainStore.getState().battle.hasActiveBattle) return;
           set((s) => ({ floatingCombatTexts: [...s.floatingCombatTexts, entry] }));
           return delay(combatTextLifetimeMs);
         })
-        .then(() => {
+        .then((res) => {
+          if (res === undefined) return;
           set((s) => ({ floatingCombatTexts: s.floatingCombatTexts.filter((c) => c.id !== entry.id) }));
         });
     }

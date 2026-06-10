@@ -123,16 +123,15 @@ import {
 
 export const cardLibrary: BattleCard[] = [
   // --- COMBAT CARDS ---
-  damageCard({ id: "slash", title: "Slash", art: slash, damageType: "physical", amount: 6 }),
-  damageCard({ id: "stab", title: "Stab", art: stab, damageType: "bleed", amount: 2 }),
+  damageCard({ id: "slash", art: slash, damageType: "physical", amount: 6 }),
+  damageCard({ id: "stab", art: stab, damageType: "bleed", amount: 2 }),
   singleEffectCard({
     id: "cleanse",
-    title: "Cleanse",
     art: cleanse,
     effect: { kind: "remove-harmful-status", amount: 1 },
     descriptionLine: "Cleanse 1 harmful status effect",
   }),
-  singleEffectCard({ id: "heal", title: "Heal", art: heal, effect: { kind: "heal", amount: 4 } }),
+  singleEffectCard({ id: "heal", art: heal, effect: { kind: "heal", amount: 4 } }),
   {
     id: "haste",
     title: "Haste",
@@ -142,74 +141,64 @@ export const cardLibrary: BattleCard[] = [
     consume: true,
     effects: [{ kind: "player-status", status: "haste", amount: 1 }],
   },
-  damageCard({ id: "poison-dagger", title: "Poison Dagger", art: poisonDagger, damageType: "poison", amount: 2 }),
-  damageCard({ id: "fireball", title: "Fireball", art: fireball, damageType: "burn", amount: 3 }),
-  damageCard({ id: "fangs", title: "Fangs", art: fangs, damageType: "physical", amount: 3, lifesteal: true }),
-  damageCard({ id: "frostbolt", title: "Frostbolt", art: frostbolt, damageType: "freeze", amount: 3 }),
+  damageCard({ id: "poison-dagger", art: poisonDagger, damageType: "poison", amount: 2 }),
+  damageCard({ id: "fireball", art: fireball, damageType: "burn", amount: 3 }),
+  damageCard({ id: "fangs", art: fangs, damageType: "physical", amount: 3, lifesteal: true }),
+  damageCard({ id: "frostbolt", art: frostbolt, damageType: "freeze", amount: 3 }),
   consumableCard({
     id: "health-potion",
-    title: "Health Potion",
     art: healthPotion,
     effect: { kind: "heal", amount: 8 },
   }),
   consumableCard({
     id: "mana-berries",
-    title: "Mana Berries",
     art: manaBerries,
     effect: { kind: "restore-mana", amount: 2 },
   }),
   consumableCard({
     id: "mana-crystals",
-    title: "Mana Crystals",
     art: manaCrystal,
     effect: { kind: "gain-max-mana", amount: 1 },
   }),
   consumableCard({
     id: "mana-potion",
-    title: "Mana Potion",
     art: manaPotion,
     effect: { kind: "restore-mana", amount: 2 },
   }),
   consumableCard({
     id: "panacea-potion",
-    title: "Panacea Potion",
     art: panaceaPotion,
     effect: { kind: "remove-harmful-status", amount: 1 },
   }),
   consumableCard({
     id: "stoneskin-potion",
-    title: "Stoneskin Potion",
     art: stoneskinPotion,
     effect: { kind: "player-status", status: "armor", amount: 2 },
   }),
   consumableCard({
     id: "acid-potion",
-    title: "Acid Potion",
     art: acidPotion,
     effect: { kind: "damage", damageType: "poison", amount: 3 },
   }),
-  playerStatusCard({ id: "anvil", title: "Anvil", art: anvil, status: "forge", amount: 1 }),
-  consumableCard({ id: "apple", title: "Apple", art: apple, effect: { kind: "heal", amount: 5 } }),
-  damageCard({ id: "bash", title: "Bash", art: bash, damageType: "stun", amount: 3 }),
-  playerStatusCard({ id: "block", title: "Block", art: block, status: "block", amount: 5 }),
-  consumableCard({ id: "bread", title: "Bread", art: bread, effect: { kind: "heal", amount: 5 } }),
+  playerStatusCard({ id: "anvil", art: anvil, status: "forge", amount: 1 }),
+  consumableCard({ id: "apple", art: apple, effect: { kind: "heal", amount: 5 } }),
+  damageCard({ id: "bash", art: bash, damageType: "stun", amount: 3 }),
+  playerStatusCard({ id: "block", art: block, status: "block", amount: 5 }),
+  consumableCard({ id: "bread", art: bread, effect: { kind: "heal", amount: 5 } }),
   playerStatThenScaledDamageCard({
     id: "blessed-aegis",
-    title: "Blessed Aegis",
     art: blessedAegis,
     damageType: "holy",
     scaleFrom: "block",
   }),
   consumableCard({
     id: "luck-potion",
-    title: "Luck Potion",
     art: luckPotion,
     effect: { kind: "gain-gold", amount: 7 },
   }),
-  singleEffectCard({ id: "wish", title: "Wish", art: wish, effect: { kind: "wish", amount: 1 } }),
+  singleEffectCard({ id: "wish", art: wish, effect: { kind: "wish", amount: 1 } }),
   consumableCard({
     id: "wishing-potion",
-    title: "Wishing Potion",
     art: wishingPotion,
     effect: { kind: "wish", amount: 1 },
   }),
@@ -234,52 +223,45 @@ export const cardLibrary: BattleCard[] = [
     consume: true,
     effects: [],
   },
-  summonCompanionCard({ id: "wolf-companion", title: "Wolf", art: wolfCompanion, companionId: "wolf" }),
+  summonCompanionCard({ id: "wolf-companion", art: wolfCompanion, companionId: "wolf" }),
   summonCompanionCard({
     id: "lizard-scout-companion",
-    title: "Lizard Scout",
     art: lizardScoutCompanion,
     companionId: "lizard-scout",
   }),
-  summonCompanionCard({ id: "imp-companion", title: "Imp", art: impCompanion, companionId: "imp" }),
+  summonCompanionCard({ id: "imp-companion", art: impCompanion, companionId: "imp" }),
   archeryDamageCard({
     id: "fire-arrow",
-    title: "Fire Arrow",
     art: fireArrow,
     damageType: "burn",
     amount: 2,
   }),
   archeryDamageCard({
     id: "ice-shot",
-    title: "Ice Shot",
     art: iceShot,
     damageType: "freeze",
     amount: 2,
   }),
   archeryDamageCard({
     id: "venom-arrow",
-    title: "Venom Arrow",
     art: venomArrow,
     damageType: "poison",
     amount: 2,
   }),
   archeryDamageCard({
     id: "serrated-arrowhead",
-    title: "Serrated Arrowhead",
     art: serratedArrowhead,
     damageType: "bleed",
     amount: 2,
   }),
   archeryDamageCard({
     id: "concussive-shot",
-    title: "Concussive Shot",
     art: concussiveShot,
     damageType: "stun",
     amount: 3,
   }),
   archeryDamageCard({
     id: "lightning-arrow",
-    title: "Lightning Arrow",
     art: lightningArrow,
     damageType: "nature",
     amount: 2,
@@ -302,7 +284,6 @@ export const cardLibrary: BattleCard[] = [
   },
   damageThenMultiplyEnemyStatusCard({
     id: "kindling",
-    title: "Kindling",
     art: kindling,
     damageType: "burn",
     damageAmount: 1,
@@ -326,7 +307,7 @@ export const cardLibrary: BattleCard[] = [
       },
     ],
   },
-  damageCard({ id: "lightning-bolt", title: "Lightning Bolt", art: lightningBolt, damageType: "nature", amount: 4 }),
+  damageCard({ id: "lightning-bolt", art: lightningBolt, damageType: "nature", amount: 4 }),
   {
     id: "wishing-well",
     title: "Wishing Well",
@@ -340,7 +321,6 @@ export const cardLibrary: BattleCard[] = [
   },
   damageThenMultiplyEnemyStatusCard({
     id: "hemorrhage",
-    title: "Hemorrhage",
     art: hemorrhage,
     damageType: "physical",
     damageAmount: 2,
@@ -393,27 +373,23 @@ export const cardLibrary: BattleCard[] = [
   // --- SUPPORT CARDS ---
   summonCompanionCard({
     id: "frost-whelp-companion",
-    title: "Frost Whelp",
     art: frostWhelpCompanion,
     companionId: "frost-whelp",
   }),
-  summonCompanionCard({ id: "bear-companion", title: "Bear", art: bearCompanion, companionId: "bear" }),
+  summonCompanionCard({ id: "bear-companion", art: bearCompanion, companionId: "bear" }),
   summonCompanionCard({
     id: "panther-companion",
-    title: "Panther",
     art: pantherCompanion,
     companionId: "panther",
   }),
   summonCompanionCard({
     id: "phoenix-companion",
-    title: "Phoenix",
     art: phoenixCompanion,
     companionId: "phoenix",
   }),
-  playerStatusCard({ id: "plate-mail", title: "Plate Mail", art: plateMail, status: "armor", amount: 2 }),
+  playerStatusCard({ id: "plate-mail", art: plateMail, status: "armor", amount: 2 }),
   playerStatThenScaledDamageCard({
     id: "sanctified-plate",
-    title: "Sanctified Plate",
     art: sanctifiedPlate,
     damageType: "holy",
     scaleFrom: "armor",
@@ -440,7 +416,6 @@ export const cardLibrary: BattleCard[] = [
   },
   dualDamageCard({
     id: "burning-blade",
-    title: "Burning Blade",
     art: burningBlade,
     hits: [
       { damageType: "physical", amount: 2 },
@@ -472,7 +447,6 @@ export const cardLibrary: BattleCard[] = [
   },
   healThenDamageCard({
     id: "sunburst",
-    title: "Sunburst",
     art: sunburst,
     heal: 2,
     damageType: "burn",
@@ -480,7 +454,6 @@ export const cardLibrary: BattleCard[] = [
   }),
   healThenDamageCard({
     id: "holy-radiance",
-    title: "Holy Radiance",
     art: holyRadiance,
     heal: 2,
     damageType: "holy",
@@ -488,7 +461,6 @@ export const cardLibrary: BattleCard[] = [
   }),
   damageCard({
     id: "venom-fangs",
-    title: "Venom Fangs",
     art: venomFangs,
     damageType: "poison",
     amount: 2,
@@ -496,7 +468,6 @@ export const cardLibrary: BattleCard[] = [
   }),
   damageCard({
     id: "bloodthorn",
-    title: "Bloodthorn",
     art: bloodthorn,
     damageType: "nature",
     amount: 4,
@@ -504,7 +475,6 @@ export const cardLibrary: BattleCard[] = [
   }),
   dualDamageCard({
     id: "cinderbloom",
-    title: "Cinderbloom",
     art: cinderbloom,
     hits: [
       { damageType: "nature", amount: 2 },
@@ -513,7 +483,6 @@ export const cardLibrary: BattleCard[] = [
   }),
   dualDamageCard({
     id: "grasping-vines",
-    title: "Grasping Vines",
     art: graspingVines,
     hits: [
       { damageType: "nature", amount: 2 },
@@ -522,7 +491,6 @@ export const cardLibrary: BattleCard[] = [
   }),
   playerStatThenScaledDamageCard({
     id: "briar-shield",
-    title: "Briar Shield",
     art: briarShield,
     damageType: "nature",
     scaleFrom: "block",
@@ -530,7 +498,6 @@ export const cardLibrary: BattleCard[] = [
   }),
   playerStatThenScaledDamageCard({
     id: "thorn-mail",
-    title: "Thorn Mail",
     art: thornMail,
     damageType: "nature",
     scaleFrom: "armor",
@@ -549,7 +516,6 @@ export const cardLibrary: BattleCard[] = [
   },
   dualDamageCard({
     id: "serrated-edge",
-    title: "Serrated Edge",
     art: serratedEdge,
     hits: [
       { damageType: "bleed", amount: 1 },
@@ -558,7 +524,6 @@ export const cardLibrary: BattleCard[] = [
   }),
   dualDamageCard({
     id: "smite",
-    title: "Smite",
     art: smite,
     hits: [
       { damageType: "holy", amount: 2 },
@@ -567,7 +532,6 @@ export const cardLibrary: BattleCard[] = [
   }),
   cleansePlayerStatusCard({
     id: "antivenom-potion",
-    title: "Antivenom Potion",
     art: antivenomPotion,
     status: "poison",
     cleanseLine: "Cleanse all Poison",
@@ -575,7 +539,6 @@ export const cardLibrary: BattleCard[] = [
   }),
   damageThenMultiplyEnemyStatusCard({
     id: "cold-snap",
-    title: "Cold Snap",
     art: coldSnap,
     damageType: "freeze",
     damageAmount: 1,
@@ -583,7 +546,7 @@ export const cardLibrary: BattleCard[] = [
     factor: 2,
     multiplyLine: "Double enemy's Freeze build-up",
   }),
-  loseHealthBenefitCard({ id: "blood-offering", title: "Blood Offering", art: bloodOffering, healthLoss: 1, draw: 2 }),
+  loseHealthBenefitCard({ id: "blood-offering", art: bloodOffering, healthLoss: 1, draw: 2 }),
   {
     id: "sunder-armor",
     title: "Sunder Armor",
@@ -616,7 +579,6 @@ export const cardLibrary: BattleCard[] = [
   },
   loseHealthBenefitCard({
     id: "faustian-bargain",
-    title: "Faustian Bargain",
     art: faustianBargain,
     healthLoss: 2,
     wish: 2,
@@ -624,7 +586,6 @@ export const cardLibrary: BattleCard[] = [
   }),
   dualDamageCard({
     id: "judgment",
-    title: "Judgment",
     art: judgment,
     hits: [
       { damageType: "holy", amount: 3 },
@@ -633,14 +594,12 @@ export const cardLibrary: BattleCard[] = [
   }),
   cleansePlayerStatusCard({
     id: "smelling-salts",
-    title: "Smelling Salts",
     art: smellingSalts,
     status: "stun",
     cleanseLine: "Cleanse Stun build-up",
   }),
   loseHealthBenefitCard({
     id: "dark-pact",
-    title: "Dark Pact",
     art: darkPact,
     healthLoss: 2,
     wish: 1,
@@ -652,10 +611,9 @@ export const cardLibrary: BattleCard[] = [
     art: raiseSkeletonCompanion,
     companionId: "skeleton",
   }),
-  summonCompanionCard({ id: "pixie-companion", title: "Pixie", art: pixieCompanion, companionId: "pixie" }),
+  summonCompanionCard({ id: "pixie-companion", art: pixieCompanion, companionId: "pixie" }),
   summonCompanionCard({
     id: "mana-moth-companion",
-    title: "Mana Moth",
     art: manaMothCompanion,
     companionId: "mana-moth",
   }),
@@ -667,19 +625,16 @@ export const cardLibrary: BattleCard[] = [
   }),
   summonCompanionCard({
     id: "golden-retriever-companion",
-    title: "Golden Retriever",
     art: goldenRetrieverCompanion,
     companionId: "golden-retriever",
   }),
   summonCompanionCard({
     id: "shield-scarab-companion",
-    title: "Shield Scarab",
     art: shieldScarabCompanion,
     companionId: "shield-scarab",
   }),
   summonCompanionCard({
     id: "library-owl-companion",
-    title: "Library Owl",
     art: libraryOwlCompanion,
     companionId: "library-owl",
   }),

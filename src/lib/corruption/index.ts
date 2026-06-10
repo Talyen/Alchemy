@@ -72,7 +72,7 @@ function cloneCard(card: BattleCard): BattleCard {
 }
 
 // Replaces one numeric occurrence without touching other numbers on the same line.
-function replaceNumberAt(line: string, matchIndex: number, nextValue: number) {
+export function replaceNumberAt(line: string, matchIndex: number, nextValue: number) {
   const match = line.slice(matchIndex).match(CORRUPTION_TEXT_PATTERNS.leadingNumber);
   if (!match) return line;
   return `${line.slice(0, matchIndex)}${nextValue}${line.slice(matchIndex + match[0].length)}`;

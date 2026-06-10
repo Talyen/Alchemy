@@ -21,7 +21,7 @@ export const cardArtImageClass = "rounded-[30px] aspect-[3/4] object-cover";
 export const squareArtImageClass = "rounded-[30px] aspect-square object-cover";
 export const staticCardTransform = "translate3d(0px, 0px, 0px)";
 export const popupClassName =
-  "absolute bottom-full left-1/2 z-40 mb-4 rounded-[20px] border border-border/80 bg-card px-3 py-3 text-left";
+  "absolute bottom-full left-1/2 z-40 mb-4 -translate-x-1/2 rounded-[20px] border border-border/80 bg-card px-3 py-3 text-left";
 
 export const battleActorSectionClass = {
   desktop:

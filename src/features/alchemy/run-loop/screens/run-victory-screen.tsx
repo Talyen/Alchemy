@@ -1,12 +1,11 @@
 // Run victory screen — shown after defeating the Act III boss.
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import { keywordDefinitions, type KeywordId } from "@/lib/game-data";
-import { MATERIAL_IDS, materialLabels } from "@/lib/homestead/types";
+import { MATERIAL_IDS } from "@/lib/homestead/types";
 
 import { ScreenHeader } from "../../shared/ui/shared-ui";
-import { matIconMap, matPillStyle, matTextColor } from "../../shared/ui/material-icons";
+import { MaterialPill } from "../../shared/ui/material-icons";
 import { KeywordProgressCard } from "./game-over-screen";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { TalentXP } from "@/lib/game-data";
@@ -67,17 +66,7 @@ export function RunVictoryScreen({
         <div className="flex flex-wrap items-center justify-center gap-2 text-sm font-medium text-muted-foreground">
           Found
           {earnedMaterials.map((mat) => (
-            <span
-              key={mat}
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold",
-                matPillStyle[mat],
-                matTextColor[mat],
-              )}
-            >
-              {matIconMap[mat]}
-              {runEndMaterials[mat]} {materialLabels[mat]}
-            </span>
+            <MaterialPill key={mat} material={mat} amount={runEndMaterials[mat]} />
           ))}
         </div>
       )}

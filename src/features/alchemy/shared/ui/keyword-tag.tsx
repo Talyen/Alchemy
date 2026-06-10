@@ -6,7 +6,7 @@ import { keywordDefinitions } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
 import { keywordIcons } from "../config";
-import { TooltipPanel } from "./tooltip-panel";
+import { TooltipPanel, useTooltipViewportClamp } from "./tooltip-panel";
 
 export function KeywordTag({
   keywordId,
@@ -21,6 +21,8 @@ export function KeywordTag({
   className?: string;
   showTooltip?: boolean;
 }) {
+  const { ref, flip, dx } = useTooltipViewportClamp(8, keywordId);
+
   const def = keywordDefinitions[keywordId];
   const Icon = keywordIcons[keywordId];
   if (!def) return keywordId;
@@ -46,7 +48,12 @@ export function KeywordTag({
   return (
     <span className="group/keyword relative inline-flex items-center">
       <span className="cursor-help">{tag}</span>
-      <TooltipPanel className="pointer-events-none opacity-0 group-hover/keyword:opacity-100">
+      <TooltipPanel
+        ref={ref}
+        flip={flip}
+        style={dx !== 0 ? { marginLeft: dx } : undefined}
+        className="pointer-events-none opacity-0 group-hover/keyword:opacity-100"
+      >
         <span className="flex items-center gap-2 text-base">
           <KeywordTag keywordId={keywordId} showIcon />
         </span>

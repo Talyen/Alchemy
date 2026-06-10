@@ -120,7 +120,8 @@ describe("chooseWishCard", () => {
       .map((_, i) => makeCard({ id: `h${i}` }));
     const state = makeState({ hand: fullHand, wishOptions: [card] });
     const result = chooseWishCard(state, "wish-card");
-    expect(result.discard).toContainEqual(card);
+    expect(result.discard).toHaveLength(1);
+    expect(result.discard[0].id).toBe("wish-card");
     expect(result.wishOptions).toBeNull();
     expect(result.wishQueue).toEqual([]);
   });

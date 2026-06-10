@@ -219,4 +219,25 @@ describe("processEnemyAttack", () => {
     const result = processEnemyAttack(state, makeTexts());
     expect(result.playerHealth).toBe(15);
   });
+
+  it("consumes phoenix feather and resurrects player when attack is lethal", () => {
+    const state = createTestBattleState({
+      playerHealth: 5,
+      playerMaxHealth: 30,
+      playerStatuses: {
+        ...createTestBattleState().playerStatuses,
+        block: 0,
+        armor: 0,
+        phoenixFeather: 1,
+      },
+      deathsDoorUsed: false,
+      enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 10 }],
+    });
+    const result = processEnemyAttack(state, makeTexts());
+    // Phoenix Feather heals for 30% of max health (9)
+    expect(result.playerHealth).toBe(9);
+    expect(result.playerStatuses.phoenixFeather).toBe(0);
+    expect(result.deathsDoorUsed).toBe(false);
+    expect(result.deathsDoorActive).toBe(false);
+  });
 });

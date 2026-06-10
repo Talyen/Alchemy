@@ -7,10 +7,16 @@ import { expectedCompanionTurnLine } from "./companion-turn-description";
 
 type CardBaseInput = {
   id: BattleCard["id"];
-  title: string;
+  title?: string;
   art: BattleCard["art"];
   cost?: number;
 };
+
+function deriveTitle(id: string, customTitle?: string): string {
+  if (customTitle) return customTitle;
+  const base = id.endsWith("-companion") ? id.slice(0, -10) : id;
+  return base.split("-").map(capitalizeWord).join(" ");
+}
 
 type SummonCompanionCardInput = CardBaseInput & {
   companionId: CompanionId;
@@ -26,7 +32,7 @@ export function summonCompanionCard({ id, title, art, companionId, cost = 1 }: S
   const turnEffect = turnEffects[0]!;
   return {
     id,
-    title,
+    title: deriveTitle(id, title),
     descriptionLines: [expectedCompanionTurnLine(turnEffect), "Companion"],
     art,
     cost,
@@ -50,7 +56,7 @@ export function archeryDamageCard({
 }: ArcheryDamageCardInput): BattleCard {
   return {
     id,
-    title,
+    title: deriveTitle(id, title),
     descriptionLines: [`Deal ${amount} ${capitalizeWord(damageType)} damage`, "Archery"],
     art,
     cost,
@@ -78,7 +84,7 @@ export function damageCard({
   if (lifesteal) descriptionLines.push("Leech");
   return {
     id,
-    title,
+    title: deriveTitle(id, title),
     descriptionLines,
     art,
     cost,
@@ -96,7 +102,7 @@ export function dualDamageCard({ id, title, art, hits, cost = 1 }: DualDamageCar
   const [first, second] = hits;
   return {
     id,
-    title,
+    title: deriveTitle(id, title),
     descriptionLines: [
       `Deal ${first.amount} ${capitalizeWord(first.damageType)} damage`,
       `Deal ${second.amount} ${capitalizeWord(second.damageType)} damage`,
@@ -129,39 +135,12 @@ function playerStatusDescriptionLine(status: PlayerStatusCardInput["status"], am
 export function playerStatusCard({ id, title, art, status, amount, cost = 1 }: PlayerStatusCardInput): BattleCard {
   return {
     id,
-    title,
+    title: deriveTitle(id, title),
     descriptionLines: [playerStatusDescriptionLine(status, amount)],
     art,
     cost,
     effects: [{ kind: "player-status", status, amount }],
   };
-}
-
-function effectDescriptionLine(effect: BattleCardEffect): string {
-  switch (effect.kind) {
-    case "heal":
-      return `Restore ${effect.amount} Health`;
-    case "restore-mana":
-      return `Restore ${effect.amount} Mana`;
-    case "gain-max-mana":
-      return `Gain ${effect.amount} Maximum Mana`;
-    case "remove-harmful-status":
-      return `Remove ${effect.amount} harmful status effect`;
-    case "player-status":
-      if (effect.status === "block" || effect.status === "armor" || effect.status === "forge") {
-        return playerStatusDescriptionLine(effect.status, effect.amount);
-      }
-      break;
-    case "damage":
-      return `Deal ${effect.amount} ${capitalizeWord(effect.damageType)} damage`;
-    case "gain-gold":
-      return `Gain ${effect.amount} Gold`;
-    case "wish":
-      return `Wish ${effect.amount}`;
-    default:
-      break;
-  }
-  throw new Error(`effectDescriptionLine: unsupported effect kind ${(effect as { kind: string }).kind}`);
 }
 
 type SingleEffectCardInput = CardBaseInput & {
@@ -179,7 +158,7 @@ export function singleEffectCard({
 }: SingleEffectCardInput): BattleCard {
   return {
     id,
-    title,
+    title: deriveTitle(id, title),
     descriptionLines: [descriptionLine ?? effectDescriptionLine(effect)],
     art,
     cost,
@@ -194,7 +173,7 @@ type ConsumableCardInput = CardBaseInput & {
 export function consumableCard({ id, title, art, effect, cost = 1 }: ConsumableCardInput): BattleCard {
   return {
     id,
-    title,
+    title: deriveTitle(id, title),
     descriptionLines: [effectDescriptionLine(effect), CONSUME_DESCRIPTION_LINE],
     art,
     cost,
@@ -233,7 +212,7 @@ export function loseHealthBenefitCard({
   if (consume) descriptionLines.push(CONSUME_DESCRIPTION_LINE);
   return {
     id,
-    title,
+    title: deriveTitle(id, title),
     descriptionLines,
     art,
     cost,
@@ -259,7 +238,7 @@ export function healThenDamageCard({
 }: HealThenDamageCardInput): BattleCard {
   return {
     id,
-    title,
+    title: deriveTitle(id, title),
     descriptionLines: [`Restore ${heal} Health`, `Deal ${damage} ${capitalizeWord(damageType)} damage`],
     art,
     cost,
@@ -305,7 +284,7 @@ export function playerStatThenScaledDamageCard({
     amount: 0,
     ...(scaleFrom === "block" ? { equalToBlock: true } : { equalToArmor: true }),
   });
-  return { id, title, descriptionLines, art, cost, effects };
+  return { id, title: deriveTitle(id, title), descriptionLines, art, cost, effects };
 }
 
 type DamageThenMultiplyEnemyStatusCardInput = CardBaseInput & {
@@ -336,7 +315,7 @@ export function damageThenMultiplyEnemyStatusCard({
   ];
   return {
     id,
-    title,
+    title: deriveTitle(id, title),
     descriptionLines,
     art,
     cost,
@@ -366,11 +345,38 @@ export function cleansePlayerStatusCard({
   const descriptionLines = [...(consume ? [cleanseLine, CONSUME_DESCRIPTION_LINE] : [cleanseLine])];
   return {
     id,
-    title,
+    title: deriveTitle(id, title),
     descriptionLines,
     art,
     cost,
     ...(consume ? { consume: true } : {}),
     effects: [{ kind: "remove-player-status", status }],
   };
+}
+
+function effectDescriptionLine(effect: BattleCardEffect): string {
+  switch (effect.kind) {
+    case "heal":
+      return `Restore ${effect.amount} Health`;
+    case "restore-mana":
+      return `Restore ${effect.amount} Mana`;
+    case "gain-max-mana":
+      return `Gain ${effect.amount} Maximum Mana`;
+    case "remove-harmful-status":
+      return `Remove ${effect.amount} harmful status effect`;
+    case "player-status":
+      if (effect.status === "block" || effect.status === "armor" || effect.status === "forge") {
+        return playerStatusDescriptionLine(effect.status, effect.amount);
+      }
+      break;
+    case "damage":
+      return `Deal ${effect.amount} ${capitalizeWord(effect.damageType)} damage`;
+    case "gain-gold":
+      return `Gain ${effect.amount} Gold`;
+    case "wish":
+      return `Wish ${effect.amount}`;
+    default:
+      break;
+  }
+  throw new Error(`effectDescriptionLine: unsupported effect kind ${(effect as { kind: string }).kind}`);
 }
