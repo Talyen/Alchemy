@@ -6,7 +6,6 @@ import type { BattleControllerBindings } from "@/features/alchemy/shell/battle-b
 
 type ControllerActions = {
   navigation: {
-    navigateTo: (screen: Screen) => void;
     goToScreen: (screen: Screen) => void;
   };
   runStart: {

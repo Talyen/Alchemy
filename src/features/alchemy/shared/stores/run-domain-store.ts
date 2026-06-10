@@ -16,6 +16,8 @@ import {
   addTalentXP,
   computeRunEndTalentXPSnapshot,
   mergeRunTalentXPIntoPermanent,
+  tryUnlockTalent,
+  filterKeywordsForTalentXP,
   xpThresholdForPoints,
   type TalentXP,
 } from "@/lib/game-data";
@@ -246,11 +248,10 @@ export const useRunDomainStore = create<RunDomainStore>()(
 
       unlockTalent: (keywordId, talentId) =>
         set((state) => {
-          if (state.progress.unlockedTalents[keywordId]?.includes(talentId)) return;
-          state.progress.unlockedTalents = {
-            ...state.progress.unlockedTalents,
-            [keywordId]: [...(state.progress.unlockedTalents[keywordId] ?? []), talentId],
-          };
+          const result = tryUnlockTalent(keywordId, talentId, state.progress.talentXP, state.progress.unlockedTalents);
+          if (result.unlockedTalents) {
+            state.progress.unlockedTalents = result.unlockedTalents;
+          }
         }),
 
       unlockAllTalents: import.meta.env.DEV
@@ -266,7 +267,7 @@ export const useRunDomainStore = create<RunDomainStore>()(
               }
               state.progress.unlockedTalents = next;
               state.progress.talentXP = xp;
-              state.progress.runTalentXP = xp;
+              state.progress.runTalentXP = {};
             })
         : () => {},
 
@@ -288,17 +289,20 @@ export const useRunDomainStore = create<RunDomainStore>()(
         }),
 
       awardCardXP: (card) => {
-        const keywords = getCardKeywords(card);
+        const keywords = filterKeywordsForTalentXP(getCardKeywords(card));
         if (keywords.length === 0) return;
         set((state) => {
           state.progress.runTalentXP = addTalentXP(state.progress.runTalentXP, keywords);
         });
       },
 
-      awardMysteryXP: (keywordId, amount) =>
+      awardMysteryXP: (keywordId, amount) => {
+        const keywords = filterKeywordsForTalentXP([keywordId]);
+        if (keywords.length === 0) return;
         set((state) => {
-          state.progress.runTalentXP = addTalentXP(state.progress.runTalentXP, [keywordId], amount);
-        }),
+          state.progress.runTalentXP = addTalentXP(state.progress.runTalentXP, keywords, amount);
+        });
+      },
 
       finalizeRunXP: () =>
         set((state) => {

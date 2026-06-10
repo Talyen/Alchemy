@@ -6,9 +6,9 @@ import { Button } from "@/components/ui/button";
 import { DetailPopup } from "../../../shared/ui/card-popup";
 import { DisabledTooltip } from "../../../shared/ui/shared-ui";
 import { StarRating } from "../../../shared/ui/star-rating";
-import { TiltSurface } from "../../../shared/ui/tilt-surface";
 import { matIconMap, matPillStyle, matTextColor } from "../../../shared/ui/material-icons";
 import { HOMESTEAD_CONFIG, type GoalItem, MaterialCost, getArt, renderTextWithMaterials } from "./helpers";
+import { HomesteadTileCompletedFooter, HomesteadTileFrame } from "./homestead-tile-node";
 
 export function HomesteadUpgradeNode({
   item,
@@ -92,47 +92,34 @@ export function HomesteadUpgradeNode({
 
   const hasCost = MATERIAL_IDS.some((m) => (itemCost[m] ?? 0) > 0);
 
-  return (
-    <div
-      className={cn("flex flex-col items-center relative", index < HOMESTEAD_CONFIG.compilationFillerCount && "mb-2")}
-      onMouseEnter={() => setHoveredItemId(item.data.id)}
-      onMouseLeave={() => setHoveredItemId(null)}
-    >
-      {detailTooltip}
-      <div className="group w-full overflow-hidden rounded-shell-card p-3">
-        <TiltSurface
-          className={cn(
-            "relative mx-auto flex w-full items-center justify-center overflow-hidden rounded-shell-card bg-stone-900",
-            HOMESTEAD_CONFIG.artAspectRatio,
-            isCompleted && "bg-stone-800/70",
-          )}
-        >
-          <img
-            src={getArt(item.data.id)}
-            alt={item.data.title}
-            className={cn("h-full w-full object-cover", isTier0 && "grayscale opacity-60")}
-          />
-        </TiltSurface>
-      </div>
-
-      {isCompleted ? (
-        <div className="mt-1.5 flex h-9 items-center justify-center gap-1.5 text-sm font-semibold text-amber-100/75">
-          <span>{item.data.title}</span>
-          <StarRating current={maxTiers} max={maxTiers} />
-        </div>
-      ) : hasCost ? (
-        <div className="mt-1.5 flex items-center gap-2">
-          <DisabledTooltip show={!itemAffordable} message="Not Enough Resources">
-            <Button variant="outline" disabled={!itemAffordable} onClick={() => onAction(item)}>
-              {item.data.title}
-              {costItems.map((m) => (
-                <MaterialCost key={m} material={m} amount={itemCost[m]} />
-              ))}
-            </Button>
-          </DisabledTooltip>
-          <StarRating current={currentLevel} max={maxTiers} />
-        </div>
-      ) : null}
+  const footer = isCompleted ? (
+    <HomesteadTileCompletedFooter label={item.data.title} stars={<StarRating current={maxTiers} max={maxTiers} />} />
+  ) : hasCost ? (
+    <div className="mt-1.5 flex items-center gap-2">
+      <DisabledTooltip show={!itemAffordable} message="Not Enough Resources">
+        <Button variant="outline" disabled={!itemAffordable} onClick={() => onAction(item)}>
+          {item.data.title}
+          {costItems.map((m) => (
+            <MaterialCost key={m} material={m} amount={itemCost[m]} />
+          ))}
+        </Button>
+      </DisabledTooltip>
+      <StarRating current={currentLevel} max={maxTiers} />
     </div>
+  ) : null;
+
+  return (
+    <HomesteadTileFrame
+      id={item.data.id}
+      index={index}
+      hoveredItemId={hoveredItemId}
+      setHoveredItemId={setHoveredItemId}
+      detailTooltip={detailTooltip}
+      surfaceClassName={cn(HOMESTEAD_CONFIG.artAspectRatio, "w-full", isCompleted && "bg-stone-800/70")}
+      imageSrc={getArt(item.data.id)}
+      imageAlt={item.data.title}
+      imageClassName={cn("h-full w-full object-cover", isTier0 && "grayscale opacity-60")}
+      footer={footer}
+    />
   );
 }

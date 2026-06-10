@@ -64,6 +64,8 @@ export type HomesteadFarm = {
   tiers: HomesteadUpgradeTier[];
   yield: MaterialInventory;
   buttonLabel: string;
+  /** Hidden from UI until content is implemented; save data is preserved. */
+  hidden?: boolean;
 };
 
 export type HomesteadResearch = {
@@ -80,15 +82,11 @@ export type HomesteadEffectManifest = {
   flatPhysicalDamage: number;
   companionDamage: number;
   companionBondLevels: Record<import("@/lib/game-data").CompanionId, number>;
-  potionHealMultiplier: number;
-  potionDiscount: number;
   potionPotency: number;
   herbFindBonus: number;
-  startGold: number;
-  startBlock: number;
-  campfireHealBonus: number;
-  physicalCritChance: number;
-  startMaxHealthBonus: number;
+  endRunFoodPerRoom: number;
+  endRunHerbsPerRoom: number;
+  endRunCrystalPerRoom: number;
   forgeToBurn: boolean;
   flatBurnDamage: number;
   flatArrowDamage: number;

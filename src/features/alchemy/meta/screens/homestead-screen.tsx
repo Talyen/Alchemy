@@ -5,7 +5,7 @@
 import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { type BuildingId, type FarmId, type MaterialInventory, type ResearchId } from "@/lib/homestead/types";
-import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
+import { buildings, visibleFarmPlots, researchUpgrades } from "@/lib/homestead/data";
 import { HamburgerTrigger, PageLayout, PaginationControls, ScreenHeader } from "../../shared/ui/shared-ui";
 import { playUISound } from "@/lib/audio";
 import { cardLibrary, type CompanionId } from "@/lib/game-data";
@@ -45,7 +45,7 @@ export function HomesteadScreen({
   const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
 
   const buildingsItems = useMemo(() => getItems("buildings", buildings), []);
-  const farmItems = useMemo(() => getItems("farm", farmPlots), []);
+  const farmItems = useMemo(() => getItems("farm", visibleFarmPlots), []);
   const researchItems = useMemo(() => getItems("research", researchUpgrades), []);
 
   function handleAction(item: GoalItem) {

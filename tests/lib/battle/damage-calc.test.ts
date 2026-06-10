@@ -59,6 +59,28 @@ describe("computeCardDamageToEnemy", () => {
     expect(modifiedDamage).toBe(physicalEffect.amount * CRIT_MULTIPLIER);
   });
 
+  it("doubles forge contribution for physical with expert blacksmith", () => {
+    const state = createTestBattleState({
+      playerStatuses: { ...createTestBattleState().playerStatuses, forge: 3 },
+      enemyMitigation: { ...createTestBattleState().enemyMitigation, block: 0, armor: 0 },
+      talentEffects: { ...defaultTalentEffects, forgeToPhysicalDamageMultiplier: 2 },
+      rng: () => 0.99,
+    });
+    const { modifiedDamage } = computeCardDamageToEnemy(state, physicalEffect);
+    expect(modifiedDamage).toBe(physicalEffect.amount + 3 * 2);
+  });
+
+  it("adds half block to physical via blockToPhysicalDamageMultiplier", () => {
+    const state = createTestBattleState({
+      playerStatuses: { ...createTestBattleState().playerStatuses, block: 10 },
+      enemyMitigation: { ...createTestBattleState().enemyMitigation, block: 0, armor: 0 },
+      talentEffects: { ...defaultTalentEffects, blockToPhysicalDamageMultiplier: 0.5 },
+      rng: () => 0.99,
+    });
+    const { modifiedDamage } = computeCardDamageToEnemy(state, physicalEffect);
+    expect(modifiedDamage).toBe(physicalEffect.amount + 5);
+  });
+
   it("applies bleed execute threshold multiplier", () => {
     const bleedEffect: Extract<BattleCardEffect, { kind: "damage" }> = {
       kind: "damage",

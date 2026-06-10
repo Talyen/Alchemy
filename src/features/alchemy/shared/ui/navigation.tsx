@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import type { Screen } from "../types";
 import { playUISound } from "@/lib/audio";
 import { TooltipBody, TooltipHeader, TooltipPanel, useTooltipFlip } from "./tooltip-panel";
+import { TalentsLockedTooltip } from "../../meta/talents/talents-locked-tooltip";
 import { useState } from "react";
 
 const NAVIGATION_CONFIG = {
@@ -200,16 +201,10 @@ export function GameMenu({
               <WandSparkles className="h-4 w-4" /> Talents
             </Button>
             {showTalentsTooltip && isTalentsLocked && (
-              <TooltipPanel
-                width="w-64"
-                ref={talentsTooltipRef}
+              <TalentsLockedTooltip
+                panelRef={talentsTooltipRef}
                 className="z-[130] absolute right-full mr-4 top-1/2 -translate-y-1/2 text-left"
-              >
-                <TooltipHeader>Talents Locked</TooltipHeader>
-                <TooltipBody>
-                  <p className="text-red-400 font-semibold">Finish a Run as the Knight to unlock</p>
-                </TooltipBody>
-              </TooltipPanel>
+              />
             )}
           </div>
         ) : null}

@@ -1,6 +1,12 @@
 // Run screen taxonomy and transition helpers.
-// Screen *state* lives in use-alchemy-run-controller (React); stores hold run/battle/session data.
-// Navigation handlers (use-run-navigation, run-destination-handlers) call navigateTo/goToScreen.
+// Screen *state* lives in navigation.screen on the run domain store; stores hold run/battle/session data.
+// Navigation handlers (use-run-navigation, run-flow-handlers) call navigateTo/goToScreen or createScreenTransition.
+//
+// Screen transition modes (see shell/screen-transition.ts):
+// - navigateTo: default run-loop path — NAVIGATION_DELAY_MS delay + optional deferred store commit after PAGE_EXIT_MS.
+// - transitionScreen({ delayMs }): victory → rewards; uses setScreen after delay (no navigateTo commit callback).
+// - transitionScreen({ immediate: true }): defeat/game-over and labyrinth abandon — instant setScreen.
+// - restoreRun: boot resume — immediate setScreen from persisted currentScreen.
 import type { Screen } from "./screens";
 import { ROUTE_SCREENS } from "./screens";
 
@@ -87,6 +93,24 @@ export const DOCUMENTED_RUN_LOOP_TRANSITIONS: Partial<Record<Screen, readonly Sc
     ROUTE_SCREENS.CORRUPTION,
     ROUTE_SCREENS.LABYRINTH_MAP,
   ],
+  [ROUTE_SCREENS.CAMPFIRE]: [ROUTE_SCREENS.DESTINATION, ROUTE_SCREENS.LABYRINTH_MAP],
+  [ROUTE_SCREENS.SHOP]: [ROUTE_SCREENS.DESTINATION, ROUTE_SCREENS.LABYRINTH_MAP],
+  [ROUTE_SCREENS.ALCHEMIST]: [ROUTE_SCREENS.DESTINATION, ROUTE_SCREENS.LABYRINTH_MAP],
+  [ROUTE_SCREENS.MYSTERY]: [ROUTE_SCREENS.DESTINATION, ROUTE_SCREENS.LABYRINTH_MAP],
+  [ROUTE_SCREENS.CORRUPTION]: [ROUTE_SCREENS.DESTINATION, ROUTE_SCREENS.LABYRINTH_MAP],
+  [ROUTE_SCREENS.LABYRINTH_MAP]: [
+    ROUTE_SCREENS.BATTLE,
+    ROUTE_SCREENS.CAMPFIRE,
+    ROUTE_SCREENS.SHOP,
+    ROUTE_SCREENS.ALCHEMIST,
+    ROUTE_SCREENS.MYSTERY,
+  ],
+};
+
+/** Terminal outcomes after run-end teardown (registered in screen-routes/run-end-routes.tsx). */
+export const DOCUMENTED_RUN_END_TRANSITIONS: Partial<Record<Screen, readonly Screen[]>> = {
+  [ROUTE_SCREENS.GAME_OVER]: [ROUTE_SCREENS.MENU],
+  [ROUTE_SCREENS.RUN_VICTORY]: [ROUTE_SCREENS.MENU],
 };
 
 export function isDocumentedTransition(from: Screen, to: Screen): boolean {
@@ -94,6 +118,8 @@ export function isDocumentedTransition(from: Screen, to: Screen): boolean {
   if (meta?.includes(to)) return true;
   const run = DOCUMENTED_RUN_LOOP_TRANSITIONS[from];
   if (run?.includes(to)) return true;
+  const runEnd = DOCUMENTED_RUN_END_TRANSITIONS[from];
+  if (runEnd?.includes(to)) return true;
   return false;
 }
 

@@ -1,15 +1,18 @@
 import { expect, test } from "@playwright/test";
 import { makeCard, startBattleWithDeck } from "./helpers";
+import { MenuPage } from "./pages/menu-page";
+import { critical } from "./playwright-tags";
 
-test.describe("Accessibility", () => {
+test.describe("Accessibility", critical, () => {
   test("main menu buttons are discoverable by role", async ({ page }) => {
-    await page.goto("/");
+    const menu = new MenuPage(page);
+    await menu.goto();
 
-    await expect(page.getByRole("button", { name: "Play" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Collection" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Options" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Talents" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Homestead" })).toBeVisible();
+    await expect(menu.playBtn).toBeVisible();
+    await expect(menu.collectionBtn).toBeVisible();
+    await expect(menu.optionsBtn).toBeVisible();
+    await expect(menu.talentsBtn).toBeVisible();
+    await expect(menu.homesteadBtn).toBeVisible();
   });
 
   test("battle cards have accessible play labels", async ({ page }) => {
@@ -25,8 +28,9 @@ test.describe("Accessibility", () => {
   });
 
   test("mode and character select screens use proper heading roles", async ({ page }) => {
-    await page.goto("/");
-    await page.getByRole("button", { name: "Play" }).click();
+    const menu = new MenuPage(page);
+    await menu.goto();
+    await menu.openGameModeSelect();
     await expect(page.getByRole("heading", { name: "Choose Your Adventure" })).toBeVisible({ timeout: 5000 });
 
     await page.getByRole("button", { name: /The Campaign/ }).click();
@@ -42,8 +46,6 @@ test.describe("Accessibility", () => {
     await expect(cards.first()).toBeVisible({ timeout: 5000 });
 
     await cards.first().hover();
-    await expect(page.locator('[aria-label^="Inspect "]').first()).toBeVisible({ timeout: 2000 }).catch(() => {});
-    // Hover triggers inspect overlays; just verify the card itself is in the DOM
-    await expect(cards.first()).toBeVisible();
+    await expect(page.locator(".hover-popup-panel.pointer-events-auto")).toBeVisible({ timeout: 3000 });
   });
 });

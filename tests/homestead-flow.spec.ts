@@ -1,7 +1,8 @@
 import { expect, test } from "@playwright/test";
 import { HomesteadPage } from "./pages/homestead-page";
+import { critical } from "./playwright-tags";
 
-test.describe("Homestead Flow", () => {
+test.describe("Homestead Flow", critical, () => {
   test.describe("with custom materials", () => {
     test.beforeEach(async ({ page }) => {
       await new HomesteadPage(page).goto({
@@ -37,11 +38,13 @@ test.describe("Homestead Flow", () => {
       await expect(await homestead.constructButton()).toBeVisible({ timeout: 3000 });
     });
 
-    test("homestead farm tab displays farm plots", async ({ page }) => {
+    test("homestead farm tab displays visible farm plots", async ({ page }) => {
       const homestead = new HomesteadPage(page);
       await homestead.switchTab("Farm");
-      await expect(page.getByText("Herb Garden").first()).toBeVisible({ timeout: 3000 });
-      await expect(page.getByText("Wheat Field").first()).toBeVisible();
+      await expect(page.getByRole("button", { name: /Herb Garden/ })).toBeVisible({ timeout: 3000 });
+      await expect(page.getByRole("img", { name: "Herb Garden" })).toBeVisible();
+      // Placeholder farms (e.g. Wheat Field) are hidden until content ships.
+      await expect(page.getByText("Wheat Field")).toHaveCount(0);
     });
 
     test("research tab shows all research options", async ({ page }) => {

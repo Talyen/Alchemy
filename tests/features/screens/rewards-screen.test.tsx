@@ -2,7 +2,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { RewardsScreen } from "@/features/alchemy/shared/screens";
+import { RewardsScreen } from "@/features/alchemy/run-loop/screens/rewards-screen";
 import { createEmptyRewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
 import type { BattleCard } from "@/lib/game-data";
 import {

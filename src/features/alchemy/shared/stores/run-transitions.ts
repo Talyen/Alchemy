@@ -6,6 +6,7 @@ import type { Screen } from "@/lib/routing";
 import type { UnlockedTalents, TalentXP } from "@/lib/game-data";
 import { flushAlchemySaveNow } from "@/features/alchemy/shared/storage";
 import type { Destination } from "@/features/alchemy/shared/types";
+import type { MaterialInventory } from "@/lib/homestead/types";
 import { createEmptyRewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
 import { getRunDomainStore, useRunDomainStore } from "./run-domain-store";
 import { createInitialRunDomainData } from "./run-domain-types";
@@ -53,6 +54,11 @@ export function restoreRun(
       destinations: activeRun.destinationChoices as Destination[],
     });
   }
+}
+
+/** Active-run snapshot for autosave — null when the run has ended. */
+export function resolveActiveRunForSave(hasActiveRun: boolean, screen?: Screen): ActiveRunData | null {
+  return hasActiveRun ? snapshotRun(screen) : null;
 }
 
 /** Serialize domain store into persisted ActiveRunData. */
@@ -133,21 +139,35 @@ export function flushSaveAfterRunEnd(): void {
   void flushPersistedSave(null);
 }
 
-/** Defeat flow: finalize rewards/XP, persist, audio, and clear combat state. */
-export function applyRunDefeatTeardown(options: {
-  awardRunEndMaterials: () => void;
+/** Shared run-end bookkeeping: materials, XP, save flush, and clear active-run flag. */
+export function finalizeRunEndSession(options: {
+  awardRunEndMaterials: (displayMaterials?: MaterialInventory | null) => MaterialInventory;
   finalizeRunXP: () => void;
-  clearCombatState: () => void;
-}): void {
+  displayMaterials?: MaterialInventory | null;
+}): MaterialInventory {
   const activeChar = useRunDomainStore.getState().progress.characterId;
   useAppStore.getState().setFinishedRunCharacters((prev) => {
     if (prev.includes(activeChar)) return prev;
     return [...prev, activeChar];
   });
 
-  options.awardRunEndMaterials();
+  const materials = options.awardRunEndMaterials(options.displayMaterials);
   options.finalizeRunXP();
   flushSaveAfterRunEnd();
+  getRunDomainStore().setHasActiveRun(false);
+  return materials;
+}
+
+/** Defeat flow: finalize rewards/XP, persist, audio, and clear combat state. */
+export function applyRunDefeatTeardown(options: {
+  awardRunEndMaterials: () => void;
+  finalizeRunXP: () => void;
+  clearCombatState: () => void;
+}): void {
+  finalizeRunEndSession({
+    awardRunEndMaterials: () => options.awardRunEndMaterials(),
+    finalizeRunXP: options.finalizeRunXP,
+  });
   stopAllSfx();
   playDefeat();
   options.clearCombatState();

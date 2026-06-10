@@ -1,10 +1,12 @@
-import { expect, test } from "@playwright/test";
-import { enableFastMode, injectTalentUnlocks, makeCard, startBattleWithDeck } from "./helpers";
+import { expect } from "@playwright/test";
+import { injectTalentUnlocks, makeCard, startBattleWithDeck } from "./helpers";
 import { BattlePage } from "./pages/battle-page";
+import { test } from "./fixtures/e2e";
 
 test.describe("Talents in Battle", () => {
-  test("block-start talent gives starting block in combat", async ({ page }) => {
-    await enableFastMode(page);
+  test("block-start talent gives starting block in combat", async ({ page, fastBattle }) => {
+    void fastBattle;
+
     await injectTalentUnlocks(page, { block: ["block-start"] });
     const SLASH = makeCard();
     await startBattleWithDeck(page, Array.from({ length: 8 }, () => SLASH));
@@ -12,8 +14,9 @@ test.describe("Talents in Battle", () => {
     await expect(page.getByRole("button", { name: "Block 10" })).toBeVisible({ timeout: 3000 });
   });
 
-  test("physical-brute-force talent increases physical damage dealt", async ({ page }) => {
-    await enableFastMode(page);
+  test("physical-brute-force talent increases physical damage dealt", async ({ page, fastBattle }) => {
+    void fastBattle;
+
     await injectTalentUnlocks(page, { physical: ["physical-brute-force"] });
     const SLASH = makeCard();
     await startBattleWithDeck(page, Array.from({ length: 8 }, () => SLASH));

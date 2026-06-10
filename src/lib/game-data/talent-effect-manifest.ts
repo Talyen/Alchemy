@@ -30,7 +30,6 @@ export type TalentEffectManifest = {
 
   // --- Block ---
   startBlock: number;
-  blockToPhysicalDamage: boolean;
   blockPreventsBleed: boolean;
   blockPreventsPoison: boolean;
   blockPreventsStun: boolean;

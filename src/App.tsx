@@ -35,7 +35,7 @@ import { useVirtualResolution } from "@/features/alchemy/shared/hooks";
 import { GameMenu } from "@/features/alchemy/shared/ui/shared-ui";
 import { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";
 import { useHomesteadStore } from "@/features/alchemy/shared/stores/homestead-store";
-import { HomesteadProvider } from "@/features/alchemy/meta/homestead-context";
+import { CardDescriptionProvider } from "@/features/alchemy/shared/context/card-description-context";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { BackgroundParticles } from "@/features/alchemy/shared/ui/background-particles";
 import { platform } from "@/lib/platform";
@@ -171,7 +171,6 @@ function AppMainContent({
     return {
       navigation: {
         goToScreen: (screen: Screen) => runRef.current.goToScreen(screen),
-        navigateTo: (screen: Screen) => runRef.current.goToScreen(screen),
       },
       runStart: {
         beginCampaign: () => runRef.current.beginCampaign(),
@@ -277,7 +276,7 @@ function AppMainContent({
       key={renderedScreen}
       className={cn(pagePhase === "exit" ? "page-exit" : "page-enter", "h-full w-full overflow-hidden")}
     >
-      <HomesteadProvider
+      <CardDescriptionProvider
         cardDescriptionContext={{
           flatPhysicalDamage: homesteadEffects.flatPhysicalDamage,
           companionDamage: homesteadEffects.companionDamage,
@@ -304,7 +303,7 @@ function AppMainContent({
             onUnlockAllDevMode={unlockAllDevMode}
           />
         </AppScreenChromeProvider>
-      </HomesteadProvider>
+      </CardDescriptionProvider>
     </div>
   );
 

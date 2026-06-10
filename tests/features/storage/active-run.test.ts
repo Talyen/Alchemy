@@ -167,7 +167,7 @@ describe("parseActiveRun", () => {
     expect(result!.runDeck.length).toBe(7); // knight default
   });
 
-  it("sets contentSystemType to 'campaign' for unknown types", () => {
+  it("normalizes legacy wildwood contentSystemType to campaign", () => {
     const result = parseActiveRun(makeRunCandidate({ contentSystemType: "wildwood" }));
     expect(result!.contentSystemType).toBe("campaign");
   });

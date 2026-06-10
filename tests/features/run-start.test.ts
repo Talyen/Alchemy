@@ -10,17 +10,15 @@ describe("createRunStartSnapshot", () => {
       contentSystemType: "campaign",
       difficultyId: "difficulty-2",
       talentStartGold: 10,
-      homesteadStartGold: 5,
-      homesteadStartMaxHealthBonus: 3,
     });
 
     expect(result).toMatchObject({
       characterId: "knight",
       contentSystemType: "campaign",
       selectedDifficulty: "difficulty-2",
-      runGold: 15,
-      runPlayerHealth: MAX_PLAYER_HEALTH + 3,
-      runMaxHealth: MAX_PLAYER_HEALTH + 3,
+      runGold: 10,
+      runPlayerHealth: MAX_PLAYER_HEALTH,
+      runMaxHealth: MAX_PLAYER_HEALTH,
       roomsEncountered: 0,
       currentAct: 1,
       destinationIndexInAct: 0,
@@ -37,14 +35,12 @@ describe("createRunStartSnapshot", () => {
       contentSystemType: "labyrinth",
       difficultyId: "difficulty-3",
       talentStartGold: 8,
-      homesteadStartGold: 7,
-      homesteadStartMaxHealthBonus: 2,
     });
 
     expect(result.contentSystemType).toBe("labyrinth");
     expect(result.selectedDifficulty).toBeNull();
-    expect(result.runGold).toBe(15);
-    expect(result.runPlayerHealth).toBe(MAX_PLAYER_HEALTH + 2);
+    expect(result.runGold).toBe(8);
+    expect(result.runPlayerHealth).toBe(MAX_PLAYER_HEALTH);
     expect(result.hasActiveRun).toBe(true);
     expect(result.freshDeck.map((card) => card.id)).toEqual(getStartingDeck("ranger").map((card) => card.id));
   });
@@ -54,8 +50,6 @@ describe("createRunStartSnapshot", () => {
       characterId: "wizard",
       contentSystemType: "wildwood",
       talentStartGold: 99,
-      homesteadStartGold: 99,
-      homesteadStartMaxHealthBonus: 4,
     });
 
     expect(result.contentSystemType).toBe("wildwood");
@@ -65,7 +59,7 @@ describe("createRunStartSnapshot", () => {
     expect(result.roomsEncountered).toBe(0);
     expect(result.completedDestinations).toEqual([]);
     expect(result.hasActiveRun).toBe(false);
-    expect(result.runMaxHealth).toBe(MAX_PLAYER_HEALTH + 4);
+    expect(result.runMaxHealth).toBe(MAX_PLAYER_HEALTH);
     expect(result.freshDeck.map((card) => card.id)).toEqual(getStartingDeck("wizard").map((card) => card.id));
   });
 
@@ -79,8 +73,6 @@ describe("createRunStartSnapshot", () => {
       contentSystemType: "campaign",
       difficultyId: "difficulty-1",
       talentStartGold: 0,
-      homesteadStartGold: 0,
-      homesteadStartMaxHealthBonus: 0,
       draftedDeck: draftedCards,
     });
 
@@ -98,8 +90,6 @@ describe("createRunStartSnapshot", () => {
       contentSystemType: "campaign",
       difficultyId: "difficulty-1",
       talentStartGold: 0,
-      homesteadStartGold: 0,
-      homesteadStartMaxHealthBonus: 0,
     });
 
     expect(result.freshDeck).toEqual(getStartingDeck("wildcard"));

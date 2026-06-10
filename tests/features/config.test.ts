@@ -3,25 +3,21 @@ import { enemyBestiary } from "@/lib/game-data";
 import { getCurrentEnemy } from "@/features/alchemy/shared/config";
 
 describe("getCurrentEnemy", () => {
-  it("returns a normal enemy for room 0", () => {
+  it("returns a non-skeleton enemy when no enemy type is specified", () => {
     const enemy = getCurrentEnemy();
-    expect(enemy).toBeDefined();
-    expect(enemy.id).toBeDefined();
+    expect(enemy.id).not.toBe("skeleton");
   });
 
-  it("returns a non-skeleton enemy for room 1+", () => {
+  it("never returns skeleton from the default pool", () => {
     for (let i = 0; i < 50; i++) {
       const enemy = getCurrentEnemy();
       expect(enemy.id).not.toBe("skeleton");
     }
   });
 
-  it("always returns an enemy even with high room count", () => {
-    for (let i = 0; i < 50; i++) {
-      const enemy = getCurrentEnemy();
-      expect(enemy).toBeDefined();
-      expect(enemy.id).toBeDefined();
-    }
+  it("returns a normal enemy when enemy type is normal", () => {
+    const enemy = getCurrentEnemy("normal");
+    expect(enemy.enemyType).toBe("normal");
   });
 
   it("prefers normal enemies not encountered this run", () => {

@@ -24,8 +24,10 @@ import type { RunProgressStore, RunSessionStore } from "./run-domain-types";
 import type { RunStateController, TalentStateController } from "./run-domain-store";
 import {
   applyRunDefeatTeardown,
+  finalizeRunEndSession,
   flushPersistedSave,
   flushSaveAfterRunEnd,
+  resolveActiveRunForSave,
   restoreRun,
   snapshotRun,
   syncBattleToRun,
@@ -48,8 +50,10 @@ export {
 } from "./run-session-model";
 export {
   applyRunDefeatTeardown,
+  finalizeRunEndSession,
   flushPersistedSave,
   flushSaveAfterRunEnd,
+  resolveActiveRunForSave,
   restoreRun,
   snapshotRun,
   syncBattleToRun,

@@ -5,6 +5,7 @@ import { createActiveRunSnapshot } from "@/lib/active-run-session";
 import { createEmptyRewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
 import {
   applyRunDefeatTeardown,
+  finalizeRunEndSession,
   flushSaveAfterRunEnd,
   restoreRun,
   syncBattleToRun,
@@ -20,6 +21,7 @@ import {
 import { flattenRunSessionForScreens } from "@/features/alchemy/shared/stores/run-screen-data";
 import { computeTalentPoints, type BattleCard } from "@/lib/game-data";
 import type { ActiveRunData } from "@/lib/active-run-session";
+import { emptyInventory } from "@/lib/homestead/inventory";
 
 vi.mock("@/features/alchemy/shared/storage/flush-save", () => ({
   flushAlchemySaveNow: vi.fn().mockResolvedValue(undefined),
@@ -225,6 +227,11 @@ describe("awardMysteryXP", () => {
     getRunProgressStoreView().awardMysteryXP("burn", 20);
     expect(getRunProgressStoreView().runTalentXP.burn).toBe(50);
   });
+
+  it("skips hidden keywords like awardCardXP", () => {
+    getRunProgressStoreView().awardMysteryXP("consume", 50);
+    expect(getRunProgressStoreView().runTalentXP).toEqual({});
+  });
 });
 
 describe("addRunGold", () => {
@@ -237,21 +244,41 @@ describe("addRunGold", () => {
 });
 
 describe("unlockTalent", () => {
-  it("appends talentId to keyword's array", () => {
-    getRunProgressStoreView().unlockTalent("burn", "burn-increased-damage");
-    expect(getRunProgressStoreView().unlockedTalents.burn).toEqual(["burn-increased-damage"]);
+  it("appends the next eligible talent when points are available", () => {
+    setRunProgress({ talentXP: { burn: 10 } });
+    getRunProgressStoreView().unlockTalent("burn", "burn-dmg-1");
+    expect(getRunProgressStoreView().unlockedTalents.burn).toEqual(["burn-dmg-1"]);
   });
 
-  it("preserves existing unlocks", () => {
-    getRunProgressStoreView().unlockTalent("burn", "talent-1");
-    getRunProgressStoreView().unlockTalent("burn", "talent-2");
-    expect(getRunProgressStoreView().unlockedTalents.burn).toEqual(["talent-1", "talent-2"]);
+  it("preserves existing unlocks for sequential choices", () => {
+    setRunProgress({ talentXP: { burn: 30 } });
+    getRunProgressStoreView().unlockTalent("burn", "burn-dmg-1");
+    getRunProgressStoreView().unlockTalent("burn", "burn-dmg-2");
+    expect(getRunProgressStoreView().unlockedTalents.burn).toEqual(["burn-dmg-1", "burn-dmg-2"]);
   });
 
   it("ignores duplicate unlock of the same talentId", () => {
-    getRunProgressStoreView().unlockTalent("burn", "talent-1");
-    getRunProgressStoreView().unlockTalent("burn", "talent-1");
-    expect(getRunProgressStoreView().unlockedTalents.burn).toEqual(["talent-1"]);
+    setRunProgress({ talentXP: { burn: 10 } });
+    getRunProgressStoreView().unlockTalent("burn", "burn-dmg-1");
+    getRunProgressStoreView().unlockTalent("burn", "burn-dmg-1");
+    expect(getRunProgressStoreView().unlockedTalents.burn).toEqual(["burn-dmg-1"]);
+  });
+
+  it("rejects unlock without unspent points", () => {
+    getRunProgressStoreView().unlockTalent("burn", "burn-dmg-1");
+    expect(getRunProgressStoreView().unlockedTalents.burn).toBeUndefined();
+  });
+
+  it("rejects out-of-order unlocks", () => {
+    setRunProgress({ talentXP: { burn: 10 } });
+    getRunProgressStoreView().unlockTalent("burn", "burn-dmg-2");
+    expect(getRunProgressStoreView().unlockedTalents.burn).toBeUndefined();
+  });
+
+  it("rejects placeholder talents", () => {
+    setRunProgress({ talentXP: { nature: 100 } });
+    getRunProgressStoreView().unlockTalent("nature", "nature-placeholder-1");
+    expect(getRunProgressStoreView().unlockedTalents.nature).toBeUndefined();
   });
 });
 
@@ -290,7 +317,7 @@ describe("clearPermanentData", () => {
   it("clears talentXP, runTalentXP, and unlockedTalents", () => {
     getRunProgressStoreView().awardMysteryXP("burn", 50);
     getRunProgressStoreView().finalizeRunXP();
-    getRunProgressStoreView().unlockTalent("burn", "talent-1");
+    getRunProgressStoreView().unlockTalent("burn", "burn-dmg-1");
     getRunProgressStoreView().clearPermanentData();
     expect(getRunProgressStoreView().talentXP).toEqual({});
     expect(getRunProgressStoreView().runTalentXP).toEqual({});
@@ -302,11 +329,11 @@ describe("reset", () => {
   it("preserves talentXP and unlockedTalents while clearing run state", () => {
     getRunProgressStoreView().awardMysteryXP("burn", 50);
     getRunProgressStoreView().finalizeRunXP();
-    getRunProgressStoreView().unlockTalent("burn", "talent-1");
+    getRunProgressStoreView().unlockTalent("burn", "burn-dmg-1");
     setRunProgress({ runGold: 100, runPlayerHealth: 15 });
     getRunProgressStoreView().reset();
     expect(getRunProgressStoreView().talentXP.burn).toBe(50);
-    expect(getRunProgressStoreView().unlockedTalents.burn).toEqual(["talent-1"]);
+    expect(getRunProgressStoreView().unlockedTalents.burn).toEqual(["burn-dmg-1"]);
     expect(getRunProgressStoreView().runTalentXP).toEqual({});
     expect(getRunProgressStoreView().runGold).toBe(0);
     expect(getRunProgressStoreView().runPlayerHealth).toBeGreaterThan(0);
@@ -483,6 +510,15 @@ describe("run transitions", () => {
     await vi.waitFor(() => {
       expect(flushAlchemySaveNow).toHaveBeenCalledWith(null);
     });
+  });
+
+  it("finalizeRunEndSession clears hasActiveRun", () => {
+    getRunSessionStoreView().setHasActiveRun(true);
+    finalizeRunEndSession({
+      awardRunEndMaterials: vi.fn(() => emptyInventory()),
+      finalizeRunXP: vi.fn(),
+    });
+    expect(getRunSessionStoreView().hasActiveRun).toBe(false);
   });
 
   it("applyRunDefeatTeardown awards materials, finalizes XP, flushes, and clears combat", async () => {

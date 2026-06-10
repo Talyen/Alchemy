@@ -6,6 +6,7 @@ import { buildOptionsScreen } from "./options-route";
 import { metaScreenRoutes } from "./meta-routes";
 import { runSetupScreenRoutes } from "./run-setup-routes";
 import { runLoopScreenRoutes } from "./run-loop-routes";
+import { runEndScreenRoutes } from "./run-end-routes";
 import { withScreenBoundary } from "./with-screen-boundary";
 import type { ScreenRouteContext } from "./types";
 
@@ -15,6 +16,7 @@ const SCREEN_ROUTES: Record<Screen, (ctx: ScreenRouteContext) => ReactNode> = {
   ...metaScreenRoutes,
   ...runSetupScreenRoutes,
   ...runLoopScreenRoutes,
+  ...runEndScreenRoutes,
   options: buildOptionsScreen,
 } as Record<Screen, (ctx: ScreenRouteContext) => ReactNode>;
 

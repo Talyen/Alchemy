@@ -83,7 +83,15 @@ jobs:
       - if: steps.npm-cache.outputs.cache-hit != 'true'
         run: npm install -g npm@11 && npm ci
 
-      - run: npm test
+      - run: mkdir -p reports
+      - run: npx vitest run --reporter=default --reporter=json --outputFile=reports/vitest-timings.json
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: vitest-timings
+          path: reports/vitest-timings.json
+          if-no-files-found: ignore
 
   build:
     needs: install
@@ -123,6 +131,7 @@ jobs:
 
   e2e:
     needs: build
+    if: github.event_name != 'push' || github.ref != 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -188,8 +197,13 @@ jobs:
   e2e-full:
     needs: build
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    name: Full E2E (${{ matrix.shard }}/4)
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     steps:
       - uses: actions/checkout@v5
 
@@ -229,8 +243,8 @@ jobs:
         timeout-minutes: 15
         run: npx playwright install chromium
 
-      - name: Run full e2e against production build
-        run: npm run test:e2e:preview
+      - name: Run full e2e shard against production build
+        run: npm run test:e2e:preview -- --shard=${{ matrix.shard }}/4
         env:
           CI: true
 
@@ -238,7 +252,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v5
         with:
-          name: playwright-report-full
+          name: playwright-report-full-${{ matrix.shard }}
           path: |
             playwright-report/
             test-results/

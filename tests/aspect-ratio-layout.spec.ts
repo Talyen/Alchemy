@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
-import { makeCard, SAVE_KEY, selectGameMode, startBattleWithDeck } from "./helpers";
+import { enableFastMode, makeCard, SAVE_KEY, startBattleWithDeck } from "./helpers";
+import { MenuPage } from "./pages/menu-page";
 
 async function setAspectRatio(page: import("@playwright/test").Page, aspectRatio: string) {
   await page.addInitScript(({ saveKey, ar }) => {
@@ -57,8 +58,7 @@ for (const { width, height, label } of RESOLUTIONS) {
     test("character-select screen fits viewport without overflow", async ({ page }) => {
       await setAspectRatio(page, "16:9");
       await page.setViewportSize({ width, height });
-      await page.goto("/");
-      await selectGameMode(page, "campaign");
+      await new MenuPage(page).goToCharacterSelect();
       await expect(page.getByRole("heading", { name: "Choose Your Hero" })).toBeVisible();
       await assertNoOverflow(page, "Character Select");
     });
@@ -66,6 +66,7 @@ for (const { width, height, label } of RESOLUTIONS) {
     test("battle screen cards and controls fit viewport without overflow", async ({ page }) => {
       await setAspectRatio(page, "16:9");
       await page.setViewportSize({ width, height });
+      await enableFastMode(page);
       await startBattleWithDeck(page, Array.from({ length: 6 }, () => makeCard()));
 
       await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible();

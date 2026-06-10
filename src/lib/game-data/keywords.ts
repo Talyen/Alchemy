@@ -186,3 +186,18 @@ export const keywordDefinitions: Record<KeywordId, KeywordDefinition> = {
     shineColors: ["#fdba74", "#ea580c", "#fdba74"],
   },
 };
+
+/** Keywords shown in the talent tree and counted for unspent-point badges. */
+export function getVisibleKeywordIds(): KeywordId[] {
+  return (Object.keys(keywordDefinitions) as KeywordId[]).filter((kw) => !keywordDefinitions[kw].hidden);
+}
+
+/** Keywords that earn in-run talent XP (excludes hidden trees until they ship). */
+export function getTalentXpKeywordIds(): KeywordId[] {
+  return getVisibleKeywordIds();
+}
+
+export function filterKeywordsForTalentXP(keywords: KeywordId[]): KeywordId[] {
+  const allowed = new Set(getTalentXpKeywordIds());
+  return keywords.filter((kw) => allowed.has(kw));
+}

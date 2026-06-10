@@ -11,7 +11,7 @@ import { readActiveRunStore } from "../../shared/stores/run-session-facade";
 import { useHomesteadStore } from "../../shared/stores/homestead-store";
 import { applyMaterialFindBonus } from "@/lib/homestead/loot";
 
-export function useMysteryFlow({ advanceToNextDestination }: { advanceToNextDestination: () => void }) {
+export function useMysteryFlow() {
   const { mysteryEvent, mysteryCardChoices } = useRunSessionMysterySlice();
 
   function beginMysteryEvent(navigateToMystery: () => void) {
@@ -54,10 +54,6 @@ export function useMysteryFlow({ advanceToNextDestination }: { advanceToNextDest
     readActiveRunStore().setRunDeck((p) => p.filter((_, i) => i !== index));
   }
 
-  function handleMysteryContinue() {
-    advanceToNextDestination();
-  }
-
   function clearCardChoices() {
     setMysteryCardChoices(null);
   }
@@ -69,7 +65,6 @@ export function useMysteryFlow({ advanceToNextDestination }: { advanceToNextDest
     handleMysteryChoice,
     handleMysteryChooseCard,
     handleMysteryRemoveCard,
-    handleMysteryContinue,
     clearCardChoices,
   };
 }

@@ -37,12 +37,21 @@ function getPlayerBlockHalf(state: BattleState): number {
  * Calculates raw base damage amount before any keyword specific modifiers are applied.
  * Evaluates forge bonus and whether the damage scales on current block or armor.
  */
+function getForgeBonusForDamage(state: BattleState, damageType: DamageType): number {
+  if (!forgeAppliesToDamageType(damageType, state.talentEffects)) return 0;
+  const forge = state.playerStatuses.forge;
+  if (damageType === "physical" && state.talentEffects.forgeToPhysicalDamageMultiplier > 0) {
+    return forge * state.talentEffects.forgeToPhysicalDamageMultiplier;
+  }
+  return forge;
+}
+
 function computeBaseRawAmount(
   state: BattleState,
   effect: Extract<BattleCardEffect, { kind: "damage" }>,
   card?: BattleCard,
 ): number {
-  const forgeBonus = forgeAppliesToDamageType(effect.damageType, state.talentEffects) ? state.playerStatuses.forge : 0;
+  const forgeBonus = getForgeBonusForDamage(state, effect.damageType);
 
   if (effect.equalToBlock) {
     return state.playerStatuses.block + forgeBonus;
@@ -72,11 +81,6 @@ function applyPhysicalScaling(state: BattleState, rawAmount: number): number {
   }
   if (state.talentEffects.blockToPhysicalDamageMultiplier > 0) {
     nextAmount += Math.round(state.playerStatuses.block * state.talentEffects.blockToPhysicalDamageMultiplier);
-  } else if (state.talentEffects.blockToPhysicalDamage) {
-    nextAmount += getPlayerBlockHalf(state);
-  }
-  if (state.talentEffects.forgeToPhysicalDamageMultiplier > 0) {
-    nextAmount += state.playerStatuses.forge;
   }
   return nextAmount;
 }

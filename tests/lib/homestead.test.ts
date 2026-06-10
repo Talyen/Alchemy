@@ -4,9 +4,14 @@ import {
 } from "@/lib/homestead/types";
 import { emptyInventory, addInventory, canAfford, subtractInventory } from "@/lib/homestead/inventory";
 import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
-import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
+import { buildings, farmPlots, researchUpgrades, visibleFarmPlots } from "@/lib/homestead/data";
 import { computeHomesteadEffects, mergeIntoManifest } from "@/lib/homestead/effects";
-import { applyMaterialFindBonus, getEnemyMaterialLoot, getEndOfRunMaterials } from "@/lib/homestead/loot";
+import {
+  applyEndOfRunHomesteadBonuses,
+  applyMaterialFindBonus,
+  getEnemyMaterialLoot,
+  getEndOfRunMaterials,
+} from "@/lib/homestead/loot";
 import { createEmptyTalentManifest } from "@/lib/game-data";
 
 // ─── types ──────────────────────────────────────────────────────
@@ -235,10 +240,23 @@ describe("computeHomesteadEffects", () => {
     expect(effects.flatNatureDamage).toBe(1);
   });
 
-  it("hunters-lodge adds flatArrowDamage and flatNatureDamage", () => {
+  it("hunters-lodge adds flatArrowDamage, flatNatureDamage, and endRunFoodPerRoom", () => {
     const effects = computeHomesteadEffects({ "hunters-lodge": 3 }, {}, {});
     expect(effects.flatArrowDamage).toBe(3);
     expect(effects.flatNatureDamage).toBe(3);
+    expect(effects.endRunFoodPerRoom).toBe(3);
+  });
+
+  it("herb-garden adds herbFindBonus and endRunHerbsPerRoom", () => {
+    const effects = computeHomesteadEffects({}, { "herb-garden": 2 }, {});
+    expect(effects.herbFindBonus).toBeCloseTo(0.2);
+    expect(effects.endRunHerbsPerRoom).toBe(2);
+  });
+
+  it("leyline energy tiers 2-3 add endRunCrystalPerRoom", () => {
+    const effects = computeHomesteadEffects({}, {}, { carpentry: 3 });
+    expect(effects.startMana).toBe(4);
+    expect(effects.endRunCrystalPerRoom).toBe(2);
   });
 
   it("companion-sanctuary adds companionDamage", () => {
@@ -278,23 +296,17 @@ describe("mergeIntoManifest", () => {
     companionDamage: 1,
     companionBondLevels: { ...defaultHomesteadEffects.companionBondLevels, wolf: 2 },
     forgeToBurn: true,
-    potionHealMultiplier: 0.2,
-    potionDiscount: 0.1,
-    startGold: 5,
-    startBlock: 3,
-    campfireHealBonus: 0.05,
-    physicalCritChance: 2,
-    startMaxHealthBonus: 5,
+    potionPotency: 0.2,
   });
 
   it("adds homestead effects to talent effects", () => {
     const merged = mergeIntoManifest(makeTalentManifest(), makeHomesteadEffects());
     expect(merged.flatPhysicalDamage).toBe(4);
-    expect(merged.startGold).toBe(15);
-    expect(merged.startBlock).toBe(5);
-    expect(merged.campfireHealBonus).toBeCloseTo(0.15);
-    expect(merged.physicalCritChance).toBe(7);
-    expect(merged.potionDiscount).toBeCloseTo(0.1);
+    expect(merged.startGold).toBe(10);
+    expect(merged.startBlock).toBe(2);
+    expect(merged.campfireHealBonus).toBeCloseTo(0.1);
+    expect(merged.physicalCritChance).toBe(5);
+    expect(merged.potionPotency).toBeCloseTo(1.2);
     expect(merged.companionBondLevels.wolf).toBe(2);
     expect(merged.forgeToBurn).toBe(true);
     expect(merged.healMultiplier).toBe(1);
@@ -314,7 +326,7 @@ describe("mergeIntoManifest", () => {
 
   it("does not spread homestead-only fields into talent manifest", () => {
     const merged = mergeIntoManifest(makeTalentManifest(), makeHomesteadEffects());
-    expect((merged as Record<string, unknown>).startMaxHealthBonus).toBeUndefined();
+    expect((merged as Record<string, unknown>).endRunFoodPerRoom).toBeUndefined();
   });
 });
 
@@ -409,6 +421,63 @@ describe("applyMaterialFindBonus", () => {
   it("returns the same reward when no herbs are present", () => {
     const materials = { wood: 1, iron: 0, herbs: 0, food: 2, crystal: 0 };
     expect(applyMaterialFindBonus(materials, { herbFindBonus: 0.3 })).toBe(materials);
+  });
+});
+
+describe("applyEndOfRunHomesteadBonuses", () => {
+  it("applies flat end-of-run yields separately from herb find multiplier", () => {
+    const base = { wood: 4, iron: 0, herbs: 10, food: 3, crystal: 1 };
+    const effects = {
+      endRunFoodPerRoom: 2,
+      endRunHerbsPerRoom: 1,
+      endRunCrystalPerRoom: 1,
+      herbFindBonus: 0.1,
+    };
+    const result = applyEndOfRunHomesteadBonuses(base, effects, 4);
+    expect(result.food).toBe(3 + 8);
+    expect(result.crystal).toBe(1 + 4);
+    expect(result.herbs).toBe(Math.floor((10 + 4) * 1.1));
+    expect(result.wood).toBe(4);
+  });
+
+  it("does not add flat herbs when only herbFindBonus is set", () => {
+    const base = { wood: 0, iron: 0, herbs: 10, food: 0, crystal: 0 };
+    const result = applyEndOfRunHomesteadBonuses(
+      base,
+      { ...defaultHomesteadEffects, herbFindBonus: 0.1 },
+      5,
+    );
+    expect(result.herbs).toBe(11);
+  });
+});
+
+describe("homestead content integrity", () => {
+  it("hides placeholder farms from visibleFarmPlots", () => {
+    expect(visibleFarmPlots.every((farm) => !farm.hidden)).toBe(true);
+    expect(visibleFarmPlots).toHaveLength(1);
+    expect(visibleFarmPlots[0]?.id).toBe("herb-garden");
+    expect(farmPlots.some((farm) => farm.hidden)).toBe(true);
+  });
+
+  it("maps nonCombatBenefitDescription to end-of-run effect fields", () => {
+    for (const building of buildings) {
+      for (const tier of building.tiers) {
+        if (!tier.nonCombatBenefitDescription) continue;
+        expect(tier.effects?.endRunFoodPerRoom).toBeGreaterThan(0);
+      }
+    }
+    for (const farm of farmPlots) {
+      for (const tier of farm.tiers) {
+        if (!tier.nonCombatBenefitDescription) continue;
+        expect(tier.effects?.endRunHerbsPerRoom).toBeGreaterThan(0);
+      }
+    }
+    for (const research of researchUpgrades) {
+      for (const tier of research.tiers) {
+        if (!tier.nonCombatBenefitDescription) continue;
+        expect(tier.effects?.endRunCrystalPerRoom).toBeGreaterThan(0);
+      }
+    }
   });
 });
 

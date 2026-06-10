@@ -1,13 +1,18 @@
 // Run-flow controller for routing, rewards, mysteries, campfires, act transitions, and reset.
-/* eslint-disable react-hooks/refs -- mystery/destination wiring updates ref callbacks after hook init */
+/* eslint-disable react-hooks/refs -- flow handler factories receive timer and draft refs */
 // Depends on: run-session/ui stores, battle system, game constants, audio registry, and navigation flow helpers.
 // Depended on by: useAlchemyRunController for managing the overall flow of a run.
 import { useEffect, useCallback, useRef, useMemo } from "react";
 import { TimerGroup } from "@/lib/animation/game-timer";
-import { useRunAdapter, useTalentAdapter } from "@/features/alchemy/shared/stores/run-session-facade";
+import {
+  useRunAdapter,
+  useTalentAdapter,
+  useRunDomainStore,
+  useRunSessionNavigationSlice,
+} from "@/features/alchemy/shared/stores/run-session-facade";
 import { teardownRun } from "@/features/alchemy/shared/stores/run-transitions";
 import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
-import { useRunDomainStore } from "@/features/alchemy/shared/stores/run-session-facade";
+import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { useBattlePresentationStore } from "@/features/alchemy/shared/stores/battle-presentation-store";
 import { type BattleCard, type CharacterId, type DifficultyId, type DifficultyModifier } from "@/lib/game-data";
 import { playUISound } from "@/lib/audio";
@@ -15,11 +20,9 @@ import { CONSTANTS, type Destination, type Screen } from "@/features/alchemy/sha
 import { getRunAvailableDestinations } from "@/features/alchemy/run-loop/navigation/destination-flow";
 import { getPreviousDestination } from "@/features/alchemy/run-loop/navigation/run-navigation-helpers";
 import { useMysteryFlow } from "@/features/alchemy/run-loop/navigation/use-mystery-flow";
-import { useRunNavigationSession } from "@/features/alchemy/run-loop/navigation/run-navigation-session";
 import { applyCorruptionToDeck } from "@/features/alchemy/run-loop/navigation/run-navigation-corruption";
-import { createRunVictoryHandlers } from "@/features/alchemy/run-loop/run/run-victory-handlers";
+import { createRunFlowHandlers } from "@/features/alchemy/run-loop/run/run-flow-handlers";
 import { createContentSystemNavigation } from "@/features/alchemy/run-setup/run/content-system-navigation";
-import { createRunDestinationHandlers } from "@/features/alchemy/run-loop/run/run-destination-handlers";
 import type { DestinationOptionsInput } from "@/lib/active-run-session";
 
 export function useRunNavigation({
@@ -61,18 +64,17 @@ export function useRunNavigation({
   const completedDifficulties = useAppStore((s) => s.completedDifficulties);
 
   const draftedDeckRef = useRef<BattleCard[] | null>(null);
-  const {
-    phase: runPhase,
-    battle: { hasActiveBattle },
-    clearCardHover,
-    hasActiveRun,
-    activeLabyrinthRewardModifiers,
-    rewardState,
-    runEndMaterials,
-    corruptionResult,
-    pendingCharacterId,
-    pendingContentSystemType,
-  } = useRunNavigationSession(screen);
+  const nav = useRunSessionNavigationSlice(screen);
+  const clearCardHover = useUiStore((s) => s.clearCardHover);
+  const runPhase = nav.phase;
+  const hasActiveBattle = nav.hasActiveBattle;
+  const hasActiveRun = nav.hasActiveRun;
+  const activeLabyrinthRewardModifiers = nav.activeLabyrinthRewardModifiers;
+  const rewardState = nav.rewardState;
+  const runEndMaterials = nav.runEndMaterials;
+  const corruptionResult = nav.corruptionResult;
+  const pendingCharacterId = nav.pendingCharacterId;
+  const pendingContentSystemType = nav.pendingContentSystemType;
 
   const rewardTransitionTimer = useRef(new TimerGroup());
   useEffect(() => () => rewardTransitionTimer.current.clearAll(), []);
@@ -91,21 +93,6 @@ export function useRunNavigation({
     },
     [run.destinationIndexInAct, run.completedDestinations, run.runPlayerHealth, run.runGold, run.runMaxHealth],
   );
-
-  const victoryHandlers = useMemo(
-    () =>
-      createRunVictoryHandlers({
-        rewardTransitionTimer,
-        setScreen,
-        navigateTo,
-        onLabyrinthFailNode,
-        getAvailableDestinations,
-        talents,
-      }),
-    [setScreen, navigateTo, onLabyrinthFailNode, getAvailableDestinations, talents],
-  );
-
-  const { awardRunEndMaterials, clearCombatState, handleBattleVictory, handleBattleDefeat } = victoryHandlers;
 
   const returnToBattle = useCallback(() => {
     if (hasActiveBattle) navigateTo(CONSTANTS.SCREENS.BATTLE);
@@ -140,36 +127,33 @@ export function useRunNavigation({
     ],
   );
 
-  const advanceToNextRef = useRef<() => void>(() => {});
-
-  const mystery = useMysteryFlow({
-    advanceToNextDestination: () => advanceToNextRef.current(),
-  });
+  const mystery = useMysteryFlow();
 
   const beginMysteryEvent = useCallback(() => {
     mystery.beginMysteryEvent(() => navigateTo(CONSTANTS.SCREENS.MYSTERY));
     playUISound("musicBoxMystery");
   }, [mystery, navigateTo]);
 
-  const destinationHandlers = useMemo(
+  const flowHandlers = useMemo(
     () =>
-      createRunDestinationHandlers({
+      createRunFlowHandlers({
+        rewardTransitionTimer,
         run,
         talents,
         activeLabyrinthRewardModifiers,
         navigateTo,
         setScreen,
         setHasActiveBattle,
+        onLabyrinthFailNode,
+        onLabyrinthClearNode,
         onInitShop,
         onInitAlchemist,
         onStartBattle,
         onStartBossBattle,
         onStartBossById,
-        onLabyrinthClearNode,
         onMarkDifficultyCompleted,
         contentNav,
-        awardRunEndMaterials,
-        clearCombatState,
+        getAvailableDestinations,
         beginMysteryEvent,
         clearMysteryCardChoices: mystery.clearCardChoices,
       }),
@@ -180,24 +164,20 @@ export function useRunNavigation({
       navigateTo,
       setScreen,
       setHasActiveBattle,
+      onLabyrinthFailNode,
+      onLabyrinthClearNode,
       onInitShop,
       onInitAlchemist,
       onStartBattle,
       onStartBossBattle,
       onStartBossById,
-      onLabyrinthClearNode,
       onMarkDifficultyCompleted,
       contentNav,
-      awardRunEndMaterials,
-      clearCombatState,
+      getAvailableDestinations,
       beginMysteryEvent,
       mystery.clearCardChoices,
     ],
   );
-
-  useEffect(() => {
-    advanceToNextRef.current = destinationHandlers.advanceToNextDestination;
-  }, [destinationHandlers.advanceToNextDestination]);
 
   function handleWildwoodBossSelect(bossId: string) {
     if (!onStartBossById(bossId)) return;
@@ -216,7 +196,11 @@ export function useRunNavigation({
   }
 
   function handleCorruptionExit() {
-    destinationHandlers.advanceToNextDestination();
+    flowHandlers.advanceToNextDestination();
+  }
+
+  function handleMysteryContinue() {
+    flowHandlers.advanceToNextDestination();
   }
 
   function resetRunState() {
@@ -251,12 +235,12 @@ export function useRunNavigation({
       return pendingCharacterId;
     },
     getAvailableDestinations,
-    advanceToNextDestination: destinationHandlers.advanceToNextDestination,
+    advanceToNextDestination: flowHandlers.advanceToNextDestination,
     beginCampaign: contentNav.beginCampaign,
     beginLabyrinth: contentNav.beginLabyrinth,
     beginWildwood: contentNav.beginWildwood,
     beginMysteryEvent,
-    endLabyrinthRun: destinationHandlers.endLabyrinthRun,
+    endLabyrinthRun: flowHandlers.endLabyrinthRun,
     handleCharacterSelect: contentNav.handleCharacterSelect,
     handleDraftComplete: contentNav.handleDraftComplete,
     handleDifficultySelect: contentNav.handleDifficultySelect,
@@ -264,20 +248,20 @@ export function useRunNavigation({
     handleWildwoodBossSelect,
     returnToBattle,
     goToScreen,
-    handleDestinationChoice: destinationHandlers.handleDestinationChoice,
-    handleActComplete: destinationHandlers.handleActComplete,
-    finishRewards: destinationHandlers.finishRewards,
-    selectRewardChoice: destinationHandlers.selectRewardChoice,
-    prepareDestinationScreen: destinationHandlers.prepareDestinationScreen,
-    handleCampfireContinue: destinationHandlers.handleCampfireContinue,
+    handleDestinationChoice: flowHandlers.handleDestinationChoice,
+    handleActComplete: flowHandlers.handleActComplete,
+    finishRewards: flowHandlers.finishRewards,
+    selectRewardChoice: flowHandlers.selectRewardChoice,
+    prepareDestinationScreen: flowHandlers.prepareDestinationScreen,
+    handleCampfireContinue: flowHandlers.handleCampfireContinue,
     handleCorruptCard,
     handleCorruptionExit,
     handleMysteryChoice: mystery.handleMysteryChoice,
     handleMysteryChooseCard: mystery.handleMysteryChooseCard,
     handleMysteryRemoveCard: mystery.handleMysteryRemoveCard,
-    handleMysteryContinue: mystery.handleMysteryContinue,
+    handleMysteryContinue,
     resetRunState,
-    handleBattleVictory,
-    handleBattleDefeat,
+    handleBattleVictory: flowHandlers.handleBattleVictory,
+    handleBattleDefeat: flowHandlers.handleBattleDefeat,
   };
 }

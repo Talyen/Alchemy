@@ -3,8 +3,6 @@ import {
   applyLabyrinthRewardMaterialModifiers,
   computeVictoryGoldResult,
   createEmptyRewardState,
-  createBossRewardState,
-  createCombatRewardState,
   executeRewardRouteTransition,
   getActiveRewardModifiersForContentSystem,
   getCompanionCardChoices,
@@ -17,28 +15,12 @@ import {
   shouldGrantCompanionReward,
 } from "@/features/alchemy/run-loop/navigation/reward-flow";
 import { getStandardPotionPool } from "@/lib/game-data";
-import { LABYRINTH_REWARD_CONFIG } from "@/lib/game-constants";
 import { CONSTANTS } from "@/features/alchemy/shared/types";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import type { LabyrinthModifierKind } from "@/lib/content-systems/types";
 import type { BattleCard, TrinketEntry } from "@/lib/game-data";
 
-vi.mock("@/lib/game-data/reward-selection", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/lib/game-data/reward-selection")>();
-  return {
-    ...actual,
-    selectRewardCards: vi.fn(() => [{ id: "mock-card", title: "Mock", descriptionLines: [""], art: "", cost: 1, effects: [] }]),
-  };
-});
-
-vi.mock("@/features/alchemy/shared/utils", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/features/alchemy/shared/utils")>();
-  return {
-    ...actual,
-    sampleItems: vi.fn(() => [{ id: "mock-trinket", title: "Mock Trinket", description: "", art: "" }]),
-  };
-});
-
+describe("reward flow orchestration", () => {
 describe("createEmptyRewardState", () => {
   it("returns initial state with defaults", () => {
     const result = createEmptyRewardState();
@@ -51,106 +33,6 @@ describe("createEmptyRewardState", () => {
   it("accepts optional destinations", () => {
     const result = createEmptyRewardState(["Campfire"]);
     expect(result.destinations).toEqual(["Campfire"]);
-  });
-});
-
-describe("createBossRewardState", () => {
-  it("creates trinket reward with summed gold", () => {
-    const result = createBossRewardState({ gold: 10, bossBonus: 5, generousBonus: 0, talentGoldPerCombat: 2, materials: emptyInventory(), trinketIds: [] });
-    expect(result.rewardType).toBe("trinket");
-    expect(result.gold).toBe(17);
-  });
-
-  it("handles zero bonuses", () => {
-    const result = createBossRewardState({ gold: 0, bossBonus: 0, generousBonus: 0, talentGoldPerCombat: 0, materials: emptyInventory(), trinketIds: [] });
-    expect(result.gold).toBe(0);
-    expect(result.choices.length).toBeGreaterThan(0);
-  });
-
-  it("applies goldMultiplier to boss reward gold", () => {
-    const result = createBossRewardState({ gold: 10, bossBonus: 5, generousBonus: 0, talentGoldPerCombat: 2, materials: emptyInventory(), trinketIds: [], goldMultiplier: 2 });
-    expect(result.gold).toBe(34); // floor((10 + 5 + 0 + 2) * 2) = floor(34) = 34
-  });
-
-  it("goldMultiplier defaults to 1 for boss rewards", () => {
-    const result = createBossRewardState({ gold: 10, bossBonus: 5, generousBonus: 0, talentGoldPerCombat: 2, materials: emptyInventory(), trinketIds: [] });
-    expect(result.gold).toBe(17); // 10 + 5 + 0 + 2 = 17
-  });
-});
-
-describe("createCombatRewardState", () => {
-  const baseState = { currentEnemy: { enemyType: "normal" }, gold: 15 } as const;
-
-  it("offers card rewards when random exceeds trinket chance", () => {
-    vi.spyOn(Math, "random").mockReturnValue(0.5);
-    const result = createCombatRewardState({
-      battleState: baseState as never,
-      runDeck: [], gold: 10, eliteBonus: 3, generousBonus: 0, talentGoldPerCombat: 2,
-      materials: emptyInventory(), destinations: ["Campfire"], trinketIds: [],
-    });
-    expect(result.rewardType).toBe("card");
-    expect(result.gold).toBe(15);
-    vi.restoreAllMocks();
-  });
-
-  it("high elite trinket chance offers trinkets for elite enemies", () => {
-    const eliteState = { currentEnemy: { enemyType: "elite" }, gold: 10 } as const;
-    vi.spyOn(Math, "random").mockReturnValue(0.5);
-    const result = createCombatRewardState({
-      battleState: eliteState as never,
-      runDeck: [], gold: 10, eliteBonus: 5, generousBonus: 0, talentGoldPerCombat: 2,
-      materials: emptyInventory(), destinations: [], trinketIds: [],
-    });
-    expect(result.rewardType).toBe("trinket");
-    expect(result.gold).toBe(17);
-    vi.restoreAllMocks();
-  });
-
-  it("includes destinations in result", () => {
-    vi.spyOn(Math, "random").mockReturnValue(0.99);
-    const result = createCombatRewardState({
-      battleState: baseState as never,
-      runDeck: [], gold: 0, eliteBonus: 0, generousBonus: 0, talentGoldPerCombat: 0,
-      materials: emptyInventory(), destinations: ["Normal Combat", "Mystery"], trinketIds: [],
-    });
-    expect(result.destinations).toEqual(["Normal Combat", "Mystery"]);
-    vi.restoreAllMocks();
-  });
-
-  it("applies goldMultiplier to combat reward gold", () => {
-    vi.spyOn(Math, "random").mockReturnValue(0.99);
-    const result = createCombatRewardState({
-      battleState: baseState as never,
-      runDeck: [], gold: 10, eliteBonus: 3, generousBonus: 0, talentGoldPerCombat: 2,
-      materials: emptyInventory(), destinations: [], trinketIds: [],
-      goldMultiplier: 1.5,
-    });
-    expect(result.gold).toBe(22); // floor((10 + 3 + 0 + 2) * 1.5) = floor(22.5) = 22
-    vi.restoreAllMocks();
-  });
-
-  it("goldMultiplier defaults to 1 for combat rewards", () => {
-    vi.spyOn(Math, "random").mockReturnValue(0.99);
-    const result = createCombatRewardState({
-      battleState: baseState as never,
-      runDeck: [], gold: 10, eliteBonus: 3, generousBonus: 0, talentGoldPerCombat: 2,
-      materials: emptyInventory(), destinations: [], trinketIds: [],
-    });
-    expect(result.gold).toBe(15); // 10 + 3 + 0 + 2 = 15
-    vi.restoreAllMocks();
-  });
-
-  it("trinket-hoarder trait adds +10pp trinket chance", () => {
-    const goblinState = { currentEnemy: { enemyType: "normal", traits: [{ id: "trinket-hoarder", title: "Trinket Hoarder", description: "" }] }, gold: 10 } as const;
-    // Roll 0.15 — below base (0.1) + hoarder bonus (0.1) = 0.2, so trinket is offered
-    vi.spyOn(Math, "random").mockReturnValue(0.15);
-    const result = createCombatRewardState({
-      battleState: goblinState as never,
-      runDeck: [], gold: 10, eliteBonus: 3, generousBonus: 0, talentGoldPerCombat: 2,
-      materials: emptyInventory(), destinations: [], trinketIds: [],
-    });
-    expect(result.rewardType).toBe("trinket");
-    vi.restoreAllMocks();
   });
 });
 
@@ -241,12 +123,32 @@ describe("finalizeRewardState", () => {
   const companionChoice: BattleCard = { id: "wolf-companion", title: "Wolf", descriptionLines: ["Summon wolf"], art: "", cost: 1, effects: [] };
   const trinketChoice: TrinketEntry = { id: "bone-charm", title: "Bone Charm", description: "Heal on kill", art: "" };
 
+  function stampedRewardState(
+    overrides: Partial<ReturnType<typeof createEmptyRewardState>> = {},
+    victory: { enemyType: string; contentSystem: "campaign" | "labyrinth" | "wildwood" } = {
+      enemyType: "normal",
+      contentSystem: "campaign",
+    },
+  ) {
+    return {
+      ...createEmptyRewardState(),
+      ...overrides,
+      lastVictoryEnemyType: victory.enemyType,
+      lastVictoryContentSystem: victory.contentSystem,
+    };
+  }
+
   it("returns the selected card reward and routes normal campaign fights to destination", () => {
     const result = finalizeRewardState({
-      rewardState: { choices: [cardChoice], gold: 10, materials: emptyInventory(), selectedId: "slash", destinations: ["Campfire"], rewardType: "card" },
+      rewardState: stampedRewardState({
+        choices: [cardChoice],
+        gold: 10,
+        materials: emptyInventory(),
+        selectedId: "slash",
+        destinations: ["Campfire"],
+        rewardType: "card",
+      }),
       companionRewardCards: null,
-      contentSystemType: "campaign",
-      currentEnemyType: "normal",
       grantAlchemistReward: false,
     });
 
@@ -258,7 +160,7 @@ describe("finalizeRewardState", () => {
 
   it("preserves selected boss metadata for the destination preview", () => {
     const result = finalizeRewardState({
-      rewardState: {
+      rewardState: stampedRewardState({
         choices: [cardChoice],
         gold: 10,
         materials: emptyInventory(),
@@ -266,10 +168,8 @@ describe("finalizeRewardState", () => {
         destinations: ["Boss Combat"],
         rewardType: "card",
         selectedBossId: "frostwarden",
-      },
+      }),
       companionRewardCards: null,
-      contentSystemType: "campaign",
-      currentEnemyType: "normal",
       grantAlchemistReward: false,
     });
 
@@ -278,10 +178,15 @@ describe("finalizeRewardState", () => {
 
   it("returns the selected trinket reward", () => {
     const result = finalizeRewardState({
-      rewardState: { choices: [trinketChoice], gold: 10, materials: emptyInventory(), selectedId: "bone-charm", destinations: [], rewardType: "trinket" },
+      rewardState: stampedRewardState({
+        choices: [trinketChoice],
+        gold: 10,
+        materials: emptyInventory(),
+        selectedId: "bone-charm",
+        destinations: [],
+        rewardType: "trinket",
+      }),
       companionRewardCards: null,
-      contentSystemType: "campaign",
-      currentEnemyType: "normal",
       grantAlchemistReward: false,
     });
 
@@ -291,25 +196,42 @@ describe("finalizeRewardState", () => {
 
   it("creates the companion reward step before routing onward", () => {
     const result = finalizeRewardState({
-      rewardState: { choices: [cardChoice], gold: 10, materials: emptyInventory(), selectedId: "slash", destinations: ["Mystery"], rewardType: "card" },
+      rewardState: stampedRewardState(
+        {
+          choices: [cardChoice],
+          gold: 10,
+          materials: emptyInventory(),
+          selectedId: "slash",
+          destinations: ["Mystery"],
+          rewardType: "card",
+        },
+        { enemyType: "normal", contentSystem: "labyrinth" },
+      ),
       companionRewardCards: [companionChoice],
-      contentSystemType: "labyrinth",
-      currentEnemyType: "normal",
       grantAlchemistReward: true,
     });
 
     expect(result.route).toBe("companion-reward");
     expect(result.clearCompanionRewardCards).toBe(true);
     expect(result.grantAlchemistReward).toBe(true);
-    expect(result.nextRewardState).toEqual({ choices: [companionChoice], gold: 0, materials: emptyInventory(), selectedId: null, destinations: ["Mystery"], rewardType: "card" });
+    expect(result.nextRewardState).toEqual(
+      expect.objectContaining({
+        choices: [companionChoice],
+        gold: 0,
+        materials: emptyInventory(),
+        selectedId: null,
+        destinations: ["Mystery"],
+        rewardType: "card",
+        lastVictoryEnemyType: "normal",
+        lastVictoryContentSystem: "labyrinth",
+      }),
+    );
   });
 
   it("routes labyrinth non-boss rewards back to the labyrinth map", () => {
     const result = finalizeRewardState({
-      rewardState: createEmptyRewardState(),
+      rewardState: stampedRewardState({}, { enemyType: "elite", contentSystem: "labyrinth" }),
       companionRewardCards: null,
-      contentSystemType: "labyrinth",
-      currentEnemyType: "elite",
       grantAlchemistReward: false,
     });
 
@@ -318,10 +240,8 @@ describe("finalizeRewardState", () => {
 
   it("routes labyrinth boss rewards to run victory", () => {
     const result = finalizeRewardState({
-      rewardState: createEmptyRewardState(),
+      rewardState: stampedRewardState({}, { enemyType: "boss", contentSystem: "labyrinth" }),
       companionRewardCards: null,
-      contentSystemType: "labyrinth",
-      currentEnemyType: "boss",
       grantAlchemistReward: false,
     });
 
@@ -330,10 +250,8 @@ describe("finalizeRewardState", () => {
 
   it("routes campaign boss rewards to act completion", () => {
     const result = finalizeRewardState({
-      rewardState: createEmptyRewardState(),
+      rewardState: stampedRewardState({}, { enemyType: "boss", contentSystem: "campaign" }),
       companionRewardCards: null,
-      contentSystemType: "campaign",
-      currentEnemyType: "boss",
       grantAlchemistReward: false,
     });
 
@@ -342,10 +260,8 @@ describe("finalizeRewardState", () => {
 
   it("routes wildwood rewards to wildwood victory", () => {
     const result = finalizeRewardState({
-      rewardState: createEmptyRewardState(),
+      rewardState: stampedRewardState({}, { enemyType: "normal", contentSystem: "wildwood" }),
       companionRewardCards: null,
-      contentSystemType: "wildwood",
-      currentEnemyType: "normal",
       grantAlchemistReward: false,
     });
 
@@ -366,16 +282,6 @@ describe("getRandomPotionCard", () => {
     const pool = getStandardPotionPool();
     const card = getRandomPotionCard(() => 0.99);
     expect(card.id).toBe(pool[pool.length - 1]?.id);
-  });
-});
-
-describe("getCompanionCardChoices", () => {
-  it("returns deterministic companion choices with fixed rng", () => {
-    const choices = getCompanionCardChoices(() => 0);
-    expect(choices).toHaveLength(LABYRINTH_REWARD_CONFIG.companionCardChoices);
-    for (const card of choices) {
-      expect(card.effects?.some((e) => e.kind === "summon-companion")).toBe(true);
-    }
   });
 });
 
@@ -446,4 +352,5 @@ describe("executeRewardRouteTransition", () => {
     executeRewardRouteTransition("destination", materials, nextRewardState, false, handlers);
     expect(handlers.navigateTo).toHaveBeenCalledWith(CONSTANTS.SCREENS.DESTINATION, expect.any(Function));
   });
+});
 });

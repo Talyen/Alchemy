@@ -9,13 +9,13 @@ import { buildings, farmPlots, researchUpgrades } from "./data";
 
 function applyTierEffects(base: HomesteadEffectManifest, partial?: Partial<HomesteadEffectManifest>): void {
   if (!partial) return;
-  const b = base as unknown as Record<string, number | boolean>;
   for (const key of Object.keys(partial) as (keyof HomesteadEffectManifest)[]) {
+    if (key === "companionBondLevels") continue;
     const val = partial[key];
     if (typeof val === "number") {
-      b[key] = ((b[key] as number) ?? 0) + val;
+      (base[key] as number) += val;
     } else if (typeof val === "boolean") {
-      b[key] = (b[key] as boolean) || val;
+      (base[key] as boolean) = (base[key] as boolean) || val;
     }
   }
 }
@@ -66,12 +66,7 @@ export function mergeIntoManifest(
     ...talentEffects,
     flatPhysicalDamage: talentEffects.flatPhysicalDamage + homesteadEffects.flatPhysicalDamage,
     companionDamage: talentEffects.companionDamage + homesteadEffects.companionDamage,
-    startGold: talentEffects.startGold + homesteadEffects.startGold,
-    startBlock: talentEffects.startBlock + homesteadEffects.startBlock,
-    campfireHealBonus: talentEffects.campfireHealBonus + homesteadEffects.campfireHealBonus,
-    physicalCritChance: talentEffects.physicalCritChance + homesteadEffects.physicalCritChance,
     companionBondLevels: { ...talentEffects.companionBondLevels, ...homesteadEffects.companionBondLevels },
-    potionDiscount: talentEffects.potionDiscount + Math.round(homesteadEffects.potionDiscount * 100) / 100,
     potionPotency: talentEffects.potionPotency + homesteadEffects.potionPotency,
     forgeToBurn: talentEffects.forgeToBurn || homesteadEffects.forgeToBurn,
     flatBurnDamage: talentEffects.flatBurnDamage + homesteadEffects.flatBurnDamage,

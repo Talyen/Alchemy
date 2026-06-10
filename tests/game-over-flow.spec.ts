@@ -1,28 +1,25 @@
-import { expect, test } from "@playwright/test";
-import { enableFastMode, makeCard, makeHighDamageCard, startAtDestination, startBattleWithDeck } from "./helpers";
+import { expect } from "@playwright/test";
+import { assertDefeatFromEndRun, makeCard, makeHighDamageCard, startAtDestination, startBattleWithDeck } from "./helpers";
 import { BattlePage } from "./pages/battle-page";
+import { test } from "./fixtures/e2e";
 import { critical } from "./playwright-tags";
 
 test.describe("Game Over via End Run", critical, () => {
-  test("ending a run shows defeat screen and return to menu works", async ({ page }) => {
-    await enableFastMode(page);
+  test("ending a run shows defeat screen and return to menu works", async ({ page, fastBattle }) => {
+    void fastBattle;
+
     await startBattleWithDeck(page, Array.from({ length: 6 }, () => makeCard()));
-    const battle = new BattlePage(page);
-    await battle.menuBtn.click();
-    await page.getByRole("button", { name: "End Run" }).click();
-    await expect(page.getByRole("heading", { name: "Defeat" })).toBeVisible({ timeout: 5000 });
-    await expect(page.getByRole("button", { name: "Return to Main Menu" })).toBeVisible({ timeout: 3000 });
-    await page.getByRole("button", { name: "Return to Main Menu" }).click();
-    await expect(page.getByRole("button", { name: "Play" })).toBeVisible({ timeout: 3000 });
+    await assertDefeatFromEndRun(page, { returnToMenu: true });
   });
 });
 
-test.describe("Death's Door", () => {
-  test("fire and heal saves player", async ({ page }) => {
+test.describe("Death's Door", critical, () => {
+  test("fire and heal saves player", async ({ page, fastBattle }) => {
+    void fastBattle;
+
     const LIFE_SAVING_BREAD = { id: "bread", title: "Bread", descriptionLines: ["Gain 30 Health", "Consume"], art: "placeholder", cost: 1, consume: true, effects: [{ kind: "heal", amount: 30 }] };
     const finisher = makeHighDamageCard();
 
-    await enableFastMode(page);
     await startAtDestination(page, {
       runPlayerHealth: 1,
       runMaxHealth: 30,

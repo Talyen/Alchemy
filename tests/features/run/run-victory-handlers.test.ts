@@ -1,28 +1,30 @@
 import { describe, expect, it, beforeEach, vi } from "vitest";
-import { createRunVictoryHandlers } from "@/features/alchemy/run-loop/run/run-victory-handlers";
+import { createRunFlowHandlers } from "@/features/alchemy/run-loop/run/run-flow-handlers";
 import { useHomesteadStore } from "@/features/alchemy/shared/stores/homestead-store";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
-import { computeTalentEffects, createEmptyTalentManifest } from "@/lib/game-data";
 import { CONSTANTS } from "@/features/alchemy/shared/types";
-import type { TalentStateController } from "@/features/alchemy/shared/stores/run-session-facade";
 import {
   getBattleStoreView,
-  getRunProgressStoreView,
   resetRunBattleSlice,
   resetRunProgressSlice,
   setRunProgress,
 } from "../../helpers/run-domain-store-test";
+import { makeFlowHandlerDeps } from "../../helpers/run-flow-handler-deps";
 
 vi.mock("@/lib/audio", () => ({
   playVictory: vi.fn(),
   stopAllSfx: vi.fn(),
 }));
 
-vi.mock("@/features/alchemy/run-loop/navigation/run-navigation-helpers", () => ({
-  applyRunDefeatTeardown: vi.fn(),
-}));
+vi.mock("@/features/alchemy/shared/stores/run-transitions", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/features/alchemy/shared/stores/run-transitions")>();
+  return {
+    ...actual,
+    applyRunDefeatTeardown: vi.fn(),
+  };
+});
 
-import { applyRunDefeatTeardown } from "@/features/alchemy/run-loop/navigation/run-navigation-helpers";
+import { applyRunDefeatTeardown } from "@/features/alchemy/shared/stores/run-transitions";
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -33,35 +35,10 @@ beforeEach(() => {
 });
 
 function makeHandlers() {
-  const rewardTransitionTimer = { current: { clearAll: vi.fn(), setTimeout: vi.fn() } };
-  const setScreen = vi.fn();
-  const navigateTo = vi.fn();
-  const talents: TalentStateController = {
-    talentXP: {},
-    runTalentXP: {},
-    unlockedTalents: {},
-    talentEffects: computeTalentEffects(getRunProgressStoreView().unlockedTalents) ?? createEmptyTalentManifest(),
-    awardCardXP: vi.fn(),
-    unlockTalent: vi.fn(),
-    unlockAllTalents: vi.fn(),
-    resetUnlockedTalents: vi.fn(),
-    resetRunXP: vi.fn(),
-    clearPermanentData: vi.fn(),
-    awardMysteryXP: vi.fn(),
-    finalizeRunXP: vi.fn(),
-  };
-
-  return createRunVictoryHandlers({
-    rewardTransitionTimer,
-    setScreen,
-    navigateTo,
-    onLabyrinthFailNode: vi.fn(),
-    getAvailableDestinations: () => [],
-    talents,
-  });
+  return createRunFlowHandlers(makeFlowHandlerDeps());
 }
 
-describe("createRunVictoryHandlers", () => {
+describe("createRunFlowHandlers victory paths", () => {
   it("awardRunEndMaterials applies homestead herb bonus", () => {
     setRunProgress({ roomsEncountered: 4, currentAct: 1 });
     useHomesteadStore.setState((s) => ({
@@ -97,27 +74,7 @@ describe("createRunVictoryHandlers", () => {
   it("handleBattleDefeat routes labyrinth to map without teardown", () => {
     setRunProgress({ contentSystemType: CONSTANTS.CONTENT_SYSTEMS.LABYRINTH });
     const navigateTo = vi.fn();
-    const handlers = createRunVictoryHandlers({
-      rewardTransitionTimer: { current: { clearAll: vi.fn(), setTimeout: vi.fn() } },
-      setScreen: vi.fn(),
-      navigateTo,
-      onLabyrinthFailNode: vi.fn(),
-      getAvailableDestinations: () => [],
-      talents: {
-        talentXP: {},
-        runTalentXP: {},
-        unlockedTalents: {},
-        talentEffects: computeTalentEffects({}),
-        awardCardXP: vi.fn(),
-        unlockTalent: vi.fn(),
-        unlockAllTalents: vi.fn(),
-        resetUnlockedTalents: vi.fn(),
-        resetRunXP: vi.fn(),
-        clearPermanentData: vi.fn(),
-        awardMysteryXP: vi.fn(),
-        finalizeRunXP: vi.fn(),
-      },
-    });
+    const handlers = createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo }));
     handlers.handleBattleDefeat();
     expect(applyRunDefeatTeardown).not.toHaveBeenCalled();
     expect(navigateTo).toHaveBeenCalledWith(CONSTANTS.SCREENS.LABYRINTH_MAP);

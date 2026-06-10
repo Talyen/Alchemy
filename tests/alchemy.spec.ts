@@ -1,11 +1,12 @@
-import { expect, test } from "@playwright/test";
-import { AEGIS_CARD, BLOCK_CARD, enableFastMode, failOnRuntimeErrors, makeHighDamageCard, startBattleWithDeck } from "./helpers";
+import { expect, test as baseTest } from "@playwright/test";
+import { AEGIS_CARD, BLOCK_CARD, failOnRuntimeErrors, makeHighDamageCard, startBattleWithDeck } from "./helpers";
 import { BattlePage } from "./pages/battle-page";
 import { RewardPage } from "./pages/reward-page";
+import { test } from "./fixtures/e2e";
 import { critical, prepush, smoke } from "./playwright-tags";
 
-test.describe("App Boot", { ...smoke, ...prepush }, () => {
-  test("main menu renders without crashing on desktop", async ({ page }) => {
+baseTest.describe("App Boot", { ...smoke, ...prepush }, () => {
+  baseTest("main menu renders without crashing on desktop", async ({ page }) => {
     const errors = failOnRuntimeErrors(page);
     await page.goto("/");
     await expect(page.getByRole("button", { name: "Play" })).toBeVisible({ timeout: 5000 });
@@ -14,8 +15,9 @@ test.describe("App Boot", { ...smoke, ...prepush }, () => {
 });
 
 test.describe("Block Mechanics", critical, () => {
-  test("block card absorbs attack damage and halves at end of turn", async ({ page }) => {
-    await enableFastMode(page);
+  test("block card absorbs attack damage and halves at end of turn", async ({ page, fastBattle }) => {
+    void fastBattle;
+
     await startBattleWithDeck(page, [BLOCK_CARD, BLOCK_CARD, BLOCK_CARD, BLOCK_CARD, BLOCK_CARD, BLOCK_CARD]);
     const battle = new BattlePage(page);
 
@@ -30,8 +32,9 @@ test.describe("Block Mechanics", critical, () => {
     expect(hpLost).toBeGreaterThanOrEqual(0);
   });
 
-  test("blessed aegis deals holy damage equal to current block", async ({ page }) => {
-    await enableFastMode(page);
+  test("blessed aegis deals holy damage equal to current block", async ({ page, fastBattle }) => {
+    void fastBattle;
+
     await startBattleWithDeck(page, [BLOCK_CARD, AEGIS_CARD, BLOCK_CARD, AEGIS_CARD, BLOCK_CARD, AEGIS_CARD]);
     const battle = new BattlePage(page);
 
@@ -47,12 +50,13 @@ test.describe("Block Mechanics", critical, () => {
 });
 
 test.describe("Victory Rewards", critical, () => {
-  test("victory reward requires confirmation before advancing to destinations", async ({ page }) => {
-    await enableFastMode(page);
+  test("victory reward requires confirmation before advancing to destinations", async ({ page, fastBattle }) => {
+    void fastBattle;
+
     await startBattleWithDeck(page, Array.from({ length: 6 }, () => makeHighDamageCard()));
 
     const battle = new BattlePage(page);
-    await battle.winViaCombat();
+    await battle.winViaCombat(3);
 
     const reward = new RewardPage(page);
     await expect(reward.addRewardBtn).toBeDisabled();

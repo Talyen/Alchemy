@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { tickEnemyStatuses, tickPlayerStatuses } from "@/lib/battle/status-ticks";
 import type { CombatTextEvent } from "@/lib/battle/types";
-import { createTestBattleState } from "./test-state";
+import { patchBattleState } from "./test-state";
 
 function makeTexts(): CombatTextEvent[] {
   return [];
@@ -9,9 +9,9 @@ function makeTexts(): CombatTextEvent[] {
 
 describe("tickEnemyStatuses", () => {
   it("deals burn damage and halves burn stack", () => {
-    const state = createTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 30,
-      enemyStatuses: { ...createTestBattleState().enemyStatuses, burn: 10 },
+      enemyStatuses: { burn: 10 },
     });
     const texts = makeTexts();
     const next = tickEnemyStatuses(state, texts);
@@ -21,9 +21,9 @@ describe("tickEnemyStatuses", () => {
   });
 
   it("fully clears enemy burn at 1 stack", () => {
-    const state = createTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 30,
-      enemyStatuses: { ...createTestBattleState().enemyStatuses, burn: 1 },
+      enemyStatuses: { burn: 1 },
     });
     const next = tickEnemyStatuses(state, makeTexts());
     expect(next.enemyHealth).toBe(29);
@@ -31,9 +31,9 @@ describe("tickEnemyStatuses", () => {
   });
 
   it("deals poison damage and decays poison by 1", () => {
-    const state = createTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 30,
-      enemyStatuses: { ...createTestBattleState().enemyStatuses, poison: 8 },
+      enemyStatuses: { poison: 8 },
     });
     const texts = makeTexts();
     const next = tickEnemyStatuses(state, texts);
@@ -43,9 +43,9 @@ describe("tickEnemyStatuses", () => {
   });
 
   it("deals bleed damage equal to stack and resets bleed to 0", () => {
-    const state = createTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 30,
-      enemyStatuses: { ...createTestBattleState().enemyStatuses, bleed: 6 },
+      enemyStatuses: { bleed: 6 },
     });
     const texts = makeTexts();
     const next = tickEnemyStatuses(state, texts);
@@ -55,10 +55,10 @@ describe("tickEnemyStatuses", () => {
   });
 
   it("heals player from pending bleed leech healing", () => {
-    const state = createTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 30,
       playerHealth: 20,
-      enemyStatuses: { ...createTestBattleState().enemyStatuses, bleed: 6 },
+      enemyStatuses: { bleed: 6 },
       pendingBleedLeechHealing: 3,
     });
     const texts = makeTexts();
@@ -69,7 +69,7 @@ describe("tickEnemyStatuses", () => {
   });
 
   it("skips tick when burn is 0", () => {
-    const state = createTestBattleState();
+    const state = patchBattleState();
     const texts = makeTexts();
     const next = tickEnemyStatuses(state, texts);
     expect(next.enemyHealth).toBe(30);
@@ -77,10 +77,10 @@ describe("tickEnemyStatuses", () => {
   });
 
   it("applies all DoTs in sequence", () => {
-    const state = createTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 50,
       enemyMaxHealth: 50,
-      enemyStatuses: { ...createTestBattleState().enemyStatuses, burn: 10, poison: 5, bleed: 8 },
+      enemyStatuses: { burn: 10, poison: 5, bleed: 8 },
       pendingBleedLeechHealing: 2,
     });
     const texts = makeTexts();
@@ -92,10 +92,10 @@ describe("tickEnemyStatuses", () => {
   });
 
   it("applies burn damage before any CC logic runs on player ticks", () => {
-    const state = createTestBattleState({
+    const state = patchBattleState({
       playerHealth: 20,
       playerMaxHealth: 30,
-      playerStatuses: { ...createTestBattleState().playerStatuses, burn: 8, stun: 20 },
+      playerStatuses: { burn: 8, stun: 20 },
     });
     const texts = makeTexts();
     const next = tickPlayerStatuses(state, texts);
@@ -105,9 +105,9 @@ describe("tickEnemyStatuses", () => {
   });
 
   it("burnDoubleChance doubles burn when triggered", () => {
-    const state = createTestBattleState({
-      enemyStatuses: { ...createTestBattleState().enemyStatuses, burn: 10 },
-      talentEffects: { ...createTestBattleState().talentEffects, burnDoubleChance: 50 },
+    const state = patchBattleState({
+      enemyStatuses: { burn: 10 },
+      talentEffects: { burnDoubleChance: 50 },
       rng: () => 0.01,
     });
     const texts = makeTexts();
@@ -116,9 +116,9 @@ describe("tickEnemyStatuses", () => {
   });
 
   it("poisonGainChance increases poison when triggered", () => {
-    const state = createTestBattleState({
-      enemyStatuses: { ...createTestBattleState().enemyStatuses, poison: 5 },
-      talentEffects: { ...createTestBattleState().talentEffects, poisonGainChance: 50 },
+    const state = patchBattleState({
+      enemyStatuses: { poison: 5 },
+      talentEffects: { poisonGainChance: 50 },
       rng: () => 0.01,
     });
     const texts = makeTexts();
@@ -127,11 +127,11 @@ describe("tickEnemyStatuses", () => {
   });
 
   it("parasiticBloomLeechChance heals player on poison tick", () => {
-    const state = createTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 30,
       playerHealth: 20,
-      enemyStatuses: { ...createTestBattleState().enemyStatuses, poison: 8 },
-      trinketEffects: { ...createTestBattleState().trinketEffects, parasiticBloomLeechChance: 50 },
+      enemyStatuses: { poison: 8 },
+      trinketEffects: { ...patchBattleState().trinketEffects, parasiticBloomLeechChance: 50 },
       rng: () => 0.01,
     });
     const texts = makeTexts();
@@ -142,9 +142,9 @@ describe("tickEnemyStatuses", () => {
   });
 
   it("clamps enemy health at 0", () => {
-    const state = createTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 3,
-      enemyStatuses: { ...createTestBattleState().enemyStatuses, burn: 10 },
+      enemyStatuses: { burn: 10 },
     });
     const texts = makeTexts();
     const next = tickEnemyStatuses(state, texts);
@@ -152,10 +152,10 @@ describe("tickEnemyStatuses", () => {
   });
 
   it("applies resistance multiplier for burn", () => {
-    const state = createTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 50,
       enemyMaxHealth: 50,
-      enemyStatuses: { ...createTestBattleState().enemyStatuses, burn: 10 },
+      enemyStatuses: { burn: 10 },
       currentEnemy: {
         id: "fire-elemental",
         title: "Fire Elemental",
@@ -173,10 +173,10 @@ describe("tickEnemyStatuses", () => {
   });
 
   it("applies vulnerability multiplier for burn", () => {
-    const state = createTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 50,
       enemyMaxHealth: 50,
-      enemyStatuses: { ...createTestBattleState().enemyStatuses, burn: 10 },
+      enemyStatuses: { burn: 10 },
       currentEnemy: {
         id: "blight-treant",
         title: "The Blight Treant",
@@ -195,10 +195,10 @@ describe("tickEnemyStatuses", () => {
   });
 
   it("applies resistance multiplier for bleed against living-armor", () => {
-    const state = createTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 50,
       enemyMaxHealth: 50,
-      enemyStatuses: { ...createTestBattleState().enemyStatuses, bleed: 10 },
+      enemyStatuses: { bleed: 10 },
       currentEnemy: {
         id: "living-armor",
         title: "Living Armor",
@@ -220,9 +220,9 @@ describe("tickEnemyStatuses", () => {
 
 describe("tickPlayerStatuses", () => {
   it("deals burn damage to player and halves burn", () => {
-    const state = createTestBattleState({
+    const state = patchBattleState({
       playerHealth: 30,
-      playerStatuses: { ...createTestBattleState().playerStatuses, burn: 8 },
+      playerStatuses: { burn: 8 },
     });
     const texts = makeTexts();
     const next = tickPlayerStatuses(state, texts);
@@ -232,9 +232,9 @@ describe("tickPlayerStatuses", () => {
   });
 
   it("fully clears player burn at 1 stack", () => {
-    const state = createTestBattleState({
+    const state = patchBattleState({
       playerHealth: 30,
-      playerStatuses: { ...createTestBattleState().playerStatuses, burn: 1 },
+      playerStatuses: { burn: 1 },
     });
     const next = tickPlayerStatuses(state, makeTexts());
     expect(next.playerHealth).toBe(29);
@@ -242,10 +242,10 @@ describe("tickPlayerStatuses", () => {
   });
 
   it("receiveHalfBurnDamage halves burn damage", () => {
-    const state = createTestBattleState({
+    const state = patchBattleState({
       playerHealth: 30,
-      playerStatuses: { ...createTestBattleState().playerStatuses, burn: 8 },
-      talentEffects: { ...createTestBattleState().talentEffects, receiveHalfBurnDamage: true },
+      playerStatuses: { burn: 8 },
+      talentEffects: { receiveHalfBurnDamage: true },
     });
     const texts = makeTexts();
     const next = tickPlayerStatuses(state, texts);
@@ -254,10 +254,10 @@ describe("tickPlayerStatuses", () => {
   });
 
   it("armorMitigatesBurn reduces burn damage by armor", () => {
-    const state = createTestBattleState({
+    const state = patchBattleState({
       playerHealth: 30,
-      playerStatuses: { ...createTestBattleState().playerStatuses, burn: 8, armor: 3 },
-      talentEffects: { ...createTestBattleState().talentEffects, armorMitigatesBurn: true },
+      playerStatuses: { burn: 8, armor: 3 },
+      talentEffects: { armorMitigatesBurn: true },
     });
     const texts = makeTexts();
     const next = tickPlayerStatuses(state, texts);
@@ -267,11 +267,11 @@ describe("tickPlayerStatuses", () => {
   });
 
   it("armorMitigatesBurn with high armor results in 0 damage", () => {
-    const state = createTestBattleState({
+    const state = patchBattleState({
       playerHealth: 30,
       playerMaxHealth: 30,
-      playerStatuses: { ...createTestBattleState().playerStatuses, burn: 3, armor: 10 },
-      talentEffects: { ...createTestBattleState().talentEffects, armorMitigatesBurn: true },
+      playerStatuses: { burn: 3, armor: 10 },
+      talentEffects: { armorMitigatesBurn: true },
     });
     const texts = makeTexts();
     const next = tickPlayerStatuses(state, texts);
@@ -281,10 +281,10 @@ describe("tickPlayerStatuses", () => {
   });
 
   it("blockReduceBurnDamage reduces burn damage when block is active", () => {
-    const state = createTestBattleState({
+    const state = patchBattleState({
       playerHealth: 30,
-      playerStatuses: { ...createTestBattleState().playerStatuses, burn: 8, block: 5 },
-      talentEffects: { ...createTestBattleState().talentEffects, blockReduceBurnDamage: 1 },
+      playerStatuses: { burn: 8, block: 5 },
+      talentEffects: { blockReduceBurnDamage: 1 },
     });
     const texts = makeTexts();
     const next = tickPlayerStatuses(state, texts);
@@ -293,10 +293,10 @@ describe("tickPlayerStatuses", () => {
   });
 
   it("blockReduceBurnDamage reduces burn to 0 when block is active and damage is 1", () => {
-    const state = createTestBattleState({
+    const state = patchBattleState({
       playerHealth: 30,
-      playerStatuses: { ...createTestBattleState().playerStatuses, burn: 1, block: 5 },
-      talentEffects: { ...createTestBattleState().talentEffects, blockReduceBurnDamage: 1 },
+      playerStatuses: { burn: 1, block: 5 },
+      talentEffects: { blockReduceBurnDamage: 1 },
     });
     const texts = makeTexts();
     const next = tickPlayerStatuses(state, texts);
@@ -305,10 +305,10 @@ describe("tickPlayerStatuses", () => {
   });
 
   it("blockReduceBurnDamage does nothing when block is 0", () => {
-    const state = createTestBattleState({
+    const state = patchBattleState({
       playerHealth: 30,
-      playerStatuses: { ...createTestBattleState().playerStatuses, burn: 8, block: 0 },
-      talentEffects: { ...createTestBattleState().talentEffects, blockReduceBurnDamage: 1 },
+      playerStatuses: { burn: 8, block: 0 },
+      talentEffects: { blockReduceBurnDamage: 1 },
     });
     const texts = makeTexts();
     const next = tickPlayerStatuses(state, texts);
@@ -317,10 +317,10 @@ describe("tickPlayerStatuses", () => {
   });
 
   it("blockReduceBurnDamage stacks with armorMitigatesBurn", () => {
-    const state = createTestBattleState({
+    const state = patchBattleState({
       playerHealth: 30,
-      playerStatuses: { ...createTestBattleState().playerStatuses, burn: 8, block: 5, armor: 3 },
-      talentEffects: { ...createTestBattleState().talentEffects, blockReduceBurnDamage: 1, armorMitigatesBurn: true },
+      playerStatuses: { burn: 8, block: 5, armor: 3 },
+      talentEffects: { blockReduceBurnDamage: 1, armorMitigatesBurn: true },
     });
     const texts = makeTexts();
     const next = tickPlayerStatuses(state, texts);
@@ -330,9 +330,9 @@ describe("tickPlayerStatuses", () => {
   });
 
   it("deals poison damage to player and decrements poison", () => {
-    const state = createTestBattleState({
+    const state = patchBattleState({
       playerHealth: 30,
-      playerStatuses: { ...createTestBattleState().playerStatuses, poison: 5 },
+      playerStatuses: { poison: 5 },
     });
     const texts = makeTexts();
     const next = tickPlayerStatuses(state, texts);
@@ -342,10 +342,10 @@ describe("tickPlayerStatuses", () => {
   });
 
   it("receiveHalfPoisonDamage halves poison damage", () => {
-    const state = createTestBattleState({
+    const state = patchBattleState({
       playerHealth: 30,
-      playerStatuses: { ...createTestBattleState().playerStatuses, poison: 8 },
-      talentEffects: { ...createTestBattleState().talentEffects, receiveHalfPoisonDamage: true },
+      playerStatuses: { poison: 8 },
+      talentEffects: { receiveHalfPoisonDamage: true },
     });
     const texts = makeTexts();
     const next = tickPlayerStatuses(state, texts);
@@ -354,9 +354,9 @@ describe("tickPlayerStatuses", () => {
   });
 
   it("deals bleed damage and clears bleed", () => {
-    const state = createTestBattleState({
+    const state = patchBattleState({
       playerHealth: 30,
-      playerStatuses: { ...createTestBattleState().playerStatuses, bleed: 7 },
+      playerStatuses: { bleed: 7 },
     });
     const texts = makeTexts();
     const next = tickPlayerStatuses(state, texts);
@@ -366,10 +366,10 @@ describe("tickPlayerStatuses", () => {
   });
 
   it("clears stun and triggers turn skip when threshold exceeded", () => {
-    const state = createTestBattleState({
+    const state = patchBattleState({
       playerHealth: 30,
       playerMaxHealth: 30,
-      playerStatuses: { ...createTestBattleState().playerStatuses, stun: 20 },
+      playerStatuses: { stun: 20 },
     });
     const texts = makeTexts();
     const next = tickPlayerStatuses(state, texts);
@@ -381,12 +381,12 @@ describe("tickPlayerStatuses", () => {
   });
 
   it("does not apply offensive stun talents to player stun triggers", () => {
-    const state = createTestBattleState({
+    const state = patchBattleState({
       playerHealth: 30,
       playerMaxHealth: 30,
-      playerStatuses: { ...createTestBattleState().playerStatuses, stun: 14 },
+      playerStatuses: { stun: 14 },
       talentEffects: {
-        ...createTestBattleState().talentEffects,
+        ...patchBattleState().talentEffects,
         stunThresholdReduction: 0.25,
         stunDurationExtension: 2,
       },
@@ -397,10 +397,10 @@ describe("tickPlayerStatuses", () => {
   });
 
   it("does not trigger stun skip when stun is below threshold", () => {
-    const state = createTestBattleState({
+    const state = patchBattleState({
       playerHealth: 30,
       playerMaxHealth: 30,
-      playerStatuses: { ...createTestBattleState().playerStatuses, stun: 5 },
+      playerStatuses: { stun: 5 },
     });
     const texts = makeTexts();
     const next = tickPlayerStatuses(state, texts);
@@ -410,10 +410,10 @@ describe("tickPlayerStatuses", () => {
   });
 
   it("clears freeze and triggers turn skip when threshold exceeded", () => {
-    const state = createTestBattleState({
+    const state = patchBattleState({
       playerHealth: 30,
       playerMaxHealth: 30,
-      playerStatuses: { ...createTestBattleState().playerStatuses, freeze: 30 },
+      playerStatuses: { freeze: 30 },
     });
     const texts = makeTexts();
     const next = tickPlayerStatuses(state, texts);
@@ -425,11 +425,11 @@ describe("tickPlayerStatuses", () => {
   });
 
   it("does not apply offensive freeze duration bonuses to player freeze triggers", () => {
-    const state = createTestBattleState({
+    const state = patchBattleState({
       playerHealth: 30,
       playerMaxHealth: 30,
-      playerStatuses: { ...createTestBattleState().playerStatuses, freeze: 30 },
-      trinketEffects: { ...createTestBattleState().trinketEffects, freezeDurationExtension: 2 },
+      playerStatuses: { freeze: 30 },
+      trinketEffects: { ...patchBattleState().trinketEffects, freezeDurationExtension: 2 },
     });
     const next = tickPlayerStatuses(state, makeTexts());
     expect(next.playerFreezeSkipTurns).toBe(1);
@@ -437,10 +437,10 @@ describe("tickPlayerStatuses", () => {
 
   it("CC immunity suppresses second stun trigger within cooldown", () => {
     // First trigger: stun exceeds threshold, sets skip + cooldown.
-    const state = createTestBattleState({
+    const state = patchBattleState({
       playerHealth: 30,
       playerMaxHealth: 30,
-      playerStatuses: { ...createTestBattleState().playerStatuses, stun: 20 },
+      playerStatuses: { stun: 20 },
     });
     const texts = makeTexts();
     const afterFirst = tickPlayerStatuses(state, texts);
@@ -458,10 +458,10 @@ describe("tickPlayerStatuses", () => {
 
   it("CC immunity cooldown expires and allows another stun", () => {
     // Trigger stun, tick down cooldown to 1, then 0, then trigger again.
-    const state = createTestBattleState({
+    const state = patchBattleState({
       playerHealth: 30,
       playerMaxHealth: 30,
-      playerStatuses: { ...createTestBattleState().playerStatuses, stun: 20 },
+      playerStatuses: { stun: 20 },
     });
     const texts = makeTexts();
     const afterTrigger = tickPlayerStatuses(state, texts);
@@ -480,7 +480,7 @@ describe("tickPlayerStatuses", () => {
   });
 
   it("skips ticks when all statuses are 0", () => {
-    const state = createTestBattleState();
+    const state = patchBattleState();
     const texts = makeTexts();
     const next = tickPlayerStatuses(state, texts);
     expect(next.playerHealth).toBe(30);
@@ -488,10 +488,10 @@ describe("tickPlayerStatuses", () => {
   });
 
   it("applies all player DoTs in sequence", () => {
-    const state = createTestBattleState({
+    const state = patchBattleState({
       playerHealth: 50,
       playerMaxHealth: 50,
-      playerStatuses: { ...createTestBattleState().playerStatuses, burn: 8, poison: 4, bleed: 5, stun: 3, freeze: 2 },
+      playerStatuses: { burn: 8, poison: 4, bleed: 5, stun: 3, freeze: 2 },
     });
     const texts = makeTexts();
     const next = tickPlayerStatuses(state, texts);

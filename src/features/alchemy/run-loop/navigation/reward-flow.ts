@@ -32,6 +32,9 @@ export type RewardState = {
   destinations: Destination[];
   rewardType: "card" | "trinket";
   selectedBossId: string | null;
+  /** Stamped at victory commit so reward routing does not depend on battle state. */
+  lastVictoryEnemyType: string | null;
+  lastVictoryContentSystem: ContentSystemId | null;
 };
 
 export function createEmptyRewardState(destinations: Destination[] = []): RewardState {
@@ -43,11 +46,18 @@ export function createEmptyRewardState(destinations: Destination[] = []): Reward
     destinations,
     rewardType: "card",
     selectedBossId: null,
+    lastVictoryEnemyType: null,
+    lastVictoryContentSystem: null,
   };
 }
 
 export function createNextRewardState(rewardState: RewardState): RewardState {
-  return { ...createEmptyRewardState(rewardState.destinations), selectedBossId: rewardState.selectedBossId };
+  return {
+    ...createEmptyRewardState(rewardState.destinations),
+    selectedBossId: rewardState.selectedBossId,
+    lastVictoryEnemyType: rewardState.lastVictoryEnemyType,
+    lastVictoryContentSystem: rewardState.lastVictoryContentSystem,
+  };
 }
 
 export type VictoryGoldInput = {
@@ -195,19 +205,11 @@ export function computeVictoryGoldResult({
   };
 }
 
-type FinalizeRewardRoute =
-  | "companion-reward"
-  | "labyrinth-victory"
-  | "labyrinth-map"
-  | "wildwood-victory"
-  | "act-complete"
-  | "destination";
+export type FinalizeRewardRoute = (typeof CONSTANTS.REWARD_ROUTES)[keyof typeof CONSTANTS.REWARD_ROUTES];
 
 export type FinalizeRewardInput = {
   rewardState: RewardState;
   companionRewardCards: BattleCard[] | null;
-  contentSystemType: ContentSystemId;
-  currentEnemyType: string;
   grantAlchemistReward: boolean;
 };
 
@@ -238,8 +240,6 @@ function resolveRewardRoute(contentSystemType: ContentSystemId, currentEnemyType
 export function finalizeRewardState({
   rewardState,
   companionRewardCards,
-  contentSystemType,
-  currentEnemyType,
   grantAlchemistReward,
 }: FinalizeRewardInput): FinalizeRewardResult {
   const selectedChoice = rewardState.selectedId
@@ -260,12 +260,16 @@ export function finalizeRewardState({
         destinations: rewardState.destinations,
         rewardType: "card",
         selectedBossId: rewardState.selectedBossId,
+        lastVictoryEnemyType: rewardState.lastVictoryEnemyType,
+        lastVictoryContentSystem: rewardState.lastVictoryContentSystem,
       },
       clearCompanionRewardCards: true,
       route: CONSTANTS.REWARD_ROUTES.COMPANION_REWARD,
     };
   }
 
+  const contentSystemType = rewardState.lastVictoryContentSystem ?? CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN;
+  const currentEnemyType = rewardState.lastVictoryEnemyType ?? CONSTANTS.ENEMY_TYPES.NORMAL;
   const route = resolveRewardRoute(contentSystemType, currentEnemyType);
 
   return {
@@ -366,6 +370,7 @@ export function createBossRewardState({
   goldMultiplier = 1,
 }: BossRewardInput): RewardState {
   return {
+    ...createEmptyRewardState(),
     rewardType: "trinket",
     choices: sampleItems(trinketLibrary, BOSS_TRINKET_REWARD_CHOICES),
     gold: computeRewardGold({
@@ -377,9 +382,6 @@ export function createBossRewardState({
       goldMultiplier,
     }),
     materials,
-    selectedId: null,
-    destinations: [],
-    selectedBossId: null,
   };
 }
 
@@ -415,6 +417,7 @@ export function createCombatRewardState({
 }: CombatRewardInput): RewardState {
   const offerTrinket = calculateCombatTrinketRewardOffer(battleState, forceTrinket);
   return {
+    ...createEmptyRewardState(destinations),
     rewardType: offerTrinket ? "trinket" : "card",
     choices: offerTrinket
       ? sampleItems(trinketLibrary, REWARD_CARD_CHOICES)
@@ -428,8 +431,5 @@ export function createCombatRewardState({
       goldMultiplier,
     }),
     materials,
-    selectedId: null,
-    destinations,
-    selectedBossId: null,
   };
 }

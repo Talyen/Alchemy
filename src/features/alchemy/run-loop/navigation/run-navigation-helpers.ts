@@ -4,8 +4,6 @@
 import { DEFAULT_BATTLE_ENEMY_TYPE, DEFAULT_CAMPAIGN_DIFFICULTY_ID } from "@/lib/game-constants";
 import type { BattleCard, CharacterId, DifficultyId, DifficultyModifier } from "@/lib/game-data";
 import type { Destination } from "@/features/alchemy/shared/types";
-import { applyRunDefeatTeardown as applyRunDefeatLifecycle } from "@/features/alchemy/shared/stores/run-transitions";
-
 export function getPreviousDestination(
   destinationIndexInAct: number,
   completedDestinations: Destination[],
@@ -48,12 +46,4 @@ export function afterCampaignCharacterResolved(
 ): void {
   if (tryStartNoviceCampaignBattle(characterId, deps)) return;
   onContinue();
-}
-
-export function applyRunDefeatTeardown(options: {
-  awardRunEndMaterials: () => void;
-  finalizeRunXP: () => void;
-  clearCombatState: () => void;
-}) {
-  applyRunDefeatLifecycle(options);
 }

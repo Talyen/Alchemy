@@ -38,6 +38,27 @@ function computeEffects(state: HomesteadState): HomesteadEffectManifest {
   );
 }
 
+type TieredUpgradeItem = { tiers: { cost: MaterialInventory }[] };
+
+function tryUpgradeTierItem(
+  item: TieredUpgradeItem | undefined,
+  currentLevel: number,
+  inventory: MaterialInventory,
+): { ok: boolean; inventory: MaterialInventory; nextLevel: number } {
+  if (!item || currentLevel >= item.tiers.length) {
+    return { ok: false, inventory, nextLevel: currentLevel };
+  }
+  const tier = item.tiers[currentLevel];
+  if (!canAfford(inventory, tier.cost)) {
+    return { ok: false, inventory, nextLevel: currentLevel };
+  }
+  return {
+    ok: true,
+    inventory: subtractInventory(inventory, tier.cost),
+    nextLevel: currentLevel + 1,
+  };
+}
+
 export const useHomesteadStore = create<HomesteadStore>()(
   immer((set) => ({
     materialInventory: emptyInventory(),
@@ -50,26 +71,26 @@ export const useHomesteadStore = create<HomesteadStore>()(
     addMaterials: (materials) =>
       set((s) => {
         s.materialInventory = addInventory(s.materialInventory, materials);
-        s.effects = computeEffects(s);
       }),
 
     setMaterials: (materials) =>
       set((s) => {
         s.materialInventory = materials;
-        s.effects = computeEffects(s);
       }),
 
     constructBuilding: (id) => {
       let succeeded = false;
       set((s) => {
-        const building = buildings.find((b) => b.id === id);
         const currentLevel = s.constructedBuildings[id] ?? 0;
-        if (!building || currentLevel >= building.tiers.length) return;
-        const tier = building.tiers[currentLevel];
-        if (!canAfford(s.materialInventory, tier.cost)) return;
+        const result = tryUpgradeTierItem(
+          buildings.find((b) => b.id === id),
+          currentLevel,
+          s.materialInventory,
+        );
+        if (!result.ok) return;
         succeeded = true;
-        s.materialInventory = subtractInventory(s.materialInventory, tier.cost);
-        s.constructedBuildings[id] = currentLevel + 1;
+        s.materialInventory = result.inventory;
+        s.constructedBuildings[id] = result.nextLevel;
         s.effects = computeEffects(s);
       });
       return succeeded;
@@ -78,14 +99,16 @@ export const useHomesteadStore = create<HomesteadStore>()(
     plantFarm: (id) => {
       let succeeded = false;
       set((s) => {
-        const farm = farmPlots.find((f) => f.id === id);
         const currentLevel = s.plantedFarms[id] ?? 0;
-        if (!farm || currentLevel >= farm.tiers.length) return;
-        const tier = farm.tiers[currentLevel];
-        if (!canAfford(s.materialInventory, tier.cost)) return;
+        const result = tryUpgradeTierItem(
+          farmPlots.find((f) => f.id === id),
+          currentLevel,
+          s.materialInventory,
+        );
+        if (!result.ok) return;
         succeeded = true;
-        s.materialInventory = subtractInventory(s.materialInventory, tier.cost);
-        s.plantedFarms[id] = currentLevel + 1;
+        s.materialInventory = result.inventory;
+        s.plantedFarms[id] = result.nextLevel;
         s.effects = computeEffects(s);
       });
       return succeeded;
@@ -94,14 +117,16 @@ export const useHomesteadStore = create<HomesteadStore>()(
     completeResearch: (id) => {
       let succeeded = false;
       set((s) => {
-        const research = researchUpgrades.find((r) => r.id === id);
         const currentLevel = s.completedResearch[id] ?? 0;
-        if (!research || currentLevel >= research.tiers.length) return;
-        const tier = research.tiers[currentLevel];
-        if (!canAfford(s.materialInventory, tier.cost)) return;
+        const result = tryUpgradeTierItem(
+          researchUpgrades.find((r) => r.id === id),
+          currentLevel,
+          s.materialInventory,
+        );
+        if (!result.ok) return;
         succeeded = true;
-        s.materialInventory = subtractInventory(s.materialInventory, tier.cost);
-        s.completedResearch[id] = currentLevel + 1;
+        s.materialInventory = result.inventory;
+        s.completedResearch[id] = result.nextLevel;
         s.effects = computeEffects(s);
       });
       return succeeded;
@@ -139,5 +164,3 @@ export const useHomesteadStore = create<HomesteadStore>()(
       }),
   })),
 );
-
-export { COMPANION_BOND_TIERS, COMPANION_MAX_TIER } from "@/lib/homestead/companions";

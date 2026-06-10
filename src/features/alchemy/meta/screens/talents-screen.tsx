@@ -5,14 +5,15 @@ import { RotateCcw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
-  keywordDefinitions,
   talentBackgroundArt,
   type KeywordId,
   getTalentsForKeyword,
+  countImplementedTalents,
   getTalentKeywordProgress,
   type UnlockedTalents,
   type TalentXP,
 } from "@/lib/game-data";
+import { getTalentTreeKeywordIds } from "@/lib/game-data";
 
 import { TalentKeywordButton } from "../talents/talents-ui";
 import { ConfirmationDialog, HamburgerTrigger, PageLayout, ScreenHeader } from "../../shared/ui/shared-ui";
@@ -35,19 +36,13 @@ export function TalentsScreen({
 }) {
   const [selectedKeyword, setSelectedKeyword] = useState<KeywordId>("physical");
   const [showResetConfirm, setShowResetConfirm] = useState(false);
-  const keywordIds = useMemo(
-    () => (Object.keys(keywordDefinitions) as KeywordId[]).filter((kw) => !keywordDefinitions[kw].hidden),
-    [],
-  );
+  const keywordIds = useMemo(() => getTalentTreeKeywordIds(), []);
 
   const unlockedIds = useMemo(() => unlockedTalents[selectedKeyword] ?? [], [selectedKeyword, unlockedTalents]);
   const allTalentsForKeyword = getTalentsForKeyword(selectedKeyword);
-  const progress = getTalentKeywordProgress(
-    talentXP[selectedKeyword] ?? 0,
-    unlockedIds.length,
-    allTalentsForKeyword.length,
-  );
-  const allUnlocked = progress.spentPoints >= allTalentsForKeyword.length;
+  const implementedCount = countImplementedTalents(selectedKeyword);
+  const progress = getTalentKeywordProgress(talentXP[selectedKeyword] ?? 0, unlockedIds.length, implementedCount);
+  const allUnlocked = progress.spentPoints >= implementedCount;
   const unlockedTalentsForKeyword = useMemo(
     () => allTalentsForKeyword.filter((t) => unlockedIds.includes(t.id)),
     [allTalentsForKeyword, unlockedIds],
@@ -81,7 +76,7 @@ export function TalentsScreen({
             const kwProgress = getTalentKeywordProgress(
               talentXP[kw] ?? 0,
               (unlockedTalents[kw] ?? []).length,
-              getTalentsForKeyword(kw).length,
+              countImplementedTalents(kw),
             );
             return (
               <TalentKeywordButton

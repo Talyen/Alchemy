@@ -1,9 +1,9 @@
 // Whether homestead has any affordable upgrade for the menu badge.
 import { cardLibrary, type CompanionId } from "@/lib/game-data";
-import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
+import { buildings, visibleFarmPlots, researchUpgrades } from "@/lib/homestead/data";
+import { COMPANION_BOND_TIERS, COMPANION_MAX_TIER } from "@/lib/homestead/companions";
 import { canAfford } from "@/lib/homestead/inventory";
 import type { MaterialInventory } from "@/lib/homestead/types";
-import { COMPANION_BOND_TIERS, COMPANION_MAX_TIER } from "@/features/alchemy/shared/stores/homestead-store";
 
 type HomesteadAffordabilityInput = {
   materialInventory: MaterialInventory;
@@ -30,7 +30,7 @@ export function hasAffordableHomesteadUpgrade(input: HomesteadAffordabilityInput
     return canAfford(materialInventory, b.tiers[currentLevel].cost);
   });
 
-  const affordableFarm = farmPlots.some((f) => {
+  const affordableFarm = visibleFarmPlots.some((f) => {
     const currentLevel = plantedFarms[f.id] ?? 0;
     if (currentLevel >= f.tiers.length) return false;
     return canAfford(materialInventory, f.tiers[currentLevel].cost);

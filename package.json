@@ -33,6 +33,7 @@
     "dist:win": "npm run build:desktop && cross-env NODE_OPTIONS=--no-deprecation electron-builder --win",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:timings": "vitest run --reporter=verbose --reporter=json --outputFile=reports/vitest-timings.json",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test --project chromium",

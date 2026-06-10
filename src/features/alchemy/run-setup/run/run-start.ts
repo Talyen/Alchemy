@@ -26,8 +26,6 @@ export type RunStartInput = {
   contentSystemType: ContentSystemId;
   difficultyId?: DifficultyId | null | undefined;
   talentStartGold: number;
-  homesteadStartGold: number;
-  homesteadStartMaxHealthBonus: number;
   draftedDeck?: BattleCard[] | undefined;
 };
 
@@ -37,12 +35,10 @@ export function createRunStartSnapshot({
   contentSystemType,
   difficultyId = null,
   talentStartGold,
-  homesteadStartGold,
-  homesteadStartMaxHealthBonus,
   draftedDeck,
 }: RunStartInput): RunStartSnapshot {
-  const runMaxHealth = MAX_PLAYER_HEALTH + homesteadStartMaxHealthBonus;
-  const runGold = contentSystemType === "wildwood" ? 0 : talentStartGold + homesteadStartGold;
+  const runMaxHealth = MAX_PLAYER_HEALTH;
+  const runGold = contentSystemType === "wildwood" ? 0 : talentStartGold;
 
   return {
     characterId,

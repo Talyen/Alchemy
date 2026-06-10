@@ -31,7 +31,7 @@ export const buildings = [
     "Hunter's Lodge",
     stackingTiers(
       dualMaterialCosts("wood", "food"),
-      { flatArrowDamage: 1, flatNatureDamage: 1 },
+      { flatArrowDamage: 1, flatNatureDamage: 1, endRunFoodPerRoom: 1 },
       (tier) => `Increases Arrow and Nature damage by ${tier}`,
       "Gain Food after each run",
     ),
@@ -96,7 +96,7 @@ export const farmPlots = [
     "Herb Garden",
     stackingTiers(
       singleMaterialCosts("herbs"),
-      { herbFindBonus: 0.1 },
+      { herbFindBonus: 0.1, endRunHerbsPerRoom: 1 },
       (tier) => `Find ${tier * 10}% more Herbs`,
       "Gain Herbs after each run",
     ),
@@ -108,6 +108,8 @@ export const farmPlots = [
   placeholderFarm("crystal-garden", "Crystal Garden", singleMaterialCosts("crystal")),
 ];
 
+export const visibleFarmPlots = farmPlots.filter((farm) => !farm.hidden);
+
 export const researchUpgrades = [
   defineResearch("carpentry", "Leyline Energy", [
     {
@@ -117,13 +119,13 @@ export const researchUpgrades = [
     },
     {
       cost: materialCost({ crystal: 30 }),
-      effects: { startMana: 1 },
+      effects: { startMana: 1, endRunCrystalPerRoom: 1 },
       benefitDescription: "Increase starting Mana by 2\nGain Crystal after each run",
       nonCombatBenefitDescription: "Gain Crystal after each run",
     },
     {
       cost: materialCost({ crystal: 40 }),
-      effects: { startMana: 2 },
+      effects: { startMana: 2, endRunCrystalPerRoom: 1 },
       benefitDescription: "Increase starting Mana by 4\nGain Crystal after each run",
       nonCombatBenefitDescription: "Gain Crystal after each run",
     },

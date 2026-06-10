@@ -7,7 +7,6 @@ import { getDifficultyModifiers, type BattleCard, type CharacterId, type Difficu
 import { DEFAULT_BATTLE_ENEMY_TYPE } from "@/lib/game-constants";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import { useAppStore } from "../../shared/stores/app-store";
-import { useHomesteadStore } from "../../shared/stores/homestead-store";
 import { useUiStore } from "../../shared/stores/ui-store";
 import {
   setHasActiveRun,
@@ -94,14 +93,11 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
     contentSystemType: ContentSystemId,
     difficultyId?: DifficultyId | null,
   ) {
-    const homesteadEffects = useHomesteadStore.getState().effects;
     const baseInput = {
       characterId,
       contentSystemType,
       difficultyId,
       talentStartGold: deps.talents.talentEffects.startGold,
-      homesteadStartGold: homesteadEffects.startGold,
-      homesteadStartMaxHealthBonus: homesteadEffects.startMaxHealthBonus,
     };
     return createRunStartSnapshot(
       characterId === "wildcard" && deps.draftedDeckRef.current

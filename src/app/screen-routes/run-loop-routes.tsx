@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { cardLibrary, trinketLibrary } from "@/lib/game-data";
 import { useAppScreenChrome } from "@/app/app-screen-chrome-context";
 import {
@@ -7,12 +7,10 @@ import {
   CampfireScreen,
   CorruptionScreen,
   DestinationScreen,
-  GameOverScreen,
   LabyrinthMapScreen,
   MerchantShopScreen,
   MysteryScreen,
   RewardsScreen,
-  RunVictoryScreen,
 } from "@/features/alchemy/shared/screens";
 import type { ScreenRouteContext } from "./types";
 
@@ -149,9 +147,20 @@ function AlchemistScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions"
 
 function MysteryScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions">) {
   const r = useRunScreenData("mystery");
+
+  useEffect(() => {
+    if (!r.mysteryEvent) {
+      a.runFlow.handleMysteryContinue();
+    }
+  }, [r.mysteryEvent, a.runFlow]);
+
+  if (!r.mysteryEvent) {
+    return null;
+  }
+
   return (
     <MysteryScreen
-      event={r.mysteryEvent!}
+      event={r.mysteryEvent}
       runDeck={r.runDeck}
       mysteryCardChoices={r.mysteryCardChoices}
       onChoose={a.runFlow.handleMysteryChoice}
@@ -176,30 +185,6 @@ function CorruptionScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions
   );
 }
 
-function GameOverScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions">) {
-  const r = useRunScreenData("game-over");
-  return (
-    <GameOverScreen
-      runEndTalentXP={r.runEndTalentXP}
-      talentXP={r.talentXP}
-      runEndMaterials={r.runEndMaterials}
-      onMainMenu={a.runFlow.resetRunState}
-    />
-  );
-}
-
-function RunVictoryScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions">) {
-  const r = useRunScreenData("run-victory");
-  return (
-    <RunVictoryScreen
-      runEndTalentXP={r.runEndTalentXP}
-      talentXP={r.talentXP}
-      runEndMaterials={r.runEndMaterials}
-      onMainMenu={a.runFlow.resetRunState}
-    />
-  );
-}
-
 export const runLoopScreenRoutes: Partial<
   Record<import("@/lib/routing").Screen, (ctx: ScreenRouteContext) => ReactNode>
 > = {
@@ -216,6 +201,4 @@ export const runLoopScreenRoutes: Partial<
   alchemist: ({ actions: a }) => <AlchemistScreenRoute actions={a} />,
   mystery: ({ actions: a }) => <MysteryScreenRoute actions={a} />,
   corruption: ({ actions: a }) => <CorruptionScreenRoute actions={a} />,
-  "game-over": ({ actions: a }) => <GameOverScreenRoute actions={a} />,
-  "run-victory": ({ actions: a }) => <RunVictoryScreenRoute actions={a} />,
 };

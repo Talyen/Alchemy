@@ -42,11 +42,14 @@ export function defineResearch(id: ResearchId, title: string, tiers: HomesteadUp
 }
 
 export function placeholderFarm(id: FarmId, title: string, costs: readonly MaterialInventory[]): HomesteadFarm {
-  return defineFarm(
-    id,
-    title,
-    costs.map((cost) => ({ cost, benefitDescription: "Produces ???" })),
-  );
+  return {
+    ...defineFarm(
+      id,
+      title,
+      costs.map((cost) => ({ cost, benefitDescription: "Produces ???" })),
+    ),
+    hidden: true,
+  };
 }
 
 export { dualMaterialCosts, materialCost, singleMaterialCosts };

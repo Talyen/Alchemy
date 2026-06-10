@@ -20,7 +20,7 @@ export default defineConfig({
   testDir: "./tests",
   testMatch: "**/*.spec.ts",
   testIgnore: "**/electron-smoke.spec.ts",
-  fullyParallel: isPrepush || isNightly || !isCi,
+  fullyParallel: isPrepush || isNightly || isFullE2eSuite || !isCi,
   maxFailures,
   workers: isPrepush ? prepushWorkers : isNightly ? 4 : isCi ? 2 : 4,
   globalTimeout: 600_000,

@@ -2,17 +2,10 @@
 import type { BattleState } from "@/lib/battle/types";
 import { defaultBattleState } from "@/lib/battle";
 import { makeTestCard } from "./cards";
+import { seededRng } from "./rng";
 
 export { makeTestCard } from "./cards";
-
-/** Seeded PRNG for `createBattleState({ rng })` and battle talent rolls. */
-export function seededRng(seed = 42): () => number {
-  let state = seed;
-  return () => {
-    state = (state * 1664525 + 1013904223) & 0x7fffffff;
-    return state / 0x7fffffff;
-  };
-}
+export { seededRng } from "./rng";
 
 export function makeTestBattleState(overrides: Partial<BattleState> = {}): BattleState {
   return {
@@ -21,6 +14,31 @@ export function makeTestBattleState(overrides: Partial<BattleState> = {}): Battl
     maxMana: 4,
     rng: seededRng(42),
     ...overrides,
+  };
+}
+
+/** Merge partial battle state without repeating default status / trinket / talent spreads. */
+export function patchBattleState(patch: Partial<BattleState> = {}): BattleState {
+  const base = makeTestBattleState();
+  return {
+    ...base,
+    ...patch,
+    playerStatuses: patch.playerStatuses
+      ? { ...base.playerStatuses, ...patch.playerStatuses }
+      : base.playerStatuses,
+    enemyStatuses: patch.enemyStatuses
+      ? { ...base.enemyStatuses, ...patch.enemyStatuses }
+      : base.enemyStatuses,
+    trinketEffects: patch.trinketEffects
+      ? { ...base.trinketEffects, ...patch.trinketEffects }
+      : base.trinketEffects,
+    talentEffects: patch.talentEffects
+      ? { ...base.talentEffects, ...patch.talentEffects }
+      : base.talentEffects,
+    flags: patch.flags ? { ...base.flags, ...patch.flags } : base.flags,
+    enemyMitigation: patch.enemyMitigation
+      ? { ...base.enemyMitigation, ...patch.enemyMitigation }
+      : base.enemyMitigation,
   };
 }
 

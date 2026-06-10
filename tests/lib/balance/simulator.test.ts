@@ -52,22 +52,17 @@ describe("balance simulator", () => {
   });
 
   it("produces different outcomes for different policies", () => {
-    const randomResult = simulateBattle({
-      characterId: "knight",
+    const config = {
+      characterId: "knight" as const,
       enemyId: "skeleton",
       seed: 42,
       maxTurns: 10,
-      policy: "random-playable",
-    });
-    const greedyResult = simulateBattle({
-      characterId: "knight",
-      enemyId: "skeleton",
-      seed: 42,
-      maxTurns: 10,
-      policy: "greedy-damage",
-    });
-    expect(randomResult.outcome).toBeDefined();
-    expect(greedyResult.outcome).toBeDefined();
+    };
+    const randomResult = simulateBattle({ ...config, policy: "random-playable" });
+    const greedyResult = simulateBattle({ ...config, policy: "greedy-damage" });
+    expect(randomResult).not.toEqual(greedyResult);
+    expect(randomResult.turns).toBeGreaterThan(0);
+    expect(greedyResult.turns).toBeGreaterThan(0);
   });
 
   it("simulates different character and enemy combinations", () => {

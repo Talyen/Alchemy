@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { pinDestinationChoice } from "./helpers";
 import { CorruptionPage } from "./pages/corruption-page";
 import { DestinationPage } from "./pages/destination-page";
 import { critical, prepush } from "./playwright-tags";
@@ -32,7 +33,7 @@ test.describe("Corruption Full Flow", critical, () => {
     await corruption.open();
 
     await corruption.selectAndCorrupt();
-    await page.evaluate(() => { Math.random = () => 0; });
+    await pinDestinationChoice(page, "Normal Combat");
     await corruption.continueBtn.click();
 
     const destination = new DestinationPage(page);

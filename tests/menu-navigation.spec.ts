@@ -1,5 +1,6 @@
-import { expect, test } from "@playwright/test";
-import { enableFastMode, injectHomestead, injectLabyrinthRun, makeCard, openGameModeSelect, SAVE_KEY, selectGameMode, startBattleWithDeck, startCampaignBattle } from "./helpers";
+import { expect } from "@playwright/test";
+import { injectLabyrinthRun, makeCard, SAVE_KEY, startBattleWithDeck, startCampaignBattle } from "./helpers";
+import { test } from "./fixtures/e2e";
 import { BattlePage } from "./pages/battle-page";
 import { MenuPage } from "./pages/menu-page";
 import { critical, prepush } from "./playwright-tags";
@@ -13,12 +14,13 @@ test.describe("Menu", critical, () => {
   });
 
   test("all menu buttons are visible on the main menu", prepush, async ({ page }) => {
-    await page.goto("/");
-    await expect(page.getByRole("button", { name: "Play" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Collection" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Options" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Talents" })).toBeVisible();
-    await openGameModeSelect(page);
+    const menu = new MenuPage(page);
+    await menu.goto();
+    await expect(menu.playBtn).toBeVisible();
+    await expect(menu.collectionBtn).toBeVisible();
+    await expect(menu.optionsBtn).toBeVisible();
+    await expect(menu.talentsBtn).toBeVisible();
+    await menu.openGameModeSelect();
     await expect(page.getByRole("button", { name: /The Campaign/ })).toBeVisible();
     await expect(page.getByRole("button", { name: /The Labyrinth/ })).toBeVisible();
     await expect(page.getByRole("button", { name: /The Wildwoods/ })).toBeVisible();
@@ -32,10 +34,11 @@ test.describe("Menu", critical, () => {
 
   test("menu shows Resume Run when a campaign battle is active", async ({ page }) => {
     await startCampaignBattle(page);
+    const menu = new MenuPage(page);
     const battle = new BattlePage(page);
     await battle.menuBtn.click();
     await page.getByRole("button", { name: "Main Menu" }).click();
-    await openGameModeSelect(page);
+    await menu.openGameModeSelect();
     await page.getByRole("button", { name: /The Campaign/ }).click();
     await expect(page.getByRole("button", { name: "Resume" })).toBeVisible();
   });
@@ -51,13 +54,10 @@ test.describe("Menu", critical, () => {
 });
 
 test.describe("Character Select", critical, () => {
-  test("all characters are selectable and starting run is mapped to localStorage", async ({ page }) => {
-    await enableFastMode(page);
-    await injectHomestead(page);
-    await page.goto("/");
-    await selectGameMode(page, "campaign");
-
-    await expect(page.getByRole("heading", { name: "Choose Your Hero" })).toBeVisible();
+  test("all characters are selectable and starting run is mapped to localStorage", async ({ page, fastBattle }) => {
+    void fastBattle;
+    const menu = new MenuPage(page);
+    await menu.goToCharacterSelectUnlocked();
     await expect(page.getByRole("button", { name: "Knight" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Ranger" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Rogue" })).toBeVisible();
@@ -75,24 +75,33 @@ test.describe("Character Select", critical, () => {
     await page.getByRole("button", { name: "Continue" }).click({ force: true });
     await expect(page.locator('[aria-label^="Play "]').first()).toBeVisible({ timeout: 5000 });
 
-    const saveStateJson = await page.evaluate((saveKey) => localStorage.getItem(saveKey), SAVE_KEY);
-    expect(saveStateJson).not.toBeNull();
-    const save = JSON.parse(saveStateJson!);
-    expect(save.activeRun?.characterId).toBe("knight");
-    expect(Array.isArray(save.activeRun?.runDeck)).toBe(true);
+    await expect
+      .poll(
+        async () => {
+          const saveStateJson = await page.evaluate((saveKey) => localStorage.getItem(saveKey), SAVE_KEY);
+          if (!saveStateJson) return null;
+          const save = JSON.parse(saveStateJson) as { activeRun?: { characterId?: string; runDeck?: unknown[] } };
+          return save.activeRun?.characterId === "knight" && Array.isArray(save.activeRun?.runDeck)
+            ? save.activeRun
+            : null;
+        },
+        { timeout: 5000, message: "activeRun should persist knight characterId and runDeck after run start" },
+      )
+      .not.toBeNull();
   });
 
   test("back button returns to main menu", async ({ page }) => {
-    await page.goto("/");
-    await selectGameMode(page, "campaign");
+    const menu = new MenuPage(page);
+    await menu.goToCharacterSelect();
     await page.getByRole("button", { name: "Back" }).click();
-    await expect(page.getByRole("button", { name: "Play" })).toBeVisible();
+    await menu.expectMainMenu();
   });
 });
 
 test.describe("Navigation", () => {
-  test("in-battle menu allows navigation to collection, options, and talents", async ({ page }) => {
-    await enableFastMode(page);
+  test("in-battle menu allows navigation to collection, options, and talents", async ({ page, fastBattle, runtimeErrors }) => {
+    void fastBattle;
+    void runtimeErrors;
     await startBattleWithDeck(page, Array.from({ length: 6 }, () => makeCard()));
     const battle = new BattlePage(page);
 

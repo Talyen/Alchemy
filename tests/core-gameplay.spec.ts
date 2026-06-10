@@ -1,5 +1,15 @@
-import { expect, test } from "@playwright/test";
-import { ANVIL_CARD, enableFastMode, MANA_BERRIES_CARD, makeCard, makeHighDamageCard, startAtDestination, startBattleWithDeck, skipBattleAndClaimReward } from "./helpers";
+import { expect } from "@playwright/test";
+import {
+  ANVIL_CARD,
+  pinDestinationChoice,
+  MANA_BERRIES_CARD,
+  makeCard,
+  makeHighDamageCard,
+  startAtDestination,
+  startBattleWithDeck,
+  skipBattleAndClaimReward,
+} from "./helpers";
+import { test } from "./fixtures/e2e";
 import { BattlePage } from "./pages/battle-page";
 import { DestinationPage } from "./pages/destination-page";
 import { MenuPage } from "./pages/menu-page";
@@ -7,16 +17,18 @@ import { RewardPage } from "./pages/reward-page";
 import { critical } from "./playwright-tags";
 
 test.describe("Battle Flow", critical, () => {
-  test("normal combat can be won by playing cards and ending turns", async ({ page }) => {
-    await enableFastMode(page);
+  test("normal combat can be won by playing cards and ending turns", async ({ page, fastBattle, runtimeErrors }) => {
+    void fastBattle;
+    void runtimeErrors;
     await startBattleWithDeck(page, Array.from({ length: 6 }, () => makeHighDamageCard()));
     const battle = new BattlePage(page);
-    await battle.winViaCombat();
+    await battle.winViaCombat(3);
     await expect(battle.victoryHeading).toBeVisible();
   });
 
-  test("playing a card consumes mana and applies effects", async ({ page }) => {
-    await enableFastMode(page);
+  test("playing a card consumes mana and applies effects", async ({ page, fastBattle, runtimeErrors }) => {
+    void fastBattle;
+    void runtimeErrors;
     await startBattleWithDeck(page, Array.from({ length: 6 }, () => makeCard()));
     const battle = new BattlePage(page);
 
@@ -29,19 +41,24 @@ test.describe("Battle Flow", critical, () => {
     expect(handAfter).toBeGreaterThanOrEqual(0);
   });
 
-  test("end turn triggers enemy phase and draws new cards", async ({ page }) => {
-    await enableFastMode(page);
+  test("end turn triggers enemy phase and draws new cards", async ({ page, fastBattle, runtimeErrors }) => {
+    void fastBattle;
+    void runtimeErrors;
     await startBattleWithDeck(page, Array.from({ length: 6 }, () => makeCard()));
     const battle = new BattlePage(page);
 
     const handBefore = await battle.handCount();
+    await battle.playFirstCard();
+    expect(await battle.handCount()).toBe(handBefore - 1);
+
     await battle.endTurn();
-    const handAfter = await battle.handCount();
-    expect(handAfter).toBe(handBefore);
+    const handAfterTurn = await battle.handCount();
+    expect(handAfterTurn).toBe(4);
   });
 
-  test("anvil card grants forge status that persists across turns", async ({ page }) => {
-    await enableFastMode(page);
+  test("anvil card grants forge status that persists across turns", async ({ page, fastBattle, runtimeErrors }) => {
+    void fastBattle;
+    void runtimeErrors;
     await startBattleWithDeck(page, [ANVIL_CARD, ANVIL_CARD, ANVIL_CARD, ANVIL_CARD, ANVIL_CARD, ANVIL_CARD]);
     const battle = new BattlePage(page);
 
@@ -54,8 +71,9 @@ test.describe("Battle Flow", critical, () => {
 });
 
 test.describe("Mana Mechanics", () => {
-  test("restore-mana overflows beyond maxMana", async ({ page }) => {
-    await enableFastMode(page);
+  test("restore-mana overflows beyond maxMana", async ({ page, fastBattle, runtimeErrors }) => {
+    void fastBattle;
+    void runtimeErrors;
     await startBattleWithDeck(page, [MANA_BERRIES_CARD, MANA_BERRIES_CARD, MANA_BERRIES_CARD, MANA_BERRIES_CARD, MANA_BERRIES_CARD, MANA_BERRIES_CARD]);
     const battle = new BattlePage(page);
 
@@ -82,10 +100,13 @@ test.describe("Full Run Flow", () => {
 });
 
 test.describe("Talents", () => {
+  test.beforeEach(async ({ page }) => {
+    await new MenuPage(page).gotoWithUnlockedMeta();
+  });
+
   test("talents screen shows all keyword categories", async ({ page }) => {
-    await page.goto("/");
-    await page.getByRole("button", { name: "Talents" }).click();
-    await expect(page.getByRole("heading", { name: "Talents" })).toBeVisible();
+    const menu = new MenuPage(page);
+    await menu.openTalents();
 
     const keywords = ["Physical", "Stun", "Block", "Forge", "Armor", "Health", "Burn", "Gold", "Holy", "Wish", "Poison", "Bleed", "Leech", "Freeze", "Mana"];
     for (const kw of keywords) {
@@ -94,8 +115,8 @@ test.describe("Talents", () => {
   });
 
   test("reset talents button is accessible from talent screen", async ({ page }) => {
-    await page.goto("/");
-    await page.getByRole("button", { name: "Talents" }).click();
+    const menu = new MenuPage(page);
+    await menu.openTalents();
 
     const resetBtn = page.getByRole("button", { name: "Reset Talents" });
     await expect(resetBtn).toBeVisible();
@@ -135,7 +156,7 @@ test.describe("Card Interactions", () => {
     await new MenuPage(page).stage.expectRunPhase("runLoop");
 
     await expect(page.getByRole("button", { name: "Rest" })).toBeVisible({ timeout: 3000 });
-    await page.evaluate(() => { Math.random = () => 0; });
+    await pinDestinationChoice(page, "Normal Combat");
     await page.getByRole("button", { name: "Rest" }).click();
     await destination.expectVisible();
     await destination.enterCombat("Normal Combat");
@@ -143,8 +164,9 @@ test.describe("Card Interactions", () => {
 });
 
 test.describe("Elite Combat", critical, () => {
-  test("elite combat destination starts a battle that can be won", async ({ page }) => {
-    await enableFastMode(page);
+  test("elite combat destination starts a battle that can be won", async ({ page, fastBattle, runtimeErrors }) => {
+    void fastBattle;
+    void runtimeErrors;
     await startAtDestination(
       page,
       { runDeck: Array.from({ length: 6 }, () => makeHighDamageCard()) },
@@ -152,7 +174,7 @@ test.describe("Elite Combat", critical, () => {
     );
 
     await new DestinationPage(page).enterCombat("Elite Combat");
-    await new BattlePage(page).winViaCombat();
+    await new BattlePage(page).winViaCombat(3);
     await new RewardPage(page).claimFirstReward();
     await new DestinationPage(page).expectVisible();
   });

@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { useAppStore } from "../../shared/stores/app-store";
 import { playUISound } from "@/lib/audio";
 import { TooltipBody, TooltipHeader, TooltipPanel, useTooltipFlip } from "../../shared/ui/tooltip-panel";
+import { TalentsLockedTooltip } from "../talents/talents-locked-tooltip";
 
 export function MenuScreen({
   onPlay,
@@ -126,16 +127,10 @@ export function MenuScreen({
             <ShineBorder shineColor="hsl(var(--primary))" borderWidth={1} duration={8} className="rounded-xl" />
           )}
           {showTalentsTooltip && isLocked && (
-            <TooltipPanel
-              width="w-64"
-              ref={talentsTooltipRef}
+            <TalentsLockedTooltip
+              panelRef={talentsTooltipRef}
               className="z-50 absolute left-full ml-4 top-1/2 -translate-y-1/2 text-left"
-            >
-              <TooltipHeader>Talents Locked</TooltipHeader>
-              <TooltipBody>
-                <p className="text-red-400 font-semibold">Finish a Run as the Knight to unlock</p>
-              </TooltipBody>
-            </TooltipPanel>
+            />
           )}
         </div>
         <div

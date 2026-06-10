@@ -43,7 +43,7 @@ export const blockTalents: TalentDefinition[] = [
     keywordId: "block",
     name: "Weighted Guard",
     description: "Increase Physical damage by half your Block",
-    effects: [setEffect("blockToPhysicalDamage", true)],
+    effects: [setEffect("blockToPhysicalDamageMultiplier", 0.5)],
   },
   {
     id: "block-reduce-burn",

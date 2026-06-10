@@ -5,9 +5,8 @@ import { useEffect, useRef } from "react";
 import { useRunDomainStore } from "@/features/alchemy/shared/stores/run-session-facade";
 import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
 import { useHomesteadStore } from "@/features/alchemy/shared/stores/homestead-store";
-import { snapshotRun } from "@/features/alchemy/shared/stores/run-transitions";
-import { saveAlchemySaveData } from "@/features/alchemy/shared/storage";
-import { CURRENT_CONTENT_VERSION, CURRENT_GAME_BUILD_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
+import { resolveActiveRunForSave } from "@/features/alchemy/shared/stores/run-transitions";
+import { buildAlchemySaveDataFromStores, saveAlchemySaveData } from "@/features/alchemy/shared/storage";
 import { isAnimationDisabled } from "@/lib/game-constants";
 
 // Persists the normalized App/controller snapshot whenever any saved field changes.
@@ -32,40 +31,9 @@ export function useAlchemyAutosaveFromStores(enabled = true) {
       isDirty = false;
 
       const runDomainState = useRunDomainStore.getState();
-      const appState = useAppStore.getState();
-      const homesteadState = useHomesteadStore.getState();
+      const activeRun = resolveActiveRunForSave(runDomainState.session.hasActiveRun);
 
-      const activeRun = runDomainState.session.hasActiveRun ? snapshotRun() : null;
-
-      const saveData = {
-        saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
-        gameBuildVersion: CURRENT_GAME_BUILD_VERSION,
-        contentVersion: CURRENT_CONTENT_VERSION,
-        selectedAspectRatio: appState.selectedAspectRatio,
-        displayMode: appState.displayMode,
-        uiScale: appState.uiScale,
-        brightness: appState.brightness,
-        discoveredCardIds: appState.discoveredCardIds,
-        encounteredEnemyIds: appState.encounteredEnemyIds,
-        discoveredTrinketIds: appState.discoveredTrinketIds,
-        musicVolume: appState.musicVol,
-        sfxVolume: appState.sfxVol,
-        masterVolume: appState.masterVol,
-        muteInBackground: appState.muteInBackground,
-        autoEndTurn: appState.autoEndTurn,
-        completedDifficulties: appState.completedDifficulties,
-        finishedRunCharacters: appState.finishedRunCharacters,
-        talentXP: runDomainState.progress.talentXP,
-        unlockedTalents: runDomainState.progress.unlockedTalents,
-        activeRun,
-        materialInventory: homesteadState.materialInventory,
-        constructedBuildings: homesteadState.constructedBuildings,
-        plantedFarms: homesteadState.plantedFarms,
-        completedResearch: homesteadState.completedResearch,
-        bondedCompanions: homesteadState.bondedCompanions,
-      };
-
-      saveAlchemySaveData(saveData);
+      saveAlchemySaveData(buildAlchemySaveDataFromStores(activeRun));
     };
 
     const triggerSave = () => {

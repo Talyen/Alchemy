@@ -9,7 +9,7 @@ function makeCard(overrides: Partial<BattleCard> = {}): BattleCard {
   return { id: "test-card", title: "Test", descriptionLines: [""], art: "", cost: 1, effects: [], ...overrides };
 }
 
-function createTestBattleState() {
+function makeProductionBattleState() {
   return createBattleState({ runDeck: [makeCard()], currentEnemy: skeleton });
 }
 
@@ -23,12 +23,12 @@ describe("getPlayerStatusChips", () => {
   });
 
   it("returns empty array when no statuses are active", () => {
-    const state = createTestBattleState();
+    const state = makeProductionBattleState();
     expect(getPlayerStatusChips(state)).toEqual([]);
   });
 
   it("returns matching chips for active statuses", () => {
-    const state = createTestBattleState();
+    const state = makeProductionBattleState();
     state.playerStatuses.block = 10;
     state.playerStatuses.burn = 3;
     const chips = getPlayerStatusChips(state);
@@ -38,7 +38,7 @@ describe("getPlayerStatusChips", () => {
   });
 
   it("filters out zero-value statuses", () => {
-    const state = createTestBattleState();
+    const state = makeProductionBattleState();
     state.playerStatuses.block = 0;
     state.playerStatuses.burn = 5;
     const chips = getPlayerStatusChips(state);
@@ -47,7 +47,7 @@ describe("getPlayerStatusChips", () => {
   });
 
   it("returns chips in defined order", () => {
-    const state = createTestBattleState();
+    const state = makeProductionBattleState();
     state.playerStatuses.burn = 3;
     state.playerStatuses.block = 10;
     state.playerStatuses.stun = 1;
@@ -67,12 +67,12 @@ describe("getEnemyStatusChips", () => {
   });
 
   it("returns empty array when no statuses are active", () => {
-    const state = createTestBattleState();
+    const state = makeProductionBattleState();
     expect(getEnemyStatusChips(state)).toEqual([]);
   });
 
   it("returns matching chips for active statuses", () => {
-    const state = createTestBattleState();
+    const state = makeProductionBattleState();
     state.enemyStatuses.poison = 4;
     state.enemyStatuses.freeze = 1;
     const chips = getEnemyStatusChips(state);
@@ -81,7 +81,7 @@ describe("getEnemyStatusChips", () => {
   });
 
   it("filters out zero-value statuses", () => {
-    const state = createTestBattleState();
+    const state = makeProductionBattleState();
     state.enemyStatuses.poison = 0;
     state.enemyStatuses.bleed = 2;
     const chips = getEnemyStatusChips(state);
@@ -90,7 +90,7 @@ describe("getEnemyStatusChips", () => {
   });
 
   it("does not expose pending bleed leech healing as a status chip", () => {
-    const state = createTestBattleState();
+    const state = makeProductionBattleState();
     state.enemyStatuses.bleed = 2;
     state.pendingBleedLeechHealing = 4;
     expect(getEnemyStatusChips(state)).toEqual([{ id: "bleed", value: 2 }]);
@@ -99,7 +99,7 @@ describe("getEnemyStatusChips", () => {
 
 describe("createBattleState", () => {
   it("produces a valid state with playerStatuses and enemyStatuses", () => {
-    const state = createTestBattleState();
+    const state = makeProductionBattleState();
     expect(state.playerStatuses).toBeDefined();
     expect(state.enemyStatuses).toBeDefined();
     expect(typeof state.playerStatuses.block).toBe("number");

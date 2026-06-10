@@ -128,7 +128,7 @@ describe("endPlayerTurn — standard branch", () => {
     const state = battleState({ playerHealth: 30 });
     const result = endPlayerTurn(state);
     expect(result.enemyPerformedAttack).toBe(true);
-    expect(result.state.playerHealth).toBeLessThan(30);
+    expect(result.state.playerHealth).toBe(20);
   });
 
   it("applies player DoT after enemy attack", () => {
@@ -195,7 +195,7 @@ describe("endPlayerTurn — tick order", () => {
     const result = endPlayerTurn(state);
     expect(result.enemyTurnStartState?.enemyHealth).toBe(40);
     expect(result.enemyPerformedAttack).toBe(true);
-    expect(result.state.playerHealth).toBeLessThan(30);
+    expect(result.state.playerHealth).toBe(20);
   });
 
   it("skips attack when enemy dies to DoT before attacking", () => {

@@ -1,10 +1,13 @@
-import { expect, test } from "@playwright/test";
-import { enableFastMode, makeCard, startBattleWithDeck } from "./helpers";
+import { expect } from "@playwright/test";
+import { makeCard, startBattleWithDeck } from "./helpers";
 import { BattlePage } from "./pages/battle-page";
+import { test } from "./fixtures/e2e";
 
 test.describe("Keyboard Navigation", () => {
-  test("keyboard controls and hotkeys work in combat", async ({ page }) => {
-    await enableFastMode(page);
+  test("keyboard controls and hotkeys work in combat", async ({ page, fastBattle, runtimeErrors }) => {
+    void fastBattle;
+    void runtimeErrors;
+
     await startBattleWithDeck(page, Array.from({ length: 6 }, () => makeCard()));
     const battle = new BattlePage(page);
 

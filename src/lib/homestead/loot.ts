@@ -110,6 +110,26 @@ export function applyMaterialFindBonus(
   return { ...materials, herbs: Math.floor(materials.herbs * (1 + effects.herbFindBonus)) };
 }
 
+type EndOfRunHomesteadEffects = Pick<
+  HomesteadEffectManifest,
+  "endRunFoodPerRoom" | "endRunHerbsPerRoom" | "endRunCrystalPerRoom" | "herbFindBonus"
+>;
+
+// Applies homestead flat end-of-run yields, then herb find multiplier (combat/mystery only).
+export function applyEndOfRunHomesteadBonuses(
+  base: MaterialInventory,
+  effects: EndOfRunHomesteadEffects,
+  roomsEncountered: number,
+): MaterialInventory {
+  const withFlatYields = {
+    ...base,
+    herbs: base.herbs + effects.endRunHerbsPerRoom * roomsEncountered,
+    food: base.food + effects.endRunFoodPerRoom * roomsEncountered,
+    crystal: base.crystal + effects.endRunCrystalPerRoom * roomsEncountered,
+  };
+  return applyMaterialFindBonus(withFlatYields, effects);
+}
+
 // End-of-run material bonus based on performance.
 // More rooms cleared, acts reached, and bosses killed = more materials.
 export function getEndOfRunMaterials(roomsEncountered: number, currentAct: number): MaterialInventory {

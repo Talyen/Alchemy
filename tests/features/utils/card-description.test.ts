@@ -256,7 +256,11 @@ describe("getEffectiveCardDescriptionLines", () => {
     ]);
   });
 
-  it.each(cardLibrary.map((c) => [c.id, c] as const))(
+  const perManaCrystalCards = cardLibrary.filter((card) =>
+    card.descriptionLines.some((line) => line.includes("per Mana Crystal")),
+  );
+
+  it.each(perManaCrystalCards.map((c) => [c.id, c] as const))(
     "%s — per Mana Crystal lines are preserved in effective descriptions",
     (_id, card) => {
       const effective = getEffectiveCardDescriptionLines(card);

@@ -9,6 +9,7 @@ import {
 } from "@/features/alchemy/run-loop/navigation/victory-flow";
 import { createEmptyRewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
 import { emptyInventory } from "@/lib/homestead/inventory";
+import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
 import { playGoldGain } from "@/lib/audio";
 import type { Destination } from "@/features/alchemy/shared/types";
 
@@ -56,21 +57,7 @@ function baseInput(overrides: Record<string, unknown> = {}): VictoryRewardsInput
     runMaxHealth: 30,
     destinationIndexInAct: 2,
     completedDestinations: ["Normal Combat", "Normal Combat"],
-    homesteadEffects: {
-      flatPhysicalDamage: 0,
-      companionDamage: 0,
-      companionBondLevels: {},
-      potionHealMultiplier: 1,
-      potionDiscount: 0,
-      potionPotency: 0,
-      herbFindBonus: 0,
-      startGold: 0,
-      startBlock: 0,
-      campfireHealBonus: 0,
-      physicalCritChance: 0,
-      startMaxHealthBonus: 0,
-      forgeToBurn: false,
-    },
+    homesteadEffects: { ...defaultHomesteadEffects },
     getAvailableDestinations: vi.fn(() => ["Normal Combat", "Campfire", "Mystery"] as Destination[]),
     bossEnemyId: "mimic",
     ...overrides,
@@ -85,7 +72,7 @@ describe("withSelectedBossForDestinations", () => {
   it("sets selectedBossId when only Boss Combat is available", () => {
     const reward = createEmptyRewardState(["Boss Combat"]);
     const result = withSelectedBossForDestinations(["Boss Combat"], reward, "mimic");
-    expect(result.selectedBossId).toBeTruthy();
+    expect(result.selectedBossId).toBe("mimic");
   });
 
   it("clears selectedBossId when multiple destinations are available", () => {
@@ -111,7 +98,7 @@ describe("createDestinationRewardState", () => {
 
   it("sets selectedBossId for single boss destination", () => {
     const result = createDestinationRewardState(["Boss Combat"], "mimic");
-    expect(result.selectedBossId).toBeTruthy();
+    expect(result.selectedBossId).toBe("mimic");
     expect(result.destinations).toEqual(["Boss Combat"]);
   });
 });
@@ -135,7 +122,7 @@ describe("computeVictoryRewardState", () => {
       destinations: [],
     });
     expect(result.rewardType).toBe("trinket");
-    expect(result.gold).toBeGreaterThan(0);
+    expect(result.gold).toBe(25);
   });
 
   it("creates combat reward state for normal enemies", () => {
@@ -157,7 +144,7 @@ describe("computeVictoryRewardState", () => {
     });
     expect(["card", "trinket"]).toContain(result.rewardType);
     expect(result.destinations).toEqual(["Normal Combat", "Campfire"]);
-    expect(result.gold).toBeGreaterThan(0);
+    expect(result.gold).toBe(15);
   });
 
   it("forces trinket reward when collector modifier is active", () => {
@@ -184,7 +171,7 @@ describe("computeVictoryRewardState", () => {
 describe("computeVictoryRewards", () => {
   it("computes combat victory rewards for normal enemy", () => {
     const result = computeVictoryRewards(baseInput());
-    expect(result.goldEarned).toBeGreaterThan(0);
+    expect(result.goldEarned).toBe(15);
     expect(["card", "trinket"]).toContain(result.rewardState.rewardType);
     expect(result.playerHealth).toBe(30);
     expect(result.maxHealthDelta).toBe(0);
@@ -196,7 +183,8 @@ describe("computeVictoryRewards", () => {
     const result = computeVictoryRewards(baseInput({
       battleState: baseBattleState({ currentEnemy: { id: "goblin-chief", enemyType: "elite" } }),
     }));
-    expect(result.eliteBonus).toBeGreaterThan(0);
+    expect(result.eliteBonus).toBe(4);
+    expect(result.goldEarned).toBe(19);
   });
 
   it("doubles gold reward when enemy has gold-trove trait", () => {
@@ -226,7 +214,8 @@ describe("computeVictoryRewards", () => {
     const result = computeVictoryRewards(baseInput({
       battleState: baseBattleState({ currentEnemy: { id: "dragon", enemyType: "boss" } }),
     }));
-    expect(result.bossBonus).toBeGreaterThan(0);
+    expect(result.bossBonus).toBe(7);
+    expect(result.goldEarned).toBe(22);
     expect(result.rewardState.rewardType).toBe("trinket");
   });
 
@@ -235,7 +224,8 @@ describe("computeVictoryRewards", () => {
       contentSystemType: "labyrinth",
       activeLabyrinthRewardModifiers: ["generous"],
     }));
-    expect(result.generousBonus).toBeGreaterThan(0);
+    expect(result.generousBonus).toBe(7);
+    expect(result.goldEarned).toBe(22);
   });
 
   it("applies labyrinth scavenger reward modifier to materials", () => {
@@ -303,6 +293,7 @@ describe("commitVictoryRewards", () => {
   function commitDeps(overrides: Record<string, unknown> = {}) {
     return {
       battleState: baseBattleState({ gold: 5, pendingMaterials: emptyInventory() }),
+      contentSystemType: "campaign" as const,
       addHomesteadMaterials: vi.fn(),
       addRunGold: vi.fn(),
       setRunMaxHealth: vi.fn(),
@@ -333,5 +324,24 @@ describe("commitVictoryRewards", () => {
       addHomesteadMaterials,
     }));
     expect(addHomesteadMaterials).toHaveBeenCalledWith(materials);
+  });
+
+  it("stamps victory routing context onto reward state", () => {
+    const setRewardState = vi.fn();
+    const battleState = baseBattleState({
+      currentEnemy: { id: "boss", enemyType: "boss" },
+      pendingMaterials: emptyInventory(),
+    });
+    commitVictoryRewards(victoryResult(), commitDeps({
+      battleState,
+      contentSystemType: "labyrinth",
+      setRewardState,
+    }));
+    expect(setRewardState).toHaveBeenCalledWith(
+      expect.objectContaining({
+        lastVictoryEnemyType: "boss",
+        lastVictoryContentSystem: "labyrinth",
+      }),
+    );
   });
 });

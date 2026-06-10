@@ -26,7 +26,6 @@ export const DEFAULT_TALENT_EFFECTS: TalentEffectManifest = {
   manaOnStun: 0,
 
   startBlock: 0,
-  blockToPhysicalDamage: false,
   blockPreventsBleed: false,
   blockPreventsPoison: false,
   blockPreventsStun: false,

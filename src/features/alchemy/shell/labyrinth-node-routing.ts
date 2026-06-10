@@ -78,7 +78,7 @@ export function createLabyrinthNodeRouting(deps: LabyrinthNodeRoutingDeps) {
         );
       },
       onStartRest: () => enterLabyrinthNodeScreen(CONSTANTS.SCREENS.CAMPFIRE),
-      onStartMystery: () => enterLabyrinthNodeScreen(CONSTANTS.SCREENS.MYSTERY, () => deps.nav.beginMysteryEvent()),
+      onStartMystery: () => deps.nav.beginMysteryEvent(),
       onStartShop: () => enterLabyrinthNodeScreen(CONSTANTS.SCREENS.SHOP, () => deps.shop.initShop()),
       onStartAlchemist: () => enterLabyrinthNodeScreen(CONSTANTS.SCREENS.ALCHEMIST, () => deps.shop.initAlchemist()),
     });

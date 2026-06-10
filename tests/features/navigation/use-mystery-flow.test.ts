@@ -21,7 +21,7 @@ beforeEach(() => {
 describe("useMysteryFlow", () => {
   it("beginMysteryEvent stores an event and navigates", () => {
     const navigate = vi.fn();
-    const { result } = renderHook(() => useMysteryFlow({ advanceToNextDestination: vi.fn() }));
+    const { result } = renderHook(() => useMysteryFlow());
 
     act(() => {
       result.current.beginMysteryEvent(navigate);
@@ -33,8 +33,7 @@ describe("useMysteryFlow", () => {
   });
 
   it("handleMysteryChoice applies heal effects without follow-up", () => {
-    const advance = vi.fn();
-    const { result } = renderHook(() => useMysteryFlow({ advanceToNextDestination: advance }));
+    const { result } = renderHook(() => useMysteryFlow());
     const healthBefore = getRunProgressStoreView().runPlayerHealth;
 
     act(() => {
@@ -45,11 +44,10 @@ describe("useMysteryFlow", () => {
     });
 
     expect(getRunProgressStoreView().runPlayerHealth).toBe(Math.min(getRunProgressStoreView().runMaxHealth, healthBefore + 5));
-    expect(advance).not.toHaveBeenCalled();
   });
 
   it("handleMysteryChoice stops when chooseCard requires follow-up UI", () => {
-    const { result } = renderHook(() => useMysteryFlow({ advanceToNextDestination: vi.fn() }));
+    const { result } = renderHook(() => useMysteryFlow());
 
     act(() => {
       result.current.handleMysteryChoice({

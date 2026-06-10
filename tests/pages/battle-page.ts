@@ -89,7 +89,7 @@ export class BattlePage {
   }
 
   /** Win by playing cards and ending turns — works in preview/production builds. */
-  async winViaCombat(maxTurns = 12) {
+  async winViaCombat(maxTurns = 6) {
     for (let turn = 0; turn < maxTurns; turn++) {
       if (await this.isBattleOver()) break;
       await this.playAllCards();

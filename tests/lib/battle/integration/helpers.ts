@@ -4,7 +4,7 @@ import { makeTestBattleState, makeTestCard } from "../../../fixtures/battle";
 
 export { defaultBattleState };
 
-/** Integration tests often mock Math.random — default rng uses it unless overridden. */
+/** Default deck; rng uses Math.random so file-level spies control crit/proc rolls. Pass `rng: seededRng(n)` to override. */
 export const makeState = (overrides: Parameters<typeof makeTestBattleState>[0] = {}) =>
   makeTestBattleState({
     rng: Math.random,

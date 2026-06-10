@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   DOCUMENTED_META_TRANSITIONS,
+  DOCUMENTED_RUN_END_TRANSITIONS,
   DOCUMENTED_RUN_LOOP_TRANSITIONS,
   getRunPhase,
   isDocumentedTransition,
@@ -44,6 +45,11 @@ describe("run-screen-router", () => {
   it("documents known run loop transitions", () => {
     expect(DOCUMENTED_RUN_LOOP_TRANSITIONS[ROUTE_SCREENS.BATTLE]).toContain(ROUTE_SCREENS.REWARDS);
     expect(isDocumentedTransition(ROUTE_SCREENS.BATTLE, ROUTE_SCREENS.REWARDS)).toBe(true);
+  });
+
+  it("documents known run end transitions", () => {
+    expect(DOCUMENTED_RUN_END_TRANSITIONS[ROUTE_SCREENS.GAME_OVER]).toContain(ROUTE_SCREENS.MENU);
+    expect(isDocumentedTransition(ROUTE_SCREENS.RUN_VICTORY, ROUTE_SCREENS.MENU)).toBe(true);
   });
 
   it("derives run phase from screen and active battle flag", () => {

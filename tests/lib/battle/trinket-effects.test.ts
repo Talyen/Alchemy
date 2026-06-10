@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { applyIronwoodBuckler, applyBoneCharmHeal, applyLuckyCloverGold } from "@/lib/battle/trinket-effects";
 import type { CombatTextEvent } from "@/lib/battle/types";
-import { createTestBattleState } from "./test-state";
+import { patchBattleState } from "./test-state";
 
 describe("applyIronwoodBuckler", () => {
   it("converts block to armor when block >= threshold", () => {
-    const state = createTestBattleState({
-      playerStatuses: { ...createTestBattleState().playerStatuses, block: 10 },
-      trinketEffects: { ...createTestBattleState().trinketEffects, blockToArmorThreshold: 5, blockToArmorAmount: 3 },
+    const state = patchBattleState({
+      playerStatuses: { block: 10 },
+      trinketEffects: { blockToArmorThreshold: 5, blockToArmorAmount: 3 },
     });
     const texts: CombatTextEvent[] = [];
     const next = applyIronwoodBuckler(state, texts);
@@ -17,9 +17,9 @@ describe("applyIronwoodBuckler", () => {
   });
 
   it("does nothing when block is below threshold", () => {
-    const state = createTestBattleState({
-      playerStatuses: { ...createTestBattleState().playerStatuses, block: 3 },
-      trinketEffects: { ...createTestBattleState().trinketEffects, blockToArmorThreshold: 5, blockToArmorAmount: 3 },
+    const state = patchBattleState({
+      playerStatuses: { block: 3 },
+      trinketEffects: { blockToArmorThreshold: 5, blockToArmorAmount: 3 },
     });
     const texts: CombatTextEvent[] = [];
     const next = applyIronwoodBuckler(state, texts);
@@ -28,7 +28,7 @@ describe("applyIronwoodBuckler", () => {
   });
 
   it("does nothing when threshold is 0 (trinket not owned)", () => {
-    const state = createTestBattleState({ playerStatuses: { ...createTestBattleState().playerStatuses, block: 10 } });
+    const state = patchBattleState({ playerStatuses: { block: 10 } });
     const texts: CombatTextEvent[] = [];
     const next = applyIronwoodBuckler(state, texts);
     expect(next.playerStatuses.armor).toBe(0);
@@ -36,9 +36,9 @@ describe("applyIronwoodBuckler", () => {
   });
 
   it("does not mutate original state", () => {
-    const state = createTestBattleState({
-      playerStatuses: { ...createTestBattleState().playerStatuses, block: 10 },
-      trinketEffects: { ...createTestBattleState().trinketEffects, blockToArmorThreshold: 5, blockToArmorAmount: 3 },
+    const state = patchBattleState({
+      playerStatuses: { block: 10 },
+      trinketEffects: { blockToArmorThreshold: 5, blockToArmorAmount: 3 },
     });
     const texts: CombatTextEvent[] = [];
     applyIronwoodBuckler(state, texts);
@@ -48,10 +48,10 @@ describe("applyIronwoodBuckler", () => {
 
 describe("applyBoneCharmHeal", () => {
   it("heals player on enemy kill when boneCharmHealOnKill > 0", () => {
-    const state = createTestBattleState({
+    const state = patchBattleState({
       enemyHealth: 0,
       playerHealth: 20,
-      trinketEffects: { ...createTestBattleState().trinketEffects, boneCharmHealOnKill: 5 },
+      trinketEffects: { boneCharmHealOnKill: 5 },
     });
     const texts: CombatTextEvent[] = [];
     const next = applyBoneCharmHeal(state, true, texts);
@@ -60,7 +60,7 @@ describe("applyBoneCharmHeal", () => {
   });
 
   it("does nothing when enemy was not alive before this hit", () => {
-    const state = createTestBattleState({ enemyHealth: 0 });
+    const state = patchBattleState({ enemyHealth: 0 });
     const texts: CombatTextEvent[] = [];
     const next = applyBoneCharmHeal(state, false, texts);
     expect(next).toBe(state);
@@ -68,7 +68,7 @@ describe("applyBoneCharmHeal", () => {
   });
 
   it("does nothing when enemy is still alive", () => {
-    const state = createTestBattleState({ enemyHealth: 10 });
+    const state = patchBattleState({ enemyHealth: 10 });
     const texts: CombatTextEvent[] = [];
     const next = applyBoneCharmHeal(state, true, texts);
     expect(next).toBe(state);
@@ -76,7 +76,7 @@ describe("applyBoneCharmHeal", () => {
   });
 
   it("does nothing when boneCharmHealOnKill is 0", () => {
-    const state = createTestBattleState({ enemyHealth: 0 });
+    const state = patchBattleState({ enemyHealth: 0 });
     const texts: CombatTextEvent[] = [];
     const next = applyBoneCharmHeal(state, true, texts);
     expect(next).toBe(state);
@@ -86,8 +86,8 @@ describe("applyBoneCharmHeal", () => {
 
 describe("applyLuckyCloverGold", () => {
   it("grants gold on damage when luckyCloverGoldChance triggers", () => {
-    const state = createTestBattleState({
-      trinketEffects: { ...createTestBattleState().trinketEffects, luckyCloverGoldChance: 50 },
+    const state = patchBattleState({
+      trinketEffects: { luckyCloverGoldChance: 50 },
       rng: () => 0.01,
     });
     const texts: CombatTextEvent[] = [];
@@ -97,8 +97,8 @@ describe("applyLuckyCloverGold", () => {
   });
 
   it("does nothing when random does not trigger", () => {
-    const state = createTestBattleState({
-      trinketEffects: { ...createTestBattleState().trinketEffects, luckyCloverGoldChance: 50 },
+    const state = patchBattleState({
+      trinketEffects: { luckyCloverGoldChance: 50 },
       rng: () => 0.99,
     });
     const texts: CombatTextEvent[] = [];
@@ -108,7 +108,7 @@ describe("applyLuckyCloverGold", () => {
   });
 
   it("does nothing when luckyCloverGoldChance is 0", () => {
-    const state = createTestBattleState();
+    const state = patchBattleState();
     const texts: CombatTextEvent[] = [];
     const next = applyLuckyCloverGold(state, 7, texts);
     expect(next).toBe(state);
@@ -116,8 +116,8 @@ describe("applyLuckyCloverGold", () => {
   });
 
   it("does nothing when damage is 0", () => {
-    const state = createTestBattleState({
-      trinketEffects: { ...createTestBattleState().trinketEffects, luckyCloverGoldChance: 50 },
+    const state = patchBattleState({
+      trinketEffects: { luckyCloverGoldChance: 50 },
     });
     const texts: CombatTextEvent[] = [];
     const next = applyLuckyCloverGold(state, 0, texts);
@@ -126,8 +126,8 @@ describe("applyLuckyCloverGold", () => {
   });
 
   it("does nothing when damage is negative", () => {
-    const state = createTestBattleState({
-      trinketEffects: { ...createTestBattleState().trinketEffects, luckyCloverGoldChance: 50 },
+    const state = patchBattleState({
+      trinketEffects: { luckyCloverGoldChance: 50 },
     });
     const texts: CombatTextEvent[] = [];
     const next = applyLuckyCloverGold(state, -3, texts);

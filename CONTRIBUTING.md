@@ -12,6 +12,8 @@ GitHub branch protection is not available on this repo, so **local hooks are the
 4. `npm run build`
 5. `npm run test:e2e:prepush` — fast **@prepush** subset (9 tests, parallel preview build; includes one animation canary)
 
+**Before opening a PR**, also run `npm run test:e2e:prepush:full` (`@critical`, preview + CI flags). The pre-push hook only runs `@prepush`; PR CI runs the broader `@critical` suite (~40 tests).
+
 Manual full gate before **`main`**: `npm run test:e2e:main-gate` (full suite, same as CI `e2e-full`). Lighter checks: `npm run check:push` or `npm run test:e2e:prepush:full` (`@critical` only).
 
 Install hooks once: `npm run prepare` (runs on `npm install`).
@@ -25,6 +27,7 @@ First-time Playwright: `npx playwright install chromium`.
 | Active run / screen / bootstrap | `run-domain-store.ts`, `run-transitions.ts`, `shell/use-alchemy-run-controller.ts`, `hydrate.ts` | `npm test -- tests/features/stores/ tests/features/shell/ tests/lib/active-run-session/hydrate.test.ts tests/architecture/active-run-bootstrap.test.ts` then `npm run test:e2e:prepush` |
 | Save / persistence | `storage/`, `save-schemas/`, `active-run.ts` | `npm test -- tests/features/storage` + `tests/save-persistence.spec.ts` + `npm run test:e2e:prepush` |
 | Battle / cards | `src/lib/battle/`, `src/lib/game-data/` | `npm test -- tests/lib/battle` + `tests/lib/game-data/descriptions-match-effects.test.ts` |
+| Integration-style unit tests | `run-domain.test.ts`, `storage.test.ts`, `reward-flow*.test.ts`, `shell/*-hook.test.ts` | `npm test -- tests/features/stores/run-domain.test.ts tests/features/storage tests/features/navigation/reward-flow tests/features/shell` |
 | Battle E2E helpers | `tests/pages/battle-page.ts`, `tests/helpers.ts` (`enableFastMode`) | `npm run test:e2e:prepush` (animation canary) + `npm run test:e2e:main-gate` before pushing to `main` |
 | UI flows | `screens/`, controllers | Relevant `tests/*.spec.ts` + `npm run test:e2e:prepush` |
 | Any push to `main` | — | Pre-push hook + `npm run test:e2e:main-gate` when battle/helpers change |
@@ -42,6 +45,8 @@ First-time Playwright: `npx playwright install chromium`.
 |-----|------------------|
 | CI `e2e` | `npm run build && npm run test:e2e:prepush:full` |
 | Pre-push hook | `npm run build && npm run test:e2e:prepush` |
-| CI `e2e-full` (push to `main` only) | `npm run test:e2e:main-gate` |
+| CI `e2e-full` (push to `main` only, 4 shards) | `npm run test:e2e:main-gate` |
+
+On `main` push, CI skips the redundant `e2e` (`@critical`) job because `e2e-full` is a superset.
 
 See [AGENTS.md](./AGENTS.md) for architecture and commands; [docs/WORKFLOWS.md](./docs/WORKFLOWS.md) for implementation checklists.

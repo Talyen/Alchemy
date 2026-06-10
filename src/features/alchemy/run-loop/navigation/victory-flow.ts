@@ -275,6 +275,7 @@ export function computeVictoryRewards(
 
 export type CommitVictoryRewardsDeps = {
   battleState: BattleState;
+  contentSystemType: ContentSystemId;
   addHomesteadMaterials: (materials: MaterialInventory) => void;
   addRunGold: (amount: number) => void;
   setRunMaxHealth: (fn: (prev: number) => number) => void;
@@ -298,7 +299,11 @@ export function commitVictoryRewards(result: VictoryRewardsResult, deps: CommitV
     playGoldGain();
   }
 
-  deps.setRewardState(result.rewardState);
+  deps.setRewardState({
+    ...result.rewardState,
+    lastVictoryEnemyType: deps.battleState.currentEnemy.enemyType,
+    lastVictoryContentSystem: deps.contentSystemType,
+  });
   if (shouldGrantCompanionReward(result.labyrinthRewardModifiers)) {
     deps.setCompanionRewardCards(getCompanionCardChoices());
   } else {

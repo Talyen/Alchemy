@@ -1,28 +1,11 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   afterCampaignCharacterResolved,
-  applyRunDefeatTeardown,
   getPreviousDestination,
   tryStartNoviceCampaignBattle,
 } from "@/features/alchemy/run-loop/navigation/run-navigation-helpers";
 import { DEFAULT_BATTLE_ENEMY_TYPE, DEFAULT_CAMPAIGN_DIFFICULTY_ID } from "@/lib/game-constants";
 import { getStartingDeck } from "@/lib/game-data";
-
-vi.mock("@/lib/audio", () => ({
-  stopAllSfx: vi.fn(),
-  playDefeat: vi.fn(),
-}));
-
-vi.mock("@/features/alchemy/shared/storage", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/features/alchemy/shared/storage")>();
-  return {
-    ...actual,
-    flushAlchemySaveNow: vi.fn().mockResolvedValue(undefined),
-  };
-});
-
-import { playDefeat, stopAllSfx } from "@/lib/audio";
-import { flushAlchemySaveNow } from "@/features/alchemy/shared/storage";
 
 describe("getPreviousDestination", () => {
   it("returns undefined at the start of an act", () => {
@@ -106,26 +89,5 @@ describe("afterCampaignCharacterResolved", () => {
       onContinue,
     );
     expect(onContinue).toHaveBeenCalledOnce();
-  });
-});
-
-describe("applyRunDefeatTeardown", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it("awards materials, finalizes XP, stops audio, and clears combat", () => {
-    const awardRunEndMaterials = vi.fn();
-    const finalizeRunXP = vi.fn();
-    const clearCombatState = vi.fn();
-
-    applyRunDefeatTeardown({ awardRunEndMaterials, finalizeRunXP, clearCombatState });
-
-    expect(awardRunEndMaterials).toHaveBeenCalledOnce();
-    expect(finalizeRunXP).toHaveBeenCalledOnce();
-    expect(flushAlchemySaveNow).toHaveBeenCalledWith(null);
-    expect(clearCombatState).toHaveBeenCalledOnce();
-    expect(stopAllSfx).toHaveBeenCalledOnce();
-    expect(playDefeat).toHaveBeenCalledOnce();
   });
 });

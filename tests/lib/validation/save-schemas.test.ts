@@ -10,8 +10,14 @@ import {
 } from "@/lib/validation";
 import { createSeededRng } from "@/lib/utils";
 import { generateLabyrinthMap, withCurrentNode } from "@/lib/content-systems/labyrinth/map-generation";
+import { baseHomesteadSave } from "../../fixtures/saves";
 
 describe("SaveDataSchema", () => {
+  it("parses a full homestead save fixture", () => {
+    const result = SaveDataSchema.safeParse(baseHomesteadSave);
+    expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
+  });
+
   it("parses a valid minimal save", () => {
     const result = SaveDataSchema.safeParse({
       activeRun: null,

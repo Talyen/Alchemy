@@ -1,7 +1,7 @@
 ﻿/**
  * Talent definitions, pools, UI filter/sampling helpers, and default manifests.
  * Depends on: src/lib/game-data/types.ts
- * Depended on by: src/lib/talents.ts, homestead, and the battle state machine
+ * Depended on by: src/lib/game-data/talents.ts, homestead, and the battle state machine
  */
 import type { KeywordId, TalentEffectManifest } from "../types";
 
@@ -18,6 +18,12 @@ export interface TalentDefinition {
   name?: string;
   description: string;
   effects?: TalentEffectOperation[];
+  /** NYI pool slots — excluded from unlock choices and spendable point caps. */
+  isPlaceholder?: boolean;
+}
+
+export function isTalentPlaceholder(talent: TalentDefinition): boolean {
+  return talent.isPlaceholder === true;
 }
 
 type NumericTalentEffectField = {
@@ -59,6 +65,7 @@ export function placeholderTalents(
       keywordId,
       name: `Placeholder ${index + 1}`,
       description: TALENTS_CONFIG.PLACEHOLDER_DESCRIPTION,
+      isPlaceholder: true,
     };
   });
 }
