@@ -1,7 +1,14 @@
 // Dispatches and applies mystery event consequences to the run state.
 // Depends on game libraries, audio triggers, utility helpers, and mystery types.
 // Consumed by the run navigation flow and the useMysteryFlow React hook.
-import { cardLibrary, getOfferableCardPool, trinketLibrary, type BattleCard, type KeywordId } from "@/lib/game-data";
+import {
+  cardLibrary,
+  getOfferableCardPool,
+  selectRewardCards,
+  trinketLibrary,
+  type BattleCard,
+  type KeywordId,
+} from "@/lib/game-data";
 import { playGoldGain, playGoldSpend } from "@/lib/audio";
 import { MYSTERY_CARD_CHOICES } from "@/lib/game-constants";
 import { appendCardToRunWithDiscovery, appendTrinketToRunWithDiscovery } from "../run/deck-mutations";
@@ -21,6 +28,7 @@ export type MysteryEffectResult = {
 };
 
 type MysteryEffectContext = {
+  runDeck?: BattleCard[];
   runMaxHealth: number;
   setRunDeck: Dispatch<SetStateAction<BattleCard[]>>;
   setRunGold: Dispatch<SetStateAction<number>>;
@@ -70,6 +78,7 @@ export function applyMysteryEffect(effect: MysteryEffect, context: MysteryEffect
 }
 
 // Shared card reward mutation keeps discovery tracking aligned with deck changes.
+// Note: We use a simpler subset of context keys since we only mutate runDeck.
 function addCardToRun(card: BattleCard, context: Pick<MysteryEffectContext, "setRunDeck">): void {
   appendCardToRunWithDiscovery(card, context.setRunDeck);
 }
@@ -81,7 +90,7 @@ function addSpecificMysteryCard(cardId: string, context: MysteryEffectContext) {
 }
 
 function offerMysteryCardChoices(context: MysteryEffectContext): MysteryEffectResult {
-  context.setMysteryCardChoices(sampleItems(getOfferableCardPool(), MYSTERY_CARD_CHOICES));
+  context.setMysteryCardChoices(selectRewardCards(context.runDeck, getOfferableCardPool(), MYSTERY_CARD_CHOICES));
   return { followUp: "choose-card" };
 }
 

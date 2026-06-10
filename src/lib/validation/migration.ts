@@ -110,6 +110,14 @@ function migrateV1ToV2(parsed: RawSaveData): RawSaveData {
   };
 }
 
+function migrateV2ToV3(parsed: RawSaveData): RawSaveData {
+  return {
+    ...parsed,
+    saveSchemaVersion: 3,
+    finishedRunCharacters: Array.isArray(parsed.finishedRunCharacters) ? parsed.finishedRunCharacters : [],
+  };
+}
+
 // V0 saves predate schema-version tracking; they lack gameBuildVersion and contentVersion.
 function migrateV0ToV1(parsed: RawSaveData): RawSaveData {
   return {
@@ -135,6 +143,10 @@ export function migrateSaveDataToCurrent(parsed: unknown): RawSaveData {
   if (version < 2) {
     current = migrateV1ToV2(current);
     version = 2;
+  }
+  if (version < 3) {
+    current = migrateV2ToV3(current);
+    version = 3;
   }
   return normalizeLegacyAspectRatio({ ...current, saveSchemaVersion: version });
 }

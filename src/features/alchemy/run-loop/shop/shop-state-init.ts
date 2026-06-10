@@ -1,11 +1,10 @@
-import { getOfferableCardPool, getStandardPotionPool, type BattleCard } from "@/lib/game-data";
+import { getOfferableCardPool, getStandardPotionPool, selectRewardCards, type BattleCard } from "@/lib/game-data";
 import {
   SHOP_CARDS_OFFERED,
   SHOP_REFRESHES,
   ALCHEMIST_POTIONS_OFFERED,
   ALCHEMIST_REFRESHES,
 } from "@/lib/game-constants";
-import { sampleItems } from "@/features/alchemy/shared/utils";
 
 export type ShopState = {
   cards: BattleCard[];
@@ -21,19 +20,18 @@ export type AlchemistState = {
   firstPurchaseUsed: boolean;
 };
 
-export function createInitialShopState(): ShopState {
+export function createInitialShopState(deck: BattleCard[] = []): ShopState {
   return {
-    cards: sampleItems(getOfferableCardPool(), SHOP_CARDS_OFFERED),
+    cards: selectRewardCards(deck, getOfferableCardPool(), SHOP_CARDS_OFFERED),
     refreshesLeft: SHOP_REFRESHES,
     removeUsed: false,
     firstPurchaseUsed: false,
   };
 }
 
-export function createInitialAlchemistState(): AlchemistState {
-  const potions = sampleItems(getStandardPotionPool(), ALCHEMIST_POTIONS_OFFERED);
+export function createInitialAlchemistState(deck: BattleCard[] = []): AlchemistState {
   return {
-    potions,
+    potions: selectRewardCards(deck, getStandardPotionPool(), ALCHEMIST_POTIONS_OFFERED),
     refreshesLeft: ALCHEMIST_REFRESHES,
     mixUsed: false,
     firstPurchaseUsed: false,

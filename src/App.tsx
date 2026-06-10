@@ -110,6 +110,7 @@ function AppMainContent({
   setDiscoveredTrinketIds: (ids: string[]) => void;
 }) {
   const run = useRunController();
+  const finishedRunCharacters = useAppStore((s) => s.finishedRunCharacters);
   const { screen: controllerScreen, commitPendingTransition } = run;
   const { renderedScreen, pagePhase, tooltipBlocked } = useRenderedScreenTransition(
     controllerScreen,
@@ -233,6 +234,9 @@ function AppMainContent({
     appStore.getState().setDiscoveredCardIds(cardLibrary.map((card) => card.id));
     appStore.getState().setEncounteredEnemyIds(enemyBestiary.map((enemy) => enemy.id));
     setDiscoveredTrinketIds(trinketLibrary.map((trinket) => trinket.id));
+    appStore
+      .getState()
+      .setFinishedRunCharacters(["knight", "rogue", "wizard", "ranger", "alchemist", "warlock", "druid"]);
     run.unlockAllTalents();
     homesteadStore.getState().setMaterials({ wood: 99, iron: 99, herbs: 99, food: 99, crystal: 99 });
   }
@@ -340,6 +344,8 @@ function AppMainContent({
         onTalents={() => run.goToScreen("talents")}
         onHomestead={() => run.goToScreen("homestead")}
         onOptions={() => run.goToScreen("options")}
+        isTalentsLocked={!finishedRunCharacters.includes("knight")}
+        isHomesteadLocked={!finishedRunCharacters.includes("knight")}
         {...(run.hasActiveBattle ? { onReturnToBattle: run.returnToBattle } : {})}
         {...(renderedScreen === "battle" ? { onEndRun: run.handleEndRun } : {})}
         {...(renderedScreen === "labyrinth-map" ? { onEndRun: run.handleLabyrinthEndRun } : {})}

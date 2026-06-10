@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { getCardKeywords } from "@/lib/game-data";
-import { selectRewardCards } from "@/features/alchemy/run-loop/reward-utils";
+import { getCardKeywords, selectRewardCards } from "@/lib/game-data";
 import { sampleItems } from "@/features/alchemy/shared/utils";
 import type { BattleCard } from "@/lib/game-data";
 
@@ -88,10 +87,12 @@ describe("getCardKeywords", () => {
   });
 
   it("deduplicates keywords from multiple effects", () => {
-    const c = card({ effects: [
-      { kind: "damage", damageType: "physical", amount: 5 },
-      { kind: "player-status", status: "block", amount: 3 },
-    ]});
+    const c = card({
+      effects: [
+        { kind: "damage", damageType: "physical", amount: 5 },
+        { kind: "player-status", status: "block", amount: 3 },
+      ],
+    });
     const kw = getCardKeywords(c);
     expect(kw).toContain("physical");
     expect(kw).toContain("block");
@@ -126,6 +127,51 @@ describe("selectRewardCards", () => {
     const result = selectRewardCards(deck, allCards, 2);
     expect(result).toHaveLength(2);
     vi.restoreAllMocks();
+  });
+
+  it("handles all-random rolls correctly and returns unique cards", () => {
+    // Mock Math.random to return 0.0, which is always < 0.5 (random)
+    vi.spyOn(Math, "random").mockReturnValue(0.0);
+    const deck: BattleCard[] = [card({ id: "stab", effects: [{ kind: "damage", damageType: "physical", amount: 4 }] })];
+    const allCards: BattleCard[] = [card({ id: "a" }), card({ id: "b" }), card({ id: "c" })];
+    const result = selectRewardCards(deck, allCards, 3);
+    expect(result).toHaveLength(3);
+    const ids = result.map((c) => c.id);
+    expect(ids).toContain("a");
+    expect(ids).toContain("b");
+    expect(ids).toContain("c");
+    vi.restoreAllMocks();
+  });
+
+  it("handles all-affinity rolls correctly and prioritizes deck keywords", () => {
+    // Mock Math.random to return 0.9, which is always >= 0.5 (affinity)
+    vi.spyOn(Math, "random").mockReturnValue(0.9);
+    const deck: BattleCard[] = [card({ id: "stab", effects: [{ kind: "damage", damageType: "physical", amount: 4 }] })];
+    const allCards: BattleCard[] = [
+      card({ id: "a", effects: [{ kind: "damage", damageType: "physical", amount: 5 }] }), // has matching keyword
+      card({ id: "b", effects: [{ kind: "damage", damageType: "physical", amount: 3 }] }), // has matching keyword
+      card({ id: "c", effects: [{ kind: "damage", damageType: "burn", amount: 1 }] }), // no matching keyword
+    ];
+    const result = selectRewardCards(deck, allCards, 2);
+    expect(result).toHaveLength(2);
+    expect(result.some((c) => c.id === "a" || c.id === "b")).toBe(true);
+    vi.restoreAllMocks();
+  });
+
+  it("uses custom RNG if provided and respects deterministic choice", () => {
+    let callCount = 0;
+    const deterministicRng = () => {
+      callCount++;
+      return 0.99; // always returns 0.99, meaning >= 0.5 (affinity)
+    };
+    const deck: BattleCard[] = [card({ id: "stab", effects: [{ kind: "damage", damageType: "physical", amount: 4 }] })];
+    const allCards: BattleCard[] = [
+      card({ id: "a", effects: [{ kind: "damage", damageType: "physical", amount: 5 }] }),
+    ];
+    const result = selectRewardCards(deck, allCards, 1, [], deterministicRng);
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe("a");
+    expect(callCount).toBeGreaterThan(0);
   });
 });
 

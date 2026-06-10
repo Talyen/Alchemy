@@ -8,6 +8,10 @@ import { ShineBorder } from "@/components/ui/shine-border";
 import { CardFlip } from "../../shared/ui/card-flip";
 import { staticCardTransform } from "@/features/alchemy/shared/config";
 import { clearTiltFromEvent, setTiltFromEvent } from "../../shared/utils";
+import { cn } from "@/lib/utils";
+import { useAppStore } from "../../shared/stores/app-store";
+import { playUISound } from "@/lib/audio";
+import { TooltipBody, TooltipHeader, TooltipPanel, useTooltipFlip } from "../../shared/ui/tooltip-panel";
 
 export function MenuScreen({
   onPlay,
@@ -35,6 +39,15 @@ export function MenuScreen({
   const variants = logoSrcVariants ?? [logoSrc];
   const [variantIdx, setVariantIdx] = useState(1);
   const [flipped, setFlipped] = useState(false);
+
+  const finishedRunCharacters = useAppStore((s) => s.finishedRunCharacters);
+  const isLocked = !finishedRunCharacters.includes("knight");
+
+  const [showTalentsTooltip, setShowTalentsTooltip] = useState(false);
+  const { ref: talentsTooltipRef } = useTooltipFlip(showTalentsTooltip);
+
+  const [showHomesteadTooltip, setShowHomesteadTooltip] = useState(false);
+  const { ref: homesteadTooltipRef } = useTooltipFlip(showHomesteadTooltip);
 
   const handleLogoClick = useCallback(() => {
     if (!flipped) {
@@ -85,34 +98,84 @@ export function MenuScreen({
           <BookOpen className="h-4 w-4" />
           Collection
         </Button>
-        <div className="relative">
+        <div
+          className="relative"
+          onMouseEnter={() => isLocked && setShowTalentsTooltip(true)}
+          onMouseLeave={() => setShowTalentsTooltip(false)}
+        >
           <Button
             size="lg"
             variant="outline"
-            className="stagger-item justify-center gap-2 w-56 text-base"
+            className={cn(
+              "stagger-item justify-center gap-2 w-56 text-base",
+              isLocked && "opacity-50 hover:bg-background cursor-not-allowed",
+            )}
             style={{ "--stagger-index": 2 } as CSSProperties}
-            onClick={onTalents}
+            onClick={() => {
+              if (isLocked) {
+                playUISound("error");
+              } else {
+                onTalents();
+              }
+            }}
           >
             <WandSparkles className="h-4 w-4" />
             Talents
           </Button>
-          {hasUnspentTalents && (
+          {hasUnspentTalents && !isLocked && (
             <ShineBorder shineColor="hsl(var(--primary))" borderWidth={1} duration={8} className="rounded-xl" />
           )}
+          {showTalentsTooltip && isLocked && (
+            <TooltipPanel
+              width="w-64"
+              ref={talentsTooltipRef}
+              className="z-50 absolute left-full ml-4 top-1/2 -translate-y-1/2 text-left"
+            >
+              <TooltipHeader>Talents Locked</TooltipHeader>
+              <TooltipBody>
+                <p className="text-red-400 font-semibold">Finish a Run as the Knight to unlock</p>
+              </TooltipBody>
+            </TooltipPanel>
+          )}
         </div>
-        <div className="relative">
+        <div
+          className="relative"
+          onMouseEnter={() => isLocked && setShowHomesteadTooltip(true)}
+          onMouseLeave={() => setShowHomesteadTooltip(false)}
+        >
           <Button
             size="lg"
             variant="outline"
-            className="stagger-item justify-center gap-2 w-56 text-base"
+            className={cn(
+              "stagger-item justify-center gap-2 w-56 text-base",
+              isLocked && "opacity-50 hover:bg-background cursor-not-allowed",
+            )}
             style={{ "--stagger-index": 3 } as CSSProperties}
-            onClick={onHomestead}
+            onClick={() => {
+              if (isLocked) {
+                playUISound("error");
+              } else {
+                onHomestead();
+              }
+            }}
           >
             <TreePine className="h-4 w-4" />
             Homestead
           </Button>
-          {hasAffordableHomestead && (
+          {hasAffordableHomestead && !isLocked && (
             <ShineBorder shineColor="hsl(var(--primary))" borderWidth={1} duration={8} className="rounded-xl" />
+          )}
+          {showHomesteadTooltip && isLocked && (
+            <TooltipPanel
+              width="w-64"
+              ref={homesteadTooltipRef}
+              className="z-50 absolute left-full ml-4 top-1/2 -translate-y-1/2 text-left"
+            >
+              <TooltipHeader>Homestead Locked</TooltipHeader>
+              <TooltipBody>
+                <p className="text-red-400 font-semibold">Finish a Run as the Knight to unlock</p>
+              </TooltipBody>
+            </TooltipPanel>
           )}
         </div>
         <Button

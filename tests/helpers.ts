@@ -262,6 +262,7 @@ type HomesteadSave = {
   discoveredTrinketIds?: string[];
   talentXP?: Record<string, number>;
   unlockedTalents?: Record<string, unknown>;
+  finishedRunCharacters?: string[];
 };
 
 const BASE_HOMESTEAD_SAVE: HomesteadSave = {
@@ -278,6 +279,7 @@ const BASE_HOMESTEAD_SAVE: HomesteadSave = {
   muteInBackground: true,
   autoEndTurn: true,
   completedDifficulties: { knight: [], rogue: [], wizard: [], ranger: [], alchemist: [], warlock: [], druid: [], wildcard: [] },
+  finishedRunCharacters: ["knight", "rogue", "wizard", "ranger", "alchemist", "warlock", "druid"],
   activeRun: null,
   materialInventory: { wood: 999, iron: 999, herbs: 999, food: 999, crystal: 999 },
   constructedBuildings: { "blacksmiths-forge": 0, "hunters-lodge": 0, "alchemy-lab": 0, "runesmiths-workshop": 0, "companion-sanctuary": 0, "wishing-well": 0 },
@@ -346,6 +348,9 @@ export async function injectLabyrinthRun(
       Object.assign(save.activeRun, data.runOverrides);
     }
     save.discoveredCardIds = data.discoveredCardIds || ["slash"];
+    if (!Array.isArray(save.finishedRunCharacters)) {
+      save.finishedRunCharacters = ["knight", "rogue", "wizard", "ranger", "alchemist", "warlock", "druid"];
+    }
     localStorage.setItem(data.saveKey, JSON.stringify(save));
   }, { saveKey: SAVE_KEY, map, deck: options.deck ?? null, discoveredCardIds: options.discoveredCardIds ?? null, runOverrides: options.runOverrides ?? null });
   await page.goto("/");
@@ -379,6 +384,9 @@ export async function injectSaveState(page: Page, overrides: Record<string, unkn
     if (Array.isArray(discoveredCardIds)) save.discoveredCardIds = discoveredCardIds;
     if (Array.isArray(encounteredEnemyIds)) save.encounteredEnemyIds = encounteredEnemyIds;
     if (Array.isArray(discoveredTrinketIds)) save.discoveredTrinketIds = discoveredTrinketIds;
+    if (!Array.isArray(save.finishedRunCharacters)) {
+      save.finishedRunCharacters = ["knight", "rogue", "wizard", "ranger", "alchemist", "warlock", "druid"];
+    }
     if (!Array.isArray(save.discoveredCardIds) || save.discoveredCardIds.length === 0) {
       save.discoveredCardIds = [
         "slash", "bash", "block", "anvil", "plate-mail", "apple", "meteor", "blessed-aegis",

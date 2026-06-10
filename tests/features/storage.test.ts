@@ -474,6 +474,12 @@ describe("SaveDataSchema", () => {
     expect(migrated.materialInventory).toEqual({ wood: 5 });
   });
 
+  it("migrates legacy v2 saves to the current schema", () => {
+    const migrated = migrateSaveDataToCurrent({ saveSchemaVersion: 2, discoveredCardIds: ["slash"] });
+    expect(migrated.saveSchemaVersion).toBe(3);
+    expect(migrated.finishedRunCharacters).toEqual([]);
+  });
+
   it("fills all defaults for empty input", () => {
     const result = parseSave({});
     expect(result.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
@@ -495,6 +501,7 @@ describe("SaveDataSchema", () => {
       druid: [],
       wildcard: [],
     });
+    expect(result.finishedRunCharacters).toEqual([]);
   });
 
   it("preserves current-format homestead tier records", () => {

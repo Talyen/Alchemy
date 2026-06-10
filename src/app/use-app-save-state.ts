@@ -54,6 +54,7 @@ export function useAlchemyAutosaveFromStores(enabled = true) {
         muteInBackground: appState.muteInBackground,
         autoEndTurn: appState.autoEndTurn,
         completedDifficulties: appState.completedDifficulties,
+        finishedRunCharacters: appState.finishedRunCharacters,
         talentXP: runDomainState.progress.talentXP,
         unlockedTalents: runDomainState.progress.unlockedTalents,
         activeRun,

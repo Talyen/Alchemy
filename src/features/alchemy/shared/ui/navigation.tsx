@@ -5,6 +5,9 @@ import { BookOpen, ChevronLeft, ChevronRight, Cog, House, Menu, Swords, TreePine
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import type { Screen } from "../types";
+import { playUISound } from "@/lib/audio";
+import { TooltipBody, TooltipHeader, TooltipPanel, useTooltipFlip } from "./tooltip-panel";
+import { useState } from "react";
 
 const NAVIGATION_CONFIG = {
   paginationMinHeightClass: "min-h-[4.07cqh]",
@@ -106,6 +109,8 @@ export function GameMenu({
   anchorRect,
   anchorPlacement = "up-left",
   currentScreen,
+  isTalentsLocked = false,
+  isHomesteadLocked = false,
 }: {
   isOpen: boolean;
   onClose: () => void;
@@ -119,7 +124,15 @@ export function GameMenu({
   anchorRect?: DOMRect | null;
   anchorPlacement?: "up-left" | "down-right" | "down-right-of-anchor";
   currentScreen?: Screen;
+  isTalentsLocked?: boolean;
+  isHomesteadLocked?: boolean;
 }) {
+  const [showTalentsTooltip, setShowTalentsTooltip] = useState(false);
+  const { ref: talentsTooltipRef } = useTooltipFlip(showTalentsTooltip);
+
+  const [showHomesteadTooltip, setShowHomesteadTooltip] = useState(false);
+  const { ref: homesteadTooltipRef } = useTooltipFlip(showHomesteadTooltip);
+
   if (!isOpen) return null;
 
   const panel = (
@@ -164,28 +177,78 @@ export function GameMenu({
           </Button>
         ) : null}
         {currentScreen !== "talents" ? (
-          <Button
-            variant="outline"
-            className="justify-start border-0 bg-transparent"
-            onClick={() => {
-              onTalents();
-              onClose();
-            }}
+          <div
+            className="relative"
+            onMouseEnter={() => isTalentsLocked && setShowTalentsTooltip(true)}
+            onMouseLeave={() => setShowTalentsTooltip(false)}
           >
-            <WandSparkles className="h-4 w-4" /> Talents
-          </Button>
+            <Button
+              variant="outline"
+              className={cn(
+                "justify-start border-0 bg-transparent w-full",
+                isTalentsLocked && "opacity-50 hover:bg-transparent cursor-not-allowed",
+              )}
+              onClick={() => {
+                if (isTalentsLocked) {
+                  playUISound("error");
+                } else {
+                  onTalents();
+                  onClose();
+                }
+              }}
+            >
+              <WandSparkles className="h-4 w-4" /> Talents
+            </Button>
+            {showTalentsTooltip && isTalentsLocked && (
+              <TooltipPanel
+                width="w-64"
+                ref={talentsTooltipRef}
+                className="z-[130] absolute right-full mr-4 top-1/2 -translate-y-1/2 text-left"
+              >
+                <TooltipHeader>Talents Locked</TooltipHeader>
+                <TooltipBody>
+                  <p className="text-red-400 font-semibold">Finish a Run as the Knight to unlock</p>
+                </TooltipBody>
+              </TooltipPanel>
+            )}
+          </div>
         ) : null}
         {currentScreen !== "homestead" ? (
-          <Button
-            variant="outline"
-            className="justify-start border-0 bg-transparent"
-            onClick={() => {
-              onHomestead();
-              onClose();
-            }}
+          <div
+            className="relative"
+            onMouseEnter={() => isHomesteadLocked && setShowHomesteadTooltip(true)}
+            onMouseLeave={() => setShowHomesteadTooltip(false)}
           >
-            <TreePine className="h-4 w-4" /> Homestead
-          </Button>
+            <Button
+              variant="outline"
+              className={cn(
+                "justify-start border-0 bg-transparent w-full",
+                isHomesteadLocked && "opacity-50 hover:bg-transparent cursor-not-allowed",
+              )}
+              onClick={() => {
+                if (isHomesteadLocked) {
+                  playUISound("error");
+                } else {
+                  onHomestead();
+                  onClose();
+                }
+              }}
+            >
+              <TreePine className="h-4 w-4" /> Homestead
+            </Button>
+            {showHomesteadTooltip && isHomesteadLocked && (
+              <TooltipPanel
+                width="w-64"
+                ref={homesteadTooltipRef}
+                className="z-[130] absolute right-full mr-4 top-1/2 -translate-y-1/2 text-left"
+              >
+                <TooltipHeader>Homestead Locked</TooltipHeader>
+                <TooltipBody>
+                  <p className="text-red-400 font-semibold">Finish a Run as the Knight to unlock</p>
+                </TooltipBody>
+              </TooltipPanel>
+            )}
+          </div>
         ) : null}
         {currentScreen !== "options" ? (
           <Button

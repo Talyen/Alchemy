@@ -30,4 +30,5 @@ export type SaveData = {
   completedResearch: Record<ResearchId, number>;
   bondedCompanions: Record<CompanionId, number>;
   completedDifficulties: Record<CharacterId, DifficultyId[]>;
+  finishedRunCharacters: CharacterId[];
 };

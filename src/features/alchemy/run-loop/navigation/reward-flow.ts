@@ -3,6 +3,7 @@ import {
   cardLibrary,
   getOfferableCardPool,
   getStandardPotionPool,
+  selectRewardCards,
   trinketLibrary,
   type BattleCard,
   type TrinketEntry,
@@ -22,7 +23,6 @@ import { shuffle } from "@/lib/utils";
 import { CONSTANTS, type Destination, type Screen } from "../../shared/types";
 import type { ContentSystemId, LabyrinthModifierKind } from "@/lib/content-systems/types";
 import { sampleItems } from "../../shared/utils";
-import { selectRewardCards } from "../reward-utils";
 
 export type RewardState = {
   choices: (BattleCard | TrinketEntry)[];

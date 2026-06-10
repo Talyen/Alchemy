@@ -20,8 +20,21 @@ import {
 } from "../../shared/ui/tooltip-panel";
 import { cardSurfaceClass } from "@/features/alchemy/shared/config";
 import { useUiStore } from "../../shared/stores/ui-store";
+import { useAppStore } from "../../shared/stores/app-store";
+import { playUISound } from "@/lib/audio";
 
 const charCardWidthClass = "w-[clamp(18vh,20.5vh,28vh)]";
+
+const CHARACTER_UNLOCK_REQS: Record<CharacterId, { requiredChar: CharacterId | null; requiredName: string }> = {
+  knight: { requiredChar: null, requiredName: "" },
+  rogue: { requiredChar: "knight", requiredName: "Knight" },
+  wizard: { requiredChar: "rogue", requiredName: "Rogue" },
+  ranger: { requiredChar: "wizard", requiredName: "Wizard" },
+  alchemist: { requiredChar: "ranger", requiredName: "Ranger" },
+  warlock: { requiredChar: "alchemist", requiredName: "Alchemist" },
+  druid: { requiredChar: "warlock", requiredName: "Warlock" },
+  wildcard: { requiredChar: "druid", requiredName: "Druid" },
+};
 
 function CharacterCard({
   id,
@@ -31,6 +44,8 @@ function CharacterCard({
   shimmerToken,
   onSelect,
   onHoverShimmer,
+  isLocked,
+  unlockRequirementText,
 }: {
   id: CharacterId;
   index: number;
@@ -39,6 +54,8 @@ function CharacterCard({
   shimmerToken: number | undefined;
   onSelect: (id: CharacterId) => void;
   onHoverShimmer: (id: CharacterId) => void;
+  isLocked: boolean;
+  unlockRequirementText: string;
 }) {
   const [showTooltip, setShowTooltip] = useState(false);
   const { ref: tooltipRef, flip } = useTooltipFlip(showTooltip);
@@ -52,22 +69,40 @@ function CharacterCard({
     >
       <TiltSurface
         as="button"
-        ariaLabel={`Select ${char.name}`}
+        ariaLabel={isLocked ? `${char.name} (Locked)` : `Select ${char.name}`}
         className={cn(charCardWidthClass, "relative rounded-shell-tooltip")}
-        shimmerActive={isShimmer}
-        shimmerToken={shimmerToken}
+        shimmerActive={isLocked ? false : isShimmer}
+        shimmerToken={isLocked ? undefined : shimmerToken}
         shimmerRounded="rounded-shell-tooltip"
         selected={isSelected}
-        onClick={() => onSelect(id)}
+        onClick={() => {
+          if (isLocked) {
+            playUISound("error");
+          } else {
+            onSelect(id);
+          }
+        }}
         onMouseEnter={() => {
-          onHoverShimmer(id);
+          if (!isLocked) onHoverShimmer(id);
           setShowTooltip(true);
         }}
         onMouseLeave={() => setShowTooltip(false)}
       >
-        <img src={art} alt={char.name} className={cn(cardSurfaceClass, "w-full rounded-shell-tooltip aspect-[3/4]")} />
+        <img
+          src={art}
+          alt={char.name}
+          className={cn(
+            cardSurfaceClass,
+            "w-full rounded-shell-tooltip aspect-[3/4]",
+            isLocked && "opacity-45 grayscale-[50%]",
+          )}
+        />
       </TiltSurface>
-      <p className="font-display text-lg font-bold text-amber-100/90 mt-1">{char.name}</p>
+      <p
+        className={cn("font-display text-lg font-bold text-amber-100/90 mt-1", isLocked && "text-muted-foreground/60")}
+      >
+        {char.name}
+      </p>
       {showTooltip ? (
         <TooltipPanel
           width="w-80"
@@ -77,38 +112,46 @@ function CharacterCard({
         >
           <TooltipHeader>{char.name}</TooltipHeader>
 
-          <TooltipBody>
-            <p>{char.description}</p>
-          </TooltipBody>
-
-          {char.startingDeck.length > 0 ? (
-            <>
-              <TooltipSubheader>Starting Deck</TooltipSubheader>
-              <TooltipBody>
-                <p>{char.startingDeck.map((c) => c.title).join(", ")}</p>
-              </TooltipBody>
-            </>
+          {isLocked ? (
+            <TooltipBody>
+              <p className="text-red-400 font-semibold">{unlockRequirementText}</p>
+            </TooltipBody>
           ) : (
             <>
-              <TooltipSubheader>Draft a Deck</TooltipSubheader>
               <TooltipBody>
-                <p>Choose your own fate</p>
+                <p>{char.description}</p>
               </TooltipBody>
-            </>
-          )}
 
-          {char.keywords.length > 0 ? (
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {char.keywords.map((kw) => (
-                <KeywordTag key={kw} keywordId={kw} pill />
-              ))}
-            </div>
-          ) : (
-            <div className="mt-2 flex">
-              <span className="character-keyword-pill-tint inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-sm font-semibold leading-none text-amber-100/90">
-                All Keywords
-              </span>
-            </div>
+              {char.startingDeck.length > 0 ? (
+                <>
+                  <TooltipSubheader>Starting Deck</TooltipSubheader>
+                  <TooltipBody>
+                    <p>{char.startingDeck.map((c) => c.title).join(", ")}</p>
+                  </TooltipBody>
+                </>
+              ) : (
+                <>
+                  <TooltipSubheader>Draft a Deck</TooltipSubheader>
+                  <TooltipBody>
+                    <p>Choose your own fate</p>
+                  </TooltipBody>
+                </>
+              )}
+
+              {char.keywords.length > 0 ? (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {char.keywords.map((kw) => (
+                    <KeywordTag key={kw} keywordId={kw} pill />
+                  ))}
+                </div>
+              ) : (
+                <div className="mt-2 flex">
+                  <span className="character-keyword-pill-tint inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-sm font-semibold leading-none text-amber-100/90">
+                    All Keywords
+                  </span>
+                </div>
+              )}
+            </>
           )}
         </TooltipPanel>
       ) : null}
@@ -126,6 +169,7 @@ export function CharacterSelectScreen({
   const [selectedId, setSelectedId] = useState<CharacterId | null>(null);
   const shimmerState = useUiStore((s) => s.shimmerState);
   const maybeTriggerShimmer = useUiStore((s) => s.maybeTriggerShimmer);
+  const finishedRunCharacters = useAppStore((s) => s.finishedRunCharacters);
 
   const charIds = Object.keys(characters) as CharacterId[];
   const selectedChar = selectedId ? characters[selectedId] : null;
@@ -135,18 +179,26 @@ export function CharacterSelectScreen({
       <ScreenHeader title="Choose Your Hero" />
 
       <div className="grid grid-cols-2 justify-items-center gap-x-8 gap-y-6 sm:grid-cols-4">
-        {charIds.map((id, index) => (
-          <CharacterCard
-            key={id}
-            id={id}
-            index={index}
-            isSelected={selectedId === id}
-            isShimmer={shimmerState?.cardId === id}
-            shimmerToken={shimmerState?.token}
-            onSelect={setSelectedId}
-            onHoverShimmer={maybeTriggerShimmer}
-          />
-        ))}
+        {charIds.map((id, index) => {
+          const req = CHARACTER_UNLOCK_REQS[id];
+          const isLocked = req.requiredChar !== null && !finishedRunCharacters.includes(req.requiredChar);
+          const unlockRequirementText = isLocked ? `Finish a Run as the ${req.requiredName} to unlock` : "";
+
+          return (
+            <CharacterCard
+              key={id}
+              id={id}
+              index={index}
+              isSelected={selectedId === id}
+              isShimmer={shimmerState?.cardId === id}
+              shimmerToken={shimmerState?.token}
+              onSelect={setSelectedId}
+              onHoverShimmer={maybeTriggerShimmer}
+              isLocked={isLocked}
+              unlockRequirementText={unlockRequirementText}
+            />
+          );
+        })}
       </div>
 
       <div className="flex flex-col items-center gap-4">

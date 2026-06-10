@@ -11,6 +11,7 @@ import {
   setRewardState,
 } from "../../shared/stores/run-session-facade";
 import { useUiStore } from "../../shared/stores/ui-store";
+import { useAppStore } from "../../shared/stores/app-store";
 import { playUISound } from "@/lib/audio";
 import { ACTS_PER_RUN, CAMPFIRE_HEAL_FRACTION } from "@/lib/game-constants";
 import type { MaterialInventory } from "@/lib/homestead/types";
@@ -223,6 +224,12 @@ export function createRunDestinationHandlers(deps: RunDestinationHandlerDeps) {
   }
 
   function completeRunVictory(displayMaterials: MaterialInventory | null = null, onRenderedScreenCommit?: () => void) {
+    const activeChar = deps.run.characterId;
+    useAppStore.getState().setFinishedRunCharacters((prev) => {
+      if (prev.includes(activeChar)) return prev;
+      return [...prev, activeChar];
+    });
+
     deps.awardRunEndMaterials(displayMaterials);
     deps.talents.finalizeRunXP();
     flushSaveAfterRunEnd();

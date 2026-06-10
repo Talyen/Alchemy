@@ -12,3 +12,4 @@ export * from "./cards";
 export * from "./characters";
 export * from "./talents";
 export * from "./difficulties";
+export * from "./reward-selection";

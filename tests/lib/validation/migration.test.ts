@@ -103,12 +103,21 @@ describe("migrateSaveDataToCurrent", () => {
       talentXP: { arrow: 12, physical: 3 },
       unlockedTalents: { arrow: ["arrow-damage"], physical: ["physical-damage"] },
     });
-    expect(result.saveSchemaVersion).toBe(2);
+    expect(result.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
     expect(result.talentXP).toEqual({ archery: 12, physical: 3 });
     expect(result.unlockedTalents).toEqual({
       archery: ["archery-damage"],
       physical: ["physical-damage"],
     });
+  });
+
+  it("migrates v2 saves to v3 (adds finishedRunCharacters)", () => {
+    const result = migrateSaveDataToCurrent({
+      saveSchemaVersion: 2,
+      discoveredCardIds: ["slash"],
+    });
+    expect(result.saveSchemaVersion).toBe(3);
+    expect(result.finishedRunCharacters).toEqual([]);
   });
 
   it("remaps arrow placeholder talent ids when merging into archery", () => {

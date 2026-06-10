@@ -24,6 +24,7 @@ type AppStore = {
   encounteredEnemyIds: string[];
   discoveredTrinketIds: string[];
   completedDifficulties: Record<CharacterId, DifficultyId[]>;
+  finishedRunCharacters: CharacterId[];
 
   setSelectedAspectRatio: (v: AspectRatioOption) => void;
   setDisplayMode: (v: DisplayMode) => void;
@@ -43,6 +44,7 @@ type AppStore = {
       | Record<CharacterId, DifficultyId[]>
       | ((prev: Record<CharacterId, DifficultyId[]>) => Record<CharacterId, DifficultyId[]>),
   ) => void;
+  setFinishedRunCharacters: (v: CharacterId[] | ((prev: CharacterId[]) => CharacterId[])) => void;
   setCollectionPage: (tab: CollectionTab, page: number) => void;
 
   resetOptionsToDefault: () => void;
@@ -77,6 +79,7 @@ export const useAppStore = create<AppStore>()((set) => ({
     druid: [],
     wildcard: [],
   },
+  finishedRunCharacters: [],
 
   setSelectedAspectRatio: (v) => set({ selectedAspectRatio: v }),
   setDisplayMode: (v) => set({ displayMode: v }),
@@ -96,6 +99,8 @@ export const useAppStore = create<AppStore>()((set) => ({
     set((s) => ({ discoveredTrinketIds: typeof v === "function" ? v(s.discoveredTrinketIds) : v })),
   setCompletedDifficulties: (v) =>
     set((s) => ({ completedDifficulties: typeof v === "function" ? v(s.completedDifficulties) : v })),
+  setFinishedRunCharacters: (v) =>
+    set((s) => ({ finishedRunCharacters: typeof v === "function" ? v(s.finishedRunCharacters) : v })),
 
   setCollectionPage: (tab, page) =>
     set((s) => ({ collectionPages: { ...s.collectionPages, [tab]: Math.max(0, page) } })),
@@ -136,6 +141,7 @@ export const useAppStore = create<AppStore>()((set) => ({
       encounteredEnemyIds: defaultSaveData.encounteredEnemyIds,
       discoveredTrinketIds: defaultSaveData.discoveredTrinketIds,
       completedDifficulties: defaultSaveData.completedDifficulties,
+      finishedRunCharacters: defaultSaveData.finishedRunCharacters,
       collectionPages: initialCollectionPages,
       collectionTab: "cards",
       showClearSaveConfirm: false,
@@ -157,5 +163,6 @@ export const useAppStore = create<AppStore>()((set) => ({
       encounteredEnemyIds: save.encounteredEnemyIds,
       discoveredTrinketIds: save.discoveredTrinketIds,
       completedDifficulties: save.completedDifficulties,
+      finishedRunCharacters: save.finishedRunCharacters,
     }),
 }));

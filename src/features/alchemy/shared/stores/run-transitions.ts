@@ -11,6 +11,7 @@ import { getRunDomainStore, useRunDomainStore } from "./run-domain-store";
 import { createInitialRunDomainData } from "./run-domain-types";
 import { useBattlePresentationStore } from "./battle-presentation-store";
 import { useUiStore } from "./ui-store";
+import { useAppStore } from "./app-store";
 import { getRunSession } from "./run-session-model";
 
 /** Apply persisted active-run data to the domain store atomically. */
@@ -138,6 +139,12 @@ export function applyRunDefeatTeardown(options: {
   finalizeRunXP: () => void;
   clearCombatState: () => void;
 }): void {
+  const activeChar = useRunDomainStore.getState().progress.characterId;
+  useAppStore.getState().setFinishedRunCharacters((prev) => {
+    if (prev.includes(activeChar)) return prev;
+    return [...prev, activeChar];
+  });
+
   options.awardRunEndMaterials();
   options.finalizeRunXP();
   flushSaveAfterRunEnd();

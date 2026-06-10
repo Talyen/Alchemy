@@ -26,6 +26,7 @@ export function useMysteryFlow({ advanceToNextDestination }: { advanceToNextDest
 
     for (const effect of choice.effects) {
       const result = applyMysteryEffect(effect, {
+        runDeck: runStore.runDeck,
         runMaxHealth: runStore.runMaxHealth,
         setRunDeck: runStore.setRunDeck,
         setRunGold: runStore.setRunGold,

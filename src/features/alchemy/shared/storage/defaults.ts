@@ -50,4 +50,5 @@ export const defaultSaveData: SaveData = {
     druid: [],
     wildcard: [],
   },
+  finishedRunCharacters: [],
 };

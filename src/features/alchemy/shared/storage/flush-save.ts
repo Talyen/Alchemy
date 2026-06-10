@@ -37,6 +37,7 @@ function buildAlchemySaveDataFromStores(activeRun: ActiveRunData | null): SaveDa
     completedResearch: homestead.completedResearch,
     bondedCompanions: homestead.bondedCompanions,
     completedDifficulties: app.completedDifficulties,
+    finishedRunCharacters: app.finishedRunCharacters,
   };
 }
 

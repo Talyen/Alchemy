@@ -92,7 +92,7 @@ export const ELITE_GOLD_BONUS_FRACTION = 0.3;
 export const BOSS_GOLD_BONUS_FRACTION = 0.5;
 export const REWARD_CARD_CHOICES = 3;
 export const REWARD_TRINKET_CHANCE = 0.25;
-export const REWARD_RANDOM_CHANCE = 0.3;
+export const REWARD_RANDOM_CHANCE = 0.5;
 export const DESTINATION_CHOICES = 3;
 export const DEFAULT_DESTINATION_WEIGHT = 10;
 // Semantic alias: corruption uses the same weight as normal routes; separate name documents intent at call sites.

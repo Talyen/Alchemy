@@ -85,6 +85,7 @@ export function useShopController({ run, talents }: { run: RunStateController; t
       setRunGold: run.setRunGold,
       setState: setShopState,
       mapState: (p, cards) => ({ ...p, cards, refreshesLeft: p.refreshesLeft - 1 }),
+      deck: run.runDeck,
     });
   }
 
@@ -110,6 +111,7 @@ export function useShopController({ run, talents }: { run: RunStateController; t
       setRunGold: run.setRunGold,
       setState: setAlchemistState,
       mapState: (p, potions) => ({ ...p, potions, refreshesLeft: p.refreshesLeft - 1 }),
+      deck: run.runDeck,
     });
   }
 
@@ -133,11 +135,11 @@ export function useShopController({ run, talents }: { run: RunStateController; t
   return {
     initShop: () => {
       shopDiscountConsumed.current = false;
-      setShopState(createInitialShopState());
+      setShopState(createInitialShopState(run.runDeck));
     },
     initAlchemist: () => {
       alchemistDiscountConsumed.current = false;
-      setAlchemistState(createInitialAlchemistState());
+      setAlchemistState(createInitialAlchemistState(run.runDeck));
     },
     handleShopBuyCard,
     handleShopRemoveCard,

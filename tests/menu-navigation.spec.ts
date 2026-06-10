@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { enableFastMode, injectLabyrinthRun, makeCard, openGameModeSelect, SAVE_KEY, selectGameMode, startBattleWithDeck, startCampaignBattle } from "./helpers";
+import { enableFastMode, injectHomestead, injectLabyrinthRun, makeCard, openGameModeSelect, SAVE_KEY, selectGameMode, startBattleWithDeck, startCampaignBattle } from "./helpers";
 import { BattlePage } from "./pages/battle-page";
 import { MenuPage } from "./pages/menu-page";
 import { critical, prepush } from "./playwright-tags";
@@ -53,6 +53,7 @@ test.describe("Menu", critical, () => {
 test.describe("Character Select", critical, () => {
   test("all characters are selectable and starting run is mapped to localStorage", async ({ page }) => {
     await enableFastMode(page);
+    await injectHomestead(page);
     await page.goto("/");
     await selectGameMode(page, "campaign");
 

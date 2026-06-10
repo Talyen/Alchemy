@@ -3,9 +3,9 @@
  * Depends on: @/lib/game-data, ../game-constants, ./draw, ./types, ./combat-text, ./status-effects.
  * Depended on by: ./apply-effects.
  */
-import { getOfferableCardPool } from "@/lib/game-data";
+import { getOfferableCardPool, selectRewardCards } from "@/lib/game-data";
 import type { BattleCard } from "@/lib/game-data";
-import { drawCards, shuffleCards } from "./draw";
+import { drawCards } from "./draw";
 import { addGold, applyPlayerHealing, clampHealth, type BattleState, type CombatTextEvent } from "./types";
 import { emitOverhealBlockText, mergeCombatText } from "./combat-text";
 import { removeHarmfulPlayerStatuses, applyPlayerStatusEffect, getEnemyDamageMultiplier } from "./status-effects";
@@ -58,11 +58,14 @@ export function buildWishOptions(state: BattleState, card: BattleCard): BattleCa
     }
   }
 
-  const shuffled = shuffleCards(candidates, state.rng).slice(0, baseCount);
+  // Concatenate draw pile, hand, discard, and consumed cards to represent the player's full deck
+  const fullDeck = [...(state.deck || []), ...(state.hand || []), ...(state.discard || []), ...(state.exhausted || [])];
+  const selected = selectRewardCards(fullDeck, candidates, baseCount, [], state.rng);
+
   if (state.talentEffects.wishCardsUpgraded) {
-    return shuffled.map((c) => upgradeWishCard(c));
+    return selected.map((c) => upgradeWishCard(c));
   }
-  return shuffled;
+  return selected;
 }
 
 function applyWishGoldTriggers(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {

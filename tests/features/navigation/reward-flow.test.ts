@@ -23,13 +23,11 @@ import { emptyInventory } from "@/lib/homestead/inventory";
 import type { LabyrinthModifierKind } from "@/lib/content-systems/types";
 import type { BattleCard, TrinketEntry } from "@/lib/game-data";
 
-vi.mock("@/features/alchemy/run-loop/reward-utils", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/features/alchemy/run-loop/reward-utils")>();
+vi.mock("@/lib/game-data/reward-selection", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/game-data/reward-selection")>();
   return {
     ...actual,
     selectRewardCards: vi.fn(() => [{ id: "mock-card", title: "Mock", descriptionLines: [""], art: "", cost: 1, effects: [] }]),
-    REWARD_TRINKET_CHANCE: 0.1,
-    REWARD_RANDOM_CHANCE: 0,
   };
 });
 

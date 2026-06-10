@@ -1,7 +1,6 @@
 import { useCallback, useMemo, useState, type CSSProperties } from "react";
 import type { BattleCard } from "@/lib/game-data";
-import { getOfferableCardPool } from "@/lib/game-data";
-import { shuffle } from "@/lib/utils";
+import { getOfferableCardPool, selectRewardCards } from "@/lib/game-data";
 import { DRAFT_ROUNDS, DRAFT_CHOICES } from "@/lib/game-constants";
 
 import { Button } from "@/components/ui/button";
@@ -68,16 +67,13 @@ function ChoiceCardItem({
 }
 
 export function DraftDeckScreen({ onComplete }: { onComplete: (draftedCards: BattleCard[]) => void }) {
-  const [pool] = useState(() => shuffle(getOfferableCardPool()));
   const [round, setRound] = useState(0);
   const [drafted, setDrafted] = useState<BattleCard[]>([]);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
   const choices = useMemo(() => {
-    if (pool.length === 0) return [];
-    const start = round * DRAFT_CHOICES;
-    return pool.slice(start, start + DRAFT_CHOICES);
-  }, [pool, round]);
+    return selectRewardCards(drafted, getOfferableCardPool(), DRAFT_CHOICES, drafted);
+  }, [drafted]);
 
   const handlePick = useCallback(
     (card: BattleCard) => {

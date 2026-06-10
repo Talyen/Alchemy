@@ -83,5 +83,6 @@ export const SaveDataSchema = z.preprocess(
       Object.fromEntries(CHARACTER_IDS.map((id) => [id, []])),
       "completedDifficulties",
     ),
+    finishedRunCharacters: caught(z.array(z.string()), [], "finishedRunCharacters"),
   }),
 );
