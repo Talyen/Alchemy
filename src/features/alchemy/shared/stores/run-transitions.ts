@@ -160,12 +160,12 @@ export function finalizeRunEndSession(options: {
 
 /** Defeat flow: finalize rewards/XP, persist, audio, and clear combat state. */
 export function applyRunDefeatTeardown(options: {
-  awardRunEndMaterials: () => void;
+  awardRunEndMaterials: (displayMaterials?: MaterialInventory | null) => MaterialInventory;
   finalizeRunXP: () => void;
   clearCombatState: () => void;
 }): void {
   finalizeRunEndSession({
-    awardRunEndMaterials: () => options.awardRunEndMaterials(),
+    awardRunEndMaterials: options.awardRunEndMaterials,
     finalizeRunXP: options.finalizeRunXP,
   });
   stopAllSfx();
