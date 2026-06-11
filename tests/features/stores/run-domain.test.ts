@@ -598,6 +598,7 @@ describe("session facade API", () => {
       activeLabyrinthModifiers: getRunSessionStoreView().activeLabyrinthModifiers,
       activeLabyrinthRewardModifiers: getRunSessionStoreView().activeLabyrinthRewardModifiers,
       runTalentXP: getRunProgressStoreView().runTalentXP,
+      runMaterialsEarned: getRunProgressStoreView().runMaterialsEarned,
       currentScreen: ROUTE_SCREENS.DESTINATION,
       destinationChoices: ["campfire", "shop"],
       discoveredCardIdsAtRunStart: getRunProgressStoreView().discoveredCardIdsAtRunStart,

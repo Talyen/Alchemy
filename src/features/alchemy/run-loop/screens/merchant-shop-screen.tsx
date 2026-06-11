@@ -8,7 +8,14 @@ import { SELECTION_GRID_PAGE_SIZE, SHOP_CARD_PRICE, SHOP_REMOVE_PRICE, SHOP_REFR
 
 import { PurchasableCardItem, SelectableShopCard } from "../../shared/ui/shop-card-item";
 import { CardSelectionGrid } from "../../shared/ui/card-selection-grid";
-import { GoldCost, GoldDisplay, ScreenDescription, ScreenHeader, ServiceButton } from "../../shared/ui/shared-ui";
+import {
+  GoldCost,
+  GoldDisplay,
+  ScreenDescription,
+  ScreenHeader,
+  ServiceButton,
+  StaggerGroup,
+} from "../../shared/ui/shared-ui";
 
 function DeckGridPaginated({
   cards,
@@ -95,8 +102,12 @@ export function MerchantShopScreen({
       <GoldDisplay gold={gold} />
 
       {!removeMode ? (
-        <div className="state-swap flex flex-col items-center gap-6">
-          <div key={shopCards.map((card) => card.id).join("-")} className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <StaggerGroup className="flex flex-col items-center gap-6">
+          <StaggerGroup
+            swapKey={shopCards.map((card) => card.id).join("-")}
+            animate={false}
+            className="grid grid-cols-1 gap-4 sm:grid-cols-3"
+          >
             {shopCards.map((card, i) => (
               <PurchasableCardItem
                 key={`${card.id}-${i}`}
@@ -105,9 +116,10 @@ export function MerchantShopScreen({
                 gold={gold}
                 purchased={purchasedIds.has(card.id)}
                 onBuy={() => handleBuyCard(card)}
+                staggerIndex={i}
               />
             ))}
-          </div>
+          </StaggerGroup>
 
           <div className="flex flex-wrap justify-center gap-3">
             <ServiceButton
@@ -137,9 +149,9 @@ export function MerchantShopScreen({
           <Button size="lg" className="mt-2 min-w-44" onClick={onContinue}>
             Leave
           </Button>
-        </div>
+        </StaggerGroup>
       ) : (
-        <div className="state-swap">
+        <StaggerGroup>
           <ScreenDescription className="mb-4">Select a card to remove from your deck</ScreenDescription>
           <DeckGridPaginated
             cards={runDeck}
@@ -170,7 +182,7 @@ export function MerchantShopScreen({
               <Trash2 className="h-4 w-4" /> Remove Card <GoldCost amount={removePrice} />
             </Button>
           </div>
-        </div>
+        </StaggerGroup>
       )}
     </div>
   );

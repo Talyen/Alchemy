@@ -6,7 +6,13 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import type { Screen } from "../types";
 import { playUISound } from "@/lib/audio";
-import { TooltipBody, TooltipHeader, TooltipPanel, useTooltipFlip } from "./tooltip-panel";
+import {
+  TooltipBody,
+  TooltipHeader,
+  TooltipPanel,
+  tooltipSideAnchorClass,
+  useTooltipSidePlacement,
+} from "./tooltip-panel";
 import { TalentsLockedTooltip } from "../../meta/talents/talents-locked-tooltip";
 import { useState } from "react";
 
@@ -129,17 +135,23 @@ export function GameMenu({
   isHomesteadLocked?: boolean;
 }) {
   const [showTalentsTooltip, setShowTalentsTooltip] = useState(false);
-  const { ref: talentsTooltipRef } = useTooltipFlip(showTalentsTooltip);
+  const { ref: talentsTooltipRef, placement: talentsTooltipPlacement } = useTooltipSidePlacement(
+    "side-end",
+    showTalentsTooltip,
+  );
 
   const [showHomesteadTooltip, setShowHomesteadTooltip] = useState(false);
-  const { ref: homesteadTooltipRef } = useTooltipFlip(showHomesteadTooltip);
+  const { ref: homesteadTooltipRef, placement: homesteadTooltipPlacement } = useTooltipSidePlacement(
+    "side-end",
+    showHomesteadTooltip,
+  );
 
   if (!isOpen) return null;
 
   const panel = (
     <div
       data-testid="game-menu"
-      className="motion-panel alchemy-shell w-full max-w-[35.56cqh] rounded-shell-dialog border border-border/80 px-4 py-5"
+      className="motion-panel alchemy-shell w-full max-w-[35.56cqh] overflow-visible rounded-shell-dialog border border-border/80 px-4 py-5"
       onClick={(e) => e.stopPropagation()}
     >
       <div className="grid gap-2">
@@ -179,7 +191,7 @@ export function GameMenu({
         ) : null}
         {currentScreen !== "talents" ? (
           <div
-            className="relative"
+            className="relative overflow-visible"
             onMouseEnter={() => isTalentsLocked && setShowTalentsTooltip(true)}
             onMouseLeave={() => setShowTalentsTooltip(false)}
           >
@@ -204,15 +216,15 @@ export function GameMenu({
               <TalentsLockedTooltip
                 panelRef={talentsTooltipRef}
                 visible
-                placement="side-end"
-                className="z-[130] absolute right-full mr-4 top-1/2 text-left"
+                placement={talentsTooltipPlacement}
+                className={cn(tooltipSideAnchorClass(talentsTooltipPlacement), "z-[130] text-left")}
               />
             )}
           </div>
         ) : null}
         {currentScreen !== "homestead" ? (
           <div
-            className="relative"
+            className="relative overflow-visible"
             onMouseEnter={() => isHomesteadLocked && setShowHomesteadTooltip(true)}
             onMouseLeave={() => setShowHomesteadTooltip(false)}
           >
@@ -238,8 +250,8 @@ export function GameMenu({
                 width="w-64"
                 ref={homesteadTooltipRef}
                 visible
-                placement="side-end"
-                className="z-[130] absolute right-full mr-4 top-1/2 text-left"
+                placement={homesteadTooltipPlacement}
+                className={cn(tooltipSideAnchorClass(homesteadTooltipPlacement), "z-[130] text-left")}
               >
                 <TooltipHeader>Homestead Locked</TooltipHeader>
                 <TooltipBody>

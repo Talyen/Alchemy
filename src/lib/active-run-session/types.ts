@@ -2,6 +2,7 @@
 import type { BattleState } from "@/lib/battle";
 import type { BattleCard, CharacterId, DifficultyId, TalentXP } from "@/lib/game-data";
 import type { ContentSystemId, LabyrinthMap, LabyrinthModifierKind } from "@/lib/content-systems/types";
+import type { MaterialInventory } from "@/lib/homestead/types";
 import type { Screen } from "@/lib/routing";
 
 export type LabyrinthNodePosition = { row: number; col: number };
@@ -30,6 +31,7 @@ export type ActiveRunData = {
   labyrinthPendingNode: LabyrinthNodePosition | null;
   activeCombat: ActiveCombatData | null;
   runTalentXP: TalentXP;
+  runMaterialsEarned: MaterialInventory;
   currentScreen: Screen | null;
   destinationChoices: string[];
   discoveredCardIdsAtRunStart: string[];

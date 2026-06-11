@@ -1,14 +1,17 @@
 import { describe, expect, it, beforeEach, vi } from "vitest";
 import { createRunFlowHandlers } from "@/features/alchemy/run-loop/run/run-flow-handlers";
+import { readActiveRunStore } from "@/features/alchemy/shared/stores/run-session-facade";
 import { useHomesteadStore } from "@/features/alchemy/shared/stores/homestead-store";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import { CONSTANTS } from "@/features/alchemy/shared/types";
 import {
   getBattleStoreView,
+  getRunSessionStoreView,
   resetRunBattleSlice,
   resetRunProgressSlice,
   setRunProgress,
 } from "../../helpers/run-domain-store-test";
+import { emptyInventory } from "@/lib/homestead/inventory";
 import { makeFlowHandlerDeps } from "../../helpers/run-flow-handler-deps";
 
 vi.mock("@/lib/audio", () => ({
@@ -39,17 +42,38 @@ function makeHandlers() {
 }
 
 describe("createRunFlowHandlers victory paths", () => {
-  it("awardRunEndMaterials applies homestead herb bonus", () => {
+  it("awardRunEndMaterials applies homestead end-of-run per-room bonuses", () => {
     setRunProgress({ roomsEncountered: 4, currentAct: 1 });
     useHomesteadStore.setState((s) => ({
-      effects: { ...s.effects, herbFindBonus: 1 },
+      effects: { ...s.effects, endRunHerbsPerRoom: 1 },
     }));
-    const woodBefore = useHomesteadStore.getState().materialInventory.wood;
+    const herbsBefore = useHomesteadStore.getState().materialInventory.herbs;
 
     const mats = makeHandlers().awardRunEndMaterials();
 
-    expect(mats.herbs).toBeGreaterThan(0);
-    expect(useHomesteadStore.getState().materialInventory.wood).toBeGreaterThanOrEqual(woodBefore);
+    expect(mats.herbs).toBe(4);
+    expect(useHomesteadStore.getState().materialInventory.herbs).toBe(herbsBefore + 4);
+    expect(getRunSessionStoreView().runEndMaterials.herbs).toBe(4);
+  });
+
+  it("awardRunEndMaterials includes materials collected during the run on the summary", () => {
+    setRunProgress({ roomsEncountered: 2, currentAct: 1 });
+    readActiveRunStore().addRunMaterialsEarned({ ...emptyInventory(), wood: 5, herbs: 2 });
+
+    makeHandlers().awardRunEndMaterials();
+
+    expect(getRunSessionStoreView().runEndMaterials.wood).toBe(5);
+    expect(getRunSessionStoreView().runEndMaterials.herbs).toBe(2);
+    expect(readActiveRunStore().runMaterialsEarned).toEqual(emptyInventory());
+  });
+
+  it("awardRunEndMaterials adds no homestead bonus with default effects", () => {
+    setRunProgress({ roomsEncountered: 6, currentAct: 2 });
+
+    const mats = makeHandlers().awardRunEndMaterials();
+
+    expect(mats).toEqual(emptyInventory());
+    expect(getRunSessionStoreView().runEndMaterials).toEqual(emptyInventory());
   });
 
   it("clearCombatState clears battle flag", () => {

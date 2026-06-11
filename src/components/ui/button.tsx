@@ -11,13 +11,13 @@ import type { UISound } from "@/lib/sound-registry";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-semibold transition-[filter,background-color] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:brightness-95 disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       variant: {
         default: "bg-primary text-primary-foreground",
         destructive: "bg-destructive text-destructive-foreground",
-        outline: "border border-border/80 bg-background text-foreground",
+        outline: "border border-border/80 bg-background text-foreground active:bg-muted active:brightness-100",
       },
       size: {
         default: "h-11 px-5",
@@ -96,6 +96,7 @@ function getVisualClassName(className: string | undefined) {
 interface ButtonProps extends ComponentProps<"button">, VariantProps<typeof buttonVariants> {
   asChild?: boolean;
   hoverSound?: UISound | false;
+  disableHoverScale?: boolean;
 }
 
 const Button = ({
@@ -104,6 +105,7 @@ const Button = ({
   size,
   asChild = false,
   hoverSound,
+  disableHoverScale,
   onMouseEnter,
   ref,
   ...props
@@ -137,8 +139,7 @@ const Button = ({
   return (
     <motion.span
       className={cn("inline-flex", wrapperClassName)}
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.97 }}
+      {...(disableHoverScale ? {} : { whileHover: { scale: 1.02 } })}
       transition={{ type: "spring", stiffness: 400, damping: 15 }}
     >
       {button}

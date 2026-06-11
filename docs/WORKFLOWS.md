@@ -1,8 +1,10 @@
 # Alchemy — Implementation Workflows
 
-Step-by-step checklists for adding or changing game content and wiring. Domain rules and architecture live in [AGENTS.md](../AGENTS.md).
+Step-by-step checklists for adding or changing game content and wiring.
 
-**Path aliases:** imports like `@/features/alchemy/run-loop/navigation/*` resolve under `run-loop/` or `shared/` — see [AGENTS.md § Path aliases](../AGENTS.md#path-aliases-tsconfigjson). Prefer **on-disk** paths below when editing files.
+**Docs:** [AGENTS.md](../AGENTS.md) (rules) · [ARCHITECTURE.md](./ARCHITECTURE.md) (run state) · [REFERENCE.md](./REFERENCE.md) (commands, glossary, battle) · [CONTRIBUTING.md](../CONTRIBUTING.md) (hooks & tests) · [PROMPTS.md](../PROMPTS.md) (audits)
+
+**Import paths:** only `@/*` → `src/*` in `tsconfig.json`. Use **on-disk** paths under `src/features/alchemy/` (e.g. `@/features/alchemy/shared/stores/run-session-facade`) — not legacy alias paths that skip `shared/`.
 
 ## Task index
 
@@ -17,6 +19,7 @@ Step-by-step checklists for adding or changing game content and wiring. Domain r
 | Card / card effect kind | [New card](#add-a-new-card) · [New effect kind](#add-a-new-card-effect-kind) |
 | Character, enemy, trinket, companion, keyword | [Character](#add-a-new-character) · [Enemy](#add-a-new-enemy) · [Trinket](#add-a-new-trinket) · [Companion](#add-a-new-companion) · [Keyword](#add-a-new-keyword) |
 | Screen, destination, mystery | [New screen](#adding-a-new-screen) · [Destination](#adding-a-new-destination-map-node) · [Mystery effect](#adding-a-new-mystery-effect-kind) |
+| In-run materials, staggered enter | [Grant materials during a run](#grant-materials-during-a-run) · [Staggered screen enter](#staggered-screen-enter-motion) |
 
 ---
 
@@ -42,10 +45,11 @@ See also [`src/features/alchemy/shared/storage/MIGRATIONS.md`](../src/features/a
 
 ## Change mid-run resume (`ActiveRunData`)
 
-1. Extend `ActiveRunData` and Zod schema in `src/lib/validation/save-schemas.ts` if new fields are required.
-2. Update `buildActiveRunSnapshot()` in `src/lib/active-run-session/snapshot.ts` and `snapshotRun()` in `src/features/alchemy/shared/stores/run-transitions.ts`.
-3. Update hydration in `shell/use-alchemy-run-controller.ts` via `restoreRun` (restore `screen`, `destinationChoices`, combat, etc.).
-4. Run `tests/features/storage/active-run.test.ts` plus storage/migration tests.
+1. Extend `ActiveRunData` in `src/lib/active-run-session/types.ts` and Zod schema in `src/lib/validation/save-schemas/active-run.ts` (optional fields with defaults in `normalize-active-run-data.ts` often avoid a schema bump).
+2. Add the field to `RunStateFields` / hydration in `src/features/alchemy/run-setup/run/run-state-init.ts` (mirror `runTalentXP` / `runMaterialsEarned` pattern).
+3. Update `createActiveRunSnapshot()` in `src/lib/active-run-session/snapshot.ts` and `snapshotRun()` in `src/features/alchemy/shared/stores/run-transitions.ts`.
+4. Update hydration in `shell/use-alchemy-run-controller.ts` via `restoreRun` (restore `screen`, `destinationChoices`, combat, etc.).
+5. Run `tests/features/storage/active-run.test.ts`, `tests/features/stores/run-domain.test.ts` (snapshot parity), plus storage/migration tests.
 
 **Active-run helpers (do not confuse):**
 
@@ -53,6 +57,35 @@ See also [`src/features/alchemy/shared/storage/MIGRATIONS.md`](../src/features/a
 |----------|--------|------|
 | `normalizeActiveRunData` | `@/lib/validation` | Zod transform while loading save files (legacy deck / content-system fixes) |
 | `parseActiveRun` | `@/lib/active-run-session` or `@/features/alchemy/shared/storage/active-run` | Runtime validation before hydration |
+
+---
+
+## Grant materials during a run
+
+Player-earned materials must flow through `awardMaterialsDuringRun()` (`run-session-facade.ts`) so homestead inventory and `progress.runMaterialsEarned` stay aligned for the run-end summary.
+
+| Step | File(s) |
+|------|---------|
+| 1. Call `awardMaterialsDuringRun(materials)` | Mystery handlers: `run-loop/navigation/use-mystery-flow.ts`; combat: `run-flow-handlers.ts` (`finishRewards`, `commitVictoryRewards` via `addHomesteadMaterials` callback) |
+| 2. Apply homestead find bonus when appropriate | `applyMaterialFindBonus()` from `@/lib/homestead/loot` before awarding (mystery/combat already do this) |
+| 3. Run-end display (no change needed if step 1 is correct) | `run-flow-handlers.awardRunEndMaterials` merges `runMaterialsEarned` + `applyEndOfRunHomesteadBonuses` into `session.runEndMaterials` |
+| 4. Tests | `tests/features/run/run-victory-handlers.test.ts`; mystery/reward-flow tests if adding a new source |
+
+**Do not** call `useHomesteadStore.addMaterials()` directly from run-loop or mystery code for player loot.
+
+---
+
+## Staggered screen enter (motion)
+
+| Step | Guidance |
+|------|----------|
+| 1. Panel wrapper | `<StaggerGroup>` on the main content container; optional `swapKey` when content identity changes and enter should replay |
+| 2. Child items | `<StaggerItem index={n}>` wrapping each row/card — not on `Button` / `PressableMotion` directly |
+| 3. Nested grid | Inner `<StaggerGroup animate={false}>` to avoid double panel enter (shops, pickers inside an already-entering panel) |
+| 4. Tab switch fade only | `state-fade` class instead of `state-swap` when restagger on tab change is undesirable (options tabs) |
+| 5. Absolute / map nodes | Skip `StaggerItem` when the node uses `-translate-x/y` for centering; use panel-level enter only |
+
+Motion tokens and keyframes live in `src/index.css`. Hover/tap hard rules: [AGENTS.md § UI hard rules](../AGENTS.md#ui-hard-rules). Failure modes: [AGENTS.md § Common mistakes](../AGENTS.md#common-mistakes).
 
 ---
 

@@ -51,7 +51,7 @@ export function LabyrinthNodeButton({ row, col, node, labyrinthMap, onNodeClick,
   return (
     <div
       className="group/node absolute z-10 flex h-[var(--labyrinth-node-size)] w-[var(--labyrinth-node-size)] -translate-x-1/2 -translate-y-1/2 items-center justify-center group-hover/node:z-50"
-      style={{ ...positionStyle(row, col, labyrinthMap.rows, labyrinthMap.cols), willChange: "transform" }}
+      style={positionStyle(row, col, labyrinthMap.rows, labyrinthMap.cols)}
       onPointerEnter={handleHover}
       onPointerLeave={onLeave}
       onFocusCapture={handleHover}

@@ -120,6 +120,54 @@ export function useTooltipViewportClamp(padding = 8, trigger?: unknown) {
   return { ref, flip, dx };
 }
 
+type SidePlacement = Extract<TooltipPlacement, "side-start" | "side-end">;
+
+/** Absolute positioning classes for tooltips beside their anchor (overrides popupBaseClassName left-1/2). */
+export function tooltipSideAnchorClass(placement: SidePlacement): string {
+  return placement === "side-start"
+    ? "absolute left-[calc(100%+1rem)] top-1/2 right-auto bottom-auto"
+    : "absolute right-[calc(100%+1rem)] top-1/2 left-auto bottom-auto";
+}
+
+// Picks side-start or side-end based on viewport clipping; does not flip above/below.
+export function useTooltipSidePlacement(preferred: SidePlacement, trigger?: unknown, padding = 8) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [placement, setPlacement] = useState<SidePlacement>(preferred);
+  const [prevTrigger, setPrevTrigger] = useState(trigger);
+
+  if (trigger !== prevTrigger) {
+    setPrevTrigger(trigger);
+    setPlacement(preferred);
+  }
+
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const rect = el.getBoundingClientRect();
+
+    if (placement === "side-end" && rect.left < padding) {
+      setPlacement("side-start");
+      return;
+    }
+
+    if (placement === "side-start" && rect.right > window.innerWidth - padding) {
+      setPlacement("side-end");
+      return;
+    }
+
+    if (
+      (placement === "side-start" || placement === "side-end") &&
+      rect.left < padding &&
+      rect.right > window.innerWidth - padding
+    ) {
+      setPlacement(preferred);
+    }
+  }, [placement, padding, preferred, trigger]);
+
+  return { ref, placement };
+}
+
 // Above unless top-clipped, then below; if below clips the viewport bottom, use side placement.
 export function useTooltipPlacementWithSideFallback(side: "left" | "right", padding = 8, trigger?: unknown) {
   const sidePlacement: TooltipPlacement = side === "left" ? "side-start" : "side-end";

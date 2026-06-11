@@ -114,22 +114,24 @@
     --motion-state-duration: 170ms;
     --motion-state-ease: cubic-bezier(0.16, 1, 0.3, 1);
     --motion-state-y: 4px;
-    --motion-state-scale: 0.995;
+    --motion-state-scale: 1;
     --motion-stagger-duration: 230ms;
     --motion-stagger-delay: 36ms;
     --motion-stagger-y: 10px;
-    --motion-stagger-scale: 0.99;
+    --motion-stagger-scale: 1;
     --motion-overlay-duration: 150ms;
     --motion-panel-duration: 190ms;
     --motion-panel-y: 8px;
-    --motion-panel-scale: 0.98;
+    --motion-panel-scale: 1;
     --motion-battle-menu-duration: 150ms;
     --motion-battle-menu-y: 6px;
-    --motion-battle-menu-scale: 0.98;
+    --motion-battle-menu-scale: 1;
     --motion-crossfade-duration: 170ms;
     --motion-crossfade-y: 4px;
     --motion-crossfade-scale: 1;
     --motion-startup-fade-duration: 320ms;
+    --motion-talent-unlock-duration: 620ms;
+    --motion-talent-unlock-settle-duration: 400ms;
   }
 
   * {
@@ -210,8 +212,8 @@
   }
 
   .talent-node-glass {
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(12px);
     background-color: hsl(var(--background) / 0.3);
     background-image: linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05));
   }
@@ -221,7 +223,9 @@
     box-shadow:
       inset 0 1.5px 1px rgba(255, 255, 255, 0.12),
       inset 0 -1px 1px rgba(0, 0, 0, 0.3),
-      0 4px 12px rgba(0, 0, 0, 0.4);
+      0 0 0 1px rgba(255, 255, 255, 0.22),
+      0 0 0 2px rgba(0, 0, 0, 0.4),
+      0 4px 12px rgba(0, 0, 0, 0.45);
   }
 
   .talent-node-glass--choice {
@@ -340,18 +344,18 @@
   .hover-popup-panel[data-placement="above"],
   .hover-popup-panel:not([data-placement]) {
     transform-origin: bottom center;
-    transform: translateX(-50%) translateY(6px) scale(0.985);
+    transform: translateX(-50%) translateY(6px);
   }
 
   .hover-popup-panel[data-placement="below"] {
     transform-origin: top center;
-    transform: translateX(-50%) translateY(-6px) scale(0.985);
+    transform: translateX(-50%) translateY(-6px);
   }
 
   .hover-popup-panel[data-placement="side-start"],
   .hover-popup-panel[data-placement="side-end"] {
     transform-origin: left center;
-    transform: translateY(-50%) scale(0.985);
+    transform: translateY(-50%);
   }
 
   .group:hover > .hover-popup-panel,
@@ -368,7 +372,7 @@
   .group\/wildwood-boss:focus-within > .hover-popup-panel,
   .hover-popup-panel[data-visible] {
     opacity: 1;
-    transform: translateX(-50%) translateY(0) scale(1);
+    transform: translateX(-50%) translateY(0);
   }
 
   .group:hover > .hover-popup-panel[data-placement="below"],
@@ -385,7 +389,7 @@
   .group\/wildwood-boss:focus-within > .hover-popup-panel[data-placement="below"],
   .hover-popup-panel[data-placement="below"][data-visible] {
     opacity: 1;
-    transform: translateX(-50%) translateY(0) scale(1);
+    transform: translateX(-50%) translateY(0);
   }
 
   .group:hover > .hover-popup-panel[data-placement="side-start"],
@@ -415,7 +419,7 @@
   .hover-popup-panel[data-placement="side-start"][data-visible],
   .hover-popup-panel[data-placement="side-end"][data-visible] {
     opacity: 1;
-    transform: translateY(-50%) scale(1);
+    transform: translateY(-50%);
   }
 
   .tooltips-disabled .hover-popup-panel {
@@ -475,6 +479,10 @@
     animation: stateSwapIn var(--motion-state-duration) var(--motion-state-ease) both;
   }
 
+  .state-fade {
+    animation: stateFadeIn var(--motion-state-duration) var(--motion-state-ease) both;
+  }
+
   .hp-number-pop {
     animation: numberPop 280ms ease-out both;
   }
@@ -519,6 +527,45 @@
 
   .talent-choice-pending {
     animation: talentChoicePulse 1900ms ease-in-out infinite;
+  }
+
+  .talent-unlock-ring {
+    border: 2px solid var(--burst-color);
+    box-shadow:
+      0 0 18px var(--burst-color),
+      0 0 36px color-mix(in srgb, var(--burst-color) 45%, transparent);
+    opacity: 0.9;
+    animation: talentUnlockRing var(--motion-talent-unlock-duration) var(--motion-ease-out) forwards;
+    will-change: transform, opacity;
+  }
+
+  .talent-unlock-burst {
+    container-type: size;
+  }
+
+  .talent-unlock-spark {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 5px;
+    height: 5px;
+    margin-left: -2.5px;
+    margin-top: -2.5px;
+    border-radius: 9999px;
+    background-color: var(--burst-color);
+    box-shadow: 0 0 6px var(--burst-color);
+    animation: talentUnlockSpark var(--spark-duration, var(--motion-talent-unlock-duration))
+      cubic-bezier(0.22, 1, 0.36, 1) var(--spark-delay, 0ms) forwards;
+    transform: rotate(var(--spark-angle)) translateY(calc(-50cqmin));
+    will-change: transform, opacity;
+  }
+
+  .talent-node-unlocking {
+    animation: talentUnlockPop var(--motion-talent-unlock-duration) var(--motion-ease-out) forwards;
+  }
+
+  .talent-node-unlocked-settle {
+    animation: talentUnlockedSettle var(--motion-talent-unlock-settle-duration) var(--motion-ease-out) both;
   }
 
   .alchemy-startup-bar {
@@ -806,6 +853,15 @@
   }
 }
 
+@keyframes stateFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 @keyframes numberPop {
   0% {
     transform: translateY(2px) scale(0.96);
@@ -890,6 +946,52 @@
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes talentUnlockRing {
+  0% {
+    opacity: 0.95;
+    transform: scale(0.8);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2.6);
+  }
+}
+
+@keyframes talentUnlockSpark {
+  0% {
+    opacity: 1;
+    transform: rotate(var(--spark-angle)) translateY(calc(-50cqmin)) scale(1);
+  }
+  70% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(var(--spark-angle)) translateY(calc(-180cqmin)) scale(0.15);
+  }
+}
+
+@keyframes talentUnlockPop {
+  0% {
+    filter: brightness(1);
+  }
+  35% {
+    filter: brightness(1.4);
+  }
+  100% {
+    filter: brightness(1.05);
+  }
+}
+
+@keyframes talentUnlockedSettle {
+  from {
+    filter: brightness(1.15);
+  }
+  to {
+    filter: brightness(1);
   }
 }
 

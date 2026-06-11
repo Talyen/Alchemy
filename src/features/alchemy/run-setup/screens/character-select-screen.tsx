@@ -2,14 +2,13 @@
 // Depends on character game data, shared alchemy UI, and hover shimmer hooks.
 // Used when beginning a fresh run before destination routing starts.
 import { useState } from "react";
-import type { CSSProperties } from "react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { characters, characterArt, type CharacterId } from "@/lib/game-data";
 
 import { KeywordTag } from "../../shared/ui/keyword-tag";
-import { ScreenHeader } from "../../shared/ui/shared-ui";
+import { ScreenHeader, StaggerGroup, StaggerItem } from "../../shared/ui/shared-ui";
 import { TiltSurface } from "../../shared/ui/tilt-surface";
 import {
   TooltipBody,
@@ -38,7 +37,6 @@ const CHARACTER_UNLOCK_REQS: Record<CharacterId, { requiredChar: CharacterId | n
 
 function CharacterCard({
   id,
-  index,
   isSelected,
   isShimmer,
   shimmerToken,
@@ -48,7 +46,6 @@ function CharacterCard({
   unlockRequirementText,
 }: {
   id: CharacterId;
-  index: number;
   isSelected: boolean;
   isShimmer: boolean;
   shimmerToken: number | undefined;
@@ -63,14 +60,12 @@ function CharacterCard({
   const art = characterArt[char.id];
 
   return (
-    <div
-      className="stagger-item flex flex-col items-center gap-3"
-      style={{ "--stagger-index": index } as CSSProperties}
-    >
+    <div className="flex flex-col items-center gap-3">
       <div className={cn("relative", charCardWidthClass)}>
         <TiltSurface
           as="button"
           ariaLabel={isLocked ? `${char.name} (Locked)` : `Select ${char.name}`}
+          tiltEnabled={!isLocked}
           className="relative w-full rounded-shell-tooltip"
           shimmerActive={isLocked ? false : isShimmer}
           shimmerToken={isLocked ? undefined : shimmerToken}
@@ -175,28 +170,28 @@ export function CharacterSelectScreen({
     <div className="flex h-full w-full flex-col items-center justify-center gap-6 px-4 py-4 text-center">
       <ScreenHeader title="Choose Your Hero" />
 
-      <div className="grid grid-cols-2 justify-items-center gap-x-8 gap-y-6 sm:grid-cols-4">
+      <StaggerGroup className="grid grid-cols-2 justify-items-center gap-x-8 gap-y-6 sm:grid-cols-4">
         {charIds.map((id, index) => {
           const req = CHARACTER_UNLOCK_REQS[id];
           const isLocked = req.requiredChar !== null && !finishedRunCharacters.includes(req.requiredChar);
           const unlockRequirementText = isLocked ? `Finish a Run as the ${req.requiredName} to unlock` : "";
 
           return (
-            <CharacterCard
-              key={id}
-              id={id}
-              index={index}
-              isSelected={selectedId === id}
-              isShimmer={shimmerState?.cardId === id}
-              shimmerToken={shimmerState?.token}
-              onSelect={setSelectedId}
-              onHoverShimmer={maybeTriggerShimmer}
-              isLocked={isLocked}
-              unlockRequirementText={unlockRequirementText}
-            />
+            <StaggerItem key={id} index={index}>
+              <CharacterCard
+                id={id}
+                isSelected={selectedId === id}
+                isShimmer={shimmerState?.cardId === id}
+                shimmerToken={shimmerState?.token}
+                onSelect={setSelectedId}
+                onHoverShimmer={maybeTriggerShimmer}
+                isLocked={isLocked}
+                unlockRequirementText={unlockRequirementText}
+              />
+            </StaggerItem>
           );
         })}
-      </div>
+      </StaggerGroup>
 
       <div className="flex flex-col items-center gap-4">
         <div className="flex gap-4">

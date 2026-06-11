@@ -8,6 +8,7 @@ export {
   DEFAULT_TILT_STRENGTH,
   getCardRect,
   setTiltFromEvent,
+  clearTiltElement,
   clearTiltFromEvent,
   getBattleCardPlayTarget,
 } from "./dom";

@@ -7,7 +7,7 @@ import { appendCardToRunWithDiscovery } from "../run/deck-mutations";
 import { applyMysteryEffect } from "./mystery-flow";
 import { useRunSessionMysterySlice } from "../../shared/stores/run-session-facade";
 import { setMysteryCardChoices, setMysteryEvent } from "../../shared/stores/run-session-facade";
-import { readActiveRunStore } from "../../shared/stores/run-session-facade";
+import { readActiveRunStore, awardMaterialsDuringRun } from "../../shared/stores/run-session-facade";
 import { useHomesteadStore } from "../../shared/stores/homestead-store";
 import { applyMaterialFindBonus } from "@/lib/homestead/loot";
 
@@ -35,7 +35,7 @@ export function useMysteryFlow() {
         setMysteryCardChoices,
         awardMysteryXP: runStore.awardMysteryXP,
         onAddMaterials: (materials) =>
-          homesteadStore.addMaterials(applyMaterialFindBonus(materials, homesteadStore.effects)),
+          awardMaterialsDuringRun(applyMaterialFindBonus(materials, homesteadStore.effects)),
         onAwardGold: runStore.addRunGold,
       });
       if (result.followUp) return;

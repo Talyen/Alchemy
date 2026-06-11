@@ -12,14 +12,15 @@ import type { ShopState, AlchemistState } from "@/features/alchemy/run-loop/shop
 import type { Destination } from "@/features/alchemy/shared/types";
 import { getRunSession } from "./run-session-model";
 import {
-  getBattleStoreView,
   getRunDomainStore,
+  getBattleStoreView,
   getRunProgressStoreView,
   getRunSessionStoreView,
   useRunAdapter,
   useRunDomainStore,
   useTalentAdapter,
 } from "./run-domain-store";
+import { useHomesteadStore } from "./homestead-store";
 import type { RunProgressStore, RunSessionStore } from "./run-domain-types";
 import type { RunStateController, TalentStateController } from "./run-domain-store";
 import {
@@ -132,6 +133,12 @@ export function setAlchemistState(state: AlchemistState | ((prev: AlchemistState
 
 export function setRunEndMaterials(materials: MaterialInventory) {
   getRunDomainStore().setRunEndMaterials(materials);
+}
+
+/** Persist homestead materials and track totals for the run-end summary screen. */
+export function awardMaterialsDuringRun(materials: MaterialInventory) {
+  useHomesteadStore.getState().addMaterials(materials);
+  getRunDomainStore().addRunMaterialsEarned(materials);
 }
 
 export function setCorruptionResult(result: CorruptionResult | null) {

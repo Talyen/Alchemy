@@ -16,7 +16,14 @@ import {
 import { BattleCardButton } from "../../shared/ui/card-button";
 import { PurchasableCardItem, SelectableShopCard } from "../../shared/ui/shop-card-item";
 import { CardSelectionGrid } from "../../shared/ui/card-selection-grid";
-import { GoldDisplay, ScreenDescription, ScreenHeader, ServiceButton } from "../../shared/ui/shared-ui";
+import {
+  GoldDisplay,
+  ScreenDescription,
+  ScreenHeader,
+  ServiceButton,
+  StaggerGroup,
+  StaggerItem,
+} from "../../shared/ui/shared-ui";
 import { collectionTileWidthClass } from "@/features/alchemy/shared/config";
 export function AlchemistShopScreen({
   gold,
@@ -110,9 +117,11 @@ export function AlchemistShopScreen({
       {!mixedCard ? <GoldDisplay gold={gold} /> : null}
 
       {mixedCard ? (
-        <div className="state-swap flex flex-col items-center gap-6">
-          <p className="text-lg font-semibold text-emerald-400">Added to Deck: {MIXED_POTION_TITLE}</p>
-          <div className="flex flex-col items-center gap-3">
+        <StaggerGroup className="flex flex-col items-center gap-6">
+          <StaggerItem index={0}>
+            <p className="text-lg font-semibold text-emerald-400">Added to Deck: {MIXED_POTION_TITLE}</p>
+          </StaggerItem>
+          <StaggerItem index={1} className="flex flex-col items-center gap-3">
             <div onMouseEnter={() => setMixedCardHovered(true)} onMouseLeave={() => setMixedCardHovered(false)}>
               <BattleCardButton
                 card={mixedCard}
@@ -125,20 +134,26 @@ export function AlchemistShopScreen({
                 className={collectionTileWidthClass}
               />
             </div>
-          </div>
-          <Button
-            size="lg"
-            onClick={() => {
-              setMixedCard(null);
-              cancelMix();
-            }}
-          >
-            Continue
-          </Button>
-        </div>
+          </StaggerItem>
+          <StaggerItem index={2}>
+            <Button
+              size="lg"
+              onClick={() => {
+                setMixedCard(null);
+                cancelMix();
+              }}
+            >
+              Continue
+            </Button>
+          </StaggerItem>
+        </StaggerGroup>
       ) : !mixMode ? (
-        <div className="state-swap flex flex-col items-center gap-6">
-          <div key={potionCards.map((card) => card.id).join("-")} className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <StaggerGroup className="flex flex-col items-center gap-6">
+          <StaggerGroup
+            swapKey={potionCards.map((card) => card.id).join("-")}
+            animate={false}
+            className="grid grid-cols-1 gap-4 sm:grid-cols-3"
+          >
             {potionCards.map((card, i) => (
               <PurchasableCardItem
                 key={`${card.id}-${i}`}
@@ -147,9 +162,10 @@ export function AlchemistShopScreen({
                 gold={gold}
                 purchased={purchasedIds.has(card.id)}
                 onBuy={() => handleBuyCard(card)}
+                staggerIndex={i}
               />
             ))}
-          </div>
+          </StaggerGroup>
 
           <div className="flex flex-wrap justify-center gap-4">
             <ServiceButton
@@ -177,9 +193,9 @@ export function AlchemistShopScreen({
           <Button size="lg" className="min-w-44" onClick={onContinue}>
             Leave
           </Button>
-        </div>
+        </StaggerGroup>
       ) : (
-        <div className="state-swap">
+        <StaggerGroup>
           <ScreenDescription className="mb-3">Select two Potions to Combine</ScreenDescription>
           <CardSelectionGrid
             items={mixableCards}
@@ -204,7 +220,7 @@ export function AlchemistShopScreen({
               Combine
             </Button>
           </div>
-        </div>
+        </StaggerGroup>
       )}
     </div>
   );

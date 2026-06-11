@@ -6,6 +6,8 @@
 // Used by: save-schemas.ts (ActiveRunDataSchema.transform), tests.
 import { getStartingDeck } from "@/lib/game-data";
 import { LEGACY_STARTER_DECK_IDS } from "@/lib/game-constants";
+import { emptyInventory } from "@/lib/homestead/inventory";
+import type { MaterialInventory } from "@/lib/homestead/types";
 
 export function normalizeActiveRunData<T extends Record<string, unknown>>(
   data: T,
@@ -15,6 +17,7 @@ export function normalizeActiveRunData<T extends Record<string, unknown>>(
   completedDestinations: string[];
   runDeck: unknown;
   runTalentXP: Record<string, number>;
+  runMaterialsEarned: MaterialInventory;
   labyrinthMap: unknown;
   labyrinthPendingNode: unknown;
   activeCombat: unknown;
@@ -52,6 +55,7 @@ export function normalizeActiveRunData<T extends Record<string, unknown>>(
     completedDestinations,
     runDeck,
     runTalentXP: (data.runTalentXP as Record<string, number> | undefined) ?? {},
+    runMaterialsEarned: (data.runMaterialsEarned as MaterialInventory | undefined) ?? emptyInventory(),
     labyrinthMap: contentSystemType === "labyrinth" ? data.labyrinthMap : null,
     labyrinthPendingNode: contentSystemType === "labyrinth" ? data.labyrinthPendingNode : null,
     activeCombat: data.activeCombat

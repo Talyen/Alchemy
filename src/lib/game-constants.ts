@@ -71,6 +71,8 @@ export const XP_TRIANGULAR_MULTIPLIER = 5; // Total XP for n points: n(n+1)/2 ×
 export const XP_MIN_THRESHOLD = 10;
 export const XP_ROOT_DIVISOR = 0.8; // Inverse formula: sqrt(1 + 0.8×XP).
 export const TALENT_CHOICES_OFFERED = 1;
+export const TALENT_UNLOCK_ANIMATION_MS = 620;
+export const TALENT_UNLOCK_SETTLE_MS = 400;
 
 // ============ Shop ============
 export const SHOP_CARD_PRICE = 30;
@@ -352,14 +354,6 @@ export const HOMESTEAD_LOOT_CONFIG = {
     normal: 1,
     elite: 1.3,
     boss: 3,
-  },
-  endRunRates: {
-    woodPerRoom: 2,
-    ironBasePerRoom: 1,
-    ironBonusPerRoom: 1.5,
-    herbsPerRoom: 1,
-    foodPerRoom: 1.5,
-    crystalRoomsDivisor: 4,
   },
 } as const;
 

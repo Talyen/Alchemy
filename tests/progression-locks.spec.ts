@@ -14,6 +14,7 @@ test.describe("Progression Locks", () => {
     // 2. Verify Talents button is locked and shows tooltip on hover
     const talentsBtn = page.getByRole("button", { name: "Talents" });
     await expect(talentsBtn).toBeVisible();
+    await expect(talentsBtn).toHaveClass(/opacity-45/);
     await talentsBtn.hover();
     await expect(page.getByText("Finish a Run as the Knight to unlock")).toBeVisible();
 
@@ -25,6 +26,7 @@ test.describe("Progression Locks", () => {
     // 3. Verify Homestead button is locked and shows tooltip on hover
     const homesteadBtn = page.getByRole("button", { name: "Homestead" });
     await expect(homesteadBtn).toBeVisible();
+    await expect(homesteadBtn).toHaveClass(/opacity-45/);
     await homesteadBtn.hover();
     await expect(page.getByText("Finish a Run as the Knight to unlock")).toBeVisible();
 
@@ -73,12 +75,16 @@ test.describe("Progression Locks", () => {
     await page.goto("/");
 
     // 2. Verify Talents and Homestead are unlocked (clicking them navigates)
-    await page.getByRole("button", { name: "Talents" }).click();
+    const talentsBtn = page.getByRole("button", { name: "Talents" });
+    const homesteadBtn = page.getByRole("button", { name: "Homestead" });
+    await expect(talentsBtn).not.toHaveClass(/opacity-45/);
+    await expect(homesteadBtn).not.toHaveClass(/opacity-45/);
+    await talentsBtn.click();
     await expect(page.getByRole("heading", { name: "Talents" })).toBeVisible();
     await page.getByRole("button", { name: "Open talents menu" }).click();
     await page.getByRole("button", { name: "Main Menu" }).click();
 
-    await page.getByRole("button", { name: "Homestead" }).click();
+    await homesteadBtn.click();
     await expect(page.getByRole("heading", { name: "Homestead" })).toBeVisible();
     await page.getByRole("button", { name: "Open homestead menu" }).click();
     await page.getByRole("button", { name: "Main Menu" }).click();

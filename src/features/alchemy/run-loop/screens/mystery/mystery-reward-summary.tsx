@@ -13,7 +13,7 @@ import { BattleCardButton } from "../../../shared/ui/card-button";
 import { CardTitle, getCardDisplayTitle } from "../../../shared/ui/card-description-ui";
 import { DetailPopup } from "../../../shared/ui/card-popup";
 import { MysteryEffectBadge } from "../../../shared/ui/mystery-effect-badge";
-import { ScreenHeader } from "../../../shared/ui/shared-ui";
+import { ScreenHeader, StaggerGroup, StaggerItem } from "../../../shared/ui/shared-ui";
 
 type LookupProps = {
   findCard: (id: string) => BattleCard | undefined;
@@ -147,32 +147,34 @@ export function MysteryRewardSummary({
   }
 
   return (
-    <div className="state-swap space-y-6 text-center">
-      <ScreenHeader title={eventTitle} />
+    <StaggerGroup className="space-y-6 text-center">
+      <StaggerItem index={0}>
+        <ScreenHeader title={eventTitle} />
+      </StaggerItem>
 
       {otherEffects.map((effect, i) => (
-        <MysteryRewardEffectItem
-          key={i}
-          effect={effect}
-          runDeck={runDeck}
-          findCard={findCard}
-          findTrinket={findTrinket}
-        />
+        <StaggerItem key={i} index={i + 1}>
+          <MysteryRewardEffectItem effect={effect} runDeck={runDeck} findCard={findCard} findTrinket={findTrinket} />
+        </StaggerItem>
       ))}
 
-      {resourceEffects.length > 0 && (
-        <div className="flex flex-wrap items-center justify-center gap-2 text-sm font-medium text-muted-foreground">
-          Found
-          {totalGold > 0 ? <GoldPill amount={totalGold} /> : null}
-          {MATERIAL_IDS.filter((mat) => mats[mat] > 0).map((mat) => (
-            <MaterialPill key={mat} material={mat} amount={mats[mat]} />
-          ))}
-        </div>
-      )}
+      {resourceEffects.length > 0 ? (
+        <StaggerItem index={otherEffects.length + 1}>
+          <div className="flex flex-wrap items-center justify-center gap-2 text-sm font-medium text-muted-foreground">
+            Found
+            {totalGold > 0 ? <GoldPill amount={totalGold} /> : null}
+            {MATERIAL_IDS.filter((mat) => mats[mat] > 0).map((mat) => (
+              <MaterialPill key={mat} material={mat} amount={mats[mat]} />
+            ))}
+          </div>
+        </StaggerItem>
+      ) : null}
 
-      <Button size="lg" onClick={onContinue}>
-        Continue
-      </Button>
-    </div>
+      <StaggerItem index={otherEffects.length + (resourceEffects.length > 0 ? 2 : 1)}>
+        <Button size="lg" onClick={onContinue}>
+          Continue
+        </Button>
+      </StaggerItem>
+    </StaggerGroup>
   );
 }

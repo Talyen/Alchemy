@@ -3,7 +3,12 @@ import type { RefObject } from "react";
 import { TimerGroup } from "@/lib/animation/game-timer";
 import type { BattleCard, CharacterId, DifficultyId, DifficultyModifier } from "@/lib/game-data";
 import type { LabyrinthModifierKind } from "@/lib/content-systems/types";
-import { readActiveRunStore, readBattleStore, readRunSessionStore } from "../../shared/stores/run-session-facade";
+import {
+  readActiveRunStore,
+  readBattleStore,
+  readRunSessionStore,
+  awardMaterialsDuringRun,
+} from "../../shared/stores/run-session-facade";
 import { useHomesteadStore } from "../../shared/stores/homestead-store";
 import {
   setCompanionRewardCards,
@@ -13,8 +18,8 @@ import {
 } from "../../shared/stores/run-session-facade";
 import { useUiStore } from "../../shared/stores/ui-store";
 import { playUISound, playVictory, stopAllSfx } from "@/lib/audio";
-import { getEndOfRunMaterials, applyEndOfRunHomesteadBonuses } from "@/lib/homestead/loot";
-import { addInventory } from "@/lib/homestead/inventory";
+import { applyEndOfRunHomesteadBonuses } from "@/lib/homestead/loot";
+import { addInventory, emptyInventory } from "@/lib/homestead/inventory";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import { ACTS_PER_RUN, CAMPFIRE_HEAL_FRACTION, VICTORY_TRANSITION_DELAY } from "@/lib/game-constants";
 import { getBossEnemy, getBossById } from "@/features/alchemy/shared/config";
@@ -75,14 +80,15 @@ export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
     useUiStore.getState().clearCardHover();
   }
 
-  function awardRunEndMaterials(displayMaterials: MaterialInventory | null = null) {
+  function awardRunEndMaterials() {
     const runState = readActiveRunStore();
     const homesteadEffects = useHomesteadStore.getState().effects;
-    const baseMats = getEndOfRunMaterials(runState.roomsEncountered, runState.currentAct);
-    const mats = applyEndOfRunHomesteadBonuses(baseMats, homesteadEffects, runState.roomsEncountered);
-    useHomesteadStore.getState().addMaterials(mats);
-    setRunEndMaterials(displayMaterials ? addInventory(displayMaterials, mats) : mats);
-    return mats;
+    const runCollected = runState.runMaterialsEarned;
+    const homesteadBonus = applyEndOfRunHomesteadBonuses(emptyInventory(), homesteadEffects, runState.roomsEncountered);
+    useHomesteadStore.getState().addMaterials(homesteadBonus);
+    setRunEndMaterials(addInventory(runCollected, homesteadBonus));
+    runState.clearRunMaterialsEarned();
+    return homesteadBonus;
   }
 
   function computeVictoryResult() {
@@ -114,7 +120,7 @@ export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
     commitVictoryRewards(result, {
       battleState,
       contentSystemType: runState.contentSystemType,
-      addHomesteadMaterials: (materials) => useHomesteadStore.getState().addMaterials(materials),
+      addHomesteadMaterials: awardMaterialsDuringRun,
       addRunGold: runState.addRunGold,
       setRunMaxHealth: runState.setRunMaxHealth,
       setRewardState,
@@ -196,7 +202,7 @@ export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
       ),
     });
 
-    useHomesteadStore.getState().addMaterials(result.materials);
+    awardMaterialsDuringRun(result.materials);
     applyFinalizedRewards(result);
     useUiStore.getState().clearCardHover();
     routeAfterReward(result.route, result.materials, result.nextRewardState, result.clearCompanionRewardCards);

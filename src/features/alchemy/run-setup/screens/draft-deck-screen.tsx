@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, type CSSProperties } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { BattleCard } from "@/lib/game-data";
 import { getOfferableCardPool, selectRewardCards } from "@/lib/game-data";
 import { DRAFT_ROUNDS, DRAFT_CHOICES } from "@/lib/game-constants";
@@ -6,7 +6,7 @@ import { DRAFT_ROUNDS, DRAFT_CHOICES } from "@/lib/game-constants";
 import { Button } from "@/components/ui/button";
 import { BattleCardButton } from "../../shared/ui/card-button";
 import { getCardDisplayTitle } from "../../shared/ui/card-description-ui";
-import { ScreenHeader } from "../../shared/ui/shared-ui";
+import { ScreenHeader, StaggerGroup, StaggerItem } from "../../shared/ui/shared-ui";
 import { collectionTileWidthClass } from "@/features/alchemy/shared/config";
 import { useInteractiveCard } from "../../shared/ui/use-interactive-card";
 
@@ -26,8 +26,7 @@ function DraftedCardItem({ card, index }: { card: BattleCard; index: number }) {
       shimmerActive={shimmerActive}
       shimmerToken={shimmerToken}
       className={collectionTileWidthClass}
-      wrapperClassName="stagger-item relative flex justify-center"
-      wrapperStyle={{ "--stagger-index": index } as CSSProperties}
+      wrapperClassName="relative flex justify-center"
     />
   );
 }
@@ -60,8 +59,7 @@ function ChoiceCardItem({
       shimmerToken={shimmerToken}
       selected={selected}
       className={collectionTileWidthClass}
-      wrapperClassName="stagger-item relative flex justify-center"
-      wrapperStyle={{ "--stagger-index": index } as CSSProperties}
+      wrapperClassName="relative flex justify-center"
     />
   );
 }
@@ -99,23 +97,29 @@ export function DraftDeckScreen({ onComplete }: { onComplete: (draftedCards: Bat
         </p>
 
         {isComplete ? (
-          <div className="mx-auto mt-8 grid max-w-fit grid-cols-3 justify-items-center gap-6">
+          <StaggerGroup
+            swapKey="draft-complete"
+            className="mx-auto mt-8 grid max-w-fit grid-cols-3 justify-items-center gap-6"
+          >
             {drafted.map((card, index) => (
-              <DraftedCardItem key={"drafted-" + index + "-" + card.id} card={card} index={index} />
+              <StaggerItem key={"drafted-" + index + "-" + card.id} index={index}>
+                <DraftedCardItem card={card} index={index} />
+              </StaggerItem>
             ))}
-          </div>
+          </StaggerGroup>
         ) : (
-          <div className="mt-8 flex flex-wrap items-start justify-center gap-6">
+          <StaggerGroup swapKey={round} className="mt-8 flex flex-wrap items-start justify-center gap-6">
             {choices.map((card, index) => (
-              <ChoiceCardItem
-                key={"draft-choice-" + index + "-" + card.id}
-                card={card}
-                index={index}
-                selected={selectedIndex === index}
-                onClick={() => setSelectedIndex(index)}
-              />
+              <StaggerItem key={"draft-choice-" + index + "-" + card.id} index={index}>
+                <ChoiceCardItem
+                  card={card}
+                  index={index}
+                  selected={selectedIndex === index}
+                  onClick={() => setSelectedIndex(index)}
+                />
+              </StaggerItem>
             ))}
-          </div>
+          </StaggerGroup>
         )}
 
         {isComplete ? (

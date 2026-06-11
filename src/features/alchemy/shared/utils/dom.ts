@@ -25,6 +25,7 @@ export function setTiltFromEvent(event: MouseEvent<HTMLElement>) {
   // not write CSS variables more often than the browser can paint.
   const target = event.currentTarget;
   const frame = tiltFrames.get(target) ?? { rect: target.getBoundingClientRect(), x: 0.5, y: 0.5, rafId: null };
+  frame.rect = target.getBoundingClientRect();
   frame.x = (event.clientX - frame.rect.left) / frame.rect.width;
   frame.y = (event.clientY - frame.rect.top) / frame.rect.height;
   tiltFrames.set(target, frame);
@@ -44,14 +45,17 @@ export function setTiltFromEvent(event: MouseEvent<HTMLElement>) {
   });
 }
 
-export function clearTiltFromEvent(event: MouseEvent<HTMLElement>) {
-  const target = event.currentTarget;
+export function clearTiltElement(target: HTMLElement) {
   const frame = tiltFrames.get(target);
   if (frame?.rafId !== null && frame?.rafId !== undefined) cancelAnimationFrame(frame.rafId);
   tiltFrames.delete(target);
   target.classList.remove("tilt-active");
   target.style.setProperty("--tilt-rotate-y", "0deg");
   target.style.setProperty("--tilt-rotate-x", "0deg");
+}
+
+export function clearTiltFromEvent(event: MouseEvent<HTMLElement>) {
+  clearTiltElement(event.currentTarget);
 }
 
 export function getBattleCardPlayTarget(card: BattleCard): "player" | "enemy" {

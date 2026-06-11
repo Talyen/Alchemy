@@ -346,7 +346,7 @@ function AppMainContent({
         onOptions={() => run.goToScreen("options")}
         isTalentsLocked={!finishedRunCharacters.includes("knight")}
         isHomesteadLocked={!finishedRunCharacters.includes("knight")}
-        {...(run.hasActiveBattle ? { onReturnToBattle: run.returnToBattle } : {})}
+        {...(run.hasActiveBattle && renderedScreen !== "battle" ? { onReturnToBattle: run.returnToBattle } : {})}
         {...(renderedScreen === "battle" ? { onEndRun: run.handleEndRun } : {})}
         {...(renderedScreen === "labyrinth-map" ? { onEndRun: run.handleLabyrinthEndRun } : {})}
       />

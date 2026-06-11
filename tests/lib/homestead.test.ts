@@ -10,7 +10,6 @@ import {
   applyEndOfRunHomesteadBonuses,
   applyMaterialFindBonus,
   getEnemyMaterialLoot,
-  getEndOfRunMaterials,
 } from "@/lib/homestead/loot";
 import { createEmptyTalentManifest } from "@/lib/game-data";
 
@@ -481,34 +480,3 @@ describe("homestead content integrity", () => {
   });
 });
 
-describe("getEndOfRunMaterials", () => {
-  it("returns zero for zero rooms", () => {
-    const loot = getEndOfRunMaterials(0, 1);
-    expect(loot.wood).toBe(0);
-    expect(loot.iron).toBe(0);
-    expect(loot.herbs).toBe(0);
-    expect(loot.food).toBe(0);
-    expect(loot.crystal).toBe(0);
-  });
-
-  it("scales with rooms encountered", () => {
-    const loot = getEndOfRunMaterials(10, 1);
-    expect(loot.wood).toBe(20);
-    expect(loot.iron).toBe(10 + Math.floor(10 * 1.5));
-    expect(loot.herbs).toBe(10);
-    expect(loot.food).toBe(Math.floor(10 * 1.5));
-  });
-
-  it("currentAct affects crystal yield", () => {
-    const act1 = getEndOfRunMaterials(8, 1);
-    const act3 = getEndOfRunMaterials(8, 3);
-    expect(act3.crystal).toBeGreaterThan(act1.crystal);
-  });
-
-  it("all material values are non-negative", () => {
-    const loot = getEndOfRunMaterials(5, 2);
-    for (const mat of MATERIAL_IDS) {
-      expect(loot[mat]).toBeGreaterThanOrEqual(0);
-    }
-  });
-});

@@ -1,6 +1,6 @@
 // Difficulty selection screen shown after choosing a hero, before the run begins.
 // Depends on character game data, difficulty definitions, keyword tags, shared UI, and hover effects.
-import { Fragment, useState, type CSSProperties } from "react";
+import { Fragment, useState } from "react";
 import { Swords } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -20,9 +20,10 @@ import difficulty3Art from "@/assets/optimized/difficulty-3.webp";
 import { KeywordToken } from "../../shared/ui/card-description-ui";
 import { KeywordTag } from "../../shared/ui/keyword-tag";
 import { PressableMotion } from "../../shared/ui/pressable-motion";
-import { ScreenHeader, ShimmerOverlay } from "../../shared/ui/shared-ui";
-import { clearTiltFromEvent, setTiltFromEvent, tokenizeDescription } from "../../shared/utils";
-import { battleCardWidthClass, cardSurfaceClass, staticCardTransform } from "@/features/alchemy/shared/config";
+import { ScreenHeader, StaggerGroup, StaggerItem } from "../../shared/ui/shared-ui";
+import { TiltSurface } from "../../shared/ui/tilt-surface";
+import { tokenizeDescription } from "../../shared/utils";
+import { battleCardWidthClass, cardSurfaceClass } from "@/features/alchemy/shared/config";
 import { TooltipPanel } from "../../shared/ui/tooltip-panel";
 import { useUiStore } from "../../shared/stores/ui-store";
 
@@ -101,24 +102,20 @@ function DifficultyCard({
           )}
         >
           {showTilt ? (
-            <div
-              className={cn(
-                "tilt-surface relative overflow-hidden rounded-shell-panel aspect-[5/6]",
-                battleCardWidthClass,
-              )}
-              style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
-              onMouseMove={setTiltFromEvent}
+            <TiltSurface
+              className={cn("relative overflow-hidden rounded-shell-panel aspect-[5/6]", battleCardWidthClass)}
+              shimmerActive={isShimmer}
+              shimmerToken={shimmerToken}
+              shimmerRounded="rounded-shell-panel"
               onMouseEnter={() => onHoverShimmer(difficultyId)}
-              onMouseLeave={clearTiltFromEvent}
             >
-              <ShimmerOverlay active={isShimmer} token={shimmerToken} rounded="rounded-shell-panel" />
               <img src={diffArt} alt="" className={cn(cardSurfaceClass, "w-full rounded-shell-panel object-cover")} />
               {completed && (
                 <div className="absolute right-2 top-2 rounded-md bg-emerald-600/90 px-2 py-0.5 text-xs font-bold uppercase tracking-wide text-emerald-100">
                   Completed
                 </div>
               )}
-            </div>
+            </TiltSurface>
           ) : (
             <div className={cn("relative overflow-hidden rounded-shell-panel aspect-[5/6]", battleCardWidthClass)}>
               <img
@@ -187,61 +184,57 @@ export function DifficultySelectScreen({
     <div className="flex h-full w-full flex-col items-center justify-center gap-6 px-4 py-6 text-center">
       <ScreenHeader title={config.headerTitle} />
 
-      <div className="flex flex-wrap items-start justify-center gap-6">
-        <div className="flex flex-col items-center gap-3 rounded-shell-dialog border border-border/60 bg-card/60 px-4 pb-6 pt-5">
-          <div
-            className={cn(
-              "tilt-surface relative overflow-hidden rounded-shell-panel aspect-[3/4]",
-              battleCardWidthClass,
-            )}
-            style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
-            onMouseMove={setTiltFromEvent}
+      <StaggerGroup className="flex flex-wrap items-start justify-center gap-6">
+        <StaggerItem
+          index={0}
+          className="flex flex-col items-center gap-3 rounded-shell-dialog border border-border/60 bg-card/60 px-4 pb-6 pt-5"
+        >
+          <TiltSurface
+            className={cn("relative overflow-hidden rounded-shell-panel aspect-[3/4]", battleCardWidthClass)}
+            shimmerActive={shimmerState?.cardId === "character"}
+            shimmerToken={shimmerState?.token}
+            shimmerRounded="rounded-shell-panel"
             onMouseEnter={() => maybeTriggerShimmer("character")}
-            onMouseLeave={clearTiltFromEvent}
           >
-            <ShimmerOverlay
-              active={shimmerState?.cardId === "character"}
-              token={shimmerState?.token}
-              rounded="rounded-shell-panel"
-            />
             <img
               src={art}
               alt={char.name}
               className={cn(cardSurfaceClass, "w-full h-full rounded-shell-panel object-cover")}
             />
-          </div>
+          </TiltSurface>
           <p className="font-display text-base font-bold text-amber-100/75">{char.name}</p>
           <div className="flex flex-wrap justify-center gap-1">
             {char.keywords.map((kw) => (
               <KeywordTag key={kw} keywordId={kw} pill showTooltip />
             ))}
           </div>
-        </div>
+        </StaggerItem>
 
-        <div className="hidden lg:flex flex-col items-center self-stretch shrink-0">
+        <StaggerItem index={1} className="hidden lg:flex flex-col items-center self-stretch shrink-0">
           <div className="flex-1 w-px bg-gradient-to-b from-transparent via-amber-100/75 to-transparent" />
           <Swords className="h-4 w-4 text-amber-100/75 my-1" aria-hidden="true" />
           <div className="flex-1 w-px bg-gradient-to-b from-transparent via-amber-100/75 to-transparent" />
-        </div>
+        </StaggerItem>
 
         <div className="flex flex-wrap items-start justify-center gap-6">
-          {config.difficulties.map((d) => (
-            <DifficultyCard
-              key={d.id}
-              difficultyId={d.id}
-              name={d.name}
-              description={d.description}
-              completed={completedDifficulties.includes(d.id)}
-              locked={!isDifficultyUnlocked(d.id, completedDifficulties)}
-              isSelected={selectedDifficultyId === d.id}
-              isShimmer={shimmerState?.cardId === d.id}
-              shimmerToken={shimmerState?.token}
-              onHoverShimmer={maybeTriggerShimmer}
-              onSelect={handleSelectDifficulty}
-            />
+          {config.difficulties.map((d, index) => (
+            <StaggerItem key={d.id} index={index + 2}>
+              <DifficultyCard
+                difficultyId={d.id}
+                name={d.name}
+                description={d.description}
+                completed={completedDifficulties.includes(d.id)}
+                locked={!isDifficultyUnlocked(d.id, completedDifficulties)}
+                isSelected={selectedDifficultyId === d.id}
+                isShimmer={shimmerState?.cardId === d.id}
+                shimmerToken={shimmerState?.token}
+                onHoverShimmer={maybeTriggerShimmer}
+                onSelect={handleSelectDifficulty}
+              />
+            </StaggerItem>
           ))}
         </div>
-      </div>
+      </StaggerGroup>
 
       <div className="mt-6 flex items-center justify-center gap-4">
         <Button size="lg" variant="outline" className="w-40" onClick={onBack}>

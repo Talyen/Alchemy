@@ -2,6 +2,7 @@
 import { isPlayerDefeated, type BattleState } from "@/lib/battle";
 import type { BattleCard, CharacterId, DifficultyId, TalentXP } from "@/lib/game-data";
 import type { ContentSystemId, LabyrinthMap, LabyrinthModifierKind } from "@/lib/content-systems/types";
+import type { MaterialInventory } from "@/lib/homestead/types";
 import type { Screen } from "@/lib/routing";
 
 import type { ActiveRunData, LabyrinthNodePosition } from "./types";
@@ -27,6 +28,7 @@ export type ActiveRunSnapshotSource = {
   activeLabyrinthModifiers: LabyrinthModifierKind[];
   activeLabyrinthRewardModifiers: LabyrinthModifierKind[];
   runTalentXP: TalentXP;
+  runMaterialsEarned: MaterialInventory;
   currentScreen: Screen | null;
   destinationChoices: string[];
   discoveredCardIdsAtRunStart: string[];
@@ -62,6 +64,7 @@ export function createActiveRunSnapshot(source: ActiveRunSnapshotSource): Active
     labyrinthPendingNode: source.contentSystemType === "labyrinth" ? source.labyrinthPendingNode : null,
     activeCombat,
     runTalentXP: source.runTalentXP,
+    runMaterialsEarned: source.runMaterialsEarned,
     currentScreen: source.currentScreen,
     destinationChoices: source.destinationChoices,
     discoveredCardIdsAtRunStart: source.discoveredCardIdsAtRunStart,

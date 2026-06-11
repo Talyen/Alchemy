@@ -22,7 +22,7 @@ export function TabBar<T extends string>({
               type="button"
               onClick={() => onSelectTab(tab.id)}
               className={cn(
-                "inline-flex items-center gap-2 rounded-full bg-card px-4 py-2 text-sm font-semibold text-foreground ring-1 ring-offset-1 ring-offset-card transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                "inline-flex items-center gap-2 rounded-full bg-card px-4 py-2 text-sm font-semibold text-foreground ring-1 ring-offset-1 ring-offset-card transition-[filter,background-color,box-shadow] duration-150 active:bg-muted active:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                 activeTab === tab.id ? "ring-primary/70" : "ring-border/30 hover:ring-border/50",
               )}
             >

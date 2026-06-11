@@ -89,6 +89,20 @@ describe("createBattleSession", () => {
     expect(useBattlePresentationStore.getState().enemyHurtFlashToken).toBe(0);
   });
 
+  it("resetBattleSession clears floating combat texts", async () => {
+    vi.useFakeTimers();
+    useBattlePresentationStore.getState().showCombatTexts([
+      { target: "enemy", kind: "damage", stat: "health", amount: 5 },
+    ]);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(useBattlePresentationStore.getState().floatingCombatTexts).toHaveLength(1);
+
+    const { session } = makeSession();
+    session.resetBattleSession();
+    expect(useBattlePresentationStore.getState().floatingCombatTexts).toEqual([]);
+    vi.useRealTimers();
+  });
+
   it("runIfSessionActive succeeds during victory grace when hasActiveBattle is false", () => {
     const { session, victoryDefeatHandledRef } = makeSession();
     victoryDefeatHandledRef.current = true;

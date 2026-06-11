@@ -1,5 +1,5 @@
-// Shared hover/tap motion wrapper for non-Button controls such as tabs and pills.
-// Depends on motion/react and keeps press feedback consistent across alchemy UI.
+// Shared hover motion wrapper for non-Button controls such as tabs and pills.
+// Tap feedback is CSS-only on child elements; this wrapper handles hover scale only.
 import type { ReactNode } from "react";
 import { motion, type MotionStyle } from "motion/react";
 
@@ -14,14 +14,13 @@ type PressableMotionProps = {
   disableHoverScale?: boolean;
 };
 
-// Centralizes the spring contract so tab-like controls do not drift from Button feedback.
+// Centralizes hover motion for non-Button controls. Tap feedback is CSS-only (see tab-bar, tiles).
 export function PressableMotion({ children, className, style, hoverSound, disableHoverScale }: PressableMotionProps) {
   return (
     <motion.span
       className={className}
       {...(style ? { style } : {})}
       {...(disableHoverScale ? {} : { whileHover: { scale: 1.02 } })}
-      whileTap={{ scale: 0.97 }}
       transition={{ type: "spring", stiffness: 400, damping: 15 }}
       onMouseEnter={() => {
         if (hoverSound !== false) playUISound(hoverSound ?? "buttonHover");

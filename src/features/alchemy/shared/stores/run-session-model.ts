@@ -31,6 +31,7 @@ type RunSessionRunSlice = Pick<
   | "contentSystemType"
   | "talentXP"
   | "runTalentXP"
+  | "runMaterialsEarned"
   | "unlockedTalents"
   | "initialized"
   | "discoveredCardIdsAtRunStart"
@@ -101,6 +102,7 @@ function pickRunSessionRunSlice(progress: RunStateFields): RunSessionRunSlice {
     contentSystemType: progress.contentSystemType,
     talentXP: progress.talentXP,
     runTalentXP: progress.runTalentXP,
+    runMaterialsEarned: progress.runMaterialsEarned,
     unlockedTalents: progress.unlockedTalents,
     initialized: progress.initialized,
     discoveredCardIdsAtRunStart: progress.discoveredCardIdsAtRunStart,

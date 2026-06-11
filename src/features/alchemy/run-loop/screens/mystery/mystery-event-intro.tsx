@@ -9,7 +9,7 @@ import type { MysteryChoice, MysteryEvent } from "../../mystery-events";
 import { TiltSurface } from "../../../shared/ui/tilt-surface";
 import { BattleCardButton } from "../../../shared/ui/card-button";
 import { MysteryEffectList } from "../../../shared/ui/mystery-effect-badge";
-import { ScreenHeader } from "../../../shared/ui/shared-ui";
+import { ScreenHeader, StaggerGroup, StaggerItem } from "../../../shared/ui/shared-ui";
 import { TooltipPanel } from "../../../shared/ui/tooltip-panel";
 
 const CONFIG = {
@@ -73,46 +73,50 @@ export function MysteryEventIntro({
   const isHovered = hoveredCardId === event.id;
 
   return (
-    <div className="state-swap flex flex-col items-center gap-6">
-      <ScreenHeader title={event.title} />
+    <StaggerGroup className="flex flex-col items-center gap-6">
+      <StaggerItem index={0}>
+        <ScreenHeader title={event.title} />
+      </StaggerItem>
       {event.art ? (
-        <TiltSurface className="aspect-[4/3] w-full max-w-[32.59cqh] overflow-hidden rounded-shell-card transition-none">
-          <img
-            src={event.art}
-            alt={event.title}
-            width={CONFIG.EVENT_IMAGE_WIDTH}
-            height={CONFIG.EVENT_IMAGE_HEIGHT}
-            className="h-full w-full rounded-shell-card object-contain"
-            loading="eager"
-          />
-        </TiltSurface>
+        <StaggerItem index={1}>
+          <TiltSurface className="aspect-[4/3] w-full max-w-[32.59cqh] overflow-hidden rounded-shell-card">
+            <img
+              src={event.art}
+              alt={event.title}
+              width={CONFIG.EVENT_IMAGE_WIDTH}
+              height={CONFIG.EVENT_IMAGE_HEIGHT}
+              className="h-full w-full rounded-shell-card object-contain"
+              loading="eager"
+            />
+          </TiltSurface>
+        </StaggerItem>
       ) : featuredCard ? (
-        <BattleCardButton
-          card={featuredCard}
-          hovered={isHovered}
-          onHoverStart={() => setHoveredCardId(event.id)}
-          onHoverEnd={() => setHoveredCardId(null)}
-          ariaLabel={featuredCard.title}
-          shimmerActive={false}
-          shimmerToken={undefined}
-          className={viewCardWidthClass}
-        />
-      ) : null}
-      <TextAnimate once className="max-w-lg text-base leading-relaxed text-muted-foreground">
-        {event.narrative}
-      </TextAnimate>
-
-      <div className="flex flex-wrap justify-center gap-4">
-        {event.choices.map((choice, i) => (
-          <MysteryEventChoiceButton
-            key={i}
-            choice={choice}
-            findCard={findCard}
-            findTrinket={findTrinket}
-            onPick={onPick}
+        <StaggerItem index={1}>
+          <BattleCardButton
+            card={featuredCard}
+            hovered={isHovered}
+            onHoverStart={() => setHoveredCardId(event.id)}
+            onHoverEnd={() => setHoveredCardId(null)}
+            ariaLabel={featuredCard.title}
+            shimmerActive={false}
+            shimmerToken={undefined}
+            className={viewCardWidthClass}
           />
+        </StaggerItem>
+      ) : null}
+      <StaggerItem index={event.art || featuredCard ? 2 : 1}>
+        <TextAnimate once className="max-w-lg text-base leading-relaxed text-muted-foreground">
+          {event.narrative}
+        </TextAnimate>
+      </StaggerItem>
+
+      <StaggerGroup swapKey={event.id} animate={false} className="flex flex-wrap justify-center gap-4">
+        {event.choices.map((choice, i) => (
+          <StaggerItem key={i} index={(event.art || featuredCard ? 3 : 2) + i}>
+            <MysteryEventChoiceButton choice={choice} findCard={findCard} findTrinket={findTrinket} onPick={onPick} />
+          </StaggerItem>
         ))}
-      </div>
-    </div>
+      </StaggerGroup>
+    </StaggerGroup>
   );
 }

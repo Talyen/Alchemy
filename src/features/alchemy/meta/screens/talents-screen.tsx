@@ -54,6 +54,9 @@ export function TalentsScreen({
 
   function handleUnlockTalent(talentId: string) {
     onUnlockTalent(selectedKeyword, talentId);
+  }
+
+  function handleUnlockTalentBegin() {
     playUISound("talentUnlock");
   }
   function handleReset() {
@@ -132,15 +135,15 @@ export function TalentsScreen({
             );
           })}
 
-          <div className="h-full w-full">
-            <TalentTree
-              keywordId={selectedKeyword}
-              unlockedTalents={unlockedTalentsForKeyword}
-              allTalents={allTalentsForKeyword}
-              choices={currentChoices}
-              onUnlock={handleUnlockTalent}
-            />
-          </div>
+          <TalentTree
+            key={selectedKeyword}
+            keywordId={selectedKeyword}
+            unlockedTalents={unlockedTalentsForKeyword}
+            allTalents={allTalentsForKeyword}
+            choices={currentChoices}
+            onUnlock={handleUnlockTalent}
+            onUnlockBegin={handleUnlockTalentBegin}
+          />
         </div>
       </div>
 

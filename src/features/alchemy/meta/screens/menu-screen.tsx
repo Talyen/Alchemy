@@ -1,17 +1,16 @@
 // Main menu screen with logo and navigation buttons. Entry point for all other screens.
 import { useCallback, useState } from "react";
-import type { CSSProperties } from "react";
 import { BookOpen, Cog, Swords, TreePine, WandSparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { ShineBorder } from "@/components/ui/shine-border";
 import { CardFlip } from "../../shared/ui/card-flip";
-import { staticCardTransform } from "@/features/alchemy/shared/config";
-import { clearTiltFromEvent, setTiltFromEvent } from "../../shared/utils";
+import { TiltSurface } from "../../shared/ui/tilt-surface";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "../../shared/stores/app-store";
 import { playUISound } from "@/lib/audio";
 import { TooltipBody, TooltipHeader, TooltipPanel, useTooltipFlip } from "../../shared/ui/tooltip-panel";
+import { StaggerGroup, StaggerItem } from "../../shared/ui/shared-ui";
 import { TalentsLockedTooltip } from "../talents/talents-locked-tooltip";
 
 export function MenuScreen({
@@ -63,12 +62,10 @@ export function MenuScreen({
 
   return (
     <div className="flex h-full w-full flex-col items-center justify-center text-center gap-8">
-      <div
-        className="tilt-surface relative w-full max-w-[39.81cqh]"
-        style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
-        onMouseMove={setTiltFromEvent}
-        onMouseLeave={clearTiltFromEvent}
-        onClick={handleLogoClick}
+      <TiltSurface
+        className="relative w-full max-w-[39.81cqh] cursor-pointer"
+        onDivClick={handleLogoClick}
+        ariaLabel="Flip Alchemy logo"
       >
         <CardFlip
           flipped={flipped}
@@ -77,29 +74,23 @@ export function MenuScreen({
           front={<img src={variants[0]} alt="Alchemy logo" className="w-full object-contain" loading="eager" />}
           back={<img src={variants[variantIdx]} alt="Alchemy logo" className="w-full object-contain" loading="eager" />}
         />
-      </div>
+      </TiltSurface>
 
-      <div className="grid gap-2">
-        <Button
-          size="lg"
-          className="stagger-item justify-center gap-2 w-56 text-base"
-          style={{ "--stagger-index": 0 } as CSSProperties}
-          onClick={onPlay}
-        >
-          <Swords className="h-4 w-4" />
-          Play
-        </Button>
-        <Button
-          size="lg"
-          variant="outline"
-          className="stagger-item justify-center gap-2 w-56 text-base"
-          style={{ "--stagger-index": 1 } as CSSProperties}
-          onClick={onCollection}
-        >
-          <BookOpen className="h-4 w-4" />
-          Collection
-        </Button>
-        <div
+      <StaggerGroup className="grid gap-2">
+        <StaggerItem index={0}>
+          <Button size="lg" className="justify-center gap-2 w-56 text-base" onClick={onPlay}>
+            <Swords className="h-4 w-4" />
+            Play
+          </Button>
+        </StaggerItem>
+        <StaggerItem index={1}>
+          <Button size="lg" variant="outline" className="justify-center gap-2 w-56 text-base" onClick={onCollection}>
+            <BookOpen className="h-4 w-4" />
+            Collection
+          </Button>
+        </StaggerItem>
+        <StaggerItem
+          index={2}
           className="relative"
           onMouseEnter={() => isLocked && setShowTalentsTooltip(true)}
           onMouseLeave={() => setShowTalentsTooltip(false)}
@@ -108,10 +99,11 @@ export function MenuScreen({
             size="lg"
             variant="outline"
             className={cn(
-              "stagger-item justify-center gap-2 w-56 text-base",
-              isLocked && "opacity-50 hover:bg-background cursor-not-allowed",
+              "justify-center gap-2 w-56 text-base",
+              isLocked && "opacity-45 grayscale-[50%] hover:bg-background cursor-not-allowed",
             )}
-            style={{ "--stagger-index": 2 } as CSSProperties}
+            disableHoverScale={isLocked}
+            {...(isLocked ? { hoverSound: false as const } : {})}
             onClick={() => {
               if (isLocked) {
                 playUISound("error");
@@ -134,8 +126,9 @@ export function MenuScreen({
               className="z-50 absolute left-full ml-4 top-1/2 text-left"
             />
           )}
-        </div>
-        <div
+        </StaggerItem>
+        <StaggerItem
+          index={3}
           className="relative"
           onMouseEnter={() => isLocked && setShowHomesteadTooltip(true)}
           onMouseLeave={() => setShowHomesteadTooltip(false)}
@@ -144,10 +137,11 @@ export function MenuScreen({
             size="lg"
             variant="outline"
             className={cn(
-              "stagger-item justify-center gap-2 w-56 text-base",
-              isLocked && "opacity-50 hover:bg-background cursor-not-allowed",
+              "justify-center gap-2 w-56 text-base",
+              isLocked && "opacity-45 grayscale-[50%] hover:bg-background cursor-not-allowed",
             )}
-            style={{ "--stagger-index": 3 } as CSSProperties}
+            disableHoverScale={isLocked}
+            {...(isLocked ? { hoverSound: false as const } : {})}
             onClick={() => {
               if (isLocked) {
                 playUISound("error");
@@ -176,29 +170,21 @@ export function MenuScreen({
               </TooltipBody>
             </TooltipPanel>
           )}
-        </div>
-        <Button
-          size="lg"
-          variant="outline"
-          className="stagger-item justify-center gap-2 w-56 text-base"
-          style={{ "--stagger-index": 4 } as CSSProperties}
-          onClick={onOptions}
-        >
-          <Cog className="h-4 w-4" />
-          Options
-        </Button>
-        {onQuit ? (
-          <Button
-            size="lg"
-            variant="outline"
-            className="stagger-item justify-center gap-2 w-56 text-base"
-            style={{ "--stagger-index": 5 } as CSSProperties}
-            onClick={onQuit}
-          >
-            Quit
+        </StaggerItem>
+        <StaggerItem index={4}>
+          <Button size="lg" variant="outline" className="justify-center gap-2 w-56 text-base" onClick={onOptions}>
+            <Cog className="h-4 w-4" />
+            Options
           </Button>
+        </StaggerItem>
+        {onQuit ? (
+          <StaggerItem index={5}>
+            <Button size="lg" variant="outline" className="justify-center gap-2 w-56 text-base" onClick={onQuit}>
+              Quit
+            </Button>
+          </StaggerItem>
         ) : null}
-      </div>
+      </StaggerGroup>
     </div>
   );
 }

@@ -40,7 +40,7 @@ npm run dev
 | `npm run release`       | Bump version + generate changelog + create git tag     |
 | `npm run balance:sim`   | Run headless balance simulation report                 |
 
-> See [`AGENTS.md`](./AGENTS.md) for the complete list of commands.
+> Full command reference: [`docs/REFERENCE.md`](./docs/REFERENCE.md#environment--commands). Agent/coding rules: [`AGENTS.md`](./AGENTS.md).
 
 ## Desktop Build
 
@@ -74,7 +74,7 @@ npm run test:e2e
 | E2E prepush | `npm run test:e2e:prepush` | Local pre-push gate (`@prepush` tagged scenarios) |
 | E2E main gate | `npm run test:e2e:main-gate` | Full Playwright suite (CI main-branch gate) |
 
-CI runs formatting, linting, unit tests, production build, and the critical Playwright suite.
+CI runs formatting, linting, unit tests, production build, and the critical Playwright suite. Path-specific tests and CI parity: [`CONTRIBUTING.md`](./CONTRIBUTING.md).
 
 ## Balance Simulation
 
@@ -146,12 +146,11 @@ src/
 │   ├── talents.ts        # Talent XP math
 │   └── trinkets.ts       # Trinket definitions
 ├── features/alchemy/     # React UI
-│   ├── navigation/       # Map and routing
-│   ├── screens/          # Pages
-│   ├── storage/          # Save/load and persistence
-│   ├── stores/           # Zustand state stores
-│   ├── talents/          # Talent UI
-│   └── ui/               # Reusable widgets
+│   ├── shared/           # stores, storage, ui, screens barrel, config
+│   ├── meta/             # menu, collection, homestead, talents
+│   ├── run-setup/        # character, difficulty, draft screens
+│   ├── run-loop/         # battle glue, navigation, shop, in-run screens
+│   └── shell/            # controller hooks
 ├── components/           # Shared UI primitives
 ├── assets/optimized/     # Pre-optimized images
 └── public/               # Static assets (sounds, music, card art)
@@ -180,4 +179,4 @@ React • TypeScript • Vite • Tailwind CSS • Zustand • Electron • Vite
 
 ## Development Guide
 
-See [`AGENTS.md`](./AGENTS.md) for AI-assisted development conventions, architecture, and glossary. Step-by-step implementation checklists (cards, screens, saves, etc.) are in [`docs/WORKFLOWS.md`](./docs/WORKFLOWS.md). For copy-paste LLM audit prompts, see [`PROMPTS.md`](./PROMPTS.md).
+**Docs:** [`AGENTS.md`](./AGENTS.md) (coding rules) · [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) (run state) · [`docs/WORKFLOWS.md`](./docs/WORKFLOWS.md) (how-to checklists) · [`docs/REFERENCE.md`](./docs/REFERENCE.md) (commands, glossary, battle rules) · [`CONTRIBUTING.md`](./CONTRIBUTING.md) (hooks & tests) · [`PROMPTS.md`](./PROMPTS.md) (agent audits)

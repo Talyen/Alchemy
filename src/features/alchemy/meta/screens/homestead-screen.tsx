@@ -6,7 +6,13 @@ import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { type BuildingId, type FarmId, type MaterialInventory, type ResearchId } from "@/lib/homestead/types";
 import { buildings, visibleFarmPlots, researchUpgrades } from "@/lib/homestead/data";
-import { HamburgerTrigger, PageLayout, PaginationControls, ScreenHeader } from "../../shared/ui/shared-ui";
+import {
+  HamburgerTrigger,
+  PageLayout,
+  PaginationControls,
+  ScreenHeader,
+  StaggerGroup,
+} from "../../shared/ui/shared-ui";
 import { playUISound } from "@/lib/audio";
 import { cardLibrary, type CompanionId } from "@/lib/game-data";
 import { HOMESTEAD_CONFIG, type GoalItem, type Tab, MaterialsBar, HomesteadTabs, getItems } from "./homestead/helpers";
@@ -103,8 +109,10 @@ export function HomesteadScreen({
                       const isPageActive = companionPage === pageIndex;
 
                       return (
-                        <div
+                        <StaggerGroup
                           key={pageIndex}
+                          swapKey={isPageActive ? `companions-${companionPage}` : `companions-page-${pageIndex}`}
+                          animate={isPageActive}
                           className={cn(
                             "motion-crossfade col-start-1 row-start-1 grid grid-cols-3 gap-x-1 gap-y-4",
                             isPageActive ? "opacity-100" : "motion-crossfade-hidden pointer-events-none opacity-0",
@@ -123,7 +131,7 @@ export function HomesteadScreen({
                               onBond={handleBondCompanion}
                             />
                           ))}
-                        </div>
+                        </StaggerGroup>
                       );
                     })}
                   </div>
@@ -136,8 +144,10 @@ export function HomesteadScreen({
               t === "buildings" ? constructedBuildings : t === "farm" ? plantedFarms : completedResearch;
 
             return (
-              <div
+              <StaggerGroup
                 key={t}
+                swapKey={`${t}-${isActive ? "active" : "idle"}`}
+                animate={isActive}
                 className={cn(
                   "motion-crossfade col-start-1 row-start-1",
                   isActive ? "opacity-100" : "motion-crossfade-hidden pointer-events-none opacity-0",
@@ -156,7 +166,7 @@ export function HomesteadScreen({
                     onAction={handleAction}
                   />
                 ))}
-              </div>
+              </StaggerGroup>
             );
           })}
         </div>

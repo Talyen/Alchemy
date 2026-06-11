@@ -1,6 +1,7 @@
 // Shared homestead tile layout: hover shell, tilt surface, and footer slot.
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { StaggerItem } from "../../../shared/ui/shared-ui";
 import { TiltSurface } from "../../../shared/ui/tilt-surface";
 import { HOMESTEAD_CONFIG } from "./helpers";
 
@@ -28,7 +29,8 @@ export function HomesteadTileFrame({
   footer: ReactNode;
 }) {
   return (
-    <div
+    <StaggerItem
+      index={index}
       className={cn("relative flex flex-col items-center", index < HOMESTEAD_CONFIG.compilationFillerCount && "mb-2")}
       onMouseEnter={() => setHoveredItemId(id)}
       onMouseLeave={() => setHoveredItemId(null)}
@@ -45,7 +47,7 @@ export function HomesteadTileFrame({
         </TiltSurface>
       </div>
       {footer}
-    </div>
+    </StaggerItem>
   );
 }
 

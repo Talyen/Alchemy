@@ -4,6 +4,7 @@ import { type KeywordId, type TalentXP } from "@/lib/game-data";
 import { getTalentTreeKeywordIds } from "@/lib/game-data";
 import { MATERIAL_IDS, type MaterialInventory } from "@/lib/homestead/types";
 import { MaterialPill } from "../../shared/ui/material-icons";
+import { StaggerGroup, StaggerItem } from "../../shared/ui/shared-ui";
 import { KeywordProgressCard } from "./keyword-progress-card";
 
 export function RunEndProgressSection({
@@ -34,29 +35,31 @@ export function RunEndProgressSection({
   return (
     <>
       {keywordIds.length > 0 && (
-        <div className="w-full max-w-2xl">
+        <StaggerGroup className="w-full max-w-2xl">
           <div className="flex flex-wrap justify-center gap-2">
-            {keywordIds.map((kw) => (
-              <div key={kw} className="flex-none w-[19.44cqh]">
+            {keywordIds.map((kw, index) => (
+              <StaggerItem key={kw} index={index} className="flex-none w-[19.44cqh]">
                 <KeywordProgressCard
                   kw={kw}
                   runXP={runEndTalentXP[kw] ?? 0}
                   totalXP={talentXP[kw] ?? 0}
                   animate={animate}
                 />
-              </div>
+              </StaggerItem>
             ))}
           </div>
-        </div>
+        </StaggerGroup>
       )}
 
       {earnedMaterials.length > 0 && (
-        <div className="flex flex-wrap items-center justify-center gap-2 text-sm font-medium text-muted-foreground">
-          Found
-          {earnedMaterials.map((mat) => (
-            <MaterialPill key={mat} material={mat} amount={runEndMaterials[mat]} />
+        <StaggerGroup className="flex flex-wrap items-center justify-center gap-2 text-sm font-medium text-muted-foreground">
+          <StaggerItem index={0}>Found</StaggerItem>
+          {earnedMaterials.map((mat, index) => (
+            <StaggerItem key={mat} index={index + 1}>
+              <MaterialPill material={mat} amount={runEndMaterials[mat]} />
+            </StaggerItem>
           ))}
-        </div>
+        </StaggerGroup>
       )}
     </>
   );

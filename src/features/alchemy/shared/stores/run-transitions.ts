@@ -100,6 +100,7 @@ export function snapshotRun(screen?: Screen): ActiveRunData {
     activeLabyrinthModifiers: session.activeLabyrinthModifiers,
     activeLabyrinthRewardModifiers: session.activeLabyrinthRewardModifiers,
     runTalentXP: run.runTalentXP,
+    runMaterialsEarned: run.runMaterialsEarned,
     currentScreen: screen ?? getRunDomainStore().navigation.screen,
     destinationChoices: session.rewardState.destinations,
     discoveredCardIdsAtRunStart: run.discoveredCardIdsAtRunStart,

@@ -9,7 +9,7 @@ import { viewCardWidthClass } from "@/features/alchemy/shared/config";
 import { CardSelectionGrid, type CardSelectionGridItem } from "../../../shared/ui/card-selection-grid";
 import { BattleCardButton } from "../../../shared/ui/card-button";
 import { CardTitle, getCardDisplayTitle } from "../../../shared/ui/card-description-ui";
-import { ScreenDescription, ScreenHeader } from "../../../shared/ui/shared-ui";
+import { ScreenDescription, ScreenHeader, StaggerGroup, StaggerItem } from "../../../shared/ui/shared-ui";
 
 function DeckCardSelectionFlow({
   intro,
@@ -32,9 +32,11 @@ function DeckCardSelectionFlow({
   confirmDisabled: boolean;
   onConfirm: () => void;
 }) {
+  const confirmStaggerIndex = Math.min(items.length, pageSize) + 1;
+
   return (
-    <div className="state-swap space-y-6 text-center">
-      {intro}
+    <StaggerGroup className="space-y-6 text-center">
+      <StaggerItem index={0}>{intro}</StaggerItem>
       <CardSelectionGrid
         items={items}
         page={page}
@@ -42,12 +44,12 @@ function DeckCardSelectionFlow({
         pageSize={pageSize}
         renderItem={renderItem}
       />
-      <div className="flex justify-center gap-4">
+      <StaggerItem index={confirmStaggerIndex} className="flex justify-center gap-4">
         <Button size="lg" disabled={confirmDisabled} onClick={onConfirm}>
           {confirmLabel}
         </Button>
-      </div>
-    </div>
+      </StaggerItem>
+    </StaggerGroup>
   );
 }
 

@@ -6,6 +6,8 @@ import type { ActiveRunData } from "@/lib/active-run-session";
 import type { RunStartSnapshot } from "./run-start";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import type { DifficultyId, TalentXP } from "@/lib/game-data";
+import { emptyInventory } from "@/lib/homestead/inventory";
+import type { MaterialInventory } from "@/lib/homestead/types";
 
 export type RunStateFields = {
   characterId: CharacterId;
@@ -23,6 +25,7 @@ export type RunStateFields = {
   contentSystemType: ContentSystemId;
   talentXP: TalentXP;
   runTalentXP: TalentXP;
+  runMaterialsEarned: MaterialInventory;
   unlockedTalents: UnlockedTalents;
   initialized: boolean;
   discoveredCardIdsAtRunStart: string[];
@@ -58,6 +61,7 @@ export function createInitialRunState(
     contentSystemType: initialActiveRun?.contentSystemType ?? "campaign",
     talentXP: {},
     runTalentXP: initialActiveRun?.runTalentXP ?? {},
+    runMaterialsEarned: initialActiveRun?.runMaterialsEarned ?? emptyInventory(),
     unlockedTalents: {},
     initialized: false,
     discoveredCardIdsAtRunStart: initialActiveRun?.discoveredCardIdsAtRunStart

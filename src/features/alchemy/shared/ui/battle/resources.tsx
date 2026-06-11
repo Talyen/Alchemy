@@ -1,14 +1,13 @@
 // Battle resource widgets for draw/discard piles, mana, and gold.
 // Depends on game-data pile art, card styling, and value-change animation tokens.
 // Used by BattleScreen controls.
-import { type CSSProperties } from "react";
 import { Coins, Gem } from "lucide-react";
 
 import { pileDiscardArt, pileDrawArt } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
-import { cardArtImageClass, cardSurfaceClass, pileCardWidthClass, staticCardTransform } from "../../config";
-import { clearTiltFromEvent, setTiltFromEvent } from "../../utils";
+import { cardArtImageClass, cardSurfaceClass, pileCardWidthClass } from "../../config";
+import { TiltSurface } from "../tilt-surface";
 import { useChangeToken } from "./use-change-token";
 
 // Shows a tactile pile card on desktop and a compact counter on mobile battle layout.
@@ -40,17 +39,14 @@ export function PilePanel({
     );
   }
   return (
-    <div
-      ref={ref}
-      className={cn("tilt-surface", cardSurfaceClass, pileCardWidthClass, "bg-transparent")}
-      data-testid={`${type}-pile`}
-      data-count={count}
-      onMouseMove={setTiltFromEvent}
-      onMouseLeave={clearTiltFromEvent}
-      style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
+    <TiltSurface
+      surfaceRef={ref}
+      testId={`${type}-pile`}
+      dataCount={count}
+      className={cn(cardSurfaceClass, pileCardWidthClass, "bg-transparent")}
     >
       <img src={art} alt={`${label} pile`} className={cn("block w-full", cardArtImageClass)} />
-    </div>
+    </TiltSurface>
   );
 }
 

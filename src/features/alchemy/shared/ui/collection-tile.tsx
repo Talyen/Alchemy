@@ -1,7 +1,7 @@
 // Single interactive collection tile for card, bestiary, and trinket entries.
 // Depends on tile item data, card flipping, tooltip components, audio, and tilt utilities.
 // Used by CollectionGrid to keep grid layout separate from tile behavior.
-import { useState, type CSSProperties } from "react";
+import { useState } from "react";
 
 import { playCardSound, playEnemyAttack } from "@/lib/audio";
 import { cardBack } from "@/lib/game-data";
@@ -23,11 +23,9 @@ import { useInteractiveCard } from "./use-interactive-card";
 
 type CompendiumTileProps = {
   item: CollectionTileItem;
-  /** Grid stagger vars or parent layout offsets only — not for theme colors. */
-  wrapperStyle?: CSSProperties;
 };
 
-export function CompendiumTile({ item, wrapperStyle }: CompendiumTileProps) {
+export function CompendiumTile({ item }: CompendiumTileProps) {
   const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard(
     item.hoverScope,
     item.id,
@@ -35,7 +33,7 @@ export function CompendiumTile({ item, wrapperStyle }: CompendiumTileProps) {
   const [flipped, setFlipped] = useState(false);
 
   return (
-    <div className="stagger-item relative" style={wrapperStyle} onMouseEnter={onHoverStart} onMouseLeave={onHoverEnd}>
+    <div className="relative h-full w-full" onMouseEnter={onHoverStart} onMouseLeave={onHoverEnd}>
       <CollectionTilePopup item={item} hovered={isHovered} />
       <TiltSurface
         as="button"

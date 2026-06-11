@@ -12,13 +12,15 @@ GitHub branch protection is not available on this repo, so **local hooks are the
 4. `npm run build`
 5. `npm run test:e2e:prepush` — fast **@prepush** subset (9 tests, parallel preview build; includes one animation canary)
 
-**Before opening a PR**, also run `npm run test:e2e:prepush:full` (`@critical`, preview + CI flags). The pre-push hook only runs `@prepush`; PR CI runs the broader `@critical` suite (~40 tests).
+**Before pushing to `main`**, also run `npm run test:e2e:prepush:full` (`@critical`, preview + CI flags). The pre-push hook only runs `@prepush`; CI on `main` runs the broader `@critical` suite (~40 tests). If using a PR branch, run the same before opening the PR.
 
 Manual full gate before **`main`**: `npm run test:e2e:main-gate` (full suite, same as CI `e2e-full`). Lighter checks: `npm run check:push` or `npm run test:e2e:prepush:full` (`@critical` only).
 
 Install hooks once: `npm run prepare` (runs on `npm install`).
 
 First-time Playwright: `npx playwright install chromium`.
+
+**PowerShell command chaining:** use `; if ($?) { next-command }` — `;` alone ignores exit codes on Windows ([AGENTS.md](../AGENTS.md)).
 
 ## What to run when you change…
 
@@ -38,6 +40,7 @@ First-time Playwright: `npx playwright install chromium`.
 - **`resumeCampaignRun`** — use for campaign resume; waits for destination when `currentScreen` was saved as `destination` instead of clicking Play during hydrate.
 - **`enableFastMode`** — disables animations; safe for most battle tests. Do **not** use in `battle-end-turn-canary.spec.ts` or animation-focused specs.
 - **`BattlePage.endTurn`** — must work with animations off (fast tests) and on (canary + full suite). Changing it requires the prepush canary to pass.
+- **Do not** use `skipCombatToVictory()`, `skipCombatBtn`, or target Skip Combat / Unlock All strings in e2e specs — hidden in preview/production; use `winViaCombat()` or `playCardNamed()`.
 
 ## CI parity
 
@@ -49,4 +52,4 @@ First-time Playwright: `npx playwright install chromium`.
 
 On `main` push, CI skips the redundant `e2e` (`@critical`) job because `e2e-full` is a superset.
 
-See [AGENTS.md](./AGENTS.md) for architecture and commands; [docs/WORKFLOWS.md](./docs/WORKFLOWS.md) for implementation checklists.
+**Docs:** [AGENTS.md](./AGENTS.md) (rules) · [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) (run state) · [docs/WORKFLOWS.md](./docs/WORKFLOWS.md) (how-to) · [docs/REFERENCE.md](./docs/REFERENCE.md) (commands, glossary, battle) · [PROMPTS.md](./PROMPTS.md) (audits)

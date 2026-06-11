@@ -1,11 +1,20 @@
 // Turn indicator badge for battle actor panels.
 import { cn } from "@/lib/utils";
 
-export function TurnBadge({ show, variant }: { show: boolean; variant: "player" | "enemy" }) {
+export function TurnBadge({
+  show,
+  variant,
+  urgentHide = false,
+}: {
+  show: boolean;
+  variant: "player" | "enemy";
+  urgentHide?: boolean;
+}) {
   return (
     <div
       className={cn(
-        "absolute left-1/2 z-20 whitespace-nowrap rounded-md px-3 py-1 text-sm transition-all duration-500",
+        "absolute left-1/2 z-20 whitespace-nowrap rounded-md px-3 py-1 text-sm transition-all",
+        urgentHide ? "duration-150" : "duration-500",
         show ? "opacity-100" : "opacity-0 pointer-events-none",
         variant === "player" ? "bg-emerald-900/70 text-emerald-300" : "bg-rose-900/70 text-rose-300",
       )}

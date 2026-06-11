@@ -1,7 +1,7 @@
 // Battle actor panels for hero/enemy art, health, status rows, and death effects.
 // Depends on actor subcomponents, enemy tooltips, and shared card styling.
 // Used by BattleScreen through the battle UI barrel.
-import type { CSSProperties, Ref } from "react";
+import type { Ref } from "react";
 
 import { Progress } from "@/components/ui/progress";
 import { ShineBorder } from "@/components/ui/shine-border";
@@ -9,19 +9,12 @@ import type { LabyrinthModifierKind } from "@/lib/content-systems/types";
 import type { BestiaryEntry, EnemyAttackEffect } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
-import {
-  battleCardWidthClass,
-  cardArtImageClass,
-  cardSurfaceClass,
-  SHINE_PALETTES,
-  staticCardTransform,
-} from "../../config";
+import { battleCardWidthClass, cardArtImageClass, cardSurfaceClass, SHINE_PALETTES } from "../../config";
 import type { StatusChip } from "../../types";
-import { clearTiltFromEvent, setTiltFromEvent } from "../../utils";
 import { DescriptionLines } from "../card-description-ui";
 import { EnemyTooltip } from "../enemy-tooltip";
 import { TooltipPanel, TooltipHeader } from "../tooltip-panel";
-import { ShimmerOverlay } from "../shared-ui";
+import { TiltSurface } from "../tilt-surface";
 import { PortraitHurtVfx } from "./portrait-hurt-vfx";
 import { useHurtPulse } from "./use-hurt-pulse";
 import { ParticleBurst } from "./particle-burst";
@@ -215,22 +208,22 @@ function ActorArtFrame({
   const { pulse, sparksOverflow } = useHurtPulse(hurtFlashToken);
 
   return (
-    <div
-      ref={surfaceRef}
-      data-testid={`battle-${side}-art-panel`}
+    <TiltSurface
+      surfaceRef={surfaceRef}
+      testId={`battle-${side}-art-panel`}
+      tiltEnabled={!isDead}
       className={cn(
-        "tilt-surface relative",
+        "relative",
         cardSurfaceClass,
         cardWidthClass ?? battleCardWidthClass,
         sparksOverflow && "overflow-visible",
         isDead && "overflow-visible animate-frame-fade surface-transparent",
       )}
+      shimmerActive={shimmerActive}
+      shimmerToken={shimmerToken}
+      shimmerRounded="rounded-[30px]"
       onMouseEnter={() => onHoverShimmer(shimmerId)}
-      onMouseMove={setTiltFromEvent}
-      onMouseLeave={clearTiltFromEvent}
-      style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
     >
-      <ShimmerOverlay active={shimmerActive} token={shimmerToken} />
       {deathsDoorActive ? <ArtDeathDoorBorder /> : null}
       <img
         src={art}
@@ -240,7 +233,7 @@ function ActorArtFrame({
       />
       {!isDead ? <PortraitHurtVfx pulse={pulse} /> : null}
       {isDead && <ParticleBurst imageUrl={art} />}
-    </div>
+    </TiltSurface>
   );
 }
 

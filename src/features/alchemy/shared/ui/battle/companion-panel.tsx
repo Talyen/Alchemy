@@ -1,14 +1,13 @@
 // Companion card panel and tooltip for active battle allies.
 // Depends on companion game-data types, card styling, and tilt utilities.
 // Used by the battle actor section.
-import { type CSSProperties } from "react";
-
 import type { CompanionDefinition } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 
-import { cardSurfaceClass, staticCardTransform } from "../../config";
-import { clearTiltFromEvent, formatCompanionTurnStartLine, setTiltFromEvent } from "@/features/alchemy/shared/utils";
+import { cardSurfaceClass } from "../../config";
+import { formatCompanionTurnStartLine } from "@/features/alchemy/shared/utils";
 import { DescriptionLines } from "../card-description-ui";
+import { TiltSurface } from "../tilt-surface";
 import { TooltipPanel } from "../tooltip-panel";
 
 function getCompanionDescriptionLines(companion: CompanionDefinition, damageBonus: number): string[] {
@@ -37,16 +36,12 @@ export function CompanionPanel({
       data-testid="active-companion"
       aria-label={`Active companion: ${companion.title}`}
     >
-      <div
+      <TiltSurface
         className={cn(
-          "tilt-surface",
           cardSurfaceClass,
           compact ? "w-[clamp(10.71cqh,21cqh,16.46cqh)]" : "w-[clamp(10.98cqh,13.59cqh,17.16cqh)]",
           shaking && "animate-shake",
         )}
-        onMouseMove={setTiltFromEvent}
-        onMouseLeave={clearTiltFromEvent}
-        style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
       >
         <img
           src={companion.art}
@@ -54,7 +49,7 @@ export function CompanionPanel({
           className="block w-full rounded-shell-hero aspect-[3/4]"
           loading="eager"
         />
-      </div>
+      </TiltSurface>
       <TooltipPanel className="opacity-0 group-hover/companion:opacity-100">
         <p className="font-display text-base font-bold text-amber-100/75">{companion.title}</p>
         <DescriptionLines

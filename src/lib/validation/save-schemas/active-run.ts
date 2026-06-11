@@ -15,6 +15,7 @@ import {
   BattleCardSchema,
   LabyrinthMapSchema,
   LabyrinthModifierArraySchema,
+  MaterialInventorySchema,
 } from "./core";
 
 const LabyrinthNodePositionSchema = z
@@ -66,6 +67,7 @@ export const ActiveRunDataSchema = z
     labyrinthPendingNode: LabyrinthNodePositionSchema,
     activeCombat: caught(ActiveCombatDataSchema, null, "activeRun.activeCombat").default(null),
     runTalentXP: TalentXPSchema.optional(),
+    runMaterialsEarned: MaterialInventorySchema.optional(),
     currentScreen: caught(z.enum(ROUTE_SCREEN_VALUES).nullable(), null, "activeRun.currentScreen").default(null),
     destinationChoices: caught(z.array(z.string()), [], "activeRun.destinationChoices").default([]),
     discoveredCardIdsAtRunStart: deduplicatedStringArraySchema("activeRun.discoveredCardIdsAtRunStart").default([]),

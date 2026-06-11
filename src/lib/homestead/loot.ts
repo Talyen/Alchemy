@@ -129,16 +129,3 @@ export function applyEndOfRunHomesteadBonuses(
   };
   return applyMaterialFindBonus(withFlatYields, effects);
 }
-
-// End-of-run material bonus based on performance.
-// More rooms cleared, acts reached, and bosses killed = more materials.
-export function getEndOfRunMaterials(roomsEncountered: number, currentAct: number): MaterialInventory {
-  const { endRunRates } = HOMESTEAD_LOOT_CONFIG;
-  return {
-    wood: roomsEncountered * endRunRates.woodPerRoom,
-    iron: roomsEncountered * endRunRates.ironBasePerRoom + Math.floor(roomsEncountered * endRunRates.ironBonusPerRoom),
-    herbs: roomsEncountered * endRunRates.herbsPerRoom,
-    food: Math.floor(roomsEncountered * endRunRates.foodPerRoom),
-    crystal: currentAct - 1 + Math.floor(roomsEncountered / endRunRates.crystalRoomsDivisor),
-  };
-}

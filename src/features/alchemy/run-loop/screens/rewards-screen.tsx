@@ -1,6 +1,4 @@
 // Victory reward screen — pick a card or trinket to add or skip.
-import type { CSSProperties } from "react";
-
 import { Button } from "@/components/ui/button";
 import type { BattleCard, TrinketEntry } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
@@ -10,7 +8,7 @@ import { GoldPill, MaterialPill } from "../../shared/ui/material-icons";
 import { BattleCardButton } from "../../shared/ui/card-button";
 import { getCardDisplayTitle } from "../../shared/ui/card-description-ui";
 import { DetailPopup } from "../../shared/ui/card-popup";
-import { ScreenHeader } from "../../shared/ui/shared-ui";
+import { ScreenHeader, StaggerGroup, StaggerItem } from "../../shared/ui/shared-ui";
 import { TiltSurface } from "../../shared/ui/tilt-surface";
 import { cardSurfaceClass, collectionTileWidthClass } from "@/features/alchemy/shared/config";
 import type { RewardState } from "../navigation/reward-flow";
@@ -60,12 +58,10 @@ function TrinketRewardButton({
 
 function RewardCardItem({
   card,
-  index,
   selected,
   onSelect,
 }: {
   card: BattleCard;
-  index: number;
   selected: boolean;
   onSelect: (id: string) => void;
 }) {
@@ -82,8 +78,7 @@ function RewardCardItem({
       shimmerActive={shimmerActive}
       shimmerToken={shimmerToken}
       className={collectionTileWidthClass}
-      wrapperClassName="stagger-item relative flex justify-center"
-      wrapperStyle={{ "--stagger-index": index } as CSSProperties}
+      wrapperClassName="relative flex justify-center"
       selected={selected}
     />
   );
@@ -118,36 +113,43 @@ export function RewardsScreen({
           {isTrinket ? "Choose a Trinket to add to your Collection" : "Choose a Card to add to your Deck"}
         </p>
 
-        <div className="mt-8 flex flex-wrap items-start justify-center gap-6">
-          {rewardChoices.map((item, index) =>
-            isTrinket ? (
-              <TrinketRewardButton
-                key={item.id}
-                trinket={item as TrinketEntry}
-                onClick={() => onSelectReward(item.id)}
-                selected={selectedRewardId === item.id}
-              />
-            ) : (
-              <RewardCardItem
-                key={item.id}
-                card={item as BattleCard}
-                index={index}
-                selected={selectedRewardId === item.id}
-                onSelect={onSelectReward}
-              />
-            ),
-          )}
-        </div>
-
-        {rewardGold > 0 || MATERIAL_IDS.some((mat) => rewardMaterials[mat] > 0) ? (
-          <div className="state-swap mt-8 flex flex-wrap items-center justify-center gap-2 text-sm font-medium text-muted-foreground">
-            Found
-            {rewardGold > 0 ? <GoldPill amount={rewardGold} /> : null}
-            {MATERIAL_IDS.filter((mat) => rewardMaterials[mat] > 0).map((mat) => (
-              <MaterialPill key={mat} material={mat} amount={rewardMaterials[mat]} />
+        <StaggerGroup
+          swapKey={rewardChoices.map((item) => item.id).join("-")}
+          className="mt-8 flex flex-col items-center gap-8"
+        >
+          <div className="flex flex-wrap items-start justify-center gap-6">
+            {rewardChoices.map((item, index) => (
+              <StaggerItem key={item.id} index={index}>
+                {isTrinket ? (
+                  <TrinketRewardButton
+                    trinket={item as TrinketEntry}
+                    onClick={() => onSelectReward(item.id)}
+                    selected={selectedRewardId === item.id}
+                  />
+                ) : (
+                  <RewardCardItem
+                    card={item as BattleCard}
+                    selected={selectedRewardId === item.id}
+                    onSelect={onSelectReward}
+                  />
+                )}
+              </StaggerItem>
             ))}
           </div>
-        ) : null}
+
+          {rewardGold > 0 || MATERIAL_IDS.some((mat) => rewardMaterials[mat] > 0) ? (
+            <StaggerItem
+              index={rewardChoices.length}
+              className="flex flex-wrap items-center justify-center gap-2 text-sm font-medium text-muted-foreground"
+            >
+              Found
+              {rewardGold > 0 ? <GoldPill amount={rewardGold} /> : null}
+              {MATERIAL_IDS.filter((mat) => rewardMaterials[mat] > 0).map((mat) => (
+                <MaterialPill key={mat} material={mat} amount={rewardMaterials[mat]} />
+              ))}
+            </StaggerItem>
+          ) : null}
+        </StaggerGroup>
 
         <div className="mt-5 flex flex-wrap justify-center gap-3">
           {!isTrinket ? (

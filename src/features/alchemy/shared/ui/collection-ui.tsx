@@ -3,9 +3,7 @@
 // Used by CollectionScreen to render encyclopedia-style grids without owning screen routing.
 /* eslint-disable react-refresh/only-export-components */
 import { cn } from "@/lib/utils";
-import type { CSSProperties } from "react";
-
-import { PaginationControls } from "./shared-ui";
+import { PaginationControls, StaggerGroup, StaggerItem } from "./shared-ui";
 import {
   collectionCardGridClass,
   collectionTabMeta,
@@ -45,20 +43,18 @@ export function CollectionGrid({
   });
 
   return (
-    <div
-      key={`${collectionTab}-${page}`}
+    <StaggerGroup
+      swapKey={`${collectionTab}-${page}`}
       className={cn(
-        "state-swap min-h-[50cqh] gap-y-7 overflow-visible",
+        "min-h-[50cqh] gap-y-7 overflow-visible",
         collectionTab === "trinkets" ? collectionTrinketGridClass : collectionCardGridClass,
         "grid-rows-2",
       )}
     >
       {pageItems.map((item, index) => (
-        <CompendiumTile
-          key={`${item.hoverScope}-${item.id}`}
-          item={item}
-          wrapperStyle={{ "--stagger-index": index } as CSSProperties}
-        />
+        <StaggerItem key={`${item.hoverScope}-${item.id}`} index={index} className="relative">
+          <CompendiumTile item={item} />
+        </StaggerItem>
       ))}
       {Array.from({ length: getCollectionFillerCount(pageItems.length, collectionTab) }).map((_, index) => (
         <div
@@ -67,7 +63,7 @@ export function CollectionGrid({
           aria-hidden="true"
         />
       ))}
-    </div>
+    </StaggerGroup>
   );
 }
 

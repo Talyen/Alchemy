@@ -36,6 +36,7 @@ export function BattleActors({
   } = feedback;
   const { playerPanelRef, enemyPanelRef } = refs;
   const isPlayerTurn = battleState.turnPhase === "player";
+  const enemyDead = battleState.enemyHealth <= 0;
   const hasCompanion = Boolean(battleState.activeCompanion);
   const isBoss = battleState.currentEnemy.enemyType === "boss";
   const bossStatsCardWidthClass = isBoss ? bossCardWidthClass : undefined;
@@ -114,7 +115,7 @@ export function BattleActors({
           isBoss={isBoss}
           statsCardWidthClass={bossStatsCardWidthClass}
         />
-        <TurnBadge show={!isPlayerTurn} variant="enemy" />
+        <TurnBadge show={!isPlayerTurn && !enemyDead} variant="enemy" urgentHide={enemyDead} />
       </div>
     </section>
   );

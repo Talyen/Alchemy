@@ -9,7 +9,7 @@ import type { BattleCard } from "@/lib/game-data";
 import { collectionTileWidthClass } from "../config";
 import { BattleCardButton } from "./card-button";
 import { CardTitle, getCardDisplayTitle } from "./card-description-ui";
-import { DisabledTooltip, GoldCost } from "./shared-ui";
+import { DisabledTooltip, GoldCost, StaggerItem } from "./shared-ui";
 
 type PurchasableCardItemProps = {
   card: BattleCard;
@@ -18,17 +18,24 @@ type PurchasableCardItemProps = {
   purchased: boolean;
   onBuy: () => void;
   widthClass?: string;
+  staggerIndex?: number;
 };
 
 export function PurchasableCardItem(props: PurchasableCardItemProps) {
-  const { card, price, gold, purchased, onBuy, widthClass = collectionTileWidthClass } = props;
+  const { card, price, gold, purchased, onBuy, widthClass = collectionTileWidthClass, staggerIndex } = props;
   const [hovered, setHovered] = useState(false);
 
   if (purchased) {
-    return <PurchasedCardItem card={card} widthClass={widthClass} />;
+    return (
+      <PurchasedCardItem
+        card={card}
+        widthClass={widthClass}
+        {...(staggerIndex !== undefined ? { staggerIndex } : {})}
+      />
+    );
   }
 
-  return (
+  const content = (
     <div className="flex flex-col items-center gap-3 rounded-shell-card border border-border/70 bg-card/60 p-4 text-center">
       <div onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}>
         <BattleCardButton
@@ -52,10 +59,19 @@ export function PurchasableCardItem(props: PurchasableCardItemProps) {
       </DisabledTooltip>
     </div>
   );
+
+  if (staggerIndex !== undefined) {
+    return <StaggerItem index={staggerIndex}>{content}</StaggerItem>;
+  }
+  return content;
 }
 
-function PurchasedCardItem({ card, widthClass }: Pick<PurchasableCardItemProps, "card"> & { widthClass: string }) {
-  return (
+function PurchasedCardItem({
+  card,
+  widthClass,
+  staggerIndex,
+}: Pick<PurchasableCardItemProps, "card"> & { widthClass: string; staggerIndex?: number }) {
+  const content = (
     <div className="flex flex-col items-center gap-3 rounded-shell-card border border-border/30 bg-card/30 p-4 text-center opacity-50">
       <BattleCardButton
         card={card}
@@ -66,6 +82,7 @@ function PurchasedCardItem({ card, widthClass }: Pick<PurchasableCardItemProps, 
         shimmerActive={false}
         shimmerToken={undefined}
         className={widthClass}
+        disabled
       />
       <p className="text-sm font-semibold text-amber-100/75">
         <CardTitle card={card} />
@@ -73,6 +90,11 @@ function PurchasedCardItem({ card, widthClass }: Pick<PurchasableCardItemProps, 
       <span className="text-xs font-semibold text-muted-foreground">Purchased</span>
     </div>
   );
+
+  if (staggerIndex !== undefined) {
+    return <StaggerItem index={staggerIndex}>{content}</StaggerItem>;
+  }
+  return content;
 }
 
 export function SelectableShopCard({

@@ -33,6 +33,8 @@ import {
 import type { TalentEffectManifest } from "@/lib/game-data";
 import type { Screen } from "@/features/alchemy/shared/types";
 import type { Setter } from "@/lib/utils";
+import { addInventory, emptyInventory } from "@/lib/homestead/inventory";
+import type { MaterialInventory } from "@/lib/homestead/types";
 import {
   createInitialBattleFields,
   createInitialRunDomainData,
@@ -128,6 +130,8 @@ type RunDomainActions = {
   clearPermanentData: () => void;
   awardCardXP: (card: RunStateFields["runDeck"][number]) => void;
   awardMysteryXP: (keywordId: KeywordId, amount: number) => void;
+  addRunMaterialsEarned: (materials: MaterialInventory) => void;
+  clearRunMaterialsEarned: () => void;
   finalizeRunXP: () => void;
   initializeProgress: (
     activeRun: ActiveRunData | null,
@@ -313,6 +317,16 @@ export const useRunDomainStore = create<RunDomainStore>()(
         });
       },
 
+      addRunMaterialsEarned: (materials) =>
+        set((state) => {
+          state.progress.runMaterialsEarned = addInventory(state.progress.runMaterialsEarned, materials);
+        }),
+
+      clearRunMaterialsEarned: () =>
+        set((state) => {
+          state.progress.runMaterialsEarned = emptyInventory();
+        }),
+
       finalizeRunXP: () =>
         set((state) => {
           if (Object.keys(state.progress.runTalentXP).length === 0) {
@@ -342,7 +356,10 @@ export const useRunDomainStore = create<RunDomainStore>()(
       hydrateProgressFromSnapshot: (snapshot) =>
         set((state) => {
           state.session.runEndTalentXP = {};
-          Object.assign(state.progress, runFieldsFromSnapshot(snapshot), { runTalentXP: {} });
+          Object.assign(state.progress, runFieldsFromSnapshot(snapshot), {
+            runTalentXP: {},
+            runMaterialsEarned: emptyInventory(),
+          });
         }),
 
       setHasActiveRun: (active) =>
@@ -503,6 +520,8 @@ function pickProgressActions(state: RunDomainStore): Omit<RunProgressStore, keyo
     clearPermanentData: state.clearPermanentData,
     awardCardXP: state.awardCardXP,
     awardMysteryXP: state.awardMysteryXP,
+    addRunMaterialsEarned: state.addRunMaterialsEarned,
+    clearRunMaterialsEarned: state.clearRunMaterialsEarned,
     finalizeRunXP: state.finalizeRunXP,
     initialize: state.initializeProgress,
     hydrateFromSnapshot: state.hydrateProgressFromSnapshot,

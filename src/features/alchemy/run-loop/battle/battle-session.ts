@@ -92,6 +92,7 @@ export function createBattleSession(contextOrGetter: BattleControllerContext | (
     getPresentationStore().clearRevealedCardKeys();
     getStore().setBattleStartState(null);
     getPresentationStore().resetPortraitHurtTokens();
+    getPresentationStore().clearFloatingCombatTexts();
   }
 
   function finishDrawSequence(

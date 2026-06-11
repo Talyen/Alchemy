@@ -1,10 +1,10 @@
-import type { CSSProperties } from "react";
 import { cn } from "@/lib/utils";
 import type { BestiaryEntry } from "@/lib/game-data";
-import { destinationMeta, staticCardTransform } from "../config";
+import { destinationMeta } from "../config";
 import { type Destination } from "../types";
-import { clearTiltFromEvent, setTiltFromEvent } from "../utils";
 import { PressableMotion } from "./pressable-motion";
+import { TiltSurface } from "./tilt-surface";
+import { StaggerGroup, StaggerItem } from "./shared-ui";
 
 export function DestinationChoices({
   destinationOptions,
@@ -16,24 +16,15 @@ export function DestinationChoices({
   selectedBoss?: BestiaryEntry | null;
 }) {
   return (
-    <div className="flex flex-wrap justify-center gap-8">
+    <StaggerGroup swapKey={destinationOptions.join("-")} className="flex flex-wrap justify-center gap-8">
       {destinationOptions.map((destination, index) => {
         const { icon: Icon, className, art: defaultArt } = destinationMeta[destination];
         const art = destination === "Boss Combat" && selectedBoss?.art ? selectedBoss.art : defaultArt;
         return (
-          <div
-            key={destination}
-            className="stagger-item flex flex-col items-center gap-4"
-            style={{ "--stagger-index": index } as CSSProperties}
-          >
-            <div
-              className="tilt-surface rounded-shell-card"
-              style={{ "--card-base-transform": staticCardTransform } as CSSProperties}
-              onMouseMove={setTiltFromEvent}
-              onMouseLeave={clearTiltFromEvent}
-            >
+          <StaggerItem key={destination} index={index} className="flex flex-col items-center gap-4">
+            <TiltSurface className="rounded-shell-card">
               <img src={art} alt={destination} className="w-full max-w-[32.59cqh] rounded-shell-card object-contain" />
-            </div>
+            </TiltSurface>
             <div className="relative rounded-full">
               <PressableMotion className="inline-block" disableHoverScale>
                 <button
@@ -49,9 +40,9 @@ export function DestinationChoices({
                 </button>
               </PressableMotion>
             </div>
-          </div>
+          </StaggerItem>
         );
       })}
-    </div>
+    </StaggerGroup>
   );
 }

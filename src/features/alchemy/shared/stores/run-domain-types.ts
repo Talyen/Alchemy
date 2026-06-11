@@ -182,6 +182,8 @@ type RunProgressActions = {
   clearPermanentData: () => void;
   awardCardXP: (card: BattleCard) => void;
   awardMysteryXP: (keywordId: KeywordId, amount: number) => void;
+  addRunMaterialsEarned: (materials: MaterialInventory) => void;
+  clearRunMaterialsEarned: () => void;
   finalizeRunXP: () => void;
   initialize: (
     activeRun: ActiveRunData | null,
