@@ -1,8 +1,8 @@
 // Run-end discovery delta and pack batching helpers.
 /** Matches Collection card row (`grid-cols-4`). */
-export const DISCOVERY_CARD_PACK_SIZE = 4;
+const DISCOVERY_CARD_PACK_SIZE = 4;
 /** Matches Collection trinket row (`grid-cols-3`). */
-export const DISCOVERY_TRINKET_PACK_SIZE = 3;
+const DISCOVERY_TRINKET_PACK_SIZE = 3;
 
 export function computeRunDiscoveryDelta(currentIds: readonly string[], snapshotIds: readonly string[]): string[] {
   const snapshotSet = new Set(snapshotIds);
