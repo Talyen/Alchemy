@@ -1,7 +1,13 @@
 // Pure run-start snapshot builder for campaign, labyrinth, and wildwood entry points.
 // Depends on character starter decks and Health constants; React controllers apply the snapshot.
-import { MAX_PLAYER_HEALTH } from "@/lib/game-constants";
-import { getStartingDeck, type BattleCard, type CharacterId, type DifficultyId } from "@/lib/game-data";
+import {
+  computeStartingMaxHealth,
+  getStartingDeck,
+  type BattleCard,
+  type CharacterId,
+  type DifficultyId,
+  type TalentXP,
+} from "@/lib/game-data";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import type { Destination } from "../../shared/types";
 
@@ -26,6 +32,7 @@ export type RunStartInput = {
   contentSystemType: ContentSystemId;
   difficultyId?: DifficultyId | null | undefined;
   talentStartGold: number;
+  talentXP: TalentXP;
   draftedDeck?: BattleCard[] | undefined;
 };
 
@@ -35,9 +42,10 @@ export function createRunStartSnapshot({
   contentSystemType,
   difficultyId = null,
   talentStartGold,
+  talentXP,
   draftedDeck,
 }: RunStartInput): RunStartSnapshot {
-  const runMaxHealth = MAX_PLAYER_HEALTH;
+  const runMaxHealth = computeStartingMaxHealth(talentXP);
   const runGold = contentSystemType === "wildwood" ? 0 : talentStartGold;
 
   return {

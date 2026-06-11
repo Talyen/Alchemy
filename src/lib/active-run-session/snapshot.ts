@@ -29,6 +29,8 @@ export type ActiveRunSnapshotSource = {
   runTalentXP: TalentXP;
   currentScreen: Screen | null;
   destinationChoices: string[];
+  discoveredCardIdsAtRunStart: string[];
+  discoveredTrinketIdsAtRunStart: string[];
 };
 
 export function createActiveRunSnapshot(source: ActiveRunSnapshotSource): ActiveRunData {
@@ -62,5 +64,7 @@ export function createActiveRunSnapshot(source: ActiveRunSnapshotSource): Active
     runTalentXP: source.runTalentXP,
     currentScreen: source.currentScreen,
     destinationChoices: source.destinationChoices,
+    discoveredCardIdsAtRunStart: source.discoveredCardIdsAtRunStart,
+    discoveredTrinketIdsAtRunStart: source.discoveredTrinketIdsAtRunStart,
   };
 }

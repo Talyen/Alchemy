@@ -51,7 +51,6 @@ function MysteryEventChoiceButton({
           findCard={findCard}
           findTrinket={findTrinket}
           choiceLabel={choice.label}
-          choiceDescription={choice.description}
         />
       </TooltipPanel>
     </div>

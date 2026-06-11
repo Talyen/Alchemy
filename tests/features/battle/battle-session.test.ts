@@ -32,7 +32,14 @@ function makeSession() {
     onBattleDefeat,
   });
 
-  return { session, battleSessionRef, onBattleVictory, onBattleDefeat, transferCancelRegistryRef };
+  return {
+    session,
+    battleSessionRef,
+    victoryDefeatHandledRef,
+    onBattleVictory,
+    onBattleDefeat,
+    transferCancelRegistryRef,
+  };
 }
 
 beforeEach(() => {
@@ -80,5 +87,18 @@ describe("createBattleSession", () => {
     session.resetBattleSession();
     expect(useBattlePresentationStore.getState().playerHurtFlashToken).toBe(0);
     expect(useBattlePresentationStore.getState().enemyHurtFlashToken).toBe(0);
+  });
+
+  it("runIfSessionActive succeeds during victory grace when hasActiveBattle is false", () => {
+    const { session, victoryDefeatHandledRef } = makeSession();
+    victoryDefeatHandledRef.current = true;
+    getBattleStoreView().setHasActiveBattle(false);
+    getBattleStoreView().setSyncedBattleState({ ...defaultBattleState(), enemyHealth: 0 });
+
+    const fn = vi.fn(() => "ok");
+    const result = session.runIfSessionActive(1, fn);
+
+    expect(fn).toHaveBeenCalledOnce();
+    expect(result).toBe("ok");
   });
 });

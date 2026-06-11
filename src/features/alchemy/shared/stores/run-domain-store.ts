@@ -71,6 +71,7 @@ export function selectRunController(s: RunProgressStore) {
     setCompletedDestinations: s.setCompletedDestinations,
     setRunTrinkets: s.setRunTrinkets,
     setEncounteredRunEnemyIds: s.setEncounteredRunEnemyIds,
+    setDiscoveryBaselines: s.setDiscoveryBaselines,
     setSelectedDifficulty: s.setSelectedDifficulty,
     setContentSystemType: s.setContentSystemType,
     setCharacter: s.setCharacter,
@@ -114,6 +115,7 @@ type RunDomainActions = {
   setCompletedDestinations: Setter<RunStateFields["completedDestinations"]>;
   setRunTrinkets: Setter<string[]>;
   setEncounteredRunEnemyIds: Setter<string[]>;
+  setDiscoveryBaselines: (cardIds: string[], trinketIds: string[]) => void;
   setSelectedDifficulty: Setter<RunStateFields["selectedDifficulty"]>;
   setContentSystemType: Setter<RunStateFields["contentSystemType"]>;
   setCharacter: (selectedId: CharacterId) => void;
@@ -144,6 +146,8 @@ type RunDomainActions = {
   setCompanionRewardCards: (cards: RunSessionFields["companionRewardCards"]) => void;
   setRunEndMaterials: (materials: RunSessionFields["runEndMaterials"]) => void;
   setRunEndTalentXP: (xp: RunSessionFields["runEndTalentXP"]) => void;
+  setRunEndDiscoveredCardIds: (ids: RunSessionFields["runEndDiscoveredCardIds"]) => void;
+  setRunEndDiscoveredTrinketIds: (ids: RunSessionFields["runEndDiscoveredTrinketIds"]) => void;
   setCorruptionResult: (result: RunSessionFields["corruptionResult"]) => void;
   setPendingCharacterId: (id: RunSessionFields["pendingCharacterId"]) => void;
   setPendingContentSystemType: (type: RunSessionFields["pendingContentSystemType"]) => void;
@@ -219,6 +223,11 @@ export const useRunDomainStore = create<RunDomainStore>()(
       setCompletedDestinations: setProgressField("completedDestinations"),
       setRunTrinkets: setProgressField("runTrinkets"),
       setEncounteredRunEnemyIds: setProgressField("encounteredRunEnemyIds"),
+      setDiscoveryBaselines: (cardIds, trinketIds) =>
+        set((state) => {
+          state.progress.discoveredCardIdsAtRunStart = [...cardIds];
+          state.progress.discoveredTrinketIdsAtRunStart = [...trinketIds];
+        }),
       setSelectedDifficulty: setProgressField("selectedDifficulty"),
       setContentSystemType: setProgressField("contentSystemType"),
 
@@ -369,6 +378,14 @@ export const useRunDomainStore = create<RunDomainStore>()(
         set((state) => {
           state.session.runEndTalentXP = xp;
         }),
+      setRunEndDiscoveredCardIds: (ids: string[]) =>
+        set((state) => {
+          state.session.runEndDiscoveredCardIds = ids;
+        }),
+      setRunEndDiscoveredTrinketIds: (ids: string[]) =>
+        set((state) => {
+          state.session.runEndDiscoveredTrinketIds = ids;
+        }),
       setCorruptionResult: (result) =>
         set((state) => {
           state.session.corruptionResult = result;
@@ -473,6 +490,7 @@ function pickProgressActions(state: RunDomainStore): Omit<RunProgressStore, keyo
     setCompletedDestinations: state.setCompletedDestinations,
     setRunTrinkets: state.setRunTrinkets,
     setEncounteredRunEnemyIds: state.setEncounteredRunEnemyIds,
+    setDiscoveryBaselines: state.setDiscoveryBaselines,
     setSelectedDifficulty: state.setSelectedDifficulty,
     setContentSystemType: state.setContentSystemType,
     setCharacter: state.setCharacter,
@@ -501,6 +519,8 @@ function pickSessionActions(state: RunDomainStore): Omit<RunSessionStore, keyof 
     setCompanionRewardCards: state.setCompanionRewardCards,
     setRunEndMaterials: state.setRunEndMaterials,
     setRunEndTalentXP: state.setRunEndTalentXP,
+    setRunEndDiscoveredCardIds: state.setRunEndDiscoveredCardIds,
+    setRunEndDiscoveredTrinketIds: state.setRunEndDiscoveredTrinketIds,
     setCorruptionResult: state.setCorruptionResult,
     setPendingCharacterId: state.setPendingCharacterId,
     setPendingContentSystemType: state.setPendingContentSystemType,

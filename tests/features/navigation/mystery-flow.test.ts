@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import type { MysteryEffect } from "@/features/alchemy/run-loop/mystery-events";
 import { applyMysteryEffect } from "@/features/alchemy/run-loop/navigation/mystery-flow";
+import * as gameData from "@/lib/game-data";
+import { cardLibrary, getCardKeywords, getOfferableCardPool } from "@/lib/game-data";
 
 const MYSTERY_EFFECT_KINDS: MysteryEffect["kind"][] = [
   "addCard",
@@ -59,5 +61,51 @@ describe("applyMysteryEffect", () => {
     expect(() =>
       applyMysteryEffect({ kind: "unknown-kind" } as MysteryEffect, minimalContext()),
     ).toThrow(/Unhandled mystery effect kind/);
+  });
+
+  it("chooseCard with archery tag offers only archery-tagged cards", () => {
+    const context = minimalContext();
+    applyMysteryEffect({ kind: "chooseCard", tag: "archery" }, context);
+
+    expect(context.setMysteryCardChoices).toHaveBeenCalledTimes(1);
+    const offered = context.setMysteryCardChoices.mock.calls[0][0];
+    expect(offered.length).toBeGreaterThan(0);
+    for (const card of offered) {
+      const libraryCard = cardLibrary.find((c) => c.id === card.id);
+      expect(getCardKeywords(libraryCard ?? card)).toContain("archery");
+    }
+  });
+
+  it("chooseCard without tag can offer non-archery cards", () => {
+    let sawNonArchery = false;
+    for (let i = 0; i < 30; i++) {
+      const context = minimalContext();
+      applyMysteryEffect({ kind: "chooseCard" }, context);
+      const offered = context.setMysteryCardChoices.mock.calls[0][0];
+      if (offered.some((card) => !getCardKeywords(card).includes("archery"))) {
+        sawNonArchery = true;
+        break;
+      }
+    }
+    expect(sawNonArchery).toBe(true);
+  });
+
+  it("chooseCard with unmatched tag falls back to the full offerable pool", () => {
+    const slashOnly = getOfferableCardPool().filter((card) => card.id === "slash");
+    expect(slashOnly).toHaveLength(1);
+    expect(getCardKeywords(slashOnly[0])).not.toContain("archery");
+
+    const poolSpy = vi.spyOn(gameData, "getOfferableCardPool").mockReturnValue(slashOnly);
+    try {
+      const context = minimalContext();
+      applyMysteryEffect({ kind: "chooseCard", tag: "archery" }, context);
+
+      expect(context.setMysteryCardChoices).toHaveBeenCalledTimes(1);
+      const offered = context.setMysteryCardChoices.mock.calls[0][0];
+      expect(offered.length).toBeGreaterThan(0);
+      expect(offered.every((card) => card.id === "slash")).toBe(true);
+    } finally {
+      poolSpy.mockRestore();
+    }
   });
 });

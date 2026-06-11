@@ -70,6 +70,8 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
   ) {
     const snapshot = createStartSnapshot(characterId, contentSystemType, options.difficultyId);
     applyRunStartSnapshot(snapshot);
+    const appState = useAppStore.getState();
+    deps.run.setDiscoveryBaselines(appState.discoveredCardIds, appState.discoveredTrinketIds);
     if (options.playStartGoldSound && snapshot.runGold > 0) {
       playGoldGain();
     }
@@ -98,6 +100,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
       contentSystemType,
       difficultyId,
       talentStartGold: deps.talents.talentEffects.startGold,
+      talentXP: deps.talents.talentXP,
     };
     return createRunStartSnapshot(
       characterId === "wildcard" && deps.draftedDeckRef.current
@@ -130,7 +133,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
   }
 
   function initializeWildwoodRun(characterId: CharacterId) {
-    startRun(characterId, CONSTANTS.CONTENT_SYSTEMS.WILDWOOD);
+    startRun(characterId, CONSTANTS.CONTENT_SYSTEMS.WILDWOOD, { discoverStarterDeck: true });
     deps.navigateTo(CONSTANTS.SCREENS.WILDWOOD_SELECT);
   }
 

@@ -25,6 +25,8 @@ export type RunStateFields = {
   runTalentXP: TalentXP;
   unlockedTalents: UnlockedTalents;
   initialized: boolean;
+  discoveredCardIdsAtRunStart: string[];
+  discoveredTrinketIdsAtRunStart: string[];
 };
 
 const VALID_DESTINATIONS = new Set<Destination>(Object.values(DESTINATIONS));
@@ -58,6 +60,12 @@ export function createInitialRunState(
     runTalentXP: initialActiveRun?.runTalentXP ?? {},
     unlockedTalents: {},
     initialized: false,
+    discoveredCardIdsAtRunStart: initialActiveRun?.discoveredCardIdsAtRunStart
+      ? [...initialActiveRun.discoveredCardIdsAtRunStart]
+      : [],
+    discoveredTrinketIdsAtRunStart: initialActiveRun?.discoveredTrinketIdsAtRunStart
+      ? [...initialActiveRun.discoveredTrinketIdsAtRunStart]
+      : [],
   };
 }
 
@@ -85,6 +93,8 @@ export function runFieldsFromSnapshot(
   | "completedDestinations"
   | "runTrinkets"
   | "encounteredRunEnemyIds"
+  | "discoveredCardIdsAtRunStart"
+  | "discoveredTrinketIdsAtRunStart"
 > {
   return {
     characterId: snapshot.characterId,
@@ -100,5 +110,7 @@ export function runFieldsFromSnapshot(
     completedDestinations: snapshot.completedDestinations,
     runTrinkets: snapshot.runTrinkets,
     encounteredRunEnemyIds: [],
+    discoveredCardIdsAtRunStart: [],
+    discoveredTrinketIdsAtRunStart: [],
   };
 }

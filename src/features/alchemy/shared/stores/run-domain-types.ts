@@ -75,6 +75,8 @@ export function createInitialSessionFields(): RunSessionFields {
     companionRewardCards: null,
     runEndMaterials: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 },
     runEndTalentXP: {},
+    runEndDiscoveredCardIds: [],
+    runEndDiscoveredTrinketIds: [],
     corruptionResult: null,
     pendingCharacterId: null,
     pendingContentSystemType: "campaign",
@@ -120,6 +122,8 @@ export type RunSessionFields = {
   companionRewardCards: BattleCard[] | null;
   runEndMaterials: MaterialInventory;
   runEndTalentXP: TalentXP;
+  runEndDiscoveredCardIds: string[];
+  runEndDiscoveredTrinketIds: string[];
   corruptionResult: CorruptionResult | null;
   pendingCharacterId: CharacterId | null;
   pendingContentSystemType: ContentSystemId;
@@ -139,6 +143,8 @@ type RunSessionActions = {
   setCompanionRewardCards: (cards: BattleCard[] | null) => void;
   setRunEndMaterials: (materials: MaterialInventory) => void;
   setRunEndTalentXP: (xp: TalentXP) => void;
+  setRunEndDiscoveredCardIds: (ids: string[]) => void;
+  setRunEndDiscoveredTrinketIds: (ids: string[]) => void;
   setCorruptionResult: (result: CorruptionResult | null) => void;
   setPendingCharacterId: (id: CharacterId | null) => void;
   setPendingContentSystemType: (type: ContentSystemId) => void;
@@ -163,6 +169,7 @@ type RunProgressActions = {
   setCompletedDestinations: Setter<Destination[]>;
   setRunTrinkets: Setter<string[]>;
   setEncounteredRunEnemyIds: Setter<string[]>;
+  setDiscoveryBaselines: (cardIds: string[], trinketIds: string[]) => void;
   setSelectedDifficulty: Setter<DifficultyId | null>;
   setContentSystemType: Setter<ContentSystemId>;
   setCharacter: (selectedId: CharacterId) => void;

@@ -129,6 +129,7 @@ export const uiSounds = {
   talentUnlock: "music-box-chime-positive.ogg",
   collectionPage: "page-turn.ogg",
   musicBoxMystery: "music-box-mystery.ogg",
+  packOpen: "paper-move.ogg",
 } as const;
 
 export type UISound = keyof typeof uiSounds;

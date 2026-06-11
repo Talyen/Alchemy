@@ -119,9 +119,10 @@ jobs:
       - name: Smoke test production build
         run: |
           npx vite preview --host 127.0.0.1 --port 4174 --strictPort &
-          sleep 3
+          preview_pid=$!
+          npx wait-on http://127.0.0.1:4174 --timeout 30000
           curl -sf http://127.0.0.1:4174 > /dev/null
-          kill %1
+          kill "$preview_pid"
 
       - uses: actions/upload-artifact@v5
         with:

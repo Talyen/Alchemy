@@ -8,6 +8,17 @@ export const battleCardWidthClass = "w-[clamp(24.76cqh,25.16cqh,37.48cqh)]";
 export const handCardWidthClass = "w-[clamp(22.28cqh,22.64cqh,33.73cqh)]";
 export const viewCardWidthClass = "w-[clamp(17.5cqh,17.78cqh,26.48cqh)]";
 export const collectionTileWidthClass = "w-[clamp(21cqh,21.34cqh,31.78cqh)]"; // 1.2× viewCardWidthClass for collection cards/bestiary tiles.
+// One row of discovery-pack tiles (3:4 aspect, matches collectionTileWidthClass).
+export const discoveryPackStageHeightClass = "h-[clamp(28cqh,28.45cqh,42.37cqh)]";
+// Stage + hint + Continue + gaps between them.
+export const discoveryPackBlockHeightClass = "h-[calc(clamp(28cqh,28.45cqh,42.37cqh)+5.5rem)]";
+export const collectionGridGapXClass = "gap-x-3";
+export const collectionShellWidthClass = "w-full max-w-6xl";
+// Shared with CollectionGrid — same column count, gap, and justify-items-center.
+export const collectionCardGridClass = `grid w-full justify-items-center ${collectionGridGapXClass} grid-cols-4`;
+export const collectionTrinketGridClass = `grid w-full justify-items-center ${collectionGridGapXClass} grid-cols-3`;
+// Header + pack block + gap — fixed stack height so justify-center does not shift between phases.
+export const discoveryScreenStackHeightClass = "h-[calc(clamp(28cqh,28.45cqh,42.37cqh)+12.5rem)]";
 export const trinketCardWidthClass = "w-[clamp(24.5cqh,24.89cqh,37.07cqh)]"; // 1.4× viewCardWidthClass for larger trinket tiles.
 export const pileCardWidthClass = "w-[clamp(12cqh,12.96cqh,18.25cqh)]";
 
@@ -20,8 +31,16 @@ export const cardSurfaceClass = "relative overflow-hidden rounded-[30px] bg-blac
 export const cardArtImageClass = "rounded-[30px] aspect-[3/4] object-cover";
 export const squareArtImageClass = "rounded-[30px] aspect-square object-cover";
 export const staticCardTransform = "translate3d(0px, 0px, 0px)";
-export const popupClassName =
-  "absolute bottom-full left-1/2 z-40 mb-4 -translate-x-1/2 rounded-[20px] border border-border/80 bg-card px-3 py-3 text-left";
+export const popupBaseClassName =
+  "absolute left-1/2 z-50 rounded-[20px] border border-border bg-card px-3 py-3 text-left";
+
+export const tooltipAnchorClassNames = {
+  above: "bottom-full mb-4",
+  below: "top-full mt-4 bottom-auto",
+} as const;
+
+/** @deprecated Use popupBaseClassName + tooltipAnchorClassNames via TooltipPanel */
+export const popupClassName = `${popupBaseClassName} ${tooltipAnchorClassNames.above}`;
 
 export const battleActorSectionClass = {
   desktop:

@@ -11,8 +11,8 @@ const validKeywords: KeywordId[] = [
 ];
 
 describe("mysteryPool", () => {
-  it("contains 16 events", () => {
-    expect(mysteryPool.length).toBe(16);
+  it("contains 23 events", () => {
+    expect(mysteryPool.length).toBe(23);
   });
 
   it("each event has required fields", () => {
@@ -31,11 +31,10 @@ describe("mysteryPool", () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it("each choice has label, description, and at least one effect", () => {
+  it("each choice has label and at least one effect", () => {
     for (const event of mysteryPool) {
       for (const choice of event.choices) {
         expect(choice.label).toBeTruthy();
-        expect(choice.description).toBeTruthy();
         expect(Array.isArray(choice.effects)).toBe(true);
         expect(choice.effects.length).toBeGreaterThanOrEqual(1);
       }
@@ -191,6 +190,25 @@ describe("mysteryPool", () => {
   it("new events are present", () => {
     expect(mysteryPool.find((e) => e.id === "mountain-pass")).toBeDefined();
     expect(mysteryPool.find((e) => e.id === "murky-pond")).toBeDefined();
+    expect(mysteryPool.find((e) => e.id === "necromancers-offer")).toBeDefined();
+    expect(mysteryPool.find((e) => e.id === "medicinal-herb-garden")).toBeDefined();
+    expect(mysteryPool.find((e) => e.id === "crystal-garden")).toBeDefined();
+    expect(mysteryPool.find((e) => e.id === "hunters-lodge")).toBeDefined();
+    expect(mysteryPool.find((e) => e.id === "roadside-censer")).toBeDefined();
+    expect(mysteryPool.find((e) => e.id === "the-phoenix")).toBeDefined();
+    expect(mysteryPool.find((e) => e.id === "the-wolf")).toBeDefined();
+  });
+
+  it("Hunter's Lodge 'Take the Arrows' uses chooseCard with archery tag", () => {
+    const lodge = mysteryPool.find((e) => e.id === "hunters-lodge");
+    expect(lodge).toBeDefined();
+    const arrows = lodge!.choices.find((c) => c.label === "Take the Arrows");
+    expect(arrows).toBeDefined();
+    const effect = arrows!.effects.find((e) => e.kind === "chooseCard");
+    expect(effect).toBeDefined();
+    if (effect?.kind === "chooseCard") {
+      expect(effect.tag).toBe("archery");
+    }
   });
 
   it("Fairy Ring has a 'Make a Wish' choice", () => {

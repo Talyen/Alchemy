@@ -68,6 +68,10 @@ export const ActiveRunDataSchema = z
     runTalentXP: TalentXPSchema.optional(),
     currentScreen: caught(z.enum(ROUTE_SCREEN_VALUES).nullable(), null, "activeRun.currentScreen").default(null),
     destinationChoices: caught(z.array(z.string()), [], "activeRun.destinationChoices").default([]),
+    discoveredCardIdsAtRunStart: deduplicatedStringArraySchema("activeRun.discoveredCardIdsAtRunStart").default([]),
+    discoveredTrinketIdsAtRunStart: deduplicatedStringArraySchema("activeRun.discoveredTrinketIdsAtRunStart").default(
+      [],
+    ),
   })
   .transform((data) => normalizeActiveRunData(data))
   .refine((data) => data.contentSystemType !== "labyrinth" || data.labyrinthMap !== null, {

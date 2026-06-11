@@ -17,7 +17,9 @@ import { useBattlePresentationStore } from "@/features/alchemy/shared/stores/bat
 import { type BattleCard, type CharacterId, type DifficultyId, type DifficultyModifier } from "@/lib/game-data";
 import { playUISound } from "@/lib/audio";
 import { CONSTANTS, type Destination, type Screen } from "@/features/alchemy/shared/types";
+import { hasRunEndDiscoveries } from "@/lib/discoveries";
 import { getRunAvailableDestinations } from "@/features/alchemy/run-loop/navigation/destination-flow";
+import { readRunSessionStore } from "@/features/alchemy/shared/stores/run-session-facade";
 import { getPreviousDestination } from "@/features/alchemy/run-loop/navigation/run-navigation-helpers";
 import { useMysteryFlow } from "@/features/alchemy/run-loop/navigation/use-mystery-flow";
 import { applyCorruptionToDeck } from "@/features/alchemy/run-loop/navigation/run-navigation-corruption";
@@ -213,6 +215,16 @@ export function useRunNavigation({
     });
   }
 
+  function continueFromRunEnd() {
+    clearCardHover();
+    const session = readRunSessionStore();
+    if (hasRunEndDiscoveries(session.runEndDiscoveredCardIds, session.runEndDiscoveredTrinketIds)) {
+      navigateTo(CONSTANTS.SCREENS.RUN_DISCOVERIES);
+      return;
+    }
+    resetRunState();
+  }
+
   return {
     runPhase,
     rewardState,
@@ -261,6 +273,7 @@ export function useRunNavigation({
     handleMysteryRemoveCard: mystery.handleMysteryRemoveCard,
     handleMysteryContinue,
     resetRunState,
+    continueFromRunEnd,
     handleBattleVictory: flowHandlers.handleBattleVictory,
     handleBattleDefeat: flowHandlers.handleBattleDefeat,
   };

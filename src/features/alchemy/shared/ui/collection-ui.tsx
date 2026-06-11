@@ -6,7 +6,13 @@ import { cn } from "@/lib/utils";
 import type { CSSProperties } from "react";
 
 import { PaginationControls } from "./shared-ui";
-import { collectionTabMeta, collectionTileWidthClass, trinketCardWidthClass } from "../config";
+import {
+  collectionCardGridClass,
+  collectionTabMeta,
+  collectionTileWidthClass,
+  collectionTrinketGridClass,
+  trinketCardWidthClass,
+} from "../config";
 import type { CollectionTab } from "../types";
 import { TabBar } from "./tab-bar";
 import { CompendiumTile } from "./collection-tile";
@@ -42,8 +48,9 @@ export function CollectionGrid({
     <div
       key={`${collectionTab}-${page}`}
       className={cn(
-        "state-swap grid min-h-[50cqh] justify-items-center gap-x-3 gap-y-7 overflow-visible",
-        collectionTab === "trinkets" ? "grid-cols-3 grid-rows-2" : "grid-cols-4 grid-rows-2",
+        "state-swap min-h-[50cqh] gap-y-7 overflow-visible",
+        collectionTab === "trinkets" ? collectionTrinketGridClass : collectionCardGridClass,
+        "grid-rows-2",
       )}
     >
       {pageItems.map((item, index) => (

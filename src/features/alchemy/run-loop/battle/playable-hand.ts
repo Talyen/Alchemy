@@ -19,3 +19,15 @@ export function getPlayableHandCardKeys(
       .map((card) => `${card.id}-${card.uid}`),
   );
 }
+
+export function getPlayableHandCardKeysExcludingHidden(
+  battleState: Parameters<typeof getPlayableHandCardKeys>[0],
+  hiddenHandCardKeys: Set<string>,
+): Set<string> {
+  const playable = getPlayableHandCardKeys(battleState);
+  if (hiddenHandCardKeys.size === 0) return playable;
+  for (const hiddenKey of hiddenHandCardKeys) {
+    playable.delete(hiddenKey);
+  }
+  return playable;
+}

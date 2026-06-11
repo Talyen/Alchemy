@@ -33,6 +33,8 @@ type RunSessionRunSlice = Pick<
   | "runTalentXP"
   | "unlockedTalents"
   | "initialized"
+  | "discoveredCardIdsAtRunStart"
+  | "discoveredTrinketIdsAtRunStart"
 >;
 
 type RunSessionTransientSlice = RunSessionFields;
@@ -101,6 +103,8 @@ function pickRunSessionRunSlice(progress: RunStateFields): RunSessionRunSlice {
     runTalentXP: progress.runTalentXP,
     unlockedTalents: progress.unlockedTalents,
     initialized: progress.initialized,
+    discoveredCardIdsAtRunStart: progress.discoveredCardIdsAtRunStart,
+    discoveredTrinketIdsAtRunStart: progress.discoveredTrinketIdsAtRunStart,
   };
 }
 

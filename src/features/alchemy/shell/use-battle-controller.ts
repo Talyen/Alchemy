@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useShallow } from "zustand/react/shallow";
 import type { BattleState } from "@/lib/battle";
-import { getPlayableHandCardKeys } from "@/features/alchemy/run-loop/battle/playable-hand";
+import { getPlayableHandCardKeysExcludingHidden } from "@/features/alchemy/run-loop/battle/playable-hand";
 import { logError } from "@/lib/error-logger";
 import type { CardRect, Screen } from "@/features/alchemy/shared/types";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
@@ -33,6 +33,7 @@ import { createBattleInit } from "@/features/alchemy/run-loop/battle/battle-init
 import { createBattleCardPlay } from "@/features/alchemy/run-loop/battle/battle-card-play";
 import { createBattleEndTurnUi } from "@/features/alchemy/run-loop/battle/turn-orchestration";
 import { createBattleDevOutcomes } from "@/features/alchemy/run-loop/battle/battle-dev-outcomes";
+import { isVictoryGraceActive } from "@/features/alchemy/run-loop/battle/battle-victory-grace";
 import type { BattleControllerContext } from "@/features/alchemy/run-loop/battle/controller-context";
 
 export function useBattleController({
@@ -160,10 +161,10 @@ export function useBattleController({
     getTurnResolutionStore,
   } = battleSession;
 
-  const playableHandCardKeys = useMemo(() => {
-    if (cardTransferInProgress) return new Set<string>();
-    return getPlayableHandCardKeys(battleState);
-  }, [battleState, cardTransferInProgress]);
+  const playableHandCardKeys = useMemo(
+    () => getPlayableHandCardKeysExcludingHidden(battleState, hiddenHandCardKeys),
+    [battleState, hiddenHandCardKeys],
+  );
 
   const resetHandTransferUi = useCallback(() => {
     setHiddenHandCardKeys(new Set());
@@ -257,15 +258,16 @@ export function useBattleController({
     [clearAllBattleTimeouts, clearTransferHandles],
   );
 
-  // Reset transfer UI when battle ends; only react to hasActiveBattle
+  // Reset transfer UI when battle ends; defer teardown during post-victory card-play grace.
   useEffect(() => {
     if (hasActiveBattle) return;
+    if (isVictoryGraceActive(screen, battleState.enemyHealth, victoryDefeatHandledRef.current)) return;
     resetBattleSession();
     queueMicrotask(() => {
       setCardTransfers([]);
       resetHandTransferUi();
     });
-  }, [hasActiveBattle, resetBattleSession, setCardTransfers, resetHandTransferUi]);
+  }, [hasActiveBattle, screen, battleState.enemyHealth, resetBattleSession, setCardTransfers, resetHandTransferUi]);
 
   const endTurnUi = useMemo(() => createBattleEndTurnUi(getContext), [getContext]);
   const { handleEndTurn, resolveEndTurn: assignResolveEndTurn } = endTurnUi;

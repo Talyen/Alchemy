@@ -242,6 +242,34 @@ describe("playBattleCardResolved — defensive guards", () => {
     expect(result.state).toBe(state);
   });
 
+  it("allows play after enemy defeat when allowAfterEnemyDefeat is set", () => {
+    const card = makeCard({
+      id: "c1",
+      cost: 1,
+      effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
+    });
+    const state = makeState({ enemyHealth: 0, hand: [card], mana: 3 });
+    const result = playBattleCardResolved(state, "c1", 0, { allowAfterEnemyDefeat: true });
+    expect(result.state.hand.length).toBe(0);
+    expect(result.state.discard).toHaveLength(1);
+    expect(result.state.discard[0]?.id).toBe("c1");
+    expect(result.state.mana).toBe(2);
+  });
+
+  it("moves killing blow card to discard when enemy dies", () => {
+    const card = makeCard({
+      id: "c1",
+      cost: 1,
+      effects: [{ kind: "damage", damageType: "physical", amount: 999 }],
+    });
+    const state = makeState({ enemyHealth: 10, hand: [card], mana: 3 });
+    const result = playBattleCardResolved(state, "c1", 0);
+    expect(result.state.enemyHealth).toBe(0);
+    expect(result.state.hand.length).toBe(0);
+    expect(result.state.discard).toHaveLength(1);
+    expect(result.state.discard[0]?.id).toBe("c1");
+  });
+
   it("prevents play when player is defeated", () => {
     const card = makeCard({ id: "c1", cost: 1 });
     const state = makeState({

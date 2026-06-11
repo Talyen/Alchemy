@@ -51,6 +51,7 @@ const sounds = [
   { source: "Environment/fire_lighting.wav", target: "fire-lighting.ogg" },
   { source: "Musical Effects/harpsichord_level_complete.wav", target: "harpsichord-level-complete.ogg" },
   { source: "Items/page_turn.wav", target: "page-turn.ogg" },
+  { source: "Materials/paper_move.wav", target: "paper-move.ogg" },
 
   // ── Game flow stingers ──
   { source: "Musical Effects/harpsichord_defeated.wav", target: "harpsichord-defeated.ogg" },

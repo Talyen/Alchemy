@@ -8,4 +8,5 @@ export { GameOverScreen } from "./game-over-screen";
 export { MysteryScreen } from "./mystery/mystery-screen";
 export { CorruptionScreen } from "./corruption-screen";
 export { RunVictoryScreen } from "./run-victory-screen";
+export { RunDiscoveriesScreen } from "./run-discoveries-screen";
 export { LabyrinthMapScreen } from "./labyrinth/labyrinth-map-screen";

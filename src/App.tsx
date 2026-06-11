@@ -215,6 +215,7 @@ function AppMainContent({
         handleLabyrinthNodeEnter: (row: number, col: number) => runRef.current.handleLabyrinthNodeEnter(row, col),
         handleLabyrinthEndRun: () => runRef.current.handleLabyrinthEndRun(),
         resetRunState: () => runRef.current.resetRunState(),
+        continueFromRunEnd: () => runRef.current.continueFromRunEnd(),
       },
       meta: {
         unlockTalent: (keywordId: KeywordId, talentId: string) => runRef.current.unlockTalent(keywordId, talentId),

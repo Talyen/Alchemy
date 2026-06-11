@@ -32,6 +32,8 @@ export type ActiveRunData = {
   runTalentXP: TalentXP;
   currentScreen: Screen | null;
   destinationChoices: string[];
+  discoveredCardIdsAtRunStart: string[];
+  discoveredTrinketIdsAtRunStart: string[];
 };
 
 export type DestinationOptionsInput = {

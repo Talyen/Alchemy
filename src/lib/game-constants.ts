@@ -27,6 +27,7 @@ export const GOLD_TROVE_REWARD_MULTIPLIER = 2;
 export const CARDS_PER_TURN = 4; // Drawn each turn after hand is discarded; overflow draws are skipped (not discarded).
 export const MAX_HAND_SIZE = 7;
 export const MAX_PLAYER_HEALTH = 30;
+export const MAX_HEALTH_PER_TALENT_POINT = 1;
 export const BASE_ENEMY_HEALTH = 30;
 export const BASE_PLAYER_MANA = 4;
 export const DEFAULT_BATTLE_ENEMY_TYPE = "normal";

@@ -203,7 +203,9 @@ export function GameMenu({
             {showTalentsTooltip && isTalentsLocked && (
               <TalentsLockedTooltip
                 panelRef={talentsTooltipRef}
-                className="z-[130] absolute right-full mr-4 top-1/2 -translate-y-1/2 text-left"
+                visible
+                placement="side-end"
+                className="z-[130] absolute right-full mr-4 top-1/2 text-left"
               />
             )}
           </div>
@@ -235,7 +237,9 @@ export function GameMenu({
               <TooltipPanel
                 width="w-64"
                 ref={homesteadTooltipRef}
-                className="z-[130] absolute right-full mr-4 top-1/2 -translate-y-1/2 text-left"
+                visible
+                placement="side-end"
+                className="z-[130] absolute right-full mr-4 top-1/2 text-left"
               >
                 <TooltipHeader>Homestead Locked</TooltipHeader>
                 <TooltipBody>

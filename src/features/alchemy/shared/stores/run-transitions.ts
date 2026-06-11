@@ -7,6 +7,7 @@ import type { UnlockedTalents, TalentXP } from "@/lib/game-data";
 import { flushAlchemySaveNow } from "@/features/alchemy/shared/storage";
 import type { Destination } from "@/features/alchemy/shared/types";
 import type { MaterialInventory } from "@/lib/homestead/types";
+import { computeRunDiscoveryDelta } from "@/lib/discoveries";
 import { createEmptyRewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
 import { getRunDomainStore, useRunDomainStore } from "./run-domain-store";
 import { createInitialRunDomainData } from "./run-domain-types";
@@ -31,6 +32,20 @@ export function restoreRun(
 
   if (!activeRun) {
     return;
+  }
+
+  const runStarted =
+    activeRun.roomsEncountered > 0 ||
+    activeRun.currentAct > 1 ||
+    activeRun.destinationIndexInAct > 0 ||
+    activeRun.completedDestinations.length > 0;
+  if (
+    runStarted &&
+    activeRun.discoveredCardIdsAtRunStart.length === 0 &&
+    activeRun.discoveredTrinketIdsAtRunStart.length === 0
+  ) {
+    const app = useAppStore.getState();
+    store.setDiscoveryBaselines(app.discoveredCardIds, app.discoveredTrinketIds);
   }
 
   store.setHasActiveRun(true);
@@ -87,6 +102,8 @@ export function snapshotRun(screen?: Screen): ActiveRunData {
     runTalentXP: run.runTalentXP,
     currentScreen: screen ?? getRunDomainStore().navigation.screen,
     destinationChoices: session.rewardState.destinations,
+    discoveredCardIdsAtRunStart: run.discoveredCardIdsAtRunStart,
+    discoveredTrinketIdsAtRunStart: run.discoveredTrinketIdsAtRunStart,
   });
 }
 
@@ -153,8 +170,16 @@ export function finalizeRunEndSession(options: {
 
   const materials = options.awardRunEndMaterials(options.displayMaterials);
   options.finalizeRunXP();
+
+  const store = getRunDomainStore();
+  const app = useAppStore.getState();
+  const cardSnapshot = store.progress.discoveredCardIdsAtRunStart;
+  const trinketSnapshot = store.progress.discoveredTrinketIdsAtRunStart;
+  store.setRunEndDiscoveredCardIds(computeRunDiscoveryDelta(app.discoveredCardIds, cardSnapshot));
+  store.setRunEndDiscoveredTrinketIds(computeRunDiscoveryDelta(app.discoveredTrinketIds, trinketSnapshot));
+
   flushSaveAfterRunEnd();
-  getRunDomainStore().setHasActiveRun(false);
+  store.setHasActiveRun(false);
   return materials;
 }
 

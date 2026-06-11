@@ -6,69 +6,155 @@ import { type CSSProperties, type ReactNode, useLayoutEffect, useRef, useState }
 
 import { cn } from "@/lib/utils";
 
-import { popupClassName } from "../config";
+import { popupBaseClassName, tooltipAnchorClassNames } from "../config";
+
+export type TooltipPlacement = "above" | "below" | "side-start" | "side-end";
 
 type TooltipPanelProps = {
   children: ReactNode;
   width?: string;
   className?: string;
   flip?: boolean;
+  placement?: TooltipPlacement;
+  /** State-driven tooltips that are not inside a hover group. */
+  visible?: boolean;
   /** Runtime placement offsets from `useTooltipFlip` / enemy tooltip anchoring — not for theme colors. */
   style?: CSSProperties | undefined;
   ref?: React.Ref<HTMLDivElement>;
 };
 
-export function TooltipPanel({ children, width = "w-60", className, flip, style, ref }: TooltipPanelProps) {
+function tooltipAnchorClass(placement: TooltipPlacement): string {
+  if (placement === "below") return tooltipAnchorClassNames.below;
+  if (placement === "above") return tooltipAnchorClassNames.above;
+  return "";
+}
+
+export function TooltipPanel({
+  children,
+  width = "w-60",
+  className,
+  flip,
+  placement = "above",
+  visible,
+  style,
+  ref,
+}: TooltipPanelProps) {
+  const resolvedPlacement: TooltipPlacement = flip ? "below" : placement;
+
   return (
     <div
       ref={ref}
-      className={cn(popupClassName, width, "hover-popup-panel pointer-events-none", className)}
+      className={cn(
+        popupBaseClassName,
+        tooltipAnchorClass(resolvedPlacement),
+        width,
+        "hover-popup-panel pointer-events-none",
+        className,
+      )}
       style={style}
+      data-placement={resolvedPlacement}
       data-flip={flip ? "below" : "above"}
+      {...(visible ? { "data-visible": true } : {})}
     >
       {children}
     </div>
   );
 }
 
-// Standard layout measurement hook for tooltips that flip below if clipping.
-export function useTooltipFlip(trigger?: unknown) {
+export function measureTooltipPlacement(
+  rect: Pick<DOMRect, "top" | "left" | "right">,
+  padding: number,
+  viewportWidth = window.innerWidth,
+): { flip: boolean; dx: number } {
+  const flip = rect.top < padding;
+
+  let horizontalShift = 0;
+  if (rect.left < padding) {
+    horizontalShift = -rect.left + padding;
+  } else if (rect.right > viewportWidth - padding) {
+    horizontalShift = viewportWidth - rect.right - padding;
+  }
+
+  return { flip, dx: horizontalShift !== 0 ? horizontalShift : 0 };
+}
+
+function useTooltipPlacementMeasure(padding: number, trigger?: unknown) {
   const ref = useRef<HTMLDivElement>(null);
   const [flip, setFlip] = useState(false);
+  const [dx, setDx] = useState(0);
+  const [prevTrigger, setPrevTrigger] = useState(trigger);
+
+  if (trigger !== prevTrigger) {
+    setPrevTrigger(trigger);
+    setFlip(false);
+    setDx(0);
+  }
 
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const rect = el.getBoundingClientRect();
-    setFlip(rect.top < 0);
-  }, [trigger]);
 
+    const rect = el.getBoundingClientRect();
+
+    if (!flip && rect.top < padding) {
+      setFlip(true);
+      return;
+    }
+
+    const { dx: nextDx } = measureTooltipPlacement(rect, padding);
+    setDx(nextDx);
+  }, [flip, padding, trigger]);
+
+  return { ref, flip, dx };
+}
+
+// Standard layout measurement hook for tooltips that flip below if clipping.
+export function useTooltipFlip(trigger?: unknown) {
+  const { ref, flip } = useTooltipPlacementMeasure(8, trigger);
   return { ref, flip };
 }
 
 // Flips below when clipped above the viewport and shifts horizontally to stay on-screen.
 export function useTooltipViewportClamp(padding = 8, trigger?: unknown) {
+  const { ref, flip, dx } = useTooltipPlacementMeasure(padding, trigger);
+  return { ref, flip, dx };
+}
+
+// Above unless top-clipped, then below; if below clips the viewport bottom, use side placement.
+export function useTooltipPlacementWithSideFallback(side: "left" | "right", padding = 8, trigger?: unknown) {
+  const sidePlacement: TooltipPlacement = side === "left" ? "side-start" : "side-end";
   const ref = useRef<HTMLDivElement>(null);
-  const [flip, setFlip] = useState(false);
+  const [placement, setPlacement] = useState<TooltipPlacement>("above");
   const [dx, setDx] = useState(0);
+  const [prevTrigger, setPrevTrigger] = useState(trigger);
+
+  if (trigger !== prevTrigger) {
+    setPrevTrigger(trigger);
+    setPlacement("above");
+    setDx(0);
+  }
 
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
+
     const rect = el.getBoundingClientRect();
 
-    setFlip(rect.top < 0);
-
-    let horizontalShift = 0;
-    if (rect.left < 0) {
-      horizontalShift = -rect.left + padding;
-    } else if (rect.right > window.innerWidth) {
-      horizontalShift = window.innerWidth - rect.right - padding;
+    if (placement === "above" && rect.top < padding) {
+      setPlacement("below");
+      return;
     }
-    setDx(horizontalShift !== 0 ? horizontalShift : 0);
-  }, [padding, trigger]);
 
-  return { ref, flip, dx };
+    if (placement === "below" && rect.bottom > window.innerHeight - padding) {
+      setPlacement(sidePlacement);
+      return;
+    }
+
+    const { dx: nextDx } = measureTooltipPlacement(rect, padding);
+    setDx(nextDx);
+  }, [padding, placement, sidePlacement, trigger]);
+
+  return { ref, placement, flip: placement === "below", dx };
 }
 
 export function TooltipHeader({ children }: { children: ReactNode }) {

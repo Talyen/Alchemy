@@ -129,9 +129,12 @@ function getPlayableCard(state: BattleState, cardId: string, index: number): Bat
   return card;
 }
 
+export type CardPlayOptions = { allowAfterEnemyDefeat?: boolean };
+
 /** Battle-engine playability (mana, phase, defeat, wish). UI adds screen/animation guards on top. */
-export function canPlayCard(state: BattleState, card: BattleCard, index: number): boolean {
-  if (state.enemyHealth <= 0 || isPlayerDefeated(state)) return false;
+export function canPlayCard(state: BattleState, card: BattleCard, index: number, options?: CardPlayOptions): boolean {
+  if (!options?.allowAfterEnemyDefeat && state.enemyHealth <= 0) return false;
+  if (isPlayerDefeated(state)) return false;
   if (state.wishOptions) return false;
   if (state.turnPhase !== "player") return false;
   const currentCard = state.hand[index];
@@ -220,10 +223,19 @@ function handlePostPlayCardDestination(state: BattleState, card: BattleCard): Ba
 /**
  * Coordinates cost checks, play validation, effect dispatching, and deck movement.
  */
-export function playBattleCardResolved(state: BattleState, cardId: string, index: number): BattleResolution {
+export function playBattleCardResolved(
+  state: BattleState,
+  cardId: string,
+  index: number,
+  options?: CardPlayOptions,
+): BattleResolution {
   const combatTexts: CombatTextEvent[] = [];
+  const enemyWasAlive = state.enemyHealth > 0;
 
-  if (state.enemyHealth <= 0 || isPlayerDefeated(state)) {
+  if (!options?.allowAfterEnemyDefeat && state.enemyHealth <= 0) {
+    return { state, combatTexts };
+  }
+  if (isPlayerDefeated(state)) {
     return { state, combatTexts };
   }
 
@@ -236,8 +248,10 @@ export function playBattleCardResolved(state: BattleState, cardId: string, index
   }
 
   let nextState = executeCardPlayState(costState, card, index, effectiveCost, combatTexts);
-  if (nextState.enemyHealth > 0 && !isPlayerDefeated(nextState)) {
-    nextState = applyResonantChimeTrinket(nextState, combatTexts);
+  if (!isPlayerDefeated(nextState)) {
+    if (enemyWasAlive) {
+      nextState = applyResonantChimeTrinket(nextState, combatTexts);
+    }
     nextState = handlePostPlayCardDestination(nextState, card);
   }
 

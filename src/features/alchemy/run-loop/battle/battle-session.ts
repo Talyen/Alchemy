@@ -15,16 +15,21 @@ export function createBattleSession(contextOrGetter: BattleControllerContext | (
   const getStore = () => readBattleStore();
   const getPresentationStore = () => useBattlePresentationStore.getState();
 
-  function isCurrentBattleSession(session: number) {
+  function isBattleSessionActive(session: number) {
     const context = getContext();
-    return session === context.battleSessionRef.current && getStore().hasActiveBattle;
+    if (session !== context.battleSessionRef.current) return false;
+    const store = getStore();
+    return store.hasActiveBattle || (context.victoryDefeatHandledRef.current && store.battleState.enemyHealth <= 0);
+  }
+
+  function isCurrentBattleSession(session: number) {
+    return isBattleSessionActive(session);
   }
 
   function runIfSessionActive<T>(session: number, fn: () => T, fallback: T): T;
   function runIfSessionActive<T>(session: number, fn: () => T): T | undefined;
   function runIfSessionActive<T>(session: number, fn: () => T, fallback?: T): T | undefined {
-    const context = getContext();
-    if (session === context.battleSessionRef.current && getStore().hasActiveBattle) {
+    if (isBattleSessionActive(session)) {
       return fn();
     }
     return fallback;

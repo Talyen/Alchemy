@@ -10,6 +10,7 @@ describe("createRunStartSnapshot", () => {
       contentSystemType: "campaign",
       difficultyId: "difficulty-2",
       talentStartGold: 10,
+      talentXP: {},
     });
 
     expect(result).toMatchObject({
@@ -35,6 +36,7 @@ describe("createRunStartSnapshot", () => {
       contentSystemType: "labyrinth",
       difficultyId: "difficulty-3",
       talentStartGold: 8,
+      talentXP: {},
     });
 
     expect(result.contentSystemType).toBe("labyrinth");
@@ -50,6 +52,7 @@ describe("createRunStartSnapshot", () => {
       characterId: "wizard",
       contentSystemType: "wildwood",
       talentStartGold: 99,
+      talentXP: {},
     });
 
     expect(result.contentSystemType).toBe("wildwood");
@@ -73,6 +76,7 @@ describe("createRunStartSnapshot", () => {
       contentSystemType: "campaign",
       difficultyId: "difficulty-1",
       talentStartGold: 0,
+      talentXP: {},
       draftedDeck: draftedCards,
     });
 
@@ -84,12 +88,26 @@ describe("createRunStartSnapshot", () => {
     expect(result.hasActiveRun).toBe(true);
   });
 
+  it("scales max health from permanent talent XP at run start", () => {
+    const result = createRunStartSnapshot({
+      characterId: "knight",
+      contentSystemType: "campaign",
+      difficultyId: "difficulty-1",
+      talentStartGold: 0,
+      talentXP: { physical: 10, health: 30 },
+    });
+
+    expect(result.runMaxHealth).toBe(MAX_PLAYER_HEALTH + 3);
+    expect(result.runPlayerHealth).toBe(MAX_PLAYER_HEALTH + 3);
+  });
+
   it("falls back to character starting deck when no draftedDeck provided for wildcard", () => {
     const result = createRunStartSnapshot({
       characterId: "wildcard",
       contentSystemType: "campaign",
       difficultyId: "difficulty-1",
       talentStartGold: 0,
+      talentXP: {},
     });
 
     expect(result.freshDeck).toEqual(getStartingDeck("wildcard"));

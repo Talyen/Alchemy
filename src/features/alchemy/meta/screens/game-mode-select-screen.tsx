@@ -102,10 +102,7 @@ export function GameModeSelectScreen({
                 </button>
               </PressableMotion>
               {hoveredModeId === modeId && isLocked && (
-                <TooltipPanel
-                  width="w-64"
-                  className="z-50 absolute bottom-full mb-3 left-1/2 -translate-x-1/2 text-center"
-                >
+                <TooltipPanel width="w-64" visible className="z-50 mb-3 text-center">
                   <TooltipHeader>{meta.title} Locked</TooltipHeader>
                   <TooltipBody>
                     <p className="text-red-400 font-semibold">

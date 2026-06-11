@@ -2,7 +2,14 @@
  * Mathematical formulas and mapping functions for keyword Talent XP progression.
  * Depends on: src/lib/game-constants.ts and src/lib/game-data/types.ts.
  */
-import { XP_BASE_PER_POINT, XP_MIN_THRESHOLD, XP_ROOT_DIVISOR, XP_TRIANGULAR_MULTIPLIER } from "@/lib/game-constants";
+import {
+  MAX_HEALTH_PER_TALENT_POINT,
+  MAX_PLAYER_HEALTH,
+  XP_BASE_PER_POINT,
+  XP_MIN_THRESHOLD,
+  XP_ROOT_DIVISOR,
+  XP_TRIANGULAR_MULTIPLIER,
+} from "@/lib/game-constants";
 import type { KeywordId } from "../types";
 
 const TALENT_PROGRESS_CONFIG = {
@@ -42,6 +49,14 @@ export function xpThresholdForPoints(points: number): number {
 export function computeTalentPoints(xp: number): number {
   if (xp < XP_MIN_THRESHOLD) return 0;
   return Math.floor((-1 + Math.sqrt(1 + XP_ROOT_DIVISOR * xp)) / 2);
+}
+
+export function computeTotalTalentPoints(talentXP: TalentXP): number {
+  return Object.values(talentXP).reduce((sum, xp) => sum + computeTalentPoints(xp ?? 0), 0);
+}
+
+export function computeStartingMaxHealth(talentXP: TalentXP): number {
+  return MAX_PLAYER_HEALTH + computeTotalTalentPoints(talentXP) * MAX_HEALTH_PER_TALENT_POINT;
 }
 
 // XP remaining until the next talent point. Used for the progress bar display.

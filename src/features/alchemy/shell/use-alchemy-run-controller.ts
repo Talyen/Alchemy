@@ -235,5 +235,6 @@ export function useAlchemyRunController({
     skipCombatDevMode: battle.skipCombatDevMode,
     removeCardGhost: battle.removeCardGhost,
     resetRunState: nav.resetRunState,
+    continueFromRunEnd: nav.continueFromRunEnd,
   };
 }

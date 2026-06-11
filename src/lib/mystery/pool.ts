@@ -1,5 +1,15 @@
-// Declarative mystery event pool for campaign route nodes.
-import { mysteryEventArt, type KeywordId } from "@/lib/game-data";
+﻿// Declarative mystery event pool for campaign route nodes.
+import {
+  brassCenser,
+  crystalGarden,
+  herbGarden,
+  huntersLodge,
+  mysteryEventArt,
+  necromancer,
+  phoenixFeather,
+  wolfCompanion,
+  type KeywordId,
+} from "@/lib/game-data";
 import type { MaterialId } from "@/lib/homestead/types";
 
 import type { MysteryEffect, MysteryEvent } from "./types";
@@ -19,12 +29,10 @@ export const mysteryPool: MysteryEvent[] = [
     choices: [
       {
         label: "Harvest",
-        description: "Add Mana Berries to your deck",
         effects: [{ kind: "addCard", cardId: "mana-berries" }, mat("herbs", 2)],
       },
       {
         label: "Study the Glow",
-        description: "Gain 8 Mana XP",
         effects: [xp("mana")],
       },
     ],
@@ -38,12 +46,10 @@ export const mysteryPool: MysteryEvent[] = [
     choices: [
       {
         label: "Bathe in the Spring",
-        description: "Restore 12 Health",
         effects: [{ kind: "healHealth", amount: 12 }, mat("herbs", 2)],
       },
       {
         label: "Bottle the Essence",
-        description: "Add Health Potion to your deck",
         effects: [{ kind: "addCard", cardId: "health-potion" }],
       },
     ],
@@ -57,12 +63,10 @@ export const mysteryPool: MysteryEvent[] = [
     choices: [
       {
         label: "Harvest Carefully",
-        description: "Add Mana Berries to your deck",
         effects: [{ kind: "addCard", cardId: "mana-berries" }, mat("herbs", 4)],
       },
       {
         label: "Inhale the Spores",
-        description: "Gain 8 Mana XP",
         effects: [xp("mana")],
       },
     ],
@@ -76,12 +80,10 @@ export const mysteryPool: MysteryEvent[] = [
     choices: [
       {
         label: "Ask for Knowledge",
-        description: "Gain 8 Nature XP",
         effects: [xp("nature")],
       },
       {
         label: "Rest in its Shade",
-        description: "Restore 15 Health",
         effects: [{ kind: "healHealth", amount: 15 }, mat("herbs", 2)],
       },
     ],
@@ -95,12 +97,10 @@ export const mysteryPool: MysteryEvent[] = [
     choices: [
       {
         label: "Leave an Offering",
-        description: "Remove a Card (Choose)",
         effects: [{ kind: "removeCard", mode: "choose" }],
       },
       {
         label: "Make a Wish",
-        description: "Add Wish to your deck",
         effects: [{ kind: "addCard", cardId: "wish" }],
       },
     ],
@@ -114,12 +114,10 @@ export const mysteryPool: MysteryEvent[] = [
     choices: [
       {
         label: "Pray",
-        description: "Gain 8 Holy XP",
         effects: [xp("holy")],
       },
       {
         label: "Make an Offering",
-        description: "Remove a Card (Choose)",
         effects: [{ kind: "removeCard", mode: "choose" }],
       },
     ],
@@ -133,7 +131,6 @@ export const mysteryPool: MysteryEvent[] = [
     choices: [
       {
         label: "Take Everything",
-        description: "Gain 20 Gold and add Steal to your deck",
         effects: [
           { kind: "gainGold", amount: 20 },
           { kind: "addCard", cardId: "steal" },
@@ -141,7 +138,6 @@ export const mysteryPool: MysteryEvent[] = [
       },
       {
         label: "Study the Map",
-        description: "Gain Smuggler's Map trinket",
         effects: [{ kind: "gainTrinket", trinketId: "smugglers-map" }],
       },
     ],
@@ -155,12 +151,10 @@ export const mysteryPool: MysteryEvent[] = [
     choices: [
       {
         label: "Explore the Crypt",
-        description: "Gain a random trinket",
         effects: [{ kind: "gainRandomTrinket" }],
       },
       {
         label: "Decipher the Inscriptions",
-        description: "Gain 8 Nature XP",
         effects: [xp("nature")],
       },
     ],
@@ -174,12 +168,10 @@ export const mysteryPool: MysteryEvent[] = [
     choices: [
       {
         label: "Search the Scrolls",
-        description: "Choose 1 of 3 random cards to add to your deck",
         effects: [{ kind: "chooseCard" }],
       },
       {
         label: "Organize the Library",
-        description: "Gain 8 Mana XP",
         effects: [xp("mana")],
       },
     ],
@@ -193,12 +185,10 @@ export const mysteryPool: MysteryEvent[] = [
     choices: [
       {
         label: "Read Carefully",
-        description: "Gain 8 Mana XP",
         effects: [xp("mana")],
       },
       {
         label: "Tear Out the Pages",
-        description: "Gain Tattered Pages trinket",
         effects: [{ kind: "gainTrinket", trinketId: "tattered-pages" }],
       },
     ],
@@ -212,12 +202,10 @@ export const mysteryPool: MysteryEvent[] = [
     choices: [
       {
         label: "Mine the Crystals",
-        description: "Add Mana Crystals to your deck, +3 Crystal",
         effects: [{ kind: "addCard", cardId: "mana-crystals" }, mat("crystal", 3)],
       },
       {
         label: "Meditate Under the Crystal",
-        description: "Gain 8 Mana XP",
         effects: [xp("mana")],
       },
     ],
@@ -231,12 +219,10 @@ export const mysteryPool: MysteryEvent[] = [
     choices: [
       {
         label: "Collect a Fragment",
-        description: "Gain Meteorite trinket, +3 Iron",
         effects: [{ kind: "gainTrinket", trinketId: "meteorite" }, mat("iron", 3)],
       },
       {
         label: "Study the Impact Site",
-        description: "Add Meteor to your deck, gain 4 Burn XP",
         effects: [{ kind: "addCard", cardId: "meteor" }, xp("burn", 4)],
       },
     ],
@@ -250,12 +236,10 @@ export const mysteryPool: MysteryEvent[] = [
     choices: [
       {
         label: "Take the Coins",
-        description: "Gain 30 Gold",
         effects: [{ kind: "gainGold", amount: 30 }, mat("iron", 3)],
       },
       {
         label: "Take the Bones",
-        description: "Gain Bone Charm trinket",
         effects: [{ kind: "gainTrinket", trinketId: "bone-charm" }],
       },
     ],
@@ -269,12 +253,10 @@ export const mysteryPool: MysteryEvent[] = [
     choices: [
       {
         label: "Bask in the Light",
-        description: "Restore 12 Health",
         effects: [{ kind: "healHealth", amount: 12 }, mat("herbs", 3)],
       },
       {
         label: "Search the Area",
-        description: "Gain Grove's Favor trinket",
         effects: [{ kind: "gainTrinket", trinketId: "groves-favor" }],
       },
     ],
@@ -288,12 +270,10 @@ export const mysteryPool: MysteryEvent[] = [
     choices: [
       {
         label: "Mine the Cliffside",
-        description: "Gain 4 Iron and 2 Crystal",
         effects: [mat("iron", 4), mat("crystal", 2)],
       },
       {
         label: "Study the Alpine Flora",
-        description: "Gain 8 Nature XP",
         effects: [xp("nature"), mat("herbs", 2)],
       },
     ],
@@ -307,13 +287,126 @@ export const mysteryPool: MysteryEvent[] = [
     choices: [
       {
         label: "Go Fishing",
-        description: "Gain 6 Food",
         effects: [mat("food", 6)],
       },
       {
         label: "Gather Medicinal Reeds",
-        description: "Gain 4 Herbs and 2 Wood",
         effects: [mat("herbs", 4), mat("wood", 2)],
+      },
+    ],
+  },
+  {
+    id: "necromancers-offer",
+    title: "The Necromancer's Offer",
+    art: necromancer,
+    narrative: "A robed figure tends a circle of salt and bone. Without looking up, they extend a skeletal hand.",
+    choices: [
+      {
+        label: "Accept the Rite",
+        effects: [xp("bleed"), { kind: "addCard", cardId: "skeleton-companion" }],
+      },
+      {
+        label: "Take the Salts",
+        effects: [{ kind: "addCard", cardId: "smelling-salts" }],
+      },
+    ],
+  },
+  {
+    id: "medicinal-herb-garden",
+    title: "Medicinal Herb Garden",
+    art: herbGarden,
+    narrative: "Cultivated beds have run wild as medicinal herbs grow through cracked paving, rich with scent.",
+    choices: [
+      {
+        label: "Harvest Supplies",
+        effects: [mat("herbs", 5), { kind: "addCard", cardId: "panacea-potion" }],
+      },
+      {
+        label: "Read the Research",
+        effects: [xp("nature")],
+      },
+    ],
+  },
+  {
+    id: "crystal-garden",
+    title: "Crystal Garden",
+    art: crystalGarden,
+    narrative: "Faceted crystalline blooms catch stray light, chiming softly when the wind passes by.",
+    choices: [
+      {
+        label: "Harvest the Crystals",
+        effects: [mat("crystal", 4), { kind: "addCard", cardId: "mana-crystals" }],
+      },
+      {
+        label: "Study the Crystals",
+        effects: [xp("mana")],
+      },
+    ],
+  },
+  {
+    id: "hunters-lodge",
+    title: "Hunter's Lodge",
+    art: huntersLodge,
+    narrative:
+      "A deserted lodge still smells of smoke, wood, and leather. A hunter's bow and quiver hang near the door, and a loyal Wolf companion protects the homestead.",
+    choices: [
+      {
+        label: "Take the Arrows",
+        effects: [{ kind: "chooseCard", tag: "archery" }],
+      },
+      {
+        label: "Befriend the Wolf",
+        effects: [{ kind: "addCard", cardId: "wolf-companion" }],
+      },
+    ],
+  },
+  {
+    id: "roadside-censer",
+    title: "Roadside Censer",
+    art: brassCenser,
+    narrative:
+      "Incense smoke coils from a hanging brass censer at a fork in the path. The air tastes of sanctified ash and old vows.",
+    choices: [
+      {
+        label: "Breathe the Smoke",
+        effects: [xp("holy")],
+      },
+      {
+        label: "Claim the Censer",
+        effects: [{ kind: "gainTrinket", trinketId: "brass-censer" }],
+      },
+    ],
+  },
+  {
+    id: "the-phoenix",
+    title: "The Phoenix",
+    art: phoenixFeather,
+    narrative: "A single feather glows with warm radiance, asking to be reborn.",
+    choices: [
+      {
+        label: "Claim the Feather",
+        effects: [{ kind: "addCard", cardId: "phoenix-feather" }],
+      },
+      {
+        label: "Fan the Embers",
+        effects: [{ kind: "addCard", cardId: "phoenix-companion" }],
+      },
+    ],
+  },
+  {
+    id: "the-wolf",
+    title: "The Wolf",
+    art: wolfCompanion,
+    narrative:
+      "A grey wolf steps from the treeline, watching you with amber eyes. It does not flee â€” only waits, as if deciding whether you are worth knowing.",
+    choices: [
+      {
+        label: "Answer the Howl",
+        effects: [{ kind: "addCard", cardId: "wolf-companion" }],
+      },
+      {
+        label: "Study the Pack's Tactics",
+        effects: [xp("companion")],
       },
     ],
   },

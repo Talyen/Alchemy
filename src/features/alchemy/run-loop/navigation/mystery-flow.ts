@@ -3,6 +3,7 @@
 // Consumed by the run navigation flow and the useMysteryFlow React hook.
 import {
   cardLibrary,
+  getCardKeywords,
   getOfferableCardPool,
   selectRewardCards,
   trinketLibrary,
@@ -49,7 +50,7 @@ const mysteryApplyHandlers: {
   ) => MysteryEffectResult;
 } = {
   addCard: (effect, context) => addSpecificMysteryCard(effect.cardId, context),
-  chooseCard: (_effect, context) => offerMysteryCardChoices(context),
+  chooseCard: (effect, context) => offerMysteryCardChoices(effect, context),
   healHealth: (effect, context) => healFromMystery(effect.amount, effect.chance, context),
   damageHealth: (effect, context) => damageFromMystery(effect.amount, context),
   gainGold: (effect, context) => gainMysteryGold(effect.amount, context),
@@ -89,8 +90,26 @@ function addSpecificMysteryCard(cardId: string, context: MysteryEffectContext) {
   return { followUp: null };
 }
 
-function offerMysteryCardChoices(context: MysteryEffectContext): MysteryEffectResult {
-  context.setMysteryCardChoices(selectRewardCards(context.runDeck, getOfferableCardPool(), MYSTERY_CARD_CHOICES));
+function getMysteryCardChoicePool(tag?: KeywordId): BattleCard[] {
+  const pool = getOfferableCardPool();
+  if (!tag) return pool;
+  const tagged = pool.filter((card) => getCardKeywords(card).includes(tag));
+  if (tagged.length === 0) {
+    if (import.meta.env.DEV) {
+      console.warn(`[Mystery] chooseCard tag "${tag}" matched no offerable cards; using full pool`);
+    }
+    return pool;
+  }
+  return tagged;
+}
+
+function offerMysteryCardChoices(
+  effect: Extract<MysteryEffect, { kind: "chooseCard" }>,
+  context: MysteryEffectContext,
+): MysteryEffectResult {
+  context.setMysteryCardChoices(
+    selectRewardCards(context.runDeck, getMysteryCardChoicePool(effect.tag), MYSTERY_CARD_CHOICES),
+  );
   return { followUp: "choose-card" };
 }
 

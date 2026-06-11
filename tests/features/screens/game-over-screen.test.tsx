@@ -14,7 +14,7 @@ describe("GameOverScreen", () => {
         runEndTalentXP={{ physical: 12, burn: 3 }}
         talentXP={{ physical: 20, burn: 3 }}
         runEndMaterials={{ wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 }}
-        onMainMenu={() => {}}
+        onContinue={() => {}}
       />,
     );
 
@@ -29,11 +29,11 @@ describe("GameOverScreen", () => {
         runEndTalentXP={{}}
         talentXP={{}}
         runEndMaterials={{ wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 }}
-        onMainMenu={() => {}}
+        onContinue={() => {}}
       />,
     );
 
     expect(screen.queryByText("+12")).toBeNull();
-    expect(screen.queryByText("Return to Main Menu")).toBeTruthy();
+    expect(screen.queryByText("Continue")).toBeTruthy();
   });
 });

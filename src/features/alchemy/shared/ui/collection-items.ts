@@ -130,6 +130,40 @@ function getBestiaryItems(encounteredEnemyIds: string[]) {
     });
 }
 
+export function getDiscoveryCardTileItems(cardIds: readonly string[]): CollectionTileItem[] {
+  const idSet = new Set(cardIds);
+  return cardLibrary
+    .filter((card) => idSet.has(card.id))
+    .sort((a, b) => cardIds.indexOf(a.id) - cardIds.indexOf(b.id))
+    .map((card) => ({
+      id: card.id,
+      title: card.title,
+      subtitle: undefined,
+      descriptionLines: getEffectiveCardDescriptionLines(card),
+      art: card.art,
+      discovered: true,
+      hoverScope: "discoveries-card" as const,
+      frameType: "card" as const,
+    }));
+}
+
+export function getDiscoveryTrinketTileItems(trinketIds: readonly string[]): CollectionTileItem[] {
+  const idSet = new Set(trinketIds);
+  return trinketLibrary
+    .filter((entry) => idSet.has(entry.id))
+    .sort((a, b) => trinketIds.indexOf(a.id) - trinketIds.indexOf(b.id))
+    .map((entry: TrinketEntry) => ({
+      id: entry.id,
+      title: entry.title,
+      subtitle: undefined,
+      descriptionLines: entry.descriptionLines,
+      art: entry.art,
+      discovered: true,
+      hoverScope: "discoveries-trinket" as const,
+      frameType: "trinket" as const,
+    }));
+}
+
 function getTrinketItems(discoveredTrinketIds: string[]) {
   return [...trinketLibrary]
     .sort((a, b) => a.title.localeCompare(b.title))

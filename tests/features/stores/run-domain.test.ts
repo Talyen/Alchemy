@@ -600,6 +600,8 @@ describe("session facade API", () => {
       runTalentXP: getRunProgressStoreView().runTalentXP,
       currentScreen: ROUTE_SCREENS.DESTINATION,
       destinationChoices: ["campfire", "shop"],
+      discoveredCardIdsAtRunStart: getRunProgressStoreView().discoveredCardIdsAtRunStart,
+      discoveredTrinketIdsAtRunStart: getRunProgressStoreView().discoveredTrinketIdsAtRunStart,
     });
     expect(fromStores).toEqual(explicit);
   });

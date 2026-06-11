@@ -1,5 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { xpForNextPoint, xpThresholdForPoints, computeTalentPoints, xpToNextPoint, addTalentXP, getTalentKeywordProgress } from "@/lib/game-data";
+import {
+  xpForNextPoint,
+  xpThresholdForPoints,
+  computeTalentPoints,
+  computeTotalTalentPoints,
+  computeStartingMaxHealth,
+  xpToNextPoint,
+  addTalentXP,
+  getTalentKeywordProgress,
+} from "@/lib/game-data";
+import { MAX_PLAYER_HEALTH } from "@/lib/game-constants";
 
 describe("xpForNextPoint", () => {
   it("returns 10 XP for point 0→1", () => expect(xpForNextPoint(0)).toBe(10));
@@ -29,6 +39,26 @@ describe("xpToNextPoint", () => {
   it("returns 5 remaining from 5 XP", () => expect(xpToNextPoint(5)).toBe(5));
   it("returns 20 remaining from exactly 10 XP (next threshold is 30)", () => expect(xpToNextPoint(10)).toBe(20));
   it("returns 19 remaining from 11 XP (toward threshold of 30)", () => expect(xpToNextPoint(11)).toBe(19));
+});
+
+describe("computeTotalTalentPoints", () => {
+  it("returns 0 for empty talent XP", () => {
+    expect(computeTotalTalentPoints({})).toBe(0);
+  });
+
+  it("sums points across keywords", () => {
+    expect(computeTotalTalentPoints({ physical: 10, burn: 30 })).toBe(3);
+  });
+});
+
+describe("computeStartingMaxHealth", () => {
+  it("returns base health with no talent XP", () => {
+    expect(computeStartingMaxHealth({})).toBe(MAX_PLAYER_HEALTH);
+  });
+
+  it("adds 1 max health per earned talent point", () => {
+    expect(computeStartingMaxHealth({ physical: 10, health: 30 })).toBe(MAX_PLAYER_HEALTH + 3);
+  });
 });
 
 describe("addTalentXP", () => {

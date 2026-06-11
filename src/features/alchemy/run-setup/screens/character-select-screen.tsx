@@ -64,97 +64,94 @@ function CharacterCard({
 
   return (
     <div
-      className={cn("stagger-item relative flex flex-col items-center gap-3", showTooltip && "z-50")}
+      className="stagger-item flex flex-col items-center gap-3"
       style={{ "--stagger-index": index } as CSSProperties}
     >
-      <TiltSurface
-        as="button"
-        ariaLabel={isLocked ? `${char.name} (Locked)` : `Select ${char.name}`}
-        className={cn(charCardWidthClass, "relative rounded-shell-tooltip")}
-        shimmerActive={isLocked ? false : isShimmer}
-        shimmerToken={isLocked ? undefined : shimmerToken}
-        shimmerRounded="rounded-shell-tooltip"
-        selected={isSelected}
-        onClick={() => {
-          if (isLocked) {
-            playUISound("error");
-          } else {
-            onSelect(id);
-          }
-        }}
-        onMouseEnter={() => {
-          if (!isLocked) onHoverShimmer(id);
-          setShowTooltip(true);
-        }}
-        onMouseLeave={() => setShowTooltip(false)}
-      >
-        <img
-          src={art}
-          alt={char.name}
-          className={cn(
-            cardSurfaceClass,
-            "w-full rounded-shell-tooltip aspect-[3/4]",
-            isLocked && "opacity-45 grayscale-[50%]",
-          )}
-        />
-      </TiltSurface>
+      <div className={cn("relative", charCardWidthClass)}>
+        <TiltSurface
+          as="button"
+          ariaLabel={isLocked ? `${char.name} (Locked)` : `Select ${char.name}`}
+          className="relative w-full rounded-shell-tooltip"
+          shimmerActive={isLocked ? false : isShimmer}
+          shimmerToken={isLocked ? undefined : shimmerToken}
+          shimmerRounded="rounded-shell-tooltip"
+          selected={isSelected}
+          onClick={() => {
+            if (isLocked) {
+              playUISound("error");
+            } else {
+              onSelect(id);
+            }
+          }}
+          onMouseEnter={() => {
+            if (!isLocked) onHoverShimmer(id);
+            setShowTooltip(true);
+          }}
+          onMouseLeave={() => setShowTooltip(false)}
+        >
+          <img
+            src={art}
+            alt={char.name}
+            className={cn(
+              cardSurfaceClass,
+              "w-full rounded-shell-tooltip aspect-[3/4]",
+              isLocked && "opacity-45 grayscale-[50%]",
+            )}
+          />
+        </TiltSurface>
+        {showTooltip ? (
+          <TooltipPanel width="w-80" ref={tooltipRef} visible flip={flip}>
+            <TooltipHeader>{char.name}</TooltipHeader>
+
+            {isLocked ? (
+              <TooltipBody>
+                <p className="text-red-400 font-semibold">{unlockRequirementText}</p>
+              </TooltipBody>
+            ) : (
+              <>
+                <TooltipBody>
+                  <p>{char.description}</p>
+                </TooltipBody>
+
+                {char.startingDeck.length > 0 ? (
+                  <>
+                    <TooltipSubheader>Starting Deck</TooltipSubheader>
+                    <TooltipBody>
+                      <p>{char.startingDeck.map((c) => c.title).join(", ")}</p>
+                    </TooltipBody>
+                  </>
+                ) : (
+                  <>
+                    <TooltipSubheader>Draft a Deck</TooltipSubheader>
+                    <TooltipBody>
+                      <p>Choose your own fate</p>
+                    </TooltipBody>
+                  </>
+                )}
+
+                {char.keywords.length > 0 ? (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {char.keywords.map((kw) => (
+                      <KeywordTag key={kw} keywordId={kw} pill />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="mt-2 flex">
+                    <span className="character-keyword-pill-tint inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-sm font-semibold leading-none text-amber-100/90">
+                      All Keywords
+                    </span>
+                  </div>
+                )}
+              </>
+            )}
+          </TooltipPanel>
+        ) : null}
+      </div>
       <p
         className={cn("font-display text-lg font-bold text-amber-100/90 mt-1", isLocked && "text-muted-foreground/60")}
       >
         {char.name}
       </p>
-      {showTooltip ? (
-        <TooltipPanel
-          width="w-80"
-          ref={tooltipRef}
-          className={cn("z-50", flip ? "top-full mt-2 bottom-auto" : "mb-2")}
-          flip={flip}
-        >
-          <TooltipHeader>{char.name}</TooltipHeader>
-
-          {isLocked ? (
-            <TooltipBody>
-              <p className="text-red-400 font-semibold">{unlockRequirementText}</p>
-            </TooltipBody>
-          ) : (
-            <>
-              <TooltipBody>
-                <p>{char.description}</p>
-              </TooltipBody>
-
-              {char.startingDeck.length > 0 ? (
-                <>
-                  <TooltipSubheader>Starting Deck</TooltipSubheader>
-                  <TooltipBody>
-                    <p>{char.startingDeck.map((c) => c.title).join(", ")}</p>
-                  </TooltipBody>
-                </>
-              ) : (
-                <>
-                  <TooltipSubheader>Draft a Deck</TooltipSubheader>
-                  <TooltipBody>
-                    <p>Choose your own fate</p>
-                  </TooltipBody>
-                </>
-              )}
-
-              {char.keywords.length > 0 ? (
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {char.keywords.map((kw) => (
-                    <KeywordTag key={kw} keywordId={kw} pill />
-                  ))}
-                </div>
-              ) : (
-                <div className="mt-2 flex">
-                  <span className="character-keyword-pill-tint inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-sm font-semibold leading-none text-amber-100/90">
-                    All Keywords
-                  </span>
-                </div>
-              )}
-            </>
-          )}
-        </TooltipPanel>
-      ) : null}
     </div>
   );
 }

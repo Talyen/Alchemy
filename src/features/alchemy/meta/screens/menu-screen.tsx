@@ -129,7 +129,9 @@ export function MenuScreen({
           {showTalentsTooltip && isLocked && (
             <TalentsLockedTooltip
               panelRef={talentsTooltipRef}
-              className="z-50 absolute left-full ml-4 top-1/2 -translate-y-1/2 text-left"
+              visible
+              placement="side-start"
+              className="z-50 absolute left-full ml-4 top-1/2 text-left"
             />
           )}
         </div>
@@ -164,7 +166,9 @@ export function MenuScreen({
             <TooltipPanel
               width="w-64"
               ref={homesteadTooltipRef}
-              className="z-50 absolute left-full ml-4 top-1/2 -translate-y-1/2 text-left"
+              visible
+              placement="side-start"
+              className="z-50 absolute left-full ml-4 top-1/2 text-left"
             >
               <TooltipHeader>Homestead Locked</TooltipHeader>
               <TooltipBody>

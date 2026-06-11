@@ -5,6 +5,7 @@ import {
   chooseWishCard,
   playBattleCardResolved,
   type BattleState,
+  type CardPlayOptions,
   type CombatTextEvent,
 } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
@@ -19,6 +20,8 @@ import { getCardKey } from "./controller-utils";
 import { runHandDrawSequence } from "./draw-sequence";
 import { getBattleSessionStore } from "./battle-session";
 import type { BattleControllerContext } from "./controller-context";
+
+const BATTLE_CARD_PLAY_OPTIONS: CardPlayOptions = { allowAfterEnemyDefeat: true };
 
 export function createBattleCardPlay(contextOrGetter: BattleControllerContext | (() => BattleControllerContext)) {
   const getContext = typeof contextOrGetter === "function" ? contextOrGetter : () => contextOrGetter;
@@ -49,9 +52,8 @@ export function createBattleCardPlay(contextOrGetter: BattleControllerContext | 
     const context = getContext();
     return (
       context.screen === "battle" &&
-      canPlayCardInBattle(state, card, index) &&
+      canPlayCardInBattle(state, card, index, BATTLE_CARD_PLAY_OPTIONS) &&
       !context.cardPlayInProgressRef.current &&
-      !context.cardTransferInProgress &&
       !context.hiddenHandCardKeys.has(getCardKey(card))
     );
   }
@@ -96,7 +98,7 @@ export function createBattleCardPlay(contextOrGetter: BattleControllerContext | 
     getContext().cardPlayInProgressRef.current = true;
     animatePlayedCard(card, index, sourceRect);
     playCardSound(card.id);
-    const resolution = playBattleCardResolved(currentState, card.id, index);
+    const resolution = playBattleCardResolved(currentState, card.id, index, BATTLE_CARD_PLAY_OPTIONS);
     playCardResolutionFeedback(card, currentState, resolution.state, resolution.combatTexts);
     getContext().setHoveredCardId((current) =>
       current === getHoverId("hand", `${card.id}-${card.uid}`) ? null : current,

@@ -1,10 +1,12 @@
 import { describe, expect, it, beforeEach, vi } from "vitest";
 import { createContentSystemNavigation } from "@/features/alchemy/run-setup/run/content-system-navigation";
 import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
+import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
 import { useHomesteadStore } from "@/features/alchemy/shared/stores/homestead-store";
 import { CONSTANTS } from "@/features/alchemy/shared/types";
 import { makeRunController, makeTalentController } from "../../helpers/run-controller";
-import type { BattleCard } from "@/lib/game-data";
+import { DEFAULT_CAMPAIGN_DIFFICULTY_ID } from "@/lib/game-constants";
+import { getStartingDeck, type BattleCard } from "@/lib/game-data";
 import {
   getRunProgressStoreView,
   getRunSessionStoreView,
@@ -29,6 +31,7 @@ beforeEach(() => {
   resetTransientRunUi();
   resetRunProgressSlice();
   useHomesteadStore.setState(useHomesteadStore.getInitialState());
+  useAppStore.setState({ discoveredCardIds: [], discoveredTrinketIds: [] });
 });
 
 function makeDeps(overrides: Partial<Parameters<typeof createContentSystemNavigation>[0]> = {}) {
@@ -90,6 +93,29 @@ describe("createContentSystemNavigation", () => {
     nav.beginCampaign();
     expect(deps.returnToBattle).toHaveBeenCalledOnce();
     expect(deps.navigateTo).not.toHaveBeenCalled();
+  });
+
+  it("initializeRunForDifficulty discovers starter deck on a fresh save", () => {
+    const deps = makeDeps();
+    const nav = createContentSystemNavigation(deps);
+    const knightStarterIds = getStartingDeck("knight").map((card) => card.id);
+
+    nav.initializeRunForDifficulty("knight", DEFAULT_CAMPAIGN_DIFFICULTY_ID);
+
+    expect(getRunProgressStoreView().discoveredCardIdsAtRunStart).toEqual([]);
+    expect(useAppStore.getState().discoveredCardIds).toEqual(knightStarterIds);
+  });
+
+  it("initializeWildwoodRun discovers starter deck on a fresh save", () => {
+    setRunSession({ pendingContentSystemType: CONSTANTS.CONTENT_SYSTEMS.WILDWOOD });
+    const deps = makeDeps({ pendingContentSystemType: CONSTANTS.CONTENT_SYSTEMS.WILDWOOD });
+    const nav = createContentSystemNavigation(deps);
+    const knightStarterIds = getStartingDeck("knight").map((card) => card.id);
+
+    nav.handleCharacterSelect("knight");
+
+    expect(getRunProgressStoreView().discoveredCardIdsAtRunStart).toEqual([]);
+    expect(useAppStore.getState().discoveredCardIds).toEqual(knightStarterIds);
   });
 
   it("routes wildcard draft to draft-deck screen", () => {

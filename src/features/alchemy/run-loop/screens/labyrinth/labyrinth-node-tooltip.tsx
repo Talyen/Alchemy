@@ -8,7 +8,13 @@ import { LABYRINTH_MAP_UI } from "@/lib/game-constants";
 import { cn } from "@/lib/utils";
 
 import { renderColoredKeywords } from "../../../shared/ui/card-description-ui";
-import { TooltipBody, TooltipHeader, TooltipSection, useTooltipViewportClamp } from "../../../shared/ui/tooltip-panel";
+import {
+  TooltipBody,
+  TooltipHeader,
+  TooltipPanel,
+  TooltipSection,
+  useTooltipViewportClamp,
+} from "../../../shared/ui/tooltip-panel";
 
 type Props = {
   type: LabyrinthNodeType;
@@ -42,12 +48,11 @@ export function LabyrinthNodeTooltip({ type, modifiers, rewardModifiers }: Props
   const hasModifiers = enemyModifiers.length > 0 || rewardModifiers.length > 0;
 
   return (
-    <div
+    <TooltipPanel
       ref={ref}
-      className={cn(
-        "pointer-events-none absolute left-1/2 z-50 w-[23.7cqh] -translate-x-1/2 rounded-shell-tooltip border border-border/80 bg-card p-3 text-left",
-        flip ? "top-[calc(100%+0.75rem)]" : "bottom-[calc(100%+0.75rem)]",
-      )}
+      flip={flip}
+      width="w-[23.7cqh]"
+      className="z-50 rounded-shell-tooltip"
       style={dx !== 0 ? ({ marginLeft: dx } as CSSProperties) : undefined}
     >
       <TooltipHeader>{NODE_TYPE_LABELS[type]}</TooltipHeader>
@@ -66,6 +71,6 @@ export function LabyrinthNodeTooltip({ type, modifiers, rewardModifiers }: Props
           </div>
         </TooltipSection>
       ) : null}
-    </div>
+    </TooltipPanel>
   );
 }

@@ -50,6 +50,7 @@ type ControllerActions = {
     handleLabyrinthNodeEnter: (row: number, col: number) => void;
     handleLabyrinthEndRun: () => void;
     resetRunState: () => void;
+    continueFromRunEnd: () => void;
   };
   meta: {
     unlockTalent: (keywordId: KeywordId, talentId: string) => void;

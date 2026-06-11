@@ -31,6 +31,7 @@ function makeDeps(overrides: Partial<Parameters<typeof createBattleCardPlay>[0]>
     battleSessionRef,
     cardPlayInProgressRef,
     hiddenHandCardKeys: new Set<string>(),
+    cardTransferInProgress: false,
     playerPanelRef: { current: null },
     enemyPanelRef: { current: null },
     battleSceneRef: { current: null },
@@ -123,5 +124,62 @@ describe("createBattleCardPlay", () => {
     clickCard(handleCardClick, { ...slash, uid: 3 }, 0);
 
     expect(getBattleStoreView().battleState.enemyHealth).toBe(state.enemyHealth);
+  });
+
+  it("plays a revealed card while another draw transfer is still in progress", () => {
+    const slash = makeTestCard({ id: "slash", cost: 1, effects: [{ kind: "damage", damageType: "physical", amount: 6 }] });
+    const state = createTestBattleState({
+      hand: [{ ...slash, uid: 5 }],
+      mana: 3,
+      enemyHealth: 30,
+    });
+    getBattleStoreView().setSyncedBattleState(state);
+
+    const deps = makeDeps({ cardTransferInProgress: true });
+    const { handleCardClick } = createBattleCardPlay(deps);
+    clickCard(handleCardClick, { ...slash, uid: 5 }, 0);
+
+    expect(getBattleStoreView().battleState.hand.length).toBe(0);
+    expect(getBattleStoreView().battleState.enemyHealth).toBeLessThan(30);
+    expect(deps.talents.awardCardXP).toHaveBeenCalledWith(expect.objectContaining({ id: "slash" }));
+  });
+
+  it("rejects plays for cards still animating into the hand", () => {
+    const slash = makeTestCard({ id: "slash", cost: 1, effects: [{ kind: "damage", damageType: "physical", amount: 6 }] });
+    const state = createTestBattleState({
+      hand: [{ ...slash, uid: 6 }],
+      mana: 3,
+      enemyHealth: 30,
+    });
+    getBattleStoreView().setSyncedBattleState(state);
+
+    const deps = makeDeps({
+      cardTransferInProgress: true,
+      hiddenHandCardKeys: new Set(["slash-6"]),
+    });
+    const { handleCardClick } = createBattleCardPlay(deps);
+    clickCard(handleCardClick, { ...slash, uid: 6 }, 0);
+
+    expect(getBattleStoreView().battleState).toEqual(state);
+    expect(deps.talents.awardCardXP).not.toHaveBeenCalled();
+  });
+
+  it("plays cards after enemy is defeated during victory grace", () => {
+    const slash = makeTestCard({ id: "slash", cost: 1, effects: [{ kind: "damage", damageType: "physical", amount: 6 }] });
+    const state = createTestBattleState({
+      hand: [{ ...slash, uid: 4 }],
+      mana: 3,
+      enemyHealth: 0,
+    });
+    getBattleStoreView().setSyncedBattleState(state);
+
+    const deps = makeDeps();
+    const { handleCardClick } = createBattleCardPlay(deps);
+    clickCard(handleCardClick, { ...slash, uid: 4 }, 0);
+
+    expect(getBattleStoreView().battleState.hand.length).toBe(0);
+    expect(getBattleStoreView().battleState.discard).toHaveLength(1);
+    expect(getBattleStoreView().battleState.mana).toBe(2);
+    expect(deps.talents.awardCardXP).toHaveBeenCalledWith(expect.objectContaining({ id: "slash" }));
   });
 });

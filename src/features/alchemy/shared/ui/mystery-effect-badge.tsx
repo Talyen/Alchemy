@@ -3,11 +3,11 @@
 // Consumed by tooltip builders and outcome summary screens.
 import { Coins } from "lucide-react";
 import { keywordDefinitions } from "@/lib/game-data";
+import { MYSTERY_CARD_CHOICES } from "@/lib/game-constants";
 import { cn } from "@/lib/utils";
 import { materialLabels } from "@/lib/homestead/types";
 import { matIconMap, matPillStyle, matTextColor } from "./material-icons";
 import { TooltipHeader } from "./tooltip-panel";
-import { renderColoredKeywords } from "./card-description-ui";
 import type { MysteryEffect } from "@/features/alchemy/run-loop/mystery-events";
 
 const goldDef = keywordDefinitions.gold;
@@ -41,7 +41,7 @@ export function MysteryEffectBadge({
           )}
         >
           <Coins className="h-4 w-4" />
-          {tooltip ? "Gold" : `${effect.amount} Gold`}
+          {`${effect.amount} Gold`}
         </span>
       );
     case "gainMaterial":
@@ -54,25 +54,17 @@ export function MysteryEffectBadge({
           )}
         >
           <span>{matIconMap[effect.material]}</span>
-          {tooltip ? materialLabels[effect.material] : `${effect.amount} ${materialLabels[effect.material]}`}
+          {`${effect.amount} ${materialLabels[effect.material]}`}
         </span>
       );
     case "healHealth": {
       const healthDef = keywordDefinitions.health;
       return (
         <span className="font-semibold">
-          {tooltip ? (
-            <>
-              Restore <span className={cn(healthDef?.colorClass)}>Health</span>
-            </>
-          ) : (
-            <>
-              Restore {effect.amount} <span className={cn(healthDef?.colorClass)}>Health</span>
-              {effect.chance !== undefined
-                ? ` (${Math.round(effect.chance * CONSTANTS.PERCENTAGE_MULTIPLIER)}% chance)`
-                : ""}
-            </>
-          )}
+          Restore {effect.amount} <span className={cn(healthDef?.colorClass)}>Health</span>
+          {effect.chance !== undefined
+            ? ` (${Math.round(effect.chance * CONSTANTS.PERCENTAGE_MULTIPLIER)}% chance)`
+            : ""}
         </span>
       );
     }
@@ -84,15 +76,7 @@ export function MysteryEffectBadge({
       const def = keywordDefinitions[effect.keyword];
       return (
         <span className="font-semibold">
-          {tooltip ? (
-            <>
-              Gain <span className={cn(def?.colorClass)}>{def?.label ?? effect.keyword}</span> XP
-            </>
-          ) : (
-            <>
-              Gain {effect.amount} <span className={cn(def?.colorClass)}>{def?.label ?? effect.keyword}</span> XP
-            </>
-          )}
+          Gain {effect.amount} <span className={cn(def?.colorClass)}>{def?.label ?? effect.keyword}</span> XP
         </span>
       );
     }
@@ -104,12 +88,17 @@ export function MysteryEffectBadge({
       ) : (
         <span className="text-sm text-muted-foreground">Add {findCard?.(effect.cardId)?.title ?? "a card"}</span>
       );
-    case "chooseCard":
+    case "chooseCard": {
+      const tagLabel = effect.tag ? (keywordDefinitions[effect.tag]?.label ?? effect.tag) : undefined;
+      const chooseLabel = tagLabel
+        ? `Choose 1 of ${MYSTERY_CARD_CHOICES} ${tagLabel} cards`
+        : `Choose 1 of ${MYSTERY_CARD_CHOICES} cards`;
       return tooltip ? (
-        <span className="text-sm text-muted-foreground">Choose a card to add to your deck</span>
+        <span className="text-sm text-muted-foreground">{chooseLabel} to add to your deck</span>
       ) : (
-        <span className="text-sm text-muted-foreground">Choose a card</span>
+        <span className="text-sm text-muted-foreground">{chooseLabel}</span>
       );
+    }
     case "gainTrinket":
       return tooltip ? (
         <span className="text-sm text-muted-foreground">
@@ -139,20 +128,15 @@ export function MysteryEffectList({
   findCard,
   findTrinket,
   choiceLabel,
-  choiceDescription,
 }: {
   effects: MysteryEffect[];
   findCard: ((id: string) => { title: string } | undefined) | undefined;
   findTrinket: ((id: string) => { title: string } | undefined) | undefined;
   choiceLabel?: string;
-  choiceDescription?: string;
 }) {
   return (
     <div className="flex flex-col items-start gap-1.5">
       <TooltipHeader>{choiceLabel ?? "Outcome"}</TooltipHeader>
-      {choiceDescription ? (
-        <p className="text-sm leading-6 text-muted-foreground">{renderColoredKeywords(choiceDescription)}</p>
-      ) : null}
       {effects.map((effect, i) => {
         if (effect.kind === "none") return null;
 

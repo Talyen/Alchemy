@@ -19,6 +19,7 @@ export type Screen =
   | "mystery"
   | "corruption"
   | "run-victory"
+  | "run-discoveries"
   | "labyrinth-map"
   | "wildwood-select";
 
@@ -42,6 +43,7 @@ export const ROUTE_SCREENS = {
   MYSTERY: "mystery",
   CORRUPTION: "corruption",
   RUN_VICTORY: "run-victory",
+  RUN_DISCOVERIES: "run-discoveries",
   LABYRINTH_MAP: "labyrinth-map",
   WILDWOOD_SELECT: "wildwood-select",
 } as const satisfies Record<string, Screen>;

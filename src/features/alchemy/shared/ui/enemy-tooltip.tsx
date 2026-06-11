@@ -7,15 +7,16 @@ import { ALL_LABYRINTH_MODIFIERS } from "@/lib/content-systems/labyrinth/modifie
 import { cn } from "@/lib/utils";
 import type { CSSProperties } from "react";
 
-import { popupClassName } from "../config";
 import { formatEnemyAttackLines } from "../utils";
 import { DescriptionLines } from "./card-description-ui";
-import { TooltipBody, TooltipHeader, TooltipSection, TooltipSeparator, useTooltipFlip } from "./tooltip-panel";
-
-const ENEMY_TOOLTIP_CONFIG = {
-  flippedTransform: "translateY(6px) scale(0.985)",
-  flippedTransformOrigin: "left center",
-} as const;
+import {
+  TooltipBody,
+  TooltipHeader,
+  TooltipPanel,
+  TooltipSection,
+  TooltipSeparator,
+  useTooltipPlacementWithSideFallback,
+} from "./tooltip-panel";
 
 export function EnemyTooltip({
   entry,
@@ -32,13 +33,34 @@ export function EnemyTooltip({
   align?: "left" | "right";
   className?: string;
 }) {
-  const { ref, flip } = useTooltipFlip();
+  const { ref, placement, flip, dx } = useTooltipPlacementWithSideFallback(align, 8, entry.id);
 
   const attackLines = formatEnemyAttackLines(attackEffects ?? entry.attackEffects);
   const traitLines = entry.traits.flatMap((t) => t.description.split("\n"));
 
-  const inner = (
-    <>
+  const isSide = placement === "side-start" || placement === "side-end";
+
+  return (
+    <TooltipPanel
+      ref={ref}
+      placement={isSide ? placement : "above"}
+      flip={flip}
+      width="w-60"
+      className={cn(
+        "rounded-shell-tooltip",
+        isSide &&
+          (align === "left"
+            ? "absolute right-[calc(100%+1.11cqh)] top-0 bottom-auto left-auto"
+            : "absolute left-[calc(100%+1.11cqh)] top-0 bottom-auto right-auto"),
+        className,
+      )}
+      style={
+        {
+          ...(isSide ? { transform: "none" } : {}),
+          ...(dx !== 0 ? { marginLeft: dx } : {}),
+        } as CSSProperties
+      }
+    >
       <TooltipHeader>{discovered ? entry.title : "Undiscovered"}</TooltipHeader>
       <TooltipBody>
         {discovered ? (
@@ -65,35 +87,6 @@ export function EnemyTooltip({
           </TooltipSection>
         </>
       ) : null}
-    </>
-  );
-
-  if (flip) {
-    return (
-      <div
-        ref={ref}
-        className={cn(
-          "pointer-events-none",
-          align === "left"
-            ? "absolute right-[calc(100%+1.11cqh)] top-0 z-40 w-60 rounded-shell-tooltip border border-border/80 bg-card px-3 py-3 text-left"
-            : "absolute left-[calc(100%+1.11cqh)] top-0 z-40 w-60 rounded-shell-tooltip border border-border/80 bg-card px-3 py-3 text-left",
-          className,
-        )}
-        style={
-          {
-            transform: ENEMY_TOOLTIP_CONFIG.flippedTransform,
-            transformOrigin: align === "left" ? "right center" : ENEMY_TOOLTIP_CONFIG.flippedTransformOrigin,
-          } as CSSProperties
-        }
-      >
-        {inner}
-      </div>
-    );
-  }
-
-  return (
-    <div ref={ref} className={cn(popupClassName, "-translate-x-1/2", "w-60", "pointer-events-none", className)}>
-      {inner}
-    </div>
+    </TooltipPanel>
   );
 }

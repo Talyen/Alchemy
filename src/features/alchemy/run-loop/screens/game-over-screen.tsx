@@ -9,12 +9,12 @@ export function GameOverScreen({
   runEndTalentXP,
   talentXP,
   runEndMaterials,
-  onMainMenu,
+  onContinue,
 }: {
   runEndTalentXP: TalentXP;
   talentXP: TalentXP;
   runEndMaterials: MaterialInventory;
-  onMainMenu: () => void;
+  onContinue: () => void;
 }) {
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-6 px-4 py-6 text-center">
@@ -25,8 +25,8 @@ export function GameOverScreen({
 
       <RunEndProgressSection runEndTalentXP={runEndTalentXP} talentXP={talentXP} runEndMaterials={runEndMaterials} />
 
-      <Button size="lg" className="min-w-44" onClick={onMainMenu}>
-        Return to Main Menu
+      <Button size="lg" className="min-w-44" onClick={onContinue}>
+        Continue
       </Button>
     </div>
   );

@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { defaultBattleState } from "@/lib/battle";
-import { getPlayableHandCardKeys } from "@/features/alchemy/run-loop/battle/playable-hand";
+import {
+  getPlayableHandCardKeys,
+  getPlayableHandCardKeysExcludingHidden,
+} from "@/features/alchemy/run-loop/battle/playable-hand";
 import type { BattleCard } from "@/lib/game-data";
 
 const affordableCard: BattleCard = {
@@ -45,5 +48,22 @@ describe("getPlayableHandCardKeys", () => {
     };
 
     expect(getPlayableHandCardKeys(state).size).toBe(0);
+  });
+});
+
+describe("getPlayableHandCardKeysExcludingHidden", () => {
+  it("excludes hidden keys but keeps other affordable cards", () => {
+    const drawingCard: BattleCard = { ...affordableCard, id: "draw", uid: "c" };
+    const state = {
+      ...defaultBattleState(),
+      turnPhase: "player" as const,
+      mana: 2,
+      wishOptions: null,
+      hand: [affordableCard, drawingCard],
+    };
+
+    const playable = getPlayableHandCardKeysExcludingHidden(state, new Set(["draw-c"]));
+    expect(playable.has("slash-a")).toBe(true);
+    expect(playable.has("draw-c")).toBe(false);
   });
 });

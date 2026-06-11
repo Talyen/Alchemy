@@ -2,7 +2,7 @@
 // Every SaveData field has a safe default here so null-coalescing elsewhere is optional.
 // Volume/brightness defaults are imported from game-constants.ts — save-schemas.ts uses the same
 // constants for its .catch() fallbacks, guaranteeing both sources agree.
-import { allStartingDeckCardIds, type CompanionId } from "@/lib/game-data";
+import type { CompanionId } from "@/lib/game-data";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { buildings, farmPlots, researchUpgrades } from "@/lib/homestead/data";
 import { createEmptyTierRecord } from "@/lib/homestead/tiers";
@@ -23,7 +23,7 @@ export const defaultSaveData: SaveData = {
   selectedAspectRatio: "auto",
   displayMode: "borderless-fullscreen",
   uiScale: "100",
-  discoveredCardIds: [...allStartingDeckCardIds],
+  discoveredCardIds: [],
   encounteredEnemyIds: [],
   discoveredTrinketIds: [],
   talentXP: {},

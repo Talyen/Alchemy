@@ -11,6 +11,8 @@ type PlaySoundOptions = {
   volume?: number;
   delay?: number;
   cooldownMs?: number;
+  /** When false, sound plays through screen transitions (UI feedback, stingers). Default true for combat SFX. */
+  trackForCleanup?: boolean;
 };
 
 // Grouped local constants and settings for SFX playback.
@@ -21,7 +23,7 @@ const SFX_CONFIG = {
   DELAY_DEFAULT: 0.0,
 } as const;
 
-// Set of active sound source nodes to allow full stopping of SFX on room transitions/cleanup.
+// Battle-tracked sources stopped by stopAllSfx so combat audio cannot leak across rooms.
 const activeSfxSources = new Set<AudioBufferSourceNode>();
 
 // Monotonically increasing token to cancel scheduled/in-flight sounds when all SFX are stopped.
@@ -29,7 +31,12 @@ let sfxStopToken = 0;
 
 // Shared source-node setup so both sync and async paths don't duplicate code.
 // Sets up the gain nodes and links them to the master audio context.
-function playDecodedBuffer(buffer: AudioBuffer, volume: number, delay: number = SFX_CONFIG.DELAY_DEFAULT) {
+function playDecodedBuffer(
+  buffer: AudioBuffer,
+  volume: number,
+  delay: number = SFX_CONFIG.DELAY_DEFAULT,
+  trackForCleanup: boolean = true,
+) {
   const ctx = getAudioContext();
   const source = ctx.createBufferSource();
   source.buffer = buffer;
@@ -44,12 +51,15 @@ function playDecodedBuffer(buffer: AudioBuffer, volume: number, delay: number = 
   // [Source Node] -> [Local Gain (volume * sfxVolume)] -> [Master Gain (MASTER_GAIN * masterVolume)] -> [Speakers]
   gain.connect(audioState.masterGain);
 
-  activeSfxSources.add(source);
-  source.onended = () => activeSfxSources.delete(source);
+  if (trackForCleanup) {
+    activeSfxSources.add(source);
+    source.onended = () => activeSfxSources.delete(source);
+  }
   source.start(ctx.currentTime + delay);
 }
 
-// Stops currently playing or scheduled SFX so combat cleanup cannot leak sounds into the next screen.
+// Stops battle-tracked SFX (cards, combat events, gold) so combat cleanup cannot leak into the next screen.
+// UI feedback and stingers are not tracked and play through screen transitions.
 export function stopAllSfx() {
   sfxStopToken += 1;
   for (const source of activeSfxSources) {
@@ -70,6 +80,7 @@ function playBuffer(
     volume = SFX_CONFIG.VOLUME_DEFAULT,
     delay = SFX_CONFIG.DELAY_DEFAULT,
     cooldownMs = SFX_COOLDOWN_MS,
+    trackForCleanup = true,
   }: PlaySoundOptions = {},
 ) {
   if (audioState.muted) return;
@@ -87,14 +98,14 @@ function playBuffer(
   // Try the synchronous cache path first to play immediately in the current event-loop tick.
   const cached = getCachedBuffer(name);
   if (cached) {
-    playDecodedBuffer(cached, volume, delay);
+    playDecodedBuffer(cached, volume, delay, trackForCleanup);
     return;
   }
 
   // Fall back to async fetching and decoding. Checks playToken to prevent playing if stopped in the meantime.
   loadSoundBuffer(name).then((buffer) => {
     if (playToken !== sfxStopToken) return;
-    if (buffer) playDecodedBuffer(buffer, volume, delay);
+    if (buffer) playDecodedBuffer(buffer, volume, delay, trackForCleanup);
   });
 }
 
@@ -133,15 +144,15 @@ export function playBattleEvent(event: keyof typeof battleEventSounds, options: 
 
 // Plays quieter UI feedback so menus do not compete with combat sounds.
 export function playUISound(event: keyof typeof uiSounds) {
-  playBuffer(uiSounds[event], { volume: SFX_UI_VOLUME });
+  playBuffer(uiSounds[event], { volume: SFX_UI_VOLUME, trackForCleanup: false });
 }
 
 // Plays the victory stinger at a controlled volume.
 export function playVictory() {
-  playBuffer(stingerSounds.victory, { volume: SFX_VICTORY_VOLUME });
+  playBuffer(stingerSounds.victory, { volume: SFX_VICTORY_VOLUME, trackForCleanup: false });
 }
 
 // Plays the defeat stinger at a controlled volume.
 export function playDefeat() {
-  playBuffer(stingerSounds.defeat, { volume: SFX_DEFEAT_VOLUME });
+  playBuffer(stingerSounds.defeat, { volume: SFX_DEFEAT_VOLUME, trackForCleanup: false });
 }

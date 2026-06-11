@@ -4,7 +4,7 @@ import type { MaterialId } from "@/lib/homestead/types";
 
 export type MysteryEffect =
   | { kind: "addCard"; cardId: string }
-  | { kind: "chooseCard" }
+  | { kind: "chooseCard"; tag?: KeywordId }
   | { kind: "healHealth"; amount: number; chance?: number }
   | { kind: "damageHealth"; amount: number }
   | { kind: "gainGold"; amount: number }
@@ -18,7 +18,6 @@ export type MysteryEffect =
 
 export type MysteryChoice = {
   label: string;
-  description: string;
   effects: MysteryEffect[];
 };
 
