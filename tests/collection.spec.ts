@@ -1,9 +1,11 @@
 import { expect, test } from "@playwright/test";
+import { injectHomestead } from "./helpers";
 import { MenuPage } from "./pages/menu-page";
 import { critical, prepush } from "./playwright-tags";
 
 test.describe("Collection", critical, () => {
   test("collection shows all three tabs with content and card inspection works", prepush, async ({ page }) => {
+    await injectHomestead(page, { discoveredCardIds: ["anvil"] });
     const menu = new MenuPage(page);
     await menu.goto();
     await menu.openCollection();
