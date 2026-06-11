@@ -9,6 +9,7 @@ import { resumeCampaignRun } from "./navigation";
 import { forceNextDestinationChoice, seedRandom } from "./rng";
 import { injectSaveState } from "./save-injection";
 import type { DestinationName } from "./types";
+import { completeRunEndToMenu } from "./run-end";
 
 export async function enableFastMode(page: Page) {
   await page.addInitScript(() => {
@@ -79,9 +80,8 @@ export async function assertDefeatFromEndRun(page: Page, options: { returnToMenu
   await battle.menuBtn.click();
   await page.getByRole("button", { name: "End Run" }).click();
   await expect(page.getByRole("heading", { name: "Defeat" })).toBeVisible({ timeout: 5000 });
-  await expect(page.getByRole("button", { name: "Return to Main Menu" })).toBeVisible({ timeout: 3000 });
+  await expect(page.getByRole("button", { name: "Continue" })).toBeVisible({ timeout: 5000 });
   if (options.returnToMenu) {
-    await page.getByRole("button", { name: "Return to Main Menu" }).click();
-    await expect(page.getByRole("button", { name: "Play" })).toBeVisible({ timeout: 3000 });
+    await completeRunEndToMenu(page);
   }
 }

@@ -19,6 +19,6 @@ test.describe("Lethal Battle Defeat", critical, () => {
 
     await battle.endTurn();
     await expect(page.getByRole("heading", { name: "Defeat" })).toBeVisible({ timeout: 10000 });
-    await expect(page.getByRole("button", { name: "Return to Main Menu" })).toBeVisible({ timeout: 3000 });
+    await expect(page.getByRole("button", { name: "Continue" })).toBeVisible({ timeout: 5000 });
   });
 });

@@ -48,6 +48,6 @@ test.describe("Boss Fight Flow", critical, () => {
     await reward.addRewardBtn.click();
 
     await expect(page.getByRole("heading", { name: /Victory|Triumph|Run Complete/i })).toBeVisible({ timeout: 5000 });
-    await expect(page.getByRole("button", { name: /Main Menu/ })).toBeVisible({ timeout: 3000 });
+    await expect(page.getByRole("button", { name: "Continue" })).toBeVisible({ timeout: 5000 });
   });
 });

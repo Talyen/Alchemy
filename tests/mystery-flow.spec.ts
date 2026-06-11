@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { startAtDestination } from "./helpers";
+import { enableFastMode, startAtDestination } from "./helpers";
 import { MenuPage } from "./pages/menu-page";
 import { MysteryPage } from "./pages/mystery-page";
 
@@ -12,6 +12,7 @@ test.describe("Mystery Event Flow", () => {
   });
 
   test("mystery event completes and returns to destination choices", async ({ page }) => {
+    await enableFastMode(page);
     await startAtDestination(page, {}, { forceDestination: "Mystery" });
     await page.getByRole("button", { name: "Mystery" }).click();
 

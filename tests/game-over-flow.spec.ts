@@ -6,6 +6,7 @@ import { critical } from "./playwright-tags";
 
 test.describe("Game Over via End Run", critical, () => {
   test("ending a run shows defeat screen and return to menu works", async ({ page, fastBattle }) => {
+    test.setTimeout(60_000);
     void fastBattle;
 
     await startBattleWithDeck(page, Array.from({ length: 6 }, () => makeCard()));
