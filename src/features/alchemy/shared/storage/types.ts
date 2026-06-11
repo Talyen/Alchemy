@@ -31,4 +31,5 @@ export type SaveData = {
   bondedCompanions: Record<CompanionId, number>;
   completedDifficulties: Record<CharacterId, DifficultyId[]>;
   finishedRunCharacters: CharacterId[];
+  lastSavedAt: number;
 };

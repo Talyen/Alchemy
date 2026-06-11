@@ -37,5 +37,6 @@ export function buildAlchemySaveDataFromStores(activeRun: ActiveRunData | null):
     bondedCompanions: homestead.bondedCompanions,
     completedDifficulties: app.completedDifficulties,
     finishedRunCharacters: app.finishedRunCharacters,
+    lastSavedAt: Date.now(),
   };
 }

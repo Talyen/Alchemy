@@ -51,4 +51,5 @@ export const defaultSaveData: SaveData = {
     wildcard: [],
   },
   finishedRunCharacters: [],
+  lastSavedAt: 0,
 };

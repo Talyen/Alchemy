@@ -34,3 +34,4 @@ export {
   type ValidationError,
 } from "./save-schemas";
 export { normalizeActiveRunData } from "./normalize-active-run-data";
+export { pickNewerSavePayload } from "./save-merge";

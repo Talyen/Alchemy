@@ -1,4 +1,5 @@
 // Representative pre-schema save payloads used to keep old player progress loadable.
+// LEGACY_SAVE_FIXTURES_BY_SOURCE_VERSION maps each source schema version to a fixture.
 // Depends on deterministic labyrinth map generation so fixture tests can cover mid-run map saves.
 import { createSeededRng } from "@/lib/utils";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
@@ -94,3 +95,100 @@ export function legacyCorruptedCardRunSave() {
     },
   };
 }
+
+/** Schema v1 save with legacy arrow talent XP (exercises v1→v2 migration). */
+export function legacySchemaV1Save() {
+  return {
+    saveSchemaVersion: 1,
+    gameBuildVersion: "0.0.9",
+    contentVersion: 1,
+    selectedAspectRatio: "16:9",
+    displayMode: "borderless-fullscreen",
+    uiScale: "100",
+    discoveredCardIds: ["slash"],
+    encounteredEnemyIds: [],
+    discoveredTrinketIds: [],
+    talentXP: { arrow: 12, physical: 4 },
+    unlockedTalents: { arrow: ["arrow-damage"] },
+    musicVolume: 50,
+    sfxVolume: 50,
+    masterVolume: 50,
+    muteInBackground: true,
+    autoEndTurn: true,
+    brightness: 100,
+    activeRun: null,
+    materialInventory: {},
+    constructedBuildings: {},
+    plantedFarms: {},
+    completedResearch: {},
+    bondedCompanions: {},
+    completedDifficulties: {
+      knight: [],
+      rogue: [],
+      wizard: [],
+      ranger: [],
+      alchemist: [],
+      warlock: [],
+      druid: [],
+      wildcard: [],
+    },
+  };
+}
+
+/** Schema v2 save missing finishedRunCharacters (exercises v2→v3 migration). */
+export function legacySchemaV2Save() {
+  return {
+    saveSchemaVersion: 2,
+    gameBuildVersion: "0.1.0",
+    contentVersion: 1,
+    selectedAspectRatio: "auto",
+    displayMode: "borderless-fullscreen",
+    uiScale: "100",
+    discoveredCardIds: ["slash", "block"],
+    encounteredEnemyIds: ["goblin"],
+    discoveredTrinketIds: [],
+    talentXP: { archery: 8 },
+    unlockedTalents: { archery: ["archery-damage"] },
+    musicVolume: 50,
+    sfxVolume: 50,
+    masterVolume: 50,
+    muteInBackground: true,
+    autoEndTurn: true,
+    brightness: 100,
+    activeRun: {
+      characterId: "knight",
+      runDeck: [],
+      runGold: 20,
+      runPlayerHealth: 25,
+      runMaxHealth: 30,
+      roomsEncountered: 1,
+      currentAct: 1,
+      destinationIndexInAct: 0,
+      completedDestinations: [],
+      runTrinkets: [],
+      selectedDifficulty: "difficulty-1",
+      contentSystemType: "campaign",
+    },
+    materialInventory: { wood: 2 },
+    constructedBuildings: {},
+    plantedFarms: {},
+    completedResearch: {},
+    bondedCompanions: {},
+    completedDifficulties: {
+      knight: [],
+      rogue: [],
+      wizard: [],
+      ranger: [],
+      alchemist: [],
+      warlock: [],
+      druid: [],
+      wildcard: [],
+    },
+  };
+}
+
+export const LEGACY_SAVE_FIXTURES_BY_SOURCE_VERSION: Record<number, () => Record<string, unknown>> = {
+  0: legacyCampaignRunSave,
+  1: legacySchemaV1Save,
+  2: legacySchemaV2Save,
+};

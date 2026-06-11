@@ -22,6 +22,6 @@ pre-push:
     test:
       run: npm test
     build:
-      run: npm run build
+      run: npm run build:ship
     e2e-critical:
       run: npm run test:e2e:prepush

@@ -16,7 +16,8 @@ Static reference for commands, glossary, battle rules, and file lookup. Strict c
 - **npm 10+**
 - **Playwright:** `npx playwright install chromium` once before first `npm run test:e2e`.
 - **GitHub CLI (`gh`):** optional; PR/CI only when the user asks — do not run `gh auth login`.
-- **Git hooks:** lefthook `pre-push` — see [CONTRIBUTING.md](../CONTRIBUTING.md) (9 `@prepush` e2e tests after `lint:ci`, `test`, `build`).
+- **Git hooks:** lefthook `pre-push` — see [CONTRIBUTING.md](../CONTRIBUTING.md) (`lint:ci`, `test`, `build:ship`, `@prepush` e2e).
+- **Steam / ship gates:** [RELEASE.md](./RELEASE.md) — `check:ship`, `check:ship:full`, tag-triggered `release.yml`.
 - **Balance sim env vars:** `ALCHEMY_BALANCE_ITERATIONS`, `ALCHEMY_BALANCE_POLICY` (`random-playable`, `greedy-damage`, `defensive-random`).
 
 ### Script Command Reference
@@ -29,6 +30,11 @@ npm test -- <path>          # Single test file
 npm run lint:ci             # format:check + lint + deadcode (CI / pre-push)
 npm run check               # npm ci --dry-run + lint:ci + test + build
 npm run check:push          # check + test:e2e:prepush
+npm run check:ship          # lint:ci + ship unit tests + desktop compile
+npm run check:ship:full     # check:ship + save E2E + Electron E2E
+npm run sync:version        # package.json → metadata.generated.ts
+npm run generate:patch-notes
+npm run dist:desktop        # electron-builder per steam/platforms.json
 npm run test:e2e:prepush    # Fast @prepush subset (pre-push hook)
 npm run test:e2e:prepush:full  # @critical on preview (CI e2e job)
 npm run test:e2e:main-gate  # Full suite on preview (push to main)

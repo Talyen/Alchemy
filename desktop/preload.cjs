@@ -8,6 +8,7 @@ contextBridge.exposeInMainWorld("alchemyDesktop", {
   quit: () => ipcRenderer.invoke("alchemy:quit"),
   loadSave: () => ipcRenderer.invoke("alchemy:load-save"),
   writeSave: (data) => ipcRenderer.invoke("alchemy:write-save", data),
+  backupSave: () => ipcRenderer.invoke("alchemy:backup-save"),
   clearSave: () => ipcRenderer.invoke("alchemy:clear-save"),
   steamGetName: () => ipcRenderer.invoke("alchemy:steam-get-name"),
   steamSetRichPresence: (key, val) => ipcRenderer.invoke("alchemy:steam-set-rich-presence", key, val),

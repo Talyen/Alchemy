@@ -135,7 +135,9 @@ describe("storage io", () => {
     const { saveAlchemySaveData } = await import("@/features/alchemy/shared/storage/io");
     const data: SaveData = { ...defaultSaveData, selectedAspectRatio: "16:9" };
     await saveAlchemySaveData(data);
-    expect(mockStorage[SAVE_KEY]).toBe(JSON.stringify(data));
+    const written = JSON.parse(mockStorage[SAVE_KEY]) as SaveData;
+    expect(written.selectedAspectRatio).toBe("16:9");
+    expect(written.lastSavedAt).toBeGreaterThan(0);
   });
 
   it("clearAlchemySaveData removes key from localStorage", async () => {

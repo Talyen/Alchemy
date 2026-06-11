@@ -39,7 +39,7 @@ See also [`src/features/alchemy/shared/storage/MIGRATIONS.md`](../src/features/a
 2. Increment `CURRENT_SAVE_SCHEMA_VERSION` in `src/lib/validation/metadata.ts`.
 3. Add `migrateVNToVNPlus1` in `src/lib/validation/migration.ts` and chain it from `migrateSaveDataToCurrent` (tests use `storage/migrations.ts` → `SaveDataSchema.parse` only).
 4. Update Zod schemas in `src/lib/validation/save-schemas.ts`, storage defaults, and legacy fixtures in `tests/fixtures/legacy-saves.ts`.
-5. Run storage/migration tests (`tests/features/storage.test.ts`, `tests/features/storage/migrations.test.ts`, and related `tests/features/storage/` specs).
+5. CI enforces via `tests/architecture/save-migration-guard.test.ts` and `npm run check:ship` — no manual checklist.
 
 ---
 

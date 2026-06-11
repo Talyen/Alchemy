@@ -2,7 +2,7 @@
 
 **Alchemy** is a fantasy roguelite deckbuilder: pick a **Character**, fight turn-based battles with cards (**Mana**, **Statuses**, **Block**, companions), earn rewards, and travel to **Destinations** (combat, **Campfire**, shops, **Mystery**, **Corruption**). Between runs, the **Homestead** and **Talent** trees provide permanent progression.
 
-> **Docs:** [ARCHITECTURE.md](./docs/ARCHITECTURE.md) (run state) · [WORKFLOWS.md](./docs/WORKFLOWS.md) (how-to) · [REFERENCE.md](./docs/REFERENCE.md) (commands, glossary, battle) · [CONTRIBUTING.md](./CONTRIBUTING.md) (hooks & tests) · [PROMPTS.md](./PROMPTS.md) (audits) · [README.md](./README.md) (human setup)
+> **Docs:** [ARCHITECTURE.md](./docs/ARCHITECTURE.md) (run state) · [WORKFLOWS.md](./docs/WORKFLOWS.md) (how-to) · [REFERENCE.md](./docs/REFERENCE.md) (commands, glossary, battle) · [RELEASE.md](./docs/RELEASE.md) (Steam ship gates) · [CONTRIBUTING.md](./CONTRIBUTING.md) (hooks & tests) · [PROMPTS.md](./PROMPTS.md) (audits) · [README.md](./README.md) (human setup)
 
 ## Where to look
 
@@ -16,7 +16,8 @@
 
 ## Agent defaults
 
-- **Pre-push:** `npm run lint:ci && npm test` · **Full hook:** `npm run check:push` ([CONTRIBUTING.md](./CONTRIBUTING.md))
+- **Pre-push:** `npm run lint:ci && npm test` · **Full hook:** `npm run check:push` ([CONTRIBUTING.md](./CONTRIBUTING.md)) · **Ship/desktop/save:** `npm run check:ship` (pre-push runs `build:ship`; CI `ship-gate` enforces architecture guards)
+- **Steam release:** tag `v*` → [release.yml](./.github/workflows/release.yml). See [RELEASE.md](./docs/RELEASE.md). Do not hand-edit `metadata.generated.ts` — run `npm run sync:version`.
 - **PowerShell chaining:** `; if ($?) { next-command }` — `;` alone ignores exit codes on Windows.
 - **Commands / Node / Playwright:** [docs/REFERENCE.md § Environment](./docs/REFERENCE.md#environment--commands)
 - **Barrels:** `@/lib/game-data`, `@/lib/battle`, `@/lib/validation`, `@/features/alchemy/shared/screens`, `@/features/alchemy/shared/utils`, `@/features/alchemy/shared/storage` — top-level lib modules (`@/lib/audio.ts`, etc.) are not barrelled; validation schemas stay on `@/lib/validation`.

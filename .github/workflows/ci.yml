@@ -258,3 +258,262 @@ jobs:
             playwright-report/
             test-results/
           retention-days: 7
+
+  ship-gate:
+    needs: [lint, test, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - uses: actions/cache/restore@v5
+        id: npm-cache
+        with:
+          path: node_modules/
+          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - if: steps.npm-cache.outputs.cache-hit != 'true'
+        run: npm install -g npm@11 && npm ci
+
+      - uses: actions/download-artifact@v5
+        with:
+          name: dist
+          path: dist/
+
+      - run: node scripts/sync-version-metadata.mjs
+      - run: npm run check:ship:ci
+
+  save-gate:
+    needs: [install, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - uses: actions/cache/restore@v5
+        id: npm-cache
+        with:
+          path: node_modules/
+          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - if: steps.npm-cache.outputs.cache-hit != 'true'
+        run: npm install -g npm@11 && npm ci
+
+      - uses: actions/download-artifact@v5
+        with:
+          name: dist
+          path: dist/
+
+      - name: Detect save-related changes
+        id: changes
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            FILES=$(git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.sha }}")
+          else
+            FILES=$(git diff --name-only HEAD~1 HEAD || true)
+          fi
+          echo "$FILES"
+          if echo "$FILES" | grep -Eq '^(src/lib/validation/|src/features/alchemy/shared/storage/|src/lib/active-run-session/|src/lib/platform.ts|tests/fixtures/legacy-saves|tests/e2e/mid-combat-save|tests/save-)'; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Cache Playwright browsers
+        if: steps.changes.outputs.run == 'true'
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Playwright Chromium
+        if: steps.changes.outputs.run == 'true'
+        run: npx playwright install chromium
+
+      - name: Run save persistence e2e
+        if: steps.changes.outputs.run == 'true'
+        run: npm run test:ship:e2e
+        env:
+          PLAYWRIGHT_VITE_MODE: preview
+
+  active-run-gate:
+    needs: [install, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - uses: actions/cache/restore@v5
+        id: npm-cache
+        with:
+          path: node_modules/
+          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - if: steps.npm-cache.outputs.cache-hit != 'true'
+        run: npm install -g npm@11 && npm ci
+
+      - uses: actions/download-artifact@v5
+        with:
+          name: dist
+          path: dist/
+
+      - name: Detect active-run changes
+        id: changes
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            FILES=$(git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.sha }}")
+          else
+            FILES=$(git diff --name-only HEAD~1 HEAD || true)
+          fi
+          if echo "$FILES" | grep -Eq '^(src/lib/active-run-session/|src/features/alchemy/shared/stores/run-transitions|src/features/alchemy/shared/stores/run-domain-store|src/features/alchemy/shell/use-alchemy-run-controller|src/lib/validation/save-schemas/active-run|tests/save-mid-combat|tests/e2e/mid-combat-save)'; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Cache Playwright browsers
+        if: steps.changes.outputs.run == 'true'
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Playwright Chromium
+        if: steps.changes.outputs.run == 'true'
+        run: npx playwright install chromium
+
+      - name: Run mid-combat resume e2e
+        if: steps.changes.outputs.run == 'true'
+        run: npx playwright test tests/save-mid-combat-resume.spec.ts --project chromium
+        env:
+          PLAYWRIGHT_VITE_MODE: preview
+
+  desktop-build:
+    needs: install
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - uses: actions/cache/restore@v5
+        id: npm-cache
+        with:
+          path: node_modules/
+          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - if: steps.npm-cache.outputs.cache-hit != 'true'
+        run: npm install -g npm@11 && npm ci
+
+      - name: Detect desktop changes
+        id: changes
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            FILES=$(git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.sha }}")
+          else
+            FILES=$(git diff --name-only HEAD~1 HEAD || true)
+          fi
+          if echo "$FILES" | grep -Eq '^(desktop/|src/lib/platform.ts|src/features/alchemy/shared/storage/|vite.config.ts|package.json|steam/|scripts/dist-desktop|scripts/sync-steam-appid)'; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build Windows installer
+        if: steps.changes.outputs.run == 'true'
+        run: npm run dist:win
+
+      - name: Upload desktop artifact
+        if: steps.changes.outputs.run == 'true'
+        uses: actions/upload-artifact@v5
+        with:
+          name: release-desktop-win
+          path: release-desktop/
+          retention-days: 30
+
+  electron-e2e:
+    needs: install
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - uses: actions/cache/restore@v5
+        id: npm-cache
+        with:
+          path: node_modules/
+          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - if: steps.npm-cache.outputs.cache-hit != 'true'
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
+        run: npm install -g npm@11 && npm ci
+
+      - name: Detect desktop changes
+        id: changes
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            FILES=$(git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.sha }}")
+          else
+            FILES=$(git diff --name-only HEAD~1 HEAD || true)
+          fi
+          if echo "$FILES" | grep -Eq '^(desktop/|src/lib/platform.ts|src/features/alchemy/shared/storage/|tests/electron-|playwright.electron|package.json)'; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/cache/restore@v5
+        if: steps.changes.outputs.run == 'true'
+        id: electron-binary-cache
+        with:
+          path: |
+            ~/.cache/electron
+            node_modules/electron/dist
+            node_modules/electron/path.txt
+          key: electron-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Ensure Electron binary
+        if: steps.changes.outputs.run == 'true'
+        run: node scripts/ensure-electron.mjs
+
+      - name: Compile desktop renderer
+        if: steps.changes.outputs.run == 'true'
+        run: npm run compile:desktop
+
+      - name: Run Electron e2e
+        if: steps.changes.outputs.run == 'true'
+        run: xvfb-run --auto-servernum -- npm run test:ship:desktop
+        env:
+          CI: true

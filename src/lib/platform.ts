@@ -122,11 +122,18 @@ export const platform = {
     },
 
     async readCloudFallback(): Promise<string | null> {
-      if (!platform.cloud.isAvailable) return null;
+      if (!getDesktopApi()?.steamCloudRead) return null;
       try {
         return await platform.cloud.read(DESKTOP_SAVE_FILENAME);
       } catch {
         return null;
+      }
+    },
+
+    async backupLocal(): Promise<void> {
+      const desktop = getDesktopApi();
+      if (desktop?.backupSave) {
+        await desktop.backupSave();
       }
     },
   },

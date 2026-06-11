@@ -60,7 +60,7 @@ Player-earned materials must use `awardMaterialsDuringRun()` — not `useHomeste
 
 Follow [WORKFLOWS.md — change persisted save data](./docs/WORKFLOWS.md#change-persisted-save-data). Update Zod schemas, `snapshotRun` / `restoreRun`, and storage tests.
 
-**When done:** `npm test -- tests/features/storage`
+**When done:** `npm run check:ship` (redundant with `save-migration-guard` if that passes)
 
 ---
 

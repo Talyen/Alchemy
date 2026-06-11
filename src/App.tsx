@@ -39,7 +39,8 @@ import { CardDescriptionProvider } from "@/features/alchemy/shared/context/card-
 import { ErrorBoundary } from "@/components/error-boundary";
 import { BackgroundParticles } from "@/features/alchemy/shared/ui/background-particles";
 import { platform } from "@/lib/platform";
-import { loadAlchemySaveState, type SaveLoadState } from "@/features/alchemy/shared/storage";
+import { bootstrapAlchemySaveState } from "@/features/alchemy/shared/storage/bootstrap-save-state";
+import type { SaveLoadState } from "@/features/alchemy/shared/storage";
 import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
 import { clearAllPersistentGameData } from "@/features/alchemy/shared/stores/reset";
 import { isAlchemyDevBuild } from "@/features/alchemy/shared/utils";
@@ -384,10 +385,6 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
     appStore.getState().setCompletedDifficulties({ ...prev, [characterId]: [...current, difficultyId] });
   }
 
-  useEffect(() => {
-    platform.steam.init();
-  }, []);
-
   const { frameStyle, stageStyle, aspectMode, stagePixelRatio } = useVirtualResolution(selectedAspectRatio, false);
   const screen = useActiveRunScreenValue();
   useAppAudioEffects({ masterVol, musicVol, sfxVol, muteInBackground, screen });
@@ -429,7 +426,7 @@ export default function App() {
 
   useEffect(() => {
     let cancelled = false;
-    loadAlchemySaveState().then((result) => {
+    bootstrapAlchemySaveState().then((result) => {
       if (!cancelled) {
         useAppStore.getState().initialize(result.data);
         useHomesteadStore.getState().initialize({

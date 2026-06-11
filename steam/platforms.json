@@ -1,0 +1,6 @@
+{
+  "targets": ["win"],
+  "appIdEnv": "STEAM_APP_ID",
+  "depotBranch": "default",
+  "devAppId": 480
+}

@@ -9,7 +9,7 @@ GitHub branch protection is not available on this repo, so **local hooks are the
 1. `npm ci --dry-run`
 2. `npm run lint:ci` (format, ESLint, knip)
 3. `npm test` (Vitest)
-4. `npm run build`
+4. `npm run build:ship` (web + desktop compile)
 5. `npm run test:e2e:prepush` — fast **@prepush** subset (9 tests, parallel preview build; includes one animation canary)
 
 **Before pushing to `main`**, also run `npm run test:e2e:prepush:full` (`@critical`, preview + CI flags). The pre-push hook only runs `@prepush`; CI on `main` runs the broader `@critical` suite (~40 tests). If using a PR branch, run the same before opening the PR.
@@ -46,10 +46,15 @@ First-time Playwright: `npx playwright install chromium`.
 
 | Job | Local equivalent |
 |-----|------------------|
+| CI `ship-gate` | `npm run check:ship` |
+| CI `save-gate` / `active-run-gate` | `npm run test:ship:e2e` (path-filtered on PR) |
+| CI `desktop-build` / `electron-e2e` | `npm run dist:win` / `npm run test:ship:desktop` |
+| Nightly ship + Electron | `npm run check:ship:full` |
 | CI `e2e` | `npm run build && npm run test:e2e:prepush:full` |
-| Pre-push hook | `npm run build && npm run test:e2e:prepush` |
+| Pre-push hook | `npm run build:ship && npm run test:e2e:prepush` |
 | CI `e2e-full` (push to `main` only, 4 shards) | `npm run test:e2e:main-gate` |
+| Tag `v*` release | `npm run release` then push tag — see [docs/RELEASE.md](./docs/RELEASE.md) |
 
 On `main` push, CI skips the redundant `e2e` (`@critical`) job because `e2e-full` is a superset.
 
-**Docs:** [AGENTS.md](./AGENTS.md) (rules) · [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) (run state) · [docs/WORKFLOWS.md](./docs/WORKFLOWS.md) (how-to) · [docs/REFERENCE.md](./docs/REFERENCE.md) (commands, glossary, battle) · [PROMPTS.md](./PROMPTS.md) (audits)
+**Docs:** [AGENTS.md](./AGENTS.md) (rules) · [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) (run state) · [docs/WORKFLOWS.md](./docs/WORKFLOWS.md) (how-to) · [docs/REFERENCE.md](./docs/REFERENCE.md) (commands, glossary, battle) · [docs/RELEASE.md](./docs/RELEASE.md) (Steam) · [PROMPTS.md](./PROMPTS.md) (audits)

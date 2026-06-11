@@ -7,6 +7,7 @@ interface Window {
     quit: () => Promise<void>;
     loadSave: () => Promise<string | null>;
     writeSave: (data: string) => Promise<boolean>;
+    backupSave: () => Promise<boolean>;
     clearSave: () => Promise<boolean>;
     steamGetName: () => Promise<string | null>;
     steamSetRichPresence: (key: string, val: string) => Promise<boolean>;

@@ -21,8 +21,9 @@ For a schema bump from `N` to `N + 1`:
 1. Update `CURRENT_SAVE_SCHEMA_VERSION` in `src/lib/validation/metadata.ts`.
 2. Add `migrateVNToVNPlus1(raw)` in `src/lib/validation/migration.ts`.
 3. Chain it from `migrateSaveDataToCurrent` in the same file (ordering matters; keep steps idempotent).
-4. Update Zod fields in `src/lib/validation/save-schemas.ts` and matching defaults in `src/features/alchemy/storage/defaults.ts`. `SaveDataSchema` already preprocesses with `migrateSaveDataToCurrent` on load.
-5. Add or update fixture-style tests in `tests/fixtures/legacy-saves.ts` and `tests/features/storage.test.ts`. Use `normalizeSaveData` from `src/features/alchemy/storage/migrations.ts` in tests to exercise the full production parse path (`SaveDataSchema.parse`).
+4. Update Zod fields in `src/lib/validation/save-schemas/` and matching defaults in `src/features/alchemy/shared/storage/defaults.ts`. `SaveDataSchema` already preprocesses with `migrateSaveDataToCurrent` on load.
+5. Add a fixture to `LEGACY_SAVE_FIXTURES_BY_SOURCE_VERSION` in `tests/fixtures/legacy-saves.ts`. `tests/architecture/save-migration-guard.test.ts` fails if any source version is missing a fixture.
+6. Run `npm run check:ship` — use `normalizeSaveData` from `src/features/alchemy/shared/storage/migrations.ts` in tests to exercise the full production parse path (`SaveDataSchema.parse`).
 
 ## Test Expectations
 

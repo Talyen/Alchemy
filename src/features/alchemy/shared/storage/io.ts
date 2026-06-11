@@ -11,6 +11,8 @@ import {
   getRawSaveSchemaVersion,
   isUnsupportedFutureContentData,
   isUnsupportedFutureSaveData,
+  pickNewerSavePayload,
+  CURRENT_SAVE_SCHEMA_VERSION,
 } from "@/lib/validation";
 import type { SaveData } from "./types";
 import { logError } from "@/lib/error-logger";
@@ -54,19 +56,28 @@ export type SaveLoadState = {
   status: SaveLoadStatus;
 };
 
-async function readStorageItem(key: string): Promise<string | null> {
+async function readLocalRaw(key: string): Promise<string | null> {
   const local = await platform.storage.readLocal(key);
   if (!local.ok) {
     logStorageFailure("LocalStorage read failed", local.error);
     return null;
   }
-  if (local.data !== null) return local.data;
+  return local.data;
+}
 
-  if (platform.isDesktop) {
-    const cloudData = await platform.storage.readCloudFallback();
-    if (cloudData !== null) return cloudData;
+async function readStorageItem(key: string): Promise<string | null> {
+  const localData = await readLocalRaw(key);
+
+  if (!platform.isDesktop) {
+    return localData;
   }
-  return null;
+
+  const cloudData = await platform.storage.readCloudFallback();
+  if (localData !== null && cloudData !== null && localData !== cloudData) {
+    return pickNewerSavePayload(localData, cloudData);
+  }
+  if (localData !== null) return localData;
+  return cloudData;
 }
 
 async function writeStorageItem(key: string, value: string): Promise<{ ok: true } | { ok: false; error: unknown }> {
@@ -81,6 +92,19 @@ async function removeStorageItem(key: string): Promise<{ ok: true } | { ok: fals
   return { ok: false, error: result.error };
 }
 
+async function backupIfMigrated(raw: string): Promise<void> {
+  if (!platform.isDesktop) return;
+  try {
+    const parsed = JSON.parse(raw) as Partial<SaveData>;
+    const rawVersion = getRawSaveSchemaVersion(parsed);
+    if (rawVersion < CURRENT_SAVE_SCHEMA_VERSION) {
+      await platform.storage.backupLocal();
+    }
+  } catch {
+    // Backup is best-effort; load path will fall back to defaults on corrupt JSON.
+  }
+}
+
 // Loads save data plus status so the app can block unsupported newer saves before gameplay.
 export async function loadAlchemySaveState(): Promise<SaveLoadState> {
   if (typeof window === "undefined") {
@@ -92,6 +116,8 @@ export async function loadAlchemySaveState(): Promise<SaveLoadState> {
     if (!raw) {
       return { data: defaultSaveData, status: { kind: "ok" } };
     }
+
+    await backupIfMigrated(raw);
 
     const parsed = JSON.parse(raw) as Partial<SaveData>;
     if (isUnsupportedFutureSaveData(parsed)) {
@@ -141,7 +167,8 @@ export async function saveAlchemySaveData(data: SaveData) {
   if (saveSessionState.isWritesDisabled()) return;
 
   try {
-    const result = await writeStorageItem(SAVE_KEY, JSON.stringify(data));
+    const payload: SaveData = { ...data, lastSavedAt: Date.now() };
+    const result = await writeStorageItem(SAVE_KEY, JSON.stringify(payload));
     if (result.ok) return;
     logStorageFailure("Save data could not be written", result.error);
     return;

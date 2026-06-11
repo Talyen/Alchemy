@@ -124,13 +124,15 @@ jobs:
             test-results/
           retention-days: 7
 
-  e2e-electron:
-    name: Electron desktop smoke
+  ship-gate-full:
+    name: Ship gate (full)
     needs: prepare
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@v6
         with:
@@ -149,6 +151,11 @@ jobs:
           ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
         run: npm install -g npm@11 && npm ci
 
+      - uses: actions/download-artifact@v5
+        with:
+          name: dist
+          path: dist/
+
       - uses: actions/cache/restore@v5
         id: electron-binary-cache
         with:
@@ -159,24 +166,7 @@ jobs:
           key: electron-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
 
       - name: Ensure Electron binary
-        timeout-minutes: 10
         run: node scripts/ensure-electron.mjs
-        env:
-          ELECTRON_SKIP_BINARY_DOWNLOAD: ""
 
-      - run: npm run compile:desktop
-
-      - name: Run Electron smoke tests
-        run: xvfb-run --auto-servernum -- npm run test:e2e:electron:run
-        env:
-          CI: true
-
-      - name: Upload Playwright report
-        if: failure()
-        uses: actions/upload-artifact@v5
-        with:
-          name: playwright-report-nightly-electron
-          path: |
-            playwright-report/
-            test-results/
-          retention-days: 7
+      - run: node scripts/sync-version-metadata.mjs
+      - run: npm run check:ship:full

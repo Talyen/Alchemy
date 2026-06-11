@@ -5,7 +5,7 @@ const isCi = !!process.env.CI;
 
 export default defineConfig({
   testDir: "./tests",
-  testMatch: "**/electron-smoke.spec.ts",
+  testMatch: "**/electron-*.spec.ts",
   globalSetup: "./tests/electron-global-setup.ts",
   fullyParallel: false,
   workers: 1,

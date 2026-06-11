@@ -31,6 +31,7 @@ export type HomesteadSaveFixture = {
   talentXP: Record<string, number>;
   unlockedTalents: Record<string, unknown>;
   finishedRunCharacters: string[];
+  lastSavedAt: number;
 };
 
 export const baseHomesteadSave: HomesteadSaveFixture = {
@@ -97,4 +98,5 @@ export const baseHomesteadSave: HomesteadSaveFixture = {
   discoveredTrinketIds: [],
   talentXP: {},
   unlockedTalents: {},
+  lastSavedAt: 0,
 };

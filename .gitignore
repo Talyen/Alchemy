@@ -15,3 +15,7 @@ NUL
 .knip-output.json
 
 .vercel
+
+# Generated at upload / release time
+steam/build/
+release-notes/

@@ -1,0 +1,16 @@
+{
+  "header": "# Changelog\n\nAll notable changes to Alchemy are documented here. Player-facing summaries ship in `release-notes/`.\n",
+  "types": [
+    { "type": "feat", "section": "Features" },
+    { "type": "fix", "section": "Bug Fixes" },
+    { "type": "balance", "section": "Balance" },
+    { "type": "perf", "section": "Performance" },
+    { "type": "refactor", "section": "Refactors", "hidden": true },
+    { "type": "chore", "section": "Chores", "hidden": true },
+    { "type": "test", "section": "Tests", "hidden": true },
+    { "type": "ci", "section": "CI", "hidden": true },
+    { "type": "build", "section": "Build", "hidden": true },
+    { "type": "docs", "section": "Docs", "hidden": true }
+  ],
+  "releaseCommitMessageFormat": "chore(release): {{currentTag}}"
+}

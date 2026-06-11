@@ -5,11 +5,12 @@ const path = require("node:path");
 const fs = require("node:fs");
 
 // Enable Steam overlay in Electron if steamworks.js is available
+const STEAM_APP_ID = Number.parseInt(process.env.STEAM_APP_ID ?? "480", 10);
 let steamClient = null;
 try {
   const steamworks = require("steamworks.js");
   steamworks.electronEnableSteamOverlay();
-  steamClient = steamworks.init(480);
+  steamClient = steamworks.init(STEAM_APP_ID);
   console.log("Steamworks initialized successfully. Player name:", steamClient.localplayer.getName());
 } catch (error) {
   console.warn("Failed to initialize Steamworks (Steam might not be running):", error.message);
@@ -18,6 +19,7 @@ try {
 const DEV_SERVER_URL = process.env.ELECTRON_RENDERER_URL ?? "http://127.0.0.1:5173";
 const WINDOWED_SIZE = { width: 1280, height: 720 };
 const SAVE_FILE_PATH = path.join(app.getPath("userData"), "save.json");
+const SAVE_BACKUP_PATH = path.join(app.getPath("userData"), "save.json.bak");
 
 function isDisplayMode(value) {
   return value === "windowed" || value === "borderless-fullscreen" || value === "fullscreen";
@@ -117,6 +119,23 @@ app.whenReady().then(() => {
       }
       console.error("Error reading save file:", error);
       return null;
+    }
+  });
+
+  ipcMain.handle("alchemy:backup-save", async () => {
+    try {
+      if (fs.existsSync(SAVE_BACKUP_PATH)) {
+        return true;
+      }
+      const data = await fs.promises.readFile(SAVE_FILE_PATH, "utf8");
+      await fs.promises.writeFile(SAVE_BACKUP_PATH, data, "utf8");
+      return true;
+    } catch (error) {
+      if (error.code === "ENOENT") {
+        return true;
+      }
+      console.error("Error backing up save file:", error);
+      return false;
     }
   });
 

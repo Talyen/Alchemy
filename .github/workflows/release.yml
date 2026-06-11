@@ -1,0 +1,78 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+concurrency:
+  group: release-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm install -g npm@11 && npm ci
+
+      - name: Verify release tag matches package.json
+        run: node scripts/verify-release-version.mjs
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+
+      - name: Sync version metadata
+        run: node scripts/sync-version-metadata.mjs
+
+      - name: Sync Steam App ID file
+        run: node scripts/sync-steam-appid.mjs
+        env:
+          STEAM_APP_ID: ${{ secrets.STEAM_APP_ID }}
+
+      - name: Ship gate
+        run: npm run check:ship
+
+      - name: Generate patch notes
+        run: node scripts/generate-patch-notes.mjs
+        env:
+          RELEASE_VERSION: ${{ github.ref_name }}
+
+      - name: Build desktop installers
+        run: npm run dist:desktop
+        env:
+          CI_RELEASE: "true"
+          STEAM_APP_ID: ${{ secrets.STEAM_APP_ID }}
+
+      - name: Steam upload
+        shell: bash
+        env:
+          STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
+          STEAM_PASSWORD: ${{ secrets.STEAM_PASSWORD }}
+          STEAM_APP_ID: ${{ secrets.STEAM_APP_ID }}
+          STEAM_DEPOT_ID: ${{ secrets.STEAM_DEPOT_ID }}
+        run: |
+          if [ -z "$STEAM_USERNAME" ] || [ -z "$STEAM_PASSWORD" ] || [ -z "$STEAM_APP_ID" ] || [ -z "$STEAM_DEPOT_ID" ]; then
+            echo "Steam credentials not configured — running dry-run validation"
+            npm run steam:upload:dry-run
+          else
+            node scripts/steam-upload.mjs
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            release-desktop/**
+            release-notes/**
+          body_path: release-notes/${{ github.ref_name }}.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

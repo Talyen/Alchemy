@@ -84,5 +84,6 @@ export const SaveDataSchema = z.preprocess(
       "completedDifficulties",
     ),
     finishedRunCharacters: caught(z.array(z.string()), [], "finishedRunCharacters"),
+    lastSavedAt: caught(z.number().int().nonnegative(), 0, "lastSavedAt"),
   }),
 );
