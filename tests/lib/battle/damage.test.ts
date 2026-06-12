@@ -350,7 +350,7 @@ describe("computeBaseDamage — physical vs statuses", () => {
 });
 
 describe("applyFirstDamageModifiers", () => {
-  it("doubles first burn card damage when talent active", () => {
+  it("increases first burn card damage by 50% when Wildfire talent active", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99); // no crit
     const state = patchBattleState({ talentEffects: { firstBurnCardDoubled: true } });
     const card = makeCard({ effects: [makeEffect("burn", 5)] });
@@ -362,10 +362,10 @@ describe("applyFirstDamageModifiers", () => {
       texts,
     );
     expect(result.flags.firstBurnCardDoubledUsed).toBe(true);
-    expect(result.enemyHealth).toBe(20);
+    expect(result.enemyHealth).toBe(22);
   });
 
-  it("does not double second burn card when flag is used", () => {
+  it("does not boost second burn card when Wildfire flag is used", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
     const state = patchBattleState({
       talentEffects: { firstBurnCardDoubled: true },
@@ -653,7 +653,7 @@ describe("dealDamageToEnemy — lifesteal", () => {
       card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
       texts,
     );
-    expect(result.playerHealth).toBe(25);
+    expect(result.playerHealth).toBe(23);
   });
 });
 

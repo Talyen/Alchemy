@@ -15,6 +15,7 @@ import {
   type CombatTextEvent,
   isPlayerDefeated,
 } from "./types";
+import { countRemovableHarmfulStatuses } from "./status-player";
 
 type BooleanCombatFlag = {
   [K in keyof CombatFlags]: CombatFlags[K] extends boolean ? K : never;
@@ -139,7 +140,16 @@ export function canPlayCard(state: BattleState, card: BattleCard, index: number,
   if (state.turnPhase !== "player") return false;
   const currentCard = state.hand[index];
   if (!currentCard || currentCard.id !== card.id || currentCard.uid !== card.uid) return false;
-  return state.mana >= computeEffectiveCost(state, currentCard).effectiveCost;
+  if (state.mana < computeEffectiveCost(state, currentCard).effectiveCost) return false;
+
+  const removesHarmfulStatus = card.effects.some((effect) => effect.kind === "remove-harmful-status");
+  const hasIndependentUsefulEffect = card.effects.some(
+    (effect) => effect.kind !== "remove-harmful-status" && effect.kind !== "self-damage",
+  );
+  if (removesHarmfulStatus && !hasIndependentUsefulEffect && countRemovableHarmfulStatuses(state.playerStatuses) === 0)
+    return false;
+
+  return true;
 }
 
 /**
@@ -241,6 +251,7 @@ export function playBattleCardResolved(
 
   const card = getPlayableCard(state, cardId, index);
   if (!card) return { state, combatTexts };
+  if (!canPlayCard(state, card, index, options)) return { state, combatTexts };
 
   const { state: costState, effectiveCost } = resolveCardPlayCost(state, card);
   if (costState.mana < effectiveCost) {

@@ -1,11 +1,16 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildClassSimDeck,
+  CLASS_SIM_AFFINITY_EXTRAS,
+  WILDCARD_SIM_DECK_SIZE,
   simulateBatch,
   type BalanceBatchResult,
   type BalancePlayPolicy,
   type TalentPreset,
-  ANOMALY_THRESHOLD,
+  ANOMALY_THRESHOLD_BY_PRESET,
   ANOMALY_METRICS,
+  getAnomalyThreshold,
+  type BattleAnomalies,
 } from "@/lib/balance";
 import { createSeededRng } from "@/lib/utils";
 import {
@@ -125,20 +130,20 @@ function runCoreScenarios(): TieredResults {
     for (const characterId of characterIds) {
       for (const enemy of normalEnemies) {
         for (const depth of [o, o + 3, o + 6]) {
-          const deck = buildRandomDeck(seed);
+          const deck = buildClassSimDeck(characterId, tier.preset, seed);
           results.push(runScenario(characterId, enemy.id, depth, tier.preset, seed, tier.difficultyModifiers, deck));
           seed += 1000;
         }
       }
       for (const enemy of eliteEnemies) {
         for (const depth of [o + 2, o + 5, o + 7]) {
-          const deck = buildRandomDeck(seed);
+          const deck = buildClassSimDeck(characterId, tier.preset, seed);
           results.push(runScenario(characterId, enemy.id, depth, tier.preset, seed, tier.difficultyModifiers, deck));
           seed += 1000;
         }
       }
       for (const bossId of allBossIds) {
-        const deck = buildRandomDeck(seed);
+        const deck = buildClassSimDeck(characterId, tier.preset, seed);
         results.push(runScenario(characterId, bossId, o + 7, tier.preset, seed, tier.difficultyModifiers, deck));
         seed += 1000;
       }
@@ -182,13 +187,19 @@ type AnomalySummary = {
   field: string;
   maxValue: number;
   battles: number;
-  scenarios: { character: string; enemy: string; tier: string }[];
+  peakScenario: { character: string; enemy: string; tier: string; peakStat?: string } | null;
 };
 
 // A flat list of (field, label) pairs to check for anomalies in a BattleAnomalies record.
 const ANOMALY_FIELDS = ANOMALY_METRICS;
 
-function collectAnomalies(results: BalanceBatchResult[], tierLabel: string): AnomalySummary[] {
+function peakStatForMetric(key: keyof BattleAnomalies, anomalies: BattleAnomalies): string | undefined {
+  if (key === "maxSingleHitDamageToEnemy") return anomalies.maxSingleHitDamageToEnemyStat || undefined;
+  if (key === "maxSingleHitDamageToPlayer") return anomalies.maxSingleHitDamageToPlayerStat || undefined;
+  return undefined;
+}
+
+function collectAnomalies(results: BalanceBatchResult[], tierLabel: string, threshold: number): AnomalySummary[] {
   const byField: Record<string, AnomalySummary> = {};
 
   for (const batch of results) {
@@ -196,19 +207,20 @@ function collectAnomalies(results: BalanceBatchResult[], tierLabel: string): Ano
       const a = sim.anomalies;
       for (const { key, label } of ANOMALY_FIELDS) {
         const value = a[key];
-        if (value <= ANOMALY_THRESHOLD) continue;
+        if (typeof value !== "number" || value <= threshold) continue;
         if (!byField[key]) {
-          byField[key] = { field: label, maxValue: 0, battles: 0, scenarios: [] };
+          byField[key] = { field: label, maxValue: 0, battles: 0, peakScenario: null };
         }
         const entry = byField[key];
-        if (value > entry.maxValue) entry.maxValue = value;
         entry.battles++;
-        if (entry.scenarios.length < 5) {
-          entry.scenarios.push({
+        if (value > entry.maxValue) {
+          entry.maxValue = value;
+          entry.peakScenario = {
             character: CHARACTER_TITLES[sim.characterId] ?? sim.characterId,
             enemy: ENEMY_TITLES[sim.enemyId] ?? sim.enemyId,
             tier: tierLabel,
-          });
+            peakStat: peakStatForMetric(key, a),
+          };
         }
       }
     }
@@ -231,11 +243,14 @@ function collectAllAnomalyMetrics(tieredResults: TieredResults): { field: string
     return byField;
   });
 
+  const thresholds = TIERS.map((tier) => getAnomalyThreshold(tier.preset));
+
   return ANOMALY_FIELDS.map(({ key, label }) => ({
     field: label,
     early: perTier[0][key] ?? 0,
     mid: perTier[1][key] ?? 0,
     late: perTier[2][key] ?? 0,
+    thresholds,
   })).sort((a, b) => b.late - a.late);
 }
 
@@ -397,7 +412,7 @@ function writeHtmlReport(
   tieredTrinkets: TieredTrinkets,
   tieredCards: TieredCards,
   anomalies: AnomalySummary[],
-  allMetrics: { field: string; early: number; mid: number; late: number }[],
+  allMetrics: { field: string; early: number; mid: number; late: number; thresholds: number[] }[],
 ) {
   const tierLabels = TIERS.map((t) => t.label);
 
@@ -500,14 +515,31 @@ function writeHtmlReport(
 <h1>Balance Report</h1>
 <p class="meta">policy=${policy} | iterations=${iterations} | trinketIterations=${trinketIterations} | cardIterations=${cardIterations}</p>
 
+<h2>Simulation Methodology</h2>
+<div class="meta">
+<p><strong>Core scenarios</strong> (Enemy Rankings, Class Rankings, Anomalies): all characters × normal/elite/boss enemies × tier depths. Each character uses its own deck:</p>
+<ul>
+<li><strong>Deck:</strong> class starting deck + random cards from that class's keyword affinity pool (<code>getCardKeywords</code> ∩ character keywords): Early +${CLASS_SIM_AFFINITY_EXTRAS.early}, Mid +${CLASS_SIM_AFFINITY_EXTRAS.mid}, Late +${CLASS_SIM_AFFINITY_EXTRAS.late}. Alchemist also gets 2 random Mixed Potions (shop-style pairs from the standard potion pool).</li>
+<li><strong>Homestead companions:</strong> bond level 1 / 2 / 3 (Early / Mid / Late) for each companion summon card in the sim deck.</li>
+<li><strong>Wildcard:</strong> no starting deck; random ${WILDCARD_SIM_DECK_SIZE.early} / ${WILDCARD_SIM_DECK_SIZE.mid} / ${WILDCARD_SIM_DECK_SIZE.late} cards from the full offerable pool (Early / Mid / Late).</li>
+<li><strong>Talents:</strong> Early = defaults; Mid = 5 talents per affinity keyword + 2 per other; Late = up to 7 talents per affinity keyword + 5 per other keyword.</li>
+<li><strong>Difficulty:</strong> Early none; Mid Adventurer (enemy HP/damage ×1.3); Late Legend (×1.6).</li>
+</ul>
+<p><strong>Class rankings</strong> — mean win rate across all core scenarios for that character (deck identity + talents).</p>
+<p><strong>Trinket sweep</strong> — all characters × gauntlet (Skeleton, Goblin, Mimic, Iron Bear) with random 10-card decks; delta vs no-trinket baseline.</p>
+<p><strong>Card sweep</strong> — target card + 9 random others vs Skeleton; delta vs random 10-card baseline.</p>
+<p><strong>Anomalies</strong> — max metric per battle; thresholds Early ${ANOMALY_THRESHOLD_BY_PRESET.early} / Mid ${ANOMALY_THRESHOLD_BY_PRESET.mid} / Late ${ANOMALY_THRESHOLD_BY_PRESET.late}.</p>
+<p><strong>Iron Bear</strong> — Iron Hide gains one of armor, forge, or burn damage each enemy turn (not all three); no special boss tuning in this report.</p>
+</div>
+
 <h2>Enemy Rankings</h2>
-<p class="meta">Sorted by Late Game Player Win Rate ascending (hardest at top).</p>
+<p class="meta">Sorted by Late Game Player Win Rate ascending (hardest at top). Uses core scenario decks above.</p>
 <div class="scroll"><table><thead><tr><th>Enemy</th>${tierHeader}</tr></thead><tbody>
 ${tableRows(mergedEnemies, winRateCell, enemyTitle)}
 </tbody></table></div>
 
 <h2>Class Rankings</h2>
-<p class="meta">Sorted by Late Game Player Win Rate ascending.</p>
+<p class="meta">Sorted by Late Game Player Win Rate ascending. Uses core scenario class decks + talent presets.</p>
 <div class="scroll"><table><thead><tr><th>Class</th>${tierHeader}</tr></thead><tbody>
 ${tableRows(mergedClasses, winRateCell, characterTitle)}
 </tbody></table></div>
@@ -525,15 +557,19 @@ ${tableRows(mergedCards, deltaCell, cardTitle)}
 </tbody></table></div>
 
 <h2>Anomalies</h2>
-<p class="meta">Values exceeding ${ANOMALY_THRESHOLD} during simulated battles. May indicate bugs (infinite scaling, missing decay, etc.).</p>
-<div class="scroll"><table><thead><tr><th>Field</th><th>Max Value</th><th>Battles</th><th>Example Scenario</th></tr></thead><tbody>
-${anomalies.length === 0 ? '<tr><td colspan="4">None detected</td></tr>' : anomalies.slice(0, 50).map((a) => `<tr><td>${a.field}</td><td class="neg">${a.maxValue}</td><td>${a.battles}</td><td>${a.scenarios[0] ? `${a.scenarios[0].character} vs ${a.scenarios[0].enemy} (${a.scenarios[0].tier})` : ""}</td></tr>`).join("\n")}
+<p class="meta">Values exceeding tier thresholds during simulated battles (Early ${ANOMALY_THRESHOLD_BY_PRESET.early} / Mid ${ANOMALY_THRESHOLD_BY_PRESET.mid} / Late ${ANOMALY_THRESHOLD_BY_PRESET.late}).</p>
+<div class="scroll"><table><thead><tr><th>Field</th><th>Max Value</th><th>Battles</th><th>Peak Scenario</th></tr></thead><tbody>
+${anomalies.length === 0 ? '<tr><td colspan="4">None detected</td></tr>' : anomalies.slice(0, 50).map((a) => {
+  const peak = a.peakScenario;
+  const scenario = peak ? `${peak.character} vs ${peak.enemy} (${peak.tier})${peak.peakStat ? ` · ${peak.peakStat}` : ""}` : "";
+  return `<tr><td>${a.field}</td><td class="neg">${a.maxValue}</td><td>${a.battles}</td><td>${scenario}</td></tr>`;
+}).join("\n")}
 </tbody></table></div>
 
 <h2>All Anomaly Metrics</h2>
-<p class="meta">Maximum observed values per field across all tiers. Values over ${ANOMALY_THRESHOLD} highlighted in red.</p>
+<p class="meta">Maximum observed values per field across all tiers. Values over each tier threshold highlighted in red.</p>
 <div class="scroll"><table><thead><tr><th>Field</th>${TIERS.map((t) => `<th>${t.label}</th>`).join("")}</tr></thead><tbody>
-${allMetrics.map((m) => `<tr><td>${m.field}</td>${[m.early, m.mid, m.late].map((v) => `<td class="${v > ANOMALY_THRESHOLD ? 'neg' : ''}">${v}</td>`).join("")}</tr>`).join("\n")}
+${allMetrics.map((m) => `<tr><td>${m.field}</td>${[m.early, m.mid, m.late].map((v, i) => `<td class="${v > m.thresholds[i] ? 'neg' : ''}">${v}</td>`).join("")}</tr>`).join("\n")}
 </tbody></table></div>
 </body>
 </html>`;
@@ -546,7 +582,7 @@ ${allMetrics.map((m) => `<tr><td>${m.field}</td>${[m.early, m.mid, m.late].map((
 // --- Test body ---
 
 describeBalance("balance report", () => {
-  it("prints battle balance metrics", { timeout: 120000 }, () => {
+  it("prints battle balance metrics", { timeout: 600000 }, () => {
     const tieredResults = runCoreScenarios();
     const tieredTrinkets = runTrinketSweep();
     const tieredCards = runCardSweep();
@@ -600,19 +636,21 @@ describeBalance("balance report", () => {
     // Anomaly detection
     const allAnomalies: AnomalySummary[] = [];
     for (const tier of tieredResults) {
-      const anomalies = collectAnomalies(tier.results, tier.tier);
+      const tierConfig = TIERS.find((t) => t.label === tier.tier);
+      const threshold = tierConfig ? getAnomalyThreshold(tierConfig.preset) : ANOMALY_THRESHOLD_BY_PRESET.early;
+      const anomalies = collectAnomalies(tier.results, tier.tier, threshold);
       allAnomalies.push(...anomalies);
     }
     const topAnomalies = allAnomalies.sort((a, b) => b.maxValue - a.maxValue);
     if (topAnomalies.length > 0) {
-      console.info("Anomalies detected (value > threshold):");
+      console.info("Anomalies detected (value > tier threshold):");
       console.table(
         topAnomalies.slice(0, 20).map((a) => ({
           field: a.field,
           maxValue: a.maxValue,
           battles: a.battles,
-          example: a.scenarios[0]
-            ? `${a.scenarios[0].character} vs ${a.scenarios[0].enemy} (${a.scenarios[0].tier})`
+          peak: a.peakScenario
+            ? `${a.peakScenario.character} vs ${a.peakScenario.enemy} (${a.peakScenario.tier})${a.peakScenario.peakStat ? ` · ${a.peakScenario.peakStat}` : ""}`
             : "",
         })),
       );

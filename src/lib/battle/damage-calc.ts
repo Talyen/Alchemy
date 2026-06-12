@@ -9,7 +9,10 @@ import { type BattleCard, type BattleCardEffect, type DamageType, type TalentEff
 import { reduceEnemyArmor, setFlag, type BattleState } from "./types";
 import {
   BLEED_EXECUTE_MULTIPLIER,
+  BLOCK_SCALED_DAMAGE_PERCENT,
   CRIT_MULTIPLIER,
+  MANA_BURN_DAMAGE_PERCENT,
+  FIRST_BURN_CARD_BONUS_MULTIPLIER,
   FIRST_EFFECT_MULTIPLIER,
   GLOBAL_CRIT_CHANCE,
   HALF_DIVISOR,
@@ -144,22 +147,30 @@ function applyBleedDamageModifiers(state: BattleState, rawAmount: number): numbe
   return nextAmount;
 }
 
+function getBlockScaledDamageBonus(state: BattleState): number {
+  return Math.round((state.playerStatuses.block * BLOCK_SCALED_DAMAGE_PERCENT) / PERCENT_DENOMINATOR);
+}
+
 function applyStunDamageModifiers(state: BattleState, rawAmount: number): number {
   let nextAmount = rawAmount + state.talentEffects.flatStunDamage;
   if (state.talentEffects.blockToStunDamage) {
-    nextAmount += getPlayerBlockHalf(state);
+    nextAmount += getBlockScaledDamageBonus(state);
   }
   return nextAmount;
 }
 
 function applyBurnDamageModifiers(state: BattleState, rawAmount: number, card?: BattleCard): number {
   let nextAmount = rawAmount + state.talentEffects.flatBurnDamage;
-  nextAmount += Math.round((state.maxMana * state.talentEffects.burnDamagePerManaCrystal) / HALF_DIVISOR);
-  if (state.talentEffects.blockToBurnDamage) {
-    nextAmount += getPlayerBlockHalf(state);
+  if (state.talentEffects.burnDamagePerManaCrystal > 0) {
+    nextAmount += Math.round(
+      (state.maxMana * state.talentEffects.burnDamagePerManaCrystal * MANA_BURN_DAMAGE_PERCENT) / PERCENT_DENOMINATOR,
+    );
   }
-  if (card?.consume && state.talentEffects.consumeDoubleBurnDamage) {
-    nextAmount *= DAMAGE_CONSTANTS.DOUBLE_MULTIPLIER;
+  if (state.talentEffects.blockToBurnDamage) {
+    nextAmount += getBlockScaledDamageBonus(state);
+  }
+  if (card?.consume && state.talentEffects.consumeBurnDamageBonusPercent > 0) {
+    nextAmount = Math.round(nextAmount * (1 + state.talentEffects.consumeBurnDamageBonusPercent / PERCENT_DENOMINATOR));
   }
   return nextAmount;
 }
@@ -221,7 +232,7 @@ function applyFirstBurnModifiers(state: BattleState, rawDamage: number): { state
   let nextDamage = rawDamage;
 
   if (nextState.talentEffects.firstBurnCardDoubled && !nextState.flags.firstBurnCardDoubledUsed) {
-    nextDamage *= FIRST_EFFECT_MULTIPLIER;
+    nextDamage = Math.round(nextDamage * FIRST_BURN_CARD_BONUS_MULTIPLIER);
     nextState = setFlag(nextState, "firstBurnCardDoubledUsed", true);
   }
   if (nextState.trinketEffects.firstBurnDoubled && !nextState.flags.firstBurnTrinketDoubledUsed) {

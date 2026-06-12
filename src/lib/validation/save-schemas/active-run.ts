@@ -4,6 +4,8 @@ import { defaultBattleState, type BattleState } from "@/lib/battle";
 import { isPersistedBattleState } from "../battle-state-guard";
 import { ROUTE_SCREEN_VALUES } from "@/lib/routing";
 import { ACTS_PER_RUN, LEGACY_CHARACTER_RENAMES } from "@/lib/game-constants";
+import { WILDWOOD_BOSS_IDS } from "@/lib/content-systems/wildwood/bosses";
+import { WILDWOOD_MODIFIERS } from "@/lib/content-systems/wildwood/gauntlet";
 import { normalizeActiveRunData } from "../normalize-active-run-data";
 import {
   caught,
@@ -36,6 +38,24 @@ const ActiveCombatDataSchema = z
   .nullable()
   .catch(null);
 
+const WildwoodBossIdSchema = z.enum(WILDWOOD_BOSS_IDS);
+const WildwoodModifierIdSchema = z.enum(WILDWOOD_MODIFIERS.map((modifier) => modifier.id));
+const WildwoodDraftStateSchema = z
+  .object({
+    version: z.literal(1),
+    phase: z.enum(["draft", "battle", "recovery", "reward", "removal"]),
+    draftChoices: z.array(BattleCardSchema),
+    remainingBossIds: z.array(WildwoodBossIdSchema),
+    previousBossId: WildwoodBossIdSchema.nullable(),
+    currentBossId: WildwoodBossIdSchema.nullable(),
+    currentModifierId: WildwoodModifierIdSchema.nullable(),
+    rewardType: z.enum(["card", "trinket"]).nullable(),
+    rewardChoiceIds: z.array(z.string()),
+    selectedRewardId: z.string().nullable(),
+  })
+  .nullable()
+  .catch(null);
+
 // ===== ActiveRunData =====
 // normalizeActiveRunData lives in ./normalize-active-run-data.ts — imported above.
 
@@ -58,13 +78,10 @@ export const ActiveRunDataSchema = z
     runTrinkets: caught(z.array(z.string()), [], "activeRun.runTrinkets"),
     encounteredRunEnemyIds: deduplicatedStringArraySchema("activeRun.encounteredRunEnemyIds").default([]),
     selectedDifficulty: caught(DifficultyIdSchema.nullable(), null, "activeRun.selectedDifficulty").default(null),
-    contentSystemType: caught(
-      z.preprocess((val) => (val === "wildwood" ? "campaign" : val), ContentSystemIdSchema),
-      "campaign",
-      "activeRun.contentSystemType",
-    ),
+    contentSystemType: caught(ContentSystemIdSchema, "campaign", "activeRun.contentSystemType"),
     labyrinthMap: caught(LabyrinthMapSchema.nullable(), null, "activeRun.labyrinthMap"),
     labyrinthPendingNode: LabyrinthNodePositionSchema,
+    wildwoodDraft: WildwoodDraftStateSchema.default(null),
     activeCombat: caught(ActiveCombatDataSchema, null, "activeRun.activeCombat").default(null),
     runTalentXP: TalentXPSchema.optional(),
     runMaterialsEarned: MaterialInventorySchema.optional(),
@@ -78,4 +95,7 @@ export const ActiveRunDataSchema = z
   .transform((data) => normalizeActiveRunData(data))
   .refine((data) => data.contentSystemType !== "labyrinth" || data.labyrinthMap !== null, {
     message: "Labyrinth runs require a valid labyrinth map",
+  })
+  .refine((data) => data.contentSystemType !== "wildwood" || data.wildwoodDraft !== null, {
+    message: "Wildwood Draft runs require versioned mode state",
   });

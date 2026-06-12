@@ -22,6 +22,7 @@ export function getSteamRichPresenceLabel(
     case ROUTE_SCREENS.TALENTS:
       return "Selecting Talents";
     case ROUTE_SCREENS.CAMPFIRE:
+    case ROUTE_SCREENS.WILDWOOD_RECOVERY:
       return "Resting at Campfire";
     case ROUTE_SCREENS.SHOP:
     case ROUTE_SCREENS.ALCHEMIST:
@@ -36,6 +37,7 @@ export function getSteamRichPresenceLabel(
     case ROUTE_SCREENS.REWARDS:
       return "Choosing Rewards";
     case ROUTE_SCREENS.CORRUPTION:
+    case ROUTE_SCREENS.WILDWOOD_REMOVAL:
       return "At the Corruption Altar";
     case ROUTE_SCREENS.BATTLE:
       return "In Combat";
@@ -47,7 +49,6 @@ export function getSteamRichPresenceLabel(
       return "Selecting Game Mode";
     case ROUTE_SCREENS.CHARACTER_SELECT:
     case ROUTE_SCREENS.DIFFICULTY_SELECT:
-    case ROUTE_SCREENS.WILDWOOD_SELECT:
       return "Starting a Run";
     default:
       return "In Menu";

@@ -157,8 +157,8 @@ function AppMainContent({
 
   const autosaveEnabled =
     run.runPhase !== "runEnd" &&
-    run.screen !== "rewards" &&
-    run.rewardState.choices.length === 0 &&
+    (run.screen !== "rewards" || run.contentSystemType === "wildwood") &&
+    (run.rewardState.choices.length === 0 || run.contentSystemType === "wildwood") &&
     !(run.runPhase === "battle" && run.battleState.enemyHealth <= 0);
 
   useAlchemyAutosaveFromStores(autosaveEnabled);
@@ -179,9 +179,9 @@ function AppMainContent({
         beginWildwood: () => runRef.current.beginWildwood(),
         handleCharacterSelect: (id: CharacterId) => runRef.current.handleCharacterSelect(id),
         handleDraftComplete: (draftedCards: BattleCard[]) => runRef.current.handleDraftComplete(draftedCards),
+        handleDraftPick: (card: BattleCard) => runRef.current.handleDraftPick(card),
         handleDifficultySelect: (id: DifficultyId) => runRef.current.handleDifficultySelect(id),
         handleBackFromDifficultySelect: () => runRef.current.handleBackFromDifficultySelect(),
-        handleWildwoodBossSelect: (id: string) => runRef.current.handleWildwoodBossSelect(id),
       },
       battle: {
         handleCardClick: (card: BattleCard, index: number, event: React.MouseEvent<HTMLButtonElement>) =>
@@ -199,6 +199,9 @@ function AppMainContent({
         prepareDestinationScreen: () => runRef.current.prepareDestinationScreen(),
         handleDestinationChoice: (dest: Destination) => runRef.current.handleDestinationChoice(dest),
         handleCampfireContinue: () => runRef.current.handleCampfireContinue(),
+        handleWildwoodRecoveryComplete: () => runRef.current.handleWildwoodRecoveryComplete(),
+        handleWildwoodRemoveCard: (index: number) => runRef.current.handleWildwoodRemoveCard(index),
+        handleWildwoodSkipRemoval: () => runRef.current.handleWildwoodSkipRemoval(),
         handleShopContinue: () => runRef.current.handleShopContinue(),
         handleShopBuyCard: (card: BattleCard) => runRef.current.handleShopBuyCard(card),
         handleShopRemoveCard: (index: number) => runRef.current.handleShopRemoveCard(index),

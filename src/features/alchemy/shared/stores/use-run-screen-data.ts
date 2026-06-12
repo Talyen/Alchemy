@@ -30,7 +30,8 @@ const screenFields: Record<Screen, (keyof RunScreenData)[]> = {
   collection: [],
   homestead: [],
   talents: [],
-  "wildwood-select": [],
+  "wildwood-recovery": ["runPlayerHealth", "runMaxHealth"],
+  "wildwood-removal": ["runDeck"],
 };
 
 export function useRunScreenData(screen: Screen): RunScreenData {

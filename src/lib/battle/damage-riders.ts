@@ -22,6 +22,7 @@ import {
 } from "./types";
 import {
   BATTLE_CONFIG,
+  computeLeechHeal,
   FIRST_EFFECT_MULTIPLIER,
   HALF_DIVISOR,
   PERCENT_DENOMINATOR,
@@ -98,7 +99,7 @@ function applyLeechHitRiders(state: BattleState, damage: number, combatTexts: Co
 function applyLifestealAndPlayerHitTriggers(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
   if (damage <= 0) return state;
 
-  let healAmount = damage;
+  let healAmount = computeLeechHeal(damage);
 
   if (state.talentEffects.firstLeechCardDoubled && !state.flags.firstLeechCardDoubledUsed) {
     healAmount *= FIRST_EFFECT_MULTIPLIER;

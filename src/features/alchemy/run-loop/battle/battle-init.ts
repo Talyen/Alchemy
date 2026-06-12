@@ -10,6 +10,7 @@ import { appendUnique } from "@/lib/utils";
 import { useAppStore } from "../../shared/stores/app-store";
 import { syncRunToBattleStart } from "../../shared/stores/run-transitions";
 import type { BattleControllerContext } from "./controller-context";
+import { withWildwoodModifier, type WildwoodModifierId } from "@/lib/content-systems/wildwood/gauntlet";
 
 export function createBattleInit(contextOrGetter: BattleControllerContext | (() => BattleControllerContext)) {
   const getContext = typeof contextOrGetter === "function" ? contextOrGetter : () => contextOrGetter;
@@ -81,13 +82,22 @@ export function createBattleInit(contextOrGetter: BattleControllerContext | (() 
     );
   }
 
-  function startBossById(bossId: string, modifiers?: DifficultyModifier[]): boolean {
+  function startBossById(
+    bossId: string,
+    modifiers?: DifficultyModifier[],
+    wildwoodModifierId?: WildwoodModifierId,
+  ): boolean {
     const boss = getBossById(bossId);
     if (!boss) {
       console.warn(`startBossById: boss "${bossId}" not found`);
       return false;
     }
-    beginBattle(boss, getContext().run.runDeck, getContext().run.runGold, modifiers);
+    beginBattle(
+      wildwoodModifierId ? withWildwoodModifier(boss, wildwoodModifierId) : boss,
+      getContext().run.runDeck,
+      getContext().run.runGold,
+      modifiers,
+    );
     return true;
   }
 

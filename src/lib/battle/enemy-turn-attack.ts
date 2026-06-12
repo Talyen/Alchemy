@@ -12,7 +12,7 @@ import {
   type CombatTextEvent,
   type CombatTextStat,
 } from "./types";
-import { BATTLE_CONFIG, HALF_DIVISOR, PERCENT_DENOMINATOR } from "../game-constants";
+import { BATTLE_CONFIG, computeLeechHeal, HALF_DIVISOR, PERCENT_DENOMINATOR } from "../game-constants";
 import { checkHealthThresholds, isFreezeActiveForAspect } from "./enemy-turn-utils";
 
 function applyPhysicalForgeBonus(state: BattleState, effect: EnemyAttackEffect & { kind: "damage" }) {
@@ -152,10 +152,12 @@ function applyEnemyAttackLifesteal(
 ): BattleState {
   if (isFreezeActiveForAspect(state, "regen")) return state;
   if (state.talentEffects.blockEnemyLeech) return state;
-  mergeCombatText(combatTexts, { target: "enemy", kind: "heal", stat: "health", amount: actualDamage });
+  const healAmount = computeLeechHeal(actualDamage);
+  if (healAmount <= 0) return state;
+  mergeCombatText(combatTexts, { target: "enemy", kind: "heal", stat: "health", amount: healAmount });
   return {
     ...state,
-    enemyHealth: clampHealth(state.enemyHealth, actualDamage, state.enemyMaxHealth),
+    enemyHealth: clampHealth(state.enemyHealth, healAmount, state.enemyMaxHealth),
   };
 }
 

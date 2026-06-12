@@ -89,11 +89,13 @@ export function RewardsScreen({
   onAddReward,
   onSkip,
   onSelectReward,
+  allowTrinketSkip = false,
 }: {
   rewardState: RewardState;
   onAddReward: () => void;
   onSkip: () => void;
   onSelectReward: (id: string) => void;
+  allowTrinketSkip?: boolean;
 }) {
   const rewardType = rewardState.rewardType;
   const rewardChoices = rewardState.choices;
@@ -152,7 +154,7 @@ export function RewardsScreen({
         </StaggerGroup>
 
         <div className="mt-5 flex flex-wrap justify-center gap-3">
-          {!isTrinket ? (
+          {!isTrinket || allowTrinketSkip ? (
             <Button size="lg" variant="outline" className="min-w-40" onClick={onSkip}>
               Skip
             </Button>

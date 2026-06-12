@@ -2,6 +2,7 @@
 import { isPlayerDefeated, type BattleState } from "@/lib/battle";
 import type { BattleCard, CharacterId, DifficultyId, TalentXP } from "@/lib/game-data";
 import type { ContentSystemId, LabyrinthMap, LabyrinthModifierKind } from "@/lib/content-systems/types";
+import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { Screen } from "@/lib/routing";
 
@@ -25,6 +26,7 @@ export type ActiveRunSnapshotSource = {
   hasActiveBattle: boolean;
   battleState: BattleState;
   labyrinthPendingNode: LabyrinthNodePosition | null;
+  wildwoodDraft: WildwoodDraftState | null;
   activeLabyrinthModifiers: LabyrinthModifierKind[];
   activeLabyrinthRewardModifiers: LabyrinthModifierKind[];
   runTalentXP: TalentXP;
@@ -62,6 +64,7 @@ export function createActiveRunSnapshot(source: ActiveRunSnapshotSource): Active
     contentSystemType: source.contentSystemType,
     labyrinthMap: source.contentSystemType === "labyrinth" ? source.labyrinthMap : null,
     labyrinthPendingNode: source.contentSystemType === "labyrinth" ? source.labyrinthPendingNode : null,
+    wildwoodDraft: source.contentSystemType === "wildwood" ? source.wildwoodDraft : null,
     activeCombat,
     runTalentXP: source.runTalentXP,
     runMaterialsEarned: source.runMaterialsEarned,

@@ -14,6 +14,10 @@ export function parseActiveRun(activeRun: unknown): ActiveRunData | null {
 
   const candidate = activeRun as Record<string, unknown>;
 
+  if (candidate.contentSystemType === "wildwood" && !candidate.wildwoodDraft) {
+    return null;
+  }
+
   if (
     "runGold" in candidate &&
     (typeof candidate.runGold !== "number" || !Number.isInteger(candidate.runGold) || candidate.runGold < 0)
@@ -63,6 +67,12 @@ export function parseActiveRun(activeRun: unknown): ActiveRunData | null {
     ...data,
     contentSystemType: data.contentSystemType as ActiveRunData["contentSystemType"],
     runDeck: (data.runDeck as unknown as BattleCard[]).map(hydrateCard),
+    wildwoodDraft: data.wildwoodDraft
+      ? {
+          ...data.wildwoodDraft,
+          draftChoices: (data.wildwoodDraft.draftChoices as unknown as BattleCard[]).map(hydrateCard),
+        }
+      : null,
     labyrinthMap: data.labyrinthMap as LabyrinthMap | null,
   };
 }

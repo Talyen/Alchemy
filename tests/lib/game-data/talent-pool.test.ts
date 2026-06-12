@@ -168,12 +168,12 @@ describe("computeTalentEffects", () => {
 
   it("applies block-to-physical via multiplier field", () => {
     const effects = computeTalentEffects({ block: ["block-to-physical"] });
-    expect(effects.blockToPhysicalDamageMultiplier).toBe(0.5);
+    expect(effects.blockToPhysicalDamageMultiplier).toBe(0.3);
   });
 
   it("applies expert blacksmith forge multiplier", () => {
     const effects = computeTalentEffects({ physical: ["physical-expert-blacksmith"] });
-    expect(effects.forgeToPhysicalDamageMultiplier).toBe(2);
+    expect(effects.forgeToPhysicalDamageMultiplier).toBe(1.5);
   });
 
   it("applies implemented effects across multiple keywords", () => {
@@ -184,7 +184,7 @@ describe("computeTalentEffects", () => {
       bleed: ["bleed-execute", "bleed-desperate"],
     });
 
-    expect(effects.startBlock).toBe(10);
+    expect(effects.startBlock).toBe(5);
     expect(effects.blockPreventsPoison).toBe(true);
     expect(effects.startGold).toBe(20);
     expect(effects.enemyGoldDropBonus).toBe(0.1);

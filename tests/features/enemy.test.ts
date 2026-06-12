@@ -110,7 +110,7 @@ describe("enemyBestiary attack lines integration", () => {
   });
 
   it("The Forge Golem — physical + stun combined", () => {
-    expect(getAttackLines("forge-golem")).toEqual(["Deals 5 Physical and 1 Stun"]);
+    expect(getAttackLines("forge-golem")).toEqual(["Deals 4 Physical and 1 Stun"]);
   });
 
   it("The Frostwarden — physical + freeze combined", () => {

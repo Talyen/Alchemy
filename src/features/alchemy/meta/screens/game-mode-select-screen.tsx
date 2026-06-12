@@ -47,7 +47,7 @@ export function GameModeSelectScreen({
   const hasResume: Record<GameModeId, boolean> = {
     campaign: hasActiveRun && activeContentSystemType === "campaign",
     labyrinth: hasActiveRun && activeContentSystemType === "labyrinth",
-    wildwood: false,
+    wildwood: hasActiveRun && activeContentSystemType === "wildwood",
   };
 
   const selected = selectedModeId ? handlers[selectedModeId] : null;

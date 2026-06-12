@@ -319,14 +319,13 @@ export const cardLibrary: BattleCard[] = [
       { kind: "gain-gold", amount: 1 },
     ],
   },
-  damageThenMultiplyEnemyStatusCard({
+  dualDamageCard({
     id: "hemorrhage",
     art: hemorrhage,
-    damageType: "physical",
-    damageAmount: 2,
-    status: "bleed",
-    factor: 2,
-    multiplyLine: "Double enemy Bleed stacks",
+    hits: [
+      { damageType: "physical", amount: 2 },
+      { damageType: "bleed", amount: 1 },
+    ],
   }),
   {
     id: "bounty-shot",
@@ -561,10 +560,10 @@ export const cardLibrary: BattleCard[] = [
   {
     id: "mana-shield",
     title: "Mana Shield",
-    descriptionLines: ["Gain 2 Block per Mana Crystal"],
+    descriptionLines: ["Gain 1 Block per Mana Crystal"],
     art: manaShield,
     cost: 1,
-    effects: [{ kind: "player-status", status: "block", amount: 0, perManaCrystal: 2 }],
+    effects: [{ kind: "player-status", status: "block", amount: 0, perManaCrystal: 1 }],
   },
   {
     id: "prayer",
@@ -601,7 +600,7 @@ export const cardLibrary: BattleCard[] = [
   loseHealthBenefitCard({
     id: "dark-pact",
     art: darkPact,
-    healthLoss: 2,
+    healthLoss: 1,
     wish: 1,
     draw: 1,
   }),

@@ -42,8 +42,9 @@ export function normalizeActiveRunData<T extends Record<string, unknown>>(
     runDeckArr.length === LEGACY_STARTER_DECK_IDS.length &&
     runDeckArr.every((card) => legacySet.has(card.id as (typeof LEGACY_STARTER_DECK_IDS)[number]));
   const characterId = typeof data.characterId === "string" ? (data.characterId as string) : "";
+  const preserveEmptyWildwoodDraft = contentSystemType === "wildwood" && Boolean(data.wildwoodDraft);
   const runDeck =
-    runDeckArr.length === 0 || (isUnstarted && hasLegacyDeck)
+    (!preserveEmptyWildwoodDraft && runDeckArr.length === 0) || (isUnstarted && hasLegacyDeck)
       ? characterId
         ? getStartingDeck(characterId as import("@/lib/game-data").CharacterId)
         : []
@@ -58,6 +59,7 @@ export function normalizeActiveRunData<T extends Record<string, unknown>>(
     runMaterialsEarned: (data.runMaterialsEarned as MaterialInventory | undefined) ?? emptyInventory(),
     labyrinthMap: contentSystemType === "labyrinth" ? data.labyrinthMap : null,
     labyrinthPendingNode: contentSystemType === "labyrinth" ? data.labyrinthPendingNode : null,
+    wildwoodDraft: contentSystemType === "wildwood" ? data.wildwoodDraft : null,
     activeCombat: data.activeCombat
       ? {
           ...(data.activeCombat as Record<string, unknown>),

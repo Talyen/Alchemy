@@ -169,6 +169,19 @@ describe("computeVictoryRewardState", () => {
 });
 
 describe("computeVictoryRewards", () => {
+  it("awards no gold or materials for Wildwood Draft victories", () => {
+    const result = computeVictoryRewards(
+      baseInput({ contentSystemType: "wildwood", runGold: 7 }),
+      () => 0.25,
+    );
+
+    expect(result.newGold).toBe(7);
+    expect(result.goldEarned).toBe(0);
+    expect(result.materials).toEqual(emptyInventory());
+    expect(result.rewardState.gold).toBe(0);
+    expect(result.rewardState.choices).toHaveLength(3);
+  });
+
   it("computes combat victory rewards for normal enemy", () => {
     const result = computeVictoryRewards(baseInput());
     expect(result.goldEarned).toBe(15);

@@ -1,6 +1,6 @@
 // Shared status math: halved decay, armor decay after damage, percent rolls.
 // Depends on game-constants and battle types. Used by status-ticks and status-effects.
-import { BATTLE_CONFIG, HALF_DIVISOR, PERCENT_DENOMINATOR } from "../game-constants";
+import { BATTLE_CONFIG, HALF_DIVISOR, PERCENT_DENOMINATOR, POISON_DECAY_PERCENT } from "../game-constants";
 import { mergeCombatText } from "./combat-text";
 import type { BattleState, CombatTextEvent } from "./types";
 
@@ -22,6 +22,13 @@ const CONSTANTS = {
 export function decayHalvedStatus(value: number) {
   if (value <= CONSTANTS.DECAY_THRESHOLD) return 0;
   return Math.round(value / HALF_DIVISOR);
+}
+
+/** Poison stacks lost after tick: max(1, round(stacks * POISON_DECAY_PERCENT / 100)). */
+export function decayPoisonStacks(stacks: number): number {
+  if (stacks <= 0) return 0;
+  const decay = Math.max(1, Math.round((stacks * POISON_DECAY_PERCENT) / PERCENT_DENOMINATOR));
+  return Math.max(0, stacks - decay);
 }
 
 /** Halves freeze stack gain when the player talent is active. */

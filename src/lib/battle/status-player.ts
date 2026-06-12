@@ -10,6 +10,10 @@ import { addForgeToPlayer } from "./status-forge";
 import { scaleFreezeBuildUp } from "./status-helpers";
 import { FIRST_EFFECT_MULTIPLIER, HALF_DIVISOR } from "../game-constants";
 
+export function countRemovableHarmfulStatuses(playerStatuses: BattleState["playerStatuses"]): number {
+  return harmfulPlayerStatusIds.filter((statusId) => playerStatuses[statusId] > 0).length;
+}
+
 function clearHarmfulStatuses(playerStatuses: BattleState["playerStatuses"], statusTypesToClear: number) {
   const nextPlayerStatuses = { ...playerStatuses };
   let removed = 0;

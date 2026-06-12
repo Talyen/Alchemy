@@ -14,6 +14,7 @@ import type { ActiveRunData, LabyrinthNodePosition } from "@/lib/active-run-sess
 import type { RunStartSnapshot } from "@/features/alchemy/run-setup/run/run-start";
 import type { Destination, Screen } from "@/features/alchemy/shared/types";
 import type { ContentSystemId, LabyrinthMap, LabyrinthModifierKind } from "@/lib/content-systems/types";
+import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import type { CorruptionResult } from "@/lib/corruption";
 import type { MysteryEvent } from "@/lib/mystery";
 import type { MaterialInventory } from "@/lib/homestead/types";
@@ -81,6 +82,7 @@ export function createInitialSessionFields(): RunSessionFields {
     pendingCharacterId: null,
     pendingContentSystemType: "campaign",
     labyrinthMap: generateLabyrinthMap(),
+    wildwoodDraft: null,
     shopState: emptyShop,
     alchemistState: emptyAlchemist,
     mysteryEvent: null,
@@ -128,6 +130,7 @@ export type RunSessionFields = {
   pendingCharacterId: CharacterId | null;
   pendingContentSystemType: ContentSystemId;
   labyrinthMap: LabyrinthMap;
+  wildwoodDraft: WildwoodDraftState | null;
   shopState: ShopState;
   alchemistState: AlchemistState;
   mysteryEvent: MysteryEvent | null;
@@ -149,6 +152,7 @@ type RunSessionActions = {
   setPendingCharacterId: (id: CharacterId | null) => void;
   setPendingContentSystemType: (type: ContentSystemId) => void;
   setLabyrinthMap: Setter<LabyrinthMap>;
+  setWildwoodDraft: Setter<WildwoodDraftState | null>;
   setShopState: Setter<ShopState>;
   setAlchemistState: Setter<AlchemistState>;
   setMysteryEvent: (event: MysteryEvent | null) => void;

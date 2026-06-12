@@ -335,9 +335,9 @@ describe("ActiveRunDataSchema", () => {
     expect(result?.labyrinthMap).toBeNull();
   });
 
-  it("coerces unknown contentSystemType to campaign", () => {
+  it("discards legacy wildwood runs without Wildwood Draft state", () => {
     const result = parseActiveRun(activeRun({ contentSystemType: "wildwood" }));
-    expect(result?.contentSystemType).toBe("campaign");
+    expect(result).toBeNull();
   });
 
   it("defaults missing runTalentXP to empty object", () => {

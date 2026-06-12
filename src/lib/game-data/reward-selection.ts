@@ -3,7 +3,7 @@
 import { REWARD_SELECTION_CONFIG, REWARD_RANDOM_CHANCE } from "../game-constants";
 import { shuffle } from "../utils";
 import { getCardKeywords } from "./keywords";
-import type { BattleCard } from "./types";
+import type { BattleCard, KeywordId } from "./types";
 
 export function selectRewardCards(
   deck: BattleCard[] = [],
@@ -11,6 +11,7 @@ export function selectRewardCards(
   count: number,
   exclude: BattleCard[] = [],
   rng?: () => number,
+  seedKeywords: KeywordId[] = [],
 ): BattleCard[] {
   const activeRng = rng ?? Math.random;
 
@@ -24,6 +25,9 @@ export function selectRewardCards(
   const selected: BattleCard[] = [];
 
   const freq: Record<string, number> = {};
+  for (const keyword of seedKeywords) {
+    freq[keyword] = (freq[keyword] || 0) + 1;
+  }
   for (const card of deck || []) {
     for (const kw of getCardKeywords(card)) {
       freq[kw] = (freq[kw] || 0) + 1;

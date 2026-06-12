@@ -148,7 +148,7 @@ describe("processEnemyAttack", () => {
     expect(result.enemyMitigation.forge).toBe(3 - BATTLE_CONFIG.FORGE_DECAY_AMOUNT);
   });
 
-  it("heals enemy on lifesteal attacks", () => {
+  it("heals enemy for half damage on lifesteal attacks", () => {
     const state = createTestBattleState({
       playerHealth: 30,
       playerStatuses: { ...createTestBattleState().playerStatuses, block: 0, armor: 0 },
@@ -156,8 +156,10 @@ describe("processEnemyAttack", () => {
       enemyMaxHealth: 30,
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 5, lifesteal: true }],
     });
-    const result = processEnemyAttack(state, makeTexts());
-    expect(result.enemyHealth).toBe(25);
+    const texts = makeTexts();
+    const result = processEnemyAttack(state, texts);
+    expect(result.enemyHealth).toBe(23);
+    expect(texts).toContainEqual({ target: "enemy", kind: "heal", stat: "health", amount: 3 });
   });
 
   it("does not heal enemy on lifesteal when blockEnemyLeech talent is active", () => {

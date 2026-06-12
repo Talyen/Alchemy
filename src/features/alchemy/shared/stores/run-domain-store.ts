@@ -156,6 +156,7 @@ type RunDomainActions = {
   setPendingCharacterId: (id: RunSessionFields["pendingCharacterId"]) => void;
   setPendingContentSystemType: (type: RunSessionFields["pendingContentSystemType"]) => void;
   setLabyrinthMap: Setter<RunSessionFields["labyrinthMap"]>;
+  setWildwoodDraft: Setter<RunSessionFields["wildwoodDraft"]>;
   setShopState: Setter<RunSessionFields["shopState"]>;
   setAlchemistState: Setter<RunSessionFields["alchemistState"]>;
   setMysteryEvent: (event: RunSessionFields["mysteryEvent"]) => void;
@@ -416,6 +417,7 @@ export const useRunDomainStore = create<RunDomainStore>()(
           state.session.pendingContentSystemType = type;
         }),
       setLabyrinthMap: setSessionField("labyrinthMap"),
+      setWildwoodDraft: setSessionField("wildwoodDraft"),
       setShopState: setSessionField("shopState"),
       setAlchemistState: setSessionField("alchemistState"),
       setMysteryEvent: (event) =>
@@ -544,6 +546,7 @@ function pickSessionActions(state: RunDomainStore): Omit<RunSessionStore, keyof 
     setPendingCharacterId: state.setPendingCharacterId,
     setPendingContentSystemType: state.setPendingContentSystemType,
     setLabyrinthMap: state.setLabyrinthMap,
+    setWildwoodDraft: state.setWildwoodDraft,
     setShopState: state.setShopState,
     setAlchemistState: state.setAlchemistState,
     setMysteryEvent: state.setMysteryEvent,

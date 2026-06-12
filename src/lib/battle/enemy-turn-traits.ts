@@ -1,6 +1,7 @@
 // Enemy trait and difficulty turn-start handlers plus regeneration.
 import { mergeCombatText } from "./combat-text";
 import type { DifficultyModifier } from "@/lib/game-data";
+import { WILDWOOD_MODIFIERS } from "@/lib/content-systems/wildwood/gauntlet";
 import { logError } from "../error-logger";
 import { clampHealth, type BattleState, type CombatTextEvent, addEnemyMitigation } from "./types";
 import {
@@ -117,6 +118,7 @@ const PASSIVE_ONLY_TRAITS = new Set([
   "gold-trove",
   "starting-block",
   "regeneration",
+  ...WILDWOOD_MODIFIERS.map((modifier) => modifier.id),
 ]);
 
 // Difficulty modifiers whose behavior is purely passive (applied at battle start or checked elsewhere)

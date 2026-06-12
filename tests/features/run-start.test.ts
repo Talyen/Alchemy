@@ -47,7 +47,7 @@ describe("createRunStartSnapshot", () => {
     expect(result.freshDeck.map((card) => card.id)).toEqual(getStartingDeck("ranger").map((card) => card.id));
   });
 
-  it("creates a fresh non-persistent wildwood snapshot", () => {
+  it("creates a resumable wildwood snapshot", () => {
     const result = createRunStartSnapshot({
       characterId: "wizard",
       contentSystemType: "wildwood",
@@ -61,7 +61,7 @@ describe("createRunStartSnapshot", () => {
     expect(result.runTrinkets).toEqual([]);
     expect(result.roomsEncountered).toBe(0);
     expect(result.completedDestinations).toEqual([]);
-    expect(result.hasActiveRun).toBe(false);
+    expect(result.hasActiveRun).toBe(true);
     expect(result.runMaxHealth).toBe(MAX_PLAYER_HEALTH);
     expect(result.freshDeck.map((card) => card.id)).toEqual(getStartingDeck("wizard").map((card) => card.id));
   });

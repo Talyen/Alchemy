@@ -64,24 +64,31 @@ function ChoiceCardItem({
   );
 }
 
-export function DraftDeckScreen({ onComplete }: { onComplete: (draftedCards: BattleCard[]) => void }) {
-  const [round, setRound] = useState(0);
-  const [drafted, setDrafted] = useState<BattleCard[]>([]);
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+type Props = {
+  onComplete: (draftedCards: BattleCard[]) => void;
+  draftedCards?: BattleCard[];
+  draftChoices?: BattleCard[];
+  onPick?: (card: BattleCard) => void;
+};
 
-  const choices = useMemo(() => {
+export function DraftDeckScreen({ onComplete, draftedCards, draftChoices, onPick }: Props) {
+  const [localDrafted, setLocalDrafted] = useState<BattleCard[]>([]);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const drafted = draftedCards ?? localDrafted;
+  const round = drafted.length;
+
+  const localChoices = useMemo(() => {
     return selectRewardCards(drafted, getOfferableCardPool(), DRAFT_CHOICES, drafted);
   }, [drafted]);
+  const choices = draftChoices ?? localChoices;
 
   const handlePick = useCallback(
     (card: BattleCard) => {
       const nextDrafted = [...drafted, card];
-      setDrafted(nextDrafted);
-      const nextRound = round + 1;
-      if (nextRound >= DRAFT_ROUNDS) return;
-      setRound(nextRound);
+      if (onPick) onPick(card);
+      else setLocalDrafted(nextDrafted);
     },
-    [drafted, round],
+    [drafted, onPick],
   );
 
   const isComplete = drafted.length >= DRAFT_ROUNDS;

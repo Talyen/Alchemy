@@ -23,7 +23,7 @@ test.describe("Menu", critical, () => {
     await menu.openGameModeSelect();
     await expect(page.getByRole("button", { name: /The Campaign/ })).toBeVisible();
     await expect(page.getByRole("button", { name: /The Labyrinth/ })).toBeVisible();
-    await expect(page.getByRole("button", { name: /The Wildwoods/ })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Wildwood Draft/ })).toBeVisible();
   });
 
   test("active campaign battle reports battle run phase", async ({ page }) => {

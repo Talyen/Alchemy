@@ -6,6 +6,7 @@ import type { CorruptionResult } from "@/lib/corruption";
 import type { MysteryEvent } from "@/lib/mystery";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { LabyrinthNodePosition } from "@/lib/active-run-session";
+import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import type { Screen } from "@/lib/routing";
 import type { RewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
 import type { ShopState, AlchemistState } from "@/features/alchemy/run-loop/shop/shop-state-init";
@@ -103,6 +104,12 @@ export function setActiveLabyrinthPendingNode(node: LabyrinthNodePosition | null
 
 export function setLabyrinthMap(map: LabyrinthMap | ((prev: LabyrinthMap) => LabyrinthMap)) {
   getRunDomainStore().setLabyrinthMap(map);
+}
+
+export function setWildwoodDraft(
+  state: WildwoodDraftState | null | ((prev: WildwoodDraftState | null) => WildwoodDraftState | null),
+) {
+  getRunDomainStore().setWildwoodDraft(state);
 }
 
 export function setRewardState(state: RewardState | ((prev: RewardState) => RewardState)) {

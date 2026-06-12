@@ -23,7 +23,7 @@ export const DESTINATION_RANDOM_VALUES: Record<DestinationName, number> = {
 export const GAME_MODE_TITLES: Record<GameMode, string> = {
   campaign: "The Campaign",
   labyrinth: "The Labyrinth",
-  wildwood: "The Wildwoods",
+  wildwood: "Wildwood Draft",
 };
 
 declare global {

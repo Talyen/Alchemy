@@ -28,6 +28,10 @@ function makeSource(overrides: Partial<Parameters<typeof createActiveRunData>[0]
     runTalentXP: {},
     currentScreen: null,
     destinationChoices: [],
+    wildwoodDraft: null,
+    discoveredCardIdsAtRunStart: [],
+    discoveredTrinketIdsAtRunStart: [],
+    runMaterialsEarned: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 },
     ...overrides,
   };
 }
@@ -59,6 +63,10 @@ describe("createActiveRunData", () => {
       activeCombat: null,
       currentScreen: null,
       destinationChoices: [],
+      wildwoodDraft: null,
+      discoveredCardIdsAtRunStart: [],
+      discoveredTrinketIdsAtRunStart: [],
+      runMaterialsEarned: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 },
     });
   });
 
@@ -164,5 +172,24 @@ describe("createActiveRunData", () => {
 
     expect(result.currentScreen).toBe("destination");
     expect(result.destinationChoices).toEqual(["Campfire", "Merchant's Shop"]);
+  });
+
+  it("persists Wildwood Draft phase state", () => {
+    const wildwoodDraft = {
+      version: 1 as const,
+      phase: "reward" as const,
+      draftChoices: [],
+      remainingBossIds: ["iron-bear"] as const,
+      previousBossId: "forge-golem" as const,
+      currentBossId: "frostwarden" as const,
+      currentModifierId: "wildwood-modifier-feral" as const,
+      rewardType: "card" as const,
+      rewardChoiceIds: ["slash", "block"],
+      selectedRewardId: "slash",
+    };
+
+    const result = createActiveRunData(makeSource({ contentSystemType: "wildwood", wildwoodDraft }));
+
+    expect(result.wildwoodDraft).toEqual(wildwoodDraft);
   });
 });

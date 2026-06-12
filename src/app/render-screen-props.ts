@@ -14,9 +14,9 @@ type ControllerActions = {
     beginWildwood: () => void;
     handleCharacterSelect: (id: CharacterId) => void;
     handleDraftComplete: (draftedCards: BattleCard[]) => void;
+    handleDraftPick: (card: BattleCard) => void;
     handleDifficultySelect: (id: DifficultyId) => void;
     handleBackFromDifficultySelect: () => void;
-    handleWildwoodBossSelect: (id: string) => void;
   };
   battle: {
     handleCardClick: (card: BattleCard, index: number, event: React.MouseEvent<HTMLButtonElement>) => void;
@@ -33,6 +33,9 @@ type ControllerActions = {
     prepareDestinationScreen: () => void;
     handleDestinationChoice: (dest: Destination) => void;
     handleCampfireContinue: () => void;
+    handleWildwoodRecoveryComplete: () => void;
+    handleWildwoodRemoveCard: (index: number) => void;
+    handleWildwoodSkipRemoval: () => void;
     handleShopContinue: () => void;
     handleShopBuyCard: (card: BattleCard) => void | null;
     handleShopRemoveCard: (index: number) => void;

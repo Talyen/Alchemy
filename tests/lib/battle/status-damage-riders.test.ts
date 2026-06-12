@@ -264,8 +264,8 @@ describe("applyPoisonTalentRiders", () => {
     });
     const texts = makeTexts();
     const result = applyPoisonTalentRiders(state, 5, texts);
-    expect(result.playerHealth).toBe(23);
-    expect(texts).toContainEqual({ target: "player", kind: "heal", stat: "health", amount: 5 });
+    expect(result.playerHealth).toBe(21);
+    expect(texts).toContainEqual({ target: "player", kind: "heal", stat: "health", amount: 3 });
   });
 
   it("strips one armor when poisonStripArmor is active", () => {
@@ -279,7 +279,7 @@ describe("applyPoisonTalentRiders", () => {
   });
 });
 
-describe("applyDamageStatuses — physical riders", () => {
+describe("applyDamageStatuses ï¿½ physical riders", () => {
   it("detonates bleed when physicalDetonatesBleed is active", () => {
     const state = createTestBattleState({
       enemyHealth: 30,
@@ -310,7 +310,7 @@ describe("applyDamageStatuses — physical riders", () => {
   });
 });
 
-describe("applyDamageStatuses — freeze threshold uses pre-hit health", () => {
+describe("applyDamageStatuses ï¿½ freeze threshold uses pre-hit health", () => {
   it("does not freeze when stacks are below pre-hit threshold", () => {
     const state = createTestBattleState({
       enemyHealth: 30,

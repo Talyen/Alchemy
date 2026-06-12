@@ -20,7 +20,20 @@ export const BLEED_EXECUTE_MULTIPLIER = 2;
 export const FREE_CARD_SENTINEL = 99; // nextCardCostReduction value that guarantees a card costs 0.
 export const PERCENT_DENOMINATOR = 100;
 export const HALF_DIVISOR = 2;
+const LEECH_HEAL_FRACTION = 0.5;
+
+/** Leech keyword: heal for half the triggering damage (rounded). */
+export function computeLeechHeal(damageDealt: number): number {
+  if (damageDealt <= 0) return 0;
+  return Math.round(damageDealt * LEECH_HEAL_FRACTION);
+}
 export const FIRST_EFFECT_MULTIPLIER = 2;
+/** Wildfire talent: first burn card each combat deals 50% more (not a full double). */
+export const FIRST_BURN_CARD_BONUS_MULTIPLIER = 1.5;
+/** Flaming Shield / Impact Guard: bonus damage from block as a percent of current block. */
+export const BLOCK_SCALED_DAMAGE_PERCENT = 30;
+/** Manaburn talent: burn bonus from max mana as a percent of Mana Crystals. */
+export const MANA_BURN_DAMAGE_PERCENT = 35;
 export const GOLD_TROVE_REWARD_MULTIPLIER = 2;
 
 // ============ Battle Tuning ============
@@ -258,7 +271,7 @@ export const TRAIT_FREEZE_BONUS_PER_TURN = 1;
 export const IRON_HIDE_BURN_BONUS_PER_TURN = 1;
 export const DIFFICULTY_FORGE_PER_TURN = 1;
 export const LIVING_ARMOR_STARTING_ARMOR = 5;
-export const ENEMY_STARTING_BLOCK = 6;
+export const ENEMY_STARTING_BLOCK = 4;
 
 // ============ Labyrinth ============
 export const LABYRINTH_STURDY_MULTIPLIER = 1.3;
@@ -292,7 +305,8 @@ export const BATTLE_CONFIG = {
 } as const;
 
 // ============ Status Tick Tuning ============
-export const POISON_DECAY_AMOUNT = 1;
+/** Poison stacks lost after each tick: max(1, round(stacks * percent / 100)). */
+export const POISON_DECAY_PERCENT = 20;
 export const POISON_GAIN_AMOUNT = 1;
 
 export const STATUS_CONFIG = {

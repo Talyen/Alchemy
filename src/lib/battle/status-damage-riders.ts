@@ -21,7 +21,7 @@ import { applyEnemyCcImmunityClear, assignEnemyCrowdControlSkip } from "./status
 import { resolveStunTrigger } from "./status-stun-resolve";
 import { getEnemyDamageMultiplier } from "./status-effects";
 import { decayArmorAfterDamage, rollPercent } from "./status-helpers";
-import { BLEED_STATUS_MULTIPLIER, BATTLE_CONFIG, FREEZE_THRESHOLD_FRACTION } from "../game-constants";
+import { BLEED_STATUS_MULTIPLIER, BATTLE_CONFIG, computeLeechHeal, FREEZE_THRESHOLD_FRACTION } from "../game-constants";
 
 function applyBurnStatusRider(state: BattleState, actualDamage: number): BattleState {
   let nextState = addEnemyStatus(state, "burn", actualDamage);
@@ -67,13 +67,14 @@ export function applyPoisonTalentRiders(
     nextState = reduceEnemyArmor(nextState, 1);
   }
   if (damage > 0 && rollPercent(nextState.talentEffects.poisonLeechChance, nextState.rng)) {
+    const leechHeal = computeLeechHeal(damage);
     const prevState = nextState;
-    nextState = applyPlayerHealing(nextState, damage);
+    nextState = applyPlayerHealing(nextState, leechHeal);
     mergeCombatText(combatTexts, {
       target: "player",
       kind: "heal",
       stat: "health",
-      amount: damage,
+      amount: leechHeal,
     });
     emitOverhealBlockText(prevState, nextState, combatTexts);
   }

@@ -87,8 +87,8 @@ export const gameModeMeta: Record<string, { title: string; description: string; 
     art: theLabyrinth,
   },
   wildwood: {
-    title: "The Wildwoods",
-    description: "Challenge the wild's most fearsome bosses",
+    title: "Wildwood Draft",
+    description: "Draft a deck and survive an endless boss gauntlet",
     icon: PawPrint,
     art: theWildwoods,
   },

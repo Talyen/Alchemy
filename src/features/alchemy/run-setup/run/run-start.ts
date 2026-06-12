@@ -61,6 +61,6 @@ export function createRunStartSnapshot({
     destinationIndexInAct: 0,
     completedDestinations: [],
     runTrinkets: [],
-    hasActiveRun: contentSystemType !== "wildwood",
+    hasActiveRun: true,
   };
 }

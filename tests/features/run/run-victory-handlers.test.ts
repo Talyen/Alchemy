@@ -76,6 +76,19 @@ describe("createRunFlowHandlers victory paths", () => {
     expect(getRunSessionStoreView().runEndMaterials).toEqual(emptyInventory());
   });
 
+  it("Wildwood Draft run end grants no materials", () => {
+    setRunProgress({ contentSystemType: CONSTANTS.CONTENT_SYSTEMS.WILDWOOD, roomsEncountered: 12 });
+    useHomesteadStore.setState((state) => ({
+      effects: { ...state.effects, endRunHerbsPerRoom: 2 },
+    }));
+    readActiveRunStore().addRunMaterialsEarned({ ...emptyInventory(), wood: 5 });
+
+    const materials = makeHandlers().awardRunEndMaterials();
+
+    expect(materials).toEqual(emptyInventory());
+    expect(readActiveRunStore().runMaterialsEarned).toEqual(emptyInventory());
+  });
+
   it("clearCombatState clears battle flag", () => {
     getBattleStoreView().setHasActiveBattle(true);
     makeHandlers().clearCombatState();

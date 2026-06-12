@@ -11,7 +11,10 @@ import {
   MerchantShopScreen,
   MysteryScreen,
   RewardsScreen,
+  WildwoodRecoveryScreen,
+  WildwoodRemovalScreen,
 } from "@/features/alchemy/shared/screens";
+import { useRunDomainStore } from "@/features/alchemy/shared/stores/run-session-facade";
 import type { ScreenRouteContext } from "./types";
 
 function BattleScreenRoute({
@@ -79,12 +82,36 @@ function LabyrinthMapScreenRoute({
 
 function RewardsScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions">) {
   const r = useRunScreenData("rewards");
+  const isWildwood = useRunDomainStore((s) => s.progress.contentSystemType === "wildwood");
   return (
     <RewardsScreen
       rewardState={r.rewardState}
       onAddReward={a.runFlow.finishRewards}
       onSkip={a.runFlow.finishRewards}
       onSelectReward={a.runFlow.selectRewardChoice}
+      allowTrinketSkip={isWildwood}
+    />
+  );
+}
+
+function WildwoodRecoveryScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions">) {
+  const r = useRunScreenData("wildwood-recovery");
+  return (
+    <WildwoodRecoveryScreen
+      playerHealth={r.runPlayerHealth}
+      maxHealth={r.runMaxHealth}
+      onComplete={a.runFlow.handleWildwoodRecoveryComplete}
+    />
+  );
+}
+
+function WildwoodRemovalScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions">) {
+  const r = useRunScreenData("wildwood-removal");
+  return (
+    <WildwoodRemovalScreen
+      runDeck={r.runDeck}
+      onRemove={a.runFlow.handleWildwoodRemoveCard}
+      onSkip={a.runFlow.handleWildwoodSkipRemoval}
     />
   );
 }
@@ -195,6 +222,8 @@ export const runLoopScreenRoutes: Partial<
     <LabyrinthMapScreenRoute actions={a} onOpenBattleMenu={onOpenBattleMenu} />
   ),
   rewards: ({ actions: a }) => <RewardsScreenRoute actions={a} />,
+  "wildwood-recovery": ({ actions: a }) => <WildwoodRecoveryScreenRoute actions={a} />,
+  "wildwood-removal": ({ actions: a }) => <WildwoodRemovalScreenRoute actions={a} />,
   destination: ({ actions: a }) => <DestinationScreenRoute actions={a} />,
   campfire: ({ actions: a }) => <CampfireScreenRoute actions={a} />,
   shop: ({ actions: a }) => <ShopScreenRoute actions={a} />,

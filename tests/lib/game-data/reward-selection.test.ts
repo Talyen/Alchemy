@@ -105,6 +105,30 @@ describe("getCardKeywords", () => {
 });
 
 describe("selectRewardCards", () => {
+  it("uses seed keywords before a draft has any cards", () => {
+    const allCards: BattleCard[] = [
+      card({ id: "block", effects: [{ kind: "player-status", status: "block", amount: 5 }] }),
+      card({ id: "burn", effects: [{ kind: "damage", damageType: "burn", amount: 3 }] }),
+    ];
+
+    const result = selectRewardCards([], allCards, 1, [], () => 0.99, ["block"]);
+
+    expect(result[0].id).toBe("block");
+  });
+
+  it("combines seed keyword and drafted-card affinity", () => {
+    const drafted = [card({ id: "drafted-burn", effects: [{ kind: "damage", damageType: "burn", amount: 2 }] })];
+    const allCards: BattleCard[] = [
+      card({ id: "block", effects: [{ kind: "player-status", status: "block", amount: 5 }] }),
+      card({ id: "burn", effects: [{ kind: "damage", damageType: "burn", amount: 3 }] }),
+      card({ id: "plain" }),
+    ];
+
+    const result = selectRewardCards(drafted, allCards, 2, drafted, () => 0.99, ["block"]);
+
+    expect(result.map((entry) => entry.id).sort()).toEqual(["block", "burn"]);
+  });
+
   it("samples from the offerable pool passed by callers", () => {
     const deck: BattleCard[] = [card({ id: "stab", effects: [{ kind: "damage", damageType: "physical", amount: 5 }] })];
     const allCards: BattleCard[] = [

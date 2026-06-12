@@ -16,11 +16,11 @@ import {
 import { getEnemyDamageMultiplier, applyPoisonTalentRiders } from "./status-effects";
 import { emitOverhealBlockText, mergeCombatText } from "./combat-text";
 import { resolvePlayerCrowdControlTrigger } from "./status-cc";
-import { decayArmorAfterDamage, decayHalvedStatus, rollPercent } from "./status-helpers";
+import { decayArmorAfterDamage, decayHalvedStatus, decayPoisonStacks, rollPercent } from "./status-helpers";
 import {
+  computeLeechHeal,
   FREEZE_THRESHOLD_FRACTION,
   HALF_DIVISOR,
-  POISON_DECAY_AMOUNT,
   POISON_GAIN_AMOUNT,
   STUN_THRESHOLD_FRACTION,
 } from "../game-constants";
@@ -80,14 +80,15 @@ function tickBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
 
 function applyParasiticBloomLeech(state: BattleState, damage: number, combatTexts: CombatTextEvent[]): BattleState {
   if (!rollPercent(state.trinketEffects.parasiticBloomLeechChance, state.rng)) return state;
+  const leechHeal = computeLeechHeal(damage);
   mergeCombatText(combatTexts, {
     target: CONSTANTS.TARGETS.PLAYER,
     kind: CONSTANTS.COMBAT_TEXT_KINDS.HEAL,
     stat: CONSTANTS.STATUS_NAMES.HEALTH,
-    amount: damage,
+    amount: leechHeal,
   });
   const prevState = state;
-  const nextState = applyPlayerHealing(state, damage);
+  const nextState = applyPlayerHealing(state, leechHeal);
   emitOverhealBlockText(prevState, nextState, combatTexts);
   return nextState;
 }
@@ -109,7 +110,7 @@ function tickPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
     if (rollPercent(state.talentEffects.poisonGainChance, state.rng)) {
       nextPoison += POISON_GAIN_AMOUNT;
     } else {
-      nextPoison = Math.max(0, nextPoison - POISON_DECAY_AMOUNT);
+      nextPoison = decayPoisonStacks(nextPoison);
     }
   }
   let nextState: BattleState = {
@@ -138,13 +139,14 @@ function tickBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
   };
   nextState = setEnemyStatus(nextState, CONSTANTS.STATUS_NAMES.BLEED, CONSTANTS.CLEAR_STATUS_STACK);
   if (leechAmount > 0) {
+    const leechHeal = computeLeechHeal(leechAmount);
     const prevState = nextState;
-    nextState = applyPlayerHealing(nextState, leechAmount);
+    nextState = applyPlayerHealing(nextState, leechHeal);
     mergeCombatText(combatTexts, {
       target: CONSTANTS.TARGETS.PLAYER,
       kind: CONSTANTS.COMBAT_TEXT_KINDS.HEAL,
       stat: CONSTANTS.STATUS_NAMES.HEALTH,
-      amount: leechAmount,
+      amount: leechHeal,
     });
     emitOverhealBlockText(prevState, nextState, combatTexts);
   }
@@ -196,7 +198,7 @@ function tickPlayerPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
   const damage = state.playerStatuses.poison;
   if (damage <= 0) return state;
   const reducedDamage = state.talentEffects.receiveHalfPoisonDamage ? Math.round(damage / HALF_DIVISOR) : damage;
-  const nextPoison = Math.max(0, state.playerStatuses.poison - POISON_DECAY_AMOUNT);
+  const nextPoison = decayPoisonStacks(state.playerStatuses.poison);
   const nextState = setPlayerStatus(
     applyPlayerCombatDamage(state, reducedDamage),
     CONSTANTS.STATUS_NAMES.POISON,

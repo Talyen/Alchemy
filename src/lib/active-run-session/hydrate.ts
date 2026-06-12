@@ -2,6 +2,7 @@
 import type { BattleState } from "@/lib/battle";
 import type { LabyrinthMap, LabyrinthModifierKind } from "@/lib/content-systems/types";
 import type { UnlockedTalents, TalentXP } from "@/lib/game-data";
+import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 
 import type { ActiveRunData, LabyrinthNodePosition } from "./types";
 
@@ -18,6 +19,7 @@ export type ActiveRunHydrationTargets = {
     setActiveLabyrinthModifiers: (modifiers: LabyrinthModifierKind[]) => void;
     setActiveLabyrinthRewardModifiers: (modifiers: LabyrinthModifierKind[]) => void;
     setActiveLabyrinthPendingNode: (node: LabyrinthNodePosition) => void;
+    setWildwoodDraft?: (state: WildwoodDraftState | null) => void;
     applyDestinationChoices: (choices: string[]) => void;
   };
 };
@@ -49,6 +51,8 @@ export function hydrateActiveRunSession(
   if (activeRun.labyrinthPendingNode) {
     targets.screenStore.setActiveLabyrinthPendingNode(activeRun.labyrinthPendingNode);
   }
+
+  targets.screenStore.setWildwoodDraft?.(activeRun.wildwoodDraft);
 
   if (activeRun.currentScreen === "destination" && activeRun.destinationChoices.length > 0) {
     targets.screenStore.applyDestinationChoices(activeRun.destinationChoices);

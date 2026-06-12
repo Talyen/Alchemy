@@ -2,6 +2,7 @@
 import type { BattleState } from "@/lib/battle";
 import type { BattleCard, CharacterId, DifficultyId, TalentXP } from "@/lib/game-data";
 import type { ContentSystemId, LabyrinthMap, LabyrinthModifierKind } from "@/lib/content-systems/types";
+import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { Screen } from "@/lib/routing";
 
@@ -29,6 +30,7 @@ export type ActiveRunData = {
   contentSystemType: ContentSystemId;
   labyrinthMap: LabyrinthMap | null;
   labyrinthPendingNode: LabyrinthNodePosition | null;
+  wildwoodDraft: WildwoodDraftState | null;
   activeCombat: ActiveCombatData | null;
   runTalentXP: TalentXP;
   runMaterialsEarned: MaterialInventory;

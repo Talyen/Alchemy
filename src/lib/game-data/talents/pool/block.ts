@@ -28,7 +28,7 @@ export const blockTalents: TalentDefinition[] = [
     id: "block-to-stun",
     keywordId: "block",
     name: "Impact Guard",
-    description: "Increase Stun damage by half your Block",
+    description: "Stun damage is increased by 30% of your Block",
     effects: [setEffect("blockToStunDamage", true)],
   },
   {
@@ -42,8 +42,8 @@ export const blockTalents: TalentDefinition[] = [
     id: "block-to-physical",
     keywordId: "block",
     name: "Weighted Guard",
-    description: "Increase Physical damage by half your Block",
-    effects: [setEffect("blockToPhysicalDamageMultiplier", 0.5)],
+    description: "Physical damage is increased by 30% of your Block",
+    effects: [setEffect("blockToPhysicalDamageMultiplier", 0.3)],
   },
   {
     id: "block-reduce-burn",
@@ -56,8 +56,8 @@ export const blockTalents: TalentDefinition[] = [
     id: "block-start",
     keywordId: "block",
     name: "Fortify",
-    description: "Start each combat with 10 Block",
-    effects: [setEffect("startBlock", 10)],
+    description: "Start each combat with 5 Block",
+    effects: [setEffect("startBlock", 5)],
   },
   {
     id: "block-prevent-bleed",

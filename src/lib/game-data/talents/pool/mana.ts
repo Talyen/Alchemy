@@ -35,7 +35,7 @@ export const manaTalents: TalentDefinition[] = [
     id: "mana-manaburn",
     keywordId: "mana",
     name: "Manaburn",
-    description: "Burn damage is increased by half your Mana Crystals",
+    description: "Burn damage is increased by 35% of your Mana Crystals",
     effects: [setEffect("burnDamagePerManaCrystal", 1)],
   },
   {

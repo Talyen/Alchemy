@@ -26,14 +26,19 @@ import {
   type UnlockedTalents,
 } from "@/lib/game-data";
 import type { DifficultyModifier } from "@/lib/game-data";
+import { defaultHomesteadEffects } from "@/lib/homestead/defaults";
+import { mergeIntoManifest } from "@/lib/homestead/effects";
 import { createSeededRng } from "@/lib/utils";
 import { MAX_PLAYER_HEALTH } from "../game-constants";
 import { createEmptyAnomalies, sampleAnomalies, type BattleAnomalies } from "./anomalies";
+import { buildSimCompanionBondLevels } from "./homestead-preset";
 
 export type BalancePlayPolicy = "random-playable" | "greedy-damage" | "defensive-random";
 type BattleSimulationOutcome = "win" | "loss" | "timeout";
 
 export type TalentPreset = "early" | "mid" | "late";
+
+const LATE_AFFINITY_TALENT_CAP = 7;
 
 function buildPresetManifest(keywords: KeywordId[], preset: TalentPreset): TalentEffectManifest {
   if (preset === "early") return defaultTalentEffects;
@@ -45,7 +50,14 @@ function buildPresetManifest(keywords: KeywordId[], preset: TalentPreset): Talen
   for (const keywordId of allKeywordIds) {
     const keywordTalents = talentPool.filter((t) => t.keywordId === keywordId && (t.effects ?? []).length > 0);
     const isAffinity = affinitySet.has(keywordId);
-    const count = preset === "mid" ? (isAffinity ? 5 : 2) : isAffinity ? keywordTalents.length : 5;
+    const count =
+      preset === "mid"
+        ? isAffinity
+          ? 5
+          : 2
+        : isAffinity
+          ? Math.min(keywordTalents.length, LATE_AFFINITY_TALENT_CAP)
+          : 5;
     unlockedTalents[keywordId] = keywordTalents.slice(0, count).map((t) => t.id);
   }
 
@@ -69,7 +81,7 @@ export type BattleSimulationConfig = {
   gold?: number;
 };
 
-export { ANOMALY_THRESHOLD, ANOMALY_METRICS } from "./anomalies";
+export { ANOMALY_THRESHOLD_BY_PRESET, ANOMALY_METRICS, getAnomalyThreshold } from "./anomalies";
 
 export type BattleSimulationResult = {
   characterId: CharacterId;
@@ -209,11 +221,16 @@ export function simulateBattle(config: BattleSimulationConfig): BattleSimulation
   const policy = config.policy ?? DEFAULT_POLICY;
   const playerMaxHealth = config.playerMaxHealth ?? MAX_PLAYER_HEALTH;
   const playerDeck = config.deck ?? getStartingDeck(config.characterId);
-  const talentEffects =
-    config.talentEffects ??
-    (config.talentPreset
-      ? buildPresetManifest(characters[config.characterId].keywords, config.talentPreset)
-      : defaultTalentEffects);
+  const talentEffects = (() => {
+    if (config.talentEffects) return config.talentEffects;
+    if (!config.talentPreset) return defaultTalentEffects;
+    const base = buildPresetManifest(characters[config.characterId].keywords, config.talentPreset);
+    const homestead = {
+      ...defaultHomesteadEffects,
+      companionBondLevels: buildSimCompanionBondLevels(playerDeck, config.talentPreset),
+    };
+    return mergeIntoManifest(base, homestead);
+  })();
 
   let state = createBattleState({
     runDeck: playerDeck,

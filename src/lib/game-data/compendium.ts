@@ -49,9 +49,9 @@ export const enemyBestiary = [
     enemyType: "boss",
     traits: [
       trait("rusting-carapace", "Rusting Carapace", "Gains Forge each turn"),
-      trait("starting-block", "Sturdy Plating", "Starts with 6 Block"),
+      trait("starting-block", "Sturdy Plating", "Starts with 4 Block"),
     ],
-    attackEffects: [phys(5), playerStatus("stun", 1)],
+    attackEffects: [phys(4), playerStatus("stun", 1)],
   }),
   defineEnemy({
     id: "frostwarden",

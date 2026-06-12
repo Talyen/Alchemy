@@ -9,6 +9,8 @@ import {
   useTalentAdapter,
   useRunDomainStore,
   useRunSessionNavigationSlice,
+  setPendingCharacterId,
+  setWildwoodDraft,
 } from "@/features/alchemy/shared/stores/run-session-facade";
 import { teardownRun } from "@/features/alchemy/shared/stores/run-transitions";
 import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
@@ -16,16 +18,27 @@ import { useUiStore } from "@/features/alchemy/shared/stores/ui-store";
 import { useBattlePresentationStore } from "@/features/alchemy/shared/stores/battle-presentation-store";
 import { type BattleCard, type CharacterId, type DifficultyId, type DifficultyModifier } from "@/lib/game-data";
 import { playUISound } from "@/lib/audio";
+import { logError } from "@/lib/error-logger";
 import { CONSTANTS, type Destination, type Screen } from "@/features/alchemy/shared/types";
 import { hasRunEndDiscoveries } from "@/lib/discoveries";
 import { getRunAvailableDestinations } from "@/features/alchemy/run-loop/navigation/destination-flow";
-import { readRunSessionStore } from "@/features/alchemy/shared/stores/run-session-facade";
+import { readActiveRunStore, readRunSessionStore } from "@/features/alchemy/shared/stores/run-session-facade";
 import { getPreviousDestination } from "@/features/alchemy/run-loop/navigation/run-navigation-helpers";
 import { useMysteryFlow } from "@/features/alchemy/run-loop/navigation/use-mystery-flow";
 import { applyCorruptionToDeck } from "@/features/alchemy/run-loop/navigation/run-navigation-corruption";
 import { createRunFlowHandlers } from "@/features/alchemy/run-loop/run/run-flow-handlers";
 import { createContentSystemNavigation } from "@/features/alchemy/run-setup/run/content-system-navigation";
 import type { DestinationOptionsInput } from "@/lib/active-run-session";
+import { DRAFT_ROUNDS } from "@/lib/game-constants";
+import { appendUnique } from "@/lib/utils";
+import {
+  createWildwoodDraftChoices,
+  canOfferWildwoodRemoval,
+  drawWildwoodBoss,
+  getWildwoodRecoveryHealth,
+  pickWildwoodModifier,
+  type WildwoodModifierId,
+} from "@/lib/content-systems/wildwood/gauntlet";
 
 export function useRunNavigation({
   screen,
@@ -50,7 +63,11 @@ export function useRunNavigation({
     modifiers?: DifficultyModifier[],
   ) => void;
   onStartBossBattle: () => void;
-  onStartBossById: (bossId: string, modifiers?: DifficultyModifier[]) => boolean;
+  onStartBossById: (
+    bossId: string,
+    modifiers?: DifficultyModifier[],
+    wildwoodModifierId?: WildwoodModifierId,
+  ) => boolean;
   onLabyrinthClearNode: () => void;
   onLabyrinthFailNode: () => void;
   onInitShop: () => void;
@@ -100,6 +117,60 @@ export function useRunNavigation({
     if (hasActiveBattle) navigateTo(CONSTANTS.SCREENS.BATTLE);
   }, [hasActiveBattle, navigateTo]);
 
+  const startNextWildwoodBoss = useCallback(() => {
+    const state = readRunSessionStore().wildwoodDraft;
+    if (!state) return;
+    const draw = drawWildwoodBoss(state.remainingBossIds, state.currentBossId ?? state.previousBossId);
+    const modifierId = pickWildwoodModifier();
+    setWildwoodDraft({
+      ...state,
+      phase: "battle",
+      remainingBossIds: draw.remainingBossIds,
+      previousBossId: state.currentBossId ?? state.previousBossId,
+      currentBossId: draw.bossId,
+      currentModifierId: modifierId,
+      rewardType: null,
+      rewardChoiceIds: [],
+      selectedRewardId: null,
+    });
+    if (!onStartBossById(draw.bossId, undefined, modifierId)) {
+      logError("[useRunNavigation] startNextWildwoodBoss: failed to start boss battle", "other");
+      navigateTo(CONSTANTS.SCREENS.MENU, teardownRun);
+      return;
+    }
+    clearCardHover();
+    setHasActiveBattle(true);
+    navigateTo(CONSTANTS.SCREENS.BATTLE);
+  }, [clearCardHover, navigateTo, onStartBossById, setHasActiveBattle]);
+
+  const resumeWildwoodRun = useCallback(() => {
+    const state = readRunSessionStore().wildwoodDraft;
+    if (!state) {
+      navigateTo(CONSTANTS.SCREENS.MENU, teardownRun);
+      return;
+    }
+    if (state.phase === "battle" && state.currentBossId && state.currentModifierId) {
+      if (onStartBossById(state.currentBossId, undefined, state.currentModifierId)) {
+        navigateTo(CONSTANTS.SCREENS.BATTLE);
+      } else {
+        logError("[useRunNavigation] resumeWildwoodRun: failed to resume boss battle", "other");
+        navigateTo(CONSTANTS.SCREENS.MENU, teardownRun);
+      }
+      return;
+    }
+    if (state.phase === "battle") {
+      navigateTo(CONSTANTS.SCREENS.MENU, teardownRun);
+      return;
+    }
+    const routeByPhase = {
+      draft: CONSTANTS.SCREENS.DRAFT_DECK,
+      recovery: CONSTANTS.SCREENS.WILDWOOD_RECOVERY,
+      reward: CONSTANTS.SCREENS.REWARDS,
+      removal: CONSTANTS.SCREENS.WILDWOOD_REMOVAL,
+    } as const;
+    navigateTo(routeByPhase[state.phase]);
+  }, [navigateTo, onStartBossById]);
+
   const contentNav = useMemo(
     () =>
       createContentSystemNavigation({
@@ -114,6 +185,8 @@ export function useRunNavigation({
         returnToBattle,
         onStartBattle,
         getAvailableDestinations,
+        onResumeWildwood: resumeWildwoodRun,
+        onStartNextWildwoodBoss: startNextWildwoodBoss,
       }),
     [
       run,
@@ -126,8 +199,68 @@ export function useRunNavigation({
       returnToBattle,
       onStartBattle,
       getAvailableDestinations,
+      resumeWildwoodRun,
+      startNextWildwoodBoss,
     ],
   );
+
+  function handleDraftPick(card: BattleCard) {
+    const state = readRunSessionStore().wildwoodDraft;
+    if (run.contentSystemType !== CONSTANTS.CONTENT_SYSTEMS.WILDWOOD || state?.phase !== "draft") return;
+    const nextDeck = [...run.runDeck, card];
+    run.setRunDeck(nextDeck);
+    useAppStore.getState().setDiscoveredCardIds((current) => appendUnique(current, card.id));
+    setWildwoodDraft({
+      ...state,
+      draftChoices: nextDeck.length >= DRAFT_ROUNDS ? [] : createWildwoodDraftChoices(run.characterId, nextDeck),
+    });
+  }
+
+  function handleDraftComplete(draftedCards: BattleCard[]) {
+    if (run.contentSystemType !== CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
+      contentNav.handleDraftComplete(draftedCards);
+      return;
+    }
+    if (draftedCards.length < DRAFT_ROUNDS) return;
+    run.setRunDeck(draftedCards);
+    setPendingCharacterId(null);
+    startNextWildwoodBoss();
+  }
+
+  const handleWildwoodRecoveryComplete = useCallback(() => {
+    const wildwood = readRunSessionStore().wildwoodDraft;
+    if (wildwood?.phase !== "recovery") return;
+    const { runPlayerHealth, runMaxHealth, setRunPlayerHealth } = readActiveRunStore();
+    setRunPlayerHealth(getWildwoodRecoveryHealth(runPlayerHealth, runMaxHealth));
+    setWildwoodDraft({ ...wildwood, phase: "reward" });
+    navigateTo(CONSTANTS.SCREENS.REWARDS);
+  }, [navigateTo]);
+
+  const handleWildwoodRewardComplete = useCallback(() => {
+    const state = readRunSessionStore().wildwoodDraft;
+    if (!state) return;
+    if (canOfferWildwoodRemoval(readActiveRunStore().runDeck.length)) {
+      setWildwoodDraft({
+        ...state,
+        phase: "removal",
+        rewardType: null,
+        rewardChoiceIds: [],
+        selectedRewardId: null,
+      });
+      navigateTo(CONSTANTS.SCREENS.WILDWOOD_REMOVAL);
+      return;
+    }
+    startNextWildwoodBoss();
+  }, [navigateTo, startNextWildwoodBoss]);
+
+  function handleWildwoodRemoveCard(index: number) {
+    run.setRunDeck((deck) => deck.filter((_, cardIndex) => cardIndex !== index));
+    startNextWildwoodBoss();
+  }
+
+  function handleWildwoodSkipRemoval() {
+    startNextWildwoodBoss();
+  }
 
   const mystery = useMysteryFlow();
 
@@ -158,6 +291,7 @@ export function useRunNavigation({
         getAvailableDestinations,
         beginMysteryEvent,
         clearMysteryCardChoices: mystery.clearCardChoices,
+        onWildwoodRewardComplete: handleWildwoodRewardComplete,
       }),
     [
       run,
@@ -178,19 +312,21 @@ export function useRunNavigation({
       getAvailableDestinations,
       beginMysteryEvent,
       mystery.clearCardChoices,
+      handleWildwoodRewardComplete,
     ],
   );
-
-  function handleWildwoodBossSelect(bossId: string) {
-    if (!onStartBossById(bossId)) return;
-    clearCardHover();
-    setHasActiveBattle(true);
-    navigateTo(CONSTANTS.SCREENS.BATTLE);
-  }
 
   function goToScreen(nextScreen: Screen) {
     clearCardHover();
     navigateTo(nextScreen);
+  }
+
+  function selectRewardChoice(id: string) {
+    flowHandlers.selectRewardChoice(id);
+    const state = readRunSessionStore().wildwoodDraft;
+    if (run.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD && state) {
+      setWildwoodDraft({ ...state, selectedRewardId: id });
+    }
   }
 
   function handleCorruptCard(cardIndex: number) {
@@ -254,16 +390,19 @@ export function useRunNavigation({
     beginMysteryEvent,
     endLabyrinthRun: flowHandlers.endLabyrinthRun,
     handleCharacterSelect: contentNav.handleCharacterSelect,
-    handleDraftComplete: contentNav.handleDraftComplete,
+    handleDraftComplete,
+    handleDraftPick,
     handleDifficultySelect: contentNav.handleDifficultySelect,
     handleBackFromDifficultySelect: contentNav.handleBackFromDifficultySelect,
-    handleWildwoodBossSelect,
     returnToBattle,
     goToScreen,
     handleDestinationChoice: flowHandlers.handleDestinationChoice,
     handleActComplete: flowHandlers.handleActComplete,
     finishRewards: flowHandlers.finishRewards,
-    selectRewardChoice: flowHandlers.selectRewardChoice,
+    selectRewardChoice,
+    handleWildwoodRecoveryComplete,
+    handleWildwoodRemoveCard,
+    handleWildwoodSkipRemoval,
     prepareDestinationScreen: flowHandlers.prepareDestinationScreen,
     handleCampfireContinue: flowHandlers.handleCampfireContinue,
     handleCorruptCard,

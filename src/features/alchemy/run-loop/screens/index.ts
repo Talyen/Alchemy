@@ -10,3 +10,5 @@ export { CorruptionScreen } from "./corruption-screen";
 export { RunVictoryScreen } from "./run-victory-screen";
 export { RunDiscoveriesScreen } from "./run-discoveries-screen";
 export { LabyrinthMapScreen } from "./labyrinth/labyrinth-map-screen";
+export { WildwoodRecoveryScreen } from "./wildwood-recovery-screen";
+export { WildwoodRemovalScreen } from "./wildwood-removal-screen";

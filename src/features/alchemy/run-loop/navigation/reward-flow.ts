@@ -385,6 +385,30 @@ export function createBossRewardState({
   };
 }
 
+export function createWildwoodRewardState(runDeck: BattleCard[], rng: () => number = Math.random): RewardState {
+  const rewardType = rng() < 0.5 ? "trinket" : "card";
+  return {
+    ...createEmptyRewardState(),
+    rewardType,
+    choices:
+      rewardType === "trinket"
+        ? sampleItems(trinketLibrary, REWARD_CARD_CHOICES, rng)
+        : selectRewardCards(runDeck, getOfferableCardPool(), REWARD_CARD_CHOICES, [], rng),
+  };
+}
+
+export function restoreWildwoodRewardState(
+  rewardType: "card" | "trinket",
+  choiceIds: string[],
+  selectedId: string | null,
+): RewardState {
+  const library = rewardType === "card" ? getOfferableCardPool() : trinketLibrary;
+  const choices = choiceIds
+    .map((id) => library.find((entry) => entry.id === id))
+    .filter((entry): entry is BattleCard | TrinketEntry => Boolean(entry));
+  return { ...createEmptyRewardState(), rewardType, choices, selectedId };
+}
+
 function calculateCombatTrinketRewardOffer(
   battleState: BattleState,
   forceTrinket: boolean,

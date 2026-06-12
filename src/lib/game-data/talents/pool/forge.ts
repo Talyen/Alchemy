@@ -35,8 +35,8 @@ export const forgeTalents: TalentDefinition[] = [
     id: "forge-strength-1",
     keywordId: "forge",
     name: "Forge Mastery",
-    description: "Start each combat with 2 Forge",
-    effects: [setEffect("startForge", 2)],
+    description: "Start each combat with 1 Forge",
+    effects: [setEffect("startForge", 1)],
   },
   {
     id: "forge-strength-2",

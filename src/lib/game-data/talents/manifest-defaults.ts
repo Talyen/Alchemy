@@ -83,7 +83,7 @@ export const DEFAULT_TALENT_EFFECTS: TalentEffectManifest = {
   burnOnWish: 0,
   forgeOnBurnDealt: 0,
   blockToBurnDamage: false,
-  consumeDoubleBurnDamage: false,
+  consumeBurnDamageBonusPercent: 0,
   burnStunChance: 0,
 
   shopCardDiscount: 0,

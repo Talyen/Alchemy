@@ -91,7 +91,7 @@ export type TalentEffectManifest = {
   burnOnWish: number;
   forgeOnBurnDealt: number;
   blockToBurnDamage: boolean;
-  consumeDoubleBurnDamage: boolean;
+  consumeBurnDamageBonusPercent: number;
   burnStunChance: number;
 
   // --- Gold ---

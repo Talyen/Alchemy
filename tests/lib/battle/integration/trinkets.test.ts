@@ -126,8 +126,8 @@ describe("Trinket — Parasitic Bloom (10% chance to leech poison damage)", () =
       deck: [makeCard(), makeCard(), makeCard(), makeCard()],
     });
     const result = endPlayerTurn(state);
-    // poison damage = 3 * 1x multiplier = 3, leech heals for 3
-    expect(result.state.playerHealth).toBe(23);
+    // poison damage = 3, leech heals for half (2)
+    expect(result.state.playerHealth).toBe(22);
   });
 
   it("does not heal when the 10% leech fails", () => {

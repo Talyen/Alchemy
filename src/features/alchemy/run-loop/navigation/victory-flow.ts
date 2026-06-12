@@ -19,6 +19,7 @@ import {
 } from "@/lib/game-constants";
 import { getGenerousGoldBonus } from "./reward-flow";
 import type { MaterialInventory } from "@/lib/homestead/types";
+import { emptyInventory } from "@/lib/homestead/inventory";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import { CONSTANTS, type Destination } from "@/features/alchemy/shared/types";
 import { syncBattleToRun } from "@/features/alchemy/shared/stores/run-transitions";
@@ -31,6 +32,7 @@ import {
   createCombatRewardState as createCombatRewardStateFromFlow,
   createBossRewardState as createBossRewardStateFromFlow,
   createEmptyRewardState,
+  createWildwoodRewardState,
   getCompanionCardChoices,
   shouldGrantCompanionReward,
   type RewardState,
@@ -194,6 +196,22 @@ export function computeVictoryRewards(
   );
 
   const talentEffects = computeTalentEffects(input.unlockedTalents);
+  if (input.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
+    return {
+      newGold: input.runGold,
+      rewardState: createWildwoodRewardState(input.runDeck, rng),
+      labyrinthRewardModifiers: [],
+      destinations: [],
+      materials: emptyInventory(),
+      goldEarned: 0,
+      playerHealth: input.battleState.playerHealth,
+      maxHealthDelta: talentEffects.maxHealthPerCombat > 0 ? talentEffects.maxHealthPerCombat : 0,
+      baseGold: 0,
+      eliteBonus: 0,
+      bossBonus: 0,
+      generousBonus: 0,
+    };
+  }
   const { gold, eliteBonus, bossBonus, generousBonus, baseGold } = rollVictoryGold(
     input.battleState,
     talentEffects,
@@ -285,7 +303,7 @@ export type CommitVictoryRewardsDeps = {
 };
 
 export function commitVictoryRewards(result: VictoryRewardsResult, deps: CommitVictoryRewardsDeps) {
-  if (deps.battleState.pendingMaterials.crystal > 0) {
+  if (deps.contentSystemType !== CONSTANTS.CONTENT_SYSTEMS.WILDWOOD && deps.battleState.pendingMaterials.crystal > 0) {
     deps.addHomesteadMaterials(deps.battleState.pendingMaterials);
   }
 

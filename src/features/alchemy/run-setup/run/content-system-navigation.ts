@@ -13,6 +13,7 @@ import {
   setPendingCharacterId,
   setPendingContentSystemType,
   setRewardState,
+  setWildwoodDraft,
 } from "../../shared/stores/run-session-facade";
 import { readRunSessionStore } from "../../shared/stores/run-session-facade";
 import { afterCampaignCharacterResolved } from "@/features/alchemy/run-loop/navigation/run-navigation-helpers";
@@ -25,6 +26,8 @@ import { getBossEnemy } from "@/features/alchemy/shared/config";
 import { CONSTANTS, type Destination, type Screen } from "../../shared/types";
 import type { RunStateController, TalentStateController } from "../../shared/stores/run-session-facade";
 import type { DestinationOptionsInput } from "@/lib/active-run-session";
+import { createInitialWildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
+import { DRAFT_ROUNDS } from "@/lib/game-constants";
 
 export type ContentSystemNavigationDeps = {
   run: RunStateController;
@@ -43,6 +46,8 @@ export type ContentSystemNavigationDeps = {
     modifiers?: ReturnType<typeof getDifficultyModifiers>,
   ) => void;
   getAvailableDestinations: (options?: DestinationOptionsInput) => Destination[];
+  onResumeWildwood: () => void;
+  onStartNextWildwoodBoss: () => void;
 };
 
 export function createContentSystemNavigation(deps: ContentSystemNavigationDeps) {
@@ -66,9 +71,10 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
       discoverStarterDeck?: boolean;
       playStartGoldSound?: boolean;
       resetEncounteredEnemies?: boolean;
+      draftedDeck?: BattleCard[];
     } = {},
   ) {
-    const snapshot = createStartSnapshot(characterId, contentSystemType, options.difficultyId);
+    const snapshot = createStartSnapshot(characterId, contentSystemType, options.difficultyId, options.draftedDeck);
     applyRunStartSnapshot(snapshot);
     const appState = useAppStore.getState();
     deps.run.setDiscoveryBaselines(appState.discoveredCardIds, appState.discoveredTrinketIds);
@@ -94,6 +100,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
     characterId: CharacterId,
     contentSystemType: ContentSystemId,
     difficultyId?: DifficultyId | null,
+    draftedDeck?: BattleCard[],
   ) {
     const baseInput = {
       characterId,
@@ -102,10 +109,14 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
       talentStartGold: deps.talents.talentEffects.startGold,
       talentXP: deps.talents.talentXP,
     };
+    const resolvedDraft =
+      draftedDeck !== undefined
+        ? draftedDeck
+        : characterId === "wildcard" && deps.draftedDeckRef.current
+          ? deps.draftedDeckRef.current
+          : undefined;
     return createRunStartSnapshot(
-      characterId === "wildcard" && deps.draftedDeckRef.current
-        ? { ...baseInput, draftedDeck: deps.draftedDeckRef.current }
-        : baseInput,
+      resolvedDraft !== undefined ? { ...baseInput, draftedDeck: resolvedDraft } : baseInput,
     );
   }
 
@@ -132,9 +143,21 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
     deps.navigateTo(CONSTANTS.SCREENS.LABYRINTH_MAP);
   }
 
-  function initializeWildwoodRun(characterId: CharacterId) {
-    startRun(characterId, CONSTANTS.CONTENT_SYSTEMS.WILDWOOD, { discoverStarterDeck: true });
-    deps.navigateTo(CONSTANTS.SCREENS.WILDWOOD_SELECT);
+  function initializeWildwoodRun(characterId: CharacterId, initialDeck?: BattleCard[]) {
+    const skipDraft = initialDeck !== undefined && initialDeck.length >= DRAFT_ROUNDS;
+    setWildwoodDraft(createInitialWildwoodDraftState(characterId));
+    if (skipDraft) {
+      startRun(characterId, CONSTANTS.CONTENT_SYSTEMS.WILDWOOD, {
+        draftedDeck: initialDeck,
+        discoverStarterDeck: true,
+      });
+      setPendingCharacterId(null);
+      deps.onStartNextWildwoodBoss();
+      return;
+    }
+    startRun(characterId, CONSTANTS.CONTENT_SYSTEMS.WILDWOOD, { draftedDeck: [] });
+    setPendingCharacterId(characterId);
+    deps.navigateTo(CONSTANTS.SCREENS.DRAFT_DECK);
   }
 
   const noviceCampaignDeps = () => ({
@@ -165,7 +188,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
           );
         });
       } else if (systemId === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
-        deps.navigateTo(CONSTANTS.SCREENS.WILDWOOD_SELECT);
+        deps.onResumeWildwood();
       }
       return;
     }
@@ -188,6 +211,11 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
   function handleCharacterSelect(selectedId: CharacterId) {
     const systemType = deps.pendingContentSystemType;
 
+    if (systemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
+      initializeWildwoodRun(selectedId);
+      return;
+    }
+
     if (selectedId === "wildcard") {
       setPendingCharacterId(selectedId);
       deps.draftedDeckRef.current = null;
@@ -197,10 +225,6 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
 
     if (systemType === CONSTANTS.CONTENT_SYSTEMS.LABYRINTH) {
       initializeLabyrinthRun(selectedId);
-      return;
-    }
-    if (systemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
-      initializeWildwoodRun(selectedId);
       return;
     }
     if (systemType !== CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN) {
@@ -224,7 +248,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
       return;
     }
     if (systemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
-      initializeWildwoodRun("wildcard");
+      initializeWildwoodRun("wildcard", draftedCards);
       return;
     }
 

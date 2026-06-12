@@ -167,9 +167,33 @@ describe("parseActiveRun", () => {
     expect(result!.runDeck.length).toBe(7); // knight default
   });
 
-  it("normalizes legacy wildwood contentSystemType to campaign", () => {
+  it("discards legacy wildwood runs without Wildwood Draft state", () => {
     const result = parseActiveRun(makeRunCandidate({ contentSystemType: "wildwood" }));
-    expect(result!.contentSystemType).toBe("campaign");
+    expect(result).toBeNull();
+  });
+
+  it("parses resumable Wildwood Draft state", () => {
+    const wildwoodDraft = {
+      version: 1,
+      phase: "draft",
+      draftChoices: makeRunCandidate().runDeck,
+      remainingBossIds: ["forge-golem", "iron-bear"],
+      previousBossId: null,
+      currentBossId: null,
+      currentModifierId: null,
+      rewardType: null,
+      rewardChoiceIds: [],
+      selectedRewardId: null,
+    };
+
+    const result = parseActiveRun(makeRunCandidate({
+      contentSystemType: "wildwood",
+      selectedDifficulty: null,
+      wildwoodDraft,
+    }));
+
+    expect(result?.contentSystemType).toBe("wildwood");
+    expect(result?.wildwoodDraft).toMatchObject({ phase: "draft", remainingBossIds: ["forge-golem", "iron-bear"] });
   });
 
   it("falls back to campaign when labyrinth map is missing", () => {

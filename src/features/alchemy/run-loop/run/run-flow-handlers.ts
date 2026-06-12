@@ -15,6 +15,7 @@ import {
   setCorruptionResult,
   setRewardState,
   setRunEndMaterials,
+  setWildwoodDraft,
 } from "../../shared/stores/run-session-facade";
 import { useUiStore } from "../../shared/stores/ui-store";
 import { playUISound, playVictory, stopAllSfx } from "@/lib/audio";
@@ -66,6 +67,7 @@ export type RunFlowHandlerDeps = {
   }) => Destination[];
   beginMysteryEvent: () => void;
   clearMysteryCardChoices: () => void;
+  onWildwoodRewardComplete: () => void;
 };
 
 export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
@@ -82,6 +84,12 @@ export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
 
   function awardRunEndMaterials() {
     const runState = readActiveRunStore();
+    if (runState.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
+      runState.clearRunMaterialsEarned();
+      const none = emptyInventory();
+      setRunEndMaterials(none);
+      return none;
+    }
     const homesteadEffects = useHomesteadStore.getState().effects;
     const runCollected = runState.runMaterialsEarned;
     const homesteadBonus = applyEndOfRunHomesteadBonuses(emptyInventory(), homesteadEffects, runState.roomsEncountered);
@@ -127,6 +135,18 @@ export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
       setCompanionRewardCards,
       clearCombatState,
     });
+    if (runState.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
+      const wildwood = readRunSessionStore().wildwoodDraft;
+      if (wildwood) {
+        setWildwoodDraft({
+          ...wildwood,
+          phase: "recovery",
+          rewardType: result.rewardState.rewardType,
+          rewardChoiceIds: result.rewardState.choices.map((choice) => choice.id),
+          selectedRewardId: null,
+        });
+      }
+    }
   }
 
   function handleBattleVictory() {
@@ -135,7 +155,11 @@ export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
     stopAllSfx();
     playVictory();
     if (readRunSessionStore().hasActiveRun) {
-      transitionScreen(CONSTANTS.SCREENS.REWARDS, {
+      const nextScreen =
+        readActiveRunStore().contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD
+          ? CONSTANTS.SCREENS.WILDWOOD_RECOVERY
+          : CONSTANTS.SCREENS.REWARDS;
+      transitionScreen(nextScreen, {
         delayMs: VICTORY_TRANSITION_DELAY,
         guard: () => readRunSessionStore().hasActiveRun,
       });
@@ -202,9 +226,15 @@ export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
       ),
     });
 
-    awardMaterialsDuringRun(result.materials);
+    const isWildwood = deps.run.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD;
+    if (!isWildwood) awardMaterialsDuringRun(result.materials);
     applyFinalizedRewards(result);
     useUiStore.getState().clearCardHover();
+    if (isWildwood) {
+      setRewardState(result.nextRewardState);
+      deps.onWildwoodRewardComplete();
+      return;
+    }
     routeAfterReward(result.route, result.materials, result.nextRewardState, result.clearCompanionRewardCards);
   }
 

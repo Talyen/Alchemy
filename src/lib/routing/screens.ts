@@ -21,7 +21,8 @@ export type Screen =
   | "run-victory"
   | "run-discoveries"
   | "labyrinth-map"
-  | "wildwood-select";
+  | "wildwood-recovery"
+  | "wildwood-removal";
 
 export const ROUTE_SCREENS = {
   MENU: "menu",
@@ -45,7 +46,8 @@ export const ROUTE_SCREENS = {
   RUN_VICTORY: "run-victory",
   RUN_DISCOVERIES: "run-discoveries",
   LABYRINTH_MAP: "labyrinth-map",
-  WILDWOOD_SELECT: "wildwood-select",
+  WILDWOOD_RECOVERY: "wildwood-recovery",
+  WILDWOOD_REMOVAL: "wildwood-removal",
 } as const satisfies Record<string, Screen>;
 
 export const ROUTE_SCREEN_VALUES = Object.values(ROUTE_SCREENS) as [Screen, ...Screen[]];

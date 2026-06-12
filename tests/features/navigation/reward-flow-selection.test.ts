@@ -2,10 +2,28 @@ import { describe, expect, it, vi } from "vitest";
 import {
   createBossRewardState,
   createCombatRewardState,
+  createWildwoodRewardState,
 } from "@/features/alchemy/run-loop/navigation/reward-flow";
+import { getStartingDeck } from "@/lib/game-data";
 import { emptyInventory } from "@/lib/homestead/inventory";
 
 describe("reward flow selection", () => {
+  describe("createWildwoodRewardState", () => {
+    it("uses an exact half roll for three card choices", () => {
+      const result = createWildwoodRewardState(getStartingDeck("knight"), () => 0.5);
+      expect(result.rewardType).toBe("card");
+      expect(result.choices).toHaveLength(3);
+      expect(result.gold).toBe(0);
+      expect(result.materials).toEqual(emptyInventory());
+    });
+
+    it("uses an exact half roll for three trinket choices", () => {
+      const result = createWildwoodRewardState(getStartingDeck("knight"), () => 0.49);
+      expect(result.rewardType).toBe("trinket");
+      expect(result.choices).toHaveLength(3);
+    });
+  });
+
   describe("createBossRewardState", () => {
     it("creates trinket reward with summed gold", () => {
       const result = createBossRewardState({

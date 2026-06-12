@@ -116,7 +116,7 @@ export const keywordDefinitions: Record<KeywordId, KeywordDefinition> = {
   poison: {
     id: "poison",
     label: "Poison",
-    description: "Poison deals damage and decreases by 1 each turn",
+    description: "Poison deals damage and decreases by 20% each turn (minimum 1)",
     colorClass: "text-green-700",
     borderClass: "border-green-700",
     shineColors: ["#15803d", "#14532d", "#15803d"],
@@ -132,7 +132,7 @@ export const keywordDefinitions: Record<KeywordId, KeywordDefinition> = {
   leech: {
     id: "leech",
     label: "Leech",
-    description: "Leech heals you for the damage dealt",
+    description: "Leech heals you for half the damage dealt",
     colorClass: "text-rose-800",
     borderClass: "border-rose-800",
     shineColors: ["#9f1239", "#4c0519", "#9f1239"],

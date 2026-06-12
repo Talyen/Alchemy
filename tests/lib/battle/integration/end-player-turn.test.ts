@@ -173,9 +173,9 @@ describe("endPlayerTurn", () => {
     });
     const result = endPlayerTurn(state);
     expect(result.enemyTurnStartState?.enemyHealth).toBe(20);
-    expect(result.enemyTurnStartState?.playerHealth).toBe(24);
+    expect(result.enemyTurnStartState?.playerHealth).toBe(22);
     expect(result.enemyTurnStartCombatTexts).toEqual([
-      { target: "player", kind: "heal", stat: "health", amount: 4 },
+      { target: "player", kind: "heal", stat: "health", amount: 2 },
       { target: "enemy", kind: "damage", stat: "bleed", amount: 10 },
     ]);
     expect(result.enemyResolutionCombatTexts).toContainEqual({
@@ -186,8 +186,8 @@ describe("endPlayerTurn", () => {
     });
     // Enemy takes 10 bleed damage
     expect(result.state.enemyHealth).toBe(20);
-    // Player takes 8 enemy attack then heals 4 from leech: 20 - 8 + 4 = 16
-    expect(result.state.playerHealth).toBe(16);
+    // Player takes 8 enemy attack then heals 2 from leech (half of pending 4): 20 - 8 + 2 = 14
+    expect(result.state.playerHealth).toBe(14);
     expect(result.state.enemyStatuses.bleed).toBe(0);
     expect(result.state.pendingBleedLeechHealing).toBe(0);
   });
@@ -205,9 +205,9 @@ describe("endPlayerTurn", () => {
     const result = endPlayerTurn(state);
 
     expect(result.enemyTurnStartState?.enemyHealth).toBe(0);
-    expect(result.enemyTurnStartState?.playerHealth).toBe(24);
+    expect(result.enemyTurnStartState?.playerHealth).toBe(22);
     expect(result.state.enemyHealth).toBe(0);
-    expect(result.state.playerHealth).toBe(24);
+    expect(result.state.playerHealth).toBe(22);
     expect(result.enemyResolutionCombatTexts).toEqual([]);
   });
 

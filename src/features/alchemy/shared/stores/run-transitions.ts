@@ -8,7 +8,7 @@ import { flushAlchemySaveNow } from "@/features/alchemy/shared/storage";
 import type { Destination } from "@/features/alchemy/shared/types";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import { computeRunDiscoveryDelta } from "@/lib/discoveries";
-import { createEmptyRewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
+import { createEmptyRewardState, restoreWildwoodRewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
 import { getRunDomainStore, useRunDomainStore } from "./run-domain-store";
 import { createInitialRunDomainData } from "./run-domain-types";
 import { useBattlePresentationStore } from "./battle-presentation-store";
@@ -63,6 +63,17 @@ export function restoreRun(
     store.setActiveLabyrinthPendingNode(activeRun.labyrinthPendingNode);
   }
 
+  store.setWildwoodDraft(activeRun.wildwoodDraft);
+  if (activeRun.wildwoodDraft?.phase === "reward" && activeRun.wildwoodDraft.rewardType) {
+    store.setRewardState(
+      restoreWildwoodRewardState(
+        activeRun.wildwoodDraft.rewardType,
+        activeRun.wildwoodDraft.rewardChoiceIds,
+        activeRun.wildwoodDraft.selectedRewardId,
+      ),
+    );
+  }
+
   if (activeRun.currentScreen === "destination" && activeRun.destinationChoices.length > 0) {
     store.setRewardState({
       ...createEmptyRewardState(),
@@ -97,6 +108,7 @@ export function snapshotRun(screen?: Screen): ActiveRunData {
     hasActiveBattle: battle.hasActiveBattle,
     battleState: battle.battleState,
     labyrinthPendingNode: session.activeLabyrinthPendingNode,
+    wildwoodDraft: session.wildwoodDraft,
     activeLabyrinthModifiers: session.activeLabyrinthModifiers,
     activeLabyrinthRewardModifiers: session.activeLabyrinthRewardModifiers,
     runTalentXP: run.runTalentXP,

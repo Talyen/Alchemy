@@ -22,6 +22,8 @@ export type BattleAnomalies = {
   maxSingleHitDamageToEnemy: number;
   maxSingleHitDamageToPlayer: number;
   maxSingleHeal: number;
+  maxSingleHitDamageToEnemyStat: string;
+  maxSingleHitDamageToPlayerStat: string;
 };
 
 type StatusAnomalyMetric = {
@@ -57,10 +59,23 @@ export const ANOMALY_METRICS: { key: keyof BattleAnomalies; label: string }[] = 
   { key: "maxSingleHeal", label: "Player Heal" },
 ];
 
-export const ANOMALY_THRESHOLD = 100;
+export type AnomalyPreset = "early" | "mid" | "late";
+
+export const ANOMALY_THRESHOLD_BY_PRESET: Record<AnomalyPreset, number> = {
+  early: 100,
+  mid: 200,
+  late: 300,
+};
+
+export function getAnomalyThreshold(preset: AnomalyPreset): number {
+  return ANOMALY_THRESHOLD_BY_PRESET[preset];
+}
 
 export function createEmptyAnomalies(): BattleAnomalies {
-  return Object.fromEntries(ANOMALY_METRICS.map(({ key }) => [key, 0])) as BattleAnomalies;
+  const anomalies = Object.fromEntries(ANOMALY_METRICS.map(({ key }) => [key, 0])) as BattleAnomalies;
+  anomalies.maxSingleHitDamageToEnemyStat = "";
+  anomalies.maxSingleHitDamageToPlayerStat = "";
+  return anomalies;
 }
 
 export function sampleAnomalies(state: BattleState, combatTexts: CombatTextEvent[], anomalies: BattleAnomalies): void {
@@ -72,9 +87,13 @@ export function sampleAnomalies(state: BattleState, combatTexts: CombatTextEvent
     if (ct.kind !== "damage" && ct.kind !== "heal") continue;
     if (ct.kind === "damage") {
       if (ct.target === "enemy") {
-        anomalies.maxSingleHitDamageToEnemy = Math.max(anomalies.maxSingleHitDamageToEnemy, ct.amount);
-      } else {
-        anomalies.maxSingleHitDamageToPlayer = Math.max(anomalies.maxSingleHitDamageToPlayer, ct.amount);
+        if (ct.amount > anomalies.maxSingleHitDamageToEnemy) {
+          anomalies.maxSingleHitDamageToEnemy = ct.amount;
+          anomalies.maxSingleHitDamageToEnemyStat = ct.stat;
+        }
+      } else if (ct.amount > anomalies.maxSingleHitDamageToPlayer) {
+        anomalies.maxSingleHitDamageToPlayer = ct.amount;
+        anomalies.maxSingleHitDamageToPlayerStat = ct.stat;
       }
     } else {
       anomalies.maxSingleHeal = Math.max(anomalies.maxSingleHeal, ct.amount);

@@ -30,7 +30,7 @@ describe("tickEnemyStatuses", () => {
     expect(next.enemyStatuses.burn).toBe(0);
   });
 
-  it("deals poison damage and decays poison by 1", () => {
+  it("deals poison damage and decays poison by 20% (minimum 1)", () => {
     const state = patchBattleState({
       enemyHealth: 30,
       enemyStatuses: { poison: 8 },
@@ -38,7 +38,7 @@ describe("tickEnemyStatuses", () => {
     const texts = makeTexts();
     const next = tickEnemyStatuses(state, texts);
     expect(next.enemyHealth).toBe(22);
-    expect(next.enemyStatuses.poison).toBe(7);
+    expect(next.enemyStatuses.poison).toBe(6);
     expect(texts).toContainEqual({ target: "enemy", kind: "damage", stat: "poison", amount: 8 });
   });
 
@@ -63,9 +63,9 @@ describe("tickEnemyStatuses", () => {
     });
     const texts = makeTexts();
     const next = tickEnemyStatuses(state, texts);
-    expect(next.playerHealth).toBe(23);
+    expect(next.playerHealth).toBe(22);
     expect(next.pendingBleedLeechHealing).toBe(0);
-    expect(texts).toContainEqual({ target: "player", kind: "heal", stat: "health", amount: 3 });
+    expect(texts).toContainEqual({ target: "player", kind: "heal", stat: "health", amount: 2 });
   });
 
   it("skips tick when burn is 0", () => {
@@ -137,8 +137,8 @@ describe("tickEnemyStatuses", () => {
     const texts = makeTexts();
     const next = tickEnemyStatuses(state, texts);
     expect(next.enemyHealth).toBe(22);
-    expect(next.playerHealth).toBe(28);
-    expect(texts).toContainEqual({ target: "player", kind: "heal", stat: "health", amount: 8 });
+    expect(next.playerHealth).toBe(24);
+    expect(texts).toContainEqual({ target: "player", kind: "heal", stat: "health", amount: 4 });
   });
 
   it("clamps enemy health at 0", () => {
@@ -329,7 +329,7 @@ describe("tickPlayerStatuses", () => {
     expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "burn", amount: 4 });
   });
 
-  it("deals poison damage to player and decrements poison", () => {
+  it("deals poison damage to player and decays poison by 20% (minimum 1)", () => {
     const state = patchBattleState({
       playerHealth: 30,
       playerStatuses: { poison: 5 },
@@ -339,6 +339,15 @@ describe("tickPlayerStatuses", () => {
     expect(next.playerHealth).toBe(25);
     expect(next.playerStatuses.poison).toBe(4);
     expect(texts).toContainEqual({ target: "player", kind: "damage", stat: "poison", amount: 5 });
+  });
+
+  it("decays high player poison stacks by 20%", () => {
+    const state = patchBattleState({
+      playerHealth: 30,
+      playerStatuses: { poison: 100 },
+    });
+    const next = tickPlayerStatuses(state, makeTexts());
+    expect(next.playerStatuses.poison).toBe(80);
   });
 
   it("receiveHalfPoisonDamage halves poison damage", () => {

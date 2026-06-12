@@ -42,7 +42,7 @@ test.describe("Progression Locks", () => {
     await labyrinthCard.hover();
     await expect(page.getByText("Finish a Run as the Rogue to unlock")).toBeVisible();
 
-    const wildwoodCard = page.getByRole("button", { name: /The Wildwoods/ });
+    const wildwoodCard = page.getByRole("button", { name: /Wildwood Draft/ });
     await wildwoodCard.hover();
     await expect(page.getByText("Finish a Run as the Ranger to unlock")).toBeVisible();
 
@@ -134,7 +134,7 @@ test.describe("Progression Locks", () => {
 
     // 2. Verify Wildwood mode is unlocked
     await page.getByRole("button", { name: "Play" }).click();
-    const wildwoodCard = page.getByRole("button", { name: /The Wildwoods/ });
+    const wildwoodCard = page.getByRole("button", { name: /Wildwood Draft/ });
     await expect(wildwoodCard).not.toHaveClass(/opacity-50/);
     await wildwoodCard.click();
     await page.getByRole("button", { name: "Play", exact: true }).click();
