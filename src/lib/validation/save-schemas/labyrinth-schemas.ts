@@ -1,29 +1,23 @@
 // Zod schemas for labyrinth map persistence.
 import { z } from "zod";
 import { LABYRINTH_MIN_CONNECTIONS, LABYRINTH_MAX_CONNECTIONS } from "@/lib/game-constants";
-import {
-  LABYRINTH_MODIFIER_KINDS,
-  LabyrinthModifierKindSchema,
-  LabyrinthNodeStateSchema,
-  LabyrinthNodeTypeSchema,
-} from "./schema-enums";
+import { LabyrinthNodeStateSchema, LabyrinthNodeTypeSchema } from "./schema-enums";
+import { sanitizeEncounterTraitIds } from "@/lib/content-systems/encounter-traits";
 
-const VALID_LABYRINTH_MODIFIER_KINDS: ReadonlySet<string> = new Set(LABYRINTH_MODIFIER_KINDS);
-
-function filterLabyrinthModifiers(val: unknown): string[] {
-  if (!Array.isArray(val)) return [];
-  return val.filter((v): v is string => typeof v === "string" && VALID_LABYRINTH_MODIFIER_KINDS.has(v));
-}
-
-export const LabyrinthModifierArraySchema = z
-  .preprocess(filterLabyrinthModifiers, z.array(LabyrinthModifierKindSchema))
+export const EncounterCombatTraitArraySchema = z
+  .array(z.string())
+  .transform((values) => sanitizeEncounterTraitIds(values, "combat"))
+  .catch([]);
+export const EncounterRewardTraitArraySchema = z
+  .array(z.string())
+  .transform((values) => sanitizeEncounterTraitIds(values, "reward"))
   .catch([]);
 
 export const LabyrinthNodeSchema = z
   .object({
     type: LabyrinthNodeTypeSchema,
-    modifiers: LabyrinthModifierArraySchema,
-    rewardModifiers: LabyrinthModifierArraySchema,
+    modifiers: EncounterCombatTraitArraySchema,
+    rewardModifiers: EncounterRewardTraitArraySchema,
     connections: z
       .array(
         z.object({

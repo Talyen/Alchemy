@@ -14,7 +14,6 @@ import {
   addPlayerStatus,
   applyPlayerHealing,
   clampHealth,
-  isNullFieldActive,
   setFlag,
   type BattleState,
   type CombatTextEvent,
@@ -26,8 +25,8 @@ import {
   FIRST_EFFECT_MULTIPLIER,
   HALF_DIVISOR,
   PERCENT_DENOMINATOR,
-  STATUS_CONFIG,
 } from "../game-constants";
+import { processEncounterTraitHealthThreshold } from "./encounter-trait-events";
 
 function rollTalentChance(chance: number, state: { rng?: () => number }): boolean {
   return chance > 0 && rollPercent(chance, getBattleRng(state));
@@ -238,10 +237,7 @@ function applyHolyDamageRiders(state: BattleState, card: BattleCard, damage: num
     nextState.talentEffects.holyBurnChance > 0 &&
     nextState.rng() * PERCENT_DENOMINATOR < nextState.talentEffects.holyBurnChance
   ) {
-    const burnAmount = isNullFieldActive(nextState)
-      ? Math.max(STATUS_CONFIG.MIN_STACK_AMOUNT, Math.round(damage / HALF_DIVISOR))
-      : damage;
-    nextState = addEnemyStatus(nextState, "burn", burnAmount);
+    nextState = addEnemyStatus(nextState, "burn", damage);
   }
 
   if (
@@ -284,6 +280,7 @@ export function applyDamageRiders(
   modifiedDamage: number,
   combatTexts: CombatTextEvent[],
 ) {
+  const previousHealth = state.enemyHealth;
   let nextState: BattleState = {
     ...state,
     enemyHealth: clampHealth(state.enemyHealth, -modifiedDamage, state.enemyMaxHealth),
@@ -314,6 +311,8 @@ export function applyDamageRiders(
   if (modifiedDamage > 0) {
     mergeCombatText(combatTexts, { target: "enemy", kind: "damage", stat: effect.damageType, amount: modifiedDamage });
   }
+
+  nextState = processEncounterTraitHealthThreshold(previousHealth, nextState, combatTexts);
 
   return consumeForgeAfterDamage(nextState, effect, modifiedDamage);
 }

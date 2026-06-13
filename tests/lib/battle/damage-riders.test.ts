@@ -3,7 +3,6 @@ import { applyCardEffects } from "@/lib/battle/apply-effects";
 import { applyDamageRiders } from "@/lib/battle/damage-riders";
 import { defaultTalentEffects } from "@/lib/battle";
 import type { CombatTextEvent } from "@/lib/battle/types";
-import { isNullFieldActive } from "@/lib/battle/types";
 import { defaultTrinketEffects } from "@/lib/trinkets";
 import { makeTestBattleState, makeTestCard, seededRng } from "../../fixtures/battle";
 
@@ -134,15 +133,13 @@ describe("damage riders via applyCardEffects", () => {
     expect(result.enemyHealth).toBe(39);
   });
 
-  it("halves multiplied status gain in labyrinth null field", () => {
+  it("applies the full multiplied status gain", () => {
     const state = makeState({
       enemyStatuses: { burn: 0, poison: 4, bleed: 0, freeze: 0, stun: 0 },
-      difficultyModifiers: [{ kind: "labyrinth-null-field" }],
     });
-    expect(isNullFieldActive(state)).toBe(true);
     const card = makeTestCard({ effects: [{ kind: "multiply-enemy-status", status: "poison", factor: 2 }] });
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);
-    expect(result.enemyStatuses.poison).toBe(6);
+    expect(result.enemyStatuses.poison).toBe(8);
   });
 });

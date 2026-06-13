@@ -188,12 +188,12 @@ describe("combat number accuracy", () => {
     const second = applyCardEffects(first, secondCard, secondTexts);
 
     expect(first.enemyHealth).toBe(30);
-    expect(first.enemyStatuses.burn).toBe(20);
-    expect(firstTexts).toEqual([{ target: "enemy", kind: "damage", stat: "burn", amount: 20 }]);
+    expect(first.enemyStatuses.burn).toBe(15);
+    expect(firstTexts).toEqual([{ target: "enemy", kind: "damage", stat: "burn", amount: 15 }]);
     expect(first.flags.firstBurnCardDoubledUsed).toBe(true);
 
     expect(second.enemyHealth).toBe(20);
-    expect(second.enemyStatuses.burn).toBe(30);
+    expect(second.enemyStatuses.burn).toBe(25);
     expect(secondTexts).toEqual([{ target: "enemy", kind: "damage", stat: "burn", amount: 10 }]);
   });
 

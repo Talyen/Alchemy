@@ -2,21 +2,11 @@
  * Forge threshold bursts and player forge application.
  * Depends on: ./types, ./combat-text, ./status-helpers, ../game-constants.
  */
-import {
-  addEnemyStatus,
-  addPlayerStatus,
-  isNullFieldActive,
-  stripEnemyArmor,
-  type BattleState,
-  type CombatTextEvent,
-} from "./types";
+import { addEnemyStatus, addPlayerStatus, stripEnemyArmor, type BattleState, type CombatTextEvent } from "./types";
 import { mergeCombatText } from "./combat-text";
-import { HALF_DIVISOR, STATUS_CONFIG } from "../game-constants";
+import { HALF_DIVISOR } from "../game-constants";
 
 function computeForgeBurnAmount(state: BattleState): number {
-  if (isNullFieldActive(state)) {
-    return Math.max(STATUS_CONFIG.MIN_STACK_AMOUNT, Math.round(state.talentEffects.forgeBurnDamage / HALF_DIVISOR));
-  }
   return state.talentEffects.forgeBurnDamage;
 }
 

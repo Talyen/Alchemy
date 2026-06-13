@@ -3,6 +3,7 @@ import type { RefObject } from "react";
 import { TimerGroup } from "@/lib/animation/game-timer";
 import type { BattleCard, CharacterId, DifficultyId, DifficultyModifier } from "@/lib/game-data";
 import type { LabyrinthModifierKind } from "@/lib/content-systems/types";
+import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import {
   readActiveRunStore,
   readBattleStore,
@@ -109,7 +110,10 @@ export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
       runDeck: runState.runDeck,
       runTrinkets: runState.runTrinkets,
       contentSystemType: runState.contentSystemType,
-      activeLabyrinthRewardModifiers: readRunSessionStore().activeLabyrinthRewardModifiers,
+      activeLabyrinthRewardModifiers:
+        runState.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD
+          ? (readRunSessionStore().wildwoodDraft?.currentRewardTraitIds ?? [])
+          : (readRunSessionStore().activeLabyrinthRewardModifiers as EncounterRewardTraitId[]),
       battleState: readBattleStore().battleState,
       runGold: runState.runGold,
       runPlayerHealth: runState.runPlayerHealth,
@@ -222,7 +226,12 @@ export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
       rewardState: session.rewardState,
       companionRewardCards: session.companionRewardCards,
       grantAlchemistReward: shouldGrantAlchemistReward(
-        getActiveRewardModifiersForContentSystem(deps.run.contentSystemType, deps.activeLabyrinthRewardModifiers),
+        getActiveRewardModifiersForContentSystem(
+          deps.run.contentSystemType,
+          deps.run.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD
+            ? (session.wildwoodDraft?.currentRewardTraitIds ?? [])
+            : (deps.activeLabyrinthRewardModifiers as EncounterRewardTraitId[]),
+        ),
       ),
     });
 
@@ -231,6 +240,10 @@ export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
     applyFinalizedRewards(result);
     useUiStore.getState().clearCardHover();
     if (isWildwood) {
+      if (result.route === CONSTANTS.REWARD_ROUTES.COMPANION_REWARD) {
+        routeAfterReward(result.route, result.materials, result.nextRewardState, result.clearCompanionRewardCards);
+        return;
+      }
       setRewardState(result.nextRewardState);
       deps.onWildwoodRewardComplete();
       return;

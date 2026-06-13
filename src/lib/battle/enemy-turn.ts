@@ -5,6 +5,7 @@ import { tickEnemyStatuses, tickPlayerStatuses } from "./status-ticks";
 import type { BattleState, CombatTextEvent } from "./types";
 import { processEnemyAttack } from "./enemy-turn-attack";
 import { processEnemyRegeneration, processEnemyTraits } from "./enemy-turn-traits";
+import { processEncounterTraitActionDamage, processEncounterTraitActionStart } from "./encounter-trait-events";
 import { advanceToPlayerTurn, reduceSkipTurns, resolveDeathsDoorEndOfEnemyTurn } from "./enemy-turn-utils";
 
 export type EndPlayerTurnResolution = {
@@ -89,10 +90,12 @@ function resolveEnemyAction(
   options?: { traitRoll?: number },
 ): CombatTextResult & { afterAttackState: BattleState } {
   const texts: CombatTextEvent[] = [];
-  let nextState = processEnemyTraits(state, texts, options);
+  let nextState = processEncounterTraitActionStart(state, texts);
+  nextState = processEnemyTraits(nextState, texts, options);
   nextState = processEnemyAttack(nextState, texts);
   const afterAttackState = nextState;
   nextState = tickPlayerStatuses(nextState, texts);
+  nextState = processEncounterTraitActionDamage(nextState, texts);
   nextState = processEnemyRegeneration(nextState, texts);
   return { state: nextState, texts, afterAttackState };
 }

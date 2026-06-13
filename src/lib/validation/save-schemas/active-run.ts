@@ -5,7 +5,7 @@ import { isPersistedBattleState } from "../battle-state-guard";
 import { ROUTE_SCREEN_VALUES } from "@/lib/routing";
 import { ACTS_PER_RUN, LEGACY_CHARACTER_RENAMES } from "@/lib/game-constants";
 import { WILDWOOD_BOSS_IDS } from "@/lib/content-systems/wildwood/bosses";
-import { WILDWOOD_MODIFIERS } from "@/lib/content-systems/wildwood/gauntlet";
+import { sanitizeEncounterTraitIds, sanitizePersistedEnemyTraits } from "@/lib/content-systems/encounter-traits";
 import { normalizeActiveRunData } from "../normalize-active-run-data";
 import {
   caught,
@@ -16,7 +16,8 @@ import {
   TalentXPSchema,
   BattleCardSchema,
   LabyrinthMapSchema,
-  LabyrinthModifierArraySchema,
+  EncounterCombatTraitArraySchema,
+  EncounterRewardTraitArraySchema,
   MaterialInventorySchema,
 } from "./core";
 
@@ -28,31 +29,49 @@ const LabyrinthNodePositionSchema = z
 const ActiveCombatDataSchema = z
   .object({
     battleState: z.custom<BattleState>(isPersistedBattleState),
-    activeLabyrinthModifiers: LabyrinthModifierArraySchema,
-    activeLabyrinthRewardModifiers: LabyrinthModifierArraySchema,
+    activeLabyrinthModifiers: EncounterCombatTraitArraySchema,
+    activeLabyrinthRewardModifiers: EncounterRewardTraitArraySchema,
   })
-  .transform((data) => ({
-    ...data,
-    battleState: { ...defaultBattleState(), ...data.battleState } as BattleState,
-  }))
+  .transform((data) => {
+    const defaults = defaultBattleState();
+    return {
+      ...data,
+      battleState: {
+        ...defaults,
+        ...data.battleState,
+        flags: { ...defaults.flags, ...data.battleState.flags },
+        currentEnemy: {
+          ...data.battleState.currentEnemy,
+          traits: sanitizePersistedEnemyTraits(
+            Array.isArray(data.battleState.currentEnemy.traits) ? data.battleState.currentEnemy.traits : [],
+          ),
+        },
+      } as BattleState,
+    };
+  })
   .nullable()
   .catch(null);
 
 const WildwoodBossIdSchema = z.enum(WILDWOOD_BOSS_IDS);
-const WildwoodModifierIdSchema = z.enum(WILDWOOD_MODIFIERS.map((modifier) => modifier.id));
 const WildwoodDraftStateSchema = z
   .object({
-    version: z.literal(1),
+    version: z.literal(2),
     phase: z.enum(["draft", "battle", "recovery", "reward", "removal"]),
     draftChoices: z.array(BattleCardSchema),
     remainingBossIds: z.array(WildwoodBossIdSchema),
     previousBossId: WildwoodBossIdSchema.nullable(),
     currentBossId: WildwoodBossIdSchema.nullable(),
-    currentModifierId: WildwoodModifierIdSchema.nullable(),
+    currentCombatTraitIds: z.array(z.string()).default([]),
+    currentRewardTraitIds: z.array(z.string()).default([]),
     rewardType: z.enum(["card", "trinket"]).nullable(),
     rewardChoiceIds: z.array(z.string()),
     selectedRewardId: z.string().nullable(),
   })
+  .transform((state) => ({
+    ...state,
+    currentCombatTraitIds: sanitizeEncounterTraitIds(state.currentCombatTraitIds, "combat"),
+    currentRewardTraitIds: sanitizeEncounterTraitIds(state.currentRewardTraitIds, "reward"),
+  }))
   .nullable()
   .catch(null);
 

@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { makeState, makeCard, defaultBattleState } from "./helpers";
 import { applyCardEffects, defaultTalentEffects, endPlayerTurn } from "@/lib/battle";
 import { isPlayerDefeated, type CombatTextEvent } from "@/lib/battle/types";
-import { IRON_HIDE_ARMOR_PER_TURN, LABYRINTH_BURNING_GROUND_DAMAGE, LABYRINTH_LEECH_HEAL, TRAIT_FORGE_PER_TURN } from "@/lib/game-constants";
+import { IRON_HIDE_ARMOR_PER_TURN, TRAIT_FORGE_PER_TURN } from "@/lib/game-constants";
 import { companionLibrary, type DifficultyModifier } from "@/lib/game-data";
 import { computeTrinketManifest, defaultTrinketEffects } from "@/lib/trinkets";
 
@@ -301,86 +301,6 @@ describe("endPlayerTurn", () => {
 
     expect(result.state.enemyMitigation.forge).toBe(1);
     expect(result.combatTexts).toContainEqual({ target: "enemy", kind: "status", stat: "forge", amount: 1 });
-  });
-});
-
-describe("labyrinth modifiers on endPlayerTurn", () => {
-  it("labyrinth-burning-ground adds burn to player each turn", () => {
-    const state = makeState({
-      difficultyModifiers: [{ kind: "labyrinth-burning-ground" }] as DifficultyModifier[],
-      playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
-      playerHealth: 30,
-      mana: 0,
-      maxMana: 1,
-    });
-    const result = endPlayerTurn(state);
-    // 2 burn added, then tick halves to 1 and deals 2 damage.
-    expect(result.state.playerStatuses.burn).toBe(1);
-    expect(result.state.playerHealth).toBe(28); // 30 - 2 burn damage
-    expect(result.combatTexts).not.toContainEqual({
-      target: "player",
-      kind: "status",
-      stat: "burn",
-      amount: LABYRINTH_BURNING_GROUND_DAMAGE,
-    });
-    expect(result.combatTexts).toContainEqual({
-      target: "player",
-      kind: "damage",
-      stat: "burn",
-      amount: LABYRINTH_BURNING_GROUND_DAMAGE,
-    });
-  });
-
-  it("labyrinth-leeching heals enemy each turn", () => {
-    const state = makeState({
-      difficultyModifiers: [{ kind: "labyrinth-leeching" }] as DifficultyModifier[],
-      enemyHealth: 20,
-      enemyMaxHealth: 30,
-      playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
-      mana: 0,
-      maxMana: 1,
-    });
-    const result = endPlayerTurn(state);
-    expect(result.state.enemyHealth).toBe(23); // 20 + 3
-    expect(result.combatTexts).toContainEqual({
-      target: "enemy",
-      kind: "status",
-      stat: "health",
-      amount: LABYRINTH_LEECH_HEAL,
-    });
-  });
-
-  it("labyrinth-leeching does not overheal", () => {
-    const state = makeState({
-      difficultyModifiers: [{ kind: "labyrinth-leeching" }] as DifficultyModifier[],
-      enemyHealth: 30,
-      enemyMaxHealth: 30,
-      playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
-      mana: 0,
-      maxMana: 1,
-    });
-    const result = endPlayerTurn(state);
-    expect(result.state.enemyHealth).toBe(30); // capped at max
-  });
-
-  it("burning-ground and leeching apply together", () => {
-    const state = makeState({
-      difficultyModifiers: [
-        { kind: "labyrinth-burning-ground" },
-        { kind: "labyrinth-leeching" },
-      ] as DifficultyModifier[],
-      enemyHealth: 20,
-      enemyMaxHealth: 30,
-      playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
-      playerHealth: 30,
-      mana: 0,
-      maxMana: 1,
-    });
-    const result = endPlayerTurn(state);
-    // Burn: 2 added, tick halves to 1. Leech: enemy heals 3 from 20 → 23.
-    expect(result.state.playerStatuses.burn).toBe(1);
-    expect(result.state.playerHealth).toBe(28); // 30 - 2 burn damage
-    expect(result.state.enemyHealth).toBe(23); // 20 + 3
   });
 });
 
@@ -888,4 +808,3 @@ describe("endPlayerTurn — enemy forge bonus only applies to physical", () => {
     expect(result.state.playerHealth).toBe(22);
   });
 });
-

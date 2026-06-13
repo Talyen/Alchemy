@@ -409,19 +409,3 @@ describe("applyDamageStatuses — forge threshold bursts", () => {
     expect(result.playerStatuses.block).toBeGreaterThanOrEqual(3);
   });
 });
-
-describe("applyDamageStatuses — null field halves status application", () => {
-  it("burn status rider is halved in null field", () => {
-    vi.spyOn(Math, "random").mockReturnValue(0.99);
-    const card = makeCard({ effects: [{ kind: "damage", damageType: "burn", amount: 10 }] });
-    const texts: CombatTextEvent[] = [];
-    const state = makeState({
-      mana: 10, enemyHealth: 50,
-      difficultyModifiers: [{ kind: "labyrinth-null-field" }],
-    });
-    const result = applyCardEffects(state, card, texts);
-    // adjustEnemyStatusDelta halves: Math.round(10 / 2) = 5 burn
-    expect(result.enemyStatuses.burn).toBe(5);
-  });
-});
-

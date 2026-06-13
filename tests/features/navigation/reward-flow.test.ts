@@ -64,12 +64,12 @@ describe("getVictoryGoldTotal", () => {
 });
 
 describe("Labyrinth reward modifier helpers", () => {
-  it("only exposes reward modifiers during Labyrinth runs", () => {
-    const modifiers: LabyrinthModifierKind[] = ["generous", "collector"];
+  it("exposes reward traits for encounter modes but not campaign", () => {
+    const modifiers: LabyrinthModifierKind[] = ["alchemist", "collector"];
 
     expect(getActiveRewardModifiersForContentSystem("labyrinth", modifiers)).toBe(modifiers);
     expect(getActiveRewardModifiersForContentSystem("campaign", modifiers)).toEqual([]);
-    expect(getActiveRewardModifiersForContentSystem("wildwood", modifiers)).toEqual([]);
+    expect(getActiveRewardModifiersForContentSystem("wildwood", modifiers)).toBe(modifiers);
   });
 
   it("computes generous gold bonus from base reward gold", () => {

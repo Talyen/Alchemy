@@ -11,6 +11,7 @@ import { emitOverhealBlockText, mergeCombatText } from "./combat-text";
 import { removeHarmfulPlayerStatuses, applyPlayerStatusEffect, getEnemyDamageMultiplier } from "./status-effects";
 import { getEditableCorruptionTargets, replaceNumberAt } from "@/lib/corruption";
 import { PERCENT_DENOMINATOR, WISH_CHOICE_COUNT, WISH_CRYSTAL_GOLD_CHANCE, MAX_HAND_SIZE } from "../game-constants";
+import { processEncounterTraitHealthThreshold } from "./encounter-trait-events";
 
 function upgradeWishCard(card: BattleCard): BattleCard {
   const targets = getEditableCorruptionTargets(card);
@@ -184,10 +185,11 @@ function applyWishBurnTrigger(state: BattleState, combatTexts: CombatTextEvent[]
       amount: finalDamage,
     });
   }
-  return {
+  const nextState = {
     ...state,
     enemyHealth: clampHealth(state.enemyHealth, -finalDamage, state.enemyMaxHealth),
   };
+  return processEncounterTraitHealthThreshold(state.enemyHealth, nextState, combatTexts);
 }
 
 function applyWishBoonTrigger(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {

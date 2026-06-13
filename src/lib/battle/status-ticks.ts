@@ -24,6 +24,8 @@ import {
   POISON_GAIN_AMOUNT,
   STUN_THRESHOLD_FRACTION,
 } from "../game-constants";
+import { processEncounterTraitHealthThreshold } from "./encounter-trait-events";
+import { applyEnemyLeechHealing } from "./enemy-turn-attack";
 
 const CONSTANTS = {
   STATUS_NAMES: {
@@ -70,12 +72,14 @@ function tickBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
   } else {
     nextBurn = decayHalvedStatus(nextBurn);
   }
+  const previousHealth = state.enemyHealth;
   let nextState: BattleState = {
     ...state,
     enemyHealth: clampHealth(state.enemyHealth, -finalDamage, state.enemyMaxHealth),
   };
   nextState = setEnemyStatus(nextState, CONSTANTS.STATUS_NAMES.BURN, nextBurn);
-  return decayArmorAfterDamage(nextState, finalDamage, CONSTANTS.TARGETS.ENEMY, combatTexts);
+  nextState = decayArmorAfterDamage(nextState, finalDamage, CONSTANTS.TARGETS.ENEMY, combatTexts);
+  return processEncounterTraitHealthThreshold(previousHealth, nextState, combatTexts);
 }
 
 function applyParasiticBloomLeech(state: BattleState, damage: number, combatTexts: CombatTextEvent[]): BattleState {
@@ -113,6 +117,7 @@ function tickPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
       nextPoison = decayPoisonStacks(nextPoison);
     }
   }
+  const previousHealth = state.enemyHealth;
   let nextState: BattleState = {
     ...state,
     enemyHealth: clampHealth(state.enemyHealth, -finalDamage, state.enemyMaxHealth),
@@ -120,7 +125,8 @@ function tickPoison(state: BattleState, combatTexts: CombatTextEvent[]) {
   nextState = setEnemyStatus(nextState, CONSTANTS.STATUS_NAMES.POISON, nextPoison);
   nextState = applyParasiticBloomLeech(nextState, finalDamage, combatTexts);
   nextState = applyPoisonTalentRiders(nextState, finalDamage, combatTexts);
-  return decayArmorAfterDamage(nextState, finalDamage, CONSTANTS.TARGETS.ENEMY, combatTexts);
+  nextState = decayArmorAfterDamage(nextState, finalDamage, CONSTANTS.TARGETS.ENEMY, combatTexts);
+  return processEncounterTraitHealthThreshold(previousHealth, nextState, combatTexts);
 }
 
 function tickBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
@@ -132,6 +138,7 @@ function tickBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
   const multiplier = getEnemyDamageMultiplier(state, CONSTANTS.STATUS_NAMES.BLEED);
   const finalDamage = Math.round(damage * multiplier);
   const leechAmount = state.pendingBleedLeechHealing;
+  const previousHealth = state.enemyHealth;
   let nextState: BattleState = {
     ...state,
     enemyHealth: clampHealth(state.enemyHealth, -finalDamage, state.enemyMaxHealth),
@@ -156,7 +163,8 @@ function tickBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
     stat: CONSTANTS.STATUS_NAMES.BLEED,
     amount: finalDamage,
   });
-  return decayArmorAfterDamage(nextState, finalDamage, CONSTANTS.TARGETS.ENEMY, combatTexts);
+  nextState = decayArmorAfterDamage(nextState, finalDamage, CONSTANTS.TARGETS.ENEMY, combatTexts);
+  return processEncounterTraitHealthThreshold(previousHealth, nextState, combatTexts);
 }
 
 export function tickEnemyStatuses(state: BattleState, combatTexts: CombatTextEvent[]) {
@@ -225,11 +233,16 @@ function tickPlayerBleed(state: BattleState, combatTexts: CombatTextEvent[]) {
   const finalDamage = state.talentEffects.receiveHalfBleedDamage
     ? Math.round(reducedDamage / HALF_DIVISOR)
     : reducedDamage;
-  const nextState = setPlayerStatus(
+  let nextState = setPlayerStatus(
     applyPlayerCombatDamage(state, finalDamage),
     CONSTANTS.STATUS_NAMES.BLEED,
     CONSTANTS.CLEAR_STATUS_STACK,
   );
+  const enemyLeechDamage = Math.min(state.pendingEnemyBleedLeechHealing, state.playerHealth - nextState.playerHealth);
+  if (enemyLeechDamage > 0) {
+    nextState = applyEnemyLeechHealing(nextState, enemyLeechDamage, combatTexts);
+  }
+  nextState = { ...nextState, pendingEnemyBleedLeechHealing: 0 };
   const healthLost = state.playerHealth - nextState.playerHealth;
   if (healthLost > 0) {
     mergeCombatText(combatTexts, {

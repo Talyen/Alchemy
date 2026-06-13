@@ -17,12 +17,7 @@ export type DifficultyModifier =
   | { kind: "gold-multiplier"; amount: number }
   | { kind: "start-companion" }
   | { kind: "enemy-health-multiplier"; amount: number }
-  | { kind: "enemy-damage-multiplier"; amount: number }
-  // Labyrinth-only modifiers
-  | { kind: "labyrinth-sturdy" }
-  | { kind: "labyrinth-burning-ground" }
-  | { kind: "labyrinth-leeching" }
-  | { kind: "labyrinth-null-field" };
+  | { kind: "enemy-damage-multiplier"; amount: number };
 
 export type DifficultyDefinition = {
   id: DifficultyId;

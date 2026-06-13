@@ -21,7 +21,8 @@ import { emptyInventory } from "@/lib/homestead/inventory";
 import type { BattleState } from "@/lib/battle";
 import { shuffle } from "@/lib/utils";
 import { CONSTANTS, type Destination, type Screen } from "../../shared/types";
-import type { ContentSystemId, LabyrinthModifierKind } from "@/lib/content-systems/types";
+import type { ContentSystemId } from "@/lib/content-systems/types";
+import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import { sampleItems } from "../../shared/utils";
 
 export type RewardState = {
@@ -89,12 +90,12 @@ export type RewardGoldInput = {
   goldMultiplier: number;
 };
 
-function hasRewardModifier(modifiers: LabyrinthModifierKind[], kind: LabyrinthModifierKind): boolean {
+function hasRewardModifier(modifiers: EncounterRewardTraitId[], kind: EncounterRewardTraitId): boolean {
   return modifiers.includes(kind);
 }
 
-function createModifierGuard(kind: LabyrinthModifierKind) {
-  return (modifiers: LabyrinthModifierKind[]): boolean => hasRewardModifier(modifiers, kind);
+function createModifierGuard(kind: EncounterRewardTraitId) {
+  return (modifiers: EncounterRewardTraitId[]): boolean => hasRewardModifier(modifiers, kind);
 }
 
 export const shouldForceTrinketReward = createModifierGuard("collector");
@@ -103,12 +104,12 @@ export const shouldGrantAlchemistReward = createModifierGuard("alchemist");
 
 export function getActiveRewardModifiersForContentSystem(
   contentSystemType: ContentSystemId,
-  modifiers: LabyrinthModifierKind[],
-): LabyrinthModifierKind[] {
-  return contentSystemType === CONSTANTS.CONTENT_SYSTEMS.LABYRINTH ? modifiers : [];
+  modifiers: EncounterRewardTraitId[],
+): EncounterRewardTraitId[] {
+  return contentSystemType === CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN ? [] : modifiers;
 }
 
-export function getGenerousGoldBonus(modifiers: LabyrinthModifierKind[], gold: number): number {
+export function getGenerousGoldBonus(modifiers: EncounterRewardTraitId[], gold: number): number {
   return hasRewardModifier(modifiers, "generous")
     ? Math.floor(gold * LABYRINTH_REWARD_CONFIG.generousGoldBonusFraction)
     : 0;
@@ -116,7 +117,7 @@ export function getGenerousGoldBonus(modifiers: LabyrinthModifierKind[], gold: n
 
 export function applyLabyrinthRewardMaterialModifiers(
   materials: MaterialInventory,
-  modifiers: LabyrinthModifierKind[],
+  modifiers: EncounterRewardTraitId[],
 ): MaterialInventory {
   if (!hasRewardModifier(modifiers, "scavenger")) return materials;
   return {
@@ -385,15 +386,21 @@ export function createBossRewardState({
   };
 }
 
-export function createWildwoodRewardState(runDeck: BattleCard[], rng: () => number = Math.random): RewardState {
-  const rewardType = rng() < 0.5 ? "trinket" : "card";
+export function createWildwoodRewardState(
+  runDeck: BattleCard[],
+  rewardTraitsOrRng: EncounterRewardTraitId[] | (() => number) = [],
+  rng: () => number = Math.random,
+): RewardState {
+  const rewardTraits = typeof rewardTraitsOrRng === "function" ? [] : rewardTraitsOrRng;
+  const activeRng = typeof rewardTraitsOrRng === "function" ? rewardTraitsOrRng : rng;
+  const rewardType = shouldForceTrinketReward(rewardTraits) || activeRng() < 0.5 ? "trinket" : "card";
   return {
     ...createEmptyRewardState(),
     rewardType,
     choices:
       rewardType === "trinket"
-        ? sampleItems(trinketLibrary, REWARD_CARD_CHOICES, rng)
-        : selectRewardCards(runDeck, getOfferableCardPool(), REWARD_CARD_CHOICES, [], rng),
+        ? sampleItems(trinketLibrary, REWARD_CARD_CHOICES, activeRng)
+        : selectRewardCards(runDeck, getOfferableCardPool(), REWARD_CARD_CHOICES, [], activeRng),
   };
 }
 

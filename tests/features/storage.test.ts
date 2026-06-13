@@ -284,13 +284,13 @@ describe("ActiveRunDataSchema", () => {
     const labyrinthMap = generateLabyrinthMap(createSeededRng(42));
     const firstCombat = labyrinthMap.grid.flat().find((node) => node?.type === "combat");
     expect(firstCombat).toBeDefined();
-    firstCombat!.modifiers = ["armored", "missing-modifier" as never];
+    firstCombat!.modifiers = ["tempered", "missing-modifier" as never];
     firstCombat!.rewardModifiers = ["generous", "old-reward" as never];
 
     const result = parseActiveRun(activeRun({ contentSystemType: "labyrinth", labyrinthMap }));
 
     const normalizedCombat = result?.labyrinthMap?.grid.flat().find((node) => node?.type === "combat");
-    expect(normalizedCombat?.modifiers).toEqual(["armored"]);
+    expect(normalizedCombat?.modifiers).toEqual(["tempered"]);
     expect(normalizedCombat?.rewardModifiers).toEqual(["generous"]);
   });
 

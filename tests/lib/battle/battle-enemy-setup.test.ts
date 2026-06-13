@@ -8,7 +8,6 @@ import {
   ENEMY_BOSS_REGENERATION,
   ENEMY_BASE_REGENERATION,
   ENEMY_STARTING_BLOCK,
-  LABYRINTH_STURDY_MULTIPLIER,
   LIVING_ARMOR_STARTING_ARMOR,
   ROOM_SCALING_INCREMENT,
 } from "@/lib/game-constants";
@@ -63,17 +62,6 @@ describe("initializeEnemyState", () => {
     const base = initializeEnemyState(skeleton, 1, []);
     const result = initializeEnemyState(skeleton, 1, mods);
     expect(result.enemyMaxHealth).toBe(Math.round(base.enemyMaxHealth * 1.5));
-  });
-
-  it("combines labyrinth-sturdy and enemy-health-multiplier", () => {
-    const mods: DifficultyModifier[] = [
-      { kind: "labyrinth-sturdy", amount: LABYRINTH_STURDY_MULTIPLIER },
-      { kind: "enemy-health-multiplier", amount: 1.2 },
-    ];
-    const scaled = Math.round(BASE_ENEMY_HEALTH);
-    const totalMul = LABYRINTH_STURDY_MULTIPLIER + (1.2 - 1);
-    const result = initializeEnemyState(skeleton, 1, mods);
-    expect(result.enemyMaxHealth).toBe(Math.round(scaled * totalMul));
   });
 
   it("increases physical damage from difficulty bonuses", () => {

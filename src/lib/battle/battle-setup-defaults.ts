@@ -63,6 +63,7 @@ function createInitialFlags(): CombatFlags {
     firstLeechCardDoubledUsed: false,
     resonantChimeUsedThisTurn: false,
     runicQuillUsedThisTurn: false,
+    divineAegisTriggered: false,
   };
 }
 
@@ -92,6 +93,8 @@ export function defaultBattleState(): BattleState {
     playerStatuses: createEmptyPlayerStatuses(),
     enemyStatuses: createEmptyEnemyStatuses(),
     pendingBleedLeechHealing: 0,
+    pendingEnemyBleedLeechHealing: 0,
+    enemyPhysicalDamageBonus: 0,
     enemyStunSkipTurns: 0,
     enemyFreezeSkipTurns: 0,
     playerStunSkipTurns: 0,

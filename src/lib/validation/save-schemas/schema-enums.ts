@@ -9,8 +9,6 @@ import {
   type DifficultyId,
 } from "@/lib/game-data";
 import { MATERIAL_IDS, type MaterialId } from "@/lib/homestead/types";
-import { ALL_LABYRINTH_MODIFIERS } from "@/lib/content-systems/labyrinth/modifiers";
-import type { LabyrinthModifierKind } from "@/lib/content-systems/types";
 import { deduplicateStrings } from "./validation-utils";
 
 function toNonEmptyTuple<T extends string>(values: readonly T[], label: string): [T, ...T[]] {
@@ -21,10 +19,6 @@ function toNonEmptyTuple<T extends string>(values: readonly T[], label: string):
 export const CHARACTER_IDS = toNonEmptyTuple(Object.keys(characters) as CharacterId[], "Character IDs");
 const DIFFICULTY_IDS = toNonEmptyTuple(DIFFICULTY_ORDER as readonly DifficultyId[], "Difficulty IDs");
 const COMPANION_IDS = toNonEmptyTuple(Object.keys(companionLibrary) as CompanionId[], "Companion IDs");
-export const LABYRINTH_MODIFIER_KINDS = toNonEmptyTuple(
-  Object.keys(ALL_LABYRINTH_MODIFIERS) as LabyrinthModifierKind[],
-  "Labyrinth modifier kinds",
-);
 
 export const MATERIAL_ZERO_INVENTORY = Object.fromEntries(MATERIAL_IDS.map((id) => [id, 0])) as Record<
   MaterialId,
@@ -65,7 +59,6 @@ export const LabyrinthNodeTypeSchema = z.enum([
   "alchemist",
   "boss",
 ]);
-export const LabyrinthModifierKindSchema = z.enum(LABYRINTH_MODIFIER_KINDS);
 export const LabyrinthNodeStateSchema = z.enum(["hidden", "visible", "current", "cleared", "failed"]);
 export const AspectRatioOptionSchema = z.enum(["auto", "16:9", "16:10", "21:9"]);
 export const DisplayModeSchema = z.enum(["windowed", "borderless-fullscreen", "fullscreen"]);

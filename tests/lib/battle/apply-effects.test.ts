@@ -276,17 +276,16 @@ describe("applyCardEffects — buff-companion", () => {
 });
 
 describe("applyCardEffects — enemy-status (fixture)", () => {
-  it("applies labyrinth null-field adjustment once", () => {
+  it("applies the full enemy status amount", () => {
     const state = makeState({
       enemyStatuses: { burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
-      difficultyModifiers: [{ kind: "labyrinth-null-field" }],
     });
     const card = makeTestCard({
       effects: [{ kind: "enemy-status", status: "poison", amount: 4 }],
     });
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);
-    expect(result.enemyStatuses.poison).toBe(2);
+    expect(result.enemyStatuses.poison).toBe(4);
     expect(texts).toEqual([]);
   });
 });

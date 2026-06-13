@@ -134,12 +134,12 @@ describe("createActiveRunData", () => {
       contentSystemType: "labyrinth",
       hasActiveBattle: true,
       labyrinthPendingNode: { row: 1, col: 2 },
-      activeLabyrinthModifiers: ["armored"],
+      activeLabyrinthModifiers: ["tempered"],
       activeLabyrinthRewardModifiers: ["generous"],
     }));
 
     expect(result.labyrinthPendingNode).toEqual({ row: 1, col: 2 });
-    expect(result.activeCombat?.activeLabyrinthModifiers).toEqual(["armored"]);
+    expect(result.activeCombat?.activeLabyrinthModifiers).toEqual(["tempered"]);
     expect(result.activeCombat?.activeLabyrinthRewardModifiers).toEqual(["generous"]);
   });
 
@@ -176,13 +176,14 @@ describe("createActiveRunData", () => {
 
   it("persists Wildwood Draft phase state", () => {
     const wildwoodDraft = {
-      version: 1 as const,
+      version: 2 as const,
       phase: "reward" as const,
       draftChoices: [],
       remainingBossIds: ["iron-bear"] as const,
       previousBossId: "forge-golem" as const,
       currentBossId: "frostwarden" as const,
-      currentModifierId: "wildwood-modifier-feral" as const,
+      currentCombatTraitIds: ["tempered" as const],
+      currentRewardTraitIds: ["collector" as const],
       rewardType: "card" as const,
       rewardChoiceIds: ["slash", "block"],
       selectedRewardId: "slash",

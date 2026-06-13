@@ -17,7 +17,7 @@ import { checkHealthThresholds, isFreezeActiveForAspect } from "./enemy-turn-uti
 
 function applyPhysicalForgeBonus(state: BattleState, effect: EnemyAttackEffect & { kind: "damage" }) {
   if (effect.damageType !== "physical") return effect.amount;
-  return effect.amount + state.enemyMitigation.forge;
+  return effect.amount + state.enemyMitigation.forge + state.enemyPhysicalDamageBonus;
 }
 
 function computeEffectiveBlock(state: BattleState, effect: EnemyAttackEffect & { kind: "damage" }) {
@@ -145,7 +145,7 @@ function resolvePostDamageThresholds(
   return nextState;
 }
 
-function applyEnemyAttackLifesteal(
+export function applyEnemyLeechHealing(
   state: BattleState,
   actualDamage: number,
   combatTexts: CombatTextEvent[],
@@ -191,7 +191,7 @@ function applyBlockDepletedHeal(
   return nextState;
 }
 
-function processEnemyDamageEffect(
+export function processEnemyDamageEffect(
   state: BattleState,
   effect: EnemyAttackEffect & { kind: "damage" },
   combatTexts: CombatTextEvent[],
@@ -227,7 +227,7 @@ function processEnemyDamageEffect(
   nextState = applyPlayerDamageStatuses(nextState, effect, actualDamage);
 
   if (effect.lifesteal && actualDamage > 0) {
-    nextState = applyEnemyAttackLifesteal(nextState, actualDamage, combatTexts);
+    nextState = applyEnemyLeechHealing(nextState, actualDamage, combatTexts);
   }
 
   return nextState;

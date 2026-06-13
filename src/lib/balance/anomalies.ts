@@ -26,8 +26,12 @@ export type BattleAnomalies = {
   maxSingleHitDamageToPlayerStat: string;
 };
 
+type NumericAnomalyKey = {
+  [K in keyof BattleAnomalies]: BattleAnomalies[K] extends number ? K : never;
+}[keyof BattleAnomalies];
+
 type StatusAnomalyMetric = {
-  key: keyof BattleAnomalies;
+  key: NumericAnomalyKey;
   label: string;
   read: (state: BattleState) => number;
 };
@@ -72,10 +76,11 @@ export function getAnomalyThreshold(preset: AnomalyPreset): number {
 }
 
 export function createEmptyAnomalies(): BattleAnomalies {
-  const anomalies = Object.fromEntries(ANOMALY_METRICS.map(({ key }) => [key, 0])) as BattleAnomalies;
-  anomalies.maxSingleHitDamageToEnemyStat = "";
-  anomalies.maxSingleHitDamageToPlayerStat = "";
-  return anomalies;
+  return {
+    ...Object.fromEntries(ANOMALY_METRICS.map(({ key }) => [key, 0])),
+    maxSingleHitDamageToEnemyStat: "",
+    maxSingleHitDamageToPlayerStat: "",
+  } as BattleAnomalies;
 }
 
 export function sampleAnomalies(state: BattleState, combatTexts: CombatTextEvent[], anomalies: BattleAnomalies): void {

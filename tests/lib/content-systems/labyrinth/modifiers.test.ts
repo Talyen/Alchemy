@@ -8,9 +8,9 @@ import {
 } from "@/lib/content-systems/labyrinth/modifiers";
 
 describe("ALL_LABYRINTH_MODIFIERS", () => {
-  it("has exactly 11 modifier kinds (6 enemy + 5 reward)", () => {
+  it("exposes the shared 18 combat and 5 reward traits", () => {
     const kinds = Object.keys(ALL_LABYRINTH_MODIFIERS);
-    expect(kinds).toHaveLength(11);
+    expect(kinds).toHaveLength(23);
   });
 
   it("each modifier has a non-empty label and description", () => {

@@ -15,7 +15,6 @@ export {
   EnemyStatusIdSchema,
   CompanionIdSchema,
   LabyrinthNodeTypeSchema,
-  LabyrinthModifierKindSchema,
   LabyrinthNodeStateSchema,
   AspectRatioOptionSchema,
   DisplayModeSchema,

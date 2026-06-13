@@ -7,6 +7,7 @@ import { applyCardEffects } from "./apply-effects";
 import type { BattleCard, TalentEffectManifest } from "@/lib/game-data";
 import { type BattleState, type CombatTextEvent } from "./types";
 import { HALF_DIVISOR } from "../game-constants";
+import { processEncounterTraitCardAction } from "./encounter-trait-events";
 
 function buildCompanionCard(
   activeCompanion: NonNullable<BattleState["activeCompanion"]>,
@@ -95,7 +96,11 @@ export function processCompanionTurnStart(state: BattleState, combatTexts: Comba
     },
   };
 
-  const result = applyCardEffects(tempState, companionCard, combatTexts);
+  const result = processEncounterTraitCardAction(
+    applyCardEffects(tempState, companionCard, combatTexts),
+    companionCard,
+    combatTexts,
+  );
 
   return {
     ...result,

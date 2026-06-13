@@ -23,7 +23,8 @@ import { emptyInventory } from "@/lib/homestead/inventory";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import { CONSTANTS, type Destination } from "@/features/alchemy/shared/types";
 import { syncBattleToRun } from "@/features/alchemy/shared/stores/run-transitions";
-import type { ContentSystemId, LabyrinthModifierKind } from "@/lib/content-systems/types";
+import type { ContentSystemId } from "@/lib/content-systems/types";
+import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import {
   getActiveRewardModifiersForContentSystem,
   applyLabyrinthRewardMaterialModifiers,
@@ -52,7 +53,7 @@ type VictoryGoldRoll = {
 function rollVictoryGold(
   battleState: BattleState,
   talentEffects: TalentEffectManifest,
-  labyrinthRewardModifiers: LabyrinthModifierKind[],
+  labyrinthRewardModifiers: EncounterRewardTraitId[],
   rng: () => number,
 ): VictoryGoldRoll {
   const baseGold = randomInt(GOLD_REWARD_MIN, GOLD_REWARD_MAX);
@@ -85,7 +86,7 @@ export type VictoryRewardsInput = {
   runDeck: BattleCard[];
   runTrinkets: string[];
   contentSystemType: ContentSystemId;
-  activeLabyrinthRewardModifiers: LabyrinthModifierKind[];
+  activeLabyrinthRewardModifiers: EncounterRewardTraitId[];
   battleState: BattleState;
   runGold: number;
   runPlayerHealth: number;
@@ -105,7 +106,7 @@ export type VictoryRewardsInput = {
 export type VictoryRewardsResult = {
   newGold: number;
   rewardState: RewardState;
-  labyrinthRewardModifiers: LabyrinthModifierKind[];
+  labyrinthRewardModifiers: EncounterRewardTraitId[];
   destinations: Destination[];
   materials: MaterialInventory;
   goldEarned: number;
@@ -139,7 +140,7 @@ export function computeVictoryRewardState(input: {
   runDeck: BattleCard[];
   runTrinkets: string[];
   contentSystemType: ContentSystemId;
-  activeLabyrinthRewardModifiers: LabyrinthModifierKind[];
+  activeLabyrinthRewardModifiers: EncounterRewardTraitId[];
   battleState: BattleState;
   gold: number;
   eliteBonus: number;
@@ -199,8 +200,8 @@ export function computeVictoryRewards(
   if (input.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
     return {
       newGold: input.runGold,
-      rewardState: createWildwoodRewardState(input.runDeck, rng),
-      labyrinthRewardModifiers: [],
+      rewardState: createWildwoodRewardState(input.runDeck, labyrinthRewardModifiers, rng),
+      labyrinthRewardModifiers,
       destinations: [],
       materials: emptyInventory(),
       goldEarned: 0,

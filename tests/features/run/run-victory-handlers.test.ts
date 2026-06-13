@@ -9,6 +9,7 @@ import {
   getRunSessionStoreView,
   resetRunBattleSlice,
   resetRunProgressSlice,
+  setRunSession,
   setRunProgress,
 } from "../../helpers/run-domain-store-test";
 import { emptyInventory } from "@/lib/homestead/inventory";
@@ -115,5 +116,52 @@ describe("createRunFlowHandlers victory paths", () => {
     handlers.handleBattleDefeat();
     expect(applyRunDefeatTeardown).not.toHaveBeenCalled();
     expect(navigateTo).toHaveBeenCalledWith(CONSTANTS.SCREENS.LABYRINTH_MAP);
+  });
+
+  it("routes Wildwood Companion rewards before completing the boss reward", () => {
+    setRunProgress({ contentSystemType: CONSTANTS.CONTENT_SYSTEMS.WILDWOOD });
+    const companion = {
+      id: "wolf-companion",
+      uid: 1,
+      title: "Wolf Companion",
+      descriptionLines: [],
+      art: "",
+      cost: 0,
+      effects: [],
+    };
+    setRunSession({
+      rewardState: {
+        choices: [],
+        gold: 0,
+        materials: emptyInventory(),
+        selectedId: null,
+        destinations: [],
+        rewardType: "card",
+        selectedBossId: null,
+        lastVictoryEnemyType: "boss",
+        lastVictoryContentSystem: "wildwood",
+      },
+      companionRewardCards: [companion],
+      wildwoodDraft: {
+        version: 2,
+        phase: "reward",
+        draftChoices: [],
+        remainingBossIds: [],
+        previousBossId: null,
+        currentBossId: null,
+        currentCombatTraitIds: [],
+        currentRewardTraitIds: ["companion"],
+        rewardType: "card",
+        rewardChoiceIds: [],
+        selectedRewardId: null,
+      },
+    });
+    const navigateTo = vi.fn();
+    const onWildwoodRewardComplete = vi.fn();
+
+    createRunFlowHandlers(makeFlowHandlerDeps({ navigateTo, onWildwoodRewardComplete })).finishRewards();
+
+    expect(navigateTo).toHaveBeenCalledWith(CONSTANTS.SCREENS.REWARDS, expect.any(Function));
+    expect(onWildwoodRewardComplete).not.toHaveBeenCalled();
   });
 });

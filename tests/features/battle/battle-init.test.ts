@@ -76,14 +76,14 @@ describe("createBattleInit", () => {
     expect(ids.filter((id) => id === skeleton.id)).toHaveLength(1);
   });
 
-  it("appends the persisted Wildwood modifier to a boss encounter", () => {
-    makeInit().startBossById("forge-golem", undefined, "wildwood-modifier-verdant");
+  it("appends the persisted Wildwood combat trait to a boss encounter", () => {
+    makeInit().startBossById("forge-golem", undefined, "tempered");
 
     expect(getBattleStoreView().battleState.currentEnemy.traits).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          id: "wildwood-modifier-verdant",
-          description: expect.stringContaining("No combat effect yet"),
+          id: "tempered",
+          description: "Gains 1 Forge each turn",
         }),
       ]),
     );

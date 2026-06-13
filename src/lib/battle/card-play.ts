@@ -16,6 +16,7 @@ import {
   isPlayerDefeated,
 } from "./types";
 import { countRemovableHarmfulStatuses } from "./status-player";
+import { processEncounterTraitCardAction } from "./encounter-trait-events";
 
 type BooleanCombatFlag = {
   [K in keyof CombatFlags]: CombatFlags[K] extends boolean ? K : never;
@@ -204,10 +205,14 @@ function applyResonantChimeTrinket(state: BattleState, combatTexts: CombatTextEv
 /**
  * Resolves post-play destination (exhausted/discard pile) and triggers consume riders.
  */
-function handlePostPlayCardDestination(state: BattleState, card: BattleCard): BattleState {
+function handlePostPlayCardDestination(state: BattleState, card: BattleCard, triggerConsumeRiders = true): BattleState {
   if (card.consume) {
     let nextState = { ...state, exhausted: [...state.exhausted, card] };
-    if (state.trinketEffects.runicQuillDrawOnConsume > 0 && !state.flags.runicQuillUsedThisTurn) {
+    if (
+      triggerConsumeRiders &&
+      state.trinketEffects.runicQuillDrawOnConsume > 0 &&
+      !state.flags.runicQuillUsedThisTurn
+    ) {
       const draw = drawCards(
         nextState.deck,
         nextState.discard,
@@ -259,12 +264,13 @@ export function playBattleCardResolved(
   }
 
   let nextState = executeCardPlayState(costState, card, index, effectiveCost, combatTexts);
+  nextState = processEncounterTraitCardAction(nextState, card, combatTexts);
   if (!isPlayerDefeated(nextState)) {
     if (enemyWasAlive) {
       nextState = applyResonantChimeTrinket(nextState, combatTexts);
     }
-    nextState = handlePostPlayCardDestination(nextState, card);
   }
+  nextState = handlePostPlayCardDestination(nextState, card, !isPlayerDefeated(nextState));
 
   return { state: nextState, combatTexts };
 }

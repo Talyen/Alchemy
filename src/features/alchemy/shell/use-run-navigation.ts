@@ -37,6 +37,7 @@ import {
   drawWildwoodBoss,
   getWildwoodRecoveryHealth,
   pickWildwoodModifier,
+  pickWildwoodRewardTrait,
   type WildwoodModifierId,
 } from "@/lib/content-systems/wildwood/gauntlet";
 
@@ -122,13 +123,15 @@ export function useRunNavigation({
     if (!state) return;
     const draw = drawWildwoodBoss(state.remainingBossIds, state.currentBossId ?? state.previousBossId);
     const modifierId = pickWildwoodModifier();
+    const rewardTraitId = pickWildwoodRewardTrait();
     setWildwoodDraft({
       ...state,
       phase: "battle",
       remainingBossIds: draw.remainingBossIds,
       previousBossId: state.currentBossId ?? state.previousBossId,
       currentBossId: draw.bossId,
-      currentModifierId: modifierId,
+      currentCombatTraitIds: [modifierId],
+      currentRewardTraitIds: [rewardTraitId],
       rewardType: null,
       rewardChoiceIds: [],
       selectedRewardId: null,
@@ -149,8 +152,8 @@ export function useRunNavigation({
       navigateTo(CONSTANTS.SCREENS.MENU, teardownRun);
       return;
     }
-    if (state.phase === "battle" && state.currentBossId && state.currentModifierId) {
-      if (onStartBossById(state.currentBossId, undefined, state.currentModifierId)) {
+    if (state.phase === "battle" && state.currentBossId && state.currentCombatTraitIds[0]) {
+      if (onStartBossById(state.currentBossId, undefined, state.currentCombatTraitIds[0])) {
         navigateTo(CONSTANTS.SCREENS.BATTLE);
       } else {
         logError("[useRunNavigation] resumeWildwoodRun: failed to resume boss battle", "other");

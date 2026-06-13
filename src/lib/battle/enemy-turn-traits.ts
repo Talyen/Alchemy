@@ -1,7 +1,7 @@
 // Enemy trait and difficulty turn-start handlers plus regeneration.
 import { mergeCombatText } from "./combat-text";
 import type { DifficultyModifier } from "@/lib/game-data";
-import { WILDWOOD_MODIFIERS } from "@/lib/content-systems/wildwood/gauntlet";
+import { COMBAT_ENCOUNTER_TRAIT_IDS } from "@/lib/content-systems/encounter-traits";
 import { logError } from "../error-logger";
 import { clampHealth, type BattleState, type CombatTextEvent, addEnemyMitigation } from "./types";
 import {
@@ -9,8 +9,6 @@ import {
   HALF_DIVISOR,
   IRON_HIDE_ARMOR_PER_TURN,
   IRON_HIDE_BURN_BONUS_PER_TURN,
-  LABYRINTH_BURNING_GROUND_DAMAGE,
-  LABYRINTH_LEECH_HEAL,
   TRAIT_FORGE_PER_TURN,
   TRAIT_FREEZE_BONUS_PER_TURN,
 } from "../game-constants";
@@ -79,29 +77,6 @@ const difficultyTurnStartHandlers: Partial<Record<DifficultyModifier["kind"], En
     mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "forge", amount: DIFFICULTY_FORGE_PER_TURN });
     return addEnemyMitigation(state, "forge", DIFFICULTY_FORGE_PER_TURN);
   },
-  "labyrinth-leeching": (state, combatTexts) => {
-    if (isFreezeActiveForAspect(state, "regen")) return state;
-    mergeCombatText(combatTexts, { target: "enemy", kind: "status", stat: "health", amount: LABYRINTH_LEECH_HEAL });
-    return {
-      ...state,
-      enemyHealth: clampHealth(state.enemyHealth, LABYRINTH_LEECH_HEAL, state.enemyMaxHealth),
-    };
-  },
-  "labyrinth-burning-ground": (state, combatTexts) => {
-    mergeCombatText(combatTexts, {
-      target: "player",
-      kind: "status",
-      stat: "burn",
-      amount: LABYRINTH_BURNING_GROUND_DAMAGE,
-    });
-    return {
-      ...state,
-      playerStatuses: {
-        ...state.playerStatuses,
-        burn: state.playerStatuses.burn + LABYRINTH_BURNING_GROUND_DAMAGE,
-      },
-    };
-  },
 };
 
 // Traits whose behavior is purely passive (damage multipliers, one-time setup, etc.)
@@ -118,7 +93,7 @@ const PASSIVE_ONLY_TRAITS = new Set([
   "gold-trove",
   "starting-block",
   "regeneration",
-  ...WILDWOOD_MODIFIERS.map((modifier) => modifier.id),
+  ...COMBAT_ENCOUNTER_TRAIT_IDS,
 ]);
 
 // Difficulty modifiers whose behavior is purely passive (applied at battle start or checked elsewhere)
@@ -135,8 +110,6 @@ const PASSIVE_ONLY_MODIFIERS = new Set<DifficultyModifier["kind"]>([
   "start-companion",
   "enemy-health-multiplier",
   "enemy-damage-multiplier",
-  "labyrinth-sturdy",
-  "labyrinth-null-field",
 ]);
 
 /** Turn-start handler ids — used by tests and startup validation. */
@@ -166,10 +139,6 @@ const ALL_DIFFICULTY_MODIFIER_KINDS: DifficultyModifier["kind"][] = [
   "start-companion",
   "enemy-health-multiplier",
   "enemy-damage-multiplier",
-  "labyrinth-sturdy",
-  "labyrinth-burning-ground",
-  "labyrinth-leeching",
-  "labyrinth-null-field",
 ];
 
 function isEnemyTraitTurnStartCovered(traitId: string): boolean {

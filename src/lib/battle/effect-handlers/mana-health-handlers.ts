@@ -5,6 +5,7 @@ import { clampHealth, applyPlayerCombatDamage } from "../types";
 import { getEnemyDamageMultiplier } from "../status-effects";
 import type { BattleState, CombatTextEvent } from "../types";
 import type { EffectHandler } from "./handler-types";
+import { processEncounterTraitHealthThreshold } from "../encounter-trait-events";
 
 function restoreMana(
   state: BattleState,
@@ -48,6 +49,7 @@ function loseMaxMana(state: BattleState, amount: number, combatTexts: CombatText
       ...nextState,
       enemyHealth: clampHealth(nextState.enemyHealth, -finalDamage, nextState.enemyMaxHealth),
     };
+    nextState = processEncounterTraitHealthThreshold(state.enemyHealth, nextState, combatTexts);
   }
   return nextState;
 }

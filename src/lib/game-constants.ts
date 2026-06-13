@@ -274,10 +274,6 @@ export const LIVING_ARMOR_STARTING_ARMOR = 5;
 export const ENEMY_STARTING_BLOCK = 4;
 
 // ============ Labyrinth ============
-export const LABYRINTH_STURDY_MULTIPLIER = 1.3;
-export const LABYRINTH_STURDY_HEALTH_PCT = 30;
-export const LABYRINTH_BURNING_GROUND_DAMAGE = 2;
-export const LABYRINTH_LEECH_HEAL = 3;
 export const LABYRINTH_MIN_CONNECTIONS = 1;
 export const LABYRINTH_MAX_CONNECTIONS = 3;
 export const LABYRINTH_MAP_UI = {

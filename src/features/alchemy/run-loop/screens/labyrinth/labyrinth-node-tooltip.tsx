@@ -3,7 +3,7 @@ import type { CSSProperties } from "react";
 
 import type { LabyrinthModifierKind, LabyrinthNodeType } from "@/lib/content-systems/types";
 import { NODE_TYPE_LABELS, NODE_TYPE_TOOLTIPS } from "@/lib/content-systems/labyrinth/data";
-import { ALL_LABYRINTH_MODIFIERS, REWARD_MODIFIER_KINDS } from "@/lib/content-systems/labyrinth/modifiers";
+import { ALL_LABYRINTH_MODIFIERS } from "@/lib/content-systems/labyrinth/modifiers";
 import { LABYRINTH_MAP_UI } from "@/lib/game-constants";
 import { cn } from "@/lib/utils";
 
@@ -44,7 +44,7 @@ export function LabyrinthNodeTooltip({ type, modifiers, rewardModifiers }: Props
     rewardModifiers,
   ]);
 
-  const enemyModifiers = modifiers.filter((m) => !REWARD_MODIFIER_KINDS.has(m));
+  const enemyModifiers = modifiers;
   const hasModifiers = enemyModifiers.length > 0 || rewardModifiers.length > 0;
 
   return (

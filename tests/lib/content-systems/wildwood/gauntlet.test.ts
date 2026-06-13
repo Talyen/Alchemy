@@ -5,7 +5,6 @@ import {
   createWildwoodBossBag,
   drawWildwoodBoss,
   getWildwoodRecoveryHealth,
-  WILDWOOD_MODIFIERS,
   withWildwoodModifier,
 } from "@/lib/content-systems/wildwood/gauntlet";
 import { WILDWOOD_BOSS_IDS } from "@/lib/content-systems/wildwood/bosses";
@@ -38,7 +37,7 @@ describe("Wildwood Draft gauntlet rules", () => {
     expect(canOfferWildwoodRemoval(8)).toBe(true);
   });
 
-  it("appends an inert modifier without mutating the boss", () => {
+  it("appends a shared combat trait without mutating the boss", () => {
     const boss: BestiaryEntry = {
       id: "boss",
       title: "Boss",
@@ -50,10 +49,13 @@ describe("Wildwood Draft gauntlet rules", () => {
       attackEffects: [],
     };
 
-    const result = withWildwoodModifier(boss, WILDWOOD_MODIFIERS[0].id);
+    const result = withWildwoodModifier(boss, "tempered");
 
     expect(result).not.toBe(boss);
-    expect(result.traits).toEqual([boss.traits[0], WILDWOOD_MODIFIERS[0]]);
+    expect(result.traits).toEqual([
+      boss.traits[0],
+      { id: "tempered", title: "Tempered", description: "Gains 1 Forge each turn" },
+    ]);
     expect(boss.traits).toHaveLength(1);
   });
 });

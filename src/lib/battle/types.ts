@@ -15,7 +15,7 @@ import type {
   PlayerStatusId,
   TalentEffectManifest,
 } from "@/lib/game-data";
-import { CAMPFIRE_HEAL_FRACTION, HALF_DIVISOR, STATUS_CONFIG } from "../game-constants";
+import { CAMPFIRE_HEAL_FRACTION } from "../game-constants";
 import type { MaterialInventory } from "@/lib/homestead/types";
 
 // Both player and enemy use status ID unions, but enemies never gain
@@ -87,6 +87,7 @@ export type CombatFlags = {
   firstLeechCardDoubledUsed: boolean;
   resonantChimeUsedThisTurn: boolean;
   runicQuillUsedThisTurn: boolean;
+  divineAegisTriggered: boolean;
 };
 
 // The full snapshot of a battle at one point in time. Every mutation returns a new
@@ -116,6 +117,8 @@ export type BattleState = {
   playerStatuses: PlayerStatusValues;
   enemyStatuses: EnemyStatusValues;
   pendingBleedLeechHealing: number; // bleed leech queued here on damage, paid out in tickBleed — prevents double-dipping if enemy dies before bleed ticks
+  pendingEnemyBleedLeechHealing: number;
+  enemyPhysicalDamageBonus: number;
   enemyStunSkipTurns: number; // turns skipped from stun triggers
   enemyFreezeSkipTurns: number; // turns skipped from freeze triggers
   playerStunSkipTurns: number; // player turns skipped from stun
@@ -178,12 +181,16 @@ export function setPlayerStatus(state: BattleState, status: PlayerStatusId, valu
 }
 
 export function adjustEnemyStatusDelta(state: Pick<BattleState, "difficultyModifiers">, delta: number): number {
-  if (delta === 0) return 0;
-  return isNullFieldActive(state) ? Math.max(STATUS_CONFIG.MIN_STACK_AMOUNT, Math.round(delta / HALF_DIVISOR)) : delta;
+  void state;
+  return delta;
 }
 
 export function addEnemyStatus(state: BattleState, status: EnemyStatusId, delta: number): BattleState {
-  const adjustedDelta = adjustEnemyStatusDelta(state, delta);
+  const traitAdjustedDelta =
+    status === "stun" && state.currentEnemy.traits.some((trait) => trait.id === "braced")
+      ? Math.round(delta / 2)
+      : delta;
+  const adjustedDelta = adjustEnemyStatusDelta(state, traitAdjustedDelta);
   return { ...state, enemyStatuses: { ...state.enemyStatuses, [status]: state.enemyStatuses[status] + adjustedDelta } };
 }
 
@@ -290,10 +297,4 @@ export function applyPlayerHealing(state: BattleState, amount: number): BattleSt
 
 export function isPlayerDefeated(state: Pick<BattleState, "playerHealth" | "deathsDoorActive">): boolean {
   return state.playerHealth <= 0 && !state.deathsDoorActive;
-}
-
-// Derives null-field status from difficultyModifiers on every call, rather than storing a
-// separate boolean that could desync from the modifier list.
-export function isNullFieldActive(state: Pick<BattleState, "difficultyModifiers">): boolean {
-  return state.difficultyModifiers.some((m) => m.kind === "labyrinth-null-field");
 }

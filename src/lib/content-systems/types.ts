@@ -7,31 +7,17 @@ export type ContentSystemId = "campaign" | "labyrinth" | "wildwood";
 
 export type LabyrinthNodeType = "entrance" | "combat" | "elite" | "rest" | "mystery" | "shop" | "alchemist" | "boss";
 
-export type LabyrinthModifierKind =
-  | "armored"
-  | "sturdy"
-  | "burning-ground"
-  | "overwhelming"
-  | "leeching"
-  | "null-field"
-  | "collector"
-  | "generous"
-  | "alchemist"
-  | "scavenger"
-  | "companion";
+import type { EncounterCombatTraitId, EncounterRewardTraitId, EncounterTraitId } from "./encounter-traits";
 
-export type LabyrinthModifier = {
-  kind: LabyrinthModifierKind;
-  label: string;
-  description: string;
-};
+/** @deprecated Prefer category-specific encounter trait IDs. */
+export type LabyrinthModifierKind = EncounterTraitId;
 
 type LabyrinthNodeState = "hidden" | "visible" | "current" | "cleared" | "failed";
 
 export type LabyrinthNode = {
   type: LabyrinthNodeType;
-  modifiers: LabyrinthModifierKind[];
-  rewardModifiers: LabyrinthModifierKind[];
+  modifiers: EncounterCombatTraitId[];
+  rewardModifiers: EncounterRewardTraitId[];
   connections: { row: number; col: number }[];
   state: LabyrinthNodeState;
   enemyId?: string;

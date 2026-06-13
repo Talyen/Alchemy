@@ -1,13 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { createBattleState } from "@/lib/battle/battle-setup";
-import { isNullFieldActive } from "@/lib/battle/types";
 import { enemyBestiary, computeTalentEffects } from "@/lib/game-data";
 import type { BattleCard, BestiaryEntry, DifficultyModifier } from "@/lib/game-data";
 import {
   BASE_PLAYER_MANA,
   BOSS_HEALTH_MULTIPLIER,
   ELITE_HP_MULTIPLIER,
-  LABYRINTH_STURDY_MULTIPLIER,
   MAX_PLAYER_HEALTH,
 } from "@/lib/game-constants";
 import { defaultTrinketEffects } from "@/lib/trinkets";
@@ -254,52 +252,5 @@ describe("createBattleState", () => {
       const burnEffect = result.enemyAttackEffects.find((e) => e.kind === "player-status" && e.status === "burn")!;
       expect(burnEffect.amount).toBe(2);
     });
-  });
-});
-
-describe("labyrinth modifiers on createBattleState", () => {
-  const skeleton = enemyBestiary.find((e) => e.id === "skeleton")!;
-  const battleDeck = [makeCard({ id: "slash" }), makeCard({ id: "block" })];
-  const BASE_ENEMY_HEALTH = 30;
-
-  it("labyrinth-sturdy scales enemyMaxHealth by 1.3x", () => {
-    const result = createBattleState({
-      runDeck: battleDeck,
-      currentEnemy: skeleton,
-      difficultyModifiers: [{ kind: "labyrinth-sturdy" }],
-      rng: seededRng(42),
-    });
-    expect(result.enemyMaxHealth).toBe(Math.round(BASE_ENEMY_HEALTH * LABYRINTH_STURDY_MULTIPLIER));
-    expect(result.enemyHealth).toBe(result.enemyMaxHealth);
-  });
-
-  it("labyrinth-null-field modifier is detected by isNullFieldActive", () => {
-    const result = createBattleState({
-      runDeck: battleDeck,
-      currentEnemy: skeleton,
-      difficultyModifiers: [{ kind: "labyrinth-null-field" }],
-      rng: seededRng(42),
-    });
-    expect(isNullFieldActive(result)).toBe(true);
-  });
-
-  it("labyrinth-null-field is false without the modifier", () => {
-    const result = createBattleState({
-      runDeck: battleDeck,
-      currentEnemy: skeleton,
-      rng: seededRng(42),
-    });
-    expect(isNullFieldActive(result)).toBe(false);
-  });
-
-  it("sturdy and null-field stack correctly", () => {
-    const result = createBattleState({
-      runDeck: battleDeck,
-      currentEnemy: skeleton,
-      difficultyModifiers: [{ kind: "labyrinth-sturdy" }, { kind: "labyrinth-null-field" }],
-      rng: seededRng(42),
-    });
-    expect(result.enemyMaxHealth).toBe(Math.round(BASE_ENEMY_HEALTH * LABYRINTH_STURDY_MULTIPLIER));
-    expect(isNullFieldActive(result)).toBe(true);
   });
 });

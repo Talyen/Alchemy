@@ -61,7 +61,7 @@ export function createLabyrinthNodeRouting(deps: LabyrinthNodeRoutingDeps) {
         enterLabyrinthNodeScreen(
           CONSTANTS.SCREENS.BATTLE,
           () => {
-            deps.battle.startBattle(undefined, undefined, enemyType, labyrinthModifiersToDifficulty(modifiers));
+            deps.battle.startBattle(undefined, undefined, enemyType, labyrinthModifiersToDifficulty());
           },
           modifiers,
           rewardModifiers,
@@ -71,7 +71,7 @@ export function createLabyrinthNodeRouting(deps: LabyrinthNodeRoutingDeps) {
         enterLabyrinthNodeScreen(
           CONSTANTS.SCREENS.BATTLE,
           () => {
-            deps.battle.startBossBattle(labyrinthModifiersToDifficulty(modifiers));
+            deps.battle.startBossBattle(labyrinthModifiersToDifficulty());
           },
           modifiers,
           rewardModifiers,

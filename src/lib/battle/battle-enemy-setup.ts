@@ -10,7 +10,6 @@ import {
   ENEMY_BASE_REGENERATION,
   ENEMY_BOSS_REGENERATION,
   ENEMY_STARTING_BLOCK,
-  LABYRINTH_STURDY_MULTIPLIER,
   LIVING_ARMOR_STARTING_ARMOR,
   ROOM_SCALING_INCREMENT,
 } from "../game-constants";
@@ -121,10 +120,8 @@ export function initializeEnemyState(
     roomMul,
   );
 
-  const hasSturdy = battleDiffs.some((m) => m.kind === "labyrinth-sturdy");
   const hpMul = battleDiffs.find((m) => m.kind === "enemy-health-multiplier")?.amount ?? 1;
-  const totalMul = (hasSturdy ? LABYRINTH_STURDY_MULTIPLIER : 1) + (hpMul - 1);
-  const enemyMaxHealth = Math.round(scaledEnemyHealth * totalMul);
+  const enemyMaxHealth = Math.round(scaledEnemyHealth * hpMul);
 
   return {
     enemyMaxHealth,

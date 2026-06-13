@@ -36,7 +36,10 @@ export function EnemyTooltip({
   const { ref, placement, flip, dx } = useTooltipPlacementWithSideFallback(align, 8, entry.id);
 
   const attackLines = formatEnemyAttackLines(attackEffects ?? entry.attackEffects);
-  const traitLines = entry.traits.flatMap((t) => t.description.split("\n"));
+  const separatelyDisplayedTraitIds = new Set<string>(labyrinthModifiers);
+  const traitLines = entry.traits
+    .filter((trait) => !separatelyDisplayedTraitIds.has(trait.id))
+    .flatMap((trait) => trait.description.split("\n"));
 
   const isSide = placement === "side-start" || placement === "side-end";
 

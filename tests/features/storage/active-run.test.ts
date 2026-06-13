@@ -174,13 +174,14 @@ describe("parseActiveRun", () => {
 
   it("parses resumable Wildwood Draft state", () => {
     const wildwoodDraft = {
-      version: 1,
+      version: 2,
       phase: "draft",
       draftChoices: makeRunCandidate().runDeck,
       remainingBossIds: ["forge-golem", "iron-bear"],
       previousBossId: null,
       currentBossId: null,
-      currentModifierId: null,
+      currentCombatTraitIds: [],
+      currentRewardTraitIds: [],
       rewardType: null,
       rewardChoiceIds: [],
       selectedRewardId: null,
@@ -196,6 +197,31 @@ describe("parseActiveRun", () => {
     expect(result?.wildwoodDraft).toMatchObject({ phase: "draft", remainingBossIds: ["forge-golem", "iron-bear"] });
   });
 
+  it("drops removed Wildwood trait ids without invalidating the run", () => {
+    const result = parseActiveRun(
+      makeRunCandidate({
+        contentSystemType: "wildwood",
+        selectedDifficulty: null,
+        wildwoodDraft: {
+          version: 2,
+          phase: "battle",
+          draftChoices: [],
+          remainingBossIds: [],
+          previousBossId: null,
+          currentBossId: "forge-golem",
+          currentCombatTraitIds: ["tempered", "removed-combat-trait"],
+          currentRewardTraitIds: ["collector", "removed-reward-trait"],
+          rewardType: null,
+          rewardChoiceIds: [],
+          selectedRewardId: null,
+        },
+      }),
+    );
+
+    expect(result?.wildwoodDraft?.currentCombatTraitIds).toEqual(["tempered"]);
+    expect(result?.wildwoodDraft?.currentRewardTraitIds).toEqual(["collector"]);
+  });
+
   it("falls back to campaign when labyrinth map is missing", () => {
     const result = parseActiveRun(makeRunCandidate({ contentSystemType: "labyrinth" }));
     expect(result!.contentSystemType).toBe("campaign");
@@ -208,6 +234,30 @@ describe("parseActiveRun", () => {
     expect(result!.activeCombat?.battleState.turn).toBe(2);
     expect(result!.activeCombat?.battleState.playerHealth).toBe(11);
     expect(result!.labyrinthPendingNode).toBeNull();
+  });
+
+  it("normalizes nested battle defaults and removes retired encounter traits", () => {
+    const battleState = defaultBattleState();
+    const legacyBattleState = {
+      ...battleState,
+      flags: { goldOnFirstPoisonThisCombat: false },
+      currentEnemy: {
+        ...battleState.currentEnemy,
+        traits: [
+          { id: "regeneration", title: "Regeneration", description: "Base enemy trait" },
+          { id: "armored", title: "Armored", description: "Retired encounter trait" },
+          { id: "tempered", title: "Tempered", description: "Current encounter trait" },
+        ],
+      },
+    };
+
+    const result = parseActiveRun(makeRunCandidate({ activeCombat: { battleState: legacyBattleState } }));
+
+    expect(result!.activeCombat?.battleState.flags.divineAegisTriggered).toBe(false);
+    expect(result!.activeCombat?.battleState.currentEnemy.traits.map((trait) => trait.id)).toEqual([
+      "regeneration",
+      "tempered",
+    ]);
   });
 
   it("drops invalid active combat data", () => {
@@ -319,13 +369,13 @@ describe("parseActiveRun with labyrinth map", () => {
       labyrinthPendingNode: { row: 0, col: 1 },
       activeCombat: {
         battleState: defaultBattleState(),
-        activeLabyrinthModifiers: ["armored", "unknown"],
+        activeLabyrinthModifiers: ["tempered", "unknown"],
         activeLabyrinthRewardModifiers: ["generous"],
       },
     }));
 
     expect(result!.labyrinthPendingNode).toEqual({ row: 0, col: 1 });
-    expect(result!.activeCombat?.activeLabyrinthModifiers).toEqual(["armored"]);
+    expect(result!.activeCombat?.activeLabyrinthModifiers).toEqual(["tempered"]);
     expect(result!.activeCombat?.activeLabyrinthRewardModifiers).toEqual(["generous"]);
   });
 });
