@@ -80,7 +80,7 @@ export function BattleActors({
                 damageBonus={
                   battleState.companionDamageBuff +
                   battleState.talentEffects.companionDamage +
-                  battleState.trinketEffects.companionDamageBonus +
+                  battleState.boonEffects.companionDamageBonus +
                   (battleState.talentEffects.companionBondLevels[battleState.activeCompanion.id] ?? 0)
                 }
               />

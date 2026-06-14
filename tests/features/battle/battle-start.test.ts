@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { getBattleStartPlayerHealth } from "@/features/alchemy/run-loop/battle/battle-init";
 
 describe("getBattleStartPlayerHealth", () => {
-  it("preserves current Health when no start-heal trinket is equipped", () => {
+  it("preserves current Health when no start-heal boon is equipped", () => {
     expect(getBattleStartPlayerHealth(12, 30, [])).toBe(12);
   });
 

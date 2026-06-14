@@ -80,7 +80,7 @@ describe("applyDamageStatuses", () => {
 
   it("cutpurseGoldOnBleed grants gold on bleed", () => {
     const state = createTestBattleState({
-      trinketEffects: { ...createTestBattleState().trinketEffects, cutpurseGoldOnBleed: 2 },
+      boonEffects: { ...createTestBattleState().boonEffects, cutpurseGoldOnBleed: 2 },
     });
     const effect = { kind: "damage" as const, damageType: "bleed" as const, amount: 5 };
     const texts = makeTexts();
@@ -132,7 +132,7 @@ describe("applyDamageStatuses", () => {
       enemyHealth: 30,
       enemyMaxHealth: 30,
       enemyStatuses: { ...createTestBattleState().enemyStatuses, freeze: 15 },
-      trinketEffects: { ...createTestBattleState().trinketEffects, freezeDurationExtension: 2 },
+      boonEffects: { ...createTestBattleState().boonEffects, freezeDurationExtension: 2 },
     });
     const effect = { kind: "damage" as const, damageType: "freeze" as const, amount: 10 };
     const result = applyDamageStatuses(state, effect, 10, []);
@@ -144,7 +144,7 @@ describe("applyDamageStatuses", () => {
       enemyHealth: 30,
       enemyMaxHealth: 30,
       enemyStatuses: { ...createTestBattleState().enemyStatuses, freeze: 15 },
-      trinketEffects: { ...createTestBattleState().trinketEffects, frozenHeartDamage: 6 },
+      boonEffects: { ...createTestBattleState().boonEffects, frozenHeartDamage: 6 },
     });
     const effect = { kind: "damage" as const, damageType: "freeze" as const, amount: 10 };
     const texts = makeTexts();

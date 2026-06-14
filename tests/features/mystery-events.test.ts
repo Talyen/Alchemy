@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { mysteryPool } from "@/features/alchemy/run-loop/mystery-events";
-import { cardLibrary, trinketLibrary } from "@/lib/game-data";
+import { cardLibrary, boonLibrary } from "@/lib/game-data";
 import type { KeywordId } from "@/lib/game-data";
 import { MATERIAL_IDS } from "@/lib/homestead/types";
 
@@ -54,13 +54,13 @@ describe("mysteryPool", () => {
     }
   });
 
-  it("gainTrinket effects reference valid trinket IDs from the library", () => {
+  it("gainBoon effects reference valid boon IDs from the library", () => {
     for (const event of mysteryPool) {
       for (const choice of event.choices) {
         for (const effect of choice.effects) {
-          if (effect.kind === "gainTrinket") {
-            const trinket = trinketLibrary.find((t) => t.id === effect.trinketId);
-            expect(trinket, `Event "${event.id}" references unknown trinket "${effect.trinketId}"`).toBeDefined();
+          if (effect.kind === "gainBoon") {
+            const boon = boonLibrary.find((t) => t.id === effect.boonId);
+            expect(boon, `Event "${event.id}" references unknown boon "${effect.boonId}"`).toBeDefined();
           }
         }
       }
@@ -144,12 +144,12 @@ describe("mysteryPool", () => {
     expect(search!.effects.some((e) => e.kind === "chooseCard")).toBe(true);
   });
 
-  it("Overgrown Temple 'Explore the Crypt' uses gainRandomTrinket", () => {
+  it("Overgrown Temple 'Explore the Crypt' uses gainRandomBoon", () => {
     const temple = mysteryPool.find((e) => e.id === "overgrown-temple");
     expect(temple).toBeDefined();
     const explore = temple!.choices.find((c) => c.label === "Explore the Crypt");
     expect(explore).toBeDefined();
-    expect(explore!.effects.some((e) => e.kind === "gainRandomTrinket")).toBe(true);
+    expect(explore!.effects.some((e) => e.kind === "gainRandomBoon")).toBe(true);
   });
 
   it("no event has a 'none'-only choice", () => {

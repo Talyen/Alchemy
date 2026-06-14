@@ -1,10 +1,13 @@
 // Destination routing helpers and reward selection utilities for run flow.
 import type { Dispatch, SetStateAction } from "react";
 import type { BattleCard } from "@/lib/game-data";
+import type { GearDefinition } from "@/lib/gear";
+import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
 import type { RewardState } from "../navigation/reward-flow";
 import { getRandomPotionCard } from "../navigation/reward-flow";
-import { appendCardToRunWithDiscovery, appendTrinketToRunWithDiscovery } from "./deck-mutations";
+import { appendCardToRunWithDiscovery, appendBoonToRunWithDiscovery } from "./deck-mutations";
 import { CONSTANTS, type Destination, type Screen } from "../../shared/types";
+import { createInstanceId } from "@/lib/utils";
 
 export type DestinationRouteHandlers = {
   navigateTo: (nextScreen: Screen) => void;
@@ -51,18 +54,23 @@ export function routeDestinationChoice(destination: Destination, handlers: Desti
 }
 
 type RewardSelectionInput = {
-  choice: BattleCard | { id: string };
+  choice: BattleCard | { id: string } | GearDefinition;
   type: RewardState["rewardType"];
   setRunDeck: Dispatch<SetStateAction<BattleCard[]>>;
-  setRunTrinkets: Dispatch<SetStateAction<string[]>>;
+  setRunBoons: Dispatch<SetStateAction<string[]>>;
 };
 
-export function applyRewardSelection({ choice, type, setRunDeck, setRunTrinkets }: RewardSelectionInput) {
+export function applyRewardSelection({ choice, type, setRunDeck, setRunBoons }: RewardSelectionInput) {
   const selectedId = choice.id;
   if (type === "card") {
     appendCardToRunWithDiscovery(choice as BattleCard, setRunDeck);
+  } else if (type === "boon") {
+    appendBoonToRunWithDiscovery(selectedId, setRunBoons);
   } else {
-    appendTrinketToRunWithDiscovery(selectedId, setRunTrinkets);
+    const instanceId = createInstanceId();
+    useGearStore
+      .getState()
+      .addInstance({ instanceId, definitionId: selectedId as GearDefinition["id"], modifiers: [] });
   }
 }
 

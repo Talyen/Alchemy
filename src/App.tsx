@@ -9,7 +9,7 @@ import {
   characterArt,
   characters,
   enemyBestiary,
-  trinketLibrary,
+  boonLibrary,
   type CharacterId,
   type DifficultyId,
   type TalentXP,
@@ -27,12 +27,17 @@ import { useAlchemyAutosaveFromStores } from "@/app/use-app-save-state";
 import { useGlobalErrorHandlers } from "@/app/use-global-error-handlers";
 import { useInitialLoadReady } from "@/app/use-initial-load-ready";
 import { useRenderedScreenTransition } from "@/app/use-rendered-screen-transition";
+import {
+  resolveReturnToRunLabel,
+  resolveReturnToRunTarget,
+  shouldClearReturnToRunOnMainMenu,
+} from "@/app/return-to-run-navigation";
 import { RenderAlchemyScreen } from "@/app/render-alchemy-screen";
 import { AppScreenChromeProvider } from "@/app/app-screen-chrome-context";
 import { StartupLoadingScreen } from "@/app/startup-loading-screen";
 import { UnsupportedSaveVersionScreen } from "@/app/unsupported-save-version-screen";
 import { useVirtualResolution } from "@/features/alchemy/shared/hooks";
-import { GameMenu } from "@/features/alchemy/shared/ui/shared-ui";
+import { GameMenu, HamburgerTrigger } from "@/features/alchemy/shared/ui/shared-ui";
 import { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";
 import { useHomesteadStore } from "@/features/alchemy/shared/stores/homestead-store";
 import { CardDescriptionProvider } from "@/features/alchemy/shared/context/card-description-context";
@@ -45,13 +50,14 @@ import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
 import { clearAllPersistentGameData } from "@/features/alchemy/shared/stores/reset";
 import { isAlchemyDevBuild } from "@/features/alchemy/shared/utils";
 import { restoreRun } from "@/features/alchemy/shared/stores/run-session-facade";
-import type { Destination, Screen } from "@/lib/routing";
+import { isRunLoopScreen, type Destination, type Screen } from "@/lib/routing";
 import type { MysteryChoice } from "@/lib/mystery";
 import type { ActiveRunData } from "@/lib/active-run-session";
 import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 
 import { createContext, useContext } from "react";
 import { useActiveRunScreenValue } from "@/features/alchemy/shared/stores/run-session-facade";
+import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
 
 const appStore = useAppStore;
 const homesteadStore = useHomesteadStore;
@@ -100,7 +106,7 @@ function AppMainContent({
   stagePixelRatio,
   stageStyle,
   aspectMode,
-  setDiscoveredTrinketIds,
+  setDiscoveredBoonIds,
 }: {
   saveBlockedByNewerVersion: boolean;
   initialLoadReady: boolean;
@@ -108,7 +114,7 @@ function AppMainContent({
   stagePixelRatio: number;
   stageStyle: React.CSSProperties;
   aspectMode: "standard" | "narrow" | "ultrawide";
-  setDiscoveredTrinketIds: (ids: string[]) => void;
+  setDiscoveredBoonIds: (ids: string[]) => void;
 }) {
   const run = useRunController();
   const finishedRunCharacters = useAppStore((s) => s.finishedRunCharacters);
@@ -120,6 +126,7 @@ function AppMainContent({
 
   const [gameMenuOpen, setGameMenuOpen] = useState(false);
   const [menuAnchorRect, setMenuAnchorRect] = useState<DOMRect | null>(null);
+  const [returnToRunScreen, setReturnToRunScreen] = useState<Screen | null>(null);
   const gameMenuOpenRef = useRef(gameMenuOpen);
   const renderedScreenRef = useRef(renderedScreen);
 
@@ -161,7 +168,7 @@ function AppMainContent({
     (run.rewardState.choices.length === 0 || run.contentSystemType === "wildwood") &&
     !(run.runPhase === "battle" && run.battleState.enemyHealth <= 0);
 
-  useAlchemyAutosaveFromStores(autosaveEnabled);
+  useAlchemyAutosaveFromStores(autosaveEnabled, returnToRunScreen);
 
   const runRef = useRef(run);
   useEffect(() => {
@@ -237,7 +244,7 @@ function AppMainContent({
     if (!isAlchemyDevBuild()) return;
     appStore.getState().setDiscoveredCardIds(cardLibrary.map((card) => card.id));
     appStore.getState().setEncounteredEnemyIds(enemyBestiary.map((enemy) => enemy.id));
-    setDiscoveredTrinketIds(trinketLibrary.map((trinket) => trinket.id));
+    setDiscoveredBoonIds(boonLibrary.map((boon) => boon.id));
     appStore
       .getState()
       .setFinishedRunCharacters(["knight", "rogue", "wizard", "ranger", "alchemist", "warlock", "druid"]);
@@ -266,6 +273,22 @@ function AppMainContent({
   function openBattleMenu(rect?: DOMRect) {
     setMenuAnchorRect(rect ?? null);
     setGameMenuOpen(true);
+  }
+
+  function navigateToMeta(screen: Extract<Screen, "collection" | "talents" | "homestead" | "options" | "armory">) {
+    if (isRunLoopScreen(renderedScreen)) setReturnToRunScreen(renderedScreen);
+    run.goToScreen(screen);
+  }
+
+  const hasActiveBattle = run.hasActiveBattle;
+  const returnToRunTarget = resolveReturnToRunTarget(returnToRunScreen, hasActiveBattle);
+
+  function returnToRun() {
+    const target = resolveReturnToRunTarget(returnToRunScreen, hasActiveBattle);
+    if (!target) return;
+    if (target === "battle") run.returnToBattle();
+    else run.goToScreen(target);
+    setReturnToRunScreen(null);
   }
 
   const particleColors = SCREEN_PARTICLE_COLORS[renderedScreen];
@@ -297,6 +320,7 @@ function AppMainContent({
             stagePixelRatio,
             hasUnspentTalents: hasUnspentTalentsBadge,
             hasAffordableHomestead,
+            returnToRunScreen,
           }}
         >
           <RenderAlchemyScreen
@@ -333,6 +357,11 @@ function AppMainContent({
           />
         )}
         {content}
+        {isRunLoopScreen(renderedScreen) && renderedScreen !== "battle" && renderedScreen !== "labyrinth-map" ? (
+          <div className="absolute right-4 top-4 z-50">
+            <HamburgerTrigger onClick={openBattleMenu} label={`Open ${renderedScreen} menu`} />
+          </div>
+        ) : null}
       </div>
       <GameMenu
         isOpen={saveBlockedByNewerVersion ? false : gameMenuOpen}
@@ -343,14 +372,25 @@ function AppMainContent({
           setGameMenuOpen(false);
           setMenuAnchorRect(null);
         }}
-        onMainMenu={() => run.goToScreen("menu")}
-        onCollection={() => run.goToScreen("collection")}
-        onTalents={() => run.goToScreen("talents")}
-        onHomestead={() => run.goToScreen("homestead")}
-        onOptions={() => run.goToScreen("options")}
+        onMainMenu={() => {
+          if (shouldClearReturnToRunOnMainMenu(hasActiveBattle)) {
+            setReturnToRunScreen(null);
+          }
+          run.goToScreen("menu");
+        }}
+        onCollection={() => navigateToMeta("collection")}
+        onTalents={() => navigateToMeta("talents")}
+        onHomestead={() => navigateToMeta("homestead")}
+        onArmory={() => navigateToMeta("armory")}
+        onOptions={() => navigateToMeta("options")}
         isTalentsLocked={!finishedRunCharacters.includes("knight")}
         isHomesteadLocked={!finishedRunCharacters.includes("knight")}
-        {...(run.hasActiveBattle && renderedScreen !== "battle" ? { onReturnToBattle: run.returnToBattle } : {})}
+        {...(returnToRunTarget
+          ? {
+              onReturnToRun: returnToRun,
+              returnToRunLabel: resolveReturnToRunLabel(returnToRunTarget),
+            }
+          : {})}
         {...(renderedScreen === "battle" ? { onEndRun: run.handleEndRun } : {})}
         {...(renderedScreen === "labyrinth-map" ? { onEndRun: run.handleLabyrinthEndRun } : {})}
       />
@@ -370,9 +410,9 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
   const masterVol = useAppStore((s) => s.masterVol);
   const muteInBackground = useAppStore((s) => s.muteInBackground);
   const autoEndTurn = useAppStore((s) => s.autoEndTurn);
-  const setDiscoveredTrinketIds = wrapStoreSetter(
-    () => appStore.getState().discoveredTrinketIds,
-    appStore.getState().setDiscoveredTrinketIds,
+  const setDiscoveredBoonIds = wrapStoreSetter(
+    () => appStore.getState().discoveredBoonIds,
+    appStore.getState().setDiscoveredBoonIds,
   );
   const vrStageRef = useRef<HTMLDivElement>(null);
   const initialLoadReady = useInitialLoadReady({ imageUrls: allGameArt });
@@ -414,7 +454,7 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
               stagePixelRatio={stagePixelRatio}
               stageStyle={stageStyle}
               aspectMode={aspectMode}
-              setDiscoveredTrinketIds={setDiscoveredTrinketIds}
+              setDiscoveredBoonIds={setDiscoveredBoonIds}
             />
           </RunControllerProvider>
           <div id="tooltip-root" className="absolute inset-0 pointer-events-none z-30" />
@@ -439,6 +479,7 @@ export default function App() {
           completedResearch: result.data.completedResearch,
           bondedCompanions: result.data.bondedCompanions,
         });
+        useGearStore.getState().initialize(result.data.gearInventory, result.data.gearLoadouts);
         restoreRun(result.data.activeRun, result.data.talentXP, result.data.unlockedTalents);
         setBootstrapResult(result);
       }

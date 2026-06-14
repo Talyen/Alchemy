@@ -6,13 +6,13 @@ import {
   getCardKeywords,
   getOfferableCardPool,
   selectRewardCards,
-  trinketLibrary,
+  boonLibrary,
   type BattleCard,
   type KeywordId,
 } from "@/lib/game-data";
 import { playGoldGain, playGoldSpend } from "@/lib/audio";
 import { MYSTERY_CARD_CHOICES } from "@/lib/game-constants";
-import { appendCardToRunWithDiscovery, appendTrinketToRunWithDiscovery } from "../run/deck-mutations";
+import { appendCardToRunWithDiscovery, appendBoonToRunWithDiscovery } from "../run/deck-mutations";
 import type { MaterialId, MaterialInventory } from "@/lib/homestead/types";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import type { Dispatch, SetStateAction } from "react";
@@ -34,7 +34,7 @@ type MysteryEffectContext = {
   setRunDeck: Dispatch<SetStateAction<BattleCard[]>>;
   setRunGold: Dispatch<SetStateAction<number>>;
   setRunPlayerHealth: Dispatch<SetStateAction<number>>;
-  setRunTrinkets: Dispatch<SetStateAction<string[]>>;
+  setRunBoons: Dispatch<SetStateAction<string[]>>;
   setMysteryCardChoices: Dispatch<SetStateAction<BattleCard[] | null>>;
   awardMysteryXP: (keyword: KeywordId, amount: number) => void;
   onAddMaterials: (materials: MaterialInventory) => void;
@@ -60,8 +60,8 @@ const mysteryApplyHandlers: {
     return { followUp: null };
   },
   removeCard: (effect, context) => removeMysteryCard(effect.mode, context),
-  gainTrinket: (effect, context) => gainMysteryTrinket(effect.trinketId, context),
-  gainRandomTrinket: (_effect, context) => gainRandomMysteryTrinket(context),
+  gainBoon: (effect, context) => gainMysteryBoon(effect.boonId, context),
+  gainRandomBoon: (_effect, context) => gainRandomMysteryBoon(context),
   gainMaterial: (effect, context) => gainMysteryMaterial(effect.material, effect.amount, context),
   none: () => ({ followUp: null }),
 };
@@ -147,14 +147,14 @@ function removeMysteryCard(mode: "random" | "choose", context: MysteryEffectCont
   return { followUp: null };
 }
 
-function gainMysteryTrinket(trinketId: string, context: MysteryEffectContext) {
-  appendTrinketToRunWithDiscovery(trinketId, context.setRunTrinkets);
+function gainMysteryBoon(boonId: string, context: MysteryEffectContext) {
+  appendBoonToRunWithDiscovery(boonId, context.setRunBoons);
   return { followUp: null };
 }
 
-function gainRandomMysteryTrinket(context: MysteryEffectContext) {
-  const randomTrinket = sampleItems(trinketLibrary, 1)[0];
-  if (randomTrinket) gainMysteryTrinket(randomTrinket.id, context);
+function gainRandomMysteryBoon(context: MysteryEffectContext) {
+  const randomBoon = sampleItems(boonLibrary, 1)[0];
+  if (randomBoon) gainMysteryBoon(randomBoon.id, context);
   return { followUp: null };
 }
 

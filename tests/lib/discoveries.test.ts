@@ -18,7 +18,7 @@ describe("discoveries helpers", () => {
     ]);
   });
 
-  it("buildDiscoveryPackPlan runs card packs before trinket packs", () => {
+  it("buildDiscoveryPackPlan runs card packs before boon packs", () => {
     const plan = buildDiscoveryPackPlan(
       ["c1", "c2", "c3", "c4", "c5", "c6"],
       ["t1", "t2", "t3", "t4"],
@@ -26,14 +26,14 @@ describe("discoveries helpers", () => {
     expect(plan).toEqual([
       { kind: "cards", ids: ["c1", "c2", "c3", "c4"] },
       { kind: "cards", ids: ["c5", "c6"] },
-      { kind: "trinkets", ids: ["t1", "t2", "t3"] },
-      { kind: "trinkets", ids: ["t4"] },
+      { kind: "boons", ids: ["t1", "t2", "t3"] },
+      { kind: "boons", ids: ["t4"] },
     ]);
   });
 
   it("hasRunEndDiscoveries is false when both lists are empty", () => {
     expect(hasRunEndDiscoveries([], [])).toBe(false);
     expect(hasRunEndDiscoveries(["card-a"], [])).toBe(true);
-    expect(hasRunEndDiscoveries([], ["trinket-a"])).toBe(true);
+    expect(hasRunEndDiscoveries([], ["boon-a"])).toBe(true);
   });
 });

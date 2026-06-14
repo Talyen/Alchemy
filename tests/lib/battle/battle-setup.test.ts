@@ -8,7 +8,7 @@ import {
   ELITE_HP_MULTIPLIER,
   MAX_PLAYER_HEALTH,
 } from "@/lib/game-constants";
-import { defaultTrinketEffects } from "@/lib/trinkets";
+import { defaultBoonEffects } from "@/lib/boons";
 import { makeTestCard, seededRng } from "./test-state";
 
 function makeCard(overrides: Partial<BattleCard> = {}): BattleCard {
@@ -72,19 +72,32 @@ describe("createBattleState", () => {
     expect(result.enemyHealth).toBe(result.enemyMaxHealth);
   });
 
-  it("wires trinket and talent manifests from inputs", () => {
+  it("wires boon and talent manifests from inputs", () => {
     const talents = computeTalentEffects(["physical-heavy-blows"]);
     const result = createBattleState({
       runDeck: battleDeck,
       currentEnemy: skeleton,
       talentEffects: talents,
-      trinketIds: ["lucky-clover"],
+      boonIds: ["lucky-clover"],
       rng: seededRng(42),
     });
     expect(result.talentEffects).toEqual(talents);
-    expect(result.trinketEffects).not.toEqual(defaultTrinketEffects);
-    expect(result.trinketEffects.luckyCloverGoldChance).toBeGreaterThan(0);
+    expect(result.boonEffects).not.toEqual(defaultBoonEffects);
+    expect(result.boonEffects.luckyCloverGoldChance).toBeGreaterThan(0);
     expect(result.talentEffects.physicalStunChance).toBe(10);
+  });
+
+  it("wires gear effects separately from talent effects", () => {
+    const talents = computeTalentEffects([]);
+    const result = createBattleState({
+      runDeck: battleDeck,
+      currentEnemy: skeleton,
+      talentEffects: talents,
+      gearEffects: { flatPhysicalDamage: 2 },
+      rng: seededRng(42),
+    });
+    expect(result.gearEffects).toEqual({ flatPhysicalDamage: 2 });
+    expect(result.talentEffects.flatPhysicalDamage).toBe(talents.flatPhysicalDamage);
   });
 
   describe("difficulty modifiers", () => {

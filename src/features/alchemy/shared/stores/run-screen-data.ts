@@ -26,7 +26,7 @@ export function flattenRunSessionForScreens({ phase, run, session, battle }: Run
     alchemistState: session.alchemistState,
     runEndMaterials: session.runEndMaterials,
     runEndDiscoveredCardIds: session.runEndDiscoveredCardIds,
-    runEndDiscoveredTrinketIds: session.runEndDiscoveredTrinketIds,
+    runEndDiscoveredBoonIds: session.runEndDiscoveredBoonIds,
     pendingCharacterId: session.pendingCharacterId,
   };
 }

@@ -1,5 +1,5 @@
 // Core game-data type contracts shared across lib and features: card shapes, status IDs,
-// enemy/trait/trinket definitions. No runtime code — pure types only so other modules can import
+// enemy/trait/boon definitions. No runtime code — pure types only so other modules can import
 // shapes without dragging in data or side effects.
 export type { TalentEffectManifest } from "./talent-effect-manifest";
 export type KeywordId =
@@ -162,7 +162,7 @@ export type BestiaryEntry = {
   attackEffects: EnemyAttackEffect[];
 };
 
-export type TrinketEntry = {
+export type BoonEntry = {
   id: string;
   title: string;
   descriptionLines: string[];

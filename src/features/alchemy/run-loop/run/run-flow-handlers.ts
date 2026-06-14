@@ -108,7 +108,7 @@ export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
       selectedDifficulty: runState.selectedDifficulty,
       unlockedTalents: runState.unlockedTalents,
       runDeck: runState.runDeck,
-      runTrinkets: runState.runTrinkets,
+      runBoons: runState.runBoons,
       contentSystemType: runState.contentSystemType,
       activeLabyrinthRewardModifiers:
         runState.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD
@@ -142,10 +142,11 @@ export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
     if (runState.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
       const wildwood = readRunSessionStore().wildwoodDraft;
       if (wildwood) {
+        // Wildwood draft rewardType is card | boon only; gear rewards never occur in Wildwood.
         setWildwoodDraft({
           ...wildwood,
           phase: "recovery",
-          rewardType: result.rewardState.rewardType,
+          rewardType: result.rewardState.rewardType === "gear" ? null : result.rewardState.rewardType,
           rewardChoiceIds: result.rewardState.choices.map((choice) => choice.id),
           selectedRewardId: null,
         });
@@ -210,7 +211,7 @@ export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
         choice: result.selectedChoice,
         type: result.selectedRewardType,
         setRunDeck: deps.run.setRunDeck,
-        setRunTrinkets: deps.run.setRunTrinkets,
+        setRunBoons: deps.run.setRunBoons,
       });
       playUISound("talentUnlock");
     }

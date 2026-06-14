@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { TextAnimate } from "@/components/ui/text-animate";
-import { type BattleCard, type TrinketEntry } from "@/lib/game-data";
+import { type BattleCard, type BoonEntry } from "@/lib/game-data";
 
 import { viewCardWidthClass } from "@/features/alchemy/shared/config";
 import type { MysteryChoice, MysteryEvent } from "../../mystery-events";
@@ -19,13 +19,13 @@ const CONFIG = {
 
 type LookupProps = {
   findCard: (id: string) => BattleCard | undefined;
-  findTrinket: (id: string) => TrinketEntry | undefined;
+  findBoon: (id: string) => BoonEntry | undefined;
 };
 
 function MysteryEventChoiceButton({
   choice,
   findCard,
-  findTrinket,
+  findBoon,
   onPick,
 }: {
   choice: MysteryChoice;
@@ -49,7 +49,7 @@ function MysteryEventChoiceButton({
         <MysteryEffectList
           effects={choice.effects}
           findCard={findCard}
-          findTrinket={findTrinket}
+          findBoon={findBoon}
           choiceLabel={choice.label}
         />
       </TooltipPanel>
@@ -60,12 +60,12 @@ function MysteryEventChoiceButton({
 export function MysteryEventIntro({
   event,
   findCard,
-  findTrinket,
+  findBoon,
   onPick,
 }: {
   event: MysteryEvent;
   findCard: (id: string) => BattleCard | undefined;
-  findTrinket: (id: string) => TrinketEntry | undefined;
+  findBoon: (id: string) => BoonEntry | undefined;
   onPick: (choice: MysteryChoice) => void;
 }) {
   const [hoveredCardId, setHoveredCardId] = useState<string | null>(null);
@@ -113,7 +113,7 @@ export function MysteryEventIntro({
       <StaggerGroup swapKey={event.id} animate={false} className="flex flex-wrap justify-center gap-4">
         {event.choices.map((choice, i) => (
           <StaggerItem key={i} index={(event.art || featuredCard ? 3 : 2) + i}>
-            <MysteryEventChoiceButton choice={choice} findCard={findCard} findTrinket={findTrinket} onPick={onPick} />
+            <MysteryEventChoiceButton choice={choice} findCard={findCard} findBoon={findBoon} onPick={onPick} />
           </StaggerItem>
         ))}
       </StaggerGroup>

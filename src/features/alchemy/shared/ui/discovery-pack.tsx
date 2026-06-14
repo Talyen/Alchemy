@@ -14,9 +14,9 @@ import {
   collectionTileWidthClass,
   discoveryPackBlockHeightClass,
   discoveryPackStageHeightClass,
-  trinketCardWidthClass,
+  boonCardWidthClass,
 } from "../config";
-import { getDiscoveryCardTileItems, getDiscoveryTrinketTileItems, type CollectionTileItem } from "./collection-items";
+import { getDiscoveryCardTileItems, getDiscoveryBoonTileItems, type CollectionTileItem } from "./collection-items";
 import { CompendiumTile } from "./collection-tile";
 import { getCenteredGridSlots, getDiscoveryPackGridLayout, isSingleDiscoveryRow } from "./discovery-pack-grid";
 import { TiltSurface } from "./tilt-surface";
@@ -33,7 +33,7 @@ type DiscoveryPackProps = {
 };
 
 function getItemsForBatch(batch: DiscoveryPackBatch): CollectionTileItem[] {
-  return batch.kind === "cards" ? getDiscoveryCardTileItems(batch.ids) : getDiscoveryTrinketTileItems(batch.ids);
+  return batch.kind === "cards" ? getDiscoveryCardTileItems(batch.ids) : getDiscoveryBoonTileItems(batch.ids);
 }
 
 function getBatchExitDuration(itemCount: number): number {
@@ -50,13 +50,13 @@ export function DiscoveryPack({ packs, onContinue, onBatchChange }: DiscoveryPac
 
   const currentBatch = packs[batchIndex];
   const items = currentBatch ? getItemsForBatch(currentBatch) : [];
-  const isTrinketBatch = currentBatch?.kind === "trinkets";
-  const slotWidthClass = isTrinketBatch ? trinketCardWidthClass : collectionTileWidthClass;
+  const isBoonBatch = currentBatch?.kind === "boons";
+  const slotWidthClass = isBoonBatch ? boonCardWidthClass : collectionTileWidthClass;
   const isLastBatch = batchIndex >= packs.length - 1;
   const allItemsVisible = visibleCount >= items.length && items.length > 0;
   const showContinueButton = packPhase === "opened" && swapPhase === "idle" && allItemsVisible;
   const showPack = packPhase === "closed" || packPhase === "opening";
-  const { gridClass, columnCount } = getDiscoveryPackGridLayout(isTrinketBatch);
+  const { gridClass, columnCount } = getDiscoveryPackGridLayout(isBoonBatch);
   const rowSlots = showPack
     ? Array.from({ length: columnCount }, () => null)
     : getCenteredGridSlots(items, columnCount);

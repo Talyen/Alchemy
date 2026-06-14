@@ -149,7 +149,7 @@ const assets = [
   { source: "Cards/Spiked Shield.jpeg", target: "spiked-shield.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Wishing Well.jpeg", target: "wishing-well.webp", width: cardWidth, quality: cardQuality },
   { source: "Cards/Placeholder Card.png", target: "placeholder-card.webp", width: cardWidth, quality: 60 },
-  // Trinkets
+  // Boons (raw source folder retains its historical name)
   { source: "Trinkets/Bone Charm.jpeg", target: "bone-charm.webp", width: 420, quality: 82 },
   { source: "Trinkets/Brass Censer.jpeg", target: "brass-censer.webp", width: 420, quality: 82 },
   { source: "Trinkets/Companion's Collar.jpeg", target: "companions-collar.webp", width: 420, quality: 82 },
@@ -163,7 +163,7 @@ const assets = [
   { source: "Trinkets/Mortar and Pestle.jpeg", target: "mortar-and-pestle.webp", width: 420, quality: 82 },
   { source: "Trinkets/Obsidian Hammer.jpeg", target: "obsidian-hammer.webp", width: 420, quality: 82 },
   { source: "Trinkets/Parasitic Bloom.jpeg", target: "parasitic-bloom.webp", width: 420, quality: 82 },
-  { source: "Trinkets/Placeholder Trinket.png", target: "placeholder-trinket.webp", width: 420, quality: 60 },
+  { source: "Trinkets/Placeholder Trinket.png", target: "placeholder-boon.webp", width: 420, quality: 60 },
   { source: "Trinkets/Plague Doctor's Mask.jpeg", target: "plague-doctors-mask.webp", width: 420, quality: 82 },
   { source: "Trinkets/Frozen Pocketwatch.jpeg", target: "frozen-pocketwatch.webp", width: 420, quality: 82 },
   { source: "Trinkets/Resonant Chimes.jpeg", target: "resonant-chimes.webp", width: 420, quality: 82 },
@@ -175,6 +175,8 @@ const assets = [
   { source: "Trinkets/Thunderstone.jpeg", target: "thunderstone.webp", width: 420, quality: 82 },
   { source: "Trinkets/Vanguard's Crest.jpeg", target: "vanguards-crest.webp", width: 420, quality: 82 },
   { source: "Trinkets/Wishing Well Coin.jpeg", target: "wishing-well-coin.webp", width: 420, quality: 82 },
+  // Gear
+  { source: "Gear/Placeholder Gear.png", target: "placeholder-gear.webp", width: 420, quality: 82 },
   // Destinations
   { source: "Destinations/Campfire.jpeg", target: "campfire.webp", width: 900, quality: 84 },
   { source: "Destinations/Alchemist's Shop.jpeg", target: "alchemist-shop.webp", width: 900, quality: 84 },

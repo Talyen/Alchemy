@@ -12,7 +12,7 @@ test.describe("Collection", critical, () => {
 
     await expect(page.getByRole("button", { name: "Cards" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Bestiary" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Trinkets" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Boons" })).toBeVisible();
     await expect(page.getByRole("button", { name: /Inspect/ }).first()).toBeVisible();
 
     const inspectBtn = page.getByRole("button", { name: /Inspect Anvil/ });
@@ -21,7 +21,7 @@ test.describe("Collection", critical, () => {
     await expect(page.getByText(/^Gain \d+ Forge/)).toBeVisible();
   });
 
-  test("collection tab navigation shows bestiary and trinket undiscovered entries", async ({ page }) => {
+  test("collection tab navigation shows bestiary and boon undiscovered entries", async ({ page }) => {
     const menu = new MenuPage(page);
     await menu.goto();
     await menu.openCollection();
@@ -29,7 +29,7 @@ test.describe("Collection", critical, () => {
     await page.getByRole("button", { name: "Bestiary" }).click();
     await expect(page.getByRole("button", { name: "Inspect Undiscovered Entry" }).first()).toBeVisible();
 
-    await page.getByRole("button", { name: "Trinkets" }).click();
+    await page.getByRole("button", { name: "Boons" }).click();
     await expect(page.getByRole("button", { name: "Inspect Undiscovered Entry" }).first()).toBeVisible();
 
     await page.getByRole("button", { name: "Cards" }).click();

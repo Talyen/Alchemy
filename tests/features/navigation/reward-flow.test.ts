@@ -10,7 +10,7 @@ import {
   getRandomPotionCard,
   getVictoryGoldTotal,
   finalizeRewardState,
-  shouldForceTrinketReward,
+  shouldForceBoonReward,
   shouldGrantAlchemistReward,
   shouldGrantCompanionReward,
 } from "@/features/alchemy/run-loop/navigation/reward-flow";
@@ -18,7 +18,7 @@ import { getStandardPotionPool } from "@/lib/game-data";
 import { CONSTANTS } from "@/features/alchemy/shared/types";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import type { LabyrinthModifierKind } from "@/lib/content-systems/types";
-import type { BattleCard, TrinketEntry } from "@/lib/game-data";
+import type { BattleCard, BoonEntry } from "@/lib/game-data";
 
 describe("reward flow orchestration", () => {
 describe("createEmptyRewardState", () => {
@@ -38,27 +38,27 @@ describe("createEmptyRewardState", () => {
 
 describe("getVictoryGoldTotal", () => {
   it("sums all gold sources", () => {
-    const result = getVictoryGoldTotal({ battleState: { gold: 15 }, runTrinkets: [], gold: 10, eliteBonus: 3, generousBonus: 0, bossBonus: 5, talentGoldPerCombat: 2 });
+    const result = getVictoryGoldTotal({ battleState: { gold: 15 }, runBoons: [], gold: 10, eliteBonus: 3, generousBonus: 0, bossBonus: 5, talentGoldPerCombat: 2 });
     expect(result).toBe(35);
   });
 
   it("handles zero gold sources", () => {
-    const result = getVictoryGoldTotal({ battleState: { gold: 0 }, runTrinkets: [], gold: 0, eliteBonus: 0, generousBonus: 0, bossBonus: 0, talentGoldPerCombat: 0 });
+    const result = getVictoryGoldTotal({ battleState: { gold: 0 }, runBoons: [], gold: 0, eliteBonus: 0, generousBonus: 0, bossBonus: 0, talentGoldPerCombat: 0 });
     expect(result).toBe(0);
   });
 
-  it("includes Smuggler's Map trinket gold bonus", () => {
-    const result = getVictoryGoldTotal({ battleState: { gold: 10 }, runTrinkets: ["smugglers-map"], gold: 5, eliteBonus: 1, generousBonus: 0, bossBonus: 2, talentGoldPerCombat: 1 });
+  it("includes Smuggler's Map boon gold bonus", () => {
+    const result = getVictoryGoldTotal({ battleState: { gold: 10 }, runBoons: ["smugglers-map"], gold: 5, eliteBonus: 1, generousBonus: 0, bossBonus: 2, talentGoldPerCombat: 1 });
     expect(result).toBeGreaterThan(19);
   });
 
-  it("handles nonexistent trinket gracefully", () => {
-    const result = getVictoryGoldTotal({ battleState: { gold: 10 }, runTrinkets: ["bad-id"], gold: 0, eliteBonus: 0, generousBonus: 0, bossBonus: 0, talentGoldPerCombat: 0 });
+  it("handles nonexistent boon gracefully", () => {
+    const result = getVictoryGoldTotal({ battleState: { gold: 10 }, runBoons: ["bad-id"], gold: 0, eliteBonus: 0, generousBonus: 0, bossBonus: 0, talentGoldPerCombat: 0 });
     expect(result).toBe(10);
   });
 
   it("includes generous bonus by name", () => {
-    const result = getVictoryGoldTotal({ battleState: { gold: 10 }, runTrinkets: [], gold: 5, eliteBonus: 0, generousBonus: 4, bossBonus: 0, talentGoldPerCombat: 0 });
+    const result = getVictoryGoldTotal({ battleState: { gold: 10 }, runBoons: [], gold: 5, eliteBonus: 0, generousBonus: 4, bossBonus: 0, talentGoldPerCombat: 0 });
     expect(result).toBe(19);
   });
 });
@@ -93,10 +93,10 @@ describe("Labyrinth reward modifier helpers", () => {
   it("maps reward modifier kinds to reward behavior flags", () => {
     const modifiers: LabyrinthModifierKind[] = ["collector", "companion", "alchemist"];
 
-    expect(shouldForceTrinketReward(modifiers)).toBe(true);
+    expect(shouldForceBoonReward(modifiers)).toBe(true);
     expect(shouldGrantCompanionReward(modifiers)).toBe(true);
     expect(shouldGrantAlchemistReward(modifiers)).toBe(true);
-    expect(shouldForceTrinketReward([])).toBe(false);
+    expect(shouldForceBoonReward([])).toBe(false);
     expect(shouldGrantCompanionReward([])).toBe(false);
     expect(shouldGrantAlchemistReward([])).toBe(false);
   });
@@ -121,7 +121,7 @@ describe("getCompanionCardChoices", () => {
 describe("finalizeRewardState", () => {
   const cardChoice: BattleCard = { id: "slash", title: "Slash", descriptionLines: ["Deal damage"], art: "", cost: 1, effects: [] };
   const companionChoice: BattleCard = { id: "wolf-companion", title: "Wolf", descriptionLines: ["Summon wolf"], art: "", cost: 1, effects: [] };
-  const trinketChoice: TrinketEntry = { id: "bone-charm", title: "Bone Charm", description: "Heal on kill", art: "" };
+  const boonChoice: BoonEntry = { id: "bone-charm", title: "Bone Charm", description: "Heal on kill", art: "" };
 
   function stampedRewardState(
     overrides: Partial<ReturnType<typeof createEmptyRewardState>> = {},
@@ -176,22 +176,22 @@ describe("finalizeRewardState", () => {
     expect(result.nextRewardState.selectedBossId).toBe("frostwarden");
   });
 
-  it("returns the selected trinket reward", () => {
+  it("returns the selected boon reward", () => {
     const result = finalizeRewardState({
       rewardState: stampedRewardState({
-        choices: [trinketChoice],
+        choices: [boonChoice],
         gold: 10,
         materials: emptyInventory(),
         selectedId: "bone-charm",
         destinations: [],
-        rewardType: "trinket",
+        rewardType: "boon",
       }),
       companionRewardCards: null,
       grantAlchemistReward: false,
     });
 
-    expect(result.selectedChoice).toBe(trinketChoice);
-    expect(result.selectedRewardType).toBe("trinket");
+    expect(result.selectedChoice).toBe(boonChoice);
+    expect(result.selectedRewardType).toBe("boon");
   });
 
   it("creates the companion reward step before routing onward", () => {
@@ -290,7 +290,7 @@ describe("computeVictoryGoldResult", () => {
     const result = computeVictoryGoldResult({
       battleState: { currentEnemy: { enemyType: "normal" }, gold: 20 } as never,
       runGold: 10,
-      runTrinkets: [],
+      runBoons: [],
       gold: 15,
       eliteBonus: 0,
       generousBonus: 0,

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { cardHasDamageType, playBattleCardResolved } from "@/lib/battle/card-play";
 import { companionLibrary } from "@/lib/game-data";
 import { POTION_CARD_ID_SUFFIX } from "@/lib/game-constants";
-import { defaultTrinketEffects } from "@/lib/trinkets";
+import { defaultBoonEffects } from "@/lib/boons";
 import { makeTestBattleState, makeTestCard, slashDeck } from "../../fixtures/battle";
 
 function makeState(overrides: Parameters<typeof makeTestBattleState>[0] = {}) {
@@ -119,7 +119,7 @@ describe("playBattleCardResolved", () => {
     expect(second.state.mana).toBe(3);
   });
 
-  it("makes first potion free with mortar and pestle trinket", () => {
+  it("makes first potion free with mortar and pestle boon", () => {
     const card = makeTestCard({
       id: `healing${POTION_CARD_ID_SUFFIX}`,
       cost: 2,
@@ -127,7 +127,7 @@ describe("playBattleCardResolved", () => {
     });
     const state = makeState({
       hand: [card],
-      trinketEffects: { ...defaultTrinketEffects, mortarPestleFreeFirstPotion: true },
+      boonEffects: { ...defaultBoonEffects, mortarPestleFreeFirstPotion: true },
     });
     const result = playBattleCardResolved(state, card.id, 0);
     expect(result.state.mana).toBe(5);

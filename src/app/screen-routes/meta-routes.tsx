@@ -9,12 +9,16 @@ import {
   HomesteadScreen,
   MenuScreen,
   TalentsScreen,
+  ArmoryScreen,
 } from "@/features/alchemy/shared/screens";
 import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
 import { useHomesteadStore } from "@/features/alchemy/shared/stores/homestead-store";
 import { useAppActions, useHomesteadActions } from "@/features/alchemy/shared/stores/store-actions";
 import { useRunDomainStore } from "@/features/alchemy/shared/stores/run-session-facade";
 import type { ScreenRouteContext } from "./types";
+import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
+import { flushAlchemySaveNow } from "@/features/alchemy/shared/storage/flush-save";
+import { resolveActiveRunForSave } from "@/features/alchemy/shared/stores/run-transitions";
 
 function MenuScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions">) {
   const { hasUnspentTalents, hasAffordableHomestead } = useAppScreenChrome();
@@ -25,11 +29,46 @@ function MenuScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions">) {
       onOptions={() => a.navigation.goToScreen("options")}
       onHomestead={() => a.navigation.goToScreen("homestead")}
       onTalents={() => a.navigation.goToScreen("talents")}
+      onArmory={() => a.navigation.goToScreen("armory")}
       {...(platform.canQuit ? { onQuit: platform.quit } : {})}
       logoSrc={menuLogo}
       logoSrcVariants={menuLogoVariants}
       hasUnspentTalents={hasUnspentTalents}
       hasAffordableHomestead={hasAffordableHomestead}
+    />
+  );
+}
+
+function ArmoryScreenRoute({ onOpenBattleMenu }: Pick<ScreenRouteContext, "onOpenBattleMenu">) {
+  const { returnToRunScreen } = useAppScreenChrome();
+  const gear = useGearStore(
+    useShallow((s) => ({
+      inventory: s.inventory,
+      loadouts: s.loadouts,
+      equip: s.equip,
+      unequip: s.unequip,
+      salvage: s.salvage,
+    })),
+  );
+  const finishedRunCharacters = useAppStore((s) => s.finishedRunCharacters);
+  const hasActiveBattle = useRunDomainStore((s) => s.battle.hasActiveBattle);
+  const hasActiveRun = useRunDomainStore((s) => s.session.hasActiveRun);
+  const addMaterials = useHomesteadStore((s) => s.addMaterials);
+  return (
+    <ArmoryScreen
+      inventory={gear.inventory}
+      loadouts={gear.loadouts}
+      finishedRunCharacters={finishedRunCharacters}
+      browseOnly={hasActiveBattle}
+      onOpenMenu={onOpenBattleMenu}
+      onEquip={gear.equip}
+      onUnequip={gear.unequip}
+      onSalvage={(instanceId) => {
+        const result = gear.salvage(instanceId);
+        if (!result) return;
+        addMaterials(result.materials);
+        void flushAlchemySaveNow(resolveActiveRunForSave(hasActiveRun, returnToRunScreen ?? undefined));
+      }}
     />
   );
 }
@@ -55,7 +94,7 @@ function CollectionScreenRoute({ onOpenBattleMenu }: Pick<ScreenRouteContext, "o
       collectionTab: s.collectionTab,
       discoveredCardIds: s.discoveredCardIds,
       encounteredEnemyIds: s.encounteredEnemyIds,
-      discoveredTrinketIds: s.discoveredTrinketIds,
+      discoveredBoonIds: s.discoveredBoonIds,
       collectionPages: s.collectionPages,
     })),
   );
@@ -71,7 +110,7 @@ function CollectionScreenRoute({ onOpenBattleMenu }: Pick<ScreenRouteContext, "o
       bondedCompanions={bondedCompanions}
       discoveredCardIds={appValues.discoveredCardIds}
       encounteredEnemyIds={appValues.encounteredEnemyIds}
-      discoveredTrinketIds={appValues.discoveredTrinketIds}
+      discoveredBoonIds={appValues.discoveredBoonIds}
       collectionPages={appValues.collectionPages}
     />
   );
@@ -138,4 +177,5 @@ export const metaScreenRoutes: Partial<Record<import("@/lib/routing").Screen, (c
     talents: ({ actions: a, onOpenBattleMenu }) => (
       <TalentsScreenRoute actions={a} onOpenBattleMenu={onOpenBattleMenu} />
     ),
+    armory: ({ onOpenBattleMenu }) => <ArmoryScreenRoute onOpenBattleMenu={onOpenBattleMenu} />,
   };

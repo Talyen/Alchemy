@@ -22,13 +22,13 @@ describe("RunDiscoveriesScreen", () => {
     render(
       <RunDiscoveriesScreen
         runEndDiscoveredCardIds={["slash", "block"]}
-        runEndDiscoveredTrinketIds={[]}
+        runEndDiscoveredBoonIds={[]}
         onContinue={onContinue}
       />,
     );
 
     expect(screen.getByText("Discoveries")).toBeTruthy();
-    expect(screen.getByText("New cards and trinkets added to your collection")).toBeTruthy();
+    expect(screen.getByText("New cards and boons added to your collection")).toBeTruthy();
     expect(screen.getByLabelText("Open discovery pack")).toBeTruthy();
 
     await user.click(screen.getByLabelText("Open discovery pack"));
@@ -47,7 +47,7 @@ describe("RunDiscoveriesScreen", () => {
     render(
       <RunDiscoveriesScreen
         runEndDiscoveredCardIds={["slash", "block", "fireball", "stab", "bash", "apple"]}
-        runEndDiscoveredTrinketIds={[]}
+        runEndDiscoveredBoonIds={[]}
         onContinue={() => {}}
       />,
     );

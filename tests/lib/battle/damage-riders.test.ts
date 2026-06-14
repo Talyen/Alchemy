@@ -3,7 +3,7 @@ import { applyCardEffects } from "@/lib/battle/apply-effects";
 import { applyDamageRiders } from "@/lib/battle/damage-riders";
 import { defaultTalentEffects } from "@/lib/battle";
 import type { CombatTextEvent } from "@/lib/battle/types";
-import { defaultTrinketEffects } from "@/lib/trinkets";
+import { defaultBoonEffects } from "@/lib/boons";
 import { makeTestBattleState, makeTestCard, seededRng } from "../../fixtures/battle";
 
 function makeState(overrides: Parameters<typeof makeTestBattleState>[0] = {}) {
@@ -31,7 +31,7 @@ describe("applyDamageRiders", () => {
       enemyHealth: 50,
       enemyMaxHealth: 50,
       playerStatuses: { block: 0, armor: 0, forge: 8, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
-      trinketEffects: { ...defaultTrinketEffects, forgeStunThreshold: 5, forgeStunAmount: 3 },
+      boonEffects: { ...defaultBoonEffects, forgeStunThreshold: 5, forgeStunAmount: 3 },
       rng: seededRng(99),
     });
     const card = makeTestCard({ effects: [{ kind: "damage", damageType: "physical", amount: 5 }] });

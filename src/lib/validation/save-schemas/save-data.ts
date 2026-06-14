@@ -26,6 +26,26 @@ import {
   UnlockedTalentsSchema,
 } from "./core";
 import { ActiveRunDataSchema } from "./active-run";
+import { createEmptyGearLoadouts, GEAR_DEFINITION_IDS, GEAR_SLOTS } from "@/lib/gear/types";
+
+const GearDefinitionIdSchema = z.enum(GEAR_DEFINITION_IDS);
+const GearInstanceSchema = z.object({
+  instanceId: z.string().min(1),
+  definitionId: GearDefinitionIdSchema,
+  modifiers: z.array(z.object({ kind: z.string(), value: z.number().finite() })).catch([]),
+});
+const GearLoadoutSchema = z.object(
+  Object.fromEntries(GEAR_SLOTS.map((slot) => [slot, z.string().nullable().catch(null)])) as unknown as Record<
+    (typeof GEAR_SLOTS)[number],
+    z.ZodType
+  >,
+);
+const emptyGearLoadouts = createEmptyGearLoadouts();
+const GearLoadoutsSchema = z.object(
+  Object.fromEntries(
+    CHARACTER_IDS.map((id) => [id, GearLoadoutSchema.catch(emptyGearLoadouts[id])]),
+  ) as unknown as Record<(typeof CHARACTER_IDS)[number], z.ZodType>,
+);
 
 export const SaveDataSchema = z.preprocess(
   (raw) => migrateSaveDataToCurrent(raw),
@@ -41,7 +61,9 @@ export const SaveDataSchema = z.preprocess(
     ),
     discoveredCardIds: deduplicatedStringArraySchema("discoveredCardIds"),
     encounteredEnemyIds: deduplicatedStringArraySchema("encounteredEnemyIds"),
-    discoveredTrinketIds: deduplicatedStringArraySchema("discoveredTrinketIds"),
+    discoveredBoonIds: deduplicatedStringArraySchema("discoveredBoonIds"),
+    gearInventory: caught(z.array(GearInstanceSchema), [], "gearInventory"),
+    gearLoadouts: caught(GearLoadoutsSchema, emptyGearLoadouts, "gearLoadouts"),
     talentXP: TalentXPSchema,
     unlockedTalents: UnlockedTalentsSchema,
     // .catch() fallbacks must match defaults.ts — both come from game-constants.ts.

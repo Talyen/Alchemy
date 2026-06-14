@@ -56,7 +56,7 @@ export function WishOverlay({ battleState, actions }: { battleState: BattleScree
 
   const descriptionContext = {
     ...battleState.talentEffects,
-    companionDamageBonus: battleState.trinketEffects.companionDamageBonus,
+    companionDamageBonus: battleState.boonEffects.companionDamageBonus,
     companionDamageBuff: battleState.companionDamageBuff,
   };
 

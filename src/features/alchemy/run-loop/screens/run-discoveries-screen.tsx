@@ -11,16 +11,16 @@ import { cn } from "@/lib/utils";
 
 export function RunDiscoveriesScreen({
   runEndDiscoveredCardIds,
-  runEndDiscoveredTrinketIds,
+  runEndDiscoveredBoonIds,
   onContinue,
 }: {
   runEndDiscoveredCardIds: string[];
-  runEndDiscoveredTrinketIds: string[];
+  runEndDiscoveredBoonIds: string[];
   onContinue: () => void;
 }) {
   const packs = useMemo(
-    () => buildDiscoveryPackPlan(runEndDiscoveredCardIds, runEndDiscoveredTrinketIds),
-    [runEndDiscoveredCardIds, runEndDiscoveredTrinketIds],
+    () => buildDiscoveryPackPlan(runEndDiscoveredCardIds, runEndDiscoveredBoonIds),
+    [runEndDiscoveredCardIds, runEndDiscoveredBoonIds],
   );
   const [batchKind, setBatchKind] = useState<DiscoveryPackBatch["kind"]>("cards");
 
@@ -35,9 +35,9 @@ export function RunDiscoveriesScreen({
       >
         <div className="flex h-[5.5rem] w-full shrink-0 flex-col items-center">
           <ScreenHeader title="Discoveries" />
-          <p className="mt-3 text-sm text-muted-foreground">New cards and trinkets added to your collection</p>
+          <p className="mt-3 text-sm text-muted-foreground">New cards and boons added to your collection</p>
           <p className="mt-1 min-h-4 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            {batchKind === "trinkets" ? "Trinkets" : "\u00a0"}
+            {batchKind === "boons" ? "Boons" : "\u00a0"}
           </p>
         </div>
 

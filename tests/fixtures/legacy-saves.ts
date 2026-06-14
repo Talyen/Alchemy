@@ -12,7 +12,7 @@ export function legacyCampaignRunSave() {
     uiScale: "110",
     discoveredCardIds: ["slash", "block", "future-card"],
     encounteredEnemyIds: ["goblin"],
-    discoveredTrinketIds: ["bone-charm"],
+    discoveredBoonIds: ["bone-charm"],
     talentXP: { physical: 18, block: 7 },
     unlockedTalents: { physical: ["physical-dmg-1"] },
     musicVolume: 40,
@@ -31,7 +31,7 @@ export function legacyCampaignRunSave() {
       currentAct: 1,
       destinationIndexInAct: 2,
       completedDestinations: ["Normal Combat", "Campfire"],
-      runTrinkets: ["bone-charm"],
+      runBoons: ["bone-charm"],
       selectedDifficulty: "difficulty-1",
       contentSystemType: "campaign",
     },
@@ -59,7 +59,7 @@ export function legacyLabyrinthRunSave() {
       currentAct: 1,
       destinationIndexInAct: 0,
       completedDestinations: [],
-      runTrinkets: [],
+      runBoons: [],
       contentSystemType: "labyrinth",
       labyrinthMap,
     },
@@ -89,7 +89,7 @@ export function legacyCorruptedCardRunSave() {
       currentAct: 1,
       destinationIndexInAct: 1,
       completedDestinations: ["Mystery"],
-      runTrinkets: [],
+      runBoons: [],
       selectedDifficulty: "difficulty-1",
       contentSystemType: "campaign",
     },
@@ -107,7 +107,7 @@ export function legacySchemaV1Save() {
     uiScale: "100",
     discoveredCardIds: ["slash"],
     encounteredEnemyIds: [],
-    discoveredTrinketIds: [],
+    discoveredBoonIds: [],
     talentXP: { arrow: 12, physical: 4 },
     unlockedTalents: { arrow: ["arrow-damage"] },
     musicVolume: 50,
@@ -146,7 +146,7 @@ export function legacySchemaV2Save() {
     uiScale: "100",
     discoveredCardIds: ["slash", "block"],
     encounteredEnemyIds: ["goblin"],
-    discoveredTrinketIds: [],
+    discoveredBoonIds: [],
     talentXP: { archery: 8 },
     unlockedTalents: { archery: ["archery-damage"] },
     musicVolume: 50,
@@ -165,7 +165,7 @@ export function legacySchemaV2Save() {
       currentAct: 1,
       destinationIndexInAct: 0,
       completedDestinations: [],
-      runTrinkets: [],
+      runBoons: [],
       selectedDifficulty: "difficulty-1",
       contentSystemType: "campaign",
     },
@@ -187,8 +187,164 @@ export function legacySchemaV2Save() {
   };
 }
 
+/** Schema v3 save using the former Trinket field names (exercises v3->v4 migration). */
+function legacySchemaV3Save() {
+  return {
+    ...legacySchemaV2Save(),
+    saveSchemaVersion: 3,
+    finishedRunCharacters: ["knight"],
+    discoveredBoonIds: undefined,
+    discoveredTrinketIds: ["bone-charm"],
+    activeRun: {
+      ...(legacySchemaV2Save().activeRun as Record<string, unknown>),
+      runBoons: undefined,
+      runTrinkets: ["bone-charm"],
+      discoveredTrinketIdsAtRunStart: ["bone-charm"],
+    },
+  };
+}
+
+/** v3 mid-combat save with legacy trinketEffects on the battle snapshot. */
+export function legacySchemaV3MidCombatTrinketSave() {
+  return {
+    ...legacySchemaV3Save(),
+    activeRun: {
+      ...(legacySchemaV3Save().activeRun as Record<string, unknown>),
+      runTrinkets: ["meteorite", "bone-charm"],
+      activeCombat: {
+        battleState: {
+          deck: [],
+          hand: [],
+          discard: [],
+          exhausted: [],
+          mana: 2,
+          maxMana: 3,
+          gold: 10,
+          turn: 2,
+          turnPhase: "player",
+          playerHealth: 20,
+          playerMaxHealth: 30,
+          enemyHealth: 25,
+          enemyMaxHealth: 30,
+          currentEnemy: {
+            id: "goblin",
+            title: "Goblin",
+            subtitle: "",
+            descriptionLines: [],
+            art: "",
+            enemyType: "normal",
+            traits: [],
+            attackEffects: [{ kind: "damage", damageType: "physical", amount: 5 }],
+          },
+          enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 5 }],
+          playerStatuses: {},
+          enemyStatuses: {},
+          flags: { firstBurnTrinketDoubledUsed: true },
+          discoveredCardIds: [],
+          difficultyModifiers: [],
+          trinketEffects: { firstBurnDoubled: true, boneCharmHealOnKill: 3 },
+        },
+        activeLabyrinthModifiers: [],
+        activeLabyrinthRewardModifiers: [],
+      },
+    },
+  };
+}
+
 export const LEGACY_SAVE_FIXTURES_BY_SOURCE_VERSION: Record<number, () => Record<string, unknown>> = {
   0: legacyCampaignRunSave,
   1: legacySchemaV1Save,
   2: legacySchemaV2Save,
+  3: legacySchemaV3Save,
+};
+
+/** v3 wildwood reward phase with legacy trinket rewardType (exercises nested draft migration). */
+function legacyWildwoodTrinketRewardSave() {
+  return {
+    ...legacySchemaV2Save(),
+    saveSchemaVersion: 3,
+    finishedRunCharacters: ["knight", "ranger"],
+    activeRun: {
+      characterId: "ranger",
+      runDeck: [],
+      runGold: 30,
+      runPlayerHealth: 28,
+      runMaxHealth: 30,
+      roomsEncountered: 2,
+      currentAct: 1,
+      destinationIndexInAct: 0,
+      completedDestinations: [],
+      runTrinkets: [],
+      selectedDifficulty: null,
+      contentSystemType: "wildwood",
+      wildwoodDraft: {
+        version: 2,
+        phase: "reward",
+        draftChoices: [],
+        remainingBossIds: ["iron-bear"],
+        previousBossId: "forge-golem",
+        currentBossId: null,
+        currentCombatTraitIds: [],
+        currentRewardTraitIds: ["collector"],
+        rewardType: "trinket",
+        rewardChoiceIds: ["bone-charm", "brass-censer"],
+        selectedRewardId: null,
+      },
+    },
+  };
+}
+
+/** Realistic post-launch v4 save: meta progress, gear inventory, and mid-campaign run. */
+function shippedBaselineSave() {
+  return {
+    saveSchemaVersion: 4,
+    gameBuildVersion: "0.1.0",
+    contentVersion: 1,
+    selectedAspectRatio: "auto",
+    displayMode: "borderless-fullscreen",
+    uiScale: "100",
+    discoveredCardIds: ["slash", "block"],
+    encounteredEnemyIds: ["goblin"],
+    discoveredBoonIds: ["bone-charm"],
+    gearInventory: [
+      { instanceId: "gear-1", definitionId: "placeholder-body", modifiers: [{ kind: "flatPhysicalDamage", value: 0 }] },
+    ],
+    gearLoadouts: {},
+    talentXP: { physical: 10 },
+    unlockedTalents: { physical: ["physical-dmg-1"] },
+    musicVolume: 50,
+    sfxVolume: 50,
+    masterVolume: 50,
+    muteInBackground: true,
+    autoEndTurn: true,
+    brightness: 100,
+    finishedRunCharacters: ["knight"],
+    activeRun: {
+      characterId: "knight",
+      runDeck: [{ id: "slash", title: "Slash", descriptionLines: ["Deal 6 Physical damage"], art: "slash.webp", cost: 1, effects: [{ kind: "damage", damageType: "physical", amount: 6 }] }],
+      runGold: 55,
+      runPlayerHealth: 22,
+      runMaxHealth: 30,
+      roomsEncountered: 4,
+      currentAct: 1,
+      destinationIndexInAct: 1,
+      completedDestinations: ["Normal Combat"],
+      runBoons: ["bone-charm"],
+      selectedDifficulty: "difficulty-1",
+      contentSystemType: "campaign",
+      currentScreen: "destination",
+    },
+    materialInventory: { wood: 5, iron: 3 },
+    constructedBuildings: {},
+    plantedFarms: {},
+    completedResearch: {},
+    bondedCompanions: {},
+    completedDifficulties: { knight: ["difficulty-1"] },
+  };
+}
+
+export const MIGRATION_SCENARIO_FIXTURES: Record<string, () => Record<string, unknown>> = {
+  midCombatTrinket: legacySchemaV3MidCombatTrinketSave,
+  wildwoodTrinketReward: legacyWildwoodTrinketRewardSave,
+  shippedBaseline: shippedBaselineSave,
 };

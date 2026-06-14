@@ -4,15 +4,15 @@ import {
   getDiscoveryPackGridLayout,
   isSingleDiscoveryRow,
 } from "@/features/alchemy/shared/ui/discovery-pack-grid";
-import { collectionCardGridClass, collectionTrinketGridClass } from "@/features/alchemy/shared/config";
+import { collectionCardGridClass, collectionBoonGridClass } from "@/features/alchemy/shared/config";
 
 describe("getDiscoveryPackGridLayout", () => {
   it("uses the collection card grid for card batches", () => {
     expect(getDiscoveryPackGridLayout(false)).toEqual({ gridClass: collectionCardGridClass, columnCount: 4 });
   });
 
-  it("uses the collection trinket grid for trinket batches", () => {
-    expect(getDiscoveryPackGridLayout(true)).toEqual({ gridClass: collectionTrinketGridClass, columnCount: 3 });
+  it("uses the collection boon grid for boon batches", () => {
+    expect(getDiscoveryPackGridLayout(true)).toEqual({ gridClass: collectionBoonGridClass, columnCount: 3 });
   });
 });
 
@@ -35,7 +35,7 @@ describe("getCenteredGridSlots", () => {
     expect(getCenteredGridSlots(["a"], 4)).toEqual([null, "a", null, null]);
   });
 
-  it("centers one trinket in a three-column row", () => {
+  it("centers one boon in a three-column row", () => {
     expect(getCenteredGridSlots(["a"], 3)).toEqual([null, "a", null]);
   });
 });

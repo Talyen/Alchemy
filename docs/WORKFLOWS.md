@@ -17,7 +17,8 @@ Step-by-step checklists for adding or changing game content and wiring.
 | Run teardown / clear save | [Run teardown](#run-teardown) |
 | Status effect | [New status](#add-a-new-status-effect) |
 | Card / card effect kind | [New card](#add-a-new-card) · [New effect kind](#add-a-new-card-effect-kind) |
-| Character, enemy, trinket, companion, keyword | [Character](#add-a-new-character) · [Enemy](#add-a-new-enemy) · [Trinket](#add-a-new-trinket) · [Companion](#add-a-new-companion) · [Keyword](#add-a-new-keyword) |
+| Character, enemy, boon, companion, keyword | [Character](#add-a-new-character) · [Enemy](#add-a-new-enemy) · [Boon](#add-a-new-boon) · [Companion](#add-a-new-companion) · [Keyword](#add-a-new-keyword) |
+| Permanent gear | [Gear](#add-permanent-gear) |
 | Screen, destination, mystery | [New screen](#adding-a-new-screen) · [Destination](#adding-a-new-destination-map-node) · [Mystery effect](#adding-a-new-mystery-effect-kind) |
 | In-run materials, staggered enter | [Grant materials during a run](#grant-materials-during-a-run) · [Staggered screen enter](#staggered-screen-enter-motion) |
 
@@ -33,13 +34,13 @@ Step-by-step checklists for adding or changing game content and wiring.
 
 ## Change persisted save data
 
-See also [`src/features/alchemy/shared/storage/MIGRATIONS.md`](../src/features/alchemy/shared/storage/MIGRATIONS.md) (import `@/features/alchemy/shared/storage/MIGRATIONS.md`).
+See also [`src/features/alchemy/shared/storage/MIGRATIONS.md`](../src/features/alchemy/shared/storage/MIGRATIONS.md).
 
 1. Decide if a schema bump is needed (transform required vs safe additive default).
 2. Increment `CURRENT_SAVE_SCHEMA_VERSION` in `src/lib/validation/metadata.ts`.
-3. Add `migrateVNToVNPlus1` in `src/lib/validation/migration.ts` and chain it from `migrateSaveDataToCurrent` (tests use `storage/migrations.ts` → `SaveDataSchema.parse` only).
-4. Update Zod schemas in `src/lib/validation/save-schemas.ts`, storage defaults, and legacy fixtures in `tests/fixtures/legacy-saves.ts`.
-5. CI enforces via `tests/architecture/save-migration-guard.test.ts` and `npm run check:ship` — no manual checklist.
+3. Add `migrateVNToVNPlus1` in `src/lib/validation/migration/steps.ts` (use nested helpers under `src/lib/validation/migration/` for `activeRun` / battle / wildwood renames).
+4. Update Zod schemas in `src/lib/validation/save-schemas/`, storage defaults, and fixtures in `tests/fixtures/legacy-saves.ts`.
+5. CI enforces via `tests/architecture/save-migration-guard.test.ts`, `tests/architecture/save-migration-contract.test.ts`, and `npm run check:ship` — no manual release checklist.
 
 ---
 
@@ -172,13 +173,21 @@ Cards in `cardLibrary` are automatically included in merchant shop, combat rewar
 
 ---
 
-## Add a new trinket
+## Add a new boon
 
 | Step | File(s) |
 |---|---|
-| 1. Define entry in `trinketLibrary` array | `src/lib/game-data/compendium.ts` |
-| 2. Implement effect logic | `src/lib/trinkets.ts` — extend `TrinketEffectManifest` and apply in battle init |
+| 1. Define entry in `boonLibrary` array | `src/lib/game-data/compendium.ts` |
+| 2. Implement effect logic | `src/lib/boons.ts` — extend `BoonEffectManifest` and apply in battle init |
 | 3. Add art reference | `src/lib/game-data/assets.ts` |
+
+## Add permanent Gear
+
+1. Add the definition ID and definition in `src/lib/gear/`, including compatible slots, effects, art, and salvage value.
+2. Keep owned items as unique `GearInstance` records; never put definition objects or art URLs into save data.
+3. Add effect aggregation through `getEquippedGearEffects()` and merge battle-facing bonuses during battle creation.
+4. Update Gear save schemas/defaults and migration fixtures when instance or loadout shapes change.
+5. Cover pure operations, persistence, reward selection, Armory interaction, and battle snapshot behavior.
 
 ---
 

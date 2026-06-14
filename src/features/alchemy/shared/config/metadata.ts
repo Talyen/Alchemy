@@ -52,7 +52,7 @@ import type { CollectionTab, Destination } from "../types";
 export const collectionTabMeta: Array<{ id: CollectionTab; label: string; icon: LucideIcon }> = [
   { id: "cards", label: "Cards", icon: BookOpen },
   { id: "bestiary", label: "Bestiary", icon: ShieldAlert },
-  { id: "trinkets", label: "Trinkets", icon: Trophy },
+  { id: "boons", label: "Boons", icon: Trophy },
 ];
 
 // Destination visual theming gives each route type an icon, palette, and art.

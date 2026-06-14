@@ -1,6 +1,7 @@
-// Victory reward screen — pick a card or trinket to add or skip.
+// Victory reward screen — pick a card or boon to add or skip.
 import { Button } from "@/components/ui/button";
-import type { BattleCard, TrinketEntry } from "@/lib/game-data";
+import type { BattleCard, BoonEntry } from "@/lib/game-data";
+import type { GearDefinition } from "@/lib/gear";
 import { cn } from "@/lib/utils";
 import { MATERIAL_IDS } from "@/lib/homestead/types";
 import { GoldPill, MaterialPill } from "../../shared/ui/material-icons";
@@ -14,25 +15,17 @@ import { cardSurfaceClass, collectionTileWidthClass } from "@/features/alchemy/s
 import type { RewardState } from "../navigation/reward-flow";
 import { useInteractiveCard } from "../../shared/ui/use-interactive-card";
 
-function TrinketRewardButton({
-  trinket,
-  onClick,
-  selected,
-}: {
-  trinket: TrinketEntry;
-  onClick: () => void;
-  selected: boolean;
-}) {
-  const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard("reward", trinket.id);
+function BoonRewardButton({ boon, onClick, selected }: { boon: BoonEntry; onClick: () => void; selected: boolean }) {
+  const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard("reward", boon.id);
 
   return (
     <div className="relative" onMouseEnter={onHoverStart} onMouseLeave={onHoverEnd}>
       {isHovered ? (
         <DetailPopup
-          idPrefix={trinket.id}
-          title={trinket.title}
+          idPrefix={boon.id}
+          title={boon.title}
           subtitle={undefined}
-          descriptionLines={trinket.descriptionLines}
+          descriptionLines={boon.descriptionLines}
         />
       ) : null}
       <TiltSurface
@@ -42,15 +35,48 @@ function TrinketRewardButton({
         shimmerToken={shimmerToken}
         selected={selected}
         onClick={onClick}
-        ariaLabel={`Select ${trinket.title}`}
+        ariaLabel={`Select ${boon.title}`}
         onFocus={onHoverStart}
         onBlur={onHoverEnd}
       >
-        <img
-          src={trinket.art || undefined}
-          alt={trinket.title}
-          className="block w-full rounded-shell-hero aspect-square"
+        <img src={boon.art || undefined} alt={boon.title} className="block w-full rounded-shell-hero aspect-square" />
+      </TiltSurface>
+    </div>
+  );
+}
+
+function GearRewardButton({
+  gear,
+  onClick,
+  selected,
+}: {
+  gear: GearDefinition;
+  onClick: () => void;
+  selected: boolean;
+}) {
+  const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard("reward", gear.id);
+  return (
+    <div className="relative" onMouseEnter={onHoverStart} onMouseLeave={onHoverEnd}>
+      {isHovered ? (
+        <DetailPopup
+          idPrefix={gear.id}
+          title={gear.title}
+          subtitle="Permanent Gear"
+          descriptionLines={gear.descriptionLines}
         />
+      ) : null}
+      <TiltSurface
+        as="button"
+        className={cn(cardSurfaceClass, collectionTileWidthClass, "group")}
+        shimmerActive={shimmerActive}
+        shimmerToken={shimmerToken}
+        selected={selected}
+        onClick={onClick}
+        ariaLabel={`Select ${gear.title}`}
+        onFocus={onHoverStart}
+        onBlur={onHoverEnd}
+      >
+        <img src={gear.art} alt={gear.title} className="block w-full rounded-shell-hero aspect-square" />
       </TiltSurface>
     </div>
   );
@@ -89,20 +115,21 @@ export function RewardsScreen({
   onAddReward,
   onSkip,
   onSelectReward,
-  allowTrinketSkip = false,
+  allowBoonSkip = false,
 }: {
   rewardState: RewardState;
   onAddReward: () => void;
   onSkip: () => void;
   onSelectReward: (id: string) => void;
-  allowTrinketSkip?: boolean;
+  allowBoonSkip?: boolean;
 }) {
   const rewardType = rewardState.rewardType;
   const rewardChoices = rewardState.choices;
   const rewardGold = rewardState.gold;
   const rewardMaterials = rewardState.materials;
   const selectedRewardId = rewardState.selectedId;
-  const isTrinket = rewardType === "trinket";
+  const isBoon = rewardType === "boon";
+  const isGear = rewardType === "gear";
   const selectedRewardItem = selectedRewardId
     ? (rewardChoices.find((item) => "id" in item && item.id === selectedRewardId) ?? null)
     : null;
@@ -112,7 +139,11 @@ export function RewardsScreen({
       <div className="alchemy-shell w-full max-w-6xl rounded-shell-hero border border-border/80 p-7 text-center">
         <ScreenHeader title="Victory" />
         <p className="mt-3 text-base text-muted-foreground">
-          {isTrinket ? "Choose a Trinket to add to your Collection" : "Choose a Card to add to your Deck"}
+          {isGear
+            ? "Choose permanent Gear for your Armory"
+            : isBoon
+              ? "Choose a Boon to add to your Collection"
+              : "Choose a Card to add to your Deck"}
         </p>
 
         <StaggerGroup
@@ -122,9 +153,15 @@ export function RewardsScreen({
           <div className="flex flex-wrap items-start justify-center gap-6">
             {rewardChoices.map((item, index) => (
               <StaggerItem key={item.id} index={index}>
-                {isTrinket ? (
-                  <TrinketRewardButton
-                    trinket={item as TrinketEntry}
+                {isGear ? (
+                  <GearRewardButton
+                    gear={item as GearDefinition}
+                    onClick={() => onSelectReward(item.id)}
+                    selected={selectedRewardId === item.id}
+                  />
+                ) : isBoon ? (
+                  <BoonRewardButton
+                    boon={item as BoonEntry}
                     onClick={() => onSelectReward(item.id)}
                     selected={selectedRewardId === item.id}
                   />
@@ -154,13 +191,13 @@ export function RewardsScreen({
         </StaggerGroup>
 
         <div className="mt-5 flex flex-wrap justify-center gap-3">
-          {!isTrinket || allowTrinketSkip ? (
+          {(!isBoon && !isGear) || allowBoonSkip ? (
             <Button size="lg" variant="outline" className="min-w-40" onClick={onSkip}>
               Skip
             </Button>
           ) : null}
           <Button size="lg" className="min-w-40" disabled={!selectedRewardItem} onClick={onAddReward}>
-            {isTrinket ? "Take Trinket" : "Add Card"}
+            {isGear ? "Take Gear" : isBoon ? "Take Boon" : "Add Card"}
           </Button>
         </div>
       </div>

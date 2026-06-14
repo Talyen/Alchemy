@@ -10,7 +10,7 @@ import {
 import type { BattleState } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
 import { defaultTalentEffects } from "@/lib/battle";
-import { defaultTrinketEffects } from "@/lib/trinkets";
+import { defaultBoonEffects } from "@/lib/boons";
 
 function makeState(): BattleState {
   return {
@@ -23,12 +23,12 @@ function makeState(): BattleState {
     enemyStunSkipTurns: 0, enemyFreezeSkipTurns: 0, wishOptions: null, wishQueue: [], activeCompanion: null,
     currentEnemy: { id: "skeleton", title: "Skeleton", subtitle: "", descriptionLines: [""], art: "", enemyType: "normal", traits: [], attackEffects: [] },
     talentEffects: defaultTalentEffects,
-    trinketEffects: defaultTrinketEffects,
+    boonEffects: defaultBoonEffects,
     flags: {
       firstPhysicalCardFreeUsed: false, firstHolyCardFreeUsed: false, firstBurnCardDoubledUsed: false,
       firstArmorCardDoubledUsed: false, firstPoisonCardFreeUsed: false, firstBleedCardFreeUsed: false,
       nextCardCostReduction: 0, goldOnFirstPoisonThisCombat: false, firstHolyDamageBonusUsed: false,
-      firstBurnTrinketDoubledUsed: false, firstHarmfulStatusPrevented: false, firstPotionFreeUsed: false,
+      firstBurnBoonDoubledUsed: false, firstHarmfulStatusPrevented: false, firstPotionFreeUsed: false,
       resonantChimeUsedThisTurn: false,
     },
     discoveredCardIds: [],

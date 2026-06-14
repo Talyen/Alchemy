@@ -185,21 +185,21 @@ describe("processCompanionTurnStart", () => {
     expect(result.flags.goldOnFirstPoisonThisCombat).toBe(true);
   });
 
-  it("does not consume or benefit from firstBurnCardDoubled/firstBurnTrinketDoubled when Imp companion deals burn damage", () => {
+  it("does not consume or benefit from firstBurnCardDoubled/firstBurnBoonDoubled when Imp companion deals burn damage", () => {
     const state = createTestBattleState({
       activeCompanion: companionLibrary.imp,
       talentEffects: {
         ...createTestBattleState().talentEffects,
         firstBurnCardDoubled: true,
       },
-      trinketEffects: {
-        ...createTestBattleState().trinketEffects,
+      boonEffects: {
+        ...createTestBattleState().boonEffects,
         firstBurnDoubled: true,
       },
       flags: {
         ...createTestBattleState().flags,
         firstBurnCardDoubledUsed: false,
-        firstBurnTrinketDoubledUsed: false,
+        firstBurnBoonDoubledUsed: false,
       },
       enemyHealth: 30,
     });
@@ -209,6 +209,6 @@ describe("processCompanionTurnStart", () => {
     expect(result.enemyHealth).toBe(29);
     // Doubling flags should remain unconsumed (false)
     expect(result.flags.firstBurnCardDoubledUsed).toBe(false);
-    expect(result.flags.firstBurnTrinketDoubledUsed).toBe(false);
+    expect(result.flags.firstBurnBoonDoubledUsed).toBe(false);
   });
 });

@@ -1,4 +1,4 @@
-// Single interactive collection tile for card, bestiary, and trinket entries.
+// Single interactive collection tile for card, bestiary, and boon entries.
 // Depends on tile item data, card flipping, tooltip components, audio, and tilt utilities.
 // Used by CollectionGrid to keep grid layout separate from tile behavior.
 import { useState } from "react";
@@ -12,7 +12,7 @@ import {
   cardSurfaceClass,
   collectionTileWidthClass,
   squareArtImageClass,
-  trinketCardWidthClass,
+  boonCardWidthClass,
 } from "../config";
 import { CardFlip } from "./card-flip";
 import { DetailPopup } from "./card-popup";
@@ -45,7 +45,7 @@ export function CompendiumTile({ item }: CompendiumTileProps) {
         className={cn(
           "group w-full",
           cardSurfaceClass,
-          item.frameType === "trinket" ? trinketCardWidthClass : collectionTileWidthClass,
+          item.frameType === "boon" ? boonCardWidthClass : collectionTileWidthClass,
           item.frameType === "card" && "bg-transparent",
         )}
         onClick={() => {
@@ -90,9 +90,7 @@ function CollectionTileMedia({ item, flipped }: { item: CollectionTileItem; flip
     );
   }
 
-  return (
-    <TileImage item={item} className={cn(item.frameType === "trinket" ? squareArtImageClass : cardArtImageClass)} />
-  );
+  return <TileImage item={item} className={cn(item.frameType === "boon" ? squareArtImageClass : cardArtImageClass)} />;
 }
 
 function TileImage({ item, className }: { item: CollectionTileItem; className: string }) {

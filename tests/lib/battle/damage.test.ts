@@ -47,6 +47,22 @@ describe("dealDamageToEnemy — basic physical damage", () => {
     expect(result.enemyHealth).toBe(25);
   });
 
+  it("adds gear flat physical damage separately from talents", () => {
+    const state = patchBattleState({
+      enemyHealth: 30,
+      gearEffects: { flatPhysicalDamage: 3 },
+      talentEffects: { ...patchBattleState().talentEffects, flatPhysicalDamage: 0 },
+    });
+    const card = makeCard({ effects: [makeEffect("physical", 5)] });
+    const result = dealDamageToEnemy(
+      state,
+      card,
+      card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
+      makeTexts(),
+    );
+    expect(result.enemyHealth).toBe(22);
+  });
+
   it("produces combat text for damage", () => {
     const state = patchBattleState({ enemyHealth: 30 });
     const card = makeCard({ effects: [makeEffect("physical", 5)] });
@@ -383,9 +399,9 @@ describe("applyFirstDamageModifiers", () => {
     expect(result.enemyHealth).toBe(25);
   });
 
-  it("doubles first burn damage via trinket effect", () => {
+  it("doubles first burn damage via boon effect", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
-    const state = patchBattleState({ trinketEffects: { firstBurnDoubled: true } });
+    const state = patchBattleState({ boonEffects: { firstBurnDoubled: true } });
     const card = makeCard({ effects: [makeEffect("burn", 5)] });
     const texts = makeTexts();
     const result = dealDamageToEnemy(
@@ -394,12 +410,12 @@ describe("applyFirstDamageModifiers", () => {
       card.effects[0] as Extract<BattleCardEffect, { kind: "damage" }>,
       texts,
     );
-    expect(result.flags.firstBurnTrinketDoubledUsed).toBe(true);
+    expect(result.flags.firstBurnBoonDoubledUsed).toBe(true);
   });
 
-  it("doubles first holy damage when trinket effect active", () => {
+  it("doubles first holy damage when boon effect active", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
-    const state = patchBattleState({ trinketEffects: { firstHolyDamageDoubled: true } });
+    const state = patchBattleState({ boonEffects: { firstHolyDamageDoubled: true } });
     const card = makeCard({ effects: [makeEffect("holy", 5)] });
     const texts = makeTexts();
     const result = dealDamageToEnemy(
@@ -462,10 +478,10 @@ describe("applyCrit", () => {
 });
 
 describe("applyForgeStunRider", () => {
-  it("stuns enemy when forge meets trinket threshold", () => {
+  it("stuns enemy when forge meets boon threshold", () => {
     const state = patchBattleState({
       playerStatuses: { forge: 5 },
-      trinketEffects: { forgeStunThreshold: 4, forgeStunAmount: 2 },
+      boonEffects: { forgeStunThreshold: 4, forgeStunAmount: 2 },
       enemyStatuses: { stun: 15 },
     });
     const card = makeCard({ effects: [makeEffect("physical", 5)] });
@@ -482,7 +498,7 @@ describe("applyForgeStunRider", () => {
   it("does not stun when forge is below threshold", () => {
     const state = patchBattleState({
       playerStatuses: { forge: 2 },
-      trinketEffects: { forgeStunThreshold: 4, forgeStunAmount: 2 },
+      boonEffects: { forgeStunThreshold: 4, forgeStunAmount: 2 },
     });
     const card = makeCard({ effects: [makeEffect("physical", 5)] });
     const texts = makeTexts();
@@ -677,7 +693,7 @@ describe("dealDamageToEnemy — enemy armor", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
     const state = patchBattleState({
       enemyMitigation: { armor: 5, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 },
-      trinketEffects: { sunderingArmorPiercing: 2 },
+      boonEffects: { sunderingArmorPiercing: 2 },
     });
     const card = makeCard({ effects: [makeEffect("physical", 10)] });
     const texts = makeTexts();

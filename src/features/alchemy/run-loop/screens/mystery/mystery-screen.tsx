@@ -4,7 +4,7 @@
 // Consumed by the screen routing system to display the Mystery event node.
 import { useState } from "react";
 import { playUISound } from "@/lib/audio";
-import { type BattleCard, type TrinketEntry } from "@/lib/game-data";
+import { type BattleCard, type BoonEntry } from "@/lib/game-data";
 
 import type { MysteryChoice } from "../../mystery-events";
 
@@ -28,7 +28,7 @@ export function MysteryScreen({
   onRemoveCard,
   onContinue,
   findCard,
-  findTrinket,
+  findBoon,
 }: {
   event: MysteryEvent;
   runDeck: BattleCard[];
@@ -38,7 +38,7 @@ export function MysteryScreen({
   onRemoveCard: (index: number) => void;
   onContinue: () => void;
   findCard: (id: string) => BattleCard | undefined;
-  findTrinket: (id: string) => TrinketEntry | undefined;
+  findBoon: (id: string) => BoonEntry | undefined;
 }) {
   // chosen: Stores the choice object to display on the final reward summary screen.
   const [chosen, setChosen] = useState<MysteryChoice | null>(null);
@@ -98,12 +98,12 @@ export function MysteryScreen({
           choice={chosen}
           runDeck={runDeck}
           findCard={findCard}
-          findTrinket={findTrinket}
+          findBoon={findBoon}
           onContinue={onContinue}
           eventTitle={event.title}
         />
       ) : (
-        <MysteryEventIntro event={event} findCard={findCard} findTrinket={findTrinket} onPick={handlePick} />
+        <MysteryEventIntro event={event} findCard={findCard} findBoon={findBoon} onPick={handlePick} />
       )}
     </div>
   );

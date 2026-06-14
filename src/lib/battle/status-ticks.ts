@@ -83,7 +83,7 @@ function tickBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
 }
 
 function applyParasiticBloomLeech(state: BattleState, damage: number, combatTexts: CombatTextEvent[]): BattleState {
-  if (!rollPercent(state.trinketEffects.parasiticBloomLeechChance, state.rng)) return state;
+  if (!rollPercent(state.boonEffects.parasiticBloomLeechChance, state.rng)) return state;
   const leechHeal = computeLeechHeal(damage);
   mergeCombatText(combatTexts, {
     target: CONSTANTS.TARGETS.PLAYER,

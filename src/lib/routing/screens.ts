@@ -12,6 +12,7 @@ export type Screen =
   | "collection"
   | "talents"
   | "homestead"
+  | "armory"
   | "game-over"
   | "campfire"
   | "shop"
@@ -37,6 +38,7 @@ export const ROUTE_SCREENS = {
   COLLECTION: "collection",
   TALENTS: "talents",
   HOMESTEAD: "homestead",
+  ARMORY: "armory",
   GAME_OVER: "game-over",
   CAMPFIRE: "campfire",
   SHOP: "shop",

@@ -32,7 +32,7 @@ function RunDiscoveriesScreenRoute({ actions: a }: Pick<ScreenRouteContext, "act
   return (
     <RunDiscoveriesScreen
       runEndDiscoveredCardIds={r.runEndDiscoveredCardIds}
-      runEndDiscoveredTrinketIds={r.runEndDiscoveredTrinketIds}
+      runEndDiscoveredBoonIds={r.runEndDiscoveredBoonIds}
       onContinue={a.runFlow.resetRunState}
     />
   );

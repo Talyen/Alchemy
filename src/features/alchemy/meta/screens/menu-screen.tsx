@@ -1,6 +1,6 @@
 // Main menu screen with logo and navigation buttons. Entry point for all other screens.
 import { useCallback, useState } from "react";
-import { BookOpen, Cog, Swords, TreePine, WandSparkles } from "lucide-react";
+import { BookOpen, Cog, Shield, Swords, TreePine, WandSparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { ShineBorder } from "@/components/ui/shine-border";
@@ -19,6 +19,7 @@ export function MenuScreen({
   onOptions,
   onTalents,
   onHomestead,
+  onArmory,
   onQuit,
   logoSrc,
   logoSrcVariants,
@@ -30,6 +31,7 @@ export function MenuScreen({
   onOptions: () => void;
   onTalents: () => void;
   onHomestead: () => void;
+  onArmory: () => void;
   onQuit?: () => void;
   logoSrc: string;
   logoSrcVariants?: string[];
@@ -172,13 +174,18 @@ export function MenuScreen({
           )}
         </StaggerItem>
         <StaggerItem index={4}>
+          <Button size="lg" variant="outline" className="justify-center gap-2 w-56 text-base" onClick={onArmory}>
+            <Shield className="h-4 w-4" /> Armory
+          </Button>
+        </StaggerItem>
+        <StaggerItem index={5}>
           <Button size="lg" variant="outline" className="justify-center gap-2 w-56 text-base" onClick={onOptions}>
             <Cog className="h-4 w-4" />
             Options
           </Button>
         </StaggerItem>
         {onQuit ? (
-          <StaggerItem index={5}>
+          <StaggerItem index={6}>
             <Button size="lg" variant="outline" className="justify-center gap-2 w-56 text-base" onClick={onQuit}>
               Quit
             </Button>

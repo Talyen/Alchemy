@@ -50,9 +50,9 @@ function applyHarmfulStatusFromAttack(
   if (blockPreventsStatus) {
     return state;
   }
-  // Plague Doctor trinket: prevents the FIRST harmful status application each battle.
+  // Plague Doctor boon: prevents the FIRST harmful status application each battle.
   // Once used (firstHarmfulStatusPrevented flag), subsequent statuses apply normally.
-  if (state.trinketEffects.plagueDoctorImmunity && !state.flags.firstHarmfulStatusPrevented) {
+  if (state.boonEffects.plagueDoctorImmunity && !state.flags.firstHarmfulStatusPrevented) {
     return { ...state, flags: { ...state.flags, firstHarmfulStatusPrevented: true } };
   }
   const adjustedAmount = scaleFreezeBuildUp(

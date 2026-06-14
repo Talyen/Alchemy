@@ -108,7 +108,7 @@ describe("applyWishEffect", () => {
 
   it("awards wishingWellGoldOnWish per wish", () => {
     const state = createTestBattleState({
-      trinketEffects: { ...createTestBattleState().trinketEffects, wishingWellGoldOnWish: 7 },
+      boonEffects: { ...createTestBattleState().boonEffects, wishingWellGoldOnWish: 7 },
     });
     const card = { id: "strike", title: "Strike", descriptionLines: [""], art: "", cost: 1, effects: [] };
     const texts: CombatTextEvent[] = [];
@@ -165,7 +165,7 @@ describe("applyWishEffect", () => {
         goldOnWish: 5,
         goldOnWishAmount: 3,
       },
-      trinketEffects: { ...createTestBattleState().trinketEffects, wishingWellGoldOnWish: 2 },
+      boonEffects: { ...createTestBattleState().boonEffects, wishingWellGoldOnWish: 2 },
     });
     const card = { id: "strike", title: "Strike", descriptionLines: [""], art: "", cost: 1, effects: [] };
     const texts: CombatTextEvent[] = [];

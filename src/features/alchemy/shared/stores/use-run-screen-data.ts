@@ -18,7 +18,7 @@ const screenFields: Record<Screen, (keyof RunScreenData)[]> = {
   corruption: ["runDeck", "corruptionResult"],
   "game-over": ["runEndTalentXP", "talentXP", "runEndMaterials"],
   "run-victory": ["runEndTalentXP", "talentXP", "runEndMaterials"],
-  "run-discoveries": ["runEndDiscoveredCardIds", "runEndDiscoveredTrinketIds"],
+  "run-discoveries": ["runEndDiscoveredCardIds", "runEndDiscoveredBoonIds"],
   // Screens that do not use screen data but must map to safe defaults
   options: [],
   menu: [],
@@ -29,6 +29,7 @@ const screenFields: Record<Screen, (keyof RunScreenData)[]> = {
   "game-mode-select": [],
   collection: [],
   homestead: [],
+  armory: [],
   talents: [],
   "wildwood-recovery": ["runPlayerHealth", "runMaxHealth"],
   "wildwood-removal": ["runDeck"],
@@ -110,8 +111,8 @@ export function useRunScreenData(screen: Screen): RunScreenData {
           case "runEndDiscoveredCardIds":
             data.runEndDiscoveredCardIds = session.runEndDiscoveredCardIds;
             break;
-          case "runEndDiscoveredTrinketIds":
-            data.runEndDiscoveredTrinketIds = session.runEndDiscoveredTrinketIds;
+          case "runEndDiscoveredBoonIds":
+            data.runEndDiscoveredBoonIds = session.runEndDiscoveredBoonIds;
             break;
           case "pendingCharacterId":
             data.pendingCharacterId = session.pendingCharacterId;

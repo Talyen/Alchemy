@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseActiveRun } from "@/features/alchemy/shared/storage/active-run";
+import { normalizeSaveData } from "@/features/alchemy/shared/storage/migrations";
 import { defaultBattleState } from "@/lib/battle";
 
 function makeRunCandidate(overrides: Record<string, unknown> = {}): Record<string, unknown> {
@@ -13,7 +14,7 @@ function makeRunCandidate(overrides: Record<string, unknown> = {}): Record<strin
     currentAct: 1,
     destinationIndexInAct: 1,
     completedDestinations: ["combat"],
-    runTrinkets: [],
+    runBoons: [],
     selectedDifficulty: "difficulty-1",
     contentSystemType: "campaign",
     ...overrides,
@@ -234,6 +235,27 @@ describe("parseActiveRun", () => {
     expect(result!.activeCombat?.battleState.turn).toBe(2);
     expect(result!.activeCombat?.battleState.playerHealth).toBe(11);
     expect(result!.labyrinthPendingNode).toBeNull();
+  });
+
+  it("migrates legacy trinketEffects through save normalization and reconciles from runBoons", () => {
+    const battleState = defaultBattleState();
+    const legacyBattleState = {
+      ...battleState,
+      trinketEffects: { boneCharmHealOnKill: 3 },
+    };
+    delete (legacyBattleState as { boonEffects?: unknown }).boonEffects;
+
+    const migrated = normalizeSaveData({
+      saveSchemaVersion: 3,
+      activeRun: {
+        ...makeRunCandidate({
+          runBoons: ["bone-charm"],
+          activeCombat: { battleState: legacyBattleState },
+        }),
+      },
+    });
+
+    expect(migrated.activeRun?.activeCombat?.battleState.boonEffects.boneCharmHealOnKill).toBe(3);
   });
 
   it("normalizes nested battle defaults and removes retired encounter traits", () => {

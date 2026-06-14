@@ -31,7 +31,7 @@ beforeEach(() => {
   resetTransientRunUi();
   resetRunProgressSlice();
   useHomesteadStore.setState(useHomesteadStore.getInitialState());
-  useAppStore.setState({ discoveredCardIds: [], discoveredTrinketIds: [] });
+  useAppStore.setState({ discoveredCardIds: [], discoveredBoonIds: [] });
 });
 
 function makeDeps(overrides: Partial<Parameters<typeof createContentSystemNavigation>[0]> = {}) {

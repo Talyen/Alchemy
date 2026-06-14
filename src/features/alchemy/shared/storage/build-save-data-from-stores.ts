@@ -5,11 +5,13 @@ import { useHomesteadStore } from "@/features/alchemy/shared/stores/homestead-st
 import { readActiveRunStore } from "@/features/alchemy/shared/stores/run-session-facade";
 import type { ActiveRunData } from "@/lib/active-run-session";
 import type { SaveData } from "./types";
+import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
 
 export function buildAlchemySaveDataFromStores(activeRun: ActiveRunData | null): SaveData {
   const app = useAppStore.getState();
   const run = readActiveRunStore();
   const homestead = useHomesteadStore.getState();
+  const gear = useGearStore.getState();
 
   return {
     saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
@@ -21,7 +23,9 @@ export function buildAlchemySaveDataFromStores(activeRun: ActiveRunData | null):
     brightness: app.brightness,
     discoveredCardIds: app.discoveredCardIds,
     encounteredEnemyIds: app.encounteredEnemyIds,
-    discoveredTrinketIds: app.discoveredTrinketIds,
+    discoveredBoonIds: app.discoveredBoonIds,
+    gearInventory: gear.inventory,
+    gearLoadouts: gear.loadouts,
     talentXP: run.talentXP,
     unlockedTalents: run.unlockedTalents,
     musicVolume: app.musicVol,

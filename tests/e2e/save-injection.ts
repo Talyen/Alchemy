@@ -33,7 +33,7 @@ function createMinimalLabyrinthMap(options?: { rows?: number; cols?: number }) {
 export async function injectSaveState(page: Page, overrides: Record<string, unknown> = {}) {
   await page.addInitScript((data) => {
     const save = JSON.parse(localStorage.getItem(data.saveKey) || "{}");
-    const { discoveredCardIds, encounteredEnemyIds, discoveredTrinketIds, ...activeRunData } = data.payload;
+    const { discoveredCardIds, encounteredEnemyIds, discoveredBoonIds, ...activeRunData } = data.payload;
     save.activeRun = {
       characterId: "knight",
       runDeck: [],
@@ -44,12 +44,12 @@ export async function injectSaveState(page: Page, overrides: Record<string, unkn
       currentAct: 1,
       destinationIndexInAct: 0,
       completedDestinations: [],
-      runTrinkets: [],
+      runBoons: [],
       ...activeRunData,
     };
     if (Array.isArray(discoveredCardIds)) save.discoveredCardIds = discoveredCardIds;
     if (Array.isArray(encounteredEnemyIds)) save.encounteredEnemyIds = encounteredEnemyIds;
-    if (Array.isArray(discoveredTrinketIds)) save.discoveredTrinketIds = discoveredTrinketIds;
+    if (Array.isArray(discoveredBoonIds)) save.discoveredBoonIds = discoveredBoonIds;
     if (!Array.isArray(save.finishedRunCharacters)) {
       save.finishedRunCharacters = ["knight", "rogue", "wizard", "ranger", "alchemist", "warlock", "druid"];
     }
@@ -113,7 +113,7 @@ export async function injectLabyrinthRun(
       currentAct: 1,
       destinationIndexInAct: 0,
       completedDestinations: [],
-      runTrinkets: [],
+      runBoons: [],
       selectedDifficulty: null,
       contentSystemType: "labyrinth",
       labyrinthMap: data.map,

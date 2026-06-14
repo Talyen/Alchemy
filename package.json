@@ -168,7 +168,8 @@
       "tests/playwright-tags.ts": ["exports"],
       "src/features/alchemy/shared/stores/run-domain-store.ts": ["exports", "duplicates"],
       "src/features/alchemy/shared/stores/run-transitions.ts": ["exports"],
-      "src/lib/active-run-session/index.ts": ["exports", "types"]
+      "src/lib/active-run-session/index.ts": ["exports", "types"],
+      "src/lib/gear/types.ts": ["exports", "types"]
     },
     "ignoreDependencies": [
       "electron",

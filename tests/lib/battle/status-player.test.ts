@@ -21,7 +21,7 @@ describe("removeHarmfulPlayerStatuses", () => {
     expect(result.playerStatuses.bleed).toBe(2);
   });
 
-  it("does not heal with sinEater trinket when not owned", () => {
+  it("does not heal with sinEater boon when not owned", () => {
     const state = patchBattleState({
       playerHealth: 20,
       playerStatuses: { burn: 5 },
@@ -30,11 +30,11 @@ describe("removeHarmfulPlayerStatuses", () => {
     expect(result.playerHealth).toBe(20);
   });
 
-  it("heals with sinEater trinket on remove", () => {
+  it("heals with sinEater boon on remove", () => {
     const state = patchBattleState({
       playerHealth: 20,
       playerStatuses: { burn: 5, poison: 3 },
-      trinketEffects: { sinEaterHealOnHarmfulStatusRemove: 4 },
+      boonEffects: { sinEaterHealOnHarmfulStatusRemove: 4 },
     });
     const texts = makeTexts();
     const result = removeHarmfulPlayerStatuses(state, 2, texts);
@@ -46,7 +46,7 @@ describe("removeHarmfulPlayerStatuses", () => {
   it("does nothing when no statuses to remove", () => {
     const state = patchBattleState({
       playerHealth: 20,
-      trinketEffects: { sinEaterHealOnHarmfulStatusRemove: 4 },
+      boonEffects: { sinEaterHealOnHarmfulStatusRemove: 4 },
     });
     const result = removeHarmfulPlayerStatuses(state, 1);
     expect(result.playerHealth).toBe(20);

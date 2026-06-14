@@ -111,12 +111,12 @@ describe("migrateSaveDataToCurrent", () => {
     });
   });
 
-  it("migrates v2 saves to v3 (adds finishedRunCharacters)", () => {
+  it("migrates v2 saves through the current schema (adds finishedRunCharacters)", () => {
     const result = migrateSaveDataToCurrent({
       saveSchemaVersion: 2,
       discoveredCardIds: ["slash"],
     });
-    expect(result.saveSchemaVersion).toBe(3);
+    expect(result.saveSchemaVersion).toBe(4);
     expect(result.finishedRunCharacters).toEqual([]);
   });
 
@@ -131,6 +131,28 @@ describe("migrateSaveDataToCurrent", () => {
     expect(result.unlockedTalents).toEqual({
       archery: ["archery-placeholder-2", "archery-damage", "archery-placeholder-3"],
     });
+  });
+
+  it("migrates v3 trinket fields to boon fields", () => {
+    const result = migrateSaveDataToCurrent({
+      saveSchemaVersion: 3,
+      discoveredTrinketIds: ["bone-charm"],
+      activeRun: {
+        runTrinkets: ["bone-charm"],
+        discoveredTrinketIdsAtRunStart: ["bone-charm"],
+        activeCombat: {
+          battleState: {
+            trinketEffects: { boneCharmHealOnKill: 3 },
+          },
+        },
+      },
+    });
+    expect(result.discoveredBoonIds).toEqual(["bone-charm"]);
+    expect((result.activeRun as Record<string, unknown>).runBoons).toEqual(["bone-charm"]);
+    const activeCombat = (result.activeRun as Record<string, unknown>).activeCombat as Record<string, unknown>;
+    const battleState = activeCombat.battleState as Record<string, unknown>;
+    expect(battleState.boonEffects).toEqual({ boneCharmHealOnKill: 3 });
+    expect(battleState.trinketEffects).toBeUndefined();
   });
 });
 

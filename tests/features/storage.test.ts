@@ -28,7 +28,7 @@ function activeRun(overrides: Record<string, unknown> = {}) {
     currentAct: 1,
     destinationIndexInAct: 0,
     completedDestinations: [],
-    runTrinkets: [],
+    runBoons: [],
     contentSystemType: "campaign",
     ...overrides,
   };
@@ -476,7 +476,7 @@ describe("SaveDataSchema", () => {
 
   it("migrates legacy v2 saves to the current schema", () => {
     const migrated = migrateSaveDataToCurrent({ saveSchemaVersion: 2, discoveredCardIds: ["slash"] });
-    expect(migrated.saveSchemaVersion).toBe(3);
+    expect(migrated.saveSchemaVersion).toBe(4);
     expect(migrated.finishedRunCharacters).toEqual([]);
   });
 
@@ -542,7 +542,7 @@ describe("SaveDataSchema", () => {
       selectedResolution: "2560x1080",
       discoveredCardIds: ["slash", "future-card"],
       encounteredEnemyIds: ["goblin"],
-      discoveredTrinketIds: ["bone-charm"],
+      discoveredBoonIds: ["bone-charm"],
       talentXP: { physical: 25 },
       unlockedTalents: { physical: ["physical-dmg-1"] },
       materialInventory: { wood: 7, iron: 3 },
@@ -555,7 +555,7 @@ describe("SaveDataSchema", () => {
     expect(result.selectedAspectRatio).toBe("21:9");
     expect(result.discoveredCardIds).toEqual(["slash", "future-card"]);
     expect(result.encounteredEnemyIds).toEqual(["goblin"]);
-    expect(result.discoveredTrinketIds).toEqual(["bone-charm"]);
+    expect(result.discoveredBoonIds).toEqual(["bone-charm"]);
     expect(result.talentXP.physical).toBe(25);
     expect(result.unlockedTalents.physical).toEqual(["physical-dmg-1"]);
     expect(result.materialInventory).toEqual({ wood: 7, iron: 3, herbs: 0, food: 0, crystal: 0 });
@@ -607,12 +607,12 @@ describe("SaveDataSchema", () => {
     const result = parseSave({
       discoveredCardIds: ["slash", 123, "future-card", "slash", null] as never,
       encounteredEnemyIds: ["goblin", {}, "future-enemy", "goblin"] as never,
-      discoveredTrinketIds: ["bone-charm", false, "future-trinket", "bone-charm"] as never,
+      discoveredBoonIds: ["bone-charm", false, "future-boon", "bone-charm"] as never,
     });
 
     expect(result.discoveredCardIds).toEqual(["slash", "future-card"]);
     expect(result.encounteredEnemyIds).toEqual(["goblin", "future-enemy"]);
-    expect(result.discoveredTrinketIds).toEqual(["bone-charm", "future-trinket"]);
+    expect(result.discoveredBoonIds).toEqual(["bone-charm", "future-boon"]);
   });
 
   it("normalizes volume and brightness bounds", () => {
@@ -728,7 +728,7 @@ describe("SaveDataSchema", () => {
         currentAct: 2,
         destinationIndexInAct: 1,
         completedDestinations: ["Normal Combat", "Alchemist", "Campfire"],
-        runTrinkets: ["bone-charm", "brass-censer"],
+        runBoons: ["bone-charm", "brass-censer"],
         encounteredRunEnemyIds: ["skeleton", "goblin", "imp"],
         selectedDifficulty: null,
         contentSystemType: "campaign",
@@ -761,7 +761,7 @@ describe("SaveDataSchema", () => {
         currentAct: 1,
         destinationIndexInAct: 1,
         completedDestinations: ["Normal Combat"],
-        runTrinkets: [],
+        runBoons: [],
         contentSystemType: "campaign",
         labyrinthMap: null,
         labyrinthPendingNode: null,
@@ -789,7 +789,7 @@ describe("SaveDataSchema", () => {
         currentAct: 1,
         destinationIndexInAct: 0,
         completedDestinations: [],
-        runTrinkets: [],
+        runBoons: [],
         contentSystemType: "labyrinth",
         labyrinthMap,
         labyrinthPendingNode: null,
@@ -819,7 +819,7 @@ describe("SaveDataSchema", () => {
       autoEndTurn: false,
       discoveredCardIds: ["slash", "block", "bash", "fireball"],
       encounteredEnemyIds: ["skeleton", "goblin"],
-      discoveredTrinketIds: ["bone-charm"],
+      discoveredBoonIds: ["bone-charm"],
       talentXP: { physical: 25, block: 10 },
       unlockedTalents: { physical: ["physical-dmg-1", "physical-dmg-2"] },
       materialInventory: { wood: 12, iron: 5, herbs: 3, food: 0, crystal: 1 },

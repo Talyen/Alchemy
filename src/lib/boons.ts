@@ -1,9 +1,9 @@
-// Trinket manifest defaults and ID-to-effect conversion for run trinkets.
-// Depends on the battle TrinketManifest shape only.
-// Used during battle creation and shop pricing so combat reads flat trinket bonuses.
-import type { TrinketManifest } from "./battle/types";
+// Boon manifest defaults and ID-to-effect conversion for run boons.
+// Depends on the battle BoonManifest shape only.
+// Used during battle creation and shop pricing so combat reads flat boon bonuses.
+import type { BoonManifest } from "./battle/types";
 
-export const defaultTrinketEffects: TrinketManifest = {
+export const defaultBoonEffects: BoonManifest = {
   extraDrawPerBattle: 0,
   firstHolyDamageDoubled: false,
   firstBurnDoubled: false,
@@ -33,7 +33,7 @@ export const defaultTrinketEffects: TrinketManifest = {
   luckyCloverGoldChance: 0,
 };
 
-const trinketEffects: Record<string, Partial<TrinketManifest>> = {
+const boonEffects: Record<string, Partial<BoonManifest>> = {
   "brass-censer": { firstHolyDamageDoubled: true },
   "tattered-pages": { extraDrawPerBattle: 1 },
   meteorite: { firstBurnDoubled: true },
@@ -60,13 +60,19 @@ const trinketEffects: Record<string, Partial<TrinketManifest>> = {
   "lucky-clover": { luckyCloverGoldChance: 10 },
 };
 
-export function computeTrinketManifest(trinketIds: string[]): TrinketManifest {
-  const manifest = { ...defaultTrinketEffects };
+export function computeBoonManifest(boonIds: string[]): BoonManifest {
+  const manifest = { ...defaultBoonEffects };
 
-  for (const id of trinketIds) {
-    const effects = trinketEffects[id];
+  for (const id of boonIds) {
+    const effects = boonEffects[id];
     if (effects) Object.assign(manifest, effects);
   }
 
   return manifest;
+}
+
+export function isDefaultBoonManifest(manifest: BoonManifest): boolean {
+  return (Object.keys(defaultBoonEffects) as (keyof BoonManifest)[]).every(
+    (key) => manifest[key] === defaultBoonEffects[key],
+  );
 }

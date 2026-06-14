@@ -21,12 +21,12 @@ const CONSTANTS = {
 export function MysteryEffectBadge({
   effect,
   findCard,
-  findTrinket,
+  findBoon,
   tooltip,
 }: {
   effect: MysteryEffect;
   findCard: ((id: string) => { title: string } | undefined) | undefined;
-  findTrinket: ((id: string) => { title: string } | undefined) | undefined;
+  findBoon: ((id: string) => { title: string } | undefined) | undefined;
   tooltip?: boolean;
 }) {
   switch (effect.kind) {
@@ -99,18 +99,16 @@ export function MysteryEffectBadge({
         <span className="text-sm text-muted-foreground">{chooseLabel}</span>
       );
     }
-    case "gainTrinket":
+    case "gainBoon":
       return tooltip ? (
         <span className="text-sm text-muted-foreground">
-          Add {findTrinket?.(effect.trinketId)?.title ?? "a trinket"} to your Inventory
+          Add {findBoon?.(effect.boonId)?.title ?? "a boon"} to your Inventory
         </span>
       ) : (
-        <span className="text-sm text-muted-foreground">
-          Add {findTrinket?.(effect.trinketId)?.title ?? "a trinket"}
-        </span>
+        <span className="text-sm text-muted-foreground">Add {findBoon?.(effect.boonId)?.title ?? "a boon"}</span>
       );
-    case "gainRandomTrinket":
-      return <span className="text-sm text-muted-foreground">Gain a random trinket</span>;
+    case "gainRandomBoon":
+      return <span className="text-sm text-muted-foreground">Gain a random boon</span>;
     case "removeCard":
       return effect.mode === "random" ? (
         <span className="text-sm text-muted-foreground">Remove a random card</span>
@@ -126,12 +124,12 @@ export function MysteryEffectBadge({
 export function MysteryEffectList({
   effects,
   findCard,
-  findTrinket,
+  findBoon,
   choiceLabel,
 }: {
   effects: MysteryEffect[];
   findCard: ((id: string) => { title: string } | undefined) | undefined;
-  findTrinket: ((id: string) => { title: string } | undefined) | undefined;
+  findBoon: ((id: string) => { title: string } | undefined) | undefined;
   choiceLabel?: string;
 }) {
   return (
@@ -150,7 +148,7 @@ export function MysteryEffectList({
         return (
           <div key={i} className="flex items-center gap-1.5 text-sm">
             {prefix && <span className="text-muted-foreground">{prefix}</span>}
-            <MysteryEffectBadge effect={effect} findCard={findCard} findTrinket={findTrinket} tooltip />
+            <MysteryEffectBadge effect={effect} findCard={findCard} findBoon={findBoon} tooltip />
           </div>
         );
       })}

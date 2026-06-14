@@ -8,7 +8,7 @@ import type { BattleState } from "./types";
 import type { BattleCard } from "@/lib/game-data";
 
 export function getEffectiveCost(
-  state: Pick<BattleState, "flags" | "talentEffects" | "trinketEffects">,
+  state: Pick<BattleState, "flags" | "talentEffects" | "boonEffects">,
   card: BattleCard,
 ): number {
   return computeEffectiveCost(state, card).effectiveCost;

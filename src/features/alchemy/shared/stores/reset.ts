@@ -4,6 +4,7 @@ import { getRunDomainStore } from "./run-domain-store";
 import { useHomesteadStore } from "./homestead-store";
 import { useAppStore } from "./app-store";
 import { useUiStore } from "./ui-store";
+import { useGearStore } from "./gear-store";
 
 /** Prefer {@link teardownRun} from run-transitions at call sites outside this module. */
 export function resetActiveRunStores() {
@@ -20,4 +21,5 @@ export function clearAllPersistentGameData() {
   useAppStore.getState().clearSavedAppState();
   getRunDomainStore().clearPermanentData();
   useHomesteadStore.getState().reset();
+  useGearStore.getState().reset();
 }

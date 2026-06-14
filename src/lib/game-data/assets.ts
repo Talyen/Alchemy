@@ -144,9 +144,10 @@ export { default as placeholderDifficulty } from "@/assets/optimized/placeholder
 export { default as placeholderEnemy } from "@/assets/optimized/placeholder-enemy.webp";
 export { default as placeholderHomestead } from "@/assets/optimized/placeholder-homestead.webp";
 export { default as placeholderMystery } from "@/assets/optimized/placeholder-mystery.webp";
-export { default as placeholderTrinket } from "@/assets/optimized/placeholder-trinket.webp";
+export { default as placeholderBoon } from "@/assets/optimized/placeholder-boon.webp";
 export { default as plagueDoctor } from "@/assets/optimized/plague-doctor.webp";
 export { default as plagueDoctorsMask } from "@/assets/optimized/plague-doctors-mask.webp";
+export { default as placeholderGear } from "@/assets/optimized/placeholder-gear.webp";
 export { default as plateMail } from "@/assets/optimized/plate-mail.webp";
 export { default as pixieCompanion } from "@/assets/optimized/pixie-companion.webp";
 export { default as poisonDagger } from "@/assets/optimized/poison-dagger.webp";

@@ -93,7 +93,7 @@ describe("initialize", () => {
       currentAct: 1,
       destinationIndexInAct: 2,
       completedDestinations: ["combat"],
-      runTrinkets: [],
+      runBoons: [],
       encounteredRunEnemyIds: [],
       selectedDifficulty: null,
       contentSystemType: "campaign",
@@ -123,7 +123,7 @@ describe("initialize", () => {
       currentAct: 1,
       destinationIndexInAct: 2,
       completedDestinations: ["Normal Combat", "Corruption"],
-      runTrinkets: [],
+      runBoons: [],
       encounteredRunEnemyIds: [],
       selectedDifficulty: null,
       contentSystemType: "campaign",
@@ -161,7 +161,7 @@ describe("initialize", () => {
       currentAct: 1,
       destinationIndexInAct: 0,
       completedDestinations: [],
-      runTrinkets: [],
+      runBoons: [],
       encounteredRunEnemyIds: [],
       selectedDifficulty: null,
       contentSystemType: "campaign",
@@ -428,7 +428,7 @@ describe("hydrateFromSnapshot", () => {
       currentAct: 1,
       destinationIndexInAct: 0,
       completedDestinations: [],
-      runTrinkets: [],
+      runBoons: [],
       hasActiveRun: true,
     });
     expect(getRunProgressStoreView().runTalentXP).toEqual({});
@@ -587,7 +587,7 @@ describe("session facade API", () => {
       currentAct: getRunProgressStoreView().currentAct,
       destinationIndexInAct: getRunProgressStoreView().destinationIndexInAct,
       completedDestinations: getRunProgressStoreView().completedDestinations,
-      runTrinkets: getRunProgressStoreView().runTrinkets,
+      runBoons: getRunProgressStoreView().runBoons,
       encounteredRunEnemyIds: getRunProgressStoreView().encounteredRunEnemyIds,
       selectedDifficulty: getRunProgressStoreView().selectedDifficulty,
       contentSystemType: "campaign",
@@ -602,7 +602,7 @@ describe("session facade API", () => {
       currentScreen: ROUTE_SCREENS.DESTINATION,
       destinationChoices: ["campfire", "shop"],
       discoveredCardIdsAtRunStart: getRunProgressStoreView().discoveredCardIdsAtRunStart,
-      discoveredTrinketIdsAtRunStart: getRunProgressStoreView().discoveredTrinketIdsAtRunStart,
+      discoveredBoonIdsAtRunStart: getRunProgressStoreView().discoveredBoonIdsAtRunStart,
     });
     expect(fromStores).toEqual(explicit);
   });

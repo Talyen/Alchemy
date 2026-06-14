@@ -1,4 +1,9 @@
-export { CURRENT_SAVE_SCHEMA_VERSION, CURRENT_GAME_BUILD_VERSION, CURRENT_CONTENT_VERSION } from "./metadata";
+export {
+  CURRENT_SAVE_SCHEMA_VERSION,
+  LAUNCH_SAVE_SCHEMA_VERSION,
+  CURRENT_GAME_BUILD_VERSION,
+  CURRENT_CONTENT_VERSION,
+} from "./metadata";
 export {
   getRawContentVersion,
   getRawSaveSchemaVersion,

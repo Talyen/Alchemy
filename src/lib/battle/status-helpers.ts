@@ -36,7 +36,7 @@ export function scaleFreezeBuildUp(amount: number, halfBuildUp: boolean): number
   return halfBuildUp ? Math.round(amount / HALF_DIVISOR) : amount;
 }
 
-/** Rolls a 0–100 talent/trinket chance. Safe-guards against null rng. */
+/** Rolls a 0–100 talent/boon chance. Safe-guards against null rng. */
 export function rollPercent(chance: number, rng: () => number) {
   return chance > 0 && rng() * PERCENT_DENOMINATOR < chance;
 }

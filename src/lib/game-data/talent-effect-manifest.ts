@@ -164,8 +164,8 @@ export type TalentEffectManifest = {
   companionDamagePerManaCrystal: number;
   healOnManaGain: number;
 
-  // --- Trinket ---
-  trinketChanceBonus: number;
+  // --- Boon ---
+  boonChanceBonus: number;
 
   // --- Freeze ---
   freezeThresholdReduction: number;

@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { makeState, makeCard } from "./helpers";
 import { defaultTalentEffects } from "@/lib/battle";
 import { canPlayCard, playBattleCardResolved } from "@/lib/battle/card-play";
-import { computeTrinketManifest, defaultTrinketEffects } from "@/lib/trinkets";
+import { computeBoonManifest, defaultBoonEffects } from "@/lib/boons";
 
 vi.spyOn(Math, "random").mockReturnValue(0.99);
 
@@ -67,17 +67,17 @@ describe("playBattleCardResolved — first-card-free", () => {
 });
 
 describe("playBattleCardResolved — Mortar and Pestle free potion", () => {
-  it("first potion costs 0 with mortar and pestle trinket", () => {
+  it("first potion costs 0 with mortar and pestle boon", () => {
     const card = makeCard({
       id: "heal-potion",
       cost: 2,
       effects: [{ kind: "heal", amount: 5 }],
     });
-    const manifest = computeTrinketManifest(["mortar-and-pestle"]);
+    const manifest = computeBoonManifest(["mortar-and-pestle"]);
     const state = makeState({
       mana: 4,
       hand: [card],
-      trinketEffects: manifest,
+      boonEffects: manifest,
     });
     const result = playBattleCardResolved(state, "heal-potion", 0);
     expect(result.state.mana).toBe(4);
@@ -90,11 +90,11 @@ describe("playBattleCardResolved — Mortar and Pestle free potion", () => {
       cost: 2,
       effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
     });
-    const manifest = computeTrinketManifest(["mortar-and-pestle"]);
+    const manifest = computeBoonManifest(["mortar-and-pestle"]);
     const state = makeState({
       mana: 4,
       hand: [card],
-      trinketEffects: manifest,
+      boonEffects: manifest,
     });
     const result = playBattleCardResolved(state, "slash", 0);
     // not a potion (doesn't end with POTION_CARD_ID_SUFFIX) → costs 2 → mana 2
@@ -126,7 +126,7 @@ describe("playBattleCardResolved — consume double burn damage", () => {
 });
 
 describe("playBattleCardResolved — runic quill draw on consume", () => {
-  it("draws a card when consume card is played with runic quill trinket", () => {
+  it("draws a card when consume card is played with runic quill boon", () => {
     const card = makeCard({
       id: "consumable",
       cost: 1,
@@ -137,7 +137,7 @@ describe("playBattleCardResolved — runic quill draw on consume", () => {
       mana: 10,
       hand: [card],
       deck: [makeCard({ id: "d1" }), makeCard({ id: "d2" })],
-      trinketEffects: { ...defaultTrinketEffects, runicQuillDrawOnConsume: 1 },
+      boonEffects: { ...defaultBoonEffects, runicQuillDrawOnConsume: 1 },
     });
     const result = playBattleCardResolved(state, "consumable", 0);
     expect(result.state.hand).toHaveLength(1);
@@ -150,7 +150,7 @@ describe("playBattleCardResolved — runic quill draw on consume", () => {
       mana: 10,
       hand: [card1],
       deck: [makeCard({ id: "d1" })],
-      trinketEffects: { ...defaultTrinketEffects, runicQuillDrawOnConsume: 1 },
+      boonEffects: { ...defaultBoonEffects, runicQuillDrawOnConsume: 1 },
     });
     const first = playBattleCardResolved(state, "c1", 0);
     expect(first.state.flags.runicQuillUsedThisTurn).toBe(true);
@@ -163,7 +163,7 @@ describe("playBattleCardResolved — runic quill draw on consume", () => {
       mana: 10,
       hand: [card2],
       deck: [makeCard({ id: "d2" })],
-      trinketEffects: { ...defaultTrinketEffects, runicQuillDrawOnConsume: 1 },
+      boonEffects: { ...defaultBoonEffects, runicQuillDrawOnConsume: 1 },
       flags: { ...first.state.flags },
     });
     const second = playBattleCardResolved(state2, "c2", 0);
@@ -192,7 +192,7 @@ describe("playBattleCardResolved — nextCardCostReduction", () => {
         nextCardCostReduction: 2,
         goldOnFirstPoisonThisCombat: false,
         firstHolyDamageBonusUsed: false,
-        firstBurnTrinketDoubledUsed: false,
+        firstBurnBoonDoubledUsed: false,
         firstHarmfulStatusPrevented: false,
         firstPotionFreeUsed: false,
         resonantChimeUsedThisTurn: false,

@@ -1,7 +1,18 @@
 // Navigation controls for pagination and the in-game menu overlay.
 // Depends on shared Button styling, Lucide icons, and direct viewport anchoring.
 // Used by collection-style grids and battle/menu screens.
-import { BookOpen, ChevronLeft, ChevronRight, Cog, House, Menu, Swords, TreePine, WandSparkles } from "lucide-react";
+import {
+  BookOpen,
+  ChevronLeft,
+  ChevronRight,
+  Cog,
+  House,
+  Menu,
+  Shield,
+  Swords,
+  TreePine,
+  WandSparkles,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import type { Screen } from "../types";
@@ -110,9 +121,11 @@ export function GameMenu({
   onCollection,
   onTalents,
   onHomestead,
+  onArmory,
   onOptions,
   onEndRun,
-  onReturnToBattle,
+  onReturnToRun,
+  returnToRunLabel = "Return to Run",
   anchorRect,
   anchorPlacement = "up-left",
   currentScreen,
@@ -125,9 +138,11 @@ export function GameMenu({
   onCollection: () => void;
   onTalents: () => void;
   onHomestead: () => void;
+  onArmory: () => void;
   onOptions: () => void;
   onEndRun?: () => void;
-  onReturnToBattle?: () => void;
+  onReturnToRun?: () => void;
+  returnToRunLabel?: "Return to Run" | "Return to Battle";
   anchorRect?: DOMRect | null;
   anchorPlacement?: "up-left" | "down-right" | "down-right-of-anchor";
   currentScreen?: Screen;
@@ -155,16 +170,16 @@ export function GameMenu({
       onClick={(e) => e.stopPropagation()}
     >
       <div className="grid gap-2">
-        {onReturnToBattle ? (
+        {onReturnToRun ? (
           <Button
             variant="outline"
             className="justify-start border-0 bg-transparent"
             onClick={() => {
-              onReturnToBattle();
+              onReturnToRun();
               onClose();
             }}
           >
-            <Swords className="h-4 w-4" /> Return to Battle
+            <Swords className="h-4 w-4" /> {returnToRunLabel}
           </Button>
         ) : null}
         <Button
@@ -260,6 +275,18 @@ export function GameMenu({
               </TooltipPanel>
             )}
           </div>
+        ) : null}
+        {currentScreen !== "armory" ? (
+          <Button
+            variant="outline"
+            className="justify-start border-0 bg-transparent"
+            onClick={() => {
+              onArmory();
+              onClose();
+            }}
+          >
+            <Shield className="h-4 w-4" /> Armory
+          </Button>
         ) : null}
         {currentScreen !== "options" ? (
           <Button

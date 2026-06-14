@@ -50,11 +50,11 @@ describe("shop pricing formulas", () => {
     expect(shopCardPrice(true, 10, 0)).toBe(Math.max(0, SHOP_CARD_PRICE - 10));
   });
 
-  it("shopCardPrice: first purchase gets trinket discount too", () => {
+  it("shopCardPrice: first purchase gets boon discount too", () => {
     expect(shopCardPrice(true, 10, 5)).toBe(Math.max(0, SHOP_CARD_PRICE - 10 - 5));
   });
 
-  it("shopCardPrice: non-first purchase loses trinket discount", () => {
+  it("shopCardPrice: non-first purchase loses boon discount", () => {
     expect(shopCardPrice(false, 10, 5)).toBe(Math.max(0, SHOP_CARD_PRICE - 10));
   });
 
@@ -66,7 +66,7 @@ describe("shop pricing formulas", () => {
     expect(alchemistPotionPrice(true, 10, 0)).toBe(Math.max(0, ALCHEMIST_POTION_PRICE - 10));
   });
 
-  it("alchemistPotionPrice: first purchase gets trinket discount too", () => {
+  it("alchemistPotionPrice: first purchase gets boon discount too", () => {
     expect(alchemistPotionPrice(true, 10, 5)).toBe(Math.max(0, ALCHEMIST_POTION_PRICE - 10 - 5));
   });
 });

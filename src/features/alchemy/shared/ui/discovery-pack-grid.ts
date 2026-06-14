@@ -1,14 +1,14 @@
 // Discovery pack row layout — uses the same grid classes as CollectionGrid.
-import { collectionCardGridClass, collectionTrinketGridClass } from "../config";
+import { collectionCardGridClass, collectionBoonGridClass } from "../config";
 
 export type DiscoveryPackGridLayout = {
   gridClass: string;
   columnCount: number;
 };
 
-export function getDiscoveryPackGridLayout(isTrinket: boolean): DiscoveryPackGridLayout {
-  return isTrinket
-    ? { gridClass: collectionTrinketGridClass, columnCount: 3 }
+export function getDiscoveryPackGridLayout(isBoon: boolean): DiscoveryPackGridLayout {
+  return isBoon
+    ? { gridClass: collectionBoonGridClass, columnCount: 3 }
     : { gridClass: collectionCardGridClass, columnCount: 4 };
 }
 

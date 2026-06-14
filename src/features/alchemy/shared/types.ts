@@ -50,7 +50,7 @@ export const CONSTANTS = {
   REWARD_ROUTES,
 } as const;
 
-export type CollectionTab = "cards" | "bestiary" | "trinkets";
+export type CollectionTab = "cards" | "bestiary" | "boons";
 
 export type StatusChip = {
   id: PlayerStatusId | EnemyStatusId;

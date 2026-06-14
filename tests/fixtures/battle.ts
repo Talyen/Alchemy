@@ -17,7 +17,7 @@ export function makeTestBattleState(overrides: Partial<BattleState> = {}): Battl
   };
 }
 
-/** Merge partial battle state without repeating default status / trinket / talent spreads. */
+/** Merge partial battle state without repeating default status / boon / talent spreads. */
 export function patchBattleState(patch: Partial<BattleState> = {}): BattleState {
   const base = makeTestBattleState();
   return {
@@ -29,9 +29,9 @@ export function patchBattleState(patch: Partial<BattleState> = {}): BattleState 
     enemyStatuses: patch.enemyStatuses
       ? { ...base.enemyStatuses, ...patch.enemyStatuses }
       : base.enemyStatuses,
-    trinketEffects: patch.trinketEffects
-      ? { ...base.trinketEffects, ...patch.trinketEffects }
-      : base.trinketEffects,
+    boonEffects: patch.boonEffects
+      ? { ...base.boonEffects, ...patch.boonEffects }
+      : base.boonEffects,
     talentEffects: patch.talentEffects
       ? { ...base.talentEffects, ...patch.talentEffects }
       : base.talentEffects,

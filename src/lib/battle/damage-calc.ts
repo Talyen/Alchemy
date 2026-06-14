@@ -1,6 +1,6 @@
 /**
  * Player damage calculation: modifiers, crit, block, and armor mitigation, critical strikes, armor mitigation, and status riders.
- * Depends on: ./status-effects, ./combat-text, ./trinket-effects, ./wish, ./types, ../game-constants.
+ * Depends on: ./status-effects, ./combat-text, ./boon-effects, ./wish, ./types, ../game-constants.
  * Depended on by: ./apply-effects.
  */
 import { getEnemyDamageMultiplier } from "./status-effects";
@@ -78,7 +78,7 @@ function computeBaseRawAmount(
  * Takes into account flat bonus, armor/block scaling, stunned/frozen multipliers, and bleed/poison status bonuses.
  */
 function applyPhysicalScaling(state: BattleState, rawAmount: number): number {
-  let nextAmount = rawAmount + state.talentEffects.flatPhysicalDamage;
+  let nextAmount = rawAmount + state.talentEffects.flatPhysicalDamage + state.gearEffects.flatPhysicalDamage;
   if (state.talentEffects.armorToPhysicalDamage) {
     nextAmount += state.playerStatuses.armor;
   }
@@ -235,22 +235,22 @@ function applyFirstBurnModifiers(state: BattleState, rawDamage: number): { state
     nextDamage = Math.round(nextDamage * FIRST_BURN_CARD_BONUS_MULTIPLIER);
     nextState = setFlag(nextState, "firstBurnCardDoubledUsed", true);
   }
-  if (nextState.trinketEffects.firstBurnDoubled && !nextState.flags.firstBurnTrinketDoubledUsed) {
+  if (nextState.boonEffects.firstBurnDoubled && !nextState.flags.firstBurnBoonDoubledUsed) {
     nextDamage *= FIRST_EFFECT_MULTIPLIER;
-    nextState = setFlag(nextState, "firstBurnTrinketDoubledUsed", true);
+    nextState = setFlag(nextState, "firstBurnBoonDoubledUsed", true);
   }
 
   return { state: nextState, damage: nextDamage };
 }
 
 /**
- * Applies first-time holy modifiers from trinkets, updating state in place.
+ * Applies first-time holy modifiers from boons, updating state in place.
  */
 function applyFirstHolyModifiers(state: BattleState, rawDamage: number): { state: BattleState; damage: number } {
   let nextState: BattleState = state;
   let nextDamage = rawDamage;
 
-  if (nextState.trinketEffects.firstHolyDamageDoubled && !nextState.flags.firstHolyDamageBonusUsed) {
+  if (nextState.boonEffects.firstHolyDamageDoubled && !nextState.flags.firstHolyDamageBonusUsed) {
     nextDamage *= FIRST_EFFECT_MULTIPLIER;
     nextState = setFlag(nextState, "firstHolyDamageBonusUsed", true);
   }
@@ -278,11 +278,11 @@ function applyFirstDamageModifiers(
 }
 
 /**
- * Resolves trinket-based stun triggers from playing high physical/stun damage with active forge stacks.
+ * Resolves boon-based stun triggers from playing high physical/stun damage with active forge stacks.
  */
 function applySunderingArmorPiercing(state: BattleState, isPhysicalOrStun: boolean): BattleState {
   if (isPhysicalOrStun) {
-    return reduceEnemyArmor(state, state.trinketEffects.sunderingArmorPiercing);
+    return reduceEnemyArmor(state, state.boonEffects.sunderingArmorPiercing);
   }
   return state;
 }

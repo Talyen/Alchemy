@@ -28,7 +28,7 @@ import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-tra
 import {
   getActiveRewardModifiersForContentSystem,
   applyLabyrinthRewardMaterialModifiers,
-  shouldForceTrinketReward,
+  shouldForceBoonReward,
   computeVictoryGoldResult,
   createCombatRewardState as createCombatRewardStateFromFlow,
   createBossRewardState as createBossRewardStateFromFlow,
@@ -84,7 +84,7 @@ export type VictoryRewardsInput = {
   selectedDifficulty: DifficultyId | null;
   unlockedTalents: UnlockedTalents;
   runDeck: BattleCard[];
-  runTrinkets: string[];
+  runBoons: string[];
   contentSystemType: ContentSystemId;
   activeLabyrinthRewardModifiers: EncounterRewardTraitId[];
   battleState: BattleState;
@@ -133,24 +133,27 @@ export function createDestinationRewardState(destinations: Destination[], bossEn
   return withSelectedBossForDestinations(destinations, createEmptyRewardState(destinations), bossEnemyId);
 }
 
-export function computeVictoryRewardState(input: {
-  characterId: CharacterId;
-  selectedDifficulty: DifficultyId | null;
-  unlockedTalents: UnlockedTalents;
-  runDeck: BattleCard[];
-  runTrinkets: string[];
-  contentSystemType: ContentSystemId;
-  activeLabyrinthRewardModifiers: EncounterRewardTraitId[];
-  battleState: BattleState;
-  gold: number;
-  eliteBonus: number;
-  generousBonus: number;
-  bossBonus: number;
-  materials: MaterialInventory;
-  destinations: Destination[];
-  talentEffects?: TalentEffectManifest;
-  bossEnemyId?: string | null | undefined;
-}): RewardState {
+export function computeVictoryRewardState(
+  input: {
+    characterId: CharacterId;
+    selectedDifficulty: DifficultyId | null;
+    unlockedTalents: UnlockedTalents;
+    runDeck: BattleCard[];
+    runBoons: string[];
+    contentSystemType: ContentSystemId;
+    activeLabyrinthRewardModifiers: EncounterRewardTraitId[];
+    battleState: BattleState;
+    gold: number;
+    eliteBonus: number;
+    generousBonus: number;
+    bossBonus: number;
+    materials: MaterialInventory;
+    destinations: Destination[];
+    talentEffects?: TalentEffectManifest;
+    bossEnemyId?: string | null | undefined;
+  },
+  rng: () => number = Math.random,
+): RewardState {
   const talentEffects = input.talentEffects ?? computeTalentEffects(input.unlockedTalents);
   const goldMultiplier = getGoldMultiplier(input.characterId, input.selectedDifficulty);
 
@@ -161,8 +164,9 @@ export function computeVictoryRewardState(input: {
       generousBonus: input.generousBonus,
       talentGoldPerCombat: talentEffects.goldPerCombat,
       materials: input.materials,
-      trinketIds: input.runTrinkets,
+      boonIds: input.runBoons,
       goldMultiplier,
+      rng,
     });
   }
 
@@ -177,11 +181,13 @@ export function computeVictoryRewardState(input: {
       talentGoldPerCombat: talentEffects.goldPerCombat,
       materials: input.materials,
       destinations: input.destinations,
-      trinketIds: input.runTrinkets,
+      boonIds: input.runBoons,
       goldMultiplier,
-      forceTrinket: shouldForceTrinketReward(
+      forceBoon: shouldForceBoonReward(
         getActiveRewardModifiersForContentSystem(input.contentSystemType, input.activeLabyrinthRewardModifiers),
       ),
+      contentSystemType: input.contentSystemType,
+      rng,
     }),
     input.bossEnemyId,
   );
@@ -223,7 +229,7 @@ export function computeVictoryRewards(
   const goldResult = computeVictoryGoldResult({
     battleState: input.battleState,
     runGold: input.runGold,
-    runTrinkets: input.runTrinkets,
+    runBoons: input.runBoons,
     gold,
     eliteBonus,
     generousBonus,
@@ -257,24 +263,27 @@ export function computeVictoryRewards(
     previousDestination,
   );
 
-  const rewardState = computeVictoryRewardState({
-    characterId: input.characterId,
-    selectedDifficulty: input.selectedDifficulty,
-    unlockedTalents: input.unlockedTalents,
-    runDeck: input.runDeck,
-    runTrinkets: input.runTrinkets,
-    contentSystemType: input.contentSystemType,
-    activeLabyrinthRewardModifiers: input.activeLabyrinthRewardModifiers,
-    battleState: input.battleState,
-    gold,
-    eliteBonus,
-    generousBonus,
-    bossBonus,
-    materials,
-    destinations,
-    talentEffects,
-    bossEnemyId: input.bossEnemyId,
-  });
+  const rewardState = computeVictoryRewardState(
+    {
+      characterId: input.characterId,
+      selectedDifficulty: input.selectedDifficulty,
+      unlockedTalents: input.unlockedTalents,
+      runDeck: input.runDeck,
+      runBoons: input.runBoons,
+      contentSystemType: input.contentSystemType,
+      activeLabyrinthRewardModifiers: input.activeLabyrinthRewardModifiers,
+      battleState: input.battleState,
+      gold,
+      eliteBonus,
+      generousBonus,
+      bossBonus,
+      materials,
+      destinations,
+      talentEffects,
+      bossEnemyId: input.bossEnemyId,
+    },
+    rng,
+  );
 
   return {
     newGold,

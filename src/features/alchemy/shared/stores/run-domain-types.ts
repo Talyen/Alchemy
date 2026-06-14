@@ -77,7 +77,7 @@ export function createInitialSessionFields(): RunSessionFields {
     runEndMaterials: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 },
     runEndTalentXP: {},
     runEndDiscoveredCardIds: [],
-    runEndDiscoveredTrinketIds: [],
+    runEndDiscoveredBoonIds: [],
     corruptionResult: null,
     pendingCharacterId: null,
     pendingContentSystemType: "campaign",
@@ -125,7 +125,7 @@ export type RunSessionFields = {
   runEndMaterials: MaterialInventory;
   runEndTalentXP: TalentXP;
   runEndDiscoveredCardIds: string[];
-  runEndDiscoveredTrinketIds: string[];
+  runEndDiscoveredBoonIds: string[];
   corruptionResult: CorruptionResult | null;
   pendingCharacterId: CharacterId | null;
   pendingContentSystemType: ContentSystemId;
@@ -147,7 +147,7 @@ type RunSessionActions = {
   setRunEndMaterials: (materials: MaterialInventory) => void;
   setRunEndTalentXP: (xp: TalentXP) => void;
   setRunEndDiscoveredCardIds: (ids: string[]) => void;
-  setRunEndDiscoveredTrinketIds: (ids: string[]) => void;
+  setRunEndDiscoveredBoonIds: (ids: string[]) => void;
   setCorruptionResult: (result: CorruptionResult | null) => void;
   setPendingCharacterId: (id: CharacterId | null) => void;
   setPendingContentSystemType: (type: ContentSystemId) => void;
@@ -171,9 +171,9 @@ type RunProgressActions = {
   setCurrentAct: Setter<number>;
   setDestinationIndexInAct: Setter<number>;
   setCompletedDestinations: Setter<Destination[]>;
-  setRunTrinkets: Setter<string[]>;
+  setRunBoons: Setter<string[]>;
   setEncounteredRunEnemyIds: Setter<string[]>;
-  setDiscoveryBaselines: (cardIds: string[], trinketIds: string[]) => void;
+  setDiscoveryBaselines: (cardIds: string[], boonIds: string[]) => void;
   setSelectedDifficulty: Setter<DifficultyId | null>;
   setContentSystemType: Setter<ContentSystemId>;
   setCharacter: (selectedId: CharacterId) => void;

@@ -1,8 +1,8 @@
 // Run-end discovery delta and pack batching helpers.
 /** Matches Collection card row (`grid-cols-4`). */
 const DISCOVERY_CARD_PACK_SIZE = 4;
-/** Matches Collection trinket row (`grid-cols-3`). */
-const DISCOVERY_TRINKET_PACK_SIZE = 3;
+/** Matches Collection boon row (`grid-cols-3`). */
+const DISCOVERY_BOON_PACK_SIZE = 3;
 
 export function computeRunDiscoveryDelta(currentIds: readonly string[], snapshotIds: readonly string[]): string[] {
   const snapshotSet = new Set(snapshotIds);
@@ -18,18 +18,15 @@ export function chunkIds(ids: readonly string[], size: number): string[][] {
   return chunks;
 }
 
-export type DiscoveryPackBatch = { kind: "cards" | "trinkets"; ids: string[] };
+export type DiscoveryPackBatch = { kind: "cards" | "boons"; ids: string[] };
 
-export function buildDiscoveryPackPlan(
-  cardIds: readonly string[],
-  trinketIds: readonly string[],
-): DiscoveryPackBatch[] {
+export function buildDiscoveryPackPlan(cardIds: readonly string[], boonIds: readonly string[]): DiscoveryPackBatch[] {
   return [
     ...chunkIds(cardIds, DISCOVERY_CARD_PACK_SIZE).map((ids) => ({ kind: "cards" as const, ids })),
-    ...chunkIds(trinketIds, DISCOVERY_TRINKET_PACK_SIZE).map((ids) => ({ kind: "trinkets" as const, ids })),
+    ...chunkIds(boonIds, DISCOVERY_BOON_PACK_SIZE).map((ids) => ({ kind: "boons" as const, ids })),
   ];
 }
 
-export function hasRunEndDiscoveries(cardIds: readonly string[], trinketIds: readonly string[]): boolean {
-  return cardIds.length > 0 || trinketIds.length > 0;
+export function hasRunEndDiscoveries(cardIds: readonly string[], boonIds: readonly string[]): boolean {
+  return cardIds.length > 0 || boonIds.length > 0;
 }

@@ -77,7 +77,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
     const snapshot = createStartSnapshot(characterId, contentSystemType, options.difficultyId, options.draftedDeck);
     applyRunStartSnapshot(snapshot);
     const appState = useAppStore.getState();
-    deps.run.setDiscoveryBaselines(appState.discoveredCardIds, appState.discoveredTrinketIds);
+    deps.run.setDiscoveryBaselines(appState.discoveredCardIds, appState.discoveredBoonIds);
     if (options.playStartGoldSound && snapshot.runGold > 0) {
       playGoldGain();
     }

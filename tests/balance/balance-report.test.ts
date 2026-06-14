@@ -16,7 +16,7 @@ import { createSeededRng } from "@/lib/utils";
 import {
   characters,
   enemyBestiary,
-  trinketLibrary,
+  boonLibrary,
   cardLibrary,
   type BattleCard,
   type CharacterId,
@@ -29,7 +29,7 @@ import { fileURLToPath } from "node:url";
 const shouldRunBalanceReport = process.env.ALCHEMY_BALANCE_SIM === "1";
 const describeBalance = shouldRunBalanceReport ? describe : describe.skip;
 const iterations = Number.parseInt(process.env.ALCHEMY_BALANCE_ITERATIONS ?? "100", 10);
-const trinketIterations = Math.max(20, Math.floor(iterations / 2));
+const boonIterations = Math.max(20, Math.floor(iterations / 2));
 const cardIterations = Math.max(30, Math.floor(iterations / 3));
 const policy = (process.env.ALCHEMY_BALANCE_POLICY ?? "random-playable") as BalancePlayPolicy;
 
@@ -56,7 +56,7 @@ const ENEMY_TITLES: Record<string, string> = Object.fromEntries(enemyBestiary.ma
 const CHARACTER_TITLES: Record<string, string> = Object.fromEntries(
   Object.values(characters).map((c) => [c.id, c.name]),
 );
-const TRINKET_TITLES: Record<string, string> = Object.fromEntries(trinketLibrary.map((t) => [t.id, t.title]));
+const BOON_TITLES: Record<string, string> = Object.fromEntries(boonLibrary.map((t) => [t.id, t.title]));
 const CARD_TITLES: Record<string, string> = Object.fromEntries(cardLibrary.map((c) => [c.id, c.title]));
 
 function enemyTitle(id: string): string {
@@ -65,8 +65,8 @@ function enemyTitle(id: string): string {
 function characterTitle(id: string): string {
   return CHARACTER_TITLES[id] ?? id;
 }
-function trinketTitle(id: string): string {
-  return TRINKET_TITLES[id] ?? id;
+function boonTitle(id: string): string {
+  return BOON_TITLES[id] ?? id;
 }
 function cardTitle(id: string): string {
   return CARD_TITLES[id] ?? id;
@@ -254,14 +254,14 @@ function collectAllAnomalyMetrics(tieredResults: TieredResults): { field: string
   })).sort((a, b) => b.late - a.late);
 }
 
-// --- Trinket sweep per tier ---
+// --- Boon sweep per tier ---
 
-type TieredTrinkets = {
+type TieredBoons = {
   tier: string;
-  entries: { trinketId: string; delta: number; winRate: number; baseline: number }[];
+  entries: { boonId: string; delta: number; winRate: number; baseline: number }[];
 }[];
 
-function runTrinketSweep(): TieredTrinkets {
+function runBoonSweep(): TieredBoons {
   const characterIds = Object.keys(characters) as CharacterId[];
 
   return TIERS.map((tier) => {
@@ -273,7 +273,7 @@ function runTrinketSweep(): TieredTrinkets {
       { enemyId: "iron-bear", depth: o + 7 },
     ];
 
-    function averageWinRate(trinketIds: string[], seedOffset: number): number {
+    function averageWinRate(boonIds: string[], seedOffset: number): number {
       const rates: number[] = [];
       let seed = 50_000 + seedOffset;
       for (const characterId of characterIds) {
@@ -287,8 +287,8 @@ function runTrinketSweep(): TieredTrinkets {
               depth: scenario.depth,
               talentPreset: tier.preset,
               difficultyModifiers: tier.difficultyModifiers,
-              trinketIds,
-              iterations: trinketIterations,
+              boonIds,
+              iterations: boonIterations,
               seed,
               maxTurns: 30,
               policy,
@@ -301,10 +301,10 @@ function runTrinketSweep(): TieredTrinkets {
     }
 
     const baseline = averageWinRate([], 0);
-    const entries = trinketLibrary
-      .map((trinket, index) => {
-        const winRate = averageWinRate([trinket.id], (index + 1) * 100_000);
-        return { trinketId: trinket.id, delta: winRate - baseline, winRate, baseline };
+    const entries = boonLibrary
+      .map((boon, index) => {
+        const winRate = averageWinRate([boon.id], (index + 1) * 100_000);
+        return { boonId: boon.id, delta: winRate - baseline, winRate, baseline };
       })
       .sort((a, b) => b.delta - a.delta);
 
@@ -409,7 +409,7 @@ function runCardSweep(): TieredCards {
 function writeHtmlReport(
   tieredEnemies: { tier: string; entries: { id: string; winRate: number }[] }[],
   tieredClasses: { tier: string; entries: { id: CharacterId; winRate: number }[] }[],
-  tieredTrinkets: TieredTrinkets,
+  tieredBoons: TieredBoons,
   tieredCards: TieredCards,
   anomalies: AnomalySummary[],
   allMetrics: { field: string; early: number; mid: number; late: number; thresholds: number[] }[],
@@ -441,13 +441,13 @@ function writeHtmlReport(
       .sort((a, b) => a.late - b.late);
   }
 
-  function mergeTrinkets() {
-    return tieredTrinkets[0].entries
+  function mergeBoons() {
+    return tieredBoons[0].entries
       .map((entry) => ({
-        id: entry.trinketId,
-        early: tieredTrinkets[0].entries.find((t) => t.trinketId === entry.trinketId)?.delta ?? 0,
-        mid: tieredTrinkets[1].entries.find((t) => t.trinketId === entry.trinketId)?.delta ?? 0,
-        late: tieredTrinkets[2].entries.find((t) => t.trinketId === entry.trinketId)?.delta ?? 0,
+        id: entry.boonId,
+        early: tieredBoons[0].entries.find((t) => t.boonId === entry.boonId)?.delta ?? 0,
+        mid: tieredBoons[1].entries.find((t) => t.boonId === entry.boonId)?.delta ?? 0,
+        late: tieredBoons[2].entries.find((t) => t.boonId === entry.boonId)?.delta ?? 0,
       }))
       .sort((a, b) => a.late - b.late);
   }
@@ -465,7 +465,7 @@ function writeHtmlReport(
 
   const mergedEnemies = mergeEnemies();
   const mergedClasses = mergeClasses();
-  const mergedTrinkets = mergeTrinkets();
+  const mergedBoons = mergeBoons();
   const mergedCards = mergeCards();
 
   function winRateCell(value: number): string {
@@ -513,7 +513,7 @@ function writeHtmlReport(
 </head>
 <body>
 <h1>Balance Report</h1>
-<p class="meta">policy=${policy} | iterations=${iterations} | trinketIterations=${trinketIterations} | cardIterations=${cardIterations}</p>
+<p class="meta">policy=${policy} | iterations=${iterations} | boonIterations=${boonIterations} | cardIterations=${cardIterations}</p>
 
 <h2>Simulation Methodology</h2>
 <div class="meta">
@@ -526,7 +526,7 @@ function writeHtmlReport(
 <li><strong>Difficulty:</strong> Early none; Mid Adventurer (enemy HP/damage ×1.3); Late Legend (×1.6).</li>
 </ul>
 <p><strong>Class rankings</strong> — mean win rate across all core scenarios for that character (deck identity + talents).</p>
-<p><strong>Trinket sweep</strong> — all characters × gauntlet (Skeleton, Goblin, Mimic, Iron Bear) with random 10-card decks; delta vs no-trinket baseline.</p>
+<p><strong>Boon sweep</strong> — all characters × gauntlet (Skeleton, Goblin, Mimic, Iron Bear) with random 10-card decks; delta vs no-boon baseline.</p>
 <p><strong>Card sweep</strong> — target card + 9 random others vs Skeleton; delta vs random 10-card baseline.</p>
 <p><strong>Anomalies</strong> — max metric per battle; thresholds Early ${ANOMALY_THRESHOLD_BY_PRESET.early} / Mid ${ANOMALY_THRESHOLD_BY_PRESET.mid} / Late ${ANOMALY_THRESHOLD_BY_PRESET.late}.</p>
 <p><strong>Iron Bear</strong> — Iron Hide gains one of armor, forge, or burn damage each enemy turn (not all three); no special boss tuning in this report.</p>
@@ -544,10 +544,10 @@ ${tableRows(mergedEnemies, winRateCell, enemyTitle)}
 ${tableRows(mergedClasses, winRateCell, characterTitle)}
 </tbody></table></div>
 
-<h2>Trinket Rankings</h2>
-<p class="meta">Sorted by Late Game Player Win Rate Delta ascending (weakest at top). Delta vs a no-trinket baseline.</p>
-<div class="scroll"><table><thead><tr><th>Trinket</th>${deltaHeader}</tr></thead><tbody>
-${tableRows(mergedTrinkets, deltaCell, trinketTitle)}
+<h2>Boon Rankings</h2>
+<p class="meta">Sorted by Late Game Player Win Rate Delta ascending (weakest at top). Delta vs a no-boon baseline.</p>
+<div class="scroll"><table><thead><tr><th>Boon</th>${deltaHeader}</tr></thead><tbody>
+${tableRows(mergedBoons, deltaCell, boonTitle)}
 </tbody></table></div>
 
 <h2>Card Rankings</h2>
@@ -584,7 +584,7 @@ ${allMetrics.map((m) => `<tr><td>${m.field}</td>${[m.early, m.mid, m.late].map((
 describeBalance("balance report", () => {
   it("prints battle balance metrics", { timeout: 600000 }, () => {
     const tieredResults = runCoreScenarios();
-    const tieredTrinkets = runTrinketSweep();
+    const tieredBoons = runBoonSweep();
     const tieredCards = runCardSweep();
 
     const tieredEnemies = tieredResults.map((tier) => ({
@@ -597,7 +597,7 @@ describeBalance("balance report", () => {
     }));
 
     console.info(
-      `Balance simulation policy=${policy} iterations=${iterations} trinketIterations=${trinketIterations} cardIterations=${cardIterations}`,
+      `Balance simulation policy=${policy} iterations=${iterations} boonIterations=${boonIterations} cardIterations=${cardIterations}`,
     );
 
     // Condensed console output: top/bottom 3 per tier
@@ -615,13 +615,13 @@ describeBalance("balance report", () => {
       console.table(tier.entries.map((c) => ({ class: characterTitle(c.id), playerWinRate: percent(c.winRate) })));
     }
 
-    for (const tier of tieredTrinkets) {
+    for (const tier of tieredBoons) {
       const top3 = tier.entries.slice(0, 3);
       const bottom3 = tier.entries.slice(-3).reverse();
-      console.info(`Strongest trinkets (${tier.tier})`);
-      console.table(top3.map((t) => ({ trinket: trinketTitle(t.trinketId), playerWinRateDelta: percent(t.delta) })));
-      console.info(`Weakest trinkets (${tier.tier})`);
-      console.table(bottom3.map((t) => ({ trinket: trinketTitle(t.trinketId), playerWinRateDelta: percent(t.delta) })));
+      console.info(`Strongest boons (${tier.tier})`);
+      console.table(top3.map((t) => ({ boon: boonTitle(t.boonId), playerWinRateDelta: percent(t.delta) })));
+      console.info(`Weakest boons (${tier.tier})`);
+      console.table(bottom3.map((t) => ({ boon: boonTitle(t.boonId), playerWinRateDelta: percent(t.delta) })));
     }
 
     for (const tier of tieredCards) {
@@ -659,7 +659,7 @@ describeBalance("balance report", () => {
     }
 
     const allMetrics = collectAllAnomalyMetrics(tieredResults);
-    writeHtmlReport(tieredEnemies, tieredClasses, tieredTrinkets, tieredCards, topAnomalies, allMetrics);
+    writeHtmlReport(tieredEnemies, tieredClasses, tieredBoons, tieredCards, topAnomalies, allMetrics);
 
     expect(tieredResults.length).toBe(3);
   });

@@ -89,13 +89,13 @@ function applyWishGoldTriggers(state: BattleState, combatTexts: CombatTextEvent[
       amount: nextState.talentEffects.goldOnWishAmount,
     });
   }
-  if (nextState.trinketEffects.wishingWellGoldOnWish > 0) {
-    nextState = addGold(nextState, nextState.trinketEffects.wishingWellGoldOnWish);
+  if (nextState.boonEffects.wishingWellGoldOnWish > 0) {
+    nextState = addGold(nextState, nextState.boonEffects.wishingWellGoldOnWish);
     mergeCombatText(combatTexts, {
       target: "player",
       kind: "status",
       stat: "gold",
-      amount: nextState.trinketEffects.wishingWellGoldOnWish,
+      amount: nextState.boonEffects.wishingWellGoldOnWish,
     });
   }
   return nextState;

@@ -42,10 +42,10 @@ export function restoreRun(
   if (
     runStarted &&
     activeRun.discoveredCardIdsAtRunStart.length === 0 &&
-    activeRun.discoveredTrinketIdsAtRunStart.length === 0
+    activeRun.discoveredBoonIdsAtRunStart.length === 0
   ) {
     const app = useAppStore.getState();
-    store.setDiscoveryBaselines(app.discoveredCardIds, app.discoveredTrinketIds);
+    store.setDiscoveryBaselines(app.discoveredCardIds, app.discoveredBoonIds);
   }
 
   store.setHasActiveRun(true);
@@ -100,7 +100,7 @@ export function snapshotRun(screen?: Screen): ActiveRunData {
     currentAct: run.currentAct,
     destinationIndexInAct: run.destinationIndexInAct,
     completedDestinations: run.completedDestinations,
-    runTrinkets: run.runTrinkets,
+    runBoons: run.runBoons,
     encounteredRunEnemyIds: run.encounteredRunEnemyIds,
     selectedDifficulty: run.selectedDifficulty,
     contentSystemType: run.contentSystemType,
@@ -116,7 +116,7 @@ export function snapshotRun(screen?: Screen): ActiveRunData {
     currentScreen: screen ?? getRunDomainStore().navigation.screen,
     destinationChoices: session.rewardState.destinations,
     discoveredCardIdsAtRunStart: run.discoveredCardIdsAtRunStart,
-    discoveredTrinketIdsAtRunStart: run.discoveredTrinketIdsAtRunStart,
+    discoveredBoonIdsAtRunStart: run.discoveredBoonIdsAtRunStart,
   });
 }
 
@@ -125,7 +125,7 @@ export function syncRunToBattleStart(playerHealth?: number): number {
   const store = getRunDomainStore();
   const startingHealth =
     playerHealth ??
-    getBattleStartPlayerHealth(store.progress.runPlayerHealth, store.progress.runMaxHealth, store.progress.runTrinkets);
+    getBattleStartPlayerHealth(store.progress.runPlayerHealth, store.progress.runMaxHealth, store.progress.runBoons);
   store.setRunPlayerHealth(startingHealth);
   return startingHealth;
 }
@@ -187,9 +187,9 @@ export function finalizeRunEndSession(options: {
   const store = getRunDomainStore();
   const app = useAppStore.getState();
   const cardSnapshot = store.progress.discoveredCardIdsAtRunStart;
-  const trinketSnapshot = store.progress.discoveredTrinketIdsAtRunStart;
+  const boonSnapshot = store.progress.discoveredBoonIdsAtRunStart;
   store.setRunEndDiscoveredCardIds(computeRunDiscoveryDelta(app.discoveredCardIds, cardSnapshot));
-  store.setRunEndDiscoveredTrinketIds(computeRunDiscoveryDelta(app.discoveredTrinketIds, trinketSnapshot));
+  store.setRunEndDiscoveredBoonIds(computeRunDiscoveryDelta(app.discoveredBoonIds, boonSnapshot));
 
   flushSaveAfterRunEnd();
   store.setHasActiveRun(false);

@@ -52,7 +52,7 @@ export const applyRemovePlayerStatusEffect: EffectHandler = (state, _card, effec
   };
   nextState = applyHealingWithCombatText(
     nextState,
-    nextState.trinketEffects.sinEaterHealOnHarmfulStatusRemove,
+    nextState.boonEffects.sinEaterHealOnHarmfulStatusRemove,
     combatTexts,
   );
   nextState = applyHealingWithCombatText(nextState, nextState.talentEffects.healOnStatusCleanse, combatTexts);
@@ -99,7 +99,7 @@ export const applyCleansePlayerStatusToDamageEffect: EffectHandler = (
   };
   nextState = applyHealingWithCombatText(
     nextState,
-    nextState.trinketEffects.sinEaterHealOnHarmfulStatusRemove,
+    nextState.boonEffects.sinEaterHealOnHarmfulStatusRemove,
     combatTexts,
   );
   nextState = applyHealingWithCombatText(nextState, nextState.talentEffects.healOnStatusCleanse, combatTexts);

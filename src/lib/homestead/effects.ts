@@ -77,7 +77,7 @@ export function mergeIntoManifest(
     startMana: talentEffects.startMana + homesteadEffects.startMana,
     consumeHealMultiplier: talentEffects.consumeHealMultiplier + homesteadEffects.consumeHealMultiplier,
     potionMixPotency: talentEffects.potionMixPotency + homesteadEffects.potionMixPotency,
-    trinketChanceBonus: talentEffects.trinketChanceBonus + homesteadEffects.trinketChanceBonus,
+    boonChanceBonus: talentEffects.boonChanceBonus + homesteadEffects.boonChanceBonus,
     burnDamageReduction: talentEffects.burnDamageReduction + homesteadEffects.burnDamageReduction,
     freezeDamageReduction: talentEffects.freezeDamageReduction + homesteadEffects.freezeDamageReduction,
     natureDamageReduction: talentEffects.natureDamageReduction + homesteadEffects.natureDamageReduction,

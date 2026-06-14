@@ -3,6 +3,7 @@
 import type { BuildingId, FarmId, MaterialInventory, ResearchId } from "@/lib/homestead/types";
 import type { CompanionId, CharacterId, DifficultyId, UnlockedTalents, TalentXP } from "@/lib/game-data";
 import type { ActiveRunData } from "@/lib/active-run-session";
+import type { GearInstance, GearLoadouts } from "@/lib/gear";
 import type { AspectRatioOption, DisplayMode, UiScale } from "../types";
 
 export type SaveData = {
@@ -15,7 +16,9 @@ export type SaveData = {
   brightness: number;
   discoveredCardIds: string[];
   encounteredEnemyIds: string[];
-  discoveredTrinketIds: string[];
+  discoveredBoonIds: string[];
+  gearInventory: GearInstance[];
+  gearLoadouts: GearLoadouts;
   talentXP: TalentXP;
   unlockedTalents: UnlockedTalents;
   musicVolume: number;

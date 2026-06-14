@@ -357,7 +357,7 @@ export function useRunNavigation({
   function continueFromRunEnd() {
     clearCardHover();
     const session = readRunSessionStore();
-    if (hasRunEndDiscoveries(session.runEndDiscoveredCardIds, session.runEndDiscoveredTrinketIds)) {
+    if (hasRunEndDiscoveries(session.runEndDiscoveredCardIds, session.runEndDiscoveredBoonIds)) {
       navigateTo(CONSTANTS.SCREENS.RUN_DISCOVERIES);
       return;
     }

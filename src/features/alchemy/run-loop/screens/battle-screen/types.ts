@@ -27,7 +27,7 @@ export type BattleScreenState = Pick<
   | "enemyAttackEffects"
   | "turnPhase"
   | "talentEffects"
-  | "trinketEffects"
+  | "boonEffects"
   | "flags"
 >;
 

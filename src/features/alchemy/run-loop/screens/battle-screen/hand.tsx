@@ -119,7 +119,7 @@ export function BattleHand({
 
   const descriptionContext = {
     ...battleState.talentEffects,
-    companionDamageBonus: battleState.trinketEffects.companionDamageBonus,
+    companionDamageBonus: battleState.boonEffects.companionDamageBonus,
     companionDamageBuff: battleState.companionDamageBuff,
   };
 

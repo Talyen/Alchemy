@@ -15,6 +15,7 @@ import {
 } from "@/lib/game-constants";
 import type { SaveData } from "./types";
 import { CURRENT_CONTENT_VERSION, CURRENT_GAME_BUILD_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
+import { createEmptyGearLoadouts } from "@/lib/gear/types";
 
 export const defaultSaveData: SaveData = {
   saveSchemaVersion: CURRENT_SAVE_SCHEMA_VERSION,
@@ -25,7 +26,9 @@ export const defaultSaveData: SaveData = {
   uiScale: "100",
   discoveredCardIds: [],
   encounteredEnemyIds: [],
-  discoveredTrinketIds: [],
+  discoveredBoonIds: [],
+  gearInventory: [],
+  gearLoadouts: createEmptyGearLoadouts(),
   talentXP: {},
   unlockedTalents: {},
   musicVolume: DEFAULT_MUSIC_VOLUME_PCT,

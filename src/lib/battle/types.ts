@@ -16,6 +16,7 @@ import type {
   TalentEffectManifest,
 } from "@/lib/game-data";
 import { CAMPFIRE_HEAL_FRACTION } from "../game-constants";
+import type { GearEffectManifest } from "@/lib/gear";
 import type { MaterialInventory } from "@/lib/homestead/types";
 
 // Both player and enemy use status ID unions, but enemies never gain
@@ -37,10 +38,10 @@ export type EnemyMitigation = {
 
 export const EMPTY_ENEMY_MITIGATION: EnemyMitigation = { armor: 0, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 };
 
-// Pre-computed bonuses from trinkets acquired during the run. Follows the same
+// Pre-computed bonuses from boons acquired during the run. Follows the same
 // pattern as TalentEffectManifest — computed once at battle start, immutable for
 // the duration of the battle.
-export type TrinketManifest = {
+export type BoonManifest = {
   extraDrawPerBattle: number;
   firstHolyDamageDoubled: boolean;
   firstBurnDoubled: boolean;
@@ -81,7 +82,7 @@ export type CombatFlags = {
   nextCardCostReduction: number; // temporary mana discount on next card played
   goldOnFirstPoisonThisCombat: boolean;
   firstHolyDamageBonusUsed: boolean;
-  firstBurnTrinketDoubledUsed: boolean;
+  firstBurnBoonDoubledUsed: boolean;
   firstHarmfulStatusPrevented: boolean;
   firstPotionFreeUsed: boolean;
   firstLeechCardDoubledUsed: boolean;
@@ -131,7 +132,8 @@ export type BattleState = {
   companionDamageBuff: number; // persistent buff from Pack Tactics-style cards
   currentEnemy: BestiaryEntry;
   talentEffects: TalentEffectManifest;
-  trinketEffects: TrinketManifest;
+  boonEffects: BoonManifest;
+  gearEffects: GearEffectManifest;
   flags: CombatFlags;
   discoveredCardIds: string[]; // used by wish undiscovered talent
   cardsPlayedThisTurn: number;

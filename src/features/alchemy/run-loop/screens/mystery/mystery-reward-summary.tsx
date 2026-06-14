@@ -1,7 +1,7 @@
 // Mystery consequence reward summary after run state has been updated.
 import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import { type BattleCard, type TrinketEntry } from "@/lib/game-data";
+import { type BattleCard, type BoonEntry } from "@/lib/game-data";
 import { MATERIAL_IDS } from "@/lib/homestead/types";
 import { cn } from "@/lib/utils";
 
@@ -17,14 +17,14 @@ import { ScreenHeader, StaggerGroup, StaggerItem } from "../../../shared/ui/shar
 
 type LookupProps = {
   findCard: (id: string) => BattleCard | undefined;
-  findTrinket: (id: string) => TrinketEntry | undefined;
+  findBoon: (id: string) => BoonEntry | undefined;
 };
 
 function renderFoundOrLost(effect: MysteryEffect, prefix: string) {
   return (
     <div className="flex items-center justify-center gap-2 text-sm font-medium text-muted-foreground">
       {prefix}
-      <MysteryEffectBadge effect={effect} findCard={undefined} findTrinket={undefined} />
+      <MysteryEffectBadge effect={effect} findCard={undefined} findBoon={undefined} />
     </div>
   );
 }
@@ -33,7 +33,7 @@ function MysteryRewardEffectItem({
   effect,
   runDeck,
   findCard,
-  findTrinket,
+  findBoon,
 }: {
   effect: MysteryEffect;
   runDeck: BattleCard[];
@@ -72,35 +72,35 @@ function MysteryRewardEffectItem({
       const card = runDeck[runDeck.length - 1];
       return card ? renderCardReward(card) : null;
     },
-    gainTrinket: () => {
-      const trinket = findTrinket((effect as { trinketId: string }).trinketId);
-      if (!trinket) return null;
+    gainBoon: () => {
+      const boon = findBoon((effect as { boonId: string }).boonId);
+      if (!boon) return null;
       return (
         <div className="flex flex-col items-center gap-3">
           <div className="relative" onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
             {isHovered ? (
               <DetailPopup
-                idPrefix={trinket.id}
-                title={trinket.title}
+                idPrefix={boon.id}
+                title={boon.title}
                 subtitle={undefined}
-                descriptionLines={trinket.descriptionLines}
+                descriptionLines={boon.descriptionLines}
               />
             ) : null}
             <TiltSurface className={cn(cardSurfaceClass, collectionTileWidthClass)}>
               <img
-                src={trinket.art}
-                alt={trinket.title}
+                src={boon.art}
+                alt={boon.title}
                 className="block w-full rounded-shell-hero aspect-square"
                 loading="eager"
               />
             </TiltSurface>
           </div>
-          <p className="text-sm font-semibold text-foreground">{trinket.title}</p>
-          <p className="text-sm text-muted-foreground">Added {trinket.title} to your Inventory</p>
+          <p className="text-sm font-semibold text-foreground">{boon.title}</p>
+          <p className="text-sm text-muted-foreground">Added {boon.title} to your Inventory</p>
         </div>
       );
     },
-    gainRandomTrinket: () => <p className="text-sm font-semibold text-foreground">Gained a random trinket</p>,
+    gainRandomBoon: () => <p className="text-sm font-semibold text-foreground">Gained a random boon</p>,
     gainGold: () => renderFoundOrLost(effect, "Found"),
     gainMaterial: () => renderFoundOrLost(effect, "Found"),
     loseGold: () => renderFoundOrLost(effect, "Lost"),
@@ -112,7 +112,7 @@ function MysteryRewardEffectItem({
     rewardRenderers[effect.kind] ??
     (() => (
       <p className="text-base text-muted-foreground">
-        <MysteryEffectBadge effect={effect} findCard={findCard} findTrinket={findTrinket} />
+        <MysteryEffectBadge effect={effect} findCard={findCard} findBoon={findBoon} />
       </p>
     ));
 
@@ -123,7 +123,7 @@ export function MysteryRewardSummary({
   choice,
   runDeck,
   findCard,
-  findTrinket,
+  findBoon,
   onContinue,
   eventTitle,
 }: {
@@ -154,7 +154,7 @@ export function MysteryRewardSummary({
 
       {otherEffects.map((effect, i) => (
         <StaggerItem key={i} index={i + 1}>
-          <MysteryRewardEffectItem effect={effect} runDeck={runDeck} findCard={findCard} findTrinket={findTrinket} />
+          <MysteryRewardEffectItem effect={effect} runDeck={runDeck} findCard={findCard} findBoon={findBoon} />
         </StaggerItem>
       ))}
 

@@ -5,16 +5,22 @@ import { useEffect, useRef } from "react";
 import { useRunDomainStore } from "@/features/alchemy/shared/stores/run-session-facade";
 import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
 import { useHomesteadStore } from "@/features/alchemy/shared/stores/homestead-store";
+import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
 import { resolveActiveRunForSave } from "@/features/alchemy/shared/stores/run-transitions";
 import { buildAlchemySaveDataFromStores, saveAlchemySaveData } from "@/features/alchemy/shared/storage";
 import { isAnimationDisabled } from "@/lib/game-constants";
+import type { Screen } from "@/lib/routing";
 
 // Persists the normalized App/controller snapshot whenever any saved field changes.
-export function useAlchemyAutosaveFromStores(enabled = true) {
+export function useAlchemyAutosaveFromStores(enabled = true, runScreenOverride: Screen | null = null) {
   const enabledRef = useRef(enabled);
+  const runScreenOverrideRef = useRef(runScreenOverride);
   useEffect(() => {
     enabledRef.current = enabled;
   }, [enabled]);
+  useEffect(() => {
+    runScreenOverrideRef.current = runScreenOverride;
+  }, [runScreenOverride]);
 
   useEffect(() => {
     let timer: NodeJS.Timeout | null = null;
@@ -31,7 +37,10 @@ export function useAlchemyAutosaveFromStores(enabled = true) {
       isDirty = false;
 
       const runDomainState = useRunDomainStore.getState();
-      const activeRun = resolveActiveRunForSave(runDomainState.session.hasActiveRun);
+      const activeRun = resolveActiveRunForSave(
+        runDomainState.session.hasActiveRun,
+        runScreenOverrideRef.current ?? undefined,
+      );
 
       saveAlchemySaveData(buildAlchemySaveDataFromStores(activeRun));
     };
@@ -53,6 +62,7 @@ export function useAlchemyAutosaveFromStores(enabled = true) {
     const unsubRun = useRunDomainStore.subscribe(triggerSave);
     const unsubApp = useAppStore.subscribe(triggerSave);
     const unsubHome = useHomesteadStore.subscribe(triggerSave);
+    const unsubGear = useGearStore.subscribe(triggerSave);
 
     const handleBeforeUnload = () => {
       flush();
@@ -64,6 +74,7 @@ export function useAlchemyAutosaveFromStores(enabled = true) {
       unsubRun();
       unsubApp();
       unsubHome();
+      unsubGear();
       window.removeEventListener("beforeunload", handleBeforeUnload);
       flush();
     };

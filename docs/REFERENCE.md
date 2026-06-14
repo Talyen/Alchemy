@@ -90,7 +90,8 @@ Definitions of common terms used in the Alchemy codebase.
 | **TiltSurface** | Card/tile wrapper with tilt-on-hover, optional shimmer, and button/div modes (`shared/ui/tilt-surface.tsx`). |
 | **Summon** | Brings a companion into battle. |
 | **Talent Effect Manifest** | Active talent bonuses on `BattleState.talentEffects`. |
-| **Trinket Manifest** | Equipped trinket bonuses on `BattleState.trinketEffects`. |
+| **Boon Manifest** | Run-scoped Boon bonuses on `BattleState.boonEffects`. |
+| **Gear** | Permanent unique items stored in the Armory and equipped per character. Gear effects are snapshotted when battle begins. |
 | **Wish** | Card choices from full library; `wishQueue`. |
 
 ---

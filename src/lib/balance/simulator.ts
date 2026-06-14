@@ -69,7 +69,7 @@ export type BattleSimulationConfig = {
   enemyId: string;
   deck?: BattleCard[];
   depth?: number;
-  trinketIds?: string[];
+  boonIds?: string[];
   talentEffects?: TalentEffectManifest;
   talentPreset?: TalentPreset;
   difficultyModifiers?: DifficultyModifier[];
@@ -95,7 +95,7 @@ export type BattleSimulationResult = {
   enemyMaxHealth: number;
   cardsPlayed: Record<string, number>;
   totalCardsPlayed: number;
-  trinketIds: string[];
+  boonIds: string[];
   policy: BalancePlayPolicy;
   seed: number;
   anomalies: BattleAnomalies;
@@ -217,7 +217,7 @@ export function simulateBattle(config: BattleSimulationConfig): BattleSimulation
   const enemy = enemyBestiary.find((entry) => entry.id === config.enemyId);
   if (!enemy) throw new Error(`Unknown enemy id: ${config.enemyId}`);
 
-  const trinketIds = config.trinketIds ?? [];
+  const boonIds = config.boonIds ?? [];
   const policy = config.policy ?? DEFAULT_POLICY;
   const playerMaxHealth = config.playerMaxHealth ?? MAX_PLAYER_HEALTH;
   const playerDeck = config.deck ?? getStartingDeck(config.characterId);
@@ -240,7 +240,7 @@ export function simulateBattle(config: BattleSimulationConfig): BattleSimulation
     playerHealth: config.playerHealth ?? playerMaxHealth,
     talentEffects,
     maxHealth: playerMaxHealth,
-    trinketIds,
+    boonIds,
     difficultyModifiers: config.difficultyModifiers ?? [],
     rng,
   });
@@ -283,7 +283,7 @@ export function simulateBattle(config: BattleSimulationConfig): BattleSimulation
     enemyMaxHealth: state.enemyMaxHealth,
     cardsPlayed,
     totalCardsPlayed: Object.values(cardsPlayed).reduce((total, count) => total + count, 0),
-    trinketIds,
+    boonIds,
     policy,
     seed,
     anomalies,

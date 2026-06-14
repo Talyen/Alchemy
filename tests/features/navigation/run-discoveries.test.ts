@@ -12,19 +12,19 @@ describe("run discoveries at run end", () => {
     resetRunDomainStore();
     useAppStore.setState({
       discoveredCardIds: ["slash"],
-      discoveredTrinketIds: ["bone-charm"],
+      discoveredBoonIds: ["bone-charm"],
     });
   });
 
-  it("finalizeRunEndSession stores newly discovered card and trinket ids", () => {
+  it("finalizeRunEndSession stores newly discovered card and boon ids", () => {
     setRunProgress({
       discoveredCardIdsAtRunStart: ["slash"],
-      discoveredTrinketIdsAtRunStart: [],
+      discoveredBoonIdsAtRunStart: [],
       initialized: true,
     });
     useAppStore.setState({
       discoveredCardIds: ["slash", "fireball", "block"],
-      discoveredTrinketIds: ["bone-charm", "meteorite"],
+      discoveredBoonIds: ["bone-charm", "meteorite"],
     });
 
     finalizeRunEndSession({
@@ -34,7 +34,7 @@ describe("run discoveries at run end", () => {
 
     const session = getRunSessionStoreView();
     expect(session.runEndDiscoveredCardIds).toEqual(["fireball", "block"]);
-    expect(session.runEndDiscoveredTrinketIds).toEqual(["bone-charm", "meteorite"]);
+    expect(session.runEndDiscoveredBoonIds).toEqual(["bone-charm", "meteorite"]);
     expect(session.hasActiveRun).toBe(false);
   });
 
@@ -43,12 +43,12 @@ describe("run discoveries at run end", () => {
 
     setRunProgress({
       discoveredCardIdsAtRunStart: [],
-      discoveredTrinketIdsAtRunStart: [],
+      discoveredBoonIdsAtRunStart: [],
       initialized: true,
     });
     useAppStore.setState({
       discoveredCardIds: appendUniqueMany([], knightStarterIds),
-      discoveredTrinketIds: [],
+      discoveredBoonIds: [],
     });
 
     finalizeRunEndSession({
@@ -58,13 +58,13 @@ describe("run discoveries at run end", () => {
 
     const session = getRunSessionStoreView();
     expect(session.runEndDiscoveredCardIds).toEqual(knightStarterIds);
-    expect(session.runEndDiscoveredTrinketIds).toEqual([]);
+    expect(session.runEndDiscoveredBoonIds).toEqual([]);
   });
 
   it("simulates startRun order: baseline before discoverStarterDeck yields starters at run end", () => {
     const knightStarterIds = getStartingDeck("knight").map((card) => card.id);
 
-    useAppStore.setState({ discoveredCardIds: [], discoveredTrinketIds: [] });
+    useAppStore.setState({ discoveredCardIds: [], discoveredBoonIds: [] });
     getRunDomainStore().setDiscoveryBaselines([], []);
     useAppStore.setState({
       discoveredCardIds: appendUniqueMany([], knightStarterIds),
@@ -82,7 +82,7 @@ describe("run discoveries at run end", () => {
   it("stores empty discovery deltas when collection did not change", () => {
     setRunProgress({
       discoveredCardIdsAtRunStart: ["slash"],
-      discoveredTrinketIdsAtRunStart: ["bone-charm"],
+      discoveredBoonIdsAtRunStart: ["bone-charm"],
       initialized: true,
     });
 
@@ -93,6 +93,6 @@ describe("run discoveries at run end", () => {
 
     const session = getRunSessionStoreView();
     expect(session.runEndDiscoveredCardIds).toEqual([]);
-    expect(session.runEndDiscoveredTrinketIds).toEqual([]);
+    expect(session.runEndDiscoveredBoonIds).toEqual([]);
   });
 });

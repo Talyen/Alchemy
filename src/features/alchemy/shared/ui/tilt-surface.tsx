@@ -1,6 +1,6 @@
 // Tilt-surface wrapper with shimmer overlay, selection ring, and focus ring support.
 // Handles tilt mechanics (mouseMove/mouseLeave → setTiltFromEvent/clearTiltFromEvent)
-// and the common card-surface decoration shared across card, trinket, character, and homestead tiles.
+// and the common card-surface decoration shared across card, boon, character, and homestead tiles.
 import {
   useEffect,
   useRef,

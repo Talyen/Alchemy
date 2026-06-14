@@ -1,5 +1,6 @@
 // App-level display values for screen routes (character art, layout mode).
 import { createContext, useContext, type ReactNode } from "react";
+import type { Screen } from "@/lib/routing";
 
 export type AppScreenChrome = {
   heroArt: string;
@@ -8,6 +9,7 @@ export type AppScreenChrome = {
   stagePixelRatio: number;
   hasUnspentTalents: boolean;
   hasAffordableHomestead: boolean;
+  returnToRunScreen: Screen | null;
 };
 
 const AppScreenChromeContext = createContext<AppScreenChrome | null>(null);

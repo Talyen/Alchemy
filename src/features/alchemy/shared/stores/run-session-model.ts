@@ -25,7 +25,7 @@ type RunSessionRunSlice = Pick<
   | "currentAct"
   | "destinationIndexInAct"
   | "completedDestinations"
-  | "runTrinkets"
+  | "runBoons"
   | "encounteredRunEnemyIds"
   | "selectedDifficulty"
   | "contentSystemType"
@@ -35,7 +35,7 @@ type RunSessionRunSlice = Pick<
   | "unlockedTalents"
   | "initialized"
   | "discoveredCardIdsAtRunStart"
-  | "discoveredTrinketIdsAtRunStart"
+  | "discoveredBoonIdsAtRunStart"
 >;
 
 type RunSessionTransientSlice = RunSessionFields;
@@ -96,7 +96,7 @@ function pickRunSessionRunSlice(progress: RunStateFields): RunSessionRunSlice {
     currentAct: progress.currentAct,
     destinationIndexInAct: progress.destinationIndexInAct,
     completedDestinations: progress.completedDestinations,
-    runTrinkets: progress.runTrinkets,
+    runBoons: progress.runBoons,
     encounteredRunEnemyIds: progress.encounteredRunEnemyIds,
     selectedDifficulty: progress.selectedDifficulty,
     contentSystemType: progress.contentSystemType,
@@ -106,7 +106,7 @@ function pickRunSessionRunSlice(progress: RunStateFields): RunSessionRunSlice {
     unlockedTalents: progress.unlockedTalents,
     initialized: progress.initialized,
     discoveredCardIdsAtRunStart: progress.discoveredCardIdsAtRunStart,
-    discoveredTrinketIdsAtRunStart: progress.discoveredTrinketIdsAtRunStart,
+    discoveredBoonIdsAtRunStart: progress.discoveredBoonIdsAtRunStart,
   };
 }
 

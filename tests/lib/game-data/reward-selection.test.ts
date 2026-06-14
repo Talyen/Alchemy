@@ -199,24 +199,24 @@ describe("selectRewardCards", () => {
   });
 });
 
-describe("sampleItems for trinket rewards", () => {
-  it("returns requested number of trinkets", () => {
+describe("sampleItems for boon rewards", () => {
+  it("returns requested number of boons", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
-    const trinkets = [
+    const boons = [
       { id: "bone-charm", title: "Bone Charm", description: "", art: "" },
       { id: "brass-censer", title: "Brass Censer", description: "", art: "" },
       { id: "tattered-pages", title: "Tattered Pages", description: "", art: "" },
       { id: "meteorite", title: "Meteorite", description: "", art: "" },
     ];
-    const result = sampleItems(trinkets, 2);
+    const result = sampleItems(boons, 2);
     expect(result).toHaveLength(2);
     vi.restoreAllMocks();
   });
 
-  it("handles requesting more trinkets than available", () => {
+  it("handles requesting more boons than available", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
-    const trinkets = [{ id: "bone-charm", title: "Bone Charm", description: "", art: "" }];
-    const result = sampleItems(trinkets, 5);
+    const boons = [{ id: "bone-charm", title: "Bone Charm", description: "", art: "" }];
+    const result = sampleItems(boons, 5);
     expect(result).toHaveLength(1);
     vi.restoreAllMocks();
   });

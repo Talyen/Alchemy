@@ -1,5 +1,5 @@
 import { useEffect, type ReactNode } from "react";
-import { cardLibrary, trinketLibrary } from "@/lib/game-data";
+import { cardLibrary, boonLibrary } from "@/lib/game-data";
 import { useAppScreenChrome } from "@/app/app-screen-chrome-context";
 import {
   AlchemistShopScreen,
@@ -89,7 +89,7 @@ function RewardsScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions">)
       onAddReward={a.runFlow.finishRewards}
       onSkip={a.runFlow.finishRewards}
       onSelectReward={a.runFlow.selectRewardChoice}
-      allowTrinketSkip={isWildwood}
+      allowBoonSkip={isWildwood}
     />
   );
 }
@@ -195,7 +195,7 @@ function MysteryScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions">)
       onRemoveCard={a.runFlow.handleMysteryRemoveCard}
       onContinue={a.runFlow.handleMysteryContinue}
       findCard={(id) => cardLibrary.find((c) => c.id === id)}
-      findTrinket={(id) => trinketLibrary.find((t) => t.id === id)}
+      findBoon={(id) => boonLibrary.find((t) => t.id === id)}
     />
   );
 }

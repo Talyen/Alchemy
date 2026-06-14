@@ -1,4 +1,4 @@
-// Collection screen with tabs (cards / bestiary / trinkets) and paginated grid.
+// Collection screen with tabs (cards / bestiary / boons) and paginated grid.
 // All three tab grids are rendered simultaneously (preloaded) — only the active
 // one is visible, so switching tabs is instant with no image re-loading.
 import { cn } from "@/lib/utils";
@@ -11,7 +11,7 @@ import {
 } from "../../shared/ui/collection-ui";
 import type { CollectionTab } from "../../shared/types";
 
-const COLLECTION_TABS: CollectionTab[] = ["cards", "bestiary", "trinkets"];
+const COLLECTION_TABS: CollectionTab[] = ["cards", "bestiary", "boons"];
 
 export function CollectionScreen({
   onOpenMenu,
@@ -19,7 +19,7 @@ export function CollectionScreen({
   onSelectTab,
   discoveredCardIds,
   encounteredEnemyIds,
-  discoveredTrinketIds,
+  discoveredBoonIds,
   collectionPages,
   onPageChange,
   bondedCompanions,
@@ -29,7 +29,7 @@ export function CollectionScreen({
   onSelectTab: (tab: CollectionTab) => void;
   discoveredCardIds: string[];
   encounteredEnemyIds: string[];
-  discoveredTrinketIds: string[];
+  discoveredBoonIds: string[];
   collectionPages: Record<CollectionTab, number>;
   onPageChange: (tab: CollectionTab, page: number) => void;
   bondedCompanions: Record<string, number>;
@@ -66,7 +66,7 @@ export function CollectionScreen({
                   collectionTab={tab}
                   discoveredCardIds={discoveredCardIds}
                   encounteredEnemyIds={encounteredEnemyIds}
-                  discoveredTrinketIds={discoveredTrinketIds}
+                  discoveredBoonIds={discoveredBoonIds}
                   page={collectionPages[tab]}
                   bondedCompanions={bondedCompanions}
                 />

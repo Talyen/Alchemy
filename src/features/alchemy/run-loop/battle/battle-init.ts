@@ -12,6 +12,8 @@ import { syncRunToBattleStart } from "../../shared/stores/run-transitions";
 import type { BattleControllerContext } from "./controller-context";
 import { withWildwoodModifier, type WildwoodModifierId } from "@/lib/content-systems/wildwood/gauntlet";
 import { appendEncounterTraits, type EncounterCombatTraitId } from "@/lib/content-systems/encounter-traits";
+import { computeGearManifest } from "@/lib/gear";
+import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
 
 export function createBattleInit(contextOrGetter: BattleControllerContext | (() => BattleControllerContext)) {
   const getContext = typeof contextOrGetter === "function" ? contextOrGetter : () => contextOrGetter;
@@ -27,7 +29,9 @@ export function createBattleInit(contextOrGetter: BattleControllerContext | (() 
     modifiers?: DifficultyModifier[],
   ) {
     const context = getContext();
-    const mergedEffects = mergeIntoManifest(context.talents.talentEffects, context.homesteadEffectsRef.current);
+    const gear = useGearStore.getState();
+    const gearEffects = computeGearManifest(context.run.characterId, gear.inventory, gear.loadouts);
+    const battleEffects = mergeIntoManifest(context.talents.talentEffects, context.homesteadEffectsRef.current);
     const activeModifiers =
       modifiers ??
       (context.run.selectedDifficulty
@@ -39,10 +43,11 @@ export function createBattleInit(contextOrGetter: BattleControllerContext | (() 
       totalRooms: roomsEncountered,
       currentEnemy: enemy,
       playerHealth,
-      talentEffects: mergedEffects,
+      talentEffects: battleEffects,
       discoveredCardIds: useAppStore.getState().discoveredCardIds,
       maxHealth: context.run.runMaxHealth,
-      trinketIds: context.run.runTrinkets,
+      boonIds: context.run.runBoons,
+      gearEffects,
       difficultyModifiers: activeModifiers,
     });
   }

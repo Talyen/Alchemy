@@ -1,4 +1,4 @@
-// Shared run deck/trinket mutations with compendium discovery tracking.
+// Shared run deck/boon mutations with compendium discovery tracking.
 // Depends on game-data types and appendUnique helper.
 import type { BattleCard } from "@/lib/game-data";
 import { appendUnique } from "@/lib/utils";
@@ -13,10 +13,7 @@ export function appendCardToRunWithDiscovery(
   useAppStore.getState().setDiscoveredCardIds((cur) => appendUnique(cur, card.id));
 }
 
-export function appendTrinketToRunWithDiscovery(
-  trinketId: string,
-  setRunTrinkets: Dispatch<SetStateAction<string[]>>,
-): void {
-  setRunTrinkets((p) => [...p, trinketId]);
-  useAppStore.getState().setDiscoveredTrinketIds((cur) => appendUnique(cur, trinketId));
+export function appendBoonToRunWithDiscovery(boonId: string, setRunBoons: Dispatch<SetStateAction<string[]>>): void {
+  setRunBoons((p) => [...p, boonId]);
+  useAppStore.getState().setDiscoveredBoonIds((cur) => appendUnique(cur, boonId));
 }

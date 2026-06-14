@@ -4,26 +4,26 @@ import { applyCardEffects, createBattleState, defaultTalentEffects, endPlayerTur
 import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { type CombatTextEvent } from "@/lib/battle/types";
 import { companionLibrary, enemyBestiary } from "@/lib/game-data";
-import { computeTrinketManifest } from "@/lib/trinkets";
+import { computeBoonManifest } from "@/lib/boons";
 
 vi.spyOn(Math, "random").mockReturnValue(0.99);
 
-describe("Trinket — Brass Censer (first Holy damage doubled)", () => {
+describe("Boon — Brass Censer (first Holy damage doubled)", () => {
   it("doubles the first holy damage", () => {
-    const manifest = computeTrinketManifest(["brass-censer"]);
+    const manifest = computeBoonManifest(["brass-censer"]);
     const card = makeCard({ effects: [{ kind: "damage", damageType: "holy", amount: 5 }] });
-    const state = makeState({ mana: 10, enemyHealth: 30, trinketEffects: manifest, hand: [card] });
+    const state = makeState({ mana: 10, enemyHealth: 30, boonEffects: manifest, hand: [card] });
     const result = playBattleCardResolved(state, card.id, 0);
-    // 5 base * 2 trinket = 10 damage (no crit due to mock returning 0.99 > 5%)
+    // 5 base * 2 boon = 10 damage (no crit due to mock returning 0.99 > 5%)
     expect(result.state.enemyHealth).toBe(20);
     expect(result.state.flags.firstHolyDamageBonusUsed).toBe(true);
   });
 
   it("does NOT double the second holy attack", () => {
-    const manifest = computeTrinketManifest(["brass-censer"]);
+    const manifest = computeBoonManifest(["brass-censer"]);
     const card = makeCard({ effects: [{ kind: "damage", damageType: "holy", amount: 5 }] });
     const card2 = makeCard({ id: "holy2", effects: [{ kind: "damage", damageType: "holy", amount: 5 }] });
-    const state = makeState({ mana: 10, enemyHealth: 30, trinketEffects: manifest, hand: [card] });
+    const state = makeState({ mana: 10, enemyHealth: 30, boonEffects: manifest, hand: [card] });
     const first = playBattleCardResolved(state, card.id, 0);
     const second = playBattleCardResolved({ ...first.state, hand: [card2] }, card2.id, 0);
     // First: 10 damage. Second: 5 damage. Total: 15 damage = 15 remaining
@@ -31,24 +31,24 @@ describe("Trinket — Brass Censer (first Holy damage doubled)", () => {
   });
 });
 
-describe("Trinket — Tattered Pages (extra draw at battle start)", () => {
+describe("Boon — Tattered Pages (extra draw at battle start)", () => {
   it("deals 5 cards in opening hand instead of 4", () => {
     const deck = [makeCard(), makeCard(), makeCard(), makeCard(), makeCard(), makeCard(), makeCard()];
     const skeleton = enemyBestiary.find((e) => e.id === "skeleton")!;
-    const state = createBattleState({ runDeck: deck, currentEnemy: skeleton, playerHealth: 30, talentEffects: defaultTalentEffects, maxHealth: 30, trinketIds: ["tattered-pages"] });
+    const state = createBattleState({ runDeck: deck, currentEnemy: skeleton, playerHealth: 30, talentEffects: defaultTalentEffects, maxHealth: 30, boonIds: ["tattered-pages"] });
     expect(state.hand).toHaveLength(5);
   });
 });
 
-describe("Trinket — Sundering Charm (ignore 2 enemy armor)", () => {
+describe("Boon — Sundering Charm (ignore 2 enemy armor)", () => {
   it("physical attack ignores 2 enemy armor", () => {
-    const manifest = computeTrinketManifest(["sundering-charm"]);
+    const manifest = computeBoonManifest(["sundering-charm"]);
     const card = makeCard({ effects: [{ kind: "damage", damageType: "physical", amount: 10 }] });
     const state = makeState({
       mana: 10,
       enemyHealth: 30,
       enemyMitigation: { armor: 5, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 },
-      trinketEffects: manifest,
+      boonEffects: manifest,
       hand: [card],
     });
     const result = playBattleCardResolved(state, card.id, 0);
@@ -57,16 +57,16 @@ describe("Trinket — Sundering Charm (ignore 2 enemy armor)", () => {
   });
 });
 
-describe("Trinket — Runic Quill (draw 1 on consume)", () => {
+describe("Boon — Runic Quill (draw 1 on consume)", () => {
   it("draws a card when consuming a card", () => {
-    const manifest = computeTrinketManifest(["runic-quill"]);
+    const manifest = computeBoonManifest(["runic-quill"]);
     const card = makeCard({
       id: "consumable",
       consume: true,
       effects: [{ kind: "damage", damageType: "physical", amount: 1 }],
     });
     const deckCard = makeCard({ id: "deck-card" });
-    const state = makeState({ mana: 10, hand: [card], deck: [deckCard], trinketEffects: manifest });
+    const state = makeState({ mana: 10, hand: [card], deck: [deckCard], boonEffects: manifest });
     const result = playBattleCardResolved(state, card.id, 0);
     expect(result.state.exhausted).toHaveLength(1);
     expect(result.state.hand).toHaveLength(1); // drew deck-card
@@ -74,23 +74,23 @@ describe("Trinket — Runic Quill (draw 1 on consume)", () => {
   });
 });
 
-describe("Trinket — Mortar and Pestle (first potion free)", () => {
+describe("Boon — Mortar and Pestle (first potion free)", () => {
   it("makes the first potion cost 0", () => {
-    const manifest = computeTrinketManifest(["mortar-and-pestle"]);
+    const manifest = computeBoonManifest(["mortar-and-pestle"]);
     const card = makeCard({ id: "health-potion", cost: 2, effects: [] });
-    const state = makeState({ mana: 2, hand: [card], trinketEffects: manifest });
+    const state = makeState({ mana: 2, hand: [card], boonEffects: manifest });
     const result = playBattleCardResolved(state, card.id, 0);
     expect(result.state.mana).toBe(2); // no mana spent
     expect(result.state.flags.firstPotionFreeUsed).toBe(true);
   });
 
   it("second potion costs normal mana", () => {
-    const manifest = computeTrinketManifest(["mortar-and-pestle"]);
+    const manifest = computeBoonManifest(["mortar-and-pestle"]);
     const card = makeCard({ id: "health-potion", cost: 2, effects: [] });
     const state = makeState({
       mana: 10,
       hand: [card],
-      trinketEffects: manifest,
+      boonEffects: manifest,
       flags: {
         firstPhysicalCardFreeUsed: false,
         firstHolyCardFreeUsed: false,
@@ -101,7 +101,7 @@ describe("Trinket — Mortar and Pestle (first potion free)", () => {
         nextCardCostReduction: 0,
         goldOnFirstPoisonThisCombat: false,
         firstHolyDamageBonusUsed: false,
-        firstBurnTrinketDoubledUsed: false,
+        firstBurnBoonDoubledUsed: false,
         firstHarmfulStatusPrevented: false,
         firstPotionFreeUsed: true,
         resonantChimeUsedThisTurn: false,
@@ -112,17 +112,17 @@ describe("Trinket — Mortar and Pestle (first potion free)", () => {
   });
 });
 
-describe("Trinket — Parasitic Bloom (10% chance to leech poison damage)", () => {
+describe("Boon — Parasitic Bloom (10% chance to leech poison damage)", () => {
   it("heals for poison damage when the 10% leech procs", () => {
     vi.mocked(Math.random).mockReturnValueOnce(0.05); // 5% < 10% = proc
-    const manifest = computeTrinketManifest(["parasitic-bloom"]);
+    const manifest = computeBoonManifest(["parasitic-bloom"]);
     const state = makeState({
       mana: 4,
       maxMana: 4,
       playerHealth: 20,
       enemyStatuses: { burn: 0, poison: 3, bleed: 0, freeze: 0, stun: 0 },
       enemyAttackEffects: [],
-      trinketEffects: manifest,
+      boonEffects: manifest,
       deck: [makeCard(), makeCard(), makeCard(), makeCard()],
     });
     const result = endPlayerTurn(state);
@@ -132,14 +132,14 @@ describe("Trinket — Parasitic Bloom (10% chance to leech poison damage)", () =
 
   it("does not heal when the 10% leech fails", () => {
     vi.mocked(Math.random).mockReturnValueOnce(0.15); // 15% > 10% = no proc
-    const manifest = computeTrinketManifest(["parasitic-bloom"]);
+    const manifest = computeBoonManifest(["parasitic-bloom"]);
     const state = makeState({
       mana: 4,
       maxMana: 4,
       playerHealth: 20,
       enemyStatuses: { burn: 0, poison: 3, bleed: 0, freeze: 0, stun: 0 },
       enemyAttackEffects: [],
-      trinketEffects: manifest,
+      boonEffects: manifest,
       deck: [makeCard(), makeCard(), makeCard(), makeCard()],
     });
     const result = endPlayerTurn(state);
@@ -147,16 +147,16 @@ describe("Trinket — Parasitic Bloom (10% chance to leech poison damage)", () =
   });
 });
 
-describe("Trinket — Ironwood Buckler (6+ block → 1 armor)", () => {
+describe("Boon — Ironwood Buckler (6+ block → 1 armor)", () => {
   it("gains armor when block is >= 6 at end of turn", () => {
-    const manifest = computeTrinketManifest(["ironwood-buckler"]);
+    const manifest = computeBoonManifest(["ironwood-buckler"]);
     const state = makeState({
       mana: 4,
       maxMana: 4,
       playerHealth: 30,
       playerStatuses: { block: 8, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
       enemyAttackEffects: [],
-      trinketEffects: manifest,
+      boonEffects: manifest,
       deck: [makeCard(), makeCard(), makeCard(), makeCard()],
     });
     const result = endPlayerTurn(state);
@@ -164,14 +164,14 @@ describe("Trinket — Ironwood Buckler (6+ block → 1 armor)", () => {
   });
 
   it("does NOT gain armor when block is below 6", () => {
-    const manifest = computeTrinketManifest(["ironwood-buckler"]);
+    const manifest = computeBoonManifest(["ironwood-buckler"]);
     const state = makeState({
       mana: 4,
       maxMana: 4,
       playerHealth: 30,
       playerStatuses: { block: 5, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
       enemyAttackEffects: [],
-      trinketEffects: manifest,
+      boonEffects: manifest,
       deck: [makeCard(), makeCard(), makeCard(), makeCard()],
     });
     const result = endPlayerTurn(state);
@@ -179,15 +179,15 @@ describe("Trinket — Ironwood Buckler (6+ block → 1 armor)", () => {
   });
 });
 
-describe("Trinket — Sin-Eater's Lantern (heal on harmful status removal)", () => {
+describe("Boon — Sin-Eater's Lantern (heal on harmful status removal)", () => {
   it("gains 6 health when removing a harmful status", () => {
-    const manifest = computeTrinketManifest(["sin-eaters-lantern"]);
+    const manifest = computeBoonManifest(["sin-eaters-lantern"]);
     const card = makeCard({ effects: [{ kind: "remove-harmful-status", amount: 1 }] });
     const state = makeState({
       mana: 10,
       playerHealth: 20,
       playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 2, poison: 0, bleed: 0, freeze: 0, stun: 0 },
-      trinketEffects: manifest,
+      boonEffects: manifest,
     });
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);
@@ -196,33 +196,33 @@ describe("Trinket — Sin-Eater's Lantern (heal on harmful status removal)", () 
   });
 });
 
-describe("Trinket — Cutpurse Knife (gold on bleed application)", () => {
+describe("Boon — Cutpurse Knife (gold on bleed application)", () => {
   it("gains 1 gold when applying bleed", () => {
-    const manifest = computeTrinketManifest(["cutpurse-knife"]);
+    const manifest = computeBoonManifest(["cutpurse-knife"]);
     const card = makeCard({ effects: [{ kind: "damage", damageType: "bleed", amount: 3 }] });
-    const state = makeState({ mana: 10, gold: 0, trinketEffects: manifest });
+    const state = makeState({ mana: 10, gold: 0, boonEffects: manifest });
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);
     expect(result.gold).toBe(1);
   });
 });
 
-describe("Trinket — Wishing Well Coin (gold on wish)", () => {
+describe("Boon — Wishing Well Coin (gold on wish)", () => {
   it("gains 3 extra gold when wishing", () => {
-    const manifest = computeTrinketManifest(["wishing-well-coin"]);
+    const manifest = computeBoonManifest(["wishing-well-coin"]);
     const card = makeCard({ effects: [{ kind: "wish", amount: 1 }] });
-    const state = makeState({ mana: 10, gold: 2, trinketEffects: manifest });
+    const state = makeState({ mana: 10, gold: 2, boonEffects: manifest });
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);
     expect(result.gold).toBe(5);
   });
 });
 
-describe("Trinket — Bone Charm (heal on enemy defeat)", () => {
+describe("Boon — Bone Charm (heal on enemy defeat)", () => {
   it("heals 3 Health when enemy is killed by an attack", () => {
-    const manifest = computeTrinketManifest(["bone-charm"]);
+    const manifest = computeBoonManifest(["bone-charm"]);
     const card = makeCard({ effects: [{ kind: "damage", damageType: "physical", amount: 40 }] });
-    const state = makeState({ mana: 10, playerHealth: 15, enemyHealth: 30, trinketEffects: manifest });
+    const state = makeState({ mana: 10, playerHealth: 15, enemyHealth: 30, boonEffects: manifest });
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);
     expect(result.enemyHealth).toBe(0);
@@ -230,7 +230,7 @@ describe("Trinket — Bone Charm (heal on enemy defeat)", () => {
   });
 
   it("does not heal when enemy dies from status ticks (not player defeat)", () => {
-    const manifest = computeTrinketManifest(["bone-charm"]);
+    const manifest = computeBoonManifest(["bone-charm"]);
     const state = makeState({
       mana: 4,
       maxMana: 4,
@@ -239,7 +239,7 @@ describe("Trinket — Bone Charm (heal on enemy defeat)", () => {
       enemyMaxHealth: 1,
       enemyStatuses: { burn: 0, poison: 3, bleed: 0, freeze: 0, stun: 0 },
       enemyAttackEffects: [],
-      trinketEffects: manifest,
+      boonEffects: manifest,
       deck: [makeCard(), makeCard(), makeCard(), makeCard()],
     });
     const result = endPlayerTurn(state);
@@ -249,15 +249,15 @@ describe("Trinket — Bone Charm (heal on enemy defeat)", () => {
   });
 });
 
-describe("Trinket — Companion's Collar (+1 companion damage)", () => {
+describe("Boon — Companion's Collar (+1 companion damage)", () => {
   it("Wolf companion deals 1 bleed + 1 collar = 2 bleed damage, doubled to 4 by BLEED_STATUS_MULTIPLIER", () => {
-    const manifest = computeTrinketManifest(["companions-collar"]);
+    const manifest = computeBoonManifest(["companions-collar"]);
     const state = makeState({
       mana: 4,
       maxMana: 4,
       enemyHealth: 30,
       activeCompanion: companionLibrary["wolf"],
-      trinketEffects: manifest,
+      boonEffects: manifest,
       deck: [makeCard(), makeCard(), makeCard(), makeCard()],
     });
     const texts: CombatTextEvent[] = [];
@@ -266,13 +266,13 @@ describe("Trinket — Companion's Collar (+1 companion damage)", () => {
   });
 
   it("stacks with companionDamage talent", () => {
-    const manifest = computeTrinketManifest(["companions-collar"]);
+    const manifest = computeBoonManifest(["companions-collar"]);
     const state = makeState({
       mana: 4,
       maxMana: 4,
       enemyHealth: 30,
       activeCompanion: companionLibrary["wolf"],
-      trinketEffects: manifest,
+      boonEffects: manifest,
       talentEffects: { ...defaultTalentEffects, companionDamage: 2 },
       deck: [makeCard(), makeCard(), makeCard(), makeCard()],
     });
@@ -282,13 +282,13 @@ describe("Trinket — Companion's Collar (+1 companion damage)", () => {
   });
 
   it("Lizard Scout companion also benefits from collar", () => {
-    const manifest = computeTrinketManifest(["companions-collar"]);
+    const manifest = computeBoonManifest(["companions-collar"]);
     const state = makeState({
       mana: 4,
       maxMana: 4,
       enemyHealth: 30,
       activeCompanion: companionLibrary["lizard-scout"],
-      trinketEffects: manifest,
+      boonEffects: manifest,
       deck: [makeCard(), makeCard(), makeCard(), makeCard()],
     });
     const texts: CombatTextEvent[] = [];
@@ -297,13 +297,13 @@ describe("Trinket — Companion's Collar (+1 companion damage)", () => {
   });
 
   it("Imp companion also benefits from collar", () => {
-    const manifest = computeTrinketManifest(["companions-collar"]);
+    const manifest = computeBoonManifest(["companions-collar"]);
     const state = makeState({
       mana: 4,
       maxMana: 4,
       enemyHealth: 30,
       activeCompanion: companionLibrary["imp"],
-      trinketEffects: manifest,
+      boonEffects: manifest,
       deck: [makeCard(), makeCard(), makeCard(), makeCard()],
     });
     const texts: CombatTextEvent[] = [];
@@ -312,19 +312,19 @@ describe("Trinket — Companion's Collar (+1 companion damage)", () => {
   });
 
   it("does nothing when no companion is active", () => {
-    const manifest = computeTrinketManifest(["companions-collar"]);
-    const state = makeState({ trinketEffects: manifest, activeCompanion: null });
+    const manifest = computeBoonManifest(["companions-collar"]);
+    const state = makeState({ boonEffects: manifest, activeCompanion: null });
     const texts: CombatTextEvent[] = [];
     const result = processCompanionTurnStart(state, texts);
     expect(result).toBe(state);
   });
 });
 
-describe("Trinket — Polar Pendant (freeze lasts 1 turn longer)", () => {
+describe("Boon — Polar Pendant (freeze lasts 1 turn longer)", () => {
   it("extends freeze skip turns by 1 when freeze triggers", () => {
-    const manifest = computeTrinketManifest(["frozen-pocketwatch"]);
+    const manifest = computeBoonManifest(["frozen-pocketwatch"]);
     const card = makeCard({ effects: [{ kind: "damage", damageType: "freeze", amount: 15 }] });
-    const state = makeState({ mana: 10, enemyHealth: 30, trinketEffects: manifest });
+    const state = makeState({ mana: 10, enemyHealth: 30, boonEffects: manifest });
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);
     expect(result.enemyFreezeSkipTurns).toBe(2); // 1 base + 1 extension
@@ -339,20 +339,20 @@ describe("Trinket — Polar Pendant (freeze lasts 1 turn longer)", () => {
   });
 
   it("does not trigger freeze when threshold not met", () => {
-    const manifest = computeTrinketManifest(["frozen-pocketwatch"]);
+    const manifest = computeBoonManifest(["frozen-pocketwatch"]);
     const card = makeCard({ effects: [{ kind: "damage", damageType: "freeze", amount: 7 }] });
-    const state = makeState({ mana: 10, enemyHealth: 30, trinketEffects: manifest });
+    const state = makeState({ mana: 10, enemyHealth: 30, boonEffects: manifest });
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);
     expect(result.enemyFreezeSkipTurns).toBe(0);
   });
 });
 
-describe("Trinket — Thunderstone (6 nature damage on stun)", () => {
+describe("Boon — Thunderstone (6 nature damage on stun)", () => {
   it("deals 6 nature damage when stun threshold is crossed", () => {
-    const manifest = computeTrinketManifest(["thunderstone"]);
+    const manifest = computeBoonManifest(["thunderstone"]);
     const card = makeCard({ effects: [{ kind: "damage", damageType: "stun", amount: 50 }] });
-    const state = makeState({ mana: 10, enemyHealth: 100, enemyMaxHealth: 100, trinketEffects: manifest });
+    const state = makeState({ mana: 10, enemyHealth: 100, enemyMaxHealth: 100, boonEffects: manifest });
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);
     expect(result.enemyHealth).toBe(44); // 100 - 50 (stun) - 6 (thunderstone)
@@ -360,15 +360,15 @@ describe("Trinket — Thunderstone (6 nature damage on stun)", () => {
   });
 
   it("does NOT deal thunderstone damage when stun does not trigger", () => {
-    const manifest = computeTrinketManifest(["thunderstone"]);
+    const manifest = computeBoonManifest(["thunderstone"]);
     const card = makeCard({ effects: [{ kind: "damage", damageType: "stun", amount: 10 }] });
-    const state = makeState({ mana: 10, enemyHealth: 100, enemyMaxHealth: 100, trinketEffects: manifest });
+    const state = makeState({ mana: 10, enemyHealth: 100, enemyMaxHealth: 100, boonEffects: manifest });
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);
     expect(result.enemyHealth).toBe(90); // 100 - 10, no thunderstone
   });
 
-  it("without trinket, no extra damage on stun", () => {
+  it("without boon, no extra damage on stun", () => {
     const card = makeCard({ effects: [{ kind: "damage", damageType: "stun", amount: 50 }] });
     const state = makeState({ mana: 10, enemyHealth: 100, enemyMaxHealth: 100 });
     const texts: CombatTextEvent[] = [];
@@ -377,7 +377,7 @@ describe("Trinket — Thunderstone (6 nature damage on stun)", () => {
   });
 
   it("fires from Obsidian Hammer forge-based stun rider", () => {
-    const manifest = computeTrinketManifest(["obsidian-hammer", "thunderstone"]);
+    const manifest = computeBoonManifest(["obsidian-hammer", "thunderstone"]);
     const card = makeCard({ effects: [{ kind: "damage", damageType: "physical", amount: 1 }] });
     const state = makeState({
       mana: 10,
@@ -385,7 +385,7 @@ describe("Trinket — Thunderstone (6 nature damage on stun)", () => {
       enemyMaxHealth: 3,
       enemyMitigation: { armor: 3, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 },
       playerStatuses: { block: 0, armor: 0, forge: 4, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
-      trinketEffects: manifest,
+      boonEffects: manifest,
     });
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);
@@ -396,14 +396,14 @@ describe("Trinket — Thunderstone (6 nature damage on stun)", () => {
   });
 });
 
-describe("Trinket — Thunderstone + Lucky Clover chaining", () => {
+describe("Boon — Thunderstone + Lucky Clover chaining", () => {
   it("Lucky Clover can proc gold from Thunderstone nature damage", () => {
-    const manifest = computeTrinketManifest(["thunderstone", "lucky-clover"]);
+    const manifest = computeBoonManifest(["thunderstone", "lucky-clover"]);
     vi.spyOn(Math, "random")
       .mockReturnValueOnce(0.99) // crit check → no crit
       .mockReturnValueOnce(0.05); // Lucky Clover → 5 < 10 = proc
     const card = makeCard({ effects: [{ kind: "damage", damageType: "stun", amount: 50 }] });
-    const state = makeState({ mana: 10, enemyHealth: 100, enemyMaxHealth: 100, gold: 0, trinketEffects: manifest });
+    const state = makeState({ mana: 10, enemyHealth: 100, enemyMaxHealth: 100, gold: 0, boonEffects: manifest });
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);
     expect(result.enemyHealth).toBe(44);
@@ -412,10 +412,10 @@ describe("Trinket — Thunderstone + Lucky Clover chaining", () => {
   });
 
   it("does not grant gold when Lucky Clover does not proc", () => {
-    const manifest = computeTrinketManifest(["thunderstone", "lucky-clover"]);
+    const manifest = computeBoonManifest(["thunderstone", "lucky-clover"]);
     // Math.random returns 0.99 (default mock) → Lucky Clover fails
     const card = makeCard({ effects: [{ kind: "damage", damageType: "stun", amount: 50 }] });
-    const state = makeState({ mana: 10, enemyHealth: 100, enemyMaxHealth: 100, gold: 0, trinketEffects: manifest });
+    const state = makeState({ mana: 10, enemyHealth: 100, enemyMaxHealth: 100, gold: 0, boonEffects: manifest });
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);
     expect(result.enemyHealth).toBe(44);
@@ -423,14 +423,14 @@ describe("Trinket — Thunderstone + Lucky Clover chaining", () => {
   });
 });
 
-describe("Trinket — Lucky Clover (10% nature damage → gold)", () => {
+describe("Boon — Lucky Clover (10% nature damage → gold)", () => {
   it("grants gold equal to nature damage dealt when proc triggers", () => {
-    const manifest = computeTrinketManifest(["lucky-clover"]);
+    const manifest = computeBoonManifest(["lucky-clover"]);
     vi.spyOn(Math, "random")
       .mockReturnValueOnce(0.99) // crit check → no crit
       .mockReturnValueOnce(0.05); // Lucky Clover → 5 < 10 = proc
     const card = makeCard({ effects: [{ kind: "damage", damageType: "nature", amount: 8 }] });
-    const state = makeState({ mana: 10, enemyHealth: 100, enemyMaxHealth: 100, gold: 0, trinketEffects: manifest });
+    const state = makeState({ mana: 10, enemyHealth: 100, enemyMaxHealth: 100, gold: 0, boonEffects: manifest });
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);
     expect(result.enemyHealth).toBe(92); // 100 - 8
@@ -439,17 +439,17 @@ describe("Trinket — Lucky Clover (10% nature damage → gold)", () => {
   });
 
   it("does not grant gold when proc does not trigger (90% fail)", () => {
-    const manifest = computeTrinketManifest(["lucky-clover"]);
+    const manifest = computeBoonManifest(["lucky-clover"]);
     // Math.random returns 0.99 (default mock) → Lucky Clover fails
     const card = makeCard({ effects: [{ kind: "damage", damageType: "nature", amount: 8 }] });
-    const state = makeState({ mana: 10, enemyHealth: 100, enemyMaxHealth: 100, gold: 0, trinketEffects: manifest });
+    const state = makeState({ mana: 10, enemyHealth: 100, enemyMaxHealth: 100, gold: 0, boonEffects: manifest });
     const texts: CombatTextEvent[] = [];
     const result = applyCardEffects(state, card, texts);
     expect(result.enemyHealth).toBe(92);
     expect(result.gold).toBe(0);
   });
 
-  it("does nothing without the trinket", () => {
+  it("does nothing without the boon", () => {
     const card = makeCard({ effects: [{ kind: "damage", damageType: "nature", amount: 8 }] });
     const state = makeState({ mana: 10, enemyHealth: 100, enemyMaxHealth: 100, gold: 0 });
     const texts: CombatTextEvent[] = [];
@@ -459,22 +459,22 @@ describe("Trinket — Lucky Clover (10% nature damage → gold)", () => {
   });
 });
 
-describe("Resonant Chime trinket", () => {
+describe("Resonant Chime boon", () => {
   it("grants bonus mana after playing enough cards", () => {
-    const manifest = computeTrinketManifest(["resonant-chimes"]);
+    const manifest = computeBoonManifest(["resonant-chimes"]);
     const card = makeCard({ cost: 0, effects: [{ kind: "damage", damageType: "physical", amount: 1 }] });
     const state = makeState({
       mana: 5,
       maxMana: 5,
       hand: [card],
       cardsPlayedThisTurn: 2,
-      trinketEffects: manifest,
+      boonEffects: manifest,
       flags: {
         firstPhysicalCardFreeUsed: false, firstHolyCardFreeUsed: false,
         firstBurnCardDoubledUsed: false, firstArmorCardDoubledUsed: false,
         firstPoisonCardFreeUsed: false, firstBleedCardFreeUsed: false,
         nextCardCostReduction: 0, goldOnFirstPoisonThisCombat: false,
-        firstHolyDamageBonusUsed: false, firstBurnTrinketDoubledUsed: false,
+        firstHolyDamageBonusUsed: false, firstBurnBoonDoubledUsed: false,
         firstHarmfulStatusPrevented: false, firstPotionFreeUsed: false,
         resonantChimeUsedThisTurn: false,
       },
@@ -486,7 +486,7 @@ describe("Resonant Chime trinket", () => {
   });
 
   it("only triggers once per turn", () => {
-    const manifest = computeTrinketManifest(["resonant-chimes"]);
+    const manifest = computeBoonManifest(["resonant-chimes"]);
     const card1 = makeCard({ id: "c1", cost: 0, effects: [] });
     const card2 = makeCard({ id: "c2", cost: 0, effects: [] });
     const state = makeState({
@@ -494,13 +494,13 @@ describe("Resonant Chime trinket", () => {
       maxMana: 5,
       hand: [card1, card2],
       cardsPlayedThisTurn: 2,
-      trinketEffects: manifest,
+      boonEffects: manifest,
       flags: {
         firstPhysicalCardFreeUsed: false, firstHolyCardFreeUsed: false,
         firstBurnCardDoubledUsed: false, firstArmorCardDoubledUsed: false,
         firstPoisonCardFreeUsed: false, firstBleedCardFreeUsed: false,
         nextCardCostReduction: 0, goldOnFirstPoisonThisCombat: false,
-        firstHolyDamageBonusUsed: false, firstBurnTrinketDoubledUsed: false,
+        firstHolyDamageBonusUsed: false, firstBurnBoonDoubledUsed: false,
         firstHarmfulStatusPrevented: false, firstPotionFreeUsed: false,
         resonantChimeUsedThisTurn: false,
       },

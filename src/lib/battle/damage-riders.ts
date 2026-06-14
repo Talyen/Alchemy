@@ -4,7 +4,7 @@
 import { forgeAppliesToDamageType } from "./damage-calc";
 import { applyDamageStatuses, resolveStunTrigger } from "./status-effects";
 import { emitOverhealBlockText, mergeCombatText } from "./combat-text";
-import { applyBoneCharmHeal, applyLuckyCloverGold } from "./trinket-effects";
+import { applyBoneCharmHeal, applyLuckyCloverGold } from "./boon-effects";
 import { applyWishEffect } from "./wish";
 import { rollPercent, getBattleRng } from "./status-helpers";
 import { type BattleCard, type BattleCardEffect, type PlayerStatusId } from "@/lib/game-data";
@@ -161,7 +161,7 @@ function applyHolyTithe(state: BattleState, damage: number, combatTexts: CombatT
 }
 
 /**
- * Applies first-time burn multipliers from talents and trinkets, updating state in place.
+ * Applies first-time burn multipliers from talents and boons, updating state in place.
  */
 
 function decayEnemyDefensesOnHit(state: BattleState, modifiedDamage: number): BattleState {
@@ -210,8 +210,8 @@ function applyForgeStunRider(
 ) {
   if (
     effect.damageType !== "physical" ||
-    state.trinketEffects.forgeStunThreshold <= 0 ||
-    state.playerStatuses.forge < state.trinketEffects.forgeStunThreshold
+    state.boonEffects.forgeStunThreshold <= 0 ||
+    state.playerStatuses.forge < state.boonEffects.forgeStunThreshold
   )
     return state;
 
@@ -219,10 +219,10 @@ function applyForgeStunRider(
     target: "enemy",
     kind: "status",
     stat: "stun",
-    amount: state.trinketEffects.forgeStunAmount,
+    amount: state.boonEffects.forgeStunAmount,
   });
 
-  return resolveStunTrigger(addEnemyStatus(state, "stun", state.trinketEffects.forgeStunAmount), combatTexts);
+  return resolveStunTrigger(addEnemyStatus(state, "stun", state.boonEffects.forgeStunAmount), combatTexts);
 }
 
 /**

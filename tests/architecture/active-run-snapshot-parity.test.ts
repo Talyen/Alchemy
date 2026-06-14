@@ -41,7 +41,7 @@ describe("active run snapshot parity", () => {
     currentAct: ["activeRun.currentAct"],
     destinationIndexInAct: ["activeRun.destinationIndexInAct"],
     completedDestinations: ["activeRun.completedDestinations"],
-    runTrinkets: progressViaInitialize,
+    runBoons: progressViaInitialize,
     encounteredRunEnemyIds: progressViaInitialize,
     selectedDifficulty: progressViaInitialize,
     contentSystemType: progressViaInitialize,
@@ -53,7 +53,7 @@ describe("active run snapshot parity", () => {
     runTalentXP: progressViaInitialize,
     runMaterialsEarned: progressViaInitialize,
     discoveredCardIdsAtRunStart: ["discoveredCardIdsAtRunStart"],
-    discoveredTrinketIdsAtRunStart: ["discoveredTrinketIdsAtRunStart"],
+    discoveredBoonIdsAtRunStart: ["discoveredBoonIdsAtRunStart"],
   };
 
   it("restoreRun references persisted ActiveRunData fields", () => {

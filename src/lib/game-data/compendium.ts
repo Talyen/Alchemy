@@ -1,4 +1,4 @@
-// Compendium data — all enemies (bestiary), trinkets, and their stat/effect definitions.
+// Compendium data — all enemies (bestiary), boons, and their stat/effect definitions.
 // Depends on art assets and type contracts. Pure configuration arrays, no game logic.
 import {
   boneCharm,
@@ -39,7 +39,7 @@ import {
   vanguardsCrest,
   wishingWellCoin,
 } from "./assets";
-import { defineEnemy, phys, playerStatus, poisonResistance, regeneration, trait, trinket } from "./compendium-builders";
+import { defineEnemy, phys, playerStatus, poisonResistance, regeneration, trait, boon } from "./compendium-builders";
 
 export const enemyBestiary = [
   defineEnemy({
@@ -91,7 +91,7 @@ export const enemyBestiary = [
     title: "Goblin",
     art: goblin,
     enemyType: "normal",
-    traits: [trait("trinket-hoarder", "Trinket Hoarder", "Receives double Burn damage\nMore likely to drop Trinkets")],
+    traits: [trait("boon-hoarder", "Boon Hoarder", "Receives double Burn damage\nMore likely to drop Boons")],
     attackEffects: [phys(9)],
   }),
   defineEnemy({
@@ -160,61 +160,56 @@ export const enemyBestiary = [
   }),
 ];
 
-export const trinketLibrary = [
-  trinket("brass-censer", "Brass Censer", "Your first Holy damage each combat is doubled.", brassCenser),
-  trinket("tattered-pages", "Tattered Pages", "Draw 1 at the start of combat.", tatteredPages),
-  trinket("meteorite", "Meteorite", "Your first Burn damage each combat is doubled.", meteorite),
-  trinket("bone-charm", "Bone Charm", "Gain 3 Health when you defeat an enemy.", boneCharm),
-  trinket(
+export const boonLibrary = [
+  boon("brass-censer", "Brass Censer", "Your first Holy damage each combat is doubled.", brassCenser),
+  boon("tattered-pages", "Tattered Pages", "Draw 1 at the start of combat.", tatteredPages),
+  boon("meteorite", "Meteorite", "Your first Burn damage each combat is doubled.", meteorite),
+  boon("bone-charm", "Bone Charm", "Gain 3 Health when you defeat an enemy.", boneCharm),
+  boon(
     "obsidian-hammer",
     "Obsidian Hammer",
     "When you have 4 or more Forge, your Physical damage also applies 1 Stun.",
     obsidianHammer,
   ),
-  trinket("icy-heart", "Icy Heart", "When you Freeze an enemy, deal 6 Physical damage.", icyHeart),
-  trinket(
+  boon("icy-heart", "Icy Heart", "When you Freeze an enemy, deal 6 Physical damage.", icyHeart),
+  boon(
     "ironwood-buckler",
     "Ironwood Buckler",
     "At the end of your turn, if you have 6 or more Block, gain 1 Armor.",
     ironwoodBuckler,
   ),
-  trinket("runic-quill", "Runic Quill", "Draw 1 when you Consume.", runicQuill),
-  trinket(
+  boon("runic-quill", "Runic Quill", "Draw 1 when you Consume.", runicQuill),
+  boon(
     "sin-eaters-lantern",
     "Sin-Eater's Lantern",
     "Gain 6 Health when you remove a harmful status effect.",
     sinEatersLantern,
   ),
-  trinket(
-    "vanguards-crest",
-    "Vanguard's Crest",
-    "When your Block fully absorbs an attack, gain 1 Forge.",
-    vanguardsCrest,
-  ),
-  trinket("parasitic-bloom", "Parasitic Bloom", "Poison has a 10% chance to Leech.", parasiticBloom),
-  trinket("cutpurse-knife", "Cutpurse Knife", "When you apply Bleed to an enemy, gain 1 Gold.", cutpurseKnife),
-  trinket("wishing-well-coin", "Wishing Well Coin", "When you Wish, also gain 3 Gold.", wishingWellCoin),
-  trinket("merchants-favor", "Merchant's Favor", "Your first purchase at each shop costs 7 less Gold.", merchantsFavor),
-  trinket(
+  boon("vanguards-crest", "Vanguard's Crest", "When your Block fully absorbs an attack, gain 1 Forge.", vanguardsCrest),
+  boon("parasitic-bloom", "Parasitic Bloom", "Poison has a 10% chance to Leech.", parasiticBloom),
+  boon("cutpurse-knife", "Cutpurse Knife", "When you apply Bleed to an enemy, gain 1 Gold.", cutpurseKnife),
+  boon("wishing-well-coin", "Wishing Well Coin", "When you Wish, also gain 3 Gold.", wishingWellCoin),
+  boon("merchants-favor", "Merchant's Favor", "Your first purchase at each shop costs 7 less Gold.", merchantsFavor),
+  boon(
     "plague-doctors-mask",
     "Plague Doctor's Mask",
     "You are immune to the first harmful status effect you would receive each combat.",
     plagueDoctorsMask,
   ),
-  trinket("mortar-and-pestle", "Mortar and Pestle", "The first Potion you play each combat is free.", mortarAndPestle),
-  trinket("sundering-charm", "Sundering Charm", "Your Physical and Stun damage removes 2 enemy Armor.", sunderingCharm),
-  trinket(
+  boon("mortar-and-pestle", "Mortar and Pestle", "The first Potion you play each combat is free.", mortarAndPestle),
+  boon("sundering-charm", "Sundering Charm", "Your Physical and Stun damage removes 2 enemy Armor.", sunderingCharm),
+  boon(
     "resonant-chimes",
     "Resonant Chimes",
     "When you play 3 or more cards in a single turn, gain 1 Mana.",
     resonantChimes,
   ),
-  trinket("smugglers-map", "Smuggler's Map", "Gold rewards from combat are increased by 2.", smugglersMap),
-  trinket("groves-favor", "Grove's Favor", "Restore 2 Health at the start of each combat.", grovesFavor),
-  trinket("companions-collar", "Companion's Collar", "Increases Companion damage by 1.", companionsCollar),
-  trinket("frozen-pocketwatch", "Frozen Pocketwatch", "Freeze effects last 1 turn longer.", frozenPocketwatch),
-  trinket("thunderstone", "Thunderstone", "When you Stun an enemy, deal 6 Nature damage.", thunderstone),
-  trinket(
+  boon("smugglers-map", "Smuggler's Map", "Gold rewards from combat are increased by 2.", smugglersMap),
+  boon("groves-favor", "Grove's Favor", "Restore 2 Health at the start of each combat.", grovesFavor),
+  boon("companions-collar", "Companion's Collar", "Increases Companion damage by 1.", companionsCollar),
+  boon("frozen-pocketwatch", "Frozen Pocketwatch", "Freeze effects last 1 turn longer.", frozenPocketwatch),
+  boon("thunderstone", "Thunderstone", "When you Stun an enemy, deal 6 Nature damage.", thunderstone),
+  boon(
     "lucky-clover",
     "Lucky Clover",
     "Nature damage has a 10% chance to grant Gold equal to the damage dealt.",

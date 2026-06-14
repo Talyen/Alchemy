@@ -1,4 +1,4 @@
-﻿// Declarative mystery event pool for campaign route nodes.
+// Declarative mystery event pool for campaign route nodes.
 import {
   brassCenser,
   crystalGarden,
@@ -138,7 +138,7 @@ export const mysteryPool: MysteryEvent[] = [
       },
       {
         label: "Study the Map",
-        effects: [{ kind: "gainTrinket", trinketId: "smugglers-map" }],
+        effects: [{ kind: "gainBoon", boonId: "smugglers-map" }],
       },
     ],
   },
@@ -151,7 +151,7 @@ export const mysteryPool: MysteryEvent[] = [
     choices: [
       {
         label: "Explore the Crypt",
-        effects: [{ kind: "gainRandomTrinket" }],
+        effects: [{ kind: "gainRandomBoon" }],
       },
       {
         label: "Decipher the Inscriptions",
@@ -189,7 +189,7 @@ export const mysteryPool: MysteryEvent[] = [
       },
       {
         label: "Tear Out the Pages",
-        effects: [{ kind: "gainTrinket", trinketId: "tattered-pages" }],
+        effects: [{ kind: "gainBoon", boonId: "tattered-pages" }],
       },
     ],
   },
@@ -219,7 +219,7 @@ export const mysteryPool: MysteryEvent[] = [
     choices: [
       {
         label: "Collect a Fragment",
-        effects: [{ kind: "gainTrinket", trinketId: "meteorite" }, mat("iron", 3)],
+        effects: [{ kind: "gainBoon", boonId: "meteorite" }, mat("iron", 3)],
       },
       {
         label: "Study the Impact Site",
@@ -240,7 +240,7 @@ export const mysteryPool: MysteryEvent[] = [
       },
       {
         label: "Take the Bones",
-        effects: [{ kind: "gainTrinket", trinketId: "bone-charm" }],
+        effects: [{ kind: "gainBoon", boonId: "bone-charm" }],
       },
     ],
   },
@@ -257,7 +257,7 @@ export const mysteryPool: MysteryEvent[] = [
       },
       {
         label: "Search the Area",
-        effects: [{ kind: "gainTrinket", trinketId: "groves-favor" }],
+        effects: [{ kind: "gainBoon", boonId: "groves-favor" }],
       },
     ],
   },
@@ -373,7 +373,7 @@ export const mysteryPool: MysteryEvent[] = [
       },
       {
         label: "Claim the Censer",
-        effects: [{ kind: "gainTrinket", trinketId: "brass-censer" }],
+        effects: [{ kind: "gainBoon", boonId: "brass-censer" }],
       },
     ],
   },

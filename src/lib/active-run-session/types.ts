@@ -24,7 +24,7 @@ export type ActiveRunData = {
   currentAct: number;
   destinationIndexInAct: number;
   completedDestinations: string[];
-  runTrinkets: string[];
+  runBoons: string[];
   encounteredRunEnemyIds: string[];
   selectedDifficulty: DifficultyId | null;
   contentSystemType: ContentSystemId;
@@ -37,7 +37,7 @@ export type ActiveRunData = {
   currentScreen: Screen | null;
   destinationChoices: string[];
   discoveredCardIdsAtRunStart: string[];
-  discoveredTrinketIdsAtRunStart: string[];
+  discoveredBoonIdsAtRunStart: string[];
 };
 
 export type DestinationOptionsInput = {

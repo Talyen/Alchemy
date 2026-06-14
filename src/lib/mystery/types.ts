@@ -11,8 +11,8 @@ export type MysteryEffect =
   | { kind: "loseGold"; amount: number }
   | { kind: "gainXP"; keyword: KeywordId; amount: number }
   | { kind: "removeCard"; mode: "random" | "choose" }
-  | { kind: "gainTrinket"; trinketId: string }
-  | { kind: "gainRandomTrinket" }
+  | { kind: "gainBoon"; boonId: string }
+  | { kind: "gainRandomBoon" }
   | { kind: "gainMaterial"; material: MaterialId; amount: number }
   | { kind: "none" };
 

@@ -18,7 +18,7 @@ export type ActiveRunSnapshotSource = {
   currentAct: number;
   destinationIndexInAct: number;
   completedDestinations: string[];
-  runTrinkets: string[];
+  runBoons: string[];
   encounteredRunEnemyIds: string[];
   selectedDifficulty: DifficultyId | null;
   contentSystemType: ContentSystemId;
@@ -34,7 +34,7 @@ export type ActiveRunSnapshotSource = {
   currentScreen: Screen | null;
   destinationChoices: string[];
   discoveredCardIdsAtRunStart: string[];
-  discoveredTrinketIdsAtRunStart: string[];
+  discoveredBoonIdsAtRunStart: string[];
 };
 
 export function createActiveRunSnapshot(source: ActiveRunSnapshotSource): ActiveRunData {
@@ -58,7 +58,7 @@ export function createActiveRunSnapshot(source: ActiveRunSnapshotSource): Active
     currentAct: source.currentAct,
     destinationIndexInAct: source.destinationIndexInAct,
     completedDestinations: source.completedDestinations,
-    runTrinkets: source.runTrinkets,
+    runBoons: source.runBoons,
     encounteredRunEnemyIds: source.encounteredRunEnemyIds,
     selectedDifficulty: source.selectedDifficulty,
     contentSystemType: source.contentSystemType,
@@ -71,6 +71,6 @@ export function createActiveRunSnapshot(source: ActiveRunSnapshotSource): Active
     currentScreen: source.currentScreen,
     destinationChoices: source.destinationChoices,
     discoveredCardIdsAtRunStart: source.discoveredCardIdsAtRunStart,
-    discoveredTrinketIdsAtRunStart: source.discoveredTrinketIdsAtRunStart,
+    discoveredBoonIdsAtRunStart: source.discoveredBoonIdsAtRunStart,
   };
 }
