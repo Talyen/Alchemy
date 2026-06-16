@@ -12,7 +12,7 @@ import {
   cardSurfaceClass,
   collectionTileWidthClass,
   squareArtImageClass,
-  boonCardWidthClass,
+  trinketCardWidthClass,
 } from "../config";
 import { CardFlip } from "./card-flip";
 import { DetailPopup } from "./card-popup";
@@ -45,7 +45,7 @@ export function CompendiumTile({ item }: CompendiumTileProps) {
         className={cn(
           "group w-full",
           cardSurfaceClass,
-          item.frameType === "boon" ? boonCardWidthClass : collectionTileWidthClass,
+          item.frameType === "trinket" ? trinketCardWidthClass : collectionTileWidthClass,
           item.frameType === "card" && "bg-transparent",
         )}
         onClick={() => {
@@ -90,7 +90,9 @@ function CollectionTileMedia({ item, flipped }: { item: CollectionTileItem; flip
     );
   }
 
-  return <TileImage item={item} className={cn(item.frameType === "boon" ? squareArtImageClass : cardArtImageClass)} />;
+  return (
+    <TileImage item={item} className={cn(item.frameType === "trinket" ? squareArtImageClass : cardArtImageClass)} />
+  );
 }
 
 function TileImage({ item, className }: { item: CollectionTileItem; className: string }) {

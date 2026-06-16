@@ -2,7 +2,7 @@
 // Provides consistent styling across all tooltips — enemy, card, keyword, status, map, etc.
 // Width is configurable via the `width` prop (defaults to w-60).
 /* eslint-disable react-refresh/only-export-components */
-import { type CSSProperties, type ReactNode, useLayoutEffect, useRef, useState } from "react";
+import { type CSSProperties, type MouseEventHandler, type ReactNode, useLayoutEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -21,6 +21,8 @@ type TooltipPanelProps = {
   /** Runtime placement offsets from `useTooltipFlip` / enemy tooltip anchoring — not for theme colors. */
   style?: CSSProperties | undefined;
   ref?: React.Ref<HTMLDivElement>;
+  onMouseEnter?: MouseEventHandler<HTMLDivElement>;
+  onMouseLeave?: MouseEventHandler<HTMLDivElement>;
 };
 
 function tooltipAnchorClass(placement: TooltipPlacement): string {
@@ -38,6 +40,8 @@ export function TooltipPanel({
   visible,
   style,
   ref,
+  onMouseEnter,
+  onMouseLeave,
 }: TooltipPanelProps) {
   const resolvedPlacement: TooltipPlacement = flip ? "below" : placement;
 
@@ -52,6 +56,8 @@ export function TooltipPanel({
         className,
       )}
       style={style}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
       data-placement={resolvedPlacement}
       data-flip={flip ? "below" : "above"}
       {...(visible ? { "data-visible": true } : {})}

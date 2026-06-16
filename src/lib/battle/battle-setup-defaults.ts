@@ -1,6 +1,6 @@
 /**
  * Default placeholder battle state and empty status/flag factories.
- * Depends on: @/lib/game-data, ../game-constants, ./types, ../boons.
+ * Depends on: @/lib/game-data, ../game-constants, ./types, ../trinkets.
  */
 import { createEmptyTalentManifest, type TalentEffectManifest } from "@/lib/game-data";
 import { emptyInventory } from "@/lib/homestead/inventory";
@@ -12,7 +12,7 @@ import {
   type EnemyStatusValues,
   type PlayerStatusValues,
 } from "./types";
-import { defaultBoonEffects } from "../boons";
+import { defaultTrinketEffects } from "../trinkets";
 import { defaultGearEffects } from "@/lib/gear";
 
 export const defaultTalentEffects: TalentEffectManifest = createEmptyTalentManifest();
@@ -58,7 +58,7 @@ function createInitialFlags(): CombatFlags {
     nextCardCostReduction: 0,
     goldOnFirstPoisonThisCombat: false,
     firstHolyDamageBonusUsed: false,
-    firstBurnBoonDoubledUsed: false,
+    firstBurnTrinketDoubledUsed: false,
     firstHarmfulStatusPrevented: false,
     firstPotionFreeUsed: false,
     firstLeechCardDoubledUsed: false,
@@ -108,7 +108,7 @@ export function defaultBattleState(): BattleState {
     companionDamageBuff: 0,
     currentEnemy: skeletonEnemy,
     talentEffects: defaultTalentEffects,
-    boonEffects: { ...defaultBoonEffects },
+    trinketEffects: { ...defaultTrinketEffects },
     gearEffects: { ...defaultGearEffects },
     flags: createInitialFlags(),
     discoveredCardIds: [],

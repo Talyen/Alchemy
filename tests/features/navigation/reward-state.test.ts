@@ -26,7 +26,7 @@ describe("createNextRewardState", () => {
       choices: [{ id: "card-a", title: "A", descriptionLines: [""], art: "", cost: 1, effects: [] }],
       gold: 12,
       selectedId: "card-a",
-      rewardType: "boon" as const,
+      rewardType: "trinket" as const,
       selectedBossId: "boss-1",
     };
 

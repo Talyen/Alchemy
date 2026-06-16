@@ -12,6 +12,7 @@ import {
   legacySchemaV1Save,
   legacySchemaV2Save,
   legacySchemaV3MidCombatTrinketSave,
+  legacySchemaV4Save,
 } from "../fixtures/legacy-saves";
 
 const ROOT = join(import.meta.dirname, "../..");
@@ -64,7 +65,7 @@ describe("save migration guard", () => {
   it("preserves wildwood draft when migrating legacy trinket rewardType", () => {
     const migrated = normalizeSaveData(MIGRATION_SCENARIO_FIXTURES.wildwoodTrinketReward());
     expect(migrated.activeRun?.contentSystemType).toBe("wildwood");
-    expect(migrated.activeRun?.wildwoodDraft?.rewardType).toBe("boon");
+    expect(migrated.activeRun?.wildwoodDraft?.rewardType).toBe("trinket");
     expect(migrated.activeRun?.wildwoodDraft?.phase).toBe("reward");
   });
 
@@ -91,20 +92,30 @@ describe("save migration guard", () => {
     expect(migrated.activeRun?.runGold).toBe(20);
   });
 
-  it("migrates v3 trinket terminology to boons", () => {
+  it("migrates v3 trinket terminology through to trinkets", () => {
     const migrated = normalizeSaveData(LEGACY_SAVE_FIXTURES_BY_SOURCE_VERSION[3]());
-    expect(migrated.discoveredBoonIds).toEqual(["bone-charm"]);
-    expect(migrated.activeRun?.runBoons).toEqual(["bone-charm"]);
-    expect(migrated.activeRun?.discoveredBoonIdsAtRunStart).toEqual(["bone-charm"]);
+    expect(migrated.discoveredTrinketIds).toEqual(["bone-charm"]);
+    expect(migrated.activeRun?.runTrinkets).toEqual(["bone-charm"]);
     expect(migrated.gearInventory).toEqual([]);
   });
 
-  it("migrates v3 mid-combat trinketEffects to boonEffects and burn flags", () => {
+  it("migrates v4 content v1 saves with boon-era fields to trinket equivalents", () => {
+    const migrated = normalizeSaveData(legacySchemaV4Save());
+    expect(migrated.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
+    expect(migrated.contentVersion).toBe(2);
+    expect(migrated.discoveredTrinketIds).toEqual(["bone-charm"]);
+    expect(migrated.unlockedTalents.wish).toContain("wish-trinket");
+    expect(migrated.activeRun?.runTrinkets).toEqual(["bone-charm"]);
+    expect(migrated.activeRun?.runGold).toBe(55);
+    expect(migrated.gearInventory[0]?.affixIds).toBeDefined();
+  });
+
+  it("migrates v3 mid-combat trinketEffects to trinketEffects and burn flags", () => {
     const migrated = normalizeSaveData(legacySchemaV3MidCombatTrinketSave());
-    expect(migrated.activeRun?.activeCombat?.battleState.boonEffects.boneCharmHealOnKill).toBe(3);
-    expect(migrated.activeRun?.activeCombat?.battleState.boonEffects.firstBurnDoubled).toBe(true);
-    expect(migrated.activeRun?.activeCombat?.battleState.flags.firstBurnBoonDoubledUsed).toBe(true);
-    expect(migrated.activeRun?.runBoons).toEqual(["meteorite", "bone-charm"]);
+    expect(migrated.activeRun?.activeCombat?.battleState.trinketEffects.boneCharmHealOnKill).toBe(3);
+    expect(migrated.activeRun?.activeCombat?.battleState.trinketEffects.firstBurnDoubled).toBe(true);
+    expect(migrated.activeRun?.activeCombat?.battleState.flags.firstBurnTrinketDoubledUsed).toBe(true);
+    expect(migrated.activeRun?.runTrinkets).toEqual(["meteorite", "bone-charm"]);
   });
 
   it("does not drop wildwood active runs during migration", () => {

@@ -96,7 +96,7 @@ export type HomesteadEffectManifest = {
   startMana: number;
   consumeHealMultiplier: number;
   potionMixPotency: number;
-  boonChanceBonus: number;
+  trinketChanceBonus: number;
   burnDamageReduction: number;
   freezeDamageReduction: number;
   natureDamageReduction: number;

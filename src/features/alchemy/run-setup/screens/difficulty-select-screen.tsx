@@ -3,7 +3,6 @@
 import { Fragment, useState } from "react";
 import { Swords } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   characters,
@@ -20,7 +19,7 @@ import difficulty3Art from "@/assets/optimized/difficulty-3.webp";
 import { KeywordToken } from "../../shared/ui/card-description-ui";
 import { KeywordTag } from "../../shared/ui/keyword-tag";
 import { PressableMotion } from "../../shared/ui/pressable-motion";
-import { ScreenHeader, StaggerGroup, StaggerItem } from "../../shared/ui/shared-ui";
+import { ScreenHeader, ActionButtonRow, StaggerGroup, StaggerItem } from "../../shared/ui/shared-ui";
 import { TiltSurface } from "../../shared/ui/tilt-surface";
 import { tokenizeDescription } from "../../shared/utils";
 import { battleCardWidthClass, cardSurfaceClass } from "@/features/alchemy/shared/config";
@@ -88,7 +87,7 @@ function DifficultyCard({
 
   return (
     <div className="relative group flex flex-col items-center">
-      <PressableMotion disableHoverScale {...(locked ? { hoverSound: false as const } : {})}>
+      <PressableMotion {...(locked ? { hoverSound: false as const } : {})}>
         <button
           type="button"
           disabled={locked}
@@ -236,15 +235,21 @@ export function DifficultySelectScreen({
         </div>
       </StaggerGroup>
 
-      <div className="mt-6 flex items-center justify-center gap-4">
-        <Button size="lg" variant="outline" className="w-40" onClick={onBack}>
-          Back
-        </Button>
-        <Button size="lg" className="w-40" disabled={!canPlay} onClick={handlePlay}>
-          <Swords className="h-4 w-4" aria-hidden="true" />
-          Play
-        </Button>
-      </div>
+      <ActionButtonRow
+        className="mt-6"
+        width="dialog"
+        secondary={{ label: "Back", onClick: onBack }}
+        primary={{
+          label: (
+            <>
+              <Swords className="h-4 w-4" aria-hidden="true" />
+              Play
+            </>
+          ),
+          disabled: !canPlay,
+          onClick: handlePlay,
+        }}
+      />
     </div>
   );
 }

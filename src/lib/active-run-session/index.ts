@@ -3,3 +3,4 @@ export { createActiveRunSnapshot, createActiveRunSnapshot as buildActiveRunSnaps
 export { parseActiveRun } from "./parse";
 export { hydrateActiveRunSession as restoreActiveRun } from "./hydrate";
 export type { ActiveRunHydrationTargets } from "./hydrate";
+export { restorePendingReward, serializePendingReward, type PendingRewardState } from "./pending-reward-persistence";

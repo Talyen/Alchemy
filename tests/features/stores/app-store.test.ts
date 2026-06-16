@@ -19,7 +19,7 @@ vi.mock("@/features/alchemy/shared/storage/defaults", () => ({
     autoEndTurn: true,
     discoveredCardIds: [],
     encounteredEnemyIds: [],
-    discoveredBoonIds: [],
+    discoveredTrinketIds: [],
     completedDifficulties: {
       knight: [],
       rogue: [],
@@ -48,7 +48,7 @@ const makeSave = (overrides: Partial<SaveData> = {}): SaveData => ({
   autoEndTurn: true,
   discoveredCardIds: ["card-1"],
   encounteredEnemyIds: ["enemy-1"],
-  discoveredBoonIds: ["boon-1"],
+  discoveredTrinketIds: ["boon-1"],
   talentXP: {},
   unlockedTalents: {},
   activeRun: null,
@@ -91,9 +91,9 @@ describe("initial state", () => {
     expect(useAppStore.getState().encounteredEnemyIds).toEqual([]);
   });
 
-  it("starts with empty discoveredBoonIds", () => {
+  it("starts with empty discoveredTrinketIds", () => {
     useAppStore.setState(useAppStore.getInitialState());
-    expect(useAppStore.getState().discoveredBoonIds).toEqual([]);
+    expect(useAppStore.getState().discoveredTrinketIds).toEqual([]);
   });
 
   it("starts with all eight characters in completedDifficulties", () => {
@@ -211,7 +211,7 @@ describe("handleCollectionTabChange", () => {
   });
 
   it("initializes page for the new tab", () => {
-    useAppStore.getState().handleCollectionTabChange("boons");
-    expect(useAppStore.getState().collectionPages.boons).toBe(0);
+    useAppStore.getState().handleCollectionTabChange("trinkets");
+    expect(useAppStore.getState().collectionPages.trinkets).toBe(0);
   });
 });

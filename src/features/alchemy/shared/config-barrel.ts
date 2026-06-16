@@ -1,5 +1,7 @@
 // Barrel for shared alchemy configuration split by concern.
 // Depends on local config modules and preserves existing imports from ../config.
+export * from "./config/boss-shine";
+export * from "./config/button-tokens";
 export * from "./config/enemies";
 export * from "./config/keywords";
 export * from "./config/layout";

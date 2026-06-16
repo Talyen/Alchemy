@@ -22,7 +22,7 @@ A single **run** is owned by **`useRunDomainStore`** (`shared/stores/run-domain-
 
 | Concern | Owner | Notes |
 |---------|--------|--------|
-| Deck, gold, HP, acts, boons, talents | `progress` | Persisted with meta save |
+| Deck, gold, HP, acts, trinkets, talents | `progress` | Persisted with meta save |
 | Rewards, shops, labyrinth, mystery | `session` | Transient per run |
 | Current `Screen` | `navigation` | `useActiveRunScreen()` |
 | Combat snapshot + display overrides | `battle` | Synced during battle |
@@ -80,13 +80,13 @@ Presentation VFX uses `battle-presentation-store` only. Global card hover/shimme
 
 ## Meta compendium (`app-store`)
 
-`discoveredCardIds`, `encounteredEnemyIds`, and `discoveredBoonIds` live in `app-store` (persisted with save data). Run controllers read/write via `useAppStore.getState()` — not props from `App.tsx`.
+`discoveredCardIds`, `encounteredEnemyIds`, and `discoveredTrinketIds` live in `app-store` (persisted with save data). Run controllers read/write via `useAppStore.getState()` — not props from `App.tsx`.
 
 ## Permanent Gear (`gear-store`)
 
 Owned Gear instances and per-character loadouts live in `shared/stores/gear-store.ts`. Definitions and pure equip/salvage/effect rules live under `src/lib/gear/`. Gear is permanent meta progression and is not copied into active-run data; battle creation snapshots the selected character's aggregate Gear effects into the immutable battle talent manifest.
 
-The same instance may be equipped by multiple characters, but only once per character loadout. Armory editing is disabled while a battle is active. Autosave subscribes to the Gear store and uses the transient Return to Run screen when meta screens are opened during a run.
+Each Gear instance may be equipped on at most one character at a time (one slot per loadout). Equipping moves the instance off any other character or slot. Armory editing is disabled while a battle is active. Autosave subscribes to the Gear store and uses the transient Return to Run screen when meta screens are opened during a run.
 
 ## Types
 

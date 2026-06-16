@@ -5,10 +5,12 @@ import { createBattleCardPlay } from "@/features/alchemy/run-loop/battle/battle-
 import { getBattleStoreView, resetRunBattleSlice } from "../../helpers/run-domain-store-test";
 import { createTestBattleState } from "../../lib/battle/test-state";
 import { makeTestCard } from "../../fixtures/battle";
+import { playUISound } from "@/lib/audio";
 
 vi.mock("@/lib/audio", () => ({
   playCardSound: vi.fn(),
   playGoldGain: vi.fn(),
+  playUISound: vi.fn(),
 }));
 
 vi.mock("@/features/alchemy/run-loop/battle/card-transfer-animations", () => ({
@@ -90,6 +92,7 @@ describe("createBattleCardPlay", () => {
     expect(getBattleStoreView().battleState.enemyHealth).toBeLessThan(30);
     expect(deps.scheduleAutoEndTurn).toHaveBeenCalled();
     expect(deps.talents.awardCardXP).toHaveBeenCalledWith(expect.objectContaining({ id: "slash" }));
+    expect(playUISound).not.toHaveBeenCalled();
   });
 
   it("rejects plays when mana is insufficient", () => {
@@ -107,6 +110,7 @@ describe("createBattleCardPlay", () => {
     expect(getBattleStoreView().battleState).toEqual(state);
     expect(deps.scheduleAutoEndTurn).not.toHaveBeenCalled();
     expect(deps.talents.awardCardXP).not.toHaveBeenCalled();
+    expect(playUISound).toHaveBeenCalledWith("error");
   });
 
   it("rejects plays when the player is defeated", () => {
@@ -124,6 +128,7 @@ describe("createBattleCardPlay", () => {
     clickCard(handleCardClick, { ...slash, uid: 3 }, 0);
 
     expect(getBattleStoreView().battleState.enemyHealth).toBe(state.enemyHealth);
+    expect(playUISound).toHaveBeenCalledWith("error");
   });
 
   it("plays a revealed card while another draw transfer is still in progress", () => {
@@ -162,6 +167,7 @@ describe("createBattleCardPlay", () => {
 
     expect(getBattleStoreView().battleState).toEqual(state);
     expect(deps.talents.awardCardXP).not.toHaveBeenCalled();
+    expect(playUISound).toHaveBeenCalledWith("error");
   });
 
   it("plays cards after enemy is defeated during victory grace", () => {

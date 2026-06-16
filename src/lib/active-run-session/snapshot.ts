@@ -6,7 +6,7 @@ import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { Screen } from "@/lib/routing";
 
-import type { ActiveRunData, LabyrinthNodePosition } from "./types";
+import type { ActiveRunData, LabyrinthNodePosition, PersistedPendingReward } from "./types";
 
 export type ActiveRunSnapshotSource = {
   characterId: CharacterId;
@@ -18,7 +18,7 @@ export type ActiveRunSnapshotSource = {
   currentAct: number;
   destinationIndexInAct: number;
   completedDestinations: string[];
-  runBoons: string[];
+  runTrinkets: string[];
   encounteredRunEnemyIds: string[];
   selectedDifficulty: DifficultyId | null;
   contentSystemType: ContentSystemId;
@@ -33,8 +33,7 @@ export type ActiveRunSnapshotSource = {
   runMaterialsEarned: MaterialInventory;
   currentScreen: Screen | null;
   destinationChoices: string[];
-  discoveredCardIdsAtRunStart: string[];
-  discoveredBoonIdsAtRunStart: string[];
+  pendingReward: PersistedPendingReward | null;
 };
 
 export function createActiveRunSnapshot(source: ActiveRunSnapshotSource): ActiveRunData {
@@ -58,7 +57,7 @@ export function createActiveRunSnapshot(source: ActiveRunSnapshotSource): Active
     currentAct: source.currentAct,
     destinationIndexInAct: source.destinationIndexInAct,
     completedDestinations: source.completedDestinations,
-    runBoons: source.runBoons,
+    runTrinkets: source.runTrinkets,
     encounteredRunEnemyIds: source.encounteredRunEnemyIds,
     selectedDifficulty: source.selectedDifficulty,
     contentSystemType: source.contentSystemType,
@@ -70,7 +69,6 @@ export function createActiveRunSnapshot(source: ActiveRunSnapshotSource): Active
     runMaterialsEarned: source.runMaterialsEarned,
     currentScreen: source.currentScreen,
     destinationChoices: source.destinationChoices,
-    discoveredCardIdsAtRunStart: source.discoveredCardIdsAtRunStart,
-    discoveredBoonIdsAtRunStart: source.discoveredBoonIdsAtRunStart,
+    pendingReward: source.pendingReward,
   };
 }

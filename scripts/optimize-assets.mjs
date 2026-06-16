@@ -1,4 +1,4 @@
-import { mkdir, stat } from "node:fs/promises";
+import { mkdir, readdir, stat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -163,7 +163,7 @@ const assets = [
   { source: "Trinkets/Mortar and Pestle.jpeg", target: "mortar-and-pestle.webp", width: 420, quality: 82 },
   { source: "Trinkets/Obsidian Hammer.jpeg", target: "obsidian-hammer.webp", width: 420, quality: 82 },
   { source: "Trinkets/Parasitic Bloom.jpeg", target: "parasitic-bloom.webp", width: 420, quality: 82 },
-  { source: "Trinkets/Placeholder Trinket.png", target: "placeholder-boon.webp", width: 420, quality: 60 },
+  { source: "Trinkets/Placeholder Trinket.png", target: "placeholder-trinket.webp", width: 420, quality: 60 },
   { source: "Trinkets/Plague Doctor's Mask.jpeg", target: "plague-doctors-mask.webp", width: 420, quality: 82 },
   { source: "Trinkets/Frozen Pocketwatch.jpeg", target: "frozen-pocketwatch.webp", width: 420, quality: 82 },
   { source: "Trinkets/Resonant Chimes.jpeg", target: "resonant-chimes.webp", width: 420, quality: 82 },
@@ -239,6 +239,47 @@ const assets = [
   { source: "Talent Backgrounds/Companion.jpeg", target: "talent-bg-companion.webp", width: 1200, quality: 84 },
 ];
 
+const gearAssetWidth = 420;
+const gearAssetQuality = 82;
+
+function slugifyGearName(name) {
+  return name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+async function discoverGearAssets() {
+  const gearDir = path.join(sourceDir, "Gear");
+  let entries = [];
+  try {
+    entries = await readdir(gearDir, { withFileTypes: true });
+  } catch {
+    return [];
+  }
+
+  const discovered = [];
+  for (const entry of entries) {
+    if (!entry.isFile()) continue;
+    const match = entry.name.match(/^(.+?)\s-\s(Basic|Astral)\.(jpe?g|png)$/i);
+    if (!match) {
+      if (!entry.name.toLowerCase().includes("placeholder")) {
+        console.warn(`[gear] Skipping malformed gear file: ${entry.name}`);
+      }
+      continue;
+    }
+    const [, displayName, rarity] = match;
+    discovered.push({
+      source: `Gear/${entry.name}`,
+      target: `gear-${slugifyGearName(displayName)}-${rarity.toLowerCase()}.webp`,
+      width: gearAssetWidth,
+      quality: gearAssetQuality,
+    });
+  }
+  return discovered;
+}
+
 async function fileIsFresh(sourcePath, outputPath) {
   try {
     const [sourceInfo, outputInfo] = await Promise.all([stat(sourcePath), stat(outputPath)]);
@@ -268,12 +309,15 @@ async function optimizeAsset({ source, target, width, quality }) {
 async function main() {
   await mkdir(outputDir, { recursive: true });
 
+  const gearAssets = await discoverGearAssets();
+  const allAssets = [...assets, ...gearAssets];
+
   const results = [];
-  for (const asset of assets) {
+  for (const asset of allAssets) {
     results.push(await optimizeAsset(asset));
   }
 
-  console.log(`Optimized ${results.length} art assets.`);
+  console.log(`Optimized ${results.length} art assets (${gearAssets.length} gear).`);
 }
 
 main().catch((error) => {

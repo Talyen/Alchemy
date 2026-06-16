@@ -1,8 +1,8 @@
-// Pure collection item shaping for cards, enemies, and boons.
+// Pure collection item shaping for cards, enemies, and trinkets.
 // Depends on game-data libraries, card description formatting, and collection page size tuning.
 // Used by collection UI layout and tests without owning rendering concerns.
-import { COLLECTION_PAGE_SIZE, BOON_PAGE_SIZE } from "@/lib/game-constants";
-import { cardLibrary, enemyBestiary, boonLibrary, type BestiaryEntry, type BoonEntry } from "@/lib/game-data";
+import { COLLECTION_PAGE_SIZE, TRINKET_PAGE_SIZE } from "@/lib/game-constants";
+import { cardLibrary, enemyBestiary, trinketLibrary, type BestiaryEntry, type TrinketEntry } from "@/lib/game-data";
 
 import type { CollectionTab } from "../types";
 import { getEffectiveCardDescriptionLines } from "../utils/card-description";
@@ -12,7 +12,7 @@ const COLLECTION_ITEMS_CONFIG = {
   hiddenTitle: "Undiscovered",
   hiddenCardDescription: "Discover this card during a run to reveal it here.",
   hiddenEnemyDescription: "Encounter this enemy to record its details.",
-  hiddenBoonDescription: "Find this boon to reveal its effect.",
+  hiddenTrinketDescription: "Find this trinket to reveal its effect.",
 } as const;
 
 export type CollectionTileItem = {
@@ -23,12 +23,12 @@ export type CollectionTileItem = {
   art: string;
   discovered: boolean;
   hoverScope: string;
-  frameType: "card" | "bestiary" | "boon";
+  frameType: "card" | "bestiary" | "trinket";
   enemyEntry?: BestiaryEntry;
 };
 
 function getCollectionPageSize(tab: CollectionTab): number {
-  return tab === "boons" ? BOON_PAGE_SIZE : COLLECTION_PAGE_SIZE;
+  return tab === "trinkets" ? TRINKET_PAGE_SIZE : COLLECTION_PAGE_SIZE;
 }
 
 export function getCollectionTotalPages(collectionTab: CollectionTab) {
@@ -37,7 +37,7 @@ export function getCollectionTotalPages(collectionTab: CollectionTab) {
       ? cardLibrary.length
       : collectionTab === "bestiary"
         ? enemyBestiary.length
-        : boonLibrary.length;
+        : trinketLibrary.length;
 
   return Math.max(1, Math.ceil(itemCount / getCollectionPageSize(collectionTab)));
 }
@@ -46,14 +46,14 @@ export function getCollectionPageItems({
   collectionTab,
   discoveredCardIds,
   encounteredEnemyIds,
-  discoveredBoonIds,
+  discoveredTrinketIds,
   bondedCompanions = {},
   page,
 }: {
   collectionTab: CollectionTab;
   discoveredCardIds: string[];
   encounteredEnemyIds: string[];
-  discoveredBoonIds: string[];
+  discoveredTrinketIds: string[];
   bondedCompanions?: Record<string, number>;
   page: number;
 }) {
@@ -61,7 +61,7 @@ export function getCollectionPageItems({
     collectionTab,
     discoveredCardIds,
     encounteredEnemyIds,
-    discoveredBoonIds,
+    discoveredTrinketIds,
     bondedCompanions,
   });
   const pageSize = getCollectionPageSize(collectionTab);
@@ -76,18 +76,18 @@ function getCollectionItems({
   collectionTab,
   discoveredCardIds,
   encounteredEnemyIds,
-  discoveredBoonIds,
+  discoveredTrinketIds,
   bondedCompanions = {},
 }: {
   collectionTab: CollectionTab;
   discoveredCardIds: string[];
   encounteredEnemyIds: string[];
-  discoveredBoonIds: string[];
+  discoveredTrinketIds: string[];
   bondedCompanions?: Record<string, number>;
 }) {
   if (collectionTab === "cards") return getCardItems(discoveredCardIds, bondedCompanions);
   if (collectionTab === "bestiary") return getBestiaryItems(encounteredEnemyIds);
-  return getBoonItems(discoveredBoonIds);
+  return getTrinketItems(discoveredTrinketIds);
 }
 
 function getCardItems(discoveredCardIds: string[], bondedCompanions: Record<string, number> = {}) {
@@ -130,54 +130,20 @@ function getBestiaryItems(encounteredEnemyIds: string[]) {
     });
 }
 
-export function getDiscoveryCardTileItems(cardIds: readonly string[]): CollectionTileItem[] {
-  const idSet = new Set(cardIds);
-  return cardLibrary
-    .filter((card) => idSet.has(card.id))
-    .sort((a, b) => cardIds.indexOf(a.id) - cardIds.indexOf(b.id))
-    .map((card) => ({
-      id: card.id,
-      title: card.title,
-      subtitle: undefined,
-      descriptionLines: getEffectiveCardDescriptionLines(card),
-      art: card.art,
-      discovered: true,
-      hoverScope: "discoveries-card" as const,
-      frameType: "card" as const,
-    }));
-}
-
-export function getDiscoveryBoonTileItems(boonIds: readonly string[]): CollectionTileItem[] {
-  const idSet = new Set(boonIds);
-  return boonLibrary
-    .filter((entry) => idSet.has(entry.id))
-    .sort((a, b) => boonIds.indexOf(a.id) - boonIds.indexOf(b.id))
-    .map((entry: BoonEntry) => ({
-      id: entry.id,
-      title: entry.title,
-      subtitle: undefined,
-      descriptionLines: entry.descriptionLines,
-      art: entry.art,
-      discovered: true,
-      hoverScope: "discoveries-boon" as const,
-      frameType: "boon" as const,
-    }));
-}
-
-function getBoonItems(discoveredBoonIds: string[]) {
-  return [...boonLibrary]
+function getTrinketItems(discoveredTrinketIds: string[]) {
+  return [...trinketLibrary]
     .sort((a, b) => a.title.localeCompare(b.title))
-    .map((entry: BoonEntry) => {
-      const discovered = discoveredBoonIds.includes(entry.id);
+    .map((entry: TrinketEntry) => {
+      const discovered = discoveredTrinketIds.includes(entry.id);
       return {
         id: entry.id,
         title: discovered ? entry.title : COLLECTION_ITEMS_CONFIG.hiddenTitle,
         subtitle: undefined,
-        descriptionLines: discovered ? entry.descriptionLines : [COLLECTION_ITEMS_CONFIG.hiddenBoonDescription],
+        descriptionLines: discovered ? entry.descriptionLines : [COLLECTION_ITEMS_CONFIG.hiddenTrinketDescription],
         art: entry.art,
         discovered,
-        hoverScope: "collection-boon" as const,
-        frameType: "boon" as const,
+        hoverScope: "collection-trinket" as const,
+        frameType: "trinket" as const,
       };
     });
 }

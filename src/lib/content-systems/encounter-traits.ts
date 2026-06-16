@@ -94,7 +94,10 @@ export const ENCOUNTER_TRAITS: Record<EncounterTraitId, EncounterTraitDefinition
     "Divine Aegis",
     "Gains 2 Armor and 4 Block the first time reaching 50% Health",
   ),
-  collector: reward("collector", "Collector", "Guaranteed boon reward from this encounter", ["labyrinth", "wildwood"]),
+  collector: reward("collector", "Collector", "Guaranteed trinket reward from this encounter", [
+    "labyrinth",
+    "wildwood",
+  ]),
   generous: reward("generous", "Generous", "Victory gold is increased by 50%", ["labyrinth"]),
   alchemist: reward("alchemist", "Alchemist", "Gain a random potion alongside the normal reward", [
     "labyrinth",

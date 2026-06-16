@@ -131,7 +131,7 @@ describe("tickEnemyStatuses", () => {
       enemyHealth: 30,
       playerHealth: 20,
       enemyStatuses: { poison: 8 },
-      boonEffects: { ...patchBattleState().boonEffects, parasiticBloomLeechChance: 50 },
+      trinketEffects: { ...patchBattleState().trinketEffects, parasiticBloomLeechChance: 50 },
       rng: () => 0.01,
     });
     const texts = makeTexts();
@@ -438,7 +438,7 @@ describe("tickPlayerStatuses", () => {
       playerHealth: 30,
       playerMaxHealth: 30,
       playerStatuses: { freeze: 30 },
-      boonEffects: { ...patchBattleState().boonEffects, freezeDurationExtension: 2 },
+      trinketEffects: { ...patchBattleState().trinketEffects, freezeDurationExtension: 2 },
     });
     const next = tickPlayerStatuses(state, makeTexts());
     expect(next.playerFreezeSkipTurns).toBe(1);

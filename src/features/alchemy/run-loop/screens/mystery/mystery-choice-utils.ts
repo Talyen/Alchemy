@@ -4,8 +4,8 @@ import type { MysteryChoice, MysteryEffect } from "../../mystery-events";
 const POSITIVE_MYSTERY_EFFECT_KINDS = new Set<MysteryEffect["kind"]>([
   "addCard",
   "chooseCard",
-  "gainBoon",
-  "gainRandomBoon",
+  "gainTrinket",
+  "gainRandomTrinket",
   "healHealth",
   "gainGold",
   "gainXP",

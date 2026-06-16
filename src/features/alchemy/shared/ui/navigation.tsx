@@ -17,15 +17,11 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import type { Screen } from "../types";
 import { playUISound } from "@/lib/audio";
-import {
-  TooltipBody,
-  TooltipHeader,
-  TooltipPanel,
-  tooltipSideAnchorClass,
-  useTooltipSidePlacement,
-} from "./tooltip-panel";
-import { TalentsLockedTooltip } from "../../meta/talents/talents-locked-tooltip";
+import { tooltipSideAnchorClass, useTooltipSidePlacement } from "./tooltip-panel";
+import { LockedFeatureTooltip } from "./locked-feature-tooltip";
 import { useState } from "react";
+
+import { KNIGHT_UNLOCK_MESSAGE } from "@/lib/game-data/character-unlocks";
 
 const NAVIGATION_CONFIG = {
   paginationMinHeightClass: "min-h-[4.07cqh]",
@@ -131,6 +127,7 @@ export function GameMenu({
   currentScreen,
   isTalentsLocked = false,
   isHomesteadLocked = false,
+  isArmoryLocked = false,
 }: {
   isOpen: boolean;
   onClose: () => void;
@@ -148,6 +145,7 @@ export function GameMenu({
   currentScreen?: Screen;
   isTalentsLocked?: boolean;
   isHomesteadLocked?: boolean;
+  isArmoryLocked?: boolean;
 }) {
   const [showTalentsTooltip, setShowTalentsTooltip] = useState(false);
   const { ref: talentsTooltipRef, placement: talentsTooltipPlacement } = useTooltipSidePlacement(
@@ -159,6 +157,12 @@ export function GameMenu({
   const { ref: homesteadTooltipRef, placement: homesteadTooltipPlacement } = useTooltipSidePlacement(
     "side-end",
     showHomesteadTooltip,
+  );
+
+  const [showArmoryTooltip, setShowArmoryTooltip] = useState(false);
+  const { ref: armoryTooltipRef, placement: armoryTooltipPlacement } = useTooltipSidePlacement(
+    "side-end",
+    showArmoryTooltip,
   );
 
   if (!isOpen) return null;
@@ -228,7 +232,9 @@ export function GameMenu({
               <WandSparkles className="h-4 w-4" /> Talents
             </Button>
             {showTalentsTooltip && isTalentsLocked && (
-              <TalentsLockedTooltip
+              <LockedFeatureTooltip
+                title="Talents"
+                message={KNIGHT_UNLOCK_MESSAGE}
                 panelRef={talentsTooltipRef}
                 visible
                 placement={talentsTooltipPlacement}
@@ -261,32 +267,48 @@ export function GameMenu({
               <TreePine className="h-4 w-4" /> Homestead
             </Button>
             {showHomesteadTooltip && isHomesteadLocked && (
-              <TooltipPanel
-                width="w-64"
-                ref={homesteadTooltipRef}
+              <LockedFeatureTooltip
+                title="Homestead"
+                message={KNIGHT_UNLOCK_MESSAGE}
+                panelRef={homesteadTooltipRef}
                 visible
                 placement={homesteadTooltipPlacement}
                 className={cn(tooltipSideAnchorClass(homesteadTooltipPlacement), "z-[130] text-left")}
-              >
-                <TooltipHeader>Homestead Locked</TooltipHeader>
-                <TooltipBody>
-                  <p className="text-red-400 font-semibold">Finish a Run as the Knight to unlock</p>
-                </TooltipBody>
-              </TooltipPanel>
+              />
             )}
           </div>
         ) : null}
         {currentScreen !== "armory" ? (
-          <Button
-            variant="outline"
-            className="justify-start border-0 bg-transparent"
-            onClick={() => {
-              onArmory();
-              onClose();
-            }}
+          <div
+            className="relative overflow-visible"
+            onMouseEnter={() => isArmoryLocked && setShowArmoryTooltip(true)}
+            onMouseLeave={() => setShowArmoryTooltip(false)}
           >
-            <Shield className="h-4 w-4" /> Armory
-          </Button>
+            <Button
+              variant="outline"
+              disabled={isArmoryLocked}
+              className={cn(
+                "justify-start border-0 bg-transparent w-full",
+                isArmoryLocked && "opacity-50 hover:bg-transparent cursor-not-allowed",
+              )}
+              onClick={() => {
+                onArmory();
+                onClose();
+              }}
+            >
+              <Shield className="h-4 w-4" /> Armory
+            </Button>
+            {showArmoryTooltip && isArmoryLocked && (
+              <LockedFeatureTooltip
+                title="Armory"
+                message="Find Gear to unlock"
+                panelRef={armoryTooltipRef}
+                visible
+                placement={armoryTooltipPlacement}
+                className={cn(tooltipSideAnchorClass(armoryTooltipPlacement), "z-[130] text-left")}
+              />
+            )}
+          </div>
         ) : null}
         {currentScreen !== "options" ? (
           <Button

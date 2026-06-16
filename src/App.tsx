@@ -9,7 +9,7 @@ import {
   characterArt,
   characters,
   enemyBestiary,
-  boonLibrary,
+  trinketLibrary,
   type CharacterId,
   type DifficultyId,
   type TalentXP,
@@ -23,6 +23,7 @@ import { BOSS_PARTICLE_ALPHA_MULTIPLIER, SCREEN_PARTICLE_ALPHA, SCREEN_PARTICLE_
 import { useAppAudioEffects } from "@/app/use-app-audio-effects";
 import { useAppDisplayEffects } from "@/app/use-app-display-effects";
 import { useScreenAssetPreloadEffects } from "@/app/use-app-preload-effects";
+import { gearDefinitions } from "@/lib/gear";
 import { useAlchemyAutosaveFromStores } from "@/app/use-app-save-state";
 import { useGlobalErrorHandlers } from "@/app/use-global-error-handlers";
 import { useInitialLoadReady } from "@/app/use-initial-load-ready";
@@ -31,6 +32,7 @@ import {
   resolveReturnToRunLabel,
   resolveReturnToRunTarget,
   shouldClearReturnToRunOnMainMenu,
+  shouldShowReturnToRun,
 } from "@/app/return-to-run-navigation";
 import { RenderAlchemyScreen } from "@/app/render-alchemy-screen";
 import { AppScreenChromeProvider } from "@/app/app-screen-chrome-context";
@@ -58,6 +60,7 @@ import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import { createContext, useContext } from "react";
 import { useActiveRunScreenValue } from "@/features/alchemy/shared/stores/run-session-facade";
 import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
+import { isArmoryLocked as getIsArmoryLocked } from "@/lib/gear";
 
 const appStore = useAppStore;
 const homesteadStore = useHomesteadStore;
@@ -106,7 +109,7 @@ function AppMainContent({
   stagePixelRatio,
   stageStyle,
   aspectMode,
-  setDiscoveredBoonIds,
+  setDiscoveredTrinketIds,
 }: {
   saveBlockedByNewerVersion: boolean;
   initialLoadReady: boolean;
@@ -114,10 +117,11 @@ function AppMainContent({
   stagePixelRatio: number;
   stageStyle: React.CSSProperties;
   aspectMode: "standard" | "narrow" | "ultrawide";
-  setDiscoveredBoonIds: (ids: string[]) => void;
+  setDiscoveredTrinketIds: (ids: string[]) => void;
 }) {
   const run = useRunController();
   const finishedRunCharacters = useAppStore((s) => s.finishedRunCharacters);
+  const isArmoryLocked = useGearStore((s) => getIsArmoryLocked(s.inventory));
   const { screen: controllerScreen, commitPendingTransition } = run;
   const { renderedScreen, pagePhase, tooltipBlocked } = useRenderedScreenTransition(
     controllerScreen,
@@ -156,7 +160,12 @@ function AppMainContent({
     screen: run.screen,
     battleEnemyArt: run.battleState.currentEnemy.art,
     battleHand: run.battleState.hand,
-    rewardChoices: run.rewardState.choices,
+    rewardChoices:
+      run.rewardState.rewardType === "gear"
+        ? run.rewardState.choices.map((choice) => ({
+            art: gearDefinitions[choice.definitionId]?.art ?? "",
+          }))
+        : run.rewardState.choices.map((choice) => ({ art: choice.art ?? "" })),
     shopCards: run.shopCards,
     alchemistPotions: run.alchemistPotions,
     mysteryEvent: run.mysteryEvent,
@@ -164,8 +173,7 @@ function AppMainContent({
 
   const autosaveEnabled =
     run.runPhase !== "runEnd" &&
-    (run.screen !== "rewards" || run.contentSystemType === "wildwood") &&
-    (run.rewardState.choices.length === 0 || run.contentSystemType === "wildwood") &&
+    (run.screen !== "rewards" || run.contentSystemType === "wildwood" || run.rewardState.choices.length > 0) &&
     !(run.runPhase === "battle" && run.battleState.enemyHealth <= 0);
 
   useAlchemyAutosaveFromStores(autosaveEnabled, returnToRunScreen);
@@ -244,12 +252,19 @@ function AppMainContent({
     if (!isAlchemyDevBuild()) return;
     appStore.getState().setDiscoveredCardIds(cardLibrary.map((card) => card.id));
     appStore.getState().setEncounteredEnemyIds(enemyBestiary.map((enemy) => enemy.id));
-    setDiscoveredBoonIds(boonLibrary.map((boon) => boon.id));
+    setDiscoveredTrinketIds(trinketLibrary.map((boon) => boon.id));
     appStore
       .getState()
       .setFinishedRunCharacters(["knight", "rogue", "wizard", "ranger", "alchemist", "warlock", "druid"]);
     run.unlockAllTalents();
     homesteadStore.getState().setMaterials({ wood: 99, iron: 99, herbs: 99, food: 99, crystal: 99 });
+    if (useGearStore.getState().inventory.length === 0) {
+      useGearStore.getState().addInstance({
+        instanceId: "dev-unlock-gear",
+        definitionId: "placeholder-body",
+        affixIds: [],
+      });
+    }
   }
 
   const hasUnspentTalentsBadge = hasUnspentTalents(run.talentXP, run.unlockedTalents);
@@ -385,14 +400,14 @@ function AppMainContent({
         onOptions={() => navigateToMeta("options")}
         isTalentsLocked={!finishedRunCharacters.includes("knight")}
         isHomesteadLocked={!finishedRunCharacters.includes("knight")}
-        {...(returnToRunTarget
+        isArmoryLocked={isArmoryLocked}
+        {...(returnToRunTarget && shouldShowReturnToRun(returnToRunTarget, renderedScreen)
           ? {
               onReturnToRun: returnToRun,
               returnToRunLabel: resolveReturnToRunLabel(returnToRunTarget),
             }
           : {})}
-        {...(renderedScreen === "battle" ? { onEndRun: run.handleEndRun } : {})}
-        {...(renderedScreen === "labyrinth-map" ? { onEndRun: run.handleLabyrinthEndRun } : {})}
+        {...(isRunLoopScreen(renderedScreen) && run.activeRunData ? { onEndRun: run.handleEndRun } : {})}
       />
     </>
   );
@@ -410,9 +425,9 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
   const masterVol = useAppStore((s) => s.masterVol);
   const muteInBackground = useAppStore((s) => s.muteInBackground);
   const autoEndTurn = useAppStore((s) => s.autoEndTurn);
-  const setDiscoveredBoonIds = wrapStoreSetter(
-    () => appStore.getState().discoveredBoonIds,
-    appStore.getState().setDiscoveredBoonIds,
+  const setDiscoveredTrinketIds = wrapStoreSetter(
+    () => appStore.getState().discoveredTrinketIds,
+    appStore.getState().setDiscoveredTrinketIds,
   );
   const vrStageRef = useRef<HTMLDivElement>(null);
   const initialLoadReady = useInitialLoadReady({ imageUrls: allGameArt });
@@ -454,7 +469,7 @@ function AppInner({ bootstrapResult }: { bootstrapResult: SaveLoadState }) {
               stagePixelRatio={stagePixelRatio}
               stageStyle={stageStyle}
               aspectMode={aspectMode}
-              setDiscoveredBoonIds={setDiscoveredBoonIds}
+              setDiscoveredTrinketIds={setDiscoveredTrinketIds}
             />
           </RunControllerProvider>
           <div id="tooltip-root" className="absolute inset-0 pointer-events-none z-30" />
@@ -479,7 +494,11 @@ export default function App() {
           completedResearch: result.data.completedResearch,
           bondedCompanions: result.data.bondedCompanions,
         });
-        useGearStore.getState().initialize(result.data.gearInventory, result.data.gearLoadouts);
+        useGearStore.getState().initialize(
+          result.data.gearInventory,
+          result.data.gearLoadouts,
+          result.data.gearBoardPositions,
+        );
         restoreRun(result.data.activeRun, result.data.talentXP, result.data.unlockedTalents);
         setBootstrapResult(result);
       }

@@ -54,9 +54,9 @@ function BattleControls({
     <div className={battleBottomColumnClass}>
       <div className="relative flex flex-col items-center gap-2">
         <Button
-          variant="default"
+          variant="primary"
           size="sm"
-          className="bg-amber-600 text-white font-bold"
+          className="font-bold"
           onClick={onEndTurn}
           disabled={battleState.turnPhase !== "player" || cardTransferInProgress}
         >

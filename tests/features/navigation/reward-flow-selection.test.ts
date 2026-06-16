@@ -19,7 +19,7 @@ describe("reward flow selection", () => {
 
     it("uses an exact half roll for three boon choices", () => {
       const result = createWildwoodRewardState(getStartingDeck("knight"), () => 0.49);
-      expect(result.rewardType).toBe("boon");
+      expect(result.rewardType).toBe("trinket");
       expect(result.choices).toHaveLength(3);
     });
   });
@@ -32,10 +32,10 @@ describe("reward flow selection", () => {
         generousBonus: 0,
         talentGoldPerCombat: 2,
         materials: emptyInventory(),
-        boonIds: [],
+        trinketIds: [],
         rng: () => 0.99,
       });
-      expect(result.rewardType).toBe("boon");
+      expect(result.rewardType).toBe("trinket");
       expect(result.gold).toBe(17);
       expect(result.choices.length).toBeGreaterThan(0);
       expect(result.choices.every((choice) => "id" in choice && "title" in choice)).toBe(true);
@@ -48,7 +48,7 @@ describe("reward flow selection", () => {
         generousBonus: 0,
         talentGoldPerCombat: 0,
         materials: emptyInventory(),
-        boonIds: [],
+        trinketIds: [],
       });
       expect(result.gold).toBe(0);
       expect(result.choices.length).toBeGreaterThan(0);
@@ -61,7 +61,7 @@ describe("reward flow selection", () => {
         generousBonus: 0,
         talentGoldPerCombat: 2,
         materials: emptyInventory(),
-        boonIds: [],
+        trinketIds: [],
         goldMultiplier: 2,
       });
       expect(result.gold).toBe(34);
@@ -74,7 +74,7 @@ describe("reward flow selection", () => {
         generousBonus: 0,
         talentGoldPerCombat: 2,
         materials: emptyInventory(),
-        boonIds: [],
+        trinketIds: [],
       });
       expect(result.gold).toBe(17);
     });
@@ -94,7 +94,7 @@ describe("reward flow selection", () => {
         talentGoldPerCombat: 2,
         materials: emptyInventory(),
         destinations: ["Campfire"],
-        boonIds: [],
+        trinketIds: [],
       });
       expect(result.rewardType).toBe("card");
       expect(result.gold).toBe(15);
@@ -114,9 +114,9 @@ describe("reward flow selection", () => {
         talentGoldPerCombat: 2,
         materials: emptyInventory(),
         destinations: [],
-        boonIds: [],
+        trinketIds: [],
       });
-      expect(result.rewardType).toBe("boon");
+      expect(result.rewardType).toBe("trinket");
       expect(result.gold).toBe(17);
       vi.restoreAllMocks();
     });
@@ -132,7 +132,7 @@ describe("reward flow selection", () => {
         talentGoldPerCombat: 0,
         materials: emptyInventory(),
         destinations: ["Normal Combat", "Mystery"],
-        boonIds: [],
+        trinketIds: [],
       });
       expect(result.destinations).toEqual(["Normal Combat", "Mystery"]);
       vi.restoreAllMocks();
@@ -149,7 +149,7 @@ describe("reward flow selection", () => {
         talentGoldPerCombat: 2,
         materials: emptyInventory(),
         destinations: [],
-        boonIds: [],
+        trinketIds: [],
         goldMultiplier: 1.5,
       });
       expect(result.gold).toBe(22);
@@ -167,17 +167,17 @@ describe("reward flow selection", () => {
         talentGoldPerCombat: 2,
         materials: emptyInventory(),
         destinations: [],
-        boonIds: [],
+        trinketIds: [],
       });
       expect(result.gold).toBe(15);
       vi.restoreAllMocks();
     });
 
-    it("boon-hoarder trait adds +10pp boon chance", () => {
+    it("trinket-hoarder trait adds +10pp boon chance", () => {
       const goblinState = {
         currentEnemy: {
           enemyType: "normal",
-          traits: [{ id: "boon-hoarder", title: "Boon Hoarder", description: "" }],
+          traits: [{ id: "trinket-hoarder", title: "Trinket Hoarder", description: "" }],
         },
         gold: 10,
       } as const;
@@ -191,9 +191,9 @@ describe("reward flow selection", () => {
         talentGoldPerCombat: 2,
         materials: emptyInventory(),
         destinations: [],
-        boonIds: [],
+        trinketIds: [],
       });
-      expect(result.rewardType).toBe("boon");
+      expect(result.rewardType).toBe("trinket");
       vi.restoreAllMocks();
     });
   });

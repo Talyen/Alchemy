@@ -8,6 +8,10 @@ export function resolveReturnToRunLabel(target: Screen): "Return to Battle" | "R
   return target === "battle" ? "Return to Battle" : "Return to Run";
 }
 
+export function shouldShowReturnToRun(target: Screen | null, currentScreen: Screen): boolean {
+  return target !== null && target !== currentScreen;
+}
+
 export function shouldClearReturnToRunOnMainMenu(hasActiveBattle: boolean): boolean {
   return !hasActiveBattle;
 }

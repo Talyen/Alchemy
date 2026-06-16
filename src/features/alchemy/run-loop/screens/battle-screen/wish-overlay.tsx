@@ -56,13 +56,13 @@ export function WishOverlay({ battleState, actions }: { battleState: BattleScree
 
   const descriptionContext = {
     ...battleState.talentEffects,
-    companionDamageBonus: battleState.boonEffects.companionDamageBonus,
+    companionDamageBonus: battleState.trinketEffects.companionDamageBonus,
     companionDamageBuff: battleState.companionDamageBuff,
   };
 
   return (
-    <div className="motion-overlay z-wish-overlay absolute inset-0 flex items-center justify-center px-6">
-      <div className="motion-panel alchemy-shell w-full max-w-5xl rounded-shell-screen border border-border/80 px-6 py-6">
+    <div className="wish-overlay-backdrop z-wish-overlay absolute inset-0 flex items-center justify-center bg-black/70 px-6">
+      <div className="wish-overlay-panel alchemy-shell w-full max-w-5xl rounded-shell-screen border border-border/80 px-6 py-6">
         <ScreenHeader title="Wish" />
         <p className="mt-2 text-center text-sm text-muted-foreground">Choose one card to add to your hand, or skip.</p>
 

@@ -1,8 +1,15 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+import { ROUTE_SCREENS } from "@/lib/routing";
 import { useBattlePresentationStore } from "@/features/alchemy/shared/stores/battle-presentation-store";
+import {
+  getBattleStoreView,
+  getNavigationStoreView,
+  resetRunBattleSlice,
+} from "../../helpers/run-domain-store-test";
 
 function freshStore() {
   useBattlePresentationStore.setState(useBattlePresentationStore.getInitialState());
+  resetRunBattleSlice();
 }
 
 describe("battle-presentation-store", () => {
@@ -53,5 +60,32 @@ describe("battle-presentation-store", () => {
     const s = useBattlePresentationStore.getState();
     expect(s.playerHurtFlashToken).toBe(0);
     expect(s.cardGhosts).toEqual([]);
+  });
+
+  it("clearFloatingCombatTexts invalidates pending showCombatTexts timers", async () => {
+    vi.useFakeTimers();
+    getBattleStoreView().setHasActiveBattle(true);
+    getNavigationStoreView().setScreen(ROUTE_SCREENS.BATTLE);
+
+    useBattlePresentationStore.getState().showCombatTexts([
+      { target: "enemy", kind: "damage", stat: "health", amount: 5 },
+    ]);
+    useBattlePresentationStore.getState().clearFloatingCombatTexts();
+    await vi.advanceTimersByTimeAsync(4000);
+    expect(useBattlePresentationStore.getState().floatingCombatTexts).toEqual([]);
+    vi.useRealTimers();
+  });
+
+  it("showCombatTexts does not add entries when not on battle screen", async () => {
+    vi.useFakeTimers();
+    getBattleStoreView().setHasActiveBattle(true);
+    getNavigationStoreView().setScreen(ROUTE_SCREENS.COLLECTION);
+
+    useBattlePresentationStore.getState().showCombatTexts([
+      { target: "enemy", kind: "damage", stat: "health", amount: 5 },
+    ]);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(useBattlePresentationStore.getState().floatingCombatTexts).toEqual([]);
+    vi.useRealTimers();
   });
 });

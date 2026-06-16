@@ -34,7 +34,7 @@ describe("removeHarmfulPlayerStatuses", () => {
     const state = patchBattleState({
       playerHealth: 20,
       playerStatuses: { burn: 5, poison: 3 },
-      boonEffects: { sinEaterHealOnHarmfulStatusRemove: 4 },
+      trinketEffects: { sinEaterHealOnHarmfulStatusRemove: 4 },
     });
     const texts = makeTexts();
     const result = removeHarmfulPlayerStatuses(state, 2, texts);
@@ -46,7 +46,7 @@ describe("removeHarmfulPlayerStatuses", () => {
   it("does nothing when no statuses to remove", () => {
     const state = patchBattleState({
       playerHealth: 20,
-      boonEffects: { sinEaterHealOnHarmfulStatusRemove: 4 },
+      trinketEffects: { sinEaterHealOnHarmfulStatusRemove: 4 },
     });
     const result = removeHarmfulPlayerStatuses(state, 1);
     expect(result.playerHealth).toBe(20);

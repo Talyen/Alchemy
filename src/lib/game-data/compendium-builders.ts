@@ -1,5 +1,5 @@
-// Factories for compendium enemy and boon entries — reduces repeated field boilerplate.
-import type { BestiaryEntry, PlayerStatusId, BoonEntry } from "./types";
+// Factories for compendium enemy and trinket entries — reduces repeated field boilerplate.
+import type { BestiaryEntry, PlayerStatusId, TrinketEntry } from "./types";
 
 const ENEMY_SUBTITLES = { boss: "Boss", normal: "Normal", elite: "Elite" } as const;
 
@@ -29,6 +29,6 @@ export function defineEnemy(entry: Omit<BestiaryEntry, "subtitle" | "description
   };
 }
 
-export function boon(id: BoonEntry["id"], title: string, description: string, art: string): BoonEntry {
+export function trinket(id: TrinketEntry["id"], title: string, description: string, art: string): TrinketEntry {
   return { id, title, descriptionLines: [description], art };
 }

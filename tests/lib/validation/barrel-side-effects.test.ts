@@ -13,7 +13,7 @@ describe("@/lib/game-data barrel", () => {
     expect(mod.characters).toBeDefined();
     expect(mod.companionLibrary).toBeDefined();
     expect(mod.keywordDefinitions).toBeDefined();
-    expect(mod.boonLibrary).toBeDefined();
+    expect(mod.trinketLibrary).toBeDefined();
     expect(mod.getStandardPotionPool).toBeTypeOf("function");
     expect(mod.getOfferableCardPool).toBeTypeOf("function");
     expect(mod.isStandardPotionCard).toBeTypeOf("function");

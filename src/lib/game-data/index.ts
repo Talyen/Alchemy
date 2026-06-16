@@ -10,6 +10,7 @@ export * from "./compendium";
 export * from "./companions";
 export * from "./cards";
 export * from "./characters";
+export * from "./character-unlocks";
 export * from "./talents";
 export * from "./difficulties";
 export * from "./reward-selection";

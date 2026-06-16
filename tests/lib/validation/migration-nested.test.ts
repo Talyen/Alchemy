@@ -4,40 +4,40 @@ import { migrateWildwoodDraft } from "@/lib/validation/migration/migrate-wildwoo
 import { migrateActiveRun } from "@/lib/validation/migration/migrate-active-run";
 
 describe("nested save migrators", () => {
-  it("renames trinketEffects and burn flags on battle snapshots", () => {
+  it("renames boonEffects and burn flags on battle snapshots", () => {
     const migrated = migrateBattleState({
-      trinketEffects: { firstBurnDoubled: true },
-      flags: { firstBurnTrinketDoubledUsed: true },
+      boonEffects: { firstBurnDoubled: true },
+      flags: { firstBurnBoonDoubledUsed: true },
     }) as Record<string, unknown>;
 
-    expect(migrated.boonEffects).toEqual({ firstBurnDoubled: true });
-    expect(migrated.trinketEffects).toBeUndefined();
-    expect((migrated.flags as Record<string, unknown>).firstBurnBoonDoubledUsed).toBe(true);
-    expect((migrated.flags as Record<string, unknown>).firstBurnTrinketDoubledUsed).toBeUndefined();
+    expect(migrated.trinketEffects).toEqual({ firstBurnDoubled: true });
+    expect(migrated.boonEffects).toBeUndefined();
+    expect((migrated.flags as Record<string, unknown>).firstBurnTrinketDoubledUsed).toBe(true);
+    expect((migrated.flags as Record<string, unknown>).firstBurnBoonDoubledUsed).toBeUndefined();
   });
 
-  it("remaps wildwood rewardType trinket to boon", () => {
-    const migrated = migrateWildwoodDraft({ rewardType: "trinket", phase: "reward" }) as Record<string, unknown>;
-    expect(migrated.rewardType).toBe("boon");
+  it("remaps wildwood rewardType boon to trinket", () => {
+    const migrated = migrateWildwoodDraft({ rewardType: "boon", phase: "reward" }) as Record<string, unknown>;
+    expect(migrated.rewardType).toBe("trinket");
   });
 
   it("migrates nested active run fields together", () => {
     const migrated = migrateActiveRun({
-      runTrinkets: ["bone-charm"],
-      wildwoodDraft: { rewardType: "trinket" },
+      runBoons: ["bone-charm"],
+      wildwoodDraft: { rewardType: "boon" },
       activeCombat: {
         battleState: {
-          trinketEffects: { boneCharmHealOnKill: 3 },
-          flags: { firstBurnTrinketDoubledUsed: true },
+          boonEffects: { boneCharmHealOnKill: 3 },
+          flags: { firstBurnBoonDoubledUsed: true },
         },
       },
     }) as Record<string, unknown>;
 
-    expect(migrated.runBoons).toEqual(["bone-charm"]);
-    expect(migrated.runTrinkets).toBeUndefined();
-    expect((migrated.wildwoodDraft as Record<string, unknown>).rewardType).toBe("boon");
+    expect(migrated.runTrinkets).toEqual(["bone-charm"]);
+    expect(migrated.runBoons).toBeUndefined();
+    expect((migrated.wildwoodDraft as Record<string, unknown>).rewardType).toBe("trinket");
     const battleState = (migrated.activeCombat as Record<string, unknown>).battleState as Record<string, unknown>;
-    expect(battleState.boonEffects).toEqual({ boneCharmHealOnKill: 3 });
-    expect((battleState.flags as Record<string, unknown>).firstBurnBoonDoubledUsed).toBe(true);
+    expect(battleState.trinketEffects).toEqual({ boneCharmHealOnKill: 3 });
+    expect((battleState.flags as Record<string, unknown>).firstBurnTrinketDoubledUsed).toBe(true);
   });
 });

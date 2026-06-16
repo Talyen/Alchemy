@@ -25,9 +25,10 @@ Static reference for commands, glossary, battle rules, and file lookup. Strict c
 ```sh
 npm run dev                 # Vite dev server
 npm run build               # tsc + vite build
+npm run typecheck           # tsc --noEmit (fast; also in lint:ci and pre-commit)
 npm test                    # Vitest
 npm test -- <path>          # Single test file
-npm run lint:ci             # format:check + lint + deadcode (CI / pre-push)
+npm run lint:ci             # format:check + typecheck + lint + deadcode (CI / pre-push)
 npm run check               # npm ci --dry-run + lint:ci + test + build
 npm run check:push          # check + test:e2e:prepush
 npm run check:ship          # lint:ci + ship unit tests + desktop compile
@@ -90,7 +91,7 @@ Definitions of common terms used in the Alchemy codebase.
 | **TiltSurface** | Card/tile wrapper with tilt-on-hover, optional shimmer, and button/div modes (`shared/ui/tilt-surface.tsx`). |
 | **Summon** | Brings a companion into battle. |
 | **Talent Effect Manifest** | Active talent bonuses on `BattleState.talentEffects`. |
-| **Boon Manifest** | Run-scoped Boon bonuses on `BattleState.boonEffects`. |
+| **Trinket Manifest** | Run-scoped Trinket bonuses on `BattleState.trinketEffects`. |
 | **Gear** | Permanent unique items stored in the Armory and equipped per character. Gear effects are snapshotted when battle begins. |
 | **Wish** | Card choices from full library; `wishQueue`. |
 

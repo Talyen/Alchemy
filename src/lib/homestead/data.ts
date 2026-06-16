@@ -135,7 +135,7 @@ export const researchUpgrades = [
     "Detect Magic",
     stackingTiers(
       singleMaterialCosts("crystal"),
-      { boonChanceBonus: 0.1 },
+      { trinketChanceBonus: 0.1 },
       (tier) => `${tier * 10}% increased chance to find Boons`,
     ),
   ),

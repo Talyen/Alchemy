@@ -1,9 +1,8 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { gameModeMeta } from "@/features/alchemy/shared/config";
 import { PressableMotion } from "../../shared/ui/pressable-motion";
-import { ScreenHeader, StaggerGroup, StaggerItem } from "../../shared/ui/shared-ui";
+import { ActionButtonRow, ScreenHeader, StaggerGroup, StaggerItem } from "../../shared/ui/shared-ui";
 import { TiltSurface } from "../../shared/ui/tilt-surface";
 import { useAppStore } from "../../shared/stores/app-store";
 import { playUISound } from "@/lib/audio";
@@ -68,7 +67,7 @@ export function GameModeSelectScreen({
 
           return (
             <StaggerItem key={modeId} index={index} className="relative">
-              <PressableMotion disableHoverScale>
+              <PressableMotion>
                 <TiltSurface
                   as="button"
                   tiltEnabled={!isLocked}
@@ -95,9 +94,9 @@ export function GameModeSelectScreen({
               </PressableMotion>
               {hoveredModeId === modeId && isLocked && (
                 <TooltipPanel width="w-64" visible className="z-50 mb-3 text-center">
-                  <TooltipHeader>{meta.title} Locked</TooltipHeader>
+                  <TooltipHeader>{meta.title}</TooltipHeader>
                   <TooltipBody>
-                    <p className="text-red-400 font-semibold">
+                    <p>
                       {modeId === "labyrinth"
                         ? "Finish a Run as the Rogue to unlock"
                         : "Finish a Run as the Ranger to unlock"}
@@ -110,21 +109,17 @@ export function GameModeSelectScreen({
         })}
       </StaggerGroup>
 
-      <div className="flex gap-4">
-        <Button size="lg" variant="outline" className="w-40" onClick={onBack}>
-          Back
-        </Button>
-        <Button
-          size="lg"
-          className="w-40"
-          disabled={!selected}
-          onClick={() => {
+      <ActionButtonRow
+        width="dialog"
+        secondary={{ label: "Back", onClick: onBack }}
+        primary={{
+          label: buttonLabel,
+          disabled: !selected,
+          onClick: () => {
             selected?.();
-          }}
-        >
-          {buttonLabel}
-        </Button>
-      </div>
+          },
+        }}
+      />
     </div>
   );
 }

@@ -33,7 +33,7 @@
 
 ## Verification ladder
 
-1. During development, run the narrow tests listed for the changed area in [CONTRIBUTING.md](./CONTRIBUTING.md#what-to-run-when-you-change).
+1. During development, run the narrow tests listed for the changed area in [CONTRIBUTING.md](./CONTRIBUTING.md#what-to-run-when-you-change). After editing `.ts` or `.tsx`, run `npm run typecheck` (or `npm run lint:ci`, which includes it).
 2. Add `npm run lint:ci`, broader tests, or a build when the change's blast radius warrants them.
 3. Use `npm run check:push` as the normal comprehensive check before a requested push.
 4. Use `npm run check:ship` for ship/save/desktop unit and build validation.
@@ -71,14 +71,14 @@ Only `@/*` maps to `src/*` in `tsconfig.json`; use on-disk paths under `src/feat
 - Use plain function components with explicit `Props` types, not `React.FC`.
 - Build conditional Tailwind classes with `cn()` from `@/lib/utils`; do not use template literals in `className`.
 - Keep reusable `shared/ui` components isolated from run, battle, and session stores; pass domain data through props.
-- Use hover scale only through `Button` or `PressableMotion`; use CSS `active:` for press feedback, not Framer `whileTap`.
+- Use CSS `active:` for press feedback on buttons; no Framer hover scale. Hover uses brightness/background lift from `src/lib/ui/button-hover.ts` plus sound via `Button` or `PressableMotion`.
 - Use `StaggerGroup` and `StaggerItem` according to [the motion workflow](./docs/WORKFLOWS.md#staggered-screen-enter-motion). Do not wrap translate-centered absolute map nodes with `StaggerItem`.
 - Initialize cosmetic randomness lazily with `useState(() => ...)`, not `useMemo` plus `Math.random()` during render.
 
 ## Generated and heavy files
 
 - Do not edit generated outputs directly. `src/lib/validation/metadata.generated.ts` comes from `npm run sync:version`; optimized assets come from the asset scripts documented in [WORKFLOWS](./docs/WORKFLOWS.md#assets).
-- Asset regeneration requires explicit user approval because it can create a large diff.
+- When raw assets or `scripts/optimize-assets.mjs` / `scripts/sync-gear-art.mjs` change, run `npm run assets:optimize` and `npm run sync:gear-art` (if gear art changed) so generated outputs stay in sync. Expect a large diff under `src/assets/optimized/` and `src/lib/game-data/gear-art.ts`.
 - Never edit dependency, build, coverage, or report output directories: `node_modules/`, `dist/`, `.vite/`, `release-desktop/`, `coverage/`, and `reports/`.
 - Treat `Raw Assets/`, `Music/`, `src/assets/optimized/`, `game-constants.ts`, `cards.ts`, `keywords.ts`, `assets.ts`, and `vite.config.ts` as read-on-demand; avoid repeated broad reads.
 

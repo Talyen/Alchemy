@@ -35,7 +35,7 @@ export const defaultHomesteadEffects: HomesteadEffectManifest = {
   startMana: 0,
   consumeHealMultiplier: 0,
   potionMixPotency: 0,
-  boonChanceBonus: 0,
+  trinketChanceBonus: 0,
   burnDamageReduction: 0,
   freezeDamageReduction: 0,
   natureDamageReduction: 0,

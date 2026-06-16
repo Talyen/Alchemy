@@ -52,24 +52,19 @@ import type { CollectionTab, Destination } from "../types";
 export const collectionTabMeta: Array<{ id: CollectionTab; label: string; icon: LucideIcon }> = [
   { id: "cards", label: "Cards", icon: BookOpen },
   { id: "bestiary", label: "Bestiary", icon: ShieldAlert },
-  { id: "boons", label: "Boons", icon: Trophy },
+  { id: "trinkets", label: "Trinkets", icon: Trophy },
 ];
 
-// Destination visual theming gives each route type an icon, palette, and art.
-export const destinationMeta: Record<Destination, { icon: LucideIcon; className: string; art: string }> = {
-  "Normal Combat": { icon: Swords, className: "bg-red-900/85 text-white", art: normalEnemyBg },
-  "Elite Combat": { icon: ShieldAlert, className: "bg-violet-900/85 text-white", art: eliteEnemyBg },
-  "Merchant's Shop": { icon: Coins, className: "bg-yellow-600/85 text-white", art: merchantShopBg },
-  "Alchemist's Shop": { icon: WandSparkles, className: "bg-green-700/85 text-white", art: alchemistShopBg },
-  Mystery: { icon: Sparkles, className: "bg-zinc-800/90 text-zinc-100", art: mysteryBg },
-  Corruption: {
-    icon: Dices,
-    className:
-      "bg-gradient-to-br from-red-950 via-black to-red-950 bg-[length:200%_200%] animate-shine text-red-400 border-0",
-    art: corruptionAltar,
-  },
-  Campfire: { icon: Flame, className: "bg-emerald-600/85 text-white", art: campfire },
-  "Boss Combat": { icon: Skull, className: "bg-red-950/90 text-red-300", art: bossCombat },
+// Destination visual theming gives each route type an icon, accent color, and art.
+export const destinationMeta: Record<Destination, { icon: LucideIcon; accentClassName: string; art: string }> = {
+  "Normal Combat": { icon: Swords, accentClassName: "text-red-400", art: normalEnemyBg },
+  "Elite Combat": { icon: ShieldAlert, accentClassName: "text-violet-400", art: eliteEnemyBg },
+  "Merchant's Shop": { icon: Coins, accentClassName: "text-amber-400", art: merchantShopBg },
+  "Alchemist's Shop": { icon: WandSparkles, accentClassName: "text-emerald-400", art: alchemistShopBg },
+  Mystery: { icon: Sparkles, accentClassName: "text-zinc-200", art: mysteryBg },
+  Corruption: { icon: Dices, accentClassName: "text-red-400", art: corruptionAltar },
+  Campfire: { icon: Flame, accentClassName: "text-emerald-300", art: campfire },
+  "Boss Combat": { icon: Skull, accentClassName: "text-red-400", art: bossCombat },
 };
 
 // Game mode visual theming for the game mode selection screen.

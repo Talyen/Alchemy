@@ -180,7 +180,13 @@ export function BattleScreen(props: BattleScreenProps) {
 
             <BattleBottomBar view={requiredView} refs={refs} actions={actions} />
 
-            {battleState.wishOptions ? <WishOverlay battleState={displayState} actions={actions} /> : null}
+            {battleState.wishOptions ? (
+              <WishOverlay
+                key={battleState.wishOptions.map((card) => card.id).join("-")}
+                battleState={displayState}
+                actions={actions}
+              />
+            ) : null}
 
             {cardGhosts.map((ghost) => (
               <CardGhostOverlay key={ghost.id} ghost={ghost} onDone={() => removeGhost(ghost.id)} />

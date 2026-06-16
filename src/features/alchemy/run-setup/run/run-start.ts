@@ -23,7 +23,7 @@ export type RunStartSnapshot = {
   currentAct: number;
   destinationIndexInAct: number;
   completedDestinations: Destination[];
-  runBoons: string[];
+  runTrinkets: string[];
   hasActiveRun: boolean;
 };
 
@@ -60,7 +60,7 @@ export function createRunStartSnapshot({
     currentAct: 1,
     destinationIndexInAct: 0,
     completedDestinations: [],
-    runBoons: [],
+    runTrinkets: [],
     hasActiveRun: true,
   };
 }

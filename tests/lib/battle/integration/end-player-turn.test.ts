@@ -4,7 +4,7 @@ import { applyCardEffects, defaultTalentEffects, endPlayerTurn } from "@/lib/bat
 import { isPlayerDefeated, type CombatTextEvent } from "@/lib/battle/types";
 import { IRON_HIDE_ARMOR_PER_TURN, TRAIT_FORGE_PER_TURN } from "@/lib/game-constants";
 import { companionLibrary, type DifficultyModifier } from "@/lib/game-data";
-import { computeBoonManifest, defaultBoonEffects } from "@/lib/boons";
+import { computeTrinketManifest, defaultTrinketEffects } from "@/lib/trinkets";
 
 vi.spyOn(Math, "random").mockReturnValue(0.99);
 
@@ -238,13 +238,13 @@ describe("endPlayerTurn", () => {
   });
 
   it("uses Plague Doctor's Mask only on harmful status effects", () => {
-    const manifest = computeBoonManifest(["plague-doctors-mask"]);
+    const manifest = computeTrinketManifest(["plague-doctors-mask"]);
     const state = makeState({
       enemyAttackEffects: [
         { kind: "player-status", status: "block", amount: 2 },
         { kind: "player-status", status: "poison", amount: 3 },
       ],
-      boonEffects: manifest,
+      trinketEffects: manifest,
     });
 
     const result = endPlayerTurn(state);
@@ -479,11 +479,11 @@ describe("enemy damage absorption via endPlayerTurn", () => {
   });
 
   it("vanguard crest grants forge when block fully absorbs physical damage", () => {
-    const manifest = computeBoonManifest(["vanguards-crest"]);
+    const manifest = computeTrinketManifest(["vanguards-crest"]);
     const state = makeState({
       playerStatuses: { block: 10, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 6 }],
-      boonEffects: manifest,
+      trinketEffects: manifest,
     });
     const result = endPlayerTurn(state);
     expect(result.state.playerHealth).toBe(30);
@@ -690,7 +690,7 @@ describe("endPlayerTurn — non-physical enemy damage", () => {
       playerStatuses: { block: 0, armor: 0, forge: 0, haste: 0, burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
       enemyMitigation: { armor: 4, forge: 0, freezeBonus: 0, burnBonus: 0, block: 0 },
       enemyAttackEffects: [{ kind: "damage", damageType: "holy", amount: 8 }],
-      boonEffects: { ...defaultBoonEffects, sunderingArmorPiercing: 3 },
+      trinketEffects: { ...defaultTrinketEffects, sunderingArmorPiercing: 3 },
     });
     const result = endPlayerTurn(state);
     // enemy has 4 armor, but holy damage doesn't care about armor (effectiveArmor=0)

@@ -88,8 +88,8 @@ function HandCardItem({
       baseTransform={
         isHovered ? getHoverHandTransform(offset, stagePixelRatio) : getRestingHandTransform(offset, stagePixelRatio)
       }
-      className={handWidthClass}
-      disabled={!canPlay}
+      className={cn(handWidthClass, !canPlay && "cursor-default grayscale")}
+      tiltEnabled={canPlay}
       dragging={hiddenHandCardKeys.has(cardKey)}
       wrapperClassName={cn(shouldStagger && "stagger-item", "relative flex justify-center -mx-5 sm:-mx-6")}
       wrapperDataCardKey={cardKey}
@@ -119,7 +119,7 @@ export function BattleHand({
 
   const descriptionContext = {
     ...battleState.talentEffects,
-    companionDamageBonus: battleState.boonEffects.companionDamageBonus,
+    companionDamageBonus: battleState.trinketEffects.companionDamageBonus,
     companionDamageBuff: battleState.companionDamageBuff,
   };
 

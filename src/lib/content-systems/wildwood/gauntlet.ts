@@ -33,7 +33,7 @@ export type WildwoodDraftState = {
   currentBossId: WildwoodBossId | null;
   currentCombatTraitIds: EncounterCombatTraitId[];
   currentRewardTraitIds: EncounterRewardTraitId[];
-  rewardType: "card" | "boon" | null;
+  rewardType: "card" | "trinket" | null;
   rewardChoiceIds: string[];
   selectedRewardId: string | null;
 };

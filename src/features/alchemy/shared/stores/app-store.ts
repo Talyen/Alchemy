@@ -5,7 +5,7 @@ import { clearAlchemySaveData, defaultSaveData, type SaveData } from "@/features
 
 type CollectionPages = Record<CollectionTab, number>;
 
-const initialCollectionPages: CollectionPages = { cards: 0, bestiary: 0, boons: 0 };
+const initialCollectionPages: CollectionPages = { cards: 0, bestiary: 0, trinkets: 0 };
 
 type AppStore = {
   selectedAspectRatio: AspectRatioOption;
@@ -22,7 +22,7 @@ type AppStore = {
   collectionPages: CollectionPages;
   discoveredCardIds: string[];
   encounteredEnemyIds: string[];
-  discoveredBoonIds: string[];
+  discoveredTrinketIds: string[];
   completedDifficulties: Record<CharacterId, DifficultyId[]>;
   finishedRunCharacters: CharacterId[];
 
@@ -38,7 +38,7 @@ type AppStore = {
   setShowClearSaveConfirm: (v: boolean) => void;
   setDiscoveredCardIds: (v: string[] | ((prev: string[]) => string[])) => void;
   setEncounteredEnemyIds: (v: string[] | ((prev: string[]) => string[])) => void;
-  setDiscoveredBoonIds: (v: string[] | ((prev: string[]) => string[])) => void;
+  setDiscoveredTrinketIds: (v: string[] | ((prev: string[]) => string[])) => void;
   setCompletedDifficulties: (
     v:
       | Record<CharacterId, DifficultyId[]>
@@ -68,7 +68,7 @@ export const useAppStore = create<AppStore>()((set) => ({
   collectionPages: initialCollectionPages,
   discoveredCardIds: [],
   encounteredEnemyIds: [],
-  discoveredBoonIds: [],
+  discoveredTrinketIds: [],
   completedDifficulties: {
     knight: [],
     rogue: [],
@@ -95,8 +95,8 @@ export const useAppStore = create<AppStore>()((set) => ({
     set((s) => ({ discoveredCardIds: typeof v === "function" ? v(s.discoveredCardIds) : v })),
   setEncounteredEnemyIds: (v) =>
     set((s) => ({ encounteredEnemyIds: typeof v === "function" ? v(s.encounteredEnemyIds) : v })),
-  setDiscoveredBoonIds: (v) =>
-    set((s) => ({ discoveredBoonIds: typeof v === "function" ? v(s.discoveredBoonIds) : v })),
+  setDiscoveredTrinketIds: (v) =>
+    set((s) => ({ discoveredTrinketIds: typeof v === "function" ? v(s.discoveredTrinketIds) : v })),
   setCompletedDifficulties: (v) =>
     set((s) => ({ completedDifficulties: typeof v === "function" ? v(s.completedDifficulties) : v })),
   setFinishedRunCharacters: (v) =>
@@ -139,7 +139,7 @@ export const useAppStore = create<AppStore>()((set) => ({
       autoEndTurn: defaultSaveData.autoEndTurn,
       discoveredCardIds: defaultSaveData.discoveredCardIds,
       encounteredEnemyIds: defaultSaveData.encounteredEnemyIds,
-      discoveredBoonIds: defaultSaveData.discoveredBoonIds,
+      discoveredTrinketIds: defaultSaveData.discoveredTrinketIds,
       completedDifficulties: defaultSaveData.completedDifficulties,
       finishedRunCharacters: defaultSaveData.finishedRunCharacters,
       collectionPages: initialCollectionPages,
@@ -161,7 +161,7 @@ export const useAppStore = create<AppStore>()((set) => ({
       autoEndTurn: save.autoEndTurn,
       discoveredCardIds: save.discoveredCardIds,
       encounteredEnemyIds: save.encounteredEnemyIds,
-      discoveredBoonIds: save.discoveredBoonIds,
+      discoveredTrinketIds: save.discoveredTrinketIds,
       completedDifficulties: save.completedDifficulties,
       finishedRunCharacters: save.finishedRunCharacters,
     }),

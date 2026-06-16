@@ -4,20 +4,34 @@
 import { type ComponentProps } from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
-import { motion } from "motion/react";
 
 import { playUISound } from "@/lib/audio";
 import type { UISound } from "@/lib/sound-registry";
+import {
+  BUTTON_HOVER_DESTRUCTIVE,
+  BUTTON_HOVER_PRIMARY,
+  BUTTON_HOVER_SECONDARY,
+  BUTTON_HOVER_TRANSITION,
+} from "@/lib/ui/button-hover";
 import { cn } from "@/lib/utils";
 
+const primaryVariantClasses = cn("bg-primary text-primary-foreground", BUTTON_HOVER_PRIMARY);
+
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-semibold transition-[filter,background-color] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:brightness-95 disabled:pointer-events-none disabled:opacity-50",
+  cn(
+    "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:brightness-95 disabled:pointer-events-none disabled:opacity-50",
+    BUTTON_HOVER_TRANSITION,
+  ),
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground",
-        destructive: "bg-destructive text-destructive-foreground",
-        outline: "border border-border/80 bg-background text-foreground active:bg-muted active:brightness-100",
+        default: primaryVariantClasses,
+        primary: primaryVariantClasses,
+        destructive: cn("bg-destructive text-destructive-foreground", BUTTON_HOVER_DESTRUCTIVE),
+        outline: cn(
+          "border border-border/80 bg-background text-foreground active:bg-muted active:brightness-100",
+          BUTTON_HOVER_SECONDARY,
+        ),
       },
       size: {
         default: "h-11 px-5",
@@ -64,8 +78,6 @@ const sizingPrefixes = [
 
 const wrapperLayoutClassPrefixes = [...positioningPrefixes, ...sizingPrefixes];
 
-// Mirrors only layout-affecting utilities onto the motion wrapper because it becomes
-// the flex/grid item while the inner button keeps the visual styling classes.
 function getWrapperLayoutClassName(className: string | undefined) {
   if (!className) return undefined;
   return className
@@ -79,9 +91,6 @@ function getWrapperLayoutClassName(className: string | undefined) {
     .join(" ");
 }
 
-// Strips positioning utilities from the inner button so they live only on the motion
-// wrapper. Without this, hover transforms on the wrapper create a new containing block
-// and the inner button's absolute positioning teleports between ancestors.
 function getVisualClassName(className: string | undefined) {
   if (!className) return undefined;
   return className
@@ -96,7 +105,6 @@ function getVisualClassName(className: string | undefined) {
 interface ButtonProps extends ComponentProps<"button">, VariantProps<typeof buttonVariants> {
   asChild?: boolean;
   hoverSound?: UISound | false;
-  disableHoverScale?: boolean;
 }
 
 const Button = ({
@@ -105,7 +113,6 @@ const Button = ({
   size,
   asChild = false,
   hoverSound,
-  disableHoverScale,
   onMouseEnter,
   ref,
   ...props
@@ -136,15 +143,7 @@ const Button = ({
     );
   }
 
-  return (
-    <motion.span
-      className={cn("inline-flex", wrapperClassName)}
-      {...(disableHoverScale ? {} : { whileHover: { scale: 1.02 } })}
-      transition={{ type: "spring", stiffness: 400, damping: 15 }}
-    >
-      {button}
-    </motion.span>
-  );
+  return <span className={cn("inline-flex", wrapperClassName)}>{button}</span>;
 };
 
 export { Button };

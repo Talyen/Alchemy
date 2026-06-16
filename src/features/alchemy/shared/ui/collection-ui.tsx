@@ -8,8 +8,8 @@ import {
   collectionCardGridClass,
   collectionTabMeta,
   collectionTileWidthClass,
-  collectionBoonGridClass,
-  boonCardWidthClass,
+  collectionTrinketGridClass,
+  trinketCardWidthClass,
 } from "../config";
 import type { CollectionTab } from "../types";
 import { TabBar } from "./tab-bar";
@@ -22,14 +22,14 @@ export function CollectionGrid({
   collectionTab,
   discoveredCardIds,
   encounteredEnemyIds,
-  discoveredBoonIds,
+  discoveredTrinketIds,
   page,
   bondedCompanions,
 }: {
   collectionTab: CollectionTab;
   discoveredCardIds: string[];
   encounteredEnemyIds: string[];
-  discoveredBoonIds: string[];
+  discoveredTrinketIds: string[];
   page: number;
   bondedCompanions: Record<string, number>;
 }) {
@@ -37,7 +37,7 @@ export function CollectionGrid({
     collectionTab,
     discoveredCardIds,
     encounteredEnemyIds,
-    discoveredBoonIds,
+    discoveredTrinketIds,
     bondedCompanions,
     page,
   });
@@ -47,7 +47,7 @@ export function CollectionGrid({
       swapKey={`${collectionTab}-${page}`}
       className={cn(
         "min-h-[50cqh] gap-y-7 overflow-visible",
-        collectionTab === "boons" ? collectionBoonGridClass : collectionCardGridClass,
+        collectionTab === "trinkets" ? collectionTrinketGridClass : collectionCardGridClass,
         "grid-rows-2",
       )}
     >
@@ -59,7 +59,7 @@ export function CollectionGrid({
       {Array.from({ length: getCollectionFillerCount(pageItems.length, collectionTab) }).map((_, index) => (
         <div
           key={`collection-filler-${index}`}
-          className={cn(collectionTab === "boons" ? boonCardWidthClass : collectionTileWidthClass)}
+          className={cn(collectionTab === "trinkets" ? trinketCardWidthClass : collectionTileWidthClass)}
           aria-hidden="true"
         />
       ))}

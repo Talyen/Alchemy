@@ -31,7 +31,7 @@ export function useMysteryFlow() {
         setRunDeck: runStore.setRunDeck,
         setRunGold: runStore.setRunGold,
         setRunPlayerHealth: runStore.setRunPlayerHealth,
-        setRunBoons: runStore.setRunBoons,
+        setRunTrinkets: runStore.setRunTrinkets,
         setMysteryCardChoices,
         awardMysteryXP: runStore.awardMysteryXP,
         onAddMaterials: (materials) =>

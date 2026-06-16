@@ -80,7 +80,7 @@ test.describe("Keyboard Navigation", () => {
 
     const talentsBtn = menu.getByRole("button", { name: "Talents" });
     await talentsBtn.hover();
-    const tooltip = menu.getByText("Talents Locked");
+    const tooltip = menu.getByText("Finish a Run as the Knight to unlock");
     await expect(tooltip).toBeVisible({ timeout: 3000 });
 
     const btnBox = await talentsBtn.boundingBox();

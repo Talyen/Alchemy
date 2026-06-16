@@ -28,14 +28,17 @@ export function ScreenDescription({
   children,
   className,
   tone,
+  startOnView = true,
 }: {
   children: string;
   className?: string;
   tone?: "default" | "danger";
+  startOnView?: boolean;
 }) {
   return (
     <TextAnimate
       once
+      startOnView={startOnView}
       className={cn(
         "mx-auto max-w-lg text-center text-sm leading-relaxed",
         tone === "danger" ? "text-red-100/75" : "text-muted-foreground",

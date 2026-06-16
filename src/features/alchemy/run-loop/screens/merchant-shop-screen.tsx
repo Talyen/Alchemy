@@ -2,7 +2,9 @@
 import { useMemo, useState } from "react";
 import { RefreshCw, Trash2 } from "lucide-react";
 
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { BUTTON_WIDTH_ACTION } from "@/features/alchemy/shared/config";
 import type { BattleCard } from "@/lib/game-data";
 import { SELECTION_GRID_PAGE_SIZE, SHOP_CARD_PRICE, SHOP_REMOVE_PRICE, SHOP_REFRESH_PRICE } from "@/lib/game-constants";
 
@@ -146,7 +148,7 @@ export function MerchantShopScreen({
               onClick={onRefresh}
             />
           </div>
-          <Button size="lg" className="mt-2 min-w-44" onClick={onContinue}>
+          <Button size="lg" variant="primary" className={cn("mt-2", BUTTON_WIDTH_ACTION)} onClick={onContinue}>
             Leave
           </Button>
         </StaggerGroup>

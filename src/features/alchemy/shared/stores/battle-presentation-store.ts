@@ -49,6 +49,18 @@ const shakeDuration = SHAKE_DURATION;
 const combatTextLifetimeMs = COMBAT_TEXT_LIFETIME_MS;
 const combatTextLaneDelayMs = COMBAT_TEXT_LANE_DELAY_MS;
 
+let combatTextSequence = 0;
+
+function shouldShowFloatingCombatText(sequence: number): boolean {
+  if (sequence !== combatTextSequence) return false;
+  const domain = useRunDomainStore.getState();
+  return domain.battle.hasActiveBattle && domain.navigation.screen === "battle";
+}
+
+function invalidateCombatTextSequence() {
+  combatTextSequence += 1;
+}
+
 export const useBattlePresentationStore = create<BattlePresentationStore>()((set) => ({
   cardGhosts: [],
   floatingCombatTexts: [],
@@ -93,6 +105,7 @@ export const useBattlePresentationStore = create<BattlePresentationStore>()((set
 
   showCombatTexts: (events) => {
     if (events.length === 0) return;
+    const sequence = combatTextSequence;
     const laneCounts: Record<"player" | "enemy", number> = { player: 0, enemy: 0 };
     const createdAt = performance.now();
     const nextEntries = events.map((event, index) => {
@@ -110,18 +123,21 @@ export const useBattlePresentationStore = create<BattlePresentationStore>()((set
       const entryDelay = entry.lane * combatTextLaneDelayMs;
       delay(entryDelay)
         .then(() => {
-          if (!useRunDomainStore.getState().battle.hasActiveBattle) return;
+          if (!shouldShowFloatingCombatText(sequence)) return;
           set((s) => ({ floatingCombatTexts: [...s.floatingCombatTexts, entry] }));
           return delay(combatTextLifetimeMs);
         })
         .then((res) => {
-          if (res === undefined) return;
+          if (res === undefined || sequence !== combatTextSequence) return;
           set((s) => ({ floatingCombatTexts: s.floatingCombatTexts.filter((c) => c.id !== entry.id) }));
         });
     }
   },
 
-  clearFloatingCombatTexts: () => set({ floatingCombatTexts: [] }),
+  clearFloatingCombatTexts: () => {
+    invalidateCombatTextSequence();
+    set({ floatingCombatTexts: [] });
+  },
 
   addRevealedCardKey: (key) => set((s) => ({ revealedCardKeys: new Set(s.revealedCardKeys).add(key) })),
 
@@ -142,7 +158,8 @@ export const useBattlePresentationStore = create<BattlePresentationStore>()((set
       cardTransferInProgress: typeof inProgress === "function" ? inProgress(s.cardTransferInProgress) : inProgress,
     })),
 
-  resetPresentation: () =>
+  resetPresentation: () => {
+    invalidateCombatTextSequence();
     set({
       cardGhosts: [],
       floatingCombatTexts: [],
@@ -155,5 +172,6 @@ export const useBattlePresentationStore = create<BattlePresentationStore>()((set
       cardTransfers: [],
       hiddenHandCardKeys: new Set(),
       cardTransferInProgress: false,
-    }),
+    });
+  },
 }));

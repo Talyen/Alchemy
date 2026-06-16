@@ -83,7 +83,7 @@ const difficultyTurnStartHandlers: Partial<Record<DifficultyModifier["kind"], En
 // and intentionally have no turn-start handler. Excludes warnings to reduce noise.
 const PASSIVE_ONLY_TRAITS = new Set([
   "brittle-bones",
-  "boon-hoarder",
+  "trinket-hoarder",
   "holy-vulnerability",
   "burn-resistance",
   "burn-vulnerability",

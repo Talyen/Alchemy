@@ -11,7 +11,7 @@ export class CorruptionPage {
 
   readonly altarHeading = this.page.getByRole("heading", { name: "Altar of Corruption" });
   readonly corruptBtn = this.page.getByRole("button", { name: "Corrupt a Card" });
-  readonly confirmCorruptBtn = this.page.getByRole("button", { name: "Corrupt" });
+  readonly confirmCorruptBtn = this.page.getByRole("button", { name: "Corrupt", exact: true });
   readonly leaveBtn = this.page.getByRole("button", { name: "Leave" });
   readonly continueBtn = this.page.getByRole("button", { name: "Continue" });
   readonly cardGrid = this.page.locator('[data-testid="card-selection-grid"]');

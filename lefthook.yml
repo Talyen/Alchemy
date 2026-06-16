@@ -2,6 +2,8 @@ pre-commit:
   commands:
     lockfile-check:
       run: npm ci --dry-run
+    typecheck:
+      run: npm run typecheck
     format:
       glob: "src/**/*.{ts,tsx,css}"
       run: npx -y prettier --write {staged_files}

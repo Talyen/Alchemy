@@ -33,6 +33,7 @@ type BattleCardButtonProps = {
   selected?: boolean;
   disabled?: boolean;
   dragging?: boolean;
+  tiltEnabled?: boolean;
   descriptionContext?: CardDescriptionContext;
 };
 
@@ -102,6 +103,7 @@ function CardButtonSurface({
   selected = false,
   disabled = false,
   dragging = false,
+  tiltEnabled = true,
 }: BattleCardButtonProps) {
   return (
     <TiltSurface
@@ -112,6 +114,7 @@ function CardButtonSurface({
       selected={selected}
       disabled={disabled}
       dragging={dragging}
+      tiltEnabled={tiltEnabled}
       baseTransform={baseTransform}
       onClick={onClick}
       onPointerDown={onPointerDown}
@@ -121,7 +124,7 @@ function CardButtonSurface({
       ariaLabel={ariaLabel}
     >
       <img
-        src={card.art || undefined}
+        src={card.art || "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"}
         alt={getCardDisplayTitle(card)}
         className={cn("block h-auto w-full", cardArtImageClass)}
         loading="eager"

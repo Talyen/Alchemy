@@ -1,12 +1,11 @@
 // Free optional Wildwood Draft card-removal screen between boss encounters.
 import { useMemo, useState } from "react";
 import { Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import type { BattleCard } from "@/lib/game-data";
 import { SELECTION_GRID_PAGE_SIZE } from "@/lib/game-constants";
 import { CardSelectionGrid } from "../../shared/ui/card-selection-grid";
 import { SelectableShopCard } from "../../shared/ui/shop-card-item";
-import { ScreenDescription, ScreenHeader, StaggerGroup, StaggerItem } from "../../shared/ui/shared-ui";
+import { ScreenDescription, ScreenHeader, ActionButtonRow, StaggerGroup, StaggerItem } from "../../shared/ui/shared-ui";
 
 type Props = {
   runDeck: BattleCard[];
@@ -45,18 +44,20 @@ export function WildwoodRemovalScreen({ runDeck, onRemove, onSkip }: Props) {
           />
         </StaggerItem>
         <StaggerItem index={3}>
-          <div className="mt-5 flex justify-center gap-3">
-            <Button size="lg" variant="outline" onClick={onSkip}>
-              Skip
-            </Button>
-            <Button
-              size="lg"
-              disabled={selectedIndex === null}
-              onClick={() => selectedIndex !== null && onRemove(selectedIndex)}
-            >
-              <Trash2 className="h-4 w-4" /> Remove Card
-            </Button>
-          </div>
+          <ActionButtonRow
+            className="mt-5"
+            width="action"
+            secondary={{ label: "Skip", onClick: onSkip }}
+            primary={{
+              label: (
+                <>
+                  <Trash2 className="h-4 w-4" /> Remove Card
+                </>
+              ),
+              disabled: selectedIndex === null,
+              onClick: () => selectedIndex !== null && onRemove(selectedIndex),
+            }}
+          />
         </StaggerItem>
       </StaggerGroup>
     </div>

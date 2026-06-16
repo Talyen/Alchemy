@@ -24,7 +24,7 @@ describe("createRunStartSnapshot", () => {
       currentAct: 1,
       destinationIndexInAct: 0,
       completedDestinations: [],
-      runBoons: [],
+      runTrinkets: [],
       hasActiveRun: true,
     });
     expect(result.freshDeck.map((card) => card.id)).toEqual(getStartingDeck("knight").map((card) => card.id));
@@ -58,7 +58,7 @@ describe("createRunStartSnapshot", () => {
     expect(result.contentSystemType).toBe("wildwood");
     expect(result.selectedDifficulty).toBeNull();
     expect(result.runGold).toBe(0);
-    expect(result.runBoons).toEqual([]);
+    expect(result.runTrinkets).toEqual([]);
     expect(result.roomsEncountered).toBe(0);
     expect(result.completedDestinations).toEqual([]);
     expect(result.hasActiveRun).toBe(true);

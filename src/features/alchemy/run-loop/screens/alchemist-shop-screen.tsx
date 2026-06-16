@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { FlaskConical, RefreshCw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { BUTTON_WIDTH_ACTION } from "@/features/alchemy/shared/config";
 import { isStandardPotionCard, type BattleCard } from "@/lib/game-data";
 import {
   ALCHEMIST_POTION_PRICE,
@@ -190,7 +191,7 @@ export function AlchemistShopScreen({
             />
           </div>
 
-          <Button size="lg" className="min-w-44" onClick={onContinue}>
+          <Button size="lg" variant="primary" className={BUTTON_WIDTH_ACTION} onClick={onContinue}>
             Leave
           </Button>
         </StaggerGroup>

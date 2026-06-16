@@ -17,11 +17,13 @@ import { useAppActions, useHomesteadActions } from "@/features/alchemy/shared/st
 import { useRunDomainStore } from "@/features/alchemy/shared/stores/run-session-facade";
 import type { ScreenRouteContext } from "./types";
 import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
+import { isArmoryLocked as getIsArmoryLocked } from "@/lib/gear";
 import { flushAlchemySaveNow } from "@/features/alchemy/shared/storage/flush-save";
 import { resolveActiveRunForSave } from "@/features/alchemy/shared/stores/run-transitions";
 
 function MenuScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions">) {
   const { hasUnspentTalents, hasAffordableHomestead } = useAppScreenChrome();
+  const isArmoryLocked = useGearStore((s) => getIsArmoryLocked(s.inventory));
   return (
     <MenuScreen
       onPlay={() => a.navigation.goToScreen("game-mode-select")}
@@ -35,6 +37,7 @@ function MenuScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions">) {
       logoSrcVariants={menuLogoVariants}
       hasUnspentTalents={hasUnspentTalents}
       hasAffordableHomestead={hasAffordableHomestead}
+      isArmoryLocked={isArmoryLocked}
     />
   );
 }
@@ -94,7 +97,7 @@ function CollectionScreenRoute({ onOpenBattleMenu }: Pick<ScreenRouteContext, "o
       collectionTab: s.collectionTab,
       discoveredCardIds: s.discoveredCardIds,
       encounteredEnemyIds: s.encounteredEnemyIds,
-      discoveredBoonIds: s.discoveredBoonIds,
+      discoveredTrinketIds: s.discoveredTrinketIds,
       collectionPages: s.collectionPages,
     })),
   );
@@ -110,7 +113,7 @@ function CollectionScreenRoute({ onOpenBattleMenu }: Pick<ScreenRouteContext, "o
       bondedCompanions={bondedCompanions}
       discoveredCardIds={appValues.discoveredCardIds}
       encounteredEnemyIds={appValues.encounteredEnemyIds}
-      discoveredBoonIds={appValues.discoveredBoonIds}
+      discoveredTrinketIds={appValues.discoveredTrinketIds}
       collectionPages={appValues.collectionPages}
     />
   );

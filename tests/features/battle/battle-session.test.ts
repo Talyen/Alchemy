@@ -6,8 +6,10 @@ import { defaultBattleState } from "@/lib/battle";
 import { TimerGroup } from "@/lib/animation/game-timer";
 import {
   getBattleStoreView,
+  getNavigationStoreView,
   resetRunBattleSlice,
 } from "../../helpers/run-domain-store-test";
+import { ROUTE_SCREENS } from "@/lib/routing";
 
 function makeSession() {
   const battleSessionRef = { current: 1 };
@@ -46,6 +48,7 @@ beforeEach(() => {
   resetRunBattleSlice();
   useBattlePresentationStore.setState(useBattlePresentationStore.getInitialState());
   getBattleStoreView().setHasActiveBattle(true);
+  getNavigationStoreView().setScreen(ROUTE_SCREENS.BATTLE);
 });
 
 describe("createBattleSession", () => {

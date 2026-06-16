@@ -192,14 +192,14 @@ describe("processCompanionTurnStart", () => {
         ...createTestBattleState().talentEffects,
         firstBurnCardDoubled: true,
       },
-      boonEffects: {
-        ...createTestBattleState().boonEffects,
+      trinketEffects: {
+        ...createTestBattleState().trinketEffects,
         firstBurnDoubled: true,
       },
       flags: {
         ...createTestBattleState().flags,
         firstBurnCardDoubledUsed: false,
-        firstBurnBoonDoubledUsed: false,
+        firstBurnTrinketDoubledUsed: false,
       },
       enemyHealth: 30,
     });
@@ -209,6 +209,6 @@ describe("processCompanionTurnStart", () => {
     expect(result.enemyHealth).toBe(29);
     // Doubling flags should remain unconsumed (false)
     expect(result.flags.firstBurnCardDoubledUsed).toBe(false);
-    expect(result.flags.firstBurnBoonDoubledUsed).toBe(false);
+    expect(result.flags.firstBurnTrinketDoubledUsed).toBe(false);
   });
 });

@@ -4,14 +4,14 @@ import { getEffectiveCost } from "@/lib/battle";
 export function getPlayableHandCardKeys(
   battleState: Pick<
     BattleState,
-    "hand" | "turnPhase" | "mana" | "wishOptions" | "flags" | "talentEffects" | "boonEffects"
+    "hand" | "turnPhase" | "mana" | "wishOptions" | "flags" | "talentEffects" | "trinketEffects"
   >,
 ): Set<string> {
   if (battleState.turnPhase !== "player" || battleState.wishOptions) return new Set<string>();
   const costState = {
     flags: battleState.flags,
     talentEffects: battleState.talentEffects,
-    boonEffects: battleState.boonEffects,
+    trinketEffects: battleState.trinketEffects,
   };
   return new Set(
     battleState.hand

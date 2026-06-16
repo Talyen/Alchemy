@@ -31,7 +31,7 @@ import {
   getActiveRewardModifiersForContentSystem,
   shouldGrantAlchemistReward,
   executeRewardRouteTransition,
-  type RewardState,
+  type CardRewardState,
 } from "../navigation/reward-flow";
 import { applyRunDefeatTeardown, finalizeRunEndSession } from "@/features/alchemy/shared/stores/run-transitions";
 import { createScreenTransition } from "@/features/alchemy/shell/screen-transition";
@@ -108,7 +108,7 @@ export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
       selectedDifficulty: runState.selectedDifficulty,
       unlockedTalents: runState.unlockedTalents,
       runDeck: runState.runDeck,
-      runBoons: runState.runBoons,
+      runTrinkets: runState.runTrinkets,
       contentSystemType: runState.contentSystemType,
       activeLabyrinthRewardModifiers:
         runState.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD
@@ -142,12 +142,15 @@ export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
     if (runState.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
       const wildwood = readRunSessionStore().wildwoodDraft;
       if (wildwood) {
-        // Wildwood draft rewardType is card | boon only; gear rewards never occur in Wildwood.
+        // Wildwood draft rewardType is card | trinket only; gear rewards never occur in Wildwood.
         setWildwoodDraft({
           ...wildwood,
           phase: "recovery",
           rewardType: result.rewardState.rewardType === "gear" ? null : result.rewardState.rewardType,
-          rewardChoiceIds: result.rewardState.choices.map((choice) => choice.id),
+          rewardChoiceIds:
+            result.rewardState.rewardType === "gear"
+              ? result.rewardState.choices.map((choice) => choice.instanceId)
+              : result.rewardState.choices.map((choice) => choice.id),
           selectedRewardId: null,
         });
       }
@@ -171,6 +174,15 @@ export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
     }
   }
 
+  function applyCampaignDefeatTeardown() {
+    applyRunDefeatTeardown({
+      awardRunEndMaterials,
+      finalizeRunXP: deps.talents.finalizeRunXP,
+      clearCombatState,
+    });
+    transitionScreen(CONSTANTS.SCREENS.GAME_OVER, { immediate: true });
+  }
+
   function handleBattleDefeat() {
     deps.rewardTransitionTimer.current.clearAll();
     const runState = readActiveRunStore();
@@ -181,18 +193,23 @@ export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
       deps.navigateTo(CONSTANTS.SCREENS.LABYRINTH_MAP);
       return;
     }
-    applyRunDefeatTeardown({
-      awardRunEndMaterials,
-      finalizeRunXP: deps.talents.finalizeRunXP,
-      clearCombatState,
-    });
-    transitionScreen(CONSTANTS.SCREENS.GAME_OVER, { immediate: true });
+    applyCampaignDefeatTeardown();
+  }
+
+  function handleAbandonRun() {
+    deps.rewardTransitionTimer.current.clearAll();
+    useUiStore.getState().clearCardHover();
+    if (deps.run.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.LABYRINTH) {
+      endLabyrinthRun();
+      return;
+    }
+    applyCampaignDefeatTeardown();
   }
 
   function routeAfterReward(
     route: FinalizeRewardResultType["route"],
     materials: MaterialInventory,
-    nextRewardState: RewardState,
+    nextRewardState: CardRewardState,
     clearCompanion: boolean,
   ) {
     executeRewardRouteTransition(route, materials, nextRewardState, clearCompanion, {
@@ -211,7 +228,7 @@ export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
         choice: result.selectedChoice,
         type: result.selectedRewardType,
         setRunDeck: deps.run.setRunDeck,
-        setRunBoons: deps.run.setRunBoons,
+        setRunTrinkets: deps.run.setRunTrinkets,
       });
       playUISound("talentUnlock");
     }
@@ -357,6 +374,7 @@ export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
     commitVictoryResult,
     handleBattleVictory,
     handleBattleDefeat,
+    handleAbandonRun,
     finishRewards,
     selectRewardChoice,
     prepareDestinationScreen,

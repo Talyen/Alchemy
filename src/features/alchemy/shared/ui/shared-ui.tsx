@@ -1,5 +1,8 @@
 /* eslint-disable react-refresh/only-export-components */
+export { ActionButtonRow } from "./action-button-row";
+export { ChoiceButton } from "./choice-button";
 export { DestinationChoices } from "./destination-choices";
+export { ShineAccentButton } from "./shine-accent-button";
 export { AspectRatioSelect, DisplayModeSelect, UiScaleSelect } from "./settings-controls";
 export { ConfirmationDialog } from "./dialogs";
 export { ScreenHeader, PageLayout, ScreenDescription } from "./layout-components";

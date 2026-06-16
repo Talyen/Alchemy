@@ -3,6 +3,7 @@ import {
   resolveReturnToRunLabel,
   resolveReturnToRunTarget,
   shouldClearReturnToRunOnMainMenu,
+  shouldShowReturnToRun,
 } from "@/app/return-to-run-navigation";
 
 describe("return-to-run navigation", () => {
@@ -27,5 +28,13 @@ describe("return-to-run navigation", () => {
   it("keeps return state when main menu is opened during paused combat", () => {
     expect(shouldClearReturnToRunOnMainMenu(true)).toBe(false);
     expect(shouldClearReturnToRunOnMainMenu(false)).toBe(true);
+  });
+
+  it("hides return navigation when already on the target screen", () => {
+    expect(shouldShowReturnToRun("battle", "battle")).toBe(false);
+    expect(shouldShowReturnToRun("shop", "shop")).toBe(false);
+    expect(shouldShowReturnToRun(null, "battle")).toBe(false);
+    expect(shouldShowReturnToRun("battle", "collection")).toBe(true);
+    expect(shouldShowReturnToRun("shop", "collection")).toBe(true);
   });
 });

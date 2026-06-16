@@ -1,11 +1,20 @@
+import { remapLegacyBoonContentId } from "./migrate-content-v2";
 import type { RawSaveData } from "./types";
+
+function remapEnemyTraits(traits: unknown): unknown {
+  if (!Array.isArray(traits)) return traits;
+  return traits.map((trait) => {
+    if (!trait || typeof trait !== "object" || !("id" in trait) || typeof trait.id !== "string") return trait;
+    return { ...trait, id: remapLegacyBoonContentId(trait.id) };
+  });
+}
 
 function migrateCombatFlags(flags: RawSaveData): RawSaveData {
   const next = { ...flags };
-  if (next.firstBurnTrinketDoubledUsed === true && next.firstBurnBoonDoubledUsed !== true) {
-    next.firstBurnBoonDoubledUsed = true;
+  if (next.firstBurnBoonDoubledUsed === true && next.firstBurnTrinketDoubledUsed !== true) {
+    next.firstBurnTrinketDoubledUsed = true;
   }
-  delete next.firstBurnTrinketDoubledUsed;
+  delete next.firstBurnBoonDoubledUsed;
   return next;
 }
 
@@ -15,13 +24,21 @@ export function migrateBattleState(battleState: unknown): RawSaveData | unknown 
   const state = battleState as RawSaveData;
   const next: RawSaveData = { ...state };
 
-  if (!next.boonEffects && next.trinketEffects && typeof next.trinketEffects === "object") {
-    next.boonEffects = next.trinketEffects;
+  if (!next.trinketEffects && next.boonEffects && typeof next.boonEffects === "object") {
+    next.trinketEffects = next.boonEffects;
   }
-  delete next.trinketEffects;
+  delete next.boonEffects;
 
   if (next.flags && typeof next.flags === "object") {
     next.flags = migrateCombatFlags(next.flags as RawSaveData);
+  }
+
+  if (next.currentEnemy && typeof next.currentEnemy === "object") {
+    const enemy = next.currentEnemy as RawSaveData;
+    next.currentEnemy = {
+      ...enemy,
+      traits: remapEnemyTraits(enemy.traits),
+    };
   }
 
   return next;

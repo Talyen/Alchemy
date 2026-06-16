@@ -20,7 +20,6 @@ export type Screen =
   | "mystery"
   | "corruption"
   | "run-victory"
-  | "run-discoveries"
   | "labyrinth-map"
   | "wildwood-recovery"
   | "wildwood-removal";
@@ -46,7 +45,6 @@ export const ROUTE_SCREENS = {
   MYSTERY: "mystery",
   CORRUPTION: "corruption",
   RUN_VICTORY: "run-victory",
-  RUN_DISCOVERIES: "run-discoveries",
   LABYRINTH_MAP: "labyrinth-map",
   WILDWOOD_RECOVERY: "wildwood-recovery",
   WILDWOOD_REMOVAL: "wildwood-removal",

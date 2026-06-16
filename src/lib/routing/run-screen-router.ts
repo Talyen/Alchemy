@@ -40,11 +40,7 @@ const RUN_LOOP_SCREENS = [
 ] as const satisfies readonly Screen[];
 
 /** Terminal run outcomes. */
-const RUN_END_SCREENS = [
-  ROUTE_SCREENS.GAME_OVER,
-  ROUTE_SCREENS.RUN_VICTORY,
-  ROUTE_SCREENS.RUN_DISCOVERIES,
-] as const satisfies readonly Screen[];
+const RUN_END_SCREENS = [ROUTE_SCREENS.GAME_OVER, ROUTE_SCREENS.RUN_VICTORY] as const satisfies readonly Screen[];
 
 const META_SCREEN_SET = new Set<Screen>(META_SCREENS);
 const RUN_LOOP_SET = new Set<Screen>(RUN_LOOP_SCREENS);
@@ -117,9 +113,8 @@ export const DOCUMENTED_RUN_LOOP_TRANSITIONS: Partial<Record<Screen, readonly Sc
 
 /** Terminal outcomes after run-end teardown (registered in screen-routes/run-end-routes.tsx). */
 export const DOCUMENTED_RUN_END_TRANSITIONS: Partial<Record<Screen, readonly Screen[]>> = {
-  [ROUTE_SCREENS.GAME_OVER]: [ROUTE_SCREENS.RUN_DISCOVERIES, ROUTE_SCREENS.MENU],
-  [ROUTE_SCREENS.RUN_VICTORY]: [ROUTE_SCREENS.RUN_DISCOVERIES, ROUTE_SCREENS.MENU],
-  [ROUTE_SCREENS.RUN_DISCOVERIES]: [ROUTE_SCREENS.MENU],
+  [ROUTE_SCREENS.GAME_OVER]: [ROUTE_SCREENS.MENU],
+  [ROUTE_SCREENS.RUN_VICTORY]: [ROUTE_SCREENS.MENU],
 };
 
 export function isDocumentedTransition(from: Screen, to: Screen): boolean {

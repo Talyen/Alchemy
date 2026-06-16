@@ -4,17 +4,17 @@ import * as rewardGold from "@/features/alchemy/run-loop/navigation/reward-flow"
 import type { BattleCard } from "@/lib/game-data";
 
 const setDiscoveredCardIds = vi.fn();
-const setDiscoveredBoonIds = vi.fn();
+const setDiscoveredTrinketIds = vi.fn();
 
 vi.mock("@/features/alchemy/shared/stores/app-store", () => ({
   useAppStore: {
-    getState: () => ({ setDiscoveredCardIds, setDiscoveredBoonIds }),
+    getState: () => ({ setDiscoveredCardIds, setDiscoveredTrinketIds }),
   },
 }));
 
 beforeEach(() => {
   setDiscoveredCardIds.mockClear();
-  setDiscoveredBoonIds.mockClear();
+  setDiscoveredTrinketIds.mockClear();
 });
 
 function makeCard(overrides: Partial<BattleCard> = {}): BattleCard {
@@ -26,7 +26,7 @@ describe("applyRewardSelection", () => {
     const card = makeCard({ id: "slash" });
     const setRunDeck = vi.fn();
 
-    applyRewardSelection({ choice: card, type: "card", setRunDeck, setRunBoons: vi.fn() });
+    applyRewardSelection({ choice: card, type: "card", setRunDeck, setRunTrinkets: vi.fn() });
 
     const deckUpdater = setRunDeck.mock.calls[0][0];
     expect(deckUpdater([])).toEqual([card]);
@@ -35,18 +35,18 @@ describe("applyRewardSelection", () => {
   });
 
   it("appends boon rewards with discovery", () => {
-    const setRunBoons = vi.fn();
+    const setRunTrinkets = vi.fn();
 
     applyRewardSelection({
       choice: { id: "bone-charm" },
-      type: "boon",
+      type: "trinket",
       setRunDeck: vi.fn(),
-      setRunBoons,
+      setRunTrinkets,
     });
 
-    const boonUpdater = setRunBoons.mock.calls[0][0];
+    const boonUpdater = setRunTrinkets.mock.calls[0][0];
     expect(boonUpdater([])).toEqual(["bone-charm"]);
-    const discUpdater = setDiscoveredBoonIds.mock.calls[0][0];
+    const discUpdater = setDiscoveredTrinketIds.mock.calls[0][0];
     expect(discUpdater([])).toEqual(["bone-charm"]);
   });
 });

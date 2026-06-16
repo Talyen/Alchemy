@@ -4,10 +4,10 @@ import { getOfferableCardPool, selectRewardCards } from "@/lib/game-data";
 import { DRAFT_ROUNDS, DRAFT_CHOICES } from "@/lib/game-constants";
 
 import { Button } from "@/components/ui/button";
+import { BUTTON_WIDTH_ACTION, collectionTileWidthClass } from "@/features/alchemy/shared/config";
 import { BattleCardButton } from "../../shared/ui/card-button";
 import { getCardDisplayTitle } from "../../shared/ui/card-description-ui";
 import { ScreenHeader, StaggerGroup, StaggerItem } from "../../shared/ui/shared-ui";
-import { collectionTileWidthClass } from "@/features/alchemy/shared/config";
 import { useInteractiveCard } from "../../shared/ui/use-interactive-card";
 
 function DraftedCardItem({ card, index }: { card: BattleCard; index: number }) {
@@ -131,7 +131,7 @@ export function DraftDeckScreen({ onComplete, draftedCards, draftChoices, onPick
 
         {isComplete ? (
           <div className="mt-8">
-            <Button size="lg" className="min-w-44" onClick={() => onComplete(drafted)}>
+            <Button size="lg" variant="primary" className={BUTTON_WIDTH_ACTION} onClick={() => onComplete(drafted)}>
               Continue
             </Button>
           </div>
@@ -139,7 +139,7 @@ export function DraftDeckScreen({ onComplete, draftedCards, draftChoices, onPick
           <div className="mt-6">
             <Button
               size="lg"
-              className="min-w-44"
+              className={BUTTON_WIDTH_ACTION}
               disabled={selectedIndex === null}
               onClick={() => {
                 if (selectedIndex === null) return;

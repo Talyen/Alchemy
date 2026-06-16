@@ -162,7 +162,7 @@ export type BestiaryEntry = {
   attackEffects: EnemyAttackEffect[];
 };
 
-export type BoonEntry = {
+export type TrinketEntry = {
   id: string;
   title: string;
   descriptionLines: string[];

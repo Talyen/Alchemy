@@ -12,7 +12,7 @@ import { processEncounterTraitCardAction } from "./encounter-trait-events";
 function buildCompanionCard(
   activeCompanion: NonNullable<BattleState["activeCompanion"]>,
   talentEffects: TalentEffectManifest,
-  boonEffects: BattleState["boonEffects"],
+  trinketEffects: BattleState["trinketEffects"],
   companionDamageBuff: number,
   companionBondLevel: number,
   enemyFreezeSkipTurns: number,
@@ -33,7 +33,7 @@ function buildCompanionCard(
               companionBondLevel +
               talentEffects.companionDamage +
               (e.damageType === "bleed" ? talentEffects.companionBleedDamageBonus : 0) +
-              boonEffects.companionDamageBonus +
+              trinketEffects.companionDamageBonus +
               companionDamageBuff +
               (enemyFreezeSkipTurns > 0 ? talentEffects.companionVsFrozenBonus : 0) +
               Math.round((maxMana * talentEffects.companionDamagePerManaCrystal) / HALF_DIVISOR),
@@ -50,7 +50,7 @@ export function processCompanionTurnStart(state: BattleState, combatTexts: Comba
   const companionCard = buildCompanionCard(
     state.activeCompanion,
     state.talentEffects,
-    state.boonEffects,
+    state.trinketEffects,
     state.companionDamageBuff,
     companionBondLevel,
     state.enemyFreezeSkipTurns,
@@ -68,7 +68,7 @@ export function processCompanionTurnStart(state: BattleState, combatTexts: Comba
     firstPoisonCardFreeUsed: state.flags.firstPoisonCardFreeUsed,
     firstBleedCardFreeUsed: state.flags.firstBleedCardFreeUsed,
     firstHolyDamageBonusUsed: state.flags.firstHolyDamageBonusUsed,
-    firstBurnBoonDoubledUsed: state.flags.firstBurnBoonDoubledUsed,
+    firstBurnTrinketDoubledUsed: state.flags.firstBurnTrinketDoubledUsed,
     firstLeechCardDoubledUsed: state.flags.firstLeechCardDoubledUsed,
     firstPotionFreeUsed: state.flags.firstPotionFreeUsed,
     nextCardCostReduction: state.flags.nextCardCostReduction,
@@ -87,7 +87,7 @@ export function processCompanionTurnStart(state: BattleState, combatTexts: Comba
       firstPoisonCardFreeUsed: true,
       firstBleedCardFreeUsed: true,
       firstHolyDamageBonusUsed: true,
-      firstBurnBoonDoubledUsed: true,
+      firstBurnTrinketDoubledUsed: true,
       firstLeechCardDoubledUsed: true,
       firstPotionFreeUsed: true,
       nextCardCostReduction: 0,

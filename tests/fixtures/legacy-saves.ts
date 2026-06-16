@@ -12,7 +12,7 @@ export function legacyCampaignRunSave() {
     uiScale: "110",
     discoveredCardIds: ["slash", "block", "future-card"],
     encounteredEnemyIds: ["goblin"],
-    discoveredBoonIds: ["bone-charm"],
+    discoveredTrinketIds: ["bone-charm"],
     talentXP: { physical: 18, block: 7 },
     unlockedTalents: { physical: ["physical-dmg-1"] },
     musicVolume: 40,
@@ -31,7 +31,7 @@ export function legacyCampaignRunSave() {
       currentAct: 1,
       destinationIndexInAct: 2,
       completedDestinations: ["Normal Combat", "Campfire"],
-      runBoons: ["bone-charm"],
+      runTrinkets: ["bone-charm"],
       selectedDifficulty: "difficulty-1",
       contentSystemType: "campaign",
     },
@@ -59,7 +59,7 @@ export function legacyLabyrinthRunSave() {
       currentAct: 1,
       destinationIndexInAct: 0,
       completedDestinations: [],
-      runBoons: [],
+      runTrinkets: [],
       contentSystemType: "labyrinth",
       labyrinthMap,
     },
@@ -89,7 +89,7 @@ export function legacyCorruptedCardRunSave() {
       currentAct: 1,
       destinationIndexInAct: 1,
       completedDestinations: ["Mystery"],
-      runBoons: [],
+      runTrinkets: [],
       selectedDifficulty: "difficulty-1",
       contentSystemType: "campaign",
     },
@@ -107,7 +107,7 @@ export function legacySchemaV1Save() {
     uiScale: "100",
     discoveredCardIds: ["slash"],
     encounteredEnemyIds: [],
-    discoveredBoonIds: [],
+    discoveredTrinketIds: [],
     talentXP: { arrow: 12, physical: 4 },
     unlockedTalents: { arrow: ["arrow-damage"] },
     musicVolume: 50,
@@ -146,7 +146,7 @@ export function legacySchemaV2Save() {
     uiScale: "100",
     discoveredCardIds: ["slash", "block"],
     encounteredEnemyIds: ["goblin"],
-    discoveredBoonIds: [],
+    discoveredTrinketIds: [],
     talentXP: { archery: 8 },
     unlockedTalents: { archery: ["archery-damage"] },
     musicVolume: 50,
@@ -165,7 +165,7 @@ export function legacySchemaV2Save() {
       currentAct: 1,
       destinationIndexInAct: 0,
       completedDestinations: [],
-      runBoons: [],
+      runTrinkets: [],
       selectedDifficulty: "difficulty-1",
       contentSystemType: "campaign",
     },
@@ -187,17 +187,15 @@ export function legacySchemaV2Save() {
   };
 }
 
-/** Schema v3 save using the former Trinket field names (exercises v3->v4 migration). */
+/** Schema v3 save using the former Trinket field names (exercises v3->v4->v5 migration). */
 function legacySchemaV3Save() {
   return {
     ...legacySchemaV2Save(),
     saveSchemaVersion: 3,
     finishedRunCharacters: ["knight"],
-    discoveredBoonIds: undefined,
     discoveredTrinketIds: ["bone-charm"],
     activeRun: {
       ...(legacySchemaV2Save().activeRun as Record<string, unknown>),
-      runBoons: undefined,
       runTrinkets: ["bone-charm"],
       discoveredTrinketIdsAtRunStart: ["bone-charm"],
     },
@@ -251,13 +249,6 @@ export function legacySchemaV3MidCombatTrinketSave() {
   };
 }
 
-export const LEGACY_SAVE_FIXTURES_BY_SOURCE_VERSION: Record<number, () => Record<string, unknown>> = {
-  0: legacyCampaignRunSave,
-  1: legacySchemaV1Save,
-  2: legacySchemaV2Save,
-  3: legacySchemaV3Save,
-};
-
 /** v3 wildwood reward phase with legacy trinket rewardType (exercises nested draft migration). */
 function legacyWildwoodTrinketRewardSave() {
   return {
@@ -295,7 +286,7 @@ function legacyWildwoodTrinketRewardSave() {
 }
 
 /** Realistic post-launch v4 save: meta progress, gear inventory, and mid-campaign run. */
-function shippedBaselineSave() {
+export function legacySchemaV4Save() {
   return {
     saveSchemaVersion: 4,
     gameBuildVersion: "0.1.0",
@@ -310,8 +301,8 @@ function shippedBaselineSave() {
       { instanceId: "gear-1", definitionId: "placeholder-body", modifiers: [{ kind: "flatPhysicalDamage", value: 0 }] },
     ],
     gearLoadouts: {},
-    talentXP: { physical: 10 },
-    unlockedTalents: { physical: ["physical-dmg-1"] },
+    talentXP: { physical: 10, wish: 4 },
+    unlockedTalents: { physical: ["physical-dmg-1"], wish: ["wish-boon"] },
     musicVolume: 50,
     sfxVolume: 50,
     masterVolume: 50,
@@ -342,6 +333,18 @@ function shippedBaselineSave() {
     completedDifficulties: { knight: ["difficulty-1"] },
   };
 }
+
+function shippedBaselineSave() {
+  return legacySchemaV4Save();
+}
+
+export const LEGACY_SAVE_FIXTURES_BY_SOURCE_VERSION: Record<number, () => Record<string, unknown>> = {
+  0: legacyCampaignRunSave,
+  1: legacySchemaV1Save,
+  2: legacySchemaV2Save,
+  3: legacySchemaV3Save,
+  4: shippedBaselineSave,
+};
 
 export const MIGRATION_SCENARIO_FIXTURES: Record<string, () => Record<string, unknown>> = {
   midCombatTrinket: legacySchemaV3MidCombatTrinketSave,

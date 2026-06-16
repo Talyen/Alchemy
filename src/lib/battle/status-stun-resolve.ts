@@ -1,10 +1,10 @@
 /**
  * Enemy stun threshold resolution and stun-triggered talent/boon effects.
- * Depends on: ./status-forge, ./status-cc, ./talent-effects, ./boon-effects, ./types, ./combat-text.
+ * Depends on: ./status-forge, ./status-cc, ./talent-effects, ./trinket-effects, ./types, ./combat-text.
  */
 import { clampHealth, type BattleState, type CombatTextEvent } from "./types";
 import { mergeCombatText } from "./combat-text";
-import { applyLuckyCloverGold } from "./boon-effects";
+import { applyLuckyCloverGold } from "./trinket-effects";
 import { getEnemyDamageMultiplier } from "./status-effects";
 import {
   applyStunBlockTalent,
@@ -28,10 +28,10 @@ function applyStunTalentEffects(state: BattleState, combatTexts?: CombatTextEven
   return nextState;
 }
 
-function applyStunBoonEffects(state: BattleState, combatTexts?: CombatTextEvent[]): BattleState {
+function applyStunTrinketEffects(state: BattleState, combatTexts?: CombatTextEvent[]): BattleState {
   let nextState = state;
-  if (nextState.boonEffects.thunderstoneDamageOnStun > 0) {
-    const dmg = nextState.boonEffects.thunderstoneDamageOnStun;
+  if (nextState.trinketEffects.thunderstoneDamageOnStun > 0) {
+    const dmg = nextState.trinketEffects.thunderstoneDamageOnStun;
     const multiplier = getEnemyDamageMultiplier(nextState, "nature");
     const finalDamage = Math.round(dmg * multiplier);
     nextState = {
@@ -71,6 +71,6 @@ export function resolveStunTrigger(state: BattleState, combatTexts?: CombatTextE
   });
 
   nextState = applyStunTalentEffects(nextState, combatTexts);
-  nextState = applyStunBoonEffects(nextState, combatTexts);
+  nextState = applyStunTrinketEffects(nextState, combatTexts);
   return nextState;
 }

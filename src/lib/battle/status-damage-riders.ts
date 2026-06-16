@@ -110,14 +110,14 @@ function procBleedPoison(state: BattleState, actualDamage: number, bleedAmount: 
 }
 
 function awardCutpurseGold(state: BattleState, bleedAmount: number, combatTexts: CombatTextEvent[]): BattleState {
-  if (bleedAmount <= 0 || state.boonEffects.cutpurseGoldOnBleed <= 0) return state;
+  if (bleedAmount <= 0 || state.trinketEffects.cutpurseGoldOnBleed <= 0) return state;
   mergeCombatText(combatTexts, {
     target: "player",
     kind: "status",
     stat: "gold",
-    amount: state.boonEffects.cutpurseGoldOnBleed,
+    amount: state.trinketEffects.cutpurseGoldOnBleed,
   });
-  return addGold(state, state.boonEffects.cutpurseGoldOnBleed);
+  return addGold(state, state.trinketEffects.cutpurseGoldOnBleed);
 }
 
 function applyBleedStatusRider(
@@ -139,8 +139,8 @@ function applyStunStatusRider(state: BattleState, actualDamage: number, combatTe
 }
 
 function applyFrozenHeartDamage(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
-  if (state.boonEffects.frozenHeartDamage <= 0) return state;
-  const dmg = state.boonEffects.frozenHeartDamage;
+  if (state.trinketEffects.frozenHeartDamage <= 0) return state;
+  const dmg = state.trinketEffects.frozenHeartDamage;
   const multiplier = getEnemyDamageMultiplier(state, "physical");
   const finalDamage = Math.round(dmg * multiplier);
   mergeCombatText(combatTexts, {
@@ -172,7 +172,7 @@ export function tryTriggerEnemyFreeze(
   });
   if (immuneClear) return immuneClear;
 
-  const skipDuration = BATTLE_CONFIG.BASE_CC_DURATION + nextState.boonEffects.freezeDurationExtension;
+  const skipDuration = BATTLE_CONFIG.BASE_CC_DURATION + nextState.trinketEffects.freezeDurationExtension;
   let result = assignEnemyCrowdControlSkip({
     nextState,
     stat: "freeze",

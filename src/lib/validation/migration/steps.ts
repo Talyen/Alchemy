@@ -1,5 +1,6 @@
 import { CURRENT_CONTENT_VERSION, CURRENT_GAME_BUILD_VERSION } from "../metadata";
 import { migrateSaveTopLevelV4 } from "./migrate-save-top-level";
+import { migrateSaveTopLevelV5 } from "./migrate-save-top-level-v5";
 import type { RawSaveData } from "./types";
 import { normalizePositiveInteger } from "./types";
 
@@ -108,5 +109,12 @@ export function migrateV3ToV4(parsed: RawSaveData): RawSaveData {
   return {
     ...migrateSaveTopLevelV4(parsed),
     saveSchemaVersion: 4,
+  };
+}
+
+export function migrateV4ToV5(parsed: RawSaveData): RawSaveData {
+  return {
+    ...migrateSaveTopLevelV5(parsed),
+    saveSchemaVersion: 5,
   };
 }

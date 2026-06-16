@@ -1,9 +1,12 @@
 import { materialLabels, MATERIAL_IDS, type MaterialInventory } from "@/lib/homestead/types";
 import { emptyInventory } from "@/lib/homestead/inventory";
-import { gearDefinitions } from "./data";
+import { isGearAffixId, modifiersToAffixIds, resolveAffixEffects } from "./affixes";
+import { gearDefinitions } from "./definitions";
+import { mergeGearEffectManifests } from "./effect-manifest";
 import {
   GEAR_SLOTS,
   defaultGearEffects,
+  type GearAffixId,
   type GearDefinition,
   type GearCharacterId,
   type GearEffectManifest,
@@ -13,8 +16,57 @@ import {
   type GearSlot,
 } from "./types";
 
+export { mergeGearEffectManifests, subtractGearEffectManifests } from "./effect-manifest";
+
 export function isGearCompatibleWithSlot(definition: GearDefinition, slot: GearSlot): boolean {
   return definition.compatibleSlots.includes(slot);
+}
+
+export function isTwoHanded(definition: GearDefinition): boolean {
+  return definition.requiresTwoHands;
+}
+
+function resolveEquippedDefinition(
+  inventory: GearInstance[],
+  loadout: GearLoadouts[GearCharacterId],
+  slot: GearSlot,
+): GearDefinition | undefined {
+  const instanceId = loadout[slot];
+  if (!instanceId) return undefined;
+  const instance = inventory.find((item) => item.instanceId === instanceId);
+  if (!instance) return undefined;
+  return gearDefinitions[instance.definitionId];
+}
+
+function resolveHandConflicts(
+  characterLoadout: GearLoadouts[GearCharacterId],
+  slot: GearSlot,
+  definition: GearDefinition,
+  inventory: GearInstance[],
+): GearLoadouts[GearCharacterId] {
+  const next = { ...characterLoadout, [slot]: characterLoadout[slot] };
+
+  if (slot === "main-hand" && isTwoHanded(definition)) {
+    next["off-hand"] = null;
+    return next;
+  }
+
+  if (slot === "off-hand") {
+    const mainHandDefinition = resolveEquippedDefinition(inventory, next, "main-hand");
+    if (mainHandDefinition && isTwoHanded(mainHandDefinition)) {
+      next["main-hand"] = null;
+    }
+    return next;
+  }
+
+  if (slot === "main-hand" && !isTwoHanded(definition)) {
+    const offHandDefinition = resolveEquippedDefinition(inventory, next, "off-hand");
+    if (offHandDefinition?.requiresTwoHands) {
+      next["off-hand"] = null;
+    }
+  }
+
+  return next;
 }
 
 export function equipGear(
@@ -22,25 +74,35 @@ export function equipGear(
   characterId: GearCharacterId,
   slot: GearSlot,
   instance: GearInstance,
+  inventory: GearInstance[],
 ): GearLoadouts {
   const definition = gearDefinitions[instance.definitionId];
   if (!definition || !isGearCompatibleWithSlot(definition, slot)) return loadouts;
-  const next = { ...loadouts[characterId] };
-  for (const currentSlot of GEAR_SLOTS) if (next[currentSlot] === instance.instanceId) next[currentSlot] = null;
-  next[slot] = instance.instanceId;
-  return { ...loadouts, [characterId]: next };
+  if (!inventory.some((item) => item.instanceId === instance.instanceId)) return loadouts;
+
+  const next = Object.fromEntries(
+    Object.entries(loadouts).map(([currentCharacterId, loadout]) => [
+      currentCharacterId,
+      Object.fromEntries(
+        GEAR_SLOTS.map((currentSlot) => [
+          currentSlot,
+          loadout[currentSlot] === instance.instanceId ? null : loadout[currentSlot],
+        ]),
+      ),
+    ]),
+  ) as GearLoadouts;
+
+  const characterLoadout = { ...next[characterId], [slot]: instance.instanceId };
+  next[characterId] = resolveHandConflicts(characterLoadout, slot, definition, inventory);
+  return next;
 }
 
 export function unequipGear(loadouts: GearLoadouts, characterId: GearCharacterId, slot: GearSlot): GearLoadouts {
   return { ...loadouts, [characterId]: { ...loadouts[characterId], [slot]: null } };
 }
 
-export function getEquippedCharacterIds(loadouts: GearLoadouts, instanceId: string): GearCharacterId[] {
-  return (Object.keys(loadouts) as GearCharacterId[]).filter((id) => Object.values(loadouts[id]).includes(instanceId));
-}
-
 export function canSalvageGear(loadouts: GearLoadouts, instanceId: string): boolean {
-  return getEquippedCharacterIds(loadouts, instanceId).length === 0;
+  return !Object.values(loadouts).some((loadout) => Object.values(loadout).includes(instanceId));
 }
 
 export function salvageGear(inventory: GearInstance[], loadouts: GearLoadouts, instanceId: string) {
@@ -53,30 +115,29 @@ export function salvageGear(inventory: GearInstance[], loadouts: GearLoadouts, i
   };
 }
 
-function mergeGearEffects(base: GearEffectManifest, addition: GearEffectManifest): GearEffectManifest {
+export function normalizeGearInstance(raw: {
+  instanceId?: string;
+  definitionId?: string;
+  affixIds?: string[];
+  modifiers?: GearModifier[];
+}): GearInstance | null {
+  if (!raw.instanceId || !raw.definitionId || !gearDefinitions[raw.definitionId]) return null;
+
+  const validAffixIds = (raw.affixIds ?? []).filter((id): id is GearAffixId => isGearAffixId(id));
+  const affixIds = validAffixIds.length > 0 ? validAffixIds : raw.modifiers ? modifiersToAffixIds(raw.modifiers) : [];
+
   return {
-    flatPhysicalDamage: base.flatPhysicalDamage + addition.flatPhysicalDamage,
+    instanceId: raw.instanceId,
+    definitionId: raw.definitionId,
+    affixIds,
   };
 }
 
-export function applyGearModifiers(manifest: GearEffectManifest, modifiers: GearModifier[]): GearEffectManifest {
-  let next = { ...manifest };
-  for (const modifier of modifiers) {
-    switch (modifier.kind) {
-      case "flatPhysicalDamage":
-        next = { ...next, flatPhysicalDamage: next.flatPhysicalDamage + modifier.value };
-        break;
-      default:
-        break;
-    }
-  }
-  return next;
-}
-
-function effectsForInstance(instance: GearInstance): GearEffectManifest {
+export function effectsForInstance(instance: GearInstance): GearEffectManifest {
   const definition = gearDefinitions[instance.definitionId];
   if (!definition) return { ...defaultGearEffects };
-  return applyGearModifiers({ ...definition.effects }, instance.modifiers);
+  const affixEffects = resolveAffixEffects(instance.affixIds);
+  return mergeGearEffectManifests({ ...definition.effects }, affixEffects);
 }
 
 export function computeGearManifest(
@@ -88,18 +149,10 @@ export function computeGearManifest(
   return Object.values(loadouts[characterId]).reduce<GearEffectManifest>(
     (effects, instanceId) => {
       const instance = instanceId ? byId.get(instanceId) : undefined;
-      return instance ? mergeGearEffects(effects, effectsForInstance(instance)) : effects;
+      return instance ? mergeGearEffectManifests(effects, effectsForInstance(instance)) : effects;
     },
     { ...defaultGearEffects },
   );
-}
-
-export function getEquippedGearEffects(
-  characterId: GearCharacterId,
-  inventory: GearInstance[],
-  loadouts: GearLoadouts,
-): GearEffectManifest {
-  return computeGearManifest(characterId, inventory, loadouts);
 }
 
 export function formatSalvageValue(materials: MaterialInventory): string {

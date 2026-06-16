@@ -89,13 +89,13 @@ function applyWishGoldTriggers(state: BattleState, combatTexts: CombatTextEvent[
       amount: nextState.talentEffects.goldOnWishAmount,
     });
   }
-  if (nextState.boonEffects.wishingWellGoldOnWish > 0) {
-    nextState = addGold(nextState, nextState.boonEffects.wishingWellGoldOnWish);
+  if (nextState.trinketEffects.wishingWellGoldOnWish > 0) {
+    nextState = addGold(nextState, nextState.trinketEffects.wishingWellGoldOnWish);
     mergeCombatText(combatTexts, {
       target: "player",
       kind: "status",
       stat: "gold",
-      amount: nextState.boonEffects.wishingWellGoldOnWish,
+      amount: nextState.trinketEffects.wishingWellGoldOnWish,
     });
   }
   return nextState;
@@ -165,7 +165,7 @@ export function applyWishEffect(state: BattleState, card: BattleCard, amount: nu
     nextState = applyWishDrawTriggers(nextState);
     nextState = applyWishBurnTrigger(nextState, combatTexts);
     nextState = applyWishManaTrigger(nextState, combatTexts);
-    nextState = applyWishBoonTrigger(nextState, combatTexts);
+    nextState = applyWishTrinketTrigger(nextState, combatTexts);
     nextState = applyWishDesperateTrigger(nextState, combatTexts);
   }
 
@@ -192,8 +192,8 @@ function applyWishBurnTrigger(state: BattleState, combatTexts: CombatTextEvent[]
   return processEncounterTraitHealthThreshold(state.enemyHealth, nextState, combatTexts);
 }
 
-function applyWishBoonTrigger(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
-  if (!state.talentEffects.wishBoonChoice) return state;
+function applyWishTrinketTrigger(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
+  if (!state.talentEffects.wishTrinketChoice) return state;
   const isForge = state.rng() < 0.5;
   const status = isForge ? ("forge" as const) : ("armor" as const);
   return applyPlayerStatusEffect(state, { kind: "player-status", status, amount: 1 }, combatTexts);

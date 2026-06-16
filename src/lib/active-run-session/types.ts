@@ -5,6 +5,9 @@ import type { ContentSystemId, LabyrinthMap, LabyrinthModifierKind } from "@/lib
 import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { Screen } from "@/lib/routing";
+import type { PersistedPendingReward } from "./pending-reward";
+
+export type { PersistedPendingReward } from "./pending-reward";
 
 export type LabyrinthNodePosition = { row: number; col: number };
 
@@ -24,7 +27,7 @@ export type ActiveRunData = {
   currentAct: number;
   destinationIndexInAct: number;
   completedDestinations: string[];
-  runBoons: string[];
+  runTrinkets: string[];
   encounteredRunEnemyIds: string[];
   selectedDifficulty: DifficultyId | null;
   contentSystemType: ContentSystemId;
@@ -36,8 +39,7 @@ export type ActiveRunData = {
   runMaterialsEarned: MaterialInventory;
   currentScreen: Screen | null;
   destinationChoices: string[];
-  discoveredCardIdsAtRunStart: string[];
-  discoveredBoonIdsAtRunStart: string[];
+  pendingReward: PersistedPendingReward | null;
 };
 
 export type DestinationOptionsInput = {

@@ -43,7 +43,7 @@ describe("computeCardDamageToEnemy", () => {
     const state = createTestBattleState({
       enemyHealth: 30,
       enemyMitigation: { ...base.enemyMitigation, armor: 10, block: 0 },
-      boonEffects: { ...base.boonEffects, sunderingArmorPiercing: 10 },
+      trinketEffects: { ...base.trinketEffects, sunderingArmorPiercing: 10 },
     });
     const { modifiedDamage } = computeCardDamageToEnemy(state, physicalEffect);
     expect(modifiedDamage).toBe(6);

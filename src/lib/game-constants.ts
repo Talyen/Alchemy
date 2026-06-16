@@ -107,7 +107,7 @@ export const GOLD_REWARD_MAX = 30;
 export const ELITE_GOLD_BONUS_FRACTION = 0.3;
 export const BOSS_GOLD_BONUS_FRACTION = 0.5;
 export const REWARD_CARD_CHOICES = 3;
-export const REWARD_BOON_CHANCE = 0.25;
+export const REWARD_TRINKET_CHANCE = 0.25;
 export const REWARD_RANDOM_CHANCE = 0.5;
 export const DESTINATION_CHOICES = 3;
 export const DEFAULT_DESTINATION_WEIGHT = 10;
@@ -127,11 +127,22 @@ export const SHOP_REFRESHES = 1;
 export const ALCHEMIST_POTIONS_OFFERED = 3;
 export const ALCHEMIST_REFRESHES = 1;
 export const BOSS_HEALTH_MULTIPLIER = 1.4;
-export const BOSS_BOON_REWARD_CHOICES = 3;
-export const ELITE_BOON_REWARD_CHANCE = 0.75;
+export const BOSS_TRINKET_REWARD_CHOICES = 3;
+export const ELITE_TRINKET_REWARD_CHANCE = 0.75;
 export const CAMPAIGN_GEAR_REWARD_CHANCE = 0.1;
 export const LABYRINTH_GEAR_REWARD_CHANCE = 0.35;
 export const BOSS_GEAR_REWARD_CHANCE = 0.5;
+export const GEAR_RARITY_WEIGHTS = {
+  normal: { basic: 0.8, astral: 0.2 },
+  elite: { basic: 0.55, astral: 0.45 },
+  boss: { basic: 0.3, astral: 0.7 },
+} as const;
+export const GEAR_AFFIX_COUNT = {
+  basic: { min: 1, max: 2 },
+  astral: { min: 3, max: 4 },
+} as const;
+export const GEAR_AFFIX_BASE_WEIGHT = 1;
+export const GEAR_AFFIX_AFFINITY_WEIGHT = 4;
 export const MYSTERY_CARD_CHOICES = 3;
 export const MIXED_POTION_CARD_ID = "mixed-potion";
 export const POTION_CARD_ID_SUFFIX = "-potion";
@@ -143,7 +154,7 @@ export const LABYRINTH_REWARD_CONFIG = {
   generousGoldBonusFraction: 0.5,
   scavengerMaterialMultiplier: 2,
   companionCardChoices: 3,
-  boonHoarderRewardChanceBonus: 0.1,
+  trinketHoarderRewardChanceBonus: 0.1,
 } as const;
 
 export const REWARD_SELECTION_CONFIG = {
@@ -185,7 +196,7 @@ export const INITIAL_LOAD_MAX_DURATION_MS = 12000;
 export const INITIAL_LOAD_BATCH_SIZE = 4;
 
 // ============ Animation / Timing ============
-export const SHIMMER_COOLDOWN_MS = 500;
+export const SHIMMER_COOLDOWN_MS = 350;
 export const COMBAT_TEXT_LIFETIME_MS = 3300;
 export const COMBAT_TEXT_LANE_DELAY_MS = 80;
 export const ANIMATION_STAGGER_UNIT = 0.08;
@@ -225,7 +236,7 @@ export const MAX_STAGE_SCALE = 2.0;
 
 // ============ Collection ============
 export const COLLECTION_PAGE_SIZE = 8;
-export const BOON_PAGE_SIZE = 6;
+export const TRINKET_PAGE_SIZE = 6;
 export const SELECTION_GRID_PAGE_SIZE = 8;
 export const BATTLE_ACTOR_TOP = "34%";
 export const HAND_FAN_VERTICAL_STEP_PX = 10;
@@ -317,7 +328,7 @@ export const STATUS_CONFIG = {
 // ============ Enemy Trait IDs (status/damage lookups) ============
 export const ENEMY_TRAIT_IDS = {
   BRITTLE_BONES: "brittle-bones",
-  BOON_HOARDER: "boon-hoarder",
+  TRINKET_HOARDER: "trinket-hoarder",
   HOLY_VULNERABILITY: "holy-vulnerability",
   BURN_RESISTANCE: "burn-resistance",
   BURN_VULNERABILITY: "burn-vulnerability",
@@ -333,7 +344,7 @@ export const ENEMY_TRAIT_IDS = {
 export const TRAIT_DAMAGE_RULES: { traitId: string; damageType: string; multiplier: number }[] = [
   { traitId: ENEMY_TRAIT_IDS.BRITTLE_BONES, damageType: "holy", multiplier: TRAIT_DAMAGE_WEAKNESS },
   { traitId: ENEMY_TRAIT_IDS.BRITTLE_BONES, damageType: "stun", multiplier: TRAIT_DAMAGE_WEAKNESS },
-  { traitId: ENEMY_TRAIT_IDS.BOON_HOARDER, damageType: "burn", multiplier: TRAIT_DAMAGE_WEAKNESS },
+  { traitId: ENEMY_TRAIT_IDS.TRINKET_HOARDER, damageType: "burn", multiplier: TRAIT_DAMAGE_WEAKNESS },
   { traitId: ENEMY_TRAIT_IDS.HOLY_VULNERABILITY, damageType: "holy", multiplier: TRAIT_DAMAGE_WEAKNESS },
   { traitId: ENEMY_TRAIT_IDS.BURN_RESISTANCE, damageType: "burn", multiplier: TRAIT_DAMAGE_RESISTANCE },
   { traitId: ENEMY_TRAIT_IDS.BURN_VULNERABILITY, damageType: "burn", multiplier: TRAIT_DAMAGE_WEAKNESS },

@@ -4,7 +4,7 @@
 import { forgeAppliesToDamageType } from "./damage-calc";
 import { applyDamageStatuses, resolveStunTrigger } from "./status-effects";
 import { emitOverhealBlockText, mergeCombatText } from "./combat-text";
-import { applyBoneCharmHeal, applyLuckyCloverGold } from "./boon-effects";
+import { applyBoneCharmHeal, applyLuckyCloverGold } from "./trinket-effects";
 import { applyWishEffect } from "./wish";
 import { rollPercent, getBattleRng } from "./status-helpers";
 import { type BattleCard, type BattleCardEffect, type PlayerStatusId } from "@/lib/game-data";
@@ -56,8 +56,8 @@ function applyLeechManaRider(state: BattleState, combatTexts: CombatTextEvent[])
   return state;
 }
 
-function applyLeechBoonSiphonRider(state: BattleState): BattleState {
-  if (rollTalentChance(state.talentEffects.boonSiphonChance, state)) {
+function applyLeechTrinketSiphonRider(state: BattleState): BattleState {
+  if (rollTalentChance(state.talentEffects.trinketSiphonChance, state)) {
     const mit = state.enemyMitigation;
     const pool: { key: keyof EnemyMitigation; status: PlayerStatusId }[] = [];
     if (mit.forge > 0) pool.push({ key: "forge", status: "forge" });
@@ -90,7 +90,7 @@ function applyLeechHitRiders(state: BattleState, damage: number, combatTexts: Co
   let nextState = state;
   nextState = applyLeechBleedRider(nextState, damage);
   nextState = applyLeechManaRider(nextState, combatTexts);
-  nextState = applyLeechBoonSiphonRider(nextState);
+  nextState = applyLeechTrinketSiphonRider(nextState);
   nextState = applyLeechPoisonRider(nextState, damage);
   return nextState;
 }
@@ -210,8 +210,8 @@ function applyForgeStunRider(
 ) {
   if (
     effect.damageType !== "physical" ||
-    state.boonEffects.forgeStunThreshold <= 0 ||
-    state.playerStatuses.forge < state.boonEffects.forgeStunThreshold
+    state.trinketEffects.forgeStunThreshold <= 0 ||
+    state.playerStatuses.forge < state.trinketEffects.forgeStunThreshold
   )
     return state;
 
@@ -219,10 +219,10 @@ function applyForgeStunRider(
     target: "enemy",
     kind: "status",
     stat: "stun",
-    amount: state.boonEffects.forgeStunAmount,
+    amount: state.trinketEffects.forgeStunAmount,
   });
 
-  return resolveStunTrigger(addEnemyStatus(state, "stun", state.boonEffects.forgeStunAmount), combatTexts);
+  return resolveStunTrigger(addEnemyStatus(state, "stun", state.trinketEffects.forgeStunAmount), combatTexts);
 }
 
 /**

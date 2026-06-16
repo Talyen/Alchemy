@@ -35,7 +35,7 @@ export async function injectMidCombatSave(page: Page) {
     flags: {},
     discoveredCardIds: ["slash"],
     difficultyModifiers: [],
-    boonEffects: { extraDrawPerBattle: 1 },
+    trinketEffects: { extraDrawPerBattle: 1 },
   };
   const save = {
     ...baseHomesteadSave,
@@ -59,7 +59,7 @@ export async function injectMidCombatSave(page: Page) {
       currentAct: 1,
       destinationIndexInAct: 1,
       completedDestinations: ["Normal Combat"],
-      runBoons: ["tattered-pages"],
+      runTrinkets: ["tattered-pages"],
       encounteredRunEnemyIds: ["goblin"],
       selectedDifficulty: "difficulty-1",
       contentSystemType: "campaign",
@@ -74,8 +74,7 @@ export async function injectMidCombatSave(page: Page) {
       runMaterialsEarned: {},
       currentScreen: "battle",
       destinationChoices: [],
-      discoveredCardIdsAtRunStart: ["slash"],
-      discoveredBoonIdsAtRunStart: [],
+      pendingReward: null,
     },
   };
 

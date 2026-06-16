@@ -201,7 +201,7 @@ describe("processEnemyAttack", () => {
     const state = createTestBattleState({
       playerHealth: 30,
       playerStatuses: { ...createTestBattleState().playerStatuses, block: 10, armor: 0 },
-      boonEffects: { ...createTestBattleState().boonEffects, vanguardCrestForgeOnBlockAbsorb: 2 },
+      trinketEffects: { ...createTestBattleState().trinketEffects, vanguardCrestForgeOnBlockAbsorb: 2 },
       enemyAttackEffects: [{ kind: "damage", damageType: "physical", amount: 5 }],
     });
     const texts = makeTexts();

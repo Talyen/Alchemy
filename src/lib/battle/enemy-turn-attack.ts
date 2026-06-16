@@ -72,20 +72,20 @@ function applyVanguardCrestAfterBlock(
   remainingDamage: number,
   combatTexts: CombatTextEvent[],
 ): BattleState {
-  if (state.boonEffects.vanguardCrestForgeOnBlockAbsorb <= 0 || blockAbsorb <= 0 || remainingDamage !== 0) {
+  if (state.trinketEffects.vanguardCrestForgeOnBlockAbsorb <= 0 || blockAbsorb <= 0 || remainingDamage !== 0) {
     return state;
   }
   mergeCombatText(combatTexts, {
     target: "player",
     kind: "status",
     stat: "forge",
-    amount: state.boonEffects.vanguardCrestForgeOnBlockAbsorb,
+    amount: state.trinketEffects.vanguardCrestForgeOnBlockAbsorb,
   });
   return {
     ...state,
     playerStatuses: {
       ...state.playerStatuses,
-      forge: state.playerStatuses.forge + state.boonEffects.vanguardCrestForgeOnBlockAbsorb,
+      forge: state.playerStatuses.forge + state.trinketEffects.vanguardCrestForgeOnBlockAbsorb,
     },
   };
 }

@@ -9,7 +9,7 @@ import {
   type CombatTextEvent,
 } from "@/lib/battle";
 import type { BattleCard } from "@/lib/game-data";
-import { playCardSound, playGoldGain } from "@/lib/audio";
+import { playCardSound, playGoldGain, playUISound } from "@/lib/audio";
 import { appendUnique } from "@/lib/utils";
 import { useAppStore } from "../../shared/stores/app-store";
 import { CARD_ACTIVATION_ROTATION_DEGREES } from "@/lib/game-constants";
@@ -93,7 +93,10 @@ export function createBattleCardPlay(contextOrGetter: BattleControllerContext | 
     sourceRect: { x: number; y: number; width: number; height: number },
   ) {
     const currentState = getStore().battleState;
-    if (!canPlayCard(card, index, currentState)) return;
+    if (!canPlayCard(card, index, currentState)) {
+      playUISound("error");
+      return;
+    }
     const session = getContext().battleSessionRef.current;
     getContext().cardPlayInProgressRef.current = true;
     animatePlayedCard(card, index, sourceRect);

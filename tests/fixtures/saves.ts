@@ -27,7 +27,7 @@ export type HomesteadSaveFixture = {
   bondedCompanions: Record<string, number>;
   discoveredCardIds: string[];
   encounteredEnemyIds: string[];
-  discoveredBoonIds: string[];
+  discoveredTrinketIds: string[];
   talentXP: Record<string, number>;
   unlockedTalents: Record<string, unknown>;
   finishedRunCharacters: string[];
@@ -95,7 +95,7 @@ export const baseHomesteadSave: HomesteadSaveFixture = {
   },
   discoveredCardIds: ["slash"],
   encounteredEnemyIds: [],
-  discoveredBoonIds: [],
+  discoveredTrinketIds: [],
   talentXP: {},
   unlockedTalents: {},
   lastSavedAt: 0,

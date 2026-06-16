@@ -31,9 +31,9 @@ describe("save migration contract", () => {
 
   it("keeps rename logic out of active-run schema transforms", () => {
     const activeRunSource = read("src/lib/validation/save-schemas/active-run.ts");
-    expect(activeRunSource).not.toContain("trinketEffects");
-    expect(activeRunSource).not.toContain("runTrinkets");
-    expect(activeRunSource).not.toContain("firstBurnTrinket");
+    expect(activeRunSource).not.toContain("boonEffects");
+    expect(activeRunSource).not.toContain("runBoons");
+    expect(activeRunSource).not.toContain("firstBurnBoon");
   });
 
   it("keeps defaults.ts top-level keys aligned with SaveData fields", () => {
@@ -47,7 +47,7 @@ describe("save migration contract", () => {
       "completedResearch",
       "constructedBuildings",
       "contentVersion",
-      "discoveredBoonIds",
+      "discoveredTrinketIds",
       "discoveredCardIds",
       "displayMode",
       "encounteredEnemyIds",
@@ -55,6 +55,7 @@ describe("save migration contract", () => {
       "gameBuildVersion",
       "gearInventory",
       "gearLoadouts",
+      "gearBoardPositions",
       "lastSavedAt",
       "masterVolume",
       "materialInventory",

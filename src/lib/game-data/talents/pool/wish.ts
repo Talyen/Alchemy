@@ -4,11 +4,11 @@ import { addEffect, setEffect } from "../types";
 
 export const wishTalents: TalentDefinition[] = [
   {
-    id: "wish-boon",
+    id: "wish-trinket",
     keywordId: "wish",
-    name: "Wishful Boon",
+    name: "Wishful Trinket",
     description: "Gain 1 Forge or Armor when you Wish",
-    effects: [setEffect("wishBoonChoice", true)],
+    effects: [setEffect("wishTrinketChoice", true)],
   },
   {
     id: "wish-undiscovered",

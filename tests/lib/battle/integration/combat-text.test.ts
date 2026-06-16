@@ -55,7 +55,7 @@ describe("getEnemyDamageMultiplier", () => {
     expect(getEnemyDamageMultiplier(state, "physical")).toBe(1);
   });
 
-  it("returns 2 for burn against boon-hoarder", () => {
+  it("returns 2 for burn against trinket-hoarder", () => {
     const state = makeState({
       currentEnemy: {
         id: "goblin",
@@ -64,7 +64,7 @@ describe("getEnemyDamageMultiplier", () => {
         descriptionLines: [""],
         art: "",
         enemyType: "normal",
-        traits: [{ id: "boon-hoarder", title: "Boon Hoarder", description: "" }],
+        traits: [{ id: "trinket-hoarder", title: "Trinket Hoarder", description: "" }],
         attackEffects: [],
       },
     });
@@ -208,7 +208,7 @@ describe("combat number accuracy", () => {
         descriptionLines: [""],
         art: "",
         enemyType: "normal",
-        traits: [{ id: "boon-hoarder", title: "Boon Hoarder", description: "Receives double Burn damage." }],
+        traits: [{ id: "trinket-hoarder", title: "Trinket Hoarder", description: "Receives double Burn damage." }],
         attackEffects: [],
       },
     });

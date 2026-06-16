@@ -14,7 +14,9 @@ function migrateActiveCombat(activeCombat: unknown): unknown {
 
 function stripLegacyRunKeys(activeRun: RawSaveData): RawSaveData {
   const next = { ...activeRun };
-  delete next.runTrinkets;
+  delete next.runBoons;
+  delete next.discoveredBoonIdsAtRunStart;
+  delete next.discoveredCardIdsAtRunStart;
   delete next.discoveredTrinketIdsAtRunStart;
   return next;
 }
@@ -26,12 +28,7 @@ export function migrateActiveRun(activeRun: unknown): unknown {
 
   const migrated: RawSaveData = stripLegacyRunKeys({
     ...run,
-    runBoons: Array.isArray(run.runBoons) ? run.runBoons : Array.isArray(run.runTrinkets) ? run.runTrinkets : [],
-    discoveredBoonIdsAtRunStart: Array.isArray(run.discoveredBoonIdsAtRunStart)
-      ? run.discoveredBoonIdsAtRunStart
-      : Array.isArray(run.discoveredTrinketIdsAtRunStart)
-        ? run.discoveredTrinketIdsAtRunStart
-        : [],
+    runTrinkets: Array.isArray(run.runTrinkets) ? run.runTrinkets : Array.isArray(run.runBoons) ? run.runBoons : [],
     wildwoodDraft: migrateWildwoodDraft(run.wildwoodDraft),
     activeCombat: migrateActiveCombat(run.activeCombat),
   });

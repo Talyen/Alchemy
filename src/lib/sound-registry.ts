@@ -114,12 +114,13 @@ export const battleEventSounds = {
 // ── UI ──
 export const uiSounds = {
   buttonHover: "button-hover-3.ogg",
+  gearMove: "metal-button-4.ogg",
   cardHover: "card-draw-3.ogg",
   cardDrag: "whoosh-1.ogg",
   screenTransition: "whoosh-2.ogg",
   toggleOn: "toggle-on.ogg",
   toggleOff: "toggle-off.ogg",
-  error: "sci-fi-error.ogg",
+  error: "denied-03.ogg",
   shopBuy: "coin-jingle-small.ogg",
   shopRefresh: "keys-jingling.ogg",
   shopRemove: "card-fan.ogg",

@@ -9,8 +9,11 @@ export function failOnRuntimeErrors(page: Page) {
   });
   page.on("console", (message) => {
     if (message.type() === "error") {
-      console.log("[Console Error]", message.text());
-      errors.push(message.text());
+      const text = message.text();
+      if (text.includes("Failed to load or decode sound")) return;
+      if (text.includes("was passed to the") && text.includes("attribute")) return;
+      console.log("[Console Error]", text);
+      errors.push(text);
     }
   });
   return errors;

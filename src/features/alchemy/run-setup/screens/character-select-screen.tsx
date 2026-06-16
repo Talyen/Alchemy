@@ -3,12 +3,11 @@
 // Used when beginning a fresh run before destination routing starts.
 import { useState } from "react";
 
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { characters, characterArt, type CharacterId } from "@/lib/game-data";
+import { characters, characterArt, characterUnlockRequirements, type CharacterId } from "@/lib/game-data";
 
 import { KeywordTag } from "../../shared/ui/keyword-tag";
-import { ScreenHeader, StaggerGroup, StaggerItem } from "../../shared/ui/shared-ui";
+import { ScreenHeader, ActionButtonRow, StaggerGroup, StaggerItem } from "../../shared/ui/shared-ui";
 import { TiltSurface } from "../../shared/ui/tilt-surface";
 import {
   TooltipBody,
@@ -23,17 +22,6 @@ import { useAppStore } from "../../shared/stores/app-store";
 import { playUISound } from "@/lib/audio";
 
 const charCardWidthClass = "w-[clamp(18vh,20.5vh,28vh)]";
-
-const CHARACTER_UNLOCK_REQS: Record<CharacterId, { requiredChar: CharacterId | null; requiredName: string }> = {
-  knight: { requiredChar: null, requiredName: "" },
-  rogue: { requiredChar: "knight", requiredName: "Knight" },
-  wizard: { requiredChar: "rogue", requiredName: "Rogue" },
-  ranger: { requiredChar: "wizard", requiredName: "Wizard" },
-  alchemist: { requiredChar: "ranger", requiredName: "Ranger" },
-  warlock: { requiredChar: "alchemist", requiredName: "Alchemist" },
-  druid: { requiredChar: "warlock", requiredName: "Warlock" },
-  wildcard: { requiredChar: "druid", requiredName: "Druid" },
-};
 
 function CharacterCard({
   id,
@@ -100,7 +88,7 @@ function CharacterCard({
 
             {isLocked ? (
               <TooltipBody>
-                <p className="text-red-400 font-semibold">{unlockRequirementText}</p>
+                <p>{unlockRequirementText}</p>
               </TooltipBody>
             ) : (
               <>
@@ -172,7 +160,7 @@ export function CharacterSelectScreen({
 
       <StaggerGroup className="grid grid-cols-2 justify-items-center gap-x-8 gap-y-6 sm:grid-cols-4">
         {charIds.map((id, index) => {
-          const req = CHARACTER_UNLOCK_REQS[id];
+          const req = characterUnlockRequirements[id];
           const isLocked = req.requiredChar !== null && !finishedRunCharacters.includes(req.requiredChar);
           const unlockRequirementText = isLocked ? `Finish a Run as the ${req.requiredName} to unlock` : "";
 
@@ -193,23 +181,17 @@ export function CharacterSelectScreen({
         })}
       </StaggerGroup>
 
-      <div className="flex flex-col items-center gap-4">
-        <div className="flex gap-4">
-          <Button size="lg" variant="outline" className="w-40" onClick={onBack}>
-            Back
-          </Button>
-          <Button
-            size="lg"
-            className="w-40"
-            disabled={!selectedChar}
-            onClick={() => {
-              if (selectedChar) onConfirm(selectedChar.id);
-            }}
-          >
-            Continue
-          </Button>
-        </div>
-      </div>
+      <ActionButtonRow
+        width="dialog"
+        secondary={{ label: "Back", onClick: onBack }}
+        primary={{
+          label: "Continue",
+          disabled: !selectedChar,
+          onClick: () => {
+            if (selectedChar) onConfirm(selectedChar.id);
+          },
+        }}
+      />
     </div>
   );
 }

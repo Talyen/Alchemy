@@ -5,7 +5,7 @@ import {
   companionLibrary,
   enemyBestiary,
   getOfferableCardPool,
-  boonLibrary,
+  trinketLibrary,
 } from "@/lib/game-data";
 import { MIXED_POTION_CARD_ID } from "@/lib/game-constants";
 
@@ -140,14 +140,14 @@ describe("enemyBestiary data integrity", () => {
   });
 });
 
-describe("boonLibrary data integrity", () => {
+describe("trinketLibrary data integrity", () => {
   it("all boon IDs are unique", () => {
-    const ids = boonLibrary.map((t) => t.id);
+    const ids = trinketLibrary.map((t) => t.id);
     expect(new Set(ids).size).toBe(ids.length);
   });
 
   it("each boon has a title and art", () => {
-    for (const boon of boonLibrary) {
+    for (const boon of trinketLibrary) {
       expect(boon.title).toBeTruthy();
       expect(boon.art).toBeTruthy();
     }

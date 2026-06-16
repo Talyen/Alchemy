@@ -53,7 +53,7 @@ Migration tests must verify gameplay progress, not just field presence:
 - Talent XP and unlocked talents remain usable.
 - Homestead materials and upgrade tiers remain intact.
 - Active campaign, labyrinth, and wildwood runs resume when structurally valid (**`activeRun` must not be silently dropped**).
-- Mid-combat snapshots preserve boon effects, gear effects, and combat flags.
+- Mid-combat snapshots preserve trinket effects, gear effects, and combat flags.
 - Every fixture is **idempotent** after `normalizeSaveData`.
 
 ## Future schema saves
@@ -71,4 +71,40 @@ When adding a new saved field that gates features (unlocks, meta screens, game m
 
 ## Schema v4 (launch baseline)
 
-Schema v4 renames persisted Trinket fields to Boon fields and introduces Gear inventory/loadouts. Nested renames (battle snapshots, wildwood `rewardType`, combat flags) live in `src/lib/validation/migration/` helpers invoked from `migrateV3ToV4` and the final `migrateActiveRun` pass.
+Schema v4 renames persisted Trinket fields to Boon fields and introduces Gear inventory/loadouts. Nested renames (battle snapshots, wildwood `rewardType`, combat flags) live in frozen `migrate-*-v4` helpers invoked from `migrateV3ToV4`.
+
+## Schema v5 (Boon → Trinket revert)
+
+Schema v5 restores Trinket terminology in persisted saves:
+
+| v4 field | v5 field |
+|----------|----------|
+| `discoveredBoonIds` | `discoveredTrinketIds` |
+| `runBoons` | `runTrinkets` |
+| `boonEffects` | `trinketEffects` |
+| `flags.firstBurnBoonDoubledUsed` | `flags.firstBurnTrinketDoubledUsed` |
+| `wildwoodDraft.rewardType: "boon"` | `"trinket"` |
+
+Run-end discovery snapshots (`*AtRunStart` on `activeRun`) were removed with the discoveries screen; discovery is now immediate when items are earned during a run.
+
+Implemented in `migrateV4ToV5` (`migrate-save-top-level-v5.ts`, updated `migrate-active-run.ts`, `migrate-battle-state.ts`, `migrate-wildwood-draft.ts`).
+
+## Content version 2 (ID remaps)
+
+`contentVersion` 2 remaps boon-era content IDs in `unlockedTalents`:
+
+| Legacy ID | Current ID |
+|-----------|------------|
+| `wish-boon` | `wish-trinket` |
+| `leech-boon-siphon` | `leech-trinket-siphon` |
+| `boon-hoarder` | `trinket-hoarder` |
+
+Applied in `migrateContentV2` whenever `contentVersion < CURRENT_CONTENT_VERSION` after the schema migration chain completes.
+
+## Gear board layout (`gearBoardPositions`)
+
+Armory inventory tile positions persist in `gearBoardPositions: Record<instanceId, { col, row }>` (additive default `{}`). On first load after upgrade, any legacy `localStorage["alchemy-armory-positions"]` entries are merged into the save-backed store and the local key is removed.
+
+## Gear instances (`affixIds`)
+
+Gear inventory instances now persist rolled affixes as `affixIds: GearAffixId[]` instead of legacy `modifiers`. Save normalization in `save-data.ts` strips unknown affix ids and converts legacy `{ kind: "flatPhysicalDamage", value }` modifiers into repeated `flat-physical-1` affix ids when `affixIds` is absent. Placeholder definition IDs remain valid for older saves and tests.

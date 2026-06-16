@@ -1,44 +1,62 @@
-import { useMemo, useState } from "react";
-import { Lock, Shield, Trash2, Users } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { characters, characterArt, type CharacterId } from "@/lib/game-data";
+import { useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { motion } from "motion/react";
 import {
-  GEAR_SLOTS,
-  applyGearModifiers,
-  canSalvageGear,
+  Crosshair,
+  Flame,
+  FlaskConical,
+  Leaf,
+  Lock,
+  Shield,
+  Sparkles,
+  Swords,
+  WandSparkles,
+  type LucideIcon,
+} from "lucide-react";
+import {
+  characters,
+  getRequiredPreviousCharacter,
+  isCharacterUnlocked,
+  keywordDefinitions,
+  type CharacterId,
+  type KeywordId,
+} from "@/lib/game-data";
+import {
   formatSalvageValue,
-  gearDefinitions,
-  getEquippedCharacterIds,
-  getEquippedGearEffects,
-  isGearCompatibleWithSlot,
+  INVENTORY_COLS,
+  packInventoryWithPositions,
+  resolveGearDefinition,
   type GearInstance,
   type GearLoadouts,
   type GearSlot,
 } from "@/lib/gear";
 import { cn } from "@/lib/utils";
-import { ConfirmationDialog, HamburgerTrigger, ScreenHeader } from "../../shared/ui/shared-ui";
+import { ConfirmationDialog, HamburgerTrigger, PageLayout, ScreenHeader, TabBar } from "../../shared/ui/shared-ui";
+import { CharacterAndEquipmentPanel, InventoryPanel } from "./armory/armory-panels";
+import { DOUBLE_CLICK_FLYOVER_MS, MAGNET_RELEASE_EASE_MS, useArmoryGearDrag } from "./armory/use-armory-gear-drag";
+import { useArmoryInventoryPositions } from "./armory/use-armory-inventory-positions";
+import "./armory/armory-screen.css";
 
-const SLOT_LABELS: Record<GearSlot, string> = {
-  body: "Body",
-  helm: "Helm",
-  boots: "Boots",
-  gloves: "Gloves",
-  belt: "Belt",
-  "main-hand": "Main Hand",
-  "off-hand": "Off-Hand",
-  "left-ring": "Left Ring",
-  "right-ring": "Right Ring",
-  amulet: "Amulet",
+const CHARACTER_ICONS: Record<CharacterId, LucideIcon> = {
+  knight: Shield,
+  rogue: Swords,
+  wizard: WandSparkles,
+  ranger: Crosshair,
+  alchemist: FlaskConical,
+  warlock: Flame,
+  druid: Leaf,
+  wildcard: Sparkles,
 };
-const UNLOCK_PREVIOUS: Record<CharacterId, CharacterId | null> = {
-  knight: null,
-  rogue: "knight",
-  wizard: "rogue",
-  ranger: "wizard",
-  alchemist: "ranger",
-  warlock: "alchemist",
-  druid: "warlock",
-  wildcard: "druid",
+
+const CHARACTER_KEYWORDS: Record<CharacterId, KeywordId> = {
+  knight: "forge",
+  rogue: "bleed",
+  wizard: "mana",
+  ranger: "archery",
+  alchemist: "poison",
+  warlock: "leech",
+  druid: "nature",
+  wildcard: "wish",
 };
 
 type Props = {
@@ -63,222 +81,199 @@ export function ArmoryScreen({
   onSalvage,
 }: Props) {
   const [characterId, setCharacterId] = useState<CharacterId>("knight");
-  const [selectedSlot, setSelectedSlot] = useState<GearSlot>("body");
+  const inventoryBoardRef = useRef<HTMLDivElement>(null);
   const [salvageTarget, setSalvageTarget] = useState<GearInstance | null>(null);
-  const byId = useMemo(() => new Map(inventory.map((item) => [item.instanceId, item])), [inventory]);
+  const { savedPositions, handleMoveItem } = useArmoryInventoryPositions(inventory);
+
+  const inventoryById = useMemo(() => new Map(inventory.map((item) => [item.instanceId, item])), [inventory]);
+  const equippedInstanceIds = useMemo(
+    () =>
+      new Set(Object.values(loadouts).flatMap((characterLoadout) => Object.values(characterLoadout).filter(Boolean))),
+    [loadouts],
+  );
+  const availableInventory = useMemo(
+    () => inventory.filter((item) => !equippedInstanceIds.has(item.instanceId)),
+    [equippedInstanceIds, inventory],
+  );
   const loadout = loadouts[characterId];
-  const required = UNLOCK_PREVIOUS[characterId];
-  const locked = required !== null && !finishedRunCharacters.includes(required);
+  const requiredCharacterId = getRequiredPreviousCharacter(characterId);
+  const locked = !isCharacterUnlocked(characterId, finishedRunCharacters);
   const editable = !browseOnly && !locked;
-  const effects = getEquippedGearEffects(characterId, inventory, loadouts);
-  const compatible = inventory.filter((instance) =>
-    isGearCompatibleWithSlot(gearDefinitions[instance.definitionId], selectedSlot),
+  const packedInventory = useMemo(
+    () => packInventoryWithPositions(availableInventory, INVENTORY_COLS, savedPositions),
+    [availableInventory, savedPositions],
   );
 
-  return (
-    <div className="flex h-full w-full flex-col px-5 py-4">
-      <div className="flex items-center justify-between">
-        <ScreenHeader title="Armory" />
-        <HamburgerTrigger onClick={onOpenMenu} label="Open armory menu" />
-      </div>
-      {browseOnly ? (
-        <p className="mt-2 rounded-lg border border-amber-400/30 bg-amber-500/10 px-4 py-2 text-center text-sm text-amber-100">
-          Equipment can be changed after combat.
-        </p>
-      ) : null}
-      <div className="mt-3 flex flex-wrap justify-center gap-2">
-        {(Object.keys(characters) as CharacterId[]).map((id) => {
-          const previous = UNLOCK_PREVIOUS[id];
-          const isLocked = previous !== null && !finishedRunCharacters.includes(previous);
-          return (
-            <Button
-              key={id}
-              size="sm"
-              variant={id === characterId ? "default" : "outline"}
-              className={cn(isLocked && "opacity-50")}
-              disabled={isLocked}
-              onClick={() => {
-                if (!isLocked) setCharacterId(id);
-              }}
-              aria-label={`${characters[id].name}${isLocked ? " (Locked)" : ""}`}
-            >
-              {isLocked ? <Lock className="h-3.5 w-3.5" /> : null}
-              {characters[id].name}
-            </Button>
-          );
-        })}
-      </div>
-      <div className="mt-4 grid min-h-0 flex-1 grid-cols-[minmax(12rem,1fr)_minmax(18rem,1.5fr)_minmax(14rem,1fr)] gap-4">
-        <section className="alchemy-shell min-h-0 overflow-auto rounded-shell-dialog border border-border/80 p-4">
-          <h2 className="font-display text-lg text-amber-100">Inventory</h2>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {compatible.length} compatible item{compatible.length === 1 ? "" : "s"}
-          </p>
-          <div className="mt-3 grid gap-2">
-            {compatible.length === 0 ? (
-              <p className="py-8 text-center text-sm text-muted-foreground">No Gear for this slot yet.</p>
-            ) : (
-              compatible.map((instance) => {
-                const definition = gearDefinitions[instance.definitionId];
-                const instanceEffects = applyGearModifiers({ ...definition.effects }, instance.modifiers);
-                const shared = getEquippedCharacterIds(loadouts, instance.instanceId);
-                const equippedHere = Object.values(loadout).includes(instance.instanceId);
-                return (
-                  <div
-                    key={instance.instanceId}
-                    className={cn(
-                      "rounded-lg border p-2",
-                      equippedHere ? "border-primary bg-primary/10" : "border-border/70",
-                    )}
-                  >
-                    <button
-                      className="flex w-full items-center gap-3 text-left"
-                      disabled={!editable}
-                      onClick={() => onEquip(characterId, selectedSlot, instance)}
-                    >
-                      <img src={definition.art} alt="" className="h-12 w-12 rounded-md object-cover" />
-                      <span className="min-w-0 flex-1">
-                        <strong className="block truncate text-sm">{definition.title}</strong>
-                        <span className="text-xs text-muted-foreground">
-                          {instanceEffects.flatPhysicalDamage > 0
-                            ? `+${instanceEffects.flatPhysicalDamage} Physical damage`
-                            : definition.descriptionLines[0]}
-                        </span>
-                        {shared.length > 0 ? (
-                          <span className="mt-1 flex items-center gap-1 text-xs text-amber-200">
-                            <Users className="h-3 w-3" /> {shared.map((id) => characters[id].name).join(", ")}
-                          </span>
-                        ) : null}
-                      </span>
-                    </button>
-                    {canSalvageGear(loadouts, instance.instanceId) && !browseOnly ? (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="mt-1 w-full text-red-300"
-                        onClick={() => setSalvageTarget(instance)}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" /> {formatSalvageValue(definition.salvageValue)}
-                      </Button>
-                    ) : null}
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </section>
-        <section className="alchemy-shell relative flex min-h-0 flex-col items-center rounded-shell-dialog border border-border/80 p-4">
-          <div className="relative grid h-full w-full grid-cols-2 content-between gap-2">
-            {GEAR_SLOTS.slice(0, 5).map((slot) => (
-              <SlotButton
-                key={slot}
-                slot={slot}
-                selected={selectedSlot === slot}
-                instance={loadout[slot] ? byId.get(loadout[slot]!) : undefined}
-                onSelect={setSelectedSlot}
-                onUnequip={editable && loadout[slot] ? () => onUnequip(characterId, slot) : undefined}
-              />
-            ))}
-            <img
-              src={characterArt[characterId]}
-              alt={characters[characterId].name}
-              className={cn(
-                "pointer-events-none absolute left-1/2 top-1/2 h-[62%] -translate-x-1/2 -translate-y-1/2 object-contain",
-                locked && "grayscale opacity-40",
-              )}
-            />
-            {GEAR_SLOTS.slice(5).map((slot) => (
-              <SlotButton
-                key={slot}
-                slot={slot}
-                selected={selectedSlot === slot}
-                instance={loadout[slot] ? byId.get(loadout[slot]!) : undefined}
-                onSelect={setSelectedSlot}
-                onUnequip={editable && loadout[slot] ? () => onUnequip(characterId, slot) : undefined}
-              />
-            ))}
-          </div>
-          {locked ? (
-            <div className="absolute inset-0 flex items-center justify-center rounded-shell-dialog bg-black/55">
-              <div className="text-center">
-                <Lock className="mx-auto h-8 w-8" />
-                <p className="mt-2 font-semibold">Finish a Run as the {characters[required!].name} to unlock</p>
-              </div>
-            </div>
-          ) : null}
-        </section>
-        <section className="alchemy-shell rounded-shell-dialog border border-border/80 p-4">
-          <h2 className="font-display text-lg text-amber-100">Loadout Effects</h2>
-          <div className="mt-4 flex items-center gap-3 rounded-lg border border-border/70 p-3">
-            <Shield className="h-5 w-5 text-amber-300" />
-            <div>
-              <strong>Physical Damage</strong>
-              <p className="text-sm text-muted-foreground">+{effects.flatPhysicalDamage}</p>
-            </div>
-          </div>
-          <p className="mt-4 text-sm text-muted-foreground">
-            Select a slot, then choose compatible Gear from the shared inventory. The same item can be used by multiple
-            classes.
-          </p>
-        </section>
-      </div>
-      {salvageTarget ? (
-        <ConfirmationDialog
-          title="Salvage Gear?"
-          description={`Permanently salvage ${gearDefinitions[salvageTarget.definitionId].title}. ${formatSalvageValue(gearDefinitions[salvageTarget.definitionId].salvageValue)}.`}
-          confirmLabel="Salvage"
-          onCancel={() => setSalvageTarget(null)}
-          onConfirm={() => {
-            onSalvage(salvageTarget.instanceId);
-            setSalvageTarget(null);
-          }}
-        />
-      ) : null}
-    </div>
-  );
-}
+  const {
+    draggedGear,
+    dragVisual,
+    isAnimating,
+    isDraggingActive,
+    beginGearPointer,
+    moveGearPointer,
+    finishGearPointer,
+    handleGearDoubleClick,
+    clearDragState,
+  } = useArmoryGearDrag({
+    characterId,
+    editable,
+    loadout,
+    packedInventory,
+    inventoryBoardRef,
+    onEquip,
+    onUnequip,
+    onMoveItem: handleMoveItem,
+  });
 
-function SlotButton({
-  slot,
-  selected,
-  instance,
-  onSelect,
-  onUnequip,
-}: {
-  slot: GearSlot;
-  selected: boolean;
-  instance: GearInstance | undefined;
-  onSelect: (slot: GearSlot) => void;
-  onUnequip: (() => void) | undefined;
-}) {
-  const definition = instance ? gearDefinitions[instance.definitionId] : null;
+  const salvageDefinition = salvageTarget ? resolveGearDefinition(salvageTarget.definitionId) : undefined;
+  const dragDefinition = dragVisual ? resolveGearDefinition(dragVisual.instance.definitionId) : undefined;
+
   return (
-    <div
-      className={cn(
-        "relative z-10 flex min-h-20 items-center gap-2 rounded-lg border p-2",
-        selected ? "border-primary bg-primary/10" : "border-border/70 bg-background/75",
-      )}
-    >
-      <button
-        className="flex min-w-0 flex-1 items-center gap-2 text-left"
-        onClick={() => onSelect(slot)}
-        aria-label={`Select ${SLOT_LABELS[slot]} slot`}
-      >
-        {definition ? (
-          <img src={definition.art} alt="" className="h-10 w-10 rounded object-cover" />
-        ) : (
-          <div className="h-10 w-10 rounded border border-dashed border-border" />
+    <PageLayout>
+      <div
+        data-testid="armory-screen"
+        className={cn(
+          "alchemy-shell my-auto flex w-full max-w-[96rem] flex-1 flex-col rounded-shell-screen p-7 pb-1",
+          draggedGear && "cursor-grabbing [&_*]:!cursor-grabbing",
         )}
-        <span className="min-w-0">
-          <strong className="block text-xs">{SLOT_LABELS[slot]}</strong>
-          <span className="block truncate text-xs text-muted-foreground">{definition?.title ?? "Empty"}</span>
-        </span>
-      </button>
-      {onUnequip ? (
-        <button className="text-xs text-red-300" onClick={onUnequip}>
-          Unequip
-        </button>
-      ) : null}
-    </div>
+      >
+        <div className="relative flex min-h-10 w-full items-center justify-center px-12">
+          <ScreenHeader title="Armory" />
+          <div className="absolute right-0 top-1/2 -translate-y-1/2">
+            <HamburgerTrigger onClick={onOpenMenu} label="Open armory menu" />
+          </div>
+        </div>
+        {browseOnly ? (
+          <p className="mx-auto mt-3 rounded-lg border border-amber-400/30 bg-amber-500/10 px-4 py-2 text-center text-sm text-amber-100">
+            Equipment can be changed after combat.
+          </p>
+        ) : null}
+        <div
+          data-testid="armory-character-selector"
+          className="mt-4 w-full overflow-x-auto py-2 [scrollbar-width:none]"
+        >
+          <div className="mx-auto w-max min-w-full px-1">
+            <TabBar
+              tabs={(Object.keys(characters) as CharacterId[]).map((id) => {
+                const isLocked = !isCharacterUnlocked(id, finishedRunCharacters);
+                return {
+                  id,
+                  label: characters[id].name,
+                  icon: isLocked ? Lock : CHARACTER_ICONS[id],
+                  disabled: isLocked,
+                  ...(isLocked ? {} : { iconClassName: keywordDefinitions[CHARACTER_KEYWORDS[id]].colorClass }),
+                };
+              })}
+              activeTab={characterId}
+              onSelectTab={setCharacterId}
+            />
+          </div>
+        </div>
+        <div className="armory-workspace mt-2 min-w-0 flex-1">
+          <div className="armory-workspace-grid">
+            <CharacterAndEquipmentPanel
+              characterId={characterId}
+              locked={locked}
+              loadout={loadout}
+              inventoryById={inventoryById}
+              editable={editable}
+              requiredCharacterId={requiredCharacterId}
+              draggedGear={draggedGear}
+              isDraggingActive={isDraggingActive}
+              onGearPointerStart={beginGearPointer}
+              onGearPointerMove={moveGearPointer}
+              onGearPointerEnd={finishGearPointer}
+              onGearDoubleClick={handleGearDoubleClick}
+            />
+            <InventoryPanel
+              packedItems={packedInventory.items}
+              occupiedRows={packedInventory.occupiedRows}
+              loadouts={loadouts}
+              editable={editable}
+              browseOnly={browseOnly}
+              draggedInstanceId={draggedGear?.instanceId ?? null}
+              isDraggingActive={isDraggingActive}
+              isAnimating={isAnimating}
+              boardRef={inventoryBoardRef}
+              onSalvage={setSalvageTarget}
+              onGearPointerStart={beginGearPointer}
+              onGearPointerMove={moveGearPointer}
+              onGearPointerEnd={finishGearPointer}
+              onGearDoubleClick={handleGearDoubleClick}
+            />
+          </div>
+        </div>
+        {salvageTarget && salvageDefinition ? (
+          <ConfirmationDialog
+            title="Salvage Gear?"
+            description={`Permanently salvage ${salvageDefinition.title}. ${formatSalvageValue(salvageDefinition.salvageValue)}.`}
+            confirmLabel="Salvage"
+            onCancel={() => setSalvageTarget(null)}
+            onConfirm={() => {
+              onSalvage(salvageTarget.instanceId);
+              setSalvageTarget(null);
+            }}
+          />
+        ) : null}
+        {dragVisual && dragDefinition
+          ? createPortal(
+              <motion.div
+                data-testid="armory-gear-drag-visual"
+                className="pointer-events-none fixed z-[120] overflow-hidden rounded-xl"
+                initial={
+                  dragVisual.flyover
+                    ? {
+                        x: 0,
+                        y: 0,
+                        width: dragVisual.source.width,
+                        height: dragVisual.source.height,
+                        boxShadow: "0 0px 0px 0px rgba(0,0,0,0)",
+                      }
+                    : {
+                        boxShadow: "0 0px 0px 0px rgba(0,0,0,0)",
+                      }
+                }
+                style={{
+                  left: dragVisual.source.left,
+                  top: dragVisual.source.top,
+                  width: dragVisual.source.width,
+                  height: dragVisual.source.height,
+                  willChange: "transform,width,height",
+                }}
+                animate={{
+                  x: dragVisual.rect.left - dragVisual.source.left,
+                  y: dragVisual.rect.top - dragVisual.source.top,
+                  width: dragVisual.rect.width,
+                  height: dragVisual.rect.height,
+                  scale: 1,
+                  rotate: 0,
+                  boxShadow:
+                    dragVisual.settling || dragVisual.flyover
+                      ? "0 0px 0px 0px rgba(0,0,0,0)"
+                      : "0 25px 50px -12px rgba(0,0,0,0.5)",
+                }}
+                transition={{
+                  boxShadow: { duration: 1, ease: "easeOut" },
+                  default: dragVisual.flyover
+                    ? { duration: DOUBLE_CLICK_FLYOVER_MS / 1000, ease: [0.22, 1, 0.36, 1] }
+                    : dragVisual.releasing
+                      ? { duration: MAGNET_RELEASE_EASE_MS / 1000, ease: [0.22, 1, 0.36, 1] }
+                      : dragVisual.settling
+                        ? { type: "spring", stiffness: 1000, damping: 50, mass: 0.15 }
+                        : { type: "spring", stiffness: 1000, damping: 50, mass: 0.15 },
+                }}
+                onAnimationComplete={() => {
+                  if (dragVisual.settling || dragVisual.flyover) {
+                    clearDragState();
+                  }
+                }}
+              >
+                <img src={dragDefinition.art} alt="" className="h-full w-full object-cover" />
+              </motion.div>,
+              document.body,
+            )
+          : null}
+      </div>
+    </PageLayout>
   );
 }

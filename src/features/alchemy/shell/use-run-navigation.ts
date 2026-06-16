@@ -20,7 +20,6 @@ import { type BattleCard, type CharacterId, type DifficultyId, type DifficultyMo
 import { playUISound } from "@/lib/audio";
 import { logError } from "@/lib/error-logger";
 import { CONSTANTS, type Destination, type Screen } from "@/features/alchemy/shared/types";
-import { hasRunEndDiscoveries } from "@/lib/discoveries";
 import { getRunAvailableDestinations } from "@/features/alchemy/run-loop/navigation/destination-flow";
 import { readActiveRunStore, readRunSessionStore } from "@/features/alchemy/shared/stores/run-session-facade";
 import { getPreviousDestination } from "@/features/alchemy/run-loop/navigation/run-navigation-helpers";
@@ -356,11 +355,6 @@ export function useRunNavigation({
 
   function continueFromRunEnd() {
     clearCardHover();
-    const session = readRunSessionStore();
-    if (hasRunEndDiscoveries(session.runEndDiscoveredCardIds, session.runEndDiscoveredBoonIds)) {
-      navigateTo(CONSTANTS.SCREENS.RUN_DISCOVERIES);
-      return;
-    }
     resetRunState();
   }
 
@@ -392,6 +386,7 @@ export function useRunNavigation({
     beginWildwood: contentNav.beginWildwood,
     beginMysteryEvent,
     endLabyrinthRun: flowHandlers.endLabyrinthRun,
+    handleAbandonRun: flowHandlers.handleAbandonRun,
     handleCharacterSelect: contentNav.handleCharacterSelect,
     handleDraftComplete,
     handleDraftPick,

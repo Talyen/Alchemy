@@ -7,6 +7,7 @@ export const SHINE_PALETTES = {
   deathsDoorArt: ["#450a0a", "#dc2626", "#7f1d1d", "#111827"],
   deathsDoorStats: ["#450a0a", "#ef4444", "#991b1b", "#1f0505"],
   wildwoodBossSelection: ["#450a0a", "#ef4444", "#991b1b", "#7f1d1d"],
+  corruption: ["#450a0a", "#dc2626", "#f87171", "#7f1d1d"],
   labyrinth: {
     entrance: ["#292524", "#57534e", "#a8a29e", "#44403c"],
     combat: ["#450a0a", "#dc2626", "#f87171", "#7f1d1d"],

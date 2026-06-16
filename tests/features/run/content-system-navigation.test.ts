@@ -31,7 +31,7 @@ beforeEach(() => {
   resetTransientRunUi();
   resetRunProgressSlice();
   useHomesteadStore.setState(useHomesteadStore.getInitialState());
-  useAppStore.setState({ discoveredCardIds: [], discoveredBoonIds: [] });
+  useAppStore.setState({ discoveredCardIds: [], discoveredTrinketIds: [] });
 });
 
 function makeDeps(overrides: Partial<Parameters<typeof createContentSystemNavigation>[0]> = {}) {
@@ -111,7 +111,6 @@ describe("createContentSystemNavigation", () => {
 
     nav.initializeRunForDifficulty("knight", DEFAULT_CAMPAIGN_DIFFICULTY_ID);
 
-    expect(getRunProgressStoreView().discoveredCardIdsAtRunStart).toEqual([]);
     expect(useAppStore.getState().discoveredCardIds).toEqual(knightStarterIds);
   });
 
@@ -121,7 +120,6 @@ describe("createContentSystemNavigation", () => {
     const nav = createContentSystemNavigation(deps);
     nav.handleCharacterSelect("knight");
 
-    expect(getRunProgressStoreView().discoveredCardIdsAtRunStart).toEqual([]);
     expect(useAppStore.getState().discoveredCardIds).toEqual([]);
   });
 

@@ -4,21 +4,21 @@ import {
   getOfferableCardPool,
   getStandardPotionPool,
   selectRewardCards,
-  boonLibrary,
+  trinketLibrary,
   type BattleCard,
-  type BoonEntry,
+  type TrinketEntry,
 } from "@/lib/game-data";
 import {
-  BOSS_BOON_REWARD_CHOICES,
-  ELITE_BOON_REWARD_CHANCE,
+  BOSS_TRINKET_REWARD_CHOICES,
+  ELITE_TRINKET_REWARD_CHANCE,
   LABYRINTH_REWARD_CONFIG,
   REWARD_CARD_CHOICES,
-  REWARD_BOON_CHANCE,
+  REWARD_TRINKET_CHANCE,
   CAMPAIGN_GEAR_REWARD_CHANCE,
   LABYRINTH_GEAR_REWARD_CHANCE,
   BOSS_GEAR_REWARD_CHANCE,
 } from "@/lib/game-constants";
-import { computeBoonManifest } from "@/lib/boons";
+import { computeTrinketManifest } from "@/lib/trinkets";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import type { BattleState } from "@/lib/battle";
@@ -27,22 +27,40 @@ import { CONSTANTS, type Destination, type Screen } from "../../shared/types";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import { sampleItems } from "../../shared/utils";
-import { gearDefinitionList, type GearDefinition } from "@/lib/gear";
+import { generateGearRewardChoices, type GearInstance } from "@/lib/gear";
 
-export type RewardState = {
-  choices: (BattleCard | BoonEntry | GearDefinition)[];
+export type RewardStateBase = {
   gold: number;
   materials: MaterialInventory;
   selectedId: string | null;
   destinations: Destination[];
-  rewardType: "card" | "boon" | "gear";
   selectedBossId: string | null;
-  /** Stamped at victory commit so reward routing does not depend on battle state. */
   lastVictoryEnemyType: string | null;
   lastVictoryContentSystem: ContentSystemId | null;
 };
 
-export function createEmptyRewardState(destinations: Destination[] = []): RewardState {
+export type CardRewardState = RewardStateBase & {
+  rewardType: "card";
+  choices: BattleCard[];
+};
+
+export type TrinketRewardState = RewardStateBase & {
+  rewardType: "trinket";
+  choices: TrinketEntry[];
+};
+
+export type GearRewardState = RewardStateBase & {
+  rewardType: "gear";
+  choices: GearInstance[];
+};
+
+export type RewardState = CardRewardState | TrinketRewardState | GearRewardState;
+
+export function getRewardChoiceId(choice: BattleCard | TrinketEntry | GearInstance): string {
+  return choice && typeof choice === "object" && "instanceId" in choice ? choice.instanceId : choice.id;
+}
+
+export function createEmptyRewardState(destinations: Destination[] = []): CardRewardState {
   return {
     choices: [],
     gold: 0,
@@ -56,7 +74,7 @@ export function createEmptyRewardState(destinations: Destination[] = []): Reward
   };
 }
 
-export function createNextRewardState(rewardState: RewardState): RewardState {
+export function createNextRewardState(rewardState: RewardState): CardRewardState {
   return {
     ...createEmptyRewardState(rewardState.destinations),
     selectedBossId: rewardState.selectedBossId,
@@ -68,7 +86,7 @@ export function createNextRewardState(rewardState: RewardState): RewardState {
 export type VictoryGoldInput = {
   battleState: Pick<BattleState, "gold">;
   runGold: number;
-  runBoons: string[];
+  runTrinkets: string[];
   gold: number;
   eliteBonus: number;
   generousBonus: number;
@@ -90,7 +108,7 @@ export type RewardGoldInput = {
   bonusGold: number;
   generousBonus: number;
   talentGoldPerCombat: number;
-  boonIds: string[];
+  trinketIds: string[];
   goldMultiplier: number;
 };
 
@@ -102,7 +120,7 @@ function createModifierGuard(kind: EncounterRewardTraitId) {
   return (modifiers: EncounterRewardTraitId[]): boolean => hasRewardModifier(modifiers, kind);
 }
 
-export const shouldForceBoonReward = createModifierGuard("collector");
+export const shouldForceTrinketReward = createModifierGuard("collector");
 export const shouldGrantCompanionReward = createModifierGuard("companion");
 export const shouldGrantAlchemistReward = createModifierGuard("alchemist");
 
@@ -147,42 +165,45 @@ export function getCompanionCardChoices(rng: () => number = Math.random): Battle
   return shuffle(companions, rng).slice(0, LABYRINTH_REWARD_CONFIG.companionCardChoices);
 }
 
-function getSmugglersMapGoldBonus(boonIds: string[]): number {
-  return computeBoonManifest(boonIds).smugglersMapGoldBonus;
+function getSmugglersMapGoldBonus(trinketIds: string[]): number {
+  return computeTrinketManifest(trinketIds).smugglersMapGoldBonus;
 }
 
 function sumGoldBonuses(
   bonusGold: number,
   generousBonus: number,
   talentGoldPerCombat: number,
-  boonIds: string[],
+  trinketIds: string[],
 ): number {
-  return bonusGold + generousBonus + talentGoldPerCombat + getSmugglersMapGoldBonus(boonIds);
+  return bonusGold + generousBonus + talentGoldPerCombat + getSmugglersMapGoldBonus(trinketIds);
 }
 
 export function computeRewardGold(input: RewardGoldInput): number {
   return Math.floor(
-    (input.baseGold + sumGoldBonuses(input.bonusGold, input.generousBonus, input.talentGoldPerCombat, input.boonIds)) *
+    (input.baseGold +
+      sumGoldBonuses(input.bonusGold, input.generousBonus, input.talentGoldPerCombat, input.trinketIds)) *
       input.goldMultiplier,
   );
 }
 
 export function getVictoryGoldTotal({
   battleState,
-  runBoons,
+  runTrinkets,
   gold,
   eliteBonus,
   generousBonus,
   bossBonus,
   talentGoldPerCombat,
 }: VictoryGoldTotalInput): number {
-  return battleState.gold + gold + sumGoldBonuses(eliteBonus + bossBonus, generousBonus, talentGoldPerCombat, runBoons);
+  return (
+    battleState.gold + gold + sumGoldBonuses(eliteBonus + bossBonus, generousBonus, talentGoldPerCombat, runTrinkets)
+  );
 }
 
 export function computeVictoryGoldResult({
   battleState,
   runGold,
-  runBoons,
+  runTrinkets,
   gold,
   eliteBonus,
   generousBonus,
@@ -192,7 +213,7 @@ export function computeVictoryGoldResult({
 }: VictoryGoldInput): VictoryGoldResult {
   const unmultipliedTotal = getVictoryGoldTotal({
     battleState,
-    runBoons,
+    runTrinkets,
     gold,
     eliteBonus,
     generousBonus,
@@ -216,11 +237,11 @@ export type FinalizeRewardInput = {
 };
 
 export type FinalizeRewardResult = {
-  selectedChoice: BattleCard | BoonEntry | GearDefinition | null;
+  selectedChoice: BattleCard | TrinketEntry | GearInstance | null;
   selectedRewardType: RewardState["rewardType"];
   materials: MaterialInventory;
   grantAlchemistReward: boolean;
-  nextRewardState: RewardState;
+  nextRewardState: CardRewardState;
   clearCompanionRewardCards: boolean;
   route: FinalizeRewardRoute;
 };
@@ -245,7 +266,7 @@ export function finalizeRewardState({
   grantAlchemistReward,
 }: FinalizeRewardInput): FinalizeRewardResult {
   const selectedChoice = rewardState.selectedId
-    ? (rewardState.choices.find((choice) => choice.id === rewardState.selectedId) ?? null)
+    ? (rewardState.choices.find((choice) => getRewardChoiceId(choice) === rewardState.selectedId) ?? null)
     : null;
 
   if (companionRewardCards && companionRewardCards.length > 0) {
@@ -296,7 +317,7 @@ export type RewardRouteTransitionHandlers = {
 
 type RewardRouteTransitionContext = {
   materials: MaterialInventory;
-  nextRewardState: RewardState;
+  nextRewardState: CardRewardState;
   clearCompanion: boolean;
   setReward: () => void;
 };
@@ -330,7 +351,7 @@ const REWARD_ROUTE_HANDLERS: Record<
 export function executeRewardRouteTransition(
   route: FinalizeRewardResult["route"],
   materials: MaterialInventory,
-  nextRewardState: RewardState,
+  nextRewardState: CardRewardState,
   clearCompanion: boolean,
   handlers: RewardRouteTransitionHandlers,
 ) {
@@ -344,7 +365,7 @@ type BossRewardInput = {
   generousBonus: number;
   talentGoldPerCombat: number;
   materials: MaterialInventory;
-  boonIds: string[];
+  trinketIds: string[];
   goldMultiplier?: number;
   rng?: () => number;
 };
@@ -358,9 +379,9 @@ type CombatRewardInput = {
   talentGoldPerCombat: number;
   materials: MaterialInventory;
   destinations: Destination[];
-  boonIds: string[];
+  trinketIds: string[];
   goldMultiplier?: number;
-  forceBoon?: boolean;
+  forceTrinket?: boolean;
   contentSystemType: ContentSystemId;
   rng?: () => number;
 };
@@ -371,70 +392,92 @@ export function createBossRewardState({
   generousBonus,
   talentGoldPerCombat,
   materials,
-  boonIds,
+  trinketIds,
   goldMultiplier = 1,
   rng = Math.random,
-}: BossRewardInput): RewardState {
+}: BossRewardInput): GearRewardState | TrinketRewardState {
   const gearReward = rng() < BOSS_GEAR_REWARD_CHANCE;
-  return {
-    ...createEmptyRewardState(),
-    rewardType: gearReward ? "gear" : "boon",
-    choices: sampleItems(gearReward ? gearDefinitionList : boonLibrary, BOSS_BOON_REWARD_CHOICES, rng),
-    gold: computeRewardGold({
-      baseGold: gold,
-      bonusGold: bossBonus,
-      generousBonus,
-      talentGoldPerCombat,
-      boonIds,
-      goldMultiplier,
-    }),
-    materials,
-  };
+  return gearReward
+    ? {
+        ...createEmptyRewardState(),
+        rewardType: "gear",
+        choices: generateGearRewardChoices(BOSS_TRINKET_REWARD_CHOICES, "boss", rng),
+        gold: computeRewardGold({
+          baseGold: gold,
+          bonusGold: bossBonus,
+          generousBonus,
+          talentGoldPerCombat,
+          trinketIds,
+          goldMultiplier,
+        }),
+        materials,
+      }
+    : {
+        ...createEmptyRewardState(),
+        rewardType: "trinket",
+        choices: sampleItems(trinketLibrary, BOSS_TRINKET_REWARD_CHOICES, rng),
+        gold: computeRewardGold({
+          baseGold: gold,
+          bonusGold: bossBonus,
+          generousBonus,
+          talentGoldPerCombat,
+          trinketIds,
+          goldMultiplier,
+        }),
+        materials,
+      };
 }
 
 export function createWildwoodRewardState(
   runDeck: BattleCard[],
   rewardTraitsOrRng: EncounterRewardTraitId[] | (() => number) = [],
   rng: () => number = Math.random,
-): RewardState {
+): CardRewardState | TrinketRewardState {
   const rewardTraits = typeof rewardTraitsOrRng === "function" ? [] : rewardTraitsOrRng;
   const activeRng = typeof rewardTraitsOrRng === "function" ? rewardTraitsOrRng : rng;
-  const rewardType = shouldForceBoonReward(rewardTraits) || activeRng() < 0.5 ? "boon" : "card";
-  return {
-    ...createEmptyRewardState(),
-    rewardType,
-    choices:
-      rewardType === "boon"
-        ? sampleItems(boonLibrary, REWARD_CARD_CHOICES, activeRng)
-        : selectRewardCards(runDeck, getOfferableCardPool(), REWARD_CARD_CHOICES, [], activeRng),
-  };
+  const rewardType = shouldForceTrinketReward(rewardTraits) || activeRng() < 0.5 ? "trinket" : "card";
+  return rewardType === "trinket"
+    ? {
+        ...createEmptyRewardState(),
+        rewardType: "trinket",
+        choices: sampleItems(trinketLibrary, REWARD_CARD_CHOICES, activeRng),
+      }
+    : {
+        ...createEmptyRewardState(),
+        rewardType: "card",
+        choices: selectRewardCards(runDeck, getOfferableCardPool(), REWARD_CARD_CHOICES, [], activeRng),
+      };
 }
 
 export function restoreWildwoodRewardState(
-  rewardType: "card" | "boon",
+  rewardType: "card" | "trinket",
   choiceIds: string[],
   selectedId: string | null,
-): RewardState {
-  const library = rewardType === "card" ? getOfferableCardPool() : boonLibrary;
+): CardRewardState | TrinketRewardState {
+  const library = rewardType === "card" ? getOfferableCardPool() : trinketLibrary;
   const choices = choiceIds
     .map((id) => library.find((entry) => entry.id === id))
-    .filter((entry): entry is BattleCard | BoonEntry => Boolean(entry));
-  return { ...createEmptyRewardState(), rewardType, choices, selectedId };
+    .filter((entry): entry is BattleCard | TrinketEntry => Boolean(entry));
+  return rewardType === "card"
+    ? { ...createEmptyRewardState(), rewardType: "card", choices: choices as BattleCard[], selectedId }
+    : { ...createEmptyRewardState(), rewardType: "trinket", choices: choices as TrinketEntry[], selectedId };
 }
 
-function calculateCombatBoonRewardOffer(
+function calculateCombatTrinketRewardOffer(
   battleState: BattleState,
-  forceBoon: boolean,
+  forceTrinket: boolean,
   rng: () => number = Math.random,
 ): boolean {
-  if (forceBoon) return true;
-  const baseBoonChance =
-    battleState.currentEnemy.enemyType === CONSTANTS.ENEMY_TYPES.ELITE ? ELITE_BOON_REWARD_CHANCE : REWARD_BOON_CHANCE;
-  const boonHoarderBonus = battleState.currentEnemy.traits?.some((t) => t.id === "boon-hoarder")
-    ? LABYRINTH_REWARD_CONFIG.boonHoarderRewardChanceBonus
+  if (forceTrinket) return true;
+  const baseTrinketChance =
+    battleState.currentEnemy.enemyType === CONSTANTS.ENEMY_TYPES.ELITE
+      ? ELITE_TRINKET_REWARD_CHANCE
+      : REWARD_TRINKET_CHANCE;
+  const trinketHoarderBonus = battleState.currentEnemy.traits?.some((t) => t.id === "trinket-hoarder")
+    ? LABYRINTH_REWARD_CONFIG.trinketHoarderRewardChanceBonus
     : 0;
-  const boonChanceBonus = battleState.talentEffects?.boonChanceBonus ?? 0;
-  return rng() < Math.min(baseBoonChance + boonHoarderBonus + boonChanceBonus, 1);
+  const trinketChanceBonus = battleState.talentEffects?.trinketChanceBonus ?? 0;
+  return rng() < Math.min(baseTrinketChance + trinketHoarderBonus + trinketChanceBonus, 1);
 }
 
 export function createCombatRewardState({
@@ -446,34 +489,55 @@ export function createCombatRewardState({
   talentGoldPerCombat,
   materials,
   destinations,
-  boonIds,
+  trinketIds,
   goldMultiplier = 1,
-  forceBoon = false,
+  forceTrinket = false,
   contentSystemType,
   rng = Math.random,
-}: CombatRewardInput): RewardState {
+}: CombatRewardInput): CardRewardState | TrinketRewardState | GearRewardState {
   const gearChance =
     contentSystemType === CONSTANTS.CONTENT_SYSTEMS.LABYRINTH
       ? LABYRINTH_GEAR_REWARD_CHANCE
       : CAMPAIGN_GEAR_REWARD_CHANCE;
   const offerGear = rng() < gearChance;
-  const offerBoon = !offerGear && calculateCombatBoonRewardOffer(battleState, forceBoon, rng);
+  const offerTrinket = !offerGear && calculateCombatTrinketRewardOffer(battleState, forceTrinket, rng);
+  const enemyType =
+    battleState.currentEnemy.enemyType === CONSTANTS.ENEMY_TYPES.ELITE
+      ? "elite"
+      : battleState.currentEnemy.enemyType === CONSTANTS.ENEMY_TYPES.BOSS
+        ? "boss"
+        : "normal";
+  const goldTotal = computeRewardGold({
+    baseGold: gold,
+    bonusGold: eliteBonus,
+    generousBonus,
+    talentGoldPerCombat,
+    trinketIds,
+    goldMultiplier,
+  });
+  if (offerGear) {
+    return {
+      ...createEmptyRewardState(destinations),
+      rewardType: "gear",
+      choices: generateGearRewardChoices(REWARD_CARD_CHOICES, enemyType, rng),
+      gold: goldTotal,
+      materials,
+    };
+  }
+  if (offerTrinket) {
+    return {
+      ...createEmptyRewardState(destinations),
+      rewardType: "trinket",
+      choices: sampleItems(trinketLibrary, REWARD_CARD_CHOICES, rng),
+      gold: goldTotal,
+      materials,
+    };
+  }
   return {
     ...createEmptyRewardState(destinations),
-    rewardType: offerGear ? "gear" : offerBoon ? "boon" : "card",
-    choices: offerGear
-      ? sampleItems(gearDefinitionList, REWARD_CARD_CHOICES, rng)
-      : offerBoon
-        ? sampleItems(boonLibrary, REWARD_CARD_CHOICES, rng)
-        : selectRewardCards(runDeck, getOfferableCardPool(), REWARD_CARD_CHOICES, [], rng),
-    gold: computeRewardGold({
-      baseGold: gold,
-      bonusGold: eliteBonus,
-      generousBonus,
-      talentGoldPerCombat,
-      boonIds,
-      goldMultiplier,
-    }),
+    rewardType: "card",
+    choices: selectRewardCards(runDeck, getOfferableCardPool(), REWARD_CARD_CHOICES, [], rng),
+    gold: goldTotal,
     materials,
   };
 }

@@ -15,7 +15,7 @@ import { BASE_PLAYER_MANA, CARDS_PER_TURN, MAX_PLAYER_HEALTH } from "../game-con
 import type { GearEffectManifest } from "@/lib/gear";
 import { defaultGearEffects } from "@/lib/gear";
 import { EMPTY_ENEMY_MITIGATION, type BattleState, type TurnPhase } from "./types";
-import { computeBoonManifest } from "../boons";
+import { computeTrinketManifest } from "../trinkets";
 import { drawCards, shuffleCards } from "./draw";
 import { defaultBattleState, defaultTalentEffects } from "./battle-setup-defaults";
 import { initializeEnemyState } from "./battle-enemy-setup";
@@ -44,7 +44,7 @@ export type CreateBattleStateOptions = {
   talentEffects?: TalentEffectManifest;
   discoveredCardIds?: string[];
   maxHealth?: number;
-  boonIds?: string[];
+  trinketIds?: string[];
   gearEffects?: GearEffectManifest;
   difficultyModifiers?: DifficultyModifier[];
   rng?: () => number;
@@ -84,7 +84,7 @@ function buildInitialBattleState(
     activeCompanion: CompanionDefinition | null;
     currentEnemy: BestiaryEntry;
     talentEffects: TalentEffectManifest;
-    boonEffects: ReturnType<typeof computeBoonManifest>;
+    trinketEffects: ReturnType<typeof computeTrinketManifest>;
     gearEffects: GearEffectManifest;
     discoveredCardIds: string[];
     nextCardUid: number;
@@ -123,7 +123,7 @@ function buildInitialBattleState(
     activeCompanion: setup.activeCompanion,
     currentEnemy: setup.currentEnemy,
     talentEffects: setup.talentEffects,
-    boonEffects: setup.boonEffects,
+    trinketEffects: setup.trinketEffects,
     gearEffects: setup.gearEffects,
     flags: baseState.flags,
     discoveredCardIds: setup.discoveredCardIds,
@@ -141,7 +141,7 @@ export function createBattleState(options: CreateBattleStateOptions): BattleStat
     currentEnemy: battleEnemy,
     talentEffects: battleTalents = defaultTalentEffects,
     discoveredCardIds: battleDiscovered = [],
-    boonIds: battleBoons = [],
+    trinketIds: battleBoons = [],
     gearEffects: battleGearEffects = defaultGearEffects,
     difficultyModifiers: battleDiffs = [],
     rng: optionsRng,
@@ -151,9 +151,9 @@ export function createBattleState(options: CreateBattleStateOptions): BattleStat
     throw new Error("createBattleState requires currentEnemy; use defaultBattleState for inactive placeholder state.");
   }
 
-  const boonEffects = computeBoonManifest(battleBoons);
+  const trinketEffects = computeTrinketManifest(battleBoons);
   const activeRng = optionsRng ?? Math.random;
-  const { deck, hand, discard, nextCardUid } = setupOpeningHand(runDeck, boonEffects.extraDrawPerBattle, activeRng);
+  const { deck, hand, discard, nextCardUid } = setupOpeningHand(runDeck, trinketEffects.extraDrawPerBattle, activeRng);
 
   const {
     enemyMaxHealth,
@@ -193,7 +193,7 @@ export function createBattleState(options: CreateBattleStateOptions): BattleStat
     activeCompanion: startCompanion ? companionLibrary["wolf"] : null,
     currentEnemy: battleEnemy,
     talentEffects: battleTalents,
-    boonEffects,
+    trinketEffects,
     gearEffects: battleGearEffects,
     discoveredCardIds: battleDiscovered,
     nextCardUid,

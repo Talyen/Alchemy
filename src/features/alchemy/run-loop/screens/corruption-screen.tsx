@@ -1,7 +1,7 @@
 // Altar of Corruption screen — choose a deck card, corrupt it, and reveal the altered card.
 // Depends on card UI primitives, placeholder destination art, and corruption result shape.
 // Used by run navigation as a free rare route event with possible upside or downside.
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState } from "react";
 import { Dices, MoveRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -9,11 +9,17 @@ import { SELECTION_GRID_PAGE_SIZE } from "@/lib/game-constants";
 import { corruptionAltar, type BattleCard } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 import type { CorruptionResult } from "../corruption";
-import { viewCardWidthClass } from "@/features/alchemy/shared/config";
+import { SHINE_PALETTES, viewCardWidthClass } from "@/features/alchemy/shared/config";
 import { CardSelectionGrid } from "../../shared/ui/card-selection-grid";
 import { BattleCardButton } from "../../shared/ui/card-button";
 import { CardTitle, getCardDisplayTitle } from "../../shared/ui/card-description-ui";
-import { ScreenDescription, ScreenHeader, StaggerGroup, StaggerItem } from "../../shared/ui/shared-ui";
+import {
+  ScreenDescription,
+  ScreenHeader,
+  ShineAccentButton,
+  StaggerGroup,
+  StaggerItem,
+} from "../../shared/ui/shared-ui";
 
 function CorruptionDeckCard({
   card,
@@ -73,29 +79,6 @@ function CorruptionDeckPicker({
   );
 }
 
-function CorruptionActionButton({
-  children,
-  disabled = false,
-  onClick,
-}: {
-  children: ReactNode;
-  disabled?: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <div className={cn("relative rounded-xl", disabled && "opacity-50")}>
-      <Button
-        size="lg"
-        className="relative bg-gradient-to-br from-red-950 via-black to-red-950 bg-[length:200%_200%] animate-shine text-red-400 disabled:opacity-100"
-        disabled={disabled}
-        onClick={onClick}
-      >
-        <Dices className="h-4 w-4" /> {children}
-      </Button>
-    </div>
-  );
-}
-
 function CorruptionIntro({ onBegin, onLeave }: { onBegin: () => void; onLeave: () => void }) {
   return (
     <StaggerGroup className="flex flex-col items-center gap-5">
@@ -118,7 +101,14 @@ function CorruptionIntro({ onBegin, onLeave }: { onBegin: () => void; onLeave: (
         <Button size="lg" variant="outline" onClick={onLeave}>
           Leave
         </Button>
-        <CorruptionActionButton onClick={onBegin}>Corrupt a Card</CorruptionActionButton>
+        <ShineAccentButton
+          icon={Dices}
+          accentClassName="text-red-400"
+          shineColor={SHINE_PALETTES.corruption}
+          onClick={onBegin}
+        >
+          Corrupt a Card
+        </ShineAccentButton>
       </StaggerItem>
     </StaggerGroup>
   );
@@ -190,7 +180,7 @@ function CorruptionResultView({ result, onContinue }: { result: CorruptionResult
         </StaggerItem>
       )}
       <StaggerItem index={result.transformed ? 7 : 3}>
-        <Button size="lg" onClick={onContinue}>
+        <Button size="lg" variant="primary" onClick={onContinue}>
           Continue
         </Button>
       </StaggerItem>
@@ -241,6 +231,7 @@ export function CorruptionScreen({
           />
           <StaggerItem index={SELECTION_GRID_PAGE_SIZE + 2} className="flex justify-center gap-3">
             <Button
+              size="lg"
               variant="outline"
               onClick={() => {
                 setSelecting(false);
@@ -250,9 +241,15 @@ export function CorruptionScreen({
             >
               Cancel
             </Button>
-            <CorruptionActionButton disabled={selectedIndex === null} onClick={handleConfirm}>
+            <ShineAccentButton
+              icon={Dices}
+              accentClassName="text-red-400"
+              shineColor={SHINE_PALETTES.corruption}
+              disabled={selectedIndex === null}
+              onClick={handleConfirm}
+            >
               Corrupt
-            </CorruptionActionButton>
+            </ShineAccentButton>
           </StaggerItem>
         </StaggerGroup>
       ) : (

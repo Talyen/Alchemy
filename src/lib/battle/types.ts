@@ -41,7 +41,7 @@ export const EMPTY_ENEMY_MITIGATION: EnemyMitigation = { armor: 0, forge: 0, fre
 // Pre-computed bonuses from boons acquired during the run. Follows the same
 // pattern as TalentEffectManifest — computed once at battle start, immutable for
 // the duration of the battle.
-export type BoonManifest = {
+export type TrinketManifest = {
   extraDrawPerBattle: number;
   firstHolyDamageDoubled: boolean;
   firstBurnDoubled: boolean;
@@ -82,7 +82,7 @@ export type CombatFlags = {
   nextCardCostReduction: number; // temporary mana discount on next card played
   goldOnFirstPoisonThisCombat: boolean;
   firstHolyDamageBonusUsed: boolean;
-  firstBurnBoonDoubledUsed: boolean;
+  firstBurnTrinketDoubledUsed: boolean;
   firstHarmfulStatusPrevented: boolean;
   firstPotionFreeUsed: boolean;
   firstLeechCardDoubledUsed: boolean;
@@ -132,7 +132,7 @@ export type BattleState = {
   companionDamageBuff: number; // persistent buff from Pack Tactics-style cards
   currentEnemy: BestiaryEntry;
   talentEffects: TalentEffectManifest;
-  boonEffects: BoonManifest;
+  trinketEffects: TrinketManifest;
   gearEffects: GearEffectManifest;
   flags: CombatFlags;
   discoveredCardIds: string[]; // used by wish undiscovered talent

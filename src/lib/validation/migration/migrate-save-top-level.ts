@@ -1,10 +1,10 @@
-import { migrateActiveRun } from "./migrate-active-run";
+import { migrateActiveRunV4 } from "./migrate-active-run-v4";
 import type { RawSaveData } from "./types";
 
 /** Top-level save field renames and defaults introduced at schema v4. */
 export function migrateSaveTopLevelV4(parsed: RawSaveData): RawSaveData {
   const activeRun =
-    parsed.activeRun && typeof parsed.activeRun === "object" ? migrateActiveRun(parsed.activeRun) : parsed.activeRun;
+    parsed.activeRun && typeof parsed.activeRun === "object" ? migrateActiveRunV4(parsed.activeRun) : parsed.activeRun;
 
   const next: RawSaveData = {
     ...parsed,

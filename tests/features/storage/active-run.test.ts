@@ -14,7 +14,7 @@ function makeRunCandidate(overrides: Record<string, unknown> = {}): Record<strin
     currentAct: 1,
     destinationIndexInAct: 1,
     completedDestinations: ["combat"],
-    runBoons: [],
+    runTrinkets: [],
     selectedDifficulty: "difficulty-1",
     contentSystemType: "campaign",
     ...overrides,
@@ -237,25 +237,25 @@ describe("parseActiveRun", () => {
     expect(result!.labyrinthPendingNode).toBeNull();
   });
 
-  it("migrates legacy trinketEffects through save normalization and reconciles from runBoons", () => {
+  it("migrates legacy trinketEffects through save normalization and reconciles from runTrinkets", () => {
     const battleState = defaultBattleState();
     const legacyBattleState = {
       ...battleState,
       trinketEffects: { boneCharmHealOnKill: 3 },
     };
-    delete (legacyBattleState as { boonEffects?: unknown }).boonEffects;
+    delete (legacyBattleState as { trinketEffects?: unknown }).trinketEffects;
 
     const migrated = normalizeSaveData({
       saveSchemaVersion: 3,
       activeRun: {
         ...makeRunCandidate({
-          runBoons: ["bone-charm"],
+          runTrinkets: ["bone-charm"],
           activeCombat: { battleState: legacyBattleState },
         }),
       },
     });
 
-    expect(migrated.activeRun?.activeCombat?.battleState.boonEffects.boneCharmHealOnKill).toBe(3);
+    expect(migrated.activeRun?.activeCombat?.battleState.trinketEffects.boneCharmHealOnKill).toBe(3);
   });
 
   it("normalizes nested battle defaults and removes retired encounter traits", () => {

@@ -7,7 +7,7 @@ GitHub branch protection is not available on this repo, so **local hooks are the
 `lefthook` `pre-push` runs sequentially (`piped: true`):
 
 1. `npm ci --dry-run`
-2. `npm run lint:ci` (format, ESLint, knip)
+2. `npm run lint:ci` (format, TypeScript, ESLint, knip)
 3. `npm test` (Vitest)
 4. `npm run build:ship` (web + desktop compile)
 5. `npm run test:e2e:prepush` — fast **@prepush** subset (9 tests, parallel preview build; includes one animation canary)
@@ -17,6 +17,8 @@ GitHub branch protection is not available on this repo, so **local hooks are the
 Manual full gate before **`main`**: `npm run test:e2e:main-gate` (full suite, same as CI `e2e-full`). Lighter checks: `npm run check:push` or `npm run test:e2e:prepush:full` (`@critical` only).
 
 Install hooks once: `npm run prepare` (runs on `npm install`).
+
+`lefthook` `pre-commit` runs `npm ci --dry-run`, `npm run typecheck`, and Prettier on staged `src/**` files.
 
 First-time Playwright: `npx playwright install chromium`.
 

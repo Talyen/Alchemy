@@ -262,7 +262,7 @@ describe("normalizeSaveData", () => {
     expect(typeof result.muteInBackground).toBe("boolean");
     expect(typeof result.autoEndTurn).toBe("boolean");
     expect(Array.isArray(result.encounteredEnemyIds)).toBe(true);
-    expect(Array.isArray(result.discoveredBoonIds)).toBe(true);
+    expect(Array.isArray(result.discoveredTrinketIds)).toBe(true);
     expect(typeof result.talentXP).toBe("object");
     expect(typeof result.unlockedTalents).toBe("object");
     expect(result.activeRun).toBeNull();
@@ -287,7 +287,7 @@ describe("normalizeSaveData", () => {
       brightness: 120,
       discoveredCardIds: ["card-1", "card-2"],
       encounteredEnemyIds: ["goblin"],
-      discoveredBoonIds: ["boon-a"],
+      discoveredTrinketIds: ["boon-a"],
       talentXP: { burn: 50 },
       unlockedTalents: { burn: ["burn-1"] },
       musicVolume: 50,

@@ -1,6 +1,6 @@
 /**
  * Player damage calculation: modifiers, crit, block, and armor mitigation, critical strikes, armor mitigation, and status riders.
- * Depends on: ./status-effects, ./combat-text, ./boon-effects, ./wish, ./types, ../game-constants.
+ * Depends on: ./status-effects, ./combat-text, ./trinket-effects, ./wish, ./types, ../game-constants.
  * Depended on by: ./apply-effects.
  */
 import { getEnemyDamageMultiplier } from "./status-effects";
@@ -121,7 +121,7 @@ function applyPhysicalDamageModifiers(state: BattleState, rawAmount: number): nu
  * Amplifies output if the target is currently afflicted with burn.
  */
 function applyHolyDamageModifiers(state: BattleState, rawAmount: number): number {
-  let nextAmount = rawAmount;
+  let nextAmount = rawAmount + state.gearEffects.flatHolyDamage;
   nextAmount += Math.round((state.gold * state.talentEffects.holyGoldPercent) / PERCENT_DENOMINATOR);
   nextAmount += Math.round((state.playerStatuses.block * state.talentEffects.holyBlockPercent) / PERCENT_DENOMINATOR);
   if (state.talentEffects.blockToHolyDamage) {
@@ -137,7 +137,7 @@ function applyHolyDamageModifiers(state: BattleState, rawAmount: number): number
  * Applies bleed damage modifiers, including desperation below half health and execute bonuses.
  */
 function applyBleedDamageModifiers(state: BattleState, rawAmount: number): number {
-  let nextAmount = rawAmount;
+  let nextAmount = rawAmount + state.gearEffects.flatBleedDamage;
   if (state.playerHealth <= state.playerMaxHealth / HALF_DIVISOR && state.talentEffects.bleedDesperateMultiplier > 1) {
     nextAmount = Math.round(nextAmount * state.talentEffects.bleedDesperateMultiplier);
   }
@@ -152,7 +152,7 @@ function getBlockScaledDamageBonus(state: BattleState): number {
 }
 
 function applyStunDamageModifiers(state: BattleState, rawAmount: number): number {
-  let nextAmount = rawAmount + state.talentEffects.flatStunDamage;
+  let nextAmount = rawAmount + state.talentEffects.flatStunDamage + state.gearEffects.flatStunDamage;
   if (state.talentEffects.blockToStunDamage) {
     nextAmount += getBlockScaledDamageBonus(state);
   }
@@ -160,7 +160,7 @@ function applyStunDamageModifiers(state: BattleState, rawAmount: number): number
 }
 
 function applyBurnDamageModifiers(state: BattleState, rawAmount: number, card?: BattleCard): number {
-  let nextAmount = rawAmount + state.talentEffects.flatBurnDamage;
+  let nextAmount = rawAmount + state.talentEffects.flatBurnDamage + state.gearEffects.flatBurnDamage;
   if (state.talentEffects.burnDamagePerManaCrystal > 0) {
     nextAmount += Math.round(
       (state.maxMana * state.talentEffects.burnDamagePerManaCrystal * MANA_BURN_DAMAGE_PERCENT) / PERCENT_DENOMINATOR,
@@ -176,17 +176,17 @@ function applyBurnDamageModifiers(state: BattleState, rawAmount: number, card?: 
 }
 
 function applyFreezeDamageModifiers(state: BattleState, rawAmount: number): number {
-  let nextAmount = rawAmount + state.talentEffects.flatFreezeDamage;
+  let nextAmount = rawAmount + state.talentEffects.flatFreezeDamage + state.gearEffects.flatFreezeDamage;
   nextAmount += Math.round((state.maxMana * state.talentEffects.freezeDamagePerManaCrystal) / HALF_DIVISOR);
   return nextAmount;
 }
 
 function applyNatureDamageModifiers(state: BattleState, rawAmount: number): number {
-  return rawAmount + state.talentEffects.flatNatureDamage;
+  return rawAmount + state.talentEffects.flatNatureDamage + state.gearEffects.flatNatureDamage;
 }
 
 function applyPoisonDamageModifiers(state: BattleState, rawAmount: number): number {
-  let nextAmount = rawAmount;
+  let nextAmount = rawAmount + state.gearEffects.flatPoisonDamage;
   if (state.enemyStatuses.bleed > 0) {
     nextAmount += state.talentEffects.bleedPoisonDamageTakenBonus;
   }
@@ -235,9 +235,9 @@ function applyFirstBurnModifiers(state: BattleState, rawDamage: number): { state
     nextDamage = Math.round(nextDamage * FIRST_BURN_CARD_BONUS_MULTIPLIER);
     nextState = setFlag(nextState, "firstBurnCardDoubledUsed", true);
   }
-  if (nextState.boonEffects.firstBurnDoubled && !nextState.flags.firstBurnBoonDoubledUsed) {
+  if (nextState.trinketEffects.firstBurnDoubled && !nextState.flags.firstBurnTrinketDoubledUsed) {
     nextDamage *= FIRST_EFFECT_MULTIPLIER;
-    nextState = setFlag(nextState, "firstBurnBoonDoubledUsed", true);
+    nextState = setFlag(nextState, "firstBurnTrinketDoubledUsed", true);
   }
 
   return { state: nextState, damage: nextDamage };
@@ -250,7 +250,7 @@ function applyFirstHolyModifiers(state: BattleState, rawDamage: number): { state
   let nextState: BattleState = state;
   let nextDamage = rawDamage;
 
-  if (nextState.boonEffects.firstHolyDamageDoubled && !nextState.flags.firstHolyDamageBonusUsed) {
+  if (nextState.trinketEffects.firstHolyDamageDoubled && !nextState.flags.firstHolyDamageBonusUsed) {
     nextDamage *= FIRST_EFFECT_MULTIPLIER;
     nextState = setFlag(nextState, "firstHolyDamageBonusUsed", true);
   }
@@ -282,7 +282,7 @@ function applyFirstDamageModifiers(
  */
 function applySunderingArmorPiercing(state: BattleState, isPhysicalOrStun: boolean): BattleState {
   if (isPhysicalOrStun) {
-    return reduceEnemyArmor(state, state.boonEffects.sunderingArmorPiercing);
+    return reduceEnemyArmor(state, state.trinketEffects.sunderingArmorPiercing);
   }
   return state;
 }

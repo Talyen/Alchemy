@@ -6,7 +6,7 @@ test.describe("Progression Locks", () => {
     await enableFastMode(page);
   });
 
-  test("clean save gates Talents, Homestead, Labyrinth, Wildwood, and Rogue class", async ({ page }) => {
+  test("clean save gates Talents, Homestead, Armory, Labyrinth, Wildwood, and Rogue class", async ({ page }) => {
     // 1. Inject an empty homestead save where finishedRunCharacters is empty
     await injectHomestead(page, { finishedRunCharacters: [] });
     await page.goto("/");
@@ -34,7 +34,17 @@ test.describe("Progression Locks", () => {
     await homesteadBtn.click({ force: true });
     await expect(page.getByRole("heading", { name: "Homestead" })).not.toBeVisible();
 
-    // 4. Click Play and verify Labyrinth and Wildwood are locked
+    // 4. Verify Armory button is locked and shows tooltip on hover
+    const armoryBtn = page.getByRole("button", { name: "Armory" });
+    await expect(armoryBtn).toBeVisible();
+    await expect(armoryBtn).toHaveClass(/opacity-45/);
+    await armoryBtn.hover();
+    await expect(page.getByText("Find Gear to unlock")).toBeVisible();
+
+    await armoryBtn.click({ force: true });
+    await expect(page.getByRole("heading", { name: "Armory" })).not.toBeVisible();
+
+    // 5. Click Play and verify Labyrinth and Wildwood are locked
     await page.getByRole("button", { name: "Play" }).click();
     await expect(page.getByRole("heading", { name: "Choose Your Adventure" })).toBeVisible();
 
@@ -46,7 +56,7 @@ test.describe("Progression Locks", () => {
     await wildwoodCard.hover();
     await expect(page.getByText("Finish a Run as the Ranger to unlock")).toBeVisible();
 
-    // 5. Start Campaign and check character selection screen locks
+    // 6. Start Campaign and check character selection screen locks
     await page.getByRole("button", { name: /The Campaign/ }).click();
     await page.getByRole("button", { name: "Play", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Choose Your Hero" })).toBeVisible();

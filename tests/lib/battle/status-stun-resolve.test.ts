@@ -90,7 +90,7 @@ describe("resolveStunTrigger", () => {
       enemyMaxHealth: 30,
       enemyStunSkipTurns: 0,
       enemyStatuses: { ...createTestBattleState().enemyStatuses, stun: 20 },
-      boonEffects: { ...createTestBattleState().boonEffects, thunderstoneDamageOnStun: 5 },
+      trinketEffects: { ...createTestBattleState().trinketEffects, thunderstoneDamageOnStun: 5 },
     });
     const texts = makeTexts();
     const result = resolveStunTrigger(state, texts);
@@ -104,7 +104,7 @@ describe("resolveStunTrigger", () => {
       enemyMaxHealth: 30,
       enemyStunSkipTurns: 0,
       enemyStatuses: { ...createTestBattleState().enemyStatuses, stun: 20 },
-      boonEffects: { ...createTestBattleState().boonEffects, thunderstoneDamageOnStun: 5 },
+      trinketEffects: { ...createTestBattleState().trinketEffects, thunderstoneDamageOnStun: 5 },
     });
     const result = resolveStunTrigger(state);
     expect(result.enemyHealth).toBe(25);
@@ -116,8 +116,8 @@ describe("resolveStunTrigger", () => {
       enemyMaxHealth: 30,
       enemyStunSkipTurns: 0,
       enemyStatuses: { ...createTestBattleState().enemyStatuses, stun: 20 },
-      boonEffects: {
-        ...createTestBattleState().boonEffects,
+      trinketEffects: {
+        ...createTestBattleState().trinketEffects,
         thunderstoneDamageOnStun: 5,
         luckyCloverGoldChance: 100,
       },

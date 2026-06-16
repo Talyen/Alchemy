@@ -1,0 +1,49 @@
+.armory-workspace {
+  --armory-board-gap: 0.375rem;
+  --armory-cell-size: min(6.8cqh, 5.5rem, calc((100cqw - 5rem) / 8));
+}
+
+.armory-character-art-container {
+  --battle-scene-height-mimic: calc(100cqh - 127px);
+  width: clamp(
+    calc(0.2724 * var(--battle-scene-height-mimic)),
+    calc(0.2768 * var(--battle-scene-height-mimic)),
+    calc(0.4123 * var(--battle-scene-height-mimic))
+  );
+}
+
+.armory-workspace-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.armory-equipment-board {
+  width: calc(6 * var(--armory-cell-size) + 5 * var(--armory-board-gap));
+  height: calc(7 * var(--armory-cell-size) + 6 * var(--armory-board-gap));
+  max-width: 100%;
+}
+
+.armory-inventory-board {
+  width: calc(8 * var(--armory-cell-size) + 7 * var(--armory-board-gap));
+  height: calc(8 * var(--armory-cell-size) + 7 * var(--armory-board-gap));
+  max-width: 100%;
+  scrollbar-width: none;
+}
+
+.armory-inventory-board::-webkit-scrollbar {
+  display: none;
+}
+
+@container (min-width: 76rem) {
+  .armory-workspace-grid {
+    --armory-cell-size: min(
+      6.8cqh,
+      5.5rem,
+      calc((40cqw - 7 * var(--armory-board-gap) - 2rem) / 8),
+      calc((60cqw - 19rem - 5 * var(--armory-board-gap)) / 6)
+    );
+    grid-template-columns: 3fr 2fr;
+  }
+}

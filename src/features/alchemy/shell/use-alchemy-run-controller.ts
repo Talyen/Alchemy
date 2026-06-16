@@ -22,6 +22,7 @@ import { useSteamRichPresence } from "./use-steam-rich-presence";
 import { restoreRun, useActiveRunScreen } from "@/features/alchemy/shared/stores/run-session-facade";
 import { readActiveRunStore } from "@/features/alchemy/shared/stores/run-session-facade";
 import type { ActiveRunData } from "@/lib/active-run-session";
+import { shouldSurrenderBattleOnEndRun } from "./end-run-policy";
 
 export function useAlchemyRunController({
   initialTalentXP,
@@ -140,6 +141,14 @@ export function useAlchemyRunController({
   );
   const { handleLabyrinthNodeEnter } = nodeRouting;
 
+  function handleEndRun() {
+    if (shouldSurrenderBattleOnEndRun(screen, battle.hasActiveBattle, run.contentSystemType)) {
+      battle.handleEndRun();
+      return;
+    }
+    nav.handleAbandonRun();
+  }
+
   const battleBindings = useMemo<BattleControllerBindings>(
     () => ({
       battleScreenData: battle.battleScreenData,
@@ -235,7 +244,7 @@ export function useAlchemyRunController({
     handleCorruptionExit: nav.handleCorruptionExit,
     handleActComplete: nav.handleActComplete,
     handleEndTurn: battle.handleEndTurn,
-    handleEndRun: battle.handleEndRun,
+    handleEndRun,
     skipCombatDevMode: battle.skipCombatDevMode,
     removeCardGhost: battle.removeCardGhost,
     resetRunState: nav.resetRunState,

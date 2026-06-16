@@ -41,7 +41,7 @@ describe("hydrateActiveRunSession", () => {
       currentAct: 1,
       destinationIndexInAct: 0,
       completedDestinations: [],
-      runBoons: [],
+      runTrinkets: [],
       encounteredRunEnemyIds: [],
       selectedDifficulty: null,
       contentSystemType: "campaign",
@@ -54,6 +54,9 @@ describe("hydrateActiveRunSession", () => {
       runTalentXP: {},
       currentScreen: ROUTE_SCREENS.DESTINATION,
       destinationChoices: ["Campfire", "Mystery", "Merchant's Shop"],
+      pendingReward: null,
+      runMaterialsEarned: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 },
+      wildwoodDraft: null,
     });
 
     hydrateActiveRunSession(activeRun, {}, {}, targets);
@@ -77,7 +80,7 @@ describe("hydrateActiveRunSession", () => {
       currentAct: 1,
       destinationIndexInAct: 0,
       completedDestinations: [],
-      runBoons: [],
+      runTrinkets: [],
       encounteredRunEnemyIds: [],
       selectedDifficulty: null,
       contentSystemType: "campaign",
@@ -90,6 +93,9 @@ describe("hydrateActiveRunSession", () => {
       runTalentXP: {},
       currentScreen: ROUTE_SCREENS.MENU,
       destinationChoices: ["Campfire"],
+      pendingReward: null,
+      runMaterialsEarned: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 },
+      wildwoodDraft: null,
     });
 
     hydrateActiveRunSession(activeRun, {}, {}, targets);

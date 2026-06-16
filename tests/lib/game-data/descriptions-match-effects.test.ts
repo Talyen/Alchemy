@@ -6,7 +6,7 @@
 // instead of reading from the compendium will be flagged here and deleted.
 
 import { describe, expect, it } from "vitest";
-import { cardLibrary, companionLibrary, enemyBestiary, expectedCompanionTurnLine, boonLibrary } from "@/lib/game-data";
+import { cardLibrary, companionLibrary, enemyBestiary, expectedCompanionTurnLine, trinketLibrary } from "@/lib/game-data";
 import type { BattleCard, BattleCardEffect } from "@/lib/game-data";
 
 function flattenEffects(effects: BattleCardEffect[]): BattleCardEffect[] {
@@ -475,8 +475,8 @@ describe("enemy descriptions vs attack effects", () => {
           case "brittle-bones":
             expect(desc).toMatch(/holy|stun/);
             break;
-          case "boon-hoarder":
-            expect(desc).toMatch(/burn|boon/);
+          case "trinket-hoarder":
+            expect(desc).toMatch(/burn|trinket/);
             break;
           case "burn-resistance":
             expect(desc).toMatch(/burn/);
@@ -605,22 +605,22 @@ describe("boon descriptions vs manifest effects", () => {
   };
 
   it("every boon has a known description check", () => {
-    for (const boon of boonLibrary) {
+    for (const boon of trinketLibrary) {
       expect(knownBoonMap[boon.id]).toBeDefined();
     }
   });
 
   it("every known boon check has a matching compendium entry", () => {
     for (const id of Object.keys(knownBoonMap)) {
-      const entry = boonLibrary.find((t) => t.id === id);
+      const entry = trinketLibrary.find((t) => t.id === id);
       expect(entry).toBeDefined();
     }
   });
 
-  it.each(boonLibrary.map((t) => [t.id, t.title] as const))(
+  it.each(trinketLibrary.map((t) => [t.id, t.title] as const))(
     "%s — description mentions key mechanic",
     (_id, title) => {
-      const boon = boonLibrary.find((t) => t.title === title)!;
+      const boon = trinketLibrary.find((t) => t.title === title)!;
       const check = knownBoonMap[boon.id];
       if (!check) return;
       check.check(boon.descriptionLines.join(" ").toLowerCase());
@@ -628,7 +628,7 @@ describe("boon descriptions vs manifest effects", () => {
   );
 
   it("every boon has at least one non-empty description line", () => {
-    for (const boon of boonLibrary) {
+    for (const boon of trinketLibrary) {
       expect(boon.descriptionLines.length).toBeGreaterThan(0);
       for (const line of boon.descriptionLines) {
         expect(line.length).toBeGreaterThan(0);

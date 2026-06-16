@@ -32,7 +32,7 @@ export function removeHarmfulPlayerStatuses(state: BattleState, amount: number, 
   if (removed) {
     nextState = applyHealingWithCombatText(
       nextState,
-      nextState.boonEffects.sinEaterHealOnHarmfulStatusRemove,
+      nextState.trinketEffects.sinEaterHealOnHarmfulStatusRemove,
       combatTexts,
     );
     nextState = applyHealingWithCombatText(nextState, nextState.talentEffects.healOnStatusCleanse, combatTexts);

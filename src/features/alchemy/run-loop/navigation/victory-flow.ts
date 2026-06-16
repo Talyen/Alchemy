@@ -28,7 +28,7 @@ import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-tra
 import {
   getActiveRewardModifiersForContentSystem,
   applyLabyrinthRewardMaterialModifiers,
-  shouldForceBoonReward,
+  shouldForceTrinketReward,
   computeVictoryGoldResult,
   createCombatRewardState as createCombatRewardStateFromFlow,
   createBossRewardState as createBossRewardStateFromFlow,
@@ -84,7 +84,7 @@ export type VictoryRewardsInput = {
   selectedDifficulty: DifficultyId | null;
   unlockedTalents: UnlockedTalents;
   runDeck: BattleCard[];
-  runBoons: string[];
+  runTrinkets: string[];
   contentSystemType: ContentSystemId;
   activeLabyrinthRewardModifiers: EncounterRewardTraitId[];
   battleState: BattleState;
@@ -139,7 +139,7 @@ export function computeVictoryRewardState(
     selectedDifficulty: DifficultyId | null;
     unlockedTalents: UnlockedTalents;
     runDeck: BattleCard[];
-    runBoons: string[];
+    runTrinkets: string[];
     contentSystemType: ContentSystemId;
     activeLabyrinthRewardModifiers: EncounterRewardTraitId[];
     battleState: BattleState;
@@ -164,7 +164,7 @@ export function computeVictoryRewardState(
       generousBonus: input.generousBonus,
       talentGoldPerCombat: talentEffects.goldPerCombat,
       materials: input.materials,
-      boonIds: input.runBoons,
+      trinketIds: input.runTrinkets,
       goldMultiplier,
       rng,
     });
@@ -181,9 +181,9 @@ export function computeVictoryRewardState(
       talentGoldPerCombat: talentEffects.goldPerCombat,
       materials: input.materials,
       destinations: input.destinations,
-      boonIds: input.runBoons,
+      trinketIds: input.runTrinkets,
       goldMultiplier,
-      forceBoon: shouldForceBoonReward(
+      forceTrinket: shouldForceTrinketReward(
         getActiveRewardModifiersForContentSystem(input.contentSystemType, input.activeLabyrinthRewardModifiers),
       ),
       contentSystemType: input.contentSystemType,
@@ -229,7 +229,7 @@ export function computeVictoryRewards(
   const goldResult = computeVictoryGoldResult({
     battleState: input.battleState,
     runGold: input.runGold,
-    runBoons: input.runBoons,
+    runTrinkets: input.runTrinkets,
     gold,
     eliteBonus,
     generousBonus,
@@ -269,7 +269,7 @@ export function computeVictoryRewards(
       selectedDifficulty: input.selectedDifficulty,
       unlockedTalents: input.unlockedTalents,
       runDeck: input.runDeck,
-      runBoons: input.runBoons,
+      runTrinkets: input.runTrinkets,
       contentSystemType: input.contentSystemType,
       activeLabyrinthRewardModifiers: input.activeLabyrinthRewardModifiers,
       battleState: input.battleState,

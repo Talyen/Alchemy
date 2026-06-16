@@ -258,7 +258,6 @@ export function useBattleController({
     [clearAllBattleTimeouts, clearTransferHandles],
   );
 
-  // Reset transfer UI when battle ends; defer teardown during post-victory card-play grace.
   useEffect(() => {
     if (hasActiveBattle) return;
     if (isVictoryGraceActive(screen, battleState.enemyHealth, victoryDefeatHandledRef.current)) return;

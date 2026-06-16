@@ -1,7 +1,7 @@
 // Mystery consequence reward summary after run state has been updated.
 import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import { type BattleCard, type BoonEntry } from "@/lib/game-data";
+import { type BattleCard, type TrinketEntry } from "@/lib/game-data";
 import { MATERIAL_IDS } from "@/lib/homestead/types";
 import { cn } from "@/lib/utils";
 
@@ -17,14 +17,14 @@ import { ScreenHeader, StaggerGroup, StaggerItem } from "../../../shared/ui/shar
 
 type LookupProps = {
   findCard: (id: string) => BattleCard | undefined;
-  findBoon: (id: string) => BoonEntry | undefined;
+  findTrinket: (id: string) => TrinketEntry | undefined;
 };
 
 function renderFoundOrLost(effect: MysteryEffect, prefix: string) {
   return (
     <div className="flex items-center justify-center gap-2 text-sm font-medium text-muted-foreground">
       {prefix}
-      <MysteryEffectBadge effect={effect} findCard={undefined} findBoon={undefined} />
+      <MysteryEffectBadge effect={effect} findCard={undefined} findTrinket={undefined} />
     </div>
   );
 }
@@ -33,7 +33,7 @@ function MysteryRewardEffectItem({
   effect,
   runDeck,
   findCard,
-  findBoon,
+  findTrinket,
 }: {
   effect: MysteryEffect;
   runDeck: BattleCard[];
@@ -72,8 +72,8 @@ function MysteryRewardEffectItem({
       const card = runDeck[runDeck.length - 1];
       return card ? renderCardReward(card) : null;
     },
-    gainBoon: () => {
-      const boon = findBoon((effect as { boonId: string }).boonId);
+    gainTrinket: () => {
+      const boon = findTrinket((effect as { trinketId: string }).trinketId);
       if (!boon) return null;
       return (
         <div className="flex flex-col items-center gap-3">
@@ -100,7 +100,7 @@ function MysteryRewardEffectItem({
         </div>
       );
     },
-    gainRandomBoon: () => <p className="text-sm font-semibold text-foreground">Gained a random boon</p>,
+    gainRandomTrinket: () => <p className="text-sm font-semibold text-foreground">Gained a random trinket</p>,
     gainGold: () => renderFoundOrLost(effect, "Found"),
     gainMaterial: () => renderFoundOrLost(effect, "Found"),
     loseGold: () => renderFoundOrLost(effect, "Lost"),
@@ -112,7 +112,7 @@ function MysteryRewardEffectItem({
     rewardRenderers[effect.kind] ??
     (() => (
       <p className="text-base text-muted-foreground">
-        <MysteryEffectBadge effect={effect} findCard={findCard} findBoon={findBoon} />
+        <MysteryEffectBadge effect={effect} findCard={findCard} findTrinket={findTrinket} />
       </p>
     ));
 
@@ -123,7 +123,7 @@ export function MysteryRewardSummary({
   choice,
   runDeck,
   findCard,
-  findBoon,
+  findTrinket,
   onContinue,
   eventTitle,
 }: {
@@ -154,7 +154,7 @@ export function MysteryRewardSummary({
 
       {otherEffects.map((effect, i) => (
         <StaggerItem key={i} index={i + 1}>
-          <MysteryRewardEffectItem effect={effect} runDeck={runDeck} findCard={findCard} findBoon={findBoon} />
+          <MysteryRewardEffectItem effect={effect} runDeck={runDeck} findCard={findCard} findTrinket={findTrinket} />
         </StaggerItem>
       ))}
 

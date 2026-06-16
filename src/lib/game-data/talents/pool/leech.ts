@@ -46,11 +46,11 @@ export const leechTalents: TalentDefinition[] = [
     effects: [setEffect("manaOnLeechChance", 10)],
   },
   {
-    id: "leech-boon-siphon",
+    id: "leech-trinket-siphon",
     keywordId: "leech",
-    name: "Boon Siphon",
+    name: "Trinket Siphon",
     description: "Leech has a 20% chance to steal 1 Forge, Armor, or Block",
-    effects: [setEffect("boonSiphonChance", 20)],
+    effects: [setEffect("trinketSiphonChance", 20)],
   },
   {
     id: "leech-poison",

@@ -7,8 +7,12 @@ import type { UnlockedTalents, TalentXP } from "@/lib/game-data";
 import { flushAlchemySaveNow } from "@/features/alchemy/shared/storage";
 import type { Destination } from "@/features/alchemy/shared/types";
 import type { MaterialInventory } from "@/lib/homestead/types";
-import { computeRunDiscoveryDelta } from "@/lib/discoveries";
-import { createEmptyRewardState, restoreWildwoodRewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
+import {
+  createEmptyRewardState,
+  restoreWildwoodRewardState,
+  type RewardState,
+} from "@/features/alchemy/run-loop/navigation/reward-flow";
+import { restorePendingReward, serializePendingReward } from "@/lib/active-run-session/pending-reward-persistence";
 import { getRunDomainStore, useRunDomainStore } from "./run-domain-store";
 import { createInitialRunDomainData } from "./run-domain-types";
 import { useBattlePresentationStore } from "./battle-presentation-store";
@@ -32,20 +36,6 @@ export function restoreRun(
 
   if (!activeRun) {
     return;
-  }
-
-  const runStarted =
-    activeRun.roomsEncountered > 0 ||
-    activeRun.currentAct > 1 ||
-    activeRun.destinationIndexInAct > 0 ||
-    activeRun.completedDestinations.length > 0;
-  if (
-    runStarted &&
-    activeRun.discoveredCardIdsAtRunStart.length === 0 &&
-    activeRun.discoveredBoonIdsAtRunStart.length === 0
-  ) {
-    const app = useAppStore.getState();
-    store.setDiscoveryBaselines(app.discoveredCardIds, app.discoveredBoonIds);
   }
 
   store.setHasActiveRun(true);
@@ -79,6 +69,9 @@ export function restoreRun(
       ...createEmptyRewardState(),
       destinations: activeRun.destinationChoices as Destination[],
     });
+  } else if (activeRun.pendingReward) {
+    const restored = restorePendingReward(activeRun.pendingReward);
+    if (restored) store.setRewardState(restored as RewardState);
   }
 }
 
@@ -90,6 +83,8 @@ export function resolveActiveRunForSave(hasActiveRun: boolean, screen?: Screen):
 /** Serialize domain store into persisted ActiveRunData. */
 export function snapshotRun(screen?: Screen): ActiveRunData {
   const { run, session, battle } = getRunSession(screen);
+  const currentScreen = screen ?? getRunDomainStore().navigation.screen;
+  const pendingReward = session.rewardState.choices.length > 0 ? serializePendingReward(session.rewardState) : null;
   return buildActiveRunSnapshot({
     characterId: run.characterId,
     runDeck: run.runDeck,
@@ -100,7 +95,7 @@ export function snapshotRun(screen?: Screen): ActiveRunData {
     currentAct: run.currentAct,
     destinationIndexInAct: run.destinationIndexInAct,
     completedDestinations: run.completedDestinations,
-    runBoons: run.runBoons,
+    runTrinkets: run.runTrinkets,
     encounteredRunEnemyIds: run.encounteredRunEnemyIds,
     selectedDifficulty: run.selectedDifficulty,
     contentSystemType: run.contentSystemType,
@@ -113,10 +108,9 @@ export function snapshotRun(screen?: Screen): ActiveRunData {
     activeLabyrinthRewardModifiers: session.activeLabyrinthRewardModifiers,
     runTalentXP: run.runTalentXP,
     runMaterialsEarned: run.runMaterialsEarned,
-    currentScreen: screen ?? getRunDomainStore().navigation.screen,
+    currentScreen,
     destinationChoices: session.rewardState.destinations,
-    discoveredCardIdsAtRunStart: run.discoveredCardIdsAtRunStart,
-    discoveredBoonIdsAtRunStart: run.discoveredBoonIdsAtRunStart,
+    pendingReward,
   });
 }
 
@@ -125,7 +119,7 @@ export function syncRunToBattleStart(playerHealth?: number): number {
   const store = getRunDomainStore();
   const startingHealth =
     playerHealth ??
-    getBattleStartPlayerHealth(store.progress.runPlayerHealth, store.progress.runMaxHealth, store.progress.runBoons);
+    getBattleStartPlayerHealth(store.progress.runPlayerHealth, store.progress.runMaxHealth, store.progress.runTrinkets);
   store.setRunPlayerHealth(startingHealth);
   return startingHealth;
 }
@@ -184,15 +178,8 @@ export function finalizeRunEndSession(options: {
   const materials = options.awardRunEndMaterials(options.displayMaterials);
   options.finalizeRunXP();
 
-  const store = getRunDomainStore();
-  const app = useAppStore.getState();
-  const cardSnapshot = store.progress.discoveredCardIdsAtRunStart;
-  const boonSnapshot = store.progress.discoveredBoonIdsAtRunStart;
-  store.setRunEndDiscoveredCardIds(computeRunDiscoveryDelta(app.discoveredCardIds, cardSnapshot));
-  store.setRunEndDiscoveredBoonIds(computeRunDiscoveryDelta(app.discoveredBoonIds, boonSnapshot));
-
   flushSaveAfterRunEnd();
-  store.setHasActiveRun(false);
+  getRunDomainStore().setHasActiveRun(false);
   return materials;
 }
 

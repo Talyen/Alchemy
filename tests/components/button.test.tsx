@@ -52,6 +52,14 @@ describe("Button", () => {
     const { container } = render(<Button variant="outline">Outline</Button>);
     const button = container.querySelector("button")!;
     expect(button.className).toContain("border-border/80");
+    expect(button.className).toContain("hover:brightness-105");
+  });
+
+  it("applies primary hover lift without scale", () => {
+    const { container } = render(<Button variant="primary">Primary</Button>);
+    const button = container.querySelector("button")!;
+    expect(button.className).toContain("button-primary-bloom");
+    expect(button.className).not.toContain("scale");
   });
 
   it("applies sm size", () => {
@@ -73,7 +81,13 @@ describe("Button", () => {
     expect(button.className).toContain("w-11");
   });
 
-  it("wraps in motion.span when not asChild", () => {
+  it("applies primary variant alias", () => {
+    const { container } = render(<Button variant="primary">Primary</Button>);
+    const button = container.querySelector("button")!;
+    expect(button.className).toContain("bg-primary");
+  });
+
+  it("wraps in span when not asChild", () => {
     const { container } = render(<Button>Wrapped</Button>);
     const wrapper = container.firstChild as HTMLElement;
     expect(wrapper?.className).toContain("inline-flex");

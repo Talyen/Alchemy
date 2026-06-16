@@ -12,7 +12,7 @@ function baseInput(): Record<string, unknown> {
     currentAct: 1,
     destinationIndexInAct: 0,
     completedDestinations: [],
-    runBoons: [],
+    runTrinkets: [],
     selectedDifficulty: null,
     contentSystemType: "campaign",
     labyrinthMap: null,

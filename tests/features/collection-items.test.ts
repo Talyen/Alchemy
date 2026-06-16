@@ -15,7 +15,7 @@ describe("collection item helpers", () => {
       collectionTab: "cards",
       discoveredCardIds: [],
       encounteredEnemyIds: [],
-      discoveredBoonIds: [],
+      discoveredTrinketIds: [],
       page: 0,
     });
 

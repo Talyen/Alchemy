@@ -158,7 +158,7 @@ describe("applyPlayerStatusFromAttack", () => {
   describe("plague doctor immunity boon", () => {
     it("prevents first harmful status application when boon is active", () => {
       const state = createTestBattleState({
-        boonEffects: { ...createTestBattleState().boonEffects, plagueDoctorImmunity: true },
+        trinketEffects: { ...createTestBattleState().trinketEffects, plagueDoctorImmunity: true },
       });
       const texts: CombatTextEvent[] = [];
       const result = applyPlayerStatusFromAttack(state, { kind: "player-status", status: "poison", amount: 3 }, texts);
@@ -169,7 +169,7 @@ describe("applyPlayerStatusFromAttack", () => {
     it("allows second harmful status after first was already prevented", () => {
       const state = createTestBattleState({
         playerStatuses: { ...createTestBattleState().playerStatuses, poison: 2 },
-        boonEffects: { ...createTestBattleState().boonEffects, plagueDoctorImmunity: true },
+        trinketEffects: { ...createTestBattleState().trinketEffects, plagueDoctorImmunity: true },
         flags: { ...createTestBattleState().flags, firstHarmfulStatusPrevented: true },
       });
       const texts: CombatTextEvent[] = [];
@@ -179,7 +179,7 @@ describe("applyPlayerStatusFromAttack", () => {
 
     it("does not prevent beneficial statuses", () => {
       const state = createTestBattleState({
-        boonEffects: { ...createTestBattleState().boonEffects, plagueDoctorImmunity: true },
+        trinketEffects: { ...createTestBattleState().trinketEffects, plagueDoctorImmunity: true },
       });
       const texts: CombatTextEvent[] = [];
       const result = applyPlayerStatusFromAttack(state, { kind: "player-status", status: "armor", amount: 3 }, texts);

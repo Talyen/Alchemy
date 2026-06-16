@@ -1,6 +1,7 @@
 // Playwright test fixture: fast battle mode + runtime error collection with auto-assert.
 import { test as base, expect } from "@playwright/test";
-import { enableFastMode, failOnRuntimeErrors } from "../helpers";
+import { enableFastMode } from "../e2e/battle-setup";
+import { failOnRuntimeErrors } from "../e2e/errors";
 
 type E2EFixtures = {
   fastBattle: void;

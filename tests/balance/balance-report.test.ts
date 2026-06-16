@@ -16,7 +16,7 @@ import { createSeededRng } from "@/lib/utils";
 import {
   characters,
   enemyBestiary,
-  boonLibrary,
+  trinketLibrary,
   cardLibrary,
   type BattleCard,
   type CharacterId,
@@ -29,7 +29,7 @@ import { fileURLToPath } from "node:url";
 const shouldRunBalanceReport = process.env.ALCHEMY_BALANCE_SIM === "1";
 const describeBalance = shouldRunBalanceReport ? describe : describe.skip;
 const iterations = Number.parseInt(process.env.ALCHEMY_BALANCE_ITERATIONS ?? "100", 10);
-const boonIterations = Math.max(20, Math.floor(iterations / 2));
+const trinketIterations = Math.max(20, Math.floor(iterations / 2));
 const cardIterations = Math.max(30, Math.floor(iterations / 3));
 const policy = (process.env.ALCHEMY_BALANCE_POLICY ?? "random-playable") as BalancePlayPolicy;
 
@@ -56,7 +56,7 @@ const ENEMY_TITLES: Record<string, string> = Object.fromEntries(enemyBestiary.ma
 const CHARACTER_TITLES: Record<string, string> = Object.fromEntries(
   Object.values(characters).map((c) => [c.id, c.name]),
 );
-const BOON_TITLES: Record<string, string> = Object.fromEntries(boonLibrary.map((t) => [t.id, t.title]));
+const BOON_TITLES: Record<string, string> = Object.fromEntries(trinketLibrary.map((t) => [t.id, t.title]));
 const CARD_TITLES: Record<string, string> = Object.fromEntries(cardLibrary.map((c) => [c.id, c.title]));
 
 function enemyTitle(id: string): string {
@@ -65,7 +65,7 @@ function enemyTitle(id: string): string {
 function characterTitle(id: string): string {
   return CHARACTER_TITLES[id] ?? id;
 }
-function boonTitle(id: string): string {
+function trinketTitle(id: string): string {
   return BOON_TITLES[id] ?? id;
 }
 function cardTitle(id: string): string {
@@ -256,12 +256,12 @@ function collectAllAnomalyMetrics(tieredResults: TieredResults): { field: string
 
 // --- Boon sweep per tier ---
 
-type TieredBoons = {
+type TieredTrinkets = {
   tier: string;
-  entries: { boonId: string; delta: number; winRate: number; baseline: number }[];
+  entries: { trinketId: string; delta: number; winRate: number; baseline: number }[];
 }[];
 
-function runBoonSweep(): TieredBoons {
+function runTrinketSweep(): TieredTrinkets {
   const characterIds = Object.keys(characters) as CharacterId[];
 
   return TIERS.map((tier) => {
@@ -273,7 +273,7 @@ function runBoonSweep(): TieredBoons {
       { enemyId: "iron-bear", depth: o + 7 },
     ];
 
-    function averageWinRate(boonIds: string[], seedOffset: number): number {
+    function averageWinRate(trinketIds: string[], seedOffset: number): number {
       const rates: number[] = [];
       let seed = 50_000 + seedOffset;
       for (const characterId of characterIds) {
@@ -287,8 +287,8 @@ function runBoonSweep(): TieredBoons {
               depth: scenario.depth,
               talentPreset: tier.preset,
               difficultyModifiers: tier.difficultyModifiers,
-              boonIds,
-              iterations: boonIterations,
+              trinketIds,
+              iterations: trinketIterations,
               seed,
               maxTurns: 30,
               policy,
@@ -301,10 +301,10 @@ function runBoonSweep(): TieredBoons {
     }
 
     const baseline = averageWinRate([], 0);
-    const entries = boonLibrary
+    const entries = trinketLibrary
       .map((boon, index) => {
         const winRate = averageWinRate([boon.id], (index + 1) * 100_000);
-        return { boonId: boon.id, delta: winRate - baseline, winRate, baseline };
+        return { trinketId: boon.id, delta: winRate - baseline, winRate, baseline };
       })
       .sort((a, b) => b.delta - a.delta);
 
@@ -409,7 +409,7 @@ function runCardSweep(): TieredCards {
 function writeHtmlReport(
   tieredEnemies: { tier: string; entries: { id: string; winRate: number }[] }[],
   tieredClasses: { tier: string; entries: { id: CharacterId; winRate: number }[] }[],
-  tieredBoons: TieredBoons,
+  tieredBoons: TieredTrinkets,
   tieredCards: TieredCards,
   anomalies: AnomalySummary[],
   allMetrics: { field: string; early: number; mid: number; late: number; thresholds: number[] }[],
@@ -441,13 +441,13 @@ function writeHtmlReport(
       .sort((a, b) => a.late - b.late);
   }
 
-  function mergeBoons() {
+  function mergeTrinkets() {
     return tieredBoons[0].entries
       .map((entry) => ({
-        id: entry.boonId,
-        early: tieredBoons[0].entries.find((t) => t.boonId === entry.boonId)?.delta ?? 0,
-        mid: tieredBoons[1].entries.find((t) => t.boonId === entry.boonId)?.delta ?? 0,
-        late: tieredBoons[2].entries.find((t) => t.boonId === entry.boonId)?.delta ?? 0,
+        id: entry.trinketId,
+        early: tieredBoons[0].entries.find((t) => t.trinketId === entry.trinketId)?.delta ?? 0,
+        mid: tieredBoons[1].entries.find((t) => t.trinketId === entry.trinketId)?.delta ?? 0,
+        late: tieredBoons[2].entries.find((t) => t.trinketId === entry.trinketId)?.delta ?? 0,
       }))
       .sort((a, b) => a.late - b.late);
   }
@@ -465,7 +465,7 @@ function writeHtmlReport(
 
   const mergedEnemies = mergeEnemies();
   const mergedClasses = mergeClasses();
-  const mergedBoons = mergeBoons();
+  const mergedBoons = mergeTrinkets();
   const mergedCards = mergeCards();
 
   function winRateCell(value: number): string {
@@ -513,7 +513,7 @@ function writeHtmlReport(
 </head>
 <body>
 <h1>Balance Report</h1>
-<p class="meta">policy=${policy} | iterations=${iterations} | boonIterations=${boonIterations} | cardIterations=${cardIterations}</p>
+<p class="meta">policy=${policy} | iterations=${iterations} | trinketIterations=${trinketIterations} | cardIterations=${cardIterations}</p>
 
 <h2>Simulation Methodology</h2>
 <div class="meta">
@@ -547,7 +547,7 @@ ${tableRows(mergedClasses, winRateCell, characterTitle)}
 <h2>Boon Rankings</h2>
 <p class="meta">Sorted by Late Game Player Win Rate Delta ascending (weakest at top). Delta vs a no-boon baseline.</p>
 <div class="scroll"><table><thead><tr><th>Boon</th>${deltaHeader}</tr></thead><tbody>
-${tableRows(mergedBoons, deltaCell, boonTitle)}
+${tableRows(mergedBoons, deltaCell, trinketTitle)}
 </tbody></table></div>
 
 <h2>Card Rankings</h2>
@@ -584,7 +584,7 @@ ${allMetrics.map((m) => `<tr><td>${m.field}</td>${[m.early, m.mid, m.late].map((
 describeBalance("balance report", () => {
   it("prints battle balance metrics", { timeout: 600000 }, () => {
     const tieredResults = runCoreScenarios();
-    const tieredBoons = runBoonSweep();
+    const tieredBoons = runTrinketSweep();
     const tieredCards = runCardSweep();
 
     const tieredEnemies = tieredResults.map((tier) => ({
@@ -597,7 +597,7 @@ describeBalance("balance report", () => {
     }));
 
     console.info(
-      `Balance simulation policy=${policy} iterations=${iterations} boonIterations=${boonIterations} cardIterations=${cardIterations}`,
+      `Balance simulation policy=${policy} iterations=${iterations} trinketIterations=${trinketIterations} cardIterations=${cardIterations}`,
     );
 
     // Condensed console output: top/bottom 3 per tier
@@ -619,9 +619,9 @@ describeBalance("balance report", () => {
       const top3 = tier.entries.slice(0, 3);
       const bottom3 = tier.entries.slice(-3).reverse();
       console.info(`Strongest boons (${tier.tier})`);
-      console.table(top3.map((t) => ({ boon: boonTitle(t.boonId), playerWinRateDelta: percent(t.delta) })));
+      console.table(top3.map((t) => ({ boon: trinketTitle(t.trinketId), playerWinRateDelta: percent(t.delta) })));
       console.info(`Weakest boons (${tier.tier})`);
-      console.table(bottom3.map((t) => ({ boon: boonTitle(t.boonId), playerWinRateDelta: percent(t.delta) })));
+      console.table(bottom3.map((t) => ({ boon: trinketTitle(t.trinketId), playerWinRateDelta: percent(t.delta) })));
     }
 
     for (const tier of tieredCards) {

@@ -26,86 +26,153 @@ import {
   UnlockedTalentsSchema,
 } from "./core";
 import { ActiveRunDataSchema } from "./active-run";
-import { createEmptyGearLoadouts, GEAR_DEFINITION_IDS, GEAR_SLOTS } from "@/lib/gear/types";
+import {
+  createEmptyGearLoadouts,
+  normalizeExclusiveGearLoadouts,
+  normalizeGearLoadout,
+  pruneGearBoardPositions,
+  pruneOrphanGearLoadouts,
+  type GearBoardPositions,
+  type GearLoadouts,
+} from "@/lib/gear/types";
+import { GEAR_AFFIX_IDS } from "@/lib/gear/affix-ids";
+import { GEAR_DEFINITION_IDS } from "@/lib/gear/definitions";
+import { normalizeGearInstance } from "@/lib/gear/operations";
 
 const GearDefinitionIdSchema = z.enum(GEAR_DEFINITION_IDS);
+const GearAffixIdSchema = z.enum(GEAR_AFFIX_IDS);
 const GearInstanceSchema = z.object({
   instanceId: z.string().min(1),
   definitionId: GearDefinitionIdSchema,
-  modifiers: z.array(z.object({ kind: z.string(), value: z.number().finite() })).catch([]),
+  affixIds: z.array(GearAffixIdSchema),
 });
-const GearLoadoutSchema = z.object(
-  Object.fromEntries(GEAR_SLOTS.map((slot) => [slot, z.string().nullable().catch(null)])) as unknown as Record<
-    (typeof GEAR_SLOTS)[number],
-    z.ZodType
-  >,
+
+function normalizePersistedGearInstance(raw: unknown) {
+  if (!raw || typeof raw !== "object" || !("instanceId" in raw) || !("definitionId" in raw)) return null;
+  const item = raw as {
+    instanceId?: string;
+    definitionId?: string;
+    affixIds?: string[];
+    modifiers?: { kind: string; value: number }[];
+  };
+  const normalizedInput: {
+    instanceId?: string;
+    definitionId?: string;
+    affixIds?: string[];
+    modifiers?: { kind: "flatPhysicalDamage"; value: number }[];
+  } = {
+    instanceId: item.instanceId ?? "",
+    definitionId: item.definitionId ?? "",
+  };
+  if (item.affixIds) normalizedInput.affixIds = item.affixIds;
+  if (item.modifiers) normalizedInput.modifiers = item.modifiers as { kind: "flatPhysicalDamage"; value: number }[];
+  return normalizeGearInstance(normalizedInput);
+}
+
+const GearInventorySchema = z.preprocess(
+  (raw) =>
+    Array.isArray(raw)
+      ? raw.flatMap((item) => {
+          const normalized = normalizePersistedGearInstance(item);
+          return normalized ? [normalized] : [];
+        })
+      : raw,
+  z.array(GearInstanceSchema),
 );
+const GearLoadoutSchema = z
+  .record(z.string(), z.union([z.string(), z.null()]))
+  .catch({})
+  .transform((raw) => normalizeGearLoadout(raw));
 const emptyGearLoadouts = createEmptyGearLoadouts();
-const GearLoadoutsSchema = z.object(
-  Object.fromEntries(
-    CHARACTER_IDS.map((id) => [id, GearLoadoutSchema.catch(emptyGearLoadouts[id])]),
-  ) as unknown as Record<(typeof CHARACTER_IDS)[number], z.ZodType>,
-);
+const GearBoardPositionsSchema = z
+  .record(
+    z.string(),
+    z.object({
+      col: z.number().int().nonnegative(),
+      row: z.number().int().nonnegative(),
+    }),
+  )
+  .catch({})
+  .transform((positions) => positions as GearBoardPositions);
+
+const GearLoadoutsSchema = z
+  .object(
+    Object.fromEntries(
+      CHARACTER_IDS.map((id) => [id, GearLoadoutSchema.catch(emptyGearLoadouts[id])]),
+    ) as unknown as Record<(typeof CHARACTER_IDS)[number], z.ZodType>,
+  )
+  .transform((loadouts) => normalizeExclusiveGearLoadouts(loadouts as GearLoadouts));
 
 export const SaveDataSchema = z.preprocess(
   (raw) => migrateSaveDataToCurrent(raw),
-  z.object({
-    saveSchemaVersion: caught(z.literal(CURRENT_SAVE_SCHEMA_VERSION), CURRENT_SAVE_SCHEMA_VERSION, "saveSchemaVersion"),
-    gameBuildVersion: caught(z.string(), CURRENT_GAME_BUILD_VERSION, "gameBuildVersion"),
-    contentVersion: caught(z.number().int().nonnegative(), CURRENT_CONTENT_VERSION, "contentVersion"),
-    selectedAspectRatio: caught(AspectRatioOptionSchema, "auto", "selectedAspectRatio"),
-    displayMode: caught(DisplayModeSchema, "borderless-fullscreen", "displayMode"),
-    uiScale: caught(UiScaleSchema, "100", "uiScale"),
-    brightness: caught(z.number().finite(), DEFAULT_BRIGHTNESS_PCT, "brightness").transform((v) =>
-      Math.max(50, Math.min(150, v)),
-    ),
-    discoveredCardIds: deduplicatedStringArraySchema("discoveredCardIds"),
-    encounteredEnemyIds: deduplicatedStringArraySchema("encounteredEnemyIds"),
-    discoveredBoonIds: deduplicatedStringArraySchema("discoveredBoonIds"),
-    gearInventory: caught(z.array(GearInstanceSchema), [], "gearInventory"),
-    gearLoadouts: caught(GearLoadoutsSchema, emptyGearLoadouts, "gearLoadouts"),
-    talentXP: TalentXPSchema,
-    unlockedTalents: UnlockedTalentsSchema,
-    // .catch() fallbacks must match defaults.ts — both come from game-constants.ts.
-    musicVolume: caught(z.number().finite(), DEFAULT_MUSIC_VOLUME_PCT, "musicVolume").transform((v) =>
-      Math.max(0, Math.min(100, v)),
-    ),
-    sfxVolume: caught(z.number().finite(), DEFAULT_SFX_VOLUME_PCT, "sfxVolume").transform((v) =>
-      Math.max(0, Math.min(100, v)),
-    ),
-    masterVolume: caught(z.number().finite(), DEFAULT_MASTER_VOLUME_PCT, "masterVolume").transform((v) =>
-      Math.max(0, Math.min(100, v)),
-    ),
-    muteInBackground: caught(z.boolean(), true, "muteInBackground"),
-    autoEndTurn: caught(z.boolean(), true, "autoEndTurn"),
-    activeRun: caught(ActiveRunDataSchema.nullable(), null, "activeRun"),
-    materialInventory: caught(MaterialInventorySchema, MATERIAL_ZERO_INVENTORY, "materialInventory"),
-    constructedBuildings: caught(
-      createTierRecordSchema(buildings, { smithy: "blacksmiths-forge" }),
-      createEmptyTierRecord(buildings),
-      "constructedBuildings",
-    ),
-    plantedFarms: caught(
-      createTierRecordSchema(farmPlots, { "sheep-pasture": "pasture" }),
-      createEmptyTierRecord(farmPlots),
-      "plantedFarms",
-    ),
-    completedResearch: caught(
-      createTierRecordSchema(researchUpgrades),
-      createEmptyTierRecord(researchUpgrades),
-      "completedResearch",
-    ),
-    bondedCompanions: caught(
-      createTierRecordSchema(companionTierItems),
-      createEmptyTierRecord(companionTierItems),
-      "bondedCompanions",
-    ),
-    completedDifficulties: caught(
-      CompletedDifficultiesSchema,
-      Object.fromEntries(CHARACTER_IDS.map((id) => [id, []])),
-      "completedDifficulties",
-    ),
-    finishedRunCharacters: caught(z.array(z.string()), [], "finishedRunCharacters"),
-    lastSavedAt: caught(z.number().int().nonnegative(), 0, "lastSavedAt"),
-  }),
+  z
+    .object({
+      saveSchemaVersion: caught(
+        z.literal(CURRENT_SAVE_SCHEMA_VERSION),
+        CURRENT_SAVE_SCHEMA_VERSION,
+        "saveSchemaVersion",
+      ),
+      gameBuildVersion: caught(z.string(), CURRENT_GAME_BUILD_VERSION, "gameBuildVersion"),
+      contentVersion: caught(z.number().int().nonnegative(), CURRENT_CONTENT_VERSION, "contentVersion"),
+      selectedAspectRatio: caught(AspectRatioOptionSchema, "auto", "selectedAspectRatio"),
+      displayMode: caught(DisplayModeSchema, "borderless-fullscreen", "displayMode"),
+      uiScale: caught(UiScaleSchema, "100", "uiScale"),
+      brightness: caught(z.number().finite(), DEFAULT_BRIGHTNESS_PCT, "brightness").transform((v) =>
+        Math.max(50, Math.min(150, v)),
+      ),
+      discoveredCardIds: deduplicatedStringArraySchema("discoveredCardIds"),
+      encounteredEnemyIds: deduplicatedStringArraySchema("encounteredEnemyIds"),
+      discoveredTrinketIds: deduplicatedStringArraySchema("discoveredTrinketIds"),
+      gearInventory: caught(GearInventorySchema, [], "gearInventory"),
+      gearLoadouts: caught(GearLoadoutsSchema, emptyGearLoadouts, "gearLoadouts"),
+      gearBoardPositions: caught(GearBoardPositionsSchema, {}, "gearBoardPositions"),
+      talentXP: TalentXPSchema,
+      unlockedTalents: UnlockedTalentsSchema,
+      // .catch() fallbacks must match defaults.ts — both come from game-constants.ts.
+      musicVolume: caught(z.number().finite(), DEFAULT_MUSIC_VOLUME_PCT, "musicVolume").transform((v) =>
+        Math.max(0, Math.min(100, v)),
+      ),
+      sfxVolume: caught(z.number().finite(), DEFAULT_SFX_VOLUME_PCT, "sfxVolume").transform((v) =>
+        Math.max(0, Math.min(100, v)),
+      ),
+      masterVolume: caught(z.number().finite(), DEFAULT_MASTER_VOLUME_PCT, "masterVolume").transform((v) =>
+        Math.max(0, Math.min(100, v)),
+      ),
+      muteInBackground: caught(z.boolean(), true, "muteInBackground"),
+      autoEndTurn: caught(z.boolean(), true, "autoEndTurn"),
+      activeRun: caught(ActiveRunDataSchema.nullable(), null, "activeRun"),
+      materialInventory: caught(MaterialInventorySchema, MATERIAL_ZERO_INVENTORY, "materialInventory"),
+      constructedBuildings: caught(
+        createTierRecordSchema(buildings, { smithy: "blacksmiths-forge" }),
+        createEmptyTierRecord(buildings),
+        "constructedBuildings",
+      ),
+      plantedFarms: caught(
+        createTierRecordSchema(farmPlots, { "sheep-pasture": "pasture" }),
+        createEmptyTierRecord(farmPlots),
+        "plantedFarms",
+      ),
+      completedResearch: caught(
+        createTierRecordSchema(researchUpgrades),
+        createEmptyTierRecord(researchUpgrades),
+        "completedResearch",
+      ),
+      bondedCompanions: caught(
+        createTierRecordSchema(companionTierItems),
+        createEmptyTierRecord(companionTierItems),
+        "bondedCompanions",
+      ),
+      completedDifficulties: caught(
+        CompletedDifficultiesSchema,
+        Object.fromEntries(CHARACTER_IDS.map((id) => [id, []])),
+        "completedDifficulties",
+      ),
+      finishedRunCharacters: caught(z.array(z.string()), [], "finishedRunCharacters"),
+      lastSavedAt: caught(z.number().int().nonnegative(), 0, "lastSavedAt"),
+    })
+    .transform((save) => ({
+      ...save,
+      gearLoadouts: pruneOrphanGearLoadouts(save.gearInventory, save.gearLoadouts),
+      gearBoardPositions: pruneGearBoardPositions(save.gearBoardPositions, save.gearInventory),
+    })),
 );

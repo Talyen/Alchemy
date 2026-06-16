@@ -1,6 +1,14 @@
 import { CURRENT_CONTENT_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "../metadata";
+import { migrateContentV2 } from "./migrate-content-v2";
 import { migrateActiveRun } from "./migrate-active-run";
-import { migrateV0ToV1, migrateV1ToV2, migrateV2ToV3, migrateV3ToV4, normalizeLegacyAspectRatio } from "./steps";
+import {
+  migrateV0ToV1,
+  migrateV1ToV2,
+  migrateV2ToV3,
+  migrateV3ToV4,
+  migrateV4ToV5,
+  normalizeLegacyAspectRatio,
+} from "./steps";
 import type { RawSaveData } from "./types";
 
 // Returns 0 for any invalid version so callers can treat missing-version saves as v0.
@@ -40,6 +48,13 @@ export function migrateSaveDataToCurrent(parsed: unknown): RawSaveData {
   if (version < 4) {
     current = migrateV3ToV4(current);
     version = 4;
+  }
+  if (version < 5) {
+    current = migrateV4ToV5(current);
+    version = 5;
+  }
+  if (getRawContentVersion(current) < CURRENT_CONTENT_VERSION) {
+    current = migrateContentV2(current);
   }
   if (current.activeRun && typeof current.activeRun === "object") {
     current = { ...current, activeRun: migrateActiveRun(current.activeRun) };

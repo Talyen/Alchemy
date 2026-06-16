@@ -34,7 +34,10 @@ const sounds = [
   // { source: "Human/cough_double.wav", target: "cough-double.ogg" },
 
   // ── Battle events ──
-  { source: "Attacks and Combat/Sword Attacks Hits and Blocks/Sword Impact Hit 1.ogg", target: "sword-impact-hit-1.ogg" },
+  {
+    source: "Attacks and Combat/Sword Attacks Hits and Blocks/Sword Impact Hit 1.ogg",
+    target: "sword-impact-hit-1.ogg",
+  },
   { source: "Attacks and Combat/Sword Attacks Hits and Blocks/Sword Blocked 2.ogg", target: "sword-blocked-2.ogg" },
   { source: "Weapons/sword_clash.wav", target: "sword-clash.ogg" },
   { source: "Spells/Ice Freeze 1.ogg", target: "ice-freeze-1.ogg" },
@@ -46,8 +49,10 @@ const sounds = [
 
   // ── UI ──
   { source: "UI/Minimalist3.ogg", target: "button-hover-3.ogg" },
+  { source: "UI/metal button 4.wav", target: "metal-button-4.ogg" },
   { source: "Card and Board/card_draw_3.wav", target: "card-draw-3.ogg" },
   { source: "UI/toggle_on.wav", target: "toggle-on.ogg" },
+  { source: "UI/033_Denied_03.wav", target: "denied-03.ogg" },
   { source: "Environment/fire_lighting.wav", target: "fire-lighting.ogg" },
   { source: "Musical Effects/harpsichord_level_complete.wav", target: "harpsichord-level-complete.ogg" },
   { source: "Items/page_turn.wav", target: "page-turn.ogg" },
@@ -70,7 +75,10 @@ const sounds = [
   { source: "Spells/MAGSpel_CAST-Energy Noise_HY_PC-001.wav", target: "energy-noise.ogg" },
   { source: "Attacks and Combat/FGHTImpt_MELEE-Gut Kick_HY_PC-001.wav", target: "gut-kick.ogg" },
   { source: "Spells/MAGAngl_BUFF-Bonus Regen Rate_HY_PC-006.wav", target: "bonus-regen-rate.ogg" },
-  { source: "Attacks and Combat/Sword Attacks Hits and Blocks/Sword Impact Hit 2.ogg", target: "sword-impact-hit-2.ogg" },
+  {
+    source: "Attacks and Combat/Sword Attacks Hits and Blocks/Sword Impact Hit 2.ogg",
+    target: "sword-impact-hit-2.ogg",
+  },
 ];
 
 async function fileIsFresh(sourcePath, outputPath) {
@@ -104,10 +112,14 @@ async function optimizeSound({ source, target }) {
   // between quality (~128kbps) and file size for SFX.
   await execFileAsync(ffmpegPath, [
     "-y",
-    "-i", sourcePath,
-    "-af", "loudnorm=I=-16:TP=-1.5:LRA=11",
-    "-c:a", "libvorbis",
-    "-q:a", "4",
+    "-i",
+    sourcePath,
+    "-af",
+    "loudnorm=I=-16:TP=-1.5:LRA=11",
+    "-c:a",
+    "libvorbis",
+    "-q:a",
+    "4",
     "-vn",
     outputPath,
   ]);

@@ -1,22 +1,22 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import {
   appendCardToRunWithDiscovery,
-  appendBoonToRunWithDiscovery,
+  appendTrinketToRunWithDiscovery,
 } from "@/features/alchemy/run-loop/run/deck-mutations";
 import type { BattleCard } from "@/lib/game-data";
 
 const setDiscoveredCardIds = vi.fn();
-const setDiscoveredBoonIds = vi.fn();
+const setDiscoveredTrinketIds = vi.fn();
 
 vi.mock("@/features/alchemy/shared/stores/app-store", () => ({
   useAppStore: {
-    getState: () => ({ setDiscoveredCardIds, setDiscoveredBoonIds }),
+    getState: () => ({ setDiscoveredCardIds, setDiscoveredTrinketIds }),
   },
 }));
 
 beforeEach(() => {
   setDiscoveredCardIds.mockClear();
-  setDiscoveredBoonIds.mockClear();
+  setDiscoveredTrinketIds.mockClear();
 });
 
 function makeCard(overrides: Partial<BattleCard> = {}): BattleCard {
@@ -48,16 +48,16 @@ describe("appendCardToRunWithDiscovery", () => {
   });
 });
 
-describe("appendBoonToRunWithDiscovery", () => {
+describe("appendTrinketToRunWithDiscovery", () => {
   it("appends boon and discovers it", () => {
-    const setRunBoons = vi.fn();
+    const setRunTrinkets = vi.fn();
 
-    appendBoonToRunWithDiscovery("bone-charm", setRunBoons);
+    appendTrinketToRunWithDiscovery("bone-charm", setRunTrinkets);
 
-    const boonUpdater = setRunBoons.mock.calls[0][0];
+    const boonUpdater = setRunTrinkets.mock.calls[0][0];
     expect(boonUpdater([])).toEqual(["bone-charm"]);
 
-    const discUpdater = setDiscoveredBoonIds.mock.calls[0][0];
+    const discUpdater = setDiscoveredTrinketIds.mock.calls[0][0];
     expect(discUpdater([])).toEqual(["bone-charm"]);
   });
 });

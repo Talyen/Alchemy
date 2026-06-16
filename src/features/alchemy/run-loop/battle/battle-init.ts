@@ -46,7 +46,7 @@ export function createBattleInit(contextOrGetter: BattleControllerContext | (() 
       talentEffects: battleEffects,
       discoveredCardIds: useAppStore.getState().discoveredCardIds,
       maxHealth: context.run.runMaxHealth,
-      boonIds: context.run.runBoons,
+      trinketIds: context.run.runTrinkets,
       gearEffects,
       difficultyModifiers: activeModifiers,
     });

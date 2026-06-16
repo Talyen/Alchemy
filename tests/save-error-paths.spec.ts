@@ -55,7 +55,7 @@ test.describe("Save Error Paths", critical, () => {
                 activeRun: null,
                 discoveredCardIds: [],
                 encounteredEnemyIds: [],
-                discoveredBoonIds: [],
+                discoveredTrinketIds: [],
                 talentXP: {},
                 unlockedTalents: {},
               }),

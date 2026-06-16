@@ -4,7 +4,14 @@ import { useState } from "react";
 import type { KeywordId } from "@/lib/game-data";
 import { cn } from "@/lib/utils";
 import { ShineBorder } from "@/components/ui/shine-border";
-import { getKeywordShineColors } from "@/features/alchemy/shared/config";
+import {
+  BUTTON_HOVER_SECONDARY,
+  BUTTON_HOVER_TRANSITION,
+  BUTTON_PRESS,
+  BUTTON_SHAPE,
+  BUTTON_SURFACE_NEUTRAL,
+  getKeywordShineColors,
+} from "@/features/alchemy/shared/config";
 import { KeywordTag } from "../../shared/ui/keyword-tag";
 import { PressableMotion } from "../../shared/ui/pressable-motion";
 
@@ -36,11 +43,17 @@ export function TalentKeywordButton({
         : undefined;
 
   return (
-    <PressableMotion disableHoverScale>
+    <PressableMotion>
       <button
         type="button"
         className={cn(
-          "relative inline-flex items-center gap-1.5 rounded-full bg-card px-3 py-1.5 text-sm font-semibold text-foreground ring-1 ring-offset-1 ring-offset-card transition-all duration-200",
+          "relative inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-foreground transition-all duration-200",
+          BUTTON_SHAPE,
+          BUTTON_SURFACE_NEUTRAL,
+          BUTTON_HOVER_TRANSITION,
+          BUTTON_HOVER_SECONDARY,
+          BUTTON_PRESS,
+          "active:bg-muted active:brightness-100",
           ringClass(isSelected, hasUnspent),
         )}
         style={ringStyle}
@@ -53,7 +66,7 @@ export function TalentKeywordButton({
             shineColor={shineColors}
             borderWidth={isSelected ? 2 : 1}
             duration={8}
-            className="rounded-full z-10"
+            className={cn(BUTTON_SHAPE, "z-10")}
           />
         )}
         <KeywordTag keywordId={keywordId} />

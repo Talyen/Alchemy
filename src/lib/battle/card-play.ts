@@ -30,7 +30,7 @@ export function cardHasDamageType(card: BattleCard, damageType: string): boolean
   return card.effects.some((e) => e.kind === "damage" && e.damageType === damageType);
 }
 
-type CardCostState = Pick<BattleState, "flags" | "talentEffects" | "boonEffects">;
+type CardCostState = Pick<BattleState, "flags" | "talentEffects" | "trinketEffects">;
 
 const FIRST_CARD_FREE_RULES: {
   flag: BooleanCombatFlag;
@@ -66,10 +66,10 @@ function applyCostDiscount(cost: number, reduction: number): number {
 /**
  * Checks if a boon discount applies to the first potion played.
  */
-function checkBoonFreePotion(state: CardCostState, card: BattleCard): boolean {
+function checkTrinketFreePotion(state: CardCostState, card: BattleCard): boolean {
   return (
     !state.flags.firstPotionFreeUsed &&
-    !!state.boonEffects.mortarPestleFreeFirstPotion &&
+    !!state.trinketEffects.mortarPestleFreeFirstPotion &&
     card.id.endsWith(POTION_CARD_ID_SUFFIX)
   );
 }
@@ -98,7 +98,7 @@ export function computeEffectiveCost(
   }
   if (effectiveCost === 0) return { effectiveCost, consumedFlags };
 
-  if (checkBoonFreePotion(state, card)) {
+  if (checkTrinketFreePotion(state, card)) {
     effectiveCost = 0;
     consumedFlags.add("firstPotionFreeUsed");
   }
@@ -178,8 +178,8 @@ function executeCardPlayState(
 /**
  * Applies the Resonant Chime boon effect if cards played trigger criteria.
  */
-function applyResonantChimeBoon(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
-  const { resonantChimeCardsRequired, resonantChimeMana } = state.boonEffects;
+function applyResonantChimeTrinket(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
+  const { resonantChimeCardsRequired, resonantChimeMana } = state.trinketEffects;
   if (
     resonantChimeCardsRequired > 0 &&
     resonantChimeMana > 0 &&
@@ -208,12 +208,16 @@ function applyResonantChimeBoon(state: BattleState, combatTexts: CombatTextEvent
 function handlePostPlayCardDestination(state: BattleState, card: BattleCard, triggerConsumeRiders = true): BattleState {
   if (card.consume) {
     let nextState = { ...state, exhausted: [...state.exhausted, card] };
-    if (triggerConsumeRiders && state.boonEffects.runicQuillDrawOnConsume > 0 && !state.flags.runicQuillUsedThisTurn) {
+    if (
+      triggerConsumeRiders &&
+      state.trinketEffects.runicQuillDrawOnConsume > 0 &&
+      !state.flags.runicQuillUsedThisTurn
+    ) {
       const draw = drawCards(
         nextState.deck,
         nextState.discard,
         nextState.hand,
-        state.boonEffects.runicQuillDrawOnConsume,
+        state.trinketEffects.runicQuillDrawOnConsume,
         nextState.nextCardUid,
         nextState.rng,
       );
@@ -263,7 +267,7 @@ export function playBattleCardResolved(
   nextState = processEncounterTraitCardAction(nextState, card, combatTexts);
   if (!isPlayerDefeated(nextState)) {
     if (enemyWasAlive) {
-      nextState = applyResonantChimeBoon(nextState, combatTexts);
+      nextState = applyResonantChimeTrinket(nextState, combatTexts);
     }
   }
   nextState = handlePostPlayCardDestination(nextState, card, !isPlayerDefeated(nextState));

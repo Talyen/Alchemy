@@ -4,7 +4,7 @@ import { playBattleCardResolved } from "@/lib/battle/card-play";
 import { defaultBattleState } from "@/lib/battle";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { applyPlayerCombatDamage, isPlayerDefeated } from "@/lib/battle/types";
-import { computeBoonManifest } from "@/lib/boons";
+import { computeTrinketManifest } from "@/lib/trinkets";
 import { blockDeck, makeTestBattleState, makeTestCard, statusDeck } from "../../fixtures/battle";
 
 function makeState(overrides: Parameters<typeof makeTestBattleState>[0] = {}) {
@@ -249,13 +249,13 @@ describe("applyCardEffects — multiply-enemy-status", () => {
 
 describe("applyCardEffects — remove-player-status", () => {
   it("triggers Sin-Eater's Lantern heal on removal", () => {
-    const manifest = computeBoonManifest(["sin-eaters-lantern"]);
+    const manifest = computeTrinketManifest(["sin-eaters-lantern"]);
     const state = makeState({
       playerStatuses: {
         block: 0, armor: 0, forge: 0, haste: 0, burn: 4, poison: 0, bleed: 0, freeze: 0, stun: 0,
       },
       playerHealth: 15,
-      boonEffects: manifest,
+      trinketEffects: manifest,
     });
     const card = makeTestCard({ effects: [{ kind: "remove-player-status", status: "burn" }] });
     const texts: CombatTextEvent[] = [];

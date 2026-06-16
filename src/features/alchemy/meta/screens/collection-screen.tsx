@@ -11,7 +11,7 @@ import {
 } from "../../shared/ui/collection-ui";
 import type { CollectionTab } from "../../shared/types";
 
-const COLLECTION_TABS: CollectionTab[] = ["cards", "bestiary", "boons"];
+const COLLECTION_TABS: CollectionTab[] = ["cards", "bestiary", "trinkets"];
 
 export function CollectionScreen({
   onOpenMenu,
@@ -19,7 +19,7 @@ export function CollectionScreen({
   onSelectTab,
   discoveredCardIds,
   encounteredEnemyIds,
-  discoveredBoonIds,
+  discoveredTrinketIds,
   collectionPages,
   onPageChange,
   bondedCompanions,
@@ -29,7 +29,7 @@ export function CollectionScreen({
   onSelectTab: (tab: CollectionTab) => void;
   discoveredCardIds: string[];
   encounteredEnemyIds: string[];
-  discoveredBoonIds: string[];
+  discoveredTrinketIds: string[];
   collectionPages: Record<CollectionTab, number>;
   onPageChange: (tab: CollectionTab, page: number) => void;
   bondedCompanions: Record<string, number>;
@@ -66,7 +66,7 @@ export function CollectionScreen({
                   collectionTab={tab}
                   discoveredCardIds={discoveredCardIds}
                   encounteredEnemyIds={encounteredEnemyIds}
-                  discoveredBoonIds={discoveredBoonIds}
+                  discoveredTrinketIds={discoveredTrinketIds}
                   page={collectionPages[tab]}
                   bondedCompanions={bondedCompanions}
                 />

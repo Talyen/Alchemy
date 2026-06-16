@@ -8,18 +8,12 @@ export const battleCardWidthClass = "w-[clamp(24.76cqh,25.16cqh,37.48cqh)]";
 export const handCardWidthClass = "w-[clamp(22.28cqh,22.64cqh,33.73cqh)]";
 export const viewCardWidthClass = "w-[clamp(17.5cqh,17.78cqh,26.48cqh)]";
 export const collectionTileWidthClass = "w-[clamp(21cqh,21.34cqh,31.78cqh)]"; // 1.2× viewCardWidthClass for collection cards/bestiary tiles.
-// One row of discovery-pack tiles (3:4 aspect, matches collectionTileWidthClass).
-export const discoveryPackStageHeightClass = "h-[clamp(28cqh,28.45cqh,42.37cqh)]";
-// Stage + hint + Continue + gaps between them.
-export const discoveryPackBlockHeightClass = "h-[calc(clamp(28cqh,28.45cqh,42.37cqh)+5.5rem)]";
 export const collectionGridGapXClass = "gap-x-3";
 export const collectionShellWidthClass = "w-full max-w-6xl";
 // Shared with CollectionGrid — same column count, gap, and justify-items-center.
 export const collectionCardGridClass = `grid w-full justify-items-center ${collectionGridGapXClass} grid-cols-4`;
-export const collectionBoonGridClass = `grid w-full justify-items-center ${collectionGridGapXClass} grid-cols-3`;
-// Header + pack block + gap — fixed stack height so justify-center does not shift between phases.
-export const discoveryScreenStackHeightClass = "h-[calc(clamp(28cqh,28.45cqh,42.37cqh)+12.5rem)]";
-export const boonCardWidthClass = "w-[clamp(24.5cqh,24.89cqh,37.07cqh)]"; // 1.4× viewCardWidthClass for larger boon tiles.
+export const collectionTrinketGridClass = `grid w-full justify-items-center ${collectionGridGapXClass} grid-cols-3`;
+export const trinketCardWidthClass = "w-[clamp(24.5cqh,24.89cqh,37.07cqh)]"; // 1.4× viewCardWidthClass for larger boon tiles.
 export const pileCardWidthClass = "w-[clamp(12cqh,12.96cqh,18.25cqh)]";
 
 // Boss variants — 1.3× the standard battle card width for wider status panes.

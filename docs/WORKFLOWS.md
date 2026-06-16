@@ -17,16 +17,18 @@ Step-by-step checklists for adding or changing game content and wiring.
 | Run teardown / clear save | [Run teardown](#run-teardown) |
 | Status effect | [New status](#add-a-new-status-effect) |
 | Card / card effect kind | [New card](#add-a-new-card) · [New effect kind](#add-a-new-card-effect-kind) |
-| Character, enemy, boon, companion, keyword | [Character](#add-a-new-character) · [Enemy](#add-a-new-enemy) · [Boon](#add-a-new-boon) · [Companion](#add-a-new-companion) · [Keyword](#add-a-new-keyword) |
+| Character, enemy, trinket, companion, keyword | [Character](#add-a-new-character) · [Enemy](#add-a-new-enemy) · [Trinket](#add-a-new-trinket) · [Companion](#add-a-new-companion) · [Keyword](#add-a-new-keyword) |
 | Permanent gear | [Gear](#add-permanent-gear) |
 | Screen, destination, mystery | [New screen](#adding-a-new-screen) · [Destination](#adding-a-new-destination-map-node) · [Mystery effect](#adding-a-new-mystery-effect-kind) |
-| In-run materials, staggered enter | [Grant materials during a run](#grant-materials-during-a-run) · [Staggered screen enter](#staggered-screen-enter-motion) |
+| In-run materials, staggered enter | [Grant materials during a run](#grant-materials-during-a-run) · [Staggered screen enter](#staggered-screen-enter-motion) · [Interactive buttons](#interactive-button-conventions) |
 
 ---
 
 ## Assets
 
 **Add a new raw asset:** edit `scripts/optimize-assets.mjs` → `npm run assets:optimize` → import from `@/assets/optimized/` in `src/lib/game-data/assets.ts`.
+
+**Gear art:** place files in `Raw Assets/Gear/{Name} - {Basic|Astral}.jpeg` → `npm run assets:optimize` → `npm run sync:gear-art` (regenerates `src/lib/game-data/gear-art.ts`). `predev` / `prebuild` run both automatically after optimize.
 
 **Add new art:** place in `public/assets/card-art/` or `public/assets/templates/frames/` → add entry in `scripts/optimize-art.mjs` → `node scripts/optimize-art.mjs`.
 
@@ -87,6 +89,34 @@ Player-earned materials must flow through `awardMaterialsDuringRun()` (`run-sess
 | 5. Absolute / map nodes | Skip `StaggerItem` when the node uses `-translate-x/y` for centering; use panel-level enter only |
 
 Motion tokens and keyframes live in `src/index.css`. Hover/tap hard rules: [AGENTS.md § UI hard rules](../AGENTS.md#ui-hard-rules). Failure modes: [AGENTS.md § Common mistakes](../AGENTS.md#common-mistakes).
+
+---
+
+## Interactive button conventions
+
+Tokens live in `src/features/alchemy/shared/config/button-tokens.ts`. Use shared components before hand-rolling styles.
+
+| Concern | Standard |
+|---------|----------|
+| Shape | `rounded-xl` rectangles (`BUTTON_SHAPE`) |
+| Primary CTA | `Button variant="primary"` (gold fill) — Play, Continue, Confirm |
+| Secondary CTA | `Button variant="outline"` — Back, Cancel, Skip, alternate menu nav |
+| Neutral surface | `bg-background` + `border-border/80` — outline, `ChoiceButton`, `TabBar`, talent filters (`BUTTON_SURFACE_NEUTRAL`) |
+| Accent CTA | `ShineAccentButton` — corruption forward actions with shine border |
+| Paired footers | `ActionButtonRow` — secondary left, primary right |
+| Equal choices | `ChoiceButton` — destinations, neutral surface + accent text |
+| Tabs | `TabBar` — `h-11`, `rounded-xl` |
+| Hover | Sound + CSS brightness/background lift (no scale); see `src/lib/ui/button-hover.ts` |
+| Press | CSS `active:brightness-95` |
+| Width tiers | `menu` → `w-56`, `dialog` → `w-40`, `action` → `min-w-40`, `full` → `w-full` |
+
+| Step | Guidance |
+|------|----------|
+| 1. Menu stack | One `primary` at top (Play); all other items `outline` + `BUTTON_WIDTH_MENU` |
+| 2. Back + Continue | `ActionButtonRow` with `width="dialog"` |
+| 3. Skip + confirm | `ActionButtonRow` with `width="action"`; skip secondary, confirm primary |
+| 4. Destinations | `ChoiceButton` via `DestinationChoices`; accent text only on neutral surface |
+| 5. Shine | Only on accent-intent forward actions — never Back/Cancel/Skip |
 
 ---
 
@@ -173,21 +203,26 @@ Cards in `cardLibrary` are automatically included in merchant shop, combat rewar
 
 ---
 
-## Add a new boon
+## Add a new trinket
 
 | Step | File(s) |
 |---|---|
-| 1. Define entry in `boonLibrary` array | `src/lib/game-data/compendium.ts` |
-| 2. Implement effect logic | `src/lib/boons.ts` — extend `BoonEffectManifest` and apply in battle init |
+| 1. Define entry in `trinketLibrary` array | `src/lib/game-data/compendium.ts` |
+| 2. Implement effect logic | `src/lib/trinkets.ts` — extend `TrinketManifest` and apply in battle init |
 | 3. Add art reference | `src/lib/game-data/assets.ts` |
 
 ## Add permanent Gear
 
-1. Add the definition ID and definition in `src/lib/gear/`, including compatible slots, effects, art, and salvage value.
-2. Keep owned items as unique `GearInstance` records; never put definition objects or art URLs into save data.
-3. Add effect aggregation through `getEquippedGearEffects()` and merge battle-facing bonuses during battle creation.
-4. Update Gear save schemas/defaults and migration fixtures when instance or loadout shapes change.
-5. Cover pure operations, persistence, reward selection, Armory interaction, and battle snapshot behavior.
+1. Add base item metadata in `src/lib/gear/base-items.ts` (slots, two-hand rule, affinity keywords, available rarities, salvage).
+2. Register raw art as `Raw Assets/Gear/{Name} - {Basic|Astral}.jpeg`; run `npm run assets:optimize` then `npm run sync:gear-art` to emit `gear-{slug}-{rarity}.webp` mappings in `src/lib/game-data/gear-art.ts`.
+3. Variant definitions are built automatically in `src/lib/gear/definitions.ts` as `{baseItemId}-{rarity}`.
+4. Add new affixes in `src/lib/gear/affixes.ts` with stable `affixId` and `keywordId` for affinity weighting.
+5. Reward generation rolls instances in `src/lib/gear/generation.ts`; rewards screen stores the exact `GearInstance` (never re-roll on accept). Mid-reward campaign/labyrinth progress is persisted in `activeRun.pendingReward` (gear stores full instances; cards/trinkets store choice ids).
+6. Keep owned items as unique `GearInstance` records with `affixIds`; never put definition objects or art URLs into save data. On load, `affixIds` win over legacy `modifiers` when both are present.
+7. Battle applies aggregated `gearEffects` from `computeGearManifest()` during battle creation.
+8. v1 affixes only cover the eight flat damage keywords; affinity tags like `archery` or `gold` are forward-looking for roll weighting until matching affixes ship.
+8. Update Gear save schemas/defaults and migration fixtures when instance or loadout shapes change. Additive `activeRun.pendingReward` and `gearBoardPositions` use schema defaults (no bump required).
+9. Cover pure operations, generation, persistence, reward selection, Armory interaction, and battle snapshot behavior.
 
 ---
 

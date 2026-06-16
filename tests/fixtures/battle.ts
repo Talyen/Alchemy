@@ -29,9 +29,9 @@ export function patchBattleState(patch: Partial<BattleState> = {}): BattleState 
     enemyStatuses: patch.enemyStatuses
       ? { ...base.enemyStatuses, ...patch.enemyStatuses }
       : base.enemyStatuses,
-    boonEffects: patch.boonEffects
-      ? { ...base.boonEffects, ...patch.boonEffects }
-      : base.boonEffects,
+    trinketEffects: patch.trinketEffects
+      ? { ...base.trinketEffects, ...patch.trinketEffects }
+      : base.trinketEffects,
     talentEffects: patch.talentEffects
       ? { ...base.talentEffects, ...patch.talentEffects }
       : base.talentEffects,

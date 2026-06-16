@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { defaultGearEffects } from "@/lib/gear";
 import { createBattleState } from "@/lib/battle/battle-setup";
 import { enemyBestiary, computeTalentEffects } from "@/lib/game-data";
 import type { BattleCard, BestiaryEntry, DifficultyModifier } from "@/lib/game-data";
@@ -8,7 +9,7 @@ import {
   ELITE_HP_MULTIPLIER,
   MAX_PLAYER_HEALTH,
 } from "@/lib/game-constants";
-import { defaultBoonEffects } from "@/lib/boons";
+import { defaultTrinketEffects } from "@/lib/trinkets";
 import { makeTestCard, seededRng } from "./test-state";
 
 function makeCard(overrides: Partial<BattleCard> = {}): BattleCard {
@@ -78,12 +79,12 @@ describe("createBattleState", () => {
       runDeck: battleDeck,
       currentEnemy: skeleton,
       talentEffects: talents,
-      boonIds: ["lucky-clover"],
+      trinketIds: ["lucky-clover"],
       rng: seededRng(42),
     });
     expect(result.talentEffects).toEqual(talents);
-    expect(result.boonEffects).not.toEqual(defaultBoonEffects);
-    expect(result.boonEffects.luckyCloverGoldChance).toBeGreaterThan(0);
+    expect(result.trinketEffects).not.toEqual(defaultTrinketEffects);
+    expect(result.trinketEffects.luckyCloverGoldChance).toBeGreaterThan(0);
     expect(result.talentEffects.physicalStunChance).toBe(10);
   });
 
@@ -93,10 +94,10 @@ describe("createBattleState", () => {
       runDeck: battleDeck,
       currentEnemy: skeleton,
       talentEffects: talents,
-      gearEffects: { flatPhysicalDamage: 2 },
+      gearEffects: { ...defaultGearEffects, flatPhysicalDamage: 2 },
       rng: seededRng(42),
     });
-    expect(result.gearEffects).toEqual({ flatPhysicalDamage: 2 });
+    expect(result.gearEffects).toEqual({ ...defaultGearEffects, flatPhysicalDamage: 2 });
     expect(result.talentEffects.flatPhysicalDamage).toBe(talents.flatPhysicalDamage);
   });
 

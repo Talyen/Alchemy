@@ -108,7 +108,7 @@ describe("applyWishEffect", () => {
 
   it("awards wishingWellGoldOnWish per wish", () => {
     const state = createTestBattleState({
-      boonEffects: { ...createTestBattleState().boonEffects, wishingWellGoldOnWish: 7 },
+      trinketEffects: { ...createTestBattleState().trinketEffects, wishingWellGoldOnWish: 7 },
     });
     const card = { id: "strike", title: "Strike", descriptionLines: [""], art: "", cost: 1, effects: [] };
     const texts: CombatTextEvent[] = [];
@@ -165,7 +165,7 @@ describe("applyWishEffect", () => {
         goldOnWish: 5,
         goldOnWishAmount: 3,
       },
-      boonEffects: { ...createTestBattleState().boonEffects, wishingWellGoldOnWish: 2 },
+      trinketEffects: { ...createTestBattleState().trinketEffects, wishingWellGoldOnWish: 2 },
     });
     const card = { id: "strike", title: "Strike", descriptionLines: [""], art: "", cost: 1, effects: [] };
     const texts: CombatTextEvent[] = [];
@@ -226,16 +226,16 @@ describe("chooseWishCard", () => {
 });
 
 describe("new wish talents", () => {
-  it("wishBoonChoice grants 1 forge or 1 armor depending on RNG", () => {
+  it("wishTrinketChoice grants 1 forge or 1 armor depending on RNG", () => {
     const card = { id: "strike", title: "Strike", descriptionLines: [""], art: "", cost: 1, effects: [] };
     const stateForge = createTestBattleState({
       playerStatuses: { ...createTestBattleState().playerStatuses, forge: 0, armor: 0 },
-      talentEffects: { ...createTestBattleState().talentEffects, wishBoonChoice: true },
+      talentEffects: { ...createTestBattleState().talentEffects, wishTrinketChoice: true },
       rng: () => 0.1, // < 0.5 -> forge
     });
     const stateArmor = createTestBattleState({
       playerStatuses: { ...createTestBattleState().playerStatuses, forge: 0, armor: 0 },
-      talentEffects: { ...createTestBattleState().talentEffects, wishBoonChoice: true },
+      talentEffects: { ...createTestBattleState().talentEffects, wishTrinketChoice: true },
       rng: () => 0.6, // >= 0.5 -> armor
     });
 

@@ -3,7 +3,7 @@
 // Reads shop/alchemist via useRunSessionShopSlice; writes via run-session-facade.
 import { useRef } from "react";
 import { getOfferableCardPool, getStandardPotionPool, type BattleCard } from "@/lib/game-data";
-import { computeBoonManifest } from "@/lib/boons";
+import { computeTrinketManifest } from "@/lib/trinkets";
 import { appendUnique } from "@/lib/utils";
 import { appendCardToRunWithDiscovery } from "@/features/alchemy/run-loop/run/deck-mutations";
 import { refreshOfferings, spendRunGold } from "@/features/alchemy/run-loop/shop-transactions";
@@ -43,7 +43,7 @@ export function useShopController({ run, talents }: { run: RunStateController; t
   ) {
     let price = Math.max(0, basePrice - discount);
     if (!firstPurchaseUsed && !discountConsumed.current) {
-      price = Math.max(0, price - computeBoonManifest(run.runBoons).merchantsFavorDiscount);
+      price = Math.max(0, price - computeTrinketManifest(run.runTrinkets).merchantsFavorDiscount);
       discountConsumed.current = true;
     }
     if (run.runGold < price) return null;

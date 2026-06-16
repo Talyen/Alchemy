@@ -131,7 +131,7 @@ export type TalentEffectManifest = {
   wishExtraChoiceChance: number;
   wishDrawsCard: boolean;
   manaOnWish: number;
-  wishBoonChoice: boolean;
+  wishTrinketChoice: boolean;
   wishBlockBelowHealthPct: number;
   wishCardsUpgraded: boolean;
 
@@ -164,8 +164,8 @@ export type TalentEffectManifest = {
   companionDamagePerManaCrystal: number;
   healOnManaGain: number;
 
-  // --- Boon ---
-  boonChanceBonus: number;
+  // --- Trinket ---
+  trinketChanceBonus: number;
 
   // --- Freeze ---
   freezeThresholdReduction: number;
@@ -205,7 +205,7 @@ export type TalentEffectManifest = {
   leechBleedChance: number;
   leechExecuteMultiplier: number;
   manaOnLeechChance: number;
-  boonSiphonChance: number;
+  trinketSiphonChance: number;
   leechPoisonChance: number;
   blockEnemyLeech: boolean;
   natureLeechChance: number;

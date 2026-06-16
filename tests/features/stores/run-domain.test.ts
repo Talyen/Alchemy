@@ -93,7 +93,7 @@ describe("initialize", () => {
       currentAct: 1,
       destinationIndexInAct: 2,
       completedDestinations: ["combat"],
-      runBoons: [],
+      runTrinkets: [],
       encounteredRunEnemyIds: [],
       selectedDifficulty: null,
       contentSystemType: "campaign",
@@ -103,6 +103,7 @@ describe("initialize", () => {
       runTalentXP: {},
       currentScreen: null,
       destinationChoices: [],
+      pendingReward: null,
     };
     getRunProgressStoreView().initialize(activeRun, { physical: 100 }, { physical: ["talent-1"] });
     expect(getRunProgressStoreView().characterId).toBe("rogue");
@@ -123,7 +124,7 @@ describe("initialize", () => {
       currentAct: 1,
       destinationIndexInAct: 2,
       completedDestinations: ["Normal Combat", "Corruption"],
-      runBoons: [],
+      runTrinkets: [],
       encounteredRunEnemyIds: [],
       selectedDifficulty: null,
       contentSystemType: "campaign",
@@ -133,6 +134,7 @@ describe("initialize", () => {
       runTalentXP: {},
       currentScreen: null,
       destinationChoices: [],
+      pendingReward: null,
     };
 
     getRunProgressStoreView().initialize(activeRun, {}, {});
@@ -161,7 +163,7 @@ describe("initialize", () => {
       currentAct: 1,
       destinationIndexInAct: 0,
       completedDestinations: [],
-      runBoons: [],
+      runTrinkets: [],
       encounteredRunEnemyIds: [],
       selectedDifficulty: null,
       contentSystemType: "campaign",
@@ -171,6 +173,7 @@ describe("initialize", () => {
       runTalentXP: {},
       currentScreen: "shop",
       destinationChoices: [],
+      pendingReward: null,
     };
     restoreRun(activeRun, {}, {});
     expect(getNavigationStoreView().screen).toBe("shop");
@@ -428,7 +431,7 @@ describe("hydrateFromSnapshot", () => {
       currentAct: 1,
       destinationIndexInAct: 0,
       completedDestinations: [],
-      runBoons: [],
+      runTrinkets: [],
       hasActiveRun: true,
     });
     expect(getRunProgressStoreView().runTalentXP).toEqual({});
@@ -587,7 +590,7 @@ describe("session facade API", () => {
       currentAct: getRunProgressStoreView().currentAct,
       destinationIndexInAct: getRunProgressStoreView().destinationIndexInAct,
       completedDestinations: getRunProgressStoreView().completedDestinations,
-      runBoons: getRunProgressStoreView().runBoons,
+      runTrinkets: getRunProgressStoreView().runTrinkets,
       encounteredRunEnemyIds: getRunProgressStoreView().encounteredRunEnemyIds,
       selectedDifficulty: getRunProgressStoreView().selectedDifficulty,
       contentSystemType: "campaign",
@@ -601,9 +604,50 @@ describe("session facade API", () => {
       runMaterialsEarned: getRunProgressStoreView().runMaterialsEarned,
       currentScreen: ROUTE_SCREENS.DESTINATION,
       destinationChoices: ["campfire", "shop"],
-      discoveredCardIdsAtRunStart: getRunProgressStoreView().discoveredCardIdsAtRunStart,
-      discoveredBoonIdsAtRunStart: getRunProgressStoreView().discoveredBoonIdsAtRunStart,
+      pendingReward: null,
+      wildwoodDraft: null,
     });
     expect(fromStores).toEqual(explicit);
+  });
+
+  it("snapshots pending rewards whenever choices are present", () => {
+    const instance = { instanceId: "gear-1", definitionId: "placeholder-ring" as const, affixIds: [] as const };
+    getRunSessionStoreView().setRewardState({
+      ...createEmptyRewardState(),
+      rewardType: "gear",
+      choices: [instance],
+      gold: 5,
+    });
+    const snap = snapshotRun(ROUTE_SCREENS.DESTINATION);
+    expect(snap.pendingReward).toEqual(
+      expect.objectContaining({
+        rewardType: "gear",
+        gearChoices: [instance],
+        gold: 5,
+      }),
+    );
+  });
+
+  it("snapshots and restores pending gear rewards on the rewards screen", () => {
+    const instance = { instanceId: "gear-1", definitionId: "placeholder-ring" as const, affixIds: [] as const };
+    getRunSessionStoreView().setRewardState({
+      ...createEmptyRewardState(),
+      rewardType: "gear",
+      choices: [instance],
+      gold: 5,
+    });
+    const snap = snapshotRun(ROUTE_SCREENS.REWARDS);
+    expect(snap.pendingReward).toEqual(
+      expect.objectContaining({
+        rewardType: "gear",
+        gearChoices: [instance],
+        gold: 5,
+      }),
+    );
+
+    getRunSessionStoreView().setRewardState(createEmptyRewardState());
+    restoreRun(snap, {}, {});
+    expect(getRunSessionStoreView().rewardState.rewardType).toBe("gear");
+    expect(getRunSessionStoreView().rewardState.choices).toEqual([instance]);
   });
 });

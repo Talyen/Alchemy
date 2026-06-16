@@ -1,5 +1,6 @@
 import { expect, type Page } from "@playwright/test";
-import { injectHomestead, openGameModeSelect, selectGameMode } from "../helpers";
+import { openGameModeSelect, selectGameMode } from "../e2e/navigation";
+import { injectHomestead } from "../e2e/save-injection";
 import type { GameMode } from "../e2e/types";
 import { GameStage } from "./game-stage";
 

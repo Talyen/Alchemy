@@ -19,7 +19,7 @@ export type RunStateFields = {
   currentAct: number;
   destinationIndexInAct: number;
   completedDestinations: Destination[];
-  runBoons: string[];
+  runTrinkets: string[];
   encounteredRunEnemyIds: string[];
   selectedDifficulty: DifficultyId | null;
   contentSystemType: ContentSystemId;
@@ -28,8 +28,6 @@ export type RunStateFields = {
   runMaterialsEarned: MaterialInventory;
   unlockedTalents: UnlockedTalents;
   initialized: boolean;
-  discoveredCardIdsAtRunStart: string[];
-  discoveredBoonIdsAtRunStart: string[];
 };
 
 const VALID_DESTINATIONS = new Set<Destination>(Object.values(DESTINATIONS));
@@ -53,7 +51,7 @@ export function createInitialRunState(
     completedDestinations: initialActiveRun?.completedDestinations?.length
       ? initialActiveRun.completedDestinations.filter((d): d is Destination => VALID_DESTINATIONS.has(d as Destination))
       : [],
-    runBoons: initialActiveRun?.runBoons ? [...initialActiveRun.runBoons] : [],
+    runTrinkets: initialActiveRun?.runTrinkets ? [...initialActiveRun.runTrinkets] : [],
     encounteredRunEnemyIds: initialActiveRun?.encounteredRunEnemyIds
       ? [...initialActiveRun.encounteredRunEnemyIds]
       : [],
@@ -64,12 +62,6 @@ export function createInitialRunState(
     runMaterialsEarned: initialActiveRun?.runMaterialsEarned ?? emptyInventory(),
     unlockedTalents: {},
     initialized: false,
-    discoveredCardIdsAtRunStart: initialActiveRun?.discoveredCardIdsAtRunStart
-      ? [...initialActiveRun.discoveredCardIdsAtRunStart]
-      : [],
-    discoveredBoonIdsAtRunStart: initialActiveRun?.discoveredBoonIdsAtRunStart
-      ? [...initialActiveRun.discoveredBoonIdsAtRunStart]
-      : [],
   };
 }
 
@@ -95,10 +87,8 @@ export function runFieldsFromSnapshot(
   | "currentAct"
   | "destinationIndexInAct"
   | "completedDestinations"
-  | "runBoons"
+  | "runTrinkets"
   | "encounteredRunEnemyIds"
-  | "discoveredCardIdsAtRunStart"
-  | "discoveredBoonIdsAtRunStart"
 > {
   return {
     characterId: snapshot.characterId,
@@ -112,9 +102,7 @@ export function runFieldsFromSnapshot(
     currentAct: snapshot.currentAct,
     destinationIndexInAct: snapshot.destinationIndexInAct,
     completedDestinations: snapshot.completedDestinations,
-    runBoons: snapshot.runBoons,
+    runTrinkets: snapshot.runTrinkets,
     encounteredRunEnemyIds: [],
-    discoveredCardIdsAtRunStart: [],
-    discoveredBoonIdsAtRunStart: [],
   };
 }

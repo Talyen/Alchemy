@@ -138,7 +138,7 @@ export const mysteryPool: MysteryEvent[] = [
       },
       {
         label: "Study the Map",
-        effects: [{ kind: "gainBoon", boonId: "smugglers-map" }],
+        effects: [{ kind: "gainTrinket", trinketId: "smugglers-map" }],
       },
     ],
   },
@@ -151,7 +151,7 @@ export const mysteryPool: MysteryEvent[] = [
     choices: [
       {
         label: "Explore the Crypt",
-        effects: [{ kind: "gainRandomBoon" }],
+        effects: [{ kind: "gainRandomTrinket" }],
       },
       {
         label: "Decipher the Inscriptions",
@@ -189,7 +189,7 @@ export const mysteryPool: MysteryEvent[] = [
       },
       {
         label: "Tear Out the Pages",
-        effects: [{ kind: "gainBoon", boonId: "tattered-pages" }],
+        effects: [{ kind: "gainTrinket", trinketId: "tattered-pages" }],
       },
     ],
   },
@@ -219,7 +219,7 @@ export const mysteryPool: MysteryEvent[] = [
     choices: [
       {
         label: "Collect a Fragment",
-        effects: [{ kind: "gainBoon", boonId: "meteorite" }, mat("iron", 3)],
+        effects: [{ kind: "gainTrinket", trinketId: "meteorite" }, mat("iron", 3)],
       },
       {
         label: "Study the Impact Site",
@@ -240,7 +240,7 @@ export const mysteryPool: MysteryEvent[] = [
       },
       {
         label: "Take the Bones",
-        effects: [{ kind: "gainBoon", boonId: "bone-charm" }],
+        effects: [{ kind: "gainTrinket", trinketId: "bone-charm" }],
       },
     ],
   },
@@ -257,7 +257,7 @@ export const mysteryPool: MysteryEvent[] = [
       },
       {
         label: "Search the Area",
-        effects: [{ kind: "gainBoon", boonId: "groves-favor" }],
+        effects: [{ kind: "gainTrinket", trinketId: "groves-favor" }],
       },
     ],
   },
@@ -373,7 +373,7 @@ export const mysteryPool: MysteryEvent[] = [
       },
       {
         label: "Claim the Censer",
-        effects: [{ kind: "gainBoon", boonId: "brass-censer" }],
+        effects: [{ kind: "gainTrinket", trinketId: "brass-censer" }],
       },
     ],
   },

@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { makeState, makeCard } from "./helpers";
 import { applyCardEffects, defaultTalentEffects } from "@/lib/battle";
 import { type CombatTextEvent } from "@/lib/battle/types";
-import { computeBoonManifest } from "@/lib/boons";
+import { computeTrinketManifest } from "@/lib/trinkets";
 
 vi.spyOn(Math, "random").mockReturnValue(0.99);
 
@@ -60,13 +60,13 @@ describe("dealDamageToEnemy — first-damage-doubled flags", () => {
   });
 
   it("brass-censer boon sets firstHolyDamageBonusUsed flag", () => {
-    const manifest = computeBoonManifest(["brass-censer"]);
+    const manifest = computeTrinketManifest(["brass-censer"]);
     const card = makeCard({ effects: [{ kind: "damage", damageType: "holy", amount: 4 }] });
     const texts: CombatTextEvent[] = [];
     const state = makeState({
       mana: 10, enemyHealth: 50, gold: 0,
       enemyStatuses: { burn: 0, poison: 0, bleed: 0, freeze: 0, stun: 0 },
-      boonEffects: manifest,
+      trinketEffects: manifest,
     });
     const result = applyCardEffects(state, card, texts);
     expect(result.flags.firstHolyDamageBonusUsed).toBe(true);

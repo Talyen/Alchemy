@@ -10,7 +10,101 @@ describe("gear save normalization", () => {
     );
   });
 
-  it("migrates persisted trinket terminology to boons", () => {
+  it("discards obsolete Gear trinkets and loadout slots while preserving valid Gear", () => {
+    const save = normalizeSaveData({
+      saveSchemaVersion: 5,
+      gearInventory: [
+        { instanceId: "body-1", definitionId: "placeholder-body", affixIds: [] },
+        { instanceId: "old-trinket", definitionId: "placeholder-trinket", affixIds: [] },
+      ],
+      gearLoadouts: {
+        knight: { body: "body-1", "trinket-1": "old-trinket" },
+      },
+    });
+
+    expect(save.gearInventory).toEqual([
+      { instanceId: "body-1", definitionId: "placeholder-body", affixIds: [] },
+    ]);
+    expect(save.gearLoadouts.knight.body).toBe("body-1");
+    expect(save.gearLoadouts.knight).not.toHaveProperty("trinket-1");
+  });
+
+  it("keeps only the first loadout reference when legacy saves equip one item multiple times", () => {
+    const save = normalizeSaveData({
+      saveSchemaVersion: 5,
+      gearInventory: [{ instanceId: "ring-1", definitionId: "placeholder-ring", affixIds: [] }],
+      gearLoadouts: {
+        knight: { "left-ring": "ring-1" },
+        rogue: { "right-ring": "ring-1" },
+      },
+    });
+
+    expect(save.gearLoadouts.knight["left-ring"]).toBe("ring-1");
+    expect(save.gearLoadouts.rogue["right-ring"]).toBeNull();
+  });
+
+  it("drops loadout references that are not present in gearInventory", () => {
+    const save = normalizeSaveData({
+      saveSchemaVersion: 5,
+      gearInventory: [{ instanceId: "body-1", definitionId: "placeholder-body", affixIds: [] }],
+      gearLoadouts: {
+        knight: { body: "body-1", helm: "missing-helm" },
+      },
+    });
+
+    expect(save.gearLoadouts.knight.body).toBe("body-1");
+    expect(save.gearLoadouts.knight.helm).toBeNull();
+  });
+
+  it("normalizes legacy physical modifiers when affix ids are absent", () => {
+    const save = normalizeSaveData({
+      saveSchemaVersion: 5,
+      gearInventory: [
+        {
+          instanceId: "body-1",
+          definitionId: "placeholder-body",
+          modifiers: [{ kind: "flatPhysicalDamage", value: 2 }],
+        },
+      ],
+    });
+
+    expect(save.gearInventory[0]?.affixIds).toEqual(["flat-physical-1", "flat-physical-1"]);
+  });
+
+  it("strips invalid affix ids during normalization", () => {
+    const save = normalizeSaveData({
+      saveSchemaVersion: 5,
+      gearInventory: [
+        {
+          instanceId: "body-1",
+          definitionId: "placeholder-body",
+          affixIds: ["flat-burn-1", "not-an-affix"],
+        },
+      ],
+    });
+
+    expect(save.gearInventory[0]?.affixIds).toEqual(["flat-burn-1"]);
+  });
+
+  it("defaults gear board positions to an empty record", () => {
+    const save = normalizeSaveData({ saveSchemaVersion: 5 });
+    expect(save.gearBoardPositions).toEqual({});
+  });
+
+  it("prunes board positions for items no longer in inventory", () => {
+    const save = normalizeSaveData({
+      saveSchemaVersion: 5,
+      gearInventory: [{ instanceId: "body-1", definitionId: "placeholder-body", affixIds: [] }],
+      gearBoardPositions: {
+        "body-1": { col: 2, row: 1 },
+        "missing-1": { col: 0, row: 0 },
+      },
+    });
+
+    expect(save.gearBoardPositions).toEqual({ "body-1": { col: 2, row: 1 } });
+  });
+
+  it("migrates persisted legacy trinket field names to trinkets", () => {
     const save = normalizeSaveData({
       saveSchemaVersion: 3,
       discoveredTrinketIds: ["bone-charm"],
@@ -28,7 +122,7 @@ describe("gear save normalization", () => {
         contentSystemType: "campaign",
       },
     });
-    expect(save.discoveredBoonIds).toEqual(["bone-charm"]);
-    expect(save.activeRun?.runBoons).toEqual(["bone-charm"]);
+    expect(save.discoveredTrinketIds).toEqual(["bone-charm"]);
+    expect(save.activeRun?.runTrinkets).toEqual(["bone-charm"]);
   });
 });

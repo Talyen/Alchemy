@@ -1,10 +1,8 @@
 // Destination choice screen — pick the next node on the map.
 import { useEffect, useMemo } from "react";
 
-import { keywordDefinitions } from "@/lib/game-data";
-
 import { playBattleEvent } from "@/lib/audio";
-import { getBossById, getBossEnemy, keywordAliases, SHINE_PALETTES } from "@/features/alchemy/shared/config";
+import { getBossById, getBossEnemy, getBossShineGradient } from "@/features/alchemy/shared/config";
 import { DestinationChoices, ScreenHeader } from "../../shared/ui/shared-ui";
 import { DESTINATIONS, type Destination } from "../../shared/types";
 import type { RewardState } from "../navigation/reward-flow";
@@ -34,36 +32,8 @@ export function DestinationScreen({
     [bossOnly, rewardState.selectedBossId],
   );
 
-  const bossShineColors = useMemo(() => {
-    if (!boss) return [];
-    const matchedIds = new Set<string>();
-
-    // Boss headers borrow the enemy's combat vocabulary so the warning colors match the fight.
-    const traitText = boss.traits.map((t) => t.description).join(" ");
-    for (const alias of keywordAliases) {
-      if (traitText.includes(alias.match)) {
-        matchedIds.add(alias.keywordId);
-      }
-    }
-
-    for (const effect of boss.attackEffects) {
-      if (effect.kind === "damage" && effect.damageType in keywordDefinitions) {
-        matchedIds.add(effect.damageType);
-      } else if (effect.kind === "player-status" && effect.status in keywordDefinitions) {
-        matchedIds.add(effect.status);
-      }
-    }
-
-    const colors: string[] = [];
-    for (const id of matchedIds) {
-      const def = keywordDefinitions[id as keyof typeof keywordDefinitions];
-      if (def?.shineColors) {
-        colors.push(...def.shineColors);
-      }
-    }
-    return colors.length > 0 ? colors : [...SHINE_PALETTES.bossVictoryFallback];
-  }, [boss]);
-  const bossTextGradient = `linear-gradient(60deg, ${bossShineColors.join(",")})`;
+  const bossForShine = useMemo(() => boss ?? (bossOnly ? getBossEnemy() : null), [boss, bossOnly]);
+  const bossTextGradient = bossForShine ? getBossShineGradient(bossForShine) : "";
 
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-6 px-4 py-6 text-center">
@@ -74,7 +44,7 @@ export function DestinationScreen({
               className="boss-title-shine bg-clip-text text-transparent [background-size:300%_300%]"
               style={{ backgroundImage: bossTextGradient }}
             >
-              {boss?.title ?? getBossEnemy().title}
+              {bossForShine?.title ?? getBossEnemy().title}
             </span>
           }
         />

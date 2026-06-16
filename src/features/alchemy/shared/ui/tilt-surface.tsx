@@ -33,12 +33,14 @@ type TiltSurfaceProps = {
   baseTransform?: string | undefined;
   style?: CSSProperties;
   onClick?: ((e: MouseEvent<HTMLButtonElement>) => void) | undefined;
+  onDoubleClick?: ((e: MouseEvent<HTMLButtonElement>) => void) | undefined;
   onDivClick?: ((e: MouseEvent<HTMLDivElement>) => void) | undefined;
   onPointerDown?: ((e: PointerEvent<HTMLButtonElement>) => void) | undefined;
   onFocus?: () => void;
   onBlur?: () => void;
   ariaLabel?: string;
   ariaPressed?: boolean;
+  ariaExpanded?: boolean | undefined;
   buttonRef?: Ref<HTMLButtonElement> | undefined;
   surfaceRef?: Ref<HTMLDivElement> | undefined;
   testId?: string;
@@ -71,12 +73,14 @@ export function TiltSurface({
   baseTransform,
   style,
   onClick,
+  onDoubleClick,
   onDivClick,
   onPointerDown,
   onFocus,
   onBlur,
   ariaLabel,
   ariaPressed,
+  ariaExpanded,
   buttonRef,
   surfaceRef,
   testId,
@@ -122,8 +126,10 @@ export function TiltSurface({
         type="button"
         aria-label={ariaLabel}
         {...(ariaPressed !== undefined ? { "aria-pressed": ariaPressed } : {})}
+        {...(ariaExpanded !== undefined ? { "aria-expanded": ariaExpanded } : {})}
         disabled={disabled}
         onClick={onClick}
+        onDoubleClick={onDoubleClick}
         onPointerDown={onPointerDown}
         onFocus={onFocus}
         onBlur={onBlur}
@@ -166,6 +172,7 @@ export function TiltSurface({
       role={onDivClick ? "button" : undefined}
       tabIndex={onDivClick ? 0 : undefined}
       aria-label={onDivClick ? ariaLabel : undefined}
+      {...(ariaExpanded !== undefined && onDivClick ? { "aria-expanded": ariaExpanded } : {})}
       onMouseMove={handleMouseMove}
       onMouseEnter={onMouseEnter}
       onMouseLeave={handleMouseLeave}
