@@ -15,8 +15,6 @@ import type {
   TrinketShopState,
   EquipmentShopState,
 } from "@/features/alchemy/run-loop/shop/shop-state-init";
-import type { Destination } from "@/features/alchemy/shared/types";
-import { getRunSession } from "./run-session-model";
 import {
   getRunDomainStore,
   getBattleStoreView,
@@ -44,16 +42,11 @@ import {
 
 export {
   getRunSession,
-  useRunSession,
   useRunSessionBattleContext,
-  useRunSessionBattleSlice,
   useRunSessionLabyrinthSlice,
   useRunSessionMysterySlice,
   useRunSessionNavigationSlice,
-  useRunSessionRunSlice,
   useRunSessionShopSlice,
-  useRunSessionTransientSlice,
-  useRunSessionValue,
 } from "./run-session-model";
 export {
   applyRunDefeatTeardown,
@@ -79,11 +72,6 @@ export function readActiveRunStore(): RunProgressStore {
 /** Imperative read of transient session fields (shops, labyrinth, mystery). */
 export function readRunSessionStore(): RunSessionStore {
   return getRunSessionStoreView();
-}
-
-/** Imperative read of navigation screen. */
-export function readNavigationScreen() {
-  return getRunDomainStore().navigation.screen;
 }
 
 /** Imperative read of battle domain slice. */
@@ -119,10 +107,6 @@ export function setWildwoodDraft(
 
 export function setRewardState(state: RewardState | ((prev: RewardState) => RewardState)) {
   getRunDomainStore().setRewardState(state);
-}
-
-export function applyDestinationChoices(choices: Destination[]) {
-  setRewardState((prev) => ({ ...prev, destinations: choices }));
 }
 
 export function setMysteryEvent(event: MysteryEvent | null) {
@@ -185,21 +169,4 @@ export function useActiveRunScreen() {
 /** Subscribe to navigation screen only (autosave, routing). */
 export function useActiveRunScreenValue(): Screen {
   return useRunDomainStore((s) => s.navigation.screen);
-}
-
-/** Map-layer gold plus in-combat gold (e.g. victory totals). */
-export function getCombinedRunGold(runGold?: number, battleGold?: number): number {
-  const run = runGold ?? readActiveRunStore().runGold;
-  const battle = battleGold ?? readBattleStore().battleState.gold;
-  return run + battle;
-}
-
-/** Current lifecycle phase from live stores and the active screen. */
-export function getCurrentRunPhase(screen?: Screen) {
-  return getRunSession(screen).phase;
-}
-
-/** Whether run domain bootstrap has completed. */
-export function readActiveRunInitialized(): boolean {
-  return getRunDomainStore().progress.initialized;
 }

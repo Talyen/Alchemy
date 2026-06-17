@@ -33,7 +33,12 @@ function makeMockAudioContext() {
 
 function lastCreatedSource(ctx: AudioContext) {
   const createBufferSource = ctx.createBufferSource as ReturnType<typeof vi.fn>;
-  return createBufferSource.mock.results.at(-1)?.value as { stop: ReturnType<typeof vi.fn> };
+  return createBufferSource.mock.results.at(-1)?.value as { start: ReturnType<typeof vi.fn>; stop: ReturnType<typeof vi.fn> };
+}
+
+function expectLastSourceStarted() {
+  const source = lastCreatedSource(audioState.context!);
+  expect(source.start).toHaveBeenCalledOnce();
 }
 
 beforeEach(() => {
@@ -80,61 +85,73 @@ describe("stopAllSfx", () => {
 });
 
 describe("playCardSound", () => {
-  it("does not throw for known card id", () => {
-    expect(() => playCardSound("slash")).not.toThrow();
+  it("plays audio for known card id", () => {
+    playCardSound("slash");
+    expect(audioState.context!.createBufferSource).toHaveBeenCalled();
+    expectLastSourceStarted();
   });
 
   it("does nothing for unknown card id", () => {
-    expect(() => playCardSound("nonexistent-card")).not.toThrow();
+    playCardSound("nonexistent-card");
+    expect(audioState.context!.createBufferSource).not.toHaveBeenCalled();
   });
 });
 
 describe("playGoldGain", () => {
-  it("does not throw", () => {
-    expect(() => playGoldGain()).not.toThrow();
+  it("plays gold gain audio", () => {
+    playGoldGain();
+    expectLastSourceStarted();
   });
 });
 
 describe("playGoldSpend", () => {
-  it("does not throw", () => {
-    expect(() => playGoldSpend()).not.toThrow();
+  it("plays gold spend audio", () => {
+    playGoldSpend();
+    expectLastSourceStarted();
   });
 });
 
 describe("playEnemyAttack", () => {
-  it("does not throw for known enemy id", () => {
-    expect(() => playEnemyAttack("skeleton")).not.toThrow();
+  it("plays audio for known enemy id", () => {
+    playEnemyAttack("skeleton");
+    expectLastSourceStarted();
   });
 
   it("does nothing for unknown enemy id", () => {
-    expect(() => playEnemyAttack("nonexistent-enemy")).not.toThrow();
+    playEnemyAttack("nonexistent-enemy");
+    expect(audioState.context!.createBufferSource).not.toHaveBeenCalled();
   });
 });
 
 describe("playBattleEvent", () => {
-  it("does not throw for known event", () => {
-    expect(() => playBattleEvent("playerHit")).not.toThrow();
+  it("plays audio for known event", () => {
+    playBattleEvent("playerHit");
+    expectLastSourceStarted();
   });
 });
 
 describe("playUISound", () => {
-  it("does not throw for known UI sound", () => {
-    expect(() => playUISound("buttonHover")).not.toThrow();
+  it("plays audio for known UI sound", () => {
+    playUISound("buttonHover");
+    expectLastSourceStarted();
   });
 
-  it("does not throw for error sound", () => {
-    expect(() => playUISound("error")).not.toThrow();
+  it("plays audio for error sound", () => {
+    playUISound("error");
+    expectLastSourceStarted();
   });
 });
 
 describe("playVictory", () => {
-  it("does not throw", () => {
-    expect(() => playVictory()).not.toThrow();
+  it("plays victory stinger", () => {
+    playVictory();
+    expectLastSourceStarted();
   });
 });
 
 describe("playDefeat", () => {
-  it("does not throw", () => {
-    expect(() => playDefeat()).not.toThrow();
+  it("plays defeat stinger", () => {
+    playDefeat();
+    expectLastSourceStarted();
   });
 });

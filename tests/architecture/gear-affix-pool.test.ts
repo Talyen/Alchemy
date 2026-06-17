@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { GEAR_AFFIX_COUNT } from "@/lib/game-constants";
-import { buildEligibleAffixPool } from "@/lib/gear/affix-pool";
+import { buildEligibleAffixPool } from "@/lib/gear/generation";
 import { gearDefinitions } from "@/lib/gear/definitions";
 
 describe("gear affix pool guard", () => {

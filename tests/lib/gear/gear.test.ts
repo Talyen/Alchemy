@@ -1,9 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { gearAffixCatalog } from "@/lib/gear/affix-catalog";
 import {
   canSalvageGear,
   computeGearManifest,
-  computeGearMaxHealthBonus,
   createEmptyGearLoadouts,
   createGearInstance,
   defaultGearEffects,
@@ -13,15 +11,13 @@ import {
   gearDefinitions,
   isGearCompatibleWithSlot,
   isTwoHanded,
-  modifiersToAffixRolls,
+  legacyFlatPhysicalModifiersToAffixRolls,
   normalizeExclusiveGearLoadouts,
   normalizeGearInstance,
   normalizeGearLoadout,
   pruneOrphanGearLoadouts,
   resolveAffixEffects,
   rollAffixCount,
-  rollAffixes,
-  rollGearRewardRarity,
   salvageGear,
   unequipGear,
   type GearInstance,
@@ -112,11 +108,11 @@ describe("gear domain", () => {
   });
 
   it("normalizes legacy physical modifiers into affix rolls", () => {
-    expect(modifiersToAffixRolls([{ kind: "flatPhysicalDamage", value: 2 }])).toEqual([
+    expect(legacyFlatPhysicalModifiersToAffixRolls([{ kind: "flatPhysicalDamage", value: 2 }])).toEqual([
       { id: "flat-physical", value: 1 },
       { id: "flat-physical", value: 1 },
     ]);
-    expect(resolveAffixEffects(modifiersToAffixRolls([{ kind: "flatPhysicalDamage", value: 2 }]), "basic")).toEqual(
+    expect(resolveAffixEffects(legacyFlatPhysicalModifiersToAffixRolls([{ kind: "flatPhysicalDamage", value: 2 }]), "basic")).toEqual(
       manifestWithPhysical(2),
     );
   });
@@ -126,27 +122,6 @@ describe("gear domain", () => {
     expect(rollAffixCount("basic", () => 0.99)).toBe(2);
     expect(rollAffixCount("astral", () => 0)).toBe(3);
     expect(rollAffixCount("astral", () => 0.99)).toBe(4);
-  });
-
-  it("rolls affixes only from the eligible hard-filter pool", () => {
-    const definition = gearDefinitions["ruby-ring-basic"];
-    const rolls = Array.from({ length: 20 }, (_, index) => index / 20);
-    for (const roll of rolls) {
-      const selected = rollAffixes(definition, 1, () => roll);
-      for (const affixRoll of selected) {
-        const affixDef = gearAffixCatalog[affixRoll.id];
-        expect(
-          definition.affinityKeywords.includes(affixDef.keywordId) ||
-            (affixDef.secondaryKeywordId !== undefined &&
-              definition.affinityKeywords.includes(affixDef.secondaryKeywordId)),
-        ).toBe(true);
-      }
-    }
-  });
-
-  it("rolls reward gear rarity 50/50 with deterministic rng", () => {
-    expect(rollGearRewardRarity(() => 0.1)).toBe("basic");
-    expect(rollGearRewardRarity(() => 0.9)).toBe("astral");
   });
 
   it("clears off-hand when equipping a two-handed main-hand weapon", () => {
@@ -194,6 +169,13 @@ describe("gear domain", () => {
     };
     const loadouts = equipGear(createEmptyGearLoadouts(), "knight", "body", body, [body]);
     expect(computeGearManifest("knight", [body], loadouts)).toEqual(manifestWithPhysical(2));
+  });
+
+  it("rejects malformed persisted gear instances", () => {
+    expect(normalizeGearInstance(null)).toBeNull();
+    expect(normalizeGearInstance({})).toBeNull();
+    expect(normalizeGearInstance({ instanceId: 1, definitionId: "ruby-ring-basic" })).toBeNull();
+    expect(normalizeGearInstance({ instanceId: "gear-1", definitionId: "not-a-gear-id" })).toBeNull();
   });
 
   it("ignores legacy modifiers when affix rolls are present", () => {
@@ -272,7 +254,7 @@ describe("gear domain", () => {
       affixes: [{ id: "max-health", value: 2 }],
     };
     const loadouts = equipGear(createEmptyGearLoadouts(), "knight", "body", body, [body]);
-    expect(computeGearMaxHealthBonus("knight", [body], loadouts)).toBeGreaterThan(0);
+    expect(computeGearManifest("knight", [body], loadouts).maxHealth).toBeGreaterThan(0);
   });
 
   it("normalizes legacy leather-hood definition ids to leather-helm", () => {

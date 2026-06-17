@@ -25,10 +25,10 @@ import {
   canOccupyVacatedInventoryPlacement,
   formatSalvageValue,
   footprintForInstance,
+  gearDefinitions,
   getGearInstanceTitle,
   INVENTORY_COLS,
   packInventoryWithPositions,
-  resolveGearDefinition,
   type GearInstance,
   type GearLoadouts,
   type GearSlot,
@@ -179,8 +179,8 @@ export function ArmoryScreen({
     onMoveItem: handleMoveItem,
   });
 
-  const salvageDefinition = salvageTarget ? resolveGearDefinition(salvageTarget.definitionId) : undefined;
-  const dragDefinition = dragVisual ? resolveGearDefinition(dragVisual.instance.definitionId) : undefined;
+  const salvageDefinition = salvageTarget ? gearDefinitions[salvageTarget.definitionId] : undefined;
+  const dragDefinition = dragVisual ? gearDefinitions[dragVisual.instance.definitionId] : undefined;
 
   return (
     <PageLayout>

@@ -2,7 +2,9 @@
 
 Step-by-step checklists for adding or changing game content and wiring.
 
-**Docs:** [AGENTS.md](../AGENTS.md) (rules) · [ARCHITECTURE.md](./ARCHITECTURE.md) (run state) · [REFERENCE.md](./REFERENCE.md) (commands, glossary, battle) · [CONTRIBUTING.md](../CONTRIBUTING.md) (hooks & tests) · [PROMPTS.md](../PROMPTS.md) (audits)
+For refactors and simplification passes on attached paths, use [PROMPTS.md](../PROMPTS.md) code-quality audits.
+
+**Docs:** [AGENTS.md](../AGENTS.md) (rules) · [ARCHITECTURE.md](./ARCHITECTURE.md) (run state) · [REFERENCE.md](./REFERENCE.md) (commands, glossary, battle) · [CONTRIBUTING.md](../CONTRIBUTING.md) (hooks & tests) · [PROMPTS.md](../PROMPTS.md) (code-quality audits)
 
 **Import paths:** only `@/*` → `src/*` in `tsconfig.json`. Use **on-disk** paths under `src/features/alchemy/` (e.g. `@/features/alchemy/shared/stores/run-session-facade`) — not legacy alias paths that skip `shared/`.
 
@@ -88,7 +90,7 @@ Player-earned materials must flow through `awardMaterialsDuringRun()` (`run-sess
 | 4. Tab switch fade only | `state-fade` class instead of `state-swap` when restagger on tab change is undesirable (options tabs) |
 | 5. Absolute / map nodes | Skip `StaggerItem` when the node uses `-translate-x/y` for centering; use panel-level enter only |
 
-Motion tokens and keyframes live in `src/index.css`. Hover/tap hard rules: [AGENTS.md § UI hard rules](../AGENTS.md#ui-hard-rules). Failure modes: [AGENTS.md § Common mistakes](../AGENTS.md#common-mistakes).
+Motion tokens and keyframes live in `src/index.css`. Hover/tap rules: [AGENTS.md — UI conventions](../AGENTS.md#ui-conventions). Debugging pitfalls: [AGENTS.md — Debugging](../AGENTS.md#debugging).
 
 ---
 
@@ -271,7 +273,7 @@ Cards in `cardLibrary` are automatically included in merchant shop, combat rewar
 | Step | File(s) |
 |---|---|
 | 1. Add to `DESTINATIONS` const | `src/lib/routing/destinations.ts` |
-| 2. Add to destination pool / availability | `src/lib/routing/destination-availability.ts` (re-exported from `features/alchemy/config/routes.ts`) |
+| 2. Add to destination pool / availability | `src/lib/routing/destination-availability.ts` |
 
 ---
 

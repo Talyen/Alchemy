@@ -3,13 +3,13 @@ import { playUISound } from "@/lib/audio";
 import type { CharacterId } from "@/lib/game-data";
 import {
   footprintForInstance,
+  gearDefinitions,
   INVENTORY_COLS,
   INVENTORY_VISIBLE_ROWS,
   findFirstInventoryPlacement,
   findNearestInventoryPlacement,
   inventoryPlacementRect,
   isGearCompatibleWithSlot,
-  resolveGearDefinition,
   type GearInstance,
   type GearLoadout,
   type GearSlot,
@@ -17,7 +17,22 @@ import {
   type PackedInventory,
 } from "@/lib/gear";
 import { readInventoryBoardMetrics } from "./read-inventory-board-metrics";
-import type { GearDragOrigin } from "./types";
+
+export type GearDragOrigin =
+  | { kind: "inventory"; placement: { col: number; row: number } }
+  | { kind: "equipment"; slot: GearSlot };
+
+export type GearPointerStart = (
+  instance: GearInstance,
+  origin: GearDragOrigin,
+  rect: DOMRect,
+  pointer: { x: number; y: number },
+  pointerId: number,
+) => void;
+
+export type GearPointerMove = (pointer: { x: number; y: number }, pointerId: number) => void;
+
+export type GearPointerEnd = (pointer: { x: number; y: number }, pointerId: number, cancelled?: boolean) => void;
 
 const INVENTORY_SNAP_RADIUS_CELLS = 0.28;
 const EQUIPMENT_SNAP_INSET_RATIO = 0.3;
@@ -153,7 +168,7 @@ export function useArmoryGearDrag({
 
   const getDragDestination = useCallback(
     (instance: GearInstance, freeRect: DragRect, pointer: DragPoint): DragDestination | null => {
-      const definition = resolveGearDefinition(instance.definitionId);
+      const definition = gearDefinitions[instance.definitionId];
       if (!definition) return null;
 
       const element = document.elementFromPoint(pointer.x, pointer.y);
@@ -271,7 +286,7 @@ export function useArmoryGearDrag({
 
   const beginGearPointer = useCallback(
     (instance: GearInstance, origin: GearDragOrigin, source: DragRect, pointer: DragPoint, pointerId: number) => {
-      if (!resolveGearDefinition(instance.definitionId)) return;
+      if (!gearDefinitions[instance.definitionId]) return;
       if (cleanupTimerRef.current !== null) {
         window.clearTimeout(cleanupTimerRef.current);
         cleanupTimerRef.current = null;
@@ -373,7 +388,7 @@ export function useArmoryGearDrag({
   const handleGearDoubleClick = useCallback(
     (instance: GearInstance, origin: GearDragOrigin, source: DragRect) => {
       if (!editable) return;
-      const definition = resolveGearDefinition(instance.definitionId);
+      const definition = gearDefinitions[instance.definitionId];
       if (!definition) return;
 
       if (origin.kind === "inventory") {

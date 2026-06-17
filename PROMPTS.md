@@ -1,79 +1,163 @@
-# Alchemy — Agent prompt stubs
+# Alchemy — Code quality audits
 
-Copy a section into your agent with the diff or target paths attached.
+Agent prompts for **code quality** — simplification, hardening, and readability. Copy a section into your agent with target paths or a diff attached. For domain wiring (cards, saves, screens, gear), use [WORKFLOWS.md](./docs/WORKFLOWS.md) and [CONTRIBUTING.md](./CONTRIBUTING.md) instead.
 
-**Docs:** [AGENTS.md](./AGENTS.md) (rules) · [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) (run state) · [docs/WORKFLOWS.md](./docs/WORKFLOWS.md) (how-to) · [docs/REFERENCE.md](./docs/REFERENCE.md) (commands, glossary, battle) · [CONTRIBUTING.md](./CONTRIBUTING.md) (hooks & tests)
+**Docs:** [AGENTS.md](./AGENTS.md) (rules) · [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) (run state) · [docs/WORKFLOWS.md](./docs/WORKFLOWS.md) (how-to) · [CONTRIBUTING.md](./CONTRIBUTING.md) (hooks & tests)
 
-**Pre-push:** `npm run lint:ci && npm test` · **Full gate:** `npm run check:push` ([CONTRIBUTING.md](./CONTRIBUTING.md))
+**Verification tiers:** narrow area tests from [CONTRIBUTING — What to run when you change](./CONTRIBUTING.md#what-to-run-when-you-change) · **Default gate:** `npm run lint:ci && npm test` · **Pre-push parity:** `npm run check:push` · **Save/ship:** `npm run check:ship`
 
 ---
 
-## Code reduction audit
+## How to use
 
-Audit for dead code, duplication, and unnecessary abstraction. Run `npm run deadcode`. See [AGENTS.md — Large / generated / heavy files](./AGENTS.md#large--generated--heavy-files).
+- **Attach context:** target paths, diff, or "audit entire module X"
+- **Mode:** `audit-only` (report findings, do not fix) or `fix in scope` (implement safe fixes within attached paths)
+- **Scope:** prefer `audit-only` for broad module reviews; `fix in scope` for targeted refactors
+- **Ordering:** run Simplicity + Over-engineering together for refactors; run Behavior hardening after functional fixes
+- **Output format:** numbered findings with severity (`blocker` / `warning` / `nit`), file path, and one-line fix; skip praise
+- **Dirty worktree:** scope edits to attached paths; do not run repo-wide formatters (see [AGENTS.md — Working safely](./AGENTS.md#working-safely))
 
-**When done:** `npm run lint:ci && npm test`
+Each audit below uses: **Goal** · **Check** · **Docs** · **When done**
+
+---
+
+## Audit index
+
+| When you want to… | Audit |
+|-------------------|-------|
+| Cut LOC, dead code, duplication | [Simplicity & LOC reduction](#simplicity--loc-reduction-audit) |
+| Remove unnecessary abstraction | [Over-engineering](#over-engineering-audit) |
+| Improve naming and flow | [Readability & clarity](#readability--clarity-audit) |
+| Fix unsafe typing | [Type safety](#type-safety-audit) |
+| Verify layer boundaries | [Architecture compliance](#architecture-compliance-audit) |
+| Strengthen edge cases and invariants | [Behavior hardening](#behavior-hardening-audit) |
+| Improve test signal-to-noise | [Test quality](#test-quality-audit) |
+
+---
+
+## Simplicity & LOC reduction audit
+
+**Goal:** Remove dead code, duplication, and unnecessary indirection without breaking generated outputs.
+
+**Check:**
+
+- Run `npm run deadcode` (knip; also runs inside `lint:ci`)
+- Unused exports, duplicate helpers, orphaned test files
+- Duplicate logic across files — consolidate or extract only when it reduces total LOC
+- Pass-through wrappers (re-export, thin delegate, alias function with no behavior)
+- Unnecessary intermediate types/interfaces used in one place
+- Split files only when cohesion is genuinely different; prefer deleting over splitting
+- Do not delete symbols only referenced from generated files (`gear-art.ts`, `metadata.generated.ts`) without running the asset/sync scripts
+
+**Docs:** [AGENTS.md — Generated and heavy files](./AGENTS.md#generated-and-heavy-files)
+
+**When done:** `npm run deadcode && npm run lint:ci && npm test`
+
+---
+
+## Over-engineering audit
+
+**Goal:** Remove abstraction that costs more than it saves.
+
+**Check:**
+
+- Generalization for a single caller (config objects, strategy/factory for 2 cases)
+- Unused extension points, hooks, or "future-proof" parameters
+- Indirection chains where the caller could use the underlying API directly
+- Duplicate state sources (derive instead of sync)
+- Comments explaining confusing code — prefer simplifying the code and deleting the comment
+- New dependencies or patterns inconsistent with the surrounding module
+
+**Docs:** [AGENTS.md — Architectural invariants](./AGENTS.md#architectural-invariants)
+
+**When done:** `npm run lint:ci && npm test` (narrow tests for touched paths)
+
+---
+
+## Readability & clarity audit
+
+**Goal:** Make code scannable without changing behavior.
+
+**Check:**
+
+- Names match domain vocabulary already used in the module
+- Functions do one obvious thing; extract only when it improves top-to-bottom reading
+- Prefer early returns over deep nesting (>3 levels)
+- Prefer plain data structures over clever types when both are correct
+- Match surrounding file conventions (imports, export style, error handling)
+- React: explicit `Props` types, plain function components (per [AGENTS.md — UI conventions](./AGENTS.md#ui-conventions))
+
+**Docs:** [AGENTS.md — UI conventions](./AGENTS.md#ui-conventions)
+
+**When done:** `npm run lint:ci`
 
 ---
 
 ## Type safety audit
 
-Hunt `any`, `@ts-expect-error`, and unsafe casts in changed files. Prefer narrowing and Zod at persistence boundaries. See [AGENTS.md — Key conventions](./AGENTS.md#key-conventions) and [WORKFLOWS — persisted save data](./docs/WORKFLOWS.md#change-persisted-save-data).
+**Goal:** Eliminate unsafe typing in changed files; keep persistence boundaries validated.
 
-**When done:** `npm run lint:ci && npm test`
+**Check:**
 
----
+- Hunt `any`, `@ts-expect-error`, `@ts-ignore`, `eslint-disable`, `as unknown as`, and non-null assertions at persistence boundaries
+- Prefer narrowing over assertion at boundaries
+- Zod/validation at save/load boundaries
 
-## Import boundary audit
-
-Verify changed files respect [AGENTS.md § Import boundaries](./AGENTS.md#import-boundaries-eslint) and [ARCHITECTURE.md § Import boundaries](./docs/ARCHITECTURE.md#import-boundaries). Run `npm run lint`.
-
-**When done:** `npm run lint:ci`
-
----
-
-## Battle mechanics audit
-
-Verify changes match [REFERENCE.md § Battle implementation rules](./docs/REFERENCE.md#battle-implementation-rules). Immutable `BattleState`, `state.rng`, `adjustEnemyStatusDelta()` for enemy status, static `enemyAttackEffects`.
-
-**When done:** `npm test -- tests/lib/battle`
-
----
-
-## New card / effect audit
-
-Follow [WORKFLOWS.md — task index](./docs/WORKFLOWS.md#task-index) and `src/lib/game-data/effects/BATTLE_HANDLERS.md`. One handler per effect kind in `lib/battle/effect-handlers/`.
-
-**When done:** `npm test -- tests/lib/game-data/descriptions-match-effects.test.ts && npm test -- tests/lib/battle`
-
----
-
-## Run materials audit
-
-Player-earned materials must use `awardMaterialsDuringRun()` — not `useHomesteadStore.addMaterials()` from run-loop code. See [WORKFLOWS § Grant materials](./docs/WORKFLOWS.md#grant-materials-during-a-run).
-
-**When done:** `npm test -- tests/features/run/run-victory-handlers.test.ts`
-
----
-
-## Save / migration audit
-
-Follow [WORKFLOWS.md — change persisted save data](./docs/WORKFLOWS.md#change-persisted-save-data). Update Zod schemas, `snapshotRun` / `restoreRun`, and storage tests.
-
-**When done:** `npm run check:ship` (redundant with `save-migration-guard` if that passes)
-
----
-
-## Screen / route audit
-
-New screens: `run-loop/screens/` or `meta/screens/` → `shared/screens/index.ts` → `src/app/screen-routes/`. No `React.lazy` on routes. See [WORKFLOWS.md — adding a new screen](./docs/WORKFLOWS.md#adding-a-new-screen).
-
-**When done:** `npm run lint:ci && npm test`
-
----
-
-## UI / motion audit
-
-Panel enter: [WORKFLOWS § Staggered screen enter](./docs/WORKFLOWS.md#staggered-screen-enter-motion). Hard rules: [AGENTS.md § UI hard rules](./AGENTS.md#ui-hard-rules). Failure modes: [AGENTS.md § Common mistakes](./AGENTS.md#common-mistakes).
+**Docs:** [AGENTS.md — Architectural invariants](./AGENTS.md#architectural-invariants) · [WORKFLOWS — persisted save data](./docs/WORKFLOWS.md#change-persisted-save-data)
 
 **When done:** `npm run lint:ci`
+
+---
+
+## Architecture compliance audit
+
+**Goal:** Verify changed files respect layer constraints and boundary patterns enforced by ESLint and project invariants.
+
+**Check:**
+
+- `eslint.config.js` is the source of truth for import boundaries
+- `src/lib/**` must not import `@/features/**`
+- Feature screens must not import run-loop orchestration
+- `src/lib/battle/**` remains framework-agnostic and must not import features
+- `shared/ui` receives run/battle/session data through props only
+- Features outside `shared/stores/` use `run-session-facade`, not `run-domain-store` directly
+
+**Docs:** [AGENTS.md — Import boundary summary](./AGENTS.md#import-boundary-summary) · [AGENTS.md — Architectural invariants](./AGENTS.md#architectural-invariants) · [ARCHITECTURE.md — Import boundaries](./docs/ARCHITECTURE.md#import-boundaries)
+
+**When done:** `npm run lint:ci` (+ architecture tests if facade/store paths touched)
+
+---
+
+## Behavior hardening audit
+
+**Goal:** Strengthen correctness at boundaries without defensive overkill.
+
+**Check:**
+
+- Null/undefined/empty paths at module boundaries handled explicitly (not silently ignored)
+- State transitions are idempotent where re-entry is possible (resume, retry, double-click)
+- No swallowed errors; failures surface or log with context
+- Invariants from [AGENTS.md — Architectural invariants](./AGENTS.md#architectural-invariants) respected in changed code (immutable battle state, materials via facade, etc.) — verify adherence, do not re-document wiring
+- Edge cases covered by existing tests; add tests only when fixing a real gap
+
+**Docs:** [AGENTS.md — Architectural invariants](./AGENTS.md#architectural-invariants) · [CONTRIBUTING — What to run when you change](./CONTRIBUTING.md#what-to-run-when-you-change)
+
+**When done:** targeted tests from [CONTRIBUTING — What to run when you change](./CONTRIBUTING.md#what-to-run-when-you-change)
+
+---
+
+## Test quality audit
+
+**Goal:** Tests protect behavior without adding maintenance burden.
+
+**Check:**
+
+- Assert outcomes, not implementation details
+- No trivial assertions (e.g. "function exists", "returns defined")
+- Duplicate setup — extract shared fixtures/helpers
+- Orphaned or copy-pasted test files
+- E2E: no dev-only QA shortcuts — no Skip Combat / Unlock All selectors or strings in specs; `enableFastMode` not in animation canary or animation-focused specs; `BattlePage.endTurn` works with animations on and off; prefer `winViaCombat()` or `playCardNamed()` over dev-only QA shortcuts
+
+**Docs:** [CONTRIBUTING — E2E helpers](./CONTRIBUTING.md#e2e-helpers)
+
+**When done:** relevant `npm test` paths + `npm run test:e2e:prepush` if battle/page helpers changed

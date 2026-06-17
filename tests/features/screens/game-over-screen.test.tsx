@@ -18,9 +18,9 @@ describe("GameOverScreen", () => {
       />,
     );
 
-    expect(screen.getByText("+12")).toBeTruthy();
-    expect(screen.getByText("+3")).toBeTruthy();
-    expect(screen.getByText("Physical")).toBeTruthy();
+    expect(screen.getByText("+12").isConnected).toBe(true);
+    expect(screen.getByText("+3").isConnected).toBe(true);
+    expect(screen.getByText("Physical").isConnected).toBe(true);
   });
 
   it("hides keyword section when runEndTalentXP is empty", () => {
@@ -34,6 +34,7 @@ describe("GameOverScreen", () => {
     );
 
     expect(screen.queryByText("+12")).toBeNull();
-    expect(screen.queryByText("Continue")).toBeTruthy();
+    expect(screen.queryByText("Physical")).toBeNull();
+    expect(screen.getByRole("button", { name: /continue/i }).isConnected).toBe(true);
   });
 });

@@ -1,9 +1,10 @@
 import { materialLabels, MATERIAL_IDS, type MaterialInventory } from "@/lib/homestead/types";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import { normalizeAffixRolls, resolveAffixEffects } from "./affixes";
-import { gearDefinitions } from "./definitions";
-import { mergeGearEffectManifests } from "./effect-manifest";
+import { gearDefinitions, gearInstanceRarity } from "./definitions";
+import { mergeGearEffectManifests } from "./gear-effect-manifest";
 import {
+  GEAR_CHARACTER_IDS,
   GEAR_SLOTS,
   defaultGearEffects,
   type GearDefinition,
@@ -11,11 +12,8 @@ import {
   type GearEffectManifest,
   type GearInstance,
   type GearLoadouts,
-  type GearModifier,
   type GearSlot,
 } from "./types";
-
-export { mergeGearEffectManifests, subtractGearEffectManifests } from "./effect-manifest";
 
 export function isGearCompatibleWithSlot(definition: GearDefinition, slot: GearSlot): boolean {
   return definition.compatibleSlots.includes(slot);
@@ -79,17 +77,17 @@ export function equipGear(
   if (!definition || !isGearCompatibleWithSlot(definition, slot)) return loadouts;
   if (!inventory.some((item) => item.instanceId === instance.instanceId)) return loadouts;
 
-  const next = Object.fromEntries(
-    Object.entries(loadouts).map(([currentCharacterId, loadout]) => [
-      currentCharacterId,
-      Object.fromEntries(
-        GEAR_SLOTS.map((currentSlot) => [
-          currentSlot,
-          loadout[currentSlot] === instance.instanceId ? null : loadout[currentSlot],
-        ]),
-      ),
-    ]),
-  ) as GearLoadouts;
+  const next: GearLoadouts = { ...loadouts };
+  for (const currentCharacterId of GEAR_CHARACTER_IDS) {
+    const loadout = loadouts[currentCharacterId];
+    const nextLoadout = { ...loadout };
+    for (const currentSlot of GEAR_SLOTS) {
+      if (loadout[currentSlot] === instance.instanceId) {
+        nextLoadout[currentSlot] = null;
+      }
+    }
+    next[currentCharacterId] = nextLoadout;
+  }
 
   const characterLoadout = { ...next[characterId], [slot]: instance.instanceId };
   next[characterId] = resolveHandConflicts(characterLoadout, slot, definition, inventory);
@@ -112,10 +110,6 @@ export function salvageGear(inventory: GearInstance[], loadouts: GearLoadouts, i
     inventory: inventory.filter((item) => item.instanceId !== instanceId),
     materials: gearDefinitions[instance.definitionId]?.salvageValue ?? emptyInventory(),
   };
-}
-
-function instanceRarity(instance: GearInstance): GearDefinition["rarity"] {
-  return gearDefinitions[instance.definitionId]?.rarity ?? "basic";
 }
 
 const LEGACY_GEAR_DEFINITION_IDS: Record<string, string> = {
@@ -147,31 +141,68 @@ const LEGACY_GEAR_DEFINITION_IDS: Record<string, string> = {
   "plate-shield-astral": "kite-shield-astral",
 };
 
-export function normalizeGearInstance(raw: {
-  instanceId?: string;
-  definitionId?: string;
-  affixes?: { id: string; value: number }[];
-  affixIds?: string[];
-  modifiers?: GearModifier[];
-}): GearInstance | null {
-  const definitionId = raw.definitionId
-    ? (LEGACY_GEAR_DEFINITION_IDS[raw.definitionId] ?? raw.definitionId)
-    : undefined;
-  if (!raw.instanceId || !definitionId || !gearDefinitions[definitionId]) return null;
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function readStringArray(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const strings = value.filter((entry): entry is string => typeof entry === "string");
+  return strings.length > 0 ? strings : undefined;
+}
+
+function readAffixEntries(value: unknown): { id: string; value: number }[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const entries = value.flatMap((entry) => {
+    if (!isRecord(entry)) return [];
+    const id = typeof entry.id === "string" ? entry.id : undefined;
+    const rollValue = entry.value;
+    if (!id || typeof rollValue !== "number") return [];
+    return [{ id, value: rollValue }];
+  });
+  return entries.length > 0 ? entries : undefined;
+}
+
+function readModifierEntries(value: unknown): { kind: string; value: number }[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const entries = value.flatMap((entry) => {
+    if (!isRecord(entry)) return [];
+    const kind = typeof entry.kind === "string" ? entry.kind : undefined;
+    const modifierValue = entry.value;
+    if (!kind || typeof modifierValue !== "number") return [];
+    return [{ kind, value: modifierValue }];
+  });
+  return entries.length > 0 ? entries : undefined;
+}
+
+export function normalizeGearInstance(raw: unknown): GearInstance | null {
+  if (!isRecord(raw)) return null;
+
+  const instanceId = typeof raw.instanceId === "string" ? raw.instanceId : undefined;
+  const rawDefinitionId = typeof raw.definitionId === "string" ? raw.definitionId : undefined;
+  if (!instanceId || !rawDefinitionId) return null;
+
+  const definitionId = LEGACY_GEAR_DEFINITION_IDS[rawDefinitionId] ?? rawDefinitionId;
+  if (!gearDefinitions[definitionId]) return null;
+
+  const affixInput: Parameters<typeof normalizeAffixRolls>[0] = {};
+  const affixes = readAffixEntries(raw.affixes);
+  const affixIds = readStringArray(raw.affixIds);
+  const modifiers = readModifierEntries(raw.modifiers);
+  if (affixes) affixInput.affixes = affixes;
+  if (affixIds) affixInput.affixIds = affixIds;
+  if (modifiers) affixInput.modifiers = modifiers;
 
   return {
-    instanceId: raw.instanceId,
+    instanceId,
     definitionId,
-    affixes: normalizeAffixRolls(raw),
+    affixes: normalizeAffixRolls(affixInput),
   };
 }
 
 export function effectsForInstance(instance: GearInstance): GearEffectManifest {
-  const definition = gearDefinitions[instance.definitionId];
-  if (!definition) return { ...defaultGearEffects };
-  const rarity = instanceRarity(instance) ?? "basic";
-  const affixEffects = resolveAffixEffects(instance.affixes, rarity);
-  return mergeGearEffectManifests({ ...definition.effects }, affixEffects);
+  if (!gearDefinitions[instance.definitionId]) return { ...defaultGearEffects };
+  return resolveAffixEffects(instance.affixes, gearInstanceRarity(instance));
 }
 
 export function computeGearManifest(
@@ -189,18 +220,15 @@ export function computeGearManifest(
   );
 }
 
-export function computeGearMaxHealthBonus(
-  characterId: GearCharacterId,
-  inventory: GearInstance[],
-  loadouts: GearLoadouts,
-): number {
-  return computeGearManifest(characterId, inventory, loadouts).maxHealth;
-}
-
-export function formatSalvageValue(materials: MaterialInventory): string {
+function formatSalvageMaterials(materials: MaterialInventory): string {
   const parts = MATERIAL_IDS.flatMap((id) => {
     const amount = materials[id];
     return amount > 0 ? [`${amount} ${materialLabels[id]}`] : [];
   });
-  return parts.length > 0 ? `Salvage for ${parts.join(", ")}` : "Salvage";
+  return parts.join(", ");
+}
+
+export function formatSalvageValue(materials: MaterialInventory): string {
+  const materialsText = formatSalvageMaterials(materials);
+  return materialsText.length > 0 ? `Salvage for ${materialsText}` : "Salvage";
 }

@@ -4,27 +4,21 @@ import { emitOverhealBlockText, mergeCombatText } from "./combat-text";
 import { getEnemyDamageMultiplier } from "./status-effects";
 import { applyPlayerHealing, type BattleState, type CombatTextEvent } from "./types";
 
-export function gearResistancePercent(gear: GearEffectManifest, damageType?: string): number {
-  switch (damageType) {
-    case "physical":
-      return gear.resistPhysical;
-    case "stun":
-      return gear.resistStun;
-    case "holy":
-      return gear.resistHoly;
-    case "burn":
-      return gear.resistBurn;
-    case "poison":
-      return gear.resistPoison;
-    case "bleed":
-      return gear.resistBleed;
-    case "freeze":
-      return gear.resistFreeze;
-    case "nature":
-      return gear.resistNature;
-    default:
-      return 0;
-  }
+const RESIST_BY_DAMAGE_TYPE: Record<string, keyof GearEffectManifest> = {
+  physical: "resistPhysical",
+  stun: "resistStun",
+  holy: "resistHoly",
+  burn: "resistBurn",
+  poison: "resistPoison",
+  bleed: "resistBleed",
+  freeze: "resistFreeze",
+  nature: "resistNature",
+};
+
+function gearResistancePercent(gear: GearEffectManifest, damageType?: string): number {
+  if (!damageType) return 0;
+  const key = RESIST_BY_DAMAGE_TYPE[damageType];
+  return key ? gear[key] : 0;
 }
 
 export function applyGearDamageResistance(

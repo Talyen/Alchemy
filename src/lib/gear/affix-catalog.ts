@@ -1,17 +1,9 @@
 import type { KeywordId } from "@/lib/game-data";
 import type { GearAffixId } from "./affix-ids";
-import { gearAffixNameParts, type GearAffixNameParts } from "./affix-name-parts";
 import type { GearEffectManifest } from "./gear-effect-manifest";
 import type { GearRarity } from "./types";
 
-export type { GearAffixNameParts } from "./affix-name-parts";
-
 export type GearAffixAspect = "offensive" | "defensive";
-
-export type GearAffixBinding = {
-  effectKey: keyof GearEffectManifest;
-  perPoint: number;
-};
 
 export type GearAffixDefinition = {
   id: GearAffixId;
@@ -19,15 +11,12 @@ export type GearAffixDefinition = {
   keywordId: KeywordId;
   secondaryKeywordId?: KeywordId;
   descriptionTemplate: string;
-  bindings: GearAffixBinding[];
+  effectKey: keyof GearEffectManifest;
   roll: { min: number; max: number };
   rarityScale: Record<GearRarity, number>;
-  nameParts: GearAffixNameParts;
 };
 
 const BASIC_ASTRAL_SCALE: Record<GearRarity, number> = { basic: 1, astral: 2 };
-const FLAT_SCALE: Record<GearRarity, number> = { basic: 1, astral: 2 };
-const CHANCE_SCALE: Record<GearRarity, number> = { basic: 1, astral: 1 };
 const PERCENT_SCALE: Record<GearRarity, number> = { basic: 1, astral: 2 };
 
 function affix(
@@ -39,7 +28,6 @@ function affix(
   roll: { min: number; max: number },
   rarityScale: Record<GearRarity, number> = BASIC_ASTRAL_SCALE,
   secondaryKeywordId?: KeywordId,
-  perPoint = 1,
 ): GearAffixDefinition {
   return {
     id,
@@ -47,10 +35,9 @@ function affix(
     keywordId,
     ...(secondaryKeywordId !== undefined ? { secondaryKeywordId } : {}),
     descriptionTemplate,
-    bindings: [{ effectKey, perPoint }],
+    effectKey,
     roll,
     rarityScale,
-    nameParts: gearAffixNameParts[id],
   };
 }
 
@@ -65,7 +52,7 @@ export const gearAffixCatalog: Record<GearAffixId, GearAffixDefinition> = {
       min: 1,
       max: 3,
     },
-    FLAT_SCALE,
+    BASIC_ASTRAL_SCALE,
   ),
   "flat-stun": affix(
     "flat-stun",
@@ -74,7 +61,7 @@ export const gearAffixCatalog: Record<GearAffixId, GearAffixDefinition> = {
     "Increases Stun damage by {value}",
     "flatStunDamage",
     { min: 1, max: 3 },
-    FLAT_SCALE,
+    BASIC_ASTRAL_SCALE,
   ),
   "flat-holy": affix(
     "flat-holy",
@@ -83,7 +70,7 @@ export const gearAffixCatalog: Record<GearAffixId, GearAffixDefinition> = {
     "Increases Holy damage by {value}",
     "flatHolyDamage",
     { min: 1, max: 3 },
-    FLAT_SCALE,
+    BASIC_ASTRAL_SCALE,
   ),
   "flat-burn": affix(
     "flat-burn",
@@ -92,7 +79,7 @@ export const gearAffixCatalog: Record<GearAffixId, GearAffixDefinition> = {
     "Increases Burn damage by {value}",
     "flatBurnDamage",
     { min: 1, max: 3 },
-    FLAT_SCALE,
+    BASIC_ASTRAL_SCALE,
   ),
   "flat-poison": affix(
     "flat-poison",
@@ -104,7 +91,7 @@ export const gearAffixCatalog: Record<GearAffixId, GearAffixDefinition> = {
       min: 1,
       max: 3,
     },
-    FLAT_SCALE,
+    BASIC_ASTRAL_SCALE,
   ),
   "flat-bleed": affix(
     "flat-bleed",
@@ -113,7 +100,7 @@ export const gearAffixCatalog: Record<GearAffixId, GearAffixDefinition> = {
     "Increases Bleed damage by {value}",
     "flatBleedDamage",
     { min: 1, max: 3 },
-    FLAT_SCALE,
+    BASIC_ASTRAL_SCALE,
   ),
   "flat-freeze": affix(
     "flat-freeze",
@@ -125,7 +112,7 @@ export const gearAffixCatalog: Record<GearAffixId, GearAffixDefinition> = {
       min: 1,
       max: 3,
     },
-    FLAT_SCALE,
+    BASIC_ASTRAL_SCALE,
   ),
   "flat-nature": affix(
     "flat-nature",
@@ -137,7 +124,7 @@ export const gearAffixCatalog: Record<GearAffixId, GearAffixDefinition> = {
       min: 1,
       max: 3,
     },
-    FLAT_SCALE,
+    BASIC_ASTRAL_SCALE,
   ),
   "start-block": affix("start-block", "defensive", "block", "Gain {value} Block at the start of combat", "startBlock", {
     min: 1,
@@ -169,7 +156,7 @@ export const gearAffixCatalog: Record<GearAffixId, GearAffixDefinition> = {
     "Poison has a {value}% chance to Leech",
     "poisonLeechChance",
     { min: 5, max: 10 },
-    CHANCE_SCALE,
+    { basic: 1, astral: 1 },
     "poison",
   ),
   "companion-damage": affix(
@@ -215,7 +202,7 @@ export const gearAffixCatalog: Record<GearAffixId, GearAffixDefinition> = {
     "{value}% chance for Physical damage to Bleed",
     "physicalBleedChance",
     { min: 5, max: 15 },
-    CHANCE_SCALE,
+    { basic: 1, astral: 1 },
     "physical",
   ),
   "burn-per-mana": affix(
@@ -259,7 +246,7 @@ export const gearAffixCatalog: Record<GearAffixId, GearAffixDefinition> = {
     "{value}% chance for Physical damage to Stun",
     "physicalStunChance",
     { min: 5, max: 15 },
-    CHANCE_SCALE,
+    { basic: 1, astral: 1 },
     "physical",
   ),
   "nature-leech": affix(
@@ -269,7 +256,7 @@ export const gearAffixCatalog: Record<GearAffixId, GearAffixDefinition> = {
     "Nature has a {value}% chance to Leech",
     "natureLeechChance",
     { min: 5, max: 10 },
-    CHANCE_SCALE,
+    { basic: 1, astral: 1 },
     "nature",
   ),
   "forge-on-burn": affix(
@@ -306,7 +293,7 @@ export const gearAffixCatalog: Record<GearAffixId, GearAffixDefinition> = {
       min: 1,
       max: 3,
     },
-    FLAT_SCALE,
+    BASIC_ASTRAL_SCALE,
   ),
   "damage-on-freeze": affix(
     "damage-on-freeze",
@@ -394,7 +381,7 @@ export const gearAffixCatalog: Record<GearAffixId, GearAffixDefinition> = {
     "Companions benefit from Forge",
     "companionBenefitsFromForge",
     { min: 1, max: 1 },
-    CHANCE_SCALE,
+    { basic: 1, astral: 1 },
     "forge",
   ),
   "gold-blessed-holy": affix(

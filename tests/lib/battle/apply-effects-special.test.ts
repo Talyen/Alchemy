@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { applyCardEffects } from "@/lib/battle/apply-effects";
+import { applyCardEffects, defaultTalentEffects } from "@/lib/battle";
 import { DAMAGE_TYPES } from "@/lib/game-data";
 import type { CombatTextEvent } from "@/lib/battle/types";
-import { makeTestBattleState, makeTestCard, seededRng } from "../../fixtures/battle";
+import { makeTestBattleState, makeTestCard, patchBattleState, seededRng } from "../../fixtures/battle";
 
 function makeState(overrides: Parameters<typeof makeTestBattleState>[0] = {}) {
   const enemyHealth = overrides.enemyHealth ?? 30;
@@ -142,5 +142,19 @@ describe("applyCardEffects — random-damage (Gambler's Shot)", () => {
 
     expect(result.enemyHealth).toBe(30 - expectedAmount);
     expect(texts.some((t) => t.kind === "damage" && t.stat === expectedType)).toBe(true);
+  });
+});
+
+describe("forge burn", () => {
+  it("applies the configured burn amount", () => {
+    const card = makeTestCard({ effects: [{ kind: "player-status", status: "forge", amount: 1 }] });
+    const texts: CombatTextEvent[] = [];
+    const state = patchBattleState({
+      playerStatuses: { forge: 2 },
+      talentEffects: { ...defaultTalentEffects, forgeBurnThreshold: 3, forgeBurnDamage: 6 },
+    });
+    const result = applyCardEffects(state, card, texts);
+    expect(result.enemyStatuses.burn).toBe(6);
+    expect(result.playerStatuses.forge).toBe(3);
   });
 });

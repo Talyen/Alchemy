@@ -18,51 +18,30 @@ import { CONSTANTS, type Destination, type Screen } from "../../shared/types";
 import type { ContentSystemId } from "@/lib/content-systems/types";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
 import { sampleItems } from "../../shared/utils";
+import {
+  resolveCardChoices,
+  resolveGearChoices,
+  resolveTrinketChoices,
+} from "@/lib/active-run-session/pending-reward-persistence";
 import { generateGearRewardChoices, type GearInstance } from "@/lib/gear";
+import {
+  createEmptyRewardState,
+  type CardRewardState,
+  type GearRewardState,
+  type RewardState,
+  type TrinketRewardState,
+} from "@/lib/active-run-session/reward-types";
 
-export type RewardStateBase = {
-  gold: number;
-  materials: MaterialInventory;
-  selectedId: string | null;
-  destinations: Destination[];
-  selectedBossId: string | null;
-  lastVictoryEnemyType: string | null;
-  lastVictoryContentSystem: ContentSystemId | null;
-};
-
-export type CardRewardState = RewardStateBase & {
-  rewardType: "card";
-  choices: BattleCard[];
-};
-
-export type TrinketRewardState = RewardStateBase & {
-  rewardType: "trinket";
-  choices: TrinketEntry[];
-};
-
-export type GearRewardState = RewardStateBase & {
-  rewardType: "gear";
-  choices: GearInstance[];
-};
-
-export type RewardState = CardRewardState | TrinketRewardState | GearRewardState;
+export type {
+  CardRewardState,
+  GearRewardState,
+  RewardState,
+  TrinketRewardState,
+} from "@/lib/active-run-session/reward-types";
+export { createEmptyRewardState } from "@/lib/active-run-session/reward-types";
 
 export function getRewardChoiceId(choice: BattleCard | TrinketEntry | GearInstance): string {
   return choice && typeof choice === "object" && "instanceId" in choice ? choice.instanceId : choice.id;
-}
-
-export function createEmptyRewardState(destinations: Destination[] = []): CardRewardState {
-  return {
-    choices: [],
-    gold: 0,
-    materials: emptyInventory(),
-    selectedId: null,
-    destinations,
-    rewardType: "card",
-    selectedBossId: null,
-    lastVictoryEnemyType: null,
-    lastVictoryContentSystem: null,
-  };
 }
 
 export function createNextRewardState(rewardState: RewardState): CardRewardState {
@@ -86,8 +65,6 @@ export type VictoryGoldInput = {
   goldMultiplier: number;
 };
 
-export type VictoryGoldTotalInput = Omit<VictoryGoldInput, "runGold" | "goldMultiplier">;
-
 export type VictoryGoldResult = {
   unmultipliedTotal: number;
   earnedBeforeMultiplier: number;
@@ -107,12 +84,10 @@ function hasRewardModifier(modifiers: EncounterRewardTraitId[], kind: EncounterR
   return modifiers.includes(kind);
 }
 
-function createModifierGuard(kind: EncounterRewardTraitId) {
-  return (modifiers: EncounterRewardTraitId[]): boolean => hasRewardModifier(modifiers, kind);
-}
-
-export const shouldGrantCompanionReward = createModifierGuard("companion");
-export const shouldGrantAlchemistReward = createModifierGuard("alchemist");
+export const shouldGrantCompanionReward = (modifiers: EncounterRewardTraitId[]): boolean =>
+  hasRewardModifier(modifiers, "companion");
+export const shouldGrantAlchemistReward = (modifiers: EncounterRewardTraitId[]): boolean =>
+  hasRewardModifier(modifiers, "alchemist");
 
 export function getActiveRewardModifiersForContentSystem(
   contentSystemType: ContentSystemId,
@@ -145,7 +120,7 @@ export function getRandomPotionCard(rng: () => number = Math.random): BattleCard
   const potionCards = getStandardPotionPool();
   const index = Math.floor(rng() * potionCards.length);
   if (process.env.NODE_ENV !== "production" && potionCards.length === 0) {
-    console.error("[reward-flow] getRandomPotionCard: no potion cards found in cardLibrary");
+    console.error("[reward-flow] getRandomPotionCard: no potion cards found in getStandardPotionPool()");
   }
   return potionCards[index];
 }
@@ -176,21 +151,7 @@ export function computeRewardGold(input: RewardGoldInput): number {
   );
 }
 
-export function getVictoryGoldTotal({
-  battleState,
-  runTrinkets,
-  gold,
-  eliteBonus,
-  generousBonus,
-  bossBonus,
-  talentGoldPerCombat,
-}: VictoryGoldTotalInput): number {
-  return (
-    battleState.gold + gold + sumGoldBonuses(eliteBonus + bossBonus, generousBonus, talentGoldPerCombat, runTrinkets)
-  );
-}
-
-export function computeVictoryGoldResult({
+export function computeVictoryGold({
   battleState,
   runGold,
   runTrinkets,
@@ -201,15 +162,8 @@ export function computeVictoryGoldResult({
   talentGoldPerCombat,
   goldMultiplier,
 }: VictoryGoldInput): VictoryGoldResult {
-  const unmultipliedTotal = getVictoryGoldTotal({
-    battleState,
-    runTrinkets,
-    gold,
-    eliteBonus,
-    generousBonus,
-    bossBonus,
-    talentGoldPerCombat,
-  });
+  const unmultipliedTotal =
+    battleState.gold + gold + sumGoldBonuses(eliteBonus + bossBonus, generousBonus, talentGoldPerCombat, runTrinkets);
   const earnedBeforeMultiplier = unmultipliedTotal - runGold;
   return {
     unmultipliedTotal,
@@ -223,14 +177,12 @@ export type FinalizeRewardRoute = (typeof CONSTANTS.REWARD_ROUTES)[keyof typeof 
 export type FinalizeRewardInput = {
   rewardState: RewardState;
   companionRewardCards: BattleCard[] | null;
-  grantAlchemistReward: boolean;
 };
 
 export type FinalizeRewardResult = {
   selectedChoice: BattleCard | TrinketEntry | GearInstance | null;
   selectedRewardType: RewardState["rewardType"];
   materials: MaterialInventory;
-  grantAlchemistReward: boolean;
   nextRewardState: CardRewardState;
   clearCompanionRewardCards: boolean;
   route: FinalizeRewardRoute;
@@ -250,11 +202,7 @@ function resolveRewardRoute(contentSystemType: ContentSystemId, currentEnemyType
     : CONSTANTS.REWARD_ROUTES.DESTINATION;
 }
 
-export function finalizeRewardState({
-  rewardState,
-  companionRewardCards,
-  grantAlchemistReward,
-}: FinalizeRewardInput): FinalizeRewardResult {
+export function finalizeRewardState({ rewardState, companionRewardCards }: FinalizeRewardInput): FinalizeRewardResult {
   const selectedChoice = rewardState.selectedId
     ? (rewardState.choices.find((choice) => getRewardChoiceId(choice) === rewardState.selectedId) ?? null)
     : null;
@@ -264,7 +212,6 @@ export function finalizeRewardState({
       selectedChoice,
       selectedRewardType: rewardState.rewardType,
       materials: rewardState.materials,
-      grantAlchemistReward,
       nextRewardState: {
         choices: companionRewardCards,
         gold: 0,
@@ -289,7 +236,6 @@ export function finalizeRewardState({
     selectedChoice,
     selectedRewardType: rewardState.rewardType,
     materials: rewardState.materials,
-    grantAlchemistReward,
     nextRewardState: createNextRewardState(rewardState),
     clearCompanionRewardCards: false,
     route,
@@ -305,39 +251,6 @@ export type RewardRouteTransitionHandlers = {
   setRewardState: (state: RewardState) => void;
 };
 
-type RewardRouteTransitionContext = {
-  materials: MaterialInventory;
-  nextRewardState: CardRewardState;
-  clearCompanion: boolean;
-  setReward: () => void;
-};
-
-const REWARD_ROUTE_HANDLERS: Record<
-  FinalizeRewardResult["route"],
-  (handlers: RewardRouteTransitionHandlers, ctx: RewardRouteTransitionContext) => void
-> = {
-  [CONSTANTS.REWARD_ROUTES.COMPANION_REWARD]: (handlers, { clearCompanion, setReward }) => {
-    if (clearCompanion) handlers.setCompanionRewardCards(null);
-    handlers.navigateTo(CONSTANTS.SCREENS.REWARDS, setReward);
-  },
-  [CONSTANTS.REWARD_ROUTES.LABYRINTH_VICTORY]: (handlers, { materials, setReward }) => {
-    handlers.completeRunVictory(materials, setReward);
-  },
-  [CONSTANTS.REWARD_ROUTES.WILDWOOD_VICTORY]: (handlers, { materials, setReward }) => {
-    handlers.completeRunVictory(materials, setReward);
-  },
-  [CONSTANTS.REWARD_ROUTES.LABYRINTH_MAP]: (handlers, { setReward }) => {
-    handlers.onLabyrinthClearNode();
-    handlers.navigateTo(CONSTANTS.SCREENS.LABYRINTH_MAP, setReward);
-  },
-  [CONSTANTS.REWARD_ROUTES.ACT_COMPLETE]: (handlers, { materials }) => {
-    handlers.handleActComplete(materials);
-  },
-  [CONSTANTS.REWARD_ROUTES.DESTINATION]: (handlers, { setReward }) => {
-    handlers.navigateTo(CONSTANTS.SCREENS.DESTINATION, setReward);
-  },
-};
-
 export function executeRewardRouteTransition(
   route: FinalizeRewardResult["route"],
   materials: MaterialInventory,
@@ -346,7 +259,28 @@ export function executeRewardRouteTransition(
   handlers: RewardRouteTransitionHandlers,
 ) {
   const setReward = () => handlers.setRewardState(nextRewardState);
-  REWARD_ROUTE_HANDLERS[route](handlers, { materials, nextRewardState, clearCompanion, setReward });
+  switch (route) {
+    case CONSTANTS.REWARD_ROUTES.COMPANION_REWARD:
+      if (clearCompanion) handlers.setCompanionRewardCards(null);
+      handlers.navigateTo(CONSTANTS.SCREENS.REWARDS, setReward);
+      break;
+    case CONSTANTS.REWARD_ROUTES.LABYRINTH_VICTORY:
+      handlers.completeRunVictory(materials, setReward);
+      break;
+    case CONSTANTS.REWARD_ROUTES.WILDWOOD_VICTORY:
+      handlers.completeRunVictory(materials, setReward);
+      break;
+    case CONSTANTS.REWARD_ROUTES.LABYRINTH_MAP:
+      handlers.onLabyrinthClearNode();
+      handlers.navigateTo(CONSTANTS.SCREENS.LABYRINTH_MAP, setReward);
+      break;
+    case CONSTANTS.REWARD_ROUTES.ACT_COMPLETE:
+      handlers.handleActComplete(materials);
+      break;
+    case CONSTANTS.REWARD_ROUTES.DESTINATION:
+      handlers.navigateTo(CONSTANTS.SCREENS.DESTINATION, setReward);
+      break;
+  }
 }
 
 type BossRewardInput = {
@@ -389,7 +323,7 @@ export function createBossRewardState({
   return {
     ...createEmptyRewardState(),
     rewardType: "gear",
-    choices: generateGearRewardChoices(REWARD_CARD_CHOICES, rng, { astralChanceBonus: gearAstralChanceBonus }),
+    choices: generateGearRewardChoices(REWARD_CARD_CHOICES, rng, gearAstralChanceBonus),
     gold: computeRewardGold({
       baseGold: gold,
       bonusGold: bossBonus,
@@ -419,7 +353,7 @@ export function createWildwoodRewardState(
     return {
       ...createEmptyRewardState(),
       rewardType: "gear",
-      choices: generateGearRewardChoices(REWARD_CARD_CHOICES, rng, { astralChanceBonus: gearAstralChanceBonus }),
+      choices: generateGearRewardChoices(REWARD_CARD_CHOICES, rng, gearAstralChanceBonus),
     };
   }
   if (rewardType === "trinket") {
@@ -443,15 +377,15 @@ export function restoreWildwoodRewardState(
   gearChoices: GearInstance[] = [],
 ): CardRewardState | TrinketRewardState | GearRewardState {
   if (rewardType === "gear") {
-    return { ...createEmptyRewardState(), rewardType: "gear", choices: gearChoices, selectedId };
+    const choices = resolveGearChoices(gearChoices) ?? [];
+    return { ...createEmptyRewardState(), rewardType: "gear", choices, selectedId };
   }
-  const library = rewardType === "card" ? getOfferableCardPool() : trinketLibrary;
-  const choices = choiceIds
-    .map((id) => library.find((entry) => entry.id === id))
-    .filter((entry): entry is BattleCard | TrinketEntry => Boolean(entry));
-  return rewardType === "card"
-    ? { ...createEmptyRewardState(), rewardType: "card", choices: choices as BattleCard[], selectedId }
-    : { ...createEmptyRewardState(), rewardType: "trinket", choices: choices as TrinketEntry[], selectedId };
+  if (rewardType === "card") {
+    const choices = resolveCardChoices(choiceIds) ?? [];
+    return { ...createEmptyRewardState(), rewardType: "card", choices, selectedId };
+  }
+  const choices = resolveTrinketChoices(choiceIds) ?? [];
+  return { ...createEmptyRewardState(), rewardType: "trinket", choices, selectedId };
 }
 
 export function createCombatRewardState({

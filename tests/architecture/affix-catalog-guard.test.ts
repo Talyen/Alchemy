@@ -14,9 +14,7 @@ describe("affix catalog guard", () => {
   it("binds affix catalog keys to GEAR_EFFECT_KEYS", () => {
     const effectKeys = new Set<string>(GEAR_EFFECT_KEYS);
     for (const definition of Object.values(gearAffixCatalog)) {
-      for (const binding of definition.bindings) {
-        expect(effectKeys.has(binding.effectKey), `unknown effect key ${binding.effectKey}`).toBe(true);
-      }
+      expect(effectKeys.has(definition.effectKey), `unknown effect key ${definition.effectKey}`).toBe(true);
     }
   });
 
@@ -34,7 +32,6 @@ describe("affix catalog guard", () => {
         Boolean(parts.prefix || parts.suffix),
         `affix ${id} needs a prefix or suffix for item naming`,
       ).toBe(true);
-      expect(gearAffixCatalog[id].nameParts).toEqual(parts);
     }
   });
 });

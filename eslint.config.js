@@ -401,6 +401,39 @@ export default tseslint.config(
     },
   },
 
+  // Animation specs must not disable animations via fastBattle or enableFastMode.
+  {
+    files: [
+      "tests/draw-discard-animations.spec.ts",
+      "tests/battle-end-turn-canary.spec.ts",
+    ],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "./fixtures/e2e",
+              message:
+                "Animation specs must use @playwright/test directly — fixtures/e2e enables fastBattle/enableFastMode.",
+            },
+          ],
+        },
+      ],
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: 'CallExpression[callee.name="enableFastMode"]',
+          message: "Do not call enableFastMode in animation-focused specs.",
+        },
+        {
+          selector: 'ImportDeclaration[source.value="./fixtures/e2e"]',
+          message: "Animation specs must use @playwright/test directly — fixtures/e2e enables fastBattle.",
+        },
+      ],
+    },
+  },
+
   // Ban React.lazy on route screens.
   {
     files: ["src/app/screen-routes/**/*.{ts,tsx}"],

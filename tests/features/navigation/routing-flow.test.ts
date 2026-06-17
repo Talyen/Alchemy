@@ -1,103 +1,64 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
   routeDestinationChoice,
-  type DestinationRouteHandlers,
 } from "@/features/alchemy/run-loop/run/run-destination-handlers";
 import { DESTINATIONS, type Destination } from "@/features/alchemy/shared/types";
+import { makeDestinationRouteHandlers } from "../../helpers/destination-route-handlers";
 
-function makeHandlers(): DestinationRouteHandlers {
-  return {
-    navigateTo: vi.fn(),
-    beginMysteryEvent: vi.fn(),
-    resetCorruption: vi.fn(),
-    startShop: vi.fn(),
-    startAlchemist: vi.fn(),
-    startTrinketShop: vi.fn(),
-    startEquipmentShop: vi.fn(),
-    startBattle: vi.fn(),
-    startBossBattle: vi.fn(),
-  };
-}
+const ROUTE_CASES: {
+  destination: Destination;
+  expectedScreen: string;
+  startShop?: boolean;
+  startAlchemist?: boolean;
+  startTrinketShop?: boolean;
+  startEquipmentShop?: boolean;
+  beginMystery?: boolean;
+  resetCorruption?: boolean;
+  battleType?: "normal" | "elite";
+  bossBattle?: boolean;
+}[] = [
+  { destination: DESTINATIONS.CAMPFIRE, expectedScreen: "campfire" },
+  { destination: DESTINATIONS.MERCHANT_SHOP, expectedScreen: "shop", startShop: true },
+  { destination: DESTINATIONS.ALCHEMIST_SHOP, expectedScreen: "alchemist", startAlchemist: true },
+  { destination: DESTINATIONS.TRINKET_SHOP, expectedScreen: "trinket-shop", startTrinketShop: true },
+  { destination: DESTINATIONS.EQUIPMENT_SHOP, expectedScreen: "equipment-shop", startEquipmentShop: true },
+  { destination: DESTINATIONS.MYSTERY, expectedScreen: "", beginMystery: true },
+  { destination: DESTINATIONS.CORRUPTION, expectedScreen: "corruption", resetCorruption: true },
+  { destination: DESTINATIONS.ELITE_COMBAT, expectedScreen: "battle", battleType: "elite" },
+  { destination: DESTINATIONS.BOSS_COMBAT, expectedScreen: "battle", bossBattle: true },
+  { destination: DESTINATIONS.NORMAL_COMBAT, expectedScreen: "battle", battleType: "normal" },
+];
 
 describe("routeDestinationChoice", () => {
-  it("routes Campfire to navigateTo campfire", () => {
-    const handlers = makeHandlers();
-    routeDestinationChoice(DESTINATIONS.CAMPFIRE, handlers);
-    expect(handlers.navigateTo).toHaveBeenCalledWith("campfire");
-    expect(handlers.startBattle).not.toHaveBeenCalled();
-    expect(handlers.startBossBattle).not.toHaveBeenCalled();
-  });
+  it.each(ROUTE_CASES)("routes $destination to the expected screen and handlers", (testCase) => {
+    const handlers = makeDestinationRouteHandlers();
+    routeDestinationChoice(testCase.destination, handlers);
 
-  it("routes Merchant Shop to startShop and navigateTo shop", () => {
-    const handlers = makeHandlers();
-    routeDestinationChoice(DESTINATIONS.MERCHANT_SHOP, handlers);
-    expect(handlers.startShop).toHaveBeenCalledOnce();
-    expect(handlers.navigateTo).toHaveBeenCalledWith("shop");
-    expect(handlers.startBattle).not.toHaveBeenCalled();
-  });
+    if (testCase.beginMystery) {
+      expect(handlers.beginMysteryEvent).toHaveBeenCalledOnce();
+      expect(handlers.navigateTo).not.toHaveBeenCalled();
+      return;
+    }
 
-  it("routes Alchemist Shop to startAlchemist and navigateTo alchemist", () => {
-    const handlers = makeHandlers();
-    routeDestinationChoice(DESTINATIONS.ALCHEMIST_SHOP, handlers);
-    expect(handlers.startAlchemist).toHaveBeenCalledOnce();
-    expect(handlers.navigateTo).toHaveBeenCalledWith("alchemist");
-    expect(handlers.startBattle).not.toHaveBeenCalled();
-  });
-
-  it("routes Trinket Shop to startTrinketShop and navigateTo trinket-shop", () => {
-    const handlers = makeHandlers();
-    routeDestinationChoice(DESTINATIONS.TRINKET_SHOP, handlers);
-    expect(handlers.startTrinketShop).toHaveBeenCalledOnce();
-    expect(handlers.navigateTo).toHaveBeenCalledWith("trinket-shop");
-  });
-
-  it("routes Equipment Shop to startEquipmentShop and navigateTo equipment-shop", () => {
-    const handlers = makeHandlers();
-    routeDestinationChoice(DESTINATIONS.EQUIPMENT_SHOP, handlers);
-    expect(handlers.startEquipmentShop).toHaveBeenCalledOnce();
-    expect(handlers.navigateTo).toHaveBeenCalledWith("equipment-shop");
-  });
-
-  it("routes Mystery to beginMysteryEvent", () => {
-    const handlers = makeHandlers();
-    routeDestinationChoice(DESTINATIONS.MYSTERY, handlers);
-    expect(handlers.beginMysteryEvent).toHaveBeenCalledOnce();
-    expect(handlers.navigateTo).not.toHaveBeenCalled();
-    expect(handlers.startBattle).not.toHaveBeenCalled();
-  });
-
-  it("routes Corruption to resetCorruption and navigateTo corruption", () => {
-    const handlers = makeHandlers();
-    routeDestinationChoice(DESTINATIONS.CORRUPTION, handlers);
-    expect(handlers.resetCorruption).toHaveBeenCalledOnce();
-    expect(handlers.navigateTo).toHaveBeenCalledWith("corruption");
-    expect(handlers.startBattle).not.toHaveBeenCalled();
-  });
-
-  it("routes Elite Combat to startBattle elite and navigateTo battle", () => {
-    const handlers = makeHandlers();
-    routeDestinationChoice(DESTINATIONS.ELITE_COMBAT, handlers);
-    expect(handlers.startBattle).toHaveBeenCalledWith("elite");
-    expect(handlers.navigateTo).toHaveBeenCalledWith("battle");
-  });
-
-  it("routes Boss Combat to startBossBattle and navigateTo battle", () => {
-    const handlers = makeHandlers();
-    routeDestinationChoice(DESTINATIONS.BOSS_COMBAT, handlers);
-    expect(handlers.startBossBattle).toHaveBeenCalledOnce();
-    expect(handlers.navigateTo).toHaveBeenCalledWith("battle");
-    expect(handlers.startBattle).not.toHaveBeenCalled();
-  });
-
-  it("routes Normal Combat to startBattle normal and navigateTo battle", () => {
-    const handlers = makeHandlers();
-    routeDestinationChoice(DESTINATIONS.NORMAL_COMBAT, handlers);
-    expect(handlers.startBattle).toHaveBeenCalledWith("normal");
-    expect(handlers.navigateTo).toHaveBeenCalledWith("battle");
+    expect(handlers.navigateTo).toHaveBeenCalledWith(testCase.expectedScreen);
+    if (testCase.startShop) expect(handlers.startShop).toHaveBeenCalledOnce();
+    if (testCase.startAlchemist) expect(handlers.startAlchemist).toHaveBeenCalledOnce();
+    if (testCase.startTrinketShop) expect(handlers.startTrinketShop).toHaveBeenCalledOnce();
+    if (testCase.startEquipmentShop) expect(handlers.startEquipmentShop).toHaveBeenCalledOnce();
+    if (testCase.resetCorruption) expect(handlers.resetCorruption).toHaveBeenCalledOnce();
+    if (testCase.bossBattle) {
+      expect(handlers.startBossBattle).toHaveBeenCalledOnce();
+      expect(handlers.startBattle).not.toHaveBeenCalled();
+    } else if (testCase.battleType) {
+      expect(handlers.startBattle).toHaveBeenCalledWith(testCase.battleType);
+    } else {
+      expect(handlers.startBattle).not.toHaveBeenCalled();
+      expect(handlers.startBossBattle).not.toHaveBeenCalled();
+    }
   });
 
   it("falls through to normal combat for unknown destinations", () => {
-    const handlers = makeHandlers();
+    const handlers = makeDestinationRouteHandlers();
     routeDestinationChoice("Unknown Destination" as unknown as Destination, handlers);
     expect(handlers.startBattle).toHaveBeenCalledWith("normal");
     expect(handlers.navigateTo).toHaveBeenCalledWith("battle");

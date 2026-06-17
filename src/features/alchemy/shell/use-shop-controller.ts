@@ -44,7 +44,6 @@ import {
   setTrinketShopState,
   setEquipmentShopState,
 } from "@/features/alchemy/shared/stores/run-session-facade";
-import { readRunSessionStore } from "@/features/alchemy/shared/stores/run-session-facade";
 import type { RunStateController, TalentStateController } from "@/features/alchemy/shared/stores/run-session-facade";
 import type { GearInstance } from "@/lib/gear";
 import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
@@ -158,13 +157,8 @@ export function useShopController({
     return computeShopRefreshPrice(ALCHEMIST_REFRESH_PRICE, talents.talentEffects.shopFreeRefresh, refreshesLeft);
   }
 
-  function getTrinketRefreshPrice(refreshesLeft: number) {
-    return computeShopRefreshPrice(SHOP_REFRESH_PRICE, talents.talentEffects.shopFreeRefresh, refreshesLeft);
-  }
-
-  function getEquipmentRefreshPrice(refreshesLeft: number) {
-    return computeShopRefreshPrice(SHOP_REFRESH_PRICE, talents.talentEffects.shopFreeRefresh, refreshesLeft);
-  }
+  const getTrinketRefreshPrice = getShopRefreshPrice;
+  const getEquipmentRefreshPrice = getShopRefreshPrice;
 
   function getRemoveCardPrice() {
     return computeShopServicePrice(SHOP_REMOVE_PRICE, talents.talentEffects.removeCardDiscount);
@@ -175,13 +169,12 @@ export function useShopController({
   }
 
   function handleShopBuyCard(card: BattleCard, slotKey: string): boolean {
-    const { firstPurchaseUsed } = readRunSessionStore().shopState;
     const { haggleDiscount, apothecaryDiscount } = getCardBuyTalentDiscounts(card, talents.talentEffects);
     return purchaseItem(
       SHOP_CARD_PRICE,
       haggleDiscount,
       apothecaryDiscount,
-      firstPurchaseUsed,
+      shopState.firstPurchaseUsed,
       shopDiscountConsumed,
       () =>
         setShopState((p) => ({
@@ -216,7 +209,6 @@ export function useShopController({
       mapState: (p, cards) => ({
         ...p,
         cards,
-        items: cards,
         refreshesLeft: p.refreshesLeft - 1,
         purchasedSlotKeys: [],
       }),
@@ -225,13 +217,12 @@ export function useShopController({
   }
 
   function handleAlchemistBuyCard(card: BattleCard, slotKey: string): boolean {
-    const { firstPurchaseUsed } = readRunSessionStore().alchemistState;
     const { haggleDiscount, apothecaryDiscount } = getCardBuyTalentDiscounts(card, talents.talentEffects);
     return purchaseItem(
       ALCHEMIST_POTION_PRICE,
       haggleDiscount,
       apothecaryDiscount,
-      firstPurchaseUsed,
+      alchemistState.firstPurchaseUsed,
       alchemistDiscountConsumed,
       () =>
         setAlchemistState((p) => ({
@@ -257,7 +248,6 @@ export function useShopController({
       mapState: (p, potions) => ({
         ...p,
         potions,
-        items: potions,
         refreshesLeft: p.refreshesLeft - 1,
         purchasedSlotKeys: [],
       }),
@@ -283,13 +273,12 @@ export function useShopController({
   }
 
   function handleTrinketShopBuy(trinket: TrinketEntry, slotKey: string): boolean {
-    const { firstPurchaseUsed } = readRunSessionStore().trinketShopState;
     const { haggleDiscount, apothecaryDiscount } = getGenericBuyTalentDiscounts(talents.talentEffects);
     return purchaseItem(
       TRINKET_SHOP_TRINKET_PRICE,
       haggleDiscount,
       apothecaryDiscount,
-      firstPurchaseUsed,
+      trinketShopState.firstPurchaseUsed,
       trinketDiscountConsumed,
       () =>
         setTrinketShopState((p) => ({
@@ -313,7 +302,6 @@ export function useShopController({
       mapState: (p, trinkets) => ({
         ...p,
         trinkets: trinkets as TrinketEntry[],
-        items: trinkets as TrinketEntry[],
         refreshesLeft: p.refreshesLeft - 1,
         purchasedSlotKeys: [],
       }),
@@ -321,13 +309,12 @@ export function useShopController({
   }
 
   function handleEquipmentShopBuy(instance: GearInstance): boolean {
-    const { firstPurchaseUsed } = readRunSessionStore().equipmentShopState;
     const { haggleDiscount, apothecaryDiscount } = getGenericBuyTalentDiscounts(talents.talentEffects);
     return purchaseItem(
       getEquipmentShopPrice(instance),
       haggleDiscount,
       apothecaryDiscount,
-      firstPurchaseUsed,
+      equipmentShopState.firstPurchaseUsed,
       equipmentDiscountConsumed,
       () =>
         setEquipmentShopState((p) => ({
@@ -351,7 +338,6 @@ export function useShopController({
       mapState: (p, gear) => ({
         ...p,
         gear: gear as GearInstance[],
-        items: gear as GearInstance[],
         refreshesLeft: p.refreshesLeft - 1,
         purchasedSlotKeys: [],
       }),
@@ -395,11 +381,7 @@ export function useShopController({
     getEquipmentRefreshPrice,
     getRemoveCardPrice,
     getMixPotionPrice,
-    get shopCards() {
-      return readRunSessionStore().shopState.cards;
-    },
-    get alchemistPotions() {
-      return alchemistState.potions;
-    },
+    shopCards: shopState.cards,
+    alchemistPotions: alchemistState.potions,
   };
 }

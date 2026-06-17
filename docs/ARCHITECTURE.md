@@ -94,7 +94,7 @@ Run domain types live in `run-domain-types.ts` / `run-domain-store.ts` (stores l
 
 ## Import boundaries
 
-Enforced in `eslint.config.js`. **Full ESLint layer table:** [AGENTS.md § Import boundaries](../AGENTS.md#import-boundaries-eslint). Summary:
+Enforced in `eslint.config.js`. **Full ESLint layer table:** [AGENTS.md — Import boundary summary](../AGENTS.md#import-boundary-summary). Summary:
 
 - `src/lib/**` must not import `@/features/**`
 - Feature code outside `shared/stores/` uses `run-session-facade`, not `run-domain-store` directly

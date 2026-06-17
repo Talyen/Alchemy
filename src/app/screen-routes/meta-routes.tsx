@@ -17,7 +17,7 @@ import { useAppActions, useHomesteadActions } from "@/features/alchemy/shared/st
 import { useRunDomainStore } from "@/features/alchemy/shared/stores/run-session-facade";
 import type { ScreenRouteContext } from "./types";
 import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
-import { generateDevRandomGearInstance, isArmoryLocked as getIsArmoryLocked } from "@/lib/gear";
+import { generateDevRandomGearInstance } from "@/lib/gear";
 import { flushAlchemySaveNow } from "@/features/alchemy/shared/storage/flush-save";
 import { resolveActiveRunForSave, syncRunMaxHealthFromGear } from "@/features/alchemy/shared/stores/run-transitions";
 import { isAlchemyDevBuild } from "@/features/alchemy/shared/utils/dev-mode";
@@ -26,7 +26,7 @@ import type { GearInstance, GearSlot, InventoryPlacement } from "@/lib/gear";
 
 function MenuScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions">) {
   const { hasUnspentTalents, hasAffordableHomestead } = useAppScreenChrome();
-  const isArmoryLocked = useGearStore((s) => getIsArmoryLocked(s.inventory));
+  const isArmoryLocked = useGearStore((s) => s.inventory.length === 0);
   return (
     <MenuScreen
       onPlay={() => a.navigation.goToScreen("game-mode-select")}

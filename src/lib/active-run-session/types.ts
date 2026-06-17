@@ -6,9 +6,9 @@ import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { Screen } from "@/lib/routing";
 import type { GearInstance } from "@/lib/gear";
-import type { PersistedPendingReward } from "./pending-reward";
+import type { PersistedPendingReward } from "@/lib/validation/save-schemas/active-run";
 
-export type { PersistedPendingReward } from "./pending-reward";
+export type { PersistedPendingReward };
 
 export type PersistedShopState = {
   cards: BattleCard[];
@@ -75,11 +75,4 @@ export type ActiveRunData = {
   alchemistState: PersistedAlchemistState | null;
   trinketShopState: PersistedTrinketShopState | null;
   equipmentShopState: PersistedEquipmentShopState | null;
-};
-
-export type DestinationOptionsInput = {
-  currentHealth?: number;
-  currentGold?: number;
-  destinationIndexInAct?: number;
-  maxHealth?: number;
 };

@@ -1,25 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { parseActiveRun } from "@/features/alchemy/shared/storage/active-run";
+import { parseActiveRun } from "@/lib/active-run-session";
 import { normalizeSaveData } from "@/features/alchemy/shared/storage/migrations";
 import { defaultBattleState } from "@/lib/battle";
-
-function makeRunCandidate(overrides: Record<string, unknown> = {}): Record<string, unknown> {
-  return {
-    characterId: "knight",
-    runDeck: [{ id: "slash", title: "Slash", descriptionLines: [""], art: "", cost: 1, effects: [{ kind: "damage", damageType: "physical", amount: 4 }], uid: 1 }],
-    runGold: 10,
-    runPlayerHealth: 25,
-    runMaxHealth: 30,
-    roomsEncountered: 2,
-    currentAct: 1,
-    destinationIndexInAct: 1,
-    completedDestinations: ["combat"],
-    runTrinkets: [],
-    selectedDifficulty: "difficulty-1",
-    contentSystemType: "campaign",
-    ...overrides,
-  };
-}
+import { cardLibrary } from "@/lib/game-data";
+import { makeRunCandidate } from "../../fixtures/active-run";
 
 describe("parseActiveRun", () => {
   it("returns null for null input", () => {
@@ -58,38 +42,6 @@ describe("parseActiveRun", () => {
     const data = makeRunCandidate();
     delete data.runDeck;
     expect(parseActiveRun(data)).toBeNull();
-  });
-
-  it("returns null when runGold is negative", () => {
-    expect(parseActiveRun(makeRunCandidate({ runGold: -5 }))).toBeNull();
-  });
-
-  it("returns null when runGold is NaN", () => {
-    expect(parseActiveRun(makeRunCandidate({ runGold: NaN }))).toBeNull();
-  });
-
-  it("returns null when runGold is a float", () => {
-    expect(parseActiveRun(makeRunCandidate({ runGold: 5.5 }))).toBeNull();
-  });
-
-  it("returns null when playerHealth exceeds maxHealth", () => {
-    expect(parseActiveRun(makeRunCandidate({ runPlayerHealth: 40, runMaxHealth: 30 }))).toBeNull();
-  });
-
-  it("returns null when playerHealth is negative", () => {
-    expect(parseActiveRun(makeRunCandidate({ runPlayerHealth: -1, runMaxHealth: 30 }))).toBeNull();
-  });
-
-  it("returns null when maxHealth is 0", () => {
-    expect(parseActiveRun(makeRunCandidate({ runPlayerHealth: 0, runMaxHealth: 0 }))).toBeNull();
-  });
-
-  it("returns null when currentAct is less than 1", () => {
-    expect(parseActiveRun(makeRunCandidate({ currentAct: 0 }))).toBeNull();
-  });
-
-  it("returns null when currentAct exceeds max acts", () => {
-    expect(parseActiveRun(makeRunCandidate({ currentAct: 99 }))).toBeNull();
   });
 
   it("parses a valid campaign run with all fields", () => {
@@ -152,7 +104,7 @@ describe("parseActiveRun", () => {
     const card = result!.runDeck[0];
     expect(card.id).toBe("slash");
     expect(card.uid).toBe(42);
-    expect(card.title).toBeDefined();
+    expect(card.title).toBe(cardLibrary.find((entry) => entry.id === "slash")?.title);
     expect(card.descriptionLines.length).toBeGreaterThan(0);
   });
 

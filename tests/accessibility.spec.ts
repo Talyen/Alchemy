@@ -1,5 +1,6 @@
-import { expect, test } from "@playwright/test";
+import { expect } from "@playwright/test";
 import { makeCard, startBattleWithDeck } from "./helpers";
+import { test } from "./fixtures/e2e";
 import { MenuPage } from "./pages/menu-page";
 import { critical } from "./playwright-tags";
 
@@ -15,7 +16,9 @@ test.describe("Accessibility", critical, () => {
     await expect(menu.homesteadBtn).toBeVisible();
   });
 
-  test("battle cards have accessible play labels", async ({ page }) => {
+  test("battle cards have accessible play labels", async ({ page, fastBattle, runtimeErrors }) => {
+    void fastBattle;
+    void runtimeErrors;
     await startBattleWithDeck(page, Array.from({ length: 6 }, () => makeCard()));
 
     const cards = page.locator('[aria-label^="Play "]');
@@ -39,7 +42,9 @@ test.describe("Accessibility", critical, () => {
     await expect(page.getByRole("heading", { name: "Choose Your Hero" })).toBeVisible({ timeout: 5000 });
   });
 
-  test("inspect and select buttons have accessible labels in battle", async ({ page }) => {
+  test("inspect and select buttons have accessible labels in battle", async ({ page, fastBattle, runtimeErrors }) => {
+    void fastBattle;
+    void runtimeErrors;
     await startBattleWithDeck(page, Array.from({ length: 6 }, () => makeCard()));
 
     const cards = page.locator('[aria-label^="Play "]');

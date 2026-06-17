@@ -61,7 +61,6 @@ import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import { createContext, useContext } from "react";
 import { useActiveRunScreenValue } from "@/features/alchemy/shared/stores/run-session-facade";
 import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
-import { isArmoryLocked as getIsArmoryLocked } from "@/lib/gear";
 
 const appStore = useAppStore;
 const homesteadStore = useHomesteadStore;
@@ -122,7 +121,7 @@ function AppMainContent({
 }) {
   const run = useRunController();
   const finishedRunCharacters = useAppStore((s) => s.finishedRunCharacters);
-  const isArmoryLocked = useGearStore((s) => getIsArmoryLocked(s.inventory));
+  const isArmoryLocked = useGearStore((s) => s.inventory.length === 0);
   const { screen: controllerScreen, commitPendingTransition } = run;
   const { renderedScreen, pagePhase, tooltipBlocked } = useRenderedScreenTransition(
     controllerScreen,

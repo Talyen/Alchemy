@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createBattleState } from "@/lib/battle";
-import { getPlayerStatusChips, getEnemyStatusChips } from "@/features/alchemy/shared/utils/battle";
+import { getPlayerStatusChips, getEnemyStatusChips, getCombatTextColorClass, getCombatTextIcon } from "@/features/alchemy/shared/utils/battle";
+import { keywordIcons } from "@/features/alchemy/shared/config";
 import { enemyBestiary, type BattleCard } from "@/lib/game-data";
 
 const skeleton = enemyBestiary.find((enemy) => enemy.id === "skeleton")!;
@@ -97,12 +98,28 @@ describe("getEnemyStatusChips", () => {
   });
 });
 
-describe("createBattleState", () => {
-  it("produces a valid state with playerStatuses and enemyStatuses", () => {
-    const state = makeProductionBattleState();
-    expect(state.playerStatuses).toBeDefined();
-    expect(state.enemyStatuses).toBeDefined();
-    expect(typeof state.playerStatuses.block).toBe("number");
-    expect(typeof state.enemyStatuses.poison).toBe("number");
+describe("getCombatTextColorClass", () => {
+  it("returns red for health damage", () => {
+    expect(getCombatTextColorClass({ target: "player", kind: "damage", stat: "health", amount: 5 })).toBe("text-red-400");
+  });
+
+  it("returns type color for damage by type", () => {
+    expect(getCombatTextColorClass({ target: "enemy", kind: "damage", stat: "burn", amount: 5 })).toBe("text-orange-400");
+  });
+
+  it("returns green for heals", () => {
+    expect(getCombatTextColorClass({ target: "player", kind: "heal", stat: "health", amount: 5 })).toBe("text-green-400");
+  });
+});
+
+describe("getCombatTextIcon", () => {
+  it("returns HeartPulse for heal", () => {
+    const icon = getCombatTextIcon({ target: "player", kind: "heal", stat: "health", amount: 5 });
+    expect(icon).toBe(keywordIcons.health);
+  });
+
+  it("returns the stat's icon for damage", () => {
+    const icon = getCombatTextIcon({ target: "enemy", kind: "damage", stat: "burn", amount: 5 });
+    expect(icon).toBe(keywordIcons.burn);
   });
 });

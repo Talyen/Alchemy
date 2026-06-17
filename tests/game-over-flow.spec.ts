@@ -48,9 +48,7 @@ test.describe("Death's Door", critical, () => {
     await battle.endTurn();
     await expect(page.getByLabel("Death's Door")).toBeVisible({ timeout: 3000 });
 
-    const breadInHand = page.getByRole("button", { name: "Play Bread" }).first();
-    await expect(breadInHand).toBeEnabled({ timeout: 2000 });
-    await breadInHand.click();
+    await battle.playCardNamed("Bread");
 
     await expect.poll(() => battle.playerHealth()).toBeGreaterThan(0);
     await battle.playCardNamed("Boss Killer");

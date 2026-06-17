@@ -25,11 +25,11 @@ import { createRunStartSnapshot, type RunStartSnapshot } from "./run-start";
 import { getBossEnemy } from "@/features/alchemy/shared/config";
 import { CONSTANTS, type Destination, type Screen } from "../../shared/types";
 import type { RunStateController, TalentStateController } from "../../shared/stores/run-session-facade";
-import type { DestinationOptionsInput } from "@/lib/active-run-session";
+import type { DestinationOptionsInput } from "@/features/alchemy/run-loop/navigation/destination-flow";
 import { createInitialWildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import { DRAFT_ROUNDS } from "@/lib/game-constants";
 import { useGearStore } from "../../shared/stores/gear-store";
-import { computeGearMaxHealthBonus } from "@/lib/gear";
+import { computeGearManifest } from "@/lib/gear";
 
 export type ContentSystemNavigationDeps = {
   run: RunStateController;
@@ -120,19 +120,19 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
         ? {
             ...baseInput,
             draftedDeck: resolvedDraft,
-            gearMaxHealthBonus: computeGearMaxHealthBonus(
+            gearMaxHealthBonus: computeGearManifest(
               characterId,
               useGearStore.getState().inventory,
               useGearStore.getState().loadouts,
-            ),
+            ).maxHealth,
           }
         : {
             ...baseInput,
-            gearMaxHealthBonus: computeGearMaxHealthBonus(
+            gearMaxHealthBonus: computeGearManifest(
               characterId,
               useGearStore.getState().inventory,
               useGearStore.getState().loadouts,
-            ),
+            ).maxHealth,
           },
     );
   }

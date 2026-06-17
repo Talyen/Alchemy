@@ -1,14 +1,14 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   applyLabyrinthRewardMaterialModifiers,
-  computeVictoryGoldResult,
+  computeVictoryGold,
   createEmptyRewardState,
+  createNextRewardState,
   executeRewardRouteTransition,
   getActiveRewardModifiersForContentSystem,
   getCompanionCardChoices,
   getGenerousGoldBonus,
   getRandomPotionCard,
-  getVictoryGoldTotal,
   finalizeRewardState,
   shouldGrantAlchemistReward,
   shouldGrantCompanionReward,
@@ -17,6 +17,7 @@ import { getStandardPotionPool } from "@/lib/game-data";
 import { CONSTANTS } from "@/features/alchemy/shared/types";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import type { LabyrinthModifierKind } from "@/lib/content-systems/types";
+import { makeRewardRouteHandlers } from "../../helpers/destination-route-handlers";
 import type { BattleCard, TrinketEntry } from "@/lib/game-data";
 
 describe("reward flow orchestration", () => {
@@ -25,39 +26,70 @@ describe("createEmptyRewardState", () => {
     const result = createEmptyRewardState();
     expect(result.choices).toEqual([]);
     expect(result.gold).toBe(0);
+    expect(result.materials).toEqual(emptyInventory());
     expect(result.selectedId).toBeNull();
     expect(result.rewardType).toBe("card");
+    expect(result.selectedBossId).toBeNull();
   });
 
   it("accepts optional destinations", () => {
-    const result = createEmptyRewardState(["Campfire"]);
-    expect(result.destinations).toEqual(["Campfire"]);
+    const result = createEmptyRewardState(["Campfire", "Mystery"]);
+    expect(result.destinations).toEqual(["Campfire", "Mystery"]);
   });
 });
 
-describe("getVictoryGoldTotal", () => {
+describe("createNextRewardState", () => {
+  it("clears choices, gold, and selection but keeps destinations and selectedBossId", () => {
+    const previous = {
+      ...createEmptyRewardState(["Normal Combat", "Campfire"]),
+      choices: [{ id: "card-a", title: "A", descriptionLines: [""], art: "", cost: 1, effects: [] }],
+      gold: 12,
+      selectedId: "card-a",
+      rewardType: "trinket" as const,
+      selectedBossId: "boss-1",
+    };
+
+    const next = createNextRewardState(previous);
+
+    expect(next.choices).toEqual([]);
+    expect(next.gold).toBe(0);
+    expect(next.selectedId).toBeNull();
+    expect(next.rewardType).toBe("card");
+    expect(next.destinations).toEqual(["Normal Combat", "Campfire"]);
+    expect(next.selectedBossId).toBe("boss-1");
+    expect(next.materials).toEqual(emptyInventory());
+  });
+});
+
+describe("computeVictoryGold unmultiplied total", () => {
+  function unmultipliedTotal(
+    input: Omit<Parameters<typeof computeVictoryGold>[0], "runGold" | "goldMultiplier">,
+  ) {
+    return computeVictoryGold({ ...input, runGold: 0, goldMultiplier: 1 }).unmultipliedTotal;
+  }
+
   it("sums all gold sources", () => {
-    const result = getVictoryGoldTotal({ battleState: { gold: 15 }, runTrinkets: [], gold: 10, eliteBonus: 3, generousBonus: 0, bossBonus: 5, talentGoldPerCombat: 2 });
+    const result = unmultipliedTotal({ battleState: { gold: 15 }, runTrinkets: [], gold: 10, eliteBonus: 3, generousBonus: 0, bossBonus: 5, talentGoldPerCombat: 2 });
     expect(result).toBe(35);
   });
 
   it("handles zero gold sources", () => {
-    const result = getVictoryGoldTotal({ battleState: { gold: 0 }, runTrinkets: [], gold: 0, eliteBonus: 0, generousBonus: 0, bossBonus: 0, talentGoldPerCombat: 0 });
+    const result = unmultipliedTotal({ battleState: { gold: 0 }, runTrinkets: [], gold: 0, eliteBonus: 0, generousBonus: 0, bossBonus: 0, talentGoldPerCombat: 0 });
     expect(result).toBe(0);
   });
 
   it("includes Smuggler's Map boon gold bonus", () => {
-    const result = getVictoryGoldTotal({ battleState: { gold: 10 }, runTrinkets: ["smugglers-map"], gold: 5, eliteBonus: 1, generousBonus: 0, bossBonus: 2, talentGoldPerCombat: 1 });
+    const result = unmultipliedTotal({ battleState: { gold: 10 }, runTrinkets: ["smugglers-map"], gold: 5, eliteBonus: 1, generousBonus: 0, bossBonus: 2, talentGoldPerCombat: 1 });
     expect(result).toBeGreaterThan(19);
   });
 
   it("handles nonexistent boon gracefully", () => {
-    const result = getVictoryGoldTotal({ battleState: { gold: 10 }, runTrinkets: ["bad-id"], gold: 0, eliteBonus: 0, generousBonus: 0, bossBonus: 0, talentGoldPerCombat: 0 });
+    const result = unmultipliedTotal({ battleState: { gold: 10 }, runTrinkets: ["bad-id"], gold: 0, eliteBonus: 0, generousBonus: 0, bossBonus: 0, talentGoldPerCombat: 0 });
     expect(result).toBe(10);
   });
 
   it("includes generous bonus by name", () => {
-    const result = getVictoryGoldTotal({ battleState: { gold: 10 }, runTrinkets: [], gold: 5, eliteBonus: 0, generousBonus: 4, bossBonus: 0, talentGoldPerCombat: 0 });
+    const result = unmultipliedTotal({ battleState: { gold: 10 }, runTrinkets: [], gold: 5, eliteBonus: 0, generousBonus: 4, bossBonus: 0, talentGoldPerCombat: 0 });
     expect(result).toBe(19);
   });
 });
@@ -146,7 +178,6 @@ describe("finalizeRewardState", () => {
         rewardType: "card",
       }),
       companionRewardCards: null,
-      grantAlchemistReward: false,
     });
 
     expect(result.selectedChoice).toBe(cardChoice);
@@ -167,7 +198,6 @@ describe("finalizeRewardState", () => {
         selectedBossId: "frostwarden",
       }),
       companionRewardCards: null,
-      grantAlchemistReward: false,
     });
 
     expect(result.nextRewardState.selectedBossId).toBe("frostwarden");
@@ -184,7 +214,6 @@ describe("finalizeRewardState", () => {
         rewardType: "trinket",
       }),
       companionRewardCards: null,
-      grantAlchemistReward: false,
     });
 
     expect(result.selectedChoice).toBe(boonChoice);
@@ -205,12 +234,10 @@ describe("finalizeRewardState", () => {
         { enemyType: "normal", contentSystem: "labyrinth" },
       ),
       companionRewardCards: [companionChoice],
-      grantAlchemistReward: true,
     });
 
     expect(result.route).toBe("companion-reward");
     expect(result.clearCompanionRewardCards).toBe(true);
-    expect(result.grantAlchemistReward).toBe(true);
     expect(result.nextRewardState).toEqual(
       expect.objectContaining({
         choices: [companionChoice],
@@ -229,7 +256,6 @@ describe("finalizeRewardState", () => {
     const result = finalizeRewardState({
       rewardState: stampedRewardState({}, { enemyType: "elite", contentSystem: "labyrinth" }),
       companionRewardCards: null,
-      grantAlchemistReward: false,
     });
 
     expect(result.route).toBe("labyrinth-map");
@@ -239,7 +265,6 @@ describe("finalizeRewardState", () => {
     const result = finalizeRewardState({
       rewardState: stampedRewardState({}, { enemyType: "boss", contentSystem: "labyrinth" }),
       companionRewardCards: null,
-      grantAlchemistReward: false,
     });
 
     expect(result.route).toBe("labyrinth-victory");
@@ -249,7 +274,6 @@ describe("finalizeRewardState", () => {
     const result = finalizeRewardState({
       rewardState: stampedRewardState({}, { enemyType: "boss", contentSystem: "campaign" }),
       companionRewardCards: null,
-      grantAlchemistReward: false,
     });
 
     expect(result.route).toBe("act-complete");
@@ -259,7 +283,6 @@ describe("finalizeRewardState", () => {
     const result = finalizeRewardState({
       rewardState: stampedRewardState({}, { enemyType: "normal", contentSystem: "wildwood" }),
       companionRewardCards: null,
-      grantAlchemistReward: false,
     });
 
     expect(result.route).toBe("wildwood-victory");
@@ -282,9 +305,9 @@ describe("getRandomPotionCard", () => {
   });
 });
 
-describe("computeVictoryGoldResult", () => {
+describe("computeVictoryGold", () => {
   it("applies gold multiplier to earned gold only", () => {
-    const result = computeVictoryGoldResult({
+    const result = computeVictoryGold({
       battleState: { currentEnemy: { enemyType: "normal" }, gold: 20 } as never,
       runGold: 10,
       runTrinkets: [],
@@ -306,14 +329,7 @@ describe("executeRewardRouteTransition", () => {
   const nextRewardState = createEmptyRewardState(["Campfire"]);
 
   function makeHandlers() {
-    return {
-      navigateTo: vi.fn(),
-      completeRunVictory: vi.fn(),
-      handleActComplete: vi.fn(),
-      onLabyrinthClearNode: vi.fn(),
-      setCompanionRewardCards: vi.fn(),
-      setRewardState: vi.fn(),
-    };
+    return makeRewardRouteHandlers();
   }
 
   it("routes companion rewards back to the rewards screen", () => {

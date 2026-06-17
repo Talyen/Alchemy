@@ -3,17 +3,17 @@ import type { BattleCard, CharacterId, DifficultyId, KeywordId, UnlockedTalents,
 import { defaultBattleState, type BattleState, type PlayerStatusValues, type TurnPhase } from "@/lib/battle";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
 import { createEmptyRewardState, type RewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
-import {
-  SHOP_REFRESHES,
-  ALCHEMIST_REFRESHES,
-  TRINKET_SHOP_REFRESHES,
-  EQUIPMENT_SHOP_REFRESHES,
-} from "@/lib/game-constants";
 import type {
   ShopState,
   AlchemistState,
   TrinketShopState,
   EquipmentShopState,
+} from "@/features/alchemy/run-loop/shop/shop-state-init";
+import {
+  emptyAlchemistState,
+  emptyEquipmentShopState,
+  emptyShopState,
+  emptyTrinketShopState,
 } from "@/features/alchemy/run-loop/shop/shop-state-init";
 import {
   createInitialRunState,
@@ -62,39 +62,10 @@ export type RunDomainDataState = {
   battle: RunDomainBattleState;
 };
 
-const emptyShop: ShopState = {
-  items: [],
-  cards: [],
-  refreshesLeft: SHOP_REFRESHES,
-  removeUsed: false,
-  firstPurchaseUsed: false,
-  purchasedSlotKeys: [],
-};
-
-const emptyAlchemist: AlchemistState = {
-  items: [],
-  potions: [],
-  refreshesLeft: ALCHEMIST_REFRESHES,
-  mixUsed: false,
-  firstPurchaseUsed: false,
-  purchasedSlotKeys: [],
-};
-
-const emptyTrinketShop: TrinketShopState = {
-  items: [],
-  trinkets: [],
-  refreshesLeft: TRINKET_SHOP_REFRESHES,
-  firstPurchaseUsed: false,
-  purchasedSlotKeys: [],
-};
-
-const emptyEquipmentShop: EquipmentShopState = {
-  items: [],
-  gear: [],
-  refreshesLeft: EQUIPMENT_SHOP_REFRESHES,
-  firstPurchaseUsed: false,
-  purchasedSlotKeys: [],
-};
+const emptyShop: ShopState = emptyShopState();
+const emptyAlchemist: AlchemistState = emptyAlchemistState();
+const emptyTrinketShop: TrinketShopState = emptyTrinketShopState();
+const emptyEquipmentShop: EquipmentShopState = emptyEquipmentShopState();
 
 export function createInitialSessionFields(): RunSessionFields {
   return {

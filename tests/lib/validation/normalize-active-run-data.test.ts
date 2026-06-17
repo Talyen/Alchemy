@@ -1,23 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { normalizeActiveRunData } from "@/lib/validation";
+import { baseActiveRunInput } from "../../fixtures/active-run";
 
-function baseInput(): Record<string, unknown> {
-  return {
-    characterId: "knight",
-    runDeck: [],
-    runGold: 0,
-    runPlayerHealth: 30,
-    runMaxHealth: 30,
-    roomsEncountered: 0,
-    currentAct: 1,
-    destinationIndexInAct: 0,
-    completedDestinations: [],
-    runTrinkets: [],
-    selectedDifficulty: null,
-    contentSystemType: "campaign",
-    labyrinthMap: null,
-  };
-}
+const baseInput = baseActiveRunInput;
 
 describe("normalizeActiveRunData", () => {
   it("passes through a valid campaign run", () => {
@@ -44,7 +29,7 @@ describe("normalizeActiveRunData", () => {
   it("replaces empty deck with starting deck for unstarted run", () => {
     const result = normalizeActiveRunData(baseInput());
     expect(result.runDeck.length).toBeGreaterThan(0);
-    expect((result.runDeck[0] as { id: string }).id).toBeDefined();
+    expect((result.runDeck[0] as { id: string }).id).toBeTruthy();
   });
 
   it("replaces legacy starter deck with current starting deck for unstarted run", () => {

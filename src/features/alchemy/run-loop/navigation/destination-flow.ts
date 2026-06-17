@@ -14,6 +14,13 @@ import { DESTINATIONS, type Destination } from "../../shared/types";
 import type { RewardState } from "./reward-flow";
 import { withSelectedBossForDestinations } from "./victory-flow";
 
+export type DestinationOptionsInput = {
+  currentHealth?: number;
+  currentGold?: number;
+  destinationIndexInAct?: number;
+  maxHealth?: number;
+};
+
 type DestinationAvailabilityInput = {
   destinationIndexInAct: number;
   currentHealth: number;

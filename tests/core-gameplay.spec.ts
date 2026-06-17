@@ -86,7 +86,9 @@ test.describe("Mana Mechanics", () => {
 });
 
 test.describe("Full Run Flow", () => {
-  test("complete a victory run through destination choice", async ({ page }) => {
+  test("complete a victory run through destination choice", async ({ page, fastBattle, runtimeErrors }) => {
+    void fastBattle;
+    void runtimeErrors;
     await startBattleWithDeck(page, Array.from({ length: 6 }, () => makeCard()));
     const battle = new BattlePage(page);
 
@@ -128,7 +130,9 @@ test.describe("Talents", () => {
 });
 
 test.describe("Card Interactions", () => {
-  test("multiple copies of the same card in hand can be hovered and played independently", async ({ page }) => {
+  test("multiple copies of the same card in hand can be hovered and played independently", async ({ page, fastBattle, runtimeErrors }) => {
+    void fastBattle;
+    void runtimeErrors;
     await startBattleWithDeck(page, Array.from({ length: 8 }, () => makeCard()));
     const battle = new BattlePage(page);
 

@@ -43,13 +43,13 @@ describe("ArmoryScreen", () => {
     );
 
     // Verify main screen headers
-    expect(screen.getByRole("heading", { name: "Armory" })).toBeTruthy();
-    expect(screen.getByRole("heading", { name: "Inventory" })).toBeTruthy();
-    expect(screen.getByRole("heading", { name: "Equipment" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Armory" }).isConnected).toBe(true);
+    expect(screen.getByRole("heading", { name: "Inventory" }).isConnected).toBe(true);
+    expect(screen.getByRole("heading", { name: "Equipment" }).isConnected).toBe(true);
 
-    // Verify items in the inventory board are rendered via their dataset attributes
-    expect(document.querySelector('[data-gear-title="Leather Helm"]')).toBeTruthy();
-    expect(document.querySelector('[data-gear-title="Leather Armor"]')).toBeTruthy();
+    // Gear tiles expose titles via data-gear-title (not always plain text nodes)
+    expect(document.querySelector('[data-gear-title="Leather Helm"]')).not.toBeNull();
+    expect(document.querySelector('[data-gear-title="Leather Armor"]')).not.toBeNull();
   });
 
   it("switches characters when tab buttons are clicked", async () => {
@@ -68,14 +68,14 @@ describe("ArmoryScreen", () => {
     );
 
     // Initial character panel shows Knight
-    expect(screen.getByRole("heading", { name: "Knight" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Knight" }).isConnected).toBe(true);
 
     // Click on Rogue tab
     const rogueTab = screen.getByRole("button", { name: "Rogue" });
     await user.click(rogueTab);
 
     // Header updates to Rogue
-    expect(screen.getByRole("heading", { name: "Rogue" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Rogue" }).isConnected).toBe(true);
   });
 
   it("stays in salvage mode after confirming a salvage (multi-item flow)", async () => {
@@ -99,20 +99,20 @@ describe("ArmoryScreen", () => {
     const salvageModeBtn = screen.getByLabelText("Salvage Gear");
     await user.click(salvageModeBtn);
 
-    expect(screen.getByLabelText("Cancel salvage")).toBeTruthy();
+    expect(screen.getByLabelText("Cancel salvage").isConnected).toBe(true);
     const helmTile = screen.getByRole("button", { name: "Salvage Leather Helm" });
     await user.click(helmTile);
 
     // Verify confirmation modal elements are visible
-    expect(screen.getByText("Salvage Gear?")).toBeTruthy();
-    expect(screen.getByText(/Permanently salvage Leather Helm/)).toBeTruthy();
+    expect(screen.getByText("Salvage Gear?").isConnected).toBe(true);
+    expect(screen.getByText(/Permanently salvage Leather Helm/).isConnected).toBe(true);
 
     // Confirm salvage — salvage mode must remain active for the next item
     const confirmBtn = screen.getByRole("button", { name: "Salvage" });
     await user.click(confirmBtn);
 
     expect(onSalvageMock).toHaveBeenCalledWith("gear-helm");
-    expect(screen.getByLabelText("Cancel salvage")).toBeTruthy();
+    expect(screen.getByLabelText("Cancel salvage").isConnected).toBe(true);
   });
 
   it("exits salvage mode when clicking outside inventory gear", async () => {
@@ -131,10 +131,10 @@ describe("ArmoryScreen", () => {
     );
 
     await user.click(screen.getByLabelText("Salvage Gear"));
-    expect(screen.getByLabelText("Cancel salvage")).toBeTruthy();
+    expect(screen.getByLabelText("Cancel salvage").isConnected).toBe(true);
 
     await user.click(screen.getByRole("heading", { name: "Knight" }));
-    expect(screen.getByLabelText("Salvage Gear")).toBeTruthy();
+    expect(screen.getByLabelText("Salvage Gear").isConnected).toBe(true);
   });
 
   it("exits salvage mode when Escape is pressed", async () => {
@@ -154,7 +154,7 @@ describe("ArmoryScreen", () => {
 
     await user.click(screen.getByLabelText("Salvage Gear"));
     await user.keyboard("{Escape}");
-    expect(screen.getByLabelText("Salvage Gear")).toBeTruthy();
+    expect(screen.getByLabelText("Salvage Gear").isConnected).toBe(true);
   });
 
   it("exits salvage mode on right click", async () => {
@@ -174,7 +174,7 @@ describe("ArmoryScreen", () => {
 
     await user.click(screen.getByLabelText("Salvage Gear"));
     await user.pointer({ target: screen.getByTestId("armory-inventory-board"), keys: "[MouseRight]" });
-    expect(screen.getByLabelText("Salvage Gear")).toBeTruthy();
+    expect(screen.getByLabelText("Salvage Gear").isConnected).toBe(true);
   });
 
   it("renders the dev spawn button when onSpawnDevGear is provided in dev builds", async () => {
@@ -217,7 +217,7 @@ describe("ArmoryScreen", () => {
       />,
     );
 
-    expect(screen.getByText("Equipment can be changed after combat.")).toBeTruthy();
+    expect(screen.getByText("Equipment can be changed after combat.").isConnected).toBe(true);
   });
 
   it("disables locked character tabs until the previous class is finished", () => {
@@ -257,7 +257,7 @@ describe("ArmoryScreen", () => {
       />,
     );
 
-    expect(document.querySelector('[data-gear-title="Leather Helm"]')).toBeTruthy();
+    expect(document.querySelector('[data-gear-title="Leather Helm"]')).not.toBeNull();
     expect(document.querySelector('[data-gear-title="Leather Armor"]')).toBeNull();
   });
 
@@ -283,8 +283,7 @@ describe("ArmoryScreen", () => {
 
     await waitFor(() => {
       const positions = useGearStore.getState().boardPositions;
-      expect(positions["gear-helm"]).toBeDefined();
-      expect(positions["stale-item-id"]).toBeUndefined();
+      expect(Object.keys(positions)).toEqual(["gear-helm"]);
     });
   });
 });

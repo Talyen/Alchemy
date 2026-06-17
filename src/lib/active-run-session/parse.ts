@@ -3,7 +3,6 @@
 import { hydrateCard, type BattleCard } from "@/lib/game-data";
 import type { LabyrinthMap } from "@/lib/content-systems/types";
 import { ActiveRunDataSchema } from "@/lib/validation";
-import { ACTS_PER_RUN } from "@/lib/game-constants";
 
 import type { ActiveRunData } from "./types";
 
@@ -13,39 +12,6 @@ export function parseActiveRun(activeRun: unknown): ActiveRunData | null {
   }
 
   const candidate = activeRun as Record<string, unknown>;
-
-  if (candidate.contentSystemType === "wildwood" && !candidate.wildwoodDraft) {
-    return null;
-  }
-
-  if (
-    "runGold" in candidate &&
-    (typeof candidate.runGold !== "number" || !Number.isInteger(candidate.runGold) || candidate.runGold < 0)
-  ) {
-    return null;
-  }
-
-  if (
-    "runPlayerHealth" in candidate &&
-    "runMaxHealth" in candidate &&
-    (typeof candidate.runPlayerHealth !== "number" ||
-      typeof candidate.runMaxHealth !== "number" ||
-      candidate.runPlayerHealth < 0 ||
-      candidate.runMaxHealth <= 0 ||
-      candidate.runPlayerHealth > candidate.runMaxHealth)
-  ) {
-    return null;
-  }
-
-  if (
-    "currentAct" in candidate &&
-    (typeof candidate.currentAct !== "number" ||
-      !Number.isInteger(candidate.currentAct) ||
-      candidate.currentAct < 1 ||
-      candidate.currentAct > ACTS_PER_RUN)
-  ) {
-    return null;
-  }
 
   if (Array.isArray(candidate.runDeck)) {
     candidate.runDeck = candidate.runDeck.map((card) => {

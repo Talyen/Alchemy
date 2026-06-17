@@ -28,7 +28,7 @@ import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-tra
 import {
   getActiveRewardModifiersForContentSystem,
   applyLabyrinthRewardMaterialModifiers,
-  computeVictoryGoldResult,
+  computeVictoryGold,
   createCombatRewardState as createCombatRewardStateFromFlow,
   createBossRewardState as createBossRewardStateFromFlow,
   createEmptyRewardState,
@@ -224,7 +224,7 @@ export function computeVictoryRewards(
     rng,
   );
 
-  const goldResult = computeVictoryGoldResult({
+  const goldResult = computeVictoryGold({
     battleState: input.battleState,
     runGold: input.runGold,
     runTrinkets: input.runTrinkets,

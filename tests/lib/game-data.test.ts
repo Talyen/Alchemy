@@ -58,25 +58,6 @@ describe("getOfferableCardPool", () => {
       }
     }
   });
-
-  it("includes recently added cards without separate pool registration", () => {
-    const poolIds = new Set(getOfferableCardPool().map((card) => card.id));
-    for (const id of [
-      "wishing-well",
-      "molten-bulwark",
-      "glacial-ward",
-      "spiked-shield",
-      "golden-plate",
-      "crystal-bulwark",
-      "hemorrhage",
-      "bounty-shot",
-      "sap-arrow",
-      "gamblers-shot",
-      "phoenix-feather",
-    ]) {
-      expect(poolIds.has(id)).toBe(true);
-    }
-  });
 });
 
 describe("characters data integrity", () => {

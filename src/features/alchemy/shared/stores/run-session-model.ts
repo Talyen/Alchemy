@@ -123,15 +123,7 @@ function pickRunSessionBattleSlice(battle: {
   };
 }
 
-export function useRunSessionRunSlice(): RunSessionRunSlice {
-  return useRunDomainStore(useShallow((s) => pickRunSessionRunSlice(s.progress)));
-}
-
-export function useRunSessionTransientSlice(): RunSessionTransientSlice {
-  return useRunDomainStore(useShallow((s) => pickRunSessionTransientSlice(s.session)));
-}
-
-export function useRunSessionBattleSlice(): RunSessionBattleSlice {
+function useRunSessionBattleSlice(): RunSessionBattleSlice {
   return useRunDomainStore(useShallow((s) => pickRunSessionBattleSlice(s.battle)));
 }
 
@@ -231,38 +223,4 @@ export function getRunSession(screen?: Screen): RunSession {
     session: pickRunSessionTransientSlice(state.session),
     battle,
   };
-}
-
-/** React hook — subscribes to run, session, and battle slices (shallow per slice). */
-export function useRunSession(screen?: Screen): RunSession {
-  const navigationScreen = useRunDomainStore((s) => s.navigation.screen);
-  const screenValue = screen ?? navigationScreen;
-  const run = useRunSessionRunSlice();
-  const session = useRunSessionTransientSlice();
-  const battle = useRunSessionBattleSlice();
-  return useMemo(
-    () => ({
-      screen: screenValue,
-      phase: getRunPhase(screenValue, battle.hasActiveBattle),
-      run,
-      session,
-      battle,
-    }),
-    [screenValue, run, session, battle],
-  );
-}
-
-/** React hook — selects a granular value from the run session to avoid unnecessary re-renders. */
-export function useRunSessionValue<T>(selector: (state: RunSession) => T, screen?: Screen): T {
-  return useRunDomainStore((state) => {
-    const screenValue = screen ?? state.navigation.screen;
-    const runSession: RunSession = {
-      screen: screenValue,
-      phase: getRunPhase(screenValue, state.battle.hasActiveBattle),
-      run: pickRunSessionRunSlice(state.progress),
-      session: pickRunSessionTransientSlice(state.session),
-      battle: pickRunSessionBattleSlice(state.battle),
-    };
-    return selector(runSession);
-  });
 }

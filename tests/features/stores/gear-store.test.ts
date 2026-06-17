@@ -2,8 +2,6 @@ import { describe, expect, it } from "vitest";
 import {
   createEmptyGearLoadouts,
   equipGear,
-  isArmoryLocked,
-  salvageGear,
   type GearInstance,
 } from "@/lib/gear";
 import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
@@ -48,8 +46,11 @@ describe("gear-store", () => {
   });
 
   it("reports armory lock state from inventory", () => {
-    expect(isArmoryLocked([])).toBe(true);
-    expect(isArmoryLocked([ring])).toBe(false);
+    useGearStore.getState().reset();
+    expect(useGearStore.getState().inventory.length === 0).toBe(true);
+    useGearStore.getState().addInstance(ring);
+    expect(useGearStore.getState().inventory.length === 0).toBe(false);
+    useGearStore.getState().reset();
   });
 
   it("swaps board positions when equipping over occupied gear from inventory", () => {

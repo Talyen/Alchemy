@@ -8,9 +8,7 @@ import { ACTS_PER_RUN, LEGACY_CHARACTER_RENAMES } from "@/lib/game-constants";
 import { WILDWOOD_BOSS_IDS } from "@/lib/content-systems/wildwood/bosses";
 import { sanitizeEncounterTraitIds, sanitizePersistedEnemyTraits } from "@/lib/content-systems/encounter-traits";
 import { normalizeActiveRunData } from "../normalize-active-run-data";
-import { GEAR_AFFIX_IDS } from "@/lib/gear/affix-ids";
-import { GEAR_DEFINITION_IDS } from "@/lib/gear/definitions";
-import { normalizeGearInstance } from "@/lib/gear/operations";
+import { GearInstanceArraySchema, GearInstanceSchema, normalizeGearInstanceArray } from "./gear-schemas";
 import { emptyInventory } from "@/lib/homestead/inventory";
 import {
   caught,
@@ -62,17 +60,6 @@ const ActiveCombatDataSchema = z
 
 const WildwoodBossIdSchema = z.enum(WILDWOOD_BOSS_IDS);
 
-const GearAffixRollSchema = z.object({
-  id: z.enum(GEAR_AFFIX_IDS),
-  value: z.number().int().positive(),
-});
-
-const GearInstanceSchema = z.object({
-  instanceId: z.string().min(1),
-  definitionId: z.enum(GEAR_DEFINITION_IDS),
-  affixes: z.array(GearAffixRollSchema),
-});
-
 const ShopPersistSchema = z
   .object({
     cards: z.array(BattleCardSchema),
@@ -107,18 +94,7 @@ const TrinketShopPersistSchema = z
 
 const EquipmentShopPersistSchema = z
   .object({
-    gear: z.preprocess(
-      (raw) =>
-        Array.isArray(raw)
-          ? raw.flatMap((item) => {
-              const normalized = normalizeGearInstance(
-                item && typeof item === "object" ? (item as Record<string, unknown>) : {},
-              );
-              return normalized ? [normalized] : [];
-            })
-          : [],
-      z.array(GearInstanceSchema),
-    ),
+    gear: GearInstanceArraySchema,
     refreshesLeft: caught(z.number().int().nonnegative(), 0, "activeRun.equipmentShopState.refreshesLeft"),
     firstPurchaseUsed: caught(z.boolean(), false, "activeRun.equipmentShopState.firstPurchaseUsed"),
     purchasedSlotKeys: deduplicatedStringArraySchema("activeRun.equipmentShopState.purchasedSlotKeys").default([]),
@@ -154,18 +130,7 @@ const WildwoodDraftStateSchema = z
       currentRewardTraitIds: z.array(z.string()).default([]),
       rewardType: z.enum(["card", "trinket", "gear"]).nullable(),
       rewardChoiceIds: z.array(z.string()),
-      rewardGearChoices: z.preprocess(
-        (raw) =>
-          Array.isArray(raw)
-            ? raw.flatMap((item) => {
-                const normalized = normalizeGearInstance(
-                  item && typeof item === "object" ? (item as Record<string, unknown>) : {},
-                );
-                return normalized ? [normalized] : [];
-              })
-            : [],
-        z.array(GearInstanceSchema),
-      ),
+      rewardGearChoices: GearInstanceArraySchema,
       selectedRewardId: z.string().nullable(),
     }),
   )
@@ -191,45 +156,35 @@ const PersistedPendingRewardBaseSchema = {
   ),
 };
 
-const PersistedPendingRewardSchema = z
-  .preprocess(
-    (raw) => {
-      if (!raw || typeof raw !== "object") return raw;
-      const item = raw as Record<string, unknown>;
-      if (item.rewardType === "boon") return { ...item, rewardType: "trinket" };
-      return raw;
-    },
-    z.discriminatedUnion("rewardType", [
-      z.object({
-        rewardType: z.literal("card"),
-        choiceIds: z.array(z.string()),
-        ...PersistedPendingRewardBaseSchema,
-      }),
-      z.object({
-        rewardType: z.literal("trinket"),
-        choiceIds: z.array(z.string()),
-        ...PersistedPendingRewardBaseSchema,
-      }),
-      z.object({
-        rewardType: z.literal("gear"),
-        gearChoices: z.preprocess(
-          (raw) =>
-            Array.isArray(raw)
-              ? raw.flatMap((item) => {
-                  const normalized = normalizeGearInstance(
-                    item && typeof item === "object" ? (item as Record<string, unknown>) : {},
-                  );
-                  return normalized ? [normalized] : [];
-                })
-              : raw,
-          z.array(GearInstanceSchema).min(1),
-        ),
-        ...PersistedPendingRewardBaseSchema,
-      }),
-    ]),
-  )
+const PersistedPendingRewardUnionSchema = z.discriminatedUnion("rewardType", [
+  z.object({
+    rewardType: z.literal("card"),
+    choiceIds: z.array(z.string()),
+    ...PersistedPendingRewardBaseSchema,
+  }),
+  z.object({
+    rewardType: z.literal("trinket"),
+    choiceIds: z.array(z.string()),
+    ...PersistedPendingRewardBaseSchema,
+  }),
+  z.object({
+    rewardType: z.literal("gear"),
+    gearChoices: z.preprocess((raw) => normalizeGearInstanceArray(raw), z.array(GearInstanceSchema).min(1)),
+    ...PersistedPendingRewardBaseSchema,
+  }),
+]);
+
+export const PersistedPendingRewardSchema = z
+  .preprocess((raw) => {
+    if (!raw || typeof raw !== "object") return raw;
+    const item = raw as Record<string, unknown>;
+    if (item.rewardType === "boon") return { ...item, rewardType: "trinket" };
+    return raw;
+  }, PersistedPendingRewardUnionSchema)
   .nullable()
   .catch(null);
+
+export type PersistedPendingReward = z.infer<typeof PersistedPendingRewardUnionSchema>;
 
 // ===== ActiveRunData =====
 // normalizeActiveRunData lives in ./normalize-active-run-data.ts — imported above.

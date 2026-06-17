@@ -1,13 +1,9 @@
 import type { GearAffixId } from "./affix-ids";
-import { GEAR_AFFIX_IDS, LEGACY_GEAR_AFFIX_IDS } from "./affix-ids";
-import { gearAffixCatalog, gearAffixList, type GearAffixDefinition } from "./affix-catalog";
+import { LEGACY_GEAR_AFFIX_IDS } from "./affix-ids";
+import { gearAffixCatalog, type GearAffixDefinition } from "./affix-catalog";
 import type { GearEffectManifest } from "./gear-effect-manifest";
 import { defaultGearEffects } from "./gear-effect-manifest";
 import type { GearAffixRoll, GearRarity } from "./types";
-
-export type { GearAffixDefinition, GearAffixBinding } from "./affix-catalog";
-export { gearAffixCatalog, gearAffixList };
-export { GEAR_AFFIX_IDS };
 
 const LEGACY_AFFIX_MAP: Record<(typeof LEGACY_GEAR_AFFIX_IDS)[number], GearAffixId> = {
   "flat-physical-1": "flat-physical",
@@ -20,15 +16,15 @@ const LEGACY_AFFIX_MAP: Record<(typeof LEGACY_GEAR_AFFIX_IDS)[number], GearAffix
   "flat-nature-1": "flat-nature",
 };
 
-export function isGearAffixId(value: string): value is GearAffixId {
+function isGearAffixId(value: string): value is GearAffixId {
   return value in gearAffixCatalog;
 }
 
-export function scaleAffixValue(rollValue: number, rarity: GearRarity, def: GearAffixDefinition): number {
+function scaleAffixValue(rollValue: number, rarity: GearRarity, def: GearAffixDefinition): number {
   return Math.max(0, Math.round(rollValue * def.rarityScale[rarity]));
 }
 
-export function formatAffixDescription(def: GearAffixDefinition, roll: GearAffixRoll, rarity: GearRarity): string {
+function formatAffixDescription(def: GearAffixDefinition, roll: GearAffixRoll, rarity: GearRarity): string {
   const scaledValue = scaleAffixValue(roll.value, rarity, def);
   return def.descriptionTemplate.replace("{value}", String(scaledValue));
 }
@@ -39,16 +35,18 @@ export function resolveAffixEffects(affixes: readonly GearAffixRoll[], rarity: G
     const def = gearAffixCatalog[roll.id];
     if (!def) continue;
     const scaledValue = scaleAffixValue(roll.value, rarity, def);
-    for (const binding of def.bindings) {
-      effects[binding.effectKey] += scaledValue * binding.perPoint;
-    }
+    effects[def.effectKey] += scaledValue;
   }
   return effects;
 }
 
-export function normalizeLegacyAffixId(id: string): GearAffixId | null {
+function isLegacyAffixId(id: string): id is (typeof LEGACY_GEAR_AFFIX_IDS)[number] {
+  return id in LEGACY_AFFIX_MAP;
+}
+
+function normalizeLegacyAffixId(id: string): GearAffixId | null {
   if (isGearAffixId(id)) return id;
-  if (id in LEGACY_AFFIX_MAP) return LEGACY_AFFIX_MAP[id as keyof typeof LEGACY_AFFIX_MAP];
+  if (isLegacyAffixId(id)) return LEGACY_AFFIX_MAP[id];
   return null;
 }
 
@@ -72,10 +70,10 @@ export function normalizeAffixRolls(raw: {
     });
   }
 
-  return modifiersToAffixRolls(raw.modifiers ?? []);
+  return legacyFlatPhysicalModifiersToAffixRolls(raw.modifiers ?? []);
 }
 
-export function modifiersToAffixRolls(modifiers: { kind: string; value: number }[]): GearAffixRoll[] {
+export function legacyFlatPhysicalModifiersToAffixRolls(modifiers: { kind: string; value: number }[]): GearAffixRoll[] {
   const rolls: GearAffixRoll[] = [];
   for (const modifier of modifiers) {
     if (modifier.kind !== "flatPhysicalDamage" || !Number.isFinite(modifier.value)) continue;
@@ -85,11 +83,6 @@ export function modifiersToAffixRolls(modifiers: { kind: string; value: number }
     }
   }
   return rolls;
-}
-
-/** @deprecated Use modifiersToAffixRolls */
-export function modifiersToAffixIds(modifiers: { kind: string; value: number }[]): GearAffixId[] {
-  return modifiersToAffixRolls(modifiers).map((roll) => roll.id);
 }
 
 export function rollAffixValue(def: GearAffixDefinition, rng: () => number): number {

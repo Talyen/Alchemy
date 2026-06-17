@@ -4,13 +4,7 @@ import { cn } from "@/lib/utils";
 import { CHIP_BUTTON_CLASS } from "@/features/alchemy/shared/config";
 import { PressableMotion } from "./pressable-motion";
 
-export const TAB_BUTTON_BASE_CLASS = CHIP_BUTTON_CLASS;
-
-export function TabBar<T extends string>({
-  tabs,
-  activeTab,
-  onSelectTab,
-}: {
+export type TabBarProps<T extends string> = {
   tabs: {
     id: T;
     label: string;
@@ -20,7 +14,9 @@ export function TabBar<T extends string>({
   }[];
   activeTab: T;
   onSelectTab: (tab: T) => void;
-}) {
+};
+
+export function TabBar<T extends string>({ tabs, activeTab, onSelectTab }: TabBarProps<T>) {
   return (
     <div className="flex flex-wrap justify-center gap-3">
       {tabs.map((tab) => {
@@ -33,7 +29,7 @@ export function TabBar<T extends string>({
               disabled={isDisabled}
               onClick={() => !isDisabled && onSelectTab(tab.id)}
               className={cn(
-                TAB_BUTTON_BASE_CLASS,
+                CHIP_BUTTON_CLASS,
                 "shrink-0",
                 isDisabled && "cursor-default opacity-50",
                 tab.id === activeTab

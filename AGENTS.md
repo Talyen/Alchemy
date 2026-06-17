@@ -2,7 +2,7 @@
 
 **Alchemy** is a fantasy roguelite deckbuilder: pick a **Character**, fight turn-based battles with cards (**Mana**, **Statuses**, **Block**, companions), earn rewards, and travel to **Destinations** (combat, **Campfire**, shops, **Mystery**, **Corruption**). Between runs, the **Homestead** and **Talent** trees provide permanent progression.
 
-> **Docs:** [ARCHITECTURE.md](./docs/ARCHITECTURE.md) (run state) · [WORKFLOWS.md](./docs/WORKFLOWS.md) (how-to) · [REFERENCE.md](./docs/REFERENCE.md) (commands, glossary, battle) · [RELEASE.md](./docs/RELEASE.md) (Steam shipping) · [CONTRIBUTING.md](./CONTRIBUTING.md) (hooks and tests) · [PROMPTS.md](./PROMPTS.md) (audits) · [README.md](./README.md) (human setup)
+> **Docs:** [ARCHITECTURE.md](./docs/ARCHITECTURE.md) (run state) · [WORKFLOWS.md](./docs/WORKFLOWS.md) (how-to) · [REFERENCE.md](./docs/REFERENCE.md) (commands, glossary, battle) · [RELEASE.md](./docs/RELEASE.md) (Steam shipping) · [CONTRIBUTING.md](./CONTRIBUTING.md) (hooks and tests) · [PROMPTS.md](./PROMPTS.md) (code-quality audits) · [README.md](./README.md) (human setup)
 
 ## Where to look
 
@@ -13,7 +13,7 @@
 | Changing battle or card effects      | [REFERENCE battle rules](./docs/REFERENCE.md#battle-implementation-rules), [BATTLE_HANDLERS.md](./src/lib/game-data/effects/BATTLE_HANDLERS.md) | `tests/lib/battle` and `descriptions-match-effects`                               |
 | Changing UI or motion                | [WORKFLOWS stagger guidance](./docs/WORKFLOWS.md#staggered-screen-enter-motion)                                                                 | Targeted UI tests and `npm run lint:ci`                                           |
 | Changing saves or releases           | [WORKFLOWS persistence guidance](./docs/WORKFLOWS.md#change-persisted-save-data), [RELEASE](./docs/RELEASE.md)                                  | Ship checks from [CONTRIBUTING](./CONTRIBUTING.md)                                |
-| Stuck after three attempts           | Matching audit in [PROMPTS.md](./PROMPTS.md)                                                                                                    | Ask the user after the audit                                                      |
+| Stuck after three attempts           | Relevant code-quality audit in [PROMPTS.md](./PROMPTS.md) (or [WORKFLOWS](./docs/WORKFLOWS.md) for domain wiring)                               | Ask the user after the audit                                                      |
 
 ## Sources of truth
 
@@ -88,4 +88,4 @@ Only `@/*` maps to `src/*` in `tsconfig.json`; use on-disk paths under `src/feat
 - DEV-only QA controls (Skip Combat, Unlock All, Error Log) are not available in production, and E2E specs must not target them. Use `winViaCombat()` or `playCardNamed()`.
 - The startup bypass is `localStorage["alchemy-skip-loading-screen"]`; boot validation runs through `validate-startup.ts`.
 - Battle warnings use the `[Enemy Turn]` prefix.
-- After three failed attempts with the same approach, run the matching [PROMPTS.md](./PROMPTS.md) audit, then ask the user rather than continuing speculative changes.
+- After three failed attempts with the same approach, run the relevant code-quality audit in [PROMPTS.md](./PROMPTS.md) (or [WORKFLOWS](./docs/WORKFLOWS.md) for domain wiring), then ask the user rather than continuing speculative changes.

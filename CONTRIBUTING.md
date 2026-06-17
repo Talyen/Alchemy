@@ -31,6 +31,8 @@ First-time Playwright: `npx playwright install chromium`.
 | Active run / screen / bootstrap | `run-domain-store.ts`, `run-transitions.ts`, `shell/use-alchemy-run-controller.ts`, `hydrate.ts` | `npm test -- tests/features/stores/ tests/features/shell/ tests/lib/active-run-session/hydrate.test.ts tests/architecture/active-run-bootstrap.test.ts` then `npm run test:e2e:prepush` |
 | Save / persistence | `storage/`, `save-schemas/`, `active-run.ts` | `npm test -- tests/features/storage` + `tests/save-persistence.spec.ts` + `npm run test:e2e:prepush` |
 | Battle / cards | `src/lib/battle/`, `src/lib/game-data/` | `npm test -- tests/lib/battle` + `tests/lib/game-data/descriptions-match-effects.test.ts` |
+| Routing / destinations | `src/lib/routing/` | `npm test -- tests/lib/routing/destination-availability.test.ts` |
+| Gear | `src/lib/gear/` | `npm test -- tests/lib/gear tests/features/stores/gear-store.test.ts` |
 | Integration-style unit tests | `run-domain.test.ts`, `storage.test.ts`, `reward-flow*.test.ts`, `shell/*-hook.test.ts` | `npm test -- tests/features/stores/run-domain.test.ts tests/features/storage tests/features/navigation/reward-flow tests/features/shell` |
 | Battle E2E helpers | `tests/pages/battle-page.ts`, `tests/helpers.ts` (`enableFastMode`) | `npm run test:e2e:prepush` (animation canary) + `npm run test:e2e:main-gate` before pushing to `main` |
 | UI flows | `screens/`, controllers | Relevant `tests/*.spec.ts` + `npm run test:e2e:prepush` |
@@ -38,11 +40,62 @@ First-time Playwright: `npx playwright install chromium`.
 
 ## E2E helpers
 
+Layout: bootstrap helpers in [`tests/e2e/`](tests/e2e/) (`battle-setup.ts`, `navigation.ts`, `errors.ts`), re-exported from [`tests/helpers.ts`](tests/helpers.ts); page objects in [`tests/pages/`](tests/pages/); Playwright fixtures in [`tests/fixtures/e2e.ts`](tests/fixtures/e2e.ts).
+
+### When to use which test import
+
+| Import | Use for |
+|--------|---------|
+| `import { test } from "./fixtures/e2e"` | Most battle/flow specs — opt-in `fastBattle` + `runtimeErrors` fixtures |
+| `import { test } from "@playwright/test"` | Animation specs (`draw-discard-animations.spec.ts`, `battle-end-turn-canary.spec.ts`) — **no** fast mode; also boot-only smoke (`alchemy.spec.ts` uses both) |
+
+**Decision tree:**
+
+1. **Animation canary or animation-focused spec** → raw `@playwright/test`, never `enableFastMode` / `fastBattle`.
+2. **Combat or turn cycling** → `fixtures/e2e` and declare `{ page, fastBattle, runtimeErrors }` with `void fastBattle; void runtimeErrors;`.
+3. **Manual fast mode without fixtures** → `enableFastMode(page)` in `beforeEach` or per test (e.g. `run-victory-flow.spec.ts`, `progression-locks.spec.ts`).
+4. **Visibility-only battle checks** (no `endTurn` / card play) → `fastBattle` recommended but optional (`accessibility.spec.ts`, `save-mid-combat-resume.spec.ts`).
+
+### Navigation and bootstrap
+
 - **`openGameModeSelect`** — retries Play if the menu unmounts during bootstrap.
 - **`resumeCampaignRun`** — use for campaign resume; waits for destination when `currentScreen` was saved as `destination` instead of clicking Play during hydrate.
-- **`enableFastMode`** — disables animations; safe for most battle tests. Do **not** use in `battle-end-turn-canary.spec.ts` or animation-focused specs.
+- **`startBattleWithDeck`**, **`startAtDestination`**, **`skipBattleAndClaimReward`**, **`startCampaignBattle`** — battle bootstrap (`tests/e2e/battle-setup.ts`).
+- **`assertDefeatFromEndRun`** — end run from battle menu and assert defeat screen (`tests/e2e/run-end.ts`).
+- **`injectMidCombatSave`** — inject a save mid-combat for resume tests (`tests/e2e/mid-combat-save.ts`).
+- **`failOnRuntimeErrors`** — manual console/pageerror collection when not using the fixture (e.g. boot smoke in `alchemy.spec.ts`).
+
+### Card factories (`tests/e2e/cards.ts`)
+
+- **`makeCard`**, **`makeHighDamageCard`**, **`makeStatusCard`** — deck builders for E2E.
+- Preset cards: **`ANVIL_CARD`**, **`MANA_BERRIES_CARD`**, etc.
+
+### Battle page object
+
+- **`enableFastMode`** — disables animations via `localStorage`; safe for most battle tests. Do **not** use in `battle-end-turn-canary.spec.ts`, `draw-discard-animations.spec.ts`, or other animation-focused specs. ESLint blocks `fixtures/e2e` and `enableFastMode` in those files.
 - **`BattlePage.endTurn`** — must work with animations off (fast tests) and on (canary + full suite). Changing it requires the prepush canary to pass.
-- **Do not** use `skipCombatToVictory()`, `skipCombatBtn`, or target Skip Combat / Unlock All strings in e2e specs — hidden in preview/production; use `winViaCombat()` or `playCardNamed()`.
+- **`winViaCombat(maxTurns?)`** — play all cards and end turns until victory; use for preview-safe wins.
+- **`playCardNamed(title)`** — click a named card in hand (`Play ${title}` button); use when the deck defines explicit titles.
+- **`playFirstCard()`** — play the first card in hand; use for generic `makeCard()` decks.
+- **`playAllCards()`** — used internally by `winViaCombat`; rarely needed directly.
+- **Do not** use `skipCombatToVictory()`, `skipCombatBtn`, or target Skip Combat / Unlock All strings in e2e specs — hidden in preview/production. ESLint enforces this in `eslint.config.js` for `tests/**/*.spec.ts`.
+- In-game **Skip** buttons (e.g. Wildwood reward skip) are legitimate UI, not dev QA shortcuts.
+
+### Fixtures (`tests/fixtures/e2e.ts`)
+
+- **`fastBattle`** — opt-in fixture dep; calls `enableFastMode` before the test when listed in the callback params and referenced (`void fastBattle;`).
+- **`runtimeErrors`** — collects page errors and asserts `[]` after each test.
+
+### Page objects (`tests/pages/`)
+
+`BattlePage`, `MenuPage`, `DestinationPage`, `RewardPage`, `ShopPage`, `MysteryPage`, `CorruptionPage`, `HomesteadPage`, `GameStage`.
+
+### Tags (`tests/playwright-tags.ts`)
+
+- **`@prepush`** — 9-test subset in the pre-push hook (`npm run test:e2e:prepush`).
+- **`@critical`** — broader CI gate (`npm run test:e2e:prepush:full`).
+- **`@smoke`** — quick boot/menu checks.
+
 
 ## CI parity
 

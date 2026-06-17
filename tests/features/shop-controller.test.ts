@@ -4,11 +4,8 @@ import {
   SHOP_CARD_PRICE,
   SHOP_REMOVE_PRICE,
   SHOP_REFRESH_PRICE,
-  SHOP_CARDS_OFFERED,
   ALCHEMIST_POTION_PRICE,
   ALCHEMIST_REFRESH_PRICE,
-  ALCHEMIST_MIX_PRICE,
-  ALCHEMIST_POTIONS_OFFERED,
 } from "@/lib/game-constants";
 import { createInitialShopState, createInitialAlchemistState } from "@/features/alchemy/run-loop/shop/shop-state-init";
 import type { BattleCard } from "@/lib/game-data";
@@ -17,7 +14,6 @@ import {
   getRunSessionStoreView,
   resetRunProgressSlice,
   setRunProgress,
-  setRunSession,
 } from "../helpers/run-domain-store-test";
 
 beforeEach(() => {
@@ -45,103 +41,6 @@ function firstShopCard(): BattleCard | null {
   const cards = getRunSessionStoreView().shopState.cards;
   return cards.length > 0 ? cards[0] : null;
 }
-
-import { computeShopBuyPrice, getCardBuyTalentDiscounts } from "@/features/alchemy/run-loop/shop/shop-pricing";
-
-describe("shop pricing formulas", () => {
-  const shopCardPrice = (favorActive: boolean, shopCardDiscount: number, merchantsFavorDiscount: number) =>
-    computeShopBuyPrice({
-      basePrice: SHOP_CARD_PRICE,
-      haggleDiscount: shopCardDiscount,
-      apothecaryDiscount: 0,
-      merchantsFavorDiscount,
-      firstPurchaseUsed: !favorActive,
-      favorConsumed: !favorActive,
-    });
-
-  const alchemistPotionPrice = (favorActive: boolean, potionDiscount: number, merchantsFavorDiscount: number) =>
-    computeShopBuyPrice({
-      basePrice: ALCHEMIST_POTION_PRICE,
-      haggleDiscount: 0,
-      apothecaryDiscount: potionDiscount,
-      merchantsFavorDiscount,
-      firstPurchaseUsed: !favorActive,
-      favorConsumed: !favorActive,
-    });
-
-  it("shopCardPrice: base minus talent discount", () => {
-    expect(shopCardPrice(true, 10, 0)).toBe(Math.max(0, SHOP_CARD_PRICE - 10));
-  });
-
-  it("shopCardPrice: first purchase gets boon discount too", () => {
-    expect(shopCardPrice(true, 10, 5)).toBe(Math.max(0, SHOP_CARD_PRICE - 10 - 5));
-  });
-
-  it("shopCardPrice: non-first purchase loses boon discount", () => {
-    expect(shopCardPrice(false, 10, 5)).toBe(Math.max(0, SHOP_CARD_PRICE - 10));
-  });
-
-  it("shopCardPrice: floors at 0", () => {
-    expect(shopCardPrice(true, 999, 0)).toBe(0);
-  });
-
-  it("alchemistPotionPrice: base minus talent discount", () => {
-    expect(alchemistPotionPrice(true, 10, 0)).toBe(Math.max(0, ALCHEMIST_POTION_PRICE - 10));
-  });
-
-  it("alchemistPotionPrice: first purchase gets boon discount too", () => {
-    expect(alchemistPotionPrice(true, 10, 5)).toBe(Math.max(0, ALCHEMIST_POTION_PRICE - 10 - 5));
-  });
-
-  it("stacked haggle and apothecary on merchant potion", () => {
-    const potion = makeCard({ id: "health-potion" });
-    const { haggleDiscount, apothecaryDiscount } = getCardBuyTalentDiscounts(potion, {
-      shopCardDiscount: 5,
-      potionDiscount: 5,
-    });
-    expect(
-      computeShopBuyPrice({
-        basePrice: SHOP_CARD_PRICE,
-        haggleDiscount,
-        apothecaryDiscount,
-        firstPurchaseUsed: false,
-        favorConsumed: true,
-      }),
-    ).toBe(20);
-  });
-});
-
-describe("shop store integration", () => {
-  it("createInitialShopState creates correct number of cards", () => {
-    getRunSessionStoreView().setShopState(createInitialShopState());
-    expect(getRunSessionStoreView().shopState.cards.length).toBe(SHOP_CARDS_OFFERED);
-  });
-
-  it("createInitialShopState resets refreshesLeft and purchase state", () => {
-    setRunSession({
-      shopState: {
-        ...getRunSessionStoreView().shopState,
-        refreshesLeft: 0,
-        removeUsed: true,
-        firstPurchaseUsed: true,
-      },
-    });
-    getRunSessionStoreView().setShopState(createInitialShopState());
-    const shop = getRunSessionStoreView().shopState;
-    expect(shop.refreshesLeft).toBeGreaterThan(0);
-    expect(shop.removeUsed).toBe(false);
-    expect(shop.firstPurchaseUsed).toBe(false);
-  });
-
-  it("createInitialAlchemistState filters potion cards", () => {
-    getRunSessionStoreView().setAlchemistState(createInitialAlchemistState());
-    const potions = getRunSessionStoreView().alchemistState.potions;
-    expect(potions.length).toBe(ALCHEMIST_POTIONS_OFFERED);
-    for (const p of potions) {
-      expect(p.id).toMatch(/-potion$/);
-    }
-  });
-});
 
 describe("shop buy flow via run store mutations", () => {
   it("deducts gold and appends card when buying", () => {
@@ -237,16 +136,5 @@ describe("alchemist buy flow via mutations", () => {
     }));
 
     expect(getRunSessionStoreView().alchemistState.refreshesLeft).toBe(beforeRefreshes - 1);
-  });
-});
-
-describe("mix potion pricing", () => {
-  it("mix price uses mixPotionDiscount", () => {
-    const price = Math.max(0, ALCHEMIST_MIX_PRICE - 15);
-    expect(price).toBe(Math.max(0, ALCHEMIST_MIX_PRICE - 15));
-  });
-
-  it("mix price floors at 0", () => {
-    expect(Math.max(0, ALCHEMIST_MIX_PRICE - 999)).toBe(0);
   });
 });

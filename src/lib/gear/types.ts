@@ -4,8 +4,6 @@ import type { GearAffixId } from "./affix-ids";
 import type { GearBaseItemId } from "./base-items";
 import type { GearDefinitionId } from "./definitions";
 
-import type { GearEffectManifest } from "./gear-effect-manifest";
-
 export type { GearEffectManifest } from "./gear-effect-manifest";
 export { defaultGearEffects, GEAR_EFFECT_KEYS } from "./gear-effect-manifest";
 
@@ -53,7 +51,6 @@ export type GearDefinition = {
   compatibleSlots: GearSlot[];
   requiresTwoHands: boolean;
   affinityKeywords: KeywordId[];
-  effects: GearEffectManifest;
   salvageValue: MaterialInventory;
 };
 

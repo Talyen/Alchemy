@@ -310,8 +310,14 @@ describe("computeVictoryRewards", () => {
   it("computes destinations via getAvailableDestinations", () => {
     const getAvailableDestinations = vi.fn(() => ["Normal Combat", "Campfire", "Mystery"] as Destination[]);
     const result = computeVictoryRewards(baseInput({ getAvailableDestinations }));
-    expect(getAvailableDestinations).toHaveBeenCalled();
-    expect(result.destinations.length).toBeGreaterThan(0);
+    expect(getAvailableDestinations).toHaveBeenCalledWith({
+      currentHealth: 30,
+      currentGold: result.newGold,
+      destinationIndexInAct: 2,
+      maxHealth: 30,
+    });
+    expect(result.destinations).toEqual(["Normal Combat", "Campfire", "Mystery"]);
+    expect(result.newGold).toBeGreaterThan(5);
   });
 });
 

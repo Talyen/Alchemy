@@ -17,12 +17,12 @@ import { playUISound } from "@/lib/audio";
 import { characters, characterArt, gearSlotBackgroundArt, type CharacterId } from "@/lib/game-data";
 import {
   canSalvageGear,
+  gearDefinitions,
   GEAR_FOOTPRINT,
   getGearInstanceTitle,
   INVENTORY_COLS,
   INVENTORY_VISIBLE_ROWS,
   isGearCompatibleWithSlot,
-  resolveGearDefinition,
   type GearInstance,
   type GearLoadouts,
   type GearSlot,
@@ -33,9 +33,9 @@ import { TiltSurface } from "../../../shared/ui/tilt-surface";
 import { TooltipPanel, useTooltipViewportClamp } from "../../../shared/ui/tooltip-panel";
 import { useInteractiveCard } from "../../../shared/ui/use-interactive-card";
 import { GearTooltipContent } from "./gear-tooltip-content";
-import type { GearDragOrigin, GearPointerEnd, GearPointerMove, GearPointerStart } from "./types";
+import type { GearDragOrigin, GearPointerEnd, GearPointerMove, GearPointerStart } from "./use-armory-gear-drag";
 
-export type { GearDragOrigin } from "./types";
+export type { GearDragOrigin } from "./use-armory-gear-drag";
 
 const SLOT_LABELS: Record<GearSlot, string> = {
   body: "Body",
@@ -482,7 +482,7 @@ const SlotButton = memo(function SlotButton({
 }) {
   const [showTooltip, setShowTooltip] = useState(false);
   const { ref, flip, dx } = useTooltipViewportClamp(8, showTooltip);
-  const definition = instance ? resolveGearDefinition(instance.definitionId) : undefined;
+  const definition = instance ? gearDefinitions[instance.definitionId] : undefined;
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -496,7 +496,7 @@ const SlotButton = memo(function SlotButton({
   const isCompatible =
     isDraggingActive && draggedGear
       ? (() => {
-          const draggedDefinition = resolveGearDefinition(draggedGear.definitionId);
+          const draggedDefinition = gearDefinitions[draggedGear.definitionId];
           return draggedDefinition ? isGearCompatibleWithSlot(draggedDefinition, slot) : false;
         })()
       : false;
@@ -630,7 +630,7 @@ const InventoryGearTile = memo(function InventoryGearTile({
   const [tooltipSequence, setTooltipSequence] = useState<number | null>(null);
   const tileRef = useRef<HTMLDivElement>(null);
   const [tooltipAnchor, setTooltipAnchor] = useState<{ centerX: number; top: number; bottom: number } | null>(null);
-  const definition = resolveGearDefinition(instance.definitionId);
+  const definition = gearDefinitions[instance.definitionId];
   const showTooltip = tooltipSequence === dragSequence && !interactionSuppressed;
 
   const openTooltip = useCallback(() => {

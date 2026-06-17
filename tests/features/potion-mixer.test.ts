@@ -1,6 +1,7 @@
 // Unit tests for alchemist potion-combining logic.
 import { describe, expect, it, vi } from "vitest";
-import { createMixedPotion, tryCreateMixedPotion, applyMixToDeck } from "@/features/alchemy/run-loop/potion-mixer";
+import { createMixedPotion, tryCreateMixedPotion, applyMixToDeck } from "@/lib/alchemist";
+import { ALCHEMIST_MIX_PRICE } from "@/lib/game-constants";
 import type { BattleCard } from "@/lib/game-data";
 
 function makePotion(overrides: Partial<BattleCard> = {}): BattleCard {
@@ -128,5 +129,57 @@ describe("applyMixToDeck", () => {
     const copy = [...deck];
     applyMixToDeck(deck, 0, 1, mixed);
     expect(deck).toEqual(copy);
+  });
+
+  it("appends the mixed potion at the end", () => {
+    const deck = [
+      makePotion({ id: "a" }),
+      makePotion({ id: "b" }),
+      makePotion({ id: "c" }),
+      makePotion({ id: "d" }),
+    ];
+    const result = applyMixToDeck(deck, 0, 1, mixed);
+
+    expect(result[result.length - 1].id).toBe(mixed.id);
+  });
+});
+
+describe("same-card specialty potions", () => {
+  function manaPotion(): BattleCard {
+    return makePotion({
+      id: "mana-potion",
+      title: "Mana Potion",
+      descriptionLines: ["Restore 2 Mana", "Consume"],
+      effects: [{ kind: "restore-mana", amount: 2 }],
+    });
+  }
+
+  function panaceaPotion(): BattleCard {
+    return makePotion({
+      id: "panacea-potion",
+      title: "Panacea Potion",
+      descriptionLines: ["Remove 1 harmful status effect", "Consume"],
+      effects: [{ kind: "remove-harmful-status", amount: 1 }],
+    });
+  }
+
+  it("doubles restore-mana for two Mana Potions", () => {
+    const mixed = createMixedPotion(manaPotion(), manaPotion());
+
+    expect(mixed.effects[0]).toEqual({ kind: "restore-mana", amount: 4 });
+    expect(mixed.descriptionLines).toContain("Restore 4 Mana");
+  });
+
+  it("doubles remove-harmful-status for two Panacea Potions", () => {
+    const mixed = createMixedPotion(panaceaPotion(), panaceaPotion());
+
+    expect(mixed.effects[0]).toEqual({ kind: "remove-harmful-status", amount: 2 });
+    expect(mixed.descriptionLines).toContain("Remove 2 harmful status effect");
+  });
+});
+
+describe("gold deduction", () => {
+  it("costs 40 gold per mix", () => {
+    expect(ALCHEMIST_MIX_PRICE).toBe(40);
   });
 });

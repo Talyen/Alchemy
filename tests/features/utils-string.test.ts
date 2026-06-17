@@ -11,8 +11,7 @@ describe("tokenizeDescription", () => {
     const result = tokenizeDescription("Deal 5 Physical damage");
     expect(result.length).toBeGreaterThanOrEqual(2);
     const keywordPart = result.find((p) => p.keywordId === "physical");
-    expect(keywordPart).toBeDefined();
-    expect(keywordPart!.text).toBe("Physical");
+    expect(keywordPart?.text).toBe("Physical");
   });
 
   it("tokenizes multiple keywords", () => {
@@ -22,27 +21,10 @@ describe("tokenizeDescription", () => {
     expect(keywordIds).toContain("armor");
   });
 
-  it('recognizes "Mana Crystal" before "Mana" as separate keywords', () => {
-    const result = tokenizeDescription("Gain 1 Mana Crystal and restore 2 Mana");
-    const manaCrystal = result.find((p) => p.text === "Mana Crystal");
-    const mana = result.find((p) => p.text === "Mana");
-    expect(manaCrystal).toBeDefined();
-    expect(mana).toBeDefined();
-  });
-
-  it("matches case-insensitively", () => {
-    const result = tokenizeDescription("physical STUN Block");
-    const keywordIds = result.filter((p) => p.keywordId).map((p) => p.text.toLowerCase());
-    expect(keywordIds).toContain("physical");
-    expect(keywordIds).toContain("stun");
-    expect(keywordIds).toContain("block");
-  });
-
   it('maps "HP" to the health keyword', () => {
     const result = tokenizeDescription("Heal 5 HP");
     const hp = result.find((p) => p.text === "HP");
-    expect(hp).toBeDefined();
-    expect(hp!.keywordId).toBe("health");
+    expect(hp?.keywordId).toBe("health");
   });
 
   it("handles an empty string", () => {

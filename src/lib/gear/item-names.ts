@@ -1,6 +1,6 @@
 import { gearDefinitions } from "./definitions";
 import { gearBaseItems } from "./base-items";
-import { gearAffixCatalog } from "./affix-catalog";
+import { gearAffixNameParts } from "./affix-name-parts";
 import type { GearDefinition, GearInstance } from "./types";
 
 function hashString(value: string): number {
@@ -17,12 +17,8 @@ function pickFromPool<T>(pool: T[], seed: number): T | undefined {
 }
 
 function resolveBaseDisplayName(definition: GearDefinition): string {
-  const baseItem = gearBaseItems[definition.baseItemId as keyof typeof gearBaseItems];
+  const baseItem = gearBaseItems[definition.baseItemId];
   return baseItem?.displayName ?? definition.title;
-}
-
-export function getGearDefinitionTitle(definition: GearDefinition): string {
-  return resolveBaseDisplayName(definition);
 }
 
 export function getGearInstanceTitle(instance: GearInstance): string {
@@ -36,7 +32,7 @@ export function getGearInstanceTitle(instance: GearInstance): string {
   const suffixPool: string[] = [];
 
   for (const roll of instance.affixes) {
-    const nameParts = gearAffixCatalog[roll.id]?.nameParts;
+    const nameParts = gearAffixNameParts[roll.id];
     if (!nameParts) continue;
     if (nameParts.prefix) prefixPool.push(nameParts.prefix);
     if (nameParts.suffix) suffixPool.push(nameParts.suffix);

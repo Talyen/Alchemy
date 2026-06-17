@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import { defaultBattleState } from "@/lib/battle";
 import { getStartingDeck } from "@/lib/game-data";
-import { createActiveRunData } from "@/features/alchemy/run-loop/run/active-run-data";
+import { createActiveRunSnapshot } from "@/lib/active-run-session";
 
-function makeSource(overrides: Partial<Parameters<typeof createActiveRunData>[0]> = {}): Parameters<typeof createActiveRunData>[0] {
+function makeSource(overrides: Partial<Parameters<typeof createActiveRunSnapshot>[0]> = {}): Parameters<typeof createActiveRunSnapshot>[0] {
   return {
     characterId: "knight",
     runDeck: getStartingDeck("knight"),
@@ -35,10 +35,10 @@ function makeSource(overrides: Partial<Parameters<typeof createActiveRunData>[0]
   };
 }
 
-describe("createActiveRunData", () => {
+describe("createActiveRunSnapshot", () => {
   it("copies only persisted active-run fields", () => {
     const runDeck = getStartingDeck("knight");
-    const result = createActiveRunData(makeSource({
+    const result = createActiveRunSnapshot(makeSource({
       runDeck,
     }));
 
@@ -70,7 +70,7 @@ describe("createActiveRunData", () => {
 
   it("includes contentSystemType field defaulting to campaign", () => {
     const runDeck = getStartingDeck("knight");
-    const result = createActiveRunData(makeSource({
+    const result = createActiveRunSnapshot(makeSource({
       runDeck,
       runGold: 0,
       runPlayerHealth: 30,
@@ -90,7 +90,7 @@ describe("createActiveRunData", () => {
 
   it("can set contentSystemType to labyrinth", () => {
     const runDeck = getStartingDeck("knight");
-    const result = createActiveRunData(makeSource({
+    const result = createActiveRunSnapshot(makeSource({
       runDeck,
       runGold: 0,
       runPlayerHealth: 30,
@@ -110,14 +110,14 @@ describe("createActiveRunData", () => {
 
   it("persists active campaign combat state", () => {
     const battleState = { ...defaultBattleState(), turn: 3, playerHealth: 12 };
-    const result = createActiveRunData(makeSource({ hasActiveBattle: true, battleState }));
+    const result = createActiveRunSnapshot(makeSource({ hasActiveBattle: true, battleState }));
 
     expect(result.activeCombat?.battleState).toBe(battleState);
   });
 
   it("persists the current state during enemy phase instead of reverting to battle start", () => {
     const enemyPhaseState = { ...defaultBattleState(), turn: 2, turnPhase: "enemy" as const, hand: [] };
-    const result = createActiveRunData(makeSource({
+    const result = createActiveRunSnapshot(makeSource({
       hasActiveBattle: true,
       battleState: enemyPhaseState,
     }));
@@ -128,7 +128,7 @@ describe("createActiveRunData", () => {
   });
 
   it("persists labyrinth pending node and modifiers during combat", () => {
-    const result = createActiveRunData(makeSource({
+    const result = createActiveRunSnapshot(makeSource({
       contentSystemType: "labyrinth",
       hasActiveBattle: true,
       labyrinthPendingNode: { row: 1, col: 2 },
@@ -143,27 +143,27 @@ describe("createActiveRunData", () => {
 
   it("skips active combat when enemy health is zero", () => {
     const battleState = { ...defaultBattleState(), turn: 5, enemyHealth: 0 };
-    const result = createActiveRunData(makeSource({ hasActiveBattle: true, battleState }));
+    const result = createActiveRunSnapshot(makeSource({ hasActiveBattle: true, battleState }));
 
     expect(result.activeCombat).toBeNull();
   });
 
   it("skips active combat when player is defeated", () => {
     const battleState = { ...defaultBattleState(), turn: 3, playerHealth: 0, deathsDoorUsed: true, deathsDoorActive: false };
-    const result = createActiveRunData(makeSource({ hasActiveBattle: true, battleState }));
+    const result = createActiveRunSnapshot(makeSource({ hasActiveBattle: true, battleState }));
 
     expect(result.activeCombat).toBeNull();
   });
 
   it("persists runTalentXP", () => {
     const runTalentXP = { burn: 10, poison: 5 };
-    const result = createActiveRunData(makeSource({ runTalentXP }));
+    const result = createActiveRunSnapshot(makeSource({ runTalentXP }));
 
     expect(result.runTalentXP).toEqual(runTalentXP);
   });
 
   it("persists destination resume fields", () => {
-    const result = createActiveRunData(makeSource({
+    const result = createActiveRunSnapshot(makeSource({
       currentScreen: "destination",
       destinationChoices: ["Campfire", "Merchant's Shop"],
     }));
@@ -188,7 +188,7 @@ describe("createActiveRunData", () => {
       selectedRewardId: "slash",
     };
 
-    const result = createActiveRunData(makeSource({ contentSystemType: "wildwood", wildwoodDraft }));
+    const result = createActiveRunSnapshot(makeSource({ contentSystemType: "wildwood", wildwoodDraft }));
 
     expect(result.wildwoodDraft).toEqual(wildwoodDraft);
   });

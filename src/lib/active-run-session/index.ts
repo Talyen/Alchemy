@@ -1,14 +1,21 @@
 export type {
   ActiveRunData,
-  DestinationOptionsInput,
   LabyrinthNodePosition,
+  PersistedPendingReward,
   PersistedShopState,
   PersistedAlchemistState,
   PersistedTrinketShopState,
   PersistedEquipmentShopState,
 } from "./types";
-export { createActiveRunSnapshot, createActiveRunSnapshot as buildActiveRunSnapshot } from "./snapshot";
+export type { CardRewardState, GearRewardState, RewardState, TrinketRewardState } from "./reward-types";
+export { createActiveRunSnapshot } from "./snapshot";
 export { parseActiveRun } from "./parse";
-export { hydrateActiveRunSession as restoreActiveRun } from "./hydrate";
+export { hydrateActiveRunSession } from "./hydrate";
 export type { ActiveRunHydrationTargets } from "./hydrate";
-export { restorePendingReward, serializePendingReward, type PendingRewardState } from "./pending-reward-persistence";
+export {
+  restorePendingReward,
+  serializePendingReward,
+  resolveCardChoices,
+  resolveGearChoices,
+  resolveTrinketChoices,
+} from "./pending-reward-persistence";

@@ -2,25 +2,20 @@ import { describe, expect, it, vi } from "vitest";
 import type { MysteryEffect } from "@/features/alchemy/run-loop/mystery-events";
 import { applyMysteryEffect } from "@/features/alchemy/run-loop/navigation/mystery-flow";
 import * as gameData from "@/lib/game-data";
-import { cardLibrary, getCardKeywords, getOfferableCardPool } from "@/lib/game-data";
+import { cardLibrary, getCardKeywords, getOfferableCardPool, type BattleCard } from "@/lib/game-data";
 
-const MYSTERY_EFFECT_KINDS: MysteryEffect["kind"][] = [
-  "addCard",
-  "chooseCard",
-  "healHealth",
-  "damageHealth",
-  "gainGold",
-  "loseGold",
-  "gainXP",
-  "removeCard",
-  "gainTrinket",
-  "gainRandomTrinket",
-  "gainMaterial",
-  "none",
-];
+vi.mock("@/features/alchemy/shared/stores/app-store", () => ({
+  useAppStore: {
+    getState: () => ({
+      setDiscoveredCardIds: vi.fn(),
+      setDiscoveredTrinketIds: vi.fn(),
+    }),
+  },
+}));
 
-function minimalContext() {
+function minimalContext(overrides: { runDeck?: BattleCard[] } = {}) {
   return {
+    runDeck: overrides.runDeck,
     runMaxHealth: 30,
     setRunDeck: vi.fn(),
     setRunGold: vi.fn(),
@@ -33,28 +28,63 @@ function minimalContext() {
   };
 }
 
-const effectsByKind: Record<MysteryEffect["kind"], MysteryEffect> = {
-  addCard: { kind: "addCard", cardId: "slash" },
-  chooseCard: { kind: "chooseCard" },
-  healHealth: { kind: "healHealth", amount: 5 },
-  damageHealth: { kind: "damageHealth", amount: 3 },
-  gainGold: { kind: "gainGold", amount: 10 },
-  loseGold: { kind: "loseGold", amount: 5 },
-  gainXP: { kind: "gainXP", keyword: "physical", amount: 1 },
-  removeCard: { kind: "removeCard", mode: "random" },
-  gainTrinket: { kind: "gainTrinket", trinketId: "bone-charm" },
-  gainRandomTrinket: { kind: "gainRandomTrinket" },
-  gainMaterial: { kind: "gainMaterial", material: "wood", amount: 1 },
-  none: { kind: "none" },
-};
-
 describe("applyMysteryEffect", () => {
-  it("dispatches every declared mystery effect kind", () => {
-    const context = minimalContext();
+  it("dispatches each mystery effect kind to the expected run mutation", () => {
+    const slash = cardLibrary.find((card) => card.id === "slash")!;
 
-    for (const kind of MYSTERY_EFFECT_KINDS) {
-      expect(() => applyMysteryEffect(effectsByKind[kind], context)).not.toThrow();
-    }
+    const addCardContext = minimalContext();
+    applyMysteryEffect({ kind: "addCard", cardId: "slash" }, addCardContext);
+    expect(addCardContext.setRunDeck).toHaveBeenCalledOnce();
+
+    const chooseContext = minimalContext();
+    const chooseResult = applyMysteryEffect({ kind: "chooseCard" }, chooseContext);
+    expect(chooseContext.setMysteryCardChoices).toHaveBeenCalledOnce();
+    expect(chooseResult.followUp).toBe("choose-card");
+
+    const healContext = minimalContext();
+    applyMysteryEffect({ kind: "healHealth", amount: 5 }, healContext);
+    const healUpdater = healContext.setRunPlayerHealth.mock.calls[0][0];
+    expect(healUpdater(20)).toBe(25);
+
+    const damageContext = minimalContext();
+    applyMysteryEffect({ kind: "damageHealth", amount: 3 }, damageContext);
+    const damageUpdater = damageContext.setRunPlayerHealth.mock.calls[0][0];
+    expect(damageUpdater(20)).toBe(17);
+
+    const gainGoldContext = minimalContext();
+    applyMysteryEffect({ kind: "gainGold", amount: 10 }, gainGoldContext);
+    expect(gainGoldContext.onAwardGold).toHaveBeenCalledWith(10);
+
+    const loseGoldContext = minimalContext();
+    applyMysteryEffect({ kind: "loseGold", amount: 5 }, loseGoldContext);
+    const goldUpdater = loseGoldContext.setRunGold.mock.calls[0][0];
+    expect(goldUpdater(20)).toBe(15);
+
+    const gainXpContext = minimalContext();
+    applyMysteryEffect({ kind: "gainXP", keyword: "physical", amount: 1 }, gainXpContext);
+    expect(gainXpContext.awardMysteryXP).toHaveBeenCalledWith("physical", 1);
+
+    const removeContext = minimalContext({ runDeck: [slash] });
+    applyMysteryEffect({ kind: "removeCard", mode: "random" }, removeContext);
+    expect(removeContext.setRunDeck).toHaveBeenCalledOnce();
+
+    const trinketContext = minimalContext();
+    applyMysteryEffect({ kind: "gainTrinket", trinketId: "bone-charm" }, trinketContext);
+    expect(trinketContext.setRunTrinkets).toHaveBeenCalledOnce();
+
+    const randomTrinketContext = minimalContext();
+    applyMysteryEffect({ kind: "gainRandomTrinket" }, randomTrinketContext);
+    expect(randomTrinketContext.setRunTrinkets).toHaveBeenCalledOnce();
+
+    const materialContext = minimalContext();
+    applyMysteryEffect({ kind: "gainMaterial", material: "wood", amount: 1 }, materialContext);
+    expect(materialContext.onAddMaterials).toHaveBeenCalledWith(expect.objectContaining({ wood: 1 }));
+
+    const noneContext = minimalContext();
+    const noneResult = applyMysteryEffect({ kind: "none" }, noneContext);
+    expect(noneResult.followUp).toBeNull();
+    expect(noneContext.setRunDeck).not.toHaveBeenCalled();
+    expect(noneContext.onAwardGold).not.toHaveBeenCalled();
   });
 
   it("throws for unknown effect kinds", () => {

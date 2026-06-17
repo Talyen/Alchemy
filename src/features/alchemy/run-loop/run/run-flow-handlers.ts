@@ -222,7 +222,7 @@ export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
     });
   }
 
-  function applyFinalizedRewards(result: ReturnType<typeof finalizeRewardState>) {
+  function applyFinalizedRewards(result: ReturnType<typeof finalizeRewardState>, grantAlchemistReward: boolean) {
     if (result.selectedChoice) {
       applyRewardSelection({
         choice: result.selectedChoice,
@@ -233,29 +233,29 @@ export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
       playUISound("talentUnlock");
     }
 
-    if (result.grantAlchemistReward) {
+    if (grantAlchemistReward) {
       applyAlchemistPotion({ setRunDeck: deps.run.setRunDeck });
     }
   }
 
   function finishRewards() {
     const session = readRunSessionStore();
+    const grantAlchemistReward = shouldGrantAlchemistReward(
+      getActiveRewardModifiersForContentSystem(
+        deps.run.contentSystemType,
+        deps.run.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD
+          ? (session.wildwoodDraft?.currentRewardTraitIds ?? [])
+          : (deps.activeLabyrinthRewardModifiers as EncounterRewardTraitId[]),
+      ),
+    );
     const result = finalizeRewardState({
       rewardState: session.rewardState,
       companionRewardCards: session.companionRewardCards,
-      grantAlchemistReward: shouldGrantAlchemistReward(
-        getActiveRewardModifiersForContentSystem(
-          deps.run.contentSystemType,
-          deps.run.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD
-            ? (session.wildwoodDraft?.currentRewardTraitIds ?? [])
-            : (deps.activeLabyrinthRewardModifiers as EncounterRewardTraitId[]),
-        ),
-      ),
     });
 
     const isWildwood = deps.run.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD;
     if (!isWildwood) awardMaterialsDuringRun(result.materials);
-    applyFinalizedRewards(result);
+    applyFinalizedRewards(result, grantAlchemistReward);
     useUiStore.getState().clearCardHover();
     if (isWildwood) {
       if (result.route === CONSTANTS.REWARD_ROUTES.COMPANION_REWARD) {

@@ -2,7 +2,6 @@ import {
   getOfferableCardPool,
   getStandardPotionPool,
   selectRewardCards,
-  trinketLibrary,
   type BattleCard,
   type TrinketEntry,
 } from "@/lib/game-data";
@@ -12,6 +11,7 @@ import type {
   PersistedShopState,
   PersistedTrinketShopState,
 } from "@/lib/active-run-session";
+import { lookupTrinketEntries } from "@/lib/active-run-session/pending-reward-persistence";
 import {
   SHOP_CARDS_OFFERED,
   SHOP_REFRESHES,
@@ -23,80 +23,100 @@ import {
   EQUIPMENT_SHOP_REFRESHES,
 } from "@/lib/game-constants";
 import { generateGearRewardChoices, type GearInstance } from "@/lib/gear";
+import { trinketLibrary } from "@/lib/game-data";
 import { sampleItems } from "@/features/alchemy/shared/utils";
 
-export type BaseShopState<TItem> = {
-  items: TItem[];
+type RefreshableShopFields = {
   refreshesLeft: number;
   firstPurchaseUsed: boolean;
   purchasedSlotKeys: string[];
 };
 
-export type ShopState = BaseShopState<BattleCard> & {
+type RefreshablePersistedFields = Pick<
+  RefreshableShopFields,
+  "refreshesLeft" | "firstPurchaseUsed" | "purchasedSlotKeys"
+>;
+
+export type ShopState = RefreshableShopFields & {
   cards: BattleCard[];
   removeUsed: boolean;
 };
 
-export type AlchemistState = BaseShopState<BattleCard> & {
+export type AlchemistState = RefreshableShopFields & {
   potions: BattleCard[];
   mixUsed: boolean;
 };
 
-export type TrinketShopState = BaseShopState<TrinketEntry> & {
+export type TrinketShopState = RefreshableShopFields & {
   trinkets: TrinketEntry[];
 };
 
-export type EquipmentShopState = BaseShopState<GearInstance> & {
+export type EquipmentShopState = RefreshableShopFields & {
   gear: GearInstance[];
 };
 
-export function createInitialShopState(deck: BattleCard[] = []): ShopState {
-  const cards = selectRewardCards(deck, getOfferableCardPool(), SHOP_CARDS_OFFERED);
+function emptyRefreshableFields(refreshesLeft: number): RefreshableShopFields {
   return {
-    items: cards,
-    cards,
-    refreshesLeft: SHOP_REFRESHES,
+    refreshesLeft,
+    firstPurchaseUsed: false,
+    purchasedSlotKeys: [],
+  };
+}
+
+export function emptyShopState(): ShopState {
+  return {
+    cards: [],
     removeUsed: false,
-    firstPurchaseUsed: false,
-    purchasedSlotKeys: [],
+    ...emptyRefreshableFields(SHOP_REFRESHES),
   };
 }
 
-export function createInitialAlchemistState(deck: BattleCard[] = []): AlchemistState {
-  const potions = selectRewardCards(deck, getStandardPotionPool(), ALCHEMIST_POTIONS_OFFERED);
+export function emptyAlchemistState(): AlchemistState {
   return {
-    items: potions,
-    potions,
-    refreshesLeft: ALCHEMIST_REFRESHES,
+    potions: [],
     mixUsed: false,
-    firstPurchaseUsed: false,
-    purchasedSlotKeys: [],
+    ...emptyRefreshableFields(ALCHEMIST_REFRESHES),
   };
 }
 
-export function createInitialTrinketShopState(rng: () => number = Math.random): TrinketShopState {
-  const trinkets = sampleItems(trinketLibrary, TRINKET_SHOP_OFFERED, rng);
+export function emptyTrinketShopState(): TrinketShopState {
   return {
-    items: trinkets,
-    trinkets,
-    refreshesLeft: TRINKET_SHOP_REFRESHES,
-    firstPurchaseUsed: false,
-    purchasedSlotKeys: [],
+    trinkets: [],
+    ...emptyRefreshableFields(TRINKET_SHOP_REFRESHES),
   };
 }
 
-export function createInitialEquipmentShopState(
-  rng: () => number = Math.random,
-  gearAstralChanceBonus = 0,
-): EquipmentShopState {
-  const gear = generateGearRewardChoices(EQUIPMENT_SHOP_OFFERED, rng, { astralChanceBonus: gearAstralChanceBonus });
+export function emptyEquipmentShopState(): EquipmentShopState {
   return {
-    items: gear,
-    gear,
-    refreshesLeft: EQUIPMENT_SHOP_REFRESHES,
-    firstPurchaseUsed: false,
-    purchasedSlotKeys: [],
+    gear: [],
+    ...emptyRefreshableFields(EQUIPMENT_SHOP_REFRESHES),
   };
+}
+
+function serializeRefreshableFields(state: RefreshableShopFields): RefreshablePersistedFields {
+  return {
+    refreshesLeft: state.refreshesLeft,
+    firstPurchaseUsed: state.firstPurchaseUsed,
+    purchasedSlotKeys: state.purchasedSlotKeys,
+  };
+}
+
+function hydrateRefreshableFields(data: RefreshablePersistedFields): RefreshablePersistedFields {
+  return {
+    refreshesLeft: data.refreshesLeft,
+    firstPurchaseUsed: data.firstPurchaseUsed,
+    purchasedSlotKeys: data.purchasedSlotKeys ?? [],
+  };
+}
+
+function hydrateRefreshableShopState<
+  TState extends RefreshableShopFields,
+  TPersisted extends RefreshablePersistedFields,
+>(data: TPersisted, payload: Omit<TState, keyof RefreshableShopFields>): TState {
+  return {
+    ...payload,
+    ...hydrateRefreshableFields(data),
+  } as TState;
 }
 
 export function resampleTrinketShopOfferings(rng: () => number = Math.random): TrinketEntry[] {
@@ -107,89 +127,82 @@ export function resampleEquipmentShopOfferings(
   rng: () => number = Math.random,
   gearAstralChanceBonus = 0,
 ): GearInstance[] {
-  return generateGearRewardChoices(EQUIPMENT_SHOP_OFFERED, rng, { astralChanceBonus: gearAstralChanceBonus });
+  return generateGearRewardChoices(EQUIPMENT_SHOP_OFFERED, rng, gearAstralChanceBonus);
+}
+
+export function createInitialShopState(deck: BattleCard[] = []): ShopState {
+  return {
+    ...emptyShopState(),
+    cards: selectRewardCards(deck, getOfferableCardPool(), SHOP_CARDS_OFFERED),
+  };
+}
+
+export function createInitialAlchemistState(deck: BattleCard[] = []): AlchemistState {
+  return {
+    ...emptyAlchemistState(),
+    potions: selectRewardCards(deck, getStandardPotionPool(), ALCHEMIST_POTIONS_OFFERED),
+  };
+}
+
+export function createInitialTrinketShopState(rng: () => number = Math.random): TrinketShopState {
+  return {
+    ...emptyTrinketShopState(),
+    trinkets: resampleTrinketShopOfferings(rng),
+  };
+}
+
+export function createInitialEquipmentShopState(
+  rng: () => number = Math.random,
+  gearAstralChanceBonus = 0,
+): EquipmentShopState {
+  return {
+    ...emptyEquipmentShopState(),
+    gear: resampleEquipmentShopOfferings(rng, gearAstralChanceBonus),
+  };
 }
 
 export function serializeShopState(state: ShopState): PersistedShopState {
   return {
     cards: state.cards,
     removeUsed: state.removeUsed,
-    refreshesLeft: state.refreshesLeft,
-    firstPurchaseUsed: state.firstPurchaseUsed,
-    purchasedSlotKeys: state.purchasedSlotKeys,
+    ...serializeRefreshableFields(state),
   };
 }
 
 export function hydrateShopState(data: PersistedShopState): ShopState {
-  return {
-    cards: data.cards,
-    items: data.cards,
-    removeUsed: data.removeUsed,
-    refreshesLeft: data.refreshesLeft,
-    firstPurchaseUsed: data.firstPurchaseUsed,
-    purchasedSlotKeys: data.purchasedSlotKeys ?? [],
-  };
+  return hydrateRefreshableShopState(data, { cards: data.cards, removeUsed: data.removeUsed });
 }
 
 export function serializeAlchemistState(state: AlchemistState): PersistedAlchemistState {
   return {
     potions: state.potions,
     mixUsed: state.mixUsed,
-    refreshesLeft: state.refreshesLeft,
-    firstPurchaseUsed: state.firstPurchaseUsed,
-    purchasedSlotKeys: state.purchasedSlotKeys,
+    ...serializeRefreshableFields(state),
   };
 }
 
 export function hydrateAlchemistState(data: PersistedAlchemistState): AlchemistState {
-  return {
-    potions: data.potions,
-    items: data.potions,
-    mixUsed: data.mixUsed,
-    refreshesLeft: data.refreshesLeft,
-    firstPurchaseUsed: data.firstPurchaseUsed,
-    purchasedSlotKeys: data.purchasedSlotKeys ?? [],
-  };
+  return hydrateRefreshableShopState(data, { potions: data.potions, mixUsed: data.mixUsed });
 }
 
 export function serializeTrinketShopState(state: TrinketShopState): PersistedTrinketShopState {
   return {
     trinketIds: state.trinkets.map((trinket) => trinket.id),
-    refreshesLeft: state.refreshesLeft,
-    firstPurchaseUsed: state.firstPurchaseUsed,
-    purchasedSlotKeys: state.purchasedSlotKeys,
+    ...serializeRefreshableFields(state),
   };
 }
 
 export function hydrateTrinketShopState(data: PersistedTrinketShopState): TrinketShopState {
-  const trinkets = data.trinketIds.flatMap((id) => {
-    const trinket = trinketLibrary.find((entry) => entry.id === id);
-    return trinket ? [trinket] : [];
-  });
-  return {
-    trinkets,
-    items: trinkets,
-    refreshesLeft: data.refreshesLeft,
-    firstPurchaseUsed: data.firstPurchaseUsed,
-    purchasedSlotKeys: data.purchasedSlotKeys ?? [],
-  };
+  return hydrateRefreshableShopState(data, { trinkets: lookupTrinketEntries(data.trinketIds) });
 }
 
 export function serializeEquipmentShopState(state: EquipmentShopState): PersistedEquipmentShopState {
   return {
     gear: state.gear,
-    refreshesLeft: state.refreshesLeft,
-    firstPurchaseUsed: state.firstPurchaseUsed,
-    purchasedSlotKeys: state.purchasedSlotKeys,
+    ...serializeRefreshableFields(state),
   };
 }
 
 export function hydrateEquipmentShopState(data: PersistedEquipmentShopState): EquipmentShopState {
-  return {
-    gear: data.gear,
-    items: data.gear,
-    refreshesLeft: data.refreshesLeft,
-    firstPurchaseUsed: data.firstPurchaseUsed,
-    purchasedSlotKeys: data.purchasedSlotKeys ?? [],
-  };
+  return hydrateRefreshableShopState(data, { gear: data.gear });
 }

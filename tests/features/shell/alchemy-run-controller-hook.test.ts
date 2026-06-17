@@ -1,10 +1,15 @@
 // @vitest-environment jsdom
-import { renderHook } from "@testing-library/react";
+import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ROUTE_SCREENS } from "@/lib/routing";
 import { useAlchemyRunController } from "@/features/alchemy/shell/use-alchemy-run-controller";
 import { createEmptyTalentManifest } from "@/lib/game-data";
+import { resetTransientRunUi } from "@/features/alchemy/shared/stores/reset";
 import {
+  getBattleStoreView,
+  getNavigationStoreView,
+  getRunSessionStoreView,
+  resetRunBattleSlice,
   resetRunNavigationSlice,
   resetRunProgressSlice,
   setRunProgress,
@@ -36,11 +41,13 @@ beforeEach(() => {
   resetRunProgressSlice();
   setRunProgress({ initialized: true });
   resetRunNavigationSlice();
+  resetRunBattleSlice();
+  resetTransientRunUi();
 });
 
 describe("useAlchemyRunController", () => {
-  it("exposes screen, run phase, and controller actions after bootstrap", () => {
-    const { result } = renderHook(() =>
+  function renderController() {
+    return renderHook(() =>
       useAlchemyRunController({
         initialTalentXP: {},
         initialUnlockedTalents: {},
@@ -50,11 +57,34 @@ describe("useAlchemyRunController", () => {
         onMarkDifficultyCompleted: vi.fn(),
       }),
     );
+  }
+
+  it("exposes menu screen and meta run phase after bootstrap", () => {
+    const { result } = renderController();
 
     expect(result.current.screen).toBe(ROUTE_SCREENS.MENU);
     expect(result.current.runPhase).toBe("meta");
-    expect(typeof result.current.beginCampaign).toBe("function");
-    expect(typeof result.current.handleCardClick).toBe("function");
-    expect(typeof result.current.resetRunState).toBe("function");
+  });
+
+  it("resetRunState tears down run stores when navigating to menu", () => {
+    vi.useFakeTimers();
+    getRunSessionStoreView().setHasActiveRun(true);
+    getBattleStoreView().setHasActiveBattle(true);
+    getNavigationStoreView().setScreen(ROUTE_SCREENS.BATTLE);
+    const { result } = renderController();
+
+    act(() => {
+      result.current.resetRunState();
+    });
+    act(() => {
+      vi.runAllTimers();
+    });
+    act(() => {
+      result.current.commitPendingTransition();
+    });
+    vi.useRealTimers();
+
+    expect(getRunSessionStoreView().hasActiveRun).toBe(false);
+    expect(getBattleStoreView().hasActiveBattle).toBe(false);
   });
 });

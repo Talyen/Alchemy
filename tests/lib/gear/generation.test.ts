@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { GEAR_AFFIX_COUNT } from "@/lib/game-constants";
 import { generateDevRandomGearInstance, generateGearRewardChoices, gearDefinitions, rollGearRewardRarity } from "@/lib/gear";
 import { affixMatchesAffinity } from "@/lib/gear/affixes";
-import { buildEligibleAffixPool } from "@/lib/gear/affix-pool";
+import { buildEligibleAffixPool } from "@/lib/gear/generation";
 import { gearAffixCatalog } from "@/lib/gear/affix-catalog";
 
 describe("gear generation", () => {
@@ -54,10 +54,10 @@ describe("gear generation", () => {
     expect(Array.from({ length: 20 }, () => rollGearRewardRarity(() => 0.9)).every((rarity) => rarity === "astral")).toBe(
       true,
     );
-    expect(rollGearRewardRarity(() => 0.46, { astralChanceBonus: 0.03 })).toBe("basic");
-    expect(rollGearRewardRarity(() => 0.47, { astralChanceBonus: 0.03 })).toBe("astral");
-    expect(rollGearRewardRarity(() => 0.39, { astralChanceBonus: 0.1 })).toBe("basic");
-    expect(rollGearRewardRarity(() => 0.4, { astralChanceBonus: 0.1 })).toBe("astral");
+    expect(rollGearRewardRarity(() => 0.46, 0.03)).toBe("basic");
+    expect(rollGearRewardRarity(() => 0.47, 0.03)).toBe("astral");
+    expect(rollGearRewardRarity(() => 0.39, 0.1)).toBe("basic");
+    expect(rollGearRewardRarity(() => 0.4, 0.1)).toBe("astral");
   });
 
   it("rolls affixes only from eligible affinity and aspect pools", () => {

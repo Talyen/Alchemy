@@ -37,7 +37,7 @@ describe("run-session-model narrow hooks", () => {
   it("useRunSessionShopSlice exposes shop and alchemist state", () => {
     getRunSessionStoreView().setShopState((prev) => ({ ...prev, cards: [] }));
     const { result } = renderHook(() => useRunSessionShopSlice());
-    expect(result.current.shopState).toBeDefined();
-    expect(result.current.alchemistState).toBeDefined();
+    expect(result.current.shopState.cards).toEqual([]);
+    expect(result.current.alchemistState.potions).toEqual([]);
   });
 });

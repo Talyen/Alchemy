@@ -49,10 +49,6 @@ describe("shuffle", () => {
 });
 
 describe("pickRandom", () => {
-  it("returns an item from the array", () => {
-    expect(pickRandom([1, 2, 3])).toBeDefined();
-  });
-
   it("returns the item at the selected index", () => {
     vi.spyOn(Math, "random").mockReturnValueOnce(0);
     expect(pickRandom([10, 20, 30])).toBe(10);

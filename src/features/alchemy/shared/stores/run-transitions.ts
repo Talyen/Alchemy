@@ -1,19 +1,15 @@
 // Atomic run lifecycle transitions over the consolidated domain store.
 import { getBattleStartPlayerHealth } from "@/lib/battle";
 import { playDefeat, stopAllSfx } from "@/lib/audio";
-import { buildActiveRunSnapshot, type ActiveRunData } from "@/lib/active-run-session";
+import { createActiveRunSnapshot, type ActiveRunData } from "@/lib/active-run-session";
 import type { Screen } from "@/lib/routing";
 import type { CharacterId, UnlockedTalents, TalentXP } from "@/lib/game-data";
-import { computeGearMaxHealthBonus, type GearLoadouts } from "@/lib/gear";
+import { computeGearManifest, type GearInstance, type GearLoadouts } from "@/lib/gear";
 import { flushAlchemySaveNow } from "@/features/alchemy/shared/storage";
 import type { Destination } from "@/features/alchemy/shared/types";
 import type { MaterialInventory } from "@/lib/homestead/types";
-import {
-  createEmptyRewardState,
-  restoreWildwoodRewardState,
-  type RewardState,
-} from "@/features/alchemy/run-loop/navigation/reward-flow";
-import { restorePendingReward, serializePendingReward } from "@/lib/active-run-session/pending-reward-persistence";
+import { createEmptyRewardState, restoreWildwoodRewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
+import { restorePendingReward, serializePendingReward } from "@/lib/active-run-session";
 import {
   hydrateAlchemistState,
   hydrateEquipmentShopState,
@@ -24,7 +20,6 @@ import {
   serializeShopState,
   serializeTrinketShopState,
 } from "@/features/alchemy/run-loop/shop/shop-state-init";
-import { setAlchemistState, setEquipmentShopState, setShopState, setTrinketShopState } from "./run-session-facade";
 import { getRunDomainStore, useRunDomainStore } from "./run-domain-store";
 import { createInitialRunDomainData } from "./run-domain-types";
 import { useBattlePresentationStore } from "./battle-presentation-store";
@@ -85,20 +80,20 @@ export function restoreRun(
     });
   } else if (activeRun.pendingReward) {
     const restored = restorePendingReward(activeRun.pendingReward);
-    if (restored) store.setRewardState(restored as RewardState);
+    if (restored) store.setRewardState(restored);
   }
 
   if (activeRun.shopState) {
-    setShopState(hydrateShopState(activeRun.shopState));
+    store.setShopState(hydrateShopState(activeRun.shopState));
   }
   if (activeRun.alchemistState) {
-    setAlchemistState(hydrateAlchemistState(activeRun.alchemistState));
+    store.setAlchemistState(hydrateAlchemistState(activeRun.alchemistState));
   }
   if (activeRun.trinketShopState) {
-    setTrinketShopState(hydrateTrinketShopState(activeRun.trinketShopState));
+    store.setTrinketShopState(hydrateTrinketShopState(activeRun.trinketShopState));
   }
   if (activeRun.equipmentShopState) {
-    setEquipmentShopState(hydrateEquipmentShopState(activeRun.equipmentShopState));
+    store.setEquipmentShopState(hydrateEquipmentShopState(activeRun.equipmentShopState));
   }
 }
 
@@ -116,7 +111,7 @@ export function snapshotRun(screen?: Screen): ActiveRunData {
   const persistAlchemist = currentScreen === "alchemist" || session.alchemistState.potions.length > 0;
   const persistTrinketShop = currentScreen === "trinket-shop" || session.trinketShopState.trinkets.length > 0;
   const persistEquipmentShop = currentScreen === "equipment-shop" || session.equipmentShopState.gear.length > 0;
-  return buildActiveRunSnapshot({
+  return createActiveRunSnapshot({
     characterId: run.characterId,
     runDeck: run.runDeck,
     runGold: run.runGold,
@@ -152,12 +147,12 @@ export function snapshotRun(screen?: Screen): ActiveRunData {
 /** Apply gear max-health bonus delta after armory equip/unequip during an active run. */
 export function syncRunMaxHealthFromGear(
   characterId: CharacterId,
-  inventory: Parameters<typeof computeGearMaxHealthBonus>[1],
+  inventory: GearInstance[],
   loadoutsBefore: GearLoadouts,
   loadoutsAfter: GearLoadouts,
 ): void {
-  const oldBonus = computeGearMaxHealthBonus(characterId, inventory, loadoutsBefore);
-  const newBonus = computeGearMaxHealthBonus(characterId, inventory, loadoutsAfter);
+  const oldBonus = computeGearManifest(characterId, inventory, loadoutsBefore).maxHealth;
+  const newBonus = computeGearManifest(characterId, inventory, loadoutsAfter).maxHealth;
   const delta = newBonus - oldBonus;
   if (delta === 0) return;
 

@@ -27,7 +27,7 @@ import { useMysteryFlow } from "@/features/alchemy/run-loop/navigation/use-myste
 import { applyCorruptionToDeck } from "@/features/alchemy/run-loop/navigation/run-navigation-corruption";
 import { createRunFlowHandlers } from "@/features/alchemy/run-loop/run/run-flow-handlers";
 import { createContentSystemNavigation } from "@/features/alchemy/run-setup/run/content-system-navigation";
-import type { DestinationOptionsInput } from "@/lib/active-run-session";
+import type { DestinationOptionsInput } from "@/features/alchemy/run-loop/navigation/destination-flow";
 import { DRAFT_ROUNDS } from "@/lib/game-constants";
 import { appendUnique } from "@/lib/utils";
 import {

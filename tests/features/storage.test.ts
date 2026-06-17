@@ -10,69 +10,21 @@ import {
   MaterialInventorySchema,
 } from "@/lib/validation";
 import { getRawSaveSchemaVersion, isUnsupportedFutureSaveData, migrateSaveDataToCurrent } from "@/lib/validation";
+import { parseActiveRun } from "@/lib/active-run-session";
 import { cardLibrary } from "@/lib/game-data";
 import { createSeededRng } from "@/lib/utils";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
 import { hydrateCard } from "@/lib/game-data";
 import { legacyCampaignRunSave, legacyCorruptedCardRunSave, legacyLabyrinthRunSave } from "../fixtures/legacy-saves";
+import { makeMinimalActiveRunInput } from "../fixtures/active-run";
 import type { SaveData } from "@/features/alchemy/shared/storage/types";
 
-function activeRun(overrides: Record<string, unknown> = {}) {
-  return {
-    characterId: "knight",
-    runDeck: [],
-    runGold: 0,
-    runPlayerHealth: 30,
-    runMaxHealth: 30,
-    roomsEncountered: 0,
-    currentAct: 1,
-    destinationIndexInAct: 0,
-    completedDestinations: [],
-    runTrinkets: [],
-    contentSystemType: "campaign",
-    ...overrides,
-  };
-}
-
-const parseActiveRun = (val: unknown) => {
-  const result = ActiveRunDataSchema.nullable().catch(null).parse(val);
-  if (result) {
-    result.runDeck = result.runDeck.map(hydrateCard);
-  }
-  return result;
-};
+/** Schema-only parse for ActiveRunDataSchema coercion/default tests (no runtime guards). */
+const parseActiveRunSchema = (val: unknown) => ActiveRunDataSchema.nullable().catch(null).parse(val);
 
 describe("ActiveRunDataSchema", () => {
-  it("returns null for null input", () => {
-    expect(parseActiveRun(null)).toBeNull();
-  });
-
-  it("returns null for undefined input", () => {
-    expect(parseActiveRun(undefined)).toBeNull();
-  });
-
-  it("returns null for non-object input", () => {
-    expect(parseActiveRun("string")).toBeNull();
-    expect(parseActiveRun(42)).toBeNull();
-  });
-
-  it("maps legacy sorcerer to wizard", () => {
-    const result = parseActiveRun(activeRun({ characterId: "sorcerer" }));
-    expect(result?.characterId).toBe("wizard");
-  });
-
-  it("maps legacy warden to ranger", () => {
-    const result = parseActiveRun(activeRun({ characterId: "warden" }));
-    expect(result?.characterId).toBe("ranger");
-  });
-
-  it("passes through valid knight characterId", () => {
-    const result = parseActiveRun(activeRun({ characterId: "knight" }));
-    expect(result?.characterId).toBe("knight");
-  });
-
   it("preserves corrupted cards in active runs", () => {
-    const result = parseActiveRun(activeRun({
+    const result = parseActiveRun(makeMinimalActiveRunInput({
       runDeck: [{ id: "slash", title: "Slash", descriptionLines: ["Deal 8 Physical damage"], art: "", cost: 1, effects: [{ kind: "damage", damageType: "physical", amount: 8 }], corrupted: true, corruptedValuePositions: [{ lineIndex: 0, matchIndex: 5 }] }],
     }));
 
@@ -84,7 +36,7 @@ describe("ActiveRunDataSchema", () => {
   });
 
   it("refreshes known saved card art without changing saved gameplay fields", () => {
-    const result = parseActiveRun(activeRun({
+    const result = parseActiveRun(makeMinimalActiveRunInput({
       runDeck: [{ id: "block", title: "Block", descriptionLines: ["Gain 9 Block"], art: "stale-build-url.webp", cost: 2, effects: [{ kind: "player-status", status: "block", amount: 9 }] }],
     }));
 
@@ -99,7 +51,7 @@ describe("ActiveRunDataSchema", () => {
   });
 
   it("does not let saved card data override library-owned fields", () => {
-    const result = parseActiveRun(activeRun({
+    const result = parseActiveRun(makeMinimalActiveRunInput({
       runDeck: [{
         id: "slash",
         uid: 7,
@@ -120,7 +72,7 @@ describe("ActiveRunDataSchema", () => {
   });
 
   it("drops malformed saved card mutation fields", () => {
-    const result = parseActiveRun(activeRun({
+    const result = parseActiveRun(makeMinimalActiveRunInput({
       runDeck: [{
         id: "bash",
         title: "Bash",
@@ -145,7 +97,7 @@ describe("ActiveRunDataSchema", () => {
   });
 
   it("falls back to library effects when a known card has malformed saved effects", () => {
-    const result = parseActiveRun(activeRun({
+    const result = parseActiveRun(makeMinimalActiveRunInput({
       runDeck: [{
         id: "slash",
         title: "Slash",
@@ -165,7 +117,7 @@ describe("ActiveRunDataSchema", () => {
   });
 
   it("falls back to library effects when a known card has mixed valid and invalid saved effects", () => {
-    const result = parseActiveRun(activeRun({
+    const result = parseActiveRun(makeMinimalActiveRunInput({
       runDeck: [{
         id: "fireball",
         title: "Fireball",
@@ -184,7 +136,7 @@ describe("ActiveRunDataSchema", () => {
   });
 
   it("keeps only valid saved effects for unknown cards", () => {
-    const result = parseActiveRun(activeRun({
+    const result = parseActiveRun(makeMinimalActiveRunInput({
       runDeck: [{
         id: "custom-card",
         title: "Custom Card",
@@ -202,22 +154,22 @@ describe("ActiveRunDataSchema", () => {
   });
 
   it("passes through valid ranger characterId", () => {
-    const result = parseActiveRun(activeRun({ characterId: "ranger" }));
+    const result = parseActiveRun(makeMinimalActiveRunInput({ characterId: "ranger" }));
     expect(result?.characterId).toBe("ranger");
   });
 
   it("passes through valid rogue characterId", () => {
-    const result = parseActiveRun(activeRun({ characterId: "rogue" }));
+    const result = parseActiveRun(makeMinimalActiveRunInput({ characterId: "rogue" }));
     expect(result?.characterId).toBe("rogue");
   });
 
   it("passes through valid wizard characterId", () => {
-    const result = parseActiveRun(activeRun({ characterId: "wizard" }));
+    const result = parseActiveRun(makeMinimalActiveRunInput({ characterId: "wizard" }));
     expect(result?.characterId).toBe("wizard");
   });
 
   it("returns null for unknown characterId", () => {
-    const result = parseActiveRun(activeRun({ characterId: "bard" }));
+    const result = parseActiveRun(makeMinimalActiveRunInput({ characterId: "bard" }));
     expect(result).toBeNull();
   });
 
@@ -227,67 +179,67 @@ describe("ActiveRunDataSchema", () => {
   });
 
   it("preserves valid selectedDifficulty", () => {
-    const result = parseActiveRun(activeRun({ selectedDifficulty: "difficulty-2" }));
+    const result = parseActiveRun(makeMinimalActiveRunInput({ selectedDifficulty: "difficulty-2" }));
     expect(result?.selectedDifficulty).toBe("difficulty-2");
   });
 
   it("sets selectedDifficulty to null for invalid value", () => {
-    const result = parseActiveRun(activeRun({ selectedDifficulty: "difficulty-999" }));
+    const result = parseActiveRunSchema(makeMinimalActiveRunInput({ selectedDifficulty: "difficulty-999" }));
     expect(result?.selectedDifficulty).toBeNull();
   });
 
   it("sets selectedDifficulty to null when missing", () => {
-    const result = parseActiveRun(activeRun({}));
+    const result = parseActiveRunSchema(makeMinimalActiveRunInput({}));
     expect(result?.selectedDifficulty).toBeNull();
   });
 
   it("sets selectedDifficulty to null for non-string value", () => {
-    const result = parseActiveRun(activeRun({ selectedDifficulty: 42 }));
+    const result = parseActiveRunSchema(makeMinimalActiveRunInput({ selectedDifficulty: 42 }));
     expect(result?.selectedDifficulty).toBeNull();
   });
 
   it("recovers from corrupt numeric run fields with defaults", () => {
     // Zod recovers individual corrupt fields with catch()/defaults instead of discarding the whole run.
     // runPlayerHealth > maxHealth is clamped.
-    expect(parseActiveRun(activeRun({ runGold: Number.NaN }))?.runGold).toBe(0);
-    expect(parseActiveRun(activeRun({ runPlayerHealth: 31 }))?.runPlayerHealth).toBe(30);
-    expect(parseActiveRun(activeRun({ runMaxHealth: 0 }))?.runMaxHealth).toBe(30);
-    expect(parseActiveRun(activeRun({ roomsEncountered: -1 }))?.roomsEncountered).toBe(0);
-    expect(parseActiveRun(activeRun({ currentAct: 999 }))?.currentAct).toBe(1);
-    expect(parseActiveRun(activeRun({ destinationIndexInAct: 1.5 }))?.destinationIndexInAct).toBe(0);
+    expect(parseActiveRunSchema(makeMinimalActiveRunInput({ runGold: Number.NaN }))?.runGold).toBe(0);
+    expect(parseActiveRunSchema(makeMinimalActiveRunInput({ runPlayerHealth: 31 }))?.runPlayerHealth).toBe(30);
+    expect(parseActiveRunSchema(makeMinimalActiveRunInput({ runMaxHealth: 0 }))?.runMaxHealth).toBe(30);
+    expect(parseActiveRunSchema(makeMinimalActiveRunInput({ roomsEncountered: -1 }))?.roomsEncountered).toBe(0);
+    expect(parseActiveRunSchema(makeMinimalActiveRunInput({ currentAct: 999 }))?.currentAct).toBe(1);
+    expect(parseActiveRunSchema(makeMinimalActiveRunInput({ destinationIndexInAct: 1.5 }))?.destinationIndexInAct).toBe(0);
   });
 
   it("defaults contentSystemType to campaign when missing", () => {
-    const result = parseActiveRun(activeRun({ contentSystemType: undefined }));
+    const result = parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: undefined }));
     expect(result?.contentSystemType).toBe("campaign");
   });
 
   it("preserves contentSystemType labyrinth when set with a valid map", () => {
     const labyrinthMap = generateLabyrinthMap(createSeededRng(42));
-    const result = parseActiveRun(activeRun({ contentSystemType: "labyrinth", labyrinthMap }));
+    const result = parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: "labyrinth", labyrinthMap }));
     expect(result?.contentSystemType).toBe("labyrinth");
   });
 
   it("recovers labyrinth runs without a valid map to campaign", () => {
-    const result = parseActiveRun(activeRun({ contentSystemType: "labyrinth" }));
+    const result = parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: "labyrinth" }));
     expect(result).not.toBeNull();
     expect(result?.contentSystemType).toBe("campaign");
   });
 
   it("preserves valid labyrinth map state", () => {
     const labyrinthMap = generateLabyrinthMap(createSeededRng(42));
-    const result = parseActiveRun(activeRun({ contentSystemType: "labyrinth", labyrinthMap }));
+    const result = parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: "labyrinth", labyrinthMap }));
     expect(result?.labyrinthMap).toEqual(labyrinthMap);
   });
 
   it("drops unknown labyrinth modifiers from persisted maps", () => {
     const labyrinthMap = generateLabyrinthMap(createSeededRng(42));
     const firstCombat = labyrinthMap.grid.flat().find((node) => node?.type === "combat");
-    expect(firstCombat).toBeDefined();
+    expect(firstCombat).not.toBeUndefined();
     firstCombat!.modifiers = ["tempered", "missing-modifier" as never];
     firstCombat!.rewardModifiers = ["generous", "old-reward" as never];
 
-    const result = parseActiveRun(activeRun({ contentSystemType: "labyrinth", labyrinthMap }));
+    const result = parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: "labyrinth", labyrinthMap }));
 
     const normalizedCombat = result?.labyrinthMap?.grid.flat().find((node) => node?.type === "combat");
     expect(normalizedCombat?.modifiers).toEqual(["tempered"]);
@@ -304,8 +256,8 @@ describe("ActiveRunDataSchema", () => {
 
     // Fractional currentNode is recovered by Zod catch() — row 0.5 becomes 0, col 4 stays 4,
     // pointing to a valid entrance node, so the map passes validation.
-    expect(parseActiveRun(activeRun({ contentSystemType: "labyrinth", labyrinthMap: mismatchedRows }))?.contentSystemType).toBe("campaign");
-    expect(parseActiveRun(activeRun({ contentSystemType: "labyrinth", labyrinthMap: invalidConnection }))?.contentSystemType).toBe("campaign");
+    expect(parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: "labyrinth", labyrinthMap: mismatchedRows }))?.contentSystemType).toBe("campaign");
+    expect(parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: "labyrinth", labyrinthMap: invalidConnection }))?.contentSystemType).toBe("campaign");
   });
 
   it("recovers from labyrinth maps with impossible current or endpoint state to campaign", () => {
@@ -323,35 +275,30 @@ describe("ActiveRunDataSchema", () => {
     const boss = missingBoss.grid.flat().find((node) => node?.type === "boss");
     boss!.type = "combat";
 
-    expect(parseActiveRun(activeRun({ contentSystemType: "labyrinth", labyrinthMap: multipleCurrent }))?.contentSystemType).toBe("campaign");
-    expect(parseActiveRun(activeRun({ contentSystemType: "labyrinth", labyrinthMap: mismatchedCurrent }))?.contentSystemType).toBe("campaign");
-    expect(parseActiveRun(activeRun({ contentSystemType: "labyrinth", labyrinthMap: missingEntrance }))?.contentSystemType).toBe("campaign");
-    expect(parseActiveRun(activeRun({ contentSystemType: "labyrinth", labyrinthMap: missingBoss }))?.contentSystemType).toBe("campaign");
+    expect(parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: "labyrinth", labyrinthMap: multipleCurrent }))?.contentSystemType).toBe("campaign");
+    expect(parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: "labyrinth", labyrinthMap: mismatchedCurrent }))?.contentSystemType).toBe("campaign");
+    expect(parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: "labyrinth", labyrinthMap: missingEntrance }))?.contentSystemType).toBe("campaign");
+    expect(parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: "labyrinth", labyrinthMap: missingBoss }))?.contentSystemType).toBe("campaign");
   });
 
   it("drops labyrinth map state for campaign runs", () => {
     const labyrinthMap = generateLabyrinthMap(createSeededRng(42));
-    const result = parseActiveRun(activeRun({ contentSystemType: "campaign", labyrinthMap }));
+    const result = parseActiveRun(makeMinimalActiveRunInput({ contentSystemType: "campaign", labyrinthMap }));
     expect(result?.labyrinthMap).toBeNull();
   });
 
-  it("discards legacy wildwood runs without Wildwood Draft state", () => {
-    const result = parseActiveRun(activeRun({ contentSystemType: "wildwood" }));
-    expect(result).toBeNull();
-  });
-
   it("defaults missing runTalentXP to empty object", () => {
-    const result = parseActiveRun(activeRun({}));
+    const result = parseActiveRun(makeMinimalActiveRunInput({}));
     expect(result?.runTalentXP).toEqual({});
   });
 
   it("preserves runTalentXP when present", () => {
-    const result = parseActiveRun(activeRun({ runTalentXP: { burn: 10, poison: 5 } }));
+    const result = parseActiveRun(makeMinimalActiveRunInput({ runTalentXP: { burn: 10, poison: 5 } }));
     expect(result?.runTalentXP).toEqual({ burn: 10, poison: 5 });
   });
 
   it("rejects invalid runTalentXP values and falls back to empty object", () => {
-    const result = parseActiveRun(activeRun({ runTalentXP: "invalid" }));
+    const result = parseActiveRunSchema(makeMinimalActiveRunInput({ runTalentXP: "invalid" }));
     expect(result?.runTalentXP).toEqual({});
   });
 });

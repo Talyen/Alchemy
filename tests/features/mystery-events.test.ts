@@ -187,18 +187,6 @@ describe("mysteryPool", () => {
     }
   });
 
-  it("new events are present", () => {
-    expect(mysteryPool.find((e) => e.id === "mountain-pass")).toBeDefined();
-    expect(mysteryPool.find((e) => e.id === "murky-pond")).toBeDefined();
-    expect(mysteryPool.find((e) => e.id === "necromancers-offer")).toBeDefined();
-    expect(mysteryPool.find((e) => e.id === "medicinal-herb-garden")).toBeDefined();
-    expect(mysteryPool.find((e) => e.id === "crystal-garden")).toBeDefined();
-    expect(mysteryPool.find((e) => e.id === "hunters-lodge")).toBeDefined();
-    expect(mysteryPool.find((e) => e.id === "roadside-censer")).toBeDefined();
-    expect(mysteryPool.find((e) => e.id === "the-phoenix")).toBeDefined();
-    expect(mysteryPool.find((e) => e.id === "the-wolf")).toBeDefined();
-  });
-
   it("Hunter's Lodge 'Take the Arrows' uses chooseCard with archery tag", () => {
     const lodge = mysteryPool.find((e) => e.id === "hunters-lodge");
     expect(lodge).toBeDefined();

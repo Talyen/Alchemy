@@ -12,9 +12,8 @@ import {
   syncRunToBattleStart,
   teardownRun,
 } from "@/features/alchemy/shared/stores/run-transitions";
+import { getCombinedRunGold, getCurrentRunPhase } from "../../helpers/run-session-assertions";
 import {
-  getCombinedRunGold,
-  getCurrentRunPhase,
   getRunSession,
   snapshotRun,
 } from "@/features/alchemy/shared/stores/run-session-facade";
@@ -525,7 +524,8 @@ describe("run transitions", () => {
   });
 
   it("applyRunDefeatTeardown awards materials, finalizes XP, flushes, and clears combat", async () => {
-    const awardRunEndMaterials = vi.fn();
+    getRunSessionStoreView().setHasActiveRun(true);
+    const awardRunEndMaterials = vi.fn(() => emptyInventory());
     const finalizeRunXP = vi.fn();
     const clearCombatState = vi.fn();
     applyRunDefeatTeardown({ awardRunEndMaterials, finalizeRunXP, clearCombatState });
@@ -535,6 +535,7 @@ describe("run transitions", () => {
       expect(flushAlchemySaveNow).toHaveBeenCalledWith(null);
     });
     expect(clearCombatState).toHaveBeenCalledOnce();
+    expect(getRunSessionStoreView().hasActiveRun).toBe(false);
     expect(stopAllSfx).toHaveBeenCalledOnce();
     expect(playDefeat).toHaveBeenCalledOnce();
   });
