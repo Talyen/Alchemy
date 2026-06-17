@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { gearDefinitions } from "@/lib/gear";
 import {
+  canOccupyVacatedInventoryPlacement,
   findFirstInventoryPlacement,
   findNearestInventoryPlacement,
   getInventoryFootprint,
@@ -30,36 +31,36 @@ describe("packInventory", () => {
   });
 
   it("fits exactly eight rows without requiring overflow", () => {
-    const items = Array.from({ length: 64 }, (_, index) => index);
-    const packed = packInventory(items, 8, () => ({ w: 1, h: 1 }));
+    const items = Array.from({ length: 56 }, (_, index) => index);
+    const packed = packInventory(items, 7, () => ({ w: 1, h: 1 }));
 
-    expect(packed.items).toHaveLength(64);
+    expect(packed.items).toHaveLength(56);
     expect(packed.occupiedRows).toBe(8);
   });
 
   it("continues into a ninth row instead of creating a page", () => {
-    const items = Array.from({ length: 65 }, (_, index) => index);
-    const packed = packInventory(items, 8, () => ({ w: 1, h: 1 }));
+    const items = Array.from({ length: 57 }, (_, index) => index);
+    const packed = packInventory(items, 7, () => ({ w: 1, h: 1 }));
 
     expect(packed.occupiedRows).toBe(9);
-    expect(packed.items[64]).toEqual({ item: 64, col: 1, row: 9, w: 1, h: 1 });
+    expect(packed.items[56]).toEqual({ item: 56, col: 1, row: 9, w: 1, h: 1 });
   });
 
   it("uses the selected slot footprint for filtered inventory", () => {
-    const body = gearDefinitions["placeholder-body"];
+    const body = gearDefinitions["leather-armor-basic"];
 
     expect(getInventoryFootprint(body, null)).toEqual({ w: 2, h: 3 });
     expect(getInventoryFootprint(body, "left-ring")).toEqual({ w: 1, h: 1 });
   });
 
   it("uses the expanded equipment footprints", () => {
-    expect(getInventoryFootprint(gearDefinitions["placeholder-main-hand"], null)).toEqual({ w: 2, h: 3 });
-    expect(getInventoryFootprint(gearDefinitions["placeholder-off-hand"], null)).toEqual({ w: 2, h: 3 });
-    expect(getInventoryFootprint(gearDefinitions["placeholder-belt"], null)).toEqual({ w: 2, h: 1 });
+    expect(getInventoryFootprint(gearDefinitions["hatchet-basic"], null)).toEqual({ w: 2, h: 3 });
+    expect(getInventoryFootprint(gearDefinitions["leather-buckler-basic"], null)).toEqual({ w: 2, h: 3 });
+    expect(getInventoryFootprint(gearDefinitions["leather-belt-basic"], null)).toEqual({ w: 2, h: 1 });
   });
 
   it("returns no occupied rows for an empty inventory", () => {
-    expect(packInventory([], 8, () => ({ w: 1, h: 1 }))).toEqual({ items: [], occupiedRows: 0 });
+    expect(packInventory([], 7, () => ({ w: 1, h: 1 }))).toEqual({ items: [], occupiedRows: 0 });
   });
 
   it("rejects footprints wider than the board", () => {
@@ -68,9 +69,9 @@ describe("packInventory", () => {
 
   it("places items at saved positions if valid, otherwise packs sequentially", () => {
     const items = [
-      { instanceId: "item1", definitionId: "placeholder-helm" }, // 2x2
-      { instanceId: "item2", definitionId: "placeholder-body" }, // 2x3
-      { instanceId: "item3", definitionId: "placeholder-belt" }, // 2x1
+      { instanceId: "item1", definitionId: "leather-helm-basic" }, // 2x2
+      { instanceId: "item2", definitionId: "leather-armor-basic" }, // 2x3
+      { instanceId: "item3", definitionId: "leather-belt-basic" }, // 2x1
     ];
     const savedPositions = {
       item1: { col: 3, row: 1 },
@@ -86,10 +87,10 @@ describe("packInventory", () => {
 
   it("repacks items when saved positions collide", () => {
     const items = [
-      { instanceId: "item1", definitionId: "placeholder-helm" },
-      { instanceId: "item2", definitionId: "placeholder-belt" },
+      { instanceId: "item1", definitionId: "leather-helm-basic" },
+      { instanceId: "item2", definitionId: "leather-belt-basic" },
     ];
-    const result = packInventoryWithPositions(items, 8, {
+    const result = packInventoryWithPositions(items, 7, {
       item1: { col: 1, row: 1 },
       item2: { col: 1, row: 1 },
     });
@@ -123,6 +124,42 @@ describe("packInventory", () => {
     ];
 
     expect(findFirstInventoryPlacement(items, "dragged", { w: 2, h: 2 }, 8)).toEqual({ col: 3, row: 1 });
+  });
+
+  it("allows same-footprint gear to occupy a vacated inventory placement during equip swap", () => {
+    const items = [
+      { item: { instanceId: "incoming" }, col: 3, row: 2, w: 2, h: 2 },
+      { item: { instanceId: "neighbor" }, col: 1, row: 1, w: 2, h: 2 },
+    ];
+
+    expect(
+      canOccupyVacatedInventoryPlacement(
+        items,
+        "incoming",
+        { w: 2, h: 2 },
+        { w: 2, h: 2 },
+        { col: 3, row: 2 },
+        7,
+      ),
+    ).toBe(true);
+  });
+
+  it("rejects vacated placements that do not fit a different footprint", () => {
+    const items = [
+      { item: { instanceId: "incoming" }, col: 1, row: 1, w: 2, h: 1 },
+      { item: { instanceId: "blocker" }, col: 2, row: 1, w: 2, h: 2 },
+    ];
+
+    expect(
+      canOccupyVacatedInventoryPlacement(
+        items,
+        "incoming",
+        { w: 2, h: 1 },
+        { w: 2, h: 2 },
+        { col: 1, row: 1 },
+        7,
+      ),
+    ).toBe(false);
   });
 
   it.each([

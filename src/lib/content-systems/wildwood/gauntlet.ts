@@ -8,6 +8,7 @@ import {
   type CharacterId,
 } from "@/lib/game-data";
 import { DRAFT_CHOICES } from "@/lib/game-constants";
+import type { GearInstance } from "@/lib/gear";
 import { shuffle } from "@/lib/utils";
 import { WILDWOOD_BOSS_IDS } from "./bosses";
 import {
@@ -25,7 +26,7 @@ export type WildwoodBossId = (typeof WILDWOOD_BOSS_IDS)[number];
 type WildwoodDraftPhase = "draft" | "battle" | "recovery" | "reward" | "removal";
 
 export type WildwoodDraftState = {
-  version: 2;
+  version: 3;
   phase: WildwoodDraftPhase;
   draftChoices: BattleCard[];
   remainingBossIds: WildwoodBossId[];
@@ -33,8 +34,9 @@ export type WildwoodDraftState = {
   currentBossId: WildwoodBossId | null;
   currentCombatTraitIds: EncounterCombatTraitId[];
   currentRewardTraitIds: EncounterRewardTraitId[];
-  rewardType: "card" | "trinket" | null;
+  rewardType: "card" | "trinket" | "gear" | null;
   rewardChoiceIds: string[];
+  rewardGearChoices: GearInstance[];
   selectedRewardId: string | null;
 };
 
@@ -58,7 +60,7 @@ export function createInitialWildwoodDraftState(
   rng: () => number = Math.random,
 ): WildwoodDraftState {
   return {
-    version: 2,
+    version: 3,
     phase: "draft",
     draftChoices: createWildwoodDraftChoices(characterId, [], rng),
     remainingBossIds: [],
@@ -68,6 +70,7 @@ export function createInitialWildwoodDraftState(
     currentRewardTraitIds: [],
     rewardType: null,
     rewardChoiceIds: [],
+    rewardGearChoices: [],
     selectedRewardId: null,
   };
 }

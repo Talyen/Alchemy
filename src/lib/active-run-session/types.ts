@@ -5,9 +5,40 @@ import type { ContentSystemId, LabyrinthMap, LabyrinthModifierKind } from "@/lib
 import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { Screen } from "@/lib/routing";
+import type { GearInstance } from "@/lib/gear";
 import type { PersistedPendingReward } from "./pending-reward";
 
 export type { PersistedPendingReward } from "./pending-reward";
+
+export type PersistedShopState = {
+  cards: BattleCard[];
+  removeUsed: boolean;
+  refreshesLeft: number;
+  firstPurchaseUsed: boolean;
+  purchasedSlotKeys: string[];
+};
+
+export type PersistedAlchemistState = {
+  potions: BattleCard[];
+  mixUsed: boolean;
+  refreshesLeft: number;
+  firstPurchaseUsed: boolean;
+  purchasedSlotKeys: string[];
+};
+
+export type PersistedTrinketShopState = {
+  trinketIds: string[];
+  refreshesLeft: number;
+  firstPurchaseUsed: boolean;
+  purchasedSlotKeys: string[];
+};
+
+export type PersistedEquipmentShopState = {
+  gear: GearInstance[];
+  refreshesLeft: number;
+  firstPurchaseUsed: boolean;
+  purchasedSlotKeys: string[];
+};
 
 export type LabyrinthNodePosition = { row: number; col: number };
 
@@ -40,6 +71,10 @@ export type ActiveRunData = {
   currentScreen: Screen | null;
   destinationChoices: string[];
   pendingReward: PersistedPendingReward | null;
+  shopState: PersistedShopState | null;
+  alchemistState: PersistedAlchemistState | null;
+  trinketShopState: PersistedTrinketShopState | null;
+  equipmentShopState: PersistedEquipmentShopState | null;
 };
 
 export type DestinationOptionsInput = {

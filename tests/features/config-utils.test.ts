@@ -44,6 +44,26 @@ describe("getAvailableDestinations", () => {
     expect(destinations).toContain("Alchemist's Shop");
   });
 
+  it("excludes Trinket Shop when gold < 40", () => {
+    const destinations = getAvailableDestinations(30, 39, 30);
+    expect(destinations).not.toContain("Trinket Shop");
+  });
+
+  it("includes Trinket Shop when gold >= 40", () => {
+    const destinations = getAvailableDestinations(30, 40, 30);
+    expect(destinations).toContain("Trinket Shop");
+  });
+
+  it("excludes Equipment Shop when gold < 40", () => {
+    const destinations = getAvailableDestinations(30, 39, 30);
+    expect(destinations).not.toContain("Equipment Shop");
+  });
+
+  it("includes Equipment Shop when gold >= 40", () => {
+    const destinations = getAvailableDestinations(30, 40, 30);
+    expect(destinations).toContain("Equipment Shop");
+  });
+
   it("excludes Elite Combat when Health < half max", () => {
     const destinations = getAvailableDestinations(14, 100, 30);
     expect(destinations).not.toContain("Elite Combat");

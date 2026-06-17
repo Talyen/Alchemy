@@ -8,6 +8,8 @@ import {
   CompletedDifficultiesSchema,
   CURRENT_SAVE_SCHEMA_VERSION,
 } from "@/lib/validation";
+import { defaultBattleState } from "@/lib/battle";
+import { GEAR_EFFECT_KEYS } from "@/lib/gear";
 import { createSeededRng } from "@/lib/utils";
 import { generateLabyrinthMap, withCurrentNode } from "@/lib/content-systems/labyrinth/map-generation";
 import { baseHomesteadSave } from "../../fixtures/saves";
@@ -252,6 +254,46 @@ describe("ActiveRunDataSchema", () => {
   });
 
 
+  it("merges partial legacy gearEffects with defaults on mid-combat hydrate", () => {
+    const defaults = defaultBattleState();
+    const legacyGearEffects = {
+      flatPhysicalDamage: 4,
+      flatStunDamage: 2,
+    };
+    const result = ActiveRunDataSchema.safeParse({
+      characterId: "knight",
+      runDeck: [],
+      runGold: 0,
+      runPlayerHealth: 30,
+      runMaxHealth: 30,
+      roomsEncountered: 1,
+      currentAct: 1,
+      destinationIndexInAct: 0,
+      completedDestinations: [],
+      runTrinkets: [],
+      selectedDifficulty: null,
+      contentSystemType: "campaign",
+      labyrinthMap: null,
+      activeCombat: {
+        battleState: {
+          ...defaults,
+          gearEffects: legacyGearEffects,
+        },
+        activeLabyrinthModifiers: [],
+        activeLabyrinthRewardModifiers: [],
+      },
+    });
+    expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
+    if (!result.success) return;
+    const gearEffects = result.data.activeCombat!.battleState.gearEffects;
+    expect(gearEffects.flatPhysicalDamage).toBe(4);
+    expect(gearEffects.flatStunDamage).toBe(2);
+    for (const key of GEAR_EFFECT_KEYS) {
+      if (key === "flatPhysicalDamage" || key === "flatStunDamage") continue;
+      expect(gearEffects[key]).toBe(0);
+    }
+  });
+
   it("replaces legacy starter deck for unstarted run", () => {
     const legacyDeck = [
       { id: "slash", title: "Slash", descriptionLines: [], art: "", cost: 1, effects: [{ kind: "damage", damageType: "physical", amount: 6 }] },
@@ -281,6 +323,68 @@ describe("ActiveRunDataSchema", () => {
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.runDeck.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("parses persisted shop slices", () => {
+    const result = ActiveRunDataSchema.safeParse({
+      characterId: "knight",
+      runDeck: [],
+      runGold: 50,
+      runPlayerHealth: 30,
+      runMaxHealth: 30,
+      roomsEncountered: 2,
+      currentAct: 1,
+      destinationIndexInAct: 1,
+      completedDestinations: [],
+      runTrinkets: [],
+      selectedDifficulty: null,
+      contentSystemType: "campaign",
+      labyrinthMap: null,
+      currentScreen: "trinket-shop",
+      trinketShopState: {
+        trinketIds: ["lucky-clover"],
+        refreshesLeft: 2,
+        firstPurchaseUsed: true,
+      },
+    });
+    expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
+    if (result.success) {
+      expect(result.data.trinketShopState?.trinketIds).toEqual(["lucky-clover"]);
+      expect(result.data.trinketShopState?.refreshesLeft).toBe(2);
+    }
+  });
+
+  it("rejects pending gear rewards with no valid choices", () => {
+    const result = ActiveRunDataSchema.safeParse({
+      characterId: "knight",
+      runDeck: [],
+      runGold: 0,
+      runPlayerHealth: 30,
+      runMaxHealth: 30,
+      roomsEncountered: 0,
+      currentAct: 1,
+      destinationIndexInAct: 0,
+      completedDestinations: [],
+      runTrinkets: [],
+      selectedDifficulty: null,
+      contentSystemType: "campaign",
+      labyrinthMap: null,
+      pendingReward: {
+        rewardType: "gear",
+        gearChoices: [],
+        selectedId: null,
+        gold: 0,
+        materials: { wood: 0, iron: 0, herbs: 0, food: 0, crystal: 0 },
+        destinations: [],
+        selectedBossId: null,
+        lastVictoryEnemyType: null,
+        lastVictoryContentSystem: null,
+      },
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.pendingReward).toBeNull();
     }
   });
 });

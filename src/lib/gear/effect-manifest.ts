@@ -1,15 +1,6 @@
-import type { GearEffectManifest } from "./types";
+import { GEAR_EFFECT_KEYS, type GearEffectManifest } from "./gear-effect-manifest";
 
-export const GEAR_EFFECT_KEYS = [
-  "flatPhysicalDamage",
-  "flatStunDamage",
-  "flatHolyDamage",
-  "flatBurnDamage",
-  "flatPoisonDamage",
-  "flatBleedDamage",
-  "flatFreezeDamage",
-  "flatNatureDamage",
-] as const satisfies readonly (keyof GearEffectManifest)[];
+export { GEAR_EFFECT_KEYS, defaultGearEffects, type GearEffectManifest } from "./gear-effect-manifest";
 
 export function mergeGearEffectManifests(base: GearEffectManifest, addition: GearEffectManifest): GearEffectManifest {
   const merged = { ...base };

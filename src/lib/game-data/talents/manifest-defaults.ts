@@ -146,7 +146,6 @@ export const DEFAULT_TALENT_EFFECTS: TalentEffectManifest = {
   burnDamageOnManaCrystalLoss: 0,
   companionDamagePerManaCrystal: 0,
   healOnManaGain: 0,
-  trinketChanceBonus: 0,
 
   firstPoisonCardFree: false,
   poisonPhysicalBonus: 0,

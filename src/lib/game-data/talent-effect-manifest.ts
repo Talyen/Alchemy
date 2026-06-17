@@ -165,7 +165,6 @@ export type TalentEffectManifest = {
   healOnManaGain: number;
 
   // --- Trinket ---
-  trinketChanceBonus: number;
 
   // --- Freeze ---
   freezeThresholdReduction: number;

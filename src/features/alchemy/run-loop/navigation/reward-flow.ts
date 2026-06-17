@@ -8,16 +8,7 @@ import {
   type BattleCard,
   type TrinketEntry,
 } from "@/lib/game-data";
-import {
-  BOSS_TRINKET_REWARD_CHOICES,
-  ELITE_TRINKET_REWARD_CHANCE,
-  LABYRINTH_REWARD_CONFIG,
-  REWARD_CARD_CHOICES,
-  REWARD_TRINKET_CHANCE,
-  CAMPAIGN_GEAR_REWARD_CHANCE,
-  LABYRINTH_GEAR_REWARD_CHANCE,
-  BOSS_GEAR_REWARD_CHANCE,
-} from "@/lib/game-constants";
+import { LABYRINTH_REWARD_CONFIG, REWARD_CARD_CHOICES } from "@/lib/game-constants";
 import { computeTrinketManifest } from "@/lib/trinkets";
 import type { MaterialInventory } from "@/lib/homestead/types";
 import { emptyInventory } from "@/lib/homestead/inventory";
@@ -120,7 +111,6 @@ function createModifierGuard(kind: EncounterRewardTraitId) {
   return (modifiers: EncounterRewardTraitId[]): boolean => hasRewardModifier(modifiers, kind);
 }
 
-export const shouldForceTrinketReward = createModifierGuard("collector");
 export const shouldGrantCompanionReward = createModifierGuard("companion");
 export const shouldGrantAlchemistReward = createModifierGuard("alchemist");
 
@@ -368,6 +358,7 @@ type BossRewardInput = {
   trinketIds: string[];
   goldMultiplier?: number;
   rng?: () => number;
+  gearAstralChanceBonus?: number;
 };
 
 type CombatRewardInput = {
@@ -381,8 +372,6 @@ type CombatRewardInput = {
   destinations: Destination[];
   trinketIds: string[];
   goldMultiplier?: number;
-  forceTrinket?: boolean;
-  contentSystemType: ContentSystemId;
   rng?: () => number;
 };
 
@@ -395,65 +384,67 @@ export function createBossRewardState({
   trinketIds,
   goldMultiplier = 1,
   rng = Math.random,
-}: BossRewardInput): GearRewardState | TrinketRewardState {
-  const gearReward = rng() < BOSS_GEAR_REWARD_CHANCE;
-  return gearReward
-    ? {
-        ...createEmptyRewardState(),
-        rewardType: "gear",
-        choices: generateGearRewardChoices(BOSS_TRINKET_REWARD_CHOICES, "boss", rng),
-        gold: computeRewardGold({
-          baseGold: gold,
-          bonusGold: bossBonus,
-          generousBonus,
-          talentGoldPerCombat,
-          trinketIds,
-          goldMultiplier,
-        }),
-        materials,
-      }
-    : {
-        ...createEmptyRewardState(),
-        rewardType: "trinket",
-        choices: sampleItems(trinketLibrary, BOSS_TRINKET_REWARD_CHOICES, rng),
-        gold: computeRewardGold({
-          baseGold: gold,
-          bonusGold: bossBonus,
-          generousBonus,
-          talentGoldPerCombat,
-          trinketIds,
-          goldMultiplier,
-        }),
-        materials,
-      };
+  gearAstralChanceBonus = 0,
+}: BossRewardInput): GearRewardState {
+  return {
+    ...createEmptyRewardState(),
+    rewardType: "gear",
+    choices: generateGearRewardChoices(REWARD_CARD_CHOICES, rng, { astralChanceBonus: gearAstralChanceBonus }),
+    gold: computeRewardGold({
+      baseGold: gold,
+      bonusGold: bossBonus,
+      generousBonus,
+      talentGoldPerCombat,
+      trinketIds,
+      goldMultiplier,
+    }),
+    materials,
+  };
+}
+
+function rollWildwoodRewardType(rng: () => number): "card" | "trinket" | "gear" {
+  const roll = Math.floor(rng() * 3);
+  if (roll === 0) return "card";
+  if (roll === 1) return "trinket";
+  return "gear";
 }
 
 export function createWildwoodRewardState(
   runDeck: BattleCard[],
-  rewardTraitsOrRng: EncounterRewardTraitId[] | (() => number) = [],
   rng: () => number = Math.random,
-): CardRewardState | TrinketRewardState {
-  const rewardTraits = typeof rewardTraitsOrRng === "function" ? [] : rewardTraitsOrRng;
-  const activeRng = typeof rewardTraitsOrRng === "function" ? rewardTraitsOrRng : rng;
-  const rewardType = shouldForceTrinketReward(rewardTraits) || activeRng() < 0.5 ? "trinket" : "card";
-  return rewardType === "trinket"
-    ? {
-        ...createEmptyRewardState(),
-        rewardType: "trinket",
-        choices: sampleItems(trinketLibrary, REWARD_CARD_CHOICES, activeRng),
-      }
-    : {
-        ...createEmptyRewardState(),
-        rewardType: "card",
-        choices: selectRewardCards(runDeck, getOfferableCardPool(), REWARD_CARD_CHOICES, [], activeRng),
-      };
+  gearAstralChanceBonus = 0,
+): CardRewardState | TrinketRewardState | GearRewardState {
+  const rewardType = rollWildwoodRewardType(rng);
+  if (rewardType === "gear") {
+    return {
+      ...createEmptyRewardState(),
+      rewardType: "gear",
+      choices: generateGearRewardChoices(REWARD_CARD_CHOICES, rng, { astralChanceBonus: gearAstralChanceBonus }),
+    };
+  }
+  if (rewardType === "trinket") {
+    return {
+      ...createEmptyRewardState(),
+      rewardType: "trinket",
+      choices: sampleItems(trinketLibrary, REWARD_CARD_CHOICES, rng),
+    };
+  }
+  return {
+    ...createEmptyRewardState(),
+    rewardType: "card",
+    choices: selectRewardCards(runDeck, getOfferableCardPool(), REWARD_CARD_CHOICES, [], rng),
+  };
 }
 
 export function restoreWildwoodRewardState(
-  rewardType: "card" | "trinket",
+  rewardType: "card" | "trinket" | "gear",
   choiceIds: string[],
   selectedId: string | null,
-): CardRewardState | TrinketRewardState {
+  gearChoices: GearInstance[] = [],
+): CardRewardState | TrinketRewardState | GearRewardState {
+  if (rewardType === "gear") {
+    return { ...createEmptyRewardState(), rewardType: "gear", choices: gearChoices, selectedId };
+  }
   const library = rewardType === "card" ? getOfferableCardPool() : trinketLibrary;
   const choices = choiceIds
     .map((id) => library.find((entry) => entry.id === id))
@@ -461,23 +452,6 @@ export function restoreWildwoodRewardState(
   return rewardType === "card"
     ? { ...createEmptyRewardState(), rewardType: "card", choices: choices as BattleCard[], selectedId }
     : { ...createEmptyRewardState(), rewardType: "trinket", choices: choices as TrinketEntry[], selectedId };
-}
-
-function calculateCombatTrinketRewardOffer(
-  battleState: BattleState,
-  forceTrinket: boolean,
-  rng: () => number = Math.random,
-): boolean {
-  if (forceTrinket) return true;
-  const baseTrinketChance =
-    battleState.currentEnemy.enemyType === CONSTANTS.ENEMY_TYPES.ELITE
-      ? ELITE_TRINKET_REWARD_CHANCE
-      : REWARD_TRINKET_CHANCE;
-  const trinketHoarderBonus = battleState.currentEnemy.traits?.some((t) => t.id === "trinket-hoarder")
-    ? LABYRINTH_REWARD_CONFIG.trinketHoarderRewardChanceBonus
-    : 0;
-  const trinketChanceBonus = battleState.talentEffects?.trinketChanceBonus ?? 0;
-  return rng() < Math.min(baseTrinketChance + trinketHoarderBonus + trinketChanceBonus, 1);
 }
 
 export function createCombatRewardState({
@@ -491,22 +465,8 @@ export function createCombatRewardState({
   destinations,
   trinketIds,
   goldMultiplier = 1,
-  forceTrinket = false,
-  contentSystemType,
   rng = Math.random,
-}: CombatRewardInput): CardRewardState | TrinketRewardState | GearRewardState {
-  const gearChance =
-    contentSystemType === CONSTANTS.CONTENT_SYSTEMS.LABYRINTH
-      ? LABYRINTH_GEAR_REWARD_CHANCE
-      : CAMPAIGN_GEAR_REWARD_CHANCE;
-  const offerGear = rng() < gearChance;
-  const offerTrinket = !offerGear && calculateCombatTrinketRewardOffer(battleState, forceTrinket, rng);
-  const enemyType =
-    battleState.currentEnemy.enemyType === CONSTANTS.ENEMY_TYPES.ELITE
-      ? "elite"
-      : battleState.currentEnemy.enemyType === CONSTANTS.ENEMY_TYPES.BOSS
-        ? "boss"
-        : "normal";
+}: CombatRewardInput): CardRewardState | TrinketRewardState {
   const goldTotal = computeRewardGold({
     baseGold: gold,
     bonusGold: eliteBonus,
@@ -515,16 +475,7 @@ export function createCombatRewardState({
     trinketIds,
     goldMultiplier,
   });
-  if (offerGear) {
-    return {
-      ...createEmptyRewardState(destinations),
-      rewardType: "gear",
-      choices: generateGearRewardChoices(REWARD_CARD_CHOICES, enemyType, rng),
-      gold: goldTotal,
-      materials,
-    };
-  }
-  if (offerTrinket) {
+  if (battleState.currentEnemy.enemyType === CONSTANTS.ENEMY_TYPES.ELITE) {
     return {
       ...createEmptyRewardState(destinations),
       rewardType: "trinket",

@@ -15,6 +15,7 @@ import {
   type TalentXP,
   type UnlockedTalents,
   type BattleCard,
+  type TrinketEntry,
   type KeywordId,
 } from "@/lib/game-data";
 import { hasUnspentTalents } from "@/app/talent-affordability";
@@ -23,7 +24,7 @@ import { BOSS_PARTICLE_ALPHA_MULTIPLIER, SCREEN_PARTICLE_ALPHA, SCREEN_PARTICLE_
 import { useAppAudioEffects } from "@/app/use-app-audio-effects";
 import { useAppDisplayEffects } from "@/app/use-app-display-effects";
 import { useScreenAssetPreloadEffects } from "@/app/use-app-preload-effects";
-import { gearDefinitions } from "@/lib/gear";
+import { gearDefinitions, type GearInstance } from "@/lib/gear";
 import { useAlchemyAutosaveFromStores } from "@/app/use-app-save-state";
 import { useGlobalErrorHandlers } from "@/app/use-global-error-handlers";
 import { useInitialLoadReady } from "@/app/use-initial-load-ready";
@@ -131,6 +132,7 @@ function AppMainContent({
   const [gameMenuOpen, setGameMenuOpen] = useState(false);
   const [menuAnchorRect, setMenuAnchorRect] = useState<DOMRect | null>(null);
   const [returnToRunScreen, setReturnToRunScreen] = useState<Screen | null>(null);
+  const [optionsReturnScreen, setOptionsReturnScreen] = useState<Screen>("menu");
   const gameMenuOpenRef = useRef(gameMenuOpen);
   const renderedScreenRef = useRef(renderedScreen);
 
@@ -187,6 +189,10 @@ function AppMainContent({
     return {
       navigation: {
         goToScreen: (screen: Screen) => runRef.current.goToScreen(screen),
+        goToOptions: () => {
+          setOptionsReturnScreen(renderedScreenRef.current);
+          runRef.current.goToScreen("options");
+        },
       },
       runStart: {
         beginCampaign: () => runRef.current.beginCampaign(),
@@ -218,13 +224,31 @@ function AppMainContent({
         handleWildwoodRemoveCard: (index: number) => runRef.current.handleWildwoodRemoveCard(index),
         handleWildwoodSkipRemoval: () => runRef.current.handleWildwoodSkipRemoval(),
         handleShopContinue: () => runRef.current.handleShopContinue(),
-        handleShopBuyCard: (card: BattleCard) => runRef.current.handleShopBuyCard(card),
+        handleShopBuyCard: (card: BattleCard, slotKey: string) => runRef.current.handleShopBuyCard(card, slotKey),
         handleShopRemoveCard: (index: number) => runRef.current.handleShopRemoveCard(index),
         handleShopRefresh: () => runRef.current.handleShopRefresh(),
         handleAlchemistContinue: () => runRef.current.handleAlchemistContinue(),
-        handleAlchemistBuyCard: (card: BattleCard) => runRef.current.handleAlchemistBuyCard(card),
+        handleAlchemistBuyCard: (card: BattleCard, slotKey: string) =>
+          runRef.current.handleAlchemistBuyCard(card, slotKey),
         handleAlchemistRefresh: () => runRef.current.handleAlchemistRefresh(),
         handleAlchemistMixPotions: (a: number, b: number) => runRef.current.handleAlchemistMixPotions(a, b),
+        handleTrinketShopBuy: (trinket: TrinketEntry, slotKey: string) =>
+          runRef.current.handleTrinketShopBuy(trinket, slotKey),
+        handleTrinketShopRefresh: () => runRef.current.handleTrinketShopRefresh(),
+        handleTrinketShopContinue: () => runRef.current.handleTrinketShopContinue(),
+        handleEquipmentShopBuy: (instance: GearInstance) => runRef.current.handleEquipmentShopBuy(instance),
+        handleEquipmentShopRefresh: () => runRef.current.handleEquipmentShopRefresh(),
+        handleEquipmentShopContinue: () => runRef.current.handleEquipmentShopContinue(),
+        getMerchantCardBuyPrice: (card: BattleCard) => runRef.current.getMerchantCardBuyPrice(card),
+        getAlchemistPotionBuyPrice: (card: BattleCard) => runRef.current.getAlchemistPotionBuyPrice(card),
+        getTrinketBuyPrice: (trinket: TrinketEntry) => runRef.current.getTrinketBuyPrice(trinket),
+        getGearBuyPrice: (instance: GearInstance) => runRef.current.getGearBuyPrice(instance),
+        getShopRefreshPrice: (refreshesLeft: number) => runRef.current.getShopRefreshPrice(refreshesLeft),
+        getAlchemistRefreshPrice: (refreshesLeft: number) => runRef.current.getAlchemistRefreshPrice(refreshesLeft),
+        getTrinketRefreshPrice: (refreshesLeft: number) => runRef.current.getTrinketRefreshPrice(refreshesLeft),
+        getEquipmentRefreshPrice: (refreshesLeft: number) => runRef.current.getEquipmentRefreshPrice(refreshesLeft),
+        getRemoveCardPrice: () => runRef.current.getRemoveCardPrice(),
+        getMixPotionPrice: () => runRef.current.getMixPotionPrice(),
         handleMysteryChoice: (choice: MysteryChoice) => runRef.current.handleMysteryChoice(choice),
         handleMysteryChooseCard: (cardId: string) => runRef.current.handleMysteryChooseCard(cardId),
         handleMysteryRemoveCard: (index: number) => runRef.current.handleMysteryRemoveCard(index),
@@ -258,13 +282,6 @@ function AppMainContent({
       .setFinishedRunCharacters(["knight", "rogue", "wizard", "ranger", "alchemist", "warlock", "druid"]);
     run.unlockAllTalents();
     homesteadStore.getState().setMaterials({ wood: 99, iron: 99, herbs: 99, food: 99, crystal: 99 });
-    if (useGearStore.getState().inventory.length === 0) {
-      useGearStore.getState().addInstance({
-        instanceId: "dev-unlock-gear",
-        definitionId: "placeholder-body",
-        affixIds: [],
-      });
-    }
   }
 
   const hasUnspentTalentsBadge = hasUnspentTalents(run.talentXP, run.unlockedTalents);
@@ -292,7 +309,13 @@ function AppMainContent({
 
   function navigateToMeta(screen: Extract<Screen, "collection" | "talents" | "homestead" | "options" | "armory">) {
     if (isRunLoopScreen(renderedScreen)) setReturnToRunScreen(renderedScreen);
+    if (screen === "options") setOptionsReturnScreen(renderedScreen);
     run.goToScreen(screen);
+  }
+
+  function backFromOptions() {
+    if (optionsReturnScreen === "battle") run.returnToBattle();
+    else run.goToScreen(optionsReturnScreen);
   }
 
   const hasActiveBattle = run.hasActiveBattle;
@@ -345,6 +368,7 @@ function AppMainContent({
             onOpenBattleMenu={openBattleMenu}
             onClearSaveData={clearSaveData}
             onUnlockAllDevMode={unlockAllDevMode}
+            onBackFromOptions={backFromOptions}
           />
         </AppScreenChromeProvider>
       </CardDescriptionProvider>
@@ -494,11 +518,9 @@ export default function App() {
           completedResearch: result.data.completedResearch,
           bondedCompanions: result.data.bondedCompanions,
         });
-        useGearStore.getState().initialize(
-          result.data.gearInventory,
-          result.data.gearLoadouts,
-          result.data.gearBoardPositions,
-        );
+        useGearStore
+          .getState()
+          .initialize(result.data.gearInventory, result.data.gearLoadouts, result.data.gearBoardPositions);
         restoreRun(result.data.activeRun, result.data.talentXP, result.data.unlockedTalents);
         setBootstrapResult(result);
       }

@@ -28,6 +28,8 @@ import type { RunStateController, TalentStateController } from "../../shared/sto
 import type { DestinationOptionsInput } from "@/lib/active-run-session";
 import { createInitialWildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import { DRAFT_ROUNDS } from "@/lib/game-constants";
+import { useGearStore } from "../../shared/stores/gear-store";
+import { computeGearMaxHealthBonus } from "@/lib/gear";
 
 export type ContentSystemNavigationDeps = {
   run: RunStateController;
@@ -114,7 +116,24 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
           ? deps.draftedDeckRef.current
           : undefined;
     return createRunStartSnapshot(
-      resolvedDraft !== undefined ? { ...baseInput, draftedDeck: resolvedDraft } : baseInput,
+      resolvedDraft !== undefined
+        ? {
+            ...baseInput,
+            draftedDeck: resolvedDraft,
+            gearMaxHealthBonus: computeGearMaxHealthBonus(
+              characterId,
+              useGearStore.getState().inventory,
+              useGearStore.getState().loadouts,
+            ),
+          }
+        : {
+            ...baseInput,
+            gearMaxHealthBonus: computeGearMaxHealthBonus(
+              characterId,
+              useGearStore.getState().inventory,
+              useGearStore.getState().loadouts,
+            ),
+          },
     );
   }
 

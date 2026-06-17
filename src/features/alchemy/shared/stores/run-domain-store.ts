@@ -155,6 +155,8 @@ type RunDomainActions = {
   setWildwoodDraft: Setter<RunSessionFields["wildwoodDraft"]>;
   setShopState: Setter<RunSessionFields["shopState"]>;
   setAlchemistState: Setter<RunSessionFields["alchemistState"]>;
+  setTrinketShopState: Setter<RunSessionFields["trinketShopState"]>;
+  setEquipmentShopState: Setter<RunSessionFields["equipmentShopState"]>;
   setMysteryEvent: (event: RunSessionFields["mysteryEvent"]) => void;
   setMysteryCardChoices: (
     choices:
@@ -403,6 +405,8 @@ export const useRunDomainStore = create<RunDomainStore>()(
       setWildwoodDraft: setSessionField("wildwoodDraft"),
       setShopState: setSessionField("shopState"),
       setAlchemistState: setSessionField("alchemistState"),
+      setTrinketShopState: setSessionField("trinketShopState"),
+      setEquipmentShopState: setSessionField("equipmentShopState"),
       setMysteryEvent: (event) =>
         set((state) => {
           state.session.mysteryEvent = event;
@@ -529,6 +533,8 @@ function pickSessionActions(state: RunDomainStore): Omit<RunSessionStore, keyof 
     setWildwoodDraft: state.setWildwoodDraft,
     setShopState: state.setShopState,
     setAlchemistState: state.setAlchemistState,
+    setTrinketShopState: state.setTrinketShopState,
+    setEquipmentShopState: state.setEquipmentShopState,
     setMysteryEvent: state.setMysteryEvent,
     setMysteryCardChoices: state.setMysteryCardChoices,
     clearTransientSession: state.clearTransientSession,

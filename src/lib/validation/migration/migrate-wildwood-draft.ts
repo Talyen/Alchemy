@@ -18,5 +18,9 @@ export function migrateWildwoodDraft(draft: unknown): unknown {
   if (state.rewardType === "boon") {
     next.rewardType = "trinket";
   }
+  if (state.version === 2) {
+    next.version = 3;
+    next.rewardGearChoices = [];
+  }
   return next;
 }

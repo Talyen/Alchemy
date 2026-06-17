@@ -22,6 +22,7 @@ import { resolveStunTrigger } from "./status-stun-resolve";
 import { getEnemyDamageMultiplier } from "./status-effects";
 import { decayArmorAfterDamage, rollPercent } from "./status-helpers";
 import { BLEED_STATUS_MULTIPLIER, BATTLE_CONFIG, computeLeechHeal, FREEZE_THRESHOLD_FRACTION } from "../game-constants";
+import { scaledGearLeechHeal, applyGearKillRewards, applyGearProcPhysicalDamage } from "./gear-effects";
 
 function applyBurnStatusRider(state: BattleState, actualDamage: number): BattleState {
   let nextState = addEnemyStatus(state, "burn", actualDamage);
@@ -66,17 +67,20 @@ export function applyPoisonTalentRiders(
   if (nextState.talentEffects.poisonStripArmor) {
     nextState = reduceEnemyArmor(nextState, 1);
   }
-  if (damage > 0 && rollPercent(nextState.talentEffects.poisonLeechChance, nextState.rng)) {
-    const leechHeal = computeLeechHeal(damage);
-    const prevState = nextState;
-    nextState = applyPlayerHealing(nextState, leechHeal);
-    mergeCombatText(combatTexts, {
-      target: "player",
-      kind: "heal",
-      stat: "health",
-      amount: leechHeal,
-    });
-    emitOverhealBlockText(prevState, nextState, combatTexts);
+  if (damage > 0) {
+    const leechChance = nextState.talentEffects.poisonLeechChance + nextState.gearEffects.poisonLeechChance;
+    if (rollPercent(leechChance, nextState.rng)) {
+      const leechHeal = scaledGearLeechHeal(computeLeechHeal(damage), nextState.gearEffects);
+      const prevState = nextState;
+      nextState = applyPlayerHealing(nextState, leechHeal);
+      mergeCombatText(combatTexts, {
+        target: "player",
+        kind: "heal",
+        stat: "health",
+        amount: leechHeal,
+      });
+      emitOverhealBlockText(prevState, nextState, combatTexts);
+    }
   }
   return nextState;
 }
@@ -155,6 +159,31 @@ function applyFrozenHeartDamage(state: BattleState, combatTexts: CombatTextEvent
   };
 }
 
+function applyGearFreezeDamage(
+  preHitState: BattleState,
+  state: BattleState,
+  combatTexts: CombatTextEvent[],
+): BattleState {
+  const dmg = preHitState.gearEffects.damageOnFreezePhysical;
+  if (dmg <= 0) return state;
+  const enemyWasAlive = state.enemyHealth > 0;
+  const finalDamage = applyGearProcPhysicalDamage(state, dmg);
+  mergeCombatText(combatTexts, {
+    target: "enemy",
+    kind: "damage",
+    stat: "physical",
+    amount: finalDamage,
+  });
+  let nextState = {
+    ...state,
+    enemyHealth: clampHealth(state.enemyHealth, -finalDamage, state.enemyMaxHealth),
+  };
+  if (enemyWasAlive && nextState.enemyHealth <= 0) {
+    nextState = applyGearKillRewards(nextState, true, combatTexts);
+  }
+  return nextState;
+}
+
 export function tryTriggerEnemyFreeze(
   preHitState: BattleState,
   nextState: BattleState,
@@ -180,6 +209,7 @@ export function tryTriggerEnemyFreeze(
     combatTexts,
   });
   result = applyFrozenHeartDamage(result, combatTexts);
+  result = applyGearFreezeDamage(preHitState, result, combatTexts);
   result = applyFreezeBlockTalent(result, combatTexts);
   result = applyFreezeStripArmorTalent(result);
   return result;
@@ -196,12 +226,14 @@ function applyPhysicalStunChance(
   actualDamage: number,
   combatTexts: CombatTextEvent[],
 ): BattleState {
-  if (actualDamage <= 0 || !rollPercent(state.talentEffects.physicalStunChance, state.rng)) return state;
+  const stunChance = state.talentEffects.physicalStunChance + state.gearEffects.physicalStunChance;
+  if (actualDamage <= 0 || !rollPercent(stunChance, state.rng)) return state;
   return resolveStunTrigger(addEnemyStatus(state, "stun", actualDamage), combatTexts);
 }
 
 function applyPhysicalBleedChance(state: BattleState, actualDamage: number): BattleState {
-  if (actualDamage <= 0 || !rollPercent(state.talentEffects.physicalBleedChance, state.rng)) return state;
+  const bleedChance = state.talentEffects.physicalBleedChance + state.gearEffects.physicalBleedChance;
+  if (actualDamage <= 0 || !rollPercent(bleedChance, state.rng)) return state;
   return addEnemyStatus(state, "bleed", actualDamage);
 }
 

@@ -1,0 +1,536 @@
+import type { KeywordId } from "@/lib/game-data";
+import type { GearAffixId } from "./affix-ids";
+import { gearAffixNameParts, type GearAffixNameParts } from "./affix-name-parts";
+import type { GearEffectManifest } from "./gear-effect-manifest";
+import type { GearRarity } from "./types";
+
+export type { GearAffixNameParts } from "./affix-name-parts";
+
+export type GearAffixAspect = "offensive" | "defensive";
+
+export type GearAffixBinding = {
+  effectKey: keyof GearEffectManifest;
+  perPoint: number;
+};
+
+export type GearAffixDefinition = {
+  id: GearAffixId;
+  aspect: GearAffixAspect;
+  keywordId: KeywordId;
+  secondaryKeywordId?: KeywordId;
+  descriptionTemplate: string;
+  bindings: GearAffixBinding[];
+  roll: { min: number; max: number };
+  rarityScale: Record<GearRarity, number>;
+  nameParts: GearAffixNameParts;
+};
+
+const BASIC_ASTRAL_SCALE: Record<GearRarity, number> = { basic: 1, astral: 2 };
+const FLAT_SCALE: Record<GearRarity, number> = { basic: 1, astral: 2 };
+const CHANCE_SCALE: Record<GearRarity, number> = { basic: 1, astral: 1 };
+const PERCENT_SCALE: Record<GearRarity, number> = { basic: 1, astral: 2 };
+
+function affix(
+  id: GearAffixId,
+  aspect: GearAffixAspect,
+  keywordId: KeywordId,
+  descriptionTemplate: string,
+  effectKey: keyof GearEffectManifest,
+  roll: { min: number; max: number },
+  rarityScale: Record<GearRarity, number> = BASIC_ASTRAL_SCALE,
+  secondaryKeywordId?: KeywordId,
+  perPoint = 1,
+): GearAffixDefinition {
+  return {
+    id,
+    aspect,
+    keywordId,
+    ...(secondaryKeywordId !== undefined ? { secondaryKeywordId } : {}),
+    descriptionTemplate,
+    bindings: [{ effectKey, perPoint }],
+    roll,
+    rarityScale,
+    nameParts: gearAffixNameParts[id],
+  };
+}
+
+export const gearAffixCatalog: Record<GearAffixId, GearAffixDefinition> = {
+  "flat-physical": affix(
+    "flat-physical",
+    "offensive",
+    "physical",
+    "Increases Physical damage by {value}",
+    "flatPhysicalDamage",
+    {
+      min: 1,
+      max: 3,
+    },
+    FLAT_SCALE,
+  ),
+  "flat-stun": affix(
+    "flat-stun",
+    "offensive",
+    "stun",
+    "Increases Stun damage by {value}",
+    "flatStunDamage",
+    { min: 1, max: 3 },
+    FLAT_SCALE,
+  ),
+  "flat-holy": affix(
+    "flat-holy",
+    "offensive",
+    "holy",
+    "Increases Holy damage by {value}",
+    "flatHolyDamage",
+    { min: 1, max: 3 },
+    FLAT_SCALE,
+  ),
+  "flat-burn": affix(
+    "flat-burn",
+    "offensive",
+    "burn",
+    "Increases Burn damage by {value}",
+    "flatBurnDamage",
+    { min: 1, max: 3 },
+    FLAT_SCALE,
+  ),
+  "flat-poison": affix(
+    "flat-poison",
+    "offensive",
+    "poison",
+    "Increases Poison damage by {value}",
+    "flatPoisonDamage",
+    {
+      min: 1,
+      max: 3,
+    },
+    FLAT_SCALE,
+  ),
+  "flat-bleed": affix(
+    "flat-bleed",
+    "offensive",
+    "bleed",
+    "Increases Bleed damage by {value}",
+    "flatBleedDamage",
+    { min: 1, max: 3 },
+    FLAT_SCALE,
+  ),
+  "flat-freeze": affix(
+    "flat-freeze",
+    "offensive",
+    "freeze",
+    "Increases Freeze damage by {value}",
+    "flatFreezeDamage",
+    {
+      min: 1,
+      max: 3,
+    },
+    FLAT_SCALE,
+  ),
+  "flat-nature": affix(
+    "flat-nature",
+    "offensive",
+    "nature",
+    "Increases Nature damage by {value}",
+    "flatNatureDamage",
+    {
+      min: 1,
+      max: 3,
+    },
+    FLAT_SCALE,
+  ),
+  "start-block": affix("start-block", "defensive", "block", "Gain {value} Block at the start of combat", "startBlock", {
+    min: 1,
+    max: 2,
+  }),
+  "armor-pierce": affix("armor-pierce", "offensive", "physical", "Ignore {value} enemy Armor", "armorPiercing", {
+    min: 1,
+    max: 2,
+  }),
+  "damage-on-stun": affix(
+    "damage-on-stun",
+    "offensive",
+    "physical",
+    "On Stun: Deal {value} Physical damage",
+    "damageOnStunPhysical",
+    {
+      min: 1,
+      max: 3,
+    },
+  ),
+  "forge-on-stun": affix("forge-on-stun", "offensive", "forge", "On Stun: Gain {value} Forge", "forgeOnStun", {
+    min: 1,
+    max: 2,
+  }),
+  "poison-leech": affix(
+    "poison-leech",
+    "offensive",
+    "leech",
+    "Poison has a {value}% chance to Leech",
+    "poisonLeechChance",
+    { min: 5, max: 10 },
+    CHANCE_SCALE,
+    "poison",
+  ),
+  "companion-damage": affix(
+    "companion-damage",
+    "offensive",
+    "companion",
+    "Increases Companion damage by {value}",
+    "companionDamageBonus",
+    { min: 1, max: 2 },
+  ),
+  "start-heal": affix(
+    "start-heal",
+    "defensive",
+    "health",
+    "Restore {value} Health at the start of combat",
+    "startHeal",
+    { min: 1, max: 3 },
+  ),
+  "heal-on-kill": affix("heal-on-kill", "defensive", "health", "Restore {value} Health on kill", "healOnKill", {
+    min: 1,
+    max: 3,
+  }),
+  "start-forge": affix("start-forge", "defensive", "forge", "Gain {value} Forge at the start of combat", "startForge", {
+    min: 1,
+    max: 2,
+  }),
+  "start-armor": affix("start-armor", "defensive", "armor", "Gain {value} Armor at the start of combat", "startArmor", {
+    min: 1,
+    max: 2,
+  }),
+  "block-on-stun": affix("block-on-stun", "defensive", "block", "On Stun: Gain {value} Block", "blockOnStun", {
+    min: 1,
+    max: 3,
+  }),
+  "mana-on-stun": affix("mana-on-stun", "offensive", "mana", "On Stun: Gain {value} Mana", "manaOnStun", {
+    min: 1,
+    max: 2,
+  }),
+  "physical-bleed-chance": affix(
+    "physical-bleed-chance",
+    "offensive",
+    "bleed",
+    "{value}% chance for Physical damage to Bleed",
+    "physicalBleedChance",
+    { min: 5, max: 15 },
+    CHANCE_SCALE,
+    "physical",
+  ),
+  "burn-per-mana": affix(
+    "burn-per-mana",
+    "offensive",
+    "burn",
+    "Increases Burn damage by {value}% per Mana Crystal",
+    "burnDamagePerManaPercent",
+    { min: 10, max: 20 },
+    PERCENT_SCALE,
+    "mana",
+  ),
+  "gold-on-wish": affix(
+    "gold-on-wish",
+    "offensive",
+    "gold",
+    "Gain {value} Gold on Wish",
+    "goldOnWish",
+    { min: 1, max: 3 },
+    BASIC_ASTRAL_SCALE,
+    "wish",
+  ),
+  "burn-on-wish": affix(
+    "burn-on-wish",
+    "offensive",
+    "burn",
+    "Deal {value} Burn on Wish",
+    "burnOnWish",
+    { min: 1, max: 4 },
+    BASIC_ASTRAL_SCALE,
+    "wish",
+  ),
+  "gold-on-kill": affix("gold-on-kill", "offensive", "gold", "Gain {value} Gold on kill", "goldOnKill", {
+    min: 1,
+    max: 3,
+  }),
+  "physical-stun-chance": affix(
+    "physical-stun-chance",
+    "offensive",
+    "stun",
+    "{value}% chance for Physical damage to Stun",
+    "physicalStunChance",
+    { min: 5, max: 15 },
+    CHANCE_SCALE,
+    "physical",
+  ),
+  "nature-leech": affix(
+    "nature-leech",
+    "offensive",
+    "leech",
+    "Nature has a {value}% chance to Leech",
+    "natureLeechChance",
+    { min: 5, max: 10 },
+    CHANCE_SCALE,
+    "nature",
+  ),
+  "forge-on-burn": affix(
+    "forge-on-burn",
+    "offensive",
+    "forge",
+    "Gain {value} Forge when you deal Burn damage",
+    "forgeOnBurnDealt",
+    { min: 1, max: 2 },
+    BASIC_ASTRAL_SCALE,
+    "burn",
+  ),
+  "draw-on-wish": affix("draw-on-wish", "offensive", "wish", "Draw {value} cards on Wish", "drawOnWish", {
+    min: 1,
+    max: 2,
+  }),
+  "consume-heal-bonus": affix(
+    "consume-heal-bonus",
+    "defensive",
+    "consume",
+    "Increases Healing from Consumed cards by {value}%",
+    "consumeHealBonusPercent",
+    { min: 10, max: 20 },
+    PERCENT_SCALE,
+    "health",
+  ),
+  "archery-damage": affix(
+    "archery-damage",
+    "offensive",
+    "archery",
+    "Increases Archery damage by {value}",
+    "flatArrowDamage",
+    {
+      min: 1,
+      max: 3,
+    },
+    FLAT_SCALE,
+  ),
+  "damage-on-freeze": affix(
+    "damage-on-freeze",
+    "offensive",
+    "physical",
+    "On Freeze: Deal {value} Physical damage",
+    "damageOnFreezePhysical",
+    { min: 1, max: 4 },
+    BASIC_ASTRAL_SCALE,
+    "freeze",
+  ),
+  "heal-on-block-depleted": affix(
+    "heal-on-block-depleted",
+    "defensive",
+    "health",
+    "Restore {value} Health when Block is depleted",
+    "blockDepletedHeal",
+    { min: 1, max: 3 },
+    BASIC_ASTRAL_SCALE,
+    "block",
+  ),
+  "health-on-wish": affix(
+    "health-on-wish",
+    "defensive",
+    "health",
+    "Restore {value} Health on Wish",
+    "healthOnWish",
+    { min: 1, max: 4 },
+    BASIC_ASTRAL_SCALE,
+    "wish",
+  ),
+  "mana-on-wish": affix(
+    "mana-on-wish",
+    "offensive",
+    "mana",
+    "Gain {value} Mana on Wish",
+    "manaOnWish",
+    { min: 1, max: 2 },
+    BASIC_ASTRAL_SCALE,
+    "wish",
+  ),
+  "start-freeze": affix(
+    "start-freeze",
+    "defensive",
+    "freeze",
+    "Apply {value} Freeze at the start of combat",
+    "startFreeze",
+    {
+      min: 1,
+      max: 4,
+    },
+  ),
+  "holy-from-block": affix(
+    "holy-from-block",
+    "offensive",
+    "holy",
+    "Increases Holy damage by {value}% of your Block",
+    "holyDamageFromBlockPercent",
+    { min: 10, max: 30 },
+    PERCENT_SCALE,
+    "block",
+  ),
+  "leech-potency": affix(
+    "leech-potency",
+    "offensive",
+    "leech",
+    "Leech restores {value}% more Health",
+    "leechHealBonusPercent",
+    { min: 10, max: 25 },
+    PERCENT_SCALE,
+  ),
+  "frozen-vulnerable": affix(
+    "frozen-vulnerable",
+    "offensive",
+    "freeze",
+    "Frozen enemies take {value}% more damage",
+    "frozenEnemyDamageBonusPercent",
+    { min: 10, max: 25 },
+    PERCENT_SCALE,
+  ),
+  "companion-forge-power": affix(
+    "companion-forge-power",
+    "offensive",
+    "companion",
+    "Companions benefit from Forge",
+    "companionBenefitsFromForge",
+    { min: 1, max: 1 },
+    CHANCE_SCALE,
+    "forge",
+  ),
+  "gold-blessed-holy": affix(
+    "gold-blessed-holy",
+    "offensive",
+    "holy",
+    "Increases Holy damage by {value}% of your Gold",
+    "holyDamageFromGoldPercent",
+    { min: 1, max: 3 },
+    PERCENT_SCALE,
+    "gold",
+  ),
+  "resist-physical": affix(
+    "resist-physical",
+    "defensive",
+    "physical",
+    "Reduces Physical damage taken by {value}%",
+    "resistPhysical",
+    { min: 5, max: 15 },
+    PERCENT_SCALE,
+  ),
+  "resist-stun": affix(
+    "resist-stun",
+    "defensive",
+    "stun",
+    "Reduces Stun damage taken by {value}%",
+    "resistStun",
+    {
+      min: 5,
+      max: 15,
+    },
+    PERCENT_SCALE,
+  ),
+  "resist-holy": affix(
+    "resist-holy",
+    "defensive",
+    "holy",
+    "Reduces Holy damage taken by {value}%",
+    "resistHoly",
+    {
+      min: 5,
+      max: 15,
+    },
+    PERCENT_SCALE,
+  ),
+  "resist-burn": affix(
+    "resist-burn",
+    "defensive",
+    "burn",
+    "Reduces Burn damage taken by {value}%",
+    "resistBurn",
+    {
+      min: 5,
+      max: 15,
+    },
+    PERCENT_SCALE,
+  ),
+  "resist-poison": affix(
+    "resist-poison",
+    "defensive",
+    "poison",
+    "Reduces Poison damage taken by {value}%",
+    "resistPoison",
+    {
+      min: 5,
+      max: 15,
+    },
+    PERCENT_SCALE,
+  ),
+  "resist-bleed": affix(
+    "resist-bleed",
+    "defensive",
+    "bleed",
+    "Reduces Bleed damage taken by {value}%",
+    "resistBleed",
+    {
+      min: 5,
+      max: 15,
+    },
+    PERCENT_SCALE,
+  ),
+  "resist-freeze": affix(
+    "resist-freeze",
+    "defensive",
+    "freeze",
+    "Reduces Freeze damage taken by {value}%",
+    "resistFreeze",
+    {
+      min: 5,
+      max: 15,
+    },
+    PERCENT_SCALE,
+  ),
+  "resist-nature": affix(
+    "resist-nature",
+    "defensive",
+    "nature",
+    "Reduces Nature damage taken by {value}%",
+    "resistNature",
+    {
+      min: 5,
+      max: 15,
+    },
+    PERCENT_SCALE,
+  ),
+  "health-per-turn": affix(
+    "health-per-turn",
+    "defensive",
+    "health",
+    "Restores {value} Health each turn",
+    "healthPerTurn",
+    {
+      min: 1,
+      max: 3,
+    },
+  ),
+  "block-gain": affix("block-gain", "defensive", "block", "Increases Block gained by {value}", "flatBlockGained", {
+    min: 1,
+    max: 2,
+  }),
+  "gold-gain": affix(
+    "gold-gain",
+    "defensive",
+    "gold",
+    "Increases Gold gained by {value}%",
+    "goldGainPercent",
+    {
+      min: 10,
+      max: 25,
+    },
+    PERCENT_SCALE,
+  ),
+  "max-health": affix("max-health", "defensive", "health", "Increases Health by {value}", "maxHealth", {
+    min: 1,
+    max: 5,
+  }),
+};
+
+export const gearAffixList = Object.values(gearAffixCatalog);

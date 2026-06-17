@@ -71,7 +71,8 @@ Only `@/*` maps to `src/*` in `tsconfig.json`; use on-disk paths under `src/feat
 - Use plain function components with explicit `Props` types, not `React.FC`.
 - Build conditional Tailwind classes with `cn()` from `@/lib/utils`; do not use template literals in `className`.
 - Keep reusable `shared/ui` components isolated from run, battle, and session stores; pass domain data through props.
-- Use CSS `active:` for press feedback on buttons; no Framer hover scale. Hover uses brightness/background lift from `src/lib/ui/button-hover.ts` plus sound via `Button` or `PressableMotion`.
+- Use CSS `active:` for press feedback on buttons; no Framer hover scale. Hover uses background lift from `src/lib/ui/button-hover.ts` plus sound via `Button` or `PressableMotion`.
+- Do not add focus rings (`focus-visible:ring-*` except `ring-0`). Use `NO_FOCUS_RING` from `src/lib/ui/focus.ts` or `BUTTON_FOCUS` from button tokens on interactive controls; selection/hover art carries focus state visually.
 - Use `StaggerGroup` and `StaggerItem` according to [the motion workflow](./docs/WORKFLOWS.md#staggered-screen-enter-motion). Do not wrap translate-centered absolute map nodes with `StaggerItem`.
 - Initialize cosmetic randomness lazily with `useState(() => ...)`, not `useMemo` plus `Math.random()` during render.
 

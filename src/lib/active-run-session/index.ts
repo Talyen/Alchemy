@@ -1,4 +1,12 @@
-export type { ActiveRunData, DestinationOptionsInput, LabyrinthNodePosition } from "./types";
+export type {
+  ActiveRunData,
+  DestinationOptionsInput,
+  LabyrinthNodePosition,
+  PersistedShopState,
+  PersistedAlchemistState,
+  PersistedTrinketShopState,
+  PersistedEquipmentShopState,
+} from "./types";
 export { createActiveRunSnapshot, createActiveRunSnapshot as buildActiveRunSnapshot } from "./snapshot";
 export { parseActiveRun } from "./parse";
 export { hydrateActiveRunSession as restoreActiveRun } from "./hydrate";

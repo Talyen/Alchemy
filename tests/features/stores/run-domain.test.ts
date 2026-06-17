@@ -605,13 +605,17 @@ describe("session facade API", () => {
       currentScreen: ROUTE_SCREENS.DESTINATION,
       destinationChoices: ["campfire", "shop"],
       pendingReward: null,
+      shopState: null,
+      alchemistState: null,
+      trinketShopState: null,
+      equipmentShopState: null,
       wildwoodDraft: null,
     });
     expect(fromStores).toEqual(explicit);
   });
 
   it("snapshots pending rewards whenever choices are present", () => {
-    const instance = { instanceId: "gear-1", definitionId: "placeholder-ring" as const, affixIds: [] as const };
+    const instance = { instanceId: "gear-1", definitionId: "ruby-ring-basic" as const, affixes: [] };
     getRunSessionStoreView().setRewardState({
       ...createEmptyRewardState(),
       rewardType: "gear",
@@ -629,7 +633,7 @@ describe("session facade API", () => {
   });
 
   it("snapshots and restores pending gear rewards on the rewards screen", () => {
-    const instance = { instanceId: "gear-1", definitionId: "placeholder-ring" as const, affixIds: [] as const };
+    const instance = { instanceId: "gear-1", definitionId: "ruby-ring-basic" as const, affixes: [] };
     getRunSessionStoreView().setRewardState({
       ...createEmptyRewardState(),
       rewardType: "gear",
@@ -647,6 +651,33 @@ describe("session facade API", () => {
 
     getRunSessionStoreView().setRewardState(createEmptyRewardState());
     restoreRun(snap, {}, {});
+    expect(getRunSessionStoreView().rewardState.rewardType).toBe("gear");
+    expect(getRunSessionStoreView().rewardState.choices).toEqual([instance]);
+  });
+
+  it("restores wildwood gear rewards from recovery-phase draft when pendingReward is absent", () => {
+    const instance = { instanceId: "gear-1", definitionId: "ruby-ring-basic" as const, affixes: [] };
+    const activeRun = {
+      ...snapshotRun(ROUTE_SCREENS.LABYRINTH),
+      pendingReward: null,
+      wildwoodDraft: {
+        version: 3 as const,
+        phase: "recovery" as const,
+        draftChoices: [],
+        remainingBossIds: ["iron-bear"] as const,
+        previousBossId: null,
+        currentBossId: null,
+        currentCombatTraitIds: [],
+        currentRewardTraitIds: [],
+        rewardType: "gear" as const,
+        rewardChoiceIds: [],
+        rewardGearChoices: [instance],
+        selectedRewardId: null,
+      },
+    };
+
+    getRunSessionStoreView().setRewardState(createEmptyRewardState());
+    restoreRun(activeRun, {}, {});
     expect(getRunSessionStoreView().rewardState.rewardType).toBe("gear");
     expect(getRunSessionStoreView().rewardState.choices).toEqual([instance]);
   });

@@ -101,6 +101,19 @@ describe("createRunStartSnapshot", () => {
     expect(result.runPlayerHealth).toBe(MAX_PLAYER_HEALTH + 3);
   });
 
+  it("adds gear max-health bonus to run cap at run start", () => {
+    const result = createRunStartSnapshot({
+      characterId: "knight",
+      contentSystemType: "campaign",
+      talentStartGold: 0,
+      talentXP: {},
+      gearMaxHealthBonus: 4,
+    });
+
+    expect(result.runMaxHealth).toBe(MAX_PLAYER_HEALTH + 4);
+    expect(result.runPlayerHealth).toBe(MAX_PLAYER_HEALTH + 4);
+  });
+
   it("falls back to character starting deck when no draftedDeck provided for wildcard", () => {
     const result = createRunStartSnapshot({
       characterId: "wildcard",

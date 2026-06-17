@@ -220,7 +220,7 @@ describe("parseActiveRun", () => {
     );
 
     expect(result?.wildwoodDraft?.currentCombatTraitIds).toEqual(["tempered"]);
-    expect(result?.wildwoodDraft?.currentRewardTraitIds).toEqual(["collector"]);
+    expect(result?.wildwoodDraft?.currentRewardTraitIds).toEqual([]);
   });
 
   it("falls back to campaign when labyrinth map is missing", () => {

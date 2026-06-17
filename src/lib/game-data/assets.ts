@@ -13,6 +13,16 @@ import alchemyLogoPoison from "@/assets/optimized/alchemy-logo-poison.webp";
 import discardPile from "@/assets/optimized/discard-pile.webp";
 import drawPile from "@/assets/optimized/draw-pile.webp";
 import druid from "@/assets/optimized/druid.webp";
+import gearSlotAmulet from "@/assets/optimized/gear-slot-amulet.webp";
+import gearSlotBelt from "@/assets/optimized/gear-slot-belt.webp";
+import gearSlotBody from "@/assets/optimized/gear-slot-body.webp";
+import gearSlotBoots from "@/assets/optimized/gear-slot-boots.webp";
+import gearSlotGloves from "@/assets/optimized/gear-slot-gloves.webp";
+import gearSlotHelm from "@/assets/optimized/gear-slot-helm.webp";
+import gearSlotLeftRing from "@/assets/optimized/gear-slot-left-ring.webp";
+import gearSlotMainHand from "@/assets/optimized/gear-slot-main-hand.webp";
+import gearSlotOffHand from "@/assets/optimized/gear-slot-off-hand.webp";
+import gearSlotRightRing from "@/assets/optimized/gear-slot-right-ring.webp";
 import knight from "@/assets/optimized/knight.webp";
 import pointerCursor from "@/assets/optimized/pointer-c-shaded.webp";
 import ranger from "@/assets/optimized/ranger.webp";
@@ -146,7 +156,6 @@ export { default as placeholderHomestead } from "@/assets/optimized/placeholder-
 export { default as placeholderMystery } from "@/assets/optimized/placeholder-mystery.webp";
 export { default as plagueDoctor } from "@/assets/optimized/plague-doctor.webp";
 export { default as plagueDoctorsMask } from "@/assets/optimized/plague-doctors-mask.webp";
-export { default as placeholderGear } from "@/assets/optimized/placeholder-gear.webp";
 export { default as plateMail } from "@/assets/optimized/plate-mail.webp";
 export { default as pixieCompanion } from "@/assets/optimized/pixie-companion.webp";
 export { default as poisonDagger } from "@/assets/optimized/poison-dagger.webp";
@@ -290,3 +299,16 @@ export const talentBackgroundArt: Partial<Record<KeywordId, string>> = {
   nature: talentBgNature,
   companion: talentBgCompanion,
 };
+
+export const gearSlotBackgroundArt = {
+  body: gearSlotBody,
+  helm: gearSlotHelm,
+  boots: gearSlotBoots,
+  gloves: gearSlotGloves,
+  belt: gearSlotBelt,
+  "main-hand": gearSlotMainHand,
+  "off-hand": gearSlotOffHand,
+  "left-ring": gearSlotLeftRing,
+  "right-ring": gearSlotRightRing,
+  amulet: gearSlotAmulet,
+} as const;

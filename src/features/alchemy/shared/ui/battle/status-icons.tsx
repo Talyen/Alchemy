@@ -4,6 +4,7 @@
 import { Skull, Sparkles } from "lucide-react";
 
 import { keywordDefinitions, type KeywordId } from "@/lib/game-data";
+import { NO_FOCUS_RING } from "@/lib/ui/focus";
 import { cn } from "@/lib/utils";
 
 import { keywordIcons } from "../../config";
@@ -29,7 +30,7 @@ export function StatusIcon({ chip }: { chip: StatusChip }) {
     <div className="status-chip-pop group/status relative flex items-center justify-center">
       <button
         type="button"
-        className="relative flex h-7 w-7 items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        className={cn("relative flex h-7 w-7 items-center justify-center", NO_FOCUS_RING)}
         aria-label={`${definition.label} ${chip.value}`}
       >
         <Icon className={cn("h-[1.67cqh] w-[1.67cqh]", definition.colorClass)} />
@@ -54,7 +55,7 @@ function HasteStatusIcon({ value }: { value: number }) {
     <div className="status-chip-pop group/status relative flex items-center justify-center">
       <button
         type="button"
-        className="relative flex h-7 w-7 items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        className={cn("relative flex h-7 w-7 items-center justify-center", NO_FOCUS_RING)}
         aria-label={`Haste ${value}`}
       >
         <Sparkles className="h-[1.67cqh] w-[1.67cqh] text-fuchsia-300" />
@@ -77,7 +78,10 @@ export function DeathsDoorStatusIcon() {
     <div className="status-chip-pop group/status relative flex items-center justify-center">
       <button
         type="button"
-        className="relative flex h-7 w-7 items-center justify-center rounded-full bg-red-950/70 text-red-200 ring-1 ring-red-400/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        className={cn(
+          "relative flex h-7 w-7 items-center justify-center rounded-full bg-red-950/70 text-red-200 ring-1 ring-red-400/60",
+          NO_FOCUS_RING,
+        )}
         aria-label="Death's Door"
       >
         <Skull className="h-[1.67cqh] w-[1.67cqh]" />

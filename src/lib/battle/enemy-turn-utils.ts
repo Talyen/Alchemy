@@ -1,8 +1,8 @@
 // Shared helpers for enemy turn phase transitions, Death's Door, and health thresholds.
 import { drawCards } from "./draw";
-import { mergeCombatText } from "./combat-text";
+import { emitOverhealBlockText, mergeCombatText } from "./combat-text";
 import { decayHalvedStatus } from "./status-helpers";
-import type { BattleState, CombatTextEvent } from "./types";
+import { applyPlayerHealing, type BattleState, type CombatTextEvent } from "./types";
 import { CARDS_PER_TURN, PERCENT_DENOMINATOR } from "../game-constants";
 
 export const ENEMY_TURN_CONSTANTS = {
@@ -76,7 +76,7 @@ function performDrawAndResetPhase(state: BattleState, deathsDoorNeedsRecoveryTur
   };
 }
 
-export function advanceToPlayerTurn(state: BattleState) {
+export function advanceToPlayerTurn(state: BattleState, combatTexts: CombatTextEvent[] = []) {
   const deathsDoorNeedsRecoveryTurn = state.deathsDoorActive && state.playerHealth <= 0;
 
   let nextState = state;
@@ -91,7 +91,14 @@ export function advanceToPlayerTurn(state: BattleState) {
     return handleCCSkipTurn(nextState);
   }
 
-  return performDrawAndResetPhase(nextState, deathsDoorNeedsRecoveryTurn);
+  const drawnState = performDrawAndResetPhase(nextState, deathsDoorNeedsRecoveryTurn);
+  if (drawnState.gearEffects.healthPerTurn <= 0) return drawnState;
+  const healAmount = drawnState.gearEffects.healthPerTurn;
+  const prevState = drawnState;
+  const healedState = applyPlayerHealing(drawnState, healAmount);
+  mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: healAmount });
+  emitOverhealBlockText(prevState, healedState, combatTexts);
+  return healedState;
 }
 
 export function checkHealthThresholds(

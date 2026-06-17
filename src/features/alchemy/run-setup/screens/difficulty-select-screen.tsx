@@ -4,6 +4,7 @@ import { Fragment, useState } from "react";
 import { Swords } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { NO_FOCUS_RING } from "@/lib/ui/focus";
 import {
   characters,
   characterArt,
@@ -95,7 +96,8 @@ function DifficultyCard({
           aria-pressed={isSelected}
           onClick={() => onSelect(difficultyId)}
           className={cn(
-            "relative flex flex-col items-center gap-3 rounded-shell-dialog border border-border/60 bg-card/60 px-4 pb-6 pt-5 text-center transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-default",
+            "relative flex flex-col items-center gap-3 rounded-shell-dialog border border-border/60 bg-card/60 px-4 pb-6 pt-5 text-center transition-all disabled:cursor-default",
+            NO_FOCUS_RING,
             locked && "grayscale border-muted/40",
             isSelected && "ring-2 ring-primary",
           )}

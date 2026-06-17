@@ -12,6 +12,8 @@ function makeHandlers(): DestinationRouteHandlers {
     resetCorruption: vi.fn(),
     startShop: vi.fn(),
     startAlchemist: vi.fn(),
+    startTrinketShop: vi.fn(),
+    startEquipmentShop: vi.fn(),
     startBattle: vi.fn(),
     startBossBattle: vi.fn(),
   };
@@ -40,6 +42,20 @@ describe("routeDestinationChoice", () => {
     expect(handlers.startAlchemist).toHaveBeenCalledOnce();
     expect(handlers.navigateTo).toHaveBeenCalledWith("alchemist");
     expect(handlers.startBattle).not.toHaveBeenCalled();
+  });
+
+  it("routes Trinket Shop to startTrinketShop and navigateTo trinket-shop", () => {
+    const handlers = makeHandlers();
+    routeDestinationChoice(DESTINATIONS.TRINKET_SHOP, handlers);
+    expect(handlers.startTrinketShop).toHaveBeenCalledOnce();
+    expect(handlers.navigateTo).toHaveBeenCalledWith("trinket-shop");
+  });
+
+  it("routes Equipment Shop to startEquipmentShop and navigateTo equipment-shop", () => {
+    const handlers = makeHandlers();
+    routeDestinationChoice(DESTINATIONS.EQUIPMENT_SHOP, handlers);
+    expect(handlers.startEquipmentShop).toHaveBeenCalledOnce();
+    expect(handlers.navigateTo).toHaveBeenCalledWith("equipment-shop");
   });
 
   it("routes Mystery to beginMysteryEvent", () => {

@@ -3,7 +3,8 @@ import { getBattleStartPlayerHealth } from "@/lib/battle";
 import { playDefeat, stopAllSfx } from "@/lib/audio";
 import { buildActiveRunSnapshot, type ActiveRunData } from "@/lib/active-run-session";
 import type { Screen } from "@/lib/routing";
-import type { UnlockedTalents, TalentXP } from "@/lib/game-data";
+import type { CharacterId, UnlockedTalents, TalentXP } from "@/lib/game-data";
+import { computeGearMaxHealthBonus, type GearLoadouts } from "@/lib/gear";
 import { flushAlchemySaveNow } from "@/features/alchemy/shared/storage";
 import type { Destination } from "@/features/alchemy/shared/types";
 import type { MaterialInventory } from "@/lib/homestead/types";
@@ -13,6 +14,17 @@ import {
   type RewardState,
 } from "@/features/alchemy/run-loop/navigation/reward-flow";
 import { restorePendingReward, serializePendingReward } from "@/lib/active-run-session/pending-reward-persistence";
+import {
+  hydrateAlchemistState,
+  hydrateEquipmentShopState,
+  hydrateShopState,
+  hydrateTrinketShopState,
+  serializeAlchemistState,
+  serializeEquipmentShopState,
+  serializeShopState,
+  serializeTrinketShopState,
+} from "@/features/alchemy/run-loop/shop/shop-state-init";
+import { setAlchemistState, setEquipmentShopState, setShopState, setTrinketShopState } from "./run-session-facade";
 import { getRunDomainStore, useRunDomainStore } from "./run-domain-store";
 import { createInitialRunDomainData } from "./run-domain-types";
 import { useBattlePresentationStore } from "./battle-presentation-store";
@@ -54,12 +66,14 @@ export function restoreRun(
   }
 
   store.setWildwoodDraft(activeRun.wildwoodDraft);
-  if (activeRun.wildwoodDraft?.phase === "reward" && activeRun.wildwoodDraft.rewardType) {
+  const wildwoodDraft = activeRun.wildwoodDraft;
+  if (wildwoodDraft?.rewardType && (wildwoodDraft.phase === "reward" || wildwoodDraft.phase === "recovery")) {
     store.setRewardState(
       restoreWildwoodRewardState(
-        activeRun.wildwoodDraft.rewardType,
-        activeRun.wildwoodDraft.rewardChoiceIds,
-        activeRun.wildwoodDraft.selectedRewardId,
+        wildwoodDraft.rewardType,
+        wildwoodDraft.rewardChoiceIds,
+        wildwoodDraft.selectedRewardId,
+        wildwoodDraft.rewardGearChoices,
       ),
     );
   }
@@ -73,6 +87,19 @@ export function restoreRun(
     const restored = restorePendingReward(activeRun.pendingReward);
     if (restored) store.setRewardState(restored as RewardState);
   }
+
+  if (activeRun.shopState) {
+    setShopState(hydrateShopState(activeRun.shopState));
+  }
+  if (activeRun.alchemistState) {
+    setAlchemistState(hydrateAlchemistState(activeRun.alchemistState));
+  }
+  if (activeRun.trinketShopState) {
+    setTrinketShopState(hydrateTrinketShopState(activeRun.trinketShopState));
+  }
+  if (activeRun.equipmentShopState) {
+    setEquipmentShopState(hydrateEquipmentShopState(activeRun.equipmentShopState));
+  }
 }
 
 /** Active-run snapshot for autosave — null when the run has ended. */
@@ -85,6 +112,10 @@ export function snapshotRun(screen?: Screen): ActiveRunData {
   const { run, session, battle } = getRunSession(screen);
   const currentScreen = screen ?? getRunDomainStore().navigation.screen;
   const pendingReward = session.rewardState.choices.length > 0 ? serializePendingReward(session.rewardState) : null;
+  const persistShop = currentScreen === "shop" || session.shopState.cards.length > 0;
+  const persistAlchemist = currentScreen === "alchemist" || session.alchemistState.potions.length > 0;
+  const persistTrinketShop = currentScreen === "trinket-shop" || session.trinketShopState.trinkets.length > 0;
+  const persistEquipmentShop = currentScreen === "equipment-shop" || session.equipmentShopState.gear.length > 0;
   return buildActiveRunSnapshot({
     characterId: run.characterId,
     runDeck: run.runDeck,
@@ -111,7 +142,29 @@ export function snapshotRun(screen?: Screen): ActiveRunData {
     currentScreen,
     destinationChoices: session.rewardState.destinations,
     pendingReward,
+    shopState: persistShop ? serializeShopState(session.shopState) : null,
+    alchemistState: persistAlchemist ? serializeAlchemistState(session.alchemistState) : null,
+    trinketShopState: persistTrinketShop ? serializeTrinketShopState(session.trinketShopState) : null,
+    equipmentShopState: persistEquipmentShop ? serializeEquipmentShopState(session.equipmentShopState) : null,
   });
+}
+
+/** Apply gear max-health bonus delta after armory equip/unequip during an active run. */
+export function syncRunMaxHealthFromGear(
+  characterId: CharacterId,
+  inventory: Parameters<typeof computeGearMaxHealthBonus>[1],
+  loadoutsBefore: GearLoadouts,
+  loadoutsAfter: GearLoadouts,
+): void {
+  const oldBonus = computeGearMaxHealthBonus(characterId, inventory, loadoutsBefore);
+  const newBonus = computeGearMaxHealthBonus(characterId, inventory, loadoutsAfter);
+  const delta = newBonus - oldBonus;
+  if (delta === 0) return;
+
+  const store = getRunDomainStore();
+  const nextMax = store.progress.runMaxHealth + delta;
+  store.setRunMaxHealth(nextMax);
+  store.setRunPlayerHealth(Math.min(nextMax, store.progress.runPlayerHealth));
 }
 
 /** Clamp run HP for battle entry and persist before creating BattleState. */

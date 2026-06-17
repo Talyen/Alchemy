@@ -130,15 +130,23 @@ export const researchUpgrades = [
       nonCombatBenefitDescription: "Gain Crystal after each run",
     },
   ]),
-  defineResearch(
-    "masonry",
-    "Detect Magic",
-    stackingTiers(
-      singleMaterialCosts("crystal"),
-      { trinketChanceBonus: 0.1 },
-      (tier) => `${tier * 10}% increased chance to find Boons`,
-    ),
-  ),
+  defineResearch("masonry", "Detect Magic", [
+    {
+      cost: materialCost({ crystal: 20 }),
+      effects: { gearAstralChanceBonus: 0.03 },
+      benefitDescription: "3% increased chance to find higher rarity equipment",
+    },
+    {
+      cost: materialCost({ crystal: 30 }),
+      effects: { gearAstralChanceBonus: 0.03 },
+      benefitDescription: "6% increased chance to find higher rarity equipment",
+    },
+    {
+      cost: materialCost({ crystal: 40 }),
+      effects: { gearAstralChanceBonus: 0.04 },
+      benefitDescription: "10% increased chance to find higher rarity equipment",
+    },
+  ]),
   defineResearch(
     "crop-rotation",
     "Botanical Distillation",

@@ -12,14 +12,20 @@ import {
   BUTTON_HOVER_PRIMARY,
   BUTTON_HOVER_SECONDARY,
   BUTTON_HOVER_TRANSITION,
+  BUTTON_PRESS_OUTLINE,
 } from "@/lib/ui/button-hover";
+import { NO_FOCUS_RING } from "@/lib/ui/focus";
 import { cn } from "@/lib/utils";
 
-const primaryVariantClasses = cn("bg-primary text-primary-foreground", BUTTON_HOVER_PRIMARY);
+const primaryVariantClasses = cn(
+  "bg-primary text-primary-foreground active:bg-primary/90 active:brightness-100",
+  BUTTON_HOVER_PRIMARY,
+);
 
 const buttonVariants = cva(
   cn(
-    "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:brightness-95 disabled:pointer-events-none disabled:opacity-50",
+    "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-semibold disabled:pointer-events-none disabled:opacity-50",
+    NO_FOCUS_RING,
     BUTTON_HOVER_TRANSITION,
   ),
   {
@@ -27,10 +33,14 @@ const buttonVariants = cva(
       variant: {
         default: primaryVariantClasses,
         primary: primaryVariantClasses,
-        destructive: cn("bg-destructive text-destructive-foreground", BUTTON_HOVER_DESTRUCTIVE),
+        destructive: cn(
+          "bg-destructive text-destructive-foreground active:bg-destructive/90 active:brightness-100",
+          BUTTON_HOVER_DESTRUCTIVE,
+        ),
         outline: cn(
-          "border border-border/80 bg-background text-foreground active:bg-muted active:brightness-100",
+          "border border-border/80 bg-background text-foreground active:bg-muted/90 active:brightness-100",
           BUTTON_HOVER_SECONDARY,
+          BUTTON_PRESS_OUTLINE,
         ),
       },
       size: {

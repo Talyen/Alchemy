@@ -10,7 +10,6 @@ import {
   getRandomPotionCard,
   getVictoryGoldTotal,
   finalizeRewardState,
-  shouldForceTrinketReward,
   shouldGrantAlchemistReward,
   shouldGrantCompanionReward,
 } from "@/features/alchemy/run-loop/navigation/reward-flow";
@@ -91,12 +90,10 @@ describe("Labyrinth reward modifier helpers", () => {
   });
 
   it("maps reward modifier kinds to reward behavior flags", () => {
-    const modifiers: LabyrinthModifierKind[] = ["collector", "companion", "alchemist"];
+    const modifiers: LabyrinthModifierKind[] = ["companion", "alchemist"];
 
-    expect(shouldForceTrinketReward(modifiers)).toBe(true);
     expect(shouldGrantCompanionReward(modifiers)).toBe(true);
     expect(shouldGrantAlchemistReward(modifiers)).toBe(true);
-    expect(shouldForceTrinketReward([])).toBe(false);
     expect(shouldGrantCompanionReward([])).toBe(false);
     expect(shouldGrantAlchemistReward([])).toBe(false);
   });

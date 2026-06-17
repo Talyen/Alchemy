@@ -9,7 +9,7 @@ export class ShopPage {
     this.stage = new GameStage(page);
   }
 
-  readonly heading = this.page.getByRole("heading", { name: /(Merchant|Alchemist)/ });
+  readonly heading = this.page.getByRole("heading", { name: /(Merchant|Alchemist|Trinket|Equipment)/ });
   readonly buyBtn = this.page.getByRole("button", { name: /^Buy/ });
   readonly removeCardBtn = this.page.getByRole("button", { name: /Remove Card/ });
   readonly refreshBtn = this.page.getByRole("button", { name: /Refresh/ });
@@ -60,9 +60,7 @@ export class ShopPage {
   }
 
   async getInspectLabels(): Promise<(string | null)[]> {
-    return Promise.all(
-      (await this.inspectButtons.all()).map((btn) => btn.getAttribute("aria-label"))
-    );
+    return Promise.all((await this.inspectButtons.all()).map((btn) => btn.getAttribute("aria-label")));
   }
 
   async mixPotions() {
@@ -77,7 +75,10 @@ export class ShopPage {
     await expect(this.page.getByText("Added to Deck: Mixed Potion")).toBeVisible({ timeout: 3000 });
   }
 
-  async enterFromDestination(gold: number, destination: "Merchant's Shop" | "Alchemist's Shop") {
+  async enterFromDestination(
+    gold: number,
+    destination: "Merchant's Shop" | "Alchemist's Shop" | "Trinket Shop" | "Equipment Shop",
+  ) {
     await startAtDestination(this.page, { runGold: gold }, { forceDestination: destination });
     await this.page.getByRole("button", { name: destination }).click();
     await expect(this.page.getByRole("heading", { name: destination })).toBeVisible();

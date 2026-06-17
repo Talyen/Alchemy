@@ -174,16 +174,17 @@ describe("createActiveRunData", () => {
 
   it("persists Wildwood Draft phase state", () => {
     const wildwoodDraft = {
-      version: 2 as const,
+      version: 3 as const,
       phase: "reward" as const,
       draftChoices: [],
       remainingBossIds: ["iron-bear"] as const,
       previousBossId: "forge-golem" as const,
       currentBossId: "frostwarden" as const,
       currentCombatTraitIds: ["tempered" as const],
-      currentRewardTraitIds: ["collector" as const],
+      currentRewardTraitIds: ["alchemist" as const],
       rewardType: "card" as const,
       rewardChoiceIds: ["slash", "block"],
+      rewardGearChoices: [],
       selectedRewardId: "slash",
     };
 

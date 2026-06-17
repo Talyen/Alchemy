@@ -101,6 +101,39 @@ describe("createBattleState", () => {
     expect(result.talentEffects.flatPhysicalDamage).toBe(talents.flatPhysicalDamage);
   });
 
+  it("uses run maxHealth without double-counting gear maxHealth", () => {
+    const result = createBattleState({
+      runDeck: battleDeck,
+      currentEnemy: skeleton,
+      maxHealth: 40,
+      gearEffects: { ...defaultGearEffects, maxHealth: 5 },
+      rng: seededRng(42),
+    });
+    expect(result.playerMaxHealth).toBe(40);
+  });
+
+  it("applies gear start bonuses at battle setup", () => {
+    const result = createBattleState({
+      runDeck: battleDeck,
+      currentEnemy: skeleton,
+      playerHealth: 25,
+      maxHealth: 30,
+      gearEffects: {
+        ...defaultGearEffects,
+        startHeal: 2,
+        startBlock: 3,
+        startForge: 1,
+        startFreeze: 1,
+        flatBlockGained: 2,
+      },
+      rng: seededRng(42),
+    });
+    expect(result.playerHealth).toBe(27);
+    expect(result.playerStatuses.block).toBe(5);
+    expect(result.playerStatuses.forge).toBeGreaterThanOrEqual(1);
+    expect(result.enemyStatuses.freeze).toBeGreaterThanOrEqual(1);
+  });
+
   describe("difficulty modifiers", () => {
     it("Knight Novice (d1): start-block 5 adds to player block", () => {
       const result = createBattleState({

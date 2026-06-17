@@ -1,6 +1,6 @@
 // Victory reward screen — pick a card or trinket to add or skip.
 import type { BattleCard, TrinketEntry } from "@/lib/game-data";
-import { gearDefinitions, getGearInstanceDescriptionLines, type GearInstance } from "@/lib/gear";
+import { gearDefinitions, getGearInstanceDescriptionLines, getGearInstanceTitle, type GearInstance } from "@/lib/gear";
 import { cn } from "@/lib/utils";
 import { MATERIAL_IDS } from "@/lib/homestead/types";
 import { GoldPill, MaterialPill } from "../../shared/ui/material-icons";
@@ -71,7 +71,7 @@ function GearRewardButton({
   selected: boolean;
 }) {
   const definition = gearDefinitions[instance.definitionId];
-  const title = definition?.title ?? "Gear";
+  const title = getGearInstanceTitle(instance);
   const art = definition?.art ?? "";
   const descriptionLines = getGearInstanceDescriptionLines(instance);
   const { isHovered, onHoverStart, onHoverEnd, shimmerActive, shimmerToken } = useInteractiveCard(

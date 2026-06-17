@@ -5,14 +5,7 @@ import { FlaskConical, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BUTTON_WIDTH_ACTION } from "@/features/alchemy/shared/config";
 import { isStandardPotionCard, type BattleCard } from "@/lib/game-data";
-import {
-  ALCHEMIST_POTION_PRICE,
-  ALCHEMIST_MIX_PRICE,
-  ALCHEMIST_REFRESH_PRICE,
-  MIXED_POTION_CARD_ID,
-  MIXED_POTION_TITLE,
-  SELECTION_GRID_PAGE_SIZE,
-} from "@/lib/game-constants";
+import { MIXED_POTION_CARD_ID, MIXED_POTION_TITLE, SELECTION_GRID_PAGE_SIZE } from "@/lib/game-constants";
 
 import { BattleCardButton } from "../../shared/ui/card-button";
 import { PurchasableCardItem, SelectableShopCard } from "../../shared/ui/shop-card-item";
@@ -32,6 +25,10 @@ export function AlchemistShopScreen({
   potionCards,
   refreshesLeft,
   mixUsed,
+  purchasedSlotKeys,
+  getPotionPrice,
+  mixPrice,
+  refreshPrice,
   onBuyCard,
   onRefresh,
   onMixPotions,
@@ -42,26 +39,26 @@ export function AlchemistShopScreen({
   potionCards: BattleCard[];
   refreshesLeft: number;
   mixUsed: boolean;
-  onBuyCard: (card: BattleCard) => void;
+  purchasedSlotKeys: string[];
+  getPotionPrice: (card: BattleCard) => number;
+  mixPrice: number;
+  refreshPrice: number;
+  onBuyCard: (card: BattleCard, slotKey: string) => boolean;
   onRefresh: () => void;
   onMixPotions: (indexA: number, indexB: number) => BattleCard | null;
   onContinue: () => void;
 }) {
-  const potionPrice = ALCHEMIST_POTION_PRICE;
-  const mixPrice = ALCHEMIST_MIX_PRICE;
   const [mixMode, setMixMode] = useState(false);
   const [mixStep, setMixStep] = useState(0);
   const [selectedA, setSelectedA] = useState<number | null>(null);
   const [selectedB, setSelectedB] = useState<number | null>(null);
-  const [purchasedIds, setPurchasedIds] = useState<Set<string>>(new Set());
   const [mixedCard, setMixedCard] = useState<BattleCard | null>(null);
   const [mixPage, setMixPage] = useState(0);
   const [mixedCardHovered, setMixedCardHovered] = useState(false);
 
-  function handleBuyCard(card: BattleCard) {
-    if (purchasedIds.has(card.id)) return;
-    onBuyCard(card);
-    setPurchasedIds((prev) => new Set(prev).add(card.id));
+  function handleBuyCard(card: BattleCard, slotKey: string) {
+    if (purchasedSlotKeys.includes(slotKey)) return;
+    onBuyCard(card, slotKey);
   }
 
   function startMix() {
@@ -155,17 +152,20 @@ export function AlchemistShopScreen({
             animate={false}
             className="grid grid-cols-1 gap-4 sm:grid-cols-3"
           >
-            {potionCards.map((card, i) => (
-              <PurchasableCardItem
-                key={`${card.id}-${i}`}
-                card={card}
-                price={potionPrice}
-                gold={gold}
-                purchased={purchasedIds.has(card.id)}
-                onBuy={() => handleBuyCard(card)}
-                staggerIndex={i}
-              />
-            ))}
+            {potionCards.map((card, i) => {
+              const slotKey = `${card.id}-${i}`;
+              return (
+                <PurchasableCardItem
+                  key={slotKey}
+                  card={card}
+                  price={getPotionPrice(card)}
+                  gold={gold}
+                  purchased={purchasedSlotKeys.includes(slotKey)}
+                  onBuy={() => handleBuyCard(card, slotKey)}
+                  staggerIndex={i}
+                />
+              );
+            })}
           </StaggerGroup>
 
           <div className="flex flex-wrap justify-center gap-4">
@@ -182,8 +182,8 @@ export function AlchemistShopScreen({
             <ServiceButton
               icon={RefreshCw}
               label="Refresh Shop"
-              cost={ALCHEMIST_REFRESH_PRICE}
-              disabled={refreshesLeft <= 0 || gold < ALCHEMIST_REFRESH_PRICE}
+              cost={refreshPrice}
+              disabled={refreshesLeft <= 0 || gold < refreshPrice}
               disabledMessage="Not Enough Gold"
               used={refreshesLeft <= 0}
               soldOutText="Refresh — Sold Out"

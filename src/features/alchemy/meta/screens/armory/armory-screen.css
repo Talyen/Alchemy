@@ -1,6 +1,7 @@
+/* Inventory grid: INVENTORY_COLS=7, INVENTORY_VISIBLE_ROWS=8 (inventory-layout.ts) */
 .armory-workspace {
   --armory-board-gap: 0.375rem;
-  --armory-cell-size: min(6.8cqh, 5.5rem, calc((100cqw - 5rem) / 8));
+  --armory-cell-size: min(6.8cqh, 5.5rem, calc((100cqw - 5rem) / 7));
 }
 
 .armory-character-art-container {
@@ -26,7 +27,7 @@
 }
 
 .armory-inventory-board {
-  width: calc(8 * var(--armory-cell-size) + 7 * var(--armory-board-gap));
+  width: calc(7 * var(--armory-cell-size) + 6 * var(--armory-board-gap));
   height: calc(8 * var(--armory-cell-size) + 7 * var(--armory-board-gap));
   max-width: 100%;
   scrollbar-width: none;
@@ -41,7 +42,7 @@
     --armory-cell-size: min(
       6.8cqh,
       5.5rem,
-      calc((40cqw - 7 * var(--armory-board-gap) - 2rem) / 8),
+      calc((40cqw - 6 * var(--armory-board-gap) - 2rem) / 7),
       calc((60cqw - 19rem - 5 * var(--armory-board-gap)) / 6)
     );
     grid-template-columns: 3fr 2fr;

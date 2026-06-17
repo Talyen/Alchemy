@@ -26,7 +26,15 @@ beforeEach(() => {
 });
 
 function makeCard(overrides: Partial<BattleCard> = {}): BattleCard {
-  return { id: "test", title: "Test", descriptionLines: [""], art: "", cost: 2, effects: [{ kind: "damage", damageType: "physical", amount: 5 }], ...overrides };
+  return {
+    id: "test",
+    title: "Test",
+    descriptionLines: [""],
+    art: "",
+    cost: 2,
+    effects: [{ kind: "damage", damageType: "physical", amount: 5 }],
+    ...overrides,
+  };
 }
 
 function seedGold(amount: number) {
@@ -38,14 +46,29 @@ function firstShopCard(): BattleCard | null {
   return cards.length > 0 ? cards[0] : null;
 }
 
-// Pricing formulas — match useShopController purchaseCard logic.
-const shopCardPrice = (firstPurchase: boolean, shopCardDiscount: number, merchantsFavorDiscount: number) =>
-  Math.max(0, SHOP_CARD_PRICE - shopCardDiscount - (firstPurchase ? merchantsFavorDiscount : 0));
-
-const alchemistPotionPrice = (firstPurchase: boolean, potionDiscount: number, merchantsFavorDiscount: number) =>
-  Math.max(0, ALCHEMIST_POTION_PRICE - potionDiscount - (firstPurchase ? merchantsFavorDiscount : 0));
+import { computeShopBuyPrice, getCardBuyTalentDiscounts } from "@/features/alchemy/run-loop/shop/shop-pricing";
 
 describe("shop pricing formulas", () => {
+  const shopCardPrice = (favorActive: boolean, shopCardDiscount: number, merchantsFavorDiscount: number) =>
+    computeShopBuyPrice({
+      basePrice: SHOP_CARD_PRICE,
+      haggleDiscount: shopCardDiscount,
+      apothecaryDiscount: 0,
+      merchantsFavorDiscount,
+      firstPurchaseUsed: !favorActive,
+      favorConsumed: !favorActive,
+    });
+
+  const alchemistPotionPrice = (favorActive: boolean, potionDiscount: number, merchantsFavorDiscount: number) =>
+    computeShopBuyPrice({
+      basePrice: ALCHEMIST_POTION_PRICE,
+      haggleDiscount: 0,
+      apothecaryDiscount: potionDiscount,
+      merchantsFavorDiscount,
+      firstPurchaseUsed: !favorActive,
+      favorConsumed: !favorActive,
+    });
+
   it("shopCardPrice: base minus talent discount", () => {
     expect(shopCardPrice(true, 10, 0)).toBe(Math.max(0, SHOP_CARD_PRICE - 10));
   });
@@ -68,6 +91,23 @@ describe("shop pricing formulas", () => {
 
   it("alchemistPotionPrice: first purchase gets boon discount too", () => {
     expect(alchemistPotionPrice(true, 10, 5)).toBe(Math.max(0, ALCHEMIST_POTION_PRICE - 10 - 5));
+  });
+
+  it("stacked haggle and apothecary on merchant potion", () => {
+    const potion = makeCard({ id: "health-potion" });
+    const { haggleDiscount, apothecaryDiscount } = getCardBuyTalentDiscounts(potion, {
+      shopCardDiscount: 5,
+      potionDiscount: 5,
+    });
+    expect(
+      computeShopBuyPrice({
+        basePrice: SHOP_CARD_PRICE,
+        haggleDiscount,
+        apothecaryDiscount,
+        firstPurchaseUsed: false,
+        favorConsumed: true,
+      }),
+    ).toBe(20);
   });
 });
 

@@ -1,5 +1,5 @@
 // Labyrinth map node chrome: icons, colors, and shine palettes per node type.
-import { Crown, DoorOpen, FlaskConical, Heart, ShoppingCart, Skull, Sparkles, Swords } from "lucide-react";
+import { Crown, DoorOpen, FlaskConical, Gem, Hammer, Heart, ShoppingCart, Skull, Sparkles, Swords } from "lucide-react";
 
 import type { LabyrinthNodeType } from "@/lib/content-systems/types";
 
@@ -46,6 +46,16 @@ export const LABYRINTH_NODE_META: Record<LabyrinthNodeType, LabyrinthNodeMeta> =
     icon: FlaskConical,
     className: "bg-black text-emerald-500",
     shineColors: [...SHINE_PALETTES.labyrinth.alchemist],
+  },
+  "trinket-shop": {
+    icon: Gem,
+    className: "bg-black text-violet-500",
+    shineColors: [...SHINE_PALETTES.labyrinth["trinket-shop"]],
+  },
+  "equipment-shop": {
+    icon: Hammer,
+    className: "bg-black text-slate-400",
+    shineColors: [...SHINE_PALETTES.labyrinth["equipment-shop"]],
   },
   boss: {
     icon: Crown,

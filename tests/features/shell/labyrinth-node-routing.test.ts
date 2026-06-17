@@ -21,7 +21,12 @@ describe("createLabyrinthNodeRouting", () => {
         startBossBattle: vi.fn(),
       },
       nav: { beginMysteryEvent },
-      shop: { initShop: vi.fn(), initAlchemist: vi.fn() },
+      shop: {
+        initShop: vi.fn(),
+        initAlchemist: vi.fn(),
+        initTrinketShop: vi.fn(),
+        initEquipmentShop: vi.fn(),
+      },
     });
 
     routing.handleLabyrinthNodeEnter(0, 0);

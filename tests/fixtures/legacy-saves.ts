@@ -298,7 +298,7 @@ export function legacySchemaV4Save() {
     encounteredEnemyIds: ["goblin"],
     discoveredBoonIds: ["bone-charm"],
     gearInventory: [
-      { instanceId: "gear-1", definitionId: "placeholder-body", modifiers: [{ kind: "flatPhysicalDamage", value: 0 }] },
+      { instanceId: "gear-1", definitionId: "leather-armor-basic", modifiers: [{ kind: "flatPhysicalDamage", value: 0 }] },
     ],
     gearLoadouts: {},
     talentXP: { physical: 10, wish: 4 },

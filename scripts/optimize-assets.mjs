@@ -176,7 +176,6 @@ const assets = [
   { source: "Trinkets/Vanguard's Crest.jpeg", target: "vanguards-crest.webp", width: 420, quality: 82 },
   { source: "Trinkets/Wishing Well Coin.jpeg", target: "wishing-well-coin.webp", width: 420, quality: 82 },
   // Gear
-  { source: "Gear/Placeholder Gear.png", target: "placeholder-gear.webp", width: 420, quality: 82 },
   // Destinations
   { source: "Destinations/Campfire.jpeg", target: "campfire.webp", width: 900, quality: 84 },
   { source: "Destinations/Alchemist's Shop.jpeg", target: "alchemist-shop.webp", width: 900, quality: 84 },
@@ -242,6 +241,32 @@ const assets = [
 const gearAssetWidth = 420;
 const gearAssetQuality = 82;
 
+const GEAR_SLOT_IDS = [
+  "body",
+  "helm",
+  "boots",
+  "gloves",
+  "belt",
+  "main-hand",
+  "off-hand",
+  "amulet",
+  "left-ring",
+  "right-ring",
+];
+
+const GEAR_SLOT_BACKGROUND_NAME_TO_ID = {
+  amulet: "amulet",
+  belt: "belt",
+  body: "body",
+  boots: "boots",
+  gloves: "gloves",
+  helm: "helm",
+  "left ring": "left-ring",
+  "main hand": "main-hand",
+  "off-hand": "off-hand",
+  "right ring": "right-ring",
+};
+
 function slugifyGearName(name) {
   return name
     .trim()
@@ -280,6 +305,48 @@ async function discoverGearAssets() {
   return discovered;
 }
 
+async function discoverGearSlotBackgrounds() {
+  const slotDir = path.join(sourceDir, "Gear", "Gear Slot Backgrounds");
+  let entries = [];
+  try {
+    entries = await readdir(slotDir, { withFileTypes: true });
+  } catch {
+    return [];
+  }
+
+  const discovered = [];
+  const foundSlotIds = new Set();
+  for (const entry of entries) {
+    if (!entry.isFile()) continue;
+    const match = entry.name.match(/^(.+?)\sSlot\.(jpe?g|png)$/i);
+    if (!match) {
+      console.warn(`[gear-slot] Skipping malformed slot background file: ${entry.name}`);
+      continue;
+    }
+    const displayName = match[1].trim().toLowerCase();
+    const slotId = GEAR_SLOT_BACKGROUND_NAME_TO_ID[displayName];
+    if (!slotId) {
+      console.warn(`[gear-slot] Unknown slot background name: ${match[1]}`);
+      continue;
+    }
+    foundSlotIds.add(slotId);
+    discovered.push({
+      source: `Gear/Gear Slot Backgrounds/${entry.name}`,
+      target: `gear-slot-${slotId}.webp`,
+      width: gearAssetWidth,
+      quality: gearAssetQuality,
+    });
+  }
+
+  for (const slotId of GEAR_SLOT_IDS) {
+    if (!foundSlotIds.has(slotId)) {
+      console.warn(`[gear-slot] Missing background art for slot: ${slotId}`);
+    }
+  }
+
+  return discovered;
+}
+
 async function fileIsFresh(sourcePath, outputPath) {
   try {
     const [sourceInfo, outputInfo] = await Promise.all([stat(sourcePath), stat(outputPath)]);
@@ -292,6 +359,12 @@ async function fileIsFresh(sourcePath, outputPath) {
 async function optimizeAsset({ source, target, width, quality }) {
   const sourcePath = path.join(sourceDir, source);
   const outputPath = path.join(outputDir, target);
+
+  try {
+    await stat(sourcePath);
+  } catch {
+    return `${target} skipped (missing source)`;
+  }
 
   const isFresh = await fileIsFresh(sourcePath, outputPath);
   if (isFresh) {
@@ -310,14 +383,17 @@ async function main() {
   await mkdir(outputDir, { recursive: true });
 
   const gearAssets = await discoverGearAssets();
-  const allAssets = [...assets, ...gearAssets];
+  const gearSlotBackgrounds = await discoverGearSlotBackgrounds();
+  const allAssets = [...assets, ...gearAssets, ...gearSlotBackgrounds];
 
   const results = [];
   for (const asset of allAssets) {
     results.push(await optimizeAsset(asset));
   }
 
-  console.log(`Optimized ${results.length} art assets (${gearAssets.length} gear).`);
+  console.log(
+    `Optimized ${results.length} art assets (${gearAssets.length} gear, ${gearSlotBackgrounds.length} gear slot backgrounds).`,
+  );
 }
 
 main().catch((error) => {

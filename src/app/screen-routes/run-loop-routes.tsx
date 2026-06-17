@@ -7,10 +7,12 @@ import {
   CampfireScreen,
   CorruptionScreen,
   DestinationScreen,
+  EquipmentShopScreen,
   LabyrinthMapScreen,
   MerchantShopScreen,
   MysteryScreen,
   RewardsScreen,
+  TrinketShopScreen,
   WildwoodRecoveryScreen,
   WildwoodRemovalScreen,
 } from "@/features/alchemy/shared/screens";
@@ -147,6 +149,10 @@ function ShopScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions">) {
       shopCards={r.shopState.cards}
       refreshesLeft={r.shopState.refreshesLeft}
       removeUsed={r.shopState.removeUsed}
+      purchasedSlotKeys={r.shopState.purchasedSlotKeys}
+      getCardPrice={a.runFlow.getMerchantCardBuyPrice}
+      removePrice={a.runFlow.getRemoveCardPrice()}
+      refreshPrice={a.runFlow.getShopRefreshPrice(r.shopState.refreshesLeft)}
       onBuyCard={a.runFlow.handleShopBuyCard}
       onRemoveCard={a.runFlow.handleShopRemoveCard}
       onRefresh={a.runFlow.handleShopRefresh}
@@ -164,10 +170,48 @@ function AlchemistScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions"
       potionCards={r.alchemistState.potions}
       refreshesLeft={r.alchemistState.refreshesLeft}
       mixUsed={r.alchemistState.mixUsed}
+      purchasedSlotKeys={r.alchemistState.purchasedSlotKeys}
+      getPotionPrice={a.runFlow.getAlchemistPotionBuyPrice}
+      mixPrice={a.runFlow.getMixPotionPrice()}
+      refreshPrice={a.runFlow.getAlchemistRefreshPrice(r.alchemistState.refreshesLeft)}
       onBuyCard={a.runFlow.handleAlchemistBuyCard}
       onRefresh={a.runFlow.handleAlchemistRefresh}
       onMixPotions={a.runFlow.handleAlchemistMixPotions}
       onContinue={a.runFlow.handleAlchemistContinue}
+    />
+  );
+}
+
+function TrinketShopScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions">) {
+  const r = useRunScreenData("trinket-shop");
+  return (
+    <TrinketShopScreen
+      gold={r.runGold}
+      trinkets={r.trinketShopState.trinkets}
+      refreshesLeft={r.trinketShopState.refreshesLeft}
+      purchasedSlotKeys={r.trinketShopState.purchasedSlotKeys}
+      getTrinketPrice={a.runFlow.getTrinketBuyPrice}
+      refreshPrice={a.runFlow.getTrinketRefreshPrice(r.trinketShopState.refreshesLeft)}
+      onBuyTrinket={a.runFlow.handleTrinketShopBuy}
+      onRefresh={a.runFlow.handleTrinketShopRefresh}
+      onContinue={a.runFlow.handleTrinketShopContinue}
+    />
+  );
+}
+
+function EquipmentShopScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions">) {
+  const r = useRunScreenData("equipment-shop");
+  return (
+    <EquipmentShopScreen
+      gold={r.runGold}
+      gear={r.equipmentShopState.gear}
+      refreshesLeft={r.equipmentShopState.refreshesLeft}
+      purchasedSlotKeys={r.equipmentShopState.purchasedSlotKeys}
+      getGearPrice={a.runFlow.getGearBuyPrice}
+      refreshPrice={a.runFlow.getEquipmentRefreshPrice(r.equipmentShopState.refreshesLeft)}
+      onBuyGear={a.runFlow.handleEquipmentShopBuy}
+      onRefresh={a.runFlow.handleEquipmentShopRefresh}
+      onContinue={a.runFlow.handleEquipmentShopContinue}
     />
   );
 }
@@ -228,6 +272,8 @@ export const runLoopScreenRoutes: Partial<
   campfire: ({ actions: a }) => <CampfireScreenRoute actions={a} />,
   shop: ({ actions: a }) => <ShopScreenRoute actions={a} />,
   alchemist: ({ actions: a }) => <AlchemistScreenRoute actions={a} />,
+  "trinket-shop": ({ actions: a }) => <TrinketShopScreenRoute actions={a} />,
+  "equipment-shop": ({ actions: a }) => <EquipmentShopScreenRoute actions={a} />,
   mystery: ({ actions: a }) => <MysteryScreenRoute actions={a} />,
   corruption: ({ actions: a }) => <CorruptionScreenRoute actions={a} />,
 };

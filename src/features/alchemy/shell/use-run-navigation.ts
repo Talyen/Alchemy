@@ -51,6 +51,8 @@ export function useRunNavigation({
   onLabyrinthFailNode,
   onInitShop,
   onInitAlchemist,
+  onInitTrinketShop,
+  onInitEquipmentShop,
   onMarkDifficultyCompleted,
 }: {
   screen: Screen;
@@ -72,6 +74,8 @@ export function useRunNavigation({
   onLabyrinthFailNode: () => void;
   onInitShop: () => void;
   onInitAlchemist: () => void;
+  onInitTrinketShop: () => void;
+  onInitEquipmentShop: () => void;
   onMarkDifficultyCompleted: (characterId: CharacterId, difficultyId: DifficultyId) => void;
 }) {
   const run = useRunAdapter();
@@ -133,6 +137,7 @@ export function useRunNavigation({
       currentRewardTraitIds: [rewardTraitId],
       rewardType: null,
       rewardChoiceIds: [],
+      rewardGearChoices: [],
       selectedRewardId: null,
     });
     if (!onStartBossById(draw.bossId, undefined, modifierId)) {
@@ -247,6 +252,7 @@ export function useRunNavigation({
         phase: "removal",
         rewardType: null,
         rewardChoiceIds: [],
+        rewardGearChoices: [],
         selectedRewardId: null,
       });
       navigateTo(CONSTANTS.SCREENS.WILDWOOD_REMOVAL);
@@ -285,6 +291,8 @@ export function useRunNavigation({
         onLabyrinthClearNode,
         onInitShop,
         onInitAlchemist,
+        onInitTrinketShop,
+        onInitEquipmentShop,
         onStartBattle,
         onStartBossBattle,
         onStartBossById,
@@ -306,6 +314,8 @@ export function useRunNavigation({
       onLabyrinthClearNode,
       onInitShop,
       onInitAlchemist,
+      onInitTrinketShop,
+      onInitEquipmentShop,
       onStartBattle,
       onStartBossBattle,
       onStartBossById,

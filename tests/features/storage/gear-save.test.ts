@@ -14,8 +14,8 @@ describe("gear save normalization", () => {
     const save = normalizeSaveData({
       saveSchemaVersion: 5,
       gearInventory: [
-        { instanceId: "body-1", definitionId: "placeholder-body", affixIds: [] },
-        { instanceId: "old-trinket", definitionId: "placeholder-trinket", affixIds: [] },
+        { instanceId: "body-1", definitionId: "leather-armor-basic", affixes: [] },
+        { instanceId: "old-trinket", definitionId: "placeholder-trinket", affixes: [] },
       ],
       gearLoadouts: {
         knight: { body: "body-1", "trinket-1": "old-trinket" },
@@ -23,7 +23,7 @@ describe("gear save normalization", () => {
     });
 
     expect(save.gearInventory).toEqual([
-      { instanceId: "body-1", definitionId: "placeholder-body", affixIds: [] },
+      { instanceId: "body-1", definitionId: "leather-armor-basic", affixes: [] },
     ]);
     expect(save.gearLoadouts.knight.body).toBe("body-1");
     expect(save.gearLoadouts.knight).not.toHaveProperty("trinket-1");
@@ -32,7 +32,7 @@ describe("gear save normalization", () => {
   it("keeps only the first loadout reference when legacy saves equip one item multiple times", () => {
     const save = normalizeSaveData({
       saveSchemaVersion: 5,
-      gearInventory: [{ instanceId: "ring-1", definitionId: "placeholder-ring", affixIds: [] }],
+      gearInventory: [{ instanceId: "ring-1", definitionId: "ruby-ring-basic", affixes: [] }],
       gearLoadouts: {
         knight: { "left-ring": "ring-1" },
         rogue: { "right-ring": "ring-1" },
@@ -46,7 +46,7 @@ describe("gear save normalization", () => {
   it("drops loadout references that are not present in gearInventory", () => {
     const save = normalizeSaveData({
       saveSchemaVersion: 5,
-      gearInventory: [{ instanceId: "body-1", definitionId: "placeholder-body", affixIds: [] }],
+      gearInventory: [{ instanceId: "body-1", definitionId: "leather-armor-basic", affixes: [] }],
       gearLoadouts: {
         knight: { body: "body-1", helm: "missing-helm" },
       },
@@ -56,34 +56,37 @@ describe("gear save normalization", () => {
     expect(save.gearLoadouts.knight.helm).toBeNull();
   });
 
-  it("normalizes legacy physical modifiers when affix ids are absent", () => {
+  it("normalizes legacy physical modifiers when affix rolls are absent", () => {
     const save = normalizeSaveData({
       saveSchemaVersion: 5,
       gearInventory: [
         {
           instanceId: "body-1",
-          definitionId: "placeholder-body",
+          definitionId: "leather-armor-basic",
           modifiers: [{ kind: "flatPhysicalDamage", value: 2 }],
         },
       ],
     });
 
-    expect(save.gearInventory[0]?.affixIds).toEqual(["flat-physical-1", "flat-physical-1"]);
+    expect(save.gearInventory[0]?.affixes).toEqual([
+      { id: "flat-physical", value: 1 },
+      { id: "flat-physical", value: 1 },
+    ]);
   });
 
-  it("strips invalid affix ids during normalization", () => {
+  it("migrates legacy affix ids and strips invalid entries", () => {
     const save = normalizeSaveData({
       saveSchemaVersion: 5,
       gearInventory: [
         {
           instanceId: "body-1",
-          definitionId: "placeholder-body",
+          definitionId: "leather-armor-basic",
           affixIds: ["flat-burn-1", "not-an-affix"],
         },
       ],
     });
 
-    expect(save.gearInventory[0]?.affixIds).toEqual(["flat-burn-1"]);
+    expect(save.gearInventory[0]?.affixes).toEqual([{ id: "flat-burn", value: 1 }]);
   });
 
   it("defaults gear board positions to an empty record", () => {
@@ -94,7 +97,7 @@ describe("gear save normalization", () => {
   it("prunes board positions for items no longer in inventory", () => {
     const save = normalizeSaveData({
       saveSchemaVersion: 5,
-      gearInventory: [{ instanceId: "body-1", definitionId: "placeholder-body", affixIds: [] }],
+      gearInventory: [{ instanceId: "body-1", definitionId: "leather-armor-basic", affixes: [] }],
       gearBoardPositions: {
         "body-1": { col: 2, row: 1 },
         "missing-1": { col: 0, row: 0 },

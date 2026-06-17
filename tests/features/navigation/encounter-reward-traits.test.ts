@@ -3,21 +3,20 @@ import { describe, expect, it } from "vitest";
 import {
   createWildwoodRewardState,
   getActiveRewardModifiersForContentSystem,
-  shouldForceTrinketReward,
   shouldGrantAlchemistReward,
   shouldGrantCompanionReward,
 } from "@/features/alchemy/run-loop/navigation/reward-flow";
 
 describe("encounter reward traits", () => {
-  it("forces Wildwood boon rewards for Collector", () => {
-    const result = createWildwoodRewardState([], ["collector"], () => 0.99);
-    expect(result.rewardType).toBe("trinket");
+  it("rolls card, trinket, or gear rewards equally in Wildwood", () => {
+    expect(createWildwoodRewardState([], () => 0.1).rewardType).toBe("card");
+    expect(createWildwoodRewardState([], () => 0.5).rewardType).toBe("trinket");
+    expect(createWildwoodRewardState([], () => 0.9).rewardType).toBe("gear");
   });
 
   it("shares Alchemist and Companion behavior across encounter modes", () => {
     const traits = getActiveRewardModifiersForContentSystem("wildwood", ["alchemist", "companion"]);
     expect(shouldGrantAlchemistReward(traits)).toBe(true);
     expect(shouldGrantCompanionReward(traits)).toBe(true);
-    expect(shouldForceTrinketReward(traits)).toBe(false);
   });
 });

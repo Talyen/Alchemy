@@ -17,6 +17,7 @@ import type {
 } from "@/lib/game-data";
 import { CAMPFIRE_HEAL_FRACTION } from "../game-constants";
 import type { GearEffectManifest } from "@/lib/gear";
+import { applyGearDamageResistance, scaleGoldReward } from "./gear-effects";
 import type { MaterialInventory } from "@/lib/homestead/types";
 
 // Both player and enemy use status ID unions, but enemies never gain
@@ -175,7 +176,11 @@ export type BattleResolution = {
 // pattern used ~25 times across the battle engine with one-line focused updaters.
 
 export function addPlayerStatus(state: BattleState, status: PlayerStatusId, delta: number): BattleState {
-  return { ...state, playerStatuses: { ...state.playerStatuses, [status]: state.playerStatuses[status] + delta } };
+  const bonus = status === "block" && delta > 0 ? state.gearEffects.flatBlockGained : 0;
+  return {
+    ...state,
+    playerStatuses: { ...state.playerStatuses, [status]: state.playerStatuses[status] + delta + bonus },
+  };
 }
 
 export function setPlayerStatus(state: BattleState, status: PlayerStatusId, value: number): BattleState {
@@ -227,7 +232,8 @@ export function reduceEnemyArmor(state: BattleState, delta: number): BattleState
 }
 
 export function addGold(state: BattleState, delta: number): BattleState {
-  return { ...state, gold: state.gold + delta };
+  const adjusted = delta > 0 ? scaleGoldReward(delta, state.gearEffects) : delta;
+  return { ...state, gold: state.gold + adjusted };
 }
 
 export function setFlag<K extends keyof CombatFlags>(state: BattleState, flag: K, value: CombatFlags[K]): BattleState {
@@ -252,6 +258,7 @@ export function applyPlayerCombatDamage(state: BattleState, damage: number, dama
     reducedDamage -= state.talentEffects.natureDamageReduction ?? 0;
   }
   reducedDamage = Math.max(0, reducedDamage);
+  reducedDamage = applyGearDamageResistance(reducedDamage, damageType, state.gearEffects);
   const nextHealth = clampHealth(state.playerHealth, -reducedDamage, state.playerMaxHealth);
   if (nextHealth > 0) return { ...state, playerHealth: nextHealth };
   if (state.playerStatuses.phoenixFeather > 0) {

@@ -98,12 +98,16 @@ function calculateNodeTypeCounts(
     mystery: 0,
     shop: 0,
     alchemist: 0,
+    "trinket-shop": 0,
+    "equipment-shop": 0,
   };
   const supportTypes: Array<Exclude<LabyrinthNodeType, "entrance" | "combat" | "elite" | "boss">> = [
     "rest",
     "mystery",
     "shop",
     "alchemist",
+    "trinket-shop",
+    "equipment-shop",
   ];
   let assigned = counts.combat + counts.elite;
   let supportIndex = Math.floor(rng() * supportTypes.length);

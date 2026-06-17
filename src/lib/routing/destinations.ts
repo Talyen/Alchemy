@@ -4,6 +4,8 @@ export const DESTINATIONS = {
   ELITE_COMBAT: "Elite Combat",
   MERCHANT_SHOP: "Merchant's Shop",
   ALCHEMIST_SHOP: "Alchemist's Shop",
+  TRINKET_SHOP: "Trinket Shop",
+  EQUIPMENT_SHOP: "Equipment Shop",
   MYSTERY: "Mystery",
   CORRUPTION: "Corruption",
   CAMPFIRE: "Campfire",

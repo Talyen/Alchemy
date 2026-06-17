@@ -9,7 +9,12 @@ import type { LabyrinthNodePosition } from "@/lib/active-run-session";
 import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import type { Screen } from "@/lib/routing";
 import type { RewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
-import type { ShopState, AlchemistState } from "@/features/alchemy/run-loop/shop/shop-state-init";
+import type {
+  ShopState,
+  AlchemistState,
+  TrinketShopState,
+  EquipmentShopState,
+} from "@/features/alchemy/run-loop/shop/shop-state-init";
 import type { Destination } from "@/features/alchemy/shared/types";
 import { getRunSession } from "./run-session-model";
 import {
@@ -136,6 +141,14 @@ export function setShopState(state: ShopState | ((prev: ShopState) => ShopState)
 
 export function setAlchemistState(state: AlchemistState | ((prev: AlchemistState) => AlchemistState)) {
   getRunDomainStore().setAlchemistState(state);
+}
+
+export function setTrinketShopState(state: TrinketShopState | ((prev: TrinketShopState) => TrinketShopState)) {
+  getRunDomainStore().setTrinketShopState(state);
+}
+
+export function setEquipmentShopState(state: EquipmentShopState | ((prev: EquipmentShopState) => EquipmentShopState)) {
+  getRunDomainStore().setEquipmentShopState(state);
 }
 
 export function setRunEndMaterials(materials: MaterialInventory) {

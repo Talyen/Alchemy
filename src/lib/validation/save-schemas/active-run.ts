@@ -45,8 +45,8 @@ const ActiveCombatDataSchema = z
       battleState: {
         ...defaults,
         ...saved,
-        trinketEffects: saved.trinketEffects ?? defaults.trinketEffects,
-        gearEffects: saved.gearEffects ?? defaults.gearEffects,
+        trinketEffects: { ...defaults.trinketEffects, ...(saved.trinketEffects ?? {}) },
+        gearEffects: { ...defaults.gearEffects, ...(saved.gearEffects ?? {}) },
         flags: { ...defaults.flags, ...saved.flags },
         currentEnemy: {
           ...saved.currentEnemy,
@@ -61,20 +61,114 @@ const ActiveCombatDataSchema = z
   .catch(null);
 
 const WildwoodBossIdSchema = z.enum(WILDWOOD_BOSS_IDS);
-const WildwoodDraftStateSchema = z
+
+const GearAffixRollSchema = z.object({
+  id: z.enum(GEAR_AFFIX_IDS),
+  value: z.number().int().positive(),
+});
+
+const GearInstanceSchema = z.object({
+  instanceId: z.string().min(1),
+  definitionId: z.enum(GEAR_DEFINITION_IDS),
+  affixes: z.array(GearAffixRollSchema),
+});
+
+const ShopPersistSchema = z
   .object({
-    version: z.literal(2),
-    phase: z.enum(["draft", "battle", "recovery", "reward", "removal"]),
-    draftChoices: z.array(BattleCardSchema),
-    remainingBossIds: z.array(WildwoodBossIdSchema),
-    previousBossId: WildwoodBossIdSchema.nullable(),
-    currentBossId: WildwoodBossIdSchema.nullable(),
-    currentCombatTraitIds: z.array(z.string()).default([]),
-    currentRewardTraitIds: z.array(z.string()).default([]),
-    rewardType: z.enum(["card", "trinket"]).nullable(),
-    rewardChoiceIds: z.array(z.string()),
-    selectedRewardId: z.string().nullable(),
+    cards: z.array(BattleCardSchema),
+    removeUsed: caught(z.boolean(), false, "activeRun.shopState.removeUsed"),
+    refreshesLeft: caught(z.number().int().nonnegative(), 0, "activeRun.shopState.refreshesLeft"),
+    firstPurchaseUsed: caught(z.boolean(), false, "activeRun.shopState.firstPurchaseUsed"),
+    purchasedSlotKeys: deduplicatedStringArraySchema("activeRun.shopState.purchasedSlotKeys").default([]),
   })
+  .nullable()
+  .catch(null);
+
+const AlchemistPersistSchema = z
+  .object({
+    potions: z.array(BattleCardSchema),
+    mixUsed: caught(z.boolean(), false, "activeRun.alchemistState.mixUsed"),
+    refreshesLeft: caught(z.number().int().nonnegative(), 0, "activeRun.alchemistState.refreshesLeft"),
+    firstPurchaseUsed: caught(z.boolean(), false, "activeRun.alchemistState.firstPurchaseUsed"),
+    purchasedSlotKeys: deduplicatedStringArraySchema("activeRun.alchemistState.purchasedSlotKeys").default([]),
+  })
+  .nullable()
+  .catch(null);
+
+const TrinketShopPersistSchema = z
+  .object({
+    trinketIds: z.array(z.string()),
+    refreshesLeft: caught(z.number().int().nonnegative(), 0, "activeRun.trinketShopState.refreshesLeft"),
+    firstPurchaseUsed: caught(z.boolean(), false, "activeRun.trinketShopState.firstPurchaseUsed"),
+    purchasedSlotKeys: deduplicatedStringArraySchema("activeRun.trinketShopState.purchasedSlotKeys").default([]),
+  })
+  .nullable()
+  .catch(null);
+
+const EquipmentShopPersistSchema = z
+  .object({
+    gear: z.preprocess(
+      (raw) =>
+        Array.isArray(raw)
+          ? raw.flatMap((item) => {
+              const normalized = normalizeGearInstance(
+                item && typeof item === "object" ? (item as Record<string, unknown>) : {},
+              );
+              return normalized ? [normalized] : [];
+            })
+          : [],
+      z.array(GearInstanceSchema),
+    ),
+    refreshesLeft: caught(z.number().int().nonnegative(), 0, "activeRun.equipmentShopState.refreshesLeft"),
+    firstPurchaseUsed: caught(z.boolean(), false, "activeRun.equipmentShopState.firstPurchaseUsed"),
+    purchasedSlotKeys: deduplicatedStringArraySchema("activeRun.equipmentShopState.purchasedSlotKeys").default([]),
+  })
+  .nullable()
+  .catch(null);
+
+const WildwoodDraftStateSchema = z
+  .preprocess(
+    (raw) => {
+      if (!raw || typeof raw !== "object") return raw;
+      const state = raw as Record<string, unknown>;
+      const next: Record<string, unknown> = { ...state };
+      if (state.version === 2) {
+        next.version = 3;
+        if (!("rewardGearChoices" in state)) {
+          next.rewardGearChoices = [];
+        }
+      }
+      if (state.rewardType === "boon") {
+        next.rewardType = "trinket";
+      }
+      return next;
+    },
+    z.object({
+      version: z.literal(3),
+      phase: z.enum(["draft", "battle", "recovery", "reward", "removal"]),
+      draftChoices: z.array(BattleCardSchema),
+      remainingBossIds: z.array(WildwoodBossIdSchema),
+      previousBossId: WildwoodBossIdSchema.nullable(),
+      currentBossId: WildwoodBossIdSchema.nullable(),
+      currentCombatTraitIds: z.array(z.string()).default([]),
+      currentRewardTraitIds: z.array(z.string()).default([]),
+      rewardType: z.enum(["card", "trinket", "gear"]).nullable(),
+      rewardChoiceIds: z.array(z.string()),
+      rewardGearChoices: z.preprocess(
+        (raw) =>
+          Array.isArray(raw)
+            ? raw.flatMap((item) => {
+                const normalized = normalizeGearInstance(
+                  item && typeof item === "object" ? (item as Record<string, unknown>) : {},
+                );
+                return normalized ? [normalized] : [];
+              })
+            : [],
+        z.array(GearInstanceSchema),
+      ),
+      selectedRewardId: z.string().nullable(),
+    }),
+  )
   .transform((state) => ({
     ...state,
     currentCombatTraitIds: sanitizeEncounterTraitIds(state.currentCombatTraitIds, "combat"),
@@ -82,12 +176,6 @@ const WildwoodDraftStateSchema = z
   }))
   .nullable()
   .catch(null);
-
-const GearInstanceSchema = z.object({
-  instanceId: z.string().min(1),
-  definitionId: z.enum(GEAR_DEFINITION_IDS),
-  affixIds: z.array(z.enum(GEAR_AFFIX_IDS)),
-});
 
 const PersistedPendingRewardBaseSchema = {
   selectedId: caught(z.string().nullable(), null, "activeRun.pendingReward.selectedId"),
@@ -134,7 +222,7 @@ const PersistedPendingRewardSchema = z
                   return normalized ? [normalized] : [];
                 })
               : raw,
-          z.array(GearInstanceSchema),
+          z.array(GearInstanceSchema).min(1),
         ),
         ...PersistedPendingRewardBaseSchema,
       }),
@@ -175,6 +263,10 @@ export const ActiveRunDataSchema = z
     currentScreen: caught(z.enum(ROUTE_SCREEN_VALUES).nullable(), null, "activeRun.currentScreen").default(null),
     destinationChoices: caught(z.array(z.string()), [], "activeRun.destinationChoices").default([]),
     pendingReward: caught(PersistedPendingRewardSchema, null, "activeRun.pendingReward").default(null),
+    shopState: ShopPersistSchema.default(null),
+    alchemistState: AlchemistPersistSchema.default(null),
+    trinketShopState: TrinketShopPersistSchema.default(null),
+    equipmentShopState: EquipmentShopPersistSchema.default(null),
   })
   .transform((data) => normalizeActiveRunData(data))
   .transform((data) => {

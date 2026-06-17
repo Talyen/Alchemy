@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion } from "motion/react";
 import {
@@ -22,13 +22,17 @@ import {
   type KeywordId,
 } from "@/lib/game-data";
 import {
+  canOccupyVacatedInventoryPlacement,
   formatSalvageValue,
+  footprintForInstance,
+  getGearInstanceTitle,
   INVENTORY_COLS,
   packInventoryWithPositions,
   resolveGearDefinition,
   type GearInstance,
   type GearLoadouts,
   type GearSlot,
+  type InventoryPlacement,
 } from "@/lib/gear";
 import { cn } from "@/lib/utils";
 import { ConfirmationDialog, HamburgerTrigger, PageLayout, ScreenHeader, TabBar } from "../../shared/ui/shared-ui";
@@ -65,9 +69,15 @@ type Props = {
   finishedRunCharacters: CharacterId[];
   browseOnly: boolean;
   onOpenMenu: (rect?: DOMRect) => void;
-  onEquip: (characterId: CharacterId, slot: GearSlot, instance: GearInstance) => void;
+  onEquip: (
+    characterId: CharacterId,
+    slot: GearSlot,
+    instance: GearInstance,
+    options?: { vacatedPlacement?: InventoryPlacement; swapDisplaced?: boolean },
+  ) => void;
   onUnequip: (characterId: CharacterId, slot: GearSlot) => void;
   onSalvage: (instanceId: string) => void;
+  onSpawnDevGear?: () => void;
 };
 
 export function ArmoryScreen({
@@ -79,6 +89,7 @@ export function ArmoryScreen({
   onEquip,
   onUnequip,
   onSalvage,
+  onSpawnDevGear,
 }: Props) {
   const [characterId, setCharacterId] = useState<CharacterId>("knight");
   const inventoryBoardRef = useRef<HTMLDivElement>(null);
@@ -104,6 +115,49 @@ export function ArmoryScreen({
     [availableInventory, savedPositions],
   );
 
+  const handleEquipWithSwap = useCallback(
+    (
+      targetCharacterId: CharacterId,
+      slot: GearSlot,
+      instance: GearInstance,
+      options?: { vacatedPlacement?: InventoryPlacement },
+    ) => {
+      const vacatedPlacement = options?.vacatedPlacement;
+      if (!vacatedPlacement) {
+        onEquip(targetCharacterId, slot, instance);
+        return;
+      }
+
+      const displacedId = loadouts[targetCharacterId]?.[slot];
+      if (!displacedId || displacedId === instance.instanceId) {
+        onEquip(targetCharacterId, slot, instance, { vacatedPlacement, swapDisplaced: false });
+        return;
+      }
+
+      const displaced = inventoryById.get(displacedId);
+      const incomingFootprint = footprintForInstance(instance);
+      const displacedFootprint = displaced ? footprintForInstance(displaced) : null;
+      const canSwap =
+        !!displaced &&
+        !!incomingFootprint &&
+        !!displacedFootprint &&
+        canOccupyVacatedInventoryPlacement(
+          packedInventory.items,
+          instance.instanceId,
+          incomingFootprint,
+          displacedFootprint,
+          vacatedPlacement,
+          INVENTORY_COLS,
+        );
+
+      onEquip(targetCharacterId, slot, instance, {
+        vacatedPlacement,
+        swapDisplaced: canSwap,
+      });
+    },
+    [inventoryById, loadouts, onEquip, packedInventory.items],
+  );
+
   const {
     draggedGear,
     dragVisual,
@@ -120,7 +174,7 @@ export function ArmoryScreen({
     loadout,
     packedInventory,
     inventoryBoardRef,
-    onEquip,
+    onEquip: handleEquipWithSwap,
     onUnequip,
     onMoveItem: handleMoveItem,
   });
@@ -196,6 +250,10 @@ export function ArmoryScreen({
               isAnimating={isAnimating}
               boardRef={inventoryBoardRef}
               onSalvage={setSalvageTarget}
+              onSalvageModeChange={(active) => {
+                if (!active) setSalvageTarget(null);
+              }}
+              {...(onSpawnDevGear ? { onSpawnDevGear } : {})}
               onGearPointerStart={beginGearPointer}
               onGearPointerMove={moveGearPointer}
               onGearPointerEnd={finishGearPointer}
@@ -206,10 +264,13 @@ export function ArmoryScreen({
         {salvageTarget && salvageDefinition ? (
           <ConfirmationDialog
             title="Salvage Gear?"
-            description={`Permanently salvage ${salvageDefinition.title}. ${formatSalvageValue(salvageDefinition.salvageValue)}.`}
+            description={`Permanently salvage ${getGearInstanceTitle(salvageTarget)}. ${formatSalvageValue(salvageDefinition.salvageValue)}.`}
             confirmLabel="Salvage"
+            dimBackground={true}
             onCancel={() => setSalvageTarget(null)}
             onConfirm={() => {
+              // Intentional: do not exit salvage mode here — players often salvage multiple items in one session.
+              // Salvage mode ends only via the Salvage Gear toggle, Escape, or outside click (see InventoryPanel).
               onSalvage(salvageTarget.instanceId);
               setSalvageTarget(null);
             }}

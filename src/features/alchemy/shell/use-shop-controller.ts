@@ -1,12 +1,13 @@
 // Shop and alchemist purchase controller for pricing, refreshes, removals, and potion mixing.
-// Depends on run/talent state, sampled shop state, boon pricing, audio, and mixer helpers.
-// Reads shop/alchemist via useRunSessionShopSlice; writes via run-session-facade.
-import { useRef } from "react";
-import { getOfferableCardPool, getStandardPotionPool, type BattleCard } from "@/lib/game-data";
+import { useRef, type MutableRefObject } from "react";
+import { getOfferableCardPool, getStandardPotionPool, type BattleCard, type TrinketEntry } from "@/lib/game-data";
 import { computeTrinketManifest } from "@/lib/trinkets";
 import { appendUnique } from "@/lib/utils";
-import { appendCardToRunWithDiscovery } from "@/features/alchemy/run-loop/run/deck-mutations";
-import { refreshOfferings, spendRunGold } from "@/features/alchemy/run-loop/shop-transactions";
+import {
+  appendCardToRunWithDiscovery,
+  appendTrinketToRunWithDiscovery,
+} from "@/features/alchemy/run-loop/run/deck-mutations";
+import { refreshOfferings, refreshShopOfferings, spendRunGold } from "@/features/alchemy/run-loop/shop-transactions";
 import { applyMixToDeck, tryCreateMixedPotion } from "@/lib/alchemist";
 import {
   ALCHEMIST_MIX_PRICE,
@@ -17,64 +18,192 @@ import {
   SHOP_REMOVE_PRICE,
   SHOP_CARDS_OFFERED,
   ALCHEMIST_POTIONS_OFFERED,
+  TRINKET_SHOP_TRINKET_PRICE,
   MIXED_POTION_CARD_ID,
 } from "@/lib/game-constants";
-import { createInitialShopState, createInitialAlchemistState } from "@/features/alchemy/run-loop/shop/shop-state-init";
+import {
+  createInitialShopState,
+  createInitialAlchemistState,
+  createInitialTrinketShopState,
+  createInitialEquipmentShopState,
+  resampleTrinketShopOfferings,
+  resampleEquipmentShopOfferings,
+} from "@/features/alchemy/run-loop/shop/shop-state-init";
+import {
+  computeShopBuyPrice,
+  computeShopRefreshPrice,
+  computeShopServicePrice,
+  getCardBuyTalentDiscounts,
+  getGenericBuyTalentDiscounts,
+} from "@/features/alchemy/run-loop/shop/shop-pricing";
+import { getEquipmentShopPrice } from "@/features/alchemy/run-loop/shop/shop-gear-pricing";
 import { useRunSessionShopSlice } from "@/features/alchemy/shared/stores/run-session-facade";
-import { setAlchemistState, setShopState } from "@/features/alchemy/shared/stores/run-session-facade";
+import {
+  setAlchemistState,
+  setShopState,
+  setTrinketShopState,
+  setEquipmentShopState,
+} from "@/features/alchemy/shared/stores/run-session-facade";
 import { readRunSessionStore } from "@/features/alchemy/shared/stores/run-session-facade";
 import type { RunStateController, TalentStateController } from "@/features/alchemy/shared/stores/run-session-facade";
+import type { GearInstance } from "@/lib/gear";
+import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
 
 import { useAppStore } from "@/features/alchemy/shared/stores/app-store";
+import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 
-export function useShopController({ run, talents }: { run: RunStateController; talents: TalentStateController }) {
-  const { shopState, alchemistState } = useRunSessionShopSlice();
+function markSlotPurchased(keys: string[], slotKey: string): string[] {
+  return keys.includes(slotKey) ? keys : [...keys, slotKey];
+}
+
+export function useShopController({
+  run,
+  talents,
+  homesteadEffectsRef,
+}: {
+  run: RunStateController;
+  talents: TalentStateController;
+  homesteadEffectsRef: MutableRefObject<HomesteadEffectManifest>;
+}) {
+  const { shopState, alchemistState, trinketShopState, equipmentShopState } = useRunSessionShopSlice();
 
   const shopDiscountConsumed = useRef(false);
   const alchemistDiscountConsumed = useRef(false);
+  const trinketDiscountConsumed = useRef(false);
+  const equipmentDiscountConsumed = useRef(false);
 
-  function purchaseCard(
-    card: BattleCard,
+  const merchantsFavorDiscount = computeTrinketManifest(run.runTrinkets).merchantsFavorDiscount;
+  const gearAstralChanceBonus = () => homesteadEffectsRef.current.gearAstralChanceBonus;
+
+  function purchaseItem(
     basePrice: number,
-    discount: number,
+    haggleDiscount: number,
+    apothecaryDiscount: number,
     firstPurchaseUsed: boolean,
     discountConsumed: { current: boolean },
     markFirstPurchase: () => void,
-  ) {
-    let price = Math.max(0, basePrice - discount);
-    if (!firstPurchaseUsed && !discountConsumed.current) {
-      price = Math.max(0, price - computeTrinketManifest(run.runTrinkets).merchantsFavorDiscount);
+    onAcquire: () => void,
+  ): boolean {
+    const price = computeShopBuyPrice({
+      basePrice,
+      haggleDiscount,
+      apothecaryDiscount,
+      merchantsFavorDiscount,
+      firstPurchaseUsed,
+      favorConsumed: discountConsumed.current,
+    });
+    if (run.runGold < price) return false;
+    spendRunGold(price, run.setRunGold);
+    onAcquire();
+    if (!firstPurchaseUsed && !discountConsumed.current && merchantsFavorDiscount > 0) {
       discountConsumed.current = true;
     }
-    if (run.runGold < price) return null;
-    spendRunGold(price, run.setRunGold);
-    appendCardToRunWithDiscovery(card, run.setRunDeck);
     markFirstPurchase();
-    return card;
+    return true;
   }
 
-  function handleShopBuyCard(card: BattleCard) {
-    purchaseCard(
-      card,
+  function getMerchantCardBuyPrice(card: BattleCard) {
+    const { haggleDiscount, apothecaryDiscount } = getCardBuyTalentDiscounts(card, talents.talentEffects);
+    return computeShopBuyPrice({
+      basePrice: SHOP_CARD_PRICE,
+      haggleDiscount,
+      apothecaryDiscount,
+      merchantsFavorDiscount,
+      firstPurchaseUsed: shopState.firstPurchaseUsed,
+      favorConsumed: shopDiscountConsumed.current,
+    });
+  }
+
+  function getAlchemistPotionBuyPrice(card: BattleCard) {
+    const { haggleDiscount, apothecaryDiscount } = getCardBuyTalentDiscounts(card, talents.talentEffects);
+    return computeShopBuyPrice({
+      basePrice: ALCHEMIST_POTION_PRICE,
+      haggleDiscount,
+      apothecaryDiscount,
+      merchantsFavorDiscount,
+      firstPurchaseUsed: alchemistState.firstPurchaseUsed,
+      favorConsumed: alchemistDiscountConsumed.current,
+    });
+  }
+
+  function getTrinketBuyPrice(_trinket: TrinketEntry) {
+    const { haggleDiscount, apothecaryDiscount } = getGenericBuyTalentDiscounts(talents.talentEffects);
+    return computeShopBuyPrice({
+      basePrice: TRINKET_SHOP_TRINKET_PRICE,
+      haggleDiscount,
+      apothecaryDiscount,
+      merchantsFavorDiscount,
+      firstPurchaseUsed: trinketShopState.firstPurchaseUsed,
+      favorConsumed: trinketDiscountConsumed.current,
+    });
+  }
+
+  function getGearBuyPrice(instance: GearInstance) {
+    const { haggleDiscount, apothecaryDiscount } = getGenericBuyTalentDiscounts(talents.talentEffects);
+    return computeShopBuyPrice({
+      basePrice: getEquipmentShopPrice(instance),
+      haggleDiscount,
+      apothecaryDiscount,
+      merchantsFavorDiscount,
+      firstPurchaseUsed: equipmentShopState.firstPurchaseUsed,
+      favorConsumed: equipmentDiscountConsumed.current,
+    });
+  }
+
+  function getShopRefreshPrice(refreshesLeft: number) {
+    return computeShopRefreshPrice(SHOP_REFRESH_PRICE, talents.talentEffects.shopFreeRefresh, refreshesLeft);
+  }
+
+  function getAlchemistRefreshPrice(refreshesLeft: number) {
+    return computeShopRefreshPrice(ALCHEMIST_REFRESH_PRICE, talents.talentEffects.shopFreeRefresh, refreshesLeft);
+  }
+
+  function getTrinketRefreshPrice(refreshesLeft: number) {
+    return computeShopRefreshPrice(SHOP_REFRESH_PRICE, talents.talentEffects.shopFreeRefresh, refreshesLeft);
+  }
+
+  function getEquipmentRefreshPrice(refreshesLeft: number) {
+    return computeShopRefreshPrice(SHOP_REFRESH_PRICE, talents.talentEffects.shopFreeRefresh, refreshesLeft);
+  }
+
+  function getRemoveCardPrice() {
+    return computeShopServicePrice(SHOP_REMOVE_PRICE, talents.talentEffects.removeCardDiscount);
+  }
+
+  function getMixPotionPrice() {
+    return computeShopServicePrice(ALCHEMIST_MIX_PRICE, talents.talentEffects.mixPotionDiscount);
+  }
+
+  function handleShopBuyCard(card: BattleCard, slotKey: string): boolean {
+    const { firstPurchaseUsed } = readRunSessionStore().shopState;
+    const { haggleDiscount, apothecaryDiscount } = getCardBuyTalentDiscounts(card, talents.talentEffects);
+    return purchaseItem(
       SHOP_CARD_PRICE,
-      talents.talentEffects.shopCardDiscount,
-      shopState.firstPurchaseUsed,
+      haggleDiscount,
+      apothecaryDiscount,
+      firstPurchaseUsed,
       shopDiscountConsumed,
-      () => setShopState((p) => ({ ...p, firstPurchaseUsed: true })),
+      () =>
+        setShopState((p) => ({
+          ...p,
+          firstPurchaseUsed: true,
+          purchasedSlotKeys: markSlotPurchased(p.purchasedSlotKeys, slotKey),
+        })),
+      () => appendCardToRunWithDiscovery(card, run.setRunDeck),
     );
   }
 
   function handleShopRemoveCard(index: number) {
     if (shopState.removeUsed) return;
-    const price = Math.max(0, SHOP_REMOVE_PRICE - talents.talentEffects.removeCardDiscount);
-    if (run.runGold < price) return null;
+    const price = getRemoveCardPrice();
+    if (run.runGold < price) return;
     spendRunGold(price, run.setRunGold);
     run.setRunDeck((p) => p.filter((_, i) => i !== index));
     setShopState((p) => ({ ...p, removeUsed: true }));
   }
 
   function handleShopRefresh() {
-    const price = talents.talentEffects.shopFreeRefresh && shopState.refreshesLeft > 0 ? 0 : SHOP_REFRESH_PRICE;
+    const price = getShopRefreshPrice(shopState.refreshesLeft);
     refreshOfferings({
       price,
       refreshesLeft: shopState.refreshesLeft,
@@ -84,25 +213,40 @@ export function useShopController({ run, talents }: { run: RunStateController; t
       count: SHOP_CARDS_OFFERED,
       setRunGold: run.setRunGold,
       setState: setShopState,
-      mapState: (p, cards) => ({ ...p, cards, refreshesLeft: p.refreshesLeft - 1 }),
+      mapState: (p, cards) => ({
+        ...p,
+        cards,
+        items: cards,
+        refreshesLeft: p.refreshesLeft - 1,
+        purchasedSlotKeys: [],
+      }),
       deck: run.runDeck,
     });
   }
 
-  function handleAlchemistBuyCard(card: BattleCard) {
-    purchaseCard(
-      card,
+  function handleAlchemistBuyCard(card: BattleCard, slotKey: string): boolean {
+    const { firstPurchaseUsed } = readRunSessionStore().alchemistState;
+    const { haggleDiscount, apothecaryDiscount } = getCardBuyTalentDiscounts(card, talents.talentEffects);
+    return purchaseItem(
       ALCHEMIST_POTION_PRICE,
-      talents.talentEffects.potionDiscount,
-      alchemistState.firstPurchaseUsed,
+      haggleDiscount,
+      apothecaryDiscount,
+      firstPurchaseUsed,
       alchemistDiscountConsumed,
-      () => setAlchemistState((p) => ({ ...p, firstPurchaseUsed: true })),
+      () =>
+        setAlchemistState((p) => ({
+          ...p,
+          firstPurchaseUsed: true,
+          purchasedSlotKeys: markSlotPurchased(p.purchasedSlotKeys, slotKey),
+        })),
+      () => appendCardToRunWithDiscovery(card, run.setRunDeck),
     );
   }
 
   function handleAlchemistRefresh() {
+    const price = getAlchemistRefreshPrice(alchemistState.refreshesLeft);
     refreshOfferings({
-      price: ALCHEMIST_REFRESH_PRICE,
+      price,
       refreshesLeft: alchemistState.refreshesLeft,
       runGold: run.runGold,
       pool: getStandardPotionPool(),
@@ -110,13 +254,19 @@ export function useShopController({ run, talents }: { run: RunStateController; t
       count: ALCHEMIST_POTIONS_OFFERED,
       setRunGold: run.setRunGold,
       setState: setAlchemistState,
-      mapState: (p, potions) => ({ ...p, potions, refreshesLeft: p.refreshesLeft - 1 }),
+      mapState: (p, potions) => ({
+        ...p,
+        potions,
+        items: potions,
+        refreshesLeft: p.refreshesLeft - 1,
+        purchasedSlotKeys: [],
+      }),
       deck: run.runDeck,
     });
   }
 
   function handleAlchemistMixPotions(indexA: number, indexB: number): BattleCard | null {
-    const price = Math.max(0, ALCHEMIST_MIX_PRICE - talents.talentEffects.mixPotionDiscount);
+    const price = getMixPotionPrice();
     if (run.runGold < price) return null;
     const deck = run.runDeck;
     const cardA = deck[indexA];
@@ -132,6 +282,82 @@ export function useShopController({ run, talents }: { run: RunStateController; t
     return mixed;
   }
 
+  function handleTrinketShopBuy(trinket: TrinketEntry, slotKey: string): boolean {
+    const { firstPurchaseUsed } = readRunSessionStore().trinketShopState;
+    const { haggleDiscount, apothecaryDiscount } = getGenericBuyTalentDiscounts(talents.talentEffects);
+    return purchaseItem(
+      TRINKET_SHOP_TRINKET_PRICE,
+      haggleDiscount,
+      apothecaryDiscount,
+      firstPurchaseUsed,
+      trinketDiscountConsumed,
+      () =>
+        setTrinketShopState((p) => ({
+          ...p,
+          firstPurchaseUsed: true,
+          purchasedSlotKeys: markSlotPurchased(p.purchasedSlotKeys, slotKey),
+        })),
+      () => appendTrinketToRunWithDiscovery(trinket.id, run.setRunTrinkets),
+    );
+  }
+
+  function handleTrinketShopRefresh() {
+    const price = getTrinketRefreshPrice(trinketShopState.refreshesLeft);
+    refreshShopOfferings({
+      price,
+      refreshesLeft: trinketShopState.refreshesLeft,
+      runGold: run.runGold,
+      setRunGold: run.setRunGold,
+      setState: setTrinketShopState,
+      resample: () => resampleTrinketShopOfferings(),
+      mapState: (p, trinkets) => ({
+        ...p,
+        trinkets: trinkets as TrinketEntry[],
+        items: trinkets as TrinketEntry[],
+        refreshesLeft: p.refreshesLeft - 1,
+        purchasedSlotKeys: [],
+      }),
+    });
+  }
+
+  function handleEquipmentShopBuy(instance: GearInstance): boolean {
+    const { firstPurchaseUsed } = readRunSessionStore().equipmentShopState;
+    const { haggleDiscount, apothecaryDiscount } = getGenericBuyTalentDiscounts(talents.talentEffects);
+    return purchaseItem(
+      getEquipmentShopPrice(instance),
+      haggleDiscount,
+      apothecaryDiscount,
+      firstPurchaseUsed,
+      equipmentDiscountConsumed,
+      () =>
+        setEquipmentShopState((p) => ({
+          ...p,
+          firstPurchaseUsed: true,
+          purchasedSlotKeys: markSlotPurchased(p.purchasedSlotKeys, instance.instanceId),
+        })),
+      () => useGearStore.getState().addInstance(instance),
+    );
+  }
+
+  function handleEquipmentShopRefresh() {
+    const price = getEquipmentRefreshPrice(equipmentShopState.refreshesLeft);
+    refreshShopOfferings({
+      price,
+      refreshesLeft: equipmentShopState.refreshesLeft,
+      runGold: run.runGold,
+      setRunGold: run.setRunGold,
+      setState: setEquipmentShopState,
+      resample: () => resampleEquipmentShopOfferings(Math.random, gearAstralChanceBonus()),
+      mapState: (p, gear) => ({
+        ...p,
+        gear: gear as GearInstance[],
+        items: gear as GearInstance[],
+        refreshesLeft: p.refreshesLeft - 1,
+        purchasedSlotKeys: [],
+      }),
+    });
+  }
+
   return {
     initShop: () => {
       shopDiscountConsumed.current = false;
@@ -141,12 +367,34 @@ export function useShopController({ run, talents }: { run: RunStateController; t
       alchemistDiscountConsumed.current = false;
       setAlchemistState(createInitialAlchemistState(run.runDeck));
     },
+    initTrinketShop: () => {
+      trinketDiscountConsumed.current = false;
+      setTrinketShopState(createInitialTrinketShopState());
+    },
+    initEquipmentShop: () => {
+      equipmentDiscountConsumed.current = false;
+      setEquipmentShopState(createInitialEquipmentShopState(Math.random, gearAstralChanceBonus()));
+    },
     handleShopBuyCard,
     handleShopRemoveCard,
     handleShopRefresh,
     handleAlchemistBuyCard,
     handleAlchemistRefresh,
     handleAlchemistMixPotions,
+    handleTrinketShopBuy,
+    handleTrinketShopRefresh,
+    handleEquipmentShopBuy,
+    handleEquipmentShopRefresh,
+    getMerchantCardBuyPrice,
+    getAlchemistPotionBuyPrice,
+    getTrinketBuyPrice,
+    getGearBuyPrice,
+    getShopRefreshPrice,
+    getAlchemistRefreshPrice,
+    getTrinketRefreshPrice,
+    getEquipmentRefreshPrice,
+    getRemoveCardPrice,
+    getMixPotionPrice,
     get shopCards() {
       return readRunSessionStore().shopState.cards;
     },

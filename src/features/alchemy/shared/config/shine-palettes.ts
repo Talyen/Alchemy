@@ -16,6 +16,8 @@ export const SHINE_PALETTES = {
     mystery: ["#27272a", "#a1a1aa", "#e4e4e7", "#525252"],
     shop: ["#422006", "#eab308", "#fde047", "#78350f"],
     alchemist: ["#022c22", "#10b981", "#6ee7b7", "#064e3b"],
+    "trinket-shop": ["#2e1065", "#a855f7", "#e9d5ff", "#581c87"],
+    "equipment-shop": ["#1e293b", "#94a3b8", "#e2e8f0", "#334155"],
     boss: ["#450a0a", "#b91c1c", "#fca5a5", "#7f1d1d"],
   },
 } as const;

@@ -11,6 +11,7 @@ export function RenderAlchemyScreen({
   onOpenBattleMenu,
   onClearSaveData,
   onUnlockAllDevMode,
+  onBackFromOptions,
 }: RenderAlchemyScreenProps) {
   return renderAlchemyScreenRoute({
     screen,
@@ -19,5 +20,6 @@ export function RenderAlchemyScreen({
     onOpenBattleMenu,
     onClearSaveData,
     onUnlockAllDevMode,
+    onBackFromOptions,
   });
 }

@@ -58,7 +58,10 @@ export type RunSessionBattleContext = {
   activeLabyrinthModifiers: LabyrinthModifierKind[];
 };
 
-export type RunSessionShopSlice = Pick<RunSessionTransientSlice, "shopState" | "alchemistState">;
+export type RunSessionShopSlice = Pick<
+  RunSessionTransientSlice,
+  "shopState" | "alchemistState" | "trinketShopState" | "equipmentShopState"
+>;
 
 export type RunSessionMysterySlice = Pick<RunSessionTransientSlice, "mysteryEvent" | "mysteryCardChoices">;
 
@@ -153,6 +156,8 @@ export function useRunSessionShopSlice(): RunSessionShopSlice {
     useShallow((s) => ({
       shopState: s.session.shopState,
       alchemistState: s.session.alchemistState,
+      trinketShopState: s.session.trinketShopState,
+      equipmentShopState: s.session.equipmentShopState,
     })),
   );
 }

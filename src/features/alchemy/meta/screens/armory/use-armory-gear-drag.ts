@@ -57,7 +57,12 @@ type UseArmoryGearDragOptions = {
   loadout: GearLoadout;
   packedInventory: PackedInventory;
   inventoryBoardRef: RefObject<HTMLDivElement | null>;
-  onEquip: (characterId: CharacterId, slot: GearSlot, instance: GearInstance) => void;
+  onEquip: (
+    characterId: CharacterId,
+    slot: GearSlot,
+    instance: GearInstance,
+    options?: { vacatedPlacement?: InventoryPlacement },
+  ) => void;
   onUnequip: (characterId: CharacterId, slot: GearSlot) => void;
   onMoveItem: (instanceId: string, col: number, row: number) => void;
 };
@@ -76,6 +81,7 @@ export function useArmoryGearDrag({
   const [dragVisual, setDragVisual] = useState<GearDragVisual | null>(null);
   const pendingDragRef = useRef<PendingGearDrag | null>(null);
   const activeDragRef = useRef<GearDragVisual | null>(null);
+  const pendingFlyoverCommitRef = useRef<(() => void) | null>(null);
   const cleanupTimerRef = useRef<number | null>(null);
 
   const isAnimating = !!dragVisual?.settling || !!dragVisual?.flyover;
@@ -188,6 +194,8 @@ export function useArmoryGearDrag({
       window.clearTimeout(cleanupTimerRef.current);
       cleanupTimerRef.current = null;
     }
+    pendingFlyoverCommitRef.current?.();
+    pendingFlyoverCommitRef.current = null;
     setDraggedGear(null);
     setDragVisual(null);
     activeDragRef.current = null;
@@ -268,6 +276,8 @@ export function useArmoryGearDrag({
         window.clearTimeout(cleanupTimerRef.current);
         cleanupTimerRef.current = null;
       }
+      pendingFlyoverCommitRef.current?.();
+      pendingFlyoverCommitRef.current = null;
       activeDragRef.current = null;
       setDragVisual(null);
       setDraggedGear(null);
@@ -326,7 +336,8 @@ export function useArmoryGearDrag({
       }
 
       if (destination.kind === "equipment") {
-        onEquip(characterId, destination.slot, visual.instance);
+        const vacatedPlacement = pending.origin.kind === "inventory" ? pending.origin.placement : undefined;
+        onEquip(characterId, destination.slot, visual.instance, vacatedPlacement ? { vacatedPlacement } : undefined);
       } else {
         onMoveItem(visual.instance.instanceId, destination.placement.col, destination.placement.row);
         if (pending.origin.kind === "equipment") onUnequip(characterId, pending.origin.slot);
@@ -353,7 +364,7 @@ export function useArmoryGearDrag({
       setDraggedGear(instance);
       setDragVisual(visual);
       playUISound("gearMove");
-      commit();
+      pendingFlyoverCommitRef.current = commit;
       clearDragAfterAnimation(DOUBLE_CLICK_FLYOVER_MS);
     },
     [clearDragAfterAnimation],
@@ -378,7 +389,10 @@ export function useArmoryGearDrag({
           origin,
           source,
           { kind: "equipment", slot, rect: slotElement.getBoundingClientRect() },
-          () => onEquip(characterId, slot, instance),
+          () =>
+            onEquip(characterId, slot, instance, {
+              vacatedPlacement: origin.placement,
+            }),
         );
         return;
       }

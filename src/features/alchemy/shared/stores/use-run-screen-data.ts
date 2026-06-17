@@ -11,6 +11,8 @@ const screenFields: Record<Screen, (keyof RunScreenData)[]> = {
   campfire: ["runPlayerHealth", "runMaxHealth"],
   shop: ["runGold", "runDeck", "shopState"],
   alchemist: ["runGold", "runDeck", "alchemistState"],
+  "trinket-shop": ["runGold", "trinketShopState"],
+  "equipment-shop": ["runGold", "equipmentShopState"],
   "labyrinth-map": ["labyrinthMap"],
   rewards: ["rewardState"],
   destination: ["rewardState"],
@@ -103,6 +105,12 @@ export function useRunScreenData(screen: Screen): RunScreenData {
             break;
           case "alchemistState":
             data.alchemistState = session.alchemistState;
+            break;
+          case "trinketShopState":
+            data.trinketShopState = session.trinketShopState;
+            break;
+          case "equipmentShopState":
+            data.equipmentShopState = session.equipmentShopState;
             break;
           case "runEndMaterials":
             data.runEndMaterials = session.runEndMaterials;

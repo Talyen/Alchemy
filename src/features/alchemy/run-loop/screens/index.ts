@@ -4,6 +4,8 @@ export { DestinationScreen } from "./destination-screen";
 export { CampfireScreen } from "./campfire-screen";
 export { MerchantShopScreen } from "./merchant-shop-screen";
 export { AlchemistShopScreen } from "./alchemist-shop-screen";
+export { TrinketShopScreen } from "./trinket-shop-screen";
+export { EquipmentShopScreen } from "./equipment-shop-screen";
 export { GameOverScreen } from "./game-over-screen";
 export { MysteryScreen } from "./mystery/mystery-screen";
 export { CorruptionScreen } from "./corruption-screen";

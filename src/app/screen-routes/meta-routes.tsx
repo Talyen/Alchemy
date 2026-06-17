@@ -17,9 +17,12 @@ import { useAppActions, useHomesteadActions } from "@/features/alchemy/shared/st
 import { useRunDomainStore } from "@/features/alchemy/shared/stores/run-session-facade";
 import type { ScreenRouteContext } from "./types";
 import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
-import { isArmoryLocked as getIsArmoryLocked } from "@/lib/gear";
+import { generateDevRandomGearInstance, isArmoryLocked as getIsArmoryLocked } from "@/lib/gear";
 import { flushAlchemySaveNow } from "@/features/alchemy/shared/storage/flush-save";
-import { resolveActiveRunForSave } from "@/features/alchemy/shared/stores/run-transitions";
+import { resolveActiveRunForSave, syncRunMaxHealthFromGear } from "@/features/alchemy/shared/stores/run-transitions";
+import { isAlchemyDevBuild } from "@/features/alchemy/shared/utils/dev-mode";
+import type { CharacterId } from "@/lib/game-data";
+import type { GearInstance, GearSlot, InventoryPlacement } from "@/lib/gear";
 
 function MenuScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions">) {
   const { hasUnspentTalents, hasAffordableHomestead } = useAppScreenChrome();
@@ -28,7 +31,7 @@ function MenuScreenRoute({ actions: a }: Pick<ScreenRouteContext, "actions">) {
     <MenuScreen
       onPlay={() => a.navigation.goToScreen("game-mode-select")}
       onCollection={() => a.navigation.goToScreen("collection")}
-      onOptions={() => a.navigation.goToScreen("options")}
+      onOptions={() => a.navigation.goToOptions()}
       onHomestead={() => a.navigation.goToScreen("homestead")}
       onTalents={() => a.navigation.goToScreen("talents")}
       onArmory={() => a.navigation.goToScreen("armory")}
@@ -51,12 +54,37 @@ function ArmoryScreenRoute({ onOpenBattleMenu }: Pick<ScreenRouteContext, "onOpe
       equip: s.equip,
       unequip: s.unequip,
       salvage: s.salvage,
+      addInstance: s.addInstance,
     })),
   );
   const finishedRunCharacters = useAppStore((s) => s.finishedRunCharacters);
   const hasActiveBattle = useRunDomainStore((s) => s.battle.hasActiveBattle);
   const hasActiveRun = useRunDomainStore((s) => s.session.hasActiveRun);
+  const activeRunCharacterId = useRunDomainStore((s) => s.progress.characterId);
   const addMaterials = useHomesteadStore((s) => s.addMaterials);
+
+  function syncGearMaxHealthIfActiveRun(characterId: CharacterId, loadoutsBefore: typeof gear.loadouts) {
+    if (!hasActiveRun || hasActiveBattle || characterId !== activeRunCharacterId) return;
+    syncRunMaxHealthFromGear(characterId, gear.inventory, loadoutsBefore, useGearStore.getState().loadouts);
+  }
+
+  function handleEquip(
+    characterId: CharacterId,
+    slot: GearSlot,
+    instance: GearInstance,
+    options?: { vacatedPlacement?: InventoryPlacement; swapDisplaced?: boolean },
+  ) {
+    const loadoutsBefore = gear.loadouts;
+    gear.equip(characterId, slot, instance, options);
+    syncGearMaxHealthIfActiveRun(characterId, loadoutsBefore);
+  }
+
+  function handleUnequip(characterId: CharacterId, slot: GearSlot) {
+    const loadoutsBefore = gear.loadouts;
+    gear.unequip(characterId, slot);
+    syncGearMaxHealthIfActiveRun(characterId, loadoutsBefore);
+  }
+
   return (
     <ArmoryScreen
       inventory={gear.inventory}
@@ -64,14 +92,23 @@ function ArmoryScreenRoute({ onOpenBattleMenu }: Pick<ScreenRouteContext, "onOpe
       finishedRunCharacters={finishedRunCharacters}
       browseOnly={hasActiveBattle}
       onOpenMenu={onOpenBattleMenu}
-      onEquip={gear.equip}
-      onUnequip={gear.unequip}
+      onEquip={handleEquip}
+      onUnequip={handleUnequip}
       onSalvage={(instanceId) => {
         const result = gear.salvage(instanceId);
         if (!result) return;
         addMaterials(result.materials);
         void flushAlchemySaveNow(resolveActiveRunForSave(hasActiveRun, returnToRunScreen ?? undefined));
       }}
+      {...(isAlchemyDevBuild()
+        ? {
+            onSpawnDevGear: () => {
+              if (!isAlchemyDevBuild()) return;
+              gear.addInstance(generateDevRandomGearInstance());
+              void flushAlchemySaveNow(resolveActiveRunForSave(hasActiveRun, returnToRunScreen ?? undefined));
+            },
+          }
+        : {})}
     />
   );
 }

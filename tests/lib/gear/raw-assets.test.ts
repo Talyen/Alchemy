@@ -63,4 +63,23 @@ describe("raw gear assets", () => {
       }
     }
   });
+
+  it("has no raw gear art without a matching base item", async () => {
+    let entries: string[] = [];
+    try {
+      entries = await readdir(gearDir);
+    } catch {
+      entries = [];
+    }
+
+    const baseItemIds = new Set(Object.keys(gearBaseItems));
+    const unmatched = entries.flatMap((name) => {
+      const match = name.match(/^(.+?)\s-\s(Basic|Astral)\.(jpe?g|png)$/i);
+      if (!match) return [];
+      const baseItemId = slugifyGearName(match[1]!);
+      return baseItemIds.has(baseItemId) ? [] : [name];
+    });
+
+    expect(unmatched, `unmapped raw gear art: ${unmatched.join(", ")}`).toEqual([]);
+  });
 });

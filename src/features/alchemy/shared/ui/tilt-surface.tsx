@@ -1,4 +1,4 @@
-// Tilt-surface wrapper with shimmer overlay, selection ring, and focus ring support.
+// Tilt-surface wrapper with shimmer overlay and selection ring support.
 // Handles tilt mechanics (mouseMove/mouseLeave → setTiltFromEvent/clearTiltFromEvent)
 // and the common card-surface decoration shared across card, boon, character, and homestead tiles.
 import {
@@ -13,6 +13,7 @@ import {
 } from "react";
 
 import { cn } from "@/lib/utils";
+import { NO_FOCUS_RING } from "@/lib/ui/focus";
 
 import { staticCardTransform } from "../config/layout";
 import { clearTiltElement, clearTiltFromEvent, DEFAULT_TILT_STRENGTH, setTiltFromEvent } from "../utils";
@@ -139,7 +140,8 @@ export function TiltSurface({
         data-testid={testId}
         data-tilt-strength={String(tiltStrength)}
         className={cn(
-          "tilt-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+          "tilt-surface",
+          NO_FOCUS_RING,
           selected && "ring-2 ring-primary ring-offset-4 ring-offset-background",
           disabled && "cursor-default grayscale",
           dragging && "opacity-0",

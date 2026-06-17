@@ -1,48 +1,10 @@
-import { placeholderGear } from "@/lib/game-data/assets";
 import { gearArtByDefinitionId } from "@/lib/game-data/gear-art";
-import { emptyInventory } from "@/lib/homestead/inventory";
 import { gearBaseItems, type GearBaseItemId } from "./base-items";
-import {
-  defaultGearEffects,
-  PLACEHOLDER_GEAR_DEFINITION_IDS,
-  type GearDefinition,
-  type GearRarity,
-  type GearSlot,
-  type PlaceholderGearDefinitionId,
-} from "./types";
+import { defaultGearEffects, type GearDefinition, type GearRarity } from "./types";
 
-function formatVariantTitle(displayName: string, rarity: GearRarity): string {
-  const label = rarity === "astral" ? "Astral" : "Basic";
-  return `${label} ${displayName}`;
+function formatVariantTitle(displayName: string): string {
+  return displayName;
 }
-
-function placeholder(id: PlaceholderGearDefinitionId, title: string, compatibleSlots: GearSlot[]): GearDefinition {
-  return {
-    id,
-    baseItemId: id,
-    rarity: null,
-    title,
-    compatibleSlots,
-    requiresTwoHands: false,
-    affinityKeywords: ["physical"],
-    descriptionLines: ["Increases Physical damage by 1."],
-    art: placeholderGear,
-    effects: { ...defaultGearEffects, flatPhysicalDamage: 1 },
-    salvageValue: { ...emptyInventory(), iron: 1 },
-  };
-}
-
-const placeholderDefinitions: Record<PlaceholderGearDefinitionId, GearDefinition> = {
-  "placeholder-body": placeholder("placeholder-body", "Placeholder Body", ["body"]),
-  "placeholder-helm": placeholder("placeholder-helm", "Placeholder Helm", ["helm"]),
-  "placeholder-boots": placeholder("placeholder-boots", "Placeholder Boots", ["boots"]),
-  "placeholder-gloves": placeholder("placeholder-gloves", "Placeholder Gloves", ["gloves"]),
-  "placeholder-belt": placeholder("placeholder-belt", "Placeholder Belt", ["belt"]),
-  "placeholder-main-hand": placeholder("placeholder-main-hand", "Placeholder Main Hand", ["main-hand"]),
-  "placeholder-off-hand": placeholder("placeholder-off-hand", "Placeholder Off-Hand", ["off-hand"]),
-  "placeholder-ring": placeholder("placeholder-ring", "Placeholder Ring", ["left-ring", "right-ring"]),
-  "placeholder-amulet": placeholder("placeholder-amulet", "Placeholder Amulet", ["amulet"]),
-};
 
 function buildVariantDefinitions(): Record<string, GearDefinition> {
   const variants: Record<string, GearDefinition> = {};
@@ -50,16 +12,20 @@ function buildVariantDefinitions(): Record<string, GearDefinition> {
   for (const baseItem of Object.values(gearBaseItems)) {
     for (const rarity of baseItem.availableRarities) {
       const id = `${baseItem.id}-${rarity}`;
+      const art = gearArtByDefinitionId[id];
+      if (!art) {
+        throw new Error(`Missing gear art for ${id}`);
+      }
       variants[id] = {
         id,
         baseItemId: baseItem.id as GearBaseItemId,
         rarity,
-        title: formatVariantTitle(baseItem.displayName, rarity),
+        title: formatVariantTitle(baseItem.displayName),
         compatibleSlots: [...baseItem.compatibleSlots],
         requiresTwoHands: baseItem.requiresTwoHands,
         affinityKeywords: [...baseItem.affinityKeywords],
         descriptionLines: [],
-        art: gearArtByDefinitionId[id] ?? placeholderGear,
+        art,
         effects: { ...defaultGearEffects },
         salvageValue: { ...baseItem.salvageByRarity[rarity] },
       };
@@ -69,21 +35,17 @@ function buildVariantDefinitions(): Record<string, GearDefinition> {
   return variants;
 }
 
-export const gearDefinitions: Record<string, GearDefinition> = {
-  ...placeholderDefinitions,
-  ...buildVariantDefinitions(),
-};
+export const gearDefinitions: Record<string, GearDefinition> = buildVariantDefinitions();
 
-export type GearDefinitionId = string;
+export type GearDefinitionId = keyof typeof gearDefinitions;
 
 export const GEAR_DEFINITION_IDS = Object.keys(gearDefinitions) as [GearDefinitionId, ...GearDefinitionId[]];
 
 export const gearDefinitionList = Object.values(gearDefinitions);
 
-export const generatedGearDefinitionList = gearDefinitionList.filter(
-  (definition) => !PLACEHOLDER_GEAR_DEFINITION_IDS.includes(definition.id as PlaceholderGearDefinitionId),
-);
+/** @deprecated Use `gearDefinitionList` — placeholder definitions were removed. */
+export const generatedGearDefinitionList = gearDefinitionList;
 
 export function getGearDefinitionsByRarity(rarity: GearRarity): GearDefinition[] {
-  return generatedGearDefinitionList.filter((definition) => definition.rarity === rarity);
+  return gearDefinitionList.filter((definition) => definition.rarity === rarity);
 }

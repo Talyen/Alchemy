@@ -5,6 +5,7 @@ import { forgeAppliesToDamageType } from "./damage-calc";
 import { applyDamageStatuses, resolveStunTrigger } from "./status-effects";
 import { emitOverhealBlockText, mergeCombatText } from "./combat-text";
 import { applyBoneCharmHeal, applyLuckyCloverGold } from "./trinket-effects";
+import { applyGearKillRewards, scaledGearLeechHeal } from "./gear-effects";
 import { applyWishEffect } from "./wish";
 import { rollPercent, getBattleRng } from "./status-helpers";
 import { type BattleCard, type BattleCardEffect, type PlayerStatusId } from "@/lib/game-data";
@@ -118,6 +119,8 @@ function applyLifestealAndPlayerHitTriggers(state: BattleState, damage: number, 
     healAmount += Math.round(missing / state.talentEffects.leechMissingHealthStep);
   }
 
+  healAmount = scaledGearLeechHeal(healAmount, state.gearEffects);
+
   const nextState = executePlayerHealing(state, healAmount, combatTexts);
   return applyLeechHitRiders(nextState, damage, combatTexts);
 }
@@ -126,7 +129,9 @@ function applyLifestealAndPlayerHitTriggers(state: BattleState, damage: number, 
  * Restores player health proportionally for holy damage types.
  */
 function applyNatureLeech(state: BattleState, damage: number, combatTexts: CombatTextEvent[]) {
-  if (damage <= 0 || !rollTalentChance(state.talentEffects.natureLeechChance, state)) return state;
+  if (damage <= 0) return state;
+  const leechChance = state.talentEffects.natureLeechChance + state.gearEffects.natureLeechChance;
+  if (leechChance <= 0 || !rollTalentChance(leechChance, state)) return state;
   return applyLifestealAndPlayerHitTriggers(state, damage, combatTexts);
 }
 
@@ -185,6 +190,9 @@ function applyBurnDamageRiders(
   if (state.talentEffects.forgeOnBurnDealt > 0) {
     nextState = addPlayerStatus(nextState, "forge", state.talentEffects.forgeOnBurnDealt);
   }
+  if (state.gearEffects.forgeOnBurnDealt > 0) {
+    nextState = addPlayerStatus(nextState, "forge", state.gearEffects.forgeOnBurnDealt);
+  }
   if (rollTalentChance(state.talentEffects.burnStunChance, state)) {
     nextState = resolveStunTrigger(addEnemyStatus(nextState, "stun", modifiedDamage), combatTexts);
   }
@@ -197,7 +205,7 @@ function applyNatureDamageRiders(
   combatTexts: CombatTextEvent[],
 ): BattleState {
   let nextState = applyLuckyCloverGold(state, modifiedDamage, combatTexts);
-  if (state.talentEffects.natureLeechChance > 0) {
+  if (state.talentEffects.natureLeechChance > 0 || state.gearEffects.natureLeechChance > 0) {
     nextState = applyNatureLeech(nextState, modifiedDamage, combatTexts);
   }
   return nextState;
@@ -290,6 +298,7 @@ export function applyDamageRiders(
   // boneCharmHeal uses state.enemyHealth > 0 (pre-hit state), not nextState,
   // so heal-on-kill only triggers if the enemy WAS alive before this hit.
   nextState = applyBoneCharmHeal(nextState, state.enemyHealth > 0, combatTexts);
+  nextState = applyGearKillRewards(nextState, state.enemyHealth > 0, combatTexts);
   nextState = applyDamageStatuses(nextState, effect, modifiedDamage, combatTexts);
   nextState = applyForgeStunRider(nextState, effect, combatTexts);
 

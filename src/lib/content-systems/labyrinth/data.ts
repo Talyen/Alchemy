@@ -13,6 +13,8 @@ export const NODE_TYPE_LABELS: Record<LabyrinthNodeType, string> = {
   mystery: "Mystery",
   shop: "Merchant",
   alchemist: "Alchemist",
+  "trinket-shop": "Trinkets",
+  "equipment-shop": "Equipment",
   boss: "Boss",
 };
 
@@ -24,6 +26,8 @@ export const NODE_TYPE_TOOLTIPS: Record<LabyrinthNodeType, string> = {
   mystery: "Encounter an unpredictable event",
   shop: "Spend gold on cards and services",
   alchemist: "Buy or mix potions",
+  "trinket-shop": "Buy trinkets for your run",
+  "equipment-shop": "Buy gear for your armory",
   boss: "Challenge the Labyrinth guardian",
 };
 

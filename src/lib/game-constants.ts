@@ -97,6 +97,17 @@ export const ALCHEMIST_POTION_PRICE = 20;
 export const ALCHEMIST_REFRESH_PRICE = 20;
 export const ALCHEMIST_MIX_PRICE = 40;
 
+// ============ Trinket Shop ============
+export const TRINKET_SHOP_TRINKET_PRICE = 50;
+export const TRINKET_SHOP_OFFERED = 3;
+export const TRINKET_SHOP_REFRESHES = 1;
+
+// ============ Equipment Shop ============
+export const EQUIPMENT_SHOP_BASIC_PRICE = 60;
+export const EQUIPMENT_SHOP_ASTRAL_PRICE = 80;
+export const EQUIPMENT_SHOP_OFFERED = 3;
+export const EQUIPMENT_SHOP_REFRESHES = 1;
+
 // ============ Draft ============
 export const DRAFT_ROUNDS = 6;
 export const DRAFT_CHOICES = 3;
@@ -107,7 +118,6 @@ export const GOLD_REWARD_MAX = 30;
 export const ELITE_GOLD_BONUS_FRACTION = 0.3;
 export const BOSS_GOLD_BONUS_FRACTION = 0.5;
 export const REWARD_CARD_CHOICES = 3;
-export const REWARD_TRINKET_CHANCE = 0.25;
 export const REWARD_RANDOM_CHANCE = 0.5;
 export const DESTINATION_CHOICES = 3;
 export const DEFAULT_DESTINATION_WEIGHT = 10;
@@ -127,22 +137,11 @@ export const SHOP_REFRESHES = 1;
 export const ALCHEMIST_POTIONS_OFFERED = 3;
 export const ALCHEMIST_REFRESHES = 1;
 export const BOSS_HEALTH_MULTIPLIER = 1.4;
-export const BOSS_TRINKET_REWARD_CHOICES = 3;
-export const ELITE_TRINKET_REWARD_CHANCE = 0.75;
-export const CAMPAIGN_GEAR_REWARD_CHANCE = 0.1;
-export const LABYRINTH_GEAR_REWARD_CHANCE = 0.35;
-export const BOSS_GEAR_REWARD_CHANCE = 0.5;
-export const GEAR_RARITY_WEIGHTS = {
-  normal: { basic: 0.8, astral: 0.2 },
-  elite: { basic: 0.55, astral: 0.45 },
-  boss: { basic: 0.3, astral: 0.7 },
-} as const;
+export const GEAR_REWARD_RARITY_CHANCE = 0.5;
 export const GEAR_AFFIX_COUNT = {
   basic: { min: 1, max: 2 },
   astral: { min: 3, max: 4 },
 } as const;
-export const GEAR_AFFIX_BASE_WEIGHT = 1;
-export const GEAR_AFFIX_AFFINITY_WEIGHT = 4;
 export const MYSTERY_CARD_CHOICES = 3;
 export const MIXED_POTION_CARD_ID = "mixed-potion";
 export const POTION_CARD_ID_SUFFIX = "-potion";
@@ -154,7 +153,6 @@ export const LABYRINTH_REWARD_CONFIG = {
   generousGoldBonusFraction: 0.5,
   scavengerMaterialMultiplier: 2,
   companionCardChoices: 3,
-  trinketHoarderRewardChanceBonus: 0.1,
 } as const;
 
 export const REWARD_SELECTION_CONFIG = {

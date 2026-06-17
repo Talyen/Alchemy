@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { BUTTON_WIDTH_ACTION } from "@/features/alchemy/shared/config";
 import type { BattleCard } from "@/lib/game-data";
-import { SELECTION_GRID_PAGE_SIZE, SHOP_CARD_PRICE, SHOP_REMOVE_PRICE, SHOP_REFRESH_PRICE } from "@/lib/game-constants";
+import { SELECTION_GRID_PAGE_SIZE } from "@/lib/game-constants";
 
 import { PurchasableCardItem, SelectableShopCard } from "../../shared/ui/shop-card-item";
 import { CardSelectionGrid } from "../../shared/ui/card-selection-grid";
@@ -61,6 +61,10 @@ export function MerchantShopScreen({
   shopCards,
   refreshesLeft,
   removeUsed,
+  purchasedSlotKeys,
+  getCardPrice,
+  removePrice,
+  refreshPrice,
   onBuyCard,
   onRemoveCard,
   onRefresh,
@@ -71,24 +75,23 @@ export function MerchantShopScreen({
   shopCards: BattleCard[];
   refreshesLeft: number;
   removeUsed: boolean;
-  onBuyCard: (card: BattleCard) => void;
+  purchasedSlotKeys: string[];
+  getCardPrice: (card: BattleCard) => number;
+  removePrice: number;
+  refreshPrice: number;
+  onBuyCard: (card: BattleCard, slotKey: string) => boolean;
   onRemoveCard: (cardIndex: number) => void;
   onRefresh: () => void;
   onContinue: () => void;
 }) {
-  const cardPrice = SHOP_CARD_PRICE;
-  const removePrice = SHOP_REMOVE_PRICE;
-  const refreshPrice = SHOP_REFRESH_PRICE;
   const [removeMode, setRemoveMode] = useState(false);
   const [selectedRemoveIndex, setSelectedRemoveIndex] = useState<number | null>(null);
-  const [purchasedIds, setPurchasedIds] = useState<Set<string>>(new Set());
   const [removePage, setRemovePage] = useState(0);
   const deckPageSize = SELECTION_GRID_PAGE_SIZE;
 
-  function handleBuyCard(card: BattleCard) {
-    if (purchasedIds.has(card.id)) return;
-    onBuyCard(card);
-    setPurchasedIds((prev) => new Set(prev).add(card.id));
+  function handleBuyCard(card: BattleCard, slotKey: string) {
+    if (purchasedSlotKeys.includes(slotKey)) return;
+    onBuyCard(card, slotKey);
   }
 
   function handleRemoveConfirm() {
@@ -110,17 +113,20 @@ export function MerchantShopScreen({
             animate={false}
             className="grid grid-cols-1 gap-4 sm:grid-cols-3"
           >
-            {shopCards.map((card, i) => (
-              <PurchasableCardItem
-                key={`${card.id}-${i}`}
-                card={card}
-                price={cardPrice}
-                gold={gold}
-                purchased={purchasedIds.has(card.id)}
-                onBuy={() => handleBuyCard(card)}
-                staggerIndex={i}
-              />
-            ))}
+            {shopCards.map((card, i) => {
+              const slotKey = `${card.id}-${i}`;
+              return (
+                <PurchasableCardItem
+                  key={slotKey}
+                  card={card}
+                  price={getCardPrice(card)}
+                  gold={gold}
+                  purchased={purchasedSlotKeys.includes(slotKey)}
+                  onBuy={() => handleBuyCard(card, slotKey)}
+                  staggerIndex={i}
+                />
+              );
+            })}
           </StaggerGroup>
 
           <div className="flex flex-wrap justify-center gap-3">

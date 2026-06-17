@@ -104,7 +104,7 @@ describe("createDestinationRewardState", () => {
 });
 
 describe("computeVictoryRewardState", () => {
-  it("creates a Boon boss reward when the boss roll selects Boons", () => {
+  it("creates a gear boss reward for boss enemies", () => {
     const result = computeVictoryRewardState({
       characterId: "knight",
       selectedDifficulty: null,
@@ -121,7 +121,7 @@ describe("computeVictoryRewardState", () => {
       materials: emptyInventory(),
       destinations: [],
     }, () => 0.99);
-    expect(result.rewardType).toBe("trinket");
+    expect(result.rewardType).toBe("gear");
     expect(result.gold).toBe(25);
   });
 
@@ -142,12 +142,12 @@ describe("computeVictoryRewardState", () => {
       materials: emptyInventory(),
       destinations: ["Normal Combat", "Campfire"],
     }, () => 0.99);
-    expect(["card", "trinket"]).toContain(result.rewardType);
+    expect(result.rewardType).toBe("card");
     expect(result.destinations).toEqual(["Normal Combat", "Campfire"]);
     expect(result.gold).toBe(15);
   });
 
-  it("forces boon reward when collector modifier is active", () => {
+  it("always awards card rewards for normal enemies", () => {
     const result = computeVictoryRewardState({
       characterId: "knight",
       selectedDifficulty: null,
@@ -155,7 +155,7 @@ describe("computeVictoryRewardState", () => {
       runDeck: [],
       runTrinkets: [],
       contentSystemType: "labyrinth",
-      activeLabyrinthRewardModifiers: ["collector"],
+      activeLabyrinthRewardModifiers: [],
       battleState: baseBattleState({ currentEnemy: { id: "goblin", enemyType: "normal" } }),
       gold: 15,
       eliteBonus: 0,
@@ -164,30 +164,39 @@ describe("computeVictoryRewardState", () => {
       materials: emptyInventory(),
       destinations: ["Normal Combat"],
     }, () => 0.99);
+    expect(result.rewardType).toBe("card");
+  });
+
+  it("always awards trinket rewards for elite enemies", () => {
+    const result = computeVictoryRewardState({
+      characterId: "knight",
+      selectedDifficulty: null,
+      unlockedTalents: {},
+      runDeck: [],
+      runTrinkets: [],
+      contentSystemType: "campaign",
+      activeLabyrinthRewardModifiers: [],
+      battleState: baseBattleState({ currentEnemy: { id: "goblin-chief", enemyType: "elite" } }),
+      gold: 15,
+      eliteBonus: 4,
+      generousBonus: 0,
+      bossBonus: 0,
+      materials: emptyInventory(),
+      destinations: ["Normal Combat"],
+    }, () => 0.01);
     expect(result.rewardType).toBe("trinket");
   });
 
-  it("rolls Gear before normal rewards using mode-specific rates", () => {
-    const input = {
-      characterId: "knight" as const, selectedDifficulty: null, unlockedTalents: {}, runDeck: [], runTrinkets: [],
-      activeLabyrinthRewardModifiers: [], battleState: baseBattleState({ currentEnemy: { id: "goblin", enemyType: "normal" } }),
-      gold: 15, eliteBonus: 0, generousBonus: 0, bossBonus: 0, materials: emptyInventory(), destinations: ["Normal Combat" as const],
-    };
-    expect(computeVictoryRewardState({ ...input, contentSystemType: "campaign" }, () => 0.2).rewardType).not.toBe("gear");
-    expect(computeVictoryRewardState({ ...input, contentSystemType: "labyrinth" }, () => 0.2).rewardType).toBe("gear");
-  });
-
-  it("splits boss rewards between Gear and Boons", () => {
+  it("always awards gear rewards for boss enemies", () => {
     const input = {
       characterId: "knight" as const, selectedDifficulty: null, unlockedTalents: {}, runDeck: [], runTrinkets: [], contentSystemType: "campaign" as const,
       activeLabyrinthRewardModifiers: [], battleState: baseBattleState({ currentEnemy: { id: "dragon", enemyType: "boss" } }),
       gold: 15, eliteBonus: 0, generousBonus: 0, bossBonus: 7, materials: emptyInventory(), destinations: [],
     };
-    expect(computeVictoryRewardState(input, () => 0).rewardType).toBe("gear");
-    expect(computeVictoryRewardState(input, () => 0.99).rewardType).toBe("trinket");
-    const gearReward = computeVictoryRewardState(input, () => 0);
+    const gearReward = computeVictoryRewardState(input, () => 0.99);
+    expect(gearReward.rewardType).toBe("gear");
     expect(gearReward.choices.every((choice) => "instanceId" in choice)).toBe(true);
-    expect(gearReward.choices.every((choice) => "affixIds" in choice)).toBe(true);
+    expect(gearReward.choices.every((choice) => "affixes" in choice)).toBe(true);
   });
 });
 
@@ -208,7 +217,7 @@ describe("computeVictoryRewards", () => {
   it("computes combat victory rewards for normal enemy", () => {
     const result = computeVictoryRewards(baseInput());
     expect(result.goldEarned).toBe(15);
-    expect(["card", "trinket"]).toContain(result.rewardState.rewardType);
+    expect(result.rewardState.rewardType).toBe("card");
     expect(result.playerHealth).toBe(30);
     expect(result.maxHealthDelta).toBe(0);
     expect(result.bossBonus).toBe(0);
@@ -252,7 +261,7 @@ describe("computeVictoryRewards", () => {
     }));
     expect(result.bossBonus).toBe(7);
     expect(result.goldEarned).toBe(22);
-    expect(["trinket", "gear"]).toContain(result.rewardState.rewardType);
+    expect(result.rewardState.rewardType).toBe("gear");
   });
 
   it("applies generous labyrinth modifier gold bonus", () => {
@@ -272,11 +281,10 @@ describe("computeVictoryRewards", () => {
     expect(result.materials.wood).toBeGreaterThanOrEqual(1);
   });
 
-  it("applies labyrinth collector modifier forcing boon reward", () => {
+  it("awards trinket rewards for elite combat victories", () => {
     const result = computeVictoryRewards(baseInput({
       contentSystemType: "labyrinth",
-      activeLabyrinthRewardModifiers: ["collector"],
-      battleState: baseBattleState({ currentEnemy: { id: "goblin", enemyType: "normal" } }),
+      battleState: baseBattleState({ currentEnemy: { id: "goblin-chief", enemyType: "elite" } }),
     }), () => 0.99);
     expect(result.rewardState.rewardType).toBe("trinket");
   });

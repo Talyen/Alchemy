@@ -57,6 +57,8 @@ export const LabyrinthNodeTypeSchema = z.enum([
   "mystery",
   "shop",
   "alchemist",
+  "trinket-shop",
+  "equipment-shop",
   "boss",
 ]);
 export const LabyrinthNodeStateSchema = z.enum(["hidden", "visible", "current", "cleared", "failed"]);

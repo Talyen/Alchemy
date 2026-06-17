@@ -91,7 +91,7 @@ export const enemyBestiary = [
     title: "Goblin",
     art: goblin,
     enemyType: "normal",
-    traits: [trait("trinket-hoarder", "Trinket Hoarder", "Receives double Burn damage\nMore likely to drop Trinkets")],
+    traits: [trait("trinket-hoarder", "Trinket Hoarder", "Receives double Burn damage")],
     attackEffects: [phys(9)],
   }),
   defineEnemy({

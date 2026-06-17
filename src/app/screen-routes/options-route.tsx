@@ -9,7 +9,8 @@ function OptionsScreenRoute({
   onOpenBattleMenu,
   onClearSaveData,
   onUnlockAllDevMode,
-}: Pick<ScreenRouteContext, "onOpenBattleMenu" | "onClearSaveData" | "onUnlockAllDevMode">) {
+  onBackFromOptions,
+}: Pick<ScreenRouteContext, "onOpenBattleMenu" | "onClearSaveData" | "onUnlockAllDevMode" | "onBackFromOptions">) {
   const appValues = useAppStore(
     useShallow((s) => ({
       selectedAspectRatio: s.selectedAspectRatio,
@@ -29,6 +30,7 @@ function OptionsScreenRoute({
   return (
     <OptionsScreen
       onOpenMenu={onOpenBattleMenu}
+      onBack={onBackFromOptions}
       display={{
         selectedAspectRatio: appValues.selectedAspectRatio,
         onAspectRatioChange: appActions.setSelectedAspectRatio,
@@ -69,6 +71,7 @@ export function buildOptionsScreen(ctx: ScreenRouteContext) {
       onOpenBattleMenu={ctx.onOpenBattleMenu}
       onClearSaveData={ctx.onClearSaveData}
       onUnlockAllDevMode={ctx.onUnlockAllDevMode}
+      onBackFromOptions={ctx.onBackFromOptions}
     />
   );
 }

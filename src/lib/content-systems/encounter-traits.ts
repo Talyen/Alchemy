@@ -24,7 +24,7 @@ export const COMBAT_ENCOUNTER_TRAIT_IDS = [
   "divine-aegis",
 ] as const;
 
-export const REWARD_ENCOUNTER_TRAIT_IDS = ["collector", "generous", "alchemist", "scavenger", "companion"] as const;
+export const REWARD_ENCOUNTER_TRAIT_IDS = ["generous", "alchemist", "scavenger", "companion"] as const;
 
 /** Retained as save-migration tombstones when encounter traits leave the catalog. */
 const RETIRED_ENCOUNTER_TRAIT_IDS = [
@@ -34,6 +34,7 @@ const RETIRED_ENCOUNTER_TRAIT_IDS = [
   "overwhelming",
   "leeching",
   "null-field",
+  "collector",
 ] as const;
 
 export type EncounterCombatTraitId = (typeof COMBAT_ENCOUNTER_TRAIT_IDS)[number];
@@ -94,10 +95,6 @@ export const ENCOUNTER_TRAITS: Record<EncounterTraitId, EncounterTraitDefinition
     "Divine Aegis",
     "Gains 2 Armor and 4 Block the first time reaching 50% Health",
   ),
-  collector: reward("collector", "Collector", "Guaranteed trinket reward from this encounter", [
-    "labyrinth",
-    "wildwood",
-  ]),
   generous: reward("generous", "Generous", "Victory gold is increased by 50%", ["labyrinth"]),
   alchemist: reward("alchemist", "Alchemist", "Gain a random potion alongside the normal reward", [
     "labyrinth",

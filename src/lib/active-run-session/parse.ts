@@ -74,5 +74,5 @@ export function parseActiveRun(activeRun: unknown): ActiveRunData | null {
         }
       : null,
     labyrinthMap: data.labyrinthMap as LabyrinthMap | null,
-  };
+  } as ActiveRunData;
 }

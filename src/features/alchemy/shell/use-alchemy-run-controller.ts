@@ -85,7 +85,7 @@ export function useAlchemyRunController({
     onBattleDefeat: () => onBattleDefeatRef.current(),
   });
 
-  const shop = useShopController({ run, talents });
+  const shop = useShopController({ run, talents, homesteadEffectsRef });
 
   const labyrinth = useLabyrinthController(screen);
 
@@ -100,6 +100,8 @@ export function useAlchemyRunController({
     onLabyrinthFailNode: labyrinth.onNodeFailed,
     onInitShop: shop.initShop,
     onInitAlchemist: shop.initAlchemist,
+    onInitTrinketShop: shop.initTrinketShop,
+    onInitEquipmentShop: shop.initEquipmentShop,
     onMarkDifficultyCompleted,
   });
 
@@ -236,6 +238,22 @@ export function useAlchemyRunController({
     handleAlchemistRefresh: shop.handleAlchemistRefresh,
     handleAlchemistMixPotions: shop.handleAlchemistMixPotions,
     handleAlchemistContinue: nav.advanceToNextDestination,
+    handleTrinketShopBuy: shop.handleTrinketShopBuy,
+    handleTrinketShopRefresh: shop.handleTrinketShopRefresh,
+    handleTrinketShopContinue: nav.advanceToNextDestination,
+    handleEquipmentShopBuy: shop.handleEquipmentShopBuy,
+    handleEquipmentShopRefresh: shop.handleEquipmentShopRefresh,
+    handleEquipmentShopContinue: nav.advanceToNextDestination,
+    getMerchantCardBuyPrice: shop.getMerchantCardBuyPrice,
+    getAlchemistPotionBuyPrice: shop.getAlchemistPotionBuyPrice,
+    getTrinketBuyPrice: shop.getTrinketBuyPrice,
+    getGearBuyPrice: shop.getGearBuyPrice,
+    getShopRefreshPrice: shop.getShopRefreshPrice,
+    getAlchemistRefreshPrice: shop.getAlchemistRefreshPrice,
+    getTrinketRefreshPrice: shop.getTrinketRefreshPrice,
+    getEquipmentRefreshPrice: shop.getEquipmentRefreshPrice,
+    getRemoveCardPrice: shop.getRemoveCardPrice,
+    getMixPotionPrice: shop.getMixPotionPrice,
     handleMysteryChoice: nav.handleMysteryChoice,
     handleMysteryChooseCard: nav.handleMysteryChooseCard,
     handleMysteryRemoveCard: nav.handleMysteryRemoveCard,

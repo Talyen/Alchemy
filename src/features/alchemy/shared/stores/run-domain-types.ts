@@ -3,8 +3,18 @@ import type { BattleCard, CharacterId, DifficultyId, KeywordId, UnlockedTalents,
 import { defaultBattleState, type BattleState, type PlayerStatusValues, type TurnPhase } from "@/lib/battle";
 import { generateLabyrinthMap } from "@/lib/content-systems/labyrinth/map-generation";
 import { createEmptyRewardState, type RewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
-import { SHOP_REFRESHES, ALCHEMIST_REFRESHES } from "@/lib/game-constants";
-import type { ShopState, AlchemistState } from "@/features/alchemy/run-loop/shop/shop-state-init";
+import {
+  SHOP_REFRESHES,
+  ALCHEMIST_REFRESHES,
+  TRINKET_SHOP_REFRESHES,
+  EQUIPMENT_SHOP_REFRESHES,
+} from "@/lib/game-constants";
+import type {
+  ShopState,
+  AlchemistState,
+  TrinketShopState,
+  EquipmentShopState,
+} from "@/features/alchemy/run-loop/shop/shop-state-init";
 import {
   createInitialRunState,
   createInitialTalentState,
@@ -53,17 +63,37 @@ export type RunDomainDataState = {
 };
 
 const emptyShop: ShopState = {
+  items: [],
   cards: [],
   refreshesLeft: SHOP_REFRESHES,
   removeUsed: false,
   firstPurchaseUsed: false,
+  purchasedSlotKeys: [],
 };
 
 const emptyAlchemist: AlchemistState = {
+  items: [],
   potions: [],
   refreshesLeft: ALCHEMIST_REFRESHES,
   mixUsed: false,
   firstPurchaseUsed: false,
+  purchasedSlotKeys: [],
+};
+
+const emptyTrinketShop: TrinketShopState = {
+  items: [],
+  trinkets: [],
+  refreshesLeft: TRINKET_SHOP_REFRESHES,
+  firstPurchaseUsed: false,
+  purchasedSlotKeys: [],
+};
+
+const emptyEquipmentShop: EquipmentShopState = {
+  items: [],
+  gear: [],
+  refreshesLeft: EQUIPMENT_SHOP_REFRESHES,
+  firstPurchaseUsed: false,
+  purchasedSlotKeys: [],
 };
 
 export function createInitialSessionFields(): RunSessionFields {
@@ -83,6 +113,8 @@ export function createInitialSessionFields(): RunSessionFields {
     wildwoodDraft: null,
     shopState: emptyShop,
     alchemistState: emptyAlchemist,
+    trinketShopState: emptyTrinketShop,
+    equipmentShopState: emptyEquipmentShop,
     mysteryEvent: null,
     mysteryCardChoices: null,
   };
@@ -129,6 +161,8 @@ export type RunSessionFields = {
   wildwoodDraft: WildwoodDraftState | null;
   shopState: ShopState;
   alchemistState: AlchemistState;
+  trinketShopState: TrinketShopState;
+  equipmentShopState: EquipmentShopState;
   mysteryEvent: MysteryEvent | null;
   mysteryCardChoices: BattleCard[] | null;
 };
@@ -149,6 +183,8 @@ type RunSessionActions = {
   setWildwoodDraft: Setter<WildwoodDraftState | null>;
   setShopState: Setter<ShopState>;
   setAlchemistState: Setter<AlchemistState>;
+  setTrinketShopState: Setter<TrinketShopState>;
+  setEquipmentShopState: Setter<EquipmentShopState>;
   setMysteryEvent: (event: MysteryEvent | null) => void;
   setMysteryCardChoices: (choices: BattleCard[] | null | ((prev: BattleCard[] | null) => BattleCard[] | null)) => void;
   clearTransientSession: () => void;

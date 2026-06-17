@@ -11,6 +11,7 @@ import { emitOverhealBlockText, mergeCombatText } from "./combat-text";
 import { removeHarmfulPlayerStatuses, applyPlayerStatusEffect, getEnemyDamageMultiplier } from "./status-effects";
 import { getEditableCorruptionTargets, replaceNumberAt } from "@/lib/corruption";
 import { PERCENT_DENOMINATOR, WISH_CHOICE_COUNT, WISH_CRYSTAL_GOLD_CHANCE, MAX_HAND_SIZE } from "../game-constants";
+import { scaleGoldReward, applyGearKillRewards, gearFrozenDamageMultiplier } from "./gear-effects";
 import { processEncounterTraitHealthThreshold } from "./encounter-trait-events";
 
 function upgradeWishCard(card: BattleCard): BattleCard {
@@ -71,22 +72,16 @@ export function buildWishOptions(state: BattleState, card: BattleCard): BattleCa
 
 function applyWishGoldTriggers(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   let nextState = state;
-  if (nextState.talentEffects.goldOnWish > 0) {
-    nextState = addGold(nextState, nextState.talentEffects.goldOnWish);
+  const goldAmount =
+    nextState.talentEffects.goldOnWish + nextState.talentEffects.goldOnWishAmount + nextState.gearEffects.goldOnWish;
+  if (goldAmount > 0) {
+    const scaledGold = scaleGoldReward(goldAmount, nextState.gearEffects);
+    nextState = addGold(nextState, goldAmount);
     mergeCombatText(combatTexts, {
       target: "player",
       kind: "status",
       stat: "gold",
-      amount: nextState.talentEffects.goldOnWish,
-    });
-  }
-  if (nextState.talentEffects.goldOnWishAmount > 0) {
-    nextState = addGold(nextState, nextState.talentEffects.goldOnWishAmount);
-    mergeCombatText(combatTexts, {
-      target: "player",
-      kind: "status",
-      stat: "gold",
-      amount: nextState.talentEffects.goldOnWishAmount,
+      amount: scaledGold,
     });
   }
   if (nextState.trinketEffects.wishingWellGoldOnWish > 0) {
@@ -117,14 +112,15 @@ function applyWishCrystalGoldTrigger(state: BattleState, combatTexts: CombatText
 
 function applyWishHealthAndStatusTriggers(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
   let nextState = state;
-  if (nextState.talentEffects.healthOnWish > 0) {
+  const healthGain = nextState.talentEffects.healthOnWish + nextState.gearEffects.healthOnWish;
+  if (healthGain > 0) {
     const prevState = nextState;
-    nextState = applyPlayerHealing(nextState, nextState.talentEffects.healthOnWish);
+    nextState = applyPlayerHealing(nextState, healthGain);
     mergeCombatText(combatTexts, {
       target: "player",
       kind: "heal",
       stat: "health",
-      amount: nextState.talentEffects.healthOnWish,
+      amount: healthGain,
     });
     emitOverhealBlockText(prevState, nextState, combatTexts);
   }
@@ -135,18 +131,24 @@ function applyWishHealthAndStatusTriggers(state: BattleState, combatTexts: Comba
 }
 
 function applyWishDrawTriggers(state: BattleState): BattleState {
-  let nextState = state;
-  if (nextState.talentEffects.wishDrawsCard) {
-    const draw = drawCards(nextState.deck, nextState.discard, nextState.hand, 1, nextState.nextCardUid, nextState.rng);
-    nextState = {
-      ...nextState,
-      deck: draw.deck,
-      discard: draw.discard,
-      hand: draw.hand,
-      nextCardUid: draw.nextCardUid,
-    };
-  }
-  return nextState;
+  const nextState = state;
+  const drawCount = (nextState.talentEffects.wishDrawsCard ? 1 : 0) + nextState.gearEffects.drawOnWish;
+  if (drawCount <= 0) return nextState;
+  const draw = drawCards(
+    nextState.deck,
+    nextState.discard,
+    nextState.hand,
+    drawCount,
+    nextState.nextCardUid,
+    nextState.rng,
+  );
+  return {
+    ...nextState,
+    deck: draw.deck,
+    discard: draw.discard,
+    hand: draw.hand,
+    nextCardUid: draw.nextCardUid,
+  };
 }
 
 export function applyWishEffect(state: BattleState, card: BattleCard, amount: number, combatTexts: CombatTextEvent[]) {
@@ -173,9 +175,10 @@ export function applyWishEffect(state: BattleState, card: BattleCard, amount: nu
 }
 
 function applyWishBurnTrigger(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
-  const burnAmount = state.talentEffects.burnOnWish;
+  const burnAmount = state.talentEffects.burnOnWish + state.gearEffects.burnOnWish;
   if (burnAmount <= 0 || state.enemyHealth <= 0) return state;
-  const multiplier = getEnemyDamageMultiplier(state, "burn");
+  const enemyWasAlive = state.enemyHealth > 0;
+  const multiplier = getEnemyDamageMultiplier(state, "burn") * gearFrozenDamageMultiplier(state);
   const finalDamage = Math.round(burnAmount * multiplier);
   if (finalDamage > 0) {
     mergeCombatText(combatTexts, {
@@ -189,7 +192,8 @@ function applyWishBurnTrigger(state: BattleState, combatTexts: CombatTextEvent[]
     ...state,
     enemyHealth: clampHealth(state.enemyHealth, -finalDamage, state.enemyMaxHealth),
   };
-  return processEncounterTraitHealthThreshold(state.enemyHealth, nextState, combatTexts);
+  const afterThreshold = processEncounterTraitHealthThreshold(state.enemyHealth, nextState, combatTexts);
+  return applyGearKillRewards(afterThreshold, enemyWasAlive, combatTexts);
 }
 
 function applyWishTrinketTrigger(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
@@ -210,7 +214,7 @@ function applyWishDesperateTrigger(state: BattleState, combatTexts: CombatTextEv
 }
 
 function applyWishManaTrigger(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
-  const manaGain = state.talentEffects.manaOnWish;
+  const manaGain = state.talentEffects.manaOnWish + state.gearEffects.manaOnWish;
   if (manaGain <= 0) return state;
   mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "mana", amount: manaGain });
   return { ...state, mana: state.mana + manaGain };

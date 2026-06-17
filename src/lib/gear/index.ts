@@ -9,3 +9,5 @@ export * from "./base-items";
 export * from "./effect-manifest";
 export * from "./generation";
 export * from "./display";
+export * from "./item-names";
+export * from "./gear-shine";

@@ -7,7 +7,7 @@ export const goldTalents: TalentDefinition[] = [
     id: "gold-shop-discount",
     keywordId: "gold",
     name: "Haggle",
-    description: "Shop cards cost 5 less Gold",
+    description: "Shop purchases cost 5 less Gold",
     effects: [setEffect("shopCardDiscount", 5)],
   },
   {

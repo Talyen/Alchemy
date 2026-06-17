@@ -2,43 +2,52 @@
 
 import gearArtGearCrossbowAstral from "@/assets/optimized/gear-crossbow-astral.webp";
 import gearArtGearCrossbowBasic from "@/assets/optimized/gear-crossbow-basic.webp";
+import gearArtGearDaggerAstral from "@/assets/optimized/gear-dagger-astral.webp";
 import gearArtGearDaggerBasic from "@/assets/optimized/gear-dagger-basic.webp";
+import gearArtGearDoubleAxeAstral from "@/assets/optimized/gear-double-axe-astral.webp";
+import gearArtGearDoubleAxeBasic from "@/assets/optimized/gear-double-axe-basic.webp";
 import gearArtGearEmeraldAmuletAstral from "@/assets/optimized/gear-emerald-amulet-astral.webp";
 import gearArtGearEmeraldAmuletBasic from "@/assets/optimized/gear-emerald-amulet-basic.webp";
 import gearArtGearEmeraldRingAstral from "@/assets/optimized/gear-emerald-ring-astral.webp";
 import gearArtGearEmeraldRingBasic from "@/assets/optimized/gear-emerald-ring-basic.webp";
+import gearArtGearFlailAstral from "@/assets/optimized/gear-flail-astral.webp";
 import gearArtGearFlailBasic from "@/assets/optimized/gear-flail-basic.webp";
-import gearArtGearGreatAxeAstral from "@/assets/optimized/gear-great-axe-astral.webp";
-import gearArtGearGreatAxeBasic from "@/assets/optimized/gear-great-axe-basic.webp";
-import gearArtGearGreatMaceAstral from "@/assets/optimized/gear-great-mace-astral.webp";
-import gearArtGearGreatMaceBasic from "@/assets/optimized/gear-great-mace-basic.webp";
-import gearArtGearGreatSwordAstral from "@/assets/optimized/gear-great-sword-astral.webp";
-import gearArtGearHandAxeAstral from "@/assets/optimized/gear-hand-axe-astral.webp";
-import gearArtGearHandAxeBasic from "@/assets/optimized/gear-hand-axe-basic.webp";
+import gearArtGearGreatswordAstral from "@/assets/optimized/gear-greatsword-astral.webp";
+import gearArtGearGreatswordBasic from "@/assets/optimized/gear-greatsword-basic.webp";
+import gearArtGearHatchetAstral from "@/assets/optimized/gear-hatchet-astral.webp";
+import gearArtGearHatchetBasic from "@/assets/optimized/gear-hatchet-basic.webp";
+import gearArtGearKiteShieldAstral from "@/assets/optimized/gear-kite-shield-astral.webp";
+import gearArtGearKiteShieldBasic from "@/assets/optimized/gear-kite-shield-basic.webp";
 import gearArtGearLeatherArmorAstral from "@/assets/optimized/gear-leather-armor-astral.webp";
 import gearArtGearLeatherArmorBasic from "@/assets/optimized/gear-leather-armor-basic.webp";
 import gearArtGearLeatherBeltAstral from "@/assets/optimized/gear-leather-belt-astral.webp";
 import gearArtGearLeatherBeltBasic from "@/assets/optimized/gear-leather-belt-basic.webp";
 import gearArtGearLeatherBootsAstral from "@/assets/optimized/gear-leather-boots-astral.webp";
 import gearArtGearLeatherBootsBasic from "@/assets/optimized/gear-leather-boots-basic.webp";
+import gearArtGearLeatherBucklerAstral from "@/assets/optimized/gear-leather-buckler-astral.webp";
+import gearArtGearLeatherBucklerBasic from "@/assets/optimized/gear-leather-buckler-basic.webp";
+import gearArtGearLeatherGlovesAstral from "@/assets/optimized/gear-leather-gloves-astral.webp";
 import gearArtGearLeatherGlovesBasic from "@/assets/optimized/gear-leather-gloves-basic.webp";
 import gearArtGearLeatherHelmAstral from "@/assets/optimized/gear-leather-helm-astral.webp";
-import gearArtGearLeatherHoodBasic from "@/assets/optimized/gear-leather-hood-basic.webp";
-import gearArtGearLeatherShieldBasic from "@/assets/optimized/gear-leather-shield-basic.webp";
-import gearArtGearLongBowBasic from "@/assets/optimized/gear-long-bow-basic.webp";
-import gearArtGearLongSwordAstral from "@/assets/optimized/gear-long-sword-astral.webp";
-import gearArtGearLongSwordBasic from "@/assets/optimized/gear-long-sword-basic.webp";
+import gearArtGearLeatherHelmBasic from "@/assets/optimized/gear-leather-helm-basic.webp";
+import gearArtGearLongbowAstral from "@/assets/optimized/gear-longbow-astral.webp";
+import gearArtGearLongbowBasic from "@/assets/optimized/gear-longbow-basic.webp";
+import gearArtGearLongswordAstral from "@/assets/optimized/gear-longsword-astral.webp";
+import gearArtGearLongswordBasic from "@/assets/optimized/gear-longsword-basic.webp";
+import gearArtGearMaceAstral from "@/assets/optimized/gear-mace-astral.webp";
 import gearArtGearMaceBasic from "@/assets/optimized/gear-mace-basic.webp";
+import gearArtGearMaulAstral from "@/assets/optimized/gear-maul-astral.webp";
+import gearArtGearMaulBasic from "@/assets/optimized/gear-maul-basic.webp";
 import gearArtGearPlateArmorAstral from "@/assets/optimized/gear-plate-armor-astral.webp";
 import gearArtGearPlateArmorBasic from "@/assets/optimized/gear-plate-armor-basic.webp";
 import gearArtGearPlateBootsAstral from "@/assets/optimized/gear-plate-boots-astral.webp";
 import gearArtGearPlateBootsBasic from "@/assets/optimized/gear-plate-boots-basic.webp";
+import gearArtGearPlateHelmAstral from "@/assets/optimized/gear-plate-helm-astral.webp";
 import gearArtGearPlateHelmBasic from "@/assets/optimized/gear-plate-helm-basic.webp";
-import gearArtGearPlateShieldAstral from "@/assets/optimized/gear-plate-shield-astral.webp";
-import gearArtGearPlateShieldBasic from "@/assets/optimized/gear-plate-shield-basic.webp";
 import gearArtGearQuiverAstral from "@/assets/optimized/gear-quiver-astral.webp";
 import gearArtGearQuiverBasic from "@/assets/optimized/gear-quiver-basic.webp";
 import gearArtGearRecurveBowAstral from "@/assets/optimized/gear-recurve-bow-astral.webp";
+import gearArtGearRecurveBowBasic from "@/assets/optimized/gear-recurve-bow-basic.webp";
 import gearArtGearRubyAmuletAstral from "@/assets/optimized/gear-ruby-amulet-astral.webp";
 import gearArtGearRubyAmuletBasic from "@/assets/optimized/gear-ruby-amulet-basic.webp";
 import gearArtGearRubyRingAstral from "@/assets/optimized/gear-ruby-ring-astral.webp";
@@ -46,57 +55,81 @@ import gearArtGearRubyRingBasic from "@/assets/optimized/gear-ruby-ring-basic.we
 import gearArtGearSapphireAmuletAstral from "@/assets/optimized/gear-sapphire-amulet-astral.webp";
 import gearArtGearSapphireAmuletBasic from "@/assets/optimized/gear-sapphire-amulet-basic.webp";
 import gearArtGearSapphireRingAstral from "@/assets/optimized/gear-sapphire-ring-astral.webp";
-import gearArtGearShortBowBasic from "@/assets/optimized/gear-short-bow-basic.webp";
-import gearArtGearShortSwordBasic from "@/assets/optimized/gear-short-sword-basic.webp";
+import gearArtGearSapphireRingBasic from "@/assets/optimized/gear-sapphire-ring-basic.webp";
+import gearArtGearShortbowAstral from "@/assets/optimized/gear-shortbow-astral.webp";
+import gearArtGearShortbowBasic from "@/assets/optimized/gear-shortbow-basic.webp";
+import gearArtGearShortswordAstral from "@/assets/optimized/gear-shortsword-astral.webp";
+import gearArtGearShortswordBasic from "@/assets/optimized/gear-shortsword-basic.webp";
+import gearArtGearSlotAmulet from "@/assets/optimized/gear-slot-amulet.webp";
+import gearArtGearSlotBelt from "@/assets/optimized/gear-slot-belt.webp";
+import gearArtGearSlotBody from "@/assets/optimized/gear-slot-body.webp";
+import gearArtGearSlotBoots from "@/assets/optimized/gear-slot-boots.webp";
+import gearArtGearSlotGloves from "@/assets/optimized/gear-slot-gloves.webp";
+import gearArtGearSlotHelm from "@/assets/optimized/gear-slot-helm.webp";
+import gearArtGearSlotLeftRing from "@/assets/optimized/gear-slot-left-ring.webp";
+import gearArtGearSlotMainHand from "@/assets/optimized/gear-slot-main-hand.webp";
+import gearArtGearSlotOffHand from "@/assets/optimized/gear-slot-off-hand.webp";
+import gearArtGearSlotRightRing from "@/assets/optimized/gear-slot-right-ring.webp";
 import gearArtGearSpellbookAstral from "@/assets/optimized/gear-spellbook-astral.webp";
 import gearArtGearSpellbookBasic from "@/assets/optimized/gear-spellbook-basic.webp";
+import gearArtGearStaffAstral from "@/assets/optimized/gear-staff-astral.webp";
 import gearArtGearStaffBasic from "@/assets/optimized/gear-staff-basic.webp";
 import gearArtGearTopazAmuletAstral from "@/assets/optimized/gear-topaz-amulet-astral.webp";
 import gearArtGearTopazAmuletBasic from "@/assets/optimized/gear-topaz-amulet-basic.webp";
 import gearArtGearTopazRingAstral from "@/assets/optimized/gear-topaz-ring-astral.webp";
 import gearArtGearTopazRingBasic from "@/assets/optimized/gear-topaz-ring-basic.webp";
 import gearArtGearWandAstral from "@/assets/optimized/gear-wand-astral.webp";
+import gearArtGearWandBasic from "@/assets/optimized/gear-wand-basic.webp";
 
 export const gearArtByDefinitionId: Record<string, string> = {
   "crossbow-astral": gearArtGearCrossbowAstral,
   "crossbow-basic": gearArtGearCrossbowBasic,
+  "dagger-astral": gearArtGearDaggerAstral,
   "dagger-basic": gearArtGearDaggerBasic,
+  "double-axe-astral": gearArtGearDoubleAxeAstral,
+  "double-axe-basic": gearArtGearDoubleAxeBasic,
   "emerald-amulet-astral": gearArtGearEmeraldAmuletAstral,
   "emerald-amulet-basic": gearArtGearEmeraldAmuletBasic,
   "emerald-ring-astral": gearArtGearEmeraldRingAstral,
   "emerald-ring-basic": gearArtGearEmeraldRingBasic,
+  "flail-astral": gearArtGearFlailAstral,
   "flail-basic": gearArtGearFlailBasic,
-  "great-axe-astral": gearArtGearGreatAxeAstral,
-  "great-axe-basic": gearArtGearGreatAxeBasic,
-  "great-mace-astral": gearArtGearGreatMaceAstral,
-  "great-mace-basic": gearArtGearGreatMaceBasic,
-  "great-sword-astral": gearArtGearGreatSwordAstral,
-  "hand-axe-astral": gearArtGearHandAxeAstral,
-  "hand-axe-basic": gearArtGearHandAxeBasic,
+  "greatsword-astral": gearArtGearGreatswordAstral,
+  "greatsword-basic": gearArtGearGreatswordBasic,
+  "hatchet-astral": gearArtGearHatchetAstral,
+  "hatchet-basic": gearArtGearHatchetBasic,
+  "kite-shield-astral": gearArtGearKiteShieldAstral,
+  "kite-shield-basic": gearArtGearKiteShieldBasic,
   "leather-armor-astral": gearArtGearLeatherArmorAstral,
   "leather-armor-basic": gearArtGearLeatherArmorBasic,
   "leather-belt-astral": gearArtGearLeatherBeltAstral,
   "leather-belt-basic": gearArtGearLeatherBeltBasic,
   "leather-boots-astral": gearArtGearLeatherBootsAstral,
   "leather-boots-basic": gearArtGearLeatherBootsBasic,
+  "leather-buckler-astral": gearArtGearLeatherBucklerAstral,
+  "leather-buckler-basic": gearArtGearLeatherBucklerBasic,
+  "leather-gloves-astral": gearArtGearLeatherGlovesAstral,
   "leather-gloves-basic": gearArtGearLeatherGlovesBasic,
   "leather-helm-astral": gearArtGearLeatherHelmAstral,
-  "leather-hood-basic": gearArtGearLeatherHoodBasic,
-  "leather-shield-basic": gearArtGearLeatherShieldBasic,
-  "long-bow-basic": gearArtGearLongBowBasic,
-  "long-sword-astral": gearArtGearLongSwordAstral,
-  "long-sword-basic": gearArtGearLongSwordBasic,
+  "leather-helm-basic": gearArtGearLeatherHelmBasic,
+  "longbow-astral": gearArtGearLongbowAstral,
+  "longbow-basic": gearArtGearLongbowBasic,
+  "longsword-astral": gearArtGearLongswordAstral,
+  "longsword-basic": gearArtGearLongswordBasic,
+  "mace-astral": gearArtGearMaceAstral,
   "mace-basic": gearArtGearMaceBasic,
+  "maul-astral": gearArtGearMaulAstral,
+  "maul-basic": gearArtGearMaulBasic,
   "plate-armor-astral": gearArtGearPlateArmorAstral,
   "plate-armor-basic": gearArtGearPlateArmorBasic,
   "plate-boots-astral": gearArtGearPlateBootsAstral,
   "plate-boots-basic": gearArtGearPlateBootsBasic,
+  "plate-helm-astral": gearArtGearPlateHelmAstral,
   "plate-helm-basic": gearArtGearPlateHelmBasic,
-  "plate-shield-astral": gearArtGearPlateShieldAstral,
-  "plate-shield-basic": gearArtGearPlateShieldBasic,
   "quiver-astral": gearArtGearQuiverAstral,
   "quiver-basic": gearArtGearQuiverBasic,
   "recurve-bow-astral": gearArtGearRecurveBowAstral,
+  "recurve-bow-basic": gearArtGearRecurveBowBasic,
   "ruby-amulet-astral": gearArtGearRubyAmuletAstral,
   "ruby-amulet-basic": gearArtGearRubyAmuletBasic,
   "ruby-ring-astral": gearArtGearRubyRingAstral,
@@ -104,14 +137,29 @@ export const gearArtByDefinitionId: Record<string, string> = {
   "sapphire-amulet-astral": gearArtGearSapphireAmuletAstral,
   "sapphire-amulet-basic": gearArtGearSapphireAmuletBasic,
   "sapphire-ring-astral": gearArtGearSapphireRingAstral,
-  "short-bow-basic": gearArtGearShortBowBasic,
-  "short-sword-basic": gearArtGearShortSwordBasic,
+  "sapphire-ring-basic": gearArtGearSapphireRingBasic,
+  "shortbow-astral": gearArtGearShortbowAstral,
+  "shortbow-basic": gearArtGearShortbowBasic,
+  "shortsword-astral": gearArtGearShortswordAstral,
+  "shortsword-basic": gearArtGearShortswordBasic,
+  "slot-amulet": gearArtGearSlotAmulet,
+  "slot-belt": gearArtGearSlotBelt,
+  "slot-body": gearArtGearSlotBody,
+  "slot-boots": gearArtGearSlotBoots,
+  "slot-gloves": gearArtGearSlotGloves,
+  "slot-helm": gearArtGearSlotHelm,
+  "slot-left-ring": gearArtGearSlotLeftRing,
+  "slot-main-hand": gearArtGearSlotMainHand,
+  "slot-off-hand": gearArtGearSlotOffHand,
+  "slot-right-ring": gearArtGearSlotRightRing,
   "spellbook-astral": gearArtGearSpellbookAstral,
   "spellbook-basic": gearArtGearSpellbookBasic,
+  "staff-astral": gearArtGearStaffAstral,
   "staff-basic": gearArtGearStaffBasic,
   "topaz-amulet-astral": gearArtGearTopazAmuletAstral,
   "topaz-amulet-basic": gearArtGearTopazAmuletBasic,
   "topaz-ring-astral": gearArtGearTopazRingAstral,
   "topaz-ring-basic": gearArtGearTopazRingBasic,
   "wand-astral": gearArtGearWandAstral,
+  "wand-basic": gearArtGearWandBasic,
 };

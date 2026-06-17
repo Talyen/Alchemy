@@ -26,6 +26,8 @@ type LabyrinthNodeRoutingDeps = {
         onStartMystery: () => void;
         onStartShop: () => void;
         onStartAlchemist: () => void;
+        onStartTrinketShop: () => void;
+        onStartEquipmentShop: () => void;
       },
     ) => boolean;
   };
@@ -39,7 +41,7 @@ type LabyrinthNodeRoutingDeps = {
     startBossBattle: (modifiers?: DifficultyModifier[]) => void;
   };
   nav: { beginMysteryEvent: () => void };
-  shop: { initShop: () => void; initAlchemist: () => void };
+  shop: { initShop: () => void; initAlchemist: () => void; initTrinketShop: () => void; initEquipmentShop: () => void };
 };
 
 export function createLabyrinthNodeRouting(deps: LabyrinthNodeRoutingDeps) {
@@ -81,6 +83,10 @@ export function createLabyrinthNodeRouting(deps: LabyrinthNodeRoutingDeps) {
       onStartMystery: () => deps.nav.beginMysteryEvent(),
       onStartShop: () => enterLabyrinthNodeScreen(CONSTANTS.SCREENS.SHOP, () => deps.shop.initShop()),
       onStartAlchemist: () => enterLabyrinthNodeScreen(CONSTANTS.SCREENS.ALCHEMIST, () => deps.shop.initAlchemist()),
+      onStartTrinketShop: () =>
+        enterLabyrinthNodeScreen(CONSTANTS.SCREENS.TRINKET_SHOP, () => deps.shop.initTrinketShop()),
+      onStartEquipmentShop: () =>
+        enterLabyrinthNodeScreen(CONSTANTS.SCREENS.EQUIPMENT_SHOP, () => deps.shop.initEquipmentShop()),
     });
   }
 

@@ -30,21 +30,25 @@ import {
   createEmptyGearLoadouts,
   normalizeExclusiveGearLoadouts,
   normalizeGearLoadout,
-  pruneGearBoardPositions,
   pruneOrphanGearLoadouts,
   type GearBoardPositions,
   type GearLoadouts,
 } from "@/lib/gear/types";
+import { sanitizeGearBoardPositions } from "@/lib/gear/inventory-layout";
 import { GEAR_AFFIX_IDS } from "@/lib/gear/affix-ids";
 import { GEAR_DEFINITION_IDS } from "@/lib/gear/definitions";
 import { normalizeGearInstance } from "@/lib/gear/operations";
 
 const GearDefinitionIdSchema = z.enum(GEAR_DEFINITION_IDS);
 const GearAffixIdSchema = z.enum(GEAR_AFFIX_IDS);
+const GearAffixRollSchema = z.object({
+  id: GearAffixIdSchema,
+  value: z.number().int().positive(),
+});
 const GearInstanceSchema = z.object({
   instanceId: z.string().min(1),
   definitionId: GearDefinitionIdSchema,
-  affixIds: z.array(GearAffixIdSchema),
+  affixes: z.array(GearAffixRollSchema),
 });
 
 function normalizePersistedGearInstance(raw: unknown) {
@@ -52,18 +56,21 @@ function normalizePersistedGearInstance(raw: unknown) {
   const item = raw as {
     instanceId?: string;
     definitionId?: string;
+    affixes?: { id: string; value: number }[];
     affixIds?: string[];
     modifiers?: { kind: string; value: number }[];
   };
   const normalizedInput: {
     instanceId?: string;
     definitionId?: string;
+    affixes?: { id: string; value: number }[];
     affixIds?: string[];
     modifiers?: { kind: "flatPhysicalDamage"; value: number }[];
   } = {
     instanceId: item.instanceId ?? "",
     definitionId: item.definitionId ?? "",
   };
+  if (item.affixes) normalizedInput.affixes = item.affixes;
   if (item.affixIds) normalizedInput.affixIds = item.affixIds;
   if (item.modifiers) normalizedInput.modifiers = item.modifiers as { kind: "flatPhysicalDamage"; value: number }[];
   return normalizeGearInstance(normalizedInput);
@@ -173,6 +180,6 @@ export const SaveDataSchema = z.preprocess(
     .transform((save) => ({
       ...save,
       gearLoadouts: pruneOrphanGearLoadouts(save.gearInventory, save.gearLoadouts),
-      gearBoardPositions: pruneGearBoardPositions(save.gearBoardPositions, save.gearInventory),
+      gearBoardPositions: sanitizeGearBoardPositions(save.gearBoardPositions, save.gearInventory),
     })),
 );

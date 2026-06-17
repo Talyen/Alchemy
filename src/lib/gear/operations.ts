@@ -1,12 +1,11 @@
 import { materialLabels, MATERIAL_IDS, type MaterialInventory } from "@/lib/homestead/types";
 import { emptyInventory } from "@/lib/homestead/inventory";
-import { isGearAffixId, modifiersToAffixIds, resolveAffixEffects } from "./affixes";
+import { normalizeAffixRolls, resolveAffixEffects } from "./affixes";
 import { gearDefinitions } from "./definitions";
 import { mergeGearEffectManifests } from "./effect-manifest";
 import {
   GEAR_SLOTS,
   defaultGearEffects,
-  type GearAffixId,
   type GearDefinition,
   type GearCharacterId,
   type GearEffectManifest,
@@ -115,28 +114,63 @@ export function salvageGear(inventory: GearInstance[], loadouts: GearLoadouts, i
   };
 }
 
+function instanceRarity(instance: GearInstance): GearDefinition["rarity"] {
+  return gearDefinitions[instance.definitionId]?.rarity ?? "basic";
+}
+
+const LEGACY_GEAR_DEFINITION_IDS: Record<string, string> = {
+  "leather-hood-basic": "leather-helm-basic",
+  "great-axe-basic": "double-axe-basic",
+  "great-axe-astral": "double-axe-astral",
+  "great-mace-basic": "maul-basic",
+  "great-mace-astral": "maul-astral",
+  "great-sword-basic": "greatsword-basic",
+  "great-sword-astral": "greatsword-astral",
+  "hand-axe-basic": "hatchet-basic",
+  "hand-axe-astral": "hatchet-astral",
+  "long-sword-basic": "longsword-basic",
+  "long-sword-astral": "longsword-astral",
+  "sword-basic": "longsword-basic",
+  "sword-astral": "longsword-astral",
+  "short-sword-basic": "shortsword-basic",
+  "short-sword-astral": "shortsword-astral",
+  "gladius-basic": "shortsword-basic",
+  "shortsword-basic": "shortsword-basic",
+  "shortsword-astral": "shortsword-astral",
+  "long-bow-basic": "longbow-basic",
+  "long-bow-astral": "longbow-astral",
+  "short-bow-basic": "shortbow-basic",
+  "short-bow-astral": "shortbow-astral",
+  "leather-shield-basic": "leather-buckler-basic",
+  "leather-shield-astral": "leather-buckler-astral",
+  "plate-shield-basic": "kite-shield-basic",
+  "plate-shield-astral": "kite-shield-astral",
+};
+
 export function normalizeGearInstance(raw: {
   instanceId?: string;
   definitionId?: string;
+  affixes?: { id: string; value: number }[];
   affixIds?: string[];
   modifiers?: GearModifier[];
 }): GearInstance | null {
-  if (!raw.instanceId || !raw.definitionId || !gearDefinitions[raw.definitionId]) return null;
-
-  const validAffixIds = (raw.affixIds ?? []).filter((id): id is GearAffixId => isGearAffixId(id));
-  const affixIds = validAffixIds.length > 0 ? validAffixIds : raw.modifiers ? modifiersToAffixIds(raw.modifiers) : [];
+  const definitionId = raw.definitionId
+    ? (LEGACY_GEAR_DEFINITION_IDS[raw.definitionId] ?? raw.definitionId)
+    : undefined;
+  if (!raw.instanceId || !definitionId || !gearDefinitions[definitionId]) return null;
 
   return {
     instanceId: raw.instanceId,
-    definitionId: raw.definitionId,
-    affixIds,
+    definitionId,
+    affixes: normalizeAffixRolls(raw),
   };
 }
 
 export function effectsForInstance(instance: GearInstance): GearEffectManifest {
   const definition = gearDefinitions[instance.definitionId];
   if (!definition) return { ...defaultGearEffects };
-  const affixEffects = resolveAffixEffects(instance.affixIds);
+  const rarity = instanceRarity(instance) ?? "basic";
+  const affixEffects = resolveAffixEffects(instance.affixes, rarity);
   return mergeGearEffectManifests({ ...definition.effects }, affixEffects);
 }
 
@@ -153,6 +187,14 @@ export function computeGearManifest(
     },
     { ...defaultGearEffects },
   );
+}
+
+export function computeGearMaxHealthBonus(
+  characterId: GearCharacterId,
+  inventory: GearInstance[],
+  loadouts: GearLoadouts,
+): number {
+  return computeGearManifest(characterId, inventory, loadouts).maxHealth;
 }
 
 export function formatSalvageValue(materials: MaterialInventory): string {

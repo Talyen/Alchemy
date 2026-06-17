@@ -7,6 +7,7 @@ import {
 } from "@/lib/battle/enemy-turn-utils";
 import { defaultTalentEffects } from "@/lib/battle";
 import { CARDS_PER_TURN } from "@/lib/game-constants";
+import { defaultGearEffects } from "@/lib/gear";
 import type { CombatTextEvent } from "@/lib/battle/types";
 import { createTestBattleState } from "./test-state";
 
@@ -86,6 +87,22 @@ describe("advanceToPlayerTurn", () => {
     expect(result.turnPhase).toBe("player");
     expect(result.playerStunSkipTurns).toBe(0);
     expect(result.playerFreezeSkipTurns).toBe(0);
+  });
+
+  it("heals from gear healthPerTurn and emits combat text", () => {
+    const state = createTestBattleState({
+      turnPhase: "enemy",
+      playerHealth: 10,
+      playerMaxHealth: 30,
+      deck: [makeCard("d1"), makeCard("d2"), makeCard("d3")],
+      hand: [],
+      gearEffects: { ...defaultGearEffects, healthPerTurn: 4 },
+      rng: () => 0,
+    });
+    const texts: CombatTextEvent[] = [];
+    const result = advanceToPlayerTurn(state, texts);
+    expect(result.playerHealth).toBe(14);
+    expect(texts.some((t) => t.kind === "heal" && t.amount === 4)).toBe(true);
   });
 });
 

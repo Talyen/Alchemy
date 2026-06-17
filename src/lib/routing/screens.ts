@@ -17,6 +17,8 @@ export type Screen =
   | "campfire"
   | "shop"
   | "alchemist"
+  | "trinket-shop"
+  | "equipment-shop"
   | "mystery"
   | "corruption"
   | "run-victory"
@@ -42,6 +44,8 @@ export const ROUTE_SCREENS = {
   CAMPFIRE: "campfire",
   SHOP: "shop",
   ALCHEMIST: "alchemist",
+  TRINKET_SHOP: "trinket-shop",
+  EQUIPMENT_SHOP: "equipment-shop",
   MYSTERY: "mystery",
   CORRUPTION: "corruption",
   RUN_VICTORY: "run-victory",

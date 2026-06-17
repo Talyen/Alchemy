@@ -41,6 +41,8 @@ type LabyrinthNodeHandlers = {
   onStartMystery: () => void;
   onStartShop: () => void;
   onStartAlchemist: () => void;
+  onStartTrinketShop: () => void;
+  onStartEquipmentShop: () => void;
 };
 
 /**
@@ -71,6 +73,12 @@ function routeNodeInteraction(node: LabyrinthNode, handlers: LabyrinthNodeHandle
       break;
     case "alchemist":
       handlers.onStartAlchemist();
+      break;
+    case "trinket-shop":
+      handlers.onStartTrinketShop();
+      break;
+    case "equipment-shop":
+      handlers.onStartEquipmentShop();
       break;
   }
 }

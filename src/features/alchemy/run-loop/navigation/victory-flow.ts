@@ -28,7 +28,6 @@ import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-tra
 import {
   getActiveRewardModifiersForContentSystem,
   applyLabyrinthRewardMaterialModifiers,
-  shouldForceTrinketReward,
   computeVictoryGoldResult,
   createCombatRewardState as createCombatRewardStateFromFlow,
   createBossRewardState as createBossRewardStateFromFlow,
@@ -151,11 +150,13 @@ export function computeVictoryRewardState(
     destinations: Destination[];
     talentEffects?: TalentEffectManifest;
     bossEnemyId?: string | null | undefined;
+    gearAstralChanceBonus?: number;
   },
   rng: () => number = Math.random,
 ): RewardState {
   const talentEffects = input.talentEffects ?? computeTalentEffects(input.unlockedTalents);
   const goldMultiplier = getGoldMultiplier(input.characterId, input.selectedDifficulty);
+  const gearAstralChanceBonus = input.gearAstralChanceBonus ?? 0;
 
   if (input.battleState.currentEnemy.enemyType === CONSTANTS.ENEMY_TYPES.BOSS) {
     return createBossRewardStateFromFlow({
@@ -167,6 +168,7 @@ export function computeVictoryRewardState(
       trinketIds: input.runTrinkets,
       goldMultiplier,
       rng,
+      gearAstralChanceBonus,
     });
   }
 
@@ -183,10 +185,6 @@ export function computeVictoryRewardState(
       destinations: input.destinations,
       trinketIds: input.runTrinkets,
       goldMultiplier,
-      forceTrinket: shouldForceTrinketReward(
-        getActiveRewardModifiersForContentSystem(input.contentSystemType, input.activeLabyrinthRewardModifiers),
-      ),
-      contentSystemType: input.contentSystemType,
       rng,
     }),
     input.bossEnemyId,
@@ -206,7 +204,7 @@ export function computeVictoryRewards(
   if (input.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
     return {
       newGold: input.runGold,
-      rewardState: createWildwoodRewardState(input.runDeck, labyrinthRewardModifiers, rng),
+      rewardState: createWildwoodRewardState(input.runDeck, rng, input.homesteadEffects.gearAstralChanceBonus),
       labyrinthRewardModifiers,
       destinations: [],
       materials: emptyInventory(),
@@ -281,6 +279,7 @@ export function computeVictoryRewards(
       destinations,
       talentEffects,
       bossEnemyId: input.bossEnemyId,
+      gearAstralChanceBonus: input.homesteadEffects.gearAstralChanceBonus,
     },
     rng,
   );

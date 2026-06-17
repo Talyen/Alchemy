@@ -1,5 +1,5 @@
 // Mana and health-related card effect apply handlers.
-import { MIN_MAX_MANA_FLOOR } from "../../game-constants";
+import { MIN_MAX_MANA_FLOOR, PERCENT_DENOMINATOR } from "../../game-constants";
 import { applyHealOnManaGain, mergeCombatText, applyHealingWithCombatText } from "../combat-text";
 import { clampHealth, applyPlayerCombatDamage } from "../types";
 import { getEnemyDamageMultiplier } from "../status-effects";
@@ -77,7 +77,9 @@ export const applyLoseMaxManaEffect: EffectHandler = (state, _card, effect, _pot
 export const applyHealEffect: EffectHandler = (state, card, effect, potionMult, combatTexts) => {
   if (effect.kind !== "heal") return state;
   const adjustedHeal = Math.round(effect.amount * potionMult);
-  const consumeBonus = card.consume ? (state.talentEffects.consumeHealMultiplier ?? 0) : 0;
+  const consumeBonus = card.consume
+    ? (state.talentEffects.consumeHealMultiplier ?? 0) + state.gearEffects.consumeHealBonusPercent / PERCENT_DENOMINATOR
+    : 0;
   const healAmount = Math.round(adjustedHeal * (state.talentEffects.healMultiplier + consumeBonus));
   return applyHealingWithCombatText(state, healAmount, combatTexts);
 };

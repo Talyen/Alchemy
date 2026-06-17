@@ -250,6 +250,7 @@ function OtherOptionsPanel({ saveData, dev }: { saveData: SaveDataOptionsProps; 
 
 export function OptionsScreen({
   onOpenMenu,
+  onBack,
   display,
   audio,
   gameplay,
@@ -257,6 +258,7 @@ export function OptionsScreen({
   dev,
 }: {
   onOpenMenu: (rect?: DOMRect) => void;
+  onBack: () => void;
   display: DisplayOptionsProps;
   audio: AudioOptionsProps;
   gameplay: GameplayOptionsProps;
@@ -315,6 +317,12 @@ export function OptionsScreen({
           >
             <OtherOptionsPanel saveData={saveData} dev={devWithLog} />
           </div>
+        </div>
+
+        <div className="mt-6 flex justify-center">
+          <Button variant="outline" className="w-40" onClick={onBack}>
+            Back
+          </Button>
         </div>
       </div>
 

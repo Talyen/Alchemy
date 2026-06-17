@@ -5,7 +5,17 @@ export type ContentSystemId = "campaign" | "labyrinth" | "wildwood";
 
 // ============ Labyrinth ============
 
-export type LabyrinthNodeType = "entrance" | "combat" | "elite" | "rest" | "mystery" | "shop" | "alchemist" | "boss";
+export type LabyrinthNodeType =
+  | "entrance"
+  | "combat"
+  | "elite"
+  | "rest"
+  | "mystery"
+  | "shop"
+  | "alchemist"
+  | "trinket-shop"
+  | "equipment-shop"
+  | "boss";
 
 import type { EncounterCombatTraitId, EncounterRewardTraitId, EncounterTraitId } from "./encounter-traits";
 

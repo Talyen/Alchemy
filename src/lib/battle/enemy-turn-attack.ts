@@ -179,12 +179,9 @@ function applyBlockDepletedHeal(
   nextState: BattleState,
   combatTexts: CombatTextEvent[],
 ): BattleState {
-  if (
-    prevState.talentEffects.blockDepletedHeal > 0 &&
-    prevState.playerStatuses.block > 0 &&
-    nextState.playerStatuses.block <= 0
-  ) {
-    const healedState = applyPlayerHealing(nextState, prevState.talentEffects.blockDepletedHeal);
+  const healAmount = prevState.talentEffects.blockDepletedHeal + prevState.gearEffects.blockDepletedHeal;
+  if (healAmount > 0 && prevState.playerStatuses.block > 0 && nextState.playerStatuses.block <= 0) {
+    const healedState = applyPlayerHealing(nextState, healAmount);
     emitOverhealBlockText(nextState, healedState, combatTexts);
     return healedState;
   }

@@ -84,7 +84,7 @@ Definitions of common terms used in the Alchemy codebase.
 | **Damage type** | `physical`, `stun`, `holy`, `burn`, `poison`, `bleed`, `freeze`, `nature` — enemies may resist or be vulnerable per type. |
 | **Potion** | Consumable with temporary effect from the Alchemist shop. |
 | **Regen / Regeneration** | Enemy trait: heal each turn at end of enemy phase. |
-| **Reward route** | Internal post-rewards destination (`REWARD_ROUTES`), not a `Screen` — see **Screen** above. |
+| **Reward route** | Internal post-rewards destination (`REWARD_ROUTES`), not a `Screen` — see **Screen** above. Combat rewards: normal → card, elite → trinket, boss → gear; Wildwood rolls 1/3 card/trinket/gear. |
 | **Run materials earned** | `progress.runMaterialsEarned` — materials collected during the current run (combat, mysteries); persisted in `ActiveRunData`; cleared after run end. Shown on game-over / run-victory via `session.runEndMaterials` (includes homestead `endRun*PerRoom` bonuses). |
 | **StaggerGroup / StaggerItem** | Shared enter-animation wrappers (`shared-ui`); panel `state-swap` + per-child `.stagger-item` stagger. See [WORKFLOWS § Staggered screen enter](./WORKFLOWS.md#staggered-screen-enter-motion). |
 | **Status** | Temporary player/enemy effect with tick/expiry (Burn, Freeze, Poison, Stun, …). |
@@ -113,7 +113,7 @@ Lookup for modules not covered in [ARCHITECTURE.md](./ARCHITECTURE.md). Paths ar
 | Effect handler registry doc | `src/lib/game-data/effects/BATTLE_HANDLERS.md` |
 | Feature config barrel | `src/features/alchemy/shared/config/` |
 | Game-data types | `src/lib/game-data/types.ts` |
-| Homestead data | `src/lib/homestead/` |
+| Homestead data | `src/lib/homestead/` — **Detect Magic** (`masonry` research) shifts gear reward/shop Basic↔Astral rolls (+3% / +6% / +10% Astral at tiers 1–3). |
 | In-run material grants | `awardMaterialsDuringRun()` in `shared/stores/run-session-facade.ts` |
 | Motion UI (`StaggerGroup`, `StaggerItem`, `TiltSurface`, `PressableMotion`) | `src/features/alchemy/shared/ui/` — enter tokens in `src/index.css` |
 | Image preload helper | `src/lib/image-preload.ts` |

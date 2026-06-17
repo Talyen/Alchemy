@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import { BUTTON_HOVER_PRIMARY, BUTTON_HOVER_SECONDARY } from "@/lib/ui/button-hover";
 import { destinationMeta } from "@/features/alchemy/shared/config";
-import { BUTTON_SURFACE_NEUTRAL } from "@/features/alchemy/shared/config/button-tokens";
+import { BUTTON_FOCUS, BUTTON_SURFACE_NEUTRAL } from "@/features/alchemy/shared/config/button-tokens";
+import { NO_FOCUS_RING } from "@/lib/ui/focus";
 
 describe("destinationMeta", () => {
   it("uses accent text classes instead of colored button fills", () => {
@@ -25,6 +26,15 @@ describe("button hover tokens", () => {
 
   it("uses muted background hover for secondary", () => {
     expect(BUTTON_HOVER_SECONDARY).toContain("hover:bg-muted/80");
+  });
+});
+
+describe("button focus token", () => {
+  it("re-exports NO_FOCUS_RING without decorative rings", () => {
+    expect(BUTTON_FOCUS).toBe(NO_FOCUS_RING);
+    expect(BUTTON_FOCUS).toContain("focus-visible:ring-0");
+    expect(BUTTON_FOCUS).toContain("focus-visible:ring-offset-0");
+    expect(BUTTON_FOCUS).not.toMatch(/focus-visible:ring-(?!0\b|offset-)/);
   });
 });
 

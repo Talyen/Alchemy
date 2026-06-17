@@ -4,6 +4,7 @@
  * Depended on by: ./apply-effects.
  */
 import { getEnemyDamageMultiplier } from "./status-effects";
+import { gearFrozenDamageMultiplier } from "./gear-effects";
 import { getBattleRng } from "./status-helpers";
 import { type BattleCard, type BattleCardEffect, type DamageType, type TalentEffectManifest } from "@/lib/game-data";
 import { reduceEnemyArmor, setFlag, type BattleState } from "./types";
@@ -68,7 +69,7 @@ function computeBaseRawAmount(
   }
   let amount = effect.amount + forgeBonus;
   if (card?.tags?.includes("archery")) {
-    amount += state.talentEffects.flatArrowDamage;
+    amount += state.talentEffects.flatArrowDamage + state.gearEffects.flatArrowDamage;
   }
   return amount;
 }
@@ -124,6 +125,10 @@ function applyHolyDamageModifiers(state: BattleState, rawAmount: number): number
   let nextAmount = rawAmount + state.gearEffects.flatHolyDamage;
   nextAmount += Math.round((state.gold * state.talentEffects.holyGoldPercent) / PERCENT_DENOMINATOR);
   nextAmount += Math.round((state.playerStatuses.block * state.talentEffects.holyBlockPercent) / PERCENT_DENOMINATOR);
+  nextAmount += Math.round(
+    (state.playerStatuses.block * state.gearEffects.holyDamageFromBlockPercent) / PERCENT_DENOMINATOR,
+  );
+  nextAmount += Math.round((state.gold * state.gearEffects.holyDamageFromGoldPercent) / PERCENT_DENOMINATOR);
   if (state.talentEffects.blockToHolyDamage) {
     nextAmount += getPlayerBlockHalf(state);
   }
@@ -165,6 +170,9 @@ function applyBurnDamageModifiers(state: BattleState, rawAmount: number, card?: 
     nextAmount += Math.round(
       (state.maxMana * state.talentEffects.burnDamagePerManaCrystal * MANA_BURN_DAMAGE_PERCENT) / PERCENT_DENOMINATOR,
     );
+  }
+  if (state.gearEffects.burnDamagePerManaPercent > 0) {
+    nextAmount += Math.round((state.maxMana * state.gearEffects.burnDamagePerManaPercent) / PERCENT_DENOMINATOR);
   }
   if (state.talentEffects.blockToBurnDamage) {
     nextAmount += getBlockScaledDamageBonus(state);
@@ -281,10 +289,10 @@ function applyFirstDamageModifiers(
  * Resolves boon-based stun triggers from playing high physical/stun damage with active forge stacks.
  */
 function applySunderingArmorPiercing(state: BattleState, isPhysicalOrStun: boolean): BattleState {
-  if (isPhysicalOrStun) {
-    return reduceEnemyArmor(state, state.trinketEffects.sunderingArmorPiercing);
-  }
-  return state;
+  if (!isPhysicalOrStun) return state;
+  const pierce = state.trinketEffects.sunderingArmorPiercing + state.gearEffects.armorPiercing;
+  if (pierce <= 0) return state;
+  return reduceEnemyArmor(state, pierce);
 }
 
 // Returns { state, remainingDamage } because block absorption produces TWO distinct
@@ -329,6 +337,7 @@ export function computeCardDamageToEnemy(
   const nextState = applySunderingArmorPiercing(stateAfterBlock, isPhysicalOrStun);
   const effectiveArmor = isPhysicalOrStun ? nextState.enemyMitigation.armor : 0;
   const damageAfterArmor = Math.max(0, damageAfterBlock - effectiveArmor);
-  const multiplier = getEnemyDamageMultiplier(stateAfterFirstMods, effect.damageType);
+  const multiplier =
+    getEnemyDamageMultiplier(stateAfterFirstMods, effect.damageType) * gearFrozenDamageMultiplier(stateAfterFirstMods);
   return { nextState, modifiedDamage: Math.round(damageAfterArmor * multiplier) };
 }

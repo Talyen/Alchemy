@@ -24,6 +24,8 @@ export function flattenRunSessionForScreens({ phase, run, session, battle }: Run
     corruptionResult: session.corruptionResult,
     shopState: session.shopState,
     alchemistState: session.alchemistState,
+    trinketShopState: session.trinketShopState,
+    equipmentShopState: session.equipmentShopState,
     runEndMaterials: session.runEndMaterials,
     pendingCharacterId: session.pendingCharacterId,
   };

@@ -1,128 +1,116 @@
-import type { KeywordId } from "@/lib/game-data";
 import type { GearAffixId } from "./affix-ids";
-import { GEAR_AFFIX_IDS } from "./affix-ids";
-import type { GearEffectManifest } from "./types";
-import { defaultGearEffects } from "./types";
+import { GEAR_AFFIX_IDS, LEGACY_GEAR_AFFIX_IDS } from "./affix-ids";
+import { gearAffixCatalog, gearAffixList, type GearAffixDefinition } from "./affix-catalog";
+import type { GearEffectManifest } from "./gear-effect-manifest";
+import { defaultGearEffects } from "./gear-effect-manifest";
+import type { GearAffixRoll, GearRarity } from "./types";
 
-export type GearAffixDefinition = {
-  id: GearAffixId;
-  keywordId: KeywordId;
-  descriptionLine: string;
-  effectKey: keyof GearEffectManifest;
-  value: number;
-};
+export type { GearAffixDefinition, GearAffixBinding } from "./affix-catalog";
+export { gearAffixCatalog, gearAffixList };
+export { GEAR_AFFIX_IDS };
 
-export const gearAffixCatalog: Record<GearAffixId, GearAffixDefinition> = {
-  "flat-physical-1": {
-    id: "flat-physical-1",
-    keywordId: "physical",
-    descriptionLine: "Increases Physical damage by 1.",
-    effectKey: "flatPhysicalDamage",
-    value: 1,
-  },
-  "flat-stun-1": {
-    id: "flat-stun-1",
-    keywordId: "stun",
-    descriptionLine: "Increases Stun damage by 1.",
-    effectKey: "flatStunDamage",
-    value: 1,
-  },
-  "flat-holy-1": {
-    id: "flat-holy-1",
-    keywordId: "holy",
-    descriptionLine: "Increases Holy damage by 1.",
-    effectKey: "flatHolyDamage",
-    value: 1,
-  },
-  "flat-burn-1": {
-    id: "flat-burn-1",
-    keywordId: "burn",
-    descriptionLine: "Increases Burn damage by 1.",
-    effectKey: "flatBurnDamage",
-    value: 1,
-  },
-  "flat-poison-1": {
-    id: "flat-poison-1",
-    keywordId: "poison",
-    descriptionLine: "Increases Poison damage by 1.",
-    effectKey: "flatPoisonDamage",
-    value: 1,
-  },
-  "flat-bleed-1": {
-    id: "flat-bleed-1",
-    keywordId: "bleed",
-    descriptionLine: "Increases Bleed damage by 1.",
-    effectKey: "flatBleedDamage",
-    value: 1,
-  },
-  "flat-freeze-1": {
-    id: "flat-freeze-1",
-    keywordId: "freeze",
-    descriptionLine: "Increases Freeze damage by 1.",
-    effectKey: "flatFreezeDamage",
-    value: 1,
-  },
-  "flat-nature-1": {
-    id: "flat-nature-1",
-    keywordId: "nature",
-    descriptionLine: "Increases Nature damage by 1.",
-    effectKey: "flatNatureDamage",
-    value: 1,
-  },
-};
-
-export const gearAffixList = Object.values(gearAffixCatalog);
-
-const EFFECT_SUMMARY_LABELS: Record<keyof GearEffectManifest, string> = {
-  flatPhysicalDamage: "Physical",
-  flatStunDamage: "Stun",
-  flatHolyDamage: "Holy",
-  flatBurnDamage: "Burn",
-  flatPoisonDamage: "Poison",
-  flatBleedDamage: "Bleed",
-  flatFreezeDamage: "Freeze",
-  flatNatureDamage: "Nature",
+const LEGACY_AFFIX_MAP: Record<(typeof LEGACY_GEAR_AFFIX_IDS)[number], GearAffixId> = {
+  "flat-physical-1": "flat-physical",
+  "flat-stun-1": "flat-stun",
+  "flat-holy-1": "flat-holy",
+  "flat-burn-1": "flat-burn",
+  "flat-poison-1": "flat-poison",
+  "flat-bleed-1": "flat-bleed",
+  "flat-freeze-1": "flat-freeze",
+  "flat-nature-1": "flat-nature",
 };
 
 export function isGearAffixId(value: string): value is GearAffixId {
   return value in gearAffixCatalog;
 }
 
-export function resolveAffixEffects(affixIds: readonly GearAffixId[]): GearEffectManifest {
+export function scaleAffixValue(rollValue: number, rarity: GearRarity, def: GearAffixDefinition): number {
+  return Math.max(0, Math.round(rollValue * def.rarityScale[rarity]));
+}
+
+export function formatAffixDescription(def: GearAffixDefinition, roll: GearAffixRoll, rarity: GearRarity): string {
+  const scaledValue = scaleAffixValue(roll.value, rarity, def);
+  return def.descriptionTemplate.replace("{value}", String(scaledValue));
+}
+
+export function resolveAffixEffects(affixes: readonly GearAffixRoll[], rarity: GearRarity): GearEffectManifest {
   const effects = { ...defaultGearEffects };
-  for (const affixId of affixIds) {
-    const affix = gearAffixCatalog[affixId];
-    if (!affix) continue;
-    effects[affix.effectKey] += affix.value;
+  for (const roll of affixes) {
+    const def = gearAffixCatalog[roll.id];
+    if (!def) continue;
+    const scaledValue = scaleAffixValue(roll.value, rarity, def);
+    for (const binding of def.bindings) {
+      effects[binding.effectKey] += scaledValue * binding.perPoint;
+    }
   }
   return effects;
 }
 
-export function modifiersToAffixIds(modifiers: { kind: string; value: number }[]): GearAffixId[] {
-  const affixIds: GearAffixId[] = [];
+export function normalizeLegacyAffixId(id: string): GearAffixId | null {
+  if (isGearAffixId(id)) return id;
+  if (id in LEGACY_AFFIX_MAP) return LEGACY_AFFIX_MAP[id as keyof typeof LEGACY_AFFIX_MAP];
+  return null;
+}
+
+export function normalizeAffixRolls(raw: {
+  affixes?: { id: string; value: number }[];
+  affixIds?: string[];
+  modifiers?: { kind: string; value: number }[];
+}): GearAffixRoll[] {
+  if (raw.affixes && raw.affixes.length > 0) {
+    return raw.affixes.flatMap((entry) => {
+      const id = normalizeLegacyAffixId(entry.id);
+      if (!id || !Number.isFinite(entry.value) || entry.value <= 0) return [];
+      return [{ id, value: Math.round(entry.value) }];
+    });
+  }
+
+  if (raw.affixIds && raw.affixIds.length > 0) {
+    return raw.affixIds.flatMap((legacyId) => {
+      const id = normalizeLegacyAffixId(legacyId);
+      return id ? [{ id, value: 1 }] : [];
+    });
+  }
+
+  return modifiersToAffixRolls(raw.modifiers ?? []);
+}
+
+export function modifiersToAffixRolls(modifiers: { kind: string; value: number }[]): GearAffixRoll[] {
+  const rolls: GearAffixRoll[] = [];
   for (const modifier of modifiers) {
     if (modifier.kind !== "flatPhysicalDamage" || !Number.isFinite(modifier.value)) continue;
     const count = Math.max(0, Math.round(modifier.value));
     for (let index = 0; index < count; index += 1) {
-      affixIds.push("flat-physical-1");
+      rolls.push({ id: "flat-physical", value: 1 });
     }
   }
-  return affixIds;
+  return rolls;
 }
 
-export function getGearAffixDescriptionLines(affixIds: readonly GearAffixId[]): { key: string; text: string }[] {
-  return affixIds.flatMap((affixId, index) => {
-    const line = gearAffixCatalog[affixId]?.descriptionLine;
-    return line ? [{ key: `${affixId}-${index}`, text: line }] : [];
+/** @deprecated Use modifiersToAffixRolls */
+export function modifiersToAffixIds(modifiers: { kind: string; value: number }[]): GearAffixId[] {
+  return modifiersToAffixRolls(modifiers).map((roll) => roll.id);
+}
+
+export function rollAffixValue(def: GearAffixDefinition, rng: () => number): number {
+  const span = def.roll.max - def.roll.min + 1;
+  return def.roll.min + Math.floor(rng() * span);
+}
+
+export function getGearAffixDescriptionLines(
+  affixes: readonly GearAffixRoll[],
+  rarity: GearRarity,
+): { key: string; text: string }[] {
+  return affixes.flatMap((roll, index) => {
+    const def = gearAffixCatalog[roll.id];
+    if (!def) return [];
+    return [{ key: `${roll.id}-${index}`, text: formatAffixDescription(def, roll, rarity) }];
   });
 }
 
-export function formatGearEffectSummary(effects: GearEffectManifest): string[] {
-  return (Object.keys(EFFECT_SUMMARY_LABELS) as (keyof GearEffectManifest)[]).flatMap((key) => {
-    const amount = effects[key];
-    if (amount <= 0) return [];
-    return [`+${amount} ${EFFECT_SUMMARY_LABELS[key]} damage`];
-  });
+export function affixMatchesAffinity(def: GearAffixDefinition, affinityKeywords: readonly string[]): boolean {
+  return (
+    affinityKeywords.includes(def.keywordId) ||
+    (def.secondaryKeywordId !== undefined && affinityKeywords.includes(def.secondaryKeywordId))
+  );
 }
-
-export { GEAR_AFFIX_IDS };

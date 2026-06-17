@@ -14,6 +14,8 @@ export type DestinationRouteHandlers = {
   resetCorruption: () => void;
   startShop: () => void;
   startAlchemist: () => void;
+  startTrinketShop: () => void;
+  startEquipmentShop: () => void;
   startBattle: (enemyType: typeof CONSTANTS.ENEMY_TYPES.NORMAL | typeof CONSTANTS.ENEMY_TYPES.ELITE) => void;
   startBossBattle: () => void;
 };
@@ -27,6 +29,14 @@ const DESTINATION_HANDLERS: Record<Destination, (handlers: DestinationRouteHandl
   [CONSTANTS.DESTINATIONS.ALCHEMIST_SHOP]: (handlers) => {
     handlers.startAlchemist();
     handlers.navigateTo(CONSTANTS.SCREENS.ALCHEMIST);
+  },
+  [CONSTANTS.DESTINATIONS.TRINKET_SHOP]: (handlers) => {
+    handlers.startTrinketShop();
+    handlers.navigateTo(CONSTANTS.SCREENS.TRINKET_SHOP);
+  },
+  [CONSTANTS.DESTINATIONS.EQUIPMENT_SHOP]: (handlers) => {
+    handlers.startEquipmentShop();
+    handlers.navigateTo(CONSTANTS.SCREENS.EQUIPMENT_SHOP);
   },
   [CONSTANTS.DESTINATIONS.MYSTERY]: (handlers) => handlers.beginMysteryEvent(),
   [CONSTANTS.DESTINATIONS.CORRUPTION]: (handlers) => {

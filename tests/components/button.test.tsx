@@ -52,7 +52,8 @@ describe("Button", () => {
     const { container } = render(<Button variant="outline">Outline</Button>);
     const button = container.querySelector("button")!;
     expect(button.className).toContain("border-border/80");
-    expect(button.className).toContain("hover:brightness-105");
+    expect(button.className).toContain("hover:bg-muted/80");
+    expect(button.className).not.toContain("hover:brightness-105");
   });
 
   it("applies primary hover lift without scale", () => {
@@ -60,6 +61,12 @@ describe("Button", () => {
     const button = container.querySelector("button")!;
     expect(button.className).toContain("button-primary-bloom");
     expect(button.className).not.toContain("scale");
+  });
+
+  it("applies press feedback on primary variant", () => {
+    const { container } = render(<Button variant="primary">Primary</Button>);
+    const button = container.querySelector("button")!;
+    expect(button.className).toContain("active:bg-primary/90");
   });
 
   it("applies sm size", () => {

@@ -11,13 +11,14 @@ import {
   type RefObject,
 } from "react";
 import { createPortal } from "react-dom";
-import { Lock, Trash2 } from "lucide-react";
+import { Dices, Lock, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { playUISound } from "@/lib/audio";
-import { characters, characterArt, type CharacterId } from "@/lib/game-data";
+import { characters, characterArt, gearSlotBackgroundArt, type CharacterId } from "@/lib/game-data";
 import {
   canSalvageGear,
   GEAR_FOOTPRINT,
+  getGearInstanceTitle,
   INVENTORY_COLS,
   INVENTORY_VISIBLE_ROWS,
   isGearCompatibleWithSlot,
@@ -195,6 +196,8 @@ export const InventoryPanel = memo(function InventoryPanel({
   isAnimating,
   boardRef,
   onSalvage,
+  onSalvageModeChange,
+  onSpawnDevGear,
   onGearPointerStart,
   onGearPointerMove,
   onGearPointerEnd,
@@ -210,6 +213,8 @@ export const InventoryPanel = memo(function InventoryPanel({
   isAnimating: boolean;
   boardRef: RefObject<HTMLDivElement | null>;
   onSalvage: (instance: GearInstance) => void;
+  onSalvageModeChange?: (active: boolean) => void;
+  onSpawnDevGear?: () => void;
   onGearPointerStart: GearPointerStart;
   onGearPointerMove: GearPointerMove;
   onGearPointerEnd: GearPointerEnd;
@@ -222,9 +227,68 @@ export const InventoryPanel = memo(function InventoryPanel({
   const [dragSequence, setDragSequence] = useState(0);
   const [salvageMode, setSalvageMode] = useState(false);
   const [salvagePointer, setSalvagePointer] = useState<{ x: number; y: number } | null>(null);
+  const salvageModeRef = useRef(salvageMode);
+  salvageModeRef.current = salvageMode;
+
+  const exitSalvageMode = useCallback(() => {
+    setSalvageMode(false);
+    setSalvagePointer(null);
+    onSalvageModeChange?.(false);
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+  }, [onSalvageModeChange]);
+
+  // Salvage mode persists across confirmed salvages so players can clear several items without re-toggling.
+  // Exit paths: Salvage Gear button, Escape, click outside inventory gear, or context menu.
+  useEffect(() => {
+    if (!salvageMode) return;
+
+    function isSalvageDismissTarget(target: EventTarget | null): boolean {
+      if (!(target instanceof HTMLElement)) return false;
+      if (target.closest('[data-testid="armory-inventory-item"]')) return false;
+      if (target.closest("button")) return false;
+      if (target.closest(".motion-overlay")) return false;
+      return true;
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Escape") return;
+      exitSalvageMode();
+      event.preventDefault();
+      event.stopPropagation();
+    }
+
+    function handleClick(event: MouseEvent) {
+      if (!salvageModeRef.current || !isSalvageDismissTarget(event.target)) return;
+      exitSalvageMode();
+    }
+
+    function handleContextMenu(event: MouseEvent) {
+      if (!salvageModeRef.current) return;
+      event.preventDefault();
+      exitSalvageMode();
+    }
+
+    window.addEventListener("keydown", handleKeyDown, true);
+    document.addEventListener("click", handleClick);
+    document.addEventListener("contextmenu", handleContextMenu);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown, true);
+      document.removeEventListener("click", handleClick);
+      document.removeEventListener("contextmenu", handleContextMenu);
+    };
+  }, [salvageMode, exitSalvageMode]);
+
   const renderedRows = Math.max(INVENTORY_VISIBLE_ROWS, occupiedRows);
   const canScroll = occupiedRows > INVENTORY_VISIBLE_ROWS;
   const hasSalvageableGear = !browseOnly && packedItems.some(({ item }) => canSalvageGear(loadouts, item.instanceId));
+
+  useEffect(() => {
+    if (salvageMode && !hasSalvageableGear) {
+      exitSalvageMode();
+    }
+  }, [salvageMode, hasSalvageableGear, exitSalvageMode]);
 
   function handlePointerDown(event: ReactPointerEvent<HTMLDivElement>) {
     if (!canScroll || event.pointerType === "touch" || event.button !== 0) return;
@@ -277,20 +341,37 @@ export const InventoryPanel = memo(function InventoryPanel({
       onPointerLeave={() => setSalvagePointer(null)}
     >
       <h2 className="text-center font-display text-lg text-amber-100">Inventory</h2>
-      <Button
-        size="icon"
-        variant="outline"
-        disabled={!hasSalvageableGear}
-        className={cn(
-          "absolute right-4 top-3 h-8 w-8 border-red-950/60 text-red-400/65 hover:border-red-900/70 hover:bg-red-950/25 hover:text-red-300 disabled:border-border/40 disabled:text-muted-foreground/45",
-          salvageMode && "border-red-700/70 bg-red-950/35 text-red-300",
-        )}
-        aria-label={salvageMode ? "Cancel salvage" : "Salvage Gear"}
-        aria-pressed={salvageMode}
-        onClick={() => setSalvageMode((current) => !current)}
-      >
-        <Trash2 className="h-3.5 w-3.5" />
-      </Button>
+      <div className="absolute right-4 top-3 isolate flex items-center gap-1.5">
+        {import.meta.env.DEV && onSpawnDevGear ? (
+          <Button
+            size="icon"
+            variant="outline"
+            hoverSound={false}
+            className="h-8 w-8 border-amber-600/50 text-amber-200/80 hover:border-amber-500/70 hover:bg-amber-950/25 hover:text-amber-100"
+            aria-label="Spawn random gear"
+            onClick={onSpawnDevGear}
+          >
+            <Dices className="h-3.5 w-3.5" />
+          </Button>
+        ) : null}
+        <Button
+          size="icon"
+          variant="outline"
+          disabled={!hasSalvageableGear}
+          className={cn(
+            "h-8 w-8 border-red-950/60 text-red-400/65 hover:border-red-900/70 hover:bg-red-950/25 hover:text-red-300 disabled:border-border/40 disabled:text-muted-foreground/45",
+            salvageMode && "border-red-700/70 bg-red-950/35 text-red-300",
+          )}
+          aria-label={salvageMode ? "Cancel salvage" : "Salvage Gear"}
+          aria-pressed={salvageMode}
+          onClick={() => {
+            if (salvageMode) exitSalvageMode();
+            else setSalvageMode(true);
+          }}
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </Button>
+      </div>
       <div
         ref={boardRef}
         data-testid="armory-inventory-board"
@@ -355,11 +436,7 @@ export const InventoryPanel = memo(function InventoryPanel({
                 hasActiveDrag={isDraggingActive}
                 dragSequence={dragSequence}
                 shouldSuppressClick={() => suppressClickRef.current}
-                onSalvage={() => {
-                  setSalvageMode(false);
-                  setSalvagePointer(null);
-                  onSalvage(item);
-                }}
+                onSalvage={() => onSalvage(item)}
                 onGearPointerStart={onGearPointerStart}
                 onGearPointerMove={onGearPointerMove}
                 onGearPointerEnd={onGearPointerEnd}
@@ -439,6 +516,7 @@ const SlotButton = memo(function SlotButton({
         "relative h-full w-full cursor-grab rounded-xl transition-[box-shadow] duration-150 active:cursor-grabbing",
         isCompatible && "shadow-[0_0_0_1px_rgba(134,239,172,0.38),0_0_10px_rgba(34,197,94,0.16)]",
       )}
+      aria-label={`${SLOT_LABELS[slot]} equipment slot`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onFocus={handleMouseEnter}
@@ -478,24 +556,26 @@ const SlotButton = memo(function SlotButton({
       data-testid="armory-equipment-slot"
       data-slot={slot}
     >
-      <TiltSurface
-        className="relative h-full w-full overflow-hidden rounded-xl bg-background/75"
-        tiltEnabled={false}
-        dragging={instance !== undefined && draggedGear?.instanceId === instance.instanceId}
+      <div
+        className={cn(
+          "relative h-full w-full overflow-hidden rounded-xl",
+          instance !== undefined && draggedGear?.instanceId === instance.instanceId && "opacity-0",
+        )}
       >
+        <img
+          src={gearSlotBackgroundArt[slot]}
+          alt=""
+          data-testid="armory-slot-background"
+          className="absolute inset-0 h-full w-full object-cover brightness-[0.65]"
+        />
         {definition?.art ? (
           <img
             src={definition.art}
             alt=""
-            className="absolute -inset-px h-[calc(100%+2px)] w-[calc(100%+2px)] max-w-none object-cover"
+            className="absolute -inset-px z-10 h-[calc(100%+2px)] w-[calc(100%+2px)] max-w-none object-cover"
           />
         ) : null}
-        {definition ? null : (
-          <span className="relative z-10 flex h-full items-center justify-center px-1 text-center text-xs font-semibold leading-tight text-amber-100/45">
-            {SLOT_LABELS[slot]}
-          </span>
-        )}
-      </TiltSurface>
+      </div>
       {showTooltip && definition && !isDraggingActive ? (
         <TooltipPanel
           width="w-72"
@@ -619,6 +699,8 @@ const InventoryGearTile = memo(function InventoryGearTile({
     return null;
   }
 
+  const canSalvage = canSalvageGear(loadouts, instance.instanceId);
+
   return (
     <div
       ref={tileRef}
@@ -668,23 +750,23 @@ const InventoryGearTile = memo(function InventoryGearTile({
       onFocus={handleFocus}
       onBlur={handleBlur}
       data-testid="armory-inventory-item"
-      data-gear-title={definition.title}
+      data-gear-title={getGearInstanceTitle(instance)}
     >
       <div
-        role={salvageMode ? "button" : undefined}
-        tabIndex={salvageMode ? 0 : undefined}
-        className="relative h-full w-full overflow-hidden rounded-xl bg-background/60 group"
+        role={salvageMode && canSalvage ? "button" : undefined}
+        tabIndex={salvageMode && canSalvage ? 0 : undefined}
+        className={cn("armory-salvage-tile relative h-full w-full overflow-hidden rounded-xl bg-background/60 group")}
         onClick={() => {
           if (shouldSuppressClick()) return;
-          if (salvageMode && canSalvageGear(loadouts, instance.instanceId)) onSalvage();
+          if (salvageMode && canSalvage) onSalvage();
         }}
         onKeyDown={(event) => {
-          if (salvageMode && (event.key === "Enter" || event.key === " ")) {
+          if (salvageMode && canSalvage && (event.key === "Enter" || event.key === " ")) {
             event.preventDefault();
-            if (canSalvageGear(loadouts, instance.instanceId)) onSalvage();
+            onSalvage();
           }
         }}
-        aria-label={salvageMode ? `Salvage ${definition.title}` : undefined}
+        aria-label={salvageMode && canSalvage ? `Salvage ${getGearInstanceTitle(instance)}` : undefined}
       >
         <img
           src={definition.art}
@@ -692,7 +774,14 @@ const InventoryGearTile = memo(function InventoryGearTile({
           className="absolute -inset-px h-[calc(100%+2px)] w-[calc(100%+2px)] max-w-none object-cover"
         />
         {salvageMode ? (
-          <div className="absolute inset-0 pointer-events-none rounded-xl ring-inset ring-1 ring-red-400/25 group-hover:ring-red-300/60" />
+          <div
+            className={cn(
+              "absolute inset-0 pointer-events-none rounded-xl ring-inset ring-1",
+              canSalvage
+                ? "ring-red-400/25 group-hover:ring-red-300/60 group-focus-visible:ring-red-300/80"
+                : "ring-red-400/10",
+            )}
+          />
         ) : null}
       </div>
       {showTooltip && tooltipAnchor

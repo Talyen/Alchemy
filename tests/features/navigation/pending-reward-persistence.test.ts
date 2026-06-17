@@ -9,7 +9,10 @@ import { createEmptyRewardState } from "@/features/alchemy/run-loop/navigation/r
 
 describe("pending reward persistence", () => {
   it("round-trips gear reward choices with affixes intact", () => {
-    const instance = createGearInstance(gearDefinitions["ruby-ring-basic"], ["flat-burn-1", "flat-freeze-1"]);
+    const instance = createGearInstance(gearDefinitions["ruby-ring-basic"], [
+      { id: "flat-burn", value: 1 },
+      { id: "flat-freeze", value: 1 },
+    ]);
     const rewardState = {
       ...createEmptyRewardState(),
       rewardType: "gear" as const,

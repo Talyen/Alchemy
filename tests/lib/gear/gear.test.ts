@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
+import { gearAffixCatalog } from "@/lib/gear/affix-catalog";
 import {
   canSalvageGear,
   computeGearManifest,
+  computeGearMaxHealthBonus,
   createEmptyGearLoadouts,
   createGearInstance,
   defaultGearEffects,
@@ -11,7 +13,7 @@ import {
   gearDefinitions,
   isGearCompatibleWithSlot,
   isTwoHanded,
-  modifiersToAffixIds,
+  modifiersToAffixRolls,
   normalizeExclusiveGearLoadouts,
   normalizeGearInstance,
   normalizeGearLoadout,
@@ -19,7 +21,7 @@ import {
   resolveAffixEffects,
   rollAffixCount,
   rollAffixes,
-  rollGearRarity,
+  rollGearRewardRarity,
   salvageGear,
   unequipGear,
   type GearInstance,
@@ -27,7 +29,7 @@ import {
   GEAR_SLOTS,
 } from "@/lib/gear";
 
-const ring: GearInstance = { instanceId: "ring-1", definitionId: "placeholder-ring", affixIds: [] };
+const ring: GearInstance = { instanceId: "ring-1", definitionId: "ruby-ring-basic", affixes: [] };
 
 function manifestWithPhysical(amount: number) {
   return { ...defaultGearEffects, flatPhysicalDamage: amount };
@@ -63,31 +65,44 @@ describe("gear domain", () => {
       equipGear(loadouts, "knight", "body", {
         instanceId: "x",
         definitionId: "not-a-gear-id",
-        affixIds: [],
+        affixes: [],
       }, []),
     ).toBe(loadouts);
 
     expect(
       equipGear(loadouts, "knight", "helm", {
         instanceId: "body-1",
-        definitionId: "placeholder-body",
-        affixIds: [],
+        definitionId: "leather-armor-basic",
+        affixes: [],
       }, []),
     ).toBe(loadouts);
   });
 
-  it("aggregates one physical damage per equipped placeholder", () => {
-    const body: GearInstance = { instanceId: "body-1", definitionId: "placeholder-body", affixIds: [] };
-    let loadouts = equipGear(createEmptyGearLoadouts(), "knight", "body", body, [body, ring]);
-    loadouts = equipGear(loadouts, "knight", "left-ring", ring, [body, ring]);
-    expect(computeGearManifest("knight", [body, ring], loadouts)).toEqual(manifestWithPhysical(2));
+  it("aggregates equipped affix physical damage", () => {
+    const body: GearInstance = {
+      instanceId: "body-1",
+      definitionId: "leather-armor-basic",
+      affixes: [{ id: "flat-physical", value: 1 }],
+    };
+    const ringWithAffix: GearInstance = {
+      instanceId: "ring-1",
+      definitionId: "ruby-ring-basic",
+      affixes: [{ id: "flat-physical", value: 1 }],
+    };
+    let loadouts = equipGear(createEmptyGearLoadouts(), "knight", "body", body, [body, ringWithAffix]);
+    loadouts = equipGear(loadouts, "knight", "left-ring", ringWithAffix, [body, ringWithAffix]);
+    expect(computeGearManifest("knight", [body, ringWithAffix], loadouts)).toEqual(manifestWithPhysical(2));
   });
 
   it("aggregates affix effects by damage type", () => {
     const item: GearInstance = {
       instanceId: "gear-1",
       definitionId: "ruby-ring-basic",
-      affixIds: ["flat-burn-1", "flat-freeze-1", "flat-burn-1"],
+      affixes: [
+        { id: "flat-burn", value: 1 },
+        { id: "flat-freeze", value: 1 },
+        { id: "flat-burn", value: 1 },
+      ],
     };
     expect(effectsForInstance(item)).toEqual({
       ...defaultGearEffects,
@@ -96,12 +111,12 @@ describe("gear domain", () => {
     });
   });
 
-  it("normalizes legacy physical modifiers into affix ids", () => {
-    expect(modifiersToAffixIds([{ kind: "flatPhysicalDamage", value: 2 }])).toEqual([
-      "flat-physical-1",
-      "flat-physical-1",
+  it("normalizes legacy physical modifiers into affix rolls", () => {
+    expect(modifiersToAffixRolls([{ kind: "flatPhysicalDamage", value: 2 }])).toEqual([
+      { id: "flat-physical", value: 1 },
+      { id: "flat-physical", value: 1 },
     ]);
-    expect(resolveAffixEffects(modifiersToAffixIds([{ kind: "flatPhysicalDamage", value: 2 }]))).toEqual(
+    expect(resolveAffixEffects(modifiersToAffixRolls([{ kind: "flatPhysicalDamage", value: 2 }]), "basic")).toEqual(
       manifestWithPhysical(2),
     );
   });
@@ -113,30 +128,33 @@ describe("gear domain", () => {
     expect(rollAffixCount("astral", () => 0.99)).toBe(4);
   });
 
-  it("weights affinity-matching affixes higher", () => {
+  it("rolls affixes only from the eligible hard-filter pool", () => {
     const definition = gearDefinitions["ruby-ring-basic"];
-    const rolls = Array.from({ length: 40 }, (_, index) => index / 40);
-    const selections = rolls.map((roll) => rollAffixes(definition, 1, () => roll)[0]);
-    expect(selections.filter((affixId) => affixId === "flat-burn-1").length).toBeGreaterThan(
-      selections.filter((affixId) => affixId === "flat-physical-1").length,
-    );
+    const rolls = Array.from({ length: 20 }, (_, index) => index / 20);
+    for (const roll of rolls) {
+      const selected = rollAffixes(definition, 1, () => roll);
+      for (const affixRoll of selected) {
+        const affixDef = gearAffixCatalog[affixRoll.id];
+        expect(
+          definition.affinityKeywords.includes(affixDef.keywordId) ||
+            (affixDef.secondaryKeywordId !== undefined &&
+              definition.affinityKeywords.includes(affixDef.secondaryKeywordId)),
+        ).toBe(true);
+      }
+    }
   });
 
-  it("rolls rarity by enemy type with deterministic rng", () => {
-    expect(rollGearRarity("normal", () => 0.1)).toBe("basic");
-    expect(rollGearRarity("normal", () => 0.9)).toBe("astral");
-    expect(rollGearRarity("elite", () => 0.4)).toBe("basic");
-    expect(rollGearRarity("elite", () => 0.6)).toBe("astral");
-    expect(rollGearRarity("boss", () => 0.2)).toBe("basic");
-    expect(rollGearRarity("boss", () => 0.8)).toBe("astral");
+  it("rolls reward gear rarity 50/50 with deterministic rng", () => {
+    expect(rollGearRewardRarity(() => 0.1)).toBe("basic");
+    expect(rollGearRewardRarity(() => 0.9)).toBe("astral");
   });
 
   it("clears off-hand when equipping a two-handed main-hand weapon", () => {
-    const staff = createGearInstance(gearDefinitions["staff-basic"], ["flat-burn-1"]);
+    const staff = createGearInstance(gearDefinitions["staff-basic"], [{ id: "flat-burn", value: 1 }]);
     const shield: GearInstance = {
       instanceId: "shield-1",
-      definitionId: "leather-shield-basic",
-      affixIds: [],
+      definitionId: "leather-buckler-basic",
+      affixes: [],
     };
     let loadouts = equipGear(createEmptyGearLoadouts(), "knight", "off-hand", shield, [staff, shield]);
     loadouts = equipGear(loadouts, "knight", "main-hand", staff, [staff, shield]);
@@ -146,11 +164,11 @@ describe("gear domain", () => {
   });
 
   it("clears two-handed main-hand when equipping off-hand", () => {
-    const staff = createGearInstance(gearDefinitions["staff-basic"], ["flat-burn-1"]);
+    const staff = createGearInstance(gearDefinitions["staff-basic"], [{ id: "flat-burn", value: 1 }]);
     const shield: GearInstance = {
       instanceId: "shield-1",
-      definitionId: "leather-shield-basic",
-      affixIds: [],
+      definitionId: "leather-buckler-basic",
+      affixes: [],
     };
     let loadouts = equipGear(createEmptyGearLoadouts(), "knight", "main-hand", staff, [staff, shield]);
     loadouts = equipGear(loadouts, "knight", "off-hand", shield, [staff, shield]);
@@ -159,30 +177,45 @@ describe("gear domain", () => {
   });
 
   it("skips orphan loadout references and missing definitions in manifest", () => {
-    const body: GearInstance = { instanceId: "body-1", definitionId: "placeholder-body", affixIds: [] };
+    const body: GearInstance = { instanceId: "body-1", definitionId: "leather-armor-basic", affixes: [] };
     const loadouts = equipGear(createEmptyGearLoadouts(), "knight", "body", body, [body]);
     loadouts.knight.helm = "missing-instance";
-    expect(computeGearManifest("knight", [body], loadouts)).toEqual(manifestWithPhysical(1));
+    expect(computeGearManifest("knight", [body], loadouts)).toEqual(manifestWithPhysical(0));
   });
 
   it("applies instance affixes on top of definition effects", () => {
     const body: GearInstance = {
       instanceId: "body-1",
-      definitionId: "placeholder-body",
-      affixIds: ["flat-physical-1", "flat-physical-1"],
+      definitionId: "leather-armor-basic",
+      affixes: [
+        { id: "flat-physical", value: 1 },
+        { id: "flat-physical", value: 1 },
+      ],
     };
     const loadouts = equipGear(createEmptyGearLoadouts(), "knight", "body", body, [body]);
-    expect(computeGearManifest("knight", [body], loadouts)).toEqual(manifestWithPhysical(3));
+    expect(computeGearManifest("knight", [body], loadouts)).toEqual(manifestWithPhysical(2));
   });
 
-  it("ignores legacy modifiers when affixIds are present", () => {
+  it("ignores legacy modifiers when affix rolls are present", () => {
     const normalized = normalizeGearInstance({
       instanceId: "gear-1",
-      definitionId: "placeholder-ring",
+      definitionId: "ruby-ring-basic",
       affixIds: ["flat-physical-1"],
       modifiers: [{ kind: "flatPhysicalDamage", value: 2 }],
     });
-    expect(normalized?.affixIds).toEqual(["flat-physical-1"]);
+    expect(normalized?.affixes).toEqual([{ id: "flat-physical", value: 1 }]);
+  });
+
+  it("migrates legacy affix ids to rolls", () => {
+    const normalized = normalizeGearInstance({
+      instanceId: "gear-1",
+      definitionId: "ruby-ring-basic",
+      affixIds: ["flat-physical-1", "flat-physical-1"],
+    });
+    expect(normalized?.affixes).toEqual([
+      { id: "flat-physical", value: 1 },
+      { id: "flat-physical", value: 1 },
+    ]);
   });
 
   it("rejects equipping gear that is not in inventory", () => {
@@ -230,5 +263,39 @@ describe("gear domain", () => {
     const pruned = pruneOrphanGearLoadouts([], loadouts);
     expect(pruned.knight["left-ring"]).toBeNull();
     expect(pruneOrphanGearLoadouts(inventory, loadouts).knight["left-ring"]).toBe("ring-1");
+  });
+
+  it("reports gear max-health bonus from equipped loadout", () => {
+    const body: GearInstance = {
+      instanceId: "body-1",
+      definitionId: "leather-armor-basic",
+      affixes: [{ id: "max-health", value: 2 }],
+    };
+    const loadouts = equipGear(createEmptyGearLoadouts(), "knight", "body", body, [body]);
+    expect(computeGearMaxHealthBonus("knight", [body], loadouts)).toBeGreaterThan(0);
+  });
+
+  it("normalizes legacy leather-hood definition ids to leather-helm", () => {
+    const normalized = normalizeGearInstance({
+      instanceId: "hood-1",
+      definitionId: "leather-hood-basic",
+      affixes: [{ id: "max-health", value: 1 }],
+    });
+    expect(normalized?.definitionId).toBe("leather-helm-basic");
+  });
+
+  it("normalizes legacy great-axe definition ids to double-axe", () => {
+    const basic = normalizeGearInstance({
+      instanceId: "axe-1",
+      definitionId: "great-axe-basic",
+      affixes: [],
+    });
+    const astral = normalizeGearInstance({
+      instanceId: "axe-2",
+      definitionId: "great-axe-astral",
+      affixes: [],
+    });
+    expect(basic?.definitionId).toBe("double-axe-basic");
+    expect(astral?.definitionId).toBe("double-axe-astral");
   });
 });

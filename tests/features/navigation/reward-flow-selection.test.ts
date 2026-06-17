@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
   createBossRewardState,
   createCombatRewardState,
@@ -9,23 +9,30 @@ import { emptyInventory } from "@/lib/homestead/inventory";
 
 describe("reward flow selection", () => {
   describe("createWildwoodRewardState", () => {
-    it("uses an exact half roll for three card choices", () => {
-      const result = createWildwoodRewardState(getStartingDeck("knight"), () => 0.5);
+    it("rolls card rewards at the low third", () => {
+      const result = createWildwoodRewardState(getStartingDeck("knight"), () => 0.1);
       expect(result.rewardType).toBe("card");
       expect(result.choices).toHaveLength(3);
       expect(result.gold).toBe(0);
       expect(result.materials).toEqual(emptyInventory());
     });
 
-    it("uses an exact half roll for three boon choices", () => {
-      const result = createWildwoodRewardState(getStartingDeck("knight"), () => 0.49);
+    it("rolls trinket rewards in the middle third", () => {
+      const result = createWildwoodRewardState(getStartingDeck("knight"), () => 0.5);
       expect(result.rewardType).toBe("trinket");
       expect(result.choices).toHaveLength(3);
+    });
+
+    it("rolls gear rewards in the high third", () => {
+      const result = createWildwoodRewardState(getStartingDeck("knight"), () => 0.9);
+      expect(result.rewardType).toBe("gear");
+      expect(result.choices).toHaveLength(3);
+      expect(result.choices.every((choice) => "instanceId" in choice)).toBe(true);
     });
   });
 
   describe("createBossRewardState", () => {
-    it("creates boon reward with summed gold", () => {
+    it("creates gear reward with summed gold", () => {
       const result = createBossRewardState({
         gold: 10,
         bossBonus: 5,
@@ -35,10 +42,10 @@ describe("reward flow selection", () => {
         trinketIds: [],
         rng: () => 0.99,
       });
-      expect(result.rewardType).toBe("trinket");
+      expect(result.rewardType).toBe("gear");
       expect(result.gold).toBe(17);
       expect(result.choices.length).toBeGreaterThan(0);
-      expect(result.choices.every((choice) => "id" in choice && "title" in choice)).toBe(true);
+      expect(result.choices.every((choice) => "instanceId" in choice)).toBe(true);
     });
 
     it("handles zero bonuses", () => {
@@ -83,8 +90,7 @@ describe("reward flow selection", () => {
   describe("createCombatRewardState", () => {
     const baseState = { currentEnemy: { enemyType: "normal" }, gold: 15 } as const;
 
-    it("offers card rewards when random exceeds boon chance", () => {
-      vi.spyOn(Math, "random").mockReturnValue(0.5);
+    it("offers card rewards for normal enemies", () => {
       const result = createCombatRewardState({
         battleState: baseState as never,
         runDeck: [],
@@ -99,12 +105,10 @@ describe("reward flow selection", () => {
       expect(result.rewardType).toBe("card");
       expect(result.gold).toBe(15);
       expect(result.choices.length).toBeGreaterThan(0);
-      vi.restoreAllMocks();
     });
 
-    it("high elite boon chance offers boons for elite enemies", () => {
+    it("always offers trinket rewards for elite enemies", () => {
       const eliteState = { currentEnemy: { enemyType: "elite" }, gold: 10 } as const;
-      vi.spyOn(Math, "random").mockReturnValue(0.5);
       const result = createCombatRewardState({
         battleState: eliteState as never,
         runDeck: [],
@@ -118,11 +122,9 @@ describe("reward flow selection", () => {
       });
       expect(result.rewardType).toBe("trinket");
       expect(result.gold).toBe(17);
-      vi.restoreAllMocks();
     });
 
     it("includes destinations in result", () => {
-      vi.spyOn(Math, "random").mockReturnValue(0.99);
       const result = createCombatRewardState({
         battleState: baseState as never,
         runDeck: [],
@@ -135,11 +137,9 @@ describe("reward flow selection", () => {
         trinketIds: [],
       });
       expect(result.destinations).toEqual(["Normal Combat", "Mystery"]);
-      vi.restoreAllMocks();
     });
 
     it("applies goldMultiplier to combat reward gold", () => {
-      vi.spyOn(Math, "random").mockReturnValue(0.99);
       const result = createCombatRewardState({
         battleState: baseState as never,
         runDeck: [],
@@ -153,11 +153,9 @@ describe("reward flow selection", () => {
         goldMultiplier: 1.5,
       });
       expect(result.gold).toBe(22);
-      vi.restoreAllMocks();
     });
 
     it("goldMultiplier defaults to 1 for combat rewards", () => {
-      vi.spyOn(Math, "random").mockReturnValue(0.99);
       const result = createCombatRewardState({
         battleState: baseState as never,
         runDeck: [],
@@ -170,31 +168,6 @@ describe("reward flow selection", () => {
         trinketIds: [],
       });
       expect(result.gold).toBe(15);
-      vi.restoreAllMocks();
-    });
-
-    it("trinket-hoarder trait adds +10pp boon chance", () => {
-      const goblinState = {
-        currentEnemy: {
-          enemyType: "normal",
-          traits: [{ id: "trinket-hoarder", title: "Trinket Hoarder", description: "" }],
-        },
-        gold: 10,
-      } as const;
-      vi.spyOn(Math, "random").mockReturnValue(0.15);
-      const result = createCombatRewardState({
-        battleState: goblinState as never,
-        runDeck: [],
-        gold: 10,
-        eliteBonus: 3,
-        generousBonus: 0,
-        talentGoldPerCombat: 2,
-        materials: emptyInventory(),
-        destinations: [],
-        trinketIds: [],
-      });
-      expect(result.rewardType).toBe("trinket");
-      vi.restoreAllMocks();
     });
   });
 });

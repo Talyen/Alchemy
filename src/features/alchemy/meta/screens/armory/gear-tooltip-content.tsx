@@ -1,4 +1,5 @@
 import { getGearInstanceTooltipLines, type GearDefinition, type GearInstance } from "@/lib/gear";
+import { GearItemTitle } from "../../../shared/ui/gear-item-title";
 import { renderColoredKeywords } from "../../../shared/ui/card-description-ui";
 import { TooltipBody, TooltipHeader } from "../../../shared/ui/tooltip-panel";
 
@@ -15,7 +16,7 @@ export function GearTooltipContent({
 
   return (
     <div>
-      <TooltipHeader>{definition.title}</TooltipHeader>
+      <TooltipHeader>{instance ? <GearItemTitle instance={instance} /> : definition.title}</TooltipHeader>
       <TooltipBody>
         {lines.map((line) => (
           <p key={line.key} className="text-sm text-muted-foreground">

@@ -9,8 +9,8 @@ import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
 
 describe("ArmoryScreen", () => {
   const mockInventory: GearInstance[] = [
-    { instanceId: "gear-helm", definitionId: "placeholder-helm", affixIds: [] },
-    { instanceId: "gear-body", definitionId: "placeholder-body", affixIds: [] },
+    { instanceId: "gear-helm", definitionId: "leather-helm-basic", affixes: [] },
+    { instanceId: "gear-body", definitionId: "leather-armor-basic", affixes: [] },
   ];
 
   beforeEach(() => {
@@ -48,8 +48,8 @@ describe("ArmoryScreen", () => {
     expect(screen.getByRole("heading", { name: "Equipment" })).toBeTruthy();
 
     // Verify items in the inventory board are rendered via their dataset attributes
-    expect(document.querySelector('[data-gear-title="Placeholder Helm"]')).toBeTruthy();
-    expect(document.querySelector('[data-gear-title="Placeholder Body"]')).toBeTruthy();
+    expect(document.querySelector('[data-gear-title="Leather Helm"]')).toBeTruthy();
+    expect(document.querySelector('[data-gear-title="Leather Armor"]')).toBeTruthy();
   });
 
   it("switches characters when tab buttons are clicked", async () => {
@@ -78,7 +78,7 @@ describe("ArmoryScreen", () => {
     expect(screen.getByRole("heading", { name: "Rogue" })).toBeTruthy();
   });
 
-  it("shows a confirmation dialog and triggers salvage when requested", async () => {
+  it("stays in salvage mode after confirming a salvage (multi-item flow)", async () => {
     const user = userEvent.setup();
     const onSalvageMock = vi.fn();
 
@@ -99,19 +99,108 @@ describe("ArmoryScreen", () => {
     const salvageModeBtn = screen.getByLabelText("Salvage Gear");
     await user.click(salvageModeBtn);
 
-    // Click the helm item to trigger salvage
-    const helmTile = screen.getByRole("button", { name: "Salvage Placeholder Helm" });
+    expect(screen.getByLabelText("Cancel salvage")).toBeTruthy();
+    const helmTile = screen.getByRole("button", { name: "Salvage Leather Helm" });
     await user.click(helmTile);
 
     // Verify confirmation modal elements are visible
     expect(screen.getByText("Salvage Gear?")).toBeTruthy();
-    expect(screen.getByText(/Permanently salvage Placeholder Helm/)).toBeTruthy();
+    expect(screen.getByText(/Permanently salvage Leather Helm/)).toBeTruthy();
 
-    // Confirm salvage
+    // Confirm salvage — salvage mode must remain active for the next item
     const confirmBtn = screen.getByRole("button", { name: "Salvage" });
     await user.click(confirmBtn);
 
     expect(onSalvageMock).toHaveBeenCalledWith("gear-helm");
+    expect(screen.getByLabelText("Cancel salvage")).toBeTruthy();
+  });
+
+  it("exits salvage mode when clicking outside inventory gear", async () => {
+    const user = userEvent.setup();
+    render(
+      <ArmoryScreen
+        inventory={mockInventory}
+        loadouts={createEmptyGearLoadouts()}
+        finishedRunCharacters={["knight"]}
+        browseOnly={false}
+        onOpenMenu={vi.fn()}
+        onEquip={vi.fn()}
+        onUnequip={vi.fn()}
+        onSalvage={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByLabelText("Salvage Gear"));
+    expect(screen.getByLabelText("Cancel salvage")).toBeTruthy();
+
+    await user.click(screen.getByRole("heading", { name: "Knight" }));
+    expect(screen.getByLabelText("Salvage Gear")).toBeTruthy();
+  });
+
+  it("exits salvage mode when Escape is pressed", async () => {
+    const user = userEvent.setup();
+    render(
+      <ArmoryScreen
+        inventory={mockInventory}
+        loadouts={createEmptyGearLoadouts()}
+        finishedRunCharacters={["knight"]}
+        browseOnly={false}
+        onOpenMenu={vi.fn()}
+        onEquip={vi.fn()}
+        onUnequip={vi.fn()}
+        onSalvage={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByLabelText("Salvage Gear"));
+    await user.keyboard("{Escape}");
+    expect(screen.getByLabelText("Salvage Gear")).toBeTruthy();
+  });
+
+  it("exits salvage mode on right click", async () => {
+    const user = userEvent.setup();
+    render(
+      <ArmoryScreen
+        inventory={mockInventory}
+        loadouts={createEmptyGearLoadouts()}
+        finishedRunCharacters={["knight"]}
+        browseOnly={false}
+        onOpenMenu={vi.fn()}
+        onEquip={vi.fn()}
+        onUnequip={vi.fn()}
+        onSalvage={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByLabelText("Salvage Gear"));
+    await user.pointer({ target: screen.getByTestId("armory-inventory-board"), keys: "[MouseRight]" });
+    expect(screen.getByLabelText("Salvage Gear")).toBeTruthy();
+  });
+
+  it("renders the dev spawn button when onSpawnDevGear is provided in dev builds", async () => {
+    const onSpawnDevGear = vi.fn();
+    render(
+      <ArmoryScreen
+        inventory={mockInventory}
+        loadouts={createEmptyGearLoadouts()}
+        finishedRunCharacters={["knight"]}
+        browseOnly={false}
+        onOpenMenu={vi.fn()}
+        onEquip={vi.fn()}
+        onUnequip={vi.fn()}
+        onSalvage={vi.fn()}
+        onSpawnDevGear={onSpawnDevGear}
+      />,
+    );
+
+    if (!import.meta.env.DEV) {
+      expect(screen.queryByLabelText("Spawn random gear")).toBeNull();
+      return;
+    }
+
+    const spawnBtn = screen.getByLabelText("Spawn random gear");
+    await userEvent.setup().click(spawnBtn);
+    expect(onSpawnDevGear).toHaveBeenCalledTimes(1);
   });
 
   it("shows browse-only banner when combat is active", () => {
@@ -168,8 +257,8 @@ describe("ArmoryScreen", () => {
       />,
     );
 
-    expect(document.querySelector('[data-gear-title="Placeholder Helm"]')).toBeTruthy();
-    expect(document.querySelector('[data-gear-title="Placeholder Body"]')).toBeNull();
+    expect(document.querySelector('[data-gear-title="Leather Helm"]')).toBeTruthy();
+    expect(document.querySelector('[data-gear-title="Leather Armor"]')).toBeNull();
   });
 
   it("automatically cleans up stale saved coordinates in the gear store on mount", async () => {

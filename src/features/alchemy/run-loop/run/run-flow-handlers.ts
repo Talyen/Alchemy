@@ -55,6 +55,8 @@ export type RunFlowHandlerDeps = {
   onLabyrinthClearNode: () => void;
   onInitShop: () => void;
   onInitAlchemist: () => void;
+  onInitTrinketShop: () => void;
+  onInitEquipmentShop: () => void;
   onStartBattle: (deck?: BattleCard[], gold?: number, enemyType?: "normal" | "elite") => void;
   onStartBossBattle: () => void;
   onStartBossById: (bossId: string, modifiers?: DifficultyModifier[]) => boolean;
@@ -142,15 +144,13 @@ export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
     if (runState.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
       const wildwood = readRunSessionStore().wildwoodDraft;
       if (wildwood) {
-        // Wildwood draft rewardType is card | trinket only; gear rewards never occur in Wildwood.
         setWildwoodDraft({
           ...wildwood,
           phase: "recovery",
-          rewardType: result.rewardState.rewardType === "gear" ? null : result.rewardState.rewardType,
+          rewardType: result.rewardState.rewardType,
           rewardChoiceIds:
-            result.rewardState.rewardType === "gear"
-              ? result.rewardState.choices.map((choice) => choice.instanceId)
-              : result.rewardState.choices.map((choice) => choice.id),
+            result.rewardState.rewardType === "gear" ? [] : result.rewardState.choices.map((choice) => choice.id),
+          rewardGearChoices: result.rewardState.rewardType === "gear" ? result.rewardState.choices : [],
           selectedRewardId: null,
         });
       }
@@ -281,6 +281,8 @@ export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
       resetCorruption: () => setCorruptionResult(null),
       startShop: deps.onInitShop,
       startAlchemist: deps.onInitAlchemist,
+      startTrinketShop: deps.onInitTrinketShop,
+      startEquipmentShop: deps.onInitEquipmentShop,
       startBattle: (enemyType) => deps.onStartBattle(undefined, undefined, enemyType),
       startBossBattle: () => {
         if (selectedBossId && deps.onStartBossById(selectedBossId)) return;

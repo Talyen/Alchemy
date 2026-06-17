@@ -1,9 +1,9 @@
 import { gearDefinitions } from "./definitions";
-import type { GearDefinition, GearInstance, GearSlot } from "./types";
+import type { GearBoardPositions, GearDefinition, GearInstance, GearSlot } from "./types";
 
 export type GearFootprint = { w: number; h: number };
 
-export const INVENTORY_COLS = 8;
+export const INVENTORY_COLS = 7;
 export const INVENTORY_VISIBLE_ROWS = 8;
 
 export const GEAR_FOOTPRINT: Record<GearSlot, GearFootprint> = {
@@ -187,6 +187,29 @@ export function footprintForInstance(instance: { definitionId: string }): GearFo
   return GEAR_FOOTPRINT[definition.compatibleSlots[0]!];
 }
 
+export function canOccupyVacatedInventoryPlacement(
+  items: PackedInventoryItem[],
+  incomingInstanceId: string,
+  incomingFootprint: GearFootprint,
+  displacedFootprint: GearFootprint,
+  placement: InventoryPlacement,
+  cols: number,
+): boolean {
+  if (placement.col < 1 || placement.row < 1 || placement.col + displacedFootprint.w - 1 > cols) {
+    return false;
+  }
+  if (incomingFootprint.w === displacedFootprint.w && incomingFootprint.h === displacedFootprint.h) {
+    return true;
+  }
+  return !inventoryPlacementCollides(
+    items.filter((item) => item.item.instanceId !== incomingInstanceId),
+    "__vacated__",
+    placement,
+    displacedFootprint,
+    cols,
+  );
+}
+
 export function packInventoryWithPositions<T extends { definitionId: string; instanceId: string }>(
   items: T[],
   cols: number,
@@ -240,4 +263,22 @@ export function packInventoryWithPositions<T extends { definitionId: string; ins
   }
 
   return { items: packedItems, occupiedRows };
+}
+
+export function sanitizeGearBoardPositions(
+  boardPositions: GearBoardPositions,
+  inventory: GearInstance[],
+): GearBoardPositions {
+  const inventoryIds = new Set(inventory.map((item) => item.instanceId));
+  const next: GearBoardPositions = {};
+  for (const [instanceId, position] of Object.entries(boardPositions)) {
+    if (!inventoryIds.has(instanceId)) continue;
+    const item = inventory.find((entry) => entry.instanceId === instanceId);
+    if (!item) continue;
+    const footprint = footprintForInstance(item);
+    if (!footprint) continue;
+    if (position.col < 1 || position.row < 1 || position.col + footprint.w - 1 > INVENTORY_COLS) continue;
+    next[instanceId] = position;
+  }
+  return next;
 }

@@ -3,11 +3,24 @@ import { CAMPFIRE_HEALTH_THRESHOLD, ELITE_HEALTH_THRESHOLD, SHOP_MIN_GOLD } from
 
 import { DESTINATIONS, type Destination } from "./destinations";
 
+const GOLD_GATED_SHOPS: Destination[] = [
+  DESTINATIONS.MERCHANT_SHOP,
+  DESTINATIONS.ALCHEMIST_SHOP,
+  DESTINATIONS.TRINKET_SHOP,
+  DESTINATIONS.EQUIPMENT_SHOP,
+];
+
+export function isGoldGatedShop(destination: Destination): boolean {
+  return GOLD_GATED_SHOPS.includes(destination);
+}
+
 const destinationPool: Destination[] = [
   DESTINATIONS.NORMAL_COMBAT,
   DESTINATIONS.ELITE_COMBAT,
   DESTINATIONS.MERCHANT_SHOP,
   DESTINATIONS.ALCHEMIST_SHOP,
+  DESTINATIONS.TRINKET_SHOP,
+  DESTINATIONS.EQUIPMENT_SHOP,
   DESTINATIONS.MYSTERY,
   DESTINATIONS.CORRUPTION,
   DESTINATIONS.CAMPFIRE,
@@ -19,8 +32,7 @@ export function getAvailableDestinations(currentHealth: number, currentGold: num
   return destinationPool.filter((d) => {
     if (d === DESTINATIONS.BOSS_COMBAT) return false;
     if (d === DESTINATIONS.CAMPFIRE && currentHealth >= Math.floor(maxHealth * CAMPFIRE_HEALTH_THRESHOLD)) return false;
-    if ((d === DESTINATIONS.MERCHANT_SHOP || d === DESTINATIONS.ALCHEMIST_SHOP) && currentGold < SHOP_MIN_GOLD)
-      return false;
+    if (isGoldGatedShop(d) && currentGold < SHOP_MIN_GOLD) return false;
     if (d === DESTINATIONS.ELITE_COMBAT && currentHealth < Math.floor(maxHealth * ELITE_HEALTH_THRESHOLD)) return false;
     return true;
   });

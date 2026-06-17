@@ -54,12 +54,14 @@ function initializePlayerHealthAndBlock(
   options: CreateBattleStateOptions,
   talentEffects: TalentEffectManifest,
   startBlock: number,
+  gearEffects: GearEffectManifest,
 ) {
   const maxHealth = options.maxHealth ?? MAX_PLAYER_HEALTH;
   const playerHealth = options.playerHealth ?? MAX_PLAYER_HEALTH;
-  const startingHealth = Math.min(maxHealth, playerHealth + talentEffects.startHealth);
-  const startingBlock = talentEffects.startBlock + startBlock;
-  const startingArmor = talentEffects.startArmor;
+  const startingHealth = Math.min(maxHealth, playerHealth + talentEffects.startHealth + gearEffects.startHeal);
+  const baseBlock = talentEffects.startBlock + startBlock + gearEffects.startBlock;
+  const startingBlock = baseBlock > 0 ? baseBlock + gearEffects.flatBlockGained : 0;
+  const startingArmor = talentEffects.startArmor + gearEffects.startArmor;
   return { startingHealth, maxHealth, startingBlock, startingArmor };
 }
 
@@ -116,10 +118,13 @@ function buildInitialBattleState(
     playerStatuses: {
       ...baseState.playerStatuses,
       block: setup.startingBlock + (setup.talentEffects.manaBulwarkActive ? setup.mana : 0),
-      forge: setup.talentEffects.startForge,
+      forge: setup.talentEffects.startForge + setup.gearEffects.startForge,
       armor: setup.startingArmor + (setup.talentEffects.manaShellActive ? setup.mana : 0),
     },
-    enemyStatuses: { ...baseState.enemyStatuses, freeze: setup.talentEffects.startFreeze },
+    enemyStatuses: {
+      ...baseState.enemyStatuses,
+      freeze: setup.talentEffects.startFreeze + setup.gearEffects.startFreeze,
+    },
     activeCompanion: setup.activeCompanion,
     currentEnemy: setup.currentEnemy,
     talentEffects: setup.talentEffects,
@@ -172,7 +177,7 @@ export function createBattleState(options: CreateBattleStateOptions): BattleStat
     maxHealth: finalMaxHealth,
     startingBlock,
     startingArmor: playerStartingArmor,
-  } = initializePlayerHealthAndBlock(options, battleTalents, startBlock);
+  } = initializePlayerHealthAndBlock(options, battleTalents, startBlock, battleGearEffects);
 
   return buildInitialBattleState(defaultBattleState(), {
     deck,

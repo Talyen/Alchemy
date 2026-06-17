@@ -61,6 +61,8 @@ export const destinationMeta: Record<Destination, { icon: LucideIcon; accentClas
   "Elite Combat": { icon: ShieldAlert, accentClassName: "text-violet-400", art: eliteEnemyBg },
   "Merchant's Shop": { icon: Coins, accentClassName: "text-amber-400", art: merchantShopBg },
   "Alchemist's Shop": { icon: WandSparkles, accentClassName: "text-emerald-400", art: alchemistShopBg },
+  "Trinket Shop": { icon: Gem, accentClassName: "text-violet-400", art: alchemistShopBg },
+  "Equipment Shop": { icon: Hammer, accentClassName: "text-slate-300", art: merchantShopBg },
   Mystery: { icon: Sparkles, accentClassName: "text-zinc-200", art: mysteryBg },
   Corruption: { icon: Dices, accentClassName: "text-red-400", art: corruptionAltar },
   Campfire: { icon: Flame, accentClassName: "text-emerald-300", art: campfire },

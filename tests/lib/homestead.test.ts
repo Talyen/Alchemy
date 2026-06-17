@@ -268,6 +268,12 @@ describe("computeHomesteadEffects", () => {
     expect(effects.wishCrystalGold).toBe(2);
   });
 
+  it("detect magic stacks gear astral chance bonus across tiers", () => {
+    expect(computeHomesteadEffects({}, {}, { masonry: 1 }).gearAstralChanceBonus).toBeCloseTo(0.03);
+    expect(computeHomesteadEffects({}, {}, { masonry: 2 }).gearAstralChanceBonus).toBeCloseTo(0.06);
+    expect(computeHomesteadEffects({}, {}, { masonry: 3 }).gearAstralChanceBonus).toBeCloseTo(0.1);
+  });
+
   it("ignores unknown building IDs", () => {
     const effects = computeHomesteadEffects({ "nonexistent-building": 1 }, {}, {});
     expect(effects).toEqual(defaultHomesteadEffects);

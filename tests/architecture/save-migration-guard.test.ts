@@ -107,7 +107,7 @@ describe("save migration guard", () => {
     expect(migrated.unlockedTalents.wish).toContain("wish-trinket");
     expect(migrated.activeRun?.runTrinkets).toEqual(["bone-charm"]);
     expect(migrated.activeRun?.runGold).toBe(55);
-    expect(migrated.gearInventory[0]?.affixIds).toBeDefined();
+    expect(migrated.gearInventory[0]?.affixes).toBeDefined();
   });
 
   it("migrates v3 mid-combat trinketEffects to trinketEffects and burn flags", () => {

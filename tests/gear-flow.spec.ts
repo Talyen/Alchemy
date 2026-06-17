@@ -5,8 +5,8 @@ import { BattlePage } from "./pages/battle-page";
 import { MenuPage } from "./pages/menu-page";
 import { test } from "./fixtures/e2e";
 
-const bodyGear = { instanceId: "gear-body", definitionId: "placeholder-body" as const, affixIds: [] };
-const helmGear = { instanceId: "gear-helm", definitionId: "placeholder-helm" as const, affixIds: [] };
+const bodyGear = { instanceId: "gear-body", definitionId: "leather-armor-basic" as const, affixes: [] };
+const helmGear = { instanceId: "gear-helm", definitionId: "leather-helm-basic" as const, affixes: [] };
 const characterIds = ["knight", "rogue", "wizard", "ranger", "alchemist", "warlock", "druid", "wildcard"];
 const gearSlots = [
   "body",
@@ -99,7 +99,7 @@ test.describe("Gear flow", () => {
 
     const menu = new MenuPage(page);
     await menu.gotoWithUnlockedMeta({
-      gearInventory: [{ instanceId: "gear-1", definitionId: "placeholder-body", affixIds: [] }],
+      gearInventory: [{ instanceId: "gear-1", definitionId: "leather-armor-basic", affixes: [] }],
       gearLoadouts: loadouts,
     });
 
@@ -125,7 +125,7 @@ test.describe("Gear flow", () => {
   });
 
   test("armory screen opens from the main menu", async ({ page }) => {
-    await openArmory(page, [{ instanceId: "gear-1", definitionId: "placeholder-body", affixIds: [] }]);
+    await openArmory(page, [{ instanceId: "gear-1", definitionId: "leather-armor-basic", affixes: [] }]);
     await expect(page.getByRole("heading", { name: "Inventory" })).toBeVisible();
   });
 
@@ -147,13 +147,13 @@ test.describe("Gear flow", () => {
     await expect(helmItem).toBeVisible();
 
     await pointerDrag(page, bodyItem, bodySlot);
-    await expect(bodySlot.locator("img")).toBeVisible();
-    await expect(page.getByTestId("armory-equipment-panel").getByText("Body", { exact: true })).toHaveCount(0);
+    await expect(bodySlot.locator("img")).toHaveCount(2);
     await expect(bodyItem).toHaveCount(0);
     await expect(helmItem).toBeVisible();
 
     await pointerDragToInventory(page, bodySlot, page.getByTestId("armory-inventory-board"), 3, 1, 2, 3);
-    await expect(page.getByTestId("armory-equipment-panel").getByText("Body", { exact: true })).toBeVisible();
+    await expect(bodySlot.getByTestId("armory-slot-background")).toBeVisible();
+    await expect(bodySlot.locator("img")).toHaveCount(1);
     await expect(bodyItem).toBeVisible();
 
     await page.getByRole("button", { name: "Rogue", exact: true }).click();
@@ -192,7 +192,7 @@ test.describe("Gear flow", () => {
 
     // Drop and confirm it equips
     await page.mouse.up();
-    await expect(bodySlot.locator("img")).toBeVisible();
+    await expect(bodySlot.locator("img")).toHaveCount(2);
   });
 
   test("double-click equips and unequips gear", async ({ page }) => {
@@ -211,13 +211,15 @@ test.describe("Gear flow", () => {
     expect(flying).not.toBeNull();
     expect(flying!.x).toBeGreaterThan(Math.min(source!.x, destination!.x));
     expect(flying!.x).toBeLessThan(Math.max(source!.x, destination!.x));
-    await expect(bodyItem).toHaveCount(0);
-    await expect(bodySlot.locator("img")).toBeVisible();
+    await expect(bodySlot.locator("img")).toHaveCount(1);
 
     await expect(flyover).toHaveCount(0);
+    await expect(bodyItem).toHaveCount(0);
+    await expect(bodySlot.locator("img")).toHaveCount(2);
+
     await bodySlot.dblclick();
     await expect(bodyItem).toBeVisible();
-    await expect(bodySlot.locator("img")).toHaveCount(0);
+    await expect(bodySlot.locator("img")).toHaveCount(1);
     const board = await page.getByTestId("armory-inventory-board").boundingBox();
     const unequipped = await bodyItem.boundingBox();
     expect(board).not.toBeNull();
@@ -252,7 +254,7 @@ test.describe("Gear flow", () => {
   for (const viewport of armoryViewports) {
     test(`uses the same equipment and inventory scale at ${viewport.label}`, async ({ page }) => {
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
-      await openArmory(page, [bodyGear, { instanceId: "gear-belt", definitionId: "placeholder-belt", affixIds: [] }]);
+      await openArmory(page, [bodyGear, { instanceId: "gear-belt", definitionId: "leather-belt-basic", affixes: [] }]);
 
       const sizes = await page.evaluate(() => {
         const size = (selector: string) => {
@@ -275,10 +277,10 @@ test.describe("Gear flow", () => {
   }
 
   test("scrolls only occupied inventory rows", async ({ page }) => {
-    const rings = Array.from({ length: 65 }, (_, index) => ({
+    const rings = Array.from({ length: 57 }, (_, index) => ({
       instanceId: `ring-${index}`,
-      definitionId: "placeholder-ring" as const,
-      affixIds: [],
+      definitionId: "ruby-ring-basic" as const,
+      affixes: [],
     }));
     await openArmory(page, rings);
 
@@ -286,7 +288,7 @@ test.describe("Gear flow", () => {
     await expect(board).toHaveAttribute("data-scrollable", "true");
     expect(
       await page.locator('[data-testid="armory-inventory-item"][data-gear-title="Placeholder Ring"]').count(),
-    ).toBe(65);
+    ).toBe(57);
     await board.hover();
     await page.mouse.wheel(0, 500);
 
@@ -296,10 +298,10 @@ test.describe("Gear flow", () => {
   });
 
   test("does not scroll when all occupied rows fit", async ({ page }) => {
-    const rings = Array.from({ length: 64 }, (_, index) => ({
+    const rings = Array.from({ length: 56 }, (_, index) => ({
       instanceId: `ring-${index}`,
-      definitionId: "placeholder-ring" as const,
-      affixIds: [],
+      definitionId: "ruby-ring-basic" as const,
+      affixes: [],
     }));
     await openArmory(page, rings);
 
@@ -327,7 +329,7 @@ test.describe("Gear flow", () => {
     await expect(page.getByText("Equipment can be changed after combat.")).toBeVisible();
     const bodyItem = page.locator('[data-testid="armory-inventory-item"][data-gear-title="Placeholder Body"]');
     await bodyItem.dblclick();
-    await expect(page.locator('[data-testid="armory-equipment-slot"][data-slot="body"] img')).toHaveCount(0);
+    await expect(page.locator('[data-testid="armory-equipment-slot"][data-slot="body"] img')).toHaveCount(1);
   });
 
   for (const viewport of armoryViewports) {
@@ -337,8 +339,8 @@ test.describe("Gear flow", () => {
         page,
         Array.from({ length: 24 }, (_, index) => ({
           instanceId: `layout-${index}`,
-          definitionId: index % 2 === 0 ? "placeholder-body" : "placeholder-ring",
-          affixIds: [],
+          definitionId: index % 2 === 0 ? "leather-armor-basic" : "ruby-ring-basic",
+          affixes: [],
         })),
       );
 

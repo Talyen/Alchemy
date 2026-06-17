@@ -22,7 +22,7 @@ export type EndPlayerTurnResolution = {
 function finalizePlayerTurn(state: BattleState, combatTexts: CombatTextEvent[]) {
   let nextState = applyIronwoodBuckler(state, combatTexts);
   nextState = resolveDeathsDoorEndOfEnemyTurn(nextState);
-  const finalState = advanceToPlayerTurn(nextState);
+  const finalState = advanceToPlayerTurn(nextState, combatTexts);
   return { state: finalState, combatTexts, playerTurnSkipped: finalState.turnPhase === "enemy" };
 }
 

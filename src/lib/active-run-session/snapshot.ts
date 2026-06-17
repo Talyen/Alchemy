@@ -6,7 +6,15 @@ import type { WildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet
 import type { MaterialInventory } from "@/lib/homestead/types";
 import type { Screen } from "@/lib/routing";
 
-import type { ActiveRunData, LabyrinthNodePosition, PersistedPendingReward } from "./types";
+import type {
+  ActiveRunData,
+  LabyrinthNodePosition,
+  PersistedPendingReward,
+  PersistedShopState,
+  PersistedAlchemistState,
+  PersistedTrinketShopState,
+  PersistedEquipmentShopState,
+} from "./types";
 
 export type ActiveRunSnapshotSource = {
   characterId: CharacterId;
@@ -34,6 +42,10 @@ export type ActiveRunSnapshotSource = {
   currentScreen: Screen | null;
   destinationChoices: string[];
   pendingReward: PersistedPendingReward | null;
+  shopState: PersistedShopState | null;
+  alchemistState: PersistedAlchemistState | null;
+  trinketShopState: PersistedTrinketShopState | null;
+  equipmentShopState: PersistedEquipmentShopState | null;
 };
 
 export function createActiveRunSnapshot(source: ActiveRunSnapshotSource): ActiveRunData {
@@ -70,5 +82,9 @@ export function createActiveRunSnapshot(source: ActiveRunSnapshotSource): Active
     currentScreen: source.currentScreen,
     destinationChoices: source.destinationChoices,
     pendingReward: source.pendingReward,
+    shopState: source.shopState,
+    alchemistState: source.alchemistState,
+    trinketShopState: source.trinketShopState,
+    equipmentShopState: source.equipmentShopState,
   };
 }

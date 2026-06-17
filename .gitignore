@@ -10,6 +10,7 @@ reports/
 .DS_Store
 scratch/
 .vite/
+tsconfig.tsbuildinfo
 screenshot-*
 NUL
 .knip-output.json
