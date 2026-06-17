@@ -23,7 +23,16 @@ export function legacyCampaignRunSave() {
     brightness: 110,
     activeRun: {
       characterId: "knight",
-      runDeck: [{ id: "slash", title: "Slash", descriptionLines: ["Deal 6 Physical damage"], art: "old-slash.webp", cost: 1, effects: [{ kind: "damage", damageType: "physical", amount: 6 }] }],
+      runDeck: [
+        {
+          id: "slash",
+          title: "Slash",
+          descriptionLines: ["Deal 6 Physical damage"],
+          art: "old-slash.webp",
+          cost: 1,
+          effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
+        },
+      ],
       runGold: 42,
       runPlayerHealth: 18,
       runMaxHealth: 30,
@@ -71,17 +80,19 @@ export function legacyCorruptedCardRunSave() {
   return {
     activeRun: {
       characterId: "wizard",
-      runDeck: [{
-        id: "fireball",
-        title: "Old Fireball Title",
-        descriptionLines: ["Deal 9 Burn damage"],
-        art: "old-fireball.webp",
-        cost: 2,
-        effects: [{ kind: "damage", damageType: "burn", amount: 9 }],
-        corrupted: true,
-        baseTitle: "Fireball",
-        corruptedValuePositions: [{ lineIndex: 0, matchIndex: 5 }],
-      }],
+      runDeck: [
+        {
+          id: "fireball",
+          title: "Old Fireball Title",
+          descriptionLines: ["Deal 9 Burn damage"],
+          art: "old-fireball.webp",
+          cost: 2,
+          effects: [{ kind: "damage", damageType: "burn", amount: 9 }],
+          corrupted: true,
+          baseTitle: "Fireball",
+          corruptedValuePositions: [{ lineIndex: 0, matchIndex: 5 }],
+        },
+      ],
       runGold: 5,
       runPlayerHealth: 20,
       runMaxHealth: 30,
@@ -298,7 +309,11 @@ export function legacySchemaV4Save() {
     encounteredEnemyIds: ["goblin"],
     discoveredBoonIds: ["bone-charm"],
     gearInventory: [
-      { instanceId: "gear-1", definitionId: "leather-armor-basic", modifiers: [{ kind: "flatPhysicalDamage", value: 0 }] },
+      {
+        instanceId: "gear-1",
+        definitionId: "leather-armor-basic",
+        modifiers: [{ kind: "flatPhysicalDamage", value: 0 }],
+      },
     ],
     gearLoadouts: {},
     talentXP: { physical: 10, wish: 4 },
@@ -312,7 +327,16 @@ export function legacySchemaV4Save() {
     finishedRunCharacters: ["knight"],
     activeRun: {
       characterId: "knight",
-      runDeck: [{ id: "slash", title: "Slash", descriptionLines: ["Deal 6 Physical damage"], art: "slash.webp", cost: 1, effects: [{ kind: "damage", damageType: "physical", amount: 6 }] }],
+      runDeck: [
+        {
+          id: "slash",
+          title: "Slash",
+          descriptionLines: ["Deal 6 Physical damage"],
+          art: "slash.webp",
+          cost: 1,
+          effects: [{ kind: "damage", damageType: "physical", amount: 6 }],
+        },
+      ],
       runGold: 55,
       runPlayerHealth: 22,
       runMaxHealth: 30,
@@ -338,12 +362,69 @@ function shippedBaselineSave() {
   return legacySchemaV4Save();
 }
 
+export function legacySchemaV5Save() {
+  const baseline = shippedBaselineSave();
+  return {
+    ...baseline,
+    saveSchemaVersion: 5,
+    gearInventory: [
+      {
+        instanceId: "gear-1",
+        definitionId: "leather-armor-astral",
+        affixes: [
+          { id: "flat-physical", value: 1 },
+          { id: "poison-leech", value: 5 },
+        ],
+      },
+    ],
+    activeRun: {
+      ...baseline.activeRun,
+      equipmentShopState: {
+        gear: [
+          {
+            instanceId: "gear-active-1",
+            definitionId: "leather-armor-astral",
+            affixes: [
+              { id: "flat-physical", value: 2 },
+              { id: "poison-leech", value: 7 },
+            ],
+          },
+        ],
+        refreshesLeft: 1,
+        firstPurchaseUsed: false,
+        purchasedSlotKeys: [],
+      },
+      pendingReward: {
+        rewardType: "gear",
+        gearChoices: [
+          {
+            instanceId: "gear-reward-1",
+            definitionId: "leather-armor-astral",
+            affixes: [
+              { id: "flat-physical", value: 1 },
+              { id: "poison-leech", value: 5 },
+            ],
+          },
+        ],
+        selectedId: null,
+        gold: 0,
+        materials: {},
+        destinations: [],
+        selectedBossId: null,
+        lastVictoryEnemyType: null,
+        lastVictoryContentSystem: null,
+      },
+    },
+  };
+}
+
 export const LEGACY_SAVE_FIXTURES_BY_SOURCE_VERSION: Record<number, () => Record<string, unknown>> = {
   0: legacyCampaignRunSave,
   1: legacySchemaV1Save,
   2: legacySchemaV2Save,
   3: legacySchemaV3Save,
   4: shippedBaselineSave,
+  5: legacySchemaV5Save,
 };
 
 export const MIGRATION_SCENARIO_FIXTURES: Record<string, () => Record<string, unknown>> = {

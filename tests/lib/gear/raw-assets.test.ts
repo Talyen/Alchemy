@@ -17,7 +17,7 @@ function slugifyGearName(name: string): string {
 
 describe("raw gear assets", () => {
   it("matches catalog rarities for every named gear source file", async () => {
-    let entries: string[] = [];
+    let entries: string[];
     try {
       entries = await readdir(gearDir);
     } catch {
@@ -38,7 +38,7 @@ describe("raw gear assets", () => {
   });
 
   it("has a raw asset for every catalog rarity variant", async () => {
-    let entries: string[] = [];
+    let entries: string[];
     try {
       entries = await readdir(gearDir);
     } catch {
@@ -65,7 +65,7 @@ describe("raw gear assets", () => {
   });
 
   it("has no raw gear art without a matching base item", async () => {
-    let entries: string[] = [];
+    let entries: string[];
     try {
       entries = await readdir(gearDir);
     } catch {

@@ -288,9 +288,12 @@ function applyFirstDamageModifiers(
 /**
  * Resolves boon-based stun triggers from playing high physical/stun damage with active forge stacks.
  */
-function applySunderingArmorPiercing(state: BattleState, isPhysicalOrStun: boolean): BattleState {
+function applySunderingArmorPiercing(state: BattleState, isPhysicalOrStun: boolean, card?: BattleCard): BattleState {
   if (!isPhysicalOrStun) return state;
-  const pierce = state.trinketEffects.sunderingArmorPiercing + state.gearEffects.armorPiercing;
+  let pierce = state.trinketEffects.sunderingArmorPiercing + state.gearEffects.armorPiercing;
+  if (card?.tags?.includes("archery")) {
+    pierce += state.gearEffects.archeryArmorPiercing;
+  }
   if (pierce <= 0) return state;
   return reduceEnemyArmor(state, pierce);
 }
@@ -334,10 +337,17 @@ export function computeCardDamageToEnemy(
   );
   const isPhysicalOrStun = effect.damageType === "physical" || effect.damageType === "stun";
 
-  const nextState = applySunderingArmorPiercing(stateAfterBlock, isPhysicalOrStun);
+  const nextState = applySunderingArmorPiercing(stateAfterBlock, isPhysicalOrStun, card);
   const effectiveArmor = isPhysicalOrStun ? nextState.enemyMitigation.armor : 0;
   const damageAfterArmor = Math.max(0, damageAfterBlock - effectiveArmor);
-  const multiplier =
+  let multiplier =
     getEnemyDamageMultiplier(stateAfterFirstMods, effect.damageType) * gearFrozenDamageMultiplier(stateAfterFirstMods);
+  if (
+    effect.damageType === "burn" &&
+    stateAfterFirstMods.enemyStatuses.bleed > 0 &&
+    stateAfterFirstMods.gearEffects.burnDamageBonusToBleedingPercent > 0
+  ) {
+    multiplier *= 1 + stateAfterFirstMods.gearEffects.burnDamageBonusToBleedingPercent / PERCENT_DENOMINATOR;
+  }
   return { nextState, modifiedDamage: Math.round(damageAfterArmor * multiplier) };
 }

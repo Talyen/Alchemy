@@ -78,7 +78,7 @@ describe("gear definitions and art", () => {
   });
 
   it("matches optimized gear item webp files to art mappings", async () => {
-    let entries: string[] = [];
+    let entries: string[];
     try {
       entries = await readdir(optimizedDir);
     } catch {

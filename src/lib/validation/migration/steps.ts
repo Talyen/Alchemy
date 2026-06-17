@@ -118,3 +118,79 @@ export function migrateV4ToV5(parsed: RawSaveData): RawSaveData {
     saveSchemaVersion: 5,
   };
 }
+
+const SCALE_1_AFFIXES = new Set([
+  "poison-leech",
+  "physical-bleed-chance",
+  "physical-stun-chance",
+  "nature-leech",
+  "companion-forge-power",
+]);
+
+function migrateGearInstance(item: Record<string, unknown>): Record<string, unknown> {
+  const definitionId = item.definitionId;
+  if (typeof definitionId !== "string") return item;
+
+  const isAstral = definitionId.endsWith("-astral");
+  if (!isAstral) return item;
+
+  const affixes = item.affixes;
+  if (!Array.isArray(affixes)) return item;
+
+  const migratedAffixes = affixes.map((affix) => {
+    if (!affix || typeof affix !== "object") return affix;
+    const a = affix as Record<string, unknown>;
+    const id = a.id;
+    const value = a.value;
+    if (typeof id !== "string" || typeof value !== "number") return affix;
+
+    const scale = SCALE_1_AFFIXES.has(id) ? 1 : 2;
+    return {
+      ...a,
+      value: Math.max(0, Math.round(value * scale)),
+    };
+  });
+
+  return {
+    ...item,
+    affixes: migratedAffixes,
+  };
+}
+
+export function migrateV5ToV6(parsed: RawSaveData): RawSaveData {
+  const next = { ...parsed };
+  if (Array.isArray(next.gearInventory)) {
+    next.gearInventory = (next.gearInventory as Record<string, unknown>[]).map(migrateGearInstance);
+  }
+  if (next.activeRun && typeof next.activeRun === "object") {
+    const activeRun = { ...(next.activeRun as Record<string, unknown>) };
+    if (activeRun.equipmentShopState && typeof activeRun.equipmentShopState === "object") {
+      const shopState = { ...(activeRun.equipmentShopState as Record<string, unknown>) };
+      if (Array.isArray(shopState.gear)) {
+        shopState.gear = (shopState.gear as Record<string, unknown>[]).map(migrateGearInstance);
+      }
+      activeRun.equipmentShopState = shopState;
+    }
+    if (activeRun.pendingReward && typeof activeRun.pendingReward === "object") {
+      const pendingReward = { ...(activeRun.pendingReward as Record<string, unknown>) };
+      if (pendingReward.rewardType === "gear" && Array.isArray(pendingReward.gearChoices)) {
+        pendingReward.gearChoices = (pendingReward.gearChoices as Record<string, unknown>[]).map(migrateGearInstance);
+      }
+      activeRun.pendingReward = pendingReward;
+    }
+    if (activeRun.wildwoodDraft && typeof activeRun.wildwoodDraft === "object") {
+      const wildwoodDraft = { ...(activeRun.wildwoodDraft as Record<string, unknown>) };
+      if (Array.isArray(wildwoodDraft.rewardGearChoices)) {
+        wildwoodDraft.rewardGearChoices = (wildwoodDraft.rewardGearChoices as Record<string, unknown>[]).map(
+          migrateGearInstance,
+        );
+      }
+      activeRun.wildwoodDraft = wildwoodDraft;
+    }
+    next.activeRun = activeRun;
+  }
+  return {
+    ...next,
+    saveSchemaVersion: 6,
+  };
+}

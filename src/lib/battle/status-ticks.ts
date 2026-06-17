@@ -58,7 +58,10 @@ function tickBurn(state: BattleState, combatTexts: CombatTextEvent[]) {
   if (damage <= 0) return state;
   // Burn has a talent chance to DOUBLE instead of halving — intentional for
   // burn-focused builds. Armor decay after burn only triggers if damage > 0.
-  const multiplier = getEnemyDamageMultiplier(state, CONSTANTS.STATUS_NAMES.BURN);
+  let multiplier = getEnemyDamageMultiplier(state, CONSTANTS.STATUS_NAMES.BURN);
+  if (state.enemyStatuses.bleed > 0 && state.gearEffects.burnDamageBonusToBleedingPercent > 0) {
+    multiplier *= 1 + state.gearEffects.burnDamageBonusToBleedingPercent / 100;
+  }
   const finalDamage = Math.round(damage * multiplier);
   mergeCombatText(combatTexts, {
     target: CONSTANTS.TARGETS.ENEMY,

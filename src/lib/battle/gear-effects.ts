@@ -38,11 +38,17 @@ export function applyGearKillRewards(
 ): BattleState {
   if (state.enemyHealth > 0 || !enemyWasAlive) return state;
   let nextState = state;
-  const { healOnKill, goldOnKill } = state.gearEffects;
+  const { healOnKill, goldOnKill, healOnBurnEnemyDefeated } = state.gearEffects;
   if (healOnKill > 0) {
     const prevState = nextState;
     nextState = applyPlayerHealing(nextState, healOnKill);
     mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: healOnKill });
+    emitOverhealBlockText(prevState, nextState, combatTexts);
+  }
+  if (healOnBurnEnemyDefeated > 0 && state.enemyStatuses.burn > 0) {
+    const prevState = nextState;
+    nextState = applyPlayerHealing(nextState, healOnBurnEnemyDefeated);
+    mergeCombatText(combatTexts, { target: "player", kind: "heal", stat: "health", amount: healOnBurnEnemyDefeated });
     emitOverhealBlockText(prevState, nextState, combatTexts);
   }
   if (goldOnKill > 0) {

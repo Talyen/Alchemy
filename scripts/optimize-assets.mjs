@@ -277,7 +277,7 @@ function slugifyGearName(name) {
 
 async function discoverGearAssets() {
   const gearDir = path.join(sourceDir, "Gear");
-  let entries = [];
+  let entries;
   try {
     entries = await readdir(gearDir, { withFileTypes: true });
   } catch {
@@ -307,7 +307,7 @@ async function discoverGearAssets() {
 
 async function discoverGearSlotBackgrounds() {
   const slotDir = path.join(sourceDir, "Gear", "Gear Slot Backgrounds");
-  let entries = [];
+  let entries;
   try {
     entries = await readdir(slotDir, { withFileTypes: true });
   } catch {

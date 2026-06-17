@@ -13,6 +13,7 @@ import {
   legacySchemaV2Save,
   legacySchemaV3MidCombatTrinketSave,
   legacySchemaV4Save,
+  legacySchemaV5Save,
 } from "../fixtures/legacy-saves";
 
 const ROOT = join(import.meta.dirname, "../..");
@@ -52,15 +53,12 @@ describe("save migration guard", () => {
     },
   );
 
-  it.each(Object.entries(MIGRATION_SCENARIO_FIXTURES))(
-    "migrates scenario %s idempotently",
-    (_name, createFixture) => {
-      const once = normalizeSaveData(createFixture());
-      const twice = normalizeSaveData(migrateSaveDataToCurrent(once));
-      expect(twice).toEqual(once);
-      expect(once.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
-    },
-  );
+  it.each(Object.entries(MIGRATION_SCENARIO_FIXTURES))("migrates scenario %s idempotently", (_name, createFixture) => {
+    const once = normalizeSaveData(createFixture());
+    const twice = normalizeSaveData(migrateSaveDataToCurrent(once));
+    expect(twice).toEqual(once);
+    expect(once.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
+  });
 
   it("preserves wildwood draft when migrating legacy trinket rewardType", () => {
     const migrated = normalizeSaveData(MIGRATION_SCENARIO_FIXTURES.wildwoodTrinketReward());
@@ -116,6 +114,35 @@ describe("save migration guard", () => {
     expect(migrated.activeRun?.activeCombat?.battleState.trinketEffects.firstBurnDoubled).toBe(true);
     expect(migrated.activeRun?.activeCombat?.battleState.flags.firstBurnTrinketDoubledUsed).toBe(true);
     expect(migrated.activeRun?.runTrinkets).toEqual(["meteorite", "bone-charm"]);
+  });
+
+  it("migrates v5 saves and scales up astral gear affix values", () => {
+    const migrated = normalizeSaveData(legacySchemaV5Save());
+    expect(migrated.saveSchemaVersion).toBe(6);
+
+    // gearInventory check
+    const item = migrated.gearInventory.find((g) => g.instanceId === "gear-1");
+    expect(item).toBeDefined();
+    // flat-physical has scale 2: 1 * 2 = 2
+    expect(item?.affixes.find((a) => a.id === "flat-physical")?.value).toBe(2);
+    // poison-leech has scale 1: 5 * 1 = 5
+    expect(item?.affixes.find((a) => a.id === "poison-leech")?.value).toBe(5);
+
+    // activeRun gear check
+    const activeItem = migrated.activeRun?.equipmentShopState?.gear.find((g) => g.instanceId === "gear-active-1");
+    expect(activeItem).toBeDefined();
+    // flat-physical has scale 2: 2 * 2 = 4
+    expect(activeItem?.affixes.find((a) => a.id === "flat-physical")?.value).toBe(4);
+    // poison-leech has scale 1: 7 * 1 = 7
+    expect(activeItem?.affixes.find((a) => a.id === "poison-leech")?.value).toBe(7);
+
+    // pending rewards gear choices check
+    const reward = migrated.activeRun?.pendingReward;
+    expect(reward?.rewardType).toBe("gear");
+    const rewardItem = reward?.gearChoices.find((g: any) => g.instanceId === "gear-reward-1");
+    expect(rewardItem).toBeDefined();
+    expect(rewardItem?.affixes.find((a: any) => a.id === "flat-physical")?.value).toBe(2);
+    expect(rewardItem?.affixes.find((a: any) => a.id === "poison-leech")?.value).toBe(5);
   });
 
   it("does not drop wildwood active runs during migration", () => {

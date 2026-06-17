@@ -52,6 +52,17 @@ export const GEAR_AFFIX_IDS = [
   "block-gain",
   "gold-gain",
   "max-health",
+  "burn-on-consume",
+  "archery-ignore-armor",
+  "absorb-per-mana",
+  "heal-on-burn-death",
+  "mana-on-leech-chance",
+  "poison-reduces-armor",
+  "nature-mana-refund-chance",
+  "burn-on-bleed",
+  "stun-on-block-hit",
+  "companion-leech",
+  "armor-on-cc",
 ] as const;
 
 export type GearAffixId = (typeof GEAR_AFFIX_IDS)[number];

@@ -20,22 +20,16 @@ function isGearAffixId(value: string): value is GearAffixId {
   return value in gearAffixCatalog;
 }
 
-function scaleAffixValue(rollValue: number, rarity: GearRarity, def: GearAffixDefinition): number {
-  return Math.max(0, Math.round(rollValue * def.rarityScale[rarity]));
+function formatAffixDescription(def: GearAffixDefinition, roll: GearAffixRoll): string {
+  return def.descriptionTemplate.replace("{value}", String(roll.value));
 }
 
-function formatAffixDescription(def: GearAffixDefinition, roll: GearAffixRoll, rarity: GearRarity): string {
-  const scaledValue = scaleAffixValue(roll.value, rarity, def);
-  return def.descriptionTemplate.replace("{value}", String(scaledValue));
-}
-
-export function resolveAffixEffects(affixes: readonly GearAffixRoll[], rarity: GearRarity): GearEffectManifest {
+export function resolveAffixEffects(affixes: readonly GearAffixRoll[], _rarity?: GearRarity): GearEffectManifest {
   const effects = { ...defaultGearEffects };
   for (const roll of affixes) {
     const def = gearAffixCatalog[roll.id];
     if (!def) continue;
-    const scaledValue = scaleAffixValue(roll.value, rarity, def);
-    effects[def.effectKey] += scaledValue;
+    effects[def.effectKey] += roll.value;
   }
   return effects;
 }
@@ -85,19 +79,20 @@ export function legacyFlatPhysicalModifiersToAffixRolls(modifiers: { kind: strin
   return rolls;
 }
 
-export function rollAffixValue(def: GearAffixDefinition, rng: () => number): number {
-  const span = def.roll.max - def.roll.min + 1;
-  return def.roll.min + Math.floor(rng() * span);
+export function rollAffixValue(def: GearAffixDefinition, rarity: GearRarity, rng: () => number): number {
+  const range = def.roll[rarity];
+  const span = range.max - range.min + 1;
+  return range.min + Math.floor(rng() * span);
 }
 
 export function getGearAffixDescriptionLines(
   affixes: readonly GearAffixRoll[],
-  rarity: GearRarity,
+  _rarity?: GearRarity,
 ): { key: string; text: string }[] {
   return affixes.flatMap((roll, index) => {
     const def = gearAffixCatalog[roll.id];
     if (!def) return [];
-    return [{ key: `${roll.id}-${index}`, text: formatAffixDescription(def, roll, rarity) }];
+    return [{ key: `${roll.id}-${index}`, text: formatAffixDescription(def, roll) }];
   });
 }
 

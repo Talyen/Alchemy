@@ -198,7 +198,18 @@ export function addEnemyStatus(state: BattleState, status: EnemyStatusId, delta:
       ? Math.round(delta / 2)
       : delta;
   const adjustedDelta = adjustEnemyStatusDelta(state, traitAdjustedDelta);
-  return { ...state, enemyStatuses: { ...state.enemyStatuses, [status]: state.enemyStatuses[status] + adjustedDelta } };
+  let nextState = {
+    ...state,
+    enemyStatuses: { ...state.enemyStatuses, [status]: state.enemyStatuses[status] + adjustedDelta },
+  };
+
+  if (status === "poison" && adjustedDelta > 0 && nextState.gearEffects.poisonArmorShredChance > 0) {
+    if (nextState.rng() * 100 < nextState.gearEffects.poisonArmorShredChance) {
+      nextState = reduceEnemyArmor(nextState, 1);
+    }
+  }
+
+  return nextState;
 }
 
 export function setEnemyStatus(state: BattleState, status: EnemyStatusId, value: number): BattleState {

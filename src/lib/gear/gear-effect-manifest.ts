@@ -52,6 +52,17 @@ export const GEAR_EFFECT_KEYS = [
   "forgeOnBurnDealt",
   "damageOnFreezePhysical",
   "blockDepletedHeal",
+  "burnOnConsume",
+  "archeryArmorPiercing",
+  "damageReductionPerMana",
+  "healOnBurnEnemyDefeated",
+  "manaOnLeechChance",
+  "poisonArmorShredChance",
+  "manaOnNatureDamageChance",
+  "burnDamageBonusToBleedingPercent",
+  "stunOnBlockDepleted",
+  "healOnCompanionAttack",
+  "armorOnStunOrFreeze",
 ] as const;
 
 export type GearEffectManifest = {

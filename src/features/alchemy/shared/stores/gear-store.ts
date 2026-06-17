@@ -85,7 +85,7 @@ export const useGearStore = create<GearStore>((set, get) => ({
     set((state) => {
       const displacedId = state.loadouts[characterId]?.[slot] ?? null;
       const nextLoadouts = equipGear(state.loadouts, characterId, slot, instance, state.inventory);
-      let nextPositions = { ...state.boardPositions };
+      const nextPositions = { ...state.boardPositions };
 
       if (options?.vacatedPlacement) {
         delete nextPositions[instance.instanceId];

@@ -174,7 +174,7 @@ const PersistedPendingRewardUnionSchema = z.discriminatedUnion("rewardType", [
   }),
 ]);
 
-export const PersistedPendingRewardSchema = z
+const PersistedPendingRewardSchema = z
   .preprocess((raw) => {
     if (!raw || typeof raw !== "object") return raw;
     const item = raw as Record<string, unknown>;

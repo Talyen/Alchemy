@@ -14,6 +14,7 @@ import {
   type CombatFlags,
   type CombatTextEvent,
   isPlayerDefeated,
+  addEnemyStatus,
 } from "./types";
 import { countRemovableHarmfulStatuses } from "./status-player";
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
@@ -172,7 +173,27 @@ function executeCardPlayState(
   };
 
   nextState = applyCardEffects(nextState, card, combatTexts);
-  return { ...nextState, mana: Math.max(0, nextState.mana - effectiveCost) };
+
+  // Deduct mana cost first so that any refunds aren't capped by maxMana prematurely.
+  nextState = { ...nextState, mana: Math.max(0, nextState.mana - effectiveCost) };
+
+  if (cardHasDamageType(card, "nature") && state.gearEffects.manaOnNatureDamageChance > 0) {
+    if (state.rng() * 100 < state.gearEffects.manaOnNatureDamageChance) {
+      const nextMana = Math.min(nextState.maxMana, nextState.mana + 1);
+      const gained = nextMana - nextState.mana;
+      if (gained > 0) {
+        mergeCombatText(combatTexts, {
+          target: "player",
+          kind: "status",
+          stat: "mana",
+          amount: gained,
+        });
+        nextState = { ...nextState, mana: nextMana };
+      }
+    }
+  }
+
+  return nextState;
 }
 
 /**
@@ -205,30 +226,43 @@ function applyResonantChimeTrinket(state: BattleState, combatTexts: CombatTextEv
 /**
  * Resolves post-play destination (exhausted/discard pile) and triggers consume riders.
  */
-function handlePostPlayCardDestination(state: BattleState, card: BattleCard, triggerConsumeRiders = true): BattleState {
+function handlePostPlayCardDestination(
+  state: BattleState,
+  card: BattleCard,
+  triggerConsumeRiders = true,
+  combatTexts?: CombatTextEvent[],
+): BattleState {
   if (card.consume) {
     let nextState = { ...state, exhausted: [...state.exhausted, card] };
-    if (
-      triggerConsumeRiders &&
-      state.trinketEffects.runicQuillDrawOnConsume > 0 &&
-      !state.flags.runicQuillUsedThisTurn
-    ) {
-      const draw = drawCards(
-        nextState.deck,
-        nextState.discard,
-        nextState.hand,
-        state.trinketEffects.runicQuillDrawOnConsume,
-        nextState.nextCardUid,
-        nextState.rng,
-      );
-      nextState = {
-        ...nextState,
-        deck: draw.deck,
-        discard: draw.discard,
-        hand: draw.hand,
-        nextCardUid: draw.nextCardUid,
-        flags: { ...nextState.flags, runicQuillUsedThisTurn: true },
-      };
+    if (triggerConsumeRiders) {
+      if (state.trinketEffects.runicQuillDrawOnConsume > 0 && !state.flags.runicQuillUsedThisTurn) {
+        const draw = drawCards(
+          nextState.deck,
+          nextState.discard,
+          nextState.hand,
+          state.trinketEffects.runicQuillDrawOnConsume,
+          nextState.nextCardUid,
+          nextState.rng,
+        );
+        nextState = {
+          ...nextState,
+          deck: draw.deck,
+          discard: draw.discard,
+          hand: draw.hand,
+          nextCardUid: draw.nextCardUid,
+          flags: { ...nextState.flags, runicQuillUsedThisTurn: true },
+        };
+      }
+      if (state.gearEffects.burnOnConsume > 0 && combatTexts) {
+        const burnAmount = state.gearEffects.burnOnConsume;
+        nextState = addEnemyStatus(nextState, "burn", burnAmount);
+        mergeCombatText(combatTexts, {
+          target: "enemy",
+          kind: "status",
+          stat: "burn",
+          amount: burnAmount,
+        });
+      }
     }
     return nextState;
   }
@@ -270,7 +304,7 @@ export function playBattleCardResolved(
       nextState = applyResonantChimeTrinket(nextState, combatTexts);
     }
   }
-  nextState = handlePostPlayCardDestination(nextState, card, !isPlayerDefeated(nextState));
+  nextState = handlePostPlayCardDestination(nextState, card, !isPlayerDefeated(nextState), combatTexts);
 
   return { state: nextState, combatTexts };
 }

@@ -67,6 +67,12 @@ export function applyPoisonTalentRiders(
   if (nextState.talentEffects.poisonStripArmor) {
     nextState = reduceEnemyArmor(nextState, 1);
   }
+  if (
+    nextState.gearEffects.poisonArmorShredChance > 0 &&
+    rollPercent(nextState.gearEffects.poisonArmorShredChance, nextState.rng)
+  ) {
+    nextState = reduceEnemyArmor(nextState, 1);
+  }
   if (damage > 0) {
     const leechChance = nextState.talentEffects.poisonLeechChance + nextState.gearEffects.poisonLeechChance;
     if (rollPercent(leechChance, nextState.rng)) {

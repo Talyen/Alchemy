@@ -20,7 +20,7 @@ function toDefinitionId(target) {
 }
 
 async function main() {
-  let entries = [];
+  let entries;
   try {
     entries = await readdir(optimizedDir);
   } catch {

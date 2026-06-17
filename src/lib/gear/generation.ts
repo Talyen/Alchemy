@@ -56,11 +56,12 @@ function rollAffixes(definition: GearDefinition, count: number, rng: () => numbe
   const effectiveCount = Math.min(count, pool.length);
   const selected: GearAffixRoll[] = [];
   const remaining = [...pool];
+  const rarity = definition.rarity ?? "basic";
 
   for (let pick = 0; pick < effectiveCount && remaining.length > 0; pick += 1) {
     const chosenIndex = Math.floor(rng() * remaining.length);
     const [chosen] = remaining.splice(chosenIndex, 1);
-    selected.push({ id: chosen.id, value: rollAffixValue(chosen, rng) });
+    selected.push({ id: chosen.id, value: rollAffixValue(chosen, rarity, rng) });
   }
 
   return selected;

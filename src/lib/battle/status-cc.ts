@@ -6,7 +6,7 @@
  */
 import { mergeCombatText } from "./combat-text";
 import { BATTLE_CONFIG, STATUS_CONFIG } from "../game-constants";
-import { setEnemyStatus, setPlayerStatus, type BattleState, type CombatTextEvent } from "./types";
+import { setEnemyStatus, setPlayerStatus, addPlayerStatus, type BattleState, type CombatTextEvent } from "./types";
 
 const CONSTANTS = {
   STATUS_NAMES: {
@@ -68,11 +68,24 @@ export function resolvePlayerCrowdControlTrigger(input: PlayerCcTriggerInput): B
     text: stat === CONSTANTS.STATUS_NAMES.STUN ? STATUS_CONFIG.CC_NOTICE_STUN : STATUS_CONFIG.CC_NOTICE_FREEZE,
   });
   const skipField = CONSTANTS.SKIP_FIELDS[stat].player;
-  return {
+  let nextState: BattleState = {
     ...clearPlayerCcStack(state, stat),
     [skipField]: state[skipField] + BATTLE_CONFIG.BASE_CC_DURATION,
     playerCCCooldown: BATTLE_CONFIG.CC_IMMUNITY_DURATION,
   };
+
+  if (state.gearEffects.armorOnStunOrFreeze > 0) {
+    const armorAmount = state.gearEffects.armorOnStunOrFreeze;
+    nextState = addPlayerStatus(nextState, "armor", armorAmount);
+    mergeCombatText(combatTexts, {
+      target: CONSTANTS.TARGETS.PLAYER,
+      kind: "status",
+      stat: "armor",
+      amount: armorAmount,
+    });
+  }
+
+  return nextState;
 }
 
 export type EnemyCcImmunityInput = {

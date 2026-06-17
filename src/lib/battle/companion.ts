@@ -5,9 +5,10 @@
  */
 import { applyCardEffects } from "./apply-effects";
 import type { BattleCard, TalentEffectManifest } from "@/lib/game-data";
-import { type BattleState, type CombatTextEvent } from "./types";
+import { type BattleState, type CombatTextEvent, applyPlayerHealing } from "./types";
 import { HALF_DIVISOR } from "../game-constants";
 import { processEncounterTraitCardAction } from "./encounter-trait-events";
+import { emitOverhealBlockText, mergeCombatText } from "./combat-text";
 
 function buildCompanionCard(
   activeCompanion: NonNullable<BattleState["activeCompanion"]>,
@@ -110,11 +111,28 @@ export function processCompanionTurnStart(state: BattleState, combatTexts: Comba
     combatTexts,
   );
 
-  return {
+  let finalState = {
     ...result,
     flags: {
       ...result.flags,
       ...originalCardPlayFlags,
     },
   };
+
+  if (state.gearEffects.healOnCompanionAttack > 0) {
+    const hasDamageEffect = companionCard.effects.some((e) => e.kind === "damage");
+    if (hasDamageEffect) {
+      const prevState = finalState;
+      finalState = applyPlayerHealing(finalState, state.gearEffects.healOnCompanionAttack);
+      mergeCombatText(combatTexts, {
+        target: "player",
+        kind: "heal",
+        stat: "health",
+        amount: state.gearEffects.healOnCompanionAttack,
+      });
+      emitOverhealBlockText(prevState, finalState, combatTexts);
+    }
+  }
+
+  return finalState;
 }

@@ -1,7 +1,7 @@
 // Enemy attack resolution: damage, block, armor, and attack effect dispatch.
 import { emitOverhealBlockText, mergeCombatText } from "./combat-text";
 import { applyPlayerStatusFromAttack } from "./status-application";
-import { applyPlayerDamageStatuses } from "./status-effects";
+import { applyPlayerDamageStatuses, resolveStunTrigger } from "./status-effects";
 import type { EnemyAttackEffect } from "@/lib/game-data";
 import { logError } from "../error-logger";
 import {
@@ -11,6 +11,7 @@ import {
   type BattleState,
   type CombatTextEvent,
   type CombatTextStat,
+  addEnemyStatus,
 } from "./types";
 import { BATTLE_CONFIG, computeLeechHeal, HALF_DIVISOR, PERCENT_DENOMINATOR } from "../game-constants";
 import { checkHealthThresholds, isFreezeActiveForAspect } from "./enemy-turn-utils";
@@ -50,6 +51,10 @@ function calculateBlockAndArmorMitigation(
   combatTexts: CombatTextEvent[],
 ) {
   let remainingDamage = applyPhysicalForgeBonus(state, effect);
+  if (state.gearEffects.damageReductionPerMana > 0) {
+    const absorb = state.gearEffects.damageReductionPerMana * state.mana;
+    remainingDamage = Math.max(0, remainingDamage - absorb);
+  }
   if (state.enemyStatuses.poison > 0) {
     remainingDamage = Math.max(0, remainingDamage - state.talentEffects.poisonReducesEnemyDamage);
   }
@@ -179,13 +184,29 @@ function applyBlockDepletedHeal(
   nextState: BattleState,
   combatTexts: CombatTextEvent[],
 ): BattleState {
+  let finalState = nextState;
   const healAmount = prevState.talentEffects.blockDepletedHeal + prevState.gearEffects.blockDepletedHeal;
-  if (healAmount > 0 && prevState.playerStatuses.block > 0 && nextState.playerStatuses.block <= 0) {
-    const healedState = applyPlayerHealing(nextState, healAmount);
-    emitOverhealBlockText(nextState, healedState, combatTexts);
-    return healedState;
+  const isBlockDepleted = prevState.playerStatuses.block > 0 && nextState.playerStatuses.block <= 0;
+
+  if (isBlockDepleted && healAmount > 0) {
+    const healedState = applyPlayerHealing(finalState, healAmount);
+    emitOverhealBlockText(finalState, healedState, combatTexts);
+    finalState = healedState;
   }
-  return nextState;
+
+  if (isBlockDepleted && prevState.gearEffects.stunOnBlockDepleted > 0 && finalState.enemyHealth > 0) {
+    const stunAmount = prevState.gearEffects.stunOnBlockDepleted;
+    finalState = addEnemyStatus(finalState, "stun", stunAmount);
+    mergeCombatText(combatTexts, {
+      target: "enemy",
+      kind: "status",
+      stat: "stun",
+      amount: stunAmount,
+    });
+    finalState = resolveStunTrigger(finalState, combatTexts);
+  }
+
+  return finalState;
 }
 
 export function processEnemyDamageEffect(

@@ -50,11 +50,16 @@ function applyLeechBleedRider(state: BattleState, damage: number): BattleState {
 }
 
 function applyLeechManaRider(state: BattleState, combatTexts: CombatTextEvent[]): BattleState {
+  let nextState = state;
   if (rollTalentChance(state.talentEffects.manaOnLeechChance, state)) {
     mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "mana", amount: 1 });
-    return { ...state, mana: state.mana + 1 };
+    nextState = { ...nextState, mana: nextState.mana + 1 };
   }
-  return state;
+  if (rollTalentChance(state.gearEffects.manaOnLeechChance, state)) {
+    mergeCombatText(combatTexts, { target: "player", kind: "status", stat: "mana", amount: 1 });
+    nextState = { ...nextState, mana: nextState.mana + 1 };
+  }
+  return nextState;
 }
 
 function applyLeechTrinketSiphonRider(state: BattleState): BattleState {
