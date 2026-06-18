@@ -11,7 +11,10 @@ import {
   getGearAffixDisplayName,
   getGearAffixTooltipEntries,
   getGearInstanceTooltipEntries,
+  isGearCompatibleWithLoadoutSlot,
   isGearCompatibleWithSlot,
+  isQuiver,
+  isRangedWeapon,
   isTwoHanded,
   legacyFlatPhysicalModifiersToAffixRolls,
   normalizeExclusiveGearLoadouts,
@@ -23,6 +26,7 @@ import {
   salvageGear,
   unequipGear,
   type GearInstance,
+  type GearLoadout,
   GEAR_DEFINITION_IDS,
   GEAR_SLOTS,
 } from "@/lib/gear";
@@ -316,5 +320,112 @@ describe("gear domain", () => {
       affixes: [{ id: "flat-physical", value: 1 }],
     });
     expect(entries[0]?.name).toBe("Ironbound");
+  });
+
+  describe("ranged weapons and quivers", () => {
+    const longbow: GearInstance = { instanceId: "longbow-1", definitionId: "longbow-basic", affixes: [] };
+    const crossbow: GearInstance = { instanceId: "crossbow-1", definitionId: "crossbow-basic", affixes: [] };
+    const longsword: GearInstance = { instanceId: "longsword-1", definitionId: "longsword-basic", affixes: [] };
+    const quiver: GearInstance = { instanceId: "quiver-1", definitionId: "quiver-basic", affixes: [] };
+    const buckler: GearInstance = { instanceId: "buckler-1", definitionId: "leather-buckler-basic", affixes: [] };
+
+    it("flags longbow, shortbow, recurve-bow, and crossbow as ranged weapons", () => {
+      expect(isRangedWeapon(gearDefinitions["longbow-basic"])).toBe(true);
+      expect(isRangedWeapon(gearDefinitions["shortbow-basic"])).toBe(true);
+      expect(isRangedWeapon(gearDefinitions["recurve-bow-basic"])).toBe(true);
+      expect(isRangedWeapon(gearDefinitions["crossbow-basic"])).toBe(true);
+      expect(isRangedWeapon(gearDefinitions["longsword-basic"])).toBe(false);
+    });
+
+    it("flags only quiver as a quiver base item", () => {
+      expect(isQuiver(gearDefinitions["quiver-basic"])).toBe(true);
+      expect(isQuiver(gearDefinitions["longsword-basic"])).toBe(false);
+      expect(isQuiver(gearDefinitions["leather-buckler-basic"])).toBe(false);
+    });
+
+    it("marks all ranged weapons as one-handed (quiver is the off-hand)", () => {
+      expect(isTwoHanded(gearDefinitions["longbow-basic"])).toBe(false);
+      expect(isTwoHanded(gearDefinitions["shortbow-basic"])).toBe(false);
+      expect(isTwoHanded(gearDefinitions["recurve-bow-basic"])).toBe(false);
+      expect(isTwoHanded(gearDefinitions["crossbow-basic"])).toBe(false);
+    });
+
+    it("rejects equipping a quiver off-hand when no ranged main-hand is equipped", () => {
+      const empty = createEmptyGearLoadouts();
+      const inventory = [quiver];
+      expect(
+        isGearCompatibleWithLoadoutSlot(gearDefinitions["quiver-basic"], "off-hand", empty.knight, inventory),
+      ).toBe(false);
+      const result = equipGear(empty, "knight", "off-hand", quiver, inventory);
+      expect(result.knight["off-hand"]).toBeNull();
+    });
+
+    it("accepts equipping a quiver off-hand when a bow main-hand is equipped", () => {
+      const loadouts = equipGear(createEmptyGearLoadouts(), "knight", "main-hand", longbow, [longbow]);
+      expect(
+        isGearCompatibleWithLoadoutSlot(
+          gearDefinitions["quiver-basic"],
+          "off-hand",
+          loadouts.knight,
+          [longbow, quiver],
+        ),
+      ).toBe(true);
+      const result = equipGear(loadouts, "knight", "off-hand", quiver, [longbow, quiver]);
+      expect(result.knight["main-hand"]).toBe(longbow.instanceId);
+      expect(result.knight["off-hand"]).toBe(quiver.instanceId);
+    });
+
+    it("accepts equipping a quiver off-hand when a crossbow main-hand is equipped", () => {
+      const loadouts = equipGear(createEmptyGearLoadouts(), "knight", "main-hand", crossbow, [crossbow]);
+      const result = equipGear(loadouts, "knight", "off-hand", quiver, [crossbow, quiver]);
+      expect(result.knight["main-hand"]).toBe(crossbow.instanceId);
+      expect(result.knight["off-hand"]).toBe(quiver.instanceId);
+    });
+
+    it("rejects equipping a non-ranged main-hand when a quiver is in the off-hand", () => {
+      const loadouts: GearLoadouts = createEmptyGearLoadouts();
+      loadouts.knight["off-hand"] = quiver.instanceId;
+      const inventory = [quiver, longsword];
+      expect(
+        isGearCompatibleWithLoadoutSlot(
+          gearDefinitions["longsword-basic"],
+          "main-hand",
+          loadouts.knight,
+          inventory,
+        ),
+      ).toBe(false);
+      const result = equipGear(loadouts, "knight", "main-hand", longsword, inventory);
+      expect(result.knight["main-hand"]).toBeNull();
+      expect(result.knight["off-hand"]).toBe(quiver.instanceId);
+    });
+
+    it("resolveHandConflicts clears the off-hand quiver when a non-ranged main-hand is equipped", () => {
+      const loadouts = equipGear(createEmptyGearLoadouts(), "knight", "main-hand", longbow, [longbow]);
+      const withQuiver = equipGear(loadouts, "knight", "off-hand", quiver, [longbow, quiver]);
+      expect(withQuiver.knight["off-hand"]).toBe(quiver.instanceId);
+      const withQuiverRemoved: GearLoadouts = {
+        ...withQuiver,
+        knight: { ...withQuiver.knight, "off-hand": null },
+      };
+      const swapped = equipGear(withQuiverRemoved, "knight", "main-hand", longsword, [
+        longbow,
+        quiver,
+        longsword,
+      ]);
+      expect(swapped.knight["main-hand"]).toBe(longsword.instanceId);
+      expect(swapped.knight["off-hand"]).toBeNull();
+    });
+
+    it("accepts equipping a buckler off-hand regardless of main-hand", () => {
+      const inventory = [buckler];
+      expect(
+        isGearCompatibleWithLoadoutSlot(
+          gearDefinitions["leather-buckler-basic"],
+          "off-hand",
+          createEmptyGearLoadouts().knight,
+          inventory,
+        ),
+      ).toBe(true);
+    });
   });
 });

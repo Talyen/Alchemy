@@ -1,8 +1,8 @@
 import { memo, useEffect, useRef, useState, type FocusEvent } from "react";
 import { createPortal } from "react-dom";
-import { gearDefinitions, type GearInstance, type GearSlot } from "@/lib/gear";
+import { gearDefinitions, type GearInstance, type GearLoadout, type GearSlot } from "@/lib/gear";
 import { gearSlotBackgroundArt } from "@/lib/game-data";
-import { canApplyCraftingCurrency, isGearCompatibleWithSlot, type CraftingCurrencyId } from "@/lib/gear";
+import { canApplyCraftingCurrency, isGearCompatibleWithLoadoutSlot, type CraftingCurrencyId } from "@/lib/gear";
 import { playUISound } from "@/lib/audio";
 import { cn } from "@/lib/utils";
 import { TooltipPanel } from "../../../../shared/ui/tooltip-panel";
@@ -18,6 +18,8 @@ function dismissWhenFocusLeaves(event: FocusEvent<HTMLDivElement>, dismiss: () =
 export const SlotButton = memo(function SlotButton({
   slot,
   instance,
+  loadout,
+  inventory,
   editable,
   draggedGear,
   secondaryDragInstanceId = null,
@@ -34,6 +36,8 @@ export const SlotButton = memo(function SlotButton({
 }: {
   slot: GearSlot;
   instance: GearInstance | undefined;
+  loadout: GearLoadout;
+  inventory: GearInstance[];
   editable: boolean;
   draggedGear: GearInstance | null | undefined;
   secondaryDragInstanceId?: string | null;
@@ -71,7 +75,9 @@ export const SlotButton = memo(function SlotButton({
     isDraggingActive && draggedGear
       ? (() => {
           const draggedDefinition = gearDefinitions[draggedGear.definitionId];
-          return draggedDefinition ? isGearCompatibleWithSlot(draggedDefinition, slot) : false;
+          return draggedDefinition
+            ? isGearCompatibleWithLoadoutSlot(draggedDefinition, slot, loadout, inventory)
+            : false;
         })()
       : false;
   const canCraft = activeCurrencyId && instance ? canApplyCraftingCurrency(activeCurrencyId, instance) : false;

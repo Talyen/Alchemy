@@ -1,5 +1,5 @@
 import { gearArtByDefinitionId } from "@/lib/game-data/gear-art";
-import { gearBaseItems, type GearBaseItemId } from "./base-items";
+import { gearBaseItems, type GearBaseItemDefinition, type GearBaseItemId } from "./base-items";
 import type { GearDefinition, GearInstance, GearRarity } from "./types";
 
 export function gearInstanceRarity(instance: GearInstance): GearRarity {
@@ -10,7 +10,7 @@ function buildVariantDefinitions(): Record<string, GearDefinition> {
   const variants: Record<string, GearDefinition> = {};
 
   for (const baseItemId of Object.keys(gearBaseItems) as GearBaseItemId[]) {
-    const baseItem = gearBaseItems[baseItemId];
+    const baseItem: GearBaseItemDefinition = gearBaseItems[baseItemId];
     for (const rarity of baseItem.availableRarities) {
       const id = `${baseItemId}-${rarity}`;
       const art = gearArtByDefinitionId[id];
@@ -28,6 +28,8 @@ function buildVariantDefinitions(): Record<string, GearDefinition> {
         descriptionLines: [],
         art,
         salvageValue: { ...baseItem.salvageByRarity[rarity] },
+        ...(baseItem.rangedWeapon !== undefined ? { rangedWeapon: baseItem.rangedWeapon } : {}),
+        ...(baseItem.quiver !== undefined ? { quiver: baseItem.quiver } : {}),
       };
     }
   }

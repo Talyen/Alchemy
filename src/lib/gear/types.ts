@@ -52,6 +52,8 @@ export type GearDefinition = {
   requiresTwoHands: boolean;
   affinityKeywords: KeywordId[];
   salvageValue: MaterialInventory;
+  rangedWeapon?: boolean;
+  quiver?: boolean;
 };
 
 export type GearInstance = {

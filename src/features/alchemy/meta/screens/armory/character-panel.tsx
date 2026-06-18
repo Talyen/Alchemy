@@ -91,6 +91,8 @@ export const CharacterAndEquipmentPanel = memo(function CharacterAndEquipmentPan
                 <SlotButton
                   slot={slot}
                   instance={instanceId ? inventoryById.get(instanceId) : undefined}
+                  loadout={loadout}
+                  inventory={Array.from(inventoryById.values())}
                   editable={editable}
                   draggedGear={draggedGear}
                   secondaryDragInstanceId={secondaryDragInstanceId}

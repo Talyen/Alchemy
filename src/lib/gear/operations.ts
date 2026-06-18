@@ -22,6 +22,46 @@ export function isTwoHanded(definition: GearDefinition): boolean {
   return definition.requiresTwoHands;
 }
 
+export function isRangedWeapon(definition: GearDefinition): boolean {
+  return definition.rangedWeapon === true;
+}
+
+export function isQuiver(definition: GearDefinition): boolean {
+  return definition.quiver === true;
+}
+
+function resolveEquippedDefinitionAt(
+  inventory: GearInstance[],
+  loadout: GearLoadouts[GearCharacterId],
+  slot: GearSlot,
+): GearDefinition | undefined {
+  const instanceId = loadout[slot];
+  if (!instanceId) return undefined;
+  const instance = inventory.find((item) => item.instanceId === instanceId);
+  if (!instance) return undefined;
+  return gearDefinitions[instance.definitionId];
+}
+
+export function isGearCompatibleWithLoadoutSlot(
+  definition: GearDefinition,
+  slot: GearSlot,
+  characterLoadout: GearLoadouts[GearCharacterId],
+  inventory: GearInstance[],
+): boolean {
+  if (!isGearCompatibleWithSlot(definition, slot)) return false;
+
+  const mainHandDef = resolveEquippedDefinitionAt(inventory, characterLoadout, "main-hand");
+  const offHandDef = resolveEquippedDefinitionAt(inventory, characterLoadout, "off-hand");
+
+  if (slot === "off-hand" && isQuiver(definition)) {
+    return mainHandDef ? isRangedWeapon(mainHandDef) : false;
+  }
+  if (slot === "main-hand" && !isRangedWeapon(definition) && offHandDef && isQuiver(offHandDef)) {
+    return false;
+  }
+  return true;
+}
+
 function resolveEquippedDefinition(
   inventory: GearInstance[],
   loadout: GearLoadouts[GearCharacterId],
@@ -59,6 +99,8 @@ function resolveHandConflicts(
     const offHandDefinition = resolveEquippedDefinition(inventory, next, "off-hand");
     if (offHandDefinition?.requiresTwoHands) {
       next["off-hand"] = null;
+    } else if (offHandDefinition && isQuiver(offHandDefinition) && !isRangedWeapon(definition)) {
+      next["off-hand"] = null;
     }
   }
 
@@ -73,8 +115,9 @@ export function equipGear(
   inventory: GearInstance[],
 ): GearLoadouts {
   const definition = gearDefinitions[instance.definitionId];
-  if (!definition || !isGearCompatibleWithSlot(definition, slot)) return loadouts;
+  if (!definition) return loadouts;
   if (!inventory.some((item) => item.instanceId === instance.instanceId)) return loadouts;
+  if (!isGearCompatibleWithLoadoutSlot(definition, slot, loadouts[characterId], inventory)) return loadouts;
 
   const next: GearLoadouts = { ...loadouts };
   for (const currentCharacterId of GEAR_CHARACTER_IDS) {

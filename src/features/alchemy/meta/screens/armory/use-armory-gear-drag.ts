@@ -6,7 +6,7 @@ import {
   gearDefinitions,
   INVENTORY_COLS,
   inventoryPlacementRect,
-  isGearCompatibleWithSlot,
+  isGearCompatibleWithLoadoutSlot,
   type GearInstance,
   type GearLoadout,
   type GearSlot,
@@ -201,7 +201,8 @@ export function useArmoryGearDrag({
       const element = document.elementFromPoint(pointer.x, pointer.y);
       const slotElement = element?.closest<HTMLElement>("[data-testid='armory-equipment-slot']");
       const slot = slotElement?.dataset.slot as GearSlot | undefined;
-      if (slotElement && slot && isGearCompatibleWithSlot(definition, slot)) {
+      const inventoryList = Array.from(inventoryById.values());
+      if (slotElement && slot && isGearCompatibleWithLoadoutSlot(definition, slot, loadout, inventoryList)) {
         const rect = slotElement.getBoundingClientRect();
         const insetX = rect.width * EQUIPMENT_SNAP_INSET_RATIO;
         const insetY = rect.height * EQUIPMENT_SNAP_INSET_RATIO;
@@ -228,7 +229,7 @@ export function useArmoryGearDrag({
       }
       return null;
     },
-    [getInventoryDestination, inventoryBoardRef],
+    [getInventoryDestination, inventoryBoardRef, inventoryById, loadout],
   );
 
   const clearDragState = useCallback(() => {
