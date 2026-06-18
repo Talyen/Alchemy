@@ -11,6 +11,8 @@ export type GearBaseItemDefinition = {
   affinityKeywords: KeywordId[];
   availableRarities: readonly GearRarity[];
   salvageByRarity: Record<GearRarity, MaterialInventory>;
+  rangedWeapon?: boolean;
+  quiver?: boolean;
 };
 
 function salvage(basicIron: number, astralIron: number, astralCrystal = 1): Record<GearRarity, MaterialInventory> {
@@ -33,6 +35,7 @@ export const gearBaseItems = {
     affinityKeywords: ["physical", "stun", "bleed"],
     availableRarities: ["basic", "astral"],
     salvageByRarity: heavySalvage,
+    rangedWeapon: false,
   },
   maul: {
     id: "maul",
@@ -42,6 +45,7 @@ export const gearBaseItems = {
     affinityKeywords: ["physical", "stun", "holy"],
     availableRarities: ["basic", "astral"],
     salvageByRarity: heavySalvage,
+    rangedWeapon: false,
   },
   greatsword: {
     id: "greatsword",
@@ -51,6 +55,7 @@ export const gearBaseItems = {
     affinityKeywords: ["physical", "stun", "forge"],
     availableRarities: ["basic", "astral"],
     salvageByRarity: heavySalvage,
+    rangedWeapon: false,
   },
   hatchet: {
     id: "hatchet",
@@ -60,6 +65,7 @@ export const gearBaseItems = {
     affinityKeywords: ["physical", "bleed"],
     availableRarities: ["basic", "astral"],
     salvageByRarity: mediumSalvage,
+    rangedWeapon: false,
   },
   longsword: {
     id: "longsword",
@@ -69,6 +75,7 @@ export const gearBaseItems = {
     affinityKeywords: ["physical", "forge", "holy"],
     availableRarities: ["basic", "astral"],
     salvageByRarity: mediumSalvage,
+    rangedWeapon: false,
   },
   shortsword: {
     id: "shortsword",
@@ -78,6 +85,7 @@ export const gearBaseItems = {
     affinityKeywords: ["physical", "forge", "bleed"],
     availableRarities: ["basic", "astral"],
     salvageByRarity: lightSalvage,
+    rangedWeapon: false,
   },
   dagger: {
     id: "dagger",
@@ -87,6 +95,7 @@ export const gearBaseItems = {
     affinityKeywords: ["physical", "bleed", "poison"],
     availableRarities: ["basic", "astral"],
     salvageByRarity: lightSalvage,
+    rangedWeapon: false,
   },
   mace: {
     id: "mace",
@@ -96,6 +105,7 @@ export const gearBaseItems = {
     affinityKeywords: ["physical", "stun", "holy"],
     availableRarities: ["basic", "astral"],
     salvageByRarity: mediumSalvage,
+    rangedWeapon: false,
   },
   flail: {
     id: "flail",
@@ -105,6 +115,7 @@ export const gearBaseItems = {
     affinityKeywords: ["physical", "stun"],
     availableRarities: ["basic", "astral"],
     salvageByRarity: mediumSalvage,
+    rangedWeapon: false,
   },
   longbow: {
     id: "longbow",
@@ -114,6 +125,7 @@ export const gearBaseItems = {
     affinityKeywords: ["archery", "physical", "nature", "companion"],
     availableRarities: ["basic", "astral"],
     salvageByRarity: mediumSalvage,
+    rangedWeapon: true,
   },
   shortbow: {
     id: "shortbow",
@@ -123,6 +135,7 @@ export const gearBaseItems = {
     affinityKeywords: ["archery", "physical", "nature", "companion"],
     availableRarities: ["basic", "astral"],
     salvageByRarity: lightSalvage,
+    rangedWeapon: true,
   },
   "recurve-bow": {
     id: "recurve-bow",
@@ -132,15 +145,17 @@ export const gearBaseItems = {
     affinityKeywords: ["archery", "nature", "physical", "companion"],
     availableRarities: ["basic", "astral"],
     salvageByRarity: mediumSalvage,
+    rangedWeapon: true,
   },
   crossbow: {
     id: "crossbow",
     displayName: "Crossbow",
     compatibleSlots: ["main-hand"],
-    requiresTwoHands: true,
+    requiresTwoHands: false,
     affinityKeywords: ["archery", "physical"],
     availableRarities: ["basic", "astral"],
     salvageByRarity: heavySalvage,
+    rangedWeapon: true,
   },
   staff: {
     id: "staff",
@@ -150,6 +165,7 @@ export const gearBaseItems = {
     affinityKeywords: ["burn", "freeze", "mana"],
     availableRarities: ["basic", "astral"],
     salvageByRarity: mediumSalvage,
+    rangedWeapon: false,
   },
   wand: {
     id: "wand",
@@ -159,6 +175,7 @@ export const gearBaseItems = {
     affinityKeywords: ["burn", "freeze", "mana"],
     availableRarities: ["basic", "astral"],
     salvageByRarity: lightSalvage,
+    rangedWeapon: false,
   },
   "leather-buckler": {
     id: "leather-buckler",
@@ -186,6 +203,7 @@ export const gearBaseItems = {
     affinityKeywords: ["archery", "physical"],
     availableRarities: ["basic", "astral"],
     salvageByRarity: lightSalvage,
+    quiver: true,
   },
   spellbook: {
     id: "spellbook",
