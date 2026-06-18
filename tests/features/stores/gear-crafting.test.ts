@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type GearInstance, createEmptyGearInventories, createEmptyGearLoadouts, equipGear, flattenGearInventories } from "@/lib/gear";
+import { type GearInstance, createEmptyGearInventories, createEmptyGearLoadouts, equipGear } from "@/lib/gear";
 import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
 
 function knightInventories(...items: GearInstance[]) {
@@ -17,7 +17,9 @@ describe("gear-store crafting integration", () => {
 
   it("initializes crafting currencies, merging defaults", () => {
     useGearStore.getState().reset();
-    useGearStore.getState().initialize(knightInventories(item), createEmptyGearLoadouts(), undefined, { "discordant-dice": 3 });
+    useGearStore
+      .getState()
+      .initialize(knightInventories(item), createEmptyGearLoadouts(), undefined, { "discordant-dice": 3 });
 
     expect(useGearStore.getState().craftingCurrencies["discordant-dice"]).toBe(3);
     expect(useGearStore.getState().craftingCurrencies["sprig-of-growth"]).toBe(0);
@@ -83,7 +85,9 @@ describe("gear-store crafting integration", () => {
     expect(successApply).toBe(true);
     expect(useGearStore.getState().craftingCurrencies.voidstone).toBe(0);
     expect(useGearStore.getState().loadouts.knight["main-hand"]).toBe(item.instanceId);
-    expect(useGearStore.getState().inventories.knight.find((i) => i.instanceId === item.instanceId)?.affixes).toHaveLength(0);
+    expect(
+      useGearStore.getState().inventories.knight.find((i) => i.instanceId === item.instanceId)?.affixes,
+    ).toHaveLength(0);
     useGearStore.getState().reset();
   });
 
@@ -103,7 +107,9 @@ describe("gear-store crafting integration", () => {
 
     function initStore(inventory: GearInstance[], currencies: Partial<Record<string, number>>) {
       useGearStore.getState().reset();
-      useGearStore.getState().initialize(knightInventories(...inventory), createEmptyGearLoadouts(), undefined, currencies);
+      useGearStore
+        .getState()
+        .initialize(knightInventories(...inventory), createEmptyGearLoadouts(), undefined, currencies);
     }
 
     it.each([

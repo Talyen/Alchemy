@@ -31,50 +31,61 @@ function createMinimalLabyrinthMap(options?: { rows?: number; cols?: number }) {
 }
 
 export async function injectSaveState(page: Page, overrides: Record<string, unknown> = {}) {
-  await page.addInitScript((data) => {
-    const save = JSON.parse(localStorage.getItem(data.saveKey) || "{}");
-    const { discoveredCardIds, encounteredEnemyIds, discoveredTrinketIds, ...activeRunData } = data.payload;
-    save.activeRun = {
-      characterId: "knight",
-      runDeck: [],
-      runGold: 0,
-      runPlayerHealth: 30,
-      runMaxHealth: 30,
-      roomsEncountered: 0,
-      currentAct: 1,
-      destinationIndexInAct: 0,
-      completedDestinations: [],
-      runTrinkets: [],
-      ...activeRunData,
-    };
-    if (Array.isArray(discoveredCardIds)) save.discoveredCardIds = discoveredCardIds;
-    if (Array.isArray(encounteredEnemyIds)) save.encounteredEnemyIds = encounteredEnemyIds;
-    if (Array.isArray(discoveredTrinketIds)) save.discoveredTrinketIds = discoveredTrinketIds;
-    if (!Array.isArray(save.finishedRunCharacters)) {
-      save.finishedRunCharacters = ["knight", "rogue", "wizard", "ranger", "alchemist", "warlock", "druid"];
-    }
-    if (!Array.isArray(save.discoveredCardIds) || save.discoveredCardIds.length === 0) {
-      save.discoveredCardIds = [
-        "slash", "bash", "block", "anvil", "plate-mail", "apple", "meteor", "blessed-aegis",
-      ];
-    }
-    localStorage.setItem(data.saveKey, JSON.stringify(save));
-  }, { saveKey: SAVE_KEY, payload: overrides });
+  await page.addInitScript(
+    (data) => {
+      const save = JSON.parse(localStorage.getItem(data.saveKey) || "{}");
+      const { discoveredCardIds, encounteredEnemyIds, discoveredTrinketIds, ...activeRunData } = data.payload;
+      save.activeRun = {
+        characterId: "knight",
+        runDeck: [],
+        runGold: 0,
+        runPlayerHealth: 30,
+        runMaxHealth: 30,
+        roomsEncountered: 0,
+        currentAct: 1,
+        destinationIndexInAct: 0,
+        completedDestinations: [],
+        runTrinkets: [],
+        ...activeRunData,
+      };
+      if (Array.isArray(discoveredCardIds)) save.discoveredCardIds = discoveredCardIds;
+      if (Array.isArray(encounteredEnemyIds)) save.encounteredEnemyIds = encounteredEnemyIds;
+      if (Array.isArray(discoveredTrinketIds)) save.discoveredTrinketIds = discoveredTrinketIds;
+      if (!Array.isArray(save.finishedRunCharacters)) {
+        save.finishedRunCharacters = ["knight", "rogue", "wizard", "ranger", "alchemist", "warlock", "druid"];
+      }
+      if (!Array.isArray(save.discoveredCardIds) || save.discoveredCardIds.length === 0) {
+        save.discoveredCardIds = ["slash", "bash", "block", "anvil", "plate-mail", "apple", "meteor", "blessed-aegis"];
+      }
+      localStorage.setItem(data.saveKey, JSON.stringify(save));
+    },
+    { saveKey: SAVE_KEY, payload: overrides },
+  );
 }
 
 export async function injectHomestead(page: Page, overrides: Record<string, unknown> = {}) {
-  await page.addInitScript((data) => {
-    localStorage.setItem(data.saveKey, JSON.stringify(data.save));
-  }, { saveKey: SAVE_KEY, save: { ...baseHomesteadSave, ...overrides } });
+  const save = { ...baseHomesteadSave, ...overrides };
+  if ("gearInventory" in overrides && overrides.gearInventory !== undefined) {
+    save.saveSchemaVersion = 8;
+  }
+  await page.addInitScript(
+    (data) => {
+      localStorage.setItem(data.saveKey, JSON.stringify(data.save));
+    },
+    { saveKey: SAVE_KEY, save },
+  );
 }
 
 export async function injectTalentUnlocks(page: Page, unlockedTalents: Record<string, string[]>) {
-  await page.addInitScript(({ saveKey, talents }) => {
-    const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
-    save.unlockedTalents = { ...(save.unlockedTalents || {}), ...talents };
-    save.discoveredCardIds = save.discoveredCardIds || ["slash"];
-    localStorage.setItem(saveKey, JSON.stringify(save));
-  }, { saveKey: SAVE_KEY, talents: unlockedTalents });
+  await page.addInitScript(
+    ({ saveKey, talents }) => {
+      const save = JSON.parse(localStorage.getItem(saveKey) || "{}");
+      save.unlockedTalents = { ...(save.unlockedTalents || {}), ...talents };
+      save.discoveredCardIds = save.discoveredCardIds || ["slash"];
+      localStorage.setItem(saveKey, JSON.stringify(save));
+    },
+    { saveKey: SAVE_KEY, talents: unlockedTalents },
+  );
 }
 
 export async function injectBossState(page: Page, act = 1) {
@@ -101,39 +112,42 @@ export async function injectLabyrinthRun(
   } = {},
 ) {
   const map = createMinimalLabyrinthMap();
-  await page.addInitScript((data) => {
-    const save = JSON.parse(localStorage.getItem(data.saveKey) || "{}");
-    save.activeRun = {
-      characterId: "knight",
-      runDeck: [],
-      runGold: 0,
-      runPlayerHealth: 30,
-      runMaxHealth: 30,
-      roomsEncountered: 0,
-      currentAct: 1,
-      destinationIndexInAct: 0,
-      completedDestinations: [],
-      runTrinkets: [],
-      selectedDifficulty: null,
-      contentSystemType: "labyrinth",
-      labyrinthMap: data.map,
-    };
-    if (data.deck) save.activeRun.runDeck = data.deck;
-    if (data.runOverrides) {
-      Object.assign(save.activeRun, data.runOverrides);
-    }
-    save.discoveredCardIds = data.discoveredCardIds || ["slash"];
-    if (!Array.isArray(save.finishedRunCharacters)) {
-      save.finishedRunCharacters = ["knight", "rogue", "wizard", "ranger", "alchemist", "warlock", "druid"];
-    }
-    localStorage.setItem(data.saveKey, JSON.stringify(save));
-  }, {
-    saveKey: SAVE_KEY,
-    map,
-    deck: options.deck ?? null,
-    discoveredCardIds: options.discoveredCardIds ?? null,
-    runOverrides: options.runOverrides ?? null,
-  });
+  await page.addInitScript(
+    (data) => {
+      const save = JSON.parse(localStorage.getItem(data.saveKey) || "{}");
+      save.activeRun = {
+        characterId: "knight",
+        runDeck: [],
+        runGold: 0,
+        runPlayerHealth: 30,
+        runMaxHealth: 30,
+        roomsEncountered: 0,
+        currentAct: 1,
+        destinationIndexInAct: 0,
+        completedDestinations: [],
+        runTrinkets: [],
+        selectedDifficulty: null,
+        contentSystemType: "labyrinth",
+        labyrinthMap: data.map,
+      };
+      if (data.deck) save.activeRun.runDeck = data.deck;
+      if (data.runOverrides) {
+        Object.assign(save.activeRun, data.runOverrides);
+      }
+      save.discoveredCardIds = data.discoveredCardIds || ["slash"];
+      if (!Array.isArray(save.finishedRunCharacters)) {
+        save.finishedRunCharacters = ["knight", "rogue", "wizard", "ranger", "alchemist", "warlock", "druid"];
+      }
+      localStorage.setItem(data.saveKey, JSON.stringify(save));
+    },
+    {
+      saveKey: SAVE_KEY,
+      map,
+      deck: options.deck ?? null,
+      discoveredCardIds: options.discoveredCardIds ?? null,
+      runOverrides: options.runOverrides ?? null,
+    },
+  );
   await page.goto("/");
   await expect(page.getByRole("button", { name: "Play", exact: true })).toBeEnabled({ timeout: 5000 });
   await page.getByRole("button", { name: "Play", exact: true }).click();

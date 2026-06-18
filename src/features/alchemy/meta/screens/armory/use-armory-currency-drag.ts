@@ -7,10 +7,9 @@ import {
   INVENTORY_VISIBLE_ROWS,
   inventoryPlacementRect,
   type CraftingCurrencyId,
-  type PackedInventoryItem,
 } from "@/lib/gear";
 import { readInventoryBoardMetrics } from "./read-inventory-board-metrics";
-import { MAGNET_RELEASE_EASE_MS, type DragDestination, type DragPoint, type DragRect } from "./use-armory-gear-drag";
+import { type DragDestination, type DragPoint, type DragRect } from "./use-armory-gear-drag";
 
 const CURRENCY_FOOTPRINT = { w: 1, h: 1 };
 const INVENTORY_SNAP_RADIUS_CELLS = 0.28;
@@ -52,7 +51,6 @@ export type CurrencyPointerEnd = (pointer: DragPoint, pointerId: number, cancell
 
 type UseArmoryCurrencyDragOptions = {
   editable: boolean;
-  boardObstacles: PackedInventoryItem<{ instanceId: string }>[];
   occupiedRows: number;
   inventoryBoardRef: RefObject<HTMLDivElement | null>;
   onMoveCurrency: (currencyId: CraftingCurrencyId, col: number, row: number) => void;
@@ -60,7 +58,6 @@ type UseArmoryCurrencyDragOptions = {
 
 export function useArmoryCurrencyDrag({
   editable,
-  boardObstacles,
   occupiedRows,
   inventoryBoardRef,
   onMoveCurrency,
@@ -99,7 +96,7 @@ export function useArmoryCurrencyDrag({
       const { cellSize, gap, boardRect, scrollTop } = metrics;
       const renderedRows = Math.max(INVENTORY_VISIBLE_ROWS, occupiedRows + 1);
       const placement = findNearestInventoryPlacement(
-        boardObstacles,
+        [],
         currencyId,
         CURRENCY_FOOTPRINT,
         { cellSize, gap, cols: INVENTORY_COLS, rows: renderedRows },
@@ -133,7 +130,7 @@ export function useArmoryCurrencyDrag({
         },
       };
     },
-    [boardObstacles, inventoryBoardRef, occupiedRows],
+    [inventoryBoardRef, occupiedRows],
   );
 
   const getDragDestination = useCallback(
@@ -317,5 +314,3 @@ export function useArmoryCurrencyDrag({
     clearDragState,
   };
 }
-
-export { MAGNET_RELEASE_EASE_MS };

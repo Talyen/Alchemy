@@ -27,6 +27,10 @@ import {
   sanitizeGearBoardPositionsByCharacter,
   sanitizeCurrencyBoardPositionsByCharacter,
   sanitizeGearBoardPositions,
+  footprintForInstance,
+  CRAFTING_CURRENCY_IDS,
+  INVENTORY_COLS,
+  GEAR_CHARACTER_IDS,
 } from "@/lib/gear";
 
 const LEGACY_ARMORY_POSITIONS_KEY = "alchemy-armory-positions";
@@ -43,6 +47,163 @@ function readLegacyBoardPositions(): GearBoardPositions {
   } catch {
     return {};
   }
+}
+
+function resolveMoveItemAndSwap(
+  characterId: CharacterId,
+  movingId: string,
+  targetCol: number,
+  targetRow: number,
+  state: GearStore,
+): {
+  nextGearPositions: GearBoardPositions;
+  nextCurrencyPositions: CraftingCurrencyBoardPositions;
+} {
+  const nextGearPositions: GearBoardPositions = {
+    ...(state.boardPositionsByCharacter[characterId] ?? {}),
+  };
+  const nextCurrencyPositions: CraftingCurrencyBoardPositions = {
+    ...(state.currencyBoardPositionsByCharacter[characterId] ?? {}),
+  };
+
+  const equippedInstanceIds = new Set(Object.values(state.loadouts[characterId] ?? {}).filter(Boolean) as string[]);
+  const availableInventory = (state.inventories[characterId] ?? []).filter(
+    (item) => !equippedInstanceIds.has(item.instanceId),
+  );
+  const activeCurrencies = CRAFTING_CURRENCY_IDS.filter((id) => (state.craftingCurrencies[id] ?? 0) > 0);
+
+  const getFootprint = (id: string): { w: number; h: number } | null => {
+    const gearItem = availableInventory.find((item) => item.instanceId === id);
+    if (gearItem) {
+      return footprintForInstance(gearItem);
+    }
+    if (activeCurrencies.includes(id as CraftingCurrencyId)) {
+      return { w: 1, h: 1 };
+    }
+    return null;
+  };
+
+  const movingFootprint = getFootprint(movingId);
+  if (!movingFootprint) {
+    return { nextGearPositions, nextCurrencyPositions };
+  }
+
+  type BoardItem = {
+    id: string;
+    kind: "gear" | "currency";
+    w: number;
+    h: number;
+    origCol: number;
+    origRow: number;
+    col: number;
+    row: number;
+  };
+
+  const boardItems: BoardItem[] = [];
+
+  for (const item of availableInventory) {
+    const fp = footprintForInstance(item);
+    if (!fp) continue;
+    const pos = nextGearPositions[item.instanceId] || { col: 1, row: 1 };
+    boardItems.push({
+      id: item.instanceId,
+      kind: "gear",
+      w: fp.w,
+      h: fp.h,
+      origCol: pos.col,
+      origRow: pos.row,
+      col: pos.col,
+      row: pos.row,
+    });
+  }
+
+  for (const currencyId of activeCurrencies) {
+    const pos = nextCurrencyPositions[currencyId] || { col: 1, row: 1 };
+    boardItems.push({
+      id: currencyId,
+      kind: "currency",
+      w: 1,
+      h: 1,
+      origCol: pos.col,
+      origRow: pos.row,
+      col: pos.col,
+      row: pos.row,
+    });
+  }
+
+  const movingItem = boardItems.find((x) => x.id === movingId);
+  if (!movingItem) {
+    return { nextGearPositions, nextCurrencyPositions };
+  }
+
+  movingItem.col = targetCol;
+  movingItem.row = targetRow;
+
+  const overlaps = (
+    p1: { col: number; row: number; w: number; h: number },
+    p2: { col: number; row: number; w: number; h: number },
+  ) => {
+    return !(p1.col + p1.w <= p2.col || p2.col + p2.w <= p1.col || p1.row + p1.h <= p2.row || p2.row + p2.h <= p1.row);
+  };
+
+  const displacedItems: BoardItem[] = [];
+  const fixedItems: BoardItem[] = [];
+
+  for (const item of boardItems) {
+    if (item.id === movingId) continue;
+    if (overlaps(movingItem, item)) {
+      displacedItems.push(item);
+    } else {
+      fixedItems.push(item);
+    }
+  }
+
+  displacedItems.sort((a, b) => b.w * b.h - a.w * a.h);
+
+  const placedItems: BoardItem[] = [movingItem, ...fixedItems];
+
+  const isPositionOccupied = (col: number, row: number, w: number, h: number) => {
+    if (col < 1 || col + w - 1 > INVENTORY_COLS || row < 1) return true;
+    return placedItems.some((placed) => overlaps({ col, row, w, h }, placed));
+  };
+
+  for (const item of displacedItems) {
+    let bestCol = 1;
+    let bestRow = 1;
+    let minDistanceSq = Number.POSITIVE_INFINITY;
+
+    for (let r = 1; r <= 40; r++) {
+      for (let c = 1; c <= INVENTORY_COLS - item.w + 1; c++) {
+        if (!isPositionOccupied(c, r, item.w, item.h)) {
+          const origCenterX = item.origCol + (item.w - 1) / 2;
+          const origCenterY = item.origRow + (item.h - 1) / 2;
+          const candCenterX = c + (item.w - 1) / 2;
+          const candCenterY = r + (item.h - 1) / 2;
+          const distSq = (origCenterX - candCenterX) ** 2 + (origCenterY - candCenterY) ** 2;
+
+          if (distSq < minDistanceSq) {
+            minDistanceSq = distSq;
+            bestCol = c;
+            bestRow = r;
+          }
+        }
+      }
+    }
+
+    item.col = bestCol;
+    item.row = bestRow;
+    placedItems.push(item);
+  }
+
+  for (const item of placedItems) {
+    if (item.kind === "gear") {
+      nextGearPositions[item.id] = { col: item.col, row: item.row };
+    } else {
+      nextCurrencyPositions[item.id as CraftingCurrencyId] = { col: item.col, row: item.row };
+    }
+  }
+
+  return { nextGearPositions, nextCurrencyPositions };
 }
 
 type GearStore = {
@@ -198,6 +359,25 @@ export const useGearStore = create<GearStore>((set, get) => ({
       const characterPositions = { ...(nextPositionsByCharacter[characterId] ?? {}) };
       const nextReturn = { ...state.equippedReturnPositions };
 
+      // Find current owner of the item in inventories
+      const currentOwner = findGearInventoryOwner(state.inventories, instance.instanceId);
+      let nextInventories = state.inventories;
+      if (currentOwner && currentOwner !== characterId) {
+        // Remove from currentOwner's inventory, add to characterId's inventory
+        nextInventories = {
+          ...state.inventories,
+          [currentOwner]: state.inventories[currentOwner].filter((item) => item.instanceId !== instance.instanceId),
+          [characterId]: [...(state.inventories[characterId] ?? []), instance],
+        };
+        // Move board position from currentOwner to characterId
+        const currentOwnerPositions = { ...(nextPositionsByCharacter[currentOwner] ?? {}) };
+        if (currentOwnerPositions[instance.instanceId]) {
+          characterPositions[instance.instanceId] = currentOwnerPositions[instance.instanceId];
+          delete currentOwnerPositions[instance.instanceId];
+          nextPositionsByCharacter[currentOwner] = currentOwnerPositions;
+        }
+      }
+
       if (options?.vacatedPlacement) {
         const currentPos = characterPositions[instance.instanceId];
         if (currentPos) {
@@ -212,8 +392,9 @@ export const useGearStore = create<GearStore>((set, get) => ({
       nextPositionsByCharacter[characterId] = characterPositions;
 
       return {
+        inventories: nextInventories,
         loadouts: nextLoadouts,
-        boardPositionsByCharacter: sanitizeGearBoardPositionsByCharacter(nextPositionsByCharacter, state.inventories),
+        boardPositionsByCharacter: sanitizeGearBoardPositionsByCharacter(nextPositionsByCharacter, nextInventories),
         equippedReturnPositions: nextReturn,
       };
     }),
@@ -236,36 +417,156 @@ export const useGearStore = create<GearStore>((set, get) => ({
       };
     }),
   setBoardPosition: (characterId, instanceId, col, row) =>
-    set((state) => ({
-      boardPositionsByCharacter: {
-        ...state.boardPositionsByCharacter,
-        [characterId]: {
-          ...(state.boardPositionsByCharacter[characterId] ?? {}),
-          [instanceId]: { col, row },
+    set((state) => {
+      const { nextGearPositions, nextCurrencyPositions } = resolveMoveItemAndSwap(
+        characterId,
+        instanceId,
+        col,
+        row,
+        state,
+      );
+      return {
+        boardPositionsByCharacter: {
+          ...state.boardPositionsByCharacter,
+          [characterId]: nextGearPositions,
         },
-      },
-    })),
+        currencyBoardPositionsByCharacter: {
+          ...state.currencyBoardPositionsByCharacter,
+          [characterId]: nextCurrencyPositions,
+        },
+      };
+    }),
   setCurrencyBoardPosition: (characterId, currencyId, col, row) =>
-    set((state) => ({
-      currencyBoardPositionsByCharacter: {
-        ...state.currencyBoardPositionsByCharacter,
-        [characterId]: {
-          ...(state.currencyBoardPositionsByCharacter[characterId] ?? {}),
-          [currencyId]: { col, row },
+    set((state) => {
+      const { nextGearPositions, nextCurrencyPositions } = resolveMoveItemAndSwap(
+        characterId,
+        currencyId,
+        col,
+        row,
+        state,
+      );
+      return {
+        boardPositionsByCharacter: {
+          ...state.boardPositionsByCharacter,
+          [characterId]: nextGearPositions,
         },
-      },
-    })),
+        currencyBoardPositionsByCharacter: {
+          ...state.currencyBoardPositionsByCharacter,
+          [characterId]: nextCurrencyPositions,
+        },
+      };
+    }),
   syncBoardPositions: () =>
     set((state) => {
-      const nextBoardPositionsByCharacter = sanitizeGearBoardPositionsByCharacter(
-        state.boardPositionsByCharacter,
-        state.inventories,
-      );
-      const nextCurrencyPositionsByCharacter = sanitizeCurrencyBoardPositionsByCharacter(
-        state.currencyBoardPositionsByCharacter,
-        state.craftingCurrencies,
-      );
+      let changed = false;
+      const nextBoardPositionsByCharacter = { ...state.boardPositionsByCharacter };
+      const nextCurrencyPositionsByCharacter = { ...state.currencyBoardPositionsByCharacter };
+
+      for (const characterId of GEAR_CHARACTER_IDS) {
+        const equippedInstanceIds = new Set(
+          Object.values(state.loadouts[characterId] ?? {}).filter(Boolean) as string[],
+        );
+        const availableInventory = (state.inventories[characterId] ?? []).filter(
+          (item) => !equippedInstanceIds.has(item.instanceId),
+        );
+        const activeCurrencies = CRAFTING_CURRENCY_IDS.filter((id) => (state.craftingCurrencies[id] ?? 0) > 0);
+
+        const gearPositions = { ...(nextBoardPositionsByCharacter[characterId] ?? {}) };
+        const currencyPositions = { ...(nextCurrencyPositionsByCharacter[characterId] ?? {}) };
+
+        const occupancy: boolean[][] = [];
+        const ensureRows = (rows: number) => {
+          while (occupancy.length < rows) {
+            occupancy.push(Array(INVENTORY_COLS).fill(false));
+          }
+        };
+        const canPlace = (col: number, row: number, w: number, h: number) => {
+          if (col < 1 || col + w - 1 > INVENTORY_COLS || row < 1) return false;
+          ensureRows(row + h - 1);
+          for (let y = row - 1; y < row - 1 + h; y++) {
+            for (let x = col - 1; x < col - 1 + w; x++) {
+              if (occupancy[y]?.[x]) return false;
+            }
+          }
+          return true;
+        };
+        const markPlaced = (col: number, row: number, w: number, h: number) => {
+          ensureRows(row + h - 1);
+          for (let y = row - 1; y < row - 1 + h; y++) {
+            for (let x = col - 1; x < col - 1 + w; x++) {
+              occupancy[y]![x] = true;
+            }
+          }
+        };
+
+        const toPlaceGear: GearInstance[] = [];
+        for (const item of availableInventory) {
+          const fp = footprintForInstance(item);
+          if (!fp) continue;
+          const pos = gearPositions[item.instanceId];
+          if (pos && canPlace(pos.col, pos.row, fp.w, fp.h)) {
+            markPlaced(pos.col, pos.row, fp.w, fp.h);
+          } else {
+            toPlaceGear.push(item);
+          }
+        }
+
+        const toPlaceCurrencies: CraftingCurrencyId[] = [];
+        for (const currencyId of activeCurrencies) {
+          const pos = currencyPositions[currencyId];
+          if (pos && canPlace(pos.col, pos.row, 1, 1)) {
+            markPlaced(pos.col, pos.row, 1, 1);
+          } else {
+            toPlaceCurrencies.push(currencyId);
+          }
+        }
+
+        const findFirstAvailable = (w: number, h: number) => {
+          for (let r = 1; ; r++) {
+            for (let c = 1; c <= INVENTORY_COLS - w + 1; c++) {
+              if (canPlace(c, r, w, h)) {
+                return { col: c, row: r };
+              }
+            }
+          }
+        };
+
+        for (const item of toPlaceGear) {
+          const fp = footprintForInstance(item);
+          if (!fp) continue;
+          const pos = findFirstAvailable(fp.w, fp.h);
+          markPlaced(pos.col, pos.row, fp.w, fp.h);
+          gearPositions[item.instanceId] = pos;
+          changed = true;
+        }
+
+        for (const currencyId of toPlaceCurrencies) {
+          const pos = findFirstAvailable(1, 1);
+          markPlaced(pos.col, pos.row, 1, 1);
+          currencyPositions[currencyId] = pos;
+          changed = true;
+        }
+
+        const gearIds = new Set(availableInventory.map((item) => item.instanceId));
+        for (const id of Object.keys(gearPositions)) {
+          if (!gearIds.has(id)) {
+            delete gearPositions[id];
+            changed = true;
+          }
+        }
+        for (const id of Object.keys(currencyPositions)) {
+          if (!activeCurrencies.includes(id as CraftingCurrencyId)) {
+            delete currencyPositions[id as CraftingCurrencyId];
+            changed = true;
+          }
+        }
+
+        nextBoardPositionsByCharacter[characterId] = gearPositions;
+        nextCurrencyPositionsByCharacter[characterId] = currencyPositions;
+      }
+
       if (
+        !changed &&
         boardPositionsByCharacterEqual(state.boardPositionsByCharacter, nextBoardPositionsByCharacter) &&
         currencyBoardPositionsByCharacterEqual(
           state.currencyBoardPositionsByCharacter,
@@ -274,6 +575,7 @@ export const useGearStore = create<GearStore>((set, get) => ({
       ) {
         return state;
       }
+
       return {
         boardPositionsByCharacter: nextBoardPositionsByCharacter,
         currencyBoardPositionsByCharacter: nextCurrencyPositionsByCharacter,

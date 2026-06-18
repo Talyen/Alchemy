@@ -1,11 +1,11 @@
-import { useLayoutEffect, useRef, useState, type CSSProperties } from "react";
+import { useLayoutEffect, useRef, useState, type CSSProperties, type RefObject } from "react";
 
 export type PortaledTooltipAnchor = { centerX: number; top: number; bottom: number };
 
 const VR_STAGE_SELECTOR = '[data-testid="vr-stage"]';
 const DEFAULT_HORIZONTAL_INSET = 152;
 
-export function getVrStageBounds(): DOMRect {
+function getVrStageBounds(): DOMRect {
   const stage = document.querySelector(VR_STAGE_SELECTOR);
   if (stage) {
     return stage.getBoundingClientRect();
@@ -20,12 +20,12 @@ export function shouldPlacePortaledTooltipBelow(
   stage: Pick<DOMRect, "top" | "bottom">,
   padding = 8,
 ): boolean {
-  const spaceAbove = anchor.top - stage.top - padding;
+  const spaceAbove = anchor.top - stage.top - 2 * padding;
   if (spaceAbove >= tooltipHeight) {
     return false;
   }
 
-  const spaceBelow = stage.bottom - anchor.bottom - padding;
+  const spaceBelow = stage.bottom - anchor.bottom - 2 * padding;
   return spaceBelow >= tooltipHeight || spaceBelow > spaceAbove;
 }
 
@@ -50,19 +50,7 @@ export function measurePortaledTooltipPlacement(
   stage: Pick<DOMRect, "top" | "bottom" | "left" | "right"> = getVrStageBounds(),
   padding = 8,
 ): { placeBelow: boolean; style: CSSProperties } {
-  let placeBelow = shouldPlacePortaledTooltipBelow(anchor, tooltipRect.height, stage, padding);
-
-  if (!placeBelow && tooltipRect.top < stage.top + padding) {
-    placeBelow = true;
-  }
-
-  if (placeBelow && tooltipRect.bottom > stage.bottom - padding) {
-    const spaceAbove = anchor.top - stage.top - padding;
-    const spaceBelow = stage.bottom - anchor.bottom - padding;
-    if (spaceAbove > spaceBelow) {
-      placeBelow = false;
-    }
-  }
+  const placeBelow = shouldPlacePortaledTooltipBelow(anchor, tooltipRect.height, stage, padding);
 
   return {
     placeBelow,
@@ -70,31 +58,37 @@ export function measurePortaledTooltipPlacement(
   };
 }
 
-export function useArmoryPortaledTooltipPlacement(anchor: PortaledTooltipAnchor | null, active: boolean, padding = 8) {
+export function useArmoryPortaledTooltipPlacement(
+  triggerRef: RefObject<HTMLElement | null>,
+  active: boolean,
+  padding = 8,
+) {
   const tooltipRef = useRef<HTMLDivElement>(null);
   const [placeBelow, setPlaceBelow] = useState(false);
-  const [prevActive, setPrevActive] = useState(active);
-  const [prevAnchor, setPrevAnchor] = useState(anchor);
-
-  if (active !== prevActive || anchor !== prevAnchor) {
-    setPrevActive(active);
-    setPrevAnchor(anchor);
-    setPlaceBelow(false);
-  }
+  const [tooltipStyle, setTooltipStyle] = useState<CSSProperties | undefined>(undefined);
 
   useLayoutEffect(() => {
-    if (!active || !anchor || !tooltipRef.current) return;
-
-    const stage = getVrStageBounds();
-    const rect = tooltipRef.current.getBoundingClientRect();
-    const nextPlacement = measurePortaledTooltipPlacement(anchor, rect, stage, padding);
-
-    if (nextPlacement.placeBelow !== placeBelow) {
-      setPlaceBelow(nextPlacement.placeBelow);
+    if (!active || !triggerRef.current || !tooltipRef.current) {
+      setTooltipStyle(undefined);
+      return;
     }
-  }, [active, anchor, placeBelow, padding]);
 
-  const tooltipStyle = anchor ? buildPortaledTooltipStyle(anchor, placeBelow, padding) : undefined;
+    const triggerRect = triggerRef.current.getBoundingClientRect();
+    const tooltipRect = tooltipRef.current.getBoundingClientRect();
+    const stage = getVrStageBounds();
+
+    const anchor = {
+      centerX: (triggerRect.left + triggerRect.right) / 2,
+      top: triggerRect.top,
+      bottom: triggerRect.bottom,
+    };
+
+    const below = shouldPlacePortaledTooltipBelow(anchor, tooltipRect.height, stage, padding);
+    setPlaceBelow(below);
+
+    const style = buildPortaledTooltipStyle(anchor, below, padding, stage);
+    setTooltipStyle(style);
+  }, [active, triggerRef, padding]);
 
   return { tooltipRef, placeBelow, tooltipStyle };
 }

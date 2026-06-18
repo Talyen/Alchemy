@@ -84,6 +84,7 @@ export function useBattleController({
     })),
   );
   const removeCardGhost = useBattlePresentationStore((s) => s.removeCardGhost);
+  const clearFloatingCombatTexts = useBattlePresentationStore((s) => s.clearFloatingCombatTexts);
 
   const battleScreenData: BattleScreenData = useMemo(
     () => ({
@@ -267,6 +268,12 @@ export function useBattleController({
       resetHandTransferUi();
     });
   }, [hasActiveBattle, screen, battleState.enemyHealth, resetBattleSession, setCardTransfers, resetHandTransferUi]);
+
+  useEffect(() => {
+    if (screen !== "battle") {
+      clearFloatingCombatTexts();
+    }
+  }, [screen, clearFloatingCombatTexts]);
 
   const endTurnUi = useMemo(() => createBattleEndTurnUi(getContext), [getContext]);
   const { handleEndTurn, resolveEndTurn: assignResolveEndTurn } = endTurnUi;

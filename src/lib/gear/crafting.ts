@@ -25,7 +25,7 @@ export type CraftingCurrencyId =
   | "severance-maw"
   | "smiths-whetstone";
 
-export type CraftingCurrencyBoardPosition = { col: number; row: number };
+type CraftingCurrencyBoardPosition = { col: number; row: number };
 export type CraftingCurrencyBoardPositions = Partial<Record<CraftingCurrencyId, CraftingCurrencyBoardPosition>>;
 export type CraftingCurrencyBoardPositionsByCharacter = Record<GearCharacterId, CraftingCurrencyBoardPositions>;
 

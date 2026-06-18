@@ -127,7 +127,6 @@ export function createBattleCardPlay(contextOrGetter: BattleControllerContext | 
     handlePlayCard(card, index, getCardRect(event.currentTarget.getBoundingClientRect()));
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   function handleWishChoice(cardOrNull: BattleCard | null) {
     const currentState = getStore().battleState;
     const newState = chooseWishCard(currentState, cardOrNull?.id ?? null);

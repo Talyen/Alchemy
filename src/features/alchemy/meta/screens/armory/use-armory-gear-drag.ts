@@ -191,7 +191,7 @@ export function useArmoryGearDrag({
       const { cellSize, gap, boardRect, scrollTop } = metrics;
       const renderedRows = Math.max(INVENTORY_VISIBLE_ROWS, packedInventory.occupiedRows + footprint.h);
       const placement = findNearestInventoryPlacement(
-        boardObstacles,
+        [],
         instance.instanceId,
         footprint,
         { cellSize, gap, cols: INVENTORY_COLS, rows: renderedRows },
@@ -225,7 +225,7 @@ export function useArmoryGearDrag({
         },
       };
     },
-    [inventoryBoardRef, packedInventory.occupiedRows, boardObstacles],
+    [inventoryBoardRef, packedInventory.occupiedRows],
   );
 
   const getDragDestination = useCallback(
@@ -538,7 +538,6 @@ export function useArmoryGearDrag({
       editable,
       characterId,
       loadout,
-      packedInventory.items,
       boardObstacles,
       inventoryBoardRef,
       animateGearTransfer,

@@ -173,7 +173,13 @@
       "src/features/alchemy/shared/stores/run-domain-store.ts": ["exports", "duplicates"],
       "src/features/alchemy/shared/stores/run-transitions.ts": ["exports"],
       "src/lib/active-run-session/index.ts": ["exports", "types"],
-      "src/lib/gear/types.ts": ["exports", "types"]
+      "src/lib/gear/types.ts": ["exports", "types"],
+      "scripts/lib/git-release.mjs": ["exports"],
+      "scripts/lib/patch-notes-core.mjs": ["exports"],
+      "src/features/alchemy/run-loop/navigation/destination-flow.ts": ["exports"],
+      "src/lib/game-constants.ts": ["exports"],
+      "src/lib/routing/destinations.ts": ["exports"],
+      "src/lib/routing/index.ts": ["exports"]
     },
     "ignoreDependencies": [
       "electron",

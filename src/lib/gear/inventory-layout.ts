@@ -327,7 +327,7 @@ export type PackedCurrencyItem = {
 
 const CURRENCY_FOOTPRINT: GearFootprint = { w: 1, h: 1 };
 
-export function sanitizeCurrencyBoardPositions(
+function sanitizeCurrencyBoardPositions(
   boardPositions: CraftingCurrencyBoardPositions,
   currencies: Record<CraftingCurrencyId, number>,
 ): CraftingCurrencyBoardPositions {

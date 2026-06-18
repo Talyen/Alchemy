@@ -108,13 +108,6 @@ export function getGearAffixTooltipEntries(
   });
 }
 
-export function getGearAffixDescriptionLines(
-  affixes: readonly GearAffixRoll[],
-  rarity?: GearRarity,
-): { key: string; text: string }[] {
-  return getGearAffixTooltipEntries(affixes, rarity).map(({ key, text }) => ({ key, text }));
-}
-
 export function affixMatchesAffinity(def: GearAffixDefinition, affinityKeywords: readonly string[]): boolean {
   return (
     affinityKeywords.includes(def.keywordId) ||

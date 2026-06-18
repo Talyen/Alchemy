@@ -6,6 +6,15 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Features
 
+- feat(armory): per-character gear inventories, destination pity, and UI polish
+  - Migrate saves to per-character gear inventories and board positions (schema v9)
+  
+  - Track destination offer state with pity weights and post-offer dampening
+  
+  - Improve armory tooltip placement and salvage confirmation dialog
+- feat(release): automate changelog sync and patch notes from git history
+  Pre-push syncs CHANGELOG.md from conventional commits, generates player-facing
+  notes from changelog sections, and adds CI drift guard for main-only agent workflow.
 - feat(ui): add crafting currencies, armory apply flows, and coverage
   Introduce six salvage crafting currencies with store persistence and armory
   application UI. Add save migrations plus E2E and unit tests for crafting,

@@ -2,7 +2,6 @@ import {
   memo,
   useCallback,
   useEffect,
-  useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
@@ -34,7 +33,7 @@ import {
 } from "@/lib/gear";
 import { cn } from "@/lib/utils";
 import { TiltSurface } from "../../../shared/ui/tilt-surface";
-import { TooltipPanel, useTooltipViewportClamp } from "../../../shared/ui/tooltip-panel";
+import { TooltipPanel } from "../../../shared/ui/tooltip-panel";
 import { useInteractiveCard } from "../../../shared/ui/use-interactive-card";
 import { GearTooltipContent, ARMORY_TOOLTIP_WIDTH } from "./gear-tooltip-content";
 import { useArmoryPortaledTooltipPlacement } from "./armory-tooltip-placement";
@@ -223,7 +222,6 @@ export const InventoryPanel = memo(function InventoryPanel({
   draggedCurrencyId = null,
   secondaryDragInstanceId = null,
   isDraggingActive,
-  isAnimating,
   boardRef,
   salvageMode,
   activeCurrencyId,
@@ -251,7 +249,6 @@ export const InventoryPanel = memo(function InventoryPanel({
   draggedCurrencyId?: CraftingCurrencyId | null;
   secondaryDragInstanceId?: string | null;
   isDraggingActive: boolean;
-  isAnimating: boolean;
   boardRef: RefObject<HTMLDivElement | null>;
   salvageMode: boolean;
   activeCurrencyId: CraftingCurrencyId | null;
@@ -435,7 +432,6 @@ export const InventoryPanel = memo(function InventoryPanel({
                 activeCurrencyId={activeCurrencyId}
                 dragging={draggedInstanceId === item.instanceId}
                 secondaryDragging={secondaryDragInstanceId === item.instanceId}
-                isAnimating={isAnimating}
                 interactionSuppressed={dragging || suppressingInteraction || isDraggingActive}
                 hasActiveDrag={isDraggingActive}
                 dragSequence={dragSequence}
@@ -502,34 +498,16 @@ const CraftingCurrencyTile = memo(function CraftingCurrencyTile({
 }) {
   const tileRef = useRef<HTMLDivElement>(null);
   const [showTooltip, setShowTooltip] = useState(false);
-  const [tooltipAnchor, setTooltipAnchor] = useState<{ centerX: number; top: number; bottom: number } | null>(null);
   const definition = getCraftingCurrencyDefinition(currencyId);
 
-  useLayoutEffect(() => {
-    if (showTooltip && tileRef.current) {
-      const rect = tileRef.current.getBoundingClientRect();
-      setTooltipAnchor({
-        centerX: (rect.left + rect.right) / 2,
-        top: rect.top,
-        bottom: rect.bottom,
-      });
-    }
-  }, [showTooltip, placement.col, placement.row, dragging]);
-
-  const { tooltipRef, placeBelow, tooltipStyle } = useArmoryPortaledTooltipPlacement(
-    tooltipAnchor,
-    showTooltip && tooltipAnchor !== null,
-  );
+  const { tooltipRef, placeBelow, tooltipStyle } = useArmoryPortaledTooltipPlacement(tileRef, showTooltip);
 
   const openTooltip = useCallback(() => {
-    const rect = tileRef.current?.getBoundingClientRect();
-    if (rect) setTooltipAnchor({ centerX: (rect.left + rect.right) / 2, top: rect.top, bottom: rect.bottom });
     setShowTooltip(true);
   }, []);
 
   const closeTooltip = useCallback(() => {
     setShowTooltip(false);
-    setTooltipAnchor(null);
   }, []);
 
   return (
@@ -565,6 +543,7 @@ const CraftingCurrencyTile = memo(function CraftingCurrencyTile({
       onPointerDown={(event) => {
         if (!editable || targetingMode || event.button !== 0 || interactionSuppressed) return;
         event.stopPropagation();
+        closeTooltip();
         event.currentTarget.setPointerCapture(event.pointerId);
         onCurrencyPointerStart(
           currencyId,
@@ -593,19 +572,18 @@ const CraftingCurrencyTile = memo(function CraftingCurrencyTile({
     >
       <div
         className={cn(
-          "group relative h-full w-full overflow-hidden rounded-xl border border-border/60 bg-black transition-[box-shadow,transform] active:scale-95",
+          "group relative h-full w-full overflow-hidden rounded-xl border border-border/60 bg-black transition-[box-shadow,transform]",
           "disabled:cursor-not-allowed disabled:opacity-40",
           active && "shadow-[0_0_0_2px_rgba(251,191,36,0.75),0_0_18px_rgba(251,191,36,0.25)]",
         )}
       >
         <span className="absolute inset-0 bg-black" aria-hidden />
         <img src={definition.art} alt="" className="absolute inset-0 h-full w-full object-cover" />
-        <span className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-white/10" aria-hidden />
         <span className="absolute top-1 left-1 text-xs font-bold leading-none text-stone-100 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
           {count}
         </span>
       </div>
-      {showTooltip && tooltipAnchor
+      {showTooltip
         ? createPortal(
             <TooltipPanel
               ref={tooltipRef}
@@ -665,9 +643,9 @@ const SlotButton = memo(function SlotButton({
   onAbortGearDrag: (instanceId: string) => void;
 }) {
   const [showTooltip, setShowTooltip] = useState(false);
-  const { ref, flip, dx } = useTooltipViewportClamp(8, showTooltip);
-  const definition = instance ? gearDefinitions[instance.definitionId] : undefined;
   const containerRef = useRef<HTMLDivElement>(null);
+  const { tooltipRef, placeBelow, tooltipStyle } = useArmoryPortaledTooltipPlacement(containerRef, showTooltip);
+  const definition = instance ? gearDefinitions[instance.definitionId] : undefined;
 
   useEffect(() => {
     if (!instance) return;
@@ -711,10 +689,11 @@ const SlotButton = memo(function SlotButton({
         activeCurrencyId &&
           instance &&
           canCraft &&
-          "ring-2 ring-emerald-400/40 bg-emerald-950/10 hover:ring-emerald-400/80 hover:bg-emerald-950/20",
-        activeCurrencyId && instance && !canCraft && "ring-2 ring-red-500/30 bg-red-950/15 opacity-60",
+          "ring-inset ring-2 ring-emerald-400/40 bg-emerald-950/10 hover:ring-emerald-400/80 hover:bg-emerald-950/20",
+        activeCurrencyId && instance && !canCraft && "ring-inset ring-2 ring-red-500/30 bg-red-950/15 opacity-60",
       )}
       aria-label={`${SLOT_LABELS[slot]} equipment slot`}
+      data-salvageable={salvageMode && instance ? "true" : undefined}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onFocus={handleMouseEnter}
@@ -722,6 +701,7 @@ const SlotButton = memo(function SlotButton({
       onPointerDown={(event) => {
         if (!editable || !instance || salvageMode || activeCurrencyId || event.button !== 0 || isDraggingActive) return;
         event.stopPropagation();
+        setShowTooltip(false);
         event.currentTarget.setPointerCapture(event.pointerId);
         onGearPointerStart(
           instance,
@@ -786,18 +766,21 @@ const SlotButton = memo(function SlotButton({
           />
         ) : null}
       </div>
-      {showTooltip && definition && !isDraggingActive && !salvageMode && !activeCurrencyId ? (
-        <TooltipPanel
-          width={ARMORY_TOOLTIP_WIDTH}
-          ref={ref}
-          visible
-          flip={flip}
-          className="pointer-events-none z-[80] !shadow-none"
-          style={dx !== 0 ? { marginLeft: dx } : undefined}
-        >
-          <GearTooltipContent definition={definition} {...(instance ? { instance } : {})} />
-        </TooltipPanel>
-      ) : null}
+      {showTooltip && definition && !isDraggingActive && !salvageMode && !activeCurrencyId
+        ? createPortal(
+            <TooltipPanel
+              ref={tooltipRef}
+              width={ARMORY_TOOLTIP_WIDTH}
+              visible
+              flip={placeBelow}
+              className="armory-inventory-tooltip pointer-events-none fixed bottom-auto top-auto z-[100] mb-0 mt-0 !shadow-none"
+              style={tooltipStyle}
+            >
+              <GearTooltipContent definition={definition} {...(instance ? { instance } : {})} />
+            </TooltipPanel>,
+            document.body,
+          )
+        : null}
     </div>
   );
 });
@@ -811,7 +794,6 @@ const InventoryGearTile = memo(function InventoryGearTile({
   activeCurrencyId,
   dragging,
   secondaryDragging,
-  isAnimating,
   interactionSuppressed,
   hasActiveDrag,
   dragSequence,
@@ -832,7 +814,6 @@ const InventoryGearTile = memo(function InventoryGearTile({
   activeCurrencyId: CraftingCurrencyId | null;
   dragging: boolean;
   secondaryDragging: boolean;
-  isAnimating: boolean;
   interactionSuppressed: boolean;
   hasActiveDrag: boolean;
   dragSequence: number;
@@ -847,7 +828,6 @@ const InventoryGearTile = memo(function InventoryGearTile({
 }) {
   const [tooltipSequence, setTooltipSequence] = useState<number | null>(null);
   const tileRef = useRef<HTMLDivElement>(null);
-  const [tooltipAnchor, setTooltipAnchor] = useState<{ centerX: number; top: number; bottom: number } | null>(null);
   const definition = gearDefinitions[instance.definitionId];
   const showTooltip = tooltipSequence === dragSequence && !interactionSuppressed;
 
@@ -871,14 +851,11 @@ const InventoryGearTile = memo(function InventoryGearTile({
   }, [instance]);
 
   const openTooltip = useCallback(() => {
-    const rect = tileRef.current?.getBoundingClientRect();
-    if (rect) setTooltipAnchor({ centerX: (rect.left + rect.right) / 2, top: rect.top, bottom: rect.bottom });
     setTooltipSequence(dragSequence);
   }, [dragSequence]);
 
   const closeTooltip = useCallback(() => {
     setTooltipSequence(null);
-    setTooltipAnchor(null);
   }, []);
 
   // Trigger tooltip immediately on drop if mouse is hovering
@@ -892,22 +869,7 @@ const InventoryGearTile = memo(function InventoryGearTile({
     }
   }, [activeCurrencyId, closeTooltip, hasActiveDrag, openTooltip, salvageMode, shouldSuppressClick]);
 
-  // Recalculate bounding rect dynamically when showing tooltip or layout changes
-  useLayoutEffect(() => {
-    if (showTooltip && tileRef.current) {
-      const rect = tileRef.current.getBoundingClientRect();
-      setTooltipAnchor({
-        centerX: (rect.left + rect.right) / 2,
-        top: rect.top,
-        bottom: rect.bottom,
-      });
-    }
-  }, [showTooltip, placement.col, placement.row, dragging, isAnimating]);
-
-  const { tooltipRef, placeBelow, tooltipStyle } = useArmoryPortaledTooltipPlacement(
-    tooltipAnchor,
-    showTooltip && tooltipAnchor !== null,
-  );
+  const { tooltipRef, placeBelow, tooltipStyle } = useArmoryPortaledTooltipPlacement(tileRef, showTooltip);
 
   const handleMouseEnter = () => {
     if (!salvageMode && !activeCurrencyId && !shouldSuppressClick()) {
@@ -949,12 +911,13 @@ const InventoryGearTile = memo(function InventoryGearTile({
         salvageMode && !canSalvage && "ring-inset ring-1 ring-red-400/10",
         activeCurrencyId &&
           canCraft &&
-          "ring-2 ring-emerald-400/40 bg-emerald-950/10 hover:ring-emerald-400/80 hover:bg-emerald-950/20",
-        activeCurrencyId && !canCraft && "ring-2 ring-red-500/30 bg-red-950/15 opacity-60",
+          "ring-inset ring-2 ring-emerald-400/40 bg-emerald-950/10 hover:ring-emerald-400/80 hover:bg-emerald-950/20",
+        activeCurrencyId && !canCraft && "ring-inset ring-2 ring-red-500/30 bg-red-950/15 opacity-60",
       )}
       style={packedItemStyle(placement)}
       role={editable && (isSalvageTarget || isCurrencyTarget) ? "button" : undefined}
       tabIndex={editable && (isSalvageTarget || isCurrencyTarget) ? 0 : undefined}
+      data-salvageable={isSalvageTarget ? "true" : undefined}
       aria-label={
         isSalvageTarget
           ? `Salvage ${getGearInstanceTitle(instance)}`
@@ -988,6 +951,7 @@ const InventoryGearTile = memo(function InventoryGearTile({
       onPointerDown={(event) => {
         if (!editable || targetingMode || event.button !== 0 || interactionSuppressed) return;
         event.stopPropagation();
+        closeTooltip();
         event.currentTarget.setPointerCapture(event.pointerId);
         onGearPointerStart(
           instance,
@@ -1034,7 +998,7 @@ const InventoryGearTile = memo(function InventoryGearTile({
         className="absolute -inset-px h-[calc(100%+2px)] w-[calc(100%+2px)] max-w-none object-cover"
       />
       {flash ? <div className="absolute inset-0 pointer-events-none rounded-xl craft-flash-overlay z-30" /> : null}
-      {showTooltip && tooltipAnchor
+      {showTooltip
         ? createPortal(
             <TooltipPanel
               ref={tooltipRef}

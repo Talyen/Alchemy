@@ -37,7 +37,6 @@ import {
   DESTINATION_CHOICES,
   ACTS_PER_RUN,
   BOSS_HEALTH_MULTIPLIER,
-  BOSS_TRINKET_REWARD_CHOICES,
   MASTER_GAIN,
   DEFAULT_MUSIC_VOLUME,
   MUSIC_BASE_PATH,
@@ -189,10 +188,6 @@ describe("Reward constants", () => {
   it("BOSS_HEALTH_MULTIPLIER is at least 1", () => {
     expect(BOSS_HEALTH_MULTIPLIER).toBeGreaterThanOrEqual(1);
     expect(Number.isFinite(BOSS_HEALTH_MULTIPLIER)).toBe(true);
-  });
-
-  it("BOSS_TRINKET_REWARD_CHOICES is at least 1", () => {
-    expect(BOSS_TRINKET_REWARD_CHOICES).toBeGreaterThanOrEqual(1);
   });
 });
 

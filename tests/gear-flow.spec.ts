@@ -387,4 +387,23 @@ test.describe("Gear flow", () => {
     expect(armoryArtRect!.width).toBeCloseTo(battleArtRect!.width * 1.1, 1);
     expect(armoryArtRect!.height).toBeCloseTo(battleArtRect!.height * 1.1, 1);
   });
+
+  test("equipped items show tooltips on hover", async ({ page }) => {
+    await openArmory(page, [bodyGear]);
+
+    const bodyItem = gearItemLocator(page, "Leather Armor");
+    const bodySlot = page.locator('[data-testid="armory-equipment-slot"][data-slot="body"]');
+
+    // Equip the armor by double clicking
+    await bodyItem.dblclick();
+    await expect(bodySlot.locator("img")).toHaveCount(2);
+
+    // Hover over the body slot
+    await bodySlot.hover();
+
+    // Verify that the tooltip is visible
+    const tooltip = page.locator(".armory-inventory-tooltip");
+    await expect(tooltip).toBeVisible();
+    await expect(tooltip.getByText("Leather Armor")).toBeVisible();
+  });
 });

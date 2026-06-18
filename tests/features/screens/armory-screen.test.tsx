@@ -168,7 +168,7 @@ describe("ArmoryScreen", () => {
     expect(screen.getByLabelText("Salvage Gear").isConnected).toBe(true);
   });
 
-  it("does not exit salvage mode when clicking inside the armory workspace", async () => {
+  it("exits salvage mode when clicking inside the armory workspace (but outside a salvageable item)", async () => {
     const user = userEvent.setup();
     render(
       <ArmoryScreen
@@ -187,7 +187,7 @@ describe("ArmoryScreen", () => {
     expect(screen.getByLabelText("Cancel salvage").isConnected).toBe(true);
 
     await user.click(screen.getByRole("heading", { name: "Knight" }));
-    expect(screen.getByLabelText("Cancel salvage").isConnected).toBe(true);
+    expect(screen.getByLabelText("Salvage Gear").isConnected).toBe(true);
   });
 
   it("exits salvage mode when Escape is pressed", async () => {
@@ -584,7 +584,9 @@ describe("ArmoryScreen", () => {
 
     await waitFor(() => {
       const positions = useGearStore.getState().boardPositionsByCharacter.knight;
-      expect(Object.keys(positions)).toEqual(["gear-helm"]);
+      expect(positions["stale-item-id"]).toBeUndefined();
+      expect(positions["gear-helm"]).toEqual({ col: 1, row: 1 });
+      expect(positions["gear-body"]).toBeDefined();
     });
   });
 
@@ -727,5 +729,33 @@ describe("ArmoryScreen", () => {
     });
 
     rectSpy.mockRestore();
+  });
+
+  it("renders tooltips for equipped items and portals them to document.body", async () => {
+    const loadoutWithHelm = { ...createEmptyGearLoadouts(), knight: { helm: "gear-helm" } };
+    render(
+      <ArmoryScreen
+        inventories={mockInventories()}
+        loadouts={loadoutWithHelm}
+        finishedRunCharacters={["knight"]}
+        browseOnly={false}
+        onOpenMenu={vi.fn()}
+        onEquip={vi.fn()}
+        onUnequip={vi.fn()}
+        onSalvage={vi.fn()}
+      />,
+    );
+
+    const helmSlot = screen.getByLabelText("Helm equipment slot");
+    expect(helmSlot).not.toBeNull();
+
+    // Hover over the equipped helm slot
+    fireEvent.mouseEnter(helmSlot);
+
+    await waitFor(() => {
+      const tooltip = screen.getByText("Leather Helm");
+      expect(tooltip.isConnected).toBe(true);
+      expect(tooltip.closest(".armory-inventory-tooltip")?.parentElement).toBe(document.body);
+    });
   });
 });

@@ -22,7 +22,7 @@ export const bodyGear = {
   affixes: [],
 };
 
-export const helmGear = {
+const helmGear = {
   instanceId: "gear-helm",
   definitionId: "leather-helm-basic" as const,
   affixes: [],

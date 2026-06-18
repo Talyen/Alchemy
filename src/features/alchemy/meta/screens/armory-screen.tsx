@@ -108,7 +108,7 @@ type Props = {
 export function ArmoryScreen({
   inventories,
   loadouts,
-  finishedRunCharacters,
+  finishedRunCharacters = [],
   browseOnly,
   onOpenMenu,
   onEquip,
@@ -124,7 +124,7 @@ export function ArmoryScreen({
   const [salvageMode, setSalvageMode] = useState(false);
   const [activeCurrencyId, setActiveCurrencyId] = useState<CraftingCurrencyId | null>(null);
   const [cursorPoint, setCursorPoint] = useState<{ x: number; y: number } | null>(null);
-  const characterInventory = inventories[characterId] ?? [];
+  const characterInventory = useMemo(() => inventories[characterId] ?? [], [inventories, characterId]);
   const { savedPositions, handleMoveItem } = useArmoryInventoryPositions(characterId, characterInventory);
   const {
     savedPositions: savedCurrencyPositions,
@@ -219,7 +219,6 @@ export function ArmoryScreen({
     draggedGear,
     dragVisual,
     secondaryDragVisual,
-    isAnimating,
     isDraggingActive,
     beginGearPointer,
     moveGearPointer,
@@ -246,7 +245,6 @@ export function ArmoryScreen({
   const {
     draggedCurrencyId,
     dragVisual: currencyDragVisual,
-    isAnimating: isCurrencyAnimating,
     isDraggingActive: isCurrencyDraggingActive,
     beginCurrencyPointer,
     moveCurrencyPointer,
@@ -254,7 +252,6 @@ export function ArmoryScreen({
     clearDragState: clearCurrencyDragState,
   } = useArmoryCurrencyDrag({
     editable,
-    boardObstacles,
     occupiedRows,
     inventoryBoardRef,
     onMoveCurrency: handleMoveCurrency,
@@ -300,6 +297,17 @@ export function ArmoryScreen({
     }
 
     function handleClick(event: MouseEvent) {
+      if (salvageMode) {
+        if (
+          event.target instanceof HTMLElement &&
+          (event.target.closest('[data-salvageable="true"]') ||
+            event.target.closest('[data-testid="armory-salvage-toggle"]'))
+        ) {
+          return;
+        }
+        clearTargeting();
+        return;
+      }
       if (isTargetingElement(event.target)) return;
       clearTargeting();
     }
@@ -322,30 +330,52 @@ export function ArmoryScreen({
     };
   }, [activeCurrencyId, clearTargeting, salvageMode, salvageTarget]);
 
-  useEffect(() => {
-    if (editable) return;
-    clearTargeting();
+  const handleSelectCharacter = useCallback((id: CharacterId) => {
+    setCharacterId(id);
+    setSalvageMode(false);
+    setActiveCurrencyId(null);
+    setCursorPoint(null);
     setSalvageTarget(null);
-  }, [clearTargeting, editable]);
+  }, []);
 
+  // Clear targeting when edit permissions are removed (e.g. browseOnly toggle)
   useEffect(() => {
-    if (!activeCurrencyId) return;
-    if ((craftingCurrencies[activeCurrencyId] ?? 0) <= 0) {
+    if (!editable) {
+      setSalvageMode(false); // eslint-disable-line react-hooks/set-state-in-effect
       setActiveCurrencyId(null);
+      setCursorPoint(null);
+      setSalvageTarget(null);
+    }
+  }, [editable]);
+
+  // Clear active currency if it becomes depleted
+  useEffect(() => {
+    if (activeCurrencyId && (craftingCurrencies[activeCurrencyId] ?? 0) <= 0) {
+      setActiveCurrencyId(null); // eslint-disable-line react-hooks/set-state-in-effect
     }
   }, [activeCurrencyId, craftingCurrencies]);
 
+  // Clear salvage confirmation target if the item is removed from the inventory
   useEffect(() => {
-    if (!salvageTarget) return;
-    if (!inventoryById.has(salvageTarget.instanceId)) {
-      setSalvageTarget(null);
+    if (salvageTarget && !inventoryById.has(salvageTarget.instanceId)) {
+      setSalvageTarget(null); // eslint-disable-line react-hooks/set-state-in-effect
     }
-  }, [inventoryById, salvageTarget]);
+  }, [salvageTarget, inventoryById]);
+
+  // Side-effects for DOM interaction (blur active element on navigation/edit toggle)
+  useEffect(() => {
+    if (!editable) {
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
+    }
+  }, [editable]);
 
   useEffect(() => {
-    clearTargeting();
-    setSalvageTarget(null);
-  }, [characterId, clearTargeting]);
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+  }, [characterId]);
 
   function handleSelectCurrency(currencyId: CraftingCurrencyId) {
     if (!editable || (craftingCurrencies[currencyId] ?? 0) <= 0) return;
@@ -410,7 +440,7 @@ export function ArmoryScreen({
                 };
               })}
               activeTab={characterId}
-              onSelectTab={setCharacterId}
+              onSelectTab={handleSelectCharacter}
             />
           </div>
         </div>
@@ -451,7 +481,6 @@ export function ArmoryScreen({
               draggedCurrencyId={draggedCurrencyId}
               secondaryDragInstanceId={secondaryDragVisual?.instance.instanceId ?? null}
               isDraggingActive={isDraggingActive || isCurrencyDraggingActive}
-              isAnimating={isAnimating || isCurrencyAnimating}
               boardRef={inventoryBoardRef}
               salvageMode={salvageMode}
               activeCurrencyId={activeCurrencyId}
@@ -508,6 +537,7 @@ export function ArmoryScreen({
           <CurrencyDragVisualPortal
             visual={currencyDragVisual}
             art={getCraftingCurrencyDefinition(currencyDragVisual.currencyId).art}
+            count={craftingCurrencies[currencyDragVisual.currencyId] ?? 0}
             onComplete={clearCurrencyDragState}
           />
         ) : null}
@@ -546,10 +576,12 @@ export function ArmoryScreen({
 function CurrencyDragVisualPortal({
   visual,
   art,
+  count,
   onComplete,
 }: {
   visual: CurrencyDragVisual;
   art: string;
+  count: number;
   onComplete: () => void;
 }) {
   return createPortal(
@@ -583,7 +615,12 @@ function CurrencyDragVisualPortal({
         if (visual.settling) onComplete();
       }}
     >
-      <img src={art} alt="" className="h-full w-full object-cover" />
+      <div className="relative h-full w-full">
+        <img src={art} alt="" className="h-full w-full object-cover" />
+        <span className="absolute top-1 left-1 text-xs font-bold leading-none text-stone-100 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+          {count}
+        </span>
+      </div>
     </motion.div>,
     document.body,
   );
