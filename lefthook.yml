@@ -17,6 +17,8 @@ commit-msg:
 pre-push:
   piped: true
   commands:
+    changelog-sync:
+      run: node scripts/sync-changelog-commit.mjs
     lockfile-check:
       run: npm ci --dry-run
     lint-ci:

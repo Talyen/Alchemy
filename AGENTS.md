@@ -30,8 +30,23 @@
 - Never run `git reset`, `git checkout --`, `git restore`, `git clean`, `git rebase`, or `git merge`. Ask before `git stash`.
 - Do not commit, push, tag, release, stash, create a PR, bump versions, change dependencies, or regenerate assets unless the user explicitly requests it.
 - When publishing is requested without a branch or PR workflow, commit and push directly to `main` using a [Conventional Commit](https://www.conventionalcommits.org/) message.
+- Never hand-edit `CHANGELOG.md` or `release-notes/` — the pre-push hook runs `sync:changelog` and auto-commits when needed; patch notes are generated from the changelog.
 - Never hand-edit `package-lock.json`; let npm update it only as part of an explicitly requested dependency change.
 - In PowerShell, chain dependent commands with `; if ($?) { ... }`; do not use plain `;` when a later command depends on an earlier command succeeding.
+
+## Commit messages and changelog
+
+All agents push directly to `main` (no PRs). Commit messages are the changelog source — hooks and scripts handle the rest.
+
+- **Header (required):** `type(scope): imperative summary` or `type: summary`
+- **Player-facing types:** `feat`, `fix`, `balance`, `perf` — included in patch notes
+- **Dev-only types:** `refactor`, `test`, `chore`, `ci`, `build`, `docs`, `style` — in `CHANGELOG.md` only
+- **Body (optional):** prose paragraphs or `-` bullets for multi-area work; patch-note generation extracts sentences from bodies on large commits
+- **Do not edit** `CHANGELOG.md` or `release-notes/` manually
+- **No pre-release changelog steps** — `git push origin main` syncs `CHANGELOG.md` via lefthook pre-push
+- **Preview player notes:** `npm run generate:patch-notes` → `release-notes/UNRELEASED.md` (gitignored)
+
+See [RELEASE.md](./docs/RELEASE.md) for version tagging and Steam shipping.
 
 ## Verification ladder
 

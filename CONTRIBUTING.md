@@ -6,11 +6,12 @@ GitHub branch protection is not available on this repo, so **local hooks are the
 
 `lefthook` `pre-push` runs sequentially (`piped: true`):
 
-1. `npm ci --dry-run`
-2. `npm run lint:ci` (format, TypeScript, ESLint, knip)
-3. `npm test` (Vitest)
-4. `npm run build:ship` (web + desktop compile)
-5. `npm run test:e2e:prepush` — fast **@prepush** subset (9 tests, parallel preview build; includes one animation canary)
+1. `node scripts/sync-changelog-commit.mjs` — sync `CHANGELOG.md` ## [Unreleased] from git and auto-commit when dirty
+2. `npm ci --dry-run`
+3. `npm run lint:ci` (format, TypeScript, ESLint, knip)
+4. `npm test` (Vitest)
+5. `npm run build:ship` (web + desktop compile)
+6. `npm run test:e2e:prepush` — fast **@prepush** subset (9 tests, parallel preview build; includes one animation canary)
 
 **Before pushing to `main`**, also run `npm run test:e2e:prepush:full` (`@critical`, preview + CI flags). The pre-push hook only runs `@prepush`; CI on `main` runs the broader `@critical` suite (~40 tests). If using a PR branch, run the same before opening the PR.
 
@@ -23,6 +24,16 @@ Install hooks once: `npm run prepare` (runs on `npm install`).
 First-time Playwright: `npx playwright install chromium`.
 
 **PowerShell command chaining:** use `; if ($?) { next-command }` — `;` alone ignores exit codes on Windows ([AGENTS.md](../AGENTS.md)).
+
+## Changelog and patch notes
+
+Agents push directly to `main`; there is no PR merge step. Commit messages feed an automated changelog:
+
+- **Pre-push hook** syncs `CHANGELOG.md` ## [Unreleased] from git history since the latest `v*` tag
+- **Player-facing draft:** `npm run generate:patch-notes` → `release-notes/UNRELEASED.md`
+- **Drift guard:** `tests/architecture/changelog-sync.test.ts` (also in `npm run test:ship:unit`)
+
+Commit message rules: [AGENTS.md](../AGENTS.md#commit-messages-and-changelog). Release flow: [RELEASE.md](./docs/RELEASE.md).
 
 ## What to run when you change…
 

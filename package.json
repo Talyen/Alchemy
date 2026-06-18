@@ -33,6 +33,8 @@
     "dist:win": "npm run build:desktop && cross-env NODE_OPTIONS=--no-deprecation electron-builder --win",
     "dist:desktop": "npm run build:desktop && node scripts/dist-desktop.mjs",
     "generate:patch-notes": "node scripts/generate-patch-notes.mjs",
+    "sync:changelog": "node scripts/sync-changelog.mjs",
+    "sync:changelog:check": "node scripts/sync-changelog.mjs --check",
     "sync:version": "node scripts/sync-version-metadata.mjs",
     "sync:steam-appid": "node scripts/sync-steam-appid.mjs",
     "sync:gear-art": "node scripts/sync-gear-art.mjs",

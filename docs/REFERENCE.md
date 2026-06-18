@@ -34,7 +34,9 @@ npm run check:push          # check + test:e2e:prepush
 npm run check:ship          # lint:ci + ship unit tests + desktop compile
 npm run check:ship:full     # check:ship + save E2E + Electron E2E
 npm run sync:version        # package.json → metadata.generated.ts
-npm run generate:patch-notes
+npm run sync:changelog      # git log → CHANGELOG.md ## [Unreleased]
+npm run sync:changelog:check  # fail if CHANGELOG unreleased is stale
+npm run generate:patch-notes    # CHANGELOG → release-notes/UNRELEASED.md (or vX.Y.Z on tag)
 npm run dist:desktop        # electron-builder per steam/platforms.json
 npm run test:e2e:prepush    # Fast @prepush subset (pre-push hook)
 npm run test:e2e:prepush:full  # @critical on preview (CI e2e job)

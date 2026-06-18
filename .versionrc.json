@@ -1,5 +1,12 @@
 {
   "header": "# Changelog\n\nAll notable changes to Alchemy are documented here. Player-facing summaries ship in `release-notes/`.\n",
+  "skip": {
+    "changelog": true
+  },
+  "scripts": {
+    "prerelease": "node scripts/sync-changelog.mjs",
+    "postbump": "node scripts/release-changelog.mjs"
+  },
   "types": [
     { "type": "feat", "section": "Features" },
     { "type": "fix", "section": "Bug Fixes" },
