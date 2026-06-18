@@ -120,8 +120,8 @@ describe("createRunFlowHandlers victory paths", () => {
 
   it("handleAbandonRun invokes applyRunDefeatTeardown for campaign", () => {
     setRunProgress({ contentSystemType: CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN });
-    const setScreen = vi.fn();
-    const handlers = createRunFlowHandlers(makeFlowHandlerDeps({ setScreen }));
+    const transition = vi.fn();
+    const handlers = createRunFlowHandlers(makeFlowHandlerDeps({ transition }));
     handlers.handleAbandonRun();
     expect(applyRunDefeatTeardown).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -130,22 +130,22 @@ describe("createRunFlowHandlers victory paths", () => {
         clearCombatState: handlers.clearCombatState,
       }),
     );
-    expect(setScreen).toHaveBeenCalledWith(CONSTANTS.SCREENS.GAME_OVER);
+    expect(transition).toHaveBeenCalledWith(CONSTANTS.SCREENS.GAME_OVER, expect.objectContaining({ immediate: true }));
   });
 
   it("handleAbandonRun abandons labyrinth run without failing the current node", () => {
     setRunProgress({ contentSystemType: CONSTANTS.CONTENT_SYSTEMS.LABYRINTH });
     const navigateTo = vi.fn();
     const onLabyrinthFailNode = vi.fn();
-    const setScreen = vi.fn();
+    const transition = vi.fn();
     const handlers = createRunFlowHandlers(
-      makeFlowHandlerDeps({ navigateTo, onLabyrinthFailNode, setScreen }),
+      makeFlowHandlerDeps({ navigateTo, onLabyrinthFailNode, transition }),
     );
     handlers.handleAbandonRun();
     expect(onLabyrinthFailNode).not.toHaveBeenCalled();
     expect(navigateTo).not.toHaveBeenCalledWith(CONSTANTS.SCREENS.LABYRINTH_MAP);
     expect(applyRunDefeatTeardown).toHaveBeenCalled();
-    expect(setScreen).toHaveBeenCalledWith(CONSTANTS.SCREENS.GAME_OVER);
+    expect(transition).toHaveBeenCalledWith(CONSTANTS.SCREENS.GAME_OVER, expect.objectContaining({ immediate: true }));
   });
 
   it("routes Wildwood Companion rewards before completing the boss reward", () => {

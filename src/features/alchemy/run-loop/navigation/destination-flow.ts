@@ -85,14 +85,6 @@ export function computeDestinationWeight(destination: Destination, context: Dest
   return Math.max(1, (DEFAULT_DESTINATION_WEIGHT + pity) * repeatMultiplier - dampen);
 }
 
-/** @deprecated Use computeDestinationWeight with DestinationWeightContext. */
-export function getDestinationWeight(destination: Destination, lastOfferedDestinations: Destination[] = []) {
-  return computeDestinationWeight(destination, {
-    lastOfferedDestinations,
-    roundsSinceOffered: {},
-  });
-}
-
 function weightedPick(pool: Destination[], context: DestinationWeightContext, rng: () => number): Destination | null {
   if (pool.length === 0) return null;
   const totalWeight = pool.reduce((sum, destination) => sum + computeDestinationWeight(destination, context), 0);

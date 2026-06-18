@@ -28,13 +28,15 @@ describe("useRunNavigation", () => {
     getRunSessionStoreView().setHasActiveRun(true);
     getBattleStoreView().setHasActiveBattle(true);
     const navigateTo = vi.fn((_screen: string, onCommit?: () => void) => onCommit?.());
-    const setScreen = vi.fn();
+    const transition = vi.fn();
+    const cancelPending = vi.fn();
 
     const { result } = renderHook(() =>
       useRunNavigation({
         screen: ROUTE_SCREENS.BATTLE,
-        setScreen,
         navigateTo,
+        transition,
+        cancelPending,
         onStartBattle: vi.fn(),
         onStartBossBattle: vi.fn(),
         onStartBossById: vi.fn(),
@@ -50,6 +52,7 @@ describe("useRunNavigation", () => {
       result.current.resetRunState();
     });
 
+    expect(cancelPending).toHaveBeenCalledOnce();
     expect(navigateTo).toHaveBeenCalledWith(ROUTE_SCREENS.MENU, expect.any(Function));
     expect(getRunSessionStoreView().hasActiveRun).toBe(false);
     expect(getBattleStoreView().hasActiveBattle).toBe(false);

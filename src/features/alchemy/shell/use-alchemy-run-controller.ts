@@ -17,7 +17,7 @@ import { useShopController } from "./use-shop-controller";
 import { useRunNavigation } from "./use-run-navigation";
 import { useLabyrinthController } from "./use-labyrinth-controller";
 import { createLabyrinthNodeRouting } from "./labyrinth-node-routing";
-import { useScreenNavigation } from "./use-screen-navigation";
+import { useScreenTransitions } from "./use-screen-transitions";
 import { useSteamRichPresence } from "./use-steam-rich-presence";
 import { restoreRun, useActiveRunScreen } from "@/features/alchemy/shared/stores/run-session-facade";
 import { readActiveRunStore } from "@/features/alchemy/shared/stores/run-session-facade";
@@ -47,7 +47,7 @@ export function useAlchemyRunController({
   const talents = useTalentAdapter();
 
   const { screen, setScreen } = useActiveRunScreen();
-  const { navigateTo, commitPendingTransition } = useScreenNavigation(screen, setScreen);
+  const { navigateTo, transition, commitPendingTransition, cancelPending } = useScreenTransitions(screen, setScreen);
 
   // ============ Ref Wrappers ============
   const homesteadEffectsRef = useRef(homesteadEffects);
@@ -91,8 +91,9 @@ export function useAlchemyRunController({
 
   const nav = useRunNavigation({
     screen,
-    setScreen,
     navigateTo,
+    transition,
+    cancelPending,
     onStartBattle: battle.startBattle,
     onStartBossBattle: battle.startBossBattle,
     onStartBossById: battle.startBossById,

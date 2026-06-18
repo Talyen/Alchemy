@@ -6,6 +6,7 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Features
 
+- feat(armory): simplify state, fix equipped tooltips, and remove click animations
 - feat(armory): per-character gear inventories, destination pity, and UI polish
   - Migrate saves to per-character gear inventories and board positions (schema v9)
   
@@ -318,6 +319,34 @@ All notable changes to Alchemy are documented here. Player-facing summaries ship
 
 ### Refactors
 
+- refactor(battle): drop Math.random defaults, remove dispatch route metadata, and refresh stale doc
+  Phase 0 of the battle engine refactor. Five small cleanups that remove
+  footguns and dead abstractions without changing public behavior; all 1055
+  battle+game-data tests pass.
+  
+  - Make draw.ts and shuffleCards require an explicit rng. Production uses
+    state.rng; tests pass any seeded fn. The previous '= Math.random' default
+    slipped past the eslint 'no Math.random()' rule because the rule only
+    catches call expressions, not identifier references. AGENTS.md already
+    forbids Math.random() in the battle engine; this makes the ban structural.
+  
+  - Delete adjustEnemyStatusDelta() and its two call sites in types.ts,
+    status-damage-riders.ts, and effect-handlers/status-handlers.ts. The
+    function was a no-op (returned delta unchanged) wired for a labyrinth or
+    difficulty hook that was never implemented. Inlined the value at each site.
+  
+  - Remove the dispatchRoute field from EffectKindDefinition and the entire
+    dispatch-routes.ts / getEffectDispatchRoute / ALL_EFFECT_REGISTRY_ENTRIES
+    machinery. The string categorization was descriptive only - it had no
+    runtime effect, no consumer, and the categories ('mana', 'utility',
+    'damage', ...) did not match the actual handler grouping in effect-handlers/.
+  
+  - Rewrite BATTLE_HANDLERS.md to describe the actual 5-grouped handler plus
+    5-grouped schema layout instead of the per-kind subfolders that never
+    existed.
+  
+  - Update the effects-registry test to assert the schemas-only contract
+    (every kind has a schema, schemas parse) without the route assertions.
 - refactor: consolidate gear and run session into lib and simplify reward flows
   Colocate pending-reward and gear schemas in lib, drop feature shims, and add shared test helpers.
 - refactor(run): consolidate run-flow handlers, save builder, and test infra

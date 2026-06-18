@@ -1,6 +1,4 @@
 // Unified run-flow handlers: battle victory/defeat, rewards, destinations, and run completion.
-import type { RefObject } from "react";
-import { TimerGroup } from "@/lib/animation/game-timer";
 import type { BattleCard, CharacterId, DifficultyId, DifficultyModifier } from "@/lib/game-data";
 import type { LabyrinthModifierKind } from "@/lib/content-systems/types";
 import type { EncounterRewardTraitId } from "@/lib/content-systems/encounter-traits";
@@ -34,7 +32,7 @@ import {
   type CardRewardState,
 } from "../navigation/reward-flow";
 import { applyRunDefeatTeardown, finalizeRunEndSession } from "@/features/alchemy/shared/stores/run-transitions";
-import { createScreenTransition } from "@/features/alchemy/shell/screen-transition";
+import type { ScreenTransitionOptions } from "@/features/alchemy/shell/use-screen-transitions";
 import { applyAlchemistPotion, applyRewardSelection, routeDestinationChoice } from "./run-destination-handlers";
 import type { ContentSystemNavigationApi } from "@/features/alchemy/run-setup/run/content-system-navigation";
 import { CONSTANTS, type Destination, type Screen } from "../../shared/types";
@@ -43,12 +41,11 @@ import type { RunStateController, TalentStateController } from "../../shared/sto
 type FinalizeRewardResultType = ReturnType<typeof finalizeRewardState>;
 
 export type RunFlowHandlerDeps = {
-  rewardTransitionTimer: RefObject<TimerGroup>;
   run: RunStateController;
   talents: TalentStateController;
   activeLabyrinthRewardModifiers: LabyrinthModifierKind[];
   navigateTo: (nextScreen: Screen, onRenderedScreenCommit?: () => void) => void;
-  setScreen: React.Dispatch<React.SetStateAction<Screen>>;
+  transition: (nextScreen: Screen, options?: ScreenTransitionOptions) => void;
   setHasActiveBattle: (value: boolean) => void;
   onLabyrinthFailNode: () => void;
   onLabyrinthClearNode: () => void;
@@ -73,12 +70,6 @@ export type RunFlowHandlerDeps = {
 };
 
 export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
-  const transitionScreen = createScreenTransition(
-    { navigateTo: deps.navigateTo, setScreen: deps.setScreen },
-    deps.rewardTransitionTimer,
-  );
-  const transitionScreenImmediate = createScreenTransition({ navigateTo: deps.navigateTo, setScreen: deps.setScreen });
-
   function clearCombatState() {
     readBattleStore().setHasActiveBattle(false);
     useUiStore.getState().clearCardHover();
@@ -162,7 +153,6 @@ export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
   }
 
   function handleBattleVictory() {
-    deps.rewardTransitionTimer.current.clearAll();
     commitVictoryResult(computeVictoryResult());
     stopAllSfx();
     playVictory();
@@ -171,7 +161,7 @@ export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
         readActiveRunStore().contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD
           ? CONSTANTS.SCREENS.WILDWOOD_RECOVERY
           : CONSTANTS.SCREENS.REWARDS;
-      transitionScreen(nextScreen, {
+      deps.transition(nextScreen, {
         delayMs: VICTORY_TRANSITION_DELAY,
         guard: () => readRunSessionStore().hasActiveRun,
       });
@@ -184,11 +174,10 @@ export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
       finalizeRunXP: deps.talents.finalizeRunXP,
       clearCombatState,
     });
-    transitionScreen(CONSTANTS.SCREENS.GAME_OVER, { immediate: true });
+    deps.transition(CONSTANTS.SCREENS.GAME_OVER, { immediate: true });
   }
 
   function handleBattleDefeat() {
-    deps.rewardTransitionTimer.current.clearAll();
     const runState = readActiveRunStore();
     if (runState.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.LABYRINTH) {
       stopAllSfx();
@@ -201,7 +190,6 @@ export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
   }
 
   function handleAbandonRun() {
-    deps.rewardTransitionTimer.current.clearAll();
     useUiStore.getState().clearCardHover();
     if (deps.run.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.LABYRINTH) {
       endLabyrinthRun();
@@ -302,7 +290,7 @@ export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
       finalizeRunXP: deps.talents.finalizeRunXP,
       clearCombatState,
     });
-    transitionScreenImmediate(CONSTANTS.SCREENS.GAME_OVER, { immediate: true });
+    deps.transition(CONSTANTS.SCREENS.GAME_OVER, { immediate: true });
   }
 
   function handleActComplete(displayMaterials?: MaterialInventory) {

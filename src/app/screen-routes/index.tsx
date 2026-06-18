@@ -1,7 +1,5 @@
 // Screen route registry — maps Screen values to screen components.
 import type { ReactNode } from "react";
-import type { Screen } from "@/lib/routing";
-import { ROUTE_SCREEN_VALUES } from "@/lib/routing";
 import { buildOptionsScreen } from "./options-route";
 import { metaScreenRoutes } from "./meta-routes";
 import { runSetupScreenRoutes } from "./run-setup-routes";
@@ -11,31 +9,38 @@ import { withScreenBoundary } from "./with-screen-boundary";
 import type { ScreenRouteContext } from "./types";
 
 export type { ScreenRouteContext } from "./types";
+export type ScreenRoute = (ctx: ScreenRouteContext) => ReactNode;
 
-const SCREEN_ROUTES: Record<Screen, (ctx: ScreenRouteContext) => ReactNode> = {
+/**
+ * Compose phase-scoped route tables. Each input covers a disjoint subset of
+ * `Screen`; the union must equal `Screen` for `SCREEN_ROUTES` to type as
+ * `Record<Screen, ScreenRoute>`. A missing or duplicate key becomes a
+ * compile error on `_exhaustive` below.
+ */
+type PhaseKeys =
+  | keyof typeof metaScreenRoutes
+  | keyof typeof runSetupScreenRoutes
+  | keyof typeof runLoopScreenRoutes
+  | keyof typeof runEndScreenRoutes
+  | "options";
+
+type _Exhaustive = [PhaseKeys] extends [import("@/lib/routing").Screen]
+  ? [import("@/lib/routing").Screen] extends [PhaseKeys]
+    ? true
+    : false
+  : false;
+const _exhaustive: _Exhaustive = true;
+void _exhaustive;
+
+const SCREEN_ROUTES = {
   ...metaScreenRoutes,
   ...runSetupScreenRoutes,
   ...runLoopScreenRoutes,
   ...runEndScreenRoutes,
   options: buildOptionsScreen,
-} as Record<Screen, (ctx: ScreenRouteContext) => ReactNode>;
-
-for (const screen of ROUTE_SCREEN_VALUES) {
-  if (!SCREEN_ROUTES[screen]) {
-    throw new Error(`[screen-routes] Missing route handler for screen: ${screen}`);
-  }
-}
+};
 
 export function renderAlchemyScreenRoute(ctx: ScreenRouteContext): ReactNode {
-  const render = SCREEN_ROUTES[ctx.screen];
-  if (!render) {
-    console.error(`[RenderAlchemyScreen] Unknown screen: "${ctx.screen}"`);
-    return withScreenBoundary(
-      "unknown-screen",
-      <div className="flex h-full items-center justify-center">
-        <p className="text-muted-foreground">Unknown screen: {ctx.screen}</p>
-      </div>,
-    );
-  }
+  const render = SCREEN_ROUTES[ctx.screen as keyof typeof SCREEN_ROUTES] as ScreenRoute;
   return withScreenBoundary(ctx.screen, render(ctx));
 }

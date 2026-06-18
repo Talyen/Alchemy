@@ -10,59 +10,57 @@
 import type { Screen } from "./screens";
 import { ROUTE_SCREENS } from "./screens";
 
-/** Screens available from the main menu without an active run. */
-const META_SCREENS = [
-  ROUTE_SCREENS.MENU,
-  ROUTE_SCREENS.GAME_MODE_SELECT,
-  ROUTE_SCREENS.CHARACTER_SELECT,
-  ROUTE_SCREENS.DIFFICULTY_SELECT,
-  ROUTE_SCREENS.DRAFT_DECK,
-  ROUTE_SCREENS.OPTIONS,
-  ROUTE_SCREENS.COLLECTION,
-  ROUTE_SCREENS.TALENTS,
-  ROUTE_SCREENS.HOMESTEAD,
-  ROUTE_SCREENS.ARMORY,
-] as const satisfies readonly Screen[];
+/** High-level run lifecycle phase for persistence and orchestration. */
+export type RunPhase = "meta" | "runLoop" | "battle" | "runEnd";
 
-/** Screens that only make sense while a run is in progress (or mid-resume). */
-const RUN_LOOP_SCREENS = [
-  ROUTE_SCREENS.BATTLE,
-  ROUTE_SCREENS.REWARDS,
-  ROUTE_SCREENS.DESTINATION,
-  ROUTE_SCREENS.CAMPFIRE,
-  ROUTE_SCREENS.SHOP,
-  ROUTE_SCREENS.ALCHEMIST,
-  ROUTE_SCREENS.TRINKET_SHOP,
-  ROUTE_SCREENS.EQUIPMENT_SHOP,
-  ROUTE_SCREENS.MYSTERY,
-  ROUTE_SCREENS.CORRUPTION,
-  ROUTE_SCREENS.LABYRINTH_MAP,
-  ROUTE_SCREENS.WILDWOOD_RECOVERY,
-  ROUTE_SCREENS.WILDWOOD_REMOVAL,
-] as const satisfies readonly Screen[];
-
-/** Terminal run outcomes. */
-const RUN_END_SCREENS = [ROUTE_SCREENS.GAME_OVER, ROUTE_SCREENS.RUN_VICTORY] as const satisfies readonly Screen[];
-
-const META_SCREEN_SET = new Set<Screen>(META_SCREENS);
-const RUN_LOOP_SET = new Set<Screen>(RUN_LOOP_SCREENS);
-const RUN_END_SET = new Set<Screen>(RUN_END_SCREENS);
+/**
+ * Static phase classification per screen. Battle is classified as `runLoop` here;
+ * `getRunPhase` upgrades `BATTLE` to `battle` when `hasActiveBattle` is true.
+ */
+export const SCREEN_PHASE: Record<Screen, RunPhase> = {
+  [ROUTE_SCREENS.MENU]: "meta",
+  [ROUTE_SCREENS.GAME_MODE_SELECT]: "meta",
+  [ROUTE_SCREENS.CHARACTER_SELECT]: "meta",
+  [ROUTE_SCREENS.DIFFICULTY_SELECT]: "meta",
+  [ROUTE_SCREENS.DRAFT_DECK]: "meta",
+  [ROUTE_SCREENS.OPTIONS]: "meta",
+  [ROUTE_SCREENS.COLLECTION]: "meta",
+  [ROUTE_SCREENS.TALENTS]: "meta",
+  [ROUTE_SCREENS.HOMESTEAD]: "meta",
+  [ROUTE_SCREENS.ARMORY]: "meta",
+  [ROUTE_SCREENS.BATTLE]: "runLoop",
+  [ROUTE_SCREENS.REWARDS]: "runLoop",
+  [ROUTE_SCREENS.DESTINATION]: "runLoop",
+  [ROUTE_SCREENS.CAMPFIRE]: "runLoop",
+  [ROUTE_SCREENS.SHOP]: "runLoop",
+  [ROUTE_SCREENS.ALCHEMIST]: "runLoop",
+  [ROUTE_SCREENS.TRINKET_SHOP]: "runLoop",
+  [ROUTE_SCREENS.EQUIPMENT_SHOP]: "runLoop",
+  [ROUTE_SCREENS.MYSTERY]: "runLoop",
+  [ROUTE_SCREENS.CORRUPTION]: "runLoop",
+  [ROUTE_SCREENS.LABYRINTH_MAP]: "runLoop",
+  [ROUTE_SCREENS.WILDWOOD_RECOVERY]: "runLoop",
+  [ROUTE_SCREENS.WILDWOOD_REMOVAL]: "runLoop",
+  [ROUTE_SCREENS.GAME_OVER]: "runEnd",
+  [ROUTE_SCREENS.RUN_VICTORY]: "runEnd",
+};
 
 export function isMetaScreen(screen: Screen): boolean {
-  return META_SCREEN_SET.has(screen);
+  return SCREEN_PHASE[screen] === "meta";
 }
 
 export function isRunLoopScreen(screen: Screen): boolean {
-  return RUN_LOOP_SET.has(screen);
+  return SCREEN_PHASE[screen] === "runLoop";
 }
 
 export function isRunEndScreen(screen: Screen): boolean {
-  return RUN_END_SET.has(screen);
+  return SCREEN_PHASE[screen] === "runEnd";
 }
 
 /** True when gameplay expects hasActiveRun and run domain/session data to be populated. */
 export function requiresActiveRun(screen: Screen): boolean {
-  return isRunLoopScreen(screen) || isRunEndScreen(screen);
+  const phase = SCREEN_PHASE[screen];
+  return phase === "runLoop" || phase === "runEnd";
 }
 
 /**
@@ -135,13 +133,8 @@ export function isDocumentedTransition(from: Screen, to: Screen): boolean {
   return false;
 }
 
-/** High-level run lifecycle phase for persistence and orchestration. */
-export type RunPhase = "meta" | "runLoop" | "battle" | "runEnd";
-
 /** Derives run phase from the current screen and whether combat state is active. */
 export function getRunPhase(screen: Screen, hasActiveBattle: boolean): RunPhase {
-  if (isRunEndScreen(screen)) return "runEnd";
-  if (screen === ROUTE_SCREENS.BATTLE && hasActiveBattle) return "battle";
-  if (isRunLoopScreen(screen)) return "runLoop";
-  return "meta";
+  if (hasActiveBattle && screen === ROUTE_SCREENS.BATTLE) return "battle";
+  return SCREEN_PHASE[screen];
 }

@@ -1,9 +1,8 @@
 // Run-flow controller for routing, rewards, mysteries, campfires, act transitions, and reset.
-/* eslint-disable react-hooks/refs -- flow handler factories receive timer and draft refs */
+/* eslint-disable react-hooks/refs -- flow handler factories receive draft refs */
 // Depends on: run-session/ui stores, battle system, game constants, audio registry, and navigation flow helpers.
 // Depended on by: useAlchemyRunController for managing the overall flow of a run.
-import { useEffect, useCallback, useRef, useMemo } from "react";
-import { TimerGroup } from "@/lib/animation/game-timer";
+import { useCallback, useRef, useMemo } from "react";
 import {
   useRunAdapter,
   useTalentAdapter,
@@ -27,6 +26,7 @@ import { useMysteryFlow } from "@/features/alchemy/run-loop/navigation/use-myste
 import { applyCorruptionToDeck } from "@/features/alchemy/run-loop/navigation/run-navigation-corruption";
 import { createRunFlowHandlers } from "@/features/alchemy/run-loop/run/run-flow-handlers";
 import { createContentSystemNavigation } from "@/features/alchemy/run-setup/run/content-system-navigation";
+import type { ScreenTransitionOptions } from "./use-screen-transitions";
 import type { DestinationOptionsInput } from "@/features/alchemy/run-loop/navigation/destination-flow";
 import { DRAFT_ROUNDS } from "@/lib/game-constants";
 import { appendUnique } from "@/lib/utils";
@@ -42,8 +42,9 @@ import {
 
 export function useRunNavigation({
   screen,
-  setScreen,
   navigateTo,
+  transition,
+  cancelPending,
   onStartBattle,
   onStartBossBattle,
   onStartBossById,
@@ -56,8 +57,9 @@ export function useRunNavigation({
   onMarkDifficultyCompleted,
 }: {
   screen: Screen;
-  setScreen: React.Dispatch<React.SetStateAction<Screen>>;
   navigateTo: (nextScreen: Screen, onRenderedScreenCommit?: () => void) => void;
+  transition: (nextScreen: Screen, options?: ScreenTransitionOptions) => void;
+  cancelPending: () => void;
   onStartBattle: (
     deck?: BattleCard[],
     gold?: number,
@@ -98,9 +100,6 @@ export function useRunNavigation({
   const corruptionResult = nav.corruptionResult;
   const pendingCharacterId = nav.pendingCharacterId;
   const pendingContentSystemType = nav.pendingContentSystemType;
-
-  const rewardTransitionTimer = useRef(new TimerGroup());
-  useEffect(() => () => rewardTransitionTimer.current.clearAll(), []);
 
   const getAvailableDestinations = useCallback(
     (options: DestinationOptionsInput = {}): Destination[] => {
@@ -280,12 +279,11 @@ export function useRunNavigation({
   const flowHandlers = useMemo(
     () =>
       createRunFlowHandlers({
-        rewardTransitionTimer,
         run,
         talents,
         activeLabyrinthRewardModifiers,
         navigateTo,
-        setScreen,
+        transition,
         setHasActiveBattle,
         onLabyrinthFailNode,
         onLabyrinthClearNode,
@@ -308,7 +306,7 @@ export function useRunNavigation({
       talents,
       activeLabyrinthRewardModifiers,
       navigateTo,
-      setScreen,
+      transition,
       setHasActiveBattle,
       onLabyrinthFailNode,
       onLabyrinthClearNode,
@@ -354,7 +352,7 @@ export function useRunNavigation({
   }
 
   function resetRunState() {
-    rewardTransitionTimer.current.clearAll();
+    cancelPending();
     clearCardGhosts();
     clearCardHover();
     setHasActiveBattle(false);

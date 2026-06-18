@@ -1,19 +1,14 @@
-import type { RefObject } from "react";
-import { TimerGroup } from "@/lib/animation/game-timer";
 import { createEmptyRewardState } from "@/features/alchemy/run-loop/navigation/reward-flow";
 import type { RunFlowHandlerDeps } from "@/features/alchemy/run-loop/run/run-flow-handlers";
 import { makeRunController, makeTalentController } from "./run-controller";
 
 export function makeFlowHandlerDeps(overrides: Partial<RunFlowHandlerDeps> = {}): RunFlowHandlerDeps {
-  const rewardTransitionTimer = { current: new TimerGroup() } as RefObject<TimerGroup>;
-
   return {
-    rewardTransitionTimer,
     run: makeRunController(),
     talents: makeTalentController(),
     activeLabyrinthRewardModifiers: [],
     navigateTo: () => {},
-    setScreen: () => {},
+    transition: () => {},
     setHasActiveBattle: () => {},
     onLabyrinthFailNode: () => {},
     onLabyrinthClearNode: () => {},
