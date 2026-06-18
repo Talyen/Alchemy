@@ -1,14 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import { playUISound } from "@/lib/audio";
-import {
-  INVENTORY_COLS,
-  INVENTORY_VISIBLE_ROWS,
-  findNearestInventoryPlacement,
-  inventoryPlacementRect,
-  type InventoryPlacement,
-  type PackedInventory,
-} from "@/lib/gear";
-import { readInventoryBoardMetrics } from "./read-inventory-board-metrics";
+import { type InventoryPlacement, type PackedInventory } from "@/lib/gear";
+import { applyMagnetHysteresis, placeInventoryTileFromMetrics } from "./board-drag-math";
 
 export type DragPoint = { x: number; y: number };
 export type DragRect = { left: number; top: number; width: number; height: number };
@@ -100,45 +93,14 @@ export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrig
     (id: TId, freeRect: DragRect, requireProximity = true): DragDestination | null => {
       const board = inventoryBoardRef.current;
       if (!board) return null;
-      const metrics = readInventoryBoardMetrics(board);
       const footprint = getFootprint(id, itemLookup);
-      if (!metrics || !footprint) return null;
-      const { cellSize, gap, boardRect, scrollTop } = metrics;
-      const renderedRows = Math.max(INVENTORY_VISIBLE_ROWS, occupiedRows + footprint.h);
-      const placement = findNearestInventoryPlacement(
-        [],
-        id,
-        footprint,
-        { cellSize, gap, cols: INVENTORY_COLS, rows: renderedRows },
-        {
-          x: freeRect.left + freeRect.width / 2 - boardRect.left,
-          y: freeRect.top + freeRect.height / 2 - boardRect.top + scrollTop,
-        },
-      );
-      if (!placement) return null;
-      const localRect = inventoryPlacementRect(placement, footprint, { cellSize, gap });
-      const freeCenter = { x: freeRect.left + freeRect.width / 2, y: freeRect.top + freeRect.height / 2 };
-      const destinationCenter = {
-        x: boardRect.left + localRect.left + localRect.width / 2,
-        y: boardRect.top + localRect.top - scrollTop + localRect.height / 2,
-      };
-      if (
-        requireProximity &&
-        Math.hypot(freeCenter.x - destinationCenter.x, freeCenter.y - destinationCenter.y) >
-          cellSize * INVENTORY_SNAP_RADIUS_CELLS
-      ) {
-        return null;
-      }
-      return {
-        kind: "inventory",
-        placement,
-        rect: {
-          left: boardRect.left + localRect.left,
-          top: boardRect.top + localRect.top - scrollTop,
-          width: localRect.width,
-          height: localRect.height,
-        },
-      };
+      if (!footprint) return null;
+      const result = placeInventoryTileFromMetrics(board, footprint, freeRect, null, {
+        requireProximity,
+        occupiedRows,
+      });
+      if (!result) return null;
+      return { kind: "inventory", placement: result.placement, rect: result.rect };
     },
     [getFootprint, inventoryBoardRef, itemLookup, occupiedRows],
   );
@@ -198,11 +160,6 @@ export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrig
     [clearDragState],
   );
 
-  const sameDestination = useCallback((left: DragDestination, right: DragDestination) => {
-    if (left.kind === "external" || right.kind === "external") return left.kind === right.kind;
-    return left.placement.col === right.placement.col && left.placement.row === right.placement.row;
-  }, []);
-
   const updateActiveDrag = useCallback(
     (pointer: DragPoint, pointerId: number) => {
       const pending = pendingDragRef.current;
@@ -225,25 +182,11 @@ export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrig
       };
       const candidate = getDragDestination(pending.id, freeRect, pointer);
       const previousDestination = activeDragRef.current?.destination ?? null;
-      const freeCenter = { x: freeRect.left + freeRect.width / 2, y: freeRect.top + freeRect.height / 2 };
-      const distanceTo = (destination: DragDestination) => {
-        const centerX = destination.rect.left + destination.rect.width / 2;
-        const centerY = destination.rect.top + destination.rect.height / 2;
-        return Math.hypot(freeCenter.x - centerX, freeCenter.y - centerY);
-      };
-
-      let destination = candidate;
-      if (previousDestination && (!candidate || !sameDestination(previousDestination, candidate))) {
-        const previousDistance = distanceTo(previousDestination);
-        const candidateDistance = candidate ? distanceTo(candidate) : Number.POSITIVE_INFINITY;
-        if (
-          previousDistance <= candidateDistance + MAGNET_SWITCH_MARGIN_PX &&
-          previousDistance <=
-            Math.max(previousDestination.rect.width, previousDestination.rect.height) / 2 + MAGNET_RELEASE_HYSTERESIS_PX
-        ) {
-          destination = previousDestination;
-        }
-      }
+      const { destination } = applyMagnetHysteresis({
+        candidate,
+        previousDestination,
+        freeRect,
+      });
 
       const visual: BoardDragVisual<TId, TOrigin> = {
         id: pending.id,
@@ -256,7 +199,7 @@ export function useBoardDrag<TId extends string, TItem, TOrigin extends DragOrig
       activeDragRef.current = visual;
       setDragVisual(visual);
     },
-    [getDragDestination, sameDestination],
+    [getDragDestination],
   );
 
   const beginPointer = useCallback(

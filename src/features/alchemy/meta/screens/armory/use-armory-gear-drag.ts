@@ -5,8 +5,6 @@ import {
   footprintForInstance,
   gearDefinitions,
   INVENTORY_COLS,
-  INVENTORY_VISIBLE_ROWS,
-  findNearestInventoryPlacement,
   inventoryPlacementRect,
   isGearCompatibleWithSlot,
   type GearInstance,
@@ -19,6 +17,7 @@ import {
   type PackedInventoryItem,
 } from "@/lib/gear";
 import { readInventoryBoardMetrics } from "./read-inventory-board-metrics";
+import { applyMagnetHysteresis, placeInventoryTileFromMetrics } from "./board-drag-math";
 import { resolveEquipSwap } from "./resolve-equip-swap";
 
 export type GearDragOrigin =
@@ -37,10 +36,7 @@ export type GearPointerMove = (pointer: { x: number; y: number }, pointerId: num
 
 export type GearPointerEnd = (pointer: { x: number; y: number }, pointerId: number, cancelled?: boolean) => void;
 
-const INVENTORY_SNAP_RADIUS_CELLS = 0.28;
 const EQUIPMENT_SNAP_INSET_RATIO = 0.3;
-const MAGNET_SWITCH_MARGIN_PX = 14;
-const MAGNET_RELEASE_HYSTERESIS_PX = 18;
 export const DOUBLE_CLICK_FLYOVER_MS = 280;
 export const MAGNET_RELEASE_EASE_MS = 140;
 
@@ -185,45 +181,14 @@ export function useArmoryGearDrag({
     (instance: GearInstance, freeRect: DragRect, requireProximity = true): DragDestination | null => {
       const board = inventoryBoardRef.current;
       if (!board) return null;
-      const metrics = readInventoryBoardMetrics(board);
       const footprint = footprintForInstance(instance);
-      if (!metrics || !footprint) return null;
-      const { cellSize, gap, boardRect, scrollTop } = metrics;
-      const renderedRows = Math.max(INVENTORY_VISIBLE_ROWS, packedInventory.occupiedRows + footprint.h);
-      const placement = findNearestInventoryPlacement(
-        [],
-        instance.instanceId,
-        footprint,
-        { cellSize, gap, cols: INVENTORY_COLS, rows: renderedRows },
-        {
-          x: freeRect.left + freeRect.width / 2 - boardRect.left,
-          y: freeRect.top + freeRect.height / 2 - boardRect.top + scrollTop,
-        },
-      );
-      if (!placement) return null;
-      const localRect = inventoryPlacementRect(placement, footprint, { cellSize, gap });
-      const freeCenter = { x: freeRect.left + freeRect.width / 2, y: freeRect.top + freeRect.height / 2 };
-      const destinationCenter = {
-        x: boardRect.left + localRect.left + localRect.width / 2,
-        y: boardRect.top + localRect.top - scrollTop + localRect.height / 2,
-      };
-      if (
-        requireProximity &&
-        Math.hypot(freeCenter.x - destinationCenter.x, freeCenter.y - destinationCenter.y) >
-          cellSize * INVENTORY_SNAP_RADIUS_CELLS
-      ) {
-        return null;
-      }
-      return {
-        kind: "inventory",
-        placement,
-        rect: {
-          left: boardRect.left + localRect.left,
-          top: boardRect.top + localRect.top - scrollTop,
-          width: localRect.width,
-          height: localRect.height,
-        },
-      };
+      if (!footprint) return null;
+      const result = placeInventoryTileFromMetrics(board, footprint, freeRect, null, {
+        requireProximity,
+        occupiedRows: packedInventory.occupiedRows,
+      });
+      if (!result) return null;
+      return { kind: "inventory", placement: result.placement, rect: result.rect };
     },
     [inventoryBoardRef, packedInventory.occupiedRows],
   );
@@ -335,32 +300,12 @@ export function useArmoryGearDrag({
       };
       const candidate = getDragDestination(pending.instance, freeRect, pointer);
       const previousDestination = activeDragRef.current?.destination ?? null;
-      const freeCenter = { x: freeRect.left + freeRect.width / 2, y: freeRect.top + freeRect.height / 2 };
-      const distanceTo = (destination: DragDestination) => {
-        const centerX = destination.rect.left + destination.rect.width / 2;
-        const centerY = destination.rect.top + destination.rect.height / 2;
-        return Math.hypot(freeCenter.x - centerX, freeCenter.y - centerY);
-      };
-      const sameDestination = (left: DragDestination, right: DragDestination) =>
-        left.kind === right.kind &&
-        (left.kind === "equipment"
-          ? right.kind === "equipment" && left.slot === right.slot
-          : right.kind === "inventory" &&
-            left.placement.col === right.placement.col &&
-            left.placement.row === right.placement.row);
 
-      let destination = candidate;
-      if (previousDestination && (!candidate || !sameDestination(previousDestination, candidate))) {
-        const previousDistance = distanceTo(previousDestination);
-        const candidateDistance = candidate ? distanceTo(candidate) : Number.POSITIVE_INFINITY;
-        if (
-          previousDistance <= candidateDistance + MAGNET_SWITCH_MARGIN_PX &&
-          previousDistance <=
-            Math.max(previousDestination.rect.width, previousDestination.rect.height) / 2 + MAGNET_RELEASE_HYSTERESIS_PX
-        ) {
-          destination = previousDestination;
-        }
-      }
+      const { destination } = applyMagnetHysteresis({
+        candidate,
+        previousDestination,
+        freeRect,
+      });
 
       const visual = {
         instance: pending.instance,
