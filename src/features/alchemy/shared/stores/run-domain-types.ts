@@ -172,6 +172,12 @@ type RunProgressActions = {
   setCurrentAct: Setter<number>;
   setDestinationIndexInAct: Setter<number>;
   setCompletedDestinations: Setter<Destination[]>;
+  setLastOfferedDestinations: Setter<Destination[]>;
+  setDestinationRoundsSinceOffered: Setter<Partial<Record<Destination, number>>>;
+  setDestinationOfferState: (state: {
+    lastOfferedDestinations: Destination[];
+    roundsSinceOffered: Partial<Record<Destination, number>>;
+  }) => void;
   setRunTrinkets: Setter<string[]>;
   setEncounteredRunEnemyIds: Setter<string[]>;
   setSelectedDifficulty: Setter<DifficultyId | null>;

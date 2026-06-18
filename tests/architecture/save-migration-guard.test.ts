@@ -5,6 +5,7 @@ import { normalizeSaveData } from "@/features/alchemy/shared/storage/migrations"
 import { migrateSaveDataToCurrent } from "@/lib/validation/migration";
 import { defaultSaveData } from "@/features/alchemy/shared/storage/defaults";
 import { CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
+import { flattenGearInventories } from "@/lib/gear";
 import {
   LEGACY_SAVE_FIXTURES_BY_SOURCE_VERSION,
   MIGRATION_SCENARIO_FIXTURES,
@@ -94,7 +95,7 @@ describe("save migration guard", () => {
     const migrated = normalizeSaveData(LEGACY_SAVE_FIXTURES_BY_SOURCE_VERSION[3]());
     expect(migrated.discoveredTrinketIds).toEqual(["bone-charm"]);
     expect(migrated.activeRun?.runTrinkets).toEqual(["bone-charm"]);
-    expect(migrated.gearInventory).toEqual([]);
+    expect(flattenGearInventories(migrated.gearInventories)).toEqual([]);
   });
 
   it("migrates v4 content v1 saves with boon-era fields to trinket equivalents", () => {
@@ -105,7 +106,7 @@ describe("save migration guard", () => {
     expect(migrated.unlockedTalents.wish).toContain("wish-trinket");
     expect(migrated.activeRun?.runTrinkets).toEqual(["bone-charm"]);
     expect(migrated.activeRun?.runGold).toBe(55);
-    expect(migrated.gearInventory[0]?.affixes).toBeDefined();
+    expect(flattenGearInventories(migrated.gearInventories)[0]?.affixes).toBeDefined();
   });
 
   it("migrates v3 mid-combat trinketEffects to trinketEffects and burn flags", () => {
@@ -120,8 +121,8 @@ describe("save migration guard", () => {
     const migrated = normalizeSaveData(legacySchemaV5Save());
     expect(migrated.saveSchemaVersion).toBe(CURRENT_SAVE_SCHEMA_VERSION);
 
-    // gearInventory check
-    const item = migrated.gearInventory.find((g) => g.instanceId === "gear-1");
+    // gearInventories check
+    const item = flattenGearInventories(migrated.gearInventories).find((g) => g.instanceId === "gear-1");
     expect(item).toBeDefined();
     // flat-physical has scale 2: 1 * 2 = 2
     expect(item?.affixes.find((a) => a.id === "flat-physical")?.value).toBe(2);

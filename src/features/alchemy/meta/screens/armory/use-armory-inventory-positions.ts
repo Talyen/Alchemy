@@ -1,9 +1,10 @@
 import { useCallback, useEffect } from "react";
+import type { CharacterId } from "@/lib/game-data";
 import type { GearInstance } from "@/lib/gear";
 import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
 
-export function useArmoryInventoryPositions(inventory: GearInstance[]) {
-  const savedPositions = useGearStore((state) => state.boardPositions);
+export function useArmoryInventoryPositions(characterId: CharacterId, inventory: GearInstance[]) {
+  const savedPositions = useGearStore((state) => state.boardPositionsByCharacter[characterId] ?? {});
   const setBoardPosition = useGearStore((state) => state.setBoardPosition);
   const syncBoardPositions = useGearStore((state) => state.syncBoardPositions);
 
@@ -13,9 +14,9 @@ export function useArmoryInventoryPositions(inventory: GearInstance[]) {
 
   const handleMoveItem = useCallback(
     (instanceId: string, col: number, row: number) => {
-      setBoardPosition(instanceId, col, row);
+      setBoardPosition(characterId, instanceId, col, row);
     },
-    [setBoardPosition],
+    [characterId, setBoardPosition],
   );
 
   return { savedPositions, handleMoveItem };

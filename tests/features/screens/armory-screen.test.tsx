@@ -3,16 +3,45 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ArmoryScreen } from "@/features/alchemy/meta/screens/armory-screen";
-import { createEmptyGearLoadouts, CRAFTING_CURRENCY_LIST } from "@/lib/gear";
+import { createEmptyGearLoadouts, createEmptyGearInventories, createEmptyGearBoardPositionsByCharacter, CRAFTING_CURRENCY_LIST } from "@/lib/gear";
 import type { GearInstance } from "@/lib/gear";
 import type { CharacterId } from "@/lib/game-data";
 import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
+
+function mockDomRect(partial: Partial<DOMRect>): DOMRect {
+  return {
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: 0,
+    height: 0,
+    x: 0,
+    y: 0,
+    toJSON: () => ({}),
+    ...partial,
+  } as DOMRect;
+}
+
+function mountVrStage(bounds: Partial<DOMRect>) {
+  const stage = document.createElement("div");
+  stage.setAttribute("data-testid", "vr-stage");
+  document.body.appendChild(stage);
+  vi.spyOn(stage, "getBoundingClientRect").mockReturnValue(mockDomRect(bounds));
+  return stage;
+}
 
 describe("ArmoryScreen", () => {
   const mockInventory: GearInstance[] = [
     { instanceId: "gear-helm", definitionId: "leather-helm-basic", affixes: [] },
     { instanceId: "gear-body", definitionId: "leather-armor-basic", affixes: [] },
   ];
+
+  function mockInventories(items: GearInstance[] = mockInventory, characterId: CharacterId = "knight") {
+    const inventories = createEmptyGearInventories();
+    inventories[characterId] = items;
+    return inventories;
+  }
 
   beforeEach(() => {
     useGearStore.getState().reset();
@@ -27,12 +56,13 @@ describe("ArmoryScreen", () => {
 
   afterEach(() => {
     cleanup();
+    document.querySelector('[data-testid="vr-stage"]')?.remove();
   });
 
   it("renders headers and panels correctly", () => {
     render(
       <ArmoryScreen
-        inventory={mockInventory}
+        inventories={mockInventories()}
         loadouts={createEmptyGearLoadouts()}
         finishedRunCharacters={["knight"]}
         browseOnly={false}
@@ -57,7 +87,7 @@ describe("ArmoryScreen", () => {
     const user = userEvent.setup();
     render(
       <ArmoryScreen
-        inventory={mockInventory}
+        inventories={mockInventories()}
         loadouts={createEmptyGearLoadouts()}
         finishedRunCharacters={["knight", "rogue"]}
         browseOnly={false}
@@ -85,7 +115,7 @@ describe("ArmoryScreen", () => {
 
     render(
       <ArmoryScreen
-        inventory={mockInventory}
+        inventories={mockInventories()}
         loadouts={createEmptyGearLoadouts()}
         finishedRunCharacters={["knight"]}
         browseOnly={false}
@@ -116,11 +146,33 @@ describe("ArmoryScreen", () => {
     expect(screen.getByLabelText("Cancel salvage").isConnected).toBe(true);
   });
 
-  it("exits salvage mode when clicking outside inventory gear", async () => {
+  it("exits salvage mode when clicking outside the armory workspace", async () => {
     const user = userEvent.setup();
     render(
       <ArmoryScreen
-        inventory={mockInventory}
+        inventories={mockInventories()}
+        loadouts={createEmptyGearLoadouts()}
+        finishedRunCharacters={["knight"]}
+        browseOnly={false}
+        onOpenMenu={vi.fn()}
+        onEquip={vi.fn()}
+        onUnequip={vi.fn()}
+        onSalvage={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByLabelText("Salvage Gear"));
+    expect(screen.getByLabelText("Cancel salvage").isConnected).toBe(true);
+
+    await user.click(screen.getByRole("heading", { name: "Armory" }));
+    expect(screen.getByLabelText("Salvage Gear").isConnected).toBe(true);
+  });
+
+  it("does not exit salvage mode when clicking inside the armory workspace", async () => {
+    const user = userEvent.setup();
+    render(
+      <ArmoryScreen
+        inventories={mockInventories()}
         loadouts={createEmptyGearLoadouts()}
         finishedRunCharacters={["knight"]}
         browseOnly={false}
@@ -135,14 +187,14 @@ describe("ArmoryScreen", () => {
     expect(screen.getByLabelText("Cancel salvage").isConnected).toBe(true);
 
     await user.click(screen.getByRole("heading", { name: "Knight" }));
-    expect(screen.getByLabelText("Salvage Gear").isConnected).toBe(true);
+    expect(screen.getByLabelText("Cancel salvage").isConnected).toBe(true);
   });
 
   it("exits salvage mode when Escape is pressed", async () => {
     const user = userEvent.setup();
     render(
       <ArmoryScreen
-        inventory={mockInventory}
+        inventories={mockInventories()}
         loadouts={createEmptyGearLoadouts()}
         finishedRunCharacters={["knight"]}
         browseOnly={false}
@@ -162,7 +214,7 @@ describe("ArmoryScreen", () => {
     const user = userEvent.setup();
     render(
       <ArmoryScreen
-        inventory={mockInventory}
+        inventories={mockInventories()}
         loadouts={createEmptyGearLoadouts()}
         finishedRunCharacters={["knight"]}
         browseOnly={false}
@@ -181,11 +233,36 @@ describe("ArmoryScreen", () => {
     expect(screen.getByText("Salvaging items yields crafting materials").isConnected).toBe(true);
   });
 
+  it("dismisses salvage confirmation when Escape is pressed", async () => {
+    const user = userEvent.setup();
+    render(
+      <ArmoryScreen
+        inventories={mockInventories()}
+        loadouts={createEmptyGearLoadouts()}
+        finishedRunCharacters={["knight"]}
+        browseOnly={false}
+        onOpenMenu={vi.fn()}
+        onEquip={vi.fn()}
+        onUnequip={vi.fn()}
+        onSalvage={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByLabelText("Salvage Gear"));
+    await user.click(screen.getByRole("button", { name: /Salvage .*Leather Helm/ }));
+    expect(screen.getByText("Salvaging items yields crafting materials").isConnected).toBe(true);
+
+    await user.keyboard("{Escape}");
+
+    expect(screen.queryByText("Salvaging items yields crafting materials")).toBeNull();
+    expect(screen.getByLabelText("Cancel salvage").isConnected).toBe(true);
+  });
+
   it("opens salvage confirmation when clicking the inventory tile wrapper", async () => {
     const user = userEvent.setup();
     render(
       <ArmoryScreen
-        inventory={mockInventory}
+        inventories={mockInventories()}
         loadouts={createEmptyGearLoadouts()}
         finishedRunCharacters={["knight"]}
         browseOnly={false}
@@ -206,7 +283,7 @@ describe("ArmoryScreen", () => {
     const user = userEvent.setup();
     render(
       <ArmoryScreen
-        inventory={mockInventory}
+        inventories={mockInventories()}
         loadouts={createEmptyGearLoadouts()}
         finishedRunCharacters={["knight"]}
         browseOnly={false}
@@ -226,7 +303,7 @@ describe("ArmoryScreen", () => {
     const onSpawnDevGear = vi.fn();
     render(
       <ArmoryScreen
-        inventory={mockInventory}
+        inventories={mockInventories()}
         loadouts={createEmptyGearLoadouts()}
         finishedRunCharacters={["knight"]}
         browseOnly={false}
@@ -253,7 +330,9 @@ describe("ArmoryScreen", () => {
     const onApplyCurrency = vi.fn(() => true);
     render(
       <ArmoryScreen
-        inventory={[{ instanceId: "gear-helm", definitionId: "leather-helm-basic", affixes: [{ id: "max-health", value: 7 }] }]}
+        inventories={mockInventories([
+          { instanceId: "gear-helm", definitionId: "leather-helm-basic", affixes: [{ id: "max-health", value: 7 }] },
+        ])}
         loadouts={createEmptyGearLoadouts()}
         finishedRunCharacters={["knight"]}
         browseOnly={false}
@@ -284,7 +363,9 @@ describe("ArmoryScreen", () => {
   it("portals crafting currency tooltips to document.body with shared tooltip styling", () => {
     render(
       <ArmoryScreen
-        inventory={[{ instanceId: "gear-helm", definitionId: "leather-helm-basic", affixes: [{ id: "max-health", value: 7 }] }]}
+        inventories={mockInventories([
+          { instanceId: "gear-helm", definitionId: "leather-helm-basic", affixes: [{ id: "max-health", value: 7 }] },
+        ])}
         loadouts={createEmptyGearLoadouts()}
         finishedRunCharacters={["knight"]}
         browseOnly={false}
@@ -316,7 +397,9 @@ describe("ArmoryScreen", () => {
     const user = userEvent.setup();
     const { rerender } = render(
       <ArmoryScreen
-        inventory={[{ instanceId: "gear-helm", definitionId: "leather-helm-basic", affixes: [{ id: "max-health", value: 7 }] }]}
+        inventories={mockInventories([
+          { instanceId: "gear-helm", definitionId: "leather-helm-basic", affixes: [{ id: "max-health", value: 7 }] },
+        ])}
         loadouts={createEmptyGearLoadouts()}
         finishedRunCharacters={["knight"]}
         browseOnly={false}
@@ -341,7 +424,9 @@ describe("ArmoryScreen", () => {
 
     rerender(
       <ArmoryScreen
-        inventory={[{ instanceId: "gear-helm", definitionId: "leather-helm-basic", affixes: [{ id: "max-health", value: 7 }] }]}
+        inventories={mockInventories([
+          { instanceId: "gear-helm", definitionId: "leather-helm-basic", affixes: [{ id: "max-health", value: 7 }] },
+        ])}
         loadouts={createEmptyGearLoadouts()}
         finishedRunCharacters={["knight"]}
         browseOnly={false}
@@ -370,7 +455,9 @@ describe("ArmoryScreen", () => {
     const onSalvage = vi.fn();
     const onApplyCurrency = vi.fn(() => true);
     const props = {
-      inventory: [{ instanceId: "gear-helm", definitionId: "leather-helm-basic", affixes: [{ id: "max-health", value: 7 }] }] as GearInstance[],
+      inventories: mockInventories([
+        { instanceId: "gear-helm", definitionId: "leather-helm-basic", affixes: [{ id: "max-health", value: 7 }] },
+      ]),
       loadouts: createEmptyGearLoadouts(),
       finishedRunCharacters: ["knight"] as CharacterId[],
       onOpenMenu: vi.fn(),
@@ -416,7 +503,7 @@ describe("ArmoryScreen", () => {
   it("shows browse-only banner when combat is active", () => {
     render(
       <ArmoryScreen
-        inventory={mockInventory}
+        inventories={mockInventories()}
         loadouts={createEmptyGearLoadouts()}
         finishedRunCharacters={["knight"]}
         browseOnly={true}
@@ -433,7 +520,7 @@ describe("ArmoryScreen", () => {
   it("disables locked character tabs until the previous class is finished", () => {
     render(
       <ArmoryScreen
-        inventory={mockInventory}
+        inventories={mockInventories()}
         loadouts={createEmptyGearLoadouts()}
         finishedRunCharacters={["knight"]}
         browseOnly={false}
@@ -456,7 +543,7 @@ describe("ArmoryScreen", () => {
 
     render(
       <ArmoryScreen
-        inventory={mockInventory}
+        inventories={mockInventories()}
         loadouts={loadouts}
         finishedRunCharacters={["knight"]}
         browseOnly={false}
@@ -476,11 +563,15 @@ describe("ArmoryScreen", () => {
       "gear-helm": { col: 1, row: 1 },
       "stale-item-id": { col: 3, row: 3 },
     };
-    useGearStore.getState().initialize(mockInventory, createEmptyGearLoadouts(), initialPositions);
+    useGearStore.getState().initialize(
+      mockInventories(),
+      createEmptyGearLoadouts(),
+      { ...createEmptyGearBoardPositionsByCharacter(), knight: initialPositions },
+    );
 
     render(
       <ArmoryScreen
-        inventory={mockInventory}
+        inventories={mockInventories()}
         loadouts={createEmptyGearLoadouts()}
         finishedRunCharacters={["knight"]}
         browseOnly={false}
@@ -492,7 +583,7 @@ describe("ArmoryScreen", () => {
     );
 
     await waitFor(() => {
-      const positions = useGearStore.getState().boardPositions;
+      const positions = useGearStore.getState().boardPositionsByCharacter.knight;
       expect(Object.keys(positions)).toEqual(["gear-helm"]);
     });
   });
@@ -503,7 +594,7 @@ describe("ArmoryScreen", () => {
     ];
     render(
       <ArmoryScreen
-        inventory={inventory}
+        inventories={mockInventories(inventory)}
         loadouts={createEmptyGearLoadouts()}
         finishedRunCharacters={["knight"]}
         browseOnly={false}
@@ -525,15 +616,13 @@ describe("ArmoryScreen", () => {
     );
 
     fireEvent.contextMenu(screen.getByLabelText(`Use ${displayName}`));
-    expect(
-      screen.getByRole("button", { name: (name) => name.includes(`Apply ${displayName}`) }),
-    ).toBeTruthy();
+    expect(screen.getByRole("button", { name: (name) => name.includes(`Apply ${displayName}`) })).toBeTruthy();
   });
 
   it("renders both affix epithets in the gear tooltip portal", () => {
     render(
       <ArmoryScreen
-        inventory={[
+        inventories={mockInventories([
           {
             instanceId: "gear-sword",
             definitionId: "shortsword-basic",
@@ -542,7 +631,7 @@ describe("ArmoryScreen", () => {
               { id: "flat-burn", value: 1 },
             ],
           },
-        ]}
+        ])}
         loadouts={createEmptyGearLoadouts()}
         finishedRunCharacters={["knight"]}
         browseOnly={false}
@@ -557,5 +646,86 @@ describe("ArmoryScreen", () => {
     expect(screen.getByText("Ironbound")).toBeTruthy();
     expect(screen.getByText("Blazing")).toBeTruthy();
     expect(screen.getByText("Ironbound").closest(".armory-inventory-tooltip")?.parentElement).toBe(document.body);
+  });
+
+  it("keeps inventory gear tooltips above when the stage has room even near the old flip threshold", async () => {
+    mountVrStage({ top: 0, left: 0, right: 1280, bottom: 720, width: 1280, height: 720 });
+
+    const rectSpy = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (
+      this: HTMLElement,
+    ) {
+      if (this.getAttribute("data-gear-title") === "Leather Helm") {
+        return mockDomRect({ top: 280, left: 550, right: 650, bottom: 360, width: 100, height: 80 });
+      }
+      if (this.classList.contains("armory-inventory-tooltip")) {
+        return mockDomRect({ top: 172, left: 500, right: 700, bottom: 272, height: 100 });
+      }
+      return mockDomRect({});
+    });
+
+    render(
+      <ArmoryScreen
+        inventories={mockInventories([{ instanceId: "gear-helm", definitionId: "leather-helm-basic", affixes: [] }])}
+        loadouts={createEmptyGearLoadouts()}
+        finishedRunCharacters={["knight"]}
+        browseOnly={false}
+        onOpenMenu={vi.fn()}
+        onEquip={vi.fn()}
+        onUnequip={vi.fn()}
+        onSalvage={vi.fn()}
+      />,
+    );
+
+    fireEvent.mouseEnter(document.querySelector('[data-gear-title="Leather Helm"]')!);
+
+    await waitFor(() => {
+      const tooltip = document.querySelector(".armory-inventory-tooltip");
+      expect(tooltip?.getAttribute("data-placement")).toBe("above");
+    });
+
+    rectSpy.mockRestore();
+  });
+
+  it("flips inventory gear tooltips below when they would clip the stage top", async () => {
+    mountVrStage({ top: 0, left: 0, right: 1280, bottom: 720, width: 1280, height: 720 });
+
+    let tooltipPass = 0;
+    const rectSpy = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (
+      this: HTMLElement,
+    ) {
+      if (this.getAttribute("data-gear-title") === "Leather Helm") {
+        return mockDomRect({ top: 40, left: 550, right: 650, bottom: 120, width: 100, height: 80 });
+      }
+      if (this.classList.contains("armory-inventory-tooltip")) {
+        tooltipPass += 1;
+        if (tooltipPass === 1) {
+          return mockDomRect({ top: 2, left: 500, right: 700, bottom: 102, height: 100 });
+        }
+        return mockDomRect({ top: 128, left: 500, right: 700, bottom: 228, height: 100 });
+      }
+      return mockDomRect({});
+    });
+
+    render(
+      <ArmoryScreen
+        inventories={mockInventories([{ instanceId: "gear-helm", definitionId: "leather-helm-basic", affixes: [] }])}
+        loadouts={createEmptyGearLoadouts()}
+        finishedRunCharacters={["knight"]}
+        browseOnly={false}
+        onOpenMenu={vi.fn()}
+        onEquip={vi.fn()}
+        onUnequip={vi.fn()}
+        onSalvage={vi.fn()}
+      />,
+    );
+
+    fireEvent.mouseEnter(document.querySelector('[data-gear-title="Leather Helm"]')!);
+
+    await waitFor(() => {
+      const tooltip = document.querySelector(".armory-inventory-tooltip");
+      expect(tooltip?.getAttribute("data-placement")).toBe("below");
+    });
+
+    rectSpy.mockRestore();
   });
 });

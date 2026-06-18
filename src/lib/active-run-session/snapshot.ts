@@ -26,6 +26,8 @@ export type ActiveRunSnapshotSource = {
   currentAct: number;
   destinationIndexInAct: number;
   completedDestinations: string[];
+  lastOfferedDestinations: string[];
+  destinationRoundsSinceOffered: Record<string, number>;
   runTrinkets: string[];
   encounteredRunEnemyIds: string[];
   selectedDifficulty: DifficultyId | null;
@@ -69,6 +71,8 @@ export function createActiveRunSnapshot(source: ActiveRunSnapshotSource): Active
     currentAct: source.currentAct,
     destinationIndexInAct: source.destinationIndexInAct,
     completedDestinations: source.completedDestinations,
+    lastOfferedDestinations: source.lastOfferedDestinations ?? [],
+    destinationRoundsSinceOffered: source.destinationRoundsSinceOffered ?? {},
     runTrinkets: source.runTrinkets,
     encounteredRunEnemyIds: source.encounteredRunEnemyIds,
     selectedDifficulty: source.selectedDifficulty,

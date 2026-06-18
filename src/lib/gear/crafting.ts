@@ -9,7 +9,13 @@ import { buildEligibleAffixPool } from "./generation";
 import { rollAffixValue } from "./affixes";
 import { gearAffixCatalog } from "./affix-catalog";
 import { gearDefinitions, gearInstanceRarity } from "./definitions";
-import type { GearInstance, GearAffixRoll, GearRarity } from "./types";
+import {
+  GEAR_CHARACTER_IDS,
+  type GearCharacterId,
+  type GearInstance,
+  type GearAffixRoll,
+  type GearRarity,
+} from "./types";
 
 export type CraftingCurrencyId =
   | "discordant-dice"
@@ -21,6 +27,13 @@ export type CraftingCurrencyId =
 
 export type CraftingCurrencyBoardPosition = { col: number; row: number };
 export type CraftingCurrencyBoardPositions = Partial<Record<CraftingCurrencyId, CraftingCurrencyBoardPosition>>;
+export type CraftingCurrencyBoardPositionsByCharacter = Record<GearCharacterId, CraftingCurrencyBoardPositions>;
+
+export function createEmptyCurrencyBoardPositionsByCharacter(): CraftingCurrencyBoardPositionsByCharacter {
+  return Object.fromEntries(
+    GEAR_CHARACTER_IDS.map((id) => [id, {} as CraftingCurrencyBoardPositions]),
+  ) as CraftingCurrencyBoardPositionsByCharacter;
+}
 
 export type CraftingCurrencyDefinition = {
   id: CraftingCurrencyId;

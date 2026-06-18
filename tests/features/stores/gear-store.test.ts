@@ -1,10 +1,32 @@
 import { describe, expect, it } from "vitest";
 import {
+  createEmptyGearBoardPositionsByCharacter,
+  createEmptyGearInventories,
+  createEmptyCurrencyBoardPositionsByCharacter,
   createEmptyGearLoadouts,
   equipGear,
+  flattenGearInventories,
   type GearInstance,
 } from "@/lib/gear";
 import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
+
+function knightInventories(...items: GearInstance[]) {
+  const inventories = createEmptyGearInventories();
+  inventories.knight = items;
+  return inventories;
+}
+
+function knightBoards(positions: Record<string, { col: number; row: number }>) {
+  const boards = createEmptyGearBoardPositionsByCharacter();
+  boards.knight = positions;
+  return boards;
+}
+
+function knightCurrencyBoards(positions: Record<string, { col: number; row: number }>) {
+  const boards = createEmptyCurrencyBoardPositionsByCharacter();
+  boards.knight = positions;
+  return boards;
+}
 
 describe("gear-store", () => {
   const ring: GearInstance = { instanceId: "ring-1", definitionId: "ruby-ring-basic", affixes: [] };
@@ -12,41 +34,43 @@ describe("gear-store", () => {
   it("initializes inventory, loadouts, and board positions from save data", () => {
     const loadouts = equipGear(createEmptyGearLoadouts(), "knight", "left-ring", ring, [ring]);
     const boardPositions = { [ring.instanceId]: { col: 2, row: 3 } };
-    useGearStore.getState().initialize([ring], loadouts, boardPositions);
-    expect(useGearStore.getState().inventory).toEqual([ring]);
+    useGearStore.getState().initialize(knightInventories(ring), loadouts, knightBoards(boardPositions));
+    expect(useGearStore.getState().inventories.knight).toEqual([ring]);
     expect(useGearStore.getState().loadouts.knight["left-ring"]).toBe("ring-1");
-    expect(useGearStore.getState().boardPositions).toEqual(boardPositions);
+    expect(useGearStore.getState().boardPositionsByCharacter.knight).toEqual(boardPositions);
     useGearStore.getState().reset();
   });
 
   it("updates loadouts on equip and inventory on salvage", () => {
     useGearStore.getState().reset();
-    useGearStore.getState().addInstance(ring);
+    useGearStore.getState().addInstance(ring, "knight");
     useGearStore.getState().equip("knight", "left-ring", ring);
     expect(useGearStore.getState().loadouts.knight["left-ring"]).toBe("ring-1");
 
     const salvaged = useGearStore.getState().salvage(ring.instanceId, { rng: () => 0 });
-    expect(salvaged?.inventory).toEqual([]);
+    expect(salvaged?.inventories.knight).toEqual([]);
     expect(useGearStore.getState().loadouts.knight["left-ring"]).toBeNull();
-    expect(useGearStore.getState().inventory).toEqual([]);
+    expect(flattenGearInventories(useGearStore.getState().inventories)).toEqual([]);
     useGearStore.getState().reset();
   });
 
   it("prunes stale board positions when salvaging gear", () => {
     useGearStore.getState().reset();
-    useGearStore.getState().initialize([ring], createEmptyGearLoadouts(), {
-      [ring.instanceId]: { col: 1, row: 1 },
-    });
+    useGearStore.getState().initialize(
+      knightInventories(ring),
+      createEmptyGearLoadouts(),
+      knightBoards({ [ring.instanceId]: { col: 1, row: 1 } }),
+    );
     useGearStore.getState().salvage(ring.instanceId);
-    expect(useGearStore.getState().boardPositions).toEqual({});
+    expect(useGearStore.getState().boardPositionsByCharacter.knight).toEqual({});
     useGearStore.getState().reset();
   });
 
   it("reports armory lock state from inventory", () => {
     useGearStore.getState().reset();
-    expect(useGearStore.getState().inventory.length === 0).toBe(true);
-    useGearStore.getState().addInstance(ring);
-    expect(useGearStore.getState().inventory.length === 0).toBe(false);
+    expect(flattenGearInventories(useGearStore.getState().inventories).length === 0).toBe(true);
+    useGearStore.getState().addInstance(ring, "knight");
+    expect(flattenGearInventories(useGearStore.getState().inventories).length === 0).toBe(false);
     useGearStore.getState().reset();
   });
 
@@ -55,15 +79,19 @@ describe("gear-store", () => {
     const helmA: GearInstance = { instanceId: "helm-a", definitionId: "leather-helm-basic", affixes: [] };
     const helmB: GearInstance = { instanceId: "helm-b", definitionId: "leather-helm-basic", affixes: [] };
     const loadouts = equipGear(createEmptyGearLoadouts(), "knight", "helm", helmB, [helmA, helmB]);
-    useGearStore.getState().initialize([helmA, helmB], loadouts, {
-      [helmA.instanceId]: { col: 3, row: 2 },
-      [helmB.instanceId]: { col: 1, row: 1 },
-    });
+    useGearStore.getState().initialize(
+      knightInventories(helmA, helmB),
+      loadouts,
+      knightBoards({
+        [helmA.instanceId]: { col: 3, row: 2 },
+        [helmB.instanceId]: { col: 1, row: 1 },
+      }),
+    );
 
     useGearStore.getState().equip("knight", "helm", helmA, { vacatedPlacement: { col: 3, row: 2 } });
 
     expect(useGearStore.getState().loadouts.knight.helm).toBe("helm-a");
-    expect(useGearStore.getState().boardPositions).toEqual({
+    expect(useGearStore.getState().boardPositionsByCharacter.knight).toEqual({
       [helmB.instanceId]: { col: 3, row: 2 },
     });
     expect(useGearStore.getState().equippedReturnPositions).toEqual({
@@ -75,13 +103,15 @@ describe("gear-store", () => {
   it("keeps board position when equipping from inventory without swapping", () => {
     useGearStore.getState().reset();
     const helm: GearInstance = { instanceId: "helm-a", definitionId: "leather-helm-basic", affixes: [] };
-    useGearStore.getState().initialize([helm], createEmptyGearLoadouts(), {
-      [helm.instanceId]: { col: 3, row: 2 },
-    });
+    useGearStore.getState().initialize(
+      knightInventories(helm),
+      createEmptyGearLoadouts(),
+      knightBoards({ [helm.instanceId]: { col: 3, row: 2 } }),
+    );
 
     useGearStore.getState().equip("knight", "helm", helm);
 
-    expect(useGearStore.getState().boardPositions).toEqual({
+    expect(useGearStore.getState().boardPositionsByCharacter.knight).toEqual({
       [helm.instanceId]: { col: 3, row: 2 },
     });
     expect(useGearStore.getState().equippedReturnPositions).toEqual({});
@@ -91,21 +121,34 @@ describe("gear-store", () => {
   it("skips board position updates when pruning makes no changes", () => {
     useGearStore.getState().reset();
     const boardPositions = { [ring.instanceId]: { col: 1, row: 1 } };
-    useGearStore.getState().initialize([ring], createEmptyGearLoadouts(), boardPositions);
+    useGearStore.getState().initialize(knightInventories(ring), createEmptyGearLoadouts(), knightBoards(boardPositions));
     const before = useGearStore.getState();
     useGearStore.getState().syncBoardPositions();
     const after = useGearStore.getState();
-    expect(after.boardPositions).toBe(before.boardPositions);
+    expect(after.boardPositionsByCharacter).toBe(before.boardPositionsByCharacter);
     useGearStore.getState().reset();
   });
 
   it("persists crafting currency board positions", () => {
     useGearStore.getState().reset();
-    useGearStore.getState().initialize([], createEmptyGearLoadouts(), {}, { voidstone: 2 }, {}, { voidstone: { col: 4, row: 2 } });
-    expect(useGearStore.getState().currencyBoardPositions).toEqual({ voidstone: { col: 4, row: 2 } });
+    useGearStore
+      .getState()
+      .initialize(
+        knightInventories(),
+        createEmptyGearLoadouts(),
+        createEmptyGearBoardPositionsByCharacter(),
+        { voidstone: 2 },
+        {},
+        knightCurrencyBoards({ voidstone: { col: 4, row: 2 } }),
+      );
+    expect(useGearStore.getState().currencyBoardPositionsByCharacter.knight).toEqual({
+      voidstone: { col: 4, row: 2 },
+    });
 
-    useGearStore.getState().setCurrencyBoardPosition("voidstone", 6, 3);
-    expect(useGearStore.getState().currencyBoardPositions).toEqual({ voidstone: { col: 6, row: 3 } });
+    useGearStore.getState().setCurrencyBoardPosition("knight", "voidstone", 6, 3);
+    expect(useGearStore.getState().currencyBoardPositionsByCharacter.knight).toEqual({
+      voidstone: { col: 6, row: 3 },
+    });
     useGearStore.getState().reset();
   });
 
@@ -113,17 +156,19 @@ describe("gear-store", () => {
     useGearStore.getState().reset();
     const helm: GearInstance = { instanceId: "helm-a", definitionId: "leather-helm-basic", affixes: [] };
     const returnPosition = { col: 4, row: 2 };
-    useGearStore.getState().initialize([helm], createEmptyGearLoadouts(), { [helm.instanceId]: returnPosition });
+    useGearStore
+      .getState()
+      .initialize(knightInventories(helm), createEmptyGearLoadouts(), knightBoards({ [helm.instanceId]: returnPosition }));
     useGearStore.getState().equip("knight", "helm", helm, { vacatedPlacement: returnPosition });
 
     expect(useGearStore.getState().loadouts.knight.helm).toBe("helm-a");
-    expect(useGearStore.getState().boardPositions[helm.instanceId]).toBeUndefined();
+    expect(useGearStore.getState().boardPositionsByCharacter.knight[helm.instanceId]).toBeUndefined();
     expect(useGearStore.getState().equippedReturnPositions[helm.instanceId]).toEqual(returnPosition);
 
     useGearStore.getState().unequip("knight", "helm");
 
     expect(useGearStore.getState().loadouts.knight.helm).toBeNull();
-    expect(useGearStore.getState().boardPositions[helm.instanceId]).toEqual(returnPosition);
+    expect(useGearStore.getState().boardPositionsByCharacter.knight[helm.instanceId]).toEqual(returnPosition);
     expect(useGearStore.getState().equippedReturnPositions[helm.instanceId]).toBeUndefined();
     useGearStore.getState().reset();
   });
@@ -132,13 +177,15 @@ describe("gear-store", () => {
     useGearStore.getState().reset();
     const helm: GearInstance = { instanceId: "helm-a", definitionId: "leather-helm-basic", affixes: [] };
     const boardPosition = { col: 3, row: 2 };
-    useGearStore.getState().initialize([helm], createEmptyGearLoadouts(), { [helm.instanceId]: boardPosition });
+    useGearStore
+      .getState()
+      .initialize(knightInventories(helm), createEmptyGearLoadouts(), knightBoards({ [helm.instanceId]: boardPosition }));
     useGearStore.getState().equip("knight", "helm", helm);
 
     useGearStore.getState().unequip("knight", "helm");
 
     expect(useGearStore.getState().loadouts.knight.helm).toBeNull();
-    expect(useGearStore.getState().boardPositions[helm.instanceId]).toEqual(boardPosition);
+    expect(useGearStore.getState().boardPositionsByCharacter.knight[helm.instanceId]).toEqual(boardPosition);
     expect(useGearStore.getState().equippedReturnPositions).toEqual({});
     useGearStore.getState().reset();
   });

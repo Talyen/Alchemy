@@ -20,7 +20,6 @@ import { afterCampaignCharacterResolved } from "@/features/alchemy/run-loop/navi
 import { createDestinationRewardState } from "@/features/alchemy/run-loop/navigation/victory-flow";
 import { sampleDestinationChoices } from "@/features/alchemy/run-loop/navigation/destination-flow";
 import { restoreOrCreateDestinationRewardState } from "@/features/alchemy/run-loop/navigation/destination-flow";
-import { getPreviousDestination } from "@/features/alchemy/run-loop/navigation/run-navigation-helpers";
 import { createRunStartSnapshot, type RunStartSnapshot } from "./run-start";
 import { getBossEnemy } from "@/features/alchemy/shared/config";
 import { CONSTANTS, type Destination, type Screen } from "../../shared/types";
@@ -29,7 +28,7 @@ import type { DestinationOptionsInput } from "@/features/alchemy/run-loop/naviga
 import { createInitialWildwoodDraftState } from "@/lib/content-systems/wildwood/gauntlet";
 import { DRAFT_ROUNDS } from "@/lib/game-constants";
 import { useGearStore } from "../../shared/stores/gear-store";
-import { computeGearManifest } from "@/lib/gear";
+import { computeGearManifest, flattenGearInventories } from "@/lib/gear";
 
 export type ContentSystemNavigationDeps = {
   run: RunStateController;
@@ -53,11 +52,13 @@ export type ContentSystemNavigationDeps = {
 };
 
 export function createContentSystemNavigation(deps: ContentSystemNavigationDeps) {
-  function createInitialDestinations(options?: DestinationOptionsInput, prevDest?: Destination) {
-    return createDestinationRewardState(
-      sampleDestinationChoices(deps.getAvailableDestinations(options), prevDest),
-      getBossEnemy().id,
-    );
+  function createInitialDestinations(options?: DestinationOptionsInput) {
+    const sampled = sampleDestinationChoices(deps.getAvailableDestinations(options), {
+      lastOfferedDestinations: deps.run.lastOfferedDestinations,
+      roundsSinceOffered: deps.run.destinationRoundsSinceOffered,
+    });
+    deps.run.setDestinationOfferState(sampled.offerState);
+    return createDestinationRewardState(sampled.choices, getBossEnemy().id);
   }
 
   function applyRunStartSnapshot(snapshot: RunStartSnapshot) {
@@ -122,7 +123,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
             draftedDeck: resolvedDraft,
             gearMaxHealthBonus: computeGearManifest(
               characterId,
-              useGearStore.getState().inventory,
+              flattenGearInventories(useGearStore.getState().inventories),
               useGearStore.getState().loadouts,
             ).maxHealth,
           }
@@ -130,7 +131,7 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
             ...baseInput,
             gearMaxHealthBonus: computeGearManifest(
               characterId,
-              useGearStore.getState().inventory,
+              flattenGearInventories(useGearStore.getState().inventories),
               useGearStore.getState().loadouts,
             ).maxHealth,
           },
@@ -194,13 +195,16 @@ export function createContentSystemNavigation(deps: ContentSystemNavigationDeps)
       if (systemId === CONSTANTS.CONTENT_SYSTEMS.LABYRINTH) {
         deps.navigateTo(CONSTANTS.SCREENS.LABYRINTH_MAP);
       } else if (systemId === CONSTANTS.CONTENT_SYSTEMS.CAMPAIGN) {
-        const prevDest = getPreviousDestination(deps.run.destinationIndexInAct, deps.run.completedDestinations);
         deps.navigateTo(CONSTANTS.SCREENS.DESTINATION, () => {
           setRewardState((prev) =>
             restoreOrCreateDestinationRewardState(prev, {
               availableDestinations: deps.getAvailableDestinations(),
-              ...(prevDest !== undefined ? { previousDestination: prevDest } : {}),
+              offerState: {
+                lastOfferedDestinations: deps.run.lastOfferedDestinations,
+                roundsSinceOffered: deps.run.destinationRoundsSinceOffered,
+              },
               bossEnemyId: getBossEnemy().id,
+              onSampled: (result) => deps.run.setDestinationOfferState(result.offerState),
             }),
           );
         });

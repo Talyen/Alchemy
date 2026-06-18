@@ -1,7 +1,7 @@
 // Modal confirmation overlays for destructive or blocking game actions.
 // Depends on the shared Button primitive and Lucide icons.
 // Used by menus and screens that need explicit player confirmation.
-import type { ComponentType } from "react";
+import { useEffect, type ComponentType } from "react";
 import { AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -18,6 +18,7 @@ export function ConfirmationDialog({
   tone = "danger",
   dimBackground = true,
   dismissOnBackdrop = true,
+  dismissOnEscape = true,
   // Intentional: icon is replaceable so callers can pass salvage/material themed icons
   icon: Icon = AlertTriangle,
   onConfirm,
@@ -30,10 +31,25 @@ export function ConfirmationDialog({
   tone?: "danger" | "default";
   dimBackground?: boolean;
   dismissOnBackdrop?: boolean;
+  dismissOnEscape?: boolean;
   icon?: ComponentType<{ className?: string }>;
   onConfirm: () => void;
   onCancel: () => void;
 }) {
+  useEffect(() => {
+    if (!dismissOnEscape) return;
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      onCancel();
+    }
+
+    window.addEventListener("keydown", handleKeyDown, true);
+    return () => window.removeEventListener("keydown", handleKeyDown, true);
+  }, [dismissOnEscape, onCancel]);
+
   return (
     <div
       className={cn(

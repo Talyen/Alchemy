@@ -1,5 +1,12 @@
 export { type Screen, ROUTE_SCREENS, ROUTE_SCREEN_VALUES } from "./screens";
-export { DESTINATIONS, type Destination } from "./destinations";
+export {
+  DESTINATIONS,
+  type Destination,
+  COMBAT_DESTINATIONS,
+  SHOP_DESTINATIONS,
+  isCombatDestination,
+  isShopDestination,
+} from "./destinations";
 export { getAvailableDestinations } from "./destination-availability";
 export {
   DOCUMENTED_META_TRANSITIONS,

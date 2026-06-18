@@ -30,17 +30,41 @@ import {
 import { ActiveRunDataSchema } from "./active-run";
 import { GearInstanceArraySchema } from "./gear-schemas";
 import {
+  createEmptyGearInventories,
+  createEmptyGearBoardPositionsByCharacter,
   createEmptyGearLoadouts,
+  flattenGearInventories,
   normalizeExclusiveGearLoadouts,
   normalizeGearLoadout,
   pruneOrphanGearLoadouts,
   type GearBoardPositions,
+  type GearBoardPositionsByCharacter,
+  type GearInventories,
   type GearLoadouts,
 } from "@/lib/gear/types";
-import { sanitizeGearBoardPositions, sanitizeCurrencyBoardPositions } from "@/lib/gear/inventory-layout";
-import type { CraftingCurrencyBoardPositions } from "@/lib/gear/crafting";
+import {
+  sanitizeGearBoardPositionsByCharacter,
+  sanitizeCurrencyBoardPositionsByCharacter,
+} from "@/lib/gear/inventory-layout";
+import {
+  createEmptyCurrencyBoardPositionsByCharacter,
+  type CraftingCurrencyBoardPositions,
+  type CraftingCurrencyBoardPositionsByCharacter,
+} from "@/lib/gear/crafting";
 
 const GearInventorySchema = GearInstanceArraySchema;
+const emptyGearInventories = createEmptyGearInventories();
+const emptyGearBoardPositionsByCharacter = createEmptyGearBoardPositionsByCharacter();
+const emptyCurrencyBoardPositionsByCharacter = createEmptyCurrencyBoardPositionsByCharacter();
+const GearInventoriesSchema = z
+  .object(
+    Object.fromEntries(CHARACTER_IDS.map((id) => [id, GearInventorySchema.catch([])])) as unknown as Record<
+      (typeof CHARACTER_IDS)[number],
+      z.ZodType
+    >,
+  )
+  .catch(emptyGearInventories)
+  .transform((inventories) => inventories as GearInventories);
 const GearLoadoutSchema = z
   .record(z.string(), z.union([z.string(), z.null()]))
   .catch({})
@@ -67,6 +91,25 @@ const CraftingCurrencyBoardPositionsSchema = z
   )
   .catch({})
   .transform((positions) => positions as CraftingCurrencyBoardPositions);
+
+const GearBoardPositionsByCharacterSchema = z
+  .object(
+    Object.fromEntries(CHARACTER_IDS.map((id) => [id, GearBoardPositionsSchema.catch({})])) as unknown as Record<
+      (typeof CHARACTER_IDS)[number],
+      z.ZodType
+    >,
+  )
+  .catch(emptyGearBoardPositionsByCharacter)
+  .transform((positions) => positions as GearBoardPositionsByCharacter);
+
+const CraftingCurrencyBoardPositionsByCharacterSchema = z
+  .object(
+    Object.fromEntries(
+      CHARACTER_IDS.map((id) => [id, CraftingCurrencyBoardPositionsSchema.catch({})]),
+    ) as unknown as Record<(typeof CHARACTER_IDS)[number], z.ZodType>,
+  )
+  .catch(emptyCurrencyBoardPositionsByCharacter)
+  .transform((positions) => positions as CraftingCurrencyBoardPositionsByCharacter);
 
 const GearLoadoutsSchema = z
   .object(
@@ -96,13 +139,17 @@ export const SaveDataSchema = z.preprocess(
       discoveredCardIds: deduplicatedStringArraySchema("discoveredCardIds"),
       encounteredEnemyIds: deduplicatedStringArraySchema("encounteredEnemyIds"),
       discoveredTrinketIds: deduplicatedStringArraySchema("discoveredTrinketIds"),
-      gearInventory: caught(GearInventorySchema, [], "gearInventory"),
+      gearInventories: caught(GearInventoriesSchema, emptyGearInventories, "gearInventories"),
       gearLoadouts: caught(GearLoadoutsSchema, emptyGearLoadouts, "gearLoadouts"),
-      gearBoardPositions: caught(GearBoardPositionsSchema, {}, "gearBoardPositions"),
-      craftingCurrencyBoardPositions: caught(
-        CraftingCurrencyBoardPositionsSchema,
-        {},
-        "craftingCurrencyBoardPositions",
+      gearBoardPositionsByCharacter: caught(
+        GearBoardPositionsByCharacterSchema,
+        emptyGearBoardPositionsByCharacter,
+        "gearBoardPositionsByCharacter",
+      ),
+      craftingCurrencyBoardPositionsByCharacter: caught(
+        CraftingCurrencyBoardPositionsByCharacterSchema,
+        emptyCurrencyBoardPositionsByCharacter,
+        "craftingCurrencyBoardPositionsByCharacter",
       ),
       talentXP: TalentXPSchema,
       unlockedTalents: UnlockedTalentsSchema,
@@ -153,13 +200,19 @@ export const SaveDataSchema = z.preprocess(
       finishedRunCharacters: caught(z.array(z.string()), [], "finishedRunCharacters"),
       lastSavedAt: caught(z.number().int().nonnegative(), 0, "lastSavedAt"),
     })
-    .transform((save) => ({
-      ...save,
-      gearLoadouts: pruneOrphanGearLoadouts(save.gearInventory, save.gearLoadouts),
-      gearBoardPositions: sanitizeGearBoardPositions(save.gearBoardPositions, save.gearInventory),
-      craftingCurrencyBoardPositions: sanitizeCurrencyBoardPositions(
-        save.craftingCurrencyBoardPositions,
-        save.craftingCurrencies,
-      ),
-    })),
+    .transform((save) => {
+      const flatInventory = flattenGearInventories(save.gearInventories);
+      return {
+        ...save,
+        gearLoadouts: pruneOrphanGearLoadouts(flatInventory, save.gearLoadouts),
+        gearBoardPositionsByCharacter: sanitizeGearBoardPositionsByCharacter(
+          save.gearBoardPositionsByCharacter,
+          save.gearInventories,
+        ),
+        craftingCurrencyBoardPositionsByCharacter: sanitizeCurrencyBoardPositionsByCharacter(
+          save.craftingCurrencyBoardPositionsByCharacter,
+          save.craftingCurrencies,
+        ),
+      };
+    }),
 );

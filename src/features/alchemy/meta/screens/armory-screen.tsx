@@ -10,7 +10,6 @@ import {
   Shield,
   Sparkles,
   Swords,
-  Trash2,
   WandSparkles,
   type LucideIcon,
 } from "lucide-react";
@@ -34,6 +33,7 @@ import {
   currencyObstaclesForBoard,
   type CraftingCurrencyId,
   type GearInstance,
+  type GearInventories,
   type GearLoadouts,
   type GearSlot,
   type InventoryPlacement,
@@ -87,7 +87,7 @@ const CURRENCY_CURSOR_STYLES: Record<CraftingCurrencyId, { className: string }> 
 };
 
 type Props = {
-  inventory: GearInstance[];
+  inventories: GearInventories;
   loadouts: GearLoadouts;
   finishedRunCharacters: CharacterId[];
   browseOnly: boolean;
@@ -100,13 +100,13 @@ type Props = {
   ) => void;
   onUnequip: (characterId: CharacterId, slot: GearSlot) => void;
   onSalvage: (instanceId: string) => void;
-  onSpawnDevGear?: () => void;
+  onSpawnDevGear?: (characterId: CharacterId) => void;
   craftingCurrencies?: Record<CraftingCurrencyId, number>;
   onApplyCurrency?: (currencyId: CraftingCurrencyId, instanceId: string) => boolean;
 };
 
 export function ArmoryScreen({
-  inventory,
+  inventories,
   loadouts,
   finishedRunCharacters,
   browseOnly,
@@ -124,12 +124,13 @@ export function ArmoryScreen({
   const [salvageMode, setSalvageMode] = useState(false);
   const [activeCurrencyId, setActiveCurrencyId] = useState<CraftingCurrencyId | null>(null);
   const [cursorPoint, setCursorPoint] = useState<{ x: number; y: number } | null>(null);
-  const { savedPositions, handleMoveItem } = useArmoryInventoryPositions(inventory);
+  const characterInventory = inventories[characterId] ?? [];
+  const { savedPositions, handleMoveItem } = useArmoryInventoryPositions(characterId, characterInventory);
   const {
     savedPositions: savedCurrencyPositions,
     activeCurrencyIds,
     handleMoveCurrency,
-  } = useArmoryCurrencyPositions(craftingCurrencies);
+  } = useArmoryCurrencyPositions(characterId, craftingCurrencies);
   const equippedReturnPositions = useGearStore((state) => state.equippedReturnPositions);
 
   const currencyBlockers = useMemo(
@@ -142,22 +143,24 @@ export function ArmoryScreen({
     [activeCurrencyIds, savedCurrencyPositions],
   );
 
-  const inventoryById = useMemo(() => new Map(inventory.map((item) => [item.instanceId, item])), [inventory]);
+  const inventoryById = useMemo(
+    () => new Map(characterInventory.map((item) => [item.instanceId, item])),
+    [characterInventory],
+  );
   const equippedInstanceIds = useMemo(
-    () =>
-      new Set(Object.values(loadouts).flatMap((characterLoadout) => Object.values(characterLoadout).filter(Boolean))),
-    [loadouts],
+    () => new Set(Object.values(loadouts[characterId]).filter(Boolean)),
+    [loadouts, characterId],
   );
   const availableInventory = useMemo(
-    () => inventory.filter((item) => !equippedInstanceIds.has(item.instanceId)),
-    [equippedInstanceIds, inventory],
+    () => characterInventory.filter((item) => !equippedInstanceIds.has(item.instanceId)),
+    [characterInventory, equippedInstanceIds],
   );
   const loadout = loadouts[characterId];
   const requiredCharacterId = getRequiredPreviousCharacter(characterId);
   const locked = !isCharacterUnlocked(characterId, finishedRunCharacters);
   const editable = !browseOnly && !locked;
   const packedInventory = useMemo(() => {
-    const reservedEquipped = inventory.filter((item) => equippedInstanceIds.has(item.instanceId));
+    const reservedEquipped = characterInventory.filter((item) => equippedInstanceIds.has(item.instanceId));
     return packInventoryWithPositions(
       availableInventory,
       INVENTORY_COLS,
@@ -165,7 +168,7 @@ export function ArmoryScreen({
       reservedEquipped,
       currencyBlockers,
     );
-  }, [availableInventory, currencyBlockers, equippedInstanceIds, inventory, savedPositions]);
+  }, [availableInventory, characterInventory, currencyBlockers, equippedInstanceIds, savedPositions]);
 
   const packedCurrencies = useMemo(
     () => packCurrencyWithPositions(activeCurrencyIds, INVENTORY_COLS, savedCurrencyPositions, packedInventory.items),
@@ -224,6 +227,7 @@ export function ArmoryScreen({
     handleGearDoubleClick,
     clearDragState,
     clearSecondaryDragState,
+    abortGearDragIfDragging,
   } = useArmoryGearDrag({
     characterId,
     editable,
@@ -278,11 +282,13 @@ export function ArmoryScreen({
     function isTargetingElement(target: EventTarget | null): boolean {
       if (!(target instanceof HTMLElement)) return false;
       return (
+        !!target.closest('[data-testid="armory-workspace"]') ||
+        !!target.closest('[data-testid="confirmation-dialog"]') ||
         !!target.closest('[data-testid="armory-inventory-item"]') ||
         !!target.closest('[data-testid="armory-equipment-slot"]') ||
         !!target.closest('[data-testid="armory-crafting-currency"]') ||
         !!target.closest(".armory-salvage-tile") ||
-        !!target.closest("button")
+        !!target.closest('[data-testid="armory-salvage-toggle"]')
       );
     }
 
@@ -336,6 +342,11 @@ export function ArmoryScreen({
     }
   }, [inventoryById, salvageTarget]);
 
+  useEffect(() => {
+    clearTargeting();
+    setSalvageTarget(null);
+  }, [characterId, clearTargeting]);
+
   function handleSelectCurrency(currencyId: CraftingCurrencyId) {
     if (!editable || (craftingCurrencies[currencyId] ?? 0) <= 0) return;
     setSalvageMode(false);
@@ -367,6 +378,7 @@ export function ArmoryScreen({
         data-testid="armory-screen"
         className={cn(
           "alchemy-shell my-auto flex w-full max-w-[96rem] flex-1 flex-col rounded-shell-screen p-7 pb-1",
+          salvageMode && "armory-salvage-cursor",
           draggedGear && "cursor-grabbing [&_*]:!cursor-grabbing",
         )}
       >
@@ -402,11 +414,11 @@ export function ArmoryScreen({
             />
           </div>
         </div>
-        <div className="armory-workspace mt-2 min-w-0 flex-1">
+        <div className="armory-workspace mt-2 min-w-0 flex-1" data-testid="armory-workspace">
           <div
             className="armory-workspace-grid"
             onPointerMove={(event) => {
-              if (salvageMode || activeCurrencyId) setCursorPoint({ x: event.clientX, y: event.clientY });
+              if (activeCurrencyId) setCursorPoint({ x: event.clientX, y: event.clientY });
             }}
             onPointerLeave={() => setCursorPoint(null)}
           >
@@ -428,6 +440,7 @@ export function ArmoryScreen({
               onGearDoubleClick={handleGearDoubleClick}
               onSalvage={setSalvageTarget}
               onApplyCurrency={handleApplyCurrency}
+              onAbortGearDrag={abortGearDragIfDragging}
             />
             <InventoryPanel
               packedItems={packedInventory.items}
@@ -443,13 +456,15 @@ export function ArmoryScreen({
               salvageMode={salvageMode}
               activeCurrencyId={activeCurrencyId}
               onSalvage={setSalvageTarget}
-              hasSalvageableGear={editable && inventory.length > 0}
+              hasSalvageableGear={
+                editable && (characterInventory.length > 0 || Object.values(loadouts[characterId]).some(Boolean))
+              }
               onToggleSalvageMode={() => {
                 setActiveCurrencyId(null);
                 setSalvageMode((active) => !active);
               }}
               onSelectCurrency={handleSelectCurrency}
-              {...(onSpawnDevGear ? { onSpawnDevGear } : {})}
+              {...(onSpawnDevGear ? { onSpawnDevGear: () => onSpawnDevGear(characterId) } : {})}
               onGearPointerStart={beginGearPointer}
               onGearPointerMove={moveGearPointer}
               onGearPointerEnd={finishGearPointer}
@@ -459,6 +474,7 @@ export function ArmoryScreen({
               onCurrencyPointerEnd={finishCurrencyPointer}
               craftingCurrencies={craftingCurrencies}
               onApplyCurrency={handleApplyCurrency}
+              onAbortGearDrag={abortGearDragIfDragging}
             />
           </div>
         </div>
@@ -506,15 +522,6 @@ export function ArmoryScreen({
             onComplete={clearSecondaryDragState}
           />
         ) : null}
-        {salvageMode && cursorPoint
-          ? createPortal(
-              <Trash2
-                className="pointer-events-none fixed z-[130] h-6 w-6 -translate-x-1/2 -translate-y-1/2 text-red-300 drop-shadow-[0_2px_5px_rgba(0,0,0,0.9)]"
-                style={{ left: cursorPoint.x, top: cursorPoint.y }}
-              />,
-              document.body,
-            )
-          : null}
         {activeCurrency && activeCurrencyId && cursorPoint
           ? createPortal(
               <div

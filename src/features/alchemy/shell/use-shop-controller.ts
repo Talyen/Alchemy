@@ -322,7 +322,7 @@ export function useShopController({
           firstPurchaseUsed: true,
           purchasedSlotKeys: markSlotPurchased(p.purchasedSlotKeys, instance.instanceId),
         })),
-      () => useGearStore.getState().addInstance(instance),
+      () => useGearStore.getState().addInstance(instance, run.characterId),
     );
   }
 

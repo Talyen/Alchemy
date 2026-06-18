@@ -35,7 +35,6 @@ import {
 } from "../navigation/reward-flow";
 import { applyRunDefeatTeardown, finalizeRunEndSession } from "@/features/alchemy/shared/stores/run-transitions";
 import { createScreenTransition } from "@/features/alchemy/shell/screen-transition";
-import { getPreviousDestination } from "../navigation/run-navigation-helpers";
 import { applyAlchemistPotion, applyRewardSelection, routeDestinationChoice } from "./run-destination-handlers";
 import type { ContentSystemNavigationApi } from "@/features/alchemy/run-setup/run/content-system-navigation";
 import { CONSTANTS, type Destination, type Screen } from "../../shared/types";
@@ -125,6 +124,10 @@ export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
       homesteadEffects: lobby.effects,
       getAvailableDestinations: deps.getAvailableDestinations,
       bossEnemyId: getBossEnemy().id,
+      destinationOfferState: {
+        lastOfferedDestinations: runState.lastOfferedDestinations,
+        roundsSinceOffered: runState.destinationRoundsSinceOffered,
+      },
     });
   }
 
@@ -139,6 +142,7 @@ export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
       setRunMaxHealth: runState.setRunMaxHealth,
       setRewardState,
       setCompanionRewardCards,
+      setDestinationOfferState: runState.setDestinationOfferState,
       clearCombatState,
     });
     if (runState.contentSystemType === CONSTANTS.CONTENT_SYSTEMS.WILDWOOD) {
@@ -340,11 +344,10 @@ export function createRunFlowHandlers(deps: RunFlowHandlerDeps) {
       deps.navigateTo(CONSTANTS.SCREENS.LABYRINTH_MAP);
       return;
     }
-    const prevDest = getPreviousDestination(deps.run.destinationIndexInAct, deps.run.completedDestinations);
     useUiStore.getState().clearCardHover();
     deps.clearMysteryCardChoices();
     deps.navigateTo(CONSTANTS.SCREENS.DESTINATION, () => {
-      setRewardState(deps.contentNav.createInitialDestinations(undefined, prevDest));
+      setRewardState(deps.contentNav.createInitialDestinations());
       prepareDestinationScreen();
     });
   }

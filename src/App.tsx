@@ -61,6 +61,7 @@ import type { HomesteadEffectManifest } from "@/lib/homestead/types";
 import { createContext, useContext } from "react";
 import { useActiveRunScreenValue } from "@/features/alchemy/shared/stores/run-session-facade";
 import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
+import { flattenGearInventories } from "@/lib/gear";
 
 const appStore = useAppStore;
 const homesteadStore = useHomesteadStore;
@@ -121,7 +122,7 @@ function AppMainContent({
 }) {
   const run = useRunController();
   const finishedRunCharacters = useAppStore((s) => s.finishedRunCharacters);
-  const isArmoryLocked = useGearStore((s) => s.inventory.length === 0);
+  const isArmoryLocked = useGearStore((s) => flattenGearInventories(s.inventories).length === 0);
   const { screen: controllerScreen, commitPendingTransition } = run;
   const { renderedScreen, pagePhase, tooltipBlocked } = useRenderedScreenTransition(
     controllerScreen,
@@ -520,12 +521,12 @@ export default function App() {
         useGearStore
           .getState()
           .initialize(
-            result.data.gearInventory,
+            result.data.gearInventories,
             result.data.gearLoadouts,
-            result.data.gearBoardPositions,
+            result.data.gearBoardPositionsByCharacter,
             result.data.craftingCurrencies,
             {},
-            result.data.craftingCurrencyBoardPositions,
+            result.data.craftingCurrencyBoardPositionsByCharacter,
           );
         restoreRun(result.data.activeRun, result.data.talentXP, result.data.unlockedTalents);
         setBootstrapResult(result);

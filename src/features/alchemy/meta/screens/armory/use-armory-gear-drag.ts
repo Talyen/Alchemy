@@ -125,14 +125,6 @@ export function useArmoryGearDrag({
     };
   }, [draggedGear]);
 
-  useEffect(
-    () => () => {
-      if (cleanupTimerRef.current !== null) window.clearTimeout(cleanupTimerRef.current);
-      if (secondaryCleanupTimerRef.current !== null) window.clearTimeout(secondaryCleanupTimerRef.current);
-    },
-    [],
-  );
-
   const clearSecondaryDragState = useCallback(() => {
     if (secondaryCleanupTimerRef.current !== null) {
       window.clearTimeout(secondaryCleanupTimerRef.current);
@@ -285,6 +277,36 @@ export function useArmoryGearDrag({
     setDragVisual(null);
     activeDragRef.current = null;
   }, []);
+
+  const abortActiveDrag = useCallback(() => {
+    pendingDragRef.current = null;
+    pendingFlyoverCommitRef.current = null;
+    if (cleanupTimerRef.current !== null) {
+      window.clearTimeout(cleanupTimerRef.current);
+      cleanupTimerRef.current = null;
+    }
+    clearDragState();
+  }, [clearDragState]);
+
+  const abortGearDragIfDragging = useCallback(
+    (instanceId: string) => {
+      const pending = pendingDragRef.current;
+      const active = activeDragRef.current;
+      if (pending?.instance.instanceId === instanceId || active?.instance.instanceId === instanceId) {
+        abortActiveDrag();
+      }
+    },
+    [abortActiveDrag],
+  );
+
+  useEffect(
+    () => () => {
+      if (cleanupTimerRef.current !== null) window.clearTimeout(cleanupTimerRef.current);
+      if (secondaryCleanupTimerRef.current !== null) window.clearTimeout(secondaryCleanupTimerRef.current);
+      abortActiveDrag();
+    },
+    [abortActiveDrag],
+  );
 
   const clearDragAfterAnimation = useCallback(
     (delay = 1000) => {
@@ -541,5 +563,7 @@ export function useArmoryGearDrag({
     handleGearDoubleClick,
     clearDragState,
     clearSecondaryDragState,
+    abortActiveDrag,
+    abortGearDragIfDragging,
   };
 }

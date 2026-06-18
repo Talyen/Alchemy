@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { type GearInstance, createEmptyGearLoadouts, equipGear } from "@/lib/gear";
+import { type GearInstance, createEmptyGearInventories, createEmptyGearLoadouts, equipGear, flattenGearInventories } from "@/lib/gear";
 import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
+
+function knightInventories(...items: GearInstance[]) {
+  const inventories = createEmptyGearInventories();
+  inventories.knight = items;
+  return inventories;
+}
 
 describe("gear-store crafting integration", () => {
   const item: GearInstance = {
@@ -11,7 +17,7 @@ describe("gear-store crafting integration", () => {
 
   it("initializes crafting currencies, merging defaults", () => {
     useGearStore.getState().reset();
-    useGearStore.getState().initialize([item], createEmptyGearLoadouts(), {}, { "discordant-dice": 3 });
+    useGearStore.getState().initialize(knightInventories(item), createEmptyGearLoadouts(), undefined, { "discordant-dice": 3 });
 
     expect(useGearStore.getState().craftingCurrencies["discordant-dice"]).toBe(3);
     expect(useGearStore.getState().craftingCurrencies["sprig-of-growth"]).toBe(0);
@@ -48,13 +54,13 @@ describe("gear-store crafting integration", () => {
 
   it("updates crafting currencies on gear salvage", () => {
     useGearStore.getState().reset();
-    useGearStore.getState().initialize([item], createEmptyGearLoadouts());
+    useGearStore.getState().initialize(knightInventories(item), createEmptyGearLoadouts());
 
     expect(useGearStore.getState().craftingCurrencies["discordant-dice"]).toBe(0);
 
     const salvageResult = useGearStore.getState().salvage(item.instanceId, { rng: () => 0 });
     expect(salvageResult).toBeDefined();
-    expect(salvageResult?.inventory).toEqual([]);
+    expect(salvageResult?.inventories.knight).toEqual([]);
     expect(salvageResult?.yieldedCurrencies).toEqual({
       "discordant-dice": 1,
       "sprig-of-growth": 1,
@@ -71,23 +77,23 @@ describe("gear-store crafting integration", () => {
   it("applies currency to equipped gear without clearing loadout references", () => {
     useGearStore.getState().reset();
     const loadouts = equipGear(createEmptyGearLoadouts(), "knight", "main-hand", item, [item]);
-    useGearStore.getState().initialize([item], loadouts, {}, { voidstone: 1 });
+    useGearStore.getState().initialize(knightInventories(item), loadouts, undefined, { voidstone: 1 });
 
     const successApply = useGearStore.getState().applyCurrency("voidstone", item.instanceId, { rng: () => 0 });
     expect(successApply).toBe(true);
     expect(useGearStore.getState().craftingCurrencies.voidstone).toBe(0);
     expect(useGearStore.getState().loadouts.knight["main-hand"]).toBe(item.instanceId);
-    expect(useGearStore.getState().inventory.find((i) => i.instanceId === item.instanceId)?.affixes).toHaveLength(0);
+    expect(useGearStore.getState().inventories.knight.find((i) => i.instanceId === item.instanceId)?.affixes).toHaveLength(0);
     useGearStore.getState().reset();
   });
 
   it("salvages equipped gear and clears loadout references", () => {
     useGearStore.getState().reset();
     const loadouts = equipGear(createEmptyGearLoadouts(), "knight", "main-hand", item, [item]);
-    useGearStore.getState().initialize([item], loadouts);
+    useGearStore.getState().initialize(knightInventories(item), loadouts);
 
     const salvageResult = useGearStore.getState().salvage(item.instanceId, { rng: () => 0 });
-    expect(salvageResult?.inventory).toEqual([]);
+    expect(salvageResult?.inventories.knight).toEqual([]);
     expect(useGearStore.getState().loadouts.knight["main-hand"]).toBeNull();
     useGearStore.getState().reset();
   });
@@ -97,7 +103,7 @@ describe("gear-store crafting integration", () => {
 
     function initStore(inventory: GearInstance[], currencies: Partial<Record<string, number>>) {
       useGearStore.getState().reset();
-      useGearStore.getState().initialize(inventory, createEmptyGearLoadouts(), {}, currencies);
+      useGearStore.getState().initialize(knightInventories(...inventory), createEmptyGearLoadouts(), undefined, currencies);
     }
 
     it.each([
@@ -176,7 +182,7 @@ describe("gear-store crafting integration", () => {
       const success = useGearStore.getState().applyCurrency(currencyId, item.instanceId, { rng });
       expect(success).toBe(true);
       expect(useGearStore.getState().craftingCurrencies[currencyId]).toBe(0);
-      assert(useGearStore.getState().inventory.find((entry) => entry.instanceId === item.instanceId));
+      assert(useGearStore.getState().inventories.knight.find((entry) => entry.instanceId === item.instanceId));
       useGearStore.getState().reset();
     });
 
@@ -196,7 +202,7 @@ describe("gear-store crafting integration", () => {
       initStore([bareItem], { voidstone: 1 });
       expect(useGearStore.getState().applyCurrency("voidstone", bareItem.instanceId)).toBe(false);
       expect(useGearStore.getState().craftingCurrencies.voidstone).toBe(1);
-      expect(useGearStore.getState().inventory[0]?.affixes).toEqual([]);
+      expect(useGearStore.getState().inventories.knight[0]?.affixes).toEqual([]);
       useGearStore.getState().reset();
     });
   });

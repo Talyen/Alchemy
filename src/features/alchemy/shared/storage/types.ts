@@ -4,11 +4,11 @@ import type { BuildingId, FarmId, MaterialInventory, ResearchId } from "@/lib/ho
 import type { CompanionId, CharacterId, DifficultyId, UnlockedTalents, TalentXP } from "@/lib/game-data";
 import type { ActiveRunData } from "@/lib/active-run-session";
 import type {
-  GearInstance,
+  GearInventories,
   GearLoadouts,
-  GearBoardPositions,
+  GearBoardPositionsByCharacter,
   CraftingCurrencyId,
-  CraftingCurrencyBoardPositions,
+  CraftingCurrencyBoardPositionsByCharacter,
 } from "@/lib/gear";
 import type { AspectRatioOption, DisplayMode, UiScale } from "../types";
 
@@ -23,10 +23,10 @@ export type SaveData = {
   discoveredCardIds: string[];
   encounteredEnemyIds: string[];
   discoveredTrinketIds: string[];
-  gearInventory: GearInstance[];
+  gearInventories: GearInventories;
   gearLoadouts: GearLoadouts;
-  gearBoardPositions: GearBoardPositions;
-  craftingCurrencyBoardPositions: CraftingCurrencyBoardPositions;
+  gearBoardPositionsByCharacter: GearBoardPositionsByCharacter;
+  craftingCurrencyBoardPositionsByCharacter: CraftingCurrencyBoardPositionsByCharacter;
   craftingCurrencies: Record<CraftingCurrencyId, number>;
   talentXP: TalentXP;
   unlockedTalents: UnlockedTalents;

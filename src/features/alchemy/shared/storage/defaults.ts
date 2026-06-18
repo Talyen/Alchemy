@@ -15,7 +15,13 @@ import {
 } from "@/lib/game-constants";
 import type { SaveData } from "./types";
 import { CURRENT_CONTENT_VERSION, CURRENT_GAME_BUILD_VERSION, CURRENT_SAVE_SCHEMA_VERSION } from "@/lib/validation";
-import { createEmptyGearLoadouts, EMPTY_CRAFTING_CURRENCIES } from "@/lib/gear";
+import {
+  createEmptyGearLoadouts,
+  createEmptyGearInventories,
+  createEmptyGearBoardPositionsByCharacter,
+  createEmptyCurrencyBoardPositionsByCharacter,
+  EMPTY_CRAFTING_CURRENCIES,
+} from "@/lib/gear";
 
 const defaultCraftingCurrencies = { ...EMPTY_CRAFTING_CURRENCIES };
 
@@ -29,10 +35,10 @@ export const defaultSaveData: SaveData = {
   discoveredCardIds: [],
   encounteredEnemyIds: [],
   discoveredTrinketIds: [],
-  gearInventory: [],
+  gearInventories: createEmptyGearInventories(),
   gearLoadouts: createEmptyGearLoadouts(),
-  gearBoardPositions: {},
-  craftingCurrencyBoardPositions: {},
+  gearBoardPositionsByCharacter: createEmptyGearBoardPositionsByCharacter(),
+  craftingCurrencyBoardPositionsByCharacter: createEmptyCurrencyBoardPositionsByCharacter(),
   craftingCurrencies: { ...defaultCraftingCurrencies },
   talentXP: {},
   unlockedTalents: {},

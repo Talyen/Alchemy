@@ -440,6 +440,16 @@ function legacySchemaV7Save() {
   };
 }
 
+function legacySchemaV8Save() {
+  return {
+    ...legacySchemaV7Save(),
+    saveSchemaVersion: 8,
+    craftingCurrencyBoardPositions: {
+      voidstone: { col: 2, row: 1 },
+    },
+  };
+}
+
 export const LEGACY_SAVE_FIXTURES_BY_SOURCE_VERSION: Record<number, () => Record<string, unknown>> = {
   0: legacyCampaignRunSave,
   1: legacySchemaV1Save,
@@ -449,6 +459,7 @@ export const LEGACY_SAVE_FIXTURES_BY_SOURCE_VERSION: Record<number, () => Record
   5: legacySchemaV5Save,
   6: legacySchemaV6Save,
   7: legacySchemaV7Save,
+  8: legacySchemaV8Save,
 };
 
 export const MIGRATION_SCENARIO_FIXTURES: Record<string, () => Record<string, unknown>> = {

@@ -624,6 +624,10 @@ describe("session facade API", () => {
       currentAct: getRunProgressStoreView().currentAct,
       destinationIndexInAct: getRunProgressStoreView().destinationIndexInAct,
       completedDestinations: getRunProgressStoreView().completedDestinations,
+      lastOfferedDestinations: getRunProgressStoreView().lastOfferedDestinations,
+      destinationRoundsSinceOffered: Object.fromEntries(
+        Object.entries(getRunProgressStoreView().destinationRoundsSinceOffered),
+      ),
       runTrinkets: getRunProgressStoreView().runTrinkets,
       encounteredRunEnemyIds: getRunProgressStoreView().encounteredRunEnemyIds,
       selectedDifficulty: getRunProgressStoreView().selectedDifficulty,

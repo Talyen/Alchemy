@@ -19,6 +19,8 @@ export type RunStateFields = {
   currentAct: number;
   destinationIndexInAct: number;
   completedDestinations: Destination[];
+  lastOfferedDestinations: Destination[];
+  destinationRoundsSinceOffered: Partial<Record<Destination, number>>;
   runTrinkets: string[];
   encounteredRunEnemyIds: string[];
   selectedDifficulty: DifficultyId | null;
@@ -31,6 +33,24 @@ export type RunStateFields = {
 };
 
 const VALID_DESTINATIONS = new Set<Destination>(Object.values(DESTINATIONS));
+
+function filterValidDestinations(values: string[] | undefined): Destination[] {
+  if (!values?.length) return [];
+  return values.filter((destination): destination is Destination => VALID_DESTINATIONS.has(destination as Destination));
+}
+
+function hydrateDestinationRoundsSinceOffered(
+  values: Record<string, number> | undefined,
+): Partial<Record<Destination, number>> {
+  if (!values) return {};
+  const roundsSinceOffered: Partial<Record<Destination, number>> = {};
+  for (const [destination, rounds] of Object.entries(values)) {
+    if (VALID_DESTINATIONS.has(destination as Destination) && typeof rounds === "number" && rounds >= 0) {
+      roundsSinceOffered[destination as Destination] = rounds;
+    }
+  }
+  return roundsSinceOffered;
+}
 
 export function createInitialRunState(
   initialActiveRun: ActiveRunData | null,
@@ -49,8 +69,12 @@ export function createInitialRunState(
     currentAct: initialActiveRun?.currentAct ?? 1,
     destinationIndexInAct: initialActiveRun?.destinationIndexInAct ?? 0,
     completedDestinations: initialActiveRun?.completedDestinations?.length
-      ? initialActiveRun.completedDestinations.filter((d): d is Destination => VALID_DESTINATIONS.has(d as Destination))
+      ? filterValidDestinations(initialActiveRun.completedDestinations)
       : [],
+    lastOfferedDestinations: filterValidDestinations(initialActiveRun?.lastOfferedDestinations),
+    destinationRoundsSinceOffered: hydrateDestinationRoundsSinceOffered(
+      initialActiveRun?.destinationRoundsSinceOffered,
+    ),
     runTrinkets: initialActiveRun?.runTrinkets ? [...initialActiveRun.runTrinkets] : [],
     encounteredRunEnemyIds: initialActiveRun?.encounteredRunEnemyIds
       ? [...initialActiveRun.encounteredRunEnemyIds]
@@ -87,6 +111,8 @@ export function runFieldsFromSnapshot(
   | "currentAct"
   | "destinationIndexInAct"
   | "completedDestinations"
+  | "lastOfferedDestinations"
+  | "destinationRoundsSinceOffered"
   | "runTrinkets"
   | "encounteredRunEnemyIds"
 > {
@@ -102,6 +128,8 @@ export function runFieldsFromSnapshot(
     currentAct: snapshot.currentAct,
     destinationIndexInAct: snapshot.destinationIndexInAct,
     completedDestinations: snapshot.completedDestinations,
+    lastOfferedDestinations: [],
+    destinationRoundsSinceOffered: {},
     runTrinkets: snapshot.runTrinkets,
     encounteredRunEnemyIds: [],
   };

@@ -121,6 +121,8 @@ export function snapshotRun(screen?: Screen): ActiveRunData {
     currentAct: run.currentAct,
     destinationIndexInAct: run.destinationIndexInAct,
     completedDestinations: run.completedDestinations,
+    lastOfferedDestinations: run.lastOfferedDestinations,
+    destinationRoundsSinceOffered: { ...run.destinationRoundsSinceOffered },
     runTrinkets: run.runTrinkets,
     encounteredRunEnemyIds: run.encounteredRunEnemyIds,
     selectedDifficulty: run.selectedDifficulty,

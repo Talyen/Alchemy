@@ -59,6 +59,8 @@ export function selectRunController(s: RunProgressStore) {
     currentAct: s.currentAct,
     destinationIndexInAct: s.destinationIndexInAct,
     completedDestinations: s.completedDestinations,
+    lastOfferedDestinations: s.lastOfferedDestinations,
+    destinationRoundsSinceOffered: s.destinationRoundsSinceOffered,
     runTrinkets: s.runTrinkets,
     encounteredRunEnemyIds: s.encounteredRunEnemyIds,
     selectedDifficulty: s.selectedDifficulty,
@@ -71,6 +73,9 @@ export function selectRunController(s: RunProgressStore) {
     setCurrentAct: s.setCurrentAct,
     setDestinationIndexInAct: s.setDestinationIndexInAct,
     setCompletedDestinations: s.setCompletedDestinations,
+    setLastOfferedDestinations: s.setLastOfferedDestinations,
+    setDestinationRoundsSinceOffered: s.setDestinationRoundsSinceOffered,
+    setDestinationOfferState: s.setDestinationOfferState,
     setRunTrinkets: s.setRunTrinkets,
     setEncounteredRunEnemyIds: s.setEncounteredRunEnemyIds,
     setSelectedDifficulty: s.setSelectedDifficulty,
@@ -114,6 +119,12 @@ type RunDomainActions = {
   setCurrentAct: Setter<number>;
   setDestinationIndexInAct: Setter<number>;
   setCompletedDestinations: Setter<RunStateFields["completedDestinations"]>;
+  setLastOfferedDestinations: Setter<RunStateFields["lastOfferedDestinations"]>;
+  setDestinationRoundsSinceOffered: Setter<RunStateFields["destinationRoundsSinceOffered"]>;
+  setDestinationOfferState: (state: {
+    lastOfferedDestinations: RunStateFields["lastOfferedDestinations"];
+    roundsSinceOffered: RunStateFields["destinationRoundsSinceOffered"];
+  }) => void;
   setRunTrinkets: Setter<string[]>;
   setEncounteredRunEnemyIds: Setter<string[]>;
   setSelectedDifficulty: Setter<RunStateFields["selectedDifficulty"]>;
@@ -224,6 +235,13 @@ export const useRunDomainStore = create<RunDomainStore>()(
       setCurrentAct: setProgressField("currentAct"),
       setDestinationIndexInAct: setProgressField("destinationIndexInAct"),
       setCompletedDestinations: setProgressField("completedDestinations"),
+      setLastOfferedDestinations: setProgressField("lastOfferedDestinations"),
+      setDestinationRoundsSinceOffered: setProgressField("destinationRoundsSinceOffered"),
+      setDestinationOfferState: (offerState) =>
+        set((state) => {
+          state.progress.lastOfferedDestinations = [...offerState.lastOfferedDestinations];
+          state.progress.destinationRoundsSinceOffered = { ...offerState.roundsSinceOffered };
+        }),
       setRunTrinkets: setProgressField("runTrinkets"),
       setEncounteredRunEnemyIds: setProgressField("encounteredRunEnemyIds"),
       setSelectedDifficulty: setProgressField("selectedDifficulty"),
@@ -353,6 +371,8 @@ export const useRunDomainStore = create<RunDomainStore>()(
           Object.assign(state.progress, runFieldsFromSnapshot(snapshot), {
             runTalentXP: {},
             runMaterialsEarned: emptyInventory(),
+            lastOfferedDestinations: [],
+            destinationRoundsSinceOffered: {},
           });
         }),
 
@@ -494,6 +514,9 @@ function pickProgressActions(state: RunDomainStore): Omit<RunProgressStore, keyo
     setCurrentAct: state.setCurrentAct,
     setDestinationIndexInAct: state.setDestinationIndexInAct,
     setCompletedDestinations: state.setCompletedDestinations,
+    setLastOfferedDestinations: state.setLastOfferedDestinations,
+    setDestinationRoundsSinceOffered: state.setDestinationRoundsSinceOffered,
+    setDestinationOfferState: state.setDestinationOfferState,
     setRunTrinkets: state.setRunTrinkets,
     setEncounteredRunEnemyIds: state.setEncounteredRunEnemyIds,
     setSelectedDifficulty: state.setSelectedDifficulty,

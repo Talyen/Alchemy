@@ -77,11 +77,9 @@ export async function applyCurrencyToGear(page: Page, gearTitle: string, currenc
 }
 
 export async function enterSalvageMode(page: Page) {
-  const toggle = page.locator('button[aria-label="Salvage Gear"]');
+  const toggle = page.getByTestId("armory-salvage-toggle");
   await expect(toggle).toBeEnabled();
-  await toggle.evaluate((element) => {
-    (element as HTMLButtonElement).click();
-  });
+  await toggle.click();
   await expect(page.locator('button[aria-label="Cancel salvage"]')).toBeVisible();
 }
 

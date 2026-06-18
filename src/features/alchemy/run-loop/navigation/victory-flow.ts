@@ -37,8 +37,7 @@ import {
   shouldGrantCompanionReward,
   type RewardState,
 } from "./reward-flow";
-import { sampleDestinationChoices } from "./destination-flow";
-import { getPreviousDestination } from "./run-navigation-helpers";
+import { sampleDestinationChoices, type DestinationOfferState } from "./destination-flow";
 import { playGoldGain } from "@/lib/audio";
 
 type VictoryGoldRoll = {
@@ -100,6 +99,7 @@ export type VictoryRewardsInput = {
     maxHealth?: number;
   }) => Destination[];
   bossEnemyId?: string | null | undefined;
+  destinationOfferState: DestinationOfferState;
 };
 
 export type VictoryRewardsResult = {
@@ -115,6 +115,7 @@ export type VictoryRewardsResult = {
   eliteBonus: number;
   bossBonus: number;
   generousBonus: number;
+  destinationOfferState: DestinationOfferState;
 };
 
 export function withSelectedBossForDestinations(
@@ -215,6 +216,7 @@ export function computeVictoryRewards(
       eliteBonus: 0,
       bossBonus: 0,
       generousBonus: 0,
+      destinationOfferState: input.destinationOfferState,
     };
   }
   const { gold, eliteBonus, bossBonus, generousBonus, baseGold } = rollVictoryGold(
@@ -250,16 +252,14 @@ export function computeVictoryRewards(
     labyrinthRewardModifiers,
   );
 
-  const previousDestination = getPreviousDestination(input.destinationIndexInAct, input.completedDestinations);
-  const destinations = sampleDestinationChoices(
-    input.getAvailableDestinations({
-      currentHealth: input.battleState.playerHealth,
-      currentGold: newGold,
-      destinationIndexInAct: input.destinationIndexInAct,
-      maxHealth: input.runMaxHealth,
-    }),
-    previousDestination,
-  );
+  const eligibleDestinations = input.getAvailableDestinations({
+    currentHealth: input.battleState.playerHealth,
+    currentGold: newGold,
+    destinationIndexInAct: input.destinationIndexInAct,
+    maxHealth: input.runMaxHealth,
+  });
+  const sampled = sampleDestinationChoices(eligibleDestinations, input.destinationOfferState);
+  const destinations = sampled.choices;
 
   const rewardState = computeVictoryRewardState(
     {
@@ -297,6 +297,7 @@ export function computeVictoryRewards(
     eliteBonus,
     bossBonus,
     generousBonus,
+    destinationOfferState: sampled.offerState,
   };
 }
 
@@ -308,6 +309,7 @@ export type CommitVictoryRewardsDeps = {
   setRunMaxHealth: (fn: (prev: number) => number) => void;
   setRewardState: (state: RewardState) => void;
   setCompanionRewardCards: (cards: BattleCard[] | null) => void;
+  setDestinationOfferState: (state: DestinationOfferState) => void;
   clearCombatState: () => void;
 };
 
@@ -331,6 +333,7 @@ export function commitVictoryRewards(result: VictoryRewardsResult, deps: CommitV
     lastVictoryEnemyType: deps.battleState.currentEnemy.enemyType,
     lastVictoryContentSystem: deps.contentSystemType,
   });
+  deps.setDestinationOfferState(result.destinationOfferState);
   if (shouldGrantCompanionReward(result.labyrinthRewardModifiers)) {
     deps.setCompanionRewardCards(getCompanionCardChoices());
   } else {

@@ -2,16 +2,30 @@ import { afterEach, describe, expect, it } from "vitest";
 import { buildAlchemySaveDataFromStores } from "@/features/alchemy/shared/storage/build-save-data-from-stores";
 import { normalizeSaveData } from "@/features/alchemy/shared/storage/migrations";
 import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
-import { createEmptyGearLoadouts, equipGear, type GearInstance } from "@/lib/gear";
+import {
+  createEmptyGearBoardPositionsByCharacter,
+  createEmptyGearInventories,
+  createEmptyCurrencyBoardPositionsByCharacter,
+  createEmptyGearLoadouts,
+  equipGear,
+  flattenGearInventories,
+  type GearInstance,
+} from "@/lib/gear";
 
 afterEach(() => {
   useGearStore.getState().reset();
 });
 
+function knightInventories(...items: GearInstance[]) {
+  const inventories = createEmptyGearInventories();
+  inventories.knight = items;
+  return inventories;
+}
+
 describe("gear save normalization", () => {
-  it("defaults old saves to an empty inventory and empty class loadouts", () => {
+  it("defaults old saves to empty per-character inventories and empty class loadouts", () => {
     const save = normalizeSaveData({ saveSchemaVersion: 3 });
-    expect(save.gearInventory).toEqual([]);
+    expect(flattenGearInventories(save.gearInventories)).toEqual([]);
     expect(Object.values(save.gearLoadouts).every((loadout) => Object.values(loadout).every((id) => id === null))).toBe(
       true,
     );
@@ -29,7 +43,7 @@ describe("gear save normalization", () => {
       },
     });
 
-    expect(save.gearInventory).toEqual([
+    expect(save.gearInventories.knight).toEqual([
       { instanceId: "body-1", definitionId: "leather-armor-basic", affixes: [] },
     ]);
     expect(save.gearLoadouts.knight.body).toBe("body-1");
@@ -48,6 +62,9 @@ describe("gear save normalization", () => {
 
     expect(save.gearLoadouts.knight["left-ring"]).toBe("ring-1");
     expect(save.gearLoadouts.rogue["right-ring"]).toBeNull();
+    expect(save.gearInventories.knight).toEqual([
+      { instanceId: "ring-1", definitionId: "ruby-ring-basic", affixes: [] },
+    ]);
   });
 
   it("drops loadout references that are not present in gearInventory", () => {
@@ -75,7 +92,7 @@ describe("gear save normalization", () => {
       ],
     });
 
-    expect(save.gearInventory[0]?.affixes).toEqual([
+    expect(save.gearInventories.knight[0]?.affixes).toEqual([
       { id: "flat-physical", value: 1 },
       { id: "flat-physical", value: 1 },
     ]);
@@ -93,12 +110,12 @@ describe("gear save normalization", () => {
       ],
     });
 
-    expect(save.gearInventory[0]?.affixes).toEqual([{ id: "flat-burn", value: 1 }]);
+    expect(save.gearInventories.knight[0]?.affixes).toEqual([{ id: "flat-burn", value: 1 }]);
   });
 
-  it("defaults gear board positions to an empty record", () => {
+  it("defaults gear board positions to empty per-character records", () => {
     const save = normalizeSaveData({ saveSchemaVersion: 5 });
-    expect(save.gearBoardPositions).toEqual({});
+    expect(save.gearBoardPositionsByCharacter.knight).toEqual({});
   });
 
   it("defaults migrated crafting currencies to an empty record", () => {
@@ -113,9 +130,9 @@ describe("gear save normalization", () => {
     });
   });
 
-  it("defaults crafting currency board positions to an empty record", () => {
+  it("defaults crafting currency board positions to empty per-character records", () => {
     const save = normalizeSaveData({ saveSchemaVersion: 7 });
-    expect(save.craftingCurrencyBoardPositions).toEqual({});
+    expect(save.craftingCurrencyBoardPositionsByCharacter.knight).toEqual({});
   });
 
   it("preserves valid crafting currency board positions and prunes zero-count currencies", () => {
@@ -136,7 +153,7 @@ describe("gear save normalization", () => {
       },
     });
 
-    expect(save.craftingCurrencyBoardPositions).toEqual({
+    expect(save.craftingCurrencyBoardPositionsByCharacter.knight).toEqual({
       "discordant-dice": { col: 2, row: 1 },
     });
   });
@@ -171,7 +188,34 @@ describe("gear save normalization", () => {
       },
     });
 
-    expect(save.gearBoardPositions).toEqual({ "body-1": { col: 2, row: 1 } });
+    expect(save.gearBoardPositionsByCharacter.knight).toEqual({ "body-1": { col: 2, row: 1 } });
+  });
+
+  it("migrates v8 flat inventory into per-character inventories with equipped ownership", () => {
+    const save = normalizeSaveData({
+      saveSchemaVersion: 8,
+      gearInventory: [
+        { instanceId: "body-1", definitionId: "leather-armor-basic", affixes: [] },
+        { instanceId: "ring-1", definitionId: "ruby-ring-basic", affixes: [] },
+      ],
+      gearLoadouts: {
+        knight: { body: "body-1" },
+        rogue: { "left-ring": "ring-1" },
+      },
+      gearBoardPositions: {
+        "body-1": { col: 2, row: 1 },
+        "ring-1": { col: 4, row: 2 },
+      },
+    });
+
+    expect(save.gearInventories.knight).toEqual([
+      { instanceId: "body-1", definitionId: "leather-armor-basic", affixes: [] },
+    ]);
+    expect(save.gearInventories.rogue).toEqual([
+      { instanceId: "ring-1", definitionId: "ruby-ring-basic", affixes: [] },
+    ]);
+    expect(save.gearBoardPositionsByCharacter.knight).toEqual({ "body-1": { col: 2, row: 1 } });
+    expect(save.gearBoardPositionsByCharacter.rogue).toEqual({ "ring-1": { col: 4, row: 2 } });
   });
 
   it("migrates persisted legacy trinket field names to trinkets", () => {
@@ -220,24 +264,29 @@ describe("gear save normalization", () => {
       voidstone: { col: 3, row: 1 },
     };
 
+    const gearBoardPositionsByCharacter = createEmptyGearBoardPositionsByCharacter();
+    gearBoardPositionsByCharacter.knight = boardPositions;
+    const currencyBoardPositionsByCharacter = createEmptyCurrencyBoardPositionsByCharacter();
+    currencyBoardPositionsByCharacter.knight = currencyBoardPositions;
+
     useGearStore.getState().initialize(
-      [body, ring],
+      knightInventories(body, ring),
       loadouts,
-      boardPositions,
+      gearBoardPositionsByCharacter,
       craftingCurrencies,
       {},
-      currencyBoardPositions,
+      currencyBoardPositionsByCharacter,
     );
 
     const save = buildAlchemySaveDataFromStores(null);
     const normalized = normalizeSaveData(save);
 
-    expect(normalized.gearInventory).toEqual([body, ring]);
+    expect(normalized.gearInventories.knight).toEqual([body, ring]);
     expect(normalized.gearLoadouts.knight.body).toBe("body-1");
     expect(normalized.gearLoadouts.knight["left-ring"]).toBeNull();
-    expect(normalized.gearBoardPositions).toEqual(boardPositions);
+    expect(normalized.gearBoardPositionsByCharacter.knight).toEqual(boardPositions);
     expect(normalized.craftingCurrencies).toEqual(craftingCurrencies);
-    expect(normalized.craftingCurrencyBoardPositions).toEqual({
+    expect(normalized.craftingCurrencyBoardPositionsByCharacter.knight).toEqual({
       "discordant-dice": { col: 1, row: 1 },
       voidstone: { col: 3, row: 1 },
     });

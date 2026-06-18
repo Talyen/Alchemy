@@ -37,6 +37,7 @@ import { TiltSurface } from "../../../shared/ui/tilt-surface";
 import { TooltipPanel, useTooltipViewportClamp } from "../../../shared/ui/tooltip-panel";
 import { useInteractiveCard } from "../../../shared/ui/use-interactive-card";
 import { GearTooltipContent, ARMORY_TOOLTIP_WIDTH } from "./gear-tooltip-content";
+import { useArmoryPortaledTooltipPlacement } from "./armory-tooltip-placement";
 import type { GearDragOrigin, GearPointerEnd, GearPointerMove, GearPointerStart } from "./use-armory-gear-drag";
 import type { CurrencyPointerEnd, CurrencyPointerMove, CurrencyPointerStart } from "./use-armory-currency-drag";
 import { TooltipBody, TooltipHeader } from "../../../shared/ui/tooltip-panel";
@@ -70,33 +71,6 @@ const EQUIP_SLOT_PLACEMENT: Record<GearSlot, { x: number; y: number }> = {
 };
 
 const EQUIP_SLOTS = Object.keys(EQUIP_SLOT_PLACEMENT) as GearSlot[];
-
-const CURRENCY_TILE_STYLES: Record<CraftingCurrencyId, { className: string; glowClassName: string }> = {
-  "discordant-dice": {
-    className: "border-violet-400/45 text-violet-100 hover:border-violet-300/80",
-    glowClassName: "bg-violet-500/20",
-  },
-  "sprig-of-growth": {
-    className: "border-emerald-400/45 text-emerald-100 hover:border-emerald-300/80",
-    glowClassName: "bg-emerald-500/20",
-  },
-  voidstone: {
-    className: "border-slate-300/45 text-slate-100 hover:border-slate-200/80",
-    glowClassName: "bg-slate-300/20",
-  },
-  "ascension-seal": {
-    className: "border-amber-300/50 text-amber-100 hover:border-amber-200/80",
-    glowClassName: "bg-amber-400/20",
-  },
-  "severance-maw": {
-    className: "border-red-400/45 text-red-100 hover:border-red-300/80",
-    glowClassName: "bg-red-500/20",
-  },
-  "smiths-whetstone": {
-    className: "border-stone-300/50 text-stone-100 hover:border-stone-200/80",
-    glowClassName: "bg-stone-300/20",
-  },
-};
 
 function equipmentSlotStyle(slot: GearSlot): CSSProperties {
   const { x, y } = EQUIP_SLOT_PLACEMENT[slot];
@@ -140,6 +114,7 @@ export const CharacterAndEquipmentPanel = memo(function CharacterAndEquipmentPan
   onGearDoubleClick,
   onSalvage,
   onApplyCurrency,
+  onAbortGearDrag,
 }: {
   characterId: CharacterId;
   locked: boolean;
@@ -158,6 +133,7 @@ export const CharacterAndEquipmentPanel = memo(function CharacterAndEquipmentPan
   onGearDoubleClick: (instance: GearInstance, origin: GearDragOrigin, rect: DOMRect) => void;
   onSalvage: (instance: GearInstance) => void;
   onApplyCurrency: (instance: GearInstance) => void;
+  onAbortGearDrag: (instanceId: string) => void;
 }) {
   const { onHoverStart, shimmerActive, shimmerToken } = useInteractiveCard("armory", characterId);
 
@@ -212,6 +188,7 @@ export const CharacterAndEquipmentPanel = memo(function CharacterAndEquipmentPan
                   onGearPointerMove={onGearPointerMove}
                   onGearPointerEnd={onGearPointerEnd}
                   onGearDoubleClick={onGearDoubleClick}
+                  onAbortGearDrag={onAbortGearDrag}
                   onSalvage={() =>
                     instanceId && inventoryById.get(instanceId) && onSalvage(inventoryById.get(instanceId)!)
                   }
@@ -264,6 +241,7 @@ export const InventoryPanel = memo(function InventoryPanel({
   onCurrencyPointerEnd,
   craftingCurrencies,
   onApplyCurrency,
+  onAbortGearDrag,
 }: {
   packedItems: PackedInventoryItem<GearInstance>[];
   packedCurrencies: PackedCurrencyItem[];
@@ -291,6 +269,7 @@ export const InventoryPanel = memo(function InventoryPanel({
   onCurrencyPointerEnd: CurrencyPointerEnd;
   craftingCurrencies: Record<CraftingCurrencyId, number>;
   onApplyCurrency: (instance: GearInstance) => void;
+  onAbortGearDrag: (instanceId: string) => void;
 }) {
   const dragRef = useRef<{ pointerId: number; startY: number; startScrollTop: number; moved: boolean } | null>(null);
   const suppressClickRef = useRef(false);
@@ -356,7 +335,7 @@ export const InventoryPanel = memo(function InventoryPanel({
       className="armory-inventory-panel alchemy-shell relative flex min-w-0 flex-col items-center rounded-shell-dialog border border-border/80 p-4"
     >
       <h2 className="text-center font-display text-lg text-amber-100">Inventory</h2>
-      <div className="absolute right-4 top-3 isolate flex items-center gap-1.5">
+      <div className="absolute right-4 top-3 z-20 isolate flex items-center gap-1.5">
         {import.meta.env.DEV && onSpawnDevGear ? (
           <Button
             type="button"
@@ -375,13 +354,21 @@ export const InventoryPanel = memo(function InventoryPanel({
           size="icon"
           variant="outline"
           disabled={!hasSalvageableGear}
+          data-testid="armory-salvage-toggle"
           className={cn(
             "h-8 w-8 border-red-950/60 text-red-400/65 hover:border-red-900/70 hover:bg-red-950/25 hover:text-red-300 disabled:border-border/40 disabled:text-muted-foreground/45 cursor-pointer",
             salvageMode && "border-red-700/70 bg-red-950/35 text-red-300",
           )}
           aria-label={salvageMode ? "Cancel salvage" : "Salvage Gear"}
           aria-pressed={salvageMode}
-          onClick={onToggleSalvageMode}
+          onPointerDown={(event) => {
+            if (event.button !== 0) return;
+            event.stopPropagation();
+          }}
+          onClick={(event) => {
+            event.stopPropagation();
+            onToggleSalvageMode();
+          }}
         >
           <Trash2 className="h-3.5 w-3.5" />
         </Button>
@@ -459,6 +446,7 @@ export const InventoryPanel = memo(function InventoryPanel({
                 onGearPointerMove={onGearPointerMove}
                 onGearPointerEnd={onGearPointerEnd}
                 onGearDoubleClick={onGearDoubleClick}
+                onAbortGearDrag={onAbortGearDrag}
               />
             ))}
             {packedCurrencies.map((placement) => (
@@ -516,7 +504,6 @@ const CraftingCurrencyTile = memo(function CraftingCurrencyTile({
   const [showTooltip, setShowTooltip] = useState(false);
   const [tooltipAnchor, setTooltipAnchor] = useState<{ centerX: number; top: number; bottom: number } | null>(null);
   const definition = getCraftingCurrencyDefinition(currencyId);
-  const style = CURRENCY_TILE_STYLES[currencyId];
 
   useLayoutEffect(() => {
     if (showTooltip && tileRef.current) {
@@ -529,14 +516,10 @@ const CraftingCurrencyTile = memo(function CraftingCurrencyTile({
     }
   }, [showTooltip, placement.col, placement.row, dragging]);
 
-  const placeBelow = tooltipAnchor ? tooltipAnchor.top < 320 : false;
-  const tooltipStyle: CSSProperties | undefined = tooltipAnchor
-    ? {
-        left: `clamp(152px, ${tooltipAnchor.centerX}px, calc(100vw - 152px))`,
-        top: placeBelow ? tooltipAnchor.bottom + 8 : "auto",
-        bottom: placeBelow ? "auto" : window.innerHeight - tooltipAnchor.top + 8,
-      }
-    : undefined;
+  const { tooltipRef, placeBelow, tooltipStyle } = useArmoryPortaledTooltipPlacement(
+    tooltipAnchor,
+    showTooltip && tooltipAnchor !== null,
+  );
 
   const openTooltip = useCallback(() => {
     const rect = tileRef.current?.getBoundingClientRect();
@@ -610,23 +593,22 @@ const CraftingCurrencyTile = memo(function CraftingCurrencyTile({
     >
       <div
         className={cn(
-          "group relative h-full w-full overflow-hidden rounded-xl border bg-black transition-[box-shadow,transform] active:scale-95",
+          "group relative h-full w-full overflow-hidden rounded-xl border border-border/60 bg-black transition-[box-shadow,transform] active:scale-95",
           "disabled:cursor-not-allowed disabled:opacity-40",
-          style.className,
           active && "shadow-[0_0_0_2px_rgba(251,191,36,0.75),0_0_18px_rgba(251,191,36,0.25)]",
         )}
       >
         <span className="absolute inset-0 bg-black" aria-hidden />
         <img src={definition.art} alt="" className="absolute inset-0 h-full w-full object-cover" />
-        <span className={cn("absolute inset-0", style.glowClassName)} aria-hidden />
         <span className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-white/10" aria-hidden />
-        <span className="absolute bottom-1 right-1 rounded bg-black/80 px-1 text-[10px] font-bold leading-none text-stone-100">
+        <span className="absolute top-1 left-1 text-xs font-bold leading-none text-stone-100 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
           {count}
         </span>
       </div>
       {showTooltip && tooltipAnchor
         ? createPortal(
             <TooltipPanel
+              ref={tooltipRef}
               width={ARMORY_TOOLTIP_WIDTH}
               visible
               flip={placeBelow}
@@ -664,6 +646,7 @@ const SlotButton = memo(function SlotButton({
   onGearDoubleClick,
   onSalvage,
   onApplyCurrency,
+  onAbortGearDrag,
 }: {
   slot: GearSlot;
   instance: GearInstance | undefined;
@@ -679,11 +662,18 @@ const SlotButton = memo(function SlotButton({
   onGearDoubleClick: (instance: GearInstance, origin: GearDragOrigin, rect: DOMRect) => void;
   onSalvage: () => void;
   onApplyCurrency: () => void;
+  onAbortGearDrag: (instanceId: string) => void;
 }) {
   const [showTooltip, setShowTooltip] = useState(false);
   const { ref, flip, dx } = useTooltipViewportClamp(8, showTooltip);
   const definition = instance ? gearDefinitions[instance.definitionId] : undefined;
   const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!instance) return;
+    const instanceId = instance.instanceId;
+    return () => onAbortGearDrag(instanceId);
+  }, [instance, onAbortGearDrag]);
 
   useEffect(() => {
     if (!isDraggingActive && containerRef.current?.matches(":hover")) {
@@ -832,6 +822,7 @@ const InventoryGearTile = memo(function InventoryGearTile({
   onGearPointerMove,
   onGearPointerEnd,
   onGearDoubleClick,
+  onAbortGearDrag,
 }: {
   instance: GearInstance;
   placement: { col: number; row: number; w: number; h: number };
@@ -852,12 +843,18 @@ const InventoryGearTile = memo(function InventoryGearTile({
   onGearPointerMove: GearPointerMove;
   onGearPointerEnd: GearPointerEnd;
   onGearDoubleClick: (instance: GearInstance, origin: GearDragOrigin, rect: DOMRect) => void;
+  onAbortGearDrag: (instanceId: string) => void;
 }) {
   const [tooltipSequence, setTooltipSequence] = useState<number | null>(null);
   const tileRef = useRef<HTMLDivElement>(null);
   const [tooltipAnchor, setTooltipAnchor] = useState<{ centerX: number; top: number; bottom: number } | null>(null);
   const definition = gearDefinitions[instance.definitionId];
   const showTooltip = tooltipSequence === dragSequence && !interactionSuppressed;
+
+  useEffect(() => {
+    const instanceId = instance.instanceId;
+    return () => onAbortGearDrag(instanceId);
+  }, [instance.instanceId, onAbortGearDrag]);
 
   const prevAffixesRef = useRef(instance.affixes);
   const prevDefRef = useRef(instance.definitionId);
@@ -907,14 +904,10 @@ const InventoryGearTile = memo(function InventoryGearTile({
     }
   }, [showTooltip, placement.col, placement.row, dragging, isAnimating]);
 
-  const placeBelow = tooltipAnchor ? tooltipAnchor.top < 320 : false;
-  const tooltipStyle: CSSProperties | undefined = tooltipAnchor
-    ? {
-        left: `clamp(152px, ${tooltipAnchor.centerX}px, calc(100vw - 152px))`,
-        top: placeBelow ? tooltipAnchor.bottom + 8 : "auto",
-        bottom: placeBelow ? "auto" : window.innerHeight - tooltipAnchor.top + 8,
-      }
-    : undefined;
+  const { tooltipRef, placeBelow, tooltipStyle } = useArmoryPortaledTooltipPlacement(
+    tooltipAnchor,
+    showTooltip && tooltipAnchor !== null,
+  );
 
   const handleMouseEnter = () => {
     if (!salvageMode && !activeCurrencyId && !shouldSuppressClick()) {
@@ -1044,6 +1037,7 @@ const InventoryGearTile = memo(function InventoryGearTile({
       {showTooltip && tooltipAnchor
         ? createPortal(
             <TooltipPanel
+              ref={tooltipRef}
               width={ARMORY_TOOLTIP_WIDTH}
               visible
               flip={placeBelow}

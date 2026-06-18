@@ -1,7 +1,21 @@
 import { gearDefinitions } from "./definitions";
-import type { CraftingCurrencyBoardPositions, CraftingCurrencyId } from "./crafting";
-import { CRAFTING_CURRENCY_IDS } from "./crafting";
-import type { GearBoardPositions, GearDefinition, GearInstance, GearSlot } from "./types";
+import {
+  CRAFTING_CURRENCY_IDS,
+  createEmptyCurrencyBoardPositionsByCharacter,
+  type CraftingCurrencyBoardPositions,
+  type CraftingCurrencyBoardPositionsByCharacter,
+  type CraftingCurrencyId,
+} from "./crafting";
+import {
+  GEAR_CHARACTER_IDS,
+  createEmptyGearBoardPositionsByCharacter,
+  type GearBoardPositions,
+  type GearBoardPositionsByCharacter,
+  type GearDefinition,
+  type GearInventories,
+  type GearInstance,
+  type GearSlot,
+} from "./types";
 
 export type GearFootprint = { w: number; h: number };
 
@@ -396,6 +410,31 @@ export function sanitizeGearBoardPositions(
     if (!footprint) continue;
     if (position.col < 1 || position.row < 1 || position.col + footprint.w - 1 > INVENTORY_COLS) continue;
     next[instanceId] = position;
+  }
+  return next;
+}
+
+export function sanitizeGearBoardPositionsByCharacter(
+  boardPositionsByCharacter: GearBoardPositionsByCharacter,
+  inventories: GearInventories,
+): GearBoardPositionsByCharacter {
+  const next = createEmptyGearBoardPositionsByCharacter();
+  for (const characterId of GEAR_CHARACTER_IDS) {
+    next[characterId] = sanitizeGearBoardPositions(
+      boardPositionsByCharacter[characterId] ?? {},
+      inventories[characterId] ?? [],
+    );
+  }
+  return next;
+}
+
+export function sanitizeCurrencyBoardPositionsByCharacter(
+  boardPositionsByCharacter: CraftingCurrencyBoardPositionsByCharacter,
+  currencies: Record<CraftingCurrencyId, number>,
+): CraftingCurrencyBoardPositionsByCharacter {
+  const next = createEmptyCurrencyBoardPositionsByCharacter();
+  for (const characterId of GEAR_CHARACTER_IDS) {
+    next[characterId] = sanitizeCurrencyBoardPositions(boardPositionsByCharacter[characterId] ?? {}, currencies);
   }
   return next;
 }

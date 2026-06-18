@@ -3,7 +3,17 @@ import { migrateSaveTopLevelV4 } from "./migrate-save-top-level";
 import { migrateSaveTopLevelV5 } from "./migrate-save-top-level-v5";
 import type { RawSaveData } from "./types";
 import { normalizePositiveInteger } from "./types";
-import { EMPTY_CRAFTING_CURRENCIES } from "@/lib/gear";
+import { EMPTY_CRAFTING_CURRENCIES, createEmptyCurrencyBoardPositionsByCharacter } from "@/lib/gear";
+import {
+  GEAR_CHARACTER_IDS,
+  createEmptyGearBoardPositionsByCharacter,
+  createEmptyGearInventories,
+  findGearEquippedCharacter,
+  normalizeGearLoadout,
+  type GearInstance,
+  type GearLoadouts,
+} from "@/lib/gear/types";
+import type { CraftingCurrencyBoardPositions } from "@/lib/gear/crafting";
 
 // Maps old fixed-resolution strings (v0 save format) to the canonical aspect-ratio values
 // used in v1+. Only runs after schema migration so the field is already at its new name.
@@ -211,5 +221,62 @@ export function migrateV7ToV8(parsed: RawSaveData): RawSaveData {
     craftingCurrencyBoardPositions:
       parsed.craftingCurrencyBoardPositions !== undefined ? parsed.craftingCurrencyBoardPositions : {},
     saveSchemaVersion: 8,
+  };
+}
+
+export function migrateV8ToV9(parsed: RawSaveData): RawSaveData {
+  if (parsed.gearInventories && typeof parsed.gearInventories === "object") {
+    return { ...parsed, saveSchemaVersion: 9 };
+  }
+
+  const legacyInventory = Array.isArray(parsed.gearInventory) ? (parsed.gearInventory as GearInstance[]) : [];
+  const rawLoadouts = parsed.gearLoadouts;
+  const loadouts = GEAR_CHARACTER_IDS.reduce((acc, characterId) => {
+    const raw =
+      rawLoadouts && typeof rawLoadouts === "object"
+        ? (rawLoadouts as Record<string, unknown>)[characterId]
+        : undefined;
+    acc[characterId] = normalizeGearLoadout(raw as Partial<Record<string, string | null>>);
+    return acc;
+  }, {} as GearLoadouts);
+
+  const legacyBoardPositions =
+    parsed.gearBoardPositions && typeof parsed.gearBoardPositions === "object"
+      ? (parsed.gearBoardPositions as Record<string, { col: number; row: number }>)
+      : {};
+  const legacyCurrencyPositions =
+    parsed.craftingCurrencyBoardPositions && typeof parsed.craftingCurrencyBoardPositions === "object"
+      ? (parsed.craftingCurrencyBoardPositions as CraftingCurrencyBoardPositions)
+      : {};
+
+  const gearInventories = createEmptyGearInventories();
+  const gearBoardPositionsByCharacter = createEmptyGearBoardPositionsByCharacter();
+  const currencyBoardPositionsByCharacter = createEmptyCurrencyBoardPositionsByCharacter();
+
+  for (const item of legacyInventory) {
+    if (!item || typeof item !== "object" || typeof item.instanceId !== "string") continue;
+    const owner = findGearEquippedCharacter(loadouts, item.instanceId) ?? "knight";
+    gearInventories[owner].push(item);
+    const position = legacyBoardPositions[item.instanceId];
+    if (position) {
+      gearBoardPositionsByCharacter[owner][item.instanceId] = position;
+    }
+  }
+
+  currencyBoardPositionsByCharacter.knight = { ...legacyCurrencyPositions };
+
+  const {
+    gearInventory: _gearInventory,
+    gearBoardPositions: _gearBoardPositions,
+    craftingCurrencyBoardPositions: _craftingCurrencyBoardPositions,
+    ...rest
+  } = parsed;
+
+  return {
+    ...rest,
+    gearInventories,
+    gearBoardPositionsByCharacter,
+    craftingCurrencyBoardPositionsByCharacter: currencyBoardPositionsByCharacter,
+    saveSchemaVersion: 9,
   };
 }

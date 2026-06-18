@@ -58,6 +58,8 @@ export type ActiveRunData = {
   currentAct: number;
   destinationIndexInAct: number;
   completedDestinations: string[];
+  lastOfferedDestinations: string[];
+  destinationRoundsSinceOffered: Record<string, number>;
   runTrinkets: string[];
   encounteredRunEnemyIds: string[];
   selectedDifficulty: DifficultyId | null;

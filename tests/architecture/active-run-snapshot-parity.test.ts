@@ -41,6 +41,8 @@ describe("active run snapshot parity", () => {
     currentAct: progressViaInitialize,
     destinationIndexInAct: progressViaInitialize,
     completedDestinations: progressViaInitialize,
+    lastOfferedDestinations: progressViaInitialize,
+    destinationRoundsSinceOffered: progressViaInitialize,
     runTrinkets: progressViaInitialize,
     encounteredRunEnemyIds: progressViaInitialize,
     selectedDifficulty: progressViaInitialize,

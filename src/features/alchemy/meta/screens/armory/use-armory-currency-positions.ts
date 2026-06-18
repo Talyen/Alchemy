@@ -1,9 +1,13 @@
 import { useCallback, useEffect } from "react";
+import type { CharacterId } from "@/lib/game-data";
 import { CRAFTING_CURRENCY_IDS, type CraftingCurrencyId } from "@/lib/gear";
 import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
 
-export function useArmoryCurrencyPositions(craftingCurrencies: Record<CraftingCurrencyId, number>) {
-  const savedPositions = useGearStore((state) => state.currencyBoardPositions);
+export function useArmoryCurrencyPositions(
+  characterId: CharacterId,
+  craftingCurrencies: Record<CraftingCurrencyId, number>,
+) {
+  const savedPositions = useGearStore((state) => state.currencyBoardPositionsByCharacter[characterId] ?? {});
   const setCurrencyBoardPosition = useGearStore((state) => state.setCurrencyBoardPosition);
   const syncBoardPositions = useGearStore((state) => state.syncBoardPositions);
 
@@ -13,9 +17,9 @@ export function useArmoryCurrencyPositions(craftingCurrencies: Record<CraftingCu
 
   const handleMoveCurrency = useCallback(
     (currencyId: CraftingCurrencyId, col: number, row: number) => {
-      setCurrencyBoardPosition(currencyId, col, row);
+      setCurrencyBoardPosition(characterId, currencyId, col, row);
     },
-    [setCurrencyBoardPosition],
+    [characterId, setCurrencyBoardPosition],
   );
 
   const activeCurrencyIds = CRAFTING_CURRENCY_IDS.filter((id) => (craftingCurrencies[id] ?? 0) > 0);

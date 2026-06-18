@@ -61,11 +61,45 @@ export type GearInstance = {
 };
 
 export type GearInventory = GearInstance[];
+export type GearInventories = Record<GearCharacterId, GearInventory>;
 export type GearLoadout = Record<GearSlot, string | null>;
 export type GearLoadouts = Record<GearCharacterId, GearLoadout>;
 
 export type GearBoardPosition = { col: number; row: number };
 export type GearBoardPositions = Record<string, GearBoardPosition>;
+export type GearBoardPositionsByCharacter = Record<GearCharacterId, GearBoardPositions>;
+
+export function createEmptyGearInventories(): GearInventories {
+  return Object.fromEntries(GEAR_CHARACTER_IDS.map((id) => [id, [] as GearInventory])) as GearInventories;
+}
+
+export function createEmptyGearBoardPositionsByCharacter(): GearBoardPositionsByCharacter {
+  return Object.fromEntries(
+    GEAR_CHARACTER_IDS.map((id) => [id, {} as GearBoardPositions]),
+  ) as GearBoardPositionsByCharacter;
+}
+
+export function flattenGearInventories(inventories: GearInventories): GearInventory {
+  return GEAR_CHARACTER_IDS.flatMap((id) => inventories[id] ?? []);
+}
+
+export function findGearEquippedCharacter(loadouts: GearLoadouts, instanceId: string): GearCharacterId | null {
+  for (const characterId of GEAR_CHARACTER_IDS) {
+    for (const slot of GEAR_SLOTS) {
+      if (loadouts[characterId][slot] === instanceId) return characterId;
+    }
+  }
+  return null;
+}
+
+export function findGearInventoryOwner(inventories: GearInventories, instanceId: string): GearCharacterId | null {
+  for (const characterId of GEAR_CHARACTER_IDS) {
+    if ((inventories[characterId] ?? []).some((item) => item.instanceId === instanceId)) {
+      return characterId;
+    }
+  }
+  return null;
+}
 
 export function pruneGearBoardPositions(
   boardPositions: GearBoardPositions,

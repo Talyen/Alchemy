@@ -3,6 +3,7 @@ import type { Dispatch, SetStateAction } from "react";
 import type { BattleCard } from "@/lib/game-data";
 import type { GearInstance } from "@/lib/gear";
 import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
+import { readActiveRunStore } from "@/features/alchemy/shared/stores/run-session-facade";
 import type { RewardState } from "../navigation/reward-flow";
 import { getRandomPotionCard } from "../navigation/reward-flow";
 import { appendCardToRunWithDiscovery, appendTrinketToRunWithDiscovery } from "./deck-mutations";
@@ -75,7 +76,8 @@ export function applyRewardSelection({ choice, type, setRunDeck, setRunTrinkets 
   } else if (type === "trinket") {
     appendTrinketToRunWithDiscovery((choice as { id: string }).id, setRunTrinkets);
   } else if (type === "gear") {
-    useGearStore.getState().addInstance(choice as GearInstance);
+    const characterId = readActiveRunStore().characterId;
+    useGearStore.getState().addInstance(choice as GearInstance, characterId);
   }
 }
 

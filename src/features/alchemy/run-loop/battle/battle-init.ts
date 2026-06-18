@@ -12,7 +12,7 @@ import { syncRunToBattleStart } from "../../shared/stores/run-transitions";
 import type { BattleControllerContext } from "./controller-context";
 import { withWildwoodModifier, type WildwoodModifierId } from "@/lib/content-systems/wildwood/gauntlet";
 import { appendEncounterTraits, type EncounterCombatTraitId } from "@/lib/content-systems/encounter-traits";
-import { computeGearManifest } from "@/lib/gear";
+import { computeGearManifest, flattenGearInventories } from "@/lib/gear";
 import { useGearStore } from "@/features/alchemy/shared/stores/gear-store";
 
 export function createBattleInit(contextOrGetter: BattleControllerContext | (() => BattleControllerContext)) {
@@ -30,7 +30,11 @@ export function createBattleInit(contextOrGetter: BattleControllerContext | (() 
   ) {
     const context = getContext();
     const gear = useGearStore.getState();
-    const gearEffects = computeGearManifest(context.run.characterId, gear.inventory, gear.loadouts);
+    const gearEffects = computeGearManifest(
+      context.run.characterId,
+      flattenGearInventories(gear.inventories),
+      gear.loadouts,
+    );
     const battleEffects = mergeIntoManifest(context.talents.talentEffects, context.homesteadEffectsRef.current);
     const activeModifiers =
       modifiers ??

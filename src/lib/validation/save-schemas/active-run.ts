@@ -205,6 +205,12 @@ export const ActiveRunDataSchema = z
     currentAct: caught(z.number().int().min(1).max(ACTS_PER_RUN), 1, "activeRun.currentAct"),
     destinationIndexInAct: caught(z.number().int().nonnegative(), 0, "activeRun.destinationIndexInAct"),
     completedDestinations: caught(z.array(z.string()), [], "activeRun.completedDestinations"),
+    lastOfferedDestinations: caught(z.array(z.string()), [], "activeRun.lastOfferedDestinations").default([]),
+    destinationRoundsSinceOffered: caught(
+      z.record(z.string(), z.number().int().nonnegative()),
+      {},
+      "activeRun.destinationRoundsSinceOffered",
+    ).default({}),
     runTrinkets: caught(z.array(z.string()), [], "activeRun.runTrinkets"),
     encounteredRunEnemyIds: deduplicatedStringArraySchema("activeRun.encounteredRunEnemyIds").default([]),
     selectedDifficulty: caught(DifficultyIdSchema.nullable(), null, "activeRun.selectedDifficulty").default(null),

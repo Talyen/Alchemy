@@ -25,6 +25,8 @@ type RunSessionRunSlice = Pick<
   | "currentAct"
   | "destinationIndexInAct"
   | "completedDestinations"
+  | "lastOfferedDestinations"
+  | "destinationRoundsSinceOffered"
   | "runTrinkets"
   | "encounteredRunEnemyIds"
   | "selectedDifficulty"
@@ -97,6 +99,8 @@ function pickRunSessionRunSlice(progress: RunStateFields): RunSessionRunSlice {
     currentAct: progress.currentAct,
     destinationIndexInAct: progress.destinationIndexInAct,
     completedDestinations: progress.completedDestinations,
+    lastOfferedDestinations: progress.lastOfferedDestinations,
+    destinationRoundsSinceOffered: progress.destinationRoundsSinceOffered,
     runTrinkets: progress.runTrinkets,
     encounteredRunEnemyIds: progress.encounteredRunEnemyIds,
     selectedDifficulty: progress.selectedDifficulty,

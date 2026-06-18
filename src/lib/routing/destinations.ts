@@ -13,3 +13,24 @@ export const DESTINATIONS = {
 } as const;
 
 export type Destination = (typeof DESTINATIONS)[keyof typeof DESTINATIONS];
+
+export const COMBAT_DESTINATIONS = [
+  DESTINATIONS.NORMAL_COMBAT,
+  DESTINATIONS.ELITE_COMBAT,
+  DESTINATIONS.BOSS_COMBAT,
+] as const satisfies readonly Destination[];
+
+export const SHOP_DESTINATIONS = [
+  DESTINATIONS.MERCHANT_SHOP,
+  DESTINATIONS.ALCHEMIST_SHOP,
+  DESTINATIONS.TRINKET_SHOP,
+  DESTINATIONS.EQUIPMENT_SHOP,
+] as const satisfies readonly Destination[];
+
+export function isCombatDestination(destination: Destination): boolean {
+  return (COMBAT_DESTINATIONS as readonly Destination[]).includes(destination);
+}
+
+export function isShopDestination(destination: Destination): boolean {
+  return (SHOP_DESTINATIONS as readonly Destination[]).includes(destination);
+}

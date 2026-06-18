@@ -19,7 +19,10 @@ vi.mock("@/lib/utils", async () => {
 });
 
 vi.mock("@/features/alchemy/run-loop/navigation/destination-flow", () => ({
-  sampleDestinationChoices: vi.fn((dests: Destination[]) => dests.slice(0, 3)),
+  sampleDestinationChoices: vi.fn((dests: Destination[]) => ({
+    choices: dests.slice(0, 3),
+    offerState: { lastOfferedDestinations: dests.slice(0, 3), roundsSinceOffered: {} },
+  })),
 }));
 
 vi.mock("@/lib/homestead/loot", () => ({
@@ -60,6 +63,7 @@ function baseInput(overrides: Record<string, unknown> = {}): VictoryRewardsInput
     homesteadEffects: { ...defaultHomesteadEffects },
     getAvailableDestinations: vi.fn(() => ["Normal Combat", "Campfire", "Mystery"] as Destination[]),
     bossEnemyId: "mimic",
+    destinationOfferState: { lastOfferedDestinations: [], roundsSinceOffered: {} },
     ...overrides,
   };
 }
@@ -336,6 +340,7 @@ describe("commitVictoryRewards", () => {
       eliteBonus: 0,
       bossBonus: 0,
       generousBonus: 0,
+      destinationOfferState: { lastOfferedDestinations: [], roundsSinceOffered: {} },
       ...overrides,
     };
   }
@@ -349,6 +354,7 @@ describe("commitVictoryRewards", () => {
       setRunMaxHealth: vi.fn(),
       setRewardState: vi.fn(),
       setCompanionRewardCards: vi.fn(),
+      setDestinationOfferState: vi.fn(),
       clearCombatState: vi.fn(),
       ...overrides,
     };
