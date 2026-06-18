@@ -1,0 +1,250 @@
+import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import {
+  canApplyCraftingCurrency,
+  canSalvageGear,
+  gearDefinitions,
+  getCraftingCurrencyDefinition,
+  getGearInstanceTitle,
+  type CraftingCurrencyId,
+  type GearInstance,
+} from "@/lib/gear";
+import { playUISound } from "@/lib/audio";
+import { cn } from "@/lib/utils";
+import { TooltipPanel } from "../../../../shared/ui/tooltip-panel";
+import { GearTooltipContent, ARMORY_TOOLTIP_WIDTH } from "../gear-tooltip-content";
+import { useArmoryPortaledTooltipPlacement } from "../armory-tooltip-placement";
+import { packedItemStyle } from "./grid-styles";
+import type { GearDragOrigin, GearPointerEnd, GearPointerMove, GearPointerStart } from "../use-armory-gear-drag";
+
+export const InventoryGearTile = memo(function InventoryGearTile({
+  instance,
+  placement,
+  inventory,
+  editable,
+  salvageMode,
+  activeCurrencyId,
+  dragging,
+  secondaryDragging,
+  interactionSuppressed,
+  hasActiveDrag,
+  dragSequence,
+  shouldSuppressClick,
+  onSalvage,
+  onApplyCurrency,
+  onGearPointerStart,
+  onGearPointerMove,
+  onGearPointerEnd,
+  onGearDoubleClick,
+  onAbortGearDrag,
+}: {
+  instance: GearInstance;
+  placement: { col: number; row: number; w: number; h: number };
+  inventory: GearInstance[];
+  editable: boolean;
+  salvageMode: boolean;
+  activeCurrencyId: CraftingCurrencyId | null;
+  dragging: boolean;
+  secondaryDragging: boolean;
+  interactionSuppressed: boolean;
+  hasActiveDrag: boolean;
+  dragSequence: number;
+  shouldSuppressClick: () => boolean;
+  onSalvage: () => void;
+  onApplyCurrency: () => void;
+  onGearPointerStart: GearPointerStart;
+  onGearPointerMove: GearPointerMove;
+  onGearPointerEnd: GearPointerEnd;
+  onGearDoubleClick: (instance: GearInstance, origin: GearDragOrigin, rect: DOMRect) => void;
+  onAbortGearDrag: (instanceId: string) => void;
+}) {
+  const [tooltipSequence, setTooltipSequence] = useState<number | null>(null);
+  const tileRef = useRef<HTMLDivElement>(null);
+  const definition = gearDefinitions[instance.definitionId];
+  const showTooltip = tooltipSequence === dragSequence && !interactionSuppressed;
+
+  useEffect(() => {
+    const instanceId = instance.instanceId;
+    return () => onAbortGearDrag(instanceId);
+  }, [instance.instanceId, onAbortGearDrag]);
+
+  const prevAffixesRef = useRef(instance.affixes);
+  const prevDefRef = useRef(instance.definitionId);
+  const [flash, setFlash] = useState(false);
+
+  useEffect(() => {
+    if (prevAffixesRef.current !== instance.affixes || prevDefRef.current !== instance.definitionId) {
+      prevAffixesRef.current = instance.affixes;
+      prevDefRef.current = instance.definitionId;
+      setFlash(true);
+      const timer = setTimeout(() => setFlash(false), 550);
+      return () => clearTimeout(timer);
+    }
+  }, [instance]);
+
+  const openTooltip = useCallback(() => {
+    setTooltipSequence(dragSequence);
+  }, [dragSequence]);
+
+  const closeTooltip = useCallback(() => {
+    setTooltipSequence(null);
+  }, []);
+
+  useEffect(() => {
+    if (!hasActiveDrag && tileRef.current?.matches(":hover")) {
+      if (!salvageMode && !activeCurrencyId && !shouldSuppressClick()) {
+        openTooltip();
+      }
+    } else {
+      closeTooltip();
+    }
+  }, [activeCurrencyId, closeTooltip, hasActiveDrag, openTooltip, salvageMode, shouldSuppressClick]);
+
+  const { tooltipRef, placeBelow, tooltipStyle } = useArmoryPortaledTooltipPlacement(tileRef, showTooltip);
+
+  const handleMouseEnter = () => {
+    if (!salvageMode && !activeCurrencyId && !shouldSuppressClick()) {
+      playUISound("buttonHover");
+      openTooltip();
+    }
+  };
+
+  const handleMouseLeave = () => {
+    closeTooltip();
+  };
+
+  const handleFocus = () => {
+    if (!salvageMode && !activeCurrencyId && !shouldSuppressClick()) openTooltip();
+  };
+
+  const handleBlur = () => {
+    closeTooltip();
+  };
+
+  if (!definition) {
+    return null;
+  }
+
+  const canSalvage = canSalvageGear(inventory, instance.instanceId);
+  const canCraft = activeCurrencyId ? canApplyCraftingCurrency(activeCurrencyId, instance) : false;
+  const targetingMode = salvageMode || activeCurrencyId;
+  const isSalvageTarget = salvageMode && canSalvage;
+  const isCurrencyTarget = !!activeCurrencyId;
+
+  return (
+    <div
+      ref={tileRef}
+      className={cn(
+        "armory-salvage-tile absolute z-10 min-h-0 min-w-0 overflow-hidden rounded-xl",
+        targetingMode ? "cursor-default" : "cursor-grab active:cursor-grabbing bg-background/60",
+        dragging || secondaryDragging ? "opacity-0" : "transition-[transform] duration-150",
+        isSalvageTarget && "ring-inset ring-1 ring-red-400/25 hover:ring-red-300/60",
+        salvageMode && !canSalvage && "ring-inset ring-1 ring-red-400/10",
+        activeCurrencyId &&
+          canCraft &&
+          "ring-inset ring-2 ring-emerald-400/40 bg-emerald-950/10 hover:ring-emerald-400/80 hover:bg-emerald-950/20",
+        activeCurrencyId && !canCraft && "ring-inset ring-2 ring-red-500/30 bg-red-950/15 opacity-60",
+      )}
+      style={packedItemStyle(placement)}
+      role={editable && (isSalvageTarget || isCurrencyTarget) ? "button" : undefined}
+      tabIndex={editable && (isSalvageTarget || isCurrencyTarget) ? 0 : undefined}
+      data-salvageable={isSalvageTarget ? "true" : undefined}
+      aria-label={
+        isSalvageTarget
+          ? `Salvage ${getGearInstanceTitle(instance)}`
+          : isCurrencyTarget
+            ? `Apply ${getCraftingCurrencyDefinition(activeCurrencyId).displayName} to ${getGearInstanceTitle(instance)}`
+            : undefined
+      }
+      onClick={(event) => {
+        if (!editable) return;
+        if (shouldSuppressClick()) return;
+        if (isSalvageTarget) {
+          event.stopPropagation();
+          onSalvage();
+        } else if (activeCurrencyId) {
+          event.stopPropagation();
+          onApplyCurrency();
+        }
+      }}
+      onKeyDown={(event) => {
+        if (!editable) return;
+        if (event.key === "Enter" || event.key === " ") {
+          if (isSalvageTarget) {
+            event.preventDefault();
+            onSalvage();
+          } else if (activeCurrencyId) {
+            event.preventDefault();
+            onApplyCurrency();
+          }
+        }
+      }}
+      onPointerDown={(event) => {
+        if (!editable || targetingMode || event.button !== 0 || interactionSuppressed) return;
+        event.stopPropagation();
+        closeTooltip();
+        event.currentTarget.setPointerCapture(event.pointerId);
+        onGearPointerStart(
+          instance,
+          { kind: "inventory", placement: { col: placement.col, row: placement.row } },
+          event.currentTarget.getBoundingClientRect(),
+          { x: event.clientX, y: event.clientY },
+          event.pointerId,
+        );
+      }}
+      onPointerMove={(event) => {
+        if (!event.currentTarget.hasPointerCapture(event.pointerId)) return;
+        event.stopPropagation();
+        onGearPointerMove({ x: event.clientX, y: event.clientY }, event.pointerId);
+      }}
+      onPointerUp={(event) => {
+        if (!event.currentTarget.hasPointerCapture(event.pointerId)) return;
+        event.stopPropagation();
+        event.currentTarget.releasePointerCapture(event.pointerId);
+        onGearPointerEnd({ x: event.clientX, y: event.clientY }, event.pointerId);
+      }}
+      onPointerCancel={(event) => {
+        if (!event.currentTarget.hasPointerCapture(event.pointerId)) return;
+        event.stopPropagation();
+        event.currentTarget.releasePointerCapture(event.pointerId);
+        onGearPointerEnd({ x: event.clientX, y: event.clientY }, event.pointerId, true);
+      }}
+      onDoubleClick={(event) => {
+        if (!editable || targetingMode) return;
+        onGearDoubleClick(
+          instance,
+          { kind: "inventory", placement: { col: placement.col, row: placement.row } },
+          event.currentTarget.getBoundingClientRect(),
+        );
+      }}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
+      data-testid="armory-inventory-item"
+      data-gear-title={getGearInstanceTitle(instance)}
+    >
+      <img
+        src={definition.art}
+        alt=""
+        className="absolute -inset-px h-[calc(100%+2px)] w-[calc(100%+2px)] max-w-none object-cover"
+      />
+      {flash ? <div className="absolute inset-0 pointer-events-none rounded-xl craft-flash-overlay z-30" /> : null}
+      {showTooltip
+        ? createPortal(
+            <TooltipPanel
+              ref={tooltipRef}
+              width={ARMORY_TOOLTIP_WIDTH}
+              visible
+              flip={placeBelow}
+              className="armory-inventory-tooltip pointer-events-none fixed bottom-auto top-auto z-[100] mb-0 mt-0 !shadow-none"
+              style={tooltipStyle}
+            >
+              <GearTooltipContent definition={definition} instance={instance} />
+            </TooltipPanel>,
+            document.body,
+          )
+        : null}
+    </div>
+  );
+});

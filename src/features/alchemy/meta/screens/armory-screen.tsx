@@ -1,90 +1,39 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
-import { motion } from "motion/react";
-import {
-  Crosshair,
-  Flame,
-  FlaskConical,
-  Leaf,
-  Lock,
-  Shield,
-  Sparkles,
-  Swords,
-  WandSparkles,
-  type LucideIcon,
-} from "lucide-react";
-import { playUISound } from "@/lib/audio";
-import {
-  characters,
-  getRequiredPreviousCharacter,
-  isCharacterUnlocked,
-  keywordDefinitions,
-  type CharacterId,
-  type KeywordId,
-} from "@/lib/game-data";
 import {
   canApplyCraftingCurrency,
+  currencyObstaclesForBoard,
   EMPTY_CRAFTING_CURRENCIES,
   gearDefinitions,
   getCraftingCurrencyDefinition,
   INVENTORY_COLS,
   packInventoryWithPositions,
   packCurrencyWithPositions,
-  currencyObstaclesForBoard,
   type CraftingCurrencyId,
   type GearInstance,
   type GearInventories,
   type GearLoadouts,
   type GearSlot,
   type InventoryPlacement,
+  type PackedCurrencyItem,
 } from "@/lib/gear";
 import { cn } from "@/lib/utils";
-import { ConfirmationDialog, HamburgerTrigger, PageLayout, ScreenHeader, TabBar } from "../../shared/ui/shared-ui";
+import { getRequiredPreviousCharacter, isCharacterUnlocked, type CharacterId } from "@/lib/game-data";
+import { playUISound } from "@/lib/audio";
+import { ConfirmationDialog, HamburgerTrigger, PageLayout, ScreenHeader } from "../../shared/ui/shared-ui";
 import { GearItemTitle } from "../../shared/ui/gear-item-title";
 import { useGearStore } from "../../shared/stores/gear-store";
+import { Sparkles } from "lucide-react";
 import { CharacterAndEquipmentPanel, InventoryPanel } from "./armory/armory-panels";
 import { resolveEquipSwap } from "./armory/resolve-equip-swap";
-import {
-  DOUBLE_CLICK_FLYOVER_MS,
-  MAGNET_RELEASE_EASE_MS,
-  useArmoryGearDrag,
-  type GearDragVisual,
-} from "./armory/use-armory-gear-drag";
+import { useArmoryGearDrag } from "./armory/use-armory-gear-drag";
 import { useArmoryInventoryPositions } from "./armory/use-armory-inventory-positions";
 import { useArmoryCurrencyPositions } from "./armory/use-armory-currency-positions";
-import { useArmoryCurrencyDrag, type CurrencyDragVisual } from "./armory/use-armory-currency-drag";
+import { useArmoryCurrencyDrag } from "./armory/use-armory-currency-drag";
+import { ArmoryCharacterTabs } from "./armory/armory-character-tabs";
+import { ArmoryCurrencyCursor } from "./armory/armory-currency-targeting";
+import { GearDragVisualPortal } from "./armory/armory-drag-portal";
+import { CurrencyDragVisualPortal } from "./armory/armory-currency-drag-portal";
 import "./armory/armory-screen.css";
-
-const CHARACTER_ICONS: Record<CharacterId, LucideIcon> = {
-  knight: Shield,
-  rogue: Swords,
-  wizard: WandSparkles,
-  ranger: Crosshair,
-  alchemist: FlaskConical,
-  warlock: Flame,
-  druid: Leaf,
-  wildcard: Sparkles,
-};
-
-const CHARACTER_KEYWORDS: Record<CharacterId, KeywordId> = {
-  knight: "forge",
-  rogue: "bleed",
-  wizard: "mana",
-  ranger: "archery",
-  alchemist: "poison",
-  warlock: "leech",
-  druid: "nature",
-  wildcard: "wish",
-};
-
-const CURRENCY_CURSOR_STYLES: Record<CraftingCurrencyId, { className: string }> = {
-  "discordant-dice": { className: "border-violet-300/70 bg-violet-950" },
-  "sprig-of-growth": { className: "border-emerald-300/70 bg-emerald-950" },
-  voidstone: { className: "border-slate-300/70 bg-slate-950" },
-  "ascension-seal": { className: "border-amber-300/70 bg-amber-950" },
-  "severance-maw": { className: "border-red-300/70 bg-red-950" },
-  "smiths-whetstone": { className: "border-stone-300/70 bg-stone-950" },
-};
 
 type Props = {
   inventories: GearInventories;
@@ -176,7 +125,7 @@ export function ArmoryScreen({
   );
 
   const boardObstacles = useMemo(
-    () => [...packedInventory.items, ...currencyObstaclesForBoard(packedCurrencies)],
+    () => [...packedInventory.items, ...currencyObstaclesForBoard(packedCurrencies as PackedCurrencyItem[])],
     [packedCurrencies, packedInventory.items],
   );
 
@@ -261,7 +210,6 @@ export function ArmoryScreen({
   const secondaryDragDefinition = secondaryDragVisual
     ? gearDefinitions[secondaryDragVisual.instance.definitionId]
     : undefined;
-  const activeCurrency = activeCurrencyId ? getCraftingCurrencyDefinition(activeCurrencyId) : null;
 
   const clearTargeting = useCallback(() => {
     setSalvageMode(false);
@@ -338,7 +286,6 @@ export function ArmoryScreen({
     setSalvageTarget(null);
   }, []);
 
-  // Clear targeting when edit permissions are removed (e.g. browseOnly toggle)
   useEffect(() => {
     if (!editable) {
       setSalvageMode(false); // eslint-disable-line react-hooks/set-state-in-effect
@@ -348,21 +295,18 @@ export function ArmoryScreen({
     }
   }, [editable]);
 
-  // Clear active currency if it becomes depleted
   useEffect(() => {
     if (activeCurrencyId && (craftingCurrencies[activeCurrencyId] ?? 0) <= 0) {
       setActiveCurrencyId(null); // eslint-disable-line react-hooks/set-state-in-effect
     }
   }, [activeCurrencyId, craftingCurrencies]);
 
-  // Clear salvage confirmation target if the item is removed from the inventory
   useEffect(() => {
     if (salvageTarget && !inventoryById.has(salvageTarget.instanceId)) {
       setSalvageTarget(null); // eslint-disable-line react-hooks/set-state-in-effect
     }
   }, [salvageTarget, inventoryById]);
 
-  // Side-effects for DOM interaction (blur active element on navigation/edit toggle)
   useEffect(() => {
     if (!editable) {
       if (document.activeElement instanceof HTMLElement) {
@@ -423,27 +367,11 @@ export function ArmoryScreen({
             Equipment can be changed after combat.
           </p>
         ) : null}
-        <div
-          data-testid="armory-character-selector"
-          className="mt-4 w-full overflow-x-auto py-2 [scrollbar-width:none]"
-        >
-          <div className="mx-auto w-max min-w-full px-1">
-            <TabBar
-              tabs={(Object.keys(characters) as CharacterId[]).map((id) => {
-                const isLocked = !isCharacterUnlocked(id, finishedRunCharacters);
-                return {
-                  id,
-                  label: characters[id].name,
-                  icon: isLocked ? Lock : CHARACTER_ICONS[id],
-                  disabled: isLocked,
-                  ...(isLocked ? {} : { iconClassName: keywordDefinitions[CHARACTER_KEYWORDS[id]].colorClass }),
-                };
-              })}
-              activeTab={characterId}
-              onSelectTab={handleSelectCharacter}
-            />
-          </div>
-        </div>
+        <ArmoryCharacterTabs
+          activeTab={characterId}
+          finishedRunCharacters={finishedRunCharacters}
+          onSelectTab={handleSelectCharacter}
+        />
         <div className="armory-workspace mt-2 min-w-0 flex-1" data-testid="armory-workspace">
           <div
             className="armory-workspace-grid"
@@ -517,7 +445,6 @@ export function ArmoryScreen({
             description="Salvaging items yields crafting materials"
             confirmLabel="Salvage"
             icon={Sparkles}
-            // Intentional: do not darken the background behind this modal as per design preference
             dimBackground={false}
             dismissOnBackdrop={false}
             onCancel={() => setSalvageTarget(null)}
@@ -526,8 +453,6 @@ export function ArmoryScreen({
                 setSalvageTarget(null);
                 return;
               }
-              // Intentional: do not exit salvage mode here — players often salvage multiple items in one session.
-              // Salvage mode ends only via the Salvage Gear toggle, Escape, or outside click (see InventoryPanel).
               onSalvage(salvageTarget.instanceId);
               setSalvageTarget(null);
             }}
@@ -552,143 +477,8 @@ export function ArmoryScreen({
             onComplete={clearSecondaryDragState}
           />
         ) : null}
-        {activeCurrency && activeCurrencyId && cursorPoint
-          ? createPortal(
-              <div
-                data-testid="armory-crafting-cursor"
-                aria-label={activeCurrency.displayName}
-                className={cn(
-                  "pointer-events-none fixed z-[130] h-8 w-8 -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded border shadow-[0_0_10px_rgba(0,0,0,0.85)]",
-                  CURRENCY_CURSOR_STYLES[activeCurrencyId].className,
-                )}
-                style={{ left: cursorPoint.x, top: cursorPoint.y }}
-              >
-                <img src={activeCurrency.art} alt="" className="h-full w-full object-cover" />
-              </div>,
-              document.body,
-            )
-          : null}
+        <ArmoryCurrencyCursor activeCurrencyId={activeCurrencyId} cursorPoint={cursorPoint} />
       </div>
     </PageLayout>
-  );
-}
-
-function CurrencyDragVisualPortal({
-  visual,
-  art,
-  count,
-  onComplete,
-}: {
-  visual: CurrencyDragVisual;
-  art: string;
-  count: number;
-  onComplete: () => void;
-}) {
-  return createPortal(
-    <motion.div
-      data-testid="armory-currency-drag-visual"
-      className="pointer-events-none fixed z-[120] overflow-hidden rounded-xl"
-      initial={{ boxShadow: "0 0px 0px 0px rgba(0,0,0,0)" }}
-      style={{
-        left: visual.source.left,
-        top: visual.source.top,
-        width: visual.source.width,
-        height: visual.source.height,
-        willChange: "transform,width,height",
-      }}
-      animate={{
-        x: visual.rect.left - visual.source.left,
-        y: visual.rect.top - visual.source.top,
-        width: visual.rect.width,
-        height: visual.rect.height,
-        boxShadow: visual.settling ? "0 0px 0px 0px rgba(0,0,0,0)" : "0 25px 50px -12px rgba(0,0,0,0.5)",
-      }}
-      transition={{
-        boxShadow: { duration: 1, ease: "easeOut" },
-        default: visual.releasing
-          ? { duration: MAGNET_RELEASE_EASE_MS / 1000, ease: [0.22, 1, 0.36, 1] }
-          : visual.settling
-            ? { type: "spring", stiffness: 1000, damping: 50, mass: 0.15 }
-            : { type: "spring", stiffness: 1000, damping: 50, mass: 0.15 },
-      }}
-      onAnimationComplete={() => {
-        if (visual.settling) onComplete();
-      }}
-    >
-      <div className="relative h-full w-full">
-        <img src={art} alt="" className="h-full w-full object-cover" />
-        <span className="absolute top-1 left-1 text-xs font-bold leading-none text-stone-100 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
-          {count}
-        </span>
-      </div>
-    </motion.div>,
-    document.body,
-  );
-}
-
-function GearDragVisualPortal({
-  visual,
-  art,
-  testId = "armory-gear-drag-visual",
-  onComplete,
-}: {
-  visual: GearDragVisual;
-  art: string;
-  testId?: string;
-  onComplete: () => void;
-}) {
-  return createPortal(
-    <motion.div
-      data-testid={testId}
-      className="pointer-events-none fixed z-[120] overflow-hidden rounded-xl"
-      initial={
-        visual.flyover
-          ? {
-              x: 0,
-              y: 0,
-              width: visual.source.width,
-              height: visual.source.height,
-              boxShadow: "0 0px 0px 0px rgba(0,0,0,0)",
-            }
-          : {
-              boxShadow: "0 0px 0px 0px rgba(0,0,0,0)",
-            }
-      }
-      style={{
-        left: visual.source.left,
-        top: visual.source.top,
-        width: visual.source.width,
-        height: visual.source.height,
-        willChange: "transform,width,height",
-      }}
-      animate={{
-        x: visual.rect.left - visual.source.left,
-        y: visual.rect.top - visual.source.top,
-        width: visual.rect.width,
-        height: visual.rect.height,
-        scale: 1,
-        rotate: 0,
-        boxShadow:
-          visual.settling || visual.flyover ? "0 0px 0px 0px rgba(0,0,0,0)" : "0 25px 50px -12px rgba(0,0,0,0.5)",
-      }}
-      transition={{
-        boxShadow: { duration: 1, ease: "easeOut" },
-        default: visual.flyover
-          ? { duration: DOUBLE_CLICK_FLYOVER_MS / 1000, ease: [0.22, 1, 0.36, 1] }
-          : visual.releasing
-            ? { duration: MAGNET_RELEASE_EASE_MS / 1000, ease: [0.22, 1, 0.36, 1] }
-            : visual.settling
-              ? { type: "spring", stiffness: 1000, damping: 50, mass: 0.15 }
-              : { type: "spring", stiffness: 1000, damping: 50, mass: 0.15 },
-      }}
-      onAnimationComplete={() => {
-        if (visual.settling || visual.flyover) {
-          onComplete();
-        }
-      }}
-    >
-      <img src={art} alt="" className="h-full w-full object-cover" />
-    </motion.div>,
-    document.body,
   );
 }
